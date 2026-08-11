@@ -1,0 +1,19 @@
+{
+  "name": "autofluxos",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Automação de atendimento no WhatsApp. Fluxo visual, motor puro, IA opcional.",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}
