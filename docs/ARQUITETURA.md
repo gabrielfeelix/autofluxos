@@ -298,6 +298,9 @@ autofluxos/
     │   └── ia/
     │       └── responder.ts           chamada ao LLM com contexto travado
     │
+    ├── exemplos/                      ✅ fluxo de demonstração (dado, não código)
+    │   └── triagem.ts                 some quando o editor e o banco existirem
+    │
     ├── app/                           ★ NEXT.JS — front e back no mesmo deploy
     │   ├── (auth)/
     │   │   └── login/page.tsx
@@ -598,8 +601,8 @@ clica de novo, recebe link, e o lead vai parar numa base. Zero LLM.
 
 | # | Entrega | Prova o quê |
 |---|---|---|
-| 1 | `core/` + testes | o motor anda no grafo corretamente |
-| 2 | `/api/simular` + chat de teste | dá pra conversar com um fluxo escrito na mão |
+| 1 ✅ | `core/` + testes | o motor anda no grafo corretamente |
+| 2 ✅ | `/api/simular` + chat de teste | dá pra conversar com um fluxo escrito na mão |
 | 3 | Supabase + CRUD de cliente/fluxo | o fluxo persiste |
 | 4 | Editor React Flow + painel | dá pra **desenhar** o fluxo |
 | 5 | Publicar + versionar | rascunho ≠ produção |

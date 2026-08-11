@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { fluxoSchema, LIMITE_LISTA, type Fluxo } from './schema.js'
-import { validar } from './validar.js'
+import { fluxoSchema, LIMITE_LISTA, type Fluxo } from './schema'
+import { validar } from './validar'
 
 const p = { x: 0, y: 0 }
 

@@ -1,41 +1,57 @@
-import type { Opcao } from '../flow/schema.js'
+import { z } from 'zod'
+import type { Opcao } from '../flow/schema'
+
+/**
+ * `Sessao` e `Entrada` são schemas Zod, não só tipos: eles atravessam a
+ * fronteira da rede (o simulador manda a sessão de volta a cada mensagem, o
+ * webhook do WhatsApp manda o que chegou). Tudo que vem de fora é validado
+ * antes de encostar no motor.
+ *
+ * `Acao` é só tipo — ela sempre sai daqui, nunca entra.
+ */
+
+export const statusSessaoSchema = z.enum([
+  /** conversando normalmente */
+  'ativa',
+  /** parada num nó de IA, esperando a resposta do modelo */
+  'aguardando_ia',
+  /** o humano assumiu — o bot fica calado */
+  'humano',
+  /** o fluxo chegou ao fim */
+  'encerrada',
+])
 
 /**
  * Tudo que o motor precisa lembrar de uma conversa. É serializável: cabe numa
  * linha de banco e volta de lá sem perder nada. Não existe estado do motor
  * fora daqui.
  */
-export type Sessao = {
+export const sessaoSchema = z.object({
   /** Nó onde a conversa parou. `null` = ainda não começou. */
-  noAtual: string | null
+  noAtual: z.string().nullable(),
   /** Variáveis coletadas: `{ nome: "Ana", assunto: "orçamento" }` */
-  vars: Record<string, string>
+  vars: z.record(z.string(), z.string()),
   /** Quantas vezes seguidas o motor não entendeu. Reseta ao avançar. */
-  tentativas: number
-  status: StatusSessao
-}
-
-export type StatusSessao =
-  /** conversando normalmente */
-  | 'ativa'
-  /** parada num nó de IA, esperando a resposta do modelo */
-  | 'aguardando_ia'
-  /** o humano assumiu — o bot fica calado */
-  | 'humano'
-  /** o fluxo chegou ao fim */
-  | 'encerrada'
+  tentativas: z.number().int().min(0),
+  status: statusSessaoSchema,
+})
 
 /** O que chegou. O motor não sabe se veio do WhatsApp ou do simulador. */
-export type Entrada =
+export const entradaSchema = z.discriminatedUnion('tipo', [
   /** primeira interação: começa o fluxo do zero */
-  | { tipo: 'inicio' }
-  | { tipo: 'texto'; texto: string }
+  z.object({ tipo: z.literal('inicio') }),
+  z.object({ tipo: z.literal('texto'), texto: z.string() }),
   /** a pessoa clicou num botão ou item de lista */
-  | { tipo: 'opcao'; opcaoId: string }
+  z.object({ tipo: z.literal('opcao'), opcaoId: z.string().min(1) }),
   /** áudio, imagem, documento, figurinha... (Regra B) */
-  | { tipo: 'midia'; formato: string }
+  z.object({ tipo: z.literal('midia'), formato: z.string().min(1) }),
   /** o servidor chamou o modelo e trouxe a resposta de volta */
-  | { tipo: 'ia_respondeu'; texto: string }
+  z.object({ tipo: z.literal('ia_respondeu'), texto: z.string() }),
+])
+
+export type StatusSessao = z.infer<typeof statusSessaoSchema>
+export type Sessao = z.infer<typeof sessaoSchema>
+export type Entrada = z.infer<typeof entradaSchema>
 
 /**
  * O que o mundo lá fora deve fazer. O motor nunca executa nada — ele descreve.

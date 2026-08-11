@@ -7,8 +7,8 @@ Produto da [4YU](https://4yu.com.br).
 
 ## Estado
 
-**Etapa 1, passo 1 de 7:** o motor existe e está testado. Ainda não tem
-interface, banco, nem WhatsApp.
+**Etapa 1, passo 2 de 7:** o motor está testado e já dá para **conversar com um
+fluxo** no navegador. Ainda não tem editor visual, banco, nem WhatsApp.
 
 Veja [docs/ARQUITETURA.md](docs/ARQUITETURA.md) para o desenho completo e as
 decisões por trás dele.
@@ -17,12 +17,29 @@ decisões por trás dele.
 
 ```bash
 npm install
-npm test          # 30 testes, ~400ms
+npm run dev       # http://localhost:3000 — o simulador
+npm test          # 35 testes, ~400ms
 npm run typecheck
 ```
 
-Não precisa de Docker, banco, nem chave de API. O motor é uma função pura — essa
-é a ideia.
+Não precisa de Docker, banco, nem chave de API.
+
+## O simulador
+
+`/` abre um chat onde você escreve como se fosse o cliente e vê o bot responder,
+com os botões que apareceriam no WhatsApp. Ao lado, o estado da conversa ao vivo:
+nó atual, variáveis coletadas e o resultado da validação do fluxo.
+
+Ele não imita o motor — ele **chama o motor**. `/api/simular` roda a mesma
+`executar()` que o webhook do WhatsApp vai rodar, e o endpoint é sem estado: quem
+guarda a sessão é o navegador, que devolve ela a cada mensagem.
+
+Coisas que vale testar lá:
+
+- escrever “quero falar com um atendente” a qualquer momento
+- clicar no 🎤 para ver o que acontece quando a pessoa manda áudio
+- responder “2” em vez de clicar no botão
+- digitar besteira três vezes seguidas
 
 ## A regra que sustenta o projeto
 

@@ -4,8 +4,8 @@ import {
   SAIDA_VERDADEIRO,
   type Fluxo,
   type No,
-} from './schema.js'
-import { variaveisCitadas } from '../engine/interpolar.js'
+} from './schema'
+import { variaveisCitadas } from '../engine/interpolar'
 
 export type Problema = {
   codigo: string

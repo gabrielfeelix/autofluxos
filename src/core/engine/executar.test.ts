@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { fluxoSchema, type Fluxo } from '../flow/schema.js'
-import { executar, MAX_TENTATIVAS } from './executar.js'
-import { sessaoNova, type Acao, type Entrada, type Sessao } from './types.js'
+import { fluxoSchema, type Fluxo } from '../flow/schema'
+import { executar, MAX_TENTATIVAS } from './executar'
+import { sessaoNova, type Acao, type Entrada, type Sessao } from './types'
 
 const p = { x: 0, y: 0 }
 

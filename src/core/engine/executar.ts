@@ -6,9 +6,9 @@ import {
   type No,
   type NoPergunta,
   type Opcao,
-} from '../flow/schema.js'
-import { interpolar, normalizar } from './interpolar.js'
-import type { Acao, Entrada, Resultado, Sessao } from './types.js'
+} from '../flow/schema'
+import { interpolar, normalizar } from './interpolar'
+import type { Acao, Entrada, Resultado, Sessao } from './types'
 
 /** Na terceira vez que o motor não entende, a conversa vai para uma pessoa. */
 export const MAX_TENTATIVAS = 3
@@ -198,7 +198,9 @@ function avancar(
 
       case 'handoff': {
         acoes.push({ tipo: 'enviar_texto', texto: interpolar(no.data.mensagem, s.vars) })
-        acoes.push({ tipo: 'transferir_humano', motivo: no.data.motivo })
+        // O motivo também interpola: "lead qualificado - {{tipo}}" chega no
+        // painel já dizendo qual lead é, sem ninguém precisar abrir a conversa.
+        acoes.push({ tipo: 'transferir_humano', motivo: interpolar(no.data.motivo, s.vars) })
         s.noAtual = no.id
         s.status = 'humano'
         return { acoes, sessao: s }
