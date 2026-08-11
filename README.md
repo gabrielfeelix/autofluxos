@@ -7,8 +7,9 @@ Produto da [4YU](https://4yu.com.br).
 
 ## Estado
 
-**Etapa 1, passo 2 de 7:** o motor está testado e já dá para **conversar com um
-fluxo** no navegador. Ainda não tem editor visual, banco, nem WhatsApp.
+**Etapa 1, passo 3 de 7:** o motor está testado, dá para **conversar com um
+fluxo** no navegador, e clientes e fluxos **ficam salvos** no Supabase. Ainda não
+tem editor visual, publicação nem WhatsApp.
 
 Veja [docs/ARQUITETURA.md](docs/ARQUITETURA.md) para o desenho completo e as
 decisões por trás dele.
@@ -17,12 +18,31 @@ decisões por trás dele.
 
 ```bash
 npm install
-npm run dev       # http://localhost:3000 — o simulador
-npm test          # 35 testes, ~400ms
+cp .env.example .env    # valores em 4yu-apps/.secrets/4yu.env (prefixo AUTOFLUXOS_)
+npm run dev             # http://localhost:3000
+npm test                # 40 testes
 npm run typecheck
 ```
 
-Não precisa de Docker, banco, nem chave de API.
+Não precisa de Docker. O banco é Supabase na nuvem (projeto `autofluxos`,
+região São Paulo).
+
+Sem `.env` os testes que falam com o banco se pulam sozinhos, e o resto roda
+normal — dá para clonar e rodar `npm test` sem credencial nenhuma.
+
+## Banco
+
+Migrations em [supabase/migrations/](supabase/migrations/), aplicadas pela
+Management API do Supabase.
+
+Duas tabelas por enquanto: `clients` e `flows`. `flow_versions`, `contacts`,
+`sessions` e `messages` entram nos passos 5 e 6 — tabela criada "por garantia" e
+nunca usada só acumula divergência entre o desenho e o código.
+
+**RLS está ligada e sem nenhuma política, de propósito.** A chave `publishable`
+(que pode chegar ao navegador) não lê nem escreve nada; todo acesso passa pelo
+servidor com a chave `secret`. Enquanto não existir login, esse é o estado
+seguro. As políticas entram junto com o login, e não antes.
 
 ## O simulador
 

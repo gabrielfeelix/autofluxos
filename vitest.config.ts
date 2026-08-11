@@ -1,11 +1,37 @@
+import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
 
+/**
+ * Carrega o `.env` para os testes que falam com o Supabase de verdade.
+ * Sem `.env`, esses testes se pulam sozinhos em vez de quebrar a suíte —
+ * quem clona o repo consegue rodar `npm test` sem credencial nenhuma.
+ */
+function lerEnvLocal(): Record<string, string> {
+  const caminho = fileURLToPath(new URL('./.env', import.meta.url))
+  if (!existsSync(caminho)) return {}
+
+  const env: Record<string, string> = {}
+  for (const linha of readFileSync(caminho, 'utf8').split('\n')) {
+    const limpa = linha.trim()
+    if (limpa === '' || limpa.startsWith('#')) continue
+    const corte = limpa.indexOf('=')
+    if (corte === -1) continue
+    env[limpa.slice(0, corte)] = limpa.slice(corte + 1)
+  }
+  return env
+}
+
 export default defineConfig({
   resolve: {
-    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // `server-only` lança erro só de ser carregado fora do Next. Ver o stub.
+      'server-only': fileURLToPath(new URL('./test/stub-server-only.ts', import.meta.url)),
+    },
   },
   test: {
     include: ['src/**/*.test.ts'],
+    env: lerEnvLocal(),
   },
 })

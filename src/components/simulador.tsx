@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { sessaoNova, type Acao, type Entrada, type Resultado, type Sessao } from '@/core/engine/types'
 import type { Fluxo, Opcao } from '@/core/flow/schema'
@@ -22,7 +23,19 @@ const ROTULO_STATUS: Record<Sessao['status'], { texto: string; classe: string }>
   encerrada: { texto: 'encerrada', classe: 'bg-zinc-500/15 text-zinc-600 dark:text-zinc-400' },
 }
 
-export function Simulador({ fluxo, validacao }: { fluxo: Fluxo; validacao: ResultadoValidacao }) {
+export function Simulador({
+  fluxo,
+  validacao,
+  titulo = 'AutoFluxos — simulador',
+  subtitulo,
+  voltarHref,
+}: {
+  fluxo: Fluxo
+  validacao: ResultadoValidacao
+  titulo?: string
+  subtitulo?: string
+  voltarHref?: string
+}) {
   const [itens, setItens] = useState<Item[]>([])
   const [sessao, setSessao] = useState<Sessao>(sessaoNova)
   const [pendentes, setPendentes] = useState<Pendentes | null>(null)
@@ -137,10 +150,18 @@ export function Simulador({ fluxo, validacao }: { fluxo: Fluxo; validacao: Resul
     <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 p-4 sm:p-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">AutoFluxos — simulador</h1>
+          {voltarHref && (
+            <Link
+              href={voltarHref}
+              className="text-xs text-zinc-500 hover:underline dark:text-zinc-400"
+            >
+              ← voltar
+            </Link>
+          )}
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight">{titulo}</h1>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            Converse como se fosse o cliente. É o mesmo motor que vai rodar no WhatsApp — não uma
-            imitação dele.
+            {subtitulo ? `${subtitulo} · ` : ''}Converse como se fosse o cliente. É o mesmo motor
+            que vai rodar no WhatsApp — não uma imitação dele.
           </p>
         </div>
         <button

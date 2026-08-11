@@ -288,9 +288,11 @@ autofluxos/
     │   └── evolution.ts               (só se precisar)
     │
     ├── server/                        ★ COLA — aqui mora o efeito colateral
-    │   ├── db.ts                      cliente Supabase (server-side)
+    │   ├── db.ts                      ✅ Supabase com a chave secreta
+    │   ├── acoes.ts                   ✅ server actions (criar cliente/fluxo)
     │   ├── repos/
-    │   │   ├── fluxos.ts
+    │   │   ├── clientes.ts            ✅
+    │   │   ├── fluxos.ts              ✅
     │   │   ├── sessoes.ts
     │   │   ├── contatos.ts
     │   │   └── mensagens.ts
@@ -346,6 +348,17 @@ sair do Next, virar VPS, virar CLI — `core/` vai junto sem tocar numa linha.
 > arquivo dele.
 
 ## Banco (Supabase / Postgres)
+
+> **Construído até agora:** só `clients` e `flows` (migration 0001), e `flows`
+> guarda o **rascunho** direto numa coluna `jsonb`. `flow_versions` entra no
+> passo 5 e o resto no passo 6, quando a gente souber o formato real do que o
+> WhatsApp manda. Tabela criada "por garantia" e nunca usada só acumula
+> divergência entre o desenho e o código.
+>
+> **RLS ligada e sem política nenhuma**, de propósito: a chave `publishable` não
+> lê nem escreve nada, e todo acesso passa pelo servidor com a chave `secret`.
+> Enquanto não existir login, esse é o estado seguro — as políticas entram junto
+> com o login, e não antes.
 
 ```sql
 clients         id, nome                          -- Reinaldo
@@ -603,7 +616,7 @@ clica de novo, recebe link, e o lead vai parar numa base. Zero LLM.
 |---|---|---|
 | 1 ✅ | `core/` + testes | o motor anda no grafo corretamente |
 | 2 ✅ | `/api/simular` + chat de teste | dá pra conversar com um fluxo escrito na mão |
-| 3 | Supabase + CRUD de cliente/fluxo | o fluxo persiste |
+| 3 ✅ | Supabase + CRUD de cliente/fluxo | o fluxo persiste |
 | 4 | Editor React Flow + painel | dá pra **desenhar** o fluxo |
 | 5 | Publicar + versionar | rascunho ≠ produção |
 | 6 | Webhook + `cloud-api` no número do Cliente 00 | **funciona no WhatsApp** |
