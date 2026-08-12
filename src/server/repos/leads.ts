@@ -1,6 +1,6 @@
 import 'server-only'
 import { z } from 'zod'
-import { db } from '../db'
+import { db, ehIdInvalido } from '../db'
 
 /**
  * Um lead é um contato visto pelo lado de quem vende: o que ele respondeu, se
@@ -119,6 +119,7 @@ export async function listarLeads(clienteId: string): Promise<Lead[]> {
     .eq('client_id', clienteId)
     .order('ultima_em', { ascending: false, nullsFirst: false })
 
+  if (ehIdInvalido(error)) return []
   if (error) throw new Error(`não deu para listar os leads: ${error.message}`)
   return (data as Linha[]).map(paraLead)
 }
@@ -137,6 +138,7 @@ export async function acharLead(clienteId: string, contatoId: string): Promise<L
     .eq('contact_id', contatoId)
     .maybeSingle()
 
+  if (ehIdInvalido(error)) return null
   if (error) throw new Error(`não deu para buscar o lead: ${error.message}`)
   return data ? paraLead(data as Linha) : null
 }
@@ -160,6 +162,7 @@ export async function lerConversa(
     .order('ts', { ascending: false })
     .limit(teto + 1)
 
+  if (ehIdInvalido(error)) return { cortada: false, mensagens: [] }
   if (error) throw new Error(`não deu para ler a conversa: ${error.message}`)
 
   const linhas = data as { id: string; direcao: string; texto: string | null; ts: string }[]

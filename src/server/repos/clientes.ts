@@ -1,5 +1,5 @@
 import 'server-only'
-import { db } from '../db'
+import { db, ehIdInvalido } from '../db'
 
 export type Cliente = {
   id: string
@@ -46,6 +46,7 @@ export async function listarClientes(): Promise<Cliente[]> {
 export async function acharCliente(id: string): Promise<Cliente | null> {
   const { data, error } = await db().from('clients').select(COLUNAS).eq('id', id).maybeSingle()
 
+  if (ehIdInvalido(error)) return null
   if (error) throw new Error(`não deu para buscar o cliente: ${error.message}`)
   return data ? paraCliente(data as Linha) : null
 }

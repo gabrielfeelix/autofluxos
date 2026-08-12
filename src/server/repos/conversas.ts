@@ -1,6 +1,6 @@
 import 'server-only'
 import { sessaoSchema, type Sessao } from '@/core/engine/types'
-import { db } from '../db'
+import { db, ehIdInvalido } from '../db'
 
 export type CanalSalvo = {
   id: string
@@ -241,6 +241,7 @@ export async function contextoDeResposta(
     .eq('client_id', clienteId)
     .maybeSingle()
 
+  if (ehIdInvalido(erroDoContato)) return null
   if (erroDoContato) throw new Error(`não deu para achar o contato: ${erroDoContato.message}`)
   if (!contato) return null
 
@@ -338,6 +339,7 @@ export async function encerrarAtendimento(
     .eq('client_id', clienteId)
     .maybeSingle()
 
+  if (ehIdInvalido(erroDoContato)) return { ok: false }
   if (erroDoContato) throw new Error(`não deu para achar o contato: ${erroDoContato.message}`)
   if (!contato) return { ok: false }
 
@@ -404,6 +406,47 @@ export async function criarCanal(dados: {
   }
 }
 
+/**
+ * Desconecta um número deste cliente.
+ *
+ * Existe porque conectar é digitar um id da Meta na mão, e id digitado na mão
+ * sai errado. Sem isto, o número torto ficava na tela para sempre, com um aviso
+ * amarelo permanente de "sem fluxo ligado".
+ *
+ * As conversas ficam: `sessions` referencia o canal, e apagar junto seria
+ * apagar o histórico de leads reais por causa de um erro de digitação. Por isso
+ * o `delete` só passa quando não há sessão nenhuma pendurada — e quando há, a
+ * resposta diz isso em vez de estourar com erro de chave estrangeira.
+ */
+export async function desconectarNumero(
+  clienteId: string,
+  canalId: string,
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  const { count, error: erroDaContagem } = await db()
+    .from('sessions')
+    .select('id', { count: 'exact', head: true })
+    .eq('channel_id', canalId)
+
+  if (ehIdInvalido(erroDaContagem)) return { ok: false, motivo: 'este número não existe mais' }
+  if (erroDaContagem) throw new Error(`não deu para conferir as conversas: ${erroDaContagem.message}`)
+
+  if ((count ?? 0) > 0) {
+    return {
+      ok: false,
+      motivo: `este número já tem ${count} conversa(s) registrada(s) — desconectar apagaria o histórico delas`,
+    }
+  }
+
+  const { error } = await db()
+    .from('channels')
+    .delete()
+    .eq('id', canalId)
+    .eq('client_id', clienteId)
+
+  if (error) throw new Error(`não deu para desconectar o número: ${error.message}`)
+  return { ok: true }
+}
+
 export async function listarCanais(clienteId: string): Promise<CanalSalvo[]> {
   const { data, error } = await db()
     .from('channels')
@@ -411,6 +454,7 @@ export async function listarCanais(clienteId: string): Promise<CanalSalvo[]> {
     .eq('client_id', clienteId)
     .order('criado_em', { ascending: true })
 
+  if (ehIdInvalido(error)) return []
   if (error) throw new Error(`não deu para listar os canais: ${error.message}`)
   return (data as Record<string, unknown>[]).map((c) => ({
     id: c.id as string,

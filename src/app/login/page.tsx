@@ -21,7 +21,9 @@ export default function Login() {
             Fluxos de conversa no WhatsApp — o bot conduz, coleta o que importa e passa para uma pessoa na hora certa.
           </p>
           <div className="mt-7 flex gap-[22px] font-mono text-[11px] text-dim">
-            <span><strong className="font-normal text-accent">6</strong> tipos de bloco</span>
+            {/* Sete desde que o nó de API entrou. Contagem errada na porta de
+                entrada é a primeira coisa que alguém confere. */}
+            <span><strong className="font-normal text-accent">7</strong> tipos de bloco</span>
             <span><strong className="font-normal text-accent">1</strong> arrasto = 1 ramificação</span>
             <span>handoff sempre garantido</span>
           </div>

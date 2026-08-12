@@ -5,6 +5,7 @@ import { acharCliente, atualizarContexto, criarCliente, listarClientes } from '.
 import {
   acharFluxo,
   acharVersao,
+  apagarFluxo,
   criarFluxo,
   definirIa,
   listarFluxos,
@@ -12,6 +13,14 @@ import {
   publicar,
   salvarRascunho,
 } from './fluxos'
+import { listarConexoes } from './conexoes'
+import {
+  contextoDeResposta,
+  criarCanal,
+  desconectarNumero,
+  listarCanais,
+} from './conversas'
+import { acharLead, lerConversa, listarLeads } from './leads'
 
 /**
  * Fala com o Supabase de verdade. Não tem mock: o que a gente precisa saber é
@@ -218,5 +227,66 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
   it('devolve null para id que não existe', async () => {
     expect(await acharCliente('00000000-0000-0000-0000-000000000000')).toBeNull()
     expect(await acharFluxo('00000000-0000-0000-0000-000000000000')).toBeNull()
+  })
+
+  /**
+   * Id torto no endereço é "não achei", nunca 500.
+   *
+   * O Postgres recusa `where id = 'nao-existe'` com 22P02 antes de olhar a
+   * tabela. Sem tratar, a exceção subia e a pessoa via "Alguma coisa quebrou
+   * aqui" — para um link truncado no WhatsApp ou um id colado pela metade, que
+   * é o jeito mais comum de chegar num endereço errado aqui.
+   */
+  it('id sem forma de uuid é não-encontrado, e não erro', async () => {
+    expect(await acharCliente('nao-existe')).toBeNull()
+    expect(await acharFluxo('nao-existe')).toBeNull()
+    expect(await acharVersao('nao-existe')).toBeNull()
+    expect(await listarFluxos('nao-existe')).toEqual([])
+    expect(await listarVersoes('nao-existe')).toEqual([])
+    expect(await listarLeads('nao-existe')).toEqual([])
+    expect(await acharLead('nao-existe', 'nao-existe')).toBeNull()
+    expect(await lerConversa('nao-existe')).toEqual({ cortada: false, mensagens: [] })
+    expect(await listarConexoes('nao-existe')).toEqual([])
+    expect(await listarCanais('nao-existe')).toEqual([])
+    expect(await contextoDeResposta('nao-existe', 'nao-existe')).toBeNull()
+  })
+
+  /**
+   * Apagar automação recusa enquanto ela estiver ligada a um número: apagar
+   * um fluxo que um número executa deixa o bot mudo no WhatsApp de gente de
+   * verdade, e desligar o número tem que ser um ato deliberado.
+   */
+  it('RECUSA apagar automação ligada a um número, e aceita depois de desligar', async () => {
+    const cliente = await criarCliente(`${marca} apagar`)
+    criados.push(cliente.id)
+
+    const fluxo = await criarFluxo(cliente.id, `${marca} descartável`, fluxoNovo())
+    const canal = await criarCanal({
+      clienteId: cliente.id,
+      phoneNumberId: `test-apagar-${Math.random().toString(36).slice(2, 10)}`,
+      flowId: fluxo.id,
+    })
+
+    const negado = await apagarFluxo(cliente.id, fluxo.id)
+    expect(negado.ok).toBe(false)
+    expect(!negado.ok && negado.motivo).toContain(canal.phoneNumberId)
+    expect(await acharFluxo(fluxo.id)).not.toBeNull()
+
+    // Sem conversa nenhuma, desconectar o número passa.
+    expect(await desconectarNumero(cliente.id, canal.id)).toEqual({ ok: true })
+    expect(await apagarFluxo(cliente.id, fluxo.id)).toEqual({ ok: true })
+    expect(await acharFluxo(fluxo.id)).toBeNull()
+  })
+
+  it('não apaga a automação de um cliente pelo id de outro', async () => {
+    const dono = await criarCliente(`${marca} dono`)
+    const intruso = await criarCliente(`${marca} intruso`)
+    criados.push(dono.id, intruso.id)
+
+    const fluxo = await criarFluxo(dono.id, `${marca} protegido`, fluxoNovo())
+    expect(await apagarFluxo(intruso.id, fluxo.id)).toEqual({ ok: true })
+    // O `delete` filtra por cliente, então "ok" não significa que apagou algo
+    // de outro dono — o fluxo continua lá.
+    expect(await acharFluxo(fluxo.id)).not.toBeNull()
   })
 })

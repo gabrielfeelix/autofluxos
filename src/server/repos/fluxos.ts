@@ -1,7 +1,7 @@
 import 'server-only'
 import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
 import { validar, type Problema } from '@/core/flow/validar'
-import { db } from '../db'
+import { db, ehIdInvalido } from '../db'
 import { listarConexoes } from './conexoes'
 import { acharCliente } from './clientes'
 
@@ -80,6 +80,7 @@ export async function listarFluxos(clienteId: string): Promise<FluxoSalvo[]> {
     .eq('client_id', clienteId)
     .order('criado_em', { ascending: true })
 
+  if (ehIdInvalido(error)) return []
   if (error) throw new Error(`não deu para listar os fluxos: ${error.message}`)
   return (data as Linha[]).map(paraFluxo)
 }
@@ -87,6 +88,7 @@ export async function listarFluxos(clienteId: string): Promise<FluxoSalvo[]> {
 export async function acharFluxo(id: string): Promise<FluxoSalvo | null> {
   const { data, error } = await db().from('flows').select(COLUNAS).eq('id', id).maybeSingle()
 
+  if (ehIdInvalido(error)) return null
   if (error) throw new Error(`não deu para buscar o fluxo: ${error.message}`)
   return data ? paraFluxo(data as Linha) : null
 }
@@ -129,6 +131,7 @@ export async function acharVersao(id: string): Promise<VersaoPublicada | null> {
     .eq('id', id)
     .maybeSingle()
 
+  if (ehIdInvalido(error)) return null
   if (error) throw new Error(`não deu para buscar a versão publicada: ${error.message}`)
   if (!data) return null
 
@@ -147,6 +150,7 @@ export async function listarVersoes(fluxoId: string): Promise<Omit<VersaoPublica
     .eq('flow_id', fluxoId)
     .order('versao', { ascending: false })
 
+  if (ehIdInvalido(error)) return []
   if (error) throw new Error(`não deu para listar as versões: ${error.message}`)
   return (data as { id: string; versao: number; publicado_em: string }[]).map((v) => ({
     id: v.id,
@@ -222,6 +226,42 @@ export async function publicar(
       grafo: fluxoSchema.parse(linha.grafo),
     },
   }
+}
+
+/**
+ * Apaga uma automação.
+ *
+ * Recusa quando ela está no ar em algum número: apagar um fluxo publicado que
+ * um número executa deixa o bot mudo no WhatsApp de gente de verdade, e o
+ * caminho honesto é desligar o número do fluxo primeiro — um ato deliberado, em
+ * vez de um efeito colateral de "apagar aquele teste ali".
+ *
+ * O par (fluxo, cliente) vem junto porque a URL é adivinhável, como em toda
+ * escrita por aqui.
+ */
+export async function apagarFluxo(
+  clienteId: string,
+  fluxoId: string,
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  const { data: canais, error: erroDosCanais } = await db()
+    .from('channels')
+    .select('phone_number_id')
+    .eq('flow_id', fluxoId)
+
+  if (ehIdInvalido(erroDosCanais)) return { ok: false, motivo: 'esta automação não existe mais' }
+  if (erroDosCanais) throw new Error(`não deu para conferir os números: ${erroDosCanais.message}`)
+
+  const ligados = (canais as { phone_number_id: string }[]) ?? []
+  if (ligados.length > 0) {
+    return {
+      ok: false,
+      motivo: `esta automação está ligada ao número ${ligados.map((c) => c.phone_number_id).join(', ')}. Desligue lá primeiro — apagar agora deixaria o bot mudo no WhatsApp.`,
+    }
+  }
+
+  const { error } = await db().from('flows').delete().eq('id', fluxoId).eq('client_id', clienteId)
+  if (error) throw new Error(`não deu para apagar a automação: ${error.message}`)
+  return { ok: true }
 }
 
 /** Liga ou desliga a IA desta automação. É o que se vende, então é explícito. */

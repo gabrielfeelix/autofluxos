@@ -8,14 +8,16 @@ import { triagem } from '@/exemplos/triagem'
 import { atualizarContexto, criarCliente } from './repos/clientes'
 import { canalCloudApi } from '@/channels/cloud-api'
 import { dentroDaJanela } from '@/channels/janela'
+import type { EstadoSalvar } from '@/components/design/formulario-salvar'
 import {
   contextoDeResposta,
   criarCanal,
   definirStatusDaSessao,
+  desconectarNumero,
   encerrarAtendimento,
   registrarSaida,
 } from './repos/conversas'
-import { criarFluxo, definirIa, publicar, salvarRascunho } from './repos/fluxos'
+import { apagarFluxo, criarFluxo, definirIa, publicar, salvarRascunho } from './repos/fluxos'
 import { apagarConexao, criarConexao, trocarValor } from './repos/conexoes'
 
 export async function acaoCriarCliente(formData: FormData) {
@@ -94,13 +96,50 @@ export async function acaoPublicar(fluxoId: string, clienteId: string, grafo: un
   return { ok: false as const, erros: resultado.erros }
 }
 
-export async function acaoConectarNumero(clienteId: string, formData: FormData) {
+export async function acaoConectarNumero(
+  clienteId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
   const phoneNumberId = String(formData.get('phoneNumberId') ?? '').trim()
   const flowId = String(formData.get('flowId') ?? '').trim()
-  if (phoneNumberId === '') return
+  if (phoneNumberId === '') return { erro: 'cole a identificação do número' }
 
-  await criarCanal({ clienteId, phoneNumberId, flowId: flowId === '' ? null : flowId })
+  // Número já conectado dispara o `unique` do banco. Sem tratar, virava a tela
+  // de "alguma coisa quebrou" para um erro que é só "esse já está aí".
+  try {
+    await criarCanal({ clienteId, phoneNumberId, flowId: flowId === '' ? null : flowId })
+  } catch (erro) {
+    const mensagem = erro instanceof Error ? erro.message : ''
+    return {
+      erro: /duplicate key|23505/.test(mensagem)
+        ? 'este número já está conectado a algum cliente'
+        : mensagem || 'não deu para conectar',
+    }
+  }
+
   revalidatePath(`/clientes/${clienteId}`)
+  return { ok: true }
+}
+
+/** Tira um número do cliente. Ver `desconectarNumero` sobre o que ele recusa. */
+export async function acaoDesconectarNumero(
+  clienteId: string,
+  canalId: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  const r = await desconectarNumero(clienteId, canalId)
+  revalidatePath(`/clientes/${clienteId}`)
+  return r.ok ? { ok: true } : { ok: false, erro: r.motivo }
+}
+
+/** Apaga uma automação. Ver `apagarFluxo` sobre o que ele recusa. */
+export async function acaoApagarFluxo(
+  clienteId: string,
+  fluxoId: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  const r = await apagarFluxo(clienteId, fluxoId)
+  revalidatePath(`/clientes/${clienteId}`)
+  return r.ok ? { ok: true } : { ok: false, erro: r.motivo }
 }
 
 /**
@@ -259,9 +298,24 @@ export async function acaoEncerrarAtendimento(clienteId: string, contatoId: stri
   revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
 }
 
-/** Salva o que a IA pode dizer sobre o negócio. Ver `contexto/page.tsx`. */
-export async function acaoSalvarContexto(clienteId: string, formData: FormData) {
-  await atualizarContexto(clienteId, String(formData.get('contexto') ?? ''))
+/**
+ * Salva o que a IA pode dizer sobre o negócio. Ver `contexto/page.tsx`.
+ *
+ * Devolve estado em vez de não devolver nada: este campo é a única fonte de
+ * verdade da IA, e salvar em silêncio deixa quem escreveu sem saber se gravou.
+ */
+export async function acaoSalvarContexto(
+  clienteId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  try {
+    await atualizarContexto(clienteId, String(formData.get('contexto') ?? ''))
+  } catch (erro) {
+    return { erro: erro instanceof Error ? erro.message : 'não deu para salvar' }
+  }
+
   revalidatePath(`/clientes/${clienteId}/contexto`)
   revalidatePath(`/clientes/${clienteId}`)
+  return { ok: true }
 }

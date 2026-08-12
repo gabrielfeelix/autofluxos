@@ -2,10 +2,17 @@ import { headers } from 'next/headers'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
+import { BotaoPerigo } from '@/components/design/botao-perigo'
+import { FormularioSalvar } from '@/components/design/formulario-salvar'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { PainelShell } from '@/components/design/shell'
 import { validar } from '@/core/flow/validar'
-import { acaoConectarNumero, acaoCriarFluxo } from '@/server/acoes'
+import {
+  acaoApagarFluxo,
+  acaoConectarNumero,
+  acaoCriarFluxo,
+  acaoDesconectarNumero,
+} from '@/server/acoes'
 import { acharCliente, type Cliente } from '@/server/repos/clientes'
 import { listarCanais } from '@/server/repos/conversas'
 import { listarFluxos } from '@/server/repos/fluxos'
@@ -187,10 +194,10 @@ async function Conteudo({ cliente }: { cliente: Cliente }) {
             {fluxos.map((fluxo) => {
               const validacao = validar(fluxo.rascunho, { iaHabilitada: fluxo.iaHabilitada })
               return (
-                <li key={fluxo.id} className="border-b border-white/[0.045] last:border-0">
+                <li key={fluxo.id} className="flex items-center border-b border-white/[0.045] pr-4 transition last:border-0 hover:bg-white/[0.03]">
                   <Link
                     href={`/clientes/${cliente.id}/fluxos/${fluxo.id}`}
-                    className="flex items-center gap-3.5 px-5 py-[15px] transition hover:bg-white/[0.03]"
+                    className="flex min-w-0 flex-1 items-center gap-3.5 px-5 py-[15px]"
                   >
                     <span className={`size-2 shrink-0 rounded-full ${fluxo.versaoPublicadaId ? 'bg-emerald-400' : 'bg-dim'}`} />
                     <span className="min-w-0 flex-1">
@@ -209,6 +216,12 @@ async function Conteudo({ cliente }: { cliente: Cliente }) {
                       {fluxo.versaoPublicadaId ? 'NO AR' : 'RASCUNHO'}
                     </span>
                   </Link>
+                  {/* Fora do `Link`: botão dentro de link é clique ambíguo. */}
+                  <BotaoPerigo
+                    titulo="Apaga esta automação. Recusa enquanto ela estiver ligada a um número."
+                    pergunta={`Apagar a automação "${fluxo.nome}"? O desenho e as versões publicadas dela somem.`}
+                    acao={acaoApagarFluxo.bind(null, cliente.id, fluxo.id)}
+                  />
                 </li>
               )
             })}
@@ -222,7 +235,12 @@ async function Conteudo({ cliente }: { cliente: Cliente }) {
             <h2 className="text-[14.5px] font-bold">Números do WhatsApp</h2>
           </header>
 
-          {canais.length > 0 && (
+          {canais.length === 0 ? (
+            <p className="border-b border-white/[0.045] px-5 py-6 text-center text-xs leading-5 text-dim">
+              Nenhum número conectado ainda — sem isto o WhatsApp não chega até aqui. A identificação
+              está no painel da Meta, em <strong className="text-muted">WhatsApp → Configuração da API</strong>.
+            </p>
+          ) : (
             <ul>
               {canais.map((canal) => {
                 const fluxo = fluxos.find((item) => item.id === canal.flowId)
@@ -236,7 +254,15 @@ async function Conteudo({ cliente }: { cliente: Cliente }) {
                   <li key={canal.id} className="border-b border-white/[0.045] px-5 py-3.5">
                     <div className="flex items-center gap-2 text-[12.5px] font-semibold">
                       <span className={`size-2 rounded-full ${aviso ? 'bg-amber-300' : 'bg-emerald-400'}`} />
-                      <code className="font-mono text-[11px] text-soft">{canal.phoneNumberId}</code>
+                      <code className="min-w-0 flex-1 truncate font-mono text-[11px] text-soft">
+                        {canal.phoneNumberId}
+                      </code>
+                      <BotaoPerigo
+                        rotulo="Desconectar"
+                        titulo="Tira este número deste cliente. As conversas já registradas impedem — elas são o histórico dos leads."
+                        pergunta={`Desconectar o número ${canal.phoneNumberId}? O bot para de responder nele.`}
+                        acao={acaoDesconectarNumero.bind(null, cliente.id, canal.id)}
+                      />
                     </div>
                     <p className="mt-1.5 ml-4 text-[11.5px] text-muted">
                       Executa: <strong className="font-semibold text-soft">{fluxo?.nome ?? 'nenhum fluxo'}</strong>
@@ -252,23 +278,24 @@ async function Conteudo({ cliente }: { cliente: Cliente }) {
             </ul>
           )}
 
-          <form action={conectarComCliente} className="space-y-2.5 p-5">
-            <input
-              name="phoneNumberId"
-              required
-              placeholder="Identificação do número (Meta)"
-              className="app-field px-3 py-2.5 text-[12.5px]"
-            />
-            <div className="flex gap-2">
-              <select name="flowId" className="app-field min-w-0 flex-1 px-3 py-2.5 text-[12.5px]">
-                <option value="">sem fluxo</option>
-                {fluxos.map((fluxo) => (
-                  <option key={fluxo.id} value={fluxo.id}>{fluxo.nome}</option>
-                ))}
-              </select>
-              <button type="submit" className="app-secondary-button px-4 py-2 text-xs">Conectar</button>
-            </div>
-          </form>
+          <div className="p-5">
+            <FormularioSalvar action={conectarComCliente} rotulo="Conectar">
+              <div className="space-y-2.5">
+                <input
+                  name="phoneNumberId"
+                  required
+                  placeholder="Identificação do número (Meta)"
+                  className="app-field px-3 py-2.5 text-[12.5px]"
+                />
+                <select name="flowId" className="app-field w-full px-3 py-2.5 text-[12.5px]">
+                  <option value="">sem fluxo</option>
+                  {fluxos.map((fluxo) => (
+                    <option key={fluxo.id} value={fluxo.id}>{fluxo.nome}</option>
+                  ))}
+                </select>
+              </div>
+            </FormularioSalvar>
+          </div>
         </section>
 
         <section className="app-card p-5">

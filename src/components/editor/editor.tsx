@@ -135,8 +135,12 @@ export function Editor({
   const [publicada, setPublicada] = useState(publicadaInicial)
   const [publicando, setPublicando] = useState(false)
   const [errosDePublicacao, setErrosDePublicacao] = useState<Problema[] | null>(null)
+  /** Versão que acabou de ir ao ar. Some sozinha — aviso fixo para de ser lido. */
+  const [publicadoAgora, setPublicadoAgora] = useState<number | null>(null)
   const [comIa, setComIa] = useState(iaHabilitada)
   const [tela, setTela] = useState<ReactFlowInstance | null>(null)
+  /** O último bloco apagado, para poder devolver. Ver `apagar()`. */
+  const [desfazer, setDesfazer] = useState<{ no: Node; edges: Edge[]; eraInicio: boolean } | null>(null)
   const areaRef = useRef<HTMLDivElement>(null)
 
   const fluxo = useMemo(() => paraFluxo(inicio, nodes, edges), [inicio, nodes, edges])
@@ -233,14 +237,16 @@ export function Editor({
         ? tela.screenToFlowPosition({ x: area.x + area.width / 2, y: area.y + area.height / 2 })
         : { x: 80 + nodes.length * 24, y: 80 + nodes.length * 40 }
 
+    // Menos metade do bloco, senão ele nasce com o canto no centro em vez do
+    // meio. A largura é a do `Caixa` em `nos.tsx` (w-56 = 224px).
+    const posicao = livre({ x: centro.x - 112, y: centro.y - 40 }, nodes)
+
     setNodes((atuais) => [
       ...atuais.map((n) => ({ ...n, selected: false })),
       {
         id,
         type: tipo,
-        // Menos metade do bloco, senão ele nasce com o canto no centro em vez
-        // do meio. A largura é a do `Caixa` em `nos.tsx` (w-56 = 224px).
-        position: { x: centro.x - 112, y: centro.y - 40 },
+        position: posicao,
         data: dadosPadrao(tipo),
         selected: true,
       },
@@ -255,22 +261,56 @@ export function Editor({
     )
   }
 
+  /**
+   * Apagar um bloco leva as ligações dele junto, e o rascunho é salvo sozinho
+   * 800ms depois — sem desfazer, um clique errado custava o trabalho de religar
+   * tudo à mão. Guarda o que sumiu para poder devolver.
+   *
+   * Um passo só, de propósito: pilha de desfazer é outra coisa (mexe em mover,
+   * digitar, ligar) e prometer meia pilha é pior do que prometer um passo.
+   */
   function apagar() {
     if (!selecionado) return
+    const no = nodes.find((n) => n.id === selecionado)
+    if (!no) return
+
+    const ligacoes = edges.filter((e) => e.source === selecionado || e.target === selecionado)
+    setDesfazer({ no, edges: ligacoes, eraInicio: inicio === selecionado })
+
     setNodes((atuais) => atuais.filter((n) => n.id !== selecionado))
     setEdges((atuais) => atuais.filter((e) => e.source !== selecionado && e.target !== selecionado))
     setSelecionado(null)
   }
 
+  function desfazerApagar() {
+    if (!desfazer) return
+    const { no, edges: ligacoes, eraInicio } = desfazer
+
+    setNodes((atuais) => [...atuais.map((n) => ({ ...n, selected: false })), { ...no, selected: true }])
+    setEdges((atuais) => [...atuais, ...ligacoes])
+    // O nó de início some junto quando é ele que é apagado; devolver o bloco
+    // sem devolver isso deixaria o fluxo apontando para um início que não é
+    // mais o que a pessoa tinha escolhido.
+    if (eraInicio) setInicio(no.id)
+    setSelecionado(no.id)
+    setAba('bloco')
+    setDesfazer(null)
+  }
+
   async function publicarAgora() {
     setPublicando(true)
     setErrosDePublicacao(null)
+    setPublicadoAgora(null)
     try {
       const r = await acaoPublicar(fluxoId, clienteId, JSON.parse(assinatura))
       if (r.ok) {
         assinaturaSalva.current = assinatura
         setSalvamento('salvo')
         setPublicada({ versao: r.versao, quando: 'agora', grafo: JSON.parse(assinatura) })
+        // Publicar é a ação mais consequente daqui: o desenho passa a atender
+        // gente de verdade no WhatsApp. Um selo mudando de cor no canto era
+        // discreto demais para o que acabou de acontecer.
+        setPublicadoAgora(r.versao)
       } else {
         setErrosDePublicacao(r.erros)
       }
@@ -373,6 +413,25 @@ export function Editor({
         </div>
       )}
 
+      {publicadoAgora !== null && (
+        <div
+          role="status"
+          className="flex shrink-0 items-center gap-2 border-b border-emerald-400/25 bg-emerald-400/[0.09] px-4 py-2 text-xs text-emerald-300"
+        >
+          <span className="size-1.5 rounded-full bg-emerald-400" />
+          <span className="flex-1">
+            <strong>No ar.</strong> A versão {publicadoAgora} passa a atender as conversas novas
+            deste número — quem já estava conversando termina na versão em que começou.
+          </span>
+          <button
+            onClick={() => setPublicadoAgora(null)}
+            className="rounded-lg px-2 py-0.5 transition hover:bg-emerald-400/[0.16]"
+          >
+            ok
+          </button>
+        </div>
+      )}
+
       <div className="flex min-h-0 flex-1">
         <nav className="w-[198px] shrink-0 overflow-y-auto border-r border-white/[0.06] bg-white/[0.012] px-2.5 py-3.5">
           <p className="mb-2.5 px-2 text-[10.5px] font-bold tracking-[0.08em] text-dim uppercase">
@@ -448,6 +507,21 @@ export function Editor({
 
           {aba === 'bloco' ? (
             <div className="min-h-0 flex-1 overflow-y-auto">
+              {desfazer && (
+                <div className="flex items-center gap-2 border-b border-amber-300/20 bg-amber-300/[0.07] px-3.5 py-2.5 text-[11.5px] text-amber-200">
+                  <span className="min-w-0 flex-1">
+                    Bloco apagado
+                    {desfazer.edges.length > 0 && ` — e ${desfazer.edges.length} ligação(ões) com ele`}.
+                  </span>
+                  <button
+                    onClick={desfazerApagar}
+                    className="shrink-0 rounded-lg border border-amber-300/30 px-2.5 py-1 font-bold transition hover:bg-amber-300/[0.15]"
+                  >
+                    Desfazer
+                  </button>
+                </div>
+              )}
+
               <Painel
                 no={noSelecionado}
                 ehInicio={selecionado === inicio}
@@ -531,6 +605,26 @@ export function Editor({
       </div>
     </div>
   )
+}
+
+/**
+ * Empurra o bloco novo até um lugar que não esteja ocupado.
+ *
+ * Sem isto, adicionar dois blocos seguidos empilhava um exatamente em cima do
+ * outro no centro da tela: parecia que o segundo não tinha sido criado, e quem
+ * arrastasse descobria dois na mesma posição.
+ */
+function livre(inicial: { x: number; y: number }, existentes: Node[]): { x: number; y: number } {
+  const perto = (a: { x: number; y: number }, b: { x: number; y: number }) =>
+    Math.abs(a.x - b.x) < 40 && Math.abs(a.y - b.y) < 40
+
+  let alvo = inicial
+  // Teto para não virar laço infinito num desenho muito cheio: depois de 20
+  // degraus, empilhar é melhor do que travar.
+  for (let i = 0; i < 20 && existentes.some((n) => perto(n.position, alvo)); i++) {
+    alvo = { x: alvo.x + 34, y: alvo.y + 34 }
+  }
+  return alvo
 }
 
 function EstadoSalvamento({ estado }: { estado: 'salvo' | 'salvando' | 'pendente' | 'erro' }) {

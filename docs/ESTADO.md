@@ -7,7 +7,7 @@ consegue continuar lendo só isto e o [ARQUITETURA.md](ARQUITETURA.md).
 
 ## Leia isto primeiro
 
-**Estado:** tudo verde e no ar. `npm test` dá **208 passando**, `npm run
+**Estado:** tudo verde e no ar. `npm test` dá **223 passando**, `npm run
 typecheck` e `npm run build` limpos, `main` publicado em
 https://autofluxos.4yu.com.br.
 
@@ -39,9 +39,11 @@ nosso, nunca requisito para funcionar.
 |---|---|---|
 | 1 | **Papéis de usuário** (BRIEF-UI §6) | É a maior, e destrava as outras. Hoje é uma senha só. Há comentário em quatro pontos do código dizendo "isto muda quando o cliente ganhar acesso" — recusa de endereço interno, isolamento entre clientes, a tela de "não encontrado" que vira "não é seu". Este é o dia. **Duas coisas entram junto, e não depois:** (a) `/api/simular` aceita um fluxo inventado + `fluxoId` de qualquer cliente e manda a credencial dele para a URL do corpo — hoje inofensivo porque a senha já dá acesso a tudo, escalada de privilégio no minuto em que o cliente tiver login; (b) a sessão do painel é `SHA-256(senha)` pura, sem nonce e sem carimbo, então cookie copiado vale para sempre e não há como revogar um acesso só. |
 | 2 | **Modelos (templates) da Meta** | A caixa de resposta do painel só funciona dentro da janela de 24h — é a regra da Meta, e fora dela o único jeito de retomar é um modelo aprovado, que este produto não manda. A tela avisa antes de alguém digitar. Gatilho para construir: o primeiro lead que esfriar e precisar de retomada. |
-| 3 | **Credencial de sandbox por conexão** | A aba Testar usa a credencial real: testar um fluxo de CRM grava no CRM de verdade. Hoje há aviso na tela e o cabeçalho `X-AutoFluxos-Teste: 1`. Gatilho para construir: o primeiro cliente com CRM em produção. |
-| 4 | **`drop` de `clients.ia_habilitada`** | O código já parou de ler (migration 0005 pedia essa confirmação). Falta a migration que apaga. |
-| 5 | **Teste de banco intermitente** | `repos.test.ts` falha de vez em quando com `JWT issued at future` — o relógio do WSL2 desanda quando a máquina suspende e o Supabase recusa o token. É ambiente, não código: rodar de novo passa. Se incomodar, `sudo hwclock -s` acerta na hora. |
+| 3 | **Histórico de versões, e voltar para uma** | `listarVersoes` existe no repo e **nenhuma tela usa**. Publicou errado, hoje o único caminho é redesenhar e publicar de novo — com o desenho ruim atendendo gente no WhatsApp enquanto isso. O caminho é curto: as versões são imutáveis e `publicar()` já aceita um grafo qualquer, então voltar é publicar o grafo de uma versão antiga. |
+| 4 | **Apagar cliente** | Dá para apagar automação e desconectar número; cliente não. Ficou de fora de propósito: `on delete cascade` leva leads, conversas e credenciais junto, e isso merece uma confirmação melhor do que um `confirm()` — provavelmente digitar o nome. |
+| 5 | **Credencial de sandbox por conexão** | A aba Testar usa a credencial real: testar um fluxo de CRM grava no CRM de verdade. Hoje há aviso na tela e o cabeçalho `X-AutoFluxos-Teste: 1`. Gatilho para construir: o primeiro cliente com CRM em produção. |
+| 6 | **`drop` de `clients.ia_habilitada`** | O código já parou de ler (migration 0005 pedia essa confirmação). Falta a migration que apaga. |
+| 7 | **Teste de banco intermitente** | `repos.test.ts` falha de vez em quando com `JWT issued at future` — o relógio do WSL2 desanda quando a máquina suspende e o Supabase recusa o token. É ambiente, não código: rodar de novo passa. Se incomodar, `sudo hwclock -s` acerta na hora. |
 
 ### O que foi construído em 12/ago, e onde está escrito
 
@@ -49,6 +51,15 @@ nosso, nunca requisito para funcionar.
 - **Conexões** (credenciais no cofre) — [CONEXOES.md](CONEXOES.md), migration `0006`
 - **DNS rebinding fechado** — `server/efeitos/rede.ts`, e o porquê de vir antes do cofre está no CONEXOES
 - **Tela do contexto do negócio** — era lido em cinco lugares e escrito em nenhum
+- **Passada de uso, dirigindo o painel de verdade** (Playwright, 18 conferências).
+  O que ela achou e consertou: id torto no endereço dava **500** em vez de 404
+  (`ehIdInvalido` em `server/db.ts` — Postgres recusa uuid malformado com 22P02
+  antes de olhar a tabela); "Esqueci a senha" era um `<span>` morto **dentro do
+  `<label>` da senha**; o e-mail sumia ao errar a senha; salvar o contexto não
+  confirmava nada; a caixa de números não tinha estado vazio; não havia como
+  desconectar número nem apagar automação; apagar bloco não tinha desfazer;
+  publicar não confirmava em texto; bloco novo nascia em cima do anterior; e a
+  porta de entrada anunciava "6 tipos de bloco" quando já são 7.
 - **Responder o lead pelo painel** — `components/lead/responder.tsx`,
   `acaoResponderLead`, e a janela de 24h em `channels/janela.ts`. Era o beco do
   handoff: o bot calava e não havia de onde responder, porque o número roda na

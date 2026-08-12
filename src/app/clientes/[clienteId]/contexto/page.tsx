@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { FormularioSalvar } from '@/components/design/formulario-salvar'
 import { PainelShell } from '@/components/design/shell'
 import { acaoSalvarContexto } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
@@ -68,7 +69,10 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           </p>
         )}
 
-        <form action={acaoSalvarContexto.bind(null, clienteId)}>
+        <FormularioSalvar
+          action={acaoSalvarContexto.bind(null, clienteId)}
+          dica="Vale na próxima conversa. Não precisa republicar fluxo nenhum."
+        >
           <textarea
             name="contexto"
             rows={18}
@@ -76,13 +80,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             placeholder={EXEMPLO}
             className="app-field resize-y px-4 py-3.5 text-[13px] leading-6"
           />
-          <div className="mt-3.5 flex items-center gap-3">
-            <button className="app-primary-button px-[18px] py-2.5 text-[13px]">Salvar</button>
-            <span className="text-[11.5px] text-dim">
-              Vale na próxima conversa. Não precisa republicar fluxo nenhum.
-            </span>
-          </div>
-        </form>
+        </FormularioSalvar>
       </main>
     </PainelShell>
   )

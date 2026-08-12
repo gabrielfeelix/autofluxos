@@ -1,5 +1,5 @@
 import 'server-only'
-import { db } from '../db'
+import { db, ehIdInvalido } from '../db'
 
 /**
  * Conexões: a credencial de um cliente, guardada no cofre.
@@ -60,6 +60,7 @@ export async function listarConexoes(clienteId: string): Promise<Conexao[]> {
     .eq('client_id', clienteId)
     .order('criado_em', { ascending: true })
 
+  if (ehIdInvalido(error)) return []
   if (error) throw new Error(`não deu para listar as conexões: ${error.message}`)
   return (data as Linha[]).map(paraConexao)
 }

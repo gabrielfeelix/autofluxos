@@ -12,6 +12,25 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
  * mandar a chave secreta para dentro do bundle do navegador.
  */
 
+/**
+ * O id do endereço não tem forma de uuid.
+ *
+ * O Postgres recusa `where id = 'nao-existe'` com **22P02** antes de olhar a
+ * tabela, e o supabase-js entrega isso como erro comum. Sem tratar, ele sobe
+ * como exceção e a pessoa recebe 500 e "Alguma coisa quebrou aqui" — quando a
+ * resposta certa é a mesma de um id que simplesmente não existe: não achei.
+ *
+ * E isso não é caso raro: os endereços do painel carregam uuid de cliente, de
+ * fluxo e de contato, então link truncado no WhatsApp, id colado pela metade e
+ * id de outro ambiente caem todos aqui.
+ *
+ * Vale só para leitura por id. Em escrita, id torto continua sendo erro de
+ * verdade — quem manda apagar algo com id inválido merece saber que não apagou.
+ */
+export function ehIdInvalido(error: { code?: string } | null | undefined): boolean {
+  return error?.code === '22P02'
+}
+
 let cache: SupabaseClient | null = null
 
 export function db(): SupabaseClient {
