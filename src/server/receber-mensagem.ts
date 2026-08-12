@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { canalCloudApi } from '@/channels/cloud-api'
 import type { Canal } from '@/channels/types'
 import { sessaoNova, type Acao, type Entrada } from '@/core/engine/types'
-import { executarComIa, type OpcoesDeIa } from './ia/conduzir'
+import { executarComEfeitos, type OpcoesDeEfeitos } from './efeitos/resolver'
 import { escolherModelo } from './ia/modelo'
 import { acharCliente } from './repos/clientes'
 import { acharFluxo, acharVersao } from './repos/fluxos'
@@ -161,7 +161,7 @@ async function tratarUma(
 
   // Conversa nova começa pelo início do fluxo. A primeira mensagem da pessoa
   // é o gatilho, não uma resposta — ela ainda não foi perguntada nada.
-  const resultado = await executarComIa(
+  const resultado = await executarComEfeitos(
     versao.grafo,
     salva.sessao,
     conversaNova ? { tipo: 'inicio' } : entrada,
@@ -183,8 +183,8 @@ async function prepararIa(
   contatoId: string,
   grafo: { nodes: { type: string }[] },
   perguntaDaPessoa: string | null,
-): Promise<OpcoesDeIa> {
-  const vazio: OpcoesDeIa = { modelo: null, contextoNegocio: '' }
+): Promise<OpcoesDeEfeitos> {
+  const vazio: OpcoesDeEfeitos = { modelo: null, contextoNegocio: '' }
   if (!grafo.nodes.some((n) => n.type === 'ia') || !canalSalvo.flowId) return vazio
 
   const [fluxo, cliente, conversa] = await Promise.all([

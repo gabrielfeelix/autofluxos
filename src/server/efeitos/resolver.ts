@@ -2,7 +2,7 @@ import 'server-only'
 import { executar } from '@/core/engine/executar'
 import type { Acao, Entrada, Resultado, Sessao } from '@/core/engine/types'
 import type { Fluxo } from '@/core/flow/schema'
-import type { Modelo, Turno } from './types'
+import type { Modelo, Turno } from '../ia/types'
 
 /**
  * O motor, com a IA resolvida.
@@ -20,7 +20,7 @@ const AVISO_DE_HANDOFF = 'Vou te passar para um atendente. Só um instante!'
 /** Trava contra fluxo que encadeia blocos de IA. Nenhum real chega perto. */
 const MAX_CHAMADAS = 3
 
-export type OpcoesDeIa = {
+export type OpcoesDeEfeitos = {
   /** `null` = não há modelo disponível (sem plano, sem chave). */
   modelo: Modelo | null
   /** O que o cliente escreveu sobre o próprio negócio. Fecha o escopo. */
@@ -31,11 +31,11 @@ export type OpcoesDeIa = {
   perguntaDaPessoa?: string
 }
 
-export async function executarComIa(
+export async function executarComEfeitos(
   fluxo: Fluxo,
   sessao: Sessao,
   entrada: Entrada,
-  opcoes: OpcoesDeIa,
+  opcoes: OpcoesDeEfeitos,
 ): Promise<Resultado> {
   let resultado = executar(fluxo, sessao, entrada)
 

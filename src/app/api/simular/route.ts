@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { entradaSchema, sessaoSchema } from '@/core/engine/types'
 import { fluxoSchema } from '@/core/flow/schema'
-import { executarComIa } from '@/server/ia/conduzir'
+import { executarComEfeitos } from '@/server/efeitos/resolver'
 import { escolherModelo } from '@/server/ia/modelo'
 
 /**
@@ -52,6 +52,6 @@ export async function POST(req: Request) {
   const { modelo } = escolherModelo({ iaHabilitada })
 
   return Response.json(
-    await executarComIa(fluxo, sessao, entrada, { modelo, contextoNegocio, historico }),
+    await executarComEfeitos(fluxo, sessao, entrada, { modelo, contextoNegocio, historico }),
   )
 }

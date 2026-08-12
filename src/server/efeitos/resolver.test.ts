@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { sessaoNova } from '@/core/engine/types'
 import type { Fluxo } from '@/core/flow/schema'
-import { executarComIa } from './conduzir'
-import type { Modelo, PedidoDeIa, Resposta } from './types'
+import { executarComEfeitos } from './resolver'
+import type { Modelo, PedidoDeIa, Resposta } from '../ia/types'
 
 /**
  * Sem rede e sem chave: o modelo é de mentira de propósito.
@@ -49,7 +49,7 @@ describe('quando existe IA', () => {
   it('chama o modelo, manda a resposta e segue o fluxo', async () => {
     const modelo = modeloQue(() => ({ tipo: 'texto', texto: 'O orçamento é gratuito!' }))
 
-    const r = await executarComIa(fluxoComIa, sessaoNova(), { tipo: 'inicio' }, {
+    const r = await executarComEfeitos(fluxoComIa, sessaoNova(), { tipo: 'inicio' }, {
       modelo,
       contextoNegocio,
       historico: [{ de: 'pessoa', texto: 'o orçamento é pago?' }],
@@ -69,7 +69,7 @@ describe('quando existe IA', () => {
   it('leva o contexto do negócio e a pergunta da pessoa até o modelo', async () => {
     const modelo = modeloQue(() => ({ tipo: 'texto', texto: 'ok' }))
 
-    await executarComIa(fluxoComIa, sessaoNova(), { tipo: 'inicio' }, {
+    await executarComEfeitos(fluxoComIa, sessaoNova(), { tipo: 'inicio' }, {
       modelo,
       contextoNegocio,
       historico: [
@@ -90,7 +90,7 @@ describe('quando existe IA', () => {
   it('quando a IA não sabe, avisa e passa para uma pessoa', async () => {
     const modelo = modeloQue(() => ({ tipo: 'nao_sei', motivo: 'fora do contexto' }))
 
-    const r = await executarComIa(fluxoComIa, sessaoNova(), { tipo: 'inicio' }, {
+    const r = await executarComEfeitos(fluxoComIa, sessaoNova(), { tipo: 'inicio' }, {
       modelo,
       contextoNegocio,
     })
@@ -114,7 +114,7 @@ describe('quando não existe IA', () => {
    * respondeu.
    */
   it('devolve o pedido de IA intacto, sem inventar resposta', async () => {
-    const r = await executarComIa(fluxoComIa, sessaoNova(), { tipo: 'inicio' }, {
+    const r = await executarComEfeitos(fluxoComIa, sessaoNova(), { tipo: 'inicio' }, {
       modelo: null,
       contextoNegocio,
     })
@@ -141,7 +141,7 @@ describe('fluxo sem IA nenhuma', () => {
       edges: [{ id: 'a1', source: 'oi', target: 'fim' }],
     }
 
-    await executarComIa(simples, sessaoNova(), { tipo: 'inicio' }, { modelo, contextoNegocio })
+    await executarComEfeitos(simples, sessaoNova(), { tipo: 'inicio' }, { modelo, contextoNegocio })
     expect(modelo.pedidos).toHaveLength(0)
   })
 })
