@@ -264,9 +264,19 @@ describe('resolvendo o nó de API', () => {
     })
     chamarHttp.mockResolvedValue({ ok: true, valores: {} })
 
-    await executarComEfeitos(ciclo, sessaoNova(), { tipo: 'inicio' }, semIa)
+    const r = await executarComEfeitos(ciclo, sessaoNova(), { tipo: 'inicio' }, semIa)
 
     expect(chamarHttp).toHaveBeenCalledTimes(MAX_EFEITOS)
+
+    // Estourar a trava não pode terminar em silêncio nem com o motivo errado.
+    // A conversa vai para uma pessoa, e o motivo aponta para o ciclo no
+    // desenho — não para a integração, que respondeu certo todas as vezes.
+    expect(r.sessao.status).toBe('humano')
+    expect(r.acoes.some((a) => a.tipo === 'chamar_http')).toBe(false)
+
+    const transferencia = r.acoes.find((a) => a.tipo === 'transferir_humano')
+    expect(transferencia).toBeDefined()
+    expect(transferencia?.tipo === 'transferir_humano' && transferencia.motivo).toContain('ciclo')
   })
 
   it('IA e API no mesmo fluxo, cada uma atendida pelo seu resolvedor', async () => {

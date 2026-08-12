@@ -179,6 +179,32 @@ export async function executarComEfeitos(
     }
   }
 
+  /**
+   * A trava estourou: o fluxo encadeou mais de `MAX_EFEITOS` chamadas externas
+   * sem chegar a lugar nenhum, quase sempre porque tem ciclo.
+   *
+   * Antes daqui, o pedido não atendido sobrava na lista e ia parar em
+   * `aplicar()`, que passava a conversa para uma pessoa dizendo "a integração
+   * não chegou a ser executada" — verdade pela metade, e que manda quem for
+   * investigar procurar defeito na integração em vez de ciclo no desenho.
+   * Falhar com o motivo certo é o que faz a diferença entre trinta segundos e
+   * uma tarde.
+   */
+  const pendente = resultado.acoes.find((a) => a.tipo === 'chamar_ia' || a.tipo === 'chamar_http')
+  if (pendente) {
+    return {
+      acoes: [
+        ...resultado.acoes.filter((a) => a.tipo !== 'chamar_ia' && a.tipo !== 'chamar_http'),
+        { tipo: 'enviar_texto', texto: AVISO_DE_HANDOFF },
+        {
+          tipo: 'transferir_humano',
+          motivo: `o fluxo encadeou mais de ${MAX_EFEITOS} chamadas externas seguidas — provavelmente há um ciclo no desenho`,
+        },
+      ],
+      sessao: { ...resultado.sessao, status: 'humano' },
+    }
+  }
+
   return resultado
 }
 

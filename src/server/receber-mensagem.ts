@@ -12,6 +12,7 @@ import {
   acharCanalPorNumero,
   acharOuCriarContato,
   criarSessao,
+  definirStatusDaSessao,
   guardarCampo,
   guardarSessao,
   registrarEntrada,
@@ -22,6 +23,7 @@ import {
   type CanalSalvo,
   type Contato,
 } from './repos/conversas'
+import { travarContato } from './repos/travas'
 
 /**
  * O caminho de uma mensagem do WhatsApp até a resposta.
@@ -125,9 +127,51 @@ async function tratarUma(
     payload: mensagem,
   })
   // A Meta reenviou algo que já processamos. Sair aqui é o que impede a
-  // conversa de andar duas vezes.
+  // conversa de andar duas vezes. Vem **antes** da trava de propósito: reenvio
+  // não precisa esperar fila nenhuma para ser descartado.
   if (!inedita) return
 
+  // Daqui para baixo a conversa avança, e duas mensagens da mesma pessoa não
+  // podem avançar juntas — ver `repos/travas.ts` e a migration 0007.
+  const destravar = await travarContato(contato.id)
+  if (!destravar) {
+    await desistirDaVez(canalSalvo, contato)
+    return
+  }
+
+  try {
+    await avancarConversa(canalSalvo, contato, mensagem, entrada, texto, fabricaDeCanal)
+  } finally {
+    await destravar()
+  }
+}
+
+/**
+ * Não conseguiu a vez dentro do prazo.
+ *
+ * Vinte segundos esperando significa que alguma coisa está presa, não que há
+ * fila. A mensagem já foi deduplicada, então a pessoa não pode simplesmente
+ * ficar sem resposta e sem aparecer em lugar nenhum: vira handoff, que é o que
+ * a tela de leads mostra. Sem sessão para pendurar o handoff, resta o log.
+ */
+async function desistirDaVez(canalSalvo: CanalSalvo, contato: Contato): Promise<void> {
+  console.error('[whatsapp] não consegui a vez do contato', contato.id)
+
+  const salva = await ultimaSessao(contato.id, canalSalvo.id)
+  if (!salva) return
+
+  await registrarHandoff(salva.id, 'a conversa ficou presa e a mensagem não foi processada')
+  await definirStatusDaSessao(salva.id, 'humano')
+}
+
+async function avancarConversa(
+  canalSalvo: CanalSalvo,
+  contato: Contato,
+  mensagem: Mensagem,
+  entrada: Entrada,
+  texto: string | null,
+  fabricaDeCanal: FabricaDeCanal,
+): Promise<void> {
   let salva = await ultimaSessao(contato.id, canalSalvo.id)
 
   // O humano assumiu. O bot fica calado — a mensagem fica registrada, e quem

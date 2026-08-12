@@ -324,6 +324,46 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
   })
 
   /**
+   * Duas mensagens da mesma pessoa, quase juntas.
+   *
+   * É o comportamento normal de quem manda "oi" e "tudo bem?" em seguida: a
+   * Meta entrega os dois webhooks, e nada garante que o segundo espere o
+   * primeiro. Sem trava, os dois leem a sessão no mesmo estado — e como o
+   * primeiro ainda não gravou nada, o segundo também acha que a conversa é
+   * nova e **cria uma segunda sessão**. A conversa reinicia sozinha, e quem
+   * está do outro lado vê a saudação duas vezes.
+   *
+   * A asserção é uma sessão só. É a forma mais direta de dizer "os dois
+   * passaram pelo mesmo funil, um depois do outro".
+   */
+  it('duas mensagens ao mesmo tempo não criam duas sessões', async () => {
+    const de = `5511${(Date.now() + 14).toString().slice(-9)}`
+    mock.enviadas.length = 0
+
+    await Promise.all([
+      receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-14a`), comMock),
+      receberMensagem(webhookTexto(de, 'tudo bem?', `wamid-${marca}-14b`), comMock),
+    ])
+
+    const { data: contato } = await db().from('contacts').select('id').eq('wa_id', de).single()
+    const { data: sessoes } = await db()
+      .from('sessions')
+      .select('id')
+      .eq('contact_id', contato!.id as string)
+
+    expect(sessoes).toHaveLength(1)
+
+    // E o que a pessoa veria: a saudação uma vez, não duas. É o sintoma que a
+    // trava existe para evitar — a sessão duplicada é a causa, esta é a cara.
+    const saudacao = mock.enviadas.find((e) => e.tipo === 'texto')
+    expect(saudacao).toBeDefined()
+    const repetidas = mock.enviadas.filter(
+      (e) => e.tipo === 'texto' && e.texto === (saudacao as { texto: string }).texto,
+    )
+    expect(repetidas).toHaveLength(1)
+  })
+
+  /**
    * O que a caixa de resposta do painel precisa saber antes de deixar alguém
    * digitar: por qual número a resposta sai, e se a janela de 24h está aberta.
    */
