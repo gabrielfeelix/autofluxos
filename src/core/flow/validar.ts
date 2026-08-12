@@ -46,6 +46,16 @@ export type Capacidades = {
    * é o erro barulhento. O contrário seria vender IA por descuido.
    */
   iaHabilitada?: boolean
+  /**
+   * Ids das conexões que existem para este cliente.
+   *
+   * `undefined` significa "não sei" e o validador não cobra — é o caso do
+   * editor validando enquanto digita, sem ter ido ao banco. Quando a lista vem,
+   * bloco apontando para conexão que não existe mais vira impedimento: publicar
+   * assim entrega um fluxo que chama sem credencial, e a conversa morre em
+   * handoff sem ninguém entender por quê.
+   */
+  conexoes?: string[]
 }
 
 /**
@@ -57,7 +67,7 @@ export type Capacidades = {
  * na memória de quem desenhou o fluxo.
  */
 export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoValidacao {
-  const { iaHabilitada = false } = capacidades
+  const { iaHabilitada = false, conexoes } = capacidades
   const erros: Problema[] = []
   const avisos: Problema[] = []
 
@@ -139,6 +149,15 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
         codigo: 'IA_NAO_CONTRATADA',
         mensagem:
           'Este bloco usa IA, que é um plano à parte e não está contratado para este cliente.',
+        noId: no.id,
+      })
+    }
+
+    if (no.type === 'http' && no.data.conexaoId && conexoes && !conexoes.includes(no.data.conexaoId)) {
+      erros.push({
+        codigo: 'CONEXAO_INEXISTENTE',
+        mensagem:
+          'Este bloco usa uma credencial que não existe mais neste cliente. Escolha outra, ou tire a credencial.',
         noId: no.id,
       })
     }

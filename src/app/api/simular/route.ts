@@ -34,6 +34,8 @@ const corpoSchema = z.object({
   contextoNegocio: z.string().default(''),
   /** Espelha o plano da automação: sem contratar, o simulador não chama modelo. */
   iaHabilitada: z.boolean().default(false),
+  /** De quem é o fluxo. Sem isto o bloco de API não alcança as credenciais. */
+  clienteId: z.string().optional(),
   /** A conversa até aqui, para a IA não repetir o que já foi dito. */
   historico: z
     .array(z.object({ de: z.enum(['pessoa', 'bot']), texto: z.string() }))
@@ -56,7 +58,8 @@ export async function POST(req: Request) {
     )
   }
 
-  const { fluxo, sessao, entrada, contextoNegocio, iaHabilitada, historico } = analise.data
+  const { fluxo, sessao, entrada, contextoNegocio, iaHabilitada, historico, clienteId } =
+    analise.data
   const { modelo } = escolherModelo({ iaHabilitada })
 
   return Response.json(
@@ -67,6 +70,7 @@ export async function POST(req: Request) {
       // A aba Testar chama API de verdade. Dizer que veio daqui é o que permite
       // o sistema do cliente separar tráfego de teste do movimento real dele.
       origem: 'simulador',
+      clienteId,
     }),
   )
 }

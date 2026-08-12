@@ -14,6 +14,19 @@ import { conferirEndereco } from './rede'
 
 export type PedidoHttp = Extract<Acao, { tipo: 'chamar_http' }>
 
+/**
+ * A credencial já resolvida, do jeito que ela entra na requisição.
+ *
+ * O formato bate com `repos/conexoes.ts` de propósito, mas este arquivo não
+ * importa nada de lá: quem dispara requisição não precisa saber que existe
+ * tabela, cofre ou cliente.
+ */
+export type CredencialDaChamada = {
+  tipo: 'bearer' | 'cabecalho' | 'query'
+  campo: string | null
+  valor: string
+}
+
 export type RespostaHttp =
   | { ok: true; valores: Record<string, string> }
   | { ok: false; motivo: string }
@@ -32,9 +45,9 @@ const MAX_SALTOS = 3
 
 export async function chamarHttp(
   pedido: PedidoHttp,
-  { deTeste }: { deTeste: boolean },
+  { deTeste, credencial }: { deTeste: boolean; credencial?: CredencialDaChamada | null },
 ): Promise<RespostaHttp> {
-  let url = pedido.url
+  let urlBase = pedido.url
   let resposta: Awaited<ReturnType<typeof request>>
 
   // A origem do endereço original. Um redirecionamento para outro host não pode
@@ -53,6 +66,14 @@ export async function chamarHttp(
   let corpo: string | undefined = pedido.corpo
 
   for (let salto = 0; ; salto++) {
+    // A credencial vale só na origem que o operador escreveu. Depois de um
+    // redirecionamento para outro host ela fica para trás, pela mesma razão
+    // dos cabeçalhos: quem responde um 302 não ganha o token de outro serviço.
+    const mesmaOrigem = origemDe(urlBase) === origemInicial
+    const credencialValida = mesmaOrigem ? (credencial ?? null) : null
+
+    const url = comCredencialNaConsulta(urlBase, credencialValida)
+
     const veredito = await conferirEndereco(url)
     if (!veredito.ok) return { ok: false, motivo: veredito.motivo }
 
@@ -66,7 +87,7 @@ export async function chamarHttp(
       // até o `after()` do webhook, a sessão nunca seria salva, a mensagem já
       // foi deduplicada e a pessoa ficaria sem resposta nenhuma — sem nem a
       // Meta reenviar. Falhar aqui vira handoff, que é o certo.
-      cabecalhos = montarCabecalhos(pedido, deTeste, new URL(url).origin === origemInicial)
+      cabecalhos = montarCabecalhos(pedido, deTeste, mesmaOrigem, credencialValida)
     } catch {
       return { ok: false, motivo: 'um dos cabeçalhos configurados é inválido' }
     }
@@ -122,7 +143,7 @@ export async function chamarHttp(
       corpo = undefined
     }
 
-    url = proxima.toString()
+    urlBase = proxima.toString()
   }
 
   if (resposta.statusCode < 200 || resposta.statusCode >= 300) {
@@ -181,10 +202,35 @@ function cabecalho(resposta: { headers: Record<string, string | string[] | undef
   return valor ?? null
 }
 
+/** A origem de uma URL, ou string vazia se ela não der para ler. */
+function origemDe(url: string): string {
+  try {
+    return new URL(url).origin
+  } catch {
+    return ''
+  }
+}
+
+/**
+ * Credencial do tipo `query` entra na URL, e é refeita a cada salto: o destino
+ * de um redirecionamento não carrega os parâmetros da chamada anterior.
+ */
+function comCredencialNaConsulta(url: string, credencial: CredencialDaChamada | null): string {
+  if (!credencial || credencial.tipo !== 'query' || !credencial.campo) return url
+  try {
+    const alvo = new URL(url)
+    alvo.searchParams.set(credencial.campo, credencial.valor)
+    return alvo.toString()
+  } catch {
+    return url
+  }
+}
+
 function montarCabecalhos(
   pedido: PedidoHttp,
   deTeste: boolean,
   mesmaOrigem: boolean,
+  credencial: CredencialDaChamada | null,
 ): Record<string, string> {
   const cabecalhos = new Headers()
 
@@ -196,6 +242,16 @@ function montarCabecalhos(
       // Nome vazio faz o `Headers` lançar. Um cabeçalho pela metade no editor é
       // rascunho, não motivo para a conversa morrer.
       if (chave.trim() !== '') cabecalhos.set(chave.trim(), valor)
+    }
+  }
+
+  // A credencial vem depois, e por isso ganha de um cabeçalho escrito à mão com
+  // o mesmo nome. Se as duas coisas existem, a que o cofre guarda é a boa.
+  if (credencial) {
+    if (credencial.tipo === 'bearer') {
+      cabecalhos.set('authorization', `Bearer ${credencial.valor}`)
+    } else if (credencial.tipo === 'cabecalho' && credencial.campo) {
+      cabecalhos.set(credencial.campo.trim(), credencial.valor)
     }
   }
 

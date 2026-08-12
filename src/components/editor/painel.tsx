@@ -13,6 +13,9 @@ import {
 } from '@/core/flow/schema'
 import { NOMES } from './nos'
 
+/** O que o painel precisa saber de uma credencial: o nome, e nada mais. */
+export type ConexaoDoCliente = { id: string; nome: string; tipo: string }
+
 /**
  * O formulário do bloco selecionado. Tudo que é específico de um cliente é
  * digitado aqui e vai parar no JSON do fluxo — nunca no código.
@@ -21,6 +24,7 @@ export function Painel({
   no,
   ehInicio,
   variaveis,
+  conexoes = [],
   aoMudarDados,
   aoDefinirInicio,
   aoApagar,
@@ -28,6 +32,7 @@ export function Painel({
   no: No | null
   ehInicio: boolean
   variaveis: string[]
+  conexoes?: ConexaoDoCliente[]
   aoMudarDados: (dados: Record<string, unknown>) => void
   aoDefinirInicio: () => void
   aoApagar: () => void
@@ -196,6 +201,31 @@ export function Painel({
           />
 
           <Mapeamentos mapear={no.data.mapear} aoMudar={(mapear) => aoMudarDados({ mapear })} />
+
+          <label className="block">
+            <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+              Credencial
+            </span>
+            <select
+              value={no.data.conexaoId ?? ''}
+              onChange={(e) =>
+                aoMudarDados({ conexaoId: e.target.value === '' ? undefined : e.target.value })
+              }
+              className="app-field px-3 py-2.5 text-[13px]"
+            >
+              <option value="">Nenhuma — o endereço não pede chave</option>
+              {conexoes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nome}
+                </option>
+              ))}
+            </select>
+            <span className="mt-1 block text-[10.5px] leading-4 text-dim">
+              {conexoes.length === 0
+                ? 'Nenhuma credencial cadastrada neste cliente ainda. Cadastre em Credenciais, na tela do cliente.'
+                : 'O valor fica no cofre. O fluxo guarda só a referência, então trocar a chave depois não exige republicar.'}
+            </span>
+          </label>
 
           <label className="block">
             <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">Se falhar</span>

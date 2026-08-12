@@ -8,6 +8,7 @@ import { triagem } from '@/exemplos/triagem'
 import { criarCliente } from './repos/clientes'
 import { criarCanal } from './repos/conversas'
 import { criarFluxo, definirIa, publicar, salvarRascunho } from './repos/fluxos'
+import { apagarConexao, criarConexao, trocarValor } from './repos/conexoes'
 
 export async function acaoCriarCliente(formData: FormData) {
   const nome = String(formData.get('nome') ?? '').trim()
@@ -105,4 +106,42 @@ export async function acaoAlternarIa(fluxoId: string, clienteId: string, habilit
   await definirIa(fluxoId, habilitada)
   revalidatePath(`/clientes/${clienteId}`)
   return { ok: true as const, iaHabilitada: habilitada }
+}
+
+/**
+ * Cadastra uma credencial de um cliente.
+ *
+ * O valor entra por aqui, vai para o cofre, e **nunca mais volta para a tela**.
+ * Trocar significa gravar de novo — não existe "ver o token atual", porque o
+ * único jeito de garantir que ele não vaza pela interface é a interface não
+ * ter como pedir.
+ */
+export async function acaoCriarConexao(clienteId: string, formData: FormData) {
+  const tipo = String(formData.get('tipo') ?? 'bearer')
+  if (tipo !== 'bearer' && tipo !== 'cabecalho' && tipo !== 'query') return
+
+  await criarConexao({
+    clienteId,
+    nome: String(formData.get('nome') ?? ''),
+    tipo,
+    campo: String(formData.get('campo') ?? ''),
+    valor: String(formData.get('valor') ?? ''),
+  })
+
+  revalidatePath(`/clientes/${clienteId}/conexoes`)
+}
+
+/** Rotação: troca o valor mantendo o id, então nenhum fluxo precisa republicar. */
+export async function acaoTrocarValorDaConexao(
+  clienteId: string,
+  conexaoId: string,
+  formData: FormData,
+) {
+  await trocarValor(conexaoId, String(formData.get('valor') ?? ''))
+  revalidatePath(`/clientes/${clienteId}/conexoes`)
+}
+
+export async function acaoApagarConexao(clienteId: string, conexaoId: string) {
+  await apagarConexao(conexaoId)
+  revalidatePath(`/clientes/${clienteId}/conexoes`)
 }

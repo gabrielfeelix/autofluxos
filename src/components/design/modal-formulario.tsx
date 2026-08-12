@@ -9,18 +9,32 @@ export function ModalFormulario({
   descricao,
   action,
   children,
+  rotuloEnviar = 'Criar e abrir',
+  variante = 'primario',
 }: {
   botao: ReactNode
   titulo: string
   descricao: string
   action: (formData: FormData) => void | Promise<void>
   children: ReactNode
+  /** O texto do botão que confirma. Nem todo modal cria e abre alguma coisa. */
+  rotuloEnviar?: string
+  /** `secundario` para quando o modal não é a ação principal da tela. */
+  variante?: 'primario' | 'secundario'
 }) {
   const dialogo = useRef<HTMLDialogElement>(null)
 
   return (
     <>
-      <button type="button" onClick={() => dialogo.current?.showModal()} className="app-primary-button px-[18px] py-2.5 text-[13px]">
+      <button
+        type="button"
+        onClick={() => dialogo.current?.showModal()}
+        className={
+          variante === 'primario'
+            ? 'app-primary-button px-[18px] py-2.5 text-[13px]'
+            : 'app-secondary-button px-3 py-1.5 text-[11.5px]'
+        }
+      >
         {botao}
       </button>
       <dialog
@@ -43,7 +57,7 @@ export function ModalFormulario({
               Cancelar
             </button>
             <button type="submit" className="app-primary-button flex-[1.35] px-4 py-2.5 text-[13px]">
-              Criar e abrir
+              {rotuloEnviar}
             </button>
           </div>
         </form>

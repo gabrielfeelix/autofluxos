@@ -96,6 +96,12 @@ export type Acao =
       corpo: string
       mapear: Mapeamento[]
       aoFalhar: AoFalhar
+      /**
+       * Referência à credencial, nunca a credencial. O motor não sabe o que há
+       * do outro lado deste id, e é por isso que segredo nenhum consegue
+       * entrar na sessão — que viaja para o navegador no simulador.
+       */
+      conexaoId?: string
     }
   | { tipo: 'transferir_humano'; motivo: string }
   | { tipo: 'encerrar' }

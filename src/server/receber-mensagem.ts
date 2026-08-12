@@ -184,7 +184,12 @@ async function prepararIa(
   grafo: { nodes: { type: string }[] },
   perguntaDaPessoa: string | null,
 ): Promise<OpcoesDeEfeitos> {
-  const vazio: OpcoesDeEfeitos = { modelo: null, contextoNegocio: '', origem: 'whatsapp' }
+  const vazio: OpcoesDeEfeitos = {
+    modelo: null,
+    contextoNegocio: '',
+    origem: 'whatsapp',
+    clienteId: canalSalvo.clienteId,
+  }
   if (!grafo.nodes.some((n) => n.type === 'ia') || !canalSalvo.flowId) return vazio
 
   const [fluxo, cliente, conversa] = await Promise.all([
@@ -201,6 +206,7 @@ async function prepararIa(
   return {
     modelo,
     origem: 'whatsapp',
+    clienteId: canalSalvo.clienteId,
     contextoNegocio: cliente?.contextoNegocio ?? '',
     perguntaDaPessoa: perguntaDaPessoa ?? undefined,
     historico: conversa.mensagens.map((m) => ({

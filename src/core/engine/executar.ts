@@ -226,6 +226,7 @@ function avancar(
           corpo: interpolar(no.data.corpo, s.vars, comoJson),
           mapear: no.data.mapear,
           aoFalhar: no.data.aoFalhar,
+          conexaoId: no.data.conexaoId,
         })
         s.noAtual = no.id
         s.status = 'aguardando_http'

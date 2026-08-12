@@ -4,6 +4,7 @@ import type { Acao, Entrada, Resultado, Sessao } from '@/core/engine/types'
 import type { Fluxo } from '@/core/flow/schema'
 import type { Modelo, Turno } from '../ia/types'
 import { chamarHttp } from './http'
+import { lerCredencial } from '../repos/conexoes'
 
 /**
  * O motor, com os efeitos externos resolvidos.
@@ -49,6 +50,12 @@ export type OpcoesDeEfeitos = {
    * conversa real como teste faria o cliente descartar lead de verdade.
    */
   origem?: 'simulador' | 'whatsapp'
+  /**
+   * De quem é a conversa. Sem isto o nó de API não consegue usar credencial:
+   * ela é lida com o id do cliente junto, para o fluxo de um nunca alcançar o
+   * cofre de outro.
+   */
+  clienteId?: string
 }
 
 export async function executarComEfeitos(
@@ -67,8 +74,34 @@ export async function executarComEfeitos(
     const chamadaHttp = resultado.acoes.find((a) => a.tipo === 'chamar_http')
 
     if (chamadaHttp?.tipo === 'chamar_http') {
+      // A credencial é buscada aqui, fora do motor, e vive só o tempo desta
+      // chamada. Ela não entra na sessão, não é serializada, e portanto não
+      // tem como chegar ao navegador pelo simulador.
+      const credencial =
+        chamadaHttp.conexaoId && opcoes.clienteId
+          ? await lerCredencial(chamadaHttp.conexaoId, opcoes.clienteId)
+          : null
+
+      // Bloco que pede credencial e não recebe não pode sair chamando sem ela:
+      // uma API que responde 401 vira handoff com motivo confuso, e uma que
+      // aceita anônimo faria coisa errada em nome do cliente.
+      if (chamadaHttp.conexaoId && !credencial) {
+        return {
+          acoes: [
+            ...semEfeito(resultado.acoes, 'chamar_http'),
+            { tipo: 'enviar_texto', texto: AVISO_DE_HANDOFF },
+            {
+              tipo: 'transferir_humano',
+              motivo: 'a integração falhou — a credencial configurada não está mais disponível',
+            },
+          ],
+          sessao: { ...resultado.sessao, status: 'humano' },
+        }
+      }
+
       const resposta = await chamarHttp(chamadaHttp, {
         deTeste: opcoes.origem === 'simulador',
+        credencial,
       })
 
       if (!resposta.ok && chamadaHttp.aoFalhar === 'humano') {

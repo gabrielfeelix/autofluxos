@@ -146,6 +146,15 @@ export const noHttpSchema = z.object({
     corpo: z.string().default(''),
     mapear: z.array(mapeamentoSchema).default([]),
     aoFalhar: z.enum(AO_FALHAR).default('humano'),
+    /**
+     * Qual credencial do cliente usar. É só o **id** — o valor nunca entra no
+     * fluxo, e portanto nunca entra na versão publicada, que é imutável por
+     * gatilho. Quem resolve é o servidor, depois do motor.
+     *
+     * `undefined` = chamada sem autenticação, que é o caso de webhook e de
+     * Apps Script (onde a chave já vem embutida na URL que o Google gera).
+     */
+    conexaoId: z.string().optional(),
   }),
 })
 

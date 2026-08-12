@@ -24,6 +24,7 @@ import { validar } from '@/core/flow/validar'
 import { acaoAlternarIa, acaoPublicar, acaoSalvarRascunho } from '@/server/acoes'
 import { ICONES, NOMES, tiposDeNo } from './nos'
 import { Painel } from './painel'
+import type { ConexaoDoCliente } from './painel'
 
 const PAUSA_ANTES_DE_SALVAR = 800
 
@@ -95,6 +96,7 @@ function paraFluxo(inicio: string, nodes: Node[], edges: Edge[]): Fluxo {
 export function Editor({
   fluxoId,
   clienteId,
+  conexoes,
   nome,
   clienteNome,
   voltarHref,
@@ -105,6 +107,7 @@ export function Editor({
 }: {
   fluxoId: string
   clienteId: string
+  conexoes: ConexaoDoCliente[]
   nome: string
   clienteNome: string
   voltarHref: string
@@ -134,7 +137,11 @@ export function Editor({
   const areaRef = useRef<HTMLDivElement>(null)
 
   const fluxo = useMemo(() => paraFluxo(inicio, nodes, edges), [inicio, nodes, edges])
-  const validacao = useMemo(() => validar(fluxo, { iaHabilitada: comIa }), [fluxo, comIa])
+  const idsDeConexao = useMemo(() => conexoes.map((c) => c.id), [conexoes])
+  const validacao = useMemo(
+    () => validar(fluxo, { iaHabilitada: comIa, conexoes: idsDeConexao }),
+    [fluxo, comIa, idsDeConexao],
+  )
 
   const assinatura = JSON.stringify(fluxo)
   const assinaturaSalva = useRef(assinatura)
@@ -442,6 +449,7 @@ export function Editor({
                 no={noSelecionado}
                 ehInicio={selecionado === inicio}
                 variaveis={variaveis}
+                conexoes={conexoes}
                 aoMudarDados={mudarDados}
                 aoDefinirInicio={definirInicio}
                 aoApagar={apagar}
@@ -493,6 +501,7 @@ export function Editor({
             <>
               <Conversa
                 fluxo={fluxo}
+                clienteId={clienteId}
                 contextoNegocio={contextoNegocio}
                 iaHabilitada={comIa}
                 aoMudarSessao={setSessao}

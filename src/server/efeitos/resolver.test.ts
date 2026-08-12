@@ -6,6 +6,9 @@ import type { Modelo, PedidoDeIa, Resposta } from '../ia/types'
 const chamarHttp = vi.hoisted(() => vi.fn())
 vi.mock('./http', () => ({ chamarHttp }))
 
+const lerCredencial = vi.hoisted(() => vi.fn())
+vi.mock('../repos/conexoes', () => ({ lerCredencial }))
+
 const { executarComEfeitos, MAX_EFEITOS } = await import('./resolver')
 
 /**
@@ -227,7 +230,10 @@ describe('resolvendo o nó de API', () => {
       origem: 'simulador',
     })
 
-    expect(chamarHttp).toHaveBeenCalledWith(expect.anything(), { deTeste: true })
+    expect(chamarHttp).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ deTeste: true }),
+    )
   })
 
   it('sem dizer a origem, NÃO marca como teste', async () => {
@@ -240,7 +246,10 @@ describe('resolvendo o nó de API', () => {
       contextoNegocio: '',
     })
 
-    expect(chamarHttp).toHaveBeenCalledWith(expect.anything(), { deTeste: false })
+    expect(chamarHttp).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ deTeste: false }),
+    )
   })
 
   it('a trava para o encadeamento sem fim, e conta IA e API juntas', async () => {
@@ -345,5 +354,94 @@ describe('falha com seguir não deixa dado velho passando por fresco', () => {
     const textos = r.acoes.flatMap((a) => (a.tipo === 'enviar_texto' ? [a.texto] : []))
     expect(textos).toContain('está ')
     expect(textos).not.toContain('está a caminho')
+  })
+})
+
+describe('credencial da conexão', () => {
+  const comConexao = (conexaoId?: string) =>
+    fluxoSchema.parse({
+      inicio: 'consulta',
+      nodes: [
+        {
+          id: 'consulta',
+          type: 'http',
+          position: { x: 0, y: 0 },
+          data: { url: 'https://crm.com/leads', metodo: 'POST', corpo: '{}', conexaoId },
+        },
+        { id: 'humano', type: 'handoff', position: { x: 0, y: 0 }, data: {} },
+      ],
+      edges: [{ id: 'a1', source: 'consulta', target: 'humano' }],
+    })
+
+  const base = { modelo: null, contextoNegocio: '', origem: 'whatsapp' as const }
+
+  beforeEach(() => {
+    chamarHttp.mockReset()
+    lerCredencial.mockReset()
+  })
+
+  it('lê a credencial do cliente e entrega a quem dispara', async () => {
+    chamarHttp.mockResolvedValue({ ok: true, valores: {} })
+    lerCredencial.mockResolvedValue({ tipo: 'bearer', campo: null, valor: 'tok_123' })
+
+    await executarComEfeitos(comConexao('cx1'), sessaoNova(), { tipo: 'inicio' }, {
+      ...base,
+      clienteId: 'cli1',
+    })
+
+    // O par (conexão, cliente) é o que impede um cliente alcançar o cofre do
+    // outro. Ler só pelo id da conexão bastaria para vazar entre clientes.
+    expect(lerCredencial).toHaveBeenCalledWith('cx1', 'cli1')
+    expect(chamarHttp).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ credencial: { tipo: 'bearer', campo: null, valor: 'tok_123' } }),
+    )
+  })
+
+  it('a credencial NÃO entra na sessão nem nas ações', async () => {
+    chamarHttp.mockResolvedValue({ ok: true, valores: {} })
+    lerCredencial.mockResolvedValue({ tipo: 'bearer', campo: null, valor: 'tok_secreto' })
+
+    const r = await executarComEfeitos(comConexao('cx1'), sessaoNova(), { tipo: 'inicio' }, {
+      ...base,
+      clienteId: 'cli1',
+    })
+
+    // A sessão viaja para o navegador a cada mensagem do simulador. Se o
+    // segredo aparecesse aqui, ele chegaria ao browser.
+    const tudo = JSON.stringify(r)
+    expect(tudo).not.toContain('tok_secreto')
+  })
+
+  it('bloco sem conexão nem consulta o cofre', async () => {
+    chamarHttp.mockResolvedValue({ ok: true, valores: {} })
+
+    await executarComEfeitos(comConexao(undefined), sessaoNova(), { tipo: 'inicio' }, {
+      ...base,
+      clienteId: 'cli1',
+    })
+
+    expect(lerCredencial).not.toHaveBeenCalled()
+    expect(chamarHttp).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ credencial: null }),
+    )
+  })
+
+  it('conexão apagada não vira chamada sem credencial — vai para uma pessoa', async () => {
+    lerCredencial.mockResolvedValue(null)
+
+    const r = await executarComEfeitos(comConexao('cx-sumida'), sessaoNova(), { tipo: 'inicio' }, {
+      ...base,
+      clienteId: 'cli1',
+    })
+
+    // Chamar sem a credencial faria uma de duas coisas ruins: 401 com motivo
+    // confuso, ou pior, a API aceitando anônimo e agindo em nome do cliente.
+    expect(chamarHttp).not.toHaveBeenCalled()
+    expect(r.sessao.status).toBe('humano')
+    const t = r.acoes.find((a) => a.tipo === 'transferir_humano')
+    if (t?.tipo !== 'transferir_humano') throw new Error('faltou a transferência')
+    expect(t.motivo).toContain('credencial')
   })
 })
