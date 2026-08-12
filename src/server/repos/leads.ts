@@ -20,6 +20,8 @@ export type Lead = {
   ultimaEm: string | null
   ultimaDirecao: Direcao | null
   ultimoTexto: string | null
+  /** `false` quando a última saída não teve confirmação do canal. */
+  ultimaEntregue: boolean | null
   /** Handoff sem `resolvido_em`. `null` = ninguém esperando. */
   aguardando: { motivo: string; desde: string } | null
   criadoEm: string
@@ -32,6 +34,8 @@ export type MensagemDoLead = {
   direcao: Direcao
   texto: string | null
   ts: string
+  /** Saídas que ainda não tiveram confirmação do canal não são entrega certa. */
+  entregue: boolean
 }
 
 export type Conversa = {
@@ -54,6 +58,7 @@ type Linha = {
   ultima_em: string | null
   ultima_direcao: string | null
   ultimo_texto: string | null
+  ultima_entregue: boolean | null
   handoff_motivo: string | null
   handoff_em: string | null
 }
@@ -62,7 +67,7 @@ type Linha = {
 // tipo para saber o formato do retorno, e concatenação vira `string` genérica —
 // aí o tipo do `data` desanda e o `tsc` acusa.
 const COLUNAS =
-  'contact_id, client_id, wa_id, nome, campos, criado_em, ultima_em, ultima_direcao, ultimo_texto, handoff_motivo, handoff_em'
+  'contact_id, client_id, wa_id, nome, campos, criado_em, ultima_em, ultima_direcao, ultimo_texto, handoff_motivo, handoff_em, ultima_entregue'
 
 /**
  * `campos` é `jsonb`: o banco aceita qualquer coisa ali. Hoje só o motor
@@ -103,6 +108,7 @@ function paraLead(linha: Linha): Lead {
     ultimaEm: linha.ultima_em,
     ultimaDirecao: direcao.success ? direcao.data : null,
     ultimoTexto: linha.ultimo_texto,
+    ultimaEntregue: linha.ultima_entregue,
     aguardando:
       linha.handoff_motivo && linha.handoff_em
         ? { motivo: linha.handoff_motivo, desde: linha.handoff_em }
@@ -157,7 +163,7 @@ export async function lerConversa(
 ): Promise<Conversa> {
   const { data, error } = await db()
     .from('messages')
-    .select('id, direcao, texto, ts')
+    .select('id, direcao, texto, ts, entregue')
     .eq('contact_id', contatoId)
     .order('ts', { ascending: false })
     .limit(teto + 1)
@@ -165,7 +171,13 @@ export async function lerConversa(
   if (ehIdInvalido(error)) return { cortada: false, mensagens: [] }
   if (error) throw new Error(`não deu para ler a conversa: ${error.message}`)
 
-  const linhas = data as { id: string; direcao: string; texto: string | null; ts: string }[]
+  const linhas = data as {
+    id: string
+    direcao: string
+    texto: string | null
+    ts: string
+    entregue: boolean
+  }[]
   const cortada = linhas.length > teto
 
   return {
@@ -178,6 +190,7 @@ export async function lerConversa(
         direcao: direcaoSchema.parse(m.direcao),
         texto: m.texto,
         ts: m.ts,
+        entregue: m.entregue,
       })),
   }
 }

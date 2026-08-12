@@ -12,6 +12,7 @@ import type { EstadoSalvar } from '@/components/design/formulario-salvar'
 import {
   contextoDeResposta,
   criarCanal,
+  confirmarEntrega,
   definirStatusDaSessao,
   desconectarNumero,
   encerrarAtendimento,
@@ -264,6 +265,11 @@ export async function acaoResponderLead(
 
   const canal = canalCloudApi({ phoneNumberId: contexto.canal.phoneNumberId, token })
 
+  // Grava antes para não perder do histórico uma mensagem que saiu no instante
+  // em que a função morreu. Enquanto a API não confirmar, a tela a marca como
+  // envio não confirmado — ela nunca a apresenta como entregue por certeza.
+  const registro = await registrarSaida({ contatoId, sessaoId: contexto.sessaoId, texto })
+
   try {
     await canal.enviarTexto(contexto.waId, texto)
   } catch (erro) {
@@ -272,9 +278,7 @@ export async function acaoResponderLead(
     return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para enviar' }
   }
 
-  // Só depois de sair de verdade. Registrar antes poria na tela do lead uma
-  // mensagem que ninguém recebeu, que é a pior coisa que essa tela pode fazer.
-  await registrarSaida({ contatoId, sessaoId: contexto.sessaoId, texto })
+  await confirmarEntrega(registro)
 
   // Só o status: o que a conversa já coletou continua na sessão, e é ele que
   // volta a valer se o bot reassumir depois do "Já atendi".

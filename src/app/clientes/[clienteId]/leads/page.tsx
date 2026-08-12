@@ -165,7 +165,7 @@ async function Tabela({ clienteId }: { clienteId: string }) {
                       <span title={horaExata(lead.ultimaEm)}>{quando(lead.ultimaEm)}</span>
                       {lead.ultimoTexto && (
                         <span className="block max-w-52 truncate text-[10.5px] text-dim">
-                          {lead.ultimaDirecao === 'saida' && 'bot: '}{lead.ultimoTexto}
+                          {lead.ultimaDirecao === 'saida' && `${lead.ultimaEntregue ? 'bot: ' : 'envio não confirmado: '}`}{lead.ultimoTexto}
                         </span>
                       )}
                     </>

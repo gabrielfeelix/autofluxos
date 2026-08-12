@@ -289,11 +289,13 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
     const { data: contato } = await db().from('contacts').select('id').eq('wa_id', de).single()
     const contatoId = contato!.id as string
 
-    // Só a que saiu de verdade fica registrada. A que falhou não vira histórico
-    // de conversa — senão a tela de leads mostraria uma mensagem que ninguém
-    // recebeu, que é a pior coisa que essa tela pode fazer.
+    // A que falhou fica no histórico como tentativa, mas não como entrega. É a
+    // informação necessária para investigar sem dizer à pessoa que ela recebeu.
     const conversa = await lerConversa(contatoId)
-    expect(conversa.mensagens.filter((m) => m.direcao === 'saida')).toHaveLength(1)
+    expect(conversa.mensagens.filter((m) => m.direcao === 'saida').map((m) => m.entregue)).toEqual([
+      true,
+      false,
+    ])
 
     const salva = await ultimaSessao(contatoId, canalId)
     expect(salva?.sessao.status).toBe('humano')

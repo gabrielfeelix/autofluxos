@@ -7,6 +7,7 @@ import {
   acharOuCriarContato,
   criarCanal,
   criarSessao,
+  confirmarEntrega,
   guardarCampo,
   registrarEntrada,
   registrarHandoff,
@@ -70,7 +71,8 @@ describe.skipIf(!temCredencial)('leads contra o Supabase', () => {
       texto: 'oi',
       payload: {},
     })
-    await registrarSaida({ contatoId: contato.id, sessaoId: sessao.id, texto: 'Oi! Como ajudo?' })
+    const saida = await registrarSaida({ contatoId: contato.id, sessaoId: sessao.id, texto: 'Oi! Como ajudo?' })
+    await confirmarEntrega(saida)
     await registrarHandoff(sessao.id, 'a pessoa pediu para falar com alguém')
 
     const [lead] = await listarLeads(cliente.id)
@@ -81,6 +83,7 @@ describe.skipIf(!temCredencial)('leads contra o Supabase', () => {
     expect(lead.campos).toEqual({ nome: 'Ana', assunto: 'orçamento' })
     expect(lead.ultimoTexto).toBe('Oi! Como ajudo?')
     expect(lead.ultimaDirecao).toBe('saida')
+    expect(lead.ultimaEntregue).toBe(true)
     expect(lead.aguardando?.motivo).toBe('a pessoa pediu para falar com alguém')
 
     // A mesma linha tem que vir pelo caminho de um lead só.
@@ -141,7 +144,8 @@ describe.skipIf(!temCredencial)('leads contra o Supabase', () => {
       texto: 'quero um orçamento',
       payload: {},
     })
-    await registrarSaida({ contatoId: contato.id, sessaoId: sessao.id, texto: 'De que serviço?' })
+    const saida = await registrarSaida({ contatoId: contato.id, sessaoId: sessao.id, texto: 'De que serviço?' })
+    await confirmarEntrega(saida)
     await registrarEntrada({
       contatoId: contato.id,
       sessaoId: sessao.id,
@@ -153,10 +157,10 @@ describe.skipIf(!temCredencial)('leads contra o Supabase', () => {
     const conversa = await lerConversa(contato.id)
 
     expect(conversa.cortada).toBe(false)
-    expect(conversa.mensagens.map((m) => [m.direcao, m.texto])).toEqual([
-      ['entrada', 'quero um orçamento'],
-      ['saida', 'De que serviço?'],
-      ['entrada', 'pintura'],
+    expect(conversa.mensagens.map((m) => [m.direcao, m.texto, m.entregue])).toEqual([
+      ['entrada', 'quero um orçamento', true],
+      ['saida', 'De que serviço?', true],
+      ['entrada', 'pintura', true],
     ])
   })
 
@@ -167,7 +171,8 @@ describe.skipIf(!temCredencial)('leads contra o Supabase', () => {
     const sessao = await criarSessao(contato.id, canal.id, versaoId, sessaoNova())
 
     for (const texto of ['um', 'dois', 'três']) {
-      await registrarSaida({ contatoId: contato.id, sessaoId: sessao.id, texto })
+      const saida = await registrarSaida({ contatoId: contato.id, sessaoId: sessao.id, texto })
+      await confirmarEntrega(saida)
     }
 
     const conversa = await lerConversa(contato.id, 2)
@@ -175,6 +180,22 @@ describe.skipIf(!temCredencial)('leads contra o Supabase', () => {
     expect(conversa.cortada).toBe(true)
     // Cortou o começo, não o fim: o que importa é o que acabou de acontecer.
     expect(conversa.mensagens.map((m) => m.texto)).toEqual(['dois', 'três'])
+  })
+
+  it('guarda tentativa que o canal não confirmou, sem fingir que foi entregue', async () => {
+    const { cliente, canal, versaoId } = await montarCliente('entrega-pendente')
+    const contato = await acharOuCriarContato(cliente.id, `${marca}-5544000008`, 'Cris')
+    const sessao = await criarSessao(contato.id, canal.id, versaoId, sessaoNova())
+
+    await registrarSaida({ contatoId: contato.id, sessaoId: sessao.id, texto: 'Ainda estou tentando.' })
+
+    const conversa = await lerConversa(contato.id)
+    expect(conversa.mensagens).toMatchObject([
+      { direcao: 'saida', texto: 'Ainda estou tentando.', entregue: false },
+    ])
+
+    const lead = await acharLead(cliente.id, contato.id)
+    expect(lead?.ultimaEntregue).toBe(false)
   })
 
   /** A URL é adivinhável. O id certo no cliente errado não pode abrir. */

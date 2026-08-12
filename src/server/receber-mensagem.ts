@@ -15,6 +15,7 @@ import {
   definirStatusDaSessao,
   guardarCampo,
   guardarSessao,
+  confirmarEntrega,
   registrarEntrada,
   registrarHandoff,
   registrarSaida,
@@ -317,28 +318,36 @@ async function aplicar(
   for (const acao of acoes) {
     switch (acao.tipo) {
       case 'enviar_texto': {
+        // Grava antes de mandar e confirma depois — ver `registrarSaida`.
+        const registro = await registrarSaida({
+          contatoId: contato.id,
+          sessaoId,
+          texto: acao.texto,
+        })
         const entrega = await entregar(() => canal.enviarTexto(contato.waId, acao.texto))
         // Parar em vez de seguir: mandar a terceira mensagem depois da segunda
         // ter falhado entrega uma conversa fora de ordem, e uma conversa fora
-        // de ordem é pior do que uma pessoa assumindo.
+        // de ordem é pior do que uma pessoa assumindo. A linha fica gravada
+        // como não confirmada, que é o registro honesto do que se tentou.
         if (!entrega.ok) return pararNoHumano(entrega.motivo)
 
-        await registrarSaida({ contatoId: contato.id, sessaoId, texto: acao.texto })
+        await confirmarEntrega(registro)
         break
       }
 
       case 'enviar_opcoes': {
-        const entrega = await entregar(() =>
-          canal.enviarOpcoes(contato.waId, acao.texto, acao.opcoes, acao.formato),
-        )
-        if (!entrega.ok) return pararNoHumano(entrega.motivo)
-
-        await registrarSaida({
+        const registro = await registrarSaida({
           contatoId: contato.id,
           sessaoId,
           texto: acao.texto,
           payload: { opcoes: acao.opcoes, formato: acao.formato },
         })
+        const entrega = await entregar(() =>
+          canal.enviarOpcoes(contato.waId, acao.texto, acao.opcoes, acao.formato),
+        )
+        if (!entrega.ok) return pararNoHumano(entrega.motivo)
+
+        await confirmarEntrega(registro)
         break
       }
 
@@ -359,10 +368,13 @@ async function aplicar(
         //
         // O aviso pode não sair, e mesmo assim o handoff é registrado: quem
         // está esperando tem que aparecer na tela mesmo quando o canal falhou.
+        const registro = await registrarSaida({
+          contatoId: contato.id,
+          sessaoId,
+          texto: AVISO_DE_HANDOFF,
+        })
         const entrega = await entregar(() => canal.enviarTexto(contato.waId, AVISO_DE_HANDOFF))
-        if (entrega.ok) {
-          await registrarSaida({ contatoId: contato.id, sessaoId, texto: AVISO_DE_HANDOFF })
-        }
+        if (entrega.ok) await confirmarEntrega(registro)
 
         return pararNoHumano(
           entrega.ok
@@ -375,10 +387,13 @@ async function aplicar(
         // O resolvedor sempre atende esta ação — inclusive quando a chamada
         // falha, porque `aoFalhar` decide lá. Chegar aqui é defeito nosso, e
         // entre deixar alguém pendurado e passar para uma pessoa, passa.
+        const registro = await registrarSaida({
+          contatoId: contato.id,
+          sessaoId,
+          texto: AVISO_DE_HANDOFF,
+        })
         const entrega = await entregar(() => canal.enviarTexto(contato.waId, AVISO_DE_HANDOFF))
-        if (entrega.ok) {
-          await registrarSaida({ contatoId: contato.id, sessaoId, texto: AVISO_DE_HANDOFF })
-        }
+        if (entrega.ok) await confirmarEntrega(registro)
 
         return pararNoHumano(
           entrega.ok

@@ -179,21 +179,48 @@ export async function registrarEntrada(dados: {
   return true
 }
 
+/**
+ * Registra uma saída **antes** de ela sair, como não confirmada.
+ *
+ * A ordem é essa de propósito. Gravar depois do envio deixa uma janela — curta,
+ * mas real num `after()` que pode bater no `maxDuration` no meio de um fluxo
+ * lento: a função morre entre uma coisa e outra, a pessoa recebeu a mensagem, e
+ * o histórico não tem. Quem abre a tela do lead vê um buraco na conversa,
+ * justamente quando mais precisa saber o que o bot disse.
+ *
+ * Gravando antes, as duas mortes possíveis ficam honestas: antes de mandar,
+ * fica "não confirmado" e não foi; depois de mandar, fica "não confirmado" e
+ * foi. A tela nunca afirma o que não sabe.
+ *
+ * Devolve o id para `confirmarEntrega`.
+ */
 export async function registrarSaida(dados: {
   contatoId: string
   sessaoId: string | null
   texto: string
   payload?: unknown
-}): Promise<void> {
-  const { error } = await db().from('messages').insert({
-    contact_id: dados.contatoId,
-    session_id: dados.sessaoId,
-    direcao: 'saida',
-    texto: dados.texto,
-    payload: dados.payload ?? null,
-  })
+}): Promise<string> {
+  const { data, error } = await db()
+    .from('messages')
+    .insert({
+      contact_id: dados.contatoId,
+      session_id: dados.sessaoId,
+      direcao: 'saida',
+      texto: dados.texto,
+      payload: dados.payload ?? null,
+      entregue: false,
+    })
+    .select('id')
+    .single()
 
   if (error) throw new Error(`não deu para registrar o envio: ${error.message}`)
+  return data.id as string
+}
+
+/** A mensagem saiu. Chamado logo depois do envio dar certo. */
+export async function confirmarEntrega(id: string): Promise<void> {
+  const { error } = await db().from('messages').update({ entregue: true }).eq('id', id)
+  if (error) throw new Error(`não deu para confirmar a entrega: ${error.message}`)
 }
 
 /** O que o fluxo coletou vira coluna na tela de leads. */

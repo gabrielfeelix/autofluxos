@@ -166,6 +166,9 @@ async function Historico({ contatoId, nomeDoLead }: { contatoId: string; nomeDoL
               <span className="ml-2 text-[9.5px] text-dim" title={horaExata(mensagem.ts)}>
                 {nossa ? 'bot' : (nomeDoLead ?? 'cliente')} · {quando(mensagem.ts)}
               </span>
+              {nossa && !mensagem.entregue && (
+                <span className="ml-2 text-[9.5px] text-amber-200">envio não confirmado</span>
+              )}
             </p>
           </div>
         )
