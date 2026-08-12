@@ -5,12 +5,31 @@ export type Cliente = {
   id: string
   nome: string
   contextoNegocio: string
+  /** Quem responde por este cliente. Ex.: "Daniel, dono do estúdio". */
+  responsavel: string
+  /** Telefone de quem responde — **não** é o número que o bot atende. */
+  telefone: string
+  email: string
+  /** O que foi combinado e não cabe em campo. */
+  observacoes: string
 }
+
+/**
+ * O cadastro que dá para editar de uma vez na tela do cliente.
+ *
+ * `contextoNegocio` fica de fora de propósito: ele tem tela própria porque é
+ * o bloco de IA, não um campo de ficha.
+ */
+export type Cadastro = Pick<Cliente, 'nome' | 'responsavel' | 'telefone' | 'email' | 'observacoes'>
 
 type Linha = {
   id: string
   nome: string
   contexto_negocio: string
+  responsavel: string
+  telefone: string
+  email: string
+  observacoes: string
 }
 
 /**
@@ -23,13 +42,17 @@ type Linha = {
  * no banco é o passo seguinte, e separado — código que parou de usar volta
  * fácil, coluna apagada não.
  */
-const COLUNAS = 'id, nome, contexto_negocio'
+const COLUNAS = 'id, nome, contexto_negocio, responsavel, telefone, email, observacoes'
 
 function paraCliente(linha: Linha): Cliente {
   return {
     id: linha.id,
     nome: linha.nome,
     contextoNegocio: linha.contexto_negocio,
+    responsavel: linha.responsavel,
+    telefone: linha.telefone,
+    email: linha.email,
+    observacoes: linha.observacoes,
   }
 }
 
@@ -71,6 +94,27 @@ export async function criarCliente(nome: string): Promise<Cliente> {
  * conversa para uma pessoa toda vez. Falha fechado, e por isso ninguém percebe
  * que está quebrado.
  */
+/**
+ * Grava a ficha do cliente.
+ *
+ * O nome é o único obrigatório — cliente cadastrado no meio de uma reunião tem
+ * só isso, e exigir telefone para salvar o nome faria a pessoa inventar um.
+ */
+export async function atualizarCadastro(id: string, cadastro: Cadastro): Promise<void> {
+  const { error } = await db()
+    .from('clients')
+    .update({
+      nome: cadastro.nome.trim(),
+      responsavel: cadastro.responsavel.trim(),
+      telefone: cadastro.telefone.trim(),
+      email: cadastro.email.trim(),
+      observacoes: cadastro.observacoes.trim(),
+    })
+    .eq('id', id)
+
+  if (error) throw new Error(`não deu para salvar o cadastro: ${error.message}`)
+}
+
 export async function atualizarContexto(id: string, contexto: string): Promise<void> {
   const { error } = await db()
     .from('clients')

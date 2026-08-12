@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import { fluxoSchema } from '@/core/flow/schema'
 import { fluxoNovo } from '@/core/flow/novo'
 import { triagem } from '@/exemplos/triagem'
-import { atualizarContexto, criarCliente } from './repos/clientes'
+import { atualizarCadastro, atualizarContexto, criarCliente } from './repos/clientes'
 import { canalCloudApi } from '@/channels/cloud-api'
 import { dentroDaJanela } from '@/channels/janela'
 import type { EstadoSalvar } from '@/components/design/formulario-salvar'
@@ -321,5 +321,39 @@ export async function acaoSalvarContexto(
 
   revalidatePath(`/clientes/${clienteId}/contexto`)
   revalidatePath(`/clientes/${clienteId}`)
+  return { ok: true }
+}
+
+/**
+ * Salva a ficha do cliente. Ver `clientes/[clienteId]/page.tsx`.
+ *
+ * Devolve estado, como o contexto: formulário que grava em silêncio deixa quem
+ * digitou sem saber se pegou — e nome de cliente é o tipo de campo que a pessoa
+ * corrige, sai da tela e volta para conferir.
+ */
+export async function acaoSalvarCadastro(
+  clienteId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  const nome = String(formData.get('nome') ?? '').trim()
+  if (nome === '') return { erro: 'O cliente precisa de um nome.' }
+
+  try {
+    await atualizarCadastro(clienteId, {
+      nome,
+      responsavel: String(formData.get('responsavel') ?? ''),
+      telefone: String(formData.get('telefone') ?? ''),
+      email: String(formData.get('email') ?? ''),
+      observacoes: String(formData.get('observacoes') ?? ''),
+    })
+  } catch (erro) {
+    return { erro: erro instanceof Error ? erro.message : 'não deu para salvar' }
+  }
+
+  // A lista de clientes e o cabeçalho de toda tela deste cliente mostram o
+  // nome: revalidar só esta página deixaria o nome antigo no menu ao lado.
+  revalidatePath('/')
+  revalidatePath(`/clientes/${clienteId}`, 'layout')
   return { ok: true }
 }
