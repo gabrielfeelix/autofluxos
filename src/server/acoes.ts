@@ -6,6 +6,7 @@ import { fluxoSchema } from '@/core/flow/schema'
 import { fluxoNovo } from '@/core/flow/novo'
 import { triagem } from '@/exemplos/triagem'
 import { criarCliente } from './repos/clientes'
+import { criarCanal } from './repos/conversas'
 import { criarFluxo, publicar, salvarRascunho } from './repos/fluxos'
 
 export async function acaoCriarCliente(formData: FormData) {
@@ -76,4 +77,13 @@ export async function acaoPublicar(fluxoId: string, clienteId: string, grafo: un
   }
 
   return { ok: false as const, erros: resultado.erros }
+}
+
+export async function acaoConectarNumero(clienteId: string, formData: FormData) {
+  const phoneNumberId = String(formData.get('phoneNumberId') ?? '').trim()
+  const flowId = String(formData.get('flowId') ?? '').trim()
+  if (phoneNumberId === '') return
+
+  await criarCanal({ clienteId, phoneNumberId, flowId: flowId === '' ? null : flowId })
+  revalidatePath(`/clientes/${clienteId}`)
 }

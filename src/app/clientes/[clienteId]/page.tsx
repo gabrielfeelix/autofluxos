@@ -1,8 +1,10 @@
+import { headers } from 'next/headers'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { validar } from '@/core/flow/validar'
-import { acaoCriarFluxo } from '@/server/acoes'
+import { acaoConectarNumero, acaoCriarFluxo } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
+import { listarCanais } from '@/server/repos/conversas'
 import { listarFluxos } from '@/server/repos/fluxos'
 
 export const dynamic = 'force-dynamic'
@@ -13,8 +15,18 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const fluxos = await listarFluxos(clienteId)
+  const [fluxos, canais, cabecalhos] = await Promise.all([
+    listarFluxos(clienteId),
+    listarCanais(clienteId),
+    headers(),
+  ])
+
+  const host = cabecalhos.get('x-forwarded-host') ?? cabecalhos.get('host') ?? 'localhost:3000'
+  const protocolo = host.startsWith('localhost') ? 'http' : 'https'
+  const baseUrl = `${protocolo}://${host}`
+
   const criarComCliente = acaoCriarFluxo.bind(null, clienteId)
+  const conectarComCliente = acaoConectarNumero.bind(null, clienteId)
 
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-8 p-6 sm:p-10">
@@ -67,6 +79,69 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           )
         })}
       </ul>
+
+      <section className="border-t border-zinc-200 pt-6 dark:border-zinc-800">
+        <h2 className="text-xs font-semibold tracking-wide text-zinc-500 uppercase">
+          Números do WhatsApp
+        </h2>
+
+        {canais.length > 0 && (
+          <ul className="mt-3 space-y-2">
+            {canais.map((canal) => {
+              const fluxo = fluxos.find((f) => f.id === canal.flowId)
+              return (
+                <li
+                  key={canal.id}
+                  className="rounded-xl border border-zinc-200 px-4 py-3 text-sm dark:border-zinc-800"
+                >
+                  <code className="text-xs">{canal.phoneNumberId}</code>
+                  <span className="ml-2 text-xs text-zinc-500">
+                    {fluxo
+                      ? fluxo.versaoPublicadaId
+                        ? `roda "${fluxo.nome}"`
+                        : `ligado a "${fluxo.nome}", que ainda não foi publicado`
+                      : 'sem fluxo ligado — o bot não responde'}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+
+        <form action={conectarComCliente} className="mt-3 flex flex-wrap gap-2">
+          <input
+            name="phoneNumberId"
+            required
+            placeholder="Identificação do número (Meta)"
+            className="min-w-48 flex-1 rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none focus:border-emerald-500 dark:border-zinc-700"
+          />
+          <select
+            name="flowId"
+            className="rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+          >
+            <option value="">sem fluxo</option>
+            {fluxos.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.nome}
+              </option>
+            ))}
+          </select>
+          <button
+            type="submit"
+            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium transition hover:bg-zinc-200 dark:border-zinc-700 dark:hover:bg-zinc-800"
+          >
+            Conectar
+          </button>
+        </form>
+
+        <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
+          No painel da Meta, em <strong>WhatsApp → Configuração</strong>, aponte o webhook para{' '}
+          <code className="rounded bg-zinc-100 px-1.5 py-0.5 dark:bg-zinc-800">
+            {baseUrl}/api/webhook/whatsapp
+          </code>{' '}
+          e assine o campo <code>messages</code>.
+        </p>
+      </section>
 
       <form
         action={criarComCliente}
