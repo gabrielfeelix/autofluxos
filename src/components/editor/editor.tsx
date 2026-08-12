@@ -15,7 +15,7 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import Link from 'next/link'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent as ReactDragEvent } from 'react'
 import { Conversa } from '@/components/conversa'
 import type { Sessao } from '@/core/engine/types'
 import { fluxoSchema, type Fluxo, type No, type TipoNo } from '@/core/flow/schema'
@@ -39,6 +39,14 @@ const DESCRICOES: Record<TipoNo, string> = {
   handoff: 'Passa para uma pessoa',
   http: 'Chama um sistema',
 }
+
+/**
+ * O que viaja no arrasto da barra de blocos até o desenho.
+ *
+ * Tipo próprio em vez de `text/plain`: qualquer texto arrastado de fora (uma
+ * seleção de outra aba, um link) chega como `text/plain` e viraria bloco.
+ */
+const TIPO_ARRASTADO = 'application/autofluxos-bloco'
 
 /** Como cada bloco nasce ao ser arrastado da barra. */
 function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
@@ -227,9 +235,28 @@ export function Editor({
     [setNodes, tela],
   )
 
-  function adicionar(tipo: TipoNo) {
+  /**
+   * Põe um bloco novo no desenho, já selecionado.
+   *
+   * `posicao` é o canto do bloco em coordenadas do fluxo. Quem chama decide
+   * onde: o clique manda o centro da tela, o arrasto manda onde a pessoa
+   * soltou.
+   */
+  function criarNo(tipo: TipoNo, posicao: { x: number; y: number }) {
     const id = crypto.randomUUID().slice(0, 8)
 
+    setNodes((atuais) => [
+      ...atuais.map((n) => ({ ...n, selected: false })),
+      { id, type: tipo, position: posicao, data: dadosPadrao(tipo), selected: true },
+    ])
+    setSelecionado(id)
+    setAba('bloco')
+  }
+
+  /** Menos metade do bloco: senão ele nasce com o canto no ponto, não o meio. */
+  const centralizar = (p: { x: number; y: number }) => ({ x: p.x - LARGURA_NO / 2, y: p.y - 40 })
+
+  function adicionar(tipo: TipoNo) {
     // Nasce no meio de onde a pessoa está olhando. Posição fixa colocava o
     // bloco fora da tela assim que alguém arrastasse o desenho para o lado —
     // aparecia a mensagem "adicionado" e nada na tela.
@@ -239,22 +266,23 @@ export function Editor({
         ? tela.screenToFlowPosition({ x: area.x + area.width / 2, y: area.y + area.height / 2 })
         : { x: 80 + nodes.length * 24, y: 80 + nodes.length * 40 }
 
-    // Menos metade do bloco, senão ele nasce com o canto no centro em vez do
-    // meio. A largura é a do `Caixa` em `nos.tsx` (w-56 = 224px).
-    const posicao = livre({ x: centro.x - 112, y: centro.y - 40 }, nodes)
+    criarNo(tipo, livre(centralizar(centro), nodes))
+  }
 
-    setNodes((atuais) => [
-      ...atuais.map((n) => ({ ...n, selected: false })),
-      {
-        id,
-        type: tipo,
-        position: posicao,
-        data: dadosPadrao(tipo),
-        selected: true,
-      },
-    ])
-    setSelecionado(id)
-    setAba('bloco')
+  /**
+   * Soltar um bloco no desenho.
+   *
+   * Aqui **não** passa pelo `livre()`: quem arrastou escolheu o lugar, e
+   * empurrar o bloco para outro ponto "porque estava ocupado" seria desobedecer
+   * a única coisa que o gesto queria dizer. Sobrepor arrastando é problema de
+   * quem arrastou, e se resolve arrastando de novo.
+   */
+  function soltar(evento: ReactDragEvent<HTMLDivElement>) {
+    evento.preventDefault()
+    const tipo = evento.dataTransfer.getData(TIPO_ARRASTADO) as TipoNo
+    if (!tipo || !TIPOS.includes(tipo) || !tela) return
+
+    criarNo(tipo, centralizar(tela.screenToFlowPosition({ x: evento.clientX, y: evento.clientY })))
   }
 
   function mudarDados(dados: Record<string, unknown>) {
@@ -443,7 +471,12 @@ export function Editor({
             <button
               key={tipo}
               onClick={() => adicionar(tipo)}
-              className="mb-0.5 flex w-full items-start gap-2.5 rounded-[11px] border border-transparent p-2 text-left transition hover:border-white/[0.07] hover:bg-white/[0.04]"
+              draggable
+              onDragStart={(evento) => {
+                evento.dataTransfer.setData(TIPO_ARRASTADO, tipo)
+                evento.dataTransfer.effectAllowed = 'copy'
+              }}
+              className="mb-0.5 flex w-full cursor-grab items-start gap-2.5 rounded-[11px] border border-transparent p-2 text-left transition select-none hover:border-white/[0.07] hover:bg-white/[0.04] active:cursor-grabbing"
             >
               <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-[9px] border border-white/[0.08] bg-white/[0.045] text-sm text-accent">
                 {ICONES[tipo]}
@@ -455,11 +488,22 @@ export function Editor({
             </button>
           ))}
           <p className="mt-3.5 border-t border-white/[0.06] px-2 pt-3 text-[10.5px] leading-4 text-dim">
-            Toque para adicionar. Arraste de uma alça até outro bloco para ligar.
+            Arraste um bloco para o desenho, ou clique para soltar no meio. Para ligar dois blocos,
+            arraste de uma alça até o outro.
           </p>
         </nav>
 
-        <div ref={areaRef} className="min-w-0 flex-1">
+        <div
+          ref={areaRef}
+          className="min-w-0 flex-1"
+          onDrop={soltar}
+          // Sem cancelar o `dragover`, o navegador recusa o soltar e o gesto
+          // termina com a animação de "voltou para o lugar".
+          onDragOver={(evento) => {
+            evento.preventDefault()
+            evento.dataTransfer.dropEffect = 'copy'
+          }}
+        >
           <ReactFlow
             onInit={setTela}
             nodes={nodes}
