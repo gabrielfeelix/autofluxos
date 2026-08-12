@@ -103,6 +103,52 @@ export const noHandoffSchema = z.object({
   }),
 })
 
+/** Verbos que o nó de API aceita. `GET` consulta, `POST` grava. */
+export const METODOS = ['GET', 'POST'] as const
+export type Metodo = (typeof METODOS)[number]
+
+/**
+ * O que fazer quando a chamada falha.
+ *
+ * O padrão é `humano` por decisão de produto (§9): quem garante a saída é o
+ * sistema. `seguir` existe para enriquecimento opcional — o CEP não respondeu e
+ * a conversa não deveria morrer por isso.
+ */
+export const AO_FALHAR = ['humano', 'seguir'] as const
+export type AoFalhar = (typeof AO_FALHAR)[number]
+
+export const cabecalhoSchema = z.object({
+  chave: z.string(),
+  valor: z.string(),
+})
+
+export const mapeamentoSchema = z.object({
+  /** A variável que recebe o valor extraído. */
+  variavel: nomeVariavel,
+  /**
+   * Caminho no JSON da resposta, com ponto e índice: `pedido.status`,
+   * `resultados.0.nome`. Não é JSONPath: quase todo caso é campo raso, e o que
+   * não for o cliente achata do lado dele. JSONPath seria uma linguagem
+   * inteira para manter, testar e explicar.
+   */
+  caminho: z.string(),
+})
+
+export const noHttpSchema = z.object({
+  ...base,
+  type: z.literal('http'),
+  data: z.object({
+    metodo: z.enum(METODOS).default('GET'),
+    /** Aceita `{{variavel}}` e, no futuro, `{{segredo.nome}}`. */
+    url: z.string().default(''),
+    cabecalhos: z.array(cabecalhoSchema).default([]),
+    /** JSON escrito como texto. Aceita interpolação. */
+    corpo: z.string().default(''),
+    mapear: z.array(mapeamentoSchema).default([]),
+    aoFalhar: z.enum(AO_FALHAR).default('humano'),
+  }),
+})
+
 export const noSchema = z.discriminatedUnion('type', [
   noMensagemSchema,
   noPerguntaSchema,
@@ -110,6 +156,7 @@ export const noSchema = z.discriminatedUnion('type', [
   noSalvarCampoSchema,
   noIaSchema,
   noHandoffSchema,
+  noHttpSchema,
 ])
 
 export const arestaSchema = z.object({
@@ -135,6 +182,9 @@ export const fluxoSchema = z.object({
 export type Opcao = z.infer<typeof opcaoSchema>
 export type No = z.infer<typeof noSchema>
 export type NoPergunta = z.infer<typeof noPerguntaSchema>
+export type Cabecalho = z.infer<typeof cabecalhoSchema>
+export type Mapeamento = z.infer<typeof mapeamentoSchema>
+export type NoHttp = z.infer<typeof noHttpSchema>
 export type Aresta = z.infer<typeof arestaSchema>
 export type Fluxo = z.infer<typeof fluxoSchema>
 export type TipoNo = No['type']

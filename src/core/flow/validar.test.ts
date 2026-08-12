@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fluxoSchema, LIMITE_LISTA, type Fluxo } from './schema'
+import { fluxoSchema, LIMITE_LISTA, noHttpSchema, type Fluxo } from './schema'
 import { validar } from './validar'
 
 const p = { x: 0, y: 0 }
@@ -248,5 +248,35 @@ describe('IA é plano à parte', () => {
   it('fluxo sem bloco de IA não é afetado pelo plano', () => {
     expect(validar(fluxoValido(), { iaHabilitada: false }).ok).toBe(true)
     expect(validar(fluxoValido(), { iaHabilitada: true }).ok).toBe(true)
+  })
+})
+
+describe('schema do nó http', () => {
+  it('nasce com os padrões certos quando só a URL é informada', () => {
+    const no = noHttpSchema.parse({
+      id: 'n1',
+      position: { x: 0, y: 0 },
+      type: 'http',
+      data: { url: 'https://exemplo.com/x' },
+    })
+
+    expect(no.data.metodo).toBe('GET')
+    expect(no.data.cabecalhos).toEqual([])
+    expect(no.data.corpo).toBe('')
+    expect(no.data.mapear).toEqual([])
+    // Falhar fechado: quem esquecer de escolher não deixa ninguém pendurado.
+    expect(no.data.aoFalhar).toBe('humano')
+  })
+
+  it('entra na união de nós, então um fluxo com ele é um fluxo válido', () => {
+    const fluxo = fluxoSchema.parse({
+      inicio: 'a',
+      nodes: [
+        { id: 'a', type: 'http', position: { x: 0, y: 0 }, data: { url: 'https://e.com' } },
+      ],
+      edges: [],
+    })
+
+    expect(fluxo.nodes[0]?.type).toBe('http')
   })
 })
