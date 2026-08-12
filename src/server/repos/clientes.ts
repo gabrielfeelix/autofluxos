@@ -5,25 +5,31 @@ export type Cliente = {
   id: string
   nome: string
   contextoNegocio: string
-  /** Etapa 2 é plano à parte. Sem isto, fluxo com nó de IA não publica. */
-  iaHabilitada: boolean
 }
 
 type Linha = {
   id: string
   nome: string
   contexto_negocio: string
-  ia_habilitada: boolean
 }
 
-const COLUNAS = 'id, nome, contexto_negocio, ia_habilitada'
+/**
+ * `ia_habilitada` saiu daqui.
+ *
+ * A migration 0005 moveu o plano de IA para o fluxo e deixou a coluna do
+ * cliente para trás de propósito, dizendo que ela sumiria "quando alguém
+ * confirmar que ninguém mais depende dela". Ninguém depende: nada no código
+ * lia `cliente.iaHabilitada`. Parar de selecionar é essa confirmação; o `drop`
+ * no banco é o passo seguinte, e separado — código que parou de usar volta
+ * fácil, coluna apagada não.
+ */
+const COLUNAS = 'id, nome, contexto_negocio'
 
 function paraCliente(linha: Linha): Cliente {
   return {
     id: linha.id,
     nome: linha.nome,
     contextoNegocio: linha.contexto_negocio,
-    iaHabilitada: linha.ia_habilitada,
   }
 }
 

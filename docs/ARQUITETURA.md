@@ -297,86 +297,73 @@ autofluxos/
 ├── README.md
 ├── .env.example                       ← só NOMES de variável, nunca valores
 ├── .gitignore                         ← .env* na primeira linha (repo é público)
-├── package.json
-├── next.config.ts
-├── tsconfig.json
 │
 ├── docs/
 │   ├── ARQUITETURA.md                 ← este arquivo
-│   └── DECISOES.md                    ← log de decisão: o quê, quando, por quê
+│   ├── ESTADO.md                      ← onde paramos, e o que fazer em seguida
+│   ├── BRIEF-UI.md                    ← o que cada tela faz, sem decidir visual
+│   ├── NO-API.md                      ← o nó de API
+│   ├── PLANO-NO-API.md                ← o plano que o construiu
+│   └── CONEXOES.md                    ← as credenciais e o cofre
 │
-├── supabase/
-│   └── migrations/
-│       ├── 0001_init.sql          clients, flows
-│       ├── 0002_versoes.sql       flow_versions (imutável) + publicar_fluxo()
-│       ├── 0003_conversas.sql     channels, contacts, sessions, messages, handoffs
-│       └── 0004_leads.sql         view `leads` (security_invoker!)
+├── supabase/migrations/
+│   ├── 0001_init.sql            clients, flows
+│   ├── 0002_versoes.sql         flow_versions (imutável) + publicar_fluxo()
+│   ├── 0003_conversas.sql       channels, contacts, sessions, messages, handoffs
+│   ├── 0004_leads.sql           view `leads` (security_invoker!)
+│   ├── 0005_ia_no_fluxo.sql     flows.ia_habilitada
+│   └── 0006_conexoes.sql        connections + as funções do Vault
 │
 └── src/
     │
     ├── core/                          ★ CORAÇÃO — zero import de Next, WhatsApp ou DB
-    │   ├── flow/                      ✅ construído
-    │   │   ├── schema.ts              Zod: Fluxo, No, Aresta + tipos — fonte da verdade
-    │   │   ├── validar.ts             tem início? nó órfão? saída para humano?
-    │   │   └── validar.test.ts
-    │   └── engine/                    ✅ construído
+    │   ├── flow/
+    │   │   ├── schema.ts              Zod: Fluxo, No, Aresta — fonte da verdade
+    │   │   ├── novo.ts                o esqueleto com que todo fluxo nasce
+    │   │   └── validar.ts             tem início? nó órfão? saída para humano?
+    │   └── engine/
     │       ├── types.ts               Sessao, Entrada, Acao
     │       ├── executar.ts            (fluxo, sessão, entrada) → {ações, sessão}
-    │       ├── interpolar.ts          "Oi {{nome}}, sobre {{assunto}}..."
-    │       └── executar.test.ts       ← o teste que segura o produto inteiro
+    │       └── interpolar.ts          "{{nome}}" + os escapes por contexto
     │
     ├── channels/                      ★ ADAPTADORES DE CANAL
-    │   ├── types.ts                   interface Canal
-    │   ├── mock.ts                    simulador (dia 1)
-    │   ├── cloud-api.ts               Meta oficial
-    │   └── evolution.ts               (só se precisar)
+    │   ├── types.ts · mock.ts · cloud-api.ts
     │
     ├── server/                        ★ COLA — aqui mora o efeito colateral
-    │   ├── db.ts                      ✅ Supabase com a chave secreta
-    │   ├── acoes.ts                   ✅ server actions (criar, salvar, publicar)
+    │   ├── db.ts · acoes.ts · auth-actions.ts
+    │   ├── receber-mensagem.ts        webhook → motor → executa ações
     │   ├── repos/
-    │   │   ├── clientes.ts            ✅
-    │   │   ├── fluxos.ts              ✅
-    │   │   ├── conversas.ts           ✅ canal, contato, sessão, mensagem, handoff
-    │   │   └── leads.ts               ✅ lê a view `leads` + a conversa
-    │   ├── receber-mensagem.ts        ✅ dedup → sessão → motor → executa ações
+    │   │   ├── clientes.ts · fluxos.ts · conversas.ts · leads.ts
+    │   │   └── conexoes.ts            credenciais; o valor mora no Vault
+    │   ├── efeitos/                   ★ o mundo lá fora
+    │   │   ├── resolver.ts            o laço que atende IA e API
+    │   │   ├── http.ts                dispara, com IP fixado e sem retry
+    │   │   └── rede.ts                quem pode ser chamado (SSRF)
     │   └── ia/
-    │       └── responder.ts           chamada ao LLM com contexto travado
+    │       ├── types.ts · prompt.ts · gemini.ts · modelo.ts
     │
-    ├── exemplos/                      ✅ fluxo de demonstração (dado, não código)
-    │   └── triagem.ts                 some quando o editor e o banco existirem
-    │
-    ├── proxy.ts                       ✅ senha do painel (era `middleware.ts`)
+    ├── exemplos/triagem.ts            fluxo de demonstração (dado, não código)
+    ├── proxy.ts                       senha do painel (era `middleware.ts`)
+    ├── lib/painel-auth.ts             o token derivado da senha
     │
     ├── app/                           ★ NEXT.JS — front e back no mesmo deploy
-    │   ├── (auth)/
-    │   │   └── login/page.tsx
-    │   ├── (app)/
-    │   │   ├── layout.tsx
-    │   │   ├── page.tsx                       lista de clientes
-    │   │   └── clientes/[clienteId]/
-    │   │       ├── page.tsx                   visão geral
-    │   │       ├── contexto/page.tsx          o que o bot sabe sobre o negócio
-    │   │       ├── canal/page.tsx             conectar o número
-    │   │       ├── leads/page.tsx             ← a tela que prova o valor
-    │   │       ├── conversas/page.tsx         histórico real
-    │   │       └── fluxos/
-    │   │           ├── page.tsx
-    │   │           └── [fluxoId]/page.tsx     ← EDITOR + SIMULADOR lado a lado
+    │   ├── login/page.tsx
+    │   ├── page.tsx                            lista de clientes
+    │   ├── clientes/[clienteId]/
+    │   │   ├── page.tsx                        visão geral
+    │   │   ├── contexto/page.tsx               o que a IA pode dizer
+    │   │   ├── conexoes/page.tsx               as credenciais do cliente
+    │   │   ├── leads/page.tsx                  ← a tela que prova o valor
+    │   │   ├── leads/[contatoId]/page.tsx      um lead e a conversa dele
+    │   │   └── fluxos/[fluxoId]/page.tsx       ← EDITOR + SIMULADOR lado a lado
     │   └── api/
-    │       ├── webhook/whatsapp/route.ts      GET verifica · POST recebe
-    │       ├── simular/route.ts               roda o motor sem WhatsApp
-    │       └── fluxos/[id]/publicar/route.ts
+    │       ├── webhook/whatsapp/route.ts       GET verifica · POST recebe
+    │       └── simular/route.ts                roda o motor sem WhatsApp
     │
-    ├── components/
-    │   ├── conversa.tsx               ✅ o chat de teste (chama /api/simular)
-    │   └── editor/                    ✅ construído
-    │       ├── editor.tsx             canvas + barra + painel + salvamento
-    │       ├── nos.tsx                o visual dos 6 blocos e suas alças
-    │       └── painel.tsx             form do bloco selecionado
-    │
-    └── lib/
-        └── utils.ts
+    └── components/
+        ├── conversa.tsx               o chat de teste (chama /api/simular)
+        ├── design/                    marca, shell, login, modal
+        └── editor/                    editor.tsx · nos.tsx · painel.tsx
 ```
 
 **A regra que sustenta a árvore:** `core/` não importa nada de `app/`,
@@ -392,15 +379,12 @@ sair do Next, virar VPS, virar CLI — `core/` vai junto sem tocar numa linha.
 
 ## Banco (Supabase / Postgres)
 
-> **Construído até agora:** `clients` e `flows` (0001) e `flow_versions` (0002).
-> `flows.rascunho` é `jsonb` mutável; publicar tira uma foto dele numa linha de
-> `flow_versions` que **o banco recusa alterar** (gatilho `flow_versions_imutavel`).
-> `contacts`, `sessions` e `messages` entram no passo 6, quando a gente souber o
-> formato real do que o WhatsApp manda.
->
-> A metade que falta do §5 é o vínculo `sessions.flow_version_id` — ele só existe
-> quando `sessions` existir. Até lá, o versionamento já está de pé e as versões
-> já são imutáveis.
+> **Tudo construído.** `flows.rascunho` é `jsonb` mutável; publicar tira uma foto
+> dele numa linha de `flow_versions` que **o banco recusa alterar** (gatilho
+> `flow_versions_imutavel`). `contacts`, `sessions` e `messages` nasceram no
+> passo 6, quando já se sabia o formato real do que o WhatsApp manda — tabela
+> criada "por garantia" e nunca usada só acumula divergência. `connections`
+> (0006) guarda credencial por referência; o valor fica no Vault.
 >
 > **RLS ligada e sem política nenhuma**, de propósito: a chave `publishable` não
 > lê nem escreve nada, e todo acesso passa pelo servidor com a chave `secret`.

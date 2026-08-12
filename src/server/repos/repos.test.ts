@@ -37,7 +37,8 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
     criados.push(criado.id)
 
     expect(criado.id).toMatch(/^[0-9a-f-]{36}$/)
-    expect(criado.iaHabilitada).toBe(false)
+    // Nasce sem contexto, e é por isso que a tela de contexto existe: sem ele
+    // preenchido, fluxo com bloco de IA não publica.
     expect(criado.contextoNegocio).toBe('')
 
     const achado = await acharCliente(criado.id)
