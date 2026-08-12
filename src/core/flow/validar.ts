@@ -181,8 +181,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
     if (no.type === 'ia' && !iaHabilitada) {
       erros.push({
         codigo: 'IA_NAO_CONTRATADA',
-        mensagem:
-          'Este bloco usa IA, que é um plano à parte e não está contratado para este cliente.',
+        mensagem: `${descrever(no)} usa IA, que é um plano à parte e não está contratado para este cliente.`,
         noId: no.id,
       })
     }
@@ -199,8 +198,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
     if (no.type === 'http' && no.data.conexaoId && conexoes && !conexoes.includes(no.data.conexaoId)) {
       erros.push({
         codigo: 'CONEXAO_INEXISTENTE',
-        mensagem:
-          'Este bloco usa uma credencial que não existe mais neste cliente. Escolha outra, ou tire a credencial.',
+        mensagem: `${descrever(no)} usa uma credencial que não existe mais neste cliente. Escolha outra, ou tire a credencial.`,
         noId: no.id,
       })
     }
@@ -224,7 +222,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
     if (!alcancaveis.has(no.id)) {
       avisos.push({
         codigo: 'NO_ORFAO',
-        mensagem: 'Este bloco está solto: a conversa nunca chega nele.',
+        mensagem: `${descrever(no)} está solto: a conversa nunca chega nele.`,
         noId: no.id,
       })
     }
@@ -242,6 +240,44 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
   for (const problema of conferirVariaveis(fluxo)) avisos.push(problema)
 
   return { ok: erros.length === 0, erros, avisos }
+}
+
+/**
+ * Como chamar um bloco dentro de uma mensagem para quem desenhou.
+ *
+ * Existe porque as listas de impedimento e de aviso são do **fluxo inteiro**,
+ * não do bloco selecionado. Sem isto, dois blocos soltos viravam duas linhas
+ * idênticas dizendo "Este bloco está solto" — e "este" não respondia qual, que
+ * é exatamente o que a pessoa precisa saber para consertar.
+ *
+ * O texto do bloco é o que identifica melhor, porque é o que se lê no desenho.
+ * Quando ele está vazio sobra o tipo, que ao menos estreita a busca.
+ */
+function descrever(no: No): string {
+  const curto = (texto: string) => {
+    const limpo = texto.trim().replace(/\s+/g, ' ')
+    if (limpo === '') return ''
+    return limpo.length > 38 ? `"${limpo.slice(0, 38)}…"` : `"${limpo}"`
+  }
+  const rotular = (tipo: string, detalhe: string) =>
+    detalhe === '' ? `O bloco de ${tipo}` : `${tipo} ${detalhe}`
+
+  switch (no.type) {
+    case 'mensagem':
+      return rotular('Mensagem', curto(no.data.texto))
+    case 'pergunta':
+      return rotular('Pergunta', curto(no.data.texto))
+    case 'condicao':
+      return rotular('Condição sobre', curto(no.data.variavel))
+    case 'salvar-campo':
+      return rotular('Guardar em', curto(no.data.campo))
+    case 'ia':
+      return rotular('IA', curto(no.data.instrucao))
+    case 'handoff':
+      return rotular('Falar com humano', curto(no.data.motivo))
+    case 'http':
+      return rotular('API', curto(no.data.url))
+  }
 }
 
 /**
@@ -302,7 +338,7 @@ function conferirConteudo(no: No, erros: Problema[]): void {
     case 'salvar-campo':
       conferirVariavel(no.data.campo, 'campo')
       if (vazio(no.data.campo)) {
-        erros.push({ codigo: 'CAMPO_VAZIO', mensagem: 'Este bloco não diz em qual campo guardar.', noId: no.id })
+        erros.push({ codigo: 'CAMPO_VAZIO', mensagem: `${descrever(no)} não diz em qual campo guardar.`, noId: no.id })
       }
       break
 
@@ -325,7 +361,7 @@ function conferirConteudo(no: No, erros: Problema[]): void {
 
     case 'http': {
       if (vazio(no.data.url)) {
-        erros.push({ codigo: 'URL_VAZIA', mensagem: 'Este bloco não diz qual endereço chamar.', noId: no.id })
+        erros.push({ codigo: 'URL_VAZIA', mensagem: `${descrever(no)} não diz qual endereço chamar.`, noId: no.id })
       } else if (temVariavelNoHost(no.data.url)) {
         erros.push({
           codigo: 'HOST_VARIAVEL',
@@ -495,7 +531,7 @@ function conferirVariaveis(fluxo: Fluxo): Problema[] {
       if (!definidas.has(citada)) {
         problemas.push({
           codigo: 'VARIAVEL_DESCONHECIDA',
-          mensagem: `Este bloco usa {{${citada}}}, mas nenhum bloco preenche essa informação.`,
+          mensagem: `${descrever(no)} usa {{${citada}}}, mas nenhum bloco preenche essa informação.`,
           noId: no.id,
         })
       }
@@ -508,8 +544,7 @@ function conferirVariaveis(fluxo: Fluxo): Problema[] {
     if (textos.some((t) => CITA_SEGREDO.test(t))) {
       problemas.push({
         codigo: 'SEGREDO_INEXISTENTE',
-        mensagem:
-          'Este bloco usa {{segredo.…}}, e o cofre de segredos ainda não existe. Hoje isso sai literal na chamada.',
+        mensagem: `${descrever(no)} usa {{segredo.…}}, e o cofre de segredos ainda não existe. Hoje isso sai literal na chamada.`,
         noId: no.id,
       })
     }

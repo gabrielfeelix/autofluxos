@@ -578,3 +578,61 @@ describe('pergunta com opções dinâmicas', () => {
     expect(codigos(validar(fluxo).avisos)).toContain('VARIAVEL_DESCONHECIDA')
   })
 })
+
+describe('as mensagens dizem de qual bloco estão falando', () => {
+  /**
+   * As listas de impedimento e aviso são do fluxo inteiro, não do bloco
+   * selecionado. Mensagem que começa com "Este bloco" vira, com dois blocos no
+   * mesmo estado, duas linhas idênticas — e nenhuma responde qual é qual.
+   */
+  it('dois blocos soltos viram dois avisos distinguíveis', () => {
+    const fluxo = fluxoValido()
+    fluxo.nodes.push(
+      { id: 'orfao1', type: 'mensagem', position: p, data: { texto: 'Promoção de janeiro' } },
+      { id: 'orfao2', type: 'mensagem', position: p, data: { texto: 'Aviso de recesso' } },
+    )
+
+    const soltos = validar(fluxo).avisos.filter((a) => a.codigo === 'NO_ORFAO')
+    expect(soltos).toHaveLength(2)
+    expect(soltos[0]?.mensagem).toContain('Promoção de janeiro')
+    expect(soltos[1]?.mensagem).toContain('Aviso de recesso')
+    expect(soltos[0]?.mensagem).not.toBe(soltos[1]?.mensagem)
+  })
+
+  it('bloco sem texto ainda se identifica pelo tipo', () => {
+    const fluxo = fluxoValido()
+    fluxo.nodes.push({ id: 'orfao', type: 'mensagem', position: p, data: { texto: '' } })
+
+    const solto = validar(fluxo).avisos.find((a) => a.codigo === 'NO_ORFAO')
+    expect(solto?.mensagem).toContain('bloco de Mensagem')
+  })
+
+  it('texto comprido é cortado em vez de virar um parágrafo na lista', () => {
+    const fluxo = fluxoValido()
+    fluxo.nodes.push({
+      id: 'orfao',
+      type: 'mensagem',
+      position: p,
+      data: { texto: 'a'.repeat(200) },
+    })
+
+    const solto = validar(fluxo).avisos.find((a) => a.codigo === 'NO_ORFAO')
+    expect(solto?.mensagem.length).toBeLessThan(110)
+    expect(solto?.mensagem).toContain('…')
+  })
+
+  it('a API solta se identifica pelo endereço', () => {
+    const fluxo = fluxoValido()
+    fluxo.nodes.push(
+      noHttpSchema.parse({
+        id: 'orfao',
+        type: 'http',
+        position: p,
+        data: { metodo: 'GET', url: 'https://viacep.com.br/ws/01310100/json/' },
+      }),
+    )
+
+    const solto = validar(fluxo).avisos.find((a) => a.codigo === 'NO_ORFAO')
+    expect(solto?.mensagem).toContain('viacep')
+  })
+})
