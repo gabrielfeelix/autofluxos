@@ -115,8 +115,10 @@ na versão publicada e handoff no fim. O caminho do lead quente, de ponta a pont
 
 `+55 44 7400-7438` · phone_number_id `1301107846409860` · WABA `2245936116250161`
 
-`VERIFIED` e `CONNECTED`. O PIN de 2 fatores usado no `register` está no cofre
-como `AUTOFLUXOS_WA_PIN` — ele é pedido de novo se o número for movido.
+`VERIFIED` e `CONNECTED`. O PIN de 2 fatores usado no `register` é pedido de
+novo se o número for movido de WABA — e **ele não está guardado em lugar
+nenhum**, apesar do que esta seção dizia até 12/ago. Ver "Segredos" mais abaixo:
+é a pendência mais cara deste documento, porque sem o PIN o número trava.
 
 ### O que custou caro descobrir
 
@@ -241,13 +243,33 @@ O que ainda trava **atender cliente de verdade** são as três coisas da seção
 - Painel já tem `Cliente 00 — Gabriel` com o fluxo de triagem **publicado (v1)**
   e o número conectado.
 
-### Segredos já no cofre (`.secrets/4yu.env`, prefixo `AUTOFLUXOS_`)
+### Segredos — ATENÇÃO, este documento estava errado aqui
 
-`META_APP_SECRET`, `WA_TOKEN` (usuário do sistema, permanente),
-`WA_PHONE_NUMBER_ID`, `WA_WABA_ID`, `WA_VERIFY_TOKEN`, `PAINEL_SENHA`,
-`SUPABASE_*`.
+Até 12/ago esta seção dizia que os segredos do AutoFluxos estavam em
+`.secrets/4yu.env` com o prefixo `AUTOFLUXOS_`. **Conferido: não estão.** Não
+existe **nenhuma** variável com esse prefixo naquele arquivo — ele é de 10/ago,
+anterior a este projeto, e só tem os segredos dos outros produtos.
 
-Todas já publicadas na Vercel e em produção.
+Onde eles realmente estão hoje:
+
+| Variável | `.secrets/4yu.env` | `autofluxos/.env` (local, fora do git) | Vercel |
+|---|---|---|---|
+| `SUPABASE_URL`, `SUPABASE_SECRET_KEY` | não | sim | sim |
+| `META_APP_SECRET` | não | sim | sim |
+| `WHATSAPP_TOKEN`, `WHATSAPP_VERIFY_TOKEN` | não | sim | sim |
+| `GEMINI_API_KEY` | não | sim | sim |
+| `PAINEL_SENHA` | não | **não** | sim |
+| PIN de 2 fatores do número (o tal `AUTOFLUXOS_WA_PIN`) | **não** | não | não |
+
+**O que fazer com isso, e é do Gabriel:** copiar essas variáveis para
+`.secrets/4yu.env` com o prefixo `AUTOFLUXOS_`, como a `4yu-apps/CLAUDE.md`
+manda. Enquanto não for feito, a Vercel é a **única** cópia de `PAINEL_SENHA` —
+recuperável, é só gerar outra — e o **PIN de 2 fatores do número não tem cópia
+nenhuma**. Esse é o que dói: ele é pedido de novo se o número for movido de
+WABA, e sem ele o número trava.
+
+Um agente não faz essa cópia sozinho: mover credencial viva entre cofres é ato
+do dono, não efeito colateral de uma revisão.
 
 ---
 
