@@ -115,10 +115,10 @@ na versão publicada e handoff no fim. O caminho do lead quente, de ponta a pont
 
 `+55 44 7400-7438` · phone_number_id `1301107846409860` · WABA `2245936116250161`
 
-`VERIFIED` e `CONNECTED`. O PIN de 2 fatores usado no `register` é pedido de
-novo se o número for movido de WABA — e **ele não está guardado em lugar
-nenhum**, apesar do que esta seção dizia até 12/ago. Ver "Segredos" mais abaixo:
-é a pendência mais cara deste documento, porque sem o PIN o número trava.
+`VERIFIED` e `CONNECTED`. O PIN de 2 fatores usado no `register` está no cofre
+como `AUTOFLUXOS_WA_PIN` — **no cofre da máquina de casa**, que é o completo.
+Ele é pedido de novo se o número for movido de WABA. Ver "Segredos" mais abaixo
+sobre as duas máquinas não estarem iguais.
 
 ### O que custou caro descobrir
 
@@ -243,33 +243,34 @@ O que ainda trava **atender cliente de verdade** são as três coisas da seção
 - Painel já tem `Cliente 00 — Gabriel` com o fluxo de triagem **publicado (v1)**
   e o número conectado.
 
-### Segredos — ATENÇÃO, este documento estava errado aqui
+### Segredos — o cofre depende de qual máquina você está
 
-Até 12/ago esta seção dizia que os segredos do AutoFluxos estavam em
-`.secrets/4yu.env` com o prefixo `AUTOFLUXOS_`. **Conferido: não estão.** Não
-existe **nenhuma** variável com esse prefixo naquele arquivo — ele é de 10/ago,
-anterior a este projeto, e só tem os segredos dos outros produtos.
+Esta seção dizia que os segredos do AutoFluxos estavam em `.secrets/4yu.env`
+com o prefixo `AUTOFLUXOS_`. **Depende da máquina:** na de casa estão; na do
+trabalho o `.secrets/4yu.env` é uma cópia de 10/ago, anterior a este projeto, e
+não tem nenhuma variável com esse prefixo.
 
-Onde eles realmente estão hoje:
+Vale a pena saber disso antes de tentar usar: derivar o cookie do painel a
+partir do cofre falha em silêncio na máquina do trabalho, e parece problema de
+produção quando é só o arquivo estar velho ali.
 
-| Variável | `.secrets/4yu.env` | `autofluxos/.env` (local, fora do git) | Vercel |
+O que existe em cada lugar, **na máquina do trabalho**:
+
+| Variável | `.secrets/4yu.env` (aqui) | `autofluxos/.env` (local, fora do git) | Vercel |
 |---|---|---|---|
 | `SUPABASE_URL`, `SUPABASE_SECRET_KEY` | não | sim | sim |
 | `META_APP_SECRET` | não | sim | sim |
 | `WHATSAPP_TOKEN`, `WHATSAPP_VERIFY_TOKEN` | não | sim | sim |
 | `GEMINI_API_KEY` | não | sim | sim |
 | `PAINEL_SENHA` | não | **não** | sim |
-| PIN de 2 fatores do número (o tal `AUTOFLUXOS_WA_PIN`) | **não** | não | não |
+| PIN de 2 fatores do número (`AUTOFLUXOS_WA_PIN`) | não | não | não |
 
-**O que fazer com isso, e é do Gabriel:** copiar essas variáveis para
-`.secrets/4yu.env` com o prefixo `AUTOFLUXOS_`, como a `4yu-apps/CLAUDE.md`
-manda. Enquanto não for feito, a Vercel é a **única** cópia de `PAINEL_SENHA` —
-recuperável, é só gerar outra — e o **PIN de 2 fatores do número não tem cópia
-nenhuma**. Esse é o que dói: ele é pedido de novo se o número for movido de
-WABA, e sem ele o número trava.
+O PIN **está no cofre da máquina de casa** — não se perdeu. O que falta é o
+`.secrets/4yu.env` das duas máquinas estar igual; enquanto não estiver, tarefa
+que precisa de segredo só roda em casa.
 
-Um agente não faz essa cópia sozinho: mover credencial viva entre cofres é ato
-do dono, não efeito colateral de uma revisão.
+Um agente não sincroniza isso sozinho: mover credencial viva entre máquinas é
+ato do dono, não efeito colateral de uma revisão.
 
 ---
 
