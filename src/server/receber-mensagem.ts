@@ -2,9 +2,12 @@ import 'server-only'
 import { z } from 'zod'
 import { canalCloudApi } from '@/channels/cloud-api'
 import type { Canal } from '@/channels/types'
-import { executar } from '@/core/engine/executar'
 import { sessaoNova, type Acao, type Entrada } from '@/core/engine/types'
+import { executarComIa, type OpcoesDeIa } from './ia/conduzir'
+import { escolherModelo } from './ia/modelo'
+import { acharCliente } from './repos/clientes'
 import { acharFluxo, acharVersao } from './repos/fluxos'
+import { lerConversa } from './repos/leads'
 import {
   acharCanalPorNumero,
   acharOuCriarContato,
@@ -158,10 +161,52 @@ async function tratarUma(
 
   // Conversa nova começa pelo início do fluxo. A primeira mensagem da pessoa
   // é o gatilho, não uma resposta — ela ainda não foi perguntada nada.
-  const resultado = executar(versao.grafo, salva.sessao, conversaNova ? { tipo: 'inicio' } : entrada)
+  const resultado = await executarComIa(
+    versao.grafo,
+    salva.sessao,
+    conversaNova ? { tipo: 'inicio' } : entrada,
+    await prepararIa(canalSalvo, contato.id, versao.grafo, texto),
+  )
 
   await guardarSessao(salva.id, resultado.sessao)
   await aplicar(fabricaDeCanal(canalSalvo), contato, salva.id, resultado.acoes)
+}
+
+/**
+ * O que a IA precisa para responder — buscado **só quando o fluxo tem IA**.
+ *
+ * A checagem no grafo evita duas consultas por mensagem em todo cliente que não
+ * contratou Etapa 2, que hoje é a maioria. Custo zero para quem não usa.
+ */
+async function prepararIa(
+  canalSalvo: CanalSalvo,
+  contatoId: string,
+  grafo: { nodes: { type: string }[] },
+  perguntaDaPessoa: string | null,
+): Promise<OpcoesDeIa> {
+  const vazio: OpcoesDeIa = { modelo: null, contextoNegocio: '' }
+  if (!grafo.nodes.some((n) => n.type === 'ia') || !canalSalvo.flowId) return vazio
+
+  const [fluxo, cliente, conversa] = await Promise.all([
+    acharFluxo(canalSalvo.flowId),
+    acharCliente(canalSalvo.clienteId),
+    lerConversa(contatoId, 10),
+  ])
+
+  // O plano é lido do fluxo **agora**, e não da versão publicada: contrato não
+  // congela junto com o desenho. Desligar a IA tem que valer na próxima
+  // mensagem, não na próxima publicação.
+  const { modelo } = escolherModelo({ iaHabilitada: fluxo?.iaHabilitada ?? false })
+
+  return {
+    modelo,
+    contextoNegocio: cliente?.contextoNegocio ?? '',
+    perguntaDaPessoa: perguntaDaPessoa ?? undefined,
+    historico: conversa.mensagens.map((m) => ({
+      de: m.direcao === 'entrada' ? ('pessoa' as const) : ('bot' as const),
+      texto: m.texto ?? '(áudio ou imagem)',
+    })),
+  }
 }
 
 async function aplicar(

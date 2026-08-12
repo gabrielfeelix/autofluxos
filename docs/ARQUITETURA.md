@@ -175,7 +175,25 @@ Business API. Bot task-oriented é permitido. Então o nó `ia` sempre roda com:
 
 Isso não é limitação técnica nossa. É o que mantém o número do cliente vivo.
 
-### 7. A chave da IA é do cliente (BYOK) — e o free tier não serve pra produção
+### 7. A chave da IA — uma nossa para demonstrar, uma paga do cliente para produzir
+
+> **Revisado em 11/ago/2026, com o módulo construído e medido.** O texto abaixo
+> continua valendo para produção. O que mudou: existe **uma chave da 4YU**
+> (`GEMINI_API_KEY`) usada para demonstração — desenhar o fluxo na frente do
+> cliente, na reunião, e ele já responder. Nesse cenário quem conversa somos nós
+> e o prospect, com dado inventado: não há terceiro cujo dado vá para treino.
+> A linha continua exatamente onde este texto põe: **conversa de cliente final
+> exige chave paga.** Quem escolhe a chave é `server/ia/modelo.ts`, e ela devolve
+> de quem é a chave para a tela poder mostrar — regra visível vale mais que
+> promessa em documento.
+>
+> **Medido na chave real** (AI Studio, projeto AutoFluxos): o free tier é
+> **por modelo e por dia** — `gemini-flash-latest` dá **20 chamadas/dia**. Não
+> sustenta uma reunião. Para demonstrar, ou troque de modelo em `GEMINI_MODELO`
+> (a cota de cada um é separada) ou ative faturamento no projeto do AI Studio,
+> que é barato no Flash-Lite e resolve cota e treino de uma vez.
+
+### 7.1 O texto original (continua valendo para produção)
 
 **O cliente paga a IA, sempre.** Cada cliente cadastra a própria chave. Isso
 resolve custo, cota e responsabilidade de uma vez: se o Reinaldo mandar 50 mil
@@ -657,9 +675,15 @@ O nó `ia` entra. O cliente paga à parte, com a chave dele (§7). Comercialment
 um plano acima; tecnicamente é **um tipo de nó a mais** — o resto do sistema não
 muda em nada.
 
-Isso vira uma flag: `clients.ia_habilitada`. O validador recusa publicar fluxo
-com nó `ia` para cliente que não contratou. Vender IA passa a ser ligar um
-booleano, não fazer um deploy.
+Isso vira uma flag — e ela mora **no fluxo**, não no cliente:
+`flows.ia_habilitada` (migration 0005). O mesmo negócio pode ter uma triagem
+simples de horário e uma automação de dúvidas com IA; o que se vende, se cobra e
+se entrega é a automação. Amarrar no cliente obrigaria a cadastrar duas vezes o
+mesmo negócio.
+
+O validador recusa publicar fluxo com nó `ia` sem esse booleano, e o padrão é
+**falhar fechado**. Vender IA passa a ser marcar uma caixa ao criar a automação,
+não fazer um deploy.
 
 ### Etapa 3 — Encaixar a Prelúdio **sem tocar no produto**
 

@@ -23,9 +23,15 @@ const novaChave = () => ++sequencia
  */
 export function Conversa({
   fluxo,
+  contextoNegocio = '',
+  iaHabilitada = false,
   aoMudarSessao,
 }: {
   fluxo: Fluxo
+  /** O que o cliente escreveu sobre o negócio: é o que fecha o escopo da IA. */
+  contextoNegocio?: string
+  /** Espelha o plano da automação. Sem isto, o bloco de IA não chama modelo. */
+  iaHabilitada?: boolean
   aoMudarSessao?: (sessao: Sessao) => void
 }) {
   const [itens, setItens] = useState<Item[]>([])
@@ -36,6 +42,9 @@ export function Conversa({
   const [desatualizada, setDesatualizada] = useState(false)
 
   const sessaoRef = useRef<Sessao>(sessaoNova())
+  // Espelho dos itens para montar o histórico sem depender do fechamento do
+  // render em que `enviar` foi criada.
+  const itensRef = useRef<Item[]>([])
   const fimDaLista = useRef<HTMLDivElement>(null)
   const jaComecou = useRef(false)
   const assinaturaDoInicio = useRef('')
@@ -53,7 +62,17 @@ export function Conversa({
       const resposta = await fetch('/api/simular', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ fluxo, sessao: sessaoRef.current, entrada }),
+        body: JSON.stringify({
+          fluxo,
+          sessao: sessaoRef.current,
+          entrada,
+          contextoNegocio,
+          iaHabilitada,
+          // O que já foi dito, para a IA não repetir pergunta respondida.
+          historico: itensRef.current
+            .filter((i) => i.de !== 'sistema')
+            .map((i) => ({ de: i.de === 'pessoa' ? 'pessoa' : 'bot', texto: i.texto })),
+        }),
       })
 
       if (!resposta.ok) {
@@ -147,6 +166,7 @@ export function Conversa({
   }, [assinatura])
 
   useEffect(() => {
+    itensRef.current = itens
     fimDaLista.current?.scrollIntoView({ behavior: 'smooth' })
   }, [itens])
 

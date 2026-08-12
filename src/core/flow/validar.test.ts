@@ -204,3 +204,49 @@ describe('validar', () => {
     expect(codigos(validar(fluxo).erros)).toContain('ID_DUPLICADO')
   })
 })
+
+describe('IA é plano à parte', () => {
+  /** Um fluxo com bloco de IA, válido em tudo o mais. */
+  const comIa: Fluxo = {
+    inicio: 'duvida',
+    nodes: [
+      {
+        id: 'duvida',
+        type: 'ia',
+        position: { x: 0, y: 0 },
+        data: { instrucao: 'Responda a dúvida do cliente.' },
+      },
+      {
+        id: 'humano',
+        type: 'handoff',
+        position: { x: 0, y: 100 },
+        data: { motivo: 'fim', mensagem: 'Já te passo para alguém.' },
+      },
+    ],
+    edges: [{ id: 'a1', source: 'duvida', target: 'humano' }],
+  }
+
+  it('recusa publicar fluxo com IA quando a automação não contratou', () => {
+    const r = validar(comIa)
+    expect(r.ok).toBe(false)
+    expect(r.erros.map((e) => e.codigo)).toContain('IA_NAO_CONTRATADA')
+  })
+
+  it('aceita quando a automação tem IA', () => {
+    expect(validar(comIa, { iaHabilitada: true }).ok).toBe(true)
+  })
+
+  /**
+   * O padrão é falhar fechado: quem esquecer de dizer que a automação tem IA vê
+   * a publicação ser recusada — o erro barulhento. O contrário seria entregar
+   * IA de graça por descuido de chamada.
+   */
+  it('sem dizer nada, o padrão é recusar', () => {
+    expect(validar(comIa, {}).ok).toBe(false)
+  })
+
+  it('fluxo sem bloco de IA não é afetado pelo plano', () => {
+    expect(validar(fluxoValido(), { iaHabilitada: false }).ok).toBe(true)
+    expect(validar(fluxoValido(), { iaHabilitada: true }).ok).toBe(true)
+  })
+})

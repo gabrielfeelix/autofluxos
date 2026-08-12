@@ -6,6 +6,7 @@ import {
   acharFluxo,
   acharVersao,
   criarFluxo,
+  definirIa,
   listarFluxos,
   listarVersoes,
   publicar,
@@ -169,6 +170,38 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
       .eq('id', pub.versao.id)
 
     expect(error?.message).toContain('não pode ser alterada')
+  })
+
+  /**
+   * O portão comercial da Etapa 2, ponta a ponta: coluna no banco, leitura no
+   * repo, recusa no `publicar`. Vender IA tem que ser ligar um booleano — e não
+   * ligar tem que impedir de verdade, não só sumir com o botão da tela.
+   */
+  it('RECUSA publicar fluxo com IA enquanto a automação não tiver o plano', async () => {
+    const cliente = await criarCliente(`${marca} plano ia`)
+    criados.push(cliente.id)
+
+    const comIa = structuredClone(fluxoNovo())
+    comIa.nodes.push({
+      id: 'duvida',
+      type: 'ia',
+      position: { x: 400, y: 400 },
+      data: { instrucao: 'Responda a dúvida do cliente.' },
+    })
+    comIa.edges.push({ id: 'para-ia', source: 'abertura', target: 'duvida' })
+
+    const fluxo = await criarFluxo(cliente.id, `${marca} f`, comIa)
+    expect(fluxo.iaHabilitada).toBe(false)
+
+    const recusado = await publicar(fluxo.id, fluxo.rascunho)
+    expect(recusado.ok).toBe(false)
+    expect(!recusado.ok && recusado.erros.map((e) => e.codigo)).toContain('IA_NAO_CONTRATADA')
+    expect(await listarVersoes(fluxo.id)).toEqual([])
+
+    // Contratou: a mesma publicação passa, sem redesenhar nada.
+    await definirIa(fluxo.id, true)
+    const aceito = await publicar(fluxo.id, fluxo.rascunho)
+    expect(aceito.ok).toBe(true)
   })
 
   it('devolve null para id que não existe', async () => {

@@ -7,7 +7,7 @@ import { fluxoNovo } from '@/core/flow/novo'
 import { triagem } from '@/exemplos/triagem'
 import { criarCliente } from './repos/clientes'
 import { criarCanal } from './repos/conversas'
-import { criarFluxo, publicar, salvarRascunho } from './repos/fluxos'
+import { criarFluxo, definirIa, publicar, salvarRascunho } from './repos/fluxos'
 
 export async function acaoCriarCliente(formData: FormData) {
   const nome = String(formData.get('nome') ?? '').trim()
@@ -47,12 +47,18 @@ export async function acaoSalvarRascunho(fluxoId: string, grafo: unknown) {
   return { ok: true as const }
 }
 
+/**
+ * A pergunta "tem IA?" é feita **aqui**, ao criar a automação, e não no
+ * cadastro do cliente: é a automação que se vende com ou sem IA.
+ */
 export async function acaoCriarFluxo(clienteId: string, formData: FormData) {
   const nome = String(formData.get('nome') ?? '').trim()
   if (nome === '') return
 
+  const comIa = formData.get('ia') === 'on'
+
   // Nasce válido de propósito — ver core/flow/novo.ts.
-  const fluxo = await criarFluxo(clienteId, nome, fluxoNovo())
+  const fluxo = await criarFluxo(clienteId, nome, fluxoNovo(), comIa)
   revalidatePath(`/clientes/${clienteId}`)
   redirect(`/clientes/${clienteId}/fluxos/${fluxo.id}`)
 }
@@ -86,4 +92,17 @@ export async function acaoConectarNumero(clienteId: string, formData: FormData) 
 
   await criarCanal({ clienteId, phoneNumberId, flowId: flowId === '' ? null : flowId })
   revalidatePath(`/clientes/${clienteId}`)
+}
+
+/**
+ * Liga/desliga a IA de uma automação já criada.
+ *
+ * Não republica nada de propósito: o que está no ar continua no ar. Desligar a
+ * IA de um fluxo publicado que usa nó de IA só impede a **próxima** publicação
+ * — mexer no que já roda no WhatsApp de alguém tem que ser um ato deliberado.
+ */
+export async function acaoAlternarIa(fluxoId: string, clienteId: string, habilitada: boolean) {
+  await definirIa(fluxoId, habilitada)
+  revalidatePath(`/clientes/${clienteId}`)
+  return { ok: true as const, iaHabilitada: habilitada }
 }

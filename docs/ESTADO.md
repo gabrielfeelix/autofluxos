@@ -44,8 +44,19 @@ Duas coisas que valem saber antes de mexer:
    navegador.
 2. **Verificação de empresa na Meta** (Portfólio - 4YU está "não verificada").
    Demora e não trava hoje, mas trava cliente real depois.
-3. **Etapa 2 (IA)** — vira um tipo de nó a mais e uma flag `ia_habilitada` no
-   cliente. O resto do sistema não muda.
+3. **Etapa 2 (IA) — o módulo existe.** `server/ia/`: prompt de escopo fechado
+   (puro, com teste), adaptador do Gemini, e `conduzir.ts` que resolve o
+   `chamar_ia` do motor. Ligado no simulador e no WhatsApp. A flag é
+   `flows.ia_habilitada` (0005) — **por automação, não por cliente**.
+
+   O que falta: chave paga por cliente (`clients.ia_chave_ref` → Vault). Hoje
+   roda com uma chave da 4YU, boa para demonstração e **não** para conversa de
+   cliente final — o free tier do Google treina modelo com o que passa.
+
+   **Cota medida:** free tier é por modelo e por dia; `gemini-flash-latest` dá
+   **20/dia**. Trocar em `GEMINI_MODELO` usa outra cota. Os testes que chamam o
+   Gemini de verdade só rodam com `IA_TESTE_REAL=1`, justamente para não gastar
+   a cota que sustenta uma demonstração.
 4. Se um dia a lista de leads crescer: paginar `listarLeads` e um filtro de
    "só quem espera atendimento". Hoje seria enfeite.
 

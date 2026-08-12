@@ -21,7 +21,7 @@ import type { Sessao } from '@/core/engine/types'
 import { fluxoSchema, type Fluxo, type No, type TipoNo } from '@/core/flow/schema'
 import type { Problema } from '@/core/flow/validar'
 import { validar } from '@/core/flow/validar'
-import { acaoPublicar, acaoSalvarRascunho } from '@/server/acoes'
+import { acaoAlternarIa, acaoPublicar, acaoSalvarRascunho } from '@/server/acoes'
 import { ICONES, NOMES, tiposDeNo } from './nos'
 import { Painel } from './painel'
 
@@ -78,6 +78,8 @@ export function Editor({
   voltarHref,
   inicial,
   publicadaInicial,
+  iaHabilitada,
+  contextoNegocio,
 }: {
   fluxoId: string
   clienteId: string
@@ -85,6 +87,10 @@ export function Editor({
   clienteNome: string
   voltarHref: string
   inicial: Fluxo
+  /** Etapa 2 é plano à parte: sem contratar, fluxo com nó de IA não publica. */
+  iaHabilitada: boolean
+  /** O que o cliente escreveu sobre o negócio. É o escopo fechado da IA. */
+  contextoNegocio: string
   /** `quando` já vem formatado do servidor — formatar data no cliente daria
    *  divergência de hidratação entre o fuso do servidor e o do navegador. */
   publicadaInicial: { versao: number; quando: string; grafo: Fluxo } | null
@@ -101,11 +107,12 @@ export function Editor({
   const [publicada, setPublicada] = useState(publicadaInicial)
   const [publicando, setPublicando] = useState(false)
   const [errosDePublicacao, setErrosDePublicacao] = useState<Problema[] | null>(null)
+  const [comIa, setComIa] = useState(iaHabilitada)
   const [tela, setTela] = useState<ReactFlowInstance | null>(null)
   const areaRef = useRef<HTMLDivElement>(null)
 
   const fluxo = useMemo(() => paraFluxo(inicio, nodes, edges), [inicio, nodes, edges])
-  const validacao = useMemo(() => validar(fluxo), [fluxo])
+  const validacao = useMemo(() => validar(fluxo, { iaHabilitada: comIa }), [fluxo, comIa])
 
   const assinatura = JSON.stringify(fluxo)
   const assinaturaSalva = useRef(assinatura)
@@ -264,6 +271,29 @@ export function Editor({
         </div>
 
         <div className="flex items-center gap-3 text-xs">
+          {/* O plano da automação, no lugar onde ela é editada. Mudar aqui não
+              republica nada: só muda o que a próxima publicação aceita. */}
+          <label
+            title="IA é plano à parte. Sem isto, fluxo com bloco de IA não publica."
+            className="flex cursor-pointer items-center gap-1.5 text-zinc-500 dark:text-zinc-400"
+          >
+            <input
+              type="checkbox"
+              checked={comIa}
+              onChange={async (e) => {
+                const novo = e.target.checked
+                setComIa(novo)
+                try {
+                  await acaoAlternarIa(fluxoId, clienteId, novo)
+                } catch {
+                  setComIa(!novo)
+                }
+              }}
+              className="size-3.5 accent-fuchsia-600"
+            />
+            com IA
+          </label>
+
           <EstadoSalvamento estado={salvamento} />
 
           <span className="text-zinc-400">
@@ -419,7 +449,12 @@ export function Editor({
             </div>
           ) : (
             <>
-              <Conversa fluxo={fluxo} aoMudarSessao={setSessao} />
+              <Conversa
+                fluxo={fluxo}
+                contextoNegocio={contextoNegocio}
+                iaHabilitada={comIa}
+                aoMudarSessao={setSessao}
+              />
               {sessao && (
                 <div className="shrink-0 border-t border-zinc-200 p-3 text-[11px] dark:border-zinc-800">
                   <p className="text-zinc-400">

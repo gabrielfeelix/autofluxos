@@ -23,6 +23,23 @@ export type ResultadoValidacao = {
 }
 
 /**
+ * O que o dono do fluxo tem direito de usar.
+ *
+ * Repare que é uma **capacidade**, não um cliente: o `core/` continua sem saber
+ * que existe tabela `clients` ou coluna `ia_habilitada`. Ele só sabe responder
+ * "com IA disponível, este desenho pode ir ao ar?". Quem traduz contrato em
+ * capacidade é a camada de fora.
+ */
+export type Capacidades = {
+  /**
+   * IA é plano à parte (Etapa 2). O padrão é `false` — **falha fechado**: quem
+   * esquecer de dizer que o cliente contratou vê a publicação ser recusada, que
+   * é o erro barulhento. O contrário seria vender IA por descuido.
+   */
+  iaHabilitada?: boolean
+}
+
+/**
  * Confere se o fluxo pode ir ao ar.
  *
  * A regra que mais importa aqui é a do handoff alcançável: o sistema se recusa
@@ -30,7 +47,8 @@ export type ResultadoValidacao = {
  * diferença entre um produto que previne o "hello loop" e um produto que confia
  * na memória de quem desenhou o fluxo.
  */
-export function validar(fluxo: Fluxo): ResultadoValidacao {
+export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoValidacao {
+  const { iaHabilitada = false } = capacidades
   const erros: Problema[] = []
   const avisos: Problema[] = []
 
@@ -102,6 +120,18 @@ export function validar(fluxo: Fluxo): ResultadoValidacao {
           noId: no.id,
         })
       }
+    }
+
+    // O portão comercial da Etapa 2. Sem ele, um fluxo com nó de IA publica
+    // para quem não contratou e a conversa vira handoff silencioso em produção
+    // — o cliente vê o bot "desistindo" sem ninguém entender por quê.
+    if (no.type === 'ia' && !iaHabilitada) {
+      erros.push({
+        codigo: 'IA_NAO_CONTRATADA',
+        mensagem:
+          'Este bloco usa IA, que é um plano à parte e não está contratado para este cliente.',
+        noId: no.id,
+      })
     }
 
     if (no.type === 'condicao') {

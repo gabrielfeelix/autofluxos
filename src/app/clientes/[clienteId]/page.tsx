@@ -34,9 +34,8 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           </Link>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight">{cliente.nome}</h1>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            {cliente.iaHabilitada
-              ? 'IA habilitada.'
-              : 'IA não contratada — Etapa 1, automação pura.'}
+            A IA é contratada por automação, não por cliente — cada fluxo abaixo diz
+            se usa.
           </p>
         </div>
 
@@ -114,7 +113,7 @@ async function Conteudo({ cliente }: { cliente: Cliente }) {
 
         <ul className="space-y-2">
           {fluxos.map((fluxo) => {
-            const validacao = validar(fluxo.rascunho)
+            const validacao = validar(fluxo.rascunho, { iaHabilitada: fluxo.iaHabilitada })
             return (
               <li key={fluxo.id}>
                 <Link
@@ -128,6 +127,11 @@ async function Conteudo({ cliente }: { cliente: Cliente }) {
                     </span>
                   </span>
                   <span className="flex shrink-0 items-center gap-2">
+                    {fluxo.iaHabilitada && (
+                      <span className="rounded bg-fuchsia-500/15 px-2 py-0.5 text-xs font-medium text-fuchsia-700 dark:text-fuchsia-400">
+                        com IA
+                      </span>
+                    )}
                     {!validacao.ok && (
                       <span className="rounded bg-red-500/15 px-2 py-0.5 text-xs font-medium text-red-700 dark:text-red-400">
                         {validacao.erros.length} erro(s)
@@ -215,19 +219,25 @@ async function Conteudo({ cliente }: { cliente: Cliente }) {
 
       <form
         action={criarComCliente}
-        className="flex gap-2 border-t border-zinc-200 pt-6 dark:border-zinc-800"
+        className="flex flex-wrap items-center gap-2 border-t border-zinc-200 pt-6 dark:border-zinc-800"
       >
         <input
           name="nome"
           required
-          placeholder="Nome do novo fluxo"
-          className="flex-1 rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none focus:border-emerald-500 dark:border-zinc-700"
+          placeholder="Nome da nova automação"
+          className="min-w-48 flex-1 rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none focus:border-emerald-500 dark:border-zinc-700"
         />
+        {/* A pergunta que decide o plano, feita no momento em que a automação
+            nasce — que é quando você já sabe o que vendeu. */}
+        <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+          <input name="ia" type="checkbox" className="size-4 accent-fuchsia-600" />
+          com IA
+        </label>
         <button
           type="submit"
           className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium transition hover:bg-zinc-200 dark:border-zinc-700 dark:hover:bg-zinc-800"
         >
-          Novo fluxo
+          Criar automação
         </button>
       </form>
     </>

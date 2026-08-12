@@ -15,6 +15,13 @@ export type FluxoSalvo = {
   atualizadoEm: string
   /** `null` = nunca publicado. */
   versaoPublicadaId: string | null
+  /**
+   * Etapa 2 contratada **para esta automação** (0005).
+   *
+   * Fica no fluxo e não no cliente porque é a automação que se vende: o mesmo
+   * negócio pode ter uma triagem simples e uma automação com IA.
+   */
+  iaHabilitada: boolean
 }
 
 /** Uma foto imutável do fluxo. É isto que as conversas executam. */
@@ -32,9 +39,11 @@ type Linha = {
   rascunho: unknown
   atualizado_em: string
   versao_publicada_id: string | null
+  ia_habilitada: boolean
 }
 
-const COLUNAS = 'id, client_id, nome, rascunho, atualizado_em, versao_publicada_id'
+const COLUNAS =
+  'id, client_id, nome, rascunho, atualizado_em, versao_publicada_id, ia_habilitada'
 
 /**
  * `rascunho` é `jsonb`: o banco aceita qualquer coisa ali. Uma migração
@@ -58,6 +67,7 @@ function paraFluxo(linha: Linha): FluxoSalvo {
     rascunho: analise.data,
     atualizadoEm: linha.atualizado_em,
     versaoPublicadaId: linha.versao_publicada_id,
+    iaHabilitada: linha.ia_habilitada,
   }
 }
 
@@ -83,10 +93,16 @@ export async function criarFluxo(
   clienteId: string,
   nome: string,
   rascunho: Fluxo,
+  iaHabilitada = false,
 ): Promise<FluxoSalvo> {
   const { data, error } = await db()
     .from('flows')
-    .insert({ client_id: clienteId, nome: nome.trim(), rascunho: fluxoSchema.parse(rascunho) })
+    .insert({
+      client_id: clienteId,
+      nome: nome.trim(),
+      rascunho: fluxoSchema.parse(rascunho),
+      ia_habilitada: iaHabilitada,
+    })
     .select(COLUNAS)
     .single()
 
@@ -148,6 +164,10 @@ export async function listarVersoes(fluxoId: string): Promise<Omit<VersaoPublica
  * Salva o rascunho junto, de propósito: publicar tem que publicar exatamente o
  * que está na tela de quem clicou, e não uma versão anterior que por acaso
  * estava no banco.
+ *
+ * O contrato de IA é lido **aqui**, do banco, e não recebido por parâmetro. Um
+ * booleano que chega de fora é um booleano que a chamada errada manda `true` —
+ * e este é o portão que separa quem paga pela Etapa 2 de quem não paga.
  */
 export async function publicar(
   fluxoId: string,
@@ -161,7 +181,15 @@ export async function publicar(
     }
   }
 
-  const conferido = validar(analise.data)
+  const fluxo = await acharFluxo(fluxoId)
+  if (!fluxo) {
+    return {
+      ok: false,
+      erros: [{ codigo: 'FLUXO_SUMIU', mensagem: 'Este fluxo não existe mais.' }],
+    }
+  }
+
+  const conferido = validar(analise.data, { iaHabilitada: fluxo.iaHabilitada })
   if (!conferido.ok) return { ok: false, erros: conferido.erros }
 
   await salvarRascunho(fluxoId, analise.data)
@@ -183,4 +211,14 @@ export async function publicar(
       grafo: fluxoSchema.parse(linha.grafo),
     },
   }
+}
+
+/** Liga ou desliga a IA desta automação. É o que se vende, então é explícito. */
+export async function definirIa(fluxoId: string, habilitada: boolean): Promise<void> {
+  const { error } = await db()
+    .from('flows')
+    .update({ ia_habilitada: habilitada })
+    .eq('id', fluxoId)
+
+  if (error) throw new Error(`não deu para mudar a IA do fluxo: ${error.message}`)
 }

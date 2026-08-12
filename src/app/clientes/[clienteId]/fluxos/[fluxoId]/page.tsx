@@ -42,6 +42,8 @@ export default async function Pagina({
       clienteNome={cliente.nome}
       voltarHref={`/clientes/${cliente.id}`}
       inicial={fluxo.rascunho}
+      iaHabilitada={fluxo.iaHabilitada}
+      contextoNegocio={cliente.contextoNegocio}
       publicadaInicial={
         publicada
           ? { versao: publicada.versao, quando: quando(publicada.publicadoEm), grafo: publicada.grafo }
