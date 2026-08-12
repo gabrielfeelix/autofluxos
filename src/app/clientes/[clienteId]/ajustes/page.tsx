@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { ClienteShell } from '@/components/design/cliente-shell'
 import type { ReactNode } from 'react'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarConexoes } from '@/server/repos/conexoes'
@@ -30,46 +31,48 @@ export default async function Pagina({
   const semContexto = cliente.contextoNegocio.trim() === ''
 
   return (
-    <main className="max-w-[720px] px-[42px] pt-[26px] pb-[42px]">
-      <ul className="app-card divide-y divide-white/[0.045] overflow-hidden">
-        <Linha
-          href={`/clientes/${cliente.id}/contexto`}
-          titulo="Contexto do negócio"
-          descricao="A única coisa que o bloco de IA pode dizer. Sem isto, ele responde “não sei” a tudo."
-          estado={
-            semContexto ? (
-              <Selo tom="alerta">vazio</Selo>
-            ) : (
-              <Selo tom="ok">{`${cliente.contextoNegocio.trim().split(/\s+/).length} palavras`}</Selo>
-            )
-          }
-        />
-        <Linha
-          href={`/clientes/${cliente.id}/conexoes`}
-          titulo="Credenciais"
-          descricao="As chaves que os blocos de API usam para falar com os sistemas deste cliente."
-          estado={
-            <Selo tom={conexoes.length === 0 ? 'neutro' : 'ok'}>
-              {conexoes.length === 0
-                ? 'nenhuma'
-                : `${conexoes.length} ${conexoes.length === 1 ? 'chave' : 'chaves'}`}
-            </Selo>
-          }
-        />
-        <Linha
-          href={`/clientes/${cliente.id}/numero`}
-          titulo="Número do WhatsApp"
-          descricao="Qual número atende, qual fluxo ele executa, e o endereço para o painel da Meta."
-          estado={
-            <Selo tom={canais.length === 0 ? 'alerta' : 'ok'}>
-              {canais.length === 0
-                ? 'nenhum'
-                : `${canais.length} ${canais.length === 1 ? 'número' : 'números'}`}
-            </Selo>
-          }
-        />
-      </ul>
-    </main>
+    <ClienteShell cliente={cliente} ativa="ajustes">
+      <main className="max-w-[720px] px-[42px] pt-[26px] pb-[42px]">
+        <ul className="app-card divide-y divide-white/[0.045] overflow-hidden">
+          <Linha
+            href={`/clientes/${cliente.id}/contexto`}
+            titulo="Contexto do negócio"
+            descricao="A única coisa que o bloco de IA pode dizer. Sem isto, ele responde “não sei” a tudo."
+            estado={
+              semContexto ? (
+                <Selo tom="alerta">vazio</Selo>
+              ) : (
+                <Selo tom="ok">{`${cliente.contextoNegocio.trim().split(/\s+/).length} palavras`}</Selo>
+              )
+            }
+          />
+          <Linha
+            href={`/clientes/${cliente.id}/conexoes`}
+            titulo="Credenciais"
+            descricao="As chaves que os blocos de API usam para falar com os sistemas deste cliente."
+            estado={
+              <Selo tom={conexoes.length === 0 ? 'neutro' : 'ok'}>
+                {conexoes.length === 0
+                  ? 'nenhuma'
+                  : `${conexoes.length} ${conexoes.length === 1 ? 'chave' : 'chaves'}`}
+              </Selo>
+            }
+          />
+          <Linha
+            href={`/clientes/${cliente.id}/numero`}
+            titulo="Número do WhatsApp"
+            descricao="Qual número atende, qual fluxo ele executa, e o endereço para o painel da Meta."
+            estado={
+              <Selo tom={canais.length === 0 ? 'alerta' : 'ok'}>
+                {canais.length === 0
+                  ? 'nenhum'
+                  : `${canais.length} ${canais.length === 1 ? 'número' : 'números'}`}
+              </Selo>
+            }
+          />
+        </ul>
+      </main>
+    </ClienteShell>
   )
 }
 

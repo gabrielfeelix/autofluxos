@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
-import { FormularioSalvar } from '@/components/design/formulario-salvar'
-import { acaoSalvarCadastro } from '@/server/acoes'
-import { acharCliente, type Cliente } from '@/server/repos/clientes'
+import { FichaDoCliente } from '@/components/cliente/ficha'
+import { ClienteShell } from '@/components/design/cliente-shell'
+import { acaoRemoverLogo, acaoSalvarCadastro, acaoSalvarLogo } from '@/server/acoes'
+import { acharCliente } from '@/server/repos/clientes'
 import { listarCanais } from '@/server/repos/conversas'
 import { listarFluxos } from '@/server/repos/fluxos'
 import { listarLeads } from '@/server/repos/leads'
@@ -26,13 +27,20 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   if (!cliente) notFound()
 
   return (
-    <main className="max-w-[1000px] px-[42px] pt-[26px] pb-[42px]">
-      <Suspense fallback={<div className="app-card mb-[18px] h-[104px] animate-pulse" />}>
-        <Atendimento clienteId={cliente.id} />
-      </Suspense>
+    <ClienteShell cliente={cliente} ativa="inicio">
+      <main className="max-w-[1000px] px-[42px] pt-[26px] pb-[42px]">
+        <Suspense fallback={<div className="app-card mb-[18px] h-[104px] animate-pulse" />}>
+          <Atendimento clienteId={cliente.id} />
+        </Suspense>
 
-      <Cadastro cliente={cliente} />
-    </main>
+        <FichaDoCliente
+          cliente={cliente}
+          salvarCadastro={acaoSalvarCadastro.bind(null, cliente.id)}
+          salvarLogo={acaoSalvarLogo.bind(null, cliente.id)}
+          removerLogo={acaoRemoverLogo.bind(null, cliente.id)}
+        />
+      </main>
+    </ClienteShell>
   )
 }
 
@@ -127,104 +135,5 @@ function Medida({ valor, rotulo, alerta }: { valor: number; rotulo: string; aler
       </strong>
       <span className="text-[11.5px] text-muted">{rotulo}</span>
     </p>
-  )
-}
-
-function Cadastro({ cliente }: { cliente: Cliente }) {
-  return (
-    <section className="app-card overflow-hidden">
-      <header className="border-b border-white/[0.06] px-6 py-4">
-        <h2 className="text-[14.5px] font-bold">Cadastro</h2>
-        <p className="mt-0.5 text-[12px] text-dim">
-          Quem é este cliente e como falar com ele. É a nossa ficha — nada daqui vai para o
-          WhatsApp.
-        </p>
-      </header>
-
-      <div className="p-6">
-        <FormularioSalvar action={acaoSalvarCadastro.bind(null, cliente.id)} rotulo="Salvar cadastro">
-          <div className="grid grid-cols-2 gap-4">
-            <Campo rotulo="Nome do cliente" nome="nome" valor={cliente.nome} obrigatorio />
-            <Campo
-              rotulo="Quem responde"
-              nome="responsavel"
-              valor={cliente.responsavel}
-              dica="a pessoa com quem a gente fala"
-              exemplo="ex.: Daniel, dono do estúdio"
-            />
-            <Campo
-              rotulo="Telefone"
-              nome="telefone"
-              valor={cliente.telefone}
-              tipo="tel"
-              dica="o contato dessa pessoa, não o número que o bot atende"
-              exemplo="(11) 99999-0000"
-            />
-            <Campo
-              rotulo="E-mail"
-              nome="email"
-              valor={cliente.email}
-              tipo="email"
-              exemplo="nome@empresa.com.br"
-            />
-          </div>
-
-          <label className="mt-5 block">
-            <Rotulo>Observações</Rotulo>
-            <textarea
-              name="observacoes"
-              rows={4}
-              defaultValue={cliente.observacoes}
-              placeholder="Escopo combinado, prazo, o que já foi cobrado."
-              className="app-field resize-y px-3.5 py-3 text-[13px] leading-6"
-            />
-          </label>
-        </FormularioSalvar>
-      </div>
-    </section>
-  )
-}
-
-function Campo({
-  rotulo,
-  nome,
-  valor,
-  tipo = 'text',
-  dica,
-  exemplo,
-  obrigatorio,
-}: {
-  rotulo: string
-  nome: string
-  valor: string
-  tipo?: string
-  dica?: string
-  exemplo?: string
-  obrigatorio?: boolean
-}) {
-  return (
-    <label className="block">
-      <Rotulo>{rotulo}</Rotulo>
-      <input
-        name={nome}
-        type={tipo}
-        required={obrigatorio}
-        defaultValue={valor}
-        placeholder={exemplo}
-        className="app-field px-3.5 py-2.5 text-[13px]"
-      />
-      {/* A dica vem **depois** do campo, e não entre o rótulo e ele: dois campos
-          lado a lado em que só um tem dica ficavam com os inputs em alturas
-          diferentes, e a grade parecia torta sem motivo aparente. */}
-      {dica && <span className="mt-1.5 block text-[11px] text-dim">{dica}</span>}
-    </label>
-  )
-}
-
-function Rotulo({ children }: { children: string }) {
-  return (
-    <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
-      {children}
-    </span>
   )
 }

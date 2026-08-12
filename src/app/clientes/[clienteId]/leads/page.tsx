@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { ClienteShell } from '@/components/design/cliente-shell'
 import { Suspense } from 'react'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarCanais } from '@/server/repos/conversas'
@@ -14,12 +15,14 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   if (!cliente) notFound()
 
   return (
-    <main className="flex min-h-full flex-col px-[42px] pt-[26px] pb-[42px]">
+    <ClienteShell cliente={cliente} ativa="leads">
+      <main className="flex min-h-full flex-col px-[42px] pt-[26px] pb-[42px]">
 
-      <Suspense fallback={<Esqueleto />}>
-        <Tabela clienteId={cliente.id} />
-      </Suspense>
-    </main>
+        <Suspense fallback={<Esqueleto />}>
+          <Tabela clienteId={cliente.id} />
+        </Suspense>
+      </main>
+    </ClienteShell>
   )
 }
 
