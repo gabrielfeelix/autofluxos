@@ -150,10 +150,21 @@ esperado para número não verificado. Testado chamando a Cloud API direto.
 Pedir o código muitas vezes derrubou no limite (`You have requested a
 verification code too many times`). É por tempo; passa sozinho.
 
+### Onde fica a tela (o caminho exato, para não procurar de novo)
+
+No **Gerenciador de Negócios da Meta**, menu da esquerda:
+
+```
+Contas → Contas do WhatsApp → clicar em "4YU Tech" → aba "Phone numbers"
+```
+
+Ali aparece o número **com o status**. O botão de verificar fica nos **três
+pontinhos (`...`) da linha do número** — ou clicando no próprio número.
+
 ### Quando o limite liberar
 
-1. Em **Contas do WhatsApp → 4YU Tech → Phone numbers**, confirmar que o número
-   listado é o certo antes de gastar tentativa.
+1. Nessa tela, confirmar que o número listado é o certo antes de gastar
+   tentativa.
 2. Verificar por **Ligação telefônica**, **uma vez só**, sem pedir reenvio.
 3. Depois de verificado, falta registrar com um PIN de 2 fatores —
    `POST /{phone_number_id}/register`. Dá para fazer pela API com o token que já
