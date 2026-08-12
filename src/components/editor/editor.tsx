@@ -27,7 +27,7 @@ import { Painel } from './painel'
 
 const PAUSA_ANTES_DE_SALVAR = 800
 
-const TIPOS: TipoNo[] = ['mensagem', 'pergunta', 'condicao', 'salvar-campo', 'ia', 'handoff']
+const TIPOS: TipoNo[] = ['mensagem', 'pergunta', 'condicao', 'salvar-campo', 'ia', 'handoff', 'http']
 
 const DESCRICOES: Record<TipoNo, string> = {
   mensagem: 'Envia um texto',
@@ -36,6 +36,7 @@ const DESCRICOES: Record<TipoNo, string> = {
   'salvar-campo': 'Registra no lead',
   ia: 'Responde pelo contexto',
   handoff: 'Passa para uma pessoa',
+  http: 'Chama um sistema',
 }
 
 /** Como cada bloco nasce ao ser arrastado da barra. */
@@ -55,6 +56,18 @@ function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
       return {
         motivo: 'pedido pelo fluxo',
         mensagem: 'Vou te passar para um atendente. Só um instante!',
+      }
+    case 'http':
+      // Nasce chamando o ViaCEP de verdade: dá para arrastar o bloco, abrir a
+      // aba Testar e ver a integração funcionando antes de configurar nada.
+      // É a demonstração de reunião pronta, e é o que prova a cadeia inteira.
+      return {
+        metodo: 'GET',
+        url: 'https://viacep.com.br/ws/01310100/json/',
+        cabecalhos: [],
+        corpo: '',
+        mapear: [{ variavel: 'cidade', caminho: 'localidade' }],
+        aoFalhar: 'humano',
       }
   }
 }

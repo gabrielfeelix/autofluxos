@@ -20,6 +20,7 @@ const CORES = {
   'salvar-campo': 'border-amber-300/30',
   ia: 'border-fuchsia-400/30',
   handoff: 'border-rose-400/30',
+  http: 'border-cyan-400/30',
 } as const
 
 export const ICONES = {
@@ -29,6 +30,7 @@ export const ICONES = {
   'salvar-campo': '↓',
   ia: '✦',
   handoff: '♙',
+  http: '⇄',
 } as const
 
 export const NOMES = {
@@ -38,6 +40,7 @@ export const NOMES = {
   'salvar-campo': 'Guardar',
   ia: 'IA',
   handoff: 'Falar com humano',
+  http: 'API',
 } as const
 
 function Caixa({
@@ -178,6 +181,23 @@ function NoHandoff({ data, selected }: NodeProps) {
   )
 }
 
+function NoHttp({ data, selected }: NodeProps) {
+  const d = data as { metodo: string; url: string; mapear: { variavel: string }[] }
+  return (
+    <Caixa tipo="http" selecionado={!!selected}>
+      <p className="truncate text-[12.5px] leading-5 text-soft">
+        <span className="font-mono text-[10px] text-[#8de2fa]">{d.metodo}</span>{' '}
+        {vazio(d.url, '(sem endereço)')}
+      </p>
+      {d.mapear.length > 0 && (
+        <p className="mt-1 truncate font-mono text-[10px] text-dim">
+          guarda {d.mapear.map((m) => m.variavel || '?').join(', ')}
+        </p>
+      )}
+    </Caixa>
+  )
+}
+
 export const tiposDeNo: NodeTypes = {
   mensagem: NoMensagem,
   pergunta: NoPergunta,
@@ -185,4 +205,5 @@ export const tiposDeNo: NodeTypes = {
   'salvar-campo': NoSalvarCampo,
   ia: NoIa,
   handoff: NoHandoff,
+  http: NoHttp,
 }
