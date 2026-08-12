@@ -113,6 +113,17 @@ export function Conversa({
         case 'chamar_ia':
           novos.push({ chave, de: 'sistema', texto: `chamaria a IA — "${acao.instrucao}"` })
           break
+        case 'chamar_http':
+          // O caminho normal é o resolvedor já ter trocado isto pelos
+          // `salvar_campo` que vieram da resposta. Chegar aqui significa que
+          // ninguém executou — mostrar é melhor do que sumir com o evento.
+          novos.push({
+            chave,
+            de: 'sistema',
+            texto: `a chamada para ${acao.url} não foi executada`,
+            alerta: true,
+          })
+          break
         case 'transferir_humano':
           novos.push({ chave, de: 'sistema', texto: `passou para um humano — ${acao.motivo}`, alerta: true })
           break
@@ -171,9 +182,17 @@ export function Conversa({
   }, [itens])
 
   const viva = status === 'ativa' || status === 'aguardando_ia'
+  const temApi = fluxo.nodes.some((n) => n.type === 'http')
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      {temApi && (
+        <p className="mx-3.5 mt-3.5 rounded-[11px] border border-cyan-400/20 bg-cyan-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-cyan-300">
+          Este fluxo chama uma API. O teste dispara <strong>de verdade</strong> — testar cinco vezes
+          grava cinco vezes no sistema do cliente.
+        </p>
+      )}
+
       <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3.5">
         {itens.map((item) => (
           <Bolha key={item.chave} item={item} pendentes={pendentes} ocupado={ocupado} aoEscolher={enviar} />
