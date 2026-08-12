@@ -11,6 +11,7 @@ import {
   type Connection,
   type Edge,
   type Node,
+  type ReactFlowInstance,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import Link from 'next/link'
@@ -100,6 +101,8 @@ export function Editor({
   const [publicada, setPublicada] = useState(publicadaInicial)
   const [publicando, setPublicando] = useState(false)
   const [errosDePublicacao, setErrosDePublicacao] = useState<Problema[] | null>(null)
+  const [tela, setTela] = useState<ReactFlowInstance | null>(null)
+  const areaRef = useRef<HTMLDivElement>(null)
 
   const fluxo = useMemo(() => paraFluxo(inicio, nodes, edges), [inicio, nodes, edges])
   const validacao = useMemo(() => validar(fluxo), [fluxo])
@@ -163,15 +166,44 @@ export function Editor({
     [setEdges],
   )
 
+  /**
+   * Seleciona um bloco **e traz ele para a vista**.
+   *
+   * Selecionar sozinho não bastava: um impedimento que aponta para um bloco fora
+   * da tela trocava o painel e mais nada, e o clique parecia não ter funcionado.
+   */
+  const focar = useCallback(
+    (noId: string) => {
+      setSelecionado(noId)
+      setAba('bloco')
+      setNodes((atuais) => atuais.map((n) => ({ ...n, selected: n.id === noId })))
+      tela?.fitView({ nodes: [{ id: noId }], duration: 400, maxZoom: 1.2 })
+    },
+    [setNodes, tela],
+  )
+
   function adicionar(tipo: TipoNo) {
     const id = crypto.randomUUID().slice(0, 8)
+
+    // Nasce no meio de onde a pessoa está olhando. Posição fixa colocava o
+    // bloco fora da tela assim que alguém arrastasse o desenho para o lado —
+    // aparecia a mensagem "adicionado" e nada na tela.
+    const area = areaRef.current?.getBoundingClientRect()
+    const centro =
+      tela && area
+        ? tela.screenToFlowPosition({ x: area.x + area.width / 2, y: area.y + area.height / 2 })
+        : { x: 80 + nodes.length * 24, y: 80 + nodes.length * 40 }
+
     setNodes((atuais) => [
-      ...atuais,
+      ...atuais.map((n) => ({ ...n, selected: false })),
       {
         id,
         type: tipo,
-        position: { x: 80 + atuais.length * 24, y: 80 + atuais.length * 40 },
+        // Menos metade do bloco, senão ele nasce com o canto no centro em vez
+        // do meio. A largura é a do `Caixa` em `nos.tsx` (w-56 = 224px).
+        position: { x: centro.x - 112, y: centro.y - 40 },
         data: dadosPadrao(tipo),
+        selected: true,
       },
     ])
     setSelecionado(id)
@@ -294,8 +326,9 @@ export function Editor({
           ))}
         </nav>
 
-        <div className="min-w-0 flex-1">
+        <div ref={areaRef} className="min-w-0 flex-1">
           <ReactFlow
+            onInit={setTela}
             nodes={nodes}
             edges={edges}
             onNodesChange={aoMudarNos}
@@ -353,7 +386,7 @@ export function Editor({
                     {validacao.erros.map((erro, i) => (
                       <li key={i}>
                         <button
-                          onClick={() => erro.noId && setSelecionado(erro.noId)}
+                          onClick={() => erro.noId && focar(erro.noId)}
                           className="text-left text-[11px] text-red-600 hover:underline dark:text-red-400"
                         >
                           {erro.mensagem}
@@ -373,7 +406,7 @@ export function Editor({
                     {validacao.avisos.map((aviso, i) => (
                       <li key={i}>
                         <button
-                          onClick={() => aviso.noId && setSelecionado(aviso.noId)}
+                          onClick={() => aviso.noId && focar(aviso.noId)}
                           className="text-left text-[11px] text-amber-600 hover:underline dark:text-amber-400"
                         >
                           {aviso.mensagem}

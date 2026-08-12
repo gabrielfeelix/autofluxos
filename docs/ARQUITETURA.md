@@ -316,6 +316,8 @@ autofluxos/
     ├── exemplos/                      ✅ fluxo de demonstração (dado, não código)
     │   └── triagem.ts                 some quando o editor e o banco existirem
     │
+    ├── proxy.ts                       ✅ senha do painel (era `middleware.ts`)
+    │
     ├── app/                           ★ NEXT.JS — front e back no mesmo deploy
     │   ├── (auth)/
     │   │   └── login/page.tsx

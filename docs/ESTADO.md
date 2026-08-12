@@ -63,6 +63,11 @@ Duas coisas que valem saber antes de mexer:
   "facilitar".
 - Antes de dizer que algo funciona, **rode**: `npm test`, `npx tsc --noEmit`,
   `npm run build`.
+- **`notFound()` tem que acontecer antes de qualquer `<Suspense>`.** Depois que
+  o Next começa a enviar a página, o status já foi: "não encontrado" viraria
+  200. Por isso as telas buscam o dono primeiro e só então transmitem o resto.
+  Nunca crie um `loading.tsx` acima de uma tela que chama `notFound()` — ele é
+  exatamente essa fronteira, e desfaz isso em silêncio.
 
 ### Comandos
 

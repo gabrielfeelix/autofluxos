@@ -3,6 +3,10 @@ import { NextResponse, type NextRequest } from 'next/server'
 /**
  * Senha no painel.
  *
+ * O arquivo se chama `proxy` porque no Next 16 o nome `middleware` foi
+ * aposentado — mesmo comportamento, nome que descreve melhor onde ele roda
+ * (`guides/upgrading/version-16.md`). O runtime aqui é sempre Node, não Edge.
+ *
  * O modelo de operação é agência: quem mexe é uma pessoa só (ver §8). Login com
  * usuário, papel e convite entra quando existir um segundo operador — mas
  * "ainda não tem login" não pode virar "o painel do cliente está aberto na
@@ -11,7 +15,7 @@ import { NextResponse, type NextRequest } from 'next/server'
  * O webhook do WhatsApp fica de fora: a Meta não tem como mandar senha, e ele
  * se protege por assinatura HMAC, que é a defesa certa para aquele caso.
  */
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const senha = process.env.PAINEL_SENHA
 
   if (!senha) {
