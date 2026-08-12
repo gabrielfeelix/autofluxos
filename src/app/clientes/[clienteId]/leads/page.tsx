@@ -105,12 +105,19 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
                   <td className="px-4 py-3 align-top">
                     {lead.aguardando ? (
-                      <span
-                        title={lead.aguardando.motivo}
-                        className="rounded bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400"
-                      >
-                        aguardando humano
-                      </span>
+                      <>
+                        <span className="rounded bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                          aguardando humano
+                        </span>
+                        {/* Há quanto tempo espera importa mais do que o fato de
+                            esperar: é o número que decide de quem cuidar primeiro. */}
+                        <span
+                          className="mt-1 block text-xs text-zinc-500 dark:text-zinc-400"
+                          title={horaExata(lead.aguardando.desde)}
+                        >
+                          {quando(lead.aguardando.desde)} · {lead.aguardando.motivo}
+                        </span>
+                      </>
                     ) : (
                       <span className="text-xs text-zinc-400">com o bot</span>
                     )}

@@ -150,15 +150,24 @@ alterações ainda não salvas. Quem digita faz o papel do cliente.
 - Ao lado, o estado ao vivo: em que bloco a conversa está e o que já foi
   coletado.
 
-### 4. Leads (em construção)
+### 4. Leads
 
 Onde o valor do produto aparece para o cliente. Lista as pessoas que conversaram
 com o bot, com o que o fluxo coletou de cada uma (as informações variam por
 fluxo), quem está esperando atendimento humano e há quanto tempo, e quando foi a
 última mensagem.
 
+As colunas do meio **saem dos dados**: cada fluxo coleta o que quiser, então a
+tabela descobre as colunas a partir do que existe. Uma lista fixa de campos aqui
+seria o produto sabendo o negócio de um cliente específico.
+
 Abrir um lead mostra a conversa inteira, na ordem, separando o que a pessoa
-escreveu do que o bot respondeu.
+escreveu do que o bot respondeu, mais tudo que o fluxo coletou dela.
+
+**Sem campo de resposta, de propósito:** responder acontece no WhatsApp de quem
+atende. Um botão de enviar aqui prometeria uma caixa de entrada que não existe —
+e construir uma é decisão de produto, não de tela (ver "Coexistence" no
+ESTADO.md: o celular do cliente continua sendo o inbox).
 
 ---
 
