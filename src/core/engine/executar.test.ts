@@ -488,3 +488,116 @@ describe('o que a pessoa digita não pode escrever a requisição', () => {
     expect(textos(r.acoes)).toContain('Oi João "Jô" & Cia!')
   })
 })
+
+/**
+ * Perguntas cujas opções não existem na hora do desenho.
+ *
+ * O caso que motivou: "quais horários livres na quarta?". Ninguém desenha isso
+ * — a lista vem de uma consulta e muda a cada dia. Por isso a ramificação por
+ * opção some e sobram duas saídas, `escolheu` e `vazio`.
+ */
+describe('pergunta com opções dinâmicas', () => {
+  const p3 = { x: 0, y: 0 }
+
+  const agenda: Fluxo = fluxoSchema.parse({
+    inicio: 'escolher',
+    nodes: [
+      {
+        id: 'escolher',
+        type: 'pergunta',
+        position: p3,
+        data: { texto: 'Qual horário?', salvarEm: 'horario', opcoesDe: 'horarios' },
+      },
+      { id: 'confirmou', type: 'mensagem', position: p3, data: { texto: 'Agendado {{horario}}!' } },
+      { id: 'sem-vaga', type: 'mensagem', position: p3, data: { texto: 'Esse dia não tem horário livre 😕' } },
+      { id: 'humano', type: 'handoff', position: p3, data: {} },
+    ],
+    edges: [
+      { id: 'a1', source: 'escolher', sourceHandle: 'escolheu', target: 'confirmou' },
+      { id: 'a2', source: 'escolher', sourceHandle: 'vazio', target: 'sem-vaga' },
+      { id: 'a3', source: 'confirmou', target: 'humano' },
+      { id: 'a4', source: 'sem-vaga', target: 'humano' },
+    ],
+  })
+
+  const comHorarios = (horarios: string): Sessao => ({ ...sessaoNova(), vars: { horarios } })
+
+  it('mostra o que veio na variável, como botões', () => {
+    const r = executar(agenda, comHorarios('7h00;10h00;15h00'), { tipo: 'inicio' })
+
+    const acao = r.acoes.find((a) => a.tipo === 'enviar_opcoes')
+    if (acao?.tipo !== 'enviar_opcoes') throw new Error('faltou a pergunta')
+    expect(acao.opcoes.map((o) => o.rotulo)).toEqual(['7h00', '10h00', '15h00'])
+    expect(acao.formato).toBe('botoes')
+  })
+
+  it('quebra de linha separa igual ao ponto e vírgula, e espaço sobrando não vira opção', () => {
+    const r = executar(agenda, comHorarios(' 7h00 \n\n 10h00 ;'), { tipo: 'inicio' })
+
+    const acao = r.acoes.find((a) => a.tipo === 'enviar_opcoes')
+    if (acao?.tipo !== 'enviar_opcoes') throw new Error('faltou a pergunta')
+    expect(acao.opcoes.map((o) => o.rotulo)).toEqual(['7h00', '10h00'])
+  })
+
+  it('acima de 3 vira lista, e corta no limite da Meta', () => {
+    const doze = Array.from({ length: 12 }, (_, i) => `${i + 7}h00`).join(';')
+    const r = executar(agenda, comHorarios(doze), { tipo: 'inicio' })
+
+    const acao = r.acoes.find((a) => a.tipo === 'enviar_opcoes')
+    if (acao?.tipo !== 'enviar_opcoes') throw new Error('faltou a pergunta')
+    expect(acao.formato).toBe('lista')
+    // A Meta recusa a mensagem inteira acima de 10 itens: cortar entrega uma
+    // conversa a menos, não cortar entrega conversa nenhuma.
+    expect(acao.opcoes).toHaveLength(10)
+  })
+
+  it('rótulo comprido é cortado em vez de derrubar a mensagem', () => {
+    const r = executar(agenda, comHorarios('quarta-feira às 10h00 com a professora Carol'), {
+      tipo: 'inicio',
+    })
+
+    const acao = r.acoes.find((a) => a.tipo === 'enviar_opcoes')
+    if (acao?.tipo !== 'enviar_opcoes') throw new Error('faltou a pergunta')
+    expect(acao.opcoes[0]?.rotulo).toHaveLength(20)
+  })
+
+  it('clicar segue pela saída "escolheu" e guarda a escolha', () => {
+    const primeira = executar(agenda, comHorarios('7h00;10h00'), { tipo: 'inicio' })
+    const r = executar(agenda, primeira.sessao, { tipo: 'opcao', opcaoId: 'd2' })
+
+    expect(textos(r.acoes)).toContain('Agendado 10h00!')
+    expect(r.sessao.vars.horario).toBe('10h00')
+  })
+
+  it('digitar o número também casa, porque muita gente responde "2"', () => {
+    const primeira = executar(agenda, comHorarios('7h00;10h00'), { tipo: 'inicio' })
+    const r = executar(agenda, primeira.sessao, { tipo: 'texto', texto: '2' })
+
+    expect(r.sessao.vars.horario).toBe('10h00')
+  })
+
+  it('variável vazia sai pela saída "vazio" sem perguntar nada', () => {
+    const r = executar(agenda, comHorarios(''), { tipo: 'inicio' })
+
+    expect(r.acoes.some((a) => a.tipo === 'enviar_opcoes')).toBe(false)
+    expect(textos(r.acoes)).toContain('Esse dia não tem horário livre 😕')
+  })
+
+  it('variável que nem existe é tratada como vazia, não como pergunta aberta', () => {
+    const r = executar(agenda, sessaoNova(), { tipo: 'inicio' })
+
+    // Sem a saída `vazio`, isto viraria uma pergunta de resposta livre — a
+    // pessoa digitaria um horário que não existe e ninguém saberia.
+    expect(textos(r.acoes)).toContain('Esse dia não tem horário livre 😕')
+  })
+
+  it('resposta que não casa insiste, e na terceira vez chama uma pessoa', () => {
+    let s = executar(agenda, comHorarios('7h00;10h00'), { tipo: 'inicio' }).sessao
+    for (let i = 0; i < MAX_TENTATIVAS - 1; i++) {
+      s = executar(agenda, s, { tipo: 'texto', texto: 'meia noite' }).sessao
+    }
+    const r = executar(agenda, s, { tipo: 'texto', texto: 'meia noite' })
+
+    expect(r.sessao.status).toBe('humano')
+  })
+})

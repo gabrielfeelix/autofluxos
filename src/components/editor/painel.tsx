@@ -87,10 +87,25 @@ export function Painel({
             dica="nome sem espaço nem acento, ex: nome, prazo"
             aoMudar={(v) => aoMudarDados({ salvarEm: v.trim() === '' ? undefined : v.trim() })}
           />
-          <Opcoes
-            opcoes={no.data.opcoes}
-            aoMudar={(opcoes) => aoMudarDados({ opcoes })}
+          <Linha
+            rotulo="Opções vêm da variável"
+            valor={no.data.opcoesDe ?? ''}
+            dica="deixe vazio para desenhar as opções à mão"
+            aoMudar={(v) => aoMudarDados({ opcoesDe: v.trim() === '' ? undefined : v.trim() })}
           />
+          {(no.data.opcoesDe ?? '').trim() === '' ? (
+            <Opcoes opcoes={no.data.opcoes} aoMudar={(opcoes) => aoMudarDados({ opcoes })} />
+          ) : (
+            <p className="text-[11px] leading-4 text-dim">
+              As opções saem de{' '}
+              <code className="font-mono text-[#8de2fa]">{no.data.opcoesDe}</code>, separadas por{' '}
+              <code className="font-mono">;</code> ou quebra de linha — normalmente preenchida por um
+              bloco de API antes deste. Como elas só existem durante a conversa, o bloco deixa de
+              ramificar por opção: ligue as saídas <strong className="text-soft">escolheu</strong> e{' '}
+              <strong className="text-soft">veio vazia</strong>, e use um bloco de Condição depois se
+              precisar decidir sobre a escolha.
+            </p>
+          )}
         </>
       )}
 

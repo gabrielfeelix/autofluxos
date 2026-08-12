@@ -59,6 +59,21 @@ export const noPerguntaSchema = z.object({
     salvarEm: nomeVariavel.optional(),
     /** Vazio = resposta livre em texto. Preenchido = botões ou lista. */
     opcoes: z.array(opcaoSchema).default([]),
+    /**
+     * Nome da variável que traz as opções prontas, separadas por `;` ou quebra
+     * de linha. Preenchido, as opções deixam de ser desenhadas e passam a
+     * nascer da conversa.
+     *
+     * Existe porque há pergunta que ninguém tem como desenhar de antemão: "os
+     * horários livres de quarta" só se sabe depois de perguntar a alguém. O
+     * caminho normal é um nó de API mapear a resposta para esta variável.
+     *
+     * **Some a ramificação por opção.** Não dá para ligar uma aresta a uma
+     * opção que não existe na hora do desenho, então a pergunta dinâmica tem
+     * duas saídas fixas: `escolheu` e `vazio`. Qual foi a escolha vira
+     * `salvarEm`, e quem ramifica sobre ela é um nó de condição depois.
+     */
+    opcoesDe: nomeVariavel.optional(),
   }),
 })
 
@@ -201,3 +216,19 @@ export type TipoNo = No['type']
 /** Saídas da condição, usadas como `sourceHandle`. */
 export const SAIDA_VERDADEIRO = 'verdadeiro'
 export const SAIDA_FALSO = 'falso'
+
+/**
+ * Saídas da pergunta com opções dinâmicas.
+ *
+ * `vazio` não é detalhe: lista que vem de fora vem vazia com frequência — não
+ * há horário livre, a API não respondeu nada. Sem essa saída, a conversa
+ * pararia numa pergunta sem resposta possível. Por isso o validador cobra as
+ * duas.
+ */
+export const SAIDA_ESCOLHEU = 'escolheu'
+export const SAIDA_VAZIO = 'vazio'
+
+/** A pergunta tira as opções de uma variável em vez de tê-las desenhadas? */
+export function perguntaEhDinamica(no: NoPergunta): boolean {
+  return (no.data.opcoesDe ?? '').trim() !== ''
+}

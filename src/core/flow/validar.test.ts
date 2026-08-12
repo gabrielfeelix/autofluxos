@@ -502,3 +502,79 @@ describe('IA sem contexto de negócio não vai ao ar', () => {
     expect(codigos(r.erros)).not.toContain('SEM_CONTEXTO_DE_NEGOCIO')
   })
 })
+
+describe('pergunta com opções dinâmicas', () => {
+  /** Consulta a agenda, mostra o que voltou, e trata o dia sem vaga. */
+  function fluxoDinamico(dados: Record<string, unknown> = {}, arestas: unknown[] = []): Fluxo {
+    return fluxoSchema.parse({
+      inicio: 'consulta',
+      nodes: [
+        {
+          id: 'consulta',
+          type: 'http',
+          position: p,
+          data: {
+            metodo: 'GET',
+            url: 'https://script.google.com/macros/s/abc/exec',
+            mapear: [{ variavel: 'horarios', caminho: 'livres' }],
+          },
+        },
+        {
+          id: 'q',
+          type: 'pergunta',
+          position: p,
+          data: { texto: 'Qual horário?', salvarEm: 'horario', opcoesDe: 'horarios', ...dados },
+        },
+        { id: 'humano', type: 'handoff', position: p, data: {} },
+        { id: 'tchau', type: 'mensagem', position: p, data: { texto: 'Sem vaga nesse dia.' } },
+      ],
+      edges: [
+        { id: 'e0', source: 'consulta', target: 'q' },
+        { id: 'e1', source: 'q', sourceHandle: 'escolheu', target: 'humano' },
+        { id: 'e2', source: 'q', sourceHandle: 'vazio', target: 'tchau' },
+        { id: 'e3', source: 'tchau', target: 'humano' },
+        ...arestas,
+      ],
+    })
+  }
+
+  it('aprova quando as duas saídas estão ligadas', () => {
+    expect(validar(fluxoDinamico()).ok).toBe(true)
+  })
+
+  it('recusa sem a saída "vazio" — lista que vem de fora vem vazia', () => {
+    const fluxo = fluxoDinamico()
+    fluxo.edges = fluxo.edges.filter((a) => a.sourceHandle !== 'vazio')
+
+    expect(codigos(validar(fluxo).erros)).toContain('PERGUNTA_DINAMICA_SEM_SAIDA')
+  })
+
+  it('recusa sem a saída "escolheu"', () => {
+    const fluxo = fluxoDinamico()
+    fluxo.edges = fluxo.edges.filter((a) => a.sourceHandle !== 'escolheu')
+
+    expect(codigos(validar(fluxo).erros)).toContain('PERGUNTA_DINAMICA_SEM_SAIDA')
+  })
+
+  it('recusa misturar opção desenhada com opção de variável', () => {
+    const fluxo = fluxoDinamico({ opcoes: [{ id: 'x', rotulo: 'Manhã' }] })
+
+    expect(codigos(validar(fluxo).erros)).toContain('OPCOES_MISTURADAS')
+  })
+
+  it('não cobra aresta por opção, que é justamente o que não dá para desenhar', () => {
+    expect(codigos(validar(fluxoDinamico()).erros)).not.toContain('OPCAO_SEM_SAIDA')
+  })
+
+  it('nome de variável torto é recusado', () => {
+    const fluxo = fluxoDinamico({ opcoesDe: 'os horarios' })
+
+    expect(codigos(validar(fluxo).erros)).toContain('VARIAVEL_INVALIDA')
+  })
+
+  it('avisa quando nenhum bloco preenche a variável das opções', () => {
+    const fluxo = fluxoDinamico({ opcoesDe: 'ninguem_preenche' })
+
+    expect(codigos(validar(fluxo).avisos)).toContain('VARIAVEL_DESCONHECIDA')
+  })
+})

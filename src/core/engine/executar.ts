@@ -1,7 +1,12 @@
 import {
   LIMITE_BOTOES,
+  LIMITE_LISTA,
+  LIMITE_ROTULO,
+  SAIDA_ESCOLHEU,
   SAIDA_FALSO,
+  SAIDA_VAZIO,
   SAIDA_VERDADEIRO,
+  perguntaEhDinamica,
   type Fluxo,
   type No,
   type NoPergunta,
@@ -118,10 +123,20 @@ function responderPergunta(
   no: NoPergunta,
   entrada: Entrada,
 ): Resultado {
-  const { opcoes, salvarEm } = no.data
+  const { salvarEm } = no.data
+  const dinamica = perguntaEhDinamica(no)
+  const opcoes = resolverOpcoes(no, s.vars)
 
-  // Resposta livre em texto.
   if (opcoes.length === 0) {
+    // Dinâmica sem itens não é resposta livre: é a lista que veio vazia. O
+    // `avancar()` já desvia antes de parar aqui, então isto é o cinto de
+    // segurança para sessão presa num nó que mudou de configuração.
+    if (dinamica) {
+      s.tentativas = 0
+      return avancar(fluxo, porId, s, acoes, proximo(fluxo, no.id, SAIDA_VAZIO))
+    }
+
+    // Resposta livre em texto.
     if (entrada.tipo !== 'texto') return { acoes, sessao: s }
     if (salvarEm) {
       s.vars[salvarEm] = entrada.texto
@@ -148,7 +163,15 @@ function responderPergunta(
     acoes.push({ tipo: 'salvar_campo', campo: salvarEm, valor: escolhida.rotulo })
   }
   s.tentativas = 0
-  return avancar(fluxo, porId, s, acoes, proximo(fluxo, no.id, escolhida.id))
+  // Desenhada ramifica por opção; dinâmica sai por uma porta só, porque não
+  // existe aresta desenhada para uma opção que nasceu agora.
+  return avancar(
+    fluxo,
+    porId,
+    s,
+    acoes,
+    proximo(fluxo, no.id, dinamica ? SAIDA_ESCOLHEU : escolhida.id),
+  )
 }
 
 /**
@@ -197,6 +220,14 @@ function avancar(
       }
 
       case 'pergunta': {
+        // Lista dinâmica vazia: não há o que perguntar. Parar aqui deixaria a
+        // pessoa olhando uma pergunta sem nenhuma resposta possível — é o
+        // "esse dia não tem horário livre" saindo pela saída própria.
+        if (perguntaEhDinamica(no) && resolverOpcoes(no, s.vars).length === 0) {
+          atual = proximo(fluxo, no.id, SAIDA_VAZIO)
+          break
+        }
+
         acoes.push(perguntar(no, s))
         s.noAtual = no.id
         s.status = 'ativa'
@@ -251,17 +282,41 @@ function avancar(
   return { acoes, sessao: s }
 }
 
+/**
+ * As opções que esta pergunta mostra agora.
+ *
+ * Desenhadas, é a lista do nó. Dinâmicas, saem de uma variável — texto com os
+ * itens separados por `;` ou quebra de linha, que é o formato que sobrevive a
+ * `vars` ser `Record<string, string>`. Guardar JSON numa string ali mentiria
+ * sobre o tipo; separador não mente, só combina.
+ *
+ * Os dois cortes são limite da Cloud API, não escolha: acima de 10 itens ou 20
+ * caracteres de rótulo a Meta recusa a mensagem inteira. Cortar entrega uma
+ * conversa a menos; não cortar entrega conversa nenhuma.
+ */
+export function resolverOpcoes(no: NoPergunta, vars: Record<string, string>): Opcao[] {
+  if (!perguntaEhDinamica(no)) return no.data.opcoes
+
+  return (vars[no.data.opcoesDe as string] ?? '')
+    .split(/[;\n]/)
+    .map((item) => item.trim())
+    .filter((item) => item !== '')
+    .slice(0, LIMITE_LISTA)
+    .map((rotulo, i) => ({ id: `d${i + 1}`, rotulo: rotulo.slice(0, LIMITE_ROTULO) }))
+}
+
 function perguntar(no: NoPergunta, s: Sessao): Acao {
   const texto = interpolar(no.data.texto, s.vars)
-  if (no.data.opcoes.length === 0) return { tipo: 'enviar_texto', texto }
+  const opcoes = resolverOpcoes(no, s.vars)
+  if (opcoes.length === 0) return { tipo: 'enviar_texto', texto }
 
   return {
     tipo: 'enviar_opcoes',
     texto,
-    opcoes: no.data.opcoes,
+    opcoes,
     // Até 3 opções o WhatsApp mostra como botão, que dá muito mais clique.
     // Acima disso vira lista suspensa.
-    formato: no.data.opcoes.length <= LIMITE_BOTOES ? 'botoes' : 'lista',
+    formato: opcoes.length <= LIMITE_BOTOES ? 'botoes' : 'lista',
   }
 }
 

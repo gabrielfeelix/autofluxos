@@ -2,7 +2,14 @@
 
 import { Handle, Position, type NodeProps, type NodeTypes } from '@xyflow/react'
 import type { ReactNode } from 'react'
-import { LIMITE_BOTOES, SAIDA_FALSO, SAIDA_VERDADEIRO, type Opcao } from '@/core/flow/schema'
+import {
+  LIMITE_BOTOES,
+  SAIDA_ESCOLHEU,
+  SAIDA_FALSO,
+  SAIDA_VAZIO,
+  SAIDA_VERDADEIRO,
+  type Opcao,
+} from '@/core/flow/schema'
 
 /**
  * O visual de cada tipo de bloco.
@@ -106,25 +113,47 @@ function NoMensagem({ data, selected }: NodeProps) {
 }
 
 function NoPergunta({ data, selected }: NodeProps) {
-  const d = data as { texto: string; salvarEm?: string; opcoes: Opcao[] }
+  const d = data as { texto: string; salvarEm?: string; opcoes: Opcao[]; opcoesDe?: string }
+  const dinamica = (d.opcoesDe ?? '').trim() !== ''
+
   return (
-    <Caixa tipo="pergunta" selecionado={!!selected} saidaUnica={d.opcoes.length === 0}>
+    <Caixa
+      tipo="pergunta"
+      selecionado={!!selected}
+      saidaUnica={!dinamica && d.opcoes.length === 0}
+    >
       <p className="line-clamp-2 text-[12.5px] leading-5 text-soft">{vazio(d.texto, '(sem texto)')}</p>
       {d.salvarEm && <p className="mt-1 font-mono text-[10px] text-dim">guarda em {d.salvarEm}</p>}
 
-      {d.opcoes.map((opcao) => (
-        <Saida key={opcao.id} id={opcao.id}>
-          <span className="text-[11px]">{vazio(opcao.rotulo, '(sem rótulo)')}</span>
-        </Saida>
-      ))}
+      {dinamica ? (
+        <>
+          <p className="mt-1 text-[10px] text-dim">
+            opções de <code className="font-mono text-[#8de2fa]">{d.opcoesDe}</code>
+          </p>
+          <Saida id={SAIDA_ESCOLHEU}>
+            <span className="text-[11px] text-emerald-300">escolheu</span>
+          </Saida>
+          <Saida id={SAIDA_VAZIO}>
+            <span className="text-[11px] text-muted">veio vazia</span>
+          </Saida>
+        </>
+      ) : (
+        <>
+          {d.opcoes.map((opcao) => (
+            <Saida key={opcao.id} id={opcao.id}>
+              <span className="text-[11px]">{vazio(opcao.rotulo, '(sem rótulo)')}</span>
+            </Saida>
+          ))}
 
-      {d.opcoes.length > 0 && (
-        <p className="mt-1.5 text-[10px] text-dim">
-          {d.opcoes.length <= LIMITE_BOTOES ? 'vira botões' : 'vira lista'}
-        </p>
-      )}
-      {d.opcoes.length === 0 && (
-        <p className="mt-1 text-[10px] text-dim">resposta livre em texto</p>
+          {d.opcoes.length > 0 && (
+            <p className="mt-1.5 text-[10px] text-dim">
+              {d.opcoes.length <= LIMITE_BOTOES ? 'vira botões' : 'vira lista'}
+            </p>
+          )}
+          {d.opcoes.length === 0 && (
+            <p className="mt-1 text-[10px] text-dim">resposta livre em texto</p>
+          )}
+        </>
       )}
     </Caixa>
   )

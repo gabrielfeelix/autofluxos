@@ -2,8 +2,11 @@ import {
   FORMATO_VARIAVEL,
   LIMITE_LISTA,
   LIMITE_ROTULO,
+  SAIDA_ESCOLHEU,
   SAIDA_FALSO,
+  SAIDA_VAZIO,
   SAIDA_VERDADEIRO,
+  perguntaEhDinamica,
   type Fluxo,
   type No,
 } from './schema'
@@ -111,7 +114,28 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
     const minhasSaidas = saidas(no.id)
     conferirConteudo(no, erros)
 
-    if (no.type === 'pergunta') {
+    if (no.type === 'pergunta' && perguntaEhDinamica(no)) {
+      if (no.data.opcoes.length > 0) {
+        erros.push({
+          codigo: 'OPCOES_MISTURADAS',
+          mensagem: `"${no.data.texto}" tira as opções de {{${no.data.opcoesDe}}} e também tem opções desenhadas. Escolha um dos dois: as desenhadas seriam ignoradas.`,
+          noId: no.id,
+        })
+      }
+
+      for (const saida of [SAIDA_ESCOLHEU, SAIDA_VAZIO]) {
+        if (!minhasSaidas.some((a) => a.sourceHandle === saida)) {
+          erros.push({
+            codigo: 'PERGUNTA_DINAMICA_SEM_SAIDA',
+            mensagem:
+              saida === SAIDA_VAZIO
+                ? `"${no.data.texto}" não diz o que fazer quando {{${no.data.opcoesDe}}} vem vazia. Ligue a saída "vazio" — lista que vem de fora vem vazia.`
+                : `"${no.data.texto}" não continua depois da escolha. Ligue a saída "escolheu".`,
+            noId: no.id,
+          })
+        }
+      }
+    } else if (no.type === 'pergunta') {
       const { opcoes } = no.data
 
       if (opcoes.length > LIMITE_LISTA) {
@@ -253,6 +277,7 @@ function conferirConteudo(no: No, erros: Problema[]): void {
         erros.push({ codigo: 'TEXTO_VAZIO', mensagem: 'Esta pergunta está sem texto.', noId: no.id })
       }
       conferirVariavel(no.data.salvarEm, 'variável')
+      conferirVariavel(no.data.opcoesDe, 'variável das opções')
       for (const opcao of no.data.opcoes) {
         if (vazio(opcao.rotulo)) {
           erros.push({ codigo: 'ROTULO_VAZIO', mensagem: 'Uma das opções está sem rótulo.', noId: no.id })
@@ -498,7 +523,12 @@ function variaveisDoNo(no: No): string[] {
     case 'mensagem':
       return variaveisCitadas(no.data.texto)
     case 'pergunta':
-      return variaveisCitadas(no.data.texto)
+      // `opcoesDe` é citação como qualquer outra: apontar para variável que
+      // nenhum bloco preenche entrega uma pergunta que nasce sempre vazia.
+      return [
+        ...variaveisCitadas(no.data.texto),
+        ...(perguntaEhDinamica(no) ? [no.data.opcoesDe as string] : []),
+      ]
     case 'salvar-campo':
       return variaveisCitadas(no.data.valor)
     case 'ia':
