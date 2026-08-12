@@ -29,6 +29,15 @@ const PAUSA_ANTES_DE_SALVAR = 800
 
 const TIPOS: TipoNo[] = ['mensagem', 'pergunta', 'condicao', 'salvar-campo', 'ia', 'handoff']
 
+const DESCRICOES: Record<TipoNo, string> = {
+  mensagem: 'Envia um texto',
+  pergunta: 'Pergunta e guarda',
+  condicao: 'Divide o caminho',
+  'salvar-campo': 'Registra no lead',
+  ia: 'Responde pelo contexto',
+  handoff: 'Passa para uma pessoa',
+}
+
 /** Como cada bloco nasce ao ser arrastado da barra. */
 function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
   switch (tipo) {
@@ -261,21 +270,29 @@ export function Editor({
   const variaveis = variaveisDoFluxo(fluxo)
 
   return (
-    <div className="flex h-screen flex-col bg-zinc-100 dark:bg-zinc-950">
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-zinc-200 bg-white px-4 py-2.5 dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="flex h-screen flex-col bg-canvas">
+      <header className="flex h-[54px] shrink-0 items-center gap-3 border-b border-white/[0.07] bg-white/[0.018] px-4">
+        <Link
+          href={voltarHref}
+          title={`Voltar para ${clienteNome}`}
+          className="flex size-[30px] shrink-0 items-center justify-center rounded-lg border border-white/10 text-base text-muted transition hover:border-accent/50 hover:text-accent"
+        >
+          ‹
+        </Link>
         <div className="min-w-0">
-          <Link href={voltarHref} className="text-xs text-zinc-500 hover:underline">
-            ← {clienteNome}
-          </Link>
-          <h1 className="truncate text-sm font-semibold">{nome}</h1>
+          <h1 className="max-w-56 truncate text-sm font-bold tracking-[-0.01em]">{nome}</h1>
+          <p className="text-[10.5px] text-dim">{clienteNome}</p>
         </div>
+        <span className="mx-0.5 h-6 w-px bg-white/[0.08]" />
+        <EstadoSalvamento estado={salvamento} />
+        <span className="mx-0.5 h-6 w-px bg-white/[0.08]" />
 
         <div className="flex items-center gap-3 text-xs">
           {/* O plano da automação, no lugar onde ela é editada. Mudar aqui não
               republica nada: só muda o que a próxima publicação aceita. */}
           <label
             title="IA é plano à parte. Sem isto, fluxo com bloco de IA não publica."
-            className="flex cursor-pointer items-center gap-1.5 text-zinc-500 dark:text-zinc-400"
+            className="flex cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-muted transition hover:bg-white/[0.04]"
           >
             <input
               type="checkbox"
@@ -289,71 +306,73 @@ export function Editor({
                   setComIa(!novo)
                 }
               }}
-              className="size-3.5 accent-fuchsia-600"
+              className="size-3.5 accent-violet-400"
             />
             com IA
           </label>
-
-          <EstadoSalvamento estado={salvamento} />
-
-          <span className="text-zinc-400">
-            {publicada ? (
-              <>
-                no ar: v{publicada.versao} · {publicada.quando}
-                {haNovidade && (
-                  <span className="ml-1 text-amber-600 dark:text-amber-400">(com mudanças)</span>
-                )}
-              </>
-            ) : (
-              'nunca publicado'
-            )}
-          </span>
-
-          {!validacao.ok && (
-            <span className="rounded bg-red-500/15 px-2 py-1 font-medium text-red-700 dark:text-red-400">
-              {validacao.erros.length} impedimento(s)
-            </span>
-          )}
-
-          <button
-            onClick={publicarAgora}
-            disabled={!validacao.ok || !haNovidade || publicando || salvamento === 'salvando'}
-            title={
-              !validacao.ok
-                ? 'Resolva os impedimentos antes de publicar'
-                : !haNovidade
-                  ? 'O que está no ar já é este desenho'
-                  : 'Publicar este desenho'
-            }
-            className="rounded-lg bg-emerald-600 px-3 py-1.5 font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {publicando ? 'publicando…' : 'Publicar'}
-          </button>
         </div>
+        <span className="flex-1" />
+
+        {publicada ? (
+          <span className={`rounded-full border px-3 py-1 text-xs ${haNovidade ? 'border-amber-300/25 bg-amber-300/[0.08] text-amber-200' : 'border-emerald-400/20 bg-emerald-400/[0.08] text-emerald-300'}`}>
+            {haNovidade ? 'Desenho difere do publicado' : `No ar · v${publicada.versao}`}
+          </span>
+        ) : (
+          <span className="rounded-full border border-dashed border-white/[0.15] px-3 py-1 text-xs text-muted">Nunca publicado</span>
+        )}
+
+        {!validacao.ok && (
+          <span className="rounded-full border border-rose-400/30 bg-rose-400/10 px-3 py-1 text-xs font-bold text-rose-300">
+            {validacao.erros.length} impedimento(s)
+          </span>
+        )}
+
+        <button
+          onClick={publicarAgora}
+          disabled={!validacao.ok || !haNovidade || publicando || salvamento === 'salvando'}
+          title={
+            !validacao.ok
+              ? 'Resolva os impedimentos antes de publicar'
+              : !haNovidade
+                ? 'O que está no ar já é este desenho'
+                : 'Publicar este desenho'
+          }
+          className="app-primary-button px-[18px] py-2 text-[13px]"
+        >
+          {publicando ? 'publicando…' : 'Publicar'}
+        </button>
       </header>
 
       {errosDePublicacao && (
-        <div className="shrink-0 border-b border-red-500/30 bg-red-500/10 px-4 py-2 text-xs text-red-700 dark:text-red-400">
+        <div className="shrink-0 border-b border-rose-400/30 bg-rose-400/10 px-4 py-2 text-xs text-rose-300">
           <strong>Não publicou.</strong>{' '}
           {errosDePublicacao.map((e) => e.mensagem).join(' ')}
         </div>
       )}
 
       <div className="flex min-h-0 flex-1">
-        <nav className="w-40 shrink-0 space-y-1 overflow-y-auto border-r border-zinc-200 bg-white p-2 dark:border-zinc-800 dark:bg-zinc-900">
-          <p className="px-1 pt-1 pb-2 text-[10px] font-semibold tracking-wide text-zinc-400 uppercase">
-            Adicionar
+        <nav className="w-[198px] shrink-0 overflow-y-auto border-r border-white/[0.06] bg-white/[0.012] px-2.5 py-3.5">
+          <p className="mb-2.5 px-2 text-[10.5px] font-bold tracking-[0.08em] text-dim uppercase">
+            Blocos
           </p>
           {TIPOS.map((tipo) => (
             <button
               key={tipo}
               onClick={() => adicionar(tipo)}
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              className="mb-0.5 flex w-full items-start gap-2.5 rounded-[11px] border border-transparent p-2 text-left transition hover:border-white/[0.07] hover:bg-white/[0.04]"
             >
-              <span aria-hidden>{ICONES[tipo]}</span>
-              {NOMES[tipo]}
+              <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-[9px] border border-white/[0.08] bg-white/[0.045] text-sm text-accent">
+                {ICONES[tipo]}
+              </span>
+              <span className="min-w-0">
+                <strong className="block text-[12.5px] font-bold">{NOMES[tipo]}</strong>
+                <span className="mt-0.5 block text-[10.5px] leading-[1.35] text-dim">{DESCRICOES[tipo]}</span>
+              </span>
             </button>
           ))}
+          <p className="mt-3.5 border-t border-white/[0.06] px-2 pt-3 text-[10.5px] leading-4 text-dim">
+            Toque para adicionar. Arraste de uma alça até outro bloco para ligar.
+          </p>
         </nav>
 
         <div ref={areaRef} className="min-w-0 flex-1">
@@ -371,24 +390,32 @@ export function Editor({
               if (id) setAba('bloco')
             }}
             fitView
+            colorMode="dark"
             proOptions={{ hideAttribution: false }}
           >
-            <Background />
-            <Controls />
-            <MiniMap pannable zoomable className="!hidden lg:!block" />
+            <Background gap={24} size={1} color="rgba(255,255,255,.08)" />
+            <Controls position="bottom-right" />
+            <MiniMap
+              pannable
+              zoomable
+              position="bottom-left"
+              nodeColor="#334155"
+              maskColor="rgba(7,10,14,.72)"
+              className="!h-24 !w-[150px]"
+            />
           </ReactFlow>
         </div>
 
-        <aside className="flex w-96 shrink-0 flex-col border-l border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-          <div className="flex shrink-0 border-b border-zinc-200 text-xs dark:border-zinc-800">
+        <aside className="flex w-[356px] shrink-0 flex-col border-l border-white/[0.06] bg-white/[0.014]">
+          <div className="flex shrink-0 gap-1 border-b border-white/[0.06] px-3 pt-2.5 text-xs">
             {(['bloco', 'testar'] as const).map((chave) => (
               <button
                 key={chave}
                 onClick={() => setAba(chave)}
-                className={`flex-1 px-3 py-2 font-medium transition ${
+                className={`rounded-t-lg border-b-2 px-4 py-2.5 font-bold transition ${
                   aba === chave
-                    ? 'border-b-2 border-emerald-600 text-emerald-700 dark:text-emerald-400'
-                    : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                    ? 'border-accent text-white'
+                    : 'border-transparent text-muted hover:text-white'
                 }`}
               >
                 {chave === 'bloco' ? 'Bloco' : 'Testar'}
@@ -408,8 +435,8 @@ export function Editor({
               />
 
               {!validacao.ok && (
-                <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
-                  <p className="mb-2 text-[10px] font-semibold tracking-wide text-red-600 uppercase">
+                <div className="border-t border-white/[0.06] p-4">
+                  <p className="mb-2 text-[11px] font-bold tracking-[0.04em] text-soft uppercase">
                     Impede de publicar
                   </p>
                   <ul className="space-y-1.5">
@@ -417,9 +444,10 @@ export function Editor({
                       <li key={i}>
                         <button
                           onClick={() => erro.noId && focar(erro.noId)}
-                          className="text-left text-[11px] text-red-600 hover:underline dark:text-red-400"
+                          className="flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left text-[11.5px] leading-4 text-rose-300 transition hover:bg-rose-400/[0.07]"
                         >
-                          {erro.mensagem}
+                          <span className="mt-1 size-1.5 shrink-0 rounded-full bg-rose-400" />
+                          <span>{erro.mensagem}</span>
                         </button>
                       </li>
                     ))}
@@ -428,8 +456,8 @@ export function Editor({
               )}
 
               {validacao.avisos.length > 0 && (
-                <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
-                  <p className="mb-2 text-[10px] font-semibold tracking-wide text-amber-600 uppercase">
+                <div className="border-t border-white/[0.06] p-4">
+                  <p className="mb-2 text-[11px] font-bold tracking-[0.04em] text-soft uppercase">
                     Vale olhar
                   </p>
                   <ul className="space-y-1.5">
@@ -437,9 +465,10 @@ export function Editor({
                       <li key={i}>
                         <button
                           onClick={() => aviso.noId && focar(aviso.noId)}
-                          className="text-left text-[11px] text-amber-600 hover:underline dark:text-amber-400"
+                          className="flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left text-[11.5px] leading-4 text-amber-200 transition hover:bg-amber-300/[0.07]"
                         >
-                          {aviso.mensagem}
+                          <span className="mt-1 size-1.5 shrink-0 rounded-full bg-amber-300" />
+                          <span>{aviso.mensagem}</span>
                         </button>
                       </li>
                     ))}
@@ -456,14 +485,14 @@ export function Editor({
                 aoMudarSessao={setSessao}
               />
               {sessao && (
-                <div className="shrink-0 border-t border-zinc-200 p-3 text-[11px] dark:border-zinc-800">
-                  <p className="text-zinc-400">
+                <div className="shrink-0 border-t border-white/[0.06] p-3 text-[11px]">
+                  <p className="text-dim">
                     bloco atual: <code>{sessao.noAtual ?? '—'}</code> · {sessao.status}
                   </p>
                   {Object.keys(sessao.vars).length > 0 && (
                     <p className="mt-1 flex flex-wrap gap-1">
                       {Object.entries(sessao.vars).map(([k, v]) => (
-                        <span key={k} className="rounded bg-zinc-100 px-1.5 py-0.5 dark:bg-zinc-800">
+                        <span key={k} className="rounded-md border border-white/[0.08] bg-white/[0.045] px-2 py-1 font-mono text-[10px] text-muted">
                           {k}: {v}
                         </span>
                       ))}
@@ -488,7 +517,20 @@ function EstadoSalvamento({ estado }: { estado: 'salvo' | 'salvando' | 'pendente
   }[estado]
 
   return (
-    <span className={estado === 'erro' ? 'text-red-600' : 'text-zinc-400'}>{texto}</span>
+    <span className={`flex items-center gap-2 text-xs ${estado === 'erro' ? 'text-rose-300' : 'text-muted'}`}>
+      <span
+        className={`size-1.5 rounded-full ${
+          estado === 'erro'
+            ? 'bg-rose-400'
+            : estado === 'salvo'
+              ? 'bg-emerald-400'
+              : estado === 'salvando'
+                ? 'animate-pulse bg-accent'
+                : 'bg-amber-300'
+        }`}
+      />
+      {texto}
+    </span>
   )
 }
 

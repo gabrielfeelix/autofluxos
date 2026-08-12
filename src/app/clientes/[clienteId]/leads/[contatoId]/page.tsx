@@ -1,155 +1,139 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
+import { PainelShell } from '@/components/design/shell'
 import { acharCliente } from '@/server/repos/clientes'
 import { acharLead, lerConversa } from '@/server/repos/leads'
 import { horaExata, quando } from '../quando'
 
 export const dynamic = 'force-dynamic'
 
-/**
- * Um lead e a conversa inteira dele.
- *
- * A tela é só leitura, e é assim de propósito na Etapa 1: responder acontece no
- * WhatsApp da pessoa, do celular dela. Um campo de resposta aqui prometeria uma
- * caixa de entrada que ainda não existe — e mensagem enviada por um botão que
- * não funciona é pior do que botão nenhum.
- *
- * O lead vem antes de qualquer `<Suspense>` porque é ele que decide se a página
- * existe (ver o comentário na tela de leads sobre status no meio do envio). A
- * conversa, que é a consulta que cresce sem limite, fica atrás da fronteira.
- */
 export default async function Pagina({
   params,
 }: {
   params: Promise<{ clienteId: string; contatoId: string }>
 }) {
   const { clienteId, contatoId } = await params
-
   const [cliente, lead] = await Promise.all([acharCliente(clienteId), acharLead(clienteId, contatoId)])
   if (!cliente || !lead) notFound()
 
   const campos = Object.entries(lead.campos)
+  const nome = lead.nome ?? 'sem nome'
+  const iniciais = nome.split(' ').filter(Boolean).slice(0, 2).map((parte) => parte[0]).join('').toUpperCase()
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 p-6 sm:p-10">
-      <header>
-        <Link
-          href={`/clientes/${cliente.id}/leads`}
-          className="text-xs text-zinc-500 hover:underline dark:text-zinc-400"
-        >
-          ← leads de {cliente.nome}
-        </Link>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">{lead.nome ?? 'sem nome'}</h1>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-          <code className="text-xs">{lead.waId}</code>
-          <span className="mx-2 text-zinc-300 dark:text-zinc-700">·</span>
-          <span title={horaExata(lead.criadoEm)}>chegou {quando(lead.criadoEm)}</span>
-        </p>
-      </header>
+    <PainelShell>
+      <main className="app-page-enter max-w-[1080px] px-[46px] pt-[34px] pb-[46px]">
+        <nav className="mb-3.5 text-[12.5px] text-dim">
+          <Link href="/" className="text-muted transition hover:text-accent">Clientes</Link>
+          <span className="mx-2">/</span>
+          <Link href={`/clientes/${cliente.id}`} className="text-muted transition hover:text-accent">{cliente.nome}</Link>
+          <span className="mx-2">/</span>
+          <Link href={`/clientes/${cliente.id}/leads`} className="text-muted transition hover:text-accent">Leads</Link>
+          <span className="mx-2">/</span>
+          <span className="text-soft">{nome}</span>
+        </nav>
 
-      {lead.aguardando && (
-        <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
-          <strong className="font-semibold">Esperando uma pessoa.</strong> {lead.aguardando.motivo}{' '}
-          <span className="text-xs opacity-80" title={horaExata(lead.aguardando.desde)}>
-            ({quando(lead.aguardando.desde)})
+        <header className="mb-4 flex items-center gap-3.5">
+          <span className="flex size-11 items-center justify-center rounded-full border border-white/[0.11] bg-white/[0.05] text-[12px] font-bold text-[#97a2b4]">
+            {iniciais}
           </span>
-        </p>
-      )}
+          <div className="min-w-0">
+            <h1 className="text-[21px] font-bold tracking-[-0.02em]">{nome}</h1>
+            <p className="mt-0.5 font-mono text-[11px] text-dim">{lead.waId}</p>
+          </div>
+          <span className="flex-1" />
+          <span className={`rounded-full border px-3 py-1 text-[10.5px] font-bold ${lead.aguardando ? 'border-rose-400/25 bg-rose-400/[0.09] text-rose-300' : 'border-emerald-400/20 bg-emerald-400/[0.07] text-emerald-300'}`}>
+            {lead.aguardando ? 'AGUARDANDO HUMANO' : 'COM O BOT'}
+          </span>
+        </header>
 
-      <section>
-        <h2 className="text-xs font-semibold tracking-wide text-zinc-500 uppercase">
-          O que o fluxo coletou
-        </h2>
-
-        {campos.length === 0 ? (
-          <p className="mt-2 text-sm text-zinc-400">
-            Nada ainda — a conversa não chegou em nenhuma pergunta que salva campo.
-          </p>
-        ) : (
-          <dl className="mt-3 grid gap-x-6 gap-y-3 sm:grid-cols-2">
-            {campos.map(([chave, valor]) => (
-              <div
-                key={chave}
-                className="rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-800"
-              >
-                <dt className="text-xs tracking-wide text-zinc-500 uppercase">{chave}</dt>
-                <dd className="mt-0.5 text-sm break-words">{valor}</dd>
-              </div>
-            ))}
-          </dl>
-        )}
-      </section>
-
-      <section className="flex flex-col gap-3">
-        <h2 className="text-xs font-semibold tracking-wide text-zinc-500 uppercase">A conversa</h2>
-        <Suspense
-          fallback={
-            <div className="space-y-3">
-              <div className="h-10 w-2/3 animate-pulse rounded-2xl bg-zinc-100 dark:bg-zinc-900" />
-              <div className="ml-auto h-10 w-1/2 animate-pulse rounded-2xl bg-zinc-100 dark:bg-zinc-900" />
-              <span className="sr-only">Carregando a conversa…</span>
+        {lead.aguardando && (
+          <div className="mb-[18px] flex items-center gap-3 rounded-[13px] border border-rose-400/25 bg-rose-400/[0.06] px-[17px] py-[13px]">
+            <span className="size-2 shrink-0 animate-pulse rounded-full bg-rose-400" />
+            <div className="min-w-0 flex-1">
+              <strong className="block text-[13px] text-rose-300">Esperando uma pessoa {quando(lead.aguardando.desde)}</strong>
+              <span className="mt-0.5 block text-[11.5px] text-muted">Motivo do handoff: {lead.aguardando.motivo}</span>
             </div>
-          }
-        >
-          <Historico contatoId={contatoId} nomeDoLead={lead.nome} />
-        </Suspense>
-      </section>
-    </main>
+          </div>
+        )}
+
+        <div className="grid grid-cols-[280px_minmax(0,1fr)] items-start gap-[18px]">
+          <section className="app-card overflow-hidden">
+            <h2 className="border-b border-white/[0.06] px-[18px] py-3.5 text-[13px] font-bold">O que o fluxo coletou</h2>
+            {campos.length === 0 ? (
+              <p className="px-[18px] py-[22px] text-xs leading-5 text-dim">
+                Nada coletado — a conversa não chegou a preencher nenhuma variável.
+              </p>
+            ) : (
+              <dl>
+                {campos.map(([chave, valor]) => (
+                  <div key={chave} className="border-b border-white/[0.045] px-[18px] py-[11px] last:border-0">
+                    <dt className="font-mono text-[10px] tracking-[0.04em] text-dim">{chave}</dt>
+                    <dd className="mt-1 truncate text-[13px] font-semibold">{valor}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+          </section>
+
+          <section className="app-card flex max-h-[620px] min-h-[360px] flex-col overflow-hidden">
+            <header className="flex items-center gap-2 border-b border-white/[0.06] px-[18px] py-3.5">
+              <h2 className="flex-1 text-[13px] font-bold">Conversa</h2>
+              <span className="flex items-center gap-1.5 text-[11px] text-dim">
+                <span className="size-1.5 rounded-full bg-dim" /> somente leitura
+              </span>
+            </header>
+            <div className="min-h-0 flex-1 overflow-auto p-[18px]">
+              <Suspense fallback={<HistoricoEsqueleto />}>
+                <Historico contatoId={contatoId} nomeDoLead={lead.nome} />
+              </Suspense>
+            </div>
+          </section>
+        </div>
+      </main>
+    </PainelShell>
   )
 }
 
-async function Historico({
-  contatoId,
-  nomeDoLead,
-}: {
-  contatoId: string
-  nomeDoLead: string | null
-}) {
+function HistoricoEsqueleto() {
+  return (
+    <div className="flex animate-pulse flex-col gap-3">
+      <div className="h-9 w-[46%] self-end rounded-[13px_13px_4px_13px] bg-accent/[0.07]" />
+      <div className="h-9 w-[34%] rounded-[13px_13px_13px_4px] bg-white/[0.05]" />
+      <div className="h-9 w-[52%] self-end rounded-[13px_13px_4px_13px] bg-accent/[0.07]" />
+      <span className="sr-only">Carregando a conversa…</span>
+    </div>
+  )
+}
+
+async function Historico({ contatoId, nomeDoLead }: { contatoId: string; nomeDoLead: string | null }) {
   const conversa = await lerConversa(contatoId)
 
   if (conversa.mensagens.length === 0) {
-    return <p className="text-sm text-zinc-400">Nenhuma mensagem registrada.</p>
+    return <p className="py-10 text-center text-xs text-dim">Nenhuma mensagem registrada.</p>
   }
 
   return (
-    <>
+    <div className="flex flex-col gap-2.5">
       {conversa.cortada && (
-        <p className="text-center text-[11px] tracking-wide text-zinc-400">
+        <p className="self-center rounded-xl border border-dashed border-white/[0.14] px-3.5 py-2 text-center font-mono text-[10px] text-[#6b7689]">
           conversa longa — mostrando só as mensagens mais recentes
         </p>
       )}
-
-      <div className="space-y-3">
-        {conversa.mensagens.map((mensagem) => {
-          // Quem lê esta tela é o dono do negócio: a resposta dele (o bot)
-          // fica à direita, como no WhatsApp dele. O lead fica à esquerda.
-          const nossa = mensagem.direcao === 'saida'
-          return (
-            <div key={mensagem.id} className={nossa ? 'flex justify-end' : 'flex justify-start'}>
-              <div className={`max-w-[85%] ${nossa ? 'text-right' : 'text-left'}`}>
-                <p
-                  className={
-                    nossa
-                      ? 'rounded-2xl rounded-br-sm bg-emerald-600 px-3 py-2 text-left text-sm whitespace-pre-wrap text-white'
-                      : 'rounded-2xl rounded-bl-sm bg-zinc-100 px-3 py-2 text-sm whitespace-pre-wrap dark:bg-zinc-800'
-                  }
-                >
-                  {mensagem.texto ?? (
-                    <span className="italic opacity-70">(áudio, imagem ou documento)</span>
-                  )}
-                </p>
-                <span
-                  className="mt-1 block text-[11px] text-zinc-400"
-                  title={horaExata(mensagem.ts)}
-                >
-                  {nossa ? 'bot' : (nomeDoLead ?? 'cliente')} · {quando(mensagem.ts)}
-                </span>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </>
+      {conversa.mensagens.map((mensagem) => {
+        const nossa = mensagem.direcao === 'saida'
+        return (
+          <div key={mensagem.id} className={nossa ? 'flex justify-end' : 'flex justify-start'}>
+            <p className={`max-w-[78%] px-3 py-2 text-[12.5px] leading-[1.45] whitespace-pre-wrap ${nossa ? 'rounded-[13px_13px_4px_13px] border border-accent/[0.22] bg-accent/[0.13]' : 'rounded-[13px_13px_13px_4px] border border-white/[0.07] bg-white/[0.055]'}`}>
+              {mensagem.texto ?? <span className="italic text-muted">(áudio, imagem ou documento)</span>}
+              <span className="ml-2 text-[9.5px] text-dim" title={horaExata(mensagem.ts)}>
+                {nossa ? 'bot' : (nomeDoLead ?? 'cliente')} · {quando(mensagem.ts)}
+              </span>
+            </p>
+          </div>
+        )
+      })}
+    </div>
   )
 }

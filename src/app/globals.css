@@ -1,43 +1,287 @@
 @import 'tailwindcss';
 
+@theme inline {
+  --font-sans: var(--font-outfit);
+  --font-mono: var(--font-jetbrains-mono);
+  --color-accent: #56d0f5;
+  --color-canvas: #080b10;
+  --color-panel: #0e131c;
+  --color-ink: #e9eef5;
+  --color-muted: #8a94a6;
+  --color-dim: #5a6478;
+}
+
 :root {
-  color-scheme: light dark;
+  color-scheme: dark;
+  --accent: #56d0f5;
+  --canvas: #080b10;
+  --canvas-deep: #070a0e;
+  --panel: #0e131c;
+  --ink: #e9eef5;
+  --soft: #b9c2d0;
+  --muted: #8a94a6;
+  --dim: #5a6478;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-soft: rgba(255, 255, 255, 0.055);
+  --surface: rgba(255, 255, 255, 0.028);
+  --surface-hover: rgba(255, 255, 255, 0.05);
+}
+
+* {
+  box-sizing: border-box;
 }
 
 html,
 body {
-  height: 100%;
+  min-width: 1024px;
+  min-height: 100%;
 }
 
 body {
-  @apply bg-zinc-100 text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100;
-  font-family:
-    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* O bloco onde a conversa começa. O editor marca ele com esta classe. */
-.react-flow__node.no-inicio::after {
-  content: 'início';
-  position: absolute;
-  top: -9px;
-  left: 10px;
-  padding: 1px 7px;
-  border-radius: 999px;
-  background: var(--color-emerald-600);
-  color: white;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+body::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(1000px 520px at 12% -12%, rgba(86, 208, 245, 0.075), transparent 60%),
+    radial-gradient(900px 540px at 95% 112%, rgba(124, 108, 255, 0.07), transparent 60%);
+  content: '';
   pointer-events: none;
 }
 
-/* O React Flow desenha o próprio fundo; sem isto ele fica branco no dark. */
-.react-flow {
-  background: var(--color-zinc-100);
+::selection {
+  background: rgba(86, 208, 245, 0.28);
 }
 
-@media (prefers-color-scheme: dark) {
-  .react-flow {
-    background: var(--color-zinc-950);
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid #0a0d12;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #525c6e;
+}
+
+.app-field {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  outline: none;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--ink);
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.app-field:focus {
+  border-color: color-mix(in oklab, var(--accent) 60%, transparent);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.app-field:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.app-card {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.app-card-interactive {
+  transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+}
+
+.app-card-interactive:hover {
+  border-color: color-mix(in oklab, var(--accent) 40%, transparent);
+  background: rgba(255, 255, 255, 0.034);
+  transform: translateY(-2px);
+}
+
+.app-primary-button {
+  border: 0;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #06222e;
+  font-weight: 800;
+  cursor: pointer;
+  transition: filter 150ms ease, opacity 150ms ease;
+}
+
+.app-primary-button:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.app-primary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.app-secondary-button {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--soft);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.app-secondary-button:hover:not(:disabled) {
+  border-color: color-mix(in oklab, var(--accent) 45%, transparent);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--accent);
+}
+
+.app-page-enter {
+  animation: fade-up 350ms ease both;
+}
+
+.app-dialog::backdrop {
+  background: rgba(4, 6, 10, 0.72);
+  backdrop-filter: blur(6px);
+}
+
+.app-dialog[open] {
+  animation: pop 220ms ease both;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
   }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes blink {
+  0%,
+  80%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.6);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* O bloco onde a conversa começa. */
+.react-flow__node.no-inicio::after {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  padding: 2px 7px;
+  border: 1px solid color-mix(in oklab, var(--accent) 35%, transparent);
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--accent) 14%, transparent);
+  color: var(--accent);
+  content: 'INÍCIO';
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+
+.react-flow {
+  background: var(--canvas-deep);
+}
+
+.react-flow__background pattern circle {
+  fill: rgba(255, 255, 255, 0.08);
+}
+
+.react-flow__edge-path {
+  stroke: #4f5b6f;
+  stroke-width: 1.5;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.react-flow__controls,
+.react-flow__minimap {
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 11px;
+  background: rgba(13, 17, 24, 0.88);
+  box-shadow: none;
+}
+
+.react-flow__controls-button {
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+
+.react-flow__controls-button:hover {
+  background: rgba(255, 255, 255, 0.07) !important;
+  color: white !important;
+}
+
+.react-flow__controls-button svg {
+  fill: currentColor;
+}
+
+.react-flow__attribution {
+  background: rgba(8, 11, 16, 0.7) !important;
+  color: var(--dim) !important;
 }

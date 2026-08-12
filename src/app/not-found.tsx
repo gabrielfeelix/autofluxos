@@ -10,17 +10,20 @@ import Link from 'next/link'
  */
 export default function NaoEncontrado() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center gap-4 p-6 text-center">
-      <h1 className="text-lg font-semibold">Não achei esta página.</h1>
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+    <main className="flex min-h-screen items-center justify-center p-10 text-center">
+      <div className="app-page-enter max-w-[380px]">
+      <p className="mb-3.5 font-mono text-[11px] tracking-[0.22em] text-dim">404 · NÃO ENCONTRADO</p>
+      <h1 className="text-[19px] font-bold">Não achei esta página.</h1>
+      <p className="mt-2 mb-[22px] text-[12.5px] leading-[1.65] text-muted">
         O endereço pode estar errado, ou apontar para algo que foi apagado.
       </p>
       <Link
         href="/"
-        className="mx-auto rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium transition hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+        className="app-secondary-button inline-block px-5 py-2.5 text-[13px]"
       >
         Voltar para os clientes
       </Link>
+      </div>
     </main>
   )
 }

@@ -27,9 +27,11 @@ export default function Erro({
   }, [error])
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center gap-4 p-6 text-center">
-      <h1 className="text-lg font-semibold">Alguma coisa quebrou aqui.</h1>
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+    <main className="flex min-h-screen items-center justify-center p-10 text-center">
+      <div className="app-page-enter max-w-[430px]">
+      <span className="mx-auto mb-4 flex size-11 items-center justify-center rounded-full border border-rose-400/30 bg-rose-400/10 text-lg font-bold text-rose-300">!</span>
+      <h1 className="text-[19px] font-bold">Alguma coisa quebrou aqui.</h1>
+      <p className="mt-2 mb-5 text-[12.5px] leading-[1.65] text-muted">
         Nada do que você fez se perdeu — o rascunho do fluxo é salvo sozinho. Tentar de novo costuma
         resolver quando é falha de rede.
       </p>
@@ -37,23 +39,24 @@ export default function Erro({
       <div className="flex justify-center gap-2">
         <button
           onClick={reset}
-          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"
+          className="app-primary-button px-5 py-2.5 text-[13px]"
         >
           Tentar de novo
         </button>
         <Link
           href="/"
-          className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium transition hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+          className="app-secondary-button px-5 py-2.5 text-[13px]"
         >
           Voltar para os clientes
         </Link>
       </div>
 
       {error.digest && (
-        <p className="text-xs text-zinc-400">
+        <p className="mt-4 text-xs text-dim">
           Se precisar reportar, mande este código: <code>{error.digest}</code>
         </p>
       )}
+      </div>
     </main>
   )
 }

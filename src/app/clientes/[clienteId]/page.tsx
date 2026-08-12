@@ -2,6 +2,8 @@ import { headers } from 'next/headers'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
+import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
+import { PainelShell } from '@/components/design/shell'
 import { validar } from '@/core/flow/validar'
 import { acaoConectarNumero, acaoCriarFluxo } from '@/server/acoes'
 import { acharCliente, type Cliente } from '@/server/repos/clientes'
@@ -11,79 +13,85 @@ import { listarLeads } from '@/server/repos/leads'
 
 export const dynamic = 'force-dynamic'
 
-/**
- * A tela do cliente: fluxos, números conectados e a porta para os leads.
- *
- * O cliente é buscado antes de tudo — é a checagem que decide se a página
- * existe, e ela precisa acontecer antes de qualquer `<Suspense>` para que "não
- * encontrado" responda 404 de verdade em vez de 200 (ver `guides/streaming.md`
- * da versão do Next instalada). O resto, que são três consultas, chega depois.
- */
 export default async function Pagina({ params }: { params: Promise<{ clienteId: string }> }) {
   const { clienteId } = await params
-
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-8 p-6 sm:p-10">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <Link href="/" className="text-xs text-zinc-500 hover:underline dark:text-zinc-400">
-            ← todos os clientes
-          </Link>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight">{cliente.nome}</h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            A IA é contratada por automação, não por cliente — cada fluxo abaixo diz
-            se usa.
-          </p>
-        </div>
+    <PainelShell>
+      <main className="app-page-enter max-w-[1160px] px-[46px] pt-[34px] pb-[46px]">
+        <nav className="mb-3.5 text-[12.5px] text-dim">
+          <Link href="/" className="text-muted transition hover:text-accent">Clientes</Link>
+          <span className="mx-2">/</span>
+          <span className="text-soft">{cliente.nome}</span>
+        </nav>
 
-        {/* O fluxo é o meio; o lead é o fim. Fica em destaque, e a contagem —
-            principalmente quantos esperam uma pessoa — chega em seguida. */}
+        <h1 className="mb-[30px] text-[25px] font-bold tracking-[-0.02em]">{cliente.nome}</h1>
+
         <Link
           href={`/clientes/${cliente.id}/leads`}
-          className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium transition hover:border-emerald-500 hover:text-emerald-600 dark:border-zinc-700"
+          className="app-card app-card-interactive mb-[18px] flex min-h-[72px] items-center gap-[26px] px-6 py-4"
         >
-          Leads
-          <Suspense fallback={<span className="ml-2 text-xs font-normal text-zinc-400">…</span>}>
+          <Suspense fallback={<ContagemEsqueleto />}>
             <ContagemDeLeads clienteId={cliente.id} />
           </Suspense>
+          <span className="flex-1" />
+          <span className="text-[13px] font-bold text-accent">Ver leads →</span>
         </Link>
-      </header>
 
-      <Suspense fallback={<Esqueleto />}>
-        <Conteudo cliente={cliente} />
-      </Suspense>
-    </main>
+        <Suspense fallback={<Esqueleto />}>
+          <Conteudo cliente={cliente} />
+        </Suspense>
+      </main>
+    </PainelShell>
   )
 }
 
 function Esqueleto() {
   return (
-    <div className="space-y-2">
+    <div className="grid grid-cols-2 gap-[18px]">
       {[0, 1].map((i) => (
-        <div key={i} className="h-14 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-900" />
+        <div key={i} className="app-card h-52 animate-pulse" />
       ))}
       <span className="sr-only">Carregando os fluxos…</span>
     </div>
   )
 }
 
+function ContagemEsqueleto() {
+  return (
+    <>
+      <div className="w-[110px] animate-pulse">
+        <div className="h-[23px] w-11 rounded-md bg-white/[0.07]" />
+        <div className="mt-1 h-[11px] w-[88px] rounded bg-white/[0.05]" />
+      </div>
+      <div className="h-[34px] w-px bg-white/[0.07]" />
+      <div className="w-40 animate-pulse">
+        <div className="h-[23px] w-11 rounded-md bg-white/[0.07]" />
+        <div className="mt-1 h-[11px] w-[140px] rounded bg-white/[0.05]" />
+      </div>
+    </>
+  )
+}
+
 async function ContagemDeLeads({ clienteId }: { clienteId: string }) {
   const leads = await listarLeads(clienteId)
-  const esperando = leads.filter((l) => l.aguardando).length
+  const esperando = leads.filter((lead) => lead.aguardando).length
 
   return (
     <>
-      <span className="ml-2 text-xs font-normal text-zinc-500 dark:text-zinc-400">
-        {leads.length}
-      </span>
-      {esperando > 0 && (
-        <span className="ml-2 rounded bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
-          {esperando} esperando
-        </span>
-      )}
+      <div className="w-[110px]">
+        <strong className="block text-[22px] leading-[23px] tracking-[-0.02em]">{leads.length}</strong>
+        <span className="mt-1 block text-[11px] leading-3 text-muted">leads no total</span>
+      </div>
+      <div className="h-[34px] w-px bg-white/[0.07]" />
+      <div className="w-40">
+        <strong className={`block text-[22px] leading-[23px] tracking-[-0.02em] ${esperando > 0 ? 'text-rose-300' : ''}`}>
+          {esperando}
+        </strong>
+        <span className="mt-1 block text-[11px] leading-3 text-muted">esperando atendimento</span>
+      </div>
     </>
   )
 }
@@ -97,149 +105,145 @@ async function Conteudo({ cliente }: { cliente: Cliente }) {
 
   const host = cabecalhos.get('x-forwarded-host') ?? cabecalhos.get('host') ?? 'localhost:3000'
   const protocolo = host.startsWith('localhost') ? 'http' : 'https'
-  const baseUrl = `${protocolo}://${host}`
-
+  const webhook = `${protocolo}://${host}/api/webhook/whatsapp`
   const criarComCliente = acaoCriarFluxo.bind(null, cliente.id)
   const conectarComCliente = acaoConectarNumero.bind(null, cliente.id)
 
   return (
-    <>
-      <section>
-        <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
-          {fluxos.length === 0
-            ? 'Nenhum fluxo ainda.'
-            : `${fluxos.length} ${fluxos.length === 1 ? 'fluxo' : 'fluxos'}.`}
-        </p>
+    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-[18px]">
+      <section className="app-card overflow-hidden">
+        <header className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-5 py-4">
+          <h2 className="text-[14.5px] font-bold">Fluxos</h2>
+          <ModalFormulario
+            botao="+ Criar fluxo"
+            titulo="Novo fluxo"
+            descricao={'Nasce como rascunho com um esqueleto válido — boas-vindas ligada a “Falar com humano”.'}
+            action={criarComCliente}
+          >
+            <label>
+              <RotuloCampo>Nome do fluxo</RotuloCampo>
+              <input
+                name="nome"
+                required
+                autoFocus
+                placeholder="ex.: Atendimento comercial"
+                className="app-field px-[13px] py-[11px] text-[13.5px]"
+              />
+            </label>
+            <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-white/[0.09] p-3">
+              <input name="ia" type="checkbox" className="size-4 accent-[#a78bfa]" />
+              <span>
+                <strong className="block text-[12.5px] font-semibold">Com IA</strong>
+                <span className="mt-0.5 block text-[11px] leading-5 text-dim">
+                  Blocos de IA respondem de verdade neste fluxo. Plano à parte.
+                </span>
+              </span>
+            </label>
+          </ModalFormulario>
+        </header>
 
-        <ul className="space-y-2">
-          {fluxos.map((fluxo) => {
-            const validacao = validar(fluxo.rascunho, { iaHabilitada: fluxo.iaHabilitada })
-            return (
-              <li key={fluxo.id}>
-                <Link
-                  href={`/clientes/${cliente.id}/fluxos/${fluxo.id}`}
-                  className="flex items-center justify-between gap-4 rounded-xl border border-zinc-200 bg-white px-4 py-3 transition hover:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900"
-                >
-                  <span>
-                    <span className="font-medium">{fluxo.nome}</span>
-                    <span className="ml-2 text-xs text-zinc-400">
-                      {fluxo.rascunho.nodes.length} blocos
-                    </span>
-                  </span>
-                  <span className="flex shrink-0 items-center gap-2">
-                    {fluxo.iaHabilitada && (
-                      <span className="rounded bg-fuchsia-500/15 px-2 py-0.5 text-xs font-medium text-fuchsia-700 dark:text-fuchsia-400">
-                        com IA
-                      </span>
-                    )}
-                    {!validacao.ok && (
-                      <span className="rounded bg-red-500/15 px-2 py-0.5 text-xs font-medium text-red-700 dark:text-red-400">
-                        {validacao.erros.length} erro(s)
-                      </span>
-                    )}
-                    <span
-                      className={`rounded px-2 py-0.5 text-xs font-medium ${
-                        fluxo.versaoPublicadaId
-                          ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
-                          : 'bg-zinc-500/15 text-zinc-600 dark:text-zinc-400'
-                      }`}
-                    >
-                      {fluxo.versaoPublicadaId ? 'no ar' : 'rascunho'}
-                    </span>
-                  </span>
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
-      </section>
-
-      <section className="border-t border-zinc-200 pt-6 dark:border-zinc-800">
-        <h2 className="text-xs font-semibold tracking-wide text-zinc-500 uppercase">
-          Números do WhatsApp
-        </h2>
-
-        {canais.length > 0 && (
-          <ul className="mt-3 space-y-2">
-            {canais.map((canal) => {
-              const fluxo = fluxos.find((f) => f.id === canal.flowId)
+        {fluxos.length === 0 ? (
+          <div className="px-5 py-10 text-center">
+            <p className="text-[13.5px] font-semibold text-soft">Nenhum fluxo ainda</p>
+            <p className="mt-1 text-xs leading-5 text-dim">Crie o primeiro fluxo para começar a desenhar o atendimento.</p>
+          </div>
+        ) : (
+          <ul>
+            {fluxos.map((fluxo) => {
+              const validacao = validar(fluxo.rascunho, { iaHabilitada: fluxo.iaHabilitada })
               return (
-                <li
-                  key={canal.id}
-                  className="rounded-xl border border-zinc-200 px-4 py-3 text-sm dark:border-zinc-800"
-                >
-                  <code className="text-xs">{canal.phoneNumberId}</code>
-                  <span className="ml-2 text-xs text-zinc-500">
-                    {fluxo
-                      ? fluxo.versaoPublicadaId
-                        ? `roda "${fluxo.nome}"`
-                        : `ligado a "${fluxo.nome}", que ainda não foi publicado`
-                      : 'sem fluxo ligado — o bot não responde'}
-                  </span>
+                <li key={fluxo.id} className="border-b border-white/[0.045] last:border-0">
+                  <Link
+                    href={`/clientes/${cliente.id}/fluxos/${fluxo.id}`}
+                    className="flex items-center gap-3.5 px-5 py-[15px] transition hover:bg-white/[0.03]"
+                  >
+                    <span className={`size-2 shrink-0 rounded-full ${fluxo.versaoPublicadaId ? 'bg-emerald-400' : 'bg-dim'}`} />
+                    <span className="min-w-0 flex-1">
+                      <strong className="block truncate text-[13.5px] font-semibold">{fluxo.nome}</strong>
+                      <span className="mt-0.5 block text-[11px] text-dim">
+                        {fluxo.rascunho.nodes.length} blocos
+                        {fluxo.iaHabilitada ? ' · IA ativa' : ''}
+                      </span>
+                    </span>
+                    {!validacao.ok && (
+                      <span className="rounded-full border border-rose-400/25 bg-rose-400/10 px-2.5 py-1 text-[10.5px] font-bold text-rose-300">
+                        {validacao.erros.length} impedimento(s)
+                      </span>
+                    )}
+                    <span className={`rounded-full border px-2.5 py-1 text-[10.5px] font-bold ${fluxo.versaoPublicadaId ? 'border-emerald-400/25 bg-emerald-400/[0.08] text-emerald-300' : 'border-white/10 bg-white/[0.04] text-muted'}`}>
+                      {fluxo.versaoPublicadaId ? 'NO AR' : 'RASCUNHO'}
+                    </span>
+                  </Link>
                 </li>
               )
             })}
           </ul>
         )}
-
-        <form action={conectarComCliente} className="mt-3 flex flex-wrap gap-2">
-          <input
-            name="phoneNumberId"
-            required
-            placeholder="Identificação do número (Meta)"
-            className="min-w-48 flex-1 rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none focus:border-emerald-500 dark:border-zinc-700"
-          />
-          <select
-            name="flowId"
-            className="rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-          >
-            <option value="">sem fluxo</option>
-            {fluxos.map((f) => (
-              <option key={f.id} value={f.id}>
-                {f.nome}
-              </option>
-            ))}
-          </select>
-          <button
-            type="submit"
-            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium transition hover:bg-zinc-200 dark:border-zinc-700 dark:hover:bg-zinc-800"
-          >
-            Conectar
-          </button>
-        </form>
-
-        <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
-          No painel da Meta, em <strong>WhatsApp → Configuração</strong>, aponte o webhook para{' '}
-          <code className="rounded bg-zinc-100 px-1.5 py-0.5 dark:bg-zinc-800">
-            {baseUrl}/api/webhook/whatsapp
-          </code>{' '}
-          e assine o campo <code>messages</code>.
-        </p>
       </section>
 
-      <form
-        action={criarComCliente}
-        className="flex flex-wrap items-center gap-2 border-t border-zinc-200 pt-6 dark:border-zinc-800"
-      >
-        <input
-          name="nome"
-          required
-          placeholder="Nome da nova automação"
-          className="min-w-48 flex-1 rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none focus:border-emerald-500 dark:border-zinc-700"
-        />
-        {/* A pergunta que decide o plano, feita no momento em que a automação
-            nasce — que é quando você já sabe o que vendeu. */}
-        <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
-          <input name="ia" type="checkbox" className="size-4 accent-fuchsia-600" />
-          com IA
-        </label>
-        <button
-          type="submit"
-          className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium transition hover:bg-zinc-200 dark:border-zinc-700 dark:hover:bg-zinc-800"
-        >
-          Criar automação
-        </button>
-      </form>
-    </>
+      <div className="space-y-[18px]">
+        <section className="app-card overflow-hidden">
+          <header className="border-b border-white/[0.06] px-5 py-4">
+            <h2 className="text-[14.5px] font-bold">Números do WhatsApp</h2>
+          </header>
+
+          {canais.length > 0 && (
+            <ul>
+              {canais.map((canal) => {
+                const fluxo = fluxos.find((item) => item.id === canal.flowId)
+                const aviso = !fluxo
+                  ? 'Sem fluxo ligado — o bot não responde.'
+                  : !fluxo.versaoPublicadaId
+                    ? 'O fluxo ligado ainda não foi publicado.'
+                    : null
+
+                return (
+                  <li key={canal.id} className="border-b border-white/[0.045] px-5 py-3.5">
+                    <div className="flex items-center gap-2 text-[12.5px] font-semibold">
+                      <span className={`size-2 rounded-full ${aviso ? 'bg-amber-300' : 'bg-emerald-400'}`} />
+                      <code className="font-mono text-[11px] text-soft">{canal.phoneNumberId}</code>
+                    </div>
+                    <p className="mt-1.5 ml-4 text-[11.5px] text-muted">
+                      Executa: <strong className="font-semibold text-soft">{fluxo?.nome ?? 'nenhum fluxo'}</strong>
+                    </p>
+                    {aviso && (
+                      <p className="mt-2 ml-4 rounded-lg border border-amber-300/25 bg-amber-300/[0.08] px-2.5 py-2 text-[11.5px] text-amber-200">
+                        {aviso}
+                      </p>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+
+          <form action={conectarComCliente} className="space-y-2.5 p-5">
+            <input
+              name="phoneNumberId"
+              required
+              placeholder="Identificação do número (Meta)"
+              className="app-field px-3 py-2.5 text-[12.5px]"
+            />
+            <div className="flex gap-2">
+              <select name="flowId" className="app-field min-w-0 flex-1 px-3 py-2.5 text-[12.5px]">
+                <option value="">sem fluxo</option>
+                {fluxos.map((fluxo) => (
+                  <option key={fluxo.id} value={fluxo.id}>{fluxo.nome}</option>
+                ))}
+              </select>
+              <button type="submit" className="app-secondary-button px-4 py-2 text-xs">Conectar</button>
+            </div>
+          </form>
+        </section>
+
+        <section className="app-card p-5">
+          <h2 className="text-[13px] font-bold">Endereço para o painel da Meta</h2>
+          <p className="mt-1 text-[11.5px] text-dim">Cadastre este webhook na configuração do WhatsApp Business.</p>
+          <code className="mt-2.5 block truncate rounded-lg border border-white/[0.08] bg-black/30 px-3 py-2.5 font-mono text-[11.5px] text-[#8de2fa]">
+            {webhook}
+          </code>
+        </section>
+      </div>
+    </div>
   )
 }

@@ -14,21 +14,21 @@ import { LIMITE_BOTOES, SAIDA_FALSO, SAIDA_VERDADEIRO, type Opcao } from '@/core
  */
 
 const CORES = {
-  mensagem: 'border-sky-500/40 bg-sky-500/5',
-  pergunta: 'border-emerald-500/40 bg-emerald-500/5',
-  condicao: 'border-violet-500/40 bg-violet-500/5',
-  'salvar-campo': 'border-amber-500/40 bg-amber-500/5',
-  ia: 'border-fuchsia-500/40 bg-fuchsia-500/5',
-  handoff: 'border-blue-500/40 bg-blue-500/5',
+  mensagem: 'border-sky-400/30',
+  pergunta: 'border-emerald-400/30',
+  condicao: 'border-violet-400/30',
+  'salvar-campo': 'border-amber-300/30',
+  ia: 'border-fuchsia-400/30',
+  handoff: 'border-rose-400/30',
 } as const
 
 export const ICONES = {
-  mensagem: '💬',
-  pergunta: '❓',
+  mensagem: '↗',
+  pergunta: '?',
   condicao: '⑂',
-  'salvar-campo': '💾',
-  ia: '✨',
-  handoff: '🙋',
+  'salvar-campo': '↓',
+  ia: '✦',
+  handoff: '♙',
 } as const
 
 export const NOMES = {
@@ -54,18 +54,20 @@ function Caixa({
 }) {
   return (
     <div
-      className={`w-56 rounded-xl border-2 bg-white px-3 py-2 text-xs shadow-sm transition dark:bg-zinc-900 ${CORES[tipo]} ${
-        selecionado ? 'ring-2 ring-zinc-900 dark:ring-white' : ''
+      className={`w-[248px] overflow-hidden rounded-xl border bg-[#0b1018] text-xs shadow-[0_14px_34px_rgba(0,0,0,0.35)] transition ${CORES[tipo]} ${
+        selecionado ? '!border-accent ring-1 ring-accent/30' : ''
       }`}
     >
-      <Handle type="target" position={Position.Top} className="!h-2 !w-2 !bg-zinc-400" />
-      <p className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold tracking-wide text-zinc-500 uppercase">
-        <span aria-hidden>{ICONES[tipo]}</span>
+      <Handle type="target" position={Position.Left} className="!left-[-6px] !size-[13px] !border-2 !border-white/30 !bg-[#0b1018]" />
+      <p className="flex h-[38px] items-center gap-2 border-b border-white/[0.06] px-3 text-[10px] font-bold tracking-[0.06em] text-[#97a2b4] uppercase">
+        <span aria-hidden className="flex size-6 items-center justify-center rounded-[7px] bg-white/[0.05] text-[13px] text-soft">
+          {ICONES[tipo]}
+        </span>
         {NOMES[tipo]}
       </p>
-      {children}
+      <div className="px-3 py-2.5">{children}</div>
       {saidaUnica && (
-        <Handle type="source" position={Position.Bottom} className="!h-2 !w-2 !bg-zinc-400" />
+        <Handle type="source" position={Position.Right} className="!right-[-6px] !size-[11px] !border-2 !border-[#0b1018] !bg-accent" />
       )}
     </div>
   )
@@ -74,13 +76,13 @@ function Caixa({
 /** Uma linha com a própria alça de saída à direita. */
 function Saida({ id, children }: { id: string; children: ReactNode }) {
   return (
-    <div className="relative mt-1 rounded border border-zinc-200 bg-white px-2 py-1 pr-4 dark:border-zinc-700 dark:bg-zinc-800">
+    <div className="relative mt-1.5 rounded-[7px] border border-white/[0.07] bg-white/[0.035] px-2 py-1.5 pr-5 text-[#b9c2d0]">
       {children}
       <Handle
         type="source"
         id={id}
         position={Position.Right}
-        className="!right-[-5px] !h-2 !w-2 !bg-emerald-500"
+        className="!right-[-6px] !size-[11px] !border-2 !border-[#0b1018] !bg-accent"
         style={{ top: '50%' }}
       />
     </div>
@@ -93,7 +95,7 @@ function NoMensagem({ data, selected }: NodeProps) {
   const d = data as { texto: string }
   return (
     <Caixa tipo="mensagem" selecionado={!!selected}>
-      <p className="line-clamp-3 whitespace-pre-wrap text-zinc-700 dark:text-zinc-200">
+      <p className="line-clamp-3 whitespace-pre-wrap text-[12.5px] leading-5 text-soft">
         {vazio(d.texto, '(sem texto)')}
       </p>
     </Caixa>
@@ -104,8 +106,8 @@ function NoPergunta({ data, selected }: NodeProps) {
   const d = data as { texto: string; salvarEm?: string; opcoes: Opcao[] }
   return (
     <Caixa tipo="pergunta" selecionado={!!selected} saidaUnica={d.opcoes.length === 0}>
-      <p className="line-clamp-2 text-zinc-700 dark:text-zinc-200">{vazio(d.texto, '(sem texto)')}</p>
-      {d.salvarEm && <p className="mt-1 text-[10px] text-zinc-400">guarda em {d.salvarEm}</p>}
+      <p className="line-clamp-2 text-[12.5px] leading-5 text-soft">{vazio(d.texto, '(sem texto)')}</p>
+      {d.salvarEm && <p className="mt-1 font-mono text-[10px] text-dim">guarda em {d.salvarEm}</p>}
 
       {d.opcoes.map((opcao) => (
         <Saida key={opcao.id} id={opcao.id}>
@@ -114,12 +116,12 @@ function NoPergunta({ data, selected }: NodeProps) {
       ))}
 
       {d.opcoes.length > 0 && (
-        <p className="mt-1.5 text-[10px] text-zinc-400">
+        <p className="mt-1.5 text-[10px] text-dim">
           {d.opcoes.length <= LIMITE_BOTOES ? 'vira botões' : 'vira lista'}
         </p>
       )}
       {d.opcoes.length === 0 && (
-        <p className="mt-1 text-[10px] text-zinc-400">resposta livre em texto</p>
+        <p className="mt-1 text-[10px] text-dim">resposta livre em texto</p>
       )}
     </Caixa>
   )
@@ -129,16 +131,16 @@ function NoCondicao({ data, selected }: NodeProps) {
   const d = data as { variavel: string; operador: string; valor: string }
   return (
     <Caixa tipo="condicao" selecionado={!!selected} saidaUnica={false}>
-      <p className="text-zinc-700 dark:text-zinc-200">
-        <code className="text-[11px]">{d.variavel}</code>{' '}
-        <span className="text-zinc-500">{d.operador}</span>{' '}
-        {d.valor && <code className="text-[11px]">{d.valor}</code>}
+      <p className="text-soft">
+        <code className="font-mono text-[11px] text-[#8de2fa]">{d.variavel}</code>{' '}
+        <span className="text-muted">{d.operador}</span>{' '}
+        {d.valor && <code className="font-mono text-[11px]">{d.valor}</code>}
       </p>
       <Saida id={SAIDA_VERDADEIRO}>
-        <span className="text-[11px] text-emerald-600 dark:text-emerald-400">verdadeiro</span>
+        <span className="text-[11px] text-emerald-300">verdadeiro</span>
       </Saida>
       <Saida id={SAIDA_FALSO}>
-        <span className="text-[11px] text-zinc-500">falso</span>
+        <span className="text-[11px] text-muted">falso</span>
       </Saida>
     </Caixa>
   )
@@ -148,8 +150,8 @@ function NoSalvarCampo({ data, selected }: NodeProps) {
   const d = data as { campo: string; valor: string }
   return (
     <Caixa tipo="salvar-campo" selecionado={!!selected}>
-      <p className="text-zinc-700 dark:text-zinc-200">
-        <code className="text-[11px]">{d.campo}</code> = {vazio(d.valor, '(vazio)')}
+      <p className="text-soft">
+        <code className="font-mono text-[11px] text-[#8de2fa]">{d.campo}</code> = {vazio(d.valor, '(vazio)')}
       </p>
     </Caixa>
   )
@@ -159,7 +161,7 @@ function NoIa({ data, selected }: NodeProps) {
   const d = data as { instrucao: string; salvarEm?: string }
   return (
     <Caixa tipo="ia" selecionado={!!selected}>
-      <p className="line-clamp-3 text-zinc-700 dark:text-zinc-200">
+      <p className="line-clamp-3 text-[12.5px] leading-5 text-soft">
         {vazio(d.instrucao, '(sem instrução)')}
       </p>
     </Caixa>
@@ -170,8 +172,8 @@ function NoHandoff({ data, selected }: NodeProps) {
   const d = data as { motivo: string; mensagem: string }
   return (
     <Caixa tipo="handoff" selecionado={!!selected} saidaUnica={false}>
-      <p className="line-clamp-2 text-zinc-700 dark:text-zinc-200">{d.mensagem}</p>
-      <p className="mt-1 text-[10px] text-zinc-400">motivo: {d.motivo}</p>
+      <p className="line-clamp-2 text-[12.5px] leading-5 text-soft">{d.mensagem}</p>
+      <p className="mt-1 text-[10px] text-dim">motivo: {d.motivo}</p>
     </Caixa>
   )
 }

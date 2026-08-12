@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
+import { PainelShell } from '@/components/design/shell'
 import { acaoCriarCliente, acaoCriarExemplo } from '@/server/acoes'
 import { listarClientes } from '@/server/repos/clientes'
 import { resumirAutomacoes } from '@/server/repos/fluxos'
@@ -9,69 +11,119 @@ export default async function Pagina() {
   const [clientes, automacoes] = await Promise.all([listarClientes(), resumirAutomacoes()])
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-8 p-6 sm:p-10">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Clientes</h1>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-          Cada cliente tem os fluxos dele. O que é específico de um negócio mora no fluxo, nunca no
-          código.
-        </p>
-      </header>
+    <PainelShell>
+      <main className="app-page-enter max-w-[1120px] px-[46px] pt-[38px] pb-[46px]">
+        <header className="mb-7 flex items-end justify-between gap-5">
+          <div>
+            <h1 className="text-[25px] font-bold tracking-[-0.02em]">Clientes</h1>
+            <p className="mt-1 text-[13px] text-muted">
+              Empresas atendidas pela 4YU — cada uma com seus fluxos e números.
+            </p>
+          </div>
 
-      {clientes.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 p-10 text-center dark:border-zinc-700">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">Nenhum cliente ainda.</p>
-          <form action={acaoCriarExemplo} className="mt-4">
-            <button
-              type="submit"
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"
-            >
-              Criar um cliente de exemplo
-            </button>
-          </form>
-          <p className="mt-3 text-xs text-zinc-400">
-            Vem com um fluxo de triagem pronto, para você ter o que testar.
-          </p>
-        </div>
-      ) : (
-        <ul className="space-y-2">
-          {clientes.map((cliente) => (
-            <li key={cliente.id}>
-              <Link
-                href={`/clientes/${cliente.id}`}
-                className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-3 transition hover:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900"
-              >
-                <span className="font-medium">{cliente.nome}</span>
-                {/* IA é por automação (0005), então o rótulo do cliente conta
-                    quantas — dizer "cliente com IA" seria mentira agora. */}
-                <span className="text-xs text-zinc-400">
-                  {(() => {
-                    const r = automacoes.get(cliente.id)
-                    if (!r || r.total === 0) return 'sem automação'
-                    const base = `${r.total} ${r.total === 1 ? 'automação' : 'automações'}`
-                    return r.comIa > 0 ? `${base} · ${r.comIa} com IA` : base
-                  })()}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
+          <ModalFormulario
+            botao={
+              <span className="flex items-center gap-2">
+                <span aria-hidden className="text-lg leading-none">+</span>
+                Novo cliente
+              </span>
+            }
+            titulo="Novo cliente"
+            descricao="A empresa nasce vazia — o primeiro fluxo e o número de WhatsApp vêm depois, na tela dela."
+            action={acaoCriarCliente}
+          >
+            <label>
+              <RotuloCampo>Nome da empresa</RotuloCampo>
+              <input
+                name="nome"
+                required
+                autoFocus
+                placeholder="ex.: Vega Filmes"
+                className="app-field px-[13px] py-[11px] text-[13.5px]"
+              />
+            </label>
+          </ModalFormulario>
+        </header>
 
-      <form action={acaoCriarCliente} className="flex gap-2 border-t border-zinc-200 pt-6 dark:border-zinc-800">
-        <input
-          name="nome"
-          required
-          placeholder="Nome do novo cliente"
-          className="flex-1 rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none focus:border-emerald-500 dark:border-zinc-700"
-        />
-        <button
-          type="submit"
-          className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium transition hover:bg-zinc-200 dark:border-zinc-700 dark:hover:bg-zinc-800"
-        >
-          Adicionar
-        </button>
-      </form>
-    </main>
+        {clientes.length === 0 ? (
+          <section className="app-card border-dashed px-10 py-14 text-center">
+            <p className="text-[14px] font-semibold text-soft">Nenhum cliente ainda</p>
+            <p className="mx-auto mt-1.5 max-w-md text-[12.5px] leading-6 text-dim">
+              Crie uma empresa vazia ou comece com o exemplo pronto para conhecer o fluxo completo.
+            </p>
+            <form action={acaoCriarExemplo} className="mt-5">
+              <button type="submit" className="app-primary-button px-5 py-2.5 text-[13px]">
+                Criar cliente de exemplo
+              </button>
+            </form>
+          </section>
+        ) : (
+          <ul className="grid grid-cols-[repeat(auto-fill,minmax(310px,1fr))] gap-4">
+            {clientes.map((cliente) => {
+              const resumo = automacoes.get(cliente.id)
+              const total = resumo?.total ?? 0
+              const comIa = resumo?.comIa ?? 0
+
+              return (
+                <li key={cliente.id}>
+                  <Link
+                    href={`/clientes/${cliente.id}`}
+                    className="app-card app-card-interactive block min-h-[172px] p-5"
+                  >
+                    <div className="mb-4 flex items-center gap-3">
+                      <Avatar nome={cliente.nome} />
+                      <div className="min-w-0 flex-1">
+                        <h2 className="truncate text-[15.5px] font-bold tracking-[-0.01em]">
+                          {cliente.nome}
+                        </h2>
+                        <p className="mt-0.5 text-[11.5px] text-dim">cliente AutoFluxos</p>
+                      </div>
+                      {comIa > 0 && (
+                        <span className="font-mono text-[10px] text-violet-300">
+                          {comIa} com IA
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="mb-4 flex gap-[18px] text-[12.5px] text-muted">
+                      <span>
+                        <strong className="font-mono text-[13px] text-ink">{total}</strong>{' '}
+                        {total === 1 ? 'automação' : 'automações'}
+                      </span>
+                      <span>
+                        <strong className="font-mono text-[13px] text-ink">{comIa}</strong> com IA
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className={`size-2 rounded-full ${total > 0 ? 'bg-emerald-400' : 'bg-dim'}`} />
+                      <span className={total > 0 ? 'text-emerald-300' : 'text-muted'}>
+                        {total > 0 ? 'estrutura configurada' : 'aguardando primeiro fluxo'}
+                      </span>
+                    </div>
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </main>
+    </PainelShell>
+  )
+}
+
+function Avatar({ nome }: { nome: string }) {
+  const iniciais = nome
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((parte) => parte[0])
+    .join('')
+    .toUpperCase()
+
+  return (
+    <span className="flex size-11 shrink-0 items-center justify-center rounded-full border border-white/[0.11] bg-white/[0.05] text-[13px] font-bold tracking-[0.03em] text-[#97a2b4]">
+      {iniciais || 'CL'}
+    </span>
   )
 }

@@ -174,24 +174,34 @@ export function Conversa({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
+      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3.5">
         {itens.map((item) => (
           <Bolha key={item.chave} item={item} pendentes={pendentes} ocupado={ocupado} aoEscolher={enviar} />
         ))}
-        {ocupado && <p className="text-xs text-zinc-400">digitando…</p>}
+        {ocupado && (
+          <div className="flex w-fit gap-1 rounded-[13px_13px_13px_4px] border border-white/[0.08] bg-white/[0.055] px-3.5 py-3">
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                className="size-1.5 rounded-full bg-muted"
+                style={{ animation: `blink 1.1s ${i * 0.18}s infinite` }}
+              />
+            ))}
+          </div>
+        )}
         <div ref={fimDaLista} />
       </div>
 
       {desatualizada && (
-        <p className="border-t border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-700 dark:text-amber-400">
+        <p className="mx-3.5 mb-2 rounded-[11px] border border-amber-300/25 bg-amber-300/[0.08] px-3 py-2.5 text-[11.5px] text-amber-200">
           O fluxo mudou desde que esta conversa começou.{' '}
-          <button onClick={recomecar} className="font-medium underline">
+          <button onClick={recomecar} className="font-bold underline underline-offset-2">
             recomeçar para testar
           </button>
         </p>
       )}
 
-      <div className="border-t border-zinc-200 p-3 dark:border-zinc-800">
+      <div className="border-t border-white/[0.06] p-3">
         {viva ? (
           <form onSubmit={submeter} className="flex gap-2">
             <input
@@ -201,31 +211,31 @@ export function Conversa({
               placeholder={
                 status === 'aguardando_ia' ? 'o que a IA responderia?' : 'escreva como o cliente…'
               }
-              className="min-w-0 flex-1 rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none focus:border-emerald-500 disabled:opacity-50 dark:border-zinc-700"
+              className="app-field min-w-0 flex-1 px-3 py-2 text-[12.5px]"
             />
             <button
               type="button"
               onClick={() => void enviar({ tipo: 'midia', formato: 'audio' }, '🎤 (áudio)')}
               disabled={ocupado || status === 'aguardando_ia'}
               title="Testar o que acontece quando a pessoa manda áudio"
-              className="rounded-lg border border-zinc-300 px-3 text-sm transition hover:bg-zinc-100 disabled:opacity-40 dark:border-zinc-700 dark:hover:bg-zinc-800"
+              className="app-secondary-button flex size-9 shrink-0 items-center justify-center px-0 text-sm disabled:opacity-40"
             >
               🎤
             </button>
             <button
               type="submit"
               disabled={ocupado || rascunho.trim() === ''}
-              className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-40"
+              className="app-primary-button flex size-9 shrink-0 items-center justify-center px-0 text-lg disabled:opacity-40"
             >
-              Enviar
+              ›
             </button>
           </form>
         ) : (
-          <p className="px-1 py-2 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="px-1 py-2 text-[12.5px] leading-5 text-muted">
             {status === 'humano'
               ? 'O bot saiu de cena — daqui em diante quem responde é uma pessoa.'
               : 'A conversa terminou.'}{' '}
-            <button onClick={recomecar} className="font-medium text-emerald-600 underline">
+            <button onClick={recomecar} className="font-bold text-accent underline underline-offset-2">
               recomeçar
             </button>
           </p>
@@ -249,8 +259,8 @@ function Bolha({
   if (item.de === 'sistema') {
     return (
       <p
-        className={`text-center text-[11px] tracking-wide ${
-          item.alerta ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-400 dark:text-zinc-500'
+        className={`mx-auto w-fit rounded-full border border-dashed px-3 py-1 text-center font-mono text-[9.5px] ${
+          item.alerta ? 'border-amber-300/25 text-amber-200' : 'border-white/[0.14] text-[#6b7689]'
         }`}
       >
         {item.texto}
@@ -261,7 +271,7 @@ function Bolha({
   if (item.de === 'pessoa') {
     return (
       <div className="flex justify-end">
-        <p className="max-w-[85%] rounded-2xl rounded-br-sm bg-emerald-600 px-3 py-2 text-sm text-white">
+        <p className="max-w-[85%] rounded-[13px_13px_4px_13px] border border-accent/[0.24] bg-accent/[0.14] px-3 py-2 text-[12.5px] leading-[1.5] text-ink">
           {item.texto}
         </p>
       </div>
@@ -272,7 +282,7 @@ function Bolha({
 
   return (
     <div className="flex flex-col items-start gap-2">
-      <p className="max-w-[85%] rounded-2xl rounded-bl-sm bg-zinc-100 px-3 py-2 text-sm whitespace-pre-wrap dark:bg-zinc-800">
+      <p className="max-w-[88%] rounded-[13px_13px_13px_4px] border border-white/[0.08] bg-white/[0.055] px-3 py-2 text-[12.5px] leading-[1.5] whitespace-pre-wrap">
         {item.texto}
       </p>
 
@@ -280,8 +290,8 @@ function Bolha({
         <div
           className={
             item.formato === 'botoes'
-              ? 'flex max-w-[85%] flex-wrap gap-2'
-              : 'flex w-full max-w-[85%] flex-col overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700'
+              ? 'flex max-w-[88%] flex-wrap gap-1.5'
+              : 'flex w-full max-w-[88%] flex-col overflow-hidden rounded-xl border border-white/[0.1]'
           }
         >
           {item.opcoes.map((opcao) => (
@@ -292,8 +302,8 @@ function Bolha({
               onClick={() => aoEscolher({ tipo: 'opcao', opcaoId: opcao.id }, opcao.rotulo)}
               className={
                 item.formato === 'botoes'
-                  ? 'rounded-full border border-emerald-600/40 px-3 py-1.5 text-xs font-medium text-emerald-700 transition enabled:hover:bg-emerald-600 enabled:hover:text-white disabled:opacity-40 dark:text-emerald-400'
-                  : 'border-b border-zinc-200 px-3 py-2 text-left text-xs transition last:border-0 enabled:hover:bg-zinc-100 disabled:opacity-40 dark:border-zinc-700 dark:enabled:hover:bg-zinc-800'
+                  ? 'rounded-lg border border-accent/[0.28] bg-accent/[0.07] px-3 py-1.5 text-xs font-semibold text-accent transition enabled:hover:bg-accent/[0.14] disabled:opacity-40'
+                  : 'border-b border-white/[0.08] px-3 py-2 text-left text-xs text-soft transition last:border-0 enabled:hover:bg-white/[0.05] disabled:opacity-40'
               }
             >
               {opcao.rotulo}
@@ -303,7 +313,7 @@ function Bolha({
       )}
 
       {item.opcoes && (
-        <span className="text-[10px] text-zinc-400">
+        <span className="font-mono text-[9.5px] text-dim">
           no WhatsApp isto vira {item.formato === 'botoes' ? 'botões' : 'uma lista'}
         </span>
       )}
