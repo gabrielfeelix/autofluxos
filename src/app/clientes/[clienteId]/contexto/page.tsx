@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { FormularioSalvar } from '@/components/design/formulario-salvar'
-import { PainelShell } from '@/components/design/shell'
 import { acaoSalvarContexto } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
 
@@ -42,46 +41,41 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const vazio = cliente.contextoNegocio.trim() === ''
 
   return (
-    <PainelShell>
-      <main className="app-page-enter max-w-[820px] px-[46px] pt-[34px] pb-[46px]">
-        <nav className="mb-3.5 text-[12.5px] text-dim">
-          <Link href="/" className="text-muted transition hover:text-accent">Clientes</Link>
-          <span className="mx-2">/</span>
-          <Link href={`/clientes/${clienteId}`} className="text-muted transition hover:text-accent">
-            {cliente.nome}
-          </Link>
-          <span className="mx-2">/</span>
-          <span className="text-soft">Contexto do negócio</span>
-        </nav>
+    <main className="max-w-[820px] px-[42px] pt-[26px] pb-[42px]">
+      <Link
+        href={`/clientes/${clienteId}/ajustes`}
+        className="mb-3.5 inline-block text-[12.5px] text-muted transition hover:text-accent"
+      >
+        ← Ajustes
+      </Link>
 
-        <h1 className="text-[25px] font-bold tracking-[-0.02em]">Contexto do negócio</h1>
-        <p className="mt-1.5 mb-6 max-w-[620px] text-[13px] leading-6 text-dim">
-          É a <strong className="text-soft">única fonte de verdade</strong> do bloco de IA. Ela
-          responde só com o que estiver escrito aqui; para qualquer outra coisa, passa a conversa
-          para uma pessoa. Escreva como você explicaria o negócio para alguém no primeiro dia de
-          trabalho — incluindo o que ela <em>não</em> deve responder.
+      <h1 className="text-[25px] font-bold tracking-[-0.02em]">Contexto do negócio</h1>
+      <p className="mt-1.5 mb-6 max-w-[620px] text-[13px] leading-6 text-dim">
+        É a <strong className="text-soft">única fonte de verdade</strong> do bloco de IA. Ela
+        responde só com o que estiver escrito aqui; para qualquer outra coisa, passa a conversa
+        para uma pessoa. Escreva como você explicaria o negócio para alguém no primeiro dia de
+        trabalho — incluindo o que ela <em>não</em> deve responder.
+      </p>
+
+      {vazio && (
+        <p className="mb-5 rounded-[11px] border border-amber-300/25 bg-amber-300/[0.08] px-4 py-3 text-[12.5px] leading-5 text-amber-200">
+          Está vazio. Enquanto ficar assim, um fluxo com bloco de IA não publica — ele responderia
+          &quot;não sei&quot; a tudo.
         </p>
+      )}
 
-        {vazio && (
-          <p className="mb-5 rounded-[11px] border border-amber-300/25 bg-amber-300/[0.08] px-4 py-3 text-[12.5px] leading-5 text-amber-200">
-            Está vazio. Enquanto ficar assim, um fluxo com bloco de IA não publica — ele responderia
-            &quot;não sei&quot; a tudo.
-          </p>
-        )}
-
-        <FormularioSalvar
-          action={acaoSalvarContexto.bind(null, clienteId)}
-          dica="Vale na próxima conversa. Não precisa republicar fluxo nenhum."
-        >
-          <textarea
-            name="contexto"
-            rows={18}
-            defaultValue={cliente.contextoNegocio}
-            placeholder={EXEMPLO}
-            className="app-field resize-y px-4 py-3.5 text-[13px] leading-6"
-          />
-        </FormularioSalvar>
-      </main>
-    </PainelShell>
+      <FormularioSalvar
+        action={acaoSalvarContexto.bind(null, clienteId)}
+        dica="Vale na próxima conversa. Não precisa republicar fluxo nenhum."
+      >
+        <textarea
+          name="contexto"
+          rows={18}
+          defaultValue={cliente.contextoNegocio}
+          placeholder={EXEMPLO}
+          className="app-field resize-y px-4 py-3.5 text-[13px] leading-6"
+        />
+      </FormularioSalvar>
+    </main>
   )
 }

@@ -2,7 +2,6 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { comoFalta, restaDaJanela } from '@/channels/janela'
-import { PainelShell } from '@/components/design/shell'
 import { CaixaDeResposta } from '@/components/lead/responder'
 import { acaoEncerrarAtendimento, acaoResponderLead } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
@@ -37,98 +36,93 @@ export default async function Pagina({
   const janela = restante && restante > 0 ? comoFalta(restante) : null
 
   return (
-    <PainelShell>
-      <main className="app-page-enter max-w-[1080px] px-[46px] pt-[34px] pb-[46px]">
-        <nav className="mb-3.5 text-[12.5px] text-dim">
-          <Link href="/" className="text-muted transition hover:text-accent">Clientes</Link>
-          <span className="mx-2">/</span>
-          <Link href={`/clientes/${cliente.id}`} className="text-muted transition hover:text-accent">{cliente.nome}</Link>
-          <span className="mx-2">/</span>
-          <Link href={`/clientes/${cliente.id}/leads`} className="text-muted transition hover:text-accent">Leads</Link>
-          <span className="mx-2">/</span>
-          <span className="text-soft">{nome}</span>
-        </nav>
+    <main className="max-w-[1080px] px-[42px] pt-[26px] pb-[42px]">
+      <Link
+      href={`/clientes/${cliente.id}/leads`}
+      className="mb-3.5 inline-block text-[12.5px] text-muted transition hover:text-accent"
+      >
+      ← Leads
+      </Link>
 
-        <header className="mb-4 flex items-center gap-3.5">
-          <span className="flex size-11 items-center justify-center rounded-full border border-white/[0.11] bg-white/[0.05] text-[12px] font-bold text-[#97a2b4]">
-            {iniciais}
-          </span>
-          <div className="min-w-0">
-            <h1 className="text-[21px] font-bold tracking-[-0.02em]">{nome}</h1>
-            <p className="mt-0.5 font-mono text-[11px] text-dim">{lead.waId}</p>
-          </div>
-          <span className="flex-1" />
-          <span className={`rounded-full border px-3 py-1 text-[10.5px] font-bold ${lead.aguardando ? 'border-rose-400/25 bg-rose-400/[0.09] text-rose-300' : 'border-emerald-400/20 bg-emerald-400/[0.07] text-emerald-300'}`}>
-            {lead.aguardando ? 'AGUARDANDO HUMANO' : 'COM O BOT'}
-          </span>
-        </header>
-
-        {lead.aguardando && (
-          <div className="mb-[18px] flex items-center gap-3 rounded-[13px] border border-rose-400/25 bg-rose-400/[0.06] px-[17px] py-[13px]">
-            <span className="size-2 shrink-0 animate-pulse rounded-full bg-rose-400" />
-            <div className="min-w-0 flex-1">
-              <strong className="block text-[13px] text-rose-300">Esperando uma pessoa {quando(lead.aguardando.desde)}</strong>
-              <span className="mt-0.5 block text-[11.5px] text-muted">Motivo do handoff: {lead.aguardando.motivo}</span>
-            </div>
-            {/*
-              O que este botão faz, e por que ele é um só: tira o lead da fila e
-              devolve o contato ao bot. Enquanto a sessão estiver com uma pessoa,
-              o bot fica calado com esse número — então "atendi" e "pode voltar
-              a atender" são o mesmo ato, e separar os dois só criaria um estado
-              em que ninguém responde.
-            */}
-            <form action={acaoEncerrarAtendimento.bind(null, clienteId, contatoId)}>
-              <button
-                type="submit"
-                title="Resolve o handoff. A próxima mensagem desta pessoa começa uma conversa nova com o bot."
-                className="shrink-0 rounded-[9px] border border-rose-400/30 bg-rose-400/[0.12] px-3.5 py-2 text-[12px] font-bold text-rose-200 transition hover:bg-rose-400/[0.2]"
-              >
-                Já atendi
-              </button>
-            </form>
-          </div>
-        )}
-
-        <div className="grid grid-cols-[280px_minmax(0,1fr)] items-start gap-[18px]">
-          <section className="app-card overflow-hidden">
-            <h2 className="border-b border-white/[0.06] px-[18px] py-3.5 text-[13px] font-bold">O que o fluxo coletou</h2>
-            {campos.length === 0 ? (
-              <p className="px-[18px] py-[22px] text-xs leading-5 text-dim">
-                Nada coletado — a conversa não chegou a preencher nenhuma variável.
-              </p>
-            ) : (
-              <dl>
-                {campos.map(([chave, valor]) => (
-                  <div key={chave} className="border-b border-white/[0.045] px-[18px] py-[11px] last:border-0">
-                    <dt className="font-mono text-[10px] tracking-[0.04em] text-dim">{chave}</dt>
-                    <dd className="mt-1 truncate text-[13px] font-semibold">{valor}</dd>
-                  </div>
-                ))}
-              </dl>
-            )}
-          </section>
-
-          <section className="app-card flex max-h-[620px] min-h-[360px] flex-col overflow-hidden">
-            <header className="flex items-center gap-2 border-b border-white/[0.06] px-[18px] py-3.5">
-              <h2 className="flex-1 text-[13px] font-bold">Conversa</h2>
-              <span className="flex items-center gap-1.5 text-[11px] text-dim">
-                <span className="size-1.5 rounded-full bg-dim" /> {lead.waId}
-              </span>
-            </header>
-            <div className="min-h-0 flex-1 overflow-auto p-[18px]">
-              <Suspense fallback={<HistoricoEsqueleto />}>
-                <Historico contatoId={contatoId} nomeDoLead={lead.nome} />
-              </Suspense>
-            </div>
-            <CaixaDeResposta
-              acao={acaoResponderLead.bind(null, clienteId, contatoId)}
-              restaDaJanela={janela}
-              nome={primeiroNome}
-            />
-          </section>
+      <header className="mb-4 flex items-center gap-3.5">
+        <span className="flex size-11 items-center justify-center rounded-full border border-white/[0.11] bg-white/[0.05] text-[12px] font-bold text-[#97a2b4]">
+          {iniciais}
+        </span>
+        <div className="min-w-0">
+          <h1 className="text-[21px] font-bold tracking-[-0.02em]">{nome}</h1>
+          <p className="mt-0.5 font-mono text-[11px] text-dim">{lead.waId}</p>
         </div>
-      </main>
-    </PainelShell>
+        <span className="flex-1" />
+        <span className={`rounded-full border px-3 py-1 text-[10.5px] font-bold ${lead.aguardando ? 'border-rose-400/25 bg-rose-400/[0.09] text-rose-300' : 'border-emerald-400/20 bg-emerald-400/[0.07] text-emerald-300'}`}>
+          {lead.aguardando ? 'AGUARDANDO HUMANO' : 'COM O BOT'}
+        </span>
+      </header>
+
+      {lead.aguardando && (
+        <div className="mb-[18px] flex items-center gap-3 rounded-[13px] border border-rose-400/25 bg-rose-400/[0.06] px-[17px] py-[13px]">
+          <span className="size-2 shrink-0 animate-pulse rounded-full bg-rose-400" />
+          <div className="min-w-0 flex-1">
+            <strong className="block text-[13px] text-rose-300">Esperando uma pessoa {quando(lead.aguardando.desde)}</strong>
+            <span className="mt-0.5 block text-[11.5px] text-muted">Motivo do handoff: {lead.aguardando.motivo}</span>
+          </div>
+          {/*
+            O que este botão faz, e por que ele é um só: tira o lead da fila e
+            devolve o contato ao bot. Enquanto a sessão estiver com uma pessoa,
+            o bot fica calado com esse número — então "atendi" e "pode voltar
+            a atender" são o mesmo ato, e separar os dois só criaria um estado
+            em que ninguém responde.
+          */}
+          <form action={acaoEncerrarAtendimento.bind(null, clienteId, contatoId)}>
+            <button
+              type="submit"
+              title="Resolve o handoff. A próxima mensagem desta pessoa começa uma conversa nova com o bot."
+              className="shrink-0 rounded-[9px] border border-rose-400/30 bg-rose-400/[0.12] px-3.5 py-2 text-[12px] font-bold text-rose-200 transition hover:bg-rose-400/[0.2]"
+            >
+              Já atendi
+            </button>
+          </form>
+        </div>
+      )}
+
+      <div className="grid grid-cols-[280px_minmax(0,1fr)] items-start gap-[18px]">
+        <section className="app-card overflow-hidden">
+          <h2 className="border-b border-white/[0.06] px-[18px] py-3.5 text-[13px] font-bold">O que o fluxo coletou</h2>
+          {campos.length === 0 ? (
+            <p className="px-[18px] py-[22px] text-xs leading-5 text-dim">
+              Nada coletado — a conversa não chegou a preencher nenhuma variável.
+            </p>
+          ) : (
+            <dl>
+              {campos.map(([chave, valor]) => (
+                <div key={chave} className="border-b border-white/[0.045] px-[18px] py-[11px] last:border-0">
+                  <dt className="font-mono text-[10px] tracking-[0.04em] text-dim">{chave}</dt>
+                  <dd className="mt-1 truncate text-[13px] font-semibold">{valor}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+        </section>
+
+        <section className="app-card flex max-h-[620px] min-h-[360px] flex-col overflow-hidden">
+          <header className="flex items-center gap-2 border-b border-white/[0.06] px-[18px] py-3.5">
+            <h2 className="flex-1 text-[13px] font-bold">Conversa</h2>
+            <span className="flex items-center gap-1.5 text-[11px] text-dim">
+              <span className="size-1.5 rounded-full bg-dim" /> {lead.waId}
+            </span>
+          </header>
+          <div className="min-h-0 flex-1 overflow-auto p-[18px]">
+            <Suspense fallback={<HistoricoEsqueleto />}>
+              <Historico contatoId={contatoId} nomeDoLead={lead.nome} />
+            </Suspense>
+          </div>
+          <CaixaDeResposta
+            acao={acaoResponderLead.bind(null, clienteId, contatoId)}
+            restaDaJanela={janela}
+            nome={primeiroNome}
+          />
+        </section>
+      </div>
+    </main>
   )
 }
 

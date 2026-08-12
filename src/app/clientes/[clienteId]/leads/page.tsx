@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
-import { PainelShell } from '@/components/design/shell'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarCanais } from '@/server/repos/conversas'
 import { listarLeads, type Lead } from '@/server/repos/leads'
@@ -15,27 +14,12 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   if (!cliente) notFound()
 
   return (
-    <PainelShell>
-      <main className="app-page-enter flex min-h-full flex-col px-[42px] pt-[34px] pb-[42px]">
-        <nav className="mb-3 text-[12.5px] text-dim">
-          <Link href="/" className="text-muted transition hover:text-accent">Clientes</Link>
-          <span className="mx-2">/</span>
-          <Link href={`/clientes/${cliente.id}`} className="text-muted transition hover:text-accent">
-            {cliente.nome}
-          </Link>
-          <span className="mx-2">/</span>
-          <span className="text-soft">Leads</span>
-        </nav>
+    <main className="flex min-h-full flex-col px-[42px] pt-[26px] pb-[42px]">
 
-        <div className="mb-[22px] flex items-center gap-3">
-          <h1 className="text-[23px] font-bold tracking-[-0.02em]">Leads · {cliente.nome}</h1>
-        </div>
-
-        <Suspense fallback={<Esqueleto />}>
-          <Tabela clienteId={cliente.id} />
-        </Suspense>
-      </main>
-    </PainelShell>
+      <Suspense fallback={<Esqueleto />}>
+        <Tabela clienteId={cliente.id} />
+      </Suspense>
+    </main>
   )
 }
 
