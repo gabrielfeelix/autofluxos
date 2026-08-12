@@ -54,3 +54,21 @@ export async function criarCliente(nome: string): Promise<Cliente> {
   if (error) throw new Error(`não deu para criar o cliente: ${error.message}`)
   return paraCliente(data as Linha)
 }
+
+/**
+ * O que a IA pode dizer sobre este negócio.
+ *
+ * É a única fonte de verdade do nó de IA: o prompt manda responder `não sei`
+ * para tudo que não estiver aqui (ver `ia/prompt.ts`). Sem isto preenchido, o
+ * bloco de IA existe, chama o modelo, e responde `não sei` sempre — passando a
+ * conversa para uma pessoa toda vez. Falha fechado, e por isso ninguém percebe
+ * que está quebrado.
+ */
+export async function atualizarContexto(id: string, contexto: string): Promise<void> {
+  const { error } = await db()
+    .from('clients')
+    .update({ contexto_negocio: contexto })
+    .eq('id', id)
+
+  if (error) throw new Error(`não deu para salvar o contexto: ${error.message}`)
+}

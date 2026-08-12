@@ -41,6 +41,27 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         </Link>
 
         <Link
+          href={`/clientes/${cliente.id}/contexto`}
+          className="app-card app-card-interactive mb-[18px] flex min-h-[60px] items-center gap-4 px-6 py-4"
+        >
+          <div>
+            <p className="text-[13.5px] font-bold">
+              Contexto do negócio
+              {cliente.contextoNegocio.trim() === '' && (
+                <span className="ml-2 rounded-md border border-amber-300/30 bg-amber-300/[0.1] px-1.5 py-0.5 text-[10px] font-bold text-amber-200">
+                  VAZIO
+                </span>
+              )}
+            </p>
+            <p className="mt-0.5 text-[12px] text-dim">
+              A única coisa que o bloco de IA pode dizer. Sem isto, ele responde &quot;não sei&quot; a tudo
+            </p>
+          </div>
+          <span className="flex-1" />
+          <span className="text-[13px] font-bold text-accent">Abrir →</span>
+        </Link>
+
+        <Link
           href={`/clientes/${cliente.id}/conexoes`}
           className="app-card app-card-interactive mb-[18px] flex min-h-[60px] items-center gap-4 px-6 py-4"
         >

@@ -49,6 +49,7 @@ export default async function Pagina({
       inicial={fluxo.rascunho}
       iaHabilitada={fluxo.iaHabilitada}
       contextoNegocio={cliente.contextoNegocio}
+      temContextoDeNegocio={cliente.contextoNegocio.trim() !== ''}
       conexoes={conexoes}
       publicadaInicial={
         publicada

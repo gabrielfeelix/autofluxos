@@ -56,6 +56,16 @@ export type Capacidades = {
    * handoff sem ninguém entender por quê.
    */
   conexoes?: string[]
+  /**
+   * O cliente escreveu o contexto do negócio?
+   *
+   * `undefined` = não sei, e aí não se cobra (é o editor validando sem ter ido
+   * ao banco). Quando vem `false`, bloco de IA vira impedimento: o prompt manda
+   * responder só com o que está no contexto, então com ele vazio a IA responde
+   * "não sei" a tudo e a conversa vai para uma pessoa toda vez. Publicar assim
+   * entrega um bot que parece funcionar e nunca responde.
+   */
+  temContextoDeNegocio?: boolean
 }
 
 /**
@@ -67,7 +77,7 @@ export type Capacidades = {
  * na memória de quem desenhou o fluxo.
  */
 export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoValidacao {
-  const { iaHabilitada = false, conexoes } = capacidades
+  const { iaHabilitada = false, conexoes, temContextoDeNegocio } = capacidades
   const erros: Problema[] = []
   const avisos: Problema[] = []
 
@@ -149,6 +159,15 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
         codigo: 'IA_NAO_CONTRATADA',
         mensagem:
           'Este bloco usa IA, que é um plano à parte e não está contratado para este cliente.',
+        noId: no.id,
+      })
+    }
+
+    if (no.type === 'ia' && temContextoDeNegocio === false) {
+      erros.push({
+        codigo: 'SEM_CONTEXTO_DE_NEGOCIO',
+        mensagem:
+          'Este cliente não tem o contexto do negócio escrito, e é só com ele que a IA pode responder. Do jeito que está, ela responderia "não sei" a tudo.',
         noId: no.id,
       })
     }

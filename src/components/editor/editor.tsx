@@ -104,6 +104,7 @@ export function Editor({
   publicadaInicial,
   iaHabilitada,
   contextoNegocio,
+  temContextoDeNegocio,
 }: {
   fluxoId: string
   clienteId: string
@@ -116,6 +117,8 @@ export function Editor({
   iaHabilitada: boolean
   /** O que o cliente escreveu sobre o negócio. É o escopo fechado da IA. */
   contextoNegocio: string
+  /** Sem contexto escrito, bloco de IA não publica. Ver `contexto/page.tsx`. */
+  temContextoDeNegocio: boolean
   /** `quando` já vem formatado do servidor — formatar data no cliente daria
    *  divergência de hidratação entre o fuso do servidor e o do navegador. */
   publicadaInicial: { versao: number; quando: string; grafo: Fluxo } | null
@@ -139,8 +142,8 @@ export function Editor({
   const fluxo = useMemo(() => paraFluxo(inicio, nodes, edges), [inicio, nodes, edges])
   const idsDeConexao = useMemo(() => conexoes.map((c) => c.id), [conexoes])
   const validacao = useMemo(
-    () => validar(fluxo, { iaHabilitada: comIa, conexoes: idsDeConexao }),
-    [fluxo, comIa, idsDeConexao],
+    () => validar(fluxo, { iaHabilitada: comIa, conexoes: idsDeConexao, temContextoDeNegocio }),
+    [fluxo, comIa, idsDeConexao, temContextoDeNegocio],
   )
 
   const assinatura = JSON.stringify(fluxo)

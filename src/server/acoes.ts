@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import { fluxoSchema } from '@/core/flow/schema'
 import { fluxoNovo } from '@/core/flow/novo'
 import { triagem } from '@/exemplos/triagem'
-import { criarCliente } from './repos/clientes'
+import { atualizarContexto, criarCliente } from './repos/clientes'
 import { criarCanal } from './repos/conversas'
 import { criarFluxo, definirIa, publicar, salvarRascunho } from './repos/fluxos'
 import { apagarConexao, criarConexao, trocarValor } from './repos/conexoes'
@@ -161,4 +161,11 @@ export async function acaoTrocarValorDaConexao(
 export async function acaoApagarConexao(clienteId: string, conexaoId: string) {
   await apagarConexao(conexaoId, clienteId)
   revalidatePath(`/clientes/${clienteId}/conexoes`)
+}
+
+/** Salva o que a IA pode dizer sobre o negócio. Ver `contexto/page.tsx`. */
+export async function acaoSalvarContexto(clienteId: string, formData: FormData) {
+  await atualizarContexto(clienteId, String(formData.get('contexto') ?? ''))
+  revalidatePath(`/clientes/${clienteId}/contexto`)
+  revalidatePath(`/clientes/${clienteId}`)
 }

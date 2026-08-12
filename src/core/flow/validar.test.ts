@@ -468,3 +468,37 @@ describe('mapeamento precisa dizer o que ler', () => {
     expect(comMapa([{ variavel: 'situacao', caminho: 'pedido.status' }])).toEqual([])
   })
 })
+
+describe('IA sem contexto de negócio não vai ao ar', () => {
+  const comBlocoDeIa = fluxoSchema.parse({
+    inicio: 'duvida',
+    nodes: [
+      { id: 'duvida', type: 'ia', position: p, data: { instrucao: 'Responda a dúvida.' } },
+      { id: 'humano', type: 'handoff', position: p, data: {} },
+    ],
+    edges: [{ id: 'a1', source: 'duvida', target: 'humano' }],
+  })
+
+  it('bloqueia quando o cliente não escreveu o contexto', () => {
+    // O prompt manda responder só com o que está no contexto. Vazio, a IA
+    // responde "não sei" a tudo — um bot que parece pronto e nunca responde.
+    const r = validar(comBlocoDeIa, { iaHabilitada: true, temContextoDeNegocio: false })
+    expect(codigos(r.erros)).toContain('SEM_CONTEXTO_DE_NEGOCIO')
+    expect(r.ok).toBe(false)
+  })
+
+  it('libera quando o contexto existe', () => {
+    const r = validar(comBlocoDeIa, { iaHabilitada: true, temContextoDeNegocio: true })
+    expect(codigos(r.erros)).not.toContain('SEM_CONTEXTO_DE_NEGOCIO')
+  })
+
+  it('não cobra quando ninguém disse — é o editor validando sem ir ao banco', () => {
+    const r = validar(comBlocoDeIa, { iaHabilitada: true })
+    expect(codigos(r.erros)).not.toContain('SEM_CONTEXTO_DE_NEGOCIO')
+  })
+
+  it('fluxo sem bloco de IA não se importa com contexto', () => {
+    const r = validar(fluxoValido(), { temContextoDeNegocio: false })
+    expect(codigos(r.erros)).not.toContain('SEM_CONTEXTO_DE_NEGOCIO')
+  })
+})

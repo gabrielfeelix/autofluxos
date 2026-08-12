@@ -3,6 +3,7 @@ import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
 import { validar, type Problema } from '@/core/flow/validar'
 import { db } from '../db'
 import { listarConexoes } from './conexoes'
+import { acharCliente } from './clientes'
 
 /**
  * Um fluxo salvo no banco. `rascunho` é o grafo mutável — o que o editor
@@ -194,7 +195,12 @@ export async function publicar(
   // publicaria fluxo apontando para credencial já apagada. Recusa de tela é
   // conveniência; a que vale é esta.
   const conexoes = (await listarConexoes(fluxo.clienteId)).map((c) => c.id)
-  const conferido = validar(analise.data, { iaHabilitada: fluxo.iaHabilitada, conexoes })
+  const cliente = await acharCliente(fluxo.clienteId)
+  const conferido = validar(analise.data, {
+    iaHabilitada: fluxo.iaHabilitada,
+    conexoes,
+    temContextoDeNegocio: (cliente?.contextoNegocio ?? '').trim() !== '',
+  })
   if (!conferido.ok) return { ok: false, erros: conferido.erros }
 
   await salvarRascunho(fluxoId, analise.data)
