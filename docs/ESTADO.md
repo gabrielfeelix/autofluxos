@@ -60,52 +60,50 @@ deles. Mesmo padrão do `deixeiaqui` e do `www`.
 
 ---
 
-## O que está travado, e por quê
+## O que está travado — **uma coisa só**
 
-**A Meta não entrega o número de teste.**
+**O número precisa ser verificado.** Nada além disso.
 
-Na Etapa 1 do caso de uso "Conectar-se com clientes pelo WhatsApp", o botão
-**Reivindicar número de teste** recarrega a página e não cria nada. O console
-mostra só CSP bloqueando a telemetria da própria Meta
-(`mpc-prod-*.run.app`, `*.on.aws`) — **a chamada que criaria o número nem sai**.
+Estado do número (`+55 44 7400-7438`, phone_number_id `1301107846409860`):
 
-Reproduzido em janela anônima, sem extensão. É bug do console deles.
+- nome `4YU Tech` — **aprovado sem análise**
+- `code_verification_status: NOT_VERIFIED`
+- `status: PENDING`
 
-### Como destravar quando voltar
+Enviar falha com **`(#133010) Account not registered`** — que é exatamente o
+esperado para número não verificado. Testado chamando a Cloud API direto.
 
-1. Tentar de novo o **Reivindicar número de teste** — esse tipo de quebra costuma
-   cair sozinha em algumas horas.
-2. Se não voltar: ir pela **Etapa 2 (Configuração da produção)** com um número
-   real que não esteja em nenhum WhatsApp. Precisa de forma de pagamento no
-   portfólio. É o caminho que vai ser necessário para cliente de verdade de
-   qualquer forma.
+Pedir o código muitas vezes derrubou no limite (`You have requested a
+verification code too many times`). É por tempo; passa sozinho.
 
-### Quando o número existir, faltam 5 minutos
+### Quando o limite liberar
 
-Pegar em **WhatsApp → Configuração da API** e escrever em
-`4yu-apps/.secrets/4yu.env` (**nunca no repo, nunca no chat**):
+1. Em **Contas do WhatsApp → 4YU Tech → Phone numbers**, confirmar que o número
+   listado é o certo antes de gastar tentativa.
+2. Verificar por **Ligação telefônica**, **uma vez só**, sem pedir reenvio.
+3. Depois de verificado, falta registrar com um PIN de 2 fatores —
+   `POST /{phone_number_id}/register`. Dá para fazer pela API com o token que já
+   está no cofre; não precisa de painel.
+4. Mandar "oi" do WhatsApp e ver o bot responder.
 
-```bash
-AUTOFLUXOS_META_APP_SECRET=          # Configurações → Básico
-AUTOFLUXOS_WA_TOKEN=                 # token de acesso (o temporário vale 24h)
-AUTOFLUXOS_WA_PHONE_NUMBER_ID=       # identificação do número de telefone
-AUTOFLUXOS_WA_WABA_ID=               # identificação da conta WhatsApp Business
-AUTOFLUXOS_WA_VERIFY_TOKEN=          # frase inventada, repetida no painel da Meta
-```
+### O que já está pronto e testado em produção
 
-Depois:
+- Webhook configurado na Meta e **assinado no campo `messages`**
+- Assinatura HMAC validada com a chave real: correta → 200, errada → 401,
+  ausente → 401, verificação GET → 200
+- **Mensagem de verdade já entrou pelo webhook**, criou contato, criou sessão
+  presa na versão publicada e **o motor avançou até a primeira pergunta**. Só o
+  envio falhou, pelo número não registrado.
+- Painel já tem `Cliente 00 — Gabriel` com o fluxo de triagem **publicado (v1)**
+  e o número conectado.
 
-1. Publicar essas variáveis na Vercel como `META_APP_SECRET`, `WHATSAPP_TOKEN`,
-   `WHATSAPP_VERIFY_TOKEN` e fazer redeploy.
-   (`SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `SUPABASE_PUBLISHABLE_KEY` e
-   `PAINEL_SENHA` **já estão configuradas**.)
-2. No painel da Meta, apontar o webhook para
-   `https://autofluxos.4yu.com.br/api/webhook/whatsapp`, usar o mesmo
-   `verify_token`, e **assinar o campo `messages`**.
-3. Adicionar o próprio número como destinatário de teste (campo "Para").
-4. No painel do AutoFluxos: criar cliente → criar fluxo → publicar →
-   conectar o número (colando o `phone_number_id`).
-5. Mandar "oi" do WhatsApp e ver o bot responder.
+### Segredos já no cofre (`.secrets/4yu.env`, prefixo `AUTOFLUXOS_`)
+
+`META_APP_SECRET`, `WA_TOKEN` (usuário do sistema, permanente),
+`WA_PHONE_NUMBER_ID`, `WA_WABA_ID`, `WA_VERIFY_TOKEN`, `PAINEL_SENHA`,
+`SUPABASE_*`.
+
+Todas já publicadas na Vercel e em produção.
 
 ---
 
