@@ -47,6 +47,18 @@ export async function chamarHttp(
   pedido: PedidoHttp,
   { deTeste, credencial }: { deTeste: boolean; credencial?: CredencialDaChamada | null },
 ): Promise<RespostaHttp> {
+  // Um prazo para a chamada inteira, saltos incluídos. Os tempos do undici são
+  // de **inatividade**: um servidor pingando um byte por segundo nunca os
+  // dispara, e sozinhos eles deixariam a função estourar o `maxDuration` do
+  // webhook e morrer antes de gravar o handoff.
+  const prazo = AbortSignal.timeout(TIMEOUT_MS * (MAX_SALTOS + 1))
+
+  /** Agents abertos nesta chamada. Sem fechar, sobra socket keep-alive vivo. */
+  const agents: Agent[] = []
+  const fechar = async () => {
+    await Promise.allSettled(agents.map((a) => a.close()))
+  }
+
   let urlBase = pedido.url
   let resposta: Awaited<ReturnType<typeof request>>
 
@@ -75,10 +87,9 @@ export async function chamarHttp(
     const url = comCredencialNaConsulta(urlBase, credencialValida)
 
     const veredito = await conferirEndereco(url)
-    if (!veredito.ok) return { ok: false, motivo: veredito.motivo }
-
-    if (salto > MAX_SALTOS) {
-      return { ok: false, motivo: 'a chamada redirecionou vezes demais' }
+    if (!veredito.ok) {
+      await fechar()
+      return { ok: false, motivo: veredito.motivo }
     }
 
     let cabecalhos: Record<string, string>
@@ -89,6 +100,7 @@ export async function chamarHttp(
       // Meta reenviar. Falhar aqui vira handoff, que é o certo.
       cabecalhos = montarCabecalhos(pedido, deTeste, mesmaOrigem, credencialValida)
     } catch {
+      await fechar()
       return { ok: false, motivo: 'um dos cabeçalhos configurados é inválido' }
     }
 
@@ -105,15 +117,23 @@ export async function chamarHttp(
         bodyTimeout: TIMEOUT_MS,
         // Aqui mora a defesa contra rebinding: conecta no endereço que
         // `conferirEndereco` já aprovou, sem consultar o DNS de novo.
-        dispatcher: fixarNo(veredito.endereco, veredito.familia),
+        signal: prazo,
+        dispatcher: agenteFixadoEm(veredito.enderecos, agents),
       })
     } catch (erro) {
+      await fechar()
       const nome = erro instanceof Error ? erro.name : ''
-      const motivo =
-        nome === 'HeadersTimeoutError' || nome === 'BodyTimeoutError' || nome === 'TimeoutError'
+      const porTempo =
+        nome === 'HeadersTimeoutError' ||
+        nome === 'BodyTimeoutError' ||
+        nome === 'TimeoutError' ||
+        nome === 'AbortError'
+      return {
+        ok: false,
+        motivo: porTempo
           ? `a chamada passou de ${TIMEOUT_MS / 1000}s sem responder`
-          : 'a chamada não completou'
-      return { ok: false, motivo }
+          : 'a chamada não completou',
+      }
     }
 
     const destino =
@@ -121,10 +141,23 @@ export async function chamarHttp(
 
     if (!destino) break
 
+    // O corpo do 3xx não interessa, mas precisa ser lido: um stream pausado que
+    // o undici destrói depois vira exceção sem dono.
+    await descartar(resposta)
+
+    // A conta fica aqui, e não no topo do laço, porque só aqui se sabe que vai
+    // haver outro salto. `salto` começa em 0, então isto permite MAX_SALTOS
+    // redirecionamentos e MAX_SALTOS + 1 chamadas.
+    if (salto >= MAX_SALTOS) {
+      await fechar()
+      return { ok: false, motivo: 'a chamada redirecionou vezes demais' }
+    }
+
     let proxima: URL
     try {
       proxima = new URL(destino, url)
     } catch {
+      await fechar()
       return { ok: false, motivo: 'a chamada redirecionou para um endereço ilegível' }
     }
 
@@ -147,6 +180,10 @@ export async function chamarHttp(
   }
 
   if (resposta.statusCode < 200 || resposta.statusCode >= 300) {
+    // Mesmo motivo dos outros `descartar`: uma resposta 500 com corpo grande
+    // deixaria o stream pendurado e a exceção cairia dentro do `after()`.
+    await descartar(resposta)
+    await fechar()
     return { ok: false, motivo: `a chamada respondeu ${resposta.statusCode}` }
   }
 
@@ -154,7 +191,8 @@ export async function chamarHttp(
   // esquecido, que é metade do valor deste nó. O corpo ainda precisa ser
   // consumido — deixar pendurado segura a conexão até o timeout.
   if (pedido.mapear.length === 0) {
-    await resposta.body.dump()
+    await descartar(resposta)
+    await fechar()
     return { ok: true, valores: {} }
   }
 
@@ -162,7 +200,10 @@ export async function chamarHttp(
   try {
     json = await resposta.body.json()
   } catch {
+    await fechar()
     return { ok: false, motivo: 'a resposta não é JSON, e o bloco pede campos dela' }
+  } finally {
+    await fechar()
   }
 
   const valores: Record<string, string> = {}
@@ -181,18 +222,39 @@ export async function chamarHttp(
  * isso o certificado não bateria e todo https quebraria. O undici cuida disso
  * sozinho porque a URL continua com o hostname; só o `lookup` é que mente.
  */
-function fixarNo(endereco: string, familia: 4 | 6): Agent {
-  return new Agent({
+function agenteFixadoEm(
+  enderecos: { address: string; family: 4 | 6 }[],
+  registro: Agent[],
+): Agent {
+  const primeiro = enderecos[0] as { address: string; family: 4 | 6 }
+
+  const agent = new Agent({
     connect: {
       lookup(_hostname, opcoes, callback) {
+        // A lista inteira quando pedem `all`, para o Node poder cair no A
+        // quando o AAAA não conecta. Nenhum deles resolve nada: todos já
+        // passaram pela recusa antes de chegar aqui.
         if (opcoes.all) {
-          callback(null, [{ address: endereco, family: familia }] as never)
+          callback(null, enderecos as never)
           return
         }
-        callback(null, endereco as never, familia as never)
+        callback(null, primeiro.address as never, primeiro.family as never)
       },
     },
   })
+
+  registro.push(agent)
+  return agent
+}
+
+/** Lê e joga fora o corpo, para o stream não ficar pendurado. */
+async function descartar(resposta: { body: { dump: () => Promise<void> } }): Promise<void> {
+  try {
+    await resposta.body.dump()
+  } catch {
+    // Corpo já consumido ou conexão morta. Não há o que fazer, e estourar aqui
+    // seria trocar um vazamento de socket por uma exceção sem dono.
+  }
 }
 
 /** Lê um cabeçalho da resposta, que no undici pode vir como lista. */

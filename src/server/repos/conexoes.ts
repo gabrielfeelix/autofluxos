@@ -115,13 +115,17 @@ export async function criarConexao(entrada: {
  * É esta assinatura que faz rotação de credencial não exigir republicar fluxo:
  * os blocos apontam para a conexão, não para o segredo.
  */
-export async function trocarValor(id: string, valor: string): Promise<void> {
+export async function trocarValor(id: string, clienteId: string, valor: string): Promise<void> {
   if (valor.trim() === '') throw new Error('a conexão precisa de um valor')
 
+  // O par (conexão, cliente) em toda operação, e não só na leitura: isolamento
+  // que depende de quem chama lembrar de conferir é isolamento que uma tela
+  // nova quebra sem ninguém notar.
   const { data, error } = await db()
     .from('connections')
     .select('secret_id')
     .eq('id', id)
+    .eq('client_id', clienteId)
     .maybeSingle()
 
   if (error) throw new Error(`não deu para achar a conexão: ${error.message}`)
@@ -134,9 +138,13 @@ export async function trocarValor(id: string, valor: string): Promise<void> {
   if (erroDoCofre) throw new Error(`não deu para trocar o valor: ${erroDoCofre.message}`)
 }
 
-export async function apagarConexao(id: string): Promise<void> {
+export async function apagarConexao(id: string, clienteId: string): Promise<void> {
   // O gatilho da migration apaga o segredo no cofre junto com a linha.
-  const { error } = await db().from('connections').delete().eq('id', id)
+  const { error } = await db()
+    .from('connections')
+    .delete()
+    .eq('id', id)
+    .eq('client_id', clienteId)
   if (error) throw new Error(`não deu para apagar a conexão: ${error.message}`)
 }
 

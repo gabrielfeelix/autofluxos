@@ -41,12 +41,15 @@ export type Veredito =
   | {
       ok: true
       /**
-       * O endereço aprovado, para quem for conectar **fixar nele** em vez de
-       * resolver de novo. É o que fecha a janela do rebinding.
+       * **Todos** os endereços aprovados, para quem for conectar fixar neles em
+       * vez de resolver de novo. É o que fecha a janela do rebinding.
+       *
+       * A lista inteira, e não só o primeiro: um host de pilha dupla resolve
+       * para AAAA e A, o Node devolve na ordem do servidor, e ficar só com o
+       * primeiro tornaria o host inalcançável quando o ambiente não tem IPv6.
+       * Todos já passaram pela recusa, então entregar a lista não afrouxa nada.
        */
-      endereco: string
-      /** 4 ou 6, que o `lookup` do undici precisa devolver junto. */
-      familia: 4 | 6
+      enderecos: { address: string; family: 4 | 6 }[]
     }
   | { ok: false; motivo: string }
 
@@ -85,17 +88,12 @@ export async function conferirEndereco(url: string): Promise<Veredito> {
     }
   }
 
-  // Devolve o primeiro, que é o que será fixado na conexão. Todos já passaram —
-  // aprovar a lista e conectar em outro endereço seria o mesmo furo de novo.
-  const primeiro = enderecos[0]
-  if (!primeiro) {
-    return { ok: false, motivo: `"${alvo.hostname}" não resolveu para endereço nenhum` }
-  }
-
   return {
     ok: true,
-    endereco: primeiro.address,
-    familia: primeiro.address.includes(':') ? 6 : 4,
+    enderecos: enderecos.map(({ address }) => ({
+      address,
+      family: address.includes(':') ? (6 as const) : (4 as const),
+    })),
   }
 }
 

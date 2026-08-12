@@ -17,8 +17,7 @@ describe('conferirEndereco', () => {
     dnsResponde('93.184.216.34')
     expect(await conferirEndereco('https://exemplo.com/x')).toEqual({
       ok: true,
-      endereco: '93.184.216.34',
-      familia: 4,
+      enderecos: [{ address: '93.184.216.34', family: 4 }],
     })
   })
 
@@ -72,8 +71,7 @@ describe('conferirEndereco', () => {
     dnsResponde('2606:4700:4700::1111')
     expect(await conferirEndereco('https://a.com')).toEqual({
       ok: true,
-      endereco: '2606:4700:4700::1111',
-      familia: 6,
+      enderecos: [{ address: '2606:4700:4700::1111', family: 6 }],
     })
   })
 
@@ -127,7 +125,17 @@ describe('o veredito carrega o endereço para fixar a conexão', () => {
 
     if (!v.ok) throw new Error('deveria ter aprovado')
     // Sem isto, quem conecta resolve de novo e o rebinding volta a existir.
-    expect(v.endereco).toBe('93.184.216.34')
-    expect(v.familia).toBe(4)
+    expect(v.enderecos).toEqual([{ address: '93.184.216.34', family: 4 }])
+  })
+
+  it('devolve TODOS os endereços — pilha dupla precisa do A quando o AAAA falha', async () => {
+    dnsResponde('2606:4700::1111', '93.184.216.34')
+    const v = await conferirEndereco('https://exemplo.com')
+
+    if (!v.ok) throw new Error('deveria ter aprovado')
+    expect(v.enderecos).toEqual([
+      { address: '2606:4700::1111', family: 6 },
+      { address: '93.184.216.34', family: 4 },
+    ])
   })
 })

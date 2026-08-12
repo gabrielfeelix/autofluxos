@@ -3,6 +3,7 @@ import { entradaSchema, sessaoSchema } from '@/core/engine/types'
 import { fluxoSchema } from '@/core/flow/schema'
 import { executarComEfeitos } from '@/server/efeitos/resolver'
 import { escolherModelo } from '@/server/ia/modelo'
+import { acharFluxo } from '@/server/repos/fluxos'
 
 /**
  * Roda o motor sem WhatsApp nenhum.
@@ -34,8 +35,17 @@ const corpoSchema = z.object({
   contextoNegocio: z.string().default(''),
   /** Espelha o plano da automação: sem contratar, o simulador não chama modelo. */
   iaHabilitada: z.boolean().default(false),
-  /** De quem é o fluxo. Sem isto o bloco de API não alcança as credenciais. */
-  clienteId: z.string().optional(),
+  /**
+   * Qual automação está sendo testada.
+   *
+   * Repare que **não** é o `clienteId`: quem diz de quem é o fluxo é o banco,
+   * não o corpo da requisição. Aceitar o cliente daqui deixaria qualquer um
+   * postar um fluxo inventado, apontar para o cliente que quisesse e mandar a
+   * credencial dele para um endereço próprio. O desenho pode vir de fora
+   * (é o ponto do simulador: testar o que ainda não foi salvo); a identidade,
+   * não.
+   */
+  fluxoId: z.string().optional(),
   /** A conversa até aqui, para a IA não repetir o que já foi dito. */
   historico: z
     .array(z.object({ de: z.enum(['pessoa', 'bot']), texto: z.string() }))
@@ -58,8 +68,13 @@ export async function POST(req: Request) {
     )
   }
 
-  const { fluxo, sessao, entrada, contextoNegocio, iaHabilitada, historico, clienteId } =
+  const { fluxo, sessao, entrada, contextoNegocio, iaHabilitada, historico, fluxoId } =
     analise.data
+
+  // O dono sai do banco, pelo id da automação. Sem `fluxoId`, ou com um que
+  // não existe, o teste roda sem credencial nenhuma — que é o certo: melhor o
+  // bloco de API falhar do que usar a chave de alguém por engano.
+  const clienteId = fluxoId ? ((await acharFluxo(fluxoId))?.clienteId ?? undefined) : undefined
   const { modelo } = escolherModelo({ iaHabilitada })
 
   return Response.json(

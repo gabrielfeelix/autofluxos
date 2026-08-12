@@ -77,10 +77,18 @@ export async function executarComEfeitos(
       // A credencial é buscada aqui, fora do motor, e vive só o tempo desta
       // chamada. Ela não entra na sessão, não é serializada, e portanto não
       // tem como chegar ao navegador pelo simulador.
-      const credencial =
-        chamadaHttp.conexaoId && opcoes.clienteId
-          ? await lerCredencial(chamadaHttp.conexaoId, opcoes.clienteId)
-          : null
+      // Banco fora do ar ou cofre recusando não pode estourar daqui: a exceção
+      // subiria até o `after()` do webhook, a sessão nunca seria salva, e a
+      // mensagem já foi deduplicada — a pessoa ficaria sem resposta nenhuma.
+      // Sem credencial, o bloco cai no caminho de handoff logo abaixo.
+      let credencial = null
+      if (chamadaHttp.conexaoId && opcoes.clienteId) {
+        try {
+          credencial = await lerCredencial(chamadaHttp.conexaoId, opcoes.clienteId)
+        } catch {
+          credencial = null
+        }
+      }
 
       // Bloco que pede credencial e não recebe não pode sair chamando sem ela:
       // uma API que responde 401 vira handoff com motivo confuso, e uma que

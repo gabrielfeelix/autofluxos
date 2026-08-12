@@ -7,6 +7,7 @@ const pedirUndici = vi.hoisted(() => vi.fn())
 const AgentFalso = vi.hoisted(() =>
   vi.fn(function (this: Record<string, unknown>, opcoes: unknown) {
     this.opcoes = opcoes
+    this.close = async () => undefined
   }),
 )
 vi.mock('undici', () => ({ request: pedirUndici, Agent: AgentFalso }))
@@ -55,15 +56,13 @@ function lookupDo(i = 0, opcoes: { all?: boolean } = {}) {
     connect: { lookup: (h: string, o: object, cb: unknown) => void }
   }
   return new Promise((resolver) => {
-    construido.connect.lookup(
-      'qualquer.com',
-      opcoes,
-      (_e: unknown, a: unknown, b: unknown) => resolver(opcoes.all ? a : { endereco: a, familia: b }),
+    construido.connect.lookup('qualquer.com', opcoes, (_e: unknown, a: unknown, b: unknown) =>
+      resolver(opcoes.all ? a : { endereco: a, familia: b }),
     )
   })
 }
 
-const aprovado = { ok: true, endereco: '93.184.216.34', familia: 4 }
+const aprovado = { ok: true, enderecos: [{ address: '93.184.216.34', family: 4 }] }
 
 afterEach(() => {
   pedirUndici.mockReset()
@@ -137,7 +136,7 @@ describe('a conexão é fixada no endereço aprovado', () => {
   it('cada salto de redirecionamento fixa de novo', async () => {
     conferirEndereco
       .mockResolvedValueOnce(aprovado)
-      .mockResolvedValueOnce({ ok: true, endereco: '1.2.3.4', familia: 4 })
+      .mockResolvedValueOnce({ ok: true, enderecos: [{ address: '1.2.3.4', family: 4 }] })
     pedirUndici
       .mockResolvedValueOnce(resposta(null, 302, { location: 'https://outro.com/x' }))
       .mockResolvedValueOnce(resposta({ a: 1 }))

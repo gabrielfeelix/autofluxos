@@ -84,7 +84,9 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             <label className="block">
               <RotuloCampo>Nome do cabeçalho ou parâmetro</RotuloCampo>
               <input name="campo" placeholder="x-api-key" className="app-field px-3 py-2.5 text-[13px]" />
-              <span className="mt-1 block text-[10.5px] text-dim">Deixe vazio quando for Bearer.</span>
+              <span className="mt-1 block text-[10.5px] text-dim">
+                Deixe vazio quando for Bearer. Nos outros dois, é obrigatório.
+              </span>
             </label>
 
             <label className="block">

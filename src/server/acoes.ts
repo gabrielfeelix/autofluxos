@@ -116,19 +116,31 @@ export async function acaoAlternarIa(fluxoId: string, clienteId: string, habilit
  * único jeito de garantir que ele não vaza pela interface é a interface não
  * ter como pedir.
  */
-export async function acaoCriarConexao(clienteId: string, formData: FormData) {
+export async function acaoCriarConexao(
+  clienteId: string,
+  formData: FormData,
+): Promise<{ ok: boolean; erro?: string }> {
   const tipo = String(formData.get('tipo') ?? 'bearer')
-  if (tipo !== 'bearer' && tipo !== 'cabecalho' && tipo !== 'query') return
+  if (tipo !== 'bearer' && tipo !== 'cabecalho' && tipo !== 'query') {
+    return { ok: false, erro: 'tipo de credencial inválido' }
+  }
 
-  await criarConexao({
-    clienteId,
-    nome: String(formData.get('nome') ?? ''),
-    tipo,
-    campo: String(formData.get('campo') ?? ''),
-    valor: String(formData.get('valor') ?? ''),
-  })
+  // Deixar estourar daria o digest opaco do Next, e a pessoa perderia a chave
+  // que acabou de colar. Erro de preenchimento vira frase.
+  try {
+    await criarConexao({
+      clienteId,
+      nome: String(formData.get('nome') ?? ''),
+      tipo,
+      campo: String(formData.get('campo') ?? ''),
+      valor: String(formData.get('valor') ?? ''),
+    })
+  } catch (erro) {
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para guardar' }
+  }
 
   revalidatePath(`/clientes/${clienteId}/conexoes`)
+  return { ok: true }
 }
 
 /** Rotação: troca o valor mantendo o id, então nenhum fluxo precisa republicar. */
@@ -136,12 +148,17 @@ export async function acaoTrocarValorDaConexao(
   clienteId: string,
   conexaoId: string,
   formData: FormData,
-) {
-  await trocarValor(conexaoId, String(formData.get('valor') ?? ''))
+): Promise<{ ok: boolean; erro?: string }> {
+  try {
+    await trocarValor(conexaoId, clienteId, String(formData.get('valor') ?? ''))
+  } catch (erro) {
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para trocar' }
+  }
   revalidatePath(`/clientes/${clienteId}/conexoes`)
+  return { ok: true }
 }
 
 export async function acaoApagarConexao(clienteId: string, conexaoId: string) {
-  await apagarConexao(conexaoId)
+  await apagarConexao(conexaoId, clienteId)
   revalidatePath(`/clientes/${clienteId}/conexoes`)
 }

@@ -23,14 +23,17 @@ const novaChave = () => ++sequencia
  */
 export function Conversa({
   fluxo,
-  clienteId,
+  fluxoId,
   contextoNegocio = '',
   iaHabilitada = false,
   aoMudarSessao,
 }: {
   fluxo: Fluxo
-  /** De quem é o fluxo. Sem isto o bloco de API não alcança as credenciais. */
-  clienteId?: string
+  /**
+   * Qual automação é esta. O servidor usa para descobrir de quem é o fluxo e
+   * quais credenciais ele pode usar — a identidade não viaja pelo corpo.
+   */
+  fluxoId?: string
   /** O que o cliente escreveu sobre o negócio: é o que fecha o escopo da IA. */
   contextoNegocio?: string
   /** Espelha o plano da automação. Sem isto, o bloco de IA não chama modelo. */
@@ -69,7 +72,7 @@ export function Conversa({
           fluxo,
           sessao: sessaoRef.current,
           entrada,
-          clienteId,
+          fluxoId,
           contextoNegocio,
           iaHabilitada,
           // O que já foi dito, para a IA não repetir pergunta respondida.

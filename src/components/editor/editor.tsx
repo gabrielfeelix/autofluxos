@@ -501,7 +501,7 @@ export function Editor({
             <>
               <Conversa
                 fluxo={fluxo}
-                clienteId={clienteId}
+                fluxoId={fluxoId}
                 contextoNegocio={contextoNegocio}
                 iaHabilitada={comIa}
                 aoMudarSessao={setSessao}
