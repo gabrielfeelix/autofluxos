@@ -18,8 +18,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Conversa } from '@/components/conversa'
 import type { Sessao } from '@/core/engine/types'
 import { fluxoSchema, type Fluxo, type No, type TipoNo } from '@/core/flow/schema'
+import type { Problema } from '@/core/flow/validar'
 import { validar } from '@/core/flow/validar'
-import { acaoSalvarRascunho } from '@/server/acoes'
+import { acaoPublicar, acaoSalvarRascunho } from '@/server/acoes'
 import { ICONES, NOMES, tiposDeNo } from './nos'
 import { Painel } from './painel'
 
@@ -70,16 +71,22 @@ function paraFluxo(inicio: string, nodes: Node[], edges: Edge[]): Fluxo {
 
 export function Editor({
   fluxoId,
+  clienteId,
   nome,
   clienteNome,
   voltarHref,
   inicial,
+  publicadaInicial,
 }: {
   fluxoId: string
+  clienteId: string
   nome: string
   clienteNome: string
   voltarHref: string
   inicial: Fluxo
+  /** `quando` já vem formatado do servidor — formatar data no cliente daria
+   *  divergência de hidratação entre o fuso do servidor e o do navegador. */
+  publicadaInicial: { versao: number; quando: string; grafo: Fluxo } | null
 }) {
   const [nodes, setNodes, aoMudarNos] = useNodesState<Node>(
     inicial.nodes.map((n) => ({ ...n, className: n.id === inicial.inicio ? 'no-inicio' : '' })),
@@ -90,12 +97,23 @@ export function Editor({
   const [aba, setAba] = useState<'bloco' | 'testar'>('bloco')
   const [salvamento, setSalvamento] = useState<'salvo' | 'salvando' | 'pendente' | 'erro'>('salvo')
   const [sessao, setSessao] = useState<Sessao | null>(null)
+  const [publicada, setPublicada] = useState(publicadaInicial)
+  const [publicando, setPublicando] = useState(false)
+  const [errosDePublicacao, setErrosDePublicacao] = useState<Problema[] | null>(null)
 
   const fluxo = useMemo(() => paraFluxo(inicio, nodes, edges), [inicio, nodes, edges])
   const validacao = useMemo(() => validar(fluxo), [fluxo])
 
   const assinatura = JSON.stringify(fluxo)
   const assinaturaSalva = useRef(assinatura)
+
+  // Normaliza o publicado pelo mesmo caminho do rascunho, senão a comparação
+  // pegaria diferença de ordem de chave em vez de diferença de conteúdo.
+  const assinaturaPublicada = useMemo(
+    () => (publicada ? JSON.stringify(fluxoSchema.parse(publicada.grafo)) : null),
+    [publicada],
+  )
+  const haNovidade = assinatura !== assinaturaPublicada
 
   // Salva sozinho depois de uma pausa. Rascunho incompleto pode ser salvo —
   // quem barra a publicação é o validador, não o salvamento.
@@ -173,6 +191,25 @@ export function Editor({
     setSelecionado(null)
   }
 
+  async function publicarAgora() {
+    setPublicando(true)
+    setErrosDePublicacao(null)
+    try {
+      const r = await acaoPublicar(fluxoId, clienteId, JSON.parse(assinatura))
+      if (r.ok) {
+        assinaturaSalva.current = assinatura
+        setSalvamento('salvo')
+        setPublicada({ versao: r.versao, quando: 'agora', grafo: JSON.parse(assinatura) })
+      } else {
+        setErrosDePublicacao(r.erros)
+      }
+    } catch {
+      setErrosDePublicacao([{ codigo: 'FALHA', mensagem: 'Não deu para publicar. Tente de novo.' }])
+    } finally {
+      setPublicando(false)
+    }
+  }
+
   function definirInicio() {
     if (!selecionado) return
     setInicio(selecionado)
@@ -196,17 +233,49 @@ export function Editor({
 
         <div className="flex items-center gap-3 text-xs">
           <EstadoSalvamento estado={salvamento} />
-          {validacao.ok ? (
-            <span className="rounded bg-emerald-500/15 px-2 py-1 font-medium text-emerald-700 dark:text-emerald-400">
-              pode publicar
-            </span>
-          ) : (
+
+          <span className="text-zinc-400">
+            {publicada ? (
+              <>
+                no ar: v{publicada.versao} · {publicada.quando}
+                {haNovidade && (
+                  <span className="ml-1 text-amber-600 dark:text-amber-400">(com mudanças)</span>
+                )}
+              </>
+            ) : (
+              'nunca publicado'
+            )}
+          </span>
+
+          {!validacao.ok && (
             <span className="rounded bg-red-500/15 px-2 py-1 font-medium text-red-700 dark:text-red-400">
               {validacao.erros.length} impedimento(s)
             </span>
           )}
+
+          <button
+            onClick={publicarAgora}
+            disabled={!validacao.ok || !haNovidade || publicando || salvamento === 'salvando'}
+            title={
+              !validacao.ok
+                ? 'Resolva os impedimentos antes de publicar'
+                : !haNovidade
+                  ? 'O que está no ar já é este desenho'
+                  : 'Publicar este desenho'
+            }
+            className="rounded-lg bg-emerald-600 px-3 py-1.5 font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {publicando ? 'publicando…' : 'Publicar'}
+          </button>
         </div>
       </header>
+
+      {errosDePublicacao && (
+        <div className="shrink-0 border-b border-red-500/30 bg-red-500/10 px-4 py-2 text-xs text-red-700 dark:text-red-400">
+          <strong>Não publicou.</strong>{' '}
+          {errosDePublicacao.map((e) => e.mensagem).join(' ')}
+        </div>
+      )}
 
       <div className="flex min-h-0 flex-1">
         <nav className="w-40 shrink-0 space-y-1 overflow-y-auto border-r border-zinc-200 bg-white p-2 dark:border-zinc-800 dark:bg-zinc-900">

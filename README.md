@@ -7,9 +7,9 @@ Produto da [4YU](https://4yu.com.br).
 
 ## Estado
 
-**Etapa 1, passo 4 de 7:** dá para **desenhar o fluxo arrastando blocos**,
-testar a conversa ao lado sem sair da tela, e tudo salva sozinho. Falta publicar
-(rascunho x versão) e o WhatsApp.
+**Etapa 1, passo 5 de 7:** dá para **desenhar o fluxo arrastando blocos**, testar
+a conversa ao lado, e **publicar** — o rascunho vira versão numerada e imutável.
+Falta a tela de leads e o WhatsApp.
 
 Veja [docs/ARQUITETURA.md](docs/ARQUITETURA.md) para o desenho completo e as
 decisões por trás dele.
@@ -20,7 +20,7 @@ decisões por trás dele.
 npm install
 cp .env.example .env    # valores em 4yu-apps/.secrets/4yu.env (prefixo AUTOFLUXOS_)
 npm run dev             # http://localhost:3000
-npm test                # 45 testes
+npm test                # 49 testes
 npm run typecheck
 ```
 
@@ -35,9 +35,10 @@ normal — dá para clonar e rodar `npm test` sem credencial nenhuma.
 Migrations em [supabase/migrations/](supabase/migrations/), aplicadas pela
 Management API do Supabase.
 
-Duas tabelas por enquanto: `clients` e `flows`. `flow_versions`, `contacts`,
-`sessions` e `messages` entram nos passos 5 e 6 — tabela criada "por garantia" e
-nunca usada só acumula divergência entre o desenho e o código.
+Três tabelas: `clients`, `flows` e `flow_versions`. `contacts`, `sessions` e
+`messages` entram no passo 6, quando a gente souber o formato real do que o
+WhatsApp manda — tabela criada "por garantia" e nunca usada só acumula
+divergência entre o desenho e o código.
 
 **RLS está ligada e sem nenhuma política, de propósito.** A chave `publishable`
 (que pode chegar ao navegador) não lê nem escreve nada; todo acesso passa pelo
@@ -56,6 +57,20 @@ branch em lugar nenhum.
 
 Salva sozinho depois de uma pausa na digitação. Rascunho pela metade pode ser
 salvo; o que o validador barra é a publicação.
+
+## Publicar
+
+O rascunho é mutável e é o que você edita. **Publicar tira uma foto dele** e
+guarda numa linha de `flow_versions` numerada que o banco se recusa a alterar —
+não por convenção, por gatilho.
+
+Por que isso importa: sem versão, você edita o fluxo às 15h e a conversa que
+começou às 14h se vê num bloco que não existe mais. Quebra silenciosa, difícil de
+reproduzir, e quem descobre é o cliente.
+
+O botão só habilita se o validador deixar, mas **a checagem de verdade está no
+servidor** (`publicar()` no repo). Botão desabilitado é conveniência; um fluxo
+sem saída para humano tem que ser recusado venha a chamada de onde vier.
 
 A aba **Testar** conversa com o fluxo **em memória**, então dá para experimentar
 uma mudança antes de ela ser salva. Coisas que vale testar:

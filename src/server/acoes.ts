@@ -6,7 +6,7 @@ import { fluxoSchema } from '@/core/flow/schema'
 import { fluxoNovo } from '@/core/flow/novo'
 import { triagem } from '@/exemplos/triagem'
 import { criarCliente } from './repos/clientes'
-import { criarFluxo, salvarRascunho } from './repos/fluxos'
+import { criarFluxo, publicar, salvarRascunho } from './repos/fluxos'
 
 export async function acaoCriarCliente(formData: FormData) {
   const nome = String(formData.get('nome') ?? '').trim()
@@ -54,4 +54,26 @@ export async function acaoCriarFluxo(clienteId: string, formData: FormData) {
   const fluxo = await criarFluxo(clienteId, nome, fluxoNovo())
   revalidatePath(`/clientes/${clienteId}`)
   redirect(`/clientes/${clienteId}/fluxos/${fluxo.id}`)
+}
+
+/**
+ * Publica o que está na tela.
+ *
+ * A checagem de verdade mora no repo (`publicar`), não aqui e muito menos no
+ * botão desabilitado: um fluxo sem saída para humano tem que ser recusado
+ * mesmo que a chamada venha de outro lugar.
+ */
+export async function acaoPublicar(fluxoId: string, clienteId: string, grafo: unknown) {
+  const resultado = await publicar(fluxoId, grafo)
+
+  if (resultado.ok) {
+    revalidatePath(`/clientes/${clienteId}`)
+    return {
+      ok: true as const,
+      versao: resultado.versao.versao,
+      publicadoEm: resultado.versao.publicadoEm,
+    }
+  }
+
+  return { ok: false as const, erros: resultado.erros }
 }

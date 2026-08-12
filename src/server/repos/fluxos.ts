@@ -1,5 +1,6 @@
 import 'server-only'
 import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
+import { validar, type Problema } from '@/core/flow/validar'
 import { db } from '../db'
 
 /**
@@ -12,6 +13,16 @@ export type FluxoSalvo = {
   nome: string
   rascunho: Fluxo
   atualizadoEm: string
+  /** `null` = nunca publicado. */
+  versaoPublicadaId: string | null
+}
+
+/** Uma foto imutável do fluxo. É isto que as conversas executam. */
+export type VersaoPublicada = {
+  id: string
+  versao: number
+  publicadoEm: string
+  grafo: Fluxo
 }
 
 type Linha = {
@@ -20,9 +31,10 @@ type Linha = {
   nome: string
   rascunho: unknown
   atualizado_em: string
+  versao_publicada_id: string | null
 }
 
-const COLUNAS = 'id, client_id, nome, rascunho, atualizado_em'
+const COLUNAS = 'id, client_id, nome, rascunho, atualizado_em, versao_publicada_id'
 
 /**
  * `rascunho` é `jsonb`: o banco aceita qualquer coisa ali. Uma migração
@@ -45,6 +57,7 @@ function paraFluxo(linha: Linha): FluxoSalvo {
     nome: linha.nome,
     rascunho: analise.data,
     atualizadoEm: linha.atualizado_em,
+    versaoPublicadaId: linha.versao_publicada_id,
   }
 }
 
@@ -89,4 +102,85 @@ export async function salvarRascunho(id: string, rascunho: Fluxo): Promise<void>
     .eq('id', id)
 
   if (error) throw new Error(`não deu para salvar o rascunho: ${error.message}`)
+}
+
+export async function acharVersao(id: string): Promise<VersaoPublicada | null> {
+  const { data, error } = await db()
+    .from('flow_versions')
+    .select('id, versao, publicado_em, grafo')
+    .eq('id', id)
+    .maybeSingle()
+
+  if (error) throw new Error(`não deu para buscar a versão publicada: ${error.message}`)
+  if (!data) return null
+
+  return {
+    id: data.id as string,
+    versao: data.versao as number,
+    publicadoEm: data.publicado_em as string,
+    grafo: fluxoSchema.parse(data.grafo),
+  }
+}
+
+export async function listarVersoes(fluxoId: string): Promise<Omit<VersaoPublicada, 'grafo'>[]> {
+  const { data, error } = await db()
+    .from('flow_versions')
+    .select('id, versao, publicado_em')
+    .eq('flow_id', fluxoId)
+    .order('versao', { ascending: false })
+
+  if (error) throw new Error(`não deu para listar as versões: ${error.message}`)
+  return (data as { id: string; versao: number; publicado_em: string }[]).map((v) => ({
+    id: v.id,
+    versao: v.versao,
+    publicadoEm: v.publicado_em,
+  }))
+}
+
+/**
+ * Publica o desenho: guarda o rascunho como versão imutável e aponta o fluxo
+ * para ela.
+ *
+ * **O portão de qualidade é aqui, não no botão.** O botão desabilitado é
+ * conveniência; um fluxo sem saída para humano tem que ser recusado mesmo que
+ * a chamada venha de outro lugar.
+ *
+ * Salva o rascunho junto, de propósito: publicar tem que publicar exatamente o
+ * que está na tela de quem clicou, e não uma versão anterior que por acaso
+ * estava no banco.
+ */
+export async function publicar(
+  fluxoId: string,
+  grafo: unknown,
+): Promise<{ ok: true; versao: VersaoPublicada } | { ok: false; erros: Problema[] }> {
+  const analise = fluxoSchema.safeParse(grafo)
+  if (!analise.success) {
+    return {
+      ok: false,
+      erros: [{ codigo: 'ESTRUTURA_INVALIDA', mensagem: 'O desenho chegou com formato inválido.' }],
+    }
+  }
+
+  const conferido = validar(analise.data)
+  if (!conferido.ok) return { ok: false, erros: conferido.erros }
+
+  await salvarRascunho(fluxoId, analise.data)
+
+  const { data, error } = await db().rpc('publicar_fluxo', {
+    p_flow_id: fluxoId,
+    p_grafo: analise.data,
+  })
+
+  if (error) throw new Error(`não deu para publicar: ${error.message}`)
+
+  const linha = data as { id: string; versao: number; publicado_em: string; grafo: unknown }
+  return {
+    ok: true,
+    versao: {
+      id: linha.id,
+      versao: linha.versao,
+      publicadoEm: linha.publicado_em,
+      grafo: fluxoSchema.parse(linha.grafo),
+    },
+  }
 }

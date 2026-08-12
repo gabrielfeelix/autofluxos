@@ -300,7 +300,7 @@ autofluxos/
     │
     ├── server/                        ★ COLA — aqui mora o efeito colateral
     │   ├── db.ts                      ✅ Supabase com a chave secreta
-    │   ├── acoes.ts                   ✅ server actions (criar cliente/fluxo)
+    │   ├── acoes.ts                   ✅ server actions (criar, salvar, publicar)
     │   ├── repos/
     │   │   ├── clientes.ts            ✅
     │   │   ├── fluxos.ts              ✅
@@ -358,11 +358,15 @@ sair do Next, virar VPS, virar CLI — `core/` vai junto sem tocar numa linha.
 
 ## Banco (Supabase / Postgres)
 
-> **Construído até agora:** só `clients` e `flows` (migration 0001), e `flows`
-> guarda o **rascunho** direto numa coluna `jsonb`. `flow_versions` entra no
-> passo 5 e o resto no passo 6, quando a gente souber o formato real do que o
-> WhatsApp manda. Tabela criada "por garantia" e nunca usada só acumula
-> divergência entre o desenho e o código.
+> **Construído até agora:** `clients` e `flows` (0001) e `flow_versions` (0002).
+> `flows.rascunho` é `jsonb` mutável; publicar tira uma foto dele numa linha de
+> `flow_versions` que **o banco recusa alterar** (gatilho `flow_versions_imutavel`).
+> `contacts`, `sessions` e `messages` entram no passo 6, quando a gente souber o
+> formato real do que o WhatsApp manda.
+>
+> A metade que falta do §5 é o vínculo `sessions.flow_version_id` — ele só existe
+> quando `sessions` existir. Até lá, o versionamento já está de pé e as versões
+> já são imutáveis.
 >
 > **RLS ligada e sem política nenhuma**, de propósito: a chave `publishable` não
 > lê nem escreve nada, e todo acesso passa pelo servidor com a chave `secret`.
@@ -627,7 +631,7 @@ clica de novo, recebe link, e o lead vai parar numa base. Zero LLM.
 | 2 ✅ | `/api/simular` + chat de teste | dá pra conversar com um fluxo escrito na mão |
 | 3 ✅ | Supabase + CRUD de cliente/fluxo | o fluxo persiste |
 | 4 ✅ | Editor React Flow + painel | dá pra **desenhar** o fluxo |
-| 5 | Publicar + versionar | rascunho ≠ produção |
+| 5 ✅ | Publicar + versionar | rascunho ≠ produção |
 | 6 | Webhook + `cloud-api` no número do Cliente 00 | **funciona no WhatsApp** |
 | 7 | Tela de leads + `handoff` | o cliente vê valor e o humano assume |
 

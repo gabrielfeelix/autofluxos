@@ -46,14 +46,21 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
                     {fluxo.rascunho.nodes.length} blocos
                   </span>
                 </span>
-                <span
-                  className={`rounded px-2 py-0.5 text-xs font-medium ${
-                    validacao.ok
-                      ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
-                      : 'bg-red-500/15 text-red-700 dark:text-red-400'
-                  }`}
-                >
-                  {validacao.ok ? 'pode publicar' : `${validacao.erros.length} erro(s)`}
+                <span className="flex shrink-0 items-center gap-2">
+                  {!validacao.ok && (
+                    <span className="rounded bg-red-500/15 px-2 py-0.5 text-xs font-medium text-red-700 dark:text-red-400">
+                      {validacao.erros.length} erro(s)
+                    </span>
+                  )}
+                  <span
+                    className={`rounded px-2 py-0.5 text-xs font-medium ${
+                      fluxo.versaoPublicadaId
+                        ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
+                        : 'bg-zinc-500/15 text-zinc-600 dark:text-zinc-400'
+                    }`}
+                  >
+                    {fluxo.versaoPublicadaId ? 'no ar' : 'rascunho'}
+                  </span>
                 </span>
               </Link>
             </li>
