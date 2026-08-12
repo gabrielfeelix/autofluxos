@@ -83,11 +83,28 @@ O cofre entrou junto, como **Conexões** ([CONEXOES.md](CONEXOES.md)), e o DNS
 rebinding foi fechado antes dele — sem o IP fixado na conexão, guardar
 credencial seria entregá-la.
 
+**O contexto do negócio ganhou tela** (`/clientes/[id]/contexto`). Ele era lido
+em cinco lugares e escrito em nenhum, então era `''` para todo cliente — e o
+bloco de IA, que só pode responder com o que está escrito ali, respondia "não
+sei" a tudo. Falhava fechado, então ninguém percebia. Agora o validador recusa
+publicar fluxo com bloco de IA enquanto o contexto estiver vazio.
+
 O que fica pendente e é decisão de produto: **a aba Testar usa a credencial de
 verdade**. Testar um fluxo com conexão de CRM grava no CRM de verdade. Hoje há
 o aviso na tela e o cabeçalho `X-AutoFluxos-Teste: 1` para o sistema do cliente
 filtrar; a solução completa é uma credencial de sandbox por conexão, e o gatilho
 para construir é o primeiro cliente com CRM de produção.
+
+E o que continua faltando, em ordem de tamanho:
+
+1. **Papéis de usuário** (BRIEF-UI §6). Hoje é uma senha só. Vários comentários
+   no código dizem "isto muda quando o cliente ganhar acesso" — é este o dia.
+2. **Credencial de sandbox por conexão**, para a aba Testar não gravar no
+   sistema de produção do cliente.
+3. **`drop` de `clients.ia_habilitada`**, que o código já parou de ler.
+4. **Teste de banco intermitente**: `repos.test.ts` falha de vez em quando com
+   desvio de relógio entre esta máquina e o Supabase. É ambiente, não código —
+   mas atrapalha confiar na suíte.
 
 ---
 
