@@ -280,3 +280,83 @@ describe('schema do nó http', () => {
     expect(fluxo.nodes[0]?.type).toBe('http')
   })
 })
+
+describe('validação do nó de API', () => {
+  const comHttp = (data: Record<string, unknown>) =>
+    fluxoSchema.parse({
+      inicio: 'api',
+      nodes: [
+        { id: 'api', type: 'http', position: { x: 0, y: 0 }, data },
+        { id: 'humano', type: 'handoff', position: { x: 0, y: 0 }, data: {} },
+      ],
+      edges: [{ id: 'a1', source: 'api', target: 'humano' }],
+    })
+
+  const codigos = (fluxo: Fluxo) => validar(fluxo).erros.map((e) => e.codigo)
+
+  it('recusa URL vazia', () => {
+    expect(codigos(comHttp({ url: '' }))).toContain('URL_VAZIA')
+  })
+
+  it('recusa URL que não é https', () => {
+    expect(codigos(comHttp({ url: 'http://exemplo.com' }))).toContain('URL_INSEGURA')
+  })
+
+  it('aceita https', () => {
+    expect(codigos(comHttp({ url: 'https://exemplo.com' }))).not.toContain('URL_INSEGURA')
+  })
+
+  it('recusa nome de variável inválido no mapeamento', () => {
+    const fluxo = comHttp({
+      url: 'https://e.com',
+      mapear: [{ variavel: 'nome do lead', caminho: 'a' }],
+    })
+    expect(codigos(fluxo)).toContain('VARIAVEL_INVALIDA')
+  })
+
+  it('recusa POST com corpo que não é JSON', () => {
+    const fluxo = comHttp({ url: 'https://e.com', metodo: 'POST', corpo: '{ nome: }' })
+    expect(codigos(fluxo)).toContain('CORPO_INVALIDO')
+  })
+
+  it('aceita POST com corpo que usa {{variavel}}', () => {
+    const fluxo = comHttp({
+      url: 'https://e.com',
+      metodo: 'POST',
+      corpo: '{"nome": "{{nome}}", "idade": {{idade}}}',
+    })
+    expect(codigos(fluxo)).not.toContain('CORPO_INVALIDO')
+  })
+
+  it('não cobra corpo de GET', () => {
+    const fluxo = comHttp({ url: 'https://e.com', metodo: 'GET', corpo: 'nada disso é JSON' })
+    expect(codigos(fluxo)).not.toContain('CORPO_INVALIDO')
+  })
+
+  it('o que o nó mapeia conta como variável definida do fluxo', () => {
+    const fluxo = fluxoSchema.parse({
+      inicio: 'api',
+      nodes: [
+        {
+          id: 'api',
+          type: 'http',
+          position: { x: 0, y: 0 },
+          data: { url: 'https://e.com', mapear: [{ variavel: 'situacao', caminho: 's' }] },
+        },
+        { id: 'diz', type: 'mensagem', position: { x: 0, y: 0 }, data: { texto: 'está {{situacao}}' } },
+        { id: 'humano', type: 'handoff', position: { x: 0, y: 0 }, data: {} },
+      ],
+      edges: [
+        { id: 'a1', source: 'api', target: 'diz' },
+        { id: 'a2', source: 'diz', target: 'humano' },
+      ],
+    })
+
+    expect(validar(fluxo).avisos.map((a) => a.codigo)).not.toContain('VARIAVEL_DESCONHECIDA')
+  })
+
+  it('avisa que o cofre de segredos ainda não existe', () => {
+    const fluxo = comHttp({ url: 'https://e.com?k={{segredo.token}}' })
+    expect(validar(fluxo).avisos.map((a) => a.codigo)).toContain('SEGREDO_INEXISTENTE')
+  })
+})

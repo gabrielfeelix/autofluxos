@@ -9,6 +9,15 @@ import {
 } from './schema'
 import { variaveisCitadas } from '../engine/interpolar'
 
+/**
+ * `{{segredo.nome}}` — o namespace reservado para o cofre da v2.
+ *
+ * Ele atravessa o motor sem ser tocado (o regex de `interpolar()` não casa com
+ * ponto), então hoje sairia literal na requisição. Por isso o aviso: é erro de
+ * quem desenhou, mas não trava publicação de fluxo que não depende disso.
+ */
+const CITA_SEGREDO = /\{\{\s*segredo\.[a-zA-Z][a-zA-Z0-9_]*\s*\}\}/
+
 export type Problema = {
   codigo: string
   mensagem: string
@@ -250,6 +259,56 @@ function conferirConteudo(no: No, erros: Problema[]): void {
         })
       }
       break
+
+    case 'http': {
+      if (vazio(no.data.url)) {
+        erros.push({ codigo: 'URL_VAZIA', mensagem: 'Este bloco não diz qual endereço chamar.', noId: no.id })
+      } else if (!no.data.url.trim().startsWith('https://')) {
+        erros.push({
+          codigo: 'URL_INSEGURA',
+          mensagem: 'O endereço precisa começar com https:// — o servidor recusa qualquer outro.',
+          noId: no.id,
+        })
+      }
+
+      for (const item of no.data.mapear) {
+        conferirVariavel(item.variavel, 'variável')
+        if (vazio(item.variavel)) {
+          erros.push({
+            codigo: 'VARIAVEL_INVALIDA',
+            mensagem: 'Um dos mapeamentos não diz em qual variável guardar.',
+            noId: no.id,
+          })
+        }
+      }
+
+      if (no.data.metodo === 'POST' && !vazio(no.data.corpo) && !ehJsonComVariaveis(no.data.corpo)) {
+        erros.push({
+          codigo: 'CORPO_INVALIDO',
+          mensagem: 'O corpo não é JSON válido.',
+          noId: no.id,
+        })
+      }
+      break
+    }
+  }
+}
+
+/**
+ * O corpo é JSON válido, considerando que `{{variavel}}` ainda não virou nada.
+ *
+ * Troca cada `{{...}}` por `1` antes de conferir. O `1` é escolhido porque
+ * funciona nos dois lugares onde uma variável aparece: dentro de aspas
+ * (`{"nome": "1"}`) e fora delas (`{"idade": 1}`). Trocar por texto quebraria o
+ * segundo caso, e recusar o corpo por causa disso puniria a forma correta de
+ * escrever.
+ */
+function ehJsonComVariaveis(corpo: string): boolean {
+  try {
+    JSON.parse(corpo.replace(/\{\{[^}]*\}\}/g, '1'))
+    return true
+  } catch {
+    return false
   }
 }
 
@@ -276,6 +335,9 @@ function conferirVariaveis(fluxo: Fluxo): Problema[] {
     if (no.type === 'pergunta' && no.data.salvarEm) definidas.add(no.data.salvarEm)
     if (no.type === 'salvar-campo') definidas.add(no.data.campo)
     if (no.type === 'ia' && no.data.salvarEm) definidas.add(no.data.salvarEm)
+    if (no.type === 'http') {
+      for (const item of no.data.mapear) definidas.add(item.variavel)
+    }
   }
 
   const problemas: Problema[] = []
@@ -290,6 +352,20 @@ function conferirVariaveis(fluxo: Fluxo): Problema[] {
       }
     }
   }
+
+  for (const no of fluxo.nodes) {
+    if (no.type !== 'http') continue
+    const textos = [no.data.url, no.data.corpo, ...no.data.cabecalhos.map((c) => c.valor)]
+    if (textos.some((t) => CITA_SEGREDO.test(t))) {
+      problemas.push({
+        codigo: 'SEGREDO_INEXISTENTE',
+        mensagem:
+          'Este bloco usa {{segredo.…}}, e o cofre de segredos ainda não existe. Hoje isso sai literal na chamada.',
+        noId: no.id,
+      })
+    }
+  }
+
   return problemas
 }
 
@@ -307,5 +383,11 @@ function variaveisDoNo(no: No): string[] {
       return variaveisCitadas(no.data.mensagem)
     case 'condicao':
       return [no.data.variavel]
+    case 'http':
+      return [
+        ...variaveisCitadas(no.data.url),
+        ...variaveisCitadas(no.data.corpo),
+        ...no.data.cabecalhos.flatMap((c) => variaveisCitadas(c.valor)),
+      ]
   }
 }
