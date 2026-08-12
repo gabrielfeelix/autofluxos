@@ -10,7 +10,7 @@ import type { Canal } from './types'
  */
 
 /** Sobrescreva pelo `.env` quando a Meta aposentar a versão. */
-const VERSAO_PADRAO = 'v23.0'
+const VERSAO_PADRAO = 'v25.0'
 
 export type ConfigCloudApi = {
   phoneNumberId: string
