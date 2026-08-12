@@ -87,6 +87,21 @@ export function executar(fluxo: Fluxo, sessao: Sessao, entrada: Entrada): Result
     return avancar(fluxo, porId, s, acoes, proximo(fluxo, atual.id))
   }
 
+  if (atual.type === 'http') {
+    // A pessoa escreveu enquanto a chamada rodava: ignora, a resposta vem.
+    if (entrada.tipo !== 'http_respondeu') return { acoes, sessao: s }
+
+    for (const [variavel, valor] of Object.entries(entrada.valores)) {
+      s.vars[variavel] = valor
+      // Emitir `salvar_campo` faz o dado virar coluna na tela de leads sozinho,
+      // porque as colunas de lá saem dos dados.
+      acoes.push({ tipo: 'salvar_campo', campo: variavel, valor })
+    }
+
+    s.tentativas = 0
+    return avancar(fluxo, porId, s, acoes, proximo(fluxo, atual.id))
+  }
+
   if (atual.type === 'pergunta') {
     return responderPergunta(fluxo, porId, s, acoes, atual, entrada)
   }
@@ -193,6 +208,24 @@ function avancar(
         acoes.push({ tipo: 'chamar_ia', instrucao: interpolar(no.data.instrucao, s.vars) })
         s.noAtual = no.id
         s.status = 'aguardando_ia'
+        return { acoes, sessao: s }
+      }
+
+      case 'http': {
+        acoes.push({
+          tipo: 'chamar_http',
+          metodo: no.data.metodo,
+          url: interpolar(no.data.url, s.vars),
+          cabecalhos: no.data.cabecalhos.map((c) => ({
+            chave: c.chave,
+            valor: interpolar(c.valor, s.vars),
+          })),
+          corpo: interpolar(no.data.corpo, s.vars),
+          mapear: no.data.mapear,
+          aoFalhar: no.data.aoFalhar,
+        })
+        s.noAtual = no.id
+        s.status = 'aguardando_http'
         return { acoes, sessao: s }
       }
 

@@ -319,3 +319,86 @@ describe('robustez', () => {
     expect(original.vars).toEqual({})
   })
 })
+
+describe('nó de API', () => {
+  const comApi: Fluxo = fluxoSchema.parse({
+    inicio: 'consulta',
+    nodes: [
+      {
+        id: 'consulta',
+        type: 'http',
+        position: p,
+        data: {
+          metodo: 'GET',
+          url: 'https://exemplo.com/pedido/{{codigo}}?chave={{segredo.token}}',
+          mapear: [{ variavel: 'situacao', caminho: 'pedido.status' }],
+        },
+      },
+      { id: 'aviso', type: 'mensagem', position: p, data: { texto: 'Seu pedido está {{situacao}}.' } },
+      { id: 'humano', type: 'handoff', position: p, data: { motivo: 'fim' } },
+    ],
+    edges: [
+      { id: 'a1', source: 'consulta', target: 'aviso' },
+      { id: 'a2', source: 'aviso', target: 'humano' },
+    ],
+  })
+
+  const sessaoCom = (vars: Record<string, string>): Sessao => ({
+    ...sessaoNova(),
+    vars,
+  })
+
+  it('para no nó e descreve a chamada, sem executar nada', () => {
+    const r = executar(comApi, sessaoCom({ codigo: 'AB12' }), { tipo: 'inicio' })
+
+    expect(r.sessao.status).toBe('aguardando_http')
+    expect(r.sessao.noAtual).toBe('consulta')
+    expect(tipos(r.acoes)).toEqual(['chamar_http'])
+  })
+
+  it('interpola a variável da sessão na URL', () => {
+    const r = executar(comApi, sessaoCom({ codigo: 'AB12' }), { tipo: 'inicio' })
+    const acao = r.acoes[0]
+
+    expect(acao?.tipo).toBe('chamar_http')
+    if (acao?.tipo !== 'chamar_http') throw new Error('ação errada')
+    expect(acao.url).toContain('/pedido/AB12')
+  })
+
+  it('NÃO toca em {{segredo.x}} — quem resolve segredo é o servidor', () => {
+    const r = executar(comApi, sessaoCom({ codigo: 'AB12' }), { tipo: 'inicio' })
+    const acao = r.acoes[0]
+
+    if (acao?.tipo !== 'chamar_http') throw new Error('ação errada')
+    expect(acao.url).toContain('chave={{segredo.token}}')
+  })
+
+  it('com a resposta, guarda os valores e segue o fluxo', () => {
+    const parado = executar(comApi, sessaoCom({ codigo: 'AB12' }), { tipo: 'inicio' })
+    const r = executar(comApi, parado.sessao, {
+      tipo: 'http_respondeu',
+      valores: { situacao: 'a caminho' },
+    })
+
+    expect(r.sessao.vars.situacao).toBe('a caminho')
+    // 'humano' é handoff sem `mensagem` explícita: além do 'aviso', o próprio
+    // handoff manda seu texto padrão de transferência antes de transferir.
+    expect(tipos(r.acoes)).toEqual(['salvar_campo', 'enviar_texto', 'enviar_texto', 'transferir_humano'])
+    expect(textos(r.acoes)).toContain('Seu pedido está a caminho.')
+  })
+
+  it('ignora o que a pessoa escreve enquanto a chamada não voltou', () => {
+    const parado = executar(comApi, sessaoCom({ codigo: 'AB12' }), { tipo: 'inicio' })
+    const r = executar(comApi, parado.sessao, { tipo: 'texto', texto: 'oi?' })
+
+    expect(r.acoes).toEqual([])
+    expect(r.sessao.status).toBe('aguardando_http')
+  })
+
+  it('sem valores (o caso do aoFalhar seguir), continua mesmo assim', () => {
+    const parado = executar(comApi, sessaoCom({ codigo: 'AB12' }), { tipo: 'inicio' })
+    const r = executar(comApi, parado.sessao, { tipo: 'http_respondeu', valores: {} })
+
+    expect(textos(r.acoes)).toContain('Seu pedido está .')
+  })
+})
