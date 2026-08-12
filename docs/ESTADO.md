@@ -70,17 +70,24 @@ segue o fluxo.
 
 O motivo é comercial: passa a ser verdade dizer "integra com o seu sistema" numa
 reunião. Cobre Sheets por Apps Script, webhook de qualquer coisa, e n8n/Make/
-Zapier inteiros. **Não cobre** CRM que exige cabeçalho `Authorization` — não há
-cofre de segredos, e token não pode ficar no grafo do fluxo, que vira versão
-imutável no banco. Para esses, a resposta honesta continua sendo "passa por n8n".
+Zapier inteiros. **Cobre CRM também**, desde as Credenciais (migration 0006): cada cliente
+cadastra as chaves dele uma vez, num cofre fora do banco, e o bloco aponta pela
+referência. Nada mais precisa de n8n — se o cliente precisasse dele, não
+precisaria da gente.
 
 O que ficou pronto: schema, motor, validador, recusa de SSRF, disparo com
 timeout, resolvedor único (IA e API no mesmo laço), bloco no editor e aviso na
 aba Testar. Desenho em [NO-API.md](NO-API.md), plano em [PLANO-NO-API.md](PLANO-NO-API.md).
 
-A próxima peça natural é o **cofre de segredos** — e ela é aditiva, não
-reescrita: `{{segredo.x}}` já atravessa o motor intacto, porque o regex da
-interpolação não casa com ponto.
+O cofre entrou junto, como **Conexões** ([CONEXOES.md](CONEXOES.md)), e o DNS
+rebinding foi fechado antes dele — sem o IP fixado na conexão, guardar
+credencial seria entregá-la.
+
+O que fica pendente e é decisão de produto: **a aba Testar usa a credencial de
+verdade**. Testar um fluxo com conexão de CRM grava no CRM de verdade. Hoje há
+o aviso na tela e o cabeçalho `X-AutoFluxos-Teste: 1` para o sistema do cliente
+filtrar; a solução completa é uma credencial de sandbox por conexão, e o gatilho
+para construir é o primeiro cliente com CRM de produção.
 
 ---
 

@@ -28,7 +28,7 @@ decisões por trás dele.
 npm install
 cp .env.example .env    # valores em 4yu-apps/.secrets/4yu.env (prefixo AUTOFLUXOS_)
 npm run dev             # http://localhost:3000
-npm test                # 168 testes
+npm test                # 204 testes
 npm run typecheck
 ```
 
@@ -109,16 +109,21 @@ Três coisas que o produto garante, e que não dependem de quem desenha lembrar:
   vindos dali levam o cabeçalho `X-AutoFluxos-Teste: 1`, para o sistema do
   cliente separar teste de movimento real.
 - **Endereço interno é recusado no servidor**, olhando o IP resolvido e não o
-  nome, inclusive a cada redirecionamento. Um domínio público apontando para
-  `127.0.0.1` é como esse ataque costuma ser escrito.
+  nome, inclusive a cada redirecionamento. A conexão é fixada nesse IP, então
+  não sobra segunda resolução para um atacante trocar (DNS rebinding).
+- **Credencial não acompanha redirecionamento para outro host**, e nem o corpo
+  com o lead dentro.
 - **Falha não pendura ninguém.** Por padrão a conversa vai para uma pessoa com o
   motivo real; `continua mesmo assim` é escolha explícita, para enriquecimento
   que pode faltar sem prejuízo.
 
-**Não há cofre de segredos ainda**, então token de CRM não tem onde morar com
-segurança — para esses, o caminho é passar por um intermediário. O desenho está
-em [docs/NO-API.md](docs/NO-API.md), incluindo por que a expansão para cofre é
-aditiva.
+**Para o que pede chave — CRM, ERP —, existem as Credenciais.** Cada cliente
+cadastra as dele uma vez, o bloco aponta pela referência, e o valor mora num
+cofre fora do banco. Não existe campo onde digitar token dentro do fluxo, então
+ele não tem como entrar na versão publicada, que é imutável. Trocar a chave
+depois não exige republicar nada.
+
+O desenho está em [docs/NO-API.md](docs/NO-API.md) e [docs/CONEXOES.md](docs/CONEXOES.md).
 
 ## A regra que sustenta o projeto
 

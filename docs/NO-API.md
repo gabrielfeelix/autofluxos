@@ -48,7 +48,7 @@ quando o mesmo sistema aparecer no terceiro cliente.
 | **Consulta de pedido, rastreio, estoque** | `GET` na API do sistema dele, resposta mapeada em variável |
 | **CEP, CNPJ** | ViaCEP, BrasilAPI — enriquece o lead sem perguntar |
 | **Notificação interna** | webhook do Slack, do Telegram, do que for |
-| **CRM com `Authorization`** | **não**, até o cofre existir (v2). A resposta honesta é "passa por n8n" |
+| **CRM com `Authorization`** | **sim**, desde as Conexões — ver [CONEXOES.md](CONEXOES.md) |
 
 O Sheets merece nota: a API do Google **não aceita API key para escrita** —
 exige OAuth2 ou service account com a planilha compartilhada. O caminho que o
@@ -245,19 +245,23 @@ A recusa mora no resolvedor, não no editor. Validação de tela é conveniênci
 recusa precisa valer venha a chamada de onde vier — a mesma lógica que
 `publicar()` já aplica ao validador.
 
-### O que a recusa não cobre: DNS rebinding
+### DNS rebinding: fechado
 
-Entre resolver o nome e o `fetch` resolver de novo, a resposta do DNS pode
-mudar: um domínio devolve IP público na primeira consulta e o endereço de
-metadados na segunda. É uma janela de tempo inerente ao padrão "confere e depois
-chama", não um erro na lógica.
+O padrão ingênuo — resolver, conferir, e deixar o cliente HTTP resolver de novo
+ao conectar — tem uma janela que quem controla o domínio explora. E o `undici`
+(o que está por baixo do `fetch` no Node) **ignora o `agent` e re-resolve o DNS
+na conexão**, então a janela existe de verdade. É a classe da CVE do Budibase
+(`GHSA-v42f-v8xc-j435`), que é um low-code com nó de REST.
 
-Fechar exige fixar o IP resolvido no momento da conexão — um `dispatcher` do
-undici com `lookup` próprio, convivendo com o `fetch` que o Next embrulha.
+`conferirEndereco` devolve os endereços aprovados, e `http.ts` conecta neles com
+um `dispatcher` cujo `lookup` não consulta DNS nenhum. A URL continua com o
+hostname, então `Host` e SNI continuam certos e o certificado bate — quem mente
+é só o `lookup`. Cada salto de redirecionamento fixa de novo.
 
-**Risco aceito enquanto só o operador escreve endereço de fluxo**, porque quem
-exploraria isso já tem acesso ao editor. No dia em que o cliente ganhar acesso
-(BRIEF-UI §6), isso deixa de ser teórico e vira tarefa.
+Isso virou pré-requisito quando as credenciais entraram (ver
+[CONEXOES.md](CONEXOES.md)): sem o IP fixado, o rebinding deixaria de ser SSRF e
+viraria roubo de credencial, porque ele não muda o host e a regra que larga
+cabeçalho só dispara quando a origem muda.
 
 ### O simulador dispara de verdade
 
