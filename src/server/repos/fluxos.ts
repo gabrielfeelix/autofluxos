@@ -222,3 +222,27 @@ export async function definirIa(fluxoId: string, habilitada: boolean): Promise<v
 
   if (error) throw new Error(`não deu para mudar a IA do fluxo: ${error.message}`)
 }
+
+export type ResumoDeAutomacoes = { total: number; comIa: number }
+
+/**
+ * Quantas automações cada cliente tem, e quantas usam IA.
+ *
+ * Uma consulta só para a lista inteira, e não uma por cliente: a tela de
+ * clientes é a primeira coisa que abre, e N+1 ali aparece como lentidão logo no
+ * login. Devolve mapa para a tela não precisar procurar.
+ */
+export async function resumirAutomacoes(): Promise<Map<string, ResumoDeAutomacoes>> {
+  const { data, error } = await db().from('flows').select('client_id, ia_habilitada')
+
+  if (error) throw new Error(`não deu para contar as automações: ${error.message}`)
+
+  const mapa = new Map<string, ResumoDeAutomacoes>()
+  for (const linha of data as { client_id: string; ia_habilitada: boolean }[]) {
+    const atual = mapa.get(linha.client_id) ?? { total: 0, comIa: 0 }
+    atual.total += 1
+    if (linha.ia_habilitada) atual.comIa += 1
+    mapa.set(linha.client_id, atual)
+  }
+  return mapa
+}

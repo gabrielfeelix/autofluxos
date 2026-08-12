@@ -1,11 +1,12 @@
 import Link from 'next/link'
 import { acaoCriarCliente, acaoCriarExemplo } from '@/server/acoes'
 import { listarClientes } from '@/server/repos/clientes'
+import { resumirAutomacoes } from '@/server/repos/fluxos'
 
 export const dynamic = 'force-dynamic'
 
 export default async function Pagina() {
-  const clientes = await listarClientes()
+  const [clientes, automacoes] = await Promise.all([listarClientes(), resumirAutomacoes()])
 
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-8 p-6 sm:p-10">
@@ -41,8 +42,15 @@ export default async function Pagina() {
                 className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-3 transition hover:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900"
               >
                 <span className="font-medium">{cliente.nome}</span>
+                {/* IA é por automação (0005), então o rótulo do cliente conta
+                    quantas — dizer "cliente com IA" seria mentira agora. */}
                 <span className="text-xs text-zinc-400">
-                  {cliente.iaHabilitada ? 'com IA' : 'sem IA'}
+                  {(() => {
+                    const r = automacoes.get(cliente.id)
+                    if (!r || r.total === 0) return 'sem automação'
+                    const base = `${r.total} ${r.total === 1 ? 'automação' : 'automações'}`
+                    return r.comIa > 0 ? `${base} · ${r.comIa} com IA` : base
+                  })()}
                 </span>
               </Link>
             </li>

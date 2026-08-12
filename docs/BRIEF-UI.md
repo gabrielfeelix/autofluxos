@@ -31,7 +31,7 @@ Estes nomes aparecem na interface e devem ser respeitados:
 | Termo | O que é |
 |---|---|
 | **Cliente** | a empresa atendida (ex.: uma produtora de vídeo) |
-| **Fluxo** | o desenho da conversa de um cliente |
+| **Fluxo** (ou **automação**) | o desenho da conversa de um cliente. É a unidade que se vende: existe com IA e sem IA |
 | **Bloco** | cada peça do fluxo |
 | **Rascunho** | o desenho sendo editado |
 | **Versão publicada** | foto imutável do fluxo, é o que roda de verdade |
@@ -52,16 +52,26 @@ Entrada do sistema. Lista os clientes e permite criar um novo pelo nome.
 
 - **Vazio:** primeiro acesso, nenhum cliente. Oferece criar um cliente de exemplo
   já com um fluxo pronto, para a pessoa ter o que explorar.
-- Cada cliente indica se tem IA contratada.
+- Cada cliente mostra quantas automações tem e quantas delas usam IA
+  (ex.: "3 automações · 1 com IA"). Cliente sem nenhuma diz isso.
 - Clicar num cliente abre a tela dele.
 
 ### 2. Cliente
 
 Reúne tudo de um cliente: fluxos, números de WhatsApp e acesso aos leads.
 
+**Atalho para os leads, em destaque.** O fluxo é o meio, o lead é o fim. O
+atalho carrega dois números: quantos leads existem e — quando houver — quantos
+estão **esperando atendimento humano**. Esse segundo número é o que faz alguém
+largar o que está fazendo, e chega na tela depois do resto (é consulta mais
+pesada), então precisa de um estado intermediário que não empurre o layout.
+
 **Lista de fluxos.** Cada fluxo mostra quantos blocos tem, quantos impedimentos
-de publicação existem (se houver) e se está **no ar** ou ainda **rascunho**.
-Criar fluxo novo pede só o nome — ele nasce com um esqueleto válido.
+de publicação existem (se houver), se usa **IA**, e se está **no ar** ou ainda
+**rascunho**.
+
+**Criar automação** pede o nome e **se tem IA** — a decisão é tomada aqui porque
+é aqui que se sabe o que foi vendido. Ela nasce com um esqueleto válido.
 
 **Números de WhatsApp.** Lista os números conectados, cada um indicando qual
 fluxo executa e alertando quando está ligado a um fluxo ainda não publicado ou a
@@ -75,15 +85,19 @@ A tela principal do produto, e onde a pessoa passa a maior parte do tempo. Tem
 três funções convivendo: **catálogo de blocos**, **área de desenho** e um
 **painel** que alterna entre editar o bloco selecionado e testar a conversa.
 
-**No cabeçalho:** nome do fluxo e do cliente, estado do salvamento, o que está
-no ar (versão e há quanto tempo), aviso quando o desenho difere do que está
-publicado, contagem de impedimentos, e a ação de publicar.
+**No cabeçalho:** nome do fluxo e do cliente, **se esta automação tem IA**
+(alternável ali mesmo), estado do salvamento, o que está no ar (versão e há
+quanto tempo), aviso quando o desenho difere do que está publicado, contagem de
+impedimentos, e a ação de publicar.
+
+Ligar ou desligar a IA não republica nada: muda só o que a próxima publicação
+aceita. Com a IA desligada, um bloco de IA no desenho vira impedimento.
 
 #### Interações da área de desenho
 
 | Ação | O que acontece |
 |---|---|
-| Escolher um tipo no catálogo | um bloco novo aparece já selecionado, com conteúdo de exemplo, e o painel abre nele |
+| Escolher um tipo no catálogo | um bloco novo aparece **no meio de onde a pessoa está olhando**, já selecionado, com conteúdo de exemplo, e o painel abre nele |
 | Clicar num bloco | seleciona e abre no painel para edição |
 | Arrastar um bloco | reposiciona; a posição faz parte do fluxo e é salva |
 | Arrastar de uma alça até outro bloco | cria a ligação — **é assim que a conversa ramifica** |
@@ -126,7 +140,9 @@ Campos de texto aceitam `{{variavel}}`, que é substituída pelo que a pessoa
 respondeu. O painel mostra quais variáveis aquele fluxo preenche.
 
 **Lista de impedimentos e avisos.** Abaixo do formulário. **Impedimento** trava a
-publicação; **aviso** não. Cada item é clicável e seleciona o bloco culpado.
+publicação; **aviso** não. Cada item é clicável: seleciona o bloco culpado **e
+traz ele para a vista**, com movimento — o bloco pode estar fora da tela, e
+selecionar sem mover faz o clique parecer quebrado.
 Exemplos: bloco sem texto, opção que não leva a lugar nenhum, condição sem uma
 das saídas, nome de variável inválido, rótulo maior do que o WhatsApp mostra,
 bloco solto que a conversa nunca alcança, e o mais importante: **nenhum caminho
@@ -141,6 +157,11 @@ alterações ainda não salvas. Quem digita faz o papel do cliente.
   clicáveis, indicando se virariam botões ou lista.
 - Entre as mensagens aparecem eventos internos: o que foi guardado, quando
   passou para um humano e por quê, quando a conversa encerrou.
+- **Quando a automação tem IA, ela responde de verdade aqui** — com a chave da
+  4YU, para dar para desenhar o fluxo na frente do cliente numa reunião e ele já
+  responder. A resposta demora alguns segundos: a espera precisa ser visível.
+- Quando a IA não sabe responder, ela não inventa: avisa e passa para uma
+  pessoa. Isso aparece como evento, com o motivo.
 - Um botão simula o envio de áudio, para mostrar que áudio vai direto para uma
   pessoa.
 - Se o desenho mudar no meio de um teste, a conversa avisa que está velha e
@@ -169,6 +190,42 @@ atende. Um botão de enviar aqui prometeria uma caixa de entrada que não existe
 e construir uma é decisão de produto, não de tela (ver "Coexistence" no
 ESTADO.md: o celular do cliente continua sendo o inbox).
 
+#### 4a. Lista de leads — o que cada linha tem
+
+Uma tabela. As colunas fixas são **Contato**, **Situação** e **Última
+mensagem**; entre elas entram, dinamicamente, as informações que aquele fluxo
+coletou.
+
+| Coluna | O que mostra |
+|---|---|
+| Contato | nome do perfil do WhatsApp (ou "sem nome") e o número. Leva ao lead |
+| *(dinâmicas)* | uma por informação coletada; quem não tem aquela informação mostra vazio |
+| Situação | "aguardando humano" **com há quanto tempo e o motivo**, ou "com o bot" |
+| Última mensagem | quando foi, em tempo relativo, e uma prévia — marcando quando foi o bot que falou |
+
+Ordena da conversa mais recente para a mais antiga. Quem nunca escreveu aparece
+no fim, sem data.
+
+**Vazio, dois casos diferentes:** sem número de WhatsApp conectado, o texto diz
+isso (é a causa real); com número conectado, diz que os leads aparecem quando
+alguém escrever.
+
+#### 4b. O lead — campos e conversa
+
+Cabeçalho com nome, número e há quanto tempo chegou. Se está esperando uma
+pessoa, isso aparece em destaque logo abaixo, com o motivo e desde quando.
+
+Depois, **o que o fluxo coletou** — pares de rótulo e valor, e um texto honesto
+quando ainda não coletou nada.
+
+Por fim, **a conversa inteira na ordem**: o que o lead escreveu de um lado, o
+que o bot respondeu do outro, cada mensagem com horário. Mensagem que não é
+texto (áudio, imagem, documento) aparece identificada como tal. Conversa muito
+longa mostra as mais recentes e **avisa que cortou** — nunca corta calado.
+
+A conversa chega depois do resto da página (é a consulta que cresce sem limite),
+então precisa de um estado de carregamento próprio.
+
 ---
 
 ## Telas que faltam
@@ -195,11 +252,25 @@ aqui expõe dado de um cliente para outro.
 
 ## Estados que toda tela precisa resolver
 
+Os quatro primeiros **já existem em código** e precisam de desenho; o quinto
+espera o login.
+
 - **Vazio:** primeira vez, sem nada criado. É a maior chance de ensinar o produto.
-- **Carregando:** a maioria das telas lê banco antes de aparecer.
-- **Erro:** falha de rede ou de servidor, com caminho de volta.
-- **Sem permissão:** cliente tentando alcançar algo que não é dele.
-- **Não encontrado:** endereço de cliente ou fluxo que não existe.
+- **Carregando:** as telas pintam o cabeçalho na hora e preenchem o miolo quando
+  o banco responde. O que espera é sempre um pedaço da tela, nunca a tela toda —
+  então o desenho precisa de esqueletos que **reservem o espaço certo**, senão o
+  conteúdo pula quando chega. Onde há esqueleto hoje: lista de fluxos, tabela de
+  leads, conversa de um lead, e o contador de leads no cabeçalho do cliente.
+- **Erro:** falha de banco ou de rede. Duas saídas: tentar de novo e voltar para
+  o começo. Mostra um código curto para reportar. Existe também uma versão de
+  último recurso, para quando o próprio layout quebra.
+- **Não encontrado:** endereço que não existe. Tem duas versões, e a diferença é
+  proposital: na raiz, "esta página não existe"; dentro de um cliente, "este
+  cliente, fluxo ou lead não existe — ou não é deste painel", que é a mesma
+  mensagem que um dia vai servir para "não é seu".
+- **Sem permissão:** cliente tentando alcançar algo que não é dele. Ainda não
+  existe — entra com o login, e reaproveita a tela acima de propósito: dizer
+  "existe, mas não é seu" já é contar demais.
 
 ## Momentos em que algo muda e a pessoa precisa perceber
 
@@ -244,3 +315,24 @@ Elas moldam o editor e precisam ser comunicadas **antes** do erro acontecer:
   produto, não sugestão — existe para nunca prender uma pessoa conversando com
   um robô.
 - Rascunho pode estar pela metade e ser salvo. O que é barrado é publicar.
+
+---
+
+## O que mudou desde a primeira versão deste brief
+
+Resumo para quem já leu a versão anterior e só quer o delta. Tudo abaixo **já
+existe em código** e está esperando desenho.
+
+| # | O quê | Onde |
+|---|---|---|
+| 1 | **Lista de leads** — tabela com colunas dinâmicas, situação e última mensagem | §4a |
+| 2 | **Tela de um lead** — campos coletados e a conversa inteira | §4b |
+| 3 | **Atalho de leads no cliente**, com quantos esperam atendimento | §2 |
+| 4 | **IA é da automação, não do cliente** — caixa ao criar, selo na lista, alternador no editor | §2, §3 |
+| 5 | **Lista de clientes** conta automações em vez de dizer "cliente com IA" | §1 |
+| 6 | **Carregando, Erro e Não encontrado** passaram a existir | "Estados" |
+| 7 | Impedimento clicado **traz o bloco para a vista**; bloco novo nasce onde a pessoa olha | §3 |
+| 8 | Na aba Testar, **a IA responde de verdade** | §3 |
+
+O que **não** mudou e continua valendo: nenhuma decisão visual está tomada aqui.
+Cor, tipografia, espaçamento, layout e movimento seguem sendo de quem desenha.
