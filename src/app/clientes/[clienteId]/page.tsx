@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { BotaoPerigo } from '@/components/design/botao-perigo'
+import { Dropdown } from '@/components/design/dropdown'
 import { FormularioSalvar } from '@/components/design/formulario-salvar'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { PainelShell } from '@/components/design/shell'
@@ -287,12 +288,14 @@ async function Conteudo({ cliente }: { cliente: Cliente }) {
                   placeholder="Identificação do número (Meta)"
                   className="app-field px-3 py-2.5 text-[12.5px]"
                 />
-                <select name="flowId" className="app-field w-full px-3 py-2.5 text-[12.5px]">
-                  <option value="">sem fluxo</option>
-                  {fluxos.map((fluxo) => (
-                    <option key={fluxo.id} value={fluxo.id}>{fluxo.nome}</option>
-                  ))}
-                </select>
+                <Dropdown
+                  nome="flowId"
+                  rotuloAcessivel="Fluxo que o número executa"
+                  opcoes={[
+                    { valor: '', rotulo: 'sem fluxo' },
+                    ...fluxos.map((fluxo) => ({ valor: fluxo.id, rotulo: fluxo.nome })),
+                  ]}
+                />
               </div>
             </FormularioSalvar>
           </div>

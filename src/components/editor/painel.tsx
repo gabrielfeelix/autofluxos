@@ -11,6 +11,7 @@ import {
   type No,
   type Opcao,
 } from '@/core/flow/schema'
+import { Dropdown } from '@/components/design/dropdown'
 import { NOMES } from './nos'
 
 /** O que o painel precisa saber de uma credencial: o nome, e nada mais. */
@@ -102,17 +103,12 @@ export function Painel({
           />
           <label className="block">
             <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">Operador</span>
-            <select
-              value={no.data.operador}
-              onChange={(e) => aoMudarDados({ operador: e.target.value })}
-              className="app-field px-3 py-2.5 text-[13px]"
-            >
-              {OPERADORES.map((op) => (
-                <option key={op} value={op}>
-                  {op}
-                </option>
-              ))}
-            </select>
+            <Dropdown
+              valor={no.data.operador}
+              aoMudar={(operador) => aoMudarDados({ operador })}
+              rotuloAcessivel="Operador"
+              opcoes={OPERADORES.map((operador) => ({ valor: operador, rotulo: operador }))}
+            />
           </label>
           {no.data.operador !== 'vazio' && no.data.operador !== 'preenchido' && (
             <Linha rotulo="Valor" valor={no.data.valor} aoMudar={(valor) => aoMudarDados({ valor })} />
@@ -171,17 +167,12 @@ export function Painel({
         <>
           <label className="block">
             <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">Método</span>
-            <select
-              value={no.data.metodo}
-              onChange={(e) => aoMudarDados({ metodo: e.target.value })}
-              className="app-field px-3 py-2.5 text-[13px]"
-            >
-              {METODOS.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
+            <Dropdown
+              valor={no.data.metodo}
+              aoMudar={(metodo) => aoMudarDados({ metodo })}
+              rotuloAcessivel="Método HTTP"
+              opcoes={METODOS.map((metodo) => ({ valor: metodo, rotulo: metodo }))}
+            />
           </label>
 
           <Linha
@@ -206,20 +197,15 @@ export function Painel({
             <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
               Credencial
             </span>
-            <select
-              value={no.data.conexaoId ?? ''}
-              onChange={(e) =>
-                aoMudarDados({ conexaoId: e.target.value === '' ? undefined : e.target.value })
-              }
-              className="app-field px-3 py-2.5 text-[13px]"
-            >
-              <option value="">Nenhuma — o endereço não pede chave</option>
-              {conexoes.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nome}
-                </option>
-              ))}
-            </select>
+            <Dropdown
+              valor={no.data.conexaoId ?? ''}
+              aoMudar={(conexaoId) => aoMudarDados({ conexaoId: conexaoId === '' ? undefined : conexaoId })}
+              rotuloAcessivel="Credencial"
+              opcoes={[
+                { valor: '', rotulo: 'Nenhuma — o endereço não pede chave' },
+                ...conexoes.map((conexao) => ({ valor: conexao.id, rotulo: conexao.nome })),
+              ]}
+            />
             <span className="mt-1 block text-[10.5px] leading-4 text-dim">
               {conexoes.length === 0
                 ? 'Nenhuma credencial cadastrada neste cliente ainda. Cadastre em Credenciais, na tela do cliente.'
@@ -229,14 +215,15 @@ export function Painel({
 
           <label className="block">
             <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">Se falhar</span>
-            <select
-              value={no.data.aoFalhar}
-              onChange={(e) => aoMudarDados({ aoFalhar: e.target.value })}
-              className="app-field px-3 py-2.5 text-[13px]"
-            >
-              <option value="humano">passa para uma pessoa</option>
-              <option value="seguir">continua a conversa mesmo assim</option>
-            </select>
+            <Dropdown
+              valor={no.data.aoFalhar}
+              aoMudar={(aoFalhar) => aoMudarDados({ aoFalhar })}
+              rotuloAcessivel="Se falhar"
+              opcoes={[
+                { valor: 'humano', rotulo: 'passa para uma pessoa' },
+                { valor: 'seguir', rotulo: 'continua a conversa mesmo assim' },
+              ]}
+            />
           </label>
 
           <p className="rounded-[10px] border border-cyan-400/20 bg-cyan-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-cyan-300">

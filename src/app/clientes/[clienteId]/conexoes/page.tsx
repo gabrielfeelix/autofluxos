@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { Dropdown } from '@/components/design/dropdown'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { PainelShell } from '@/components/design/shell'
 import {
@@ -74,11 +75,16 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
             <label className="block">
               <RotuloCampo>Como ela entra na chamada</RotuloCampo>
-              <select name="tipo" className="app-field px-3 py-2.5 text-[13px]" defaultValue="bearer">
-                <option value="bearer">Authorization: Bearer (o mais comum em CRM)</option>
-                <option value="cabecalho">Um cabeçalho próprio (ex.: x-api-key)</option>
-                <option value="query">Um parâmetro na URL (ex.: ?key=)</option>
-              </select>
+              <Dropdown
+                nome="tipo"
+                valorInicial="bearer"
+                rotuloAcessivel="Como a credencial entra na chamada"
+                opcoes={[
+                  { valor: 'bearer', rotulo: 'Authorization: Bearer', detalhe: 'O mais comum em CRM' },
+                  { valor: 'cabecalho', rotulo: 'Um cabeçalho próprio', detalhe: 'Ex.: x-api-key' },
+                  { valor: 'query', rotulo: 'Um parâmetro na URL', detalhe: 'Ex.: ?key=' },
+                ]}
+              />
             </label>
 
             <label className="block">
