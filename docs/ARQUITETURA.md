@@ -123,6 +123,17 @@ precisa de tela de configuração de branch — o desenho é a lógica.
 O schema é escrito uma vez em Zod (`core/flow/schema.ts`) e serve os dois lados:
 o editor valida antes de salvar, o motor valida antes de rodar.
 
+**Zod cuida da estrutura; `validar()` cuida do sentido.** Essa divisão apareceu
+construindo o editor, e é ela que o torna usável: enquanto alguém apaga um campo
+para redigitar, o fluxo passa por estados incompletos — mensagem sem texto,
+opção sem rótulo, variável com meio nome. Se o Zod recusasse, o editor quebraria
+a cada tecla e o trabalho se perderia.
+
+Então o Zod só garante que o objeto tem o formato certo, e todas as regras de
+qualidade (texto vazio, rótulo grande demais, nome de variável com espaço) são
+erros do `validar()`. Rascunho pode estar pela metade; **publicar é que não
+pode**.
+
 ### 4. Seis tipos de nó. Nem um a mais.
 
 | Nó | Faz |
@@ -324,13 +335,11 @@ autofluxos/
     │       └── fluxos/[id]/publicar/route.ts
     │
     ├── components/
-    │   ├── ui/                        shadcn
-    │   └── editor/
-    │       ├── canvas.tsx             React Flow
-    │       ├── nos/                   um .tsx por tipo de nó
-    │       ├── painel-lateral.tsx     form do nó selecionado
-    │       ├── barra-nos.tsx          arrastar pra adicionar
-    │       └── simulador.tsx          chat de teste colado no canvas
+    │   ├── conversa.tsx               ✅ o chat de teste (chama /api/simular)
+    │   └── editor/                    ✅ construído
+    │       ├── editor.tsx             canvas + barra + painel + salvamento
+    │       ├── nos.tsx                o visual dos 6 blocos e suas alças
+    │       └── painel.tsx             form do bloco selecionado
     │
     └── lib/
         └── utils.ts
@@ -617,7 +626,7 @@ clica de novo, recebe link, e o lead vai parar numa base. Zero LLM.
 | 1 ✅ | `core/` + testes | o motor anda no grafo corretamente |
 | 2 ✅ | `/api/simular` + chat de teste | dá pra conversar com um fluxo escrito na mão |
 | 3 ✅ | Supabase + CRUD de cliente/fluxo | o fluxo persiste |
-| 4 | Editor React Flow + painel | dá pra **desenhar** o fluxo |
+| 4 ✅ | Editor React Flow + painel | dá pra **desenhar** o fluxo |
 | 5 | Publicar + versionar | rascunho ≠ produção |
 | 6 | Webhook + `cloud-api` no número do Cliente 00 | **funciona no WhatsApp** |
 | 7 | Tela de leads + `handoff` | o cliente vê valor e o humano assume |

@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation'
-import { Simulador } from '@/components/simulador'
-import { validar } from '@/core/flow/validar'
+import { Editor } from '@/components/editor/editor'
 import { acharCliente } from '@/server/repos/clientes'
 import { acharFluxo } from '@/server/repos/fluxos'
 
@@ -16,16 +15,13 @@ export default async function Pagina({
   const [cliente, fluxo] = await Promise.all([acharCliente(clienteId), acharFluxo(fluxoId)])
   if (!cliente || !fluxo || fluxo.clienteId !== cliente.id) notFound()
 
-  // A mesma validação que vai bloquear o botão "Publicar" no passo 5.
-  const validacao = validar(fluxo.rascunho)
-
   return (
-    <Simulador
-      fluxo={fluxo.rascunho}
-      validacao={validacao}
-      titulo={fluxo.nome}
-      subtitulo={cliente.nome}
+    <Editor
+      fluxoId={fluxo.id}
+      nome={fluxo.nome}
+      clienteNome={cliente.nome}
       voltarHref={`/clientes/${cliente.id}`}
+      inicial={fluxo.rascunho}
     />
   )
 }

@@ -17,7 +17,7 @@ export const LIMITE_ROTULO = 20
 
 export const opcaoSchema = z.object({
   id: z.string().min(1),
-  rotulo: z.string().min(1).max(LIMITE_ROTULO),
+  rotulo: z.string(),
 })
 
 const posicaoSchema = z.object({ x: z.number(), y: z.number() })
@@ -27,16 +27,26 @@ const base = {
   position: posicaoSchema,
 }
 
-/** Nome de variável: `nome`, `valor_estimado`. Sem espaço, sem acento. */
-const nomeVariavel = z.string().regex(/^[a-zA-Z][a-zA-Z0-9_]*$/, {
-  message: 'nome de variável deve começar com letra e conter só letras, números e _',
-})
+/**
+ * Nome de variável: `nome`, `valor_estimado`. Sem espaço, sem acento.
+ *
+ * Note que aqui é só `string`. A regra do formato mora no `validar()`, e a
+ * razão é o editor: enquanto alguém digita, o campo passa por estados
+ * inválidos ("no", "nom") e por vazio. Se o schema recusasse, o editor
+ * quebraria a cada tecla.
+ *
+ * A divisão que ficou: **Zod garante a estrutura, `validar()` garante o
+ * sentido.** Rascunho pode estar pela metade; publicar é que não pode.
+ */
+const nomeVariavel = z.string()
+
+export const FORMATO_VARIAVEL = /^[a-zA-Z][a-zA-Z0-9_]*$/
 
 export const noMensagemSchema = z.object({
   ...base,
   type: z.literal('mensagem'),
   data: z.object({
-    texto: z.string().min(1),
+    texto: z.string(),
   }),
 })
 
@@ -44,11 +54,11 @@ export const noPerguntaSchema = z.object({
   ...base,
   type: z.literal('pergunta'),
   data: z.object({
-    texto: z.string().min(1),
+    texto: z.string(),
     /** Onde guardar a resposta. Sem isso a resposta é usada só para ramificar. */
     salvarEm: nomeVariavel.optional(),
     /** Vazio = resposta livre em texto. Preenchido = botões ou lista. */
-    opcoes: z.array(opcaoSchema).max(LIMITE_LISTA).default([]),
+    opcoes: z.array(opcaoSchema).default([]),
   }),
 })
 
@@ -79,7 +89,7 @@ export const noIaSchema = z.object({
   ...base,
   type: z.literal('ia'),
   data: z.object({
-    instrucao: z.string().min(1),
+    instrucao: z.string(),
     salvarEm: nomeVariavel.optional(),
   }),
 })

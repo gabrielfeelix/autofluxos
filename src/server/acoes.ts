@@ -2,10 +2,11 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { fluxoSchema } from '@/core/flow/schema'
 import { fluxoNovo } from '@/core/flow/novo'
 import { triagem } from '@/exemplos/triagem'
 import { criarCliente } from './repos/clientes'
-import { criarFluxo } from './repos/fluxos'
+import { criarFluxo, salvarRascunho } from './repos/fluxos'
 
 export async function acaoCriarCliente(formData: FormData) {
   const nome = String(formData.get('nome') ?? '').trim()
@@ -25,6 +26,24 @@ export async function acaoCriarExemplo() {
   await criarFluxo(cliente.id, 'Triagem de orçamento', triagem)
   revalidatePath('/')
   redirect(`/clientes/${cliente.id}`)
+}
+
+/**
+ * Salva o desenho. Chamada pelo editor a cada pausa na digitação.
+ *
+ * Aceita rascunho incompleto de propósito: mensagem sem texto, opção sem
+ * rótulo. O que impede de ir ao ar é o `validar()`, não o salvar — senão o
+ * editor perderia trabalho toda vez que alguém parasse no meio de uma frase.
+ * O `fluxoSchema.parse` aqui é a garantia de que a *estrutura* está sã.
+ */
+export async function acaoSalvarRascunho(fluxoId: string, grafo: unknown) {
+  const analise = fluxoSchema.safeParse(grafo)
+  if (!analise.success) {
+    return { ok: false as const, erro: 'o desenho chegou com formato inválido' }
+  }
+
+  await salvarRascunho(fluxoId, analise.data)
+  return { ok: true as const }
 }
 
 export async function acaoCriarFluxo(clienteId: string, formData: FormData) {

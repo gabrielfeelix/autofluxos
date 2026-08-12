@@ -7,9 +7,9 @@ Produto da [4YU](https://4yu.com.br).
 
 ## Estado
 
-**Etapa 1, passo 3 de 7:** o motor está testado, dá para **conversar com um
-fluxo** no navegador, e clientes e fluxos **ficam salvos** no Supabase. Ainda não
-tem editor visual, publicação nem WhatsApp.
+**Etapa 1, passo 4 de 7:** dá para **desenhar o fluxo arrastando blocos**,
+testar a conversa ao lado sem sair da tela, e tudo salva sozinho. Falta publicar
+(rascunho x versão) e o WhatsApp.
 
 Veja [docs/ARQUITETURA.md](docs/ARQUITETURA.md) para o desenho completo e as
 decisões por trás dele.
@@ -20,7 +20,7 @@ decisões por trás dele.
 npm install
 cp .env.example .env    # valores em 4yu-apps/.secrets/4yu.env (prefixo AUTOFLUXOS_)
 npm run dev             # http://localhost:3000
-npm test                # 40 testes
+npm test                # 45 testes
 npm run typecheck
 ```
 
@@ -44,17 +44,21 @@ nunca usada só acumula divergência entre o desenho e o código.
 servidor com a chave `secret`. Enquanto não existir login, esse é o estado
 seguro. As políticas entram junto com o login, e não antes.
 
-## O simulador
+## O editor
 
-`/` abre um chat onde você escreve como se fosse o cliente e vê o bot responder,
-com os botões que apareceriam no WhatsApp. Ao lado, o estado da conversa ao vivo:
-nó atual, variáveis coletadas e o resultado da validação do fluxo.
+Abra um cliente → um fluxo. A tela tem três partes: a barra de blocos à
+esquerda, o desenho no meio, e à direita duas abas — **Bloco** (editar o que
+está selecionado) e **Testar** (conversar com o fluxo).
 
-Ele não imita o motor — ele **chama o motor**. `/api/simular` roda a mesma
-`executar()` que o webhook do WhatsApp vai rodar, e o endpoint é sem estado: quem
-guarda a sessão é o navegador, que devolve ela a cada mensagem.
+Para ramificar, arraste a bolinha ao lado de uma opção até o bloco de destino.
+**A setinha que você arrasta É a ramificação** — não existe tela de configurar
+branch em lugar nenhum.
 
-Coisas que vale testar lá:
+Salva sozinho depois de uma pausa na digitação. Rascunho pela metade pode ser
+salvo; o que o validador barra é a publicação.
+
+A aba **Testar** conversa com o fluxo **em memória**, então dá para experimentar
+uma mudança antes de ela ser salva. Coisas que vale testar:
 
 - escrever “quero falar com um atendente” a qualquer momento
 - clicar no 🎤 para ver o que acontece quando a pessoa manda áudio

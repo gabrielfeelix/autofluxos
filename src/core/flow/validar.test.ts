@@ -139,6 +139,64 @@ describe('validar', () => {
     expect(codigos(validar(fluxo).avisos)).not.toContain('VARIAVEL_DESCONHECIDA')
   })
 
+  it('reclama de bloco de mensagem sem texto', () => {
+    const fluxo = fluxoValido()
+    const oi = fluxo.nodes.find((n) => n.id === 'oi')
+    if (oi?.type === 'mensagem') oi.data.texto = '   '
+
+    expect(codigos(validar(fluxo).erros)).toContain('TEXTO_VAZIO')
+  })
+
+  it('reclama de opção sem rótulo', () => {
+    const fluxo = fluxoValido()
+    const q = fluxo.nodes.find((n) => n.id === 'q')
+    if (q?.type === 'pergunta' && q.data.opcoes[0]) q.data.opcoes[0].rotulo = ''
+
+    expect(codigos(validar(fluxo).erros)).toContain('ROTULO_VAZIO')
+  })
+
+  it('reclama de rótulo maior do que o WhatsApp mostra', () => {
+    const fluxo = fluxoValido()
+    const q = fluxo.nodes.find((n) => n.id === 'q')
+    if (q?.type === 'pergunta' && q.data.opcoes[0]) {
+      q.data.opcoes[0].rotulo = 'um rótulo absurdamente comprido que não cabe'
+    }
+
+    expect(codigos(validar(fluxo).erros)).toContain('ROTULO_LONGO')
+  })
+
+  it('reclama de nome de variável com espaço ou acento', () => {
+    const fluxo = fluxoValido()
+    const q = fluxo.nodes.find((n) => n.id === 'q')
+    if (q?.type === 'pergunta') q.data.salvarEm = 'nome do cliente'
+
+    const erro = validar(fluxo).erros.find((e) => e.codigo === 'VARIAVEL_INVALIDA')
+    expect(erro?.mensagem).toContain('nome do cliente')
+  })
+
+  /**
+   * O contrato que o editor depende: rascunho pela metade é estruturalmente
+   * válido (o Zod aceita), e é o `validar()` que impede de ir ao ar. Sem isso o
+   * editor quebraria a cada campo apagado para redigitar.
+   */
+  it('aceita rascunho incompleto na estrutura, mas barra na publicação', () => {
+    const bruto = {
+      inicio: 'a',
+      nodes: [
+        { id: 'a', type: 'mensagem', position: p, data: { texto: '' } },
+        { id: 'h', type: 'handoff', position: p, data: {} },
+      ],
+      edges: [{ id: 'e', source: 'a', target: 'h' }],
+    }
+
+    const analise = fluxoSchema.safeParse(bruto)
+    expect(analise.success).toBe(true)
+
+    const r = validar(analise.data as Fluxo)
+    expect(r.ok).toBe(false)
+    expect(codigos(r.erros)).toContain('TEXTO_VAZIO')
+  })
+
   it('reclama de id repetido', () => {
     const fluxo = fluxoValido()
     fluxo.nodes.push({ id: 'oi', type: 'mensagem', position: p, data: { texto: 'de novo' } })

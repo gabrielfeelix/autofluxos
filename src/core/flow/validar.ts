@@ -1,5 +1,7 @@
 import {
+  FORMATO_VARIAVEL,
   LIMITE_LISTA,
+  LIMITE_ROTULO,
   SAIDA_FALSO,
   SAIDA_VERDADEIRO,
   type Fluxo,
@@ -60,6 +62,7 @@ export function validar(fluxo: Fluxo): ResultadoValidacao {
 
   for (const no of fluxo.nodes) {
     const minhasSaidas = saidas(no.id)
+    conferirConteudo(no, erros)
 
     if (no.type === 'pergunta') {
       const { opcoes } = no.data
@@ -138,6 +141,86 @@ export function validar(fluxo: Fluxo): ResultadoValidacao {
   for (const problema of conferirVariaveis(fluxo)) avisos.push(problema)
 
   return { ok: erros.length === 0, erros, avisos }
+}
+
+/**
+ * As regras de conteúdo que o Zod não faz mais.
+ *
+ * O schema garante que o objeto tem o formato certo; aqui a gente cobra que ele
+ * faça sentido. A separação existe porque o rascunho passa por estados
+ * incompletos enquanto alguém digita — o que não pode é isso ir ao ar.
+ */
+function conferirConteudo(no: No, erros: Problema[]): void {
+  const vazio = (texto: string) => texto.trim() === ''
+
+  const conferirVariavel = (nome: string | undefined, campo: string) => {
+    if (nome === undefined || nome === '') return
+    if (!FORMATO_VARIAVEL.test(nome)) {
+      erros.push({
+        codigo: 'VARIAVEL_INVALIDA',
+        mensagem: `"${nome}" não serve como nome de ${campo}: comece com letra e use só letras, números e _ (sem espaço nem acento).`,
+        noId: no.id,
+      })
+    }
+  }
+
+  switch (no.type) {
+    case 'mensagem':
+      if (vazio(no.data.texto)) {
+        erros.push({ codigo: 'TEXTO_VAZIO', mensagem: 'Esta mensagem está sem texto.', noId: no.id })
+      }
+      break
+
+    case 'pergunta': {
+      if (vazio(no.data.texto)) {
+        erros.push({ codigo: 'TEXTO_VAZIO', mensagem: 'Esta pergunta está sem texto.', noId: no.id })
+      }
+      conferirVariavel(no.data.salvarEm, 'variável')
+      for (const opcao of no.data.opcoes) {
+        if (vazio(opcao.rotulo)) {
+          erros.push({ codigo: 'ROTULO_VAZIO', mensagem: 'Uma das opções está sem rótulo.', noId: no.id })
+        } else if (opcao.rotulo.length > LIMITE_ROTULO) {
+          erros.push({
+            codigo: 'ROTULO_LONGO',
+            mensagem: `"${opcao.rotulo}" tem ${opcao.rotulo.length} caracteres. O WhatsApp corta em ${LIMITE_ROTULO}.`,
+            noId: no.id,
+          })
+        }
+      }
+      break
+    }
+
+    case 'condicao':
+      conferirVariavel(no.data.variavel, 'variável')
+      if (vazio(no.data.variavel)) {
+        erros.push({ codigo: 'CONDICAO_SEM_VARIAVEL', mensagem: 'A condição não diz qual variável olhar.', noId: no.id })
+      }
+      break
+
+    case 'salvar-campo':
+      conferirVariavel(no.data.campo, 'campo')
+      if (vazio(no.data.campo)) {
+        erros.push({ codigo: 'CAMPO_VAZIO', mensagem: 'Este bloco não diz em qual campo guardar.', noId: no.id })
+      }
+      break
+
+    case 'ia':
+      if (vazio(no.data.instrucao)) {
+        erros.push({ codigo: 'IA_SEM_INSTRUCAO', mensagem: 'A IA está sem instrução.', noId: no.id })
+      }
+      conferirVariavel(no.data.salvarEm, 'variável')
+      break
+
+    case 'handoff':
+      if (vazio(no.data.mensagem)) {
+        erros.push({
+          codigo: 'TEXTO_VAZIO',
+          mensagem: 'Sem mensagem, a pessoa é passada para um humano sem aviso nenhum.',
+          noId: no.id,
+        })
+      }
+      break
+  }
 }
 
 function alcancaveisA_partirDe(fluxo: Fluxo): Set<string> {
