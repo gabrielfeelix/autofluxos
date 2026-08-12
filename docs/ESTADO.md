@@ -5,150 +5,60 @@ consegue continuar lendo só isto e o [ARQUITETURA.md](ARQUITETURA.md).
 
 ---
 
-## PRÓXIMO AGENTE: comece por aqui
+## Etapa 1 COMPLETA — o bot respondeu no WhatsApp de verdade
 
-**O lado da Meta está travado por limite de tempo e não é para ser perseguido.**
-Não peça ao Gabriel para clicar, verificar ou conferir nada no painel da Meta —
-o bloqueio é por tempo, não por configuração. Se ele mesmo trouxer o assunto,
-retome pela seção "O que está travado".
+Em 12/ago/2026, 02:58, a conversa inteira rodou no WhatsApp real:
 
-**O passo 7 está feito.** A Etapa 1 está construída inteira. O que sobra é a
-verificação do número, que é da Meta, não nossa.
-
-### O que existe agora (passo 7)
-
-- View `leads` no banco (migration `0004`), juntando `contacts` + a última
-  mensagem + o handoff aberto. A agregação é do Postgres de propósito: fazer
-  isso no TypeScript exigiria puxar todas as mensagens de todo mundo para
-  ordenar por "última mensagem".
-- `src/server/repos/leads.ts` — `listarLeads`, `acharLead`, `lerConversa`.
-- `/clientes/[clienteId]/leads` — a tabela, com **as colunas saindo dos dados**
-  (`contacts.campos` é `jsonb` e as chaves mudam por fluxo; nada chumbado).
-- `/clientes/[clienteId]/leads/[contatoId]` — os campos coletados e a conversa
-  inteira, entrada de um lado, saída do outro.
-- 7 testes novos em `src/server/repos/leads.test.ts`, contra o Supabase real.
-
-Duas coisas que valem saber antes de mexer:
-
-1. **A view é `security_invoker = true`.** Sem isso ela rodaria com os direitos
-   de quem a criou e passaria por cima da RLS — a chave `publishable`, que vai
-   para o navegador, leria a conversa de todo mundo. Está provado: com a chave
-   `publishable` a view responde `401 permission denied`.
-2. **`acharLead` filtra por cliente também**, não só pelo id do contato. A URL é
-   adivinhável.
-
-### O que fazer em seguida
-
-1. **Gabriel testar o editor** de verdade — arrastar bloco, ligar setinha,
-   conversar na aba Testar. É a única parte que nunca foi verificada com
-   navegador.
-2. **Verificação de empresa na Meta** (Portfólio - 4YU está "não verificada").
-   Demora e não trava hoje, mas trava cliente real depois.
-3. **Etapa 2 (IA) — o módulo existe.** `server/ia/`: prompt de escopo fechado
-   (puro, com teste), adaptador do Gemini, e `conduzir.ts` que resolve o
-   `chamar_ia` do motor. Ligado no simulador e no WhatsApp. A flag é
-   `flows.ia_habilitada` (0005) — **por automação, não por cliente**.
-
-   O que falta: chave paga por cliente (`clients.ia_chave_ref` → Vault). Hoje
-   roda com uma chave da 4YU, boa para demonstração e **não** para conversa de
-   cliente final — o free tier do Google treina modelo com o que passa.
-
-   **Cota medida:** free tier é por modelo e por dia; `gemini-flash-latest` dá
-   **20/dia**. Trocar em `GEMINI_MODELO` usa outra cota. Os testes que chamam o
-   Gemini de verdade só rodam com `IA_TESTE_REAL=1`, justamente para não gastar
-   a cota que sustenta uma demonstração.
-4. Se um dia a lista de leads crescer: paginar `listarLeads` e um filtro de
-   "só quem espera atendimento". Hoje seria enfeite.
-
-### Regras do projeto que não podem ser quebradas
-
-- **`src/core/` não sabe o nome de nenhum cliente** e não importa nada de Next,
-  do WhatsApp ou do banco. Se uma feature parece exigir isso, ela é
-  configuração, não código.
-- **Zod garante a estrutura; `validar()` garante o sentido.** Não devolva regra
-  de qualidade para o schema — o editor quebra a cada tecla.
-- **Segredo nunca entra no repo.** Ele é público. Tudo em
-  `4yu-apps/.secrets/4yu.env`, prefixo `AUTOFLUXOS_`.
-- **RLS está ligada e sem política de propósito.** Todo acesso é servidor, com a
-  chave `secret`. Não crie política — nem view sem `security_invoker` — para
-  "facilitar".
-- Antes de dizer que algo funciona, **rode**: `npm test`, `npx tsc --noEmit`,
-  `npm run build`.
-- **`notFound()` tem que acontecer antes de qualquer `<Suspense>`.** Depois que
-  o Next começa a enviar a página, o status já foi: "não encontrado" viraria
-  200. Por isso as telas buscam o dono primeiro e só então transmitem o resto.
-  Nunca crie um `loading.tsx` acima de uma tela que chama `notFound()` — ele é
-  exatamente essa fronteira, e desfaz isso em silêncio.
-
-### Comandos
-
-```bash
-npm run dev                 # http://localhost:3000
-npm test                    # 64 testes (os de banco pulam sem .env)
+```
+saida    Perfeito! Como posso te chamar?
+entrada  joao
+saida    Legal, joao. Para quando seria?
+entrada  Próximas semanas
+saida    Show, joao! Já estou chamando alguém do time aqui. 🙌
+saida    Prontinho! Alguém do time assume a conversa a partir daqui.
 ```
 
-**Não precisa publicar na mão.** A Vercel está ligada no GitHub e sobe produção
-a cada push na `main`. O comando manual existe (`npx vercel deploy --prod --yes
---token "$VERCEL_TOKEN"`), mas usar os dois gera dois deploys da mesma coisa.
+Interpolação (`{{nome}}` virou "joao"), casamento da opção clicada, sessão presa
+na versão publicada e handoff no fim. O caminho do lead quente, de ponta a ponta.
 
-Migration nova vai pela Management API:
+### O número (Cliente 00)
 
-```bash
-set -a && . /home/gabfelix/dev/4yu-apps/.secrets/4yu.env && set +a
-python3 -c "import json;print(json.dumps({'query': open('supabase/migrations/0004_leads.sql').read()}))" > /tmp/q.json
-curl -sS -X POST "https://api.supabase.com/v1/projects/$AUTOFLUXOS_SUPABASE_PROJECT_REF/database/query" \
-  -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H 'Content-Type: application/json' --data @/tmp/q.json
-```
+`+55 44 7400-7438` · phone_number_id `1301107846409860` · WABA `2245936116250161`
 
-### Quando o Gabriel disser que verificou o número
+`VERIFIED` e `CONNECTED`. O PIN de 2 fatores usado no `register` está no cofre
+como `AUTOFLUXOS_WA_PIN` — ele é pedido de novo se o número for movido.
 
-Falta só registrar o PIN de 2 fatores. É uma chamada, com o token que já está
-no cofre:
+### O que custou caro descobrir
 
-```bash
-set -a && . /home/gabfelix/dev/4yu-apps/.secrets/4yu.env && set +a
-curl -s -X POST "https://graph.facebook.com/v25.0/$AUTOFLUXOS_WA_PHONE_NUMBER_ID/register" \
-  -H "Authorization: Bearer $AUTOFLUXOS_WA_TOKEN" -H 'content-type: application/json' \
-  -d '{"messaging_product":"whatsapp","pin":"482913"}'
-```
+- **Verificação por ligação, não SMS.** Pedir código muitas vezes derruba num
+  limite por tempo que custa horas. Uma tentativa, sem reenviar.
+- **Verificado não basta: falta `register`.** Sem ele, todo envio volta
+  `(#133010) Account not registered`. É uma chamada de API, não tem no painel.
+- **Quem começa a conversa importa.** Mensagem iniciada pela empresa exige forma
+  de pagamento cadastrada. Mensagem de resposta (a pessoa escreveu primeiro) é
+  grátis, mil por mês. Para testar, **mande você primeiro**.
+- **Número de teste só fala com até 5 destinatários autorizados**, e autorizar
+  só pelo painel. Existe um número de teste registrado (`+1 555-197-7747`,
+  phone_number_id `1171822376025244`) que ficou inútil por isso.
+- **O console da Meta quebra silenciosamente.** Vários botões ("Reivindicar
+  número de teste", "Gerar token") não fazem nada, e o console só mostra CSP
+  bloqueando a telemetria da própria Meta. Quando isso acontecer, procure o
+  mesmo caminho pelo `business.facebook.com` ou pela Graph API — quase tudo tem
+  equivalente.
+- **Token carrega as permissões de quando foi gerado.** Adicionar permissão ao
+  app depois não muda o token; tem que gerar outro.
 
-Guarde o PIN escolhido em `.secrets` como `AUTOFLUXOS_WA_PIN` — ele é pedido de
-novo se o número for movido. Depois disso, o Gabriel manda "oi" para
-**+55 44 7400-7438** e o bot responde: o painel já tem `Cliente 00 — Gabriel`
-com o fluxo publicado e o número conectado.
+### O que falta para atender cliente de verdade
 
----
+1. **Verificação da empresa** — `Portfólio - 4YU` está "Não verificada". Demora,
+   e é a porta que trava as duas coisas abaixo.
+2. **Virar Provedor de Tecnologia** (App Review + Access Verification).
+3. **Embedded Signup v4** com `featureType: whatsapp_business_app_onboarding` —
+   é o que permite Coexistence: o número do cliente funciona no celular dele e
+   na Cloud API ao mesmo tempo. Sem isso, entrar com um cliente significa tirar
+   o WhatsApp do celular dele.
 
-## O produto em uma frase
-
-Sistema onde a 4YU desenha fluxos de atendimento no WhatsApp para clientes.
-**Não é o bot de um cliente — é a chave mestre** onde o bot de qualquer cliente
-cabe sem tocar em código.
-
-Três etapas, cada uma vendável sozinha:
-
-| Etapa | O que é | Estado |
-|---|---|---|
-| 1 | Automação pura, sem IA — botões, opções, lead na tela | **construída — falta a Meta liberar o número** |
-| 2 | Nó de IA, cobrado à parte, com a chave do cliente (BYOK) | não começou |
-| 3 | Encaixar a Prelúdio **só configurando**, sem mexer no produto | não começou |
-
----
-
-## Etapa 1 — o que está pronto
-
-| # | Passo | Estado |
-|---|---|---|
-| 1 | Motor de fluxo + validador | ✅ |
-| 2 | Simulador de conversa | ✅ |
-| 3 | Clientes e fluxos no Supabase | ✅ |
-| 4 | Editor visual (React Flow) | ✅ |
-| 5 | Publicar + versionar | ✅ |
-| 6 | Webhook + canal Cloud API | ✅ código pronto, **travado na Meta** |
-| 7 | Tela de leads | ✅ |
-
-**64 testes** passando (`npm test`), `tsc` limpo, `next build` limpo. Os testes de
-banco e webhook falam com o Supabase de verdade e se pulam sozinhos sem `.env`.
+Detalhe de prazo: **Embedded Signup v2 morre em 15/out/2026.** Nascer no v4.
 
 ---
 
