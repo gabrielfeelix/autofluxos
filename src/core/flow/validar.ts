@@ -264,6 +264,18 @@ function conferirConteudo(no: No, erros: Problema[]): void {
       if (vazio(no.data.url)) {
         erros.push({ codigo: 'URL_VAZIA', mensagem: 'Este bloco não diz qual endereço chamar.', noId: no.id })
       } else if (!no.data.url.trim().startsWith('https://')) {
+        // Exigir o `https://` **literal** no começo é de propósito, e o efeito
+        // colateral é que a URL não pode começar com `{{variavel}}`.
+        //
+        // Isso não é limitação a corrigir: as variáveis da sessão vêm do que a
+        // pessoa digita no WhatsApp. Se o começo da URL saísse delas, quem está
+        // conversando escolheria para onde o nosso servidor faz requisição. A
+        // recusa de endereço interno (`server/efeitos/rede.ts`) ainda barraria
+        // rede privada, mas um estranho passaria a apontar o servidor para
+        // qualquer host externo que quisesse.
+        //
+        // Se um dia fizer falta ter endereço-base por cliente, o caminho é uma
+        // lista de hosts permitidos — não afrouxar isto aqui.
         erros.push({
           codigo: 'URL_INSEGURA',
           mensagem: 'O endereço precisa começar com https:// — o servidor recusa qualquer outro.',
@@ -282,12 +294,22 @@ function conferirConteudo(no: No, erros: Problema[]): void {
         }
       }
 
-      if (no.data.metodo === 'POST' && !vazio(no.data.corpo) && !ehJsonComVariaveis(no.data.corpo)) {
-        erros.push({
-          codigo: 'CORPO_INVALIDO',
-          mensagem: 'O corpo não é JSON válido.',
-          noId: no.id,
-        })
+      if (no.data.metodo === 'POST' && !vazio(no.data.corpo)) {
+        const problema = conferirCorpo(no.data.corpo)
+        if (problema === 'VARIAVEL_FORA_DE_ASPAS') {
+          erros.push({
+            codigo: 'VARIAVEL_FORA_DE_ASPAS',
+            mensagem:
+              'Toda {{variavel}} no corpo precisa estar entre aspas: o que a conversa coleta é sempre texto, e sem as aspas o JSON quebra na hora do envio.',
+            noId: no.id,
+          })
+        } else if (problema === 'CORPO_INVALIDO') {
+          erros.push({
+            codigo: 'CORPO_INVALIDO',
+            mensagem: 'O corpo não é JSON válido.',
+            noId: no.id,
+          })
+        }
       }
       break
     }
@@ -295,21 +317,68 @@ function conferirConteudo(no: No, erros: Problema[]): void {
 }
 
 /**
- * O corpo é JSON válido, considerando que `{{variavel}}` ainda não virou nada.
+ * O mesmo padrão que `interpolar()` reconhece. Precisa ser o mesmo, e não um
+ * parecido: o que este arquivo aprova é enviado depois de passar por lá, então
+ * qualquer diferença entre os dois vira corpo que publica e quebra na conversa.
  *
- * Troca cada `{{...}}` por `1` antes de conferir. O `1` é escolhido porque
- * funciona nos dois lugares onde uma variável aparece: dentro de aspas
- * (`{"nome": "1"}`) e fora delas (`{"idade": 1}`). Trocar por texto quebraria o
- * segundo caso, e recusar o corpo por causa disso puniria a forma correta de
- * escrever.
+ * `{{1abc}}` é o exemplo: não é nome de variável válido, `interpolar()` não
+ * troca, e o texto sai literal na requisição. Com um regex mais frouxo aqui,
+ * isso passaria na validação.
  */
-function ehJsonComVariaveis(corpo: string): boolean {
-  try {
-    JSON.parse(corpo.replace(/\{\{[^}]*\}\}/g, '1'))
-    return true
-  } catch {
-    return false
+const VARIAVEL_NO_TEXTO = /\{\{\s*[a-zA-Z][a-zA-Z0-9_]*\s*\}\}/g
+
+/**
+ * Confere o corpo do POST sabendo que as variáveis ainda não viraram nada.
+ *
+ * Duas regras, e a segunda é a que salva de um bug que só aparece com cliente
+ * real conversando:
+ *
+ * 1. **Toda variável tem que estar entre aspas.** As variáveis da sessão são
+ *    sempre texto (`Record<string, string>`), então `{"nome": {{nome}}}` vira
+ *    `{"nome": João}` no envio — JSON quebrado. Variável fora de aspas num
+ *    corpo JSON é sempre engano, nunca intenção.
+ * 2. **Com as aspas garantidas, trocar por `1` e tentar `JSON.parse`.** Como
+ *    toda variável está dentro de uma string, a troca não muda a estrutura, e o
+ *    que sobrar de errado é erro de sintaxe de verdade.
+ */
+function conferirCorpo(corpo: string): 'CORPO_INVALIDO' | 'VARIAVEL_FORA_DE_ASPAS' | null {
+  const dentroDeTexto = mapaDeTexto(corpo)
+
+  for (const achado of corpo.matchAll(VARIAVEL_NO_TEXTO)) {
+    if (achado.index !== undefined && !dentroDeTexto[achado.index]) {
+      return 'VARIAVEL_FORA_DE_ASPAS'
+    }
   }
+
+  try {
+    JSON.parse(corpo.replace(VARIAVEL_NO_TEXTO, '1'))
+    return null
+  } catch {
+    return 'CORPO_INVALIDO'
+  }
+}
+
+/** Para cada posição do texto, se ela está dentro de uma string JSON. */
+function mapaDeTexto(corpo: string): boolean[] {
+  const dentro: boolean[] = []
+  let emTexto = false
+  let escapado = false
+
+  for (let i = 0; i < corpo.length; i++) {
+    dentro[i] = emTexto
+
+    if (escapado) {
+      escapado = false
+      continue
+    }
+    if (corpo[i] === '\\') {
+      escapado = true
+      continue
+    }
+    if (corpo[i] === '"') emTexto = !emTexto
+  }
+
+  return dentro
 }
 
 function alcancaveisA_partirDe(fluxo: Fluxo): Set<string> {

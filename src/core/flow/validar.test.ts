@@ -319,13 +319,53 @@ describe('validação do nó de API', () => {
     expect(codigos(fluxo)).toContain('CORPO_INVALIDO')
   })
 
-  it('aceita POST com corpo que usa {{variavel}}', () => {
+  it('aceita POST com corpo que usa {{variavel}} entre aspas', () => {
     const fluxo = comHttp({
       url: 'https://e.com',
       metodo: 'POST',
-      corpo: '{"nome": "{{nome}}", "idade": {{idade}}}',
+      corpo: '{"nome": "{{nome}}", "assunto": "quero {{assunto}} agora"}',
     })
     expect(codigos(fluxo)).not.toContain('CORPO_INVALIDO')
+    expect(codigos(fluxo)).not.toContain('VARIAVEL_FORA_DE_ASPAS')
+  })
+
+  it('recusa variável fora de aspas — vira JSON quebrado no envio', () => {
+    // `{"idade": {{idade}}}` parece válido e não é: as variáveis da sessão são
+    // sempre texto, então isso vira `{"idade": 34 anos}` na hora de enviar.
+    const fluxo = comHttp({
+      url: 'https://e.com',
+      metodo: 'POST',
+      corpo: '{"idade": {{idade}}}',
+    })
+    expect(codigos(fluxo)).toContain('VARIAVEL_FORA_DE_ASPAS')
+  })
+
+  it('recusa nome de variável que interpolar() nunca vai substituir', () => {
+    // `{{1abc}}` não casa com o regex de interpolação, então sai literal na
+    // requisição. Se o validador usasse um padrão mais frouxo, isso passaria.
+    const fluxo = comHttp({
+      url: 'https://e.com',
+      metodo: 'POST',
+      corpo: '{"idade": {{1abc}}}',
+    })
+    expect(codigos(fluxo)).toContain('CORPO_INVALIDO')
+  })
+
+  it('chave escapada não confunde a contagem de aspas', () => {
+    const fluxo = comHttp({
+      url: 'https://e.com',
+      metodo: 'POST',
+      corpo: '{"aspas \\" no meio": "{{nome}}"}',
+    })
+    expect(codigos(fluxo)).not.toContain('VARIAVEL_FORA_DE_ASPAS')
+    expect(codigos(fluxo)).not.toContain('CORPO_INVALIDO')
+  })
+
+  it('não recusa endereço só por ser https', () => {
+    // Guarda a decisão: a URL precisa do https:// literal no começo, então
+    // começar com {{variavel}} é recusado de propósito — o host não pode sair
+    // do que a pessoa digitou no WhatsApp.
+    expect(codigos(comHttp({ url: '{{base}}/pedidos' }))).toContain('URL_INSEGURA')
   })
 
   it('não cobra corpo de GET', () => {
