@@ -6,6 +6,16 @@
 *-sa.json
 .secrets/
 
+# Dado de cliente também não. Planilha e documento de cliente chegam aqui para
+# análise e ficam na máquina: a lista de turma do estúdio tem nome, telefone e
+# anotação de saúde de aluna — dado pessoal de terceiro, não do cliente.
+# Publicado uma vez, foi clonado e indexado; apagar o commit não desfaz.
+*.xlsx
+*.xls
+*.docx
+*.doc
+*.csv
+
 node_modules/
 .next/
 dist/
