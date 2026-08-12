@@ -33,6 +33,12 @@ camada de automação; se o cliente precisa do n8n, ele não precisa da gente.
 Faltou peça? Constrói a peça. Ferramenta externa pode ser destino de um webhook
 nosso, nunca requisito para funcionar.
 
+> **Antes de pegar qualquer item da fila abaixo**, veja o
+> [PLANO-ENDURECIMENTO.md](PLANO-ENDURECIMENTO.md). Ele é o que falta a nível de
+> código para o sistema ficar profissional e seguro — nove blocos, em ordem, com
+> as decisões técnicas já tomadas. Os blocos 4 e 7 de lá são pré-requisito
+> barato do item 1 desta fila.
+
 ### Por onde continuar, em ordem
 
 | # | O quê | Por que agora |
