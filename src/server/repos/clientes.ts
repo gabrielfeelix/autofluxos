@@ -10,8 +10,12 @@ export type Cliente = {
   /** Telefone de quem responde — **não** é o número que o bot atende. */
   telefone: string
   email: string
+  /** Só para emissão de nota. Guardado como foi digitado. */
+  cnpj: string
   /** O que foi combinado e não cabe em campo. */
   observacoes: string
+  /** Endereço público da logo. Vazio = a tela mostra as iniciais. */
+  logoUrl: string
 }
 
 /**
@@ -20,7 +24,10 @@ export type Cliente = {
  * `contextoNegocio` fica de fora de propósito: ele tem tela própria porque é
  * o bloco de IA, não um campo de ficha.
  */
-export type Cadastro = Pick<Cliente, 'nome' | 'responsavel' | 'telefone' | 'email' | 'observacoes'>
+export type Cadastro = Pick<
+  Cliente,
+  'nome' | 'responsavel' | 'telefone' | 'email' | 'cnpj' | 'observacoes'
+>
 
 type Linha = {
   id: string
@@ -29,7 +36,9 @@ type Linha = {
   responsavel: string
   telefone: string
   email: string
+  cnpj: string
   observacoes: string
+  logo_url: string
 }
 
 /**
@@ -42,7 +51,8 @@ type Linha = {
  * no banco é o passo seguinte, e separado — código que parou de usar volta
  * fácil, coluna apagada não.
  */
-const COLUNAS = 'id, nome, contexto_negocio, responsavel, telefone, email, observacoes'
+const COLUNAS =
+  'id, nome, contexto_negocio, responsavel, telefone, email, cnpj, observacoes, logo_url'
 
 function paraCliente(linha: Linha): Cliente {
   return {
@@ -52,7 +62,9 @@ function paraCliente(linha: Linha): Cliente {
     responsavel: linha.responsavel,
     telefone: linha.telefone,
     email: linha.email,
+    cnpj: linha.cnpj,
     observacoes: linha.observacoes,
+    logoUrl: linha.logo_url,
   }
 }
 
@@ -108,6 +120,7 @@ export async function atualizarCadastro(id: string, cadastro: Cadastro): Promise
       responsavel: cadastro.responsavel.trim(),
       telefone: cadastro.telefone.trim(),
       email: cadastro.email.trim(),
+      cnpj: cadastro.cnpj.trim(),
       observacoes: cadastro.observacoes.trim(),
     })
     .eq('id', id)
@@ -122,4 +135,10 @@ export async function atualizarContexto(id: string, contexto: string): Promise<v
     .eq('id', id)
 
   if (error) throw new Error(`não deu para salvar o contexto: ${error.message}`)
+}
+
+/** Aponta o cliente para a logo recém-guardada. Vazio volta para as iniciais. */
+export async function atualizarLogo(id: string, url: string): Promise<void> {
+  const { error } = await db().from('clients').update({ logo_url: url }).eq('id', id)
+  if (error) throw new Error(`não deu para guardar a logo: ${error.message}`)
 }

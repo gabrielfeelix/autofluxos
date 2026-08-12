@@ -3,9 +3,10 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { fluxoSchema } from '@/core/flow/schema'
+import { db } from './db'
 import { fluxoNovo } from '@/core/flow/novo'
 import { triagem } from '@/exemplos/triagem'
-import { atualizarCadastro, atualizarContexto, criarCliente } from './repos/clientes'
+import { atualizarCadastro, atualizarContexto, atualizarLogo, criarCliente } from './repos/clientes'
 import { canalCloudApi } from '@/channels/cloud-api'
 import { dentroDaJanela } from '@/channels/janela'
 import type { EstadoSalvar } from '@/components/design/formulario-salvar'
@@ -345,6 +346,7 @@ export async function acaoSalvarCadastro(
       responsavel: String(formData.get('responsavel') ?? ''),
       telefone: String(formData.get('telefone') ?? ''),
       email: String(formData.get('email') ?? ''),
+      cnpj: String(formData.get('cnpj') ?? ''),
       observacoes: String(formData.get('observacoes') ?? ''),
     })
   } catch (erro) {
@@ -356,4 +358,66 @@ export async function acaoSalvarCadastro(
   revalidatePath('/')
   revalidatePath(`/clientes/${clienteId}`, 'layout')
   return { ok: true }
+}
+
+/** Tamanho e tipos que o bucket `logos` aceita. Repetidos aqui para o erro
+ *  chegar em português na tela em vez de vir cru do storage. */
+const LIMITE_LOGO = 512 * 1024
+const TIPOS_DE_LOGO: Record<string, string> = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/webp': 'webp',
+}
+
+/**
+ * Guarda a logo do cliente e aponta a linha para ela.
+ *
+ * O arquivo vai para um bucket público — logo de empresa é identidade, não
+ * segredo, e URL assinada exigiria assinar de novo a cada linha da lista de
+ * clientes sem proteger nada que já não esteja no site do cliente.
+ *
+ * O nome no bucket é o id do cliente, então trocar a logo sobrescreve em vez de
+ * acumular arquivo órfão. Como o endereço não muda, ele ganha `?v=` com o
+ * instante — sem isso o navegador continuaria mostrando a logo antiga.
+ */
+export async function acaoSalvarLogo(
+  clienteId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  const arquivo = formData.get('logo')
+  if (!(arquivo instanceof File) || arquivo.size === 0) {
+    return { erro: 'Escolha uma imagem.' }
+  }
+
+  const extensao = TIPOS_DE_LOGO[arquivo.type]
+  if (!extensao) return { erro: 'A logo precisa ser PNG, JPG ou WebP.' }
+  if (arquivo.size > LIMITE_LOGO) {
+    return { erro: `A imagem tem ${Math.round(arquivo.size / 1024)} KB. O limite é 512 KB.` }
+  }
+
+  try {
+    const caminho = `${clienteId}.${extensao}`
+    const { error } = await db()
+      .storage.from('logos')
+      .upload(caminho, arquivo, { contentType: arquivo.type, upsert: true })
+
+    if (error) throw new Error(error.message)
+
+    const { data } = db().storage.from('logos').getPublicUrl(caminho)
+    await atualizarLogo(clienteId, `${data.publicUrl}?v=${Date.now()}`)
+  } catch (erro) {
+    return { erro: erro instanceof Error ? erro.message : 'não deu para guardar a logo' }
+  }
+
+  revalidatePath('/')
+  revalidatePath(`/clientes/${clienteId}`, 'layout')
+  return { ok: true }
+}
+
+/** Tira a logo e volta para as iniciais. O arquivo fica — trocar depois sobrescreve. */
+export async function acaoRemoverLogo(clienteId: string) {
+  await atualizarLogo(clienteId, '')
+  revalidatePath('/')
+  revalidatePath(`/clientes/${clienteId}`, 'layout')
 }

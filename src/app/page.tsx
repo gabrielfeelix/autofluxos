@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
+import { LogoDoCliente } from '@/components/design/logo-cliente'
 import { PainelShell } from '@/components/design/shell'
 import { acaoCriarCliente, acaoCriarExemplo } from '@/server/acoes'
 import { listarClientes } from '@/server/repos/clientes'
@@ -71,7 +72,7 @@ export default async function Pagina() {
                     className="app-card app-card-interactive block min-h-[172px] p-5"
                   >
                     <div className="mb-4 flex items-center gap-3">
-                      <Avatar nome={cliente.nome} />
+                      <LogoDoCliente cliente={cliente} />
                       <div className="min-w-0 flex-1">
                         <h2 className="truncate text-[15.5px] font-bold tracking-[-0.01em]">
                           {cliente.nome}
@@ -109,21 +110,5 @@ export default async function Pagina() {
         )}
       </main>
     </PainelShell>
-  )
-}
-
-function Avatar({ nome }: { nome: string }) {
-  const iniciais = nome
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((parte) => parte[0])
-    .join('')
-    .toUpperCase()
-
-  return (
-    <span className="flex size-11 shrink-0 items-center justify-center rounded-full border border-white/[0.11] bg-white/[0.05] text-[13px] font-bold tracking-[0.03em] text-[#97a2b4]">
-      {iniciais || 'CL'}
-    </span>
   )
 }
