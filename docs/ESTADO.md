@@ -5,6 +5,80 @@ consegue continuar lendo só isto e o [ARQUITETURA.md](ARQUITETURA.md).
 
 ---
 
+## PRÓXIMO AGENTE: comece por aqui
+
+**O lado da Meta está travado por limite de tempo e não é para ser perseguido.**
+Não peça ao Gabriel para clicar, verificar ou conferir nada no painel da Meta —
+ele já gastou horas nisso hoje e o bloqueio é por tempo, não por configuração.
+Se ele mesmo trouxer o assunto, aí sim retome pela seção "O que está travado".
+
+**O que fazer:** o **passo 7 — tela de leads**. É código puro, não depende de
+ninguém, e é o que faz a demo valer.
+
+### Especificação do passo 7
+
+Rota nova: `/clientes/[clienteId]/leads`, ligada a partir da página do cliente.
+
+Cada linha é um contato, e mostra:
+
+- nome (de `contacts.nome`, que vem do perfil do WhatsApp) e o `wa_id`
+- as informações que o fluxo coletou (`contacts.campos`, um `jsonb` cujas chaves
+  variam por fluxo — descubra as colunas a partir das chaves presentes, não
+  chumbe nomes)
+- se está aguardando humano (`handoffs` sem `resolvido_em`) e o motivo
+- quando foi a última mensagem (`messages.ts`)
+
+Detalhe da página do lead (`/clientes/[clienteId]/leads/[contatoId]`): a conversa
+inteira a partir de `messages`, na ordem, separando entrada e saída.
+
+Repositório novo em `src/server/repos/leads.ts`, no mesmo padrão dos outros
+(tipos em português, erro com mensagem útil, validação na leitura quando o dado
+vier de `jsonb`).
+
+Teste em `src/server/repos/leads.test.ts`, contra o Supabase de verdade, criando
+e apagando o que usar — igual aos que já existem.
+
+### Regras do projeto que não podem ser quebradas
+
+- **`src/core/` não sabe o nome de nenhum cliente** e não importa nada de Next,
+  do WhatsApp ou do banco. Se uma feature parece exigir isso, ela é
+  configuração, não código.
+- **Zod garante a estrutura; `validar()` garante o sentido.** Não devolva regra
+  de qualidade para o schema — o editor quebra a cada tecla.
+- **Segredo nunca entra no repo.** Ele é público. Tudo em
+  `4yu-apps/.secrets/4yu.env`, prefixo `AUTOFLUXOS_`.
+- **RLS está ligada e sem política de propósito.** Todo acesso é servidor, com a
+  chave `secret`. Não crie política para "facilitar".
+- Antes de dizer que algo funciona, **rode**: `npm test`, `npx tsc --noEmit`,
+  `npm run build`.
+
+### Comandos
+
+```bash
+npm run dev                 # http://localhost:3000
+npm test                    # 57 testes (os de banco pulam sem .env)
+npx vercel deploy --prod --yes --token "$VERCEL_TOKEN"
+```
+
+### Quando o Gabriel disser que verificou o número
+
+Falta só registrar o PIN de 2 fatores. É uma chamada, com o token que já está
+no cofre:
+
+```bash
+set -a && . /home/gabfelix/dev/4yu-apps/.secrets/4yu.env && set +a
+curl -s -X POST "https://graph.facebook.com/v25.0/$AUTOFLUXOS_WA_PHONE_NUMBER_ID/register" \
+  -H "Authorization: Bearer $AUTOFLUXOS_WA_TOKEN" -H 'content-type: application/json' \
+  -d '{"messaging_product":"whatsapp","pin":"482913"}'
+```
+
+Guarde o PIN escolhido em `.secrets` como `AUTOFLUXOS_WA_PIN` — ele é pedido de
+novo se o número for movido. Depois disso, o Gabriel manda "oi" para
+**+55 44 7400-7438** e o bot responde: o painel já tem `Cliente 00 — Gabriel`
+com o fluxo publicado e o número conectado.
+
+---
+
 ## O produto em uma frase
 
 Sistema onde a 4YU desenha fluxos de atendimento no WhatsApp para clientes.

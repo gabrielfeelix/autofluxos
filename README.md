@@ -14,8 +14,9 @@ número de teste, que é onde estamos travados (ver ESTADO.md).
 
 No ar em **https://autofluxos.4yu.com.br** (painel protegido por senha).
 
-**Retomando o trabalho?** Comece por [docs/ESTADO.md](docs/ESTADO.md) — o que
-está pronto, o que está travado e o que fazer em seguida.
+**Retomando o trabalho — humano ou agente?** Comece por
+[docs/ESTADO.md](docs/ESTADO.md). A primeira seção diz exatamente o que fazer
+em seguida, o que **não** perseguir, e as regras que não podem ser quebradas.
 
 Veja [docs/ARQUITETURA.md](docs/ARQUITETURA.md) para o desenho completo e as
 decisões por trás dele.
