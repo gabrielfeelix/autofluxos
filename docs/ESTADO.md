@@ -69,8 +69,11 @@ Duas coisas que valem saber antes de mexer:
 ```bash
 npm run dev                 # http://localhost:3000
 npm test                    # 64 testes (os de banco pulam sem .env)
-npx vercel deploy --prod --yes --token "$VERCEL_TOKEN"
 ```
+
+**Não precisa publicar na mão.** A Vercel está ligada no GitHub e sobe produção
+a cada push na `main`. O comando manual existe (`npx vercel deploy --prod --yes
+--token "$VERCEL_TOKEN"`), mas usar os dois gera dois deploys da mesma coisa.
 
 Migration nova vai pela Management API:
 
