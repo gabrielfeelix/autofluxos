@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Um push em cima do outro cancela o anterior: o que interessa é o estado do
+# topo do branch, não a fila de commits do meio do caminho.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  conferir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Tipos
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      # Sem SUPABASE_URL no ambiente, os arquivos de teste que falam com o
+      # banco se pulam sozinhos (`describe.skipIf`) e sobram os puros — motor,
+      # validador, interpolação, recusa de endereço, janela de 24h, prompt da
+      # IA e autenticação do painel.
+      #
+      # A chave secreta do Supabase NÃO entra como secret do GitHub, e isso é
+      # decisão, não esquecimento: este repositório é público, e um workflow
+      # de um PR de fora leria o segredo. O que fala com banco roda na máquina
+      # antes do push.
+      - name: Testes
+        run: npm test
+
+      - name: Build
+        run: npm run build

@@ -32,7 +32,7 @@ esbarra em pelo menos uma:
 ## Ordem, e por que é esta
 
 ```
-1. CI                     protege todos os outros
+1. CI  ✅              protege todos os outros
 2. Corrida de sessão      bug real esperando tráfego
 3. Portas abertas         limite, teto de corpo, noindex
 4. Escrita cruzada        barato, e é pré-requisito de papéis
@@ -53,7 +53,23 @@ começar com menos dívida.
 
 ---
 
-## Bloco 1 — CI
+## Bloco 1 — CI ✅ FEITO
+
+> **Duas correções ao que estava escrito aqui**, descobertas ao executar:
+>
+> 1. **`next lint` não existe mais.** Foi removido no Next 16 em favor do CLI
+>    do ESLint. O script é `eslint .`, e a configuração é *flat config*
+>    (`eslint.config.mjs`), não `.eslintrc`.
+> 2. **`eslint-config-next` não traz as regras base do ESLint.** Sem
+>    `js.configs.recommended`, o `// eslint-disable-next-line no-control-regex`
+>    que já existia em `interpolar.ts` era um comentário morto — a regra nunca
+>    rodou. Com as regras base ligadas ele passa a valer, e a base ficou limpa
+>    na primeira passada (só um aviso, no `postcss.config.mjs`, corrigido).
+>
+> Isso é o motivo de os blocos seguintes serem detalhados na hora de executar,
+> e não agora: plano escrito com antecedência erra nos detalhes que só a
+> execução mostra.
+
 
 **Por que primeiro:** hoje nada roda `npm test`, `npm run typecheck` nem
 `npm run build` antes de subir. Todo bloco seguinte deste plano fica mais
@@ -112,8 +128,10 @@ export default [
 Em `package.json`, dentro de `scripts`:
 
 ```json
-"lint": "next lint"
+"lint": "eslint ."
 ```
+
+(`next lint` foi removido no Next 16.)
 
 - [ ] **1.4 — Rodar e ver o que está sujo**
 
