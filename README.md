@@ -7,10 +7,11 @@ Produto da [4YU](https://4yu.com.br).
 
 ## Estado
 
-**Etapa 1, 6 de 7 passos prontos.** Dá para desenhar o fluxo arrastando blocos,
-testar a conversa ao lado, publicar (versão numerada e imutável), e o webhook do
-WhatsApp está publicado e testado. Falta a tela de leads — e a Meta liberar um
-número de teste, que é onde estamos travados (ver ESTADO.md).
+**Etapa 1 construída, os 7 passos.** Dá para desenhar o fluxo arrastando
+blocos, testar a conversa ao lado, publicar (versão numerada e imutável), receber
+mensagem pelo webhook e ver o lead cair na tela com o que o bot coletou. O que
+falta não é código: a Meta precisa liberar a verificação do número, que é onde
+estamos travados (ver ESTADO.md).
 
 No ar em **https://autofluxos.4yu.com.br** (painel protegido por senha).
 
@@ -27,7 +28,7 @@ decisões por trás dele.
 npm install
 cp .env.example .env    # valores em 4yu-apps/.secrets/4yu.env (prefixo AUTOFLUXOS_)
 npm run dev             # http://localhost:3000
-npm test                # 57 testes
+npm test                # 64 testes
 npm run typecheck
 ```
 
@@ -42,10 +43,15 @@ normal — dá para clonar e rodar `npm test` sem credencial nenhuma.
 Migrations em [supabase/migrations/](supabase/migrations/), aplicadas pela
 Management API do Supabase.
 
-Três tabelas: `clients`, `flows` e `flow_versions`. `contacts`, `sessions` e
-`messages` entram no passo 6, quando a gente souber o formato real do que o
-WhatsApp manda — tabela criada "por garantia" e nunca usada só acumula
-divergência entre o desenho e o código.
+`clients`, `flows` e `flow_versions` (passos 3 e 5); `channels`, `contacts`,
+`sessions`, `messages` e `handoffs` (passo 6, criadas só quando já se sabia o
+formato real do que o WhatsApp manda — tabela criada "por garantia" e nunca
+usada só acumula divergência entre o desenho e o código).
+
+A tela de leads lê a view `leads` (0004), que junta o contato com a última
+mensagem e o handoff aberto. Ela é **`security_invoker = true`**: view é o jeito
+clássico de furar RLS sem perceber, e sem isso a chave que vai para o navegador
+leria a conversa de todo mundo.
 
 **RLS está ligada e sem nenhuma política, de propósito.** A chave `publishable`
 (que pode chegar ao navegador) não lê nem escreve nada; todo acesso passa pelo

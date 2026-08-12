@@ -277,7 +277,10 @@ autofluxos/
 │
 ├── supabase/
 │   └── migrations/
-│       └── 0001_init.sql
+│       ├── 0001_init.sql          clients, flows
+│       ├── 0002_versoes.sql       flow_versions (imutável) + publicar_fluxo()
+│       ├── 0003_conversas.sql     channels, contacts, sessions, messages, handoffs
+│       └── 0004_leads.sql         view `leads` (security_invoker!)
 │
 └── src/
     │
@@ -304,10 +307,9 @@ autofluxos/
     │   ├── repos/
     │   │   ├── clientes.ts            ✅
     │   │   ├── fluxos.ts              ✅
-    │   │   ├── sessoes.ts
-    │   │   ├── contatos.ts
-    │   │   └── mensagens.ts
-    │   ├── receber-mensagem.ts        dedup → sessão → motor → executa ações
+    │   │   ├── conversas.ts           ✅ canal, contato, sessão, mensagem, handoff
+    │   │   └── leads.ts               ✅ lê a view `leads` + a conversa
+    │   ├── receber-mensagem.ts        ✅ dedup → sessão → motor → executa ações
     │   └── ia/
     │       └── responder.ts           chamada ao LLM com contexto travado
     │

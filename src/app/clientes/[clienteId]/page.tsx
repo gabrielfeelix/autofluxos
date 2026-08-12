@@ -6,6 +6,7 @@ import { acaoConectarNumero, acaoCriarFluxo } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarCanais } from '@/server/repos/conversas'
 import { listarFluxos } from '@/server/repos/fluxos'
+import { listarLeads } from '@/server/repos/leads'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,11 +16,14 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [fluxos, canais, cabecalhos] = await Promise.all([
+  const [fluxos, canais, leads, cabecalhos] = await Promise.all([
     listarFluxos(clienteId),
     listarCanais(clienteId),
+    listarLeads(clienteId),
     headers(),
   ])
+
+  const esperando = leads.filter((l) => l.aguardando).length
 
   const host = cabecalhos.get('x-forwarded-host') ?? cabecalhos.get('host') ?? 'localhost:3000'
   const protocolo = host.startsWith('localhost') ? 'http' : 'https'
@@ -30,17 +34,38 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-8 p-6 sm:p-10">
-      <header>
-        <Link href="/" className="text-xs text-zinc-500 hover:underline dark:text-zinc-400">
-          ← todos os clientes
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <Link href="/" className="text-xs text-zinc-500 hover:underline dark:text-zinc-400">
+            ← todos os clientes
+          </Link>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight">{cliente.nome}</h1>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            {fluxos.length === 0
+              ? 'Nenhum fluxo ainda.'
+              : `${fluxos.length} ${fluxos.length === 1 ? 'fluxo' : 'fluxos'}.`}{' '}
+            {cliente.iaHabilitada
+              ? 'IA habilitada.'
+              : 'IA não contratada — Etapa 1, automação pura.'}
+          </p>
+        </div>
+
+        {/* O fluxo é o meio; o lead é o fim. Fica em destaque, com o número que
+            faz alguém largar o que está fazendo: quantos esperam uma pessoa. */}
+        <Link
+          href={`/clientes/${cliente.id}/leads`}
+          className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium transition hover:border-emerald-500 hover:text-emerald-600 dark:border-zinc-700"
+        >
+          Leads
+          <span className="ml-2 text-xs font-normal text-zinc-500 dark:text-zinc-400">
+            {leads.length}
+          </span>
+          {esperando > 0 && (
+            <span className="ml-2 rounded bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+              {esperando} esperando
+            </span>
+          )}
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">{cliente.nome}</h1>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-          {fluxos.length === 0
-            ? 'Nenhum fluxo ainda.'
-            : `${fluxos.length} ${fluxos.length === 1 ? 'fluxo' : 'fluxos'}.`}{' '}
-          {cliente.iaHabilitada ? 'IA habilitada.' : 'IA não contratada — Etapa 1, automação pura.'}
-        </p>
       </header>
 
       <ul className="space-y-2">

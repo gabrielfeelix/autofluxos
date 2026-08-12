@@ -9,34 +9,45 @@ consegue continuar lendo só isto e o [ARQUITETURA.md](ARQUITETURA.md).
 
 **O lado da Meta está travado por limite de tempo e não é para ser perseguido.**
 Não peça ao Gabriel para clicar, verificar ou conferir nada no painel da Meta —
-ele já gastou horas nisso hoje e o bloqueio é por tempo, não por configuração.
-Se ele mesmo trouxer o assunto, aí sim retome pela seção "O que está travado".
+o bloqueio é por tempo, não por configuração. Se ele mesmo trouxer o assunto,
+retome pela seção "O que está travado".
 
-**O que fazer:** o **passo 7 — tela de leads**. É código puro, não depende de
-ninguém, e é o que faz a demo valer.
+**O passo 7 está feito.** A Etapa 1 está construída inteira. O que sobra é a
+verificação do número, que é da Meta, não nossa.
 
-### Especificação do passo 7
+### O que existe agora (passo 7)
 
-Rota nova: `/clientes/[clienteId]/leads`, ligada a partir da página do cliente.
+- View `leads` no banco (migration `0004`), juntando `contacts` + a última
+  mensagem + o handoff aberto. A agregação é do Postgres de propósito: fazer
+  isso no TypeScript exigiria puxar todas as mensagens de todo mundo para
+  ordenar por "última mensagem".
+- `src/server/repos/leads.ts` — `listarLeads`, `acharLead`, `lerConversa`.
+- `/clientes/[clienteId]/leads` — a tabela, com **as colunas saindo dos dados**
+  (`contacts.campos` é `jsonb` e as chaves mudam por fluxo; nada chumbado).
+- `/clientes/[clienteId]/leads/[contatoId]` — os campos coletados e a conversa
+  inteira, entrada de um lado, saída do outro.
+- 7 testes novos em `src/server/repos/leads.test.ts`, contra o Supabase real.
 
-Cada linha é um contato, e mostra:
+Duas coisas que valem saber antes de mexer:
 
-- nome (de `contacts.nome`, que vem do perfil do WhatsApp) e o `wa_id`
-- as informações que o fluxo coletou (`contacts.campos`, um `jsonb` cujas chaves
-  variam por fluxo — descubra as colunas a partir das chaves presentes, não
-  chumbe nomes)
-- se está aguardando humano (`handoffs` sem `resolvido_em`) e o motivo
-- quando foi a última mensagem (`messages.ts`)
+1. **A view é `security_invoker = true`.** Sem isso ela rodaria com os direitos
+   de quem a criou e passaria por cima da RLS — a chave `publishable`, que vai
+   para o navegador, leria a conversa de todo mundo. Está provado: com a chave
+   `publishable` a view responde `401 permission denied`.
+2. **`acharLead` filtra por cliente também**, não só pelo id do contato. A URL é
+   adivinhável.
 
-Detalhe da página do lead (`/clientes/[clienteId]/leads/[contatoId]`): a conversa
-inteira a partir de `messages`, na ordem, separando entrada e saída.
+### O que fazer em seguida
 
-Repositório novo em `src/server/repos/leads.ts`, no mesmo padrão dos outros
-(tipos em português, erro com mensagem útil, validação na leitura quando o dado
-vier de `jsonb`).
-
-Teste em `src/server/repos/leads.test.ts`, contra o Supabase de verdade, criando
-e apagando o que usar — igual aos que já existem.
+1. **Gabriel testar o editor** de verdade — arrastar bloco, ligar setinha,
+   conversar na aba Testar. É a única parte que nunca foi verificada com
+   navegador.
+2. **Verificação de empresa na Meta** (Portfólio - 4YU está "não verificada").
+   Demora e não trava hoje, mas trava cliente real depois.
+3. **Etapa 2 (IA)** — vira um tipo de nó a mais e uma flag `ia_habilitada` no
+   cliente. O resto do sistema não muda.
+4. Se um dia a lista de leads crescer: paginar `listarLeads` e um filtro de
+   "só quem espera atendimento". Hoje seria enfeite.
 
 ### Regras do projeto que não podem ser quebradas
 
@@ -48,7 +59,8 @@ e apagando o que usar — igual aos que já existem.
 - **Segredo nunca entra no repo.** Ele é público. Tudo em
   `4yu-apps/.secrets/4yu.env`, prefixo `AUTOFLUXOS_`.
 - **RLS está ligada e sem política de propósito.** Todo acesso é servidor, com a
-  chave `secret`. Não crie política para "facilitar".
+  chave `secret`. Não crie política — nem view sem `security_invoker` — para
+  "facilitar".
 - Antes de dizer que algo funciona, **rode**: `npm test`, `npx tsc --noEmit`,
   `npm run build`.
 
@@ -56,8 +68,17 @@ e apagando o que usar — igual aos que já existem.
 
 ```bash
 npm run dev                 # http://localhost:3000
-npm test                    # 57 testes (os de banco pulam sem .env)
+npm test                    # 64 testes (os de banco pulam sem .env)
 npx vercel deploy --prod --yes --token "$VERCEL_TOKEN"
+```
+
+Migration nova vai pela Management API:
+
+```bash
+set -a && . /home/gabfelix/dev/4yu-apps/.secrets/4yu.env && set +a
+python3 -c "import json;print(json.dumps({'query': open('supabase/migrations/0004_leads.sql').read()}))" > /tmp/q.json
+curl -sS -X POST "https://api.supabase.com/v1/projects/$AUTOFLUXOS_SUPABASE_PROJECT_REF/database/query" \
+  -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H 'Content-Type: application/json' --data @/tmp/q.json
 ```
 
 ### Quando o Gabriel disser que verificou o número
@@ -89,7 +110,7 @@ Três etapas, cada uma vendável sozinha:
 
 | Etapa | O que é | Estado |
 |---|---|---|
-| 1 | Automação pura, sem IA — botões, opções, lead na tela | **6 de 7 passos prontos** |
+| 1 | Automação pura, sem IA — botões, opções, lead na tela | **construída — falta a Meta liberar o número** |
 | 2 | Nó de IA, cobrado à parte, com a chave do cliente (BYOK) | não começou |
 | 3 | Encaixar a Prelúdio **só configurando**, sem mexer no produto | não começou |
 
@@ -105,9 +126,9 @@ Três etapas, cada uma vendável sozinha:
 | 4 | Editor visual (React Flow) | ✅ |
 | 5 | Publicar + versionar | ✅ |
 | 6 | Webhook + canal Cloud API | ✅ código pronto, **travado na Meta** |
-| 7 | Tela de leads | ⬜ **próximo, não depende de ninguém** |
+| 7 | Tela de leads | ✅ |
 
-**57 testes** passando (`npm test`), `tsc` limpo, `next build` limpo. Os testes de
+**64 testes** passando (`npm test`), `tsc` limpo, `next build` limpo. Os testes de
 banco e webhook falam com o Supabase de verdade e se pulam sozinhos sem `.env`.
 
 ---
@@ -179,6 +200,10 @@ pontinhos (`...`) da linha do número** — ou clicando no próprio número.
 - **Mensagem de verdade já entrou pelo webhook**, criou contato, criou sessão
   presa na versão publicada e **o motor avançou até a primeira pergunta**. Só o
   envio falhou, pelo número não registrado.
+- Em 11/ago às 22:51 e 22:54 entraram mais dois "oi" — um de teste e um do
+  número do Gabriel. Os dois viraram contato e **aparecem na tela de leads**,
+  cada um com uma mensagem de `entrada` e **nenhuma de `saida`**. É o retrato
+  exato do bloqueio: o que chega, chega; o que sai, não sai.
 - Painel já tem `Cliente 00 — Gabriel` com o fluxo de triagem **publicado (v1)**
   e o número conectado.
 
@@ -192,21 +217,6 @@ Todas já publicadas na Vercel e em produção.
 
 ---
 
-## O que fazer em seguida (ordem sugerida)
-
-1. **Passo 7 — tela de leads.** Não depende da Meta e é o que faz a demo valer:
-   é onde o lead aparece para o cliente. Os dados já são gravados
-   (`contacts.campos`, `messages`, `handoffs`); falta a tela.
-2. **Gabriel testar o editor** de verdade — arrastar bloco, ligar setinha,
-   conversar na aba Testar. Foi a única parte que não deu para verificar sem
-   navegador; se algo estiver estranho no arrasto ou no autosave, é aqui.
-3. **Verificação de empresa na Meta** (Portfólio - 4YU está "não verificada").
-   Demora e não trava nada hoje, mas trava cliente real depois. Começar cedo é
-   de graça.
-4. **Etapa 2 (IA)** — vira um tipo de nó a mais e uma flag `ia_habilitada` no
-   cliente. O resto do sistema não muda.
-
----
 
 ## Contexto de negócio que não está no código
 
