@@ -1,7 +1,69 @@
-# Onde paramos — 11/ago/2026
+# Onde paramos — 12/ago/2026
 
 Documento de retomada. Quem chegar aqui sem ter acompanhado a construção
 consegue continuar lendo só isto e o [ARQUITETURA.md](ARQUITETURA.md).
+
+---
+
+## Leia isto primeiro
+
+**Estado:** tudo verde e no ar. `npm test` dá **208 passando**, `npm run
+typecheck` e `npm run build` limpos, `main` publicado em
+https://autofluxos.4yu.com.br.
+
+**O produto hoje faz:** desenhar fluxo arrastando bloco, testar a conversa ao
+lado, publicar versão imutável, receber mensagem do WhatsApp, responder,
+**chamar o sistema do cliente no meio da conversa** (bloco API), guardar as
+credenciais dele num cofre, e o lead cair na tela.
+
+**As três regras que não se quebram**, e das quais quase tudo aqui decorre:
+
+1. `src/core/` não faz rede, não importa Next, WhatsApp nem banco. Se uma tarefa
+   parecer exigir quebrar isso, a tarefa está errada.
+2. O motor nunca vê segredo. Credencial é resolvida no servidor, depois de
+   `executar()`, e por isso não entra na sessão — que viaja para o navegador a
+   cada mensagem do simulador.
+3. Recusa de tela é conveniência; a recusa que vale é a do servidor. `publicar()`
+   revalida tudo, e `efeitos/rede.ts` recusa endereço independentemente do que o
+   editor deixou passar.
+
+**A regra de produto que não é óbvia e já me fez errar:** mandar o cliente usar
+n8n, Zapier ou Make **não é resposta aceitável**. O AutoFluxos vende ser a
+camada de automação; se o cliente precisa do n8n, ele não precisa da gente.
+Faltou peça? Constrói a peça. Ferramenta externa pode ser destino de um webhook
+nosso, nunca requisito para funcionar.
+
+### Por onde continuar, em ordem
+
+| # | O quê | Por que agora |
+|---|---|---|
+| 1 | **Papéis de usuário** (BRIEF-UI §6) | É a maior, e destrava as outras. Hoje é uma senha só. Há comentário em quatro pontos do código dizendo "isto muda quando o cliente ganhar acesso" — recusa de endereço interno, isolamento entre clientes, a tela de "não encontrado" que vira "não é seu". Este é o dia. |
+| 2 | **Credencial de sandbox por conexão** | A aba Testar usa a credencial real: testar um fluxo de CRM grava no CRM de verdade. Hoje há aviso na tela e o cabeçalho `X-AutoFluxos-Teste: 1`. Gatilho para construir: o primeiro cliente com CRM em produção. |
+| 3 | **`drop` de `clients.ia_habilitada`** | O código já parou de ler (migration 0005 pedia essa confirmação). Falta a migration que apaga. |
+| 4 | **Teste de banco intermitente** | `repos.test.ts` falha de vez em quando por desvio de relógio entre a máquina local e o Supabase. É ambiente, não código — mas atrapalha confiar na suíte. |
+
+### O que foi construído em 12/ago, e onde está escrito
+
+- **Nó de API** (o sétimo bloco) — [NO-API.md](NO-API.md), plano em [PLANO-NO-API.md](PLANO-NO-API.md)
+- **Conexões** (credenciais no cofre) — [CONEXOES.md](CONEXOES.md), migration `0006`
+- **DNS rebinding fechado** — `server/efeitos/rede.ts`, e o porquê de vir antes do cofre está no CONEXOES
+- **Tela do contexto do negócio** — era lido em cinco lugares e escrito em nenhum
+
+### Armadilhas que já custaram caro nesta base
+
+- **Interpolar dentro de estrutura sem escapar.** O que a pessoa digita no
+  WhatsApp entra em URL, corpo JSON e cabeçalho. Sem escape, ela deixa de
+  preencher campo e passa a escrever a requisição. Os escapes por contexto estão
+  em `core/engine/interpolar.ts` — use-os em qualquer campo novo.
+- **Exceção solta dentro do `after()` do webhook.** A mensagem já foi
+  deduplicada, então se a sessão não for salva a pessoa fica sem resposta e a
+  Meta não reenvia. Tudo que pode lançar no caminho do webhook precisa virar
+  handoff, não exceção.
+- **Corpo de resposta HTTP não consumido.** Stream pausado que o undici destrói
+  depois vira exceção sem dono, e cai no caso acima.
+- **Identidade vinda do corpo da requisição.** `/api/simular` aceitava o
+  `clienteId` do cliente HTTP e isso permitia resolver credencial de qualquer
+  cliente. Desenho pode vir de fora; identidade sai do banco.
 
 ---
 
@@ -130,42 +192,17 @@ deles. Mesmo padrão do `deixeiaqui` e do `www`.
 
 ---
 
-## O que está travado — **uma coisa só**
+## O caminho da Meta — o que sobrou
 
-**O número precisa ser verificado.** Nada além disso.
+O número do Cliente 00 está verificado, registrado e conversando (ver o topo).
+O que ainda trava **atender cliente de verdade** são as três coisas da seção
+"O que falta", e nenhuma delas é código.
 
-Estado do número (`+55 44 7400-7438`, phone_number_id `1301107846409860`):
-
-- nome `4YU Tech` — **aprovado sem análise**
-- `code_verification_status: NOT_VERIFIED`
-- `status: PENDING`
-
-Enviar falha com **`(#133010) Account not registered`** — que é exatamente o
-esperado para número não verificado. Testado chamando a Cloud API direto.
-
-Pedir o código muitas vezes derrubou no limite (`You have requested a
-verification code too many times`). É por tempo; passa sozinho.
-
-### Onde fica a tela (o caminho exato, para não procurar de novo)
-
-No **Gerenciador de Negócios da Meta**, menu da esquerda:
-
-```
-Contas → Contas do WhatsApp → clicar em "4YU Tech" → aba "Phone numbers"
-```
-
-Ali aparece o número **com o status**. O botão de verificar fica nos **três
-pontinhos (`...`) da linha do número** — ou clicando no próprio número.
-
-### Quando o limite liberar
-
-1. Nessa tela, confirmar que o número listado é o certo antes de gastar
-   tentativa.
-2. Verificar por **Ligação telefônica**, **uma vez só**, sem pedir reenvio.
-3. Depois de verificado, falta registrar com um PIN de 2 fatores —
-   `POST /{phone_number_id}/register`. Dá para fazer pela API com o token que já
-   está no cofre; não precisa de painel.
-4. Mandar "oi" do WhatsApp e ver o bot responder.
+> **Nota para quem lê o histórico:** até 12/ago este documento tinha uma seção
+> dizendo que o número estava `NOT_VERIFIED` e que tudo dependia disso. Ela era
+> de 11/ago e ficou para trás quando o número foi liberado — mas continuou aqui,
+> contradizendo o próprio topo do arquivo. Foi removida em 12/ago. Se você achar
+> duas afirmações opostas neste documento de novo, a de cima é a nova.
 
 ### O que já está pronto e testado em produção
 

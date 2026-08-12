@@ -7,7 +7,7 @@ Produto da [4YU](https://4yu.com.br).
 
 ## Estado
 
-**Etapa 1 construída, os 7 passos.** Dá para desenhar o fluxo arrastando
+**Etapa 1 e 2 construídas.** Dá para desenhar o fluxo arrastando
 blocos, testar a conversa ao lado, publicar (versão numerada e imutável), receber
 mensagem pelo webhook e ver o lead cair na tela com o que o bot coletou. O que
 falta não é código: a Meta precisa liberar a verificação do número, que é onde
@@ -16,8 +16,9 @@ estamos travados (ver ESTADO.md).
 No ar em **https://autofluxos.4yu.com.br** (painel protegido por senha).
 
 **Retomando o trabalho — humano ou agente?** Comece por
-[docs/ESTADO.md](docs/ESTADO.md). A primeira seção diz exatamente o que fazer
-em seguida, o que **não** perseguir, e as regras que não podem ser quebradas.
+[docs/ESTADO.md](docs/ESTADO.md). A seção "Leia isto primeiro" tem o estado
+atual, as três regras que não se quebram, a fila do que fazer em seguida, e as
+armadilhas que já custaram caro nesta base.
 
 Veja [docs/ARQUITETURA.md](docs/ARQUITETURA.md) para o desenho completo e as
 decisões por trás dele.
