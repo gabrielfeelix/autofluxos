@@ -36,6 +36,42 @@ abstrato costuma acertar ninguém. O jeito de ter os dois é **derivar** o gené
 de um caso real — construir olhando pra Prelúdio e pro Cliente 00, e recusar com
 disciplina qualquer coisa deles que tente entrar no código.
 
+## O outro lado da mesma régua: o dado do cliente não mora aqui
+
+O princípio acima diz o que não entra em `src/`. Este diz o que não entra no
+**banco**. São a mesma disciplina aplicada a duas fronteiras.
+
+O AutoFluxos é sistema de **automação**, não de gestão. Ele cria fluxos que
+gerem aula, lead, pedido — e não vira o lugar onde esse dado mora.
+
+- **Nosso:** mensagem, sessão, status de entrega. É estado de execução: sem ele
+  o motor não roda — deduplicar mensagem, saber onde a conversa parou, contar a
+  janela de 24h, marcar handoff. Não dá pra terceirizar.
+- **Do cliente:** o registro de negócio — lead como funil, status, tag e
+  follow-up; turma, matrícula, presença. Isso é chamada ao sistema dele, pelo
+  nó de API com credencial nas Conexões.
+
+**O motivo não é volume.** Dez mil linhas não é problema pro Postgres, e quem
+recusa por "vai encher o banco" recusa pela razão errada. O motivo é não virar
+a **segunda fonte da verdade**: se o dado está no sistema do cliente e também
+aqui, os dois divergem, e divergiram calados.
+
+O teste, irmão do de cima:
+
+> Isso é **estado que o motor precisa pra executar**, ou é **registro de
+> negócio do cliente**?
+
+Faltou dado pra um fluxo? A resposta padrão é chamar o sistema do cliente, não
+criar tabela. Foi essa régua que barrou modelar a agenda do MGM Pilates aqui
+dentro — quatro tabelas de turma e presença teriam feito da gente um sistema de
+gestão de estúdio com passo extra.
+
+**O que já está do lado errado, e fica anotado:** a tela de leads nasceu por
+cima do histórico de conversa e hoje tem cara de mini-CRM. O histórico é nosso;
+o lead como registro de negócio não é. Revisar quando houver CRM de cliente pra
+apontar — não antes, porque trocar uma tela que funciona por uma integração que
+não existe é piorar.
+
 ## As nove decisões
 
 ### 1. O motor é uma função pura
