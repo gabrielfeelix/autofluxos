@@ -295,3 +295,55 @@ describe('resolvendo o nó de API', () => {
     expect(r.acoes.some((a) => a.tipo === 'chamar_http' || a.tipo === 'chamar_ia')).toBe(false)
   })
 })
+
+describe('falha com seguir não deixa dado velho passando por fresco', () => {
+  const duasChamadas = fluxoSchema.parse({
+    inicio: 'primeira',
+    nodes: [
+      {
+        id: 'primeira',
+        type: 'http',
+        position: { x: 0, y: 0 },
+        data: {
+          url: 'https://e.com/1',
+          mapear: [{ variavel: 'situacao', caminho: 'status' }],
+          aoFalhar: 'seguir',
+        },
+      },
+      {
+        id: 'segunda',
+        type: 'http',
+        position: { x: 0, y: 0 },
+        data: {
+          url: 'https://e.com/2',
+          mapear: [{ variavel: 'situacao', caminho: 'status' }],
+          aoFalhar: 'seguir',
+        },
+      },
+      { id: 'diz', type: 'mensagem', position: { x: 0, y: 0 }, data: { texto: 'está {{situacao}}' } },
+      { id: 'humano', type: 'handoff', position: { x: 0, y: 0 }, data: {} },
+    ],
+    edges: [
+      { id: 'a1', source: 'primeira', target: 'segunda' },
+      { id: 'a2', source: 'segunda', target: 'diz' },
+      { id: 'a3', source: 'diz', target: 'humano' },
+    ],
+  })
+
+  it('a segunda chamada falhando apaga o que a primeira tinha guardado', async () => {
+    chamarHttp.mockReset()
+    chamarHttp
+      .mockResolvedValueOnce({ ok: true, valores: { situacao: 'a caminho' } })
+      .mockResolvedValueOnce({ ok: false, motivo: 'caiu' })
+
+    const r = await executarComEfeitos(duasChamadas, sessaoNova(), { tipo: 'inicio' }, {
+      modelo: null,
+      contextoNegocio: '',
+      origem: 'whatsapp',
+    })
+
+    const textos = r.acoes.flatMap((a) => (a.tipo === 'enviar_texto' ? [a.texto] : []))
+    expect(textos).toContain('está ')
+    expect(textos).not.toContain('está a caminho')
+  })
+})

@@ -36,6 +36,16 @@ export async function chamarHttp(
   let url = pedido.url
   let resposta: Response
 
+  // A origem do endereço original. Um redirecionamento para outro host não pode
+  // levar os cabeçalhos configurados junto: o `Authorization` que o operador
+  // escreveu para o sistema do cliente iria parar em quem respondeu o 302.
+  let origemInicial: string
+  try {
+    origemInicial = new URL(pedido.url).origin
+  } catch {
+    return { ok: false, motivo: 'o endereço não é uma URL válida' }
+  }
+
   for (let salto = 0; ; salto++) {
     const veredito = await conferirEndereco(url)
     if (!veredito.ok) return { ok: false, motivo: veredito.motivo }
@@ -44,10 +54,21 @@ export async function chamarHttp(
       return { ok: false, motivo: 'a chamada redirecionou vezes demais' }
     }
 
+    let cabecalhos: Headers
+    try {
+      // `Headers.set` lança com nome ou valor inválido. Fora do `try` isso
+      // escapa até o `after()` do webhook, a sessão nunca é salva, a mensagem
+      // já foi deduplicada e a pessoa fica sem resposta nenhuma — sem nem a
+      // Meta reenviar. Falhar aqui dentro vira handoff, que é o certo.
+      cabecalhos = montarCabecalhos(pedido, deTeste, new URL(url).origin === origemInicial)
+    } catch {
+      return { ok: false, motivo: 'um dos cabeçalhos configurados é inválido' }
+    }
+
     try {
       resposta = await fetch(url, {
         method: pedido.metodo,
-        headers: montarCabecalhos(pedido, deTeste),
+        headers: cabecalhos,
         body: pedido.metodo === 'POST' ? pedido.corpo : undefined,
         // Seguir sozinho pularia a conferência de endereço no destino, que é
         // exatamente por onde o ataque entraria: um host público que responde
@@ -98,13 +119,18 @@ export async function chamarHttp(
   return { ok: true, valores }
 }
 
-function montarCabecalhos(pedido: PedidoHttp, deTeste: boolean): Headers {
+function montarCabecalhos(pedido: PedidoHttp, deTeste: boolean, mesmaOrigem: boolean): Headers {
   const cabecalhos = new Headers()
 
-  for (const { chave, valor } of pedido.cabecalhos) {
-    // Nome vazio faz o `Headers` lançar. Um cabeçalho pela metade no editor é
-    // rascunho, não motivo para a conversa morrer.
-    if (chave.trim() !== '') cabecalhos.set(chave.trim(), valor)
+  // Só na origem que o operador escreveu. Depois de um redirecionamento para
+  // outro host, os cabeçalhos configurados ficam para trás — quem responde um
+  // 302 não pode ganhar a credencial destinada a outro serviço.
+  if (mesmaOrigem) {
+    for (const { chave, valor } of pedido.cabecalhos) {
+      // Nome vazio faz o `Headers` lançar. Um cabeçalho pela metade no editor é
+      // rascunho, não motivo para a conversa morrer.
+      if (chave.trim() !== '') cabecalhos.set(chave.trim(), valor)
+    }
   }
 
   if (pedido.metodo === 'POST' && !cabecalhos.has('content-type')) {

@@ -282,3 +282,67 @@ describe('chamarHttp', () => {
     expect(r.motivo).toContain('302')
   })
 })
+
+describe('cabeçalho não pode derrubar a conversa nem vazar', () => {
+  it('cabeçalho com nome inválido vira falha, não exceção solta', async () => {
+    conferirEndereco.mockResolvedValue({ ok: true })
+    const espiao = fetchResponde({})
+    vi.stubGlobal('fetch', espiao)
+
+    // Espaço no nome faz `Headers.set` lançar. Sem o try, isso escaparia até o
+    // after() do webhook e a pessoa ficaria sem resposta nenhuma.
+    const r = await chamarHttp(pedido({ cabecalhos: [{ chave: 'x chave', valor: 'a' }] }), {
+      deTeste: false,
+    })
+
+    expect(r.ok).toBe(false)
+    if (r.ok) throw new Error('deveria ter falhado')
+    expect(r.motivo).toContain('cabeçalho')
+  })
+
+  it('cabeçalho com valor inválido também vira falha', async () => {
+    conferirEndereco.mockResolvedValue({ ok: true })
+    vi.stubGlobal('fetch', fetchResponde({}))
+
+    const r = await chamarHttp(pedido({ cabecalhos: [{ chave: 'x-a', valor: 'quebra\nlinha' }] }), {
+      deTeste: false,
+    })
+
+    expect(r.ok).toBe(false)
+  })
+
+  it('redirecionamento para OUTRO host não leva os cabeçalhos configurados', async () => {
+    conferirEndereco.mockResolvedValue({ ok: true })
+    const espiao = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(null, { status: 302, headers: { location: 'https://outro.com/x' } }),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ a: 1 }), { status: 200 }))
+    vi.stubGlobal('fetch', espiao)
+
+    await chamarHttp(pedido({ cabecalhos: [{ chave: 'authorization', valor: 'Bearer segredo' }] }), {
+      deTeste: false,
+    })
+
+    expect(new Headers(initDaChamada(espiao, 0).headers).get('authorization')).toBe('Bearer segredo')
+    expect(new Headers(initDaChamada(espiao, 1).headers).get('authorization')).toBeNull()
+  })
+
+  it('redirecionamento para o MESMO host mantém os cabeçalhos', async () => {
+    conferirEndereco.mockResolvedValue({ ok: true })
+    const espiao = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(null, { status: 302, headers: { location: '/outro-caminho' } }),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ a: 1 }), { status: 200 }))
+    vi.stubGlobal('fetch', espiao)
+
+    await chamarHttp(pedido({ cabecalhos: [{ chave: 'authorization', valor: 'Bearer segredo' }] }), {
+      deTeste: false,
+    })
+
+    expect(new Headers(initDaChamada(espiao, 1).headers).get('authorization')).toBe('Bearer segredo')
+  })
+})

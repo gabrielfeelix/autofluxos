@@ -245,6 +245,20 @@ A recusa mora no resolvedor, não no editor. Validação de tela é conveniênci
 recusa precisa valer venha a chamada de onde vier — a mesma lógica que
 `publicar()` já aplica ao validador.
 
+### O que a recusa não cobre: DNS rebinding
+
+Entre resolver o nome e o `fetch` resolver de novo, a resposta do DNS pode
+mudar: um domínio devolve IP público na primeira consulta e o endereço de
+metadados na segunda. É uma janela de tempo inerente ao padrão "confere e depois
+chama", não um erro na lógica.
+
+Fechar exige fixar o IP resolvido no momento da conexão — um `dispatcher` do
+undici com `lookup` próprio, convivendo com o `fetch` que o Next embrulha.
+
+**Risco aceito enquanto só o operador escreve endereço de fluxo**, porque quem
+exploraria isso já tem acesso ao editor. No dia em que o cliente ganhar acesso
+(BRIEF-UI §6), isso deixa de ser teórico e vira tarefa.
+
 ### O simulador dispara de verdade
 
 É a promessa central do produto (simulador e produção rodam o mesmo código) e é
@@ -258,6 +272,28 @@ sistema do cliente. Então:
   para o lado de lá poder filtrar
 
 ---
+
+### O que a pessoa digita não pode escrever a requisição
+
+O nó interpola dentro de **estruturas**, não dentro de texto solto: uma URL, um
+corpo JSON, um cabeçalho. Ali o conteúdo tem sintaxe, e o que a pessoa respondeu
+no WhatsApp é entrada de fora. Sem escapar, ela deixa de preencher um campo e
+passa a escrever a requisição — alguém respondendo
+`x", "aprovado": true, "y": "z` acrescenta campos à chamada que vai para o
+sistema do cliente.
+
+Então cada campo escapa conforme a estrutura em que cai, em `core/engine/interpolar.ts`:
+
+| Onde | Escape | O que impede |
+|---|---|---|
+| URL | `encodeURIComponent` | `&` e `?` acrescentarem parâmetro; `../` subir de diretório |
+| corpo JSON | `JSON.stringify` sem as aspas das pontas | fechar a string e abrir campo novo |
+| cabeçalho | tira controle e quebra de linha | a resposta virar cabeçalho novo |
+| mensagem comum | nenhum | nada — ali o valor é texto mesmo |
+
+E o **host não pode vir de variável** (`HOST_VARIAVEL`): `https://{{base}}/x`
+deixaria quem conversa escolher para onde o servidor faz requisição. Depois da
+primeira barra, variável é o uso normal e desejado.
 
 ## Validador
 

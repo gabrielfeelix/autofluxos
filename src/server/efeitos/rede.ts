@@ -21,6 +21,27 @@ import { lookup } from 'node:dns/promises'
  * precisa valer venha a chamada de onde vier.
  */
 
+/**
+ * **O que esta conferência NÃO cobre: DNS rebinding.**
+ *
+ * Entre resolver o nome aqui e o `fetch` resolver de novo, a resposta do DNS
+ * pode mudar. Quem controla um domínio consegue devolver um IP público na
+ * primeira consulta e `169.254.169.254` na segunda, e aí a requisição sai para
+ * o endereço que este arquivo existe para bloquear. É uma janela de tempo, não
+ * um furo na lógica — o padrão "conferir e depois chamar" tem essa brecha por
+ * construção.
+ *
+ * Fechar de verdade exige fixar o IP já resolvido no momento da conexão (um
+ * `dispatcher` do undici com `lookup` próprio), o que muda como o `fetch` é
+ * montado e precisa conviver com o `fetch` que o Next embrulha.
+ *
+ * Fica registrado como risco aceito, e não como coisa esquecida: hoje só o
+ * operador escreve endereço de fluxo, então quem exploraria isso é quem já tem
+ * acesso ao editor. **Isto muda no dia em que o cliente ganhar acesso**
+ * (BRIEF-UI §6) — nesse dia, o rebinding sai de teórico e este comentário vira
+ * tarefa.
+ */
+
 export type Veredito = { ok: true } | { ok: false; motivo: string }
 
 export async function conferirEndereco(url: string): Promise<Veredito> {

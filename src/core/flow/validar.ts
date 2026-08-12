@@ -263,6 +263,13 @@ function conferirConteudo(no: No, erros: Problema[]): void {
     case 'http': {
       if (vazio(no.data.url)) {
         erros.push({ codigo: 'URL_VAZIA', mensagem: 'Este bloco não diz qual endereço chamar.', noId: no.id })
+      } else if (temVariavelNoHost(no.data.url)) {
+        erros.push({
+          codigo: 'HOST_VARIAVEL',
+          mensagem:
+            'O endereço do servidor não pode vir de {{variavel}}. As variáveis são o que a pessoa digita no WhatsApp — quem conversa escolheria para onde a chamada vai. Use variável só depois da primeira barra.',
+          noId: no.id,
+        })
       } else if (!no.data.url.trim().startsWith('https://')) {
         // Exigir o `https://` **literal** no começo é de propósito, e o efeito
         // colateral é que a URL não pode começar com `{{variavel}}`.
@@ -459,4 +466,30 @@ function variaveisDoNo(no: No): string[] {
         ...no.data.cabecalhos.flatMap((c) => variaveisCitadas(c.valor)),
       ]
   }
+}
+
+/**
+ * A variável está no pedaço da URL que decide **para qual servidor** a chamada
+ * vai (esquema, usuário, host, porta)?
+ *
+ * Exigir `https://` literal já barrava `{{base}}/x`, mas deixava passar
+ * `https://{{host}}/x` — que é o mesmo problema com outra roupa: o destino
+ * saindo do que a pessoa digitou no WhatsApp. A recusa de endereço interno do
+ * servidor ainda barraria rede privada, mas quem conversa passaria a apontar a
+ * nossa infraestrutura para qualquer host externo que quisesse.
+ *
+ * Depois da primeira barra é caminho e consulta, e ali variável é o uso normal
+ * e desejado — `/pedido/{{codigo}}`.
+ */
+function temVariavelNoHost(url: string): boolean {
+  const limpa = url.trim()
+  const depoisDoEsquema = limpa.indexOf('://')
+
+  // Sem `://`, a URL inteira ainda é candidata a host. `URL_INSEGURA` cobre o
+  // caso, mas variável aqui também é problema — e este erro explica melhor.
+  const inicio = depoisDoEsquema === -1 ? 0 : depoisDoEsquema + 3
+  const fim = limpa.slice(inicio).search(/[/?#]/)
+  const autoridade = fim === -1 ? limpa.slice(inicio) : limpa.slice(inicio, inicio + fim)
+
+  return limpa.slice(0, inicio).includes('{{') || autoridade.includes('{{')
 }

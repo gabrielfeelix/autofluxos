@@ -553,6 +553,9 @@ function variaveisDoFluxo(fluxo: Fluxo): string[] {
     if (no.type === 'pergunta' && no.data.salvarEm) nomes.add(no.data.salvarEm)
     if (no.type === 'salvar-campo' && no.data.campo) nomes.add(no.data.campo)
     if (no.type === 'ia' && no.data.salvarEm) nomes.add(no.data.salvarEm)
+    // O que a API guarda também é variável do fluxo. Sem isto, o painel não
+    // mostra `{{cidade}}` como disponível e quem desenha acha que não existe.
+    if (no.type === 'http') for (const m of no.data.mapear) if (m.variavel) nomes.add(m.variavel)
   }
   return [...nomes].sort()
 }

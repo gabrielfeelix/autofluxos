@@ -361,11 +361,10 @@ describe('validação do nó de API', () => {
     expect(codigos(fluxo)).not.toContain('CORPO_INVALIDO')
   })
 
-  it('não recusa endereço só por ser https', () => {
-    // Guarda a decisão: a URL precisa do https:// literal no começo, então
-    // começar com {{variavel}} é recusado de propósito — o host não pode sair
-    // do que a pessoa digitou no WhatsApp.
-    expect(codigos(comHttp({ url: '{{base}}/pedidos' }))).toContain('URL_INSEGURA')
+  it('recusa endereço que começa com variável', () => {
+    // O host não pode sair do que a pessoa digitou no WhatsApp. O erro
+    // específico é HOST_VARIAVEL, que explica melhor do que URL_INSEGURA.
+    expect(codigos(comHttp({ url: '{{base}}/pedidos' }))).toContain('HOST_VARIAVEL')
   })
 
   it('não cobra corpo de GET', () => {
@@ -398,5 +397,47 @@ describe('validação do nó de API', () => {
   it('avisa que o cofre de segredos ainda não existe', () => {
     const fluxo = comHttp({ url: 'https://e.com?k={{segredo.token}}' })
     expect(validar(fluxo).avisos.map((a) => a.codigo)).toContain('SEGREDO_INEXISTENTE')
+  })
+})
+
+describe('o destino da chamada não pode sair da conversa', () => {
+  const comUrl = (url: string) =>
+    validar(
+      fluxoSchema.parse({
+        inicio: 'api',
+        nodes: [
+          { id: 'api', type: 'http', position: { x: 0, y: 0 }, data: { url } },
+          { id: 'humano', type: 'handoff', position: { x: 0, y: 0 }, data: {} },
+        ],
+        edges: [{ id: 'a1', source: 'api', target: 'humano' }],
+      }),
+    ).erros.map((e) => e.codigo)
+
+  it('recusa variável no host', () => {
+    expect(comUrl('https://{{host}}/pedidos')).toContain('HOST_VARIAVEL')
+  })
+
+  it('recusa variável no meio do host', () => {
+    expect(comUrl('https://{{cliente}}.exemplo.com/x')).toContain('HOST_VARIAVEL')
+  })
+
+  it('recusa variável na porta', () => {
+    expect(comUrl('https://exemplo.com:{{porta}}/x')).toContain('HOST_VARIAVEL')
+  })
+
+  it('recusa variável no esquema', () => {
+    expect(comUrl('{{base}}/pedidos')).toContain('HOST_VARIAVEL')
+  })
+
+  it('aceita variável no caminho', () => {
+    expect(comUrl('https://exemplo.com/pedido/{{codigo}}')).not.toContain('HOST_VARIAVEL')
+  })
+
+  it('aceita variável na consulta', () => {
+    expect(comUrl('https://exemplo.com/busca?q={{termo}}')).not.toContain('HOST_VARIAVEL')
+  })
+
+  it('aceita URL sem variável nenhuma', () => {
+    expect(comUrl('https://exemplo.com/x')).toEqual([])
   })
 })

@@ -7,7 +7,7 @@ import {
   type NoPergunta,
   type Opcao,
 } from '../flow/schema'
-import { interpolar, normalizar } from './interpolar'
+import { comoCabecalho, comoJson, comoUrl, interpolar, normalizar } from './interpolar'
 import type { Acao, Entrada, Resultado, Sessao } from './types'
 
 /** Na terceira vez que o motor não entende, a conversa vai para uma pessoa. */
@@ -215,12 +215,15 @@ function avancar(
         acoes.push({
           tipo: 'chamar_http',
           metodo: no.data.metodo,
-          url: interpolar(no.data.url, s.vars),
+          // Cada campo escapa do jeito da estrutura em que ele cai. O que a
+          // pessoa digitou é entrada de fora: sem isso, ela deixa de preencher
+          // um campo e passa a escrever a requisição.
+          url: interpolar(no.data.url, s.vars, comoUrl),
           cabecalhos: no.data.cabecalhos.map((c) => ({
             chave: c.chave,
-            valor: interpolar(c.valor, s.vars),
+            valor: interpolar(c.valor, s.vars, comoCabecalho),
           })),
-          corpo: interpolar(no.data.corpo, s.vars),
+          corpo: interpolar(no.data.corpo, s.vars, comoJson),
           mapear: no.data.mapear,
           aoFalhar: no.data.aoFalhar,
         })

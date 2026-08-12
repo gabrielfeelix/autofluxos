@@ -82,12 +82,16 @@ export async function executarComEfeitos(
         }
       }
 
-      // `aoFalhar: 'seguir'` reentra sem valores: a conversa continua e as
-      // variáveis mapeadas ficam vazias, que é como o produto já trata
-      // variável ausente em qualquer texto.
+      // `aoFalhar: 'seguir'`: a conversa continua e as variáveis mapeadas ficam
+      // vazias, que é como o produto já trata variável ausente em qualquer
+      // texto. Zerar explicitamente importa — sem isso, uma segunda chamada que
+      // falha deixaria o valor da primeira em pé, e a mensagem para o cliente
+      // mostraria dado velho como se fosse fresco.
       const seguinte = executar(fluxo, resultado.sessao, {
         tipo: 'http_respondeu',
-        valores: resposta.ok ? resposta.valores : {},
+        valores: resposta.ok
+          ? resposta.valores
+          : Object.fromEntries(chamadaHttp.mapear.map((m) => [m.variavel, ''])),
       })
 
       resultado = {

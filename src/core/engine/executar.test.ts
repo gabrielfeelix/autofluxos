@@ -402,3 +402,89 @@ describe('nó de API', () => {
     expect(textos(r.acoes)).toContain('Seu pedido está .')
   })
 })
+
+describe('o que a pessoa digita não pode escrever a requisição', () => {
+  const p2 = { x: 0, y: 0 }
+
+  const fluxoCom = (dataDoHttp: Record<string, unknown>): Fluxo =>
+    fluxoSchema.parse({
+      inicio: 'chama',
+      nodes: [
+        { id: 'chama', type: 'http', position: p2, data: dataDoHttp },
+        { id: 'humano', type: 'handoff', position: p2, data: {} },
+      ],
+      edges: [{ id: 'a1', source: 'chama', target: 'humano' }],
+    })
+
+  const chamadaDe = (fluxo: Fluxo, vars: Record<string, string>) => {
+    const r = executar(fluxo, { ...sessaoNova(), vars }, { tipo: 'inicio' })
+    const acao = r.acoes[0]
+    if (acao?.tipo !== 'chamar_http') throw new Error('esperava chamar_http')
+    return acao
+  }
+
+  it('resposta com aspas não acrescenta campo ao corpo JSON', () => {
+    const fluxo = fluxoCom({
+      metodo: 'POST',
+      url: 'https://e.com',
+      corpo: '{"nome": "{{nome}}"}',
+    })
+
+    // A injeção: fechar a string e abrir um campo novo.
+    const acao = chamadaDe(fluxo, { nome: 'x", "aprovado": true, "y": "z' })
+
+    const enviado = JSON.parse(acao.corpo) as Record<string, unknown>
+    expect(Object.keys(enviado)).toEqual(['nome'])
+    expect(enviado.aprovado).toBeUndefined()
+    expect(enviado.nome).toBe('x", "aprovado": true, "y": "z')
+  })
+
+  it('resposta com quebra de linha não quebra o corpo JSON', () => {
+    const fluxo = fluxoCom({ metodo: 'POST', url: 'https://e.com', corpo: '{"nome": "{{nome}}"}' })
+    const acao = chamadaDe(fluxo, { nome: 'João\nSilva' })
+
+    expect(() => JSON.parse(acao.corpo)).not.toThrow()
+    expect((JSON.parse(acao.corpo) as { nome: string }).nome).toBe('João\nSilva')
+  })
+
+  it('resposta com & não acrescenta parâmetro na URL', () => {
+    const fluxo = fluxoCom({ url: 'https://e.com/busca?q={{termo}}&fonte=bot' })
+    const acao = chamadaDe(fluxo, { termo: 'x&admin=1' })
+
+    const url = new URL(acao.url)
+    expect(url.searchParams.get('admin')).toBeNull()
+    expect(url.searchParams.get('q')).toBe('x&admin=1')
+  })
+
+  it('resposta com ../ não sobe de diretório na URL', () => {
+    const fluxo = fluxoCom({ url: 'https://e.com/publico/{{arquivo}}' })
+    const acao = chamadaDe(fluxo, { arquivo: '../interno/segredo' })
+
+    expect(new URL(acao.url).pathname).toBe('/publico/..%2Finterno%2Fsegredo')
+  })
+
+  it('resposta com quebra de linha não cria cabeçalho novo', () => {
+    const fluxo = fluxoCom({
+      url: 'https://e.com',
+      cabecalhos: [{ chave: 'x-lead', valor: '{{nome}}' }],
+    })
+    const acao = chamadaDe(fluxo, { nome: 'ana\r\nx-admin: 1' })
+
+    expect(acao.cabecalhos[0]?.valor).not.toContain('\r')
+    expect(acao.cabecalhos[0]?.valor).not.toContain('\n')
+  })
+
+  it('mensagem comum continua sem escapar nada', () => {
+    const fluxo = fluxoSchema.parse({
+      inicio: 'diz',
+      nodes: [
+        { id: 'diz', type: 'mensagem', position: p2, data: { texto: 'Oi {{nome}}!' } },
+        { id: 'humano', type: 'handoff', position: p2, data: {} },
+      ],
+      edges: [{ id: 'a1', source: 'diz', target: 'humano' }],
+    })
+
+    const r = executar(fluxo, { ...sessaoNova(), vars: { nome: 'João "Jô" & Cia' } }, { tipo: 'inicio' })
+    expect(textos(r.acoes)).toContain('Oi João "Jô" & Cia!')
+  })
+})
