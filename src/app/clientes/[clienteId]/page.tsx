@@ -40,6 +40,20 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           <span className="text-[13px] font-bold text-accent">Ver leads →</span>
         </Link>
 
+        <Link
+          href={`/clientes/${cliente.id}/conexoes`}
+          className="app-card app-card-interactive mb-[18px] flex min-h-[60px] items-center gap-4 px-6 py-4"
+        >
+          <div>
+            <p className="text-[13.5px] font-bold">Credenciais</p>
+            <p className="mt-0.5 text-[12px] text-dim">
+              As chaves que os blocos de API usam para falar com os sistemas deste cliente
+            </p>
+          </div>
+          <span className="flex-1" />
+          <span className="text-[13px] font-bold text-accent">Abrir →</span>
+        </Link>
+
         <Suspense fallback={<Esqueleto />}>
           <Conteudo cliente={cliente} />
         </Suspense>

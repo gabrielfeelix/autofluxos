@@ -150,6 +150,18 @@ o sétimo, o oitavo, o vigésimo — é assim que MVP morre. Cada nó novo custa
 componente visual + form de edição + execução no motor + teste + migração dos
 fluxos que já existem.
 
+> **O sétimo nó entrou em 12/ago/2026: `http`.** O teste desta seção é "isso é um
+> nó/configuração, ou é um cliente específico?" — e uma URL configurável não
+> carrega o nome de ninguém. Ele existe porque a alternativa era um conector
+> nomeado por sistema (HubSpot, Omie, Bling), e aí sim o `src/` começaria a
+> colecionar cliente. Com um bloco genérico, Sheets (via Apps Script), qualquer
+> webhook e o n8n/Make/Zapier inteiro entram sem código novo.
+>
+> O custo previsto nesta seção foi pago: componente visual, form, execução,
+> teste. O que ele **não** custou foi arquitetura — o nó de IA já tinha aberto o
+> caminho de "descreve o efeito, alguém de fora resolve", e o `http` só mudou de
+> nome nesse mesmo trilho. Desenho em [NO-API.md](NO-API.md).
+
 ### 5. Fluxo tem versão, e a sessão fica presa numa
 
 `flows` (o nome) → `flow_versions` (o grafo, imutável, numerada).

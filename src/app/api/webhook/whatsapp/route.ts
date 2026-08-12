@@ -17,6 +17,20 @@ import { receberMensagem } from '@/server/receber-mensagem'
  * `messages.wa_message_id`.
  */
 
+/**
+ * O `after()` continua rodando depois da resposta, mas dentro do orçamento de
+ * tempo da função — que na Vercel é curto por padrão.
+ *
+ * Sem isto, um parceiro lento no nó de API estoura o orçamento antes do nosso
+ * próprio timeout de 10s por chamada: a função é morta no meio, o handoff nunca
+ * é gravado, e a sessão fica presa em `aguardando_http`. Como a mensagem já foi
+ * deduplicada, a Meta não reenvia e a pessoa fica sem resposta nenhuma.
+ *
+ * 60s cobre o pior caso realista: três saltos de redirecionamento no timeout
+ * cheio, mais o banco.
+ */
+export const maxDuration = 60
+
 export async function GET(req: Request) {
   const parametros = new URL(req.url).searchParams
   const modo = parametros.get('hub.mode')

@@ -4,11 +4,17 @@ import {
   LIMITE_BOTOES,
   LIMITE_LISTA,
   LIMITE_ROTULO,
+  METODOS,
   OPERADORES,
+  type Cabecalho,
+  type Mapeamento,
   type No,
   type Opcao,
 } from '@/core/flow/schema'
 import { NOMES } from './nos'
+
+/** O que o painel precisa saber de uma credencial: o nome, e nada mais. */
+export type ConexaoDoCliente = { id: string; nome: string; tipo: string }
 
 /**
  * O formulário do bloco selecionado. Tudo que é específico de um cliente é
@@ -18,6 +24,7 @@ export function Painel({
   no,
   ehInicio,
   variaveis,
+  conexoes = [],
   aoMudarDados,
   aoDefinirInicio,
   aoApagar,
@@ -25,6 +32,7 @@ export function Painel({
   no: No | null
   ehInicio: boolean
   variaveis: string[]
+  conexoes?: ConexaoDoCliente[]
   aoMudarDados: (dados: Record<string, unknown>) => void
   aoDefinirInicio: () => void
   aoApagar: () => void
@@ -159,6 +167,85 @@ export function Painel({
         </>
       )}
 
+      {no.type === 'http' && (
+        <>
+          <label className="block">
+            <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">Método</span>
+            <select
+              value={no.data.metodo}
+              onChange={(e) => aoMudarDados({ metodo: e.target.value })}
+              className="app-field px-3 py-2.5 text-[13px]"
+            >
+              {METODOS.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <Linha
+            rotulo="Endereço"
+            valor={no.data.url}
+            dica="precisa começar com https://. aceita {{variavel}} no meio"
+            aoMudar={(url) => aoMudarDados({ url })}
+          />
+
+          {no.data.metodo === 'POST' && (
+            <Area rotulo="Corpo (JSON)" valor={no.data.corpo} aoMudar={(corpo) => aoMudarDados({ corpo })} />
+          )}
+
+          <Cabecalhos
+            cabecalhos={no.data.cabecalhos}
+            aoMudar={(cabecalhos) => aoMudarDados({ cabecalhos })}
+          />
+
+          <Mapeamentos mapear={no.data.mapear} aoMudar={(mapear) => aoMudarDados({ mapear })} />
+
+          <label className="block">
+            <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+              Credencial
+            </span>
+            <select
+              value={no.data.conexaoId ?? ''}
+              onChange={(e) =>
+                aoMudarDados({ conexaoId: e.target.value === '' ? undefined : e.target.value })
+              }
+              className="app-field px-3 py-2.5 text-[13px]"
+            >
+              <option value="">Nenhuma — o endereço não pede chave</option>
+              {conexoes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nome}
+                </option>
+              ))}
+            </select>
+            <span className="mt-1 block text-[10.5px] leading-4 text-dim">
+              {conexoes.length === 0
+                ? 'Nenhuma credencial cadastrada neste cliente ainda. Cadastre em Credenciais, na tela do cliente.'
+                : 'O valor fica no cofre. O fluxo guarda só a referência, então trocar a chave depois não exige republicar.'}
+            </span>
+          </label>
+
+          <label className="block">
+            <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">Se falhar</span>
+            <select
+              value={no.data.aoFalhar}
+              onChange={(e) => aoMudarDados({ aoFalhar: e.target.value })}
+              className="app-field px-3 py-2.5 text-[13px]"
+            >
+              <option value="humano">passa para uma pessoa</option>
+              <option value="seguir">continua a conversa mesmo assim</option>
+            </select>
+          </label>
+
+          <p className="rounded-[10px] border border-cyan-400/20 bg-cyan-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-cyan-300">
+            A aba Testar chama este endereço <strong>de verdade</strong>. Os disparos vindos dali
+            levam o cabeçalho <code className="font-mono">X-AutoFluxos-Teste: 1</code>.
+          </p>
+        </>
+      )}
+
       {variaveis.length > 0 && (
         <div className="border-t border-white/[0.06] pt-3">
           <p className="text-[10px] font-bold tracking-[0.05em] text-muted uppercase">Variáveis deste fluxo</p>
@@ -278,6 +365,130 @@ function Opcoes({ opcoes, aoMudar }: { opcoes: Opcao[]; aoMudar: (opcoes: Opcao[
       </p>
       <p className="text-[10.5px] leading-4 text-dim">
         Cada opção tem a própria saída no bloco. Ligue todas — o validador cobra.
+      </p>
+    </div>
+  )
+}
+
+function Cabecalhos({
+  cabecalhos,
+  aoMudar,
+}: {
+  cabecalhos: Cabecalho[]
+  aoMudar: (c: Cabecalho[]) => void
+}) {
+  return (
+    <div>
+      <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">Cabeçalhos</span>
+
+      <div className="space-y-1.5">
+        {cabecalhos.map((c, i) => (
+          <div key={i} className="flex gap-1.5">
+            <input
+              value={c.chave}
+              placeholder="nome"
+              onChange={(e) => {
+                const copia = [...cabecalhos]
+                copia[i] = { ...c, chave: e.target.value }
+                aoMudar(copia)
+              }}
+              className="app-field min-w-0 flex-1 px-3 py-2 text-[12.5px]"
+            />
+            <input
+              value={c.valor}
+              placeholder="valor"
+              onChange={(e) => {
+                const copia = [...cabecalhos]
+                copia[i] = { ...c, valor: e.target.value }
+                aoMudar(copia)
+              }}
+              className="app-field min-w-0 flex-1 px-3 py-2 text-[12.5px]"
+            />
+            <button
+              onClick={() => aoMudar(cabecalhos.filter((_, j) => j !== i))}
+              title="remover cabeçalho"
+              className="flex size-8 shrink-0 items-center justify-center rounded-lg text-xs text-dim transition hover:bg-rose-400/[0.08] hover:text-rose-300"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <button
+        onClick={() => aoMudar([...cabecalhos, { chave: '', valor: '' }])}
+        className="mt-2 w-full rounded-lg border border-dashed border-white/[0.12] py-2 text-xs font-semibold text-muted transition hover:border-accent/40 hover:text-accent"
+      >
+        + adicionar cabeçalho
+      </button>
+
+      <p className="mt-2 text-[10.5px] leading-4 text-dim">
+        Não coloque token aqui: publicar tira uma foto do fluxo que o banco se recusa a alterar, e o
+        valor ficaria guardado nela. O cofre de segredos ainda não existe — enquanto isso, use
+        endereço que já traz a chave (Apps Script, n8n) ou passe por um intermediário.
+      </p>
+    </div>
+  )
+}
+
+function Mapeamentos({
+  mapear,
+  aoMudar,
+}: {
+  mapear: Mapeamento[]
+  aoMudar: (m: Mapeamento[]) => void
+}) {
+  return (
+    <div>
+      <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+        Guardar da resposta
+      </span>
+
+      <div className="space-y-1.5">
+        {mapear.map((m, i) => (
+          <div key={i} className="flex gap-1.5">
+            <input
+              value={m.variavel}
+              placeholder="variável"
+              onChange={(e) => {
+                const copia = [...mapear]
+                copia[i] = { ...m, variavel: e.target.value }
+                aoMudar(copia)
+              }}
+              className="app-field min-w-0 flex-1 px-3 py-2 text-[12.5px]"
+            />
+            <input
+              value={m.caminho}
+              placeholder="pedido.status"
+              onChange={(e) => {
+                const copia = [...mapear]
+                copia[i] = { ...m, caminho: e.target.value }
+                aoMudar(copia)
+              }}
+              className="app-field min-w-0 flex-1 px-3 py-2 font-mono text-[12.5px]"
+            />
+            <button
+              onClick={() => aoMudar(mapear.filter((_, j) => j !== i))}
+              title="remover"
+              className="flex size-8 shrink-0 items-center justify-center rounded-lg text-xs text-dim transition hover:bg-rose-400/[0.08] hover:text-rose-300"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <button
+        onClick={() => aoMudar([...mapear, { variavel: '', caminho: '' }])}
+        className="mt-2 w-full rounded-lg border border-dashed border-white/[0.12] py-2 text-xs font-semibold text-muted transition hover:border-accent/40 hover:text-accent"
+      >
+        + guardar um campo
+      </button>
+
+      <p className="mt-2 text-[10.5px] leading-4 text-dim">
+        Caminho com ponto e índice: <code className="font-mono">pedido.status</code>,{' '}
+        <code className="font-mono">itens.0.nome</code>. O que você guardar vira coluna na tela de
+        leads sozinho.
       </p>
     </div>
   )

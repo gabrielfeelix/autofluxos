@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { Opcao } from '../flow/schema'
+import type { AoFalhar, Cabecalho, Mapeamento, Metodo, Opcao } from '../flow/schema'
 
 /**
  * `Sessao` e `Entrada` são schemas Zod, não só tipos: eles atravessam a
@@ -15,6 +15,8 @@ export const statusSessaoSchema = z.enum([
   'ativa',
   /** parada num nó de IA, esperando a resposta do modelo */
   'aguardando_ia',
+  /** parada num nó de API, esperando a resposta da chamada */
+  'aguardando_http',
   /** o humano assumiu — o bot fica calado */
   'humano',
   /** o fluxo chegou ao fim */
@@ -47,6 +49,14 @@ export const entradaSchema = z.discriminatedUnion('tipo', [
   z.object({ tipo: z.literal('midia'), formato: z.string().min(1) }),
   /** o servidor chamou o modelo e trouxe a resposta de volta */
   z.object({ tipo: z.literal('ia_respondeu'), texto: z.string() }),
+  /**
+   * O servidor chamou a API e trouxe os valores **já extraídos**. Quem entende
+   * de JSON é o resolvedor; o motor só sabe manipular pares de nome e texto.
+   */
+  z.object({
+    tipo: z.literal('http_respondeu'),
+    valores: z.record(z.string(), z.string()),
+  }),
 ])
 
 export type StatusSessao = z.infer<typeof statusSessaoSchema>
@@ -70,6 +80,29 @@ export type Acao =
   | { tipo: 'salvar_campo'; campo: string; valor: string }
   /** chamar o modelo e reentrar no motor com `{ tipo: 'ia_respondeu' }` */
   | { tipo: 'chamar_ia'; instrucao: string }
+  /**
+   * Chamar uma API e reentrar no motor com `{ tipo: 'http_respondeu' }`.
+   *
+   * `url`, `corpo` e os valores dos cabeçalhos já vêm interpolados com as
+   * variáveis da sessão. O que **não** vem resolvido é `{{segredo.x}}` — isso é
+   * trabalho do servidor, e de propósito: segredo que entrasse aqui entraria na
+   * sessão, e a sessão viaja para o navegador no simulador.
+   */
+  | {
+      tipo: 'chamar_http'
+      metodo: Metodo
+      url: string
+      cabecalhos: Cabecalho[]
+      corpo: string
+      mapear: Mapeamento[]
+      aoFalhar: AoFalhar
+      /**
+       * Referência à credencial, nunca a credencial. O motor não sabe o que há
+       * do outro lado deste id, e é por isso que segredo nenhum consegue
+       * entrar na sessão — que viaja para o navegador no simulador.
+       */
+      conexaoId?: string
+    }
   | { tipo: 'transferir_humano'; motivo: string }
   | { tipo: 'encerrar' }
 

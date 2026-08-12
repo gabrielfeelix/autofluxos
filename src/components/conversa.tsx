@@ -23,11 +23,17 @@ const novaChave = () => ++sequencia
  */
 export function Conversa({
   fluxo,
+  fluxoId,
   contextoNegocio = '',
   iaHabilitada = false,
   aoMudarSessao,
 }: {
   fluxo: Fluxo
+  /**
+   * Qual automação é esta. O servidor usa para descobrir de quem é o fluxo e
+   * quais credenciais ele pode usar — a identidade não viaja pelo corpo.
+   */
+  fluxoId?: string
   /** O que o cliente escreveu sobre o negócio: é o que fecha o escopo da IA. */
   contextoNegocio?: string
   /** Espelha o plano da automação. Sem isto, o bloco de IA não chama modelo. */
@@ -66,6 +72,7 @@ export function Conversa({
           fluxo,
           sessao: sessaoRef.current,
           entrada,
+          fluxoId,
           contextoNegocio,
           iaHabilitada,
           // O que já foi dito, para a IA não repetir pergunta respondida.
@@ -88,6 +95,14 @@ export function Conversa({
       setStatus(nova.status)
       aoMudarSessao?.(nova)
       aplicar(acoes, nova)
+    } catch {
+      // Sem isto a falha some: a requisição pode morrer por rede, ou por a rota
+      // estourar o tempo esperando uma API lenta. Ficar girando em silêncio é
+      // pior do que dizer o que houve.
+      setItens((atual) => [
+        ...atual,
+        { chave: novaChave(), de: 'sistema', texto: 'a requisição não completou', alerta: true },
+      ])
     } finally {
       setOcupado(false)
     }
@@ -112,6 +127,17 @@ export function Conversa({
           break
         case 'chamar_ia':
           novos.push({ chave, de: 'sistema', texto: `chamaria a IA — "${acao.instrucao}"` })
+          break
+        case 'chamar_http':
+          // O caminho normal é o resolvedor já ter trocado isto pelos
+          // `salvar_campo` que vieram da resposta. Chegar aqui significa que
+          // ninguém executou — mostrar é melhor do que sumir com o evento.
+          novos.push({
+            chave,
+            de: 'sistema',
+            texto: `a chamada para ${acao.url} não foi executada`,
+            alerta: true,
+          })
           break
         case 'transferir_humano':
           novos.push({ chave, de: 'sistema', texto: `passou para um humano — ${acao.motivo}`, alerta: true })
@@ -170,10 +196,18 @@ export function Conversa({
     fimDaLista.current?.scrollIntoView({ behavior: 'smooth' })
   }, [itens])
 
-  const viva = status === 'ativa' || status === 'aguardando_ia'
+  const viva = status === 'ativa' || status === 'aguardando_ia' || status === 'aguardando_http'
+  const temApi = fluxo.nodes.some((n) => n.type === 'http')
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      {temApi && (
+        <p className="mx-3.5 mt-3.5 rounded-[11px] border border-cyan-400/20 bg-cyan-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-cyan-300">
+          Este fluxo chama uma API. O teste dispara <strong>de verdade</strong> — testar cinco vezes
+          grava cinco vezes no sistema do cliente.
+        </p>
+      )}
+
       <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3.5">
         {itens.map((item) => (
           <Bolha key={item.chave} item={item} pendentes={pendentes} ocupado={ocupado} aoEscolher={enviar} />

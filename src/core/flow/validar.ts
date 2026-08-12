@@ -9,6 +9,15 @@ import {
 } from './schema'
 import { variaveisCitadas } from '../engine/interpolar'
 
+/**
+ * `{{segredo.nome}}` — o namespace reservado para o cofre da v2.
+ *
+ * Ele atravessa o motor sem ser tocado (o regex de `interpolar()` não casa com
+ * ponto), então hoje sairia literal na requisição. Por isso o aviso: é erro de
+ * quem desenhou, mas não trava publicação de fluxo que não depende disso.
+ */
+const CITA_SEGREDO = /\{\{\s*segredo\.[a-zA-Z][a-zA-Z0-9_]*\s*\}\}/
+
 export type Problema = {
   codigo: string
   mensagem: string
@@ -37,6 +46,16 @@ export type Capacidades = {
    * é o erro barulhento. O contrário seria vender IA por descuido.
    */
   iaHabilitada?: boolean
+  /**
+   * Ids das conexões que existem para este cliente.
+   *
+   * `undefined` significa "não sei" e o validador não cobra — é o caso do
+   * editor validando enquanto digita, sem ter ido ao banco. Quando a lista vem,
+   * bloco apontando para conexão que não existe mais vira impedimento: publicar
+   * assim entrega um fluxo que chama sem credencial, e a conversa morre em
+   * handoff sem ninguém entender por quê.
+   */
+  conexoes?: string[]
 }
 
 /**
@@ -48,7 +67,7 @@ export type Capacidades = {
  * na memória de quem desenhou o fluxo.
  */
 export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoValidacao {
-  const { iaHabilitada = false } = capacidades
+  const { iaHabilitada = false, conexoes } = capacidades
   const erros: Problema[] = []
   const avisos: Problema[] = []
 
@@ -130,6 +149,15 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
         codigo: 'IA_NAO_CONTRATADA',
         mensagem:
           'Este bloco usa IA, que é um plano à parte e não está contratado para este cliente.',
+        noId: no.id,
+      })
+    }
+
+    if (no.type === 'http' && no.data.conexaoId && conexoes && !conexoes.includes(no.data.conexaoId)) {
+      erros.push({
+        codigo: 'CONEXAO_INEXISTENTE',
+        mensagem:
+          'Este bloco usa uma credencial que não existe mais neste cliente. Escolha outra, ou tire a credencial.',
         noId: no.id,
       })
     }
@@ -250,7 +278,143 @@ function conferirConteudo(no: No, erros: Problema[]): void {
         })
       }
       break
+
+    case 'http': {
+      if (vazio(no.data.url)) {
+        erros.push({ codigo: 'URL_VAZIA', mensagem: 'Este bloco não diz qual endereço chamar.', noId: no.id })
+      } else if (temVariavelNoHost(no.data.url)) {
+        erros.push({
+          codigo: 'HOST_VARIAVEL',
+          mensagem:
+            'O endereço do servidor não pode vir de {{variavel}}. As variáveis são o que a pessoa digita no WhatsApp — quem conversa escolheria para onde a chamada vai. Use variável só depois da primeira barra.',
+          noId: no.id,
+        })
+      } else if (!no.data.url.trim().startsWith('https://')) {
+        // Exigir o `https://` **literal** no começo é de propósito, e o efeito
+        // colateral é que a URL não pode começar com `{{variavel}}`.
+        //
+        // Isso não é limitação a corrigir: as variáveis da sessão vêm do que a
+        // pessoa digita no WhatsApp. Se o começo da URL saísse delas, quem está
+        // conversando escolheria para onde o nosso servidor faz requisição. A
+        // recusa de endereço interno (`server/efeitos/rede.ts`) ainda barraria
+        // rede privada, mas um estranho passaria a apontar o servidor para
+        // qualquer host externo que quisesse.
+        //
+        // Se um dia fizer falta ter endereço-base por cliente, o caminho é uma
+        // lista de hosts permitidos — não afrouxar isto aqui.
+        erros.push({
+          codigo: 'URL_INSEGURA',
+          mensagem: 'O endereço precisa começar com https:// — o servidor recusa qualquer outro.',
+          noId: no.id,
+        })
+      }
+
+      for (const item of no.data.mapear) {
+        conferirVariavel(item.variavel, 'variável')
+        if (vazio(item.variavel)) {
+          erros.push({
+            codigo: 'VARIAVEL_INVALIDA',
+            mensagem: 'Um dos mapeamentos não diz em qual variável guardar.',
+            noId: no.id,
+          })
+        }
+        // Sem caminho, `extrair()` devolve string vazia para sempre e o fluxo
+        // publica parecendo certo — a variável só nunca é preenchida. É o tipo
+        // de defeito que só aparece com cliente conversando.
+        if (vazio(item.caminho)) {
+          erros.push({
+            codigo: 'CAMINHO_VAZIO',
+            mensagem: `O mapeamento de "${item.variavel || 'uma variável'}" não diz qual campo da resposta ler.`,
+            noId: no.id,
+          })
+        }
+      }
+
+      if (no.data.metodo === 'POST' && !vazio(no.data.corpo)) {
+        const problema = conferirCorpo(no.data.corpo)
+        if (problema === 'VARIAVEL_FORA_DE_ASPAS') {
+          erros.push({
+            codigo: 'VARIAVEL_FORA_DE_ASPAS',
+            mensagem:
+              'Toda {{variavel}} no corpo precisa estar entre aspas: o que a conversa coleta é sempre texto, e sem as aspas o JSON quebra na hora do envio.',
+            noId: no.id,
+          })
+        } else if (problema === 'CORPO_INVALIDO') {
+          erros.push({
+            codigo: 'CORPO_INVALIDO',
+            mensagem: 'O corpo não é JSON válido.',
+            noId: no.id,
+          })
+        }
+      }
+      break
+    }
   }
+}
+
+/**
+ * O mesmo padrão que `interpolar()` reconhece. Precisa ser o mesmo, e não um
+ * parecido: o que este arquivo aprova é enviado depois de passar por lá, então
+ * qualquer diferença entre os dois vira corpo que publica e quebra na conversa.
+ *
+ * `{{1abc}}` é o exemplo: não é nome de variável válido, `interpolar()` não
+ * troca, e o texto sai literal na requisição. Com um regex mais frouxo aqui,
+ * isso passaria na validação.
+ */
+const VARIAVEL_NO_TEXTO = /\{\{\s*[a-zA-Z][a-zA-Z0-9_]*\s*\}\}/g
+
+/**
+ * Confere o corpo do POST sabendo que as variáveis ainda não viraram nada.
+ *
+ * Duas regras, e a segunda é a que salva de um bug que só aparece com cliente
+ * real conversando:
+ *
+ * 1. **Toda variável tem que estar entre aspas.** As variáveis da sessão são
+ *    sempre texto (`Record<string, string>`), então `{"nome": {{nome}}}` vira
+ *    `{"nome": João}` no envio — JSON quebrado. Variável fora de aspas num
+ *    corpo JSON é sempre engano, nunca intenção.
+ * 2. **Com as aspas garantidas, trocar por `1` e tentar `JSON.parse`.** Como
+ *    toda variável está dentro de uma string, a troca não muda a estrutura, e o
+ *    que sobrar de errado é erro de sintaxe de verdade.
+ */
+function conferirCorpo(corpo: string): 'CORPO_INVALIDO' | 'VARIAVEL_FORA_DE_ASPAS' | null {
+  const dentroDeTexto = mapaDeTexto(corpo)
+
+  for (const achado of corpo.matchAll(VARIAVEL_NO_TEXTO)) {
+    if (achado.index !== undefined && !dentroDeTexto[achado.index]) {
+      return 'VARIAVEL_FORA_DE_ASPAS'
+    }
+  }
+
+  try {
+    JSON.parse(corpo.replace(VARIAVEL_NO_TEXTO, '1'))
+    return null
+  } catch {
+    return 'CORPO_INVALIDO'
+  }
+}
+
+/** Para cada posição do texto, se ela está dentro de uma string JSON. */
+function mapaDeTexto(corpo: string): boolean[] {
+  const dentro: boolean[] = []
+  let emTexto = false
+  let escapado = false
+
+  for (let i = 0; i < corpo.length; i++) {
+    dentro[i] = emTexto
+
+    if (escapado) {
+      escapado = false
+      continue
+    }
+    if (corpo[i] === '\\') {
+      escapado = true
+      continue
+    }
+    if (corpo[i] === '"') emTexto = !emTexto
+  }
+
+  return dentro
 }
 
 function alcancaveisA_partirDe(fluxo: Fluxo): Set<string> {
@@ -276,6 +440,9 @@ function conferirVariaveis(fluxo: Fluxo): Problema[] {
     if (no.type === 'pergunta' && no.data.salvarEm) definidas.add(no.data.salvarEm)
     if (no.type === 'salvar-campo') definidas.add(no.data.campo)
     if (no.type === 'ia' && no.data.salvarEm) definidas.add(no.data.salvarEm)
+    if (no.type === 'http') {
+      for (const item of no.data.mapear) definidas.add(item.variavel)
+    }
   }
 
   const problemas: Problema[] = []
@@ -290,6 +457,20 @@ function conferirVariaveis(fluxo: Fluxo): Problema[] {
       }
     }
   }
+
+  for (const no of fluxo.nodes) {
+    if (no.type !== 'http') continue
+    const textos = [no.data.url, no.data.corpo, ...no.data.cabecalhos.map((c) => c.valor)]
+    if (textos.some((t) => CITA_SEGREDO.test(t))) {
+      problemas.push({
+        codigo: 'SEGREDO_INEXISTENTE',
+        mensagem:
+          'Este bloco usa {{segredo.…}}, e o cofre de segredos ainda não existe. Hoje isso sai literal na chamada.',
+        noId: no.id,
+      })
+    }
+  }
+
   return problemas
 }
 
@@ -307,5 +488,37 @@ function variaveisDoNo(no: No): string[] {
       return variaveisCitadas(no.data.mensagem)
     case 'condicao':
       return [no.data.variavel]
+    case 'http':
+      return [
+        ...variaveisCitadas(no.data.url),
+        ...variaveisCitadas(no.data.corpo),
+        ...no.data.cabecalhos.flatMap((c) => variaveisCitadas(c.valor)),
+      ]
   }
+}
+
+/**
+ * A variável está no pedaço da URL que decide **para qual servidor** a chamada
+ * vai (esquema, usuário, host, porta)?
+ *
+ * Exigir `https://` literal já barrava `{{base}}/x`, mas deixava passar
+ * `https://{{host}}/x` — que é o mesmo problema com outra roupa: o destino
+ * saindo do que a pessoa digitou no WhatsApp. A recusa de endereço interno do
+ * servidor ainda barraria rede privada, mas quem conversa passaria a apontar a
+ * nossa infraestrutura para qualquer host externo que quisesse.
+ *
+ * Depois da primeira barra é caminho e consulta, e ali variável é o uso normal
+ * e desejado — `/pedido/{{codigo}}`.
+ */
+function temVariavelNoHost(url: string): boolean {
+  const limpa = url.trim()
+  const depoisDoEsquema = limpa.indexOf('://')
+
+  // Sem `://`, a URL inteira ainda é candidata a host. `URL_INSEGURA` cobre o
+  // caso, mas variável aqui também é problema — e este erro explica melhor.
+  const inicio = depoisDoEsquema === -1 ? 0 : depoisDoEsquema + 3
+  const fim = limpa.slice(inicio).search(/[/?#]/)
+  const autoridade = fim === -1 ? limpa.slice(inicio) : limpa.slice(inicio, inicio + fim)
+
+  return limpa.slice(0, inicio).includes('{{') || autoridade.includes('{{')
 }

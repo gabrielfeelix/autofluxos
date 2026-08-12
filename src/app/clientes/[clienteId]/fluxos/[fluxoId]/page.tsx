@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { Editor } from '@/components/editor/editor'
 import { acharCliente } from '@/server/repos/clientes'
+import { listarConexoes } from '@/server/repos/conexoes'
 import { acharFluxo, acharVersao } from '@/server/repos/fluxos'
 
 export const dynamic = 'force-dynamic'
@@ -29,7 +30,11 @@ export default async function Pagina({
 }) {
   const { clienteId, fluxoId } = await params
 
-  const [cliente, fluxo] = await Promise.all([acharCliente(clienteId), acharFluxo(fluxoId)])
+  const [cliente, fluxo, conexoes] = await Promise.all([
+    acharCliente(clienteId),
+    acharFluxo(fluxoId),
+    listarConexoes(clienteId),
+  ])
   if (!cliente || !fluxo || fluxo.clienteId !== cliente.id) notFound()
 
   const publicada = fluxo.versaoPublicadaId ? await acharVersao(fluxo.versaoPublicadaId) : null
@@ -44,6 +49,7 @@ export default async function Pagina({
       inicial={fluxo.rascunho}
       iaHabilitada={fluxo.iaHabilitada}
       contextoNegocio={cliente.contextoNegocio}
+      conexoes={conexoes}
       publicadaInicial={
         publicada
           ? { versao: publicada.versao, quando: quando(publicada.publicadoEm), grafo: publicada.grafo }

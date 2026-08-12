@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { canalCloudApi } from '@/channels/cloud-api'
 import type { Canal } from '@/channels/types'
 import { sessaoNova, type Acao, type Entrada } from '@/core/engine/types'
-import { executarComIa, type OpcoesDeIa } from './ia/conduzir'
+import { executarComEfeitos, type OpcoesDeEfeitos } from './efeitos/resolver'
 import { escolherModelo } from './ia/modelo'
 import { acharCliente } from './repos/clientes'
 import { acharFluxo, acharVersao } from './repos/fluxos'
@@ -161,7 +161,7 @@ async function tratarUma(
 
   // Conversa nova começa pelo início do fluxo. A primeira mensagem da pessoa
   // é o gatilho, não uma resposta — ela ainda não foi perguntada nada.
-  const resultado = await executarComIa(
+  const resultado = await executarComEfeitos(
     versao.grafo,
     salva.sessao,
     conversaNova ? { tipo: 'inicio' } : entrada,
@@ -183,8 +183,13 @@ async function prepararIa(
   contatoId: string,
   grafo: { nodes: { type: string }[] },
   perguntaDaPessoa: string | null,
-): Promise<OpcoesDeIa> {
-  const vazio: OpcoesDeIa = { modelo: null, contextoNegocio: '' }
+): Promise<OpcoesDeEfeitos> {
+  const vazio: OpcoesDeEfeitos = {
+    modelo: null,
+    contextoNegocio: '',
+    origem: 'whatsapp',
+    clienteId: canalSalvo.clienteId,
+  }
   if (!grafo.nodes.some((n) => n.type === 'ia') || !canalSalvo.flowId) return vazio
 
   const [fluxo, cliente, conversa] = await Promise.all([
@@ -200,6 +205,8 @@ async function prepararIa(
 
   return {
     modelo,
+    origem: 'whatsapp',
+    clienteId: canalSalvo.clienteId,
     contextoNegocio: cliente?.contextoNegocio ?? '',
     perguntaDaPessoa: perguntaDaPessoa ?? undefined,
     historico: conversa.mensagens.map((m) => ({
@@ -245,13 +252,31 @@ async function aplicar(
         break
 
       case 'chamar_ia': {
-        // A IA é a Etapa 2 e ainda não existe. Um fluxo publicado com nó de IA
-        // travaria a conversa esperando uma resposta que nunca vem — então ela
-        // vai para uma pessoa. Nunca deixar alguém pendurado.
+        // Só chega aqui quando não há modelo disponível: automação sem o plano
+        // de IA contratado, ou sem chave no ambiente. O fluxo publicado pede
+        // uma resposta que ninguém pode dar, então a conversa vai para uma
+        // pessoa em vez de ficar pendurada esperando o que nunca vem.
         const aviso = 'Vou te passar para um atendente. Só um instante!'
         await canal.enviarTexto(contato.waId, aviso)
         await registrarSaida({ contatoId: contato.id, sessaoId, texto: aviso })
-        await registrarHandoff(sessaoId, 'fluxo pediu IA, que ainda é da Etapa 2')
+        await registrarHandoff(sessaoId, 'o fluxo pediu IA e não há modelo disponível')
+        await guardarSessao(sessaoId, {
+          noAtual: null,
+          vars: campos,
+          tentativas: 0,
+          status: 'humano',
+        })
+        break
+      }
+
+      case 'chamar_http': {
+        // O resolvedor sempre atende esta ação — inclusive quando a chamada
+        // falha, porque `aoFalhar` decide lá. Chegar aqui é defeito nosso, e
+        // entre deixar alguém pendurado e passar para uma pessoa, passa.
+        const aviso = 'Vou te passar para um atendente. Só um instante!'
+        await canal.enviarTexto(contato.waId, aviso)
+        await registrarSaida({ contatoId: contato.id, sessaoId, texto: aviso })
+        await registrarHandoff(sessaoId, 'a integração não chegou a ser executada')
         await guardarSessao(sessaoId, {
           noAtual: null,
           vars: campos,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fluxoSchema, LIMITE_LISTA, type Fluxo } from './schema'
+import { fluxoSchema, LIMITE_LISTA, noHttpSchema, type Fluxo } from './schema'
 import { validar } from './validar'
 
 const p = { x: 0, y: 0 }
@@ -248,5 +248,223 @@ describe('IA é plano à parte', () => {
   it('fluxo sem bloco de IA não é afetado pelo plano', () => {
     expect(validar(fluxoValido(), { iaHabilitada: false }).ok).toBe(true)
     expect(validar(fluxoValido(), { iaHabilitada: true }).ok).toBe(true)
+  })
+})
+
+describe('schema do nó http', () => {
+  it('nasce com os padrões certos quando só a URL é informada', () => {
+    const no = noHttpSchema.parse({
+      id: 'n1',
+      position: { x: 0, y: 0 },
+      type: 'http',
+      data: { url: 'https://exemplo.com/x' },
+    })
+
+    expect(no.data.metodo).toBe('GET')
+    expect(no.data.cabecalhos).toEqual([])
+    expect(no.data.corpo).toBe('')
+    expect(no.data.mapear).toEqual([])
+    // Falhar fechado: quem esquecer de escolher não deixa ninguém pendurado.
+    expect(no.data.aoFalhar).toBe('humano')
+  })
+
+  it('entra na união de nós, então um fluxo com ele é um fluxo válido', () => {
+    const fluxo = fluxoSchema.parse({
+      inicio: 'a',
+      nodes: [
+        { id: 'a', type: 'http', position: { x: 0, y: 0 }, data: { url: 'https://e.com' } },
+      ],
+      edges: [],
+    })
+
+    expect(fluxo.nodes[0]?.type).toBe('http')
+  })
+})
+
+describe('validação do nó de API', () => {
+  const comHttp = (data: Record<string, unknown>) =>
+    fluxoSchema.parse({
+      inicio: 'api',
+      nodes: [
+        { id: 'api', type: 'http', position: { x: 0, y: 0 }, data },
+        { id: 'humano', type: 'handoff', position: { x: 0, y: 0 }, data: {} },
+      ],
+      edges: [{ id: 'a1', source: 'api', target: 'humano' }],
+    })
+
+  const codigos = (fluxo: Fluxo) => validar(fluxo).erros.map((e) => e.codigo)
+
+  it('recusa URL vazia', () => {
+    expect(codigos(comHttp({ url: '' }))).toContain('URL_VAZIA')
+  })
+
+  it('recusa URL que não é https', () => {
+    expect(codigos(comHttp({ url: 'http://exemplo.com' }))).toContain('URL_INSEGURA')
+  })
+
+  it('aceita https', () => {
+    expect(codigos(comHttp({ url: 'https://exemplo.com' }))).not.toContain('URL_INSEGURA')
+  })
+
+  it('recusa nome de variável inválido no mapeamento', () => {
+    const fluxo = comHttp({
+      url: 'https://e.com',
+      mapear: [{ variavel: 'nome do lead', caminho: 'a' }],
+    })
+    expect(codigos(fluxo)).toContain('VARIAVEL_INVALIDA')
+  })
+
+  it('recusa POST com corpo que não é JSON', () => {
+    const fluxo = comHttp({ url: 'https://e.com', metodo: 'POST', corpo: '{ nome: }' })
+    expect(codigos(fluxo)).toContain('CORPO_INVALIDO')
+  })
+
+  it('aceita POST com corpo que usa {{variavel}} entre aspas', () => {
+    const fluxo = comHttp({
+      url: 'https://e.com',
+      metodo: 'POST',
+      corpo: '{"nome": "{{nome}}", "assunto": "quero {{assunto}} agora"}',
+    })
+    expect(codigos(fluxo)).not.toContain('CORPO_INVALIDO')
+    expect(codigos(fluxo)).not.toContain('VARIAVEL_FORA_DE_ASPAS')
+  })
+
+  it('recusa variável fora de aspas — vira JSON quebrado no envio', () => {
+    // `{"idade": {{idade}}}` parece válido e não é: as variáveis da sessão são
+    // sempre texto, então isso vira `{"idade": 34 anos}` na hora de enviar.
+    const fluxo = comHttp({
+      url: 'https://e.com',
+      metodo: 'POST',
+      corpo: '{"idade": {{idade}}}',
+    })
+    expect(codigos(fluxo)).toContain('VARIAVEL_FORA_DE_ASPAS')
+  })
+
+  it('recusa nome de variável que interpolar() nunca vai substituir', () => {
+    // `{{1abc}}` não casa com o regex de interpolação, então sai literal na
+    // requisição. Se o validador usasse um padrão mais frouxo, isso passaria.
+    const fluxo = comHttp({
+      url: 'https://e.com',
+      metodo: 'POST',
+      corpo: '{"idade": {{1abc}}}',
+    })
+    expect(codigos(fluxo)).toContain('CORPO_INVALIDO')
+  })
+
+  it('chave escapada não confunde a contagem de aspas', () => {
+    const fluxo = comHttp({
+      url: 'https://e.com',
+      metodo: 'POST',
+      corpo: '{"aspas \\" no meio": "{{nome}}"}',
+    })
+    expect(codigos(fluxo)).not.toContain('VARIAVEL_FORA_DE_ASPAS')
+    expect(codigos(fluxo)).not.toContain('CORPO_INVALIDO')
+  })
+
+  it('recusa endereço que começa com variável', () => {
+    // O host não pode sair do que a pessoa digitou no WhatsApp. O erro
+    // específico é HOST_VARIAVEL, que explica melhor do que URL_INSEGURA.
+    expect(codigos(comHttp({ url: '{{base}}/pedidos' }))).toContain('HOST_VARIAVEL')
+  })
+
+  it('não cobra corpo de GET', () => {
+    const fluxo = comHttp({ url: 'https://e.com', metodo: 'GET', corpo: 'nada disso é JSON' })
+    expect(codigos(fluxo)).not.toContain('CORPO_INVALIDO')
+  })
+
+  it('o que o nó mapeia conta como variável definida do fluxo', () => {
+    const fluxo = fluxoSchema.parse({
+      inicio: 'api',
+      nodes: [
+        {
+          id: 'api',
+          type: 'http',
+          position: { x: 0, y: 0 },
+          data: { url: 'https://e.com', mapear: [{ variavel: 'situacao', caminho: 's' }] },
+        },
+        { id: 'diz', type: 'mensagem', position: { x: 0, y: 0 }, data: { texto: 'está {{situacao}}' } },
+        { id: 'humano', type: 'handoff', position: { x: 0, y: 0 }, data: {} },
+      ],
+      edges: [
+        { id: 'a1', source: 'api', target: 'diz' },
+        { id: 'a2', source: 'diz', target: 'humano' },
+      ],
+    })
+
+    expect(validar(fluxo).avisos.map((a) => a.codigo)).not.toContain('VARIAVEL_DESCONHECIDA')
+  })
+
+  it('avisa que o cofre de segredos ainda não existe', () => {
+    const fluxo = comHttp({ url: 'https://e.com?k={{segredo.token}}' })
+    expect(validar(fluxo).avisos.map((a) => a.codigo)).toContain('SEGREDO_INEXISTENTE')
+  })
+})
+
+describe('o destino da chamada não pode sair da conversa', () => {
+  const comUrl = (url: string) =>
+    validar(
+      fluxoSchema.parse({
+        inicio: 'api',
+        nodes: [
+          { id: 'api', type: 'http', position: { x: 0, y: 0 }, data: { url } },
+          { id: 'humano', type: 'handoff', position: { x: 0, y: 0 }, data: {} },
+        ],
+        edges: [{ id: 'a1', source: 'api', target: 'humano' }],
+      }),
+    ).erros.map((e) => e.codigo)
+
+  it('recusa variável no host', () => {
+    expect(comUrl('https://{{host}}/pedidos')).toContain('HOST_VARIAVEL')
+  })
+
+  it('recusa variável no meio do host', () => {
+    expect(comUrl('https://{{cliente}}.exemplo.com/x')).toContain('HOST_VARIAVEL')
+  })
+
+  it('recusa variável na porta', () => {
+    expect(comUrl('https://exemplo.com:{{porta}}/x')).toContain('HOST_VARIAVEL')
+  })
+
+  it('recusa variável no esquema', () => {
+    expect(comUrl('{{base}}/pedidos')).toContain('HOST_VARIAVEL')
+  })
+
+  it('aceita variável no caminho', () => {
+    expect(comUrl('https://exemplo.com/pedido/{{codigo}}')).not.toContain('HOST_VARIAVEL')
+  })
+
+  it('aceita variável na consulta', () => {
+    expect(comUrl('https://exemplo.com/busca?q={{termo}}')).not.toContain('HOST_VARIAVEL')
+  })
+
+  it('aceita URL sem variável nenhuma', () => {
+    expect(comUrl('https://exemplo.com/x')).toEqual([])
+  })
+})
+
+describe('mapeamento precisa dizer o que ler', () => {
+  const comMapa = (mapear: { variavel: string; caminho: string }[]) =>
+    validar(
+      fluxoSchema.parse({
+        inicio: 'api',
+        nodes: [
+          {
+            id: 'api',
+            type: 'http',
+            position: { x: 0, y: 0 },
+            data: { url: 'https://e.com', mapear },
+          },
+          { id: 'humano', type: 'handoff', position: { x: 0, y: 0 }, data: {} },
+        ],
+        edges: [{ id: 'a1', source: 'api', target: 'humano' }],
+      }),
+    ).erros.map((e) => e.codigo)
+
+  it('recusa caminho vazio — a variável nunca seria preenchida', () => {
+    expect(comMapa([{ variavel: 'situacao', caminho: '' }])).toContain('CAMINHO_VAZIO')
+  })
+
+  it('aceita mapeamento completo', () => {
+    expect(comMapa([{ variavel: 'situacao', caminho: 'pedido.status' }])).toEqual([])
   })
 })

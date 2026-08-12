@@ -19,6 +19,7 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "server-only": "^0.0.1",
+    "undici": "^8.10.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {

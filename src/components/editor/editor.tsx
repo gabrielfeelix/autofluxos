@@ -24,10 +24,11 @@ import { validar } from '@/core/flow/validar'
 import { acaoAlternarIa, acaoPublicar, acaoSalvarRascunho } from '@/server/acoes'
 import { ICONES, NOMES, tiposDeNo } from './nos'
 import { Painel } from './painel'
+import type { ConexaoDoCliente } from './painel'
 
 const PAUSA_ANTES_DE_SALVAR = 800
 
-const TIPOS: TipoNo[] = ['mensagem', 'pergunta', 'condicao', 'salvar-campo', 'ia', 'handoff']
+const TIPOS: TipoNo[] = ['mensagem', 'pergunta', 'condicao', 'salvar-campo', 'ia', 'handoff', 'http']
 
 const DESCRICOES: Record<TipoNo, string> = {
   mensagem: 'Envia um texto',
@@ -36,6 +37,7 @@ const DESCRICOES: Record<TipoNo, string> = {
   'salvar-campo': 'Registra no lead',
   ia: 'Responde pelo contexto',
   handoff: 'Passa para uma pessoa',
+  http: 'Chama um sistema',
 }
 
 /** Como cada bloco nasce ao ser arrastado da barra. */
@@ -55,6 +57,18 @@ function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
       return {
         motivo: 'pedido pelo fluxo',
         mensagem: 'Vou te passar para um atendente. Só um instante!',
+      }
+    case 'http':
+      // Nasce chamando o ViaCEP de verdade: dá para arrastar o bloco, abrir a
+      // aba Testar e ver a integração funcionando antes de configurar nada.
+      // É a demonstração de reunião pronta, e é o que prova a cadeia inteira.
+      return {
+        metodo: 'GET',
+        url: 'https://viacep.com.br/ws/01310100/json/',
+        cabecalhos: [],
+        corpo: '',
+        mapear: [{ variavel: 'cidade', caminho: 'localidade' }],
+        aoFalhar: 'humano',
       }
   }
 }
@@ -82,6 +96,7 @@ function paraFluxo(inicio: string, nodes: Node[], edges: Edge[]): Fluxo {
 export function Editor({
   fluxoId,
   clienteId,
+  conexoes,
   nome,
   clienteNome,
   voltarHref,
@@ -92,6 +107,7 @@ export function Editor({
 }: {
   fluxoId: string
   clienteId: string
+  conexoes: ConexaoDoCliente[]
   nome: string
   clienteNome: string
   voltarHref: string
@@ -121,7 +137,11 @@ export function Editor({
   const areaRef = useRef<HTMLDivElement>(null)
 
   const fluxo = useMemo(() => paraFluxo(inicio, nodes, edges), [inicio, nodes, edges])
-  const validacao = useMemo(() => validar(fluxo, { iaHabilitada: comIa }), [fluxo, comIa])
+  const idsDeConexao = useMemo(() => conexoes.map((c) => c.id), [conexoes])
+  const validacao = useMemo(
+    () => validar(fluxo, { iaHabilitada: comIa, conexoes: idsDeConexao }),
+    [fluxo, comIa, idsDeConexao],
+  )
 
   const assinatura = JSON.stringify(fluxo)
   const assinaturaSalva = useRef(assinatura)
@@ -429,6 +449,7 @@ export function Editor({
                 no={noSelecionado}
                 ehInicio={selecionado === inicio}
                 variaveis={variaveis}
+                conexoes={conexoes}
                 aoMudarDados={mudarDados}
                 aoDefinirInicio={definirInicio}
                 aoApagar={apagar}
@@ -480,6 +501,7 @@ export function Editor({
             <>
               <Conversa
                 fluxo={fluxo}
+                fluxoId={fluxoId}
                 contextoNegocio={contextoNegocio}
                 iaHabilitada={comIa}
                 aoMudarSessao={setSessao}
@@ -540,6 +562,9 @@ function variaveisDoFluxo(fluxo: Fluxo): string[] {
     if (no.type === 'pergunta' && no.data.salvarEm) nomes.add(no.data.salvarEm)
     if (no.type === 'salvar-campo' && no.data.campo) nomes.add(no.data.campo)
     if (no.type === 'ia' && no.data.salvarEm) nomes.add(no.data.salvarEm)
+    // O que a API guarda também é variável do fluxo. Sem isto, o painel não
+    // mostra `{{cidade}}` como disponível e quem desenha acha que não existe.
+    if (no.type === 'http') for (const m of no.data.mapear) if (m.variavel) nomes.add(m.variavel)
   }
   return [...nomes].sort()
 }
