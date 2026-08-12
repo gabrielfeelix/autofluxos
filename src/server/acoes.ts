@@ -6,7 +6,15 @@ import { fluxoSchema } from '@/core/flow/schema'
 import { fluxoNovo } from '@/core/flow/novo'
 import { triagem } from '@/exemplos/triagem'
 import { atualizarContexto, criarCliente } from './repos/clientes'
-import { criarCanal, encerrarAtendimento } from './repos/conversas'
+import { canalCloudApi } from '@/channels/cloud-api'
+import { dentroDaJanela } from '@/channels/janela'
+import {
+  contextoDeResposta,
+  criarCanal,
+  definirStatusDaSessao,
+  encerrarAtendimento,
+  registrarSaida,
+} from './repos/conversas'
 import { criarFluxo, definirIa, publicar, salvarRascunho } from './repos/fluxos'
 import { apagarConexao, criarConexao, trocarValor } from './repos/conexoes'
 
@@ -161,6 +169,81 @@ export async function acaoTrocarValorDaConexao(
 export async function acaoApagarConexao(clienteId: string, conexaoId: string) {
   await apagarConexao(conexaoId, clienteId)
   revalidatePath(`/clientes/${clienteId}/conexoes`)
+}
+
+/** O maior texto que a Cloud API aceita numa mensagem. */
+const LIMITE_DA_MENSAGEM = 4096
+
+/**
+ * Responder o lead pelo painel.
+ *
+ * Até aqui, o handoff era um beco: o bot calava, a tela avisava que alguém
+ * precisava assumir, e assumir tinha que acontecer fora do sistema. Como o
+ * número roda na Cloud API, o celular do cliente não é caixa de entrada — não
+ * existia lugar nenhum de onde responder.
+ *
+ * **Responder daqui assume a conversa.** A sessão vai para `humano`, e o bot
+ * para de falar com aquela pessoa até alguém clicar em "Já atendi". Duas bocas
+ * na mesma conversa é pior do que uma só, e entre calar o bot e calar a pessoa,
+ * cala o bot.
+ *
+ * A janela de 24h é conferida **aqui**, e não só na tela: a tela desabilita o
+ * campo por conveniência, mas quem garante é o servidor — mesma postura de
+ * `publicar()` e de `efeitos/rede.ts`.
+ */
+export async function acaoResponderLead(
+  clienteId: string,
+  contatoId: string,
+  formData: FormData,
+): Promise<{ ok: boolean; erro?: string }> {
+  const texto = String(formData.get('texto') ?? '').trim()
+  if (texto === '') return { ok: false, erro: 'escreva a mensagem antes de enviar' }
+  if (texto.length > LIMITE_DA_MENSAGEM) {
+    return {
+      ok: false,
+      erro: `o WhatsApp aceita no máximo ${LIMITE_DA_MENSAGEM} caracteres, e esta tem ${texto.length}`,
+    }
+  }
+
+  // A ordem importa: primeiro o que é sobre esta conversa, depois o que é sobre
+  // o servidor. Dizer "falta WHATSAPP_TOKEN" para quem esbarrou na janela de
+  // 24h manda a pessoa investigar a caixa errada.
+  const contexto = await contextoDeResposta(clienteId, contatoId)
+  if (!contexto) return { ok: false, erro: 'este lead não tem um número conectado para responder' }
+
+  if (!dentroDaJanela(contexto.ultimaEntradaEm)) {
+    return {
+      ok: false,
+      erro: contexto.ultimaEntradaEm
+        ? 'passaram mais de 24h desde a última mensagem dela, e o WhatsApp só deixa retomar por um modelo aprovado'
+        : 'esta pessoa nunca escreveu, e o WhatsApp não deixa começar a conversa com texto livre',
+    }
+  }
+
+  const token = process.env.WHATSAPP_TOKEN
+  if (!token) return { ok: false, erro: 'falta WHATSAPP_TOKEN no ambiente deste servidor' }
+
+  const canal = canalCloudApi({ phoneNumberId: contexto.canal.phoneNumberId, token })
+
+  try {
+    await canal.enviarTexto(contexto.waId, texto)
+  } catch (erro) {
+    // O texto da Meta é específico e é ele que resolve. Engolir aqui devolveria
+    // "não deu certo" para quem precisa saber que o token expirou.
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para enviar' }
+  }
+
+  // Só depois de sair de verdade. Registrar antes poria na tela do lead uma
+  // mensagem que ninguém recebeu, que é a pior coisa que essa tela pode fazer.
+  await registrarSaida({ contatoId, sessaoId: contexto.sessaoId, texto })
+
+  // Só o status: o que a conversa já coletou continua na sessão, e é ele que
+  // volta a valer se o bot reassumir depois do "Já atendi".
+  if (contexto.sessaoId) await definirStatusDaSessao(contexto.sessaoId, 'humano')
+
+  revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
+  revalidatePath(`/clientes/${clienteId}/leads`)
+  return { ok: true }
 }
 
 /**

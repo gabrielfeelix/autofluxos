@@ -1,9 +1,12 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
+import { comoFalta, restaDaJanela } from '@/channels/janela'
 import { PainelShell } from '@/components/design/shell'
-import { acaoEncerrarAtendimento } from '@/server/acoes'
+import { CaixaDeResposta } from '@/components/lead/responder'
+import { acaoEncerrarAtendimento, acaoResponderLead } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
+import { contextoDeResposta } from '@/server/repos/conversas'
 import { acharLead, lerConversa } from '@/server/repos/leads'
 import { horaExata, quando } from '../quando'
 
@@ -21,6 +24,17 @@ export default async function Pagina({
   const campos = Object.entries(lead.campos)
   const nome = lead.nome ?? 'sem nome'
   const iniciais = nome.split(' ').filter(Boolean).slice(0, 2).map((parte) => parte[0]).join('').toUpperCase()
+
+  // O primeiro nome basta na caixa de resposta: "Responder Maria Aparecida da
+  // Silva pelo WhatsApp…" não cabe e não ajuda.
+  const primeiroNome = lead.nome?.split(' ')[0] ?? 'esta pessoa'
+
+  // Quanto ainda dá para responder em texto livre. `null` fecha a caixa — e a
+  // conta é feita aqui, no servidor, porque o relógio do navegador de quem abre
+  // a tela não é fonte de verdade para uma regra da Meta.
+  const contexto = await contextoDeResposta(clienteId, contatoId)
+  const restante = restaDaJanela(contexto?.ultimaEntradaEm ?? null)
+  const janela = restante && restante > 0 ? comoFalta(restante) : null
 
   return (
     <PainelShell>
@@ -98,7 +112,7 @@ export default async function Pagina({
             <header className="flex items-center gap-2 border-b border-white/[0.06] px-[18px] py-3.5">
               <h2 className="flex-1 text-[13px] font-bold">Conversa</h2>
               <span className="flex items-center gap-1.5 text-[11px] text-dim">
-                <span className="size-1.5 rounded-full bg-dim" /> somente leitura
+                <span className="size-1.5 rounded-full bg-dim" /> {lead.waId}
               </span>
             </header>
             <div className="min-h-0 flex-1 overflow-auto p-[18px]">
@@ -106,6 +120,11 @@ export default async function Pagina({
                 <Historico contatoId={contatoId} nomeDoLead={lead.nome} />
               </Suspense>
             </div>
+            <CaixaDeResposta
+              acao={acaoResponderLead.bind(null, clienteId, contatoId)}
+              restaDaJanela={janela}
+              nome={primeiroNome}
+            />
           </section>
         </div>
       </main>

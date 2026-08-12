@@ -118,6 +118,22 @@ export async function criarSessao(
   return { id: data.id as string, flowVersionId: data.flow_version_id as string, sessao }
 }
 
+/**
+ * Muda só o status, sem tocar no resto da sessão.
+ *
+ * Existe separado de `guardarSessao` de propósito: quem quer calar o bot não
+ * tem uma `Sessao` na mão, e montar uma para passar ali apagaria `vars` e
+ * `no_atual` — o que a conversa já coletou sumiria por causa de uma mudança de
+ * estado que não tinha nada a ver com isso.
+ */
+export async function definirStatusDaSessao(
+  id: string,
+  status: Sessao['status'],
+): Promise<void> {
+  const { error } = await db().from('sessions').update({ status }).eq('id', id)
+  if (error) throw new Error(`não deu para mudar o status da sessão: ${error.message}`)
+}
+
 export async function guardarSessao(id: string, sessao: Sessao): Promise<void> {
   const { error } = await db()
     .from('sessions')
@@ -192,6 +208,107 @@ export async function guardarCampo(
 export async function registrarHandoff(sessaoId: string, motivo: string): Promise<void> {
   const { error } = await db().from('handoffs').insert({ session_id: sessaoId, motivo })
   if (error) throw new Error(`não deu para registrar o handoff: ${error.message}`)
+}
+
+/**
+ * Tudo que responder um lead pelo painel exige, numa consulta só.
+ *
+ * Existe como função única porque as três coisas têm que vir do **mesmo**
+ * contato: o número para onde mandar, o canal de onde sai (que é o número em
+ * que a pessoa escreveu, não "algum" da conta), e quando ela falou pela última
+ * vez — que é o que abre ou fecha a janela de 24h.
+ *
+ * `null` quando o contato não é deste cliente. Como em toda leitura por aqui,
+ * o par (contato, cliente) vem junto: a URL é adivinhável.
+ */
+export type ContextoDeResposta = {
+  waId: string
+  canal: CanalSalvo
+  /** A sessão mais recente, para o bot calar quando uma pessoa assume. */
+  sessaoId: string | null
+  /** Quando a pessoa escreveu pela última vez. `null` = nunca escreveu. */
+  ultimaEntradaEm: string | null
+}
+
+export async function contextoDeResposta(
+  clienteId: string,
+  contatoId: string,
+): Promise<ContextoDeResposta | null> {
+  const { data: contato, error: erroDoContato } = await db()
+    .from('contacts')
+    .select('wa_id')
+    .eq('id', contatoId)
+    .eq('client_id', clienteId)
+    .maybeSingle()
+
+  if (erroDoContato) throw new Error(`não deu para achar o contato: ${erroDoContato.message}`)
+  if (!contato) return null
+
+  const [{ data: sessao, error: erroDaSessao }, { data: entrada, error: erroDaEntrada }] =
+    await Promise.all([
+      db()
+        .from('sessions')
+        .select('id, channel_id')
+        .eq('contact_id', contatoId)
+        .order('criado_em', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      db()
+        .from('messages')
+        .select('ts')
+        .eq('contact_id', contatoId)
+        .eq('direcao', 'entrada')
+        .order('ts', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ])
+
+  if (erroDaSessao) throw new Error(`não deu para achar a sessão: ${erroDaSessao.message}`)
+  if (erroDaEntrada) throw new Error(`não deu para achar a última mensagem: ${erroDaEntrada.message}`)
+
+  const canal = await canalDaResposta(clienteId, (sessao as { channel_id: string } | null)?.channel_id)
+  if (!canal) return null
+
+  return {
+    waId: contato.wa_id as string,
+    canal,
+    sessaoId: (sessao as { id: string } | null)?.id ?? null,
+    ultimaEntradaEm: (entrada as { ts: string } | null)?.ts ?? null,
+  }
+}
+
+/**
+ * De qual número a resposta sai.
+ *
+ * O da sessão, sempre que houver: é o número em que a pessoa escreveu, e
+ * responder por outro chega como mensagem de um desconhecido. Só quando não há
+ * sessão nenhuma é que cai no primeiro canal ativo do cliente.
+ */
+async function canalDaResposta(
+  clienteId: string,
+  canalDaSessao: string | undefined,
+): Promise<CanalSalvo | null> {
+  const consulta = db().from('channels').select('id, client_id, phone_number_id, flow_id, status')
+
+  const { data, error } = canalDaSessao
+    ? await consulta.eq('id', canalDaSessao).maybeSingle()
+    : await consulta
+        .eq('client_id', clienteId)
+        .eq('status', 'ativo')
+        .order('criado_em', { ascending: true })
+        .limit(1)
+        .maybeSingle()
+
+  if (error) throw new Error(`não deu para achar o canal: ${error.message}`)
+  if (!data) return null
+
+  return {
+    id: data.id as string,
+    clienteId: data.client_id as string,
+    phoneNumberId: data.phone_number_id as string,
+    flowId: data.flow_id as string | null,
+    status: data.status as string,
+  }
 }
 
 /**

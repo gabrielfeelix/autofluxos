@@ -1,10 +1,16 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { dentroDaJanela } from '@/channels/janela'
 import { canalMock } from '@/channels/mock'
 import { triagem } from '@/exemplos/triagem'
 import { db } from './db'
 import { receberMensagem } from './receber-mensagem'
 import { criarCliente } from './repos/clientes'
-import { criarCanal, encerrarAtendimento, ultimaSessao } from './repos/conversas'
+import {
+  contextoDeResposta,
+  criarCanal,
+  encerrarAtendimento,
+  ultimaSessao,
+} from './repos/conversas'
 import { criarFluxo, publicar, salvarRascunho } from './repos/fluxos'
 import { acharLead, lerConversa } from './repos/leads'
 
@@ -315,6 +321,38 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
     mock.enviadas.length = 0
     await receberMensagem(webhookTexto(de, 'voltei', `wamid-${marca}-10c`), comMock)
     expect(mock.enviadas.length).toBeGreaterThan(0)
+  })
+
+  /**
+   * O que a caixa de resposta do painel precisa saber antes de deixar alguém
+   * digitar: por qual número a resposta sai, e se a janela de 24h está aberta.
+   */
+  it('monta o contexto de resposta com o canal em que a pessoa escreveu', async () => {
+    const de = `5511${(Date.now() + 12).toString().slice(-9)}`
+    await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-12`), comMock)
+
+    const { data: contato } = await db().from('contacts').select('id').eq('wa_id', de).single()
+    const contexto = await contextoDeResposta(clienteId, contato!.id as string)
+
+    expect(contexto?.waId).toBe(de)
+    expect(contexto?.canal.phoneNumberId).toBe(numeroDoBot)
+    expect(contexto?.sessaoId).toBeTruthy()
+    // Ela acabou de escrever, então a janela tem que estar aberta.
+    expect(dentroDaJanela(contexto?.ultimaEntradaEm ?? null)).toBe(true)
+  })
+
+  it('não monta contexto de resposta para o contato de outro cliente', async () => {
+    const de = `5511${(Date.now() + 13).toString().slice(-9)}`
+    await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-13`), comMock)
+
+    const { data: contato } = await db().from('contacts').select('id').eq('wa_id', de).single()
+
+    const outro = await criarCliente(`${marca} intruso 2`)
+    try {
+      expect(await contextoDeResposta(outro.id, contato!.id as string)).toBeNull()
+    } finally {
+      await db().from('clients').delete().eq('id', outro.id)
+    }
   })
 
   it('não encerra o atendimento de um contato pelo id de outro cliente', async () => {

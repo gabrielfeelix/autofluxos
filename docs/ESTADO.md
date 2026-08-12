@@ -38,10 +38,10 @@ nosso, nunca requisito para funcionar.
 | # | O quê | Por que agora |
 |---|---|---|
 | 1 | **Papéis de usuário** (BRIEF-UI §6) | É a maior, e destrava as outras. Hoje é uma senha só. Há comentário em quatro pontos do código dizendo "isto muda quando o cliente ganhar acesso" — recusa de endereço interno, isolamento entre clientes, a tela de "não encontrado" que vira "não é seu". Este é o dia. **Duas coisas entram junto, e não depois:** (a) `/api/simular` aceita um fluxo inventado + `fluxoId` de qualquer cliente e manda a credencial dele para a URL do corpo — hoje inofensivo porque a senha já dá acesso a tudo, escalada de privilégio no minuto em que o cliente tiver login; (b) a sessão do painel é `SHA-256(senha)` pura, sem nonce e sem carimbo, então cookie copiado vale para sempre e não há como revogar um acesso só. |
-| 2 | **Responder pelo painel, ou Coexistence** | Depois do handoff o bot cala e **ninguém tem como responder**: `Canal` só envia e nenhuma tela chama. Como o número roda na Cloud API, o celular não é inbox. Com Cliente 00 dá para viver; com a Prelúdio, não. Ou entra Coexistence, ou entra uma caixa de resposta na tela do lead. |
+| 2 | **Modelos (templates) da Meta** | A caixa de resposta do painel só funciona dentro da janela de 24h — é a regra da Meta, e fora dela o único jeito de retomar é um modelo aprovado, que este produto não manda. A tela avisa antes de alguém digitar. Gatilho para construir: o primeiro lead que esfriar e precisar de retomada. |
 | 3 | **Credencial de sandbox por conexão** | A aba Testar usa a credencial real: testar um fluxo de CRM grava no CRM de verdade. Hoje há aviso na tela e o cabeçalho `X-AutoFluxos-Teste: 1`. Gatilho para construir: o primeiro cliente com CRM em produção. |
 | 4 | **`drop` de `clients.ia_habilitada`** | O código já parou de ler (migration 0005 pedia essa confirmação). Falta a migration que apaga. |
-| 5 | **Teste de banco intermitente** | `repos.test.ts` falha de vez em quando por desvio de relógio entre a máquina local e o Supabase. É ambiente, não código — mas atrapalha confiar na suíte. |
+| 5 | **Teste de banco intermitente** | `repos.test.ts` falha de vez em quando com `JWT issued at future` — o relógio do WSL2 desanda quando a máquina suspende e o Supabase recusa o token. É ambiente, não código: rodar de novo passa. Se incomodar, `sudo hwclock -s` acerta na hora. |
 
 ### O que foi construído em 12/ago, e onde está escrito
 
@@ -49,6 +49,11 @@ nosso, nunca requisito para funcionar.
 - **Conexões** (credenciais no cofre) — [CONEXOES.md](CONEXOES.md), migration `0006`
 - **DNS rebinding fechado** — `server/efeitos/rede.ts`, e o porquê de vir antes do cofre está no CONEXOES
 - **Tela do contexto do negócio** — era lido em cinco lugares e escrito em nenhum
+- **Responder o lead pelo painel** — `components/lead/responder.tsx`,
+  `acaoResponderLead`, e a janela de 24h em `channels/janela.ts`. Era o beco do
+  handoff: o bot calava e não havia de onde responder, porque o número roda na
+  Cloud API e o celular do cliente não é caixa de entrada. Responder assume a
+  conversa (a sessão vai para `humano`) e "Já atendi" devolve ela ao bot.
 - **Revisão de segurança e de uso**, e os quatro consertos que saíram dela:
   falha de entrega vira handoff (`receber-mensagem.ts`), prazo de 15s na Cloud
   API (`channels/cloud-api.ts`), botão **"Já atendi"** na tela do lead
