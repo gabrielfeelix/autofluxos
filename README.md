@@ -7,9 +7,15 @@ Produto da [4YU](https://4yu.com.br).
 
 ## Estado
 
-**Etapa 1, passo 5 de 7:** dá para **desenhar o fluxo arrastando blocos**, testar
-a conversa ao lado, e **publicar** — o rascunho vira versão numerada e imutável.
-Falta a tela de leads e o WhatsApp.
+**Etapa 1, 6 de 7 passos prontos.** Dá para desenhar o fluxo arrastando blocos,
+testar a conversa ao lado, publicar (versão numerada e imutável), e o webhook do
+WhatsApp está publicado e testado. Falta a tela de leads — e a Meta liberar um
+número de teste, que é onde estamos travados (ver ESTADO.md).
+
+No ar em **https://autofluxos.4yu.com.br** (painel protegido por senha).
+
+**Retomando o trabalho?** Comece por [docs/ESTADO.md](docs/ESTADO.md) — o que
+está pronto, o que está travado e o que fazer em seguida.
 
 Veja [docs/ARQUITETURA.md](docs/ARQUITETURA.md) para o desenho completo e as
 decisões por trás dele.
@@ -20,7 +26,7 @@ decisões por trás dele.
 npm install
 cp .env.example .env    # valores em 4yu-apps/.secrets/4yu.env (prefixo AUTOFLUXOS_)
 npm run dev             # http://localhost:3000
-npm test                # 49 testes
+npm test                # 57 testes
 npm run typecheck
 ```
 
