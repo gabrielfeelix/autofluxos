@@ -52,6 +52,13 @@ export async function POST(req: Request) {
   const { modelo } = escolherModelo({ iaHabilitada })
 
   return Response.json(
-    await executarComEfeitos(fluxo, sessao, entrada, { modelo, contextoNegocio, historico }),
+    await executarComEfeitos(fluxo, sessao, entrada, {
+      modelo,
+      contextoNegocio,
+      historico,
+      // A aba Testar chama API de verdade. Dizer que veio daqui é o que permite
+      // o sistema do cliente separar tráfego de teste do movimento real dele.
+      origem: 'simulador',
+    }),
   )
 }

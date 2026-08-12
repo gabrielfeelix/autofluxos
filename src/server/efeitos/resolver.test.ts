@@ -1,8 +1,12 @@
-import { describe, expect, it } from 'vitest'
-import { sessaoNova } from '@/core/engine/types'
-import type { Fluxo } from '@/core/flow/schema'
-import { executarComEfeitos } from './resolver'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { sessaoNova, type Resultado } from '@/core/engine/types'
+import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
 import type { Modelo, PedidoDeIa, Resposta } from '../ia/types'
+
+const chamarHttp = vi.hoisted(() => vi.fn())
+vi.mock('./http', () => ({ chamarHttp }))
+
+const { executarComEfeitos, MAX_EFEITOS } = await import('./resolver')
 
 /**
  * Sem rede e sem chave: o modelo é de mentira de propósito.
@@ -143,5 +147,151 @@ describe('fluxo sem IA nenhuma', () => {
 
     await executarComEfeitos(simples, sessaoNova(), { tipo: 'inicio' }, { modelo, contextoNegocio })
     expect(modelo.pedidos).toHaveLength(0)
+  })
+})
+
+describe('resolvendo o nó de API', () => {
+  const comApi = fluxoSchema.parse({
+    inicio: 'consulta',
+    nodes: [
+      {
+        id: 'consulta',
+        type: 'http',
+        position: { x: 0, y: 0 },
+        data: { url: 'https://e.com', mapear: [{ variavel: 'situacao', caminho: 'status' }] },
+      },
+      { id: 'diz', type: 'mensagem', position: { x: 0, y: 0 }, data: { texto: 'está {{situacao}}' } },
+      { id: 'humano', type: 'handoff', position: { x: 0, y: 0 }, data: {} },
+    ],
+    edges: [
+      { id: 'a1', source: 'consulta', target: 'diz' },
+      { id: 'a2', source: 'diz', target: 'humano' },
+    ],
+  })
+
+  const semIa = { modelo: null, contextoNegocio: '', origem: 'whatsapp' as const }
+  const textosDe = (r: Resultado) =>
+    r.acoes.flatMap((a) => (a.tipo === 'enviar_texto' ? [a.texto] : []))
+
+  beforeEach(() => chamarHttp.mockReset())
+
+  it('chama, mapeia e a conversa segue', async () => {
+    chamarHttp.mockResolvedValue({ ok: true, valores: { situacao: 'a caminho' } })
+
+    const r = await executarComEfeitos(comApi, sessaoNova(), { tipo: 'inicio' }, semIa)
+
+    // O pedido já foi atendido: deixar ele na lista faria quem aplica mandar a
+    // conversa para um humano em cima de uma chamada que deu certo.
+    expect(r.acoes.some((a) => a.tipo === 'chamar_http')).toBe(false)
+    expect(textosDe(r)).toContain('está a caminho')
+  })
+
+  it('falha com aoFalhar humano passa a conversa e diz o motivo real', async () => {
+    chamarHttp.mockResolvedValue({ ok: false, motivo: 'a chamada respondeu 500' })
+
+    const r = await executarComEfeitos(comApi, sessaoNova(), { tipo: 'inicio' }, semIa)
+
+    expect(r.sessao.status).toBe('humano')
+    const transferencia = r.acoes.find((a) => a.tipo === 'transferir_humano')
+    if (transferencia?.tipo !== 'transferir_humano') throw new Error('faltou a transferência')
+    expect(transferencia.motivo).toContain('500')
+    expect(r.acoes.some((a) => a.tipo === 'chamar_http')).toBe(false)
+  })
+
+  it('falha com aoFalhar seguir continua a conversa com a variável vazia', async () => {
+    const tolerante = fluxoSchema.parse({
+      ...comApi,
+      nodes: comApi.nodes.map((n) =>
+        n.id === 'consulta' ? { ...n, data: { ...n.data, aoFalhar: 'seguir' } } : n,
+      ),
+    })
+    chamarHttp.mockResolvedValue({ ok: false, motivo: 'caiu' })
+
+    const r = await executarComEfeitos(tolerante, sessaoNova(), { tipo: 'inicio' }, semIa)
+
+    // A conversa seguiu com a variável vazia, em vez de morrer na falha.
+    expect(textosDe(r)).toContain('está ')
+
+    // Ela termina em `humano` porque o FLUXO acaba num handoff — não porque a
+    // integração caiu. É a diferença que este teste existe para provar.
+    const transferencia = r.acoes.find((a) => a.tipo === 'transferir_humano')
+    if (transferencia?.tipo !== 'transferir_humano') throw new Error('faltou a transferência')
+    expect(transferencia.motivo).not.toContain('integração')
+  })
+
+  it('marca como teste quando a origem é o simulador', async () => {
+    chamarHttp.mockResolvedValue({ ok: true, valores: {} })
+
+    await executarComEfeitos(comApi, sessaoNova(), { tipo: 'inicio' }, {
+      ...semIa,
+      origem: 'simulador',
+    })
+
+    expect(chamarHttp).toHaveBeenCalledWith(expect.anything(), { deTeste: true })
+  })
+
+  it('sem dizer a origem, NÃO marca como teste', async () => {
+    // O padrão erra para o lado seguro: marcar conversa real como teste faria o
+    // cliente filtrar lead de verdade fora do sistema dele.
+    chamarHttp.mockResolvedValue({ ok: true, valores: {} })
+
+    await executarComEfeitos(comApi, sessaoNova(), { tipo: 'inicio' }, {
+      modelo: null,
+      contextoNegocio: '',
+    })
+
+    expect(chamarHttp).toHaveBeenCalledWith(expect.anything(), { deTeste: false })
+  })
+
+  it('a trava para o encadeamento sem fim, e conta IA e API juntas', async () => {
+    // Um bloco de API ligado em si mesmo: sem trava, o laço nunca sai daqui.
+    const ciclo = fluxoSchema.parse({
+      inicio: 'consulta',
+      nodes: [
+        { id: 'consulta', type: 'http', position: { x: 0, y: 0 }, data: { url: 'https://e.com' } },
+        { id: 'humano', type: 'handoff', position: { x: 0, y: 0 }, data: {} },
+      ],
+      edges: [{ id: 'a1', source: 'consulta', target: 'consulta' }],
+    })
+    chamarHttp.mockResolvedValue({ ok: true, valores: {} })
+
+    await executarComEfeitos(ciclo, sessaoNova(), { tipo: 'inicio' }, semIa)
+
+    expect(chamarHttp).toHaveBeenCalledTimes(MAX_EFEITOS)
+  })
+
+  it('IA e API no mesmo fluxo, cada uma atendida pelo seu resolvedor', async () => {
+    const misto = fluxoSchema.parse({
+      inicio: 'consulta',
+      nodes: [
+        {
+          id: 'consulta',
+          type: 'http',
+          position: { x: 0, y: 0 },
+          data: { url: 'https://e.com', mapear: [{ variavel: 'situacao', caminho: 'status' }] },
+        },
+        { id: 'duvida', type: 'ia', position: { x: 0, y: 0 }, data: { instrucao: 'explique {{situacao}}' } },
+        { id: 'humano', type: 'handoff', position: { x: 0, y: 0 }, data: {} },
+      ],
+      edges: [
+        { id: 'a1', source: 'consulta', target: 'duvida' },
+        { id: 'a2', source: 'duvida', target: 'humano' },
+      ],
+    })
+    chamarHttp.mockResolvedValue({ ok: true, valores: { situacao: 'parado' } })
+    const modelo = modeloQue(() => ({ tipo: 'texto', texto: 'está parado por falta de pagamento' }))
+
+    const r = await executarComEfeitos(misto, sessaoNova(), { tipo: 'inicio' }, {
+      modelo,
+      contextoNegocio: 'loja',
+      origem: 'whatsapp',
+    })
+
+    expect(chamarHttp).toHaveBeenCalledTimes(1)
+    expect(modelo.pedidos).toHaveLength(1)
+    // A instrução da IA chegou já interpolada com o que a API devolveu.
+    expect(modelo.pedidos[0]?.instrucao).toBe('explique parado')
+    expect(textosDe(r)).toContain('está parado por falta de pagamento')
+    expect(r.acoes.some((a) => a.tipo === 'chamar_http' || a.tipo === 'chamar_ia')).toBe(false)
   })
 })
