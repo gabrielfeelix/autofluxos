@@ -62,6 +62,28 @@ Detalhe de prazo: **Embedded Signup v2 morre em 15/out/2026.** Nascer no v4.
 
 ---
 
+## Depois da Etapa 1: o nó de API (12/ago/2026)
+
+Enquanto a verificação da empresa não sai, entrou o **sétimo bloco: API**. Ele
+chama um endereço no meio da conversa, guarda campos da resposta em variáveis e
+segue o fluxo.
+
+O motivo é comercial: passa a ser verdade dizer "integra com o seu sistema" numa
+reunião. Cobre Sheets por Apps Script, webhook de qualquer coisa, e n8n/Make/
+Zapier inteiros. **Não cobre** CRM que exige cabeçalho `Authorization` — não há
+cofre de segredos, e token não pode ficar no grafo do fluxo, que vira versão
+imutável no banco. Para esses, a resposta honesta continua sendo "passa por n8n".
+
+O que ficou pronto: schema, motor, validador, recusa de SSRF, disparo com
+timeout, resolvedor único (IA e API no mesmo laço), bloco no editor e aviso na
+aba Testar. Desenho em [NO-API.md](NO-API.md), plano em [PLANO-NO-API.md](PLANO-NO-API.md).
+
+A próxima peça natural é o **cofre de segredos** — e ela é aditiva, não
+reescrita: `{{segredo.x}}` já atravessa o motor intacto, porque o regex da
+interpolação não casa com ponto.
+
+---
+
 ## Onde as coisas estão
 
 | O quê | Onde |

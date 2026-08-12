@@ -28,7 +28,7 @@ decisões por trás dele.
 npm install
 cp .env.example .env    # valores em 4yu-apps/.secrets/4yu.env (prefixo AUTOFLUXOS_)
 npm run dev             # http://localhost:3000
-npm test                # 64 testes
+npm test                # 168 testes
 npm run typecheck
 ```
 
@@ -93,6 +93,33 @@ uma mudança antes de ela ser salva. Coisas que vale testar:
 - responder “2” em vez de clicar no botão
 - digitar besteira três vezes seguidas
 
+## Integrar com o sistema do cliente
+
+O bloco **API** chama um endereço durante a conversa, guarda pedaços da resposta
+em variáveis e segue o fluxo. É um bloco só, e é de propósito: ele cobre planilha
+do Sheets (via Apps Script publicado), qualquer webhook, e n8n/Make/Zapier — que
+sozinhos carregam os milhares de apps que nunca vamos integrar na mão.
+
+Ele nasce chamando o ViaCEP, então dá para arrastar o bloco e ver a integração
+respondendo na aba Testar antes de configurar qualquer coisa.
+
+Três coisas que o produto garante, e que não dependem de quem desenha lembrar:
+
+- **A aba Testar chama de verdade.** É o mesmo código da produção. Os disparos
+  vindos dali levam o cabeçalho `X-AutoFluxos-Teste: 1`, para o sistema do
+  cliente separar teste de movimento real.
+- **Endereço interno é recusado no servidor**, olhando o IP resolvido e não o
+  nome, inclusive a cada redirecionamento. Um domínio público apontando para
+  `127.0.0.1` é como esse ataque costuma ser escrito.
+- **Falha não pendura ninguém.** Por padrão a conversa vai para uma pessoa com o
+  motivo real; `continua mesmo assim` é escolha explícita, para enriquecimento
+  que pode faltar sem prejuízo.
+
+**Não há cofre de segredos ainda**, então token de CRM não tem onde morar com
+segurança — para esses, o caminho é passar por um intermediário. O desenho está
+em [docs/NO-API.md](docs/NO-API.md), incluindo por que a expansão para cofre é
+aditiva.
+
 ## A regra que sustenta o projeto
 
 `src/core/` **não sabe o nome de nenhum cliente**, não importa nada de Next, do
@@ -135,8 +162,8 @@ arrasta no editor **é** a ramificação:
 }
 ```
 
-Seis tipos de nó: `mensagem`, `pergunta`, `condicao`, `salvar-campo`, `ia`,
-`handoff`.
+Sete tipos de nó: `mensagem`, `pergunta`, `condicao`, `salvar-campo`, `ia`,
+`handoff`, `http`.
 
 ## Garantias que o motor dá de graça
 
@@ -148,6 +175,8 @@ Ninguém precisa lembrar de desenhar isso — o sistema faz sozinho:
 - **Áudio, imagem e documento** vão direto para uma pessoa — nunca "não entendi"
 - **Ciclo no desenho** estoura uma trava e chama humano, em vez de prender alguém
 - **O validador recusa publicar** fluxo que não tenha nenhum caminho até um humano
+- **Integração que falha** não deixa ninguém pendurado: por padrão a conversa vai
+  para uma pessoa, com o motivo real já escrito no painel de leads
 
 ## Segredo
 
