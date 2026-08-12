@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it } from 'vitest'
 import { fluxoNovo } from '@/core/flow/novo'
 import { db } from '../db'
-import { acharCliente, criarCliente, listarClientes } from './clientes'
+import { acharCliente, atualizarContexto, criarCliente, listarClientes } from './clientes'
 import {
   acharFluxo,
   acharVersao,
@@ -198,8 +198,18 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
     expect(!recusado.ok && recusado.erros.map((e) => e.codigo)).toContain('IA_NAO_CONTRATADA')
     expect(await listarVersoes(fluxo.id)).toEqual([])
 
-    // Contratou: a mesma publicação passa, sem redesenhar nada.
+    // Contratou o plano, mas o contexto do negócio continua vazio: ainda não
+    // publica. Com o contexto vazio a IA responde "não sei" a tudo, e o bot
+    // pareceria pronto sem nunca responder.
     await definirIa(fluxo.id, true)
+    const semContexto = await publicar(fluxo.id, fluxo.rascunho)
+    expect(semContexto.ok).toBe(false)
+    expect(!semContexto.ok && semContexto.erros.map((e) => e.codigo)).toContain(
+      'SEM_CONTEXTO_DE_NEGOCIO',
+    )
+
+    // Com as duas coisas, a mesma publicação passa, sem redesenhar nada.
+    await atualizarContexto(cliente.id, 'Pintura residencial em Maringá. Orçamento gratuito.')
     const aceito = await publicar(fluxo.id, fluxo.rascunho)
     expect(aceito.ok).toBe(true)
   })
