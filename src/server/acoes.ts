@@ -6,7 +6,7 @@ import { fluxoSchema } from '@/core/flow/schema'
 import { fluxoNovo } from '@/core/flow/novo'
 import { triagem } from '@/exemplos/triagem'
 import { atualizarContexto, criarCliente } from './repos/clientes'
-import { criarCanal } from './repos/conversas'
+import { criarCanal, encerrarAtendimento } from './repos/conversas'
 import { criarFluxo, definirIa, publicar, salvarRascunho } from './repos/fluxos'
 import { apagarConexao, criarConexao, trocarValor } from './repos/conexoes'
 
@@ -161,6 +161,19 @@ export async function acaoTrocarValorDaConexao(
 export async function acaoApagarConexao(clienteId: string, conexaoId: string) {
   await apagarConexao(conexaoId, clienteId)
   revalidatePath(`/clientes/${clienteId}/conexoes`)
+}
+
+/**
+ * "Já falei com essa pessoa."
+ *
+ * Tira o lead da fila de quem espera e devolve o contato ao bot na próxima
+ * mensagem. É o botão que faltava: sem ele, todo lead que passou por handoff
+ * ficava vermelho para sempre e a tela perdia o sentido no segundo dia.
+ */
+export async function acaoEncerrarAtendimento(clienteId: string, contatoId: string) {
+  await encerrarAtendimento(clienteId, contatoId)
+  revalidatePath(`/clientes/${clienteId}/leads`)
+  revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
 }
 
 /** Salva o que a IA pode dizer sobre o negócio. Ver `contexto/page.tsx`. */

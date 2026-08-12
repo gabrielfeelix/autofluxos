@@ -194,6 +194,65 @@ export async function registrarHandoff(sessaoId: string, motivo: string): Promis
   if (error) throw new Error(`não deu para registrar o handoff: ${error.message}`)
 }
 
+/**
+ * "Já atendi esta pessoa."
+ *
+ * Faz **duas** coisas, e as duas são necessárias:
+ *
+ * 1. Resolve os handoffs abertos, que é o que tira o lead do vermelho. Sem
+ *    isso a coluna `resolvido_em` nunca era escrita por código de aplicação —
+ *    a tela mostrava "aguardando humano" para sempre e o contador só subia.
+ * 2. Encerra a sessão. Uma sessão em `humano` faz o bot ficar calado com aquele
+ *    contato **para sempre** (ver `tratarUma`), então resolver o handoff sem
+ *    encerrar deixaria a pessoa fora do alcance do fluxo sem ninguém perceber.
+ *    Encerrada, a próxima mensagem dela começa uma conversa nova.
+ *
+ * O `clienteId` vem junto pelo mesmo motivo de sempre: a URL é adivinhável, e
+ * o contato de um cliente não se encerra pelo painel de outro.
+ */
+export async function encerrarAtendimento(
+  clienteId: string,
+  contatoId: string,
+): Promise<{ ok: boolean }> {
+  const { data: contato, error: erroDoContato } = await db()
+    .from('contacts')
+    .select('id')
+    .eq('id', contatoId)
+    .eq('client_id', clienteId)
+    .maybeSingle()
+
+  if (erroDoContato) throw new Error(`não deu para achar o contato: ${erroDoContato.message}`)
+  if (!contato) return { ok: false }
+
+  const { data: sessoes, error: erroDasSessoes } = await db()
+    .from('sessions')
+    .select('id')
+    .eq('contact_id', contatoId)
+
+  if (erroDasSessoes) throw new Error(`não deu para achar as sessões: ${erroDasSessoes.message}`)
+
+  const ids = (sessoes as { id: string }[]).map((s) => s.id)
+  if (ids.length === 0) return { ok: true }
+
+  const { error: erroDoHandoff } = await db()
+    .from('handoffs')
+    .update({ resolvido_em: new Date().toISOString() })
+    .in('session_id', ids)
+    .is('resolvido_em', null)
+
+  if (erroDoHandoff) throw new Error(`não deu para resolver o handoff: ${erroDoHandoff.message}`)
+
+  const { error: erroDaSessao } = await db()
+    .from('sessions')
+    .update({ status: 'encerrada' })
+    .in('id', ids)
+    .eq('status', 'humano')
+
+  if (erroDaSessao) throw new Error(`não deu para encerrar a sessão: ${erroDaSessao.message}`)
+
+  return { ok: true }
+}
+
 export async function vincularSessaoNaMensagem(
   waMessageId: string,
   sessaoId: string,

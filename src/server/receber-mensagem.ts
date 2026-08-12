@@ -216,6 +216,34 @@ async function prepararIa(
   }
 }
 
+/** O texto padrão antes de uma pessoa assumir. */
+const AVISO_DE_HANDOFF = 'Vou te passar para um atendente. Só um instante!'
+
+type Entrega = { ok: true } | { ok: false; motivo: string }
+
+/**
+ * Manda, e devolve o que aconteceu em vez de estourar.
+ *
+ * **Falha de entrega não pode virar exceção.** A sessão já foi gravada antes de
+ * `aplicar()` e a mensagem que chegou já foi deduplicada em `registrarEntrada`:
+ * uma exceção daqui sobe até o `catch` do `after()` no webhook, a Meta não
+ * reenvia, e a pessoa fica sem resposta com o fluxo tendo avançado como se
+ * tivesse falado. Token expirado, janela de 24h fechada e limite de taxa são
+ * todos casos rotineiros que caíam exatamente nisso.
+ */
+async function entregar(envio: () => Promise<void>): Promise<Entrega> {
+  try {
+    await envio()
+    return { ok: true }
+  } catch (erro) {
+    const detalhe = erro instanceof Error ? erro.message : String(erro)
+    // Fica no log porque o motivo do handoff aparece na tela do painel e o
+    // texto da Meta é longo; a versão inteira é o que resolve a investigação.
+    console.error('[whatsapp] não deu para entregar a mensagem', detalhe)
+    return { ok: false, motivo: `não deu para entregar a mensagem — ${detalhe.slice(0, 200)}` }
+  }
+}
+
 async function aplicar(
   canal: Canal,
   contato: Contato,
@@ -225,15 +253,42 @@ async function aplicar(
   const campos = { ...contato.campos }
   let mexeuNosCampos = false
 
+  const salvarCampos = async () => {
+    if (mexeuNosCampos) await guardarCampo(contato.id, campos)
+    mexeuNosCampos = false
+  }
+
+  /** Tira a conversa do bot e deixa registrado por quê. */
+  const pararNoHumano = async (motivo: string) => {
+    await salvarCampos()
+    await registrarHandoff(sessaoId, motivo)
+    await guardarSessao(sessaoId, {
+      noAtual: null,
+      vars: campos,
+      tentativas: 0,
+      status: 'humano',
+    })
+  }
+
   for (const acao of acoes) {
     switch (acao.tipo) {
-      case 'enviar_texto':
-        await canal.enviarTexto(contato.waId, acao.texto)
+      case 'enviar_texto': {
+        const entrega = await entregar(() => canal.enviarTexto(contato.waId, acao.texto))
+        // Parar em vez de seguir: mandar a terceira mensagem depois da segunda
+        // ter falhado entrega uma conversa fora de ordem, e uma conversa fora
+        // de ordem é pior do que uma pessoa assumindo.
+        if (!entrega.ok) return pararNoHumano(entrega.motivo)
+
         await registrarSaida({ contatoId: contato.id, sessaoId, texto: acao.texto })
         break
+      }
 
-      case 'enviar_opcoes':
-        await canal.enviarOpcoes(contato.waId, acao.texto, acao.opcoes, acao.formato)
+      case 'enviar_opcoes': {
+        const entrega = await entregar(() =>
+          canal.enviarOpcoes(contato.waId, acao.texto, acao.opcoes, acao.formato),
+        )
+        if (!entrega.ok) return pararNoHumano(entrega.motivo)
+
         await registrarSaida({
           contatoId: contato.id,
           sessaoId,
@@ -241,6 +296,7 @@ async function aplicar(
           payload: { opcoes: acao.opcoes, formato: acao.formato },
         })
         break
+      }
 
       case 'salvar_campo':
         campos[acao.campo] = acao.valor
@@ -256,34 +312,35 @@ async function aplicar(
         // de IA contratado, ou sem chave no ambiente. O fluxo publicado pede
         // uma resposta que ninguém pode dar, então a conversa vai para uma
         // pessoa em vez de ficar pendurada esperando o que nunca vem.
-        const aviso = 'Vou te passar para um atendente. Só um instante!'
-        await canal.enviarTexto(contato.waId, aviso)
-        await registrarSaida({ contatoId: contato.id, sessaoId, texto: aviso })
-        await registrarHandoff(sessaoId, 'o fluxo pediu IA e não há modelo disponível')
-        await guardarSessao(sessaoId, {
-          noAtual: null,
-          vars: campos,
-          tentativas: 0,
-          status: 'humano',
-        })
-        break
+        //
+        // O aviso pode não sair, e mesmo assim o handoff é registrado: quem
+        // está esperando tem que aparecer na tela mesmo quando o canal falhou.
+        const entrega = await entregar(() => canal.enviarTexto(contato.waId, AVISO_DE_HANDOFF))
+        if (entrega.ok) {
+          await registrarSaida({ contatoId: contato.id, sessaoId, texto: AVISO_DE_HANDOFF })
+        }
+
+        return pararNoHumano(
+          entrega.ok
+            ? 'o fluxo pediu IA e não há modelo disponível'
+            : `o fluxo pediu IA e não há modelo disponível, e ${entrega.motivo}`,
+        )
       }
 
       case 'chamar_http': {
         // O resolvedor sempre atende esta ação — inclusive quando a chamada
         // falha, porque `aoFalhar` decide lá. Chegar aqui é defeito nosso, e
         // entre deixar alguém pendurado e passar para uma pessoa, passa.
-        const aviso = 'Vou te passar para um atendente. Só um instante!'
-        await canal.enviarTexto(contato.waId, aviso)
-        await registrarSaida({ contatoId: contato.id, sessaoId, texto: aviso })
-        await registrarHandoff(sessaoId, 'a integração não chegou a ser executada')
-        await guardarSessao(sessaoId, {
-          noAtual: null,
-          vars: campos,
-          tentativas: 0,
-          status: 'humano',
-        })
-        break
+        const entrega = await entregar(() => canal.enviarTexto(contato.waId, AVISO_DE_HANDOFF))
+        if (entrega.ok) {
+          await registrarSaida({ contatoId: contato.id, sessaoId, texto: AVISO_DE_HANDOFF })
+        }
+
+        return pararNoHumano(
+          entrega.ok
+            ? 'a integração não chegou a ser executada'
+            : `a integração não chegou a ser executada, e ${entrega.motivo}`,
+        )
       }
 
       case 'encerrar':
@@ -291,7 +348,7 @@ async function aplicar(
     }
   }
 
-  if (mexeuNosCampos) await guardarCampo(contato.id, campos)
+  await salvarCampos()
 }
 
 /** Traduz o que o WhatsApp mandou para o que o motor entende. */

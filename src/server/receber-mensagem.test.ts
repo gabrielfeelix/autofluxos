@@ -4,8 +4,9 @@ import { triagem } from '@/exemplos/triagem'
 import { db } from './db'
 import { receberMensagem } from './receber-mensagem'
 import { criarCliente } from './repos/clientes'
-import { criarCanal, ultimaSessao } from './repos/conversas'
+import { criarCanal, encerrarAtendimento, ultimaSessao } from './repos/conversas'
 import { criarFluxo, publicar, salvarRascunho } from './repos/fluxos'
+import { acharLead, lerConversa } from './repos/leads'
 
 /**
  * O caminho inteiro, do webhook até a resposta, contra o Supabase de verdade.
@@ -238,4 +239,119 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
     )
     expect(mock.enviadas).toEqual([])
   })
+
+  /**
+   * O caso que estava aberto: a Cloud API recusa o envio (token expirado,
+   * janela de 24h fechada, limite de taxa) e a exceção subia até o `after()`
+   * do webhook. Como a mensagem que chegou já foi deduplicada, a Meta não
+   * reenvia — a pessoa ficava sem resposta e o fluxo tinha avançado como se
+   * tivesse falado. Agora vira handoff, que é o que a tela consegue mostrar.
+   */
+  it('falha de entrega vira handoff, e não exceção sem dono', async () => {
+    const de = `5511${(Date.now() + 6).toString().slice(-9)}`
+    const quebrado = canalQueRecusa('(#131047) Re-engagement message')
+
+    await expect(
+      receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-8`), () => quebrado),
+    ).resolves.toBeUndefined()
+
+    const { data: contato } = await db().from('contacts').select('id').eq('wa_id', de).single()
+    const salva = await ultimaSessao(contato!.id as string, canalId)
+    expect(salva?.sessao.status).toBe('humano')
+
+    const { data: handoffs } = await db()
+      .from('handoffs')
+      .select('motivo')
+      .eq('session_id', salva!.id)
+    expect(handoffs?.[0]?.motivo).toContain('não deu para entregar')
+    expect(handoffs?.[0]?.motivo).toContain('131047')
+  })
+
+  /**
+   * Uma saudação seguida de opções são dois envios. Falhando o segundo, o
+   * primeiro já saiu — seguir para um terceiro entregaria a conversa fora de
+   * ordem, que é pior do que uma pessoa assumindo.
+   */
+  it('entrega que falha no meio para o resto em vez de mandar fora de ordem', async () => {
+    const de = `5511${(Date.now() + 7).toString().slice(-9)}`
+    const soAPrimeira = canalQueRecusa('canal caiu', 1)
+
+    await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-9`), () => soAPrimeira)
+
+    expect(soAPrimeira.tentativas).toBe(2)
+
+    const { data: contato } = await db().from('contacts').select('id').eq('wa_id', de).single()
+    const contatoId = contato!.id as string
+
+    // Só a que saiu de verdade fica registrada. A que falhou não vira histórico
+    // de conversa — senão a tela de leads mostraria uma mensagem que ninguém
+    // recebeu, que é a pior coisa que essa tela pode fazer.
+    const conversa = await lerConversa(contatoId)
+    expect(conversa.mensagens.filter((m) => m.direcao === 'saida')).toHaveLength(1)
+
+    const salva = await ultimaSessao(contatoId, canalId)
+    expect(salva?.sessao.status).toBe('humano')
+  })
+
+  /**
+   * O botão "Já atendi" da tela de leads. Sem ele o lead ficava vermelho para
+   * sempre — e, pior, a sessão continuava em `humano`, então o bot nunca mais
+   * falava com aquele número.
+   */
+  it('encerrar o atendimento resolve o handoff e devolve o contato ao bot', async () => {
+    const de = `5511${(Date.now() + 8).toString().slice(-9)}`
+    await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-10a`), comMock)
+    await receberMensagem(webhookAudio(de, `wamid-${marca}-10b`), comMock)
+
+    const { data: contato } = await db().from('contacts').select('id').eq('wa_id', de).single()
+    const contatoId = contato!.id as string
+
+    expect((await acharLead(clienteId, contatoId))?.aguardando).not.toBeNull()
+
+    expect(await encerrarAtendimento(clienteId, contatoId)).toEqual({ ok: true })
+
+    expect((await acharLead(clienteId, contatoId))?.aguardando).toBeNull()
+
+    mock.enviadas.length = 0
+    await receberMensagem(webhookTexto(de, 'voltei', `wamid-${marca}-10c`), comMock)
+    expect(mock.enviadas.length).toBeGreaterThan(0)
+  })
+
+  it('não encerra o atendimento de um contato pelo id de outro cliente', async () => {
+    const de = `5511${(Date.now() + 9).toString().slice(-9)}`
+    await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-11a`), comMock)
+    await receberMensagem(webhookAudio(de, `wamid-${marca}-11b`), comMock)
+
+    const { data: contato } = await db().from('contacts').select('id').eq('wa_id', de).single()
+    const contatoId = contato!.id as string
+
+    const outro = await criarCliente(`${marca} intruso`)
+    try {
+      expect(await encerrarAtendimento(outro.id, contatoId)).toEqual({ ok: false })
+      expect((await acharLead(clienteId, contatoId))?.aguardando).not.toBeNull()
+    } finally {
+      await db().from('clients').delete().eq('id', outro.id)
+    }
+  })
 })
+
+/**
+ * Um canal que recusa o envio, como a Cloud API faz quando o token expirou ou
+ * a janela de 24h fechou. `aPartirDe` deixa as primeiras entregas passarem,
+ * para exercitar a falha no meio de uma sequência.
+ */
+function canalQueRecusa(motivo: string, aPartirDe = 0) {
+  let tentativas = 0
+  const recusar = async () => {
+    tentativas += 1
+    if (tentativas > aPartirDe) throw new Error(`Cloud API respondeu 400: ${motivo}`)
+  }
+
+  return {
+    get tentativas() {
+      return tentativas
+    },
+    enviarTexto: recusar,
+    enviarOpcoes: recusar,
+  }
+}

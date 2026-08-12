@@ -37,10 +37,11 @@ nosso, nunca requisito para funcionar.
 
 | # | O quê | Por que agora |
 |---|---|---|
-| 1 | **Papéis de usuário** (BRIEF-UI §6) | É a maior, e destrava as outras. Hoje é uma senha só. Há comentário em quatro pontos do código dizendo "isto muda quando o cliente ganhar acesso" — recusa de endereço interno, isolamento entre clientes, a tela de "não encontrado" que vira "não é seu". Este é o dia. |
-| 2 | **Credencial de sandbox por conexão** | A aba Testar usa a credencial real: testar um fluxo de CRM grava no CRM de verdade. Hoje há aviso na tela e o cabeçalho `X-AutoFluxos-Teste: 1`. Gatilho para construir: o primeiro cliente com CRM em produção. |
-| 3 | **`drop` de `clients.ia_habilitada`** | O código já parou de ler (migration 0005 pedia essa confirmação). Falta a migration que apaga. |
-| 4 | **Teste de banco intermitente** | `repos.test.ts` falha de vez em quando por desvio de relógio entre a máquina local e o Supabase. É ambiente, não código — mas atrapalha confiar na suíte. |
+| 1 | **Papéis de usuário** (BRIEF-UI §6) | É a maior, e destrava as outras. Hoje é uma senha só. Há comentário em quatro pontos do código dizendo "isto muda quando o cliente ganhar acesso" — recusa de endereço interno, isolamento entre clientes, a tela de "não encontrado" que vira "não é seu". Este é o dia. **Duas coisas entram junto, e não depois:** (a) `/api/simular` aceita um fluxo inventado + `fluxoId` de qualquer cliente e manda a credencial dele para a URL do corpo — hoje inofensivo porque a senha já dá acesso a tudo, escalada de privilégio no minuto em que o cliente tiver login; (b) a sessão do painel é `SHA-256(senha)` pura, sem nonce e sem carimbo, então cookie copiado vale para sempre e não há como revogar um acesso só. |
+| 2 | **Responder pelo painel, ou Coexistence** | Depois do handoff o bot cala e **ninguém tem como responder**: `Canal` só envia e nenhuma tela chama. Como o número roda na Cloud API, o celular não é inbox. Com Cliente 00 dá para viver; com a Prelúdio, não. Ou entra Coexistence, ou entra uma caixa de resposta na tela do lead. |
+| 3 | **Credencial de sandbox por conexão** | A aba Testar usa a credencial real: testar um fluxo de CRM grava no CRM de verdade. Hoje há aviso na tela e o cabeçalho `X-AutoFluxos-Teste: 1`. Gatilho para construir: o primeiro cliente com CRM em produção. |
+| 4 | **`drop` de `clients.ia_habilitada`** | O código já parou de ler (migration 0005 pedia essa confirmação). Falta a migration que apaga. |
+| 5 | **Teste de banco intermitente** | `repos.test.ts` falha de vez em quando por desvio de relógio entre a máquina local e o Supabase. É ambiente, não código — mas atrapalha confiar na suíte. |
 
 ### O que foi construído em 12/ago, e onde está escrito
 
@@ -48,6 +49,12 @@ nosso, nunca requisito para funcionar.
 - **Conexões** (credenciais no cofre) — [CONEXOES.md](CONEXOES.md), migration `0006`
 - **DNS rebinding fechado** — `server/efeitos/rede.ts`, e o porquê de vir antes do cofre está no CONEXOES
 - **Tela do contexto do negócio** — era lido em cinco lugares e escrito em nenhum
+- **Revisão de segurança e de uso**, e os quatro consertos que saíram dela:
+  falha de entrega vira handoff (`receber-mensagem.ts`), prazo de 15s na Cloud
+  API (`channels/cloud-api.ts`), botão **"Já atendi"** na tela do lead
+  (`repos/conversas.ts` → `encerrarAtendimento`) e cabeçalhos de segurança no
+  `next.config.ts`. O que a revisão achou e ficou para a fila está lá em cima,
+  nos itens 1 e 2.
 
 ### Armadilhas que já custaram caro nesta base
 
@@ -58,7 +65,12 @@ nosso, nunca requisito para funcionar.
 - **Exceção solta dentro do `after()` do webhook.** A mensagem já foi
   deduplicada, então se a sessão não for salva a pessoa fica sem resposta e a
   Meta não reenvia. Tudo que pode lançar no caminho do webhook precisa virar
-  handoff, não exceção.
+  handoff, não exceção. Foi assim que o **envio** ficou aberto até 12/ago: a
+  sessão é gravada *antes* de `aplicar()`, e a Cloud API lança em qualquer
+  não-2xx (token expirado, janela de 24h, limite de taxa) — o fluxo avançava
+  como se tivesse falado e ninguém recebia nada. Hoje falha de entrega vira
+  handoff e **para o resto das ações**, porque mandar a terceira mensagem
+  depois da segunda ter falhado entrega uma conversa fora de ordem.
 - **Corpo de resposta HTTP não consumido.** Stream pausado que o undici destrói
   depois vira exceção sem dono, e cai no caso acima.
 - **Identidade vinda do corpo da requisição.** `/api/simular` aceitava o
@@ -157,16 +169,10 @@ o aviso na tela e o cabeçalho `X-AutoFluxos-Teste: 1` para o sistema do cliente
 filtrar; a solução completa é uma credencial de sandbox por conexão, e o gatilho
 para construir é o primeiro cliente com CRM de produção.
 
-E o que continua faltando, em ordem de tamanho:
-
-1. **Papéis de usuário** (BRIEF-UI §6). Hoje é uma senha só. Vários comentários
-   no código dizem "isto muda quando o cliente ganhar acesso" — é este o dia.
-2. **Credencial de sandbox por conexão**, para a aba Testar não gravar no
-   sistema de produção do cliente.
-3. **`drop` de `clients.ia_habilitada`**, que o código já parou de ler.
-4. **Teste de banco intermitente**: `repos.test.ts` falha de vez em quando com
-   desvio de relógio entre esta máquina e o Supabase. É ambiente, não código —
-   mas atrapalha confiar na suíte.
+A fila do que continua faltando é **uma só**, e está na tabela lá em cima
+("Por onde continuar, em ordem"). Ela não é repetida aqui de propósito: duas
+listas do mesmo assunto foi exatamente o que já contradisse este documento uma
+vez.
 
 ---
 

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { PainelShell } from '@/components/design/shell'
+import { acaoEncerrarAtendimento } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { acharLead, lerConversa } from '@/server/repos/leads'
 import { horaExata, quando } from '../quando'
@@ -55,6 +56,22 @@ export default async function Pagina({
               <strong className="block text-[13px] text-rose-300">Esperando uma pessoa {quando(lead.aguardando.desde)}</strong>
               <span className="mt-0.5 block text-[11.5px] text-muted">Motivo do handoff: {lead.aguardando.motivo}</span>
             </div>
+            {/*
+              O que este botão faz, e por que ele é um só: tira o lead da fila e
+              devolve o contato ao bot. Enquanto a sessão estiver com uma pessoa,
+              o bot fica calado com esse número — então "atendi" e "pode voltar
+              a atender" são o mesmo ato, e separar os dois só criaria um estado
+              em que ninguém responde.
+            */}
+            <form action={acaoEncerrarAtendimento.bind(null, clienteId, contatoId)}>
+              <button
+                type="submit"
+                title="Resolve o handoff. A próxima mensagem desta pessoa começa uma conversa nova com o bot."
+                className="shrink-0 rounded-[9px] border border-rose-400/30 bg-rose-400/[0.12] px-3.5 py-2 text-[12px] font-bold text-rose-200 transition hover:bg-rose-400/[0.2]"
+              >
+                Já atendi
+              </button>
+            </form>
           </div>
         )}
 
