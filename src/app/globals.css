@@ -31,6 +31,35 @@
   box-sizing: border-box;
 }
 
+/*
+ * O Tailwind 4 parou de dar `cursor: pointer` a botão — o Preflight passou a
+ * seguir o padrão do navegador, que é seta. O efeito aqui é que praticamente
+ * nada no painel parecia clicável: publicar, apagar, criar bloco, trocar de
+ * aba, tudo com a seta de "não faço nada".
+ *
+ * A regra vive aqui, e não espalhada em `cursor-pointer` por componente,
+ * porque a pergunta "isto é clicável?" tem uma resposta só e ela é do sistema.
+ * Espalhar significa esquecer no botão seguinte.
+ *
+ * Desabilitado fica de fora: `:disabled` já tem `not-allowed` nas classes de
+ * campo, e prometer clique onde não há é pior que a seta.
+ *
+ * Vai dentro de `@layer base` de propósito. Solta, ela venceria os utilitários
+ * do Tailwind — CSS sem camada bate CSS em camada, independente de
+ * especificidade — e o `cursor-grab` da barra de blocos, que diz "isto se
+ * arrasta", viraria a mãozinha de clique. Na camada base, quem escreve um
+ * cursor específico no elemento continua mandando.
+ */
+@layer base {
+  button:not(:disabled),
+  summary,
+  [role='button']:not([aria-disabled='true']),
+  label:has(> input[type='checkbox']),
+  label:has(> input[type='radio']) {
+    cursor: pointer;
+  }
+}
+
 html,
 body {
   min-width: 1024px;
