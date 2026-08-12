@@ -15,7 +15,11 @@ function dnsResponde(...enderecos: string[]) {
 describe('conferirEndereco', () => {
   it('aceita https que resolve para endereço público', async () => {
     dnsResponde('93.184.216.34')
-    expect(await conferirEndereco('https://exemplo.com/x')).toEqual({ ok: true })
+    expect(await conferirEndereco('https://exemplo.com/x')).toEqual({
+      ok: true,
+      endereco: '93.184.216.34',
+      familia: 4,
+    })
   })
 
   it('recusa http', async () => {
@@ -51,9 +55,9 @@ describe('conferirEndereco', () => {
 
   it('aceita 172.15 e 172.32, que estão FORA da faixa privada', async () => {
     dnsResponde('172.15.0.1')
-    expect(await conferirEndereco('https://a.com')).toEqual({ ok: true })
+    expect((await conferirEndereco('https://a.com')).ok).toBe(true)
     dnsResponde('172.32.0.1')
-    expect(await conferirEndereco('https://a.com')).toEqual({ ok: true })
+    expect((await conferirEndereco('https://a.com')).ok).toBe(true)
   })
 
   it.each([['::1'], ['::'], ['fc00::1'], ['fd12:3456::1'], ['fe80::1']])(
@@ -66,7 +70,11 @@ describe('conferirEndereco', () => {
 
   it('aceita IPv6 público', async () => {
     dnsResponde('2606:4700:4700::1111')
-    expect(await conferirEndereco('https://a.com')).toEqual({ ok: true })
+    expect(await conferirEndereco('https://a.com')).toEqual({
+      ok: true,
+      endereco: '2606:4700:4700::1111',
+      familia: 6,
+    })
   })
 
   it('recusa IPv4 disfarçado de IPv6', async () => {
@@ -109,5 +117,17 @@ describe('ehInterno', () => {
   it('aceita endereço público comum', () => {
     expect(ehInterno('8.8.8.8')).toBe(false)
     expect(ehInterno('93.184.216.34')).toBe(false)
+  })
+})
+
+describe('o veredito carrega o endereço para fixar a conexão', () => {
+  it('devolve o IP aprovado, não só "pode"', async () => {
+    dnsResponde('93.184.216.34')
+    const v = await conferirEndereco('https://exemplo.com')
+
+    if (!v.ok) throw new Error('deveria ter aprovado')
+    // Sem isto, quem conecta resolve de novo e o rebinding volta a existir.
+    expect(v.endereco).toBe('93.184.216.34')
+    expect(v.familia).toBe(4)
   })
 })

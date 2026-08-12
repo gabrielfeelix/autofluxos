@@ -1,4 +1,5 @@
 import 'server-only'
+import { Agent, request } from 'undici'
 import type { Acao } from '@/core/engine/types'
 import { conferirEndereco } from './rede'
 
@@ -34,7 +35,7 @@ export async function chamarHttp(
   { deTeste }: { deTeste: boolean },
 ): Promise<RespostaHttp> {
   let url = pedido.url
-  let resposta: Response
+  let resposta: Awaited<ReturnType<typeof request>>
 
   // A origem do endereço original. Um redirecionamento para outro host não pode
   // levar os cabeçalhos configurados junto: o `Authorization` que o operador
@@ -59,38 +60,43 @@ export async function chamarHttp(
       return { ok: false, motivo: 'a chamada redirecionou vezes demais' }
     }
 
-    let cabecalhos: Headers
+    let cabecalhos: Record<string, string>
     try {
-      // `Headers.set` lança com nome ou valor inválido. Fora do `try` isso
-      // escapa até o `after()` do webhook, a sessão nunca é salva, a mensagem
-      // já foi deduplicada e a pessoa fica sem resposta nenhuma — sem nem a
-      // Meta reenviar. Falhar aqui dentro vira handoff, que é o certo.
+      // Nome ou valor inválido lança aqui dentro. Fora do `try` isso escaparia
+      // até o `after()` do webhook, a sessão nunca seria salva, a mensagem já
+      // foi deduplicada e a pessoa ficaria sem resposta nenhuma — sem nem a
+      // Meta reenviar. Falhar aqui vira handoff, que é o certo.
       cabecalhos = montarCabecalhos(pedido, deTeste, new URL(url).origin === origemInicial)
     } catch {
       return { ok: false, motivo: 'um dos cabeçalhos configurados é inválido' }
     }
 
     try {
-      resposta = await fetch(url, {
+      resposta = await request(url, {
         method: metodo,
         headers: cabecalhos,
         body: metodo === 'POST' ? corpo : undefined,
-        // Seguir sozinho pularia a conferência de endereço no destino, que é
-        // exatamente por onde o ataque entraria: um host público que responde
-        // 302 apontando para a rede interna.
-        redirect: 'manual',
-        signal: AbortSignal.timeout(TIMEOUT_MS),
+        // `request` do undici **não segue redirecionamento** por padrão, e é
+        // isso que a gente quer: seguir sozinho pularia a conferência de
+        // endereço no destino, que é exatamente por onde o ataque entraria —
+        // um host público que responde 302 apontando para a rede interna.
+        headersTimeout: TIMEOUT_MS,
+        bodyTimeout: TIMEOUT_MS,
+        // Aqui mora a defesa contra rebinding: conecta no endereço que
+        // `conferirEndereco` já aprovou, sem consultar o DNS de novo.
+        dispatcher: fixarNo(veredito.endereco, veredito.familia),
       })
     } catch (erro) {
+      const nome = erro instanceof Error ? erro.name : ''
       const motivo =
-        erro instanceof Error && erro.name === 'TimeoutError'
+        nome === 'HeadersTimeoutError' || nome === 'BodyTimeoutError' || nome === 'TimeoutError'
           ? `a chamada passou de ${TIMEOUT_MS / 1000}s sem responder`
           : 'a chamada não completou'
       return { ok: false, motivo }
     }
 
     const destino =
-      resposta.status >= 300 && resposta.status < 400 ? resposta.headers.get('location') : null
+      resposta.statusCode >= 300 && resposta.statusCode < 400 ? cabecalho(resposta, 'location') : null
 
     if (!destino) break
 
@@ -105,7 +111,11 @@ export async function chamarHttp(
     // navegador faz. 307 e 308 preservam o método, e aí o corpo só continua se
     // o destino for a mesma origem: ele carrega o lead inteiro, e entregá-lo a
     // quem respondeu o redirecionamento é o mesmo vazamento que os cabeçalhos.
-    if (resposta.status === 301 || resposta.status === 302 || resposta.status === 303) {
+    if (
+      resposta.statusCode === 301 ||
+      resposta.statusCode === 302 ||
+      resposta.statusCode === 303
+    ) {
       metodo = 'GET'
       corpo = undefined
     } else if (proxima.origin !== origemInicial) {
@@ -115,17 +125,21 @@ export async function chamarHttp(
     url = proxima.toString()
   }
 
-  if (!resposta.ok) {
-    return { ok: false, motivo: `a chamada respondeu ${resposta.status}` }
+  if (resposta.statusCode < 200 || resposta.statusCode >= 300) {
+    return { ok: false, motivo: `a chamada respondeu ${resposta.statusCode}` }
   }
 
   // Sem mapeamento, o que voltou não interessa: é o webhook disparado e
-  // esquecido, que é metade do valor deste nó.
-  if (pedido.mapear.length === 0) return { ok: true, valores: {} }
+  // esquecido, que é metade do valor deste nó. O corpo ainda precisa ser
+  // consumido — deixar pendurado segura a conexão até o timeout.
+  if (pedido.mapear.length === 0) {
+    await resposta.body.dump()
+    return { ok: true, valores: {} }
+  }
 
   let json: unknown
   try {
-    json = await resposta.json()
+    json = await resposta.body.json()
   } catch {
     return { ok: false, motivo: 'a resposta não é JSON, e o bloco pede campos dela' }
   }
@@ -138,7 +152,40 @@ export async function chamarHttp(
   return { ok: true, valores }
 }
 
-function montarCabecalhos(pedido: PedidoHttp, deTeste: boolean, mesmaOrigem: boolean): Headers {
+/**
+ * Um `dispatcher` que não resolve nome nenhum: conecta direto no endereço que
+ * já passou pela conferência.
+ *
+ * O `Host` e o `servername` do TLS continuam sendo o hostname original — sem
+ * isso o certificado não bateria e todo https quebraria. O undici cuida disso
+ * sozinho porque a URL continua com o hostname; só o `lookup` é que mente.
+ */
+function fixarNo(endereco: string, familia: 4 | 6): Agent {
+  return new Agent({
+    connect: {
+      lookup(_hostname, opcoes, callback) {
+        if (opcoes.all) {
+          callback(null, [{ address: endereco, family: familia }] as never)
+          return
+        }
+        callback(null, endereco as never, familia as never)
+      },
+    },
+  })
+}
+
+/** Lê um cabeçalho da resposta, que no undici pode vir como lista. */
+function cabecalho(resposta: { headers: Record<string, string | string[] | undefined> }, nome: string): string | null {
+  const valor = resposta.headers[nome]
+  if (Array.isArray(valor)) return valor[0] ?? null
+  return valor ?? null
+}
+
+function montarCabecalhos(
+  pedido: PedidoHttp,
+  deTeste: boolean,
+  mesmaOrigem: boolean,
+): Record<string, string> {
   const cabecalhos = new Headers()
 
   // Só na origem que o operador escreveu. Depois de um redirecionamento para
@@ -158,7 +205,7 @@ function montarCabecalhos(pedido: PedidoHttp, deTeste: boolean, mesmaOrigem: boo
 
   if (deTeste) cabecalhos.set(CABECALHO_TESTE, '1')
 
-  return cabecalhos
+  return Object.fromEntries(cabecalhos.entries())
 }
 
 /**

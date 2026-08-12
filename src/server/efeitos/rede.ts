@@ -22,27 +22,33 @@ import { lookup } from 'node:dns/promises'
  */
 
 /**
- * **O que esta conferência NÃO cobre: DNS rebinding.**
+ * **DNS rebinding está fechado, e é por isso que esta função devolve o IP.**
  *
- * Entre resolver o nome aqui e o `fetch` resolver de novo, a resposta do DNS
- * pode mudar. Quem controla um domínio consegue devolver um IP público na
- * primeira consulta e `169.254.169.254` na segunda, e aí a requisição sai para
- * o endereço que este arquivo existe para bloquear. É uma janela de tempo, não
- * um furo na lógica — o padrão "conferir e depois chamar" tem essa brecha por
- * construção.
+ * O padrão ingênuo — resolver, conferir, e deixar o cliente HTTP resolver de
+ * novo na hora de conectar — tem uma janela: quem controla o domínio devolve um
+ * IP público na conferência e o endereço de metadados da nuvem na conexão. O
+ * `undici` (que é o que está por baixo do `fetch` no Node) **ignora o `agent` do
+ * Node e re-resolve o DNS ao conectar**, então a janela existe de verdade.
  *
- * Fechar de verdade exige fixar o IP já resolvido no momento da conexão (um
- * `dispatcher` do undici com `lookup` próprio), o que muda como o `fetch` é
- * montado e precisa conviver com o `fetch` que o Next embrulha.
+ * Não é teoria: é a mesma classe da CVE do Budibase (GHSA-v42f-v8xc-j435), que
+ * é um low-code com nó de REST — o mesmo produto que este aqui.
  *
- * Fica registrado como risco aceito, e não como coisa esquecida: hoje só o
- * operador escreve endereço de fluxo, então quem exploraria isso é quem já tem
- * acesso ao editor. **Isto muda no dia em que o cliente ganhar acesso**
- * (BRIEF-UI §6) — nesse dia, o rebinding sai de teórico e este comentário vira
- * tarefa.
+ * Por isso o veredito positivo carrega o endereço aprovado. Quem chama fixa a
+ * conexão nele (ver `http.ts`), e não sobra segunda resolução para trocar.
  */
 
-export type Veredito = { ok: true } | { ok: false; motivo: string }
+export type Veredito =
+  | {
+      ok: true
+      /**
+       * O endereço aprovado, para quem for conectar **fixar nele** em vez de
+       * resolver de novo. É o que fecha a janela do rebinding.
+       */
+      endereco: string
+      /** 4 ou 6, que o `lookup` do undici precisa devolver junto. */
+      familia: 4 | 6
+    }
+  | { ok: false; motivo: string }
 
 export async function conferirEndereco(url: string): Promise<Veredito> {
   let alvo: URL
@@ -57,7 +63,7 @@ export async function conferirEndereco(url: string): Promise<Veredito> {
     return { ok: false, motivo: 'só https é aceito' }
   }
 
-  let enderecos: { address: string }[]
+  let enderecos: { address: string; family: number }[]
   try {
     enderecos = await lookup(alvo.hostname, { all: true })
   } catch {
@@ -79,7 +85,18 @@ export async function conferirEndereco(url: string): Promise<Veredito> {
     }
   }
 
-  return { ok: true }
+  // Devolve o primeiro, que é o que será fixado na conexão. Todos já passaram —
+  // aprovar a lista e conectar em outro endereço seria o mesmo furo de novo.
+  const primeiro = enderecos[0]
+  if (!primeiro) {
+    return { ok: false, motivo: `"${alvo.hostname}" não resolveu para endereço nenhum` }
+  }
+
+  return {
+    ok: true,
+    endereco: primeiro.address,
+    familia: primeiro.address.includes(':') ? 6 : 4,
+  }
 }
 
 /**
