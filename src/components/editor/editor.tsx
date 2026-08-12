@@ -129,6 +129,8 @@ export function Editor({
   const [edges, setEdges, aoMudarArestas] = useEdgesState<Edge>(inicial.edges as Edge[])
   const [inicio, setInicio] = useState(inicial.inicio)
   const [selecionado, setSelecionado] = useState<string | null>(null)
+  /** Qual bloco a última seleção apontava — ver `onSelectionChange`. */
+  const ultimoSelecionado = useRef<string | null>(null)
   const [aba, setAba] = useState<'bloco' | 'testar'>('bloco')
   const [salvamento, setSalvamento] = useState<'salvo' | 'salvando' | 'pendente' | 'erro'>('salvo')
   const [sessao, setSessao] = useState<Sessao | null>(null)
@@ -469,7 +471,18 @@ export function Editor({
             onSelectionChange={({ nodes: sel }) => {
               const id = sel[0]?.id ?? null
               setSelecionado(id)
-              if (id) setAba('bloco')
+              // Trocar de bloco leva para a aba "Bloco", porque é o que a
+              // pessoa quer ver ao clicar num bloco diferente.
+              //
+              // **Só quando o bloco muda de verdade.** O React Flow redispara
+              // este evento com a mesma seleção a cada render, inclusive no
+              // render causado por clicar na aba "Testar" — e aí o `setAba`
+              // daqui roda no mesmo lote e vence o do clique. O efeito para
+              // quem usa: com um bloco selecionado (que é o estado normal de
+              // quem está desenhando) a aba "Testar" simplesmente não abre,
+              // sem nem piscar. Parecia botão quebrado.
+              if (id && id !== ultimoSelecionado.current) setAba('bloco')
+              ultimoSelecionado.current = id
             }}
             fitView
             colorMode="dark"
@@ -608,21 +621,44 @@ export function Editor({
 }
 
 /**
+ * O tamanho do bloco no desenho. A largura é o `w-[248px]` de `nos.tsx`; a
+ * altura varia com o conteúdo (uma pergunta com opções é bem mais alta que uma
+ * mensagem), então vale a maior. Errar para cima só afasta um pouco o bloco
+ * novo; errar para baixo devolve a sobreposição.
+ */
+const LARGURA_NO = 248
+const ALTURA_NO = 140
+
+/**
  * Empurra o bloco novo até um lugar que não esteja ocupado.
  *
  * Sem isto, adicionar dois blocos seguidos empilhava um exatamente em cima do
  * outro no centro da tela: parecia que o segundo não tinha sido criado, e quem
  * arrastasse descobria dois na mesma posição.
+ *
+ * **A comparação é entre retângulos, não entre pontos.** A primeira versão
+ * disto media 40px nos dois eixos, o que é menos de um sexto da largura do
+ * bloco: dois blocos a 46px de distância passavam no teste e se sobrepunham em
+ * 200px. E bloco coberto não é só feio — ele fica inclicável, então o de baixo
+ * some do editor sem nenhum aviso.
  */
 function livre(inicial: { x: number; y: number }, existentes: Node[]): { x: number; y: number } {
-  const perto = (a: { x: number; y: number }, b: { x: number; y: number }) =>
-    Math.abs(a.x - b.x) < 40 && Math.abs(a.y - b.y) < 40
+  const sobrepoe = (a: { x: number; y: number }, b: { x: number; y: number }) =>
+    Math.abs(a.x - b.x) < LARGURA_NO && Math.abs(a.y - b.y) < ALTURA_NO
 
   let alvo = inicial
   // Teto para não virar laço infinito num desenho muito cheio: depois de 20
   // degraus, empilhar é melhor do que travar.
-  for (let i = 0; i < 20 && existentes.some((n) => perto(n.position, alvo)); i++) {
-    alvo = { x: alvo.x + 34, y: alvo.y + 34 }
+  //
+  // O degrau desce um bloco inteiro, e é de propósito. Descer de pouquinho
+  // parece mais delicado e não é: o bloco novo caminha pela mesma diagonal que
+  // os anteriores já ocuparam, gasta cinco degraus para vencer cada um, e no
+  // quinto bloco o teto estoura — voltando a empilhar exatamente no caso em que
+  // esta função existe para ajudar. Descendo uma altura por vez, cada degrau
+  // vence um bloco, e o teto vira o que ele deveria ser: inalcançável na
+  // prática.
+  for (let i = 0; i < 20 && existentes.some((n) => sobrepoe(n.position, alvo)); i++) {
+    alvo = { x: alvo.x, y: alvo.y + ALTURA_NO + 20 }
   }
   return alvo
 }
