@@ -346,3 +346,83 @@ describe('cabeçalho não pode derrubar a conversa nem vazar', () => {
     expect(new Headers(initDaChamada(espiao, 1).headers).get('authorization')).toBe('Bearer segredo')
   })
 })
+
+describe('o corpo não acompanha redirecionamento para fora', () => {
+  it('302 para outro host não leva o corpo, e vira GET', async () => {
+    conferirEndereco.mockResolvedValue({ ok: true })
+    const espiao = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(null, { status: 302, headers: { location: 'https://outro.com/x' } }),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ a: 1 }), { status: 200 }))
+    vi.stubGlobal('fetch', espiao)
+
+    await chamarHttp(pedido({ metodo: 'POST', corpo: '{"lead":"João"}' }), { deTeste: false })
+
+    expect(initDaChamada(espiao, 0).body).toBe('{"lead":"João"}')
+    expect(initDaChamada(espiao, 1).body).toBeUndefined()
+    expect(initDaChamada(espiao, 1).method).toBe('GET')
+  })
+
+  it('307 para outro host preserva o método mas larga o corpo', async () => {
+    conferirEndereco.mockResolvedValue({ ok: true })
+    const espiao = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(null, { status: 307, headers: { location: 'https://outro.com/x' } }),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ a: 1 }), { status: 200 }))
+    vi.stubGlobal('fetch', espiao)
+
+    await chamarHttp(pedido({ metodo: 'POST', corpo: '{"lead":"João"}' }), { deTeste: false })
+
+    expect(initDaChamada(espiao, 1).method).toBe('POST')
+    expect(initDaChamada(espiao, 1).body).toBeUndefined()
+  })
+
+  it('307 no MESMO host mantém método e corpo', async () => {
+    conferirEndereco.mockResolvedValue({ ok: true })
+    const espiao = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(null, { status: 307, headers: { location: '/outro' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ a: 1 }), { status: 200 }))
+    vi.stubGlobal('fetch', espiao)
+
+    await chamarHttp(pedido({ metodo: 'POST', corpo: '{"lead":"João"}' }), { deTeste: false })
+
+    expect(initDaChamada(espiao, 1).method).toBe('POST')
+    expect(initDaChamada(espiao, 1).body).toBe('{"lead":"João"}')
+  })
+
+  it('segue no máximo 3 redirecionamentos — 4 chamadas ao todo', async () => {
+    conferirEndereco.mockResolvedValue({ ok: true })
+    const espiao = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(null, { status: 302, headers: { location: 'https://exemplo.com/volta' } }),
+      )
+    vi.stubGlobal('fetch', espiao)
+
+    await chamarHttp(pedido(), { deTeste: false })
+
+    // Importa para o orçamento de tempo: 4 x TIMEOUT_MS tem que caber no
+    // maxDuration que o webhook declara.
+    expect(espiao).toHaveBeenCalledTimes(4)
+  })
+})
+
+describe('valor mapeado tem teto', () => {
+  it('corta valor gigante em vez de deixar estourar o limite do WhatsApp', () => {
+    const enorme = { texto: 'a'.repeat(5000) }
+    const valor = extrair(enorme, 'texto')
+
+    expect(valor.length).toBeLessThan(1100)
+    expect(valor.endsWith('…')).toBe(true)
+  })
+
+  it('objeto grande também é cortado', () => {
+    const valor = extrair({ lista: Array.from({ length: 500 }, (_, i) => ({ i })) }, 'lista')
+    expect(valor.length).toBeLessThan(1100)
+  })
+})

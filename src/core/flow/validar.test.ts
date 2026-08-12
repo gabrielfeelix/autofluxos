@@ -441,3 +441,30 @@ describe('o destino da chamada não pode sair da conversa', () => {
     expect(comUrl('https://exemplo.com/x')).toEqual([])
   })
 })
+
+describe('mapeamento precisa dizer o que ler', () => {
+  const comMapa = (mapear: { variavel: string; caminho: string }[]) =>
+    validar(
+      fluxoSchema.parse({
+        inicio: 'api',
+        nodes: [
+          {
+            id: 'api',
+            type: 'http',
+            position: { x: 0, y: 0 },
+            data: { url: 'https://e.com', mapear },
+          },
+          { id: 'humano', type: 'handoff', position: { x: 0, y: 0 }, data: {} },
+        ],
+        edges: [{ id: 'a1', source: 'api', target: 'humano' }],
+      }),
+    ).erros.map((e) => e.codigo)
+
+  it('recusa caminho vazio — a variável nunca seria preenchida', () => {
+    expect(comMapa([{ variavel: 'situacao', caminho: '' }])).toContain('CAMINHO_VAZIO')
+  })
+
+  it('aceita mapeamento completo', () => {
+    expect(comMapa([{ variavel: 'situacao', caminho: 'pedido.status' }])).toEqual([])
+  })
+})

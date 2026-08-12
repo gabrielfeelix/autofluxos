@@ -46,6 +46,11 @@ export async function chamarHttp(
     return { ok: false, motivo: 'o endereço não é uma URL válida' }
   }
 
+  // Método e corpo mudam ao longo dos saltos: o corpo carrega o lead inteiro e
+  // não pode acompanhar um redirecionamento para fora da origem original.
+  let metodo: PedidoHttp['metodo'] = pedido.metodo
+  let corpo: string | undefined = pedido.corpo
+
   for (let salto = 0; ; salto++) {
     const veredito = await conferirEndereco(url)
     if (!veredito.ok) return { ok: false, motivo: veredito.motivo }
@@ -67,9 +72,9 @@ export async function chamarHttp(
 
     try {
       resposta = await fetch(url, {
-        method: pedido.metodo,
+        method: metodo,
         headers: cabecalhos,
-        body: pedido.metodo === 'POST' ? pedido.corpo : undefined,
+        body: metodo === 'POST' ? corpo : undefined,
         // Seguir sozinho pularia a conferência de endereço no destino, que é
         // exatamente por onde o ataque entraria: um host público que responde
         // 302 apontando para a rede interna.
@@ -89,11 +94,25 @@ export async function chamarHttp(
 
     if (!destino) break
 
+    let proxima: URL
     try {
-      url = new URL(destino, url).toString()
+      proxima = new URL(destino, url)
     } catch {
       return { ok: false, motivo: 'a chamada redirecionou para um endereço ilegível' }
     }
+
+    // 301, 302 e 303 viram GET sem corpo — é o que a norma manda e o que todo
+    // navegador faz. 307 e 308 preservam o método, e aí o corpo só continua se
+    // o destino for a mesma origem: ele carrega o lead inteiro, e entregá-lo a
+    // quem respondeu o redirecionamento é o mesmo vazamento que os cabeçalhos.
+    if (resposta.status === 301 || resposta.status === 302 || resposta.status === 303) {
+      metodo = 'GET'
+      corpo = undefined
+    } else if (proxima.origin !== origemInicial) {
+      corpo = undefined
+    }
+
+    url = proxima.toString()
   }
 
   if (!resposta.ok) {
@@ -163,6 +182,20 @@ export function extrair(json: unknown, caminho: string): string {
   }
 
   if (atual === null || atual === undefined) return ''
-  if (typeof atual === 'object') return JSON.stringify(atual)
-  return String(atual)
+  return cortar(typeof atual === 'object' ? JSON.stringify(atual) : String(atual))
+}
+
+/**
+ * Teto para um valor mapeado.
+ *
+ * Um caminho que cai num objeto grande — ou uma API que devolve muito mais do
+ * que se esperava — viraria uma variável enorme, e ela acaba dentro de uma
+ * mensagem de WhatsApp. A Cloud API corta em 4096 caracteres e recusa acima
+ * disso, e a recusa aconteceria em `aplicar()`, depois da sessão já ter
+ * avançado. 1000 é folgado para um campo e seguro para o limite.
+ */
+const LIMITE_VALOR = 1000
+
+function cortar(valor: string): string {
+  return valor.length <= LIMITE_VALOR ? valor : `${valor.slice(0, LIMITE_VALOR)}…`
 }

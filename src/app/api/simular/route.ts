@@ -18,6 +18,14 @@ import { escolherModelo } from '@/server/ia/modelo'
  * `ia/modelo.ts` sobre onde fica a linha entre demonstração e conversa real.
  */
 
+/**
+ * Esta rota roda o mesmo trabalho bloqueante que o webhook: um fluxo com bloco
+ * de API chama a internet daqui também. Sem orçamento de tempo próprio, um
+ * parceiro lento faz a requisição morrer sem resposta nenhuma, e a aba Testar
+ * fica só girando.
+ */
+export const maxDuration = 60
+
 const corpoSchema = z.object({
   fluxo: fluxoSchema,
   sessao: sessaoSchema,

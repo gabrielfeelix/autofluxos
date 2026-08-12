@@ -88,6 +88,14 @@ export function Conversa({
       setStatus(nova.status)
       aoMudarSessao?.(nova)
       aplicar(acoes, nova)
+    } catch {
+      // Sem isto a falha some: a requisição pode morrer por rede, ou por a rota
+      // estourar o tempo esperando uma API lenta. Ficar girando em silêncio é
+      // pior do que dizer o que houve.
+      setItens((atual) => [
+        ...atual,
+        { chave: novaChave(), de: 'sistema', texto: 'a requisição não completou', alerta: true },
+      ])
     } finally {
       setOcupado(false)
     }
@@ -181,7 +189,7 @@ export function Conversa({
     fimDaLista.current?.scrollIntoView({ behavior: 'smooth' })
   }, [itens])
 
-  const viva = status === 'ativa' || status === 'aguardando_ia'
+  const viva = status === 'ativa' || status === 'aguardando_ia' || status === 'aguardando_http'
   const temApi = fluxo.nodes.some((n) => n.type === 'http')
 
   return (

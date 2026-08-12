@@ -299,6 +299,16 @@ function conferirConteudo(no: No, erros: Problema[]): void {
             noId: no.id,
           })
         }
+        // Sem caminho, `extrair()` devolve string vazia para sempre e o fluxo
+        // publica parecendo certo — a variável só nunca é preenchida. É o tipo
+        // de defeito que só aparece com cliente conversando.
+        if (vazio(item.caminho)) {
+          erros.push({
+            codigo: 'CAMINHO_VAZIO',
+            mensagem: `O mapeamento de "${item.variavel || 'uma variável'}" não diz qual campo da resposta ler.`,
+            noId: no.id,
+          })
+        }
       }
 
       if (no.data.metodo === 'POST' && !vazio(no.data.corpo)) {
