@@ -1,284 +1,234 @@
-# Brief — sistema de agenda para estúdio
+# Brief — Agenda, o SaaS de agendamento da 4YU
 
-Documento para quem vai **construir o sistema**, que é outro projeto e outro
-repositório. Aqui está a situação, o que já se sabe do domínio, e onde ele
-encosta no AutoFluxos.
-
----
-
-## A situação
-
-A 4YU vende automação de WhatsApp (AutoFluxos). O primeiro cliente de verdade é
-o **MGM Pilates**, estúdio do Daniel na Av. Paulista, trazido pelo Eduardo. O
-bot precisa responder "quais horários estão livres na quarta?" — e a resposta
-mora numa planilha.
-
-[PLANILHAS.md](PLANILHAS.md) fecha três saídas para clientes que vivem em
-planilha. **Este documento é a terceira:** parar de depender de planilha e
-oferecer a gestão de horários como produto.
-
-Valor: resolve de vez o problema de estrutura, e vira receita recorrente por
-cliente em vez de uma automação vendida uma vez.
+Passagem de bastão para quem vai **construir o sistema**, que é outro projeto e
+outro repositório. Aqui está o que o produto é, o que já se sabe, o que precisa
+ser pesquisado, e onde ele encosta no AutoFluxos.
 
 ---
 
-## O que este sistema NÃO é
+## O que é
+
+Um **SaaS de agendamento**, multi-inquilino, para qualquer negócio que marque
+horário. Não é software de estúdio de pilates. Não é software de academia.
+
+Os clientes previstos são de áreas diferentes e com agendas de formatos
+diferentes:
+
+- estúdio de pilates — turma com várias vagas, aluno fixo no mesmo horário toda
+  semana
+- personal trainer sem espaço próprio — atendimento individual, horário
+  combinado, local variável
+- barbearia, salão — horário avulso, serviços de durações diferentes, escolha do
+  profissional
+- clínica, consultório — horário avulso, retorno, encaixe
+- professor particular, aula de idioma — recorrente ou avulso
+
+**A regra que decide tudo:**
+
+> Isto é **agendamento**, ou é **este cliente**?
+
+Se for do cliente, vira configuração — nunca coluna nova, nunca `if` no código.
+É a mesma disciplina do [ARQUITETURA.md](ARQUITETURA.md) do AutoFluxos, e existe
+pelo mesmo motivo: no dia em que precisar mexer no código para encaixar um
+cliente, o produto virou consultoria com passo extra.
+
+**O risco concreto deste projeto** é modelar em cima do primeiro caso. O MGM
+Pilates é a evidência disponível, não o alvo. "Turma", "aluno" e "professor" são
+o vocabulário *dele*; o produto precisa de nomes que sirvam para o barbeiro e o
+consultório também.
+
+---
+
+## As duas formas de agenda que já sabemos existir
+
+O modelo tem que aguentar as duas sem gambiarra, e provavelmente é a decisão
+mais importante do projeto:
+
+**Vaga recorrente.** A pessoa ocupa o mesmo horário toda semana, por tempo
+indeterminado. Ninguém remarca nada — a presença é que é registrada. Quando ela
+falta, aparece a **reposição**: encaixe avulso em outro horário. É o caso do
+pilates, do professor particular, da aula de idioma.
+
+**Horário avulso.** Cada atendimento é marcado individualmente, escolhendo
+serviço, profissional e horário. É o caso do barbeiro, da clínica, do personal.
+
+Suspeita a validar: as duas podem ser a mesma coisa se o "horário recorrente"
+for uma assinatura que *gera* atendimentos. Ou podem ser conceitos distintos que
+só compartilham a grade. **Essa escolha é do agente que construir**, e vale
+pesquisá-la antes de escrever a primeira migration.
+
+Capacidade também generaliza: turma de pilates com 4 vagas e atendimento
+individual são o mesmo objeto com capacidade 4 e 1.
+
+---
+
+## O que NÃO é
 
 Escopo negativo primeiro, porque é o que mais economiza trabalho:
 
-- **Não é financeiro.** Sem cobrança, sem mensalidade, sem boleto, sem
-  conciliação. Vencimento de plano entra como *data*, para avisar; cobrar não.
-- **Não é aplicativo do aluno.** Não agora. O aluno fala por WhatsApp, e o
-  WhatsApp é o app dele. Fazer app significa iOS também, loja, revisão,
-  atualização — e nada disso entrega o que o estúdio precisa hoje.
-- **Não é plataforma de conteúdo.** Sem vídeo, sem trilha, sem feed. O sistema
-  de referência tem isso porque foi pensado com app; aqui não faz sentido —
-  não existe lugar onde o aluno acessaria.
-- **Não é o AutoFluxos.** São dois produtos. A conversa entre eles é por API,
-  detalhada no fim.
+- **Não é financeiro.** Sem cobrança, mensalidade, boleto ou conciliação.
+  Vencimento de plano pode entrar como *data*, para avisar; cobrar não.
+- **Não é aplicativo de quem é atendido.** O cliente final fala por WhatsApp, e
+  o WhatsApp é o app dele. Isso derruba login público, recuperação de senha e
+  tela de aluno.
+- **Não é plataforma de conteúdo.** Sem vídeo, trilha ou feed.
+- **Não é o AutoFluxos.** São dois produtos, e conversam por API.
 
-O que ele **é**: gestão de agenda e de alunos, para o estúdio operar.
+O que ele **é**: a agenda e o cadastro de quem é atendido, para o negócio operar.
 
 ---
 
-## O que já existe para reaproveitar
+## Evidência disponível
 
-O Gabriel construiu um sistema para o CT de boxe do Argel Riboli, em
-**`D:\Sistema-ct-boxe`** (`/mnt/d/Sistema-ct-boxe` no WSL). Monorepo pnpm com
-Next.js na web, React Native/Expo no app, e um pacote compartilhado. Banco no
-Supabase.
+### 1. Um sistema já construído, para referência de domínio
 
-O modelo de dados dele já resolveu boa parte das perguntas:
+`D:\Sistema-ct-boxe` (`/mnt/d/Sistema-ct-boxe` no WSL). Monorepo pnpm, Next.js
+na web, React Native/Expo no app, Supabase no banco. Feito para um CT de boxe.
 
-```
-alunos · aulas · presencas · professores · planos · series_aulas
-avaliacoes · contratos · pagamentos · notificacoes · candidatos
-trilhas_videos · posts · post_comentarios · aluno_documentos
-```
+Entidades que ele tem: `alunos`, `aulas`, `presencas`, `professores`, `planos`,
+`series_aulas`, `avaliacoes`, `candidatos`, `contratos`, `pagamentos`,
+`notificacoes`, `trilhas_videos`, `posts`, `aluno_documentos`.
 
-**Aproveitar:** `alunos`, `aulas`, `presencas`, `professores`, `planos`,
-`series_aulas`, `avaliacoes`, `candidatos` (que é o lead).
+**Referência de domínio, não base de código, e não modelo do produto.** Ele é
+tão específico de um negócio quanto a planilha do pilates — só que em código.
+Serve para ver quais perguntas aparecem, não para copiar o formato. Conteúdo e
+financeiro ficam de fora por escopo.
 
-**Deixar de fora:** `trilhas_videos`, `posts`, `post_comentarios` (conteúdo,
-que era para o app), `pagamentos` e `contratos` (financeiro, fora do escopo).
+### 2. A planilha de um cliente real, para ver como se opera hoje
 
-É **referência de domínio, não base de código.** O layout e a organização se
-refazem com o cuidado que o AutoFluxos tem hoje. O que se aproveita é o trabalho
-de descobrir quais entidades existem e como se relacionam, que costuma ser a
-parte cara.
+Lista de turma do MGM Pilates, agosto/26, analisada célula a célula. **É um
+caso, não o padrão** — mas é dado real de um negócio que funciona, e mostra
+problemas que aparecem em qualquer agenda:
 
----
+**Escala:** 70 horários por semana, 232 vagas, 132 ocupadas (57%), mais 47
+pessoas fora da grade (encaixe, avulso, reserva).
 
-## O que a planilha do MGM ensina
+**O estado vira prosa quando não tem campo.** As marcas usadas na presença:
+`P` (140), `FAR` (30), `LIC` (17), `XX`/`X` (25), `F` (13), `REP`+data (6),
+`P ANT 19H` e `18H` (5), `F EXP` (2). E escritos junto do nome: `PERSONAL`,
+`RESERVA`, `REPOSIÇÃO`, `Gestante`, `Fascia`, `Domicílio`.
 
-Levantado do arquivo real (agosto/26). Vale mais que qualquer suposição, porque
-é como um estúdio de verdade opera hoje.
+Cada um desses é um estado que o negócio precisa registrar e não tem onde.
+**A lição generaliza:** se o sistema não tiver o estado como campo, a pessoa
+escreve prosa — e o dado morre.
 
-**O formato.** Uma aba por dia da semana. 14 horários por dia, das 7h às 20h.
-Cada horário é um bloco com professor, 2 a 4 vagas numeradas, e as datas do mês
-como colunas de presença. Arquivo novo a cada mês.
-
-**Os números.** 70 turmas por semana, 232 vagas, 132 ocupadas — **57% de
-ocupação** — mais 47 pessoas fora da numeração das vagas.
-
-**A regra que muda tudo: matrícula é fixa e semanal.** A aluna é "da segunda das
-7h" e ocupa aquela vaga toda semana. Ninguém agenda aula solta. Quem "agenda" é
-aluna nova, ou é **reposição** — encaixe avulso num horário com folga. Modelar
-como reserva por sessão erraria o domínio inteiro.
-
-**As colunas por aluna:** matrícula, nome, telefone, **vencimento do plano** e
-**próxima avaliação postural**. As duas últimas dizem que o sistema precisa de
-data com aviso, não só de agenda.
-
-**O vocabulário existe, mas não está escrito.** As marcas de presença usadas:
-
-| Marca | Quantas | O que parece ser |
-|---|---|---|
-| `P` | 140 | presente |
-| `FAR` | 30 | falta |
-| `LIC` | 17 | licença (afastamento longo) |
-| `XX` / `X` | 25 | sem aula / horário não existiu |
-| `F` | 13 | falta (outra grafia?) |
-| `REP` + data | 6 | reposição, com a data de origem |
-| `P ANT 19H`, `18H` | 5 | veio, mas em outro horário |
-| `F EXP` | 2 | faltou à experimental |
-
-E anotações escritas dentro da célula do nome: `PERSONAL` (6), `RESERVA` (4),
-`REPOSIÇÃO` (2), `Gestante`, `Fascia`, `Domicílio`.
-
-**Isso é requisito, não bagunça.** Cada marca dessas é um estado que o estúdio
-precisa registrar e hoje não tem onde. O sistema tem que ter esses estados como
-campo, com nome, senão a pessoa volta a escrever prosa na célula.
-
-**Qualidade do dado, para quem for importar:** 77% têm matrícula, 70% têm
-telefone, e o formato dominante do telefone não tem DDD (`9.8109-1840`, 95 de
-125). A mesma pessoa aparece escrita de dois jeitos entre meses (`PERSIO` e
-`PÉRSIO FAULIM DE MENEZES`). Importar exige decidir o que fazer com o que não
-casa — e **relatar**, não adivinhar.
+**Qualidade do dado, para quem for importar de planilha:** 77% com identificador,
+70% com telefone, formato de telefone sem DDD na maioria, e a mesma pessoa
+escrita de dois jeitos entre meses. Importador precisa **relatar o que não
+casou**, nunca adivinhar.
 
 ---
 
-## O que o mercado já resolveu
+## O que pesquisar antes de modelar
 
-Levantado de Tecnofit, Clínica Ágil, Vedius e SuperSaaS, que atendem esse
-segmento no Brasil. O que aparece em todos:
+Tarefa de quem for construir. Não modele a partir deste documento — ele só diz
+onde olhar.
 
-- **Agendamento por matrícula e por sessão**, com inclusão automática do aluno
-  nos horários fixos.
-- **Controle de vagas e taxa de ocupação** — o número que diz se vale abrir
-  turma nova.
-- **Presença, falta e reposição** como fluxo, não como anotação.
-- **Lista de espera** com aviso automático quando abre vaga em horário cheio.
-- **Lembrete automático** antes da aula, para reduzir falta.
-- **Abrir turma nova no mesmo horário** quando um horário vive lotado.
-
-Os três primeiros são o mínimo para substituir a planilha. Lista de espera e
-lembrete são exatamente o que o bot do AutoFluxos faz melhor que qualquer app —
-e é aí que os dois produtos se somam.
-
----
-
-## O dia a dia que o sistema precisa atender
-
-Ordenado por frequência, que é o que decide o que fica na tela inicial:
-
-1. **Marcar presença da turma.** Todo dia, várias vezes. Hoje é papel impresso.
-   Se o sistema não for rápido nisso, ele não substitui a folha.
-2. **Encaixar uma reposição.** Achar horário com folga e pôr a aluna lá, uma
-   vez, sem mexer na matrícula fixa dela.
-3. **Ver quem falta / quem sumiu.** Aluna com faltas seguidas é aluna saindo.
-4. **Matricular aluna nova** num horário com vaga.
-5. **Trocar uma aluna de horário** em definitivo.
-6. **Ver plano vencendo** e avaliação postural a fazer.
-7. **Abrir, fechar ou remanejar horário** — professor de férias, feriado.
-8. **Imprimir a lista da turma.** Enquanto a marcação for no papel, isso é
-   requisito, não conveniência.
+1. **Como os concorrentes modelam recorrência.** Tecnofit, Clínica Ágil, Vedius,
+   SuperSaaS no Brasil; Calendly, Cal.com, Acuity, Simply Book, Booksy fora.
+   Cal.com é código aberto — o modelo de dados dele está lá para ler.
+2. **Quais features aparecem em todos.** Já se sabe que aparecem: controle de
+   vagas e ocupação, presença/falta/reposição, **lista de espera com aviso
+   quando abre vaga**, lembrete antes do horário. Confirmar e completar.
+3. **Fuso, feriado e exceção.** Semana cheia, feriado, profissional de férias,
+   horário que não existe naquela semana. É onde agenda costuma quebrar.
+4. **Como cada segmento chama as coisas.** "Turma/aluno/professor" no pilates,
+   "cliente/profissional/serviço" no salão, "paciente" na clínica. Decidir o
+   vocabulário interno neutro e onde a tradução acontece.
+5. **Onde termina a agenda e começa o CRM.** Histórico, observação, tag,
+   retorno. Traçar a linha explicitamente.
 
 ---
 
-## Como o aluno confirma
+## Multi-inquilino e segmentação
 
-**Por WhatsApp, e é isso que diferencia o produto.**
+Multi-inquilino **desde a primeira migration**, com um cliente só em produção.
+Acrescentar o identificador do inquilino depois custa migração em toda tabela e
+revisão de toda consulta.
 
-Nesse segmento o aluno não instala app de estúdio. Ele já conversa com o estúdio
-por WhatsApp — o doc do Eduardo mostra o fluxo inteiro assim. O sistema é a tela
-de **quem trabalha no estúdio**; o aluno nunca vê o sistema.
-
-Então a divisão fica:
-
-- **Aluno:** WhatsApp, atendido pelo AutoFluxos.
-- **Estúdio:** web, neste sistema.
-- **App:** fora do escopo agora. Se um dia entrar, entra para o professor
-  marcar presença no tablet, não para o aluno.
-
-Isso simplifica muito: **não precisa de login de aluno, nem de recuperação de
-senha, nem de tela pública.** O que o aluno faria num app, o bot faz na conversa.
+Ideia registrada, **fora do escopo agora**: no cadastro, perguntar o ramo e a
+forma de agenda para já entregar o sistema pré-configurado. Vale desenhar o
+modelo de forma que isso caiba depois — não vale construir agora.
 
 ---
 
-## Entidades propostas
+## Papéis
 
-Ponto de partida, para o agente refinar:
+- **Dono da conta:** tudo.
+- **Profissional:** a agenda dele, as pessoas dele, registrar atendimento. Não
+  vê a operação inteira.
+- **Recepção / secretaria:** marca e remarca para todos, não mexe em
+  configuração.
+- **4YU:** acesso de suporte, para configurar e diagnosticar.
 
-```
-estudios          multi-cliente desde o começo — o segundo estúdio não pode
-                  exigir reescrever
-
-professores       nome, contato, cor na agenda
-alunos            nome, telefone (E.164), matrícula, observações de saúde,
-                  vencimento do plano, próxima avaliação postural
-planos            frequência semanal contratada (1x, 2x, 3x…)
-
-turmas            estudio, dia da semana, hora, professor, capacidade,
-                  modalidade (pilates, personal, fisio), ativa
-matriculas        aluno ↔ turma — a vaga fixa semanal. É o coração.
-ocorrencias       aluno, turma, data, tipo: presente | falta | falta_avisada |
-                  licenca | reposicao | horario_trocado | sem_aula
-                  (+ referência à data de origem, quando for reposição)
-
-espera            aluno, turma — fila para quando abrir vaga
-leads             quem chegou pelo WhatsApp e ainda não é aluno
-```
-
-Duas decisões que valem discutir antes de codar:
-
-**`ocorrencias` como tabela única, com tipo**, em vez de `presencas` +
-`reposicoes` + `faltas` separadas. O vocabulário da planilha mostra que os
-estados se misturam ("veio, mas em outro horário"), e tabela separada por estado
-vira migração toda vez que aparece um estado novo.
-
-**`capacidade` na turma, não no estúdio.** A planilha tem horários com 2, 3 e 4
-vagas no mesmo dia.
+O terceiro papel existe porque em salão e clínica quem marca não é quem atende.
+No pilates é a mesma pessoa — e é exatamente o tipo de diferença que tem que ser
+papel, não sistema diferente.
 
 ---
 
 ## A fronteira com o AutoFluxos
 
-**São dois sistemas. A conversa é por API, com autenticação, e nenhum dos dois
-importa código do outro.** Isso não é preferência: o
-[ARQUITETURA.md](ARQUITETURA.md) do AutoFluxos proíbe dado de negócio do cliente
-morar dentro dele, e vale igual aqui — a agenda é o sistema do estúdio, o
-AutoFluxos é a automação que conversa com ele.
+**São dois sistemas separados, conversando por API com autenticação. Nenhum
+importa código do outro, e nenhum lê o banco do outro.**
 
-**O AutoFluxos não precisa de código novo para consumir isto.** Ele já tem nó de
-API com credencial no cofre (Conexões). O que este sistema precisa entregar é um
-token e alguns endereços.
+O AutoFluxos é a camada de automação: ele conversa no WhatsApp e chama sistemas
+de fora pelo bloco de API, com a credencial guardada no cofre dele. A Agenda é
+um desses sistemas — do ponto de vista do AutoFluxos, não é diferente de um CRM
+do cliente.
 
-Superfície mínima para o bot funcionar:
+**Consequência prática: o AutoFluxos não precisa de código novo.** O que a
+Agenda precisa entregar é um token e alguns endereços.
+
+### Superfície mínima para o bot funcionar
 
 ```
-GET  /disponibilidade?dia=quarta
+GET  /disponibilidade?dia=quarta[&servico=...][&profissional=...]
      → { "livres": "7h00;10h00;15h00" }
-
-     O formato com ponto e vírgula é o que a pergunta dinâmica do AutoFluxos
-     espera direto, sem tradução no meio. Ver PLANILHAS.md.
-
-GET  /aluno?telefone=5511999990000
-     → { "encontrado": true, "nome": "...", "turma": "segunda 7h00" }
-     → { "encontrado": false }
-
-     Vai responder `false` com frequência: no dado do MGM, 30% não têm
-     telefone. Não reconhecer é caminho normal, não erro.
-
-POST /reposicao
-     { "telefone": "...", "dia": "quarta", "hora": "10h00" }
-     → { "ok": true, "professor": "Carol" }
-     → { "ok": false, "motivo": "esse horário encheu" }
-
-     Confere a vaga **na hora de gravar**, não só na hora de mostrar: entre
-     mostrar e clicar, alguém pode ter ocupado.
-
-GET  /turmas
-     → catálogo, para telas e conferência
 ```
 
-Autenticação por token estático no cabeçalho — é o que o cofre do AutoFluxos
+O formato separado por ponto e vírgula não é capricho: é o que o bloco de
+pergunta dinâmica do AutoFluxos consome direto, sem tradução no meio. Ver
+[PLANILHAS.md](PLANILHAS.md).
+
+```
+GET  /pessoa?telefone=5511999990000
+     → { "encontrado": true, "nome": "...", "recorrencia": "segunda 7h00" }
+     → { "encontrado": false }
+```
+
+Vai responder `false` com frequência — no dado real, 30% não têm telefone
+cadastrado. **Não reconhecer é caminho normal, não erro**, e o bot já trata
+assim.
+
+```
+POST /agendamento
+     { "telefone": "...", "dia": "quarta", "hora": "10h00", "tipo": "reposicao" }
+     → { "ok": true, "profissional": "Carol" }
+     → { "ok": false, "motivo": "esse horário encheu" }
+```
+
+Confere a vaga **na hora de gravar**, não só na hora de mostrar: entre mostrar e
+clicar, alguém pode ter ocupado.
+
+```
+GET  /catalogo
+     → serviços, profissionais e grade, para telas e conferência
+```
+
+Autenticação por token estático em cabeçalho — é o que o cofre do AutoFluxos
 guarda hoje (`bearer`, `cabeçalho` ou `query`).
 
----
+### No outro sentido
 
-## Acessos
+Vale desenhar desde já: a Agenda vai querer **avisar** (lembrete de horário,
+vaga que abriu na lista de espera). Quem fala com o cliente final é o AutoFluxos.
+Então a Agenda precisa poder disparar um evento para fora — webhook de saída,
+com assinatura — em vez de mandar WhatsApp por conta própria.
 
-- **Administrador do estúdio** (Daniel): tudo.
-- **Professor:** a agenda dele, os alunos dele, marcar presença. Não vê o
-  estúdio inteiro.
-- **4YU:** acesso de suporte, para configurar e diagnosticar.
+Duas regras que evitam retrabalho:
 
-Multi-estúdio desde o primeiro dia no modelo de dados, mesmo com um cliente só —
-adicionar `estudio_id` depois custa migração em toda tabela e toda consulta.
-
----
-
-## Perguntas em aberto, para validar com o Daniel
-
-Não são detalhes de código; mudam o modelo:
-
-1. **Reposição tem regra?** Quantas por mês, precisa avisar com antecedência,
-   vale para qualquer plano? A planilha mostra que acontece muito e a regra não
-   está escrita em lugar nenhum.
-2. **O que exatamente significam `FAR`, `F`, `LIC`, `XX`?** Foi inferido da
-   frequência, não confirmado.
-3. **Personal e Domicílio ocupam vaga de turma** ou são agenda paralela?
-4. **Aluna com plano vencido continua ocupando a vaga?**
-5. **Quem marca presença** — o professor, na hora, ou alguém depois, pela folha?
-   Isso decide se a tela é de celular ou de computador.
+1. **A Agenda nunca fala com a Meta.** Quem tem o número, a janela de 24h e os
+   modelos aprovados é o AutoFluxos.
+2. **O AutoFluxos nunca guarda turma, matrícula ou presença.** Ele lê e escreve
+   pela API, e o dado mora na Agenda.
