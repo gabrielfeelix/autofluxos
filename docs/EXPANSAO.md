@@ -71,8 +71,8 @@ imutável · receber mensagem do WhatsApp e responder · chamar o sistema do cli
 no meio da conversa · guardar credenciais num cofre · o lead cair na tela · e
 responder o lead pelo painel dentro da janela de 24h.
 
-**248 testes passando**, `typecheck` e `lint` limpos, no ar em
-`autofluxos.4yu.com.br`.
+**Base local:** 250 testes passando, `typecheck` e `lint` limpos. O painel
+publicado está em `autofluxos.4yu.com.br`.
 
 ### 1.2 As telas que existem
 
@@ -627,9 +627,9 @@ corta**, três testes novos, e o texto do cofre corrigido. 248 testes verdes.
 
 ---
 
-### 1. Atribuição de anúncio (`referral`)
+### ✅ 1. Atribuição de anúncio (`referral`)
 
-**Hoje:** [`receber-mensagem.ts`](../src/server/receber-mensagem.ts) — o
+**Hoje era:** [`receber-mensagem.ts`](../src/server/receber-mensagem.ts) — o
 `webhookSchema` lê `metadata`, `contacts` e `messages`. **Não lê `referral`.**
 Quando alguém chega por anúncio Click-to-WhatsApp, a Cloud API manda junto da
 primeira mensagem um objeto com `source_id` (o anúncio), `source_url`,
@@ -638,14 +638,17 @@ primeira mensagem um objeto com `source_id` (o anúncio), `source_url`,
 **Lá:** campo `Registrado por meio de: Direto` no perfil do contato, e a tela de
 Campanhas inteira construída em cima disso.
 
-**Estado esperado:** a tabela de leads mostra de qual anúncio veio cada pessoa,
-em coluna criada sozinha. `Direto` para quem chegou sem anúncio.
+**Estado atual:** a tabela de leads mostra `origem`, `origem_anuncio` e
+`origem_titulo` em colunas criadas sozinhas. `Direto` para quem chegou sem
+anúncio. A atribuição acontece sob a trava do contato e só enquanto `origem` não
+existe, então uma mensagem futura não apaga a aquisição verdadeira nem campos
+coletados pelo fluxo.
 
-**Como fazer:**
+**Como foi feito:**
 1. Acrescentar `referral` ao `mensagemSchema` (opcional, todos os campos
    opcionais — a Meta muda o formato sem avisar)
-2. Em `tratarUma`, quando houver `referral`, gravar em `contacts.campos` como
-   `origem`, `origem_anuncio`, `origem_titulo`
+2. Em `tratarUma`, gravar `origem` como `Anúncio` ou `Direto`; quando houver
+   `referral`, acrescentar `origem_anuncio` e `origem_titulo`
 3. Gravar só na **primeira** vez: o `referral` só vem na mensagem que abre a
    conversa, e sobrescrever apagaria a origem verdadeira numa volta futura
 4. Teste com payload real de `referral` em `receber-mensagem.test.ts`

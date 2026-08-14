@@ -65,6 +65,25 @@ export async function acharOuCriarContato(
   }
 }
 
+export async function acharContato(contatoId: string): Promise<Contato | null> {
+  const { data, error } = await db()
+    .from('contacts')
+    .select('id, client_id, wa_id, nome, campos')
+    .eq('id', contatoId)
+    .maybeSingle()
+
+  if (error) throw new Error(`não deu para achar o contato: ${error.message}`)
+  if (!data) return null
+
+  return {
+    id: data.id as string,
+    clienteId: data.client_id as string,
+    waId: data.wa_id as string,
+    nome: data.nome as string | null,
+    campos: (data.campos ?? {}) as Record<string, string>,
+  }
+}
+
 /** A conversa mais recente deste contato neste número. */
 export async function ultimaSessao(
   contatoId: string,

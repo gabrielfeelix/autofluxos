@@ -30,7 +30,12 @@ const mock = canalMock()
 const comMock = () => mock
 
 /** O formato que a Meta manda de verdade. */
-function webhookTexto(de: string, texto: string, id: string) {
+function webhookTexto(
+  de: string,
+  texto: string,
+  id: string,
+  referral?: Record<string, string>,
+) {
   return {
     object: 'whatsapp_business_account',
     entry: [
@@ -41,7 +46,15 @@ function webhookTexto(de: string, texto: string, id: string) {
             value: {
               metadata: { phone_number_id: numeroDoBot },
               contacts: [{ wa_id: de, profile: { name: 'Ana Teste' } }],
-              messages: [{ id, from: de, type: 'text', text: { body: texto } }],
+              messages: [
+                {
+                  id,
+                  from: de,
+                  type: 'text',
+                  text: { body: texto },
+                  ...(referral ? { referral } : {}),
+                },
+              ],
             },
           },
         ],
@@ -121,6 +134,48 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
 
     expect(mock.enviadas[0]).toMatchObject({ tipo: 'texto', para: de })
     expect(mock.enviadas.find((e) => e.tipo === 'opcoes')).toMatchObject({ formato: 'botoes' })
+  })
+
+  it('guarda o anúncio que trouxe o contato na primeira mensagem', async () => {
+    const de = `5511${(Date.now() + 15).toString().slice(-9)}`
+    const referral = {
+      source_url: 'https://fb.me/3Exemplo',
+      source_type: 'ad',
+      source_id: '120210000000001',
+      headline: 'Filme institucional para sua empresa',
+      body: 'Conte sua história com a Prelúdio',
+      media_type: 'image',
+      image_url: 'https://lookaside.fbsbx.com/exemplo.jpg',
+      ctwa_clid: 'ARAzExemploDeClickId',
+    }
+
+    await receberMensagem(
+      webhookTexto(de, 'Quero um orçamento', `wamid-${marca}-referral-1`, referral),
+      comMock,
+    )
+
+    const { data } = await db().from('contacts').select('campos').eq('wa_id', de).single()
+    expect(data?.campos).toMatchObject({
+      origem: 'Anúncio',
+      origem_anuncio: referral.source_id,
+      origem_titulo: referral.headline,
+    })
+  })
+
+  it('marca entrada direta e não troca a origem numa mensagem futura', async () => {
+    const de = `5511${(Date.now() + 16).toString().slice(-9)}`
+
+    await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-direto-1`), comMock)
+    await receberMensagem(
+      webhookTexto(de, 'voltei por um anúncio', `wamid-${marca}-direto-2`, {
+        source_id: '120210000000002',
+        headline: 'Outro anúncio',
+      }),
+      comMock,
+    )
+
+    const { data } = await db().from('contacts').select('campos').eq('wa_id', de).single()
+    expect(data?.campos).toEqual({ origem: 'Direto' })
   })
 
   it('ignora reenvio da mesma mensagem — senão a conversa anda duas vezes', async () => {

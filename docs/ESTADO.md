@@ -1,4 +1,4 @@
-# Onde paramos — 12/ago/2026
+# Onde paramos — 13/ago/2026
 
 Documento de retomada. Quem chegar aqui sem ter acompanhado a construção
 consegue continuar lendo só isto e o [ARQUITETURA.md](ARQUITETURA.md).
@@ -7,9 +7,9 @@ consegue continuar lendo só isto e o [ARQUITETURA.md](ARQUITETURA.md).
 
 ## Leia isto primeiro
 
-**Estado:** tudo verde e no ar. `npm test` dá **223 passando**, `npm run
-typecheck` e `npm run build` limpos, `main` publicado em
-https://autofluxos.4yu.com.br.
+**Estado:** item 1 da expansão concluído na base local. `npm test` dá **250
+passando**, `npm run typecheck` e `npm run lint` estão limpos. O último `main`
+publicado continua em https://autofluxos.4yu.com.br.
 
 **O produto hoje faz:** desenhar fluxo arrastando bloco, testar a conversa ao
 lado, publicar versão imutável, receber mensagem do WhatsApp, responder,
@@ -87,6 +87,15 @@ dívida e a de lá manda na ordem das features.**
   (`repos/conversas.ts` → `encerrarAtendimento`) e cabeçalhos de segurança no
   `next.config.ts`. O que a revisão achou e ficou para a fila está lá em cima,
   nos itens 1 e 2.
+
+### O que foi construído em 13/ago
+
+- **Origem do lead por anúncio** — o webhook preserva o `referral` da primeira
+  mensagem Click-to-WhatsApp em `contacts.campos`: `origem`, `origem_anuncio` e
+  `origem_titulo`. Quem chega sem anúncio fica como `Direto`. A origem só é
+  escrita uma vez, então uma conversa futura não troca a aquisição verdadeira.
+  Não houve migration: a tela de leads já transforma as chaves do `jsonb` em
+  colunas.
 
 ### Armadilhas que já custaram caro nesta base
 

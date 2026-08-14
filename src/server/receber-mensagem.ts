@@ -10,6 +10,7 @@ import { acharFluxo, acharVersao } from './repos/fluxos'
 import { lerConversa } from './repos/leads'
 import {
   acharCanalPorNumero,
+  acharContato,
   acharOuCriarContato,
   criarSessao,
   definirStatusDaSessao,
@@ -34,10 +35,24 @@ import { travarContato } from './repos/travas'
  * mundo real para o motor e o retorno do motor de volta para o mundo real.
  */
 
+const referralSchema = z.object({
+  source_url: z.string().optional(),
+  source_type: z.string().optional(),
+  source_id: z.string().optional(),
+  headline: z.string().optional(),
+  body: z.string().optional(),
+  media_type: z.string().optional(),
+  image_url: z.string().optional(),
+  video_url: z.string().optional(),
+  thumbnail_url: z.string().optional(),
+  ctwa_clid: z.string().optional(),
+})
+
 const mensagemSchema = z.object({
   id: z.string(),
   from: z.string(),
   type: z.string(),
+  referral: referralSchema.optional(),
   text: z.object({ body: z.string() }).optional(),
   interactive: z
     .object({
@@ -75,6 +90,7 @@ export const webhookSchema = z.object({
 })
 
 type Mensagem = z.infer<typeof mensagemSchema>
+type Referral = z.infer<typeof referralSchema>
 
 /** Como o canal é montado. Injetável para os testes rodarem sem rede. */
 export type FabricaDeCanal = (canal: CanalSalvo) => Canal
@@ -141,10 +157,30 @@ async function tratarUma(
   }
 
   try {
-    await avancarConversa(canalSalvo, contato, mensagem, entrada, texto, fabricaDeCanal)
+    const contatoAtual = Object.hasOwn(contato.campos, 'origem')
+      ? contato
+      : await acharContato(contato.id)
+    if (!contatoAtual) return
+
+    const contatoComOrigem = await atribuirOrigem(contatoAtual, mensagem.referral)
+    await avancarConversa(canalSalvo, contatoComOrigem, mensagem, entrada, texto, fabricaDeCanal)
   } finally {
     await destravar()
   }
+}
+
+async function atribuirOrigem(contato: Contato, referral?: Referral): Promise<Contato> {
+  if (Object.hasOwn(contato.campos, 'origem')) return contato
+
+  const campos = {
+    ...contato.campos,
+    origem: referral ? 'Anúncio' : 'Direto',
+    ...(referral?.source_id ? { origem_anuncio: referral.source_id } : {}),
+    ...(referral?.headline ? { origem_titulo: referral.headline } : {}),
+  }
+
+  await guardarCampo(contato.id, campos)
+  return { ...contato, campos }
 }
 
 /**

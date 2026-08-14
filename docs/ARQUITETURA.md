@@ -441,6 +441,7 @@ flows           id, client_id, nome, versao_publicada_id
 flow_versions   id, flow_id, versao, grafo jsonb, publicado_em
 
 contacts        id, client_id, wa_id, nome, campos jsonb
+                -- campos do fluxo + origem imutável da primeira entrada
                 consentimento_em                  -- LGPD
 sessions        id, contact_id, flow_version_id, no_atual,
                 vars jsonb, tentativas int,       -- anti hello-loop (§9)
@@ -467,8 +468,10 @@ WhatsApp → POST /api/webhook/whatsapp
              ├─ responde 200 IMEDIATAMENTE          ← Meta corta em 20s; mire <5s
              └─ processa (waitUntil)
                   │
+                  ├─ acha/cria contact
                   ├─ INSERT em messages → duplicata? descarta e sai
-                  ├─ acha/cria contact + session
+                  ├─ preserva a origem da primeira entrada
+                  ├─ acha/cria session
                   ├─ core/engine/executar(grafo, sessão, texto)   ← função pura
                   ├─ salva sessão nova
                   └─ canal.enviar(ações)
