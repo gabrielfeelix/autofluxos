@@ -4,6 +4,7 @@ import { comoFalta, restaDaJanela } from '@/channels/janela'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { ControleDeAutomacao } from '@/components/lead/controle-automacao'
 import { CaixaDeResposta } from '@/components/lead/responder'
+import { NotificacoesDaFila } from '@/components/inbox/notificacoes-da-fila'
 import { acaoEncerrarAtendimento, acaoResponderLead } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { contextoDeResposta } from '@/server/repos/conversas'
@@ -110,26 +111,46 @@ async function Conteudo({
   const janela = restante && restante > 0 ? comoFalta(restante) : null
   const primeiroNome = selecionado.nome?.split(' ')[0] ?? 'esta pessoa'
   const esperando = leads.filter((lead) => lead.aguardando).length
+  const alertasIniciais = leads.flatMap((lead) => {
+    if (!lead.aguardando) return []
+    return [{
+      id: `${lead.contatoId}:${lead.aguardando.desde}`,
+      contatoId: lead.contatoId,
+      nome: lead.nome,
+      motivo: lead.aguardando.motivo,
+      desde: lead.aguardando.desde,
+    }]
+  })
 
   return (
-    <div className="grid min-h-[640px] grid-cols-[292px_minmax(390px,1fr)_250px] overflow-hidden rounded-[16px] border border-white/[0.075] bg-[#0c1118] shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
-      <Fila clienteId={clienteId} leads={leads} selecionado={selecionado} esperando={esperando} />
-
-      <section className="flex min-w-0 flex-col border-r border-white/[0.06]">
-        <CabecalhoDaConversa clienteId={clienteId} lead={selecionado} />
-        <div className="min-h-0 flex-1 overflow-auto bg-[radial-gradient(500px_320px_at_70%_5%,rgba(86,208,245,0.04),transparent_68%)] p-5">
-          <Historico mensagens={conversa.mensagens} cortada={conversa.cortada} nome={selecionado.nome} />
+    <>
+      <header className="mb-3 flex items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="font-mono text-[10px] font-bold tracking-[0.14em] text-dim">ATENDIMENTO</p>
+          <h1 className="mt-0.5 text-[19px] font-bold tracking-[-0.02em]">Inbox</h1>
         </div>
-        <CaixaDeResposta
-          acao={acaoResponderLead.bind(null, clienteId, selecionado.contatoId)}
-          restaDaJanela={janela}
-          nome={primeiroNome}
-          respostasRapidas={respostasRapidas}
-        />
-      </section>
+        <NotificacoesDaFila clienteId={clienteId} alertasIniciais={alertasIniciais} />
+      </header>
 
-      <DadosDoLead clienteId={clienteId} lead={selecionado} />
-    </div>
+      <div className="grid min-h-[640px] grid-cols-[292px_minmax(390px,1fr)_250px] overflow-hidden rounded-[16px] border border-white/[0.075] bg-[#0c1118] shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
+        <Fila clienteId={clienteId} leads={leads} selecionado={selecionado} esperando={esperando} />
+
+        <section className="flex min-w-0 flex-col border-r border-white/[0.06]">
+          <CabecalhoDaConversa clienteId={clienteId} lead={selecionado} />
+          <div className="min-h-0 flex-1 overflow-auto bg-[radial-gradient(500px_320px_at_70%_5%,rgba(86,208,245,0.04),transparent_68%)] p-5">
+            <Historico mensagens={conversa.mensagens} cortada={conversa.cortada} nome={selecionado.nome} />
+          </div>
+          <CaixaDeResposta
+            acao={acaoResponderLead.bind(null, clienteId, selecionado.contatoId)}
+            restaDaJanela={janela}
+            nome={primeiroNome}
+            respostasRapidas={respostasRapidas}
+          />
+        </section>
+
+        <DadosDoLead clienteId={clienteId} lead={selecionado} />
+      </div>
+    </>
   )
 }
 

@@ -56,6 +56,16 @@ export type Conversa = {
   cortada: boolean
 }
 
+/** O mínimo que o navegador precisa para avisar uma nova fila humana. */
+export type AlertaDeHandoff = {
+  /** Inclui o instante do handoff para uma segunda fila do mesmo lead avisar de novo. */
+  id: string
+  contatoId: string
+  nome: string | null
+  motivo: string
+  desde: string
+}
+
 /** Teto de mensagens numa tela só. Quem estoura isso é avisado, não enganado. */
 export const TETO_DE_MENSAGENS = 500
 
@@ -135,6 +145,42 @@ function paraLead(linha: Linha): Lead {
 function tipoDaMensagem(payload: unknown): string | null {
   if (!payload || typeof payload !== 'object' || !('type' in payload)) return null
   return typeof payload.type === 'string' ? payload.type : null
+}
+
+/**
+ * Fila enxuta para o alerta do Inbox.
+ *
+ * Não reutiliza `COLUNAS`: o alerta só precisa de dados seguros para aparecer
+ * na notificação e assim continua compatível enquanto uma migration de outra
+ * tela ainda aguarda aplicação. A rota que a usa passa pelo `proxy`, que exige
+ * a sessão do painel antes de chegar aqui.
+ */
+export async function listarAlertasDeHandoff(clienteId: string): Promise<AlertaDeHandoff[]> {
+  const { data, error } = await db()
+    .from('leads')
+    .select('contact_id, nome, handoff_motivo, handoff_em')
+    .eq('client_id', clienteId)
+    .not('handoff_em', 'is', null)
+    .order('handoff_em', { ascending: false })
+
+  if (ehIdInvalido(error)) return []
+  if (error) throw new Error(`não deu para ler a fila de alertas: ${error.message}`)
+
+  return (data as {
+    contact_id: string
+    nome: string | null
+    handoff_motivo: string | null
+    handoff_em: string | null
+  }[]).flatMap((linha) => {
+    if (!linha.handoff_motivo || !linha.handoff_em) return []
+    return [{
+      id: `${linha.contact_id}:${linha.handoff_em}`,
+      contatoId: linha.contact_id,
+      nome: linha.nome,
+      motivo: linha.handoff_motivo,
+      desde: linha.handoff_em,
+    }]
+  })
 }
 
 /**
