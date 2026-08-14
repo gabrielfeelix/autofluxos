@@ -8,6 +8,8 @@ import type { Opcao } from '@/core/flow/schema'
  * nada em `core/` muda.
  */
 export type Canal = {
+  /** Mostra "digitando" quando houver suporte e segura a resposta pelo prazo. */
+  aguardarResposta(mensagemId: string, atrasoMs: number): Promise<void>
   enviarTexto(para: string, texto: string): Promise<void>
   enviarOpcoes(
     para: string,

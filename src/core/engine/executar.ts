@@ -200,7 +200,11 @@ function avancar(
 
     switch (no.type) {
       case 'mensagem': {
-        acoes.push({ tipo: 'enviar_texto', texto: interpolar(no.data.texto, s.vars) })
+        acoes.push({
+          tipo: 'enviar_texto',
+          texto: interpolar(no.data.texto, s.vars),
+          ...(no.data.atraso ? { atrasoMs: no.data.atraso * 1_000 } : {}),
+        })
         atual = proximo(fluxo, no.id)
         break
       }

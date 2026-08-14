@@ -7,7 +7,7 @@ consegue continuar lendo só isto e o [ARQUITETURA.md](ARQUITETURA.md).
 
 ## Leia isto primeiro
 
-**Estado:** itens 1 a 3 da expansão concluídos na base local. `npm test` dá **253
+**Estado:** itens 1 a 4 da expansão concluídos na base local. `npm test` dá **257
 passando**, `npm run typecheck` e `npm run lint` estão limpos. O último `main`
 publicado continua em https://autofluxos.4yu.com.br.
 
@@ -107,6 +107,12 @@ dívida e a de lá manda na ordem das features.**
   primeira mensagem. Elas são recalculadas de `messages` e do histórico inteiro
   de `handoffs` em consultas por lote; não há campo para sincronizar, escrita
   nova nem migration. Um handoff continua contando depois de resolvido.
+- **Atraso curto e “digitando…”** — bloco de Mensagem aceita até 3 segundos. O
+  motor puro só descreve `atrasoMs`; a Cloud API marca a entrada
+  como lida, mostra o indicador usando o `wamid` recebido e espera no canal. Se
+  o indicador falhar, a resposta continua. A aba Testar usa os pontos animados
+  durante a mesma pausa e revela sequências mensagem por mensagem. Pausa acima
+  de 3 segundos continua reservada ao agendador do item 12.
 
 ### Armadilhas que já custaram caro nesta base
 

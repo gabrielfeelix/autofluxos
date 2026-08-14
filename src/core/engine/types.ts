@@ -68,7 +68,12 @@ export type Entrada = z.infer<typeof entradaSchema>
  * Quem executa é o canal (WhatsApp de verdade) ou o simulador (que só mostra).
  */
 export type Acao =
-  | { tipo: 'enviar_texto'; texto: string }
+  | {
+      tipo: 'enviar_texto'
+      texto: string
+      /** Esperar fora do motor antes do envio. Ausente = entregar na hora. */
+      atrasoMs?: number
+    }
   | {
       tipo: 'enviar_opcoes'
       texto: string

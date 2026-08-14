@@ -71,6 +71,32 @@ function conversar(fluxo: Fluxo, entradas: Entrada[]): { sessao: Sessao; acoes: 
 }
 
 describe('início da conversa', () => {
+  it('descreve o atraso da mensagem sem dormir dentro do motor', () => {
+    const bruto = structuredClone(triagem) as unknown as {
+      nodes: { id: string; data: Record<string, unknown> }[]
+    }
+    const abertura = bruto.nodes.find((no) => no.id === 'boas-vindas')
+    if (!abertura) throw new Error('o fluxo de teste precisa da abertura')
+    abertura.data.atraso = 1.5
+
+    const { acoes } = conversar(fluxoSchema.parse(bruto), [{ tipo: 'inicio' }])
+
+    expect(acoes.find((acao) => acao.tipo === 'enviar_texto')).toMatchObject({
+      atrasoMs: 1_500,
+    })
+  })
+
+  it('recusa atraso maior que o teto curto da função', () => {
+    const bruto = structuredClone(triagem) as unknown as {
+      nodes: { id: string; data: Record<string, unknown> }[]
+    }
+    const abertura = bruto.nodes.find((no) => no.id === 'boas-vindas')
+    if (!abertura) throw new Error('o fluxo de teste precisa da abertura')
+    abertura.data.atraso = 3.1
+
+    expect(fluxoSchema.safeParse(bruto).success).toBe(false)
+  })
+
   it('manda a saudação e para na primeira pergunta', () => {
     const { acoes, sessao } = conversar(triagem, [{ tipo: 'inicio' }])
 

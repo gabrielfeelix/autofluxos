@@ -102,12 +102,13 @@ function Saida({ id, children }: { id: string; children: ReactNode }) {
 const vazio = (t: string, alt: string) => (t.trim() === '' ? alt : t)
 
 function NoMensagem({ data, selected }: NodeProps) {
-  const d = data as { texto: string }
+  const d = data as { texto: string; atraso?: number }
   return (
     <Caixa tipo="mensagem" selecionado={!!selected}>
       <p className="line-clamp-3 whitespace-pre-wrap text-[12.5px] leading-5 text-soft">
         {vazio(d.texto, '(sem texto)')}
       </p>
+      {!!d.atraso && <p className="mt-1 text-[10px] text-dim">digita por {d.atraso}s</p>}
     </Caixa>
   )
 }

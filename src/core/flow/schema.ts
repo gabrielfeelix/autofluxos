@@ -60,11 +60,18 @@ const nomeVariavel = z.string()
 
 export const FORMATO_VARIAVEL = /^[a-zA-Z][a-zA-Z0-9_]*$/
 
+/**
+ * Espera curta cabe no `after()` do webhook. Acima disso é agendamento, não
+ * sono dentro de uma função serverless (EXPANSAO, item 12).
+ */
+export const LIMITE_ATRASO_SEGUNDOS = 3
+
 export const noMensagemSchema = z.object({
   ...base,
   type: z.literal('mensagem'),
   data: z.object({
     texto: z.string(),
+    atraso: z.number().min(0).max(LIMITE_ATRASO_SEGUNDOS).optional(),
   }),
 })
 

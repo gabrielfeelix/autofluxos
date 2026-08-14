@@ -1,4 +1,4 @@
-import { LIMITE_ROTULO, type Opcao } from '@/core/flow/schema'
+import { LIMITE_ATRASO_SEGUNDOS, LIMITE_ROTULO, type Opcao } from '@/core/flow/schema'
 import type { Canal } from './types'
 
 /**
@@ -24,6 +24,8 @@ const VERSAO_PADRAO = 'v25.0'
  * caso normal, então quinze só corta o que já está quebrado.
  */
 const TIMEOUT_MS = 15_000
+/** Indicador é conveniência; ele não pode consumir o prazo de um envio real. */
+const TIMEOUT_INDICADOR_MS = 2_000
 
 export type ConfigCloudApi = {
   phoneNumberId: string
@@ -35,7 +37,10 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
   const versao = config.versaoGraph ?? process.env.META_GRAPH_VERSION ?? VERSAO_PADRAO
   const url = `https://graph.facebook.com/${versao}/${config.phoneNumberId}/messages`
 
-  async function mandar(corpo: Record<string, unknown>): Promise<void> {
+  async function mandar(
+    corpo: Record<string, unknown>,
+    timeoutMs: number = TIMEOUT_MS,
+  ): Promise<void> {
     let resposta: Response
     try {
       resposta = await fetch(url, {
@@ -45,14 +50,14 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
           'content-type': 'application/json',
         },
         body: JSON.stringify({ messaging_product: 'whatsapp', ...corpo }),
-        signal: AbortSignal.timeout(TIMEOUT_MS),
+        signal: AbortSignal.timeout(timeoutMs),
       })
     } catch (erro) {
       // Rede caída ou prazo estourado. Vira erro nosso com nome, e não um
       // `TypeError: fetch failed` que não diz nada a quem for ler o handoff.
       const nome = erro instanceof Error ? erro.name : ''
       if (nome === 'TimeoutError' || nome === 'AbortError') {
-        throw new Error(`a Cloud API não respondeu em ${TIMEOUT_MS / 1000}s`)
+        throw new Error(`a Cloud API não respondeu em ${timeoutMs / 1000}s`)
       }
       throw new Error(`não deu para falar com a Cloud API: ${erro instanceof Error ? erro.message : erro}`)
     }
@@ -67,6 +72,33 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
   }
 
   return {
+    async aguardarResposta(mensagemId, atrasoMs) {
+      try {
+        // A Meta exige o id da entrada: o mesmo pedido marca como lida e liga
+        // o indicador até a resposta sair (ou por no máximo 25 segundos).
+        await mandar(
+          {
+            status: 'read',
+            message_id: mensagemId,
+            typing_indicator: { type: 'text' },
+          },
+          TIMEOUT_INDICADOR_MS,
+        )
+      } catch (erro) {
+        // "Digitando" é conveniência. Token ou rede ruins ainda serão
+        // tratados no envio que vale; barrar a resposta por este pedido seria
+        // transformar uma melhoria visual em indisponibilidade.
+        console.warn(
+          '[whatsapp] não deu para mostrar digitando',
+          erro instanceof Error ? erro.message : String(erro),
+        )
+      }
+
+      const tetoMs = LIMITE_ATRASO_SEGUNDOS * 1_000
+      const esperaMs = Math.min(Math.max(atrasoMs, 0), tetoMs)
+      await new Promise((resolver) => setTimeout(resolver, esperaMs))
+    },
+
     async enviarTexto(para, texto) {
       await mandar({ to: para, type: 'text', text: { preview_url: true, body: texto } })
     },

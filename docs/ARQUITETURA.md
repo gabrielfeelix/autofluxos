@@ -99,10 +99,23 @@ Essa é a peça que decide se o projeto fica simples ou vira um monstro.
 
 ```ts
 interface Canal {
+  aguardarResposta(mensagemId: string, atrasoMs: number): Promise<void>
   enviarTexto(para: string, texto: string): Promise<void>
-  enviarBotoes(para: string, texto: string, opcoes: Opcao[]): Promise<void>
+  enviarOpcoes(
+    para: string,
+    texto: string,
+    opcoes: Opcao[],
+    formato: 'botoes' | 'lista',
+  ): Promise<void>
 }
 ```
+
+O atraso curto continua obedecendo a fronteira: o motor só põe `atrasoMs` na
+ação; quem espera é o canal. Na Cloud API, `aguardarResposta` usa o id da
+mensagem recebida para marcar como lida e mostrar “digitando…”. Esse indicador é
+conveniência e falha aberto — uma recusa dele nunca impede a resposta real. O
+teto de 3 segundos existe porque espera maior dentro da função serverless é
+agendamento, não responsabilidade do canal.
 
 Três implementações, entrando em momentos diferentes:
 

@@ -713,26 +713,27 @@ próxima leitura, sem estado duplicado e sem migration.
 
 ---
 
-### 4. Atraso e "digitando…"
+### ✅ 4. Atraso e "digitando…"
 
-**Hoje:** o motor devolve todas as ações de uma vez e
+**Hoje era:** o motor devolvia todas as ações de uma vez e
 [`receber-mensagem.ts`](../src/server/receber-mensagem.ts) aplica em sequência.
-Quatro parágrafos chegam no mesmo segundo.
+Quatro parágrafos chegavam no mesmo segundo.
 
 **Lá:** todos os ramos longos do MGM têm `Atraso — Digitando 1 seg` antes das
 mensagens de venda.
 
-**Estado esperado:** campo opcional `atraso` (segundos) no bloco de mensagem. O
-canal espera e, quando der, manda o indicador de digitando.
+**Estado atual:** o bloco de Mensagem tem atraso opcional de até 3 segundos. No
+WhatsApp, o canal marca a entrada como lida, mostra “digitando…” e espera; no
+simulador, os pontos já existentes ficam visíveis durante a mesma pausa e cada
+mensagem aparece na sua vez.
 
-**Como fazer:**
-1. `atraso?: number` no `noMensagemSchema`, com teto (3s)
-2. O motor **não dorme** — ele descreve: a ação `enviar_texto` ganha `atrasoMs`
-3. Quem dorme é o canal
-4. **A armadilha:** `after()` tem `maxDuration = 60` e tempo de função é cobrado.
-   Por isso o teto de 3s. **Atraso maior tem que virar agendamento (item 12)** —
-   decidir isso agora custa nada, descobrir depois custa reescrever o canal
-5. No simulador, o atraso é visual (já existe indicador de digitando)
+**Como foi feito:** `atraso?: number` entrou no schema com teto de 3 segundos e
+vira `atrasoMs` na ação `enviar_texto`; `core/` não chama relógio nem canal. O
+adaptador recebe também o `wamid` da entrada, exigido pela Meta para o indicador,
+e é quem dorme. O pedido de “digitando” tem prazo próprio de 2 segundos e falha
+aberto: ele é conveniência, então sua falha não vira handoff nem impede o envio.
+**Atraso maior continua sendo agendamento (item 12)**, porque `after()` tem
+`maxDuration = 60` e tempo de função é cobrado.
 
 **Tamanho:** meia rodada.
 

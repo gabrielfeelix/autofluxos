@@ -111,9 +111,14 @@ beforeAll(async () => {
   const cliente = await criarCliente(`${marca} cliente`)
   clienteId = cliente.id
 
-  const fluxo = await criarFluxo(cliente.id, `${marca} triagem`, triagem)
+  const fluxoComAtraso = structuredClone(triagem)
+  const abertura = fluxoComAtraso.nodes.find((no) => no.id === 'abertura')
+  if (abertura?.type !== 'mensagem') throw new Error('a triagem deveria começar com mensagem')
+  Object.assign(abertura.data, { atraso: 1 })
+
+  const fluxo = await criarFluxo(cliente.id, `${marca} triagem`, fluxoComAtraso)
   fluxoId = fluxo.id
-  const pub = await publicar(fluxo.id, triagem)
+  const pub = await publicar(fluxo.id, fluxoComAtraso)
   if (!pub.ok) throw new Error('o fluxo de exemplo deveria publicar')
 
   const canal = await criarCanal({ clienteId, phoneNumberId: numeroDoBot, flowId: fluxo.id })
@@ -129,10 +134,12 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
   it('primeira mensagem começa o fluxo e responde com a saudação e as opções', async () => {
     mock.enviadas.length = 0
     const de = `5511${Date.now().toString().slice(-9)}`
+    const mensagemId = `wamid-${marca}-1`
 
-    await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-1`), comMock)
+    await receberMensagem(webhookTexto(de, 'oi', mensagemId), comMock)
 
-    expect(mock.enviadas[0]).toMatchObject({ tipo: 'texto', para: de })
+    expect(mock.enviadas[0]).toEqual({ tipo: 'espera', mensagemId, atrasoMs: 1_000 })
+    expect(mock.enviadas[1]).toMatchObject({ tipo: 'texto', para: de })
     expect(mock.enviadas.find((e) => e.tipo === 'opcoes')).toMatchObject({ formato: 'botoes' })
   })
 
@@ -486,6 +493,7 @@ function canalQueRecusa(motivo: string, aPartirDe = 0) {
     get tentativas() {
       return tentativas
     },
+    async aguardarResposta() {},
     enviarTexto: recusar,
     enviarOpcoes: recusar,
   }

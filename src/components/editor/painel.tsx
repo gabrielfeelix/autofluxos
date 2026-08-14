@@ -2,6 +2,7 @@
 
 import {
   LIMITE_BOTOES,
+  LIMITE_ATRASO_SEGUNDOS,
   LIMITE_LISTA,
   LIMITE_ROTULO,
   LIMITE_TEXTO,
@@ -77,12 +78,42 @@ export function Painel({
       </div>
 
       {no.type === 'mensagem' && (
-        <Area
-          rotulo="Texto"
-          valor={no.data.texto}
-          limite={LIMITE_TEXTO}
-          aoMudar={(texto) => aoMudarDados({ texto })}
-        />
+        <>
+          <Area
+            rotulo="Texto"
+            valor={no.data.texto}
+            limite={LIMITE_TEXTO}
+            aoMudar={(texto) => aoMudarDados({ texto })}
+          />
+          <label className="block">
+            <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+              Atraso antes de enviar
+            </span>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={0}
+                max={LIMITE_ATRASO_SEGUNDOS}
+                step={0.5}
+                value={no.data.atraso ?? ''}
+                placeholder="0"
+                onChange={(evento) => {
+                  const valor = evento.currentTarget.valueAsNumber
+                  aoMudarDados({
+                    atraso: Number.isFinite(valor)
+                      ? Math.min(Math.max(valor, 0), LIMITE_ATRASO_SEGUNDOS) || undefined
+                      : undefined,
+                  })
+                }}
+                className="app-field w-24 px-3 py-2.5 font-mono text-[13px]"
+              />
+              <span className="text-[11.5px] text-muted">segundos</span>
+            </div>
+            <span className="mt-1 block text-[10.5px] leading-4 text-dim">
+              Até {LIMITE_ATRASO_SEGUNDOS}s: mostra “digitando…” antes desta mensagem. Pausa maior precisa ser agendada.
+            </span>
+          </label>
+        </>
       )}
 
       {no.type === 'pergunta' && (

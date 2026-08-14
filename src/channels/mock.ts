@@ -2,6 +2,7 @@ import type { Opcao } from '@/core/flow/schema'
 import type { Canal } from './types'
 
 export type Enviada =
+  | { tipo: 'espera'; mensagemId: string; atrasoMs: number }
   | { tipo: 'texto'; para: string; texto: string }
   | { tipo: 'opcoes'; para: string; texto: string; opcoes: Opcao[]; formato: 'botoes' | 'lista' }
 
@@ -17,6 +18,10 @@ export function canalMock(): Canal & { enviadas: Enviada[] } {
 
   return {
     enviadas,
+    async aguardarResposta(mensagemId, atrasoMs) {
+      // O mock prova a ordem sem tornar a suíte três segundos mais lenta.
+      enviadas.push({ tipo: 'espera', mensagemId, atrasoMs })
+    },
     async enviarTexto(para, texto) {
       enviadas.push({ tipo: 'texto', para, texto })
     },

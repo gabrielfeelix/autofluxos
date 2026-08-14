@@ -250,7 +250,7 @@ async function avancarConversa(
   )
 
   await guardarSessao(salva.id, resultado.sessao)
-  await aplicar(fabricaDeCanal(canalSalvo), contato, salva.id, resultado.acoes)
+  await aplicar(fabricaDeCanal(canalSalvo), contato, salva.id, mensagem.id, resultado.acoes)
 }
 
 /**
@@ -329,6 +329,7 @@ async function aplicar(
   canal: Canal,
   contato: Contato,
   sessaoId: string,
+  mensagemId: string,
   acoes: Acao[],
 ): Promise<void> {
   const campos = { ...contato.campos }
@@ -354,6 +355,8 @@ async function aplicar(
   for (const acao of acoes) {
     switch (acao.tipo) {
       case 'enviar_texto': {
+        if (acao.atrasoMs) await canal.aguardarResposta(mensagemId, acao.atrasoMs)
+
         // Grava antes de mandar e confirma depois — ver `registrarSaida`.
         const registro = await registrarSaida({
           contatoId: contato.id,

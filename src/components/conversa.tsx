@@ -94,7 +94,7 @@ export function Conversa({
       sessaoRef.current = nova
       setStatus(nova.status)
       aoMudarSessao?.(nova)
-      aplicar(acoes, nova)
+      await aplicar(acoes, nova)
     } catch {
       // Sem isto a falha some: a requisição pode morrer por rede, ou por a rota
       // estourar o tempo esperando uma API lenta. Ficar girando em silêncio é
@@ -108,31 +108,34 @@ export function Conversa({
     }
   }
 
-  function aplicar(acoes: Acao[], nova: Sessao) {
-    const novos: Item[] = []
+  async function aplicar(acoes: Acao[], nova: Sessao) {
     let ultimas: Pendentes | null = null
+    const adicionar = (item: Item) => setItens((atual) => [...atual, item])
 
     for (const acao of acoes) {
       const chave = novaChave()
       switch (acao.tipo) {
         case 'enviar_texto':
-          novos.push({ chave, de: 'bot', texto: acao.texto })
+          if (acao.atrasoMs) {
+            await new Promise((resolver) => setTimeout(resolver, acao.atrasoMs))
+          }
+          adicionar({ chave, de: 'bot', texto: acao.texto })
           break
         case 'enviar_opcoes':
-          novos.push({ chave, de: 'bot', texto: acao.texto, opcoes: acao.opcoes, formato: acao.formato })
+          adicionar({ chave, de: 'bot', texto: acao.texto, opcoes: acao.opcoes, formato: acao.formato })
           ultimas = { chave, opcoes: acao.opcoes, formato: acao.formato }
           break
         case 'salvar_campo':
-          novos.push({ chave, de: 'sistema', texto: `guardou ${acao.campo} = "${acao.valor}"` })
+          adicionar({ chave, de: 'sistema', texto: `guardou ${acao.campo} = "${acao.valor}"` })
           break
         case 'chamar_ia':
-          novos.push({ chave, de: 'sistema', texto: `chamaria a IA — "${acao.instrucao}"` })
+          adicionar({ chave, de: 'sistema', texto: `chamaria a IA — "${acao.instrucao}"` })
           break
         case 'chamar_http':
           // O caminho normal é o resolvedor já ter trocado isto pelos
           // `salvar_campo` que vieram da resposta. Chegar aqui significa que
           // ninguém executou — mostrar é melhor do que sumir com o evento.
-          novos.push({
+          adicionar({
             chave,
             de: 'sistema',
             texto: `a chamada para ${acao.url} não foi executada`,
@@ -140,15 +143,14 @@ export function Conversa({
           })
           break
         case 'transferir_humano':
-          novos.push({ chave, de: 'sistema', texto: `passou para um humano — ${acao.motivo}`, alerta: true })
+          adicionar({ chave, de: 'sistema', texto: `passou para um humano — ${acao.motivo}`, alerta: true })
           break
         case 'encerrar':
-          novos.push({ chave, de: 'sistema', texto: 'conversa encerrada' })
+          adicionar({ chave, de: 'sistema', texto: 'conversa encerrada' })
           break
       }
     }
 
-    setItens((atual) => [...atual, ...novos])
     if (nova.status === 'ativa' && ultimas) setPendentes(ultimas)
   }
 
