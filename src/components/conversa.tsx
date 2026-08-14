@@ -4,15 +4,27 @@ import { useEffect, useRef, useState } from 'react'
 import { sessaoNova, type Acao, type Entrada, type Resultado, type Sessao } from '@/core/engine/types'
 import type { Fluxo, Opcao } from '@/core/flow/schema'
 
-type Item =
-  | { chave: number; de: 'bot'; texto: string; opcoes?: Opcao[]; formato?: 'botoes' | 'lista' }
-  | { chave: number; de: 'pessoa'; texto: string }
+export type ModoDaConversa = 'conversa' | 'bastidores'
+
+export type ItemDaConversa =
+  | { chave: number; de: 'bot'; texto: string; hora?: string; opcoes?: Opcao[]; formato?: 'botoes' | 'lista' }
+  | { chave: number; de: 'pessoa'; texto: string; hora?: string }
   | { chave: number; de: 'sistema'; texto: string; alerta?: boolean }
+
+export function itensDoModo(itens: ItemDaConversa[], modo: ModoDaConversa) {
+  return modo === 'conversa' ? itens.filter((item) => item.de !== 'sistema') : itens
+}
+
+export function contarEventos(itens: ItemDaConversa[]) {
+  return itens.filter((item) => item.de === 'sistema').length
+}
 
 type Pendentes = { chave: number; opcoes: Opcao[]; formato: 'botoes' | 'lista' }
 
 let sequencia = 0
 const novaChave = () => ++sequencia
+const horaAtual = () =>
+  new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(new Date())
 
 /**
  * O chat de teste. Não imita o motor — chama o motor, pela mesma rota que o
@@ -24,9 +36,9 @@ const novaChave = () => ++sequencia
 export function Conversa({
   fluxo,
   fluxoId,
+  nomeContato,
   contextoNegocio = '',
   iaHabilitada = false,
-  aoMudarSessao,
 }: {
   fluxo: Fluxo
   /**
@@ -34,23 +46,26 @@ export function Conversa({
    * quais credenciais ele pode usar — a identidade não viaja pelo corpo.
    */
   fluxoId?: string
+  /** Nome que aparece no cabeçalho da simulação, como apareceria no WhatsApp. */
+  nomeContato: string
   /** O que o cliente escreveu sobre o negócio: é o que fecha o escopo da IA. */
   contextoNegocio?: string
   /** Espelha o plano da automação. Sem isto, o bloco de IA não chama modelo. */
   iaHabilitada?: boolean
-  aoMudarSessao?: (sessao: Sessao) => void
 }) {
-  const [itens, setItens] = useState<Item[]>([])
+  const [itens, setItens] = useState<ItemDaConversa[]>([])
   const [pendentes, setPendentes] = useState<Pendentes | null>(null)
   const [rascunho, setRascunho] = useState('')
   const [ocupado, setOcupado] = useState(false)
   const [status, setStatus] = useState<Sessao['status']>('ativa')
   const [desatualizada, setDesatualizada] = useState(false)
+  const [modo, setModo] = useState<ModoDaConversa>('conversa')
+  const [sessaoExibida, setSessaoExibida] = useState<Sessao>(() => sessaoNova())
 
   const sessaoRef = useRef<Sessao>(sessaoNova())
   // Espelho dos itens para montar o histórico sem depender do fechamento do
   // render em que `enviar` foi criada.
-  const itensRef = useRef<Item[]>([])
+  const itensRef = useRef<ItemDaConversa[]>([])
   const fimDaLista = useRef<HTMLDivElement>(null)
   const jaComecou = useRef(false)
   const assinaturaDoInicio = useRef('')
@@ -61,7 +76,7 @@ export function Conversa({
     setOcupado(true)
     setPendentes(null)
     if (eco !== undefined) {
-      setItens((atual) => [...atual, { chave: novaChave(), de: 'pessoa', texto: eco }])
+      setItens((atual) => [...atual, { chave: novaChave(), de: 'pessoa', texto: eco, hora: horaAtual() }])
     }
 
     try {
@@ -92,8 +107,8 @@ export function Conversa({
 
       const { acoes, sessao: nova } = (await resposta.json()) as Resultado
       sessaoRef.current = nova
+      setSessaoExibida(nova)
       setStatus(nova.status)
-      aoMudarSessao?.(nova)
       await aplicar(acoes, nova)
     } catch {
       // Sem isto a falha some: a requisição pode morrer por rede, ou por a rota
@@ -110,7 +125,7 @@ export function Conversa({
 
   async function aplicar(acoes: Acao[], nova: Sessao) {
     let ultimas: Pendentes | null = null
-    const adicionar = (item: Item) => setItens((atual) => [...atual, item])
+    const adicionar = (item: ItemDaConversa) => setItens((atual) => [...atual, item])
 
     for (const acao of acoes) {
       const chave = novaChave()
@@ -119,10 +134,17 @@ export function Conversa({
           if (acao.atrasoMs) {
             await new Promise((resolver) => setTimeout(resolver, acao.atrasoMs))
           }
-          adicionar({ chave, de: 'bot', texto: acao.texto })
+          adicionar({ chave, de: 'bot', texto: acao.texto, hora: horaAtual() })
           break
         case 'enviar_opcoes':
-          adicionar({ chave, de: 'bot', texto: acao.texto, opcoes: acao.opcoes, formato: acao.formato })
+          adicionar({
+            chave,
+            de: 'bot',
+            texto: acao.texto,
+            hora: horaAtual(),
+            opcoes: acao.opcoes,
+            formato: acao.formato,
+          })
           ultimas = { chave, opcoes: acao.opcoes, formato: acao.formato }
           break
         case 'salvar_campo':
@@ -162,7 +184,7 @@ export function Conversa({
     setItens([])
     setPendentes(null)
     setRascunho('')
-    aoMudarSessao?.(sessaoRef.current)
+    setSessaoExibida(sessaoRef.current)
     void enviar({ tipo: 'inicio' })
   }
 
@@ -200,9 +222,55 @@ export function Conversa({
 
   const viva = status === 'ativa' || status === 'aguardando_ia' || status === 'aguardando_http'
   const temApi = fluxo.nodes.some((n) => n.type === 'http')
+  const eventos = contarEventos(itens)
+  const iniciais = nomeContato
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((parte) => parte[0])
+    .join('')
+    .toUpperCase()
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/[0.06] px-3 py-2">
+        <div className="flex rounded-lg border border-white/[0.08] bg-black/20 p-0.5" role="group" aria-label="Modo do teste">
+          {(['conversa', 'bastidores'] as const).map((opcao) => (
+            <button
+              key={opcao}
+              type="button"
+              onClick={() => setModo(opcao)}
+              aria-pressed={modo === opcao}
+              className={`rounded-md px-2.5 py-1.5 text-[10.5px] font-bold transition ${
+                modo === opcao ? 'bg-white/[0.11] text-ink shadow-sm' : 'text-dim hover:text-soft'
+              }`}
+            >
+              {opcao === 'conversa' ? 'Conversa' : 'Bastidores'}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1.5">
+          {modo === 'conversa' && eventos > 0 && (
+            <button
+              type="button"
+              onClick={() => setModo('bastidores')}
+              className="rounded-full border border-white/[0.08] px-2 py-1 text-[9.5px] font-semibold text-dim transition hover:border-white/[0.16] hover:text-soft"
+              title="Ver eventos nos bastidores"
+            >
+              {eventos} {eventos === 1 ? 'evento' : 'eventos'}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={recomecar}
+            className="rounded-lg px-2 py-1.5 text-[10.5px] font-bold text-soft transition hover:bg-white/[0.07] hover:text-ink"
+            title="Reiniciar o teste desde o começo"
+          >
+            ↻ Reiniciar
+          </button>
+        </div>
+      </div>
+
       {temApi && (
         <p className="mx-3.5 mt-3.5 rounded-[11px] border border-cyan-400/20 bg-cyan-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-cyan-300">
           Este fluxo chama uma API. O teste dispara <strong>de verdade</strong> — testar cinco vezes
@@ -210,16 +278,45 @@ export function Conversa({
         </p>
       )}
 
-      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3.5">
-        {itens.map((item) => (
-          <Bolha key={item.chave} item={item} pendentes={pendentes} ocupado={ocupado} aoEscolher={enviar} />
+      {modo === 'conversa' && (
+        <div className="flex shrink-0 items-center gap-2.5 border-b border-black/10 bg-[#f0f2f5] px-3 py-2 text-[#111b21]">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#00a884] text-[10px] font-extrabold text-white">
+            {iniciais || 'AF'}
+          </span>
+          <span className="min-w-0">
+            <strong className="block truncate text-[12px] leading-4">{nomeContato}</strong>
+            <span className="block text-[9.5px] text-[#667781]">contato de teste</span>
+          </span>
+        </div>
+      )}
+
+      <div
+        className={`min-h-0 flex-1 space-y-2 overflow-y-auto p-3.5 ${
+          modo === 'conversa' ? 'whatsapp-wallpaper' : ''
+        }`}
+      >
+        {itensDoModo(itens, modo).map((item) => (
+          <Bolha
+            key={item.chave}
+            item={item}
+            modo={modo}
+            pendentes={pendentes}
+            ocupado={ocupado}
+            aoEscolher={enviar}
+          />
         ))}
         {ocupado && (
-          <div className="flex w-fit gap-1 rounded-[13px_13px_13px_4px] border border-white/[0.08] bg-white/[0.055] px-3.5 py-3">
+          <div
+            className={`flex w-fit gap-1 rounded-[13px_13px_13px_4px] px-3.5 py-3 ${
+              modo === 'conversa'
+                ? 'bg-white shadow-[0_1px_1px_rgba(11,20,26,0.13)]'
+                : 'border border-white/[0.08] bg-white/[0.055]'
+            }`}
+          >
             {[0, 1, 2].map((i) => (
               <span
                 key={i}
-                className="size-1.5 rounded-full bg-muted"
+                className={`typing-dot size-1.5 rounded-full ${modo === 'conversa' ? 'bg-[#8696a0]' : 'bg-muted'}`}
                 style={{ animation: `blink 1.1s ${i * 0.18}s infinite` }}
               />
             ))}
@@ -237,7 +334,7 @@ export function Conversa({
         </p>
       )}
 
-      <div className="border-t border-white/[0.06] p-3">
+      <div className={`border-t p-3 ${modo === 'conversa' ? 'border-black/10 bg-[#f0f2f5]' : 'border-white/[0.06]'}`}>
         {viva ? (
           <form onSubmit={submeter} className="flex gap-2">
             <input
@@ -247,27 +344,39 @@ export function Conversa({
               placeholder={
                 status === 'aguardando_ia' ? 'o que a IA responderia?' : 'escreva como o cliente…'
               }
-              className="app-field min-w-0 flex-1 px-3 py-2 text-[12.5px]"
+              className={
+                modo === 'conversa'
+                  ? 'min-w-0 flex-1 rounded-full border-0 bg-white px-3.5 py-2 text-[12px] text-[#111b21] outline-none placeholder:text-[#8696a0] disabled:opacity-60'
+                  : 'app-field min-w-0 flex-1 px-3 py-2 text-[12.5px]'
+              }
             />
             <button
               type="button"
               onClick={() => void enviar({ tipo: 'midia', formato: 'audio' }, '🎤 (áudio)')}
               disabled={ocupado || status === 'aguardando_ia'}
               title="Testar o que acontece quando a pessoa manda áudio"
-              className="app-secondary-button flex size-9 shrink-0 items-center justify-center px-0 text-sm disabled:opacity-40"
+              className={
+                modo === 'conversa'
+                  ? 'flex size-9 shrink-0 items-center justify-center rounded-full text-sm text-[#54656f] transition hover:bg-black/[0.05] disabled:opacity-40'
+                  : 'app-secondary-button flex size-9 shrink-0 items-center justify-center px-0 text-sm disabled:opacity-40'
+              }
             >
               🎤
             </button>
             <button
               type="submit"
               disabled={ocupado || rascunho.trim() === ''}
-              className="app-primary-button flex size-9 shrink-0 items-center justify-center px-0 text-lg disabled:opacity-40"
+              className={
+                modo === 'conversa'
+                  ? 'flex size-9 shrink-0 items-center justify-center rounded-full bg-[#00a884] px-0 text-base text-white transition hover:bg-[#008f72] disabled:opacity-40'
+                  : 'app-primary-button flex size-9 shrink-0 items-center justify-center px-0 text-lg disabled:opacity-40'
+              }
             >
-              ›
+              {modo === 'conversa' ? '➤' : '›'}
             </button>
           </form>
         ) : (
-          <p className="px-1 py-2 text-[12.5px] leading-5 text-muted">
+          <p className={`px-1 py-2 text-[12.5px] leading-5 ${modo === 'conversa' ? 'text-[#54656f]' : 'text-muted'}`}>
             {status === 'humano'
               ? 'O bot saiu de cena — daqui em diante quem responde é uma pessoa.'
               : 'A conversa terminou.'}{' '}
@@ -277,17 +386,39 @@ export function Conversa({
           </p>
         )}
       </div>
+
+      {modo === 'bastidores' && (
+        <div className="shrink-0 border-t border-white/[0.06] p-3 text-[11px]">
+          <p className="text-dim">
+            bloco atual: <code>{sessaoExibida.noAtual ?? '—'}</code> · {sessaoExibida.status}
+          </p>
+          {Object.keys(sessaoExibida.vars).length > 0 && (
+            <p className="mt-1 flex flex-wrap gap-1">
+              {Object.entries(sessaoExibida.vars).map(([chave, valor]) => (
+                <span
+                  key={chave}
+                  className="rounded-md border border-white/[0.08] bg-white/[0.045] px-2 py-1 font-mono text-[10px] text-muted"
+                >
+                  {chave}: {valor}
+                </span>
+              ))}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   )
 }
 
 function Bolha({
   item,
+  modo,
   pendentes,
   ocupado,
   aoEscolher,
 }: {
-  item: Item
+  item: ItemDaConversa
+  modo: ModoDaConversa
   pendentes: Pendentes | null
   ocupado: boolean
   aoEscolher: (entrada: Entrada, eco?: string) => void
@@ -307,14 +438,62 @@ function Bolha({
   if (item.de === 'pessoa') {
     return (
       <div className="flex justify-end">
-        <p className="max-w-[85%] rounded-[13px_13px_4px_13px] border border-accent/[0.24] bg-accent/[0.14] px-3 py-2 text-[12.5px] leading-[1.5] text-ink">
-          {item.texto}
+        <p
+          className={`max-w-[85%] rounded-[13px_13px_4px_13px] px-3 py-2 text-[12.5px] leading-[1.5] ${
+            modo === 'conversa'
+              ? 'bg-[#d9fdd3] text-[#111b21] shadow-[0_1px_1px_rgba(11,20,26,0.13)]'
+              : 'border border-accent/[0.24] bg-accent/[0.14] text-ink'
+          }`}
+        >
+          <span>{item.texto}</span>
+          {modo === 'conversa' && (
+            <span className="ml-2 inline-flex translate-y-0.5 gap-0.5 whitespace-nowrap text-[8.5px] text-[#667781]">
+              {item.hora} <span className="font-bold text-[#53bdeb]">✓✓</span>
+            </span>
+          )}
         </p>
       </div>
     )
   }
 
   const ativo = pendentes?.chave === item.chave && !ocupado
+
+  if (modo === 'conversa') {
+    const ehLista = item.formato === 'lista' || (item.opcoes?.length ?? 0) > 3
+
+    return (
+      <div className="flex max-w-[92%] flex-col items-start gap-1">
+        <p className="max-w-full rounded-[13px_13px_13px_4px] bg-white px-3 py-2 text-[12.5px] leading-[1.5] whitespace-pre-wrap text-[#111b21] shadow-[0_1px_1px_rgba(11,20,26,0.13)]">
+          <span>{item.texto}</span>
+          <span className="ml-2 inline-block translate-y-0.5 whitespace-nowrap text-[8.5px] text-[#667781]">
+            {item.hora}
+          </span>
+        </p>
+
+        {item.opcoes && item.opcoes.length > 0 && (
+          <div className="w-full overflow-hidden rounded-lg bg-white shadow-[0_1px_1px_rgba(11,20,26,0.13)]">
+            {ehLista && (
+              <p className="border-b border-[#e9edef] px-3 py-2 text-[10px] font-semibold text-[#667781]">
+                ☰ Escolha uma opção
+              </p>
+            )}
+            {item.opcoes.map((opcao) => (
+              <button
+                key={opcao.id}
+                type="button"
+                disabled={!ativo}
+                onClick={() => aoEscolher({ tipo: 'opcao', opcaoId: opcao.id }, opcao.rotulo)}
+                className="flex w-full items-center gap-2 border-b border-[#e9edef] px-3 py-2.5 text-left text-[11.5px] font-medium text-[#008069] transition last:border-0 enabled:hover:bg-[#f5f6f6] disabled:text-[#8696a0]"
+              >
+                <span aria-hidden className="text-sm text-[#00a884]">↩</span>
+                <span>{opcao.rotulo}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col items-start gap-2">

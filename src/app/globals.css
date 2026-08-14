@@ -349,6 +349,23 @@ textarea::placeholder {
   }
 }
 
+/* A visualização usa textura própria em vez de uma imagem externa: continua
+   reconhecível como conversa e não adiciona ativo de terceiro ao repositório. */
+.whatsapp-wallpaper {
+  background-color: #efeae2;
+  background-image:
+    radial-gradient(circle at 18px 18px, rgb(84 101 111 / 7%) 1px, transparent 1.5px),
+    radial-gradient(circle at 7px 35px, rgb(84 101 111 / 5%) 1px, transparent 1.5px),
+    linear-gradient(45deg, transparent 47%, rgb(84 101 111 / 3%) 48%, rgb(84 101 111 / 3%) 52%, transparent 53%);
+  background-size: 42px 42px, 42px 42px, 52px 52px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typing-dot {
+    animation: none !important;
+  }
+}
+
 /* O bloco onde a conversa começa. */
 .react-flow__node.no-inicio::after {
   position: absolute;

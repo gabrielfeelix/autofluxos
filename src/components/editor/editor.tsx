@@ -17,7 +17,6 @@ import '@xyflow/react/dist/style.css'
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent as ReactDragEvent } from 'react'
 import { Conversa } from '@/components/conversa'
-import type { Sessao } from '@/core/engine/types'
 import { fluxoSchema, type Fluxo, type No, type TipoNo } from '@/core/flow/schema'
 import type { Problema } from '@/core/flow/validar'
 import { validar } from '@/core/flow/validar'
@@ -141,7 +140,6 @@ export function Editor({
   const ultimoSelecionado = useRef<string | null>(null)
   const [aba, setAba] = useState<'bloco' | 'testar'>('bloco')
   const [salvamento, setSalvamento] = useState<'salvo' | 'salvando' | 'pendente' | 'erro'>('salvo')
-  const [sessao, setSessao] = useState<Sessao | null>(null)
   const [publicada, setPublicada] = useState(publicadaInicial)
   const [publicando, setPublicando] = useState(false)
   const [errosDePublicacao, setErrosDePublicacao] = useState<Problema[] | null>(null)
@@ -636,26 +634,10 @@ export function Editor({
               <Conversa
                 fluxo={fluxo}
                 fluxoId={fluxoId}
+                nomeContato={clienteNome}
                 contextoNegocio={contextoNegocio}
                 iaHabilitada={comIa}
-                aoMudarSessao={setSessao}
               />
-              {sessao && (
-                <div className="shrink-0 border-t border-white/[0.06] p-3 text-[11px]">
-                  <p className="text-dim">
-                    bloco atual: <code>{sessao.noAtual ?? '—'}</code> · {sessao.status}
-                  </p>
-                  {Object.keys(sessao.vars).length > 0 && (
-                    <p className="mt-1 flex flex-wrap gap-1">
-                      {Object.entries(sessao.vars).map(([k, v]) => (
-                        <span key={k} className="rounded-md border border-white/[0.08] bg-white/[0.045] px-2 py-1 font-mono text-[10px] text-muted">
-                          {k}: {v}
-                        </span>
-                      ))}
-                    </p>
-                  )}
-                </div>
-              )}
             </>
           )}
         </aside>

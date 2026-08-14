@@ -7,7 +7,7 @@ consegue continuar lendo só isto e o [ARQUITETURA.md](ARQUITETURA.md).
 
 ## Leia isto primeiro
 
-**Estado:** itens 1 a 4 da expansão concluídos na base local. `npm test` dá **257
+**Estado:** itens 1 a 5 da expansão concluídos na base local. `npm test` dá **260
 passando**, `npm run typecheck` e `npm run lint` estão limpos. O último `main`
 publicado continua em https://autofluxos.4yu.com.br.
 
@@ -113,6 +113,12 @@ dívida e a de lá manda na ordem das features.**
   o indicador falhar, a resposta continua. A aba Testar usa os pontos animados
   durante a mesma pausa e revela sequências mensagem por mensagem. Pausa acima
   de 3 segundos continua reservada ao agendador do item 12.
+- **Teste com pele de WhatsApp** — a aba Testar abre em `Conversa`, com contato
+  nomeado, horário, papel de parede, bolhas e respostas de largura total. O
+  alternador `Bastidores` devolve todos os eventos de sistema, variáveis e
+  estado da sessão; no modo visual, eles viram um contador que leva até lá. O
+  áudio, os dois alertas e o reinício fixo existem nos dois modos. Nenhuma ação
+  do motor mudou: os desenhos consomem a mesma lista.
 
 ### Armadilhas que já custaram caro nesta base
 

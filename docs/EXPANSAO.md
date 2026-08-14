@@ -739,27 +739,31 @@ aberto: ele é conveniência, então sua falha não vira handoff nem impede o en
 
 ---
 
-### 5. Pele de WhatsApp na aba Testar
+### ✅ 5. Pele de WhatsApp na aba Testar
 
-**Hoje:** [`conversa.tsx`](../src/components/conversa.tsx) desenha bolhas com as
+**Hoje era:** [`conversa.tsx`](../src/components/conversa.tsx) desenhava bolhas com as
 cores do painel e escreve, em fonte mono, `no WhatsApp isto vira botões`.
 **Explicamos com texto o que dá para mostrar com pixel.**
 
 **Lá:** papel de parede, bolhas brancas, botões renderizados como o WhatsApp
 renderiza (largura total, ↩ verde), horário, contato nomeado.
 
-**Estado esperado:** alternador **`Conversa` / `Bastidores`** dentro do painel.
+**Estado atual:** alternador **`Conversa` / `Bastidores`** dentro do painel.
 `Conversa` = fidelidade visual. `Bastidores` = o que já temos, que é **superior
 ao deles** e não pode ser perdido: eventos inline (`guardou nome = "joao"`,
 `passou para um humano — {motivo}`), o 🎤 que testa mídia de verdade, o aviso de
 fluxo desatualizado, e o aviso de que testar API grava de verdade.
 
-**Como fazer:**
-1. Estado `modo` no componente; a lista de itens é a mesma, muda o desenho
-2. Em `Conversa`, item de sistema some (fica no contador "N eventos")
-3. Botões com o desenho real: até 3 = botões largura total; acima = lista
-4. Sempre visível: **reiniciar**
-5. **Extra que vale:** testar como um lead existente — carregar as `vars` de um
+**Como foi feito:** o componente guarda um estado `modo`, mas os dois desenhos
+consomem a mesma lista. `Conversa` esconde os eventos de sistema atrás de um
+contador que abre os Bastidores; mostra cabeçalho nomeado, horário, papel de
+parede, bolhas e respostas de largura total (acima de três, como lista).
+`Bastidores` preserva eventos, variáveis e estado da sessão. Áudio, aviso de
+fluxo desatualizado, aviso de API real e o reinício fixo continuam acessíveis.
+Três testes prendem a filtragem e a contagem para um modo nunca apagar informação
+do outro.
+
+**Extra que continua valendo:** testar como um lead existente — carregar as `vars` de um
    contato real. O motor já aceita, porque `executar(fluxo, sessao, entrada)`
    recebe a sessão pronta. Resolve "por que quebrou com a Maria?"
 
