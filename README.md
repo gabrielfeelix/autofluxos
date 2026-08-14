@@ -5,13 +5,19 @@ conversa, o lead cai numa tela. IA é opcional.
 
 Produto da [4YU](https://4yu.com.br).
 
+> **Banco de produção compartilhado:** AutoFluxos e Verandi usam o mesmo projeto
+> Supabase. O AutoFluxos mora em `public`; a Verandi, em `app_verandi`. Antes de
+> mexer em migration, Auth, RLS, Storage, extensão ou Data API, leia
+> [docs/BANCO-COMPARTILHADO.md](docs/BANCO-COMPARTILHADO.md). **Nunca rode
+> `supabase db push` contra produção.**
+
 ## Estado
 
-**Etapa 1 e 2 construídas.** Dá para desenhar o fluxo arrastando
+**Produto-base construído e expansão 0–5 concluída.** Dá para desenhar o fluxo arrastando
 blocos, testar a conversa ao lado, publicar (versão numerada e imutável), receber
 mensagem pelo webhook e ver o lead cair na tela com o que o bot coletou. O que
-falta não é código: a Meta precisa liberar a verificação do número, que é onde
-estamos travados (ver ESTADO.md).
+resta está consolidado no [plano mestre](docs/PLANO-MESTRE.md); parte é código e
+parte depende das liberações da Meta.
 
 No ar em **https://autofluxos.4yu.com.br** (painel protegido por senha).
 
@@ -19,6 +25,10 @@ No ar em **https://autofluxos.4yu.com.br** (painel protegido por senha).
 [docs/ESTADO.md](docs/ESTADO.md). A seção "Leia isto primeiro" tem o estado
 atual, as três regras que não se quebram, a fila do que fazer em seguida, e as
 armadilhas que já custaram caro nesta base.
+
+Para escolher e executar a próxima atividade, use
+[docs/PLANO-MESTRE.md](docs/PLANO-MESTRE.md), que reúne dívida, expansão,
+gatilhos externos e critérios de aceite sem duplicar tarefas concluídas.
 
 Veja [docs/ARQUITETURA.md](docs/ARQUITETURA.md) para o desenho completo e as
 decisões por trás dele.
@@ -43,6 +53,16 @@ normal — dá para clonar e rodar `npm test` sem credencial nenhuma.
 
 Migrations em [supabase/migrations/](supabase/migrations/), aplicadas pela
 Management API do Supabase.
+
+Este não é mais um projeto Supabase exclusivo. A Verandi usa o mesmo projeto de
+produção no schema `app_verandi`; os objetos deste produto permanecem em
+`public`. Auth, Storage, extensões, Data API, cotas e backup são compartilhados.
+A fonte de verdade operacional é
+[docs/BANCO-COMPARTILHADO.md](docs/BANCO-COMPARTILHADO.md).
+
+**A última migration atual é `0011`; a próxima é `0012`.** Não reutilize os
+números antigos citados em planos. Nunca aplique migrations da Verandi por este
+repositório e nunca use `supabase db push` em produção.
 
 `clients`, `flows` e `flow_versions` (passos 3 e 5); `channels`, `contacts`,
 `sessions`, `messages` e `handoffs` (passo 6, criadas só quando já se sabia o

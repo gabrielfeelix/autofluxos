@@ -1,5 +1,13 @@
 # Plano — atender o MGM Pilates (Daniel)
 
+> **SUBSTITUÍDO em 14/ago/2026. Não execute este plano no AutoFluxos.** A Agenda
+> virou o produto separado **Verandi**, no schema `app_verandi` do projeto
+> Supabase compartilhado. AutoFluxos permanece em `public` e conversa com o
+> Verandi somente por API/evento autenticado. Este arquivo fica como registro
+> histórico do raciocínio de domínio; suas migrations e tabelas não pertencem
+> mais a este repositório. Veja [PLANO-MESTRE.md](PLANO-MESTRE.md) e
+> [BANCO-COMPARTILHADO.md](BANCO-COMPARTILHADO.md).
+
 **Objetivo:** sair do zero até o estúdio ser atendido pelo AutoFluxos, incluindo
 reposição de aula. Cliente do Eduardo; quem opera o painel é o Eduardo.
 

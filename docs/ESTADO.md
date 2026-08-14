@@ -1,7 +1,13 @@
-# Onde paramos — 13/ago/2026
+# Onde paramos — 14/ago/2026
 
 Documento de retomada. Quem chegar aqui sem ter acompanhado a construção
 consegue continuar lendo só isto e o [ARQUITETURA.md](ARQUITETURA.md).
+
+> **ANTES DE QUALQUER MUDANÇA DE BANCO:** desde 14/ago/2026, este projeto
+> Supabase também hospeda a Verandi em `app_verandi`. Leia
+> [BANCO-COMPARTILHADO.md](BANCO-COMPARTILHADO.md). AutoFluxos continua em
+> `public`; Auth, Storage, extensões, Data API, cotas e backup são globais.
+> **Nunca rode `supabase db push` contra produção.**
 
 ---
 
@@ -16,7 +22,7 @@ lado, publicar versão imutável, receber mensagem do WhatsApp, responder,
 **chamar o sistema do cliente no meio da conversa** (bloco API), guardar as
 credenciais dele num cofre, e o lead cair na tela.
 
-**As três regras que não se quebram**, e das quais quase tudo aqui decorre:
+**As quatro regras que não se quebram**, e das quais quase tudo aqui decorre:
 
 1. `src/core/` não faz rede, não importa Next, WhatsApp nem banco. Se uma tarefa
    parecer exigir quebrar isso, a tarefa está errada.
@@ -26,6 +32,9 @@ credenciais dele num cofre, e o lead cair na tela.
 3. Recusa de tela é conveniência; a recusa que vale é a do servidor. `publicar()`
    revalida tudo, e `efeitos/rede.ts` recusa endereço independentemente do que o
    editor deixou passar.
+4. O banco é compartilhado com a Verandi, não o domínio. Este repositório só
+   cria objetos do AutoFluxos em `public`; nunca consulta `app_verandi`. Mudança
+   em Auth, Storage, extensões ou Data API precisa ser avaliada nos dois produtos.
 
 **A regra de produto que não é óbvia e já me fez errar:** mandar o cliente usar
 n8n, Zapier ou Make **não é resposta aceitável**. O AutoFluxos vende ser a
@@ -33,11 +42,11 @@ camada de automação; se o cliente precisa do n8n, ele não precisa da gente.
 Faltou peça? Constrói a peça. Ferramenta externa pode ser destino de um webhook
 nosso, nunca requisito para funcionar.
 
-> **Antes de pegar qualquer item da fila abaixo**, veja o
-> [PLANO-ENDURECIMENTO.md](PLANO-ENDURECIMENTO.md). Ele é o que falta a nível de
-> código para o sistema ficar profissional e seguro — nove blocos, em ordem, com
-> as decisões técnicas já tomadas. Os blocos 4 e 7 de lá são pré-requisito
-> barato do item 1 desta fila.
+> A dívida de segurança continua em
+> [PLANO-ENDURECIMENTO.md](PLANO-ENDURECIMENTO.md), mas não é mais a ordem de
+> produto. O [PLANO-MESTRE.md](PLANO-MESTRE.md) começa por Inbox e automações
+> de atendimento; os blocos 4 e 7 de endurecimento entram obrigatoriamente
+> antes de liberar login de cliente.
 
 **Existem duas filas neste projeto, e elas não competem.** A de baixo é de
 **dívida**: o que está torto, inseguro ou pela metade. A de features está em
@@ -48,6 +57,10 @@ que existe fora, e o que construir com estado esperado de cada item.
 Onde as duas se tocam: o **item 1** daqui (papéis) é o item 15 de lá, e o
 **item 2** (modelos da Meta) é o 13. Quando divergirem, **esta fila manda na
 dívida e a de lá manda na ordem das features.**
+
+O índice executável das duas filas, com dependências, gatilhos e critérios de
+aceite, é [PLANO-MESTRE.md](PLANO-MESTRE.md). Use-o para escolher a próxima
+fase; mantenha este arquivo como retrato operacional e evidência das decisões.
 
 ### Por onde continuar, em ordem
 

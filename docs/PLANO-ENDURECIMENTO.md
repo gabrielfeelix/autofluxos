@@ -4,6 +4,13 @@
 tráfego real, e dar ao projeto o mínimo que separa "funciona na minha máquina"
 de "funciona sem alguém olhando".
 
+> **Este plano nasceu antes do banco compartilhado com a Verandi.** Antes de
+> executar qualquer bloco que toque Supabase, leia
+> [BANCO-COMPARTILHADO.md](BANCO-COMPARTILHADO.md). Os números de migration
+> escritos abaixo são históricos, não instruções: a última migration real do
+> AutoFluxos é `0011` e a próxima é `0012`. Nunca use `supabase db push` em
+> produção e nunca toque `app_verandi` a partir deste repositório.
+
 **Como ler:** são **nove blocos**, em ordem de execução. Cada bloco entrega
 software funcionando sozinho e pode parar ali. As decisões técnicas já estão
 tomadas aqui — quando um bloco entrar em execução, ele vira um plano de tarefas
@@ -26,6 +33,8 @@ esbarra em pelo menos uma:
 3. Recusa de tela é conveniência; a que vale é a do servidor.
 4. Nada pode estourar dentro do `after()` do webhook — falha vira handoff.
 5. n8n/Zapier/Make não são resposta. Faltou peça, constrói a peça.
+6. Banco compartilhado não é domínio compartilhado: AutoFluxos fica em `public`,
+   Verandi fica em `app_verandi`, e mudanças globais são avaliadas nos dois.
 
 ---
 
@@ -33,7 +42,7 @@ esbarra em pelo menos uma:
 
 ```
 1. CI  ✅              protege todos os outros
-2. Corrida de sessão      bug real esperando tráfego
+2. Corrida de sessão  ✅  bug real corrigido
 3. Portas abertas         limite, teto de corpo, noindex
 4. Escrita cruzada        barato, e é pré-requisito de papéis
 5. Rollback de versão     rede de segurança pra publicar sem medo
@@ -196,7 +205,7 @@ gh run watch
 
 ---
 
-## Bloco 2 — Corrida de sessão
+## Bloco 2 — Corrida de sessão ✅ FEITO
 
 **O defeito:** duas mensagens da mesma pessoa chegam quase juntas, viram dois
 `after()` concorrentes, os dois leem a mesma sessão, os dois gravam. A última
@@ -263,7 +272,8 @@ Entra: recusa acima de 256 KB de corpo, e acima de 200 nós no fluxo.
 **3c — `noindex` no painel.** `/login` é público e indexável hoje.
 
 **Arquivos:**
-- Criar: `supabase/migrations/0008_limites.sql`
+- Criar: `supabase/migrations/0012_limites.sql` (próxima livre na data desta
+  revisão; confirme novamente no diretório antes de criar)
 - Criar: `src/server/limite.ts`
 - Criar: `public/robots.txt`
 - Modificar: `src/server/auth-actions.ts`, `src/app/api/simular/route.ts`,
@@ -418,7 +428,8 @@ do cliente, **do cliente do cliente**. Falta um botão de apagar e uma política
 > configurável na migration e está escrito lá, não no código.
 
 **Arquivos:**
-- Criar: `supabase/migrations/0009_retencao.sql`
+- Criar: migration com o próximo número livre na hora de executar; não reutilize
+  `0009`, que já existe
 - Criar: `src/app/clientes/[clienteId]/leads/exportar/route.ts`
 - Modificar: `src/server/repos/leads.ts` (paginação + busca),
   `src/app/clientes/[clienteId]/leads/page.tsx`, `src/server/acoes.ts`

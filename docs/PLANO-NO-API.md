@@ -1,5 +1,11 @@
 # Plano de implementação — o nó `API`
 
+> **CONCLUÍDO em 12/ago/2026.** As caixas vazias abaixo preservam o roteiro
+> histórico e não representam backlog atual. O estado implementado está em
+> [NO-API.md](NO-API.md), [CONEXOES.md](CONEXOES.md) e
+> [ESTADO.md](ESTADO.md). Para trabalho restante, use
+> [PLANO-MESTRE.md](PLANO-MESTRE.md).
+
 > **Para quem executa (humano ou agente):** use a skill
 > `superpowers:subagent-driven-development` (recomendada) ou
 > `superpowers:executing-plans` para tocar tarefa por tarefa. Os passos usam

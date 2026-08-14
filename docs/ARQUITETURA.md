@@ -2,6 +2,11 @@
 
 > Rascunho para discussão. Nada aqui está fechado.
 
+> **Infraestrutura de produção:** desde 14/ago/2026, AutoFluxos e Verandi usam o
+> mesmo projeto Supabase. AutoFluxos mora em `public`; Verandi mora em
+> `app_verandi`. Leia [BANCO-COMPARTILHADO.md](BANCO-COMPARTILHADO.md) antes de
+> qualquer decisão sobre banco, Auth, Storage, RLS, extensão ou Data API.
+
 ## O que o MVP precisa fazer (e só isso)
 
 Um cliente da 4YU — digamos o Reinaldo — tem um número de WhatsApp. Alguém manda
@@ -432,6 +437,12 @@ sair do Next, virar VPS, virar CLI — `core/` vai junto sem tocar numa linha.
 > arquivo dele.
 
 ## Banco (Supabase / Postgres)
+
+> **O projeto Supabase é compartilhado, o domínio não.** Tudo abaixo pertence ao
+> AutoFluxos e continua em `public`. Nenhuma tabela, função ou consulta deste
+> produto atravessa para `app_verandi`. O inverso também é regra. O isolamento,
+> os recursos globais e o procedimento de migrations estão em
+> [BANCO-COMPARTILHADO.md](BANCO-COMPARTILHADO.md).
 
 > **Tudo construído.** `flows.rascunho` é `jsonb` mutável; publicar tira uma foto
 > dele numa linha de `flow_versions` que **o banco recusa alterar** (gatilho
