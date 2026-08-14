@@ -50,8 +50,15 @@ function basicAuthConfere(req: NextRequest, senha: string): boolean {
 }
 
 export const config = {
-  // `robots.txt` fica de fora porque ele **precisa** ser lido por quem não tem
-  // sessão — é essa a função dele. Dentro do matcher, o crawler recebia o
-  // redirecionamento para `/login` e nunca via a regra que proíbe indexar.
-  matcher: ['/((?!api/webhook|_next/static|_next/image|favicon.ico|robots.txt).*)'],
+  // Duas exceções, e as duas por quem chama:
+  //
+  // `robots.txt` **precisa** ser lido por quem não tem sessão — é essa a função
+  // dele. Dentro do matcher, o crawler recebia o redirecionamento para `/login`
+  // e nunca via a regra que proíbe indexar.
+  //
+  // `api/manutencao` é chamada pela tarefa agendada da plataforma, que não tem
+  // cookie de painel. Ela se protege com `CRON_SECRET` e falha fechada sem ele.
+  matcher: [
+    '/((?!api/webhook|api/manutencao|_next/static|_next/image|favicon.ico|robots.txt).*)',
+  ],
 }

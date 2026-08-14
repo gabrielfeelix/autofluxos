@@ -3,9 +3,10 @@ import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { Suspense } from 'react'
 import { comoFalta, restaDaJanela } from '@/channels/janela'
+import { BotaoPerigo } from '@/components/design/botao-perigo'
 import { ControleDeAutomacao } from '@/components/lead/controle-automacao'
 import { CaixaDeResposta } from '@/components/lead/responder'
-import { acaoEncerrarAtendimento, acaoResponderLead } from '@/server/acoes'
+import { acaoApagarContato, acaoEncerrarAtendimento, acaoResponderLead } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { contextoDeResposta } from '@/server/repos/conversas'
 import { acharLead, lerConversa } from '@/server/repos/leads'
@@ -64,6 +65,15 @@ export default async function Pagina({
           <span className={`rounded-full border px-3 py-1 text-[10.5px] font-bold ${lead.aguardando ? 'border-rose-400/25 bg-rose-400/[0.09] text-rose-300' : !lead.automacaoAtiva ? 'border-amber-300/25 bg-amber-300/[0.08] text-amber-200' : 'border-emerald-400/20 bg-emerald-400/[0.07] text-emerald-300'}`}>
             {lead.aguardando ? 'AGUARDANDO HUMANO' : !lead.automacaoAtiva ? 'BOT EM PAUSA' : 'COM O BOT'}
           </span>
+          {/* O pedido de exclusão da LGPD vira este botão. A pergunta diz o que
+              some junto porque não existe desfazer: a conversa não está copiada
+              em lugar nenhum. */}
+          <BotaoPerigo
+            acao={acaoApagarContato.bind(null, clienteId, contatoId)}
+            rotulo="Apagar contato"
+            titulo="Apaga a pessoa, a conversa inteira e o que o fluxo coletou. Não dá para desfazer."
+            pergunta={`Apagar ${nome} e tudo desta pessoa?\n\nSomem a conversa inteira, o que o fluxo coletou e o histórico de atendimento. Não dá para desfazer.`}
+          />
         </header>
 
         {lead.aguardando && (

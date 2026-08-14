@@ -32,6 +32,7 @@ import {
   salvarRascunho,
 } from './repos/fluxos'
 import { apagarConexao, criarConexao, trocarValor } from './repos/conexoes'
+import { apagarContato } from './repos/retencao'
 import { apagarRespostaRapida, criarRespostaRapida } from './repos/respostas-rapidas'
 
 export async function acaoCriarCliente(formData: FormData) {
@@ -440,6 +441,34 @@ export async function acaoAlternarAutomacaoDoLead(
   revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
   revalidatePath(`/clientes/${clienteId}/inbox`)
   return { ok: true }
+}
+
+/**
+ * Apaga um contato e tudo que veio com ele.
+ *
+ * É o pedido de exclusão da LGPD virando botão. Não existe arquivamento por
+ * baixo: `contacts` cascateia sessão, mensagem, handoff e trava, e não há cópia
+ * do histórico em outro lugar. A tela precisa dizer isso **antes** de perguntar
+ * — desfazer não é uma opção que exista aqui.
+ */
+export async function acaoApagarContato(
+  clienteId: string,
+  contatoId: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  if (
+    !z.string().uuid().safeParse(clienteId).success ||
+    !z.string().uuid().safeParse(contatoId).success
+  ) {
+    return { ok: false, erro: 'contato inválido' }
+  }
+
+  const apagou = await apagarContato(clienteId, contatoId)
+  if (!apagou) return { ok: false, erro: 'este contato não existe neste cliente' }
+
+  revalidatePath(`/clientes/${clienteId}/leads`)
+  revalidatePath(`/clientes/${clienteId}/inbox`)
+  revalidatePath(`/clientes/${clienteId}`)
+  redirect(`/clientes/${clienteId}/leads`)
 }
 
 /**
