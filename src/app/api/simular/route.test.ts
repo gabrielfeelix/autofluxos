@@ -1,7 +1,13 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { sessaoNova } from '@/core/engine/types'
 import { triagem } from '@/exemplos/triagem'
+import { consumirLimite } from '@/server/limite'
 import { POST } from './route'
+
+vi.mock('@/server/limite', () => ({
+  chaveDeLimite: vi.fn(() => 'simular:127.0.0.1'),
+  consumirLimite: vi.fn(),
+}))
 
 function pedir(corpo: unknown) {
   return POST(
@@ -14,6 +20,10 @@ function pedir(corpo: unknown) {
 }
 
 describe('POST /api/simular', () => {
+  beforeEach(() => {
+    vi.mocked(consumirLimite).mockResolvedValue(true)
+  })
+
   it('começa a conversa e devolve ações mais a sessão', async () => {
     const resposta = await pedir({ fluxo: triagem, sessao: sessaoNova(), entrada: { tipo: 'inicio' } })
     expect(resposta.status).toBe(200)
@@ -60,5 +70,36 @@ describe('POST /api/simular', () => {
       entrada: { tipo: 'telepatia' },
     })
     expect(resposta.status).toBe(400)
+  })
+
+  it('recusa corpo acima de 256 KB antes de analisar ou executar', async () => {
+    const resposta = await POST(
+      new Request('http://localhost/api/simular', {
+        method: 'POST',
+        body: 'x'.repeat(300 * 1024),
+      }),
+    )
+
+    expect(resposta.status).toBe(413)
+  })
+
+  it('recusa fluxo com mais de 200 nós antes de executar efeitos', async () => {
+    const fluxo = structuredClone(triagem)
+    const primeiro = fluxo.nodes[0]
+    if (!primeiro) throw new Error('o exemplo precisa ter um nó')
+    fluxo.nodes = Array.from({ length: 201 }, (_, indice) => ({
+      ...primeiro,
+      id: `no-${indice}`,
+    }))
+
+    const resposta = await pedir({ fluxo, sessao: sessaoNova(), entrada: { tipo: 'inicio' } })
+    expect(resposta.status).toBe(413)
+  })
+
+  it('recusa quem excedeu o limite antes de executar o simulador', async () => {
+    vi.mocked(consumirLimite).mockResolvedValue(false)
+
+    const resposta = await pedir({ fluxo: triagem, sessao: sessaoNova(), entrada: { tipo: 'inicio' } })
+    expect(resposta.status).toBe(429)
   })
 })

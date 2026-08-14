@@ -8,6 +8,7 @@ import {
   iguais,
   tokenDaSenha,
 } from '@/lib/painel-auth'
+import { chaveDeLimite, consumirLimite } from '@/server/limite'
 
 /**
  * `email` volta junto do erro de propósito.
@@ -23,6 +24,11 @@ export async function acaoEntrar(
   formData: FormData,
 ): Promise<EstadoLogin> {
   const email = String(formData.get('email') ?? '')
+  const cabecalhos = await headers()
+  if (!(await consumirLimite(chaveDeLimite('login', cabecalhos)))) {
+    return { erro: 'Muitas tentativas, espere alguns minutos antes de tentar novamente.', email }
+  }
+
   const configurada = process.env.PAINEL_SENHA
   if (!configurada) {
     return { erro: 'O acesso do painel ainda não foi configurado neste ambiente.', email }
@@ -33,7 +39,7 @@ export async function acaoEntrar(
     return { erro: 'Credenciais não conferem. Verifique e tente de novo.', email }
   }
 
-  const [cookieStore, cabecalhos] = await Promise.all([cookies(), headers()])
+  const cookieStore = await cookies()
   const conexaoSegura = cabecalhos.get('x-forwarded-proto') === 'https' || process.env.VERCEL === '1'
   cookieStore.set(COOKIE_PAINEL, await tokenDaSenha(configurada), {
     httpOnly: true,

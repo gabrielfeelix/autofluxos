@@ -3,6 +3,7 @@ import { entradaSchema, sessaoSchema } from '@/core/engine/types'
 import { fluxoSchema } from '@/core/flow/schema'
 import { executarComEfeitos } from '@/server/efeitos/resolver'
 import { escolherModelo } from '@/server/ia/modelo'
+import { chaveDeLimite, consumirLimite } from '@/server/limite'
 import { acharFluxo } from '@/server/repos/fluxos'
 
 /**
@@ -26,6 +27,8 @@ import { acharFluxo } from '@/server/repos/fluxos'
  * fica só girando.
  */
 export const maxDuration = 60
+const LIMITE_DO_CORPO_EM_BYTES = 256 * 1024
+const LIMITE_DE_NOS = 200
 
 const corpoSchema = z.object({
   fluxo: fluxoSchema,
@@ -53,9 +56,24 @@ const corpoSchema = z.object({
 })
 
 export async function POST(req: Request) {
+  const tamanhoDeclarado = Number(req.headers.get('content-length') ?? '0')
+  if (Number.isFinite(tamanhoDeclarado) && tamanhoDeclarado > LIMITE_DO_CORPO_EM_BYTES) {
+    return Response.json({ erro: 'corpo excede 256 KB' }, { status: 413 })
+  }
+
+  let texto: string
+  try {
+    texto = await req.text()
+  } catch {
+    return Response.json({ erro: 'não foi possível ler o corpo' }, { status: 400 })
+  }
+  if (new TextEncoder().encode(texto).byteLength > LIMITE_DO_CORPO_EM_BYTES) {
+    return Response.json({ erro: 'corpo excede 256 KB' }, { status: 413 })
+  }
+
   let bruto: unknown
   try {
-    bruto = await req.json()
+    bruto = JSON.parse(texto)
   } catch {
     return Response.json({ erro: 'corpo não é JSON válido' }, { status: 400 })
   }
@@ -70,6 +88,14 @@ export async function POST(req: Request) {
 
   const { fluxo, sessao, entrada, contextoNegocio, iaHabilitada, historico, fluxoId } =
     analise.data
+
+  if (fluxo.nodes.length > LIMITE_DE_NOS) {
+    return Response.json({ erro: 'fluxo excede 200 nós' }, { status: 413 })
+  }
+
+  if (!(await consumirLimite(chaveDeLimite('simular', req.headers)))) {
+    return Response.json({ erro: 'muitas tentativas, espere' }, { status: 429 })
+  }
 
   // O dono sai do banco, pelo id da automação. Sem `fluxoId`, ou com um que
   // não existe, o teste roda sem credencial nenhuma — que é o certo: melhor o

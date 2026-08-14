@@ -18,6 +18,7 @@ const jetBrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'AutoFluxos — atendimento desenhado bloco a bloco',
   description: 'Automação visual de atendimento no WhatsApp.',
+  robots: { index: false, follow: false },
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {
