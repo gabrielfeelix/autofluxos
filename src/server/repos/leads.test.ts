@@ -14,7 +14,15 @@ import {
   registrarSaida,
 } from './conversas'
 import { criarFluxo, publicar } from './fluxos'
-import { acharLead, lerConversa, listarLeads } from './leads'
+import {
+  acharLead,
+  contarEsperandoPessoa,
+  contarLeads,
+  lerConversa,
+  limparBusca,
+  listarLeads,
+  paginarLeads,
+} from './leads'
 
 /**
  * Fala com o Supabase de verdade, igual aos outros. O que precisa ser provado
@@ -269,5 +277,96 @@ describe.skipIf(!temCredencial)('leads contra o Supabase', () => {
     const { cliente } = await montarCliente('vazio')
     expect(await acharLead(cliente.id, '00000000-0000-0000-0000-000000000000')).toBeNull()
     expect(await listarLeads(cliente.id)).toEqual([])
+  })
+
+  it('pagina sem repetir nem perder ninguém, e conta o filtro inteiro', async () => {
+    const { cliente } = await montarCliente('paginado')
+    for (let i = 0; i < 5; i++) {
+      await acharOuCriarContato(cliente.id, `${marca}-55440001${i}0`, `Pagina ${i}`)
+    }
+
+    const primeira = await paginarLeads(cliente.id, { porPagina: 2, pagina: 1 })
+    const segunda = await paginarLeads(cliente.id, { porPagina: 2, pagina: 2 })
+    const terceira = await paginarLeads(cliente.id, { porPagina: 2, pagina: 3 })
+
+    expect(primeira.total).toBe(5)
+    expect(primeira.paginas).toBe(3)
+    expect(primeira.leads).toHaveLength(2)
+    expect(terceira.leads).toHaveLength(1)
+
+    const vistos = [...primeira.leads, ...segunda.leads, ...terceira.leads].map((l) => l.contatoId)
+    expect(new Set(vistos).size).toBe(5)
+  }, 15_000)
+
+  it('página fora da faixa cai na última em vez de devolver vazio', async () => {
+    const { cliente } = await montarCliente('fora da faixa')
+    await acharOuCriarContato(cliente.id, `${marca}-5544000200`, 'Única')
+
+    const longe = await paginarLeads(cliente.id, { porPagina: 2, pagina: 99 })
+
+    expect(longe.pagina).toBe(1)
+    expect(longe.leads).toHaveLength(1)
+  })
+
+  it('busca por parte do nome e por parte do telefone, só no cliente atual', async () => {
+    const dono = await montarCliente('busca')
+    const outro = await montarCliente('busca alheia')
+
+    await acharOuCriarContato(dono.cliente.id, `${marca}-5544777001`, 'Mariana Prado')
+    await acharOuCriarContato(dono.cliente.id, `${marca}-5544888002`, 'Joana Silva')
+    await acharOuCriarContato(outro.cliente.id, `${marca}-5544777003`, 'Mariana de Outro')
+
+    const porNome = await paginarLeads(dono.cliente.id, { busca: 'marian' })
+    expect(porNome.leads.map((l) => l.nome)).toEqual(['Mariana Prado'])
+
+    const porTelefone = await paginarLeads(dono.cliente.id, { busca: '888002' })
+    expect(porTelefone.leads.map((l) => l.nome)).toEqual(['Joana Silva'])
+
+    // O lead do outro cliente casa com o termo e não pode aparecer aqui.
+    expect(porNome.total).toBe(1)
+  }, 15_000)
+
+  /**
+   * O `or` do PostgREST é uma string com sintaxe. Um termo com vírgula e
+   * parêntese não pode virar filtro: viraria escolha de linha por conta própria.
+   */
+  it('termo com sintaxe de filtro não vira filtro', async () => {
+    const { cliente } = await montarCliente('injecao')
+    await acharOuCriarContato(cliente.id, `${marca}-5544999001`, 'Alvo')
+
+    const r = await paginarLeads(cliente.id, { busca: 'nome.ilike.*,wa_id.not.is.null' })
+
+    expect(r.total).toBe(0)
+    expect(r.leads).toEqual([])
+  })
+
+  it('conta leads e fila de atendimento sem trazer a lista', async () => {
+    const { cliente, canal, versaoId } = await montarCliente('contagem')
+    const contato = await acharOuCriarContato(cliente.id, `${marca}-5544666001`, 'Esperando')
+    await acharOuCriarContato(cliente.id, `${marca}-5544666002`, 'Tranquilo')
+    const sessao = await criarSessao(contato.id, canal.id, versaoId, sessaoNova())
+    await registrarHandoff(sessao.id, 'quer falar com alguém')
+
+    expect(await contarLeads(cliente.id)).toBe(2)
+    expect(await contarEsperandoPessoa(cliente.id)).toBe(1)
+  }, 10_000)
+})
+
+describe('limpeza do termo de busca', () => {
+  it('mantém o que aparece em nome e telefone', () => {
+    expect(limparBusca('  Mariana Prado ')).toBe('Mariana Prado')
+    expect(limparBusca('+55 (44) 9 9999-0000')).toBe('55  44  9 9999-0000')
+    expect(limparBusca('joao.silva@exemplo.com')).toBe('joao.silva@exemplo.com')
+  })
+
+  it('tira a sintaxe do filtro e o curinga do like', () => {
+    expect(limparBusca('a,b')).toBe('a b')
+    expect(limparBusca('nome.ilike.*x*')).toBe('nome.ilike. x')
+    expect(limparBusca('%')).toBe('')
+    expect(limparBusca('a"b\\c')).toBe('a b c')
+  })
+
+  it('não deixa termo gigante virar consulta gigante', () => {
+    expect(limparBusca('a'.repeat(500))).toHaveLength(60)
   })
 })

@@ -7,7 +7,7 @@ import { acaoRemoverLogo, acaoSalvarCadastro, acaoSalvarLogo } from '@/server/ac
 import { acharCliente } from '@/server/repos/clientes'
 import { listarCanais } from '@/server/repos/conversas'
 import { listarFluxos } from '@/server/repos/fluxos'
-import { listarLeads } from '@/server/repos/leads'
+import { contarEsperandoPessoa, contarLeads } from '@/server/repos/leads'
 import { medirFunil, type MedidasDoMes } from '@/server/repos/metricas'
 
 export const dynamic = 'force-dynamic'
@@ -87,16 +87,18 @@ function resumoDoMes(medidas: MedidasDoMes): string {
 }
 
 async function Atendimento({ clienteId }: { clienteId: string }) {
-  const [fluxos, canais, leads] = await Promise.all([
+  // Só a contagem, e não a lista inteira: esta tela abre a cada visita ao
+  // cliente e o único uso dos leads aqui é o número de quem espera pessoa.
+  const [fluxos, canais, totalDeLeads, esperando] = await Promise.all([
     listarFluxos(clienteId),
     listarCanais(clienteId),
-    listarLeads(clienteId),
+    contarLeads(clienteId),
+    contarEsperandoPessoa(clienteId),
   ])
 
   const noAr = fluxos.filter((fluxo) => fluxo.versaoPublicadaId)
   const publicados = new Set(noAr.map((fluxo) => fluxo.id))
   const atendendo = canais.filter((canal) => canal.flowId && publicados.has(canal.flowId))
-  const esperando = leads.filter((lead) => lead.aguardando).length
 
   // A ordem importa: a primeira peça que falta é a que adianta resolver. Listar
   // tudo que está errado de uma vez faz parecer que há quatro problemas quando
@@ -141,7 +143,7 @@ async function Atendimento({ clienteId }: { clienteId: string }) {
 
         <Medida valor={noAr.length} rotulo={noAr.length === 1 ? 'fluxo no ar' : 'fluxos no ar'} />
         <Medida valor={canais.length} rotulo={canais.length === 1 ? 'número' : 'números'} />
-        <Medida valor={leads.length} rotulo="leads" />
+        <Medida valor={totalDeLeads} rotulo="leads" />
         <Medida valor={esperando} rotulo="esperando" alerta={esperando > 0} />
 
         <span className="flex-1" />

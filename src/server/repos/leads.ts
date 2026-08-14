@@ -193,7 +193,23 @@ export async function listarAlertasDeHandoff(clienteId: string): Promise<AlertaD
 async function classificar(leads: Lead[]): Promise<Lead[]> {
   if (leads.length === 0) return leads
 
-  const contatos = leads.map((lead) => lead.contatoId)
+  const porContato = await etiquetasPorContato(leads.map((lead) => lead.contatoId))
+  return leads.map((lead) => ({ ...lead, etiquetas: porContato.get(lead.contatoId) ?? [] }))
+}
+
+/**
+ * As etiquetas de um lote de contatos.
+ *
+ * Separado de `classificar` porque o filtro por etiqueta precisa da mesma
+ * conta **antes** de saber quais leads mostrar: com paginação, filtrar a página
+ * já carregada daria contagem errada e página faltando.
+ */
+async function etiquetasPorContato(
+  contatos: string[],
+): Promise<Map<string, EtiquetaDeLead[]>> {
+  const porContato = new Map<string, EtiquetaDeLead[]>()
+  if (contatos.length === 0) return porContato
+
   const [entradas, sessoes] = await Promise.all([
     db()
       .from('messages')
@@ -246,9 +262,9 @@ async function classificar(leads: Lead[]): Promise<Lead[]> {
     }
   }
 
-  return leads.map((lead) => {
+  for (const contatoId of contatos) {
     const etiquetas: EtiquetaDeLead[] = []
-    const tipoInicial = tipoDaMensagem(primeiraEntrada.get(lead.contatoId))
+    const tipoInicial = tipoDaMensagem(primeiraEntrada.get(contatoId))
 
     // É a mesma fronteira da entrada do motor: texto e resposta interativa são
     // conversa; áudio, imagem, localização e qualquer outro formato vão para
@@ -256,11 +272,13 @@ async function classificar(leads: Lead[]): Promise<Lead[]> {
     if (tipoInicial && tipoInicial !== 'text' && tipoInicial !== 'interactive') {
       etiquetas.push('abriu_com_midia')
     }
-    if (contatosComHandoff.has(lead.contatoId)) etiquetas.push('foi_para_pessoa')
-    if (contagemDeEntradas.get(lead.contatoId) === 1) etiquetas.push('nao_respondeu')
+    if (contatosComHandoff.has(contatoId)) etiquetas.push('foi_para_pessoa')
+    if (contagemDeEntradas.get(contatoId) === 1) etiquetas.push('nao_respondeu')
 
-    return { ...lead, etiquetas }
-  })
+    porContato.set(contatoId, etiquetas)
+  }
+
+  return porContato
 }
 
 /** Os leads do cliente, o mais recente primeiro. Quem nunca falou vai no fim. */
@@ -274,6 +292,159 @@ export async function listarLeads(clienteId: string): Promise<Lead[]> {
   if (ehIdInvalido(error)) return []
   if (error) throw new Error(`não deu para listar os leads: ${error.message}`)
   return classificar((data as Linha[]).map(paraLead))
+}
+
+/** Quantos leads o cliente tem, sem trazer nenhum deles. */
+export async function contarLeads(clienteId: string): Promise<number> {
+  const { count, error } = await db()
+    .from('leads')
+    .select('contact_id', { count: 'exact', head: true })
+    .eq('client_id', clienteId)
+
+  if (ehIdInvalido(error)) return 0
+  if (error) throw new Error(`não deu para contar os leads: ${error.message}`)
+  return count ?? 0
+}
+
+/** Quantos leads deste cliente esperam uma pessoa agora. */
+export async function contarEsperandoPessoa(clienteId: string): Promise<number> {
+  const { count, error } = await db()
+    .from('leads')
+    .select('contact_id', { count: 'exact', head: true })
+    .eq('client_id', clienteId)
+    .not('handoff_em', 'is', null)
+
+  if (ehIdInvalido(error)) return 0
+  if (error) throw new Error(`não deu para contar quem espera atendimento: ${error.message}`)
+  return count ?? 0
+}
+
+/** Quantos leads cabem numa tela. Cinquenta é o combinado do plano mestre. */
+export const LEADS_POR_PAGINA = 50
+
+/** Nada de busca gigante: o campo é para nome e telefone, não para texto livre. */
+const LIMITE_DA_BUSCA = 60
+
+export type FiltroDeLeads = {
+  /** Nome ou telefone, parcial. Vazio = sem busca. */
+  busca?: string
+  etiqueta?: EtiquetaDeLead | null
+  /** Começa em 1. Fora da faixa, cai na primeira. */
+  pagina?: number
+  porPagina?: number
+}
+
+export type PaginaDeLeads = {
+  leads: Lead[]
+  /** Quantos leads o filtro inteiro tem, não quantos vieram nesta página. */
+  total: number
+  pagina: number
+  paginas: number
+}
+
+/**
+ * O que sobra de um termo de busca antes de virar filtro.
+ *
+ * **O `or` do PostgREST é uma string com vírgula, parêntese e `*` com
+ * significado.** Um termo com esses caracteres não "quebra a consulta": ele
+ * *vira* consulta, e passa a escolher linha por conta própria. Por isso a
+ * limpeza é uma lista do que **entra** — letra, número, espaço e a pontuação
+ * que aparece em nome e telefone — e não uma lista do que sai; lista do que sai
+ * sempre esquece um caractere.
+ *
+ * `%` some junto: é curinga do `like` e transformaria uma busca em "traga
+ * tudo". `+` também, e por outro motivo: `wa_id` é guardado sem o sinal
+ * (`5544...`), então ele não acharia nada e ainda vira espaço ao ser codificado
+ * na URL.
+ */
+export function limparBusca(bruto: string): string {
+  return bruto
+    .slice(0, LIMITE_DA_BUSCA)
+    .replace(/[^\p{L}\p{N}\s@._-]/gu, ' ')
+    .trim()
+}
+
+/**
+ * Uma página de leads do cliente.
+ *
+ * **Por que a etiqueta é resolvida antes e não depois.** Ela não é coluna: sai
+ * do histórico de mensagens e handoffs. Filtrar a página já carregada daria
+ * contagem errada ("3 de 50") e página faltando. Então, com etiqueta escolhida,
+ * o caminho é achar os contatos que a têm e paginar dentro deles — é a leitura
+ * mais cara daqui, e é por isso que ela só acontece quando alguém pede o filtro.
+ */
+export async function paginarLeads(
+  clienteId: string,
+  filtro: FiltroDeLeads = {},
+): Promise<PaginaDeLeads> {
+  const porPagina = filtro.porPagina ?? LEADS_POR_PAGINA
+  const termo = limparBusca(filtro.busca ?? '')
+
+  let permitidos: string[] | null = null
+  if (filtro.etiqueta) {
+    permitidos = await contatosComEtiqueta(clienteId, filtro.etiqueta)
+    if (permitidos.length === 0) {
+      return { leads: [], total: 0, pagina: 1, paginas: 1 }
+    }
+  }
+
+  const consulta = () => {
+    let q = db()
+      .from('leads')
+      .select(COLUNAS, { count: 'exact' })
+      .eq('client_id', clienteId)
+      .order('ultima_em', { ascending: false, nullsFirst: false })
+      // Desempate estável: sem ele, dois leads com o mesmo instante podem
+      // trocar de lugar entre páginas e um deles nunca aparece.
+      .order('contact_id', { ascending: true })
+
+    if (termo !== '') q = q.or(`nome.ilike.*${termo}*,wa_id.ilike.*${termo}*`)
+    if (permitidos) q = q.in('contact_id', permitidos)
+    return q
+  }
+
+  // Uma primeira ida só para saber o tamanho: quem digita "3" na página 9 e
+  // apaga um dígito não pode receber uma página vazia sem explicação.
+  const { count: bruto, error: erroDaContagem } = await consulta().range(0, 0)
+  if (ehIdInvalido(erroDaContagem)) return { leads: [], total: 0, pagina: 1, paginas: 1 }
+  if (erroDaContagem) throw new Error(`não deu para contar os leads: ${erroDaContagem.message}`)
+
+  const total = bruto ?? 0
+  const paginas = Math.max(1, Math.ceil(total / porPagina))
+  const pagina = Math.min(Math.max(1, Math.floor(filtro.pagina ?? 1)), paginas)
+  const inicio = (pagina - 1) * porPagina
+
+  const { data, error } = await consulta().range(inicio, inicio + porPagina - 1)
+  if (ehIdInvalido(error)) return { leads: [], total: 0, pagina: 1, paginas: 1 }
+  if (error) throw new Error(`não deu para listar os leads: ${error.message}`)
+
+  return {
+    leads: await classificar((data as Linha[]).map(paraLead)),
+    total,
+    pagina,
+    paginas,
+  }
+}
+
+/**
+ * Os contatos deste cliente que têm uma etiqueta.
+ *
+ * Lê os ids do cliente e depois o histórico deles. É a consulta mais pesada do
+ * arquivo — e é a mesma que a tela fazia em toda visita antes da paginação,
+ * agora só quando alguém escolhe o filtro.
+ */
+async function contatosComEtiqueta(
+  clienteId: string,
+  etiqueta: EtiquetaDeLead,
+): Promise<string[]> {
+  const { data, error } = await db().from('contacts').select('id').eq('client_id', clienteId)
+
+  if (ehIdInvalido(error)) return []
+  if (error) throw new Error(`não deu para listar os contatos do cliente: ${error.message}`)
+
+  const ids = (data as { id: string }[]).map((linha) => linha.id)
+  const porContato = await etiquetasPorContato(ids)
+  return ids.filter((id) => porContato.get(id)?.includes(etiqueta))
 }
 
 /**
