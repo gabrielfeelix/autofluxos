@@ -689,19 +689,25 @@ anterior. Na lista de fluxos, cada automação mostra suas execuções históric
 
 ---
 
-### 3. Etiquetas automáticas
+### ✅ 3. Etiquetas automáticas
 
-**Hoje:** não existe etiqueta. Tratamos mídia (garantia do motor) e não contamos.
+**Hoje era:** não existia etiqueta. Tratávamos mídia (garantia do motor) e não
+contávamos.
 
 **Lá:** `primeira_mensagem_nao_suportada` é a **única** etiqueta em uso no MGM —
 o que diz que abrir conversa com áudio acontece muito.
 
-**Estado esperado:** filtros na tabela de leads por "abriu com áudio/mídia", "foi
-para pessoa", "nunca respondeu depois da primeira".
+**Estado atual:** a tabela de leads tem chips com contagem para "abriu com
+áudio/mídia", "foi para pessoa" e "não respondeu depois da primeira". O filtro
+fica na URL e roda no servidor, então recarregar ou compartilhar o endereço
+preserva a seleção.
 
-**Como fazer:** todas são **derivadas de dado que já existe** — `messages` e
-`handoffs`. Nada de escrita nova, nada de migration. Uma função que classifica o
-lead na leitura, e chips de filtro na tabela.
+**Como foi feito:** `repos/leads.ts` classifica todos os contatos da página em
+lote a partir das mensagens de entrada e das sessões/handoffs. A primeira
+entrada de mídia, qualquer handoff histórico (inclusive resolvido) e exatamente
+uma mensagem de entrada produzem as três etiquetas. Elas não são gravadas em
+`contacts.campos`: uma resposta nova ou um atendimento muda a classificação na
+próxima leitura, sem estado duplicado e sem migration.
 
 **Tamanho:** meia rodada.
 

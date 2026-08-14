@@ -7,7 +7,7 @@ consegue continuar lendo só isto e o [ARQUITETURA.md](ARQUITETURA.md).
 
 ## Leia isto primeiro
 
-**Estado:** itens 1 e 2 da expansão concluídos na base local. `npm test` dá **252
+**Estado:** itens 1 a 3 da expansão concluídos na base local. `npm test` dá **253
 passando**, `npm run typecheck` e `npm run lint` estão limpos. O último `main`
 publicado continua em https://autofluxos.4yu.com.br.
 
@@ -102,6 +102,11 @@ dívida e a de lá manda na ordem das features.**
   `metricas_sessoes` (migration `0011`) agrega no Postgres, por mês de São
   Paulo, sem puxar todas as sessões para o Next. Sessão encerrada depois de um
   handoff continua humana — não infla a taxa do bot.
+- **Etiquetas automáticas nos leads** — a lista ganhou filtros para quem abriu
+  com áudio/mídia, quem já foi para uma pessoa e quem nunca respondeu depois da
+  primeira mensagem. Elas são recalculadas de `messages` e do histórico inteiro
+  de `handoffs` em consultas por lote; não há campo para sincronizar, escrita
+  nova nem migration. Um handoff continua contando depois de resolvido.
 
 ### Armadilhas que já custaram caro nesta base
 

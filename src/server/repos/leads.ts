@@ -24,10 +24,20 @@ export type Lead = {
   ultimaEntregue: boolean | null
   /** Handoff sem `resolvido_em`. `null` = ninguém esperando. */
   aguardando: { motivo: string; desde: string } | null
+  /** Sinais derivados do histórico; nunca são gravados de volta no contato. */
+  etiquetas: EtiquetaDeLead[]
   criadoEm: string
 }
 
 export type Direcao = 'entrada' | 'saida'
+
+export const ETIQUETAS_DE_LEAD = [
+  'abriu_com_midia',
+  'foi_para_pessoa',
+  'nao_respondeu',
+] as const
+
+export type EtiquetaDeLead = (typeof ETIQUETAS_DE_LEAD)[number]
 
 export type MensagemDoLead = {
   id: string
@@ -113,8 +123,94 @@ function paraLead(linha: Linha): Lead {
       linha.handoff_motivo && linha.handoff_em
         ? { motivo: linha.handoff_motivo, desde: linha.handoff_em }
         : null,
+    etiquetas: [],
     criadoEm: linha.criado_em,
   }
+}
+
+function tipoDaMensagem(payload: unknown): string | null {
+  if (!payload || typeof payload !== 'object' || !('type' in payload)) return null
+  return typeof payload.type === 'string' ? payload.type : null
+}
+
+/**
+ * Classifica pela história, não por uma cópia em `contacts.campos`.
+ *
+ * Assim uma resolução de handoff ou uma nova resposta muda o filtro na próxima
+ * leitura sem sincronização. As consultas são por lote: o custo cresce em
+ * linhas, não em uma ida ao banco por lead.
+ */
+async function classificar(leads: Lead[]): Promise<Lead[]> {
+  if (leads.length === 0) return leads
+
+  const contatos = leads.map((lead) => lead.contatoId)
+  const [entradas, sessoes] = await Promise.all([
+    db()
+      .from('messages')
+      .select('id, contact_id, payload, ts')
+      .in('contact_id', contatos)
+      .eq('direcao', 'entrada')
+      .order('ts', { ascending: true })
+      .order('id', { ascending: true }),
+    db().from('sessions').select('id, contact_id').in('contact_id', contatos),
+  ])
+
+  if (entradas.error) {
+    throw new Error(`não deu para classificar as mensagens dos leads: ${entradas.error.message}`)
+  }
+  if (sessoes.error) {
+    throw new Error(`não deu para classificar os atendimentos dos leads: ${sessoes.error.message}`)
+  }
+
+  const contagemDeEntradas = new Map<string, number>()
+  const primeiraEntrada = new Map<string, unknown>()
+  for (const mensagem of entradas.data as { contact_id: string; payload: unknown }[]) {
+    contagemDeEntradas.set(
+      mensagem.contact_id,
+      (contagemDeEntradas.get(mensagem.contact_id) ?? 0) + 1,
+    )
+    if (!primeiraEntrada.has(mensagem.contact_id)) {
+      primeiraEntrada.set(mensagem.contact_id, mensagem.payload)
+    }
+  }
+
+  const contatoPorSessao = new Map(
+    (sessoes.data as { id: string; contact_id: string }[]).map((sessao) => [
+      sessao.id,
+      sessao.contact_id,
+    ]),
+  )
+  const sessoesIds = [...contatoPorSessao.keys()]
+  const contatosComHandoff = new Set<string>()
+
+  if (sessoesIds.length > 0) {
+    const { data, error } = await db()
+      .from('handoffs')
+      .select('session_id')
+      .in('session_id', sessoesIds)
+
+    if (error) throw new Error(`não deu para classificar os handoffs dos leads: ${error.message}`)
+    for (const handoff of data as { session_id: string }[]) {
+      const contatoId = contatoPorSessao.get(handoff.session_id)
+      if (contatoId) contatosComHandoff.add(contatoId)
+    }
+  }
+
+  return leads.map((lead) => {
+    const etiquetas: EtiquetaDeLead[] = []
+    const tipoInicial = tipoDaMensagem(primeiraEntrada.get(lead.contatoId))
+
+    // É a mesma fronteira da entrada do motor: texto e resposta interativa são
+    // conversa; áudio, imagem, localização e qualquer outro formato vão para
+    // uma pessoa e contam como mídia aqui.
+    if (tipoInicial && tipoInicial !== 'text' && tipoInicial !== 'interactive') {
+      etiquetas.push('abriu_com_midia')
+    }
+    if (contatosComHandoff.has(lead.contatoId)) etiquetas.push('foi_para_pessoa')
+    if (contagemDeEntradas.get(lead.contatoId) === 1) etiquetas.push('nao_respondeu')
+
+    return { ...lead, etiquetas }
+  })
 }
 
 /** Os leads do cliente, o mais recente primeiro. Quem nunca falou vai no fim. */
@@ -127,7 +223,7 @@ export async function listarLeads(clienteId: string): Promise<Lead[]> {
 
   if (ehIdInvalido(error)) return []
   if (error) throw new Error(`não deu para listar os leads: ${error.message}`)
-  return (data as Linha[]).map(paraLead)
+  return classificar((data as Linha[]).map(paraLead))
 }
 
 /**
@@ -146,7 +242,9 @@ export async function acharLead(clienteId: string, contatoId: string): Promise<L
 
   if (ehIdInvalido(error)) return null
   if (error) throw new Error(`não deu para buscar o lead: ${error.message}`)
-  return data ? paraLead(data as Linha) : null
+  if (!data) return null
+  const [lead] = await classificar([paraLead(data as Linha)])
+  return lead ?? null
 }
 
 /**

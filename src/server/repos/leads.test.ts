@@ -110,6 +110,62 @@ describe.skipIf(!temCredencial)('leads contra o Supabase', () => {
     expect(depois?.aguardando).toBeNull()
   })
 
+  it('deriva etiquetas do histórico sem gravá-las no contato', async () => {
+    const { cliente, canal, versaoId } = await montarCliente('etiquetas')
+
+    const abriuComAudio = await acharOuCriarContato(cliente.id, `${marca}-5544000010`, 'Áudio')
+    const sessaoDoAudio = await criarSessao(abriuComAudio.id, canal.id, versaoId, sessaoNova())
+    await registrarEntrada({
+      contatoId: abriuComAudio.id,
+      sessaoId: sessaoDoAudio.id,
+      waMessageId: idDeMensagem(),
+      texto: null,
+      payload: { type: 'audio' },
+    })
+    await registrarEntrada({
+      contatoId: abriuComAudio.id,
+      sessaoId: sessaoDoAudio.id,
+      waMessageId: idDeMensagem(),
+      texto: 'agora escrevi',
+      payload: { type: 'text' },
+    })
+
+    const foiParaPessoa = await acharOuCriarContato(cliente.id, `${marca}-5544000011`, 'Humano')
+    const sessaoDoHumano = await criarSessao(foiParaPessoa.id, canal.id, versaoId, sessaoNova())
+    for (const texto of ['oi', 'obrigado']) {
+      await registrarEntrada({
+        contatoId: foiParaPessoa.id,
+        sessaoId: sessaoDoHumano.id,
+        waMessageId: idDeMensagem(),
+        texto,
+        payload: { type: 'text' },
+      })
+    }
+    await registrarHandoff(sessaoDoHumano.id, 'quis falar com alguém')
+    await db()
+      .from('handoffs')
+      .update({ resolvido_em: new Date().toISOString() })
+      .eq('session_id', sessaoDoHumano.id)
+
+    const naoRespondeu = await acharOuCriarContato(cliente.id, `${marca}-5544000012`, 'Silêncio')
+    const sessaoDoSilencio = await criarSessao(naoRespondeu.id, canal.id, versaoId, sessaoNova())
+    await registrarEntrada({
+      contatoId: naoRespondeu.id,
+      sessaoId: sessaoDoSilencio.id,
+      waMessageId: idDeMensagem(),
+      texto: 'oi',
+      payload: { type: 'text' },
+    })
+
+    const porContato = new Map(
+      (await listarLeads(cliente.id)).map((lead) => [lead.contatoId, lead.etiquetas]),
+    )
+
+    expect(porContato.get(abriuComAudio.id)).toEqual(['abriu_com_midia'])
+    expect(porContato.get(foiParaPessoa.id)).toEqual(['foi_para_pessoa'])
+    expect(porContato.get(naoRespondeu.id)).toEqual(['nao_respondeu'])
+  }, 10_000)
+
   it('quem nunca escreveu aparece na lista, e vai depois de quem escreveu', async () => {
     const { cliente, canal, versaoId } = await montarCliente('ordem')
 

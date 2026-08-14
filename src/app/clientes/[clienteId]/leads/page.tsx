@@ -4,22 +4,47 @@ import { ClienteShell } from '@/components/design/cliente-shell'
 import { Suspense } from 'react'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarCanais } from '@/server/repos/conversas'
-import { listarLeads, type Lead } from '@/server/repos/leads'
+import {
+  ETIQUETAS_DE_LEAD,
+  listarLeads,
+  type EtiquetaDeLead,
+  type Lead,
+} from '@/server/repos/leads'
 import { horaExata, quando } from './quando'
 
 export const dynamic = 'force-dynamic'
 
-export default async function Pagina({ params }: { params: Promise<{ clienteId: string }> }) {
-  const { clienteId } = await params
+type Busca = { etiqueta?: string | string[] }
+
+const filtros: { etiqueta: EtiquetaDeLead; rotulo: string }[] = [
+  { etiqueta: 'abriu_com_midia', rotulo: 'Abriu com áudio/mídia' },
+  { etiqueta: 'foi_para_pessoa', rotulo: 'Foi para pessoa' },
+  { etiqueta: 'nao_respondeu', rotulo: 'Não respondeu depois da primeira' },
+]
+
+function etiquetaValida(valor: Busca['etiqueta']): EtiquetaDeLead | null {
+  const unica = Array.isArray(valor) ? valor[0] : valor
+  return ETIQUETAS_DE_LEAD.find((etiqueta) => etiqueta === unica) ?? null
+}
+
+export default async function Pagina({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ clienteId: string }>
+  searchParams: Promise<Busca>
+}) {
+  const [{ clienteId }, busca] = await Promise.all([params, searchParams])
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
+  const etiqueta = etiquetaValida(busca.etiqueta)
 
   return (
     <ClienteShell cliente={cliente} ativa="leads">
       <main className="flex min-h-full flex-col px-[42px] pt-[26px] pb-[42px]">
 
         <Suspense fallback={<Esqueleto />}>
-          <Tabela clienteId={cliente.id} />
+          <Tabela clienteId={cliente.id} etiqueta={etiqueta} />
         </Suspense>
       </main>
     </ClienteShell>
@@ -51,10 +76,19 @@ function colunasDosCampos(leads: Lead[]): string[] {
   return vistas
 }
 
-async function Tabela({ clienteId }: { clienteId: string }) {
+async function Tabela({
+  clienteId,
+  etiqueta,
+}: {
+  clienteId: string
+  etiqueta: EtiquetaDeLead | null
+}) {
   const [leads, canais] = await Promise.all([listarLeads(clienteId), listarCanais(clienteId)])
   const colunas = colunasDosCampos(leads)
-  const esperando = leads.filter((lead) => lead.aguardando).length
+  const visiveis = etiqueta
+    ? leads.filter((lead) => lead.etiquetas.includes(etiqueta))
+    : leads
+  const esperando = visiveis.filter((lead) => lead.aguardando).length
 
   if (leads.length === 0) {
     return (
@@ -89,6 +123,7 @@ async function Tabela({ clienteId }: { clienteId: string }) {
     <>
       <div className="-mt-[53px] mb-[22px] flex justify-end gap-2">
         <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-semibold text-muted">
+          {etiqueta && `${visiveis.length} de `}
           {leads.length} {leads.length === 1 ? 'pessoa' : 'pessoas'}
         </span>
         {esperando > 0 && (
@@ -98,18 +133,55 @@ async function Tabela({ clienteId }: { clienteId: string }) {
         )}
       </div>
 
-      <div className="app-card overflow-x-auto overflow-y-hidden">
-        <table className="w-full min-w-[760px] border-collapse text-left">
-          <thead>
-            <tr className="border-b border-white/[0.07]">
-              <Cabecalho>Contato</Cabecalho>
-              {colunas.map((coluna) => <Cabecalho key={coluna} mono>{coluna}</Cabecalho>)}
-              <Cabecalho>Situação</Cabecalho>
-              <Cabecalho>Última mensagem</Cabecalho>
-            </tr>
-          </thead>
-          <tbody>
-            {leads.map((lead) => (
+      <nav aria-label="Filtrar leads por etiqueta" className="mb-3 flex flex-wrap gap-2">
+        <Link
+          href={`/clientes/${clienteId}/leads`}
+          aria-current={etiqueta === null ? 'page' : undefined}
+          className={classeDoFiltro(etiqueta === null)}
+          scroll={false}
+        >
+          Todos <Contagem>{leads.length}</Contagem>
+        </Link>
+        {filtros.map((filtro) => (
+          <Link
+            key={filtro.etiqueta}
+            href={`/clientes/${clienteId}/leads?etiqueta=${filtro.etiqueta}`}
+            aria-current={etiqueta === filtro.etiqueta ? 'page' : undefined}
+            className={classeDoFiltro(etiqueta === filtro.etiqueta)}
+            scroll={false}
+          >
+            {filtro.rotulo}{' '}
+            <Contagem>
+              {leads.filter((lead) => lead.etiquetas.includes(filtro.etiqueta)).length}
+            </Contagem>
+          </Link>
+        ))}
+      </nav>
+
+      {visiveis.length === 0 ? (
+        <div className="app-card py-14 text-center">
+          <p className="text-[13px] font-bold">Nenhum lead com esta etiqueta</p>
+          <Link
+            href={`/clientes/${clienteId}/leads`}
+            className="mt-2 inline-block text-[11.5px] font-semibold text-accent hover:underline"
+            scroll={false}
+          >
+            Limpar filtro
+          </Link>
+        </div>
+      ) : (
+        <div className="app-card overflow-x-auto overflow-y-hidden">
+          <table className="w-full min-w-[760px] border-collapse text-left">
+            <thead>
+              <tr className="border-b border-white/[0.07]">
+                <Cabecalho>Contato</Cabecalho>
+                {colunas.map((coluna) => <Cabecalho key={coluna} mono>{coluna}</Cabecalho>)}
+                <Cabecalho>Situação</Cabecalho>
+                <Cabecalho>Última mensagem</Cabecalho>
+              </tr>
+            </thead>
+            <tbody>
+              {visiveis.map((lead) => (
               <tr key={lead.contatoId} className="border-b border-white/[0.045] transition last:border-0 hover:bg-white/[0.03]">
                 <td className="px-3.5 py-3">
                   <div className="flex items-center gap-2.5">
@@ -159,12 +231,25 @@ async function Tabela({ clienteId }: { clienteId: string }) {
                   ) : 'sem mensagem'}
                 </td>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </>
   )
+}
+
+function classeDoFiltro(ativo: boolean): string {
+  return `rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${
+    ativo
+      ? 'border-accent/35 bg-accent/12 text-accent'
+      : 'border-white/10 bg-white/[0.025] text-muted hover:border-white/20 hover:text-white'
+  }`
+}
+
+function Contagem({ children }: { children: React.ReactNode }) {
+  return <span className="ml-1 font-mono text-[9.5px] opacity-65">{children}</span>
 }
 
 function Cabecalho({ children, mono = false }: { children: React.ReactNode; mono?: boolean }) {
