@@ -8,7 +8,13 @@ import type { Problema } from '@/core/flow/validar'
 import { db } from './db'
 import { fluxoNovo } from '@/core/flow/novo'
 import { triagem } from '@/exemplos/triagem'
-import { atualizarCadastro, atualizarContexto, atualizarLogo, criarCliente } from './repos/clientes'
+import {
+  apagarCliente,
+  atualizarCadastro,
+  atualizarContexto,
+  atualizarLogo,
+  criarCliente,
+} from './repos/clientes'
 import { canalCloudApi } from '@/channels/cloud-api'
 import { dentroDaJanela } from '@/channels/janela'
 import type { EstadoSalvar } from '@/components/design/formulario-salvar'
@@ -441,6 +447,28 @@ export async function acaoAlternarAutomacaoDoLead(
   revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
   revalidatePath(`/clientes/${clienteId}/inbox`)
   return { ok: true }
+}
+
+/**
+ * Apaga o cliente inteiro.
+ *
+ * A confirmação por digitação mora na tela — ver `components/cliente/apagar.tsx`
+ * sobre por que ela não é um `confirm()`. Aqui não há segunda checagem do que
+ * foi digitado de propósito: repetir a comparação no servidor daria a impressão
+ * de que ela é uma trava de segurança, e não é. Quem alcança esta ação já tem a
+ * sessão do painel, e com ela já podia apagar tudo item por item. A confirmação
+ * protege contra engano, não contra intruso.
+ */
+export async function acaoApagarCliente(clienteId: string): Promise<{ ok: boolean; erro?: string }> {
+  if (!z.string().uuid().safeParse(clienteId).success) {
+    return { ok: false, erro: 'cliente inválido' }
+  }
+
+  const apagou = await apagarCliente(clienteId)
+  if (!apagou) return { ok: false, erro: 'este cliente não existe mais' }
+
+  revalidatePath('/')
+  redirect('/')
 }
 
 /**

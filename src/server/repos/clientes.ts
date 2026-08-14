@@ -142,3 +142,74 @@ export async function atualizarLogo(id: string, url: string): Promise<void> {
   const { error } = await db().from('clients').update({ logo_url: url }).eq('id', id)
   if (error) throw new Error(`não deu para guardar a logo: ${error.message}`)
 }
+
+/** O tamanho do estrago, para a tela conseguir dizer o que vai sumir. */
+export type EstragoDaExclusao = {
+  leads: number
+  fluxos: number
+  conexoes: number
+  numeros: number
+}
+
+/**
+ * Quantas coisas a exclusão levaria junto.
+ *
+ * A confirmação precisa mostrar número, não categoria: "apaga os leads" é
+ * abstrato, e "apaga 428 leads" é a frase que faz alguém parar e reler.
+ */
+export async function contarOQueSomeCom(id: string): Promise<EstragoDaExclusao> {
+  const contar = async (tabela: string) => {
+    const { count, error } = await db()
+      .from(tabela)
+      .select('id', { count: 'exact', head: true })
+      .eq('client_id', id)
+
+    if (ehIdInvalido(error)) return 0
+    if (error) throw new Error(`não deu para contar ${tabela}: ${error.message}`)
+    return count ?? 0
+  }
+
+  const [leads, fluxos, conexoes, numeros] = await Promise.all([
+    contar('contacts'),
+    contar('flows'),
+    contar('connections'),
+    contar('channels'),
+  ])
+
+  return { leads, fluxos, conexoes, numeros }
+}
+
+/**
+ * Apaga o cliente e tudo que é dele.
+ *
+ * **Não existe recusa aqui, e é de propósito.** `apagarFluxo` recusa apagar
+ * automação no ar porque a pessoa provavelmente não percebeu o efeito; aqui o
+ * efeito é o pedido. Quem digita o nome do cliente para confirmar está
+ * dizendo exatamente isto: some com o cliente, com os leads, com as conversas e
+ * com as credenciais.
+ *
+ * A logo sai do bucket junto. O `on delete cascade` não alcança o Storage — ele
+ * está fora dos schemas de domínio (ver BANCO-COMPARTILHADO) — e arquivo de
+ * cliente que não existe mais é dado pessoal órfão num bucket público.
+ */
+export async function apagarCliente(id: string): Promise<boolean> {
+  const { data, error } = await db()
+    .from('clients')
+    .delete()
+    .eq('id', id)
+    .select('id')
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return false
+  if (error) throw new Error(`não deu para apagar o cliente: ${error.message}`)
+  if (!data) return false
+
+  // Depois do banco, e sem derrubar a exclusão se falhar: a linha já foi. Ficar
+  // com um arquivo órfão é ruim; recusar a exclusão porque o bucket piscou
+  // deixaria o cliente meio apagado, que é pior.
+  await db()
+    .storage.from('logos')
+    .remove(['png', 'jpg', 'webp'].map((extensao) => `${id}.${extensao}`))
+
+  return true
+}

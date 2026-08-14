@@ -2,7 +2,8 @@ import { afterAll, describe, expect, it } from 'vitest'
 import { sessaoNova } from '@/core/engine/types'
 import { fluxoNovo } from '@/core/flow/novo'
 import { db } from '../db'
-import { criarCliente } from './clientes'
+import { acharCliente, apagarCliente, contarOQueSomeCom, criarCliente } from './clientes'
+import { criarConexao, listarConexoes } from './conexoes'
 import { acharOuCriarContato, criarCanal, criarSessao, registrarEntrada } from './conversas'
 import { criarFluxo, publicar } from './fluxos'
 import { acharLead, lerConversa } from './leads'
@@ -154,6 +155,48 @@ describe.skipIf(!temCredencial)('retenção contra o Supabase', () => {
     expect(await acharLead(cliente.id, antigo.id)).toBeNull()
     expect(await acharLead(cliente.id, novo.id)).not.toBeNull()
   }, 15_000)
+
+  /**
+   * A exclusão de cliente é a única que leva lead, conversa e credencial de uma
+   * vez. O que precisa ser provado é que ela leva **tudo** — credencial órfã num
+   * cofre é pior do que credencial ativa.
+   */
+  it('apagar o cliente leva leads, automações e credenciais junto', async () => {
+    const { cliente, canal, versaoId } = await montarCliente('exclusao total')
+    const contato = await acharOuCriarContato(cliente.id, `${marca}-5544555040`, 'Vai junto')
+    const sessao = await criarSessao(contato.id, canal.id, versaoId, sessaoNova())
+    await registrarEntrada({
+      contatoId: contato.id,
+      sessaoId: sessao.id,
+      waMessageId: idDeMensagem(),
+      texto: 'oi',
+      payload: {},
+    })
+    await criarConexao({
+      clienteId: cliente.id,
+      nome: 'CRM de teste',
+      tipo: 'bearer',
+      campo: '',
+      valor: 'valor-secreto-de-teste',
+    })
+
+    expect(await contarOQueSomeCom(cliente.id)).toEqual({
+      leads: 1,
+      fluxos: 1,
+      conexoes: 1,
+      numeros: 1,
+    })
+
+    expect(await apagarCliente(cliente.id)).toBe(true)
+
+    expect(await acharCliente(cliente.id)).toBeNull()
+    expect(await acharLead(cliente.id, contato.id)).toBeNull()
+    expect((await lerConversa(contato.id)).mensagens).toEqual([])
+    expect(await listarConexoes(cliente.id)).toEqual([])
+
+    // Já foi: apagar de novo não estoura, só diz que não havia o que apagar.
+    expect(await apagarCliente(cliente.id)).toBe(false)
+  }, 20_000)
 
   it('avisa quando bateu no teto e ainda há fila', async () => {
     const { cliente } = await montarCliente('retencao lote')

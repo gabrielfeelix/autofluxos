@@ -2,7 +2,9 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import type { ReactNode } from 'react'
-import { acharCliente } from '@/server/repos/clientes'
+import { ApagarCliente } from '@/components/cliente/apagar'
+import { acaoApagarCliente } from '@/server/acoes'
+import { acharCliente, contarOQueSomeCom } from '@/server/repos/clientes'
 import { listarConexoes } from '@/server/repos/conexoes'
 import { listarCanais } from '@/server/repos/conversas'
 import { listarRespostasRapidas } from '@/server/repos/respostas-rapidas'
@@ -25,10 +27,11 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [conexoes, canais, respostasRapidas] = await Promise.all([
+  const [conexoes, canais, respostasRapidas, estrago] = await Promise.all([
     listarConexoes(cliente.id),
     listarCanais(cliente.id),
     listarRespostasRapidas(cliente.id),
+    contarOQueSomeCom(cliente.id),
   ])
   const semContexto = cliente.contextoNegocio.trim() === ''
 
@@ -85,6 +88,23 @@ export default async function Pagina({
             }
           />
         </ul>
+
+        {/* Longe do resto e por último, porque a tela de ajustes é onde se
+            entra para mexer numa coisa e sair — e este botão não é uma
+            configuração, é o fim do cliente. */}
+        <section className="mt-10 rounded-[14px] border border-rose-400/[0.18] bg-rose-400/[0.03] px-6 py-5">
+          <h2 className="text-[13.5px] font-bold text-rose-200">Apagar o cliente</h2>
+          <p className="mt-1 mb-4 max-w-[520px] text-[12px] leading-5 text-muted">
+            Some com {cliente.nome} e com tudo que é dele: leads, conversas inteiras, automações,
+            versões publicadas e as credenciais guardadas no cofre. Não existe cópia em outro lugar
+            e não dá para desfazer.
+          </p>
+          <ApagarCliente
+            nome={cliente.nome}
+            estrago={estrago}
+            acao={acaoApagarCliente.bind(null, cliente.id)}
+          />
+        </section>
       </main>
     </ClienteShell>
   )
