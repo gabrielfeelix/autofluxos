@@ -4,12 +4,13 @@ import type { Cliente } from '@/server/repos/clientes'
 import { LogoDoCliente } from './logo-cliente'
 import { PainelShell } from './shell'
 
-export type AbaDoCliente = 'inicio' | 'fluxos' | 'leads' | 'ajustes'
+export type AbaDoCliente = 'inicio' | 'fluxos' | 'leads' | 'inbox' | 'ajustes'
 
 const ABAS: { chave: AbaDoCliente; rotulo: string; href: string }[] = [
   { chave: 'inicio', rotulo: 'Início', href: '' },
   { chave: 'fluxos', rotulo: 'Fluxos', href: '/fluxos' },
   { chave: 'leads', rotulo: 'Leads', href: '/leads' },
+  { chave: 'inbox', rotulo: 'Inbox', href: '/inbox' },
   { chave: 'ajustes', rotulo: 'Ajustes', href: '/ajustes' },
 ]
 

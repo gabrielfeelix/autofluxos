@@ -287,6 +287,7 @@ export async function acaoResponderLead(
 
   revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
   revalidatePath(`/clientes/${clienteId}/leads`)
+  revalidatePath(`/clientes/${clienteId}/inbox`)
   return { ok: true }
 }
 
@@ -301,6 +302,7 @@ export async function acaoEncerrarAtendimento(clienteId: string, contatoId: stri
   await encerrarAtendimento(clienteId, contatoId)
   revalidatePath(`/clientes/${clienteId}/leads`)
   revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
+  revalidatePath(`/clientes/${clienteId}/inbox`)
 }
 
 /**
