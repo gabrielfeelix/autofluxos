@@ -13,8 +13,9 @@ consegue continuar lendo só isto e o [ARQUITETURA.md](ARQUITETURA.md).
 
 ## Leia isto primeiro
 
-**Estado:** itens 1 a 5 da expansão concluídos na base local. `npm test` dá **260
-passando**, `npm run typecheck` e `npm run lint` estão limpos. O último `main`
+**Estado:** fases 1 a 3 do plano mestre concluídas. `npm test` dá **309
+passando** (8 pulados), `npm run typecheck`, `npm run lint` e `npm run build`
+estão limpos. O último `main`
 publicado continua em https://autofluxos.4yu.com.br.
 
 **O produto hoje faz:** desenhar fluxo arrastando bloco, testar a conversa ao
@@ -98,16 +99,42 @@ Sem migration: as três entregas são código.
   documentados, não falhas — mas o alerta só começa a servir depois de
   preenchida.
 
+### Atualização de 14/ago/2026 — Fase 3 do plano mestre
+
+- **Leads em escala.** A lista pagina de 50 com contagem vinda do banco, busca
+  por nome ou telefone e exportação CSV do filtro atual. As contagens por
+  etiqueta saíram da barra: cada número obrigava a ler o histórico do cliente
+  inteiro a cada visita, que é o que a paginação veio evitar.
+- **LGPD.** Apagar contato na tela do lead e retenção de 12 meses contados do
+  último sinal de vida. A retenção roda por tarefa agendada da Vercel, e **não**
+  por `pg_cron`: extensão é global ao projeto compartilhado com a Verandi. A
+  rota exige `CRON_SECRET` e falha fechada sem ele — **enquanto a variável não
+  existir em produção, nada é apagado**.
+- **Apagar cliente** com confirmação digitando o nome, mostrando quantos leads,
+  automações, credenciais e números somem junto. A logo sai do bucket na mesma
+  ação: cascata de banco não alcança o Storage.
+- **390px e WCAG 2.2 A/AA.** Auditoria com axe-core em 11 telas, em três
+  larguras. Três defeitos latentes apareceram e foram corrigidos: o piso de
+  1024px estava em `html/body` em vez do editor; `text-soft` era usada em 34
+  lugares e **nunca pintou nada** (o token só existia em `:root`, e no Tailwind 4
+  quem gera utilitário é `@theme`); e `--dim` reprovava contraste AA em
+  praticamente toda tela.
+- **Um 500 pré-existente saiu junto:** `ControleDeAutomacao` era componente de
+  servidor passando closure inline no `action` do formulário, e isso derrubava a
+  tela do lead sempre que o contato **não** estava aguardando pessoa — o caso
+  comum. Virou componente de cliente e passou a mostrar os motivos de recusa que
+  a ação já devolvia.
+- Migration `0015_sem_ia_no_cliente.sql` versionada e **não aplicada**.
+
 ### Por onde continuar, em ordem
 
 | # | O quê | Por que agora |
 |---|---|---|
 | 1 | **Papéis de usuário** (BRIEF-UI §6) | É a maior, e destrava as outras. Hoje é uma senha só. Há comentário em quatro pontos do código dizendo "isto muda quando o cliente ganhar acesso" — recusa de endereço interno, isolamento entre clientes, a tela de "não encontrado" que vira "não é seu". Este é o dia. **Uma coisa entra junto, e não depois:** `/api/simular` aceita um fluxo inventado + `fluxoId` de qualquer cliente e manda a credencial dele para a URL do corpo — hoje inofensivo porque a senha já dá acesso a tudo, escalada de privilégio no minuto em que o cliente tiver login. A sessão do painel deixou de ser problema em 14/ago (cookie assinado, id por login, prazo no servidor); o que ainda falta dela é **revogar uma sessão só**, e isso é banco, então é aqui. |
 | 2 | **Modelos (templates) da Meta** | A caixa de resposta do painel só funciona dentro da janela de 24h — é a regra da Meta, e fora dela o único jeito de retomar é um modelo aprovado, que este produto não manda. A tela avisa antes de alguém digitar. Gatilho para construir: o primeiro lead que esfriar e precisar de retomada. |
-| 3 | **Apagar cliente** | Dá para apagar automação e desconectar número; cliente não. Ficou de fora de propósito: `on delete cascade` leva leads, conversas e credenciais junto, e isso merece uma confirmação melhor do que um `confirm()` — provavelmente digitar o nome. |
-| 4 | **Credencial de sandbox por conexão** | A aba Testar usa a credencial real: testar um fluxo de CRM grava no CRM de verdade. Hoje há aviso na tela e o cabeçalho `X-AutoFluxos-Teste: 1`. Gatilho para construir: o primeiro cliente com CRM em produção. |
-| 5 | **`drop` de `clients.ia_habilitada`** | O código já parou de ler (migration 0005 pedia essa confirmação). Falta a migration que apaga. |
-| 6 | **Teste de banco intermitente** | `repos.test.ts` falha de vez em quando com `JWT issued at future` — o relógio do WSL2 desanda quando a máquina suspende e o Supabase recusa o token. É ambiente, não código: rodar de novo passa. Se incomodar, `sudo hwclock -s` acerta na hora. |
+| 3 | **Credencial de sandbox por conexão** | A aba Testar usa a credencial real: testar um fluxo de CRM grava no CRM de verdade. Hoje há aviso na tela e o cabeçalho `X-AutoFluxos-Teste: 1`. Gatilho para construir: o primeiro cliente com CRM em produção. |
+| 4 | **Aplicar `0015_sem_ia_no_cliente.sql`** | A migration que apaga `clients.ia_habilitada` está escrita e versionada. Falta autorização para aplicar em produção — banco compartilhado. |
+| 5 | **Teste de banco intermitente** | `repos.test.ts` falha de vez em quando com `JWT issued at future` — o relógio do WSL2 desanda quando a máquina suspende e o Supabase recusa o token. É ambiente, não código: rodar de novo passa. Se incomodar, `sudo hwclock -s` acerta na hora. |
 
 ### O que foi construído em 12/ago, e onde está escrito
 

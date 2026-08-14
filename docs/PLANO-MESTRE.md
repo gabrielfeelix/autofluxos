@@ -55,8 +55,10 @@ produto por si só.
 
 > **Concluídas em 14/ago/2026:** a Fase 1 fechou limites de entrada, teto do
 > simulador, indexação e escrita cruzada de fluxos. A Fase 2 fechou histórico e
-> rollback de versão, alertas por webhook e sessão de painel com prazo. A
-> próxima fase é a 3.
+> rollback de versão, alertas por webhook e sessão de painel com prazo. A Fase 3
+> fechou leads em escala, LGPD, exclusão de cliente, responsividade e WCAG. A
+> próxima fase é a 4 — e ela é o portão de acesso: nenhum cliente recebe login
+> antes dela.
 
 ## Mapa completo de dependências
 
@@ -64,7 +66,7 @@ produto por si só.
 |---|---|---|
 | 1 | Fechar portas e isolamento de escrita | Concluída |
 | 2 | Publicação segura, alertas e sessão real | Concluída |
-| 3 | Leads em escala, LGPD e telas de leitura | Agora |
+| 3 | Leads em escala, LGPD e telas de leitura | Concluída |
 | 4 | Login por usuário, papéis e auditoria | Fases 1 e 2 concluídas; obrigatório antes do primeiro cliente logar |
 | 5 | Produtividade do operador | Pode seguir após a fundação; sem dependência externa |
 | 6 | Inbox | Depois da produtividade básica |
@@ -149,6 +151,15 @@ Fonte: blocos 5, 6 e 7 de [PLANO-ENDURECIMENTO.md](PLANO-ENDURECIMENTO.md).
 
 ## Fase 3 — Leads em escala, LGPD e telas de leitura
 
+**Estado: concluída em 14/ago/2026.** A lista pagina de 50 com busca por nome e
+telefone e exportação CSV do filtro atual; contato e cliente podem ser apagados,
+o segundo exigindo digitar o nome; a retenção de 12 meses roda por tarefa
+agendada da Vercel, não por `pg_cron` — extensão é global ao projeto
+compartilhado, e o agendamento fora do banco evitou mexer no que a Verandi
+também usa. A migration `0015_sem_ia_no_cliente.sql` está versionada e **não
+aplicada**. As quatro telas passam em 390px e a auditoria WCAG 2.2 A/AA não
+deixou violação aberta.
+
 Fonte: blocos 8 e 9 de [PLANO-ENDURECIMENTO.md](PLANO-ENDURECIMENTO.md) e itens
 4 e 6 de [ESTADO.md](ESTADO.md).
 
@@ -168,9 +179,10 @@ Fonte: blocos 8 e 9 de [PLANO-ENDURECIMENTO.md](PLANO-ENDURECIMENTO.md) e itens
 
 ### Banco
 
-Retenção, exclusão e remoção de coluna devem usar os próximos números livres no
-momento da execução. Se `pg_cron` for habilitado ou alterado, tratar isso como
-mudança global e validar o impacto no Verandi antes de aplicar.
+Só uma migration saiu daqui: `0015_sem_ia_no_cliente.sql`. Retenção e exclusão
+não precisaram de banco — apagar é `delete` com cascata, e a retenção virou
+regra em código com agendamento na Vercel justamente para não ligar `pg_cron`,
+que é extensão e, portanto, mudança global a ser avaliada nos dois produtos.
 
 ### Aceite
 
