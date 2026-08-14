@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { COOKIE_PAINEL, iguais, tokenDaSenha } from '@/lib/painel-auth'
+import { COOKIE_PAINEL, conferirSessao, iguais, segredoDeSessao } from '@/lib/painel-auth'
 
 /**
  * Protege o painel com a senha única do MVP.
@@ -17,9 +17,10 @@ export async function proxy(req: NextRequest) {
     return new NextResponse('PAINEL_SENHA não configurada', { status: 503 })
   }
 
-  const esperada = await tokenDaSenha(senha)
+  // Quem confere o prazo é aqui, e não o navegador: `maxAge` é um pedido, e um
+  // cookie copiado continua valendo até o servidor recusar a data que ele traz.
   const sessao = req.cookies.get(COOKIE_PAINEL)?.value ?? ''
-  const autenticada = iguais(sessao, esperada)
+  const autenticada = await conferirSessao(sessao, segredoDeSessao(senha))
 
   if (login) {
     return autenticada

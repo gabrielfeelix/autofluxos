@@ -5,8 +5,9 @@ import { redirect } from 'next/navigation'
 import {
   COOKIE_PAINEL,
   DURACAO_SESSAO_SEGUNDOS,
+  criarSessao,
   iguais,
-  tokenDaSenha,
+  segredoDeSessao,
 } from '@/lib/painel-auth'
 import { chaveDeLimite, consumirLimite } from '@/server/limite'
 
@@ -41,7 +42,7 @@ export async function acaoEntrar(
 
   const cookieStore = await cookies()
   const conexaoSegura = cabecalhos.get('x-forwarded-proto') === 'https' || process.env.VERCEL === '1'
-  cookieStore.set(COOKIE_PAINEL, await tokenDaSenha(configurada), {
+  cookieStore.set(COOKIE_PAINEL, await criarSessao(segredoDeSessao(configurada)), {
     httpOnly: true,
     secure: conexaoSegura,
     sameSite: 'lax',
