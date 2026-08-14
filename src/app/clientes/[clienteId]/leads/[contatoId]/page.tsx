@@ -8,6 +8,7 @@ import { acaoEncerrarAtendimento, acaoResponderLead } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { contextoDeResposta } from '@/server/repos/conversas'
 import { acharLead, lerConversa } from '@/server/repos/leads'
+import { listarRespostasRapidas } from '@/server/repos/respostas-rapidas'
 import { horaExata, quando } from '../quando'
 
 export const dynamic = 'force-dynamic'
@@ -18,7 +19,11 @@ export default async function Pagina({
   params: Promise<{ clienteId: string; contatoId: string }>
 }) {
   const { clienteId, contatoId } = await params
-  const [cliente, lead] = await Promise.all([acharCliente(clienteId), acharLead(clienteId, contatoId)])
+  const [cliente, lead, respostasRapidas] = await Promise.all([
+    acharCliente(clienteId),
+    acharLead(clienteId, contatoId),
+    listarRespostasRapidas(clienteId),
+  ])
   if (!cliente || !lead) notFound()
 
   const campos = Object.entries(lead.campos)
@@ -121,6 +126,7 @@ export default async function Pagina({
               acao={acaoResponderLead.bind(null, clienteId, contatoId)}
               restaDaJanela={janela}
               nome={primeiroNome}
+              respostasRapidas={respostasRapidas}
             />
           </section>
         </div>

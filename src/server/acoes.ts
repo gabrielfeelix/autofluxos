@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { z } from 'zod'
 import { fluxoSchema } from '@/core/flow/schema'
 import { db } from './db'
 import { fluxoNovo } from '@/core/flow/novo'
@@ -21,6 +22,7 @@ import {
 } from './repos/conversas'
 import { apagarFluxo, criarFluxo, definirIa, publicar, salvarRascunho } from './repos/fluxos'
 import { apagarConexao, criarConexao, trocarValor } from './repos/conexoes'
+import { apagarRespostaRapida, criarRespostaRapida } from './repos/respostas-rapidas'
 
 export async function acaoCriarCliente(formData: FormData) {
   const nome = String(formData.get('nome') ?? '').trim()
@@ -214,6 +216,56 @@ export async function acaoApagarConexao(clienteId: string, conexaoId: string) {
 
 /** O maior texto que a Cloud API aceita numa mensagem. */
 const LIMITE_DA_MENSAGEM = 4096
+
+const respostaRapidaSchema = z.object({
+  atalho: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[a-z0-9][a-z0-9_-]{0,39}$/, 'use até 40 letras minúsculas, números, _ ou -'),
+  texto: z.string().trim().min(1, 'escreva a mensagem').max(LIMITE_DA_MENSAGEM),
+})
+
+/** Cria uma frase reutilizável no Inbox, sempre no cliente atual. */
+export async function acaoCriarRespostaRapida(
+  clienteId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  const resultado = respostaRapidaSchema.safeParse({
+    atalho: String(formData.get('atalho') ?? ''),
+    texto: String(formData.get('texto') ?? ''),
+  })
+  if (!resultado.success) return { erro: resultado.error.issues[0]?.message ?? 'resposta inválida' }
+
+  try {
+    await criarRespostaRapida(clienteId, resultado.data)
+  } catch (erro) {
+    return { erro: erro instanceof Error ? erro.message : 'não deu para criar a resposta rápida' }
+  }
+
+  revalidatePath(`/clientes/${clienteId}/inbox`)
+  revalidatePath(`/clientes/${clienteId}/ajustes`)
+  revalidatePath(`/clientes/${clienteId}/ajustes/respostas-rapidas`)
+  return { ok: true }
+}
+
+export async function acaoApagarRespostaRapida(
+  clienteId: string,
+  respostaId: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  try {
+    const apagou = await apagarRespostaRapida(respostaId, clienteId)
+    if (!apagou) return { ok: false, erro: 'esta resposta não existe neste cliente' }
+  } catch (erro) {
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para apagar' }
+  }
+
+  revalidatePath(`/clientes/${clienteId}/inbox`)
+  revalidatePath(`/clientes/${clienteId}/ajustes`)
+  revalidatePath(`/clientes/${clienteId}/ajustes/respostas-rapidas`)
+  return { ok: true }
+}
 
 /**
  * Responder o lead pelo painel.

@@ -7,6 +7,7 @@ import { acaoEncerrarAtendimento, acaoResponderLead } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { contextoDeResposta } from '@/server/repos/conversas'
 import { listarLeads, lerConversa, type Lead, type MensagemDoLead } from '@/server/repos/leads'
+import { listarRespostasRapidas, type RespostaRapida } from '@/server/repos/respostas-rapidas'
 import { horaExata, quando } from '../leads/quando'
 
 export const dynamic = 'force-dynamic'
@@ -30,7 +31,11 @@ export default async function Pagina({
   searchParams: Promise<Busca>
 }) {
   const [{ clienteId }, busca] = await Promise.all([params, searchParams])
-  const [cliente, leads] = await Promise.all([acharCliente(clienteId), listarLeads(clienteId)])
+  const [cliente, leads, respostasRapidas] = await Promise.all([
+    acharCliente(clienteId),
+    listarLeads(clienteId),
+    listarRespostasRapidas(clienteId),
+  ])
   if (!cliente) notFound()
 
   const pedido = Array.isArray(busca.conversa) ? busca.conversa[0] : busca.conversa
@@ -42,7 +47,12 @@ export default async function Pagina({
         {leads.length === 0 || !selecionado ? (
           <EstadoVazio clienteId={cliente.id} />
         ) : (
-          <Conteudo clienteId={cliente.id} leads={leads} selecionado={selecionado} />
+          <Conteudo
+            clienteId={cliente.id}
+            leads={leads}
+            selecionado={selecionado}
+            respostasRapidas={respostasRapidas}
+          />
         )}
       </main>
     </ClienteShell>
@@ -82,10 +92,12 @@ async function Conteudo({
   clienteId,
   leads,
   selecionado,
+  respostasRapidas,
 }: {
   clienteId: string
   leads: Lead[]
   selecionado: Lead
+  respostasRapidas: RespostaRapida[]
 }) {
   // `selecionado` veio de `listarLeads(clienteId)`. Só depois desse vínculo
   // cliente–contato confirmado é seguro ler as mensagens pelo id do contato.
@@ -111,6 +123,7 @@ async function Conteudo({
           acao={acaoResponderLead.bind(null, clienteId, selecionado.contatoId)}
           restaDaJanela={janela}
           nome={primeiroNome}
+          respostasRapidas={respostasRapidas}
         />
       </section>
 

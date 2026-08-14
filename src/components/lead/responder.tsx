@@ -23,11 +23,13 @@ export function CaixaDeResposta({
   acao,
   restaDaJanela,
   nome,
+  respostasRapidas = [],
 }: {
   acao: (formData: FormData) => Promise<{ ok: boolean; erro?: string }>
   /** `null` = fora da janela, ou a pessoa nunca escreveu. */
   restaDaJanela: string | null
   nome: string
+  respostasRapidas?: { atalho: string; texto: string }[]
 }) {
   const campo = useRef<HTMLTextAreaElement>(null)
   const [erro, setErro] = useState<string | null>(null)
@@ -58,6 +60,23 @@ export function CaixaDeResposta({
     })
   }
 
+  function inserirResposta(texto: string) {
+    const textarea = campo.current
+    if (!textarea) return
+
+    const inicio = textarea.selectionStart ?? textarea.value.length
+    const fim = textarea.selectionEnd ?? textarea.value.length
+    const proximo = textarea.value.slice(0, inicio) + texto + textarea.value.slice(fim)
+    if (proximo.length > 4096) {
+      setErro('esta resposta não cabe inteira: o WhatsApp aceita até 4.096 caracteres')
+      return
+    }
+
+    textarea.setRangeText(texto, inicio, fim, 'end')
+    textarea.focus()
+    setErro(null)
+  }
+
   return (
     <form action={enviar} className="border-t border-white/[0.06] px-[18px] py-3.5">
       <textarea
@@ -77,6 +96,23 @@ export function CaixaDeResposta({
           }
         }}
       />
+
+      {respostasRapidas.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Inserir resposta rápida">
+          {respostasRapidas.map((resposta) => (
+            <button
+              key={resposta.atalho}
+              type="button"
+              disabled={enviando}
+              title={resposta.texto}
+              onClick={() => inserirResposta(resposta.texto)}
+              className="rounded-full border border-accent/20 bg-accent/[0.07] px-2.5 py-1 text-[10.5px] font-bold text-accent transition hover:border-accent/40 hover:bg-accent/[0.13] disabled:opacity-50"
+            >
+              /{resposta.atalho}
+            </button>
+          ))}
+        </div>
+      )}
 
       {erro && (
         <p className="mt-2 rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2 text-[11.5px] leading-5 text-rose-200">

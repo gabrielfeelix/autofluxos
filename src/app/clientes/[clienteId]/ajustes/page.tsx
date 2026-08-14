@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarConexoes } from '@/server/repos/conexoes'
 import { listarCanais } from '@/server/repos/conversas'
+import { listarRespostasRapidas } from '@/server/repos/respostas-rapidas'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,9 +25,10 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [conexoes, canais] = await Promise.all([
+  const [conexoes, canais, respostasRapidas] = await Promise.all([
     listarConexoes(cliente.id),
     listarCanais(cliente.id),
+    listarRespostasRapidas(cliente.id),
   ])
   const semContexto = cliente.contextoNegocio.trim() === ''
 
@@ -55,6 +57,18 @@ export default async function Pagina({
                 {conexoes.length === 0
                   ? 'nenhuma'
                   : `${conexoes.length} ${conexoes.length === 1 ? 'chave' : 'chaves'}`}
+              </Selo>
+            }
+          />
+          <Linha
+            href={`/clientes/${cliente.id}/ajustes/respostas-rapidas`}
+            titulo="Respostas rápidas"
+            descricao="Frases prontas para inserir na conversa sem reescrever todo dia."
+            estado={
+              <Selo tom={respostasRapidas.length === 0 ? 'neutro' : 'ok'}>
+                {respostasRapidas.length === 0
+                  ? 'nenhuma'
+                  : `${respostasRapidas.length} ${respostasRapidas.length === 1 ? 'resposta' : 'respostas'}`}
               </Selo>
             }
           />
