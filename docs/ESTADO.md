@@ -39,6 +39,16 @@ nosso, nunca requisito para funcionar.
 > as decisões técnicas já tomadas. Os blocos 4 e 7 de lá são pré-requisito
 > barato do item 1 desta fila.
 
+**Existem duas filas neste projeto, e elas não competem.** A de baixo é de
+**dívida**: o que está torto, inseguro ou pela metade. A de features está em
+[EXPANSAO.md](EXPANSAO.md), que saiu da análise de 31 telas de um concorrente
+(BotConversa) rodando num cliente real, e traz o nosso estado campo a campo, o
+que existe fora, e o que construir com estado esperado de cada item.
+
+Onde as duas se tocam: o **item 1** daqui (papéis) é o item 15 de lá, e o
+**item 2** (modelos da Meta) é o 13. Quando divergirem, **esta fila manda na
+dívida e a de lá manda na ordem das features.**
+
 ### Por onde continuar, em ordem
 
 | # | O quê | Por que agora |
