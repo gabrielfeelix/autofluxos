@@ -151,6 +151,37 @@ export async function acharVersao(id: string): Promise<VersaoPublicada | null> {
   }
 }
 
+/**
+ * Uma versão específica **desta** automação.
+ *
+ * O par (versão, fluxo) vem junto porque o id da versão chega da tela, e a tela
+ * é adivinhável. Sem o `flow_id` no filtro, mandar o id de uma versão de outro
+ * cliente publicaria o desenho dele aqui dentro — o mesmo buraco que a fase 1
+ * fechou nas outras escritas.
+ */
+export async function acharVersaoDoFluxo(
+  versaoId: string,
+  fluxoId: string,
+): Promise<VersaoPublicada | null> {
+  const { data, error } = await db()
+    .from('flow_versions')
+    .select('id, versao, publicado_em, grafo')
+    .eq('id', versaoId)
+    .eq('flow_id', fluxoId)
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return null
+  if (error) throw new Error(`não deu para buscar a versão publicada: ${error.message}`)
+  if (!data) return null
+
+  return {
+    id: data.id as string,
+    versao: data.versao as number,
+    publicadoEm: data.publicado_em as string,
+    grafo: fluxoSchema.parse(data.grafo),
+  }
+}
+
 export async function listarVersoes(fluxoId: string): Promise<Omit<VersaoPublicada, 'grafo'>[]> {
   const { data, error } = await db()
     .from('flow_versions')

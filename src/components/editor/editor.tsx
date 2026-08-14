@@ -20,10 +20,11 @@ import { Conversa } from '@/components/conversa'
 import { fluxoSchema, type Fluxo, type No, type TipoNo } from '@/core/flow/schema'
 import type { Problema } from '@/core/flow/validar'
 import { validar } from '@/core/flow/validar'
-import { acaoAlternarIa, acaoPublicar, acaoSalvarRascunho } from '@/server/acoes'
+import { acaoAlternarIa, acaoPublicar, acaoSalvarRascunho, acaoVoltarParaVersao } from '@/server/acoes'
 import { ICONES, NOMES, tiposDeNo } from './nos'
 import { Painel } from './painel'
 import type { ConexaoDoCliente } from './painel'
+import { Versoes, type VersaoNaLista } from './versoes'
 
 const PAUSA_ANTES_DE_SALVAR = 800
 
@@ -109,6 +110,7 @@ export function Editor({
   voltarHref,
   inicial,
   publicadaInicial,
+  versoesIniciais,
   iaHabilitada,
   contextoNegocio,
   temContextoDeNegocio,
@@ -128,7 +130,9 @@ export function Editor({
   temContextoDeNegocio: boolean
   /** `quando` já vem formatado do servidor — formatar data no cliente daria
    *  divergência de hidratação entre o fuso do servidor e o do navegador. */
-  publicadaInicial: { versao: number; quando: string; grafo: Fluxo } | null
+  publicadaInicial: { id: string; versao: number; quando: string; grafo: Fluxo } | null
+  /** Histórico completo, da mais nova para a mais antiga. */
+  versoesIniciais: VersaoNaLista[]
 }) {
   const [nodes, setNodes, aoMudarNos] = useNodesState<Node>(
     inicial.nodes.map((n) => ({ ...n, className: n.id === inicial.inicio ? 'no-inicio' : '' })),
@@ -141,10 +145,15 @@ export function Editor({
   const [aba, setAba] = useState<'bloco' | 'testar'>('bloco')
   const [salvamento, setSalvamento] = useState<'salvo' | 'salvando' | 'pendente' | 'erro'>('salvo')
   const [publicada, setPublicada] = useState(publicadaInicial)
+  const [versoes, setVersoes] = useState(versoesIniciais)
+  /** Id da versão sendo republicada, para a linha dela mostrar o progresso. */
+  const [voltando, setVoltando] = useState<string | null>(null)
   const [publicando, setPublicando] = useState(false)
   const [errosDePublicacao, setErrosDePublicacao] = useState<Problema[] | null>(null)
   /** Versão que acabou de ir ao ar. Some sozinha — aviso fixo para de ser lido. */
   const [publicadoAgora, setPublicadoAgora] = useState<number | null>(null)
+  /** Rollback recém-feito. O aviso precisa dizer de onde veio, não só o número. */
+  const [voltouDe, setVoltouDe] = useState<{ antiga: number; nova: number } | null>(null)
   const [comIa, setComIa] = useState(iaHabilitada)
   const [tela, setTela] = useState<ReactFlowInstance | null>(null)
   /** O último bloco apagado, para poder devolver. Ver `apagar()`. */
@@ -329,12 +338,14 @@ export function Editor({
     setPublicando(true)
     setErrosDePublicacao(null)
     setPublicadoAgora(null)
+    setVoltouDe(null)
     try {
       const r = await acaoPublicar(fluxoId, clienteId, JSON.parse(assinatura))
       if (r.ok) {
         assinaturaSalva.current = assinatura
         setSalvamento('salvo')
-        setPublicada({ versao: r.versao, quando: 'agora', grafo: JSON.parse(assinatura) })
+        setPublicada({ id: r.id, versao: r.versao, quando: 'agora', grafo: JSON.parse(assinatura) })
+        setVersoes((atuais) => [{ id: r.id, versao: r.versao, quando: 'agora' }, ...atuais])
         // Publicar é a ação mais consequente daqui: o desenho passa a atender
         // gente de verdade no WhatsApp. Um selo mudando de cor no canto era
         // discreto demais para o que acabou de acontecer.
@@ -346,6 +357,47 @@ export function Editor({
       setErrosDePublicacao([{ codigo: 'FALHA', mensagem: 'Não deu para publicar. Tente de novo.' }])
     } finally {
       setPublicando(false)
+    }
+  }
+
+  /**
+   * Põe uma versão antiga no ar de novo.
+   *
+   * O desenho da tela é trocado junto: o que está no editor tem que ser o que
+   * está publicado, senão o selo diria "no ar" ao lado de um desenho diferente.
+   * `assinaturaSalva` é atualizada antes do estado para o salvamento automático
+   * não gravar de novo o que a publicação já gravou.
+   */
+  async function voltarParaVersao(versaoId: string): Promise<boolean> {
+    setVoltando(versaoId)
+    setErrosDePublicacao(null)
+    setPublicadoAgora(null)
+    try {
+      const r = await acaoVoltarParaVersao(fluxoId, clienteId, versaoId)
+      if (!r.ok) {
+        setErrosDePublicacao(r.erros)
+        return false
+      }
+
+      assinaturaSalva.current = JSON.stringify(r.grafo)
+      setNodes(
+        r.grafo.nodes.map((n) => ({ ...n, className: n.id === r.grafo.inicio ? 'no-inicio' : '' })),
+      )
+      setEdges(r.grafo.edges as Edge[])
+      setInicio(r.grafo.inicio)
+      setSelecionado(null)
+      setSalvamento('salvo')
+      setPublicada({ id: r.id, versao: r.versao, quando: 'agora', grafo: r.grafo })
+      setVersoes((atuais) => [{ id: r.id, versao: r.versao, quando: 'agora' }, ...atuais])
+      setVoltouDe({ antiga: r.voltouDe, nova: r.versao })
+      return true
+    } catch {
+      setErrosDePublicacao([
+        { codigo: 'FALHA', mensagem: 'Não deu para voltar para esta versão. Tente de novo.' },
+      ])
+      return false
+    } finally {
+      setVoltando(null)
     }
   }
 
@@ -404,6 +456,13 @@ export function Editor({
         </div>
         <span className="flex-1" />
 
+        <Versoes
+          versoes={versoes}
+          publicadaId={publicada?.id ?? null}
+          voltando={voltando}
+          aoVoltar={voltarParaVersao}
+        />
+
         {publicada ? (
           <span className={`rounded-full border px-3 py-1 text-xs ${haNovidade ? 'border-amber-300/25 bg-amber-300/[0.08] text-amber-200' : 'border-emerald-400/20 bg-emerald-400/[0.08] text-emerald-300'}`}>
             {haNovidade ? 'Desenho difere do publicado' : `No ar · v${publicada.versao}`}
@@ -453,6 +512,26 @@ export function Editor({
           </span>
           <button
             onClick={() => setPublicadoAgora(null)}
+            className="rounded-lg px-2 py-0.5 transition hover:bg-emerald-400/[0.16]"
+          >
+            ok
+          </button>
+        </div>
+      )}
+
+      {voltouDe && (
+        <div
+          role="status"
+          className="flex shrink-0 items-center gap-2 border-b border-emerald-400/25 bg-emerald-400/[0.09] px-4 py-2 text-xs text-emerald-300"
+        >
+          <span className="size-1.5 rounded-full bg-emerald-400" />
+          <span className="flex-1">
+            <strong>Voltou para a v{voltouDe.antiga}.</strong> Ela foi publicada de novo como versão{' '}
+            {voltouDe.nova} e o desenho na tela agora é o dela. O histórico anterior continua
+            inteiro.
+          </span>
+          <button
+            onClick={() => setVoltouDe(null)}
             className="rounded-lg px-2 py-0.5 transition hover:bg-emerald-400/[0.16]"
           >
             ok

@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import { Editor } from '@/components/editor/editor'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarConexoes } from '@/server/repos/conexoes'
-import { acharFluxo, acharVersao } from '@/server/repos/fluxos'
+import { acharFluxo, acharVersao, listarVersoes } from '@/server/repos/fluxos'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,7 +37,13 @@ export default async function Pagina({
   ])
   if (!cliente || !fluxo || fluxo.clienteId !== cliente.id) notFound()
 
-  const publicada = fluxo.versaoPublicadaId ? await acharVersao(fluxo.versaoPublicadaId) : null
+  // O histórico vem junto do desenho: abrir o editor é o único lugar de onde
+  // alguém decide voltar atrás, e uma segunda ida ao banco só ao clicar deixaria
+  // o botão "Histórico" mentindo sobre existir versão para escolher.
+  const [publicada, versoes] = await Promise.all([
+    fluxo.versaoPublicadaId ? acharVersao(fluxo.versaoPublicadaId) : null,
+    listarVersoes(fluxo.id),
+  ])
 
   return (
     <Editor
@@ -53,9 +59,19 @@ export default async function Pagina({
       conexoes={conexoes}
       publicadaInicial={
         publicada
-          ? { versao: publicada.versao, quando: quando(publicada.publicadoEm), grafo: publicada.grafo }
+          ? {
+              id: publicada.id,
+              versao: publicada.versao,
+              quando: quando(publicada.publicadoEm),
+              grafo: publicada.grafo,
+            }
           : null
       }
+      versoesIniciais={versoes.map((v) => ({
+        id: v.id,
+        versao: v.versao,
+        quando: quando(v.publicadoEm),
+      }))}
     />
   )
 }

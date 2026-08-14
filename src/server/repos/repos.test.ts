@@ -5,6 +5,7 @@ import { acharCliente, atualizarContexto, criarCliente, listarClientes } from '.
 import {
   acharFluxo,
   acharVersao,
+  acharVersaoDoFluxo,
   apagarFluxo,
   criarFluxo,
   definirIa,
@@ -114,6 +115,56 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
 
     const versoes = await listarVersoes(fluxo.id)
     expect(versoes.map((v) => v.versao)).toEqual([2, 1])
+  })
+
+  /**
+   * O caminho exato do rollback: achar a versão antiga provando o fluxo, e
+   * publicá-la de novo. Voltar nunca reescreve nem aponta para trás.
+   */
+  it('voltar para uma versão antiga publica ela como versão nova', async () => {
+    const cliente = await criarCliente(`${marca} rollback`)
+    criados.push(cliente.id)
+
+    const primeiroDesenho = fluxoNovo()
+    const fluxo = await criarFluxo(cliente.id, `${marca} f`, primeiroDesenho)
+    const v1 = await publicar(fluxo.id, cliente.id, primeiroDesenho)
+    if (!v1.ok) throw new Error('deveria ter publicado a v1')
+
+    const segundoDesenho = structuredClone(primeiroDesenho)
+    const abertura = segundoDesenho.nodes.find((no) => no.id === 'abertura')
+    if (abertura?.type === 'mensagem') abertura.data.texto = 'texto da v2'
+    const v2 = await publicar(fluxo.id, cliente.id, segundoDesenho)
+    if (!v2.ok) throw new Error('deveria ter publicado a v2')
+
+    const antiga = await acharVersaoDoFluxo(v1.versao.id, fluxo.id)
+    if (!antiga) throw new Error('a v1 deveria continuar existindo')
+    const v3 = await publicar(fluxo.id, cliente.id, antiga.grafo)
+
+    expect(v3.ok && v3.versao.versao).toBe(3)
+    expect(v3.ok && v3.versao.grafo).toEqual(v1.versao.grafo)
+
+    // O histórico cresce: a v2 continua lá, inteira, com o desenho dela.
+    expect((await listarVersoes(fluxo.id)).map((v) => v.versao)).toEqual([3, 2, 1])
+    expect((await acharVersao(v2.versao.id))?.grafo).toEqual(segundoDesenho)
+
+    // E o que está no ar é a nova, não a antiga — nada aponta para trás.
+    const relido = await acharFluxo(fluxo.id)
+    expect(relido?.versaoPublicadaId).toBe(v3.ok ? v3.versao.id : null)
+    expect(relido?.rascunho).toEqual(primeiroDesenho)
+  })
+
+  it('não acha a versão de uma automação usando o id de outra', async () => {
+    const cliente = await criarCliente(`${marca} versao cruzada`)
+    criados.push(cliente.id)
+    const meu = await criarFluxo(cliente.id, `${marca} meu`, fluxoNovo())
+    const outro = await criarFluxo(cliente.id, `${marca} outro`, fluxoNovo())
+
+    const publicada = await publicar(meu.id, cliente.id, meu.rascunho)
+    if (!publicada.ok) throw new Error('deveria ter publicado')
+
+    expect(await acharVersaoDoFluxo(publicada.versao.id, meu.id)).not.toBeNull()
+    expect(await acharVersaoDoFluxo(publicada.versao.id, outro.id)).toBeNull()
+    expect(await acharVersaoDoFluxo(publicada.versao.id, 'nao-existe')).toBeNull()
   })
 
   /**

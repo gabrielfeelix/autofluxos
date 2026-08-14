@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { fluxoSchema } from '@/core/flow/schema'
+import type { Problema } from '@/core/flow/validar'
 import { db } from './db'
 import { fluxoNovo } from '@/core/flow/novo'
 import { triagem } from '@/exemplos/triagem'
@@ -22,7 +23,14 @@ import {
   registrarSaida,
 } from './repos/conversas'
 import { travarContato } from './repos/travas'
-import { apagarFluxo, criarFluxo, definirIa, publicar, salvarRascunho } from './repos/fluxos'
+import {
+  acharVersaoDoFluxo,
+  apagarFluxo,
+  criarFluxo,
+  definirIa,
+  publicar,
+  salvarRascunho,
+} from './repos/fluxos'
 import { apagarConexao, criarConexao, trocarValor } from './repos/conexoes'
 import { apagarRespostaRapida, criarRespostaRapida } from './repos/respostas-rapidas'
 
@@ -94,12 +102,52 @@ export async function acaoPublicar(fluxoId: string, clienteId: string, grafo: un
     revalidatePath(`/clientes/${clienteId}`)
     return {
       ok: true as const,
+      id: resultado.versao.id,
       versao: resultado.versao.versao,
       publicadoEm: resultado.versao.publicadoEm,
     }
   }
 
   return { ok: false as const, erros: resultado.erros }
+}
+
+/**
+ * Volta o desenho para uma versão antiga.
+ *
+ * **Voltar publica de novo; não aponta de volta.** Apontar `versao_publicada_id`
+ * para uma linha antiga deixaria buracos na numeração e faria "o que está no ar"
+ * ter duas respostas. Aqui a v2 vira a v5: o histórico só cresce, nunca se
+ * reescreve, e quem já estava conversando termina na versão em que começou.
+ *
+ * Passa pelo mesmo `publicar()` de propósito. Uma versão antiga pode ter ficado
+ * inválida depois de publicada — a conexão que ela usa foi apagada, a IA foi
+ * descontratada, o contexto do negócio sumiu. Republicar sem revalidar poria no
+ * ar um fluxo que o editor recusaria hoje.
+ */
+export async function acaoVoltarParaVersao(fluxoId: string, clienteId: string, versaoId: string) {
+  const antiga = await acharVersaoDoFluxo(versaoId, fluxoId)
+  if (!antiga) {
+    return {
+      ok: false as const,
+      erros: [
+        { codigo: 'VERSAO_SUMIU', mensagem: 'Esta versão não existe nesta automação.' },
+      ] satisfies Problema[],
+    }
+  }
+
+  const resultado = await publicar(fluxoId, clienteId, antiga.grafo)
+  if (!resultado.ok) return { ok: false as const, erros: resultado.erros }
+
+  revalidatePath(`/clientes/${clienteId}`)
+  revalidatePath(`/clientes/${clienteId}/fluxos/${fluxoId}`)
+  return {
+    ok: true as const,
+    id: resultado.versao.id,
+    versao: resultado.versao.versao,
+    publicadoEm: resultado.versao.publicadoEm,
+    grafo: resultado.versao.grafo,
+    voltouDe: antiga.versao,
+  }
 }
 
 export async function acaoConectarNumero(
