@@ -32,7 +32,7 @@ export function FichaDoCliente({
 
   return (
     <section className="app-card overflow-hidden">
-      <header className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-6 py-4">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-4 sm:px-6">
         <div>
           <h2 className="text-[14.5px] font-bold">Cadastro</h2>
           <p className="mt-0.5 text-[12px] text-dim">
@@ -49,11 +49,11 @@ export function FichaDoCliente({
       </header>
 
       {editando ? (
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <Logo cliente={cliente} salvarLogo={salvarLogo} removerLogo={removerLogo} />
 
           <FormularioSalvar action={salvarCadastro} rotulo="Salvar cadastro">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Campo rotulo="Nome do cliente" nome="nome" valor={cliente.nome} obrigatorio />
               <Campo
                 rotulo="Quem responde"
@@ -99,9 +99,9 @@ export function FichaDoCliente({
           </FormularioSalvar>
         </div>
       ) : (
-        <div className="flex items-start gap-6 p-6">
+        <div className="flex flex-col items-start gap-6 p-4 sm:flex-row sm:p-6">
           <LogoDoCliente cliente={cliente} tamanho={72} />
-          <dl className="grid min-w-0 flex-1 grid-cols-2 gap-x-6 gap-y-4">
+          <dl className="grid min-w-0 flex-1 grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
             <Leitura rotulo="Quem responde" valor={cliente.responsavel} />
             <Leitura rotulo="Telefone" valor={cliente.telefone} />
             <Leitura rotulo="E-mail" valor={cliente.email} />
@@ -124,7 +124,7 @@ function Logo({
   removerLogo: () => Promise<void>
 }) {
   return (
-    <div className="mb-6 flex items-center gap-5 border-b border-white/[0.06] pb-6">
+    <div className="mb-6 flex flex-wrap items-center gap-5 border-b border-white/[0.06] pb-6">
       <LogoDoCliente cliente={cliente} tamanho={72} />
       <div className="min-w-0 flex-1">
         <FormularioSalvar action={salvarLogo} rotulo="Enviar logo">

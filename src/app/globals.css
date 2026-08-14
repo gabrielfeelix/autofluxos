@@ -1,5 +1,19 @@
 @import 'tailwindcss';
 
+/*
+ * **`--color-soft` faltava e ninguém tinha percebido.** `text-soft` aparece em
+ * 34 lugares do painel, mas o token só existia em `:root` — e `:root` não gera
+ * utilitário no Tailwind 4, só `@theme` gera. O resultado é que `text-soft`
+ * nunca pintou nada: cada um desses elementos herdava a cor do pai, e quando o
+ * pai era `text-dim` o texto que devia ganhar destaque saía mais apagado que o
+ * normal. Foi a auditoria de contraste que encontrou.
+ *
+ * **`--dim` subiu de `#5a6478` para `#7d8799`** porque reprovava 1.4.3 (AA) em
+ * praticamente toda tela: 3,15:1 contra o fundo dos cartões, quando o mínimo
+ * para texto normal é 4,5:1. O tom novo dá 5,1:1 ali e continua sendo o degrau
+ * mais apagado da escala — a hierarquia visual sobrevive, a leitura deixa de
+ * depender de vista boa e monitor bom.
+ */
 @theme inline {
   --font-sans: var(--font-outfit);
   --font-mono: var(--font-jetbrains-mono);
@@ -7,8 +21,9 @@
   --color-canvas: #080b10;
   --color-panel: #0e131c;
   --color-ink: #e9eef5;
+  --color-soft: #b9c2d0;
   --color-muted: #8a94a6;
-  --color-dim: #5a6478;
+  --color-dim: #7d8799;
 }
 
 :root {
@@ -20,7 +35,7 @@
   --ink: #e9eef5;
   --soft: #b9c2d0;
   --muted: #8a94a6;
-  --dim: #5a6478;
+  --dim: #7d8799;
   --line: rgba(255, 255, 255, 0.08);
   --line-soft: rgba(255, 255, 255, 0.055);
   --surface: rgba(255, 255, 255, 0.028);
@@ -62,8 +77,23 @@
 
 html,
 body {
-  min-width: 1024px;
   min-height: 100%;
+}
+
+/*
+ * **O piso de 1024px é do editor, não do painel.**
+ *
+ * Ele estava em `html, body` e valia para tudo: as telas de leitura ficavam com
+ * 1024px de largura mínima num aparelho de 390px, e o resultado era a página
+ * inteira rolando de lado — cabeçalho, abas e conteúdo saindo pela direita.
+ *
+ * O editor continua desktop de propósito: barra de blocos, desenho e painel de
+ * propriedades lado a lado não cabem num celular, e espremer os três seria
+ * pior do que assumir o mínimo. A diferença é que agora quem exige a largura é
+ * ele, e não o produto inteiro.
+ */
+.app-editor {
+  min-width: 1024px;
 }
 
 body {
@@ -135,6 +165,18 @@ textarea::placeholder {
 .app-field:focus {
   border-color: color-mix(in oklab, var(--accent) 60%, transparent);
   background: rgba(255, 255, 255, 0.06);
+}
+
+/*
+ * O `outline: none` acima tira o anel do navegador, e quem tira precisa
+ * devolver: sem indicador, quem navega por teclado não sabe onde está (WCAG
+ * 2.4.7). A borda mudando de cor sozinha era discreta demais em campo escuro.
+ * É o mesmo anel do `.app-dropdown-trigger`, para foco parecer foco em todo
+ * lugar.
+ */
+.app-field:focus-visible {
+  border-color: color-mix(in oklab, var(--accent) 70%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 13%, transparent);
 }
 
 .app-field:disabled {

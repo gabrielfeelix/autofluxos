@@ -13,8 +13,8 @@ export default async function Pagina() {
 
   return (
     <PainelShell>
-      <main className="app-page-enter max-w-[1120px] px-[46px] pt-[38px] pb-[46px]">
-        <header className="mb-7 flex items-end justify-between gap-5">
+      <main className="app-page-enter max-w-[1120px] px-4 md:px-[46px] pt-[38px] pb-[46px]">
+        <header className="mb-7 flex flex-wrap items-end justify-between gap-5">
           <div>
             <h1 className="text-[25px] font-bold tracking-[-0.02em]">Clientes</h1>
             <p className="mt-1 text-[13px] text-muted">
@@ -59,7 +59,7 @@ export default async function Pagina() {
             </form>
           </section>
         ) : (
-          <ul className="grid grid-cols-[repeat(auto-fill,minmax(310px,1fr))] gap-4">
+          <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(310px,100%),1fr))] gap-4">
             {clientes.map((cliente) => {
               const resumo = automacoes.get(cliente.id)
               const total = resumo?.total ?? 0

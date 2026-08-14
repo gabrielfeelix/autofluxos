@@ -3,11 +3,22 @@ import type { ReactNode } from 'react'
 import { acaoSair } from '@/server/auth-actions'
 import { Marca } from './marca'
 
+/**
+ * A moldura do painel.
+ *
+ * **Duas formas, e a diferença não é só largura.** No desktop a barra é uma
+ * coluna fixa e só o conteúdo rola — é o que mantém a navegação sempre à vista
+ * numa tela de trabalho. No celular a mesma coluna comeria 226px dos 390px
+ * disponíveis, então ela vira uma faixa no topo e a página inteira volta a
+ * rolar como página. `h-screen` some junto: prender a altura na viewport de um
+ * celular briga com a barra de endereço que aparece e some, e o resultado é
+ * conteúdo cortado que não rola.
+ */
 export function PainelShell({ children }: { children: ReactNode }) {
   return (
-    <div className="flex h-screen min-h-[700px] overflow-hidden">
-      <aside className="flex w-[226px] shrink-0 flex-col border-r border-white/[0.06] bg-white/[0.014] px-3.5 pt-5 pb-4">
-        <div className="mb-5 px-2">
+    <div className="flex min-h-screen flex-col md:h-screen md:min-h-[700px] md:flex-row md:overflow-hidden">
+      <aside className="flex shrink-0 flex-row items-center gap-3 border-b border-white/[0.06] bg-white/[0.014] px-4 py-3 md:w-[226px] md:flex-col md:items-stretch md:gap-0 md:border-r md:border-b-0 md:px-3.5 md:pt-5 md:pb-4">
+        <div className="md:mb-5 md:px-2">
           <Marca />
         </div>
 
@@ -21,11 +32,13 @@ export function PainelShell({ children }: { children: ReactNode }) {
 
         <div className="flex-1" />
 
-        <div className="flex items-center gap-2.5 border-t border-white/[0.06] px-1.5 pt-3.5">
+        <div className="flex items-center gap-2.5 border-white/[0.06] md:border-t md:px-1.5 md:pt-3.5">
           <span className="flex size-[30px] shrink-0 items-center justify-center rounded-full border border-white/[0.12] bg-[linear-gradient(135deg,#334155,#1e293b)] text-[11px] font-bold text-[#b9c2d0]">
             4Y
           </span>
-          <span className="min-w-0 flex-1">
+          {/* Nome e papel são contexto, não navegação: some no celular para o
+              topo caber sem virar duas linhas. O botão de sair fica. */}
+          <span className="hidden min-w-0 flex-1 md:block">
             <span className="block truncate text-[12.5px] font-semibold">Operador 4YU</span>
             <span className="block text-[11px] text-dim">Administrador</span>
           </span>
@@ -40,7 +53,7 @@ export function PainelShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <div className="relative min-w-0 flex-1 overflow-auto">{children}</div>
+      <div className="relative min-w-0 flex-1 md:overflow-auto">{children}</div>
     </div>
   )
 }

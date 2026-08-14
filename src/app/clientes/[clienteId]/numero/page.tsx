@@ -42,7 +42,7 @@ export default async function Pagina({
 
   return (
     <ClienteShell cliente={cliente} ativa="ajustes">
-      <main className="max-w-[720px] px-[42px] pt-[26px] pb-[42px]">
+      <main className="max-w-[720px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <section className="app-card mb-[18px] overflow-hidden">
           <header className="border-b border-white/[0.06] px-5 py-4">
             <h2 className="text-[14.5px] font-bold">Números do WhatsApp</h2>

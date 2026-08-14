@@ -45,7 +45,7 @@ export default async function Pagina({
 
   return (
     <ClienteShell cliente={cliente} ativa="inbox">
-      <main className="px-[42px] pt-[26px] pb-[42px]">
+      <main className="px-4 md:px-[42px] pt-[26px] pb-[42px]">
         {leads.length === 0 || !selecionado ? (
           <EstadoVazio clienteId={cliente.id} />
         ) : (
@@ -197,9 +197,9 @@ function Fila({
               <span className="min-w-0 flex-1">
                 <span className="flex items-baseline gap-2">
                   <strong className={`min-w-0 flex-1 truncate text-[12.5px] ${ativa ? 'text-white' : 'text-soft'}`}>{nome}</strong>
-                  <small className="shrink-0 text-[9.5px] text-dim">{lead.ultimaEm ? quando(lead.ultimaEm) : ''}</small>
+                  <small className="shrink-0 text-[9.5px] text-muted">{lead.ultimaEm ? quando(lead.ultimaEm) : ''}</small>
                 </span>
-                <span className={`mt-0.5 block truncate text-[10.5px] ${lead.aguardando ? 'text-rose-300' : 'text-dim'}`}>
+                <span className={`mt-0.5 block truncate text-[10.5px] ${lead.aguardando ? 'text-rose-300' : 'text-muted'}`}>
                   {lead.aguardando ? `Pessoa: ${lead.aguardando.motivo}` : resumoDaConversa(lead)}
                 </span>
               </span>
@@ -260,7 +260,7 @@ function Historico({
                 : 'rounded-[13px_13px_13px_4px] border border-white/[0.07] bg-white/[0.055]'
             }`}>
               {mensagem.texto ?? <span className="italic text-muted">(áudio, imagem ou documento)</span>}
-              <span className="ml-2 text-[9.5px] text-dim" title={horaExata(mensagem.ts)}>
+              <span className="ml-2 text-[9.5px] text-muted" title={horaExata(mensagem.ts)}>
                 {nossa ? 'atendimento' : (nome ?? 'cliente')} · {quando(mensagem.ts)}
               </span>
               {nossa && !mensagem.entregue && (

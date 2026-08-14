@@ -33,7 +33,7 @@ export default async function Pagina({
 
   return (
     <ClienteShell cliente={cliente} ativa="fluxos">
-      <main className="max-w-[1000px] px-[42px] pt-[26px] pb-[42px]">
+      <main className="max-w-[1000px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <section className="app-card overflow-hidden">
           <header className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-5 py-4">
             <div>

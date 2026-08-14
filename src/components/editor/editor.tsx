@@ -413,7 +413,7 @@ export function Editor({
   const variaveis = variaveisDoFluxo(fluxo)
 
   return (
-    <div className="flex h-screen flex-col bg-canvas">
+    <div className="app-editor flex h-screen flex-col bg-canvas">
       <header className="flex h-[54px] shrink-0 items-center gap-3 border-b border-white/[0.07] bg-white/[0.018] px-4">
         <Link
           href={voltarHref}

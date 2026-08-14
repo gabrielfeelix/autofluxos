@@ -29,7 +29,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
   return (
     <ClienteShell cliente={cliente} ativa="inicio">
-      <main className="max-w-[1000px] px-[42px] pt-[26px] pb-[42px]">
+      <main className="max-w-[1000px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <Suspense fallback={<div className="app-card mb-[18px] h-[104px] animate-pulse" />}>
           <Atendimento clienteId={cliente.id} />
         </Suspense>

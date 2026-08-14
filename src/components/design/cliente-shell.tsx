@@ -40,9 +40,12 @@ export function ClienteShell({
   return (
     <PainelShell>
       <div className="app-page-enter flex min-h-full flex-col">
-        <header className="shrink-0 px-[42px] pt-[26px]">
+        <header className="shrink-0 px-4 md:px-[42px] pt-[26px]">
           <nav className="mb-3 text-[12.5px] text-dim">
-            <Link href="/" className="text-muted transition hover:text-accent">
+            {/* Sublinhado, e não só cor: dentro de um texto corrido, link que
+                só muda de cor some para quem não distingue esses dois tons
+                (WCAG 1.4.1, nível A). */}
+            <Link href="/" className="text-muted underline underline-offset-2 transition hover:text-accent">
               Clientes
             </Link>
             <span className="mx-2">/</span>
@@ -51,10 +54,17 @@ export function ClienteShell({
 
           <div className="mb-[16px] flex items-center gap-3.5">
             <LogoDoCliente cliente={cliente} tamanho={44} />
-            <h1 className="text-[25px] font-bold tracking-[-0.02em]">{cliente.nome}</h1>
+            <h1 className="min-w-0 truncate text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">
+              {cliente.nome}
+            </h1>
           </div>
 
-          <nav className="-mb-px flex gap-1 border-b border-white/[0.06]" aria-label="Seções do cliente">
+          {/* Cinco abas não cabem em 390px. Rolar na horizontal aqui dentro é o
+              que impede a página inteira de rolar de lado — e nenhuma aba some. */}
+          <nav
+            className="-mb-px flex gap-1 overflow-x-auto border-b border-white/[0.06]"
+            aria-label="Seções do cliente"
+          >
             {ABAS.map((aba) => {
               const acesa = aba.chave === ativa
               return (
@@ -62,7 +72,7 @@ export function ClienteShell({
                   key={aba.chave}
                   href={`/clientes/${cliente.id}${aba.href}`}
                   aria-current={acesa ? 'page' : undefined}
-                  className={`rounded-t-lg border-b-2 px-4 py-2.5 text-[13px] font-bold transition ${
+                  className={`shrink-0 rounded-t-lg border-b-2 px-4 py-2.5 text-[13px] font-bold transition ${
                     acesa ? 'border-accent text-white' : 'border-transparent text-muted hover:text-white'
                   }`}
                 >

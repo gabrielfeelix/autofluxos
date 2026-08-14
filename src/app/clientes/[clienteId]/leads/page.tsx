@@ -74,7 +74,7 @@ export default async function Pagina({
 
   return (
     <ClienteShell cliente={cliente} ativa="leads">
-      <main className="flex min-h-full flex-col px-[42px] pt-[26px] pb-[42px]">
+      <main className="flex min-h-full flex-col px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <Suspense key={`${etiqueta}-${termo}-${pagina}`} fallback={<Esqueleto />}>
           <Tabela clienteId={cliente.id} etiqueta={etiqueta} termo={termo} pagina={pagina} />
         </Suspense>
@@ -140,7 +140,7 @@ async function Tabela({
 
   return (
     <>
-      <div className="-mt-[53px] mb-[22px] flex flex-wrap items-center justify-end gap-2">
+      <div className="mb-[22px] flex flex-wrap items-center justify-end gap-2 md:-mt-[53px]">
         <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-semibold text-muted">
           {total} {total === 1 ? 'pessoa' : 'pessoas'}
           {filtrando && ' no filtro'}
