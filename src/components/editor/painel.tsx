@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef, useState } from 'react'
 import {
   LIMITE_BOTOES,
   LIMITE_ATRASO_SEGUNDOS,
@@ -15,10 +16,16 @@ import {
   type Opcao,
 } from '@/core/flow/schema'
 import { Dropdown } from '@/components/design/dropdown'
+import { inserirNoCursor } from './inserir-variavel'
 import { NOMES } from './nos'
 
 /** O que o painel precisa saber de uma credencial: o nome, e nada mais. */
 export type ConexaoDoCliente = { id: string; nome: string; tipo: string }
+
+type CampoDeTexto = {
+  elemento: HTMLInputElement | HTMLTextAreaElement
+  aoMudar: (valor: string) => void
+}
 
 /**
  * O formulário do bloco selecionado. Tudo que é específico de um cliente é
@@ -41,6 +48,44 @@ export function Painel({
   aoDefinirInicio: () => void
   aoApagar: () => void
 }) {
+  const campoAtivo = useRef<CampoDeTexto | null>(null)
+  const [foco, setFoco] = useState(false)
+
+  useEffect(() => {
+    campoAtivo.current = null
+    setFoco(false)
+  }, [no?.id])
+
+  function registrarCampo(elemento: HTMLInputElement | HTMLTextAreaElement, aoMudar: (valor: string) => void) {
+    campoAtivo.current = { elemento, aoMudar }
+    setFoco(true)
+  }
+
+  function inserirVariavel(variavel: string) {
+    const ativo = campoAtivo.current
+    if (!ativo || !ativo.elemento.isConnected) {
+      campoAtivo.current = null
+      setFoco(false)
+      return
+    }
+
+    const { elemento, aoMudar } = ativo
+    const { proximo, cursor } = inserirNoCursor(
+      elemento.value,
+      elemento.selectionStart ?? elemento.value.length,
+      elemento.selectionEnd ?? elemento.value.length,
+      `{{${variavel}}}`,
+    )
+    aoMudar(proximo)
+
+    // O campo é controlado e a mudança acima pede render. Esperar um frame
+    // devolve foco e cursor depois do valor novo chegar ao DOM.
+    requestAnimationFrame(() => {
+      elemento.focus()
+      elemento.setSelectionRange(cursor, cursor)
+    })
+  }
+
   if (!no) {
     return (
       <div className="m-4 rounded-[14px] border border-dashed border-white/10 px-[18px] py-[34px] text-center text-[12.5px] leading-6 text-dim">
@@ -84,6 +129,7 @@ export function Painel({
             valor={no.data.texto}
             limite={LIMITE_TEXTO}
             aoMudar={(texto) => aoMudarDados({ texto })}
+            aoFocar={registrarCampo}
           />
           <label className="block">
             <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
@@ -128,6 +174,7 @@ export function Painel({
                 : LIMITE_TEXTO
             }
             aoMudar={(texto) => aoMudarDados({ texto })}
+            aoFocar={registrarCampo}
           />
           <Linha
             rotulo="Guardar resposta em"
@@ -174,7 +221,13 @@ export function Painel({
             />
           </label>
           {no.data.operador !== 'vazio' && no.data.operador !== 'preenchido' && (
-            <Linha rotulo="Valor" valor={no.data.valor} aoMudar={(valor) => aoMudarDados({ valor })} />
+            <Linha
+              rotulo="Valor"
+              valor={no.data.valor}
+              aoMudar={(valor) => aoMudarDados({ valor })}
+              aceitaVariavel
+              aoFocar={registrarCampo}
+            />
           )}
         </>
       )}
@@ -187,6 +240,8 @@ export function Painel({
             valor={no.data.valor}
             dica="aceita {{variavel}}"
             aoMudar={(valor) => aoMudarDados({ valor })}
+            aceitaVariavel
+            aoFocar={registrarCampo}
           />
         </>
       )}
@@ -197,6 +252,7 @@ export function Painel({
             rotulo="Instrução para a IA"
             valor={no.data.instrucao}
             aoMudar={(instrucao) => aoMudarDados({ instrucao })}
+            aoFocar={registrarCampo}
           />
           <Linha
             rotulo="Guardar resposta em"
@@ -217,12 +273,15 @@ export function Painel({
             valor={no.data.mensagem}
             limite={LIMITE_TEXTO}
             aoMudar={(mensagem) => aoMudarDados({ mensagem })}
+            aoFocar={registrarCampo}
           />
           <Linha
             rotulo="Motivo (interno)"
             valor={no.data.motivo}
             dica="aparece no painel; aceita {{variavel}}"
             aoMudar={(motivo) => aoMudarDados({ motivo })}
+            aceitaVariavel
+            aoFocar={registrarCampo}
           />
         </>
       )}
@@ -244,15 +303,23 @@ export function Painel({
             valor={no.data.url}
             dica="precisa começar com https://. aceita {{variavel}} no meio"
             aoMudar={(url) => aoMudarDados({ url })}
+            aceitaVariavel
+            aoFocar={registrarCampo}
           />
 
           {no.data.metodo === 'POST' && (
-            <Area rotulo="Corpo (JSON)" valor={no.data.corpo} aoMudar={(corpo) => aoMudarDados({ corpo })} />
+            <Area
+              rotulo="Corpo (JSON)"
+              valor={no.data.corpo}
+              aoMudar={(corpo) => aoMudarDados({ corpo })}
+              aoFocar={registrarCampo}
+            />
           )}
 
           <Cabecalhos
             cabecalhos={no.data.cabecalhos}
             aoMudar={(cabecalhos) => aoMudarDados({ cabecalhos })}
+            aoFocar={registrarCampo}
           />
 
           <Mapeamentos mapear={no.data.mapear} aoMudar={(mapear) => aoMudarDados({ mapear })} />
@@ -300,13 +367,18 @@ export function Painel({
       {variaveis.length > 0 && (
         <div className="border-t border-white/[0.06] pt-3">
           <p className="text-[10px] font-bold tracking-[0.05em] text-muted uppercase">Variáveis deste fluxo</p>
-          <p className="mt-1 text-[11px] text-dim">Use essas variáveis nos textos com chaves duplas.</p>
+          <p className="mt-1 text-[11px] text-dim">
+            {foco ? 'Clique para inserir no cursor do campo de texto em foco.' : 'Selecione um campo de texto e clique para inserir.'}
+          </p>
           <p className="mt-1 flex flex-wrap gap-1">
             {variaveis.map((v) => (
-              <code
+              <button
                 key={v}
-                className="rounded-[7px] border border-accent/[0.22] bg-accent/[0.09] px-2 py-1 font-mono text-[10px] text-[#8de2fa]"
-              >{`{{${v}}}`}</code>
+                type="button"
+                onClick={() => inserirVariavel(v)}
+                className="rounded-[7px] border border-accent/[0.22] bg-accent/[0.09] px-2 py-1 font-mono text-[10px] text-[#8de2fa] transition hover:border-accent/50 hover:bg-accent/[0.16]"
+                title={`Inserir {{${v}}} no cursor`}
+              >{`{{${v}}}`}</button>
             ))}
           </p>
         </div>
@@ -320,11 +392,15 @@ function Linha({
   valor,
   dica,
   aoMudar,
+  aceitaVariavel = false,
+  aoFocar,
 }: {
   rotulo: string
   valor: string
   dica?: string
   aoMudar: (valor: string) => void
+  aceitaVariavel?: boolean
+  aoFocar?: (elemento: HTMLInputElement, aoMudar: (valor: string) => void) => void
 }) {
   return (
     <label className="block">
@@ -332,6 +408,8 @@ function Linha({
       <input
         value={valor}
         onChange={(e) => aoMudar(e.target.value)}
+        onFocus={(e) => aceitaVariavel && aoFocar?.(e.currentTarget, aoMudar)}
+        onSelect={(e) => aceitaVariavel && aoFocar?.(e.currentTarget, aoMudar)}
         className="app-field px-3 py-2.5 text-[13px]"
       />
       {dica && <span className="mt-1 block text-[10.5px] text-dim">{dica}</span>}
@@ -349,11 +427,13 @@ function Area({
   valor,
   limite,
   aoMudar,
+  aoFocar,
 }: {
   rotulo: string
   valor: string
   limite?: number
   aoMudar: (valor: string) => void
+  aoFocar?: (elemento: HTMLTextAreaElement, aoMudar: (valor: string) => void) => void
 }) {
   const estourou = limite !== undefined && valor.length > limite
 
@@ -370,6 +450,8 @@ function Area({
       <textarea
         value={valor}
         onChange={(e) => aoMudar(e.target.value)}
+        onFocus={(e) => aoFocar?.(e.currentTarget, aoMudar)}
+        onSelect={(e) => aoFocar?.(e.currentTarget, aoMudar)}
         rows={4}
         className={`app-field resize-y px-3 py-2.5 text-[13px] leading-5 ${estourou ? 'border-rose-400/40' : ''}`}
       />
@@ -444,9 +526,11 @@ function Opcoes({ opcoes, aoMudar }: { opcoes: Opcao[]; aoMudar: (opcoes: Opcao[
 function Cabecalhos({
   cabecalhos,
   aoMudar,
+  aoFocar,
 }: {
   cabecalhos: Cabecalho[]
   aoMudar: (c: Cabecalho[]) => void
+  aoFocar: (elemento: HTMLInputElement, aoMudar: (valor: string) => void) => void
 }) {
   return (
     <div>
@@ -473,6 +557,16 @@ function Cabecalhos({
                 copia[i] = { ...c, valor: e.target.value }
                 aoMudar(copia)
               }}
+              onFocus={(e) => aoFocar(e.currentTarget, (valor) => {
+                const copia = [...cabecalhos]
+                copia[i] = { ...c, valor }
+                aoMudar(copia)
+              })}
+              onSelect={(e) => aoFocar(e.currentTarget, (valor) => {
+                const copia = [...cabecalhos]
+                copia[i] = { ...c, valor }
+                aoMudar(copia)
+              })}
               className="app-field min-w-0 flex-1 px-3 py-2 text-[12.5px]"
             />
             <button
