@@ -8,6 +8,7 @@ import { acharCliente } from '@/server/repos/clientes'
 import { listarCanais } from '@/server/repos/conversas'
 import { listarFluxos } from '@/server/repos/fluxos'
 import { listarLeads } from '@/server/repos/leads'
+import { medirFunil, type MedidasDoMes } from '@/server/repos/metricas'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,6 +34,10 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           <Atendimento clienteId={cliente.id} />
         </Suspense>
 
+        <Suspense fallback={<div className="app-card mb-[18px] h-[96px] animate-pulse" />}>
+          <Funil clienteId={cliente.id} />
+        </Suspense>
+
         <FichaDoCliente
           cliente={cliente}
           salvarCadastro={acaoSalvarCadastro.bind(null, cliente.id)}
@@ -42,6 +47,43 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
       </main>
     </ClienteShell>
   )
+}
+
+async function Funil({ clienteId }: { clienteId: string }) {
+  const funil = await medirFunil(clienteId)
+  const percentual = funil.atual.conversas
+    ? Math.round((funil.atual.resolvidasPeloBot / funil.atual.conversas) * 100)
+    : 0
+
+  return (
+    <section className="app-card mb-[18px] px-6 py-5" aria-labelledby="titulo-funil">
+      <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
+        <div className="min-w-[130px]">
+          <h2 id="titulo-funil" className="text-[12px] font-bold uppercase tracking-[0.08em] text-dim">
+            Este mês
+          </h2>
+          <p className="mt-1 text-[11.5px] text-dim">Mês passado: {resumoDoMes(funil.anterior)}</p>
+        </div>
+
+        <span aria-hidden className="h-[38px] w-px bg-white/[0.07]" />
+
+        <Medida valor={funil.atual.conversas} rotulo="conversas" />
+        <Medida
+          valor={funil.atual.resolvidasPeloBot}
+          rotulo={`resolvidas pelo bot (${percentual}%)`}
+        />
+        <Medida
+          valor={funil.atual.esperandoPessoa}
+          rotulo="esperando pessoa"
+          alerta={funil.atual.esperandoPessoa > 0}
+        />
+      </div>
+    </section>
+  )
+}
+
+function resumoDoMes(medidas: MedidasDoMes): string {
+  return `${medidas.conversas} conversas · ${medidas.resolvidasPeloBot} pelo bot · ${medidas.esperandoPessoa} para pessoa`
 }
 
 async function Atendimento({ clienteId }: { clienteId: string }) {

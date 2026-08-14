@@ -7,7 +7,7 @@ consegue continuar lendo só isto e o [ARQUITETURA.md](ARQUITETURA.md).
 
 ## Leia isto primeiro
 
-**Estado:** item 1 da expansão concluído na base local. `npm test` dá **250
+**Estado:** itens 1 e 2 da expansão concluídos na base local. `npm test` dá **252
 passando**, `npm run typecheck` e `npm run lint` estão limpos. O último `main`
 publicado continua em https://autofluxos.4yu.com.br.
 
@@ -96,6 +96,12 @@ dívida e a de lá manda na ordem das features.**
   escrita uma vez, então uma conversa futura não troca a aquisição verdadeira.
   Não houve migration: a tela de leads já transforma as chaves do `jsonb` em
   colunas.
+- **Funil e execuções** — o início do cliente mostra conversas do mês,
+  resolvidas pelo bot, esperando pessoa e o mês anterior como referência; a
+  lista de fluxos mostra quantas vezes cada automação rodou. A view
+  `metricas_sessoes` (migration `0011`) agrega no Postgres, por mês de São
+  Paulo, sem puxar todas as sessões para o Next. Sessão encerrada depois de um
+  handoff continua humana — não infla a taxa do bot.
 
 ### Armadilhas que já custaram caro nesta base
 

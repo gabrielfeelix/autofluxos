@@ -348,7 +348,12 @@ autofluxos/
 │   ├── 0003_conversas.sql       channels, contacts, sessions, messages, handoffs
 │   ├── 0004_leads.sql           view `leads` (security_invoker!)
 │   ├── 0005_ia_no_fluxo.sql     flows.ia_habilitada
-│   └── 0006_conexoes.sql        connections + as funções do Vault
+│   ├── 0006_conexoes.sql        connections + as funções do Vault
+│   ├── 0007_travas.sql          fila por contato contra mensagem simultânea
+│   ├── 0008_entrega.sql         confirmação de saída + view leads atualizada
+│   ├── 0009_cadastro_do_cliente.sql
+│   ├── 0010_cnpj_e_logo.sql
+│   └── 0011_metricas.sql        view agregada do funil e execuções
 │
 └── src/
     │
@@ -449,6 +454,9 @@ sessions        id, contact_id, flow_version_id, no_atual,
 messages        id, session_id, direcao, wa_message_id UNIQUE,
                 texto, payload jsonb, ts
 handoffs        id, session_id, motivo, criado_em
+
+metricas_sessoes VIEW: client_id, flow_id, mes, status, total
+                -- agregada no banco; security_invoker, sem acesso público
 ```
 
 Dois detalhes que evitam bug caro:

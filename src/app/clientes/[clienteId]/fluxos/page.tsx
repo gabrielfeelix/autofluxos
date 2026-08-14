@@ -11,6 +11,7 @@ import { acaoApagarFluxo, acaoCriarFluxo } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarCanais } from '@/server/repos/conversas'
 import { listarFluxos } from '@/server/repos/fluxos'
+import { contarExecucoesPorFluxo } from '@/server/repos/metricas'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,9 +24,10 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [fluxos, canais] = await Promise.all([
+  const [fluxos, canais, execucoes] = await Promise.all([
     listarFluxos(cliente.id),
     listarCanais(cliente.id),
+    contarExecucoesPorFluxo(cliente.id),
   ])
   const criarComCliente = acaoCriarFluxo.bind(null, cliente.id)
 
@@ -95,6 +97,7 @@ export default async function Pagina({
                 // Fluxo ligado a um número é o que está atendendo agora. Dizer
                 // isso aqui evita a viagem até a tela do número só para conferir.
                 const emUso = canais.some((canal) => canal.flowId === fluxo.id)
+                const totalDeExecucoes = execucoes.get(fluxo.id) ?? 0
 
                 return (
                   <li
@@ -124,6 +127,10 @@ export default async function Pagina({
                           {validacao.erros.length} impedimento(s)
                         </span>
                       )}
+                      <span className="whitespace-nowrap text-[11px] text-dim">
+                        <strong className="font-semibold text-soft">{totalDeExecucoes}</strong>{' '}
+                        {totalDeExecucoes === 1 ? 'execução' : 'execuções'}
+                      </span>
                       <span
                         className={`rounded-full border px-2.5 py-1 text-[10.5px] font-bold ${fluxo.versaoPublicadaId ? 'border-emerald-400/25 bg-emerald-400/[0.08] text-emerald-300' : 'border-white/10 bg-white/[0.04] text-muted'}`}
                       >

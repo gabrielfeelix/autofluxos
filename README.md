@@ -29,7 +29,7 @@ decisões por trás dele.
 npm install
 cp .env.example .env    # valores em 4yu-apps/.secrets/4yu.env (prefixo AUTOFLUXOS_)
 npm run dev             # http://localhost:3000
-npm test                # 204 testes
+npm test                # 252 testes
 npm run typecheck
 ```
 

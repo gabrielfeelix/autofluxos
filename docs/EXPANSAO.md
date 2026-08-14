@@ -71,7 +71,7 @@ imutável · receber mensagem do WhatsApp e responder · chamar o sistema do cli
 no meio da conversa · guardar credenciais num cofre · o lead cair na tela · e
 responder o lead pelo painel dentro da janela de 24h.
 
-**Base local:** 250 testes passando, `typecheck` e `lint` limpos. O painel
+**Base local:** 252 testes passando, `typecheck` e `lint` limpos. O painel
 publicado está em `autofluxos.4yu.com.br`.
 
 ### 1.2 As telas que existem
@@ -662,25 +662,27 @@ cliente 01 é tráfego pago e essa pergunta não tem resposta hoje.
 
 ---
 
-### 2. Funil e execuções
+### ✅ 2. Funil e execuções
 
-**Hoje:** nenhuma métrica em lugar nenhum.
+**Hoje era:** nenhuma métrica em lugar nenhum.
 
 **Lá:** `Conversas 39 (100%) → Chatbot respondeu 11 (28%)`, execuções por
 palavra-chave, e as colunas `Execuções`/`CTR %` na lista de fluxos (vazias no
 print — o mesmo número existe em três telas e aparece numa).
 
-**Estado esperado:** no início do cliente, uma faixa com "X conversas este mês, Y
-resolvidas pelo bot (Z%), W esperando pessoa". Na lista de fluxos, execuções por
-automação.
+**Estado atual:** no início do cliente, uma faixa mostra conversas deste mês,
+resolvidas pelo bot com percentual, esperando pessoa e os três números do mês
+anterior. Na lista de fluxos, cada automação mostra suas execuções históricas.
 
-**Como fazer:**
-1. Consulta em `sessions` agrupando por `status` e mês — `encerrada` = resolvida
-   pelo bot, `humano` = foi para pessoa
-2. Execuções por fluxo: `count` de `sessions` por `flow_version_id` → `flow_id`
-3. Comparar com o mês anterior — **número sem referência não é informação**, que
-   é o erro do `28%` deles
-4. Repositório novo `repos/metricas.ts`, com teste
+**Como foi feito:**
+1. A view `metricas_sessoes` agrupa no Postgres por cliente, fluxo, mês de São
+   Paulo e desfecho; o índice começa em `flow_version_id`
+2. `repos/metricas.ts` lê a mesma agregação para o funil e para as execuções,
+   sem N+1 e sem trazer cada sessão para o Next
+3. `encerrada` só significa “resolvida pelo bot” quando a sessão nunca teve
+   handoff — “Já atendi” também encerra sessão e não pode virar mérito do bot
+4. O teste cobre mês atual/anterior, virada UTC × São Paulo, duas automações,
+   isolamento entre clientes e atendimento humano já resolvido
 
 **Tamanho:** meia rodada. Já é um `group by` — o dado existe desde a migration
 `0003`.
