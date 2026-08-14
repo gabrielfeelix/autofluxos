@@ -3,6 +3,7 @@ import { executar } from '@/core/engine/executar'
 import type { Acao, Entrada, Resultado, Sessao } from '@/core/engine/types'
 import type { Fluxo } from '@/core/flow/schema'
 import type { Modelo, Turno } from '../ia/types'
+import { alertar } from '../alertar'
 import { chamarHttp } from './http'
 import { lerCredencial } from '../repos/conexoes'
 
@@ -85,8 +86,16 @@ export async function executarComEfeitos(
       if (chamadaHttp.conexaoId && opcoes.clienteId) {
         try {
           credencial = await lerCredencial(chamadaHttp.conexaoId, opcoes.clienteId)
-        } catch {
+        } catch (erro) {
           credencial = null
+          // Cofre recusando é falha de infraestrutura, não erro de desenho: o
+          // fluxo continua certo e todas as conversas que passam por ele caem em
+          // handoff ao mesmo tempo. Quem vê isso pela tela do lead acha que é
+          // problema de um contato só.
+          await alertar('não deu para ler a credencial do cofre', erro, {
+            conexao: chamadaHttp.conexaoId,
+            cliente: opcoes.clienteId,
+          })
         }
       }
 

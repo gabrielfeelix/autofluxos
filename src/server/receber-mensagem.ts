@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { canalCloudApi } from '@/channels/cloud-api'
 import type { Canal } from '@/channels/types'
 import { sessaoNova, type Acao, type Entrada } from '@/core/engine/types'
+import { alertar, type ContextoDoAlerta } from './alertar'
 import { executarComEfeitos, type OpcoesDeEfeitos } from './efeitos/resolver'
 import { escolherModelo } from './ia/modelo'
 import { acharCliente } from './repos/clientes'
@@ -318,7 +319,10 @@ type Entrega = { ok: true } | { ok: false; motivo: string }
  * tivesse falado. Token expirado, janela de 24h fechada e limite de taxa são
  * todos casos rotineiros que caíam exatamente nisso.
  */
-async function entregar(envio: () => Promise<void>): Promise<Entrega> {
+async function entregar(
+  envio: () => Promise<void>,
+  contexto: ContextoDoAlerta = {},
+): Promise<Entrega> {
   try {
     await envio()
     return { ok: true }
@@ -327,6 +331,10 @@ async function entregar(envio: () => Promise<void>): Promise<Entrega> {
     // Fica no log porque o motivo do handoff aparece na tela do painel e o
     // texto da Meta é longo; a versão inteira é o que resolve a investigação.
     console.error('[whatsapp] não deu para entregar a mensagem', detalhe)
+    // O handoff cobre a pessoa, mas token expirado e número bloqueado derrubam
+    // *todas* as conversas do cliente ao mesmo tempo — é o tipo de falha que
+    // precisa chegar em alguém antes de virar um dia inteiro de leads perdidos.
+    await alertar('a Cloud API recusou a entrega', detalhe, contexto)
     return { ok: false, motivo: `não deu para entregar a mensagem — ${detalhe.slice(0, 200)}` }
   }
 }
@@ -340,6 +348,9 @@ async function aplicar(
 ): Promise<void> {
   const campos = { ...contato.campos }
   let mexeuNosCampos = false
+
+  /** O que o alerta de entrega precisa para achar a conversa no painel. */
+  const alvo: ContextoDoAlerta = { contato: contato.id, sessao: sessaoId }
 
   const salvarCampos = async () => {
     if (mexeuNosCampos) await guardarCampo(contato.id, campos)
@@ -369,7 +380,7 @@ async function aplicar(
           sessaoId,
           texto: acao.texto,
         })
-        const entrega = await entregar(() => canal.enviarTexto(contato.waId, acao.texto))
+        const entrega = await entregar(() => canal.enviarTexto(contato.waId, acao.texto), alvo)
         // Parar em vez de seguir: mandar a terceira mensagem depois da segunda
         // ter falhado entrega uma conversa fora de ordem, e uma conversa fora
         // de ordem é pior do que uma pessoa assumindo. A linha fica gravada
@@ -387,8 +398,9 @@ async function aplicar(
           texto: acao.texto,
           payload: { opcoes: acao.opcoes, formato: acao.formato },
         })
-        const entrega = await entregar(() =>
-          canal.enviarOpcoes(contato.waId, acao.texto, acao.opcoes, acao.formato),
+        const entrega = await entregar(
+          () => canal.enviarOpcoes(contato.waId, acao.texto, acao.opcoes, acao.formato),
+          alvo,
         )
         if (!entrega.ok) return pararNoHumano(entrega.motivo)
 
@@ -418,7 +430,7 @@ async function aplicar(
           sessaoId,
           texto: AVISO_DE_HANDOFF,
         })
-        const entrega = await entregar(() => canal.enviarTexto(contato.waId, AVISO_DE_HANDOFF))
+        const entrega = await entregar(() => canal.enviarTexto(contato.waId, AVISO_DE_HANDOFF), alvo)
         if (entrega.ok) await confirmarEntrega(registro)
 
         return pararNoHumano(
@@ -437,7 +449,7 @@ async function aplicar(
           sessaoId,
           texto: AVISO_DE_HANDOFF,
         })
-        const entrega = await entregar(() => canal.enviarTexto(contato.waId, AVISO_DE_HANDOFF))
+        const entrega = await entregar(() => canal.enviarTexto(contato.waId, AVISO_DE_HANDOFF), alvo)
         if (entrega.ok) await confirmarEntrega(registro)
 
         return pararNoHumano(

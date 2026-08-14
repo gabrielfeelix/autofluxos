@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { after } from 'next/server'
+import { alertar } from '@/server/alertar'
 import { receberMensagem } from '@/server/receber-mensagem'
 
 /**
@@ -70,6 +71,10 @@ export async function POST(req: Request) {
       // Já respondemos 200. Deixar estourar aqui só produziria um unhandled
       // rejection sem ninguém para ver.
       console.error('[webhook] falhou ao processar', erro)
+      // Esta é *a* exceção que deixa alguém sem resposta no WhatsApp: a Meta já
+      // recebeu 200 e não reenvia. Sem aviso, ela é invisível até o cliente
+      // ligar reclamando.
+      await alertar('o processamento do webhook falhou', erro)
     }
   })
 
