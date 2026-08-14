@@ -165,6 +165,43 @@ describe('validar', () => {
     expect(codigos(validar(fluxo).erros)).toContain('ROTULO_LONGO')
   })
 
+  it('deixa passar mensagem longa de texto puro, mas barra acima de 4096', () => {
+    const fluxo = fluxoValido()
+    const m = fluxo.nodes.find((n) => n.type === 'mensagem')
+    if (m?.type !== 'mensagem') throw new Error('o fluxo de teste precisa de um nó de mensagem')
+
+    m.data.texto = 'a'.repeat(4096)
+    expect(codigos(validar(fluxo).erros)).not.toContain('TEXTO_LONGO')
+
+    m.data.texto = 'a'.repeat(4097)
+    expect(codigos(validar(fluxo).erros)).toContain('TEXTO_LONGO')
+  })
+
+  it('barra pergunta com opções acima de 1024 — interativa aceita um quarto', () => {
+    const fluxo = fluxoValido()
+    const q = fluxo.nodes.find((n) => n.id === 'q')
+    if (q?.type !== 'pergunta') throw new Error('o fluxo de teste precisa da pergunta "q"')
+    expect(q.data.opcoes.length).toBeGreaterThan(0)
+
+    // Caberia numa mensagem de texto puro, e não cabe numa com botões.
+    q.data.texto = 'a'.repeat(1025)
+    expect(codigos(validar(fluxo).erros)).toContain('TEXTO_LONGO')
+
+    q.data.texto = 'a'.repeat(1024)
+    expect(codigos(validar(fluxo).erros)).not.toContain('TEXTO_LONGO')
+  })
+
+  it('pergunta sem opção é texto puro, então o teto volta a ser 4096', () => {
+    const fluxo = fluxoValido()
+    const q = fluxo.nodes.find((n) => n.id === 'q')
+    if (q?.type !== 'pergunta') throw new Error('o fluxo de teste precisa da pergunta "q"')
+
+    q.data.opcoes = []
+    q.data.texto = 'a'.repeat(2000)
+
+    expect(codigos(validar(fluxo).erros)).not.toContain('TEXTO_LONGO')
+  })
+
   it('reclama de nome de variável com espaço ou acento', () => {
     const fluxo = fluxoValido()
     const q = fluxo.nodes.find((n) => n.id === 'q')

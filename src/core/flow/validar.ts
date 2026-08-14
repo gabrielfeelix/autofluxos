@@ -2,6 +2,8 @@ import {
   FORMATO_VARIAVEL,
   LIMITE_LISTA,
   LIMITE_ROTULO,
+  LIMITE_TEXTO,
+  LIMITE_TEXTO_INTERATIVO,
   SAIDA_ESCOLHEU,
   SAIDA_FALSO,
   SAIDA_VAZIO,
@@ -301,17 +303,39 @@ function conferirConteudo(no: No, erros: Problema[]): void {
     }
   }
 
+  /**
+   * O corpo cabe no que a Meta aceita? Qual limite vale depende de a mensagem
+   * sair como texto puro ou como interativa — a mesma decisão que o
+   * `executar.ts` toma pela quantidade de opções.
+   */
+  const conferirTamanho = (texto: string, interativa: boolean) => {
+    const limite = interativa ? LIMITE_TEXTO_INTERATIVO : LIMITE_TEXTO
+    if (texto.length > limite) {
+      erros.push({
+        codigo: 'TEXTO_LONGO',
+        mensagem: interativa
+          ? `São ${texto.length} caracteres. Mensagem com botões ou lista aceita ${limite} — acima disso o WhatsApp recusa a mensagem inteira, e a pessoa não recebe nada.`
+          : `São ${texto.length} caracteres. O WhatsApp aceita ${limite}.`,
+        noId: no.id,
+      })
+    }
+  }
+
   switch (no.type) {
     case 'mensagem':
       if (vazio(no.data.texto)) {
         erros.push({ codigo: 'TEXTO_VAZIO', mensagem: 'Esta mensagem está sem texto.', noId: no.id })
       }
+      conferirTamanho(no.data.texto, false)
       break
 
     case 'pergunta': {
       if (vazio(no.data.texto)) {
         erros.push({ codigo: 'TEXTO_VAZIO', mensagem: 'Esta pergunta está sem texto.', noId: no.id })
       }
+      // Pergunta dinâmica também vira interativa: as opções chegam na hora, mas
+      // chegam.
+      conferirTamanho(no.data.texto, no.data.opcoes.length > 0 || perguntaEhDinamica(no))
       conferirVariavel(no.data.salvarEm, 'variável')
       conferirVariavel(no.data.opcoesDe, 'variável das opções')
       for (const opcao of no.data.opcoes) {
@@ -357,6 +381,7 @@ function conferirConteudo(no: No, erros: Problema[]): void {
           noId: no.id,
         })
       }
+      conferirTamanho(no.data.mensagem, false)
       break
 
     case 'http': {

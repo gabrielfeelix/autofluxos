@@ -15,6 +15,24 @@ export const LIMITE_LISTA = 10
  *  Usamos 20 para o rótulo funcionar nos dois formatos. */
 export const LIMITE_ROTULO = 20
 
+/**
+ * Tamanho do corpo da mensagem, e são **dois** limites porque a Meta trata as
+ * duas mensagens como coisas diferentes:
+ *
+ * - texto puro (`enviar_texto`) aceita 4096
+ * - mensagem interativa, a que carrega botões ou lista (`enviar_opcoes`),
+ *   aceita **1024** — um quarto disso
+ *
+ * Qual vale depende de ter opção ou não, que é a mesma decisão do
+ * `executar.ts`: pergunta sem opção sai como texto puro.
+ *
+ * Sem isto, dava para escrever 3.000 caracteres numa pergunta com botões,
+ * publicar, e só descobrir com cliente de verdade conversando — a Meta recusa a
+ * mensagem inteira e a pessoa não recebe nada.
+ */
+export const LIMITE_TEXTO = 4096
+export const LIMITE_TEXTO_INTERATIVO = 1024
+
 export const opcaoSchema = z.object({
   id: z.string().min(1),
   rotulo: z.string(),

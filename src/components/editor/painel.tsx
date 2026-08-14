@@ -4,6 +4,8 @@ import {
   LIMITE_BOTOES,
   LIMITE_LISTA,
   LIMITE_ROTULO,
+  LIMITE_TEXTO,
+  LIMITE_TEXTO_INTERATIVO,
   METODOS,
   OPERADORES,
   type Cabecalho,
@@ -75,12 +77,27 @@ export function Painel({
       </div>
 
       {no.type === 'mensagem' && (
-        <Area rotulo="Texto" valor={no.data.texto} aoMudar={(texto) => aoMudarDados({ texto })} />
+        <Area
+          rotulo="Texto"
+          valor={no.data.texto}
+          limite={LIMITE_TEXTO}
+          aoMudar={(texto) => aoMudarDados({ texto })}
+        />
       )}
 
       {no.type === 'pergunta' && (
         <>
-          <Area rotulo="Pergunta" valor={no.data.texto} aoMudar={(texto) => aoMudarDados({ texto })} />
+          <Area
+            rotulo="Pergunta"
+            valor={no.data.texto}
+            // Com opção, a mensagem sai interativa e o teto cai para um quarto.
+            limite={
+              no.data.opcoes.length > 0 || (no.data.opcoesDe ?? '').trim() !== ''
+                ? LIMITE_TEXTO_INTERATIVO
+                : LIMITE_TEXTO
+            }
+            aoMudar={(texto) => aoMudarDados({ texto })}
+          />
           <Linha
             rotulo="Guardar resposta em"
             valor={no.data.salvarEm ?? ''}
@@ -167,6 +184,7 @@ export function Painel({
           <Area
             rotulo="Mensagem antes de passar"
             valor={no.data.mensagem}
+            limite={LIMITE_TEXTO}
             aoMudar={(mensagem) => aoMudarDados({ mensagem })}
           />
           <Linha
@@ -290,25 +308,45 @@ function Linha({
   )
 }
 
+/**
+ * `limite` não corta o que a pessoa digita — mostra. Cortar no meio de uma frase
+ * enquanto alguém escreve é pior do que deixar passar: o validador barra a
+ * publicação, e é lá que a recusa vale.
+ */
 function Area({
   rotulo,
   valor,
+  limite,
   aoMudar,
 }: {
   rotulo: string
   valor: string
+  limite?: number
   aoMudar: (valor: string) => void
 }) {
+  const estourou = limite !== undefined && valor.length > limite
+
   return (
     <label className="block">
-      <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">{rotulo}</span>
+      <span className="mb-1.5 flex items-baseline text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+        {rotulo}
+        {limite !== undefined && (
+          <span className={`ml-auto font-mono text-[10px] normal-case ${estourou ? 'font-bold text-rose-300' : 'text-dim'}`}>
+            {valor.length}/{limite}
+          </span>
+        )}
+      </span>
       <textarea
         value={valor}
         onChange={(e) => aoMudar(e.target.value)}
         rows={4}
-        className="app-field resize-y px-3 py-2.5 text-[13px] leading-5"
+        className={`app-field resize-y px-3 py-2.5 text-[13px] leading-5 ${estourou ? 'border-rose-400/40' : ''}`}
       />
-      <span className="mt-1 block text-[10.5px] text-dim">aceita {'{{variavel}}'}</span>
+      <span className="mt-1 block text-[10.5px] text-dim">
+        {estourou
+          ? `O WhatsApp recusa acima de ${limite} caracteres — publicar fica barrado até encurtar.`
+          : `aceita {{variavel}}`}
+      </span>
     </label>
   )
 }
@@ -426,8 +464,8 @@ function Cabecalhos({
 
       <p className="mt-2 text-[10.5px] leading-4 text-dim">
         Não coloque token aqui: publicar tira uma foto do fluxo que o banco se recusa a alterar, e o
-        valor ficaria guardado nela. O cofre de segredos ainda não existe — enquanto isso, use
-        endereço que já traz a chave (Apps Script, n8n) ou passe por um intermediário.
+        valor ficaria guardado nela. Chave vai no campo <strong className="text-soft">Credencial</strong>,
+        logo abaixo — o valor mora no cofre e o fluxo guarda só a referência.
       </p>
     </div>
   )
