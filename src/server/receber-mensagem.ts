@@ -162,6 +162,12 @@ async function tratarUma(
       : await acharContato(contato.id)
     if (!contatoAtual) return
 
+    // Pausar é uma escolha persistente do contato, não só da sessão atual.
+    // A entrada já ficou no histórico acima; daqui para baixo é que o motor
+    // poderia avançar ou produzir uma saída, e isso fica proibido enquanto a
+    // pessoa responsável não religar a automação no painel.
+    if (!contatoAtual.automacaoAtiva) return
+
     const contatoComOrigem = await atribuirOrigem(contatoAtual, mensagem.referral)
     await avancarConversa(canalSalvo, contatoComOrigem, mensagem, entrada, texto, fabricaDeCanal)
   } finally {

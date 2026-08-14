@@ -16,6 +16,8 @@ export type Contato = {
   waId: string
   nome: string | null
   campos: Record<string, string>
+  /** A pausa é do contato, não de uma sessão: sobrevive à próxima conversa. */
+  automacaoAtiva: boolean
 }
 
 export type SessaoSalva = {
@@ -51,7 +53,7 @@ export async function acharOuCriarContato(
   const { data, error } = await db()
     .from('contacts')
     .upsert({ client_id: clienteId, wa_id: waId, nome }, { onConflict: 'client_id,wa_id' })
-    .select('id, client_id, wa_id, nome, campos')
+    .select('id, client_id, wa_id, nome, campos, automacao_ativa')
     .single()
 
   if (error) throw new Error(`não deu para registrar o contato: ${error.message}`)
@@ -62,13 +64,14 @@ export async function acharOuCriarContato(
     waId: data.wa_id as string,
     nome: data.nome as string | null,
     campos: (data.campos ?? {}) as Record<string, string>,
+    automacaoAtiva: data.automacao_ativa as boolean,
   }
 }
 
 export async function acharContato(contatoId: string): Promise<Contato | null> {
   const { data, error } = await db()
     .from('contacts')
-    .select('id, client_id, wa_id, nome, campos')
+    .select('id, client_id, wa_id, nome, campos, automacao_ativa')
     .eq('id', contatoId)
     .maybeSingle()
 
@@ -81,6 +84,7 @@ export async function acharContato(contatoId: string): Promise<Contato | null> {
     waId: data.wa_id as string,
     nome: data.nome as string | null,
     campos: (data.campos ?? {}) as Record<string, string>,
+    automacaoAtiva: data.automacao_ativa as boolean,
   }
 }
 
@@ -414,6 +418,79 @@ export async function encerrarAtendimento(
     .eq('status', 'humano')
 
   if (erroDaSessao) throw new Error(`não deu para encerrar a sessão: ${erroDaSessao.message}`)
+
+  return { ok: true }
+}
+
+/**
+ * Pausa ou religa a automação de um contato do cliente atual.
+ *
+ * Quem chama segura `travarContato` antes desta função. Isso evita a corrida
+ * em que o webhook lê "ligado" enquanto alguém acabou de clicar em pausar.
+ * Handoff aberto nunca é reativado aqui: uma pessoa que pediu ajuda não pode
+ * voltar ao bot por um clique que parecia inofensivo.
+ */
+export async function alterarAutomacaoDoContato(
+  clienteId: string,
+  contatoId: string,
+  ativa: boolean,
+): Promise<{ ok: true } | { ok: false; motivo: 'nao_encontrado' | 'handoff_aberto' }> {
+  const { data: contato, error: erroDoContato } = await db()
+    .from('contacts')
+    .select('id')
+    .eq('id', contatoId)
+    .eq('client_id', clienteId)
+    .maybeSingle()
+
+  if (ehIdInvalido(erroDoContato)) return { ok: false, motivo: 'nao_encontrado' }
+  if (erroDoContato) throw new Error(`não deu para achar o contato: ${erroDoContato.message}`)
+  if (!contato) return { ok: false, motivo: 'nao_encontrado' }
+
+  if (ativa) {
+    const { data: sessoes, error: erroDasSessoes } = await db()
+      .from('sessions')
+      .select('id')
+      .eq('contact_id', contatoId)
+
+    if (erroDasSessoes) throw new Error(`não deu para achar as sessões: ${erroDasSessoes.message}`)
+
+    const ids = (sessoes as { id: string }[]).map((sessao) => sessao.id)
+    if (ids.length > 0) {
+      const { data: handoff, error: erroDoHandoff } = await db()
+        .from('handoffs')
+        .select('id')
+        .in('session_id', ids)
+        .is('resolvido_em', null)
+        .limit(1)
+        .maybeSingle()
+
+      if (erroDoHandoff) throw new Error(`não deu para conferir o handoff: ${erroDoHandoff.message}`)
+      if (handoff) return { ok: false, motivo: 'handoff_aberto' }
+    }
+  }
+
+  // Responder pelo painel marca a sessão como `humano`, mas não cria handoff.
+  // Depois de religar, deixá-la assim faria o botão parecer funcionar enquanto
+  // o webhook continuaria calado. Sem handoff aberto (checado acima), encerrar
+  // essas sessões faz a próxima mensagem começar um fluxo novo, sem reviver um
+  // estado antigo no meio da conversa.
+  if (ativa) {
+    const { error: erroAoEncerrar } = await db()
+      .from('sessions')
+      .update({ status: 'encerrada' })
+      .eq('contact_id', contatoId)
+      .eq('status', 'humano')
+
+    if (erroAoEncerrar) throw new Error(`não deu para preparar o bot: ${erroAoEncerrar.message}`)
+  }
+
+  const { error: erroDaAutomacao } = await db()
+    .from('contacts')
+    .update({ automacao_ativa: ativa })
+    .eq('id', contatoId)
+    .eq('client_id', clienteId)
+
+  if (erroDaAutomacao) throw new Error(`não deu para mudar a automação: ${erroDaAutomacao.message}`)
 
   return { ok: true }
 }

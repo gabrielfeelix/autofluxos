@@ -22,6 +22,8 @@ export type Lead = {
   ultimoTexto: string | null
   /** `false` quando a última saída não teve confirmação do canal. */
   ultimaEntregue: boolean | null
+  /** Pausa persistente do bot para este contato. */
+  automacaoAtiva: boolean
   /** Handoff sem `resolvido_em`. `null` = ninguém esperando. */
   aguardando: { motivo: string; desde: string } | null
   /** Sinais derivados do histórico; nunca são gravados de volta no contato. */
@@ -69,6 +71,7 @@ type Linha = {
   ultima_direcao: string | null
   ultimo_texto: string | null
   ultima_entregue: boolean | null
+  automacao_ativa: boolean
   handoff_motivo: string | null
   handoff_em: string | null
 }
@@ -77,7 +80,7 @@ type Linha = {
 // tipo para saber o formato do retorno, e concatenação vira `string` genérica —
 // aí o tipo do `data` desanda e o `tsc` acusa.
 const COLUNAS =
-  'contact_id, client_id, wa_id, nome, campos, criado_em, ultima_em, ultima_direcao, ultimo_texto, handoff_motivo, handoff_em, ultima_entregue'
+  'contact_id, client_id, wa_id, nome, campos, criado_em, ultima_em, ultima_direcao, ultimo_texto, handoff_motivo, handoff_em, ultima_entregue, automacao_ativa'
 
 /**
  * `campos` é `jsonb`: o banco aceita qualquer coisa ali. Hoje só o motor
@@ -119,6 +122,7 @@ function paraLead(linha: Linha): Lead {
     ultimaDirecao: direcao.success ? direcao.data : null,
     ultimoTexto: linha.ultimo_texto,
     ultimaEntregue: linha.ultima_entregue,
+    automacaoAtiva: linha.automacao_ativa,
     aguardando:
       linha.handoff_motivo && linha.handoff_em
         ? { motivo: linha.handoff_motivo, desde: linha.handoff_em }

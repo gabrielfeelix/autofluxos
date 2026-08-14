@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { Suspense } from 'react'
 import { comoFalta, restaDaJanela } from '@/channels/janela'
+import { ControleDeAutomacao } from '@/components/lead/controle-automacao'
 import { CaixaDeResposta } from '@/components/lead/responder'
 import { acaoEncerrarAtendimento, acaoResponderLead } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
@@ -60,8 +61,8 @@ export default async function Pagina({
             <p className="mt-0.5 font-mono text-[11px] text-dim">{lead.waId}</p>
           </div>
           <span className="flex-1" />
-          <span className={`rounded-full border px-3 py-1 text-[10.5px] font-bold ${lead.aguardando ? 'border-rose-400/25 bg-rose-400/[0.09] text-rose-300' : 'border-emerald-400/20 bg-emerald-400/[0.07] text-emerald-300'}`}>
-            {lead.aguardando ? 'AGUARDANDO HUMANO' : 'COM O BOT'}
+          <span className={`rounded-full border px-3 py-1 text-[10.5px] font-bold ${lead.aguardando ? 'border-rose-400/25 bg-rose-400/[0.09] text-rose-300' : !lead.automacaoAtiva ? 'border-amber-300/25 bg-amber-300/[0.08] text-amber-200' : 'border-emerald-400/20 bg-emerald-400/[0.07] text-emerald-300'}`}>
+            {lead.aguardando ? 'AGUARDANDO HUMANO' : !lead.automacaoAtiva ? 'BOT EM PAUSA' : 'COM O BOT'}
           </span>
         </header>
 
@@ -88,6 +89,30 @@ export default async function Pagina({
                 Já atendi
               </button>
             </form>
+          </div>
+        )}
+
+        {!lead.aguardando && (
+          <div className={`mb-[18px] flex items-center gap-3 rounded-[13px] border px-[17px] py-[13px] ${lead.automacaoAtiva ? 'border-emerald-400/20 bg-emerald-400/[0.045]' : 'border-amber-300/25 bg-amber-300/[0.06]'}`}>
+            <span className={`size-2 shrink-0 rounded-full ${lead.automacaoAtiva ? 'bg-emerald-400' : 'bg-amber-300'}`} />
+            <div className="min-w-0 flex-1">
+              <strong className={`block text-[13px] ${lead.automacaoAtiva ? 'text-emerald-300' : 'text-amber-200'}`}>
+                {lead.automacaoAtiva ? 'Bot respondendo este contato' : 'Bot pausado para este contato'}
+              </strong>
+              <span className="mt-0.5 block text-[11.5px] text-muted">
+                {lead.automacaoAtiva
+                  ? 'Pause se você vai conduzir a conversa manualmente.'
+                  : 'As mensagens entram no histórico, sem resposta automática.'}
+              </span>
+            </div>
+            <div className="w-[132px] shrink-0">
+              <ControleDeAutomacao
+                clienteId={clienteId}
+                contatoId={contatoId}
+                automacaoAtiva={lead.automacaoAtiva}
+                compacto
+              />
+            </div>
           </div>
         )}
 

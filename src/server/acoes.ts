@@ -18,8 +18,10 @@ import {
   definirStatusDaSessao,
   desconectarNumero,
   encerrarAtendimento,
+  alterarAutomacaoDoContato,
   registrarSaida,
 } from './repos/conversas'
+import { travarContato } from './repos/travas'
 import { apagarFluxo, criarFluxo, definirIa, publicar, salvarRascunho } from './repos/fluxos'
 import { apagarConexao, criarConexao, trocarValor } from './repos/conexoes'
 import { apagarRespostaRapida, criarRespostaRapida } from './repos/respostas-rapidas'
@@ -355,6 +357,41 @@ export async function acaoEncerrarAtendimento(clienteId: string, contatoId: stri
   revalidatePath(`/clientes/${clienteId}/leads`)
   revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
   revalidatePath(`/clientes/${clienteId}/inbox`)
+}
+
+/** Pausa ou religa o motor sem transformar a pausa em um handoff fictício. */
+export async function acaoAlternarAutomacaoDoLead(
+  clienteId: string,
+  contatoId: string,
+  ativa: boolean,
+): Promise<{ ok: boolean; erro?: string }> {
+  if (!z.string().uuid().safeParse(clienteId).success || !z.string().uuid().safeParse(contatoId).success) {
+    return { ok: false, erro: 'contato inválido' }
+  }
+  if (typeof ativa !== 'boolean') return { ok: false, erro: 'estado da automação inválido' }
+
+  const destravar = await travarContato(contatoId)
+  if (!destravar) return { ok: false, erro: 'a conversa está ocupada; tente novamente em instantes' }
+
+  try {
+    const resultado = await alterarAutomacaoDoContato(clienteId, contatoId, ativa)
+    if (!resultado.ok) {
+      return {
+        ok: false,
+        erro:
+          resultado.motivo === 'handoff_aberto'
+            ? 'esta conversa ainda aguarda uma pessoa; conclua o atendimento antes de religar o bot'
+            : 'este contato não existe neste cliente',
+      }
+    }
+  } finally {
+    await destravar()
+  }
+
+  revalidatePath(`/clientes/${clienteId}/leads`)
+  revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
+  revalidatePath(`/clientes/${clienteId}/inbox`)
+  return { ok: true }
 }
 
 /**

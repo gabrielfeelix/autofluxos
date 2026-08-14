@@ -578,6 +578,7 @@ export function Editor({
               )}
 
               <Painel
+                key={noSelecionado?.id ?? 'sem-selecao'}
                 no={noSelecionado}
                 ehInicio={selecionado === inicio}
                 variaveis={variaveis}

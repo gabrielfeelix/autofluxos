@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { comoFalta, restaDaJanela } from '@/channels/janela'
 import { ClienteShell } from '@/components/design/cliente-shell'
+import { ControleDeAutomacao } from '@/components/lead/controle-automacao'
 import { CaixaDeResposta } from '@/components/lead/responder'
 import { acaoEncerrarAtendimento, acaoResponderLead } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
@@ -254,6 +255,8 @@ function Historico({
 
 function DadosDoLead({ clienteId, lead }: { clienteId: string; lead: Lead }) {
   const campos = Object.entries(lead.campos)
+  const aguardandoPessoa = lead.aguardando !== null
+  const botPausado = !lead.automacaoAtiva
   return (
     <aside className="min-w-0 bg-white/[0.012]">
       <header className="border-b border-white/[0.06] px-4 py-[17px]">
@@ -262,13 +265,13 @@ function DadosDoLead({ clienteId, lead }: { clienteId: string; lead: Lead }) {
       </header>
 
       <div className="p-4">
-        <div className={`rounded-[11px] border px-3 py-2.5 ${lead.aguardando ? 'border-rose-400/25 bg-rose-400/[0.07]' : 'border-emerald-400/20 bg-emerald-400/[0.055]'}`}>
-          <p className={`text-[10px] font-bold tracking-[0.04em] ${lead.aguardando ? 'text-rose-300' : 'text-emerald-300'}`}>
-            {lead.aguardando ? 'AGUARDANDO PESSOA' : 'BOT RESPONDENDO'}
+        <div className={`rounded-[11px] border px-3 py-2.5 ${aguardandoPessoa ? 'border-rose-400/25 bg-rose-400/[0.07]' : botPausado ? 'border-amber-300/25 bg-amber-300/[0.065]' : 'border-emerald-400/20 bg-emerald-400/[0.055]'}`}>
+          <p className={`text-[10px] font-bold tracking-[0.04em] ${aguardandoPessoa ? 'text-rose-300' : botPausado ? 'text-amber-200' : 'text-emerald-300'}`}>
+            {aguardandoPessoa ? 'AGUARDANDO PESSOA' : botPausado ? 'BOT EM PAUSA' : 'BOT RESPONDENDO'}
           </p>
-          {lead.aguardando ? (
+          {aguardandoPessoa ? (
             <>
-              <p className="mt-1 text-[11px] leading-4 text-muted">{lead.aguardando.motivo}</p>
+              <p className="mt-1 text-[11px] leading-4 text-muted">{lead.aguardando?.motivo}</p>
               <form action={acaoEncerrarAtendimento.bind(null, clienteId, lead.contatoId)}>
                 <button
                   type="submit"
@@ -279,7 +282,11 @@ function DadosDoLead({ clienteId, lead }: { clienteId: string; lead: Lead }) {
               </form>
             </>
           ) : (
-            <p className="mt-1 text-[11px] leading-4 text-muted">O bot responde enquanto a conversa estiver ativa.</p>
+            <ControleDeAutomacao
+              clienteId={clienteId}
+              contatoId={lead.contatoId}
+              automacaoAtiva={lead.automacaoAtiva}
+            />
           )}
         </div>
 

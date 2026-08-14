@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   LIMITE_BOTOES,
   LIMITE_ATRASO_SEGUNDOS,
@@ -50,11 +50,6 @@ export function Painel({
 }) {
   const campoAtivo = useRef<CampoDeTexto | null>(null)
   const [foco, setFoco] = useState(false)
-
-  useEffect(() => {
-    campoAtivo.current = null
-    setFoco(false)
-  }, [no?.id])
 
   function registrarCampo(elemento: HTMLInputElement | HTMLTextAreaElement, aoMudar: (valor: string) => void) {
     campoAtivo.current = { elemento, aoMudar }
