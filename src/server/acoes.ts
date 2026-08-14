@@ -54,13 +54,13 @@ export async function acaoCriarExemplo() {
  * editor perderia trabalho toda vez que alguém parasse no meio de uma frase.
  * O `fluxoSchema.parse` aqui é a garantia de que a *estrutura* está sã.
  */
-export async function acaoSalvarRascunho(fluxoId: string, grafo: unknown) {
+export async function acaoSalvarRascunho(fluxoId: string, clienteId: string, grafo: unknown) {
   const analise = fluxoSchema.safeParse(grafo)
   if (!analise.success) {
     return { ok: false as const, erro: 'o desenho chegou com formato inválido' }
   }
 
-  await salvarRascunho(fluxoId, analise.data)
+  await salvarRascunho(fluxoId, clienteId, analise.data)
   return { ok: true as const }
 }
 
@@ -88,7 +88,7 @@ export async function acaoCriarFluxo(clienteId: string, formData: FormData) {
  * mesmo que a chamada venha de outro lugar.
  */
 export async function acaoPublicar(fluxoId: string, clienteId: string, grafo: unknown) {
-  const resultado = await publicar(fluxoId, grafo)
+  const resultado = await publicar(fluxoId, clienteId, grafo)
 
   if (resultado.ok) {
     revalidatePath(`/clientes/${clienteId}`)
@@ -156,7 +156,7 @@ export async function acaoApagarFluxo(
  * — mexer no que já roda no WhatsApp de alguém tem que ser um ato deliberado.
  */
 export async function acaoAlternarIa(fluxoId: string, clienteId: string, habilitada: boolean) {
-  await definirIa(fluxoId, habilitada)
+  await definirIa(fluxoId, clienteId, habilitada)
   revalidatePath(`/clientes/${clienteId}`)
   return { ok: true as const, iaHabilitada: habilitada }
 }

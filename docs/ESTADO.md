@@ -62,6 +62,18 @@ O índice executável das duas filas, com dependências, gatilhos e critérios d
 aceite, é [PLANO-MESTRE.md](PLANO-MESTRE.md). Use-o para escolher a próxima
 fase; mantenha este arquivo como retrato operacional e evidência das decisões.
 
+### Atualização de 14/ago/2026 — Fase 1 do plano mestre
+
+- Limite de cinco tentativas por IP em cinco minutos para login e simulador;
+  indisponibilidade da conferência fecha a porta.
+- Simulador recusa corpo maior que 256 KB e fluxo com mais de 200 nós antes de
+  executar efeitos; `robots.txt` e metadado bloqueiam indexação do painel.
+- Salvar rascunho, alternar IA e publicar agora exigem que o fluxo pertença ao
+  cliente informado. O teste cobre as três tentativas de escrita cruzada.
+- A migration `0014_limites.sql` está versionada, mas não foi aplicada em
+  produção: o ambiente de trabalho não tem Supabase CLI/Docker local e banco
+  compartilhado só aceita aplicação autorizada pelo aplicador do AutoFluxos.
+
 ### Por onde continuar, em ordem
 
 | # | O quê | Por que agora |

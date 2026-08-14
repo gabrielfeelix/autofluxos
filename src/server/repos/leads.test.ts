@@ -44,7 +44,7 @@ async function montarCliente(nome: string) {
   criados.push(cliente.id)
 
   const fluxo = await criarFluxo(cliente.id, `${marca} f`, fluxoNovo())
-  const publicado = await publicar(fluxo.id, fluxo.rascunho)
+  const publicado = await publicar(fluxo.id, cliente.id, fluxo.rascunho)
   if (!publicado.ok) throw new Error('o fluxo de teste deveria ter publicado')
 
   const canal = await criarCanal({

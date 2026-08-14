@@ -28,9 +28,9 @@ beforeAll(async () => {
   primeiroFluxoId = primeiro.id
   segundoFluxoId = segundo.id
 
-  const primeiraVersao = await publicar(primeiro.id, primeiro.rascunho)
-  const segundaVersao = await publicar(segundo.id, segundo.rascunho)
-  const versaoAlheia = await publicar(alheio.id, alheio.rascunho)
+  const primeiraVersao = await publicar(primeiro.id, cliente.id, primeiro.rascunho)
+  const segundaVersao = await publicar(segundo.id, cliente.id, segundo.rascunho)
+  const versaoAlheia = await publicar(alheio.id, outroCliente.id, alheio.rascunho)
   if (!primeiraVersao.ok || !segundaVersao.ok || !versaoAlheia.ok) {
     throw new Error('os fluxos das métricas deveriam publicar')
   }

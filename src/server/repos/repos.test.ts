@@ -81,7 +81,7 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
     const abertura = mexido.nodes.find((n) => n.id === 'abertura')
     if (abertura?.type === 'mensagem') abertura.data.texto = 'texto trocado'
 
-    await salvarRascunho(fluxo.id, mexido)
+    await salvarRascunho(fluxo.id, cliente.id, mexido)
 
     const relido = await acharFluxo(fluxo.id)
     const aberturaRelida = relido?.rascunho.nodes.find((n) => n.id === 'abertura')
@@ -95,7 +95,7 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
     const fluxo = await criarFluxo(cliente.id, `${marca} f`, fluxoNovo())
     const torto = { inicio: 'abertura', nodes: [], edges: [] }
 
-    await expect(salvarRascunho(fluxo.id, torto as never)).rejects.toThrow()
+    await expect(salvarRascunho(fluxo.id, cliente.id, torto as never)).rejects.toThrow()
   })
 
   it('publica, numera a versão e aponta o fluxo para ela', async () => {
@@ -103,10 +103,10 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
     criados.push(cliente.id)
     const fluxo = await criarFluxo(cliente.id, `${marca} f`, fluxoNovo())
 
-    const primeira = await publicar(fluxo.id, fluxo.rascunho)
+    const primeira = await publicar(fluxo.id, cliente.id, fluxo.rascunho)
     expect(primeira.ok && primeira.versao.versao).toBe(1)
 
-    const segunda = await publicar(fluxo.id, fluxo.rascunho)
+    const segunda = await publicar(fluxo.id, cliente.id, fluxo.rascunho)
     expect(segunda.ok && segunda.versao.versao).toBe(2)
 
     const relido = await acharFluxo(fluxo.id)
@@ -129,7 +129,7 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
     semSaida.edges = semSaida.edges.filter((a) => a.target !== 'humano')
 
     const fluxo = await criarFluxo(cliente.id, `${marca} f`, semSaida)
-    const r = await publicar(fluxo.id, fluxo.rascunho)
+    const r = await publicar(fluxo.id, cliente.id, fluxo.rascunho)
 
     expect(r.ok).toBe(false)
     expect(!r.ok && r.erros.map((e) => e.codigo)).toContain('SEM_SAIDA_HUMANA')
@@ -144,13 +144,13 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
     criados.push(cliente.id)
     const fluxo = await criarFluxo(cliente.id, `${marca} f`, fluxoNovo())
 
-    const pub = await publicar(fluxo.id, fluxo.rascunho)
+    const pub = await publicar(fluxo.id, cliente.id, fluxo.rascunho)
     if (!pub.ok) throw new Error('deveria ter publicado')
 
     const mexido = structuredClone(fluxo.rascunho)
     const abertura = mexido.nodes.find((n) => n.id === 'abertura')
     if (abertura?.type === 'mensagem') abertura.data.texto = 'texto novo do rascunho'
-    await salvarRascunho(fluxo.id, mexido)
+    await salvarRascunho(fluxo.id, cliente.id, mexido)
 
     const congelada = await acharVersao(pub.versao.id)
     const aberturaCongelada = congelada?.grafo.nodes.find((n) => n.id === 'abertura')
@@ -171,7 +171,7 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
     criados.push(cliente.id)
     const fluxo = await criarFluxo(cliente.id, `${marca} f`, fluxoNovo())
 
-    const pub = await publicar(fluxo.id, fluxo.rascunho)
+    const pub = await publicar(fluxo.id, cliente.id, fluxo.rascunho)
     if (!pub.ok) throw new Error('deveria ter publicado')
 
     const { error } = await db()
@@ -203,7 +203,7 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
     const fluxo = await criarFluxo(cliente.id, `${marca} f`, comIa)
     expect(fluxo.iaHabilitada).toBe(false)
 
-    const recusado = await publicar(fluxo.id, fluxo.rascunho)
+    const recusado = await publicar(fluxo.id, cliente.id, fluxo.rascunho)
     expect(recusado.ok).toBe(false)
     expect(!recusado.ok && recusado.erros.map((e) => e.codigo)).toContain('IA_NAO_CONTRATADA')
     expect(await listarVersoes(fluxo.id)).toEqual([])
@@ -211,8 +211,8 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
     // Contratou o plano, mas o contexto do negócio continua vazio: ainda não
     // publica. Com o contexto vazio a IA responde "não sei" a tudo, e o bot
     // pareceria pronto sem nunca responder.
-    await definirIa(fluxo.id, true)
-    const semContexto = await publicar(fluxo.id, fluxo.rascunho)
+    await definirIa(fluxo.id, cliente.id, true)
+    const semContexto = await publicar(fluxo.id, cliente.id, fluxo.rascunho)
     expect(semContexto.ok).toBe(false)
     expect(!semContexto.ok && semContexto.erros.map((e) => e.codigo)).toContain(
       'SEM_CONTEXTO_DE_NEGOCIO',
@@ -220,7 +220,7 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
 
     // Com as duas coisas, a mesma publicação passa, sem redesenhar nada.
     await atualizarContexto(cliente.id, 'Pintura residencial em Maringá. Orçamento gratuito.')
-    const aceito = await publicar(fluxo.id, fluxo.rascunho)
+    const aceito = await publicar(fluxo.id, cliente.id, fluxo.rascunho)
     expect(aceito.ok).toBe(true)
   })
 
@@ -288,5 +288,27 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
     // O `delete` filtra por cliente, então "ok" não significa que apagou algo
     // de outro dono — o fluxo continua lá.
     expect(await acharFluxo(fluxo.id)).not.toBeNull()
+  })
+
+  it('não altera nem publica a automação de um cliente pelo id de outro', async () => {
+    const dono = await criarCliente(`${marca} dono de escrita`)
+    const intruso = await criarCliente(`${marca} intruso de escrita`)
+    criados.push(dono.id, intruso.id)
+    const fluxo = await criarFluxo(dono.id, `${marca} protegido`, fluxoNovo())
+    const alterado = structuredClone(fluxo.rascunho)
+    const abertura = alterado.nodes.find((no) => no.id === 'abertura')
+    if (abertura?.type === 'mensagem') abertura.data.texto = 'não pode gravar'
+
+    await expect(salvarRascunho(fluxo.id, intruso.id, alterado)).rejects.toThrow(
+      'esta automação não existe mais',
+    )
+    await expect(definirIa(fluxo.id, intruso.id, true)).rejects.toThrow('esta automação não existe mais')
+    const publicacao = await publicar(fluxo.id, intruso.id, alterado)
+
+    expect(publicacao.ok).toBe(false)
+    expect(!publicacao.ok && publicacao.erros.map((erro) => erro.codigo)).toContain('FLUXO_SUMIU')
+    expect((await acharFluxo(fluxo.id))?.rascunho).toEqual(fluxo.rascunho)
+    expect((await acharFluxo(fluxo.id))?.iaHabilitada).toBe(false)
+    expect(await listarVersoes(fluxo.id)).toEqual([])
   })
 })

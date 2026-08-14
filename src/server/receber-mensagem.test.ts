@@ -118,7 +118,7 @@ beforeAll(async () => {
 
   const fluxo = await criarFluxo(cliente.id, `${marca} triagem`, fluxoComAtraso)
   fluxoId = fluxo.id
-  const pub = await publicar(fluxo.id, fluxoComAtraso)
+  const pub = await publicar(fluxo.id, cliente.id, fluxoComAtraso)
   if (!pub.ok) throw new Error('o fluxo de exemplo deveria publicar')
 
   const canal = await criarCanal({ clienteId, phoneNumberId: numeroDoBot, flowId: fluxo.id })
@@ -252,8 +252,8 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
     const outro = structuredClone(triagem)
     const abertura = outro.nodes.find((n) => n.id === 'abertura')
     if (abertura?.type === 'mensagem') abertura.data.texto = 'FLUXO NOVO'
-    await salvarRascunho(fluxoId, outro)
-    const pub = await publicar(fluxoId, outro)
+    await salvarRascunho(fluxoId, clienteId, outro)
+    const pub = await publicar(fluxoId, clienteId, outro)
     expect(pub.ok).toBe(true)
 
     mock.enviadas.length = 0

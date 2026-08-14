@@ -53,8 +53,8 @@ de papéis; LGPD, paginação e acessibilidade quando Leads/Inbox forem para uso
 mais amplo. Elas não deixam de existir, apenas não substituem uma entrega de
 produto por si só.
 
-> **Em andamento:** a primeira fatia desta ordem é o Inbox, aproveitando a
-> resposta e o handoff já existentes em Leads.
+> **Concluída em 14/ago/2026:** a Fase 1 fechou limites de entrada, teto do
+> simulador, indexação e escrita cruzada de fluxos. A próxima fase é a 2.
 
 ## Mapa completo de dependências
 
@@ -80,6 +80,12 @@ cliente for receber login ainda, as fases 5–7 podem avançar depois da fundaç
 O que não pode acontecer é liberar login de cliente antes de concluir a fase 4.
 
 ## Fase 1 — Fechar portas e isolamento de escrita
+
+**Estado: concluída em 14/ago/2026.** Migration `0014_limites.sql` versiona o
+> contador atômico para aplicar pelo procedimento próprio do AutoFluxos; não foi
+> aplicada em produção durante esta implementação. Login e simulador recusam a
+> sexta tentativa por IP em cinco minutos, o simulador limita corpo e nós, o
+> painel não é indexável e salvar/alternar IA/publicar exigem o par fluxo–cliente.
 
 Fonte: blocos 3 e 4 de [PLANO-ENDURECIMENTO.md](PLANO-ENDURECIMENTO.md).
 

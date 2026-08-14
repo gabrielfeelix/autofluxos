@@ -115,13 +115,21 @@ export async function criarFluxo(
 }
 
 /** Salva o desenho. Valida antes de gravar — o banco nunca recebe grafo torto. */
-export async function salvarRascunho(id: string, rascunho: Fluxo): Promise<void> {
-  const { error } = await db()
+export async function salvarRascunho(
+  fluxoId: string,
+  clienteId: string,
+  rascunho: Fluxo,
+): Promise<void> {
+  const { data, error } = await db()
     .from('flows')
     .update({ rascunho: fluxoSchema.parse(rascunho) })
-    .eq('id', id)
+    .eq('id', fluxoId)
+    .eq('client_id', clienteId)
+    .select('id')
+    .maybeSingle()
 
   if (error) throw new Error(`não deu para salvar o rascunho: ${error.message}`)
+  if (!data) throw new Error('esta automação não existe mais')
 }
 
 export async function acharVersao(id: string): Promise<VersaoPublicada | null> {
@@ -177,6 +185,7 @@ export async function listarVersoes(fluxoId: string): Promise<Omit<VersaoPublica
  */
 export async function publicar(
   fluxoId: string,
+  clienteId: string,
   grafo: unknown,
 ): Promise<{ ok: true; versao: VersaoPublicada } | { ok: false; erros: Problema[] }> {
   const analise = fluxoSchema.safeParse(grafo)
@@ -188,7 +197,7 @@ export async function publicar(
   }
 
   const fluxo = await acharFluxo(fluxoId)
-  if (!fluxo) {
+  if (!fluxo || fluxo.clienteId !== clienteId) {
     return {
       ok: false,
       erros: [{ codigo: 'FLUXO_SUMIU', mensagem: 'Este fluxo não existe mais.' }],
@@ -207,7 +216,7 @@ export async function publicar(
   })
   if (!conferido.ok) return { ok: false, erros: conferido.erros }
 
-  await salvarRascunho(fluxoId, analise.data)
+  await salvarRascunho(fluxoId, clienteId, analise.data)
 
   const { data, error } = await db().rpc('publicar_fluxo', {
     p_flow_id: fluxoId,
@@ -265,13 +274,21 @@ export async function apagarFluxo(
 }
 
 /** Liga ou desliga a IA desta automação. É o que se vende, então é explícito. */
-export async function definirIa(fluxoId: string, habilitada: boolean): Promise<void> {
-  const { error } = await db()
+export async function definirIa(
+  fluxoId: string,
+  clienteId: string,
+  habilitada: boolean,
+): Promise<void> {
+  const { data, error } = await db()
     .from('flows')
     .update({ ia_habilitada: habilitada })
     .eq('id', fluxoId)
+    .eq('client_id', clienteId)
+    .select('id')
+    .maybeSingle()
 
   if (error) throw new Error(`não deu para mudar a IA do fluxo: ${error.message}`)
+  if (!data) throw new Error('esta automação não existe mais')
 }
 
 export type ResumoDeAutomacoes = { total: number; comIa: number }

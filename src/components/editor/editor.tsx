@@ -179,7 +179,7 @@ export function Editor({
       setSalvamento('salvando')
       const congelado = assinatura
       try {
-        const r = await acaoSalvarRascunho(fluxoId, JSON.parse(congelado))
+        const r = await acaoSalvarRascunho(fluxoId, clienteId, JSON.parse(congelado))
         if (r.ok) {
           assinaturaSalva.current = congelado
           setSalvamento(congelado === assinatura ? 'salvo' : 'pendente')
@@ -192,7 +192,7 @@ export function Editor({
     }, PAUSA_ANTES_DE_SALVAR)
 
     return () => clearTimeout(relogio)
-  }, [assinatura, fluxoId])
+  }, [assinatura, clienteId, fluxoId])
 
   // Avisa antes de fechar a aba com coisa por salvar.
   useEffect(() => {
