@@ -53,16 +53,18 @@ de papéis; LGPD, paginação e acessibilidade quando Leads/Inbox forem para uso
 mais amplo. Elas não deixam de existir, apenas não substituem uma entrega de
 produto por si só.
 
-> **Concluída em 14/ago/2026:** a Fase 1 fechou limites de entrada, teto do
-> simulador, indexação e escrita cruzada de fluxos. A próxima fase é a 2.
+> **Concluídas em 14/ago/2026:** a Fase 1 fechou limites de entrada, teto do
+> simulador, indexação e escrita cruzada de fluxos. A Fase 2 fechou histórico e
+> rollback de versão, alertas por webhook e sessão de painel com prazo. A
+> próxima fase é a 3.
 
 ## Mapa completo de dependências
 
 | Fase | Trabalho | Estado para começar |
 |---|---|---|
-| 1 | Fechar portas e isolamento de escrita | Agora |
-| 2 | Publicação segura, alertas e sessão real | Depois da fase 1 |
-| 3 | Leads em escala, LGPD e telas de leitura | Depois da fase 2 |
+| 1 | Fechar portas e isolamento de escrita | Concluída |
+| 2 | Publicação segura, alertas e sessão real | Concluída |
+| 3 | Leads em escala, LGPD e telas de leitura | Agora |
 | 4 | Login por usuário, papéis e auditoria | Fases 1 e 2 concluídas; obrigatório antes do primeiro cliente logar |
 | 5 | Produtividade do operador | Pode seguir após a fundação; sem dependência externa |
 | 6 | Inbox | Depois da produtividade básica |
@@ -113,6 +115,14 @@ mínimas e não ficar executável por `public`, `anon` ou `authenticated`.
 - O painel não é indexável.
 
 ## Fase 2 — Publicação segura, observabilidade e sessão real
+
+**Estado: concluída em 14/ago/2026.** Sem migration: as três entregas são
+código. O editor lista o histórico e volta para uma versão publicando-a de novo;
+`alertar()` avisa nos três pontos de falha e vira no-op sem `ALERTA_WEBHOOK_URL`;
+a sessão do painel virou cookie assinado com id por login e prazo conferido no
+servidor. `PAINEL_SEGREDO` e `ALERTA_WEBHOOK_URL` entraram no `.env.example` e
+**ainda não foram preenchidas em produção** — sem elas o comportamento é o
+documentado (segredo derivado da senha, alerta desligado), não uma falha.
 
 Fonte: blocos 5, 6 e 7 de [PLANO-ENDURECIMENTO.md](PLANO-ENDURECIMENTO.md).
 

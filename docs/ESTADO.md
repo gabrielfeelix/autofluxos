@@ -74,17 +74,40 @@ fase; mantenha este arquivo como retrato operacional e evidência das decisões.
   produção: o ambiente de trabalho não tem Supabase CLI/Docker local e banco
   compartilhado só aceita aplicação autorizada pelo aplicador do AutoFluxos.
 
+### Atualização de 14/ago/2026 — Fase 2 do plano mestre
+
+Sem migration: as três entregas são código.
+
+- **Histórico e rollback.** O editor lista as versões publicadas e "voltar para
+  esta" publica o desenho antigo como versão nova, passando pelo mesmo
+  `publicar()` — com validação, porque uma versão antiga pode ter ficado
+  inválida depois de publicada (conexão apagada, IA descontratada, contexto
+  removido). A versão é buscada pelo par `(versão, fluxo)`.
+- **Alertas.** `server/alertar.ts` avisa por webhook em três lugares e só três:
+  falha no `after()` do webhook, recusa da Cloud API e cofre que não devolve
+  credencial. Sem `ALERTA_WEBHOOK_URL` é no-op, e ela nunca estoura nem segura a
+  conversa — os três chamadores já estão num caminho de falha.
+- **Sessão do painel.** O cookie deixou de ser `SHA-256(senha)` e virou
+  `id.expira.HMAC(segredo, id.expira)`: id aleatório por login, prazo conferido
+  no servidor (não no navegador), e trocar `PAINEL_SEGREDO` encerra todas as
+  sessões. Revogar **uma** sessão continua exigindo banco e segue com papéis de
+  usuário.
+- **Duas variáveis novas no `.env.example` ainda não preenchidas em produção:**
+  `PAINEL_SEGREDO` (sem ela, a assinatura é derivada de `PAINEL_SENHA`) e
+  `ALERTA_WEBHOOK_URL` (sem ela, nenhum alerta sai). Os dois padrões são
+  documentados, não falhas — mas o alerta só começa a servir depois de
+  preenchida.
+
 ### Por onde continuar, em ordem
 
 | # | O quê | Por que agora |
 |---|---|---|
-| 1 | **Papéis de usuário** (BRIEF-UI §6) | É a maior, e destrava as outras. Hoje é uma senha só. Há comentário em quatro pontos do código dizendo "isto muda quando o cliente ganhar acesso" — recusa de endereço interno, isolamento entre clientes, a tela de "não encontrado" que vira "não é seu". Este é o dia. **Duas coisas entram junto, e não depois:** (a) `/api/simular` aceita um fluxo inventado + `fluxoId` de qualquer cliente e manda a credencial dele para a URL do corpo — hoje inofensivo porque a senha já dá acesso a tudo, escalada de privilégio no minuto em que o cliente tiver login; (b) a sessão do painel é `SHA-256(senha)` pura, sem nonce e sem carimbo, então cookie copiado vale para sempre e não há como revogar um acesso só. |
+| 1 | **Papéis de usuário** (BRIEF-UI §6) | É a maior, e destrava as outras. Hoje é uma senha só. Há comentário em quatro pontos do código dizendo "isto muda quando o cliente ganhar acesso" — recusa de endereço interno, isolamento entre clientes, a tela de "não encontrado" que vira "não é seu". Este é o dia. **Uma coisa entra junto, e não depois:** `/api/simular` aceita um fluxo inventado + `fluxoId` de qualquer cliente e manda a credencial dele para a URL do corpo — hoje inofensivo porque a senha já dá acesso a tudo, escalada de privilégio no minuto em que o cliente tiver login. A sessão do painel deixou de ser problema em 14/ago (cookie assinado, id por login, prazo no servidor); o que ainda falta dela é **revogar uma sessão só**, e isso é banco, então é aqui. |
 | 2 | **Modelos (templates) da Meta** | A caixa de resposta do painel só funciona dentro da janela de 24h — é a regra da Meta, e fora dela o único jeito de retomar é um modelo aprovado, que este produto não manda. A tela avisa antes de alguém digitar. Gatilho para construir: o primeiro lead que esfriar e precisar de retomada. |
-| 3 | **Histórico de versões, e voltar para uma** | `listarVersoes` existe no repo e **nenhuma tela usa**. Publicou errado, hoje o único caminho é redesenhar e publicar de novo — com o desenho ruim atendendo gente no WhatsApp enquanto isso. O caminho é curto: as versões são imutáveis e `publicar()` já aceita um grafo qualquer, então voltar é publicar o grafo de uma versão antiga. |
-| 4 | **Apagar cliente** | Dá para apagar automação e desconectar número; cliente não. Ficou de fora de propósito: `on delete cascade` leva leads, conversas e credenciais junto, e isso merece uma confirmação melhor do que um `confirm()` — provavelmente digitar o nome. |
-| 5 | **Credencial de sandbox por conexão** | A aba Testar usa a credencial real: testar um fluxo de CRM grava no CRM de verdade. Hoje há aviso na tela e o cabeçalho `X-AutoFluxos-Teste: 1`. Gatilho para construir: o primeiro cliente com CRM em produção. |
-| 6 | **`drop` de `clients.ia_habilitada`** | O código já parou de ler (migration 0005 pedia essa confirmação). Falta a migration que apaga. |
-| 7 | **Teste de banco intermitente** | `repos.test.ts` falha de vez em quando com `JWT issued at future` — o relógio do WSL2 desanda quando a máquina suspende e o Supabase recusa o token. É ambiente, não código: rodar de novo passa. Se incomodar, `sudo hwclock -s` acerta na hora. |
+| 3 | **Apagar cliente** | Dá para apagar automação e desconectar número; cliente não. Ficou de fora de propósito: `on delete cascade` leva leads, conversas e credenciais junto, e isso merece uma confirmação melhor do que um `confirm()` — provavelmente digitar o nome. |
+| 4 | **Credencial de sandbox por conexão** | A aba Testar usa a credencial real: testar um fluxo de CRM grava no CRM de verdade. Hoje há aviso na tela e o cabeçalho `X-AutoFluxos-Teste: 1`. Gatilho para construir: o primeiro cliente com CRM em produção. |
+| 5 | **`drop` de `clients.ia_habilitada`** | O código já parou de ler (migration 0005 pedia essa confirmação). Falta a migration que apaga. |
+| 6 | **Teste de banco intermitente** | `repos.test.ts` falha de vez em quando com `JWT issued at future` — o relógio do WSL2 desanda quando a máquina suspende e o Supabase recusa o token. É ambiente, não código: rodar de novo passa. Se incomodar, `sudo hwclock -s` acerta na hora. |
 
 ### O que foi construído em 12/ago, e onde está escrito
 

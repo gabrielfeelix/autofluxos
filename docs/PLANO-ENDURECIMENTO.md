@@ -43,11 +43,11 @@ esbarra em pelo menos uma:
 ```
 1. CI  ✅              protege todos os outros
 2. Corrida de sessão  ✅  bug real corrigido
-3. Portas abertas         limite, teto de corpo, noindex
-4. Escrita cruzada        barato, e é pré-requisito de papéis
-5. Rollback de versão     rede de segurança pra publicar sem medo
-6. Observabilidade        pra saber que algo quebrou antes do cliente ligar
-7. Sessão do painel       expira, revoga, e é única
+3. Portas abertas  ✅      limite, teto de corpo, noindex
+4. Escrita cruzada  ✅     barato, e é pré-requisito de papéis
+5. Rollback de versão  ✅  rede de segurança pra publicar sem medo
+6. Observabilidade  ✅     pra saber que algo quebrou antes do cliente ligar
+7. Sessão do painel  ✅    expira, revoga, e é única
 8. Leads que aguentam     paginação, busca, CSV, apagar (LGPD)
 9. Mobile e acessibilidade
 ```
@@ -248,7 +248,7 @@ e a conversa avança **um passo por mensagem, na ordem** — hoje ele falha.
 
 ---
 
-## Bloco 3 — As portas abertas
+## Bloco 3 — As portas abertas ✅ FEITO
 
 Três coisas independentes, no mesmo bloco porque as três são "alguém de fora
 consegue nos custar dinheiro ou acesso".
@@ -288,7 +288,7 @@ volta 413; e `curl -s https://autofluxos.4yu.com.br/robots.txt` proíbe tudo.
 
 ---
 
-## Bloco 4 — Escrita cruzada entre clientes
+## Bloco 4 — Escrita cruzada entre clientes ✅ FEITO
 
 **O buraco:** `acaoSalvarRascunho`, `acaoPublicar` e `acaoAlternarIa` recebem
 `fluxoId` e **não provam que o fluxo é do cliente**. No repo, `salvarRascunho` e
@@ -314,7 +314,15 @@ de outro", igual ao que já existe para apagar.
 
 ---
 
-## Bloco 5 — Rollback de versão
+## Bloco 5 — Rollback de versão ✅ FEITO
+
+> **Uma decisão a mais, tomada ao executar:** voltar passa pelo mesmo
+> `publicar()`, com validação. Uma versão de meses atrás pode ter ficado
+> inválida depois de publicada — a conexão que ela usa foi apagada, a IA foi
+> descontratada, o contexto do negócio sumiu. Republicar sem revalidar poria no
+> ar um desenho que o editor recusaria hoje. A versão antiga é buscada pelo par
+> `(versão, fluxo)`: o id chega da tela, e sem o `flow_id` no filtro o id de uma
+> versão de outro cliente publicaria o desenho dele aqui dentro.
 
 **Por que agora:** publicar é a ação mais consequente do produto — o desenho
 passa a atender gente de verdade. Hoje, publicado errado, o único caminho é
@@ -345,7 +353,14 @@ que o publicar normal já dá.
 
 ---
 
-## Bloco 6 — Observabilidade
+## Bloco 6 — Observabilidade ✅ FEITO
+
+> **Como ficou:** `alertar(titulo, detalhe, contexto)` em `src/server/alertar.ts`,
+> chamada nos três lugares combinados. O detalhe aceita qualquer coisa que um
+> `catch` pegue — `String(erro)` num objeto daria `[object Object]` justamente no
+> campo que era para explicar o que houve. Tempo limitado a 3s e todo erro morre
+> lá dentro: os três chamadores já estão num caminho de falha, e uma exceção do
+> aviso seria a segunda falha derrubando o que a primeira deixava de pé.
 
 **O buraco:** `console.error` na Vercel e mais nada. Uma exceção dentro do
 `after()` do webhook — justamente a que deixa o cliente sem resposta — é
@@ -376,7 +391,14 @@ mensagem faz chegar um aviso, com o motivo, sem ninguém estar olhando a Vercel.
 
 ---
 
-## Bloco 7 — Sessão do painel de verdade
+## Bloco 7 — Sessão do painel de verdade ✅ FEITO
+
+> **Uma decisão a mais, tomada ao executar:** sem `PAINEL_SEGREDO` no ambiente,
+> a assinatura é **derivada** de `PAINEL_SENHA` em vez de o painel falhar
+> fechado. Um ambiente que já estava no ar não pode parar de autenticar por
+> causa de uma variável que ninguém preencheu ainda, e o valor derivado nunca é
+> a senha. Preenchendo a variável, trocar a senha deixa de derrubar as sessões —
+> que é o ponto da separação.
 
 **O buraco:** o cookie é `SHA-256(senha)`. Sem nonce, sem carimbo de tempo, sem
 registro no servidor. Não expira (o `maxAge` de 12h é só o navegador), não dá
