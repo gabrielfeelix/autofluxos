@@ -71,9 +71,9 @@ fase; mantenha este arquivo como retrato operacional e evidência das decisões.
   executar efeitos; `robots.txt` e metadado bloqueiam indexação do painel.
 - Salvar rascunho, alternar IA e publicar agora exigem que o fluxo pertença ao
   cliente informado. O teste cobre as três tentativas de escrita cruzada.
-- A migration `0014_limites.sql` está versionada, mas não foi aplicada em
-  produção: o ambiente de trabalho não tem Supabase CLI/Docker local e banco
-  compartilhado só aceita aplicação autorizada pelo aplicador do AutoFluxos.
+- A migration `0014_limites.sql` foi aplicada em produção em 16/ago/2026 pela
+  Management API do AutoFluxos, com a tabela e o RPC conferidos depois da
+  aplicação. Ela não toca objetos do schema `app_verandi`.
 
 ### Atualização de 14/ago/2026 — Fase 2 do plano mestre
 
