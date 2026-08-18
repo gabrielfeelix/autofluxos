@@ -199,7 +199,7 @@ export function Painel({
             aoMudar={(url) => aoMudarDados({ url })}
             aceitaVariavel
             aoFocar={registrarCampo}
-            dica="Precisa ser https://. A Meta baixa o arquivo deste endereço na hora de entregar."
+            dica="Precisa ser https://. Copie o endereço em Ajustes → Acervo, ou cole um de fora."
           />
 
           {no.data.midia === 'documento' && (

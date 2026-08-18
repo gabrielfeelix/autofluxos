@@ -4,6 +4,7 @@ import { ClienteShell } from '@/components/design/cliente-shell'
 import type { ReactNode } from 'react'
 import { ApagarCliente } from '@/components/cliente/apagar'
 import { acaoApagarCliente } from '@/server/acoes'
+import { listarAcervo } from '@/server/repos/acervo'
 import { acharCliente, contarOQueSomeCom } from '@/server/repos/clientes'
 import { listarConexoes } from '@/server/repos/conexoes'
 import { listarCanais } from '@/server/repos/conversas'
@@ -27,10 +28,11 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [conexoes, canais, respostasRapidas, estrago] = await Promise.all([
+  const [conexoes, canais, respostasRapidas, acervo, estrago] = await Promise.all([
     listarConexoes(cliente.id),
     listarCanais(cliente.id),
     listarRespostasRapidas(cliente.id),
+    listarAcervo(cliente.id),
     contarOQueSomeCom(cliente.id),
   ])
   const semContexto = cliente.contextoNegocio.trim() === ''
@@ -54,12 +56,24 @@ export default async function Pagina({
           <Linha
             href={`/clientes/${cliente.id}/conexoes`}
             titulo="Credenciais"
-            descricao="As chaves que os blocos de API usam para falar com os sistemas deste cliente."
+            descricao="As chaves que os blocos de Serviços externos usam para falar com os sistemas deste cliente."
             estado={
               <Selo tom={conexoes.length === 0 ? 'neutro' : 'ok'}>
                 {conexoes.length === 0
                   ? 'nenhuma'
                   : `${conexoes.length} ${conexoes.length === 1 ? 'chave' : 'chaves'}`}
+              </Selo>
+            }
+          />
+          <Linha
+            href={`/clientes/${cliente.id}/acervo`}
+            titulo="Acervo"
+            descricao="Foto, vídeo, áudio e PDF que o bloco de Mídia pode enviar na conversa."
+            estado={
+              <Selo tom={acervo.length === 0 ? 'neutro' : 'ok'}>
+                {acervo.length === 0
+                  ? 'vazio'
+                  : `${acervo.length} ${acervo.length === 1 ? 'arquivo' : 'arquivos'}`}
               </Selo>
             }
           />

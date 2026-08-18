@@ -15,6 +15,12 @@ import {
   atualizarLogo,
   criarCliente,
 } from './repos/clientes'
+import {
+  apagarDoAcervo,
+  guardarNoAcervo,
+  LIMITE_DO_ARQUIVO,
+  TIPOS_ACEITOS,
+} from './repos/acervo'
 import { canalCloudApi } from '@/channels/cloud-api'
 import { dentroDaJanela } from '@/channels/janela'
 import type { EstadoSalvar } from '@/components/design/formulario-salvar'
@@ -616,4 +622,64 @@ export async function acaoRemoverLogo(clienteId: string) {
   await atualizarLogo(clienteId, '')
   revalidatePath('/')
   revalidatePath(`/clientes/${clienteId}`, 'layout')
+}
+
+/**
+ * Sobe um arquivo para o acervo do cliente.
+ *
+ * O acervo existe porque o bloco de mídia sozinho era metade de uma
+ * funcionalidade: ele pede uma URL `https://`, e quem desenha o fluxo do
+ * estúdio não tem onde hospedar a foto da sala.
+ */
+export async function acaoSubirParaAcervo(
+  clienteId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  const arquivo = formData.get('arquivo')
+  if (!(arquivo instanceof File) || arquivo.size === 0) {
+    return { erro: 'Escolha um arquivo.' }
+  }
+
+  if (!TIPOS_ACEITOS[arquivo.type]) {
+    return { erro: 'O WhatsApp não envia este tipo. Use imagem, MP4, MP3, OGG ou PDF.' }
+  }
+  if (arquivo.size > LIMITE_DO_ARQUIVO) {
+    // O teto é da Cloud API, não nosso: aceitar mais seria guardar arquivo que
+    // a Meta recusaria na hora de entregar, e o erro apareceria na conversa de
+    // um cliente em vez de aqui.
+    return {
+      erro: `O arquivo tem ${Math.round(arquivo.size / 1024 / 1024)} MB. O WhatsApp aceita até 16 MB.`,
+    }
+  }
+
+  try {
+    await guardarNoAcervo(clienteId, arquivo)
+  } catch (erro) {
+    return { erro: erro instanceof Error ? erro.message : 'não deu para guardar o arquivo' }
+  }
+
+  revalidatePath(`/clientes/${clienteId}/acervo`)
+  return { ok: true }
+}
+
+/**
+ * Tira um arquivo do acervo.
+ *
+ * **Não confere se algum fluxo aponta para ele, e isso é escolha.** Conferir
+ * exigiria varrer o rascunho e todas as versões publicadas de todos os fluxos a
+ * cada exclusão, e ainda assim uma versão antiga poderia apontar para o arquivo.
+ * A tela avisa; a decisão é de quem apaga.
+ */
+export async function acaoApagarDoAcervo(
+  clienteId: string,
+  caminho: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  try {
+    await apagarDoAcervo(clienteId, caminho)
+  } catch (erro) {
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para apagar' }
+  }
+  revalidatePath(`/clientes/${clienteId}/acervo`)
+  return { ok: true }
 }

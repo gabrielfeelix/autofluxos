@@ -1,5 +1,6 @@
 import 'server-only'
 import { db, ehIdInvalido } from '../db'
+import { apagarAcervoDoCliente } from './acervo'
 
 export type Cliente = {
   id: string
@@ -231,9 +232,10 @@ export async function contarOQueSomeCom(id: string): Promise<EstragoDaExclusao> 
  * dizendo exatamente isto: some com o cliente, com os leads, com as conversas e
  * com as credenciais.
  *
- * A logo sai do bucket junto. O `on delete cascade` não alcança o Storage — ele
- * está fora dos schemas de domínio (ver BANCO-COMPARTILHADO) — e arquivo de
- * cliente que não existe mais é dado pessoal órfão num bucket público.
+ * A logo e o acervo saem do bucket junto. O `on delete cascade` não alcança o
+ * Storage — ele está fora dos schemas de domínio (ver BANCO-COMPARTILHADO) — e
+ * arquivo de cliente que não existe mais é dado pessoal órfão num bucket
+ * público.
  */
 export async function apagarCliente(id: string): Promise<boolean> {
   const { data, error } = await db()
@@ -253,6 +255,7 @@ export async function apagarCliente(id: string): Promise<boolean> {
   await db()
     .storage.from('logos')
     .remove(['png', 'jpg', 'webp'].map((extensao) => `${id}.${extensao}`))
+  await apagarAcervoDoCliente(id)
 
   return true
 }
