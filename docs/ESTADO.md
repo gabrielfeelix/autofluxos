@@ -13,15 +13,17 @@ consegue continuar lendo só isto e o [ARQUITETURA.md](ARQUITETURA.md).
 
 ## Leia isto primeiro
 
-**Estado:** fases 1 a 3 do plano mestre concluídas. `npm test` dá **309
-passando** (8 pulados), `npm run typecheck`, `npm run lint` e `npm run build`
-estão limpos. O último `main`
+**Estado:** fases 1 a 3 do plano mestre e fases A, B e C do
+[PLANO-PRODUTO.md](PLANO-PRODUTO.md) concluídas. `npm test` dá **371 passando**
+(8 pulados), `npm run typecheck`, `npm run lint` e `npm run build` estão limpos. O último `main`
 publicado continua em https://autofluxos.4yu.com.br.
 
 **O produto hoje faz:** desenhar fluxo arrastando bloco, testar a conversa ao
 lado, publicar versão imutável, receber mensagem do WhatsApp, responder,
-**chamar o sistema do cliente no meio da conversa** (bloco API), guardar as
-credenciais dele num cofre, e o lead cair na tela.
+**mandar foto, vídeo, PDF e áudio**, **chamar o sistema do cliente no meio da
+conversa** (bloco de Serviços externos), guardar as credenciais dele num cofre,
+o contato cair na tela **com o nome de verdade**, e a planilha do cliente ser
+conciliada com quem já conversou.
 
 **As quatro regras que não se quebram**, e das quais quase tudo aqui decorre:
 
@@ -157,12 +159,49 @@ Nenhuma feature nova; é a fila de dívida pequena zerando.
 **Duas coisas com o mesmo sintoma escondem uma à outra.** "Falha que some ao
 rodar de novo" foi atribuída ao relógio e ficou meses sem investigação.
 
+### Atualização de 17/ago/2026 — fases A, B e C do PLANO-PRODUTO
+
+Escrito depois de 13 prints do BotConversa comentados por quem opera. O plano é
+[PLANO-PRODUTO.md](PLANO-PRODUTO.md); aqui fica o que mudou de premissa.
+
+- **A lista de clientes virou fila de trabalho.** Cada linha diz quantas pessoas
+  esperam atendimento, quantos contatos, quantas automações e o último
+  movimento, ordenada por quem espera primeiro. Os números vêm da view
+  `resumo_clientes` (`0016`), numa consulta só. O `comIa` aparecia **duas vezes**
+  no mesmo cartão — selo e linha de números.
+- **O bot manda arquivo.** Oitavo bloco: imagem, vídeo, documento e áudio, com
+  acervo por cliente no Storage (`0017`, bucket `autofluxos-acervo`). Envio por
+  `link` e não por `media_id`, que expira em 30 dias. Áudio não aceita legenda —
+  a Meta recusa a mensagem inteira, e a regra mora no motor porque é do formato,
+  não do canal.
+- **Contato tem nome de gente** (`0018`). `nome_real` vence o do perfil na
+  exibição, e a precedência mora na leitura: num gatilho, a próxima mensagem
+  desfaria a correção. Importação de planilha concilia pelo telefone com todas
+  as grafias do mesmo aparelho, **inclusive sem o nono dígito** — o `wa_id` de
+  contas antigas vem sem ele, e comparação literal diz que são duas pessoas.
+- **A aba "Leads" virou "Contatos".** Lead é um estado por que um contato passa;
+  o aluno que remarca aula há seis meses nunca preenche coluna de qualificação.
+  A rota continua `/leads`.
+- **Dois defeitos nossos apareceram na análise do concorrente:** o nome do fluxo
+  no editor tinha `max-w-56 truncate` — o mesmo defeito que o print reclama
+  deles — e o bloco `http` se chamava "API", o nome da tecnologia em vez do nome
+  do trabalho. Virou "Serviços externos".
+- **Oito clientes de teste órfãos foram apagados de produção.** Sobraram de uma
+  execução que quebrou no meio em 14/ago, antes do conserto do teste
+  intermitente, e apareciam na lista de clientes.
+
+**Intermitência que sobra, e ainda sem diagnóstico:** cerca de uma execução em
+oito falha **um** teste, sem padrão identificado. Não é mais o teto de 5s (subiu
+para 30s) nem colisão de telefone (o sorteio agora é por execução), e os testes
+de retenção passam `clienteId`, então não varrem o banco de outra suíte. Doze
+execuções seguidas limpas depois da última falha, que não foi capturada.
+
 ### Por onde continuar, em ordem
 
 | # | O quê | Por que agora |
 |---|---|---|
 | 1 | **Papéis de usuário** (BRIEF-UI §6) | É a maior, e destrava as outras. Hoje é uma senha só. Há comentário em quatro pontos do código dizendo "isto muda quando o cliente ganhar acesso" — recusa de endereço interno, isolamento entre clientes, a tela de "não encontrado" que vira "não é seu". Este é o dia. **Uma coisa entra junto, e não depois:** `/api/simular` aceita um fluxo inventado + `fluxoId` de qualquer cliente e manda a credencial dele para a URL do corpo — hoje inofensivo porque a senha já dá acesso a tudo, escalada de privilégio no minuto em que o cliente tiver login. A sessão do painel deixou de ser problema em 14/ago (cookie assinado, id por login, prazo no servidor); o que ainda falta dela é **revogar uma sessão só**, e isso é banco, então é aqui. |
-| 2 | **Mídia de saída** | O produto não manda imagem, e a documentação de 13/ago já dizia isso na "lista honesta". O motor tem `enviar_texto` e `enviar_opcoes` e mais nada; não existe bloco de mídia no schema. Receber mídia funciona — vira handoff. Deixou de ser item de gatilho porque **catálogo, foto de sala e PDF de plano são o assunto da conversa** em quase todo cliente de serviço. |
+| 2 | **Provar a mídia no WhatsApp real** | O bloco existe e é testado ponta a ponta com o canal mock, mas nenhuma foto saiu pela Cloud API de verdade ainda. É uma conversa de cinco minutos com o Cliente 00. |
 | 3 | **Modelos (templates) da Meta** | A caixa de resposta do painel só funciona dentro da janela de 24h — é a regra da Meta, e fora dela o único jeito de retomar é um modelo aprovado, que este produto não manda. A tela avisa antes de alguém digitar. Gatilho para construir: o primeiro lead que esfriar e precisar de retomada. |
 | 4 | **Credencial de sandbox por conexão** | A aba Testar usa a credencial real: testar um fluxo de CRM grava no CRM de verdade. Hoje há aviso na tela e o cabeçalho `X-AutoFluxos-Teste: 1`. Gatilho para construir: o primeiro cliente com CRM em produção. |
 | 5 | **`ALERTA_WEBHOOK_URL`** | Única variável do `.env.example` ainda vazia em produção. Precisa de uma URL de Discord ou Slack que só o dono cria; sem ela, `alertar()` é no-op e falha de entrega não avisa ninguém. |

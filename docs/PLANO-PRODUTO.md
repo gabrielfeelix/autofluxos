@@ -219,7 +219,24 @@ Três decisões que valem além desta fase:
 pelo webhook; falha de envio de mídia vira handoff e **para o resto das ações**,
 como já valia para texto. Falta a prova final: mandar uma foto no WhatsApp real.
 
-### Fase C — identidade do contato (print 13)
+### Fase C — identidade do contato (print 13) ✅
+
+**Concluída em 17/ago/2026.** Migration `0018`. A tela passou a se chamar
+**Contatos** e o telefone a aparecer legível.
+
+O nono dígito era o que fazia isso ser difícil, e estava invisível no plano
+original. Celulares brasileiros ganharam um `9` na frente, mas o `wa_id` de
+contas antigas continua vindo sem ele — `5511987654321` na conversa e
+`551187654321` na planilha, e comparação literal diz que são duas pessoas.
+`core/contatos/telefone.ts` devolve **lista de chaves** em vez de eleger uma
+forma canônica: geramos todas as grafias que significam o mesmo aparelho e
+procuramos por qualquer uma. A busca da tela usa a mesma função.
+
+O que o plano pedia e continua pendente: os campos manuais no contato (item 5).
+Notas entraram; campo livre com nome escolhido pelo cliente, não — ele encosta
+em `contacts.campos`, que hoje é território do motor, e misturar as duas fontes
+sem uma regra de precedência criaria o mesmo problema que `nome_real` acabou de
+resolver.
 
 Migration. É o que transforma a lista de apelidos em lista de gente.
 
@@ -357,7 +374,7 @@ têm 11 itens; nós temos 5. Cada coisa nova precisa achar casa em `Fluxos`,
 |---|---|---|
 | ~~1~~ | ~~**A** — o que está torto~~ | ✅ 17/ago |
 | ~~2~~ | ~~**B** — mídia~~ | ✅ 17/ago |
-| 3 | **C** — identidade | Sem isso, todo relatório e toda segmentação nascem sujos |
+| ~~3~~ | ~~**C** — identidade~~ | ✅ 17/ago |
 | 4–5 | **D** — papéis e o lado do cliente | É o portão: nenhum cliente loga antes. Entrega o segundo produto |
 | 6 | **E** — ganchos do canal | Depende de papéis para saber quem configura |
 | 7 | **F** — conectores de CRM | Depois que houver um cliente com CRM de verdade em produção |
