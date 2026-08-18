@@ -66,15 +66,6 @@ export const FORMATO_VARIAVEL = /^[a-zA-Z][a-zA-Z0-9_]*$/
  */
 export const LIMITE_ATRASO_SEGUNDOS = 3
 
-export const noMensagemSchema = z.object({
-  ...base,
-  type: z.literal('mensagem'),
-  data: z.object({
-    texto: z.string(),
-    atraso: z.number().min(0).max(LIMITE_ATRASO_SEGUNDOS).optional(),
-  }),
-})
-
 /**
  * Os quatro tipos de mídia que a Cloud API envia, e eles não são
  * intercambiáveis — cada um tem regra própria e a Meta recusa a mensagem
@@ -91,6 +82,114 @@ export type TipoDeMidia = (typeof TIPOS_DE_MIDIA)[number]
 
 /** Legenda de mídia é campo próprio na Cloud API e cabe menos que o texto. */
 export const LIMITE_LEGENDA = 1024
+
+/**
+ * Quantos pedaços cabem num bloco só.
+ *
+ * O teto existe para o bloco não virar um fluxo dentro do fluxo: dez pedaços já
+ * são dez mensagens seguidas no WhatsApp de alguém, e passar disso é conversa
+ * que ninguém lê. Também protege de um laço no editor gerar duzentos.
+ */
+export const LIMITE_PARTES = 10
+
+/**
+ * Um pedaço de mensagem.
+ *
+ * **O bloco deixou de ser um texto e virou uma pilha**, e essa é a mudança mais
+ * profunda da Etapa A (PLANO-SISTEMA §3.10). O que a gente tinha era
+ * `data: { texto }`, e a mesma conversa que o produto de referência resolve num
+ * bloco exigia cinco dos nossos: um para o texto, outro para a foto, outro para
+ * a pausa, outro para gravar o campo.
+ *
+ * Os tipos não são invenção nossa — são os que a Cloud API sabe entregar, mais
+ * os dois que só mexem no nosso lado (`salvar`, `auto-off`).
+ */
+export const parteTextoSchema = z.object({
+  tipo: z.literal('texto'),
+  /**
+   * Aceita a formatação do WhatsApp: `*negrito*`, `_itálico_`, `~riscado~` e
+   * três crases para monoespaçado. É texto puro de propósito — quem renderiza é
+   * o WhatsApp, e guardar HTML ou Markdown aqui obrigaria a converter na saída
+   * e a adivinhar na volta.
+   */
+  texto: z.string(),
+})
+
+export const parteMidiaSchema = z.object({
+  tipo: z.literal('midia'),
+  midia: z.enum(TIPOS_DE_MIDIA),
+  url: z.string(),
+  legenda: z.string().optional(),
+  /** Só o `documento` usa. Vazio = quem entrega inventa a partir da URL. */
+  nomeArquivo: z.string().optional(),
+})
+
+export const parteAtrasoSchema = z.object({
+  tipo: z.literal('atraso'),
+  segundos: z.number().min(0).max(LIMITE_ATRASO_SEGUNDOS),
+})
+
+export const parteSalvarSchema = z.object({
+  tipo: z.literal('salvar'),
+  campo: nomeVariavel,
+  /** Aceita interpolação: "{{nome}} - {{assunto}}" */
+  valor: z.string(),
+})
+
+/**
+ * Pausa o bot **neste contato**.
+ *
+ * Existe como pedaço, e não como bloco próprio, porque o uso real é sempre
+ * junto de uma frase: *"já chamei alguém, não respondo mais por aqui"* e o bot
+ * cala. Separado em dois blocos, a ordem entre eles vira detalhe que dá para
+ * errar.
+ *
+ * Não é o mesmo que `handoff`: aqui ninguém entra na fila de atendimento. É o
+ * "AutoOff" do produto de referência — a automação para e a conversa fica como
+ * está.
+ */
+export const parteAutoOffSchema = z.object({ tipo: z.literal('auto-off') })
+
+export const parteSchema = z.discriminatedUnion('tipo', [
+  parteTextoSchema,
+  parteMidiaSchema,
+  parteAtrasoSchema,
+  parteSalvarSchema,
+  parteAutoOffSchema,
+])
+
+/**
+ * O bloco de mensagem, nos **dois** formatos.
+ *
+ * `texto` e `atraso` são o formato antigo e continuam aqui para sempre — não
+ * por preguiça, mas porque `flow_versions` é imutável e a sessão fica presa à
+ * versão em que começou. Uma conversa que começou às 14h continua rodando o
+ * grafo de 14h; se este schema deixasse de dar parse no que foi publicado
+ * antes, **toda conversa em andamento morreria no meio**.
+ *
+ * A regra, escrita para não se perder: **ler os dois formatos, escrever só um.**
+ * O motor e o validador nunca tocam `data.texto` direto — passam por
+ * `partesDaMensagem()`, em `core/flow/mensagem.ts`. O editor só escreve
+ * `partes`. E nenhuma migration reescreve `flow_versions.grafo`, inclusive as
+ * nossas.
+ *
+ * Os dois campos serem opcionais é de propósito: um bloco sem nenhum dos dois é
+ * estruturalmente válido e **semanticamente** vazio, e quem recusa isso é o
+ * `validar()`. É a mesma divisão que já vale para nome de variável — Zod
+ * garante a estrutura, `validar()` garante o sentido, e rascunho pode estar
+ * pela metade.
+ */
+export const noMensagemSchema = z.object({
+  ...base,
+  type: z.literal('mensagem'),
+  data: z.object({
+    /** Formato antigo. Só leitura — nada escreve aqui desde a A3. */
+    texto: z.string().optional(),
+    /** Formato antigo: espera antes de mandar. Vira uma parte `atraso`. */
+    atraso: z.number().min(0).max(LIMITE_ATRASO_SEGUNDOS).optional(),
+    partes: z.array(parteSchema).max(LIMITE_PARTES).optional(),
+  }),
+})
 
 /**
  * Um arquivo enviado pelo bot.
@@ -269,6 +368,11 @@ export const fluxoSchema = z.object({
   edges: z.array(arestaSchema),
 })
 
+export type Parte = z.infer<typeof parteSchema>
+export type ParteTexto = z.infer<typeof parteTextoSchema>
+export type ParteMidia = z.infer<typeof parteMidiaSchema>
+export type TipoDeParte = Parte['tipo']
+export type NoMensagem = z.infer<typeof noMensagemSchema>
 export type Opcao = z.infer<typeof opcaoSchema>
 export type No = z.infer<typeof noSchema>
 export type NoPergunta = z.infer<typeof noPerguntaSchema>

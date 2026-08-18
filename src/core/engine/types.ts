@@ -108,6 +108,15 @@ export type Acao =
     }
   /** persistir no contato — é isso que alimenta a tela de leads */
   | { tipo: 'salvar_campo'; campo: string; valor: string }
+  /**
+   * Desligar a automação **deste contato** — o "AutoOff".
+   *
+   * Não é `transferir_humano`: ninguém entra na fila de atendimento e ninguém
+   * é avisado. O bot simplesmente para de responder para esta pessoa, e a
+   * conversa fica onde está. Serve para o fim de fluxo que já resolveu tudo, e
+   * para o "não me responde mais por aqui".
+   */
+  | { tipo: 'pausar_automacao' }
   /** chamar o modelo e reentrar no motor com `{ tipo: 'ia_respondeu' }` */
   | { tipo: 'chamar_ia'; instrucao: string }
   /**

@@ -13,6 +13,7 @@ import {
   acharCanalPorNumero,
   acharContato,
   acharOuCriarContato,
+  alterarAutomacaoDoContato,
   criarSessao,
   definirStatusDaSessao,
   guardarCampo,
@@ -445,6 +446,23 @@ async function aplicar(
       case 'salvar_campo':
         campos[acao.campo] = acao.valor
         mexeuNosCampos = true
+        break
+
+      case 'pausar_automacao':
+        /**
+         * O AutoOff, e ele é diferente do handoff em algo que importa: **não
+         * chama ninguém.** Ninguém entra na fila, ninguém é avisado, e o bot
+         * simplesmente para de responder para esta pessoa.
+         *
+         * A pausa é do **contato** e não da sessão — sobrevive à próxima
+         * conversa, que é o comportamento que a coluna `automacao_ativa`
+         * sempre teve quando alguém desliga pela tela. Um AutoOff que valesse
+         * só até o fim da conversa não desligaria nada na prática.
+         *
+         * As ações seguintes continuam saindo: o desenho comum é calar o bot e
+         * mandar a última frase, e parar aqui engoliria justamente a despedida.
+         */
+        await alterarAutomacaoDoContato(contato.clienteId, contato.id, false)
         break
 
       case 'transferir_humano':

@@ -2,12 +2,14 @@
 
 import { Handle, Position, type NodeProps, type NodeTypes } from '@xyflow/react'
 import type { ReactNode } from 'react'
+import { partesDaMensagem } from '@/core/flow/mensagem'
 import {
   LIMITE_BOTOES,
   SAIDA_ESCOLHEU,
   SAIDA_FALSO,
   SAIDA_VAZIO,
   SAIDA_VERDADEIRO,
+  type NoMensagem as NoMensagemSchema,
   type Opcao,
 } from '@/core/flow/schema'
 
@@ -113,17 +115,8 @@ function Saida({ id, children }: { id: string; children: ReactNode }) {
 
 const vazio = (t: string, alt: string) => (t.trim() === '' ? alt : t)
 
-function NoMensagem({ data, selected }: NodeProps) {
-  const d = data as { texto: string; atraso?: number }
-  return (
-    <Caixa tipo="mensagem" selecionado={!!selected}>
-      <p className="line-clamp-3 whitespace-pre-wrap text-[12.5px] leading-5 text-soft">
-        {vazio(d.texto, '(sem texto)')}
-      </p>
-      {!!d.atraso && <p className="mt-1 text-[10px] text-dim">digita por {d.atraso}s</p>}
-    </Caixa>
-  )
-}
+/** O que o React Flow entrega em `data` para um bloco de mensagem. */
+type DadosDaMensagem = NoMensagemSchema['data']
 
 /** O que cada tipo de mídia se chama na tela, no singular de quem desenha. */
 const ROTULO_DA_MIDIA = {
@@ -132,6 +125,55 @@ const ROTULO_DA_MIDIA = {
   documento: 'Documento',
   audio: 'Áudio',
 } as const
+
+/**
+ * O bloco no desenho mostra o texto **e o resumo da pilha**.
+ *
+ * Sem a segunda linha, um bloco que manda três fotos e grava dois campos fica
+ * idêntico a um que manda só "Oi" — e o desenho é justamente onde alguém
+ * procura o bloco que precisa mexer. `partesDaMensagem` lê os dois formatos,
+ * então o grafo antigo continua desenhando igual.
+ */
+function NoMensagem({ id, data, selected }: NodeProps) {
+  const partes = partesDaMensagem({
+    id,
+    type: 'mensagem',
+    position: { x: 0, y: 0 },
+    data: data as DadosDaMensagem,
+  })
+
+  const texto = partes
+    .filter((parte) => parte.tipo === 'texto')
+    .map((parte) => parte.texto)
+    .join('\n')
+    .trim()
+
+  const outros = partes.filter((parte) => parte.tipo !== 'texto')
+
+  return (
+    <Caixa tipo="mensagem" selecionado={!!selected}>
+      <p className="line-clamp-3 whitespace-pre-wrap text-[12.5px] leading-5 text-soft">
+        {vazio(texto, '(sem texto)')}
+      </p>
+      {outros.length > 0 && (
+        <p className="mt-1 flex flex-wrap gap-x-2 text-[10px] text-dim">
+          {outros.map((parte, i) => (
+            <span key={i}>
+              {parte.tipo === 'midia'
+                ? ROTULO_DA_MIDIA[parte.midia]
+                : parte.tipo === 'atraso'
+                  ? `digita por ${parte.segundos}s`
+                  : parte.tipo === 'salvar'
+                    ? `guarda ${parte.campo || '?'}`
+                    : 'desliga o bot'}
+            </span>
+          ))}
+        </p>
+      )}
+    </Caixa>
+  )
+}
+
 
 function NoMidia({ data, selected }: NodeProps) {
   const d = data as {

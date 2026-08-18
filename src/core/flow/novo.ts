@@ -18,7 +18,7 @@ export function fluxoNovo(): Fluxo {
         id: 'abertura',
         type: 'mensagem',
         position: { x: 0, y: 0 },
-        data: { texto: 'Oi! 👋 Sou o assistente virtual. Posso te ajudar?' },
+        data: { partes: [{ tipo: 'texto', texto: 'Oi! 👋 Sou o assistente virtual. Posso te ajudar?' }] },
       },
       {
         id: 'assunto',
@@ -43,7 +43,7 @@ export function fluxoNovo(): Fluxo {
         id: 'despedida',
         type: 'mensagem',
         position: { x: 160, y: 320 },
-        data: { texto: 'Tranquilo! Quando precisar é só chamar aqui. 👋' },
+        data: { partes: [{ tipo: 'texto', texto: 'Tranquilo! Quando precisar é só chamar aqui. 👋' }] },
       },
     ],
     edges: [

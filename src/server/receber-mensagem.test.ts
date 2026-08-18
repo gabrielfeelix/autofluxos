@@ -129,10 +129,23 @@ beforeAll(async () => {
   const cliente = await criarCliente(`${marca} cliente`)
   clienteId = cliente.id
 
+  /**
+   * A abertura é reescrita no **formato antigo** de propósito.
+   *
+   * `flow_versions` é imutável e a sessão fica presa à versão em que começou:
+   * existe conversa em produção rodando um grafo publicado antes de o bloco de
+   * mensagem virar uma pilha. Este é o único teste que prova, do webhook até o
+   * canal, que aquele grafo continua respondendo igual — inclusive o `atraso`,
+   * que hoje é um pedaço e naquela época era um campo do bloco.
+   */
   const fluxoComAtraso = structuredClone(triagem)
   const abertura = fluxoComAtraso.nodes.find((no) => no.id === 'abertura')
   if (abertura?.type !== 'mensagem') throw new Error('a triagem deveria começar com mensagem')
-  Object.assign(abertura.data, { atraso: 1 })
+  abertura.data = {
+    texto:
+      'Oi! 👋 Sou o assistente virtual do estúdio. Faço 3 perguntas rápidas e já te passo para alguém do time.',
+    atraso: 1,
+  }
 
   const fluxo = await criarFluxo(cliente.id, `${marca} triagem`, fluxoComAtraso)
   fluxoId = fluxo.id

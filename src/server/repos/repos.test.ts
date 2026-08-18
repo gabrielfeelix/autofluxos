@@ -1,4 +1,5 @@
 import { afterAll, describe, expect, it } from 'vitest'
+import { textoDaMensagem } from '@/core/flow/mensagem'
 import { fluxoNovo } from '@/core/flow/novo'
 import { db } from '../db'
 import { acharCliente, atualizarContexto, criarCliente, listarClientes } from './clientes'
@@ -200,19 +201,27 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
 
     const mexido = structuredClone(fluxo.rascunho)
     const abertura = mexido.nodes.find((n) => n.id === 'abertura')
-    if (abertura?.type === 'mensagem') abertura.data.texto = 'texto novo do rascunho'
+    if (abertura?.type === 'mensagem') {
+      abertura.data.partes = [{ tipo: 'texto', texto: 'texto novo do rascunho' }]
+    }
     await salvarRascunho(fluxo.id, cliente.id, mexido)
 
+    /**
+     * Lê pelo normalizador, e não por `data.texto`, porque o bloco tem dois
+     * formatos gravados no banco: o antigo (`{ texto }`, de tudo que foi
+     * publicado antes da A3) e a pilha de pedaços. É justamente esta leitura
+     * que mantém viva a conversa presa a uma versão antiga.
+     */
     const congelada = await acharVersao(pub.versao.id)
     const aberturaCongelada = congelada?.grafo.nodes.find((n) => n.id === 'abertura')
 
-    expect(aberturaCongelada?.type === 'mensagem' && aberturaCongelada.data.texto).toBe(
+    expect(aberturaCongelada?.type === 'mensagem' && textoDaMensagem(aberturaCongelada)).toBe(
       'Oi! 👋 Sou o assistente virtual. Posso te ajudar?',
     )
 
     const relido = await acharFluxo(fluxo.id)
     const aberturaRascunho = relido?.rascunho.nodes.find((n) => n.id === 'abertura')
-    expect(aberturaRascunho?.type === 'mensagem' && aberturaRascunho.data.texto).toBe(
+    expect(aberturaRascunho?.type === 'mensagem' && textoDaMensagem(aberturaRascunho)).toBe(
       'texto novo do rascunho',
     )
   })

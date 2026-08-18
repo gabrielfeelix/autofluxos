@@ -1,3 +1,4 @@
+import { partesDaMensagem } from '../flow/mensagem'
 import {
   LIMITE_BOTOES,
   LIMITE_LISTA,
@@ -200,11 +201,74 @@ function avancar(
 
     switch (no.type) {
       case 'mensagem': {
-        acoes.push({
-          tipo: 'enviar_texto',
-          texto: interpolar(no.data.texto, s.vars),
-          ...(no.data.atraso ? { atrasoMs: no.data.atraso * 1_000 } : {}),
-        })
+        /**
+         * O bloco virou uma pilha, e cada pedaço vira uma ação.
+         *
+         * `partesDaMensagem` lê os **dois** formatos — o grafo antigo, com
+         * `{ texto }`, e o novo, com `partes`. Nada aqui sabe qual dos dois
+         * chegou, e é essa ignorância que mantém viva a conversa presa a uma
+         * versão publicada antes desta mudança.
+         */
+        let esperaMs = 0
+
+        for (const parte of partesDaMensagem(no)) {
+          switch (parte.tipo) {
+            case 'atraso':
+              /**
+               * O atraso não é uma ação: ele **atrasa a próxima**.
+               *
+               * Podia ser uma ação `esperar`, e aí toda camada de entrega —
+               * WhatsApp, mock, simulador — precisaria aprender a dormir. Como
+               * `atrasoMs` do envio seguinte, o contrato que já existe continua
+               * valendo e o formato antigo (`data.atraso`, que sempre foi o
+               * atraso *do* envio) produz exatamente as mesmas ações de antes.
+               *
+               * Somar em vez de substituir: dois atrasos seguidos são a espera
+               * que a pessoa desenhou, e o teto de cada um já foi conferido no
+               * schema.
+               */
+              esperaMs += parte.segundos * 1_000
+              break
+
+            case 'texto':
+              acoes.push({
+                tipo: 'enviar_texto',
+                texto: interpolar(parte.texto, s.vars),
+                ...(esperaMs > 0 ? { atrasoMs: esperaMs } : {}),
+              })
+              esperaMs = 0
+              break
+
+            case 'midia': {
+              const legenda = parte.legenda ? interpolar(parte.legenda, s.vars) : ''
+              acoes.push({
+                tipo: 'enviar_midia',
+                midia: parte.midia,
+                url: interpolar(parte.url, s.vars),
+                // `audio` não aceita legenda — regra do formato, não do canal.
+                ...(legenda !== '' && parte.midia !== 'audio' ? { legenda } : {}),
+                ...(parte.nomeArquivo && parte.midia === 'documento'
+                  ? { nomeArquivo: interpolar(parte.nomeArquivo, s.vars) }
+                  : {}),
+                ...(esperaMs > 0 ? { atrasoMs: esperaMs } : {}),
+              })
+              esperaMs = 0
+              break
+            }
+
+            case 'salvar': {
+              const valor = interpolar(parte.valor, s.vars)
+              s.vars[parte.campo] = valor
+              acoes.push({ tipo: 'salvar_campo', campo: parte.campo, valor })
+              break
+            }
+
+            case 'auto-off':
+              acoes.push({ tipo: 'pausar_automacao' })
+              break
+          }
+        }
+
         atual = proximo(fluxo, no.id)
         break
       }

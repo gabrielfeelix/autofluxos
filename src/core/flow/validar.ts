@@ -1,3 +1,4 @@
+import { partesDaMensagem, textoDaMensagem } from './mensagem'
 import {
   FORMATO_VARIAVEL,
   LIMITE_LEGENDA,
@@ -12,6 +13,7 @@ import {
   perguntaEhDinamica,
   type Fluxo,
   type No,
+  type TipoDeMidia,
 } from './schema'
 import { variaveisCitadas } from '../engine/interpolar'
 
@@ -115,7 +117,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
 
   for (const no of fluxo.nodes) {
     const minhasSaidas = saidas(no.id)
-    conferirConteudo(no, erros)
+    conferirConteudo(no, erros, avisos)
 
     if (no.type === 'pergunta' && perguntaEhDinamica(no)) {
       if (no.data.opcoes.length > 0) {
@@ -267,7 +269,7 @@ function descrever(no: No): string {
 
   switch (no.type) {
     case 'mensagem':
-      return rotular('Mensagem', curto(no.data.texto))
+      return rotular('Mensagem', curto(textoDaMensagem(no)))
     case 'pergunta':
       return rotular('Pergunta', curto(no.data.texto))
     case 'condicao':
@@ -286,13 +288,76 @@ function descrever(no: No): string {
 }
 
 /**
+ * As regras de um arquivo que o bot manda — **as mesmas** para o bloco de mídia
+ * e para o pedaço de mídia dentro de uma mensagem.
+ *
+ * Ela existe porque agora há dois lugares que descrevem o mesmo envio, e cada
+ * uma destas quatro regras já custou caro em algum lugar: a Meta recusa a
+ * mensagem **inteira** quando qualquer uma é quebrada, e quem descobre é o
+ * cliente conversando. Duas cópias divergiriam na primeira mudança.
+ */
+function conferirMidia(
+  dados: { midia: TipoDeMidia; url: string; legenda?: string },
+  noId: string,
+  erros: Problema[],
+): void {
+  const vazio = (texto: string) => texto.trim() === ''
+
+  if (vazio(dados.url)) {
+    erros.push({
+      codigo: 'MIDIA_SEM_ARQUIVO',
+      mensagem: 'Este bloco não diz qual arquivo enviar.',
+      noId,
+    })
+  } else if (temVariavelNoHost(dados.url)) {
+    // Mesma regra do bloco de serviços externos, e pelo mesmo motivo: as
+    // variáveis vêm do que a pessoa digita no WhatsApp. Com o host vindo
+    // delas, quem conversa escolheria de qual servidor a Meta baixa — e o
+    // arquivo entregue em nome do cliente passaria a ser escolha de um
+    // estranho.
+    erros.push({
+      codigo: 'HOST_VARIAVEL',
+      mensagem:
+        'O endereço do servidor não pode vir de {{variavel}}. Use variável só depois da primeira barra.',
+      noId,
+    })
+  } else if (!dados.url.trim().startsWith('https://')) {
+    erros.push({
+      codigo: 'MIDIA_INSEGURA',
+      mensagem:
+        'O arquivo precisa vir de um endereço https:// — a Meta recusa buscar de qualquer outro.',
+      noId,
+    })
+  }
+
+  // Áudio com legenda não é campo ignorado: a Meta recusa a mensagem. Vale
+  // recusar aqui para ninguém descobrir com cliente de verdade conversando.
+  if (dados.midia === 'audio' && !vazio(dados.legenda ?? '')) {
+    erros.push({
+      codigo: 'AUDIO_COM_LEGENDA',
+      mensagem:
+        'Áudio não aceita legenda no WhatsApp. Escreva a legenda num pedaço de texto antes ou depois dele.',
+      noId,
+    })
+  }
+
+  if ((dados.legenda ?? '').length > LIMITE_LEGENDA) {
+    erros.push({
+      codigo: 'TEXTO_LONGO',
+      mensagem: `São ${dados.legenda?.length} caracteres. A legenda de mídia aceita ${LIMITE_LEGENDA} — acima disso o WhatsApp recusa a mensagem inteira.`,
+      noId,
+    })
+  }
+}
+
+/**
  * As regras de conteúdo que o Zod não faz mais.
  *
  * O schema garante que o objeto tem o formato certo; aqui a gente cobra que ele
  * faça sentido. A separação existe porque o rascunho passa por estados
  * incompletos enquanto alguém digita — o que não pode é isso ir ao ar.
  */
-function conferirConteudo(no: No, erros: Problema[]): void {
+function conferirConteudo(no: No, erros: Problema[], avisos: Problema[]): void {
   const vazio = (texto: string) => texto.trim() === ''
 
   const conferirVariavel = (nome: string | undefined, campo: string) => {
@@ -325,61 +390,76 @@ function conferirConteudo(no: No, erros: Problema[]): void {
   }
 
   switch (no.type) {
-    case 'mensagem':
-      if (vazio(no.data.texto)) {
-        erros.push({ codigo: 'TEXTO_VAZIO', mensagem: 'Esta mensagem está sem texto.', noId: no.id })
-      }
-      conferirTamanho(no.data.texto, false)
-      break
+    case 'mensagem': {
+      /**
+       * O bloco é uma pilha, e o vazio dela é o que importa recusar.
+       *
+       * "Sem texto" deixou de ser a pergunta certa: um bloco que só manda uma
+       * foto é legítimo. O que não pode ir ao ar é um bloco que **não faz
+       * nada** — nenhum pedaço, ou só pedaços que não entregam coisa alguma.
+       */
+      const partes = partesDaMensagem(no)
+      const entrega = partes.some(
+        (parte) =>
+          (parte.tipo === 'texto' && !vazio(parte.texto)) ||
+          parte.tipo === 'midia' ||
+          parte.tipo === 'salvar' ||
+          parte.tipo === 'auto-off',
+      )
 
-    case 'midia': {
-      if (vazio(no.data.url)) {
+      if (!entrega) {
         erros.push({
-          codigo: 'MIDIA_SEM_ARQUIVO',
-          mensagem: 'Este bloco não diz qual arquivo enviar.',
-          noId: no.id,
-        })
-      } else if (temVariavelNoHost(no.data.url)) {
-        // Mesma regra do bloco de serviços externos, e pelo mesmo motivo: as
-        // variáveis vêm do que a pessoa digita no WhatsApp. Com o host vindo
-        // delas, quem conversa escolheria de qual servidor a Meta baixa — e o
-        // arquivo entregue em nome do cliente passaria a ser escolha de um
-        // estranho.
-        erros.push({
-          codigo: 'HOST_VARIAVEL',
-          mensagem:
-            'O endereço do servidor não pode vir de {{variavel}}. Use variável só depois da primeira barra.',
-          noId: no.id,
-        })
-      } else if (!no.data.url.trim().startsWith('https://')) {
-        erros.push({
-          codigo: 'MIDIA_INSEGURA',
-          mensagem:
-            'O arquivo precisa vir de um endereço https:// — a Meta recusa buscar de qualquer outro.',
+          codigo: 'TEXTO_VAZIO',
+          mensagem: 'Esta mensagem está vazia: ela não manda nem guarda nada.',
           noId: no.id,
         })
       }
 
-      // Áudio com legenda não é campo ignorado: a Meta recusa a mensagem. Vale
-      // recusar aqui para ninguém descobrir com cliente de verdade conversando.
-      if (no.data.midia === 'audio' && !vazio(no.data.legenda ?? '')) {
-        erros.push({
-          codigo: 'AUDIO_COM_LEGENDA',
-          mensagem:
-            'Áudio não aceita legenda no WhatsApp. Escreva a legenda num bloco de Mensagem antes ou depois deste.',
-          noId: no.id,
-        })
+      for (const parte of partes) {
+        switch (parte.tipo) {
+          case 'texto':
+            // Cada pedaço vira **uma mensagem própria** no WhatsApp, então o
+            // limite é por pedaço e não pela soma. Somar recusaria uma pilha
+            // perfeitamente válida de três textos de 2.000 caracteres.
+            conferirTamanho(parte.texto, false)
+            break
+          case 'midia':
+            conferirMidia(parte, no.id, erros)
+            break
+          case 'salvar':
+            conferirVariavel(parte.campo, 'variável')
+            if (vazio(parte.campo)) {
+              erros.push({
+                codigo: 'CAMPO_SEM_NOME',
+                mensagem: 'Um pedaço "guardar" não diz em qual variável gravar.',
+                noId: no.id,
+              })
+            }
+            break
+          case 'atraso':
+          case 'auto-off':
+            break
+        }
       }
 
-      if ((no.data.legenda ?? '').length > LIMITE_LEGENDA) {
-        erros.push({
-          codigo: 'TEXTO_LONGO',
-          mensagem: `São ${no.data.legenda?.length} caracteres. A legenda de mídia aceita ${LIMITE_LEGENDA} — acima disso o WhatsApp recusa a mensagem inteira.`,
+      /**
+       * Atraso no fim da pilha não atrasa nada: ele adia a **próxima** entrega,
+       * e não existe próxima. É aviso e não impedimento — o fluxo funciona, só
+       * que aquele pedaço é decorativo, e quem desenhou merece saber.
+       */
+      if (partes.length > 0 && partes[partes.length - 1]!.tipo === 'atraso') {
+        avisos.push({
+          codigo: 'ATRASO_NO_FIM',
+          mensagem: `${descrever(no)} termina com um atraso, que não atrasa nada: ele adia a entrega seguinte, e não há nenhuma depois dele.`,
           noId: no.id,
         })
       }
       break
     }
+
+    case 'midia':
+      conferirMidia(no.data, no.id, erros)
+      break
 
     case 'pergunta': {
       if (vazio(no.data.texto)) {
@@ -633,7 +713,22 @@ function conferirVariaveis(fluxo: Fluxo): Problema[] {
 function variaveisDoNo(no: No): string[] {
   switch (no.type) {
     case 'mensagem':
-      return variaveisCitadas(no.data.texto)
+      return partesDaMensagem(no).flatMap((parte) => {
+        switch (parte.tipo) {
+          case 'texto':
+            return variaveisCitadas(parte.texto)
+          case 'midia':
+            return [
+              ...variaveisCitadas(parte.url),
+              ...variaveisCitadas(parte.legenda ?? ''),
+              ...variaveisCitadas(parte.nomeArquivo ?? ''),
+            ]
+          case 'salvar':
+            return variaveisCitadas(parte.valor)
+          default:
+            return []
+        }
+      })
     case 'pergunta':
       // `opcoesDe` é citação como qualquer outra: apontar para variável que
       // nenhum bloco preenche entrega uma pergunta que nasce sempre vazia.

@@ -20,8 +20,13 @@ export const triagem: Fluxo = fluxoSchema.parse({
       type: 'mensagem',
       position: { x: 0, y: 0 },
       data: {
-        texto:
-          'Oi! 👋 Sou o assistente virtual do estúdio. Faço 3 perguntas rápidas e já te passo para alguém do time.',
+        partes: [
+          {
+            tipo: 'texto',
+            texto:
+              'Oi! 👋 Sou o assistente virtual do estúdio. Faço 3 perguntas rápidas e já te passo para alguém do time.',
+          },
+        ],
       },
     },
     {
@@ -71,8 +76,13 @@ export const triagem: Fluxo = fluxoSchema.parse({
       type: 'mensagem',
       position: { x: 120, y: 720 },
       data: {
-        texto:
-          'Tranquilo, {{nome}}! Só para você ter uma referência: projetos de {{tipo}} costumam ficar entre R$ 4 mil e R$ 18 mil, dependendo de diárias, equipe e entregáveis.',
+        partes: [
+          {
+            tipo: 'texto',
+            texto:
+              'Tranquilo, {{nome}}! Só para você ter uma referência: projetos de {{tipo}} costumam ficar entre R$ 4 mil e R$ 18 mil, dependendo de diárias, equipe e entregáveis.',
+          },
+        ],
       },
     },
     {
@@ -92,7 +102,7 @@ export const triagem: Fluxo = fluxoSchema.parse({
       id: 'despedida',
       type: 'mensagem',
       position: { x: 340, y: 1000 },
-      data: { texto: 'Combinado, {{nome}}! Quando quiser é só chamar aqui. 👋' },
+      data: { partes: [{ tipo: 'texto', texto: 'Combinado, {{nome}}! Quando quiser é só chamar aqui. 👋' }] },
     },
 
     // --- quente: não enrola, passa para o humano ---
@@ -106,7 +116,7 @@ export const triagem: Fluxo = fluxoSchema.parse({
       id: 'aviso',
       type: 'mensagem',
       position: { x: -420, y: 860 },
-      data: { texto: 'Show, {{nome}}! Já estou chamando alguém do time aqui. 🙌' },
+      data: { partes: [{ tipo: 'texto', texto: 'Show, {{nome}}! Já estou chamando alguém do time aqui. 🙌' }] },
     },
     {
       id: 'humano',

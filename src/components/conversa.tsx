@@ -237,6 +237,17 @@ export function Conversa({
             alerta: true,
           })
           break
+        case 'pausar_automacao':
+          // Alerta, e não linha comum: o bot ficar mudo é a coisa mais fácil de
+          // confundir com defeito. Dizer que foi escolha do desenho evita meia
+          // hora procurando o que não quebrou.
+          adicionar({
+            chave,
+            de: 'sistema',
+            texto: 'desligou o bot para este contato — as próximas mensagens ficam sem resposta',
+            alerta: true,
+          })
+          break
         case 'transferir_humano':
           adicionar({ chave, de: 'sistema', texto: `passou para um humano — ${acao.motivo}`, alerta: true })
           break

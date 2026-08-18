@@ -729,3 +729,140 @@ describe('bloco de mídia', () => {
     expect(midiaDe(r.acoes)).toMatchObject({ atrasoMs: 2_000 })
   })
 })
+
+describe('o bloco de mensagem em pilha', () => {
+  /**
+   * Um fluxo de um bloco só, para ler as ações sem ruído em volta.
+   *
+   * O `encerrar` sai da lista: ele é do fluxo acabar, não do bloco, e aparece
+   * em todos estes casos dizendo a mesma coisa. O teste de compatibilidade lá
+   * embaixo o mantém, porque lá o que se compara é a saída inteira.
+   */
+  function comPartes(partes: unknown[]): Acao[] {
+    const fluxo = fluxoSchema.parse({
+      inicio: 'pilha',
+      nodes: [{ id: 'pilha', type: 'mensagem', position: p, data: { partes } }],
+      edges: [],
+    })
+    return executar(fluxo, sessaoNova(), { tipo: 'inicio' }).acoes.filter(
+      (acao) => acao.tipo !== 'encerrar',
+    )
+  }
+
+  it('cada pedaço vira uma ação, na ordem em que foi desenhado', () => {
+    const acoes = comPartes([
+      { tipo: 'texto', texto: 'Segue a planta' },
+      { tipo: 'midia', midia: 'imagem', url: 'https://e.test/planta.png' },
+      { tipo: 'texto', texto: 'Qualquer dúvida é só falar' },
+    ])
+
+    expect(acoes.map((a) => a.tipo)).toEqual(['enviar_texto', 'enviar_midia', 'enviar_texto'])
+  })
+
+  it('o atraso não é uma ação: ele atrasa a **próxima**', () => {
+    // Se fosse ação própria, toda camada de entrega — WhatsApp, mock,
+    // simulador — precisaria aprender a dormir. Como `atrasoMs` do envio
+    // seguinte, o contrato que já existia continua valendo.
+    const acoes = comPartes([
+      { tipo: 'texto', texto: 'Primeira' },
+      { tipo: 'atraso', segundos: 2 },
+      { tipo: 'texto', texto: 'Segunda' },
+    ])
+
+    expect(acoes).toEqual([
+      { tipo: 'enviar_texto', texto: 'Primeira' },
+      { tipo: 'enviar_texto', texto: 'Segunda', atrasoMs: 2000 },
+    ])
+  })
+
+  it('dois atrasos seguidos somam', () => {
+    const acoes = comPartes([
+      { tipo: 'atraso', segundos: 2 },
+      { tipo: 'atraso', segundos: 1 },
+      { tipo: 'texto', texto: 'Enfim' },
+    ])
+    expect(acoes).toEqual([{ tipo: 'enviar_texto', texto: 'Enfim', atrasoMs: 3000 }])
+  })
+
+  it('atraso no fim não vira nada — não há próxima entrega para adiar', () => {
+    const acoes = comPartes([
+      { tipo: 'texto', texto: 'Tchau' },
+      { tipo: 'atraso', segundos: 2 },
+    ])
+    expect(acoes).toEqual([{ tipo: 'enviar_texto', texto: 'Tchau' }])
+  })
+
+  it('o pedaço de guardar grava a variável e a deixa visível para os seguintes', () => {
+    const fluxo = fluxoSchema.parse({
+      inicio: 'pilha',
+      nodes: [
+        {
+          id: 'pilha',
+          type: 'mensagem',
+          position: p,
+          data: {
+            partes: [
+              { tipo: 'salvar', campo: 'etapa', valor: 'orcamento' },
+              { tipo: 'texto', texto: 'Você está em {{etapa}}' },
+            ],
+          },
+        },
+      ],
+      edges: [],
+    })
+    const r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+
+    expect(r.sessao.vars.etapa).toBe('orcamento')
+    expect(r.acoes).toEqual([
+      { tipo: 'salvar_campo', campo: 'etapa', valor: 'orcamento' },
+      { tipo: 'enviar_texto', texto: 'Você está em orcamento' },
+      { tipo: 'encerrar' },
+    ])
+  })
+
+  it('o AutoOff é uma ação própria, e não é handoff', () => {
+    // Handoff põe alguém na fila de atendimento e avisa. AutoOff só cala o
+    // bot: ninguém é chamado, e a conversa fica onde está.
+    const acoes = comPartes([
+      { tipo: 'texto', texto: 'Já chamei alguém' },
+      { tipo: 'auto-off' },
+    ])
+    expect(acoes.map((a) => a.tipo)).toEqual(['enviar_texto', 'pausar_automacao'])
+  })
+
+  it('áudio continua sem legenda, e documento continua com nome', () => {
+    // A regra é do formato, não do canal: a Meta recusa a mensagem inteira.
+    const acoes = comPartes([
+      { tipo: 'midia', midia: 'audio', url: 'https://e.test/a.ogg', legenda: 'ignorada' },
+      {
+        tipo: 'midia',
+        midia: 'documento',
+        url: 'https://e.test/p.pdf',
+        legenda: 'O plano',
+        nomeArquivo: 'plano-{{nome}}.pdf',
+      },
+    ])
+
+    expect(acoes[0]).toEqual({ tipo: 'enviar_midia', midia: 'audio', url: 'https://e.test/a.ogg' })
+    expect(acoes[1]).toMatchObject({ legenda: 'O plano', nomeArquivo: 'plano-.pdf' })
+  })
+
+  it('o formato antigo produz exatamente o que produzia antes da pilha existir', () => {
+    // **É este o teste que protege as conversas em andamento.** Uma sessão
+    // presa a uma versão publicada antes da A3 continua rodando aquele grafo;
+    // no dia em que estas ações mudarem, ela muda de comportamento no meio.
+    const fluxo = fluxoSchema.parse({
+      inicio: 'antigo',
+      nodes: [
+        { id: 'antigo', type: 'mensagem', position: p, data: { texto: 'Oi {{nome}}!', atraso: 2 } },
+      ],
+      edges: [],
+    })
+    const sessao: Sessao = { ...sessaoNova(), vars: { nome: 'Ana' } }
+
+    expect(executar(fluxo, sessao, { tipo: 'inicio' }).acoes).toEqual([
+      { tipo: 'enviar_texto', texto: 'Oi Ana!', atrasoMs: 2000 },
+      { tipo: 'encerrar' },
+    ])
+  })
+})
