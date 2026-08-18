@@ -59,7 +59,6 @@ superior direito (prints 1 e 4).
 │ ☺  Contatos         │  quem é quem, etiquetas, importar
 │ ⑂  Automações       │  → Fluxos · Gatilhos · Sequências · Modelos de fluxo
 │ ◈  Campanhas        │  → Campanhas · Transmissões
-│ ▤  Quadros          │  kanban do funil
 │ ⇄  Integrações      │  serviços externos, credenciais, webhooks
 │ ⚙  Configurações    │  perfil, número, equipe, horário, etiquetas,
 │                     │    respostas rápidas, acervo, mensagens aprovadas
@@ -68,7 +67,11 @@ superior direito (prints 1 e 4).
 └─────────────────────┘
 ```
 
-**Oito itens, não onze.** O EXPANSAO já tinha escrito a regra depois de contar os
+**Sete itens na Etapa A, não onze.** `Quadros` (kanban) entra na Etapa C e só
+então ganha lugar na barra — item de menu para tela que não existe é promessa
+que a interface faz e o produto não cumpre.
+
+ O EXPANSAO já tinha escrito a regra depois de contar os
 deles: *não crescer a lateral por acumulação*. Três decisões saem disso:
 
 1. **`Automações` junta o que eles espalham em dois lugares.** Eles têm
@@ -438,6 +441,53 @@ O caminho é **ler os dois formatos e nunca reescrever o que está gravado**:
 Teste que prende a regra: publicar no formato antigo, mudar o código, e a sessão
 presa àquela versão continua respondendo igual.
 
+### 3.10.1 A cadeia de atendimento — o elo mais fraco do produto
+
+> *"Qual número que vai? Como que o atendente vai virar atendente? Está fácil
+> falando que quando finaliza o fluxo o atendente vai falar com a pessoa, mas
+> qual é o número do atendente?"*
+
+A pergunta está certa e o produto não responde bem. Vamos por partes.
+
+**Qual número vai? O mesmo.** Bot e atendente dividem o número do WhatsApp do
+cliente — a Cloud API é um número só. O contato nunca vê número diferente e
+nunca precisa migrar de conversa. Isso já funciona: `acaoResponderLead` envia
+pelo mesmo canal em que a pessoa escreveu.
+
+**Como o atendente fica sabendo? Hoje, mal.** `NotificacoesDaFila` consulta a
+cada 30s e dispara notificação do navegador — **só se alguém estiver com o Inbox
+aberto**. Fora isso, o handoff acontece e ninguém percebe. Este é o buraco.
+
+Três caminhos para avisar, e o que parece mais natural é o mais caro:
+
+| Caminho | Custo | Quando serve |
+|---|---|---|
+| **Push do navegador + e-mail** | zero, e não depende da Meta | é o padrão, e resolve a maioria |
+| **WhatsApp para o atendente** | **exige modelo aprovado pela Meta e é cobrado por conversa** — mandar para o número dele é conversa iniciada pela empresa, e fora da janela de 24h isso só existe como template | para quem não fica no painel. É o que o fluxo do MGM faz ("notify Daniel Mutti por WhatsApp") |
+| **Coexistence** | depende da nossa verificação como Provedor | elimina o problema: o dono vê a conversa no WhatsApp do celular porque é o mesmo número |
+
+**Como ele "vira" atendente? Hoje ninguém vira.** A sessão vai para `humano`, o
+bot cala, e a conversa fica esperando qualquer pessoa. Falta atribuição, falta
+presença (`Disponível`/`Ausente`) e falta o botão "assumir".
+
+E três coisas que faltam e são graves:
+
+1. **Horário de atendimento não existe.** O bot faz handoff às 3h da manhã e a
+   pessoa fica no vácuo até alguém abrir o painel, sem ninguém dizer nada. O
+   mínimo é o handoff saber a hora e dizer uma coisa diferente fora do
+   expediente — *"nosso horário é das 8h às 18h, te respondemos amanhã cedo"* é
+   uma frase que salva a conversa; silêncio não.
+2. **A janela de 24 horas corre contra o atendente.** Se ele demorar mais que
+   isso, não pode mais mandar texto livre — só modelo aprovado. A fila precisa
+   mostrar **quanto tempo resta**, não só que alguém espera.
+3. **Handoff acontece demais.** Hoje ele dispara em cinco situações: terceira
+   resposta não entendida, mídia recebida, falha de entrega, falha de integração
+   e ciclo no desenho. **Mídia recebida virando handoff deixou de fazer sentido**
+   agora que existe "fluxo padrão para mídia" — o cliente deve poder dizer o que
+   fazer com um áudio em vez de acordar alguém.
+
+Isso tudo vira a **frente 4 da Etapa A**, e não um detalhe de uma tela.
+
 ### 3.11 Integrações · print 22
 
 ```
@@ -463,7 +513,41 @@ Ordem: **RD Station primeiro** (é o cliente real), depois Google Sheets, depois
 webhook genérico. **Zapier não entra** — é o iPaaS que o print 5 da leva anterior
 mostrou custando 5.000 ações que ninguém usa.
 
-### 3.12 Configurações
+### 3.12 Configurações · print 23
+
+O print da tela mostra a estrutura interna inteira:
+
+```
+┌ Conexões ────────┐  WhatsApp   [Conta] [Modelos de mensagem]  [↻ Atualizar]
+│ • WhatsApp       │  Nome de exibição · Número conectado
+│ Geral            │  ID da conta WhatsApp Business [CoEx] · Limites 250 BICs/24h
+│ • Companhia      │  Status do número · Verificação da empresa · Status da
+│ • Equipe         │    conta · Linha de crédito
+│ • Horário de     │
+│   atendimento    │  Automações
+│ • Inbox          │  ┌ Iniciadores de conversa ─ [Configurar] ┐
+│ • Registros      │  ┌ Mensagem de boas-vindas ─ [fluxo ⌄]    ┐
+│ • Faturamento    │  ┌ Resposta padrão ───────── [fluxo ⌄]    ┐
+│ • Integrações    │
+│ Automação        │
+│ • Campos         │
+│ • Etiquetas      │
+│ • Respostas ráp. │
+│ Preferências     │
+│ • Notificações   │
+└──────────────────┘
+```
+
+**`+ Adicionar nova companhia`** (print 24) fica no seletor de conta, no rodapé
+da sidebar, com busca. **Um usuário pode ter mais de uma companhia** — o dono
+que tem dois negócios, ou a agência que administra os dois. Isso é estrutural e
+entra na A1: o plugin de organização do Better Auth já modela usuário × várias
+organizações com uma ativa, e adaptar depois seria refazer o modelo.
+
+**`Iniciadores de conversa`** é o menu de tópicos que o WhatsApp mostra antes da
+primeira mensagem. É configuração da Meta, não fluxo nosso.
+
+### 3.12.1 O que juntamos
 
 Junta o que hoje está espalhado entre `/ajustes`, `/contexto`, `/numero`,
 `/conexoes` e `/acervo`, mais o que falta:
@@ -498,17 +582,17 @@ antes, sempre ([BANCO-COMPARTILHADO.md](BANCO-COMPARTILHADO.md)).
 | # | Migration | O que entra |
 |---|---|---|
 | 0019 | `auth_better` | Tabelas do Better Auth com `modelName` nosso: `af_usuarios`, `af_sessoes`, `af_contas`, `af_verificacoes`. **Nomes com prefixo**: Storage e Postgres são compartilhados com a Verandi, e `user`/`session` soltos em `public` são convite a colisão |
-| 0020 | `contas_e_papeis` | `clients` vira a organização; `af_membros` (usuário × conta × papel); `dono`/`admin`/`atendente`. Índice por conta em tudo |
+| 0020 | `contas_e_papeis` | `clients` vira a organização; `af_membros` (usuário × conta × papel); `dono`/`admin`/`atendente`. **Um usuário pode estar em várias contas** — é o `+ Adicionar nova companhia` do print 24. Índice por conta em tudo |
 | 0021 | `auditoria` | `af_auditoria`: autor, conta, ação, alvo, quando, **e se foi impersonado**. Append-only |
-| 0022 | `presenca_e_notificacoes` | Status do usuário; `notificacoes` por conta e usuário |
+| 0022 | `presenca_e_horario` | Status `Disponível`/`Ausente` do usuário e **horário de atendimento da conta** — é o que faz o handoff das 3h da manhã dizer alguma coisa em vez de calar |
 | 0023 | `atribuicao_e_leitura` | `conversas.atribuido_a`, `lida_em` por usuário. É o que faz "Não lidas" e "Meus chats" |
 | 0024 | `etiquetas_manuais` | `etiquetas` + `contato_etiquetas`. As derivadas continuam derivadas — **não** viram linha |
 | 0025 | `campanhas` | Campanha (nome, fluxo, frase, ativa) + atribuição do contato |
 | 0026 | `gatilhos` | Palavras-chave por conta, com operador e execuções |
 | 0027 | `agendador` | `tarefas` + claim atômico. **Destrava sequências, transmissão e timeout de pergunta** |
-| 0028 | `transmissoes` | Transmissão, público congelado no disparo, resultado por contato |
-| 0029 | `quadros` | Quadro, coluna, cartão — cartão **sempre** aponta para um contato |
-| 0030 | `modelos_meta` | Mensagens aprovadas, sincronizadas da Graph API |
+| 0028 | `transmissoes` | *(Etapa C, trava da Meta)* Transmissão, público congelado no disparo, resultado por contato |
+| 0029 | `quadros` | *(Etapa C)* Quadro, coluna, cartão — cartão **sempre** aponta para um contato |
+| 0030 | `modelos_meta` | *(Etapa C, trava da Meta)* Mensagens aprovadas, sincronizadas da Graph API |
 | 0031 | `pastas_e_compartilhamento` | Pasta de fluxo; link de compartilhamento com escopo |
 | 0032 | `metricas_de_tempo` | View com mediana/média até primeira resposta e até fechamento |
 
@@ -530,25 +614,51 @@ Ele fala Postgres direto (Kysely), não pelo PostgREST. Isso significa:
 
 ---
 
-## 5. Ordem
+## 5. Ordem — três etapas
 
-Cada fase termina com `npm test`, `typecheck`, `lint`, `build` verdes e commit
+**A regra que decide o corte:** cada tela nova é superfície, e superfície custa
+tempo agora e manutenção para sempre. A Etapa A só tem o que faz o sistema
+**funcionar de verdade** — se dá para operar um cliente inteiro sem aquilo, não
+é A.
+
+Cada frente termina com `npm test`, `typecheck`, `lint`, `build` verdes e commit
 próprio.
 
-| # | Fase | Entrega | Por que aqui |
-|---|---|---|---|
-| **1** | **Login, contas e papéis** | Better Auth, `af_membros`, sidebar, entrar como, auditoria | Nada abaixo existe sem saber **de quem é a conta**. E fecha o furo do `/api/simular`, que hoje manda credencial de qualquer cliente para a URL do corpo |
-| **2** | **Bloco de mensagem em pilha** | Partes, formatação, emoji, variável por clique, janela de 24h | É o que faz o produto parecer completo por dentro. Compatível com versões antigas por normalização, nunca por reescrita |
-| **3** | **Inbox de verdade** | Atribuição, não lidas, presença, tipo de mídia no preview, paginação, painel lateral | É onde o negócio do cliente acontece todo dia — doze dias de conversa real do MGM sem o bot participar de nenhuma |
-| **4** | **Contatos completo** | Etiquetas manuais, rail de filtros, criar à mão, lote | Sustenta segmentação, campanha e transmissão |
-| **5** | **Automações** | Gatilhos, 4 fluxos padrão, pastas, auto-organizar, compartilhar fluxo | Deixa o cliente montar o atendimento dele sem a gente |
-| **6** | **Agendador** | Tarefas com claim atômico | Destrava três coisas e não tem trava externa |
-| **7** | **Campanhas e quadros** | Campanha, roteamento por frase, kanban ligado ao contato | Depende de contatos e etiquetas |
-| **8** | **Painel completo** | Barra proporcional, série diária, desempenho pessoal, métricas de tempo | Depende de atribuição existir (fase 3) |
-| **9** | **Integrações** | Presets RD Station, Sheets, webhook de entrada | Quando houver o primeiro CRM de produção |
-| **10** | **Meta** | Modelos aprovados, transmissão, retomada fora das 24h | **Trava externa**: verificação da empresa e App Review. Não é código nosso que destrava |
+### Etapa A — o obrigatório
 
----
+| # | Frente | O que entrega |
+|---|---|---|
+| **A1** | **Login, contas e papéis** | Better Auth, papéis, **entrar como**, auditoria, e **mais de uma companhia por usuário** (o print de Configurações tem `+ Adicionar nova companhia`). Nada abaixo existe sem saber de quem é a conta — e fecha o furo do `/api/simular` |
+| **A2** | **Sidebar e as duas visões** | Sidebar do cliente (8 itens) e a área do administrador. Fim das abas no topo |
+| **A3** | **Bloco de mensagem em pilha** | Texto com negrito/itálico/riscado, variável por clique, emoji, imagem, vídeo, arquivo, áudio, atraso, salvar, AutoOff, botão de lista — e a janela de 24h dentro do bloco. É a frente que mais muda o produto por dentro |
+| **A4** | **A cadeia de atendimento** (§3.10.1) | Horário de atendimento, aviso ao atendente (push + e-mail), atribuição, presença, relógio da janela de 24h na fila, e parar de jogar para humano por qualquer motivo |
+| **A5** | **Inbox de verdade** | Rail `Atribuído`, não lidas, tipo de mídia no preview, paginação, painel lateral do contato |
+| **A6** | **Fluxos padrão e gatilhos** | Boas-vindas, resposta padrão, fluxo para mídia, pós-atendimento, e palavras-chave por conta |
+| **A7** | **Configurações reorganizada** | Perfil do negócio, número, equipe, horário, etiquetas, respostas rápidas, acervo, contexto da IA — tudo num lugar só |
+
+**Ao fim da Etapa A o cliente entra na conta dele, monta um atendimento
+completo, e o atendimento humano funciona ponta a ponta.** É o corte.
+
+### Etapa B — o que completa
+
+| # | Frente | Por que não é A |
+|---|---|---|
+| B1 | **Agendador** | Destrava sequências e timeout de pergunta, mas nada da Etapa A depende dele |
+| B2 | **Contatos completo** | Etiquetas manuais, rail de filtros, criar à mão, ações em lote. Dá para operar sem |
+| B3 | **Painel completo** | Série diária, desempenho pessoal, métricas de tempo. Depende de atribuição (A4) |
+| B4 | **Campanhas** | Porta de entrada por anúncio. Depende de tráfego pago existir |
+| B5 | **Fluxos: pastas, auto-organizar, compartilhar, modelos** | Conforto de quem tem muitos fluxos |
+| B6 | **Integrações com preset** | RD Station primeiro. Gatilho: primeiro CRM em produção |
+
+### Etapa C — o diferencial
+
+| # | Frente | Por que fica por último |
+|---|---|---|
+| C1 | **Quadros (Kanban)** | Interessante de verdade, e nenhum atendimento deixa de funcionar sem. É a maior superfície de todas |
+| C2 | **Central de notificações** | Abas Todos/Menções/Não lidas. O push da A4 já resolve o urgente |
+| C3 | **Idioma, opções de login, ajuda, relatar bug, comunidade** | Casca. Nenhum cliente deixa de operar por falta |
+| C4 | **Modelos da Meta e Transmissão** | **Trava externa**: verificação da empresa e App Review. Não é código nosso que destrava |
+| C5 | **Faturamento e registros** | Quando houver contrato de verdade |
 
 ## 6. O que fica fora, e por quê
 
