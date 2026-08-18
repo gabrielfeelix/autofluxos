@@ -33,5 +33,19 @@ export default defineConfig({
   test: {
     include: ['src/**/*.test.ts'],
     env: lerEnvLocal(),
+    /**
+     * O padrão do Vitest é 5s, que é orçamento de teste unitário. Boa parte
+     * desta suíte fala com o Supabase de produção em `sa-east-1`, e um teste
+     * de ponta a ponta faz quatro ou cinco idas seguidas até lá — o de encerrar
+     * atendimento mediu 3998ms num dia bom. Ele não estava lento: estava a
+     * 1 segundo do teto, e qualquer variação da rede o derrubava.
+     *
+     * Isso vinha sendo lido como "o relógio do WSL2 desandou". Eram duas coisas
+     * diferentes com o mesmo sintoma — falha que some ao rodar de novo —, e a
+     * segunda escondeu a primeira por semanas. `hookTimeout` sobe junto porque
+     * o `beforeAll` destas suítes cria cliente, fluxo, versão e canal.
+     */
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
   },
 })

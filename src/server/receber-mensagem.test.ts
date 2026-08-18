@@ -29,6 +29,24 @@ const numeroDoBot = `test-${Math.random().toString(36).slice(2, 10)}`
 const mock = canalMock()
 const comMock = () => mock
 
+/**
+ * Telefone de teste: 7 dígitos sorteados uma vez por execução + 2 do índice.
+ *
+ * Antes cada teste montava o número a partir de `Date.now()` mais um
+ * deslocamento fixo. Parece único e não é: o carimbo é lido no instante em que
+ * **cada** teste roda, então dois testes que caem no mesmo milissegundo com
+ * deslocamentos vizinhos produzem o mesmo `wa_id`, e o `.single()` que espera
+ * uma linha acha duas. O banco é o de verdade e contato de teste sobrevive à
+ * execução que o criou, então a colisão também atravessa execuções.
+ *
+ * Amarrar ao sorteio da execução dá o mesmo isolamento que `marca` já dá aos
+ * `wamid`, e o número continua rastreável até a execução que o criou.
+ */
+const seedTelefone = Math.floor(Math.random() * 1e7)
+  .toString()
+  .padStart(7, '0')
+const telefone = (indice: number) => `5511${seedTelefone}${indice.toString().padStart(2, '0')}`
+
 /** O formato que a Meta manda de verdade. */
 function webhookTexto(
   de: string,
@@ -133,7 +151,7 @@ afterAll(async () => {
 describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
   it('primeira mensagem começa o fluxo e responde com a saudação e as opções', async () => {
     mock.enviadas.length = 0
-    const de = `5511${Date.now().toString().slice(-9)}`
+    const de = telefone(0)
     const mensagemId = `wamid-${marca}-1`
 
     await receberMensagem(webhookTexto(de, 'oi', mensagemId), comMock)
@@ -144,7 +162,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
   })
 
   it('guarda o anúncio que trouxe o contato na primeira mensagem', async () => {
-    const de = `5511${(Date.now() + 15).toString().slice(-9)}`
+    const de = telefone(15)
     const referral = {
       source_url: 'https://fb.me/3Exemplo',
       source_type: 'ad',
@@ -170,7 +188,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
   })
 
   it('marca entrada direta e não troca a origem numa mensagem futura', async () => {
-    const de = `5511${(Date.now() + 16).toString().slice(-9)}`
+    const de = telefone(16)
 
     await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-direto-1`), comMock)
     await receberMensagem(
@@ -186,7 +204,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
   })
 
   it('ignora reenvio da mesma mensagem — senão a conversa anda duas vezes', async () => {
-    const de = `5511${(Date.now() + 1).toString().slice(-9)}`
+    const de = telefone(1)
     const idRepetido = `wamid-${marca}-dup`
 
     await receberMensagem(webhookTexto(de, 'oi', idRepetido), comMock)
@@ -197,7 +215,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
   })
 
   it('clicar num botão avança o fluxo e guarda a resposta no contato', async () => {
-    const de = `5511${(Date.now() + 2).toString().slice(-9)}`
+    const de = telefone(2)
     await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-3a`), comMock)
 
     mock.enviadas.length = 0
@@ -210,7 +228,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
   })
 
   it('áudio vai para uma pessoa em vez de "não entendi" (Regra B)', async () => {
-    const de = `5511${(Date.now() + 3).toString().slice(-9)}`
+    const de = telefone(3)
     await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-4a`), comMock)
 
     mock.enviadas.length = 0
@@ -228,7 +246,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
   })
 
   it('depois do handoff o bot fica calado', async () => {
-    const de = `5511${(Date.now() + 4).toString().slice(-9)}`
+    const de = telefone(4)
     await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-5a`), comMock)
     await receberMensagem(webhookAudio(de, `wamid-${marca}-5b`), comMock)
 
@@ -242,7 +260,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
    * estava conversando para um bloco que não existia quando ela entrou.
    */
   it('a conversa em andamento continua na versão em que começou', async () => {
-    const de = `5511${(Date.now() + 5).toString().slice(-9)}`
+    const de = telefone(5)
     await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-6a`), comMock)
 
     const { data: contato } = await db().from('contacts').select('id').eq('wa_id', de).single()
@@ -316,7 +334,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
    * tivesse falado. Agora vira handoff, que é o que a tela consegue mostrar.
    */
   it('falha de entrega vira handoff, e não exceção sem dono', async () => {
-    const de = `5511${(Date.now() + 6).toString().slice(-9)}`
+    const de = telefone(6)
     const quebrado = canalQueRecusa('(#131047) Re-engagement message')
 
     await expect(
@@ -341,7 +359,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
    * ordem, que é pior do que uma pessoa assumindo.
    */
   it('entrega que falha no meio para o resto em vez de mandar fora de ordem', async () => {
-    const de = `5511${(Date.now() + 7).toString().slice(-9)}`
+    const de = telefone(7)
     const soAPrimeira = canalQueRecusa('canal caiu', 1)
 
     await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-9`), () => soAPrimeira)
@@ -369,7 +387,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
    * falava com aquele número.
    */
   it('encerrar o atendimento resolve o handoff e devolve o contato ao bot', async () => {
-    const de = `5511${(Date.now() + 8).toString().slice(-9)}`
+    const de = telefone(8)
     await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-10a`), comMock)
     await receberMensagem(webhookAudio(de, `wamid-${marca}-10b`), comMock)
 
@@ -401,7 +419,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
    * passaram pelo mesmo funil, um depois do outro".
    */
   it('duas mensagens ao mesmo tempo não criam duas sessões', async () => {
-    const de = `5511${(Date.now() + 14).toString().slice(-9)}`
+    const de = telefone(14)
     mock.enviadas.length = 0
 
     await Promise.all([
@@ -432,7 +450,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
    * digitar: por qual número a resposta sai, e se a janela de 24h está aberta.
    */
   it('monta o contexto de resposta com o canal em que a pessoa escreveu', async () => {
-    const de = `5511${(Date.now() + 12).toString().slice(-9)}`
+    const de = telefone(12)
     await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-12`), comMock)
 
     const { data: contato } = await db().from('contacts').select('id').eq('wa_id', de).single()
@@ -446,7 +464,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
   })
 
   it('não monta contexto de resposta para o contato de outro cliente', async () => {
-    const de = `5511${(Date.now() + 13).toString().slice(-9)}`
+    const de = telefone(13)
     await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-13`), comMock)
 
     const { data: contato } = await db().from('contacts').select('id').eq('wa_id', de).single()
@@ -460,7 +478,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
   })
 
   it('não encerra o atendimento de um contato pelo id de outro cliente', async () => {
-    const de = `5511${(Date.now() + 9).toString().slice(-9)}`
+    const de = telefone(9)
     await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-11a`), comMock)
     await receberMensagem(webhookAudio(de, `wamid-${marca}-11b`), comMock)
 
