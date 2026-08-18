@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it } from 'vitest'
 import { Pool } from 'pg'
-import { auth } from './auth'
+import { autenticacao } from './auth'
 
 /**
  * O login contra o banco de verdade.
@@ -28,7 +28,7 @@ afterAll(async () => {
 async function criar(sufixo: string) {
   const endereco = email(sufixo)
   criados.push(endereco)
-  const r = await auth.api.signUpEmail({
+  const r = await autenticacao().api.signUpEmail({
     body: { email: endereco, password: SENHA, name: `Teste ${sufixo}` },
   })
   return { endereco, usuario: r.user }
@@ -70,17 +70,17 @@ describe.skipIf(!temBanco)('login por usuário', () => {
   it('entra com a senha certa e recusa a errada', async () => {
     const { endereco } = await criar('entrar')
 
-    const ok = await auth.api.signInEmail({ body: { email: endereco, password: SENHA } })
+    const ok = await autenticacao().api.signInEmail({ body: { email: endereco, password: SENHA } })
     expect(ok.user.email).toBe(endereco)
 
     await expect(
-      auth.api.signInEmail({ body: { email: endereco, password: 'outra-coisa-qualquer' } }),
+      autenticacao().api.signInEmail({ body: { email: endereco, password: 'outra-coisa-qualquer' } }),
     ).rejects.toThrow()
   })
 
   it('recusa senha curta — o mínimo é 10', async () => {
     await expect(
-      auth.api.signUpEmail({
+      autenticacao().api.signUpEmail({
         body: { email: email('curta'), password: 'abc123', name: 'Curta' },
       }),
     ).rejects.toThrow()
@@ -90,13 +90,13 @@ describe.skipIf(!temBanco)('login por usuário', () => {
     const { endereco } = await criar('duplicado')
 
     await expect(
-      auth.api.signUpEmail({ body: { email: endereco, password: SENHA, name: 'Outro' } }),
+      autenticacao().api.signUpEmail({ body: { email: endereco, password: SENHA, name: 'Outro' } }),
     ).rejects.toThrow()
   })
 
   it('a sessão nasce sem `impersonatedBy` — quem entra pela senha é ele mesmo', async () => {
     const { endereco } = await criar('sessao')
-    const entrada = await auth.api.signInEmail({ body: { email: endereco, password: SENHA } })
+    const entrada = await autenticacao().api.signInEmail({ body: { email: endereco, password: SENHA } })
 
     const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 1 })
     try {
@@ -119,7 +119,7 @@ describe.skipIf(!temBanco)('login por usuário', () => {
 describe.skipIf(!temBanco)('contas e papéis', () => {
   /** Abre uma sessão de verdade e devolve os cabeçalhos que a autenticam. */
   async function entrar(endereco: string) {
-    const r = await auth.api.signInEmail({
+    const r = await autenticacao().api.signInEmail({
       body: { email: endereco, password: SENHA },
       returnHeaders: true,
     })
@@ -139,7 +139,7 @@ describe.skipIf(!temBanco)('contas e papéis', () => {
     const { endereco } = await criar('dono')
     const { headers } = await entrar(endereco)
 
-    const org = await auth.api.createOrganization({
+    const org = await autenticacao().api.createOrganization({
       headers,
       body: { name: 'zz Estúdio Teste', slug: `zz-teste-${Math.random().toString(36).slice(2, 8)}` },
     })
@@ -163,7 +163,7 @@ describe.skipIf(!temBanco)('contas e papéis', () => {
     const { endereco } = await criar('papel')
     const { headers, usuario } = await entrar(endereco)
 
-    const org = await auth.api.createOrganization({
+    const org = await autenticacao().api.createOrganization({
       headers,
       body: { name: 'zz Papel', slug: `zz-papel-${Math.random().toString(36).slice(2, 8)}` },
     })
@@ -188,20 +188,20 @@ describe.skipIf(!temBanco)('contas e papéis', () => {
     const { headers } = await entrar(endereco)
 
     const sufixo = Math.random().toString(36).slice(2, 8)
-    const uma = await auth.api.createOrganization({
+    const uma = await autenticacao().api.createOrganization({
       headers,
       body: { name: 'zz Estúdio', slug: `zz-a-${sufixo}` },
     })
-    const outra = await auth.api.createOrganization({
+    const outra = await autenticacao().api.createOrganization({
       headers,
       body: { name: 'zz Clínica', slug: `zz-b-${sufixo}` },
     })
 
     try {
-      const lista = await auth.api.listOrganizations({ headers })
+      const lista = await autenticacao().api.listOrganizations({ headers })
       expect(lista.map((o) => o.id).sort()).toEqual([uma!.id, outra!.id].sort())
 
-      await auth.api.setActiveOrganization({ headers, body: { organizationId: outra!.id } })
+      await autenticacao().api.setActiveOrganization({ headers, body: { organizationId: outra!.id } })
 
       const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 1 })
       const { rows } = await pool.query(
@@ -220,7 +220,7 @@ describe.skipIf(!temBanco)('contas e papéis', () => {
   it('apagar a conta leva membros e convites junto', async () => {
     const { endereco } = await criar('cascata')
     const { headers, usuario } = await entrar(endereco)
-    const org = await auth.api.createOrganization({
+    const org = await autenticacao().api.createOrganization({
       headers,
       body: { name: 'zz Cascata', slug: `zz-casc-${Math.random().toString(36).slice(2, 8)}` },
     })

@@ -10,7 +10,10 @@ export const JANELA_DE_TENTATIVAS_SEGUNDOS = 5 * 60
  * requisição para formar a chave; sem cabeçalho, todas as chamadas desconhecidas
  * ficam juntas e o comportamento continua seguro.
  */
-export function chaveDeLimite(finalidade: 'login' | 'simular', cabecalhos: Headers): string {
+export function chaveDeLimite(
+  finalidade: 'login' | 'cadastro' | 'simular',
+  cabecalhos: Headers,
+): string {
   const encaminhado = cabecalhos.get('x-forwarded-for')?.split(',')[0]?.trim()
   const endereco = encaminhado || cabecalhos.get('x-real-ip') || 'desconhecido'
   return `${finalidade}:${endereco}`

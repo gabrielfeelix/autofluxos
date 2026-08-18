@@ -1,40 +1,99 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import { getSessionCookie } from 'better-auth/cookies'
 import { COOKIE_PAINEL, conferirSessao, iguais, segredoDeSessao } from '@/lib/painel-auth'
 
 /**
- * Protege o painel com a senha única do MVP.
+ * Quem entra no painel — e, por enquanto, são **duas** portas.
  *
- * A tela de login transforma a senha em um cookie HTTP-only. Basic Auth segue
- * aceito nas rotas protegidas por compatibilidade com acessos já configurados.
+ * A senha única (`PAINEL_SENHA` + cookie assinado) é a que está no ar desde o
+ * MVP. O login por usuário (Better Auth) nasceu ao lado dela e ainda não a
+ * substituiu. As duas convivem de propósito: enquanto a senha única funcionar
+ * exatamente como funcionava, nada que já está rodando pode quebrar por causa
+ * do sistema novo.
+ *
+ * **O que este arquivo decide é "a requisição segue", não "esta pessoa pode".**
+ * A distinção não é acadêmica: a documentação do Next avisa que Server Action é
+ * um POST na rota onde ela é usada, e um refactor que a mova para outra rota a
+ * tira do matcher sem ninguém perceber. Autorização de verdade mora em
+ * `server/sessao.ts` e é chamada por quem renderiza ou executa.
+ *
+ * Daí a conferência do login por usuário aqui ser só de **presença do cookie**.
+ * Ela é barata, não vai ao banco, e não decide nada sozinha: um cookie forjado
+ * passa por aqui e morre no `getSession` da tela seguinte.
+ */
+
+/** Telas que existem justamente para quem ainda não entrou. */
+const PORTAS_ABERTAS = ['/entrar', '/criar-conta']
+
+/**
+ * O simulador continua **só** com a senha única, e isso é contenção.
+ *
+ * Ele aceita `fluxoId` de qualquer cliente e resolve a credencial daquele
+ * cliente — o furo que o handoff descreve. A rota ganhou a conferência de
+ * membro nesta rodada, mas manter a porta estreita aqui garante que nenhum
+ * caminho novo passe a alcançá-la antes da varredura de isolamento.
  */
 export async function proxy(req: NextRequest) {
+  const caminho = req.nextUrl.pathname
   const senha = process.env.PAINEL_SENHA
-  const login = req.nextUrl.pathname === '/login'
-
-  if (!senha) {
-    // A tela precisa continuar acessível para explicar o ambiente incompleto.
-    if (login || process.env.NODE_ENV !== 'production') return NextResponse.next()
-    return new NextResponse('PAINEL_SENHA não configurada', { status: 503 })
-  }
 
   // Quem confere o prazo é aqui, e não o navegador: `maxAge` é um pedido, e um
   // cookie copiado continua valendo até o servidor recusar a data que ele traz.
-  const sessao = req.cookies.get(COOKIE_PAINEL)?.value ?? ''
-  const autenticada = await conferirSessao(sessao, segredoDeSessao(senha))
+  const cookiePainel = req.cookies.get(COOKIE_PAINEL)?.value ?? ''
+  const temPainel = senha
+    ? (await conferirSessao(cookiePainel, segredoDeSessao(senha))) || basicAuthConfere(req, senha)
+    : false
 
-  if (login) {
-    return autenticada
-      ? NextResponse.redirect(new URL('/', req.nextUrl))
-      : NextResponse.next()
+  // Presença, não validade. Ver o comentário no topo.
+  const temUsuario = getSessionCookie(req) !== null
+
+  // Sempre abertas, e **sem redirecionar quem já parece logado**. A tentação é
+  // mandar para a raiz quem chega ao `/entrar` com cookie; um cookie vencido
+  // faz isso virar laço: a raiz confere de verdade, não encontra sessão, e
+  // devolve para cá. Quem decide isso é a própria tela, que lê a sessão em vez
+  // de olhar para o cookie.
+  if (PORTAS_ABERTAS.includes(caminho)) return NextResponse.next()
+
+  const login = caminho === '/login'
+
+  if (!senha) {
+    // Sem senha única configurada, ela simplesmente não é uma porta. Em
+    // desenvolvimento o painel segue aberto para quem clonou o repositório e
+    // ainda não tem credencial nenhuma; em produção, o login por usuário passa
+    // a ser o único caminho.
+    //
+    // Isto substitui o 503 que existia aqui. Ele fazia sentido quando não havia
+    // outra forma de entrar; hoje ele derrubaria um ambiente que já autentica.
+    if (login || process.env.NODE_ENV !== 'production') return NextResponse.next()
+    if (temUsuario) return NextResponse.next()
+    return NextResponse.redirect(new URL('/entrar', req.nextUrl))
   }
 
-  if (autenticada || basicAuthConfere(req, senha)) return NextResponse.next()
+  if (login) {
+    return temPainel ? NextResponse.redirect(new URL('/', req.nextUrl)) : NextResponse.next()
+  }
 
-  if (req.nextUrl.pathname.startsWith('/api/')) {
+  if (temPainel) return NextResponse.next()
+
+  /**
+   * A sessão de usuário abre o painel, **menos o simulador**.
+   *
+   * Toda tela alcançada por aqui confere quem é de novo, no servidor: a área do
+   * administrador exige papel de plataforma, e a moldura do cliente exige
+   * ser membro daquela conta. O simulador fica fora até a varredura de
+   * isolamento passar por ele.
+   */
+  if (temUsuario && !caminho.startsWith('/api/simular')) return NextResponse.next()
+
+  if (caminho.startsWith('/api/')) {
     return new NextResponse('sessão expirada', { status: 401 })
   }
 
-  return NextResponse.redirect(new URL('/login', req.nextUrl))
+  // Enquanto a senha única for a porta principal, quem perdeu a sessão volta
+  // para ela — mandar o operador de hoje para uma tela onde a senha dele não
+  // funciona seria trocar "expirou" por "quebrou". As duas telas apontam uma
+  // para a outra, então ninguém fica preso na errada.
+  return NextResponse.redirect(new URL(senha ? '/login' : '/entrar', req.nextUrl))
 }
 
 function basicAuthConfere(req: NextRequest, senha: string): boolean {
@@ -50,7 +109,7 @@ function basicAuthConfere(req: NextRequest, senha: string): boolean {
 }
 
 export const config = {
-  // Duas exceções, e as duas por quem chama:
+  // Três exceções, e as três por quem chama:
   //
   // `robots.txt` **precisa** ser lido por quem não tem sessão — é essa a função
   // dele. Dentro do matcher, o crawler recebia o redirecionamento para `/login`
@@ -58,7 +117,10 @@ export const config = {
   //
   // `api/manutencao` é chamada pela tarefa agendada da plataforma, que não tem
   // cookie de painel. Ela se protege com `CRON_SECRET` e falha fechada sem ele.
+  //
+  // `api/auth` é o próprio login: entrar, sair, trocar de companhia. Exigir
+  // sessão para chegar até ele seria exigir sessão para criar uma.
   matcher: [
-    '/((?!api/webhook|api/manutencao|_next/static|_next/image|favicon.ico|robots.txt).*)',
+    '/((?!api/auth|api/webhook|api/manutencao|_next/static|_next/image|favicon.ico|robots.txt).*)',
   ],
 }
