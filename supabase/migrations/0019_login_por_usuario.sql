@@ -16,6 +16,12 @@
 -- nasceu sem prefixo e hoje não dá para renomear sem quebrar toda `logo_url`
 -- gravada — aqui a gente não repete o erro.
 --
+-- **Por que os ids são uuid com `default gen_random_uuid()`:** o Better Auth
+-- está configurado com `generateId: 'uuid'`, que significa *o banco gera*, e não
+-- *gere um uuid no código*. Sem o default, o insert chega com `id` nulo e o
+-- Postgres recusa — foi exatamente o que aconteceu na primeira tentativa. Uuid
+-- também é o tipo de `clients.id`, para onde a conta do plugin aponta.
+--
 -- **Por que as colunas estão em camelCase**, ao contrário de todo o resto do
 -- banco: são o contrato do Better Auth, e ele monta as consultas sozinho.
 -- Renomear cada uma com `fields` seria manter um mapa inteiro para ganhar
@@ -27,7 +33,7 @@
 -- acesso — a biblioteca não conhece nossas regras.
 
 create table if not exists public.af_usuarios (
-  "id"            text not null primary key,
+  "id"            uuid not null primary key default gen_random_uuid(),
   "name"          text not null,
   "email"         text not null unique,
   "emailVerified" boolean not null,
@@ -44,23 +50,23 @@ create table if not exists public.af_usuarios (
 );
 
 create table if not exists public.af_sessoes (
-  "id"        text not null primary key,
+  "id"        uuid not null primary key default gen_random_uuid(),
   "expiresAt" timestamptz not null,
   "token"     text not null unique,
   "createdAt" timestamptz not null default current_timestamp,
   "updatedAt" timestamptz not null,
   "ipAddress" text,
   "userAgent" text,
-  "userId"    text not null references public.af_usuarios ("id") on delete cascade,
+  "userId"    uuid not null references public.af_usuarios ("id") on delete cascade,
   -- O "entrar como". Preenchido = esta sessão é de um administrador vendo a
   -- conta de outra pessoa, e é o que a faixa no topo da tela lê para avisar.
   -- Guardar isto **na sessão** é o que torna a auditoria confiável: não existe
   -- caminho para agir na conta de alguém sem a linha existir.
-  "impersonatedBy" text
+  "impersonatedBy" uuid references public.af_usuarios ("id") on delete set null
 );
 
 create table if not exists public.af_contas (
-  "id"                    text not null primary key,
+  "id"                    uuid not null primary key default gen_random_uuid(),
   -- `issuer` não estava aqui na primeira escrita desta migration, e o motivo
   -- vale registrar: o schema veio do `@better-auth/cli`, que na data era 1.4.21
   -- enquanto o runtime instalado é 1.7.0. O CLI é publicado à parte e fica para
@@ -70,7 +76,7 @@ create table if not exists public.af_contas (
   "issuer"                text not null,
   "accountId"             text not null,
   "providerId"            text not null,
-  "userId"                text not null references public.af_usuarios ("id") on delete cascade,
+  "userId"                uuid not null references public.af_usuarios ("id") on delete cascade,
   "accessToken"           text,
   "refreshToken"          text,
   "idToken"               text,
@@ -84,7 +90,7 @@ create table if not exists public.af_contas (
 );
 
 create table if not exists public.af_verificacoes (
-  "id"         text not null primary key,
+  "id"         uuid not null primary key default gen_random_uuid(),
   "identifier" text not null,
   "value"      text not null,
   "expiresAt"  timestamptz not null,

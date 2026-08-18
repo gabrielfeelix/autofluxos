@@ -1,6 +1,6 @@
 import 'server-only'
 import { betterAuth } from 'better-auth'
-import { admin } from 'better-auth/plugins'
+import { admin, organization } from 'better-auth/plugins'
 import { Pool } from 'pg'
 
 /**
@@ -61,6 +61,16 @@ export const auth = betterAuth({
     minPasswordLength: 10,
   },
 
+  /**
+   * Ids em uuid, e isto não é preferência estética.
+   *
+   * A organização do plugin **é** a nossa tabela `clients`, cujo `id` é uuid
+   * desde a 0001 e para onde apontam `flows`, `contacts`, `channels`,
+   * `connections` e `messages`. Com o gerador padrão do Better Auth (um id
+   * curto próprio), todo insert de conta quebraria no casamento de tipos.
+   */
+  advanced: { database: { generateId: 'uuid' } },
+
   user: { modelName: 'af_usuarios' },
   session: {
     modelName: 'af_sessoes',
@@ -83,6 +93,35 @@ export const auth = betterAuth({
      * conta de quem sem nunca pedir a senha de ninguém.
      */
     admin({ impersonationSessionDuration: 60 * 60 }),
+
+    /**
+     * A conta do cliente — e ela **é** a nossa `clients`, não uma tabela ao
+     * lado.
+     *
+     * Aceitar a `organization` própria do plugin deixaria duas tabelas para o
+     * mesmo conceito: a nossa, com todas as chaves estrangeiras do sistema, e a
+     * dele, com membros e convites. Duas listas de conta divergem, e é o mesmo
+     * defeito que a 0018 consertou no nome do contato.
+     *
+     * `creatorRole: 'owner'` porque quem cria a conta é o dono dela. O papel de
+     * **plataforma** (administrador da 4YU) é outra coisa e mora em
+     * `af_usuarios.role`.
+     */
+    organization({
+      schema: {
+        organization: {
+          modelName: 'clients',
+          fields: { name: 'nome', logo: 'logo_url', createdAt: 'criado_em' },
+        },
+        member: { modelName: 'af_membros' },
+        invitation: { modelName: 'af_convites' },
+      },
+      creatorRole: 'owner',
+      // Um usuário pode ter mais de uma companhia (print 24). O teto existe
+      // para um bug de laço não criar mil contas em silêncio, não para limitar
+      // ninguém de verdade.
+      organizationLimit: 20,
+    }),
   ],
 })
 
