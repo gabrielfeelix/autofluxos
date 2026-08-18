@@ -54,9 +54,16 @@ function destinoDe(resposta: Response): string | null {
 }
 
 describe('as portas do painel', () => {
-  it('deixa entrar e criar conta abertas — são as telas de quem ainda não entrou', async () => {
+  it('deixa /entrar aberta — é a tela de quem ainda não entrou', async () => {
     expect(seguiu(await proxy(pedir('/entrar')))).toBe(true)
-    expect(seguiu(await proxy(pedir('/criar-conta')))).toBe(true)
+  })
+
+  it('não deixa /criar-conta aberta, e este é o teste que mais importa aqui', async () => {
+    // Ela abre a porta de primeira execução: sem usuário nenhum, quem chega
+    // nasce administrador da plataforma. Pública, isso é qualquer um na
+    // internet virando administrador do painel.
+    expect(destinoDe(await proxy(pedir('/criar-conta')))).toBe('/login')
+    expect(seguiu(await proxy(pedir('/criar-conta', await cookieDoPainel())))).toBe(true)
   })
 
   it('não redireciona quem chega ao /entrar com cookie', async () => {

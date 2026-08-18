@@ -73,6 +73,17 @@ function montar() {
     database: bancoDoLogin(),
     secret: process.env.BETTER_AUTH_SECRET,
 
+    /**
+     * O endereço público do painel, quando alguém o preenche.
+     *
+     * Sem ele a biblioteca deriva a origem da requisição que chegou e avisa em
+     * todo `next dev` que redirecionamento e callback podem sair errados. Para
+     * o que existe hoje — e-mail e senha, tudo na mesma origem — derivar
+     * funciona, e é por isso que a variável é **opcional**: um valor errado aqui
+     * quebra o login inteiro, e vale mais não ter do que ter chutado.
+     */
+    baseURL: process.env.BETTER_AUTH_URL,
+
     emailAndPassword: {
       enabled: true,
       // Ligar verificação por e-mail exige SMTP, que é **global ao projeto

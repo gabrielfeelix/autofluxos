@@ -27,8 +27,19 @@ import {
  * passa por aqui e morre no `getSession` da tela seguinte.
  */
 
-/** Telas que existem justamente para quem ainda não entrou. */
-const PORTAS_ABERTAS = ['/entrar', '/criar-conta']
+/**
+ * A única tela que existe para quem ainda não entrou.
+ *
+ * **`/criar-conta` não está aqui, e a primeira escrita a tinha posto.** Ela
+ * abre a porta de primeira execução — se não há usuário nenhum, quem chega
+ * nasce administrador da plataforma. Pública, isso significa que qualquer um na
+ * internet vira administrador do painel enquanto o primeiro não for criado.
+ *
+ * Atrás da senha única, quem cria o primeiro administrador é quem já tem acesso
+ * total hoje, e a fronteira de confiança não muda de lugar. Depois do primeiro,
+ * a tela exige sessão de administrador de qualquer forma.
+ */
+const PORTAS_ABERTAS = ['/entrar']
 
 export async function proxy(req: NextRequest) {
   const caminho = req.nextUrl.pathname

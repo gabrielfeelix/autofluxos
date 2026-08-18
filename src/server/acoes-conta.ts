@@ -13,6 +13,7 @@ import {
   ehAdminDaPlataforma,
   existeAlgumUsuario,
   exigirAdminDaPlataforma,
+  temSessaoDePainel,
   sessaoAtual,
 } from './sessao'
 
@@ -134,6 +135,20 @@ export async function acaoCriarPrimeiroAdministrador(
   // Depois do primeiro, esta tela vira o cadastro que **um administrador** faz.
   if (jaTemGente && !ehAdminDaPlataforma(sessao)) {
     return { erro: 'O cadastro é feito por quem administra a plataforma.', email, nome }
+  }
+
+  /**
+   * A porta de primeira execução exige a senha única.
+   *
+   * O `proxy.ts` já recusa quem chega aqui sem ela, e isto não é redundância
+   * inútil: Server Action é um POST na rota onde ela é usada, e a própria
+   * documentação do Next avisa que mover a ação de rota a tira do matcher sem
+   * ninguém perceber. Uma porta que faz alguém nascer administrador não pode
+   * depender de um arquivo de configuração continuar apontando para o lugar
+   * certo.
+   */
+  if (!jaTemGente && !(await temSessaoDePainel())) {
+    return { erro: 'O primeiro cadastro é feito de dentro do painel.', email, nome }
   }
 
   try {
