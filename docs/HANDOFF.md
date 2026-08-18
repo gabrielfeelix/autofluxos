@@ -285,6 +285,9 @@ ninguém olhar.
 
 ## 7. Perguntas em aberto para o dono
 
+A lista completa, com o que cada uma trava e o passo a passo, mora em
+[PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md). O resumo:
+
 - **O primeiro administrador** — nome, e-mail e senha. É o §4.1, e é o que
   destrava tudo que foi construído nesta rodada.
 - `ALERTA_WEBHOOK_URL` — precisa da URL do Discord/Slack.
