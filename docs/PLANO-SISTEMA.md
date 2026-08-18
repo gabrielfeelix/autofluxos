@@ -601,6 +601,36 @@ RLS ligada; `GRANT` decidido explicitamente; nada de `anon`/`authenticated`;
 função `security definer` com `search_path` fixo. E **nada é aplicado em produção
 sem eu mostrar o SQL antes**.
 
+### 4.1 A decisão de autenticação, e por quê
+
+**Escolhido: Better Auth (`1.7.0`), com os plugins `organization` e `admin`,
+no schema `public`.** Pesquisado em 17/ago; as fontes estão no fim desta seção.
+
+O que decidiu não foi lista de recursos — foi a restrição que já existe aqui: **o
+projeto Supabase é compartilhado com a Verandi, e `auth.users`, SMTP e URLs de
+redirect são globais aos dois produtos.** Better Auth cria as tabelas dele no
+**nosso** schema e nunca encosta em `auth.users`. Raio de impacto zero no outro
+produto, que é o que [BANCO-COMPARTILHADO.md](BANCO-COMPARTILHADO.md) exige.
+
+Os dois plugins entregam exatamente o que o produto pede:
+
+- **`organization`** — organizações, membros, papéis (`owner`/`admin`/`member` e
+  customizados) e convite. **Usuário pode pertencer a várias organizações com
+  uma ativa**, que é o `+ Adicionar nova companhia` do print 24.
+- **`admin`** — **impersonação de primeira classe**: cria sessão que imita o
+  usuário, com prazo padrão de 1 hora, e grava `impersonatedBy` **na própria
+  sessão**. Isso importa mais do que parece: a boa prática de segurança para o
+  recurso é exatamente separar a sessão do admin da impersonada, expirar rápido e
+  registrar — aqui vem por construção, não por a gente lembrar. Também dá listar,
+  banir, definir papel e revogar sessão.
+
+**Descartados:**
+
+| Opção | Por quê não |
+|---|---|
+| **Supabase Auth** | `auth.users`, SMTP e redirects são globais: toda mudança de login do AutoFluxos vira mudança a avaliar na Verandi. E não tem organizações nem impersonação embutidas, então construiríamos as partes difíceis do mesmo jeito |
+| **Auth próprio** | Só se ganha controle. Perde-se hash de senha, recuperação, convite e impersonação prontos — que é onde erro custa caro |
+
 ### O ponto de atenção do Better Auth
 
 Ele fala Postgres direto (Kysely), não pelo PostgREST. Isso significa:
@@ -611,6 +641,51 @@ Ele fala Postgres direto (Kysely), não pelo PostgREST. Isso significa:
 - passamos a ter **dois caminhos** para o mesmo banco (supabase-js e pg). É
   dívida consciente: a alternativa é escrever hash de senha, recuperação, convite
   e impersonação à mão, que é onde erro custa caro.
+
+**A string de conexão** (confirmada pela Management API em 17/ago):
+
+```
+postgresql://postgres.<ref>:<senha>@aws-0-sa-east-1.pooler.supabase.com:6543/postgres
+```
+
+`pool_mode: transaction`, SCRAM ligado. A senha é `AUTOFLUXOS_SUPABASE_DB_PASSWORD`,
+que já existe no cofre. Entram duas variáveis novas no `.env.example`:
+`DATABASE_URL` e `BETTER_AUTH_SECRET`.
+
+**As tabelas são renomeadas com `modelName`.** Better Auth cria `user`, `session`,
+`account` e `verification` — nomes genéricos demais para um projeto que hospeda
+dois produtos. Viram `af_usuarios`, `af_sessoes`, `af_contas`, `af_verificacoes`.
+É a mesma lição do bucket `logos`, que nasceu sem prefixo e agora não dá para
+renomear sem quebrar toda `logo_url` gravada.
+
+### 4.2 O `.npmrc`, e por que ele é versionado
+
+`better-auth` declara `@sveltejs/kit` como peer **opcional**, e o resolvedor do
+npm tenta satisfazê-lo mesmo sem ninguém usar Svelte aqui. Isso arrasta o plugin
+Vite do SvelteKit, que exige `vite@8`, e colide com o `vite@7` do Vitest — a
+instalação falha com `ERESOLVE`.
+
+`legacy-peer-deps=true` no `.npmrc` resolve, e o arquivo é **versionado** para a
+Vercel e o CI resolverem igual à máquina; sem ele o build quebra no deploy com o
+mesmo erro. Conferido depois de ligar: nenhum pacote `@sveltejs/*` entrou em
+`node_modules` e o Vite continua em `7.3.6`.
+
+O custo honesto: `legacy-peer-deps` desliga a conferência de peer para o projeto
+inteiro, então um conflito real passa a não aparecer na instalação. É o preço, e
+está escrito aqui para quem investigar um conflito estranho no futuro saber onde
+olhar.
+
+### 4.3 Fontes
+
+- [Better Auth — plugin `admin`](https://www.better-auth.com/docs/plugins/admin)
+- [Better Auth — plugin `organization`](https://www.better-auth.com/docs/plugins/organization)
+- [Better Auth — banco e `modelName`](https://www.better-auth.com/docs/concepts/database)
+- [Comparação Better Auth × Clerk × NextAuth × Supabase Auth (2026)](https://www.turbostarter.dev/blog/better-auth-vs-clerk-vs-nextauth-vs-supabase-auth)
+- [Supabase — conectar ao Postgres](https://supabase.com/docs/guides/database/connecting-to-postgres)
+- [Supavisor FAQ — modo transação e prepared statements](https://supabase.com/docs/guides/troubleshooting/supavisor-faq-YyP5tI)
+- [Impersonação segura: consentimento e auditoria](https://appmaster.io/blog/secure-admin-impersonation-controls-audit-scope)
+- [Meta — WhatsApp Business Platform](https://developers.facebook.com/documentation/business-messaging/whatsapp/about-the-platform)
+  e [modelos de mensagem](https://gurusup.com/blog/whatsapp-api-message-templates), que sustentam §3.10.1
 
 ---
 
