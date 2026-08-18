@@ -143,7 +143,7 @@ async function Atendimento({ clienteId }: { clienteId: string }) {
 
         <Medida valor={noAr.length} rotulo={noAr.length === 1 ? 'fluxo no ar' : 'fluxos no ar'} />
         <Medida valor={canais.length} rotulo={canais.length === 1 ? 'número' : 'números'} />
-        <Medida valor={totalDeLeads} rotulo="leads" />
+        <Medida valor={totalDeLeads} rotulo="contatos" />
         <Medida valor={esperando} rotulo="esperando" alerta={esperando > 0} />
 
         <span className="flex-1" />

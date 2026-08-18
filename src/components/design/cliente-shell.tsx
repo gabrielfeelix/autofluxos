@@ -9,7 +9,14 @@ export type AbaDoCliente = 'inicio' | 'fluxos' | 'leads' | 'inbox' | 'ajustes'
 const ABAS: { chave: AbaDoCliente; rotulo: string; href: string }[] = [
   { chave: 'inicio', rotulo: 'Início', href: '' },
   { chave: 'fluxos', rotulo: 'Fluxos', href: '/fluxos' },
-  { chave: 'leads', rotulo: 'Leads', href: '/leads' },
+  // "Contatos", não "Leads". Lead é um **estado** por que um contato passa —
+  // quem chegou por anúncio e ainda não fechou. O aluno que remarca aula há
+  // seis meses é contato e nunca vai preencher coluna de qualificação, e era
+  // ele que a tela chamava de lead. Ver docs/PLANO-PRODUTO.md §4.2.
+  //
+  // A rota continua `/leads`: trocá-la quebraria endereço guardado e cada
+  // `revalidatePath` do código, para arrumar uma palavra que só aparece aqui.
+  { chave: 'leads', rotulo: 'Contatos', href: '/leads' },
   { chave: 'inbox', rotulo: 'Inbox', href: '/inbox' },
   { chave: 'ajustes', rotulo: 'Ajustes', href: '/ajustes' },
 ]

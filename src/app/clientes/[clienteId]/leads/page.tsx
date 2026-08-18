@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { telefoneLegivel } from '@/core/contatos/telefone'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { Suspense } from 'react'
@@ -93,7 +94,7 @@ function Esqueleto() {
           <span className="h-3 w-36 rounded bg-white/[0.06]" />
         </div>
       ))}
-      <span className="sr-only">Carregando os leads…</span>
+      <span className="sr-only">Carregando os contatos…</span>
     </div>
   )
 }
@@ -194,7 +195,7 @@ async function Tabela({
       {/* Sem contagem por etiqueta de propósito: cada número desses obrigava a
           ler o histórico do cliente inteiro a cada visita — exatamente o que a
           paginação veio evitar. O número que importa continua acima. */}
-      <nav aria-label="Filtrar leads por etiqueta" className="mb-3 flex flex-wrap gap-2">
+      <nav aria-label="Filtrar contatos por etiqueta" className="mb-3 flex flex-wrap gap-2">
         <Link
           href={endereco(clienteId, { busca: termo })}
           aria-current={etiqueta === null ? 'page' : undefined}
@@ -219,7 +220,7 @@ async function Tabela({
       {leads.length === 0 ? (
         <div className="app-card py-14 text-center">
           <p className="text-[13px] font-bold">
-            {termo !== '' ? `Ninguém com "${termo}"` : 'Nenhum lead com esta etiqueta'}
+            {termo !== '' ? `Ninguém com "${termo}"` : 'Ninguém com esta etiqueta'}
           </p>
           <Link
             href={`/clientes/${clienteId}/leads`}
@@ -254,7 +255,7 @@ async function Tabela({
                         >
                           {lead.nome ?? 'sem nome'}
                         </Link>
-                        <span className="block whitespace-nowrap font-mono text-[10px] text-dim">{lead.waId}</span>
+                        <span className="block whitespace-nowrap font-mono text-[10px] text-dim">{telefoneLegivel(lead.waId)}</span>
                       </div>
                     </div>
                   </td>
@@ -338,7 +339,7 @@ function PrimeiraVez({ clienteId, temCanal }: { clienteId: string; temCanal: boo
           <p className="mb-3 font-mono text-[10px] tracking-[0.16em] text-dim">SEM CANAL</p>
           <h2 className="text-[15.5px] font-bold">Nenhum número conectado</h2>
           <p className="mt-1.5 text-[12.5px] leading-6 text-muted">
-            Sem um número de WhatsApp ligado a um fluxo publicado, ninguém consegue conversar com o bot — e nenhum lead entra aqui.
+            Sem um número de WhatsApp ligado a um fluxo publicado, ninguém consegue conversar com o bot — e nenhum contato entra aqui.
           </p>
           <Link href={`/clientes/${clienteId}`} className="app-secondary-button mt-5 inline-block px-5 py-2.5 text-[13px]">
             Conectar um número
@@ -349,7 +350,7 @@ function PrimeiraVez({ clienteId, temCanal }: { clienteId: string; temCanal: boo
           <span className="mb-3.5 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/[0.08] px-3 py-1 text-[11px] font-bold text-emerald-300">
             <span className="size-1.5 rounded-full bg-emerald-400" /> Número no ar
           </span>
-          <h2 className="text-[15.5px] font-bold">Nenhum lead ainda</h2>
+          <h2 className="text-[15.5px] font-bold">Nenhum contato ainda</h2>
           <p className="mt-1.5 text-[12.5px] leading-6 text-muted">
             Quando alguém conversar com o bot, a pessoa aparece aqui com tudo o que o fluxo coletar.
           </p>
