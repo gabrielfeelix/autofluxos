@@ -9,6 +9,15 @@ Os documentos de origem continuam explicando o porquê e o desenho de cada
 feature. Este documento responde três perguntas: **o que ainda falta, em qual
 ordem e o que prova que cada etapa terminou**.
 
+> **Leia [PLANO-PRODUTO.md](PLANO-PRODUTO.md) antes de escolher a próxima
+> fase.** Escrito em 17/ago/2026 a partir de 13 prints do BotConversa comentados
+> por quem opera, ele responde uma pergunta que este documento não responde —
+> *que produto isto é* — e mudou três premissas: mídia saiu de item de gatilho
+> para a segunda rodada, "Lead" deixou de ser o nome da tela de contatos, e a
+> fase 4 virou também a entrega do lado do cliente, não só dívida de segurança.
+> Quando os dois divergirem: **aquele manda no que fazer, este manda no que
+> prova que terminou.**
+
 > **Regra de banco obrigatória:** AutoFluxos e Verandi compartilham o projeto
 > Supabase, mas não o domínio. Antes de qualquer migration, leia
 > [BANCO-COMPARTILHADO.md](BANCO-COMPARTILHADO.md). AutoFluxos só cria objetos
@@ -366,9 +375,17 @@ Executar conforme aparecer demanda real:
 
 Fonte: item 19 de [EXPANSAO.md](EXPANSAO.md).
 
-Gatilho: primeiro cliente pedir imagem, vídeo, arquivo ou áudio enviado pelo
-bot. Implementar mídia no motor, adaptador WhatsApp, simulador, validação e
-armazenamento. Receber mídia sem quebrar já existe e não deve regredir.
+> **Deixou de ser gatilho em 17/ago/2026.** Era "quando o primeiro cliente pedir
+> imagem"; virou a **Fase B** de [PLANO-PRODUTO.md](PLANO-PRODUTO.md), segunda
+> rodada. O motivo está lá: num negócio de serviço, catálogo, foto de sala e PDF
+> de plano não são pedido eventual — são o assunto da conversa. É também o único
+> item da fila em que a resposta hoje é "o produto não faz", e não "o produto
+> faz de um jeito pior".
+
+Implementar mídia no motor, adaptador WhatsApp, simulador, validação e
+armazenamento. Receber mídia sem quebrar já existe e não deve regredir. O acervo
+mora no Storage, que é **global ao projeto compartilhado** — o nome do bucket
+precisa identificar o produto e a remoção precisa limpá-lo explicitamente.
 
 ## Backlog condicionado e manutenção
 
