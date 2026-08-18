@@ -493,6 +493,76 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
       await db().from('clients').delete().eq('id', outro.id)
     }
   })
+
+  /**
+   * O caminho inteiro da mídia: o fluxo descreve, o canal entrega, e a conversa
+   * guarda o arquivo — não só a legenda. Uma linha em branco no histórico
+   * esconderia de quem atende que a foto do plano já foi mandada.
+   */
+  it('entrega o arquivo pelo canal e guarda o anexo na conversa', async () => {
+    const de = telefone(17)
+    const comFoto = structuredClone(triagem)
+    comFoto.nodes.push({
+      id: 'foto',
+      type: 'midia',
+      position: { x: 0, y: 0 },
+      data: {
+        midia: 'imagem',
+        url: 'https://cdn.exemplo.com/sala.jpg',
+        legenda: 'A sala de aparelhos',
+      },
+    })
+    comFoto.inicio = 'foto'
+    comFoto.edges.push({ id: 'foto-abertura', source: 'foto', target: 'abertura' })
+
+    const fluxo = await criarFluxo(clienteId, `${marca} com foto`, comFoto)
+    const pub = await publicar(fluxo.id, clienteId, comFoto)
+    expect(pub.ok).toBe(true)
+
+    const canal = await criarCanal({
+      clienteId,
+      phoneNumberId: `${numeroDoBot}-midia`,
+      flowId: fluxo.id,
+    })
+
+    mock.enviadas.length = 0
+    await receberMensagem(
+      {
+        entry: [
+          {
+            changes: [
+              {
+                value: {
+                  metadata: { phone_number_id: `${numeroDoBot}-midia` },
+                  contacts: [{ wa_id: de, profile: { name: 'Ana Teste' } }],
+                  messages: [{ id: `wamid-${marca}-midia`, from: de, type: 'text', text: { body: 'oi' } }],
+                },
+              },
+            ],
+          },
+        ],
+      },
+      comMock,
+    )
+
+    expect(mock.enviadas[0]).toEqual({
+      tipo: 'midia',
+      para: de,
+      midia: 'imagem',
+      url: 'https://cdn.exemplo.com/sala.jpg',
+      legenda: 'A sala de aparelhos',
+    })
+
+    const { data: contato } = await db().from('contacts').select('id').eq('wa_id', de).single()
+    const conversa = await lerConversa(contato!.id as string)
+    const comAnexo = conversa.mensagens.find((m) => m.anexo)
+
+    expect(comAnexo?.anexo).toEqual({ midia: 'imagem', url: 'https://cdn.exemplo.com/sala.jpg' })
+    expect(comAnexo?.texto).toBe('A sala de aparelhos')
+    expect(comAnexo?.entregue).toBe(true)
+
+    await db().from('channels').delete().eq('id', canal.id)
+  })
 })
 
 /**
@@ -514,5 +584,6 @@ function canalQueRecusa(motivo: string, aPartirDe = 0) {
     async aguardarResposta() {},
     enviarTexto: recusar,
     enviarOpcoes: recusar,
+    enviarMidia: recusar,
   }
 }

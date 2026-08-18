@@ -673,3 +673,84 @@ describe('as mensagens dizem de qual bloco estão falando', () => {
     expect(solto?.mensagem).toContain('viacep')
   })
 })
+
+describe('bloco de mídia', () => {
+  /** O fluxo mínimo válido, com um bloco de mídia no caminho. */
+  function comMidia(data: Record<string, unknown>): Fluxo {
+    const fluxo = fluxoValido()
+    fluxo.nodes.push({ id: 'arquivo', type: 'midia', position: p, data } as never)
+    fluxo.edges.push({ id: 'em', source: 'oi', target: 'arquivo' })
+    fluxo.edges.push({ id: 'em2', source: 'arquivo', target: 'q' })
+    return fluxoSchema.parse(fluxo)
+  }
+
+  const codigos = (fluxo: Fluxo) => validar(fluxo).erros.map((e) => e.codigo)
+
+  it('publica com imagem e legenda', () => {
+    const r = validar(comMidia({ midia: 'imagem', url: 'https://cdn.ex.com/a.jpg', legenda: 'A sala' }))
+    expect(r.ok).toBe(true)
+  })
+
+  it('recusa publicar sem arquivo', () => {
+    expect(codigos(comMidia({ midia: 'imagem', url: '' }))).toContain('MIDIA_SEM_ARQUIVO')
+  })
+
+  it('recusa endereço que não seja https', () => {
+    expect(codigos(comMidia({ midia: 'imagem', url: 'http://cdn.ex.com/a.jpg' }))).toContain(
+      'MIDIA_INSEGURA',
+    )
+  })
+
+  it('recusa variável no host — quem conversa escolheria de onde o arquivo sai', () => {
+    expect(codigos(comMidia({ midia: 'imagem', url: 'https://{{host}}/a.jpg' }))).toContain(
+      'HOST_VARIAVEL',
+    )
+  })
+
+  it('aceita variável depois da primeira barra', () => {
+    const fluxo = comMidia({ midia: 'imagem', url: 'https://cdn.ex.com/{{plano}}.jpg' })
+    expect(validar(fluxo).erros.filter((e) => e.noId === 'arquivo')).toEqual([])
+  })
+
+  it('recusa áudio com legenda, porque a Meta recusa a mensagem inteira', () => {
+    expect(
+      codigos(comMidia({ midia: 'audio', url: 'https://cdn.ex.com/a.ogg', legenda: 'escuta' })),
+    ).toContain('AUDIO_COM_LEGENDA')
+  })
+
+  it('áudio sem legenda publica', () => {
+    expect(validar(comMidia({ midia: 'audio', url: 'https://cdn.ex.com/a.ogg' })).ok).toBe(true)
+  })
+
+  it('recusa legenda acima do que o WhatsApp aceita', () => {
+    expect(
+      codigos(
+        comMidia({ midia: 'imagem', url: 'https://cdn.ex.com/a.jpg', legenda: 'a'.repeat(1025) }),
+      ),
+    ).toContain('TEXTO_LONGO')
+  })
+
+  it('a variável da legenda entra na conta de quem preenche o quê', () => {
+    // Citar variável que nenhum bloco preenche vira aviso, como no resto do
+    // fluxo — legenda não é um canto fora dessa regra.
+    const fluxo = comMidia({
+      midia: 'imagem',
+      url: 'https://cdn.ex.com/a.jpg',
+      legenda: 'Oi {{ninguem_preenche}}',
+    })
+    expect(validar(fluxo).avisos.some((a) => a.mensagem.includes('ninguem_preenche'))).toBe(true)
+  })
+
+  it('a mídia solta se identifica pela legenda', () => {
+    const fluxo = fluxoValido()
+    fluxo.nodes.push({
+      id: 'orfao',
+      type: 'midia',
+      position: p,
+      data: { midia: 'imagem', url: 'https://cdn.ex.com/a.jpg', legenda: 'A sala de aparelhos' },
+    } as never)
+
+    const solto = validar(fluxoSchema.parse(fluxo)).avisos.find((a) => a.codigo === 'NO_ORFAO')
+    expect(solto?.mensagem).toContain('sala de aparelhos')
+  })
+})

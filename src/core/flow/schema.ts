@@ -75,6 +75,46 @@ export const noMensagemSchema = z.object({
   }),
 })
 
+/**
+ * Os quatro tipos de mídia que a Cloud API envia, e eles não são
+ * intercambiáveis — cada um tem regra própria e a Meta recusa a mensagem
+ * inteira quando a regra é quebrada:
+ *
+ * - `imagem` e `video` aceitam legenda;
+ * - `documento` aceita legenda **e** nome de arquivo (é o que a pessoa vê
+ *   antes de baixar; sem ele o WhatsApp mostra o hash da URL);
+ * - `audio` **não aceita legenda nenhuma**. Mandar uma faz a Meta devolver
+ *   erro, não ignorar o campo.
+ */
+export const TIPOS_DE_MIDIA = ['imagem', 'video', 'documento', 'audio'] as const
+export type TipoDeMidia = (typeof TIPOS_DE_MIDIA)[number]
+
+/** Legenda de mídia é campo próprio na Cloud API e cabe menos que o texto. */
+export const LIMITE_LEGENDA = 1024
+
+/**
+ * Um arquivo enviado pelo bot.
+ *
+ * `url` é o endereço de onde o arquivo sai, e o motor **não** o interpreta: ele
+ * descreve `enviar_midia` e quem entrega decide se busca, faz upload ou reusa
+ * um id. Isso mantém `core/` sem rede, como as outras seis ações.
+ *
+ * A legenda interpola variável igual ao texto — "Segue a planta do {{plano}}"
+ * é o caso comum, não a exceção.
+ */
+export const noMidiaSchema = z.object({
+  ...base,
+  type: z.literal('midia'),
+  data: z.object({
+    midia: z.enum(TIPOS_DE_MIDIA),
+    url: z.string(),
+    legenda: z.string().optional(),
+    /** Só o `documento` usa. Vazio = quem entrega inventa a partir da URL. */
+    nomeArquivo: z.string().optional(),
+    atraso: z.number().min(0).max(LIMITE_ATRASO_SEGUNDOS).optional(),
+  }),
+})
+
 export const noPerguntaSchema = z.object({
   ...base,
   type: z.literal('pergunta'),
@@ -200,6 +240,7 @@ export const noHttpSchema = z.object({
 
 export const noSchema = z.discriminatedUnion('type', [
   noMensagemSchema,
+  noMidiaSchema,
   noPerguntaSchema,
   noCondicaoSchema,
   noSalvarCampoSchema,
@@ -231,6 +272,7 @@ export const fluxoSchema = z.object({
 export type Opcao = z.infer<typeof opcaoSchema>
 export type No = z.infer<typeof noSchema>
 export type NoPergunta = z.infer<typeof noPerguntaSchema>
+export type NoMidia = z.infer<typeof noMidiaSchema>
 export type Cabecalho = z.infer<typeof cabecalhoSchema>
 export type Mapeamento = z.infer<typeof mapeamentoSchema>
 export type NoHttp = z.infer<typeof noHttpSchema>

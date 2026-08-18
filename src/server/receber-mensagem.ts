@@ -391,6 +391,40 @@ async function aplicar(
         break
       }
 
+      case 'enviar_midia': {
+        if (acao.atrasoMs) await canal.aguardarResposta(mensagemId, acao.atrasoMs)
+
+        // O que fica na conversa é a legenda, e sem legenda o rótulo do tipo.
+        // Uma linha em branco no histórico do lead esconderia que algo foi
+        // entregue; `payload` guarda o resto para a tela desenhar o anexo.
+        const registro = await registrarSaida({
+          contatoId: contato.id,
+          sessaoId,
+          texto: acao.legenda ?? '',
+          payload: {
+            midia: acao.midia,
+            url: acao.url,
+            ...(acao.nomeArquivo ? { nomeArquivo: acao.nomeArquivo } : {}),
+          },
+        })
+        const entrega = await entregar(
+          () =>
+            canal.enviarMidia(contato.waId, {
+              midia: acao.midia,
+              url: acao.url,
+              ...(acao.legenda ? { legenda: acao.legenda } : {}),
+              ...(acao.nomeArquivo ? { nomeArquivo: acao.nomeArquivo } : {}),
+            }),
+          alvo,
+        )
+        // Mesma regra do texto: entrega que falha para o resto. Mandar o preço
+        // depois de a foto do plano ter falhado entrega a conversa pela metade.
+        if (!entrega.ok) return pararNoHumano(entrega.motivo)
+
+        await confirmarEntrega(registro)
+        break
+      }
+
       case 'enviar_opcoes': {
         const registro = await registrarSaida({
           contatoId: contato.id,

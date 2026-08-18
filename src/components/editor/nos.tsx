@@ -28,6 +28,7 @@ const CORES = {
   ia: 'border-fuchsia-400/30',
   handoff: 'border-rose-400/30',
   http: 'border-cyan-400/30',
+  midia: 'border-sky-400/30',
 } as const
 
 export const ICONES = {
@@ -38,6 +39,7 @@ export const ICONES = {
   ia: '✦',
   handoff: '♙',
   http: '⇄',
+  midia: '▣',
 } as const
 
 /**
@@ -57,6 +59,7 @@ export const NOMES = {
   ia: 'IA',
   handoff: 'Falar com humano',
   http: 'Serviços externos',
+  midia: 'Mídia',
 } as const
 
 function Caixa({
@@ -120,6 +123,50 @@ function NoMensagem({ data, selected }: NodeProps) {
       {!!d.atraso && <p className="mt-1 text-[10px] text-dim">digita por {d.atraso}s</p>}
     </Caixa>
   )
+}
+
+/** O que cada tipo de mídia se chama na tela, no singular de quem desenha. */
+const ROTULO_DA_MIDIA = {
+  imagem: 'Imagem',
+  video: 'Vídeo',
+  documento: 'Documento',
+  audio: 'Áudio',
+} as const
+
+function NoMidia({ data, selected }: NodeProps) {
+  const d = data as {
+    midia: keyof typeof ROTULO_DA_MIDIA
+    url: string
+    legenda?: string
+    nomeArquivo?: string
+    atraso?: number
+  }
+  // O nome do arquivo é o que identifica no desenho; a URL inteira estoura a
+  // caixa e as três primeiras dezenas dela são sempre iguais entre blocos.
+  const arquivo = d.nomeArquivo?.trim() || nomeDaUrl(d.url)
+
+  return (
+    <Caixa tipo="midia" selecionado={!!selected}>
+      <p className="text-[11px] font-bold tracking-[0.04em] text-sky-200 uppercase">
+        {ROTULO_DA_MIDIA[d.midia] ?? 'Mídia'}
+      </p>
+      <p className="mt-0.5 truncate font-mono text-[10.5px] text-dim">
+        {arquivo === '' ? '(sem arquivo)' : arquivo}
+      </p>
+      {(d.legenda ?? '').trim() !== '' && (
+        <p className="mt-1.5 line-clamp-2 text-[12.5px] leading-5 text-soft">{d.legenda}</p>
+      )}
+      {!!d.atraso && <p className="mt-1 text-[10px] text-dim">digita por {d.atraso}s</p>}
+    </Caixa>
+  )
+}
+
+/** O último pedaço da URL, sem query. Só para o desenho ficar legível. */
+function nomeDaUrl(url: string): string {
+  const limpo = url.trim()
+  if (limpo === '') return ''
+  const semQuery = limpo.split(/[?#]/)[0] ?? limpo
+  return decodeURIComponent(semQuery.slice(semQuery.lastIndexOf('/') + 1)) || limpo
 }
 
 function NoPergunta({ data, selected }: NodeProps) {
@@ -239,6 +286,7 @@ function NoHttp({ data, selected }: NodeProps) {
 
 export const tiposDeNo: NodeTypes = {
   mensagem: NoMensagem,
+  midia: NoMidia,
   pergunta: NoPergunta,
   condicao: NoCondicao,
   'salvar-campo': NoSalvarCampo,

@@ -10,6 +10,7 @@ import { acharCliente } from '@/server/repos/clientes'
 import { contextoDeResposta } from '@/server/repos/conversas'
 import { listarLeads, lerConversa, type Lead, type MensagemDoLead } from '@/server/repos/leads'
 import { listarRespostasRapidas, type RespostaRapida } from '@/server/repos/respostas-rapidas'
+import { AnexoNaConversa, SemTexto } from '@/components/lead/anexo'
 import { horaExata, quando } from '@/lib/quando'
 
 export const dynamic = 'force-dynamic'
@@ -259,7 +260,8 @@ function Historico({
                 ? 'rounded-[13px_13px_4px_13px] border border-accent/[0.2] bg-accent/[0.12]'
                 : 'rounded-[13px_13px_13px_4px] border border-white/[0.07] bg-white/[0.055]'
             }`}>
-              {mensagem.texto ?? <span className="italic text-muted">(áudio, imagem ou documento)</span>}
+              {mensagem.anexo && <AnexoNaConversa anexo={mensagem.anexo} />}
+              {mensagem.texto ?? <SemTexto />}
               <span className="ml-2 text-[9.5px] text-muted" title={horaExata(mensagem.ts)}>
                 {nossa ? 'atendimento' : (nome ?? 'cliente')} · {quando(mensagem.ts)}
               </span>

@@ -209,6 +209,27 @@ function avancar(
         break
       }
 
+      case 'midia': {
+        const legenda = no.data.legenda ? interpolar(no.data.legenda, s.vars) : ''
+        acoes.push({
+          tipo: 'enviar_midia',
+          midia: no.data.midia,
+          // A URL interpola porque catálogo por variável é o caso real: o nó de
+          // API devolve o link do plano escolhido e a mídia manda aquele.
+          url: interpolar(no.data.url, s.vars),
+          // `audio` não aceita legenda, e a decisão é aqui e não no adaptador:
+          // é regra do formato, não do canal. Se o WhatsApp saísse de cena
+          // amanhã, áudio com legenda continuaria não existindo.
+          ...(legenda !== '' && no.data.midia !== 'audio' ? { legenda } : {}),
+          ...(no.data.nomeArquivo && no.data.midia === 'documento'
+            ? { nomeArquivo: interpolar(no.data.nomeArquivo, s.vars) }
+            : {}),
+          ...(no.data.atraso ? { atrasoMs: no.data.atraso * 1_000 } : {}),
+        })
+        atual = proximo(fluxo, no.id)
+        break
+      }
+
       case 'salvar-campo': {
         const valor = interpolar(no.data.valor, s.vars)
         s.vars[no.data.campo] = valor

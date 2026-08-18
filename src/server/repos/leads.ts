@@ -1,5 +1,6 @@
 import 'server-only'
 import { z } from 'zod'
+import { TIPOS_DE_MIDIA, type TipoDeMidia } from '@/core/flow/schema'
 import { db, ehIdInvalido } from '../db'
 
 /**
@@ -41,6 +42,13 @@ export const ETIQUETAS_DE_LEAD = [
 
 export type EtiquetaDeLead = (typeof ETIQUETAS_DE_LEAD)[number]
 
+/** O arquivo de uma mensagem, quando ela tem um. `texto` é a legenda. */
+export type AnexoDaMensagem = {
+  midia: TipoDeMidia
+  url: string
+  nomeArquivo?: string
+}
+
 export type MensagemDoLead = {
   id: string
   direcao: Direcao
@@ -48,6 +56,14 @@ export type MensagemDoLead = {
   ts: string
   /** Saídas que ainda não tiveram confirmação do canal não são entrega certa. */
   entregue: boolean
+  /**
+   * Ausente na esmagadora maioria das linhas.
+   *
+   * Sem isto, a conversa mostraria só a legenda — e um arquivo entregue viraria
+   * linha em branco no histórico, que é pior do que não ter mandado nada: quem
+   * atende não descobre que a foto do plano já foi.
+   */
+  anexo?: AnexoDaMensagem
 }
 
 export type Conversa = {
@@ -482,7 +498,7 @@ export async function lerConversa(
 ): Promise<Conversa> {
   const { data, error } = await db()
     .from('messages')
-    .select('id, direcao, texto, ts, entregue')
+    .select('id, direcao, texto, ts, entregue, payload')
     .eq('contact_id', contatoId)
     .order('ts', { ascending: false })
     .limit(teto + 1)
@@ -496,6 +512,7 @@ export async function lerConversa(
     texto: string | null
     ts: string
     entregue: boolean
+    payload: unknown
   }[]
   const cortada = linhas.length > teto
 
@@ -504,12 +521,37 @@ export async function lerConversa(
     mensagens: linhas
       .slice(0, teto)
       .reverse()
-      .map((m) => ({
-        id: m.id,
-        direcao: direcaoSchema.parse(m.direcao),
-        texto: m.texto,
-        ts: m.ts,
-        entregue: m.entregue,
-      })),
+      .map((m) => {
+        const anexo = anexoDoPayload(m.payload)
+        return {
+          id: m.id,
+          direcao: direcaoSchema.parse(m.direcao),
+          texto: m.texto,
+          ts: m.ts,
+          entregue: m.entregue,
+          ...(anexo ? { anexo } : {}),
+        }
+      }),
+  }
+}
+
+/**
+ * O anexo guardado em `messages.payload`, quando há um.
+ *
+ * `payload` é `jsonb` e carrega coisas diferentes conforme a mensagem — opções
+ * de uma pergunta, o `type` do que chegou do WhatsApp, e agora a mídia que
+ * saiu. Ler defensivamente é o que impede uma linha antiga, de antes deste
+ * campo existir, de derrubar a tela do lead.
+ */
+function anexoDoPayload(payload: unknown): AnexoDaMensagem | null {
+  if (!payload || typeof payload !== 'object') return null
+  const bruto = payload as Record<string, unknown>
+  if (typeof bruto.midia !== 'string' || typeof bruto.url !== 'string') return null
+  if (!(TIPOS_DE_MIDIA as readonly string[]).includes(bruto.midia)) return null
+
+  return {
+    midia: bruto.midia as TipoDeMidia,
+    url: bruto.url,
+    ...(typeof bruto.nomeArquivo === 'string' ? { nomeArquivo: bruto.nomeArquivo } : {}),
   }
 }

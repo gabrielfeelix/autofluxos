@@ -28,10 +28,20 @@ import { Versoes, type VersaoNaLista } from './versoes'
 
 const PAUSA_ANTES_DE_SALVAR = 800
 
-const TIPOS: TipoNo[] = ['mensagem', 'pergunta', 'condicao', 'salvar-campo', 'ia', 'handoff', 'http']
+const TIPOS: TipoNo[] = [
+  'mensagem',
+  'midia',
+  'pergunta',
+  'condicao',
+  'salvar-campo',
+  'ia',
+  'handoff',
+  'http',
+]
 
 const DESCRICOES: Record<TipoNo, string> = {
   mensagem: 'Envia um texto',
+  midia: 'Envia foto ou arquivo',
   pergunta: 'Pergunta e guarda',
   condicao: 'Divide o caminho',
   'salvar-campo': 'Registra no lead',
@@ -53,6 +63,11 @@ function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
   switch (tipo) {
     case 'mensagem':
       return { texto: 'Escreva a mensagem aqui.' }
+    case 'midia':
+      // Nasce sem URL de propósito: o validador recusa publicar assim, e é o
+      // erro certo. Um endereço de exemplo que funcionasse viraria foto de
+      // outro negócio no WhatsApp de um cliente.
+      return { midia: 'imagem', url: '', legenda: '' }
     case 'pergunta':
       return { texto: 'O que você quer perguntar?', opcoes: [] }
     case 'condicao':

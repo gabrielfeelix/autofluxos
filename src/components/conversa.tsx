@@ -2,12 +2,27 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { sessaoNova, type Acao, type Entrada, type Resultado, type Sessao } from '@/core/engine/types'
-import type { Fluxo, Opcao } from '@/core/flow/schema'
+import type { Fluxo, Opcao, TipoDeMidia } from '@/core/flow/schema'
 
 export type ModoDaConversa = 'conversa' | 'bastidores'
 
+/** O anexo de uma fala. `texto` continua sendo a legenda, quando há. */
+export type AnexoDaFala = {
+  midia: TipoDeMidia
+  url: string
+  nomeArquivo?: string
+}
+
 export type ItemDaConversa =
-  | { chave: number; de: 'bot'; texto: string; hora?: string; opcoes?: Opcao[]; formato?: 'botoes' | 'lista' }
+  | {
+      chave: number
+      de: 'bot'
+      texto: string
+      hora?: string
+      opcoes?: Opcao[]
+      formato?: 'botoes' | 'lista'
+      anexo?: AnexoDaFala
+    }
   | { chave: number; de: 'pessoa'; texto: string; hora?: string }
   | { chave: number; de: 'sistema'; texto: string; alerta?: boolean }
 
@@ -20,6 +35,48 @@ export function contarEventos(itens: ItemDaConversa[]) {
 }
 
 type Pendentes = { chave: number; opcoes: Opcao[]; formato: 'botoes' | 'lista' }
+
+/**
+ * O anexo dentro da bolha.
+ *
+ * Imagem e vídeo aparecem de verdade — o ponto do modo `conversa` é ver o que a
+ * pessoa vai ver, e um retângulo escrito "imagem" não prova que o arquivo
+ * carrega. Documento e áudio viram cartão, que é o que o WhatsApp mostra.
+ *
+ * `<img>` puro em vez do `next/image`: a URL é digitada por quem desenha o
+ * fluxo e aponta para qualquer host, então não há como configurar domínio
+ * permitido no `next.config` sem quebrar o caso normal. Aqui é preview de
+ * teste, não imagem de página.
+ */
+function Anexo({ anexo, claro = false }: { anexo: AnexoDaFala; claro?: boolean }) {
+  const nome = anexo.nomeArquivo?.trim() || 'arquivo'
+
+  if (anexo.midia === 'imagem') {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={anexo.url} alt={nome} className="block max-h-64 w-full object-cover" />
+  }
+
+  if (anexo.midia === 'video') {
+    return <video src={anexo.url} controls className="block max-h-64 w-full bg-black" />
+  }
+
+  if (anexo.midia === 'audio') {
+    return <audio src={anexo.url} controls className="block w-full max-w-[260px] p-2" />
+  }
+
+  return (
+    <span
+      className={`flex items-center gap-2.5 px-3 py-2.5 ${
+        claro ? 'bg-[#f5f6f6] text-[#111b21]' : 'bg-white/[0.05]'
+      }`}
+    >
+      <span aria-hidden className="text-base">
+        📄
+      </span>
+      <span className="min-w-0 flex-1 truncate text-[12px] font-medium">{nome}</span>
+    </span>
+  )
+}
 
 let sequencia = 0
 const novaChave = () => ++sequencia
@@ -135,6 +192,22 @@ export function Conversa({
             await new Promise((resolver) => setTimeout(resolver, acao.atrasoMs))
           }
           adicionar({ chave, de: 'bot', texto: acao.texto, hora: horaAtual() })
+          break
+        case 'enviar_midia':
+          if (acao.atrasoMs) {
+            await new Promise((resolver) => setTimeout(resolver, acao.atrasoMs))
+          }
+          adicionar({
+            chave,
+            de: 'bot',
+            texto: acao.legenda ?? '',
+            hora: horaAtual(),
+            anexo: {
+              midia: acao.midia,
+              url: acao.url,
+              ...(acao.nomeArquivo ? { nomeArquivo: acao.nomeArquivo } : {}),
+            },
+          })
           break
         case 'enviar_opcoes':
           adicionar({
@@ -463,12 +536,15 @@ function Bolha({
 
     return (
       <div className="flex max-w-[92%] flex-col items-start gap-1">
-        <p className="max-w-full rounded-[13px_13px_13px_4px] bg-white px-3 py-2 text-[12.5px] leading-[1.5] whitespace-pre-wrap text-[#111b21] shadow-[0_1px_1px_rgba(11,20,26,0.13)]">
-          <span>{item.texto}</span>
-          <span className="ml-2 inline-block translate-y-0.5 whitespace-nowrap text-[8.5px] text-[#667781]">
-            {item.hora}
-          </span>
-        </p>
+        <div className="max-w-full overflow-hidden rounded-[13px_13px_13px_4px] bg-white shadow-[0_1px_1px_rgba(11,20,26,0.13)]">
+          {item.anexo && <Anexo anexo={item.anexo} claro />}
+          <p className="px-3 py-2 text-[12.5px] leading-[1.5] whitespace-pre-wrap text-[#111b21]">
+            <span>{item.texto}</span>
+            <span className="ml-2 inline-block translate-y-0.5 whitespace-nowrap text-[8.5px] text-[#667781]">
+              {item.hora}
+            </span>
+          </p>
+        </div>
 
         {item.opcoes && item.opcoes.length > 0 && (
           <div className="w-full overflow-hidden rounded-lg bg-white shadow-[0_1px_1px_rgba(11,20,26,0.13)]">
@@ -497,9 +573,12 @@ function Bolha({
 
   return (
     <div className="flex flex-col items-start gap-2">
-      <p className="max-w-[88%] rounded-[13px_13px_13px_4px] border border-white/[0.08] bg-white/[0.055] px-3 py-2 text-[12.5px] leading-[1.5] whitespace-pre-wrap">
-        {item.texto}
-      </p>
+      <div className="max-w-[88%] overflow-hidden rounded-[13px_13px_13px_4px] border border-white/[0.08] bg-white/[0.055]">
+        {item.anexo && <Anexo anexo={item.anexo} />}
+        {item.texto.trim() !== '' && (
+          <p className="px-3 py-2 text-[12.5px] leading-[1.5] whitespace-pre-wrap">{item.texto}</p>
+        )}
+      </div>
 
       {item.opcoes && item.opcoes.length > 0 && (
         <div

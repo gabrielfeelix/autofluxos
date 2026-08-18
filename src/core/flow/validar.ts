@@ -1,5 +1,6 @@
 import {
   FORMATO_VARIAVEL,
+  LIMITE_LEGENDA,
   LIMITE_LISTA,
   LIMITE_ROTULO,
   LIMITE_TEXTO,
@@ -278,7 +279,9 @@ function descrever(no: No): string {
     case 'handoff':
       return rotular('Falar com humano', curto(no.data.motivo))
     case 'http':
-      return rotular('API', curto(no.data.url))
+      return rotular('Serviços externos', curto(no.data.url))
+    case 'midia':
+      return rotular('Mídia', curto(no.data.legenda ?? no.data.url))
   }
 }
 
@@ -328,6 +331,55 @@ function conferirConteudo(no: No, erros: Problema[]): void {
       }
       conferirTamanho(no.data.texto, false)
       break
+
+    case 'midia': {
+      if (vazio(no.data.url)) {
+        erros.push({
+          codigo: 'MIDIA_SEM_ARQUIVO',
+          mensagem: 'Este bloco não diz qual arquivo enviar.',
+          noId: no.id,
+        })
+      } else if (temVariavelNoHost(no.data.url)) {
+        // Mesma regra do bloco de serviços externos, e pelo mesmo motivo: as
+        // variáveis vêm do que a pessoa digita no WhatsApp. Com o host vindo
+        // delas, quem conversa escolheria de qual servidor a Meta baixa — e o
+        // arquivo entregue em nome do cliente passaria a ser escolha de um
+        // estranho.
+        erros.push({
+          codigo: 'HOST_VARIAVEL',
+          mensagem:
+            'O endereço do servidor não pode vir de {{variavel}}. Use variável só depois da primeira barra.',
+          noId: no.id,
+        })
+      } else if (!no.data.url.trim().startsWith('https://')) {
+        erros.push({
+          codigo: 'MIDIA_INSEGURA',
+          mensagem:
+            'O arquivo precisa vir de um endereço https:// — a Meta recusa buscar de qualquer outro.',
+          noId: no.id,
+        })
+      }
+
+      // Áudio com legenda não é campo ignorado: a Meta recusa a mensagem. Vale
+      // recusar aqui para ninguém descobrir com cliente de verdade conversando.
+      if (no.data.midia === 'audio' && !vazio(no.data.legenda ?? '')) {
+        erros.push({
+          codigo: 'AUDIO_COM_LEGENDA',
+          mensagem:
+            'Áudio não aceita legenda no WhatsApp. Escreva a legenda num bloco de Mensagem antes ou depois deste.',
+          noId: no.id,
+        })
+      }
+
+      if ((no.data.legenda ?? '').length > LIMITE_LEGENDA) {
+        erros.push({
+          codigo: 'TEXTO_LONGO',
+          mensagem: `São ${no.data.legenda?.length} caracteres. A legenda de mídia aceita ${LIMITE_LEGENDA} — acima disso o WhatsApp recusa a mensagem inteira.`,
+          noId: no.id,
+        })
+      }
+      break
+    }
 
     case 'pergunta': {
       if (vazio(no.data.texto)) {
@@ -591,6 +643,12 @@ function variaveisDoNo(no: No): string[] {
       ]
     case 'salvar-campo':
       return variaveisCitadas(no.data.valor)
+    case 'midia':
+      return [
+        ...variaveisCitadas(no.data.url),
+        ...variaveisCitadas(no.data.legenda ?? ''),
+        ...variaveisCitadas(no.data.nomeArquivo ?? ''),
+      ]
     case 'ia':
       return variaveisCitadas(no.data.instrucao)
     case 'handoff':

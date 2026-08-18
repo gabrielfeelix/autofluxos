@@ -33,6 +33,21 @@ export type ConfigCloudApi = {
   versaoGraph?: string
 }
 
+/**
+ * O nosso nome de cada mídia e o nome da Meta.
+ *
+ * São diferentes em dois dos quatro (`imagem`/`image`, `video`/`video` batem;
+ * `documento`/`document` e `audio`/`audio` não). Manter a tradução aqui é o que
+ * deixa `core/` falar português sem saber que a Cloud API existe — a mesma
+ * fronteira que já vale para o resto do domínio.
+ */
+const TIPO_NA_META = {
+  imagem: 'image',
+  video: 'video',
+  documento: 'document',
+  audio: 'audio',
+} as const
+
 export function canalCloudApi(config: ConfigCloudApi): Canal {
   const versao = config.versaoGraph ?? process.env.META_GRAPH_VERSION ?? VERSAO_PADRAO
   const url = `https://graph.facebook.com/${versao}/${config.phoneNumberId}/messages`
@@ -101,6 +116,31 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
 
     async enviarTexto(para, texto) {
       await mandar({ to: para, type: 'text', text: { preview_url: true, body: texto } })
+    },
+
+    async enviarMidia(para, { midia, url, legenda, nomeArquivo }) {
+      // A Meta baixa do `link` na hora de entregar; o outro caminho é subir o
+      // arquivo antes e mandar um `id`. Ficamos no link de propósito: o `id`
+      // expira em 30 dias e obrigaria a guardar validade e reenviar sozinho,
+      // que é um cache com invalidação para economizar um GET da Meta.
+      //
+      // O preço do link é ser público enquanto durar. Quem publica o endereço
+      // decide isso; o canal só entrega o que o fluxo mandou.
+      const tipo = TIPO_NA_META[midia]
+
+      await mandar({
+        to: para,
+        type: tipo,
+        [tipo]: {
+          link: url,
+          // Áudio não aceita legenda e o motor já não a produz. Repetir a
+          // condição aqui não é redundância: o adaptador é o último ponto
+          // antes da Meta, e uma versão publicada antes desta regra pode
+          // carregar a legenda no grafo.
+          ...(legenda && midia !== 'audio' ? { caption: legenda } : {}),
+          ...(nomeArquivo && midia === 'documento' ? { filename: nomeArquivo } : {}),
+        },
+      })
     },
 
     async enviarOpcoes(para, texto, opcoes, formato) {

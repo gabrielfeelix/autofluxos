@@ -4,20 +4,31 @@ import { useRef, useState } from 'react'
 import {
   LIMITE_BOTOES,
   LIMITE_ATRASO_SEGUNDOS,
+  LIMITE_LEGENDA,
   LIMITE_LISTA,
   LIMITE_ROTULO,
   LIMITE_TEXTO,
   LIMITE_TEXTO_INTERATIVO,
   METODOS,
   OPERADORES,
+  TIPOS_DE_MIDIA,
   type Cabecalho,
   type Mapeamento,
   type No,
   type Opcao,
+  type TipoDeMidia,
 } from '@/core/flow/schema'
 import { Dropdown } from '@/components/design/dropdown'
 import { inserirNoCursor } from './inserir-variavel'
 import { NOMES } from './nos'
+
+/** Os quatro tipos, no nome que quem desenha o fluxo usa. */
+const ROTULOS_DE_MIDIA: Record<TipoDeMidia, string> = {
+  imagem: 'Imagem',
+  video: 'Vídeo',
+  documento: 'Documento',
+  audio: 'Áudio',
+}
 
 /** O que o painel precisa saber de uma credencial: o nome, e nada mais. */
 export type ConexaoDoCliente = { id: string; nome: string; tipo: string }
@@ -154,6 +165,69 @@ export function Painel({
               Até {LIMITE_ATRASO_SEGUNDOS}s: mostra “digitando…” antes desta mensagem. Pausa maior precisa ser agendada.
             </span>
           </label>
+        </>
+      )}
+
+      {no.type === 'midia' && (
+        <>
+          <label className="block">
+            <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+              Tipo
+            </span>
+            <select
+              value={no.data.midia}
+              onChange={(evento) => {
+                const midia = evento.currentTarget.value as TipoDeMidia
+                // Trocar para áudio limpa a legenda em vez de deixá-la
+                // guardada e invisível: o campo some da tela, e um texto que
+                // ninguém mais vê barraria a publicação sem dizer onde está.
+                aoMudarDados(midia === 'audio' ? { midia, legenda: '' } : { midia })
+              }}
+              className="app-field px-3 py-2.5 text-[13px]"
+            >
+              {TIPOS_DE_MIDIA.map((tipo) => (
+                <option key={tipo} value={tipo}>
+                  {ROTULOS_DE_MIDIA[tipo]}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <Linha
+            rotulo="Endereço do arquivo"
+            valor={no.data.url}
+            aoMudar={(url) => aoMudarDados({ url })}
+            aceitaVariavel
+            aoFocar={registrarCampo}
+            dica="Precisa ser https://. A Meta baixa o arquivo deste endereço na hora de entregar."
+          />
+
+          {no.data.midia === 'documento' && (
+            <Linha
+              rotulo="Nome do arquivo"
+              valor={no.data.nomeArquivo ?? ''}
+              aoMudar={(nomeArquivo) => aoMudarDados({ nomeArquivo })}
+              aceitaVariavel
+              aoFocar={registrarCampo}
+              dica="É o que a pessoa lê antes de baixar. Vazio, o WhatsApp mostra o fim da URL."
+            />
+          )}
+
+          {no.data.midia === 'audio' ? (
+            <p className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-[11.5px] leading-5 text-muted">
+              Áudio não aceita legenda no WhatsApp — a Meta recusa a mensagem
+              inteira, não ignora o campo. Para dizer algo junto, use um bloco de
+              Mensagem antes ou depois deste.
+            </p>
+          ) : (
+            <Area
+              rotulo="Legenda"
+              valor={no.data.legenda ?? ''}
+              limite={LIMITE_LEGENDA}
+              aoMudar={(legenda) => aoMudarDados({ legenda })}
+              aoFocar={registrarCampo}
+            />
+          )}
         </>
       )}
 

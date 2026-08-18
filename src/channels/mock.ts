@@ -1,10 +1,11 @@
 import type { Opcao } from '@/core/flow/schema'
-import type { Canal } from './types'
+import type { Canal, Midia } from './types'
 
 export type Enviada =
   | { tipo: 'espera'; mensagemId: string; atrasoMs: number }
   | { tipo: 'texto'; para: string; texto: string }
   | { tipo: 'opcoes'; para: string; texto: string; opcoes: Opcao[]; formato: 'botoes' | 'lista' }
+  | ({ tipo: 'midia'; para: string } & Midia)
 
 /**
  * O canal que não envia nada — guarda o que enviaria.
@@ -27,6 +28,9 @@ export function canalMock(): Canal & { enviadas: Enviada[] } {
     },
     async enviarOpcoes(para, texto, opcoes, formato) {
       enviadas.push({ tipo: 'opcoes', para, texto, opcoes, formato })
+    },
+    async enviarMidia(para, midia) {
+      enviadas.push({ tipo: 'midia', para, ...midia })
     },
   }
 }

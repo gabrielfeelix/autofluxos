@@ -627,3 +627,105 @@ describe('pergunta com opções dinâmicas', () => {
     expect(r.sessao.status).toBe('humano')
   })
 })
+
+describe('bloco de mídia', () => {
+  const comMidia = (data: Record<string, unknown>): Fluxo =>
+    fluxoSchema.parse({
+      inicio: 'arquivo',
+      nodes: [
+        { id: 'arquivo', type: 'midia', position: p, data },
+        { id: 'humano', type: 'handoff', position: p, data: { motivo: 'fim' } },
+      ],
+      edges: [{ id: 'a1', source: 'arquivo', target: 'humano' }],
+    })
+
+  const midiaDe = (acoes: Acao[]) => acoes.find((a) => a.tipo === 'enviar_midia')
+
+  it('descreve o arquivo em vez de buscá-lo', () => {
+    const r = executar(
+      comMidia({ midia: 'imagem', url: 'https://cdn.exemplo.com/sala.jpg', legenda: 'A sala' }),
+      sessaoNova(),
+      { tipo: 'inicio' },
+    )
+
+    expect(midiaDe(r.acoes)).toEqual({
+      tipo: 'enviar_midia',
+      midia: 'imagem',
+      url: 'https://cdn.exemplo.com/sala.jpg',
+      legenda: 'A sala',
+    })
+  })
+
+  it('interpola legenda e endereço, porque catálogo por variável é o caso real', () => {
+    const sessao: Sessao = { ...sessaoNova(), vars: { nome: 'Ana', plano: 'trimestral' } }
+    const r = executar(
+      comMidia({
+        midia: 'documento',
+        url: 'https://cdn.exemplo.com/planos/{{plano}}.pdf',
+        legenda: 'Segue o plano, {{nome}}',
+        nomeArquivo: 'plano-{{plano}}.pdf',
+      }),
+      sessao,
+      { tipo: 'inicio' },
+    )
+
+    expect(midiaDe(r.acoes)).toMatchObject({
+      url: 'https://cdn.exemplo.com/planos/trimestral.pdf',
+      legenda: 'Segue o plano, Ana',
+      nomeArquivo: 'plano-trimestral.pdf',
+    })
+  })
+
+  it('áudio sai sem legenda mesmo quando o desenho tem uma', () => {
+    // A Meta recusa a mensagem inteira, não ignora o campo. A decisão é do
+    // motor e não do adaptador: é regra do formato, não do canal.
+    const r = executar(
+      comMidia({ midia: 'audio', url: 'https://cdn.exemplo.com/oi.ogg', legenda: 'escuta isso' }),
+      sessaoNova(),
+      { tipo: 'inicio' },
+    )
+
+    expect(midiaDe(r.acoes)).not.toHaveProperty('legenda')
+  })
+
+  it('nome de arquivo só acompanha documento', () => {
+    const r = executar(
+      comMidia({ midia: 'imagem', url: 'https://cdn.exemplo.com/a.jpg', nomeArquivo: 'a.jpg' }),
+      sessaoNova(),
+      { tipo: 'inicio' },
+    )
+
+    expect(midiaDe(r.acoes)).not.toHaveProperty('nomeArquivo')
+  })
+
+  it('a conversa continua depois do arquivo', () => {
+    const r = executar(
+      comMidia({ midia: 'imagem', url: 'https://cdn.exemplo.com/sala.jpg' }),
+      sessaoNova(),
+      { tipo: 'inicio' },
+    )
+
+    expect(tipos(r.acoes)).toEqual(['enviar_midia', 'enviar_texto', 'transferir_humano'])
+    expect(r.sessao.status).toBe('humano')
+  })
+
+  it('legenda vazia não vira campo vazio na ação', () => {
+    const r = executar(
+      comMidia({ midia: 'imagem', url: 'https://cdn.exemplo.com/sala.jpg', legenda: '' }),
+      sessaoNova(),
+      { tipo: 'inicio' },
+    )
+
+    expect(midiaDe(r.acoes)).not.toHaveProperty('legenda')
+  })
+
+  it('atraso vira atrasoMs, igual ao bloco de mensagem', () => {
+    const r = executar(
+      comMidia({ midia: 'imagem', url: 'https://cdn.exemplo.com/sala.jpg', atraso: 2 }),
+      sessaoNova(),
+      { tipo: 'inicio' },
+    )
+
+    expect(midiaDe(r.acoes)).toMatchObject({ atrasoMs: 2_000 })
+  })
+})

@@ -1,5 +1,12 @@
 import { z } from 'zod'
-import type { AoFalhar, Cabecalho, Mapeamento, Metodo, Opcao } from '../flow/schema'
+import type {
+  AoFalhar,
+  Cabecalho,
+  Mapeamento,
+  Metodo,
+  Opcao,
+  TipoDeMidia,
+} from '../flow/schema'
 
 /**
  * `Sessao` e `Entrada` são schemas Zod, não só tipos: eles atravessam a
@@ -80,6 +87,24 @@ export type Acao =
       opcoes: Opcao[]
       /** decidido pela quantidade: até 3 vira botão, até 10 vira lista */
       formato: 'botoes' | 'lista'
+    }
+  /**
+   * Entregar um arquivo: foto da sala, PDF do plano, vídeo do portfólio.
+   *
+   * O motor descreve **de onde o arquivo sai** e não sabe como ele chega. Quem
+   * entrega decide entre mandar o endereço, fazer upload ou reusar um id que já
+   * tem — é o mesmo motivo de `chamar_http` carregar `conexaoId` em vez da
+   * credencial: `core/` não faz rede, e essa regra não abre exceção por mídia.
+   */
+  | {
+      tipo: 'enviar_midia'
+      midia: TipoDeMidia
+      url: string
+      /** Já interpolada. Ausente em `audio`, que não aceita legenda. */
+      legenda?: string
+      /** O nome que a pessoa vê antes de baixar. Só `documento` usa. */
+      nomeArquivo?: string
+      atrasoMs?: number
     }
   /** persistir no contato — é isso que alimenta a tela de leads */
   | { tipo: 'salvar_campo'; campo: string; valor: string }

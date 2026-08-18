@@ -1,4 +1,12 @@
-import type { Opcao } from '@/core/flow/schema'
+import type { Opcao, TipoDeMidia } from '@/core/flow/schema'
+
+/** O que o canal precisa para entregar um arquivo. Espelha `enviar_midia`. */
+export type Midia = {
+  midia: TipoDeMidia
+  url: string
+  legenda?: string
+  nomeArquivo?: string
+}
 
 /**
  * Por onde as mensagens saem.
@@ -17,4 +25,5 @@ export type Canal = {
     opcoes: Opcao[],
     formato: 'botoes' | 'lista',
   ): Promise<void>
+  enviarMidia(para: string, midia: Midia): Promise<void>
 }
