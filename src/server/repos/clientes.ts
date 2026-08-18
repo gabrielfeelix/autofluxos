@@ -78,6 +78,49 @@ export async function listarClientes(): Promise<Cliente[]> {
   return (data as Linha[]).map(paraCliente)
 }
 
+export type ResumoDeAtendimento = {
+  contatos: number
+  esperandoPessoa: number
+  /** `null` quando ninguém nunca escreveu — cliente novo, não cliente parado. */
+  ultimaAtividade: Date | null
+}
+
+type LinhaDeResumo = {
+  client_id: string
+  contatos: number | string
+  esperando_pessoa: number | string
+  ultima_atividade: string | null
+}
+
+/**
+ * Quem está esperando resposta, quantos contatos e o último movimento — de
+ * todos os clientes, numa consulta.
+ *
+ * Uma consulta por cliente seria N+1 na primeira tela que abre, e a agregação
+ * fica no Postgres pelo mesmo motivo da view `metricas_sessoes`: reduzir aqui
+ * significaria trazer o histórico de todo mundo para contar linha. A view
+ * `resumo_clientes` (migration 0016) faz o `group by` lá.
+ *
+ * Devolve mapa porque a tela itera clientes, não resumos, e não deve procurar.
+ */
+export async function resumirAtendimento(): Promise<Map<string, ResumoDeAtendimento>> {
+  const { data, error } = await db()
+    .from('resumo_clientes')
+    .select('client_id, contatos, esperando_pessoa, ultima_atividade')
+
+  if (error) throw new Error(`não deu para resumir o atendimento: ${error.message}`)
+
+  const mapa = new Map<string, ResumoDeAtendimento>()
+  for (const linha of data as LinhaDeResumo[]) {
+    mapa.set(linha.client_id, {
+      contatos: Number(linha.contatos),
+      esperandoPessoa: Number(linha.esperando_pessoa),
+      ultimaAtividade: linha.ultima_atividade ? new Date(linha.ultima_atividade) : null,
+    })
+  }
+  return mapa
+}
+
 export async function acharCliente(id: string): Promise<Cliente | null> {
   const { data, error } = await db().from('clients').select(COLUNAS).eq('id', id).maybeSingle()
 

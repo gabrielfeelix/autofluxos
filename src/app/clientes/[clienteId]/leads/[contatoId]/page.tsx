@@ -11,7 +11,7 @@ import { acharCliente } from '@/server/repos/clientes'
 import { contextoDeResposta } from '@/server/repos/conversas'
 import { acharLead, lerConversa } from '@/server/repos/leads'
 import { listarRespostasRapidas } from '@/server/repos/respostas-rapidas'
-import { horaExata, quando } from '../quando'
+import { horaExata, quando } from '@/lib/quando'
 
 export const dynamic = 'force-dynamic'
 

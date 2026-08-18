@@ -12,7 +12,7 @@ import {
   type EtiquetaDeLead,
   type Lead,
 } from '@/server/repos/leads'
-import { horaExata, quando } from './quando'
+import { horaExata, quando } from '@/lib/quando'
 
 export const dynamic = 'force-dynamic'
 

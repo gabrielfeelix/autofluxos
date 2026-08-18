@@ -10,7 +10,7 @@ import { acharCliente } from '@/server/repos/clientes'
 import { contextoDeResposta } from '@/server/repos/conversas'
 import { listarLeads, lerConversa, type Lead, type MensagemDoLead } from '@/server/repos/leads'
 import { listarRespostasRapidas, type RespostaRapida } from '@/server/repos/respostas-rapidas'
-import { horaExata, quando } from '../leads/quando'
+import { horaExata, quando } from '@/lib/quando'
 
 export const dynamic = 'force-dynamic'
 

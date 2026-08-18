@@ -422,8 +422,18 @@ export function Editor({
         >
           ‹
         </Link>
-        <div className="min-w-0">
-          <h1 className="max-w-56 truncate text-sm font-bold tracking-[-0.01em]">{nome}</h1>
+        {/*
+          O nome do fluxo não corta mais.
+          Ele tinha `max-w-56 truncate`, e um nome como "PRINCIPAL - ATENDIMENTO"
+          virava "PRINCIPAL - ATEN…" — o mesmo defeito que reclamamos do
+          concorrente. Nome de automação é como quem desenhou se localiza entre
+          as suas; cortar no meio economiza 60px e cobra a leitura.
+
+          `min-w-0` sai junto: ele existia para o `truncate` funcionar, e agora
+          seria ele a espremer o título contra os controles da direita.
+        */}
+        <div className="shrink-0">
+          <h1 className="text-sm font-bold tracking-[-0.01em]">{nome}</h1>
           <p className="text-[10.5px] text-dim">{clienteNome}</p>
         </div>
         <span className="mx-0.5 h-6 w-px bg-white/[0.08]" />

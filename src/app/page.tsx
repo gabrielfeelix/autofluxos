@@ -2,23 +2,78 @@ import Link from 'next/link'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { LogoDoCliente } from '@/components/design/logo-cliente'
 import { PainelShell } from '@/components/design/shell'
+import { horaExata, quando } from '@/lib/quando'
 import { acaoCriarCliente, acaoCriarExemplo } from '@/server/acoes'
-import { listarClientes } from '@/server/repos/clientes'
+import { listarClientes, resumirAtendimento } from '@/server/repos/clientes'
 import { resumirAutomacoes } from '@/server/repos/fluxos'
 
 export const dynamic = 'force-dynamic'
 
+/**
+ * A porta de entrada do painel.
+ *
+ * **Ela era uma grade de cartões e virou lista, e isso não é gosto.** O cartão
+ * respondia "quanta coisa a gente montou aqui" — nome, `N automações`, `N com
+ * IA` (duas vezes, uma como selo e outra na linha de números) e um ponto verde
+ * dizendo "estrutura configurada". Nada disso muda ao longo do dia, e nada
+ * disso é motivo para abrir a tela.
+ *
+ * A pergunta que faz alguém abrir isto de manhã é **quem está esperando
+ * resposta**. Ela cabe numa linha, e uma linha por cliente ocupa a largura da
+ * tela em vez de deixar um deserto à direita de três caixas de 310px.
+ */
 export default async function Pagina() {
-  const [clientes, automacoes] = await Promise.all([listarClientes(), resumirAutomacoes()])
+  const [clientes, automacoes, atendimento] = await Promise.all([
+    listarClientes(),
+    resumirAutomacoes(),
+    resumirAtendimento(),
+  ])
+
+  /**
+   * Quem espera vem primeiro, depois quem se mexeu por último.
+   *
+   * A ordem de criação era estável e não dizia nada. Esta muda de dia para dia
+   * de propósito: a lista é uma fila de trabalho, e o primeiro item tem que ser
+   * o que precisa de alguém agora. O desempate por nome mantém a ordem previsível
+   * quando ninguém espera e ninguém se mexeu.
+   */
+  const fila = [...clientes].sort((a, b) => {
+    const ra = atendimento.get(a.id)
+    const rb = atendimento.get(b.id)
+    const esperando = (rb?.esperandoPessoa ?? 0) - (ra?.esperandoPessoa ?? 0)
+    if (esperando !== 0) return esperando
+
+    const movimento = (rb?.ultimaAtividade?.getTime() ?? 0) - (ra?.ultimaAtividade?.getTime() ?? 0)
+    if (movimento !== 0) return movimento
+
+    return a.nome.localeCompare(b.nome, 'pt-BR')
+  })
+
+  const esperandoNoTotal = fila.reduce(
+    (soma, cliente) => soma + (atendimento.get(cliente.id)?.esperandoPessoa ?? 0),
+    0,
+  )
 
   return (
     <PainelShell>
-      <main className="app-page-enter max-w-[1120px] px-4 md:px-[46px] pt-[38px] pb-[46px]">
+      <main className="app-page-enter px-4 md:px-[46px] pt-[38px] pb-[46px]">
         <header className="mb-7 flex flex-wrap items-end justify-between gap-5">
           <div>
             <h1 className="text-[25px] font-bold tracking-[-0.02em]">Clientes</h1>
             <p className="mt-1 text-[13px] text-muted">
-              Empresas atendidas pela 4YU — cada uma com seus fluxos e números.
+              {esperandoNoTotal > 0 ? (
+                <>
+                  <strong className="font-semibold text-amber-300">
+                    {esperandoNoTotal}{' '}
+                    {esperandoNoTotal === 1 ? 'pessoa espera' : 'pessoas esperam'} atendimento
+                  </strong>{' '}
+                  em {clientes.length} {clientes.length === 1 ? 'empresa' : 'empresas'}.
+                </>
+              ) : (
+                <>
+                  Empresas atendidas pela 4YU — nenhuma conversa esperando uma pessoa agora.
+                </>
+              )}
             </p>
           </div>
 
@@ -59,56 +114,87 @@ export default async function Pagina() {
             </form>
           </section>
         ) : (
-          <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(310px,100%),1fr))] gap-4">
-            {clientes.map((cliente) => {
-              const resumo = automacoes.get(cliente.id)
-              const total = resumo?.total ?? 0
-              const comIa = resumo?.comIa ?? 0
-
-              return (
-                <li key={cliente.id}>
-                  <Link
-                    href={`/clientes/${cliente.id}`}
-                    className="app-card app-card-interactive block min-h-[172px] p-5"
-                  >
-                    <div className="mb-4 flex items-center gap-3">
-                      <LogoDoCliente cliente={cliente} />
-                      <div className="min-w-0 flex-1">
-                        <h2 className="truncate text-[15.5px] font-bold tracking-[-0.01em]">
-                          {cliente.nome}
-                        </h2>
-                        <p className="mt-0.5 text-[11.5px] text-dim">cliente AutoFluxos</p>
-                      </div>
-                      {comIa > 0 && (
-                        <span className="font-mono text-[10px] text-violet-300">
-                          {comIa} com IA
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="mb-4 flex gap-[18px] text-[12.5px] text-muted">
-                      <span>
-                        <strong className="font-mono text-[13px] text-ink">{total}</strong>{' '}
-                        {total === 1 ? 'automação' : 'automações'}
-                      </span>
-                      <span>
-                        <strong className="font-mono text-[13px] text-ink">{comIa}</strong> com IA
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className={`size-2 rounded-full ${total > 0 ? 'bg-emerald-400' : 'bg-dim'}`} />
-                      <span className={total > 0 ? 'text-emerald-300' : 'text-muted'}>
-                        {total > 0 ? 'estrutura configurada' : 'aguardando primeiro fluxo'}
-                      </span>
-                    </div>
-                  </Link>
-                </li>
-              )
-            })}
+          <ul className="flex flex-col gap-2">
+            {fila.map((cliente) => (
+              <li key={cliente.id}>
+                <LinhaDoCliente
+                  cliente={cliente}
+                  resumo={atendimento.get(cliente.id)}
+                  automacoes={automacoes.get(cliente.id)?.total ?? 0}
+                />
+              </li>
+            ))}
           </ul>
         )}
       </main>
     </PainelShell>
+  )
+}
+
+type Resumo = ReturnType<Awaited<ReturnType<typeof resumirAtendimento>>['get']>
+
+function LinhaDoCliente({
+  cliente,
+  resumo,
+  automacoes,
+}: {
+  cliente: { id: string; nome: string; responsavel: string; logoUrl: string }
+  resumo: Resumo
+  automacoes: number
+}) {
+  const esperando = resumo?.esperandoPessoa ?? 0
+  const contatos = resumo?.contatos ?? 0
+  const ultima = resumo?.ultimaAtividade ?? null
+
+  return (
+    <Link
+      href={`/clientes/${cliente.id}`}
+      className="app-card app-card-interactive grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3.5 gap-y-3 p-3.5 md:grid-cols-[auto_minmax(0,1fr)_auto] md:gap-x-5 md:p-4"
+    >
+      <LogoDoCliente cliente={cliente} />
+
+      <div className="min-w-0">
+        <h2 className="truncate text-[15px] font-bold tracking-[-0.01em]">{cliente.nome}</h2>
+        <p className="mt-0.5 truncate text-[11.5px] text-dim">
+          {cliente.responsavel.trim() !== '' ? cliente.responsavel : 'sem responsável no cadastro'}
+        </p>
+      </div>
+
+      {/*
+        `col-span-2` no celular põe os números embaixo do nome em vez de espremer
+        cinco colunas em 390px; a partir de `md` eles voltam para a direita da
+        mesma linha e é aí que a largura da tela vira informação, não vazio.
+      */}
+      <div className="col-span-2 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[12.5px] md:col-span-1 md:flex-nowrap md:justify-end md:gap-x-7">
+        {/*
+          O estado importante não pode depender de cor: quem não distingue
+          âmbar de cinza lê "3 esperando" do mesmo jeito. A cor só reforça.
+        */}
+        {esperando > 0 ? (
+          <span className="font-semibold text-amber-300">
+            <strong className="font-mono text-[13px] font-bold">{esperando}</strong> esperando
+          </span>
+        ) : (
+          <span className="text-dim">ninguém esperando</span>
+        )}
+
+        <span className="text-muted">
+          <strong className="font-mono text-[13px] text-ink">{contatos}</strong>{' '}
+          {contatos === 1 ? 'contato' : 'contatos'}
+        </span>
+
+        <span className="text-muted">
+          <strong className="font-mono text-[13px] text-ink">{automacoes}</strong>{' '}
+          {automacoes === 1 ? 'automação' : 'automações'}
+        </span>
+
+        <span
+          className="text-dim md:w-[104px] md:text-right"
+          title={ultima ? horaExata(ultima.toISOString()) : undefined}
+        >
+          {ultima ? quando(ultima.toISOString()) : 'sem conversa'}
+        </span>
+      </div>
+    </Link>
   )
 }

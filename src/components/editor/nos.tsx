@@ -40,6 +40,15 @@ export const ICONES = {
   http: '⇄',
 } as const
 
+/**
+ * O nome que aparece no bloco e no catálogo.
+ *
+ * `http` se chamava **"API"**, que é o nome da tecnologia, não o do trabalho.
+ * Quem desenha o fluxo do estúdio de pilates não está procurando uma API: está
+ * procurando "puxar a agenda", "mandar pro CRM", "consultar o sistema". Foi
+ * exatamente o que o operador do concorrente apontou, e lá o bloco ainda se
+ * chamava "Integração" — nós estávamos um degrau abaixo.
+ */
 export const NOMES = {
   mensagem: 'Mensagem',
   pergunta: 'Pergunta',
@@ -47,7 +56,7 @@ export const NOMES = {
   'salvar-campo': 'Guardar',
   ia: 'IA',
   handoff: 'Falar com humano',
-  http: 'API',
+  http: 'Serviços externos',
 } as const
 
 function Caixa({
