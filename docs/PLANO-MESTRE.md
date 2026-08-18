@@ -151,14 +151,17 @@ Fonte: blocos 5, 6 e 7 de [PLANO-ENDURECIMENTO.md](PLANO-ENDURECIMENTO.md).
 
 ## Fase 3 — Leads em escala, LGPD e telas de leitura
 
-**Estado: concluída em 14/ago/2026.** A lista pagina de 50 com busca por nome e
-telefone e exportação CSV do filtro atual; contato e cliente podem ser apagados,
-o segundo exigindo digitar o nome; a retenção de 12 meses roda por tarefa
-agendada da Vercel, não por `pg_cron` — extensão é global ao projeto
-compartilhado, e o agendamento fora do banco evitou mexer no que a Verandi
-também usa. A migration `0015_sem_ia_no_cliente.sql` está versionada e **não
-aplicada**. As quatro telas passam em 390px e a auditoria WCAG 2.2 A/AA não
-deixou violação aberta.
+**Estado: concluída em 14/ago/2026; pendências de aplicação fechadas em
+17/ago.** A lista pagina de 50 com busca por nome e telefone e exportação CSV do
+filtro atual; contato e cliente podem ser apagados, o segundo exigindo digitar o
+nome; a retenção de 12 meses roda por tarefa agendada da Vercel, não por
+`pg_cron` — extensão é global ao projeto compartilhado, e o agendamento fora do
+banco evitou mexer no que a Verandi também usa. A migration
+`0015_sem_ia_no_cliente.sql` **foi aplicada em produção em 17/ago** pela
+Management API, com `ia_habilitada` conferida depois (só sobra em
+`public.flows`). `CRON_SECRET` entrou no ambiente no mesmo dia, então a retenção
+saiu do 503 e passou a rodar. As quatro telas passam em 390px e a auditoria WCAG
+2.2 A/AA não deixou violação aberta.
 
 Fonte: blocos 8 e 9 de [PLANO-ENDURECIMENTO.md](PLANO-ENDURECIMENTO.md) e itens
 4 e 6 de [ESTADO.md](ESTADO.md).
@@ -375,7 +378,7 @@ armazenamento. Receber mídia sem quebrar já existe e não deve regredir.
 | CSP completa com nonce | Rodada própria com teste de hidratação |
 | Fila de reentrega com recuo | Cliente com volume justificar; hoje falha vira handoff |
 | PITR | Continua fora enquanto a decisão for não contratar o plano pago |
-| Teste `JWT issued at future` | Corrigir relógio do WSL2; é ambiente, não produto |
+| ~~Teste `JWT issued at future`~~ | **Resolvido em 17/ago.** Não era o relógio: era o teto de 5s do Vitest contra banco remoto, mais telefone de teste derivado de `Date.now()` que colidia |
 | Sincronizar cofre entre máquinas | Ação manual do dono; agente não transporta segredo |
 
 ## Ausências documentadas que ainda não viraram atividade

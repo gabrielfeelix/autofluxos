@@ -1,4 +1,4 @@
-# Onde paramos — 14/ago/2026
+# Onde paramos — 17/ago/2026
 
 Documento de retomada. Quem chegar aqui sem ter acompanhado a construção
 consegue continuar lendo só isto e o [ARQUITETURA.md](ARQUITETURA.md).
@@ -113,6 +113,8 @@ Sem migration: as três entregas são código.
 - **Apagar cliente** com confirmação digitando o nome, mostrando quantos leads,
   automações, credenciais e números somem junto. A logo sai do bucket na mesma
   ação: cascata de banco não alcança o Storage.
+  > A migration `0015` citada abaixo **foi aplicada em 17/ago**; ver a
+  > atualização daquele dia.
 - **390px e WCAG 2.2 A/AA.** Auditoria com axe-core em 11 telas, em três
   larguras. Três defeitos latentes apareceram e foram corrigidos: o piso de
   1024px estava em `html/body` em vez do editor; `text-soft` era usada em 34
@@ -126,15 +128,44 @@ Sem migration: as três entregas são código.
   a ação já devolvia.
 - Migration `0015_sem_ia_no_cliente.sql` versionada e **não aplicada**.
 
+### Atualização de 17/ago/2026 — pendências de operação fechadas
+
+Nenhuma feature nova; é a fila de dívida pequena zerando.
+
+- **`0015_sem_ia_no_cliente.sql` aplicada em produção** pela Management API do
+  AutoFluxos. Conferido depois: `ia_habilitada` só existe em `public.flows`.
+  Não tocou `app_verandi`, Auth, Storage nem extensão.
+- **`PAINEL_SEGREDO`, `CRON_SECRET` e `GEMINI_API_KEY` preenchidas na Vercel.**
+  As duas primeiras eram padrões documentados; a terceira era um buraco de
+  verdade — **o bloco de IA nunca funcionou em produção**, porque a variável
+  existia no `.env` local e em lugar nenhum no ambiente publicado. Falhava
+  fechado, então ninguém percebia. Os valores novos estão em `.secrets/4yu.env`
+  com o prefixo `AUTOFLUXOS_`.
+- **Trocar `PAINEL_SEGREDO` encerrou todas as sessões abertas** — é o
+  comportamento projetado, não um efeito colateral. Quem estava logado entra de
+  novo.
+- **A retenção passou a rodar de verdade.** O contato mais antigo em produção é
+  de 12/ago/2026, então a primeira execução não apaga nada; o prazo é de 12
+  meses contados do último sinal de vida.
+- **O teste intermitente não era o relógio.** Medido: zero segundo de desvio, e
+  a falha continuou. Era o teto de 5s do Vitest contra um banco em `sa-east-1` —
+  o teste de encerrar atendimento faz cinco idas até lá e mediu 3998ms num dia
+  bom. Junto saiu um defeito latente: telefone de teste derivado de `Date.now()`
+  colidia entre testes e entre execuções, porque o banco é o de verdade e o
+  contato sobrevive. Seis execuções seguidas verdes depois do conserto.
+
+**Duas coisas com o mesmo sintoma escondem uma à outra.** "Falha que some ao
+rodar de novo" foi atribuída ao relógio e ficou meses sem investigação.
+
 ### Por onde continuar, em ordem
 
 | # | O quê | Por que agora |
 |---|---|---|
 | 1 | **Papéis de usuário** (BRIEF-UI §6) | É a maior, e destrava as outras. Hoje é uma senha só. Há comentário em quatro pontos do código dizendo "isto muda quando o cliente ganhar acesso" — recusa de endereço interno, isolamento entre clientes, a tela de "não encontrado" que vira "não é seu". Este é o dia. **Uma coisa entra junto, e não depois:** `/api/simular` aceita um fluxo inventado + `fluxoId` de qualquer cliente e manda a credencial dele para a URL do corpo — hoje inofensivo porque a senha já dá acesso a tudo, escalada de privilégio no minuto em que o cliente tiver login. A sessão do painel deixou de ser problema em 14/ago (cookie assinado, id por login, prazo no servidor); o que ainda falta dela é **revogar uma sessão só**, e isso é banco, então é aqui. |
-| 2 | **Modelos (templates) da Meta** | A caixa de resposta do painel só funciona dentro da janela de 24h — é a regra da Meta, e fora dela o único jeito de retomar é um modelo aprovado, que este produto não manda. A tela avisa antes de alguém digitar. Gatilho para construir: o primeiro lead que esfriar e precisar de retomada. |
-| 3 | **Credencial de sandbox por conexão** | A aba Testar usa a credencial real: testar um fluxo de CRM grava no CRM de verdade. Hoje há aviso na tela e o cabeçalho `X-AutoFluxos-Teste: 1`. Gatilho para construir: o primeiro cliente com CRM em produção. |
-| 4 | **Aplicar `0015_sem_ia_no_cliente.sql`** | A migration que apaga `clients.ia_habilitada` está escrita e versionada. Falta autorização para aplicar em produção — banco compartilhado. |
-| 5 | **Teste de banco intermitente** | `repos.test.ts` falha de vez em quando com `JWT issued at future` — o relógio do WSL2 desanda quando a máquina suspende e o Supabase recusa o token. É ambiente, não código: rodar de novo passa. Se incomodar, `sudo hwclock -s` acerta na hora. |
+| 2 | **Mídia de saída** | O produto não manda imagem, e a documentação de 13/ago já dizia isso na "lista honesta". O motor tem `enviar_texto` e `enviar_opcoes` e mais nada; não existe bloco de mídia no schema. Receber mídia funciona — vira handoff. Deixou de ser item de gatilho porque **catálogo, foto de sala e PDF de plano são o assunto da conversa** em quase todo cliente de serviço. |
+| 3 | **Modelos (templates) da Meta** | A caixa de resposta do painel só funciona dentro da janela de 24h — é a regra da Meta, e fora dela o único jeito de retomar é um modelo aprovado, que este produto não manda. A tela avisa antes de alguém digitar. Gatilho para construir: o primeiro lead que esfriar e precisar de retomada. |
+| 4 | **Credencial de sandbox por conexão** | A aba Testar usa a credencial real: testar um fluxo de CRM grava no CRM de verdade. Hoje há aviso na tela e o cabeçalho `X-AutoFluxos-Teste: 1`. Gatilho para construir: o primeiro cliente com CRM em produção. |
+| 5 | **`ALERTA_WEBHOOK_URL`** | Única variável do `.env.example` ainda vazia em produção. Precisa de uma URL de Discord ou Slack que só o dono cria; sem ela, `alertar()` é no-op e falha de entrega não avisa ninguém. |
 
 ### O que foi construído em 12/ago, e onde está escrito
 
