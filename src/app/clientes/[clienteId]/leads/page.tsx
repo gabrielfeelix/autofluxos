@@ -150,6 +150,13 @@ async function Tabela({
             {esperando} esperando humano nesta página
           </span>
         )}
+        <Link
+          href={`/clientes/${clienteId}/leads/importar`}
+          className="app-secondary-button px-3 py-1.5 text-[11.5px]"
+          title="Casar a planilha do cliente com quem já conversou, e corrigir os nomes"
+        >
+          Importar
+        </Link>
         <a
           href={enderecoDoCsv(clienteId, etiqueta, termo)}
           className="app-secondary-button px-3 py-1.5 text-[11.5px]"

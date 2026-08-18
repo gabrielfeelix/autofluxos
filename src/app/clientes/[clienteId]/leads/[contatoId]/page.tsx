@@ -6,12 +6,19 @@ import { comoFalta, restaDaJanela } from '@/channels/janela'
 import { BotaoPerigo } from '@/components/design/botao-perigo'
 import { ControleDeAutomacao } from '@/components/lead/controle-automacao'
 import { CaixaDeResposta } from '@/components/lead/responder'
-import { acaoApagarContato, acaoEncerrarAtendimento, acaoResponderLead } from '@/server/acoes'
+import {
+  acaoApagarContato,
+  acaoCorrigirNome,
+  acaoEncerrarAtendimento,
+  acaoResponderLead,
+  acaoSalvarNotas,
+} from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { contextoDeResposta } from '@/server/repos/conversas'
-import { acharLead, lerConversa } from '@/server/repos/leads'
+import { acharLead, lerConversa, LIMITE_DA_NOTA } from '@/server/repos/leads'
 import { listarRespostasRapidas } from '@/server/repos/respostas-rapidas'
 import { AnexoNaConversa, SemTexto } from '@/components/lead/anexo'
+import { NomeDoContato, NotasDoContato } from '@/components/lead/identidade'
 import { horaExata, quando } from '@/lib/quando'
 
 export const dynamic = 'force-dynamic'
@@ -58,10 +65,13 @@ export default async function Pagina({
           <span className="flex size-11 items-center justify-center rounded-full border border-white/[0.11] bg-white/[0.05] text-[12px] font-bold text-[#97a2b4]">
             {iniciais}
           </span>
-          <div className="min-w-0">
-            <h1 className="text-[21px] font-bold tracking-[-0.02em]">{nome}</h1>
-            <p className="mt-0.5 font-mono text-[11px] text-dim">{lead.waId}</p>
-          </div>
+          <NomeDoContato
+            nome={lead.nome}
+            nomeDoPerfil={lead.nomeDoPerfil}
+            nomeReal={lead.nomeReal}
+            waId={lead.waId}
+            salvar={acaoCorrigirNome.bind(null, clienteId, contatoId)}
+          />
           <span className="flex-1" />
           <span className={`rounded-full border px-3 py-1 text-[10.5px] font-bold ${lead.aguardando ? 'border-rose-400/25 bg-rose-400/[0.09] text-rose-300' : !lead.automacaoAtiva ? 'border-amber-300/25 bg-amber-300/[0.08] text-amber-200' : 'border-emerald-400/20 bg-emerald-400/[0.07] text-emerald-300'}`}>
             {lead.aguardando ? 'AGUARDANDO HUMANO' : !lead.automacaoAtiva ? 'BOT EM PAUSA' : 'COM O BOT'}
@@ -128,6 +138,12 @@ export default async function Pagina({
         )}
 
         <div className="grid grid-cols-1 items-start gap-[18px] md:grid-cols-[280px_minmax(0,1fr)]">
+          <div className="flex flex-col gap-[18px]">
+          <NotasDoContato
+            notas={lead.notas}
+            limite={LIMITE_DA_NOTA}
+            salvar={acaoSalvarNotas.bind(null, clienteId, contatoId)}
+          />
           <section className="app-card overflow-hidden">
             <h2 className="border-b border-white/[0.06] px-[18px] py-3.5 text-[13px] font-bold">O que o fluxo coletou</h2>
             {campos.length === 0 ? (
@@ -145,6 +161,7 @@ export default async function Pagina({
               </dl>
             )}
           </section>
+          </div>
 
           <section className="app-card flex max-h-[620px] min-h-[360px] flex-col overflow-hidden">
             <header className="flex items-center gap-2 border-b border-white/[0.06] px-[18px] py-3.5">

@@ -21,6 +21,13 @@ import {
   LIMITE_DO_ARQUIVO,
   TIPOS_ACEITOS,
 } from './repos/acervo'
+import { acharColunas, conciliar, lerCsv } from '@/core/contatos/planilha'
+import {
+  aplicarImportacao,
+  contatosConhecidos,
+  corrigirNome,
+  salvarNotas,
+} from './repos/leads'
 import { canalCloudApi } from '@/channels/cloud-api'
 import { dentroDaJanela } from '@/channels/janela'
 import type { EstadoSalvar } from '@/components/design/formulario-salvar'
@@ -682,4 +689,102 @@ export async function acaoApagarDoAcervo(
   }
   revalidatePath(`/clientes/${clienteId}/acervo`)
   return { ok: true }
+}
+
+/**
+ * Corrige o nome do contato.
+ *
+ * Vai para `nome_real` e não para `nome`: o do perfil continua sendo o que a
+ * Meta manda, e é ele que identifica a conta do WhatsApp quando a pessoa troca
+ * de número. Vazio limpa a correção e devolve a exibição para o perfil.
+ */
+export async function acaoCorrigirNome(
+  clienteId: string,
+  contatoId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  const nome = String(formData.get('nome') ?? '')
+  const ok = await corrigirNome(clienteId, contatoId, nome)
+  if (!ok) return { erro: 'este contato não é deste cliente' }
+
+  revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
+  revalidatePath(`/clientes/${clienteId}/leads`)
+  revalidatePath(`/clientes/${clienteId}/inbox`)
+  return { ok: true }
+}
+
+export async function acaoSalvarNotas(
+  clienteId: string,
+  contatoId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  const notas = String(formData.get('notas') ?? '')
+  const ok = await salvarNotas(clienteId, contatoId, notas)
+  if (!ok) return { erro: 'este contato não é deste cliente' }
+
+  revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
+  return { ok: true }
+}
+
+/**
+ * Importa a planilha de contatos do cliente.
+ *
+ * Faz tudo numa passada — ler, conciliar e aplicar — em vez de uma prévia com
+ * confirmação depois. A prévia seria melhor e custaria guardar o arquivo entre
+ * duas requisições; o resultado devolvido cobre a mesma necessidade, porque
+ * **nada aqui é destrutivo**: renomear é reversível apagando o campo, criar
+ * contato é reversível apagando o contato, e pendência não escreve nada.
+ */
+export async function acaoImportarContatos(
+  clienteId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar & { resumo?: string; pendentes?: string[] }> {
+  const arquivo = formData.get('planilha')
+  if (!(arquivo instanceof File) || arquivo.size === 0) return { erro: 'Escolha um arquivo CSV.' }
+  if (arquivo.size > 4 * 1024 * 1024) return { erro: 'O arquivo passa de 4 MB.' }
+
+  const { cabecalho, linhas } = lerCsv(await arquivo.text())
+  const colunas = acharColunas(cabecalho)
+
+  if (colunas.telefone === -1) {
+    return {
+      erro: `Não achei a coluna do telefone. O cabeçalho tem: ${cabecalho.join(', ') || '(vazio)'}. Renomeie uma coluna para "Telefone".`,
+    }
+  }
+  if (linhas.length === 0) return { erro: 'A planilha não tem nenhuma linha além do cabeçalho.' }
+
+  const daPlanilha = linhas.map((celulas, i) => ({
+    // +2: a primeira linha do arquivo é o cabeçalho e o editor conta de 1.
+    numero: i + 2,
+    nome: colunas.nome === -1 ? '' : (celulas[colunas.nome] ?? '').trim(),
+    telefone: (celulas[colunas.telefone] ?? '').trim(),
+  }))
+
+  const conciliacoes = conciliar(daPlanilha, await contatosConhecidos(clienteId))
+  const resultado = await aplicarImportacao(clienteId, conciliacoes)
+
+  revalidatePath(`/clientes/${clienteId}/leads`)
+  revalidatePath(`/clientes/${clienteId}/inbox`)
+
+  const partes = [
+    `${daPlanilha.length} ${daPlanilha.length === 1 ? 'linha lida' : 'linhas lidas'}`,
+    `${resultado.renomeados} ${resultado.renomeados === 1 ? 'nome corrigido' : 'nomes corrigidos'}`,
+    `${resultado.criados} ${resultado.criados === 1 ? 'contato novo' : 'contatos novos'}`,
+  ]
+  if (resultado.pendentes.length > 0) {
+    partes.push(`${resultado.pendentes.length} sem importar`)
+  }
+
+  return {
+    ok: true,
+    resumo: partes.join(' · '),
+    // As pendências voltam com o número da linha para a pessoa consertar na
+    // planilha dela. Sem isso, "40 sem importar" não diz quais.
+    pendentes: resultado.pendentes.map(
+      (p) => `linha ${p.numero}${p.nome ? ` (${p.nome})` : ''} — ${p.motivo}`,
+    ),
+  }
 }

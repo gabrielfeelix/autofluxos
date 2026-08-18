@@ -1,5 +1,7 @@
 import 'server-only'
 import { z } from 'zod'
+import type { Conciliacao, ContatoConhecido } from '@/core/contatos/planilha'
+import { chavesDoTelefone } from '@/core/contatos/telefone'
 import { TIPOS_DE_MIDIA, type TipoDeMidia } from '@/core/flow/schema'
 import { db, ehIdInvalido } from '../db'
 
@@ -14,8 +16,19 @@ import { db, ehIdInvalido } from '../db'
 export type Lead = {
   contatoId: string
   waId: string
-  /** Vem do perfil do WhatsApp. `null` enquanto a Meta não mandar. */
+  /**
+   * O que a tela mostra: o nome corrigido quando existe, o do perfil quando
+   * não. A precedência é resolvida aqui e não no banco de propósito — num
+   * gatilho, a próxima mensagem do WhatsApp desfaria a correção de uma pessoa,
+   * que é exatamente o defeito que a correção existe para consertar.
+   */
   nome: string | null
+  /** O nome do perfil do WhatsApp, sempre. É o que a pessoa escolheu para si. */
+  nomeDoPerfil: string | null
+  /** Corrigido por gente ou vindo da planilha. Vazio = ninguém corrigiu. */
+  nomeReal: string
+  /** Anotação de quem atende. Não vai para o WhatsApp nem para automação. */
+  notas: string
   /** O que o fluxo coletou. As chaves mudam de fluxo para fluxo. */
   campos: Record<string, string>
   ultimaEm: string | null
@@ -100,13 +113,15 @@ type Linha = {
   automacao_ativa: boolean
   handoff_motivo: string | null
   handoff_em: string | null
+  nome_real: string
+  notas: string
 }
 
 // Numa linha só, e não concatenado: o supabase-js lê esta string no nível de
 // tipo para saber o formato do retorno, e concatenação vira `string` genérica —
 // aí o tipo do `data` desanda e o `tsc` acusa.
 const COLUNAS =
-  'contact_id, client_id, wa_id, nome, campos, criado_em, ultima_em, ultima_direcao, ultimo_texto, handoff_motivo, handoff_em, ultima_entregue, automacao_ativa'
+  'contact_id, client_id, wa_id, nome, nome_real, notas, campos, criado_em, ultima_em, ultima_direcao, ultimo_texto, handoff_motivo, handoff_em, ultima_entregue, automacao_ativa'
 
 /**
  * `campos` é `jsonb`: o banco aceita qualquer coisa ali. Hoje só o motor
@@ -139,10 +154,15 @@ function paraCampos(bruto: unknown, waId: string): Record<string, string> {
 function paraLead(linha: Linha): Lead {
   const direcao = direcaoSchema.safeParse(linha.ultima_direcao)
 
+  const nomeReal = (linha.nome_real ?? '').trim()
+
   return {
     contatoId: linha.contact_id,
     waId: linha.wa_id,
-    nome: linha.nome,
+    nome: nomeReal !== '' ? nomeReal : linha.nome,
+    nomeDoPerfil: linha.nome,
+    nomeReal,
+    notas: linha.notas ?? '',
     campos: paraCampos(linha.campos, linha.wa_id),
     ultimaEm: linha.ultima_em,
     ultimaDirecao: direcao.success ? direcao.data : null,
@@ -414,7 +434,22 @@ export async function paginarLeads(
       // trocar de lugar entre páginas e um deles nunca aparece.
       .order('contact_id', { ascending: true })
 
-    if (termo !== '') q = q.or(`nome.ilike.*${termo}*,wa_id.ilike.*${termo}*`)
+    if (termo !== '') {
+      // Buscar nos dois nomes, não só no do perfil: quem corrigiu "Rodrigão"
+      // para "Rodrigo" vai procurar por Rodrigo, e antes disto não achava nada.
+      const partes = [
+        `nome.ilike.*${termo}*`,
+        `nome_real.ilike.*${termo}*`,
+        `wa_id.ilike.*${termo}*`,
+      ]
+      // E buscar pelas formas do telefone, não só pelo que foi digitado: quem
+      // procura "(11) 98765-4321" não acha `551187654321` com `ilike`, e o nono
+      // dígito faz o mesmo aparelho ter duas grafias. `chavesDoTelefone`
+      // devolve as duas; sem isto, a busca por telefone só funciona quando a
+      // pessoa digita exatamente como a Meta gravou.
+      for (const chave of chavesDoTelefone(termo)) partes.push(`wa_id.eq.${chave}`)
+      q = q.or(partes.join(','))
+    }
     if (permitidos) q = q.in('contact_id', permitidos)
     return q
   }
@@ -554,4 +589,134 @@ function anexoDoPayload(payload: unknown): AnexoDaMensagem | null {
     url: bruto.url,
     ...(typeof bruto.nomeArquivo === 'string' ? { nomeArquivo: bruto.nomeArquivo } : {}),
   }
+}
+
+/**
+ * Corrige o nome do contato.
+ *
+ * Grava em `nome_real` e **não** em `nome`: o do perfil continua sendo
+ * sobrescrito a cada mensagem que chega, e é ele que identifica a conta do
+ * WhatsApp. Vazio limpa a correção e devolve a exibição para o perfil.
+ *
+ * O par `(contato, cliente)` é conferido na escrita pelo mesmo motivo das
+ * escritas de fluxo: id de contato vindo da tela não prova de quem ele é.
+ */
+export async function corrigirNome(
+  clienteId: string,
+  contatoId: string,
+  nome: string,
+): Promise<boolean> {
+  const { data, error } = await db()
+    .from('contacts')
+    .update({ nome_real: nome.trim().slice(0, 120) })
+    .eq('id', contatoId)
+    .eq('client_id', clienteId)
+    .select('id')
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return false
+  if (error) throw new Error(`não deu para corrigir o nome: ${error.message}`)
+  return data !== null
+}
+
+/** Teto da anotação. Nota é lembrete, não prontuário — o histórico é a conversa. */
+export const LIMITE_DA_NOTA = 2_000
+
+export async function salvarNotas(
+  clienteId: string,
+  contatoId: string,
+  notas: string,
+): Promise<boolean> {
+  const { data, error } = await db()
+    .from('contacts')
+    .update({ notas: notas.trim().slice(0, LIMITE_DA_NOTA) })
+    .eq('id', contatoId)
+    .eq('client_id', clienteId)
+    .select('id')
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return false
+  if (error) throw new Error(`não deu para salvar a anotação: ${error.message}`)
+  return data !== null
+}
+
+/** O que a conciliação precisa saber dos contatos deste cliente. */
+export async function contatosConhecidos(clienteId: string): Promise<ContatoConhecido[]> {
+  const { data, error } = await db()
+    .from('contacts')
+    .select('id, wa_id, nome, nome_real')
+    .eq('client_id', clienteId)
+
+  if (ehIdInvalido(error)) return []
+  if (error) throw new Error(`não deu para ler os contatos: ${error.message}`)
+
+  return (data as { id: string; wa_id: string; nome: string | null; nome_real: string }[]).map(
+    (linha) => ({
+      contatoId: linha.id,
+      waId: linha.wa_id,
+      nomeAtual: (linha.nome_real ?? '').trim() !== '' ? linha.nome_real.trim() : linha.nome,
+    }),
+  )
+}
+
+export type ResultadoDaImportacao = {
+  renomeados: number
+  criados: number
+  pendentes: { numero: number; nome: string; telefone: string; motivo: string }[]
+}
+
+/**
+ * Aplica uma conciliação já decidida.
+ *
+ * **Só escreve `nome_real`, e só quando a planilha traz um nome.** Linha sem
+ * nome existe para trazer o telefone, e sobrescrever com vazio apagaria a
+ * correção que alguém já tinha feito à mão.
+ *
+ * As pendências voltam inteiras, com o número da linha, para a pessoa consertar
+ * na planilha dela e importar de novo. Elas não viram nada no banco: um contato
+ * sem telefone utilizável não tem como receber mensagem, e criá-lo só encheria
+ * a lista de gente que o bot nunca vai alcançar.
+ */
+export async function aplicarImportacao(
+  clienteId: string,
+  conciliacoes: Conciliacao[],
+): Promise<ResultadoDaImportacao> {
+  let renomeados = 0
+  let criados = 0
+  const pendentes: ResultadoDaImportacao['pendentes'] = []
+
+  for (const item of conciliacoes) {
+    if (item.tipo === 'pendente') {
+      pendentes.push({
+        numero: item.linha.numero,
+        nome: item.linha.nome,
+        telefone: item.linha.telefone,
+        motivo: item.motivo,
+      })
+      continue
+    }
+
+    const nome = item.linha.nome.trim()
+
+    if (item.tipo === 'casou') {
+      if (nome === '' || nome === (item.nomeAtual ?? '').trim()) continue
+      if (await corrigirNome(clienteId, item.contatoId, nome)) renomeados += 1
+      continue
+    }
+
+    // Contato novo: nasce só com o telefone e o nome de verdade. `nome` fica
+    // vazio até a pessoa escrever pela primeira vez — é a Meta que preenche o
+    // perfil, e inventar um aqui seria dizer que ela escolheu esse nome.
+    const { error } = await db()
+      .from('contacts')
+      .insert({ client_id: clienteId, wa_id: item.waId, nome_real: nome.slice(0, 120) })
+
+    // Corrida com uma mensagem que chegou entre a conciliação e o insert: o
+    // contato passou a existir e a importação não deve estourar por isso.
+    if (error?.code === '23505') continue
+    if (error) throw new Error(`não deu para criar o contato: ${error.message}`)
+    criados += 1
+  }
+
+  return { renomeados, criados, pendentes }
 }

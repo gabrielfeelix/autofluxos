@@ -98,7 +98,7 @@ export async function guardarNoAcervo(
     // Acento e espaço viram %20 na URL e o WhatsApp mostra isso no nome do
     // documento. Normalizar aqui é mais barato do que explicar depois.
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-zA-Z0-9-]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 48)
