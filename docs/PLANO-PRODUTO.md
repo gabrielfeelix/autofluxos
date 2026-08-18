@@ -322,6 +322,13 @@ trava externa.
 
 ---
 
+> **Decidido em 17/ago, e as fases D em diante foram substituídas.** A resposta
+> não foi escolher entre visão de cima e visão de dentro: são **dois produtos**.
+> A conta é do cliente e ele faz tudo nela; o administrador da 4YU tem área
+> própria e **entra como** o cliente para ver o que ele veria. As telas, o banco
+> e a ordem estão em [PLANO-SISTEMA.md](PLANO-SISTEMA.md). A seção abaixo fica
+> como registro de como a pergunta foi feita.
+
 ## 7. A decisão que preciso de você — modelo de navegação
 
 O print 1 mostra o modelo do BotConversa e do ManyChat: **entra-se dentro do

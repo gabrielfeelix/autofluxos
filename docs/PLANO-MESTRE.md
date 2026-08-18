@@ -9,8 +9,13 @@ Os documentos de origem continuam explicando o porquê e o desenho de cada
 feature. Este documento responde três perguntas: **o que ainda falta, em qual
 ordem e o que prova que cada etapa terminou**.
 
-> **Leia [PLANO-PRODUTO.md](PLANO-PRODUTO.md) antes de escolher a próxima
-> fase.** Escrito em 17/ago/2026 a partir de 13 prints do BotConversa comentados
+> **Leia [PLANO-SISTEMA.md](PLANO-SISTEMA.md) primeiro.** Escrito em 17/ago a
+> partir de 18 prints do BotConversa, ele descreve o sistema completo tela a
+> tela e substitui as fases 4 em diante deste documento. A decisão que o motiva:
+> a conta é do cliente e ele faz tudo nela; o administrador da 4YU tem área
+> própria e **entra como** o cliente.
+>
+> **Leia [PLANO-PRODUTO.md](PLANO-PRODUTO.md) para o diagnóstico.** Escrito em 17/ago/2026 a partir de 13 prints do BotConversa comentados
 > por quem opera, ele responde uma pergunta que este documento não responde —
 > *que produto isto é* — e mudou três premissas: mídia saiu de item de gatilho
 > para a segunda rodada, "Lead" deixou de ser o nome da tela de contatos, e a
