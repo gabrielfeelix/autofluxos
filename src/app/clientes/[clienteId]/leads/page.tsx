@@ -76,6 +76,8 @@ export default async function Pagina({
   return (
     <ClienteShell cliente={cliente} ativa="leads">
       <main className="flex min-h-full flex-col px-4 md:px-[42px] pt-[26px] pb-[42px]">
+        <h1 className="mb-5 text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Contatos</h1>
+
         <Suspense key={`${etiqueta}-${termo}-${pagina}`} fallback={<Esqueleto />}>
           <Tabela clienteId={cliente.id} etiqueta={etiqueta} termo={termo} pagina={pagina} />
         </Suspense>

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { LogoDoCliente } from '@/components/design/logo-cliente'
 import { PainelShell } from '@/components/design/shell'
@@ -6,6 +7,7 @@ import { horaExata, quando } from '@/lib/quando'
 import { acaoCriarCliente, acaoCriarExemplo } from '@/server/acoes'
 import { listarClientes, resumirAtendimento } from '@/server/repos/clientes'
 import { resumirAutomacoes } from '@/server/repos/fluxos'
+import { ehAdminDaPlataforma, sessaoAtual } from '@/server/sessao'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +25,17 @@ export const dynamic = 'force-dynamic'
  * tela em vez de deixar um deserto à direita de três caixas de 310px.
  */
 export default async function Pagina() {
+  /**
+   * Esta tela é a visão de quem opera a 4YU: ela lista **todos** os clientes.
+   *
+   * Quem entrou como pessoa e não administra a plataforma não tem nada a fazer
+   * aqui — vai para as companhias dele. Sem esta linha, bastaria alguém
+   * cadastrado alcançar a raiz para ver a carteira inteira, que é exatamente o
+   * furo que o login existe para fechar.
+   */
+  const sessao = await sessaoAtual()
+  if (sessao && !ehAdminDaPlataforma(sessao)) redirect('/contas')
+
   const [clientes, automacoes, atendimento] = await Promise.all([
     listarClientes(),
     resumirAutomacoes(),

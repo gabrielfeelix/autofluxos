@@ -40,6 +40,10 @@ export default async function Pagina({
   return (
     <ClienteShell cliente={cliente} ativa="ajustes">
       <main className="max-w-[720px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
+        <h1 className="mb-5 text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">
+          Configurações
+        </h1>
+
         <ul className="app-card divide-y divide-white/[0.045] overflow-hidden">
           <Linha
             href={`/clientes/${cliente.id}/contexto`}

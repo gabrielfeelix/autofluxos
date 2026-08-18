@@ -96,3 +96,23 @@ export function iguais(a: string, b: string): boolean {
   for (let i = 0; i < a.length; i++) diferenca |= a.charCodeAt(i) ^ b.charCodeAt(i)
   return diferenca === 0
 }
+
+/**
+ * Basic Auth, aceito por compatibilidade com acessos já configurados.
+ *
+ * Mora aqui, e não no `proxy.ts`, porque **duas** camadas precisam da mesma
+ * resposta desde que existem duas portas: o proxy, que deixa a requisição
+ * passar, e o servidor que renderiza, que precisa saber se quem chegou tem a
+ * sessão do painel antes de exigir uma conta de usuário. Uma cópia em cada
+ * lugar viraria um caminho que abre e outro que fecha.
+ */
+export function basicAuthConfere(cabecalho: string | null, senha: string): boolean {
+  if (!cabecalho?.startsWith('Basic ')) return false
+
+  try {
+    const [, informada] = atob(cabecalho.slice(6)).split(':')
+    return informada !== undefined && iguais(informada, senha)
+  } catch {
+    return false
+  }
+}

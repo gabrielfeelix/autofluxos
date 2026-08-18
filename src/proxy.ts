@@ -1,6 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { getSessionCookie } from 'better-auth/cookies'
-import { COOKIE_PAINEL, conferirSessao, iguais, segredoDeSessao } from '@/lib/painel-auth'
+import {
+  COOKIE_PAINEL,
+  basicAuthConfere,
+  conferirSessao,
+  segredoDeSessao,
+} from '@/lib/painel-auth'
 
 /**
  * Quem entra no painel — e, por enquanto, são **duas** portas.
@@ -41,7 +46,8 @@ export async function proxy(req: NextRequest) {
   // cookie copiado continua valendo até o servidor recusar a data que ele traz.
   const cookiePainel = req.cookies.get(COOKIE_PAINEL)?.value ?? ''
   const temPainel = senha
-    ? (await conferirSessao(cookiePainel, segredoDeSessao(senha))) || basicAuthConfere(req, senha)
+    ? (await conferirSessao(cookiePainel, segredoDeSessao(senha))) ||
+      basicAuthConfere(req.headers.get('authorization'), senha)
     : false
 
   // Presença, não validade. Ver o comentário no topo.
@@ -94,18 +100,6 @@ export async function proxy(req: NextRequest) {
   // funciona seria trocar "expirou" por "quebrou". As duas telas apontam uma
   // para a outra, então ninguém fica preso na errada.
   return NextResponse.redirect(new URL(senha ? '/login' : '/entrar', req.nextUrl))
-}
-
-function basicAuthConfere(req: NextRequest, senha: string): boolean {
-  const cabecalho = req.headers.get('authorization') ?? ''
-  if (!cabecalho.startsWith('Basic ')) return false
-
-  try {
-    const [, informada] = atob(cabecalho.slice(6)).split(':')
-    return informada !== undefined && iguais(informada, senha)
-  } catch {
-    return false
-  }
 }
 
 export const config = {

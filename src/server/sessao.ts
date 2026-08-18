@@ -1,6 +1,12 @@
 import 'server-only'
-import { headers } from 'next/headers'
-import { redirect } from 'next/navigation'
+import { cookies, headers } from 'next/headers'
+import { notFound, redirect } from 'next/navigation'
+import {
+  COOKIE_PAINEL,
+  basicAuthConfere,
+  conferirSessao,
+  segredoDeSessao,
+} from '@/lib/painel-auth'
 import { autenticacao, bancoDoLogin } from './auth'
 
 /**
@@ -201,4 +207,86 @@ export async function acharUsuario(id: string): Promise<UsuarioDaSessao | null> 
     papelDePlataforma: linha.role === null ? null : String(linha.role),
     banido: Boolean(linha.banned),
   }
+}
+
+/**
+ * Para onde a pessoa vai quando entra — e para onde a tela de entrar a manda se
+ * ela já estava logada.
+ *
+ * Mora aqui, e não junto das ações, porque **duas** telas precisam da mesma
+ * resposta: a que acabou de autenticar e a que descobre uma sessão já aberta.
+ * Duas cópias divergem no dia em que o administrador ganhar uma tela inicial
+ * própria.
+ */
+export async function destinoAposEntrar(sessao: SessaoAtual): Promise<string> {
+  if (ehAdminDaPlataforma(sessao)) return '/admin/contas'
+
+  const [primeira, ...resto] = await contasDoUsuario(sessao.usuario.id)
+  // Uma conta só é o caso comum, e mandar essa pessoa para um seletor de um
+  // item é fazê-la clicar para confirmar o óbvio.
+  if (primeira && resto.length === 0) return `/clientes/${primeira.id}`
+  return '/contas'
+}
+
+/**
+ * A senha única ainda vale nesta requisição?
+ *
+ * O `proxy.ts` já respondeu isso para deixar a requisição passar, e este módulo
+ * precisa da mesma resposta para decidir se quem chegou pode ver a conta. São
+ * perguntas diferentes com a mesma conta a pagar: sem isto, o operador de hoje
+ * — que entra pela senha e não tem usuário nenhum — perderia o painel inteiro
+ * no instante em que a moldura do cliente passasse a exigir sessão de usuário.
+ */
+export async function temSessaoDePainel(): Promise<boolean> {
+  const senha = process.env.PAINEL_SENHA
+  // Sem senha configurada ela não é uma porta. Em desenvolvimento o painel
+  // segue aberto, como no proxy: quem clonou o repositório ainda não tem
+  // credencial nenhuma.
+  if (!senha) return process.env.NODE_ENV !== 'production'
+
+  const cabecalhos = await headers()
+  if (basicAuthConfere(cabecalhos.get('authorization'), senha)) return true
+
+  const cookie = (await cookies()).get(COOKIE_PAINEL)?.value ?? ''
+  return conferirSessao(cookie, segredoDeSessao(senha))
+}
+
+export type AcessoAoCliente = {
+  /** Nulo quando quem entrou foi a senha única do time. */
+  sessao: SessaoAtual | null
+  /** `owner`, `admin`, `member` — ou nulo para administrador da 4YU e senha única. */
+  papel: string | null
+  viaSenhaUnica: boolean
+}
+
+/**
+ * Pode ver esta conta?
+ *
+ * **A sessão de usuário tem precedência sobre a senha única.** Quem entrou como
+ * pessoa vê o que aquela pessoa vê, e não o painel inteiro — senão o login por
+ * usuário seria decoração por cima do acesso total que já existe. Para agir
+ * dentro da conta de um cliente, o administrador usa o "entrar como", que
+ * deixa rastro na auditoria.
+ *
+ * O administrador da 4YU passa mesmo sem ser membro **enquanto a senha única
+ * existir**: hoje ele já alcança tudo, e fechar essa porta antes de a varredura
+ * de isolamento terminar trocaria um furo conhecido por um painel quebrado. No
+ * dia em que a senha única sair (docs/HANDOFF.md §4, passo 6), esta linha é a
+ * que estreita para "só impersonando".
+ *
+ * Quem não pode recebe **404**, e não 403: confirmar que a conta existe já é
+ * contar de um cliente para quem não é dele.
+ */
+export async function exigirAcessoAoCliente(contaId: string): Promise<AcessoAoCliente> {
+  const sessao = await sessaoAtual()
+
+  if (sessao) {
+    const papel = await papelNaConta(sessao.usuario.id, contaId)
+    if (papel !== null) return { sessao, papel, viaSenhaUnica: false }
+    if (ehAdminDaPlataforma(sessao)) return { sessao, papel: null, viaSenhaUnica: false }
+    notFound()
+  }
+
+  if (await temSessaoDePainel()) return { sessao: null, papel: null, viaSenhaUnica: true }
+  redirect('/entrar')
 }

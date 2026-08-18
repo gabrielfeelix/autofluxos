@@ -9,11 +9,11 @@ import { registrar } from './repos/auditoria'
 import {
   acharUsuario,
   contasDoUsuario,
+  destinoAposEntrar,
   ehAdminDaPlataforma,
   existeAlgumUsuario,
   exigirAdminDaPlataforma,
   sessaoAtual,
-  type SessaoAtual,
 } from './sessao'
 
 /**
@@ -50,17 +50,6 @@ function motivo(erro: unknown): string {
   return 'não deu para completar a operação'
 }
 
-/** Para onde a pessoa vai depois de entrar. */
-async function destinoDe(sessao: SessaoAtual): Promise<string> {
-  if (ehAdminDaPlataforma(sessao)) return '/admin/contas'
-
-  const [primeira, ...resto] = await contasDoUsuario(sessao.usuario.id)
-  // Uma conta só é o caso comum, e mandar essa pessoa para um seletor de um
-  // item é fazê-la clicar para confirmar o óbvio.
-  if (primeira && resto.length === 0) return `/clientes/${primeira.id}`
-  return '/contas'
-}
-
 // ---------------------------------------------------------------------------
 // Entrar e sair
 // ---------------------------------------------------------------------------
@@ -94,7 +83,7 @@ export async function acaoEntrar(
   // `redirect` funciona lançando: precisa ficar fora do `try`, senão o próprio
   // catch o engoliria e a tela responderia "credenciais não conferem" depois de
   // um login que deu certo.
-  redirect(await destinoDe(sessao))
+  redirect(await destinoAposEntrar(sessao))
 }
 
 export async function acaoSair() {
@@ -221,16 +210,23 @@ export async function acaoTrocarDeCompanhia(contaId: string) {
   redirect(`/clientes/${contaId}`)
 }
 
-/** Cria uma companhia nova para quem está logado — o `+ Adicionar nova companhia`. */
+/**
+ * Cria uma companhia nova para quem está logado — o `+ Adicionar nova
+ * companhia` do print 24.
+ *
+ * A forma do retorno é a que o `ModalFormulario` entende: devolver
+ * `{ ok: false, erro }` faz o modal mostrar a mensagem em vez de fechar. Sem
+ * isso, um nome recusado vira o digest opaco do Next e a pessoa perde o que
+ * digitou.
+ */
 export async function acaoCriarCompanhia(
-  _estado: EstadoDeConta,
   formData: FormData,
-): Promise<EstadoDeConta> {
+): Promise<{ ok: boolean; erro?: string } | void> {
   const sessao = await sessaoAtual()
   if (!sessao) redirect('/entrar')
 
   const nome = String(formData.get('nome') ?? '').trim()
-  if (nome === '') return { erro: 'O nome da companhia é obrigatório.' }
+  if (nome === '') return { ok: false, erro: 'O nome da companhia é obrigatório.' }
 
   let id: string
   try {
@@ -240,7 +236,7 @@ export async function acaoCriarCompanhia(
       // sozinho quando ninguém manda, mas aqui quem manda é a biblioteca.
       body: { name: nome, slug: sugerirSlug(nome) },
     })
-    if (!conta) return { erro: 'não deu para criar a companhia' }
+    if (!conta) return { ok: false, erro: 'não deu para criar a companhia' }
     id = conta.id
 
     await registrar({
@@ -255,7 +251,7 @@ export async function acaoCriarCompanhia(
       impersonadoPor: sessao.impersonadoPor,
     })
   } catch (erro) {
-    return { erro: motivo(erro) }
+    return { ok: false, erro: motivo(erro) }
   }
 
   revalidatePath('/', 'layout')

@@ -1,8 +1,10 @@
 import { notFound } from 'next/navigation'
+import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
 import { Editor } from '@/components/editor/editor'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarConexoes } from '@/server/repos/conexoes'
 import { acharFluxo, acharVersao, listarVersoes } from '@/server/repos/fluxos'
+import { exigirAcessoAoCliente } from '@/server/sessao'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,6 +39,17 @@ export default async function Pagina({
   ])
   if (!cliente || !fluxo || fluxo.clienteId !== cliente.id) notFound()
 
+  /**
+   * O editor não usa a moldura do cliente — é tela cheia por natureza —, então
+   * ele faz por conta própria as duas coisas que ela faria: conferir quem pode
+   * ver esta conta e mostrar a faixa de impersonação.
+   *
+   * **É a tela onde esquecer isso custa mais caro.** Publicar aqui muda o que o
+   * WhatsApp de um cliente responde para gente de verdade; fazê-lo achando que
+   * está na própria conta é o erro que a faixa existe para impedir.
+   */
+  await exigirAcessoAoCliente(cliente.id)
+
   // O histórico vem junto do desenho: abrir o editor é o único lugar de onde
   // alguém decide voltar atrás, e uma segunda ida ao banco só ao clicar deixaria
   // o botão "Histórico" mentindo sobre existir versão para escolher.
@@ -46,32 +59,35 @@ export default async function Pagina({
   ])
 
   return (
-    <Editor
-      fluxoId={fluxo.id}
-      clienteId={cliente.id}
-      nome={fluxo.nome}
-      clienteNome={cliente.nome}
-      voltarHref={`/clientes/${cliente.id}`}
-      inicial={fluxo.rascunho}
-      iaHabilitada={fluxo.iaHabilitada}
-      contextoNegocio={cliente.contextoNegocio}
-      temContextoDeNegocio={cliente.contextoNegocio.trim() !== ''}
-      conexoes={conexoes}
-      publicadaInicial={
-        publicada
-          ? {
-              id: publicada.id,
-              versao: publicada.versao,
-              quando: quando(publicada.publicadoEm),
-              grafo: publicada.grafo,
-            }
-          : null
-      }
-      versoesIniciais={versoes.map((v) => ({
-        id: v.id,
-        versao: v.versao,
-        quando: quando(v.publicadoEm),
-      }))}
-    />
+    <>
+      <FaixaDeImpersonacao />
+      <Editor
+        fluxoId={fluxo.id}
+        clienteId={cliente.id}
+        nome={fluxo.nome}
+        clienteNome={cliente.nome}
+        voltarHref={`/clientes/${cliente.id}`}
+        inicial={fluxo.rascunho}
+        iaHabilitada={fluxo.iaHabilitada}
+        contextoNegocio={cliente.contextoNegocio}
+        temContextoDeNegocio={cliente.contextoNegocio.trim() !== ''}
+        conexoes={conexoes}
+        publicadaInicial={
+          publicada
+            ? {
+                id: publicada.id,
+                versao: publicada.versao,
+                quando: quando(publicada.publicadoEm),
+                grafo: publicada.grafo,
+              }
+            : null
+        }
+        versoesIniciais={versoes.map((v) => ({
+          id: v.id,
+          versao: v.versao,
+          quando: quando(v.publicadoEm),
+        }))}
+      />
+    </>
   )
 }
