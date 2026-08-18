@@ -156,9 +156,28 @@ número do mês responde a pergunta certa e não deixa buraco.
 Ordem por dependência real. Cada uma cabe numa rodada — construir, você revisar,
 validar.
 
-### Fase A — o que está torto e é barato
+### Fase A — o que está torto e é barato ✅
 
-Sem migration. É a rodada que faz o sistema parar de parecer estranho.
+**Concluída em 17/ago/2026.** A lista de clientes virou fila de trabalho: cada
+linha diz quantas pessoas esperam atendimento, quantos contatos, quantas
+automações e o último movimento, ordenada por quem espera primeiro. Os números
+saem da view `resumo_clientes` (migration `0016`), numa consulta só — chamar
+`contarEsperandoPessoa` por cliente seria N+1 na primeira tela que abre.
+
+Itens 5 e 6 **já estavam feitos** e a leitura do plano estava errada: a ficha do
+cliente já lê fechada mostrando os dados sem clicar em nada, e o botão de apagar
+já mora longe do resto, com o comentário no código dizendo exatamente o motivo
+que o comentário do print 8 formula. Nada a fazer.
+
+O item 4 também não virou trabalho, por outro motivo: a nossa aba se chama
+**Testar**, e ela testa de verdade — executa o motor e chama API com a credencial
+real do cliente. Chamar de "Visualização" seria o erro de nome que o próprio
+EXPANSAO lista como regra ("um nome, uma coisa"). O que o print 10 pede de
+verdade — separar compartilhar de testar — não se aplica: não temos
+compartilhamento.
+
+Sem migration além da `0016`. É a rodada que faz o sistema parar de parecer
+estranho.
 
 1. **Tela de clientes reescrita**: largura que acompanha a tela, densidade de
    lista, e os números que importam (esperando resposta, conversas no mês,
@@ -175,22 +194,30 @@ Sem migration. É a rodada que faz o sistema parar de parecer estranho.
    print 8 formula melhor do que qualquer guia: *fácil de achar, longe do
    caminho de quem não procura*.
 
-### Fase B — mídia (§3)
+### Fase B — mídia (§3) ✅
 
-O buraco funcional. Migration provável para o acervo.
+**Concluída em 17/ago/2026.** O oitavo bloco. Ação `enviar_midia` no motor,
+bloco no schema/validador/editor, adaptador da Cloud API, acervo por cliente no
+Storage (migration `0017`) e a mídia aparecendo no simulador, no Lead e no Inbox.
 
-1. Ação `enviar_midia` no motor (`core/` continua sem rede e sem Next).
-2. Bloco de mídia no schema, validador e editor — imagem, vídeo, documento,
-   áudio, com legenda.
-3. Adaptador da Cloud API: upload, `media_id`, reuso do id em vez de reenviar.
-4. Acervo por cliente no Storage, com o nome do bucket identificando o produto —
-   `storage.objects` fica **fora** dos schemas de domínio e é global ao projeto
-   compartilhado ([BANCO-COMPARTILHADO.md](BANCO-COMPARTILHADO.md)).
-5. Mídia no simulador, na aba Visualização e no Inbox.
+Três decisões que valem além desta fase:
 
-**Aceite:** o bot manda uma foto de verdade no WhatsApp real; o mesmo arquivo
-enviado duas vezes usa o `media_id` guardado; falha de envio de mídia vira
-handoff e **para o resto das ações**, como já vale para texto.
+- **A regra do formato mora no motor, não no adaptador.** Áudio não aceita
+  legenda e documento tem nome de arquivo — se o WhatsApp saísse de cena amanhã,
+  isso continuaria valendo. O adaptador repete a condição porque uma versão
+  publicada antes desta regra pode carregar a legenda no grafo.
+- **Envio por `link`, e não por upload com `media_id`.** O plano pedia `media_id`
+  com reuso; o id expira em 30 dias e obrigaria a guardar validade e reenviar
+  sozinho, que é um cache com invalidação para economizar um GET da Meta. O
+  aceite mudou junto.
+- **O bucket novo se chama `autofluxos-acervo`.** O das logos se chama `logos`,
+  sem prefixo, e Storage é global — a Verandi tem dois buckets ali do lado.
+  Renomear quebraria toda `logo_url` gravada; o bucket novo é que não repete o
+  erro.
+
+**Aceite alcançado:** 18 testes novos cobrem motor, validador e o caminho inteiro
+pelo webhook; falha de envio de mídia vira handoff e **para o resto das ações**,
+como já valia para texto. Falta a prova final: mandar uma foto no WhatsApp real.
 
 ### Fase C — identidade do contato (print 13)
 
@@ -328,8 +355,8 @@ têm 11 itens; nós temos 5. Cada coisa nova precisa achar casa em `Fluxos`,
 
 | Rodada | Fase | Por que aqui |
 |---|---|---|
-| 1 | **A** — o que está torto | Barato, e é o que faz o sistema parar de parecer estranho |
-| 2 | **B** — mídia | Maior buraco funcional; não depende de nada nem de ninguém |
+| ~~1~~ | ~~**A** — o que está torto~~ | ✅ 17/ago |
+| ~~2~~ | ~~**B** — mídia~~ | ✅ 17/ago |
 | 3 | **C** — identidade | Sem isso, todo relatório e toda segmentação nascem sujos |
 | 4–5 | **D** — papéis e o lado do cliente | É o portão: nenhum cliente loga antes. Entrega o segundo produto |
 | 6 | **E** — ganchos do canal | Depende de papéis para saber quem configura |
