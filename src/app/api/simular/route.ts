@@ -5,6 +5,7 @@ import { executarComEfeitos } from '@/server/efeitos/resolver'
 import { escolherModelo } from '@/server/ia/modelo'
 import { chaveDeLimite, consumirLimite } from '@/server/limite'
 import { acharFluxo } from '@/server/repos/fluxos'
+import { conferirAcessoAoCliente } from '@/server/sessao'
 
 /**
  * Roda o motor sem WhatsApp nenhum.
@@ -101,6 +102,25 @@ export async function POST(req: Request) {
   // não existe, o teste roda sem credencial nenhuma — que é o certo: melhor o
   // bloco de API falhar do que usar a chave de alguém por engano.
   const clienteId = fluxoId ? ((await acharFluxo(fluxoId))?.clienteId ?? undefined) : undefined
+
+  /**
+   * **O furo que estava aberto.**
+   *
+   * O desenho pode vir de fora — é o ponto do simulador: testar o que ainda não
+   * foi salvo. O `fluxoId`, não: ele é o que faz o motor resolver a credencial
+   * de um cliente e mandá-la para a URL que o corpo pedir. Sem esta linha,
+   * bastava postar um fluxo inventado apontando para o `fluxoId` de qualquer
+   * cliente. Era inofensivo enquanto a senha única dava acesso a tudo; virava
+   * escalada de privilégio no minuto em que o primeiro cliente entrasse.
+   *
+   * Sem `fluxoId` não há credencial a resolver, e o teste roda como sempre
+   * rodou — que é o certo: melhor o bloco de API falhar do que usar a chave de
+   * alguém por engano.
+   */
+  if (clienteId && !(await conferirAcessoAoCliente(clienteId))) {
+    return Response.json({ erro: 'não achei essa automação' }, { status: 404 })
+  }
+
   const { modelo } = escolherModelo({ iaHabilitada })
 
   return Response.json(

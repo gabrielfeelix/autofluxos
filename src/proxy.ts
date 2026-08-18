@@ -30,14 +30,6 @@ import {
 /** Telas que existem justamente para quem ainda não entrou. */
 const PORTAS_ABERTAS = ['/entrar', '/criar-conta']
 
-/**
- * O simulador continua **só** com a senha única, e isso é contenção.
- *
- * Ele aceita `fluxoId` de qualquer cliente e resolve a credencial daquele
- * cliente — o furo que o handoff descreve. A rota ganhou a conferência de
- * membro nesta rodada, mas manter a porta estreita aqui garante que nenhum
- * caminho novo passe a alcançá-la antes da varredura de isolamento.
- */
 export async function proxy(req: NextRequest) {
   const caminho = req.nextUrl.pathname
   const senha = process.env.PAINEL_SENHA
@@ -82,14 +74,16 @@ export async function proxy(req: NextRequest) {
   if (temPainel) return NextResponse.next()
 
   /**
-   * A sessão de usuário abre o painel, **menos o simulador**.
+   * A sessão de usuário abre o painel — e toda tela alcançada por aqui confere
+   * quem é de novo, no servidor.
    *
-   * Toda tela alcançada por aqui confere quem é de novo, no servidor: a área do
-   * administrador exige papel de plataforma, e a moldura do cliente exige
-   * ser membro daquela conta. O simulador fica fora até a varredura de
-   * isolamento passar por ele.
+   * A área do administrador exige papel de plataforma; a moldura do cliente e o
+   * editor exigem ser daquela conta; as rotas de API que carregam `clienteId`
+   * perguntam o mesmo antes de ler qualquer coisa. O simulador ganhou a
+   * conferência pelo dono do `fluxoId`, que era por onde a credencial de um
+   * cliente vazava para quem postasse o id dele.
    */
-  if (temUsuario && !caminho.startsWith('/api/simular')) return NextResponse.next()
+  if (temUsuario) return NextResponse.next()
 
   if (caminho.startsWith('/api/')) {
     return new NextResponse('sessão expirada', { status: 401 })

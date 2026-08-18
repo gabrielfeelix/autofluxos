@@ -278,15 +278,32 @@ export type AcessoAoCliente = {
  * contar de um cliente para quem não é dele.
  */
 export async function exigirAcessoAoCliente(contaId: string): Promise<AcessoAoCliente> {
+  const acesso = await conferirAcessoAoCliente(contaId)
+  if (acesso) return acesso
+
+  // Sem sessão nenhuma é "entre"; com sessão e sem direito é "não existe".
+  if (await sessaoAtual()) notFound()
+  redirect('/entrar')
+}
+
+/**
+ * A mesma pergunta, sem redirecionar — é a forma que serve a rota de API.
+ *
+ * Rota de API não redireciona nem renderiza 404: ela responde status. Ter as
+ * duas formas em cima da mesma função é o que impede a regra de divergir entre
+ * a tela e a API que a alimenta, que é como um caminho fica aberto depois de o
+ * outro fechar.
+ */
+export async function conferirAcessoAoCliente(contaId: string): Promise<AcessoAoCliente | null> {
   const sessao = await sessaoAtual()
 
   if (sessao) {
     const papel = await papelNaConta(sessao.usuario.id, contaId)
     if (papel !== null) return { sessao, papel, viaSenhaUnica: false }
     if (ehAdminDaPlataforma(sessao)) return { sessao, papel: null, viaSenhaUnica: false }
-    notFound()
+    return null
   }
 
   if (await temSessaoDePainel()) return { sessao: null, papel: null, viaSenhaUnica: true }
-  redirect('/entrar')
+  return null
 }

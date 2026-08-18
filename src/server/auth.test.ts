@@ -236,3 +236,87 @@ describe.skipIf(!temBanco)('contas e papéis', () => {
     expect(rows[0]?.n).toBe(0)
   })
 })
+
+describe.skipIf(!temBanco)('entrar como', () => {
+  /**
+   * A impersonação é o recurso mais perigoso do painel, e o que o teste prova
+   * são as três coisas que a tornam defensável: que a sessão nova é **marcada**
+   * com quem a abriu, que ela **expira rápido**, e que quem não administra a
+   * plataforma **não consegue** abri-la. Errar qualquer uma só apareceria no
+   * dia em que alguém precisasse auditar o que a 4YU fez dentro da conta de um
+   * cliente — que é tarde demais.
+   */
+  async function entrarComCabecalhos(endereco: string) {
+    const r = await autenticacao().api.signInEmail({
+      body: { email: endereco, password: SENHA },
+      returnHeaders: true,
+    })
+    return { headers: new Headers({ cookie: r.headers.get('set-cookie') ?? '' }), usuario: r.response.user }
+  }
+
+  /** Promove por SQL, que é o mesmo caminho do primeiro administrador. */
+  async function tornarAdministrador(id: string) {
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 1 })
+    await pool.query('update public.af_usuarios set "role" = $1 where id = $2', ['admin', id])
+    await pool.end()
+  }
+
+  it('marca a sessão com quem entrou, e ela dura uma hora', async () => {
+    const admin = await criar('admin')
+    await tornarAdministrador(admin.usuario.id)
+    const alvo = await criar('alvo')
+
+    const { headers } = await entrarComCabecalhos(admin.endereco)
+    await autenticacao().api.impersonateUser({ headers, body: { userId: alvo.usuario.id } })
+
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 1 })
+    try {
+      const { rows } = await pool.query(
+        'select "impersonatedBy", "expiresAt" from public.af_sessoes where "userId" = $1 and "impersonatedBy" is not null',
+        [alvo.usuario.id],
+      )
+      expect(rows).toHaveLength(1)
+      // Sem esta coluna a auditoria mente por omissão: não haveria como separar
+      // "o cliente fez" de "a 4YU fez em nome do cliente".
+      expect(rows[0]?.impersonatedBy).toBe(admin.usuario.id)
+
+      const resta = new Date(rows[0]?.expiresAt as string).getTime() - Date.now()
+      expect(resta).toBeGreaterThan(0)
+      // Uma hora, e não os sete dias da sessão comum. Prazo curto é metade do
+      // que torna o recurso aceitável.
+      expect(resta).toBeLessThanOrEqual(60 * 60 * 1000 + 5_000)
+    } finally {
+      await pool.end()
+    }
+  })
+
+  it('a sessão do administrador continua de pé para ele voltar', async () => {
+    const admin = await criar('volta')
+    await tornarAdministrador(admin.usuario.id)
+    const alvo = await criar('volta-alvo')
+
+    const { headers } = await entrarComCabecalhos(admin.endereco)
+    await autenticacao().api.impersonateUser({ headers, body: { userId: alvo.usuario.id } })
+
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 1 })
+    try {
+      const { rows } = await pool.query(
+        'select count(*)::int as n from public.af_sessoes where "userId" = $1',
+        [admin.usuario.id],
+      )
+      expect(rows[0]?.n).toBeGreaterThan(0)
+    } finally {
+      await pool.end()
+    }
+  })
+
+  it('quem não administra a plataforma não entra como ninguém', async () => {
+    const comum = await criar('comum')
+    const alvo = await criar('comum-alvo')
+
+    const { headers } = await entrarComCabecalhos(comum.endereco)
+    await expect(
+      autenticacao().api.impersonateUser({ headers, body: { userId: alvo.usuario.id } }),
+    ).rejects.toThrow()
+  })
+})

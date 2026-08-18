@@ -7,6 +7,7 @@ import {
   type EtiquetaDeLead,
   type Lead,
 } from '@/server/repos/leads'
+import { conferirAcessoAoCliente } from '@/server/sessao'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,8 +33,10 @@ const TETO_DE_LINHAS = 20_000
  * a base inteira seria uma surpresa cara, ainda mais numa exportação que sai da
  * ferramenta e vira anexo de e-mail.
  *
- * O `proxy` já exigiu a sessão do painel antes de chegar aqui, e o cliente do
- * endereço é o único usado nas consultas.
+ * O `proxy` já recusou quem não tem sessão nenhuma, e o cliente do endereço é o
+ * único usado nas consultas. Falta a pergunta que o login trouxe: **esta pessoa
+ * é desta conta?** Planilha de contato é o dado mais sensível que sai daqui, e
+ * ela sai como anexo de e-mail.
  */
 export async function GET(
   req: Request,
@@ -41,6 +44,10 @@ export async function GET(
 ) {
   const params = paramsSchema.safeParse(await contexto.params)
   if (!params.success) return Response.json({ erro: 'cliente inválido' }, { status: 400 })
+
+  if (!(await conferirAcessoAoCliente(params.data.clienteId))) {
+    return Response.json({ erro: 'cliente não encontrado' }, { status: 404 })
+  }
 
   const cliente = await acharCliente(params.data.clienteId)
   if (!cliente) return Response.json({ erro: 'cliente não encontrado' }, { status: 404 })
