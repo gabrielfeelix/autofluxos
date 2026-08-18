@@ -124,7 +124,11 @@ describe('as portas do painel', () => {
 
   it('cookie do painel adulterado não vale', async () => {
     const bom = await criarSessao(segredoDeSessao(SENHA))
-    const ruim = `${COOKIE_PAINEL}=${bom.slice(0, -1)}0`
+    // Trocar o último caractere **por outro**, e não por um fixo: a assinatura
+    // é hex, e um `0` colado no lugar de um `0` devolvia o cookie intacto uma
+    // vez em dezesseis. O teste passava sozinho e caía na suíte inteira.
+    const ultimo = bom.slice(-1)
+    const ruim = `${COOKIE_PAINEL}=${bom.slice(0, -1)}${ultimo === 'a' ? 'b' : 'a'}`
     expect(destinoDe(await proxy(pedir('/clientes/abc', ruim)))).toBe('/login')
   })
 })

@@ -307,3 +307,24 @@ export async function conferirAcessoAoCliente(contaId: string): Promise<AcessoAo
   if (await temSessaoDePainel()) return { sessao: null, papel: null, viaSenhaUnica: true }
   return null
 }
+
+/**
+ * A visão de quem opera a 4YU: a lista de todos os clientes e o que nasce dela.
+ *
+ * Criar cliente não tem `clienteId` para conferir — o cliente ainda não existe.
+ * A pergunta certa é outra: **quem pode criar?** Hoje, quem já enxerga a
+ * carteira inteira, que é o operador da senha única e o administrador da
+ * plataforma. Um dono de conta cria companhia por `/contas`, que é caminho
+ * dele e passa pelo plugin.
+ */
+export async function exigirOperadorDa4YU(): Promise<void> {
+  const sessao = await sessaoAtual()
+
+  if (sessao) {
+    if (!ehAdminDaPlataforma(sessao)) redirect('/contas')
+    return
+  }
+
+  if (await temSessaoDePainel()) return
+  redirect('/entrar')
+}

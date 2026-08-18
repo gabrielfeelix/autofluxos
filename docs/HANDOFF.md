@@ -208,18 +208,19 @@ projeto compartilhado.
 
 ### 4.2 O que falta na A1
 
-1. **A varredura de isolamento, completa.** Fechamos o caminho por onde se
-   entra: a moldura do cliente, o editor, e as três rotas de API que carregam
-   `clienteId` — inclusive `/api/simular`, que era o furo descrito aqui na
-   rodada passada (aceitava `fluxoId` de qualquer cliente e resolvia a
-   credencial dele). **O que continua aberto são os repositórios**: eles ainda
-   assumem que quem chegou pode. Hoje isso está contido porque toda porta
-   confere antes; a garantia de verdade é a pergunta descer até `repos/`.
+1. ~~A varredura de isolamento.~~ **Feita.** Ela não estava onde o handoff
+   anterior dizia: os repositórios já recebem `clienteId` e filtram por ele —
+   `publicar`, `apagarFluxo`, `acharLead`, `lerCredencial`, todos. Quem aceitava
+   id de fora eram as **Server Actions**, que recebem `clienteId` do formulário.
+   As 27 que recebem cliente chamam `exigirAcessoAoCliente`; as 2 que criam
+   cliente chamam `exigirOperadorDa4YU`; e `acoes.test.ts` recusa ação nova que
+   esqueça a linha, porque 27 repetições é exatamente onde a 28ª fica de fora.
 2. **Convite por e-mail.** `af_convites` existe e nada a preenche. Depende de
    SMTP, que é decisão dos dois produtos.
-3. **Trocar a senha única pelo login por usuário.** Só depois de (1). Enquanto
-   as duas convivem, nada quebra; o dia da troca é uma linha em
-   `exigirAcessoAoCliente` e a remoção de `PAINEL_SENHA`.
+3. **Trocar a senha única pelo login por usuário.** Enquanto as duas convivem,
+   nada quebra; o dia da troca é uma linha em `exigirAcessoAoCliente` (parar de
+   deixar o administrador passar sem ser membro) e a remoção de `PAINEL_SENHA`.
+   Exige o primeiro administrador existir — §4.1.
 
 Depois disso: **A3** (bloco de mensagem em pilha) e **A4** (a cadeia de
 atendimento). A A4 é a mais importante e a menos óbvia — leia

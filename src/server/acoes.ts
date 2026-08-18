@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { fluxoSchema } from '@/core/flow/schema'
 import type { Problema } from '@/core/flow/validar'
 import { db } from './db'
+import { exigirAcessoAoCliente, exigirOperadorDa4YU } from './sessao'
 import { fluxoNovo } from '@/core/flow/novo'
 import { triagem } from '@/exemplos/triagem'
 import {
@@ -54,7 +55,22 @@ import { apagarConexao, criarConexao, trocarValor } from './repos/conexoes'
 import { apagarContato } from './repos/retencao'
 import { apagarRespostaRapida, criarRespostaRapida } from './repos/respostas-rapidas'
 
+/**
+ * **Toda ação deste arquivo confere quem é antes de tocar em qualquer coisa.**
+ *
+ * A que recebe `clienteId` chama `exigirAcessoAoCliente`; a que cria cliente
+ * chama `exigirOperadorDa4YU`. Não é redundância com o `proxy.ts`: Server
+ * Action é um POST na rota onde ela é usada, o `clienteId` chega do formulário,
+ * e nada impede alguém de postar o id de outro cliente. Enquanto havia uma
+ * senha só isso era inofensivo — quem entrava já podia tudo. Com login por
+ * usuário, é escalada de privilégio.
+ *
+ * `src/server/acoes.test.ts` recusa ação nova que esqueça a linha. Vinte e sete
+ * repetições é exatamente onde a vigésima oitava fica de fora.
+ */
 export async function acaoCriarCliente(formData: FormData) {
+  await exigirOperadorDa4YU()
+
   const nome = String(formData.get('nome') ?? '').trim()
   if (nome === '') return
 
@@ -68,6 +84,8 @@ export async function acaoCriarCliente(formData: FormData) {
  * para dar o que explorar sem ninguém precisar desenhar nada antes.
  */
 export async function acaoCriarExemplo() {
+  await exigirOperadorDa4YU()
+
   const cliente = await criarCliente('Estúdio de exemplo')
   await criarFluxo(cliente.id, 'Triagem de orçamento', triagem)
   revalidatePath('/')
@@ -83,6 +101,8 @@ export async function acaoCriarExemplo() {
  * O `fluxoSchema.parse` aqui é a garantia de que a *estrutura* está sã.
  */
 export async function acaoSalvarRascunho(fluxoId: string, clienteId: string, grafo: unknown) {
+  await exigirAcessoAoCliente(clienteId)
+
   const analise = fluxoSchema.safeParse(grafo)
   if (!analise.success) {
     return { ok: false as const, erro: 'o desenho chegou com formato inválido' }
@@ -97,6 +117,8 @@ export async function acaoSalvarRascunho(fluxoId: string, clienteId: string, gra
  * cadastro do cliente: é a automação que se vende com ou sem IA.
  */
 export async function acaoCriarFluxo(clienteId: string, formData: FormData) {
+  await exigirAcessoAoCliente(clienteId)
+
   const nome = String(formData.get('nome') ?? '').trim()
   if (nome === '') return
 
@@ -116,6 +138,8 @@ export async function acaoCriarFluxo(clienteId: string, formData: FormData) {
  * mesmo que a chamada venha de outro lugar.
  */
 export async function acaoPublicar(fluxoId: string, clienteId: string, grafo: unknown) {
+  await exigirAcessoAoCliente(clienteId)
+
   const resultado = await publicar(fluxoId, clienteId, grafo)
 
   if (resultado.ok) {
@@ -145,6 +169,8 @@ export async function acaoPublicar(fluxoId: string, clienteId: string, grafo: un
  * ar um fluxo que o editor recusaria hoje.
  */
 export async function acaoVoltarParaVersao(fluxoId: string, clienteId: string, versaoId: string) {
+  await exigirAcessoAoCliente(clienteId)
+
   const antiga = await acharVersaoDoFluxo(versaoId, fluxoId)
   if (!antiga) {
     return {
@@ -175,6 +201,8 @@ export async function acaoConectarNumero(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
+  await exigirAcessoAoCliente(clienteId)
+
   const phoneNumberId = String(formData.get('phoneNumberId') ?? '').trim()
   const flowId = String(formData.get('flowId') ?? '').trim()
   if (phoneNumberId === '') return { erro: 'cole a identificação do número' }
@@ -201,6 +229,8 @@ export async function acaoDesconectarNumero(
   clienteId: string,
   canalId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
   const r = await desconectarNumero(clienteId, canalId)
   revalidatePath(`/clientes/${clienteId}`)
   return r.ok ? { ok: true } : { ok: false, erro: r.motivo }
@@ -211,6 +241,8 @@ export async function acaoApagarFluxo(
   clienteId: string,
   fluxoId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
   const r = await apagarFluxo(clienteId, fluxoId)
   revalidatePath(`/clientes/${clienteId}`)
   return r.ok ? { ok: true } : { ok: false, erro: r.motivo }
@@ -224,6 +256,8 @@ export async function acaoApagarFluxo(
  * — mexer no que já roda no WhatsApp de alguém tem que ser um ato deliberado.
  */
 export async function acaoAlternarIa(fluxoId: string, clienteId: string, habilitada: boolean) {
+  await exigirAcessoAoCliente(clienteId)
+
   await definirIa(fluxoId, clienteId, habilitada)
   revalidatePath(`/clientes/${clienteId}`)
   return { ok: true as const, iaHabilitada: habilitada }
@@ -241,6 +275,8 @@ export async function acaoCriarConexao(
   clienteId: string,
   formData: FormData,
 ): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
   const tipo = String(formData.get('tipo') ?? 'bearer')
   if (tipo !== 'bearer' && tipo !== 'cabecalho' && tipo !== 'query') {
     return { ok: false, erro: 'tipo de credencial inválido' }
@@ -270,6 +306,8 @@ export async function acaoTrocarValorDaConexao(
   conexaoId: string,
   formData: FormData,
 ): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
   try {
     await trocarValor(conexaoId, clienteId, String(formData.get('valor') ?? ''))
   } catch (erro) {
@@ -280,6 +318,8 @@ export async function acaoTrocarValorDaConexao(
 }
 
 export async function acaoApagarConexao(clienteId: string, conexaoId: string) {
+  await exigirAcessoAoCliente(clienteId)
+
   await apagarConexao(conexaoId, clienteId)
   revalidatePath(`/clientes/${clienteId}/conexoes`)
 }
@@ -302,6 +342,8 @@ export async function acaoCriarRespostaRapida(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
+  await exigirAcessoAoCliente(clienteId)
+
   const resultado = respostaRapidaSchema.safeParse({
     atalho: String(formData.get('atalho') ?? ''),
     texto: String(formData.get('texto') ?? ''),
@@ -324,6 +366,8 @@ export async function acaoApagarRespostaRapida(
   clienteId: string,
   respostaId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
   try {
     const apagou = await apagarRespostaRapida(respostaId, clienteId)
     if (!apagou) return { ok: false, erro: 'esta resposta não existe neste cliente' }
@@ -359,6 +403,8 @@ export async function acaoResponderLead(
   contatoId: string,
   formData: FormData,
 ): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
   const texto = String(formData.get('texto') ?? '').trim()
   if (texto === '') return { ok: false, erro: 'escreva a mensagem antes de enviar' }
   if (texto.length > LIMITE_DA_MENSAGEM) {
@@ -421,6 +467,8 @@ export async function acaoResponderLead(
  * ficava vermelho para sempre e a tela perdia o sentido no segundo dia.
  */
 export async function acaoEncerrarAtendimento(clienteId: string, contatoId: string) {
+  await exigirAcessoAoCliente(clienteId)
+
   await encerrarAtendimento(clienteId, contatoId)
   revalidatePath(`/clientes/${clienteId}/leads`)
   revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
@@ -433,6 +481,8 @@ export async function acaoAlternarAutomacaoDoLead(
   contatoId: string,
   ativa: boolean,
 ): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
   if (!z.string().uuid().safeParse(clienteId).success || !z.string().uuid().safeParse(contatoId).success) {
     return { ok: false, erro: 'contato inválido' }
   }
@@ -473,6 +523,8 @@ export async function acaoAlternarAutomacaoDoLead(
  * protege contra engano, não contra intruso.
  */
 export async function acaoApagarCliente(clienteId: string): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
   if (!z.string().uuid().safeParse(clienteId).success) {
     return { ok: false, erro: 'cliente inválido' }
   }
@@ -496,6 +548,8 @@ export async function acaoApagarContato(
   clienteId: string,
   contatoId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
   if (
     !z.string().uuid().safeParse(clienteId).success ||
     !z.string().uuid().safeParse(contatoId).success
@@ -523,6 +577,8 @@ export async function acaoSalvarContexto(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
+  await exigirAcessoAoCliente(clienteId)
+
   try {
     await atualizarContexto(clienteId, String(formData.get('contexto') ?? ''))
   } catch (erro) {
@@ -546,6 +602,8 @@ export async function acaoSalvarCadastro(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
+  await exigirAcessoAoCliente(clienteId)
+
   const nome = String(formData.get('nome') ?? '').trim()
   if (nome === '') return { erro: 'O cliente precisa de um nome.' }
 
@@ -594,6 +652,8 @@ export async function acaoSalvarLogo(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
+  await exigirAcessoAoCliente(clienteId)
+
   const arquivo = formData.get('logo')
   if (!(arquivo instanceof File) || arquivo.size === 0) {
     return { erro: 'Escolha uma imagem.' }
@@ -626,6 +686,8 @@ export async function acaoSalvarLogo(
 
 /** Tira a logo e volta para as iniciais. O arquivo fica — trocar depois sobrescreve. */
 export async function acaoRemoverLogo(clienteId: string) {
+  await exigirAcessoAoCliente(clienteId)
+
   await atualizarLogo(clienteId, '')
   revalidatePath('/')
   revalidatePath(`/clientes/${clienteId}`, 'layout')
@@ -643,6 +705,8 @@ export async function acaoSubirParaAcervo(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
+  await exigirAcessoAoCliente(clienteId)
+
   const arquivo = formData.get('arquivo')
   if (!(arquivo instanceof File) || arquivo.size === 0) {
     return { erro: 'Escolha um arquivo.' }
@@ -682,6 +746,8 @@ export async function acaoApagarDoAcervo(
   clienteId: string,
   caminho: string,
 ): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
   try {
     await apagarDoAcervo(clienteId, caminho)
   } catch (erro) {
@@ -704,6 +770,8 @@ export async function acaoCorrigirNome(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
+  await exigirAcessoAoCliente(clienteId)
+
   const nome = String(formData.get('nome') ?? '')
   const ok = await corrigirNome(clienteId, contatoId, nome)
   if (!ok) return { erro: 'este contato não é deste cliente' }
@@ -720,6 +788,8 @@ export async function acaoSalvarNotas(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
+  await exigirAcessoAoCliente(clienteId)
+
   const notas = String(formData.get('notas') ?? '')
   const ok = await salvarNotas(clienteId, contatoId, notas)
   if (!ok) return { erro: 'este contato não é deste cliente' }
@@ -742,6 +812,8 @@ export async function acaoImportarContatos(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar & { resumo?: string; pendentes?: string[] }> {
+  await exigirAcessoAoCliente(clienteId)
+
   const arquivo = formData.get('planilha')
   if (!(arquivo instanceof File) || arquivo.size === 0) return { erro: 'Escolha um arquivo CSV.' }
   if (arquivo.size > 4 * 1024 * 1024) return { erro: 'O arquivo passa de 4 MB.' }
