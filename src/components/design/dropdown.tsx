@@ -100,11 +100,21 @@ export function Dropdown({
     const alturaDaLista = Math.min(235, opcoes.length * 44 + 10)
     const cabeAbaixo = window.innerHeight - r.bottom > alturaDaLista + 12
 
-    setCaixa({
+    const proxima = {
       top: cabeAbaixo ? r.bottom + 6 : Math.max(8, r.top - alturaDaLista - 6),
       left: r.left,
       width: r.width,
-    })
+    }
+
+    // Só troca o estado quando a medida **mudou de verdade**. Um objeto novo a
+    // cada medição re-renderiza, e se a re-renderização mexer no que rola (foi
+    // o caso do modal que virava contentor de `fixed`), o ciclo se alimenta e a
+    // tela treme. A guarda custa três comparações e corta a realimentação.
+    setCaixa((atual) =>
+      atual && atual.top === proxima.top && atual.left === proxima.left && atual.width === proxima.width
+        ? atual
+        : proxima,
+    )
   }, [opcoes.length])
 
   // `useLayoutEffect` para a primeira medida acontecer antes de pintar: com

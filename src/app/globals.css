@@ -353,6 +353,22 @@ textarea::placeholder {
   }
 }
 
+/**
+ * O fim é `transform: none`, e **não** `scale(1)`.
+ *
+ * Parecem a mesma coisa e não são: com `animation-fill-mode: both`, o `to` fica
+ * aplicado para sempre — e qualquer transform, inclusive a identidade, faz o
+ * elemento virar **bloco contentor de `position: fixed`** nos descendentes.
+ *
+ * O efeito disso apareceu como um modal tremendo sem parar: o `Dropdown` dentro
+ * do `<dialog>` desenha por portal com `position: fixed` e coordenada de
+ * janela; com o modal virando contentor, aquela coordenada passou a ser medida
+ * de dentro dele, o menu estourou a altura, apareceu rolagem, a rolagem
+ * disparou a remedição, a remedição moveu o menu, e o ciclo se alimentou.
+ *
+ * `transform: none` no fim mata a causa: sem contentor, `fixed` volta a ser a
+ * janela, que é o que o portal supõe.
+ */
 @keyframes pop {
   from {
     opacity: 0;
@@ -360,7 +376,7 @@ textarea::placeholder {
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: none;
   }
 }
 

@@ -74,13 +74,19 @@ export function Popover({
       const cabeAbaixo = window.innerHeight - r.bottom > altura + 12
       const centro = r.left + r.width / 2 - largura / 2
 
-      setCaixa({
+      const proxima = {
         top: cabeAbaixo ? r.bottom + 6 : Math.max(8, r.top - altura - 6),
         // Centralizado no botão, mas nunca fora da janela: os campos do editor
         // ficam colados na borda direita, e centralizar sem limite desenharia
         // metade do painel fora da tela.
         left: Math.max(8, Math.min(centro, window.innerWidth - largura - 8)),
-      })
+      }
+
+      // Mesma guarda do `Dropdown`: medida igual não vira estado novo, senão
+      // uma remedição que mexa no que rola realimenta a próxima e a tela treme.
+      setCaixa((atual) =>
+        atual && atual.top === proxima.top && atual.left === proxima.left ? atual : proxima,
+      )
     }
 
     medir()
