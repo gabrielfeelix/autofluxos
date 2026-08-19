@@ -54,12 +54,23 @@ describe('cada preset produz um bloco de API válido', () => {
 })
 
 describe('o que os presets escolhem, e por quê', () => {
-  it('nenhum deles manda a conversa para uma pessoa quando a API falha', () => {
-    // O lead já está no nosso banco. Não ter chegado no CRM é problema de
-    // sincronia, não de atendimento — e handoff aqui encheria a fila com
-    // conversas que não precisam de ninguém.
+  it('quem escreve segue em frente ao falhar; quem lê chama uma pessoa', () => {
+    /**
+     * A regra mudou de forma quando entraram os presets de **consulta**, e a
+     * distinção é o ponto:
+     *
+     * - **Escrita** (`POST`) — mandar o lead para o CRM, gravar linha na
+     *   planilha. Ele já está no nosso banco; não ter chegado lá é problema de
+     *   sincronia, não de atendimento, e handoff aqui encheria a fila com
+     *   conversas que não precisam de ninguém.
+     * - **Leitura** (`GET`) — consultar horário livre, tabela, estoque. O que
+     *   falhou **é o assunto da conversa**: sem os valores não há o que
+     *   perguntar, e seguir em frente entregaria uma pergunta sem nenhuma
+     *   resposta possível. Uma pessoa assume.
+     */
     for (const preset of PRESETS) {
-      expect(preset.dados.aoFalhar).toBe('seguir')
+      const esperado = preset.dados.metodo === 'GET' ? 'humano' : 'seguir'
+      expect(preset.dados.aoFalhar, preset.id).toBe(esperado)
     }
   })
 

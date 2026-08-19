@@ -102,6 +102,75 @@ export const PRESETS: Preset[] = [
       aoFalhar: 'seguir',
     },
   },
+  /**
+   * Ler a planilha — o que faltava.
+   *
+   * O preset de Sheets que existia só **escrevia** (acrescentar linha). Mas o
+   * caso que aparece toda semana é o contrário: o negócio inteiro do cliente
+   * mora numa planilha, e o bot precisa **consultar** — horário livre, professor
+   * do dia, preço da tabela.
+   *
+   * A leitura é feita pelo bot, e não pela IA, e a diferença não é detalhe: a
+   * IA responde por probabilidade, e horário é fato. Ela inventaria uma vaga que
+   * não existe num dia ruim, e o erro só apareceria com a aluna já no estúdio.
+   * Aqui o bloco lê a célula e a **pergunta dinâmica** transforma o conteúdo em
+   * botões — a pessoa escolhe entre o que existe de verdade. A IA continua
+   * ótima na camada de cima: entender "queria de manhã, mais pro fim da semana"
+   * e virar `dia=sexta` antes da consulta rodar.
+   *
+   * **Duas portas, porque os clientes são dois.** O Apps Script não pede chave
+   * do Google nem planilha pública, e é o mesmo gesto que quem já usa o preset
+   * de escrever aprendeu. A API v4 é uma chamada direta, sem nada publicado,
+   * mas exige a planilha aberta por link — o que é aceitável para uma grade de
+   * horários e inaceitável para uma lista de alunos.
+   *
+   * O formato do que se lê está fechado em `docs/PLANILHAS.md`: uma aba
+   * `AutoFluxos`, um intervalo nomeado por dia, e a célula com os valores
+   * separados por ponto e vírgula — que é exatamente o que `opcoesDe` espera.
+   */
+  {
+    id: 'google-sheets-ler',
+    nome: 'Google Sheets · consultar (Apps Script)',
+    resumo:
+      'Lê um intervalo nomeado da planilha e devolve os valores para a conversa. É o caminho de quem gere horário, tabela ou estoque em planilha.',
+    exige:
+      'Um Web App publicado no Apps Script devolvendo o intervalo em JSON (Implantar → Novo, acesso “qualquer pessoa”). A chave já vem na URL que o Google gera — cole-a no endereço. A planilha não precisa ser pública.',
+    credencial: 'nenhuma',
+    dados: {
+      metodo: 'GET',
+      // `{{dia}}` no endereço: uma chamada só resolve qualquer dia da semana,
+      // porque a ramificação por opção já gravou o dia escolhido. Com endereço
+      // fixo seriam sete blocos ou uma corrente de condições.
+      url: 'https://script.google.com/macros/s/COLE-O-SEU-ID-AQUI/exec?intervalo={{dia}}',
+      cabecalhos: [],
+      corpo: '',
+      mapear: [{ variavel: 'horarios', caminho: 'valores' }],
+      // Planilha fora do ar é integração falhando, e aqui ela é o assunto da
+      // conversa: sem os horários não há o que perguntar. Uma pessoa assume.
+      aoFalhar: 'humano',
+    },
+  },
+  {
+    id: 'google-sheets-api-ler',
+    nome: 'Google Sheets · consultar (API do Google)',
+    resumo:
+      'Lê um intervalo nomeado direto pela API do Sheets. Sem publicar nada, mas exige a planilha aberta por link.',
+    exige:
+      'A planilha compartilhada como “qualquer pessoa com o link pode ver” e uma chave de API do Google Cloud (Sheets API ativada). Cadastre a chave em Credenciais como “query”, com campo `key`.',
+    credencial: 'query',
+    dados: {
+      metodo: 'GET',
+      // O ID da planilha é o pedaço entre `/d/` e `/edit` na URL dela.
+      url: 'https://sheets.googleapis.com/v4/spreadsheets/COLE-O-ID-DA-PLANILHA/values/{{dia}}',
+      cabecalhos: [],
+      corpo: '',
+      // A API devolve `{ "values": [["7h00;10h00;15h00"]] }` — matriz de linhas
+      // por colunas. O caminho pega a primeira célula, que é onde o contrato de
+      // leitura manda a planilha juntar os valores.
+      mapear: [{ variavel: 'horarios', caminho: 'values.0.0' }],
+      aoFalhar: 'humano',
+    },
+  },
   {
     id: 'webhook',
     nome: 'Webhook · avisar um sistema seu',
