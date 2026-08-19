@@ -15,6 +15,10 @@ import {
 } from '@/server/repos/leads'
 import { horaExata, quando } from '@/lib/quando'
 import { FichaDeEtiqueta } from '@/components/etiquetas/ficha'
+import { CaixaDeSelecao, CaixaDeTodos, SelecaoDeContatos } from '@/components/lead/selecao'
+import { MenuDoContato } from '@/components/lead/menu-do-contato'
+import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
+import { acaoCriarContato } from '@/server/acoes'
 import { listarEtiquetasComContagem, type Etiqueta } from '@/server/repos/etiquetas'
 
 export const dynamic = 'force-dynamic'
@@ -188,6 +192,31 @@ async function Tabela({
         >
           Importar
         </Link>
+        <ModalFormulario
+          botao="+ Criar contato"
+          titulo="Novo contato"
+          descricao="Para quem você já tem o telefone e ainda não escreveu por aqui. O bot só fala depois que a pessoa mandar a primeira mensagem — o WhatsApp não deixa começar conversa com texto livre."
+          action={acaoCriarContato.bind(null, clienteId)}
+        >
+          <label>
+            <RotuloCampo>Nome</RotuloCampo>
+            <input
+              name="nome"
+              placeholder="ex.: Ana Souza"
+              className="app-field px-[13px] py-[11px] text-[13.5px]"
+            />
+          </label>
+          <label>
+            <RotuloCampo>Telefone com DDD</RotuloCampo>
+            <input
+              name="telefone"
+              required
+              autoFocus
+              placeholder="ex.: (11) 98765-4321"
+              className="app-field px-[13px] py-[11px] text-[13.5px]"
+            />
+          </label>
+        </ModalFormulario>
         <a
           href={enderecoDoCsv(clienteId, etiqueta, marca, termo)}
           className="app-secondary-button px-3 py-1.5 text-[11.5px]"
@@ -287,20 +316,32 @@ async function Tabela({
           </Link>
         </div>
       ) : (
-        <>
+        <SelecaoDeContatos
+          clienteId={clienteId}
+          etiquetas={etiquetasDaConta.map(({ id, nome, cor }) => ({ id, nome, cor }))}
+        >
           <div className="app-card overflow-x-auto overflow-y-hidden">
-            <table className="w-full min-w-[760px] border-collapse text-left">
+            <table className="w-full min-w-[820px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-white/[0.07]">
+                  <th scope="col" className="w-9 px-3.5 py-2.5">
+                    <CaixaDeTodos ids={leads.map((lead) => lead.contatoId)} />
+                  </th>
                   <Cabecalho>Contato</Cabecalho>
                   {colunas.map((coluna) => <Cabecalho key={coluna} mono>{coluna}</Cabecalho>)}
                   <Cabecalho>Situação</Cabecalho>
                   <Cabecalho>Última mensagem</Cabecalho>
+                  <th scope="col" className="w-10 px-2 py-2.5">
+                    <span className="sr-only">Ações</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {leads.map((lead) => (
                 <tr key={lead.contatoId} className="border-b border-white/[0.045] transition last:border-0 hover:bg-white/[0.03]">
+                  <td className="px-3.5 py-3 align-top">
+                    <CaixaDeSelecao id={lead.contatoId} rotulo={lead.nome ?? lead.waId} />
+                  </td>
                   <td className="px-3.5 py-3">
                     <div className="flex items-center gap-2.5">
                       <Avatar nome={lead.nome} />
@@ -349,6 +390,15 @@ async function Tabela({
                       </>
                     ) : 'sem mensagem'}
                   </td>
+                  <td className="px-2 py-3 align-top">
+                    <MenuDoContato
+                      clienteId={clienteId}
+                      contatoId={lead.contatoId}
+                      nome={lead.nome ?? telefoneLegivel(lead.waId)}
+                      automacaoAtiva={lead.automacaoAtiva}
+                      aguardandoPessoa={lead.aguardando !== null}
+                    />
+                  </td>
                 </tr>
                 ))}
               </tbody>
@@ -365,7 +415,7 @@ async function Tabela({
               </p>
               <div className="flex items-center gap-2">
                 <Passo
-                  href={endereco(clienteId, { etiqueta, busca: termo, pagina: pagina - 1 })}
+                  href={endereco(clienteId, { etiqueta, marca, busca: termo, pagina: pagina - 1 })}
                   ativo={pagina > 1}
                 >
                   ‹ Anterior
@@ -374,7 +424,7 @@ async function Tabela({
                   Página {pagina} de {paginas}
                 </span>
                 <Passo
-                  href={endereco(clienteId, { etiqueta, busca: termo, pagina: pagina + 1 })}
+                  href={endereco(clienteId, { etiqueta, marca, busca: termo, pagina: pagina + 1 })}
                   ativo={pagina < paginas}
                 >
                   Próxima ›
@@ -382,7 +432,7 @@ async function Tabela({
               </div>
             </nav>
           )}
-        </>
+        </SelecaoDeContatos>
       )}
     </>
   )

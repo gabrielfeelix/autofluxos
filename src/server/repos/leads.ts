@@ -832,3 +832,60 @@ export async function contarPorAtribuicao(
 
   return { total: linhas.length, semDono, porUsuario }
 }
+
+/**
+ * Cria um contato à mão, sem esperar a pessoa escrever.
+ *
+ * **É o único caminho em que um `wa_id` entra no sistema digitado por gente**,
+ * e por isso ele passa por `chavesDoTelefone`: o `wa_id` é a identidade da
+ * pessoa no WhatsApp, e gravar `(11) 98765-4321` ali criaria um contato que
+ * nunca casa com a conversa que chegar depois — dois cadastros da mesma pessoa,
+ * um deles morto, e ninguém entendendo por quê.
+ *
+ * Número que não dá para normalizar com segurança é recusado em vez de
+ * adivinhado. `98765-4321` sem DDD pode ser de onze estados, e chutar o DDD do
+ * cliente casaria a conversa de uma pessoa com o cadastro de outra.
+ */
+export async function criarContato(
+  clienteId: string,
+  dados: { nome: string; telefone: string },
+): Promise<{ ok: true; contatoId: string } | { ok: false; motivo: string }> {
+  const nome = dados.nome.trim()
+  const chaves = chavesDoTelefone(dados.telefone)
+
+  if (chaves.length === 0) {
+    return {
+      ok: false,
+      motivo: 'escreva o telefone com DDD — sem ele não dá para saber de qual estado é',
+    }
+  }
+
+  // A primeira chave é a forma completa com DDI. As outras são as grafias
+  // alternativas do mesmo aparelho, e servem para descobrir se ele já existe.
+  const [waId] = chaves
+
+  const { data: existente, error: erroDaBusca } = await db()
+    .from('contacts')
+    .select('id, wa_id')
+    .eq('client_id', clienteId)
+    .in('wa_id', chaves)
+    .limit(1)
+    .maybeSingle()
+
+  if (erroDaBusca && !ehIdInvalido(erroDaBusca)) {
+    throw new Error(`não deu para conferir o telefone: ${erroDaBusca.message}`)
+  }
+  if (existente) {
+    return { ok: false, motivo: 'este telefone já está na lista de contatos' }
+  }
+
+  const { data, error } = await db()
+    .from('contacts')
+    .insert({ client_id: clienteId, wa_id: waId, nome_real: nome })
+    .select('id')
+    .single()
+
+  if (error?.code === '23505') return { ok: false, motivo: 'este telefone já está na lista' }
+  if (error) throw new Error(`não deu para criar o contato: ${error.message}`)
+  return { ok: true, contatoId: data.id as string }
+}

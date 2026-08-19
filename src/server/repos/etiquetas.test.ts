@@ -12,7 +12,8 @@ import {
   listarEtiquetasComContagem,
   marcarContatos,
 } from './etiquetas'
-import { paginarLeads } from './leads'
+import { criarContato, paginarLeads } from './leads'
+import { apagarContatos } from './retencao'
 
 /**
  * As etiquetas manuais (0025).
@@ -166,5 +167,52 @@ describe.skipIf(!temCredencial)('aplicar em contatos', () => {
 
     const depois = await etiquetasDeContatos([contatoA])
     expect(depois.get(contatoA)?.some((e) => e.nome === 'Orçamento enviado')).toBeFalsy()
+  })
+})
+
+describe.skipIf(!temCredencial)('criar contato à mão e apagar em lote', () => {
+  it('normaliza o telefone para a forma que a Meta manda', async () => {
+    const criado = await criarContato(clienteId, {
+      nome: 'Digitado à mão',
+      telefone: `(11) 9${seed.slice(0, 4)}-${seed.slice(4)}8`,
+    })
+    expect(criado.ok).toBe(true)
+
+    const { data } = await db()
+      .from('contacts')
+      .select('wa_id, nome_real')
+      .eq('id', criado.ok ? criado.contatoId : '')
+      .single()
+
+    // O `wa_id` é a identidade da pessoa no WhatsApp. Gravar "(11) 98765-4321"
+    // ali criaria um cadastro que nunca casa com a conversa que chegar depois.
+    expect(data?.wa_id).toMatch(/^55\d+$/)
+    expect(data?.nome_real).toBe('Digitado à mão')
+  })
+
+  it('recusa telefone sem DDD em vez de chutar o estado', async () => {
+    expect(await criarContato(clienteId, { nome: 'Sem DDD', telefone: '98765-4321' })).toEqual({
+      ok: false,
+      motivo: 'escreva o telefone com DDD — sem ele não dá para saber de qual estado é',
+    })
+  })
+
+  it('recusa telefone que já está na lista, mesmo escrito de outro jeito', async () => {
+    const primeiro = `11 9${seed}7`
+    expect((await criarContato(clienteId, { nome: 'A', telefone: primeiro })).ok).toBe(true)
+
+    const mesmoNumero = await criarContato(clienteId, { nome: 'A de novo', telefone: `+55 ${primeiro}` })
+    expect(mesmoNumero).toEqual({ ok: false, motivo: 'este telefone já está na lista de contatos' })
+  })
+
+  it('apagar em lote não alcança contato de outro cliente', async () => {
+    const meu = await acharOuCriarContato(clienteId, telefone(9), 'Para apagar')
+
+    // O id do outro cliente vai junto de propósito: o `client_id` no `delete` é
+    // o que faz ele não apagar nada em vez de apagar o contato alheio.
+    expect(await apagarContatos(clienteId, [meu.id, doOutro])).toBe(1)
+
+    const { data } = await db().from('contacts').select('id').eq('id', doOutro).maybeSingle()
+    expect(data).not.toBeNull()
   })
 })

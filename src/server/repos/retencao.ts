@@ -59,6 +59,32 @@ export async function apagarContato(clienteId: string, contatoId: string): Promi
   return data !== null
 }
 
+/**
+ * Apaga vários contatos deste cliente de uma vez.
+ *
+ * O `client_id` no `delete` é o que faz um id de outra conta na lista não
+ * apagar nada em vez de apagar o contato de outro cliente — e é por isso que a
+ * resposta é "quantos foram", e não "ok": a diferença entre pedido e feito é
+ * exatamente a informação de que alguém mandou id que não era dele.
+ */
+export async function apagarContatos(
+  clienteId: string,
+  contatos: string[],
+): Promise<number> {
+  if (contatos.length === 0) return 0
+
+  const { data, error } = await db()
+    .from('contacts')
+    .delete()
+    .eq('client_id', clienteId)
+    .in('id', contatos)
+    .select('id')
+
+  if (ehIdInvalido(error)) return 0
+  if (error) throw new Error(`não deu para apagar os contatos: ${error.message}`)
+  return data?.length ?? 0
+}
+
 export type ResultadoDaLimpeza = {
   apagados: number
   /** `true` quando bateu no teto e ainda havia fila — a próxima passada segue. */

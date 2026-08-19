@@ -29,6 +29,7 @@ import {
   aplicarImportacao,
   contatosConhecidos,
   corrigirNome,
+  criarContato,
   salvarNotas,
 } from './repos/leads'
 import { canalCloudApi } from '@/channels/cloud-api'
@@ -65,7 +66,7 @@ import {
   salvarRascunho,
 } from './repos/fluxos'
 import { apagarConexao, criarConexao, trocarValor } from './repos/conexoes'
-import { apagarContato } from './repos/retencao'
+import { apagarContato, apagarContatos } from './repos/retencao'
 import { apagarRespostaRapida, criarRespostaRapida } from './repos/respostas-rapidas'
 import { alternarGatilho, apagarGatilho, criarGatilho } from './repos/gatilhos'
 import {
@@ -460,6 +461,58 @@ export async function acaoMarcarEtiqueta(
     revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
   }
   return { ok: true }
+}
+
+/**
+ * Cria um contato à mão (B2).
+ *
+ * A tela de contatos era só de leitura do que o WhatsApp trouxe. Existe o caso
+ * contrário — o cliente tem o telefone de alguém e quer a pessoa na lista antes
+ * de ela escrever — e sem isto a única entrada era a importação por planilha,
+ * que é ferramenta demais para um contato só.
+ */
+export async function acaoCriarContato(
+  clienteId: string,
+  formData: FormData,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const nome = String(formData.get('nome') ?? '')
+  const telefone = String(formData.get('telefone') ?? '')
+  if (telefone.trim() === '') return { ok: false, erro: 'escreva o telefone' }
+
+  const r = await criarContato(clienteId, { nome, telefone })
+  if (!r.ok) return { ok: false, erro: r.motivo }
+
+  revalidatePath(`/clientes/${clienteId}/leads`)
+  revalidatePath(`/clientes/${clienteId}`)
+  return { ok: true }
+}
+
+/**
+ * Apaga vários contatos de uma vez.
+ *
+ * Devolve **quantos** foram, e não só `ok`: pedir cem e apagar noventa e oito
+ * significa que dois ids não eram deste cliente, e engolir essa diferença
+ * esconderia exatamente o caso que a conferência de dono existe para pegar.
+ */
+export async function acaoApagarContatos(
+  clienteId: string,
+  contatos: string[],
+): Promise<{ ok: boolean; apagados?: number; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  if (!Array.isArray(contatos) || contatos.some((id) => !z.string().uuid().safeParse(id).success)) {
+    return { ok: false, erro: 'seleção inválida' }
+  }
+  if (contatos.length === 0) return { ok: false, erro: 'escolha ao menos um contato' }
+
+  const apagados = await apagarContatos(clienteId, contatos)
+
+  revalidatePath(`/clientes/${clienteId}/leads`)
+  revalidatePath(`/clientes/${clienteId}/inbox`)
+  revalidatePath(`/clientes/${clienteId}`)
+  return { ok: true, apagados }
 }
 
 // ---------------------------------------------------------------------------
