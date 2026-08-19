@@ -29,7 +29,13 @@ import type { CanalId } from '@/core/canais'
 import { fluxoSchema, type Fluxo, type No, type TipoNo } from '@/core/flow/schema'
 import type { Problema } from '@/core/flow/validar'
 import { validar } from '@/core/flow/validar'
-import { acaoAlternarIa, acaoPublicar, acaoSalvarRascunho, acaoVoltarParaVersao } from '@/server/acoes'
+import {
+  acaoAlternarIa,
+  acaoDescartarRascunho,
+  acaoPublicar,
+  acaoSalvarRascunho,
+  acaoVoltarParaVersao,
+} from '@/server/acoes'
 import { Modal } from '@/components/design/modal'
 import { SeloDoCanal } from '@/components/design/selo-do-canal'
 import { AcaoDaArestaProvider, tiposDeAresta } from './arestas'
@@ -232,6 +238,9 @@ export function Editor({
   /** Id da versão sendo republicada, para a linha dela mostrar o progresso. */
   const [voltando, setVoltando] = useState<string | null>(null)
   const [publicando, setPublicando] = useState(false)
+  /** Descarte pedido, esperando confirmação. Ver `descartar()`. */
+  const [confirmandoDescarte, setConfirmandoDescarte] = useState(false)
+  const [descartando, setDescartando] = useState(false)
   const [errosDePublicacao, setErrosDePublicacao] = useState<Problema[] | null>(null)
   /** Versão que acabou de ir ao ar. Some sozinha — aviso fixo para de ser lido. */
   const [publicadoAgora, setPublicadoAgora] = useState<number | null>(null)
@@ -743,6 +752,45 @@ export function Editor({
     setDesfazer(null)
   }
 
+  /**
+   * Joga o rascunho fora e volta ao desenho que está no ar.
+   *
+   * **Aplicado pelo caminho normal, e não pelo do desfazer**: assim a troca
+   * entra no histórico do `Ctrl+Z`, e quem descartar por engano volta com uma
+   * tecla. Um descarte que não dá para desfazer é exatamente o tipo de botão
+   * que ninguém clica com confiança.
+   *
+   * Não republica nada. O que está no ar continua como está — o que muda é só
+   * o desenho de trabalho.
+   */
+  async function descartar() {
+    setDescartando(true)
+    setErrosDePublicacao(null)
+    try {
+      const r = await acaoDescartarRascunho(fluxoId, clienteId)
+      if (!r.ok) {
+        setErrosDePublicacao([{ codigo: 'DESCARTE', mensagem: r.erro }])
+        return
+      }
+
+      assinaturaSalva.current = JSON.stringify(r.grafo)
+      setNodes(
+        r.grafo.nodes.map((n) => ({ ...n, className: n.id === r.grafo.inicio ? 'no-inicio' : '' })),
+      )
+      setEdges(r.grafo.edges as Edge[])
+      setInicio(r.grafo.inicio)
+      setSelecionado(null)
+      setSalvamento('salvo')
+    } catch {
+      setErrosDePublicacao([
+        { codigo: 'DESCARTE', mensagem: 'Não deu para descartar. Tente de novo.' },
+      ])
+    } finally {
+      setDescartando(false)
+      setConfirmandoDescarte(false)
+    }
+  }
+
   async function publicarAgora() {
     setPublicando(true)
     setErrosDePublicacao(null)
@@ -952,6 +1000,23 @@ export function Editor({
           fluxoId={fluxoId}
           publicada={publicada ? { versao: publicada.versao, grafo: publicada.grafo } : null}
         />
+
+        {/*
+          Só aparece quando **há o que descartar e para onde voltar**: desenho
+          diferente do publicado, e um publicado existindo. Botão que fica
+          sempre na tela e quase nunca pode agir vira ruído — e este, podendo
+          jogar trabalho fora, seria ruído perigoso.
+        */}
+        {publicada && haNovidade && (
+          <button
+            type="button"
+            onClick={() => setConfirmandoDescarte(true)}
+            title="Joga fora as alterações não publicadas e volta ao desenho que está no ar"
+            className="rounded-lg border border-white/10 px-3 py-2 text-[12.5px] font-semibold text-muted transition hover:border-amber-300/40 hover:text-amber-200"
+          >
+            Descartar
+          </button>
+        )}
 
         <button
           type="button"
@@ -1244,6 +1309,36 @@ export function Editor({
           )}
         </aside>
       </div>
+
+      <Modal
+        aberto={confirmandoDescarte}
+        aoFechar={() => setConfirmandoDescarte(false)}
+        titulo="Descartar as alterações?"
+        descricao={`O desenho volta a ser a versão ${publicada?.versao ?? ''} — a que está no ar agora. O que está publicado não muda: quem está conversando no WhatsApp não sente nada.`}
+      >
+        <p className="mb-4 rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[12px] leading-5 text-muted">
+          Dá para voltar atrás com <strong className="text-soft">Ctrl+Z</strong> logo depois — o
+          descarte entra no histórico de desfazer como qualquer outra mudança.
+        </p>
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            autoFocus
+            onClick={() => setConfirmandoDescarte(false)}
+            className="rounded-lg border border-white/10 px-3.5 py-2 text-[12px] font-semibold text-muted transition hover:border-white/25 hover:text-white"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            disabled={descartando}
+            onClick={descartar}
+            className="rounded-lg border border-amber-300/40 bg-amber-300/[0.12] px-3.5 py-2 text-[12px] font-bold text-amber-200 transition hover:bg-amber-300/20 disabled:opacity-50"
+          >
+            {descartando ? 'descartando…' : 'Descartar alterações'}
+          </button>
+        </div>
+      </Modal>
 
       <ConfirmarApagar
         no={nodes.find((n) => n.id === aApagar) ?? null}

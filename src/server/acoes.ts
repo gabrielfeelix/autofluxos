@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
-import { fluxoSchema, type TipoDeMidia } from '@/core/flow/schema'
+import { fluxoSchema, type Fluxo, type TipoDeMidia } from '@/core/flow/schema'
 import type { Problema } from '@/core/flow/validar'
 import { db } from './db'
 import { canalValido } from '@/core/canais'
@@ -64,6 +64,7 @@ import { autenticacao } from './auth'
 import { registrar } from './repos/auditoria'
 import { sessaoAtual } from './sessao'
 import {
+  acharFluxo,
   acharVersaoDoFluxo,
   apagarFluxo,
   criarFluxo,
@@ -219,6 +220,45 @@ export async function acaoCriarFluxo(clienteId: string, formData: FormData) {
   const fluxo = await criarFluxo(clienteId, nome, modelo?.grafo ?? fluxoNovo(), false, canal)
   revalidatePath(`/clientes/${clienteId}`)
   redirect(`/clientes/${clienteId}/fluxos/${fluxo.id}`)
+}
+
+/**
+ * Joga o rascunho fora e volta ao que **está no ar**.
+ *
+ * O editor salva sozinho, e isso é certo — ninguém deveria perder trabalho por
+ * esquecer de clicar. Mas autosave sem descarte é uma via de mão única: quem
+ * mexeu em cinco blocos e se arrependeu não tinha para onde voltar, porque não
+ * existe "penúltimo rascunho" (o rascunho é um só, sobrescrito).
+ *
+ * Volta para a **versão publicada**, e não para um ponto qualquer: é o único
+ * estado que o sistema sabe que já esteve bom o bastante para atender gente.
+ *
+ * Não republica nada — o que está no ar continua exatamente como está. O que
+ * muda é só o desenho de trabalho.
+ */
+export async function acaoDescartarRascunho(
+  fluxoId: string,
+  clienteId: string,
+): Promise<{ ok: true; grafo: Fluxo } | { ok: false; erro: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const fluxo = await acharFluxo(fluxoId)
+  if (!fluxo || fluxo.clienteId !== clienteId) {
+    return { ok: false, erro: 'esta automação não existe mais' }
+  }
+  if (!fluxo.versaoPublicadaId) {
+    return {
+      ok: false,
+      erro: 'esta automação nunca foi publicada — não há versão no ar para voltar',
+    }
+  }
+
+  const versao = await acharVersaoDoFluxo(fluxo.versaoPublicadaId, fluxoId)
+  if (!versao) return { ok: false, erro: 'a versão publicada sumiu' }
+
+  await salvarRascunho(fluxoId, clienteId, versao.grafo)
+  revalidatePath(`/clientes/${clienteId}/fluxos/${fluxoId}`)
+  return { ok: true, grafo: versao.grafo }
 }
 
 /**

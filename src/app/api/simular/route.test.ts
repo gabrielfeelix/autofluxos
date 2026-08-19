@@ -4,9 +4,14 @@ import { triagem } from '@/exemplos/triagem'
 import { consumirLimite } from '@/server/limite'
 import { POST } from './route'
 
+// O mock precisa exportar **tudo** que a rota importa do módulo: o Vitest
+// estoura em import de nome que o mock não tem, e a rota passou a pedir também
+// o teto próprio do simulador.
 vi.mock('@/server/limite', () => ({
   chaveDeLimite: vi.fn(() => 'simular:127.0.0.1'),
   consumirLimite: vi.fn(),
+  TETO_DO_SIMULADOR: 60,
+  JANELA_DO_SIMULADOR_SEGUNDOS: 60,
 }))
 
 function pedir(corpo: unknown) {
