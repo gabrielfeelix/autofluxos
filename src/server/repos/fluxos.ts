@@ -1,4 +1,5 @@
 import 'server-only'
+import { CANAL_PADRAO, type CanalId } from '@/core/canais'
 import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
 import { validar, type Problema } from '@/core/flow/validar'
 import { db, ehIdInvalido, pareceUuid } from '../db'
@@ -41,6 +42,16 @@ export type FluxoSalvo = {
    * como apagar ou desligar o número inteiro.
    */
   ativo: boolean
+  /**
+   * Por onde esta automação conversa (0037).
+   *
+   * É escolhido ao criar e não muda depois: os limites que o `validar()` cobra
+   * são os do canal, então trocar o canal de um desenho pronto transformaria um
+   * fluxo válido em inválido — ou, pior, num fluxo aceito por medidas que não
+   * são as de quem vai executá-lo. Quem quer o mesmo atendimento em dois canais
+   * duplica a automação, que é o que ManyChat e Chatfuel também fazem.
+   */
+  canal: CanalId
 }
 
 /** Uma foto imutável do fluxo. É isto que as conversas executam. */
@@ -71,10 +82,11 @@ type Linha = {
   ia_habilitada: boolean
   pasta_id: string | null
   ativo: boolean
+  canal: string
 }
 
 const COLUNAS =
-  'id, client_id, nome, rascunho, atualizado_em, versao_publicada_id, ia_habilitada, pasta_id, ativo'
+  'id, client_id, nome, rascunho, atualizado_em, versao_publicada_id, ia_habilitada, pasta_id, ativo, canal'
 
 /**
  * `rascunho` é `jsonb`: o banco aceita qualquer coisa ali. Uma migração
@@ -101,6 +113,9 @@ function paraFluxo(linha: Linha): FluxoSalvo {
     iaHabilitada: linha.ia_habilitada,
     pastaId: linha.pasta_id,
     ativo: linha.ativo,
+    // O `check` do banco já garante o conjunto; o `as` aqui é a fronteira entre
+    // `text` e o tipo do domínio, como em todo `paraFluxo`.
+    canal: (linha.canal as CanalId) ?? CANAL_PADRAO,
   }
 }
 
@@ -129,6 +144,7 @@ export async function criarFluxo(
   nome: string,
   rascunho: Fluxo,
   iaHabilitada = false,
+  canal: CanalId = CANAL_PADRAO,
 ): Promise<FluxoSalvo> {
   const { data, error } = await db()
     .from('flows')
@@ -137,6 +153,7 @@ export async function criarFluxo(
       nome: nome.trim(),
       rascunho: fluxoSchema.parse(rascunho),
       ia_habilitada: iaHabilitada,
+      canal,
     })
     .select(COLUNAS)
     .single()

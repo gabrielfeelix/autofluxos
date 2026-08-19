@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { fluxoSchema, type TipoDeMidia } from '@/core/flow/schema'
 import type { Problema } from '@/core/flow/validar'
 import { db } from './db'
+import { canalValido } from '@/core/canais'
 import {
   ehAdminDaPlataforma,
   exigirAcessoAoCliente,
@@ -196,7 +197,13 @@ export async function acaoCriarFluxo(clienteId: string, formData: FormData) {
   const nome = String(formData.get('nome') ?? '').trim()
   if (nome === '') return
 
-  const comIa = formData.get('ia') === 'on'
+  /**
+   * O canal vem do formulário e passa por `canalValido`, que recusa o que não
+   * tem adaptador de entrega. A tela só oferece o que está ligado; isto é a
+   * conferência que vale, porque Server Action é endereço e endereço se chama
+   * de fora da tela.
+   */
+  const canal = canalValido(formData.get('canal'))
 
   /**
    * Nasce **válido** de propósito, com ou sem modelo.
@@ -206,7 +213,10 @@ export async function acaoCriarFluxo(clienteId: string, formData: FormData) {
    * erro por causa de um modelo que saiu da lista. Ver `exemplos/modelos.ts`.
    */
   const modelo = acharModelo(String(formData.get('modelo') ?? ''))
-  const fluxo = await criarFluxo(clienteId, nome, modelo?.grafo ?? fluxoNovo(), comIa)
+  // Nasce sem IA: contratar a Etapa 2 é ato da 4YU (ver `acaoAlternarIa`), e
+  // uma caixinha aqui devolveria ao cliente o portão que acabou de sair da mão
+  // dele.
+  const fluxo = await criarFluxo(clienteId, nome, modelo?.grafo ?? fluxoNovo(), false, canal)
   revalidatePath(`/clientes/${clienteId}`)
   redirect(`/clientes/${clienteId}/fluxos/${fluxo.id}`)
 }

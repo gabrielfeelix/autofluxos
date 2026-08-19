@@ -42,6 +42,7 @@ import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { contarInscricoes, listarSequencias } from '@/server/repos/sequencias'
 import { listarQuadros } from '@/server/repos/quadros'
 import { SeloDoCanal } from '@/components/design/selo-do-canal'
+import { EscolherCanal } from '@/components/fluxos/escolher-canal'
 import { InterruptorDeFluxo } from '@/components/fluxos/interruptor'
 import { MoverFluxo } from '@/components/editor/mover-fluxo'
 import { MODELOS } from '@/exemplos/modelos'
@@ -199,12 +200,7 @@ export default async function Pagina({
         <section className="app-card overflow-hidden">
           <header className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-5 py-4">
             <div>
-              <h2 className="flex items-center gap-2 text-[14.5px] font-bold">
-                Fluxos
-                {/* Uma vez no cabeçalho, e não em cada linha: o canal é o mesmo
-                    para todas, e repetir o selo dez vezes viraria ruído. */}
-                <SeloDoCanal compacto />
-              </h2>
+              <h2 className="text-[14.5px] font-bold">Fluxos</h2>
               <p className="mt-0.5 text-[12px] text-dim">
                 O desenho do atendimento. Só o que está publicado atende gente de
                 verdade.
@@ -250,6 +246,11 @@ export default async function Pagina({
                   className="app-field px-[13px] py-[11px] text-[13.5px]"
                 />
               </label>
+              <div>
+                <RotuloCampo>Onde vai atender</RotuloCampo>
+                <EscolherCanal />
+              </div>
+
               <label>
                 <RotuloCampo>Começar de</RotuloCampo>
                 <Dropdown
@@ -262,21 +263,6 @@ export default async function Pagina({
                     detalhe: modelo.resumo,
                   }))}
                 />
-              </label>
-              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-white/[0.09] p-3">
-                <input
-                  name="ia"
-                  type="checkbox"
-                  className="size-4 accent-[#a78bfa]"
-                />
-                <span>
-                  <strong className="block text-[12.5px] font-semibold">
-                    Com IA
-                  </strong>
-                  <span className="mt-0.5 block text-[11px] leading-5 text-dim">
-                    Blocos de IA respondem de verdade neste fluxo. Plano à parte.
-                  </span>
-                </span>
               </label>
             </ModalFormulario>
             </span>
@@ -356,8 +342,13 @@ export default async function Pagina({
                         aria-hidden
                       />
                       <span className="min-w-0 flex-1">
-                        <strong className="block truncate text-[13.5px] font-semibold">
-                          {fluxo.nome}
+                        {/* O canal fica em cada linha, e não no cabeçalho da
+                            seção: desde a 0037 duas automações da mesma conta
+                            podem ser de canais diferentes, e um selo único lá
+                            em cima mentiria sobre a que estivesse fora dele. */}
+                        <strong className="flex items-center gap-2 text-[13.5px] font-semibold">
+                          <span className="truncate">{fluxo.nome}</span>
+                          <SeloDoCanal canal={fluxo.canal} compacto />
                         </strong>
                         <span className="mt-0.5 block text-[11px] text-dim">
                           {fluxo.rascunho.nodes.length} blocos

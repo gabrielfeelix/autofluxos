@@ -25,6 +25,7 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from 'react'
 import { Conversa } from '@/components/conversa'
+import type { CanalId } from '@/core/canais'
 import { fluxoSchema, type Fluxo, type No, type TipoNo } from '@/core/flow/schema'
 import type { Problema } from '@/core/flow/validar'
 import { validar } from '@/core/flow/validar'
@@ -172,6 +173,7 @@ export function Editor({
   conexoes,
   etapas,
   fluxos,
+  canal,
   nome,
   clienteNome,
   voltarHref,
@@ -190,6 +192,8 @@ export function Editor({
   etapas: EtapaDoCliente[]
   /** As automações desta conta, para o bloco "Ir para outra automação". */
   fluxos: FluxoDaConta[]
+  /** Por onde esta automação conversa (0037). Escolhido ao criar, não muda. */
+  canal: CanalId
   nome: string
   clienteNome: string
   voltarHref: string
@@ -841,7 +845,7 @@ export function Editor({
           <h1 className="text-sm font-bold tracking-[-0.01em]">{nome}</h1>
           <p className="flex items-center gap-1.5 text-[10.5px] text-dim">
             {clienteNome}
-            <SeloDoCanal compacto />
+            <SeloDoCanal canal={canal} compacto />
           </p>
         </div>
         <span className="mx-0.5 h-6 w-px bg-white/[0.08]" />

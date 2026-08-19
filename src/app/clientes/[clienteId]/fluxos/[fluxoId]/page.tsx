@@ -75,6 +75,7 @@ export default async function Pagina({
            fazendo. */
         voltarHref={`/clientes/${cliente.id}/fluxos`}
         inicial={fluxo.rascunho}
+        canal={fluxo.canal}
         iaHabilitada={fluxo.iaHabilitada}
         /* Contratar a Etapa 2 é decisão comercial da 4YU. Para a conta, o
            contrato é estado — ver o cabeçalho do editor. */
