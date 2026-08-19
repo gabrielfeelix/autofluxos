@@ -12,6 +12,7 @@ import {
   type TipoDeParte,
 } from '@/core/flow/schema'
 import { BarraDeFormato } from './barra-de-formato'
+import { LegendaDeVariaveis, TextoComVariaveis } from './texto-com-variaveis'
 import { SeletorDeArquivo } from './seletor-de-arquivo'
 
 /**
@@ -40,12 +41,15 @@ const NOME_DA_PARTE: Record<TipoDeParte, string> = {
 export function PilhaDeMensagem({
   no,
   clienteId,
+  variaveis,
   aoMudarDados,
   registrarCampo,
 }: {
   no: NoMensagem
   /** De quem é o fluxo. O upload do bloco de Mídia precisa saber a pasta. */
   clienteId: string
+  /** As que algum bloco preenche. Variável fora daqui é marcada como erro. */
+  variaveis: string[]
   aoMudarDados: (dados: Record<string, unknown>) => void
   registrarCampo: (
     elemento: HTMLInputElement | HTMLTextAreaElement,
@@ -119,6 +123,7 @@ export function PilhaDeMensagem({
           <Corpo
             parte={parte}
             clienteId={clienteId}
+            variaveis={variaveis}
             aoMudar={(proxima) => trocar(indice, proxima)}
             registrarCampo={registrarCampo}
           />
@@ -176,11 +181,13 @@ function BotaoDeOrdem({
 function Corpo({
   parte,
   clienteId,
+  variaveis,
   aoMudar,
   registrarCampo,
 }: {
   parte: Parte
   clienteId: string
+  variaveis: string[]
   aoMudar: (parte: Parte) => void
   registrarCampo: (
     elemento: HTMLInputElement | HTMLTextAreaElement,
@@ -194,6 +201,7 @@ function Corpo({
           valor={parte.texto}
           aoMudar={(texto) => aoMudar({ ...parte, texto })}
           registrarCampo={registrarCampo}
+          conhecidas={variaveis}
         />
       )
 
@@ -333,6 +341,7 @@ function CampoDeTexto({
   valor,
   aoMudar,
   registrarCampo,
+  conhecidas,
 }: {
   valor: string
   aoMudar: (valor: string) => void
@@ -340,6 +349,8 @@ function CampoDeTexto({
     elemento: HTMLInputElement | HTMLTextAreaElement,
     aoMudar: (valor: string) => void,
   ) => void
+  /** As variáveis que algum bloco antes deste preenche. Ver o realce. */
+  conhecidas?: string[]
 }) {
   const area = useRef<HTMLTextAreaElement>(null)
   const estourou = valor.length > LIMITE_TEXTO
@@ -354,15 +365,15 @@ function CampoDeTexto({
         </span>
       </BarraDeFormato>
 
-      <textarea
-        ref={area}
-        value={valor}
-        rows={4}
-        onChange={(e) => aoMudar(e.target.value)}
-        onFocus={(e) => registrarCampo(e.currentTarget, aoMudar)}
-        onSelect={(e) => registrarCampo(e.currentTarget, aoMudar)}
-        className={`app-field resize-y px-3 py-2.5 text-[13px] leading-6 ${estourou ? 'border-rose-400/60' : ''}`}
+      <TextoComVariaveis
+        area={area}
+        valor={valor}
+        aoMudar={aoMudar}
+        erro={estourou}
+        conhecidas={conhecidas}
+        aoFocar={registrarCampo}
       />
+      <LegendaDeVariaveis valor={valor} conhecidas={conhecidas} />
     </div>
   )
 }

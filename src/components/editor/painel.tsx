@@ -21,6 +21,11 @@ import { SeletorDeArquivo } from './seletor-de-arquivo'
 import { PresetsDeIntegracao } from './presets-de-integracao'
 import { inserirNoCursor } from './inserir-variavel'
 import { PilhaDeMensagem } from './pilha'
+import {
+  LegendaDeVariaveis,
+  LinhaComVariaveis,
+  TextoComVariaveis,
+} from './texto-com-variaveis'
 import { NOMES } from './nos'
 
 /** Os quatro tipos, no nome que quem desenha o fluxo usa. */
@@ -160,6 +165,7 @@ export function Painel({
 
       {no.type === 'mensagem' && (
         <PilhaDeMensagem
+          variaveis={variaveis}
           no={no}
           clienteId={clienteId}
           aoMudarDados={aoMudarDados}
@@ -207,6 +213,7 @@ export function Painel({
               valor={no.data.nomeArquivo ?? ''}
               aoMudar={(nomeArquivo) => aoMudarDados({ nomeArquivo })}
               aceitaVariavel
+              conhecidas={variaveis}
               aoFocar={registrarCampo}
               dica="É o que a pessoa lê antes de baixar. Vazio, o WhatsApp mostra o fim da URL."
             />
@@ -220,6 +227,7 @@ export function Painel({
             </p>
           ) : (
             <Area
+              conhecidas={variaveis}
               rotulo="Legenda"
               valor={no.data.legenda ?? ''}
               limite={LIMITE_LEGENDA}
@@ -234,6 +242,7 @@ export function Painel({
       {no.type === 'pergunta' && (
         <>
           <Area
+            conhecidas={variaveis}
             rotulo="Pergunta"
             valor={no.data.texto}
             // Com opção, a mensagem sai interativa e o teto cai para um quarto.
@@ -321,6 +330,7 @@ export function Painel({
               valor={no.data.valor}
               aoMudar={(valor) => aoMudarDados({ valor })}
               aceitaVariavel
+              conhecidas={variaveis}
               aoFocar={registrarCampo}
             />
           )}
@@ -336,6 +346,7 @@ export function Painel({
             dica="aceita {{variavel}}"
             aoMudar={(valor) => aoMudarDados({ valor })}
             aceitaVariavel
+            conhecidas={variaveis}
             aoFocar={registrarCampo}
           />
         </>
@@ -384,6 +395,7 @@ export function Painel({
       {no.type === 'ia' && (
         <>
           <Area
+            conhecidas={variaveis}
             rotulo="Instrução para a IA"
             valor={no.data.instrucao}
             aoMudar={(instrucao) => aoMudarDados({ instrucao })}
@@ -404,6 +416,7 @@ export function Painel({
       {no.type === 'handoff' && (
         <>
           <Area
+            conhecidas={variaveis}
             rotulo="Mensagem antes de passar"
             valor={no.data.mensagem}
             limite={LIMITE_TEXTO}
@@ -417,6 +430,7 @@ export function Painel({
             dica="aparece no painel; aceita {{variavel}}"
             aoMudar={(motivo) => aoMudarDados({ motivo })}
             aceitaVariavel
+            conhecidas={variaveis}
             aoFocar={registrarCampo}
           />
         </>
@@ -451,11 +465,13 @@ export function Painel({
             dica="precisa começar com https://. aceita {{variavel}} no meio"
             aoMudar={(url) => aoMudarDados({ url })}
             aceitaVariavel
+            conhecidas={variaveis}
             aoFocar={registrarCampo}
           />
 
           {no.data.metodo === 'POST' && (
             <Area
+              conhecidas={variaveis}
               rotulo="Corpo (JSON)"
               valor={no.data.corpo}
               aoMudar={(corpo) => aoMudarDados({ corpo })}
@@ -540,6 +556,7 @@ function Linha({
   dica,
   aoMudar,
   aceitaVariavel = false,
+  conhecidas,
   aoFocar,
 }: {
   rotulo: string
@@ -547,20 +564,39 @@ function Linha({
   dica?: string
   aoMudar: (valor: string) => void
   aceitaVariavel?: boolean
+  /** Para o realce distinguir variável conhecida de erro de digitação. */
+  conhecidas?: string[]
   aoFocar?: (elemento: HTMLInputElement, aoMudar: (valor: string) => void) => void
 }) {
+  // Sem `<label>` envolvendo quando há realce: o campo real fica por cima de um
+  // espelho, e o clique do `<label>` no espelho moveria o cursor para o fim.
+  const Moldura = aceitaVariavel ? 'div' : 'label'
+
   return (
-    <label className="block">
+    <Moldura className="block">
       <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">{rotulo}</span>
-      <input
-        value={valor}
-        onChange={(e) => aoMudar(e.target.value)}
-        onFocus={(e) => aceitaVariavel && aoFocar?.(e.currentTarget, aoMudar)}
-        onSelect={(e) => aceitaVariavel && aoFocar?.(e.currentTarget, aoMudar)}
-        className="app-field px-3 py-2.5 text-[13px]"
-      />
-      {dica && <span className="mt-1 block text-[10.5px] text-dim">{dica}</span>}
-    </label>
+      {aceitaVariavel ? (
+        <LinhaComVariaveis
+          valor={valor}
+          aoMudar={aoMudar}
+          conhecidas={conhecidas}
+          aoFocar={aoFocar}
+        />
+      ) : (
+        <input
+          value={valor}
+          onChange={(e) => aoMudar(e.target.value)}
+          className="app-field px-3 py-2.5 text-[13px]"
+        />
+      )}
+      {aceitaVariavel ? (
+        <LegendaDeVariaveis valor={valor} conhecidas={conhecidas}>
+          {dica}
+        </LegendaDeVariaveis>
+      ) : (
+        dica && <span className="mt-1 block text-[10.5px] text-dim">{dica}</span>
+      )}
+    </Moldura>
   )
 }
 
@@ -575,6 +611,7 @@ function Area({
   limite,
   aoMudar,
   aoFocar,
+  conhecidas,
   formatavel = false,
 }: {
   rotulo: string
@@ -582,6 +619,8 @@ function Area({
   limite?: number
   aoMudar: (valor: string) => void
   aoFocar?: (elemento: HTMLTextAreaElement, aoMudar: (valor: string) => void) => void
+  /** Para o realce distinguir variável conhecida de erro de digitação. */
+  conhecidas?: string[]
   /**
    * Este texto vira mensagem no WhatsApp?
    *
@@ -623,21 +662,22 @@ function Area({
         </BarraDeFormato>
       )}
 
-      <textarea
+      <TextoComVariaveis
         id={id}
-        ref={area}
-        value={valor}
-        onChange={(e) => aoMudar(e.target.value)}
-        onFocus={(e) => aoFocar?.(e.currentTarget, aoMudar)}
-        onSelect={(e) => aoFocar?.(e.currentTarget, aoMudar)}
-        rows={4}
-        className={`app-field resize-y px-3 py-2.5 text-[13px] leading-5 ${estourou ? 'border-rose-400/40' : ''}`}
+        area={area}
+        valor={valor}
+        aoMudar={aoMudar}
+        erro={estourou}
+        conhecidas={conhecidas}
+        aoFocar={aoFocar}
       />
-      <span className="mt-1 block text-[10.5px] text-dim">
-        {estourou
-          ? `O WhatsApp recusa acima de ${limite} caracteres — publicar fica barrado até encurtar.`
-          : `aceita {{variavel}}`}
-      </span>
+      {estourou ? (
+        <span className="mt-1 block text-[10.5px] text-rose-300">
+          O WhatsApp recusa acima de {limite} caracteres — publicar fica barrado até encurtar.
+        </span>
+      ) : (
+        <LegendaDeVariaveis valor={valor} conhecidas={conhecidas} />
+      )}
     </div>
   )
 }

@@ -71,3 +71,38 @@ export function normalizar(texto: string): string {
     .trim()
     .toLowerCase()
 }
+
+/** Um pedaço de texto: literal, ou uma citação de variável. */
+export type PedacoDeTexto =
+  | { tipo: 'texto'; texto: string }
+  | { tipo: 'variavel'; texto: string; nome: string }
+
+/**
+ * Fatia o texto em literais e citações de variável.
+ *
+ * Existe para o editor **mostrar** que `{{nome}}` não é texto comum. Escrito
+ * como fatia e não como "troca por HTML" de propósito: quem monta o realce é o
+ * React, com elementos de verdade — devolver marcação daqui viraria
+ * `dangerouslySetInnerHTML` sobre texto que a pessoa digitou, que é XSS servido
+ * pela porta da frente.
+ *
+ * Usa **o mesmo padrão** de `interpolar` e `variaveisCitadas`. Não é
+ * coincidência: se o realce reconhecesse mais coisa que o motor, o editor
+ * pintaria de azul um `{{ nome }}` que a conversa mandaria literal — e a pessoa
+ * confiaria na cor.
+ */
+export function fatiarVariaveis(texto: string): PedacoDeTexto[] {
+  const pedacos: PedacoDeTexto[] = []
+  const padrao = /\{\{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*\}\}/g
+  let cursor = 0
+
+  for (const achado of texto.matchAll(padrao)) {
+    const inicio = achado.index
+    if (inicio > cursor) pedacos.push({ tipo: 'texto', texto: texto.slice(cursor, inicio) })
+    pedacos.push({ tipo: 'variavel', texto: achado[0], nome: achado[1] as string })
+    cursor = inicio + achado[0].length
+  }
+
+  if (cursor < texto.length) pedacos.push({ tipo: 'texto', texto: texto.slice(cursor) })
+  return pedacos
+}

@@ -1088,7 +1088,29 @@ que havia mais coisa. A aba vem por `?aba=`, e não por estado de cliente: o
 endereço leva de volta ao mesmo lugar, o "voltar" do navegador funciona, e a
 página continua sendo renderizada no servidor.
 
-**5. Botão de estado vazio leva ao lugar certo.** "Nenhum número conectado →
+**5. `{{variavel}}` no editor não parece texto comum.** Ela era indistinguível
+do resto da frase, e a consequência aparecia tarde: alguém escrevia `{{nomee}}`,
+publicava, e descobria na conversa de um cliente que ali saía vazio. Agora ela é
+realçada — **e conhecida é diferente de desconhecida**, que é o que transforma
+enfeite em informação: variável que nenhum bloco preenche fica âmbar, com o mesmo
+critério do `validar()`.
+
+A técnica é fundo espelhado (`components/editor/texto-com-variaveis.tsx`): não dá
+para estilizar pedaço de conteúdo dentro de um `<textarea>`, então há uma `<div>`
+atrás desenhando o texto fatiado e o campo por cima com texto transparente e só
+o cursor visível. `contenteditable` daria o mesmo visual e quebraria colar,
+desfazer, seleção nativa e a inserção de variável na posição do cursor.
+
+O que ela exige está escrito no arquivo, e cada item já quebrou em alguma
+implementação por aí: as duas camadas medindo igual, rolagem sincronizada, um
+caractere depois da última quebra de linha, e `pre-wrap` nas duas.
+
+**A fatia mora em `core/engine/interpolar.ts`, ao lado de `interpolar`**, e usa o
+mesmo padrão — de propósito. Se o realce reconhecesse mais coisa que o motor, o
+editor pintaria de azul um `{{ nome }}` que a conversa mandaria literal, e a
+pessoa confiaria na cor. Há teste prendendo os dois no mesmo resultado.
+
+**6. Botão de estado vazio leva ao lugar certo.** "Nenhum número conectado →
 Conectar um número" apontava para o painel, não para a tela do número. Botão de
 estado vazio que leva ao lugar errado é pior que estado vazio sem botão: ele
 ensina que o produto não sabe para onde mandar a pessoa.
