@@ -31,7 +31,17 @@ import { getSessionCookie } from 'better-auth/cookies'
  * que a destranca ("não há ninguém?") só tem resposta afirmativa uma vez na vida
  * do sistema. Ver `acoes-conta.ts`.
  */
-const PORTAS_ABERTAS = ['/entrar']
+const PORTAS_ABERTAS = [
+  '/entrar',
+  /**
+   * A política de privacidade **precisa** abrir sem sessão.
+   *
+   * É a URL que o app review da Meta exige, e quem revisa não tem conta aqui:
+   * uma página que redireciona para o login é, para efeito de análise, uma
+   * página que não existe. Ela não lê dado nenhum — é texto.
+   */
+  '/privacidade',
+]
 
 /**
  * A página de um fluxo compartilhado (0030).
