@@ -7,7 +7,8 @@ produto, ou de uma conta que é de uma pessoa de verdade.
 Junte tudo e faça de uma vez ao fim das rodadas. Cada item diz o que trava
 enquanto não for feito.
 
-Atualizado em 18/ago/2026.
+Atualizado em 18/ago/2026 (depois da A6 — a `0023` e a `0024` já foram
+aplicadas com autorização).
 
 ---
 
@@ -52,8 +53,9 @@ os dois produtos, então é decisão sua, não do código. Ver
 
 ## 5. Provar a mídia no WhatsApp de verdade
 
-**Trava:** nada, mas é um risco aberto. O bloco de mídia é testado ponta a ponta
-com o canal mock, e **nenhuma foto saiu pela Cloud API de verdade**.
+**Trava:** nada, mas é um risco aberto — e maior desde a A6, que deu ao número
+um papel inteiro dedicado a mídia. O bloco de mídia é testado ponta a ponta com
+o canal mock, e **nenhuma foto saiu pela Cloud API de verdade**.
 
 São cinco minutos com o Cliente 00: um fluxo com bloco de imagem, uma mensagem,
 e conferir se a foto chega.
@@ -67,18 +69,7 @@ Quando você quiser fechar: uma linha em `exigirAcessoAoCliente` (parar de deixa
 o administrador passar sem ser membro) e remover `PAINEL_SENHA` da Vercel. É
 trabalho nosso — o que depende de você é decidir a hora, e ter o item 1 feito.
 
-## 7. Autorizar a migration `0023`
-
-**Trava:** duas peças do Inbox. O contador de **não lidas** (que é por pessoa,
-não por conversa — "alguém leu" não ajuda ninguém a decidir o que abrir) e o
-**tipo da última mensagem** na prévia da fila, que hoje diz "mídia ou mensagem
-sem texto" para foto, áudio, figurinha e PDF igualmente.
-
-O SQL está em `supabase/migrations/0023_leitura_e_tipo_da_mensagem.sql`, escrito
-e **não aplicado**. É aditivo: uma tabela nova e uma coluna no fim da view de
-leads. Basta dizer que pode.
-
-## 8. Modelos de mensagem aprovados pela Meta
+## 7. Modelos de mensagem aprovados pela Meta
 
 **Trava:** a janela de 24 horas dentro do bloco de mensagem (`Dentro de` /
 `Fora de`, do desenho da A3) ficou de fora, e vai ficar até isto existir. Fora
@@ -88,13 +79,13 @@ não teria o que fazer além de mentir. Trava também a Transmissão inteira.
 Depende de verificação da empresa e App Review na Meta. Não é código nosso que
 destrava.
 
-## 9. `BETTER_AUTH_URL` — opcional, e talvez nunca
+## 8. `BETTER_AUTH_URL` — opcional, e talvez nunca
 
 Sem ela a origem sai da requisição, o que basta para e-mail e senha na mesma
 origem; o custo é um aviso a cada `next dev`. Preenchida errado, quebra o login
 inteiro. Só mexa se aparecer problema de redirecionamento.
 
-## 10. Os prints do painel do cliente
+## 9. Os prints do painel do cliente
 
 O painel "eu entro e vejo meus lucros" está em espera a seu pedido, aguardando
 mais prints. Não temos dado de dinheiro, e inventar por multiplicação vira

@@ -13,14 +13,13 @@ visual, motor puro que executa, e handoff para uma pessoa quando o bot não dá
 conta. Está em produção em `autofluxos.4yu.com.br` (Vercel), com Supabase
 **compartilhado com outro produto** (Verandi).
 
-A Etapa A do [PLANO-SISTEMA.md](PLANO-SISTEMA.md) vai de A1 a A7. **A1 a A5
-estão no ar.** Faltam A6 e A7, e as duas esbarram em coisas que só o dono
-resolve — ver [PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md).
+A Etapa A do [PLANO-SISTEMA.md](PLANO-SISTEMA.md) vai de A1 a A7. **A1 a A6
+estão no ar.** Falta a A7, e o pedaço dela que sobra esbarra em coisas que só o
+dono resolve — ver [PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md).
 
-`npm test` → **488 passando, 8 pulados** (os 8 dependem de `IA_TESTE_REAL` e
+`npm test` → **512 passando, 8 pulados** (os 8 dependem de `IA_TESTE_REAL` e
 `API_TESTE_REAL`, por desenho). `typecheck`, `lint` e `build` limpos.
-**Migrations aplicadas: até a `0022`. A próxima a escrever é a `0024`** — a
-`0023` existe, está escrita e **não foi aplicada**.
+**Migrations aplicadas: até a `0024`, todas. A próxima a escrever é a `0025`.**
 
 ---
 
@@ -57,13 +56,13 @@ Configurações**. Não há mais abas no topo.
 | `/clientes/[id]/leads` | Contatos | lista com filtro, busca, paginação e CSV |
 | `/clientes/[id]/leads/[contatoId]` | Contatos | ficha do contato |
 | `/clientes/[id]/leads/importar` | Contatos | importação por planilha, com conciliação |
-| `/clientes/[id]/fluxos` | Automações | lista de fluxos |
+| `/clientes/[id]/fluxos` | Automações | lista de fluxos **e as palavras-chave da conta** |
 | `/clientes/[id]/fluxos/[fluxoId]` | — | **o editor**, tela cheia, sem a moldura |
 | `/clientes/[id]/ajustes` | Configurações | índice, com o estado de cada peça |
 | `/clientes/[id]/ajustes/horario` | Configurações | horário de atendimento |
 | `/clientes/[id]/ajustes/respostas-rapidas` | Configurações | respostas prontas do Inbox |
 | `/clientes/[id]/contexto` | Configurações | contexto do negócio (o escopo da IA) |
-| `/clientes/[id]/numero` | Configurações | números do WhatsApp e qual fluxo cada um executa |
+| `/clientes/[id]/numero` | Configurações | números do WhatsApp e o fluxo de cada um dos **quatro papéis** |
 | `/clientes/[id]/conexoes` | Configurações | credenciais dos blocos de API |
 | `/clientes/[id]/acervo` | Configurações | arquivos que os fluxos enviam |
 
@@ -139,6 +138,50 @@ por nome e telefone, e anotação da equipe no painel lateral do contato.
 
 ---
 
+### A6 — fluxos padrão e gatilhos
+
+Um número deixou de executar **um** fluxo e passou a ter quatro papéis:
+
+| Papel | Coluna | Quando roda |
+|---|---|---|
+| **Principal** | `channels.flow_id` (já existia) | conversa nova, quando nada mais casa. É a "resposta padrão" |
+| **Boas-vindas** | `flow_boas_vindas_id` | a primeira conversa daquele contato **naquele número** |
+| **Mídia recebida** | `flow_midia_id` | chegou áudio, foto, figurinha ou PDF |
+| **Pós-atendimento** | `flow_pos_atendimento_id` | alguém da equipe clicou em "Já atendi" |
+
+São três colunas e não quatro porque **"resposta padrão" é o que `flow_id`
+sempre foi**. Coluna nova para o mesmo papel obrigaria a tela a explicar qual
+das duas ganha.
+
+E os **gatilhos por palavra-chave** (`gatilhos`, por conta): frase → fluxo, com
+operador `É`/`Contém`, liga/desliga e contagem de execuções.
+
+**A ordem de decisão da entrada é a regra do produto**, e mora em
+`escolherAbertura` (`server/receber-mensagem.ts`):
+
+1. **o escape global ganha de tudo** — `pediuAtendente()` é lido do motor antes
+   de olhar gatilho nenhum. Um gatilho do cliente com a palavra "falar" não
+   pode engolir "quero falar com uma pessoa";
+2. **palavra-chave**, só em texto digitado (clique em botão nunca é sequestrado);
+3. **fluxo de mídia**;
+4. **boas-vindas**, só na primeira vez;
+5. **o principal**, só quando não há conversa viva para continuar.
+
+Gatilho e mídia **interrompem a conversa em andamento**. Parece agressivo e é
+o que o escape global sempre fez — e o que a mídia substitui (handoff imediato)
+interrompia mais ainda. A sessão anterior fica `encerrada`, nunca `ativa`.
+
+Papel apontando para fluxo sem versão publicada **cai para o próximo
+candidato** em vez de emudecer o número.
+
+**`flow_midia_id` é o que aposenta a Regra B.** Sem ele configurado, mídia
+continua indo para uma pessoa exatamente como antes.
+
+Duas correções que a A6 tornou visíveis e entraram junto:
+`prepararIa` lia o contrato de IA de `channels.flow_id` e agora lê do fluxo que
+está rodando de verdade (`VersaoPublicada.fluxoId`); e `apagarFluxo` confere os
+quatro papéis, não só o principal.
+
 ## 4. As sete regras que não se negociam
 
 ### 4.1 O banco é compartilhado com outro produto
@@ -165,8 +208,8 @@ Depois de aplicar, **confira as duas coisas**: que as colunas existem, e que
 
 `create or replace view` não reordena nem remove: recusa qualquer outra
 diferença com `cannot change name of view column`. A ordem verdadeira é a da
-última migration que mexeu nela — hoje a `0022`, e a `0023` (escrita) já segue
-essa ordem.
+última migration que mexeu nela — hoje a `0023`, que acrescentou `ultimo_tipo`
+no fim. A `0024` não tocou na view.
 
 ### 4.3 Versão publicada é imutável, inclusive para nós
 
@@ -189,10 +232,10 @@ O proxy decide se a requisição **segue**; a conferência do login por usuário
 Não é preguiça: a documentação do Next avisa que Server Action é um POST na
 rota onde ela é usada, e um refactor que a mova de rota a tira do matcher sem
 ninguém perceber. **`src/server/acoes.test.ts` lê o texto de `acoes.ts` e
-recusa ação nova que esqueça a conferência.** Trinta e três ações — trinta e
-uma com `clienteId`, que chamam `exigirAcessoAoCliente`, e duas que criam
+recusa ação nova que esqueça a conferência.** Trinta e sete ações — trinta e
+cinco com `clienteId`, que chamam `exigirAcessoAoCliente`, e duas que criam
 cliente, que chamam `exigirOperadorDa4YU` — é exatamente onde a trigésima
-quarta fica de fora.
+oitava fica de fora.
 
 ### 4.5 A sessão de usuário tem precedência sobre a senha única
 
@@ -226,7 +269,7 @@ de apagar; não existe permissão.
 |---|---|
 | `clients` | a conta. Ganhou `slug` (único, com gatilho), `metadata` e `horario_atendimento` |
 | `flows`, `flow_versions` | o desenho e as versões publicadas (imutáveis por gatilho) |
-| `channels` | número do WhatsApp × fluxo |
+| `channels` | número do WhatsApp × fluxo. Ganhou os três papéis novos da 0024 |
 | `contacts` | quem conversa. Ganhou `atribuido_a` |
 | `sessions`, `messages`, `handoffs` | o estado de execução e o histórico |
 | `connections` | credenciais dos blocos de API |
@@ -236,8 +279,10 @@ de apagar; não existe permissão.
 | `af_verificacoes` | tokens de verificação |
 | `af_membros` | usuário × conta × papel (`owner`/`admin`/`member`) |
 | `af_convites` | a tabela existe; o convite não, porque depende de SMTP |
+| `gatilhos` | frase → fluxo, por conta, com operador e contagem de disparos |
+| `af_leituras` | quando cada pessoa abriu cada conversa. **A tabela existe e nada a lê ainda** — ver §7.3 |
 | `af_auditoria` | quem fez o quê. Append-only |
-| view `leads` | contato + última mensagem + handoff aberto + `ultima_entrada_em` + `atribuido_a` |
+| view `leads` | contato + última mensagem + handoff aberto + `ultima_entrada_em` + `atribuido_a` + `ultimo_tipo` |
 | view `metricas_sessoes`, `resumo_clientes` | agregações do painel |
 
 **As tabelas do login ficam fora da Data API de propósito** (`revoke all` para
@@ -274,37 +319,32 @@ suporta prepared statements**.
 
 ## 7. O que falta, em ordem
 
-### 7.1 A6 — fluxos padrão e gatilhos · **precisa de migration**
-
-O que o plano pede (§3.7 e §3.8):
-
-- **Os quatro fluxos padrão** por número: boas-vindas, resposta padrão, fluxo
-  para **mídia recebida**, pós-atendimento. Hoje é um número → um fluxo
-  (`channels.flow_id`).
-- **Gatilhos por palavra-chave**: frase → fluxo, com operador (`é`, `contém`),
-  contagem de execuções e liga/desliga. Hoje só existem as palavras de escape
-  fixas no motor (`PALAVRAS_ESCAPE` em `core/engine/executar.ts`).
-
-**É esta frente que destrava a última pendência da A4**: hoje mídia recebida
-vira handoff sempre (`Regra B`, em `executar.ts`), e o plano diz que isso
-deixou de fazer sentido quando existe um fluxo padrão para mídia — o cliente
-deve poder dizer o que fazer com um áudio em vez de acordar alguém.
-
-Sugestão de forma, para quem for escrever: colunas de fluxo padrão em
-`channels` (uma por papel) e uma tabela `gatilhos(conta, frase, operador,
-fluxo, ativo, execucoes)`. O casamento da frase acontece **antes** do fluxo
-padrão, na entrada do webhook.
-
-### 7.2 A7 — configurações reunidas · **parcialmente feito**
+### 7.1 A7 — configurações reunidas · **parcialmente feito**
 
 A maior parte já existe e está ligada no índice de `/ajustes` (perfil do
 negócio na tela do Painel, número, horário, respostas rápidas, acervo, contexto
 da IA, credenciais). Falta:
 
 - **Etiquetas manuais** — precisa de migration (`etiquetas` +
-  `contato_etiquetas`). As derivadas continuam derivadas; **não** viram linha.
+  `contato_etiquetas`, que seria a `0025`). As derivadas continuam derivadas;
+  **não** viram linha.
 - **Equipe** — a tela existiria para listar membros e convidar. Sem convite por
   e-mail (SMTP) ela seria uma lista vazia com um botão que não funciona.
+
+### 7.2 O que a `0023` destravou e ninguém usa ainda
+
+A migration foi aplicada, e as duas peças que ela existe para servir **não têm
+código**:
+
+- **`leads.ultimo_tipo`** — o tipo da última mensagem já vem na view, e a fila
+  continua dizendo "mídia ou mensagem sem texto" para foto, áudio, figurinha e
+  PDF igualmente (`app/clientes/[id]/inbox/page.tsx`, a função da prévia).
+- **`af_leituras`** — a tabela existe, o índice existe, e nada escreve nem lê.
+  É o contador de **não lidas por pessoa**: não lida = entrada com `ts` maior
+  que `lida_em` daquele usuário. Escrever `lida_em` ao abrir a conversa é o
+  ponto de entrada.
+
+São as duas últimas peças da A5, e não custam migration nenhuma.
 
 ### 7.3 Depois da Etapa A
 
@@ -321,13 +361,14 @@ Ordem e critério em [PLANO-SISTEMA.md §5](PLANO-SISTEMA.md).
 
 ### 7.4 O que espera o dono
 
-Dez itens em [PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md). Os três que mais
+Nove itens em [PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md). Os três que mais
 travam:
 
 1. **Criar o primeiro administrador.** Não existe **nenhum** usuário em
    produção; todo o login está de pé e dormindo.
-2. **Autorizar a migration `0023`** (não lidas + tipo da mídia na prévia).
-3. **`ALERTA_WEBHOOK_URL`**, sem a qual falha de entrega não avisa ninguém.
+2. **`ALERTA_WEBHOOK_URL`**, sem a qual falha de entrega não avisa ninguém.
+3. **Provar a mídia no WhatsApp de verdade** — nenhuma foto saiu pela Cloud API
+   até hoje, e agora existe um papel de número inteiro dedicado a mídia.
 
 ---
 
@@ -336,7 +377,7 @@ travam:
 ### O ciclo
 
 ```bash
-npm test          # 488 passando, 8 pulados
+npm test          # 512 passando, 8 pulados
 npm run typecheck
 npm run lint
 npm run build     # roda também sem DATABASE_URL, e tem que continuar rodando

@@ -75,8 +75,8 @@ import { PAPEIS_DO_NUMERO, type PapelDoNumero } from '@/core/papeis-do-numero'
  * senha só isso era inofensivo — quem entrava já podia tudo. Com login por
  * usuário, é escalada de privilégio.
  *
- * `src/server/acoes.test.ts` recusa ação nova que esqueça a linha. Vinte e sete
- * repetições é exatamente onde a vigésima oitava fica de fora.
+ * `src/server/acoes.test.ts` recusa ação nova que esqueça a linha. Trinta e cinco
+ * repetições é exatamente onde a trigésima sexta fica de fora.
  */
 export async function acaoCriarCliente(formData: FormData) {
   await exigirOperadorDa4YU()

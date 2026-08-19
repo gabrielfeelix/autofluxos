@@ -19,7 +19,7 @@ Storage, extensão, função/view SQL ou Data API, leia por inteiro
 - Nunca crie ou altere objeto da Verandi a partir deste repositório.
 - Nunca rode `supabase db push` ou `supabase db reset` contra produção.
 - Descubra a próxima migration pelo diretório atual. Não copie numeração de
-  planos antigos; a próxima do AutoFluxos é `0012` enquanto `0011` for a última.
+  planos antigos; a próxima do AutoFluxos é `0025` enquanto `0024` for a última.
 - Auth, `auth.users`, Storage, extensões, Data API, cotas e backup são globais ao
   projeto. Uma alteração neles exige avaliar os dois produtos.
 - A `service_role` ignora RLS e não isola um produto do outro. Mantenha schema e

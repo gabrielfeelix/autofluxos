@@ -6,11 +6,11 @@ import { describe, expect, it } from 'vitest'
  * A trava que não é código de produção: **nenhuma Server Action pode esquecer
  * de perguntar quem é.**
  *
- * O arquivo `acoes.ts` tem vinte e nove ações, e vinte e sete delas começam com
- * a mesma linha. Repetição desse tamanho não se mantém por disciplina — a
- * trigésima vai ser escrita com pressa, e o esquecimento não aparece em nenhum
- * teste funcional, porque a ação continua funcionando: ela só passa a funcionar
- * para quem não devia.
+ * O arquivo `acoes.ts` tem trinta e sete ações, e trinta e cinco delas começam
+ * com a mesma linha. Repetição desse tamanho não se mantém por disciplina — a
+ * trigésima oitava vai ser escrita com pressa, e o esquecimento não aparece em
+ * nenhum teste funcional, porque a ação continua funcionando: ela só passa a
+ * funcionar para quem não devia.
  *
  * Então o teste lê o **texto** do arquivo. É grosseiro de propósito: ele não
  * prova que a conferência está certa (isso é `sessao.ts` e os testes de
