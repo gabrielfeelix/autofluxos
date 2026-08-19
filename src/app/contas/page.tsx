@@ -35,7 +35,7 @@ export default async function Contas() {
     <div className="min-h-screen bg-canvas">
       <FaixaDeImpersonacao />
 
-      <main className="app-page-enter mx-auto max-w-[620px] px-4 pt-[46px] pb-[46px] md:px-6">
+      <main className="app-page-enter mx-auto max-w-[1100px] px-4 pt-[46px] pb-[46px] md:px-6">
         <div className="mb-9 flex items-center justify-between gap-4">
           <Marca />
           <form action={acaoSair}>

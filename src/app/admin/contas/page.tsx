@@ -25,7 +25,7 @@ export default async function Contas() {
   const semNinguem = contas.filter((conta) => conta.membros.length === 0).length
 
   return (
-    <main className="max-w-[880px] px-4 pt-[38px] pb-[46px] md:px-[46px]">
+    <main className="w-full max-w-[1280px] px-4 pt-[38px] pb-[46px] md:px-[46px]">
       <header className="mb-7">
         <h1 className="text-[25px] font-bold tracking-[-0.02em]">Contas</h1>
         <p className="mt-1 text-[13px] text-muted">

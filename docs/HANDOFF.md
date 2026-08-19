@@ -23,8 +23,8 @@ se move sozinho (§5.10). O resto dela está em §8.2.
 
 `npm test` → **683 passando, 28 pulados** (os pulados dependem de `IA_TESTE_REAL`
 e `API_TESTE_REAL`, por desenho). `typecheck`, `lint` e `build` limpos.
-**Migrations aplicadas em produção: `0001` a `0034`, todas. A próxima a escrever
-é a `0035`.**
+**Migrations aplicadas em produção: `0001` a `0035`, todas. A próxima a escrever
+é a `0036`.**
 
 ---
 
@@ -928,8 +928,18 @@ select distinct g.table_name from information_schema.role_table_grants g
  where g.table_schema = 'public' and g.grantee in ('anon', 'authenticated')
    and c.relkind = 'v';
 
--- 2d. tem que continuar 40
-select count(*) from information_schema.tables where table_schema = 'app_verandi';
+-- 2d. nenhum objeto NOSSO em `app_verandi`.
+--
+--     Era `count(*) = 40`, e o número envelheceu no primeiro dia em que a
+--     Verandi aplicou uma migration dela — passou a 41 sem nada de errado ter
+--     acontecido. Número fixo aqui produz susto falso e, pior, ensina a ignorar
+--     a conferência. A pergunta certa nunca foi "quantas tabelas" e sim
+--     "alguma coisa nossa vazou para lá": tem que vir VAZIO.
+select table_name from information_schema.tables
+ where table_schema = 'app_verandi'
+   and table_name in (
+     select table_name from information_schema.tables where table_schema = 'public'
+   );
 ```
 
 **3. O comportamento: as rotas de serviço respondem o que deviam.**
@@ -958,6 +968,14 @@ curl -s -H "Authorization: Bearer $AUTOFLUXOS_CRON_SECRET" \
   a sessão não for salva, a pessoa fica sem resposta e a Meta não reenvia.
 - **Identidade vinda do corpo da requisição.** Desenho pode vir de fora;
   identidade sai do banco. Foi o furo do `/api/simular`, corrigido.
+- **`on delete restrict` numa chave que um `cascade` atravessa.** Em `sequencia_
+  passos.flow_id` ele era a escolha certa para o gesto que se queria proteger
+  (ninguém apaga por acidente um fluxo que é passo de sequência) e **travava um
+  segundo caminho**: `delete from clients` → cascade em `flows` → restrict ali →
+  violação de chave estrangeira crua na cara de quem clicou. O Postgres não
+  expressa "recuse o gesto direto, ceda quando o pai está sendo apagado". A saída
+  é `cascade` no banco e a recusa no código, com a frase que diz onde ir
+  desligar — é o que `campanhas.flow_id` já fazia desde a 0027. Ver a 0035.
 - **`ON CONFLICT` contra índice único parcial.** O PostgREST não expressa o
   predicado, e o `upsert` falha com "no unique or exclusion constraint
   matching". Foi o que fez `agendar()` virar cancelar-e-inserir.
@@ -1058,7 +1076,19 @@ telas de lista foram para `1440px`, as de configuração para `1100px`, e os
 parágrafos ganharam `max-w` próprio — largura de leitura e largura de tabela são
 medidas diferentes, e usar a mesma para as duas erra uma delas.
 
-**3. Botão de estado vazio leva ao lugar certo.** "Nenhum número conectado →
+**3. Coisa criada aparece.** A lista de fluxos escondia grupo vazio, e o efeito
+era criar uma pasta e a tela não mudar em nada — que ensina que o botão está
+quebrado. A gaveta recém-criada é justamente a que ainda não tem nada dentro;
+esconder o resultado do único clique que a pessoa deu é o pior desfecho.
+
+**4. Quatro assuntos que se usam um de cada vez viram abas.** Automações
+empilhava fluxos, palavras-chave, campanhas e sequências, cada um com o próprio
+texto de apoio — quem abria via um paredão de explicação e rolava para descobrir
+que havia mais coisa. A aba vem por `?aba=`, e não por estado de cliente: o
+endereço leva de volta ao mesmo lugar, o "voltar" do navegador funciona, e a
+página continua sendo renderizada no servidor.
+
+**5. Botão de estado vazio leva ao lugar certo.** "Nenhum número conectado →
 Conectar um número" apontava para o painel, não para a tela do número. Botão de
 estado vazio que leva ao lugar errado é pior que estado vazio sem botão: ele
 ensina que o produto não sabe para onde mandar a pessoa.

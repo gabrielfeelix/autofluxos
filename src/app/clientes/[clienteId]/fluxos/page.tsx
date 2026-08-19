@@ -49,12 +49,23 @@ import { contarExecucoesPorFluxo } from '@/server/repos/metricas'
 
 export const dynamic = 'force-dynamic'
 
+const ABAS_VALIDAS = ['fluxos', 'palavras', 'campanhas', 'sequencias'] as const
+type Aba = (typeof ABAS_VALIDAS)[number]
+
 export default async function Pagina({
   params,
+  searchParams,
 }: {
   params: Promise<{ clienteId: string }>
+  searchParams: Promise<{ aba?: string }>
 }) {
   const { clienteId } = await params
+  const { aba: abaPedida } = await searchParams
+  // Aba desconhecida cai em Fluxos em vez de mostrar nada: o valor vem da URL,
+  // e link velho não pode virar tela em branco.
+  const aba: Aba = (ABAS_VALIDAS as readonly string[]).includes(abaPedida ?? '')
+    ? (abaPedida as Aba)
+    : 'fluxos' 
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
@@ -108,6 +119,13 @@ export default async function Pagina({
   const criarGatilhoComCliente = acaoCriarGatilho.bind(null, cliente.id, {})
   const criarCampanhaComCliente = acaoCriarCampanha.bind(null, cliente.id, {})
   const criarSequenciaComCliente = acaoCriarSequencia.bind(null, cliente.id, {})
+
+  const ABAS = [
+    { chave: 'fluxos', rotulo: 'Fluxos', contagem: fluxos.length },
+    { chave: 'palavras', rotulo: 'Palavras-chave', contagem: gatilhos.length },
+    { chave: 'campanhas', rotulo: 'Campanhas', contagem: campanhas.length },
+    { chave: 'sequencias', rotulo: 'Sequências', contagem: sequencias.length },
+  ] as const
   const nomeDaEtiqueta = (id: string | null) =>
     etiquetas.find((etiqueta) => etiqueta.id === id)?.nome ?? 'uma etiqueta apagada'
 
@@ -141,6 +159,41 @@ export default async function Pagina({
       <main className="w-full max-w-[1440px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <h1 className="mb-5 text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Automações</h1>
 
+
+        {/*
+          Abas, e não quatro seções empilhadas.
+          A tela tinha fluxos, palavras-chave, campanhas e sequências uma embaixo
+          da outra, cada uma com o próprio texto de apoio: quem abria via um
+          paredão de explicação e precisava rolar para descobrir que havia mais
+          coisa. São quatro assuntos que se usam **um de cada vez** — ninguém
+          cadastra campanha e sequência no mesmo minuto.
+
+          A aba vem por `?aba=`, e não por estado de cliente: assim o endereço
+          leva de volta ao mesmo lugar, o botão "voltar" do navegador funciona, e
+          a página continua sendo renderizada no servidor.
+        */}
+        <nav className="mb-5 flex flex-wrap gap-1 border-b border-white/[0.07]">
+          {ABAS.map((item) => (
+            <Link
+              key={item.chave}
+              href={`/clientes/${cliente.id}/fluxos?aba=${item.chave}`}
+              className={`-mb-px border-b-2 px-3.5 py-2.5 text-[13px] font-semibold transition ${
+                item.chave === aba
+                  ? 'border-accent text-accent'
+                  : 'border-transparent text-dim hover:text-soft'
+              }`}
+            >
+              {item.rotulo}
+              {item.contagem > 0 && (
+                <span className="ml-1.5 rounded-full bg-white/[0.07] px-1.5 py-0.5 text-[10.5px] font-normal text-dim">
+                  {item.contagem}
+                </span>
+              )}
+            </Link>
+          ))}
+        </nav>
+
+        {aba === 'fluxos' && (
         <section className="app-card overflow-hidden">
           <header className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-5 py-4">
             <div>
@@ -222,7 +275,7 @@ export default async function Pagina({
             </span>
           </header>
 
-          {fluxos.length === 0 ? (
+          {fluxos.length === 0 && pastas.length === 0 ? (
             <div className="px-5 py-14 text-center">
               <p className="text-[13.5px] font-semibold text-soft">
                 Nenhum fluxo ainda
@@ -233,8 +286,19 @@ export default async function Pagina({
             </div>
           ) : (
             <ul>
+              {/*
+                **Pasta vazia aparece.** Ela não aparecia, e o efeito era criar
+                uma pasta e a tela não mudar em nada — o que ensina que o botão
+                está quebrado. A gaveta recém-criada é justamente a que ainda não
+                tem nada dentro; escondê-la é esconder o resultado do único
+                clique que a pessoa acabou de dar.
+
+                A raiz é a exceção: ela não é uma gaveta que alguém criou, e uma
+                linha "Sem pasta — vazia" seria ruído sobre uma coisa que não
+                existe.
+              */}
               {grupos.map((grupo) =>
-                grupo.fluxos.length === 0 ? null : (
+                grupo.id === null && grupo.fluxos.length === 0 ? null : (
                   <li key={grupo.id ?? 'raiz'}>
                     {grupo.nome !== '' && (
                       <div className="flex items-center gap-2 border-b border-white/[0.045] bg-white/[0.015] px-5 py-2">
@@ -257,6 +321,11 @@ export default async function Pagina({
                       </div>
                     )}
                     <ul>
+                      {grupo.fluxos.length === 0 && (
+                        <li className="border-b border-white/[0.045] px-5 py-4 text-[11.5px] text-dim">
+                          Pasta vazia — mova um fluxo para cá pelo botão de pasta na linha dele.
+                        </li>
+                      )}
                       {grupo.fluxos.map((fluxo) => {
                 const validacao = validar(fluxo.rascunho, {
                   iaHabilitada: fluxo.iaHabilitada,
@@ -332,8 +401,10 @@ export default async function Pagina({
 
 
         </section>
+        )}
 
-        <section className="app-card mt-[18px] overflow-hidden">
+        {aba === 'palavras' && (
+        <section className="app-card overflow-hidden">
           <header className="flex items-start justify-between gap-4 border-b border-white/[0.06] px-5 py-4">
             <div className="min-w-0">
             <h2 className="text-[14.5px] font-bold">Palavras-chave</h2>
@@ -449,7 +520,10 @@ export default async function Pagina({
 
 
         </section>
-        <section className="app-card mt-[18px] overflow-hidden">
+        )}
+
+        {aba === 'campanhas' && (
+        <section className="app-card overflow-hidden">
           <header className="flex items-start justify-between gap-4 border-b border-white/[0.06] px-5 py-4">
             <div className="min-w-0">
             <h2 className="text-[14.5px] font-bold">Campanhas</h2>
@@ -566,7 +640,10 @@ export default async function Pagina({
 
 
         </section>
-        <section className="app-card mt-[18px] overflow-hidden">
+        )}
+
+        {aba === 'sequencias' && (
+        <section className="app-card overflow-hidden">
           <header className="flex items-start justify-between gap-4 border-b border-white/[0.06] px-5 py-4">
             <div className="min-w-0 max-w-[86ch]">
             <h2 className="text-[14.5px] font-bold">Sequências</h2>
@@ -799,6 +876,7 @@ export default async function Pagina({
 
 
         </section>
+        )}
       </main>
     </ClienteShell>
   )

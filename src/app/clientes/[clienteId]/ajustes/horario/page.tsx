@@ -25,7 +25,7 @@ export default async function Pagina({
 
   return (
     <ClienteShell cliente={cliente} ativa="ajustes">
-      <main className="max-w-[720px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
+      <main className="w-full max-w-[1100px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
         <nav className="mb-3 text-[12.5px] text-dim">
           <Link
             href={`/clientes/${cliente.id}/ajustes`}
