@@ -15,12 +15,22 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import Link from 'next/link'
-import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent as ReactDragEvent } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type DragEvent as ReactDragEvent,
+  type MouseEvent as ReactMouseEvent,
+} from 'react'
 import { Conversa } from '@/components/conversa'
 import { fluxoSchema, type Fluxo, type No, type TipoNo } from '@/core/flow/schema'
 import type { Problema } from '@/core/flow/validar'
 import { validar } from '@/core/flow/validar'
 import { acaoAlternarIa, acaoPublicar, acaoSalvarRascunho, acaoVoltarParaVersao } from '@/server/acoes'
+import { Modal } from '@/components/design/modal'
+import { AcaoDaArestaProvider, tiposDeAresta } from './arestas'
 import { ICONES, NOMES, tiposDeNo } from './nos'
 import { Painel } from './painel'
 import type { ConexaoDoCliente, EtapaDoCliente } from './painel'
@@ -191,6 +201,16 @@ export function Editor({
   const [voltouDe, setVoltouDe] = useState<{ antiga: number; nova: number } | null>(null)
   const [comIa, setComIa] = useState(iaHabilitada)
   const [tela, setTela] = useState<ReactFlowInstance | null>(null)
+  /**
+   * O menu do botão direito: em qual bloco (ou ligação) ele abriu e onde.
+   *
+   * `x`/`y` são medidos **dentro da área de desenho**, não na janela: o menu é
+   * desenhado dentro dela para poder ser recortado por ela, e coordenada de
+   * janela colocaria o menu deslocado da largura da barra de blocos.
+   */
+  const [menu, setMenu] = useState<MenuAberto | null>(null)
+  /** Bloco que o clique em "apagar" está esperando confirmar. Ver `apagar()`. */
+  const [aApagar, setAApagar] = useState<string | null>(null)
   /** O último bloco apagado, para poder devolver. Ver `apagar()`. */
   const [desfazer, setDesfazer] = useState<{ no: Node; edges: Edge[]; eraInicio: boolean } | null>(null)
   const areaRef = useRef<HTMLDivElement>(null)
@@ -341,17 +361,113 @@ export function Editor({
    * Um passo só, de propósito: pilha de desfazer é outra coisa (mexe em mover,
    * digitar, ligar) e prometer meia pilha é pior do que prometer um passo.
    */
-  function apagar() {
-    if (!selecionado) return
-    const no = nodes.find((n) => n.id === selecionado)
+  function apagar(noId: string) {
+    const no = nodes.find((n) => n.id === noId)
     if (!no) return
 
-    const ligacoes = edges.filter((e) => e.source === selecionado || e.target === selecionado)
-    setDesfazer({ no, edges: ligacoes, eraInicio: inicio === selecionado })
+    const ligacoes = edges.filter((e) => e.source === noId || e.target === noId)
+    setDesfazer({ no, edges: ligacoes, eraInicio: inicio === noId })
 
-    setNodes((atuais) => atuais.filter((n) => n.id !== selecionado))
-    setEdges((atuais) => atuais.filter((e) => e.source !== selecionado && e.target !== selecionado))
-    setSelecionado(null)
+    setNodes((atuais) => atuais.filter((n) => n.id !== noId))
+    setEdges((atuais) => atuais.filter((e) => e.source !== noId && e.target !== noId))
+    if (selecionado === noId) setSelecionado(null)
+    setAApagar(null)
+  }
+
+  /**
+   * Copia um bloco ao lado, com o conteúdo inteiro e **sem as ligações**.
+   *
+   * Sem ligação de propósito: uma saída leva a um lugar só (ver `aoConectar`),
+   * então herdar as arestas do original faria a cópia roubar o destino dele —
+   * duplicar quebraria o fluxo que já estava desenhado. Quem duplicou liga a
+   * cópia onde quiser.
+   *
+   * `structuredClone` porque `data` tem lista dentro (as opções da pergunta, a
+   * pilha da mensagem): cópia rasa deixaria as duas caixas mexendo no mesmo
+   * array, e editar a cópia mudaria o original.
+   */
+  function duplicar(noId: string) {
+    const no = nodes.find((n) => n.id === noId)
+    if (!no) return
+
+    const id = crypto.randomUUID().slice(0, 8)
+    const posicao = livre({ x: no.position.x + LARGURA_NO + 28, y: no.position.y }, nodes)
+
+    setNodes((atuais) => [
+      ...atuais.map((n) => ({ ...n, selected: false })),
+      {
+        ...no,
+        id,
+        position: posicao,
+        data: structuredClone(no.data),
+        selected: true,
+        // O realce de início é do bloco inicial, e o fluxo só tem um. A cópia
+        // nasce como bloco comum.
+        className: '',
+      },
+    ])
+    setSelecionado(id)
+    setAba('bloco')
+  }
+
+  /**
+   * O clique em "apagar" pergunta antes; a tecla `Delete` não.
+   *
+   * O botão é alcançável por engano — ele fica a poucos pixels do cabeçalho que
+   * a pessoa usa para arrastar o bloco — e apagar leva as ligações junto. A
+   * tecla é deliberada e continua instantânea: para ela o desfazer de cinco
+   * segundos já é a rede.
+   */
+  function pedirParaApagar(noId: string) {
+    setAApagar(noId)
+  }
+
+  /**
+   * Abre o menu do botão direito em cima do bloco (ou da ligação) clicado.
+   *
+   * O alvo é **selecionado junto**: sem isso o menu falaria de um bloco e o
+   * painel da direita mostraria outro, e "Editar" pareceria ter aberto a coisa
+   * errada.
+   */
+  function abrirMenu(
+    evento: ReactMouseEvent,
+    alvo: 'no' | 'aresta',
+    id: string,
+  ) {
+    evento.preventDefault()
+    const area = areaRef.current?.getBoundingClientRect()
+    const x = evento.clientX - (area?.left ?? 0)
+    const y = evento.clientY - (area?.top ?? 0)
+
+    // Clique perto da borda: o menu abre para o outro lado em vez de nascer
+    // metade fora da área, com o último item inalcançável.
+    setMenu({
+      alvo,
+      id,
+      x,
+      y,
+      paraEsquerda: !!area && x + LARGURA_MENU > area.width,
+      paraCima: !!area && y + ALTURA_MENU > area.height,
+    })
+    if (alvo === 'no') editarNo(id)
+  }
+
+  /** Seleciona o bloco e abre o painel da direita nele. */
+  function editarNo(noId: string) {
+    setNodes((atuais) => atuais.map((n) => ({ ...n, selected: n.id === noId })))
+    setSelecionado(noId)
+    setAba('bloco')
+  }
+
+  /**
+   * Apaga uma ligação — e só ela.
+   *
+   * Sem confirmação, ao contrário do bloco: uma linha some e se refaz
+   * arrastando de novo em dois segundos, enquanto um bloco leva o conteúdo
+   * escrito junto. Perguntar aqui seria pedágio em cima de um gesto barato.
+   */
+  function apagarAresta(arestaId: string) {
+    setEdges((atuais) => atuais.filter((e) => e.id !== arestaId))
   }
 
   /**
@@ -395,17 +511,50 @@ export function Editor({
         alvo?.isContentEditable === true
       if (digitando) return
 
+      // A linha selecionada também morre pela tecla. Ela vem antes do bloco
+      // porque selecionar uma aresta não desmarca o bloco no React Flow: sem
+      // esta ordem, `Delete` em cima de uma linha apagaria o bloco de antes.
+      const arestasEscolhidas = edges.filter((e) => e.selected)
+      if (arestasEscolhidas.length > 0) {
+        evento.preventDefault()
+        const ids = new Set(arestasEscolhidas.map((e) => e.id))
+        setEdges((atuais) => atuais.filter((e) => !ids.has(e.id)))
+        return
+      }
+
       // Sem bloco escolhido não há o que apagar, e `Backspace` fora de campo é
       // "voltar" em alguns navegadores — deixar passar seria sair do editor.
       if (!selecionado) return
 
       evento.preventDefault()
-      apagar()
+      apagar(selecionado)
     }
 
     window.addEventListener('keydown', aoTeclar)
     return () => window.removeEventListener('keydown', aoTeclar)
   })
+
+  /**
+   * O menu fecha em qualquer clique e no `Esc`.
+   *
+   * O listener na janela roda **depois** do `onClick` do item, porque o React
+   * trata o clique na raiz da aplicação e só então ele chega em `window`. Ou
+   * seja: a ação acontece e o menu fecha em seguida, na ordem certa. Não fecha
+   * no `contextmenu`, que é o evento que abriu o menu.
+   */
+  useEffect(() => {
+    if (!menu) return
+    const fechar = () => setMenu(null)
+    const aoTeclar = (evento: KeyboardEvent) => {
+      if (evento.key === 'Escape') setMenu(null)
+    }
+    window.addEventListener('click', fechar)
+    window.addEventListener('keydown', aoTeclar)
+    return () => {
+      window.removeEventListener('click', fechar)
+      window.removeEventListener('keydown', aoTeclar)
+    }
+  }, [menu])
 
   function desfazerApagar() {
     if (!desfazer) return
@@ -678,7 +827,7 @@ export function Editor({
 
         <div
           ref={areaRef}
-          className="min-w-0 flex-1"
+          className="relative min-w-0 flex-1"
           onDrop={soltar}
           // Sem cancelar o `dragover`, o navegador recusa o soltar e o gesto
           // termina com a animação de "voltou para o lugar".
@@ -687,6 +836,7 @@ export function Editor({
             evento.dataTransfer.dropEffect = 'copy'
           }}
         >
+          <AcaoDaArestaProvider value={apagarAresta}>
           <ReactFlow
             onInit={setTela}
             nodes={nodes}
@@ -695,6 +845,16 @@ export function Editor({
             onEdgesChange={aoMudarArestas}
             onConnect={aoConectar}
             nodeTypes={tiposDeNo}
+            edgeTypes={tiposDeAresta}
+            onNodeContextMenu={(evento, no) => abrirMenu(evento, 'no', no.id)}
+            onEdgeContextMenu={(evento, aresta) => abrirMenu(evento, 'aresta', aresta.id)}
+            // Arrastar ou mexer na tela com o menu aberto deixaria ele parado
+            // apontando para um lugar que não existe mais.
+            onNodeDragStart={() => setMenu(null)}
+            onMoveStart={() => setMenu(null)}
+            // Todo grafo já salvo tem aresta sem `type`; o padrão faz as antigas
+            // ganharem o ✕ sem precisar migrar nada no banco.
+            defaultEdgeOptions={{ type: 'removivel' }}
             onSelectionChange={({ nodes: sel }) => {
               const id = sel[0]?.id ?? null
               setSelecionado(id)
@@ -726,6 +886,16 @@ export function Editor({
               className="!h-24 !w-[150px]"
             />
           </ReactFlow>
+          </AcaoDaArestaProvider>
+
+          {menu && (
+            <MenuDoBotaoDireito
+              menu={menu}
+              aoEditar={() => editarNo(menu.id)}
+              aoDuplicar={() => duplicar(menu.id)}
+              aoApagar={() => (menu.alvo === 'no' ? pedirParaApagar(menu.id) : apagarAresta(menu.id))}
+            />
+          )}
         </div>
 
         <aside className="flex w-[356px] shrink-0 flex-col border-l border-white/[0.06] bg-white/[0.014]">
@@ -772,7 +942,7 @@ export function Editor({
                 etapas={etapas}
                 aoMudarDados={mudarDados}
                 aoDefinirInicio={definirInicio}
-                aoApagar={apagar}
+                aoApagar={() => selecionado && pedirParaApagar(selecionado)}
               />
 
               {!validacao.ok && (
@@ -830,7 +1000,172 @@ export function Editor({
           )}
         </aside>
       </div>
+
+      <ConfirmarApagar
+        no={nodes.find((n) => n.id === aApagar) ?? null}
+        ligacoes={edges.filter((e) => e.source === aApagar || e.target === aApagar).length}
+        ehInicio={aApagar !== null && aApagar === inicio}
+        aoFechar={() => setAApagar(null)}
+        aoConfirmar={() => aApagar && apagar(aApagar)}
+      />
     </div>
+  )
+}
+
+/** Onde o menu abriu e para que lado ele precisa crescer. */
+type MenuAberto = {
+  alvo: 'no' | 'aresta'
+  id: string
+  x: number
+  y: number
+  paraEsquerda: boolean
+  paraCima: boolean
+}
+
+/** O tamanho do menu, para decidir o lado antes de desenhar. */
+const LARGURA_MENU = 176
+const ALTURA_MENU = 130
+
+/**
+ * O menu do botão direito.
+ *
+ * Ele substituiu os botões que iam ficar no canto de cada bloco: dois ícones em
+ * cada caixa de um desenho com vinte delas é ruído permanente para uma ação
+ * ocasional, e o botão direito é onde todo editor de diagrama guarda isso.
+ *
+ * Ele é desenhado dentro da área de desenho e não num portal: assim a rolagem e
+ * o recorte da área valem para ele, e o menu não sobra por cima do painel da
+ * direita quando o clique é perto da borda.
+ */
+function MenuDoBotaoDireito({
+  menu,
+  aoEditar,
+  aoDuplicar,
+  aoApagar,
+}: {
+  menu: MenuAberto
+  aoEditar: () => void
+  aoDuplicar: () => void
+  aoApagar: () => void
+}) {
+  const item =
+    'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-soft transition hover:bg-white/[0.07] hover:text-white'
+
+  return (
+    <div
+      style={{
+        left: menu.x,
+        top: menu.y,
+        transform: `translate(${menu.paraEsquerda ? '-100%' : '0'}, ${menu.paraCima ? '-100%' : '0'})`,
+      }}
+      className="absolute z-20 w-[176px] rounded-[12px] border border-white/10 bg-panel p-1.5 shadow-[0_24px_60px_rgba(0,0,0,0.55)]"
+      onContextMenu={(evento) => evento.preventDefault()}
+    >
+      {menu.alvo === 'no' ? (
+        <>
+          <button type="button" onClick={aoEditar} className={item}>
+            <span aria-hidden className="w-4 text-center text-muted">
+              ✎
+            </span>
+            Editar
+          </button>
+          <button type="button" onClick={aoDuplicar} className={item}>
+            <span aria-hidden className="w-4 text-center text-muted">
+              ⧉
+            </span>
+            Duplicar
+          </button>
+          <div className="my-1 h-px bg-white/[0.07]" />
+          <button
+            type="button"
+            onClick={aoApagar}
+            className={`${item} text-rose-300 hover:bg-rose-400/[0.12] hover:text-rose-200`}
+          >
+            <span aria-hidden className="w-4 text-center">
+              ✕
+            </span>
+            Excluir
+          </button>
+        </>
+      ) : (
+        <button
+          type="button"
+          onClick={aoApagar}
+          className={`${item} text-rose-300 hover:bg-rose-400/[0.12] hover:text-rose-200`}
+        >
+          <span aria-hidden className="w-4 text-center">
+            ✕
+          </span>
+          Apagar ligação
+        </button>
+      )}
+    </div>
+  )
+}
+
+/**
+ * A confirmação de apagar um bloco.
+ *
+ * Ela diz **quantas ligações vão junto** e avisa quando o bloco é o início,
+ * porque essas são as duas consequências que não estão à vista: some o bloco,
+ * somem as setas que chegavam nele, e um fluxo sem início não publica.
+ *
+ * `key` amarrado ao bloco: sem isso o `<dialog>` reaproveitado mostraria por um
+ * quadro o texto do bloco anterior.
+ */
+function ConfirmarApagar({
+  no,
+  ligacoes,
+  ehInicio,
+  aoFechar,
+  aoConfirmar,
+}: {
+  no: Node | null
+  ligacoes: number
+  ehInicio: boolean
+  aoFechar: () => void
+  aoConfirmar: () => void
+}) {
+  const tipo = (no?.type ?? 'mensagem') as TipoNo
+
+  return (
+    <Modal
+      key={no?.id ?? 'sem-bloco'}
+      aberto={no !== null}
+      aoFechar={aoFechar}
+      titulo={`Apagar o bloco de ${NOMES[tipo].toLowerCase()}?`}
+      descricao={
+        ligacoes > 0
+          ? `As ${ligacoes} ligação(ões) que entram ou saem dele somem junto. Dá para desfazer por alguns segundos depois.`
+          : 'Dá para desfazer por alguns segundos depois.'
+      }
+    >
+      {ehInicio && (
+        <p className="mb-4 rounded-[10px] border border-amber-300/25 bg-amber-300/[0.07] px-3 py-2 text-[12px] leading-5 text-amber-200">
+          Este é o bloco de <strong>início</strong>. Sem ele, o fluxo não publica até você escolher
+          outro.
+        </p>
+      )}
+      <div className="flex justify-end gap-2">
+        <button
+          type="button"
+          autoFocus
+          onClick={aoFechar}
+          className="rounded-lg border border-white/10 px-3.5 py-2 text-[12px] font-semibold text-muted transition hover:border-white/25 hover:text-white"
+        >
+          Cancelar
+        </button>
+        {/* O foco começa no "Cancelar": `Enter` logo depois de abrir é reflexo
+            comum, e não pode ser o que apaga o bloco. */}
+        <button
+          type="button"
+          onClick={aoConfirmar}
+          className="rounded-lg border border-rose-400/40 bg-rose-400/[0.12] px-3.5 py-2 text-[12px] font-bold text-rose-300 transition hover:bg-rose-400/20"
+        >
+          Apagar bloco
+        </button>
+      </div>
+    </Modal>
   )
 }
 
