@@ -18,6 +18,7 @@ import {
 import { Dropdown } from '@/components/design/dropdown'
 import { BarraDeFormato } from './barra-de-formato'
 import { SeletorDeArquivo } from './seletor-de-arquivo'
+import { PresetsDeIntegracao } from './presets-de-integracao'
 import { inserirNoCursor } from './inserir-variavel'
 import { PilhaDeMensagem } from './pilha'
 import { NOMES } from './nos'
@@ -371,6 +372,17 @@ export function Painel({
 
       {no.type === 'http' && (
         <>
+          {/*
+            Preset, e não tipo de nó novo (§3.11).
+            
+            Ele preenche os campos abaixo **uma vez** e some do caminho: o que
+            fica gravado no fluxo é o bloco resolvido, não uma referência viva.
+            Se fosse referência, mudar o endereço da RD amanhã mudaria por baixo
+            o que uma conversa em andamento vai chamar — e versão publicada é
+            imutável aqui também.
+          */}
+          <PresetsDeIntegracao aoAplicar={aoMudarDados} />
+
           <label className="block">
             <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">Método</span>
             <Dropdown

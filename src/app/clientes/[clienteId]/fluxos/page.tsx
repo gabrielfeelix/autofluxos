@@ -18,12 +18,17 @@ import {
   acaoApagarFluxo,
   acaoApagarGatilho,
   acaoCriarCampanha,
+  acaoApagarPasta,
   acaoCriarFluxo,
   acaoCriarGatilho,
+  acaoCriarPasta,
 } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { fluxoDoPapel, listarCanais } from '@/server/repos/conversas'
 import { listarGatilhos } from '@/server/repos/gatilhos'
+import { listarPastas } from '@/server/repos/pastas'
+import { MoverFluxo } from '@/components/editor/mover-fluxo'
+import { MODELOS } from '@/exemplos/modelos'
 import { contatosPorCampanha, listarCampanhas } from '@/server/repos/campanhas'
 import { listarFluxos } from '@/server/repos/fluxos'
 import { contarExecucoesPorFluxo } from '@/server/repos/metricas'
@@ -47,6 +52,29 @@ export default async function Pagina({
     listarCampanhas(cliente.id),
     contatosPorCampanha(cliente.id),
   ])
+  const pastas = await listarPastas(cliente.id)
+  const criarPastaComCliente = acaoCriarPasta.bind(null, cliente.id)
+
+  /**
+   * Os fluxos agrupados por gaveta, com a raiz **por último**.
+   *
+   * Quem cria pastas está separando o que interessa; deixar a raiz em cima
+   * empurraria as gavetas para baixo da lista solta, que é exatamente a
+   * bagunça que a pasta veio arrumar. Sem pasta nenhuma, o agrupamento
+   * desaparece e a lista fica como sempre foi.
+   */
+  const grupos = [
+    ...pastas.map((pasta) => ({
+      id: pasta.id,
+      nome: pasta.nome,
+      fluxos: fluxos.filter((fluxo) => fluxo.pastaId === pasta.id),
+    })),
+    {
+      id: null,
+      nome: pastas.length > 0 ? 'Sem pasta' : '',
+      fluxos: fluxos.filter((fluxo) => !fluxo.pastaId),
+    },
+  ]
   const criarComCliente = acaoCriarFluxo.bind(null, cliente.id)
   const criarGatilhoComCliente = acaoCriarGatilho.bind(null, cliente.id)
   const criarCampanhaComCliente = acaoCriarCampanha.bind(null, cliente.id)
@@ -86,7 +114,7 @@ export default async function Pagina({
               botao="+ Criar fluxo"
               titulo="Novo fluxo"
               descricao={
-                'Nasce como rascunho com um esqueleto válido — boas-vindas ligada a “Falar com humano”.'
+                'Nasce como rascunho já válido. O modelo é só o ponto de partida: a partir daí o desenho é seu, e mudar o modelo depois não mexe no que você criou.'
               }
               action={criarComCliente}
             >
@@ -98,6 +126,19 @@ export default async function Pagina({
                   autoFocus
                   placeholder="ex.: Atendimento comercial"
                   className="app-field px-[13px] py-[11px] text-[13.5px]"
+                />
+              </label>
+              <label>
+                <RotuloCampo>Começar de</RotuloCampo>
+                <Dropdown
+                  nome="modelo"
+                  rotuloAcessivel="Modelo do fluxo"
+                  valorInicial="vazio"
+                  opcoes={MODELOS.map((modelo) => ({
+                    valor: modelo.id,
+                    rotulo: modelo.nome,
+                    detalhe: modelo.resumo,
+                  }))}
                 />
               </label>
               <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-white/[0.09] p-3">
@@ -129,7 +170,31 @@ export default async function Pagina({
             </div>
           ) : (
             <ul>
-              {fluxos.map((fluxo) => {
+              {grupos.map((grupo) =>
+                grupo.fluxos.length === 0 ? null : (
+                  <li key={grupo.id ?? 'raiz'}>
+                    {grupo.nome !== '' && (
+                      <div className="flex items-center gap-2 border-b border-white/[0.045] bg-white/[0.015] px-5 py-2">
+                        <span className="text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+                          {grupo.nome}
+                        </span>
+                        <span className="text-[10.5px] text-dim">
+                          {grupo.fluxos.length}
+                        </span>
+                        {grupo.id && (
+                          <span className="ml-auto">
+                            <BotaoPerigo
+                              rotulo="Apagar pasta"
+                              titulo="Apaga só a gaveta. Os fluxos dentro dela voltam para a raiz."
+                              pergunta={`Apagar a pasta “${grupo.nome}”? Os ${grupo.fluxos.length} fluxo(s) dentro dela voltam para a raiz — nenhum desenho some.`}
+                              acao={acaoApagarPasta.bind(null, cliente.id, grupo.id)}
+                            />
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <ul>
+                      {grupo.fluxos.map((fluxo) => {
                 const validacao = validar(fluxo.rascunho, {
                   iaHabilitada: fluxo.iaHabilitada,
                 })
@@ -176,6 +241,16 @@ export default async function Pagina({
                         {fluxo.versaoPublicadaId ? 'NO AR' : 'RASCUNHO'}
                       </span>
                     </Link>
+                    {pastas.length > 0 && (
+                      <span className="mr-3">
+                        <MoverFluxo
+                          clienteId={cliente.id}
+                          fluxoId={fluxo.id}
+                          pastaAtual={fluxo.pastaId}
+                          pastas={pastas}
+                        />
+                      </span>
+                    )}
                     {/* Fora do `Link`: botão dentro de link é clique ambíguo. */}
                     <BotaoPerigo
                       titulo="Apaga esta automação. Recusa enquanto ela estiver ligada a um número."
@@ -184,9 +259,26 @@ export default async function Pagina({
                     />
                   </li>
                 )
-              })}
+                      })}
+                    </ul>
+                  </li>
+                ),
+              )}
             </ul>
           )}
+
+          <div className="border-t border-white/[0.045] p-5">
+            <FormularioSalvar action={criarPastaComCliente} rotulo="Criar pasta">
+              <input
+                name="nome"
+                required
+                maxLength={40}
+                placeholder="Nome da pasta (ex.: Campanhas de agosto)"
+                aria-label="Nome da pasta"
+                className="app-field px-3 py-2.5 text-[12.5px]"
+              />
+            </FormularioSalvar>
+          </div>
         </section>
 
         <section className="app-card mt-[18px] overflow-hidden">

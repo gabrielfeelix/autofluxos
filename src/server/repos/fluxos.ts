@@ -24,6 +24,8 @@ export type FluxoSalvo = {
    * negócio pode ter uma triagem simples e uma automação com IA.
    */
   iaHabilitada: boolean
+  /** A gaveta em que ele aparece na lista (0029). Nulo = raiz. */
+  pastaId: string | null
 }
 
 /** Uma foto imutável do fluxo. É isto que as conversas executam. */
@@ -52,10 +54,11 @@ type Linha = {
   atualizado_em: string
   versao_publicada_id: string | null
   ia_habilitada: boolean
+  pasta_id: string | null
 }
 
 const COLUNAS =
-  'id, client_id, nome, rascunho, atualizado_em, versao_publicada_id, ia_habilitada'
+  'id, client_id, nome, rascunho, atualizado_em, versao_publicada_id, ia_habilitada, pasta_id'
 
 /**
  * `rascunho` é `jsonb`: o banco aceita qualquer coisa ali. Uma migração
@@ -80,6 +83,7 @@ function paraFluxo(linha: Linha): FluxoSalvo {
     atualizadoEm: linha.atualizado_em,
     versaoPublicadaId: linha.versao_publicada_id,
     iaHabilitada: linha.ia_habilitada,
+    pastaId: linha.pasta_id,
   }
 }
 

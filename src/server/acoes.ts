@@ -71,6 +71,8 @@ import { apagarContato, apagarContatos } from './repos/retencao'
 import { apagarRespostaRapida, criarRespostaRapida } from './repos/respostas-rapidas'
 import { alternarGatilho, apagarGatilho, criarGatilho } from './repos/gatilhos'
 import { alternarCampanha, apagarCampanha, criarCampanha } from './repos/campanhas'
+import { apagarPasta, criarPasta, moverFluxo } from './repos/pastas'
+import { acharModelo } from '@/exemplos/modelos'
 import {
   apagarEtiqueta,
   criarEtiqueta,
@@ -151,8 +153,15 @@ export async function acaoCriarFluxo(clienteId: string, formData: FormData) {
 
   const comIa = formData.get('ia') === 'on'
 
-  // Nasce válido de propósito — ver core/flow/novo.ts.
-  const fluxo = await criarFluxo(clienteId, nome, fluxoNovo(), comIa)
+  /**
+   * Nasce **válido** de propósito, com ou sem modelo.
+   *
+   * Modelo desconhecido cai no esqueleto em vez de recusar: o id vem de um
+   * formulário, e quem escolheu "em branco" numa aba velha não pode receber um
+   * erro por causa de um modelo que saiu da lista. Ver `exemplos/modelos.ts`.
+   */
+  const modelo = acharModelo(String(formData.get('modelo') ?? ''))
+  const fluxo = await criarFluxo(clienteId, nome, modelo?.grafo ?? fluxoNovo(), comIa)
   revalidatePath(`/clientes/${clienteId}`)
   redirect(`/clientes/${clienteId}/fluxos/${fluxo.id}`)
 }
@@ -568,6 +577,54 @@ export async function acaoApagarCampanha(
   revalidatePath(`/clientes/${clienteId}/fluxos`)
   revalidatePath(`/clientes/${clienteId}/leads`)
   return apagou ? { ok: true } : { ok: false, erro: 'esta campanha não existe mais' }
+}
+
+/**
+ * Cria uma gaveta para organizar fluxos (B5).
+ *
+ * Pasta não tem permissão e não herda nada — é um rótulo com nome. Pasta que
+ * decide quem vê o quê seria um segundo sistema de autorização paralelo ao de
+ * contas, e dois sistemas de autorização é como um deles fica para trás.
+ */
+export async function acaoCriarPasta(
+  clienteId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const r = await criarPasta(clienteId, String(formData.get('nome') ?? ''))
+  if (!r.ok) return { erro: r.motivo }
+
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  return { ok: true }
+}
+
+/** Apagar a pasta devolve os fluxos dela para a raiz. Nenhum desenho some. */
+export async function acaoApagarPasta(
+  clienteId: string,
+  pastaId: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const apagou = await apagarPasta(clienteId, pastaId)
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  return apagou ? { ok: true } : { ok: false, erro: 'esta pasta não existe mais' }
+}
+
+/** Move um fluxo entre gavetas. String vazia é a raiz. */
+export async function acaoMoverFluxo(
+  clienteId: string,
+  fluxoId: string,
+  pastaId: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const r = await moverFluxo(clienteId, fluxoId, pastaId === '' ? null : pastaId)
+  if (!r.ok) return { ok: false, erro: r.motivo }
+
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  return { ok: true }
 }
 
 // ---------------------------------------------------------------------------
