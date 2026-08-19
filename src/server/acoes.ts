@@ -39,6 +39,7 @@ import {
   contextoDeResposta,
   criarCanal,
   confirmarEntrega,
+  definirFluxosDoNumero,
   definirStatusDaSessao,
   desconectarNumero,
   encerrarAtendimento,
@@ -59,6 +60,10 @@ import {
 import { apagarConexao, criarConexao, trocarValor } from './repos/conexoes'
 import { apagarContato } from './repos/retencao'
 import { apagarRespostaRapida, criarRespostaRapida } from './repos/respostas-rapidas'
+import { alternarGatilho, apagarGatilho, criarGatilho } from './repos/gatilhos'
+import { OPERADORES_DE_GATILHO, type OperadorDeGatilho } from '@/core/gatilhos'
+import { rodarPosAtendimento } from './receber-mensagem'
+import { PAPEIS_DO_NUMERO, type PapelDoNumero } from '@/core/papeis-do-numero'
 
 /**
  * **Toda ação deste arquivo confere quem é antes de tocar em qualquer coisa.**
@@ -269,6 +274,91 @@ export async function acaoAlternarIa(fluxoId: string, clienteId: string, habilit
 }
 
 /**
+ * Troca os fluxos que um número executa — os quatro papéis de uma vez (A6).
+ *
+ * Campo em branco significa "sem fluxo neste papel", e não "não mexa": a tela
+ * manda os quatro sempre, então tirar um fluxo é escolher a opção vazia. Um
+ * formulário que ignorasse o vazio não teria como desfazer uma configuração.
+ */
+export async function acaoDefinirFluxosDoNumero(
+  clienteId: string,
+  canalId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const fluxos: Partial<Record<PapelDoNumero, string | null>> = {}
+  for (const papel of PAPEIS_DO_NUMERO) {
+    const valor = String(formData.get(papel) ?? '').trim()
+    fluxos[papel] = valor === '' ? null : valor
+  }
+
+  const r = await definirFluxosDoNumero(clienteId, canalId, fluxos)
+  if (!r.ok) return { erro: r.motivo }
+
+  revalidatePath(`/clientes/${clienteId}/numero`)
+  revalidatePath(`/clientes/${clienteId}`)
+  return { ok: true }
+}
+
+/** Cadastra uma palavra-chave que abre um fluxo. */
+export async function acaoCriarGatilho(
+  clienteId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const frase = String(formData.get('frase') ?? '').trim()
+  const operadorPedido = String(formData.get('operador') ?? 'contem')
+  const fluxoId = String(formData.get('fluxoId') ?? '').trim()
+
+  if (frase === '') return { erro: 'escreva a palavra ou frase' }
+  if (fluxoId === '') return { erro: 'escolha para qual fluxo esta palavra leva' }
+  // O operador chega de um formulário e o banco tem `check`, mas o erro do
+  // banco chegaria na tela como "alguma coisa quebrou". Recusar aqui devolve a
+  // frase certa para quem está olhando.
+  if (!(OPERADORES_DE_GATILHO as readonly string[]).includes(operadorPedido)) {
+    return { erro: 'operador inválido' }
+  }
+
+  const r = await criarGatilho(clienteId, {
+    frase,
+    operador: operadorPedido as OperadorDeGatilho,
+    fluxoId,
+  })
+  if (!r.ok) return { erro: r.motivo }
+
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  return { ok: true }
+}
+
+/** Liga/desliga sem apagar — a contagem de execuções é o histórico dele. */
+export async function acaoAlternarGatilho(
+  clienteId: string,
+  gatilhoId: string,
+  ativo: boolean,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const mudou = await alternarGatilho(clienteId, gatilhoId, ativo)
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  return mudou ? { ok: true } : { ok: false, erro: 'este gatilho não existe mais' }
+}
+
+export async function acaoApagarGatilho(
+  clienteId: string,
+  gatilhoId: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const apagou = await apagarGatilho(clienteId, gatilhoId)
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  return apagou ? { ok: true } : { ok: false, erro: 'este gatilho não existe mais' }
+}
+
+/**
  * Cadastra uma credencial de um cliente.
  *
  * O valor entra por aqui, vai para o cofre, e **nunca mais volta para a tela**.
@@ -475,6 +565,13 @@ export async function acaoEncerrarAtendimento(clienteId: string, contatoId: stri
   await exigirAcessoAoCliente(clienteId)
 
   await encerrarAtendimento(clienteId, contatoId)
+
+  // O quarto papel do número (A6). Vem **depois** de encerrar, e nunca antes:
+  // encerrar é o que tira a pessoa da fila, e é a única coisa aqui que não pode
+  // deixar de acontecer. O fluxo de pós-atendimento engole os próprios erros
+  // pelo mesmo motivo — ver `rodarPosAtendimento`.
+  await rodarPosAtendimento(clienteId, contatoId)
+
   revalidatePath(`/clientes/${clienteId}/leads`)
   revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
   revalidatePath(`/clientes/${clienteId}/inbox`)

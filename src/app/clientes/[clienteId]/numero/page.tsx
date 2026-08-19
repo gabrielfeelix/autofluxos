@@ -4,9 +4,18 @@ import { ClienteShell } from '@/components/design/cliente-shell'
 import { BotaoPerigo } from '@/components/design/botao-perigo'
 import { Dropdown } from '@/components/design/dropdown'
 import { FormularioSalvar } from '@/components/design/formulario-salvar'
-import { acaoConectarNumero, acaoDesconectarNumero } from '@/server/acoes'
+import {
+  acaoConectarNumero,
+  acaoDefinirFluxosDoNumero,
+  acaoDesconectarNumero,
+} from '@/server/acoes'
+import {
+  EXPLICACAO_DO_PAPEL,
+  PAPEIS_DO_NUMERO,
+  ROTULO_DO_PAPEL,
+} from '@/core/papeis-do-numero'
 import { acharCliente } from '@/server/repos/clientes'
-import { listarCanais } from '@/server/repos/conversas'
+import { fluxoDoPapel, listarCanais } from '@/server/repos/conversas'
 import { listarFluxos } from '@/server/repos/fluxos'
 
 export const dynamic = 'force-dynamic'
@@ -70,10 +79,15 @@ export default async function Pagina({
               {canais.map((canal) => {
                 const fluxo = fluxos.find((item) => item.id === canal.flowId)
                 const aviso = !fluxo
-                  ? 'Sem fluxo ligado — o bot não responde.'
+                  ? 'Sem fluxo principal — o bot não responde.'
                   : !fluxo.versaoPublicadaId
-                    ? 'O fluxo ligado ainda não foi publicado.'
+                    ? 'O fluxo principal ainda não foi publicado.'
                     : null
+                const salvarFluxos = acaoDefinirFluxosDoNumero.bind(
+                  null,
+                  cliente.id,
+                  canal.id,
+                )
 
                 return (
                   <li
@@ -99,17 +113,60 @@ export default async function Pagina({
                         )}
                       />
                     </div>
-                    <p className="mt-1.5 ml-4 text-[11.5px] text-muted">
-                      Executa:{' '}
-                      <strong className="font-semibold text-soft">
-                        {fluxo?.nome ?? 'nenhum fluxo'}
-                      </strong>
-                    </p>
                     {aviso && (
                       <p className="mt-2 ml-4 rounded-lg border border-amber-300/25 bg-amber-300/[0.08] px-2.5 py-2 text-[11.5px] text-amber-200">
                         {aviso}
                       </p>
                     )}
+
+                    <div className="mt-3 ml-4">
+                      <FormularioSalvar
+                        action={salvarFluxos}
+                        rotulo="Salvar fluxos"
+                        dica="Vazio = papel desligado."
+                      >
+                        <div className="space-y-3">
+                          {PAPEIS_DO_NUMERO.map((papel) => {
+                            const escolhido = fluxoDoPapel(canal, papel) ?? ''
+                            const naoPublicado = fluxos.some(
+                              (item) => item.id === escolhido && !item.versaoPublicadaId,
+                            )
+
+                            return (
+                              <div key={papel}>
+                                <p className="text-[11.5px] font-semibold text-soft">
+                                  {ROTULO_DO_PAPEL[papel]}
+                                </p>
+                                <p className="mt-0.5 mb-1.5 text-[11px] leading-4 text-dim">
+                                  {EXPLICACAO_DO_PAPEL[papel]}
+                                </p>
+                                <Dropdown
+                                  nome={papel}
+                                  valorInicial={escolhido}
+                                  rotuloAcessivel={`Fluxo de ${ROTULO_DO_PAPEL[papel]}`}
+                                  opcoes={[
+                                    { valor: '', rotulo: 'sem fluxo' },
+                                    ...fluxos.map((item) => ({
+                                      valor: item.id,
+                                      rotulo: item.nome,
+                                      ...(item.versaoPublicadaId
+                                        ? {}
+                                        : { detalhe: 'rascunho' }),
+                                    })),
+                                  ]}
+                                />
+                                {naoPublicado && (
+                                  <p className="mt-1 text-[11px] text-amber-200">
+                                    Este fluxo ainda não foi publicado — enquanto
+                                    estiver assim, este papel não fala.
+                                  </p>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </FormularioSalvar>
+                    </div>
                   </li>
                 )
               })}
@@ -127,9 +184,9 @@ export default async function Pagina({
                 />
                 <Dropdown
                   nome="flowId"
-                  rotuloAcessivel="Fluxo que o número executa"
+                  rotuloAcessivel="Fluxo principal do número"
                   opcoes={[
-                    { valor: '', rotulo: 'sem fluxo' },
+                    { valor: '', rotulo: 'sem fluxo principal' },
                     ...fluxos.map((fluxo) => ({
                       valor: fluxo.id,
                       rotulo: fluxo.nome,

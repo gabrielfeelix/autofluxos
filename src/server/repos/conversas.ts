@@ -1,13 +1,66 @@
 import 'server-only'
 import { sessaoSchema, type Sessao } from '@/core/engine/types'
+import type { PapelDoNumero } from '@/core/papeis-do-numero'
 import { db, ehIdInvalido } from '../db'
 
+/**
+ * Um número do WhatsApp e os fluxos que ele executa.
+ *
+ * `flowId` é o **principal** — a resposta padrão do número, o que roda quando
+ * nada mais casa. Os outros três são papéis que a 0024 acrescentou, todos
+ * opcionais: nulo em qualquer um deles significa exatamente o comportamento que
+ * o produto tinha antes de eles existirem.
+ */
 export type CanalSalvo = {
   id: string
   clienteId: string
   phoneNumberId: string
   flowId: string | null
+  /** A primeira conversa deste contato neste número. Nulo = usa o principal. */
+  fluxoBoasVindasId: string | null
+  /** Áudio, foto, figurinha, PDF. Nulo = Regra B, a conversa vai para alguém. */
+  fluxoMidiaId: string | null
+  /** Roda quando uma pessoa clica em "Já atendi". Nulo = não roda nada. */
+  fluxoPosAtendimentoId: string | null
   status: string
+}
+
+/** Qual coluna guarda cada papel. Um lugar só, para leitura e escrita casarem. */
+export const COLUNA_DO_PAPEL: Record<PapelDoNumero, string> = {
+  principal: 'flow_id',
+  boasVindas: 'flow_boas_vindas_id',
+  midia: 'flow_midia_id',
+  posAtendimento: 'flow_pos_atendimento_id',
+}
+
+const COLUNAS_DO_CANAL =
+  'id, client_id, phone_number_id, flow_id, flow_boas_vindas_id, flow_midia_id, flow_pos_atendimento_id, status'
+
+function paraCanal(linha: Record<string, unknown>): CanalSalvo {
+  return {
+    id: linha.id as string,
+    clienteId: linha.client_id as string,
+    phoneNumberId: linha.phone_number_id as string,
+    flowId: (linha.flow_id ?? null) as string | null,
+    fluxoBoasVindasId: (linha.flow_boas_vindas_id ?? null) as string | null,
+    fluxoMidiaId: (linha.flow_midia_id ?? null) as string | null,
+    fluxoPosAtendimentoId: (linha.flow_pos_atendimento_id ?? null) as string | null,
+    status: linha.status as string,
+  }
+}
+
+/** Os fluxos que este número executa, por papel. Nulo = papel não configurado. */
+export function fluxoDoPapel(canal: CanalSalvo, papel: PapelDoNumero): string | null {
+  switch (papel) {
+    case 'principal':
+      return canal.flowId
+    case 'boasVindas':
+      return canal.fluxoBoasVindasId
+    case 'midia':
+      return canal.fluxoMidiaId
+    case 'posAtendimento':
+      return canal.fluxoPosAtendimentoId
+  }
 }
 
 export type Contato = {
@@ -29,20 +82,14 @@ export type SessaoSalva = {
 export async function acharCanalPorNumero(phoneNumberId: string): Promise<CanalSalvo | null> {
   const { data, error } = await db()
     .from('channels')
-    .select('id, client_id, phone_number_id, flow_id, status')
+    .select(COLUNAS_DO_CANAL)
     .eq('phone_number_id', phoneNumberId)
     .maybeSingle()
 
   if (error) throw new Error(`não deu para achar o canal: ${error.message}`)
   if (!data) return null
 
-  return {
-    id: data.id as string,
-    clienteId: data.client_id as string,
-    phoneNumberId: data.phone_number_id as string,
-    flowId: data.flow_id as string | null,
-    status: data.status as string,
-  }
+  return paraCanal(data as Record<string, unknown>)
 }
 
 export async function acharOuCriarContato(
@@ -278,6 +325,15 @@ export type ContextoDeResposta = {
   sessaoId: string | null
   /** Quando a pessoa escreveu pela última vez. `null` = nunca escreveu. */
   ultimaEntradaEm: string | null
+  /**
+   * O id, na Meta, da última mensagem que ela mandou.
+   *
+   * Só o pós-atendimento (A6) precisa disto: ele roda um fluxo sem nenhuma
+   * mensagem tendo chegado, e `aguardarResposta` — o "digitando" e o atraso
+   * entre blocos — exige o id de uma entrada. Sem ele o atraso desenhado no
+   * fluxo simplesmente não aconteceria, calado.
+   */
+  ultimaEntradaWaId: string | null
 }
 
 export async function contextoDeResposta(
@@ -306,7 +362,7 @@ export async function contextoDeResposta(
         .maybeSingle(),
       db()
         .from('messages')
-        .select('ts')
+        .select('ts, wa_message_id')
         .eq('contact_id', contatoId)
         .eq('direcao', 'entrada')
         .order('ts', { ascending: false })
@@ -325,6 +381,7 @@ export async function contextoDeResposta(
     canal,
     sessaoId: (sessao as { id: string } | null)?.id ?? null,
     ultimaEntradaEm: (entrada as { ts: string } | null)?.ts ?? null,
+    ultimaEntradaWaId: (entrada as { wa_message_id: string | null } | null)?.wa_message_id ?? null,
   }
 }
 
@@ -339,7 +396,7 @@ async function canalDaResposta(
   clienteId: string,
   canalDaSessao: string | undefined,
 ): Promise<CanalSalvo | null> {
-  const consulta = db().from('channels').select('id, client_id, phone_number_id, flow_id, status')
+  const consulta = db().from('channels').select(COLUNAS_DO_CANAL)
 
   const { data, error } = canalDaSessao
     ? await consulta.eq('id', canalDaSessao).maybeSingle()
@@ -353,13 +410,7 @@ async function canalDaResposta(
   if (error) throw new Error(`não deu para achar o canal: ${error.message}`)
   if (!data) return null
 
-  return {
-    id: data.id as string,
-    clienteId: data.client_id as string,
-    phoneNumberId: data.phone_number_id as string,
-    flowId: data.flow_id as string | null,
-    status: data.status as string,
-  }
+  return paraCanal(data as Record<string, unknown>)
 }
 
 /**
@@ -516,17 +567,63 @@ export async function criarCanal(dados: {
       waba_id: dados.wabaId ?? null,
       flow_id: dados.flowId ?? null,
     })
-    .select('id, client_id, phone_number_id, flow_id, status')
+    .select(COLUNAS_DO_CANAL)
     .single()
 
   if (error) throw new Error(`não deu para conectar o número: ${error.message}`)
-  return {
-    id: data.id as string,
-    clienteId: data.client_id as string,
-    phoneNumberId: data.phone_number_id as string,
-    flowId: data.flow_id as string | null,
-    status: data.status as string,
+  return paraCanal(data as Record<string, unknown>)
+}
+
+/**
+ * Troca os fluxos que um número executa — os quatro papéis de uma vez (0024).
+ *
+ * De uma vez, e não um por chamada, porque eles se leem juntos: a tela mostra
+ * os quatro lado a lado e quem mexe num costuma mexer no vizinho. Salvar em
+ * quatro idas deixaria estados intermediários visíveis no WhatsApp de gente de
+ * verdade — o número rodando o fluxo de mídia novo com o principal ainda velho.
+ *
+ * **Todo fluxo é conferido contra este cliente antes de entrar.** Os ids vêm de
+ * um formulário; a chave estrangeira só sabe que o fluxo existe, não de quem
+ * ele é. Sem esta conferência, postar o id de um fluxo de outra conta poria o
+ * desenho dele para atender no número deste.
+ */
+export async function definirFluxosDoNumero(
+  clienteId: string,
+  canalId: string,
+  fluxos: Partial<Record<PapelDoNumero, string | null>>,
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  const escolhidos = [...new Set(Object.values(fluxos).filter((id): id is string => !!id))]
+
+  if (escolhidos.length > 0) {
+    const { data, error } = await db()
+      .from('flows')
+      .select('id')
+      .eq('client_id', clienteId)
+      .in('id', escolhidos)
+
+    if (ehIdInvalido(error)) return { ok: false, motivo: 'escolha um fluxo válido' }
+    if (error) throw new Error(`não deu para conferir os fluxos: ${error.message}`)
+    if ((data?.length ?? 0) !== escolhidos.length) {
+      return { ok: false, motivo: 'algum dos fluxos escolhidos não é deste cliente' }
+    }
   }
+
+  const mudanca: Record<string, string | null> = {}
+  for (const [papel, fluxoId] of Object.entries(fluxos)) {
+    mudanca[COLUNA_DO_PAPEL[papel as PapelDoNumero]] = fluxoId ?? null
+  }
+
+  const { data, error } = await db()
+    .from('channels')
+    .update(mudanca)
+    .eq('id', canalId)
+    .eq('client_id', clienteId)
+    .select('id')
+
+  if (ehIdInvalido(error)) return { ok: false, motivo: 'este número não existe mais' }
+  if (error) throw new Error(`não deu para salvar os fluxos do número: ${error.message}`)
+  if ((data?.length ?? 0) !== 1) return { ok: false, motivo: 'este número não existe mais' }
+  return { ok: true }
 }
 
 /**
@@ -573,19 +670,13 @@ export async function desconectarNumero(
 export async function listarCanais(clienteId: string): Promise<CanalSalvo[]> {
   const { data, error } = await db()
     .from('channels')
-    .select('id, client_id, phone_number_id, flow_id, status')
+    .select(COLUNAS_DO_CANAL)
     .eq('client_id', clienteId)
     .order('criado_em', { ascending: true })
 
   if (ehIdInvalido(error)) return []
   if (error) throw new Error(`não deu para listar os canais: ${error.message}`)
-  return (data as Record<string, unknown>[]).map((c) => ({
-    id: c.id as string,
-    clienteId: c.client_id as string,
-    phoneNumberId: c.phone_number_id as string,
-    flowId: c.flow_id as string | null,
-    status: c.status as string,
-  }))
+  return (data as Record<string, unknown>[]).map(paraCanal)
 }
 
 /**

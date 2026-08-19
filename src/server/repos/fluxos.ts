@@ -1,7 +1,7 @@
 import 'server-only'
 import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
 import { validar, type Problema } from '@/core/flow/validar'
-import { db, ehIdInvalido } from '../db'
+import { db, ehIdInvalido, pareceUuid } from '../db'
 import { listarConexoes } from './conexoes'
 import { acharCliente } from './clientes'
 
@@ -29,6 +29,16 @@ export type FluxoSalvo = {
 /** Uma foto imutável do fluxo. É isto que as conversas executam. */
 export type VersaoPublicada = {
   id: string
+  /**
+   * De qual fluxo esta versão saiu.
+   *
+   * A sessão guarda a **versão**, não o fluxo, e até a A6 dava para deduzir o
+   * fluxo pelo número que a conversa entrou (era um só). Com quatro papéis por
+   * número e gatilhos que abrem qualquer fluxo, deduzir passou a errar — e
+   * quem lê isso é o portão comercial da IA, que não pode olhar para o contrato
+   * do fluxo errado.
+   */
+  fluxoId: string
   versao: number
   publicadoEm: string
   grafo: Fluxo
@@ -135,7 +145,7 @@ export async function salvarRascunho(
 export async function acharVersao(id: string): Promise<VersaoPublicada | null> {
   const { data, error } = await db()
     .from('flow_versions')
-    .select('id, versao, publicado_em, grafo')
+    .select('id, flow_id, versao, publicado_em, grafo')
     .eq('id', id)
     .maybeSingle()
 
@@ -145,6 +155,7 @@ export async function acharVersao(id: string): Promise<VersaoPublicada | null> {
 
   return {
     id: data.id as string,
+    fluxoId: data.flow_id as string,
     versao: data.versao as number,
     publicadoEm: data.publicado_em as string,
     grafo: fluxoSchema.parse(data.grafo),
@@ -165,7 +176,7 @@ export async function acharVersaoDoFluxo(
 ): Promise<VersaoPublicada | null> {
   const { data, error } = await db()
     .from('flow_versions')
-    .select('id, versao, publicado_em, grafo')
+    .select('id, flow_id, versao, publicado_em, grafo')
     .eq('id', versaoId)
     .eq('flow_id', fluxoId)
     .maybeSingle()
@@ -176,13 +187,16 @@ export async function acharVersaoDoFluxo(
 
   return {
     id: data.id as string,
+    fluxoId: data.flow_id as string,
     versao: data.versao as number,
     publicadoEm: data.publicado_em as string,
     grafo: fluxoSchema.parse(data.grafo),
   }
 }
 
-export async function listarVersoes(fluxoId: string): Promise<Omit<VersaoPublicada, 'grafo'>[]> {
+export async function listarVersoes(
+  fluxoId: string,
+): Promise<Omit<VersaoPublicada, 'grafo' | 'fluxoId'>[]> {
   const { data, error } = await db()
     .from('flow_versions')
     .select('id, versao, publicado_em')
@@ -256,11 +270,18 @@ export async function publicar(
 
   if (error) throw new Error(`não deu para publicar: ${error.message}`)
 
-  const linha = data as { id: string; versao: number; publicado_em: string; grafo: unknown }
+  const linha = data as {
+    id: string
+    flow_id: string
+    versao: number
+    publicado_em: string
+    grafo: unknown
+  }
   return {
     ok: true,
     versao: {
       id: linha.id,
+      fluxoId: linha.flow_id,
       versao: linha.versao,
       publicadoEm: linha.publicado_em,
       grafo: fluxoSchema.parse(linha.grafo),
@@ -283,19 +304,36 @@ export async function apagarFluxo(
   clienteId: string,
   fluxoId: string,
 ): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  // O filtro abaixo é uma string do PostgREST, e id que vira sintaxe é a mesma
+  // classe de erro que injeção. Conferir a forma antes é mais barato do que
+  // escapar, e um id que não parece uuid não existe mesmo.
+  if (!pareceUuid(fluxoId)) return { ok: false, motivo: 'esta automação não existe mais' }
+
+  // **Os quatro papéis, não só o principal** (0024). Um fluxo que só é o
+  // "padrão para mídia" de um número não aparecia nesta conferência quando ela
+  // olhava apenas `flow_id`, e apagá-lo devolveria a mídia ao handoff sem
+  // ninguém ter pedido — em silêncio, que é o pior jeito de um produto mudar.
   const { data: canais, error: erroDosCanais } = await db()
     .from('channels')
     .select('phone_number_id')
-    .eq('flow_id', fluxoId)
+    .or(
+      [
+        `flow_id.eq.${fluxoId}`,
+        `flow_boas_vindas_id.eq.${fluxoId}`,
+        `flow_midia_id.eq.${fluxoId}`,
+        `flow_pos_atendimento_id.eq.${fluxoId}`,
+      ].join(','),
+    )
 
   if (ehIdInvalido(erroDosCanais)) return { ok: false, motivo: 'esta automação não existe mais' }
   if (erroDosCanais) throw new Error(`não deu para conferir os números: ${erroDosCanais.message}`)
 
   const ligados = (canais as { phone_number_id: string }[]) ?? []
   if (ligados.length > 0) {
+    const numeros = [...new Set(ligados.map((c) => c.phone_number_id))]
     return {
       ok: false,
-      motivo: `esta automação está ligada ao número ${ligados.map((c) => c.phone_number_id).join(', ')}. Desligue lá primeiro — apagar agora deixaria o bot mudo no WhatsApp.`,
+      motivo: `esta automação está ligada ao número ${numeros.join(', ')}. Desligue lá primeiro — apagar agora deixaria o bot mudo no WhatsApp.`,
     }
   }
 

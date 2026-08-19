@@ -31,6 +31,21 @@ export function ehIdInvalido(error: { code?: string } | null | undefined): boole
   return error?.code === '22P02'
 }
 
+/**
+ * Isto **parece** um uuid?
+ *
+ * Existe para um caso só: o filtro `or(...)` do PostgREST é uma string, e
+ * montar string de consulta com id vindo de fora é a mesma classe de problema
+ * que injeção de SQL — uma vírgula no lugar errado vira outro filtro. Onde o
+ * id entra como parâmetro (`eq`, `in`) o driver escapa e isto não faz falta.
+ *
+ * Não substitui `ehIdInvalido`: aquele trata o id torto que **chegou** ao
+ * banco; este impede que ele chegue como sintaxe.
+ */
+export function pareceUuid(valor: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(valor)
+}
+
 let cache: SupabaseClient | null = null
 
 export function db(): SupabaseClient {

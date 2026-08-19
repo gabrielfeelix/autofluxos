@@ -7,9 +7,20 @@ import {
   RotuloCampo,
 } from '@/components/design/modal-formulario'
 import { validar } from '@/core/flow/validar'
-import { acaoApagarFluxo, acaoCriarFluxo } from '@/server/acoes'
+import { Dropdown } from '@/components/design/dropdown'
+import { FormularioSalvar } from '@/components/design/formulario-salvar'
+import { InterruptorDeGatilho } from '@/components/gatilhos/interruptor'
+import { OPERADORES_DE_GATILHO, ROTULO_DO_OPERADOR } from '@/core/gatilhos'
+import { PAPEIS_DO_NUMERO, ROTULO_DO_PAPEL } from '@/core/papeis-do-numero'
+import {
+  acaoApagarFluxo,
+  acaoApagarGatilho,
+  acaoCriarFluxo,
+  acaoCriarGatilho,
+} from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
-import { listarCanais } from '@/server/repos/conversas'
+import { fluxoDoPapel, listarCanais } from '@/server/repos/conversas'
+import { listarGatilhos } from '@/server/repos/gatilhos'
 import { listarFluxos } from '@/server/repos/fluxos'
 import { contarExecucoesPorFluxo } from '@/server/repos/metricas'
 
@@ -24,12 +35,31 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [fluxos, canais, execucoes] = await Promise.all([
+  const [fluxos, canais, execucoes, gatilhos] = await Promise.all([
     listarFluxos(cliente.id),
     listarCanais(cliente.id),
     contarExecucoesPorFluxo(cliente.id),
+    listarGatilhos(cliente.id),
   ])
   const criarComCliente = acaoCriarFluxo.bind(null, cliente.id)
+  const criarGatilhoComCliente = acaoCriarGatilho.bind(null, cliente.id)
+
+  /**
+   * Em quais papéis de número este fluxo está ligado.
+   *
+   * Os quatro, e não só o principal: um fluxo que é o "padrão para mídia" de um
+   * número está tão no ar quanto o principal, e a lista que dissesse
+   * "rascunho, ninguém usa" sobre ele estaria mentindo para quem vai apagá-lo.
+   */
+  const papeisDoFluxo = (fluxoId: string) => [
+    ...new Set(
+      canais.flatMap((canal) =>
+        PAPEIS_DO_NUMERO.filter((papel) => fluxoDoPapel(canal, papel) === fluxoId).map(
+          (papel) => ROTULO_DO_PAPEL[papel],
+        ),
+      ),
+    ),
+  ]
 
   return (
     <ClienteShell cliente={cliente} ativa="fluxos">
@@ -98,7 +128,7 @@ export default async function Pagina({
                 })
                 // Fluxo ligado a um número é o que está atendendo agora. Dizer
                 // isso aqui evita a viagem até a tela do número só para conferir.
-                const emUso = canais.some((canal) => canal.flowId === fluxo.id)
+                const papeis = papeisDoFluxo(fluxo.id)
                 const totalDeExecucoes = execucoes.get(fluxo.id) ?? 0
 
                 return (
@@ -121,7 +151,7 @@ export default async function Pagina({
                         <span className="mt-0.5 block text-[11px] text-dim">
                           {fluxo.rascunho.nodes.length} blocos
                           {fluxo.iaHabilitada ? ' · IA ativa' : ''}
-                          {emUso ? ' · ligado a um número' : ''}
+                          {papeis.length > 0 ? ` · ${papeis.join(', ')}` : ''}
                         </span>
                       </span>
                       {!validacao.ok && (
@@ -150,6 +180,117 @@ export default async function Pagina({
               })}
             </ul>
           )}
+        </section>
+
+        <section className="app-card mt-[18px] overflow-hidden">
+          <header className="border-b border-white/[0.06] px-5 py-4">
+            <h2 className="text-[14.5px] font-bold">Palavras-chave</h2>
+            <p className="mt-0.5 text-[12px] leading-5 text-dim">
+              Uma frase que leva direto a um fluxo, de qualquer ponto da conversa
+              — o mesmo que “atendente” já faz para chamar uma pessoa, só que
+              escrito por você. Ela interrompe o que estava em andamento, e nunca
+              atropela quem pediu para falar com alguém.
+            </p>
+          </header>
+
+          {gatilhos.length === 0 ? (
+            <div className="border-b border-white/[0.045] px-5 py-10 text-center">
+              <p className="text-[13px] font-semibold text-soft">
+                Nenhuma palavra-chave ainda
+              </p>
+              <p className="mt-1 text-xs leading-5 text-dim">
+                Sem elas, todo mundo entra pelo mesmo lugar e percorre a triagem
+                inteira até chegar onde queria.
+              </p>
+            </div>
+          ) : (
+            <ul>
+              {gatilhos.map((gatilho) => {
+                const destino = fluxos.find((item) => item.id === gatilho.fluxoId)
+
+                return (
+                  <li
+                    key={gatilho.id}
+                    className="flex items-center gap-3 border-b border-white/[0.045] px-5 py-3.5 last:border-0"
+                  >
+                    <InterruptorDeGatilho
+                      clienteId={cliente.id}
+                      gatilhoId={gatilho.id}
+                      ativo={gatilho.ativo}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <strong
+                        className={`block truncate text-[13px] font-semibold ${gatilho.ativo ? '' : 'text-dim line-through'}`}
+                      >
+                        {gatilho.frase}
+                      </strong>
+                      <span className="mt-0.5 block truncate text-[11px] text-dim">
+                        {ROTULO_DO_OPERADOR[gatilho.operador]} · abre{' '}
+                        <strong className="font-semibold text-muted">
+                          {destino?.nome ?? 'um fluxo que sumiu'}
+                        </strong>
+                        {destino && !destino.versaoPublicadaId
+                          ? ' · ainda não publicado, então não abre nada'
+                          : ''}
+                      </span>
+                    </span>
+                    <span className="whitespace-nowrap text-[11px] text-dim">
+                      <strong className="font-semibold text-soft">{gatilho.execucoes}</strong>{' '}
+                      {gatilho.execucoes === 1 ? 'execução' : 'execuções'}
+                    </span>
+                    <BotaoPerigo
+                      titulo="Apaga a palavra-chave e a contagem dela. Para só desligar, use o interruptor."
+                      pergunta={`Apagar a palavra-chave “${gatilho.frase}”? A contagem de ${gatilho.execucoes} execução(ões) some junto.`}
+                      acao={acaoApagarGatilho.bind(null, cliente.id, gatilho.id)}
+                    />
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+
+          <div className="p-5">
+            {fluxos.length === 0 ? (
+              <p className="text-[11.5px] text-dim">
+                Crie um fluxo primeiro — uma palavra-chave precisa de um lugar
+                para levar.
+              </p>
+            ) : (
+              <FormularioSalvar
+                action={criarGatilhoComCliente}
+                rotulo="Adicionar"
+                dica="“Contém” casa a palavra inteira, não pedaço de palavra."
+              >
+                <div className="grid gap-2.5 md:grid-cols-[1fr_120px_1fr]">
+                  <input
+                    name="frase"
+                    required
+                    placeholder="ex.: cancelar"
+                    aria-label="Palavra ou frase"
+                    className="app-field px-3 py-2.5 text-[12.5px]"
+                  />
+                  <Dropdown
+                    nome="operador"
+                    rotuloAcessivel="Como comparar a frase"
+                    valorInicial="contem"
+                    opcoes={OPERADORES_DE_GATILHO.map((operador) => ({
+                      valor: operador,
+                      rotulo: ROTULO_DO_OPERADOR[operador],
+                    }))}
+                  />
+                  <Dropdown
+                    nome="fluxoId"
+                    rotuloAcessivel="Fluxo que esta palavra abre"
+                    opcoes={fluxos.map((item) => ({
+                      valor: item.id,
+                      rotulo: item.nome,
+                      ...(item.versaoPublicadaId ? {} : { detalhe: 'rascunho' }),
+                    }))}
+                  />
+                </div>
+              </FormularioSalvar>
+            )}
+          </div>
         </section>
       </main>
     </ClienteShell>

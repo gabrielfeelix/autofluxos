@@ -103,7 +103,7 @@ export function executar(
 
   const porId = indexar(fluxo)
 
-  if (entrada.tipo === 'texto' && pediuHumano(entrada.texto)) {
+  if (entrada.tipo === 'texto' && pediuAtendente(entrada.texto)) {
     return transferir(s, acoes, 'a pessoa pediu para falar com um atendente', contexto)
   }
 
@@ -547,7 +547,16 @@ function proximo(fluxo: Fluxo, noId: string, saida?: string): string | null {
   return saidas[0]?.target ?? null
 }
 
-function pediuHumano(texto: string): boolean {
+/**
+ * A pessoa pediu para falar com gente.
+ *
+ * Exportada porque o escape **tem que ganhar dos gatilhos do cliente** (A6). A
+ * decisão de qual fluxo abrir acontece no servidor, antes do motor rodar; se
+ * ela não conhecesse esta lista, um gatilho com a palavra "atendente" — ou
+ * qualquer frase que apareça dentro de "quero falar com uma pessoa" — engoliria
+ * o pedido e mandaria a pessoa para um fluxo em vez de para alguém.
+ */
+export function pediuAtendente(texto: string): boolean {
   const t = normalizar(texto)
   return PALAVRAS_ESCAPE.some((palavra) => t.includes(palavra))
 }

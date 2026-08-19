@@ -108,7 +108,7 @@ export default async function Pagina({
           <Linha
             href={`/clientes/${cliente.id}/numero`}
             titulo="Número do WhatsApp"
-            descricao="Qual número atende, qual fluxo ele executa, e o endereço para o painel da Meta."
+            descricao="Qual número atende, que fluxo ele executa em cada papel, e o endereço para o painel da Meta."
             estado={
               <Selo tom={canais.length === 0 ? 'alerta' : 'ok'}>
                 {canais.length === 0

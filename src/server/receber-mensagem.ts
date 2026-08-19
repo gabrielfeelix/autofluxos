@@ -7,12 +7,16 @@ import { alertar, type ContextoDoAlerta } from './alertar'
 import { executarComEfeitos, type OpcoesDeEfeitos } from './efeitos/resolver'
 import { escolherModelo } from './ia/modelo'
 import { acharCliente, horarioDoCliente } from './repos/clientes'
-import { acharFluxo, acharVersao } from './repos/fluxos'
+import { acharFluxo, acharVersao, type VersaoPublicada } from './repos/fluxos'
 import { lerConversa } from './repos/leads'
 import {
   ATENDIMENTO_SEMPRE_ABERTO,
+  pediuAtendente,
   type ContextoDoAtendimento,
 } from '@/core/engine/executar'
+import { casarGatilho } from '@/core/gatilhos'
+import { dentroDaJanela } from '@/channels/janela'
+import { contarDisparo, gatilhosAtivos } from './repos/gatilhos'
 import {
   atendimentoAberto,
   proximaAbertura,
@@ -22,6 +26,7 @@ import {
   acharCanalPorNumero,
   acharContato,
   acharOuCriarContato,
+  contextoDeResposta,
   alterarAutomacaoDoContato,
   criarSessao,
   definirStatusDaSessao,
@@ -35,6 +40,7 @@ import {
   vincularSessaoNaMensagem,
   type CanalSalvo,
   type Contato,
+  type SessaoSalva,
 } from './repos/conversas'
 import { travarContato } from './repos/travas'
 
@@ -218,6 +224,84 @@ async function desistirDaVez(canalSalvo: CanalSalvo, contato: Contato): Promise<
   await definirStatusDaSessao(salva.id, 'humano')
 }
 
+/**
+ * Qual fluxo esta mensagem abre — e por quê.
+ *
+ * `null` significa "não abre nada": ou continua a conversa que já estava
+ * andando, ou não há nada publicado para dizer.
+ */
+type Abertura = {
+  versaoId: string
+  /** Preenchido só quando quem escolheu foi um gatilho, para contar o disparo. */
+  gatilhoId?: string
+}
+
+/**
+ * A ordem de decisão da entrada — o coração da A6.
+ *
+ * Até aqui era uma linha só: conversa nova roda `channels.flow_id`. Agora são
+ * quatro papéis e as palavras-chave da conta, e a ordem entre eles **é** a
+ * regra do produto:
+ *
+ * 1. **O escape global ganha de tudo.** Antes de olhar gatilho nenhum: quem
+ *    escreveu "quero falar com uma pessoa" pediu uma pessoa, e um gatilho do
+ *    cliente com a palavra "falar" não pode sequestrar isso. A lista mora no
+ *    motor (`PALAVRAS_ESCAPE`) e é lida de lá, não copiada para cá.
+ * 2. **Gatilho por palavra-chave**, e ele **interrompe** a conversa em
+ *    andamento. Parece agressivo e é o comportamento que já existia: o escape
+ *    global sempre funcionou de dentro de qualquer pergunta. Um gatilho é o
+ *    escape do cliente — tratá-lo diferente seria duas regras para a mesma
+ *    ideia. Só casa em texto digitado: clique em botão nunca é sequestrado.
+ * 3. **Fluxo de mídia**, que é o que aposenta a Regra B. Também interrompe,
+ *    pelo mesmo motivo — e porque o que ele substitui (handoff imediato)
+ *    interrompia ainda mais.
+ * 4. **Boas-vindas**, só na primeira conversa deste contato **neste número**.
+ * 5. **O principal**, que é a resposta padrão, só quando não há conversa viva
+ *    para continuar.
+ *
+ * Papel apontando para fluxo sem versão publicada cai para o próximo candidato,
+ * em vez de emudecer o número. Silêncio já é o preço de não ter nada publicado
+ * em lugar nenhum; não precisa ser também o preço de configurar um papel a mais.
+ */
+async function escolherAbertura(
+  canalSalvo: CanalSalvo,
+  estado: { temSessaoViva: boolean; primeiraVez: boolean },
+  entrada: Entrada,
+): Promise<Abertura | null> {
+  const candidatos: { fluxoId: string; gatilhoId?: string }[] = []
+
+  if (entrada.tipo === 'texto' && !pediuAtendente(entrada.texto)) {
+    const casado = casarGatilho(await gatilhosAtivos(canalSalvo.clienteId), entrada.texto)
+    if (casado) candidatos.push({ fluxoId: casado.fluxoId, gatilhoId: casado.id })
+  }
+
+  if (entrada.tipo === 'midia' && canalSalvo.fluxoMidiaId) {
+    candidatos.push({ fluxoId: canalSalvo.fluxoMidiaId })
+  }
+
+  if (estado.primeiraVez && canalSalvo.fluxoBoasVindasId) {
+    candidatos.push({ fluxoId: canalSalvo.fluxoBoasVindasId })
+  }
+
+  if (!estado.temSessaoViva && canalSalvo.flowId) {
+    candidatos.push({ fluxoId: canalSalvo.flowId })
+  }
+
+  for (const candidato of candidatos) {
+    const fluxo = await acharFluxo(candidato.fluxoId)
+    // Nada publicado: este candidato não fala. Melhor o próximo — ou o silêncio
+    // — do que responder com um rascunho que ninguém revisou.
+    if (fluxo?.versaoPublicadaId) {
+      return {
+        versaoId: fluxo.versaoPublicadaId,
+        ...(candidato.gatilhoId ? { gatilhoId: candidato.gatilhoId } : {}),
+      }
+    }
+  }
+
+  return null
+}
+
 async function avancarConversa(
   canalSalvo: CanalSalvo,
   contato: Contato,
@@ -226,34 +310,46 @@ async function avancarConversa(
   texto: string | null,
   fabricaDeCanal: FabricaDeCanal,
 ): Promise<void> {
-  let salva = await ultimaSessao(contato.id, canalSalvo.id)
+  const anterior = await ultimaSessao(contato.id, canalSalvo.id)
 
   // O humano assumiu. O bot fica calado — a mensagem fica registrada, e quem
-  // responde é a pessoa, do celular dela.
-  if (salva && salva.sessao.status === 'humano') {
-    await vincularSessaoNaMensagem(mensagem.id, salva.id)
+  // responde é a pessoa, do celular dela. Vale inclusive contra gatilho: o
+  // cliente cadastrou palavra-chave para o bot, não para atropelar quem já
+  // está conversando com a pessoa.
+  if (anterior && anterior.sessao.status === 'humano') {
+    await vincularSessaoNaMensagem(mensagem.id, anterior.id)
     return
   }
 
-  const conversaNova = !salva || salva.sessao.status === 'encerrada'
-  let grafoId: string
+  const viva = anterior && anterior.sessao.status !== 'encerrada' ? anterior : null
+  const abertura = await escolherAbertura(
+    canalSalvo,
+    { temSessaoViva: Boolean(viva), primeiraVez: anterior === null },
+    entrada,
+  )
 
-  if (conversaNova) {
-    if (!canalSalvo.flowId) return
+  let salva: SessaoSalva
+  const conversaNova = abertura !== null
 
-    const fluxo = await acharFluxo(canalSalvo.flowId)
-    // Nada publicado: o bot não fala. Melhor silêncio do que responder com um
-    // rascunho que ninguém revisou.
-    if (!fluxo?.versaoPublicadaId) return
+  if (abertura) {
+    // A conversa que estava andando morre aqui, e morre **encerrada**: deixar
+    // uma sessão `ativa` para trás faria a próxima leitura achar duas vivas no
+    // mesmo número, e as métricas contariam uma conversa que ninguém terminou.
+    if (viva) await definirStatusDaSessao(viva.id, 'encerrada')
 
-    grafoId = fluxo.versaoPublicadaId
-    salva = await criarSessao(contato.id, canalSalvo.id, grafoId, sessaoNova())
+    salva = await criarSessao(contato.id, canalSalvo.id, abertura.versaoId, sessaoNova())
+    // Depois de criar a sessão de propósito: o contador é da tela, e nunca pode
+    // ficar entre a escolha do fluxo e a conversa existir.
+    if (abertura.gatilhoId) await contarDisparo(abertura.gatilhoId)
+  } else if (viva) {
+    salva = viva
   } else {
-    grafoId = salva!.flowVersionId
+    // Nenhum papel deste número tem versão publicada. O bot não fala.
+    return
   }
 
-  const versao = await acharVersao(grafoId)
-  if (!versao || !salva) return
+  const versao = await acharVersao(salva.flowVersionId)
+  if (!versao) return
 
   await vincularSessaoNaMensagem(mensagem.id, salva.id)
 
@@ -266,12 +362,14 @@ async function avancarConversa(
    * não custa nada.
    */
   const [opcoesDeIa, horario] = await Promise.all([
-    prepararIa(canalSalvo, contato.id, versao.grafo, texto),
+    prepararIa(canalSalvo, contato.id, versao, texto),
     horarioDoCliente(canalSalvo.clienteId),
   ])
 
   // Conversa nova começa pelo início do fluxo. A primeira mensagem da pessoa
-  // é o gatilho, não uma resposta — ela ainda não foi perguntada nada.
+  // é o gatilho, não uma resposta — ela ainda não foi perguntada nada. Vale
+  // também para gatilho e para mídia: a frase que abriu o fluxo não é para ser
+  // consumida como resposta do primeiro bloco dele.
   const resultado = await executarComEfeitos(
     versao.grafo,
     salva.sessao,
@@ -284,6 +382,76 @@ async function avancarConversa(
 }
 
 /**
+ * O fluxo de pós-atendimento, disparado por "Já atendi" (A6).
+ *
+ * É o único dos quatro papéis que **ninguém pediu por mensagem**: o gatilho é
+ * uma pessoa da equipe encerrando o atendimento. Isso muda três coisas em
+ * relação ao caminho do webhook, e as três estão aqui:
+ *
+ * - **a janela de 24h é conferida antes de falar.** Nos outros papéis a pessoa
+ *   acabou de escrever, então a janela está aberta por definição. Aqui pode
+ *   fazer dias — e o WhatsApp recusaria, virando handoff logo depois de alguém
+ *   ter marcado a conversa como resolvida;
+ * - **a automação pausada é respeitada.** AutoOff cala o bot para aquele
+ *   contato, e encerrar um atendimento não é motivo para ele voltar a falar;
+ * - **nada aqui pode derrubar o "Já atendi".** Quem chama já resolveu o
+ *   handoff; um erro daqui não pode desfazer isso, então tudo é log e alerta.
+ */
+export async function rodarPosAtendimento(
+  clienteId: string,
+  contatoId: string,
+  fabricaDeCanal: FabricaDeCanal = canalPadrao,
+): Promise<void> {
+  const contexto = await contextoDeResposta(clienteId, contatoId)
+  if (!contexto?.canal.fluxoPosAtendimentoId) return
+
+  if (!dentroDaJanela(contexto.ultimaEntradaEm)) return
+
+  const contato = await acharContato(contatoId)
+  if (!contato || !contato.automacaoAtiva) return
+
+  const fluxo = await acharFluxo(contexto.canal.fluxoPosAtendimentoId)
+  if (!fluxo?.versaoPublicadaId) return
+
+  const versao = await acharVersao(fluxo.versaoPublicadaId)
+  if (!versao) return
+
+  // A mesma trava do webhook: uma mensagem chegando neste instante não pode
+  // avançar a conversa junto com o pós-atendimento.
+  const destravar = await travarContato(contatoId)
+  if (!destravar) return
+
+  try {
+    const salva = await criarSessao(contatoId, contexto.canal.id, versao.id, sessaoNova())
+
+    const [opcoesDeIa, horario] = await Promise.all([
+      prepararIa(contexto.canal, contatoId, versao, null),
+      horarioDoCliente(clienteId),
+    ])
+
+    const resultado = await executarComEfeitos(versao.grafo, salva.sessao, { tipo: 'inicio' }, {
+      ...opcoesDeIa,
+      atendimento: contextoDeAtendimento(horario),
+    })
+
+    await guardarSessao(salva.id, resultado.sessao)
+    await aplicar(
+      fabricaDeCanal(contexto.canal),
+      contato,
+      salva.id,
+      contexto.ultimaEntradaWaId,
+      resultado.acoes,
+    )
+  } catch (erro) {
+    const detalhe = erro instanceof Error ? erro.message : String(erro)
+    console.error('[pos-atendimento] não deu para rodar o fluxo', detalhe)
+    await alertar('o fluxo de pós-atendimento falhou', detalhe, { contato: contatoId })
+  } finally {
+    await destravar()
+  }
+}
+
+/**
  * O que a IA precisa para responder — buscado **só quando o fluxo tem IA**.
  *
  * A checagem no grafo evita duas consultas por mensagem em todo cliente que não
@@ -292,7 +460,7 @@ async function avancarConversa(
 async function prepararIa(
   canalSalvo: CanalSalvo,
   contatoId: string,
-  grafo: { nodes: { type: string }[] },
+  versao: VersaoPublicada,
   perguntaDaPessoa: string | null,
 ): Promise<OpcoesDeEfeitos> {
   const vazio: OpcoesDeEfeitos = {
@@ -301,10 +469,15 @@ async function prepararIa(
     origem: 'whatsapp',
     clienteId: canalSalvo.clienteId,
   }
-  if (!grafo.nodes.some((n) => n.type === 'ia') || !canalSalvo.flowId) return vazio
+  if (!versao.grafo.nodes.some((n) => n.type === 'ia')) return vazio
 
+  // **O fluxo vem da versão que está rodando, não do número.** Eram a mesma
+  // coisa enquanto um número executava um fluxo só; com quatro papéis e
+  // gatilhos, `channels.flow_id` passou a ser só um dos fluxos possíveis — e
+  // ler o contrato de IA dele decidiria pelo fluxo errado justamente no portão
+  // que separa quem paga a Etapa 2 de quem não paga.
   const [fluxo, cliente, conversa] = await Promise.all([
-    acharFluxo(canalSalvo.flowId),
+    acharFluxo(versao.fluxoId),
     acharCliente(canalSalvo.clienteId),
     lerConversa(contatoId, 10),
   ])
@@ -362,11 +535,17 @@ async function entregar(
   }
 }
 
+/**
+ * `mensagemId` é o id, na Meta, da entrada que abriu esta rodada. Ele serve ao
+ * "digitando" e ao atraso entre blocos, que a Cloud API pendura numa mensagem
+ * recebida. O pós-atendimento roda sem ninguém ter escrito agora, e por isso
+ * ele pode chegar nulo: o que se perde é o indicador, não o envio.
+ */
 async function aplicar(
   canal: Canal,
   contato: Contato,
   sessaoId: string,
-  mensagemId: string,
+  mensagemId: string | null,
   acoes: Acao[],
 ): Promise<void> {
   const campos = { ...contato.campos }
@@ -395,7 +574,7 @@ async function aplicar(
   for (const acao of acoes) {
     switch (acao.tipo) {
       case 'enviar_texto': {
-        if (acao.atrasoMs) await canal.aguardarResposta(mensagemId, acao.atrasoMs)
+        if (acao.atrasoMs && mensagemId) await canal.aguardarResposta(mensagemId, acao.atrasoMs)
 
         // Grava antes de mandar e confirma depois — ver `registrarSaida`.
         const registro = await registrarSaida({
@@ -415,7 +594,7 @@ async function aplicar(
       }
 
       case 'enviar_midia': {
-        if (acao.atrasoMs) await canal.aguardarResposta(mensagemId, acao.atrasoMs)
+        if (acao.atrasoMs && mensagemId) await canal.aguardarResposta(mensagemId, acao.atrasoMs)
 
         // O que fica na conversa é a legenda, e sem legenda o rótulo do tipo.
         // Uma linha em branco no histórico do lead esconderia que algo foi
