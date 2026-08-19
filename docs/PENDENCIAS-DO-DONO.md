@@ -67,13 +67,23 @@ Quando você quiser fechar: uma linha em `exigirAcessoAoCliente` (parar de deixa
 o administrador passar sem ser membro) e remover `PAINEL_SENHA` da Vercel. É
 trabalho nosso — o que depende de você é decidir a hora, e ter o item 1 feito.
 
-## 7. `BETTER_AUTH_URL` — opcional, e talvez nunca
+## 7. Modelos de mensagem aprovados pela Meta
+
+**Trava:** a janela de 24 horas dentro do bloco de mensagem (`Dentro de` /
+`Fora de`, do desenho da A3) ficou de fora, e vai ficar até isto existir. Fora
+da janela, o WhatsApp só aceita **modelo aprovado** — sem eles, o interruptor
+não teria o que fazer além de mentir. Trava também a Transmissão inteira.
+
+Depende de verificação da empresa e App Review na Meta. Não é código nosso que
+destrava.
+
+## 8. `BETTER_AUTH_URL` — opcional, e talvez nunca
 
 Sem ela a origem sai da requisição, o que basta para e-mail e senha na mesma
 origem; o custo é um aviso a cada `next dev`. Preenchida errado, quebra o login
 inteiro. Só mexa se aparecer problema de redirecionamento.
 
-## 8. Os prints do painel do cliente
+## 9. Os prints do painel do cliente
 
 O painel "eu entro e vejo meus lucros" está em espera a seu pedido, aguardando
 mais prints. Não temos dado de dinheiro, e inventar por multiplicação vira

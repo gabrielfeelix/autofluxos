@@ -40,6 +40,45 @@ const MENSAGEM_TRANSFERENCIA = 'Vou te passar para um atendente. Só um instante
 const MENSAGEM_NAO_ENTENDI = 'Desculpa, não entendi. Pode escolher uma das opções abaixo?'
 
 /**
+ * O que o motor precisa saber sobre **o mundo em volta** para transferir bem.
+ *
+ * Entra por parâmetro, e não por relógio lido aqui dentro, porque o motor é
+ * puro: o simulador e a produção rodam exatamente o mesmo código, e um teste
+ * que dependesse de dar meia-noite não seria teste. Quem lê a hora é o
+ * servidor, com o fuso da conta (ver `core/horario.ts`).
+ *
+ * O padrão — aberto, sem previsão — é o comportamento que o produto sempre
+ * teve, então nenhum chamador antigo muda.
+ */
+export type ContextoDoAtendimento = {
+  /** Tem gente para atender agora? */
+  atendimentoAberto: boolean
+  /** Quando abre de novo, em palavras: "amanhã a partir das 08:00". */
+  proximaAbertura: string | null
+}
+
+export const ATENDIMENTO_SEMPRE_ABERTO: ContextoDoAtendimento = {
+  atendimentoAberto: true,
+  proximaAbertura: null,
+}
+
+/**
+ * O que a pessoa ouve quando o bot desiste fora do expediente.
+ *
+ * **É a frase que salva a conversa.** Sem ela o handoff acontece às 3h da
+ * manhã, o bot cala, e quem escreveu fica olhando para uma conversa parada sem
+ * saber se alguém vem. "Estamos fechados" sozinho não resolve: não diz até
+ * quando, e quem não sabe até quando vai embora.
+ */
+export function avisoDeForaDoHorario(contexto: ContextoDoAtendimento): string | null {
+  if (contexto.atendimentoAberto) return null
+
+  return contexto.proximaAbertura
+    ? `Nosso atendimento está fechado agora — voltamos ${contexto.proximaAbertura}. Deixe sua mensagem que a gente responde por aqui assim que abrir. 🙌`
+    : 'Nosso atendimento está fechado agora. Deixe sua mensagem que a gente responde por aqui assim que abrir. 🙌'
+}
+
+/**
  * O coração do produto: dado um fluxo, o estado da conversa e o que a pessoa
  * mandou, devolve o que fazer e o novo estado.
  *
@@ -48,7 +87,12 @@ const MENSAGEM_NAO_ENTENDI = 'Desculpa, não entendi. Pode escolher uma das opç
  * parâmetro e tudo que ela decide sai no retorno. É isso que faz o simulador e
  * a produção rodarem exatamente o mesmo código.
  */
-export function executar(fluxo: Fluxo, sessao: Sessao, entrada: Entrada): Resultado {
+export function executar(
+  fluxo: Fluxo,
+  sessao: Sessao,
+  entrada: Entrada,
+  contexto: ContextoDoAtendimento = ATENDIMENTO_SEMPRE_ABERTO,
+): Resultado {
   const s: Sessao = { ...sessao, vars: { ...sessao.vars } }
   const acoes: Acao[] = []
 
@@ -60,18 +104,18 @@ export function executar(fluxo: Fluxo, sessao: Sessao, entrada: Entrada): Result
   const porId = indexar(fluxo)
 
   if (entrada.tipo === 'texto' && pediuHumano(entrada.texto)) {
-    return transferir(s, acoes, 'a pessoa pediu para falar com um atendente')
+    return transferir(s, acoes, 'a pessoa pediu para falar com um atendente', contexto)
   }
 
   // Regra B: áudio, imagem e documento vão direto para uma pessoa. Quem manda
   // áudio está engajado — responder "não entendi" mata a conversa.
   if (entrada.tipo === 'midia') {
-    return transferir(s, acoes, `a pessoa mandou ${entrada.formato} e o bot só lê texto`)
+    return transferir(s, acoes, `a pessoa mandou ${entrada.formato} e o bot só lê texto`, contexto)
   }
 
   if (entrada.tipo === 'inicio') {
     s.tentativas = 0
-    return avancar(fluxo, porId, s, acoes, fluxo.inicio)
+    return avancar(contexto, fluxo, porId, s, acoes, fluxo.inicio)
   }
 
   const atual = s.noAtual === null ? undefined : porId.get(s.noAtual)
@@ -80,7 +124,7 @@ export function executar(fluxo: Fluxo, sessao: Sessao, entrada: Entrada): Result
   // republica um fluxo mexendo numa versão já em uso — recomeça em vez de travar.
   if (!atual) {
     s.tentativas = 0
-    return avancar(fluxo, porId, s, acoes, fluxo.inicio)
+    return avancar(contexto, fluxo, porId, s, acoes, fluxo.inicio)
   }
 
   if (atual.type === 'ia') {
@@ -90,7 +134,7 @@ export function executar(fluxo: Fluxo, sessao: Sessao, entrada: Entrada): Result
     acoes.push({ tipo: 'enviar_texto', texto: entrada.texto })
     if (atual.data.salvarEm) s.vars[atual.data.salvarEm] = entrada.texto
     s.tentativas = 0
-    return avancar(fluxo, porId, s, acoes, proximo(fluxo, atual.id))
+    return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, atual.id))
   }
 
   if (atual.type === 'http') {
@@ -105,18 +149,19 @@ export function executar(fluxo: Fluxo, sessao: Sessao, entrada: Entrada): Result
     }
 
     s.tentativas = 0
-    return avancar(fluxo, porId, s, acoes, proximo(fluxo, atual.id))
+    return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, atual.id))
   }
 
   if (atual.type === 'pergunta') {
-    return responderPergunta(fluxo, porId, s, acoes, atual, entrada)
+    return responderPergunta(contexto, fluxo, porId, s, acoes, atual, entrada)
   }
 
   // O motor nunca deveria ter parado num nó destes. Segue em frente.
-  return avancar(fluxo, porId, s, acoes, proximo(fluxo, atual.id))
+  return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, atual.id))
 }
 
 function responderPergunta(
+  contexto: ContextoDoAtendimento,
   fluxo: Fluxo,
   porId: Map<string, No>,
   s: Sessao,
@@ -134,7 +179,7 @@ function responderPergunta(
     // segurança para sessão presa num nó que mudou de configuração.
     if (dinamica) {
       s.tentativas = 0
-      return avancar(fluxo, porId, s, acoes, proximo(fluxo, no.id, SAIDA_VAZIO))
+      return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, no.id, SAIDA_VAZIO))
     }
 
     // Resposta livre em texto.
@@ -144,7 +189,7 @@ function responderPergunta(
       acoes.push({ tipo: 'salvar_campo', campo: salvarEm, valor: entrada.texto })
     }
     s.tentativas = 0
-    return avancar(fluxo, porId, s, acoes, proximo(fluxo, no.id))
+    return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, no.id))
   }
 
   const escolhida = escolher(opcoes, entrada)
@@ -152,7 +197,12 @@ function responderPergunta(
   if (!escolhida) {
     s.tentativas += 1
     if (s.tentativas >= MAX_TENTATIVAS) {
-      return transferir(s, acoes, `o bot não entendeu a resposta ${MAX_TENTATIVAS} vezes seguidas`)
+      return transferir(
+        s,
+        acoes,
+        `o bot não entendeu a resposta ${MAX_TENTATIVAS} vezes seguidas`,
+        contexto,
+      )
     }
     acoes.push({ tipo: 'enviar_texto', texto: MENSAGEM_NAO_ENTENDI })
     acoes.push(perguntar(no, s))
@@ -167,6 +217,7 @@ function responderPergunta(
   // Desenhada ramifica por opção; dinâmica sai por uma porta só, porque não
   // existe aresta desenhada para uma opção que nasceu agora.
   return avancar(
+    contexto,
     fluxo,
     porId,
     s,
@@ -180,6 +231,7 @@ function responderPergunta(
  * primeiro nó que precisa (uma pergunta, a IA, ou o humano).
  */
 function avancar(
+  contexto: ContextoDoAtendimento,
   fluxo: Fluxo,
   porId: Map<string, No>,
   s: Sessao,
@@ -193,7 +245,7 @@ function avancar(
     if (passos++ >= MAX_PASSOS) {
       // Ciclo no desenho. Entregar para uma pessoa é sempre melhor do que
       // prender alguém num labirinto.
-      return transferir(s, acoes, 'o fluxo entrou em loop')
+      return transferir(s, acoes, 'o fluxo entrou em loop', contexto)
     }
 
     const no = porId.get(atual)
@@ -355,6 +407,13 @@ function avancar(
 
       case 'handoff': {
         acoes.push({ tipo: 'enviar_texto', texto: interpolar(no.data.mensagem, s.vars) })
+
+        // Vale para o handoff desenhado também: o bloco pode dizer "já te
+        // passo para o time", e às 3h da manhã isso é uma promessa que ninguém
+        // cumpre até de manhã.
+        const aviso = avisoDeForaDoHorario(contexto)
+        if (aviso) acoes.push({ tipo: 'enviar_texto', texto: aviso })
+
         // O motivo também interpola: "lead qualificado - {{tipo}}" chega no
         // painel já dizendo qual lead é, sem ninguém precisar abrir a conversa.
         acoes.push({ tipo: 'transferir_humano', motivo: interpolar(no.data.motivo, s.vars) })
@@ -454,8 +513,27 @@ function avaliar(
   }
 }
 
-function transferir(s: Sessao, acoes: Acao[], motivo: string): Resultado {
-  acoes.push({ tipo: 'enviar_texto', texto: MENSAGEM_TRANSFERENCIA })
+/**
+ * Passa a conversa para uma pessoa — dizendo a verdade sobre a hora.
+ *
+ * **Fora do expediente o aviso substitui a frase padrão, não se soma a ela.**
+ * "Vou te passar para um atendente. Só um instante!" seguido de "estamos
+ * fechados" são duas mensagens que se contradizem, e a primeira é uma promessa
+ * que ninguém cumpre até de manhã. Como a frase padrão é nossa, trocar é de
+ * graça.
+ *
+ * O que **não** é nosso é o texto do bloco de handoff, que o cliente escreveu.
+ * Lá o aviso entra como segunda linha (ver o `case 'handoff'`): engolir o que
+ * ele escreveu para caber um aviso nosso seria decidir por ele.
+ */
+function transferir(
+  s: Sessao,
+  acoes: Acao[],
+  motivo: string,
+  contexto: ContextoDoAtendimento,
+): Resultado {
+  const aviso = avisoDeForaDoHorario(contexto)
+  acoes.push({ tipo: 'enviar_texto', texto: aviso ?? MENSAGEM_TRANSFERENCIA })
   acoes.push({ tipo: 'transferir_humano', motivo })
   s.status = 'humano'
   return { acoes, sessao: s }

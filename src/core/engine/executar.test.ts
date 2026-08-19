@@ -866,3 +866,85 @@ describe('o bloco de mensagem em pilha', () => {
     ])
   })
 })
+
+describe('o handoff sabe que horas são', () => {
+  /**
+   * O buraco que motivou a frente A4: o bot desiste às 3h da manhã, cala, e a
+   * pessoa fica olhando para uma conversa parada sem saber se alguém vem.
+   * Silêncio é o que faz um lead ir embora.
+   */
+  const FECHADO = { atendimentoAberto: false, proximaAbertura: 'amanhã a partir das 08:00' }
+
+  function transferindo(contexto?: { atendimentoAberto: boolean; proximaAbertura: string | null }) {
+    const fluxo = fluxoSchema.parse({
+      inicio: 'pergunta',
+      nodes: [
+        { id: 'pergunta', type: 'pergunta', position: p, data: { texto: 'Oi?', opcoes: [] } },
+      ],
+      edges: [],
+    })
+    const sessao: Sessao = { ...sessaoNova(), noAtual: 'pergunta' }
+    return executar(fluxo, sessao, { tipo: 'texto', texto: 'quero um atendente' }, contexto).acoes
+  }
+
+  it('dentro do expediente, nada muda', () => {
+    const textos = transferindo().filter((a) => a.tipo === 'enviar_texto')
+    expect(textos).toHaveLength(1)
+  })
+
+  it('fora do expediente, diz que está fechado **e quando volta**', () => {
+    // "Estamos fechados" sozinho não resolve: não diz até quando, e quem não
+    // sabe até quando vai embora.
+    const textos = transferindo(FECHADO).filter((a) => a.tipo === 'enviar_texto')
+    expect(textos).toHaveLength(1)
+    expect(textos[0]!.texto).toContain('amanhã a partir das 08:00')
+  })
+
+  it('o aviso **substitui** a frase padrão, não se soma a ela', () => {
+    // "Vou te passar para um atendente. Só um instante!" seguido de "estamos
+    // fechados" são duas mensagens que se contradizem — e a primeira é uma
+    // promessa que ninguém cumpre até de manhã.
+    const textos = transferindo(FECHADO).filter((a) => a.tipo === 'enviar_texto')
+    expect(textos.some((acao) => acao.texto.includes('Só um instante'))).toBe(false)
+  })
+
+  it('sem previsão de abertura, avisa mesmo assim', () => {
+    const textos = transferindo({ atendimentoAberto: false, proximaAbertura: null }).filter(
+      (a) => a.tipo === 'enviar_texto',
+    )
+    expect(textos).toHaveLength(1)
+    expect(textos[0]!.texto).toContain('fechado')
+  })
+
+  it('o aviso não engole a frase que o cliente escreveu no bloco de handoff', () => {
+    // Trocar a mensagem dele por um aviso nosso é decidir por ele. Duas linhas
+    // dizem as duas coisas.
+    const fluxo = fluxoSchema.parse({
+      inicio: 'humano',
+      nodes: [
+        {
+          id: 'humano',
+          type: 'handoff',
+          position: p,
+          data: { motivo: 'pedido', mensagem: 'Já chamei a Ana do time!' },
+        },
+      ],
+      edges: [],
+    })
+    const textos = executar(fluxo, sessaoNova(), { tipo: 'inicio' }, FECHADO).acoes.filter(
+      (a) => a.tipo === 'enviar_texto',
+    )
+
+    expect(textos[0]!.texto).toBe('Já chamei a Ana do time!')
+    expect(textos[1]!.texto).toContain('amanhã a partir das 08:00')
+  })
+
+  it('o aviso vem antes do `transferir_humano`, não depois', () => {
+    // A ordem é a ordem de entrega: o aviso precisa sair enquanto o bot ainda
+    // fala. Depois do handoff, quem manda é a pessoa que assumir.
+    const acoes = transferindo(FECHADO)
+    const aviso = acoes.findIndex((a) => a.tipo === 'enviar_texto' && a.texto.includes('fechado'))
+    const handoff = acoes.findIndex((a) => a.tipo === 'transferir_humano')
+    expect(aviso).toBeLessThan(handoff)
+  })
+})
