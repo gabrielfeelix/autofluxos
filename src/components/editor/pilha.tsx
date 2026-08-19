@@ -1,20 +1,18 @@
 'use client'
 
 import { useRef } from 'react'
-import { Dropdown } from '@/components/design/dropdown'
 import { parteNova, partesDaMensagem } from '@/core/flow/mensagem'
 import {
   LIMITE_ATRASO_SEGUNDOS,
   LIMITE_LEGENDA,
   LIMITE_PARTES,
   LIMITE_TEXTO,
-  TIPOS_DE_MIDIA,
   type NoMensagem,
   type Parte,
-  type TipoDeMidia,
   type TipoDeParte,
 } from '@/core/flow/schema'
 import { BarraDeFormato } from './barra-de-formato'
+import { SeletorDeArquivo } from './seletor-de-arquivo'
 
 /**
  * O bloco de mensagem, desenhado como o que ele virou: **uma pilha**.
@@ -30,12 +28,6 @@ import { BarraDeFormato } from './barra-de-formato'
  * e a conversa que está rodando nele continua rodando nele. Abrir um bloco
  * antigo no editor mostra a pilha equivalente; salvar grava a pilha.
  */
-const ROTULOS_DE_MIDIA: Record<TipoDeMidia, string> = {
-  imagem: 'Imagem',
-  video: 'Vídeo',
-  documento: 'Documento',
-  audio: 'Áudio',
-}
 
 const NOME_DA_PARTE: Record<TipoDeParte, string> = {
   texto: 'Texto',
@@ -47,10 +39,13 @@ const NOME_DA_PARTE: Record<TipoDeParte, string> = {
 
 export function PilhaDeMensagem({
   no,
+  clienteId,
   aoMudarDados,
   registrarCampo,
 }: {
   no: NoMensagem
+  /** De quem é o fluxo. O upload do bloco de Mídia precisa saber a pasta. */
+  clienteId: string
   aoMudarDados: (dados: Record<string, unknown>) => void
   registrarCampo: (
     elemento: HTMLInputElement | HTMLTextAreaElement,
@@ -123,6 +118,7 @@ export function PilhaDeMensagem({
 
           <Corpo
             parte={parte}
+            clienteId={clienteId}
             aoMudar={(proxima) => trocar(indice, proxima)}
             registrarCampo={registrarCampo}
           />
@@ -179,10 +175,12 @@ function BotaoDeOrdem({
 
 function Corpo({
   parte,
+  clienteId,
   aoMudar,
   registrarCampo,
 }: {
   parte: Parte
+  clienteId: string
   aoMudar: (parte: Parte) => void
   registrarCampo: (
     elemento: HTMLInputElement | HTMLTextAreaElement,
@@ -202,19 +200,29 @@ function Corpo({
     case 'midia':
       return (
         <div className="space-y-2">
-          <Dropdown
-            rotuloAcessivel="Tipo de arquivo"
-            valor={parte.midia}
-            opcoes={TIPOS_DE_MIDIA.map((tipo) => ({ valor: tipo, rotulo: ROTULOS_DE_MIDIA[tipo] }))}
-            aoMudar={(valor) => aoMudar({ ...parte, midia: valor as TipoDeMidia })}
-          />
-          <input
-            value={parte.url}
-            placeholder="https://…"
-            onChange={(e) => aoMudar({ ...parte, url: e.target.value })}
-            onFocus={(e) => registrarCampo(e.currentTarget, (url) => aoMudar({ ...parte, url }))}
-            onSelect={(e) => registrarCampo(e.currentTarget, (url) => aoMudar({ ...parte, url }))}
-            className="app-field px-3 py-2.5 font-mono text-[12px]"
+          {/*
+            O tipo saiu do seletor e virou consequência do arquivo. Escolher
+            "Documento" e subir um PNG é um erro que só aparece quando a Meta
+            recusa a entrega, na conversa de alguém — e não fazia sentido
+            deixar cometê-lo.
+          */}
+          <SeletorDeArquivo
+            clienteId={clienteId}
+            url={parte.url}
+            midia={parte.midia}
+            registrarCampo={registrarCampo}
+            aoEscolher={(escolha) =>
+              aoMudar({
+                ...parte,
+                url: escolha.url,
+                midia: escolha.midia,
+                // Áudio não aceita legenda; trocar para ele sem limpar deixaria
+                // um texto guardado e invisível barrando a publicação.
+                ...(escolha.midia === 'audio' ? { legenda: undefined } : {}),
+                nomeArquivo:
+                  escolha.midia === 'documento' ? (escolha.nomeArquivo ?? parte.nomeArquivo) : undefined,
+              })
+            }
           />
           {/*
             Áudio não mostra legenda porque a Meta **recusa a mensagem inteira**

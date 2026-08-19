@@ -10,26 +10,19 @@ import {
   LIMITE_TEXTO_INTERATIVO,
   METODOS,
   OPERADORES,
-  TIPOS_DE_MIDIA,
   type Cabecalho,
   type Mapeamento,
   type No,
   type Opcao,
-  type TipoDeMidia,
 } from '@/core/flow/schema'
 import { Dropdown } from '@/components/design/dropdown'
 import { BarraDeFormato } from './barra-de-formato'
+import { SeletorDeArquivo } from './seletor-de-arquivo'
 import { inserirNoCursor } from './inserir-variavel'
 import { PilhaDeMensagem } from './pilha'
 import { NOMES } from './nos'
 
 /** Os quatro tipos, no nome que quem desenha o fluxo usa. */
-const ROTULOS_DE_MIDIA: Record<TipoDeMidia, string> = {
-  imagem: 'Imagem',
-  video: 'Vídeo',
-  documento: 'Documento',
-  audio: 'Áudio',
-}
 
 /** O que o painel precisa saber de uma credencial: o nome, e nada mais. */
 export type ConexaoDoCliente = { id: string; nome: string; tipo: string }
@@ -65,6 +58,7 @@ const PRAZOS = [
 
 export function Painel({
   no,
+  clienteId,
   ehInicio,
   variaveis,
   conexoes = [],
@@ -73,6 +67,8 @@ export function Painel({
   aoApagar,
 }: {
   no: No | null
+  /** De quem é o fluxo. O upload dos blocos de arquivo precisa saber a pasta. */
+  clienteId: string
   ehInicio: boolean
   variaveis: string[]
   conexoes?: ConexaoDoCliente[]
@@ -150,42 +146,47 @@ export function Painel({
       </div>
 
       {no.type === 'mensagem' && (
-        <PilhaDeMensagem no={no} aoMudarDados={aoMudarDados} registrarCampo={registrarCampo} />
+        <PilhaDeMensagem
+          no={no}
+          clienteId={clienteId}
+          aoMudarDados={aoMudarDados}
+          registrarCampo={registrarCampo}
+        />
       )}
 
       {no.type === 'midia' && (
         <>
-          <label className="block">
+          {/*
+            Arrastar, escolher do computador, ou reusar o que já está no acervo
+            — e o tipo sai do arquivo. O campo pedindo `https://` era o nosso
+            problema empurrado para quem usa: a foto da sala está no computador
+            da pessoa, não num servidor.
+          */}
+          <div>
             <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
-              Tipo
+              Arquivo
             </span>
-            <select
-              value={no.data.midia}
-              onChange={(evento) => {
-                const midia = evento.currentTarget.value as TipoDeMidia
-                // Trocar para áudio limpa a legenda em vez de deixá-la
-                // guardada e invisível: o campo some da tela, e um texto que
-                // ninguém mais vê barraria a publicação sem dizer onde está.
-                aoMudarDados(midia === 'audio' ? { midia, legenda: '' } : { midia })
-              }}
-              className="app-field px-3 py-2.5 text-[13px]"
-            >
-              {TIPOS_DE_MIDIA.map((tipo) => (
-                <option key={tipo} value={tipo}>
-                  {ROTULOS_DE_MIDIA[tipo]}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <Linha
-            rotulo="Endereço do arquivo"
-            valor={no.data.url}
-            aoMudar={(url) => aoMudarDados({ url })}
-            aceitaVariavel
-            aoFocar={registrarCampo}
-            dica="Precisa ser https://. Copie o endereço em Ajustes → Acervo, ou cole um de fora."
-          />
+            <SeletorDeArquivo
+              clienteId={clienteId}
+              url={no.data.url}
+              midia={no.data.midia}
+              registrarCampo={registrarCampo}
+              aoEscolher={(escolha) =>
+                aoMudarDados({
+                  url: escolha.url,
+                  midia: escolha.midia,
+                  // Áudio não aceita legenda: a Meta recusa a mensagem inteira.
+                  // Limpar em vez de deixar guardada e invisível — o campo some
+                  // da tela, e um texto que ninguém vê barraria a publicação sem
+                  // dizer onde está.
+                  ...(escolha.midia === 'audio' ? { legenda: '' } : {}),
+                  ...(escolha.midia === 'documento' && escolha.nomeArquivo
+                    ? { nomeArquivo: escolha.nomeArquivo }
+                    : {}),
+                })
+              }
+            />
+          </div>
 
           {no.data.midia === 'documento' && (
             <Linha

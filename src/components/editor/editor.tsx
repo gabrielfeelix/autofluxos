@@ -684,6 +684,7 @@ export function Editor({
               <Painel
                 key={noSelecionado?.id ?? 'sem-selecao'}
                 no={noSelecionado}
+                clienteId={clienteId}
                 ehInicio={selecionado === inicio}
                 variaveis={variaveis}
                 conexoes={conexoes}
