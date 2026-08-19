@@ -7,6 +7,7 @@ import { autenticacao, bancoDoLogin } from './auth'
 import { chaveDeLimite, consumirLimite } from './limite'
 import { registrar } from './repos/auditoria'
 import { definirPresenca } from './repos/usuarios'
+import type { UsuarioDaSessao } from './sessao'
 import {
   acharUsuario,
   contasDoUsuario,
@@ -56,6 +57,21 @@ function motivo(erro: unknown): string {
 // Entrar e sair
 // ---------------------------------------------------------------------------
 
+/**
+ * **Nunca releia a sessão que você acabou de criar.**
+ *
+ * Esta ação já respondeu "credenciais não conferem" a uma senha correta, com o
+ * `Set-Cookie` do login bem-sucedido na mesma resposta. O motivo: ela chamava
+ * `sessaoAtual()` logo depois de `signInEmail`, e `sessaoAtual()` pergunta ao
+ * Better Auth passando `headers()` — que no Next são os cabeçalhos **da
+ * requisição que chegou**. O cookie novo é gravado por `cookies()`, e os dois
+ * não são a mesma coisa: `headers()` continua contando a história de antes do
+ * login. A sessão existia no banco e no navegador; só não existia no lugar onde
+ * a ação foi procurar.
+ *
+ * A resposta certa é a que a própria chamada devolve. É de lá que sai quem
+ * entrou, e é com ela que se decide para onde ir.
+ */
 export async function acaoEntrar(
   _estado: EstadoDeConta,
   formData: FormData,
@@ -68,24 +84,45 @@ export async function acaoEntrar(
     return { erro: 'Muitas tentativas, espere alguns minutos antes de tentar novamente.', email }
   }
 
+  let usuario: UsuarioDaSessao
   try {
-    await autenticacao().api.signInEmail({ body: { email, password: senha }, headers: cabecalhos })
-  } catch {
+    const entrada = await autenticacao().api.signInEmail({
+      body: { email, password: senha },
+      headers: cabecalhos,
+    })
+    usuario = {
+      id: entrada.user.id,
+      nome: entrada.user.name,
+      email: entrada.user.email,
+      papelDePlataforma: entrada.user.role ?? null,
+      banido: Boolean(entrada.user.banned),
+    }
+  } catch (erro) {
+    // Quem está banido nem chega a autenticar: o plugin `admin` recusa dentro
+    // do `signInEmail`. A conferência que existia aqui depois do login era
+    // código morto — e, sem distinguir o motivo, um acesso suspenso ficava
+    // indistinguível de senha errada para quem o teve suspenso.
+    if (ehBanimento(erro)) {
+      return { erro: 'Este acesso está suspenso. Fale com quem administra o painel.', email }
+    }
     return { erro: CREDENCIAL_NAO_CONFERE, email }
-  }
-
-  const sessao = await sessaoAtual()
-  if (!sessao) return { erro: CREDENCIAL_NAO_CONFERE, email }
-
-  if (sessao.usuario.banido) {
-    await autenticacao().api.signOut({ headers: await headers() })
-    return { erro: 'Este acesso está suspenso. Fale com quem administra o painel.', email }
   }
 
   // `redirect` funciona lançando: precisa ficar fora do `try`, senão o próprio
   // catch o engoliria e a tela responderia "credenciais não conferem" depois de
   // um login que deu certo.
-  redirect(await destinoAposEntrar(sessao))
+  redirect(await destinoAposEntrar({ usuario, contaAtivaId: null, impersonadoPor: null }))
+}
+
+/**
+ * O erro de banimento vem com código próprio no corpo (`BANNED_USER`).
+ *
+ * Comparar a mensagem seria comparar texto em inglês que a biblioteca pode
+ * reescrever numa versão menor; o código é o contrato.
+ */
+function ehBanimento(erro: unknown): boolean {
+  const corpo = (erro as { body?: { code?: unknown } } | null)?.body
+  return typeof corpo?.code === 'string' && corpo.code === 'BANNED_USER'
 }
 
 export async function acaoSair() {
