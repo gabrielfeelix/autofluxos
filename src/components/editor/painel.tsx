@@ -587,7 +587,7 @@ export function Painel({
         </>
       )}
 
-      {variaveis.length > 0 && (
+      {aceitaVariavel(no.type) && variaveis.length > 0 && (
         <div className="border-t border-white/[0.06] pt-3">
           <p className="text-[10px] font-bold tracking-[0.05em] text-muted uppercase">Variáveis deste fluxo</p>
           <p className="mt-1 text-[11px] text-dim">
@@ -608,6 +608,23 @@ export function Painel({
       )}
     </div>
   )
+}
+
+/**
+ * Este bloco tem algum campo onde uma variável possa ser inserida?
+ *
+ * A lista de variáveis é um **teclado**, não um relatório: os botões inserem
+ * `{{nome}}` no cursor do campo em foco. Nos dois blocos que só têm escolha de
+ * lista — a etapa do quadro e o salto para outra automação — não existe cursor
+ * nenhum, e a lista virava enfeite ocupando meia tela do painel.
+ *
+ * Pior que ocupar espaço: ela sugeria que ali havia algo a preencher com
+ * variável, e não há. Interpolar id de etapa ou de automação seria deixar a
+ * conversa escolher para onde a pessoa vai — exatamente o que `variaveisDoNo()`
+ * recusa fazer no validador.
+ */
+function aceitaVariavel(tipo: No['type']): boolean {
+  return tipo !== 'etapa' && tipo !== 'ir-fluxo'
 }
 
 function Linha({
