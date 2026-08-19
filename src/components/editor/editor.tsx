@@ -33,11 +33,26 @@ import { Modal } from '@/components/design/modal'
 import { AcaoDaArestaProvider, tiposDeAresta } from './arestas'
 import { ICONES, NOMES, tiposDeNo } from './nos'
 import { Painel } from './painel'
-import type { ConexaoDoCliente, EtapaDoCliente } from './painel'
+import type { ConexaoDoCliente, EtapaDoCliente, FluxoDaConta } from './painel'
 import { Versoes, type VersaoNaLista } from './versoes'
 import { Compartilhar } from './compartilhar'
 
 const PAUSA_ANTES_DE_SALVAR = 800
+
+/** Um passo do desfazer: o desenho inteiro num instante. */
+type Instantaneo = { nodes: Node[]; edges: Edge[]; inicio: string }
+
+/**
+ * Quanto tempo de edição contínua cabe num passo só do desfazer.
+ *
+ * Meio segundo é a pausa de quem terminou uma palavra e pensou na próxima —
+ * curto o bastante para o `Ctrl+Z` não engolir um parágrafo inteiro, longo o
+ * bastante para não voltar letra por letra.
+ */
+const JANELA_DE_DIGITACAO = 500
+
+/** Quantos passos o desfazer guarda. Além disso é memória sem uso. */
+const LIMITE_DO_HISTORICO = 60
 
 /**
  * Quanto tempo o "bloco apagado — desfazer" fica na tela.
@@ -55,6 +70,7 @@ const TIPOS: TipoNo[] = [
   'condicao',
   'salvar-campo',
   'etapa',
+  'ir-fluxo',
   'ia',
   'handoff',
   'http',
@@ -67,6 +83,7 @@ const DESCRICOES: Record<TipoNo, string> = {
   condicao: 'Divide o caminho',
   'salvar-campo': 'Registra no lead',
   etapa: 'Move no quadro',
+  'ir-fluxo': 'Continua em outra',
   ia: 'Responde pelo contexto',
   handoff: 'Passa para uma pessoa',
   http: 'Chama um sistema',
@@ -101,6 +118,11 @@ function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
       // a primeira etapa do primeiro quadro poria gente num funil que quem
       // desenhou não escolheu — e ninguém revisa o que já veio preenchido.
       return { quadroId: '', colunaId: '' }
+    case 'ir-fluxo':
+      // Nasce sem destino, pelo mesmo motivo da etapa: chutar a primeira
+      // automação da lista mandaria conversa para um desenho que ninguém
+      // escolheu, e o que já vem preenchido é o que ninguém revisa.
+      return { fluxoId: '', rotulo: '' }
     case 'ia':
       return { instrucao: 'Responda a dúvida do cliente usando o contexto do negócio.' }
     case 'handoff':
@@ -148,6 +170,7 @@ export function Editor({
   clienteId,
   conexoes,
   etapas,
+  fluxos,
   nome,
   clienteNome,
   voltarHref,
@@ -163,6 +186,8 @@ export function Editor({
   conexoes: ConexaoDoCliente[]
   /** As etapas de quadro deste cliente, para o bloco de etapa (C1b). */
   etapas: EtapaDoCliente[]
+  /** As automações desta conta, para o bloco "Ir para outra automação". */
+  fluxos: FluxoDaConta[]
   nome: string
   clienteNome: string
   voltarHref: string
@@ -215,15 +240,84 @@ export function Editor({
   const [desfazer, setDesfazer] = useState<{ no: Node; edges: Edge[]; eraInicio: boolean } | null>(null)
   const areaRef = useRef<HTMLDivElement>(null)
 
+  /**
+   * O histórico do `Ctrl+Z`: cada passo é o desenho inteiro (blocos, ligações e
+   * qual é o início).
+   *
+   * Guardar o desenho inteiro, e não o "que mudou", é escolha deliberada: um
+   * fluxo grande dá uns 50 KB em memória, e a alternativa — um passo por tipo
+   * de ação — é a estrutura que erra justamente nas combinações raras
+   * (duplicar, mudar o início e apagar na mesma sequência). Aqui todo passo
+   * volta pelo mesmo caminho, então não existe ação "que o desfazer não cobre".
+   *
+   * Vive em `useRef` porque nada na tela lê o histórico: ele só é consultado no
+   * instante da tecla, e guardá-lo em `useState` faria a digitação re-renderizar
+   * o editor a cada passo registrado.
+   */
+  const historico = useRef<Instantaneo[]>([])
+  const futuro = useRef<Instantaneo[]>([])
+  const agoraNoEditor = useRef<Instantaneo>({ nodes, edges, inicio })
+  /** Marca que a mudança veio do próprio desfazer — ela não vira passo novo. */
+  const vindoDoHistorico = useRef(false)
+  /** Quando o último passo foi registrado, para juntar a digitação num só. */
+  const ultimoPasso = useRef(0)
+
   const fluxo = useMemo(() => paraFluxo(inicio, nodes, edges), [inicio, nodes, edges])
   const idsDeConexao = useMemo(() => conexoes.map((c) => c.id), [conexoes])
   const validacao = useMemo(
-    () => validar(fluxo, { iaHabilitada: comIa, conexoes: idsDeConexao, temContextoDeNegocio }),
-    [fluxo, comIa, idsDeConexao, temContextoDeNegocio],
+    () =>
+      validar(fluxo, {
+        iaHabilitada: comIa,
+        conexoes: idsDeConexao,
+        temContextoDeNegocio,
+        fluxos,
+        fluxoAtualId: fluxoId,
+      }),
+    [fluxo, comIa, idsDeConexao, temContextoDeNegocio, fluxos, fluxoId],
   )
 
   const assinatura = JSON.stringify(fluxo)
   const assinaturaSalva = useRef(assinatura)
+
+  /**
+   * Registra um passo sempre que o desenho muda.
+   *
+   * Pendura em `assinatura` — a mesma string que decide salvar e publicar —
+   * porque ela já ignora o que é só interface: selecionar um bloco ou arrastar
+   * a tela não vira passo de desfazer, e arrastar um bloco vira.
+   *
+   * **Digitação vira um passo só.** Sem a janela de coalescência, `Ctrl+Z`
+   * depois de escrever uma frase apagaria uma letra por vez, que é o desfazer
+   * que ninguém quer. Mudança de forma (bloco ou ligação a mais/a menos) sempre
+   * abre passo novo, porque apagar uma linha e digitar não são a mesma edição.
+   */
+  useEffect(() => {
+    const atual: Instantaneo = { nodes, edges, inicio }
+
+    if (vindoDoHistorico.current) {
+      vindoDoHistorico.current = false
+      agoraNoEditor.current = atual
+      return
+    }
+
+    const anterior = agoraNoEditor.current
+    const mesmaForma =
+      anterior.nodes.length === nodes.length && anterior.edges.length === edges.length
+    const agora = Date.now()
+
+    if (!mesmaForma || agora - ultimoPasso.current > JANELA_DE_DIGITACAO) {
+      historico.current = [...historico.current, anterior].slice(-LIMITE_DO_HISTORICO)
+      // Editar depois de desfazer corta o futuro: o caminho que existia dali
+      // para frente não existe mais, e oferecer "refazer" para ele devolveria
+      // um desenho que nunca foi o desta linha do tempo.
+      futuro.current = []
+      ultimoPasso.current = agora
+    }
+
+    agoraNoEditor.current = atual
+    // `assinatura` é o gatilho; os três valores são lidos dela, não observados.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assinatura])
 
   // Normaliza o publicado pelo mesmo caminho do rascunho, senão a comparação
   // pegaria diferença de ordem de chave em vez de diferença de conteúdo.
@@ -411,6 +505,40 @@ export function Editor({
   }
 
   /**
+   * Volta um passo — o `Ctrl+Z`.
+   *
+   * Devolve o desenho inteiro, então serve igual para apagar uma linha, mover
+   * um bloco, duplicar, trocar o início ou editar um texto. O aviso de "bloco
+   * apagado" sai da tela junto: ele fala de um passo que acabou de ser
+   * desfeito, e um botão "Desfazer" apontando para o que já voltou é armadilha.
+   */
+  function voltarUmPasso() {
+    const anterior = historico.current.pop()
+    if (!anterior) return
+    futuro.current = [...futuro.current, agoraNoEditor.current]
+    aplicarInstantaneo(anterior)
+  }
+
+  /** Refaz o que o `Ctrl+Z` desfez — `Ctrl+Shift+Z` ou `Ctrl+Y`. */
+  function refazerUmPasso() {
+    const proximo = futuro.current.pop()
+    if (!proximo) return
+    historico.current = [...historico.current, agoraNoEditor.current]
+    aplicarInstantaneo(proximo)
+  }
+
+  function aplicarInstantaneo(passo: Instantaneo) {
+    vindoDoHistorico.current = true
+    setNodes(passo.nodes)
+    setEdges(passo.edges)
+    setInicio(passo.inicio)
+    setSelecionado(passo.nodes.find((n) => n.selected)?.id ?? null)
+    setDesfazer(null)
+    setMenu(null)
+    setAApagar(null)
+  }
+
+  /**
    * O clique em "apagar" pergunta antes; a tecla `Delete` não.
    *
    * O botão é alcançável por engano — ele fica a poucos pixels do cabeçalho que
@@ -501,14 +629,33 @@ export function Editor({
    */
   useEffect(() => {
     const aoTeclar = (evento: KeyboardEvent) => {
-      if (evento.key !== 'Delete' && evento.key !== 'Backspace') return
-
       const alvo = evento.target as HTMLElement | null
       const digitando =
         alvo instanceof HTMLInputElement ||
         alvo instanceof HTMLTextAreaElement ||
         alvo instanceof HTMLSelectElement ||
         alvo?.isContentEditable === true
+
+      // Dentro de um campo, `Ctrl+Z` é do navegador: ele desfaz o que a pessoa
+      // digitou. Roubar a tecla ali faria o desenho voltar um passo enquanto
+      // alguém só queria apagar a última palavra.
+      const atalho = evento.ctrlKey || evento.metaKey
+      if (atalho && !digitando) {
+        const tecla = evento.key.toLowerCase()
+        if (tecla === 'z') {
+          evento.preventDefault()
+          if (evento.shiftKey) refazerUmPasso()
+          else voltarUmPasso()
+          return
+        }
+        if (tecla === 'y') {
+          evento.preventDefault()
+          refazerUmPasso()
+          return
+        }
+      }
+
+      if (evento.key !== 'Delete' && evento.key !== 'Backspace') return
       if (digitando) return
 
       // A linha selecionada também morre pela tecla. Ela vem antes do bloco
@@ -701,6 +848,45 @@ export function Editor({
             com IA
           </label>
         </div>
+
+        {/*
+          Estado à esquerda, ação à direita.
+          Os dois selos moravam colados no "Publicar", entre o "Compartilhar" e
+          ele — e ali eles pareciam botão. São informação: dizem em que pé o
+          desenho está, que é a mesma matéria do "salvo" e do "com IA" logo ao
+          lado. A direita ficou só com o que se clica.
+        */}
+        {publicada ? (
+          <span
+            className={`shrink-0 rounded-full border px-3 py-1 text-xs ${haNovidade ? 'border-amber-300/25 bg-amber-300/[0.08] text-amber-200' : 'border-emerald-400/20 bg-emerald-400/[0.08] text-emerald-300'}`}
+          >
+            {haNovidade ? 'Desenho difere do publicado' : `No ar · v${publicada.versao}`}
+          </span>
+        ) : (
+          <span className="shrink-0 rounded-full border border-dashed border-white/[0.15] px-3 py-1 text-xs text-muted">
+            Nunca publicado
+          </span>
+        )}
+
+        {!validacao.ok && (
+          // Clicável porque o número sozinho não diz onde: quem apaga uma
+          // ligação e vê o "Publicar" apagar precisa chegar no bloco culpado, e
+          // procurar a lista no painel da direita é um passo a mais em cima de
+          // um susto.
+          <button
+            type="button"
+            onClick={() => {
+              setAba('bloco')
+              const primeiro = validacao.erros.find((e) => e.noId)
+              if (primeiro?.noId) focar(primeiro.noId)
+            }}
+            title="Ver o que está impedindo a publicação"
+            className="shrink-0 rounded-full border border-rose-400/30 bg-rose-400/10 px-3 py-1 text-xs font-bold text-rose-300 transition hover:bg-rose-400/20"
+          >
+            {validacao.erros.length} impedimento(s)
+          </button>
+        )}
+
         <span className="flex-1" />
 
         <Versoes
@@ -718,19 +904,18 @@ export function Editor({
           publicada={publicada ? { versao: publicada.versao, grafo: publicada.grafo } : null}
         />
 
-        {publicada ? (
-          <span className={`rounded-full border px-3 py-1 text-xs ${haNovidade ? 'border-amber-300/25 bg-amber-300/[0.08] text-amber-200' : 'border-emerald-400/20 bg-emerald-400/[0.08] text-emerald-300'}`}>
-            {haNovidade ? 'Desenho difere do publicado' : `No ar · v${publicada.versao}`}
-          </span>
-        ) : (
-          <span className="rounded-full border border-dashed border-white/[0.15] px-3 py-1 text-xs text-muted">Nunca publicado</span>
-        )}
-
-        {!validacao.ok && (
-          <span className="rounded-full border border-rose-400/30 bg-rose-400/10 px-3 py-1 text-xs font-bold text-rose-300">
-            {validacao.erros.length} impedimento(s)
-          </span>
-        )}
+        <button
+          type="button"
+          onClick={() => setAba('testar')}
+          title="Conversar com este desenho sem sair do editor"
+          className={`rounded-lg border px-3.5 py-2 text-[12.5px] font-semibold transition ${
+            aba === 'testar'
+              ? 'border-accent/50 bg-accent/[0.12] text-accent'
+              : 'border-white/10 text-muted hover:border-accent/40 hover:text-accent'
+          }`}
+        >
+          Testar
+        </button>
 
         <button
           onClick={publicarAgora}
@@ -821,7 +1006,9 @@ export function Editor({
           ))}
           <p className="mt-3.5 border-t border-white/[0.06] px-2 pt-3 text-[10.5px] leading-4 text-dim">
             Arraste um bloco para o desenho, ou clique para soltar no meio. Para ligar dois blocos,
-            arraste de uma alça até o outro.
+            arraste de uma alça até o outro. Botão direito abre editar, duplicar e excluir; o ✕ no
+            meio da linha apaga a ligação. <strong className="text-muted">Ctrl+Z</strong> desfaz o
+            último passo.
           </p>
         </nav>
 
@@ -940,6 +1127,7 @@ export function Editor({
                 variaveis={variaveis}
                 conexoes={conexoes}
                 etapas={etapas}
+                fluxos={fluxos}
                 aoMudarDados={mudarDados}
                 aoDefinirInicio={definirInicio}
                 aoApagar={() => selecionado && pedirParaApagar(selecionado)}

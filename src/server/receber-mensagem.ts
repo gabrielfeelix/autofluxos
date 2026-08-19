@@ -45,6 +45,7 @@ import {
   registrarEntrada,
   registrarHandoff,
   registrarSaida,
+  trocarVersaoDaSessao,
   ultimaSessao,
   vincularSessaoNaMensagem,
   type CanalSalvo,
@@ -332,7 +333,11 @@ async function escolherAbertura(
     const fluxo = await acharFluxo(candidato.fluxoId)
     // Nada publicado: este candidato não fala. Melhor o próximo — ou o silêncio
     // — do que responder com um rascunho que ninguém revisou.
-    if (fluxo?.versaoPublicadaId) {
+    //
+    // Desligado (0036) cai para o próximo pelo mesmo caminho, e de propósito:
+    // quem desliga o fluxo de boas-vindas quer que o principal atenda, não que
+    // o número emudeça.
+    if (fluxo?.versaoPublicadaId && fluxo.ativo) {
       return {
         versaoId: fluxo.versaoPublicadaId,
         ...(candidato.gatilhoId ? { gatilhoId: candidato.gatilhoId } : {}),
@@ -342,6 +347,30 @@ async function escolherAbertura(
   }
 
   return null
+}
+
+/**
+ * Como um salto entre automações alcança o destino — e o que ele **não** pode
+ * alcançar.
+ *
+ * O id do destino vem do grafo, e grafo é coisa que gente edita: amarrar o
+ * carregador ao cliente da conversa é o que impede o fluxo de um cliente saltar
+ * para o de outro. As outras três recusas são as mesmas de `escolherAbertura`:
+ * sem versão publicada não há o que executar, desligado não abre conversa, e
+ * fluxo apagado não existe. Nos quatro casos o resolvedor manda a conversa para
+ * uma pessoa em vez de deixá-la muda.
+ */
+function carregadorDeFluxo(clienteId: string) {
+  return async (fluxoId: string) => {
+    const destino = await acharFluxo(fluxoId)
+    if (!destino || destino.clienteId !== clienteId) return null
+    if (!destino.ativo || !destino.versaoPublicadaId) return null
+
+    const versao = await acharVersao(destino.versaoPublicadaId)
+    if (!versao) return null
+
+    return { versaoId: versao.id, grafo: versao.grafo, iaHabilitada: destino.iaHabilitada }
+  }
 }
 
 async function avancarConversa(
@@ -421,11 +450,26 @@ async function avancarConversa(
     versao.grafo,
     salva.sessao,
     conversaNova ? { tipo: 'inicio' } : entrada,
-    { ...opcoesDeIa, atendimento: contextoDeAtendimento(horario) },
+    {
+      ...opcoesDeIa,
+      atendimento: contextoDeAtendimento(horario),
+      carregarFluxo: carregadorDeFluxo(canalSalvo.clienteId),
+    },
   )
 
   await guardarSessao(salva.id, resultado.sessao)
-  await sincronizarTimeout(canalSalvo.clienteId, contato.id, salva.id, versao.grafo, resultado.sessao)
+  // Saltou de automação: a sessão passa a executar a versão do destino, senão a
+  // próxima mensagem voltaria para o fluxo de origem com um nó que não existe
+  // lá — e o motor recomeçaria a saudação no meio da conversa.
+  if (resultado.destino) await trocarVersaoDaSessao(salva.id, resultado.destino.versaoId)
+  await sincronizarTimeout(
+    canalSalvo.clienteId,
+    contato.id,
+    salva.id,
+    // O prazo é lido do grafo onde a conversa **parou**, não de onde ela começou.
+    resultado.destino?.grafo ?? versao.grafo,
+    resultado.sessao,
+  )
   await aplicar(fabricaDeCanal(canalSalvo), contato, salva.id, mensagem.id, resultado.acoes)
 }
 
@@ -525,10 +569,18 @@ export async function rodarTimeoutDePergunta(
     const resultado = await executarComEfeitos(versao.grafo, agora.sessao, { tipo: 'timeout' }, {
       ...opcoesDeIa,
       atendimento: contextoDeAtendimento(horario),
+      carregarFluxo: carregadorDeFluxo(canal.clienteId),
     })
 
     await guardarSessao(sessaoId, resultado.sessao)
-    await sincronizarTimeout(canal.clienteId, contatoId, sessaoId, versao.grafo, resultado.sessao)
+    if (resultado.destino) await trocarVersaoDaSessao(sessaoId, resultado.destino.versaoId)
+    await sincronizarTimeout(
+      canal.clienteId,
+      contatoId,
+      sessaoId,
+      resultado.destino?.grafo ?? versao.grafo,
+      resultado.sessao,
+    )
     await aplicar(fabricaDeCanal(canal), contato, sessaoId, null, resultado.acoes)
     return 'feita'
   } finally {
@@ -627,6 +679,9 @@ export async function abrirFluxoParaContato(
 
   const fluxo = await acharFluxo(fluxoId)
   if (!fluxo || fluxo.clienteId !== clienteId || !fluxo.versaoPublicadaId) return 'sem_fluxo'
+  // Desligado não abre conversa nova (0036) — nem por sequência, nem por
+  // campanha, nem por qualquer outro caminho que passe por aqui.
+  if (!fluxo.ativo) return 'sem_fluxo'
 
   const versao = await acharVersao(fluxo.versaoPublicadaId)
   if (!versao) return 'sem_fluxo'
@@ -652,7 +707,10 @@ export async function abrirFluxoParaContato(
     const resultado = await executarComEfeitos(versao.grafo, salva.sessao, { tipo: 'inicio' }, {
       ...opcoesDeIa,
       atendimento: contextoDeAtendimento(horario),
+      carregarFluxo: carregadorDeFluxo(clienteId),
     })
+
+    if (resultado.destino) await trocarVersaoDaSessao(salva.id, resultado.destino.versaoId)
 
     await guardarSessao(salva.id, resultado.sessao)
     await aplicar(

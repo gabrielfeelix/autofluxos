@@ -38,6 +38,7 @@ const ROTULO_DO_BLOCO: Record<LinhaDoRoteiro['tipo'], string> = {
   handoff: 'Chama uma pessoa',
   http: 'API',
   etapa: 'Etapa do quadro',
+  'ir-fluxo': 'Vai para outra automação',
 }
 
 export default async function Pagina({ params }: { params: Promise<{ token: string }> }) {

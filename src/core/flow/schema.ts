@@ -380,6 +380,38 @@ export const noEtapaSchema = z.object({
   }),
 })
 
+/**
+ * **Ir para outro fluxo** — a interligação entre automações.
+ *
+ * O caso que pediu isto é literal: o estúdio tem um fluxo de pilates e um de
+ * fisioterapia, e a pessoa que cita fisioterapia no meio da triagem precisa
+ * cair nas perguntas específicas daquele fluxo. Antes, a única saída era
+ * duplicar o segundo fluxo inteiro dentro do primeiro — e a partir daí manter
+ * dois desenhos iguais à mão, que é a forma conhecida de os dois divergirem.
+ *
+ * Guarda **referência ao fluxo, não à versão**. É a mesma exceção consciente da
+ * etapa de quadro: quem salta quer o fluxo de fisioterapia **de hoje**, e não a
+ * foto dele do dia em que o salto foi desenhado. O preço — o destino pode
+ * sumir, ser despublicado ou ser desligado depois — é pago em dois lugares: o
+ * `validar()` recusa publicar apontando para destino que não serve, e o
+ * servidor manda a conversa para uma pessoa em vez de deixá-la travada.
+ *
+ * Este bloco **não tem saída**: quem salta não volta. Uma saída depois dele
+ * seria uma promessa que o motor não tem como cumprir — o outro fluxo termina
+ * onde ele terminar, e não existe pilha de chamada numa conversa de WhatsApp.
+ *
+ * `rotulo` é só desenho: o nome do fluxo no instante da escolha, para o bloco
+ * não mostrar um uuid. Quem manda é `fluxoId`.
+ */
+export const noIrFluxoSchema = z.object({
+  ...base,
+  type: z.literal('ir-fluxo'),
+  data: z.object({
+    fluxoId: z.string().default(''),
+    rotulo: z.string().default(''),
+  }),
+})
+
 export const noSchema = z.discriminatedUnion('type', [
   noMensagemSchema,
   noMidiaSchema,
@@ -390,6 +422,7 @@ export const noSchema = z.discriminatedUnion('type', [
   noHandoffSchema,
   noHttpSchema,
   noEtapaSchema,
+  noIrFluxoSchema,
 ])
 
 export const arestaSchema = z.object({

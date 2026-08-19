@@ -793,3 +793,81 @@ describe('o bloco de etapa do quadro (C1b)', () => {
     expect(r.ok).toBe(true)
   })
 })
+
+/**
+ * O bloco que interliga automações (0036).
+ *
+ * As regras aqui existem porque o bloco guarda **referência**, e não cópia: o
+ * destino pode ser apagado, despublicado ou desligado depois que o salto foi
+ * desenhado. Este é o lugar onde esse preço é cobrado — antes de a conversa de
+ * alguém pagar por ele.
+ */
+describe('ir para outra automação', () => {
+  const comSalto = (fluxoId: string): Fluxo =>
+    fluxoSchema.parse({
+      inicio: 'oi',
+      nodes: [
+        { id: 'oi', type: 'mensagem', position: p, data: { texto: 'Olá!' } },
+        { id: 'salta', type: 'ir-fluxo', position: p, data: { fluxoId, rotulo: 'Fisioterapia' } },
+      ],
+      edges: [{ id: 'e', source: 'oi', target: 'salta' }],
+    })
+
+  const fisioPronta = [{ id: 'fisio', nome: 'Fisioterapia', publicado: true, ativo: true }]
+
+  it('o salto conta como saída para uma pessoa', () => {
+    // Não é frouxidão: o destino só pode ser fluxo publicado, e nenhum fluxo
+    // publica sem caminho até uma pessoa. A escapatória continua garantida —
+    // ela só está do outro lado da porta. Sem isto, um fluxo de triagem que só
+    // distribui precisaria de um handoff decorativo que ninguém alcança.
+    const r = validar(comSalto('fisio'), { fluxos: fisioPronta })
+    expect(r.erros.map((e) => e.codigo)).not.toContain('SEM_SAIDA_HUMANA')
+    expect(r.ok).toBe(true)
+  })
+
+  it('recusa publicar sem destino escolhido', () => {
+    const r = validar(comSalto(''), { fluxos: fisioPronta })
+    expect(r.ok).toBe(false)
+    expect(r.erros.map((e) => e.codigo)).toContain('DESTINO_NAO_ESCOLHIDO')
+  })
+
+  it('recusa publicar apontando para automação que não existe mais', () => {
+    const r = validar(comSalto('sumiu'), { fluxos: fisioPronta })
+    expect(r.ok).toBe(false)
+    expect(r.erros.map((e) => e.codigo)).toContain('DESTINO_SUMIU')
+  })
+
+  it('recusa publicar mandando conversa para automação nunca publicada', () => {
+    const r = validar(comSalto('fisio'), {
+      fluxos: [{ id: 'fisio', nome: 'Fisioterapia', publicado: false, ativo: true }],
+    })
+    expect(r.ok).toBe(false)
+    expect(r.erros.map((e) => e.codigo)).toContain('DESTINO_SEM_PUBLICACAO')
+  })
+
+  it('destino desligado avisa, mas não trava a publicação', () => {
+    // Desligar é reversível num clique. Bloquear aqui faria o interruptor de
+    // uma automação travar a publicação de outra.
+    const r = validar(comSalto('fisio'), {
+      fluxos: [{ id: 'fisio', nome: 'Fisioterapia', publicado: true, ativo: false }],
+    })
+    expect(r.ok).toBe(true)
+    expect(r.avisos.map((a) => a.codigo)).toContain('DESTINO_DESLIGADO')
+  })
+
+  it('saltar para si mesmo é aviso, não impedimento', () => {
+    // Recomeçar o próprio fluxo é desenho legítimo ("quer ver de novo?"). Quem
+    // protege contra o laço infinito é a trava de saltos do servidor.
+    const r = validar(comSalto('eu'), {
+      fluxos: [{ id: 'eu', nome: 'Este mesmo', publicado: true, ativo: true }],
+      fluxoAtualId: 'eu',
+    })
+    expect(r.ok).toBe(true)
+    expect(r.avisos.map((a) => a.codigo)).toContain('DESTINO_EH_ELE_MESMO')
+  })
+
+  it('não cobra quando a lista de automações não veio — é o editor sem ir ao banco', () => {
+    const r = validar(comSalto('qualquer'))
+    expect(r.erros.map((e) => e.codigo)).not.toContain('DESTINO_SUMIU')
+  })
+})

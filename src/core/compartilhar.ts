@@ -305,6 +305,11 @@ function textoDoBloco(no: No): string {
       // dizer "move para Aula agendada" contaria o funil de um cliente a quem
       // só recebeu um desenho. O que o bloco faz basta.
       return 'move o contato no quadro'
+    case 'ir-fluxo':
+      // Pelo mesmo motivo da etapa: o nome da outra automação é informação da
+      // conta de origem, e quem recebe o link não importa o destino junto — o
+      // salto vira um bloco que ele vai ter que apontar para um fluxo dele.
+      return 'continua em outra automação'
   }
 }
 

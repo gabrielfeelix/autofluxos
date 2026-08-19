@@ -4,7 +4,7 @@ import { Editor } from '@/components/editor/editor'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarConexoes } from '@/server/repos/conexoes'
 import { listarQuadros } from '@/server/repos/quadros'
-import { acharFluxo, acharVersao, listarVersoes } from '@/server/repos/fluxos'
+import { acharFluxo, acharVersao, listarFluxos, listarVersoes } from '@/server/repos/fluxos'
 import { exigirAcessoAoCliente } from '@/server/sessao'
 
 export const dynamic = 'force-dynamic'
@@ -33,11 +33,12 @@ export default async function Pagina({
 }) {
   const { clienteId, fluxoId } = await params
 
-  const [cliente, fluxo, conexoes, quadros] = await Promise.all([
+  const [cliente, fluxo, conexoes, quadros, fluxosDaConta] = await Promise.all([
     acharCliente(clienteId),
     acharFluxo(fluxoId),
     listarConexoes(clienteId),
     listarQuadros(clienteId),
+    listarFluxos(clienteId),
   ])
   if (!cliente || !fluxo || fluxo.clienteId !== cliente.id) notFound()
 
@@ -68,12 +69,26 @@ export default async function Pagina({
         clienteId={cliente.id}
         nome={fluxo.nome}
         clienteNome={cliente.nome}
-        voltarHref={`/clientes/${cliente.id}`}
+        /* Volta para a lista de automações, e não para o painel: quem sai de
+           um fluxo quase sempre vai abrir outro, ou a palavra-chave dele. Voltar
+           para o painel jogava a pessoa dois cliques longe do que ela estava
+           fazendo. */
+        voltarHref={`/clientes/${cliente.id}/fluxos`}
         inicial={fluxo.rascunho}
         iaHabilitada={fluxo.iaHabilitada}
         contextoNegocio={cliente.contextoNegocio}
         temContextoDeNegocio={cliente.contextoNegocio.trim() !== ''}
         conexoes={conexoes}
+        /* As outras automações desta conta, para o bloco "Ir para outra
+           automação". O próprio fluxo entra na lista: recomeçar do zero é
+           desenho legítimo, e quem barra o laço infinito é a trava de saltos do
+           servidor. */
+        fluxos={fluxosDaConta.map((f) => ({
+          id: f.id,
+          nome: f.nome,
+          publicado: f.versaoPublicadaId !== null,
+          ativo: f.ativo,
+        }))}
         /* Achatado aqui, e não no componente: o painel escolhe **uma etapa**, e
            um seletor de dois níveis custaria dois cliques para uma escolha só.
            O nome do quadro entra como prefixo porque duas etapas "Fechado" em

@@ -160,6 +160,19 @@ export type Acao =
    * uma conversa não pode morrer porque alguém arrumou o quadro.
    */
   | { tipo: 'mover_etapa'; quadroId: string; colunaId: string }
+  /**
+   * Continuar a conversa em **outra automação** (0036).
+   *
+   * O motor não carrega fluxo nenhum — ele não fala com banco, e é essa
+   * ignorância que faz o simulador e a produção rodarem o mesmo código. Ele
+   * descreve o salto; quem carrega a versão publicada do destino e reentra é o
+   * resolvedor de efeitos, exatamente como já acontece com a IA e a API.
+   *
+   * As variáveis vão junto porque a sessão continua sendo a mesma conversa: o
+   * nome que a pessoa deu na triagem não pode sumir só porque o desenho
+   * mudou de arquivo.
+   */
+  | { tipo: 'ir_para_fluxo'; fluxoId: string }
   | { tipo: 'transferir_humano'; motivo: string }
   | { tipo: 'encerrar' }
 

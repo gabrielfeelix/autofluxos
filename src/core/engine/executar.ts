@@ -402,6 +402,25 @@ function avancar(
         break
       }
 
+      case 'ir-fluxo': {
+        // Sem destino escolhido o bloco não faz nada e a conversa segue — a
+        // mesma defesa do bloco de etapa, e pelo mesmo motivo: `validar()`
+        // recusa publicar assim, então isto só alcança grafo que já estava no
+        // ar quando o destino sumiu. Seguir é melhor do que travar alguém.
+        if (!no.data.fluxoId) {
+          atual = proximo(fluxo, no.id)
+          break
+        }
+
+        acoes.push({ tipo: 'ir_para_fluxo', fluxoId: no.data.fluxoId })
+        // Fica parado neste nó: quem resolve o salto é o servidor, e se ele não
+        // conseguir (destino desligado, despublicado, apagado) a conversa
+        // precisa estar num lugar conhecido para ir a uma pessoa.
+        s.noAtual = no.id
+        s.status = 'ativa'
+        return { acoes, sessao: s }
+      }
+
       case 'condicao': {
         const passou = avaliar(no.data.variavel, no.data.operador, no.data.valor, s.vars)
         atual = proximo(fluxo, no.id, passou ? SAIDA_VERDADEIRO : SAIDA_FALSO)

@@ -33,6 +33,7 @@ const CORES = {
   http: 'border-cyan-400/30',
   midia: 'border-sky-400/30',
   etapa: 'border-teal-400/30',
+  'ir-fluxo': 'border-indigo-400/30',
 } as const
 
 export const ICONES = {
@@ -45,6 +46,7 @@ export const ICONES = {
   http: '⇄',
   midia: '▣',
   etapa: '▤',
+  'ir-fluxo': '⇥',
 } as const
 
 /**
@@ -73,6 +75,13 @@ export const NOMES = {
    * correção que fez `http` deixar de se chamar "API".
    */
   etapa: 'Etapa do quadro',
+  /**
+   * "Ir para outra automação", e não "sub-fluxo" nem "chamar fluxo".
+   *
+   * "Chamar" promete volta, e não existe volta: quem salta termina no outro
+   * desenho. O nome diz exatamente o que acontece com a conversa.
+   */
+  'ir-fluxo': 'Ir para outra automação',
 } as const
 
 function Caixa({
@@ -385,6 +394,25 @@ function NoHttp({ data, selected }: NodeProps) {
   )
 }
 
+/**
+ * O bloco que manda a conversa para outra automação.
+ *
+ * Sem alça de saída (`saidaUnica={false}` e nenhuma `Saida` desenhada): daqui
+ * não sai linha nenhuma, porque a conversa continua no outro desenho e não
+ * volta. Uma alça aqui seria uma promessa que o motor não cumpre.
+ */
+function NoIrFluxo({ data, selected }: NodeProps) {
+  const d = data as { fluxoId: string; rotulo?: string }
+  return (
+    <Caixa tipo="ir-fluxo" selecionado={!!selected} saidaUnica={false}>
+      <p className="truncate text-[12.5px] leading-5 text-soft">
+        {d.fluxoId ? (d.rotulo?.trim() || 'automação escolhida') : '(nenhuma automação escolhida)'}
+      </p>
+      <p className="mt-1 text-[10px] text-dim">a conversa continua lá e não volta</p>
+    </Caixa>
+  )
+}
+
 export const tiposDeNo: NodeTypes = {
   mensagem: NoMensagem,
   midia: NoMidia,
@@ -395,4 +423,5 @@ export const tiposDeNo: NodeTypes = {
   handoff: NoHandoff,
   http: NoHttp,
   etapa: NoEtapa,
+  'ir-fluxo': NoIrFluxo,
 }

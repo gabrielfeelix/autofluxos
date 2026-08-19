@@ -28,6 +28,19 @@ export type FluxoSalvo = {
   iaHabilitada: boolean
   /** A gaveta em que ele aparece na lista (0029). Nulo = raiz. */
   pastaId: string | null
+  /**
+   * Ligado? (0036)
+   *
+   * Desligado **não abre conversa nova** — nenhum papel do número, nenhum
+   * gatilho, nenhuma campanha e nenhum salto de outro fluxo entram aqui. O que
+   * já estava andando termina: cortar no meio de uma pergunta deixaria a pessoa
+   * falando sozinha, e quem desligou queria parar de captar.
+   *
+   * É diferente de publicar: publicado diz **o que** o fluxo faz quando roda;
+   * ativo diz **se** ele roda. Sem esta coluna, "pausar por uns dias" só existia
+   * como apagar ou desligar o número inteiro.
+   */
+  ativo: boolean
 }
 
 /** Uma foto imutável do fluxo. É isto que as conversas executam. */
@@ -57,10 +70,11 @@ type Linha = {
   versao_publicada_id: string | null
   ia_habilitada: boolean
   pasta_id: string | null
+  ativo: boolean
 }
 
 const COLUNAS =
-  'id, client_id, nome, rascunho, atualizado_em, versao_publicada_id, ia_habilitada, pasta_id'
+  'id, client_id, nome, rascunho, atualizado_em, versao_publicada_id, ia_habilitada, pasta_id, ativo'
 
 /**
  * `rascunho` é `jsonb`: o banco aceita qualquer coisa ali. Uma migração
@@ -86,6 +100,7 @@ function paraFluxo(linha: Linha): FluxoSalvo {
     versaoPublicadaId: linha.versao_publicada_id,
     iaHabilitada: linha.ia_habilitada,
     pastaId: linha.pasta_id,
+    ativo: linha.ativo,
   }
 }
 
@@ -366,6 +381,32 @@ export async function apagarFluxo(
   const { error } = await db().from('flows').delete().eq('id', fluxoId).eq('client_id', clienteId)
   if (error) throw new Error(`não deu para apagar a automação: ${error.message}`)
   return { ok: true }
+}
+
+/**
+ * Liga ou desliga a automação inteira (0036).
+ *
+ * Devolve `false` quando o fluxo não é deste cliente — o par (fluxo, cliente)
+ * anda junto em toda escrita daqui, porque a URL é adivinhável.
+ */
+export async function definirAtivo(
+  clienteId: string,
+  fluxoId: string,
+  ativo: boolean,
+): Promise<boolean> {
+  if (!pareceUuid(fluxoId)) return false
+
+  const { data, error } = await db()
+    .from('flows')
+    .update({ ativo })
+    .eq('id', fluxoId)
+    .eq('client_id', clienteId)
+    .select('id')
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return false
+  if (error) throw new Error(`não deu para ligar/desligar a automação: ${error.message}`)
+  return data !== null
 }
 
 /** Liga ou desliga a IA desta automação. É o que se vende, então é explícito. */

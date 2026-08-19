@@ -268,6 +268,25 @@ export async function guardarSessao(id: string, sessao: Sessao): Promise<void> {
 }
 
 /**
+ * Troca a versão que esta sessão executa — é o que o salto entre automações faz.
+ *
+ * Sem isto o salto duraria uma mensagem só: a conversa continuaria no outro
+ * fluxo agora, e na mensagem seguinte a sessão voltaria a carregar a versão
+ * antiga com um `no_atual` que não existe lá dentro. O motor trata nó sumido
+ * recomeçando o fluxo, então o efeito seria a pessoa levar a saudação da
+ * primeira automação de novo, no meio da segunda.
+ *
+ * Vai junto de `guardarSessao`, e não dentro dele: quem salta é a exceção, e
+ * uma coluna a mais em toda gravação de sessão é escrita à toa em cada mensagem
+ * de toda conversa.
+ */
+export async function trocarVersaoDaSessao(id: string, versaoId: string): Promise<void> {
+  const { error } = await db().from('sessions').update({ flow_version_id: versaoId }).eq('id', id)
+
+  if (error) throw new Error(`não deu para trocar a versão da sessão: ${error.message}`)
+}
+
+/**
  * Registra uma mensagem recebida.
  *
  * Devolve `false` quando ela já estava lá. A Meta reenvia o webhook se não

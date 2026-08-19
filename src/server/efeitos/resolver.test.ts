@@ -455,3 +455,163 @@ describe('credencial da conexão', () => {
     expect(t.motivo).toContain('credencial')
   })
 })
+
+/**
+ * O salto entre automações (0036).
+ *
+ * O que precisa ser provado aqui não é o desenho do bloco — isso é o
+ * `executar.test.ts`. É o que o servidor faz com o pedido: carrega a versão
+ * publicada do destino, continua a conversa dentro dela **com as variáveis
+ * intactas**, e diz a quem chamou qual versão passou a valer. E, quando o
+ * destino não serve, manda para uma pessoa em vez de deixar a conversa muda.
+ */
+describe('ir para outra automação', () => {
+  const fluxoQueSalta: Fluxo = fluxoSchema.parse({
+    inicio: 'guarda',
+    nodes: [
+      {
+        id: 'guarda',
+        type: 'salvar-campo',
+        position: { x: 0, y: 0 },
+        data: { campo: 'nome', valor: 'Ana' },
+      },
+      {
+        id: 'salta',
+        type: 'ir-fluxo',
+        position: { x: 0, y: 120 },
+        data: { fluxoId: 'fisio', rotulo: 'Fisioterapia' },
+      },
+    ],
+    edges: [{ id: 'a1', source: 'guarda', target: 'salta' }],
+  })
+
+  const fluxoDestino: Fluxo = fluxoSchema.parse({
+    inicio: 'ola',
+    nodes: [
+      {
+        id: 'ola',
+        type: 'mensagem',
+        position: { x: 0, y: 0 },
+        data: { texto: 'Oi {{nome}}, vamos falar de fisioterapia.' },
+      },
+      {
+        id: 'fim',
+        type: 'handoff',
+        position: { x: 0, y: 120 },
+        data: { motivo: 'fim', mensagem: 'Já te passo para alguém.' },
+      },
+    ],
+    edges: [{ id: 'b1', source: 'ola', target: 'fim' }],
+  })
+
+  it('continua no destino, com as variáveis, e diz qual versão passou a valer', async () => {
+    const r = await executarComEfeitos(fluxoQueSalta, sessaoNova(), { tipo: 'inicio' }, {
+      modelo: null,
+      contextoNegocio: '',
+      carregarFluxo: async (id) =>
+        id === 'fisio'
+          ? { versaoId: 'v-fisio', grafo: fluxoDestino, iaHabilitada: false }
+          : null,
+    })
+
+    // O pedido de salto não sobra na lista: quem aplica as ações veria um
+    // pedido já atendido e não saberia o que fazer com ele.
+    expect(r.acoes.some((a) => a.tipo === 'ir_para_fluxo')).toBe(false)
+    expect(r.acoes).toContainEqual({
+      tipo: 'enviar_texto',
+      texto: 'Oi Ana, vamos falar de fisioterapia.',
+    })
+    expect(r.destino?.versaoId).toBe('v-fisio')
+    expect(r.sessao.vars.nome).toBe('Ana')
+  })
+
+  it('destino que não serve vira handoff, e não silêncio', async () => {
+    const r = await executarComEfeitos(fluxoQueSalta, sessaoNova(), { tipo: 'inicio' }, {
+      modelo: null,
+      contextoNegocio: '',
+      // Desligado, despublicado, apagado ou de outro cliente chegam todos aqui
+      // como `null` — quem decide isso é o carregador de quem chamou.
+      carregarFluxo: async () => null,
+    })
+
+    expect(r.sessao.status).toBe('humano')
+    expect(r.acoes).toContainEqual(
+      expect.objectContaining({
+        tipo: 'transferir_humano',
+        motivo: expect.stringContaining('não está disponível'),
+      }),
+    )
+    expect(r.destino).toBeUndefined()
+  })
+
+  it('sem carregador configurado o salto não acontece', async () => {
+    // É o caso de quem chama o motor sem saber de que cliente é a conversa.
+    // Saltar por id ali seria justamente o que não pode.
+    const r = await executarComEfeitos(fluxoQueSalta, sessaoNova(), { tipo: 'inicio' }, {
+      modelo: null,
+      contextoNegocio: '',
+    })
+
+    expect(r.sessao.status).toBe('humano')
+  })
+
+  it('a IA do destino obedece ao contrato do destino, não ao da origem', async () => {
+    const modelo = modeloQue(() => ({ tipo: 'texto', texto: 'não devia ser chamado' }))
+    const destinoComIa: Fluxo = fluxoSchema.parse({
+      inicio: 'pergunta-ia',
+      nodes: [
+        {
+          id: 'pergunta-ia',
+          type: 'ia',
+          position: { x: 0, y: 0 },
+          data: { instrucao: 'Responda a dúvida.' },
+        },
+      ],
+      edges: [],
+    })
+
+    const r = await executarComEfeitos(fluxoQueSalta, sessaoNova(), { tipo: 'inicio' }, {
+      modelo,
+      contextoNegocio: 'Clínica.',
+      carregarFluxo: async () => ({
+        versaoId: 'v-sem-ia',
+        grafo: destinoComIa,
+        // O destino não contratou a Etapa 2: o modelo não pode ir de carona só
+        // porque a conversa começou numa automação que contratou.
+        iaHabilitada: false,
+      }),
+    })
+
+    expect(modelo.pedidos).toHaveLength(0)
+    expect(r.acoes.some((a) => a.tipo === 'chamar_ia')).toBe(true)
+  })
+
+  it('laço entre automações morre na trava, com o motivo certo', async () => {
+    const emLaco: Fluxo = fluxoSchema.parse({
+      inicio: 'salta',
+      nodes: [
+        {
+          id: 'salta',
+          type: 'ir-fluxo',
+          position: { x: 0, y: 0 },
+          data: { fluxoId: 'ele-mesmo', rotulo: 'Ele mesmo' },
+        },
+      ],
+      edges: [],
+    })
+
+    const r = await executarComEfeitos(emLaco, sessaoNova(), { tipo: 'inicio' }, {
+      modelo: null,
+      contextoNegocio: '',
+      carregarFluxo: async () => ({ versaoId: 'v', grafo: emLaco, iaHabilitada: false }),
+    })
+
+    expect(r.sessao.status).toBe('humano')
+    expect(r.acoes).toContainEqual(
+      expect.objectContaining({
+        tipo: 'transferir_humano',
+        motivo: expect.stringContaining('ciclo'),
+      }),
+    )
+  })
+})

@@ -43,6 +43,16 @@ export type ConexaoDoCliente = { id: string; nome: string; tipo: string }
  */
 export type EtapaDoCliente = { quadroId: string; colunaId: string; rotulo: string }
 
+/**
+ * Uma automação da conta, como o bloco "Ir para outra automação" a enxerga.
+ *
+ * `publicado` e `ativo` vêm junto porque o seletor precisa **dizer o que está
+ * errado antes de a pessoa escolher**: mandar conversa para um fluxo que nunca
+ * foi publicado é um beco sem saída, e para um desligado é um handoff. Escolher
+ * primeiro e descobrir na lista de impedimentos depois é o caminho longo.
+ */
+export type FluxoDaConta = { id: string; nome: string; publicado: boolean; ativo: boolean }
+
 type CampoDeTexto = {
   elemento: HTMLInputElement | HTMLTextAreaElement
   aoMudar: (valor: string) => void
@@ -79,6 +89,7 @@ export function Painel({
   variaveis,
   conexoes = [],
   etapas = [],
+  fluxos = [],
   aoMudarDados,
   aoDefinirInicio,
   aoApagar,
@@ -90,6 +101,7 @@ export function Painel({
   variaveis: string[]
   conexoes?: ConexaoDoCliente[]
   etapas?: EtapaDoCliente[]
+  fluxos?: FluxoDaConta[]
   aoMudarDados: (dados: Record<string, unknown>) => void
   aoDefinirInicio: () => void
   aoApagar: () => void
@@ -386,6 +398,54 @@ export function Painel({
               <span className="mt-1 block text-[10.5px] leading-4 text-dim">
                 Quem passar por aqui entra no quadro nesta etapa — e quem já estava nele é movido
                 para cá. O relógio de &quot;parado há quanto tempo&quot; recomeça.
+              </span>
+            </>
+          )}
+        </label>
+      )}
+
+      {no.type === 'ir-fluxo' && (
+        <label className="block">
+          <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+            Continuar em qual automação
+          </span>
+          {fluxos.length === 0 ? (
+            <span className="block rounded-lg border border-dashed border-white/[0.15] px-3 py-3 text-[11.5px] leading-5 text-dim">
+              Esta conta ainda não tem automação para escolher. Crie outra em Automações — sem um
+              destino, este bloco não tem para onde mandar a conversa.
+            </span>
+          ) : (
+            <>
+              <Dropdown
+                valor={no.data.fluxoId}
+                aoMudar={(fluxoId) => {
+                  const escolhido = fluxos.find((f) => f.id === fluxoId)
+                  // `rotulo` viaja junto pelo mesmo motivo do bloco de etapa: o
+                  // desenho precisa dizer alguma coisa, e um uuid não diz. Quem
+                  // manda é `fluxoId` — o motor e o `validar()` ignoram o rótulo.
+                  aoMudarDados({ fluxoId, rotulo: escolhido?.nome ?? '' })
+                }}
+                rotuloAcessivel="Automação de destino"
+                opcoes={[
+                  { valor: '', rotulo: 'Nenhuma — a conversa pararia aqui' },
+                  ...fluxos.map((f) => ({
+                    valor: f.id,
+                    rotulo: f.nome,
+                    // O estado entra no próprio item: escolher e só depois
+                    // descobrir na lista de impedimentos que o destino não
+                    // publica é o caminho longo para a mesma informação.
+                    detalhe: !f.publicado
+                      ? 'nunca publicada — não há o que executar lá'
+                      : !f.ativo
+                        ? 'desligada — quem chegar aqui vai para uma pessoa'
+                        : undefined,
+                  })),
+                ]}
+              />
+              <span className="mt-1 block text-[10.5px] leading-4 text-dim">
+                A conversa continua na versão publicada da outra automação, do começo, e{' '}
+                <strong className="text-muted">não volta</strong>. O que já foi guardado (nome,
+                assunto, tudo) vai junto.
               </span>
             </>
           )}

@@ -35,6 +35,16 @@ const AVISO_DE_HANDOFF = 'Vou te passar para um atendente. Só um instante!'
  */
 export const MAX_EFEITOS = 10
 
+/**
+ * Quantas automações uma conversa pode atravessar numa mensagem só.
+ *
+ * Existe pelo mesmo motivo de `MAX_EFEITOS`: matar ciclo, não limitar desenho.
+ * Três saltos já é uma triagem que distribui para uma especialidade que
+ * distribui para outra — acima disso é laço, e laço aqui é infinito de verdade,
+ * porque cada salto recomeça o fluxo de destino do início.
+ */
+export const MAX_SALTOS = 5
+
 export type OpcoesDeEfeitos = {
   /** `null` = não há modelo disponível (sem plano, sem chave). */
   modelo: Modelo | null
@@ -66,6 +76,35 @@ export type OpcoesDeEfeitos = {
    * horário configurado não pode emudecer sozinha.
    */
   atendimento?: ContextoDoAtendimento
+  /**
+   * Como carregar a automação de destino de um salto — o bloco "Ir para outra
+   * automação".
+   *
+   * Entra por parâmetro, e não como import de repositório, pelo mesmo motivo do
+   * `modelo`: quem chama decide o que o salto alcança. O webhook passa um
+   * carregador amarrado ao cliente da conversa, e é isso que impede um fluxo de
+   * um cliente saltar para o de outro — o id do destino vem do grafo, e grafo é
+   * coisa que gente edita.
+   *
+   * `null` significa "este destino não serve agora": não existe, não é deste
+   * cliente, está desligado ou nunca foi publicado. O salto vira handoff, com o
+   * motivo escrito.
+   */
+  carregarFluxo?: (
+    fluxoId: string,
+  ) => Promise<{ versaoId: string; grafo: Fluxo; iaHabilitada: boolean } | null>
+}
+
+/**
+ * O que o resolvedor devolve a mais que o motor: onde a conversa **terminou**.
+ *
+ * `destino` só vem preenchido quando houve salto, e quem chamou precisa dele
+ * para duas coisas que o motor não tem como fazer: gravar na sessão qual versão
+ * ela executa agora, e agendar o timeout lendo o grafo certo. Sem isso o salto
+ * duraria uma mensagem — a próxima carregaria a versão antiga de novo.
+ */
+export type ResultadoComEfeitos = Resultado & {
+  destino?: { versaoId: string; grafo: Fluxo }
 }
 
 export async function executarComEfeitos(
@@ -73,9 +112,26 @@ export async function executarComEfeitos(
   sessao: Sessao,
   entrada: Entrada,
   opcoes: OpcoesDeEfeitos,
-): Promise<Resultado> {
+): Promise<ResultadoComEfeitos> {
   const atendimento = opcoes.atendimento ?? ATENDIMENTO_SEMPRE_ABERTO
   let resultado = executar(fluxo, sessao, entrada, atendimento)
+
+  /**
+   * O fluxo pode trocar no meio da rodada, e a partir daí é ele que vale.
+   *
+   * Tudo abaixo reentra no motor com `fluxoAtual`, nunca com o `fluxo` que
+   * chegou por parâmetro: depois de um salto, reentrar no antigo executaria o
+   * nó errado — e o erro seria silencioso, porque os dois grafos são válidos.
+   */
+  let fluxoAtual = fluxo
+  let destino: { versaoId: string; grafo: Fluxo } | undefined
+  /**
+   * O contrato de IA é **do fluxo**, não da conversa (ver `flows.ia_habilitada`).
+   * Saltar para uma automação sem Etapa 2 contratada não pode ganhar o modelo
+   * de carona só porque a conversa começou numa que tem.
+   */
+  let modelo = opcoes.modelo
+  let saltos = 0
 
   const pergunta =
     opcoes.perguntaDaPessoa ??
@@ -123,6 +179,7 @@ export async function executarComEfeitos(
             },
           ],
           sessao: { ...resultado.sessao, status: 'humano' },
+          ...(destino ? { destino } : {}),
         }
       }
 
@@ -139,6 +196,7 @@ export async function executarComEfeitos(
             { tipo: 'transferir_humano', motivo: `a integração falhou — ${resposta.motivo}` },
           ],
           sessao: { ...resultado.sessao, status: 'humano' },
+          ...(destino ? { destino } : {}),
         }
       }
 
@@ -148,7 +206,7 @@ export async function executarComEfeitos(
       // falha deixaria o valor da primeira em pé, e a mensagem para o cliente
       // mostraria dado velho como se fosse fresco.
       const seguinte = executar(
-        fluxo,
+        fluxoAtual,
         resultado.sessao,
         {
           tipo: 'http_respondeu',
@@ -166,14 +224,61 @@ export async function executarComEfeitos(
       continue
     }
 
+    const salto = resultado.acoes.find((a) => a.tipo === 'ir_para_fluxo')
+    if (salto?.tipo === 'ir_para_fluxo') {
+      const carregado = saltos++ < MAX_SALTOS ? await carregar(opcoes, salto.fluxoId) : null
+
+      // Destino que não serve não pode virar silêncio: a conversa está parada
+      // num bloco que só sabe saltar, e sem saída desenhada ela ficaria muda
+      // até alguém reparar. Uma pessoa assume, com o motivo escrito.
+      if (!carregado) {
+        return {
+          acoes: [
+            ...semEfeito(resultado.acoes, 'ir_para_fluxo'),
+            { tipo: 'enviar_texto', texto: avisoDeForaDoHorario(atendimento) ?? AVISO_DE_HANDOFF },
+            {
+              tipo: 'transferir_humano',
+              motivo:
+                saltos > MAX_SALTOS
+                  ? `o fluxo saltou entre mais de ${MAX_SALTOS} automações seguidas — provavelmente há um ciclo no desenho`
+                  : 'a automação de destino não está disponível — ela foi apagada, desligada ou nunca publicada',
+            },
+          ],
+          sessao: { ...resultado.sessao, status: 'humano' },
+          ...(destino ? { destino } : {}),
+        }
+      }
+
+      fluxoAtual = carregado.grafo
+      destino = { versaoId: carregado.versaoId, grafo: carregado.grafo }
+      modelo = carregado.iaHabilitada ? opcoes.modelo : null
+
+      // Começa do início do fluxo novo e com as variáveis intactas: é a mesma
+      // conversa, e o nome que a pessoa deu na triagem não pode sumir porque o
+      // desenho mudou de arquivo. `tentativas` zera — o que o bot não entendeu
+      // lá atrás não conta contra as perguntas de cá.
+      const seguinte = executar(
+        fluxoAtual,
+        { ...resultado.sessao, noAtual: null, tentativas: 0, status: 'ativa' },
+        { tipo: 'inicio' },
+        atendimento,
+      )
+
+      resultado = {
+        acoes: [...semEfeito(resultado.acoes, 'ir_para_fluxo'), ...seguinte.acoes],
+        sessao: seguinte.sessao,
+      }
+      continue
+    }
+
     const chamadaIa = resultado.acoes.find((a) => a.tipo === 'chamar_ia')
-    if (chamadaIa?.tipo !== 'chamar_ia') return resultado
+    if (chamadaIa?.tipo !== 'chamar_ia') return { ...resultado, ...(destino ? { destino } : {}) }
 
     // Sem modelo, `chamar_ia` continua na lista e quem chamou decide o que
     // fazer — hoje, mandar para uma pessoa. Nunca fingir que respondeu.
-    if (!opcoes.modelo) return resultado
+    if (!modelo) return { ...resultado, ...(destino ? { destino } : {}) }
 
-    const resposta = await opcoes.modelo.responder({
+    const resposta = await modelo.responder({
       contextoNegocio: opcoes.contextoNegocio,
       instrucao: chamadaIa.instrucao,
       pergunta,
@@ -196,11 +301,12 @@ export async function executarComEfeitos(
           { tipo: 'transferir_humano', motivo: `a IA não soube responder — ${resposta.motivo}` },
         ],
         sessao: { ...resultado.sessao, status: 'humano' },
+        ...(destino ? { destino } : {}),
       }
     }
 
     const seguinte = executar(
-      fluxo,
+      fluxoAtual,
       resultado.sessao,
       { tipo: 'ia_respondeu', texto: resposta.texto },
       atendimento,
@@ -235,10 +341,31 @@ export async function executarComEfeitos(
         },
       ],
       sessao: { ...resultado.sessao, status: 'humano' },
+      ...(destino ? { destino } : {}),
     }
   }
 
-  return resultado
+  return { ...resultado, ...(destino ? { destino } : {}) }
+}
+
+/**
+ * Carrega o destino do salto, e devolve `null` quando ele não serve.
+ *
+ * Sem carregador configurado o salto também não acontece: é o caso de quem
+ * chama o resolvedor sem saber de que cliente é a conversa, e nesse caso pular
+ * para um fluxo escolhido por id seria justamente o que não pode.
+ */
+async function carregar(opcoes: OpcoesDeEfeitos, fluxoId: string) {
+  if (!opcoes.carregarFluxo) return null
+  try {
+    return await opcoes.carregarFluxo(fluxoId)
+  } catch (erro) {
+    // Banco fora do ar no meio de um salto não pode estourar daqui: a exceção
+    // subiria até o `after()` do webhook, a sessão nunca seria salva e a
+    // mensagem já foi deduplicada — a pessoa ficaria sem resposta nenhuma.
+    await alertar('não deu para carregar a automação de destino', erro, { fluxo: fluxoId })
+    return null
+  }
 }
 
 /**
@@ -247,7 +374,7 @@ export async function executarComEfeitos(
  * Se ficasse, quem aplica as ações veria um pedido já respondido e mandaria a
  * conversa para um humano em cima de algo que deu certo.
  */
-function semEfeito(acoes: Acao[], tipo: 'chamar_ia' | 'chamar_http'): Acao[] {
+function semEfeito(acoes: Acao[], tipo: 'chamar_ia' | 'chamar_http' | 'ir_para_fluxo'): Acao[] {
   return acoes.filter((a) => a.tipo !== tipo)
 }
 

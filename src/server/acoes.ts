@@ -61,6 +61,7 @@ import {
   acharVersaoDoFluxo,
   apagarFluxo,
   criarFluxo,
+  definirAtivo,
   definirIa,
   publicar,
   salvarRascunho,
@@ -336,6 +337,26 @@ export async function acaoAlternarIa(fluxoId: string, clienteId: string, habilit
   await definirIa(fluxoId, clienteId, habilitada)
   revalidatePath(`/clientes/${clienteId}`)
   return { ok: true as const, iaHabilitada: habilitada }
+}
+
+/**
+ * Liga ou desliga a automação (0036).
+ *
+ * Desligar não despublica e não apaga: a versão no ar continua sendo a versão
+ * no ar, e voltar a ligar não pede publicar de novo. O que muda é só se o fluxo
+ * **abre conversa nova**.
+ */
+export async function acaoAlternarFluxoAtivo(
+  clienteId: string,
+  fluxoId: string,
+  ativo: boolean,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const mudou = await definirAtivo(clienteId, fluxoId, ativo)
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  revalidatePath(`/clientes/${clienteId}`)
+  return mudou ? { ok: true } : { ok: false, erro: 'esta automação não existe mais' }
 }
 
 /**

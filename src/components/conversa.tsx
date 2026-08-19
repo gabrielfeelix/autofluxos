@@ -121,6 +121,16 @@ export function Conversa({
   const [sessaoExibida, setSessaoExibida] = useState<Sessao>(() => sessaoNova())
 
   const sessaoRef = useRef<Sessao>(sessaoNova())
+  /**
+   * O desenho que a conversa está executando **agora**.
+   *
+   * Quase sempre é o do editor. Muda quando a conversa passa por um bloco "Ir
+   * para outra automação": dali em diante quem manda é a versão publicada do
+   * destino, e continuar mandando o rascunho de cá faria o servidor procurar o
+   * bloco atual num grafo onde ele não existe — o motor trataria como nó sumido
+   * e recomeçaria a saudação, no meio do teste.
+   */
+  const fluxoDaVez = useRef<Fluxo>(fluxo)
   // Espelho dos itens para montar o histórico sem depender do fechamento do
   // render em que `enviar` foi criada.
   const itensRef = useRef<ItemDaConversa[]>([])
@@ -142,7 +152,7 @@ export function Conversa({
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          fluxo,
+          fluxo: fluxoDaVez.current,
           sessao: sessaoRef.current,
           entrada,
           fluxoId,
@@ -163,7 +173,10 @@ export function Conversa({
         return
       }
 
-      const { acoes, sessao: nova } = (await resposta.json()) as Resultado
+      const { acoes, sessao: nova, destino } = (await resposta.json()) as Resultado & {
+        destino?: { grafo: Fluxo }
+      }
+      if (destino) fluxoDaVez.current = destino.grafo
       sessaoRef.current = nova
       setSessaoExibida(nova)
       setStatus(nova.status)
@@ -263,6 +276,9 @@ export function Conversa({
 
   function recomecar() {
     sessaoRef.current = sessaoNova()
+    // Recomeçar volta para o desenho da tela, e não para onde o último salto
+    // parou: quem clica em recomeçar quer testar o que está editando.
+    fluxoDaVez.current = fluxo
     assinaturaDoInicio.current = assinatura
     setDesatualizada(false)
     setStatus('ativa')

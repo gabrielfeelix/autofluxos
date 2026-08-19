@@ -88,6 +88,22 @@ export type Capacidades = {
    * conversa de alguém pagar por ele.
    */
   etapas?: string[]
+  /**
+   * As outras automações deste cliente, para o bloco "Ir para outro fluxo".
+   *
+   * `undefined` = não sei, e aí não se cobra (o editor validando sem ter ido ao
+   * banco). Quando a lista vem, o destino é conferido pelos dois critérios que
+   * decidem se o salto funciona **na hora da conversa**: existir com versão
+   * publicada e estar ligado.
+   *
+   * É a contrapartida de o bloco guardar referência em vez de cópia, igual à
+   * etapa de quadro: quem salta quer o fluxo de hoje, e o preço é ele poder
+   * sumir depois. Este é o lugar onde o preço é cobrado antes de a conversa de
+   * alguém pagar por ele.
+   */
+  fluxos?: { id: string; nome: string; publicado: boolean; ativo: boolean }[]
+  /** Qual é este fluxo, para avisar sobre salto para ele mesmo. */
+  fluxoAtualId?: string
 }
 
 /**
@@ -99,7 +115,14 @@ export type Capacidades = {
  * na memória de quem desenhou o fluxo.
  */
 export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoValidacao {
-  const { iaHabilitada = false, conexoes, temContextoDeNegocio, etapas } = capacidades
+  const {
+    iaHabilitada = false,
+    conexoes,
+    temContextoDeNegocio,
+    etapas,
+    fluxos,
+    fluxoAtualId,
+  } = capacidades
   const erros: Problema[] = []
   const avisos: Problema[] = []
 
@@ -244,6 +267,50 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
       }
     }
 
+    if (no.type === 'ir-fluxo') {
+      const destino = fluxos?.find((f) => f.id === no.data.fluxoId)
+
+      if (!no.data.fluxoId) {
+        erros.push({
+          codigo: 'DESTINO_NAO_ESCOLHIDO',
+          mensagem:
+            'Este bloco manda a conversa para outra automação, mas nenhuma foi escolhida. Do jeito que está, a conversa pararia aqui.',
+          noId: no.id,
+        })
+      } else if (fluxoAtualId && no.data.fluxoId === fluxoAtualId) {
+        // Aviso, e não impedimento: recomeçar o próprio fluxo é desenho
+        // legítimo ("quer ver de novo?"). Quem protege contra o laço infinito
+        // é a trava de saltos do servidor, não esta lista.
+        avisos.push({
+          codigo: 'DESTINO_EH_ELE_MESMO',
+          mensagem:
+            'Este bloco manda a conversa para esta mesma automação, do começo. Se isso não for de propósito, escolha outra.',
+          noId: no.id,
+        })
+      } else if (fluxos && !destino) {
+        erros.push({
+          codigo: 'DESTINO_SUMIU',
+          mensagem:
+            'Este bloco aponta para uma automação que não existe mais neste cliente. Escolha outra — publicar assim deixaria a conversa sem para onde ir.',
+          noId: no.id,
+        })
+      } else if (destino && !destino.publicado) {
+        erros.push({
+          codigo: 'DESTINO_SEM_PUBLICACAO',
+          mensagem: `A automação "${destino.nome}" nunca foi publicada, então não há o que executar do outro lado. Publique ela antes de mandar conversa para lá.`,
+          noId: no.id,
+        })
+      } else if (destino && !destino.ativo) {
+        // Aviso: desligar é reversível num clique, e bloquear a publicação daqui
+        // faria o interruptor de uma automação travar a publicação de outra.
+        avisos.push({
+          codigo: 'DESTINO_DESLIGADO',
+          mensagem: `A automação "${destino.nome}" está desligada. Enquanto ficar assim, quem chegar neste bloco vai para uma pessoa em vez de continuar lá.`,
+          noId: no.id,
+        })
+      }
+    }
+
     if (no.type === 'condicao') {
       for (const saida of [SAIDA_VERDADEIRO, SAIDA_FALSO]) {
         if (!minhasSaidas.some((a) => a.sourceHandle === saida)) {
@@ -269,7 +336,19 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
     }
   }
 
-  const temSaidaHumana = [...alcancaveis].some((id) => porId.get(id)?.type === 'handoff')
+  /**
+   * O salto para outro fluxo **conta como saída humana**.
+   *
+   * Não é frouxidão: o destino só pode ser um fluxo publicado, e nenhum fluxo
+   * publica sem ter caminho até uma pessoa. A escapatória continua garantida —
+   * ela só passou a estar do outro lado da porta. Sem isto, um fluxo de triagem
+   * que só distribui para os fluxos especializados seria obrigado a ter um
+   * handoff decorativo que ninguém alcança.
+   */
+  const temSaidaHumana = [...alcancaveis].some((id) => {
+    const tipo = porId.get(id)?.type
+    return tipo === 'handoff' || tipo === 'ir-fluxo'
+  })
   if (!temSaidaHumana) {
     erros.push({
       codigo: 'SEM_SAIDA_HUMANA',
@@ -324,6 +403,10 @@ function descrever(no: No): string {
       // O bloco de etapa não tem texto nenhum para citar — os dois campos são
       // ids. Sobra o tipo, que é o que já acontece com qualquer bloco vazio.
       return 'O bloco de etapa do quadro'
+    case 'ir-fluxo':
+      // `rotulo` é o nome do fluxo de destino guardado na hora da escolha. É
+      // exatamente o que identifica o bloco para quem lê a lista de problemas.
+      return rotular('Ir para', curto(no.data.rotulo))
   }
 }
 
@@ -799,6 +882,11 @@ function variaveisDoNo(no: No): string[] {
     case 'etapa':
       // Ids, não variáveis. Interpolar `{{}}` aqui seria deixar a conversa
       // escolher em que etapa a pessoa cai, e o id não é coisa que se digite.
+      return []
+    case 'ir-fluxo':
+      // Mesmo motivo da etapa: o destino é um id escolhido no editor. Deixar a
+      // conversa escolher para qual automação ela pula seria entregar o roteiro
+      // do atendimento para quem está do outro lado.
       return []
   }
 }

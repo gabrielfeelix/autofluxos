@@ -4,7 +4,7 @@ import { fluxoSchema } from '@/core/flow/schema'
 import { executarComEfeitos } from '@/server/efeitos/resolver'
 import { escolherModelo } from '@/server/ia/modelo'
 import { chaveDeLimite, consumirLimite } from '@/server/limite'
-import { acharFluxo } from '@/server/repos/fluxos'
+import { acharFluxo, acharVersao } from '@/server/repos/fluxos'
 import { conferirAcessoAoCliente } from '@/server/sessao'
 
 /**
@@ -132,6 +132,32 @@ export async function POST(req: Request) {
       // o sistema do cliente separar tráfego de teste do movimento real dele.
       origem: 'simulador',
       clienteId,
+      /**
+       * O salto entre automações também vale no teste, e ele lê a versão
+       * **publicada** do destino — que é o que a conversa de verdade vai
+       * executar. O rascunho do outro fluxo não entra aqui de propósito: testar
+       * contra um desenho que ninguém publicou esconderia justamente o erro de
+       * mandar conversa para uma automação que ainda não está pronta.
+       *
+       * Sem `clienteId` não há salto, pelo mesmo motivo de não haver credencial:
+       * o id do destino vem do corpo da requisição, e sem dono conferido ele
+       * alcançaria o fluxo de qualquer conta.
+       */
+      carregarFluxo: clienteId
+        ? async (destinoId: string) => {
+            const destino = await acharFluxo(destinoId)
+            if (!destino || destino.clienteId !== clienteId) return null
+            if (!destino.ativo || !destino.versaoPublicadaId) return null
+
+            const versao = await acharVersao(destino.versaoPublicadaId)
+            if (!versao) return null
+            return {
+              versaoId: versao.id,
+              grafo: versao.grafo,
+              iaHabilitada: destino.iaHabilitada,
+            }
+          }
+        : undefined,
     }),
   )
 }

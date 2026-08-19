@@ -41,6 +41,7 @@ import { listarPastas } from '@/server/repos/pastas'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { contarInscricoes, listarSequencias } from '@/server/repos/sequencias'
 import { listarQuadros } from '@/server/repos/quadros'
+import { InterruptorDeFluxo } from '@/components/fluxos/interruptor'
 import { MoverFluxo } from '@/components/editor/mover-fluxo'
 import { MODELOS } from '@/exemplos/modelos'
 import { contatosPorCampanha, listarCampanhas } from '@/server/repos/campanhas'
@@ -345,7 +346,7 @@ export default async function Pagina({
                       className="flex min-w-0 flex-1 items-center gap-3.5 px-5 py-[15px]"
                     >
                       <span
-                        className={`size-2 shrink-0 rounded-full ${fluxo.versaoPublicadaId ? 'bg-emerald-400' : 'bg-dim'}`}
+                        className={`size-2 shrink-0 rounded-full ${fluxo.versaoPublicadaId && fluxo.ativo ? 'bg-emerald-400' : 'bg-dim'}`}
                         aria-hidden
                       />
                       <span className="min-w-0 flex-1">
@@ -367,12 +368,34 @@ export default async function Pagina({
                         <strong className="font-semibold text-soft">{totalDeExecucoes}</strong>{' '}
                         {totalDeExecucoes === 1 ? 'execução' : 'execuções'}
                       </span>
+                      {/*
+                        Três estados, e não dois. "Publicado" e "atendendo" são
+                        perguntas diferentes desde a 0036: um fluxo desligado
+                        continua com a versão dele no ar — ele só não abre
+                        conversa nova. Mostrar "NO AR" nele seria mentir
+                        exatamente para quem acabou de desligar.
+                      */}
                       <span
-                        className={`rounded-full border px-2.5 py-1 text-[10.5px] font-bold ${fluxo.versaoPublicadaId ? 'border-emerald-400/25 bg-emerald-400/[0.08] text-emerald-300' : 'border-white/10 bg-white/[0.04] text-muted'}`}
+                        className={`rounded-full border px-2.5 py-1 text-[10.5px] font-bold ${
+                          !fluxo.ativo
+                            ? 'border-amber-300/25 bg-amber-300/[0.08] text-amber-200'
+                            : fluxo.versaoPublicadaId
+                              ? 'border-emerald-400/25 bg-emerald-400/[0.08] text-emerald-300'
+                              : 'border-white/10 bg-white/[0.04] text-muted'
+                        }`}
                       >
-                        {fluxo.versaoPublicadaId ? 'NO AR' : 'RASCUNHO'}
+                        {!fluxo.ativo ? 'DESLIGADO' : fluxo.versaoPublicadaId ? 'NO AR' : 'RASCUNHO'}
                       </span>
                     </Link>
+                    {/* Fora do `Link` pelo mesmo motivo do botão de apagar. */}
+                    <span className="mr-3">
+                      <InterruptorDeFluxo
+                        clienteId={cliente.id}
+                        fluxoId={fluxo.id}
+                        ativo={fluxo.ativo}
+                        nome={fluxo.nome}
+                      />
+                    </span>
                     {pastas.length > 0 && (
                       <span className="mr-3">
                         <MoverFluxo
