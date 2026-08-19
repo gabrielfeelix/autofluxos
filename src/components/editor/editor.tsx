@@ -1143,6 +1143,17 @@ export function Editor({
             onNodesChange={aoMudarNos}
             onEdgesChange={aoMudarArestas}
             onConnect={aoConectar}
+            /**
+             * Soltar a ligação **em cima do bloco** conecta, não só em cima da
+             * bolinha.
+             *
+             * O padrão do React Flow é 20px: fora disso a linha some no ar sem
+             * dizer nada, e quem está desenhando conclui que "esse bloco não
+             * aceita ligação". Foi exatamente o que veio de quem monta fluxo.
+             * 90px cobre a entrada do bloco inteira com folga, e continua
+             * pequeno o bastante para não roubar a alça do bloco vizinho.
+             */
+            connectionRadius={90}
             nodeTypes={tiposDeNo}
             edgeTypes={tiposDeAresta}
             onNodeContextMenu={(evento, no) => abrirMenu(evento, 'no', no.id)}

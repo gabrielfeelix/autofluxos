@@ -102,7 +102,7 @@ function Caixa({
         selecionado ? '!border-accent ring-1 ring-accent/30' : ''
       }`}
     >
-      <Handle type="target" position={Position.Left} className="!left-[-6px] !size-[13px] !border-2 !border-white/30 !bg-[#0b1018]" />
+      <Handle type="target" position={Position.Left} className="!left-[-7px] !size-[15px] !border-2 !border-white/30 !bg-[#0b1018] transition hover:!border-accent" />
       <p className="flex h-[38px] items-center gap-2 border-b border-white/[0.06] px-3 text-[10px] font-bold tracking-[0.06em] text-[#97a2b4] uppercase">
         <span aria-hidden className="flex size-6 items-center justify-center rounded-[7px] bg-white/[0.05] text-[13px] text-soft">
           {ICONES[tipo]}
@@ -111,7 +111,7 @@ function Caixa({
       </p>
       <div className="px-3 py-2.5">{children}</div>
       {saidaUnica && (
-        <Handle type="source" position={Position.Right} className="!right-[-6px] !size-[11px] !border-2 !border-[#0b1018] !bg-accent" />
+        <Handle type="source" position={Position.Right} className="!right-[-7px] !size-[13px] !border-2 !border-[#0b1018] !bg-accent transition hover:!ring-2 hover:!ring-accent/40" />
       )}
     </div>
   )
@@ -126,7 +126,7 @@ function Saida({ id, children }: { id: string; children: ReactNode }) {
         type="source"
         id={id}
         position={Position.Right}
-        className="!right-[-6px] !size-[11px] !border-2 !border-[#0b1018] !bg-accent"
+        className="!right-[-7px] !size-[13px] !border-2 !border-[#0b1018] !bg-accent transition hover:!ring-2 hover:!ring-accent/40"
         style={{ top: '50%' }}
       />
     </div>
