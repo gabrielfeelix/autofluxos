@@ -15,6 +15,11 @@ import {
   type ContextoDoAtendimento,
 } from '@/core/engine/executar'
 import { casarGatilho } from '@/core/gatilhos'
+import { chaveDoTimeout, dadosDoTimeoutSchema } from '@/core/tarefas'
+import { agendar, cancelarPorChave } from './repos/tarefas'
+import { timeoutDaPergunta } from '@/core/flow/schema'
+import type { Fluxo } from '@/core/flow/schema'
+import type { Sessao } from '@/core/engine/types'
 import { dentroDaJanela } from '@/channels/janela'
 import { contarDisparo, gatilhosAtivos } from './repos/gatilhos'
 import {
@@ -23,8 +28,10 @@ import {
   type HorarioDeAtendimento,
 } from '@/core/horario'
 import {
+  acharCanal,
   acharCanalPorNumero,
   acharContato,
+  acharSessao,
   acharOuCriarContato,
   contextoDeResposta,
   alterarAutomacaoDoContato,
@@ -378,7 +385,115 @@ async function avancarConversa(
   )
 
   await guardarSessao(salva.id, resultado.sessao)
+  await sincronizarTimeout(canalSalvo.clienteId, contato.id, salva.id, versao.grafo, resultado.sessao)
   await aplicar(fabricaDeCanal(canalSalvo), contato, salva.id, mensagem.id, resultado.acoes)
+}
+
+/**
+ * Acerta o prazo da pergunta depois de cada rodada (B1).
+ *
+ * Uma chamada só para as duas metades — agendar e cancelar — porque elas são a
+ * mesma decisão vista de dois lados: **a conversa parou numa pergunta com
+ * prazo, ou não parou.** Separar em duas funções é como se esquece de chamar a
+ * segunda, e esquecer o cancelamento é cobrar quem já respondeu.
+ *
+ * A chave é por sessão, então reagendar substitui: a espera recomeça a cada
+ * repergunta, que é o que "prazo para responder" significa.
+ */
+async function sincronizarTimeout(
+  clienteId: string,
+  contatoId: string,
+  sessaoId: string,
+  grafo: Fluxo,
+  sessao: Sessao,
+): Promise<void> {
+  const chave = chaveDoTimeout(sessaoId)
+
+  const parada =
+    sessao.status === 'ativa' && sessao.noAtual !== null
+      ? grafo.nodes.find((no) => no.id === sessao.noAtual)
+      : undefined
+
+  const minutos = parada?.type === 'pergunta' ? timeoutDaPergunta(parada) : null
+  if (minutos === null || minutos === undefined) {
+    await cancelarPorChave(chave)
+    return
+  }
+
+  await agendar({
+    clienteId,
+    tipo: 'timeout_de_pergunta',
+    quando: new Date(Date.now() + minutos * 60_000),
+    dados: { sessaoId, contatoId, noId: parada!.id },
+    chave,
+  })
+}
+
+/**
+ * O prazo de uma pergunta venceu (B1). Chamada pelo agendador, não por mensagem.
+ *
+ * **Quase tudo aqui é motivo para não fazer nada**, e essa é a parte que
+ * importa: a tarefa foi agendada minutos ou horas atrás, e no meio disso a
+ * conversa pode ter andado, sido assumida por uma pessoa, encerrada, ou o bot
+ * pode ter sido pausado. Agir sobre um estado que mudou é acordar alguém com
+ * uma cobrança que não faz mais sentido — e o agendador é justamente a peça em
+ * que ninguém está olhando quando ela erra.
+ *
+ * Devolve o que aconteceu para o cron poder contar, e não para decidir nada.
+ */
+export async function rodarTimeoutDePergunta(
+  dados: unknown,
+  fabricaDeCanal: FabricaDeCanal = canalPadrao,
+): Promise<'feita' | 'ignorada'> {
+  const analise = dadosDoTimeoutSchema.safeParse(dados)
+  if (!analise.success) return 'ignorada'
+
+  const { sessaoId, contatoId, noId } = analise.data
+
+  const salva = await acharSessao(sessaoId)
+  if (!salva) return 'ignorada'
+  // A conversa saiu de `ativa` (assumida, encerrada, esperando IA) ou andou
+  // para outro bloco. Nos dois casos o prazo perdeu o dono.
+  if (salva.sessao.status !== 'ativa' || salva.sessao.noAtual !== noId) return 'ignorada'
+
+  const [contato, canal, versao] = await Promise.all([
+    acharContato(contatoId),
+    acharCanal(salva.canalId),
+    acharVersao(salva.flowVersionId),
+  ])
+  if (!contato || !canal || !versao) return 'ignorada'
+  if (!contato.automacaoAtiva) return 'ignorada'
+
+  // A mesma trava do webhook. Não conseguir a vez significa que uma mensagem
+  // está sendo processada agora — e a mensagem ganha do prazo, sempre.
+  const destravar = await travarContato(contatoId)
+  if (!destravar) return 'ignorada'
+
+  try {
+    // Reler dentro da trava: a mensagem que estava chegando pode ter acabado de
+    // mover a conversa entre a leitura de cima e este ponto.
+    const agora = await acharSessao(sessaoId)
+    if (!agora || agora.sessao.status !== 'ativa' || agora.sessao.noAtual !== noId) {
+      return 'ignorada'
+    }
+
+    const [opcoesDeIa, horario] = await Promise.all([
+      prepararIa(canal, contatoId, versao, null),
+      horarioDoCliente(canal.clienteId),
+    ])
+
+    const resultado = await executarComEfeitos(versao.grafo, agora.sessao, { tipo: 'timeout' }, {
+      ...opcoesDeIa,
+      atendimento: contextoDeAtendimento(horario),
+    })
+
+    await guardarSessao(sessaoId, resultado.sessao)
+    await sincronizarTimeout(canal.clienteId, contatoId, sessaoId, versao.grafo, resultado.sessao)
+    await aplicar(fabricaDeCanal(canal), contato, sessaoId, null, resultado.acoes)
+    return 'feita'
+  } finally {
+    await destravar()
+  }
 }
 
 /**

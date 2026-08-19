@@ -8,6 +8,7 @@ import {
   LIMITE_TEXTO_INTERATIVO,
   SAIDA_ESCOLHEU,
   SAIDA_FALSO,
+  SAIDA_TIMEOUT,
   SAIDA_VAZIO,
   SAIDA_VERDADEIRO,
   perguntaEhDinamica,
@@ -171,7 +172,11 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
         }
       }
 
-      if (opcoes.length === 0 && minhasSaidas.length === 0) {
+      // A aresta de timeout não conta como continuação: ela é o caminho de
+      // quem **não** respondeu. Contá-la deixaria passar uma pergunta que só
+      // sabe o que fazer com o silêncio, e não com a resposta.
+      const continuacoes = minhasSaidas.filter((a) => a.sourceHandle !== SAIDA_TIMEOUT)
+      if (opcoes.length === 0 && continuacoes.length === 0) {
         erros.push({
           codigo: 'PERGUNTA_SEM_SAIDA',
           mensagem: `"${no.data.texto}" espera uma resposta mas não continua para lugar nenhum.`,

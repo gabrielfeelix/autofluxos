@@ -64,6 +64,14 @@ export const entradaSchema = z.discriminatedUnion('tipo', [
     tipo: z.literal('http_respondeu'),
     valores: z.record(z.string(), z.string()),
   }),
+  /**
+   * O prazo da pergunta acabou e ninguém respondeu (B1).
+   *
+   * Não vem de pessoa nenhuma: vem do agendador. É a única entrada que o motor
+   * recebe sem alguém do outro lado ter feito nada — e por isso a única que
+   * significa **ausência**.
+   */
+  z.object({ tipo: z.literal('timeout') }),
 ])
 
 export type StatusSessao = z.infer<typeof statusSessaoSchema>

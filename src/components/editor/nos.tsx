@@ -6,6 +6,7 @@ import { partesDaMensagem } from '@/core/flow/mensagem'
 import {
   LIMITE_BOTOES,
   SAIDA_ESCOLHEU,
+  SAIDA_TIMEOUT,
   SAIDA_FALSO,
   SAIDA_VAZIO,
   SAIDA_VERDADEIRO,
@@ -212,14 +213,23 @@ function nomeDaUrl(url: string): string {
 }
 
 function NoPergunta({ data, selected }: NodeProps) {
-  const d = data as { texto: string; salvarEm?: string; opcoes: Opcao[]; opcoesDe?: string }
+  const d = data as {
+    texto: string
+    salvarEm?: string
+    opcoes: Opcao[]
+    opcoesDe?: string
+    timeoutMinutos?: number
+  }
   const dinamica = (d.opcoesDe ?? '').trim() !== ''
+  const prazo = d.timeoutMinutos ?? null
 
   return (
     <Caixa
       tipo="pergunta"
       selecionado={!!selected}
-      saidaUnica={!dinamica && d.opcoes.length === 0}
+      // Com prazo, a saída deixa de ser única mesmo em resposta livre: existem
+      // duas, a de quem respondeu e a de quem não respondeu.
+      saidaUnica={!dinamica && d.opcoes.length === 0 && prazo === null}
     >
       <p className="line-clamp-2 text-[12.5px] leading-5 text-soft">{vazio(d.texto, '(sem texto)')}</p>
       {d.salvarEm && <p className="mt-1 font-mono text-[10px] text-dim">guarda em {d.salvarEm}</p>}
@@ -252,10 +262,35 @@ function NoPergunta({ data, selected }: NodeProps) {
           {d.opcoes.length === 0 && (
             <p className="mt-1 text-[10px] text-dim">resposta livre em texto</p>
           )}
+          {d.opcoes.length === 0 && prazo !== null && (
+            <Saida id="">
+              <span className="text-[11px] text-muted">respondeu</span>
+            </Saida>
+          )}
+        </>
+      )}
+
+      {prazo !== null && (
+        <>
+          <p className="mt-1.5 text-[10px] text-dim">espera {comoPrazo(prazo)}</p>
+          <Saida id={SAIDA_TIMEOUT}>
+            <span className="text-[11px] text-amber-200">não respondeu</span>
+          </Saida>
         </>
       )}
     </Caixa>
   )
+}
+
+/** "45 min", "2h", "1 dia". Minuto puro acima de uma hora ninguém lê. */
+export function comoPrazo(minutos: number): string {
+  if (minutos < 60) return `${minutos} min`
+  if (minutos % 1_440 === 0) {
+    const dias = minutos / 1_440
+    return dias === 1 ? '1 dia' : `${dias} dias`
+  }
+  if (minutos % 60 === 0) return `${minutos / 60}h`
+  return `${Math.floor(minutos / 60)}h${minutos % 60}`
 }
 
 function NoCondicao({ data, selected }: NodeProps) {

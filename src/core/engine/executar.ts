@@ -5,9 +5,11 @@ import {
   LIMITE_ROTULO,
   SAIDA_ESCOLHEU,
   SAIDA_FALSO,
+  SAIDA_TIMEOUT,
   SAIDA_VAZIO,
   SAIDA_VERDADEIRO,
   perguntaEhDinamica,
+  timeoutDaPergunta,
   type Fluxo,
   type No,
   type NoPergunta,
@@ -123,8 +125,37 @@ export function executar(
   // A sessão aponta para um nó que não existe mais. Acontece quando alguém
   // republica um fluxo mexendo numa versão já em uso — recomeça em vez de travar.
   if (!atual) {
+    // Timeout de uma conversa cujo nó sumiu não recomeça o fluxo: acordar
+    // alguém com a saudação do zero, sozinho, é pior do que não acordar.
+    if (entrada.tipo === 'timeout') return { acoes, sessao: s }
     s.tentativas = 0
     return avancar(contexto, fluxo, porId, s, acoes, fluxo.inicio)
+  }
+
+  /**
+   * O prazo acabou.
+   *
+   * **Sem saída desenhada, vai para uma pessoa.** Quem parou de responder no
+   * meio de uma triagem é o lead que mais vale a pena resgatar, e encerrar
+   * calado seria sumir com ele. Encerrar só acontece se o cliente tiver
+   * desenhado a saída `timeout` para uma despedida.
+   *
+   * Só vale parado numa pergunta: o agendador não agenda timeout para outra
+   * coisa, e uma tarefa velha chegando depois de a conversa ter andado não
+   * pode empurrar ninguém.
+   */
+  if (entrada.tipo === 'timeout') {
+    if (atual.type !== 'pergunta' || timeoutDaPergunta(atual) === null) {
+      return { acoes, sessao: s }
+    }
+
+    const saida = proximo(fluxo, atual.id, SAIDA_TIMEOUT)
+    if (saida === null) {
+      return transferir(s, acoes, 'ninguém respondeu dentro do prazo da pergunta', contexto)
+    }
+
+    s.tentativas = 0
+    return avancar(contexto, fluxo, porId, s, acoes, saida)
   }
 
   if (atual.type === 'ia') {
@@ -539,12 +570,21 @@ function transferir(
   return { acoes, sessao: s }
 }
 
+/**
+ * Para onde a conversa vai a partir deste nó.
+ *
+ * **A saída sem nome nunca é a de timeout.** Sem esta exclusão, uma pergunta de
+ * resposta livre com prazo desenhado mandaria quem *respondeu* para o caminho
+ * de quem *não respondeu* — porque a aresta de timeout seria a primeira da
+ * lista. É o tipo de erro que não estoura em lugar nenhum: a conversa segue,
+ * segue pelo lado errado, e o desenho na tela parece certo.
+ */
 function proximo(fluxo: Fluxo, noId: string, saida?: string): string | null {
   const saidas = fluxo.edges.filter((a) => a.source === noId)
   if (saida !== undefined) {
     return saidas.find((a) => a.sourceHandle === saida)?.target ?? null
   }
-  return saidas[0]?.target ?? null
+  return saidas.find((a) => a.sourceHandle !== SAIDA_TIMEOUT)?.target ?? null
 }
 
 /**

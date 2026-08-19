@@ -42,6 +42,26 @@ type CampoDeTexto = {
  * O formulário do bloco selecionado. Tudo que é específico de um cliente é
  * digitado aqui e vai parar no JSON do fluxo — nunca no código.
  */
+/**
+ * Os prazos que a tela oferece.
+ *
+ * Lista fechada e não campo livre: prazo é decisão de conversa, não de número.
+ * Quem digita "7" numa caixa não sabe se são minutos ou horas, e as opções
+ * respondem isso sem uma linha de ajuda. O teto de 24h é a janela do WhatsApp —
+ * passado dela não há como mandar texto livre, e um prazo que dispara para não
+ * conseguir falar só gera handoff.
+ */
+const PRAZOS = [
+  { valor: '0', rotulo: 'sem prazo', detalhe: 'espera para sempre' },
+  { valor: '5', rotulo: '5 minutos' },
+  { valor: '15', rotulo: '15 minutos' },
+  { valor: '30', rotulo: '30 minutos' },
+  { valor: '60', rotulo: '1 hora' },
+  { valor: '180', rotulo: '3 horas' },
+  { valor: '720', rotulo: '12 horas' },
+  { valor: '1440', rotulo: '24 horas', detalhe: 'o teto da janela do WhatsApp' },
+]
+
 export function Painel({
   no,
   ehInicio,
@@ -234,6 +254,31 @@ export function Painel({
               precisar decidir sobre a escolha.
             </p>
           )}
+
+          <label className="block">
+            <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+              Prazo para responder
+            </span>
+            <Dropdown
+              valor={String(no.data.timeoutMinutos ?? 0)}
+              aoMudar={(v) =>
+                aoMudarDados({ timeoutMinutos: Number(v) === 0 ? undefined : Number(v) })
+              }
+              rotuloAcessivel="Prazo para responder"
+              opcoes={PRAZOS}
+            />
+            <span className="mt-1.5 block text-[11px] leading-4 text-dim">
+              {no.data.timeoutMinutos
+                ? 'Passado o prazo sem resposta, a conversa sai pela saída “não respondeu”. Sem nada ligado nela, ela vai para uma pessoa — quem parou no meio da triagem é o lead que mais vale resgatar.'
+                : 'Sem prazo, a conversa espera para sempre. É como o produto sempre funcionou.'}
+            </span>
+            {!!no.data.timeoutMinutos && (
+              <span className="mt-1.5 block text-[11px] leading-4 text-dim">
+                O disparo é por fila, não por despertador: ele acontece{' '}
+                <strong className="text-muted">a partir</strong> do prazo, não no minuto exato.
+              </span>
+            )}
+          </label>
         </>
       )}
 

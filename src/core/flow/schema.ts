@@ -238,6 +238,20 @@ export const noPerguntaSchema = z.object({
      * `salvarEm`, e quem ramifica sobre ela é um nó de condição depois.
      */
     opcoesDe: nomeVariavel.optional(),
+    /**
+     * Quantos minutos esperar antes de desistir da resposta (B1).
+     *
+     * **Opcional, e ausente significa esperar para sempre** — que é o
+     * comportamento que o produto sempre teve. Isso não é preferência: existe
+     * conversa em produção rodando um grafo publicado antes deste campo
+     * existir, e `flow_versions` é imutável. Um campo obrigatório aqui faria
+     * todas elas pararem de dar parse e morrerem no meio.
+     *
+     * O teto de 24h é o mesmo da janela do WhatsApp: passado disso não há como
+     * mandar nada em texto livre, e um timeout que dispara para não conseguir
+     * falar é um timeout que só gera handoff.
+     */
+    timeoutMinutos: z.number().int().min(1).max(1_440).optional(),
   }),
 })
 
@@ -398,6 +412,21 @@ export const SAIDA_FALSO = 'falso'
  */
 export const SAIDA_ESCOLHEU = 'escolheu'
 export const SAIDA_VAZIO = 'vazio'
+
+/**
+ * A saída de quando ninguém respondeu dentro do prazo (B1).
+ *
+ * Sem aresta ligada nela, o timeout **passa a conversa para uma pessoa** em vez
+ * de encerrar calado: quem parou de responder no meio de uma triagem é o lead
+ * que mais vale a pena resgatar, e sumir com ele seria o pior desfecho
+ * possível. Encerrar só acontece quando o cliente desenhou a saída para isso.
+ */
+export const SAIDA_TIMEOUT = 'timeout'
+
+/** O prazo desta pergunta em minutos, ou `null` quando ela espera para sempre. */
+export function timeoutDaPergunta(no: NoPergunta): number | null {
+  return no.data.timeoutMinutos ?? null
+}
 
 /** A pergunta tira as opções de uma variável em vez de tê-las desenhadas? */
 export function perguntaEhDinamica(no: NoPergunta): boolean {

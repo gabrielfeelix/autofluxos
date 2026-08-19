@@ -135,6 +135,55 @@ export async function acharContato(contatoId: string): Promise<Contato | null> {
   }
 }
 
+/**
+ * Uma sessão pelo id dela, com o contato e o número em que ela roda.
+ *
+ * Existe para o agendador (B1): a tarefa guarda o id da sessão, e quem executa
+ * precisa de tudo o mais — o grafo em que ela está presa, o contato para quem
+ * falar, e o canal de onde falar. Buscar em três lugares depois seria três
+ * viagens para reconstruir uma linha que já tinha tudo.
+ */
+export type SessaoComContexto = SessaoSalva & { contatoId: string; canalId: string }
+
+export async function acharSessao(sessaoId: string): Promise<SessaoComContexto | null> {
+  const { data, error } = await db()
+    .from('sessions')
+    .select('id, contact_id, channel_id, flow_version_id, no_atual, vars, tentativas, status')
+    .eq('id', sessaoId)
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return null
+  if (error) throw new Error(`não deu para achar a sessão: ${error.message}`)
+  if (!data) return null
+
+  return {
+    id: data.id as string,
+    contatoId: data.contact_id as string,
+    canalId: data.channel_id as string,
+    flowVersionId: data.flow_version_id as string,
+    sessao: sessaoSchema.parse({
+      noAtual: data.no_atual,
+      vars: data.vars ?? {},
+      tentativas: data.tentativas,
+      status: data.status,
+    }),
+  }
+}
+
+/** Um número pelo id dele. O webhook busca pelo `phone_number_id`; o agendador não tem esse. */
+export async function acharCanal(canalId: string): Promise<CanalSalvo | null> {
+  const { data, error } = await db()
+    .from('channels')
+    .select(COLUNAS_DO_CANAL)
+    .eq('id', canalId)
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return null
+  if (error) throw new Error(`não deu para achar o canal: ${error.message}`)
+  if (!data) return null
+  return paraCanal(data as Record<string, unknown>)
+}
+
 /** A conversa mais recente deste contato neste número. */
 export async function ultimaSessao(
   contatoId: string,

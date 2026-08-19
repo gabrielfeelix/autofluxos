@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { sessaoNova, type Acao, type Entrada, type Resultado, type Sessao } from '@/core/engine/types'
+import { timeoutDaPergunta } from '@/core/flow/schema'
 import type { Fluxo, Opcao, TipoDeMidia } from '@/core/flow/schema'
 
 export type ModoDaConversa = 'conversa' | 'bastidores'
@@ -306,6 +307,16 @@ export function Conversa({
 
   const viva = status === 'ativa' || status === 'aguardando_ia' || status === 'aguardando_http'
   const temApi = fluxo.nodes.some((n) => n.type === 'http')
+
+  /** A conversa está parada numa pergunta que tem prazo para responder (B1)? */
+  const temPrazo =
+    status === 'ativa' &&
+    fluxo.nodes.some(
+      (no) =>
+        no.id === sessaoExibida.noAtual &&
+        no.type === 'pergunta' &&
+        timeoutDaPergunta(no) !== null,
+    )
   const eventos = contarEventos(itens)
   const iniciais = nomeContato
     .split(/\s+/)
@@ -447,6 +458,29 @@ export function Conversa({
             >
               🎤
             </button>
+            {/*
+              Testar o prazo sem esperar meia hora.
+              
+              Só aparece quando a conversa está **parada numa pergunta com
+              prazo** — um botão que estivesse sempre lá mandaria um timeout
+              para um bloco que não tem prazo nenhum, e o motor ignoraria em
+              silêncio. Botão que não faz nada ensina a não confiar na tela.
+            */}
+            {temPrazo && (
+              <button
+                type="button"
+                onClick={() => void enviar({ tipo: 'timeout' }, '⏱ (ninguém respondeu)')}
+                disabled={ocupado}
+                title="Simular o prazo desta pergunta vencendo sem resposta"
+                className={
+                  modo === 'conversa'
+                    ? 'flex size-9 shrink-0 items-center justify-center rounded-full text-sm text-[#54656f] transition hover:bg-black/[0.05] disabled:opacity-40'
+                    : 'app-secondary-button flex size-9 shrink-0 items-center justify-center px-0 text-sm disabled:opacity-40'
+                }
+              >
+                ⏱
+              </button>
+            )}
             <button
               type="submit"
               disabled={ocupado || rascunho.trim() === ''}

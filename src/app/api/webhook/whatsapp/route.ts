@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 import { after } from 'next/server'
 import { alertar } from '@/server/alertar'
 import { receberMensagem } from '@/server/receber-mensagem'
+import { rodarTarefas } from '@/server/tarefas'
 
 /**
  * Onde o WhatsApp bate.
@@ -75,6 +76,34 @@ export async function POST(req: Request) {
       // recebeu 200 e não reenvia. Sem aviso, ela é invisível até o cliente
       // ligar reclamando.
       await alertar('o processamento do webhook falhou', erro)
+    }
+
+    /**
+     * O agendador pega carona no webhook, e não é gambiarra: é a única forma
+     * de ele funcionar no plano em que estamos.
+     *
+     * **A Vercel no plano Hobby dispara cron uma vez por dia.** Um prazo de
+     * pergunta de trinta minutos que só é conferido de madrugada não é um
+     * prazo — é um lembrete atrasado que chega depois de a janela de 24h ter
+     * fechado. O cron continua declarado no `vercel.json` porque ele é o piso
+     * (a conta que passou o dia sem mensagem nenhuma ainda é varrida), mas quem
+     * dá a resolução é isto aqui.
+     *
+     * Por que funciona: a conta que tem prazo vencendo é, por construção, a
+     * conta que está recebendo mensagem. Quem não recebe nada não tem conversa
+     * esperando resposta.
+     *
+     * O teto é pequeno de propósito. Isto roda **depois** da resposta à Meta,
+     * mas ainda dentro do orçamento de tempo da função, e a mensagem que
+     * acabou de chegar tem prioridade sobre a cobrança de outra conversa.
+     * Fila vazia custa uma consulta com índice parcial.
+     */
+    try {
+      await rodarTarefas(5)
+    } catch (erro) {
+      // O agendador atrasar é ruim; ele derrubar o processamento da mensagem
+      // que acabou de chegar seria muito pior.
+      console.error('[webhook] a carona do agendador falhou', erro)
     }
   })
 
