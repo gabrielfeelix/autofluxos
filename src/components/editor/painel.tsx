@@ -141,10 +141,25 @@ export function Painel({
 
   if (!no) {
     return (
-      <div className="m-4 rounded-[14px] border border-dashed border-white/10 px-[18px] py-[34px] text-center text-[12.5px] leading-6 text-dim">
-        Selecione um bloco na área de desenho
-        <br />
-        ou adicione um novo pelo catálogo.
+      <div className="p-4">
+        <div className="rounded-[14px] border border-dashed border-white/10 px-[18px] py-[34px] text-center text-[12.5px] leading-6 text-dim">
+          Selecione um bloco na área de desenho
+          <br />
+          ou adicione um novo pelo catálogo.
+        </div>
+
+        {/*
+          A lista de variáveis também aparece sem bloco escolhido.
+          Aqui ela não é teclado — não há campo em foco para receber nada —, é
+          o índice do que este fluxo coleta. É a pergunta que se faz olhando o
+          desenho inteiro ("o que já dá para usar numa mensagem?"), e ela não
+          tinha resposta em lugar nenhum sem clicar num bloco qualquer.
+        */}
+        {variaveis.length > 0 && (
+          <div className="mt-4 border-t border-white/[0.06] pt-3">
+            <ListaDeVariaveis variaveis={variaveis} legenda="O que este fluxo coleta e já dá para usar numa mensagem." />
+          </div>
+        )}
       </div>
     )
   }
@@ -589,24 +604,63 @@ export function Painel({
 
       {aceitaVariavel(no.type) && variaveis.length > 0 && (
         <div className="border-t border-white/[0.06] pt-3">
-          <p className="text-[10px] font-bold tracking-[0.05em] text-muted uppercase">Variáveis deste fluxo</p>
-          <p className="mt-1 text-[11px] text-dim">
-            {foco ? 'Clique para inserir no cursor do campo de texto em foco.' : 'Selecione um campo de texto e clique para inserir.'}
-          </p>
-          <p className="mt-1 flex flex-wrap gap-1">
-            {variaveis.map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => inserirVariavel(v)}
-                className="rounded-[7px] border border-accent/[0.22] bg-accent/[0.09] px-2 py-1 font-mono text-[10px] text-[#8de2fa] transition hover:border-accent/50 hover:bg-accent/[0.16]"
-                title={`Inserir {{${v}}} no cursor`}
-              >{`{{${v}}}`}</button>
-            ))}
-          </p>
+          <ListaDeVariaveis
+            variaveis={variaveis}
+            legenda={
+              foco
+                ? 'Clique para inserir no cursor do campo de texto em foco.'
+                : 'Selecione um campo de texto e clique para inserir.'
+            }
+            aoEscolher={inserirVariavel}
+          />
         </div>
       )}
     </div>
+  )
+}
+
+/**
+ * As variáveis que o fluxo coleta.
+ *
+ * Sem `aoEscolher` ela é só leitura — é o caso de quando não há bloco escolhido,
+ * onde não existe campo em foco para receber a inserção. Os itens continuam
+ * parecendo o que são (pedaços de texto que a conversa preenche) em vez de
+ * virarem botões que não fazem nada ao serem clicados.
+ */
+function ListaDeVariaveis({
+  variaveis,
+  legenda,
+  aoEscolher,
+}: {
+  variaveis: string[]
+  legenda: string
+  aoEscolher?: (variavel: string) => void
+}) {
+  const aparencia =
+    'rounded-[7px] border border-accent/[0.22] bg-accent/[0.09] px-2 py-1 font-mono text-[10px] text-[#8de2fa]'
+
+  return (
+    <>
+      <p className="text-[10px] font-bold tracking-[0.05em] text-muted uppercase">
+        Variáveis deste fluxo
+      </p>
+      <p className="mt-1 text-[11px] text-dim">{legenda}</p>
+      <p className="mt-1 flex flex-wrap gap-1">
+        {variaveis.map((v) =>
+          aoEscolher ? (
+            <button
+              key={v}
+              type="button"
+              onClick={() => aoEscolher(v)}
+              className={`${aparencia} transition hover:border-accent/50 hover:bg-accent/[0.16]`}
+              title={`Inserir {{${v}}} no cursor`}
+            >{`{{${v}}}`}</button>
+          ) : (
+            <span key={v} className={aparencia}>{`{{${v}}}`}</span>
+          ),
+        )}
+      </p>
+    </>
   )
 }
 

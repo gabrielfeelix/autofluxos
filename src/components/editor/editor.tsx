@@ -178,6 +178,7 @@ export function Editor({
   publicadaInicial,
   versoesIniciais,
   iaHabilitada,
+  podeContratarIa,
   contextoNegocio,
   temContextoDeNegocio,
 }: {
@@ -194,6 +195,13 @@ export function Editor({
   inicial: Fluxo
   /** Etapa 2 é plano à parte: sem contratar, fluxo com nó de IA não publica. */
   iaHabilitada: boolean
+  /**
+   * Quem está olhando pode **contratar** a IA desta automação?
+   *
+   * Só a 4YU. Para a conta o contrato é estado, não interruptor — ver o
+   * comentário no cabeçalho.
+   */
+  podeContratarIa: boolean
   /** O que o cliente escreveu sobre o negócio. É o escopo fechado da IA. */
   contextoNegocio: string
   /** Sem contexto escrito, bloco de IA não publica. Ver `contexto/page.tsx`. */
@@ -824,12 +832,23 @@ export function Editor({
         <EstadoSalvamento estado={salvamento} />
         <span className="mx-0.5 h-6 w-px bg-white/[0.08]" />
 
-        <div className="flex items-center gap-3 text-xs">
-          {/* O plano da automação, no lugar onde ela é editada. Mudar aqui não
-              republica nada: só muda o que a próxima publicação aceita. */}
+        {/*
+          O contrato da Etapa 2 desta automação — e **quem** pode mexer nele.
+
+          A pergunta que isto responde não é "o desenho usa IA?": para isso
+          basta olhar se existe bloco de IA no quadro. É "esta automação tem o
+          plano de IA contratado?", que é decisão comercial da 4YU e o que o
+          `validar()` cobra na hora de publicar.
+
+          Era uma caixinha que qualquer pessoa da conta marcava sozinha, e um
+          portão que o próprio cliente abre não é portão — era só um passo a
+          mais antes de publicar exatamente o mesmo fluxo. Agora quem marca é a
+          4YU; para a conta é estado, e aparece do lado dos outros estados.
+        */}
+        {podeContratarIa ? (
           <label
-            title="IA é plano à parte. Sem isto, fluxo com bloco de IA não publica."
-            className="flex cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-muted transition hover:bg-white/[0.04]"
+            title="Etapa 2 (IA) é plano à parte. Sem isto, fluxo com bloco de IA não publica. Só a 4YU marca."
+            className="flex cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-xs text-muted transition hover:bg-white/[0.04]"
           >
             <input
               type="checkbox"
@@ -838,16 +857,26 @@ export function Editor({
                 const novo = e.target.checked
                 setComIa(novo)
                 try {
-                  await acaoAlternarIa(fluxoId, clienteId, novo)
+                  const r = await acaoAlternarIa(fluxoId, clienteId, novo)
+                  if (!r.ok) setComIa(!novo)
                 } catch {
                   setComIa(!novo)
                 }
               }}
               className="size-3.5 accent-violet-400"
             />
-            com IA
+            IA contratada
           </label>
-        </div>
+        ) : (
+          comIa && (
+            <span
+              title="Esta automação tem o plano de IA (Etapa 2). Para mudar, fale com a 4YU."
+              className="shrink-0 rounded-full border border-violet-400/25 bg-violet-400/[0.09] px-3 py-1 text-xs text-violet-200"
+            >
+              IA contratada
+            </span>
+          )
+        )}
 
         {/*
           Estado à esquerda, ação à direita.
@@ -980,7 +1009,7 @@ export function Editor({
       )}
 
       <div className="flex min-h-0 flex-1">
-        <nav className="w-[198px] shrink-0 overflow-y-auto border-r border-white/[0.06] bg-white/[0.012] px-2.5 py-3.5">
+        <nav className="w-[232px] shrink-0 overflow-y-auto border-r border-white/[0.06] bg-white/[0.012] px-3 py-3.5">
           <p className="mb-2.5 px-2 text-[10.5px] font-bold tracking-[0.08em] text-dim uppercase">
             Blocos
           </p>
@@ -993,23 +1022,17 @@ export function Editor({
                 evento.dataTransfer.setData(TIPO_ARRASTADO, tipo)
                 evento.dataTransfer.effectAllowed = 'copy'
               }}
-              className="mb-0.5 flex w-full cursor-grab items-start gap-2.5 rounded-[11px] border border-transparent p-2 text-left transition select-none hover:border-white/[0.07] hover:bg-white/[0.04] active:cursor-grabbing"
+              className="mb-1 flex w-full cursor-grab items-start gap-3 rounded-[11px] border border-transparent p-2.5 text-left transition select-none hover:border-white/[0.07] hover:bg-white/[0.04] active:cursor-grabbing"
             >
-              <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-[9px] border border-white/[0.08] bg-white/[0.045] text-sm text-accent">
+              <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-[10px] border border-white/[0.08] bg-white/[0.045] text-[15px] text-accent">
                 {ICONES[tipo]}
               </span>
               <span className="min-w-0">
-                <strong className="block text-[12.5px] font-bold">{NOMES[tipo]}</strong>
-                <span className="mt-0.5 block text-[10.5px] leading-[1.35] text-dim">{DESCRICOES[tipo]}</span>
+                <strong className="block text-[13.5px] font-bold">{NOMES[tipo]}</strong>
+                <span className="mt-0.5 block text-[11px] leading-[1.35] text-dim">{DESCRICOES[tipo]}</span>
               </span>
             </button>
           ))}
-          <p className="mt-3.5 border-t border-white/[0.06] px-2 pt-3 text-[10.5px] leading-4 text-dim">
-            Arraste um bloco para o desenho, ou clique para soltar no meio. Para ligar dois blocos,
-            arraste de uma alça até o outro. Botão direito abre editar, duplicar e excluir; o ✕ no
-            meio da linha apaga a ligação. <strong className="text-muted">Ctrl+Z</strong> desfaz o
-            último passo.
-          </p>
         </nav>
 
         <div

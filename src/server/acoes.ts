@@ -6,7 +6,12 @@ import { z } from 'zod'
 import { fluxoSchema, type TipoDeMidia } from '@/core/flow/schema'
 import type { Problema } from '@/core/flow/validar'
 import { db } from './db'
-import { exigirAcessoAoCliente, exigirOperadorDa4YU, podeAdministrarConta } from './sessao'
+import {
+  ehAdminDaPlataforma,
+  exigirAcessoAoCliente,
+  exigirOperadorDa4YU,
+  podeAdministrarConta,
+} from './sessao'
 import { fluxoNovo } from '@/core/flow/novo'
 import { DIAS_DA_SEMANA, emMinutos, horarioSchema } from '@/core/horario'
 import { triagem } from '@/exemplos/triagem'
@@ -331,11 +336,31 @@ export async function acaoApagarFluxo(
  * IA de um fluxo publicado que usa nó de IA só impede a **próxima** publicação
  * — mexer no que já roda no WhatsApp de alguém tem que ser um ato deliberado.
  */
+/**
+ * Contrata (ou descontrata) a Etapa 2 nesta automação — e **só a 4YU pode**.
+ *
+ * Este é o portão comercial que o `validar()` cobra ao publicar: sem ele, fluxo
+ * com bloco de IA não vai ao ar. Até aqui bastava ter acesso à conta para
+ * marcá-lo, o que fazia do portão um passo a mais antes de publicar o mesmo
+ * fluxo — um portão que quem está do lado de fora abre sozinho não é portão.
+ *
+ * A tela já esconde o interruptor de quem não é da 4YU, mas a conferência que
+ * vale é esta: Server Action é endereço, e endereço se chama de fora da tela.
+ */
 export async function acaoAlternarIa(fluxoId: string, clienteId: string, habilitada: boolean) {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirAcessoAoCliente(clienteId)
+
+  if (!ehAdminDaPlataforma(acesso.sessao)) {
+    return {
+      ok: false as const,
+      erro: 'só a 4YU contrata a IA de uma automação',
+      iaHabilitada: undefined,
+    }
+  }
 
   await definirIa(fluxoId, clienteId, habilitada)
   revalidatePath(`/clientes/${clienteId}`)
+  revalidatePath(`/clientes/${clienteId}/fluxos/${fluxoId}`)
   return { ok: true as const, iaHabilitada: habilitada }
 }
 

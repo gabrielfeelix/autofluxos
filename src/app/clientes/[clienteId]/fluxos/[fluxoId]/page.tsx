@@ -5,7 +5,7 @@ import { acharCliente } from '@/server/repos/clientes'
 import { listarConexoes } from '@/server/repos/conexoes'
 import { listarQuadros } from '@/server/repos/quadros'
 import { acharFluxo, acharVersao, listarFluxos, listarVersoes } from '@/server/repos/fluxos'
-import { exigirAcessoAoCliente } from '@/server/sessao'
+import { ehAdminDaPlataforma, exigirAcessoAoCliente } from '@/server/sessao'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,7 +51,7 @@ export default async function Pagina({
    * WhatsApp de um cliente responde para gente de verdade; fazê-lo achando que
    * está na própria conta é o erro que a faixa existe para impedir.
    */
-  await exigirAcessoAoCliente(cliente.id)
+  const acesso = await exigirAcessoAoCliente(cliente.id)
 
   // O histórico vem junto do desenho: abrir o editor é o único lugar de onde
   // alguém decide voltar atrás, e uma segunda ida ao banco só ao clicar deixaria
@@ -76,6 +76,9 @@ export default async function Pagina({
         voltarHref={`/clientes/${cliente.id}/fluxos`}
         inicial={fluxo.rascunho}
         iaHabilitada={fluxo.iaHabilitada}
+        /* Contratar a Etapa 2 é decisão comercial da 4YU. Para a conta, o
+           contrato é estado — ver o cabeçalho do editor. */
+        podeContratarIa={ehAdminDaPlataforma(acesso.sessao)}
         contextoNegocio={cliente.contextoNegocio}
         temContextoDeNegocio={cliente.contextoNegocio.trim() !== ''}
         conexoes={conexoes}
