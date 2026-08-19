@@ -114,7 +114,10 @@ import {
   criarQuadro,
   moverCartao,
   moverEtapa,
+  porNaEtapa,
   porNoQuadro,
+  contatosForaDoQuadro,
+  type ContatoParaOQuadro,
   renomearEtapa,
   renomearQuadro,
   tirarDoQuadro,
@@ -1012,6 +1015,34 @@ export async function acaoCriarEtapa(
   return { ok: true }
 }
 
+/**
+ * Criar etapa a partir do modal do quadro — sem `FormData`.
+ *
+ * A irmã com `FormData` continua servindo a formulário renderizado no servidor;
+ * esta serve ao modal, que é de cliente e já tem o valor em estado. Duas
+ * assinaturas para a mesma escrita, e **uma regra só**: as duas passam por
+ * `conferirEtapa`, que é onde o teto de oito e o nome repetido moram.
+ */
+export async function acaoCriarEtapaDireto(
+  clienteId: string,
+  quadroId: string,
+  nome: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const quadro = await acharQuadro(clienteId, quadroId)
+  if (!quadro) return { ok: false, erro: 'este quadro não existe mais' }
+
+  const regua = conferirEtapa(String(nome ?? ''), quadro.etapas.map((etapa) => etapa.nome))
+  if (!regua.ok) return { ok: false, erro: regua.motivo }
+
+  const r = await criarEtapa(clienteId, quadroId, regua.nome)
+  if (!r.ok) return { ok: false, erro: r.motivo }
+
+  revalidatePath(`/clientes/${clienteId}/quadros`)
+  return { ok: true }
+}
+
 export async function acaoRenomearEtapa(
   clienteId: string,
   quadroId: string,
@@ -1076,6 +1107,42 @@ export async function acaoPorNoQuadro(
 
   revalidatePath(`/clientes/${clienteId}/quadros`)
   revalidatePath(`/clientes/${clienteId}/leads`)
+  return { ok: true, postos: r.postos }
+}
+
+/**
+ * Quem ainda não está no quadro, para o seletor de "adicionar contato".
+ *
+ * Leitura, e mesmo assim passa pela conferência de acesso como todas as outras:
+ * o `clienteId` chega da tela, e devolver a lista de contatos de outra conta é
+ * exatamente o vazamento que a conferência existe para impedir.
+ */
+export async function acaoBuscarContatosDoQuadro(
+  clienteId: string,
+  quadroId: string,
+  termo: string,
+): Promise<{ ok: boolean; contatos?: ContatoParaOQuadro[] }> {
+  await exigirAcessoAoCliente(clienteId)
+  return { ok: true, contatos: await contatosForaDoQuadro(clienteId, quadroId, String(termo ?? '')) }
+}
+
+/** Põe contatos **na etapa em que a pessoa clicou** — não na primeira. */
+export async function acaoPorNaEtapa(
+  clienteId: string,
+  quadroId: string,
+  colunaId: string,
+  contatos: string[],
+): Promise<{ ok: boolean; postos?: number; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  if (!Array.isArray(contatos) || contatos.some((id) => !z.string().uuid().safeParse(id).success)) {
+    return { ok: false, erro: 'seleção inválida' }
+  }
+
+  const r = await porNaEtapa(clienteId, quadroId, colunaId, contatos)
+  if (!r.ok) return { ok: false, erro: r.motivo }
+
+  revalidatePath(`/clientes/${clienteId}/quadros`)
   return { ok: true, postos: r.postos }
 }
 

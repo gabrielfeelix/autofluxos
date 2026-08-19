@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { Dropdown } from '@/components/design/dropdown'
-import { FormularioSalvar } from '@/components/design/formulario-salvar'
+import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { LinhaDaEquipe } from '@/components/conta/linha-da-equipe'
 import { acaoCadastrarPessoaNaConta } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
@@ -40,7 +40,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
   return (
     <ClienteShell cliente={cliente} ativa="ajustes">
-      <main className="max-w-[820px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
+      <main className="w-full max-w-[1100px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <Link
           href={`/clientes/${clienteId}/ajustes`}
           className="mb-3.5 inline-block text-[12.5px] text-muted transition hover:text-accent"
@@ -54,11 +54,60 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           não está aqui não aparece para assumir conversa.
         </p>
 
-        <section className="app-card mb-[18px] overflow-hidden">
-          <header className="border-b border-white/[0.06] px-5 py-4">
+        <section className="app-card overflow-hidden">
+          <header className="flex items-center justify-between gap-4 border-b border-white/[0.06] px-5 py-4">
             <h2 className="text-[14.5px] font-bold">
               {equipe.length} {equipe.length === 1 ? 'pessoa' : 'pessoas'}
             </h2>
+            {podeMexer && (
+              <ModalFormulario
+                botao="+ Cadastrar pessoa"
+                titulo="Adicionar alguém"
+                descricao="A senha é definida aqui e combinada por fora — ainda não há convite por e-mail, porque o servidor é compartilhado com outro produto. E-mail que já existe apenas liga a pessoa a esta conta."
+                rotuloEnviar="Adicionar"
+                variante={equipe.length === 0 ? 'primario' : 'secundario'}
+                action={acaoCadastrarPessoaNaConta.bind(null, clienteId, {})}
+              >
+                <label>
+                  <RotuloCampo>Nome</RotuloCampo>
+                  <input
+                    name="nome"
+                    autoFocus
+                    placeholder="Nome de quem entra"
+                    className="app-field px-[13px] py-[11px] text-[13.5px]"
+                  />
+                </label>
+                <label>
+                  <RotuloCampo>E-mail</RotuloCampo>
+                  <input
+                    name="email"
+                    type="email"
+                    required
+                    placeholder="pessoa@exemplo.com.br"
+                    className="app-field px-[13px] py-[11px] text-[13.5px]"
+                  />
+                </label>
+                <label>
+                  <RotuloCampo>Senha (mín. 10 caracteres)</RotuloCampo>
+                  <input
+                    name="senha"
+                    type="password"
+                    minLength={10}
+                    autoComplete="new-password"
+                    className="app-field px-[13px] py-[11px] text-[13.5px]"
+                  />
+                </label>
+                <label>
+                  <RotuloCampo>Papel na conta</RotuloCampo>
+                  <Dropdown
+                    nome="papel"
+                    rotuloAcessivel="Papel na conta"
+                    valorInicial="member"
+                    opcoes={PAPEIS}
+                  />
+                </label>
+              </ModalFormulario>
+            )}
           </header>
 
           {equipe.length === 0 ? (
@@ -81,59 +130,6 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           )}
         </section>
 
-        {podeMexer && (
-          <section className="app-card overflow-hidden">
-            <header className="border-b border-white/[0.06] px-5 py-4">
-              <h2 className="text-[14.5px] font-bold">Adicionar alguém</h2>
-              <p className="mt-0.5 text-[12px] leading-5 text-dim">
-                A senha é definida aqui e combinada por fora — ainda não há convite
-                por e-mail, porque o servidor de e-mail é compartilhado com outro
-                produto e ligá-lo é decisão dos dois.
-                <br />
-                Se o e-mail já existir no sistema, a pessoa é apenas ligada a esta
-                conta: quem administra duas companhias usa o mesmo login nas duas.
-              </p>
-            </header>
-            <div className="p-5">
-              <FormularioSalvar
-                action={acaoCadastrarPessoaNaConta.bind(null, clienteId)}
-                rotulo="Adicionar"
-              >
-                <div className="grid gap-2.5 md:grid-cols-2">
-                  <input
-                    name="nome"
-                    placeholder="Nome"
-                    aria-label="Nome"
-                    className="app-field px-3 py-2.5 text-[12.5px]"
-                  />
-                  <input
-                    name="email"
-                    type="email"
-                    required
-                    placeholder="e-mail"
-                    aria-label="E-mail"
-                    className="app-field px-3 py-2.5 text-[12.5px]"
-                  />
-                  <input
-                    name="senha"
-                    type="password"
-                    minLength={10}
-                    placeholder="Senha (mín. 10 caracteres)"
-                    aria-label="Senha"
-                    autoComplete="new-password"
-                    className="app-field px-3 py-2.5 text-[12.5px]"
-                  />
-                  <Dropdown
-                    nome="papel"
-                    rotuloAcessivel="Papel na conta"
-                    valorInicial="member"
-                    opcoes={PAPEIS}
-                  />
-                </div>
-              </FormularioSalvar>
-            </div>
-          </section>
-        )}
       </main>
     </ClienteShell>
   )

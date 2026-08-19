@@ -19,8 +19,13 @@ export function ModalFormulario({
    * Pode devolver `{ ok: false, erro }` para o modal mostrar a mensagem em vez
    * de fechar. Sem isso, erro de preenchimento vira o digest opaco do Next e a
    * pessoa perde o que digitou.
+   *
+   * `ok` é opcional porque este é o `EstadoSalvar` da casa, o mesmo que
+   * `FormularioSalvar` usa — e é o que permite a **mesma ação** servir aos dois
+   * sem adaptador. Ação que devolve `undefined` (as que redirecionam) fecha o
+   * modal, que é o desfecho certo.
    */
-  action: (formData: FormData) => void | Promise<void | { ok: boolean; erro?: string }>
+  action: (formData: FormData) => void | Promise<void | { ok?: boolean; erro?: string }>
   children: ReactNode
   /** O texto do botão que confirma. Nem todo modal cria e abre alguma coisa. */
   rotuloEnviar?: string

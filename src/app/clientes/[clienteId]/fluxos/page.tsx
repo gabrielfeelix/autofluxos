@@ -8,7 +8,6 @@ import {
 } from '@/components/design/modal-formulario'
 import { validar } from '@/core/flow/validar'
 import { Dropdown } from '@/components/design/dropdown'
-import { FormularioSalvar } from '@/components/design/formulario-salvar'
 import { InterruptorDeGatilho } from '@/components/gatilhos/interruptor'
 import { InterruptorDeCampanha } from '@/components/gatilhos/interruptor-de-campanha'
 import { InterruptorDeSequencia } from '@/components/sequencias/interruptor'
@@ -83,7 +82,7 @@ export default async function Pagina({
     listarQuadros(cliente.id),
   ])
   const pastas = await listarPastas(cliente.id)
-  const criarPastaComCliente = acaoCriarPasta.bind(null, cliente.id)
+  const criarPastaComCliente = acaoCriarPasta.bind(null, cliente.id, {})
 
   /**
    * Os fluxos agrupados por gaveta, com a raiz **por último**.
@@ -106,9 +105,9 @@ export default async function Pagina({
     },
   ]
   const criarComCliente = acaoCriarFluxo.bind(null, cliente.id)
-  const criarGatilhoComCliente = acaoCriarGatilho.bind(null, cliente.id)
-  const criarCampanhaComCliente = acaoCriarCampanha.bind(null, cliente.id)
-  const criarSequenciaComCliente = acaoCriarSequencia.bind(null, cliente.id)
+  const criarGatilhoComCliente = acaoCriarGatilho.bind(null, cliente.id, {})
+  const criarCampanhaComCliente = acaoCriarCampanha.bind(null, cliente.id, {})
+  const criarSequenciaComCliente = acaoCriarSequencia.bind(null, cliente.id, {})
   const nomeDaEtiqueta = (id: string | null) =>
     etiquetas.find((etiqueta) => etiqueta.id === id)?.nome ?? 'uma etiqueta apagada'
 
@@ -139,7 +138,7 @@ export default async function Pagina({
 
   return (
     <ClienteShell cliente={cliente} ativa="fluxos">
-      <main className="max-w-[1000px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
+      <main className="w-full max-w-[1440px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <h1 className="mb-5 text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Automações</h1>
 
         <section className="app-card overflow-hidden">
@@ -151,6 +150,28 @@ export default async function Pagina({
                 verdade.
               </p>
             </div>
+            <span className="flex items-center gap-2">
+            <ModalFormulario
+              botao="+ Nova pasta"
+              titulo="Nova pasta"
+              descricao="Uma gaveta para organizar os fluxos. Ela não decide quem vê o quê — apagar a pasta devolve os fluxos para a raiz, nenhum desenho some."
+              rotuloEnviar="Criar pasta"
+              variante="secundario"
+              action={criarPastaComCliente}
+            >
+              <label>
+                <RotuloCampo>Nome da pasta</RotuloCampo>
+                <input
+                  name="nome"
+                  required
+                  autoFocus
+                  maxLength={40}
+                  placeholder="ex.: Campanhas de agosto"
+                  className="app-field px-[13px] py-[11px] text-[13.5px]"
+                />
+              </label>
+            </ModalFormulario>
+
             <ModalFormulario
               botao="+ Criar fluxo"
               titulo="Novo fluxo"
@@ -198,6 +219,7 @@ export default async function Pagina({
                 </span>
               </label>
             </ModalFormulario>
+            </span>
           </header>
 
           {fluxos.length === 0 ? (
@@ -308,29 +330,65 @@ export default async function Pagina({
             </ul>
           )}
 
-          <div className="border-t border-white/[0.045] p-5">
-            <FormularioSalvar action={criarPastaComCliente} rotulo="Criar pasta">
-              <input
-                name="nome"
-                required
-                maxLength={40}
-                placeholder="Nome da pasta (ex.: Campanhas de agosto)"
-                aria-label="Nome da pasta"
-                className="app-field px-3 py-2.5 text-[12.5px]"
-              />
-            </FormularioSalvar>
-          </div>
+
         </section>
 
         <section className="app-card mt-[18px] overflow-hidden">
-          <header className="border-b border-white/[0.06] px-5 py-4">
+          <header className="flex items-start justify-between gap-4 border-b border-white/[0.06] px-5 py-4">
+            <div className="min-w-0">
             <h2 className="text-[14.5px] font-bold">Palavras-chave</h2>
-            <p className="mt-0.5 text-[12px] leading-5 text-dim">
+            <p className="mt-0.5 max-w-[78ch] text-[12px] leading-5 text-dim">
               Uma frase que leva direto a um fluxo, de qualquer ponto da conversa
               — o mesmo que “atendente” já faz para chamar uma pessoa, só que
               escrito por você. Ela interrompe o que estava em andamento, e nunca
               atropela quem pediu para falar com alguém.
             </p>
+            </div>
+            {fluxos.length > 0 && (
+              <ModalFormulario
+                botao="+ Palavra-chave"
+                titulo="Nova palavra-chave"
+                descricao="Uma frase que leva direto a um fluxo, de qualquer ponto da conversa. “Contém” casa a palavra inteira, não pedaço de palavra."
+                rotuloEnviar="Adicionar"
+                variante="secundario"
+                action={criarGatilhoComCliente}
+              >
+                <label>
+                  <RotuloCampo>Palavra ou frase</RotuloCampo>
+                  <input
+                    name="frase"
+                    required
+                    autoFocus
+                    placeholder="ex.: cancelar"
+                    className="app-field px-[13px] py-[11px] text-[13.5px]"
+                  />
+                </label>
+                <label>
+                  <RotuloCampo>Como comparar</RotuloCampo>
+                  <Dropdown
+                    nome="operador"
+                    rotuloAcessivel="Como comparar a frase"
+                    valorInicial="contem"
+                    opcoes={OPERADORES_DE_GATILHO.map((operador) => ({
+                      valor: operador,
+                      rotulo: ROTULO_DO_OPERADOR[operador],
+                    }))}
+                  />
+                </label>
+                <label>
+                  <RotuloCampo>Fluxo que ela abre</RotuloCampo>
+                  <Dropdown
+                    nome="fluxoId"
+                    rotuloAcessivel="Fluxo que esta palavra abre"
+                    opcoes={fluxos.map((item) => ({
+                      valor: item.id,
+                      rotulo: item.nome,
+                      ...(item.versaoPublicadaId ? {} : { detalhe: 'rascunho' }),
+                    }))}
+                  />
+                </label>
+              </ModalFormulario>
+            )}
           </header>
 
           {gatilhos.length === 0 ? (
@@ -389,53 +447,13 @@ export default async function Pagina({
             </ul>
           )}
 
-          <div className="p-5">
-            {fluxos.length === 0 ? (
-              <p className="text-[11.5px] text-dim">
-                Crie um fluxo primeiro — uma palavra-chave precisa de um lugar
-                para levar.
-              </p>
-            ) : (
-              <FormularioSalvar
-                action={criarGatilhoComCliente}
-                rotulo="Adicionar"
-                dica="“Contém” casa a palavra inteira, não pedaço de palavra."
-              >
-                <div className="grid gap-2.5 md:grid-cols-[1fr_120px_1fr]">
-                  <input
-                    name="frase"
-                    required
-                    placeholder="ex.: cancelar"
-                    aria-label="Palavra ou frase"
-                    className="app-field px-3 py-2.5 text-[12.5px]"
-                  />
-                  <Dropdown
-                    nome="operador"
-                    rotuloAcessivel="Como comparar a frase"
-                    valorInicial="contem"
-                    opcoes={OPERADORES_DE_GATILHO.map((operador) => ({
-                      valor: operador,
-                      rotulo: ROTULO_DO_OPERADOR[operador],
-                    }))}
-                  />
-                  <Dropdown
-                    nome="fluxoId"
-                    rotuloAcessivel="Fluxo que esta palavra abre"
-                    opcoes={fluxos.map((item) => ({
-                      valor: item.id,
-                      rotulo: item.nome,
-                      ...(item.versaoPublicadaId ? {} : { detalhe: 'rascunho' }),
-                    }))}
-                  />
-                </div>
-              </FormularioSalvar>
-            )}
-          </div>
+
         </section>
         <section className="app-card mt-[18px] overflow-hidden">
-          <header className="border-b border-white/[0.06] px-5 py-4">
+          <header className="flex items-start justify-between gap-4 border-b border-white/[0.06] px-5 py-4">
+            <div className="min-w-0">
             <h2 className="text-[14.5px] font-bold">Campanhas</h2>
-            <p className="mt-0.5 text-[12px] leading-5 text-dim">
+            <p className="mt-0.5 max-w-[78ch] text-[12px] leading-5 text-dim">
               A frase que o anúncio do Click-to-WhatsApp já deixa digitada. Quem
               chega por ela cai num fluxo específico em vez do padrão do número —
               e o contato fica marcado com a campanha que o trouxe.
@@ -444,6 +462,49 @@ export default async function Pagina({
               quem apagou parte e escreveu outra coisa não está mais respondendo
               ao anúncio. Pode terminar com ponto ou não: a gente normaliza.
             </p>
+            </div>
+            {fluxos.length > 0 && (
+              <ModalFormulario
+                botao="+ Campanha"
+                titulo="Nova campanha"
+                descricao="Cole no anúncio exatamente a frase que você escrever aqui. Ela casa com a mensagem inteira."
+                rotuloEnviar="Criar campanha"
+                variante="secundario"
+                action={criarCampanhaComCliente}
+              >
+                <label>
+                  <RotuloCampo>Nome da campanha</RotuloCampo>
+                  <input
+                    name="nome"
+                    required
+                    autoFocus
+                    placeholder="ex.: Anúncio pilates agosto"
+                    className="app-field px-[13px] py-[11px] text-[13.5px]"
+                  />
+                </label>
+                <label>
+                  <RotuloCampo>Frase do anúncio</RotuloCampo>
+                  <input
+                    name="frase"
+                    required
+                    placeholder="ex.: Quero saber mais sobre o plano trimestral"
+                    className="app-field px-[13px] py-[11px] text-[13.5px]"
+                  />
+                </label>
+                <label>
+                  <RotuloCampo>Fluxo que ela abre</RotuloCampo>
+                  <Dropdown
+                    nome="fluxoId"
+                    rotuloAcessivel="Fluxo que a campanha abre"
+                    opcoes={fluxos.map((item) => ({
+                      valor: item.id,
+                      rotulo: item.nome,
+                      ...(item.versaoPublicadaId ? {} : { detalhe: 'rascunho' }),
+                    }))}
+                  />
+                </label>
+              </ModalFormulario>
+            )}
           </header>
 
           {campanhas.length === 0 ? (
@@ -503,48 +564,11 @@ export default async function Pagina({
             </ul>
           )}
 
-          <div className="p-5">
-            {fluxos.length === 0 ? (
-              <p className="text-[11.5px] text-dim">
-                Crie um fluxo primeiro — uma campanha precisa de um lugar para levar.
-              </p>
-            ) : (
-              <FormularioSalvar
-                action={criarCampanhaComCliente}
-                rotulo="Criar campanha"
-                dica="Cole no anúncio exatamente a frase que você escrever aqui."
-              >
-                <div className="grid gap-2.5 md:grid-cols-2">
-                  <input
-                    name="nome"
-                    required
-                    placeholder="Nome (ex.: Anúncio pilates agosto)"
-                    aria-label="Nome da campanha"
-                    className="app-field px-3 py-2.5 text-[12.5px]"
-                  />
-                  <Dropdown
-                    nome="fluxoId"
-                    rotuloAcessivel="Fluxo que a campanha abre"
-                    opcoes={fluxos.map((item) => ({
-                      valor: item.id,
-                      rotulo: item.nome,
-                      ...(item.versaoPublicadaId ? {} : { detalhe: 'rascunho' }),
-                    }))}
-                  />
-                  <input
-                    name="frase"
-                    required
-                    placeholder="Frase do anúncio (ex.: Quero saber mais sobre o plano trimestral)"
-                    aria-label="Frase que inicia o fluxo"
-                    className="app-field px-3 py-2.5 text-[12.5px] md:col-span-2"
-                  />
-                </div>
-              </FormularioSalvar>
-            )}
-          </div>
+
         </section>
         <section className="app-card mt-[18px] overflow-hidden">
-          <header className="border-b border-white/[0.06] px-5 py-4">
+          <header className="flex items-start justify-between gap-4 border-b border-white/[0.06] px-5 py-4">
+            <div className="min-w-0 max-w-[86ch]">
             <h2 className="text-[14.5px] font-bold">Sequências</h2>
             <p className="mt-0.5 text-[12px] leading-5 text-dim">
               O acompanhamento que acontece sozinho depois de um atendimento ou
@@ -562,6 +586,20 @@ export default async function Pagina({
               por modelo aprovado pela Meta — que ainda não temos. Um passo mais
               longo seria desenhado e nunca entregue.
             </p>
+            </div>
+            <ModalFormulario
+              botao="+ Sequência"
+              titulo="Nova sequência"
+              descricao="Ela nasce sem passo, e sem passo não inscreve ninguém — o passo você acrescenta na linha dela, depois de criada."
+              rotuloEnviar="Criar sequência"
+              variante="secundario"
+              action={criarSequenciaComCliente}
+            >
+              <CamposDaSequencia
+                etiquetas={etiquetas.map((e) => ({ id: e.id, nome: e.nome }))}
+                etapas={etapasDosQuadros}
+              />
+            </ModalFormulario>
           </header>
 
           {sequencias.length === 0 ? (
@@ -584,6 +622,7 @@ export default async function Pagina({
                   null,
                   cliente.id,
                   sequencia.id,
+                  {},
                 )
 
                 return (
@@ -703,50 +742,52 @@ export default async function Pagina({
                             traz lead nenhum — traz bloqueio.
                           </p>
                         ) : (
-                          <FormularioSalvar
+                          <ModalFormulario
+                            botao="+ Adicionar passo"
+                            titulo="Novo passo"
+                            descricao="O tempo conta do evento que inscreveu a pessoa, não do passo anterior. O teto é 24h — a janela do WhatsApp."
+                            rotuloEnviar="Adicionar passo"
+                            variante="secundario"
                             action={criarPassoComCliente}
-                            rotulo="Adicionar passo"
-                            dica="O tempo conta do evento, não do passo anterior."
                           >
-                            <div className="grid gap-2.5 md:grid-cols-[90px_90px_1fr]">
+                            <div className="grid grid-cols-2 gap-3">
                               <label>
-                                <span className="mb-1 block text-[10.5px] text-dim">horas</span>
+                                <RotuloCampo>Horas</RotuloCampo>
                                 <input
                                   name="horas"
                                   type="number"
                                   min={0}
                                   max={24}
                                   defaultValue={2}
-                                  aria-label="Horas depois do evento"
-                                  className="app-field w-full px-3 py-2.5 text-[12.5px]"
+                                  autoFocus
+                                  className="app-field px-[13px] py-[11px] text-[13.5px]"
                                 />
                               </label>
                               <label>
-                                <span className="mb-1 block text-[10.5px] text-dim">minutos</span>
+                                <RotuloCampo>Minutos</RotuloCampo>
                                 <input
                                   name="minutos"
                                   type="number"
                                   min={0}
                                   max={59}
                                   defaultValue={0}
-                                  aria-label="Minutos depois do evento"
-                                  className="app-field w-full px-3 py-2.5 text-[12.5px]"
-                                />
-                              </label>
-                              <label>
-                                <span className="mb-1 block text-[10.5px] text-dim">abre</span>
-                                <Dropdown
-                                  nome="fluxoId"
-                                  rotuloAcessivel="Fluxo que este passo abre"
-                                  opcoes={fluxos.map((item) => ({
-                                    valor: item.id,
-                                    rotulo: item.nome,
-                                    ...(item.versaoPublicadaId ? {} : { detalhe: 'rascunho' }),
-                                  }))}
+                                  className="app-field px-[13px] py-[11px] text-[13.5px]"
                                 />
                               </label>
                             </div>
-                          </FormularioSalvar>
+                            <label>
+                              <RotuloCampo>Fluxo que este passo abre</RotuloCampo>
+                              <Dropdown
+                                nome="fluxoId"
+                                rotuloAcessivel="Fluxo que este passo abre"
+                                opcoes={fluxos.map((item) => ({
+                                  valor: item.id,
+                                  rotulo: item.nome,
+                                  ...(item.versaoPublicadaId ? {} : { detalhe: 'rascunho' }),
+                                }))}
+                              />
+                            </label>
+                          </ModalFormulario>
                         )}
                       </div>
                     </details>
@@ -756,14 +797,7 @@ export default async function Pagina({
             </ul>
           )}
 
-          <div className="border-t border-white/[0.045] p-5">
-            <FormularioSalvar action={criarSequenciaComCliente} rotulo="Criar sequência">
-              <CamposDaSequencia
-                etiquetas={etiquetas.map((e) => ({ id: e.id, nome: e.nome }))}
-                etapas={etapasDosQuadros}
-              />
-            </FormularioSalvar>
-          </div>
+
         </section>
       </main>
     </ClienteShell>

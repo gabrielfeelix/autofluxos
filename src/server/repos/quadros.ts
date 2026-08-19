@@ -376,6 +376,116 @@ export async function porNoQuadro(
   return { ok: true, postos: (data as { id: string }[] | null)?.length ?? 0 }
 }
 
+export type ContatoParaOQuadro = { id: string; nome: string; telefone: string }
+
+/**
+ * Quem ainda **não** está neste quadro, para o seletor de "adicionar contato".
+ *
+ * Excluir quem já está é metade da utilidade: uma lista que oferece gente que
+ * já tem cartão faz a pessoa clicar para descobrir que não acontece nada. O
+ * índice único recusaria de qualquer forma — o que muda aqui é ela não ser
+ * oferecida.
+ *
+ * O teto de resultados existe porque a caixa é um seletor, não uma lista: conta
+ * com dez mil contatos devolveria dez mil linhas para alguém escolher uma. Quem
+ * precisa de lote usa a tela de Contatos, que tem filtro e paginação.
+ */
+export async function contatosForaDoQuadro(
+  clienteId: string,
+  quadroId: string,
+  termo: string,
+  limite = 20,
+): Promise<ContatoParaOQuadro[]> {
+  const busca = termo.trim()
+
+  let consulta = db()
+    .from('contacts')
+    .select('id, nome, nome_real, wa_id')
+    .eq('client_id', clienteId)
+    .order('criado_em', { ascending: false })
+    .limit(limite + 200)
+
+  if (busca !== '') {
+    // `,` e `)` têm significado no filtro do PostgREST — a mesma classe de
+    // problema que injeção. Some tudo que não é letra, número ou espaço.
+    const limpo = busca.replace(/[^\p{L}\p{N}\s@.+-]/gu, ' ').trim()
+    if (limpo === '') return []
+    consulta = consulta.or(
+      [`nome.ilike.*${limpo}*`, `nome_real.ilike.*${limpo}*`, `wa_id.ilike.*${limpo}*`].join(','),
+    )
+  }
+
+  const { data, error } = await consulta
+  if (ehIdInvalido(error)) return []
+  if (error) throw new Error(`não deu para buscar contatos: ${error.message}`)
+
+  const { data: jaEstao, error: erroDosCartoes } = await db()
+    .from('quadro_cartoes')
+    .select('contact_id')
+    .eq('quadro_id', quadroId)
+
+  if (erroDosCartoes) throw new Error(`não deu para ler o quadro: ${erroDosCartoes.message}`)
+  const dentro = new Set((jaEstao as { contact_id: string }[]).map((l) => l.contact_id))
+
+  return (data as { id: string; nome: string | null; nome_real: string | null; wa_id: string }[])
+    .filter((linha) => !dentro.has(linha.id))
+    .slice(0, limite)
+    .map((linha) => ({
+      id: linha.id,
+      nome: linha.nome_real || linha.nome || linha.wa_id,
+      telefone: linha.wa_id,
+    }))
+}
+
+/**
+ * Põe contatos **numa etapa específica**.
+ *
+ * Diferente de `porNoQuadro`, que joga na primeira: aqui a pessoa clicou em
+ * "adicionar" **dentro de uma coluna**, e cair noutra seria ignorar o gesto.
+ */
+export async function porNaEtapa(
+  clienteId: string,
+  quadroId: string,
+  colunaId: string,
+  contatos: string[],
+): Promise<{ ok: true; postos: number } | { ok: false; motivo: string }> {
+  if (contatos.length === 0) return { ok: false, motivo: 'escolha ao menos um contato' }
+
+  const quadro = await acharQuadro(clienteId, quadroId)
+  if (!quadro) return { ok: false, motivo: 'este quadro não existe mais' }
+  if (!quadro.etapas.some((etapa) => etapa.id === colunaId)) {
+    return { ok: false, motivo: 'esta etapa não existe mais' }
+  }
+
+  const { data: doCliente, error: erroDosContatos } = await db()
+    .from('contacts')
+    .select('id')
+    .eq('client_id', clienteId)
+    .in('id', contatos)
+
+  if (ehIdInvalido(erroDosContatos)) return { ok: false, motivo: 'contato inválido' }
+  if (erroDosContatos) throw new Error(`não deu para conferir os contatos: ${erroDosContatos.message}`)
+
+  const validos = (doCliente as { id: string }[]).map((c) => c.id)
+  if (validos.length === 0) return { ok: false, motivo: 'nenhum contato deste cliente na seleção' }
+
+  const { data, error } = await db()
+    .from('quadro_cartoes')
+    .upsert(
+      validos.map((contatoId) => ({
+        client_id: clienteId,
+        quadro_id: quadroId,
+        coluna_id: colunaId,
+        contact_id: contatoId,
+      })),
+      { onConflict: 'quadro_id,contact_id', ignoreDuplicates: true },
+    )
+    .select('id')
+
+  if (error) throw new Error(`não deu para pôr na etapa: ${error.message}`)
+  return { ok: true, postos: (data as { id: string }[] | null)?.length ?? 0 }
+}
+
 /**
  * Move o cartão de etapa.
  *

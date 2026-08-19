@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { BotaoPerigo } from '@/components/design/botao-perigo'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { Dropdown } from '@/components/design/dropdown'
-import { FormularioSalvar } from '@/components/design/formulario-salvar'
+import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { FichaDeEtiqueta } from '@/components/etiquetas/ficha'
 import { CORES_DE_ETIQUETA, LIMITE_DO_NOME, ROTULO_DA_COR } from '@/core/etiquetas'
 import { acaoApagarEtiqueta, acaoCriarEtiqueta, acaoEditarEtiqueta } from '@/server/acoes'
@@ -25,11 +25,11 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   ])
   if (!cliente) notFound()
 
-  const criarComCliente = acaoCriarEtiqueta.bind(null, cliente.id)
+  const criarComCliente = acaoCriarEtiqueta.bind(null, cliente.id, {})
 
   return (
     <ClienteShell cliente={cliente} ativa="ajustes">
-      <main className="max-w-[820px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
+      <main className="w-full max-w-[1100px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <Link
           href={`/clientes/${clienteId}/ajustes`}
           className="mb-3.5 inline-block text-[12.5px] text-muted transition hover:text-accent"
@@ -47,37 +47,40 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           mensagem.
         </p>
 
-        <section className="app-card mb-[18px] overflow-hidden">
-          <header className="border-b border-white/[0.06] px-5 py-4">
-            <h2 className="text-[14.5px] font-bold">Nova etiqueta</h2>
-          </header>
-          <div className="p-5">
-            <FormularioSalvar action={criarComCliente} rotulo="Criar">
-              <div className="grid gap-2.5 md:grid-cols-[1fr_160px]">
+        <section className="app-card overflow-hidden">
+          <header className="flex items-center justify-between gap-4 border-b border-white/[0.06] px-5 py-4">
+            <h2 className="text-[14.5px] font-bold">
+              {etiquetas.length} {etiquetas.length === 1 ? 'etiqueta' : 'etiquetas'}
+            </h2>
+            <ModalFormulario
+              botao="+ Nova etiqueta"
+              titulo="Nova etiqueta"
+              descricao="A cor é uma lista fechada de propósito: hexadecimal livre é como se cria uma etiqueta invisível."
+              rotuloEnviar="Criar etiqueta"
+              variante="secundario"
+              action={criarComCliente}
+            >
+              <label>
+                <RotuloCampo>Nome</RotuloCampo>
                 <input
                   name="nome"
                   required
+                  autoFocus
                   maxLength={LIMITE_DO_NOME}
                   placeholder="ex.: orçamento enviado"
-                  aria-label="Nome da etiqueta"
-                  className="app-field px-3 py-2.5 text-[12.5px]"
+                  className="app-field px-[13px] py-[11px] text-[13.5px]"
                 />
+              </label>
+              <label>
+                <RotuloCampo>Cor</RotuloCampo>
                 <Dropdown
                   nome="cor"
                   rotuloAcessivel="Cor da etiqueta"
                   valorInicial="cinza"
                   opcoes={OPCOES_DE_COR}
                 />
-              </div>
-            </FormularioSalvar>
-          </div>
-        </section>
-
-        <section className="app-card overflow-hidden">
-          <header className="border-b border-white/[0.06] px-5 py-4">
-            <h2 className="text-[14.5px] font-bold">
-              {etiquetas.length} {etiquetas.length === 1 ? 'etiqueta' : 'etiquetas'}
-            </h2>
+              </label>
+            </ModalFormulario>
           </header>
 
           {etiquetas.length === 0 ? (
@@ -101,34 +104,43 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
                       pergunta={`Apagar a etiqueta “${etiqueta.nome}”? Ela sai dos ${etiqueta.contatos ?? 0} contato(s) que a têm.`}
                       acao={acaoApagarEtiqueta.bind(null, cliente.id, etiqueta.id)}
                     />
+                    <ModalFormulario
+                      botao="Editar"
+                      titulo={`Editar “${etiqueta.nome}”`}
+                      descricao="Renomear mantém a etiqueta em quem já a tinha — renomear não é recriar."
+                      rotuloEnviar="Salvar"
+                      variante="secundario"
+                      action={acaoEditarEtiqueta.bind(null, cliente.id, etiqueta.id, {})}
+                    >
+                      <label>
+                        <RotuloCampo>Nome</RotuloCampo>
+                        <input
+                          name="nome"
+                          required
+                          autoFocus
+                          maxLength={LIMITE_DO_NOME}
+                          defaultValue={etiqueta.nome}
+                          className="app-field px-[13px] py-[11px] text-[13.5px]"
+                        />
+                      </label>
+                      <label>
+                        <RotuloCampo>Cor</RotuloCampo>
+                        <Dropdown
+                          nome="cor"
+                          rotuloAcessivel={`Cor de ${etiqueta.nome}`}
+                          valorInicial={etiqueta.cor}
+                          opcoes={OPCOES_DE_COR}
+                        />
+                      </label>
+                    </ModalFormulario>
                   </div>
 
                   {/*
-                    Editar no lugar, e não numa tela à parte: renomear é o que
-                    mais se faz com etiqueta, e mandar alguém a outra página
-                    para corrigir uma letra é caro para o que a tarefa vale.
+                    Editar é modal, como criar. O formulário aberto em cada
+                    linha empilhava um campo e um seletor por etiqueta: com dez
+                    etiquetas a lista virava dez formulários, e ler quais
+                    existem — que é para o que a tela serve — ficava impossível.
                   */}
-                  <FormularioSalvar
-                    action={acaoEditarEtiqueta.bind(null, cliente.id, etiqueta.id)}
-                    rotulo="Salvar"
-                  >
-                    <div className="grid gap-2.5 md:grid-cols-[1fr_160px]">
-                      <input
-                        name="nome"
-                        required
-                        maxLength={LIMITE_DO_NOME}
-                        defaultValue={etiqueta.nome}
-                        aria-label={`Nome de ${etiqueta.nome}`}
-                        className="app-field px-3 py-2 text-[12px]"
-                      />
-                      <Dropdown
-                        nome="cor"
-                        rotuloAcessivel={`Cor de ${etiqueta.nome}`}
-                        valorInicial={etiqueta.cor}
-                        opcoes={OPCOES_DE_COR}
-                      />
-                    </div>
-                  </FormularioSalvar>
                 </li>
               ))}
             </ul>

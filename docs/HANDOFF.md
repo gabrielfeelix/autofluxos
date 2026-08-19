@@ -46,6 +46,7 @@ O mapa que economiza a primeira hora de quem chega:
 | **o que sai da conta num link compartilhado** | `src/core/compartilhar.ts` — é a única barreira antes de uma URL pública |
 | **quando um passo de sequência roda** | `src/core/sequencias.ts` (régua) · `server/sequencias.ts` (entra/sai) · `server/sequencias-passo.ts` (executa) |
 | **a etapa em que um contato está** | `src/core/quadros.ts` (régua) · `repos/quadros.ts` · `components/quadros/quadro.tsx` |
+| **um formulário de criar/editar** | `components/design/modal-formulario.tsx` (com Server Action) · `modal.tsx` (controlado). Ver §10.1 |
 | **um tipo de bloco novo no fluxo** | `core/flow/schema.ts`, `engine/types.ts`, `engine/executar.ts`, `flow/validar.ts`, e no editor `nos.tsx`+`editor.tsx`+`painel.tsx`. O compilador aponta os seis — todos os `switch` são exaustivos |
 
 Duas leis de arquitetura que explicam o mapa: **`core/` não faz rede** (é o que
@@ -1028,6 +1029,39 @@ segredo para dentro do repo — ele é público.
 Conexão direta: `postgresql://postgres.<ref>:<senha>@aws-0-sa-east-1.pooler.supabase.com:6543/postgres`.
 Porta **6543** (transaction pooler). Em modo transação o Supavisor **não
 suporta prepared statements**.
+
+---
+
+## 10.1 Convenções de tela
+
+Três, e as três vieram de o dono olhar a interface e apontar o que estava errado.
+
+**1. Criar e editar são modais.** Formulário de criação aberto na página é um
+bloco que ocupa o mesmo espaço da lista que ele alimenta — e criar é raro,
+enquanto ler a lista é o tempo todo. Automações chegou a ter quatro desses
+empilhados, cada um maior que a seção que servia.
+
+O padrão é `ModalFormulario` (botão + `<form>` com Server Action) ou `Modal`
+(controlado, para quando quem abre não é um botão de barra). As ações de
+`EstadoSalvar` servem aos dois sem adaptador: `acao.bind(null, ids…, {})`
+transforma `(estado, formData)` em `(formData)`.
+
+**A exceção é a página que já É o formulário** — contexto do negócio, horário de
+atendimento, cadastro do cliente. Ali não há lista competindo pelo espaço, e um
+modal em cima de uma tela vazia é uma janela dentro de outra. A regra vale para
+**item de lista**.
+
+**2. A página usa a largura que tem.** As telas nasceram com `max-w-[1000px]` e
+menos, herdado de quando eram formulários de uma coluna. Numa tela larga isso
+deixa um terço da área morto ao lado do conteúdo, com as tabelas espremidas. As
+telas de lista foram para `1440px`, as de configuração para `1100px`, e os
+parágrafos ganharam `max-w` próprio — largura de leitura e largura de tabela são
+medidas diferentes, e usar a mesma para as duas erra uma delas.
+
+**3. Botão de estado vazio leva ao lugar certo.** "Nenhum número conectado →
+Conectar um número" apontava para o painel, não para a tela do número. Botão de
+estado vazio que leva ao lugar errado é pior que estado vazio sem botão: ele
+ensina que o produto não sabe para onde mandar a pessoa.
 
 ---
 

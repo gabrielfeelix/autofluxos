@@ -23,7 +23,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
   return (
     <ClienteShell cliente={cliente} ativa="leads">
-      <main className="max-w-[820px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
+      <main className="w-full max-w-[1000px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <Link
           href={`/clientes/${clienteId}/leads`}
           className="mb-3.5 inline-block text-[12.5px] text-muted transition hover:text-accent"

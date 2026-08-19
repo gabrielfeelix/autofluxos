@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { BotaoPerigo } from '@/components/design/botao-perigo'
 import { Dropdown } from '@/components/design/dropdown'
-import { FormularioSalvar } from '@/components/design/formulario-salvar'
+import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import {
   acaoConectarNumero,
   acaoDefinirFluxosDoNumero,
@@ -47,19 +47,20 @@ export default async function Pagina({
     'localhost:3000'
   const protocolo = host.startsWith('localhost') ? 'http' : 'https'
   const webhook = `${protocolo}://${host}/api/webhook/whatsapp`
-  const conectarComCliente = acaoConectarNumero.bind(null, cliente.id)
+  const conectarComCliente = acaoConectarNumero.bind(null, cliente.id, {})
 
   return (
     <ClienteShell cliente={cliente} ativa="ajustes">
-      <main className="max-w-[720px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
+      <main className="w-full max-w-[1100px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <h1 className="mb-5 text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">
           Número do WhatsApp
         </h1>
 
         <section className="app-card mb-[18px] overflow-hidden">
-          <header className="border-b border-white/[0.06] px-5 py-4">
+          <header className="flex items-start justify-between gap-4 border-b border-white/[0.06] px-5 py-4">
+            <div className="min-w-0 max-w-[70ch]">
             <h2 className="text-[14.5px] font-bold">Números do WhatsApp</h2>
-            <p className="mt-0.5 text-[12px] text-dim">
+            <p className="mt-0.5 text-[12px] leading-5 text-dim">
               Cada número executa um fluxo. A identificação está no painel da
               Meta, em{' '}
               <strong className="text-muted">
@@ -67,6 +68,37 @@ export default async function Pagina({
               </strong>
               .
             </p>
+            </div>
+            <ModalFormulario
+              botao="+ Conectar número"
+              titulo="Conectar um número"
+              descricao="A identificação é a do painel da Meta, em WhatsApp → Configuração da API. Os outros três papéis do número se configuram depois, na linha dele."
+              rotuloEnviar="Conectar"
+              variante={canais.length === 0 ? 'primario' : 'secundario'}
+              action={conectarComCliente}
+            >
+              <label>
+                <RotuloCampo>Identificação do número (Meta)</RotuloCampo>
+                <input
+                  name="phoneNumberId"
+                  required
+                  autoFocus
+                  placeholder="ex.: 123456789012345"
+                  className="app-field px-[13px] py-[11px] text-[13.5px]"
+                />
+              </label>
+              <label>
+                <RotuloCampo>Fluxo principal</RotuloCampo>
+                <Dropdown
+                  nome="flowId"
+                  rotuloAcessivel="Fluxo principal do número"
+                  opcoes={[
+                    { valor: '', rotulo: 'sem fluxo principal' },
+                    ...fluxos.map((fluxo) => ({ valor: fluxo.id, rotulo: fluxo.nome })),
+                  ]}
+                />
+              </label>
+            </ModalFormulario>
           </header>
 
           {canais.length === 0 ? (
@@ -87,6 +119,7 @@ export default async function Pagina({
                   null,
                   cliente.id,
                   canal.id,
+                  {},
                 )
 
                 return (
@@ -120,12 +153,15 @@ export default async function Pagina({
                     )}
 
                     <div className="mt-3 ml-4">
-                      <FormularioSalvar
+                      <ModalFormulario
+                        botao="Configurar os 4 papéis"
+                        titulo={`Fluxos do número ${canal.phoneNumberId}`}
+                        descricao="Cada papel decide quando o número fala. Vazio = papel desligado."
+                        rotuloEnviar="Salvar fluxos"
+                        variante="secundario"
                         action={salvarFluxos}
-                        rotulo="Salvar fluxos"
-                        dica="Vazio = papel desligado."
                       >
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                           {PAPEIS_DO_NUMERO.map((papel) => {
                             const escolhido = fluxoDoPapel(canal, papel) ?? ''
                             const naoPublicado = fluxos.some(
@@ -165,7 +201,7 @@ export default async function Pagina({
                             )
                           })}
                         </div>
-                      </FormularioSalvar>
+                      </ModalFormulario>
                     </div>
                   </li>
                 )
@@ -173,29 +209,6 @@ export default async function Pagina({
             </ul>
           )}
 
-          <div className="p-5">
-            <FormularioSalvar action={conectarComCliente} rotulo="Conectar">
-              <div className="space-y-2.5">
-                <input
-                  name="phoneNumberId"
-                  required
-                  placeholder="Identificação do número (Meta)"
-                  className="app-field px-3 py-2.5 text-[12.5px]"
-                />
-                <Dropdown
-                  nome="flowId"
-                  rotuloAcessivel="Fluxo principal do número"
-                  opcoes={[
-                    { valor: '', rotulo: 'sem fluxo principal' },
-                    ...fluxos.map((fluxo) => ({
-                      valor: fluxo.id,
-                      rotulo: fluxo.nome,
-                    })),
-                  ]}
-                />
-              </div>
-            </FormularioSalvar>
-          </div>
         </section>
 
         <section className="app-card p-5">
