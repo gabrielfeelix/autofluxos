@@ -231,29 +231,6 @@ textarea::placeholder {
  *
  * `top`, `left` e `width` chegam por `style`, medidos do botão.
  */
-/**
- * O irmão **ancorado** do `.app-dropdown-menu`.
- *
- * Aquele é `position: fixed` porque o `Dropdown` calcula a posição dele em JS —
- * o que serve a menu que precisa escapar de um contêiner com rolagem. Popover
- * pequeno colado no próprio botão não quer isso: usar a classe errada fazia o
- * seletor de emoji nascer no canto da janela, a meia tela do campo, porque
- * `left: 0` num elemento fixo é o canto da **janela**, não o do botão.
- *
- * A regra: quem posiciona sozinho usa `.app-popover` dentro de um pai
- * `position: relative`; quem precisa de coordenada calculada usa o outro.
- */
-.app-popover {
-  position: absolute;
-  top: calc(100% + 6px);
-  z-index: 90;
-  border: 1px solid rgba(86, 208, 245, 0.25);
-  border-radius: 12px;
-  background: #111924;
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.48), 0 2px 8px rgba(0, 0, 0, 0.28);
-  animation: dropdown-in 130ms ease both;
-}
-
 .app-dropdown-menu {
   position: fixed;
   z-index: 90;

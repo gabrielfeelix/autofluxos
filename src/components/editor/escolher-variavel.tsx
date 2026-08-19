@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState, type RefObject } from 'react'
+import { useCallback, useRef, useState, type RefObject } from 'react'
 import { inserirNoCursor } from './inserir-variavel'
+import { Popover } from './popover'
 
 /**
  * O botão que insere uma variável no campo — com busca.
@@ -25,41 +26,21 @@ export function SeletorDeVariavel({
   variaveis,
   aoMudar,
   className = '',
-  alinhamento = 'esquerda',
 }: {
   /** O campo que recebe a variável. A seleção dele é lida na hora de inserir. */
   campo: RefObject<HTMLInputElement | HTMLTextAreaElement | null>
   variaveis: string[]
   aoMudar: (valor: string) => void
   className?: string
-  /** De que lado do botão o menu abre. Campo estreito abre para a esquerda. */
-  alinhamento?: 'esquerda' | 'direita'
 }) {
   const [aberto, setAberto] = useState(false)
   const [busca, setBusca] = useState('')
-  const caixa = useRef<HTMLDivElement>(null)
+  const botao = useRef<HTMLButtonElement>(null)
+  const fechar = useCallback(() => setAberto(false), [])
 
   const filtradas = variaveis.filter((v) =>
     v.toLowerCase().includes(busca.trim().toLowerCase()),
   )
-
-  useEffect(() => {
-    if (!aberto) return
-
-    const fechar = (evento: MouseEvent) => {
-      if (!caixa.current?.contains(evento.target as Node)) setAberto(false)
-    }
-    const aoTeclar = (evento: KeyboardEvent) => {
-      if (evento.key === 'Escape') setAberto(false)
-    }
-
-    document.addEventListener('mousedown', fechar)
-    document.addEventListener('keydown', aoTeclar)
-    return () => {
-      document.removeEventListener('mousedown', fechar)
-      document.removeEventListener('keydown', aoTeclar)
-    }
-  }, [aberto])
 
   function inserir(variavel: string) {
     const elemento = campo.current
@@ -85,8 +66,9 @@ export function SeletorDeVariavel({
   }
 
   return (
-    <div ref={caixa} className={`relative ${className}`}>
+    <span className={className}>
       <button
+        ref={botao}
         type="button"
         aria-label="Inserir variável"
         aria-expanded={aberto}
@@ -111,50 +93,44 @@ export function SeletorDeVariavel({
         {'{x}'}
       </button>
 
-      {aberto && (
-        <div
-          className={`app-popover w-[220px] p-1.5 ${
-            alinhamento === 'esquerda' ? 'left-0' : 'right-0'
-          }`}
-        >
-          <input
-            autoFocus
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            onKeyDown={(e) => {
-              // `Enter` pega a primeira da lista: com a busca filtrando, a
-              // primeira quase sempre é a procurada, e tirar a mão do teclado
-              // para clicar é o que torna um seletor cansativo.
-              if (e.key === 'Enter' && filtradas[0]) {
-                e.preventDefault()
-                inserir(filtradas[0])
-              }
-            }}
-            placeholder="Buscar variável…"
-            className="app-field mb-1 px-2 py-1.5 text-[12px]"
-          />
+      <Popover aberto={aberto} gatilho={botao} largura={220} altura={250} aoFechar={fechar}>
+        <input
+          autoFocus
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          onKeyDown={(e) => {
+            // `Enter` pega a primeira da lista: com a busca filtrando, a
+            // primeira quase sempre é a procurada, e tirar a mão do teclado
+            // para clicar é o que torna um seletor cansativo.
+            if (e.key === 'Enter' && filtradas[0]) {
+              e.preventDefault()
+              inserir(filtradas[0])
+            }
+          }}
+          placeholder="Buscar variável…"
+          className="app-field mb-1 px-2 py-1.5 text-[12px]"
+        />
 
-          <div className="max-h-[190px] overflow-y-auto">
-            {filtradas.length === 0 ? (
-              <p className="px-2 py-2 text-[11px] leading-4 text-dim">
-                Nenhuma variável com esse nome.
-              </p>
-            ) : (
-              filtradas.map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  onMouseDown={(evento) => {
-                    evento.preventDefault()
-                    inserir(v)
-                  }}
-                  className="block w-full truncate rounded-md px-2 py-1.5 text-left font-mono text-[11.5px] text-[#8de2fa] transition hover:bg-accent/[0.12]"
-                >{`{{${v}}}`}</button>
-              ))
-            )}
-          </div>
+        <div className="max-h-[190px] overflow-y-auto">
+          {filtradas.length === 0 ? (
+            <p className="px-2 py-2 text-[11px] leading-4 text-dim">
+              Nenhuma variável com esse nome.
+            </p>
+          ) : (
+            filtradas.map((v) => (
+              <button
+                key={v}
+                type="button"
+                onMouseDown={(evento) => {
+                  evento.preventDefault()
+                  inserir(v)
+                }}
+                className="block w-full truncate rounded-md px-2 py-1.5 text-left font-mono text-[11.5px] text-[#8de2fa] transition hover:bg-accent/[0.12]"
+              >{`{{${v}}}`}</button>
+            ))
+          )}
         </div>
-      )}
-    </div>
+      </Popover>
+    </span>
   )
 }

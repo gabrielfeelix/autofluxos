@@ -267,12 +267,7 @@ export function LinhaComVariaveis({
 
       {variaveis && (
         <span className="absolute top-1/2 right-1.5 -translate-y-1/2">
-          <SeletorDeVariavel
-            campo={campo}
-            variaveis={variaveis}
-            aoMudar={aoMudar}
-            alinhamento="direita"
-          />
+          <SeletorDeVariavel campo={campo} variaveis={variaveis} aoMudar={aoMudar} />
         </span>
       )}
     </div>

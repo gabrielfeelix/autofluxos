@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useCallback, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { SeletorDeVariavel } from './escolher-variavel'
 import { GRUPOS_DE_EMOJI, TODOS_OS_EMOJIS } from './emojis'
+import { Popover } from './popover'
 import { alternarMarca, type Marca } from './formatar'
 
 /**
@@ -142,10 +143,12 @@ function BotaoDeMarca({
  *
  * Os três defeitos que ele corrige eram um só sintoma cada:
  *
- * 1. **Ele aparecia longe do botão**, no canto da tela, porque usava
- *    `.app-dropdown-menu` — que é `position: fixed` para servir ao `Dropdown`,
- *    que calcula coordenada em JS. Aqui o certo é `.app-popover`, absoluto,
- *    colado no próprio botão.
+ * 1. **Ele aparecia fora do lugar** — primeiro no canto da tela, depois
+ *    empurrando a coluna do editor para o lado. Os dois eram o mesmo erro de
+ *    camada: `position: fixed` com coordenada de outro elemento, e depois
+ *    `absolute` dentro de um contêiner com rolagem, onde o que passa da largura
+ *    não flutua, **alarga**. Agora é o `Popover`: portal no `<body>`, posição
+ *    medida a partir do botão, centralizada nele e presa dentro da janela.
  * 2. **Não tinha busca**, então achar um emoji era varrer a grade com o olho.
  * 3. **Tinha trinta**, o que garantia que o procurado quase nunca estava lá.
  */
@@ -159,34 +162,19 @@ function SeletorDeEmoji({
   aoAbrir: (aberto: boolean) => void
 }) {
   const [busca, setBusca] = useState('')
-  const caixa = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!aberto) return
-
-    const fechar = (evento: MouseEvent) => {
-      if (!caixa.current?.contains(evento.target as Node)) aoAbrir(false)
-    }
-    const aoTeclar = (evento: KeyboardEvent) => {
-      if (evento.key === 'Escape') aoAbrir(false)
-    }
-
-    document.addEventListener('mousedown', fechar)
-    document.addEventListener('keydown', aoTeclar)
-    return () => {
-      document.removeEventListener('mousedown', fechar)
-      document.removeEventListener('keydown', aoTeclar)
-    }
-  }, [aberto, aoAbrir])
+  const botao = useRef<HTMLButtonElement>(null)
+  const fechar = useCallback(() => aoAbrir(false), [aoAbrir])
 
   const procurado = busca.trim().toLowerCase()
   // Busca varre a lista inteira e ignora os grupos: quem digitou "coração" quer
   // ver os oito de uma vez, não descobrir em qual gaveta cada um mora.
-  const achados = procurado === '' ? null : TODOS_OS_EMOJIS.filter(([, chaves]) => chaves.includes(procurado))
+  const achados =
+    procurado === '' ? null : TODOS_OS_EMOJIS.filter(([, chaves]) => chaves.includes(procurado))
 
   return (
-    <div ref={caixa} className="relative">
+    <span>
       <button
+        ref={botao}
         type="button"
         aria-label="Inserir emoji"
         aria-expanded={aberto}
@@ -204,39 +192,37 @@ function SeletorDeEmoji({
         ☺
       </button>
 
-      {aberto && (
-        <div className="app-popover left-0 w-[268px] p-1.5">
-          <input
-            autoFocus
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            placeholder="Buscar emoji… (ex.: coração, festa)"
-            className="app-field mb-1 px-2 py-1.5 text-[12px]"
-          />
+      <Popover aberto={aberto} gatilho={botao} largura={268} altura={272} aoFechar={fechar}>
+        <input
+          autoFocus
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          placeholder="Buscar emoji… (ex.: coração, festa)"
+          className="app-field mb-1 px-2 py-1.5 text-[12px]"
+        />
 
-          <div className="max-h-[212px] overflow-y-auto">
-            {achados ? (
-              achados.length === 0 ? (
-                <p className="px-2 py-2 text-[11px] leading-4 text-dim">
-                  Nenhum emoji com esse nome. O teclado do sistema continua funcionando.
-                </p>
-              ) : (
-                <Grade itens={achados} aoEscolher={aoEscolher} />
-              )
+        <div className="max-h-[212px] overflow-y-auto">
+          {achados ? (
+            achados.length === 0 ? (
+              <p className="px-2 py-2 text-[11px] leading-4 text-dim">
+                Nenhum emoji com esse nome. O teclado do sistema continua funcionando.
+              </p>
             ) : (
-              GRUPOS_DE_EMOJI.map((grupo) => (
-                <div key={grupo.nome} className="mb-1">
-                  <p className="px-1 pt-1 pb-0.5 text-[9.5px] font-bold tracking-[0.06em] text-dim uppercase">
-                    {grupo.nome}
-                  </p>
-                  <Grade itens={grupo.itens} aoEscolher={aoEscolher} />
-                </div>
-              ))
-            )}
-          </div>
+              <Grade itens={achados} aoEscolher={aoEscolher} />
+            )
+          ) : (
+            GRUPOS_DE_EMOJI.map((grupo) => (
+              <div key={grupo.nome} className="mb-1">
+                <p className="px-1 pt-1 pb-0.5 text-[9.5px] font-bold tracking-[0.06em] text-dim uppercase">
+                  {grupo.nome}
+                </p>
+                <Grade itens={grupo.itens} aoEscolher={aoEscolher} />
+              </div>
+            ))
+          )}
         </div>
-      )}
-    </div>
+      </Popover>
+    </span>
   )
 }
 
