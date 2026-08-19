@@ -61,6 +61,15 @@ const MEDIDAS: CSSProperties = {
   overflowWrap: 'break-word',
   wordBreak: 'normal',
   margin: 0,
+  /**
+   * O vão da barra de rolagem, reservado sempre e nas duas camadas.
+   *
+   * Sem isto, o texto que passa da altura faz o `<textarea>` mostrar barra e
+   * perder ~15px de largura útil — o espelho, que não tem barra, continua com a
+   * largura cheia e quebra as linhas em pontos diferentes. É o mesmo defeito de
+   * desalinhamento, só que aparecendo de repente na quarta linha.
+   */
+  scrollbarGutter: 'stable',
 }
 
 const FUNDO: CSSProperties = {
@@ -87,6 +96,39 @@ const CAMPO: CSSProperties = {
   caretColor: 'var(--ink)',
 }
 
+/**
+ * O realce de uma variável — **sem mexer em uma medida sequer**.
+ *
+ * Era aqui o defeito que fazia o campo parecer duplicado: o realce tinha
+ * `padding: 1px 3px` e `font-weight: 600`. Os dois mudam a largura do texto no
+ * espelho, e o `<textarea>` por cima não sabe disso — ele desenha `{{nome}}`
+ * com a largura normal. A partir da primeira variável as duas camadas passavam
+ * a discordar de alguns pixels por variável, e o efeito na tela é exatamente o
+ * que se vê: texto fantasma deslocado, e o cursor caindo numa coluna diferente
+ * da letra que está sendo digitada.
+ *
+ * A regra desta técnica, que não abre exceção: **o espelho só pode mudar cor.**
+ * Nada de padding, borda, negrito, `letter-spacing`, fonte ou transformação —
+ * qualquer coisa que mova um glifo um pixel quebra a ilusão.
+ *
+ * O ar em volta do realce continua existindo, feito por `box-shadow`: sombra
+ * não ocupa espaço no fluxo, então ela pinta a folga sem empurrar o que vem
+ * depois.
+ */
+const REALCE_CONHECIDA: CSSProperties = {
+  borderRadius: 4,
+  background: 'color-mix(in oklab, var(--accent) 20%, transparent)',
+  color: 'var(--accent)',
+  boxShadow: '0 0 0 2px color-mix(in oklab, var(--accent) 20%, transparent)',
+}
+
+const REALCE_DESCONHECIDA: CSSProperties = {
+  borderRadius: 4,
+  background: 'rgba(252, 211, 77, 0.20)',
+  color: '#fde68a',
+  boxShadow: '0 0 0 2px rgba(252, 211, 77, 0.20)',
+}
+
 function Pedacos({ valor, conhecidas }: { valor: string; conhecidas?: string[] }) {
   return (
     <>
@@ -96,11 +138,10 @@ function Pedacos({ valor, conhecidas }: { valor: string; conhecidas?: string[] }
         ) : (
           <span
             key={i}
-            style={{ borderRadius: 4, padding: '1px 3px', fontWeight: 600 }}
-            className={
+            style={
               conhecidas && !conhecidas.includes(pedaco.nome)
-                ? 'bg-amber-300/20 text-amber-200'
-                : 'bg-accent/20 text-accent'
+                ? REALCE_DESCONHECIDA
+                : REALCE_CONHECIDA
             }
           >
             {pedaco.texto}
