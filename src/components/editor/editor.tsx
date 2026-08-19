@@ -29,6 +29,15 @@ import { Compartilhar } from './compartilhar'
 
 const PAUSA_ANTES_DE_SALVAR = 800
 
+/**
+ * Quanto tempo o "bloco apagado — desfazer" fica na tela.
+ *
+ * Cinco segundos: tempo de ler a frase, perceber o engano e alcançar o botão,
+ * sem virar moldura permanente. Abaixo de três, quem desviou o olhar perde a
+ * chance; acima de dez, o aviso deixa de ser aviso.
+ */
+const SEGUNDOS_DO_DESFAZER = 5
+
 const TIPOS: TipoNo[] = [
   'mensagem',
   'midia',
@@ -344,6 +353,59 @@ export function Editor({
     setEdges((atuais) => atuais.filter((e) => e.source !== selecionado && e.target !== selecionado))
     setSelecionado(null)
   }
+
+  /**
+   * O aviso de "bloco apagado" some sozinho depois de alguns segundos.
+   *
+   * Ele ficava pendurado até alguém apagar outro bloco ou clicar em Desfazer, e
+   * aviso que fica é aviso que para de ser lido — some do campo de atenção e
+   * vira parte do layout. O prazo é o do desfazer: passou, a decisão está
+   * tomada.
+   *
+   * O relógio reinicia a cada bloco apagado porque `desfazer` muda de objeto —
+   * quem apaga três seguidos ganha os segundos contados do último, que é o
+   * único que ainda dá para devolver.
+   */
+  useEffect(() => {
+    if (!desfazer) return
+    const relogio = window.setTimeout(() => setDesfazer(null), SEGUNDOS_DO_DESFAZER * 1000)
+    return () => window.clearTimeout(relogio)
+  }, [desfazer])
+
+  /**
+   * `Delete` e `Backspace` apagam o bloco selecionado.
+   *
+   * É o gesto que todo editor de diagrama tem, e a falta dele obrigava a ir até
+   * o botão do painel para cada bloco.
+   *
+   * **Só quando o foco não está num campo.** Sem essa guarda, apagar uma letra
+   * no texto da mensagem apagaria o bloco inteiro assim que o campo ficasse
+   * vazio — e `Backspace` num campo vazio é exatamente o que acontece o tempo
+   * todo enquanto alguém escreve.
+   */
+  useEffect(() => {
+    const aoTeclar = (evento: KeyboardEvent) => {
+      if (evento.key !== 'Delete' && evento.key !== 'Backspace') return
+
+      const alvo = evento.target as HTMLElement | null
+      const digitando =
+        alvo instanceof HTMLInputElement ||
+        alvo instanceof HTMLTextAreaElement ||
+        alvo instanceof HTMLSelectElement ||
+        alvo?.isContentEditable === true
+      if (digitando) return
+
+      // Sem bloco escolhido não há o que apagar, e `Backspace` fora de campo é
+      // "voltar" em alguns navegadores — deixar passar seria sair do editor.
+      if (!selecionado) return
+
+      evento.preventDefault()
+      apagar()
+    }
+
+    window.addEventListener('keydown', aoTeclar)
+    return () => window.removeEventListener('keydown', aoTeclar)
+  })
 
   function desfazerApagar() {
     if (!desfazer) return

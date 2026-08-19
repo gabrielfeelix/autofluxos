@@ -221,12 +221,19 @@ textarea::placeholder {
   opacity: 0.45;
 }
 
+/*
+ * `fixed`, e desenhada por um portal — ver o comentário em `dropdown.tsx`.
+ *
+ * Era `absolute` dentro do componente, e todo card do painel tem
+ * `overflow-hidden` para arredondar a lista que ele contém: o resultado era a
+ * lista de opções sendo recortada na altura do card. `z-index` não resolve
+ * `overflow: hidden`, que recorta em vez de empilhar.
+ *
+ * `top`, `left` e `width` chegam por `style`, medidos do botão.
+ */
 .app-dropdown-menu {
-  position: absolute;
-  z-index: 30;
-  top: calc(100% + 6px);
-  right: 0;
-  left: 0;
+  position: fixed;
+  z-index: 90;
   max-height: 235px;
   overflow-y: auto;
   padding: 5px;

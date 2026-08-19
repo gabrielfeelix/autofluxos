@@ -13,55 +13,78 @@ import { fatiarVariaveis } from '@/core/engine/interpolar'
  *
  * **E ele distingue conhecida de desconhecida**, que é o que transforma enfeite
  * em informação. Variável que nenhum bloco preenche fica âmbar, com o mesmo
- * critério do `validar()`: é o erro de digitação aparecendo antes de virar
- * mensagem torta.
+ * critério do `validar()`.
  *
  * ---------------------------------------------------------------------------
- * Como funciona, porque a técnica não é óbvia
+ * Fundo espelhado: como funciona, e o que já quebrou
  * ---------------------------------------------------------------------------
  *
  * Não dá para estilizar pedaço de conteúdo dentro de um `<textarea>`. A saída é
- * um **fundo espelhado**: uma `<div>` atrás, com a mesma tipografia e as mesmas
- * medidas de caixa, desenhando o texto já fatiado; e o `<textarea>` por cima,
- * com o texto transparente e só o cursor visível.
+ * uma `<div>` atrás desenhando o texto fatiado, e o campo por cima com o texto
+ * transparente e só o cursor visível. O `<textarea>` continua sendo um
+ * `<textarea>` de verdade — `contenteditable` daria o mesmo efeito e quebraria
+ * colar, desfazer, seleção nativa e a inserção de variável na posição do cursor.
  *
- * O `<textarea>` continua sendo um `<textarea>` de verdade, e isso é o ponto:
- * `contenteditable` daria o mesmo efeito visual e quebraria colar, desfazer,
- * seleção nativa e o `registrarCampo` que insere variável na posição do cursor.
+ * **As medidas vêm de `style` inline, e não de classe.** A primeira versão usava
+ * classes utilitárias nas duas camadas e o texto apareceu dobrado, deslocado
+ * alguns pixels: `.app-field` define `color: var(--ink)` e ganhava do
+ * `text-transparent` do Tailwind por ordem de origem, então as duas camadas
+ * pintavam texto. Estilo inline é a única forma de garantir que **a mesma
+ * medida** vale para as duas — e aqui divergir um pixel significa o cursor numa
+ * coluna e a cor em outra.
  *
- * O que a técnica exige, e cada item já quebrou em alguma implementação por aí:
+ * O resto que a técnica exige, e cada item já quebrou em alguma implementação:
  *
- * - **as duas camadas precisam medir igual** — fonte, tamanho, entrelinha,
- *   espaçamento, padding e largura de borda. Por isso as classes do campo saem
- *   de uma constante única, e não são repetidas nas duas;
- * - **rolagem sincronizada**: o fundo não tem barra e é empurrado pelo `scroll`
- *   do campo de cima, senão o realce descola do texto na quinta linha;
- * - **a última quebra de linha precisa de um caractere depois** — sem ele o
- *   fundo não reserva a linha vazia final e o texto sobe um degrau enquanto a
- *   pessoa digita `Enter`;
- * - **`white-space: pre-wrap` e `break-words`** nos dois, ou a quebra de linha
- *   cai em coluna diferente em cada camada.
+ * - rolagem sincronizada, senão o realce descola do texto na quinta linha;
+ * - um caractere depois da última quebra de linha, senão o fundo não reserva a
+ *   linha vazia final e o texto sobe um degrau ao apertar `Enter`;
+ * - `white-space: pre-wrap` e quebra por palavra idênticas nas duas.
  */
-
-/** As medidas que as duas camadas precisam compartilhar. Uma fonte só. */
-const CAIXA = 'px-3 py-2.5 text-[13px] leading-6'
 
 /**
- * O espelho copia as **medidas** do `.app-field`, e nenhuma cor.
+ * Tudo que as duas camadas precisam ter igual, ao pixel.
  *
- * Herdar a classe inteira pintaria fundo e borda duas vezes, e a borda de foco
- * apareceria dobrada. O que ele precisa é começar o texto exatamente na mesma
- * coluna do campo de cima — e isso é a borda de 1px reservando espaço, mais o
- * mesmo `padding`, que vem de `CAIXA`.
+ * `font: inherit` não basta: o `<textarea>` tem fonte própria do agente de
+ * usuário e não herda sozinho.
  */
-const ESPELHO: CSSProperties = {
-  whiteSpace: 'pre-wrap',
-  wordBreak: 'break-word',
+const MEDIDAS: CSSProperties = {
+  boxSizing: 'border-box',
+  fontFamily: 'inherit',
+  fontSize: 13,
+  lineHeight: '24px',
+  letterSpacing: 'normal',
+  padding: '10px 12px',
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: 'transparent',
   borderRadius: 10,
+  whiteSpace: 'pre-wrap',
+  overflowWrap: 'break-word',
+  wordBreak: 'normal',
+  margin: 0,
+}
+
+const FUNDO: CSSProperties = {
+  ...MEDIDAS,
+  position: 'absolute',
+  inset: 0,
+  overflow: 'hidden',
+  pointerEvents: 'none',
+  borderColor: 'transparent',
+  background: 'transparent',
   color: 'var(--ink)',
+}
+
+const CAMPO: CSSProperties = {
+  ...MEDIDAS,
+  position: 'relative',
+  width: '100%',
+  display: 'block',
+  outline: 'none',
+  background: 'rgba(255,255,255,0.045)',
+  borderColor: 'rgba(255,255,255,0.1)',
+  // As duas linhas que fazem o espelho aparecer: o texto some, o cursor fica.
+  color: 'transparent',
+  caretColor: 'var(--ink)',
 }
 
 function Pedacos({ valor, conhecidas }: { valor: string; conhecidas?: string[] }) {
@@ -73,11 +96,12 @@ function Pedacos({ valor, conhecidas }: { valor: string; conhecidas?: string[] }
         ) : (
           <span
             key={i}
-            className={`rounded-[4px] px-[3px] py-[1px] font-semibold ${
+            style={{ borderRadius: 4, padding: '1px 3px', fontWeight: 600 }}
+            className={
               conhecidas && !conhecidas.includes(pedaco.nome)
-                ? 'bg-amber-300/[0.18] text-amber-200 ring-1 ring-amber-300/30'
-                : 'bg-accent/[0.16] text-accent'
-            }`}
+                ? 'bg-amber-300/20 text-amber-200'
+                : 'bg-accent/20 text-accent'
+            }
           >
             {pedaco.texto}
           </span>
@@ -117,12 +141,7 @@ export function TextoComVariaveis({
 
   return (
     <div className="relative">
-      <div
-        ref={fundo}
-        aria-hidden
-        style={ESPELHO}
-        className={`pointer-events-none absolute inset-0 overflow-hidden ${CAIXA}`}
-      >
+      <div ref={fundo} aria-hidden style={FUNDO}>
         <Pedacos valor={valor} conhecidas={conhecidas} />
       </div>
 
@@ -137,10 +156,11 @@ export function TextoComVariaveis({
         onScroll={(e) => {
           if (fundo.current) fundo.current.scrollTop = e.currentTarget.scrollTop
         }}
-        // `resize-y` fica: o fundo é `inset-0` e acompanha a altura sozinho.
-        className={`app-field relative resize-y bg-transparent text-transparent caret-[var(--ink)] ${CAIXA} ${
-          erro ? 'border-rose-400/60' : ''
-        }`}
+        style={{
+          ...CAMPO,
+          resize: 'vertical',
+          ...(erro ? { borderColor: 'rgba(251,113,133,0.6)' } : {}),
+        }}
       />
     </div>
   )
@@ -162,12 +182,7 @@ export function LinhaComVariaveis({
 
   return (
     <div className="relative">
-      <div
-        ref={fundo}
-        aria-hidden
-        style={{ ...ESPELHO, whiteSpace: 'pre' }}
-        className={`pointer-events-none absolute inset-0 overflow-hidden ${CAIXA}`}
-      >
+      <div ref={fundo} aria-hidden style={{ ...FUNDO, whiteSpace: 'pre' }}>
         <Pedacos valor={valor} conhecidas={conhecidas} />
       </div>
 
@@ -179,7 +194,7 @@ export function LinhaComVariaveis({
         onScroll={(e) => {
           if (fundo.current) fundo.current.scrollLeft = e.currentTarget.scrollLeft
         }}
-        className={`app-field relative bg-transparent text-transparent caret-[var(--ink)] ${CAIXA}`}
+        style={{ ...CAMPO, whiteSpace: 'pre' }}
       />
     </div>
   )
@@ -188,8 +203,8 @@ export function LinhaComVariaveis({
 /**
  * A legenda que explica a cor.
  *
- * Fica junto do campo porque cor sem legenda é decoração: quem vê âmbar pela
- * primeira vez precisa saber que é aviso, e não estilo.
+ * Cor sem legenda é decoração: quem vê âmbar pela primeira vez precisa saber
+ * que é aviso, e não estilo.
  */
 export function LegendaDeVariaveis({
   valor,
@@ -202,7 +217,9 @@ export function LegendaDeVariaveis({
 }) {
   const citadas = fatiarVariaveis(valor).filter((p) => p.tipo === 'variavel')
   const desconhecidas = conhecidas
-    ? [...new Set(citadas.filter((p) => !conhecidas.includes(p.nome)).map((p) => p.nome))]
+    ? [...new Set(citadas.map((p) => (p.tipo === 'variavel' ? p.nome : '')))].filter(
+        (nome) => nome !== '' && !conhecidas.includes(nome),
+      )
     : []
 
   if (desconhecidas.length > 0) {
@@ -215,5 +232,7 @@ export function LegendaDeVariaveis({
     )
   }
 
-  return <span className="mt-1 block text-[10.5px] text-dim">{children ?? 'aceita {{variavel}}'}</span>
+  return (
+    <span className="mt-1 block text-[10.5px] text-dim">{children ?? 'aceita {{variavel}}'}</span>
+  )
 }
