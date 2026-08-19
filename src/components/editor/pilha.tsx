@@ -12,7 +12,7 @@ import {
   type TipoDeParte,
 } from '@/core/flow/schema'
 import { BarraDeFormato } from './barra-de-formato'
-import { LegendaDeVariaveis, TextoComVariaveis } from './texto-com-variaveis'
+import { LegendaDeVariaveis, LinhaComVariaveis, TextoComVariaveis } from './texto-com-variaveis'
 import { SeletorDeArquivo } from './seletor-de-arquivo'
 
 /**
@@ -43,7 +43,6 @@ export function PilhaDeMensagem({
   clienteId,
   variaveis,
   aoMudarDados,
-  registrarCampo,
 }: {
   no: NoMensagem
   /** De quem é o fluxo. O upload do bloco de Mídia precisa saber a pasta. */
@@ -51,10 +50,6 @@ export function PilhaDeMensagem({
   /** As que algum bloco preenche. Variável fora daqui é marcada como erro. */
   variaveis: string[]
   aoMudarDados: (dados: Record<string, unknown>) => void
-  registrarCampo: (
-    elemento: HTMLInputElement | HTMLTextAreaElement,
-    aoMudar: (valor: string) => void,
-  ) => void
 }) {
   const partes = partesDaMensagem(no)
 
@@ -125,7 +120,6 @@ export function PilhaDeMensagem({
             clienteId={clienteId}
             variaveis={variaveis}
             aoMudar={(proxima) => trocar(indice, proxima)}
-            registrarCampo={registrarCampo}
           />
         </section>
       ))}
@@ -183,16 +177,11 @@ function Corpo({
   clienteId,
   variaveis,
   aoMudar,
-  registrarCampo,
 }: {
   parte: Parte
   clienteId: string
   variaveis: string[]
   aoMudar: (parte: Parte) => void
-  registrarCampo: (
-    elemento: HTMLInputElement | HTMLTextAreaElement,
-    aoMudar: (valor: string) => void,
-  ) => void
 }) {
   switch (parte.tipo) {
     case 'texto':
@@ -200,7 +189,6 @@ function Corpo({
         <CampoDeTexto
           valor={parte.texto}
           aoMudar={(texto) => aoMudar({ ...parte, texto })}
-          registrarCampo={registrarCampo}
           conhecidas={variaveis}
         />
       )
@@ -218,7 +206,7 @@ function Corpo({
             clienteId={clienteId}
             url={parte.url}
             midia={parte.midia}
-            registrarCampo={registrarCampo}
+            variaveis={variaveis}
             aoEscolher={(escolha) =>
               aoMudar({
                 ...parte,
@@ -238,18 +226,13 @@ function Corpo({
             deixar digitar e reprovar na publicação.
           */}
           {parte.midia !== 'audio' && (
-            <input
-              value={parte.legenda ?? ''}
+            <LinhaComVariaveis
+              valor={parte.legenda ?? ''}
               placeholder="Legenda (opcional)"
               maxLength={LIMITE_LEGENDA}
-              onChange={(e) => aoMudar({ ...parte, legenda: e.target.value || undefined })}
-              onFocus={(e) =>
-                registrarCampo(e.currentTarget, (legenda) => aoMudar({ ...parte, legenda }))
-              }
-              onSelect={(e) =>
-                registrarCampo(e.currentTarget, (legenda) => aoMudar({ ...parte, legenda }))
-              }
-              className="app-field px-3 py-2.5 text-[12.5px]"
+              conhecidas={variaveis}
+              variaveis={variaveis}
+              aoMudar={(legenda) => aoMudar({ ...parte, legenda: legenda || undefined })}
             />
           )}
           {parte.midia === 'documento' && (
@@ -302,15 +285,12 @@ function Corpo({
             onChange={(e) => aoMudar({ ...parte, campo: e.target.value })}
             className="app-field px-3 py-2.5 font-mono text-[12.5px]"
           />
-          <input
-            value={parte.valor}
+          <LinhaComVariaveis
+            valor={parte.valor}
             placeholder="valor — aceita {{variavel}}"
-            onChange={(e) => aoMudar({ ...parte, valor: e.target.value })}
-            onFocus={(e) => registrarCampo(e.currentTarget, (valor) => aoMudar({ ...parte, valor }))}
-            onSelect={(e) =>
-              registrarCampo(e.currentTarget, (valor) => aoMudar({ ...parte, valor }))
-            }
-            className="app-field px-3 py-2.5 text-[12.5px]"
+            conhecidas={variaveis}
+            variaveis={variaveis}
+            aoMudar={(valor) => aoMudar({ ...parte, valor })}
           />
           <p className="text-[10.5px] leading-4 text-dim">
             Grava no contato e vira coluna na tela de Contatos.
@@ -340,15 +320,10 @@ function Corpo({
 function CampoDeTexto({
   valor,
   aoMudar,
-  registrarCampo,
   conhecidas,
 }: {
   valor: string
   aoMudar: (valor: string) => void
-  registrarCampo: (
-    elemento: HTMLInputElement | HTMLTextAreaElement,
-    aoMudar: (valor: string) => void,
-  ) => void
   /** As variáveis que algum bloco antes deste preenche. Ver o realce. */
   conhecidas?: string[]
 }) {
@@ -357,7 +332,7 @@ function CampoDeTexto({
 
   return (
     <div>
-      <BarraDeFormato area={area} aoMudar={aoMudar}>
+      <BarraDeFormato area={area} aoMudar={aoMudar} variaveis={conhecidas}>
         <span
           className={`font-mono text-[10px] ${estourou ? 'font-bold text-rose-300' : 'text-dim'}`}
         >
@@ -371,7 +346,6 @@ function CampoDeTexto({
         aoMudar={aoMudar}
         erro={estourou}
         conhecidas={conhecidas}
-        aoFocar={registrarCampo}
       />
       <LegendaDeVariaveis valor={valor} conhecidas={conhecidas} />
     </div>

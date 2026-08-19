@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useTransition } from 'react'
+import { LinhaComVariaveis } from './texto-com-variaveis'
 import type { TipoDeMidia } from '@/core/flow/schema'
 import {
   acaoConfirmarEnvio,
@@ -47,18 +48,16 @@ export function SeletorDeArquivo({
   clienteId,
   url,
   midia,
+  variaveis,
   aoEscolher,
-  registrarCampo,
 }: {
   clienteId: string
   url: string
   midia: TipoDeMidia
+  /** As do fluxo — o campo de endereço aceita `{{variavel}}` e as oferece. */
+  variaveis?: string[]
   /** O tipo vem junto porque ele sai do arquivo, e não de um seletor à parte. */
   aoEscolher: (escolha: { url: string; midia: TipoDeMidia; nomeArquivo?: string }) => void
-  registrarCampo?: (
-    elemento: HTMLInputElement | HTMLTextAreaElement,
-    aoMudar: (valor: string) => void,
-  ) => void
 }) {
   const entrada = useRef<HTMLInputElement>(null)
   const [arrastando, setArrastando] = useState(false)
@@ -337,17 +336,16 @@ export function SeletorDeArquivo({
 
       {colando && (
         <div>
-          <input
-            value={url}
+          {/* A URL interpola — catálogo por variável é o caso real, com o
+              bloco de API devolvendo o link e a mídia mandando aquele. Campo que
+              interpola tem realce e botão de variável, como todos os outros. */}
+          <LinhaComVariaveis
+            valor={url}
             placeholder="https://… ou {{variavel}}"
-            onChange={(e) => aoEscolher({ url: e.target.value, midia })}
-            onFocus={(e) =>
-              registrarCampo?.(e.currentTarget, (novo) => aoEscolher({ url: novo, midia }))
-            }
-            onSelect={(e) =>
-              registrarCampo?.(e.currentTarget, (novo) => aoEscolher({ url: novo, midia }))
-            }
-            className="app-field px-3 py-2.5 font-mono text-[12px]"
+            mono
+            conhecidas={variaveis}
+            variaveis={variaveis ?? []}
+            aoMudar={(novo) => aoEscolher({ url: novo, midia })}
           />
           <p className="mt-1 text-[10.5px] leading-4 text-dim">
             Colando um endereço, o tipo continua sendo escolhido por você — não

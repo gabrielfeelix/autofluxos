@@ -1,6 +1,6 @@
 'use client'
 
-import { useId, useRef, useState } from 'react'
+import { useId, useRef } from 'react'
 import {
   LIMITE_BOTOES,
   LIMITE_LEGENDA,
@@ -17,9 +17,9 @@ import {
 } from '@/core/flow/schema'
 import { Dropdown } from '@/components/design/dropdown'
 import { BarraDeFormato } from './barra-de-formato'
+import { SeletorDeVariavel } from './escolher-variavel'
 import { SeletorDeArquivo } from './seletor-de-arquivo'
 import { PresetsDeIntegracao } from './presets-de-integracao'
-import { inserirNoCursor } from './inserir-variavel'
 import { PilhaDeMensagem } from './pilha'
 import {
   LegendaDeVariaveis,
@@ -52,11 +52,6 @@ export type EtapaDoCliente = { quadroId: string; colunaId: string; rotulo: strin
  * primeiro e descobrir na lista de impedimentos depois é o caminho longo.
  */
 export type FluxoDaConta = { id: string; nome: string; publicado: boolean; ativo: boolean }
-
-type CampoDeTexto = {
-  elemento: HTMLInputElement | HTMLTextAreaElement
-  aoMudar: (valor: string) => void
-}
 
 /**
  * O formulário do bloco selecionado. Tudo que é específico de um cliente é
@@ -106,38 +101,6 @@ export function Painel({
   aoDefinirInicio: () => void
   aoApagar: () => void
 }) {
-  const campoAtivo = useRef<CampoDeTexto | null>(null)
-  const [foco, setFoco] = useState(false)
-
-  function registrarCampo(elemento: HTMLInputElement | HTMLTextAreaElement, aoMudar: (valor: string) => void) {
-    campoAtivo.current = { elemento, aoMudar }
-    setFoco(true)
-  }
-
-  function inserirVariavel(variavel: string) {
-    const ativo = campoAtivo.current
-    if (!ativo || !ativo.elemento.isConnected) {
-      campoAtivo.current = null
-      setFoco(false)
-      return
-    }
-
-    const { elemento, aoMudar } = ativo
-    const { proximo, cursor } = inserirNoCursor(
-      elemento.value,
-      elemento.selectionStart ?? elemento.value.length,
-      elemento.selectionEnd ?? elemento.value.length,
-      `{{${variavel}}}`,
-    )
-    aoMudar(proximo)
-
-    // O campo é controlado e a mudança acima pede render. Esperar um frame
-    // devolve foco e cursor depois do valor novo chegar ao DOM.
-    requestAnimationFrame(() => {
-      elemento.focus()
-      elemento.setSelectionRange(cursor, cursor)
-    })
-  }
 
   if (!no) {
     return (
@@ -148,18 +111,6 @@ export function Painel({
           ou adicione um novo pelo catálogo.
         </div>
 
-        {/*
-          A lista de variáveis também aparece sem bloco escolhido.
-          Aqui ela não é teclado — não há campo em foco para receber nada —, é
-          o índice do que este fluxo coleta. É a pergunta que se faz olhando o
-          desenho inteiro ("o que já dá para usar numa mensagem?"), e ela não
-          tinha resposta em lugar nenhum sem clicar num bloco qualquer.
-        */}
-        {variaveis.length > 0 && (
-          <div className="mt-4 border-t border-white/[0.06] pt-3">
-            <ListaDeVariaveis variaveis={variaveis} legenda="O que este fluxo coleta e já dá para usar numa mensagem." />
-          </div>
-        )}
       </div>
     )
   }
@@ -196,7 +147,6 @@ export function Painel({
           no={no}
           clienteId={clienteId}
           aoMudarDados={aoMudarDados}
-          registrarCampo={registrarCampo}
         />
       )}
 
@@ -216,7 +166,7 @@ export function Painel({
               clienteId={clienteId}
               url={no.data.url}
               midia={no.data.midia}
-              registrarCampo={registrarCampo}
+              variaveis={variaveis}
               aoEscolher={(escolha) =>
                 aoMudarDados({
                   url: escolha.url,
@@ -241,7 +191,6 @@ export function Painel({
               aoMudar={(nomeArquivo) => aoMudarDados({ nomeArquivo })}
               aceitaVariavel
               conhecidas={variaveis}
-              aoFocar={registrarCampo}
               dica="É o que a pessoa lê antes de baixar. Vazio, o WhatsApp mostra o fim da URL."
             />
           )}
@@ -259,7 +208,6 @@ export function Painel({
               valor={no.data.legenda ?? ''}
               limite={LIMITE_LEGENDA}
               aoMudar={(legenda) => aoMudarDados({ legenda })}
-              aoFocar={registrarCampo}
               formatavel
             />
           )}
@@ -279,7 +227,6 @@ export function Painel({
                 : LIMITE_TEXTO
             }
             aoMudar={(texto) => aoMudarDados({ texto })}
-            aoFocar={registrarCampo}
             formatavel
           />
           <Linha
@@ -358,7 +305,6 @@ export function Painel({
               aoMudar={(valor) => aoMudarDados({ valor })}
               aceitaVariavel
               conhecidas={variaveis}
-              aoFocar={registrarCampo}
             />
           )}
         </>
@@ -374,7 +320,6 @@ export function Painel({
             aoMudar={(valor) => aoMudarDados({ valor })}
             aceitaVariavel
             conhecidas={variaveis}
-            aoFocar={registrarCampo}
           />
         </>
       )}
@@ -474,7 +419,6 @@ export function Painel({
             rotulo="Instrução para a IA"
             valor={no.data.instrucao}
             aoMudar={(instrucao) => aoMudarDados({ instrucao })}
-            aoFocar={registrarCampo}
           />
           <Linha
             rotulo="Guardar resposta em"
@@ -496,7 +440,6 @@ export function Painel({
             valor={no.data.mensagem}
             limite={LIMITE_TEXTO}
             aoMudar={(mensagem) => aoMudarDados({ mensagem })}
-            aoFocar={registrarCampo}
             formatavel
           />
           <Linha
@@ -506,7 +449,6 @@ export function Painel({
             aoMudar={(motivo) => aoMudarDados({ motivo })}
             aceitaVariavel
             conhecidas={variaveis}
-            aoFocar={registrarCampo}
           />
         </>
       )}
@@ -541,7 +483,6 @@ export function Painel({
             aoMudar={(url) => aoMudarDados({ url })}
             aceitaVariavel
             conhecidas={variaveis}
-            aoFocar={registrarCampo}
           />
 
           {no.data.metodo === 'POST' && (
@@ -550,14 +491,13 @@ export function Painel({
               rotulo="Corpo (JSON)"
               valor={no.data.corpo}
               aoMudar={(corpo) => aoMudarDados({ corpo })}
-              aoFocar={registrarCampo}
             />
           )}
 
           <Cabecalhos
             cabecalhos={no.data.cabecalhos}
+            conhecidas={variaveis}
             aoMudar={(cabecalhos) => aoMudarDados({ cabecalhos })}
-            aoFocar={registrarCampo}
           />
 
           <Mapeamentos mapear={no.data.mapear} aoMudar={(mapear) => aoMudarDados({ mapear })} />
@@ -602,83 +542,8 @@ export function Painel({
         </>
       )}
 
-      {aceitaVariavel(no.type) && variaveis.length > 0 && (
-        <div className="border-t border-white/[0.06] pt-3">
-          <ListaDeVariaveis
-            variaveis={variaveis}
-            legenda={
-              foco
-                ? 'Clique para inserir no cursor do campo de texto em foco.'
-                : 'Selecione um campo de texto e clique para inserir.'
-            }
-            aoEscolher={inserirVariavel}
-          />
-        </div>
-      )}
     </div>
   )
-}
-
-/**
- * As variáveis que o fluxo coleta.
- *
- * Sem `aoEscolher` ela é só leitura — é o caso de quando não há bloco escolhido,
- * onde não existe campo em foco para receber a inserção. Os itens continuam
- * parecendo o que são (pedaços de texto que a conversa preenche) em vez de
- * virarem botões que não fazem nada ao serem clicados.
- */
-function ListaDeVariaveis({
-  variaveis,
-  legenda,
-  aoEscolher,
-}: {
-  variaveis: string[]
-  legenda: string
-  aoEscolher?: (variavel: string) => void
-}) {
-  const aparencia =
-    'rounded-[7px] border border-accent/[0.22] bg-accent/[0.09] px-2 py-1 font-mono text-[10px] text-[#8de2fa]'
-
-  return (
-    <>
-      <p className="text-[10px] font-bold tracking-[0.05em] text-muted uppercase">
-        Variáveis deste fluxo
-      </p>
-      <p className="mt-1 text-[11px] text-dim">{legenda}</p>
-      <p className="mt-1 flex flex-wrap gap-1">
-        {variaveis.map((v) =>
-          aoEscolher ? (
-            <button
-              key={v}
-              type="button"
-              onClick={() => aoEscolher(v)}
-              className={`${aparencia} transition hover:border-accent/50 hover:bg-accent/[0.16]`}
-              title={`Inserir {{${v}}} no cursor`}
-            >{`{{${v}}}`}</button>
-          ) : (
-            <span key={v} className={aparencia}>{`{{${v}}}`}</span>
-          ),
-        )}
-      </p>
-    </>
-  )
-}
-
-/**
- * Este bloco tem algum campo onde uma variável possa ser inserida?
- *
- * A lista de variáveis é um **teclado**, não um relatório: os botões inserem
- * `{{nome}}` no cursor do campo em foco. Nos dois blocos que só têm escolha de
- * lista — a etapa do quadro e o salto para outra automação — não existe cursor
- * nenhum, e a lista virava enfeite ocupando meia tela do painel.
- *
- * Pior que ocupar espaço: ela sugeria que ali havia algo a preencher com
- * variável, e não há. Interpolar id de etapa ou de automação seria deixar a
- * conversa escolher para onde a pessoa vai — exatamente o que `variaveisDoNo()`
- * recusa fazer no validador.
- */
-function aceitaVariavel(tipo: No['type']): boolean {
-  return tipo !== 'etapa' && tipo !== 'ir-fluxo'
 }
 
 function Linha({
@@ -688,7 +553,6 @@ function Linha({
   aoMudar,
   aceitaVariavel = false,
   conhecidas,
-  aoFocar,
 }: {
   rotulo: string
   valor: string
@@ -697,7 +561,6 @@ function Linha({
   aceitaVariavel?: boolean
   /** Para o realce distinguir variável conhecida de erro de digitação. */
   conhecidas?: string[]
-  aoFocar?: (elemento: HTMLInputElement, aoMudar: (valor: string) => void) => void
 }) {
   // Sem `<label>` envolvendo quando há realce: o campo real fica por cima de um
   // espelho, e o clique do `<label>` no espelho moveria o cursor para o fim.
@@ -711,7 +574,7 @@ function Linha({
           valor={valor}
           aoMudar={aoMudar}
           conhecidas={conhecidas}
-          aoFocar={aoFocar}
+          variaveis={conhecidas ?? []}
         />
       ) : (
         <input
@@ -741,7 +604,6 @@ function Area({
   valor,
   limite,
   aoMudar,
-  aoFocar,
   conhecidas,
   formatavel = false,
 }: {
@@ -749,7 +611,6 @@ function Area({
   valor: string
   limite?: number
   aoMudar: (valor: string) => void
-  aoFocar?: (elemento: HTMLTextAreaElement, aoMudar: (valor: string) => void) => void
   /** Para o realce distinguir variável conhecida de erro de digitação. */
   conhecidas?: string[]
   /**
@@ -787,10 +648,22 @@ function Area({
         {!formatavel && contador && <span className="ml-auto">{contador}</span>}
       </span>
 
-      {formatavel && (
-        <BarraDeFormato area={area} aoMudar={aoMudar}>
+      {/*
+        A barra completa quando o texto vira mensagem; só o botão de variável
+        quando não vira. Todo campo que interpola tem por onde inserir uma
+        variável — era esse o ponto da lista que saiu do rodapé, e agora ele
+        vale por campo, ao lado do que se está escrevendo.
+      */}
+      {formatavel ? (
+        <BarraDeFormato area={area} aoMudar={aoMudar} variaveis={conhecidas}>
           {contador}
         </BarraDeFormato>
+      ) : (
+        conhecidas && (
+          <div className="mb-1.5 flex items-center">
+            <SeletorDeVariavel campo={area} variaveis={conhecidas} aoMudar={aoMudar} />
+          </div>
+        )
       )}
 
       <TextoComVariaveis
@@ -800,7 +673,6 @@ function Area({
         aoMudar={aoMudar}
         erro={estourou}
         conhecidas={conhecidas}
-        aoFocar={aoFocar}
       />
       {estourou ? (
         <span className="mt-1 block text-[10.5px] text-rose-300">
@@ -875,11 +747,11 @@ function Opcoes({ opcoes, aoMudar }: { opcoes: Opcao[]; aoMudar: (opcoes: Opcao[
 function Cabecalhos({
   cabecalhos,
   aoMudar,
-  aoFocar,
+  conhecidas,
 }: {
   cabecalhos: Cabecalho[]
   aoMudar: (c: Cabecalho[]) => void
-  aoFocar: (elemento: HTMLInputElement, aoMudar: (valor: string) => void) => void
+  conhecidas?: string[]
 }) {
   return (
     <div>
@@ -898,26 +770,22 @@ function Cabecalhos({
               }}
               className="app-field min-w-0 flex-1 px-3 py-2 text-[12.5px]"
             />
-            <input
-              value={c.valor}
-              placeholder="valor"
-              onChange={(e) => {
-                const copia = [...cabecalhos]
-                copia[i] = { ...c, valor: e.target.value }
-                aoMudar(copia)
-              }}
-              onFocus={(e) => aoFocar(e.currentTarget, (valor) => {
-                const copia = [...cabecalhos]
-                copia[i] = { ...c, valor }
-                aoMudar(copia)
-              })}
-              onSelect={(e) => aoFocar(e.currentTarget, (valor) => {
-                const copia = [...cabecalhos]
-                copia[i] = { ...c, valor }
-                aoMudar(copia)
-              })}
-              className="app-field min-w-0 flex-1 px-3 py-2 text-[12.5px]"
-            />
+            {/* O valor do cabeçalho interpola — é onde entra `{{token}}` —,
+                então ele é campo com realce e com botão de variável, como todo
+                campo que aceita uma. O nome do cabeçalho não interpola. */}
+            <span className="min-w-0 flex-1">
+              <LinhaComVariaveis
+                valor={c.valor}
+                placeholder="valor"
+                conhecidas={conhecidas}
+                variaveis={conhecidas ?? []}
+                aoMudar={(valor) => {
+                  const copia = [...cabecalhos]
+                  copia[i] = { ...c, valor }
+                  aoMudar(copia)
+                }}
+              />
+            </span>
             <button
               onClick={() => aoMudar(cabecalhos.filter((_, j) => j !== i))}
               title="remover cabeçalho"

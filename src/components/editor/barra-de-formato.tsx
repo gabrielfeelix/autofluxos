@@ -1,6 +1,8 @@
 'use client'
 
-import { useState, type ReactNode, type RefObject } from 'react'
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { SeletorDeVariavel } from './escolher-variavel'
+import { GRUPOS_DE_EMOJI, TODOS_OS_EMOJIS } from './emojis'
 import { alternarMarca, type Marca } from './formatar'
 
 /**
@@ -23,28 +25,21 @@ import { alternarMarca, type Marca } from './formatar'
  * oferecer o botão seria ensinar a estragar o dado.
  */
 
-/**
- * Emojis à mão, sem biblioteca.
- *
- * Um seletor completo são milhares de caracteres, busca, categorias e tom de
- * pele — peso de sobra para o que acontece aqui, que é pôr um 👋 na saudação. A
- * lista é a dos que aparecem em mensagem de atendimento; quem quiser outro cola
- * do teclado do sistema, que continua funcionando.
- */
-const EMOJIS = [
-  '👋', '😀', '😊', '🙂', '😉', '🤝', '🙏', '👍', '👏', '💪',
-  '✅', '❌', '⚠️', '❤️', '🎉', '✨', '🔥', '⭐', '📅', '⏰',
-  '📍', '📞', '💬', '📷', '📄', '💰', '🛒', '🚀', '💡', '🔗',
-]
-
 export function BarraDeFormato({
   area,
   aoMudar,
+  variaveis,
   children,
 }: {
   /** O campo em que a barra age. Ela lê a seleção dele, não um estado próprio. */
   area: RefObject<HTMLTextAreaElement | null>
   aoMudar: (valor: string) => void
+  /**
+   * As variáveis do fluxo. Quando vêm, a barra ganha o botão que insere uma
+   * delas no cursor — é o lugar certo dele: ao lado do negrito e do emoji, no
+   * campo em que se escreve, e não numa lista no rodapé do painel.
+   */
+  variaveis?: string[]
   /** O que vai à direita — hoje, o contador de caracteres. */
   children?: ReactNode
 }) {
@@ -102,39 +97,9 @@ export function BarraDeFormato({
         <span className="font-mono">{'{}'}</span>
       </BotaoDeMarca>
 
-      <div className="relative">
-        <button
-          type="button"
-          aria-label="Inserir emoji"
-          aria-expanded={emojisAbertos}
-          // Mesmo motivo de `BotaoDeMarca`: o clique não pode roubar o foco do
-          // campo antes de a gente saber onde o cursor estava.
-          onMouseDown={(evento) => {
-            evento.preventDefault()
-            setEmojisAbertos((aberto) => !aberto)
-          }}
-          className="rounded-md px-1.5 py-0.5 text-[12px] text-dim transition hover:bg-white/[0.06] hover:text-white"
-        >
-          ☺
-        </button>
-        {emojisAbertos && (
-          <div className="app-dropdown-menu right-auto left-0 grid w-[232px] grid-cols-10 gap-0.5 p-1.5">
-            {EMOJIS.map((emoji) => (
-              <button
-                key={emoji}
-                type="button"
-                onMouseDown={(evento) => {
-                  evento.preventDefault()
-                  inserirEmoji(emoji)
-                }}
-                className="rounded p-0.5 text-[15px] leading-none transition hover:bg-white/[0.08]"
-              >
-                {emoji}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      {variaveis && <SeletorDeVariavel campo={area} variaveis={variaveis} aoMudar={aoMudar} />}
+
+      <SeletorDeEmoji aoEscolher={inserirEmoji} aberto={emojisAbertos} aoAbrir={setEmojisAbertos} />
 
       {children && <span className="ml-auto">{children}</span>}
     </div>
@@ -168,5 +133,136 @@ function BotaoDeMarca({
     >
       {children}
     </button>
+  )
+}
+
+
+/**
+ * O seletor de emoji: busca em português, agrupado, e **ancorado no botão**.
+ *
+ * Os três defeitos que ele corrige eram um só sintoma cada:
+ *
+ * 1. **Ele aparecia longe do botão**, no canto da tela, porque usava
+ *    `.app-dropdown-menu` — que é `position: fixed` para servir ao `Dropdown`,
+ *    que calcula coordenada em JS. Aqui o certo é `.app-popover`, absoluto,
+ *    colado no próprio botão.
+ * 2. **Não tinha busca**, então achar um emoji era varrer a grade com o olho.
+ * 3. **Tinha trinta**, o que garantia que o procurado quase nunca estava lá.
+ */
+function SeletorDeEmoji({
+  aoEscolher,
+  aberto,
+  aoAbrir,
+}: {
+  aoEscolher: (emoji: string) => void
+  aberto: boolean
+  aoAbrir: (aberto: boolean) => void
+}) {
+  const [busca, setBusca] = useState('')
+  const caixa = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!aberto) return
+
+    const fechar = (evento: MouseEvent) => {
+      if (!caixa.current?.contains(evento.target as Node)) aoAbrir(false)
+    }
+    const aoTeclar = (evento: KeyboardEvent) => {
+      if (evento.key === 'Escape') aoAbrir(false)
+    }
+
+    document.addEventListener('mousedown', fechar)
+    document.addEventListener('keydown', aoTeclar)
+    return () => {
+      document.removeEventListener('mousedown', fechar)
+      document.removeEventListener('keydown', aoTeclar)
+    }
+  }, [aberto, aoAbrir])
+
+  const procurado = busca.trim().toLowerCase()
+  // Busca varre a lista inteira e ignora os grupos: quem digitou "coração" quer
+  // ver os oito de uma vez, não descobrir em qual gaveta cada um mora.
+  const achados = procurado === '' ? null : TODOS_OS_EMOJIS.filter(([, chaves]) => chaves.includes(procurado))
+
+  return (
+    <div ref={caixa} className="relative">
+      <button
+        type="button"
+        aria-label="Inserir emoji"
+        aria-expanded={aberto}
+        title="Inserir emoji"
+        // Mesmo motivo de `BotaoDeMarca`: o clique não pode roubar o foco do
+        // campo antes de a gente saber onde o cursor estava.
+        onMouseDown={(evento) => {
+          evento.preventDefault()
+          aoAbrir(!aberto)
+        }}
+        className={`rounded-md px-1.5 py-0.5 text-[12px] transition ${
+          aberto ? 'bg-accent/15 text-accent' : 'text-dim hover:bg-white/[0.06] hover:text-white'
+        }`}
+      >
+        ☺
+      </button>
+
+      {aberto && (
+        <div className="app-popover left-0 w-[268px] p-1.5">
+          <input
+            autoFocus
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar emoji… (ex.: coração, festa)"
+            className="app-field mb-1 px-2 py-1.5 text-[12px]"
+          />
+
+          <div className="max-h-[212px] overflow-y-auto">
+            {achados ? (
+              achados.length === 0 ? (
+                <p className="px-2 py-2 text-[11px] leading-4 text-dim">
+                  Nenhum emoji com esse nome. O teclado do sistema continua funcionando.
+                </p>
+              ) : (
+                <Grade itens={achados} aoEscolher={aoEscolher} />
+              )
+            ) : (
+              GRUPOS_DE_EMOJI.map((grupo) => (
+                <div key={grupo.nome} className="mb-1">
+                  <p className="px-1 pt-1 pb-0.5 text-[9.5px] font-bold tracking-[0.06em] text-dim uppercase">
+                    {grupo.nome}
+                  </p>
+                  <Grade itens={grupo.itens} aoEscolher={aoEscolher} />
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function Grade({
+  itens,
+  aoEscolher,
+}: {
+  itens: [string, string][]
+  aoEscolher: (emoji: string) => void
+}) {
+  return (
+    <div className="grid grid-cols-8 gap-0.5">
+      {itens.map(([emoji, chaves]) => (
+        <button
+          key={emoji}
+          type="button"
+          title={chaves.split(' ')[0]}
+          onMouseDown={(evento) => {
+            evento.preventDefault()
+            aoEscolher(emoji)
+          }}
+          className="rounded p-1 text-[17px] leading-none transition hover:bg-white/[0.08]"
+        >
+          {emoji}
+        </button>
+      ))}
+    </div>
   )
 }

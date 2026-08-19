@@ -2,6 +2,7 @@
 
 import { useRef, type CSSProperties, type ReactNode, type RefObject } from 'react'
 import { fatiarVariaveis } from '@/core/engine/interpolar'
+import { SeletorDeVariavel } from './escolher-variavel'
 
 /**
  * Campo de texto que **mostra** onde há variável.
@@ -162,7 +163,6 @@ export function TextoComVariaveis({
   erro = false,
   conhecidas,
   id,
-  aoFocar,
 }: {
   valor: string
   aoMudar: (valor: string) => void
@@ -174,7 +174,6 @@ export function TextoComVariaveis({
   /** Quando vem, variável fora da lista é marcada como desconhecida. */
   conhecidas?: string[]
   id?: string
-  aoFocar?: (elemento: HTMLTextAreaElement, aoMudar: (valor: string) => void) => void
 }) {
   const proprio = useRef<HTMLTextAreaElement>(null)
   const campo = area ?? proprio
@@ -192,8 +191,6 @@ export function TextoComVariaveis({
         value={valor}
         rows={rows}
         onChange={(e) => aoMudar(e.target.value)}
-        onFocus={(e) => aoFocar?.(e.currentTarget, aoMudar)}
-        onSelect={(e) => aoFocar?.(e.currentTarget, aoMudar)}
         onScroll={(e) => {
           if (fundo.current) fundo.current.scrollTop = e.currentTarget.scrollTop
         }}
@@ -207,36 +204,77 @@ export function TextoComVariaveis({
   )
 }
 
-/** A mesma coisa numa linha só — para os campos curtos que interpolam. */
+/**
+ * A mesma coisa numa linha só — para os campos curtos que interpolam.
+ *
+ * O botão de variável mora **dentro** do campo, encostado na direita. Campo de
+ * uma linha não tem barra de formatação para hospedá-lo (asterisco não vira
+ * negrito numa URL nem no valor do Guardar), e uma barra só para ele custaria
+ * uma faixa de altura em cada campo do painel. O espaço dele é reservado no
+ * `padding-right` das **duas** camadas, senão o espelho quebraria o texto num
+ * ponto e o campo em outro.
+ */
 export function LinhaComVariaveis({
   valor,
   aoMudar,
   conhecidas,
-  aoFocar,
+  variaveis,
+  placeholder,
+  maxLength,
+  mono = false,
 }: {
   valor: string
   aoMudar: (valor: string) => void
   conhecidas?: string[]
-  aoFocar?: (elemento: HTMLInputElement, aoMudar: (valor: string) => void) => void
+  /** Quando vem, o campo ganha o botão que insere variável no cursor. */
+  variaveis?: string[]
+  placeholder?: string
+  maxLength?: number
+  mono?: boolean
 }) {
   const fundo = useRef<HTMLDivElement>(null)
+  const campo = useRef<HTMLInputElement>(null)
+
+  const espaco = variaveis ? { paddingRight: 34 } : {}
+  const fonte = mono ? { fontFamily: 'var(--font-mono, ui-monospace, monospace)' } : {}
 
   return (
     <div className="relative">
-      <div ref={fundo} aria-hidden style={{ ...FUNDO, whiteSpace: 'pre' }}>
-        <Pedacos valor={valor} conhecidas={conhecidas} />
+      <div
+        ref={fundo}
+        aria-hidden
+        style={{ ...FUNDO, ...espaco, ...fonte, whiteSpace: 'pre' }}
+      >
+        {/* O texto do campo é transparente, então o `placeholder` nativo também
+            seria — quem o desenha é o espelho, como desenha todo o resto. */}
+        {valor === '' && placeholder ? (
+          <span style={{ color: 'var(--dim, #6b7686)' }}>{placeholder}</span>
+        ) : (
+          <Pedacos valor={valor} conhecidas={conhecidas} />
+        )}
       </div>
 
       <input
+        ref={campo}
         value={valor}
+        maxLength={maxLength}
         onChange={(e) => aoMudar(e.target.value)}
-        onFocus={(e) => aoFocar?.(e.currentTarget, aoMudar)}
-        onSelect={(e) => aoFocar?.(e.currentTarget, aoMudar)}
         onScroll={(e) => {
           if (fundo.current) fundo.current.scrollLeft = e.currentTarget.scrollLeft
         }}
-        style={{ ...CAMPO, whiteSpace: 'pre' }}
+        style={{ ...CAMPO, ...espaco, ...fonte, whiteSpace: 'pre' }}
       />
+
+      {variaveis && (
+        <span className="absolute top-1/2 right-1.5 -translate-y-1/2">
+          <SeletorDeVariavel
+            campo={campo}
+            variaveis={variaveis}
+            aoMudar={aoMudar}
+            alinhamento="direita"
+          />
+        </span>
+      )}
     </div>
   )
 }
