@@ -1,67 +1,155 @@
 # Handoff — 18/ago/2026
 
-Para quem pegar este projeto agora. Leia isto, depois
-[PLANO-SISTEMA.md](PLANO-SISTEMA.md), e só então código.
+Para quem pegar este projeto agora, humano ou agente. Leia isto inteiro, depois
+[PLANO-SISTEMA.md](PLANO-SISTEMA.md), e só então código. As decisões de produto
+que não estão aqui estão lá; as que estão aqui não se renegociam sem o dono.
 
 ---
 
-## 1. Onde exatamente paramos
+## 1. O resumo em dez linhas
 
-**Etapa A: A1 a A5 estão no ar.** Login por usuário, sidebar e área de
-administração, bloco de mensagem em pilha, cadeia de atendimento e Inbox de
-fila. Falta a **A6** (fluxos padrão e gatilhos), a **A7** (configurações
-reunidas) e as pontas que dependem de você — todas em
-[PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md).
+O AutoFluxos é automação de atendimento no WhatsApp: fluxo desenhado num editor
+visual, motor puro que executa, e handoff para uma pessoa quando o bot não dá
+conta. Está em produção em `autofluxos.4yu.com.br` (Vercel), com Supabase
+**compartilhado com outro produto** (Verandi).
 
-O painel continua funcionando com a **senha única** (`PAINEL_SENHA` + cookie
-assinado em `lib/painel-auth.ts`), e o login por usuário está de pé mas
-**dormindo**: não existe nenhum usuário cadastrado. Os dois sistemas convivem
-de propósito.
+A Etapa A do [PLANO-SISTEMA.md](PLANO-SISTEMA.md) vai de A1 a A7. **A1 a A5
+estão no ar.** Faltam A6 e A7, e as duas esbarram em coisas que só o dono
+resolve — ver [PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md).
 
-`npm test` → **488 passando, 8 pulados**. `typecheck`, `lint` e `build` limpos.
-Os 8 pulados dependem de `IA_TESTE_REAL` e `API_TESTE_REAL` — é por desenho.
+`npm test` → **488 passando, 8 pulados** (os 8 dependem de `IA_TESTE_REAL` e
+`API_TESTE_REAL`, por desenho). `typecheck`, `lint` e `build` limpos.
+**Migrations aplicadas: até a `0022`. A próxima a escrever é a `0024`** — a
+`0023` existe, está escrita e **não foi aplicada**.
 
-### O que cada frente entregou
+---
 
-| Frente | O que existe agora |
+## 2. O que existe hoje, rota a rota
+
+### Portas de entrada
+
+| Rota | O que é | Quem alcança |
+|---|---|---|
+| `/login` | senha única do time (`PAINEL_SENHA`), a porta principal hoje | todo mundo |
+| `/entrar` | login por usuário (Better Auth) | todo mundo |
+| `/criar-conta` | primeira execução **e** cadastro feito por administrador | senha única ou administrador |
+| `/api/auth/[...all]` | a porta do Better Auth | todo mundo |
+
+### Painel do operador 4YU
+
+| Rota | O que é |
 |---|---|
-| **A1** | `/api/auth/[...all]`, `/entrar`, `/criar-conta`, `/contas`, `/admin/{contas,usuarios,auditoria}`, "entrar como" com faixa âmbar, e a conferência de acesso em toda tela, rota de API e Server Action |
-| **A2** | Sidebar do cliente (Painel · Inbox · Contatos · Automações · Configurações) e a área do administrador. Fim das abas no topo |
-| **A3** | Bloco de mensagem em pilha: texto formatado, arquivo, atraso, guardar, desligar o bot. Lê o formato antigo e escreve só o novo |
-| **A4** | Horário de atendimento (o handoff sabe que horas são), assumir/liberar/passar conversa, presença, relógio da janela de 24h na fila, aviso de fila em toda tela do painel |
-| **A5** | Fila paginada, rail `Atribuído` com contagem, anotação da equipe no painel lateral |
+| `/` | lista de todos os clientes, ordenada por quem espera atendimento |
+| `/contas` | seletor de companhia de quem tem mais de uma |
+| `/admin/contas` | contas e quem entra em cada uma; ligar pessoa a conta |
+| `/admin/usuarios` | quem existe, papel, sessões, **entrar como**, suspender |
+| `/admin/auditoria` | o registro append-only |
 
-### O que existe de verdade no banco
+### Painel do cliente
 
-| Tabela | O que é |
-|---|---|
-| `af_usuarios` | usuários (Better Auth), com `presenca`. **Não** é `auth.users`, que é global e da Verandi |
-| `af_sessoes` | sessões, com `impersonatedBy` e `activeOrganizationId` |
-| `af_contas` | credenciais — guarda **hash** de senha |
-| `af_verificacoes` | tokens de verificação |
-| `af_membros` | usuário × conta × papel (`owner`/`admin`/`member`) |
-| `af_convites` | convites pendentes (a tabela existe; o convite não, porque depende de SMTP) |
-| `af_auditoria` | quem fez o quê. **Append-only** |
-| `clients` | ganhou `slug`, `metadata` e `horario_atendimento` |
-| `contacts` | ganhou `atribuido_a` |
-| view `leads` | ganhou `ultima_entrada_em` e `atribuido_a` |
+Barra lateral com cinco itens — **Painel · Inbox · Contatos · Automações ·
+Configurações**. Não há mais abas no topo.
 
-**Migrations aplicadas: até a `0022`.** A `0023` está escrita e **não
-aplicada** — ela destrava as não lidas e o tipo da mídia na prévia da fila.
-Ver [PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md) §7.
+| Rota | Item da barra | O que é |
+|---|---|---|
+| `/clientes/[id]` | Painel | está sendo atendido agora? funil do mês, ficha do cliente |
+| `/clientes/[id]/inbox` | Inbox | fila paginada, rail `Atribuído`, busca, conversa, resposta, painel do contato |
+| `/clientes/[id]/leads` | Contatos | lista com filtro, busca, paginação e CSV |
+| `/clientes/[id]/leads/[contatoId]` | Contatos | ficha do contato |
+| `/clientes/[id]/leads/importar` | Contatos | importação por planilha, com conciliação |
+| `/clientes/[id]/fluxos` | Automações | lista de fluxos |
+| `/clientes/[id]/fluxos/[fluxoId]` | — | **o editor**, tela cheia, sem a moldura |
+| `/clientes/[id]/ajustes` | Configurações | índice, com o estado de cada peça |
+| `/clientes/[id]/ajustes/horario` | Configurações | horário de atendimento |
+| `/clientes/[id]/ajustes/respostas-rapidas` | Configurações | respostas prontas do Inbox |
+| `/clientes/[id]/contexto` | Configurações | contexto do negócio (o escopo da IA) |
+| `/clientes/[id]/numero` | Configurações | números do WhatsApp e qual fluxo cada um executa |
+| `/clientes/[id]/conexoes` | Configurações | credenciais dos blocos de API |
+| `/clientes/[id]/acervo` | Configurações | arquivos que os fluxos enviam |
 
-**Não existe nenhum usuário em produção ainda.** A tabela está vazia; ver §4.
+### Rotas de serviço
 
-## 2. As coisas que você precisa saber antes de tocar em qualquer coisa
+| Rota | Quem chama | Como se protege |
+|---|---|---|
+| `/api/webhook/whatsapp` | a Meta | assinatura `META_APP_SECRET` |
+| `/api/manutencao/retencao` | cron da Vercel | `CRON_SECRET`, falha fechada sem ele |
+| `/api/simular` | o editor | sessão + dono do `fluxoId` |
+| `/api/clientes/[id]/inbox/alertas` | polling do painel | sessão + membro da conta |
+| `/api/clientes/[id]/leads/csv` | botão de exportar | sessão + membro da conta |
 
-### 2.1 O banco é compartilhado com outro produto
+---
+
+## 3. O que cada frente da Etapa A entregou
+
+### A1 — login, contas e papéis
+
+- **Better Auth 1.7** em `src/server/auth.ts`, com os plugins `admin`
+  (impersonação) e `organization` (contas e membros).
+- **`clients` É a organização.** Não existe tabela `organization`: o plugin
+  aponta para `clients` via `modelName`, porque toda chave estrangeira do
+  sistema já aponta para lá.
+- **`src/server/sessao.ts` é a fronteira de autorização.** Toda tela, rota de
+  API e Server Action passa por `exigirUsuario`, `exigirAdminDaPlataforma`,
+  `exigirAcessoAoCliente` ou `conferirAcessoAoCliente`.
+- **"Entrar como"**: sessão de uma hora marcada com `impersonatedBy`,
+  registrada na auditoria, com faixa âmbar em toda tela que ela alcança —
+  inclusive o editor, que não usa moldura e a chama explicitamente.
+- **Auditoria append-only** (`af_auditoria`): `service_role` só tem `insert` e
+  `select`.
+
+### A2 — sidebar e as duas visões
+
+A moldura do cliente virou barra lateral; a área do administrador ganhou
+`layout.tsx` próprio, onde `exigirAdminDaPlataforma()` roda uma vez e toda rota
+abaixo herda a conferência.
+
+**Os itens da barra são os que têm tela.** Campanhas e Integrações estão no
+desenho da §2.1 do plano e são Etapa B: item de menu para tela que não existe é
+promessa que a interface faz e o produto não cumpre.
+
+### A3 — bloco de mensagem em pilha
+
+O bloco era `data: { texto }` e virou uma pilha de até dez pedaços: **texto**
+(com `*negrito*`, `_itálico_`, `~riscado~`, crases e emoji), **arquivo**,
+**atraso**, **guardar** e **desligar o bot** (AutoOff).
+
+**A regra que não pode ser quebrada: ler os dois formatos, escrever um só.**
+`src/core/flow/mensagem.ts` é o único lugar que conhece o formato antigo. Ver
+§4.3.
+
+Ficou de fora a janela de 24h dentro do bloco (`Dentro de` / `Fora de`): ela só
+faz sentido com modelo aprovado pela Meta, que é trava externa.
+
+### A4 — a cadeia de atendimento
+
+- **Horário de atendimento** por conta (`core/horario.ts`, puro e sem rede),
+  com fuso IANA e mais de uma faixa por dia. Fora do expediente o handoff diz
+  que está fechado e **quando volta**, em vez de prometer um atendente.
+- **Assumir / liberar / passar** a conversa. A responsabilidade mora no
+  **contato** (`contacts.atribuido_a`).
+- **Presença** (`af_usuarios.presenca`), no rodapé da barra lateral.
+- **Relógio da janela de 24h** na fila, só em quem espera uma pessoa.
+- **O aviso de fila toca em qualquer tela do painel**, não só com o Inbox
+  aberto.
+
+### A5 — Inbox de verdade
+
+Fila paginada de 50 (era tudo), rail `Atribuído` horizontal com contagem, busca
+por nome e telefone, e anotação da equipe no painel lateral do contato.
+
+---
+
+## 4. As sete regras que não se negociam
+
+### 4.1 O banco é compartilhado com outro produto
 
 AutoFluxos vive em `public`; a **Verandi** vive em `app_verandi`, no **mesmo
 projeto Supabase**. `auth.users`, Storage, extensões, Data API, cotas e backup
 são **globais**. Leia [BANCO-COMPARTILHADO.md](BANCO-COMPARTILHADO.md) inteiro
-antes de qualquer migration. Nunca rode `supabase db push`.
+antes de qualquer migration. **Nunca** rode `supabase db push` ou `db reset`.
 
-Como aplicamos SQL em produção: **Management API**, uma migration por vez.
+**Nada é aplicado em produção sem autorização explícita do dono**, uma
+migration por vez, pela Management API:
 
 ```bash
 set -a && . /home/gabfelix/dev/4yu-apps/.secrets/4yu.env && set +a
@@ -70,230 +158,254 @@ curl -s -X POST "https://api.supabase.com/v1/projects/$AUTOFLUXOS_SUPABASE_PROJE
   -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" -d "$Q"
 ```
 
-**A próxima migration é a `0022`.** Confira o diretório, não confie nesta frase.
+Depois de aplicar, **confira as duas coisas**: que as colunas existem, e que
+`app_verandi` continua com o mesmo número de tabelas.
 
-### 2.2 `clients` É a conta do Better Auth
+### 4.2 A view `leads` só aceita coluna nova **no fim**
 
-Não existe tabela `organization`. O plugin aponta para `clients` via
-`modelName`, porque **toda** chave estrangeira do sistema (`flows`, `contacts`,
-`channels`, `connections`, `messages`) já aponta para lá. Duas tabelas para o
-mesmo conceito divergem — foi o defeito que a `0018` consertou no nome do
-contato, e não vamos recriá-lo.
+`create or replace view` não reordena nem remove: recusa qualquer outra
+diferença com `cannot change name of view column`. A ordem verdadeira é a da
+última migration que mexeu nela — hoje a `0022`, e a `0023` (escrita) já segue
+essa ordem.
 
-### 2.3 `generateId: 'uuid'` significa "o banco gera"
-
-Não significa "gere um uuid no código". Toda tabela do auth precisa de
-`default gen_random_uuid()` na chave, ou o insert chega com `id` nulo.
-
-### 2.4 O CLI do Better Auth mente
-
-`@better-auth/cli` é publicado à parte e **fica para trás do runtime** — em
-17/ago o CLI mais novo era `1.5.0-beta.13` com o runtime em `1.7.0`, e o schema
-gerado não tinha a coluna `issuer`. **Use `node scripts/schema-do-auth.mjs`**,
-que lê o runtime instalado. Ao atualizar a biblioteca, rode e compare.
-
-### 2.5 O `.npmrc` com `legacy-peer-deps` é obrigatório
-
-`better-auth` declara `@sveltejs/kit` como peer opcional e o npm arrasta a
-cadeia do Svelte, que exige `vite@8` contra o `vite@7` do Vitest. Sem o
-`.npmrc`, **o build quebra no deploy**. O custo: peer conflito real deixa de
-aparecer na instalação.
-
-### 2.6 `auth.ts` exporta função, não constante — e não dá para "simplificar"
-
-`autenticacao()` constrói a instância na primeira chamada. Voltar a
-`export const auth = betterAuth(...)` derruba o CI: o pool estoura sem
-`DATABASE_URL`, e **o `npm run build` do CI roda sem variável de banco nenhuma**,
-de propósito — este repositório é público e não guarda segredo
-(`.github/workflows/ci.yml`). O mesmo vale para a rota `[...all]`, que chama
-`autenticacao()` dentro de cada método em vez de usar `toNextJsHandler`.
-
-### 2.7 `nextCookies()` tem que ser o último plugin
-
-É o gancho que repassa o `Set-Cookie` dos endpoints para o `cookies()` do Next.
-Sem ele, `signInEmail` chamado de dentro de uma Server Action autentica e **não
-deixa sessão nenhuma no navegador**: a pessoa acerta a senha, a ação responde
-200, e a tela seguinte a manda de volta para o login. Último porque o cookie que
-interessa é o do fim da cadeia — a impersonação troca o cookie de sessão dentro
-do gancho dela.
-
-### 2.8 Quem autoriza é `server/sessao.ts`, não o `proxy.ts`
-
-O proxy decide se a requisição segue, e a conferência do login por usuário lá é
-só de **presença do cookie**: não vai ao banco e não decide nada sozinha. Um
-cookie forjado passa por ele e morre no `getSession` da tela seguinte.
-
-Isso não é preguiça — a documentação do Next avisa que Server Action é um POST
-na rota onde ela é usada, e um refactor que a mova de rota a tira do matcher sem
-ninguém perceber. **Toda tela e toda ação confere de novo**, por
-`exigirUsuario`, `exigirAdminDaPlataforma` ou `exigirAcessoAoCliente`.
-
-### 2.9 A sessão de usuário tem precedência sobre a senha única
-
-Quem entra como pessoa vê o que aquela pessoa vê — não o painel inteiro. Sem
-isso o login seria decoração por cima do acesso total que já existe.
-
-O administrador da 4YU continua alcançando qualquer conta **enquanto a senha
-única existir**; é a linha em `exigirAcessoAoCliente` que estreita para "só
-impersonando" no dia em que ela sair. Quem não pode recebe **404**, e não 403:
-confirmar que a conta existe já é contar de um cliente para quem não é dele.
-
-### 2.10 Versão publicada é imutável, inclusive para nós
+### 4.3 Versão publicada é imutável, inclusive para nós
 
 `flow_versions` guarda o grafo e a sessão fica presa à versão em que começou.
-Mudar o formato de um bloco **mata toda conversa em andamento**. O caminho é
-sempre ler os dois formatos e normalizar na leitura — nunca reescrever
-`flow_versions.grafo`. Isso vai importar muito na frente **A3**.
+Uma conversa aberta às 14h continua rodando o grafo de 14h. Se um schema deixar
+de dar parse no que foi publicado antes, **toda conversa em andamento morre no
+meio**, e não há como saber quantas são.
 
-### 2.11 A auditoria não pode ser editada pela aplicação
+O caminho é sempre **ler os dois formatos e normalizar na leitura**. Nenhuma
+migration reescreve `flow_versions.grafo`. Três testes prendem isso hoje:
+`core/flow/mensagem.test.ts`, o `describe('o bloco de mensagem em pilha')` em
+`core/engine/executar.test.ts`, e o teste do webhook que publica a abertura no
+formato antigo.
+
+### 4.4 Quem autoriza é `server/sessao.ts`, não o `proxy.ts`
+
+O proxy decide se a requisição **segue**; a conferência do login por usuário lá
+é só de **presença do cookie** — não vai ao banco e não decide nada sozinha.
+
+Não é preguiça: a documentação do Next avisa que Server Action é um POST na
+rota onde ela é usada, e um refactor que a mova de rota a tira do matcher sem
+ninguém perceber. **`src/server/acoes.test.ts` lê o texto de `acoes.ts` e
+recusa ação nova que esqueça a conferência.** Trinta e três ações — trinta e
+uma com `clienteId`, que chamam `exigirAcessoAoCliente`, e duas que criam
+cliente, que chamam `exigirOperadorDa4YU` — é exatamente onde a trigésima
+quarta fica de fora.
+
+### 4.5 A sessão de usuário tem precedência sobre a senha única
+
+Quem entra como pessoa vê o que aquela pessoa vê. O administrador da 4YU
+continua alcançando qualquer conta **enquanto a senha única existir** — é a
+linha em `exigirAcessoAoCliente` que estreita para "só impersonando" no dia em
+que ela sair. Quem não pode recebe **404**, e não 403.
+
+### 4.6 `auth.ts` exporta função, não constante
+
+`autenticacao()` constrói a instância na primeira chamada. Voltar a
+`export const auth = betterAuth(...)` **derruba o CI**: o pool estoura sem
+`DATABASE_URL`, e o `npm run build` do CI roda sem variável de banco nenhuma, de
+propósito — este repositório é público e não guarda segredo. O mesmo vale para a
+rota `[...all]`, que chama `autenticacao()` dentro de cada método em vez de usar
+`toNextJsHandler`.
+
+E `nextCookies()` tem que ser o **último** plugin: sem ele, `signInEmail` numa
+Server Action autentica e não deixa sessão no navegador.
+
+### 4.7 A auditoria não pode ser editada pela aplicação
 
 `service_role` tem só `insert` e `select` em `af_auditoria`. Não escreva função
-de apagar; não existe permissão. Na primeira escrita da `0021` sobrou
-`truncate`, que tornava tudo decorativo — `revoke all` e conceder só o que entra.
+de apagar; não existe permissão.
 
 ---
 
-## 3. Ambiente
+## 5. O banco, tabela a tabela
 
-### Variáveis
+| Tabela | O que é |
+|---|---|
+| `clients` | a conta. Ganhou `slug` (único, com gatilho), `metadata` e `horario_atendimento` |
+| `flows`, `flow_versions` | o desenho e as versões publicadas (imutáveis por gatilho) |
+| `channels` | número do WhatsApp × fluxo |
+| `contacts` | quem conversa. Ganhou `atribuido_a` |
+| `sessions`, `messages`, `handoffs` | o estado de execução e o histórico |
+| `connections` | credenciais dos blocos de API |
+| `af_usuarios` | usuários (Better Auth), com `presenca`. **Não** é `auth.users` |
+| `af_sessoes` | sessões, com `impersonatedBy` e `activeOrganizationId` |
+| `af_contas` | credenciais — guarda **hash** de senha |
+| `af_verificacoes` | tokens de verificação |
+| `af_membros` | usuário × conta × papel (`owner`/`admin`/`member`) |
+| `af_convites` | a tabela existe; o convite não, porque depende de SMTP |
+| `af_auditoria` | quem fez o quê. Append-only |
+| view `leads` | contato + última mensagem + handoff aberto + `ultima_entrada_em` + `atribuido_a` |
+| view `metricas_sessoes`, `resumo_clientes` | agregações do painel |
 
-| Variável | `.env` local | Vercel | Observação |
+**As tabelas do login ficam fora da Data API de propósito** (`revoke all` para
+`anon` e `authenticated` na 0019): `af_contas` guarda hash de senha e
+`af_sessoes` guarda token. Por isso `src/server/repos/usuarios.ts` e
+`src/server/sessao.ts` falam Postgres direto pelo pool do Better Auth
+(`bancoDoLogin()`), e são a exceção da casa — todo o resto usa `supabase-js`.
+
+---
+
+## 6. Ambiente
+
+| Variável | `.env` | Vercel | Observação |
 |---|---|---|---|
 | `SUPABASE_URL`, `SUPABASE_SECRET_KEY` | ✅ | ✅ | |
 | `META_APP_SECRET`, `WHATSAPP_TOKEN`, `WHATSAPP_VERIFY_TOKEN` | ✅ | ✅ | |
-| `GEMINI_API_KEY` | ✅ | ✅ | entrou em 17/ago — **nunca tinha existido em produção**, então o bloco de IA jamais funcionou lá |
-| `PAINEL_SENHA` | ✅ | ✅ | senha única, ainda em uso. **Sem ela em produção, o login por usuário vira a única porta** — o 503 que existia aqui saiu |
+| `GEMINI_API_KEY` | ✅ | ✅ | entrou em 17/ago — antes disso o bloco de IA nunca funcionou em produção |
+| `PAINEL_SENHA` | ✅ | ✅ | senha única. **Sem ela em produção, o login por usuário vira a única porta** |
 | `PAINEL_SEGREDO` | ✅ | ✅ | trocar encerra todas as sessões do painel |
 | `CRON_SECRET` | ✅ | ✅ | sem ela a retenção responde 503 |
 | `DATABASE_URL` | ✅ | ✅ | pooler **6543**, não 5432 |
 | `BETTER_AUTH_SECRET` | ✅ | ✅ | |
-| `BETTER_AUTH_URL` | ❌ | ❌ | **opcional.** Sem ela a origem sai da requisição, o que basta para e-mail e senha na mesma origem; preenchida errado, quebra o login inteiro |
-| `ALERTA_WEBHOOK_URL` | ❌ | ❌ | **falta.** Precisa de URL de Discord/Slack que só o dono cria. Sem ela `alertar()` é no-op e falha de entrega não avisa ninguém |
+| `BETTER_AUTH_URL` | ❌ | ❌ | opcional; preenchida errado quebra o login |
+| `ALERTA_WEBHOOK_URL` | ❌ | ❌ | **falta**. Sem ela `alertar()` é no-op |
 
-Fonte da verdade dos valores: `4yu-apps/.secrets/4yu.env`, prefixo
-`AUTOFLUXOS_`. **Nunca** copie segredo para dentro do repo — ele é público.
+Valores em `4yu-apps/.secrets/4yu.env`, prefixo `AUTOFLUXOS_`. **Nunca** copie
+segredo para dentro do repo — ele é público.
 
-### Conexão direta
-
-```
-postgresql://postgres.<ref>:<senha>@aws-0-sa-east-1.pooler.supabase.com:6543/postgres
-```
-
-Porta **6543** (transaction pooler, próprio para serverless). A 5432 só para
-migration. Em modo transação o Supavisor **não suporta prepared statements**.
+Conexão direta: `postgresql://postgres.<ref>:<senha>@aws-0-sa-east-1.pooler.supabase.com:6543/postgres`.
+Porta **6543** (transaction pooler). Em modo transação o Supavisor **não
+suporta prepared statements**.
 
 ---
 
-## 4. O próximo passo, em ordem
+## 7. O que falta, em ordem
 
-### 4.1 Criar o primeiro administrador — é o único passo manual
+### 7.1 A6 — fluxos padrão e gatilhos · **precisa de migration**
 
-Não fizemos isso por você porque a conta é de uma pessoa de verdade, com o
-e-mail e a senha dela, e nem uma coisa nem a outra se inventa. O caminho:
+O que o plano pede (§3.7 e §3.8):
 
-1. Abra `/login` e entre com a `PAINEL_SENHA`.
-2. Vá para `/criar-conta`. Como não existe nenhum usuário, ela mostra
-   **"Primeiro acesso"** — nome, e-mail e senha de pelo menos 10 caracteres.
-3. Quem sai daí é administrador da plataforma, e a tela se fecha sozinha:
-   daqui em diante ela exige sessão de administrador.
-4. Em `/admin/contas`, ligue cada cliente existente a uma pessoa. Cliente sem
-   membro aparece primeiro na lista, e ninguém entra nele com login próprio até
-   ganhar dono.
+- **Os quatro fluxos padrão** por número: boas-vindas, resposta padrão, fluxo
+  para **mídia recebida**, pós-atendimento. Hoje é um número → um fluxo
+  (`channels.flow_id`).
+- **Gatilhos por palavra-chave**: frase → fluxo, com operador (`é`, `contém`),
+  contagem de execuções e liga/desliga. Hoje só existem as palavras de escape
+  fixas no motor (`PALAVRAS_ESCAPE` em `core/engine/executar.ts`).
 
-Para cadastrar o dono de um cliente: `/admin/usuarios` → `+ Cadastrar pessoa`,
-depois `/admin/contas` → `+ Ligar pessoa` como **dono da conta**. A senha é
-combinada fora daqui — convite por e-mail depende de SMTP, que é global ao
-projeto compartilhado.
+**É esta frente que destrava a última pendência da A4**: hoje mídia recebida
+vira handoff sempre (`Regra B`, em `executar.ts`), e o plano diz que isso
+deixou de fazer sentido quando existe um fluxo padrão para mídia — o cliente
+deve poder dizer o que fazer com um áudio em vez de acordar alguém.
 
-### 4.2 O que falta na Etapa A
+Sugestão de forma, para quem for escrever: colunas de fluxo padrão em
+`channels` (uma por papel) e uma tabela `gatilhos(conta, frase, operador,
+fluxo, ativo, execucoes)`. O casamento da frase acontece **antes** do fluxo
+padrão, na entrada do webhook.
 
-1. **A6 — fluxos padrão e gatilhos.** Boas-vindas, resposta padrão, fluxo para
-   mídia recebida, pós-atendimento, e palavras-chave por conta. **Precisa de
-   migration**, e é ela que também destrava a última pendência da A4: mídia
-   recebida virando handoff deixa de fazer sentido quando existe um fluxo
-   padrão para mídia.
-2. **A7 — configurações reunidas.** A maior parte já existe e está ligada no
-   índice de `/ajustes`. Faltam `Etiquetas` (migration) e `Equipe`, que sem
-   convite por e-mail seria uma tela mostrando uma lista vazia.
-3. **Convite por e-mail.** `af_convites` existe e nada a preenche. Depende de
-   SMTP, que é decisão dos dois produtos.
-4. **Trocar a senha única pelo login por usuário.** Enquanto as duas convivem,
-   nada quebra; o dia da troca é uma linha em `exigirAcessoAoCliente` (parar de
-   deixar o administrador passar sem ser membro) e a remoção de `PAINEL_SENHA`.
-   Exige o primeiro administrador existir — §4.1.
+### 7.2 A7 — configurações reunidas · **parcialmente feito**
 
-Depois da Etapa A vem a **B** (agendador, contatos completo, painel completo,
-campanhas, pastas de fluxo, integrações com preset). Ordem e critério em
-[PLANO-SISTEMA.md §5](PLANO-SISTEMA.md).
+A maior parte já existe e está ligada no índice de `/ajustes` (perfil do
+negócio na tela do Painel, número, horário, respostas rápidas, acervo, contexto
+da IA, credenciais). Falta:
+
+- **Etiquetas manuais** — precisa de migration (`etiquetas` +
+  `contato_etiquetas`). As derivadas continuam derivadas; **não** viram linha.
+- **Equipe** — a tela existiria para listar membros e convidar. Sem convite por
+  e-mail (SMTP) ela seria uma lista vazia com um botão que não funciona.
+
+### 7.3 Depois da Etapa A
+
+**Etapa B**: agendador (destrava sequências e timeout de pergunta), contatos
+completo (etiquetas, rail de filtros, criar à mão, ações em lote), painel
+completo (série diária, desempenho pessoal, métricas de tempo), campanhas,
+pastas e compartilhamento de fluxo, integrações com preset (RD Station
+primeiro).
+
+**Etapa C**: Quadros (Kanban), central de notificações, casca (idioma, ajuda),
+modelos da Meta e Transmissão (**trava externa**), faturamento e registros.
+
+Ordem e critério em [PLANO-SISTEMA.md §5](PLANO-SISTEMA.md).
+
+### 7.4 O que espera o dono
+
+Dez itens em [PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md). Os três que mais
+travam:
+
+1. **Criar o primeiro administrador.** Não existe **nenhum** usuário em
+   produção; todo o login está de pé e dormindo.
+2. **Autorizar a migration `0023`** (não lidas + tipo da mídia na prévia).
+3. **`ALERTA_WEBHOOK_URL`**, sem a qual falha de entrega não avisa ninguém.
 
 ---
 
-## 5. Armadilhas que já custaram caro nesta base
+## 8. Como trabalhar aqui
 
-Além das de [ESTADO.md](ESTADO.md), que continuam valendo:
+### O ciclo
+
+```bash
+npm test          # 488 passando, 8 pulados
+npm run typecheck
+npm run lint
+npm run build     # roda também sem DATABASE_URL, e tem que continuar rodando
+```
+
+Commit por etapa validada, push, e a Vercel faz o deploy sozinha do `main`.
+Conferir o deploy pela API (`VERCEL_TOKEN` no cofre) e **provar em produção**,
+não só no build.
+
+### Testes
+
+Boa parte da suíte fala com o **Supabase de produção**. Eles limpam o que
+criam com prefixo `zz-`; execução que quebra no meio deixa lixo. `af_auditoria`
+é a exceção — append-only, então `auditoria.test.ts` deixa linhas de
+`gente@exemplo.test` lá para sempre, e `/admin/auditoria` já nasce com elas.
+
+**Cerca de 1 execução em 8 falha um teste, sem padrão identificado.** Não é o
+teto de 5s (subiu para 30s), não é colisão de telefone (o sorteio é por
+execução), e os testes de retenção passam `clienteId`. Rodar de novo passa.
+Está escrito para não virar de novo "roda de novo que passa" sem ninguém olhar.
+
+### Armadilhas que já custaram caro
 
 - **Interpolar dentro de estrutura sem escapar.** O que a pessoa digita no
   WhatsApp entra em URL, corpo JSON e cabeçalho. Use `core/engine/interpolar.ts`.
 - **Exceção solta no `after()` do webhook.** A mensagem já foi deduplicada; se
   a sessão não for salva, a pessoa fica sem resposta e a Meta não reenvia.
 - **Identidade vinda do corpo da requisição.** Desenho pode vir de fora;
-  identidade sai do banco.
+  identidade sai do banco. Foi o furo do `/api/simular`, corrigido.
 - **Tela de autorização que o Next prerenderiza.** `/admin/page.tsx` só
-  redireciona, e sem `force-dynamic` o Next a resolvia no build: a moldura rodava
-  sem sessão nenhuma, `exigirAdminDaPlataforma` falhava, e o que ficava gravado
-  era um redirecionamento para a raiz — servido depois a quem *é* administrador.
+  redireciona, e sem `force-dynamic` o Next resolvia no build: a moldura rodava
+  sem sessão, e o que ficava gravado era um redirecionamento para a raiz.
+- **Altura calculada em `calc(100vh - N)`.** Erra em silêncio quando o
+  cabeçalho muda: a lista some por baixo e nada quebra para avisar. Use flex.
+- **Estado vazio que responde pela pergunta errada.** "Nenhuma conversa" depois
+  de uma busca sem resultado mente e ainda some com o campo de busca.
+- **Duas funções que discordam sobre a mesma regra.** `proximaAbertura`
+  anunciava faixa que `atendimentoAberto` nunca honraria.
 - **Duas coisas com o mesmo sintoma escondem uma à outra.** "Falha que some ao
-  rodar de novo" foi atribuída ao relógio do WSL2 por semanas — era o teto de 5s
-  do Vitest contra banco remoto **e** telefone de teste derivado de `Date.now()`.
-- **Testes rodam contra o Supabase de produção.** Eles limpam o que criam, mas
-  uma execução que quebra no meio deixa lixo. Se a lista de clientes tiver
-  `zz-`, é isso.
-- **E a auditoria é a exceção que eles não limpam.** `af_auditoria` é
-  append-only, então `auditoria.test.ts` deixa as linhas dele lá para sempre — a
-  tela `/admin/auditoria` já nasce com dezenas de `publicou_fluxo` de
-  `gente@exemplo.test`. Não são um incidente; são a suíte. Apagar exigiria dono
-  da tabela, que é justamente o que o append-only existe para impedir.
+  rodar de novo" foi atribuída ao relógio do WSL2 por semanas — era o teto de
+  5s do Vitest **e** telefone de teste derivado de `Date.now()`.
 
-### A intermitência que continua sem diagnóstico
+### O `.npmrc` com `legacy-peer-deps` é obrigatório
 
-Cerca de **1 execução em 8** da suíte falha um teste, sem padrão identificado.
-**Não é** o teto de 5s (subiu para 30s em `vitest.config.ts`), **não é** colisão
-de telefone (o sorteio agora é por execução), e os testes de retenção passam
-`clienteId`, então não varrem o banco de outra suíte em paralelo. Rodar de novo
-passa. Está escrito para não virar de novo "roda de novo que passa" sem
-ninguém olhar.
+`better-auth` declara `@sveltejs/kit` como peer opcional e o npm arrasta a
+cadeia do Svelte, que exige `vite@8` contra o `vite@7` do Vitest. Sem o
+`.npmrc`, **o build quebra no deploy**.
+
+### O CLI do Better Auth mente
+
+`@better-auth/cli` é publicado à parte e fica para trás do runtime. Use
+`node scripts/schema-do-auth.mjs`, que lê o runtime instalado.
 
 ---
 
-## 6. O que o dono decidiu, e que não se renegocia sem ele
+## 9. O que o dono decidiu, e que não se renegocia sem ele
 
 1. **A conta é do cliente e ele faz tudo nela** — cria, edita, publica, apaga.
    Nós somos administradores de contas, não donos dos fluxos.
-2. **Sidebar à esquerda, não abas no topo.** Foi explícito e enfático. Feito.
+2. **Sidebar à esquerda, não abas no topo.** Foi explícito e enfático.
 3. **Etapa A só com o obrigatório.** Cada tela nova é superfície, e superfície
-   custa manutenção para sempre. Kanban, notificações, idioma, ajuda e
-   comunidade ficaram para a Etapa C. Vale para item de menu também: a barra
-   lateral só lista o que tem tela.
+   custa manutenção para sempre. Vale para item de menu também: a barra só
+   lista o que tem tela.
 4. **Nada de conectar número por QR.** Perder o número do cliente é o pior
    fracasso possível para uma agência. Só Cloud API oficial.
 5. **Nada de iPaaS embutido.** Integração é preset de bloco `http`, com
    RD Station primeiro.
 6. **Mandar o cliente usar n8n/Zapier/Make não é resposta aceitável.** Faltou
    peça? Constrói a peça.
-
----
-
-## 7. Perguntas em aberto para o dono
-
-A lista completa, com o que cada uma trava e o passo a passo, mora em
-[PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md). O resumo:
-
-- **O primeiro administrador** — nome, e-mail e senha. É o §4.1, e é o que
-  destrava tudo que foi construído nesta rodada.
-- `ALERTA_WEBHOOK_URL` — precisa da URL do Discord/Slack.
-- **A mídia nunca foi provada no WhatsApp real.** O bloco é testado ponta a
-  ponta com o canal mock, mas nenhuma foto saiu pela Cloud API de verdade. São
-  cinco minutos com o Cliente 00.
-- O painel do cliente ("eu entro e vejo meus lucros") está **em espera** a
-  pedido dele, aguardando mais prints. Não temos dado de dinheiro; o caminho
-  honesto é ler valor fechado do CRM na Etapa B.
+7. **Não temos dado de dinheiro.** Inventar por multiplicação vira mentira no
+   relatório do cliente; o caminho honesto é ler valor fechado do CRM na
+   Etapa B.
