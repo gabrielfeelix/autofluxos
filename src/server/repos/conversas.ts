@@ -587,3 +587,33 @@ export async function listarCanais(clienteId: string): Promise<CanalSalvo[]> {
     status: c.status as string,
   }))
 }
+
+/**
+ * Quem é responsável por atender este contato.
+ *
+ * **A responsabilidade mora no contato, e não no handoff nem na sessão** — as
+ * duas acabam, e quem atendeu ontem é quem a pessoa espera reencontrar amanhã.
+ * É também o que faz "meus chats" ser uma lista de gente em vez de uma lista de
+ * eventos.
+ *
+ * `usuarioId` nulo libera. O cliente vai junto na consulta pelo mesmo motivo de
+ * todo o resto deste arquivo: id de contato de outro cliente não pode virar
+ * escrita, nem quando o endereço vem de dentro do painel.
+ */
+export async function atribuirContato(
+  clienteId: string,
+  contatoId: string,
+  usuarioId: string | null,
+): Promise<boolean> {
+  const { data, error } = await db()
+    .from('contacts')
+    .update({ atribuido_a: usuarioId })
+    .eq('id', contatoId)
+    .eq('client_id', clienteId)
+    .select('id')
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return false
+  if (error) throw new Error(`não deu para atribuir o contato: ${error.message}`)
+  return data !== null
+}

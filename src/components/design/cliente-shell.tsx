@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
-import { acaoSair } from '@/server/acoes-conta'
+import { acaoDefinirPresenca, acaoSair } from '@/server/acoes-conta'
 import { acaoSair as acaoSairDoPainel } from '@/server/auth-actions'
 import type { Cliente } from '@/server/repos/clientes'
+import { presencaDoUsuario } from '@/server/repos/usuarios'
 import { contasDoUsuario, ehAdminDaPlataforma, exigirAcessoAoCliente } from '@/server/sessao'
 import { LogoDoCliente } from './logo-cliente'
 import { Marca } from './marca'
@@ -69,6 +70,7 @@ export async function ClienteShell({
    */
   const acesso = await exigirAcessoAoCliente(cliente.id)
   const contas = acesso.sessao ? await contasDoUsuario(acesso.sessao.usuario.id) : []
+  const presenca = acesso.sessao ? await presencaDoUsuario(acesso.sessao.usuario.id) : null
   // O operador da senha única e o administrador da 4YU vieram da lista de
   // clientes e precisam do caminho de volta. O dono do negócio, não: para ele
   // não existe "todos os clientes", existe a conta dele.
@@ -131,6 +133,8 @@ export async function ClienteShell({
             papel={acesso.papel}
             viaSenhaUnica={acesso.viaSenhaUnica}
           />
+
+          {presenca && <Presenca atual={presenca} />}
 
           <form action={acesso.viaSenhaUnica ? acaoSairDoPainel : acaoSair} className="mt-2 px-1.5">
             <button
@@ -210,6 +214,38 @@ function SeletorDeConta({
   }
 
   return <div className="flex items-center gap-2.5 px-1.5 py-1.5">{miolo}</div>
+}
+
+/**
+ * Disponível ou ausente.
+ *
+ * Fica ao lado da conta, no rodapé, e não escondido num menu de perfil: é um
+ * estado que a pessoa precisa **ver sem procurar**. Quem esquece de voltar de
+ * "ausente" some da lista de quem pode receber conversa, e some sem erro nenhum
+ * aparecer em lugar nenhum.
+ */
+function Presenca({ atual }: { atual: string }) {
+  const disponivel = atual === 'disponivel'
+
+  return (
+    <form action={acaoDefinirPresenca.bind(null, disponivel ? 'ausente' : 'disponivel')}>
+      <button
+        type="submit"
+        className="flex w-full items-center gap-2 rounded-[10px] px-1.5 py-1.5 text-left transition hover:bg-white/[0.04]"
+      >
+        {/* Ponto **e** palavra: quem não distingue as duas cores lê o estado
+            do mesmo jeito (WCAG 1.4.1). */}
+        <span
+          aria-hidden
+          className={`size-2 shrink-0 rounded-full ${disponivel ? 'bg-emerald-400' : 'bg-white/25'}`}
+        />
+        <span className="flex-1 text-[11.5px] text-muted">
+          {disponivel ? 'Disponível' : 'Ausente'}
+        </span>
+        <span className="text-[10.5px] text-dim">trocar</span>
+      </button>
+    </form>
+  )
 }
 
 /** O que cada papel do plugin de organização quer dizer em português. */

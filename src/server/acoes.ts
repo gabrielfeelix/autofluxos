@@ -35,6 +35,7 @@ import { canalCloudApi } from '@/channels/cloud-api'
 import { dentroDaJanela } from '@/channels/janela'
 import type { EstadoSalvar } from '@/components/design/formulario-salvar'
 import {
+  atribuirContato,
   contextoDeResposta,
   criarCanal,
   confirmarEntrega,
@@ -45,6 +46,7 @@ import {
   registrarSaida,
 } from './repos/conversas'
 import { travarContato } from './repos/travas'
+import { sessaoAtual } from './sessao'
 import {
   acharVersaoDoFluxo,
   apagarFluxo,
@@ -918,5 +920,53 @@ export async function acaoSalvarHorario(
 
   await atualizarHorario(clienteId, analise.data)
   revalidatePath(`/clientes/${clienteId}`)
+  return { ok: true }
+}
+
+/**
+ * "Assumir" — o botão que faltava para alguém **virar** atendente.
+ *
+ * A pergunta do dono era essa: *"como que o atendente vai virar atendente?"*.
+ * Até aqui ninguém virava — a sessão ia para `humano`, o bot calava, e a
+ * conversa ficava esperando qualquer pessoa. Esperar "qualquer pessoa" é o
+ * mesmo que esperar ninguém quando há mais de uma.
+ *
+ * Assumir não muda o que a pessoa do outro lado vê: é organização interna. Por
+ * isso não manda mensagem nenhuma — anunciar no WhatsApp que "a Ana assumiu"
+ * seria expor a nossa mesa para quem só quer ser respondido.
+ */
+export async function acaoAssumirAtendimento(
+  clienteId: string,
+  contatoId: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const sessao = await sessaoAtual()
+  if (!sessao) {
+    // Acontece de verdade enquanto a senha única existe: não há usuário para
+    // assumir. Dizer isso é melhor que um botão que não faz nada.
+    return { ok: false, erro: 'entre com a sua conta para assumir uma conversa' }
+  }
+
+  const ok = await atribuirContato(clienteId, contatoId, sessao.usuario.id)
+  if (!ok) return { ok: false, erro: 'este contato não é deste cliente' }
+
+  revalidatePath(`/clientes/${clienteId}/inbox`)
+  revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
+  return { ok: true }
+}
+
+/** Devolve a conversa para a fila de todo mundo. */
+export async function acaoLiberarAtendimento(
+  clienteId: string,
+  contatoId: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const ok = await atribuirContato(clienteId, contatoId, null)
+  if (!ok) return { ok: false, erro: 'este contato não é deste cliente' }
+
+  revalidatePath(`/clientes/${clienteId}/inbox`)
+  revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
   return { ok: true }
 }

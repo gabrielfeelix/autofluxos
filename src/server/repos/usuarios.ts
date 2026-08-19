@@ -129,3 +129,59 @@ export async function listarContasComMembros(): Promise<ContaComMembros[]> {
     })),
   }))
 }
+
+export type MembroDaConta = {
+  id: string
+  nome: string
+  email: string
+  papel: string
+  /** `disponivel` | `ausente`. É o que decide a quem o Inbox oferece a conversa. */
+  presenca: string
+}
+
+/**
+ * Quem atende nesta conta, e quem está por perto agora.
+ *
+ * A presença não é enfeite: atribuir uma conversa a quem está de férias é o
+ * mesmo que não atribuir — a pessoa continua esperando, e agora com um nome ao
+ * lado dando a impressão de que alguém está cuidando.
+ *
+ * Ordem: disponível primeiro, depois por nome. A lista é usada para escolher, e
+ * a escolha certa tem que estar em cima.
+ */
+export async function membrosDaConta(contaId: string): Promise<MembroDaConta[]> {
+  const { rows } = await bancoDoLogin().query(
+    `select u.id, u."name" as nome, u.email, m."role" as papel, u."presenca"
+       from public.af_membros m
+       join public.af_usuarios u on u.id = m."userId"
+      where m."organizationId" = $1
+        and coalesce(u."banned", false) = false
+      order by (u."presenca" <> 'disponivel'), u."name"`,
+    [contaId],
+  )
+
+  return rows.map((linha) => ({
+    id: String(linha.id),
+    nome: String(linha.nome),
+    email: String(linha.email),
+    papel: String(linha.papel),
+    presenca: String(linha.presenca),
+  }))
+}
+
+/** Muda a própria presença. Só o dono da sessão chama isto. */
+export async function definirPresenca(usuarioId: string, presenca: 'disponivel' | 'ausente') {
+  await bancoDoLogin().query('update public.af_usuarios set "presenca" = $1 where id = $2', [
+    presenca,
+    usuarioId,
+  ])
+}
+
+/** A presença de uma pessoa só. Nulo = usuário sumiu entre a sessão e a leitura. */
+export async function presencaDoUsuario(usuarioId: string): Promise<string | null> {
+  const { rows } = await bancoDoLogin().query(
+    'select "presenca" from public.af_usuarios where id = $1',
+    [usuarioId],
+  )
+  return rows.length > 0 ? String(rows[0].presenca) : null
+}

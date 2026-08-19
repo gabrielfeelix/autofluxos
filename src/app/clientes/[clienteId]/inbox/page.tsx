@@ -1,11 +1,19 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { comoFalta, restaDaJanela } from '@/channels/janela'
+import { Assumir } from '@/components/inbox/assumir'
+import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
+import { sessaoAtual } from '@/server/sessao'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { ControleDeAutomacao } from '@/components/lead/controle-automacao'
 import { CaixaDeResposta } from '@/components/lead/responder'
 import { NotificacoesDaFila } from '@/components/inbox/notificacoes-da-fila'
-import { acaoEncerrarAtendimento, acaoResponderLead } from '@/server/acoes'
+import {
+  acaoAssumirAtendimento,
+  acaoEncerrarAtendimento,
+  acaoLiberarAtendimento,
+  acaoResponderLead,
+} from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { contextoDeResposta } from '@/server/repos/conversas'
 import { listarLeads, lerConversa, type Lead, type MensagemDoLead } from '@/server/repos/leads'
@@ -44,6 +52,34 @@ export default async function Pagina({
   const pedido = Array.isArray(busca.conversa) ? busca.conversa[0] : busca.conversa
   const selecionado = escolherLead(leads, pedido)
 
+  /**
+   * Quem atende nesta conta, para a tela dizer **nomes** em vez de uuid.
+   *
+   * A consulta fala Postgres direto (as tabelas do login ficam fora da Data
+   * API), e por isso ela pode estourar num ambiente sem `DATABASE_URL`. Cair
+   * para uma lista vazia é o certo: o Inbox é a tela mais usada do produto, e
+   * ela não pode parar de abrir porque o login não está configurado. Sem
+   * membros, a atribuição simplesmente não aparece — que é a verdade enquanto
+   * não existe usuário nenhum.
+   */
+  const sessao = await sessaoAtual()
+
+  let equipe: MembroDaConta[] = []
+  // Só busca quando há o que mostrar: alguém logado para assumir, ou alguma
+  // conversa já com dono. Enquanto a senha única for a porta e não existir
+  // usuário nenhum, isso é uma ida ao banco por abertura do Inbox — que é a
+  // tela mais usada do produto — para montar uma lista vazia.
+  if (sessao || leads.some((lead) => lead.atribuidoA)) {
+    try {
+      equipe = await membrosDaConta(cliente.id)
+    } catch (erro) {
+      console.error(
+        '[inbox] não deu para ler a equipe',
+        erro instanceof Error ? erro.message : erro,
+      )
+    }
+  }
+
   return (
     <ClienteShell cliente={cliente} ativa="inbox">
       <main className="px-4 md:px-[42px] pt-[26px] pb-[42px]">
@@ -55,6 +91,8 @@ export default async function Pagina({
             leads={leads}
             selecionado={selecionado}
             respostasRapidas={respostasRapidas}
+            equipe={equipe}
+            usuarioId={sessao?.usuario.id ?? null}
           />
         )}
       </main>
@@ -96,11 +134,16 @@ async function Conteudo({
   leads,
   selecionado,
   respostasRapidas,
+  equipe,
+  usuarioId,
 }: {
   clienteId: string
   leads: Lead[]
   selecionado: Lead
   respostasRapidas: RespostaRapida[]
+  equipe: MembroDaConta[]
+  /** Quem está olhando. `null` quando quem entrou foi a senha única do time. */
+  usuarioId: string | null
 }) {
   // `selecionado` veio de `listarLeads(clienteId)`. Só depois desse vínculo
   // cliente–contato confirmado é seguro ler as mensagens pelo id do contato.
@@ -134,10 +177,21 @@ async function Conteudo({
       </header>
 
       <div className="grid min-h-[640px] grid-cols-[292px_minmax(390px,1fr)_250px] overflow-hidden rounded-[16px] border border-white/[0.075] bg-[#0c1118] shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
-        <Fila clienteId={clienteId} leads={leads} selecionado={selecionado} esperando={esperando} />
+        <Fila
+          clienteId={clienteId}
+          leads={leads}
+          selecionado={selecionado}
+          esperando={esperando}
+          equipe={equipe}
+        />
 
         <section className="flex min-w-0 flex-col border-r border-white/[0.06]">
-          <CabecalhoDaConversa clienteId={clienteId} lead={selecionado} />
+          <CabecalhoDaConversa
+            clienteId={clienteId}
+            lead={selecionado}
+            equipe={equipe}
+            usuarioId={usuarioId}
+          />
           <div className="min-h-0 flex-1 overflow-auto bg-[radial-gradient(500px_320px_at_70%_5%,rgba(86,208,245,0.04),transparent_68%)] p-5">
             <Historico mensagens={conversa.mensagens} cortada={conversa.cortada} nome={selecionado.nome} />
           </div>
@@ -160,12 +214,16 @@ function Fila({
   leads,
   selecionado,
   esperando,
+  equipe,
 }: {
   clienteId: string
   leads: Lead[]
   selecionado: Lead
   esperando: number
+  equipe: MembroDaConta[]
 }) {
+  const nomeDe = (id: string | null) =>
+    id ? (equipe.find((membro) => membro.id === id)?.nome.split(' ')[0] ?? 'alguém') : null
   return (
     <aside className="min-w-0 border-r border-white/[0.06] bg-white/[0.015]">
       <header className="border-b border-white/[0.06] px-4 py-[17px]">
@@ -204,6 +262,16 @@ function Fila({
                   {lead.aguardando ? `Pessoa: ${lead.aguardando.motivo}` : resumoDaConversa(lead)}
                 </span>
                 {lead.aguardando && <RelogioDaJanela ultimaEntradaEm={lead.ultimaEntradaEm} />}
+                {/*
+                  Quem assumiu aparece na fila, e não só na conversa aberta: a
+                  fila é onde se decide o que pegar, e pegar o que já tem dono é
+                  o trabalho duplicado que a atribuição existe para evitar.
+                */}
+                {nomeDe(lead.atribuidoA) && (
+                  <span className="mt-0.5 block truncate text-[10px] text-dim">
+                    com {nomeDe(lead.atribuidoA)}
+                  </span>
+                )}
               </span>
             </Link>
           )
@@ -250,8 +318,19 @@ function RelogioDaJanela({ ultimaEntradaEm }: { ultimaEntradaEm: string | null }
   )
 }
 
-function CabecalhoDaConversa({ clienteId, lead }: { clienteId: string; lead: Lead }) {
+function CabecalhoDaConversa({
+  clienteId,
+  lead,
+  equipe,
+  usuarioId,
+}: {
+  clienteId: string
+  lead: Lead
+  equipe: MembroDaConta[]
+  usuarioId: string | null
+}) {
   const nome = lead.nome ?? 'sem nome'
+  const responsavel = equipe.find((membro) => membro.id === lead.atribuidoA) ?? null
   return (
     <header className="flex min-h-[69px] items-center gap-3 border-b border-white/[0.06] px-5">
       <Avatar nome={lead.nome} alerta={Boolean(lead.aguardando)} />
@@ -259,6 +338,20 @@ function CabecalhoDaConversa({ clienteId, lead }: { clienteId: string; lead: Lea
         <h2 className="truncate text-[13px] font-bold">{nome}</h2>
         <p className="mt-0.5 font-mono text-[10px] text-dim">{lead.waId}</p>
       </div>
+      {/*
+        Só aparece quando há **alguém para assumir**. Com a senha única do time
+        não existe usuário, e um botão que só sabe dizer "entre com a sua conta"
+        seria um convite a clicar em nada.
+      */}
+      {(usuarioId || responsavel) && (
+        <Assumir
+          assumir={acaoAssumirAtendimento.bind(null, clienteId, lead.contatoId)}
+          liberar={acaoLiberarAtendimento.bind(null, clienteId, lead.contatoId)}
+          responsavel={responsavel?.nome ?? null}
+          souEu={Boolean(usuarioId) && lead.atribuidoA === usuarioId}
+        />
+      )}
+
       <Link
         href={`/clientes/${clienteId}/leads/${lead.contatoId}`}
         className="rounded-[8px] border border-white/[0.09] px-2.5 py-1.5 text-[10.5px] font-semibold text-muted transition hover:border-white/[0.18] hover:text-white"

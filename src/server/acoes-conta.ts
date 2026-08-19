@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { autenticacao, bancoDoLogin } from './auth'
 import { chaveDeLimite, consumirLimite } from './limite'
 import { registrar } from './repos/auditoria'
+import { definirPresenca } from './repos/usuarios'
 import {
   acharUsuario,
   contasDoUsuario,
@@ -492,4 +493,24 @@ export async function acaoSuspenderAcesso(formData: FormData) {
   })
 
   revalidatePath('/admin/usuarios')
+}
+
+/**
+ * Disponível ou ausente — a presença de quem atende.
+ *
+ * **Não é enfeite.** É o que o Inbox usa para saber a quem oferecer uma
+ * conversa: atribuir para quem está de férias é o mesmo que não atribuir, e
+ * pior, porque agora há um nome ao lado dando a impressão de que alguém está
+ * cuidando.
+ *
+ * Cada um muda só a própria — nunca a de outro. Marcar alguém como disponível
+ * para ele receber conversa é o tipo de gentileza que acaba com lead sem
+ * resposta.
+ */
+export async function acaoDefinirPresenca(presenca: 'disponivel' | 'ausente') {
+  const sessao = await sessaoAtual()
+  if (!sessao) redirect('/entrar')
+
+  await definirPresenca(sessao.usuario.id, presenca)
+  revalidatePath('/', 'layout')
 }
