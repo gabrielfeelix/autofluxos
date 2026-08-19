@@ -7,8 +7,8 @@ produto, ou de uma conta que é de uma pessoa de verdade.
 Junte tudo e faça de uma vez ao fim das rodadas. Cada item diz o que trava
 enquanto não for feito.
 
-Atualizado em 18/ago/2026 (depois da A6 — a `0023` e a `0024` já foram
-aplicadas com autorização).
+Atualizado em 19/ago/2026, com a Etapa A e a Etapa B inteiras no ar. As
+migrations `0023` a `0029` foram aplicadas em produção com autorização.
 
 ---
 
