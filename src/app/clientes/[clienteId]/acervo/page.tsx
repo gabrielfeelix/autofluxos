@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { GerenciadorDoAcervo } from '@/components/acervo/gerenciador'
-import { acaoApagarDoAcervo, acaoSubirParaAcervo } from '@/server/acoes'
+import { acaoApagarDoAcervo } from '@/server/acoes'
 import { listarAcervo } from '@/server/repos/acervo'
 import { acharCliente } from '@/server/repos/clientes'
 
@@ -35,7 +35,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
         <GerenciadorDoAcervo
           arquivos={arquivos}
-          subir={acaoSubirParaAcervo.bind(null, cliente.id)}
+          clienteId={cliente.id}
           apagar={acaoApagarDoAcervo.bind(null, cliente.id)}
         />
       </main>

@@ -77,24 +77,9 @@ export async function listarAcervo(clienteId: string): Promise<ArquivoDoAcervo[]
     })
 }
 
-/**
- * Guarda um arquivo no acervo do cliente.
- *
- * O nome ganha um sufixo aleatório em vez de sobrescrever pelo nome original:
- * dois arquivos chamados `plano.pdf` são o caso comum, e sobrescrever trocaria
- * o PDF de um fluxo publicado sem ninguém pedir. Versão publicada é imutável
- * aqui também — o grafo aponta para uma URL, e essa URL não pode mudar de
- * conteúdo pelas costas.
- */
-export async function guardarNoAcervo(
-  clienteId: string,
-  arquivo: File,
-): Promise<ArquivoDoAcervo> {
-  const aceito = TIPOS_ACEITOS[arquivo.type]
-  if (!aceito) throw new Error('Tipo de arquivo que o WhatsApp não envia.')
-
-  const base = arquivo.name
-    .slice(0, arquivo.name.lastIndexOf('.') === -1 ? undefined : arquivo.name.lastIndexOf('.'))
+function nomeSeguro(nomeOriginal: string, extensao: string): string {
+  const base = nomeOriginal
+    .slice(0, nomeOriginal.lastIndexOf('.') === -1 ? undefined : nomeOriginal.lastIndexOf('.'))
     // Acento e espaço viram %20 na URL e o WhatsApp mostra isso no nome do
     // documento. Normalizar aqui é mais barato do que explicar depois.
     .normalize('NFD')
@@ -104,8 +89,104 @@ export async function guardarNoAcervo(
     .slice(0, 48)
     .toLowerCase()
 
+  // O sufixo aleatório em vez de sobrescrever pelo nome original: dois arquivos
+  // chamados `plano.pdf` são o caso comum, e sobrescrever trocaria o PDF de um
+  // fluxo publicado sem ninguém pedir. Versão publicada é imutável aqui também
+  // — o grafo aponta para uma URL, e essa URL não pode mudar de conteúdo pelas
+  // costas.
   const sufixo = Math.random().toString(36).slice(2, 8)
-  const nome = `${base === '' ? 'arquivo' : base}-${sufixo}.${aceito.extensao}`
+  return `${base === '' ? 'arquivo' : base}-${sufixo}.${extensao}`
+}
+
+export type EnvioAssinado = {
+  /** Para onde o navegador manda o arquivo. Vale por poucas horas. */
+  url: string
+  /** O endereço público que o fluxo vai guardar depois que o envio terminar. */
+  urlPublica: string
+  caminho: string
+  nome: string
+  midia: TipoDeMidia
+}
+
+/**
+ * Pede ao Storage uma URL de envio assinada, para **o navegador mandar o
+ * arquivo direto**.
+ *
+ * **Por que o arquivo não passa mais pelo nosso servidor.** Ele passava, como
+ * corpo de uma Server Action — e Server Action tem teto de **1 MB** no Next
+ * (`serverActions.bodySizeLimit`, padrão). Acima disso o framework devolve 413
+ * antes de a nossa função rodar: a tela mostrava "até 16 MB", a pessoa soltava
+ * um PDF de 3 MB, e o que aparecia era a página de erro genérica. Nada nosso
+ * chegava a executar, então nem o motivo dava para dizer.
+ *
+ * Subir o teto não resolveria: a plataforma corta o corpo de uma função em
+ * ~4,5 MB, e vídeo de WhatsApp passa disso com folga. Com URL assinada o
+ * arquivo vai do navegador para o Storage e o teto volta a ser o do bucket —
+ * 16 MB, que é o da própria Cloud API (0017).
+ *
+ * **O caminho é decidido aqui, depois de conferir o dono**, e a assinatura vale
+ * só para ele: o navegador não escolhe onde escrever. Tipo e tamanho continuam
+ * sendo impostos pelo bucket (`allowed_mime_types` e `file_size_limit`), que é
+ * a única checagem que ninguém contorna.
+ */
+export async function pedirEnvioAssinado(
+  clienteId: string,
+  arquivo: { nome: string; tipo: string; bytes: number },
+): Promise<{ ok: true; envio: EnvioAssinado } | { ok: false; motivo: string }> {
+  const aceito = TIPOS_ACEITOS[arquivo.tipo]
+  if (!aceito) {
+    return { ok: false, motivo: 'O WhatsApp não envia este tipo. Use imagem, MP4, MP3, OGG ou PDF.' }
+  }
+  if (arquivo.bytes <= 0) return { ok: false, motivo: 'Escolha um arquivo.' }
+  if (arquivo.bytes > LIMITE_DO_ARQUIVO) {
+    return {
+      ok: false,
+      motivo: `O arquivo tem ${Math.round(arquivo.bytes / 1024 / 1024)} MB. O WhatsApp aceita até 16 MB.`,
+    }
+  }
+
+  const nome = nomeSeguro(arquivo.nome, aceito.extensao)
+  const caminho = `${clienteId}/${nome}`
+
+  const { data, error } = await db()
+    .storage.from(BUCKET_DO_ACERVO)
+    .createSignedUploadUrl(caminho)
+
+  if (error || !data) {
+    return { ok: false, motivo: error?.message ?? 'não deu para preparar o envio' }
+  }
+
+  const { data: publico } = db().storage.from(BUCKET_DO_ACERVO).getPublicUrl(caminho)
+
+  return {
+    ok: true,
+    envio: {
+      url: data.signedUrl,
+      urlPublica: publico.publicUrl,
+      caminho,
+      nome,
+      midia: aceito.midia,
+    },
+  }
+}
+
+/**
+ * Guarda um arquivo no acervo passando pelo servidor.
+ *
+ * **Só serve para arquivo pequeno**, e hoje ninguém da interface a chama: o
+ * caminho das telas é `pedirEnvioAssinado`, justamente porque um `File` que
+ * atravessa uma Server Action bate no teto de 1 MB do Next. Fica porque os
+ * testes a usam para montar acervo sem falar com o Storage por HTTP, e porque
+ * é a forma honesta de subir arquivo de dentro do servidor.
+ */
+export async function guardarNoAcervo(
+  clienteId: string,
+  arquivo: File,
+): Promise<ArquivoDoAcervo> {
+  const aceito = TIPOS_ACEITOS[arquivo.type]
+  if (!aceito) throw new Error('Tipo de arquivo que o WhatsApp não envia.')
+
+  const nome = nomeSeguro(arquivo.name, aceito.extensao)
   const caminho = `${clienteId}/${nome}`
 
   const { error } = await db()

@@ -17,7 +17,7 @@ conta. Está em produção em `autofluxos.4yu.com.br` (Vercel), com Supabase
 recorte explícito em B5 — ver §8.1. O que sobra esbarra em coisas que só o dono
 resolve: [PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md).
 
-`npm test` → **583 passando, 8 pulados** (os 8 dependem de `IA_TESTE_REAL` e
+`npm test` → **588 passando, 8 pulados** (os 8 dependem de `IA_TESTE_REAL` e
 `API_TESTE_REAL`, por desenho). `typecheck`, `lint` e `build` limpos.
 **Migrations aplicadas: `0001` a `0029`, todas. A próxima a escrever é a `0030`.**
 
@@ -373,10 +373,12 @@ no corpo ou no cabeçalho — chave escrita ali viraria segredo dentro de
   "Documento" e subir um PNG é um erro que só aparecia quando a Meta recusava a
   entrega. Colar endereço continua existindo como caminho secundário — é quem
   hospeda fora, e o único jeito de usar `{{variavel}}` na URL.
+- **E o arquivo deixou de passar pelo nosso servidor** — ver §6.8. Ele passava,
+  e batia no teto de 1 MB da Server Action.
 
 ---
 
-## 6. As sete regras que não se negociam
+## 6. As oito regras que não se negociam
 
 ### 6.1 O banco é compartilhado com outro produto
 
@@ -464,6 +466,31 @@ Server Action autentica e não deixa sessão no navegador.
 
 `service_role` tem só `insert` e `select` em `af_auditoria`. Não escreva função
 de apagar; não existe permissão.
+
+### 6.8 Arquivo não trafega dentro de Server Action
+
+**Server Action tem teto de corpo, e ele falha antes do seu código.** O padrão
+do Next é **1 MB**: acima disso o framework devolve 413 sem a função rodar, e o
+que a pessoa vê é a página de erro genérica — sem motivo, porque não houve
+código nosso para produzir um. Foi assim que o bloco de arquivo, anunciando
+"até 16 MB", derrubava a tela inteira com um PDF de 3 MB.
+
+Subir o teto resolve pouco: a plataforma corta o corpo de uma função em ~4,5 MB.
+Hoje o `next.config.ts` pede **4 MB**, e isso existe para a **importação de
+planilha**, que precisa mesmo passar pelo servidor para ser lida.
+
+**Mídia vai direto do navegador para o Storage**, por URL assinada
+(`pedirEnvioAssinado` em `repos/acervo.ts`): o servidor confere o dono e assina
+um caminho, o navegador manda os bytes. O teto volta a ser o do bucket — 16 MB,
+o da própria Cloud API — e `allowed_mime_types` mais `file_size_limit` (0017)
+passam a ser a checagem que ninguém contorna.
+
+Regra prática, então: **arquivo de gente nunca entra numa Server Action.** A
+logo é a exceção que confirma — ela cabe porque o limite dela é 512 KB.
+
+E o corolário no cliente: **toda chamada de ação dentro de `useTransition`
+precisa de `try/catch`.** Promessa rejeitada ali sobe para a fronteira de erro
+do React e derruba a tela; falha de upload tem que ser um recado numa linha.
 
 ---
 
@@ -563,7 +590,7 @@ travam:
 ### 9.1 O ciclo
 
 ```bash
-npm test          # 583 passando, 8 pulados
+npm test          # 588 passando, 8 pulados
 npm run typecheck
 npm run lint
 npm run build     # roda também sem DATABASE_URL, e tem que continuar rodando
@@ -648,6 +675,11 @@ curl -s -H "Authorization: Bearer $AUTOFLUXOS_CRON_SECRET" \
 - **`ON CONFLICT` contra índice único parcial.** O PostgREST não expressa o
   predicado, e o `upsert` falha com "no unique or exclusion constraint
   matching". Foi o que fez `agendar()` virar cancelar-e-inserir.
+- **Arquivo dentro de Server Action.** Teto de 1 MB, 413 antes do seu código,
+  página de erro sem motivo. Ver §6.8.
+- **Erro minificado do React (#441, #418…) não é o defeito.** O 441 é o React
+  dizendo "o servidor estourou e não conto o quê" (`resolveErrorProd`). Quem
+  responde é o **500 do servidor**, não o número do cliente.
 - **Saída sem nome que pega a aresta errada.** Depois que a pergunta ganhou a
   saída `timeout`, `proximo()` sem handle passou a precisar excluí-la — senão
   quem **respondeu** vai pelo caminho de quem **não respondeu**, e o desenho na

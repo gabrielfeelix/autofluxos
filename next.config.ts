@@ -33,6 +33,29 @@ const config: NextConfig = {
   async headers() {
     return [{ source: '/:path*', headers: cabecalhos }]
   },
+
+  /**
+   * O teto do corpo de uma Server Action.
+   *
+   * **O padrão do Next é 1 MB, e ele não avisa: devolve 413 antes de qualquer
+   * código nosso rodar.** O que a pessoa vê é a página de erro genérica, sem
+   * motivo nenhum — foi assim que a importação de planilha e o envio de arquivo
+   * falhavam calados em tudo acima de um mega.
+   *
+   * 4 MB porque é o que a plataforma permite: a Vercel corta o corpo de uma
+   * função em ~4,5 MB, e pedir mais aqui só trocaria o erro do framework pelo
+   * erro dela. Uma planilha de 4 MB é da ordem de dezenas de milhares de
+   * contatos — cobre a importação real com folga.
+   *
+   * **Arquivo de mídia não depende disto e não deve voltar a depender.** Ele
+   * sobe direto do navegador para o Storage por URL assinada
+   * (`repos/acervo.ts`), onde o teto é o do bucket: 16 MB, o da própria Cloud
+   * API. A logo continua passando por aqui porque o limite dela é 512 KB, bem
+   * abaixo de qualquer um destes números.
+   */
+  experimental: {
+    serverActions: { bodySizeLimit: '4mb' },
+  },
 }
 
 export default config

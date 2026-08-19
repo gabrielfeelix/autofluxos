@@ -2,7 +2,12 @@
 
 import { useEffect, useRef, useState, useTransition } from 'react'
 import type { TipoDeMidia } from '@/core/flow/schema'
-import { acaoEnviarArquivo, acaoListarAcervo, type ArquivoEnviado } from '@/server/acoes'
+import {
+  acaoConfirmarEnvio,
+  acaoListarAcervo,
+  acaoPrepararEnvioDeArquivo,
+  type ArquivoDoEditor,
+} from '@/server/acoes'
 
 /**
  * Como um arquivo entra num bloco de Mídia.
@@ -60,7 +65,7 @@ export function SeletorDeArquivo({
   const [erro, setErro] = useState<string | null>(null)
   const [enviando, comecar] = useTransition()
 
-  const [acervo, setAcervo] = useState<ArquivoEnviado[] | null>(null)
+  const [acervo, setAcervo] = useState<ArquivoDoEditor[] | null>(null)
   const [mostrandoAcervo, setMostrandoAcervo] = useState(false)
   const [colando, setColando] = useState(false)
 
@@ -69,42 +74,101 @@ export function SeletorDeArquivo({
   useEffect(() => {
     if (!mostrandoAcervo || acervo !== null) return
     let vivo = true
-    void acaoListarAcervo(clienteId).then((r) => {
-      if (vivo) setAcervo(r.arquivos)
-    })
+    // `.catch` obrigatório: promessa rejeitada dentro de um efeito derruba a
+    // árvore. Lista vazia é degradação; página de erro não é.
+    void acaoListarAcervo(clienteId)
+      .then((r) => {
+        if (vivo) setAcervo(r.arquivos)
+      })
+      .catch(() => {
+        if (vivo) setAcervo([])
+      })
     return () => {
       vivo = false
     }
   }, [mostrandoAcervo, acervo, clienteId])
 
+  /**
+   * Enviar é em dois tempos, e o arquivo **não passa pelo nosso servidor**.
+   *
+   * 1. o servidor confere quem é você e devolve uma URL assinada, válida para
+   *    um caminho só dentro da pasta deste cliente;
+   * 2. o navegador manda os bytes direto para o Storage.
+   *
+   * Fazia em um tempo só, com o arquivo dentro de uma Server Action — e Server
+   * Action tem teto de 1 MB no Next. Um PDF de 3 MB virava 413 antes de
+   * qualquer código nosso rodar, e a tela mostrava a página de erro genérica em
+   * vez de dizer o que houve.
+   */
   function enviar(arquivo: File | undefined) {
     if (!arquivo) return
     setErro(null)
 
-    // A conferência que vale é a do servidor; esta existe para o erro aparecer
+    // A conferência que vale é a do bucket; esta existe para o erro aparecer
     // **antes** de dezesseis megabytes subirem por uma conexão de celular.
     if (arquivo.size > LIMITE_MB * 1024 * 1024) {
       setErro(`Este arquivo tem ${Math.round(arquivo.size / 1024 / 1024)} MB. O teto é ${LIMITE_MB} MB.`)
       return
     }
 
-    const dados = new FormData()
-    dados.set('arquivo', arquivo)
-
     comecar(async () => {
-      const r = await acaoEnviarArquivo(clienteId, dados)
-      if (!r.ok || !r.arquivo) {
-        setErro(r.erro ?? 'não deu para enviar')
-        return
+      /**
+       * **Tudo dentro de um `try`.** Uma promessa rejeitada aqui dentro sobe
+       * para a fronteira de erro do React e derruba a tela inteira — que foi
+       * exatamente o que aconteceu com o 413. Falha de upload é um recado numa
+       * linha, nunca uma página em branco.
+       */
+      try {
+        const preparo = await acaoPrepararEnvioDeArquivo(clienteId, {
+          nome: arquivo.name,
+          // Navegador que não reconhece a extensão manda tipo vazio; o servidor
+          // recusa com a lista do que o WhatsApp aceita, que é a resposta útil.
+          tipo: arquivo.type,
+          bytes: arquivo.size,
+        })
+
+        if (!preparo.ok || !preparo.envio) {
+          setErro(preparo.erro ?? 'não deu para preparar o envio')
+          return
+        }
+
+        const resposta = await fetch(preparo.envio.url, {
+          method: 'PUT',
+          headers: { 'content-type': arquivo.type },
+          body: arquivo,
+        })
+
+        if (!resposta.ok) {
+          // O bucket recusa por tipo e por tamanho (0017). É a única checagem
+          // que ninguém contorna, e a mensagem dela é a que vale.
+          setErro(
+            resposta.status === 413
+              ? `O arquivo passa do teto de ${LIMITE_MB} MB.`
+              : `O envio falhou (${resposta.status}). Tente de novo.`,
+          )
+          return
+        }
+
+        // O upload aconteceu fora do servidor, então nada foi revalidado: sem
+        // isto, a tela de Configurações mostraria a lista de antes.
+        await acaoConfirmarEnvio(clienteId)
+
+        // A lista em memória fica velha depois de um upload. Zerar faz a
+        // próxima abertura reler, em vez de esconder o que acabou de subir.
+        setAcervo(null)
+        aplicar({
+          url: preparo.envio.urlPublica,
+          nome: preparo.envio.nome,
+          midia: preparo.envio.midia,
+          bytes: arquivo.size,
+        })
+      } catch (erro) {
+        setErro(erro instanceof Error ? erro.message : 'não deu para enviar')
       }
-      // A lista em memória fica velha depois de um upload. Zerar faz a próxima
-      // abertura reler, em vez de esconder o arquivo que acabou de subir.
-      setAcervo(null)
-      aplicar(r.arquivo)
     })
   }
 
-  function aplicar(arquivo: ArquivoEnviado) {
+  function aplicar(arquivo: ArquivoDoEditor) {
     setMostrandoAcervo(false)
     setColando(false)
     aoEscolher({

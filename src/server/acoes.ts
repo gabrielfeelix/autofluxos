@@ -20,10 +20,9 @@ import {
 } from './repos/clientes'
 import {
   apagarDoAcervo,
-  guardarNoAcervo,
   listarAcervo,
-  LIMITE_DO_ARQUIVO,
-  TIPOS_ACEITOS,
+  pedirEnvioAssinado,
+  type EnvioAssinado,
 } from './repos/acervo'
 import { acharColunas, conciliar, lerCsv } from '@/core/contatos/planilha'
 import {
@@ -1214,59 +1213,54 @@ export async function acaoRemoverLogo(clienteId: string) {
 }
 
 /**
- * Sobe um arquivo para o acervo do cliente.
+ * Prepara o envio de um arquivo: confere quem é, e devolve para onde mandar.
  *
- * O acervo existe porque o bloco de mídia sozinho era metade de uma
- * funcionalidade: ele pede uma URL `https://`, e quem desenha o fluxo do
- * estúdio não tem onde hospedar a foto da sala.
+ * **O arquivo não passa por aqui, e é esse o ponto.** Um `File` dentro de uma
+ * Server Action bate no teto de 1 MB do Next (`serverActions.bodySizeLimit`) e
+ * o framework devolve 413 **antes** de esta função rodar — foi assim que soltar
+ * um PDF de 3 MB no bloco de arquivo derrubava a página inteira: nada nosso
+ * chegava a executar, então nem o motivo dava para dizer.
+ *
+ * O que trafega aqui é só nome, tipo e tamanho: alguns bytes. Quem sobe o
+ * arquivo é o navegador, direto para o Storage, na URL assinada que isto
+ * devolve — e ela vale para **um caminho só**, escolhido no servidor depois de
+ * conferir o dono da conta.
  */
-export async function acaoSubirParaAcervo(
+export async function acaoPrepararEnvioDeArquivo(
   clienteId: string,
-  _estado: EstadoSalvar,
-  formData: FormData,
-): Promise<EstadoSalvar> {
+  arquivo: { nome: string; tipo: string; bytes: number },
+): Promise<{ ok: boolean; erro?: string; envio?: EnvioAssinado }> {
   await exigirAcessoAoCliente(clienteId)
 
-  const conferido = conferirArquivo(formData.get('arquivo'))
-  if (!conferido.ok) return { erro: conferido.erro }
-
-  try {
-    await guardarNoAcervo(clienteId, conferido.arquivo)
-  } catch (erro) {
-    return { erro: erro instanceof Error ? erro.message : 'não deu para guardar o arquivo' }
+  if (
+    typeof arquivo?.nome !== 'string' ||
+    typeof arquivo?.tipo !== 'string' ||
+    typeof arquivo?.bytes !== 'number'
+  ) {
+    return { ok: false, erro: 'arquivo inválido' }
   }
+
+  const r = await pedirEnvioAssinado(clienteId, arquivo)
+  if (!r.ok) return { ok: false, erro: r.motivo }
+
+  return { ok: true, envio: r.envio }
+}
+
+/**
+ * O envio terminou — atualize as telas que listam o acervo.
+ *
+ * Existe porque o upload agora acontece **fora** do servidor: sem esta chamada,
+ * a tela de Configurações continuaria mostrando a lista de antes até alguém
+ * recarregar, e o arquivo pareceria não ter subido.
+ */
+export async function acaoConfirmarEnvio(clienteId: string): Promise<{ ok: boolean }> {
+  await exigirAcessoAoCliente(clienteId)
 
   revalidatePath(`/clientes/${clienteId}/acervo`)
   return { ok: true }
 }
 
-/**
- * O que o WhatsApp aceita, dito uma vez.
- *
- * As duas portas de upload — a tela do Acervo e o bloco de Mídia no editor —
- * conferem exatamente as mesmas coisas. Duas cópias divergem no dia em que a
- * Meta mudar o teto, e a que ficar para trás aceita o arquivo que a outra
- * recusa; o erro aparece na conversa de um cliente, não aqui.
- */
-function conferirArquivo(arquivo: unknown): { ok: true; arquivo: File } | { ok: false; erro: string } {
-  if (!(arquivo instanceof File) || arquivo.size === 0) {
-    return { ok: false, erro: 'Escolha um arquivo.' }
-  }
-  if (!TIPOS_ACEITOS[arquivo.type]) {
-    return { ok: false, erro: 'O WhatsApp não envia este tipo. Use imagem, MP4, MP3, OGG ou PDF.' }
-  }
-  if (arquivo.size > LIMITE_DO_ARQUIVO) {
-    // O teto é da Cloud API, não nosso: aceitar mais seria guardar arquivo que
-    // a Meta recusaria na hora de entregar.
-    return {
-      ok: false,
-      erro: `O arquivo tem ${Math.round(arquivo.size / 1024 / 1024)} MB. O WhatsApp aceita até 16 MB.`,
-    }
-  }
-  return { ok: true, arquivo }
-}
-
-export type ArquivoEnviado = {
+export type ArquivoDoEditor = {
   url: string
   nome: string
   midia: TipoDeMidia
@@ -1274,54 +1268,15 @@ export type ArquivoEnviado = {
 }
 
 /**
- * Sobe um arquivo **de dentro do bloco de Mídia** e devolve o endereço dele.
- *
- * O bloco pedia uma URL `https://`. Isso é o nosso problema empurrado para o
- * cliente: quem desenha o fluxo do estúdio tem a foto da sala no computador, e
- * não um servidor onde hospedá-la. O Acervo existe desde a 0017, mas obrigava a
- * sair do editor, subir, copiar o endereço e voltar — quatro passos para
- * "manda essa foto".
- *
- * O arquivo vai para o mesmo Acervo, de propósito: ele fica reutilizável nos
- * outros fluxos e continua aparecendo na tela de Configurações para ser apagado.
- * Nada de um depósito paralelo que só o editor conhece.
- */
-export async function acaoEnviarArquivo(
-  clienteId: string,
-  formData: FormData,
-): Promise<{ ok: boolean; erro?: string; arquivo?: ArquivoEnviado }> {
-  await exigirAcessoAoCliente(clienteId)
-
-  const conferido = conferirArquivo(formData.get('arquivo'))
-  if (!conferido.ok) return { ok: false, erro: conferido.erro }
-
-  try {
-    const guardado = await guardarNoAcervo(clienteId, conferido.arquivo)
-    revalidatePath(`/clientes/${clienteId}/acervo`)
-    return {
-      ok: true,
-      arquivo: {
-        url: guardado.url,
-        nome: guardado.nome,
-        midia: guardado.midia,
-        bytes: guardado.bytes,
-      },
-    }
-  } catch (erro) {
-    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para guardar' }
-  }
-}
-
-/**
  * O acervo do cliente, para o editor oferecer o que já foi enviado.
  *
  * Existe como ação e não como propriedade da página porque o editor é uma tela
- * de cliente que fica aberta por horas: a lista precisa ser relida depois de
- * cada upload, e recarregar a rota inteira levaria junto o desenho não salvo.
+ * que fica aberta por horas: a lista precisa ser relida depois de cada upload, e
+ * recarregar a rota inteira levaria junto o desenho não salvo.
  */
 export async function acaoListarAcervo(
   clienteId: string,
-): Promise<{ ok: boolean; arquivos: ArquivoEnviado[] }> {
+): Promise<{ ok: boolean; arquivos: ArquivoDoEditor[] }> {
   await exigirAcessoAoCliente(clienteId)
 
   const arquivos = await listarAcervo(clienteId)

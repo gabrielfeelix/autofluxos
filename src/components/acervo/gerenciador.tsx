@@ -1,9 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState, useTransition } from 'react'
 import { BotaoPerigo } from '@/components/design/botao-perigo'
-import { FormularioSalvar, type EstadoSalvar } from '@/components/design/formulario-salvar'
+import { acaoConfirmarEnvio, acaoPrepararEnvioDeArquivo } from '@/server/acoes'
 import type { ArquivoDoAcervo } from '@/server/repos/acervo'
+
+/** O mesmo teto do bucket e da Cloud API (0017). */
+const LIMITE_MB = 16
+const ACEITOS = 'image/png,image/jpeg,image/webp,video/mp4,audio/mpeg,audio/ogg,application/pdf'
 
 /**
  * O acervo de arquivos do cliente.
@@ -14,35 +18,129 @@ import type { ArquivoDoAcervo } from '@/server/repos/acervo'
  */
 export function GerenciadorDoAcervo({
   arquivos,
-  subir,
+  clienteId,
   apagar,
 }: {
   arquivos: ArquivoDoAcervo[]
-  subir: (estado: EstadoSalvar, formData: FormData) => Promise<EstadoSalvar>
+  clienteId: string
   apagar: (caminho: string) => Promise<{ ok: boolean; erro?: string }>
 }) {
+  const entrada = useRef<HTMLInputElement>(null)
+  const [erro, setErro] = useState<string | null>(null)
+  const [enviado, setEnviado] = useState<string | null>(null)
+  const [enviando, comecar] = useTransition()
+
+  /**
+   * Enviar é em dois tempos, e o arquivo **não passa pelo nosso servidor**.
+   *
+   * Passava, como corpo de uma Server Action — e Server Action tem teto de 1 MB
+   * no Next. Esta tela anunciava 16 MB desde a 0017 e falhava calada em
+   * qualquer coisa acima de um mega: o formulário devolvia a página de erro do
+   * framework, não um recado. Agora o servidor só assina o caminho e o
+   * navegador manda os bytes direto para o Storage, onde o teto real é o do
+   * bucket.
+   */
+  function enviar(arquivo: File | undefined) {
+    if (!arquivo) return
+    setErro(null)
+    setEnviado(null)
+
+    if (arquivo.size > LIMITE_MB * 1024 * 1024) {
+      setErro(`Este arquivo tem ${Math.round(arquivo.size / 1024 / 1024)} MB. O teto é ${LIMITE_MB} MB.`)
+      return
+    }
+
+    comecar(async () => {
+      // Tudo dentro de um `try`: promessa rejeitada aqui sobe para a fronteira
+      // de erro do React e derruba a tela inteira.
+      try {
+        const preparo = await acaoPrepararEnvioDeArquivo(clienteId, {
+          nome: arquivo.name,
+          tipo: arquivo.type,
+          bytes: arquivo.size,
+        })
+        if (!preparo.ok || !preparo.envio) {
+          setErro(preparo.erro ?? 'não deu para preparar o envio')
+          return
+        }
+
+        const resposta = await fetch(preparo.envio.url, {
+          method: 'PUT',
+          headers: { 'content-type': arquivo.type },
+          body: arquivo,
+        })
+        if (!resposta.ok) {
+          setErro(
+            resposta.status === 413
+              ? `O arquivo passa do teto de ${LIMITE_MB} MB.`
+              : `O envio falhou (${resposta.status}). Tente de novo.`,
+          )
+          return
+        }
+
+        await acaoConfirmarEnvio(clienteId)
+        setEnviado(preparo.envio.nome)
+      } catch (erro) {
+        setErro(erro instanceof Error ? erro.message : 'não deu para enviar')
+      }
+    })
+  }
+
   return (
     <div className="space-y-6">
       <section className="app-card p-6">
         <h2 className="text-[14.5px] font-bold">Enviar arquivo</h2>
         <p className="mt-1 text-[12px] leading-5 text-dim">
-          Imagem (PNG, JPG, WebP), vídeo MP4, áudio MP3 ou OGG, e PDF. Até 16 MB — é o teto do
-          próprio WhatsApp, não nosso.
+          Imagem (PNG, JPG, WebP), vídeo MP4, áudio MP3 ou OGG, e PDF. Até {LIMITE_MB} MB — é o
+          teto do próprio WhatsApp, não nosso.
         </p>
 
-        <FormularioSalvar
-          action={subir}
-          rotulo="Enviar"
-          dica="O arquivo fica disponível para todos os fluxos deste cliente."
+        <div
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault()
+            enviar(e.dataTransfer.files[0])
+          }}
+          className="mt-5 rounded-[11px] border border-dashed border-white/[0.14] bg-white/[0.02] px-4 py-6 text-center"
         >
-          <input
-            type="file"
-            name="arquivo"
-            required
-            accept="image/png,image/jpeg,image/webp,video/mp4,audio/mpeg,audio/ogg,application/pdf"
-            className="app-field mt-5 px-3 py-2.5 text-[13px] file:mr-3 file:rounded-lg file:border-0 file:bg-white/[0.08] file:px-3 file:py-1.5 file:text-[12px] file:font-semibold file:text-soft"
-          />
-        </FormularioSalvar>
+          <p className="text-[12.5px] font-semibold text-soft">
+            {enviando ? 'Enviando…' : 'Arraste o arquivo aqui'}
+          </p>
+          <button
+            type="button"
+            disabled={enviando}
+            onClick={() => entrada.current?.click()}
+            className="app-secondary-button mt-2.5 px-3.5 py-1.5 text-[12px] disabled:opacity-50"
+          >
+            escolher do computador
+          </button>
+          <p className="mt-2 text-[11px] text-dim">
+            O arquivo fica disponível para todos os fluxos deste cliente.
+          </p>
+        </div>
+
+        <input
+          ref={entrada}
+          type="file"
+          accept={ACEITOS}
+          className="hidden"
+          onChange={(e) => {
+            enviar(e.target.files?.[0])
+            // Zerar deixa escolher o mesmo arquivo de novo depois de um erro.
+            e.target.value = ''
+          }}
+        />
+
+        {enviado && (
+          <p role="status" className="mt-2.5 text-[12px] font-semibold text-emerald-300">
+            {enviado} entrou no acervo.
+          </p>
+        )}
+        {erro && (
+          <p role="alert" className="mt-2.5 text-[12px] font-semibold text-rose-300">
+            {erro}
+          </p>
+        )}
       </section>
 
       <section className="app-card overflow-hidden">
