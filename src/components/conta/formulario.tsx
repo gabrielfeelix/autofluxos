@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
+import { CampoDeSenha } from '@/components/design/campo-de-senha'
 import type { EstadoDeConta } from '@/server/acoes-conta'
 
 const INICIAL: EstadoDeConta = {}
@@ -63,23 +64,17 @@ export function FormularioDeConta({
         />
       </label>
 
-      <label>
-        <Rotulo>Senha</Rotulo>
-        <input
-          type="password"
-          name="senha"
-          required
-          minLength={10}
-          autoComplete={pedirNome ? 'new-password' : 'current-password'}
-          placeholder="••••••••••"
-          className="app-field px-[13px] py-[11px] text-[13.5px]"
-        />
-        {pedirNome && (
-          // O mínimo é 10 (`auth.ts`). Dizer isso antes vale mais que recusar
-          // depois: o servidor devolve a mensagem da biblioteca, em inglês.
-          <span className="mt-1.5 block text-[11px] text-dim">Pelo menos 10 caracteres.</span>
-        )}
-      </label>
+      <CampoDeSenha
+        minimo={10}
+        autoComplete={pedirNome ? 'new-password' : 'current-password'}
+        ajuda={
+          pedirNome ? (
+            // O mínimo é 10 (`auth.ts`). Dizer isso antes vale mais que recusar
+            // depois: o servidor devolve a mensagem da biblioteca, em inglês.
+            <span className="mt-1.5 block text-[11px] text-dim">Pelo menos 10 caracteres.</span>
+          ) : undefined
+        }
+      />
 
       {estado.erro && (
         <p
