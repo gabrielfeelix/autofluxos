@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState, useTransition } from 'react'
+import { Dropdown } from '@/components/design/dropdown'
 import {
   PRAZOS_DO_LINK,
   PRAZO_PADRAO,
@@ -160,24 +161,35 @@ export function Compartilhar({
             </ul>
           )}
 
-          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-            <select
-              value={prazo}
-              aria-label="Prazo do link"
-              onChange={(e) => setPrazo(e.target.value)}
-              className="app-field px-3 py-2.5 text-[12.5px] sm:w-[150px]"
-            >
-              {PRAZOS_DO_LINK.map((opcao) => (
-                <option key={opcao.valor} value={opcao.valor}>
-                  {opcao.rotulo}
-                </option>
-              ))}
-            </select>
+          {/*
+            O prazo ocupava a linha quase inteira e espremia o botão até ele
+            quebrar em três linhas ("Gerar / link e / copiar"). A causa é a
+            largura: `.app-field` fixa `width: 100%`, então a classe utilitária
+            de 150px não valia e o `<select>` continuava pedindo a linha toda —
+            sobrando ao botão a largura de uma palavra.
+
+            Agora o prazo é o `Dropdown` do próprio sistema (o mesmo do resto do
+            painel, em vez de um `<select>` nativo com a seta do sistema
+            operacional no meio da tela escura), com largura própria, e o botão
+            é `shrink-0` com o texto proibido de quebrar: quem manda na linha é
+            a ação, e o que cede é o campo.
+          */}
+          <div className="mt-4 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+            <Dropdown
+              valor={prazo}
+              aoMudar={setPrazo}
+              rotuloAcessivel="Prazo do link"
+              opcoes={PRAZOS_DO_LINK.map((opcao) => ({
+                valor: opcao.valor,
+                rotulo: opcao.rotulo,
+              }))}
+              className="sm:w-[168px]"
+            />
             <button
               type="button"
               onClick={criar}
               disabled={rodando}
-              className="app-primary-button flex-1 px-4 py-2.5 text-[12.5px]"
+              className="app-primary-button shrink-0 px-4 py-2.5 text-[12.5px] whitespace-nowrap"
             >
               {rodando ? 'gerando…' : 'Gerar link e copiar'}
             </button>

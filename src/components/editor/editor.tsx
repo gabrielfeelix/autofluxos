@@ -645,11 +645,23 @@ export function Editor({
         alvo instanceof HTMLSelectElement ||
         alvo?.isContentEditable === true
 
-      // Dentro de um campo, `Ctrl+Z` é do navegador: ele desfaz o que a pessoa
-      // digitou. Roubar a tecla ali faria o desenho voltar um passo enquanto
-      // alguém só queria apagar a última palavra.
+      /**
+       * `Ctrl+Z` vale **também dentro dos campos**, e é o oposto do que parece.
+       *
+       * A primeira versão deixava a tecla passar para o navegador quando o foco
+       * estava num campo, supondo que ele desfaria a digitação. Ele não desfaz:
+       * todo campo aqui é controlado pelo React, e a pilha nativa de desfazer
+       * não sobrevive ao valor ser reescrito a cada tecla. O efeito real era
+       * `Ctrl+Z` não fazer **nada** enquanto se escreve — que foi exatamente a
+       * reclamação.
+       *
+       * O histórico daqui cobre o caso: ele guarda o desenho inteiro, e o texto
+       * dos blocos está dentro dele. A janela de coalescência faz um passo por
+       * rajada de digitação, então voltar apaga a última frase escrita, e não a
+       * última letra.
+       */
       const atalho = evento.ctrlKey || evento.metaKey
-      if (atalho && !digitando) {
+      if (atalho) {
         const tecla = evento.key.toLowerCase()
         if (tecla === 'z') {
           evento.preventDefault()
