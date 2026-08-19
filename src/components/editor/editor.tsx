@@ -1133,7 +1133,20 @@ export function Editor({
                 aoApagar={() => selecionado && pedirParaApagar(selecionado)}
               />
 
-              {!validacao.ok && (
+              {/*
+                As duas listas são do **fluxo inteiro**, e por isso só aparecem
+                quando não há bloco escolhido.
+
+                Antes elas vinham embaixo do formulário de todo bloco clicado, e
+                o efeito era o contrário do pretendido: quem está editando uma
+                mensagem lê seis problemas de outros seis blocos, rola para
+                achar o campo, e passa a ignorar a lista — aviso que aparece
+                sempre para de ser lido. Sem bloco escolhido, o painel não tem
+                mais nada a dizer, e aí a lista é exatamente o que se quer ver.
+                Durante a edição, quem chama por elas é o selo de impedimentos
+                no cabeçalho, que leva direto ao bloco culpado.
+              */}
+              {!selecionado && !validacao.ok && (
                 <div className="border-t border-white/[0.06] p-4">
                   <p className="mb-2 text-[11px] font-bold tracking-[0.04em] text-soft uppercase">
                     Impede de publicar
@@ -1154,7 +1167,7 @@ export function Editor({
                 </div>
               )}
 
-              {validacao.avisos.length > 0 && (
+              {!selecionado && validacao.avisos.length > 0 && (
                 <div className="border-t border-white/[0.06] p-4">
                   <p className="mb-2 text-[11px] font-bold tracking-[0.04em] text-soft uppercase">
                     Vale olhar
