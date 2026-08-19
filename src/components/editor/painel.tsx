@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import {
   LIMITE_BOTOES,
   LIMITE_LEGENDA,
@@ -18,6 +18,7 @@ import {
   type TipoDeMidia,
 } from '@/core/flow/schema'
 import { Dropdown } from '@/components/design/dropdown'
+import { BarraDeFormato } from './barra-de-formato'
 import { inserirNoCursor } from './inserir-variavel'
 import { PilhaDeMensagem } from './pilha'
 import { NOMES } from './nos'
@@ -210,6 +211,7 @@ export function Painel({
               limite={LIMITE_LEGENDA}
               aoMudar={(legenda) => aoMudarDados({ legenda })}
               aoFocar={registrarCampo}
+              formatavel
             />
           )}
         </>
@@ -228,6 +230,7 @@ export function Painel({
             }
             aoMudar={(texto) => aoMudarDados({ texto })}
             aoFocar={registrarCampo}
+            formatavel
           />
           <Linha
             rotulo="Guardar resposta em"
@@ -352,6 +355,7 @@ export function Painel({
             limite={LIMITE_TEXTO}
             aoMudar={(mensagem) => aoMudarDados({ mensagem })}
             aoFocar={registrarCampo}
+            formatavel
           />
           <Linha
             rotulo="Motivo (interno)"
@@ -506,26 +510,57 @@ function Area({
   limite,
   aoMudar,
   aoFocar,
+  formatavel = false,
 }: {
   rotulo: string
   valor: string
   limite?: number
   aoMudar: (valor: string) => void
   aoFocar?: (elemento: HTMLTextAreaElement, aoMudar: (valor: string) => void) => void
+  /**
+   * Este texto vira mensagem no WhatsApp?
+   *
+   * Só quem responde sim ganha a barra de formatação. `*negrito*` num campo que
+   * a Meta não renderiza — a instrução da IA, o motivo interno do handoff — não
+   * fica em negrito: fica com asterisco, literal, na frente de quem lê. Oferecer
+   * o botão ali seria ensinar a estragar o dado.
+   */
+  formatavel?: boolean
 }) {
+  const area = useRef<HTMLTextAreaElement>(null)
+  // `useId` e não o rótulo: "Mensagem antes de passar" tem espaço, e espaço em
+  // `id` é HTML inválido — o `htmlFor` simplesmente não acha o campo.
+  const id = useId()
   const estourou = limite !== undefined && valor.length > limite
 
-  return (
-    <label className="block">
-      <span className="mb-1.5 flex items-baseline text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
-        {rotulo}
-        {limite !== undefined && (
-          <span className={`ml-auto font-mono text-[10px] normal-case ${estourou ? 'font-bold text-rose-300' : 'text-dim'}`}>
-            {valor.length}/{limite}
-          </span>
-        )}
+  const contador =
+    limite !== undefined ? (
+      <span
+        className={`font-mono text-[10px] normal-case ${estourou ? 'font-bold text-rose-300' : 'text-dim'}`}
+      >
+        {valor.length}/{limite}
       </span>
+    ) : null
+
+  return (
+    // Sem `<label>` quando há barra: o `<label>` põe o foco no campo a cada
+    // clique dentro dele, e clicar em "negrito" passaria a mover o cursor para
+    // o fim do texto antes de a marca ser aplicada.
+    <div className="block">
+      <span className="mb-1.5 flex items-baseline text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+        <label htmlFor={id}>{rotulo}</label>
+        {!formatavel && contador && <span className="ml-auto">{contador}</span>}
+      </span>
+
+      {formatavel && (
+        <BarraDeFormato area={area} aoMudar={aoMudar}>
+          {contador}
+        </BarraDeFormato>
+      )}
+
       <textarea
+        id={id}
+        ref={area}
         value={valor}
         onChange={(e) => aoMudar(e.target.value)}
         onFocus={(e) => aoFocar?.(e.currentTarget, aoMudar)}
@@ -538,7 +573,7 @@ function Area({
           ? `O WhatsApp recusa acima de ${limite} caracteres — publicar fica barrado até encurtar.`
           : `aceita {{variavel}}`}
       </span>
-    </label>
+    </div>
   )
 }
 

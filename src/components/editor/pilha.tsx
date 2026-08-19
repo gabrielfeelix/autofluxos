@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import { Dropdown } from '@/components/design/dropdown'
 import { parteNova, partesDaMensagem } from '@/core/flow/mensagem'
 import {
@@ -14,7 +14,7 @@ import {
   type TipoDeMidia,
   type TipoDeParte,
 } from '@/core/flow/schema'
-import { alternarMarca, type Marca } from './formatar'
+import { BarraDeFormato } from './barra-de-formato'
 
 /**
  * O bloco de mensagem, desenhado como o que ele virou: **uma pilha**.
@@ -44,20 +44,6 @@ const NOME_DA_PARTE: Record<TipoDeParte, string> = {
   salvar: 'Guardar',
   'auto-off': 'Desligar o bot',
 }
-
-/**
- * Emojis à mão, sem biblioteca.
- *
- * Um seletor completo são milhares de caracteres, busca, categorias e pele —
- * peso de sobra para o que acontece aqui, que é pôr um 👋 na saudação. A lista
- * é a dos que aparecem em mensagem de atendimento; quem quiser outro cola do
- * teclado do sistema, que continua funcionando.
- */
-const EMOJIS = [
-  '👋', '😀', '😊', '🙂', '😉', '🤝', '🙏', '👍', '👏', '💪',
-  '✅', '❌', '⚠️', '❤️', '🎉', '✨', '🔥', '⭐', '📅', '⏰',
-  '📍', '📞', '💬', '📷', '📄', '💰', '🛒', '🚀', '💡', '🔗',
-]
 
 export function PilhaDeMensagem({
   no,
@@ -328,11 +314,12 @@ function Corpo({
 }
 
 /**
- * O campo de texto com a barra de formatação.
+ * O campo de texto do bloco de mensagem.
  *
- * A barra não muda o formato do que é gravado — o que vai para o banco é o
- * mesmo `*negrito*` que o WhatsApp entende. Ela existe para ninguém precisar
- * decorar que itálico é sublinhado dos dois lados.
+ * A barra é a mesma da Pergunta, do Handoff e da legenda da Mídia
+ * (`barra-de-formato.tsx`). Ela morava aqui dentro e ficou presa: enquanto só
+ * este bloco mandava texto ninguém notou, e quando os outros passaram a mandar
+ * a diferença virou "essa tela está quebrada".
  */
 function CampoDeTexto({
   valor,
@@ -347,94 +334,17 @@ function CampoDeTexto({
   ) => void
 }) {
   const area = useRef<HTMLTextAreaElement>(null)
-  const [emojisAbertos, setEmojisAbertos] = useState(false)
   const estourou = valor.length > LIMITE_TEXTO
-
-  function aplicar(marca: Marca) {
-    const elemento = area.current
-    if (!elemento) return
-
-    const { proximo, selecaoInicio, selecaoFim } = alternarMarca(
-      elemento.value,
-      elemento.selectionStart,
-      elemento.selectionEnd,
-      marca,
-    )
-    aoMudar(proximo)
-
-    // O campo é controlado: esperar um frame devolve foco e seleção depois de
-    // o valor novo chegar ao DOM.
-    requestAnimationFrame(() => {
-      elemento.focus()
-      elemento.setSelectionRange(selecaoInicio, selecaoFim)
-    })
-  }
-
-  function inserirEmoji(emoji: string) {
-    const elemento = area.current
-    if (!elemento) return
-
-    const de = elemento.selectionStart
-    const ate = elemento.selectionEnd
-    const proximo = elemento.value.slice(0, de) + emoji + elemento.value.slice(ate)
-    aoMudar(proximo)
-    setEmojisAbertos(false)
-
-    requestAnimationFrame(() => {
-      elemento.focus()
-      const cursor = de + emoji.length
-      elemento.setSelectionRange(cursor, cursor)
-    })
-  }
 
   return (
     <div>
-      <div className="mb-1.5 flex items-center gap-1">
-        <BotaoDeMarca rotulo="Negrito" marca="negrito" aoClicar={aplicar}>
-          <strong>B</strong>
-        </BotaoDeMarca>
-        <BotaoDeMarca rotulo="Itálico" marca="italico" aoClicar={aplicar}>
-          <em>I</em>
-        </BotaoDeMarca>
-        <BotaoDeMarca rotulo="Riscado" marca="riscado" aoClicar={aplicar}>
-          <s>S</s>
-        </BotaoDeMarca>
-        <BotaoDeMarca rotulo="Monoespaçado" marca="mono" aoClicar={aplicar}>
-          <span className="font-mono">{'{}'}</span>
-        </BotaoDeMarca>
-
-        <div className="relative">
-          <button
-            type="button"
-            aria-label="Inserir emoji"
-            aria-expanded={emojisAbertos}
-            onClick={() => setEmojisAbertos((aberto) => !aberto)}
-            className="rounded-md px-1.5 py-0.5 text-[12px] text-dim transition hover:bg-white/[0.06] hover:text-white"
-          >
-            ☺
-          </button>
-          {emojisAbertos && (
-            <div className="app-dropdown-menu right-auto left-0 grid w-[232px] grid-cols-10 gap-0.5 p-1.5">
-              {EMOJIS.map((emoji) => (
-                <button
-                  key={emoji}
-                  type="button"
-                  onClick={() => inserirEmoji(emoji)}
-                  className="rounded p-0.5 text-[15px] leading-none transition hover:bg-white/[0.08]"
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
+      <BarraDeFormato area={area} aoMudar={aoMudar}>
         <span
-          className={`ml-auto font-mono text-[10px] ${estourou ? 'font-bold text-rose-300' : 'text-dim'}`}
+          className={`font-mono text-[10px] ${estourou ? 'font-bold text-rose-300' : 'text-dim'}`}
         >
           {valor.length}/{LIMITE_TEXTO}
         </span>
-      </div>
+      </BarraDeFormato>
 
       <textarea
         ref={area}
@@ -446,35 +356,5 @@ function CampoDeTexto({
         className={`app-field resize-y px-3 py-2.5 text-[13px] leading-6 ${estourou ? 'border-rose-400/60' : ''}`}
       />
     </div>
-  )
-}
-
-function BotaoDeMarca({
-  rotulo,
-  marca,
-  aoClicar,
-  children,
-}: {
-  rotulo: string
-  marca: Marca
-  aoClicar: (marca: Marca) => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={rotulo}
-      title={rotulo}
-      // `onMouseDown` com `preventDefault` em vez de `onClick`: clicar num
-      // botão tira o foco do textarea antes do clique acontecer, e com o foco
-      // vai a seleção — que é justamente o que a barra precisa saber.
-      onMouseDown={(evento) => {
-        evento.preventDefault()
-        aoClicar(marca)
-      }}
-      className="w-6 rounded-md py-0.5 text-[12px] text-dim transition hover:bg-white/[0.06] hover:text-white"
-    >
-      {children}
-    </button>
   )
 }
