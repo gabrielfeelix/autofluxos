@@ -21,6 +21,7 @@ import { contextoDeResposta } from '@/server/repos/conversas'
 import {
   acharLead,
   contarPorAtribuicao,
+  limparBusca,
   lerConversa,
   paginarLeads,
   type Lead,
@@ -37,6 +38,7 @@ type Busca = {
   /** O rail `Atribuído`: `todos`, `sem-dono` ou o id de um atendente. */
   de?: string | string[]
   pagina?: string | string[]
+  busca?: string | string[]
 }
 
 /**
@@ -70,10 +72,16 @@ export default async function Pagina({
   const [{ clienteId }, busca] = await Promise.all([params, searchParams])
   const atribuicao = primeiro(busca.de) || 'todos'
   const pagina = Math.max(1, Number(primeiro(busca.pagina)) || 1)
+  const termo = limparBusca(primeiro(busca.busca))
 
   const [cliente, fila, respostasRapidas, contagem] = await Promise.all([
     acharCliente(clienteId),
-    paginarLeads(clienteId, { atribuicao, pagina, porPagina: CONVERSAS_POR_PAGINA }),
+    paginarLeads(clienteId, {
+      atribuicao,
+      busca: termo,
+      pagina,
+      porPagina: CONVERSAS_POR_PAGINA,
+    }),
     listarRespostasRapidas(clienteId),
     contarPorAtribuicao(clienteId),
   ])
@@ -123,7 +131,17 @@ export default async function Pagina({
   return (
     <ClienteShell cliente={cliente} ativa="inbox">
       <main className="px-4 md:px-[42px] pt-[26px] pb-[42px]">
-        {leads.length === 0 || !selecionado ? (
+        {/*
+          O estado vazio é para **cliente sem conversa nenhuma**, e não para
+          filtro sem resultado.
+          
+          Antes bastava a lista vir vazia para a tela inteira virar "quando
+          alguém falar com o número, a conversa aparece aqui" — inclusive
+          depois de uma busca que não achou. Além de mentir (há conversas, só
+          não com aquele termo), sumia com o próprio campo de busca, e a pessoa
+          não tinha como corrigir o que digitou.
+        */}
+        {contagem.total === 0 ? (
           <EstadoVazio clienteId={cliente.id} />
         ) : (
           <Conteudo
@@ -135,6 +153,7 @@ export default async function Pagina({
             usuarioId={sessao?.usuario.id ?? null}
             contagem={contagem}
             atribuicao={atribuicao}
+            termo={termo}
             pagina={fila.pagina}
             paginas={fila.paginas}
           />
@@ -182,30 +201,35 @@ async function Conteudo({
   usuarioId,
   contagem,
   atribuicao,
+  termo,
   pagina,
   paginas,
 }: {
   clienteId: string
   leads: Lead[]
-  selecionado: Lead
+  /** `null` quando o filtro ou a busca não deixou nenhuma conversa para abrir. */
+  selecionado: Lead | null
   respostasRapidas: RespostaRapida[]
   equipe: MembroDaConta[]
   /** Quem está olhando. `null` quando quem entrou foi a senha única do time. */
   usuarioId: string | null
   contagem: Contagem
   atribuicao: string
+  termo: string
   pagina: number
   paginas: number
 }) {
   // `selecionado` veio de `paginarLeads(clienteId, ...)`. Só depois desse vínculo
   // cliente–contato confirmado é seguro ler as mensagens pelo id do contato.
-  const [conversa, contexto] = await Promise.all([
-    lerConversa(selecionado.contatoId),
-    contextoDeResposta(clienteId, selecionado.contatoId),
-  ])
+  const [conversa, contexto] = selecionado
+    ? await Promise.all([
+        lerConversa(selecionado.contatoId),
+        contextoDeResposta(clienteId, selecionado.contatoId),
+      ])
+    : [null, null]
   const restante = restaDaJanela(contexto?.ultimaEntradaEm ?? null)
   const janela = restante && restante > 0 ? comoFalta(restante) : null
-  const primeiroNome = selecionado.nome?.split(' ')[0] ?? 'esta pessoa'
+  const primeiroNome = selecionado?.nome?.split(' ')[0] ?? 'esta pessoa'
   const esperando = leads.filter((lead) => lead.aguardando).length
 
   return (
@@ -224,30 +248,41 @@ async function Conteudo({
           equipe={equipe}
           contagem={contagem}
           atribuicao={atribuicao}
+          termo={termo}
           usuarioId={usuarioId}
           pagina={pagina}
           paginas={paginas}
         />
 
-        <section className="flex min-w-0 flex-col border-r border-white/[0.06]">
-          <CabecalhoDaConversa
-            clienteId={clienteId}
-            lead={selecionado}
-            equipe={equipe}
-            usuarioId={usuarioId}
-          />
-          <div className="min-h-0 flex-1 overflow-auto bg-[radial-gradient(500px_320px_at_70%_5%,rgba(86,208,245,0.04),transparent_68%)] p-5">
-            <Historico mensagens={conversa.mensagens} cortada={conversa.cortada} nome={selecionado.nome} />
-          </div>
-          <CaixaDeResposta
-            acao={acaoResponderLead.bind(null, clienteId, selecionado.contatoId)}
-            restaDaJanela={janela}
-            nome={primeiroNome}
-            respostasRapidas={respostasRapidas}
-          />
-        </section>
+        {selecionado && conversa ? (
+          <section className="flex min-w-0 flex-col border-r border-white/[0.06]">
+            <CabecalhoDaConversa
+              clienteId={clienteId}
+              lead={selecionado}
+              equipe={equipe}
+              usuarioId={usuarioId}
+            />
+            <div className="min-h-0 flex-1 overflow-auto bg-[radial-gradient(500px_320px_at_70%_5%,rgba(86,208,245,0.04),transparent_68%)] p-5">
+              <Historico mensagens={conversa.mensagens} cortada={conversa.cortada} nome={selecionado.nome} />
+            </div>
+            <CaixaDeResposta
+              acao={acaoResponderLead.bind(null, clienteId, selecionado.contatoId)}
+              restaDaJanela={janela}
+              nome={primeiroNome}
+              respostasRapidas={respostasRapidas}
+            />
+          </section>
+        ) : (
+          <section className="col-span-2 flex min-w-0 items-center justify-center border-r border-white/[0.06] p-10 text-center">
+            <p className="max-w-[280px] text-[12.5px] leading-6 text-dim">
+              Nenhuma conversa nesta seleção.
+              <br />
+              Limpe a busca ou escolha outra aba à esquerda.
+            </p>
+          </section>
+        )}
 
-        <DadosDoLead clienteId={clienteId} lead={selecionado} />
+        {selecionado && <DadosDoLead clienteId={clienteId} lead={selecionado} />}
       </div>
     </>
   )
@@ -263,17 +298,19 @@ function Fila({
   equipe,
   contagem,
   atribuicao,
+  termo,
   usuarioId,
   pagina,
   paginas,
 }: {
   clienteId: string
   leads: Lead[]
-  selecionado: Lead
+  selecionado: Lead | null
   esperando: number
   equipe: MembroDaConta[]
   contagem: Contagem
   atribuicao: string
+  termo: string
   usuarioId: string | null
   pagina: number
   paginas: number
@@ -292,8 +329,10 @@ function Fila({
    */
 
   /** O endereço de uma aba do rail, preservando a conversa aberta. */
+  const comBusca = termo === '' ? '' : `&busca=${encodeURIComponent(termo)}`
+  const conversaAberta = selecionado ? `&conversa=${encodeURIComponent(selecionado.contatoId)}` : ''
   const linkDe = (valor: string) =>
-    `/clientes/${clienteId}/inbox?de=${encodeURIComponent(valor)}&conversa=${encodeURIComponent(selecionado.contatoId)}`
+    `/clientes/${clienteId}/inbox?de=${encodeURIComponent(valor)}${comBusca}${conversaAberta}`
   return (
     <aside className="flex min-h-0 min-w-0 flex-col border-r border-white/[0.06] bg-white/[0.015]">
       <header className="border-b border-white/[0.06] px-4 py-[17px]">
@@ -319,6 +358,38 @@ function Fila({
           aba é apostar: a pessoa clica em "sem dono" para descobrir se tem
           alguma coisa lá.
         */}
+        {/*
+          A busca é o "[+] iniciar conversa" do desenho de referência, na forma
+          que faz sentido aqui.
+          
+          Escrever primeiro para alguém só é possível **dentro da janela de 24
+          horas** — fora dela a Meta exige modelo aprovado, que este produto
+          ainda não tem. E quem está dentro da janela já está nesta lista: o que
+          falta não é um botão de começar, é achar a pessoa quando a conversa
+          dela já rolou para baixo.
+          
+          Formulário `GET`: a busca vira endereço, e endereço de busca dá para
+          guardar e recarregar.
+        */}
+        <form method="get" className="mt-2.5 flex gap-1.5">
+          <input type="hidden" name="de" value={atribuicao} />
+          {selecionado && <input type="hidden" name="conversa" value={selecionado.contatoId} />}
+          <input
+            type="search"
+            name="busca"
+            defaultValue={termo}
+            placeholder="Nome ou telefone"
+            aria-label="Buscar conversa"
+            className="app-field min-w-0 flex-1 px-2.5 py-1.5 text-[11.5px]"
+          />
+          <button
+            type="submit"
+            className="shrink-0 rounded-lg border border-white/[0.09] px-2.5 py-1.5 text-[11px] font-semibold text-muted transition hover:border-accent/40 hover:text-accent"
+          >
+            Buscar
+          </button>
+        </form>
+
         {(equipe.length > 0 || contagem.semDono < contagem.total) && (
           <nav
             aria-label="Filtrar por quem atende"
@@ -358,7 +429,7 @@ function Fila({
 
       <nav aria-label="Conversas" className="min-h-0 flex-1 overflow-y-auto py-1.5">
         {leads.map((lead) => {
-          const ativa = lead.contatoId === selecionado.contatoId
+          const ativa = lead.contatoId === selecionado?.contatoId
           const nome = lead.nome ?? 'sem nome'
           return (
             <Link
@@ -397,7 +468,9 @@ function Fila({
 
         {leads.length === 0 && (
           <p className="px-4 py-8 text-center text-[11.5px] leading-5 text-dim">
-            Nenhuma conversa nesta aba.
+            {termo === ''
+              ? 'Nenhuma conversa nesta aba.'
+              : `Ninguém com “${termo}” nesta aba.`}
           </p>
         )}
       </nav>
@@ -405,7 +478,7 @@ function Fila({
       {paginas > 1 && (
         <div className="flex items-center justify-between gap-2 border-t border-white/[0.06] px-3 py-2.5">
           <PassoDaPagina
-            href={`/clientes/${clienteId}/inbox?de=${encodeURIComponent(atribuicao)}&pagina=${pagina - 1}`}
+            href={`/clientes/${clienteId}/inbox?de=${encodeURIComponent(atribuicao)}${comBusca}&pagina=${pagina - 1}`}
             desabilitado={pagina <= 1}
             rotulo="Página anterior"
           >
@@ -415,7 +488,7 @@ function Fila({
             {pagina} / {paginas}
           </span>
           <PassoDaPagina
-            href={`/clientes/${clienteId}/inbox?de=${encodeURIComponent(atribuicao)}&pagina=${pagina + 1}`}
+            href={`/clientes/${clienteId}/inbox?de=${encodeURIComponent(atribuicao)}${comBusca}&pagina=${pagina + 1}`}
             desabilitado={pagina >= paginas}
             rotulo="Próxima página"
           >
