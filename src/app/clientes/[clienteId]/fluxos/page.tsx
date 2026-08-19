@@ -41,6 +41,7 @@ import { listarPastas } from '@/server/repos/pastas'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { contarInscricoes, listarSequencias } from '@/server/repos/sequencias'
 import { listarQuadros } from '@/server/repos/quadros'
+import { SeloDoCanal } from '@/components/design/selo-do-canal'
 import { InterruptorDeFluxo } from '@/components/fluxos/interruptor'
 import { MoverFluxo } from '@/components/editor/mover-fluxo'
 import { MODELOS } from '@/exemplos/modelos'
@@ -198,7 +199,12 @@ export default async function Pagina({
         <section className="app-card overflow-hidden">
           <header className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-5 py-4">
             <div>
-              <h2 className="text-[14.5px] font-bold">Fluxos</h2>
+              <h2 className="flex items-center gap-2 text-[14.5px] font-bold">
+                Fluxos
+                {/* Uma vez no cabeçalho, e não em cada linha: o canal é o mesmo
+                    para todas, e repetir o selo dez vezes viraria ruído. */}
+                <SeloDoCanal compacto />
+              </h2>
               <p className="mt-0.5 text-[12px] text-dim">
                 O desenho do atendimento. Só o que está publicado atende gente de
                 verdade.

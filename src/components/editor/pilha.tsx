@@ -30,6 +30,24 @@ import { SeletorDeArquivo } from './seletor-de-arquivo'
  * antigo no editor mostra a pilha equivalente; salvar grava a pilha.
  */
 
+/** O desenho de cada pedaço no cartão. Os mesmos símbolos do catálogo de blocos. */
+const ICONE_DA_PARTE: Record<TipoDeParte, string> = {
+  texto: '↗',
+  midia: '▣',
+  atraso: '⏱',
+  salvar: '↓',
+  'auto-off': '⏻',
+}
+
+/** O que cada um faz, para o cartão não depender só da palavra. */
+const DICA_DA_PARTE: Record<TipoDeParte, string> = {
+  texto: 'Manda um texto',
+  midia: 'Manda foto, vídeo, áudio ou documento',
+  atraso: 'Mostra "digitando…" antes do próximo pedaço',
+  salvar: 'Grava um valor no contato',
+  'auto-off': 'Para de responder este contato',
+}
+
 const NOME_DA_PARTE: Record<TipoDeParte, string> = {
   texto: 'Texto',
   midia: 'Arquivo',
@@ -124,16 +142,32 @@ export function PilhaDeMensagem({
         </section>
       ))}
 
-      <div className="flex flex-wrap gap-1.5 border-t border-white/[0.06] pt-3">
+      {/*
+        Cinco cartões numa grade de três, ocupando a largura toda.
+        Eram cinco pílulas "+ Texto" de tamanhos diferentes, embrulhando em duas
+        linhas irregulares — do tamanho da palavra, não da importância. Como
+        grade, cada pedaço vira alvo grande e igual, o ícone diz o que é antes
+        da leitura, e a coluna do painel deixa de ter uma faixa de sobras.
+      */}
+      <div className="grid grid-cols-3 gap-1.5 border-t border-white/[0.06] pt-3">
         {(['texto', 'midia', 'atraso', 'salvar', 'auto-off'] as const).map((tipo) => (
           <button
             key={tipo}
             type="button"
             onClick={() => acrescentar(tipo)}
             disabled={partes.length >= LIMITE_PARTES}
-            className="rounded-lg border border-white/10 px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:border-accent/40 hover:text-accent disabled:cursor-not-allowed disabled:opacity-40"
+            title={DICA_DA_PARTE[tipo]}
+            className="flex flex-col items-center justify-center gap-1 rounded-[11px] border border-white/[0.09] bg-white/[0.02] px-1.5 py-2.5 text-center transition hover:border-accent/40 hover:bg-accent/[0.07] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-white/[0.09] disabled:hover:bg-white/[0.02]"
           >
-            + {NOME_DA_PARTE[tipo]}
+            <span
+              aria-hidden
+              className="flex size-7 items-center justify-center rounded-[9px] border border-white/[0.08] bg-white/[0.05] text-[13px] text-accent"
+            >
+              {ICONE_DA_PARTE[tipo]}
+            </span>
+            <span className="text-[10.5px] leading-[1.2] font-semibold text-muted">
+              {NOME_DA_PARTE[tipo]}
+            </span>
           </button>
         ))}
       </div>

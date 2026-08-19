@@ -30,6 +30,7 @@ import type { Problema } from '@/core/flow/validar'
 import { validar } from '@/core/flow/validar'
 import { acaoAlternarIa, acaoPublicar, acaoSalvarRascunho, acaoVoltarParaVersao } from '@/server/acoes'
 import { Modal } from '@/components/design/modal'
+import { SeloDoCanal } from '@/components/design/selo-do-canal'
 import { AcaoDaArestaProvider, tiposDeAresta } from './arestas'
 import { ICONES, NOMES, tiposDeNo } from './nos'
 import { Painel } from './painel'
@@ -826,7 +827,10 @@ export function Editor({
         */}
         <div className="shrink-0">
           <h1 className="text-sm font-bold tracking-[-0.01em]">{nome}</h1>
-          <p className="text-[10.5px] text-dim">{clienteNome}</p>
+          <p className="flex items-center gap-1.5 text-[10.5px] text-dim">
+            {clienteNome}
+            <SeloDoCanal compacto />
+          </p>
         </div>
         <span className="mx-0.5 h-6 w-px bg-white/[0.08]" />
         <EstadoSalvamento estado={salvamento} />
