@@ -2,9 +2,10 @@
 
 import { createContext, useContext, useMemo, useState, useTransition, type ReactNode } from 'react'
 import { CLASSE_DA_COR, type CorDeEtiqueta } from '@/core/etiquetas'
-import { acaoApagarContatos, acaoMarcarEtiqueta } from '@/server/acoes'
+import { acaoApagarContatos, acaoMarcarEtiqueta, acaoPorNoQuadro } from '@/server/acoes'
 
 export type EtiquetaDaBarra = { id: string; nome: string; cor: CorDeEtiqueta }
+export type QuadroDaBarra = { id: string; nome: string }
 
 type Contexto = {
   marcados: string[]
@@ -30,10 +31,13 @@ const SelecaoContexto = createContext<Contexto | null>(null)
 export function SelecaoDeContatos({
   clienteId,
   etiquetas,
+  quadros,
   children,
 }: {
   clienteId: string
   etiquetas: EtiquetaDaBarra[]
+  /** Os quadros da conta (C1). Vazio = a conta ainda não tem funil desenhado. */
+  quadros: QuadroDaBarra[]
   children: ReactNode
 }) {
   const [marcados, setMarcados] = useState<string[]>([])
@@ -64,6 +68,38 @@ export function SelecaoDeContatos({
         const nome = etiquetas.find((e) => e.id === etiquetaId)?.nome ?? 'a etiqueta'
         setAviso(`${aplicar ? 'Apliquei' : 'Tirei'} “${nome}” em ${marcados.length} contato(s).`)
         setMarcados([])
+      }
+    })
+  }
+
+  /**
+   * Põe os selecionados na **primeira etapa** do quadro (C1).
+   *
+   * É o caminho real de encher um funil: depois de uma importação, trinta leads
+   * entram de uma vez. Quem já estava no quadro não volta para a primeira etapa
+   * — o aviso diz quantos entraram de verdade, e não quantos foram clicados,
+   * porque a diferença entre os dois números é exatamente a informação útil.
+   */
+  const porNoQuadro = (quadroId: string) => {
+    setErro(null)
+    setAviso(null)
+    comecar(async () => {
+      try {
+        const r = await acaoPorNoQuadro(clienteId, quadroId, marcados)
+        if (!r.ok) {
+          setErro(r.erro ?? 'não deu para pôr no quadro')
+          return
+        }
+        const nome = quadros.find((q) => q.id === quadroId)?.nome ?? 'o quadro'
+        const postos = r.postos ?? 0
+        setAviso(
+          postos === marcados.length
+            ? `Pus ${postos} contato(s) em “${nome}”.`
+            : `Pus ${postos} em “${nome}” — ${marcados.length - postos} já estavam lá e não foram movidos.`,
+        )
+        setMarcados([])
+      } catch {
+        setErro('não deu para pôr no quadro agora')
       }
     })
   }
@@ -135,6 +171,24 @@ export function SelecaoDeContatos({
                     </button>
                   </span>
                 ))
+              )}
+
+              {quadros.length > 0 && (
+                <>
+                  <span className="mx-1 h-4 w-px bg-white/10" aria-hidden />
+                  {quadros.map((quadro) => (
+                    <button
+                      key={quadro.id}
+                      type="button"
+                      disabled={ocupado}
+                      onClick={() => porNoQuadro(quadro.id)}
+                      title={`Põe os selecionados na primeira etapa de “${quadro.nome}”. Quem já está lá não é movido.`}
+                      className="rounded-full border border-white/[0.09] bg-white/[0.03] px-2.5 py-0.5 text-[10.5px] font-semibold text-muted transition hover:border-accent/40 hover:text-accent disabled:opacity-50"
+                    >
+                      → {quadro.nome}
+                    </button>
+                  ))}
+                </>
               )}
 
               <button

@@ -20,6 +20,7 @@ import { MenuDoContato } from '@/components/lead/menu-do-contato'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { acaoCriarContato } from '@/server/acoes'
 import { listarEtiquetasComContagem, type Etiqueta } from '@/server/repos/etiquetas'
+import { listarQuadros } from '@/server/repos/quadros'
 
 export const dynamic = 'force-dynamic'
 
@@ -156,9 +157,10 @@ async function Tabela({
   pagina: number
 }) {
   const filtrando = etiqueta !== null || marca !== null || termo !== ''
-  const [{ leads, total, pagina, paginas }, etiquetasDaConta] = await Promise.all([
+  const [{ leads, total, pagina, paginas }, etiquetasDaConta, quadrosDaConta] = await Promise.all([
     paginarLeads(clienteId, { etiqueta, etiquetaId: marca, busca: termo, pagina: pedida }),
     listarEtiquetasComContagem(clienteId),
+    listarQuadros(clienteId),
   ])
 
   // Sem filtro e sem nenhum lead, a tela ainda é de primeira vez: o que ajuda
@@ -319,6 +321,7 @@ async function Tabela({
         <SelecaoDeContatos
           clienteId={clienteId}
           etiquetas={etiquetasDaConta.map(({ id, nome, cor }) => ({ id, nome, cor }))}
+          quadros={quadrosDaConta.map(({ id, nome }) => ({ id, nome }))}
         >
           <div className="app-card overflow-x-auto overflow-y-hidden">
             <table className="w-full min-w-[820px] border-collapse text-left">

@@ -105,6 +105,20 @@ import {
   type EventoDeSequencia,
 } from '@/core/sequencias'
 import { PAPEIS_DO_NUMERO, type PapelDoNumero } from '@/core/papeis-do-numero'
+import { conferirEtapa } from '@/core/quadros'
+import {
+  acharQuadro,
+  apagarEtapa,
+  apagarQuadro,
+  criarEtapa,
+  criarQuadro,
+  moverCartao,
+  moverEtapa,
+  porNoQuadro,
+  renomearEtapa,
+  renomearQuadro,
+  tirarDoQuadro,
+} from './repos/quadros'
 
 /**
  * **Toda ação deste arquivo confere quem é antes de tocar em qualquer coisa.**
@@ -919,6 +933,182 @@ export async function acaoApagarPassoDaSequencia(
   const apagou = await apagarPasso(clienteId, sequenciaId, passoId)
   revalidatePath(`/clientes/${clienteId}/fluxos`)
   return apagou ? { ok: true } : { ok: false, erro: 'este passo não existe mais' }
+}
+
+// ---------------------------------------------------------------------------
+// Quadros (C1, 0032)
+// ---------------------------------------------------------------------------
+
+/**
+ * Cria um quadro, já com as três etapas neutras.
+ *
+ * O nome é do cliente; as etapas são um ponto de partida para renomear. Ver
+ * `ETAPAS_INICIAIS` sobre por que elas não podem descrever um ramo — empty
+ * state ensina o negócio de quem está olhando.
+ */
+export async function acaoCriarQuadro(
+  clienteId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const r = await criarQuadro(clienteId, String(formData.get('nome') ?? ''))
+  if (!r.ok) return { erro: r.motivo }
+
+  revalidatePath(`/clientes/${clienteId}/quadros`)
+  return { ok: true }
+}
+
+export async function acaoRenomearQuadro(
+  clienteId: string,
+  quadroId: string,
+  nome: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const r = await renomearQuadro(clienteId, quadroId, String(nome ?? ''))
+  revalidatePath(`/clientes/${clienteId}/quadros`)
+  return r.ok ? { ok: true } : { ok: false, erro: r.motivo }
+}
+
+/** Apaga o quadro. Some a posição das pessoas no funil, nunca as pessoas. */
+export async function acaoApagarQuadro(
+  clienteId: string,
+  quadroId: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const apagou = await apagarQuadro(clienteId, quadroId)
+  revalidatePath(`/clientes/${clienteId}/quadros`)
+  return apagou ? { ok: true } : { ok: false, erro: 'este quadro não existe mais' }
+}
+
+export async function acaoCriarEtapa(
+  clienteId: string,
+  quadroId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const quadro = await acharQuadro(clienteId, quadroId)
+  if (!quadro) return { erro: 'este quadro não existe mais' }
+
+  // A régua mora em `core/` e é a mesma que a tela usa — inclusive o teto de
+  // oito, que é de tela antes de ser de produto.
+  const regua = conferirEtapa(
+    String(formData.get('nome') ?? ''),
+    quadro.etapas.map((etapa) => etapa.nome),
+  )
+  if (!regua.ok) return { erro: regua.motivo }
+
+  const r = await criarEtapa(clienteId, quadroId, regua.nome)
+  if (!r.ok) return { erro: r.motivo }
+
+  revalidatePath(`/clientes/${clienteId}/quadros`)
+  return { ok: true }
+}
+
+export async function acaoRenomearEtapa(
+  clienteId: string,
+  quadroId: string,
+  etapaId: string,
+  nome: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const r = await renomearEtapa(clienteId, quadroId, etapaId, String(nome ?? ''))
+  revalidatePath(`/clientes/${clienteId}/quadros`)
+  return r.ok ? { ok: true } : { ok: false, erro: r.motivo }
+}
+
+export async function acaoMoverEtapa(
+  clienteId: string,
+  quadroId: string,
+  etapaId: string,
+  direcao: 'esquerda' | 'direita',
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  if (direcao !== 'esquerda' && direcao !== 'direita') return { ok: false, erro: 'direção inválida' }
+
+  const moveu = await moverEtapa(clienteId, quadroId, etapaId, direcao)
+  revalidatePath(`/clientes/${clienteId}/quadros`)
+  return moveu ? { ok: true } : { ok: false, erro: 'esta etapa já está na ponta' }
+}
+
+/** Recusa etapa com gente dentro, e diz quantos são — ver `apagarEtapa`. */
+export async function acaoApagarEtapa(
+  clienteId: string,
+  quadroId: string,
+  etapaId: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const r = await apagarEtapa(clienteId, quadroId, etapaId)
+  revalidatePath(`/clientes/${clienteId}/quadros`)
+  return r.ok ? { ok: true } : { ok: false, erro: r.motivo }
+}
+
+/**
+ * Põe contatos no quadro, na primeira etapa.
+ *
+ * Chamada da barra de seleção da tela de Contatos, que é o caminho real: pôr
+ * trinta leads no funil de uma vez é o que se faz depois de uma importação.
+ * Quem já está no quadro **não é movido de volta** — ver `porNoQuadro`.
+ */
+export async function acaoPorNoQuadro(
+  clienteId: string,
+  quadroId: string,
+  contatos: string[],
+): Promise<{ ok: boolean; postos?: number; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  if (!Array.isArray(contatos) || contatos.some((id) => !z.string().uuid().safeParse(id).success)) {
+    return { ok: false, erro: 'seleção inválida' }
+  }
+
+  const r = await porNoQuadro(clienteId, quadroId, contatos)
+  if (!r.ok) return { ok: false, erro: r.motivo }
+
+  revalidatePath(`/clientes/${clienteId}/quadros`)
+  revalidatePath(`/clientes/${clienteId}/leads`)
+  return { ok: true, postos: r.postos }
+}
+
+/**
+ * Move o cartão de etapa.
+ *
+ * O relógio da etapa só reinicia quando ela muda de verdade — arrastar o cartão
+ * de volta para onde ele já estava é engano de mão, e zerar a espera por causa
+ * dele apagaria o número que denuncia o esquecimento. A regra mora na função do
+ * banco, junto da escrita, porque as duas não podem se separar.
+ */
+export async function acaoMoverCartao(
+  clienteId: string,
+  cartaoId: string,
+  colunaId: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const r = await moverCartao(clienteId, cartaoId, colunaId)
+  if (!r.ok) return { ok: false, erro: r.motivo }
+
+  revalidatePath(`/clientes/${clienteId}/quadros`)
+  return { ok: true }
+}
+
+/** Tirar do quadro **não apaga o contato** — some só a posição no funil. */
+export async function acaoTirarDoQuadro(
+  clienteId: string,
+  cartaoId: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const tirou = await tirarDoQuadro(clienteId, cartaoId)
+  revalidatePath(`/clientes/${clienteId}/quadros`)
+  return tirou ? { ok: true } : { ok: false, erro: 'este cartão não existe mais' }
 }
 
 // ---------------------------------------------------------------------------

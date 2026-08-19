@@ -29,7 +29,7 @@ import { Marca } from './marca'
  * não se desliga num filho. O custo é passar `ativa` na mão, e é esse mesmo
  * custo que permite `contexto`, `numero` e `conexoes` acenderem "Configurações".
  */
-export type AbaDoCliente = 'inicio' | 'fluxos' | 'leads' | 'inbox' | 'ajustes'
+export type AbaDoCliente = 'inicio' | 'fluxos' | 'leads' | 'quadros' | 'inbox' | 'ajustes'
 
 /**
  * As chaves são as antigas de propósito.
@@ -48,6 +48,10 @@ const ITENS: {
   { chave: 'inicio', rotulo: 'Painel', href: '', icone: <IconePainel /> },
   { chave: 'inbox', rotulo: 'Inbox', href: '/inbox', icone: <IconeInbox /> },
   { chave: 'leads', rotulo: 'Contatos', href: '/leads', icone: <IconeContatos /> },
+  // Quadros entra ao lado de Contatos, e não no fim, porque é a mesma gente
+  // olhada de outro jeito: a lista responde "quem existe", o quadro responde
+  // "em que ponto cada um está".
+  { chave: 'quadros', rotulo: 'Quadros', href: '/quadros', icone: <IconeQuadros /> },
   { chave: 'fluxos', rotulo: 'Automações', href: '/fluxos', icone: <IconeAutomacoes /> },
   { chave: 'ajustes', rotulo: 'Configurações', href: '/ajustes', icone: <IconeConfiguracoes /> },
 ]
@@ -292,6 +296,16 @@ function IconeContatos() {
       <circle cx="6" cy="5" r="2.6" />
       <path d="M1.4 13c0-2.4 2.1-4 4.6-4s4.6 1.6 4.6 4" />
       <path d="M10.6 3.1a2.4 2.4 0 0 1 0 4.4M11.6 9.3c1.3.5 2.1 1.6 2.1 3.1" opacity=".5" />
+    </svg>
+  )
+}
+
+function IconeQuadros() {
+  return (
+    <svg aria-hidden width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.4">
+      <rect x="1.4" y="2" width="3.4" height="11" rx="1" />
+      <rect x="5.8" y="2" width="3.4" height="7.4" rx="1" />
+      <rect x="10.2" y="2" width="3.4" height="9.2" rx="1" opacity=".6" />
     </svg>
   )
 }

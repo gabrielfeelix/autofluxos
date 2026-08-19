@@ -66,20 +66,25 @@ caminhos e os dois são seus:
    `https://autofluxos.4yu.com.br/api/manutencao/tarefas` mandando
    `Authorization: Bearer <CRON_SECRET>`. Custa zero e não muda código nenhum.
 
-## 3.2 Aplicar as migrations `0030` e `0031` — **o que trava agora**
+## 3.2 As migrations `0030` a `0033` — ✅ **aplicadas**
 
-**Trava:** compartilhar fluxo por link e sequências estão inteiros no código,
-com teste, e **não funcionam** — as tabelas não existem em produção. Enquanto
-não forem aplicadas, apagar etiqueta e apagar fluxo também respondem erro, porque
-os dois passaram a conferir se a coisa é usada por uma sequência.
+Compartilhar fluxo por link (`0030`), sequências (`0031`) e quadros (`0032`,
+`0033`) estão em produção, com a conferência do §9.3 feita: RLS ligada em tudo,
+nenhum `grant` para `anon`/`authenticated` nas tabelas novas, nenhuma política em
+`public`, e `app_verandi` com as mesmas **40 tabelas**.
 
-As duas só **criam** objeto novo em `public` (`fluxo_links`, `sequencias`,
-`sequencia_passos`, `sequencia_inscricoes` e quatro funções). Não tocam tabela
-existente, não tocam Auth, não tocam Storage e não tocam `app_verandi`.
+## 3.3 O relógio do WSL2 — o que faz a suíte falhar sem motivo
 
-É o único item desta lista que depende de uma frase sua e de mais nada — a
-aplicação em si é nossa, uma migration por vez, pela Management API, com a
-conferência do §9.3 do HANDOFF depois.
+**Trava:** nada em produção; atrapalha quem roda `npm test` na sua máquina.
+
+Cerca de uma execução em oito falhava um arquivo inteiro com "não deu para criar
+o cliente: **JWT issued at future**". A causa foi encontrada: depois que a
+máquina suspende, o relógio do WSL2 fica adiantado em relação ao servidor, e o
+`iat` da chave de serviço nasce no futuro. Não é o teto de tempo do Vitest nem
+colisão de telefone, que eram as hipóteses antigas.
+
+`sudo hwclock -s` ressincroniza. É da máquina, não do repositório — por isso
+está aqui.
 
 ## 4. SMTP — decisão que envolve a Verandi
 

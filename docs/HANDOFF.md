@@ -18,12 +18,12 @@ conta. Está em produção em `autofluxos.4yu.com.br` (Vercel), com Supabase
 O que sobra esbarra em coisas que só o dono resolve:
 [PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md).
 
-`npm test` → **632 passando, 28 pulados** (os pulados dependem de `IA_TESTE_REAL` e
-`API_TESTE_REAL`, por desenho). `typecheck`, `lint` e `build` limpos.
-**Migrations aplicadas em produção: `0001` a `0029`. A `0030` e a `0031` estão
-escritas e esperam autorização do dono** — enquanto não forem aplicadas, as duas
-frentes novas não funcionam, e apagar etiqueta e apagar fluxo respondem erro
-(os dois passaram a conferir uso em sequência). A próxima a escrever é a `0032`.
+A **Etapa C começou pela C1** — Quadros (§5.9). O resto dela está em §8.2.
+
+`npm test` → **675 passando, 28 pulados** (os pulados dependem de `IA_TESTE_REAL`
+e `API_TESTE_REAL`, por desenho). `typecheck`, `lint` e `build` limpos.
+**Migrations aplicadas em produção: `0001` a `0033`, todas. A próxima a escrever
+é a `0034`.**
 
 ---
 
@@ -44,6 +44,7 @@ O mapa que economiza a primeira hora de quem chega:
 | **regra pura e testável sozinha** | `src/core/` — horário, gatilhos, campanhas, etiquetas, tarefas, presets, sequências |
 | **o que sai da conta num link compartilhado** | `src/core/compartilhar.ts` — é a única barreira antes de uma URL pública |
 | **quando um passo de sequência roda** | `src/core/sequencias.ts` (régua) · `server/sequencias.ts` (entra/sai) · `server/sequencias-passo.ts` (executa) |
+| **a etapa em que um contato está** | `src/core/quadros.ts` (régua) · `repos/quadros.ts` · `components/quadros/quadro.tsx` |
 
 Duas leis de arquitetura que explicam o mapa: **`core/` não faz rede** (é o que
 faz o simulador e a produção rodarem o mesmo código), e **`repos/` não decide
@@ -75,8 +76,12 @@ nada** (é o que faz a regra ser testável sem banco).
 
 ### Painel do cliente
 
-Barra lateral com cinco itens — **Painel · Inbox · Contatos · Automações ·
-Configurações**. Não há abas no topo.
+Barra lateral com seis itens — **Painel · Inbox · Contatos · Quadros ·
+Automações · Configurações**. Não há abas no topo.
+
+Quadros entra ao lado de Contatos, e não no fim, porque é a mesma gente olhada de
+outro jeito: a lista responde "quem existe", o quadro responde "em que ponto cada
+um está".
 
 | Rota | Item da barra | O que é |
 |---|---|---|
@@ -85,6 +90,7 @@ Configurações**. Não há abas no topo.
 | `/clientes/[id]/leads` | Contatos | filtro por etiqueta, busca, **seleção múltipla e lote**, **criar à mão**, CSV |
 | `/clientes/[id]/leads/[contatoId]` | Contatos | ficha do contato, com etiquetas |
 | `/clientes/[id]/leads/importar` | Contatos | importação por planilha, com conciliação |
+| `/clientes/[id]/quadros` | Quadros | **em que etapa cada contato está** (C1). `?q=<id>` escolhe o quadro |
 | `/clientes/[id]/fluxos` | Automações | fluxos **por pasta**, **palavras-chave**, **campanhas** e **sequências** |
 | `/clientes/[id]/fluxos/[fluxoId]` | — | **o editor**, tela cheia, sem a moldura |
 | `/clientes/[id]/ajustes` | Configurações | índice, com o estado de cada peça |
@@ -487,6 +493,77 @@ dois chamadores decidem coisas diferentes com cada um: `ocupado` faz o passo
 tentar de novo (uma mensagem está chegando, e a mensagem ganha do prazo,
 sempre), `janela_fechada` bloqueia, `sem_fluxo` encerra sem insistir.
 
+### 5.9 — Quadros, a primeira frente da Etapa C (`quadros`, 0032 e 0033)
+
+A etapa em que cada contato está, desenhada. A decisão que impede o quadro de
+virar outro produto é do próprio plano (§3.4) e está gravada como chave
+estrangeira obrigatória, não como disciplina: **cartão sempre aponta para um
+contato, e não existe cartão avulso** — senão em três meses são duas listas de
+gente que divergem.
+
+**Por que não é etiqueta com outro nome.** Etiqueta é conjunto: o contato tem
+zero ou muitas, sem ordem. Etapa é exclusiva e ordenada. É essa diferença que
+responde "quantos estão parados em Aula agendada?", que a etiqueta não responde —
+e é ela que justifica a tela. As duas convivem, e devem: "orçamento enviado" é um
+fato sobre a pessoa; "aula agendada" é onde ela está no funil.
+
+**`entrou_na_coluna_em` é o campo que torna o quadro útil.** Sem ele, o quadro
+mostra onde as pessoas estão e esconde quem foi esquecido — que é a pergunta que
+importa. A coluna ordena **quem está parado há mais tempo em cima**, e a faixa
+âmbar marca três dias ou mais: dentro da janela de 24h ainda dá para retomar em
+texto livre; passados três dias, retomar exige um motivo novo. Marcar antes disso
+pintaria o quadro inteiro no primeiro fim de semana, e aviso que aparece sempre
+para de ser lido.
+
+**O relógio da etapa só reinicia quando a etapa muda de verdade.** Arrastar o
+cartão de volta para onde ele já estava é engano de mão, e zerar a espera por
+causa dele apagaria o número que denuncia o esquecimento. A regra mora dentro da
+função do banco, junto da escrita, porque mover é **duas escritas que não podem
+se separar** — feito em duas idas, uma falha no meio deixaria o cartão na etapa
+nova com o relógio da antiga.
+
+Outras decisões, e o que cada uma evita:
+
+- **`quadro_colunas.ordem` não tem índice único.** Trocar duas etapas de lugar é
+  escrever duas linhas, e com `unique` a primeira já colide com a segunda dentro
+  da transação — o clássico "swap não passa sem valor temporário". Empate é
+  desempatado por `criado_em`, que é determinístico: sem isso a coluna "pula" ao
+  recarregar. Mover para o lado troca **só as duas**;
+- **apagar etapa com gente dentro é recusado**, e a recusa diz quantos são. A
+  chave é `restrict`, então o banco recusaria sozinho; o que o código acrescenta
+  é o número que transforma "não deu" em "mova essas três primeiro". Mover por
+  conta própria seria decidir por outra pessoa onde elas vão parar;
+- **apagar o quadro leva etapas e cartões, e nenhum contato.** O que some é a
+  posição das pessoas no funil — é a diferença entre apagar um quadro e apagar
+  uma lista de gente;
+- **pôr em lote não move quem já está lá.** Quem selecionou trinta contatos sem
+  lembrar quais já estavam no quadro não pode desfazer o trabalho de quem os
+  arrastou até o fim do funil. O aviso diz quantos entraram de verdade, porque a
+  diferença entre esse número e o de selecionados é a informação útil;
+- **as três etapas iniciais são neutras** (`Novo`, `Em conversa`, `Fechado`).
+  Descrevem atendimento, não um ramo. O erro do produto de referência foi um
+  empty state *de imobiliária* ("Visita agendada", "R$600 mil") numa conta de
+  estúdio de pilates — empty state ensina o negócio de quem está olhando. Zero
+  etapas seria a outra forma de errar: um quadro que abre morto;
+- **oito etapas é o teto**, e ele é de tela antes de ser de produto: acima disso
+  as colunas não cabem lado a lado e some a visão de conjunto que o quadro existe
+  para dar. Funil maior que isso costuma ser dois funis;
+- **arrastar é nativo, e nunca é o único caminho.** HTML5 DnD resolve o gesto em
+  três handlers; uma biblioteca custaria mais bundle do que a tela inteira. Todo
+  cartão tem um menu com as etapas escritas — no celular não há arrasto, e com
+  teclado também não;
+- **o quadro não é uma ilha.** A ficha do contato mostra em que quadro e etapa
+  ele está, e há quanto tempo. Sem isso o quadro vira um lugar que alguém
+  atualiza e ninguém consulta, que é como um quadro passa a mentir;
+- **o quadro aberto vem por `?q=<id>`**, e não por rota própria: `/quadros/[id]`
+  seria uma tela nova para a mesma tela. O seletor só aparece com mais de um
+  quadro, pela mesma razão de `destinoAposEntrar`.
+
+**O que ainda falta na C1 (é a C1b).** Hoje o cartão só se move por gesto humano,
+e **quadro que depende de digitação manual é quadro que ninguém mantém — e
+quadro desatualizado mente**. Falta o bloco de fluxo que move o cartão sozinho e
+o evento de sequência `etapa_alcancada`. Está em §8.2.
+
 ### Fora do plano, e entrou porque estava errado
 
 - **A barra de formatação estava presa no bloco de Mensagem.** Virou
@@ -647,14 +724,16 @@ do React e derruba a tela; falha de upload tem que ser um recado numa linha.
 | `pastas` | gavetas de fluxo |
 | `fluxo_links` | link público de uma **versão publicada**. Token, prazo, revogação e contagem separada de abertura e importação (0030) |
 | `sequencias`, `sequencia_passos`, `sequencia_inscricoes` | o acompanhamento automático (0031). `bloqueada` = a janela de 24h fechou antes do passo |
+| `quadros`, `quadro_colunas`, `quadro_cartoes` | o funil desenhado (0032). Cartão **é** um contato; `entrou_na_coluna_em` é quem responde "parado há quanto tempo" |
 | view `leads` | contato + última mensagem + handoff aberto + `ultima_entrada_em` + `atribuido_a` + `ultimo_tipo` |
 | view `metricas_sessoes`, `resumo_clientes` | o funil e a lista de automações |
 | view `metricas_de_tempo`, `metricas_diarias`, `metricas_por_pessoa` | o painel completo (0028) |
 
 Funções: `publicar_fluxo` · `contar_disparo_do_gatilho` ·
 `contar_disparo_da_campanha` · `nao_lidas_por_contato` · `pegar_tarefas` ·
-`contar_abertura_do_link` · `contar_importacao_do_link` · `sair_das_sequencias`.
-Todas com `search_path` fixo e `execute` revogado de `anon`/`authenticated`.
+`contar_abertura_do_link` · `contar_importacao_do_link` · `sair_das_sequencias` ·
+`mover_cartao`. Todas com `search_path` fixo e `execute` revogado de
+`anon`/`authenticated`.
 
 **As tabelas do login ficam fora da Data API de propósito** (`revoke all` para
 `anon` e `authenticated` na 0019): `af_contas` guarda hash de senha e
@@ -673,16 +752,34 @@ Nada da Etapa B está mais fora do código — o que falta é a autorização pa
 aplicar a `0030` e a `0031`, item 3.2 de
 [PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md).
 
-### 8.2 A Etapa C
+### 8.2 A Etapa C — em andamento
 
-**Quadros (Kanban)**, central de notificações, casca (idioma, ajuda), **modelos
-da Meta e Transmissão** (trava externa — depende de verificação da empresa e App
-Review, não de código nosso), faturamento e registros.
+| Frente | Estado |
+|---|---|
+| **C1 Quadros** | **a parte manual está no ar** (§5.9). Falta a C1b — ver abaixo |
+| C2 central de notificações | não começou. Reaproveita o alerta de fila que já toca em qualquer tela |
+| C3 casca (idioma, ajuda, relatar bug) | não começou. Ninguém deixa de operar por falta |
+| C4 modelos da Meta e Transmissão | **trava externa**: verificação da empresa e App Review. Não é código nosso que destrava |
+| C5 faturamento e registros | quando houver contrato de verdade |
 
-Ordem e critério em [PLANO-SISTEMA.md §5](PLANO-SISTEMA.md). Duas coisas dessa
-lista já têm base pronta: Transmissão só depende do agendador (feito) mais os
-modelos da Meta; a central de notificações reaproveita o alerta de fila que já
-toca em qualquer tela do painel.
+**A C1b é a próxima peça, e ela é o que faz a C1 valer.** Hoje o cartão só se
+move por gesto humano, e quadro que depende de digitação manual é quadro que
+ninguém mantém — quadro desatualizado é pior que quadro nenhum, porque ele
+mente com cara de dado. Faltam duas coisas, e as duas encaixam no que já existe:
+
+1. **um bloco de fluxo que move o cartão** — `data: { quadroId, colunaId }`. Como
+   todo campo novo do schema, opcional; e como o preset, o que fica gravado na
+   versão publicada é a referência à etapa, que é estado vivo por natureza. Etapa
+   apagada vira no-op com log, pela mesma regra do papel que aponta para fluxo
+   sem versão publicada;
+2. **`etapa_alcancada` como terceiro evento de sequência** (0031). Mover para uma
+   etapa é um ato deliberado sobre um contato, exatamente como aplicar etiqueta —
+   e "entrou em Aula agendada e não compareceu" é o acompanhamento que o cliente
+   real pede. Não precisa de migration: `sequencias.evento` é texto, e a lista
+   fechada mora em `core/sequencias.ts`.
+
+Ordem e critério do resto em [PLANO-SISTEMA.md §5](PLANO-SISTEMA.md).
+Transmissão só depende do agendador (feito) mais os modelos da Meta.
 
 ### 8.3 Dívidas conhecidas
 
@@ -832,6 +929,14 @@ curl -s -H "Authorization: Bearer $AUTOFLUXOS_CRON_SECRET" \
 - **`ON CONFLICT` contra índice único parcial.** O PostgREST não expressa o
   predicado, e o `upsert` falha com "no unique or exclusion constraint
   matching". Foi o que fez `agendar()` virar cancelar-e-inserir.
+- **Função que devolve tipo composto não devolve `null` pelo PostgREST.** Quando
+  o `update` dentro dela não casa nada, o retorno chega como um objeto com
+  **todos os campos nulos** — `{"id":null,"quadro_id":null,…}` — que é
+  verdadeiro em JavaScript. `mover_cartao` respondia "movi" para as duas
+  tentativas que ela existe para recusar, e foram os testes de isolamento que
+  pegaram. A forma segura é `returns setof`: nada casou vira `[]`. Consertar só
+  do lado do TypeScript deixa a armadilha armada para o próximo que chamar. Ver
+  a 0033.
 - **Arquivo dentro de Server Action.** Teto de 1 MB, 413 antes do seu código,
   página de erro sem motivo. Ver §6.8.
 - **Erro minificado do React (#441, #418…) não é o defeito.** O 441 é o React
@@ -843,6 +948,11 @@ curl -s -H "Authorization: Bearer $AUTOFLUXOS_CRON_SECRET" \
   tela parece certo.
 - **Tela de autorização que o Next prerenderiza.** `/admin/page.tsx` só
   redireciona, e sem `force-dynamic` o Next resolvia no build.
+- **`Date.now()` dentro do JSX de um Server Component.** O compilador do React
+  recusa com `react-hooks/purity`, e ele tem razão em geral. Quando a rota é
+  `force-dynamic` e o valor precisa mesmo ser o relógio do servidor — para o
+  cliente **não** ler o dele e divergir na hidratação — a saída é uma função no
+  módulo, chamada uma vez. Ver `agoraDoServidor` em `quadros/page.tsx`.
 - **Altura calculada em `calc(100vh - N)`.** Erra em silêncio quando o
   cabeçalho muda: a lista some por baixo e nada quebra para avisar. Use flex.
 - **Estado vazio que responde pela pergunta errada.** "Nenhuma conversa" depois

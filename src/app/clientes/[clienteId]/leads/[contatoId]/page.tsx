@@ -18,6 +18,8 @@ import { contextoDeResposta } from '@/server/repos/conversas'
 import { acharLead, lerConversa, LIMITE_DA_NOTA } from '@/server/repos/leads'
 import { listarRespostasRapidas } from '@/server/repos/respostas-rapidas'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
+import { quadrosDoContato } from '@/server/repos/quadros'
+import { comoParado, estaParado } from '@/core/quadros'
 import { SeletorDeEtiquetas } from '@/components/etiquetas/seletor'
 import { AnexoNaConversa, SemTexto } from '@/components/lead/anexo'
 import { NomeDoContato, NotasDoContato } from '@/components/lead/identidade'
@@ -31,11 +33,12 @@ export default async function Pagina({
   params: Promise<{ clienteId: string; contatoId: string }>
 }) {
   const { clienteId, contatoId } = await params
-  const [cliente, lead, respostasRapidas, etiquetas] = await Promise.all([
+  const [cliente, lead, respostasRapidas, etiquetas, noQuadro] = await Promise.all([
     acharCliente(clienteId),
     acharLead(clienteId, contatoId),
     listarRespostasRapidas(clienteId),
     listarEtiquetas(clienteId),
+    quadrosDoContato(clienteId, contatoId),
   ])
   if (!cliente || !lead) notFound()
 
@@ -155,6 +158,33 @@ export default async function Pagina({
               />
             </div>
           </section>
+          {/* **O quadro não pode ser uma ilha.** Quem abre a conversa precisa
+              ver em que ponto do funil a pessoa está sem trocar de tela — senão
+              o quadro vira um lugar que alguém atualiza e ninguém consulta, que
+              é como um quadro passa a mentir. */}
+          {noQuadro.length > 0 && (
+            <section className="app-card overflow-hidden">
+              <h2 className="border-b border-white/[0.06] px-[18px] py-3.5 text-[13px] font-bold">
+                No funil
+              </h2>
+              <ul className="flex flex-col gap-2.5 px-[18px] py-4">
+                {noQuadro.map((posicao) => (
+                  <li key={`${posicao.quadro}-${posicao.etapa}`} className="text-[12px]">
+                    <span className="block text-[10.5px] tracking-[0.04em] text-dim uppercase">
+                      {posicao.quadro}
+                    </span>
+                    <strong className="font-semibold text-soft">{posicao.etapa}</strong>{' '}
+                    <span
+                      className={estaParado(posicao.entrouEm) ? 'text-amber-200' : 'text-dim'}
+                    >
+                      · {comoParado(posicao.entrouEm)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
           <NotasDoContato
             notas={lead.notas}
             limite={LIMITE_DA_NOTA}
