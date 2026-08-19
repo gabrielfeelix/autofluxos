@@ -397,9 +397,10 @@ curl -s -X POST "https://api.supabase.com/v1/projects/$AUTOFLUXOS_SUPABASE_PROJE
   -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" -d "$Q"
 ```
 
-Depois de aplicar, **confira as três coisas**: que os objetos existem, que
-`anon`/`authenticated` não alcançam nenhum deles, e que `app_verandi` continua
-com **40 tabelas**. O roteiro pronto está no §9.3.
+Depois de aplicar, **confira as três coisas**: que os objetos existem, que toda
+tabela nova tem RLS ligada e o `grant` revogado, e que `app_verandi` continua
+com **40 tabelas**. O roteiro pronto — com o que **não** é sinal de problema —
+está no §9.3.
 
 ### 6.2 A view `leads` só aceita coluna nova **no fim**
 
@@ -632,17 +633,37 @@ curl -s "https://api.vercel.com/v6/deployments?limit=1&app=autofluxos&target=pro
 
 **2. O banco: objetos no lugar, ninguém a mais alcançando, Verandi intacta.**
 
+Antes das consultas, o que **não** é sinal de problema: dez tabelas antigas
+(`clients`, `flows`, `contacts`, `sessions`, `messages`…) têm `grant` para
+`anon`/`authenticated`, herdado do padrão do Supabase. Elas não vazam nada
+porque **a RLS está ligada e não existe política nenhuma** — é o desenho da
+0001, e é a segunda camada que fecha. As tabelas novas revogam o `grant` também,
+por isso não aparecem. Procurar "zero grants" aqui manda alguém consertar o que
+não está quebrado.
+
+As quatro que valem:
+
 ```sql
--- RLS ligada em toda tabela de `public`
-select relname, relrowsecurity from pg_class c
+-- 2a. tabela de `public` sem RLS — tem que vir VAZIO
+select relname from pg_class c
   join pg_namespace n on n.oid = c.relnamespace
- where n.nspname = 'public' and c.relkind = 'r' order by 1;
+ where n.nspname = 'public' and c.relkind = 'r' and not c.relrowsecurity;
 
--- tem que vir VAZIO
-select table_name, grantee from information_schema.role_table_grants
- where table_schema = 'public' and grantee in ('anon', 'authenticated');
+-- 2b. qualquer política em `public` — tem que vir VAZIO.
+--     O dia em que aparecer uma, a primeira camada deixou de ser irrelevante e
+--     os `grant` acima passam a importar de verdade.
+select tablename, policyname from pg_policies where schemaname = 'public';
 
--- tem que continuar 40
+-- 2c. view alcançável por anon/authenticated — tem que vir VAZIO.
+--     View não obedece RLS por si: `leads` e as `metricas_*` dependem do
+--     `revoke` e do `security_invoker`.
+select distinct g.table_name from information_schema.role_table_grants g
+  join pg_class c on c.relname = g.table_name
+  join pg_namespace n on n.oid = c.relnamespace and n.nspname = 'public'
+ where g.table_schema = 'public' and g.grantee in ('anon', 'authenticated')
+   and c.relkind = 'v';
+
+-- 2d. tem que continuar 40
 select count(*) from information_schema.tables where table_schema = 'app_verandi';
 ```
 
