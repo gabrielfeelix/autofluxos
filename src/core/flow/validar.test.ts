@@ -871,3 +871,37 @@ describe('ir para outra automação', () => {
     expect(r.erros.map((e) => e.codigo)).not.toContain('DESTINO_SUMIU')
   })
 })
+
+describe('as mensagens do bloco de falar com humano', () => {
+  const comHandoff = (data: Record<string, unknown>) =>
+    fluxoSchema.parse({
+      inicio: 'h',
+      nodes: [{ id: 'h', type: 'handoff', position: p, data }],
+      edges: [],
+    })
+
+  it('duas mensagens de despedida publicam', () => {
+    const r = validar(comHandoff({ mensagens: ['Já te passo para o time.', 'Obrigado! Que nota você dá?'] }))
+    expect(r.ok).toBe(true)
+  })
+
+  it('todas em branco é o mesmo que transferir sem avisar', () => {
+    const r = validar(comHandoff({ mensagens: ['', '  '] }))
+    expect(codigos(r.erros)).toContain('TEXTO_VAZIO')
+  })
+
+  it('uma em branco no meio de outras também barra — o campo parece que vai falar', () => {
+    const r = validar(comHandoff({ mensagens: ['Já te passo.', ''] }))
+    expect(codigos(r.erros)).toContain('TEXTO_VAZIO')
+  })
+
+  it('acima do teto vira impedimento, não fila de notificação', () => {
+    const r = validar(comHandoff({ mensagens: ['a', 'b', 'c', 'd'] }))
+    expect(codigos(r.erros)).toContain('MENSAGENS_DEMAIS')
+  })
+
+  it('variável citada em qualquer uma das mensagens é conferida', () => {
+    const r = validar(comHandoff({ mensagens: ['Já te passo.', 'Valeu, {{nome}}!'] }))
+    expect(codigos(r.avisos)).toContain('VARIAVEL_DESCONHECIDA')
+  })
+})

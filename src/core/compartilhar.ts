@@ -1,5 +1,5 @@
 import { fluxoSchema, type Fluxo, type No } from './flow/schema'
-import { partesDaMensagem } from './flow/mensagem'
+import { mensagensDoHandoff, partesDaMensagem } from './flow/mensagem'
 
 /**
  * O que viaja num fluxo compartilhado, e o que fica para trás (0030).
@@ -289,8 +289,13 @@ function textoDoBloco(no: No): string {
       return `guarda ${no.data.campo}`
     case 'ia':
       return no.data.instrucao
-    case 'handoff':
-      return no.data.mensagem
+    case 'handoff': {
+      // Os dois formatos, como em todo lugar que lê handoff. Na página pública
+      // basta a primeira fala: ela é a que diz o que acontece com a conversa.
+      const mensagens = mensagensDoHandoff(no)
+      const extras = mensagens.length - 1
+      return extras > 0 ? `${mensagens[0]} (+${extras})` : (mensagens[0] ?? '')
+    }
     case 'http': {
       let host = 'endereço com variável'
       try {

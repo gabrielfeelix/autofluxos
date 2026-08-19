@@ -368,10 +368,19 @@ function NoIa({ data, selected }: NodeProps) {
 }
 
 function NoHandoff({ data, selected }: NodeProps) {
-  const d = data as { motivo: string; mensagem: string }
+  const d = data as { motivo: string; mensagem: string; mensagens?: string[] }
+  // Os dois formatos, como em todo lugar que lê handoff. O card mostra a
+  // primeira fala inteira e conta as outras: cabe na caixa e já responde "esse
+  // bloco fala mais de uma vez antes de transferir?".
+  const mensagens = d.mensagens ?? [d.mensagem]
   return (
     <Caixa tipo="handoff" selecionado={!!selected} saidaUnica={false}>
-      <p className="line-clamp-2 text-[12.5px] leading-5 text-soft">{d.mensagem}</p>
+      <p className="line-clamp-2 text-[12.5px] leading-5 text-soft">{mensagens[0]}</p>
+      {mensagens.length > 1 && (
+        <p className="mt-1 text-[10px] text-dim">
+          + {mensagens.length - 1} mensagem{mensagens.length - 1 > 1 ? 's' : ''} antes de transferir
+        </p>
+      )}
       <p className="mt-1 text-[10px] text-dim">motivo: {d.motivo}</p>
     </Caixa>
   )

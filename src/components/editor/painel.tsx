@@ -5,6 +5,7 @@ import {
   LIMITE_BOTOES,
   LIMITE_LEGENDA,
   LIMITE_LISTA,
+  LIMITE_MENSAGENS_HANDOFF,
   LIMITE_ROTULO,
   LIMITE_TEXTO,
   LIMITE_TEXTO_INTERATIVO,
@@ -15,6 +16,7 @@ import {
   type No,
   type Opcao,
 } from '@/core/flow/schema'
+import { mensagensDoHandoff } from '@/core/flow/mensagem'
 import { Dropdown } from '@/components/design/dropdown'
 import { BarraDeFormato } from './barra-de-formato'
 import { SeletorDeVariavel } from './escolher-variavel'
@@ -466,13 +468,10 @@ export function Painel({
 
       {no.type === 'handoff' && (
         <>
-          <Area
+          <MensagensDoHandoff
+            mensagens={mensagensDoHandoff(no)}
             conhecidas={variaveis}
-            rotulo="Mensagem antes de passar"
-            valor={no.data.mensagem}
-            limite={LIMITE_TEXTO}
-            aoMudar={(mensagem) => aoMudarDados({ mensagem })}
-            formatavel
+            aoMudar={(mensagens) => aoMudarDados({ mensagens })}
           />
           <Linha
             rotulo="Motivo (interno)"
@@ -578,6 +577,84 @@ export function Painel({
   )
 }
 
+/**
+ * As mensagens que o bloco de "falar com humano" manda antes de transferir.
+ *
+ * O bloco sempre foi a última fala do bot, e por muito tempo essa fala foi uma
+ * frase só — "vou te passar para um atendente". Quem monta fluxo pediu o que
+ * faltava: agradecer e pedir uma avaliação do atendimento **do bot**, que é
+ * outra frase e não cabe grudada no aviso. Bloco de mensagem depois deste não
+ * resolve, porque a transferência acontece aqui: o que vier depois já chega com
+ * a conversa nas mãos do time.
+ *
+ * Por isso a lista mora dentro do card: continua sendo um encerramento só, com
+ * as falas na ordem em que saem.
+ */
+function MensagensDoHandoff({
+  mensagens,
+  conhecidas,
+  aoMudar,
+}: {
+  mensagens: string[]
+  conhecidas: string[]
+  aoMudar: (mensagens: string[]) => void
+}) {
+  const trocar = (i: number, texto: string) =>
+    aoMudar(mensagens.map((m, j) => (j === i ? texto : m)))
+
+  return (
+    <div className="space-y-3">
+      {mensagens.map((mensagem, i) => (
+        <div key={i} className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+              {i === 0 ? 'Mensagem antes de passar' : `Mensagem ${i + 1}`}
+            </span>
+            {mensagens.length > 1 && (
+              <button
+                type="button"
+                onClick={() => aoMudar(mensagens.filter((_, j) => j !== i))}
+                title="remover esta mensagem"
+                className="rounded-lg px-2 py-0.5 text-[10px] font-semibold text-dim transition hover:bg-rose-400/[0.08] hover:text-rose-300"
+              >
+                remover
+              </button>
+            )}
+          </div>
+          <Area
+            conhecidas={conhecidas}
+            rotulo=""
+            valor={mensagem}
+            limite={LIMITE_TEXTO}
+            aoMudar={(texto) => trocar(i, texto)}
+            formatavel
+          />
+        </div>
+      ))}
+
+      {mensagens.length < LIMITE_MENSAGENS_HANDOFF ? (
+        <button
+          type="button"
+          onClick={() => aoMudar([...mensagens, ''])}
+          className="w-full rounded-lg border border-dashed border-white/12 px-3 py-2 text-[11.5px] text-muted transition hover:border-accent/40 hover:text-accent"
+        >
+          + outra mensagem antes de transferir
+        </button>
+      ) : (
+        <p className="text-[10.5px] leading-4 text-dim">
+          {LIMITE_MENSAGENS_HANDOFF} é o teto: cada uma vira uma notificação no celular de quem já
+          está esperando alguém responder.
+        </p>
+      )}
+
+      <p className="text-[11px] leading-4 text-dim">
+        Saem em ordem, uma atrás da outra, e só depois a conversa passa para uma pessoa. É o lugar
+        do “obrigado” e do pedido de avaliação do atendimento do bot.
+      </p>
+    </div>
+  )
+}
+
 function Linha({
   rotulo,
   valor,
@@ -675,10 +752,15 @@ function Area({
     // clique dentro dele, e clicar em "negrito" passaria a mover o cursor para
     // o fim do texto antes de a marca ser aplicada.
     <div className="block">
-      <span className="mb-1.5 flex items-baseline text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
-        <label htmlFor={id}>{rotulo}</label>
-        {!formatavel && contador && <span className="ml-auto">{contador}</span>}
-      </span>
+      {/* Rótulo vazio some junto com a linha dele: quem chama assim já
+          desenhou o próprio cabeçalho em cima (é o caso da lista de mensagens
+          do handoff, que precisa do botão "remover" ao lado do nome). */}
+      {rotulo !== '' && (
+        <span className="mb-1.5 flex items-baseline text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+          <label htmlFor={id}>{rotulo}</label>
+          {!formatavel && contador && <span className="ml-auto">{contador}</span>}
+        </span>
+      )}
 
       {/*
         A barra completa quando o texto vira mensagem; só o botão de variável

@@ -1,4 +1,4 @@
-import { partesDaMensagem } from '../flow/mensagem'
+import { mensagensDoHandoff, partesDaMensagem } from '../flow/mensagem'
 import {
   LIMITE_BOTOES,
   LIMITE_LISTA,
@@ -473,7 +473,15 @@ function avancar(
       }
 
       case 'handoff': {
-        acoes.push({ tipo: 'enviar_texto', texto: interpolar(no.data.mensagem, s.vars) })
+        // Todas as mensagens do bloco, em ordem, antes de a conversa mudar de
+        // mão: é onde cabe a despedida do bot (o obrigado, o pedido de nota)
+        // sem competir com o aviso de que um humano assume. Vazia não vira
+        // mensagem — o WhatsApp recusa texto vazio, e o validador já barra
+        // publicar assim.
+        for (const mensagem of mensagensDoHandoff(no)) {
+          if (mensagem.trim() === '') continue
+          acoes.push({ tipo: 'enviar_texto', texto: interpolar(mensagem, s.vars) })
+        }
 
         // Vale para o handoff desenhado também: o bloco pode dizer "já te
         // passo para o time", e às 3h da manhã isso é uma promessa que ninguém

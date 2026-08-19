@@ -1,5 +1,6 @@
 import {
   LIMITE_ATRASO_SEGUNDOS,
+  type NoHandoff,
   type NoMensagem,
   type Parte,
 } from './schema'
@@ -76,4 +77,20 @@ export function parteNova(tipo: Parte['tipo']): Parte {
     case 'auto-off':
       return { tipo: 'auto-off' }
   }
+}
+
+
+/**
+ * As mensagens que o handoff manda antes de transferir — nos dois formatos.
+ *
+ * Mesma regra do bloco de mensagem, e pelo mesmo motivo: a conversa aberta
+ * ontem continua rodando o grafo de ontem, onde o campo era um `mensagem` só.
+ * Ler os dois, escrever um. `mensagens` vazio conta como formato novo sem nada
+ * — quem apagou todas no editor não quer a frase antiga de volta —, e é o
+ * `validar()` que recusa publicar assim.
+ */
+export function mensagensDoHandoff(no: NoHandoff): string[] {
+  const { mensagens, mensagem } = no.data
+  if (mensagens !== undefined) return mensagens
+  return [mensagem]
 }

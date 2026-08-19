@@ -1,8 +1,9 @@
-import { partesDaMensagem, textoDaMensagem } from './mensagem'
+import { mensagensDoHandoff, partesDaMensagem, textoDaMensagem } from './mensagem'
 import {
   FORMATO_VARIAVEL,
   LIMITE_LEGENDA,
   LIMITE_LISTA,
+  LIMITE_MENSAGENS_HANDOFF,
   LIMITE_ROTULO,
   LIMITE_TEXTO,
   LIMITE_TEXTO_INTERATIVO,
@@ -628,16 +629,36 @@ function conferirConteudo(no: No, erros: Problema[], avisos: Problema[]): void {
       conferirVariavel(no.data.salvarEm, 'variável')
       break
 
-    case 'handoff':
-      if (vazio(no.data.mensagem)) {
+    case 'handoff': {
+      const mensagens = mensagensDoHandoff(no)
+
+      if (mensagens.every((mensagem) => vazio(mensagem))) {
         erros.push({
           codigo: 'TEXTO_VAZIO',
           mensagem: 'Sem mensagem, a pessoa é passada para um humano sem aviso nenhum.',
           noId: no.id,
         })
+      } else if (mensagens.some((mensagem) => vazio(mensagem))) {
+        // Uma vazia no meio de outras não some sozinha: o motor pula, mas quem
+        // desenhou está olhando para um campo que parece que vai falar.
+        erros.push({
+          codigo: 'TEXTO_VAZIO',
+          mensagem: `${descrever(no)} tem uma mensagem em branco. Escreva nela ou tire.`,
+          noId: no.id,
+        })
       }
-      conferirTamanho(no.data.mensagem, false)
+
+      if (mensagens.length > LIMITE_MENSAGENS_HANDOFF) {
+        erros.push({
+          codigo: 'MENSAGENS_DEMAIS',
+          mensagem: `${descrever(no)} manda ${mensagens.length} mensagens antes de transferir. O limite é ${LIMITE_MENSAGENS_HANDOFF} — acima disso é fila chegando no celular de quem já quer falar com alguém.`,
+          noId: no.id,
+        })
+      }
+
+      for (const mensagem of mensagens) conferirTamanho(mensagem, false)
       break
+    }
 
     case 'http': {
       if (vazio(no.data.url)) {
@@ -870,7 +891,7 @@ function variaveisDoNo(no: No): string[] {
     case 'ia':
       return variaveisCitadas(no.data.instrucao)
     case 'handoff':
-      return variaveisCitadas(no.data.mensagem)
+      return mensagensDoHandoff(no).flatMap((mensagem) => variaveisCitadas(mensagem))
     case 'condicao':
       return [no.data.variavel]
     case 'http':

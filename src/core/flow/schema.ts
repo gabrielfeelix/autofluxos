@@ -93,6 +93,16 @@ export const LIMITE_LEGENDA = 1024
 export const LIMITE_PARTES = 10
 
 /**
+ * Quantas mensagens o bloco de "falar com humano" manda antes de transferir.
+ *
+ * Três porque o caso real é aviso + agradecimento + pedido de avaliação, e
+ * porque cada uma é uma notificação no celular de quem está esperando
+ * atendimento. Uma despedida mais longa que isso não é despedida: é fila de
+ * mensagens chegando enquanto a pessoa já quer falar com alguém.
+ */
+export const LIMITE_MENSAGENS_HANDOFF = 3
+
+/**
  * Um pedaço de mensagem.
  *
  * **O bloco deixou de ser um texto e virou uma pilha**, e essa é a mudança mais
@@ -287,12 +297,34 @@ export const noIaSchema = z.object({
   }),
 })
 
+/**
+ * O bloco que passa a conversa para uma pessoa — e a despedida do bot.
+ *
+ * **Ele fala mais de uma vez de propósito.** O fim do atendimento automático é
+ * onde cabem duas coisas que não são a mesma frase: avisar que um humano
+ * assume, e agradecer ou pedir uma nota pelo que o bot fez. Espremer as duas
+ * num parágrafo só faz o aviso perder o destaque; separar em dois blocos não
+ * resolve, porque a transferência acontece **neste** bloco e o que vier depois
+ * dela chega depois de a conversa já estar com o time.
+ *
+ * Por isso a lista mora aqui: as mensagens saem em ordem, uma atrás da outra,
+ * e só então a conversa muda de mão.
+ *
+ * `mensagem` e `mensagens` são os **dois formatos**, pela mesma regra do bloco
+ * de mensagem: `flow_versions` é imutável e a conversa fica presa à versão em
+ * que começou. Ler os dois, escrever um. Nada fora de `mensagensDoHandoff()`
+ * — em `core/flow/mensagem.ts` — toca `data.mensagem` direto; o editor só
+ * escreve `mensagens`.
+ */
 export const noHandoffSchema = z.object({
   ...base,
   type: z.literal('handoff'),
   data: z.object({
     motivo: z.string().default('solicitado pelo fluxo'),
+    /** Formato antigo. Só leitura — o editor não escreve aqui desde a pilha. */
     mensagem: z.string().default('Vou te passar para um atendente. Só um instante!'),
+    /** Formato novo: as mensagens em ordem, todas antes da transferência. */
+    mensagens: z.array(z.string()).optional(),
   }),
 })
 
@@ -450,6 +482,7 @@ export type ParteTexto = z.infer<typeof parteTextoSchema>
 export type ParteMidia = z.infer<typeof parteMidiaSchema>
 export type TipoDeParte = Parte['tipo']
 export type NoMensagem = z.infer<typeof noMensagemSchema>
+export type NoHandoff = z.infer<typeof noHandoffSchema>
 export type Opcao = z.infer<typeof opcaoSchema>
 export type No = z.infer<typeof noSchema>
 export type NoPergunta = z.infer<typeof noPerguntaSchema>

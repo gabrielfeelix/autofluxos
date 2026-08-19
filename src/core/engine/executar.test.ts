@@ -988,3 +988,56 @@ describe('o bloco de etapa do quadro (C1b)', () => {
     expect(r.acoes.some((a) => a.tipo === 'enviar_texto' && a.texto === 'Segue.')).toBe(true)
   })
 })
+
+describe('o handoff se despede antes de transferir', () => {
+  function comHandoff(data: Record<string, unknown>) {
+    const fluxo = fluxoSchema.parse({
+      inicio: 'h',
+      nodes: [{ id: 'h', type: 'handoff', position: p, data }],
+      edges: [],
+    })
+    return executar(fluxo, sessaoNova(), { tipo: 'inicio' }).acoes
+  }
+
+  it('manda as mensagens em ordem, todas antes de a conversa mudar de mão', () => {
+    const acoes = comHandoff({
+      motivo: 'fim do bot',
+      mensagens: [
+        'Vou te passar para um atendente. Só um instante!',
+        'Obrigado por falar comigo — de 0 a 10, que nota você dá para este atendimento?',
+      ],
+    })
+
+    expect(textos(acoes)).toEqual([
+      'Vou te passar para um atendente. Só um instante!',
+      'Obrigado por falar comigo — de 0 a 10, que nota você dá para este atendimento?',
+    ])
+    // A transferência é a última ação: o que fosse depois dela chegaria com a
+    // conversa já nas mãos do time.
+    expect(tipos(acoes).at(-1)).toBe('transferir_humano')
+  })
+
+  it('as mensagens interpolam, como sempre interpolaram', () => {
+    const fluxo = fluxoSchema.parse({
+      inicio: 'h',
+      nodes: [{ id: 'h', type: 'handoff', position: p, data: { mensagens: ['Já vai, {{nome}}!'] } }],
+      edges: [],
+    })
+    const sessao: Sessao = { ...sessaoNova(), vars: { nome: 'Ana' } }
+    const acoes = executar(fluxo, sessao, { tipo: 'inicio' }).acoes
+    expect(textos(acoes)).toEqual(['Já vai, Ana!'])
+  })
+
+  it('mensagem em branco no meio não vira mensagem vazia no WhatsApp', () => {
+    const acoes = comHandoff({ mensagens: ['Já te passo.', '   ', 'Obrigado!'] })
+    expect(textos(acoes)).toEqual(['Já te passo.', 'Obrigado!'])
+  })
+
+  it('o formato antigo (uma `mensagem` só) continua produzindo o que produzia', () => {
+    // `flow_versions` é imutável: a conversa que começou antes desta mudança
+    // segue rodando o grafo de antes.
+    const acoes = comHandoff({ mensagem: 'Vou te passar para o time.' })
+    expect(textos(acoes)).toEqual(['Vou te passar para o time.'])
+    expect(tipos(acoes).at(-1)).toBe('transferir_humano')
+  })
+})
