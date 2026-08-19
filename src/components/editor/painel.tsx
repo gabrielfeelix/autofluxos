@@ -28,6 +28,16 @@ import { NOMES } from './nos'
 /** O que o painel precisa saber de uma credencial: o nome, e nada mais. */
 export type ConexaoDoCliente = { id: string; nome: string; tipo: string }
 
+/**
+ * Os quadros do cliente, achatados em etapas (C1b).
+ *
+ * Chega achatado de propósito: o bloco escolhe **uma etapa**, e um seletor de
+ * dois níveis ("qual quadro?" depois "qual etapa?") custaria dois cliques para
+ * uma escolha só. O nome do quadro entra como prefixo, que é o que desambigua
+ * duas etapas "Fechado" em funis diferentes.
+ */
+export type EtapaDoCliente = { quadroId: string; colunaId: string; rotulo: string }
+
 type CampoDeTexto = {
   elemento: HTMLInputElement | HTMLTextAreaElement
   aoMudar: (valor: string) => void
@@ -63,6 +73,7 @@ export function Painel({
   ehInicio,
   variaveis,
   conexoes = [],
+  etapas = [],
   aoMudarDados,
   aoDefinirInicio,
   aoApagar,
@@ -73,6 +84,7 @@ export function Painel({
   ehInicio: boolean
   variaveis: string[]
   conexoes?: ConexaoDoCliente[]
+  etapas?: EtapaDoCliente[]
   aoMudarDados: (dados: Record<string, unknown>) => void
   aoDefinirInicio: () => void
   aoApagar: () => void
@@ -327,6 +339,46 @@ export function Painel({
             aoFocar={registrarCampo}
           />
         </>
+      )}
+
+      {no.type === 'etapa' && (
+        <label className="block">
+          <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+            Etapa do quadro
+          </span>
+          {etapas.length === 0 ? (
+            <span className="block rounded-lg border border-dashed border-white/[0.15] px-3 py-3 text-[11.5px] leading-5 text-dim">
+              Este cliente ainda não tem quadro nenhum. Crie um em Quadros, na tela do cliente — sem
+              etapa para escolher, este bloco não tem o que fazer.
+            </span>
+          ) : (
+            <>
+              <Dropdown
+                valor={no.data.colunaId}
+                aoMudar={(colunaId) => {
+                  const escolhida = etapas.find((etapa) => etapa.colunaId === colunaId)
+                  // `rotulo` viaja junto só para o desenho: o bloco no canvas
+                  // precisa dizer alguma coisa, e um uuid não diz. O motor
+                  // ignora, e `validar()` também.
+                  aoMudarDados({
+                    colunaId,
+                    quadroId: escolhida?.quadroId ?? '',
+                    rotulo: escolhida?.rotulo ?? '',
+                  })
+                }}
+                rotuloAcessivel="Etapa do quadro"
+                opcoes={[
+                  { valor: '', rotulo: 'Nenhuma — o bloco não faz nada' },
+                  ...etapas.map((etapa) => ({ valor: etapa.colunaId, rotulo: etapa.rotulo })),
+                ]}
+              />
+              <span className="mt-1 block text-[10.5px] leading-4 text-dim">
+                Quem passar por aqui entra no quadro nesta etapa — e quem já estava nele é movido
+                para cá. O relógio de &quot;parado há quanto tempo&quot; recomeça.
+              </span>
+            </>
+          )}
+        </label>
       )}
 
       {no.type === 'ia' && (

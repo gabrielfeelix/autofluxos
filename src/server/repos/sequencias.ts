@@ -20,12 +20,13 @@ type LinhaDaSequencia = {
   evento: string
   etiqueta_id: string | null
   etiqueta_de_saida_id: string | null
+  coluna_id: string | null
   ativa: boolean
   sequencia_passos: { id: string; atraso_minutos: number; flow_id: string }[] | null
 }
 
 const COLUNAS =
-  'id, nome, evento, etiqueta_id, etiqueta_de_saida_id, ativa, sequencia_passos (id, atraso_minutos, flow_id)'
+  'id, nome, evento, etiqueta_id, etiqueta_de_saida_id, coluna_id, ativa, sequencia_passos (id, atraso_minutos, flow_id)'
 
 function paraSequencia(linha: LinhaDaSequencia): Sequencia | null {
   // Evento que esta versão do código não conhece: a sequência some da lista em
@@ -39,6 +40,7 @@ function paraSequencia(linha: LinhaDaSequencia): Sequencia | null {
     evento: linha.evento,
     etiquetaId: linha.etiqueta_id,
     etiquetaDeSaidaId: linha.etiqueta_de_saida_id,
+    colunaId: linha.coluna_id,
     ativa: linha.ativa,
     passos: passosEmOrdem(
       (linha.sequencia_passos ?? []).map((passo) => ({
@@ -74,7 +76,8 @@ export async function listarSequencias(clienteId: string): Promise<Sequencia[]> 
 export async function sequenciasDoEvento(
   clienteId: string,
   evento: EventoDeSequencia,
-  etiquetaId: string | null,
+  /** A etiqueta ou a etapa que disparou, conforme o evento. Nulo nos demais. */
+  alvoId: string | null,
 ): Promise<Sequencia[]> {
   let consulta = db()
     .from('sequencias')
@@ -83,7 +86,10 @@ export async function sequenciasDoEvento(
     .eq('evento', evento)
     .eq('ativa', true)
 
-  if (etiquetaId) consulta = consulta.eq('etiqueta_id', etiquetaId)
+  // O alvo é lido na coluna que **este** evento usa. Filtrar sempre por
+  // `etiqueta_id` faria o evento de etapa não achar nada, em silêncio.
+  if (alvoId && evento === 'etiqueta_aplicada') consulta = consulta.eq('etiqueta_id', alvoId)
+  if (alvoId && evento === 'etapa_alcancada') consulta = consulta.eq('coluna_id', alvoId)
 
   const { data, error } = await consulta
 
@@ -122,6 +128,7 @@ export async function criarSequencia(
     evento: EventoDeSequencia
     etiquetaId: string | null
     etiquetaDeSaidaId: string | null
+    colunaId: string | null
   },
 ): Promise<{ ok: true; id: string } | { ok: false; motivo: string }> {
   const nome = dados.nome.trim()
@@ -129,6 +136,12 @@ export async function criarSequencia(
 
   if (dados.evento === 'etiqueta_aplicada' && !dados.etiquetaId) {
     return { ok: false, motivo: 'escolha a etiqueta que dispara a sequência' }
+  }
+  if (dados.evento === 'etapa_alcancada' && !dados.colunaId) {
+    return { ok: false, motivo: 'escolha a etapa do quadro que dispara a sequência' }
+  }
+  if (dados.colunaId && !(await etapaEhDoCliente(clienteId, dados.colunaId))) {
+    return { ok: false, motivo: 'esta etapa não é deste cliente' }
   }
 
   // As etiquetas são conferidas contra o **mesmo cliente**: os ids chegam de
@@ -148,12 +161,27 @@ export async function criarSequencia(
       evento: dados.evento,
       etiqueta_id: dados.evento === 'etiqueta_aplicada' ? dados.etiquetaId : null,
       etiqueta_de_saida_id: dados.etiquetaDeSaidaId,
+      coluna_id: dados.evento === 'etapa_alcancada' ? dados.colunaId : null,
     })
     .select('id')
     .single()
 
   if (error) throw new Error(`não deu para criar a sequência: ${error.message}`)
   return { ok: true, id: (data as { id: string }).id }
+}
+
+/** A etapa é de um quadro **deste** cliente? O id vem de formulário (0034). */
+async function etapaEhDoCliente(clienteId: string, colunaId: string): Promise<boolean> {
+  const { data, error } = await db()
+    .from('quadro_colunas')
+    .select('id, quadros!inner (client_id)')
+    .eq('id', colunaId)
+    .eq('quadros.client_id', clienteId)
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return false
+  if (error) throw new Error(`não deu para conferir a etapa: ${error.message}`)
+  return data !== null
 }
 
 async function etiquetaEhDoCliente(clienteId: string, etiquetaId: string): Promise<boolean> {

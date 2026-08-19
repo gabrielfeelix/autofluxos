@@ -948,3 +948,43 @@ describe('o handoff sabe que horas são', () => {
     expect(aviso).toBeLessThan(handoff)
   })
 })
+
+describe('o bloco de etapa do quadro (C1b)', () => {
+  const p = { x: 0, y: 0 }
+
+  it('descreve o movimento e segue a conversa', () => {
+    // O motor **descreve**, nunca executa: ele não sabe que existe tabela de
+    // cartão. Quem cria ou move é o servidor.
+    const fluxo = fluxoSchema.parse({
+      inicio: 'marca',
+      nodes: [
+        { id: 'marca', type: 'etapa', position: p, data: { quadroId: 'q1', colunaId: 'c2' } },
+        { id: 'fim', type: 'mensagem', position: p, data: { partes: [{ tipo: 'texto', texto: 'Pronto!' }] } },
+      ],
+      edges: [{ id: 'e', source: 'marca', target: 'fim' }],
+    })
+
+    const r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    expect(r.acoes).toContainEqual({ tipo: 'mover_etapa', quadroId: 'q1', colunaId: 'c2' })
+    expect(r.acoes.some((a) => a.tipo === 'enviar_texto' && a.texto === 'Pronto!')).toBe(true)
+  })
+
+  it('etapa não escolhida não move ninguém, e a conversa não morre', () => {
+    // É o grafo publicado antes de a etapa ser apagada. O `validar()` recusa
+    // publicar assim; aqui a defesa é para o que já está no ar — e seguir é o
+    // único desfecho aceitável, porque a alternativa é a conversa de alguém
+    // morrer por causa de uma arrumação no quadro.
+    const fluxo = fluxoSchema.parse({
+      inicio: 'marca',
+      nodes: [
+        { id: 'marca', type: 'etapa', position: p, data: { quadroId: '', colunaId: '' } },
+        { id: 'fim', type: 'mensagem', position: p, data: { partes: [{ tipo: 'texto', texto: 'Segue.' }] } },
+      ],
+      edges: [{ id: 'e', source: 'marca', target: 'fim' }],
+    })
+
+    const r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    expect(r.acoes.some((a) => a.tipo === 'mover_etapa')).toBe(false)
+    expect(r.acoes.some((a) => a.tipo === 'enviar_texto' && a.texto === 'Segue.')).toBe(true)
+  })
+})

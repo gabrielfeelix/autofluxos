@@ -66,10 +66,11 @@ caminhos e os dois são seus:
    `https://autofluxos.4yu.com.br/api/manutencao/tarefas` mandando
    `Authorization: Bearer <CRON_SECRET>`. Custa zero e não muda código nenhum.
 
-## 3.2 As migrations `0030` a `0033` — ✅ **aplicadas**
+## 3.2 As migrations `0030` a `0034` — ✅ **aplicadas**
 
-Compartilhar fluxo por link (`0030`), sequências (`0031`) e quadros (`0032`,
-`0033`) estão em produção, com a conferência do §9.3 feita: RLS ligada em tudo,
+Compartilhar fluxo por link (`0030`), sequências (`0031`), quadros (`0032`,
+`0033`) e o gatilho de sequência por etapa (`0034`) estão em produção, com a
+conferência do §9.3 feita: RLS ligada em tudo,
 nenhum `grant` para `anon`/`authenticated` nas tabelas novas, nenhuma política em
 `public`, e `app_verandi` com as mesmas **40 tabelas**.
 

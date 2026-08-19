@@ -431,6 +431,75 @@ export async function tirarDoQuadro(clienteId: string, cartaoId: string): Promis
 }
 
 /**
+ * Põe o contato numa etapa **a partir de um fluxo** (C1b).
+ *
+ * Cria o cartão se ele não existe e move se já existe — as duas coisas, porque
+ * do lado do fluxo elas são o mesmo pedido: "esta pessoa está agora nesta
+ * etapa". Obrigar o desenho a saber se ela já estava no quadro seria empurrar
+ * um detalhe de banco para quem está desenhando uma conversa.
+ *
+ * **Etapa que sumiu é nada-a-fazer, e não erro.** A versão publicada é imutável
+ * e a etapa é estado vivo: quem arruma o quadro não pode matar a conversa de
+ * alguém. É a mesma regra do papel de número que aponta para fluxo sem versão
+ * publicada. Devolve `false` para quem chama poder registrar, sem estourar.
+ */
+export async function porContatoNaEtapa(
+  clienteId: string,
+  contatoId: string,
+  quadroId: string,
+  colunaId: string,
+): Promise<boolean> {
+  // A etapa precisa ser **do quadro indicado e do cliente indicado**. Os dois
+  // ids vêm de uma versão publicada, que é imutável e pode ser de meses atrás.
+  const { data: coluna, error: erroDaColuna } = await db()
+    .from('quadro_colunas')
+    .select('id, quadros!inner (id, client_id)')
+    .eq('id', colunaId)
+    .eq('quadro_id', quadroId)
+    .eq('quadros.client_id', clienteId)
+    .maybeSingle()
+
+  if (ehIdInvalido(erroDaColuna)) return false
+  if (erroDaColuna) {
+    console.error('[quadros] não deu para conferir a etapa', erroDaColuna.message)
+    return false
+  }
+  if (!coluna) return false
+
+  const { data: existente, error: erroDoCartao } = await db()
+    .from('quadro_cartoes')
+    .select('id')
+    .eq('quadro_id', quadroId)
+    .eq('contact_id', contatoId)
+    .maybeSingle()
+
+  if (erroDoCartao) {
+    console.error('[quadros] não deu para achar o cartão', erroDoCartao.message)
+    return false
+  }
+
+  if (existente) {
+    const movido = await moverCartao(clienteId, (existente as { id: string }).id, colunaId)
+    return movido.ok
+  }
+
+  const { error } = await db().from('quadro_cartoes').insert({
+    client_id: clienteId,
+    quadro_id: quadroId,
+    coluna_id: colunaId,
+    contact_id: contatoId,
+  })
+
+  // Corrida com outra escrita para o mesmo contato: o índice único resolveu, e
+  // "já está no quadro" é o resultado que se queria.
+  if (error && error.code !== '23505') {
+    console.error('[quadros] não deu para pôr o contato na etapa', error.message)
+    return false
+  }
+  return true
+}
+
+/**
  * Em que quadros e etapas este contato está.
  *
  * É o que a ficha do contato mostra, e o que impede o quadro de virar uma

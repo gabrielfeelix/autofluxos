@@ -4,6 +4,7 @@ import { validar, type Problema } from '@/core/flow/validar'
 import { db, ehIdInvalido, pareceUuid } from '../db'
 import { listarConexoes } from './conexoes'
 import { sequenciasQueUsamOFluxo } from './sequencias'
+import { listarQuadros } from './quadros'
 import { acharCliente } from './clientes'
 
 /**
@@ -259,9 +260,16 @@ export async function publicar(
   // conveniência; a que vale é esta.
   const conexoes = (await listarConexoes(fluxo.clienteId)).map((c) => c.id)
   const cliente = await acharCliente(fluxo.clienteId)
+  // As etapas entram pelo mesmo motivo das conexões: uma aba aberta há uma hora
+  // publicaria fluxo apontando para etapa já apagada, e o bloco não moveria
+  // ninguém — em silêncio, que é o pior jeito de um fluxo deixar de funcionar.
+  const etapas = (await listarQuadros(fluxo.clienteId)).flatMap((quadro) =>
+    quadro.etapas.map((etapa) => etapa.id),
+  )
   const conferido = validar(analise.data, {
     iaHabilitada: fluxo.iaHabilitada,
     conexoes,
+    etapas,
     temContextoDeNegocio: (cliente?.contextoNegocio ?? '').trim() !== '',
   })
   if (!conferido.ok) return { ok: false, erros: conferido.erros }

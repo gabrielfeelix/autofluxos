@@ -838,12 +838,14 @@ export async function acaoCriarSequencia(
 
   const etiquetaId = String(formData.get('etiquetaId') ?? '').trim()
   const etiquetaDeSaidaId = String(formData.get('etiquetaDeSaidaId') ?? '').trim()
+  const colunaId = String(formData.get('colunaId') ?? '').trim()
 
   const r = await criarSequencia(clienteId, {
     nome: String(formData.get('nome') ?? ''),
     evento: evento as EventoDeSequencia,
     etiquetaId: etiquetaId === '' ? null : etiquetaId,
     etiquetaDeSaidaId: etiquetaDeSaidaId === '' ? null : etiquetaDeSaidaId,
+    colunaId: colunaId === '' ? null : colunaId,
   })
   if (!r.ok) return { erro: r.motivo }
 

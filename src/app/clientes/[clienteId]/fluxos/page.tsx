@@ -41,6 +41,7 @@ import { listarGatilhos } from '@/server/repos/gatilhos'
 import { listarPastas } from '@/server/repos/pastas'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { contarInscricoes, listarSequencias } from '@/server/repos/sequencias'
+import { listarQuadros } from '@/server/repos/quadros'
 import { MoverFluxo } from '@/components/editor/mover-fluxo'
 import { MODELOS } from '@/exemplos/modelos'
 import { contatosPorCampanha, listarCampanhas } from '@/server/repos/campanhas'
@@ -68,6 +69,7 @@ export default async function Pagina({
     sequencias,
     inscricoes,
     etiquetas,
+    quadros,
   ] = await Promise.all([
     listarFluxos(cliente.id),
     listarCanais(cliente.id),
@@ -78,6 +80,7 @@ export default async function Pagina({
     listarSequencias(cliente.id),
     contarInscricoes(cliente.id),
     listarEtiquetas(cliente.id),
+    listarQuadros(cliente.id),
   ])
   const pastas = await listarPastas(cliente.id)
   const criarPastaComCliente = acaoCriarPasta.bind(null, cliente.id)
@@ -108,6 +111,14 @@ export default async function Pagina({
   const criarSequenciaComCliente = acaoCriarSequencia.bind(null, cliente.id)
   const nomeDaEtiqueta = (id: string | null) =>
     etiquetas.find((etiqueta) => etiqueta.id === id)?.nome ?? 'uma etiqueta apagada'
+
+  // Achatado com o nome do quadro na frente: duas etapas "Fechado" em funis
+  // diferentes são indistinguíveis sem ele.
+  const etapasDosQuadros = quadros.flatMap((quadro) =>
+    quadro.etapas.map((etapa) => ({ id: etapa.id, rotulo: `${quadro.nome} · ${etapa.nome}` })),
+  )
+  const nomeDaEtapa = (id: string | null) =>
+    etapasDosQuadros.find((etapa) => etapa.id === id)?.rotulo ?? 'uma etapa apagada'
 
   /**
    * Em quais papéis de número este fluxo está ligado.
@@ -594,6 +605,9 @@ export default async function Pagina({
                           {sequencia.evento === 'etiqueta_aplicada'
                             ? `: “${nomeDaEtiqueta(sequencia.etiquetaId)}”`
                             : ''}
+                          {sequencia.evento === 'etapa_alcancada'
+                            ? `: “${nomeDaEtapa(sequencia.colunaId)}”`
+                            : ''}
                           {' · '}
                           {sequencia.passos.length === 0 ? (
                             <strong className="font-semibold text-amber-200">
@@ -744,7 +758,10 @@ export default async function Pagina({
 
           <div className="border-t border-white/[0.045] p-5">
             <FormularioSalvar action={criarSequenciaComCliente} rotulo="Criar sequência">
-              <CamposDaSequencia etiquetas={etiquetas.map((e) => ({ id: e.id, nome: e.nome }))} />
+              <CamposDaSequencia
+                etiquetas={etiquetas.map((e) => ({ id: e.id, nome: e.nome }))}
+                etapas={etapasDosQuadros}
+              />
             </FormularioSalvar>
           </div>
         </section>

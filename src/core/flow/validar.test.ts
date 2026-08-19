@@ -754,3 +754,42 @@ describe('bloco de mídia', () => {
     expect(solto?.mensagem).toContain('sala de aparelhos')
   })
 })
+
+describe('o bloco de etapa do quadro (C1b)', () => {
+  const p = { x: 0, y: 0 }
+
+  const comEtapa = (data: Record<string, unknown>) =>
+    fluxoSchema.parse({
+      inicio: 'marca',
+      nodes: [
+        { id: 'marca', type: 'etapa', position: p, data },
+        { id: 'fala', type: 'handoff', position: p, data: { motivo: 'x', mensagem: 'já chamo' } },
+      ],
+      edges: [{ id: 'e', source: 'marca', target: 'fala' }],
+    })
+
+  it('recusa publicar sem etapa escolhida', () => {
+    const r = validar(comEtapa({ quadroId: '', colunaId: '' }))
+    expect(r.ok).toBe(false)
+    expect(r.erros.map((e) => e.codigo)).toContain('ETAPA_NAO_ESCOLHIDA')
+  })
+
+  it('recusa publicar apontando para etapa que não existe mais', () => {
+    // É a contrapartida de o bloco guardar referência em vez de cópia: etapa é
+    // estado vivo, e o preço é ela poder sumir. Este é o lugar onde o preço é
+    // cobrado antes de a conversa de alguém pagar por ele.
+    const r = validar(comEtapa({ quadroId: 'q', colunaId: 'sumida' }), { etapas: ['outra'] })
+    expect(r.ok).toBe(false)
+    expect(r.erros.map((e) => e.codigo)).toContain('ETAPA_INEXISTENTE')
+  })
+
+  it('não cobra quando a lista de etapas não veio — é o editor sem ir ao banco', () => {
+    const r = validar(comEtapa({ quadroId: 'q', colunaId: 'qualquer' }))
+    expect(r.erros.map((e) => e.codigo)).not.toContain('ETAPA_INEXISTENTE')
+  })
+
+  it('aceita quando a etapa existe', () => {
+    const r = validar(comEtapa({ quadroId: 'q', colunaId: 'c' }), { etapas: ['c'] })
+    expect(r.ok).toBe(true)
+  })
+})

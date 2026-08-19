@@ -52,7 +52,8 @@ import {
   type SessaoSalva,
 } from './repos/conversas'
 import { travarContato } from './repos/travas'
-import { sairPorEvento } from './sequencias'
+import { inscreverNoEvento, sairPorEvento } from './sequencias'
+import { porContatoNaEtapa } from './repos/quadros'
 
 /**
  * O caminho de uma mensagem do WhatsApp até a resposta.
@@ -881,6 +882,31 @@ async function aplicar(
          */
         await alterarAutomacaoDoContato(contato.clienteId, contato.id, false)
         break
+
+      case 'mover_etapa': {
+        /**
+         * O bloco de etapa (C1b), e ele é o que faz o quadro se manter sozinho.
+         *
+         * **Nada aqui pode derrubar a conversa.** A versão publicada é imutável
+         * e a etapa é estado vivo: quem arrumou o quadro semana passada não
+         * pode fazer a mensagem de alguém falhar hoje. Etapa sumida vira log e
+         * a conversa segue — o repo já devolve `false` em vez de estourar.
+         */
+        const entrou = await porContatoNaEtapa(
+          contato.clienteId,
+          contato.id,
+          acao.quadroId,
+          acao.colunaId,
+        )
+        if (!entrou) {
+          console.error('[quadros] a etapa do fluxo não existe mais', acao.colunaId)
+          break
+        }
+        // Chegar numa etapa é um ato deliberado sobre um contato, como aplicar
+        // etiqueta — e é o terceiro evento que inscreve em sequência (0034).
+        await inscreverNoEvento(contato.clienteId, [contato.id], 'etapa_alcancada', acao.colunaId)
+        break
+      }
 
       case 'transferir_humano':
         await registrarHandoff(sessaoId, acao.motivo)

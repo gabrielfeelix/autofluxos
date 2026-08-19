@@ -3,6 +3,7 @@ import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
 import { Editor } from '@/components/editor/editor'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarConexoes } from '@/server/repos/conexoes'
+import { listarQuadros } from '@/server/repos/quadros'
 import { acharFluxo, acharVersao, listarVersoes } from '@/server/repos/fluxos'
 import { exigirAcessoAoCliente } from '@/server/sessao'
 
@@ -32,10 +33,11 @@ export default async function Pagina({
 }) {
   const { clienteId, fluxoId } = await params
 
-  const [cliente, fluxo, conexoes] = await Promise.all([
+  const [cliente, fluxo, conexoes, quadros] = await Promise.all([
     acharCliente(clienteId),
     acharFluxo(fluxoId),
     listarConexoes(clienteId),
+    listarQuadros(clienteId),
   ])
   if (!cliente || !fluxo || fluxo.clienteId !== cliente.id) notFound()
 
@@ -72,6 +74,17 @@ export default async function Pagina({
         contextoNegocio={cliente.contextoNegocio}
         temContextoDeNegocio={cliente.contextoNegocio.trim() !== ''}
         conexoes={conexoes}
+        /* Achatado aqui, e não no componente: o painel escolhe **uma etapa**, e
+           um seletor de dois níveis custaria dois cliques para uma escolha só.
+           O nome do quadro entra como prefixo porque duas etapas "Fechado" em
+           funis diferentes são indistinguíveis sem ele. */
+        etapas={quadros.flatMap((quadro) =>
+          quadro.etapas.map((etapa) => ({
+            quadroId: quadro.id,
+            colunaId: etapa.id,
+            rotulo: `${quadro.nome} · ${etapa.nome}`,
+          })),
+        )}
         publicadaInicial={
           publicada
             ? {

@@ -20,6 +20,7 @@ import {
   sairPorEtiquetaDeSaida,
   sequenciasDoEvento,
 } from './sequencias'
+import { acharQuadro, criarQuadro } from './quadros'
 
 /**
  * As sequências contra o banco de verdade (0031).
@@ -83,6 +84,7 @@ describe.skipIf(!temCredencial)('criar a sequência e os passos', () => {
       evento: 'etiqueta_aplicada',
       etiquetaId: null,
       etiquetaDeSaidaId: null,
+      colunaId: null,
     })
     expect(r).toEqual({ ok: false, motivo: 'escolha a etiqueta que dispara a sequência' })
   })
@@ -96,6 +98,7 @@ describe.skipIf(!temCredencial)('criar a sequência e os passos', () => {
       evento: 'etiqueta_aplicada',
       etiquetaId: alheia.id,
       etiquetaDeSaidaId: null,
+      colunaId: null,
     })
     expect(r).toEqual({ ok: false, motivo: 'esta etiqueta não é deste cliente' })
   })
@@ -106,6 +109,7 @@ describe.skipIf(!temCredencial)('criar a sequência e os passos', () => {
       evento: 'etiqueta_aplicada',
       etiquetaId,
       etiquetaDeSaidaId: saidaId,
+      colunaId: null,
     })
     expect(r.ok).toBe(true)
     const sequenciaId = r.ok ? r.id : ''
@@ -220,6 +224,57 @@ describe.skipIf(!temCredencial)('inscrever, e não inscrever duas vezes', () => 
   })
 })
 
+describe.skipIf(!temCredencial)('o gatilho por etapa do quadro (0034)', () => {
+  it('recusa evento de etapa sem etapa, e etapa de outra conta', async () => {
+    expect(
+      await criarSequencia(clienteId, {
+        nome: `${marca} sem etapa`,
+        evento: 'etapa_alcancada',
+        etiquetaId: null,
+        etiquetaDeSaidaId: null,
+        colunaId: null,
+      }),
+    ).toEqual({ ok: false, motivo: 'escolha a etapa do quadro que dispara a sequência' })
+
+    const alheio = await criarQuadro(outroId, `${marca} alheio`)
+    const etapaAlheia = alheio.ok ? (await acharQuadro(outroId, alheio.id))!.etapas[0]! : null
+
+    expect(
+      await criarSequencia(clienteId, {
+        nome: `${marca} etapa roubada`,
+        evento: 'etapa_alcancada',
+        etiquetaId: null,
+        etiquetaDeSaidaId: null,
+        colunaId: etapaAlheia!.id,
+      }),
+    ).toEqual({ ok: false, motivo: 'esta etapa não é deste cliente' })
+  })
+
+  it('o evento acha pela etapa, e não pela etiqueta', async () => {
+    const quadro = await criarQuadro(clienteId, `${marca} funil`)
+    const etapa = quadro.ok ? (await acharQuadro(clienteId, quadro.id))!.etapas[1]! : null
+
+    const nova = await criarSequencia(clienteId, {
+      nome: `${marca} pos-agendamento`,
+      evento: 'etapa_alcancada',
+      etiquetaId: null,
+      etiquetaDeSaidaId: null,
+      colunaId: etapa!.id,
+    })
+    expect(nova.ok).toBe(true)
+    if (nova.ok) await criarPasso(clienteId, nova.id, { atrasoMinutos: 120, fluxoId })
+
+    // Filtrar sempre por `etiqueta_id` faria este evento não achar nada, em
+    // silêncio — que é o defeito que a consulta separada por evento evita.
+    const achadas = await sequenciasDoEvento(clienteId, 'etapa_alcancada', etapa!.id)
+    expect(achadas.map((s) => s.nome)).toEqual([expect.stringContaining('pos-agendamento')])
+
+    // Outra etapa do mesmo quadro não dispara esta sequência.
+    const outraEtapa = (await acharQuadro(clienteId, quadro.ok ? quadro.id : ''))!.etapas[0]!
+    expect(await sequenciasDoEvento(clienteId, 'etapa_alcancada', outraEtapa.id)).toEqual([])
+  })
+})
+
 describe.skipIf(!temCredencial)('desligar, tirar passo e apagar', () => {
   it('desligar não esvazia quem já está dentro', async () => {
     const sequencia = (await listarSequencias(clienteId)).find((s) =>
@@ -246,6 +301,13 @@ describe.skipIf(!temCredencial)('desligar, tirar passo e apagar', () => {
       s.nome.endsWith('retomada'),
     )!
     expect(await apagarSequencia(clienteId, sequencia.id)).toBe(true)
+
+    // **Todas**, e não só aquela: o fluxo é passo de mais de uma sequência
+    // (a de etiqueta e a de etapa), e a recusa olha todas — que é justamente o
+    // comportamento que se quer provar aqui.
+    for (const outra of await listarSequencias(clienteId)) {
+      expect(await apagarSequencia(clienteId, outra.id)).toBe(true)
+    }
     expect(await apagarFluxo(clienteId, fluxoId)).toEqual({ ok: true })
   })
 })

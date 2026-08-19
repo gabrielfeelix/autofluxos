@@ -300,6 +300,11 @@ function textoDoBloco(no: No): string {
       }
       return `${no.data.metodo} em ${host}`
     }
+    case 'etapa':
+      // O nome da etapa vive no banco da conta de origem, e o link é público:
+      // dizer "move para Aula agendada" contaria o funil de um cliente a quem
+      // só recebeu um desenho. O que o bloco faz basta.
+      return 'move o contato no quadro'
   }
 }
 

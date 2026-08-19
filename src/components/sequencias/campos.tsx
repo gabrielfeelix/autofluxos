@@ -5,6 +5,7 @@ import { Dropdown } from '@/components/design/dropdown'
 import { EVENTOS_DE_SEQUENCIA, ROTULO_DO_EVENTO } from '@/core/sequencias'
 
 export type EtiquetaNaLista = { id: string; nome: string }
+export type EtapaNaLista = { id: string; rotulo: string }
 
 /**
  * Os campos de uma sequência nova.
@@ -18,9 +19,16 @@ export type EtiquetaNaLista = { id: string; nome: string }
  * A etiqueta **de saída** aparece sempre, e é opcional: ela é o "virou cliente,
  * pode parar", e vale para os dois gatilhos.
  */
-export function CamposDaSequencia({ etiquetas }: { etiquetas: EtiquetaNaLista[] }) {
+export function CamposDaSequencia({
+  etiquetas,
+  etapas,
+}: {
+  etiquetas: EtiquetaNaLista[]
+  etapas: EtapaNaLista[]
+}) {
   const [evento, setEvento] = useState<string>(EVENTOS_DE_SEQUENCIA[0])
   const porEtiqueta = evento === 'etiqueta_aplicada'
+  const porEtapa = evento === 'etapa_alcancada'
 
   return (
     <div className="grid gap-2.5 md:grid-cols-2">
@@ -61,6 +69,29 @@ export function CamposDaSequencia({ etiquetas }: { etiquetas: EtiquetaNaLista[] 
               rotuloAcessivel="Etiqueta que dispara a sequência"
               opcoes={etiquetas.map((etiqueta) => ({ valor: etiqueta.id, rotulo: etiqueta.nome }))}
             />
+          </label>
+        ))}
+
+      {porEtapa &&
+        (etapas.length === 0 ? (
+          <p className="text-[11.5px] leading-5 text-amber-200/90 md:col-span-2">
+            Crie um quadro primeiro, em Quadros. Sem etapa este gatilho não tem o que observar.
+          </p>
+        ) : (
+          <label className="md:col-span-2">
+            <span className="mb-1 block text-[11px] font-semibold text-muted">
+              Etapa que dispara
+            </span>
+            <Dropdown
+              nome="colunaId"
+              rotuloAcessivel="Etapa do quadro que dispara a sequência"
+              opcoes={etapas.map((etapa) => ({ valor: etapa.id, rotulo: etapa.rotulo }))}
+            />
+            <span className="mt-1 block text-[10.5px] leading-4 text-dim">
+              Vale para quem chega pelo bloco de fluxo <strong>Etapa do quadro</strong>. Mover o
+              cartão à mão na tela de Quadros não inscreve ninguém — inscrever alguém por um
+              arrasto de arrumação seria mandar mensagem por engano.
+            </span>
           </label>
         ))}
 

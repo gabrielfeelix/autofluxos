@@ -11,13 +11,25 @@ import { JANELA_MS } from '@/channels/janela'
 /**
  * O que inscreve alguém.
  *
- * Os dois são **atos de gente**: alguém encerrou um atendimento, alguém aplicou
- * uma etiqueta. Isso não é acaso — é a diferença entre acompanhamento e
- * disparo em massa. Um evento automático ("chegou contato novo") poria a
- * sequência disputando a conversa com o fluxo de entrada, e as duas falariam
- * por cima uma da outra.
+ * Os três são **atos deliberados sobre um contato**: alguém encerrou um
+ * atendimento, alguém aplicou uma etiqueta, ou o fluxo pôs a pessoa numa etapa
+ * do quadro. Isso não é acaso — é a diferença entre acompanhamento e disparo em
+ * massa. Um evento genérico ("chegou contato novo") poria a sequência
+ * disputando a conversa com o fluxo de entrada, e as duas falariam por cima uma
+ * da outra.
+ *
+ * `etapa_alcancada` (0034) é o que junta quadro e sequência, e é o pedido do
+ * cliente real: *"entrou em Aula agendada e não compareceu"*. Dava para exigir
+ * que o fluxo aplicasse uma etiqueta junto e reusar o evento de etiqueta — mas
+ * isso obrigaria a conta a manter duas coisas em sincronia à mão, e no dia em
+ * que alguém movesse o cartão pela tela o acompanhamento não aconteceria, sem
+ * erro nenhum para investigar.
  */
-export const EVENTOS_DE_SEQUENCIA = ['atendimento_encerrado', 'etiqueta_aplicada'] as const
+export const EVENTOS_DE_SEQUENCIA = [
+  'atendimento_encerrado',
+  'etiqueta_aplicada',
+  'etapa_alcancada',
+] as const
 
 export type EventoDeSequencia = (typeof EVENTOS_DE_SEQUENCIA)[number]
 
@@ -28,6 +40,7 @@ export function ehEventoDeSequencia(valor: string): valor is EventoDeSequencia {
 export const ROTULO_DO_EVENTO: Record<EventoDeSequencia, string> = {
   atendimento_encerrado: 'Quando alguém clicar em “Já atendi”',
   etiqueta_aplicada: 'Quando esta etiqueta for aplicada',
+  etapa_alcancada: 'Quando o contato chegar nesta etapa do quadro',
 }
 
 /**
@@ -65,6 +78,8 @@ export type Sequencia = {
   evento: EventoDeSequencia
   etiquetaId: string | null
   etiquetaDeSaidaId: string | null
+  /** A etapa que dispara, quando o evento é `etapa_alcancada` (0034). */
+  colunaId: string | null
   ativa: boolean
   passos: PassoDaSequencia[]
 }

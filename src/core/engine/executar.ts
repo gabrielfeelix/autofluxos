@@ -385,6 +385,23 @@ function avancar(
         break
       }
 
+      case 'etapa': {
+        // Sem quadro ou sem etapa escolhidos o bloco não faz nada e a conversa
+        // segue. O `validar()` recusa publicar assim; aqui a defesa é para o
+        // grafo que já estava no ar quando a etapa foi apagada — e nesse caso
+        // seguir é o único desfecho aceitável, porque a alternativa é a
+        // conversa de alguém morrer por causa de uma arrumação no quadro.
+        if (no.data.quadroId && no.data.colunaId) {
+          acoes.push({
+            tipo: 'mover_etapa',
+            quadroId: no.data.quadroId,
+            colunaId: no.data.colunaId,
+          })
+        }
+        atual = proximo(fluxo, no.id)
+        break
+      }
+
       case 'condicao': {
         const passou = avaliar(no.data.variavel, no.data.operador, no.data.valor, s.vars)
         atual = proximo(fluxo, no.id, passou ? SAIDA_VERDADEIRO : SAIDA_FALSO)

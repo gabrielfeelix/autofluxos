@@ -18,12 +18,13 @@ conta. Está em produção em `autofluxos.4yu.com.br` (Vercel), com Supabase
 O que sobra esbarra em coisas que só o dono resolve:
 [PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md).
 
-A **Etapa C começou pela C1** — Quadros (§5.9). O resto dela está em §8.2.
+A **Etapa C começou pela C1** — Quadros, inteira: o quadro (§5.9) e o quadro que
+se move sozinho (§5.10). O resto dela está em §8.2.
 
-`npm test` → **675 passando, 28 pulados** (os pulados dependem de `IA_TESTE_REAL`
+`npm test` → **683 passando, 28 pulados** (os pulados dependem de `IA_TESTE_REAL`
 e `API_TESTE_REAL`, por desenho). `typecheck`, `lint` e `build` limpos.
-**Migrations aplicadas em produção: `0001` a `0033`, todas. A próxima a escrever
-é a `0034`.**
+**Migrations aplicadas em produção: `0001` a `0034`, todas. A próxima a escrever
+é a `0035`.**
 
 ---
 
@@ -45,6 +46,7 @@ O mapa que economiza a primeira hora de quem chega:
 | **o que sai da conta num link compartilhado** | `src/core/compartilhar.ts` — é a única barreira antes de uma URL pública |
 | **quando um passo de sequência roda** | `src/core/sequencias.ts` (régua) · `server/sequencias.ts` (entra/sai) · `server/sequencias-passo.ts` (executa) |
 | **a etapa em que um contato está** | `src/core/quadros.ts` (régua) · `repos/quadros.ts` · `components/quadros/quadro.tsx` |
+| **um tipo de bloco novo no fluxo** | `core/flow/schema.ts`, `engine/types.ts`, `engine/executar.ts`, `flow/validar.ts`, e no editor `nos.tsx`+`editor.tsx`+`painel.tsx`. O compilador aponta os seis — todos os `switch` são exaustivos |
 
 Duas leis de arquitetura que explicam o mapa: **`core/` não faz rede** (é o que
 faz o simulador e a produção rodarem o mesmo código), e **`repos/` não decide
@@ -559,10 +561,50 @@ Outras decisões, e o que cada uma evita:
   seria uma tela nova para a mesma tela. O seletor só aparece com mais de um
   quadro, pela mesma razão de `destinoAposEntrar`.
 
-**O que ainda falta na C1 (é a C1b).** Hoje o cartão só se move por gesto humano,
-e **quadro que depende de digitação manual é quadro que ninguém mantém — e
-quadro desatualizado mente**. Falta o bloco de fluxo que move o cartão sozinho e
-o evento de sequência `etapa_alcancada`. Está em §8.2.
+### 5.10 — o quadro que se move sozinho (C1b, 0034)
+
+Sem isto a C1 não valeria: **quadro que depende de digitação manual é quadro que
+ninguém mantém, e quadro desatualizado é pior que quadro nenhum — ele mente com
+cara de dado.** Duas peças fecham a frente.
+
+**O bloco `etapa`.** Nono tipo de nó, e o primeiro desde a A3. Ele guarda
+`{ quadroId, colunaId }` e o motor só **descreve** (`mover_etapa`), como em toda
+ação: quem cria o cartão, ou move o que já existe, é o servidor.
+
+Ele **guarda referência, e não cópia**, e essa é a exceção consciente à regra do
+preset e do modelo (§6.3). Etapa não é configuração congelável: é estado vivo, e
+o cartão precisa cair na etapa que existe **hoje**. O preço é a etapa poder sumir
+depois de publicada, e ele é pago em dois lugares, de propósito:
+
+- **`validar()` recusa publicar** apontando para etapa que não existe — e o
+  `publicar()` passa a lista de etapas do cliente junto das conexões, pelo mesmo
+  motivo: uma aba aberta há uma hora publicaria um bloco que não move ninguém;
+- **o servidor trata etapa sumida como nada-a-fazer**, com log, em vez de
+  estourar. A versão publicada é imutável e a conversa de alguém não pode morrer
+  porque outra pessoa arrumou o quadro. É a mesma regra do papel de número que
+  aponta para fluxo sem versão publicada.
+
+O bloco se chama **"Etapa do quadro"**, não "mover cartão": quem desenha pensa em
+"marcar que essa pessoa agendou a aula", e o cartão é o desenho da coisa, não a
+coisa. Mesma correção que fez `http` deixar de se chamar "API".
+
+**O evento `etapa_alcancada`.** Terceiro gatilho de sequência, e é ele que junta
+as duas automações. O pedido do cliente real é exatamente a junção: *"entrou em
+Aula agendada e não compareceu → lembrete algumas horas depois"*.
+
+Dava para não fazer nada e pedir que o fluxo aplicasse uma etiqueta junto,
+reusando o evento que já existia. Isso obrigaria toda conta a manter duas coisas
+em sincronia à mão — e no dia em que alguém movesse o cartão pela tela sem a
+etiqueta, o acompanhamento simplesmente não aconteceria, sem erro nenhum para
+investigar.
+
+**Só o bloco de fluxo inscreve; arrastar na tela não.** Mover o cartão à mão é
+gesto de arrumação, e disparar mensagem por causa de um arrasto seria mandar
+mensagem por engano — a tela diz isso onde a sequência é criada.
+
+E `sequenciasDoEvento` passou a ler o alvo **na coluna que cada evento usa**.
+Filtrar sempre por `etiqueta_id` faria o evento de etapa não achar nada, em
+silêncio; há teste prendendo.
 
 ### Fora do plano, e entrou porque estava errado
 
@@ -725,6 +767,7 @@ do React e derruba a tela; falha de upload tem que ser um recado numa linha.
 | `fluxo_links` | link público de uma **versão publicada**. Token, prazo, revogação e contagem separada de abertura e importação (0030) |
 | `sequencias`, `sequencia_passos`, `sequencia_inscricoes` | o acompanhamento automático (0031). `bloqueada` = a janela de 24h fechou antes do passo |
 | `quadros`, `quadro_colunas`, `quadro_cartoes` | o funil desenhado (0032). Cartão **é** um contato; `entrou_na_coluna_em` é quem responde "parado há quanto tempo" |
+| `sequencias.coluna_id` | a etapa que dispara o evento `etapa_alcancada` (0034) |
 | view `leads` | contato + última mensagem + handoff aberto + `ultima_entrada_em` + `atribuido_a` + `ultimo_tipo` |
 | view `metricas_sessoes`, `resumo_clientes` | o funil e a lista de automações |
 | view `metricas_de_tempo`, `metricas_diarias`, `metricas_por_pessoa` | o painel completo (0028) |
@@ -756,27 +799,15 @@ aplicar a `0030` e a `0031`, item 3.2 de
 
 | Frente | Estado |
 |---|---|
-| **C1 Quadros** | **a parte manual está no ar** (§5.9). Falta a C1b — ver abaixo |
+| **C1 Quadros** | **inteira no ar** — o quadro (§5.9) e o bloco que o move sozinho (§5.10) |
 | C2 central de notificações | não começou. Reaproveita o alerta de fila que já toca em qualquer tela |
 | C3 casca (idioma, ajuda, relatar bug) | não começou. Ninguém deixa de operar por falta |
 | C4 modelos da Meta e Transmissão | **trava externa**: verificação da empresa e App Review. Não é código nosso que destrava |
 | C5 faturamento e registros | quando houver contrato de verdade |
 
-**A C1b é a próxima peça, e ela é o que faz a C1 valer.** Hoje o cartão só se
-move por gesto humano, e quadro que depende de digitação manual é quadro que
-ninguém mantém — quadro desatualizado é pior que quadro nenhum, porque ele
-mente com cara de dado. Faltam duas coisas, e as duas encaixam no que já existe:
-
-1. **um bloco de fluxo que move o cartão** — `data: { quadroId, colunaId }`. Como
-   todo campo novo do schema, opcional; e como o preset, o que fica gravado na
-   versão publicada é a referência à etapa, que é estado vivo por natureza. Etapa
-   apagada vira no-op com log, pela mesma regra do papel que aponta para fluxo
-   sem versão publicada;
-2. **`etapa_alcancada` como terceiro evento de sequência** (0031). Mover para uma
-   etapa é um ato deliberado sobre um contato, exatamente como aplicar etiqueta —
-   e "entrou em Aula agendada e não compareceu" é o acompanhamento que o cliente
-   real pede. Não precisa de migration: `sequencias.evento` é texto, e a lista
-   fechada mora em `core/sequencias.ts`.
+**A próxima peça é a C2**, e ela é barata: a central de notificações reaproveita
+o alerta de fila que já toca em qualquer tela do painel. A C3 é casca. A C4 é
+trava externa e não depende de código nosso. A C5 espera contrato.
 
 Ordem e critério do resto em [PLANO-SISTEMA.md §5](PLANO-SISTEMA.md).
 Transmissão só depende do agendador (feito) mais os modelos da Meta.
@@ -824,7 +855,7 @@ plataforma** (`af_usuarios.role`). Ser dono de três contas não abre `/admin/*`
 ### 9.1 O ciclo
 
 ```bash
-npm test          # 632 passando, 28 pulados
+npm test          # 683 passando, 28 pulados
 npm run typecheck
 npm run lint
 npm run build     # roda também sem DATABASE_URL, e tem que continuar rodando

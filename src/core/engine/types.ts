@@ -150,6 +150,16 @@ export type Acao =
        */
       conexaoId?: string
     }
+  /**
+   * Pôr o contato numa etapa de um quadro (C1b).
+   *
+   * Como toda ação daqui, o motor **descreve** e não executa: ele não sabe que
+   * existe tabela `quadro_cartoes`, e é o servidor que cria o cartão se ele
+   * ainda não existe ou o move se já existe. Etapa que sumiu depois da
+   * publicação é nada-a-fazer do lado de fora — o motor não tem como saber, e
+   * uma conversa não pode morrer porque alguém arrumou o quadro.
+   */
+  | { tipo: 'mover_etapa'; quadroId: string; colunaId: string }
   | { tipo: 'transferir_humano'; motivo: string }
   | { tipo: 'encerrar' }
 

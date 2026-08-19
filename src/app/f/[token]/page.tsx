@@ -42,6 +42,7 @@ const ROTULO_DO_BLOCO: Record<LinhaDoRoteiro['tipo'], string> = {
   ia: 'IA',
   handoff: 'Chama uma pessoa',
   http: 'API',
+  etapa: 'Etapa do quadro',
 }
 
 export default async function Pagina({ params }: { params: Promise<{ token: string }> }) {

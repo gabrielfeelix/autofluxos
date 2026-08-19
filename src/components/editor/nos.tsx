@@ -32,6 +32,7 @@ const CORES = {
   handoff: 'border-rose-400/30',
   http: 'border-cyan-400/30',
   midia: 'border-sky-400/30',
+  etapa: 'border-teal-400/30',
 } as const
 
 export const ICONES = {
@@ -43,6 +44,7 @@ export const ICONES = {
   handoff: '♙',
   http: '⇄',
   midia: '▣',
+  etapa: '▤',
 } as const
 
 /**
@@ -63,6 +65,14 @@ export const NOMES = {
   handoff: 'Falar com humano',
   http: 'Serviços externos',
   midia: 'Mídia',
+  /**
+   * "Etapa do quadro", e não "Kanban" nem "mover cartão".
+   *
+   * Quem desenha o fluxo pensa em "marcar que essa pessoa agendou a aula", não
+   * em mover um cartão — o cartão é o desenho da coisa, não a coisa. É a mesma
+   * correção que fez `http` deixar de se chamar "API".
+   */
+  etapa: 'Etapa do quadro',
 } as const
 
 function Caixa({
@@ -323,6 +333,20 @@ function NoSalvarCampo({ data, selected }: NodeProps) {
   )
 }
 
+function NoEtapa({ data, selected }: NodeProps) {
+  const d = data as { quadroId: string; colunaId: string; rotulo?: string }
+  return (
+    <Caixa tipo="etapa" selecionado={!!selected}>
+      {/* `rotulo` é preenchido pelo painel quando alguém escolhe, e serve só ao
+          desenho: o id não diz nada a quem olha o fluxo. O motor ignora — o que
+          vale para ele são `quadroId` e `colunaId`. */}
+      <p className="truncate text-[12.5px] leading-5 text-soft">
+        {d.colunaId ? (d.rotulo ?? 'etapa escolhida') : '(nenhuma etapa escolhida)'}
+      </p>
+    </Caixa>
+  )
+}
+
 function NoIa({ data, selected }: NodeProps) {
   const d = data as { instrucao: string; salvarEm?: string }
   return (
@@ -370,4 +394,5 @@ export const tiposDeNo: NodeTypes = {
   ia: NoIa,
   handoff: NoHandoff,
   http: NoHttp,
+  etapa: NoEtapa,
 }

@@ -75,6 +75,19 @@ export type Capacidades = {
    * entrega um bot que parece funcionar e nunca responde.
    */
   temContextoDeNegocio?: boolean
+  /**
+   * Ids das etapas de quadro que existem para este cliente (C1b).
+   *
+   * `undefined` significa "não sei" e o validador não cobra — é o editor
+   * validando enquanto alguém desenha, sem ter ido ao banco. Quando a lista
+   * vem, bloco apontando para etapa apagada vira impedimento.
+   *
+   * **É a contrapartida de o bloco guardar referência em vez de cópia.** Etapa
+   * é estado vivo e precisa ser referenciada; o preço é ela poder sumir depois
+   * de publicada, e este é o lugar onde esse preço é cobrado antes de a
+   * conversa de alguém pagar por ele.
+   */
+  etapas?: string[]
 }
 
 /**
@@ -86,7 +99,7 @@ export type Capacidades = {
  * na memória de quem desenhou o fluxo.
  */
 export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoValidacao {
-  const { iaHabilitada = false, conexoes, temContextoDeNegocio } = capacidades
+  const { iaHabilitada = false, conexoes, temContextoDeNegocio, etapas } = capacidades
   const erros: Problema[] = []
   const avisos: Problema[] = []
 
@@ -213,6 +226,24 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
       })
     }
 
+    if (no.type === 'etapa') {
+      if (!no.data.quadroId || !no.data.colunaId) {
+        erros.push({
+          codigo: 'ETAPA_NAO_ESCOLHIDA',
+          mensagem:
+            'Este bloco move o contato no quadro, mas nenhuma etapa foi escolhida. Do jeito que está ele não faria nada.',
+          noId: no.id,
+        })
+      } else if (etapas && !etapas.includes(no.data.colunaId)) {
+        erros.push({
+          codigo: 'ETAPA_INEXISTENTE',
+          mensagem:
+            'Este bloco aponta para uma etapa que não existe mais neste cliente. Escolha outra — publicar assim entrega um fluxo que não move ninguém.',
+          noId: no.id,
+        })
+      }
+    }
+
     if (no.type === 'condicao') {
       for (const saida of [SAIDA_VERDADEIRO, SAIDA_FALSO]) {
         if (!minhasSaidas.some((a) => a.sourceHandle === saida)) {
@@ -289,6 +320,10 @@ function descrever(no: No): string {
       return rotular('Serviços externos', curto(no.data.url))
     case 'midia':
       return rotular('Mídia', curto(no.data.legenda ?? no.data.url))
+    case 'etapa':
+      // O bloco de etapa não tem texto nenhum para citar — os dois campos são
+      // ids. Sobra o tipo, que é o que já acontece com qualquer bloco vazio.
+      return 'O bloco de etapa do quadro'
   }
 }
 
@@ -761,6 +796,10 @@ function variaveisDoNo(no: No): string[] {
         ...variaveisCitadas(no.data.corpo),
         ...no.data.cabecalhos.flatMap((c) => variaveisCitadas(c.valor)),
       ]
+    case 'etapa':
+      // Ids, não variáveis. Interpolar `{{}}` aqui seria deixar a conversa
+      // escolher em que etapa a pessoa cai, e o id não é coisa que se digite.
+      return []
   }
 }
 

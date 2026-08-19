@@ -23,7 +23,7 @@ import { validar } from '@/core/flow/validar'
 import { acaoAlternarIa, acaoPublicar, acaoSalvarRascunho, acaoVoltarParaVersao } from '@/server/acoes'
 import { ICONES, NOMES, tiposDeNo } from './nos'
 import { Painel } from './painel'
-import type { ConexaoDoCliente } from './painel'
+import type { ConexaoDoCliente, EtapaDoCliente } from './painel'
 import { Versoes, type VersaoNaLista } from './versoes'
 import { Compartilhar } from './compartilhar'
 
@@ -35,6 +35,7 @@ const TIPOS: TipoNo[] = [
   'pergunta',
   'condicao',
   'salvar-campo',
+  'etapa',
   'ia',
   'handoff',
   'http',
@@ -46,6 +47,7 @@ const DESCRICOES: Record<TipoNo, string> = {
   pergunta: 'Pergunta e guarda',
   condicao: 'Divide o caminho',
   'salvar-campo': 'Registra no lead',
+  etapa: 'Move no quadro',
   ia: 'Responde pelo contexto',
   handoff: 'Passa para uma pessoa',
   http: 'Chama um sistema',
@@ -75,6 +77,11 @@ function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
       return { variavel: 'assunto', operador: 'igual', valor: '' }
     case 'salvar-campo':
       return { campo: 'campo', valor: '' }
+    case 'etapa':
+      // Nasce sem etapa escolhida, e o validador recusa publicar assim. Chutar
+      // a primeira etapa do primeiro quadro poria gente num funil que quem
+      // desenhou não escolheu — e ninguém revisa o que já veio preenchido.
+      return { quadroId: '', colunaId: '' }
     case 'ia':
       return { instrucao: 'Responda a dúvida do cliente usando o contexto do negócio.' }
     case 'handoff':
@@ -121,6 +128,7 @@ export function Editor({
   fluxoId,
   clienteId,
   conexoes,
+  etapas,
   nome,
   clienteNome,
   voltarHref,
@@ -134,6 +142,8 @@ export function Editor({
   fluxoId: string
   clienteId: string
   conexoes: ConexaoDoCliente[]
+  /** As etapas de quadro deste cliente, para o bloco de etapa (C1b). */
+  etapas: EtapaDoCliente[]
   nome: string
   clienteNome: string
   voltarHref: string
@@ -697,6 +707,7 @@ export function Editor({
                 ehInicio={selecionado === inicio}
                 variaveis={variaveis}
                 conexoes={conexoes}
+                etapas={etapas}
                 aoMudarDados={mudarDados}
                 aoDefinirInicio={definirInicio}
                 aoApagar={apagar}

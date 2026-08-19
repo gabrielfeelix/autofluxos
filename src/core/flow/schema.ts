@@ -351,6 +351,35 @@ export const noHttpSchema = z.object({
   }),
 })
 
+/**
+ * Move o contato para uma etapa de um quadro (C1b, 0032).
+ *
+ * **É o bloco que faz o quadro valer.** Sem ele, a posição de cada pessoa no
+ * funil só muda por gesto humano — e quadro que depende de digitação manual é
+ * quadro que ninguém mantém, o que é pior que quadro nenhum: ele mente com cara
+ * de dado.
+ *
+ * Guarda **referência**, e não cópia, e essa é a exceção consciente à regra do
+ * preset e do modelo (§6.3 do HANDOFF). Etapa não é configuração congelável: é
+ * estado vivo, e um cartão precisa cair na etapa que existe **hoje**. O preço
+ * dessa escolha é a etapa poder sumir depois de publicada, e ele é pago em dois
+ * lugares: o `validar()` recusa publicar apontando para etapa que não existe, e
+ * o servidor trata etapa sumida como nada-a-fazer em vez de estourar — a mesma
+ * regra do papel de número que aponta para fluxo sem versão publicada.
+ *
+ * Os dois campos são texto livre no schema porque o editor passa por estados
+ * vazios enquanto alguém escolhe. Quem cobra o preenchimento é o `validar()`,
+ * como em toda a casa: Zod garante a estrutura, `validar()` garante o sentido.
+ */
+export const noEtapaSchema = z.object({
+  ...base,
+  type: z.literal('etapa'),
+  data: z.object({
+    quadroId: z.string().default(''),
+    colunaId: z.string().default(''),
+  }),
+})
+
 export const noSchema = z.discriminatedUnion('type', [
   noMensagemSchema,
   noMidiaSchema,
@@ -360,6 +389,7 @@ export const noSchema = z.discriminatedUnion('type', [
   noIaSchema,
   noHandoffSchema,
   noHttpSchema,
+  noEtapaSchema,
 ])
 
 export const arestaSchema = z.object({
@@ -394,6 +424,7 @@ export type NoMidia = z.infer<typeof noMidiaSchema>
 export type Cabecalho = z.infer<typeof cabecalhoSchema>
 export type Mapeamento = z.infer<typeof mapeamentoSchema>
 export type NoHttp = z.infer<typeof noHttpSchema>
+export type NoEtapa = z.infer<typeof noEtapaSchema>
 export type Aresta = z.infer<typeof arestaSchema>
 export type Fluxo = z.infer<typeof fluxoSchema>
 export type TipoNo = No['type']
