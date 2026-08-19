@@ -203,12 +203,50 @@ function Fila({
                 <span className={`mt-0.5 block truncate text-[10.5px] ${lead.aguardando ? 'text-rose-300' : 'text-muted'}`}>
                   {lead.aguardando ? `Pessoa: ${lead.aguardando.motivo}` : resumoDaConversa(lead)}
                 </span>
+                {lead.aguardando && <RelogioDaJanela ultimaEntradaEm={lead.ultimaEntradaEm} />}
               </span>
             </Link>
           )
         })}
       </nav>
     </aside>
+  )
+}
+
+/**
+ * Quanto tempo ainda dá para responder em texto livre.
+ *
+ * **Só aparece em quem espera uma pessoa**, e isso é decisão de desenho: a
+ * fila já carrega nome, horário e prévia, e um quarto dado em toda linha vira
+ * ruído. Onde o relógio decide alguma coisa é exatamente aqui — quem escolhe o
+ * que atender primeiro precisa saber de quem a janela está fechando, não de
+ * quem está conversando com o bot.
+ *
+ * §3.10.1: *"a fila precisa mostrar quanto tempo resta, não só que alguém
+ * espera"*. Passada a janela, a Meta só aceita modelo aprovado — que este
+ * produto ainda não tem —, então "fechada" quer dizer que não dá para
+ * responder por texto, e é a informação mais importante da linha.
+ */
+function RelogioDaJanela({ ultimaEntradaEm }: { ultimaEntradaEm: string | null }) {
+  const restante = restaDaJanela(ultimaEntradaEm)
+  if (restante === null) return null
+
+  if (restante === 0) {
+    return (
+      <span className="mt-0.5 block text-[10px] font-semibold text-rose-300">
+        janela fechada — só modelo aprovado
+      </span>
+    )
+  }
+
+  // Duas horas é o limite em que avisar ainda muda a decisão de alguém. Acima
+  // disso, cor de alerta em toda linha treina a pessoa a ignorar a cor.
+  const apertado = restante < 2 * 60 * 60 * 1000
+
+  return (
+    <span className={`mt-0.5 block text-[10px] ${apertado ? 'font-semibold text-amber-300' : 'text-dim'}`}>
+      responder em {comoFalta(restante)}
+    </span>
   )
 }
 

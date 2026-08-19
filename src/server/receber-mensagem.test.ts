@@ -258,6 +258,65 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
     expect(handoffs?.[0]?.motivo).toContain('audio')
   })
 
+  it('fora do expediente, o handoff diz que está fechado em vez de prometer alguém', async () => {
+    /**
+     * O buraco que a frente A4 existe para fechar: o bot desiste às 3h da
+     * manhã, promete um atendente, e a pessoa fica olhando para uma conversa
+     * parada. Aqui a conta fica **fechada em todos os dias**, que é a única
+     * forma de o teste não depender da hora em que a suíte roda.
+     */
+    await db()
+      .from('clients')
+      .update({
+        horario_atendimento: {
+          fuso: 'America/Sao_Paulo',
+          dias: [[], [], [], [], [], [], []].map((_, dia) =>
+            // Um dia com faixa — para não cair no "nada configurado, atende
+            // sempre" — mas uma faixa que nunca contém o agora não existe. Em
+            // vez disso, uma faixa de um minuto num dia só: fora dela, fechado.
+            dia === 0 ? [{ de: '03:00', ate: '03:01' }] : [],
+          ),
+        },
+      })
+      .eq('id', clienteId)
+
+    try {
+      const de = telefone(20)
+      await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-20a`), comMock)
+
+      mock.enviadas.length = 0
+      await receberMensagem(
+        webhookTexto(de, 'quero falar com um atendente', `wamid-${marca}-20b`),
+        comMock,
+      )
+
+      const textos = mock.enviadas.filter((e) => e.tipo === 'texto').map((e) => e.texto)
+      expect(textos.some((texto) => texto.includes('fechado'))).toBe(true)
+      // E a promessa que ninguém cumpre não sai junto: as duas frases se
+      // contradizem, e a primeira é a que faz a pessoa esperar à toa.
+      expect(textos.some((texto) => texto.includes('Só um instante'))).toBe(false)
+    } finally {
+      await db().from('clients').update({ horario_atendimento: null }).eq('id', clienteId)
+    }
+  })
+
+  it('sem horário configurado, o handoff continua como sempre foi', async () => {
+    // Toda conta criada antes da 0022 tem a coluna vazia. Se vazio virasse
+    // "fechado", o produto emudeceria sozinho no dia da migration.
+    const de = telefone(21)
+    await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-21a`), comMock)
+
+    mock.enviadas.length = 0
+    await receberMensagem(
+      webhookTexto(de, 'quero falar com um atendente', `wamid-${marca}-21b`),
+      comMock,
+    )
+
+    const textos = mock.enviadas.filter((e) => e.tipo === 'texto').map((e) => e.texto)
+    expect(textos.some((texto) => texto.includes('Só um instante'))).toBe(true)
+    expect(textos.some((texto) => texto.includes('fechado'))).toBe(false)
+  })
+
   it('depois do handoff o bot fica calado', async () => {
     const de = telefone(4)
     await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-5a`), comMock)

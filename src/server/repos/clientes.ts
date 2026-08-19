@@ -1,4 +1,5 @@
 import 'server-only'
+import { lerHorario, type HorarioDeAtendimento } from '@/core/horario'
 import { db, ehIdInvalido } from '../db'
 import { apagarAcervoDoCliente } from './acervo'
 
@@ -17,6 +18,14 @@ export type Cliente = {
   observacoes: string
   /** Endereço público da logo. Vazio = a tela mostra as iniciais. */
   logoUrl: string
+  /**
+   * O expediente do atendimento humano.
+   *
+   * `null` = **atende sempre**, que é o que a coluna vazia quer dizer para toda
+   * conta criada antes da 0022. Confundir isso com "nunca atende" faria o bot
+   * anunciar que está fechado para clientes que nunca configuraram nada.
+   */
+  horarioAtendimento: HorarioDeAtendimento | null
 }
 
 /**
@@ -40,6 +49,7 @@ type Linha = {
   cnpj: string
   observacoes: string
   logo_url: string
+  horario_atendimento: unknown
 }
 
 /**
@@ -53,7 +63,7 @@ type Linha = {
  * fácil, coluna apagada não.
  */
 const COLUNAS =
-  'id, nome, contexto_negocio, responsavel, telefone, email, cnpj, observacoes, logo_url'
+  'id, nome, contexto_negocio, responsavel, telefone, email, cnpj, observacoes, logo_url, horario_atendimento'
 
 function paraCliente(linha: Linha): Cliente {
   return {
@@ -66,6 +76,7 @@ function paraCliente(linha: Linha): Cliente {
     cnpj: linha.cnpj,
     observacoes: linha.observacoes,
     logoUrl: linha.logo_url,
+    horarioAtendimento: lerHorario(linha.horario_atendimento),
   }
 }
 
@@ -258,4 +269,44 @@ export async function apagarCliente(id: string): Promise<boolean> {
   await apagarAcervoDoCliente(id)
 
   return true
+}
+
+/**
+ * Só o expediente, sem carregar o cadastro inteiro.
+ *
+ * O webhook chama isto **em toda mensagem** que pode virar handoff, e não
+ * precisa de contexto de negócio, CNPJ nem logo para decidir o que dizer às 3h
+ * da manhã. A consulta vai junto das outras num `Promise.all`, então não custa
+ * viagem a mais no relógio.
+ */
+export async function horarioDoCliente(
+  clienteId: string,
+): Promise<HorarioDeAtendimento | null> {
+  const { data, error } = await db()
+    .from('clients')
+    .select('horario_atendimento')
+    .eq('id', clienteId)
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return null
+  if (error) {
+    // Falhar aqui não pode derrubar a mensagem de alguém. Sem horário, o
+    // atendimento é tratado como aberto — que é como o produto sempre agiu.
+    console.error('[clientes] não deu para ler o horário de atendimento', error.message)
+    return null
+  }
+  return lerHorario((data as { horario_atendimento: unknown } | null)?.horario_atendimento)
+}
+
+/** Grava o expediente. `null` volta a "atende sempre". */
+export async function atualizarHorario(
+  id: string,
+  horario: HorarioDeAtendimento | null,
+): Promise<void> {
+  const { error } = await db()
+    .from('clients')
+    .update({ horario_atendimento: horario })
+    .eq('id', id)
+
+  if (error) throw new Error(`não deu para salvar o horário: ${error.message}`)
 }

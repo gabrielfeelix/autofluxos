@@ -8,11 +8,13 @@ import type { Problema } from '@/core/flow/validar'
 import { db } from './db'
 import { exigirAcessoAoCliente, exigirOperadorDa4YU } from './sessao'
 import { fluxoNovo } from '@/core/flow/novo'
+import { DIAS_DA_SEMANA, emMinutos, horarioSchema } from '@/core/horario'
 import { triagem } from '@/exemplos/triagem'
 import {
   apagarCliente,
   atualizarCadastro,
   atualizarContexto,
+  atualizarHorario,
   atualizarLogo,
   criarCliente,
 } from './repos/clientes'
@@ -859,4 +861,62 @@ export async function acaoImportarContatos(
       (p) => `linha ${p.numero}${p.nome ? ` (${p.nome})` : ''} — ${p.motivo}`,
     ),
   }
+}
+
+/**
+ * Grava o expediente do atendimento humano.
+ *
+ * O formulário manda o objeto inteiro como JSON num campo só: são sete dias com
+ * quantas faixas quiserem, e um campo por faixa por dia seria trinta nomes
+ * calculados que o servidor teria que remontar do outro lado.
+ *
+ * **Campo vazio volta a "atende sempre"**, que é o que `null` significa na
+ * coluna — e não "nunca atende". Confundir os dois faria o bot anunciar que
+ * está fechado para quem só quis desligar a regra.
+ */
+export async function acaoSalvarHorario(
+  clienteId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const bruto = String(formData.get('horario') ?? '').trim()
+
+  if (bruto === '') {
+    await atualizarHorario(clienteId, null)
+    revalidatePath(`/clientes/${clienteId}`)
+    return { ok: true }
+  }
+
+  let analise
+  try {
+    analise = horarioSchema.safeParse(JSON.parse(bruto))
+  } catch {
+    return { erro: 'o horário chegou com formato inválido' }
+  }
+  if (!analise.success) return { erro: 'o horário chegou com formato inválido' }
+
+  /**
+   * Faixa invertida é recusada aqui, e não ignorada em silêncio.
+   *
+   * O motor já a ignora — ele fecha o atendimento em vez de abrir —, mas
+   * deixar salvar entrega uma tela que mostra "18:00 até 08:00" como se
+   * valesse. O erro tem que aparecer onde a pessoa consegue consertar.
+   */
+  for (const [dia, faixas] of analise.data.dias.entries()) {
+    for (const faixa of faixas) {
+      const de = emMinutos(faixa.de)
+      const ate = emMinutos(faixa.ate)
+      if (de === null || ate === null || ate <= de) {
+        return {
+          erro: `${DIAS_DA_SEMANA[dia]}: "${faixa.de} até ${faixa.ate}" não é um horário válido.`,
+        }
+      }
+    }
+  }
+
+  await atualizarHorario(clienteId, analise.data)
+  revalidatePath(`/clientes/${clienteId}`)
+  return { ok: true }
 }

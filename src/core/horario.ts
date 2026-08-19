@@ -1,3 +1,5 @@
+import { z } from 'zod'
+
 /**
  * O horário de atendimento — e por que ele é a peça que faltava.
  *
@@ -160,4 +162,36 @@ export function proximaAbertura(
   }
 
   return null
+}
+
+/**
+ * O que o banco devolve, conferido antes de virar decisão.
+ *
+ * `horario_atendimento` é `jsonb`: o banco aceita qualquer coisa ali. Hoje só
+ * a nossa tela escreve, mas isto é o que decide se o bot promete atendimento —
+ * e um objeto torto não pode virar "aberto" por acidente. Leitura que falha
+ * devolve `null`, que é "atende sempre": o lado que mantém o produto se
+ * comportando como sempre se comportou.
+ */
+export const faixaSchema = z.object({
+  de: z.string(),
+  ate: z.string(),
+})
+
+export const horarioSchema = z.object({
+  fuso: z.string().min(1),
+  /** Sete listas, uma por dia da semana, domingo primeiro. */
+  dias: z.array(z.array(faixaSchema)).length(7),
+})
+
+/** Lê o que veio do banco. Qualquer coisa fora do formato vira `null`. */
+export function lerHorario(bruto: unknown): HorarioDeAtendimento | null {
+  if (bruto === null || bruto === undefined) return null
+
+  const analise = horarioSchema.safeParse(bruto)
+  if (!analise.success) {
+    console.error('[horario] configuração ilegível no banco — tratando como sempre aberto')
+    return null
+  }
+  return analise.data
 }

@@ -1,5 +1,6 @@
 import 'server-only'
-import { executar } from '@/core/engine/executar'
+import { ATENDIMENTO_SEMPRE_ABERTO, avisoDeForaDoHorario, executar } from '@/core/engine/executar'
+import type { ContextoDoAtendimento } from '@/core/engine/executar'
 import type { Acao, Entrada, Resultado, Sessao } from '@/core/engine/types'
 import type { Fluxo } from '@/core/flow/schema'
 import type { Modelo, Turno } from '../ia/types'
@@ -57,6 +58,14 @@ export type OpcoesDeEfeitos = {
    * cofre de outro.
    */
   clienteId?: string
+  /**
+   * Tem gente para atender agora, e quando volta.
+   *
+   * Vai para o motor, que decide o que dizer no handoff. O padrão é "sempre
+   * aberto" porque é como o produto se comportou até aqui — e porque conta sem
+   * horário configurado não pode emudecer sozinha.
+   */
+  atendimento?: ContextoDoAtendimento
 }
 
 export async function executarComEfeitos(
@@ -65,7 +74,8 @@ export async function executarComEfeitos(
   entrada: Entrada,
   opcoes: OpcoesDeEfeitos,
 ): Promise<Resultado> {
-  let resultado = executar(fluxo, sessao, entrada)
+  const atendimento = opcoes.atendimento ?? ATENDIMENTO_SEMPRE_ABERTO
+  let resultado = executar(fluxo, sessao, entrada, atendimento)
 
   const pergunta =
     opcoes.perguntaDaPessoa ??
@@ -137,12 +147,17 @@ export async function executarComEfeitos(
       // texto. Zerar explicitamente importa — sem isso, uma segunda chamada que
       // falha deixaria o valor da primeira em pé, e a mensagem para o cliente
       // mostraria dado velho como se fosse fresco.
-      const seguinte = executar(fluxo, resultado.sessao, {
-        tipo: 'http_respondeu',
-        valores: resposta.ok
-          ? resposta.valores
-          : Object.fromEntries(chamadaHttp.mapear.map((m) => [m.variavel, ''])),
-      })
+      const seguinte = executar(
+        fluxo,
+        resultado.sessao,
+        {
+          tipo: 'http_respondeu',
+          valores: resposta.ok
+            ? resposta.valores
+            : Object.fromEntries(chamadaHttp.mapear.map((m) => [m.variavel, ''])),
+        },
+        atendimento,
+      )
 
       resultado = {
         acoes: [...semEfeito(resultado.acoes, 'chamar_http'), ...seguinte.acoes],
@@ -167,20 +182,29 @@ export async function executarComEfeitos(
 
     if (resposta.tipo === 'nao_sei') {
       // A saída de emergência do §6. Entre calar e inventar, uma pessoa assume.
+      //
+      // O aviso de fora do expediente vale aqui também, e substitui a frase
+      // padrão pelo mesmo motivo do motor: "só um instante" às 3h da manhã é
+      // uma promessa que ninguém cumpre até de manhã.
       return {
         acoes: [
           ...semEfeito(resultado.acoes, 'chamar_ia'),
-          { tipo: 'enviar_texto', texto: AVISO_DE_HANDOFF },
+          {
+            tipo: 'enviar_texto',
+            texto: avisoDeForaDoHorario(atendimento) ?? AVISO_DE_HANDOFF,
+          },
           { tipo: 'transferir_humano', motivo: `a IA não soube responder — ${resposta.motivo}` },
         ],
         sessao: { ...resultado.sessao, status: 'humano' },
       }
     }
 
-    const seguinte = executar(fluxo, resultado.sessao, {
-      tipo: 'ia_respondeu',
-      texto: resposta.texto,
-    })
+    const seguinte = executar(
+      fluxo,
+      resultado.sessao,
+      { tipo: 'ia_respondeu', texto: resposta.texto },
+      atendimento,
+    )
 
     resultado = {
       acoes: [...semEfeito(resultado.acoes, 'chamar_ia'), ...seguinte.acoes],

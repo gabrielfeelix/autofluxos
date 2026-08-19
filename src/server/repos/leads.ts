@@ -32,6 +32,15 @@ export type Lead = {
   /** O que o fluxo coletou. As chaves mudam de fluxo para fluxo. */
   campos: Record<string, string>
   ultimaEm: string | null
+  /**
+   * A última mensagem **da pessoa**, que é de onde a janela de 24h conta.
+   *
+   * Diferente de `ultimaEm`, que é a última de qualquer lado: com o bot
+   * respondendo depois, `ultimaEm` é a hora da resposta dele, e a conta da
+   * janela sairia errada **para mais** — a tela diria que dá tempo quando já
+   * não dá, que é o pior lado do erro.
+   */
+  ultimaEntradaEm: string | null
   ultimaDirecao: Direcao | null
   ultimoTexto: string | null
   /** `false` quando a última saída não teve confirmação do canal. */
@@ -40,6 +49,8 @@ export type Lead = {
   automacaoAtiva: boolean
   /** Handoff sem `resolvido_em`. `null` = ninguém esperando. */
   aguardando: { motivo: string; desde: string } | null
+  /** Quem assumiu este contato. `null` = ninguém. */
+  atribuidoA: string | null
   /** Sinais derivados do histórico; nunca são gravados de volta no contato. */
   etiquetas: EtiquetaDeLead[]
   criadoEm: string
@@ -107,7 +118,9 @@ type Linha = {
   campos: unknown
   criado_em: string
   ultima_em: string | null
+  ultima_entrada_em: string | null
   ultima_direcao: string | null
+  atribuido_a: string | null
   ultimo_texto: string | null
   ultima_entregue: boolean | null
   automacao_ativa: boolean
@@ -121,7 +134,7 @@ type Linha = {
 // tipo para saber o formato do retorno, e concatenação vira `string` genérica —
 // aí o tipo do `data` desanda e o `tsc` acusa.
 const COLUNAS =
-  'contact_id, client_id, wa_id, nome, nome_real, notas, campos, criado_em, ultima_em, ultima_direcao, ultimo_texto, handoff_motivo, handoff_em, ultima_entregue, automacao_ativa'
+  'contact_id, client_id, wa_id, nome, nome_real, notas, campos, criado_em, ultima_em, ultima_entrada_em, ultima_direcao, ultimo_texto, handoff_motivo, handoff_em, ultima_entregue, automacao_ativa, atribuido_a'
 
 /**
  * `campos` é `jsonb`: o banco aceita qualquer coisa ali. Hoje só o motor
@@ -165,6 +178,7 @@ function paraLead(linha: Linha): Lead {
     notas: linha.notas ?? '',
     campos: paraCampos(linha.campos, linha.wa_id),
     ultimaEm: linha.ultima_em,
+    ultimaEntradaEm: linha.ultima_entrada_em,
     ultimaDirecao: direcao.success ? direcao.data : null,
     ultimoTexto: linha.ultimo_texto,
     ultimaEntregue: linha.ultima_entregue,
@@ -173,6 +187,7 @@ function paraLead(linha: Linha): Lead {
       linha.handoff_motivo && linha.handoff_em
         ? { motivo: linha.handoff_motivo, desde: linha.handoff_em }
         : null,
+    atribuidoA: linha.atribuido_a,
     etiquetas: [],
     criadoEm: linha.criado_em,
   }

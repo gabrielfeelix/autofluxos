@@ -58,6 +58,18 @@ export default async function Pagina({
             }
           />
           <Linha
+            href={`/clientes/${cliente.id}/ajustes/horario`}
+            titulo="Horário de atendimento"
+            descricao="Quando há gente para atender. Fora disso, o bot avisa em vez de prometer um atendente."
+            estado={
+              cliente.horarioAtendimento ? (
+                <Selo tom="ok">configurado</Selo>
+              ) : (
+                <Selo tom="alerta">atende sempre</Selo>
+              )
+            }
+          />
+          <Linha
             href={`/clientes/${cliente.id}/conexoes`}
             titulo="Credenciais"
             descricao="As chaves que os blocos de Serviços externos usam para falar com os sistemas deste cliente."

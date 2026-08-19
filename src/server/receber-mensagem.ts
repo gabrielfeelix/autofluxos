@@ -6,9 +6,18 @@ import { sessaoNova, type Acao, type Entrada } from '@/core/engine/types'
 import { alertar, type ContextoDoAlerta } from './alertar'
 import { executarComEfeitos, type OpcoesDeEfeitos } from './efeitos/resolver'
 import { escolherModelo } from './ia/modelo'
-import { acharCliente } from './repos/clientes'
+import { acharCliente, horarioDoCliente } from './repos/clientes'
 import { acharFluxo, acharVersao } from './repos/fluxos'
 import { lerConversa } from './repos/leads'
+import {
+  ATENDIMENTO_SEMPRE_ABERTO,
+  type ContextoDoAtendimento,
+} from '@/core/engine/executar'
+import {
+  atendimentoAberto,
+  proximaAbertura,
+  type HorarioDeAtendimento,
+} from '@/core/horario'
 import {
   acharCanalPorNumero,
   acharContato,
@@ -248,13 +257,26 @@ async function avancarConversa(
 
   await vincularSessaoNaMensagem(mensagem.id, salva.id)
 
+  /**
+   * O expediente vai junto, e as duas buscas correm ao mesmo tempo.
+   *
+   * O motor precisa saber se tem gente para atender **antes** de rodar, porque
+   * é ele que decide o que dizer no handoff. Buscar em série custaria uma
+   * viagem a mais no relógio de toda mensagem; em paralelo com o preparo da IA,
+   * não custa nada.
+   */
+  const [opcoesDeIa, horario] = await Promise.all([
+    prepararIa(canalSalvo, contato.id, versao.grafo, texto),
+    horarioDoCliente(canalSalvo.clienteId),
+  ])
+
   // Conversa nova começa pelo início do fluxo. A primeira mensagem da pessoa
   // é o gatilho, não uma resposta — ela ainda não foi perguntada nada.
   const resultado = await executarComEfeitos(
     versao.grafo,
     salva.sessao,
     conversaNova ? { tipo: 'inicio' } : entrada,
-    await prepararIa(canalSalvo, contato.id, versao.grafo, texto),
+    { ...opcoesDeIa, atendimento: contextoDeAtendimento(horario) },
   )
 
   await guardarSessao(salva.id, resultado.sessao)
@@ -536,4 +558,20 @@ function paraEntrada(mensagem: Mensagem): { entrada: Entrada; texto: string | nu
   // Áudio, imagem, documento, figurinha, localização... (Regra B: vai para uma
   // pessoa, nunca "não entendi").
   return { entrada: { tipo: 'midia', formato: mensagem.type }, texto: null }
+}
+
+/**
+ * Traduz o expediente da conta no que o motor entende.
+ *
+ * `null` — conta que nunca configurou — vira "sempre aberto". É o que a coluna
+ * vazia significa, e o lado seguro do erro: um produto que emudece sozinho por
+ * causa de uma coluna nova é bem pior que um que continua respondendo.
+ */
+function contextoDeAtendimento(horario: HorarioDeAtendimento | null): ContextoDoAtendimento {
+  if (!horario) return ATENDIMENTO_SEMPRE_ABERTO
+
+  return {
+    atendimentoAberto: atendimentoAberto(horario),
+    proximaAbertura: proximaAbertura(horario),
+  }
 }
