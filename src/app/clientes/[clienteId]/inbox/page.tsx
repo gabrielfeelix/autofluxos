@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { comoFalta, restaDaJanela } from '@/channels/janela'
-import { Assumir } from '@/components/inbox/assumir'
+import { Assumir, PassarPara } from '@/components/inbox/assumir'
+import { NotaRapida } from '@/components/inbox/nota-rapida'
 import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 import { sessaoAtual } from '@/server/sessao'
 import { ClienteShell } from '@/components/design/cliente-shell'
@@ -10,20 +11,46 @@ import { CaixaDeResposta } from '@/components/lead/responder'
 import { NotificacoesDaFila } from '@/components/inbox/notificacoes-da-fila'
 import {
   acaoAssumirAtendimento,
+  acaoAtribuirPara,
   acaoEncerrarAtendimento,
   acaoLiberarAtendimento,
   acaoResponderLead,
+  acaoSalvarNotas,
 } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { contextoDeResposta } from '@/server/repos/conversas'
-import { listarLeads, lerConversa, type Lead, type MensagemDoLead } from '@/server/repos/leads'
+import {
+  acharLead,
+  contarPorAtribuicao,
+  lerConversa,
+  paginarLeads,
+  type Lead,
+  type MensagemDoLead,
+} from '@/server/repos/leads'
 import { listarRespostasRapidas, type RespostaRapida } from '@/server/repos/respostas-rapidas'
 import { AnexoNaConversa, SemTexto } from '@/components/lead/anexo'
 import { horaExata, quando } from '@/lib/quando'
 
 export const dynamic = 'force-dynamic'
 
-type Busca = { conversa?: string | string[] }
+type Busca = {
+  conversa?: string | string[]
+  /** O rail `Atribuído`: `todos`, `sem-dono` ou o id de um atendente. */
+  de?: string | string[]
+  pagina?: string | string[]
+}
+
+/**
+ * Quantas conversas a fila carrega de uma vez.
+ *
+ * Ela trazia **todas**. Com 58 tudo bem; com 5.000 é uma página que demora a
+ * abrir para mostrar cinquenta linhas que cabem na tela — e a fila é a tela que
+ * alguém deixa aberta o dia inteiro.
+ */
+const CONVERSAS_POR_PAGINA = 50
+
+const primeiro = (valor: string | string[] | undefined) =>
+  (Array.isArray(valor) ? valor[0] : valor) ?? ''
 
 /**
  * A tela de trabalho de quem atende.
@@ -42,15 +69,29 @@ export default async function Pagina({
   searchParams: Promise<Busca>
 }) {
   const [{ clienteId }, busca] = await Promise.all([params, searchParams])
-  const [cliente, leads, respostasRapidas] = await Promise.all([
+  const atribuicao = primeiro(busca.de) || 'todos'
+  const pagina = Math.max(1, Number(primeiro(busca.pagina)) || 1)
+
+  const [cliente, fila, respostasRapidas, contagem] = await Promise.all([
     acharCliente(clienteId),
-    listarLeads(clienteId),
+    paginarLeads(clienteId, { atribuicao, pagina, porPagina: CONVERSAS_POR_PAGINA }),
     listarRespostasRapidas(clienteId),
+    contarPorAtribuicao(clienteId),
   ])
   if (!cliente) notFound()
 
-  const pedido = Array.isArray(busca.conversa) ? busca.conversa[0] : busca.conversa
-  const selecionado = escolherLead(leads, pedido)
+  const leads = fila.leads
+
+  const pedido = primeiro(busca.conversa) || undefined
+
+  /**
+   * A conversa pedida pode não estar na página carregada — um link guardado de
+   * duas semanas atrás, ou uma aba do rail que não a contém. Buscar por id
+   * quando ela não aparece na lista é o que faz o endereço continuar valendo.
+   */
+  const naLista = escolherLead(leads, pedido)
+  const selecionado =
+    naLista?.contatoId === pedido || !pedido ? naLista : ((await acharLead(clienteId, pedido)) ?? naLista)
 
   /**
    * Quem atende nesta conta, para a tela dizer **nomes** em vez de uuid.
@@ -93,6 +134,10 @@ export default async function Pagina({
             respostasRapidas={respostasRapidas}
             equipe={equipe}
             usuarioId={sessao?.usuario.id ?? null}
+            contagem={contagem}
+            atribuicao={atribuicao}
+            pagina={fila.pagina}
+            paginas={fila.paginas}
           />
         )}
       </main>
@@ -136,6 +181,10 @@ async function Conteudo({
   respostasRapidas,
   equipe,
   usuarioId,
+  contagem,
+  atribuicao,
+  pagina,
+  paginas,
 }: {
   clienteId: string
   leads: Lead[]
@@ -144,8 +193,12 @@ async function Conteudo({
   equipe: MembroDaConta[]
   /** Quem está olhando. `null` quando quem entrou foi a senha única do time. */
   usuarioId: string | null
+  contagem: Contagem
+  atribuicao: string
+  pagina: number
+  paginas: number
 }) {
-  // `selecionado` veio de `listarLeads(clienteId)`. Só depois desse vínculo
+  // `selecionado` veio de `paginarLeads(clienteId, ...)`. Só depois desse vínculo
   // cliente–contato confirmado é seguro ler as mensagens pelo id do contato.
   const [conversa, contexto] = await Promise.all([
     lerConversa(selecionado.contatoId),
@@ -183,6 +236,11 @@ async function Conteudo({
           selecionado={selecionado}
           esperando={esperando}
           equipe={equipe}
+          contagem={contagem}
+          atribuicao={atribuicao}
+          usuarioId={usuarioId}
+          pagina={pagina}
+          paginas={paginas}
         />
 
         <section className="flex min-w-0 flex-col border-r border-white/[0.06]">
@@ -209,36 +267,110 @@ async function Conteudo({
   )
 }
 
+type Contagem = { total: number; semDono: number; porUsuario: Map<string, number> }
+
 function Fila({
   clienteId,
   leads,
   selecionado,
   esperando,
   equipe,
+  contagem,
+  atribuicao,
+  usuarioId,
+  pagina,
+  paginas,
 }: {
   clienteId: string
   leads: Lead[]
   selecionado: Lead
   esperando: number
   equipe: MembroDaConta[]
+  contagem: Contagem
+  atribuicao: string
+  usuarioId: string | null
+  pagina: number
+  paginas: number
 }) {
   const nomeDe = (id: string | null) =>
     id ? (equipe.find((membro) => membro.id === id)?.nome.split(' ')[0] ?? 'alguém') : null
+
+  /**
+   * A coluna é flex, e não tem altura calculada.
+   *
+   * A lista usava `max-h-[calc(100vh-264px)]`: um número mágico amarrado à
+   * altura exata do cabeçalho da página. O rail e a paginação mudaram essa
+   * altura, e um `calc` desses erra em silêncio — a lista some por baixo ou
+   * sobra espaço em branco, sem nada quebrar para avisar. Com `flex-1` e
+   * `min-h-0`, quem decide é o próprio layout.
+   */
+
+  /** O endereço de uma aba do rail, preservando a conversa aberta. */
+  const linkDe = (valor: string) =>
+    `/clientes/${clienteId}/inbox?de=${encodeURIComponent(valor)}&conversa=${encodeURIComponent(selecionado.contatoId)}`
   return (
-    <aside className="min-w-0 border-r border-white/[0.06] bg-white/[0.015]">
+    <aside className="flex min-h-0 min-w-0 flex-col border-r border-white/[0.06] bg-white/[0.015]">
       <header className="border-b border-white/[0.06] px-4 py-[17px]">
         <div className="flex items-center gap-2">
           <h2 className="flex-1 text-[14px] font-bold tracking-[-0.01em]">Inbox</h2>
           <span className="rounded-full border border-white/[0.09] bg-white/[0.035] px-2 py-0.5 font-mono text-[10px] text-muted">
-            {leads.length}
+            {contagem.total}
           </span>
         </div>
         <p className="mt-1 text-[11px] text-dim">
           {esperando > 0 ? `${esperando} esperando uma pessoa` : 'Todas as conversas estão com o bot'}
         </p>
+
+        {/*
+          O rail `Atribuído`, e ele é **horizontal**, não uma quarta coluna.
+          
+          O desenho de referência põe um painel só para isto, e num Inbox de
+          três colunas a quarta come a largura da conversa — que é onde se
+          trabalha. Com três a cinco entradas, uma linha de fichas diz a mesma
+          coisa e não tira espaço de ninguém.
+          
+          **A contagem é o que faz o rail valer a pena.** Sem ela, escolher uma
+          aba é apostar: a pessoa clica em "sem dono" para descobrir se tem
+          alguma coisa lá.
+        */}
+        {(equipe.length > 0 || contagem.semDono < contagem.total) && (
+          <nav
+            aria-label="Filtrar por quem atende"
+            className="-mx-1 mt-2.5 flex gap-1 overflow-x-auto pb-0.5"
+          >
+            <FichaDoRail href={linkDe('todos')} acesa={atribuicao === 'todos'} rotulo="Todos" contagem={contagem.total} />
+            <FichaDoRail
+              href={linkDe('sem-dono')}
+              acesa={atribuicao === 'sem-dono'}
+              rotulo="Sem dono"
+              contagem={contagem.semDono}
+              alerta
+            />
+            {usuarioId && (
+              <FichaDoRail
+                href={linkDe(usuarioId)}
+                acesa={atribuicao === usuarioId}
+                rotulo="Meus"
+                contagem={contagem.porUsuario.get(usuarioId) ?? 0}
+              />
+            )}
+            {equipe
+              .filter((membro) => membro.id !== usuarioId)
+              .map((membro) => (
+                <FichaDoRail
+                  key={membro.id}
+                  href={linkDe(membro.id)}
+                  acesa={atribuicao === membro.id}
+                  rotulo={membro.nome.split(' ')[0] ?? membro.nome}
+                  contagem={contagem.porUsuario.get(membro.id) ?? 0}
+                  ausente={membro.presenca !== 'disponivel'}
+                />
+              ))}
+          </nav>
+        )}
       </header>
 
-      <nav aria-label="Conversas" className="max-h-[calc(100vh-264px)] overflow-y-auto py-1.5">
+      <nav aria-label="Conversas" className="min-h-0 flex-1 overflow-y-auto py-1.5">
         {leads.map((lead) => {
           const ativa = lead.contatoId === selecionado.contatoId
           const nome = lead.nome ?? 'sem nome'
@@ -276,8 +408,106 @@ function Fila({
             </Link>
           )
         })}
+
+        {leads.length === 0 && (
+          <p className="px-4 py-8 text-center text-[11.5px] leading-5 text-dim">
+            Nenhuma conversa nesta aba.
+          </p>
+        )}
       </nav>
+
+      {paginas > 1 && (
+        <div className="flex items-center justify-between gap-2 border-t border-white/[0.06] px-3 py-2.5">
+          <PassoDaPagina
+            href={`/clientes/${clienteId}/inbox?de=${encodeURIComponent(atribuicao)}&pagina=${pagina - 1}`}
+            desabilitado={pagina <= 1}
+            rotulo="Página anterior"
+          >
+            ‹
+          </PassoDaPagina>
+          <span className="font-mono text-[10px] text-dim">
+            {pagina} / {paginas}
+          </span>
+          <PassoDaPagina
+            href={`/clientes/${clienteId}/inbox?de=${encodeURIComponent(atribuicao)}&pagina=${pagina + 1}`}
+            desabilitado={pagina >= paginas}
+            rotulo="Próxima página"
+          >
+            ›
+          </PassoDaPagina>
+        </div>
+      )}
     </aside>
+  )
+}
+
+function FichaDoRail({
+  href,
+  acesa,
+  rotulo,
+  contagem,
+  alerta = false,
+  ausente = false,
+}: {
+  href: string
+  acesa: boolean
+  rotulo: string
+  contagem: number
+  /** "Sem dono" com fila é o que precisa de gente — merece cor. */
+  alerta?: boolean
+  ausente?: boolean
+}) {
+  const destaque = alerta && contagem > 0 && !acesa
+
+  return (
+    <Link
+      href={href}
+      aria-current={acesa ? 'page' : undefined}
+      className={`flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10.5px] font-semibold transition ${
+        acesa
+          ? 'border-accent/40 bg-accent/[0.14] text-white'
+          : destaque
+            ? 'border-amber-400/30 bg-amber-400/[0.08] text-amber-200 hover:bg-amber-400/[0.14]'
+            : 'border-white/[0.08] text-muted hover:border-white/[0.16] hover:text-white'
+      }`}
+    >
+      {/* Ausente aparece como ponto apagado: atribuir para quem está de férias é
+          o mesmo que não atribuir, e pior — fica um nome ao lado dando a
+          impressão de que alguém está cuidando. */}
+      {ausente && <span aria-label="ausente" title="ausente" className="size-1.5 rounded-full bg-white/25" />}
+      {rotulo}
+      <span className="font-mono opacity-70">{contagem}</span>
+    </Link>
+  )
+}
+
+function PassoDaPagina({
+  href,
+  desabilitado,
+  rotulo,
+  children,
+}: {
+  href: string
+  desabilitado: boolean
+  rotulo: string
+  children: string
+}) {
+  if (desabilitado) {
+    return (
+      <span aria-disabled className="rounded-md px-2 py-0.5 text-[13px] text-white/15">
+        {children}
+      </span>
+    )
+  }
+  return (
+    <Link
+      href={href}
+      aria-label={rotulo}
+      scroll={false}
+      className="rounded-md px-2 py-0.5 text-[13px] text-muted transition hover:bg-white/[0.06] hover:text-white"
+    >
+      {children}
+    </Link>
   )
 }
 
@@ -343,6 +573,13 @@ function CabecalhoDaConversa({
         não existe usuário, e um botão que só sabe dizer "entre com a sua conta"
         seria um convite a clicar em nada.
       */}
+      {equipe.length > 1 && (
+        <PassarPara
+          atribuir={acaoAtribuirPara.bind(null, clienteId, lead.contatoId)}
+          equipe={equipe}
+        />
+      )}
+
       {(usuarioId || responsavel) && (
         <Assumir
           assumir={acaoAssumirAtendimento.bind(null, clienteId, lead.contatoId)}
@@ -463,6 +700,14 @@ function DadosDoLead({ clienteId, lead }: { clienteId: string; lead: Lead }) {
               ))}
             </dl>
           )}
+        </div>
+
+        <div className="mt-5">
+          <h3 className="text-[11px] font-bold text-soft">Anotação da equipe</h3>
+          <NotaRapida
+            inicial={lead.notas}
+            salvar={acaoSalvarNotas.bind(null, clienteId, lead.contatoId)}
+          />
         </div>
       </div>
     </aside>

@@ -46,6 +46,7 @@ import {
   registrarSaida,
 } from './repos/conversas'
 import { travarContato } from './repos/travas'
+import { membrosDaConta } from './repos/usuarios'
 import { sessaoAtual } from './sessao'
 import {
   acharVersaoDoFluxo,
@@ -968,5 +969,38 @@ export async function acaoLiberarAtendimento(
 
   revalidatePath(`/clientes/${clienteId}/inbox`)
   revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
+  return { ok: true }
+}
+
+/**
+ * Passa a conversa para outra pessoa do time.
+ *
+ * Existe separado do "assumir" porque os dois casos não têm o mesmo peso:
+ * assumir é o de todo dia e tem que ser um clique; passar para alguém é raro,
+ * e exige escolher quem. Fundir os dois numa lista só faria o caso comum
+ * custar dois cliques.
+ *
+ * O destino é conferido contra os membros da conta: id que não é da equipe não
+ * vira responsável, mesmo vindo de dentro do painel.
+ */
+export async function acaoAtribuirPara(
+  clienteId: string,
+  contatoId: string,
+  formData: FormData,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const usuarioId = String(formData.get('usuarioId') ?? '')
+  if (usuarioId === '') return { ok: false, erro: 'escolha para quem passar' }
+
+  const equipe = await membrosDaConta(clienteId)
+  if (!equipe.some((membro) => membro.id === usuarioId)) {
+    return { ok: false, erro: 'essa pessoa não atende nesta conta' }
+  }
+
+  const ok = await atribuirContato(clienteId, contatoId, usuarioId)
+  if (!ok) return { ok: false, erro: 'este contato não é deste cliente' }
+
+  revalidatePath(`/clientes/${clienteId}/inbox`)
   return { ok: true }
 }

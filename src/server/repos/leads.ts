@@ -376,10 +376,22 @@ export const LEADS_POR_PAGINA = 50
 /** Nada de busca gigante: o campo é para nome e telefone, não para texto livre. */
 const LIMITE_DA_BUSCA = 60
 
+/**
+ * Por quem a conversa está atribuída.
+ *
+ * `todos` não filtra; `sem-dono` traz o que ninguém assumiu — que é a fila de
+ * verdade, a que precisa de gente; qualquer outro valor é o id de um usuário e
+ * vira "os chats dele". É o rail `Atribuído` do Inbox.
+ */
+export type FiltroDeAtribuicao = 'todos' | 'sem-dono' | (string & {})
+
 export type FiltroDeLeads = {
   /** Nome ou telefone, parcial. Vazio = sem busca. */
   busca?: string
   etiqueta?: EtiquetaDeLead | null
+  atribuicao?: FiltroDeAtribuicao
+  /** Só quem espera uma pessoa. É o que a fila do Inbox olha primeiro. */
+  soEsperando?: boolean
   /** Começa em 1. Fora da faixa, cai na primeira. */
   pagina?: number
   porPagina?: number
@@ -466,6 +478,15 @@ export async function paginarLeads(
       q = q.or(partes.join(','))
     }
     if (permitidos) q = q.in('contact_id', permitidos)
+
+    // `sem-dono` é a fila que precisa de gente; um id vira "os chats dele".
+    if (filtro.atribuicao === 'sem-dono') q = q.is('atribuido_a', null)
+    else if (filtro.atribuicao && filtro.atribuicao !== 'todos') {
+      q = q.eq('atribuido_a', filtro.atribuicao)
+    }
+
+    if (filtro.soEsperando) q = q.not('handoff_em', 'is', null)
+
     return q
   }
 
@@ -734,4 +755,39 @@ export async function aplicarImportacao(
   }
 
   return { renomeados, criados, pendentes }
+}
+
+/**
+ * Quantas conversas há em cada aba do rail `Atribuído`.
+ *
+ * **A contagem é o que faz o rail valer a pena.** Sem ela, escolher uma aba é
+ * apostar: a pessoa clica em "sem dono" para descobrir se tem alguma coisa lá.
+ * Com o número do lado, o rail vira o resumo da mesa antes de qualquer clique.
+ *
+ * Uma consulta só, contando na aplicação. São no máximo algumas centenas de
+ * linhas por cliente e a alternativa seria um `group by` por PostgREST — que
+ * não existe sem view nova, e view por causa de contagem é migration a mais
+ * para manter.
+ */
+export async function contarPorAtribuicao(
+  clienteId: string,
+): Promise<{ total: number; semDono: number; porUsuario: Map<string, number> }> {
+  const { data, error } = await db()
+    .from('leads')
+    .select('atribuido_a')
+    .eq('client_id', clienteId)
+
+  if (ehIdInvalido(error)) return { total: 0, semDono: 0, porUsuario: new Map() }
+  if (error) throw new Error(`não deu para contar as atribuições: ${error.message}`)
+
+  const linhas = data as { atribuido_a: string | null }[]
+  const porUsuario = new Map<string, number>()
+  let semDono = 0
+
+  for (const linha of linhas) {
+    if (!linha.atribuido_a) semDono++
+    else porUsuario.set(linha.atribuido_a, (porUsuario.get(linha.atribuido_a) ?? 0) + 1)
+  }
+
+  return { total: linhas.length, semDono, porUsuario }
 }
