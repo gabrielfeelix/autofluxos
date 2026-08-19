@@ -56,16 +56,28 @@ export async function GET(
   const busca = parametros.get('busca') ?? ''
   const etiqueta =
     ETIQUETAS_DE_LEAD.find((valor) => valor === parametros.get('etiqueta')) ?? null
+  // A etiqueta manual entra pelo mesmo motivo da derivada: quem filtrou e
+  // clicou em exportar espera o arquivo do que está vendo.
+  const marca = parametros.get('marca') || null
 
-  const leads = await lerTudo(cliente.id, busca, etiqueta)
+  const leads = await lerTudo(cliente.id, busca, etiqueta, marca)
   const colunas = colunasDosCampos(leads)
 
   const arquivo = montarCsv(
-    ['Nome', 'Telefone', 'Situação', 'Última mensagem', 'Primeiro contato', ...colunas],
+    [
+      'Nome',
+      'Telefone',
+      'Situação',
+      'Etiquetas',
+      'Última mensagem',
+      'Primeiro contato',
+      ...colunas,
+    ],
     leads.map((lead) => [
       lead.nome ?? '',
       lead.waId,
       lead.aguardando ? `aguardando pessoa — ${lead.aguardando.motivo}` : 'com o bot',
+      lead.etiquetasManuais.map((etiqueta) => etiqueta.nome).join('; '),
       lead.ultimaEm ?? '',
       lead.criadoEm,
       ...colunas.map((coluna) => lead.campos[coluna] ?? ''),
@@ -86,11 +98,18 @@ async function lerTudo(
   clienteId: string,
   busca: string,
   etiqueta: EtiquetaDeLead | null,
+  etiquetaId: string | null,
 ): Promise<Lead[]> {
   const tudo: Lead[] = []
 
   for (let pagina = 1; tudo.length < TETO_DE_LINHAS; pagina++) {
-    const lote = await paginarLeads(clienteId, { busca, etiqueta, pagina, porPagina: LOTE })
+    const lote = await paginarLeads(clienteId, {
+      busca,
+      etiqueta,
+      etiquetaId,
+      pagina,
+      porPagina: LOTE,
+    })
     tudo.push(...lote.leads)
     if (pagina >= lote.paginas || lote.leads.length === 0) break
   }

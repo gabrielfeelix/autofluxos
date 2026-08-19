@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { fluxoSchema } from '@/core/flow/schema'
 import type { Problema } from '@/core/flow/validar'
 import { db } from './db'
-import { exigirAcessoAoCliente, exigirOperadorDa4YU } from './sessao'
+import { exigirAcessoAoCliente, exigirOperadorDa4YU, podeAdministrarConta } from './sessao'
 import { fluxoNovo } from '@/core/flow/novo'
 import { DIAS_DA_SEMANA, emMinutos, horarioSchema } from '@/core/horario'
 import { triagem } from '@/exemplos/triagem'
@@ -47,7 +47,14 @@ import {
   registrarSaida,
 } from './repos/conversas'
 import { travarContato } from './repos/travas'
-import { membrosDaConta } from './repos/usuarios'
+import {
+  acharUsuarioPorEmail,
+  definirPapelNaConta,
+  membrosDaConta,
+  removerDaConta,
+} from './repos/usuarios'
+import { autenticacao } from './auth'
+import { registrar } from './repos/auditoria'
 import { sessaoAtual } from './sessao'
 import {
   acharVersaoDoFluxo,
@@ -61,6 +68,13 @@ import { apagarConexao, criarConexao, trocarValor } from './repos/conexoes'
 import { apagarContato } from './repos/retencao'
 import { apagarRespostaRapida, criarRespostaRapida } from './repos/respostas-rapidas'
 import { alternarGatilho, apagarGatilho, criarGatilho } from './repos/gatilhos'
+import {
+  apagarEtiqueta,
+  criarEtiqueta,
+  editarEtiqueta,
+  marcarContatos,
+} from './repos/etiquetas'
+import { ehCorDeEtiqueta } from '@/core/etiquetas'
 import { OPERADORES_DE_GATILHO, type OperadorDeGatilho } from '@/core/gatilhos'
 import { rodarPosAtendimento } from './receber-mensagem'
 import { PAPEIS_DO_NUMERO, type PapelDoNumero } from '@/core/papeis-do-numero'
@@ -356,6 +370,245 @@ export async function acaoApagarGatilho(
   const apagou = await apagarGatilho(clienteId, gatilhoId)
   revalidatePath(`/clientes/${clienteId}/fluxos`)
   return apagou ? { ok: true } : { ok: false, erro: 'este gatilho não existe mais' }
+}
+
+/**
+ * Cria uma etiqueta manual da conta (A7).
+ *
+ * A cor chega de um formulário e vira classe CSS depois. Lista fechada aqui e
+ * `check` no banco: um valor torto não daria erro nenhum — a etiqueta só
+ * ficaria sem cor, invisível, e ninguém ligaria a causa ao efeito.
+ */
+export async function acaoCriarEtiqueta(
+  clienteId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const nome = String(formData.get('nome') ?? '')
+  const cor = String(formData.get('cor') ?? 'cinza')
+  if (!ehCorDeEtiqueta(cor)) return { erro: 'cor inválida' }
+
+  const r = await criarEtiqueta(clienteId, { nome, cor })
+  if (!r.ok) return { erro: r.motivo }
+
+  revalidatePath(`/clientes/${clienteId}/ajustes/etiquetas`)
+  revalidatePath(`/clientes/${clienteId}/leads`)
+  return { ok: true }
+}
+
+/** Renomear e repintar. Não recria: recriar tiraria a etiqueta de todo mundo. */
+export async function acaoEditarEtiqueta(
+  clienteId: string,
+  etiquetaId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const nome = String(formData.get('nome') ?? '')
+  const cor = String(formData.get('cor') ?? 'cinza')
+  if (!ehCorDeEtiqueta(cor)) return { erro: 'cor inválida' }
+
+  const r = await editarEtiqueta(clienteId, etiquetaId, { nome, cor })
+  if (!r.ok) return { erro: r.motivo }
+
+  revalidatePath(`/clientes/${clienteId}/ajustes/etiquetas`)
+  revalidatePath(`/clientes/${clienteId}/leads`)
+  return { ok: true }
+}
+
+export async function acaoApagarEtiqueta(
+  clienteId: string,
+  etiquetaId: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const apagou = await apagarEtiqueta(clienteId, etiquetaId)
+  revalidatePath(`/clientes/${clienteId}/ajustes/etiquetas`)
+  revalidatePath(`/clientes/${clienteId}/leads`)
+  revalidatePath(`/clientes/${clienteId}/inbox`)
+  return apagou ? { ok: true } : { ok: false, erro: 'esta etiqueta não existe mais' }
+}
+
+/**
+ * Aplica ou tira uma etiqueta de um ou vários contatos.
+ *
+ * Uma ação só para o caso de um e o de cem: a tela do contato manda uma lista
+ * de um item, e a seleção múltipla da lista de contatos manda a dela. Duas
+ * ações separadas divergiriam na conferência de dono, que é a parte que importa.
+ */
+export async function acaoMarcarEtiqueta(
+  clienteId: string,
+  etiquetaId: string,
+  contatos: string[],
+  aplicar: boolean,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  if (!Array.isArray(contatos) || contatos.some((id) => typeof id !== 'string')) {
+    return { ok: false, erro: 'seleção inválida' }
+  }
+
+  const r = await marcarContatos(clienteId, etiquetaId, contatos, aplicar)
+  if (!r.ok) return { ok: false, erro: r.motivo }
+
+  revalidatePath(`/clientes/${clienteId}/leads`)
+  revalidatePath(`/clientes/${clienteId}/inbox`)
+  for (const contatoId of contatos) {
+    revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
+  }
+  return { ok: true }
+}
+
+// ---------------------------------------------------------------------------
+// Equipe da conta (A7)
+// ---------------------------------------------------------------------------
+
+/**
+ * Os três papéis do plugin de organização, e o que cada um significa aqui.
+ *
+ * `owner` manda na conta; `admin` mexe na equipe; `member` atende. A lista é
+ * fechada porque o valor é escrito em `af_membros."role"` e vira decisão de
+ * permissão depois — aceitar o que vier do formulário seria deixar o navegador
+ * inventar um papel que o código não conhece.
+ */
+const PAPEIS_DA_CONTA = ['owner', 'admin', 'member'] as const
+type PapelDaConta = (typeof PAPEIS_DA_CONTA)[number]
+
+const ehPapelDaConta = (valor: string): valor is PapelDaConta =>
+  (PAPEIS_DA_CONTA as readonly string[]).includes(valor)
+
+/** A recusa que todas as ações de equipe dão para quem só atende. */
+const SO_QUEM_ADMINISTRA = 'só quem administra a conta mexe na equipe'
+
+/**
+ * Põe uma pessoa na conta — cadastrando ou vinculando quem já existe.
+ *
+ * **É a tela de Equipe funcionando sem SMTP.** O convite por e-mail depende de
+ * um servidor de e-mail que é global ao projeto compartilhado com a Verandi
+ * (ver BANCO-COMPARTILHADO.md), e enquanto ele não existir uma tela de equipe
+ * seria uma lista vazia com um botão que não faz nada. Aqui a senha é definida
+ * por quem cadastra e combinada por fora — é o mesmo caminho de
+ * `/criar-conta`, que é como todo usuário do sistema nasce hoje.
+ *
+ * E-mail que já existe **vincula em vez de recusar**: quem administra duas
+ * companhias é o caso que a A1 modelou de propósito, e "esse e-mail já está em
+ * uso" seria um beco para exatamente ele.
+ */
+export async function acaoCadastrarPessoaNaConta(
+  clienteId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  const acesso = await exigirAcessoAoCliente(clienteId)
+  if (!podeAdministrarConta(acesso)) return { erro: SO_QUEM_ADMINISTRA }
+
+  const nome = String(formData.get('nome') ?? '').trim()
+  const email = String(formData.get('email') ?? '').trim()
+  const senha = String(formData.get('senha') ?? '')
+  const papel = String(formData.get('papel') ?? 'member')
+
+  if (email === '') return { erro: 'escreva o e-mail' }
+  if (!ehPapelDaConta(papel)) return { erro: 'papel inválido' }
+
+  const jaExiste = await acharUsuarioPorEmail(email)
+  let usuarioId = jaExiste?.id ?? null
+
+  if (!usuarioId) {
+    if (nome === '') return { erro: 'escreva o nome de quem vai entrar' }
+    if (senha.length < 10) return { erro: 'a senha precisa de pelo menos 10 caracteres' }
+
+    try {
+      const criado = await autenticacao().api.signUpEmail({
+        body: { name: nome, email, password: senha },
+      })
+      usuarioId = criado.user.id
+    } catch (erro) {
+      return { erro: erro instanceof Error ? erro.message : 'não deu para cadastrar' }
+    }
+  }
+
+  try {
+    await autenticacao().api.addMember({
+      body: { userId: usuarioId, role: papel, organizationId: clienteId },
+    })
+  } catch (erro) {
+    // Já ser membro não é falha: é a resposta a "põe essa pessoa aqui".
+    const mensagem = erro instanceof Error ? erro.message : ''
+    if (!/already|duplicate|23505/i.test(mensagem)) {
+      return { erro: mensagem || 'não deu para ligar a pessoa à conta' }
+    }
+  }
+
+  await registrar({
+    acao: 'vinculou_membro',
+    autorId: acesso.sessao?.usuario.id ?? null,
+    autorEmail: acesso.sessao?.usuario.email ?? 'painel',
+    contaId: clienteId,
+    alvoTipo: 'usuario',
+    alvoId: usuarioId,
+    alvoNome: jaExiste?.nome ?? nome,
+    detalhes: { papel, cadastrou: jaExiste ? 'nao' : 'sim' },
+    impersonadoPor: acesso.sessao?.impersonadoPor ?? null,
+  })
+
+  revalidatePath(`/clientes/${clienteId}/ajustes/equipe`)
+  return { ok: true }
+}
+
+/** Troca o papel de alguém dentro desta conta. */
+export async function acaoDefinirPapelNaConta(
+  clienteId: string,
+  usuarioId: string,
+  papel: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  const acesso = await exigirAcessoAoCliente(clienteId)
+  if (!podeAdministrarConta(acesso)) return { ok: false, erro: SO_QUEM_ADMINISTRA }
+  if (!ehPapelDaConta(papel)) return { ok: false, erro: 'papel inválido' }
+
+  const mudou = await definirPapelNaConta(clienteId, usuarioId, papel)
+  if (!mudou) return { ok: false, erro: 'esta pessoa não está nesta conta' }
+
+  await registrar({
+    acao: 'trocou_papel',
+    autorId: acesso.sessao?.usuario.id ?? null,
+    autorEmail: acesso.sessao?.usuario.email ?? 'painel',
+    contaId: clienteId,
+    alvoTipo: 'usuario',
+    alvoId: usuarioId,
+    detalhes: { papel },
+    impersonadoPor: acesso.sessao?.impersonadoPor ?? null,
+  })
+
+  revalidatePath(`/clientes/${clienteId}/ajustes/equipe`)
+  return { ok: true }
+}
+
+/** Tira alguém da conta. Não apaga a pessoa — ela pode ser dona de outra. */
+export async function acaoRemoverDaConta(
+  clienteId: string,
+  usuarioId: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  const acesso = await exigirAcessoAoCliente(clienteId)
+  if (!podeAdministrarConta(acesso)) return { ok: false, erro: SO_QUEM_ADMINISTRA }
+
+  const r = await removerDaConta(clienteId, usuarioId)
+  if (!r.ok) return { ok: false, erro: r.motivo }
+
+  await registrar({
+    acao: 'removeu_membro',
+    autorId: acesso.sessao?.usuario.id ?? null,
+    autorEmail: acesso.sessao?.usuario.email ?? 'painel',
+    contaId: clienteId,
+    alvoTipo: 'usuario',
+    alvoId: usuarioId,
+    impersonadoPor: acesso.sessao?.impersonadoPor ?? null,
+  })
+
+  revalidatePath(`/clientes/${clienteId}/ajustes/equipe`)
+  return { ok: true }
 }
 
 /**

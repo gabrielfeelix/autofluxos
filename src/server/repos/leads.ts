@@ -4,6 +4,7 @@ import type { Conciliacao, ContatoConhecido } from '@/core/contatos/planilha'
 import { chavesDoTelefone } from '@/core/contatos/telefone'
 import { TIPOS_DE_MIDIA, type TipoDeMidia } from '@/core/flow/schema'
 import { db, ehIdInvalido } from '../db'
+import { contatosComEtiqueta as contatosComEtiquetaManual, etiquetasDeContatos, type Etiqueta } from './etiquetas'
 
 /**
  * Um lead é um contato visto pelo lado de quem vende: o que ele respondeu, se
@@ -43,6 +44,16 @@ export type Lead = {
   ultimaEntradaEm: string | null
   ultimaDirecao: Direcao | null
   ultimoTexto: string | null
+  /**
+   * O `type` que a Meta mandou na última mensagem — `audio`, `image`,
+   * `sticker`, `document`... Nulo quando a última foi nossa (saída não tem
+   * `type` da Meta) ou quando o payload não trouxe.
+   *
+   * Existe para a prévia da fila parar de dizer "mídia ou mensagem sem texto"
+   * para foto, áudio, figurinha e PDF igualmente: quatro coisas com urgências
+   * diferentes, e quem decide o que abrir primeiro decidia no escuro.
+   */
+  ultimoTipo: string | null
   /** `false` quando a última saída não teve confirmação do canal. */
   ultimaEntregue: boolean | null
   /** Pausa persistente do bot para este contato. */
@@ -53,6 +64,8 @@ export type Lead = {
   atribuidoA: string | null
   /** Sinais derivados do histórico; nunca são gravados de volta no contato. */
   etiquetas: EtiquetaDeLead[]
+  /** As que uma pessoa criou e aplicou (0025). Estas são linha no banco. */
+  etiquetasManuais: Etiqueta[]
   criadoEm: string
 }
 
@@ -128,13 +141,14 @@ type Linha = {
   handoff_em: string | null
   nome_real: string
   notas: string
+  ultimo_tipo: string | null
 }
 
 // Numa linha só, e não concatenado: o supabase-js lê esta string no nível de
 // tipo para saber o formato do retorno, e concatenação vira `string` genérica —
 // aí o tipo do `data` desanda e o `tsc` acusa.
 const COLUNAS =
-  'contact_id, client_id, wa_id, nome, nome_real, notas, campos, criado_em, ultima_em, ultima_entrada_em, ultima_direcao, ultimo_texto, handoff_motivo, handoff_em, ultima_entregue, automacao_ativa, atribuido_a'
+  'contact_id, client_id, wa_id, nome, nome_real, notas, campos, criado_em, ultima_em, ultima_entrada_em, ultima_direcao, ultimo_texto, ultimo_tipo, handoff_motivo, handoff_em, ultima_entregue, automacao_ativa, atribuido_a'
 
 /**
  * `campos` é `jsonb`: o banco aceita qualquer coisa ali. Hoje só o motor
@@ -181,6 +195,7 @@ function paraLead(linha: Linha): Lead {
     ultimaEntradaEm: linha.ultima_entrada_em,
     ultimaDirecao: direcao.success ? direcao.data : null,
     ultimoTexto: linha.ultimo_texto,
+    ultimoTipo: linha.ultimo_tipo,
     ultimaEntregue: linha.ultima_entregue,
     automacaoAtiva: linha.automacao_ativa,
     aguardando:
@@ -189,6 +204,7 @@ function paraLead(linha: Linha): Lead {
         : null,
     atribuidoA: linha.atribuido_a,
     etiquetas: [],
+    etiquetasManuais: [],
     criadoEm: linha.criado_em,
   }
 }
@@ -244,8 +260,19 @@ export async function listarAlertasDeHandoff(clienteId: string): Promise<AlertaD
 async function classificar(leads: Lead[]): Promise<Lead[]> {
   if (leads.length === 0) return leads
 
-  const porContato = await etiquetasPorContato(leads.map((lead) => lead.contatoId))
-  return leads.map((lead) => ({ ...lead, etiquetas: porContato.get(lead.contatoId) ?? [] }))
+  const contatos = leads.map((lead) => lead.contatoId)
+  // As duas famílias juntas e em paralelo: a derivada sai do histórico, a
+  // manual sai de `contato_etiquetas`, e a tela mostra as duas lado a lado.
+  const [derivadas, manuais] = await Promise.all([
+    etiquetasPorContato(contatos),
+    etiquetasDeContatos(contatos),
+  ])
+
+  return leads.map((lead) => ({
+    ...lead,
+    etiquetas: derivadas.get(lead.contatoId) ?? [],
+    etiquetasManuais: manuais.get(lead.contatoId) ?? [],
+  }))
 }
 
 /**
@@ -389,6 +416,8 @@ export type FiltroDeLeads = {
   /** Nome ou telefone, parcial. Vazio = sem busca. */
   busca?: string
   etiqueta?: EtiquetaDeLead | null
+  /** Etiqueta manual (0025). Combina com `etiqueta` — as duas restringem. */
+  etiquetaId?: string | null
   atribuicao?: FiltroDeAtribuicao
   /** Só quem espera uma pessoa. É o que a fila do Inbox olha primeiro. */
   soEsperando?: boolean
@@ -443,12 +472,24 @@ export async function paginarLeads(
   const porPagina = filtro.porPagina ?? LEADS_POR_PAGINA
   const termo = limparBusca(filtro.busca ?? '')
 
+  /**
+   * Os dois filtros por etiqueta restringem, e por isso a interseção.
+   *
+   * `null` significa "sem restrição por etiqueta"; lista vazia significa
+   * "nenhum contato passa", e as duas precisam ser distinguíveis — tratá-las
+   * igual mostraria a lista inteira justo quando o filtro não achou ninguém.
+   */
   let permitidos: string[] | null = null
+
   if (filtro.etiqueta) {
     permitidos = await contatosComEtiqueta(clienteId, filtro.etiqueta)
-    if (permitidos.length === 0) {
-      return { leads: [], total: 0, pagina: 1, paginas: 1 }
-    }
+  }
+  if (filtro.etiquetaId) {
+    const manuais = await contatosComEtiquetaManual(clienteId, filtro.etiquetaId)
+    permitidos = permitidos === null ? manuais : permitidos.filter((id) => manuais.includes(id))
+  }
+  if (permitidos !== null && permitidos.length === 0) {
+    return { leads: [], total: 0, pagina: 1, paginas: 1 }
   }
 
   const consulta = () => {

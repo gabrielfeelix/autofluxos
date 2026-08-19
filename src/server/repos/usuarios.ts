@@ -185,3 +185,68 @@ export async function presencaDoUsuario(usuarioId: string): Promise<string | nul
   )
   return rows.length > 0 ? String(rows[0].presenca) : null
 }
+
+/**
+ * Troca o papel de alguém **dentro de uma conta**.
+ *
+ * Por SQL e não pelo plugin de organização: os endpoints dele exigem a sessão
+ * de quem tem permissão na conta, e boa parte do painel ainda entra pela senha
+ * única, sem sessão nenhuma. Quem autoriza aqui é `podeAdministrarConta` na
+ * ação; esta função só escreve.
+ */
+export async function definirPapelNaConta(
+  contaId: string,
+  usuarioId: string,
+  papel: 'owner' | 'admin' | 'member',
+): Promise<boolean> {
+  const { rowCount } = await bancoDoLogin().query(
+    'update public.af_membros set "role" = $1 where "organizationId" = $2 and "userId" = $3',
+    [papel, contaId, usuarioId],
+  )
+  return (rowCount ?? 0) === 1
+}
+
+/**
+ * Tira alguém da conta.
+ *
+ * **Recusa quando é o último dono.** Uma conta sem dono é uma conta que só a
+ * 4YU consegue mexer, e o caminho de volta é um `insert` na mão — exatamente o
+ * tipo de estado que ninguém percebe ter criado até precisar.
+ *
+ * Não apaga o usuário: ele pode ser dono de outra companhia, e apagar gente por
+ * causa de um desvínculo é o erro que não tem desfazer.
+ */
+export async function removerDaConta(
+  contaId: string,
+  usuarioId: string,
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  const { rows } = await bancoDoLogin().query(
+    `select "userId", "role" from public.af_membros where "organizationId" = $1`,
+    [contaId],
+  )
+
+  const alvo = rows.find((linha) => String(linha.userId) === usuarioId)
+  if (!alvo) return { ok: false, motivo: 'esta pessoa não está nesta conta' }
+
+  const donos = rows.filter((linha) => String(linha.role) === 'owner')
+  if (String(alvo.role) === 'owner' && donos.length === 1) {
+    return { ok: false, motivo: 'esta é a única pessoa dona da conta — dê a posse a outra antes' }
+  }
+
+  await bancoDoLogin().query(
+    'delete from public.af_membros where "organizationId" = $1 and "userId" = $2',
+    [contaId, usuarioId],
+  )
+  return { ok: true }
+}
+
+/** O usuário com este e-mail, se existir. É como "cadastrar" vira "vincular". */
+export async function acharUsuarioPorEmail(
+  email: string,
+): Promise<{ id: string; nome: string } | null> {
+  const { rows } = await bancoDoLogin().query(
+    'select id, "name" as nome from public.af_usuarios where lower(email) = lower($1)',
+    [email.trim()],
+  )
+  return rows.length > 0 ? { id: String(rows[0].id), nome: String(rows[0].nome) } : null
+}

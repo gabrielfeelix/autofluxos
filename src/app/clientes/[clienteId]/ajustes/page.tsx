@@ -9,6 +9,8 @@ import { acharCliente, contarOQueSomeCom } from '@/server/repos/clientes'
 import { listarConexoes } from '@/server/repos/conexoes'
 import { listarCanais } from '@/server/repos/conversas'
 import { listarRespostasRapidas } from '@/server/repos/respostas-rapidas'
+import { listarEtiquetas } from '@/server/repos/etiquetas'
+import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,14 +30,24 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [conexoes, canais, respostasRapidas, acervo, estrago] = await Promise.all([
+  const [conexoes, canais, respostasRapidas, acervo, estrago, etiquetas] = await Promise.all([
     listarConexoes(cliente.id),
     listarCanais(cliente.id),
     listarRespostasRapidas(cliente.id),
     listarAcervo(cliente.id),
     contarOQueSomeCom(cliente.id),
+    listarEtiquetas(cliente.id),
   ])
   const semContexto = cliente.contextoNegocio.trim() === ''
+
+  // A equipe fala Postgres direto e pode estourar sem `DATABASE_URL`. Um índice
+  // de configurações não pode deixar de abrir por causa de um selo.
+  let equipe: MembroDaConta[] = []
+  try {
+    equipe = await membrosDaConta(cliente.id)
+  } catch (erro) {
+    console.error('[ajustes] não deu para ler a equipe', erro instanceof Error ? erro.message : erro)
+  }
 
   return (
     <ClienteShell cliente={cliente} ativa="ajustes">
@@ -90,6 +102,30 @@ export default async function Pagina({
                 {acervo.length === 0
                   ? 'vazio'
                   : `${acervo.length} ${acervo.length === 1 ? 'arquivo' : 'arquivos'}`}
+              </Selo>
+            }
+          />
+          <Linha
+            href={`/clientes/${cliente.id}/ajustes/equipe`}
+            titulo="Equipe"
+            descricao="Quem entra nesta conta e o que cada um pode fazer. É de onde sai o rail de atribuição do Inbox."
+            estado={
+              <Selo tom={equipe.length === 0 ? 'alerta' : 'ok'}>
+                {equipe.length === 0
+                  ? 'ninguém'
+                  : `${equipe.length} ${equipe.length === 1 ? 'pessoa' : 'pessoas'}`}
+              </Selo>
+            }
+          />
+          <Linha
+            href={`/clientes/${cliente.id}/ajustes/etiquetas`}
+            titulo="Etiquetas"
+            descricao="As que uma pessoa cria e aplica. Viram filtro na lista de contatos."
+            estado={
+              <Selo tom={etiquetas.length === 0 ? 'neutro' : 'ok'}>
+                {etiquetas.length === 0
+                  ? 'nenhuma'
+                  : `${etiquetas.length} ${etiquetas.length === 1 ? 'etiqueta' : 'etiquetas'}`}
               </Selo>
             }
           />

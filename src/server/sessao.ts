@@ -309,6 +309,25 @@ export async function conferirAcessoAoCliente(contaId: string): Promise<AcessoAo
 }
 
 /**
+ * Pode **administrar** esta conta — mexer em quem entra nela?
+ *
+ * `exigirAcessoAoCliente` responde "pode ver"; isto responde "pode mexer na
+ * equipe". São perguntas diferentes e a distância entre elas é escalada de
+ * privilégio: um `member` que pudesse cadastrar gente criaria a própria conta
+ * de administrador e sairia do papel em que foi posto.
+ *
+ * `owner` e `admin` da conta passam. O administrador da 4YU e a senha única
+ * também — os dois já alcançam tudo hoje, e recusar aqui quebraria o painel
+ * antes de a senha única sair.
+ */
+export function podeAdministrarConta(acesso: AcessoAoCliente): boolean {
+  if (acesso.papel === 'owner' || acesso.papel === 'admin') return true
+  // Papel nulo com sessão é administrador da 4YU; papel nulo sem sessão é a
+  // senha única. Ver `conferirAcessoAoCliente`.
+  return acesso.papel === null
+}
+
+/**
  * A visão de quem opera a 4YU: a lista de todos os clientes e o que nasce dela.
  *
  * Criar cliente não tem `clienteId` para conferir — o cliente ainda não existe.

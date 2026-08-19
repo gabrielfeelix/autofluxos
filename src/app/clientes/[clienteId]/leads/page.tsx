@@ -14,10 +14,18 @@ import {
   type Lead,
 } from '@/server/repos/leads'
 import { horaExata, quando } from '@/lib/quando'
+import { FichaDeEtiqueta } from '@/components/etiquetas/ficha'
+import { listarEtiquetasComContagem, type Etiqueta } from '@/server/repos/etiquetas'
 
 export const dynamic = 'force-dynamic'
 
-type Busca = { etiqueta?: string | string[]; busca?: string | string[]; pagina?: string | string[] }
+type Busca = {
+  etiqueta?: string | string[]
+  /** A etiqueta manual (0025). Nome diferente porque as duas famílias somam. */
+  marca?: string | string[]
+  busca?: string | string[]
+  pagina?: string | string[]
+}
 
 const filtros: { etiqueta: EtiquetaDeLead; rotulo: string }[] = [
   { etiqueta: 'abriu_com_midia', rotulo: 'Abriu com áudio/mídia' },
@@ -37,10 +45,16 @@ function etiquetaValida(valor: Busca['etiqueta']): EtiquetaDeLead | null {
 /** Monta o endereço da própria tela preservando o que já estava escolhido. */
 function endereco(
   clienteId: string,
-  filtro: { etiqueta?: EtiquetaDeLead | null; busca?: string; pagina?: number },
+  filtro: {
+    etiqueta?: EtiquetaDeLead | null
+    marca?: string | null
+    busca?: string
+    pagina?: number
+  },
 ): string {
   const parametros = new URLSearchParams()
   if (filtro.etiqueta) parametros.set('etiqueta', filtro.etiqueta)
+  if (filtro.marca) parametros.set('marca', filtro.marca)
   if (filtro.busca) parametros.set('busca', filtro.busca)
   if (filtro.pagina && filtro.pagina > 1) parametros.set('pagina', String(filtro.pagina))
 
@@ -49,9 +63,15 @@ function endereco(
 }
 
 /** A exportação leva o mesmo filtro da tela — ver o porquê na própria rota. */
-function enderecoDoCsv(clienteId: string, etiqueta: EtiquetaDeLead | null, busca: string): string {
+function enderecoDoCsv(
+  clienteId: string,
+  etiqueta: EtiquetaDeLead | null,
+  marca: string | null,
+  busca: string,
+): string {
   const parametros = new URLSearchParams()
   if (etiqueta) parametros.set('etiqueta', etiqueta)
+  if (marca) parametros.set('marca', marca)
   if (busca) parametros.set('busca', busca)
 
   const consulta = parametros.toString()
@@ -70,6 +90,7 @@ export default async function Pagina({
   if (!cliente) notFound()
 
   const etiqueta = etiquetaValida(busca.etiqueta)
+  const marca = primeiro(busca.marca) || null
   const termo = limparBusca(primeiro(busca.busca))
   const pagina = Math.max(1, Number(primeiro(busca.pagina)) || 1)
 
@@ -78,8 +99,14 @@ export default async function Pagina({
       <main className="flex min-h-full flex-col px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <h1 className="mb-5 text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Contatos</h1>
 
-        <Suspense key={`${etiqueta}-${termo}-${pagina}`} fallback={<Esqueleto />}>
-          <Tabela clienteId={cliente.id} etiqueta={etiqueta} termo={termo} pagina={pagina} />
+        <Suspense key={`${etiqueta}-${marca}-${termo}-${pagina}`} fallback={<Esqueleto />}>
+          <Tabela
+            clienteId={cliente.id}
+            etiqueta={etiqueta}
+            marca={marca}
+            termo={termo}
+            pagina={pagina}
+          />
         </Suspense>
       </main>
     </ClienteShell>
@@ -114,20 +141,21 @@ function colunasDosCampos(leads: Lead[]): string[] {
 async function Tabela({
   clienteId,
   etiqueta,
+  marca,
   termo,
   pagina: pedida,
 }: {
   clienteId: string
   etiqueta: EtiquetaDeLead | null
+  marca: string | null
   termo: string
   pagina: number
 }) {
-  const filtrando = etiqueta !== null || termo !== ''
-  const { leads, total, pagina, paginas } = await paginarLeads(clienteId, {
-    etiqueta,
-    busca: termo,
-    pagina: pedida,
-  })
+  const filtrando = etiqueta !== null || marca !== null || termo !== ''
+  const [{ leads, total, pagina, paginas }, etiquetasDaConta] = await Promise.all([
+    paginarLeads(clienteId, { etiqueta, etiquetaId: marca, busca: termo, pagina: pedida }),
+    listarEtiquetasComContagem(clienteId),
+  ])
 
   // Sem filtro e sem nenhum lead, a tela ainda é de primeira vez: o que ajuda
   // é dizer o que falta ligar, não uma tabela vazia com um cabeçalho bonito.
@@ -161,7 +189,7 @@ async function Tabela({
           Importar
         </Link>
         <a
-          href={enderecoDoCsv(clienteId, etiqueta, termo)}
+          href={enderecoDoCsv(clienteId, etiqueta, marca, termo)}
           className="app-secondary-button px-3 py-1.5 text-[11.5px]"
           title="Baixar como planilha exatamente o que este filtro mostra"
         >
@@ -171,6 +199,7 @@ async function Tabela({
 
       <form action={`/clientes/${clienteId}/leads`} className="mb-3 flex flex-wrap gap-2">
         {etiqueta && <input type="hidden" name="etiqueta" value={etiqueta} />}
+        {marca && <input type="hidden" name="marca" value={marca} />}
         <label className="flex-1 basis-[240px]">
           <span className="sr-only">Buscar por nome ou telefone</span>
           <input
@@ -186,7 +215,7 @@ async function Tabela({
         </button>
         {termo !== '' && (
           <Link
-            href={endereco(clienteId, { etiqueta })}
+            href={endereco(clienteId, { etiqueta, marca })}
             className="self-center text-[11.5px] font-semibold text-accent hover:underline"
           >
             Limpar busca
@@ -200,8 +229,8 @@ async function Tabela({
       <nav aria-label="Filtrar contatos por etiqueta" className="mb-3 flex flex-wrap gap-2">
         <Link
           href={endereco(clienteId, { busca: termo })}
-          aria-current={etiqueta === null ? 'page' : undefined}
-          className={classeDoFiltro(etiqueta === null)}
+          aria-current={etiqueta === null && marca === null ? 'page' : undefined}
+          className={classeDoFiltro(etiqueta === null && marca === null)}
           scroll={false}
         >
           Todos
@@ -209,12 +238,37 @@ async function Tabela({
         {filtros.map((filtro) => (
           <Link
             key={filtro.etiqueta}
-            href={endereco(clienteId, { etiqueta: filtro.etiqueta, busca: termo })}
+            href={endereco(clienteId, { etiqueta: filtro.etiqueta, marca, busca: termo })}
             aria-current={etiqueta === filtro.etiqueta ? 'page' : undefined}
             className={classeDoFiltro(etiqueta === filtro.etiqueta)}
             scroll={false}
           >
             {filtro.rotulo}
+          </Link>
+        ))}
+
+        {/*
+          As manuais **têm** contagem, e as derivadas não.
+          
+          Não é inconsistência: contar uma derivada obriga a ler o histórico do
+          cliente inteiro a cada visita — exatamente o que a paginação veio
+          evitar. Contar uma manual é ler uma tabela de ligação com índice. O
+          número aparece onde ele é barato, e some onde não é.
+        */}
+        {etiquetasDaConta.map((manual) => (
+          <Link
+            key={manual.id}
+            href={endereco(clienteId, {
+              etiqueta,
+              marca: marca === manual.id ? null : manual.id,
+              busca: termo,
+            })}
+            aria-current={marca === manual.id ? 'page' : undefined}
+            className={classeDoFiltro(marca === manual.id)}
+            scroll={false}
+          >
+            {manual.nome}
+            <span className="ml-1.5 text-dim">{manual.contatos ?? 0}</span>
           </Link>
         ))}
       </nav>
@@ -258,6 +312,7 @@ async function Tabela({
                           {lead.nome ?? 'sem nome'}
                         </Link>
                         <span className="block whitespace-nowrap font-mono text-[10px] text-dim">{telefoneLegivel(lead.waId)}</span>
+                        <Etiquetas lista={lead.etiquetasManuais} />
                       </div>
                     </div>
                   </td>
@@ -399,6 +454,18 @@ function Avatar({ nome }: { nome: string | null }) {
   return (
     <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-white/[0.11] bg-white/[0.05] text-[10px] font-bold text-[#97a2b4]">
       {iniciais}
+    </span>
+  )
+}
+
+/** As etiquetas manuais na linha do contato. Nada quando não há nenhuma. */
+function Etiquetas({ lista }: { lista: Etiqueta[] }) {
+  if (lista.length === 0) return null
+  return (
+    <span className="mt-1 flex flex-wrap gap-1">
+      {lista.map((etiqueta) => (
+        <FichaDeEtiqueta key={etiqueta.id} nome={etiqueta.nome} cor={etiqueta.cor} />
+      ))}
     </span>
   )
 }

@@ -30,6 +30,10 @@ import {
 import { listarRespostasRapidas, type RespostaRapida } from '@/server/repos/respostas-rapidas'
 import { AnexoNaConversa, SemTexto } from '@/components/lead/anexo'
 import { horaExata, quando } from '@/lib/quando'
+import { nomeDoTipo } from '@/core/tipo-da-mensagem'
+import { SeletorDeEtiquetas, type EtiquetaEscolhivel } from '@/components/etiquetas/seletor'
+import { listarEtiquetas } from '@/server/repos/etiquetas'
+import { marcarComoLida, naoLidasPorContato, TETO_DA_INSIGNIA } from '@/server/repos/leituras'
 
 export const dynamic = 'force-dynamic'
 
@@ -74,7 +78,7 @@ export default async function Pagina({
   const pagina = Math.max(1, Number(primeiro(busca.pagina)) || 1)
   const termo = limparBusca(primeiro(busca.busca))
 
-  const [cliente, fila, respostasRapidas, contagem] = await Promise.all([
+  const [cliente, fila, respostasRapidas, contagem, etiquetas] = await Promise.all([
     acharCliente(clienteId),
     paginarLeads(clienteId, {
       atribuicao,
@@ -84,6 +88,7 @@ export default async function Pagina({
     }),
     listarRespostasRapidas(clienteId),
     contarPorAtribuicao(clienteId),
+    listarEtiquetas(clienteId),
   ])
   if (!cliente) notFound()
 
@@ -128,6 +133,25 @@ export default async function Pagina({
     }
   }
 
+  /**
+   * **Marcar antes de contar, nesta ordem.**
+   *
+   * A conversa que está aberta na tela acabou de ser lida — contá-la como não
+   * lida no mesmo desenho em que ela está visível é o tipo de detalhe que faz
+   * a insígnia perder credibilidade e todo mundo parar de olhar para ela.
+   *
+   * Escrever durante a renderização é aceitável **aqui** porque a escrita é
+   * idempotente (`lida_em = now()`) e a rota é `force-dynamic`: rodar duas
+   * vezes na mesma navegação escreve o mesmo relógio duas vezes. Sem usuário —
+   * quem entrou pela senha única — as duas funções não fazem nada.
+   */
+  const usuarioId = sessao?.usuario.id ?? null
+  if (selecionado) await marcarComoLida(usuarioId, selecionado.contatoId)
+  const naoLidas = await naoLidasPorContato(
+    usuarioId,
+    leads.map((lead) => lead.contatoId),
+  )
+
   return (
     <ClienteShell cliente={cliente} ativa="inbox">
       <main className="px-4 md:px-[42px] pt-[26px] pb-[42px]">
@@ -150,7 +174,9 @@ export default async function Pagina({
             selecionado={selecionado}
             respostasRapidas={respostasRapidas}
             equipe={equipe}
-            usuarioId={sessao?.usuario.id ?? null}
+            usuarioId={usuarioId}
+            naoLidas={naoLidas}
+            etiquetas={etiquetas}
             contagem={contagem}
             atribuicao={atribuicao}
             termo={termo}
@@ -199,6 +225,8 @@ async function Conteudo({
   respostasRapidas,
   equipe,
   usuarioId,
+  naoLidas,
+  etiquetas,
   contagem,
   atribuicao,
   termo,
@@ -210,9 +238,13 @@ async function Conteudo({
   /** `null` quando o filtro ou a busca não deixou nenhuma conversa para abrir. */
   selecionado: Lead | null
   respostasRapidas: RespostaRapida[]
+  /** As etiquetas manuais da conta, para o painel do contato deixar aplicar. */
+  etiquetas: EtiquetaEscolhivel[]
   equipe: MembroDaConta[]
   /** Quem está olhando. `null` quando quem entrou foi a senha única do time. */
   usuarioId: string | null
+  /** Quantas entradas cada conversa tem depois da última vez que **eu** abri. */
+  naoLidas: Map<string, number>
   contagem: Contagem
   atribuicao: string
   termo: string
@@ -250,6 +282,7 @@ async function Conteudo({
           atribuicao={atribuicao}
           termo={termo}
           usuarioId={usuarioId}
+          naoLidas={naoLidas}
           pagina={pagina}
           paginas={paginas}
         />
@@ -282,7 +315,9 @@ async function Conteudo({
           </section>
         )}
 
-        {selecionado && <DadosDoLead clienteId={clienteId} lead={selecionado} />}
+        {selecionado && (
+          <DadosDoLead clienteId={clienteId} lead={selecionado} etiquetas={etiquetas} />
+        )}
       </div>
     </>
   )
@@ -300,6 +335,7 @@ function Fila({
   atribuicao,
   termo,
   usuarioId,
+  naoLidas,
   pagina,
   paginas,
 }: {
@@ -312,6 +348,7 @@ function Fila({
   atribuicao: string
   termo: string
   usuarioId: string | null
+  naoLidas: Map<string, number>
   pagina: number
   paginas: number
 }) {
@@ -431,6 +468,7 @@ function Fila({
         {leads.map((lead) => {
           const ativa = lead.contatoId === selecionado?.contatoId
           const nome = lead.nome ?? 'sem nome'
+          const semLer = naoLidas.get(lead.contatoId) ?? 0
           return (
             <Link
               key={lead.contatoId}
@@ -444,11 +482,31 @@ function Fila({
               <Avatar nome={lead.nome} alerta={Boolean(lead.aguardando)} />
               <span className="min-w-0 flex-1">
                 <span className="flex items-baseline gap-2">
-                  <strong className={`min-w-0 flex-1 truncate text-[12.5px] ${ativa ? 'text-white' : 'text-soft'}`}>{nome}</strong>
+                  <strong
+                    className={`min-w-0 flex-1 truncate text-[12.5px] ${ativa ? 'text-white' : semLer > 0 ? 'font-bold text-white' : 'text-soft'}`}
+                  >
+                    {nome}
+                  </strong>
                   <small className="shrink-0 text-[9.5px] text-muted">{lead.ultimaEm ? quando(lead.ultimaEm) : ''}</small>
                 </span>
-                <span className={`mt-0.5 block truncate text-[10.5px] ${lead.aguardando ? 'text-rose-300' : 'text-muted'}`}>
-                  {lead.aguardando ? `Pessoa: ${lead.aguardando.motivo}` : resumoDaConversa(lead)}
+                <span className="mt-0.5 flex items-center gap-1.5">
+                  <span className={`min-w-0 flex-1 truncate text-[10.5px] ${lead.aguardando ? 'text-rose-300' : semLer > 0 ? 'text-soft' : 'text-muted'}`}>
+                    {lead.aguardando ? `Pessoa: ${lead.aguardando.motivo}` : resumoDaConversa(lead)}
+                  </span>
+                  {/*
+                    A insígnia é **minha**, não da conversa: ela conta o que
+                    entrou depois da última vez que *eu* abri. "Alguém leu" é
+                    exatamente a informação que não ajuda ninguém a decidir o
+                    que abrir agora.
+                  */}
+                  {semLer > 0 && (
+                    <span
+                      title={`${semLer} mensagem(ns) desde a última vez que você abriu`}
+                      className="shrink-0 rounded-full bg-accent px-1.5 py-px text-[9.5px] font-bold text-black"
+                    >
+                      {semLer > TETO_DA_INSIGNIA ? `${TETO_DA_INSIGNIA}+` : semLer}
+                    </span>
+                  )}
                 </span>
                 {lead.aguardando && <RelogioDaJanela ultimaEntradaEm={lead.ultimaEntradaEm} />}
                 {/*
@@ -703,7 +761,15 @@ function Historico({
   )
 }
 
-function DadosDoLead({ clienteId, lead }: { clienteId: string; lead: Lead }) {
+function DadosDoLead({
+  clienteId,
+  lead,
+  etiquetas,
+}: {
+  clienteId: string
+  lead: Lead
+  etiquetas: EtiquetaEscolhivel[]
+}) {
   const campos = Object.entries(lead.campos)
   const aguardandoPessoa = lead.aguardando !== null
   const botPausado = !lead.automacaoAtiva
@@ -738,6 +804,16 @@ function DadosDoLead({ clienteId, lead }: { clienteId: string; lead: Lead }) {
               automacaoAtiva={lead.automacaoAtiva}
             />
           )}
+        </div>
+
+        <div className="mt-5">
+          <h3 className="mb-2 text-[11px] font-bold text-soft">Etiquetas</h3>
+          <SeletorDeEtiquetas
+            clienteId={clienteId}
+            contatoId={lead.contatoId}
+            disponiveis={etiquetas}
+            aplicadas={lead.etiquetasManuais.map((etiqueta) => etiqueta.id)}
+          />
         </div>
 
         <div className="mt-5">
@@ -791,7 +867,12 @@ function Avatar({ nome, alerta }: { nome: string | null; alerta: boolean }) {
 }
 
 function resumoDaConversa(lead: Lead): string {
-  if (!lead.ultimoTexto) return lead.ultimaEm ? 'mídia ou mensagem sem texto' : 'sem mensagem'
   const prefixo = lead.ultimaDirecao === 'saida' ? 'atendimento: ' : ''
-  return `${prefixo}${lead.ultimoTexto}`
+  if (lead.ultimoTexto) return `${prefixo}${lead.ultimoTexto}`
+  if (!lead.ultimaEm) return 'sem mensagem'
+
+  // O tipo quando ele existe, a frase genérica quando não. Ver
+  // `core/tipo-da-mensagem.ts` sobre por que "mídia ou mensagem sem texto"
+  // sozinho era pior do que nada.
+  return `${prefixo}${nomeDoTipo(lead.ultimoTipo) ?? 'mensagem sem texto'}`
 }
