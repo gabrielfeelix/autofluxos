@@ -55,7 +55,22 @@ const PORTAS_ABERTAS = [
  * Com a barra no fim, de propósito: sem ela, uma rota futura chamada
  * `/faturamento` nasceria pública sem ninguém notar.
  */
-const PREFIXOS_ABERTOS = ['/f/']
+const PREFIXOS_ABERTOS = [
+  '/f/',
+  /**
+   * Os logos de cliente servidos para o `=IMAGE()` do Google Sheets (ver
+   * `public/logos/README.md`).
+   *
+   * Precisam abrir sem sessão porque quem busca é o servidor do Google, que não
+   * tem cookie nenhum. Sem esta linha o arquivo estático cai no matcher e volta
+   * um redirecionamento para `/entrar` — a planilha mostra imagem quebrada e o
+   * motivo não aparece em lugar nenhum.
+   *
+   * A primeira tentativa serviu de `/clientes/`, que é justamente o prefixo da
+   * área autenticada. O caminho novo não colide com rota de tela nenhuma.
+   */
+  '/logos/',
+]
 
 export async function proxy(req: NextRequest) {
   const caminho = req.nextUrl.pathname
