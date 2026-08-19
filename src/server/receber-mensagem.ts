@@ -15,6 +15,8 @@ import {
   type ContextoDoAtendimento,
 } from '@/core/engine/executar'
 import { casarGatilho } from '@/core/gatilhos'
+import { casarCampanha } from '@/core/campanhas'
+import { atribuirCampanha, campanhasAtivas, contarDisparoDaCampanha } from './repos/campanhas'
 import { chaveDoTimeout, dadosDoTimeoutSchema } from '@/core/tarefas'
 import { agendar, cancelarPorChave } from './repos/tarefas'
 import { timeoutDaPergunta } from '@/core/flow/schema'
@@ -241,6 +243,8 @@ type Abertura = {
   versaoId: string
   /** Preenchido só quando quem escolheu foi um gatilho, para contar o disparo. */
   gatilhoId?: string
+  /** Preenchido só quando quem escolheu foi uma campanha (B4). */
+  campanhaId?: string
 }
 
 /**
@@ -254,6 +258,9 @@ type Abertura = {
  *    escreveu "quero falar com uma pessoa" pediu uma pessoa, e um gatilho do
  *    cliente com a palavra "falar" não pode sequestrar isso. A lista mora no
  *    motor (`PALAVRAS_ESCAPE`) e é lida de lá, não copiada para cá.
+ * 1.5. **Campanha** (B4), antes do gatilho: ela casa com a **mensagem inteira**,
+ *    que é um critério estrito, e é a porta de entrada que o cliente está
+ *    pagando para manter aberta. Um `contem` do gatilho não pode roubá-la.
  * 2. **Gatilho por palavra-chave**, e ele **interrompe** a conversa em
  *    andamento. Parece agressivo e é o comportamento que já existia: o escape
  *    global sempre funcionou de dentro de qualquer pergunta. Um gatilho é o
@@ -275,10 +282,20 @@ async function escolherAbertura(
   estado: { temSessaoViva: boolean; primeiraVez: boolean },
   entrada: Entrada,
 ): Promise<Abertura | null> {
-  const candidatos: { fluxoId: string; gatilhoId?: string }[] = []
+  const candidatos: { fluxoId: string; gatilhoId?: string; campanhaId?: string }[] = []
 
   if (entrada.tipo === 'texto' && !pediuAtendente(entrada.texto)) {
-    const casado = casarGatilho(await gatilhosAtivos(canalSalvo.clienteId), entrada.texto)
+    // As duas listas juntas: a conta que tem campanha quase sempre tem gatilho,
+    // e buscar em série custaria uma viagem a mais em toda mensagem de texto.
+    const [campanhas, gatilhos] = await Promise.all([
+      campanhasAtivas(canalSalvo.clienteId),
+      gatilhosAtivos(canalSalvo.clienteId),
+    ])
+
+    const campanha = casarCampanha(campanhas, entrada.texto)
+    if (campanha) candidatos.push({ fluxoId: campanha.fluxoId, campanhaId: campanha.id })
+
+    const casado = casarGatilho(gatilhos, entrada.texto)
     if (casado) candidatos.push({ fluxoId: casado.fluxoId, gatilhoId: casado.id })
   }
 
@@ -302,6 +319,7 @@ async function escolherAbertura(
       return {
         versaoId: fluxo.versaoPublicadaId,
         ...(candidato.gatilhoId ? { gatilhoId: candidato.gatilhoId } : {}),
+        ...(candidato.campanhaId ? { campanhaId: candidato.campanhaId } : {}),
       }
     }
   }
@@ -348,6 +366,11 @@ async function avancarConversa(
     // Depois de criar a sessão de propósito: o contador é da tela, e nunca pode
     // ficar entre a escolha do fluxo e a conversa existir.
     if (abertura.gatilhoId) await contarDisparo(abertura.gatilhoId)
+    if (abertura.campanhaId) {
+      await contarDisparoDaCampanha(abertura.campanhaId)
+      // Primeiro toque: `atribuirCampanha` só escreve em contato sem campanha.
+      await atribuirCampanha(contato.id, abertura.campanhaId)
+    }
   } else if (viva) {
     salva = viva
   } else {

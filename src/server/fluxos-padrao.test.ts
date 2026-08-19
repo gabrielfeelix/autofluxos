@@ -13,6 +13,7 @@ import {
 } from './repos/conversas'
 import { criarFluxo, publicar } from './repos/fluxos'
 import { criarGatilho, listarGatilhos } from './repos/gatilhos'
+import { criarCampanha, listarCampanhas } from './repos/campanhas'
 import { acharLead } from './repos/leads'
 
 /**
@@ -365,5 +366,86 @@ describe.skipIf(!temCredencial)('o pós-atendimento', () => {
     mock.enviadas.length = 0
     await rodarPosAtendimento(clienteId, contatoId, comMock)
     expect(mock.enviadas).toEqual([])
+  })
+})
+
+describe.skipIf(!temCredencial)('as campanhas', () => {
+  it('abrem o fluxo delas, contam a conversa e marcam o contato', async () => {
+    const de = telefone(10)
+    const campanha = await criarCampanha(clienteId, {
+      nome: `${marca} anúncio`,
+      frase: 'Quero saber mais sobre o plano trimestral',
+      fluxoId: fluxoDoGatilhoId,
+    })
+    expect(campanha.ok).toBe(true)
+
+    mock.enviadas.length = 0
+    // Com ponto no fim de propósito: é o que o WhatsApp às vezes come, e o
+    // produto de onde o desenho veio pede ao anunciante que compense isso na
+    // mão. Aqui a normalização é nossa.
+    await receberMensagem(
+      webhookTexto(de, 'Quero saber mais sobre o plano trimestral.', `wamid-${marca}-cmp-1`),
+      comMock,
+    )
+
+    expect(textosEnviados()[0]).toBe(FRASE.gatilho)
+
+    const criada = (await listarCampanhas(clienteId)).find((c) => c.nome === `${marca} anúncio`)!
+    expect(criada.execucoes).toBe(1)
+
+    const { data: contato } = await db()
+      .from('contacts')
+      .select('id, campanha_id')
+      .eq('wa_id', de)
+      .single()
+    expect(contato?.campanha_id).toBe(criada.id)
+  })
+
+  it('meia frase não é campanha — quem apagou parte não veio pelo anúncio', async () => {
+    const de = telefone(11)
+
+    mock.enviadas.length = 0
+    await receberMensagem(webhookTexto(de, 'Quero saber mais', `wamid-${marca}-cmp-2`), comMock)
+
+    // Cai no fluxo de boas-vindas, que é o certo para uma primeira conversa.
+    expect(textosEnviados()[0]).toBe(FRASE.boasVindas)
+
+    const { data: contato } = await db()
+      .from('contacts')
+      .select('campanha_id')
+      .eq('wa_id', de)
+      .single()
+    expect(contato?.campanha_id).toBeNull()
+  })
+
+  it('a atribuição é de primeiro toque e não troca de dono', async () => {
+    const de = telefone(12)
+    const segunda = await criarCampanha(clienteId, {
+      nome: `${marca} segundo anúncio`,
+      frase: 'Vi o outro anúncio',
+      fluxoId: fluxoDoGatilhoId,
+    })
+    expect(segunda.ok).toBe(true)
+
+    await receberMensagem(
+      webhookTexto(de, 'Quero saber mais sobre o plano trimestral', `wamid-${marca}-cmp-3`),
+      comMock,
+    )
+    const { data: primeiro } = await db()
+      .from('contacts')
+      .select('id, campanha_id')
+      .eq('wa_id', de)
+      .single()
+
+    await receberMensagem(webhookTexto(de, 'Vi o outro anúncio', `wamid-${marca}-cmp-4`), comMock)
+    const { data: depois } = await db()
+      .from('contacts')
+      .select('campanha_id')
+      .eq('wa_id', de)
+      .single()
+
+    // Sobrescrever faria o relatório do primeiro anúncio perder o lead que ele
+    // pagou para trazer.
+    expect(depois?.campanha_id).toBe(primeiro?.campanha_id)
   })
 })

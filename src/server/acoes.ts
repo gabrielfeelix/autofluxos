@@ -70,6 +70,7 @@ import { apagarConexao, criarConexao, trocarValor } from './repos/conexoes'
 import { apagarContato, apagarContatos } from './repos/retencao'
 import { apagarRespostaRapida, criarRespostaRapida } from './repos/respostas-rapidas'
 import { alternarGatilho, apagarGatilho, criarGatilho } from './repos/gatilhos'
+import { alternarCampanha, apagarCampanha, criarCampanha } from './repos/campanhas'
 import {
   apagarEtiqueta,
   criarEtiqueta,
@@ -514,6 +515,59 @@ export async function acaoApagarContatos(
   revalidatePath(`/clientes/${clienteId}/inbox`)
   revalidatePath(`/clientes/${clienteId}`)
   return { ok: true, apagados }
+}
+
+/**
+ * Cria uma campanha: a frase de um anúncio que abre um fluxo específico (B4).
+ *
+ * A frase é guardada como a pessoa escreveu e comparada normalizada — ver
+ * `core/campanhas.ts`. O produto de onde o desenho veio pede ao anunciante que
+ * não termine com ponto porque o WhatsApp às vezes o come; pedir isso é
+ * empurrar um detalhe da plataforma para quem está pagando o anúncio, então a
+ * normalização é nossa.
+ */
+export async function acaoCriarCampanha(
+  clienteId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const nome = String(formData.get('nome') ?? '')
+  const frase = String(formData.get('frase') ?? '')
+  const fluxoId = String(formData.get('fluxoId') ?? '').trim()
+  if (fluxoId === '') return { erro: 'escolha para qual fluxo a campanha leva' }
+
+  const r = await criarCampanha(clienteId, { nome, frase, fluxoId })
+  if (!r.ok) return { erro: r.motivo }
+
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  return { ok: true }
+}
+
+/** Liga/desliga sem apagar — a contagem é o histórico do anúncio que já rodou. */
+export async function acaoAlternarCampanha(
+  clienteId: string,
+  campanhaId: string,
+  ativa: boolean,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const mudou = await alternarCampanha(clienteId, campanhaId, ativa)
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  return mudou ? { ok: true } : { ok: false, erro: 'esta campanha não existe mais' }
+}
+
+export async function acaoApagarCampanha(
+  clienteId: string,
+  campanhaId: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const apagou = await apagarCampanha(clienteId, campanhaId)
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  revalidatePath(`/clientes/${clienteId}/leads`)
+  return apagou ? { ok: true } : { ok: false, erro: 'esta campanha não existe mais' }
 }
 
 // ---------------------------------------------------------------------------

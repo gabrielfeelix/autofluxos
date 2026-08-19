@@ -10,17 +10,21 @@ import { validar } from '@/core/flow/validar'
 import { Dropdown } from '@/components/design/dropdown'
 import { FormularioSalvar } from '@/components/design/formulario-salvar'
 import { InterruptorDeGatilho } from '@/components/gatilhos/interruptor'
+import { InterruptorDeCampanha } from '@/components/gatilhos/interruptor-de-campanha'
 import { OPERADORES_DE_GATILHO, ROTULO_DO_OPERADOR } from '@/core/gatilhos'
 import { PAPEIS_DO_NUMERO, ROTULO_DO_PAPEL } from '@/core/papeis-do-numero'
 import {
+  acaoApagarCampanha,
   acaoApagarFluxo,
   acaoApagarGatilho,
+  acaoCriarCampanha,
   acaoCriarFluxo,
   acaoCriarGatilho,
 } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { fluxoDoPapel, listarCanais } from '@/server/repos/conversas'
 import { listarGatilhos } from '@/server/repos/gatilhos'
+import { contatosPorCampanha, listarCampanhas } from '@/server/repos/campanhas'
 import { listarFluxos } from '@/server/repos/fluxos'
 import { contarExecucoesPorFluxo } from '@/server/repos/metricas'
 
@@ -35,14 +39,17 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [fluxos, canais, execucoes, gatilhos] = await Promise.all([
+  const [fluxos, canais, execucoes, gatilhos, campanhas, contatosDaCampanha] = await Promise.all([
     listarFluxos(cliente.id),
     listarCanais(cliente.id),
     contarExecucoesPorFluxo(cliente.id),
     listarGatilhos(cliente.id),
+    listarCampanhas(cliente.id),
+    contatosPorCampanha(cliente.id),
   ])
   const criarComCliente = acaoCriarFluxo.bind(null, cliente.id)
   const criarGatilhoComCliente = acaoCriarGatilho.bind(null, cliente.id)
+  const criarCampanhaComCliente = acaoCriarCampanha.bind(null, cliente.id)
 
   /**
    * Em quais papéis de número este fluxo está ligado.
@@ -286,6 +293,117 @@ export default async function Pagina({
                       rotulo: item.nome,
                       ...(item.versaoPublicadaId ? {} : { detalhe: 'rascunho' }),
                     }))}
+                  />
+                </div>
+              </FormularioSalvar>
+            )}
+          </div>
+        </section>
+        <section className="app-card mt-[18px] overflow-hidden">
+          <header className="border-b border-white/[0.06] px-5 py-4">
+            <h2 className="text-[14.5px] font-bold">Campanhas</h2>
+            <p className="mt-0.5 text-[12px] leading-5 text-dim">
+              A frase que o anúncio do Click-to-WhatsApp já deixa digitada. Quem
+              chega por ela cai num fluxo específico em vez do padrão do número —
+              e o contato fica marcado com a campanha que o trouxe.
+              <br />
+              Ela casa com a <strong className="text-muted">mensagem inteira</strong>;
+              quem apagou parte e escreveu outra coisa não está mais respondendo
+              ao anúncio. Pode terminar com ponto ou não: a gente normaliza.
+            </p>
+          </header>
+
+          {campanhas.length === 0 ? (
+            <div className="border-b border-white/[0.045] px-5 py-10 text-center">
+              <p className="text-[13px] font-semibold text-soft">Nenhuma campanha ainda</p>
+              <p className="mt-1 text-xs leading-5 text-dim">
+                Sem elas, todo mundo que vem de anúncio entra pela mesma porta —
+                e o relatório não separa quem veio de onde.
+              </p>
+            </div>
+          ) : (
+            <ul>
+              {campanhas.map((campanha) => {
+                const destino = fluxos.find((item) => item.id === campanha.fluxoId)
+                const trouxe = contatosDaCampanha.get(campanha.id) ?? 0
+
+                return (
+                  <li
+                    key={campanha.id}
+                    className="flex items-center gap-3 border-b border-white/[0.045] px-5 py-3.5 last:border-0"
+                  >
+                    <InterruptorDeCampanha
+                      clienteId={cliente.id}
+                      campanhaId={campanha.id}
+                      ativa={campanha.ativa}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <strong
+                        className={`block truncate text-[13px] font-semibold ${campanha.ativa ? '' : 'text-dim line-through'}`}
+                      >
+                        {campanha.nome}
+                      </strong>
+                      <span className="mt-0.5 block truncate text-[11px] text-dim">
+                        “{campanha.frase}” · abre{' '}
+                        <strong className="font-semibold text-muted">
+                          {destino?.nome ?? 'um fluxo que sumiu'}
+                        </strong>
+                        {destino && !destino.versaoPublicadaId
+                          ? ' · ainda não publicado, então não abre nada'
+                          : ''}
+                      </span>
+                    </span>
+                    <span className="whitespace-nowrap text-right text-[11px] text-dim">
+                      <strong className="font-semibold text-soft">{trouxe}</strong> contato(s)
+                      <span className="block">
+                        {campanha.execucoes} {campanha.execucoes === 1 ? 'conversa' : 'conversas'}
+                      </span>
+                    </span>
+                    <BotaoPerigo
+                      titulo="Apaga a campanha. Os contatos que ela trouxe ficam — eles são o resultado dela."
+                      pergunta={`Apagar a campanha “${campanha.nome}”? Os ${trouxe} contato(s) que ela trouxe ficam, mas deixam de aparecer ligados a ela.`}
+                      acao={acaoApagarCampanha.bind(null, cliente.id, campanha.id)}
+                    />
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+
+          <div className="p-5">
+            {fluxos.length === 0 ? (
+              <p className="text-[11.5px] text-dim">
+                Crie um fluxo primeiro — uma campanha precisa de um lugar para levar.
+              </p>
+            ) : (
+              <FormularioSalvar
+                action={criarCampanhaComCliente}
+                rotulo="Criar campanha"
+                dica="Cole no anúncio exatamente a frase que você escrever aqui."
+              >
+                <div className="grid gap-2.5 md:grid-cols-2">
+                  <input
+                    name="nome"
+                    required
+                    placeholder="Nome (ex.: Anúncio pilates agosto)"
+                    aria-label="Nome da campanha"
+                    className="app-field px-3 py-2.5 text-[12.5px]"
+                  />
+                  <Dropdown
+                    nome="fluxoId"
+                    rotuloAcessivel="Fluxo que a campanha abre"
+                    opcoes={fluxos.map((item) => ({
+                      valor: item.id,
+                      rotulo: item.nome,
+                      ...(item.versaoPublicadaId ? {} : { detalhe: 'rascunho' }),
+                    }))}
+                  />
+                  <input
+                    name="frase"
+                    required
+                    placeholder="Frase do anúncio (ex.: Quero saber mais sobre o plano trimestral)"
+                    aria-label="Frase que inicia o fluxo"
+                    className="app-field px-3 py-2.5 text-[12.5px] md:col-span-2"
                   />
                 </div>
               </FormularioSalvar>
