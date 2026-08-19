@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
+import { NotificacoesDaFila } from '@/components/inbox/notificacoes-da-fila'
 import { acaoDefinirPresenca, acaoSair } from '@/server/acoes-conta'
 import { acaoSair as acaoSairDoPainel } from '@/server/auth-actions'
 import type { Cliente } from '@/server/repos/clientes'
@@ -133,6 +134,16 @@ export async function ClienteShell({
             papel={acesso.papel}
             viaSenhaUnica={acesso.viaSenhaUnica}
           />
+
+          {/*
+            O aviso de fila vive **aqui**, e não só no Inbox.
+            
+            Era o buraco do §3.10.1: o handoff acontecia e ninguém percebia, a
+            não ser que a pessoa estivesse com o Inbox aberto. Quem está
+            desenhando um fluxo ou conferindo contatos está no painel do mesmo
+            jeito — e é justamente quem dá para avisar de graça.
+          */}
+          <NotificacoesDaFila clienteId={cliente.id} compacto />
 
           {presenca && <Presenca atual={presenca} />}
 

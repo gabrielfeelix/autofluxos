@@ -28,22 +28,44 @@ function permissaoAtual(): Permissao {
 }
 
 /**
- * Alerta opt-in do navegador para quem está com o Inbox aberto.
+ * Alerta opt-in do navegador quando alguém entra na fila.
  *
- * Não registra telefone ou conteúdo em storage. A lista inicial apenas marca
- * o que já estava pendente quando a tela abriu; só handoff que aparece depois
- * dela dispara uma notificação. A permissão pertence ao navegador/origem e só
- * é pedida em clique explícito, como os navegadores exigem.
+ * **Ele mora na moldura do cliente, e não só no Inbox** — e essa mudança é a
+ * metade barata do buraco que o §3.10.1 descreve: o handoff acontecia e
+ * ninguém percebia, *a não ser que a pessoa estivesse com o Inbox aberto*.
+ * Quem está desenhando um fluxo ou conferindo contatos está no painel do mesmo
+ * jeito, e é justamente quem dá para avisar de graça.
+ *
+ * O que continua faltando é avisar quem **não** está no painel: push de
+ * verdade (com service worker e assinatura guardada) e e-mail. Os dois pedem
+ * banco ou SMTP — ver docs/PENDENCIAS-DO-DONO.md.
+ *
+ * Não registra telefone nem conteúdo em storage. A permissão pertence ao
+ * navegador e só é pedida em clique explícito, como eles exigem.
  */
 export function NotificacoesDaFila({
   clienteId,
   alertasIniciais,
+  compacto = false,
 }: {
   clienteId: string
-  alertasIniciais: AlertaDaFila[]
+  /**
+   * O que já estava pendente quando a tela abriu, quando quem chama já tem
+   * essa lista na mão.
+   *
+   * Ausente, a **primeira consulta** vira a linha de base e não avisa nada.
+   * Sem isso, abrir uma tela qualquer do painel dispararia, trinta segundos
+   * depois, uma notificação para cada conversa que já estava esperando —
+   * uma rajada que ensina a pessoa a desligar o aviso.
+   */
+  alertasIniciais?: AlertaDaFila[]
+  /** Na barra lateral o espaço é de 226px: só o ponto e uma palavra. */
+  compacto?: boolean
 }) {
   const router = useRouter()
-  const vistos = useRef(idsDosAlertas(alertasIniciais))
+  const vistos = useRef<Set<string> | null>(
+    alertasIniciais ? idsDosAlertas(alertasIniciais) : null,
+  )
   const [permissao, setPermissao] = useState<Permissao>(permissaoAtual)
 
   useEffect(() => {
@@ -61,7 +83,8 @@ export function NotificacoesDaFila({
         const dados = respostaSchema.safeParse(corpo)
         if (!dados.success || !ativa) return
 
-        const novos = novosAlertas(dados.data.alertas, vistos.current)
+        const primeiraLeitura = vistos.current === null
+        const novos = primeiraLeitura ? [] : novosAlertas(dados.data.alertas, vistos.current!)
         vistos.current = idsDosAlertas(dados.data.alertas)
 
         if (permissaoAtual() !== 'granted') return
@@ -73,6 +96,10 @@ export function NotificacoesDaFila({
         // usável e evita transformar uma oscilação temporária em alerta falso.
       }
     }
+
+    // Uma consulta na entrada, para a linha de base não depender de esperar
+    // trinta segundos — e para quem abriu o painel já ficar em dia.
+    void atualizar()
 
     const intervalo = window.setInterval(() => void atualizar(), INTERVALO_DE_CONSULTA)
     const aoVoltar = () => {
@@ -97,6 +124,34 @@ export function NotificacoesDaFila({
 
   const ativo = permissao === 'granted'
   const bloqueado = permissao === 'denied'
+
+  if (compacto) {
+    return (
+      <button
+        type="button"
+        onClick={() => void pedirPermissao()}
+        disabled={bloqueado}
+        title={
+          ativo
+            ? 'Avisa quando alguém entra na fila, em qualquer tela do painel.'
+            : bloqueado
+              ? 'Os alertas foram bloqueados no navegador. Libere nas permissões do site.'
+              : 'Ative o aviso de novo atendimento.'
+        }
+        className="flex w-full items-center gap-2 rounded-[10px] px-1.5 py-1.5 text-left transition hover:bg-white/[0.04] disabled:cursor-not-allowed"
+      >
+        <span
+          aria-hidden
+          className={`size-2 shrink-0 rounded-full ${ativo ? 'bg-emerald-400' : bloqueado ? 'bg-rose-400' : 'bg-amber-300'}`}
+        />
+        <span className="flex-1 text-[11.5px] text-muted">
+          {ativo ? 'Avisos ligados' : bloqueado ? 'Avisos bloqueados' : 'Avisos desligados'}
+        </span>
+        {!ativo && !bloqueado && <span className="text-[10.5px] text-dim">ligar</span>}
+      </button>
+    )
+  }
+
   return (
     <div className="flex items-center gap-2">
       <span className={`size-1.5 rounded-full ${ativo ? 'bg-emerald-400' : bloqueado ? 'bg-rose-400' : 'bg-amber-300'}`} />

@@ -8,7 +8,6 @@ import { sessaoAtual } from '@/server/sessao'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { ControleDeAutomacao } from '@/components/lead/controle-automacao'
 import { CaixaDeResposta } from '@/components/lead/responder'
-import { NotificacoesDaFila } from '@/components/inbox/notificacoes-da-fila'
 import {
   acaoAssumirAtendimento,
   acaoAtribuirPara,
@@ -208,25 +207,12 @@ async function Conteudo({
   const janela = restante && restante > 0 ? comoFalta(restante) : null
   const primeiroNome = selecionado.nome?.split(' ')[0] ?? 'esta pessoa'
   const esperando = leads.filter((lead) => lead.aguardando).length
-  const alertasIniciais = leads.flatMap((lead) => {
-    if (!lead.aguardando) return []
-    return [{
-      id: `${lead.contatoId}:${lead.aguardando.desde}`,
-      contatoId: lead.contatoId,
-      nome: lead.nome,
-      motivo: lead.aguardando.motivo,
-      desde: lead.aguardando.desde,
-    }]
-  })
 
   return (
     <>
-      <header className="mb-3 flex items-center gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="font-mono text-[10px] font-bold tracking-[0.14em] text-dim">ATENDIMENTO</p>
-          <h1 className="mt-0.5 text-[19px] font-bold tracking-[-0.02em]">Inbox</h1>
-        </div>
-        <NotificacoesDaFila clienteId={clienteId} alertasIniciais={alertasIniciais} />
+      <header className="mb-3">
+        <p className="font-mono text-[10px] font-bold tracking-[0.14em] text-dim">ATENDIMENTO</p>
+        <h1 className="mt-0.5 text-[19px] font-bold tracking-[-0.02em]">Inbox</h1>
       </header>
 
       <div className="grid min-h-[640px] grid-cols-[292px_minmax(390px,1fr)_250px] overflow-hidden rounded-[16px] border border-white/[0.075] bg-[#0c1118] shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
