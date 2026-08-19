@@ -867,7 +867,11 @@ export function Editor({
   }
 
   const noSelecionado = fluxo.nodes.find((n) => n.id === selecionado) ?? null
-  const { nomes: variaveis, origens: origensDeVariaveis } = variaveisDoFluxo(fluxo)
+  const {
+    nomes: variaveis,
+    origens: origensDeVariaveis,
+    valores: valoresDeVariaveis,
+  } = variaveisDoFluxo(fluxo)
 
   return (
     <div className="app-editor flex h-screen flex-col bg-canvas">
@@ -1234,6 +1238,7 @@ export function Editor({
                 ehInicio={selecionado === inicio}
                 variaveis={variaveis}
                 origensDeVariaveis={origensDeVariaveis}
+                valoresDeVariaveis={valoresDeVariaveis}
                 conexoes={conexoes}
                 etapas={etapas}
                 fluxos={fluxos}
@@ -1586,14 +1591,30 @@ function EstadoSalvamento({ estado }: { estado: 'salvo' | 'salvando' | 'pendente
  * deixar nascer um `agendar_aula2` calado. Sem o dono, o próprio bloco
  * apareceria como se estivesse repetindo a si mesmo.
  */
-function variaveisDoFluxo(fluxo: Fluxo): { nomes: string[]; origens: Record<string, string[]> } {
+function variaveisDoFluxo(fluxo: Fluxo): {
+  nomes: string[]
+  origens: Record<string, string[]>
+  valores: Record<string, string[]>
+} {
   const origens: Record<string, string[]> = {}
+  const valores: Record<string, string[]> = {}
   const anotar = (nome: string, noId: string) => {
     ;(origens[nome] ??= []).push(noId)
   }
 
   for (const no of fluxo.nodes as No[]) {
-    if (no.type === 'pergunta' && no.data.salvarEm) anotar(no.data.salvarEm, no.id)
+    if (no.type === 'pergunta' && no.data.salvarEm) {
+      anotar(no.data.salvarEm, no.id)
+      // Pergunta com opções desenhadas guarda **o rótulo do botão clicado**.
+      // São os únicos valores que aquela variável pode ter, e é por isso que a
+      // condição sobre ela não precisa ser digitada de cabeça: um "Agendar
+      // Aula" escrito diferente do botão manda todo mundo pelo ramo errado, e
+      // nada estoura — a conversa segue, segue pelo lado errado.
+      for (const opcao of no.data.opcoes) {
+        const lista = (valores[no.data.salvarEm] ??= [])
+        if (opcao.rotulo !== '' && !lista.includes(opcao.rotulo)) lista.push(opcao.rotulo)
+      }
+    }
     if (no.type === 'salvar-campo' && no.data.campo) anotar(no.data.campo, no.id)
     if (no.type === 'ia' && no.data.salvarEm) anotar(no.data.salvarEm, no.id)
     // O que a API guarda também é variável do fluxo. Sem isto, o painel não
@@ -1602,5 +1623,5 @@ function variaveisDoFluxo(fluxo: Fluxo): { nomes: string[]; origens: Record<stri
       for (const m of no.data.mapear) if (m.variavel) anotar(m.variavel, no.id)
   }
 
-  return { nomes: Object.keys(origens).sort(), origens }
+  return { nomes: Object.keys(origens).sort(), origens, valores }
 }

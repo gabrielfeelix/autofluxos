@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useRef, useState, type ReactNode } from 'react'
 import { FORMATO_VARIAVEL } from '@/core/flow/schema'
 import { Popover } from './popover'
 
@@ -76,6 +76,7 @@ export function CampoDeVariavel({
   variaveis,
   modo,
   dica,
+  nota,
 }: {
   rotulo: string
   valor: string
@@ -84,6 +85,15 @@ export function CampoDeVariavel({
   variaveis: string[]
   modo: ModoDeVariavel
   dica?: string
+  /**
+   * O que este campo significa, dito sempre — e não só enquanto ele está vazio.
+   *
+   * A legenda de cima fala do **nome** (é novo? é o de outro bloco?); esta fala
+   * do **conteúdo**. Foi o que faltava na pergunta com botões: sem dizer que a
+   * variável guarda o rótulo clicado, quem monta o fluxo conclui que precisa de
+   * uma variável por opção — e desenha três onde uma responde.
+   */
+  nota?: ReactNode
 }) {
   const [aberto, setAberto] = useState(false)
   const [busca, setBusca] = useState('')
@@ -193,6 +203,8 @@ export function CampoDeVariavel({
       ) : (
         dica && <span className="mt-1 block text-[10.5px] leading-4 text-dim">{dica}</span>
       )}
+
+      {nota && <span className="mt-1 block text-[10.5px] leading-4 text-dim">{nota}</span>}
     </div>
   )
 }

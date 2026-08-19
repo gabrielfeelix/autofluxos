@@ -86,6 +86,7 @@ export function Painel({
   ehInicio,
   variaveis,
   origensDeVariaveis = {},
+  valoresDeVariaveis = {},
   conexoes = [],
   etapas = [],
   fluxos = [],
@@ -104,6 +105,12 @@ export function Painel({
    * repetir a si mesmo.
    */
   origensDeVariaveis?: Record<string, string[]>
+  /**
+   * Que valores cada variável pode ter, quando isso é sabido: são os rótulos
+   * dos botões das perguntas que guardam nela. A condição usa para oferecer o
+   * valor em vez de cobrar que ele seja digitado igualzinho de memória.
+   */
+  valoresDeVariaveis?: Record<string, string[]>
   conexoes?: ConexaoDoCliente[]
   etapas?: EtapaDoCliente[]
   fluxos?: FluxoDaConta[]
@@ -253,6 +260,18 @@ export function Painel({
             modo="guarda"
             dica="nome sem espaço nem acento, ex: nome, prazo — ou escolha uma que o fluxo já tem em {x}"
             aoMudar={(v) => aoMudarDados({ salvarEm: v.trim() === '' ? undefined : v.trim() })}
+            nota={
+              no.data.opcoes.length > 0 ? (
+                <>
+                  É <strong className="text-muted">uma variável só</strong>, e ela guarda o rótulo do
+                  botão clicado — {no.data.opcoes.map((o) => `“${o.rotulo}”`).join(', ')}. Ou seja: é
+                  o caminho que o lead levou, e cada ramo depois daqui guarda o que for dele em
+                  variáveis próprias.
+                </>
+              ) : (
+                'Guarda o que a pessoa escrever, do jeito que ela escrever.'
+              )
+            }
           />
           <CampoDeVariavel
             rotulo="Opções vêm da variável"
@@ -323,13 +342,20 @@ export function Painel({
             />
           </label>
           {no.data.operador !== 'vazio' && no.data.operador !== 'preenchido' && (
-            <Linha
-              rotulo="Valor"
-              valor={no.data.valor}
-              aoMudar={(valor) => aoMudarDados({ valor })}
-              aceitaVariavel
-              conhecidas={variaveis}
-            />
+            <div className="space-y-1.5">
+              <Linha
+                rotulo="Valor"
+                valor={no.data.valor}
+                aoMudar={(valor) => aoMudarDados({ valor })}
+                aceitaVariavel
+                conhecidas={variaveis}
+              />
+              <ValoresConhecidos
+                valores={valoresDeVariaveis[no.data.variavel] ?? []}
+                escolhido={no.data.valor}
+                aoEscolher={(valor) => aoMudarDados({ valor })}
+              />
+            </div>
           )}
         </>
       )}
@@ -573,6 +599,54 @@ export function Painel({
         </>
       )}
 
+    </div>
+  )
+}
+
+/**
+ * Os valores que a variável desta condição pode ter — clicáveis.
+ *
+ * Quando ela vem de uma pergunta com botões, a lista de valores possíveis é
+ * fechada e conhecida: são os rótulos dos botões. Cobrar que alguém digite
+ * "Agendar aula" de memória é criar um erro que **não estoura em lugar
+ * nenhum** — a comparação falha calada, todo mundo desce pelo ramo errado, e o
+ * desenho na tela continua parecendo certo.
+ *
+ * Some sozinho quando não há o que oferecer (variável de resposta livre, ou
+ * opções que só existem durante a conversa).
+ */
+function ValoresConhecidos({
+  valores,
+  escolhido,
+  aoEscolher,
+}: {
+  valores: string[]
+  escolhido: string
+  aoEscolher: (valor: string) => void
+}) {
+  if (valores.length === 0) return null
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="text-[10.5px] text-dim">a pergunta oferece:</span>
+      {valores.map((valor) => {
+        const igual = valor === escolhido
+        return (
+          <button
+            key={valor}
+            type="button"
+            onClick={() => aoEscolher(valor)}
+            title={igual ? 'é o valor deste ramo' : `usar “${valor}”`}
+            className={`max-w-full truncate rounded-lg border px-2 py-0.5 text-[11px] transition ${
+              igual
+                ? 'border-accent/40 bg-accent/[0.12] text-accent'
+                : 'border-white/10 text-muted hover:border-accent/40 hover:text-accent'
+            }`}
+          >
+            {valor}
+          </button>
+        )
+      })}
     </div>
   )
 }
