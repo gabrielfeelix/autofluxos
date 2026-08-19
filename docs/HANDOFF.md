@@ -13,13 +13,13 @@ visual, motor puro que executa, e handoff para uma pessoa quando o bot não dá
 conta. Está em produção em `autofluxos.4yu.com.br` (Vercel), com Supabase
 **compartilhado com outro produto** (Verandi).
 
-A Etapa A do [PLANO-SISTEMA.md](PLANO-SISTEMA.md) vai de A1 a A7. **A1 a A6
-estão no ar.** Falta a A7, e o pedaço dela que sobra esbarra em coisas que só o
-dono resolve — ver [PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md).
+**A Etapa A está inteira no ar (A1 a A7), e a Etapa B também (B1 a B6)** — com
+um recorte explícito em B5, dito no §7. O que sobra da Etapa A esbarra só em
+coisas que o dono resolve; ver [PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md).
 
-`npm test` → **512 passando, 8 pulados** (os 8 dependem de `IA_TESTE_REAL` e
+`npm test` → **583 passando, 8 pulados** (os 8 dependem de `IA_TESTE_REAL` e
 `API_TESTE_REAL`, por desenho). `typecheck`, `lint` e `build` limpos.
-**Migrations aplicadas: até a `0024`, todas. A próxima a escrever é a `0025`.**
+**Migrations aplicadas: até a `0029`, todas. A próxima a escrever é a `0030`.**
 
 ---
 
@@ -53,13 +53,15 @@ Configurações**. Não há mais abas no topo.
 |---|---|---|
 | `/clientes/[id]` | Painel | está sendo atendido agora? funil do mês, ficha do cliente |
 | `/clientes/[id]/inbox` | Inbox | fila paginada, rail `Atribuído`, busca, conversa, resposta, painel do contato |
-| `/clientes/[id]/leads` | Contatos | lista com filtro, busca, paginação e CSV |
+| `/clientes/[id]/leads` | Contatos | filtro por etiqueta, busca, seleção múltipla, ações em lote, criar à mão, CSV |
 | `/clientes/[id]/leads/[contatoId]` | Contatos | ficha do contato |
 | `/clientes/[id]/leads/importar` | Contatos | importação por planilha, com conciliação |
-| `/clientes/[id]/fluxos` | Automações | lista de fluxos **e as palavras-chave da conta** |
+| `/clientes/[id]/fluxos` | Automações | fluxos (agrupados por pasta), **palavras-chave e campanhas** |
 | `/clientes/[id]/fluxos/[fluxoId]` | — | **o editor**, tela cheia, sem a moldura |
 | `/clientes/[id]/ajustes` | Configurações | índice, com o estado de cada peça |
 | `/clientes/[id]/ajustes/horario` | Configurações | horário de atendimento |
+| `/clientes/[id]/ajustes/equipe` | Configurações | quem entra na conta, papel, cadastrar pessoa |
+| `/clientes/[id]/ajustes/etiquetas` | Configurações | etiquetas manuais da conta |
 | `/clientes/[id]/ajustes/respostas-rapidas` | Configurações | respostas prontas do Inbox |
 | `/clientes/[id]/contexto` | Configurações | contexto do negócio (o escopo da IA) |
 | `/clientes/[id]/numero` | Configurações | números do WhatsApp e o fluxo de cada um dos **quatro papéis** |
@@ -72,6 +74,7 @@ Configurações**. Não há mais abas no topo.
 |---|---|---|
 | `/api/webhook/whatsapp` | a Meta | assinatura `META_APP_SECRET` |
 | `/api/manutencao/retencao` | cron da Vercel | `CRON_SECRET`, falha fechada sem ele |
+| `/api/manutencao/tarefas` | cron da Vercel **e a carona no webhook** | `CRON_SECRET`, falha fechada sem ele |
 | `/api/simular` | o editor | sessão + dono do `fluxoId` |
 | `/api/clientes/[id]/inbox/alertas` | polling do painel | sessão + membro da conta |
 | `/api/clientes/[id]/leads/csv` | botão de exportar | sessão + membro da conta |
@@ -182,6 +185,93 @@ Duas correções que a A6 tornou visíveis e entraram junto:
 está rodando de verdade (`VersaoPublicada.fluxoId`); e `apagarFluxo` confere os
 quatro papéis, não só o principal.
 
+### A7 — configurações reunidas
+
+**Etiquetas manuais** (`etiquetas` + `contato_etiquetas`, 0025). As derivadas
+continuam derivadas e **não** viram linha: no instante em que virassem,
+precisariam de sincronização, e a primeira resposta de um lead deixaria
+`nao_respondeu` mentindo. Cor é lista fechada — hexadecimal livre é como se cria
+uma etiqueta invisível.
+
+**Equipe** (`/ajustes/equipe`) funcionando sem SMTP: a senha é definida por quem
+cadastra e combinada por fora, como todo usuário nasce hoje. E-mail que já
+existe **vincula** em vez de recusar. As três ações passam por
+`podeAdministrarConta` — `exigirAcessoAoCliente` responde "pode ver", e deixar
+um `member` cadastrar gente seria ele criar o próprio acesso de administrador.
+
+### As duas peças que a `0023` tinha destravado
+
+**Não lidas por pessoa**, com o piso na criação do usuário: sem esse piso a
+primeira pessoa da equipe abriria o Inbox com meses de histórico em vermelho —
+histórico que ela não deixou de ler, porque não estava lá. E a **prévia da fila**
+parou de dizer "mídia ou mensagem sem texto" para foto, áudio, figurinha e PDF
+igualmente.
+
+---
+
+## 3.1 A Etapa B, frente a frente
+
+### B1 — o agendador (`tarefas`, 0026)
+
+Até ele o produto era inteiramente reativo. `pegar_tarefas` usa
+`for update skip locked`: duas invocações do cron que se sobrepõem — o que
+acontece sozinho quando uma passada demora mais que o intervalo — leriam a mesma
+fila, e a pessoa receberia a mesma mensagem duas vezes.
+
+**A Vercel no plano Hobby dispara cron uma vez por dia.** Um prazo de trinta
+minutos conferido de madrugada chega depois de a janela de 24h fechar — então o
+agendador **pega carona no webhook** (teto de 5 por mensagem, depois da resposta
+à Meta). A conta com prazo vencendo é, por construção, a conta que está
+recebendo mensagem. O cron continua declarado como piso, para a conta que passou
+o dia calada. Ver [PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md) sobre como dar
+resolução de verdade a ele.
+
+Primeiro consumidor: **prazo da pergunta** (`timeoutMinutos`, opcional no
+schema — ausente é esperar para sempre, que é o comportamento de sempre). Sem
+saída `timeout` desenhada, o prazo passa a conversa para uma pessoa. Quase todo
+o executor é motivo para **não** fazer nada, e "ignorada" é resultado normal.
+
+### B2 — contatos completo
+
+Criar à mão (o telefone passa por `chavesDoTelefone`: `wa_id` é a identidade da
+pessoa no WhatsApp, e gravar `(11) 98765-4321` ali criaria um cadastro que nunca
+casa com a conversa que chegar), seleção múltipla, ações em lote e menu por
+linha. O "marcar todos" pega **esta página** — a outra versão é o botão que
+apaga cinco mil contatos achando que apagou cinquenta.
+
+### B3 — painel completo (views da 0028)
+
+**Mediana e média juntas, sempre.** Média de tempo de resposta é a métrica que
+mais mente em atendimento: uma conversa esquecida no fim de semana empurra a
+média do mês. O relógio conta do **handoff**, não da mensagem da pessoa. Quem
+entrou na fila e ninguém respondeu fica **fora** da conta e aparece como aviso.
+O gráfico é SVG à mão, com eixo começando em zero e dia vazio valendo zero.
+
+### B4 — campanhas (`campanhas`, 0027)
+
+Frase de anúncio → fluxo. **Decide antes do gatilho**, porque casa com a
+mensagem inteira e é a porta que o cliente está pagando para manter aberta.
+A normalização de pontuação final é nossa, e não um pedido ao anunciante.
+Atribuição de **primeiro toque**: nunca sobrescreve.
+
+### B5 — pastas e modelos (`pastas`, 0029) · **com recorte**
+
+Pastas com `on delete set null`, nunca `cascade`. Modelos são dado em código
+(`src/exemplos/modelos.ts`), e todos nascem válidos.
+
+**Compartilhar fluxo por link ficou de fora**, de propósito: é rota pública nova
+com token e escopo, uma superfície de segurança que não cabe junto de uma coluna
+de organização. É a única coisa da Etapa B que não está no ar.
+
+### B6 — integrações por preset
+
+RD Station primeiro, depois Google Sheets e webhook. **Preset, não tipo de nó
+novo**: ele preenche um bloco `http` comum e sai do caminho, e o que fica gravado
+é o bloco resolvido. Referência viva mudaria por baixo o que uma conversa em
+andamento chama no dia em que a RD trocasse de endereço.
+
+---
+
 ## 4. As sete regras que não se negociam
 
 ### 4.1 O banco é compartilhado com outro produto
@@ -280,10 +370,15 @@ de apagar; não existe permissão.
 | `af_membros` | usuário × conta × papel (`owner`/`admin`/`member`) |
 | `af_convites` | a tabela existe; o convite não, porque depende de SMTP |
 | `gatilhos` | frase → fluxo, por conta, com operador e contagem de disparos |
-| `af_leituras` | quando cada pessoa abriu cada conversa. **A tabela existe e nada a lê ainda** — ver §7.3 |
+| `campanhas` | frase de anúncio → fluxo. `contacts.campanha_id` é o primeiro toque |
+| `tarefas` | a fila do agendador. `pegar_tarefas` pega a vez com `skip locked` |
+| `etiquetas`, `contato_etiquetas` | as manuais. As derivadas continuam derivadas |
+| `pastas` | gavetas de fluxo. `flows.pasta_id`, `on delete set null` |
+| `af_leituras` | quando cada pessoa abriu cada conversa. É a insígnia de não lidas do Inbox |
 | `af_auditoria` | quem fez o quê. Append-only |
 | view `leads` | contato + última mensagem + handoff aberto + `ultima_entrada_em` + `atribuido_a` + `ultimo_tipo` |
 | view `metricas_sessoes`, `resumo_clientes` | agregações do painel |
+| view `metricas_de_tempo`, `metricas_diarias`, `metricas_por_pessoa` | o painel completo (0028) |
 
 **As tabelas do login ficam fora da Data API de propósito** (`revoke all` para
 `anon` e `authenticated` na 0019): `af_contas` guarda hash de senha e
@@ -319,56 +414,50 @@ suporta prepared statements**.
 
 ## 7. O que falta, em ordem
 
-### 7.1 A7 — configurações reunidas · **parcialmente feito**
+### 7.1 O que ficou de fora da Etapa B, e por quê
 
-A maior parte já existe e está ligada no índice de `/ajustes` (perfil do
-negócio na tela do Painel, número, horário, respostas rápidas, acervo, contexto
-da IA, credenciais). Falta:
+**Compartilhar fluxo por link** (parte da B5). Rota pública nova, com token,
+escopo e expiração — uma superfície de segurança que não cabe junto de uma
+coluna de organização. É a única peça da Etapa B que não está no ar.
 
-- **Etiquetas manuais** — precisa de migration (`etiquetas` +
-  `contato_etiquetas`, que seria a `0025`). As derivadas continuam derivadas;
-  **não** viram linha.
-- **Equipe** — a tela existiria para listar membros e convidar. Sem convite por
-  e-mail (SMTP) ela seria uma lista vazia com um botão que não funciona.
+**Sequências** (disparo no tempo depois de um evento). O agendador que elas
+esperavam existe e funciona; falta o desenho de produto — o que dispara, quantos
+passos, e como alguém sai no meio. É a próxima peça óbvia a construir em cima da
+B1, e ela não precisa de migration nova: `tarefas.tipo` é texto justamente por
+isso.
 
-### 7.2 O que a `0023` destravou e ninguém usa ainda
+### 7.2 A Etapa C
 
-A migration foi aplicada, e as duas peças que ela existe para servir **não têm
-código**:
+**Quadros (Kanban)**, central de notificações, casca (idioma, ajuda),
+**modelos da Meta e Transmissão** (trava externa — depende de verificação da
+empresa e App Review, não de código nosso), faturamento e registros.
 
-- **`leads.ultimo_tipo`** — o tipo da última mensagem já vem na view, e a fila
-  continua dizendo "mídia ou mensagem sem texto" para foto, áudio, figurinha e
-  PDF igualmente (`app/clientes/[id]/inbox/page.tsx`, a função da prévia).
-- **`af_leituras`** — a tabela existe, o índice existe, e nada escreve nem lê.
-  É o contador de **não lidas por pessoa**: não lida = entrada com `ts` maior
-  que `lida_em` daquele usuário. Escrever `lida_em` ao abrir a conversa é o
-  ponto de entrada.
+Ordem e critério em [PLANO-SISTEMA.md §5](PLANO-SISTEMA.md). Duas coisas dessa
+lista já têm base pronta: Transmissão só depende do agendador (feito) mais os
+modelos da Meta; a central de notificações reaproveita o alerta de fila que já
+toca em qualquer tela do painel.
 
-São as duas últimas peças da A5, e não custam migration nenhuma.
+### 7.3 Dívidas conhecidas
 
-### 7.3 Depois da Etapa A
-
-**Etapa B**: agendador (destrava sequências e timeout de pergunta), contatos
-completo (etiquetas, rail de filtros, criar à mão, ações em lote), painel
-completo (série diária, desempenho pessoal, métricas de tempo), campanhas,
-pastas e compartilhamento de fluxo, integrações com preset (RD Station
-primeiro).
-
-**Etapa C**: Quadros (Kanban), central de notificações, casca (idioma, ajuda),
-modelos da Meta e Transmissão (**trava externa**), faturamento e registros.
-
-Ordem e critério em [PLANO-SISTEMA.md §5](PLANO-SISTEMA.md).
+- **A tabela do §4 do PLANO-SISTEMA divergiu do disco** a partir da `0024`, e o
+  disco ganha. A ordem real foi A6 → A7 → B2 → B1 → B4 → B3 → B5/B6.
+- **A numeração vai cruzar com a da Verandi** (`0030_vr_`). O prefixo distingue
+  e nenhum repositório aplica a migration do outro; se incomodar, o caminho é
+  prefixo próprio — nunca renumerar o que já foi aplicado.
+- **O agendador depende da carona no webhook** para ter resolução. Conta parada
+  o dia inteiro só é varrida uma vez por dia.
 
 ### 7.4 O que espera o dono
 
-Nove itens em [PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md). Os três que mais
+Os itens em [PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md). Os três que mais
 travam:
 
 1. **Criar o primeiro administrador.** Não existe **nenhum** usuário em
-   produção; todo o login está de pé e dormindo.
+   produção; todo o login está de pé e dormindo — e agora a tela de Equipe, o
+   contador de não lidas e o desempenho por pessoa dependem de existir gente.
 2. **`ALERTA_WEBHOOK_URL`**, sem a qual falha de entrega não avisa ninguém.
 3. **Provar a mídia no WhatsApp de verdade** — nenhuma foto saiu pela Cloud API
-   até hoje, e agora existe um papel de número inteiro dedicado a mídia.
+   até hoje, e agora o bloco de arquivo sobe direto para o Storage.
 
 ---
 
@@ -377,7 +466,7 @@ travam:
 ### O ciclo
 
 ```bash
-npm test          # 512 passando, 8 pulados
+npm test          # 583 passando, 8 pulados
 npm run typecheck
 npm run lint
 npm run build     # roda também sem DATABASE_URL, e tem que continuar rodando

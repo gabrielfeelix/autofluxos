@@ -42,6 +42,23 @@ Crie um webhook de canal no Discord ou no Slack, guarde o valor em
 `4yu-apps/.secrets/4yu.env` como `AUTOFLUXOS_ALERTA_WEBHOOK_URL` e adicione a
 variável na Vercel. Nunca dentro do repositório — ele é público.
 
+## 3.1 Dar resolução ao agendador — opcional, e barato
+
+**Trava:** nada agora, mas o prazo de pergunta chega atrasado numa conta parada.
+
+A Vercel **no plano Hobby dispara cron uma vez por dia**. O agendador contorna
+isso pegando carona no webhook — a conta que tem prazo vencendo é a que está
+recebendo mensagem —, e o cron diário é só o piso. Funciona.
+
+Se quiser precisão de verdade (e a Transmissão, na Etapa C, vai querer), há dois
+caminhos e os dois são seus:
+
+1. **Subir para o plano Pro** da Vercel e trocar o `schedule` de
+   `/api/manutencao/tarefas` para `*/5 * * * *` em `vercel.json`;
+2. **Apontar um disparador externo** (cron-job.org, GitHub Actions) para
+   `https://autofluxos.4yu.com.br/api/manutencao/tarefas` mandando
+   `Authorization: Bearer <CRON_SECRET>`. Custa zero e não muda código nenhum.
+
 ## 4. SMTP — decisão que envolve a Verandi
 
 **Trava:** convite por e-mail e recuperação de senha. A tabela `af_convites`
@@ -53,12 +70,13 @@ os dois produtos, então é decisão sua, não do código. Ver
 
 ## 5. Provar a mídia no WhatsApp de verdade
 
-**Trava:** nada, mas é um risco aberto — e maior desde a A6, que deu ao número
-um papel inteiro dedicado a mídia. O bloco de mídia é testado ponta a ponta com
-o canal mock, e **nenhuma foto saiu pela Cloud API de verdade**.
+**Trava:** nada, mas é um risco aberto — e maior a cada frente: a A6 deu ao
+número um papel dedicado a mídia, e agora o bloco aceita o arquivo arrastado,
+que sobe para o Storage e vira URL pública. O caminho é testado ponta a ponta
+com o canal mock, e **nenhuma foto saiu pela Cloud API de verdade**.
 
-São cinco minutos com o Cliente 00: um fluxo com bloco de imagem, uma mensagem,
-e conferir se a foto chega.
+São cinco minutos com o Cliente 00: um fluxo com bloco de arquivo, arrastar uma
+imagem, publicar, mandar uma mensagem, e conferir se a foto chega.
 
 ## 6. Aposentar a senha única — depois do item 1
 
