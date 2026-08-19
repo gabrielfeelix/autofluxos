@@ -127,6 +127,60 @@ Levantado do arquivo real, e serve de referência para o esforço:
 
 ---
 
+## As convenções do MGM, ditas pelo estúdio
+
+Levantado com o Edu em 19/08/2026. **É metade do trabalho da saída 1**: sem
+combinar isso, fórmula nenhuma acerta, porque o que está escrito na planilha é
+texto livre digitado por quem estava na recepção.
+
+### As siglas da presença
+
+| Sigla | Quer dizer |
+|---|---|
+| `P` | presente |
+| `F` | falta |
+| `FAR` | falta avisada com direito a reposição |
+| `LIC` | licença |
+| `REP` | reposição — na frente vem a data da aula que está repondo |
+| `EXP` | aula experimental |
+| `XX` ou `X` | não teria aula nesse dia |
+
+`P ANT 19h/18h` é presença **antecipada**: a pessoa é da turma das 19h e fez a
+aula das 18h naquele dia. A anotação fica no horário dela, com o horário em que
+apareceu ao lado.
+
+### As regras que decidem se a vaga está livre
+
+1. **Aviso de falta:** até 2h antes da aula dá direito a reagendar reposição.
+   Menos que isso, não dá.
+2. **Personal, domicílio e fáscia são agenda paralela** — vão nas linhas de
+   baixo do bloco e **não ocupam vaga da turma**. É por isso que contar "nomes
+   no bloco" erra: só as linhas numeradas valem.
+3. **`RESERVA` é vaga guardada** para alguém interessado em se matricular
+   naquele horário. Para efeito de "tem vaga?", **ocupa**.
+4. **Plano vencido continua ocupando.** O estúdio mantém a pessoa na turma até
+   ela renovar; quem não renova é excluído da folha.
+5. **Quem marca presença é a recepção**, e na ausência dela alguma professora.
+   Ou seja: a planilha é preenchida à mão, por mais de uma pessoa — daí os
+   `horario fechhhorario fechadoado` da vida.
+
+### O que ainda não fecha, e precisa de decisão do estúdio
+
+- **Uma palavra fixa para "horário fechado".** Hoje é texto livre na célula do
+  nome, com erro de digitação em pelo menos um caso. Fórmula não adivinha:
+  tem que ser sempre a mesma palavra, sempre no mesmo lugar.
+- **Telefone falta em ~30% das alunas** — o estúdio identifica por outras
+  planilhas. Para o bot, contato sem telefone é contato que ele não alcança.
+
+### O que a planilha precisa ganhar
+
+- **Uma célula de data**, e ela não é enfeite: é o que deixa o bot saber de
+  quando é o que ele está lendo. Sem isso, planilha desatualizada responde com a
+  mesma confiança que planilha de hoje — e o erro só aparece com a aluna já no
+  estúdio.
+- **Fundo branco fora do layout.** O quadriculado padrão do Sheets faz a folha
+  parecer rascunho; ela é entregue ao cliente e é impressa pelas professoras.
+
 ## Saída 2 — o modelo da 4YU
 
 Para cliente novo, ou para quem topar trocar. **Zero configuração:** ele copia o
