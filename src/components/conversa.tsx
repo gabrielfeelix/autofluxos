@@ -166,9 +166,28 @@ export function Conversa({
       })
 
       if (!resposta.ok) {
+        /**
+         * O motivo vem do servidor, e não uma frase fixa.
+         *
+         * Dizer "o motor recusou este fluxo" em toda falha é mentir na metade
+         * dos casos: o 429 do limite de testes e o 404 de automação inexistente
+         * não têm nada a ver com o desenho, e quem lia isso ia procurar defeito
+         * onde não havia. `catch` porque resposta de erro nem sempre é JSON —
+         * um 502 do provedor devolve HTML.
+         */
+        const motivo = await resposta
+          .json()
+          .then((corpo: { erro?: string }) => corpo.erro)
+          .catch(() => undefined)
+
         setItens((atual) => [
           ...atual,
-          { chave: novaChave(), de: 'sistema', texto: 'o motor recusou este fluxo', alerta: true },
+          {
+            chave: novaChave(),
+            de: 'sistema',
+            texto: motivo ?? 'o motor recusou este fluxo',
+            alerta: true,
+          },
         ])
         return
       }

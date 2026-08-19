@@ -3,7 +3,12 @@ import { entradaSchema, sessaoSchema } from '@/core/engine/types'
 import { fluxoSchema } from '@/core/flow/schema'
 import { executarComEfeitos } from '@/server/efeitos/resolver'
 import { escolherModelo } from '@/server/ia/modelo'
-import { chaveDeLimite, consumirLimite } from '@/server/limite'
+import {
+  chaveDeLimite,
+  consumirLimite,
+  JANELA_DO_SIMULADOR_SEGUNDOS,
+  TETO_DO_SIMULADOR,
+} from '@/server/limite'
 import { acharFluxo, acharVersao } from '@/server/repos/fluxos'
 import { conferirAcessoAoCliente } from '@/server/sessao'
 
@@ -94,8 +99,17 @@ export async function POST(req: Request) {
     return Response.json({ erro: 'fluxo excede 200 nós' }, { status: 413 })
   }
 
-  if (!(await consumirLimite(chaveDeLimite('simular', req.headers)))) {
-    return Response.json({ erro: 'muitas tentativas, espere' }, { status: 429 })
+  if (
+    !(await consumirLimite(
+      chaveDeLimite('simular', req.headers),
+      TETO_DO_SIMULADOR,
+      JANELA_DO_SIMULADOR_SEGUNDOS,
+    ))
+  ) {
+    return Response.json(
+      { erro: 'muitas mensagens de teste seguidas. Espere um minuto e continue.' },
+      { status: 429 },
+    )
   }
 
   // O dono sai do banco, pelo id da automação. Sem `fluxoId`, ou com um que
