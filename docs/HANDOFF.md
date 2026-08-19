@@ -7,51 +7,50 @@ Para quem pegar este projeto agora. Leia isto, depois
 
 ## 1. Onde exatamente paramos
 
-**Etapa A1 (login, contas, papéis) — a parte visível existe e funciona.** As
-migrations `0019`, `0020` e `0021` estão aplicadas em produção desde 17/ago, e
-agora há rota, telas, barra lateral, área de administração e "entrar como" em
-cima delas.
+**Etapa A: A1 a A5 estão no ar.** Login por usuário, sidebar e área de
+administração, bloco de mensagem em pilha, cadeia de atendimento e Inbox de
+fila. Falta a **A6** (fluxos padrão e gatilhos), a **A7** (configurações
+reunidas) e as pontas que dependem de você — todas em
+[PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md).
 
 O painel continua funcionando com a **senha única** (`PAINEL_SENHA` + cookie
-assinado em `lib/painel-auth.ts`). Os dois sistemas de sessão convivem de
-propósito: enquanto a senha única for a porta principal, nada do que já roda
-quebra por causa do sistema novo.
+assinado em `lib/painel-auth.ts`), e o login por usuário está de pé mas
+**dormindo**: não existe nenhum usuário cadastrado. Os dois sistemas convivem
+de propósito.
 
-`npm test` → **406 passando, 8 pulados**. `typecheck`, `lint` e `build` limpos.
+`npm test` → **488 passando, 8 pulados**. `typecheck`, `lint` e `build` limpos.
 Os 8 pulados dependem de `IA_TESTE_REAL` e `API_TESTE_REAL` — é por desenho.
+
+### O que cada frente entregou
+
+| Frente | O que existe agora |
+|---|---|
+| **A1** | `/api/auth/[...all]`, `/entrar`, `/criar-conta`, `/contas`, `/admin/{contas,usuarios,auditoria}`, "entrar como" com faixa âmbar, e a conferência de acesso em toda tela, rota de API e Server Action |
+| **A2** | Sidebar do cliente (Painel · Inbox · Contatos · Automações · Configurações) e a área do administrador. Fim das abas no topo |
+| **A3** | Bloco de mensagem em pilha: texto formatado, arquivo, atraso, guardar, desligar o bot. Lê o formato antigo e escreve só o novo |
+| **A4** | Horário de atendimento (o handoff sabe que horas são), assumir/liberar/passar conversa, presença, relógio da janela de 24h na fila, aviso de fila em toda tela do painel |
+| **A5** | Fila paginada, rail `Atribuído` com contagem, anotação da equipe no painel lateral |
 
 ### O que existe de verdade no banco
 
 | Tabela | O que é |
 |---|---|
-| `af_usuarios` | usuários (Better Auth). **Não** é `auth.users`, que é global e da Verandi |
+| `af_usuarios` | usuários (Better Auth), com `presenca`. **Não** é `auth.users`, que é global e da Verandi |
 | `af_sessoes` | sessões, com `impersonatedBy` e `activeOrganizationId` |
 | `af_contas` | credenciais — guarda **hash** de senha |
 | `af_verificacoes` | tokens de verificação |
 | `af_membros` | usuário × conta × papel (`owner`/`admin`/`member`) |
 | `af_convites` | convites pendentes (a tabela existe; o convite não, porque depende de SMTP) |
 | `af_auditoria` | quem fez o quê. **Append-only** |
-| `clients` | ganhou `slug` (único, NOT NULL, com gatilho) e `metadata` |
+| `clients` | ganhou `slug`, `metadata` e `horario_atendimento` |
+| `contacts` | ganhou `atribuido_a` |
+| view `leads` | ganhou `ultima_entrada_em` e `atribuido_a` |
+
+**Migrations aplicadas: até a `0022`.** A `0023` está escrita e **não
+aplicada** — ela destrava as não lidas e o tipo da mídia na prévia da fila.
+Ver [PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md) §7.
 
 **Não existe nenhum usuário em produção ainda.** A tabela está vazia; ver §4.
-
-### As telas que nasceram nesta rodada
-
-| Rota | O que é | Quem alcança |
-|---|---|---|
-| `/api/auth/[...all]` | a porta do Better Auth | todo mundo |
-| `/entrar` | login por usuário | todo mundo |
-| `/criar-conta` | primeira execução **e** cadastro feito por administrador | senha única ou administrador |
-| `/contas` | seletor de companhia (`+ Adicionar nova companhia`) | quem tem sessão de usuário |
-| `/admin/contas` | contas e quem entra em cada uma; ligar pessoa a conta | administrador da 4YU |
-| `/admin/usuarios` | quem existe, papel, sessões, **entrar como**, suspender | administrador da 4YU |
-| `/admin/auditoria` | o registro append-only | administrador da 4YU |
-
-E a moldura do cliente (`components/design/cliente-shell.tsx`) virou **barra
-lateral**: Painel · Inbox · Contatos · Automações · Configurações, com a conta no
-rodapé. Fim das abas no topo.
-
----
 
 ## 2. As coisas que você precisa saber antes de tocar em qualquer coisa
 
@@ -206,25 +205,26 @@ depois `/admin/contas` → `+ Ligar pessoa` como **dono da conta**. A senha é
 combinada fora daqui — convite por e-mail depende de SMTP, que é global ao
 projeto compartilhado.
 
-### 4.2 O que falta na A1
+### 4.2 O que falta na Etapa A
 
-1. ~~A varredura de isolamento.~~ **Feita.** Ela não estava onde o handoff
-   anterior dizia: os repositórios já recebem `clienteId` e filtram por ele —
-   `publicar`, `apagarFluxo`, `acharLead`, `lerCredencial`, todos. Quem aceitava
-   id de fora eram as **Server Actions**, que recebem `clienteId` do formulário.
-   As 27 que recebem cliente chamam `exigirAcessoAoCliente`; as 2 que criam
-   cliente chamam `exigirOperadorDa4YU`; e `acoes.test.ts` recusa ação nova que
-   esqueça a linha, porque 27 repetições é exatamente onde a 28ª fica de fora.
-2. **Convite por e-mail.** `af_convites` existe e nada a preenche. Depende de
+1. **A6 — fluxos padrão e gatilhos.** Boas-vindas, resposta padrão, fluxo para
+   mídia recebida, pós-atendimento, e palavras-chave por conta. **Precisa de
+   migration**, e é ela que também destrava a última pendência da A4: mídia
+   recebida virando handoff deixa de fazer sentido quando existe um fluxo
+   padrão para mídia.
+2. **A7 — configurações reunidas.** A maior parte já existe e está ligada no
+   índice de `/ajustes`. Faltam `Etiquetas` (migration) e `Equipe`, que sem
+   convite por e-mail seria uma tela mostrando uma lista vazia.
+3. **Convite por e-mail.** `af_convites` existe e nada a preenche. Depende de
    SMTP, que é decisão dos dois produtos.
-3. **Trocar a senha única pelo login por usuário.** Enquanto as duas convivem,
+4. **Trocar a senha única pelo login por usuário.** Enquanto as duas convivem,
    nada quebra; o dia da troca é uma linha em `exigirAcessoAoCliente` (parar de
    deixar o administrador passar sem ser membro) e a remoção de `PAINEL_SENHA`.
    Exige o primeiro administrador existir — §4.1.
 
-Depois disso: **A3** (bloco de mensagem em pilha) e **A4** (a cadeia de
-atendimento). A A4 é a mais importante e a menos óbvia — leia
-[PLANO-SISTEMA.md §3.10.1](PLANO-SISTEMA.md).
+Depois da Etapa A vem a **B** (agendador, contatos completo, painel completo,
+campanhas, pastas de fluxo, integrações com preset). Ordem e critério em
+[PLANO-SISTEMA.md §5](PLANO-SISTEMA.md).
 
 ---
 
