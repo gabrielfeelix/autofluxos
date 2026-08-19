@@ -2062,7 +2062,7 @@ export async function acaoAssumirAtendimento(
 
   const sessao = await sessaoAtual()
   if (!sessao) {
-    // Acontece de verdade enquanto a senha única existe: não há usuário para
+    // Defesa de fundo: `exigirAcessoAoCliente` já garante a sessão, e sem ela
     // assumir. Dizer isso é melhor que um botão que não faz nada.
     return { ok: false, erro: 'entre com a sua conta para assumir uma conversa' }
   }

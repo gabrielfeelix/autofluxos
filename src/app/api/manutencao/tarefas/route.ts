@@ -1,5 +1,5 @@
 import { alertar } from '@/server/alertar'
-import { iguais } from '@/lib/painel-auth'
+import { iguais } from '@/lib/segredo'
 import { rodarTarefas } from '@/server/tarefas'
 
 export const dynamic = 'force-dynamic'

@@ -2,7 +2,6 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
 import { acaoSair } from '@/server/acoes-conta'
-import { acaoSair as acaoSairDoPainel } from '@/server/auth-actions'
 import { ehAdminDaPlataforma, sessaoAtual } from '@/server/sessao'
 import { Marca } from './marca'
 
@@ -60,13 +59,13 @@ export async function PainelShell({ children }: { children: ReactNode }) {
               topo caber sem virar duas linhas. O botão de sair fica. */}
           <span className="hidden min-w-0 flex-1 md:block">
             <span className="block truncate text-[12.5px] font-semibold">
-              {sessao ? sessao.usuario.nome : 'Operador 4YU'}
+              {sessao?.usuario.nome ?? 'Operador 4YU'}
             </span>
             <span className="block truncate text-[11px] text-dim">
-              {sessao ? sessao.usuario.email : 'senha do time'}
+              {sessao?.usuario.email ?? ''}
             </span>
           </span>
-          <form action={sessao ? acaoSair : acaoSairDoPainel}>
+          <form action={acaoSair}>
             <button
               type="submit"
               className="rounded-[7px] px-1.5 py-1 text-[11.5px] font-semibold text-dim transition hover:bg-rose-400/[0.08] hover:text-rose-300"

@@ -5,12 +5,7 @@ import { ImportarFluxo, type DestinoDaImportacao } from '@/components/compartilh
 import { resumirFluxo, roteiroDoFluxo, type LinhaDoRoteiro } from '@/core/compartilhar'
 import { acharPorToken, contarAbertura } from '@/server/repos/compartilhar'
 import { listarClientes } from '@/server/repos/clientes'
-import {
-  contasDoUsuario,
-  ehAdminDaPlataforma,
-  sessaoAtual,
-  temSessaoDePainel,
-} from '@/server/sessao'
+import { contasDoUsuario, ehAdminDaPlataforma, sessaoAtual } from '@/server/sessao'
 
 export const dynamic = 'force-dynamic'
 
@@ -217,28 +212,23 @@ function Aviso({ titulo, texto }: { titulo: string; texto: string }) {
  * Para quais contas esta pessoa consegue importar.
  *
  * É a mesma árvore de decisão de `conferirAcessoAoCliente`, e de propósito:
- * membro vê as contas dele; administrador da plataforma e senha única do time
- * alcançam a carteira inteira, que é o que eles já alcançam hoje. Uma lista
- * mais generosa do que a conferência da ação seria um seletor cheio de opções
- * que dão erro ao clicar; uma mais restrita esconderia contas de quem entra
- * pela porta principal de hoje.
+ * membro vê as contas dele; administrador da plataforma alcança a carteira
+ * inteira, que é o que ele já alcança. Uma lista mais generosa do que a
+ * conferência da ação seria um seletor cheio de opções que dão erro ao clicar;
+ * uma mais restrita esconderia contas de quem tem direito a elas.
  *
  * A lista **não decide nada** — quem decide é `exigirAcessoAoCliente` dentro da
  * ação, com o id que o navegador mandou.
  */
 async function destinosPossiveis(): Promise<DestinoDaImportacao[]> {
   const sessao = await sessaoAtual()
+  if (!sessao) return []
 
-  if (sessao) {
-    if (ehAdminDaPlataforma(sessao)) return todosOsClientes()
-    return (await contasDoUsuario(sessao.usuario.id)).map((conta) => ({
-      id: conta.id,
-      nome: conta.nome,
-    }))
-  }
-
-  if (await temSessaoDePainel()) return todosOsClientes()
-  return []
+  if (ehAdminDaPlataforma(sessao)) return todosOsClientes()
+  return (await contasDoUsuario(sessao.usuario.id)).map((conta) => ({
+    id: conta.id,
+    nome: conta.nome,
+  }))
 }
 
 async function todosOsClientes(): Promise<DestinoDaImportacao[]> {

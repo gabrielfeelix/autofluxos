@@ -1,12 +1,6 @@
 import 'server-only'
-import { cookies, headers } from 'next/headers'
+import { headers } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
-import {
-  COOKIE_PAINEL,
-  basicAuthConfere,
-  conferirSessao,
-  segredoDeSessao,
-} from '@/lib/painel-auth'
 import { autenticacao, bancoDoLogin } from './auth'
 
 /**
@@ -228,51 +222,23 @@ export async function destinoAposEntrar(sessao: SessaoAtual): Promise<string> {
   return '/contas'
 }
 
-/**
- * A senha única ainda vale nesta requisição?
- *
- * O `proxy.ts` já respondeu isso para deixar a requisição passar, e este módulo
- * precisa da mesma resposta para decidir se quem chegou pode ver a conta. São
- * perguntas diferentes com a mesma conta a pagar: sem isto, o operador de hoje
- * — que entra pela senha e não tem usuário nenhum — perderia o painel inteiro
- * no instante em que a moldura do cliente passasse a exigir sessão de usuário.
- */
-export async function temSessaoDePainel(): Promise<boolean> {
-  const senha = process.env.PAINEL_SENHA
-  // Sem senha configurada ela não é uma porta. Em desenvolvimento o painel
-  // segue aberto, como no proxy: quem clonou o repositório ainda não tem
-  // credencial nenhuma.
-  if (!senha) return process.env.NODE_ENV !== 'production'
-
-  const cabecalhos = await headers()
-  if (basicAuthConfere(cabecalhos.get('authorization'), senha)) return true
-
-  const cookie = (await cookies()).get(COOKIE_PAINEL)?.value ?? ''
-  return conferirSessao(cookie, segredoDeSessao(senha))
-}
-
 export type AcessoAoCliente = {
-  /** Nulo quando quem entrou foi a senha única do time. */
-  sessao: SessaoAtual | null
-  /** `owner`, `admin`, `member` — ou nulo para administrador da 4YU e senha única. */
+  sessao: SessaoAtual
+  /** `owner`, `admin`, `member` — ou nulo para o administrador da plataforma. */
   papel: string | null
-  viaSenhaUnica: boolean
 }
 
 /**
  * Pode ver esta conta?
  *
- * **A sessão de usuário tem precedência sobre a senha única.** Quem entrou como
- * pessoa vê o que aquela pessoa vê, e não o painel inteiro — senão o login por
- * usuário seria decoração por cima do acesso total que já existe. Para agir
- * dentro da conta de um cliente, o administrador usa o "entrar como", que
- * deixa rastro na auditoria.
+ * Quem entrou como pessoa vê o que aquela pessoa vê.
  *
- * O administrador da 4YU passa mesmo sem ser membro **enquanto a senha única
- * existir**: hoje ele já alcança tudo, e fechar essa porta antes de a varredura
- * de isolamento terminar trocaria um furo conhecido por um painel quebrado. No
- * dia em que a senha única sair (docs/HANDOFF.md §4, passo 6), esta linha é a
- * que estreita para "só impersonando".
+ * O administrador da plataforma passa mesmo sem ser membro, e essa é a linha que
+ * ainda sobra do desenho antigo — a saída dela é "só impersonando", que deixa
+ * rastro na auditoria. Fica aqui, escrito, porque agora é a **única** forma de
+ * alcançar uma conta sem ser membro: com a senha única fora, é a última porta
+ * larga do sistema, e a decisão de fechá-la é do dono (ver
+ * docs/PENDENCIAS-DO-DONO.md).
  *
  * Quem não pode recebe **404**, e não 403: confirmar que a conta existe já é
  * contar de um cliente para quem não é dele.
@@ -296,15 +262,11 @@ export async function exigirAcessoAoCliente(contaId: string): Promise<AcessoAoCl
  */
 export async function conferirAcessoAoCliente(contaId: string): Promise<AcessoAoCliente | null> {
   const sessao = await sessaoAtual()
+  if (!sessao) return null
 
-  if (sessao) {
-    const papel = await papelNaConta(sessao.usuario.id, contaId)
-    if (papel !== null) return { sessao, papel, viaSenhaUnica: false }
-    if (ehAdminDaPlataforma(sessao)) return { sessao, papel: null, viaSenhaUnica: false }
-    return null
-  }
-
-  if (await temSessaoDePainel()) return { sessao: null, papel: null, viaSenhaUnica: true }
+  const papel = await papelNaConta(sessao.usuario.id, contaId)
+  if (papel !== null) return { sessao, papel }
+  if (ehAdminDaPlataforma(sessao)) return { sessao, papel: null }
   return null
 }
 
@@ -316,14 +278,12 @@ export async function conferirAcessoAoCliente(contaId: string): Promise<AcessoAo
  * privilégio: um `member` que pudesse cadastrar gente criaria a própria conta
  * de administrador e sairia do papel em que foi posto.
  *
- * `owner` e `admin` da conta passam. O administrador da 4YU e a senha única
- * também — os dois já alcançam tudo hoje, e recusar aqui quebraria o painel
- * antes de a senha única sair.
+ * `owner` e `admin` da conta passam. O administrador da plataforma também —
+ * papel nulo aqui só acontece para ele, porque `conferirAcessoAoCliente` já
+ * recusou todo mundo que não é membro nem administrador.
  */
 export function podeAdministrarConta(acesso: AcessoAoCliente): boolean {
   if (acesso.papel === 'owner' || acesso.papel === 'admin') return true
-  // Papel nulo com sessão é administrador da 4YU; papel nulo sem sessão é a
-  // senha única. Ver `conferirAcessoAoCliente`.
   return acesso.papel === null
 }
 
@@ -331,19 +291,12 @@ export function podeAdministrarConta(acesso: AcessoAoCliente): boolean {
  * A visão de quem opera a 4YU: a lista de todos os clientes e o que nasce dela.
  *
  * Criar cliente não tem `clienteId` para conferir — o cliente ainda não existe.
- * A pergunta certa é outra: **quem pode criar?** Hoje, quem já enxerga a
- * carteira inteira, que é o operador da senha única e o administrador da
- * plataforma. Um dono de conta cria companhia por `/contas`, que é caminho
- * dele e passa pelo plugin.
+ * A pergunta certa é outra: **quem pode criar?** O administrador da plataforma.
+ * Um dono de conta cria companhia por `/contas`, que é caminho dele e passa
+ * pelo plugin.
  */
 export async function exigirOperadorDa4YU(): Promise<void> {
   const sessao = await sessaoAtual()
-
-  if (sessao) {
-    if (!ehAdminDaPlataforma(sessao)) redirect('/contas')
-    return
-  }
-
-  if (await temSessaoDePainel()) return
-  redirect('/entrar')
+  if (!sessao) redirect('/entrar')
+  if (!ehAdminDaPlataforma(sessao)) redirect('/contas')
 }

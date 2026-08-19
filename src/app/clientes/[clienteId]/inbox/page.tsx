@@ -119,7 +119,7 @@ export default async function Pagina({
 
   let equipe: MembroDaConta[] = []
   // Só busca quando há o que mostrar: alguém logado para assumir, ou alguma
-  // conversa já com dono. Enquanto a senha única for a porta e não existir
+  // conversa já com dono. Enquanto não existir
   // usuário nenhum, isso é uma ida ao banco por abertura do Inbox — que é a
   // tela mais usada do produto — para montar uma lista vazia.
   if (sessao || leads.some((lead) => lead.atribuidoA)) {
@@ -143,7 +143,7 @@ export default async function Pagina({
    * Escrever durante a renderização é aceitável **aqui** porque a escrita é
    * idempotente (`lida_em = now()`) e a rota é `force-dynamic`: rodar duas
    * vezes na mesma navegação escreve o mesmo relógio duas vezes. Sem usuário —
-   * quem entrou pela senha única — as duas funções não fazem nada.
+   * quem ainda não tem usuário na conta — as duas funções não fazem nada.
    */
   const usuarioId = sessao?.usuario.id ?? null
   if (selecionado) await marcarComoLida(usuarioId, selecionado.contatoId)
@@ -241,7 +241,7 @@ async function Conteudo({
   /** As etiquetas manuais da conta, para o painel do contato deixar aplicar. */
   etiquetas: EtiquetaEscolhivel[]
   equipe: MembroDaConta[]
-  /** Quem está olhando. `null` quando quem entrou foi a senha única do time. */
+  /** Quem está olhando. */
   usuarioId: string | null
   /** Quantas entradas cada conversa tem depois da última vez que **eu** abri. */
   naoLidas: Map<string, number>
@@ -686,7 +686,7 @@ function CabecalhoDaConversa({
         <p className="mt-0.5 font-mono text-[10px] text-dim">{lead.waId}</p>
       </div>
       {/*
-        Só aparece quando há **alguém para assumir**. Com a senha única do time
+        Só aparece quando há **alguém para assumir**. Sem ninguém na equipe
         não existe usuário, e um botão que só sabe dizer "entre com a sua conta"
         seria um convite a clicar em nada.
       */}

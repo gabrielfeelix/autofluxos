@@ -8,7 +8,7 @@ import { db, ehIdInvalido } from '../db'
  * que a conversa foi lida porque *alguém* abriu — e "alguém leu" é exatamente
  * a informação que não ajuda ninguém a decidir o que abrir agora.
  *
- * Nada aqui existe quando quem entrou foi a senha única do time: sem usuário
+ * Nada aqui existe sem usuário na sessão: sem usuário
  * não há de quem contar. As duas funções tratam `null` devolvendo o vazio, em
  * vez de o chamador ter que lembrar de perguntar antes.
  */

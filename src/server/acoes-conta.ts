@@ -15,7 +15,6 @@ import {
   ehAdminDaPlataforma,
   existeAlgumUsuario,
   exigirAdminDaPlataforma,
-  temSessaoDePainel,
   sessaoAtual,
 } from './sessao'
 
@@ -176,18 +175,18 @@ export async function acaoCriarPrimeiroAdministrador(
   }
 
   /**
-   * A porta de primeira execução exige a senha única.
+   * A porta de primeira execução não tem mais um segundo cadeado.
    *
-   * O `proxy.ts` já recusa quem chega aqui sem ela, e isto não é redundância
-   * inútil: Server Action é um POST na rota onde ela é usada, e a própria
-   * documentação do Next avisa que mover a ação de rota a tira do matcher sem
-   * ninguém perceber. Uma porta que faz alguém nascer administrador não pode
-   * depender de um arquivo de configuração continuar apontando para o lugar
-   * certo.
+   * Ela era protegida pela senha única do time, que saiu junto com a rota
+   * `/login`. O que a fecha agora é o próprio tempo: a pergunta que a destranca
+   * — "não há ninguém?" — só tem resposta afirmativa **uma vez na vida do
+   * sistema**, e em produção ela já foi respondida.
+   *
+   * A janela existe entre subir um ambiente novo e cadastrar o primeiro
+   * administrador. Quem sobe o ambiente é quem cadastra, e o intervalo é de
+   * minutos — mas está escrito aqui para ninguém descobrir sozinho depois, e
+   * para quem for subir um ambiente novo saber que esse é o primeiro passo.
    */
-  if (!jaTemGente && !(await temSessaoDePainel())) {
-    return { erro: 'O primeiro cadastro é feito de dentro do painel.', email, nome }
-  }
 
   try {
     const criado = await autenticacao().api.signUpEmail({

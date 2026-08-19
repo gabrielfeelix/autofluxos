@@ -1,5 +1,5 @@
 import { alertar } from '@/server/alertar'
-import { iguais } from '@/lib/painel-auth'
+import { iguais } from '@/lib/segredo'
 import { apagarContatosVencidos, MESES_DE_RETENCAO_PADRAO } from '@/server/repos/retencao'
 
 export const dynamic = 'force-dynamic'

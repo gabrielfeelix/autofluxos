@@ -57,7 +57,7 @@ afterAll(async () => {
 })
 
 describe.skipIf(!temTudo)('quantas não lidas', () => {
-  it('sem usuário não conta nada — a senha única não tem de quem contar', async () => {
+  it('sem usuário não conta nada — não há de quem contar', async () => {
     expect(await naoLidasPorContato(null, [contatoId])).toEqual(new Map())
   })
 

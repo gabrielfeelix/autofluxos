@@ -10,11 +10,14 @@ export const dynamic = 'force-dynamic'
  * O cadastro — e ele tem **duas** vidas.
  *
  * Enquanto não existe ninguém, é a primeira execução: quem chegar aqui nasce
- * administrador da plataforma. Duas coisas seguram essa porta — ela fecha
- * sozinha no instante em que o primeiro usuário existe (a pergunta que a
- * destranca, "não há ninguém?", só tem resposta afirmativa uma vez na vida do
- * sistema), e enquanto está aberta ela exige a senha única do painel. Sem a
- * segunda, qualquer um na internet viraria administrador antes do dono.
+ * administrador da plataforma. O que segura essa porta é o próprio tempo — ela
+ * fecha sozinha no instante em que o primeiro usuário existe, porque a pergunta
+ * que a destranca ("não há ninguém?") só tem resposta afirmativa uma vez na vida
+ * do sistema.
+ *
+ * Havia um segundo cadeado, a senha única do painel, e ele saiu junto com a rota
+ * `/login`. A janela que sobra é entre subir um ambiente novo e cadastrar o
+ * primeiro administrador — quem sobe é quem cadastra. Ver `acoes-conta.ts`.
  *
  * Depois disso, é a tela de cadastrar gente, e só administrador a usa. O
  * convite por e-mail — o caminho normal em qualquer produto — depende de SMTP,
@@ -96,9 +99,9 @@ export default async function CriarConta() {
           </p>
         ) : (
           <p>
-            Você chegou aqui com a senha do time — é ela que segura esta porta enquanto não há
-            ninguém. Depois deste cadastro a tela se fecha sozinha, e daqui em diante só
-            administrador cria gente.
+            Esta é a primeira execução: ainda não há ninguém cadastrado, e quem sair daqui
+            nasce administrador da plataforma. Depois deste cadastro a porta se fecha sozinha,
+            e daqui em diante só administrador cria gente.
           </p>
         )
       }

@@ -106,14 +106,23 @@ com o canal mock, e **nenhuma foto saiu pela Cloud API de verdade**.
 São cinco minutos com o Cliente 00: um fluxo com bloco de arquivo, arrastar uma
 imagem, publicar, mandar uma mensagem, e conferir se a foto chega.
 
-## 6. Aposentar a senha única — depois do item 1
+## 6. A senha única — ✅ **aposentada**
 
-**Trava:** enquanto ela existir, o administrador da 4YU alcança qualquer conta
-sem impersonar, e portanto sem rastro na auditoria.
+`/login`, `PAINEL_SENHA`, `PAINEL_SEGREDO` e o cookie do painel saíram.
+`/entrar` é a porta, e é a única.
 
-Quando você quiser fechar: uma linha em `exigirAcessoAoCliente` (parar de deixar
-o administrador passar sem ser membro) e remover `PAINEL_SENHA` da Vercel. É
-trabalho nosso — o que depende de você é decidir a hora, e ter o item 1 feito.
+**As duas variáveis podem sair da Vercel** — nada as lê. Deixá-las não quebra
+nada; é limpeza.
+
+**O que sobrou, e é decisão sua:** o administrador da plataforma ainda alcança
+qualquer conta **sem ser membro dela**, em `exigirAcessoAoCliente`. É a última
+forma de abrir a conta de um cliente sem deixar rastro na auditoria. A saída é
+"entrar como", que registra.
+
+Fechar é uma linha. O que ela custa: no dia em que fechar, você precisa ser
+membro de toda conta que quiser abrir direto — inclusive as que criar depois.
+Hoje você é `owner` das três, então fechar agora não te tira de lugar nenhum; o
+cuidado é com cliente novo.
 
 ## 7. Modelos de mensagem aprovados pela Meta
 

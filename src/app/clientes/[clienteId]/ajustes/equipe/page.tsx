@@ -112,8 +112,8 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
           {equipe.length === 0 ? (
             <p className="px-5 py-10 text-center text-xs leading-5 text-dim">
-              Ninguém ligado a esta conta ainda. Enquanto isso, quem opera entra
-              pela senha única do time.
+              Ninguém ligado a esta conta ainda. Enquanto isso, só quem administra a
+              plataforma consegue abrir o painel dela.
             </p>
           ) : (
             <ul>

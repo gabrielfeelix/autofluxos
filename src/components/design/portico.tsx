@@ -2,12 +2,12 @@ import type { ReactNode } from 'react'
 import { Marca } from './marca'
 
 /**
- * A moldura das telas de porta: entrar, criar conta, senha única.
+ * A moldura das telas de porta: entrar e criar conta.
  *
- * Existe porque agora são **três**, e antes era uma. Duplicar o painel da
- * esquerda em cada uma é o caminho conhecido para as três divergirem — a
- * contagem de blocos que a tela anuncia já esteve errada uma vez, e ter três
- * cópias dela é ter três chances de errar de novo.
+ * Existe porque são **duas**, e antes era uma. Duplicar o painel da esquerda em
+ * cada uma é o caminho conhecido para as duas divergirem — a contagem de blocos
+ * que a tela anuncia já esteve errada uma vez, e ter duas cópias dela é ter duas
+ * chances de errar de novo.
  *
  * O lado esquerdo some abaixo de `md`: em 390px ele empurraria o formulário
  * para fora da tela, e quem chega no celular vem para entrar, não para ler.

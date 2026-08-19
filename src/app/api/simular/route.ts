@@ -110,7 +110,7 @@ export async function POST(req: Request) {
    * foi salvo. O `fluxoId`, não: ele é o que faz o motor resolver a credencial
    * de um cliente e mandá-la para a URL que o corpo pedir. Sem esta linha,
    * bastava postar um fluxo inventado apontando para o `fluxoId` de qualquer
-   * cliente. Era inofensivo enquanto a senha única dava acesso a tudo; virava
+   * cliente. Era inofensivo quando uma senha só dava acesso a tudo; virava
    * escalada de privilégio no minuto em que o primeiro cliente entrasse.
    *
    * Sem `fluxoId` não há credencial a resolver, e o teste roda como sempre

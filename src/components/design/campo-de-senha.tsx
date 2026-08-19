@@ -12,15 +12,15 @@ import { useId, useState } from 'react'
  * digitou não é conveniência, é o único jeito de distinguir os dois casos sem
  * tentativa e erro.
  *
- * **Está aqui, e não copiado nas duas telas**, porque são duas: a senha única
- * do time (`/login`) e a conta da pessoa (`/entrar`, `/criar-conta`). Duas
+ * **Está aqui, e não copiado nas telas**, porque são duas: entrar e criar
+ * conta (`/entrar`, `/criar-conta`). Duas
  * cópias divergem, e a que fica para trás é sempre a que menos se usa — que é
  * justamente a que a pessoa acessa sem prática nenhuma.
  *
  * O botão fica **fora** do `<label>` e o rótulo aponta por `htmlFor`. Botão
  * dentro de rótulo é clique ambíguo: ativa o rótulo junto e o nome acessível do
  * campo vira "Senha Mostrar". É a mesma razão que já valia para o "Esqueci a
- * senha" do `/login`.
+ * senha" das telas de porta.
  */
 export function CampoDeSenha({
   id,

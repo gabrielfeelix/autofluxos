@@ -3,7 +3,6 @@ import type { ReactNode } from 'react'
 import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
 import { NotificacoesDaFila } from '@/components/inbox/notificacoes-da-fila'
 import { acaoDefinirPresenca, acaoSair } from '@/server/acoes-conta'
-import { acaoSair as acaoSairDoPainel } from '@/server/auth-actions'
 import type { Cliente } from '@/server/repos/clientes'
 import { presencaDoUsuario } from '@/server/repos/usuarios'
 import { contasDoUsuario, ehAdminDaPlataforma, exigirAcessoAoCliente } from '@/server/sessao'
@@ -75,11 +74,11 @@ export async function ClienteShell({
    */
   const acesso = await exigirAcessoAoCliente(cliente.id)
   const contas = acesso.sessao ? await contasDoUsuario(acesso.sessao.usuario.id) : []
-  const presenca = acesso.sessao ? await presencaDoUsuario(acesso.sessao.usuario.id) : null
-  // O operador da senha única e o administrador da 4YU vieram da lista de
-  // clientes e precisam do caminho de volta. O dono do negócio, não: para ele
-  // não existe "todos os clientes", existe a conta dele.
-  const podeVerTodosOsClientes = acesso.viaSenhaUnica || ehAdminDaPlataforma(acesso.sessao)
+  const presenca = await presencaDoUsuario(acesso.sessao.usuario.id)
+  // O administrador da plataforma veio da lista de clientes e precisa do
+  // caminho de volta. O dono do negócio, não: para ele não existe "todos os
+  // clientes", existe a conta dele.
+  const podeVerTodosOsClientes = ehAdminDaPlataforma(acesso.sessao)
 
   return (
     <div className="flex min-h-screen flex-col md:h-screen md:min-h-[700px] md:flex-row md:overflow-hidden">
@@ -136,7 +135,6 @@ export async function ClienteShell({
             cliente={cliente}
             outrasContas={contas.length}
             papel={acesso.papel}
-            viaSenhaUnica={acesso.viaSenhaUnica}
           />
 
           {/*
@@ -151,7 +149,7 @@ export async function ClienteShell({
 
           {presenca && <Presenca atual={presenca} />}
 
-          <form action={acesso.viaSenhaUnica ? acaoSairDoPainel : acaoSair} className="mt-2 px-1.5">
+          <form action={acaoSair} className="mt-2 px-1.5">
             <button
               type="submit"
               className="rounded-[7px] px-1.5 py-1 text-[11.5px] font-semibold text-dim transition hover:bg-rose-400/[0.08] hover:text-rose-300"
@@ -193,14 +191,14 @@ function SeletorDeConta({
   cliente,
   outrasContas,
   papel,
-  viaSenhaUnica,
 }: {
   cliente: Cliente
   outrasContas: number
   papel: string | null
-  viaSenhaUnica: boolean
 }) {
-  const legenda = viaSenhaUnica ? 'senha do time' : (PAPEIS[papel ?? ''] ?? 'administrador 4YU')
+  // Papel nulo só acontece para o administrador da plataforma: quem não é
+  // membro nem administrador já foi recusado por `conferirAcessoAoCliente`.
+  const legenda = PAPEIS[papel ?? ''] ?? 'administrador 4YU'
 
   const miolo = (
     <>

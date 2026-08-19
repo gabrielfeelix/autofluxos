@@ -61,9 +61,8 @@ nada** (é o que faz a regra ser testável sem banco).
 
 | Rota | O que é | Quem alcança |
 |---|---|---|
-| `/login` | senha única do time (`PAINEL_SENHA`), a porta principal hoje | todo mundo |
-| `/entrar` | login por usuário (Better Auth) | todo mundo |
-| `/criar-conta` | primeira execução **e** cadastro feito por administrador | senha única ou administrador |
+| `/entrar` | **a porta, e é a única** — login por usuário (Better Auth) | todo mundo |
+| `/criar-conta` | primeira execução **e** cadastro feito por administrador | ninguém cadastrado ainda, ou administrador |
 | `/api/auth/[...all]` | a porta do Better Auth | todo mundo |
 | `/f/[token]` | **fluxo compartilhado** — a única tela que abre sem sessão nenhuma | quem tiver o link |
 
@@ -691,12 +690,25 @@ Quando você acrescentar uma ação com `clienteId`, ela precisa começar com
 exemplo — chama `podeAdministrarConta` **depois**, sem substituir a primeira
 linha.
 
-### 6.5 A sessão de usuário tem precedência sobre a senha única
+### 6.5 A porta é uma só, e o que sobrou de largo
 
-Quem entra como pessoa vê o que aquela pessoa vê. O administrador da 4YU
-continua alcançando qualquer conta **enquanto a senha única existir** — é a
-linha em `exigirAcessoAoCliente` que estreita para "só impersonando" no dia em
-que ela sair. Quem não pode recebe **404**, e não 403.
+**A senha única do time saiu.** `/login`, `PAINEL_SENHA`, o cookie assinado e
+`lib/painel-auth.ts` não existem mais; `/entrar` é a porta. Ela existia enquanto
+nenhuma tela sabia de qual conta a pessoa era — hoje todas sabem, e mantê-la
+significava manter um caminho que alcança qualquer conta **sem passar por
+membro** e, portanto, sem deixar rastro na auditoria.
+
+Sobrou uma linha larga, e ela está escrita para não se perder: **o administrador
+da plataforma passa em `exigirAcessoAoCliente` mesmo sem ser membro**. É a última
+forma de alcançar uma conta sem rastro, e a saída dela é "só impersonando" — que
+registra. Fechar é decisão do dono, porque no dia em que fechar ele precisa ser
+membro de toda conta que quiser abrir. Ver PENDENCIAS-DO-DONO.md.
+
+Quem não pode recebe **404**, e não 403: confirmar que a conta existe já é contar
+de um cliente para quem não é dele.
+
+De `painel-auth.ts` sobreviveu só `iguais`, em `lib/segredo.ts` — comparação em
+tempo constante, que as rotas de manutenção usam no `CRON_SECRET`.
 
 ### 6.6 `auth.ts` exporta função, não constante
 
@@ -1033,8 +1045,8 @@ cadeia do Svelte, que exige `vite@8` contra o `vite@7` do Vitest. Sem o
 | `SUPABASE_URL`, `SUPABASE_SECRET_KEY` | ✅ | ✅ | |
 | `META_APP_SECRET`, `WHATSAPP_TOKEN`, `WHATSAPP_VERIFY_TOKEN` | ✅ | ✅ | |
 | `GEMINI_API_KEY` | ✅ | ✅ | entrou em 17/ago — antes disso o bloco de IA nunca funcionou em produção |
-| `PAINEL_SENHA` | ✅ | ✅ | senha única. **Sem ela em produção, o login por usuário vira a única porta** |
-| `PAINEL_SEGREDO` | ✅ | ✅ | trocar encerra todas as sessões do painel |
+| ~~`PAINEL_SENHA`~~ | ❌ | ❌ | **saiu** com a rota `/login`. Se ainda estiver na Vercel, pode remover |
+| ~~`PAINEL_SEGREDO`~~ | ❌ | ❌ | **saiu** junto |
 | `CRON_SECRET` | ✅ | ✅ | sem ela a retenção **e o agendador** respondem 503 |
 | `DATABASE_URL` | ✅ | ✅ | pooler **6543**, não 5432 |
 | `BETTER_AUTH_SECRET` | ✅ | ✅ | |

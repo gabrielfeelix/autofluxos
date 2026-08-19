@@ -1,46 +1,26 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { NextRequest } from 'next/server'
-import { COOKIE_PAINEL, criarSessao, segredoDeSessao } from './lib/painel-auth'
 import { proxy } from './proxy'
 
 /**
- * As duas portas do painel, e quem cada uma abre.
+ * A porta do painel, e ela é **uma só**.
+ *
+ * A senha única do time saiu com a rota `/login`, e estes testes existem pelo
+ * motivo de sempre: a mudança tem um jeito conhecido de dar errado, que é abrir
+ * alguma coisa que estava fechada — ou fechar o que precisa ficar aberto, como
+ * o link de fluxo compartilhado.
  *
  * O que se testa aqui é **a decisão**, não a autorização: o proxy só resolve se
  * a requisição segue. Quem confere de verdade é `server/sessao.ts`, e é por isso
- * que um cookie do Better Auth qualquer passa por aqui — ele morre no
+ * que um cookie qualquer do Better Auth passa por aqui — ele morre no
  * `getSession` da tela seguinte, e é lá que isso é testado.
- *
- * Estes testes existem porque a mudança tem um jeito conhecido de dar errado:
- * abrir para a sessão nova alguma coisa que a senha única fechava, ou fechar
- * para a senha única alguma coisa que ela abria.
  */
-const SENHA = 'senha-de-teste-do-painel'
 const COOKIE_DO_USUARIO = 'better-auth.session_token=qualquer-coisa-assinada'
-
-const senhaAntes = process.env.PAINEL_SENHA
-const segredoAntes = process.env.PAINEL_SEGREDO
-
-beforeEach(() => {
-  process.env.PAINEL_SENHA = SENHA
-  process.env.PAINEL_SEGREDO = 'segredo-de-teste'
-})
-
-afterEach(() => {
-  if (senhaAntes === undefined) delete process.env.PAINEL_SENHA
-  else process.env.PAINEL_SENHA = senhaAntes
-  if (segredoAntes === undefined) delete process.env.PAINEL_SEGREDO
-  else process.env.PAINEL_SEGREDO = segredoAntes
-})
 
 function pedir(caminho: string, cookie = ''): NextRequest {
   return new NextRequest(`https://painel.exemplo/${caminho.replace(/^\//, '')}`, {
     headers: cookie ? { cookie } : {},
   })
-}
-
-async function cookieDoPainel(): Promise<string> {
-  return `${COOKIE_PAINEL}=${await criarSessao(segredoDeSessao(SENHA))}`
 }
 
 /** `NextResponse.next()` não redireciona nem responde: é "siga". */
@@ -53,29 +33,9 @@ function destinoDe(resposta: Response): string | null {
   return destino ? new URL(destino).pathname : null
 }
 
-describe('as portas do painel', () => {
+describe('a porta do painel', () => {
   it('deixa /entrar aberta — é a tela de quem ainda não entrou', async () => {
     expect(seguiu(await proxy(pedir('/entrar')))).toBe(true)
-  })
-
-  it('não deixa /criar-conta aberta, e este é o teste que mais importa aqui', async () => {
-    // Ela abre a porta de primeira execução: sem usuário nenhum, quem chega
-    // nasce administrador da plataforma. Pública, isso é qualquer um na
-    // internet virando administrador do painel.
-    expect(destinoDe(await proxy(pedir('/criar-conta')))).toBe('/login')
-    expect(seguiu(await proxy(pedir('/criar-conta', await cookieDoPainel())))).toBe(true)
-  })
-
-  it('deixa /f/<token> aberta — é o link de fluxo compartilhado', async () => {
-    // A única tela do sistema que abre sem sessão nenhuma. Atrás do login ela
-    // não teria função: o ponto do link é chegar a quem ainda não tem conta.
-    expect(seguiu(await proxy(pedir('/f/abc123')))).toBe(true)
-  })
-
-  it('a abertura do /f/ é de prefixo, e não pega vizinho parecido', async () => {
-    // `startsWith('/f/')` e não `startsWith('/f')`: sem a barra, uma rota
-    // futura chamada `/faturamento` nasceria pública sem ninguém notar.
-    expect(destinoDe(await proxy(pedir('/faturamento')))).toBe('/login')
   })
 
   it('não redireciona quem chega ao /entrar com cookie', async () => {
@@ -84,63 +44,46 @@ describe('as portas do painel', () => {
     expect(seguiu(await proxy(pedir('/entrar', COOKIE_DO_USUARIO)))).toBe(true)
   })
 
-  it('manda quem não tem nada para o login enquanto a senha única existir', async () => {
-    // Mandar o operador de hoje para uma tela onde a senha dele não funciona
-    // seria trocar "expirou" por "quebrou".
-    expect(destinoDe(await proxy(pedir('/clientes/abc')))).toBe('/login')
+  it('não deixa /criar-conta aberta, e este é o teste que mais importa aqui', async () => {
+    // Ela abre a porta de primeira execução: sem usuário nenhum, quem chega
+    // nasce administrador da plataforma. Pública, isso é qualquer um na
+    // internet virando administrador antes do dono.
+    expect(destinoDe(await proxy(pedir('/criar-conta')))).toBe('/entrar')
+    expect(seguiu(await proxy(pedir('/criar-conta', COOKIE_DO_USUARIO)))).toBe(true)
   })
 
-  it('manda para /entrar quando não existe senha única', async () => {
-    // Fora de produção o painel segue aberto sem senha nenhuma, para quem
-    // clonou o repositório e ainda não tem credencial — daí precisar fingir
-    // produção aqui. `NODE_ENV` é somente leitura para o TypeScript; `stubEnv`
-    // é o caminho do Vitest e desfaz sozinho.
-    delete process.env.PAINEL_SENHA
-    vi.stubEnv('NODE_ENV', 'production')
-    try {
-      expect(destinoDe(await proxy(pedir('/clientes/abc')))).toBe('/entrar')
-    } finally {
-      vi.unstubAllEnvs()
-    }
+  it('manda quem não tem sessão para /entrar', async () => {
+    expect(destinoDe(await proxy(pedir('/clientes/abc')))).toBe('/entrar')
+    expect(destinoDe(await proxy(pedir('/')))).toBe('/entrar')
   })
 
-  it('a sessão do painel continua abrindo tudo, como antes', async () => {
-    const cookie = await cookieDoPainel()
-    expect(seguiu(await proxy(pedir('/', cookie)))).toBe(true)
-    expect(seguiu(await proxy(pedir('/clientes/abc', cookie)))).toBe(true)
-    expect(seguiu(await proxy(pedir('/api/simular', cookie)))).toBe(true)
-  })
-
-  it('Basic Auth continua valendo — havia acesso já configurado com ele', async () => {
-    const req = new NextRequest('https://painel.exemplo/clientes/abc', {
-      headers: { authorization: `Basic ${btoa(`painel:${SENHA}`)}` },
-    })
-    expect(seguiu(await proxy(req))).toBe(true)
-  })
-
-  it('a sessão de usuário abre o painel, inclusive o simulador', async () => {
-    // O simulador ficou fechado enquanto o `fluxoId` de qualquer cliente
-    // resolvia a credencial daquele cliente. A rota confere o dono agora.
+  it('deixa passar quem traz o cookie do Better Auth', async () => {
     expect(seguiu(await proxy(pedir('/clientes/abc', COOKIE_DO_USUARIO)))).toBe(true)
-    expect(seguiu(await proxy(pedir('/api/simular', COOKIE_DO_USUARIO)))).toBe(true)
   })
 
-  it('API sem credencial nenhuma responde 401, e não redireciona', async () => {
-    const resposta = await proxy(pedir('/api/clientes/abc/leads/csv'))
+  it('a senha única não abre mais nada — a rota /login não existe', async () => {
+    // O teste que prova a remoção: enquanto ela existia, `/login` era a única
+    // rota que respondia sem cookie. Hoje ela é uma rota como outra qualquer, e
+    // como qualquer outra vai para `/entrar`.
+    expect(destinoDe(await proxy(pedir('/login')))).toBe('/entrar')
+  })
+
+  it('rota de API sem sessão responde 401, e não redireciona', async () => {
+    // Redirecionar um `fetch` devolve o HTML do login com status 200, e quem
+    // chamou trata como sucesso.
+    const resposta = await proxy(pedir('/api/clientes/abc/inbox/alertas'))
     expect(resposta.status).toBe(401)
   })
 
-  it('quem já tem sessão do painel não vê a tela de login de novo', async () => {
-    expect(destinoDe(await proxy(pedir('/login', await cookieDoPainel())))).toBe('/')
+  it('deixa /f/<token> aberta — é o link de fluxo compartilhado', async () => {
+    // A única tela do sistema que abre sem sessão nenhuma. Atrás do login ela
+    // não teria função: o ponto do link é chegar a quem não tem conta aqui.
+    expect(seguiu(await proxy(pedir('/f/abc123')))).toBe(true)
   })
 
-  it('cookie do painel adulterado não vale', async () => {
-    const bom = await criarSessao(segredoDeSessao(SENHA))
-    // Trocar o último caractere **por outro**, e não por um fixo: a assinatura
-    // é hex, e um `0` colado no lugar de um `0` devolvia o cookie intacto uma
-    // vez em dezesseis. O teste passava sozinho e caía na suíte inteira.
-    const ultimo = bom.slice(-1)
-    const ruim = `${COOKIE_PAINEL}=${bom.slice(0, -1)}${ultimo === 'a' ? 'b' : 'a'}`
-    expect(destinoDe(await proxy(pedir('/clientes/abc', ruim)))).toBe('/login')
+  it('a abertura do /f/ é de prefixo, e não pega vizinho parecido', async () => {
+    // `startsWith('/f/')` e não `startsWith('/f')`: sem a barra, uma rota futura
+    // chamada `/faturamento` nasceria pública sem ninguém notar.
+    expect(destinoDe(await proxy(pedir('/faturamento')))).toBe('/entrar')
   })
 })
