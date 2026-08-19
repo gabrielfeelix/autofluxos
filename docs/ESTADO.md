@@ -13,7 +13,12 @@ consegue continuar lendo só isto e o [ARQUITETURA.md](ARQUITETURA.md).
 
 ## Leia isto primeiro
 
-**Estado:** fases 1 a 3 do plano mestre e fases A, B e C do
+> **Este arquivo ficou para trás.** O estado atual está em
+> [HANDOFF.md](HANDOFF.md), de 19/ago/2026 — a contagem de testes e a lista de
+> fases abaixo são de 17/ago e não valem mais. O que continua valendo aqui são
+> as regras de arquitetura e o histórico de por que cada coisa é como é.
+
+**Estado (17/ago/2026, desatualizado):** fases 1 a 3 do plano mestre e fases A, B e C do
 [PLANO-PRODUTO.md](PLANO-PRODUTO.md) concluídas. `npm test` dá **371 passando**
 (8 pulados), `npm run typecheck`, `npm run lint` e `npm run build` estão limpos. O último `main`
 publicado continua em https://autofluxos.4yu.com.br.

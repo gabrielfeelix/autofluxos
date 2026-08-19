@@ -11,6 +11,14 @@ import { Dropdown } from '@/components/design/dropdown'
 import { FormularioSalvar } from '@/components/design/formulario-salvar'
 import { InterruptorDeGatilho } from '@/components/gatilhos/interruptor'
 import { InterruptorDeCampanha } from '@/components/gatilhos/interruptor-de-campanha'
+import { InterruptorDeSequencia } from '@/components/sequencias/interruptor'
+import { CamposDaSequencia } from '@/components/sequencias/campos'
+import {
+  ATRASO_MAXIMO_MINUTOS,
+  LIMITE_DE_PASSOS,
+  ROTULO_DO_EVENTO,
+  comoAtraso,
+} from '@/core/sequencias'
 import { OPERADORES_DE_GATILHO, ROTULO_DO_OPERADOR } from '@/core/gatilhos'
 import { PAPEIS_DO_NUMERO, ROTULO_DO_PAPEL } from '@/core/papeis-do-numero'
 import {
@@ -22,11 +30,17 @@ import {
   acaoCriarFluxo,
   acaoCriarGatilho,
   acaoCriarPasta,
+  acaoApagarSequencia,
+  acaoApagarPassoDaSequencia,
+  acaoCriarPassoDaSequencia,
+  acaoCriarSequencia,
 } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { fluxoDoPapel, listarCanais } from '@/server/repos/conversas'
 import { listarGatilhos } from '@/server/repos/gatilhos'
 import { listarPastas } from '@/server/repos/pastas'
+import { listarEtiquetas } from '@/server/repos/etiquetas'
+import { contarInscricoes, listarSequencias } from '@/server/repos/sequencias'
 import { MoverFluxo } from '@/components/editor/mover-fluxo'
 import { MODELOS } from '@/exemplos/modelos'
 import { contatosPorCampanha, listarCampanhas } from '@/server/repos/campanhas'
@@ -44,13 +58,26 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [fluxos, canais, execucoes, gatilhos, campanhas, contatosDaCampanha] = await Promise.all([
+  const [
+    fluxos,
+    canais,
+    execucoes,
+    gatilhos,
+    campanhas,
+    contatosDaCampanha,
+    sequencias,
+    inscricoes,
+    etiquetas,
+  ] = await Promise.all([
     listarFluxos(cliente.id),
     listarCanais(cliente.id),
     contarExecucoesPorFluxo(cliente.id),
     listarGatilhos(cliente.id),
     listarCampanhas(cliente.id),
     contatosPorCampanha(cliente.id),
+    listarSequencias(cliente.id),
+    contarInscricoes(cliente.id),
+    listarEtiquetas(cliente.id),
   ])
   const pastas = await listarPastas(cliente.id)
   const criarPastaComCliente = acaoCriarPasta.bind(null, cliente.id)
@@ -78,6 +105,9 @@ export default async function Pagina({
   const criarComCliente = acaoCriarFluxo.bind(null, cliente.id)
   const criarGatilhoComCliente = acaoCriarGatilho.bind(null, cliente.id)
   const criarCampanhaComCliente = acaoCriarCampanha.bind(null, cliente.id)
+  const criarSequenciaComCliente = acaoCriarSequencia.bind(null, cliente.id)
+  const nomeDaEtiqueta = (id: string | null) =>
+    etiquetas.find((etiqueta) => etiqueta.id === id)?.nome ?? 'uma etiqueta apagada'
 
   /**
    * Em quais papéis de número este fluxo está ligado.
@@ -500,6 +530,222 @@ export default async function Pagina({
                 </div>
               </FormularioSalvar>
             )}
+          </div>
+        </section>
+        <section className="app-card mt-[18px] overflow-hidden">
+          <header className="border-b border-white/[0.06] px-5 py-4">
+            <h2 className="text-[14.5px] font-bold">Sequências</h2>
+            <p className="mt-0.5 text-[12px] leading-5 text-dim">
+              O acompanhamento que acontece sozinho depois de um atendimento ou
+              de uma etiqueta. Cada passo abre um fluxo no tempo que você marcar.
+              <br />
+              <strong className="text-muted">Sai quem responde</strong> — e também
+              quem for assumido por alguém, quem tiver o bot pausado, ou quem
+              ganhar a etiqueta de saída. É essa regra que separa acompanhar de
+              importunar.
+            </p>
+            <p className="mt-2 rounded-lg border border-amber-300/20 bg-amber-300/[0.05] px-3 py-2 text-[11.5px] leading-[1.6] text-amber-100/90">
+              O limite de cada passo é {comoAtraso(ATRASO_MAXIMO_MINUTOS)}, e ele não é
+              nosso: o WhatsApp só aceita texto livre dentro da janela de 24h
+              contada da última mensagem da pessoa. Passado disso só vai mensagem
+              por modelo aprovado pela Meta — que ainda não temos. Um passo mais
+              longo seria desenhado e nunca entregue.
+            </p>
+          </header>
+
+          {sequencias.length === 0 ? (
+            <div className="border-b border-white/[0.045] px-5 py-10 text-center">
+              <p className="text-[13px] font-semibold text-soft">Nenhuma sequência ainda</p>
+              <p className="mt-1 text-xs leading-5 text-dim">
+                Sem elas, quem não respondeu depois do atendimento simplesmente some.
+              </p>
+            </div>
+          ) : (
+            <ul>
+              {sequencias.map((sequencia) => {
+                const contagem = inscricoes.get(sequencia.id) ?? {
+                  ativas: 0,
+                  concluidas: 0,
+                  sairam: 0,
+                  bloqueadas: 0,
+                }
+                const criarPassoComCliente = acaoCriarPassoDaSequencia.bind(
+                  null,
+                  cliente.id,
+                  sequencia.id,
+                )
+
+                return (
+                  <li key={sequencia.id} className="border-b border-white/[0.045] last:border-0">
+                    <div className="flex items-center gap-3 px-5 py-3.5">
+                      <InterruptorDeSequencia
+                        clienteId={cliente.id}
+                        sequenciaId={sequencia.id}
+                        ativa={sequencia.ativa}
+                      />
+                      <span className="min-w-0 flex-1">
+                        <strong
+                          className={`block truncate text-[13px] font-semibold ${sequencia.ativa ? '' : 'text-dim line-through'}`}
+                        >
+                          {sequencia.nome}
+                        </strong>
+                        <span className="mt-0.5 block truncate text-[11px] text-dim">
+                          {ROTULO_DO_EVENTO[sequencia.evento]}
+                          {sequencia.evento === 'etiqueta_aplicada'
+                            ? `: “${nomeDaEtiqueta(sequencia.etiquetaId)}”`
+                            : ''}
+                          {' · '}
+                          {sequencia.passos.length === 0 ? (
+                            <strong className="font-semibold text-amber-200">
+                              sem passo — não inscreve ninguém
+                            </strong>
+                          ) : (
+                            `${sequencia.passos.length} passo(s)`
+                          )}
+                          {sequencia.etiquetaDeSaidaId
+                            ? ` · sai com “${nomeDaEtiqueta(sequencia.etiquetaDeSaidaId)}”`
+                            : ''}
+                        </span>
+                      </span>
+                      <span className="whitespace-nowrap text-right text-[11px] text-dim">
+                        <strong className="font-semibold text-soft">{contagem.ativas}</strong> em
+                        andamento
+                        <span className="block">
+                          {contagem.concluidas} até o fim · {contagem.sairam} saíram
+                        </span>
+                        {contagem.bloqueadas > 0 && (
+                          <span
+                            title="A janela de 24h fechou antes do próximo passo. Encurte os prazos."
+                            className="block text-amber-200"
+                          >
+                            {contagem.bloqueadas} fora da janela
+                          </span>
+                        )}
+                      </span>
+                      <BotaoPerigo
+                        titulo="Apaga a sequência, os passos e o histórico de quem passou por ela. Para só pausar, use o interruptor."
+                        pergunta={`Apagar a sequência “${sequencia.nome}”? Os ${contagem.ativas} acompanhamento(s) em andamento param, e o histórico dela some.`}
+                        acao={acaoApagarSequencia.bind(null, cliente.id, sequencia.id)}
+                      />
+                    </div>
+
+                    <details className="border-t border-white/[0.03] bg-white/[0.012] px-5 py-3">
+                      <summary className="cursor-pointer text-[11.5px] text-muted">
+                        Passos ({sequencia.passos.length}/{LIMITE_DE_PASSOS})
+                      </summary>
+
+                      {sequencia.passos.length > 0 && (
+                        <ol className="mt-3 flex flex-col gap-2">
+                          {sequencia.passos.map((passo, indice) => {
+                            const destino = fluxos.find((item) => item.id === passo.fluxoId)
+                            return (
+                              <li
+                                key={passo.id}
+                                className="flex items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2"
+                              >
+                                <span className="w-4 shrink-0 font-mono text-[11px] text-dim">
+                                  {indice + 1}
+                                </span>
+                                <span className="min-w-0 flex-1 text-[12px]">
+                                  <strong className="font-semibold text-soft">
+                                    {comoAtraso(passo.atrasoMinutos)}
+                                  </strong>{' '}
+                                  depois do evento · abre{' '}
+                                  <strong className="font-semibold text-muted">
+                                    {destino?.nome ?? 'um fluxo que sumiu'}
+                                  </strong>
+                                  {destino && !destino.versaoPublicadaId && (
+                                    <span className="text-amber-200">
+                                      {' '}
+                                      · não publicado, então este passo não entrega nada
+                                    </span>
+                                  )}
+                                </span>
+                                <BotaoPerigo
+                                  rotulo="Tirar"
+                                  titulo="Tira este passo. Quem já está no meio da sequência pode terminar antes."
+                                  pergunta={`Tirar o passo de ${comoAtraso(passo.atrasoMinutos)}? Quem já está no meio da sequência pode terminar antes do previsto.`}
+                                  acao={acaoApagarPassoDaSequencia.bind(
+                                    null,
+                                    cliente.id,
+                                    sequencia.id,
+                                    passo.id,
+                                  )}
+                                />
+                              </li>
+                            )
+                          })}
+                        </ol>
+                      )}
+
+                      <div className="mt-3">
+                        {fluxos.length === 0 ? (
+                          <p className="text-[11.5px] text-dim">
+                            Crie um fluxo primeiro — um passo precisa de um lugar para levar.
+                          </p>
+                        ) : sequencia.passos.length >= LIMITE_DE_PASSOS ? (
+                          <p className="text-[11.5px] text-dim">
+                            {LIMITE_DE_PASSOS} passos é o teto. Mais que isso dentro de 24h não
+                            traz lead nenhum — traz bloqueio.
+                          </p>
+                        ) : (
+                          <FormularioSalvar
+                            action={criarPassoComCliente}
+                            rotulo="Adicionar passo"
+                            dica="O tempo conta do evento, não do passo anterior."
+                          >
+                            <div className="grid gap-2.5 md:grid-cols-[90px_90px_1fr]">
+                              <label>
+                                <span className="mb-1 block text-[10.5px] text-dim">horas</span>
+                                <input
+                                  name="horas"
+                                  type="number"
+                                  min={0}
+                                  max={24}
+                                  defaultValue={2}
+                                  aria-label="Horas depois do evento"
+                                  className="app-field w-full px-3 py-2.5 text-[12.5px]"
+                                />
+                              </label>
+                              <label>
+                                <span className="mb-1 block text-[10.5px] text-dim">minutos</span>
+                                <input
+                                  name="minutos"
+                                  type="number"
+                                  min={0}
+                                  max={59}
+                                  defaultValue={0}
+                                  aria-label="Minutos depois do evento"
+                                  className="app-field w-full px-3 py-2.5 text-[12.5px]"
+                                />
+                              </label>
+                              <label>
+                                <span className="mb-1 block text-[10.5px] text-dim">abre</span>
+                                <Dropdown
+                                  nome="fluxoId"
+                                  rotuloAcessivel="Fluxo que este passo abre"
+                                  opcoes={fluxos.map((item) => ({
+                                    valor: item.id,
+                                    rotulo: item.nome,
+                                    ...(item.versaoPublicadaId ? {} : { detalhe: 'rascunho' }),
+                                  }))}
+                                />
+                              </label>
+                            </div>
+                          </FormularioSalvar>
+                        )}
+                      </div>
+                    </details>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+
+          <div className="border-t border-white/[0.045] p-5">
+            <FormularioSalvar action={criarSequenciaComCliente} rotulo="Criar sequência">
+              <CamposDaSequencia etiquetas={etiquetas.map((e) => ({ id: e.id, nome: e.nome }))} />
+            </FormularioSalvar>
           </div>
         </section>
       </main>

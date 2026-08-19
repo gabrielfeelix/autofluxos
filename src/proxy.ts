@@ -41,6 +41,21 @@ import {
  */
 const PORTAS_ABERTAS = ['/entrar']
 
+/**
+ * A página de um fluxo compartilhado (0030).
+ *
+ * É prefixo e não caminho exato porque o token vem no endereço. E ela é a
+ * **única** rota de tela deste sistema que abre sem sessão nenhuma — o que
+ * significa que a autorização dela não pode morar aqui: quem decide o que
+ * mostrar é `repos/compartilhar.ts`, olhando token, revogação e prazo, e quem
+ * decide para onde importar é `acaoImportarFluxoCompartilhado`, que confere o
+ * acesso à conta de destino como toda ação.
+ *
+ * Deixá-la atrás do login mataria a funcionalidade: o ponto do link é chegar a
+ * quem ainda não tem conta aqui.
+ */
+const PREFIXOS_ABERTOS = ['/f/']
+
 export async function proxy(req: NextRequest) {
   const caminho = req.nextUrl.pathname
   const senha = process.env.PAINEL_SENHA
@@ -62,6 +77,7 @@ export async function proxy(req: NextRequest) {
   // devolve para cá. Quem decide isso é a própria tela, que lê a sessão em vez
   // de olhar para o cookie.
   if (PORTAS_ABERTAS.includes(caminho)) return NextResponse.next()
+  if (PREFIXOS_ABERTOS.some((prefixo) => caminho.startsWith(prefixo))) return NextResponse.next()
 
   const login = caminho === '/login'
 

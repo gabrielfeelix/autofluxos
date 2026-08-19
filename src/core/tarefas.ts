@@ -10,7 +10,7 @@ import { z } from 'zod'
  * um deploy pela metade, não uma falha.
  */
 
-export const TIPOS_DE_TAREFA = ['timeout_de_pergunta'] as const
+export const TIPOS_DE_TAREFA = ['timeout_de_pergunta', 'passo_de_sequencia'] as const
 
 export type TipoDeTarefa = (typeof TIPOS_DE_TAREFA)[number]
 
@@ -44,4 +44,38 @@ export type DadosDoTimeout = z.infer<typeof dadosDoTimeoutSchema>
  */
 export function chaveDoTimeout(sessaoId: string): string {
   return `timeout:${sessaoId}`
+}
+
+/**
+ * Um passo de sequência venceu (0031).
+ *
+ * Guarda a **inscrição** e o índice do passo, e a dupla é o que evita o pior
+ * erro daqui: uma tarefa velha chegando depois de a pessoa já ter avançado
+ * mandaria de novo uma mensagem que ela já recebeu. Com o índice registrado, o
+ * passo só sai se a inscrição ainda estiver exatamente onde estava.
+ *
+ * `entrouEm` viaja junto porque o horário dos passos seguintes é contado **do
+ * evento**, não do agora — ver `quandoRodaOPasso`. Recontar a cada passo
+ * empurraria a sequência para a frente a cada atraso do agendador, e o passo de
+ * 20h chegaria fora da janela de 24h por causa de uma passada que demorou.
+ */
+export const dadosDoPassoSchema = z.object({
+  inscricaoId: z.string().uuid(),
+  sequenciaId: z.string().uuid(),
+  contatoId: z.string().uuid(),
+  passoIndice: z.number().int().min(0),
+  entrouEm: z.string().min(1),
+})
+
+export type DadosDoPasso = z.infer<typeof dadosDoPassoSchema>
+
+/**
+ * Uma tarefa pendente por inscrição, e não por passo.
+ *
+ * A inscrição está num passo de cada vez, e o próximo só é agendado depois de o
+ * anterior sair. Chave por (inscrição, passo) deixaria duas vivas no momento em
+ * que um reagendamento acontecesse, e a pessoa receberia dois passos juntos.
+ */
+export function chaveDoPasso(inscricaoId: string): string {
+  return `sequencia:${inscricaoId}`
 }

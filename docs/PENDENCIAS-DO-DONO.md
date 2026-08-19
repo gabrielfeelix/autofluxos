@@ -7,31 +7,38 @@ produto, ou de uma conta que é de uma pessoa de verdade.
 Junte tudo e faça de uma vez ao fim das rodadas. Cada item diz o que trava
 enquanto não for feito.
 
-Atualizado em 19/ago/2026, com a Etapa A e a Etapa B inteiras no ar. As
-migrations `0023` a `0029` foram aplicadas em produção com autorização.
+Atualizado em 19/ago/2026, com a Etapa A e a Etapa B inteiras no ar — agora
+**sem recorte**: compartilhar fluxo por link e sequências entraram. As
+migrations `0023` a `0029` foram aplicadas em produção com autorização; a `0030`
+e a `0031` esperam a sua.
 
 ---
 
-## 1. O primeiro administrador — destrava a A1 inteira
+## 1. O primeiro administrador — ✅ **feito**
 
-**Trava:** hoje não existe **nenhum** usuário. Todo o login por usuário está no
-ar e dormindo; o painel segue funcionando pela senha única.
+`gab.feelix@gmail.com` existe em `af_usuarios` com `role = 'admin'`, conferido
+em produção em 19/ago/2026. A tela de primeiro acesso está fechada para sempre.
 
-1. `https://autofluxos.4yu.com.br/login` — entre com a `PAINEL_SENHA`.
-2. Vá para `/criar-conta`. Como não há ninguém, ela mostra **"Primeiro acesso"**.
-3. Nome, e-mail e senha de **pelo menos 10 caracteres**. Quem sai daí é
-   administrador da plataforma, e a tela se fecha sozinha para sempre.
+Fica registrado aqui porque a distinção que ela cria continua valendo, e não é
+óbvia: **`owner` não é o mesmo que `admin`.**
 
-Não fizemos por você porque a conta é sua, com o seu e-mail e a sua senha — e
-nem uma coisa nem a outra se inventa.
+| Papel | Onde mora | O que abre |
+|---|---|---|
+| `admin` | `af_usuarios.role` — plataforma | `/admin/*`, "entrar como", auditoria |
+| `owner` | `af_membros."role"` — **dentro de uma conta** | tudo naquela conta, inclusive equipe |
 
-## 2. Dar dono a cada cliente
+Ser dono de três contas não dá acesso à área de administração da 4YU, e ser
+administrador da plataforma não faz de ninguém membro de conta nenhuma — é por
+isso que `exigirAcessoAoCliente` trata os dois casos em linhas separadas. Hoje
+você tem os dois, então na prática alcança tudo.
 
-**Trava:** nenhum cliente tem membro. Ninguém entra neles com login próprio.
+## 2. Dar dono a cada cliente — ✅ **feito para os três de hoje**
 
-Em `/admin/usuarios` → `+ Cadastrar pessoa` (a senha é combinada por fora), e
-depois `/admin/contas` → `+ Ligar pessoa` como **dono da conta**. Cliente sem
-membro aparece no topo da lista.
+`MGM Pilates`, `Estúdio de exemplo` e `Cliente 00 — Gabriel` têm `owner`.
+
+Continua valendo para **cliente novo**: em `/admin/usuarios` → `+ Cadastrar
+pessoa` (a senha é combinada por fora), e depois `/admin/contas` → `+ Ligar
+pessoa` como **dono da conta**. Cliente sem membro aparece no topo da lista.
 
 ## 3. `ALERTA_WEBHOOK_URL` — a única variável que falta
 
@@ -58,6 +65,21 @@ caminhos e os dois são seus:
 2. **Apontar um disparador externo** (cron-job.org, GitHub Actions) para
    `https://autofluxos.4yu.com.br/api/manutencao/tarefas` mandando
    `Authorization: Bearer <CRON_SECRET>`. Custa zero e não muda código nenhum.
+
+## 3.2 Aplicar as migrations `0030` e `0031` — **o que trava agora**
+
+**Trava:** compartilhar fluxo por link e sequências estão inteiros no código,
+com teste, e **não funcionam** — as tabelas não existem em produção. Enquanto
+não forem aplicadas, apagar etiqueta e apagar fluxo também respondem erro, porque
+os dois passaram a conferir se a coisa é usada por uma sequência.
+
+As duas só **criam** objeto novo em `public` (`fluxo_links`, `sequencias`,
+`sequencia_passos`, `sequencia_inscricoes` e quatro funções). Não tocam tabela
+existente, não tocam Auth, não tocam Storage e não tocam `app_verandi`.
+
+É o único item desta lista que depende de uma frase sua e de mais nada — a
+aplicação em si é nossa, uma migration por vez, pela Management API, com a
+conferência do §9.3 do HANDOFF depois.
 
 ## 4. SMTP — decisão que envolve a Verandi
 
@@ -93,6 +115,13 @@ trabalho nosso — o que depende de você é decidir a hora, e ter o item 1 feit
 `Fora de`, do desenho da A3) ficou de fora, e vai ficar até isto existir. Fora
 da janela, o WhatsApp só aceita **modelo aprovado** — sem eles, o interruptor
 não teria o que fazer além de mentir. Trava também a Transmissão inteira.
+
+**E agora trava o alcance das sequências.** Cada passo tem teto de 24h, e o teto
+não é escolha nossa: quem responde sai da sequência, então a última mensagem da
+pessoa é sempre anterior ao evento que a inscreveu — o relógio da janela já está
+correndo quando o acompanhamento começa. Com modelos aprovados, o teto sobe e
+"3 dias depois" passa a existir. Sem eles, um passo mais longo seria desenhado e
+nunca entregue, e a tela diz isso em vez de deixar a pessoa descobrir sozinha.
 
 Depende de verificação da empresa e App Review na Meta. Não é código nosso que
 destrava.

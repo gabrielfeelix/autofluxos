@@ -3,6 +3,7 @@ import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
 import { validar, type Problema } from '@/core/flow/validar'
 import { db, ehIdInvalido, pareceUuid } from '../db'
 import { listarConexoes } from './conexoes'
+import { sequenciasQueUsamOFluxo } from './sequencias'
 import { acharCliente } from './clientes'
 
 /**
@@ -338,6 +339,19 @@ export async function apagarFluxo(
     return {
       ok: false,
       motivo: `esta automação está ligada ao número ${numeros.join(', ')}. Desligue lá primeiro — apagar agora deixaria o bot mudo no WhatsApp.`,
+    }
+  }
+
+  // **E as sequências (0031)**, pela mesma razão dos quatro papéis: um fluxo
+  // que é o passo 2 de um acompanhamento está tão em uso quanto o principal, e
+  // apagá-lo pararia a sequência em silêncio. A chave estrangeira do passo é
+  // `on delete restrict`, então o banco recusaria de qualquer forma — o que
+  // esta conferência acrescenta é a frase que diz onde ir desligar.
+  const sequencias = await sequenciasQueUsamOFluxo(fluxoId)
+  if (sequencias.length > 0) {
+    return {
+      ok: false,
+      motivo: `esta automação é um passo da sequência ${sequencias.join(', ')}. Tire o passo de lá primeiro — apagar agora pararia o acompanhamento no meio.`,
     }
   }
 

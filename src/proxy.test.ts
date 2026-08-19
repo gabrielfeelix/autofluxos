@@ -66,6 +66,18 @@ describe('as portas do painel', () => {
     expect(seguiu(await proxy(pedir('/criar-conta', await cookieDoPainel())))).toBe(true)
   })
 
+  it('deixa /f/<token> aberta — é o link de fluxo compartilhado', async () => {
+    // A única tela do sistema que abre sem sessão nenhuma. Atrás do login ela
+    // não teria função: o ponto do link é chegar a quem ainda não tem conta.
+    expect(seguiu(await proxy(pedir('/f/abc123')))).toBe(true)
+  })
+
+  it('a abertura do /f/ é de prefixo, e não pega vizinho parecido', async () => {
+    // `startsWith('/f/')` e não `startsWith('/f')`: sem a barra, uma rota
+    // futura chamada `/faturamento` nasceria pública sem ninguém notar.
+    expect(destinoDe(await proxy(pedir('/faturamento')))).toBe('/login')
+  })
+
   it('não redireciona quem chega ao /entrar com cookie', async () => {
     // Um cookie vencido viraria laço: a raiz confere de verdade, não encontra
     // sessão e devolve para cá. Quem decide isso é a tela, que lê a sessão.

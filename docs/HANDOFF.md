@@ -13,13 +13,17 @@ visual, motor puro que executa, e handoff para uma pessoa quando o bot não dá
 conta. Está em produção em `autofluxos.4yu.com.br` (Vercel), com Supabase
 **compartilhado com outro produto** (Verandi).
 
-**A Etapa A está inteira no ar (A1 a A7) e a Etapa B também (B1 a B6)**, com um
-recorte explícito em B5 — ver §8.1. O que sobra esbarra em coisas que só o dono
-resolve: [PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md).
+**A Etapa A está inteira no ar (A1 a A7) e a Etapa B também (B1 a B6)** — agora
+**sem recorte**: compartilhar fluxo por link e sequências entraram (§5.7 e §5.8).
+O que sobra esbarra em coisas que só o dono resolve:
+[PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md).
 
-`npm test` → **588 passando, 8 pulados** (os 8 dependem de `IA_TESTE_REAL` e
+`npm test` → **632 passando, 28 pulados** (os pulados dependem de `IA_TESTE_REAL` e
 `API_TESTE_REAL`, por desenho). `typecheck`, `lint` e `build` limpos.
-**Migrations aplicadas: `0001` a `0029`, todas. A próxima a escrever é a `0030`.**
+**Migrations aplicadas em produção: `0001` a `0029`. A `0030` e a `0031` estão
+escritas e esperam autorização do dono** — enquanto não forem aplicadas, as duas
+frentes novas não funcionam, e apagar etiqueta e apagar fluxo respondem erro
+(os dois passaram a conferir uso em sequência). A próxima a escrever é a `0032`.
 
 ---
 
@@ -37,7 +41,9 @@ O mapa que economiza a primeira hora de quem chega:
 | **ida ao banco** | `src/server/repos/*` — nada de SQL fora daqui |
 | **o desenho do fluxo** | `src/core/flow/schema.ts` (formato) · `validar.ts` (o que publica) |
 | **o editor** | `src/components/editor/` — `painel.tsx` é o inspetor, `nos.tsx` é o desenho |
-| **regra pura e testável sozinha** | `src/core/` — horário, gatilhos, campanhas, etiquetas, tarefas, presets |
+| **regra pura e testável sozinha** | `src/core/` — horário, gatilhos, campanhas, etiquetas, tarefas, presets, sequências |
+| **o que sai da conta num link compartilhado** | `src/core/compartilhar.ts` — é a única barreira antes de uma URL pública |
+| **quando um passo de sequência roda** | `src/core/sequencias.ts` (régua) · `server/sequencias.ts` (entra/sai) · `server/sequencias-passo.ts` (executa) |
 
 Duas leis de arquitetura que explicam o mapa: **`core/` não faz rede** (é o que
 faz o simulador e a produção rodarem o mesmo código), e **`repos/` não decide
@@ -55,6 +61,7 @@ nada** (é o que faz a regra ser testável sem banco).
 | `/entrar` | login por usuário (Better Auth) | todo mundo |
 | `/criar-conta` | primeira execução **e** cadastro feito por administrador | senha única ou administrador |
 | `/api/auth/[...all]` | a porta do Better Auth | todo mundo |
+| `/f/[token]` | **fluxo compartilhado** — a única tela que abre sem sessão nenhuma | quem tiver o link |
 
 ### Painel do operador 4YU
 
@@ -78,7 +85,7 @@ Configurações**. Não há abas no topo.
 | `/clientes/[id]/leads` | Contatos | filtro por etiqueta, busca, **seleção múltipla e lote**, **criar à mão**, CSV |
 | `/clientes/[id]/leads/[contatoId]` | Contatos | ficha do contato, com etiquetas |
 | `/clientes/[id]/leads/importar` | Contatos | importação por planilha, com conciliação |
-| `/clientes/[id]/fluxos` | Automações | fluxos **por pasta**, **palavras-chave** e **campanhas** |
+| `/clientes/[id]/fluxos` | Automações | fluxos **por pasta**, **palavras-chave**, **campanhas** e **sequências** |
 | `/clientes/[id]/fluxos/[fluxoId]` | — | **o editor**, tela cheia, sem a moldura |
 | `/clientes/[id]/ajustes` | Configurações | índice, com o estado de cada peça |
 | `/clientes/[id]/ajustes/horario` | Configurações | horário de atendimento |
@@ -360,6 +367,126 @@ nosso banco; sincronia com CRM não é atendimento), e nenhum carrega credencial
 no corpo ou no cabeçalho — chave escrita ali viraria segredo dentro de
 `flow_versions`, de onde não sai.
 
+### 5.7 — compartilhar fluxo por link (`fluxo_links`, 0030)
+
+A peça que a B5 recortou. O link é público e mora em `/f/<token>` — a **única**
+tela do sistema que abre sem sessão nenhuma, e por isso a que mais decisão
+carrega por linha:
+
+- **aponta para uma versão publicada, nunca para o rascunho.** `flow_versions` é
+  imutável, e é isso que faz o link significar sempre a mesma coisa. Apontar
+  para o rascunho faria o desenho mudar por baixo de quem recebeu: a pessoa
+  abriria amanhã um fluxo diferente do que lhe mandaram hoje, sem nenhuma das
+  duas partes saber. Fluxo nunca publicado **não gera link**, e o botão diz por
+  quê em vez de sumir;
+- **o token fica em texto claro, e isso não é guardar senha.** Ele não autentica
+  ninguém: é capacidade de leitura sobre uma versão escolhida, com prazo e botão
+  de revogar. Só o hash impediria a tela de mostrar o link de novo — e link que
+  não dá para recopiar é link que a pessoa recria cinco vezes e nunca revoga os
+  quatro antigos. São 24 bytes de `randomBytes` em `base64url`, e a tabela tem
+  RLS ligada com `revoke all` como todas;
+- **a única coisa removida do grafo é `conexaoId`** (`limparParaCompartilhar`).
+  Ela aponta para uma credencial da conta de origem, que não significa nada no
+  destino a não ser um convite a tentar — e o `publicar()` do destino recusaria
+  o fluxo por causa dela, com um erro que a pessoa não causou e não sabe
+  corrigir. **Nada mais é reescrito**: texto, URL de mídia e URL de API saem
+  inteiros, porque fluxo com o miolo apagado não é fluxo compartilhado, é
+  esqueleto;
+- **e por isso os avisos vêm antes de o link existir**, não depois. Compartilhar
+  manda o texto de todas as mensagens para fora da conta, e descobrir isso
+  depois de mandar o link para um grupo é tarde. É a única coisa da tela que
+  revogar não desfaz. O aviso sobre bloco de API mostra **só o host** — o
+  caminho é onde chave costuma estar, e o aviso não pode ser o vazamento que ele
+  denuncia;
+- **o que se importa nasce rascunho, sem IA e sem credencial.** Publicar o
+  desenho de outra pessoa no número de um cliente sem ninguém ter olhado é a
+  coisa mais perigosa que este produto conseguiria fazer sozinho; e IA é plano à
+  parte, então importar não pode ser o caminho de contratá-la de graça;
+- **abertura e importação são contadas separadamente.** "Mandei para dez e
+  ninguém abriu" e "dez abriram e ninguém quis" levam a decisões opostas, e um
+  contador só não responderia nenhuma das duas.
+
+A página pública **não desenha o grafo**: ela escreve o fluxo como roteiro, na
+ordem da conversa (`roteiroDoFluxo`). Quem abre está decidindo se importa, e
+para isso precisa ler o atendimento — montar o canvas custaria o bundle do
+editor numa rota que qualquer um alcança, para entregar menos. Bloco que
+ninguém alcança aparece marcado como **solto**: é coisa que quem recebe precisa
+ver antes de importar, não descobrir publicando.
+
+No `proxy.ts` a abertura é por prefixo `'/f/'` — com a barra. Sem ela, uma rota
+futura chamada `/faturamento` nasceria pública sem ninguém notar, e há teste
+prendendo isso.
+
+### 5.8 — sequências (`sequencias`, 0031)
+
+O que o agendador (B1) existia para sustentar. O produto sabia responder e sabia
+cobrar um prazo de pergunta; não sabia **voltar** a falar com quem parou.
+
+**A verdade desconfortável primeiro, porque ela decide o resto.** A Meta só
+deixa mandar texto livre dentro de 24h contadas da última mensagem *da pessoa*.
+E quem responde **sai** da sequência — que é a regra que a impede de virar spam.
+Somando as duas: a última mensagem da pessoa é sempre anterior ao evento que a
+inscreveu, então o prazo útil de uma sequência é o que restar das 24h quando ela
+começa. Por isso `atraso_minutos` tem teto de 1440, o mesmo de `timeoutMinutos`
+e pelo mesmo motivo; por isso a tela diz isso em letra grande em vez de deixar
+alguém desenhar "3 dias depois" e não entregar nada; e por isso o executor
+confere a janela **de novo** na entrega, porque o relógio corre entre agendar e
+mandar. Com os modelos aprovados da Meta (Etapa C) o teto sobe. Até lá ele é
+honesto.
+
+**Dois eventos inscrevem, e os dois são atos de gente:** alguém clicou em "Já
+atendi", ou alguém aplicou uma etiqueta. "Contato criado" ficou de fora de
+propósito — quem acabou de chegar já está dentro de um fluxo de entrada, e uma
+sequência por cima disputaria a mesma conversa.
+
+**Quatro saídas, e elas são o produto**, não o tratamento de erro:
+
+| Sai quando | Motivo gravado |
+|---|---|
+| a pessoa responde | `respondeu` — sai no webhook, **antes** de qualquer outra decisão |
+| alguém assume a conversa | `atendimento` |
+| o bot é pausado no contato (AutoOff) | `automacao_pausada` |
+| a etiqueta de saída é aplicada | `etiqueta_de_saida` — o "virou cliente, pode parar" |
+
+A saída por resposta vale mesmo com o bot pausado, mesmo fora do expediente e
+mesmo que a conversa não vá avançar por nenhum outro motivo — por isso ela está
+no topo de `tratarUma`, logo depois da deduplicação. Reenvio da Meta não é uma
+resposta nova, e usá-lo para tirar alguém de uma sequência seria deixar a fila
+de entrega da Meta decidir o acompanhamento do cliente.
+
+**`bloqueada` é estado próprio, e não um `saiu` com motivo.** `saiu` é a
+sequência funcionando; `bloqueada` é a sequência **não entregando** porque a
+janela fechou. Misturar os dois esconderia o único número que diz ao cliente que
+os prazos dele estão longos demais — e ele aparece na tela, em âmbar.
+
+**O atraso conta do evento, não do passo anterior.** Offset absoluto porque é o
+que dá para conferir contra as 24h sem somar nada: "20h depois" ou cabe ou não
+cabe. Encadeado, descobrir que o último passo é inalcançável exigiria somar a
+régua inteira — e o erro só apareceria com gente esperando. É também o que
+impede uma passada lenta do agendador de empurrar a sequência inteira para a
+frente: `quandoRodaOPasso` recebe `entrouEm`, nunca `Date.now()`.
+
+**Cinco passos é o teto**, e é limite de produto: cinco mensagens em 24h para
+quem não respondeu nenhuma já é o que alguém tolera. O sexto não traz lead —
+traz bloqueio, e bloqueio não se desfaz.
+
+Duas conferências que a sequência obrigou a acrescentar, pelo mesmo raciocínio
+dos quatro papéis do número: **`apagarFluxo` recusa fluxo que é passo de
+sequência**, e **`apagarEtiqueta` recusa etiqueta que dispara uma**. Nos dois
+casos a chave estrangeira é `restrict` e o banco recusaria sozinho — o que o
+código acrescenta é o nome do lugar onde ir desligar.
+
+Estrutura em três arquivos, e a divisão não é estética: `core/sequencias.ts` é a
+régua pura; `server/sequencias.ts` inscreve e tira, e é chamado de dentro do
+webhook; `server/sequencias-passo.ts` executa, e precisa de `receber-mensagem.ts`
+inteiro. Juntar os dois últimos fecharia um ciclo de imports.
+
+O passo abre um fluxo por `abrirFluxoParaContato` — a mesma função que o
+pós-atendimento passou a usar. Ela devolve **motivo** e não booleano porque os
+dois chamadores decidem coisas diferentes com cada um: `ocupado` faz o passo
+tentar de novo (uma mensagem está chegando, e a mensagem ganha do prazo,
+sempre), `janela_fechada` bloqueia, `sem_fluxo` encerra sem insistir.
+
 ### Fora do plano, e entrou porque estava errado
 
 - **A barra de formatação estava presa no bloco de Mensagem.** Virou
@@ -518,13 +645,16 @@ do React e derruba a tela; falha de upload tem que ser um recado numa linha.
 | `tarefas` | a fila do agendador |
 | `etiquetas`, `contato_etiquetas` | as manuais. As derivadas continuam derivadas |
 | `pastas` | gavetas de fluxo |
+| `fluxo_links` | link público de uma **versão publicada**. Token, prazo, revogação e contagem separada de abertura e importação (0030) |
+| `sequencias`, `sequencia_passos`, `sequencia_inscricoes` | o acompanhamento automático (0031). `bloqueada` = a janela de 24h fechou antes do passo |
 | view `leads` | contato + última mensagem + handoff aberto + `ultima_entrada_em` + `atribuido_a` + `ultimo_tipo` |
 | view `metricas_sessoes`, `resumo_clientes` | o funil e a lista de automações |
 | view `metricas_de_tempo`, `metricas_diarias`, `metricas_por_pessoa` | o painel completo (0028) |
 
 Funções: `publicar_fluxo` · `contar_disparo_do_gatilho` ·
-`contar_disparo_da_campanha` · `nao_lidas_por_contato` · `pegar_tarefas`. Todas
-com `search_path` fixo e `execute` revogado de `anon`/`authenticated`.
+`contar_disparo_da_campanha` · `nao_lidas_por_contato` · `pegar_tarefas` ·
+`contar_abertura_do_link` · `contar_importacao_do_link` · `sair_das_sequencias`.
+Todas com `search_path` fixo e `execute` revogado de `anon`/`authenticated`.
 
 **As tabelas do login ficam fora da Data API de propósito** (`revoke all` para
 `anon` e `authenticated` na 0019): `af_contas` guarda hash de senha e
@@ -536,16 +666,12 @@ com `search_path` fixo e `execute` revogado de `anon`/`authenticated`.
 
 ## 8. O que falta
 
-### 8.1 O que ficou de fora da Etapa B, e por quê
+### 8.1 A Etapa B fechou
 
-**Compartilhar fluxo por link** (parte da B5). Rota pública nova, com token,
-escopo e expiração — uma superfície de segurança que não cabe junto de uma
-coluna de organização. É a única peça da Etapa B que não está no ar.
-
-**Sequências** (disparo no tempo depois de um evento). O agendador que elas
-esperavam existe e funciona; falta o desenho de produto — o que dispara, quantos
-passos, e como alguém sai no meio. É a próxima peça óbvia a construir em cima da
-B1, e não precisa de migration: `tarefas.tipo` é texto justamente por isso.
+As duas peças que faltavam entraram, e o que elas custaram está em §5.7 e §5.8.
+Nada da Etapa B está mais fora do código — o que falta é a autorização para
+aplicar a `0030` e a `0031`, item 3.2 de
+[PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md).
 
 ### 8.2 A Etapa C
 
@@ -562,7 +688,13 @@ toca em qualquer tela do painel.
 
 - **A tabela de migrations do §4 do PLANO-SISTEMA divergiu do disco** a partir
   da `0024`, e o disco ganha. A ordem real foi A6 → A7 → B2 → B1 → B4 → B3 →
-  B5/B6.
+  B5/B6 → compartilhar (`0030`) → sequências (`0031`).
+- **Apagar um passo do meio de uma sequência não reindexa quem está dentro.**
+  A inscrição guarda o índice do próximo passo; tirar um passo desloca a lista, e
+  quem estava no índice 2 pode terminar antes. A alternativa seria decidir, por
+  outra pessoa, se ela "já recebeu" um passo que nunca existiu para ela. O erro
+  escolhido é o que erra para menos: no pior caso a sequência acaba cedo, e
+  ninguém recebe nada duas vezes. Está escrito em `apagarPasso`.
 - **A numeração vai cruzar com a da Verandi** (`0030_vr_`). O prefixo distingue
   e nenhum repositório aplica a migration do outro; se incomodar, o caminho é
   prefixo próprio — nunca renumerar o que já foi aplicado.
@@ -577,12 +709,16 @@ toca em qualquer tela do painel.
 Os itens em [PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md). Os três que mais
 travam:
 
-1. **Criar o primeiro administrador.** Não existe **nenhum** usuário em
-   produção; todo o login está de pé e dormindo — e agora a tela de Equipe, o
-   contador de não lidas e o desempenho por pessoa dependem de existir gente.
+1. **Aplicar a `0030` e a `0031`.** É o que trava agora: as duas frentes novas
+   estão inteiras no código e sem tabela em produção.
 2. **`ALERTA_WEBHOOK_URL`**, sem a qual nada falha ruidosamente.
 3. **Provar a mídia no WhatsApp de verdade** — nenhuma foto saiu pela Cloud API
    até hoje, e agora o bloco de arquivo sobe direto para o Storage.
+
+O primeiro administrador e o dono de cada conta **já existem** — conferido em
+produção em 19/ago/2026. E fica a distinção que ninguém acerta de primeira:
+`owner` é papel **dentro de uma conta** (`af_membros`), `admin` é papel **de
+plataforma** (`af_usuarios.role`). Ser dono de três contas não abre `/admin/*`.
 
 ---
 
@@ -591,7 +727,7 @@ travam:
 ### 9.1 O ciclo
 
 ```bash
-npm test          # 588 passando, 8 pulados
+npm test          # 632 passando, 28 pulados
 npm run typecheck
 npm run lint
 npm run build     # roda também sem DATABASE_URL, e tem que continuar rodando

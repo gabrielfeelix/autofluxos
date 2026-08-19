@@ -52,6 +52,7 @@ import {
   type SessaoSalva,
 } from './repos/conversas'
 import { travarContato } from './repos/travas'
+import { sairPorEvento } from './sequencias'
 
 /**
  * O caminho de uma mensagem do WhatsApp até a resposta.
@@ -173,6 +174,21 @@ async function tratarUma(
   // conversa de andar duas vezes. Vem **antes** da trava de propósito: reenvio
   // não precisa esperar fila nenhuma para ser descartado.
   if (!inedita) return
+
+  /**
+   * Quem responde sai das sequências (0031).
+   *
+   * **É a regra que separa acompanhamento de spam**, e ela vale mesmo quando o
+   * bot está pausado, mesmo fora do expediente e mesmo que a conversa não vá
+   * avançar por nenhum outro motivo — por isso está aqui em cima, e não lá
+   * dentro. A pessoa voltou a falar; lembrá-la de falar é o que não pode
+   * acontecer.
+   *
+   * Depois da deduplicação de propósito: reenvio da Meta não é uma resposta
+   * nova, e usá-lo para tirar alguém de uma sequência seria deixar a fila de
+   * entrega da Meta decidir o acompanhamento do cliente.
+   */
+  await sairPorEvento(contato.id, 'respondeu')
 
   // Daqui para baixo a conversa avança, e duas mensagens da mesma pessoa não
   // podem avançar juntas — ver `repos/travas.ts` e a migration 0007.
@@ -543,23 +559,88 @@ export async function rodarPosAtendimento(
   const contexto = await contextoDeResposta(clienteId, contatoId)
   if (!contexto?.canal.fluxoPosAtendimentoId) return
 
-  if (!dentroDaJanela(contexto.ultimaEntradaEm)) return
+  try {
+    await abrirFluxoParaContato(
+      clienteId,
+      contatoId,
+      contexto.canal.fluxoPosAtendimentoId,
+      fabricaDeCanal,
+    )
+  } catch (erro) {
+    const detalhe = erro instanceof Error ? erro.message : String(erro)
+    console.error('[pos-atendimento] não deu para rodar o fluxo', detalhe)
+    await alertar('o fluxo de pós-atendimento falhou', detalhe, { contato: contatoId })
+  }
+}
+
+/**
+ * Por que uma abertura por nossa conta não aconteceu.
+ *
+ * São motivos, e não `false`, porque **quem chama decide coisas diferentes com
+ * cada um**. O pós-atendimento só desiste; a sequência precisa saber se para de
+ * vez (`janela_fechada`, `automacao_pausada`) ou se tenta o próximo passo
+ * (`ocupado`, que é uma mensagem chegando neste exato instante). Um booleano
+ * aqui obrigaria a sequência a adivinhar, e adivinhar errado significa ou
+ * insistir com quem pediu silêncio, ou abandonar quem só estava ocupado.
+ */
+export type AberturaPorNossaConta =
+  | 'aberto'
+  | 'sem_contexto'
+  | 'janela_fechada'
+  | 'automacao_pausada'
+  | 'sem_fluxo'
+  | 'ocupado'
+
+/**
+ * Abre um fluxo para um contato **sem ninguém ter escrito agora**.
+ *
+ * É o caminho comum do pós-atendimento (A6) e do passo de sequência (0031), e
+ * ele é diferente do webhook em três pontos que valem para os dois:
+ *
+ * - **a janela de 24h é conferida antes de falar.** No webhook a pessoa acabou
+ *   de escrever, então a janela está aberta por definição. Aqui pode fazer
+ *   dias — e o WhatsApp recusaria com `(#131047)`, virando handoff logo depois
+ *   de alguém ter marcado a conversa como resolvida;
+ * - **a automação pausada é respeitada.** AutoOff cala o bot naquele contato, e
+ *   nem encerrar um atendimento nem um prazo de sequência é motivo para ele
+ *   voltar a falar;
+ * - **a conversa que estava viva morre `encerrada`.** É a mesma regra do
+ *   gatilho e da campanha: deixar uma sessão `ativa` para trás faria a próxima
+ *   leitura achar duas vivas no mesmo número, e as métricas contariam uma
+ *   conversa que ninguém terminou.
+ */
+export async function abrirFluxoParaContato(
+  clienteId: string,
+  contatoId: string,
+  fluxoId: string,
+  fabricaDeCanal: FabricaDeCanal = canalPadrao,
+): Promise<AberturaPorNossaConta> {
+  const contexto = await contextoDeResposta(clienteId, contatoId)
+  if (!contexto) return 'sem_contexto'
+
+  if (!dentroDaJanela(contexto.ultimaEntradaEm)) return 'janela_fechada'
 
   const contato = await acharContato(contatoId)
-  if (!contato || !contato.automacaoAtiva) return
+  if (!contato) return 'sem_contexto'
+  if (!contato.automacaoAtiva) return 'automacao_pausada'
 
-  const fluxo = await acharFluxo(contexto.canal.fluxoPosAtendimentoId)
-  if (!fluxo?.versaoPublicadaId) return
+  const fluxo = await acharFluxo(fluxoId)
+  if (!fluxo || fluxo.clienteId !== clienteId || !fluxo.versaoPublicadaId) return 'sem_fluxo'
 
   const versao = await acharVersao(fluxo.versaoPublicadaId)
-  if (!versao) return
+  if (!versao) return 'sem_fluxo'
 
   // A mesma trava do webhook: uma mensagem chegando neste instante não pode
-  // avançar a conversa junto com o pós-atendimento.
+  // avançar a conversa junto com o que estamos abrindo.
   const destravar = await travarContato(contatoId)
-  if (!destravar) return
+  if (!destravar) return 'ocupado'
 
   try {
+    const anterior = await ultimaSessao(contatoId, contexto.canal.id)
+    if (anterior && anterior.sessao.status !== 'encerrada') {
+      await definirStatusDaSessao(anterior.id, 'encerrada')
+    }
+
     const salva = await criarSessao(contatoId, contexto.canal.id, versao.id, sessaoNova())
 
     const [opcoesDeIa, horario] = await Promise.all([
@@ -580,10 +661,7 @@ export async function rodarPosAtendimento(
       contexto.ultimaEntradaWaId,
       resultado.acoes,
     )
-  } catch (erro) {
-    const detalhe = erro instanceof Error ? erro.message : String(erro)
-    console.error('[pos-atendimento] não deu para rodar o fluxo', detalhe)
-    await alertar('o fluxo de pós-atendimento falhou', detalhe, { contato: contatoId })
+    return 'aberto'
   } finally {
     await destravar()
   }

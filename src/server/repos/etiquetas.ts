@@ -1,6 +1,7 @@
 import 'server-only'
 import { ehCorDeEtiqueta, LIMITE_DO_NOME, type CorDeEtiqueta } from '@/core/etiquetas'
 import { db, ehIdInvalido } from '../db'
+import { sequenciasQueUsamAEtiqueta } from './sequencias'
 
 /**
  * As etiquetas que uma pessoa cria e aplica (0025).
@@ -120,7 +121,30 @@ export async function editarEtiqueta(
 }
 
 /** Apagar tira a etiqueta de todos os contatos — é o `on delete cascade` da 0025. */
-export async function apagarEtiqueta(clienteId: string, etiquetaId: string): Promise<boolean> {
+/**
+ * Apaga a etiqueta.
+ *
+ * **Recusa quando ela dispara uma sequência (0031).** A chave estrangeira é
+ * `on delete restrict` e o banco recusaria de qualquer forma — o que esta
+ * conferência acrescenta é o nome da sequência, que é a única informação que
+ * transforma "não deu" em "vá desligar ali". Sequência sem etiqueta de gatilho
+ * é sequência que nunca dispara e que a tela mostraria como ativa.
+ *
+ * A etiqueta **de saída** não recusa: ela é opcional por desenho, e a sequência
+ * continua fazendo sentido sem ela — perde-se um jeito de sair, não a regra.
+ */
+export async function apagarEtiqueta(
+  clienteId: string,
+  etiquetaId: string,
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  const sequencias = await sequenciasQueUsamAEtiqueta(clienteId, etiquetaId)
+  if (sequencias.length > 0) {
+    return {
+      ok: false,
+      motivo: `esta etiqueta dispara a sequência ${sequencias.join(', ')}. Apague ou troque o gatilho da sequência primeiro.`,
+    }
+  }
+
   const { data, error } = await db()
     .from('etiquetas')
     .delete()
@@ -128,9 +152,11 @@ export async function apagarEtiqueta(clienteId: string, etiquetaId: string): Pro
     .eq('client_id', clienteId)
     .select('id')
 
-  if (ehIdInvalido(error)) return false
+  if (ehIdInvalido(error)) return { ok: false, motivo: 'esta etiqueta não existe mais' }
   if (error) throw new Error(`não deu para apagar a etiqueta: ${error.message}`)
   return (data?.length ?? 0) === 1
+    ? { ok: true }
+    : { ok: false, motivo: 'esta etiqueta não existe mais' }
 }
 
 /**
@@ -187,7 +213,7 @@ export async function marcarContatos(
   etiquetaId: string,
   contatos: string[],
   aplicar: boolean,
-): Promise<{ ok: true; afetados: number } | { ok: false; motivo: string }> {
+): Promise<{ ok: true; afetados: number; validos: string[] } | { ok: false; motivo: string }> {
   if (contatos.length === 0) return { ok: false, motivo: 'escolha ao menos um contato' }
 
   const [{ data: etiqueta, error: erroDaEtiqueta }, { data: doCliente, error: erroDosContatos }] =
@@ -223,7 +249,12 @@ export async function marcarContatos(
     if (error) throw new Error(`não deu para tirar a etiqueta: ${error.message}`)
   }
 
-  return { ok: true, afetados: validos.length }
+  // Os ids **conferidos** voltam junto, e não só a contagem: quem chama usa
+  // esta lista para disparar as sequências (0031), e a lista que chegou do
+  // formulário pode conter contato de outra conta. Devolver só o número
+  // obrigaria a ação a reusar a lista crua, que é exatamente a que não passou
+  // pela conferência de dono feita aqui em cima.
+  return { ok: true, afetados: validos.length, validos }
 }
 
 /**

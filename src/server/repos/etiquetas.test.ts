@@ -96,7 +96,10 @@ describe.skipIf(!temCredencial)('criar, editar e apagar', () => {
       ok: false,
       motivo: 'esta etiqueta não existe mais',
     })
-    expect(await apagarEtiqueta(clienteId, alheia.id)).toBe(false)
+    expect(await apagarEtiqueta(clienteId, alheia.id)).toEqual({
+      ok: false,
+      motivo: 'esta etiqueta não existe mais',
+    })
     expect((await listarEtiquetas(outroId))[0]?.nome).toBe('VIP')
   })
 })
@@ -116,6 +119,12 @@ describe.skipIf(!temCredencial)('aplicar em contatos', () => {
       ok: false,
       motivo: 'nenhum contato deste cliente na seleção',
     })
+
+    // E o de fora é descartado sem levar junto o de dentro: é este caso que
+    // fazia a inscrição em sequência alcançar contato de outra conta.
+    const misturado = await marcarContatos(clienteId, minha.id, [contatoB, doOutro], true)
+    expect(misturado).toEqual({ ok: true, afetados: 1, validos: [contatoB] })
+    await marcarContatos(clienteId, minha.id, [contatoB], false)
   })
 
   it('aplica em lote, é idempotente, e tira em lote', async () => {
@@ -123,15 +132,20 @@ describe.skipIf(!temCredencial)('aplicar em contatos', () => {
     expect(criada.ok).toBe(true)
     const etiqueta = (await listarEtiquetas(clienteId)).find((e) => e.nome === 'Orçamento enviado')!
 
+    // `validos` volta junto da contagem, e é ele que as sequências (0031) usam
+    // para inscrever: a lista crua vem do formulário e pode trazer contato de
+    // outra conta, então quem chama nunca pode reusá-la.
     expect(await marcarContatos(clienteId, etiqueta.id, [contatoA, contatoB], true)).toEqual({
       ok: true,
       afetados: 2,
+      validos: expect.arrayContaining([contatoA, contatoB]),
     })
     // Aplicar de novo não pode estourar chave duplicada — quem clica duas vezes
     // está pedindo a mesma coisa, não uma segunda linha.
     expect(await marcarContatos(clienteId, etiqueta.id, [contatoA, contatoB], true)).toEqual({
       ok: true,
       afetados: 2,
+      validos: expect.arrayContaining([contatoA, contatoB]),
     })
 
     expect((await contatosComEtiqueta(clienteId, etiqueta.id)).sort()).toEqual(
@@ -163,7 +177,7 @@ describe.skipIf(!temCredencial)('aplicar em contatos', () => {
 
   it('apagar a etiqueta a tira de quem a tinha', async () => {
     const etiqueta = (await listarEtiquetas(clienteId)).find((e) => e.nome === 'Orçamento enviado')!
-    expect(await apagarEtiqueta(clienteId, etiqueta.id)).toBe(true)
+    expect(await apagarEtiqueta(clienteId, etiqueta.id)).toEqual({ ok: true })
 
     const depois = await etiquetasDeContatos([contatoA])
     expect(depois.get(contatoA)?.some((e) => e.nome === 'Orçamento enviado')).toBeFalsy()

@@ -1,5 +1,6 @@
 import 'server-only'
 import { rodarTimeoutDePergunta, type FabricaDeCanal } from './receber-mensagem'
+import { rodarPassoDeSequencia } from './sequencias-passo'
 import {
   devolverDesconhecidas,
   marcarFalha,
@@ -78,5 +79,7 @@ async function executar(
   switch (tarefa.tipo) {
     case 'timeout_de_pergunta':
       return rodarTimeoutDePergunta(tarefa.dados, fabricaDeCanal)
+    case 'passo_de_sequencia':
+      return rodarPassoDeSequencia(tarefa.dados, fabricaDeCanal)
   }
 }

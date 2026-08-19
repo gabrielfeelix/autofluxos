@@ -71,6 +71,15 @@ import { apagarRespostaRapida, criarRespostaRapida } from './repos/respostas-rap
 import { alternarGatilho, apagarGatilho, criarGatilho } from './repos/gatilhos'
 import { alternarCampanha, apagarCampanha, criarCampanha } from './repos/campanhas'
 import { apagarPasta, criarPasta, moverFluxo } from './repos/pastas'
+import { diasDoPrazo, limparParaCompartilhar, nomeAoImportar } from '@/core/compartilhar'
+import {
+  acharPorToken,
+  contarImportacao,
+  criarLink,
+  listarLinks,
+  revogarLink,
+  type LinkDoFluxo,
+} from './repos/compartilhar'
 import { acharModelo } from '@/exemplos/modelos'
 import {
   apagarEtiqueta,
@@ -81,6 +90,20 @@ import {
 import { ehCorDeEtiqueta } from '@/core/etiquetas'
 import { OPERADORES_DE_GATILHO, type OperadorDeGatilho } from '@/core/gatilhos'
 import { rodarPosAtendimento } from './receber-mensagem'
+import { inscreverNoEvento, sairPelaEtiqueta, sairPorEvento } from './sequencias'
+import {
+  acharSequencia,
+  alternarSequencia,
+  apagarPasso,
+  apagarSequencia,
+  criarPasso,
+  criarSequencia,
+} from './repos/sequencias'
+import {
+  conferirAtraso,
+  ehEventoDeSequencia,
+  type EventoDeSequencia,
+} from '@/core/sequencias'
 import { PAPEIS_DO_NUMERO, type PapelDoNumero } from '@/core/papeis-do-numero'
 
 /**
@@ -440,7 +463,7 @@ export async function acaoApagarEtiqueta(
   revalidatePath(`/clientes/${clienteId}/ajustes/etiquetas`)
   revalidatePath(`/clientes/${clienteId}/leads`)
   revalidatePath(`/clientes/${clienteId}/inbox`)
-  return apagou ? { ok: true } : { ok: false, erro: 'esta etiqueta não existe mais' }
+  return apagou.ok ? { ok: true } : { ok: false, erro: apagou.motivo }
 }
 
 /**
@@ -464,6 +487,27 @@ export async function acaoMarcarEtiqueta(
 
   const r = await marcarContatos(clienteId, etiquetaId, contatos, aplicar)
   if (!r.ok) return { ok: false, erro: r.motivo }
+
+  /**
+   * A etiqueta é um dos dois eventos que mexem em sequência (0031), e ela mexe
+   * **nos dois sentidos**: a mesma etiquetagem pode inscrever numa sequência e
+   * tirar de outra, quando ela é o gatilho de uma e a saída da outra.
+   *
+   * Só ao **aplicar**. Tirar uma etiqueta não é um evento: quem corrige um
+   * clique errado não está pedindo para começar nada, e "tirou a etiqueta"
+   * também não significa que a pessoa voltou a dever o acompanhamento de que já
+   * saiu.
+   *
+   * Nenhuma das duas pode derrubar a etiquetagem, que é o que a pessoa pediu —
+   * as duas engolem o próprio erro, ver `server/sequencias.ts`.
+   */
+  // `r.validos`, e nunca `contatos`: a lista crua veio do formulário e pode
+  // trazer id de outra conta. `marcarContatos` já a filtrou pelo dono, e usar a
+  // versão crua aqui criaria inscrição para contato que não é deste cliente.
+  if (aplicar) {
+    await sairPelaEtiqueta(clienteId, etiquetaId, r.validos)
+    await inscreverNoEvento(clienteId, r.validos, 'etiqueta_aplicada', etiquetaId)
+  }
 
   revalidatePath(`/clientes/${clienteId}/leads`)
   revalidatePath(`/clientes/${clienteId}/inbox`)
@@ -624,6 +668,257 @@ export async function acaoMoverFluxo(
 
   revalidatePath(`/clientes/${clienteId}/fluxos`)
   return { ok: true }
+}
+
+// ---------------------------------------------------------------------------
+// Compartilhar fluxo por link (B5, a peça que faltava)
+// ---------------------------------------------------------------------------
+
+/**
+ * Gera o link público de uma versão publicada.
+ *
+ * **Compartilhar é escrita, e não leitura**, ainda que nada do fluxo mude: o
+ * que muda é quem alcança o desenho. Por isso passa pela mesma conferência de
+ * acesso das outras ações e por isso deixa rastro na auditoria — um link que
+ * apareceu do nada e ninguém sabe quem criou é o pior desfecho possível aqui.
+ */
+export async function acaoCriarLinkDoFluxo(
+  clienteId: string,
+  fluxoId: string,
+  prazo: string,
+): Promise<{ ok: boolean; link?: LinkDoFluxo; erro?: string }> {
+  const acesso = await exigirAcessoAoCliente(clienteId)
+
+  const r = await criarLink(clienteId, fluxoId, {
+    dias: diasDoPrazo(prazo),
+    criadoPor: acesso.sessao?.usuario.id ?? null,
+  })
+  if (!r.ok) return { ok: false, erro: r.motivo }
+
+  await registrar({
+    acao: 'compartilhou_fluxo',
+    autorId: acesso.sessao?.usuario.id ?? null,
+    autorEmail: acesso.sessao?.usuario.email ?? 'painel',
+    contaId: clienteId,
+    alvoTipo: 'fluxo',
+    alvoId: fluxoId,
+    alvoNome: r.link.nome,
+    detalhes: { expiraEm: r.link.expiraEm ?? 'sem prazo' },
+    impersonadoPor: acesso.sessao?.impersonadoPor ?? null,
+  })
+
+  revalidatePath(`/clientes/${clienteId}/fluxos/${fluxoId}`)
+  return { ok: true, link: r.link }
+}
+
+/** Fecha o link. A contagem do que ele já fez fica — ver `revogarLink`. */
+export async function acaoRevogarLinkDoFluxo(
+  clienteId: string,
+  fluxoId: string,
+  linkId: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  const acesso = await exigirAcessoAoCliente(clienteId)
+
+  const revogou = await revogarLink(clienteId, linkId)
+  if (!revogou) return { ok: false, erro: 'este link já estava fechado' }
+
+  await registrar({
+    acao: 'revogou_link_de_fluxo',
+    autorId: acesso.sessao?.usuario.id ?? null,
+    autorEmail: acesso.sessao?.usuario.email ?? 'painel',
+    contaId: clienteId,
+    alvoTipo: 'fluxo',
+    alvoId: fluxoId,
+    detalhes: { link: linkId },
+    impersonadoPor: acesso.sessao?.impersonadoPor ?? null,
+  })
+
+  revalidatePath(`/clientes/${clienteId}/fluxos/${fluxoId}`)
+  return { ok: true }
+}
+
+/** Os links deste fluxo. O editor pede ao abrir o painel, não ao carregar a tela. */
+export async function acaoListarLinksDoFluxo(
+  clienteId: string,
+  fluxoId: string,
+): Promise<{ ok: boolean; links?: LinkDoFluxo[] }> {
+  await exigirAcessoAoCliente(clienteId)
+  return { ok: true, links: await listarLinks(clienteId, fluxoId) }
+}
+
+/**
+ * Traz um fluxo compartilhado para dentro de uma conta.
+ *
+ * Três decisões que fazem a importação ser segura em vez de conveniente:
+ *
+ * - **nasce rascunho**, nunca publicada. Publicar o desenho de outra pessoa no
+ *   número de um cliente sem ninguém ter olhado é a coisa mais perigosa que
+ *   este produto conseguiria fazer sozinho;
+ * - **nasce sem IA**, mesmo que a origem a tivesse. IA é plano à parte, e
+ *   importar não pode ser o caminho de contratá-la de graça;
+ * - **as credenciais não viajam** — `limparParaCompartilhar` tira `conexaoId`
+ *   antes de gravar. Quem importa escolhe as dele em Conexões.
+ *
+ * A conferência do destino é a de sempre: `exigirAcessoAoCliente`. O
+ * `clienteId` chega da tela pública, então é exatamente o caso em que alguém
+ * postaria o id de uma conta que não é dele.
+ */
+export async function acaoImportarFluxoCompartilhado(
+  clienteId: string,
+  token: string,
+): Promise<{ ok: boolean; fluxoId?: string; erro?: string }> {
+  const acesso = await exigirAcessoAoCliente(clienteId)
+
+  const link = await acharPorToken(String(token ?? ''))
+  if (!link) return { ok: false, erro: 'este link não existe' }
+  if (link.estado === 'revogado') return { ok: false, erro: 'quem compartilhou fechou este link' }
+  if (link.estado === 'expirado') return { ok: false, erro: 'o prazo deste link acabou' }
+  if (!link.grafo) return { ok: false, erro: 'este link não tem desenho para importar' }
+
+  const fluxo = await criarFluxo(
+    clienteId,
+    nomeAoImportar(link.nome),
+    limparParaCompartilhar(link.grafo),
+    false,
+  )
+
+  await contarImportacao(link.id)
+  await registrar({
+    acao: 'importou_fluxo',
+    autorId: acesso.sessao?.usuario.id ?? null,
+    autorEmail: acesso.sessao?.usuario.email ?? 'painel',
+    contaId: clienteId,
+    alvoTipo: 'fluxo',
+    alvoId: fluxo.id,
+    alvoNome: fluxo.nome,
+    detalhes: { origem: link.origem, versao: link.versao },
+    impersonadoPor: acesso.sessao?.impersonadoPor ?? null,
+  })
+
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  return { ok: true, fluxoId: fluxo.id }
+}
+
+// ---------------------------------------------------------------------------
+// Sequências (0031)
+// ---------------------------------------------------------------------------
+
+/**
+ * Cria a sequência — sem passo nenhum, de propósito.
+ *
+ * Um formulário que pedisse nome, evento, etiqueta, prazo e fluxo de uma vez
+ * teria cinco campos e produziria uma sequência de um passo só, que é o caso
+ * menos comum. Aqui ela nasce vazia e **não inscreve ninguém enquanto não tiver
+ * passo** (ver `sequenciasDoEvento`) — então o estado intermediário é seguro em
+ * vez de ser uma armadilha.
+ */
+export async function acaoCriarSequencia(
+  clienteId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const evento = String(formData.get('evento') ?? '')
+  if (!ehEventoDeSequencia(evento)) return { erro: 'escolha o que dispara a sequência' }
+
+  const etiquetaId = String(formData.get('etiquetaId') ?? '').trim()
+  const etiquetaDeSaidaId = String(formData.get('etiquetaDeSaidaId') ?? '').trim()
+
+  const r = await criarSequencia(clienteId, {
+    nome: String(formData.get('nome') ?? ''),
+    evento: evento as EventoDeSequencia,
+    etiquetaId: etiquetaId === '' ? null : etiquetaId,
+    etiquetaDeSaidaId: etiquetaDeSaidaId === '' ? null : etiquetaDeSaidaId,
+  })
+  if (!r.ok) return { erro: r.motivo }
+
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  return { ok: true }
+}
+
+/**
+ * Liga e desliga.
+ *
+ * Desligar não tira ninguém de dentro na hora — quem está inscrito continua
+ * inscrito, e é o executor do passo que encerra a inscrição quando encontra a
+ * sequência desligada. Tirar todo mundo aqui apagaria o histórico de quem já
+ * tinha recebido metade do acompanhamento, e desligar costuma ser "pausa",
+ * não "cancela".
+ */
+export async function acaoAlternarSequencia(
+  clienteId: string,
+  sequenciaId: string,
+  ativa: boolean,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const mudou = await alternarSequencia(clienteId, sequenciaId, ativa)
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  return mudou ? { ok: true } : { ok: false, erro: 'esta sequência não existe mais' }
+}
+
+export async function acaoApagarSequencia(
+  clienteId: string,
+  sequenciaId: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const apagou = await apagarSequencia(clienteId, sequenciaId)
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  return apagou ? { ok: true } : { ok: false, erro: 'esta sequência não existe mais' }
+}
+
+/**
+ * Acrescenta um passo.
+ *
+ * O tempo é digitado em **horas e minutos** e convertido aqui: pedir "1440" a
+ * alguém que quer "um dia" é fazer a pessoa fazer a conta que o computador faz.
+ * A régua (`conferirAtraso`) mora em `core/` e é a mesma que a tela usa para
+ * avisar antes — inclusive sobre o teto de 24h, que é a janela da Meta e não
+ * uma escolha nossa.
+ */
+export async function acaoCriarPassoDaSequencia(
+  clienteId: string,
+  sequenciaId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const horas = Number(formData.get('horas') ?? 0)
+  const minutos = Number(formData.get('minutos') ?? 0)
+  const total = Math.round((Number.isFinite(horas) ? horas : 0) * 60 + (Number.isFinite(minutos) ? minutos : 0))
+
+  const sequencia = await acharSequencia(clienteId, sequenciaId)
+  if (!sequencia) return { erro: 'esta sequência não existe mais' }
+
+  const regua = conferirAtraso(
+    total,
+    sequencia.passos.map((passo) => passo.atrasoMinutos),
+  )
+  if (!regua.ok) return { erro: regua.motivo }
+
+  const r = await criarPasso(clienteId, sequenciaId, {
+    atrasoMinutos: total,
+    fluxoId: String(formData.get('fluxoId') ?? ''),
+  })
+  if (!r.ok) return { erro: r.motivo }
+
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  return { ok: true }
+}
+
+export async function acaoApagarPassoDaSequencia(
+  clienteId: string,
+  sequenciaId: string,
+  passoId: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const apagou = await apagarPasso(clienteId, sequenciaId, passoId)
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  return apagou ? { ok: true } : { ok: false, erro: 'este passo não existe mais' }
 }
 
 // ---------------------------------------------------------------------------
@@ -989,6 +1284,13 @@ export async function acaoEncerrarAtendimento(clienteId: string, contatoId: stri
   // pelo mesmo motivo — ver `rodarPosAtendimento`.
   await rodarPosAtendimento(clienteId, contatoId)
 
+  // O segundo evento que inscreve numa sequência (0031). Vem depois do
+  // pós-atendimento porque os dois falam com a mesma pessoa e a ordem importa:
+  // o pós-atendimento é a mensagem de agora, a sequência é o acompanhamento de
+  // depois. Inscrever antes não muda o horário do passo — muda a chance de a
+  // sequência falar primeiro se algum passo for de um minuto.
+  await inscreverNoEvento(clienteId, [contatoId], 'atendimento_encerrado')
+
   revalidatePath(`/clientes/${clienteId}/leads`)
   revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
   revalidatePath(`/clientes/${clienteId}/inbox`)
@@ -1024,6 +1326,11 @@ export async function acaoAlternarAutomacaoDoLead(
   } finally {
     await destravar()
   }
+
+  // Pausar o bot cala o bot inteiro, e sequência é bot (0031). Só na pausa:
+  // religar não devolve ninguém a um acompanhamento de que já saiu — quem
+  // decide inscrever é o evento, não o interruptor.
+  if (!ativa) await sairPorEvento(contatoId, 'automacao_pausada')
 
   revalidatePath(`/clientes/${clienteId}/leads`)
   revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
@@ -1503,6 +1810,10 @@ export async function acaoAssumirAtendimento(
 
   const ok = await atribuirContato(clienteId, contatoId, sessao.usuario.id)
   if (!ok) return { ok: false, erro: 'este contato não é deste cliente' }
+
+  // Uma pessoa assumiu: a conversa é dela agora, e um acompanhamento automático
+  // por cima falaria junto com quem está atendendo (0031).
+  await sairPorEvento(contatoId, 'atendimento')
 
   revalidatePath(`/clientes/${clienteId}/inbox`)
   revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)

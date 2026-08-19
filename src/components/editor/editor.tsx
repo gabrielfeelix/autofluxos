@@ -25,6 +25,7 @@ import { ICONES, NOMES, tiposDeNo } from './nos'
 import { Painel } from './painel'
 import type { ConexaoDoCliente } from './painel'
 import { Versoes, type VersaoNaLista } from './versoes'
+import { Compartilhar } from './compartilhar'
 
 const PAUSA_ANTES_DE_SALVAR = 800
 
@@ -486,6 +487,14 @@ export function Editor({
           publicadaId={publicada?.id ?? null}
           voltando={voltando}
           aoVoltar={voltarParaVersao}
+        />
+
+        {/* Ao lado do histórico porque é a mesma matéria: as duas falam de
+            versões publicadas, e o link aponta para a que está no ar. */}
+        <Compartilhar
+          clienteId={clienteId}
+          fluxoId={fluxoId}
+          publicada={publicada ? { versao: publicada.versao, grafo: publicada.grafo } : null}
         />
 
         {publicada ? (
