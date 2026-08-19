@@ -18,6 +18,7 @@ import {
 import { Dropdown } from '@/components/design/dropdown'
 import { BarraDeFormato } from './barra-de-formato'
 import { SeletorDeVariavel } from './escolher-variavel'
+import { CampoDeVariavel } from './campo-de-variavel'
 import { SeletorDeArquivo } from './seletor-de-arquivo'
 import { PresetsDeIntegracao } from './presets-de-integracao'
 import { PilhaDeMensagem } from './pilha'
@@ -82,6 +83,7 @@ export function Painel({
   clienteId,
   ehInicio,
   variaveis,
+  origensDeVariaveis = {},
   conexoes = [],
   etapas = [],
   fluxos = [],
@@ -94,6 +96,12 @@ export function Painel({
   clienteId: string
   ehInicio: boolean
   variaveis: string[]
+  /**
+   * Que blocos guardam cada variável. É o que separa "reaproveitei a de lá" de
+   * "criei outra igual" — sem isso o campo do próprio bloco se acusaria de
+   * repetir a si mesmo.
+   */
+  origensDeVariaveis?: Record<string, string[]>
   conexoes?: ConexaoDoCliente[]
   etapas?: EtapaDoCliente[]
   fluxos?: FluxoDaConta[]
@@ -114,6 +122,13 @@ export function Painel({
       </div>
     )
   }
+
+  // As variáveis que **outros** blocos guardam. A do próprio bloco sai da lista
+  // porque escolher o nome que já está no campo não é escolha nenhuma — e
+  // porque é ela que faria o campo dizer "reaproveita" para si mesmo.
+  const deOutrosBlocos = variaveis.filter((v) =>
+    (origensDeVariaveis[v] ?? []).some((id) => id !== no.id),
+  )
 
   return (
     <div className="space-y-4 p-4">
@@ -229,15 +244,19 @@ export function Painel({
             aoMudar={(texto) => aoMudarDados({ texto })}
             formatavel
           />
-          <Linha
+          <CampoDeVariavel
             rotulo="Guardar resposta em"
             valor={no.data.salvarEm ?? ''}
-            dica="nome sem espaço nem acento, ex: nome, prazo"
+            variaveis={deOutrosBlocos}
+            modo="guarda"
+            dica="nome sem espaço nem acento, ex: nome, prazo — ou escolha uma que o fluxo já tem em {x}"
             aoMudar={(v) => aoMudarDados({ salvarEm: v.trim() === '' ? undefined : v.trim() })}
           />
-          <Linha
+          <CampoDeVariavel
             rotulo="Opções vêm da variável"
             valor={no.data.opcoesDe ?? ''}
+            variaveis={deOutrosBlocos}
+            modo="usa"
             dica="deixe vazio para desenhar as opções à mão"
             aoMudar={(v) => aoMudarDados({ opcoesDe: v.trim() === '' ? undefined : v.trim() })}
           />
@@ -284,9 +303,12 @@ export function Painel({
 
       {no.type === 'condicao' && (
         <>
-          <Linha
+          <CampoDeVariavel
             rotulo="Variável"
             valor={no.data.variavel}
+            variaveis={deOutrosBlocos}
+            modo="usa"
+            dica="o nome cru, sem chaves: prazo, e não {{prazo}}"
             aoMudar={(variavel) => aoMudarDados({ variavel })}
           />
           <label className="block">
@@ -312,7 +334,14 @@ export function Painel({
 
       {no.type === 'salvar-campo' && (
         <>
-          <Linha rotulo="Campo" valor={no.data.campo} aoMudar={(campo) => aoMudarDados({ campo })} />
+          <CampoDeVariavel
+            rotulo="Campo"
+            valor={no.data.campo}
+            variaveis={deOutrosBlocos}
+            modo="guarda"
+            dica="nome sem espaço nem acento — ou escolha uma que o fluxo já tem em {x}"
+            aoMudar={(campo) => aoMudarDados({ campo })}
+          />
           <Linha
             rotulo="Valor"
             valor={no.data.valor}
@@ -420,9 +449,12 @@ export function Painel({
             valor={no.data.instrucao}
             aoMudar={(instrucao) => aoMudarDados({ instrucao })}
           />
-          <Linha
+          <CampoDeVariavel
             rotulo="Guardar resposta em"
             valor={no.data.salvarEm ?? ''}
+            variaveis={deOutrosBlocos}
+            modo="guarda"
+            dica="nome sem espaço nem acento — ou escolha uma que o fluxo já tem em {x}"
             aoMudar={(v) => aoMudarDados({ salvarEm: v.trim() === '' ? undefined : v.trim() })}
           />
           <p className="rounded-[10px] border border-violet-400/20 bg-violet-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-violet-300">

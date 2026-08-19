@@ -867,7 +867,7 @@ export function Editor({
   }
 
   const noSelecionado = fluxo.nodes.find((n) => n.id === selecionado) ?? null
-  const variaveis = variaveisDoFluxo(fluxo)
+  const { nomes: variaveis, origens: origensDeVariaveis } = variaveisDoFluxo(fluxo)
 
   return (
     <div className="app-editor flex h-screen flex-col bg-canvas">
@@ -1233,6 +1233,7 @@ export function Editor({
                 clienteId={clienteId}
                 ehInicio={selecionado === inicio}
                 variaveis={variaveis}
+                origensDeVariaveis={origensDeVariaveis}
                 conexoes={conexoes}
                 etapas={etapas}
                 fluxos={fluxos}
@@ -1577,15 +1578,29 @@ function EstadoSalvamento({ estado }: { estado: 'salvo' | 'salvando' | 'pendente
   )
 }
 
-function variaveisDoFluxo(fluxo: Fluxo): string[] {
-  const nomes = new Set<string>()
+/**
+ * As variáveis do fluxo — **e quem guarda cada uma**.
+ *
+ * A origem não é enfeite: o painel precisa saber se um nome já é guardado por
+ * *outro* bloco para dizer "isso reaproveita a variável de lá" em vez de
+ * deixar nascer um `agendar_aula2` calado. Sem o dono, o próprio bloco
+ * apareceria como se estivesse repetindo a si mesmo.
+ */
+function variaveisDoFluxo(fluxo: Fluxo): { nomes: string[]; origens: Record<string, string[]> } {
+  const origens: Record<string, string[]> = {}
+  const anotar = (nome: string, noId: string) => {
+    ;(origens[nome] ??= []).push(noId)
+  }
+
   for (const no of fluxo.nodes as No[]) {
-    if (no.type === 'pergunta' && no.data.salvarEm) nomes.add(no.data.salvarEm)
-    if (no.type === 'salvar-campo' && no.data.campo) nomes.add(no.data.campo)
-    if (no.type === 'ia' && no.data.salvarEm) nomes.add(no.data.salvarEm)
+    if (no.type === 'pergunta' && no.data.salvarEm) anotar(no.data.salvarEm, no.id)
+    if (no.type === 'salvar-campo' && no.data.campo) anotar(no.data.campo, no.id)
+    if (no.type === 'ia' && no.data.salvarEm) anotar(no.data.salvarEm, no.id)
     // O que a API guarda também é variável do fluxo. Sem isto, o painel não
     // mostra `{{cidade}}` como disponível e quem desenha acha que não existe.
-    if (no.type === 'http') for (const m of no.data.mapear) if (m.variavel) nomes.add(m.variavel)
+    if (no.type === 'http')
+      for (const m of no.data.mapear) if (m.variavel) anotar(m.variavel, no.id)
   }
-  return [...nomes].sort()
+
+  return { nomes: Object.keys(origens).sort(), origens }
 }
