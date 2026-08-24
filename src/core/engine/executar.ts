@@ -1,4 +1,5 @@
 import { mensagensDoHandoff, partesDaMensagem } from '../flow/mensagem'
+import { PEDIDO_PADRAO, conferirResposta } from '../flow/resposta'
 import {
   LIMITE_BOTOES,
   LIMITE_LISTA,
@@ -217,10 +218,51 @@ function responderPergunta(
 
     // Resposta livre em texto.
     if (entrada.tipo !== 'texto') return { acoes, sessao: s }
-    if (salvarEm) {
-      s.vars[salvarEm] = entrada.texto
-      acoes.push({ tipo: 'salvar_campo', campo: salvarEm, valor: entrada.texto })
+
+    /*
+     * A resposta cabe no formato pedido?
+     *
+     * **Antes disto, "me manda a data" aceitava "amanhã".** O valor ia para a
+     * variável, o fluxo seguia, e o bloco de API mandava aquilo para o sistema
+     * do cliente — que responde erro, ou pior, aceita. Recusar aqui é conversa,
+     * não falha: o bot diz o que espera e continua parado na mesma pergunta.
+     *
+     * A régua de desistir é a mesma do menu que ninguém acerta: três tentativas
+     * e a conversa vai para uma pessoa. Insistir para sempre com quem não
+     * consegue responder é a definição de bot ruim.
+     */
+    const conferida = conferirResposta(no.data.formato, entrada.texto)
+    if (!conferida.ok) {
+      s.tentativas += 1
+      if (s.tentativas >= MAX_TENTATIVAS) {
+        return transferir(
+          s,
+          acoes,
+          `o bot não entendeu a resposta ${MAX_TENTATIVAS} vezes seguidas`,
+          contexto,
+        )
+      }
+      // A frase do cliente vence a nossa, e interpola como qualquer mensagem —
+      // "{{nome}}, pode escrever a data assim: 21/08/2026?" é o uso real.
+      acoes.push({
+        tipo: 'enviar_texto',
+        texto: interpolar(mensagemDeRecusa(no), s.vars),
+      })
+      return { acoes, sessao: s }
     }
+
+    if (salvarEm) {
+      s.vars[salvarEm] = conferida.valor
+      acoes.push({ tipo: 'salvar_campo', campo: salvarEm, valor: conferida.valor })
+    }
+    // O padronizado é o que o bloco seguinte manda para a API: `2026-08-21` de
+    // um `21/08/2026`. Só existe quando quem desenhou pediu por ele.
+    const { salvarPadraoEm } = no.data
+    if (salvarPadraoEm) {
+      s.vars[salvarPadraoEm] = conferida.padrao
+      acoes.push({ tipo: 'salvar_campo', campo: salvarPadraoEm, valor: conferida.padrao })
+    }
+
     s.tentativas = 0
     return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, no.id))
   }
@@ -566,6 +608,19 @@ export function valorDaOpcao(
   if (!Number.isInteger(posicao) || posicao < 1) return null
 
   return itensDaLista(vars[de] ?? '')[posicao - 1] ?? ''
+}
+
+/**
+ * A frase de quando o bot não entende a resposta livre.
+ *
+ * A do cliente vence a nossa. As nossas dizem o que falta **e dão um exemplo**,
+ * porque "formato inválido" não ensina ninguém a responder certo — e quem não
+ * sabe o que fazer com o erro manda a mesma coisa de novo até o bot desistir.
+ */
+export function mensagemDeRecusa(no: NoPergunta): string {
+  const escrita = (no.data.mensagemDeErro ?? '').trim()
+  if (escrita !== '') return escrita
+  return no.data.formato ? PEDIDO_PADRAO[no.data.formato] : MENSAGEM_NAO_ENTENDI
 }
 
 function perguntar(no: NoPergunta, s: Sessao): Acao {

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { FORMATOS_DE_RESPOSTA } from './resposta'
 
 /**
  * O formato do fluxo é o formato nativo do React Flow (`nodes`, `edges`,
@@ -274,6 +275,35 @@ export const noPerguntaSchema = z.object({
      * dois viram variável, e cada um vai para o seu lugar.
      */
     salvarValorEm: nomeVariavel.optional(),
+    /**
+     * O que a resposta livre precisa ser: data, hora, número, e-mail, telefone
+     * ou CPF. Vazio aceita qualquer texto, que é como a pergunta sempre foi.
+     *
+     * **Opcional para sempre.** Há conversa em produção rodando um grafo
+     * publicado antes deste campo existir, e `flow_versions` é imutável; um
+     * campo obrigatório aqui faria todas elas pararem de dar parse.
+     *
+     * Só vale para resposta livre. Com opções, quem confere é o casamento com o
+     * botão clicado — pedir formato ali seria conferir duas vezes a mesma coisa.
+     */
+    formato: z.enum(FORMATOS_DE_RESPOSTA).optional(),
+    /**
+     * O que o bot diz quando não entende. Vazio usa a frase padrão do formato.
+     *
+     * É o pedido literal de quem estava usando: *"se não for escrito daquela
+     * forma eu consigo retornar a informação: 'Desculpe, pode escrever novamente
+     * citando dia / mês / Ano, exemplo: 21/08/2026'"*.
+     */
+    mensagemDeErro: z.string().optional(),
+    /**
+     * Onde guardar a resposta **padronizada** — `2026-08-21` para uma data que a
+     * pessoa escreveu `21/08/2026`.
+     *
+     * Separado de `salvarEm` pelo mesmo motivo de `salvarValorEm`: o que a
+     * pessoa quer ler de volta e o que uma API aceita não são a mesma string, e
+     * escolher um dos dois por ela surpreenderia metade dos casos.
+     */
+    salvarPadraoEm: nomeVariavel.optional(),
     /**
      * Quantos minutos esperar antes de desistir da resposta (B1).
      *

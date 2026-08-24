@@ -522,6 +522,109 @@ describe('o que a pessoa digita não pode escrever a requisição', () => {
  * — a lista vem de uma consulta e muda a cada dia. Por isso a ramificação por
  * opção some e sobram duas saídas, `escolheu` e `vazio`.
  */
+/**
+ * A pergunta livre com formato.
+ *
+ * O pedido veio assim: "você coloca config. citando que se não for escrito
+ * daquela forma eu consigo retornar a informação: 'Desculpe, pode escrever
+ * novamente citando dia / mês / Ano, exemplo: 21/08/2026'".
+ */
+describe('pergunta livre que confere o formato', () => {
+  const p4 = { x: 0, y: 0 }
+
+  const agendar = (dados: Record<string, unknown>): Fluxo =>
+    fluxoSchema.parse({
+      inicio: 'quando',
+      nodes: [
+        {
+          id: 'quando',
+          type: 'pergunta',
+          position: p4,
+          data: { texto: 'Para quando você quer agendar?', salvarEm: 'dia', ...dados },
+        },
+        { id: 'pronto', type: 'mensagem', position: p4, data: { texto: 'Marcado para {{dia}}!' } },
+        { id: 'humano', type: 'handoff', position: p4, data: {} },
+      ],
+      edges: [
+        { id: 'a1', source: 'quando', target: 'pronto' },
+        { id: 'a2', source: 'pronto', target: 'humano' },
+      ],
+    })
+
+  it('sem formato, aceita qualquer coisa — nada muda para os fluxos que já existem', () => {
+    const fluxo = agendar({})
+    const primeira = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    const r = executar(fluxo, primeira.sessao, { tipo: 'texto', texto: 'amanhã' })
+
+    expect(r.sessao.vars.dia).toBe('amanhã')
+  })
+
+  it('com formato de data, "amanhã" não passa e o bot pede de novo', () => {
+    const fluxo = agendar({ formato: 'data' })
+    const primeira = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    const r = executar(fluxo, primeira.sessao, { tipo: 'texto', texto: 'amanhã' })
+
+    expect(textos(r.acoes).join(' ')).toContain('21/08/2026')
+    expect(r.sessao.vars.dia).toBeUndefined()
+    // Continua parado na mesma pergunta: recusar é conversa, não desvio.
+    expect(r.sessao.noAtual).toBe('quando')
+  })
+
+  it('a frase do cliente vence a nossa, e interpola', () => {
+    const fluxo = agendar({
+      formato: 'data',
+      mensagemDeErro: 'Desculpe, pode escrever citando dia / mês / ano? Exemplo: 21/08/2026',
+    })
+    const primeira = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    const r = executar(fluxo, primeira.sessao, { tipo: 'texto', texto: 'sei lá' })
+
+    expect(textos(r.acoes)).toContain(
+      'Desculpe, pode escrever citando dia / mês / ano? Exemplo: 21/08/2026',
+    )
+  })
+
+  it('a data válida passa e o fluxo segue', () => {
+    const fluxo = agendar({ formato: 'data' })
+    const primeira = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    const r = executar(fluxo, primeira.sessao, { tipo: 'texto', texto: '21/08/2026' })
+
+    expect(r.sessao.vars.dia).toBe('21/08/2026')
+    expect(textos(r.acoes)).toContain('Marcado para 21/08/2026!')
+  })
+
+  it('o padronizado vai para a variável que a API usa, e o digitado fica para a mensagem', () => {
+    const fluxo = agendar({ formato: 'data', salvarPadraoEm: 'dia_iso' })
+    const primeira = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    const r = executar(fluxo, primeira.sessao, { tipo: 'texto', texto: '21/08/2026' })
+
+    expect(r.sessao.vars.dia).toBe('21/08/2026')
+    expect(r.sessao.vars.dia_iso).toBe('2026-08-21')
+  })
+
+  // Insistir para sempre com quem não consegue responder é a definição de bot
+  // ruim. A régua é a mesma do menu que ninguém acerta.
+  it('na terceira recusa a conversa vai para uma pessoa', () => {
+    const fluxo = agendar({ formato: 'data' })
+    let r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    r = executar(fluxo, r.sessao, { tipo: 'texto', texto: 'amanhã' })
+    r = executar(fluxo, r.sessao, { tipo: 'texto', texto: 'depois' })
+    r = executar(fluxo, r.sessao, { tipo: 'texto', texto: 'sei lá' })
+
+    expect(r.sessao.status).toBe('humano')
+    expect(r.acoes.some((a) => a.tipo === 'transferir_humano')).toBe(true)
+  })
+
+  it('acertar depois de errar zera o contador', () => {
+    const fluxo = agendar({ formato: 'data' })
+    let r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    r = executar(fluxo, r.sessao, { tipo: 'texto', texto: 'amanhã' })
+    r = executar(fluxo, r.sessao, { tipo: 'texto', texto: '21/08/2026' })
+
+    expect(r.sessao.tentativas).toBe(0)
+    expect(r.sessao.vars.dia).toBe('21/08/2026')
+  })
+})
+
 describe('pergunta com opções dinâmicas', () => {
   const p3 = { x: 0, y: 0 }
 

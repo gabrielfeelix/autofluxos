@@ -3,6 +3,7 @@
 import { Handle, Position, type NodeProps, type NodeTypes } from '@xyflow/react'
 import type { ReactNode } from 'react'
 import { partesDaMensagem } from '@/core/flow/mensagem'
+import { NOME_DO_FORMATO, type FormatoDeResposta } from '@/core/flow/resposta'
 import {
   LIMITE_BOTOES,
   SAIDA_ESCOLHEU,
@@ -239,6 +240,7 @@ function NoPergunta({ data, selected }: NodeProps) {
     opcoesDe?: string
     valoresDe?: string
     salvarValorEm?: string
+    formato?: FormatoDeResposta
     timeoutMinutos?: number
   }
   const dinamica = (d.opcoesDe ?? '').trim() !== ''
@@ -287,7 +289,16 @@ function NoPergunta({ data, selected }: NodeProps) {
             </p>
           )}
           {d.opcoes.length === 0 && (
-            <p className="mt-1 text-[10px] text-dim">resposta livre em texto</p>
+            <p className="mt-1 text-[10px] text-dim">
+              {d.formato ? (
+                <>
+                  resposta livre, precisa ser{' '}
+                  <strong className="text-soft">{NOME_DO_FORMATO[d.formato].toLowerCase()}</strong>
+                </>
+              ) : (
+                'resposta livre em texto'
+              )}
+            </p>
           )}
           {d.opcoes.length === 0 && prazo !== null && (
             <Saida id="">

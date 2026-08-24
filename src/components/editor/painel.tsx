@@ -32,6 +32,12 @@ import {
 } from './texto-com-variaveis'
 import { NOMES } from './nos'
 import { contarCaracteres } from '@/core/flow/texto'
+import {
+  EXEMPLO_PADRONIZADO,
+  FORMATOS_DE_RESPOSTA,
+  NOME_DO_FORMATO,
+  PEDIDO_PADRAO,
+} from '@/core/flow/resposta'
 
 /** Os quatro tipos, no nome que quem desenha o fluxo usa. */
 
@@ -284,7 +290,95 @@ export function Painel({
             aoMudar={(v) => aoMudarDados({ opcoesDe: v.trim() === '' ? undefined : v.trim() })}
           />
           {(no.data.opcoesDe ?? '').trim() === '' ? (
-            <Opcoes opcoes={no.data.opcoes} aoMudar={(opcoes) => aoMudarDados({ opcoes })} />
+            <>
+              <Opcoes opcoes={no.data.opcoes} aoMudar={(opcoes) => aoMudarDados({ opcoes })} />
+
+              {/*
+                O formato só faz sentido sem opções.
+
+                Com botão, quem confere a resposta é o casamento com o rótulo
+                clicado; oferecer o campo ali seria oferecer uma conferência que
+                não roda. Por isso ele mora dentro deste ramo, e não ao lado.
+              */}
+              {no.data.opcoes.length === 0 && (
+                <>
+                  <label className="block">
+                    <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+                      A resposta precisa ser
+                    </span>
+                    <Dropdown
+                      valor={no.data.formato ?? ''}
+                      aoMudar={(v) =>
+                        aoMudarDados({
+                          formato: v === '' ? undefined : v,
+                          // Sem formato não há o que padronizar, e uma variável
+                          // que ficasse para trás gravaria vazio para sempre.
+                          ...(v === '' ? { salvarPadraoEm: undefined } : {}),
+                        })
+                      }
+                      rotuloAcessivel="Formato da resposta"
+                      opcoes={[
+                        {
+                          valor: '',
+                          rotulo: 'Qualquer texto',
+                          detalhe: 'aceita o que a pessoa escrever',
+                        },
+                        ...FORMATOS_DE_RESPOSTA.map((formato) => ({
+                          valor: formato,
+                          rotulo: NOME_DO_FORMATO[formato],
+                          detalhe: `guarda padronizado como ${EXEMPLO_PADRONIZADO[formato]}`,
+                        })),
+                      ]}
+                    />
+                    <span className="mt-1 block text-[10.5px] leading-4 text-dim">
+                      Quando não casa, o bot pede de novo sem sair daqui. Na terceira vez a conversa
+                      vai para uma pessoa.
+                    </span>
+                  </label>
+
+                  {no.data.formato && (
+                    <>
+                      <Area
+                        conhecidas={variaveis}
+                        rotulo="Mensagem quando não entender"
+                        valor={no.data.mensagemDeErro ?? ''}
+                        limite={LIMITE_TEXTO}
+                        aoMudar={(v) =>
+                          aoMudarDados({ mensagemDeErro: v.trim() === '' ? undefined : v })
+                        }
+                        formatavel
+                      />
+                      <p className="-mt-2 text-[10.5px] leading-4 text-dim">
+                        Vazio usa a nossa:{' '}
+                        <span className="text-muted">
+                          “{PEDIDO_PADRAO[no.data.formato]}”
+                        </span>{' '}
+                        Diga o que falta <strong className="text-muted">e dê um exemplo</strong> —
+                        “formato inválido” não ensina ninguém a responder certo.
+                      </p>
+
+                      <CampoDeVariavel
+                        rotulo="Guardar padronizado em (opcional)"
+                        valor={no.data.salvarPadraoEm ?? ''}
+                        variaveis={deOutrosBlocos}
+                        modo="guarda"
+                        dica={`ex: ${no.data.formato}_padrao — vira ${EXEMPLO_PADRONIZADO[no.data.formato]}`}
+                        aoMudar={(v) =>
+                          aoMudarDados({ salvarPadraoEm: v.trim() === '' ? undefined : v.trim() })
+                        }
+                        nota={
+                          <>
+                            “Guardar resposta em” fica com o que a pessoa escreveu — é o que ela quer
+                            ler de volta. Esta guarda a forma que uma API aceita. Use quando o bloco
+                            seguinte for chamar um sistema.
+                          </>
+                        }
+                      />
+                    </>
+                  )}
+                </>
+              )}
+            </>
           ) : (
             <>
               <p className="text-[11px] leading-4 text-dim">

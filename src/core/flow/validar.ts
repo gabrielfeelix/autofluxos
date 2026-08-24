@@ -602,6 +602,39 @@ function conferirConteudo(no: No, erros: Problema[], avisos: Problema[]): void {
       conferirVariavel(no.data.opcoesDe, 'variável das opções')
       conferirVariavel(no.data.valoresDe, 'variável dos valores')
       conferirVariavel(no.data.salvarValorEm, 'variável do valor escolhido')
+      conferirVariavel(no.data.salvarPadraoEm, 'variável do valor padronizado')
+      conferirTamanho(no.data.mensagemDeErro ?? '', false)
+
+      /*
+       * Formato só existe para resposta livre.
+       *
+       * Com opções, quem confere é o casamento com o botão clicado — conferir
+       * formato ali seria conferir duas vezes a mesma coisa, e recusar um rótulo
+       * que a própria pergunta ofereceu. Publicar assim daria um campo escolhido
+       * no editor e nada acontecendo na conversa.
+       */
+      if (
+        no.data.formato &&
+        (no.data.opcoes.length > 0 || perguntaEhDinamica(no))
+      ) {
+        avisos.push({
+          codigo: 'FORMATO_COM_OPCOES',
+          mensagem:
+            'O formato da resposta não vale nesta pergunta: ela oferece opções, e quem confere a resposta é o botão clicado.',
+          noId: no.id,
+        })
+      }
+
+      // Guardar o padronizado sem dizer qual formato é grava a mesma coisa duas
+      // vezes: sem formato não há o que padronizar.
+      if (!vazio(no.data.salvarPadraoEm ?? '') && !no.data.formato) {
+        erros.push({
+          codigo: 'PADRAO_SEM_FORMATO',
+          mensagem:
+            'Esta pergunta guarda o valor padronizado, mas não diz qual formato a resposta precisa ter.',
+          noId: no.id,
+        })
+      }
 
       /*
        * A lista de valores só existe pareada com a de rótulos.
