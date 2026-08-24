@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { canalCloudApi } from '@/channels/cloud-api'
 import type { Canal } from '@/channels/types'
 import { sessaoNova, type Acao, type Entrada } from '@/core/engine/types'
+import { varsIniciais } from '@/core/contatos/vars-iniciais'
 import { alertar, type ContextoDoAlerta } from './alertar'
 import { executarComEfeitos, type OpcoesDeEfeitos } from './efeitos/resolver'
 import { escolherModelo } from './ia/modelo'
@@ -408,7 +409,13 @@ async function avancarConversa(
     // mesmo número, e as métricas contariam uma conversa que ninguém terminou.
     if (viva) await definirStatusDaSessao(viva.id, 'encerrada')
 
-    salva = await criarSessao(contato.id, canalSalvo.id, abertura.versaoId, sessaoNova())
+    // A sessão nasce sabendo com quem está falando. Sem isto, `{{telefone}}` e
+    // `{{nome}}` chegam vazios no primeiro bloco de toda conversa — e quem
+    // depende deles falha em silêncio. Ver `core/contatos/vars-iniciais.ts`.
+    salva = await criarSessao(contato.id, canalSalvo.id, abertura.versaoId, {
+      ...sessaoNova(),
+      vars: varsIniciais(contato),
+    })
     // Depois de criar a sessão de propósito: o contador é da tela, e nunca pode
     // ficar entre a escolha do fluxo e a conversa existir.
     if (abertura.gatilhoId) await contarDisparo(abertura.gatilhoId)
@@ -697,7 +704,10 @@ export async function abrirFluxoParaContato(
       await definirStatusDaSessao(anterior.id, 'encerrada')
     }
 
-    const salva = await criarSessao(contatoId, contexto.canal.id, versao.id, sessaoNova())
+    const salva = await criarSessao(contatoId, contexto.canal.id, versao.id, {
+      ...sessaoNova(),
+      vars: varsIniciais(contato),
+    })
 
     const [opcoesDeIa, horario] = await Promise.all([
       prepararIa(contexto.canal, contatoId, versao, null),

@@ -240,6 +240,24 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
     expect((data?.campos as Record<string, string>).tipo).toBe('Casamento')
   })
 
+  /*
+   * O defeito que este teste guarda não estoura em lugar nenhum.
+   *
+   * A sessão nascia com `vars` vazio, e `{{telefone}}` aparece escrito em quase
+   * todo preset de integração. A chamada saía, respondia 200, e gravava um lead
+   * sem telefone no CRM do cliente — ou, na agenda, procurava por número nenhum
+   * e tratava uma aluna de dois anos como pessoa nova.
+   */
+  it('a conversa nova já sabe o telefone e o nome de quem escreveu', async () => {
+    const de = telefone(12)
+    await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-12a`), comMock)
+
+    const { data: contato } = await db().from('contacts').select('id').eq('wa_id', de).single()
+    const salva = await ultimaSessao(contato!.id as string, canalId)
+
+    expect(salva?.sessao.vars.telefone).toBe(de)
+  })
+
   it('áudio vai para uma pessoa em vez de "não entendi" (Regra B)', async () => {
     const de = telefone(3)
     await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-4a`), comMock)

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { sessaoNova, type Acao, type Entrada, type Resultado, type Sessao } from '@/core/engine/types'
 import { timeoutDaPergunta } from '@/core/flow/schema'
 import type { Fluxo, Opcao, TipoDeMidia } from '@/core/flow/schema'
+import { varsIniciais } from '@/core/contatos/vars-iniciais'
 import { TextoDoWhatsApp } from './texto-do-whatsapp'
 
 export type ModoDaConversa = 'conversa' | 'bastidores'
@@ -80,6 +81,15 @@ function Anexo({ anexo, claro = false }: { anexo: AnexoDaFala; claro?: boolean }
   )
 }
 
+/**
+ * O número do contato de teste.
+ *
+ * Fixo e obviamente falso: ele vai parar em chamada de API de verdade quando o
+ * fluxo tem bloco de Serviços externos, e um número plausível poderia casar com
+ * o cadastro de alguém no sistema do cliente. `5500` não é DDI de lugar nenhum.
+ */
+const TELEFONE_DE_TESTE = '5500900000000'
+
 let sequencia = 0
 const novaChave = () => ++sequencia
 const horaAtual = () =>
@@ -120,9 +130,23 @@ export function Conversa({
   const [desatualizada, setDesatualizada] = useState(false)
   const [modo, setModo] = useState<ModoDaConversa>('conversa')
   const [avisoDaApiAberto, setAvisoDaApiAberto] = useState(true)
-  const [sessaoExibida, setSessaoExibida] = useState<Sessao>(() => sessaoNova())
+  /*
+   * O teste começa sabendo com quem está falando, igual à produção.
+   *
+   * O webhook semeia `{{telefone}}` e `{{nome}}` ao criar a sessão (ver
+   * `core/contatos/vars-iniciais.ts`). Se o simulador não fizesse o mesmo, o
+   * bloco que procura o contato na agenda do cliente funcionaria no WhatsApp e
+   * não funcionaria no teste — e o teste existe justamente para responder se
+   * vai funcionar.
+   */
+  const primeiraSessao = () => ({
+    ...sessaoNova(),
+    vars: varsIniciais({ waId: TELEFONE_DE_TESTE, nome: nomeContato }),
+  })
 
-  const sessaoRef = useRef<Sessao>(sessaoNova())
+  const [sessaoExibida, setSessaoExibida] = useState<Sessao>(primeiraSessao)
+
+  const sessaoRef = useRef<Sessao>(primeiraSessao())
   /**
    * O desenho que a conversa está executando **agora**.
    *
@@ -296,7 +320,7 @@ export function Conversa({
   }
 
   function recomecar() {
-    sessaoRef.current = sessaoNova()
+    sessaoRef.current = primeiraSessao()
     // Recomeçar volta para o desenho da tela, e não para onde o último salto
     // parou: quem clica em recomeçar quer testar o que está editando.
     fluxoDaVez.current = fluxo

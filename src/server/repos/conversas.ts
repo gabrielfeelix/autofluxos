@@ -68,6 +68,8 @@ export type Contato = {
   clienteId: string
   waId: string
   nome: string | null
+  /** O nome corrigido por quem atende. Vence o do perfil em toda leitura. */
+  nomeReal: string | null
   campos: Record<string, string>
   /** A pausa é do contato, não de uma sessão: sobrevive à próxima conversa. */
   automacaoAtiva: boolean
@@ -100,7 +102,7 @@ export async function acharOuCriarContato(
   const { data, error } = await db()
     .from('contacts')
     .upsert({ client_id: clienteId, wa_id: waId, nome }, { onConflict: 'client_id,wa_id' })
-    .select('id, client_id, wa_id, nome, campos, automacao_ativa')
+    .select('id, client_id, wa_id, nome, nome_real, campos, automacao_ativa')
     .single()
 
   if (error) throw new Error(`não deu para registrar o contato: ${error.message}`)
@@ -110,6 +112,7 @@ export async function acharOuCriarContato(
     clienteId: data.client_id as string,
     waId: data.wa_id as string,
     nome: data.nome as string | null,
+    nomeReal: data.nome_real as string | null,
     campos: (data.campos ?? {}) as Record<string, string>,
     automacaoAtiva: data.automacao_ativa as boolean,
   }
@@ -118,7 +121,7 @@ export async function acharOuCriarContato(
 export async function acharContato(contatoId: string): Promise<Contato | null> {
   const { data, error } = await db()
     .from('contacts')
-    .select('id, client_id, wa_id, nome, campos, automacao_ativa')
+    .select('id, client_id, wa_id, nome, nome_real, campos, automacao_ativa')
     .eq('id', contatoId)
     .maybeSingle()
 
@@ -130,6 +133,7 @@ export async function acharContato(contatoId: string): Promise<Contato | null> {
     clienteId: data.client_id as string,
     waId: data.wa_id as string,
     nome: data.nome as string | null,
+    nomeReal: data.nome_real as string | null,
     campos: (data.campos ?? {}) as Record<string, string>,
     automacaoAtiva: data.automacao_ativa as boolean,
   }
