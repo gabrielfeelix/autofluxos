@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { sessaoNova, type Acao, type Entrada, type Resultado, type Sessao } from '@/core/engine/types'
 import { timeoutDaPergunta } from '@/core/flow/schema'
 import type { Fluxo, Opcao, TipoDeMidia } from '@/core/flow/schema'
+import { TextoDoWhatsApp } from './texto-do-whatsapp'
 
 export type ModoDaConversa = 'conversa' | 'bastidores'
 
@@ -118,6 +119,7 @@ export function Conversa({
   const [status, setStatus] = useState<Sessao['status']>('ativa')
   const [desatualizada, setDesatualizada] = useState(false)
   const [modo, setModo] = useState<ModoDaConversa>('conversa')
+  const [avisoDaApiAberto, setAvisoDaApiAberto] = useState(true)
   const [sessaoExibida, setSessaoExibida] = useState<Sessao>(() => sessaoNova())
 
   const sessaoRef = useRef<Sessao>(sessaoNova())
@@ -401,12 +403,44 @@ export function Conversa({
         </div>
       </div>
 
-      {temApi && (
-        <p className="mx-3.5 mt-3.5 rounded-[11px] border border-cyan-400/20 bg-cyan-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-cyan-300">
-          Este fluxo chama uma API. O teste dispara <strong>de verdade</strong> — testar cinco vezes
-          grava cinco vezes no sistema do cliente.
-        </p>
-      )}
+      {/*
+        O aviso encolhe, mas não some.
+
+        Ele ocupa três linhas no alto do painel, e quem testa o mesmo fluxo vinte
+        vezes lê a mesma frase vinte vezes — foi por isso que pediram um "x para
+        fechar, ou um - para minimizar". Fechar de vez, porém, tira da tela a
+        única frase que impede alguém de gravar cinco pedidos de verdade no
+        sistema do cliente testando cinco vezes.
+
+        Então minimiza: vira uma tarja de uma linha, que continua dizendo que a
+        chamada é real e reabre num clique.
+      */}
+      {temApi &&
+        (avisoDaApiAberto ? (
+          <div className="mx-3.5 mt-3.5 flex items-start gap-2 rounded-[11px] border border-cyan-400/20 bg-cyan-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-cyan-300">
+            <p className="min-w-0 flex-1">
+              Este fluxo chama uma API. O teste dispara <strong>de verdade</strong> — testar cinco
+              vezes grava cinco vezes no sistema do cliente.
+            </p>
+            <button
+              type="button"
+              onClick={() => setAvisoDaApiAberto(false)}
+              title="Minimizar este aviso"
+              aria-label="Minimizar o aviso de chamada real"
+              className="-mt-0.5 -mr-1 shrink-0 rounded-md px-1.5 text-[13px] leading-5 transition hover:bg-cyan-400/[0.16]"
+            >
+              −
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setAvisoDaApiAberto(true)}
+            className="mx-3.5 mt-3.5 flex items-center gap-1.5 rounded-full border border-cyan-400/20 bg-cyan-400/[0.07] px-2.5 py-1 text-[10px] font-semibold text-cyan-300 transition hover:bg-cyan-400/[0.14]"
+          >
+            <span aria-hidden>⚠</span> o teste chama a API de verdade
+          </button>
+        ))}
 
       {modo === 'conversa' && (
         <div className="flex shrink-0 items-center gap-2.5 border-b border-black/10 bg-[#f0f2f5] px-3 py-2 text-[#111b21]">
@@ -619,7 +653,9 @@ function Bolha({
         <div className="max-w-full overflow-hidden rounded-[13px_13px_13px_4px] bg-white shadow-[0_1px_1px_rgba(11,20,26,0.13)]">
           {item.anexo && <Anexo anexo={item.anexo} claro />}
           <p className="px-3 py-2 text-[12.5px] leading-[1.5] whitespace-pre-wrap text-[#111b21]">
-            <span>{item.texto}</span>
+            <span>
+              <TextoDoWhatsApp texto={item.texto} />
+            </span>
             <span className="ml-2 inline-block translate-y-0.5 whitespace-nowrap text-[8.5px] text-[#667781]">
               {item.hora}
             </span>
@@ -656,7 +692,9 @@ function Bolha({
       <div className="max-w-[88%] overflow-hidden rounded-[13px_13px_13px_4px] border border-white/[0.08] bg-white/[0.055]">
         {item.anexo && <Anexo anexo={item.anexo} />}
         {item.texto.trim() !== '' && (
-          <p className="px-3 py-2 text-[12.5px] leading-[1.5] whitespace-pre-wrap">{item.texto}</p>
+          <p className="px-3 py-2 text-[12.5px] leading-[1.5] whitespace-pre-wrap">
+            <TextoDoWhatsApp texto={item.texto} />
+          </p>
         )}
       </div>
 

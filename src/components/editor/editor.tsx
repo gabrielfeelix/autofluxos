@@ -40,6 +40,7 @@ import { Modal } from '@/components/design/modal'
 import { SeloDoCanal } from '@/components/design/selo-do-canal'
 import { AcaoDaArestaProvider, tiposDeAresta } from './arestas'
 import { ICONES, NOMES, tiposDeNo } from './nos'
+import { NomeDoFluxo } from './nome-do-fluxo'
 import { Painel } from './painel'
 import type { ConexaoDoCliente, EtapaDoCliente, FluxoDaConta } from './painel'
 import { Versoes, type VersaoNaLista } from './versoes'
@@ -232,6 +233,7 @@ export function Editor({
   /** Qual bloco a última seleção apontava — ver `onSelectionChange`. */
   const ultimoSelecionado = useRef<string | null>(null)
   const [aba, setAba] = useState<'bloco' | 'testar'>('bloco')
+  const [painelAberto, setPainelAberto] = useState(true)
   const [salvamento, setSalvamento] = useState<'salvo' | 'salvando' | 'pendente' | 'erro'>('salvo')
   const [publicada, setPublicada] = useState(publicadaInicial)
   const [versoes, setVersoes] = useState(versoesIniciais)
@@ -894,8 +896,8 @@ export function Editor({
           seria ele a espremer o título contra os controles da direita.
         */}
         <div className="shrink-0">
-          <h1 className="text-sm font-bold tracking-[-0.01em]">{nome}</h1>
-          <p className="flex items-center gap-1.5 text-[10.5px] text-dim">
+          <NomeDoFluxo clienteId={clienteId} fluxoId={fluxoId} nome={nome} />
+          <p className="flex items-center gap-1.5 px-1 text-[10.5px] text-dim">
             {clienteNome}
             <SeloDoCanal canal={canal} compacto />
           </p>
@@ -1208,8 +1210,46 @@ export function Editor({
           )}
         </div>
 
+        {/*
+          O painel recolhe.
+
+          São 356px fixos ao lado do desenho, e num fluxo grande — o caso em que
+          o desenho é justamente o que se precisa ver — eles custam caro. O
+          pedido veio como "um x pra fechar, ou um - pra minimizar", e minimizar
+          é o certo: fechado de vez, não haveria como voltar sem adivinhar.
+
+          Recolhido, sobra uma coluna com os dois nomes de aba em pé. Clicar em
+          qualquer um dos dois reabre já naquela aba, então recolher nunca custa
+          um clique a mais do que deveria.
+        */}
+        {!painelAberto ? (
+          <aside className="flex w-[42px] shrink-0 flex-col items-center gap-2 border-l border-white/[0.06] bg-white/[0.014] py-2.5">
+            <button
+              onClick={() => setPainelAberto(true)}
+              title="Abrir o painel"
+              aria-label="Abrir o painel"
+              className="flex size-[30px] items-center justify-center rounded-lg border border-white/10 text-base text-muted transition hover:border-accent/50 hover:text-accent"
+            >
+              ‹
+            </button>
+            {(['bloco', 'testar'] as const).map((chave) => (
+              <button
+                key={chave}
+                onClick={() => {
+                  setAba(chave)
+                  setPainelAberto(true)
+                }}
+                className={`rounded-lg px-1 py-3 text-[10.5px] font-bold [writing-mode:vertical-rl] transition ${
+                  aba === chave ? 'text-white' : 'text-muted hover:text-white'
+                }`}
+              >
+                {chave === 'bloco' ? 'Bloco' : 'Testar'}
+              </button>
+            ))}
+          </aside>
+        ) : (
         <aside className="flex w-[356px] shrink-0 flex-col border-l border-white/[0.06] bg-white/[0.014]">
-          <div className="flex shrink-0 gap-1 border-b border-white/[0.06] px-3 pt-2.5 text-xs">
+          <div className="flex shrink-0 items-center gap-1 border-b border-white/[0.06] px-3 pt-2.5 text-xs">
             {(['bloco', 'testar'] as const).map((chave) => (
               <button
                 key={chave}
@@ -1223,6 +1263,14 @@ export function Editor({
                 {chave === 'bloco' ? 'Bloco' : 'Testar'}
               </button>
             ))}
+            <button
+              onClick={() => setPainelAberto(false)}
+              title="Recolher o painel e ver o desenho inteiro"
+              aria-label="Recolher o painel"
+              className="mb-1 ml-auto rounded-lg px-2 py-1 text-[13px] leading-4 text-dim transition hover:bg-white/[0.07] hover:text-ink"
+            >
+              −
+            </button>
           </div>
 
           {aba === 'bloco' ? (
@@ -1325,6 +1373,7 @@ export function Editor({
             </>
           )}
         </aside>
+        )}
       </div>
 
       <Modal

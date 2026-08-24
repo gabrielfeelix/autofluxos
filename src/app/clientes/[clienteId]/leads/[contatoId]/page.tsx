@@ -24,6 +24,7 @@ import { SeletorDeEtiquetas } from '@/components/etiquetas/seletor'
 import { AnexoNaConversa, SemTexto } from '@/components/lead/anexo'
 import { NomeDoContato, NotasDoContato } from '@/components/lead/identidade'
 import { horaExata, quando } from '@/lib/quando'
+import { TextoDoWhatsApp } from '@/components/texto-do-whatsapp'
 
 export const dynamic = 'force-dynamic'
 
@@ -265,7 +266,7 @@ async function Historico({ contatoId, nomeDoLead }: { contatoId: string; nomeDoL
           <div key={mensagem.id} className={nossa ? 'flex justify-end' : 'flex justify-start'}>
             <p className={`max-w-[78%] px-3 py-2 text-[12.5px] leading-[1.45] whitespace-pre-wrap ${nossa ? 'rounded-[13px_13px_4px_13px] border border-accent/[0.22] bg-accent/[0.13]' : 'rounded-[13px_13px_13px_4px] border border-white/[0.07] bg-white/[0.055]'}`}>
               {mensagem.anexo && <AnexoNaConversa anexo={mensagem.anexo} />}
-              {mensagem.texto ?? <SemTexto />}
+              {mensagem.texto !== null ? <TextoDoWhatsApp texto={mensagem.texto} /> : <SemTexto />}
               <span className="ml-2 text-[9.5px] text-muted" title={horaExata(mensagem.ts)}>
                 {nossa ? 'bot' : (nomeDoLead ?? 'cliente')} · {quando(mensagem.ts)}
               </span>

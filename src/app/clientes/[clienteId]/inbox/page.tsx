@@ -34,6 +34,7 @@ import { nomeDoTipo } from '@/core/tipo-da-mensagem'
 import { SeletorDeEtiquetas, type EtiquetaEscolhivel } from '@/components/etiquetas/seletor'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { marcarComoLida, naoLidasPorContato, TETO_DA_INSIGNIA } from '@/server/repos/leituras'
+import { TextoDoWhatsApp } from '@/components/texto-do-whatsapp'
 
 export const dynamic = 'force-dynamic'
 
@@ -746,7 +747,7 @@ function Historico({
                 : 'rounded-[13px_13px_13px_4px] border border-white/[0.07] bg-white/[0.055]'
             }`}>
               {mensagem.anexo && <AnexoNaConversa anexo={mensagem.anexo} />}
-              {mensagem.texto ?? <SemTexto />}
+              {mensagem.texto !== null ? <TextoDoWhatsApp texto={mensagem.texto} /> : <SemTexto />}
               <span className="ml-2 text-[9.5px] text-muted" title={horaExata(mensagem.ts)}>
                 {nossa ? 'atendimento' : (nome ?? 'cliente')} · {quando(mensagem.ts)}
               </span>

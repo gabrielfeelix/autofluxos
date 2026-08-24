@@ -1,6 +1,7 @@
 import 'server-only'
 import { CANAL_PADRAO, type CanalId } from '@/core/canais'
 import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
+import { LIMITE_NOME_DO_FLUXO } from '@/core/flow/limites'
 import { validar, type Problema } from '@/core/flow/validar'
 import { db, ehIdInvalido, pareceUuid } from '../db'
 import { listarConexoes } from './conexoes'
@@ -424,6 +425,42 @@ export async function definirAtivo(
   if (ehIdInvalido(error)) return false
   if (error) throw new Error(`não deu para ligar/desligar a automação: ${error.message}`)
   return data !== null
+}
+
+/**
+ * Renomear a automação.
+ *
+ * **Isto não existia**, e a falta apareceu do jeito mais direto possível: quem
+ * estava usando escreveu "não consigo editar o nome dos fluxos". O nome era
+ * decidido no modal de criação e nunca mais — então um "Fluxo - teste" nascido
+ * às pressas ficava assim para sempre, ou virava um fluxo novo e um desenho
+ * copiado à mão.
+ *
+ * Renomear **não** toca o rascunho nem as versões publicadas: o nome é rótulo
+ * de gaveta, não parte do desenho. Uma conversa em andamento não sente nada.
+ */
+export async function renomearFluxo(
+  clienteId: string,
+  fluxoId: string,
+  nome: string,
+): Promise<{ ok: true; nome: string } | { ok: false; motivo: string }> {
+  const limpo = nome.trim()
+  if (limpo === '') return { ok: false, motivo: 'o nome não pode ficar vazio' }
+  if (limpo.length > LIMITE_NOME_DO_FLUXO) {
+    return { ok: false, motivo: `o nome passa de ${LIMITE_NOME_DO_FLUXO} caracteres` }
+  }
+
+  const { data, error } = await db()
+    .from('flows')
+    .update({ nome: limpo })
+    .eq('id', fluxoId)
+    .eq('client_id', clienteId)
+    .select('id')
+
+  if (ehIdInvalido(error)) return { ok: false, motivo: 'esta automação não existe mais' }
+  if (error) throw new Error(`não deu para renomear a automação: ${error.message}`)
+  if ((data?.length ?? 0) !== 1) return { ok: false, motivo: 'esta automação não existe mais' }
+  return { ok: true, nome: limpo }
 }
 
 /** Liga ou desliga a IA desta automação. É o que se vende, então é explícito. */

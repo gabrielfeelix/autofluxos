@@ -45,6 +45,7 @@ import { SeloDoCanal } from '@/components/design/selo-do-canal'
 import { EscolherCanal } from '@/components/fluxos/escolher-canal'
 import { InterruptorDeFluxo } from '@/components/fluxos/interruptor'
 import { MoverFluxo } from '@/components/editor/mover-fluxo'
+import { NomeDoFluxo } from '@/components/editor/nome-do-fluxo'
 import { MODELOS } from '@/exemplos/modelos'
 import { contatosPorCampanha, listarCampanhas } from '@/server/repos/campanhas'
 import { listarFluxos } from '@/server/repos/fluxos'
@@ -384,6 +385,12 @@ export default async function Pagina({
                         {!fluxo.ativo ? 'DESLIGADO' : fluxo.versaoPublicadaId ? 'NO AR' : 'RASCUNHO'}
                       </span>
                     </Link>
+                    <NomeDoFluxo
+                      clienteId={cliente.id}
+                      fluxoId={fluxo.id}
+                      nome={fluxo.nome}
+                      variante="linha"
+                    />
                     {/* Fora do `Link` pelo mesmo motivo do botão de apagar. */}
                     <span className="mr-3">
                       <InterruptorDeFluxo

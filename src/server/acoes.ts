@@ -71,6 +71,7 @@ import {
   definirAtivo,
   definirIa,
   publicar,
+  renomearFluxo,
   salvarRascunho,
 } from './repos/fluxos'
 import { apagarConexao, criarConexao, trocarValor } from './repos/conexoes'
@@ -377,6 +378,28 @@ export async function acaoApagarFluxo(
   const r = await apagarFluxo(clienteId, fluxoId)
   revalidatePath(`/clientes/${clienteId}`)
   return r.ok ? { ok: true } : { ok: false, erro: r.motivo }
+}
+
+/**
+ * Renomear a automação.
+ *
+ * A tela do editor e a lista chamam a mesma ação, e as duas revalidam os dois
+ * caminhos: renomear no editor e voltar para a lista com o nome velho seria o
+ * tipo de mentira que faz alguém renomear de novo.
+ */
+export async function acaoRenomearFluxo(
+  clienteId: string,
+  fluxoId: string,
+  nome: string,
+): Promise<{ ok: boolean; nome?: string; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const r = await renomearFluxo(clienteId, fluxoId, nome)
+  if (!r.ok) return { ok: false, erro: r.motivo }
+
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  revalidatePath(`/clientes/${clienteId}/fluxos/${fluxoId}`)
+  return { ok: true, nome: r.nome }
 }
 
 /**
