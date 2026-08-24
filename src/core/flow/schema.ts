@@ -384,8 +384,19 @@ export const noHandoffSchema = z.object({
   }),
 })
 
-/** Verbos que o nó de API aceita. `GET` consulta, `POST` grava. */
-export const METODOS = ['GET', 'POST'] as const
+/**
+ * Verbos que o nó de API aceita. `GET` consulta, `POST` grava, `DELETE` desmarca.
+ *
+ * **`DELETE` entrou porque sem ele não existe reagendamento.** Remarcar é
+ * desmarcar e marcar de novo, e desmarcar é `DELETE` em toda agenda que tem
+ * API — a nossa inclusive. Faltando o verbo, o fluxo de reagendamento não tinha
+ * como ser desenhado, e a saída seria mandar o cliente usar outra ferramenta
+ * para uma chamada.
+ *
+ * `PUT` e `PATCH` ficam de fora até aparecer um caso: verbo que não é usado é
+ * superfície para manter, testar e explicar de graça.
+ */
+export const METODOS = ['GET', 'POST', 'DELETE'] as const
 export type Metodo = (typeof METODOS)[number]
 
 /**

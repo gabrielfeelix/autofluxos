@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { PRESETS, acharPreset } from '@/core/presets'
+import { GRUPOS_DE_PRESET, NOME_DO_GRUPO, PRESETS, acharPreset } from '@/core/presets'
 
 /**
  * O menu de integrações que os concorrentes têm — feito por cima do bloco que
@@ -44,8 +44,26 @@ export function PresetsDeIntegracao({
       </button>
 
       {aberto && (
-        <div className="mt-2.5 space-y-1.5">
-          {PRESETS.map((item) => (
+        <div className="mt-2.5 space-y-2.5">
+          {/*
+            Agrupado porque a agenda trouxe nove de uma vez.
+
+            Uma lista corrida de quatorze itens é uma lista que ninguém lê até o
+            fim, e o de baixo some. A gaveta também conta uma história: os nove
+            da Verandi estão na ordem da conversa — reconhecer, oferecer, marcar,
+            desmarcar, fila — e não são nove integrações soltas.
+          */}
+          {GRUPOS_DE_PRESET.map((grupo) => {
+            const doGrupo = PRESETS.filter((item) => item.grupo === grupo)
+            if (doGrupo.length === 0) return null
+
+            return (
+              <div key={grupo}>
+                <p className="mb-1 px-0.5 text-[9.5px] font-bold tracking-[0.07em] text-dim uppercase">
+                  {NOME_DO_GRUPO[grupo]}
+                </p>
+                <div className="space-y-1.5">
+          {doGrupo.map((item) => (
             <button
               key={item.id}
               type="button"
@@ -60,7 +78,11 @@ export function PresetsDeIntegracao({
               <strong className="block text-[12px] font-semibold text-soft">{item.nome}</strong>
               <span className="mt-0.5 block text-[11px] leading-4 text-dim">{item.resumo}</span>
             </button>
-          ))}
+                  ))}
+                </div>
+              </div>
+            )
+          })}
 
           {preset && (
             <div className="rounded-[9px] border border-amber-300/25 bg-amber-300/[0.06] px-3 py-2.5">

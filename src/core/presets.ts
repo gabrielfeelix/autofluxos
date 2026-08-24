@@ -25,8 +25,27 @@ import type { AoFalhar, Cabecalho, Mapeamento, Metodo } from './flow/schema'
  * é dizer que a peça que falta não é nossa.
  */
 
+/**
+ * A gaveta em que o preset aparece.
+ *
+ * Passou a existir quando a agenda entrou com nove blocos de uma vez: uma lista
+ * corrida de quatorze itens é uma lista que ninguém lê até o fim, e o de baixo
+ * some. A gaveta também **conta uma história** — os nove da Verandi são um fluxo
+ * inteiro na ordem da conversa, e não nove integrações soltas.
+ */
+export const GRUPOS_DE_PRESET = ['agenda', 'planilha', 'crm', 'outros'] as const
+export type GrupoDePreset = (typeof GRUPOS_DE_PRESET)[number]
+
+export const NOME_DO_GRUPO: Record<GrupoDePreset, string> = {
+  agenda: 'Agenda (Verandi)',
+  planilha: 'Planilha',
+  crm: 'CRM',
+  outros: 'Outros',
+}
+
 export type Preset = {
   id: string
+  grupo: GrupoDePreset
   nome: string
   /** Uma linha na tela, dizendo o que ele faz. */
   resumo: string
@@ -50,6 +69,7 @@ export type Preset = {
 export const PRESETS: Preset[] = [
   {
     id: 'rd-station-conversao',
+    grupo: 'crm',
     nome: 'RD Station · registrar conversão',
     resumo:
       'Manda o lead para a RD como um evento de conversão. É o que faz a pessoa aparecer lá com origem e telefone.',
@@ -83,6 +103,7 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'google-sheets-linha',
+    grupo: 'planilha',
     nome: 'Google Sheets · acrescentar linha',
     resumo:
       'Acrescenta uma linha numa planilha por um Web App do Apps Script. É o caminho de quem quer ver os leads numa planilha.',
@@ -130,6 +151,7 @@ export const PRESETS: Preset[] = [
    */
   {
     id: 'google-sheets-ler',
+    grupo: 'planilha',
     nome: 'Google Sheets · consultar (Apps Script)',
     resumo:
       'Lê um intervalo nomeado da planilha e devolve os valores para a conversa. É o caminho de quem gere horário, tabela ou estoque em planilha.',
@@ -152,6 +174,7 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'google-sheets-api-ler',
+    grupo: 'planilha',
     nome: 'Google Sheets · consultar (API do Google)',
     resumo:
       'Lê um intervalo nomeado direto pela API do Sheets. Sem publicar nada, mas exige a planilha aberta por link.',
@@ -171,8 +194,261 @@ export const PRESETS: Preset[] = [
       aoFalhar: 'humano',
     },
   },
+  /*
+   * A Verandi é a agenda da 4YU, e é o primeiro sistema que o bot conhece de
+   * ponta a ponta.
+   *
+   * **Ela é um sistema do cliente como qualquer outro, e não uma exceção.** A
+   * fronteira do ARQUITETURA.md continua de pé: o AutoFluxos não guarda turma,
+   * matrícula nem presença; ele lê e escreve pela API, e o dado mora lá. O que
+   * estes presets fazem é tirar da frente as três coisas que se erra em
+   * silêncio ao montar a chamada na mão — o endereço, o caminho do campo, e o
+   * `[]` que transforma a lista em menu.
+   *
+   * **Todos usam a mesma credencial**, uma só por cliente: a chave `vr_` dele,
+   * cadastrada em Credenciais como `bearer`. Cadastrar uma por bloco seria
+   * cinco lugares para revogar no dia em que a chave vazar.
+   *
+   * A ordem abaixo é a da conversa real: reconhecer quem chegou, oferecer o que
+   * existe, marcar, desmarcar, e a fila de quando não há vaga.
+   */
+  {
+    id: 'verandi-quem-e',
+    grupo: 'agenda',
+    nome: 'Verandi · reconhecer quem está falando',
+    resumo:
+      'Procura o telefone de quem escreveu na agenda e traz nome e id. É o primeiro bloco de qualquer fluxo de agendamento — sem ele, o bot pergunta o nome de quem faz aula há dois anos.',
+    exige:
+      'A chave da API da Verandi (Configurações → Integrações). Cadastre em Credenciais como “bearer”.',
+    credencial: 'bearer',
+    dados: {
+      metodo: 'GET',
+      // `{{telefone}}` é o número de quem está conversando, que o webhook já
+      // grava no contato. Não achar responde 200 com lista vazia, então o
+      // caminho de "não é aluno ainda" é uma condição sobre `encontrado`, e não
+      // um erro.
+      url: 'https://verandi.4yu.com.br/api/v1/pessoas?telefone={{telefone}}',
+      cabecalhos: [],
+      corpo: '',
+      mapear: [
+        { variavel: 'encontrado', caminho: 'total' },
+        { variavel: 'pessoa_id', caminho: 'pessoas.0.pessoaId' },
+        { variavel: 'nome_na_agenda', caminho: 'pessoas.0.nome' },
+      ],
+      /*
+       * Não reconhecer **não é falhar**: a rota responde 200 com `total: 0`, e
+       * o fluxo segue para o ramo de quem é novo por uma condição sobre
+       * `encontrado`. `aoFalhar` só vale quando a chamada em si não completa —
+       * e aí seguir seria pior: o fluxo trataria uma aluna antiga como pessoa
+       * nova e criaria o segundo cadastro dela.
+       */
+      aoFalhar: 'humano',
+    },
+  },
+  {
+    id: 'verandi-dias',
+    grupo: 'agenda',
+    nome: 'Verandi · quais dias têm vaga',
+    resumo:
+      'Traz os dias com horário livre num intervalo, sem repetir. Vira o menu de "para quando você quer?".',
+    exige: 'A mesma credencial “bearer” com a chave da Verandi.',
+    credencial: 'bearer',
+    dados: {
+      metodo: 'GET',
+      // As duas datas vêm de uma pergunta com formato `data` guardando o
+      // padronizado, que é `2026-08-21` — o formato que esta rota aceita.
+      url: 'https://verandi.4yu.com.br/api/v1/disponibilidade?de={{data_de}}&ate={{data_ate}}',
+      cabecalhos: [],
+      corpo: '',
+      // `unicos` é o que faz este menu prestar: a lista traz uma linha por
+      // horário, então a mesma data aparece quatro vezes num dia com quatro
+      // vagas, e um menu com "18/08" repetido não é menu.
+      mapear: [{ variavel: 'dias_livres', caminho: 'livres[].data', unicos: true }],
+      // Sem os dias não há o que perguntar: a conversa morreria numa pergunta
+      // sem resposta possível.
+      aoFalhar: 'humano',
+    },
+  },
+  {
+    id: 'verandi-horarios',
+    grupo: 'agenda',
+    nome: 'Verandi · horários livres de um dia',
+    resumo:
+      'Traz os horários com vaga de um dia, e os ids deles. É o par que faz o menu virar agendamento de verdade.',
+    exige: 'A mesma credencial “bearer” com a chave da Verandi.',
+    credencial: 'bearer',
+    dados: {
+      metodo: 'GET',
+      url: 'https://verandi.4yu.com.br/api/v1/disponibilidade?de={{dia}}&ate={{dia}}',
+      cabecalhos: [],
+      corpo: '',
+      /*
+       * Três listas do mesmo `[]`, e a ordem entre elas é o que amarra tudo.
+       *
+       * `horarios` é o que a pessoa lê, `horarios_id` é o que a API entende, e
+       * `horarios_prof` diz quem atende. Na Pergunta seguinte: opções de
+       * `horarios`, valores de `horarios_id`. **Nenhuma delas pode ter "sem
+       * repetir"** — tirar um item de uma desloca os valores das outras, e o
+       * agendamento vai para o horário de alguém.
+       */
+      mapear: [
+        { variavel: 'horarios', caminho: 'livres[].hora' },
+        { variavel: 'horarios_id', caminho: 'livres[].sessaoId' },
+        { variavel: 'horarios_prof', caminho: 'livres[].profissional' },
+      ],
+      aoFalhar: 'humano',
+    },
+  },
+  {
+    id: 'verandi-catalogo',
+    grupo: 'agenda',
+    nome: 'Verandi · serviços, profissionais e as palavras da conta',
+    resumo:
+      'Quem atende, o que se oferece e como este negócio chama cada coisa. Use quando o fluxo precisar perguntar "com qual professor?".',
+    exige: 'A mesma credencial “bearer” com a chave da Verandi.',
+    credencial: 'bearer',
+    dados: {
+      metodo: 'GET',
+      url: 'https://verandi.4yu.com.br/api/v1/catalogo',
+      cabecalhos: [],
+      corpo: '',
+      // O vocabulário vem junto porque cada conta chama as coisas do jeito
+      // dela: um estúdio diz "aula" e uma clínica diz "sessão". Quem escreve a
+      // mensagem deve usar a palavra da conta, e não a nossa.
+      mapear: [
+        { variavel: 'professores', caminho: 'profissionais[].nome' },
+        { variavel: 'professores_id', caminho: 'profissionais[].profissionalId' },
+        { variavel: 'servicos', caminho: 'servicos[].nome' },
+        { variavel: 'servicos_id', caminho: 'servicos[].servicoId' },
+      ],
+      // Sem o catálogo não há o que perguntar: a conversa pararia numa pergunta
+      // sem nenhuma resposta possível.
+      aoFalhar: 'humano',
+    },
+  },
+  {
+    id: 'verandi-cadastrar',
+    grupo: 'agenda',
+    nome: 'Verandi · cadastrar quem ainda não existe',
+    resumo:
+      'Cria a pessoa na agenda quando o reconhecimento não achou ninguém. Nome é o único campo obrigatório.',
+    exige: 'A mesma credencial “bearer” com a chave da Verandi.',
+    credencial: 'bearer',
+    dados: {
+      metodo: 'POST',
+      url: 'https://verandi.4yu.com.br/api/v1/pessoas',
+      cabecalhos: [{ chave: 'Content-Type', valor: 'application/json' }],
+      corpo: `{
+  "nome": "{{nome}}",
+  "telefone": "{{telefone}}"
+}`,
+      mapear: [{ variavel: 'pessoa_id', caminho: 'pessoaId' }],
+      // Sem `pessoa_id` não dá para marcar nada: seguir aqui só adiaria a
+      // falha para o bloco seguinte, com a pessoa já tendo respondido tudo.
+      aoFalhar: 'humano',
+    },
+  },
+  {
+    id: 'verandi-marcar',
+    grupo: 'agenda',
+    nome: 'Verandi · marcar no horário escolhido',
+    resumo:
+      'Põe a pessoa no horário que ela escolheu. A vaga é conferida na hora de gravar, e não na hora em que o menu foi montado.',
+    exige: 'A mesma credencial “bearer” com a chave da Verandi.',
+    credencial: 'bearer',
+    dados: {
+      metodo: 'POST',
+      url: 'https://verandi.4yu.com.br/api/v1/participacoes',
+      cabecalhos: [{ chave: 'Content-Type', valor: 'application/json' }],
+      // `{{sessao_id}}` sai da pergunta dinâmica com lista de valores. Escrever
+      // `{{horario}}` aqui é o erro clássico: manda "07:00" onde a API quer o
+      // id, e o pedido falha com tudo parecendo certo na tela.
+      corpo: `{
+  "pessoaId": "{{pessoa_id}}",
+  "sessaoId": "{{sessao_id}}"
+}`,
+      mapear: [{ variavel: 'participacao_id', caminho: 'participacaoId' }],
+      /*
+       * Entre montar o menu e a pessoa clicar, alguém pode ter ocupado a vaga:
+       * a resposta é 409, e 409 **é conversa normal**, não defeito. Handoff é o
+       * certo porque prometer um horário que encheu é o pior desfecho possível,
+       * e quem responde por uma vaga é quem está no balcão.
+       */
+      aoFalhar: 'humano',
+    },
+  },
+  {
+    id: 'verandi-desmarcar',
+    grupo: 'agenda',
+    nome: 'Verandi · desmarcar (o começo do reagendamento)',
+    resumo:
+      'Registra que a pessoa avisou que não vem. A vaga volta a ser oferecida na hora, e o crédito de reposição é preservado.',
+    exige:
+      'A mesma credencial “bearer”. O `participacaoId` sai do bloco de marcar, ou da agenda da pessoa.',
+    credencial: 'bearer',
+    dados: {
+      // Apesar do verbo, nada é apagado do outro lado: a marcação fica no
+      // histórico como falta avisada, que é o que preserva a reposição.
+      metodo: 'DELETE',
+      url: 'https://verandi.4yu.com.br/api/v1/participacoes/{{participacao_id}}',
+      cabecalhos: [],
+      corpo: '',
+      mapear: [{ variavel: 'situacao', caminho: 'status' }],
+      aoFalhar: 'humano',
+    },
+  },
+  {
+    id: 'verandi-minha-agenda',
+    grupo: 'agenda',
+    nome: 'Verandi · a agenda de uma pessoa',
+    resumo:
+      'Horários fixos, o que vem pela frente e quantas reposições estão em aberto. Responde "quais são meus horários?" e "quantas aulas tenho para repor?".',
+    exige: 'A mesma credencial “bearer”. O `pessoa_id` sai do bloco de reconhecer.',
+    credencial: 'bearer',
+    dados: {
+      metodo: 'GET',
+      url: 'https://verandi.4yu.com.br/api/v1/pessoas/{{pessoa_id}}',
+      cabecalhos: [],
+      corpo: '',
+      // As próximas viram menu junto com os ids delas: é assim que "quero
+      // desmarcar" oferece o que dá para desmarcar, em vez de pedir um id.
+      mapear: [
+        { variavel: 'proximas', caminho: 'proximas[].data' },
+        { variavel: 'proximas_id', caminho: 'proximas[].participacaoId' },
+        { variavel: 'reposicoes_abertas', caminho: 'reposicoesAbertas[].data' },
+        { variavel: 'horario_fixo', caminho: 'horariosFixos[].hora' },
+      ],
+      aoFalhar: 'humano',
+    },
+  },
+  {
+    id: 'verandi-espera',
+    grupo: 'agenda',
+    nome: 'Verandi · entrar na fila de um horário cheio',
+    resumo:
+      'Transforma o "está lotado" em "te aviso se abrir". Quando alguém desmarca, a agenda dispara o aviso.',
+    exige: 'A mesma credencial “bearer”. O `sessaoId` é o mesmo id que veio em `cheios`.',
+    credencial: 'bearer',
+    dados: {
+      metodo: 'POST',
+      url: 'https://verandi.4yu.com.br/api/v1/espera',
+      cabecalhos: [{ chave: 'Content-Type', valor: 'application/json' }],
+      corpo: `{
+  "pessoaId": "{{pessoa_id}}",
+  "sessaoId": "{{sessao_id}}"
+}`,
+      // Entrar na fila não reserva nada, e a mensagem seguinte precisa dizer
+      // isso: reservar sozinho criaria a pior conversa possível, que é "você
+      // foi marcada numa aula que não pediu".
+      mapear: [{ variavel: 'posicao_na_fila', caminho: 'posicao' }],
+      // Seguir em frente diria "te aviso quando abrir" sem ninguém ter entrado
+      // em fila nenhuma. Prometer aviso que não vem é pior do que não prometer.
+      aoFalhar: 'humano',
+    },
+  },
   {
     id: 'webhook',
+    grupo: 'outros',
     nome: 'Webhook · avisar um sistema seu',
     resumo:
       'Um POST com o que a conversa coletou. Serve para qualquer sistema que aceite receber JSON.',

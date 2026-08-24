@@ -54,22 +54,30 @@ describe('cada preset produz um bloco de API válido', () => {
 })
 
 describe('o que os presets escolhem, e por quê', () => {
-  it('quem escreve segue em frente ao falhar; quem lê chama uma pessoa', () => {
+  it('só quem apenas avisa um sistema segue em frente; o resto chama uma pessoa', () => {
     /**
-     * A regra mudou de forma quando entraram os presets de **consulta**, e a
-     * distinção é o ponto:
+     * **A régua não é o verbo, e por um tempo pareceu ser.**
      *
-     * - **Escrita** (`POST`) — mandar o lead para o CRM, gravar linha na
-     *   planilha. Ele já está no nosso banco; não ter chegado lá é problema de
-     *   sincronia, não de atendimento, e handoff aqui encheria a fila com
-     *   conversas que não precisam de ninguém.
-     * - **Leitura** (`GET`) — consultar horário livre, tabela, estoque. O que
-     *   falhou **é o assunto da conversa**: sem os valores não há o que
-     *   perguntar, e seguir em frente entregaria uma pergunta sem nenhuma
-     *   resposta possível. Uma pessoa assume.
+     * Enquanto os presets eram CRM e planilha, `GET` e `POST` separavam certo
+     * por acidente: as leituras eram todas assunto da conversa e as escritas
+     * eram todas avisos. A agenda quebrou a coincidência — `POST /participacoes`
+     * é escrita, e falhar nela significa prometer um horário que ninguém marcou.
+     *
+     * A pergunta que decide é outra: **a conversa depende do resultado?**
+     *
+     * - **Não depende** — o lead já está no nosso banco, e o bloco só avisa a
+     *   RD, a planilha ou um webhook. Não ter chegado lá é problema de
+     *   sincronia, não de atendimento; handoff encheria a fila com conversas que
+     *   não precisam de ninguém.
+     * - **Depende** — consultar horário livre, reconhecer quem chegou, marcar,
+     *   desmarcar, entrar na fila. Seguir em frente aqui entrega uma pergunta
+     *   sem resposta possível, um cadastro duplicado, ou uma promessa que
+     *   ninguém cumpre. Uma pessoa assume.
      */
+    const SO_AVISAM = new Set(['rd-station-conversao', 'google-sheets-linha', 'webhook'])
+
     for (const preset of PRESETS) {
-      const esperado = preset.dados.metodo === 'GET' ? 'humano' : 'seguir'
+      const esperado = SO_AVISAM.has(preset.id) ? 'seguir' : 'humano'
       expect(preset.dados.aoFalhar, preset.id).toBe(esperado)
     }
   })
