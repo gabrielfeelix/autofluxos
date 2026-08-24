@@ -1,6 +1,6 @@
 'use client'
 
-import { useId, useRef } from 'react'
+import { useId, useRef, useState } from 'react'
 import {
   LIMITE_BOTOES,
   LIMITE_LEGENDA,
@@ -18,7 +18,7 @@ import {
 } from '@/core/flow/schema'
 import { mensagensDoHandoff } from '@/core/flow/mensagem'
 import { Dropdown } from '@/components/design/dropdown'
-import { BarraDeFormato } from './barra-de-formato'
+import { BarraDeFormato, SeletorDeEmoji } from './barra-de-formato'
 import { SeletorDeVariavel } from './escolher-variavel'
 import { CampoDeVariavel } from './campo-de-variavel'
 import { SeletorDeArquivo } from './seletor-de-arquivo'
@@ -30,6 +30,7 @@ import {
   TextoComVariaveis,
 } from './texto-com-variaveis'
 import { NOMES } from './nos'
+import { contarCaracteres } from '@/core/flow/texto'
 
 /** Os quatro tipos, no nome que quem desenha o fluxo usa. */
 
@@ -885,25 +886,16 @@ function Opcoes({ opcoes, aoMudar }: { opcoes: Opcao[]; aoMudar: (opcoes: Opcao[
 
       <div className="space-y-1.5">
         {opcoes.map((opcao, i) => (
-          <div key={opcao.id} className="flex gap-1.5">
-            <input
-              value={opcao.rotulo}
-              maxLength={LIMITE_ROTULO}
-              onChange={(e) => {
-                const copia = [...opcoes]
-                copia[i] = { ...opcao, rotulo: e.target.value }
-                aoMudar(copia)
-              }}
-              className="app-field min-w-0 flex-1 px-3 py-2 text-[12.5px]"
-            />
-            <button
-              onClick={() => aoMudar(opcoes.filter((o) => o.id !== opcao.id))}
-              title="remover opção"
-              className="flex size-8 shrink-0 items-center justify-center rounded-lg text-xs text-dim transition hover:bg-rose-400/[0.08] hover:text-rose-300"
-            >
-              ×
-            </button>
-          </div>
+          <LinhaDeOpcao
+            key={opcao.id}
+            opcao={opcao}
+            aoMudarRotulo={(rotulo) => {
+              const copia = [...opcoes]
+              copia[i] = { ...opcao, rotulo }
+              aoMudar(copia)
+            }}
+            aoRemover={() => aoMudar(opcoes.filter((o) => o.id !== opcao.id))}
+          />
         ))}
       </div>
 
@@ -928,6 +920,91 @@ function Opcoes({ opcoes, aoMudar }: { opcoes: Opcao[]; aoMudar: (opcoes: Opcao[
       <p className="text-[10.5px] leading-4 text-dim">
         Cada opção tem a própria saída no bloco. Ligue todas — o validador cobra.
       </p>
+    </div>
+  )
+}
+
+/**
+ * Uma opção: o rótulo, o emoji e o contador.
+ *
+ * **Aqui morava o `maxLength={20}` que produziu três defeitos de uma vez.**
+ * `maxLength` conta unidades UTF-16, e emoji fora do plano básico ocupa duas —
+ * então um rótulo de 19 letras recusava qualquer emoji sem dizer por quê, e
+ * colar texto longo cortava no meio do par substituto. O pedaço solto que
+ * sobrava atravessava o `JSON.stringify` e **derrubava o salvamento no
+ * Postgres**, que recusa `\ud83d` dentro de `jsonb`: o rascunho não gravava, e
+ * ao recarregar a opção e os emojis tinham sumido.
+ *
+ * A troca é a mesma que o bloco de Mensagem já fazia: **contar não é cortar.**
+ * O campo aceita o que a pessoa escrever, o contador mostra quanto passou, e
+ * quem recusa é o validador na hora de publicar — onde a recusa vale e tem
+ * explicação junto.
+ *
+ * O seletor de emoji entra junto porque era a outra metade do relato: sem ele,
+ * a única forma de pôr um 📅 numa opção era colar do teclado do sistema.
+ * Formatação não entra — rótulo de botão a Meta manda como texto puro, e o
+ * asterisco apareceria literal para quem lê.
+ */
+function LinhaDeOpcao({
+  opcao,
+  aoMudarRotulo,
+  aoRemover,
+}: {
+  opcao: Opcao
+  aoMudarRotulo: (rotulo: string) => void
+  aoRemover: () => void
+}) {
+  const campo = useRef<HTMLInputElement>(null)
+  const [emojisAbertos, setEmojisAbertos] = useState(false)
+  const usados = contarCaracteres(opcao.rotulo)
+  const estourou = usados > LIMITE_ROTULO
+
+  return (
+    <div>
+      <div className="flex items-center gap-1">
+        <input
+          ref={campo}
+          value={opcao.rotulo}
+          onChange={(e) => aoMudarRotulo(e.target.value)}
+          className={`app-field min-w-0 flex-1 px-3 py-2 text-[12.5px] ${estourou ? '!border-rose-400/40' : ''}`}
+        />
+        <SeletorDeEmoji
+          aberto={emojisAbertos}
+          aoAbrir={setEmojisAbertos}
+          aoEscolher={(emoji) => {
+            const elemento = campo.current
+            if (!elemento) return
+            const de = elemento.selectionStart ?? elemento.value.length
+            const ate = elemento.selectionEnd ?? elemento.value.length
+            aoMudarRotulo(elemento.value.slice(0, de) + emoji + elemento.value.slice(ate))
+            setEmojisAbertos(false)
+            // O campo é controlado: esperar um quadro devolve foco e cursor
+            // depois de o valor novo chegar ao DOM.
+            requestAnimationFrame(() => {
+              elemento.focus()
+              const cursor = de + emoji.length
+              elemento.setSelectionRange(cursor, cursor)
+            })
+          }}
+        />
+        <span
+          className={`w-9 shrink-0 text-right font-mono text-[10px] ${estourou ? 'font-bold text-rose-300' : 'text-dim'}`}
+        >
+          {usados}/{LIMITE_ROTULO}
+        </span>
+        <button
+          onClick={aoRemover}
+          title="remover opção"
+          className="flex size-8 shrink-0 items-center justify-center rounded-lg text-xs text-dim transition hover:bg-rose-400/[0.08] hover:text-rose-300"
+        >
+          ×
+        </button>
+      </div>
+      {estourou && (
+        <p className="mt-1 text-[10.5px] leading-4 text-rose-300">
+          O WhatsApp corta em {LIMITE_ROTULO} caracteres — publicar fica barrado até encurtar.
+        </p>
+      )}
     </div>
   )
 }

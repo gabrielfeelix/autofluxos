@@ -17,6 +17,7 @@ import {
   type No,
   type TipoDeMidia,
 } from './schema'
+import { contarCaracteres, temMetadeDeCaractere } from './texto'
 import { variaveisCitadas } from '../engine/interpolar'
 
 /**
@@ -465,10 +466,11 @@ function conferirMidia(
     })
   }
 
-  if ((dados.legenda ?? '').length > LIMITE_LEGENDA) {
+  const legenda = contarCaracteres(dados.legenda ?? '')
+  if (legenda > LIMITE_LEGENDA) {
     erros.push({
       codigo: 'TEXTO_LONGO',
-      mensagem: `São ${dados.legenda?.length} caracteres. A legenda de mídia aceita ${LIMITE_LEGENDA} — acima disso o WhatsApp recusa a mensagem inteira.`,
+      mensagem: `São ${legenda} caracteres. A legenda de mídia aceita ${LIMITE_LEGENDA} — acima disso o WhatsApp recusa a mensagem inteira.`,
       noId,
     })
   }
@@ -502,12 +504,15 @@ function conferirConteudo(no: No, erros: Problema[], avisos: Problema[]): void {
    */
   const conferirTamanho = (texto: string, interativa: boolean) => {
     const limite = interativa ? LIMITE_TEXTO_INTERATIVO : LIMITE_TEXTO
-    if (texto.length > limite) {
+    // Por caractere, e não por unidade UTF-16: emoji ocupa duas, e a Meta conta
+    // uma. Ver `core/flow/texto.ts`.
+    const usados = contarCaracteres(texto)
+    if (usados > limite) {
       erros.push({
         codigo: 'TEXTO_LONGO',
         mensagem: interativa
-          ? `São ${texto.length} caracteres. Mensagem com botões ou lista aceita ${limite} — acima disso o WhatsApp recusa a mensagem inteira, e a pessoa não recebe nada.`
-          : `São ${texto.length} caracteres. O WhatsApp aceita ${limite}.`,
+          ? `São ${usados} caracteres. Mensagem com botões ou lista aceita ${limite} — acima disso o WhatsApp recusa a mensagem inteira, e a pessoa não recebe nada.`
+          : `São ${usados} caracteres. O WhatsApp aceita ${limite}.`,
         noId: no.id,
       })
     }
@@ -597,10 +602,26 @@ function conferirConteudo(no: No, erros: Problema[], avisos: Problema[]): void {
       for (const opcao of no.data.opcoes) {
         if (vazio(opcao.rotulo)) {
           erros.push({ codigo: 'ROTULO_VAZIO', mensagem: 'Uma das opções está sem rótulo.', noId: no.id })
-        } else if (opcao.rotulo.length > LIMITE_ROTULO) {
+        } else if (contarCaracteres(opcao.rotulo) > LIMITE_ROTULO) {
           erros.push({
             codigo: 'ROTULO_LONGO',
-            mensagem: `"${opcao.rotulo}" tem ${opcao.rotulo.length} caracteres. O WhatsApp corta em ${LIMITE_ROTULO}.`,
+            mensagem: `"${opcao.rotulo}" tem ${contarCaracteres(opcao.rotulo)} caracteres. O WhatsApp corta em ${LIMITE_ROTULO}.`,
+            noId: no.id,
+          })
+        }
+        /*
+         * Meio caractere não é texto — e não é problema de estilo.
+         *
+         * Um substituto sem par sobrevive na memória do navegador e no
+         * `JSON.stringify`, mas o Postgres recusa `\ud83d` dentro de `jsonb`:
+         * o rascunho para de gravar e quem digitou vê a opção sumir sem
+         * explicação. Recusar aqui transforma um salvamento que falha em
+         * silêncio num impedimento com nome.
+         */
+        if (temMetadeDeCaractere(opcao.rotulo)) {
+          erros.push({
+            codigo: 'ROTULO_QUEBRADO',
+            mensagem: `A opção "${opcao.rotulo.replace(/\p{Surrogate}/gu, '')}" tem um emoji pela metade. Apague-o e ponha de novo.`,
             noId: no.id,
           })
         }

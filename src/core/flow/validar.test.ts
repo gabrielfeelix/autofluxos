@@ -165,6 +165,23 @@ describe('validar', () => {
     expect(codigos(validar(fluxo).erros)).toContain('ROTULO_LONGO')
   })
 
+  it('deixa passar o rótulo de 20 caracteres que tem emoji — a Meta conta caractere, não UTF-16', () => {
+    const fluxo = fluxoValido()
+    const q = fluxo.nodes.find((n) => n.id === 'q')
+    // 21 unidades UTF-16, 20 caracteres. O `.length` reprovava; a Meta aceita.
+    if (q?.type === 'pergunta' && q.data.opcoes[0]) q.data.opcoes[0].rotulo = '📅 Falar com recepção'
+
+    expect(codigos(validar(fluxo).erros)).not.toContain('ROTULO_LONGO')
+  })
+
+  it('recusa emoji pela metade, que é o que fazia o rascunho parar de gravar', () => {
+    const fluxo = fluxoValido()
+    const q = fluxo.nodes.find((n) => n.id === 'q')
+    if (q?.type === 'pergunta' && q.data.opcoes[0]) q.data.opcoes[0].rotulo = 'Outro dia \ud83d'
+
+    expect(codigos(validar(fluxo).erros)).toContain('ROTULO_QUEBRADO')
+  })
+
   it('deixa passar mensagem longa de texto puro, mas barra acima de 4096', () => {
     const fluxo = fluxoValido()
     const m = fluxo.nodes.find((n) => n.type === 'mensagem')

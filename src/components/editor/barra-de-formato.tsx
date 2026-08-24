@@ -152,7 +152,7 @@ function BotaoDeMarca({
  * 2. **Não tinha busca**, então achar um emoji era varrer a grade com o olho.
  * 3. **Tinha trinta**, o que garantia que o procurado quase nunca estava lá.
  */
-function SeletorDeEmoji({
+export function SeletorDeEmoji({
   aoEscolher,
   aberto,
   aoAbrir,
