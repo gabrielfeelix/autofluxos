@@ -1675,6 +1675,10 @@ function variaveisDoFluxo(fluxo: Fluxo): {
         if (opcao.rotulo !== '' && !lista.includes(opcao.rotulo)) lista.push(opcao.rotulo)
       }
     }
+    // O valor da opção escolhida também é variável — e é justamente a que o
+    // bloco seguinte usa para chamar a API. Sem isto, `{{sessao_id}}` não
+    // apareceria na lista e quem desenha acharia que precisa digitar de cabeça.
+    if (no.type === 'pergunta' && no.data.salvarValorEm) anotar(no.data.salvarValorEm, no.id)
     if (no.type === 'salvar-campo' && no.data.campo) anotar(no.data.campo, no.id)
     if (no.type === 'ia' && no.data.salvarEm) anotar(no.data.salvarEm, no.id)
     // O que a API guarda também é variável do fluxo. Sem isto, o painel não

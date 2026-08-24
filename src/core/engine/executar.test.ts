@@ -587,6 +587,69 @@ describe('pergunta com opções dinâmicas', () => {
     expect(acao.opcoes[0]?.rotulo).toHaveLength(20)
   })
 
+  /*
+   * O caso que só se descobre tentando marcar de verdade: o menu mostra
+   * "07:00", e o `POST /participacoes` da agenda quer o `sessaoId`. Sem a lista
+   * pareada, esse id não existia em lugar nenhum da conversa.
+   */
+  describe('lista de valores pareada com a de rótulos', () => {
+    const comValores = (rotulos: string, valores: string): Sessao => ({
+      ...sessaoNova(),
+      vars: { horarios: rotulos, ids: valores },
+    })
+
+    const agendaComId: Fluxo = fluxoSchema.parse({
+      ...agenda,
+      nodes: agenda.nodes.map((no) =>
+        no.id === 'escolher'
+          ? {
+              ...no,
+              data: {
+                texto: 'Qual horário?',
+                salvarEm: 'horario',
+                opcoesDe: 'horarios',
+                valoresDe: 'ids',
+                salvarValorEm: 'sessao_id',
+              },
+            }
+          : no,
+      ),
+    })
+
+    it('guarda o rótulo para a mensagem e o valor para a chamada', () => {
+      const primeira = executar(agendaComId, comValores('7h00;10h00', 'a41f;b52g'), {
+        tipo: 'inicio',
+      })
+      const r = executar(agendaComId, primeira.sessao, { tipo: 'opcao', opcaoId: 'd2' })
+
+      expect(r.sessao.vars.horario).toBe('10h00')
+      expect(r.sessao.vars.sessao_id).toBe('b52g')
+    })
+
+    it('o valor também vira campo do contato, como todo salvar_campo', () => {
+      const primeira = executar(agendaComId, comValores('7h00', 'a41f'), { tipo: 'inicio' })
+      const r = executar(agendaComId, primeira.sessao, { tipo: 'opcao', opcaoId: 'd1' })
+
+      expect(r.acoes).toContainEqual({ tipo: 'salvar_campo', campo: 'sessao_id', valor: 'a41f' })
+    })
+
+    // Guardar vazio é ruim; guardar o id do vizinho manda o agendamento de
+    // alguém para o horário errado, e ninguém descobre até a pessoa aparecer.
+    it('lista de valores mais curta guarda vazio, e não o id do vizinho', () => {
+      const primeira = executar(agendaComId, comValores('7h00;10h00', 'a41f'), { tipo: 'inicio' })
+      const r = executar(agendaComId, primeira.sessao, { tipo: 'opcao', opcaoId: 'd2' })
+
+      expect(r.sessao.vars.sessao_id).toBe('')
+    })
+
+    it('sem lista de valores, nada é guardado além do rótulo', () => {
+      const primeira = executar(agenda, comHorarios('7h00;10h00'), { tipo: 'inicio' })
+      const r = executar(agenda, primeira.sessao, { tipo: 'opcao', opcaoId: 'd1' })
+
+      expect(r.sessao.vars.sessao_id).toBeUndefined()
+    })
+  })
+
   it('clicar segue pela saída "escolheu" e guarda a escolha', () => {
     const primeira = executar(agenda, comHorarios('7h00;10h00'), { tipo: 'inicio' })
     const r = executar(agenda, primeira.sessao, { tipo: 'opcao', opcaoId: 'd2' })

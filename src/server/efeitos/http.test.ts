@@ -99,6 +99,47 @@ describe('extrair', () => {
       1100,
     )
   })
+
+  /*
+   * A agenda da Verandi é o caso que motivou o `[]`: `GET /disponibilidade`
+   * devolve uma lista de sessões, e sem percorrê-la não há como montar o menu
+   * de horários nem descobrir o id do que a pessoa escolheu.
+   */
+  describe('caminho com [] percorre a lista', () => {
+    const agenda = {
+      livres: [
+        { sessaoId: 'a41f', data: '2026-08-18', hora: '07:00', profissional: 'Marina' },
+        { sessaoId: 'b52g', data: '2026-08-18', hora: '10:00', profissional: 'Marina' },
+        { sessaoId: 'c63h', data: '2026-08-19', hora: '07:00', profissional: 'Carol' },
+      ],
+      dias: ['segunda', 'terça'],
+      cheios: [],
+    }
+
+    it('junta o campo de cada item com ponto e vírgula', () =>
+      expect(extrair(agenda, 'livres[].hora')).toBe('07:00;10:00;07:00'))
+
+    it('a lista de valores casa por posição com a de rótulos', () =>
+      expect(extrair(agenda, 'livres[].sessaoId')).toBe('a41f;b52g;c63h'))
+
+    it('sem campo depois do [], pega o item inteiro — lista de texto puro', () =>
+      expect(extrair(agenda, 'dias[]')).toBe('segunda;terça'))
+
+    it('`unicos` tira o repetido, que é o que faz o menu de dias prestar', () =>
+      expect(extrair(agenda, 'livres[].data', true)).toBe('2026-08-18;2026-08-19'))
+
+    it('lista vazia vira vazio, e é a saída `vazio` da pergunta', () =>
+      expect(extrair(agenda, 'cheios[].hora')).toBe(''))
+
+    it('o que não é lista vira vazio em vez de mentir', () =>
+      expect(extrair(agenda, 'livres[].hora[].x')).toBe(''))
+
+    it('item que não tem o campo é pulado, não vira posição vazia', () =>
+      expect(extrair({ l: [{ a: 1 }, { b: 2 }, { a: 3 }] }, 'l[].a')).toBe('1;3'))
+
+    it('ponto e vírgula dentro do item vira vírgula, senão o menu desalinha', () =>
+      expect(extrair({ l: [{ n: 'Ana; Paula' }, { n: 'Bia' }] }, 'l[].n')).toBe('Ana, Paula;Bia'))
+  })
 })
 
 describe('a conexão é fixada no endereço aprovado', () => {

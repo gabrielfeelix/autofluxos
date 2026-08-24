@@ -9,6 +9,7 @@ import {
   LIMITE_ROTULO,
   LIMITE_TEXTO,
   LIMITE_TEXTO_INTERATIVO,
+  MARCA_DE_LISTA,
   METODOS,
   OPERADORES,
   type Cabecalho,
@@ -285,15 +286,58 @@ export function Painel({
           {(no.data.opcoesDe ?? '').trim() === '' ? (
             <Opcoes opcoes={no.data.opcoes} aoMudar={(opcoes) => aoMudarDados({ opcoes })} />
           ) : (
-            <p className="text-[11px] leading-4 text-dim">
-              As opções saem de{' '}
-              <code className="font-mono text-[#8de2fa]">{no.data.opcoesDe}</code>, separadas por{' '}
-              <code className="font-mono">;</code> ou quebra de linha — normalmente preenchida por um
-              bloco de API antes deste. Como elas só existem durante a conversa, o bloco deixa de
-              ramificar por opção: ligue as saídas <strong className="text-soft">escolheu</strong> e{' '}
-              <strong className="text-soft">veio vazia</strong>, e use um bloco de Condição depois se
-              precisar decidir sobre a escolha.
-            </p>
+            <>
+              <p className="text-[11px] leading-4 text-dim">
+                As opções saem de{' '}
+                <code className="font-mono text-[#8de2fa]">{no.data.opcoesDe}</code>, separadas por{' '}
+                <code className="font-mono">;</code> ou quebra de linha — normalmente preenchida por
+                um bloco de API antes deste. Como elas só existem durante a conversa, o bloco deixa
+                de ramificar por opção: ligue as saídas{' '}
+                <strong className="text-soft">escolheu</strong> e{' '}
+                <strong className="text-soft">veio vazia</strong>, e use um bloco de Condição depois
+                se precisar decidir sobre a escolha.
+              </p>
+
+              {/*
+                O rótulo é o que a pessoa lê; o valor é o que o sistema entende.
+
+                Os dois campos abaixo existem porque o menu de horários guardava
+                "07:00" e o `POST` seguinte precisava do id da sessão — que não
+                estava em lugar nenhum da conversa. Duas mapeadas do mesmo `[]`
+                resolvem, e é isso que a dica explica.
+              */}
+              <CampoDeVariavel
+                rotulo="Valores das opções (opcional)"
+                valor={no.data.valoresDe ?? ''}
+                variaveis={deOutrosBlocos}
+                modo="usa"
+                dica="a variável com os ids, na mesma ordem das opções"
+                aoMudar={(v) => aoMudarDados({ valoresDe: v.trim() === '' ? undefined : v.trim() })}
+                nota={
+                  <>
+                    Use quando o que a pessoa lê e o que o sistema entende são coisas diferentes —
+                    ela escolhe <strong className="text-muted">“07:00”</strong> e a API precisa do
+                    id daquele horário. No bloco de Serviços externos, mapeie duas vezes a mesma
+                    lista: <code className="font-mono text-[#8de2fa]">livres[].hora</code> para as
+                    opções e <code className="font-mono text-[#8de2fa]">livres[].sessaoId</code>{' '}
+                    para os valores. O casamento é <strong className="text-muted">por posição</strong>.
+                  </>
+                }
+              />
+
+              {(no.data.valoresDe ?? '').trim() !== '' && (
+                <CampoDeVariavel
+                  rotulo="Guardar o valor escolhido em"
+                  valor={no.data.salvarValorEm ?? ''}
+                  variaveis={deOutrosBlocos}
+                  modo="guarda"
+                  dica="ex: sessao_id — é o que o bloco seguinte manda para a API"
+                  aoMudar={(v) =>
+                    aoMudarDados({ salvarValorEm: v.trim() === '' ? undefined : v.trim() })
+                  }
+                />
+              )}
+            </>
           )}
 
           <label className="block">
@@ -1092,37 +1136,59 @@ function Mapeamentos({
       </span>
 
       <div className="space-y-1.5">
-        {mapear.map((m, i) => (
-          <div key={i} className="flex gap-1.5">
-            <input
-              value={m.variavel}
-              placeholder="variável"
-              onChange={(e) => {
-                const copia = [...mapear]
-                copia[i] = { ...m, variavel: e.target.value }
-                aoMudar(copia)
-              }}
-              className="app-field min-w-0 flex-1 px-3 py-2 text-[12.5px]"
-            />
-            <input
-              value={m.caminho}
-              placeholder="pedido.status"
-              onChange={(e) => {
-                const copia = [...mapear]
-                copia[i] = { ...m, caminho: e.target.value }
-                aoMudar(copia)
-              }}
-              className="app-field min-w-0 flex-1 px-3 py-2 font-mono text-[12.5px]"
-            />
-            <button
-              onClick={() => aoMudar(mapear.filter((_, j) => j !== i))}
-              title="remover"
-              className="flex size-8 shrink-0 items-center justify-center rounded-lg text-xs text-dim transition hover:bg-rose-400/[0.08] hover:text-rose-300"
-            >
-              ×
-            </button>
-          </div>
-        ))}
+        {mapear.map((m, i) => {
+          const percorreLista = m.caminho.includes(MARCA_DE_LISTA)
+          const trocar = (mudanca: Partial<Mapeamento>) => {
+            const copia = [...mapear]
+            copia[i] = { ...m, ...mudanca }
+            aoMudar(copia)
+          }
+
+          return (
+            <div key={i}>
+              <div className="flex gap-1.5">
+                <input
+                  value={m.variavel}
+                  placeholder="variável"
+                  onChange={(e) => trocar({ variavel: e.target.value })}
+                  className="app-field min-w-0 flex-1 px-3 py-2 text-[12.5px]"
+                />
+                <input
+                  value={m.caminho}
+                  placeholder="pedido.status"
+                  onChange={(e) => trocar({ caminho: e.target.value })}
+                  className="app-field min-w-0 flex-1 px-3 py-2 font-mono text-[12.5px]"
+                />
+                <button
+                  onClick={() => aoMudar(mapear.filter((_, j) => j !== i))}
+                  title="remover"
+                  className="flex size-8 shrink-0 items-center justify-center rounded-lg text-xs text-dim transition hover:bg-rose-400/[0.08] hover:text-rose-300"
+                >
+                  ×
+                </button>
+              </div>
+
+              {/*
+                A caixa só aparece quando o caminho percorre lista.
+
+                Fora daí ela não faria nada, e uma caixa que não faz nada ensina
+                a não confiar na tela. Dentro daí ela é o que separa um menu de
+                dias de um menu com a mesma data quatro vezes.
+              */}
+              {percorreLista && (
+                <label className="mt-1 flex cursor-pointer items-center gap-2 pl-1 text-[10.5px] leading-4 text-dim">
+                  <input
+                    type="checkbox"
+                    checked={m.unicos ?? false}
+                    onChange={(e) => trocar({ unicos: e.target.checked || undefined })}
+                    className="size-3.5 accent-[#56d0f5]"
+                  />
+                  sem repetir — use para menu de dias; não use quando esta lista for o par de outra
+                </label>
+              )}
+            </div>
+          )
+        })}
       </div>
 
       <button
@@ -1136,6 +1202,12 @@ function Mapeamentos({
         Caminho com ponto e índice: <code className="font-mono">pedido.status</code>,{' '}
         <code className="font-mono">itens.0.nome</code>. O que você guardar vira coluna na tela de
         leads sozinho.
+      </p>
+      <p className="mt-1 text-[10.5px] leading-4 text-dim">
+        Para percorrer uma lista inteira, use <code className="font-mono text-[#8de2fa]">[]</code>:{' '}
+        <code className="font-mono">livres[].hora</code> guarda{' '}
+        <code className="font-mono">07:00;10:00;15:00</code>, que é o formato que a Pergunta lê para
+        virar menu. Um <code className="font-mono">[]</code> por caminho.
       </p>
     </div>
   )

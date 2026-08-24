@@ -7,6 +7,7 @@ import {
   LIMITE_ROTULO,
   LIMITE_TEXTO,
   LIMITE_TEXTO_INTERATIVO,
+  MARCA_DE_LISTA,
   SAIDA_ESCOLHEU,
   SAIDA_FALSO,
   SAIDA_TIMEOUT,
@@ -599,6 +600,37 @@ function conferirConteudo(no: No, erros: Problema[], avisos: Problema[]): void {
       conferirTamanho(no.data.texto, no.data.opcoes.length > 0 || perguntaEhDinamica(no))
       conferirVariavel(no.data.salvarEm, 'variável')
       conferirVariavel(no.data.opcoesDe, 'variável das opções')
+      conferirVariavel(no.data.valoresDe, 'variável dos valores')
+      conferirVariavel(no.data.salvarValorEm, 'variável do valor escolhido')
+
+      /*
+       * A lista de valores só existe pareada com a de rótulos.
+       *
+       * Sozinha ela não tem com o que casar: a correspondência é por posição, e
+       * numa pergunta desenhada cada opção já tem id próprio e aresta saindo
+       * dela. Publicar assim daria um campo preenchido no editor e nada
+       * acontecendo na conversa.
+       */
+      if (!vazio(no.data.valoresDe ?? '') && !perguntaEhDinamica(no)) {
+        erros.push({
+          codigo: 'VALORES_SEM_OPCOES',
+          mensagem:
+            'Esta pergunta tem lista de valores, mas as opções não vêm de variável. A lista de valores casa por posição com a de opções — sem opções dinâmicas, não há com o que casar.',
+          noId: no.id,
+        })
+      }
+
+      // Guardar o valor sem ter de onde tirá-lo grava vazio para sempre, e o
+      // `POST` seguinte sai com o campo em branco — que a API do cliente aceita
+      // ou recusa, mas nunca do jeito que quem desenhou esperava.
+      if (!vazio(no.data.salvarValorEm ?? '') && vazio(no.data.valoresDe ?? '')) {
+        erros.push({
+          codigo: 'VALOR_SEM_LISTA',
+          mensagem:
+            'Esta pergunta guarda o valor da escolha, mas não diz de qual variável os valores vêm.',
+          noId: no.id,
+        })
+      }
       for (const opcao of no.data.opcoes) {
         if (vazio(opcao.rotulo)) {
           erros.push({ codigo: 'ROTULO_VAZIO', mensagem: 'Uma das opções está sem rótulo.', noId: no.id })
@@ -730,6 +762,31 @@ function conferirConteudo(no: No, erros: Problema[], avisos: Problema[]): void {
             noId: no.id,
           })
         }
+        /*
+         * Um `[]` por caminho.
+         *
+         * Lista dentro de lista não aparece em API de negócio, e aceitar viraria
+         * uma linguagem de consulta para manter, testar e explicar. Recusar aqui
+         * é melhor do que devolver vazio em silêncio: sem isto,
+         * `livres[].hora[].x` publica, e a variável simplesmente nunca preenche.
+         */
+        if (item.caminho.split(MARCA_DE_LISTA).length > 2) {
+          erros.push({
+            codigo: 'LISTA_DENTRO_DE_LISTA',
+            mensagem: `O caminho "${item.caminho}" tem mais de um []. Só dá para percorrer uma lista por mapeamento.`,
+            noId: no.id,
+          })
+        }
+        // `unicos` tira repetidos, e tirar repetidos de um lado desalinha o par:
+        // a opção 3 passa a valer o valor da 4. O menu continua bonito e o
+        // agendamento vai para o horário de outra pessoa.
+        if (item.unicos && !item.caminho.includes(MARCA_DE_LISTA)) {
+          avisos.push({
+            codigo: 'UNICOS_SEM_LISTA',
+            mensagem: `"${item.variavel || 'um mapeamento'}" está marcado como "sem repetir", mas o caminho não percorre lista nenhuma. Sem [], não há o que repetir.`,
+            noId: no.id,
+          })
+        }
       }
 
       if (no.data.metodo === 'POST' && !vazio(no.data.corpo)) {
@@ -840,6 +897,7 @@ function conferirVariaveis(fluxo: Fluxo): Problema[] {
   const definidas = new Set<string>()
   for (const no of fluxo.nodes) {
     if (no.type === 'pergunta' && no.data.salvarEm) definidas.add(no.data.salvarEm)
+    if (no.type === 'pergunta' && no.data.salvarValorEm) definidas.add(no.data.salvarValorEm)
     if (no.type === 'salvar-campo') definidas.add(no.data.campo)
     if (no.type === 'ia' && no.data.salvarEm) definidas.add(no.data.salvarEm)
     if (no.type === 'http') {

@@ -1,6 +1,7 @@
 import 'server-only'
 import { Agent, request } from 'undici'
 import type { Acao } from '@/core/engine/types'
+import { MARCA_DE_LISTA, SEPARADOR_DE_LISTA } from '@/core/flow/schema'
 import { conferirEndereco } from './rede'
 
 /**
@@ -207,8 +208,8 @@ export async function chamarHttp(
   }
 
   const valores: Record<string, string> = {}
-  for (const { variavel, caminho } of pedido.mapear) {
-    valores[variavel] = extrair(json, caminho)
+  for (const { variavel, caminho, unicos } of pedido.mapear) {
+    valores[variavel] = extrair(json, caminho, unicos ?? false)
   }
 
   return { ok: true, valores }
@@ -337,17 +338,75 @@ function montarCabecalhos(
  * caminho que não existe vira string vazia, igual `interpolar()` faz com
  * variável ausente. O validador é quem cobra o caminho certo, no editor.
  */
-export function extrair(json: unknown, caminho: string): string {
-  let atual: unknown = json
+export function extrair(json: unknown, caminho: string, unicos = false): string {
+  const [antes, depois] = separarNaLista(caminho)
 
-  for (const parte of caminho.split('.')) {
-    if (atual === null || atual === undefined) return ''
-    if (typeof atual !== 'object') return ''
-    atual = (atual as Record<string, unknown>)[parte]
+  if (depois === null) return comoTexto(descer(json, antes))
+
+  /*
+   * O caminho percorre uma lista.
+   *
+   * **Era a peça que faltava para o bot marcar horário.** Toda agenda e todo CRM
+   * devolvem lista, e o mapeamento só sabia campo raso: dez horários chegavam na
+   * resposta e não havia como virar menu. O contorno seria mandar o cliente
+   * achatar do lado dele — ou seja, mandar ele usar n8n, que é a resposta que
+   * este produto não dá.
+   */
+  const lista = descer(json, antes)
+  if (!Array.isArray(lista)) return ''
+
+  const itens: string[] = []
+  for (const item of lista) {
+    const bruto = depois === '' ? item : descer(item, depois)
+    if (bruto === null || bruto === undefined) continue
+
+    /*
+     * O separador não pode aparecer dentro de um item.
+     *
+     * Um nome com ponto e vírgula viraria dois itens no menu — e o menu é
+     * pareado por posição com a lista de valores, então um item a mais desloca
+     * todos os valores seguintes. Trocar por vírgula perde menos do que
+     * desalinhar tudo.
+     */
+    const texto = (typeof bruto === 'object' ? JSON.stringify(bruto) : String(bruto))
+      .replaceAll(SEPARADOR_DE_LISTA, ',')
+      .trim()
+
+    if (texto === '') continue
+    if (unicos && itens.includes(texto)) continue
+    itens.push(texto)
   }
 
-  if (atual === null || atual === undefined) return ''
-  return cortar(typeof atual === 'object' ? JSON.stringify(atual) : String(atual))
+  return cortar(itens.join(SEPARADOR_DE_LISTA))
+}
+
+/** Quebra `livres[].hora` em `["livres", "hora"]`. Sem `[]`, o segundo é `null`. */
+function separarNaLista(caminho: string): [string, string | null] {
+  const marca = caminho.indexOf(MARCA_DE_LISTA)
+  if (marca === -1) return [caminho, null]
+
+  const antes = caminho.slice(0, marca)
+  // O ponto depois do `[]` é separador de nível, não parte do nome do campo.
+  const depois = caminho.slice(marca + MARCA_DE_LISTA.length).replace(/^\./, '')
+  return [antes, depois]
+}
+
+/** Anda pelo caminho de pontos. Qualquer degrau que não existe devolve nada. */
+function descer(json: unknown, caminho: string): unknown {
+  if (caminho === '') return json
+
+  let atual: unknown = json
+  for (const parte of caminho.split('.')) {
+    if (atual === null || atual === undefined) return undefined
+    if (typeof atual !== 'object') return undefined
+    atual = (atual as Record<string, unknown>)[parte]
+  }
+  return atual
+}
+
+function comoTexto(valor: unknown): string {
+  if (valor === null || valor === undefined) return ''
+  return cortar(typeof valor === 'object' ? JSON.stringify(valor) : String(valor))
 }
 
 /**

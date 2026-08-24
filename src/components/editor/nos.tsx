@@ -237,6 +237,8 @@ function NoPergunta({ data, selected }: NodeProps) {
     salvarEm?: string
     opcoes: Opcao[]
     opcoesDe?: string
+    valoresDe?: string
+    salvarValorEm?: string
     timeoutMinutos?: number
   }
   const dinamica = (d.opcoesDe ?? '').trim() !== ''
@@ -258,6 +260,12 @@ function NoPergunta({ data, selected }: NodeProps) {
           <p className="mt-1 text-[10px] text-dim">
             opções de <code className="font-mono text-[#8de2fa]">{d.opcoesDe}</code>
           </p>
+          {d.valoresDe && (
+            <p className="text-[10px] text-dim">
+              valores de <code className="font-mono text-[#8de2fa]">{d.valoresDe}</code>
+              {d.salvarValorEm && <> → guarda em {d.salvarValorEm}</>}
+            </p>
+          )}
           <Saida id={SAIDA_ESCOLHEU}>
             <span className="text-[11px] text-emerald-300">escolheu</span>
           </Saida>

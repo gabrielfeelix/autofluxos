@@ -249,6 +249,32 @@ export const noPerguntaSchema = z.object({
      */
     opcoesDe: nomeVariavel.optional(),
     /**
+     * A variável com os **valores** das opções, casando um a um com `opcoesDe`.
+     *
+     * O rótulo é o que a pessoa lê; o valor é o que o sistema do cliente
+     * entende. São coisas diferentes e o produto tratava como uma só: a lista
+     * dinâmica guardava "07:00" e o `POST` seguinte precisava de
+     * `a41f-…-9c2b`, que não estava em lugar nenhum.
+     *
+     * Sem isto, marcar horário era impossível sem uma segunda chamada
+     * traduzindo rótulo em id — e nem sempre existe uma. Com isto, duas
+     * mapeadas do mesmo `[]` resolvem: `livres[].hora` vira o menu e
+     * `livres[].sessaoId` vira o valor.
+     *
+     * **A correspondência é por posição**, então as duas listas precisam vir do
+     * mesmo `[]`. Item a mais de um lado não tem par, e o motor guarda vazio em
+     * vez de inventar — o validador avisa no editor.
+     */
+    valoresDe: nomeVariavel.optional(),
+    /**
+     * Onde guardar o **valor** da opção escolhida.
+     *
+     * Separado de `salvarEm` de propósito: quem escreve a mensagem seguinte
+     * quer o rótulo ("Você escolheu 07:00"), e quem chama a API quer o id. Os
+     * dois viram variável, e cada um vai para o seu lugar.
+     */
+    salvarValorEm: nomeVariavel.optional(),
+    /**
      * Quantos minutos esperar antes de desistir da resposta (B1).
      *
      * **Opcional, e ausente significa esperar para sempre** — que é o
@@ -347,6 +373,27 @@ export const cabecalhoSchema = z.object({
   valor: z.string(),
 })
 
+/** O que separa os itens de uma lista dentro de uma variável. */
+export const SEPARADOR_DE_LISTA = ';'
+
+/**
+ * A marca de "percorra esta lista" dentro de um caminho.
+ *
+ * `livres[].hora` quer dizer: entre em `livres`, que é uma lista, e pegue `hora`
+ * de cada item. O resultado é `"07:00;10:00;15:00"` — exatamente o formato que a
+ * pergunta dinâmica já consome.
+ *
+ * **Esta era a peça que faltava para o bot marcar horário.** Toda agenda, todo
+ * CRM e toda planilha devolvem lista; o mapeamento só sabia campo raso, então
+ * um `GET /disponibilidade` chegava com dez horários e não havia como virar
+ * menu. O contorno seria mandar o cliente achatar do lado dele — ou seja,
+ * mandar ele usar n8n, que é a resposta que este produto não dá.
+ *
+ * **Um nível só.** Lista de lista não aparece em API de negócio e viraria uma
+ * linguagem para manter; o validador recusa dois `[]`.
+ */
+export const MARCA_DE_LISTA = '[]'
+
 export const mapeamentoSchema = z.object({
   /** A variável que recebe o valor extraído. */
   variavel: nomeVariavel,
@@ -355,8 +402,22 @@ export const mapeamentoSchema = z.object({
    * `resultados.0.nome`. Não é JSONPath: quase todo caso é campo raso, e o que
    * não for o cliente achata do lado dele. JSONPath seria uma linguagem
    * inteira para manter, testar e explicar.
+   *
+   * Aceita **um** `[]` para percorrer lista: `livres[].hora` devolve os valores
+   * juntos por `;`, que é o que a pergunta dinâmica lê.
    */
   caminho: z.string(),
+  /**
+   * Só valores diferentes, na ordem em que apareceram.
+   *
+   * Existe para o caso mais comum de menu vindo de lista: `livres[].data`
+   * devolve a mesma data repetida uma vez por horário daquele dia, e um menu com
+   * "18/08" quatro vezes não é menu.
+   *
+   * **Não use quando a lista for pareada com outra** — tirar repetidos de um
+   * lado desalinha os dois, e o valor guardado passa a ser o do vizinho.
+   */
+  unicos: z.boolean().optional(),
 })
 
 export const noHttpSchema = z.object({
@@ -528,4 +589,18 @@ export function timeoutDaPergunta(no: NoPergunta): number | null {
 /** A pergunta tira as opções de uma variável em vez de tê-las desenhadas? */
 export function perguntaEhDinamica(no: NoPergunta): boolean {
   return (no.data.opcoesDe ?? '').trim() !== ''
+}
+
+/**
+ * Os itens de uma variável que carrega lista.
+ *
+ * Separador `;` ou quebra de linha, que é o formato que sobrevive a `vars` ser
+ * `Record<string, string>`. Guardar JSON numa string ali mentiria sobre o tipo;
+ * separador não mente, só combina.
+ */
+export function itensDaLista(valor: string): string[] {
+  return valor
+    .split(/[;\n]/)
+    .map((item) => item.trim())
+    .filter((item) => item !== '')
 }

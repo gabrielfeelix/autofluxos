@@ -8,6 +8,7 @@ import {
   SAIDA_TIMEOUT,
   SAIDA_VAZIO,
   SAIDA_VERDADEIRO,
+  itensDaLista,
   perguntaEhDinamica,
   timeoutDaPergunta,
   type Fluxo,
@@ -15,6 +16,7 @@ import {
   type NoPergunta,
   type Opcao,
 } from '../flow/schema'
+import { cortarCaracteres } from '../flow/texto'
 import { comoCabecalho, comoJson, comoUrl, interpolar, normalizar } from './interpolar'
 import type { Acao, Entrada, Resultado, Sessao } from './types'
 
@@ -244,6 +246,16 @@ function responderPergunta(
     s.vars[salvarEm] = escolhida.rotulo
     acoes.push({ tipo: 'salvar_campo', campo: salvarEm, valor: escolhida.rotulo })
   }
+
+  // O valor da escolha, quando a lista veio pareada. É o que o `POST` seguinte
+  // manda para o sistema do cliente.
+  const { salvarValorEm } = no.data
+  if (salvarValorEm) {
+    const valor = valorDaOpcao(no, s.vars, escolhida) ?? ''
+    s.vars[salvarValorEm] = valor
+    acoes.push({ tipo: 'salvar_campo', campo: salvarValorEm, valor })
+  }
+
   s.tentativas = 0
   // Desenhada ramifica por opção; dinâmica sai por uma porta só, porque não
   // existe aresta desenhada para uma opção que nasceu agora.
@@ -520,12 +532,40 @@ function avancar(
 export function resolverOpcoes(no: NoPergunta, vars: Record<string, string>): Opcao[] {
   if (!perguntaEhDinamica(no)) return no.data.opcoes
 
-  return (vars[no.data.opcoesDe as string] ?? '')
-    .split(/[;\n]/)
-    .map((item) => item.trim())
-    .filter((item) => item !== '')
+  return itensDaLista(vars[no.data.opcoesDe as string] ?? '')
     .slice(0, LIMITE_LISTA)
-    .map((rotulo, i) => ({ id: `d${i + 1}`, rotulo: rotulo.slice(0, LIMITE_ROTULO) }))
+    .map((rotulo, i) => ({ id: `d${i + 1}`, rotulo: cortarCaracteres(rotulo, LIMITE_ROTULO) }))
+}
+
+/**
+ * O valor por trás da opção escolhida numa pergunta dinâmica.
+ *
+ * **O rótulo é o que a pessoa lê; o valor é o que o sistema do cliente
+ * entende.** O produto tratava os dois como a mesma coisa, e o efeito era um
+ * beco: o menu de horários guardava `"07:00"` e o `POST` seguinte precisava do
+ * `sessaoId`, que não estava em lugar nenhum da conversa.
+ *
+ * A correspondência é **por posição**, e por isso as duas listas têm que sair do
+ * mesmo `[]` da mesma resposta. Quando a de valores é mais curta, o que falta
+ * vira vazio — inventar um id seria pior do que não ter um, porque o pedido
+ * seguinte iria para o registro errado de alguém.
+ *
+ * Não vale para pergunta desenhada: ali a opção já tem id próprio e uma aresta
+ * saindo dela, que é a ramificação inteira.
+ */
+export function valorDaOpcao(
+  no: NoPergunta,
+  vars: Record<string, string>,
+  opcao: Opcao,
+): string | null {
+  const de = (no.data.valoresDe ?? '').trim()
+  if (!perguntaEhDinamica(no) || de === '') return null
+
+  // Os ids das opções dinâmicas são `d1`, `d2`, … — a posição é o próprio id.
+  const posicao = Number(opcao.id.slice(1))
+  if (!Number.isInteger(posicao) || posicao < 1) return null
+
+  return itensDaLista(vars[de] ?? '')[posicao - 1] ?? ''
 }
 
 function perguntar(no: NoPergunta, s: Sessao): Acao {
