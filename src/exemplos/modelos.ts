@@ -1,5 +1,6 @@
 import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
 import { fluxoNovo } from '@/core/flow/novo'
+import { agendamento } from './agendamento'
 import { triagem } from './triagem'
 
 /**
@@ -160,6 +161,13 @@ export const MODELOS: Modelo[] = [
     resumo:
       'Duas linhas, sem perguntar nada. Serve como padrão para mídia recebida ou para fora do expediente.',
     grafo: recadoCurto,
+  },
+  {
+    id: 'agendamento',
+    nome: 'Agendar e remarcar na agenda',
+    resumo:
+      'Reconhece quem já é cliente pelo telefone, oferece os horários livres de verdade e marca. Precisa da credencial da Verandi.',
+    grafo: agendamento,
   },
   {
     id: 'triagem',
