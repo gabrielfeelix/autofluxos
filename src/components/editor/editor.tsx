@@ -43,6 +43,8 @@ import { AcaoDaArestaProvider, tiposDeAresta } from './arestas'
 import { DESCRICOES } from '@/core/flow/blocos'
 import { ICONES, NOMES, tiposDeNo } from './nos'
 import { NomeDoFluxo } from './nome-do-fluxo'
+import { PuxadorDeLargura } from './puxador'
+import { useLarguraGuardada } from './largura-guardada'
 import { Painel } from './painel'
 import type { ConexaoDoCliente, EtapaDoCliente, FluxoDaConta } from './painel'
 import { Versoes, type VersaoNaLista } from './versoes'
@@ -232,6 +234,14 @@ export function Editor({
   const ultimoSelecionado = useRef<string | null>(null)
   const [aba, setAba] = useState<'bloco' | 'testar'>('bloco')
   const [painelAberto, setPainelAberto] = useState(true)
+
+  // A largura da barra de blocos, lembrada no navegador de quem usa.
+  const [larguraDosBlocos, mudarLarguraDosBlocos] = useLarguraGuardada(
+    CHAVE_DA_LARGURA,
+    LARGURA_PADRAO_DOS_BLOCOS,
+    LARGURA_MINIMA_DOS_BLOCOS,
+    LARGURA_MAXIMA_DOS_BLOCOS,
+  )
   const [salvamento, setSalvamento] = useState<'salvo' | 'salvando' | 'pendente' | 'erro'>('salvo')
   const [publicada, setPublicada] = useState(publicadaInicial)
   const [versoes, setVersoes] = useState(versoesIniciais)
@@ -867,6 +877,12 @@ export function Editor({
     )
   }
 
+  /**
+   * A barra está estreita o bastante para a descrição atrapalhar mais do que
+   * ajudar? O corte é onde a frase de duas linhas passa a quebrar em quatro.
+   */
+  const apertada = larguraDosBlocos < LARGURA_SEM_DESCRICAO
+
   const noSelecionado = fluxo.nodes.find((n) => n.id === selecionado) ?? null
   const {
     nomes: doDesenho,
@@ -1137,7 +1153,26 @@ export function Editor({
       )}
 
       <div className="flex min-h-0 flex-1">
-        <nav className="w-[232px] shrink-0 overflow-y-auto border-r border-white/[0.06] bg-white/[0.012] px-3 py-3.5">
+        {/*
+          A barra de blocos tem largura fixa desde sempre, e ela é grande demais
+          para quem já decorou os dez blocos e pequena demais para quem está
+          aprendendo — duas pessoas diferentes, um número só. Agora ela se puxa.
+
+          `relative` porque o puxador se posiciona contra ela; `overflow-y-auto`
+          continua, então a lista rola quando a largura aperta.
+        */}
+        <nav
+          style={{ width: larguraDosBlocos }}
+          className="relative shrink-0 overflow-y-auto border-r border-white/[0.06] bg-white/[0.012] px-3 py-3.5"
+        >
+          <PuxadorDeLargura
+            largura={larguraDosBlocos}
+            aoMudar={mudarLarguraDosBlocos}
+            minima={LARGURA_MINIMA_DOS_BLOCOS}
+            maxima={LARGURA_MAXIMA_DOS_BLOCOS}
+            padrao={LARGURA_PADRAO_DOS_BLOCOS}
+            rotulo="Largura da barra de blocos"
+          />
           <p className="mb-2.5 px-2 text-[10.5px] font-bold tracking-[0.08em] text-dim uppercase">
             Blocos
           </p>
@@ -1150,14 +1185,39 @@ export function Editor({
                 evento.dataTransfer.setData(TIPO_ARRASTADO, tipo)
                 evento.dataTransfer.effectAllowed = 'copy'
               }}
-              className="mb-1 flex w-full cursor-grab items-start gap-3 rounded-[11px] border border-transparent p-2.5 text-left transition select-none hover:border-white/[0.07] hover:bg-white/[0.04] active:cursor-grabbing"
+              // A dica do bloco entra no `title` quando ela sai da tela: quem
+              // apertou a barra não deveria perder a explicação junto.
+              title={apertada ? `${NOMES[tipo]} — ${DESCRICOES[tipo]}` : undefined}
+              className={`mb-1 flex w-full cursor-grab items-start gap-3 rounded-[11px] border border-transparent text-left transition select-none hover:border-white/[0.07] hover:bg-white/[0.04] active:cursor-grabbing ${
+                apertada ? 'p-1.5' : 'p-2.5'
+              }`}
             >
-              <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-[10px] border border-white/[0.08] bg-white/[0.045] text-[15px] text-accent">
+              <span
+                aria-hidden
+                className={`flex shrink-0 items-center justify-center rounded-[10px] border border-white/[0.08] bg-white/[0.045] text-accent ${
+                  apertada ? 'size-7 text-[13px]' : 'size-9 text-[15px]'
+                }`}
+              >
                 {ICONES[tipo]}
               </span>
               <span className="min-w-0">
-                <strong className="block text-[13.5px] font-bold">{NOMES[tipo]}</strong>
-                <span className="mt-0.5 block text-[11px] leading-[1.35] text-dim">{DESCRICOES[tipo]}</span>
+                <strong
+                  className={`block font-bold ${apertada ? 'text-[12px] leading-[1.25]' : 'text-[13.5px]'}`}
+                >
+                  {NOMES[tipo]}
+                </strong>
+                {/*
+                  A descrição é a primeira coisa a sair quando a barra aperta.
+
+                  Ela é o que ensina quem está aprendendo, e é exatamente o que
+                  sobra quando alguém já decorou os dez blocos — que é o motivo
+                  de a barra poder encolher. Some da tela e continua no `title`.
+                */}
+                {!apertada && (
+                  <span className="mt-0.5 block text-[11px] leading-[1.35] text-dim">
+                    {DESCRICOES[tipo]}
+                  </span>
+                )}
               </span>
             </button>
           ))}
@@ -1617,6 +1677,21 @@ function ConfirmarApagar({
  * mensagem), então vale a maior. Errar para cima só afasta um pouco o bloco
  * novo; errar para baixo devolve a sobreposição.
  */
+/**
+ * Os limites da barra de blocos.
+ *
+ * O mínimo é onde o nome do bloco ainda cabe ao lado do ícone; abaixo disso a
+ * lista vira dez quadradinhos iguais e deixa de ser um catálogo. O máximo é o
+ * ponto em que ela começa a disputar espaço com o desenho, que é o que se veio
+ * ver.
+ */
+const LARGURA_PADRAO_DOS_BLOCOS = 232
+const LARGURA_MINIMA_DOS_BLOCOS = 132
+const LARGURA_MAXIMA_DOS_BLOCOS = 380
+/** Abaixo disto a descrição de cada bloco sai, e sobra o ícone com o nome. */
+const LARGURA_SEM_DESCRICAO = 190
+const CHAVE_DA_LARGURA = 'autofluxos:largura-dos-blocos'
+
 const LARGURA_NO = 248
 const ALTURA_NO = 140
 
