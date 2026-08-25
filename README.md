@@ -31,7 +31,8 @@ Para escolher e executar a próxima atividade, use
 gatilhos externos e critérios de aceite sem duplicar tarefas concluídas.
 
 Veja [docs/ARQUITETURA.md](docs/ARQUITETURA.md) para o desenho completo e as
-decisões por trás dele.
+decisões por trás dele. O que o bot já responde sobre a agenda do cliente — e o
+que ainda não — está em [docs/PLANO-AGENDA.md](docs/PLANO-AGENDA.md).
 
 ## Rodando
 
