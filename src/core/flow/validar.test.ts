@@ -182,6 +182,21 @@ describe('validar', () => {
     expect(codigos(validar(fluxo).erros)).toContain('ROTULO_LONGO')
   })
 
+  it('recusa modelo de rótulo em caminho que não para no []', () => {
+    const fluxo = fluxoValido()
+    fluxo.nodes.push({
+      id: 'api', type: 'http', position: { x: 0, y: 0 },
+      data: {
+        metodo: 'GET', url: 'https://exemplo.com', cabecalhos: [], corpo: '',
+        aoFalhar: 'seguir',
+        mapear: [{ variavel: 'horarios', caminho: 'livres[].hora', rotulo: '{hora}' }],
+      },
+    })
+    fluxo.edges.push({ id: 'x', source: 'q', sourceHandle: 'sim', target: 'api' })
+
+    expect(codigos(validar(fluxo).erros)).toContain('ROTULO_SEM_LISTA')
+  })
+
   it('deixa passar o rótulo de 20 caracteres que tem emoji — a Meta conta caractere, não UTF-16', () => {
     const fluxo = fluxoValido()
     const q = fluxo.nodes.find((n) => n.id === 'q')

@@ -826,6 +826,24 @@ function conferirConteudo(no: No, erros: Problema[], avisos: Problema[]): void {
         // `unicos` tira repetidos, e tirar repetidos de um lado desalinha o par:
         // a opção 3 passa a valer o valor da 4. O menu continua bonito e o
         // agendamento vai para o horário de outra pessoa.
+        /*
+         * Modelo de rótulo só monta sobre o item inteiro.
+         *
+         * Com um campo depois do `[]` o valor já está escolhido, e as chaves não
+         * teriam de onde tirar nada — o modelo publicaria e não faria efeito
+         * nenhum, que é o tipo de campo preenchido que faz alguém confiar numa
+         * configuração que não roda.
+         */
+        if (
+          !vazio(item.rotulo ?? '') &&
+          !item.caminho.trim().endsWith(MARCA_DE_LISTA)
+        ) {
+          erros.push({
+            codigo: 'ROTULO_SEM_LISTA',
+            mensagem: `O modelo de "${item.variavel || 'um mapeamento'}" só funciona quando o caminho termina em ${MARCA_DE_LISTA} — com um campo depois, o valor de cada item já está escolhido.`,
+            noId: no.id,
+          })
+        }
         if (item.unicos && !item.caminho.includes(MARCA_DE_LISTA)) {
           avisos.push({
             codigo: 'UNICOS_SEM_LISTA',

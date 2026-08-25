@@ -1280,15 +1280,42 @@ function Mapeamentos({
                 dias de um menu com a mesma data quatro vezes.
               */}
               {percorreLista && (
-                <label className="mt-1 flex cursor-pointer items-center gap-2 pl-1 text-[10.5px] leading-4 text-dim">
-                  <input
-                    type="checkbox"
-                    checked={m.unicos ?? false}
-                    onChange={(e) => trocar({ unicos: e.target.checked || undefined })}
-                    className="size-3.5 accent-[#56d0f5]"
-                  />
-                  sem repetir — use para menu de dias; não use quando esta lista for o par de outra
-                </label>
+                <>
+                  {/*
+                    O modelo só aparece quando o caminho para no `[]`.
+
+                    Com um campo depois dele (`livres[].hora`) o valor de cada
+                    item já está escolhido, e um modelo ali não teria de onde
+                    tirar `{servico}` — oferecer o campo seria oferecer uma
+                    montagem que não roda.
+                  */}
+                  {m.caminho.trim().endsWith(MARCA_DE_LISTA) && (
+                    <div className="mt-1">
+                      <input
+                        value={m.rotulo ?? ''}
+                        placeholder="{hora} · {servico}"
+                        onChange={(e) => trocar({ rotulo: e.target.value || undefined })}
+                        className="app-field w-full px-3 py-1.5 font-mono text-[11.5px]"
+                      />
+                      <p className="mt-1 pl-1 text-[10.5px] leading-4 text-dim">
+                        Como cada item vira uma linha do menu. Campo entre chaves vem da resposta —{' '}
+                        <code className="font-mono">{'{hora} · {servico}'}</code> produz{' '}
+                        <code className="font-mono">07:00 · Pilates solo</code>. Sem modelo, o menu
+                        só mostra um campo por item.
+                      </p>
+                    </div>
+                  )}
+
+                  <label className="mt-1 flex cursor-pointer items-center gap-2 pl-1 text-[10.5px] leading-4 text-dim">
+                    <input
+                      type="checkbox"
+                      checked={m.unicos ?? false}
+                      onChange={(e) => trocar({ unicos: e.target.checked || undefined })}
+                      className="size-3.5 accent-[#56d0f5]"
+                    />
+                    sem repetir — use para menu de dias; não use quando esta lista for o par de outra
+                  </label>
+                </>
               )}
             </div>
           )

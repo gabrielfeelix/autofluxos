@@ -208,8 +208,8 @@ export async function chamarHttp(
   }
 
   const valores: Record<string, string> = {}
-  for (const { variavel, caminho, unicos } of pedido.mapear) {
-    valores[variavel] = extrair(json, caminho, unicos ?? false)
+  for (const { variavel, caminho, unicos, rotulo } of pedido.mapear) {
+    valores[variavel] = extrair(json, caminho, unicos ?? false, rotulo)
   }
 
   return { ok: true, valores }
@@ -338,7 +338,12 @@ function montarCabecalhos(
  * caminho que não existe vira string vazia, igual `interpolar()` faz com
  * variável ausente. O validador é quem cobra o caminho certo, no editor.
  */
-export function extrair(json: unknown, caminho: string, unicos = false): string {
+export function extrair(
+  json: unknown,
+  caminho: string,
+  unicos = false,
+  rotulo?: string,
+): string {
   const [antes, depois] = separarNaLista(caminho)
 
   if (depois === null) return comoTexto(descer(json, antes))
@@ -355,9 +360,18 @@ export function extrair(json: unknown, caminho: string, unicos = false): string 
   const lista = descer(json, antes)
   if (!Array.isArray(lista)) return ''
 
+  const modelo = (rotulo ?? '').trim()
   const itens: string[] = []
   for (const item of lista) {
-    const bruto = depois === '' ? item : descer(item, depois)
+    /*
+     * Com modelo, o item inteiro é a fonte e os campos entre chaves montam a
+     * linha: `{hora} · {servico}` vira "07:00 · Pilates solo".
+     *
+     * **Sem isto o menu só sabia mostrar um campo por item**, e há pergunta que
+     * não fecha assim: duas aulas no mesmo dia viram duas linhas idênticas, e
+     * "qual aula é essa?" não tem onde aparecer.
+     */
+    const bruto = modelo !== '' ? montar(modelo, item) : depois === '' ? item : descer(item, depois)
     if (bruto === null || bruto === undefined) continue
 
     /*
@@ -378,6 +392,24 @@ export function extrair(json: unknown, caminho: string, unicos = false): string 
   }
 
   return cortar(itens.join(SEPARADOR_DE_LISTA))
+}
+
+/**
+ * Monta a linha de um item a partir do modelo.
+ *
+ * Campo que não existe vira vazio, pela mesma razão que `{{variavel}}`
+ * desconhecida vira vazio numa mensagem: um menu com `{servico}` literal é pior
+ * do que um menu com um espaço a mais. Espaço sobrando nas pontas sai fora.
+ */
+function montar(modelo: string, item: unknown): string {
+  return modelo
+    .replace(/\{\s*([a-zA-Z][a-zA-Z0-9_.]*)\s*\}/g, (_, campo: string) => {
+      const valor = descer(item, campo)
+      if (valor === null || valor === undefined) return ''
+      return typeof valor === 'object' ? '' : String(valor)
+    })
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 /** Quebra `livres[].hora` em `["livres", "hora"]`. Sem `[]`, o segundo é `null`. */

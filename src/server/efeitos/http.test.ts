@@ -140,6 +140,34 @@ describe('extrair', () => {
     it('ponto e vírgula dentro do item vira vírgula, senão o menu desalinha', () =>
       expect(extrair({ l: [{ n: 'Ana; Paula' }, { n: 'Bia' }] }, 'l[].n')).toBe('Ana, Paula;Bia'))
   })
+
+  /*
+   * Sem modelo, o menu só sabe mostrar um campo por item — e há pergunta que
+   * não fecha assim: duas aulas no mesmo dia viram duas linhas idênticas, e
+   * "qual aula é essa?" não tem onde aparecer.
+   */
+  describe('modelo de rótulo, para o item virar uma linha de menu', () => {
+    const agenda = {
+      livres: [
+        { sessaoId: 'a41f', data: '2026-08-21', hora: '07:00', servico: 'Pilates solo', profissional: 'Marina' },
+        { sessaoId: 'b52g', data: '2026-08-21', hora: '10:00', servico: 'Yoga', profissional: 'Carol' },
+      ],
+    }
+
+    it('junta campos do mesmo item numa linha só', () =>
+      expect(extrair(agenda, 'livres[]', false, '{hora} · {servico}')).toBe(
+        '07:00 · Pilates solo;10:00 · Yoga',
+      ))
+
+    it('a lista de ids continua casando por posição com a de rótulos', () =>
+      expect(extrair(agenda, 'livres[].sessaoId')).toBe('a41f;b52g'))
+
+    it('campo que não existe vira vazio, e não o nome dele à mostra', () =>
+      expect(extrair(agenda, 'livres[]', false, '{hora} {local}')).toBe('07:00;10:00'))
+
+    it('o modelo só vale sobre lista', () =>
+      expect(extrair(agenda, 'livres.0.hora', false, '{hora}')).toBe('07:00'))
+  })
 })
 
 describe('a conexão é fixada no endereço aprovado', () => {

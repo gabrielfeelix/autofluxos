@@ -459,6 +459,24 @@ export const mapeamentoSchema = z.object({
    * lado desalinha os dois, e o valor guardado passa a ser o do vizinho.
    */
   unicos: z.boolean().optional(),
+  /**
+   * Como cada item da lista vira uma linha de menu.
+   *
+   * `{hora} · {servico}` numa lista de horários produz
+   * `07:00 · Pilates solo;10:00 · Yoga`. Sem isto, o menu só sabe mostrar **um**
+   * campo por item — e aí "minhas próximas aulas" vira duas linhas idênticas
+   * quando há duas aulas no mesmo dia, e não há como dizer qual é qual.
+   *
+   * Só vale quando o caminho termina em `[]`: é o item inteiro que serve de
+   * fonte para os campos entre chaves. Campo que não existe no item vira vazio,
+   * pela mesma razão que `{{variavel}}` desconhecida vira vazio numa mensagem —
+   * um menu com `{servico}` literal é pior do que um menu com um espaço a mais.
+   *
+   * Chave simples e não `{{...}}` de propósito: o que está aqui não é variável
+   * da conversa, é campo da resposta. Usar a mesma marca convidaria a escrever
+   * `{{nome}}` esperando o nome do lead.
+   */
+  rotulo: z.string().optional(),
 })
 
 export const noHttpSchema = z.object({

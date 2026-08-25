@@ -67,8 +67,10 @@ function valoresDoPreset(presetId: string, json: unknown): Record<string, string
   if (!preset) throw new Error(`preset ${presetId} sumiu`)
 
   const valores: Record<string, string> = {}
-  for (const { variavel, caminho, unicos } of preset.dados.mapear) {
-    valores[variavel] = extrair(json, caminho, unicos ?? false)
+  // Os quatro argumentos, na mesma ordem que `resolverHttp` usa no servidor —
+  // esquecer o `rotulo` aqui faria o teste passar com o menu errado.
+  for (const { variavel, caminho, unicos, rotulo } of preset.dados.mapear) {
+    valores[variavel] = extrair(json, caminho, unicos ?? false, rotulo)
   }
   return valores
 }
@@ -114,9 +116,14 @@ describe('os caminhos do mapeamento batem com o que a API responde', () => {
 
   it('os horários e os ids saem na mesma ordem, que é o que amarra o menu', () => {
     expect(valoresDoPreset('verandi-horarios', DISPONIBILIDADE)).toEqual({
-      horarios: '07:00;10:00',
+      // O rótulo diz a hora **e qual aula é** — "07:00" sozinho não responde a
+      // pergunta que sempre vem em seguida.
+      horarios: '07:00 · Pilates solo;10:00 · Pilates solo',
       horarios_id: 'a41f;b52g',
       horarios_prof: 'Marina;Carol',
+      // Vazio aqui é "não há horário cheio", e é diferente de não haver horário.
+      lotados: '',
+      lotados_id: '',
     })
   })
 
@@ -152,7 +159,10 @@ describe('a conversa inteira, do "oi" ao horário marcado', () => {
     r = responder(r, 'verandi-horarios', DISPONIBILIDADE)
 
     // O menu mostra o que a pessoa lê; os ids ficam guardados ao lado.
-    expect(opcoesDe(r.acoes).map((o) => o.rotulo)).toEqual(['07:00', '10:00'])
+    expect(opcoesDe(r.acoes).map((o) => o.rotulo)).toEqual([
+      '07:00 · Pilates solo',
+      '10:00 · Pilates solo',
+    ])
 
     r = executar(agendamento, r.sessao, { tipo: 'opcao', opcaoId: 'd1' })
     // **A prova do modelo inteiro:** o `POST` sai com o id do horário, e não

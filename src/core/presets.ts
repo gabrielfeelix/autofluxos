@@ -283,18 +283,61 @@ export const PRESETS: Preset[] = [
       cabecalhos: [],
       corpo: '',
       /*
-       * Três listas do mesmo `[]`, e a ordem entre elas é o que amarra tudo.
+       * Duas listas para o menu, e uma para o que não coube nele.
        *
-       * `horarios` é o que a pessoa lê, `horarios_id` é o que a API entende, e
-       * `horarios_prof` diz quem atende. Na Pergunta seguinte: opções de
-       * `horarios`, valores de `horarios_id`. **Nenhuma delas pode ter "sem
-       * repetir"** — tirar um item de uma desloca os valores das outras, e o
-       * agendamento vai para o horário de alguém.
+       * `horarios` é o que a pessoa lê — **hora, aula e professor na mesma
+       * linha**, porque "07:00" sozinho não responde "qual aula é essa?" nem
+       * "com quem?", que são as duas perguntas que sempre vêm em seguida.
+       * O rótulo para em dois campos porque o botão do WhatsApp aceita 20
+       * caracteres: `07:00 · Pilates solo` já são os 20. O professor fica em
+       * `horarios_prof`, para a mensagem antes do menu dizer quem atende.
+       *
+       * `horarios_id` é o que a API entende. Na Pergunta: opções de `horarios`,
+       * valores de `horarios_id`. **Nenhuma das duas pode ter "sem repetir"** —
+       * tirar um item de uma desloca os valores da outra, e o agendamento vai
+       * para o horário de alguém.
+       *
+       * `lotados` vem na mesma chamada e existe para separar duas conversas
+       * diferentes que viravam a mesma: "não tem nada nesse dia" e "tem, e
+       * encheu". A segunda tem saída — é o gancho da fila de espera —, e sem
+       * esta lista o bot dizia "não temos horário" para um dia cheio de aula.
        */
       mapear: [
-        { variavel: 'horarios', caminho: 'livres[].hora' },
+        { variavel: 'horarios', caminho: 'livres[]', rotulo: '{hora} · {servico}' },
         { variavel: 'horarios_id', caminho: 'livres[].sessaoId' },
         { variavel: 'horarios_prof', caminho: 'livres[].profissional' },
+        { variavel: 'lotados', caminho: 'cheios[]', rotulo: '{hora} · {servico}' },
+        { variavel: 'lotados_id', caminho: 'cheios[].sessaoId' },
+      ],
+      aoFalhar: 'humano',
+    },
+  },
+  {
+    id: 'verandi-horarios-do-professor',
+    grupo: 'agenda',
+    nome: 'Verandi · horários livres com um professor',
+    resumo:
+      'Os horários de um dia com um profissional específico. É o que responde "quero aula com a Marina".',
+    exige:
+      'A mesma credencial “bearer”. O `professor_id` sai do bloco de catálogo, guardado por uma pergunta com lista de valores.',
+    credencial: 'bearer',
+    dados: {
+      metodo: 'GET',
+      /*
+       * O filtro é da própria rota, e não uma lista peneirada aqui.
+       *
+       * Peneirar do nosso lado significaria trazer o dia inteiro e jogar fora o
+       * que não serve — e o teto de 10 itens do menu cortaria antes da peneira,
+       * escondendo justamente os horários do professor pedido.
+       */
+      url: 'https://verandi.4yu.com.br/api/v1/disponibilidade?de={{dia}}&ate={{dia}}&profissional={{professor_id}}',
+      cabecalhos: [],
+      corpo: '',
+      mapear: [
+        { variavel: 'horarios', caminho: 'livres[]', rotulo: '{hora} · {servico}' },
+        { variavel: 'horarios_id', caminho: 'livres[].sessaoId' },
+        { variavel: 'lotados', caminho: 'cheios[]', rotulo: '{hora} · {servico}' },
+        { variavel: 'lotados_id', caminho: 'cheios[].sessaoId' },
       ],
       aoFalhar: 'humano',
     },
@@ -412,11 +455,24 @@ export const PRESETS: Preset[] = [
       corpo: '',
       // As próximas viram menu junto com os ids delas: é assim que "quero
       // desmarcar" oferece o que dá para desmarcar, em vez de pedir um id.
+      /*
+       * Data **e hora** na mesma linha, e não só a data.
+       *
+       * Duas aulas no mesmo dia viravam duas opções idênticas no menu de
+       * desmarcar — e escolher entre duas linhas iguais é escolher no escuro.
+       * Com o modelo de rótulo, cada linha diz o dia, a hora e qual aula é.
+       */
       mapear: [
-        { variavel: 'proximas', caminho: 'proximas[].data' },
+        { variavel: 'proximas', caminho: 'proximas[]', rotulo: '{data} {hora} · {servico}' },
         { variavel: 'proximas_id', caminho: 'proximas[].participacaoId' },
-        { variavel: 'reposicoes_abertas', caminho: 'reposicoesAbertas[].data' },
-        { variavel: 'horario_fixo', caminho: 'horariosFixos[].hora' },
+        {
+          variavel: 'reposicoes_abertas',
+          caminho: 'reposicoesAbertas[]',
+          rotulo: '{data} {hora} · {servico}',
+        },
+        { variavel: 'reposicoes_id', caminho: 'reposicoesAbertas[].participacaoId' },
+        { variavel: 'horario_fixo', caminho: 'horariosFixos[]', rotulo: '{hora} · {servico}' },
+        { variavel: 'situacao_na_agenda', caminho: 'situacao' },
       ],
       aoFalhar: 'humano',
     },
