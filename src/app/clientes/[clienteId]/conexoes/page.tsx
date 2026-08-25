@@ -6,10 +6,18 @@ import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formular
 import {
   acaoApagarConexao,
   acaoCriarConexao,
+  acaoLigarAgenda,
   acaoTrocarValorDaConexao,
 } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarConexoes, type Conexao } from '@/server/repos/conexoes'
+import { listarFluxos } from '@/server/repos/fluxos'
+import { CartaoDaAgenda } from '@/components/conexoes/agenda'
+import {
+  NOME_DA_AGENDA,
+  NOME_DA_CREDENCIAL_DA_AGENDA,
+  PREFIXO_DA_CHAVE,
+} from '@/core/agenda'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,7 +44,33 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const conexoes = await listarConexoes(clienteId)
+  const [conexoes, fluxos] = await Promise.all([
+    listarConexoes(clienteId),
+    listarFluxos(clienteId),
+  ])
+
+  /**
+   * Quantos blocos apontam para cada credencial.
+   *
+   * **É a diferença entre "cadastrada" e "ligada"**, e a tela não sabia dizer:
+   * dá para ter a chave certa guardada e nenhuma automação chamando nada. Sai do
+   * rascunho de cada fluxo, que já está na mão — nenhuma consulta a mais.
+   */
+  const usoPorConexao = new Map<string, { blocos: number; fluxos: number }>()
+  for (const fluxo of fluxos) {
+    const daqui = new Set<string>()
+    for (const no of fluxo.rascunho.nodes) {
+      if (no.type !== 'http' || !no.data.conexaoId) continue
+      const uso = usoPorConexao.get(no.data.conexaoId) ?? { blocos: 0, fluxos: 0 }
+      uso.blocos += 1
+      usoPorConexao.set(no.data.conexaoId, uso)
+      daqui.add(no.data.conexaoId)
+    }
+    // Contado uma vez por automação: três blocos no mesmo fluxo são um fluxo.
+    for (const id of daqui) usoPorConexao.get(id)!.fluxos += 1
+  }
+
+  const daAgenda = conexoes.find((c) => c.nome === NOME_DA_CREDENCIAL_DA_AGENDA) ?? null
 
   return (
     <ClienteShell cliente={cliente} ativa="ajustes">
@@ -108,6 +142,59 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           </ModalFormulario>
         </div>
 
+        {/*
+          A agenda ganha cartão próprio, e as outras credenciais não.
+
+          Não é favoritismo: ela é a única cujo endereço nós conhecemos, e por
+          isso a única que dá para **conferir de verdade** — apertar um botão e
+          ouvir a resposta. Uma credencial de CRM genérica não tem para onde a
+          gente ligar sem inventar um endereço.
+        */}
+        {daAgenda ? (
+          <CartaoDaAgenda
+            clienteId={clienteId}
+            conexaoId={daAgenda.id}
+            blocosQueUsam={usoPorConexao.get(daAgenda.id)?.blocos ?? 0}
+            fluxosQueUsam={usoPorConexao.get(daAgenda.id)?.fluxos ?? 0}
+          />
+        ) : (
+          <div className="app-card mb-4 flex flex-wrap items-center gap-3 px-5 py-4">
+            <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.05] text-[15px]">
+              📅
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13.5px] font-bold">Agenda — {NOME_DA_AGENDA}</p>
+              <p className="mt-0.5 text-[11.5px] leading-4 text-dim">
+                Não ligada. Sem ela, o bot não sabe horário livre, professor nem quem já é cliente.
+              </p>
+            </div>
+            <ModalFormulario
+              botao={`Ligar a ${NOME_DA_AGENDA}`}
+              variante="secundario"
+              titulo={`Ligar a agenda ${NOME_DA_AGENDA}`}
+              descricao={`A chave fica num cofre e não volta para esta tela. Antes de guardar, a gente pergunta à agenda se ela vale — chave recusada não vira credencial nenhuma.`}
+              rotuloEnviar="Conferir e ligar"
+              action={acaoLigarAgenda.bind(null, clienteId)}
+            >
+              <label className="block">
+                <RotuloCampo>Chave da API</RotuloCampo>
+                <input
+                  name="chave"
+                  type="password"
+                  required
+                  autoComplete="off"
+                  placeholder={`${PREFIXO_DA_CHAVE}…`}
+                  className="app-field px-3 py-2.5 font-mono text-[13px]"
+                />
+                <span className="mt-1 block text-[10.5px] leading-4 text-dim">
+                  Na {NOME_DA_AGENDA}: Configurações → Integrações. Ela começa com{' '}
+                  <code className="font-mono">{PREFIXO_DA_CHAVE}</code>.
+                </span>
+              </label>
+            </ModalFormulario>
+          </div>
+        )}
+
         {conexoes.length === 0 ? (
           <div className="app-card px-6 py-10 text-center">
             <p className="text-[13.5px] text-soft">Nenhuma credencial ainda.</p>
@@ -124,6 +211,25 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
                   <p className="text-[13.5px] font-bold">{conexao.nome}</p>
                   <p className="mt-0.5 font-mono text-[11px] text-dim">
                     {COMO_ENTRA[conexao.tipo](conexao.campo)}
+                  </p>
+                  {/*
+                    Cadastrada e usada são perguntas diferentes. Uma credencial
+                    que nenhum bloco aponta não faz nada, e a lista mostrava as
+                    duas exatamente igual.
+                  */}
+                  <p className="mt-1 text-[11px] text-dim">
+                    {(() => {
+                      const uso = usoPorConexao.get(conexao.id)
+                      if (!uso) return <span className="text-amber-200">nenhum bloco usa</span>
+                      return (
+                        <>
+                          usada em <strong className="text-soft">{uso.blocos}</strong>{' '}
+                          {uso.blocos === 1 ? 'bloco' : 'blocos'} de{' '}
+                          <strong className="text-soft">{uso.fluxos}</strong>{' '}
+                          {uso.fluxos === 1 ? 'automação' : 'automações'}
+                        </>
+                      )
+                    })()}
                   </p>
                 </div>
 

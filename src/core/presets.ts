@@ -1,3 +1,4 @@
+import { ENDERECO_DA_AGENDA } from './agenda'
 import type { AoFalhar, Cabecalho, Mapeamento, Metodo } from './flow/schema'
 
 /**
@@ -227,7 +228,7 @@ export const PRESETS: Preset[] = [
       // grava no contato. Não achar responde 200 com lista vazia, então o
       // caminho de "não é aluno ainda" é uma condição sobre `encontrado`, e não
       // um erro.
-      url: 'https://verandi.4yu.com.br/api/v1/pessoas?telefone={{telefone}}',
+      url: `${ENDERECO_DA_AGENDA}/pessoas?telefone={{telefone}}`,
       cabecalhos: [],
       corpo: '',
       mapear: [
@@ -257,7 +258,7 @@ export const PRESETS: Preset[] = [
       metodo: 'GET',
       // As duas datas vêm de uma pergunta com formato `data` guardando o
       // padronizado, que é `2026-08-21` — o formato que esta rota aceita.
-      url: 'https://verandi.4yu.com.br/api/v1/disponibilidade?de={{data_de}}&ate={{data_ate}}',
+      url: `${ENDERECO_DA_AGENDA}/disponibilidade?de={{data_de}}&ate={{data_ate}}`,
       cabecalhos: [],
       corpo: '',
       // `unicos` é o que faz este menu prestar: a lista traz uma linha por
@@ -279,7 +280,7 @@ export const PRESETS: Preset[] = [
     credencial: 'bearer',
     dados: {
       metodo: 'GET',
-      url: 'https://verandi.4yu.com.br/api/v1/disponibilidade?de={{dia}}&ate={{dia}}',
+      url: `${ENDERECO_DA_AGENDA}/disponibilidade?de={{dia}}&ate={{dia}}`,
       cabecalhos: [],
       corpo: '',
       /*
@@ -330,7 +331,7 @@ export const PRESETS: Preset[] = [
        * que não serve — e o teto de 10 itens do menu cortaria antes da peneira,
        * escondendo justamente os horários do professor pedido.
        */
-      url: 'https://verandi.4yu.com.br/api/v1/disponibilidade?de={{dia}}&ate={{dia}}&profissional={{professor_id}}',
+      url: `${ENDERECO_DA_AGENDA}/disponibilidade?de={{dia}}&ate={{dia}}&profissional={{professor_id}}`,
       cabecalhos: [],
       corpo: '',
       mapear: [
@@ -352,7 +353,7 @@ export const PRESETS: Preset[] = [
     credencial: 'bearer',
     dados: {
       metodo: 'GET',
-      url: 'https://verandi.4yu.com.br/api/v1/catalogo',
+      url: `${ENDERECO_DA_AGENDA}/catalogo`,
       cabecalhos: [],
       corpo: '',
       // O vocabulário vem junto porque cada conta chama as coisas do jeito
@@ -379,7 +380,7 @@ export const PRESETS: Preset[] = [
     credencial: 'bearer',
     dados: {
       metodo: 'POST',
-      url: 'https://verandi.4yu.com.br/api/v1/pessoas',
+      url: `${ENDERECO_DA_AGENDA}/pessoas`,
       cabecalhos: [{ chave: 'Content-Type', valor: 'application/json' }],
       corpo: `{
   "nome": "{{nome}}",
@@ -401,7 +402,7 @@ export const PRESETS: Preset[] = [
     credencial: 'bearer',
     dados: {
       metodo: 'POST',
-      url: 'https://verandi.4yu.com.br/api/v1/participacoes',
+      url: `${ENDERECO_DA_AGENDA}/participacoes`,
       cabecalhos: [{ chave: 'Content-Type', valor: 'application/json' }],
       // `{{sessao_id}}` sai da pergunta dinâmica com lista de valores. Escrever
       // `{{horario}}` aqui é o erro clássico: manda "07:00" onde a API quer o
@@ -433,7 +434,7 @@ export const PRESETS: Preset[] = [
       // Apesar do verbo, nada é apagado do outro lado: a marcação fica no
       // histórico como falta avisada, que é o que preserva a reposição.
       metodo: 'DELETE',
-      url: 'https://verandi.4yu.com.br/api/v1/participacoes/{{participacao_id}}',
+      url: `${ENDERECO_DA_AGENDA}/participacoes/{{participacao_id}}`,
       cabecalhos: [],
       corpo: '',
       mapear: [{ variavel: 'situacao', caminho: 'status' }],
@@ -450,7 +451,7 @@ export const PRESETS: Preset[] = [
     credencial: 'bearer',
     dados: {
       metodo: 'GET',
-      url: 'https://verandi.4yu.com.br/api/v1/pessoas/{{pessoa_id}}',
+      url: `${ENDERECO_DA_AGENDA}/pessoas/{{pessoa_id}}`,
       cabecalhos: [],
       corpo: '',
       // As próximas viram menu junto com os ids delas: é assim que "quero
@@ -487,7 +488,7 @@ export const PRESETS: Preset[] = [
     credencial: 'bearer',
     dados: {
       metodo: 'POST',
-      url: 'https://verandi.4yu.com.br/api/v1/espera',
+      url: `${ENDERECO_DA_AGENDA}/espera`,
       cabecalhos: [{ chave: 'Content-Type', valor: 'application/json' }],
       corpo: `{
   "pessoaId": "{{pessoa_id}}",

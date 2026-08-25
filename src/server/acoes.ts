@@ -63,6 +63,8 @@ import {
 } from './repos/usuarios'
 import { autenticacao } from './auth'
 import { registrar } from './repos/auditoria'
+import { conferirChaveDaAgenda } from './agenda'
+import { NOME_DA_CREDENCIAL_DA_AGENDA } from '@/core/agenda'
 import { sessaoAtual } from './sessao'
 import {
   acharFluxo,
@@ -75,7 +77,7 @@ import {
   renomearFluxo,
   salvarRascunho,
 } from './repos/fluxos'
-import { apagarConexao, criarConexao, trocarValor } from './repos/conexoes'
+import { apagarConexao, criarConexao, lerCredencial, trocarValor } from './repos/conexoes'
 import { apagarContato, apagarContatos } from './repos/retencao'
 import { apagarRespostaRapida, criarRespostaRapida } from './repos/respostas-rapidas'
 import { alternarGatilho, apagarGatilho, criarGatilho } from './repos/gatilhos'
@@ -1447,6 +1449,90 @@ export async function acaoRemoverDaConta(
 
   revalidatePath(`/clientes/${clienteId}/ajustes/equipe`)
   return { ok: true }
+}
+
+/**
+ * Ligar a agenda deste cliente — conferindo antes de guardar.
+ *
+ * **A ordem é o ponto: confere, depois grava.** Guardar primeiro e conferir
+ * depois deixaria uma credencial errada cadastrada, com cara de pronta, e o erro
+ * apareceria só no meio de uma conversa de verdade — como um handoff sem
+ * explicação. Aqui, chave recusada não vira linha nenhuma.
+ *
+ * O que a conferência devolve é a resposta para a outra pergunta que a tela não
+ * respondia: *"qual informação o bot vai puxar?"*. Em vez de descrever, a tela
+ * mostra os profissionais e os serviços que vieram de lá.
+ */
+export async function acaoLigarAgenda(
+  clienteId: string,
+  formData: FormData,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const chave = String(formData.get('chave') ?? '')
+  const estado = await conferirChaveDaAgenda(chave)
+  if (!estado.ok) return { ok: false, erro: estado.motivo }
+
+  try {
+    await criarConexao({
+      clienteId,
+      nome: NOME_DA_CREDENCIAL_DA_AGENDA,
+      tipo: 'bearer',
+      valor: chave.trim(),
+    })
+  } catch (erro) {
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para guardar' }
+  }
+
+  revalidatePath(`/clientes/${clienteId}/conexoes`)
+  return { ok: true }
+}
+
+/**
+ * Conferir de novo uma credencial da agenda já guardada.
+ *
+ * A chave sai do cofre, vai para a agenda e **não volta para a tela** — o que
+ * volta é o que a conta tem. É a diferença entre "cadastrada" e "funcionando",
+ * e sem este botão as duas eram a mesma coisa aos olhos de quem opera.
+ */
+export type RespostaDaAgenda = {
+  ok: boolean
+  erro?: string
+  /** O que a conta tem — é o que a tela mostra no lugar de descrever. */
+  profissionais?: string[]
+  servicos?: string[]
+  locais?: string[]
+  /** Como esta conta chama um serviço: "Aula", "Sessão", "Modalidade". */
+  comoChamaServico?: string | null
+}
+
+export async function acaoConferirAgenda(
+  clienteId: string,
+  conexaoId: string,
+): Promise<RespostaDaAgenda> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const credencial = await lerCredencial(conexaoId, clienteId)
+  if (!credencial) return { ok: false, erro: 'esta credencial não é deste cliente' }
+
+  const estado = await conferirChaveDaAgenda(credencial.valor)
+  if (!estado.ok) return { ok: false, erro: estado.motivo }
+
+  /*
+   * Devolve os **nomes**, e não a contagem.
+   *
+   * "3 profissionais" prova que a chave vale e não responde a pergunta que veio
+   * junto: *"qual informação o bot vai puxar?"*. Ver "Marina, Carol, Júlia" na
+   * tela responde as duas de uma vez, e ainda pega o erro mais silencioso de
+   * todos — a chave certa da conta errada.
+   */
+  return {
+    ok: true,
+    profissionais: estado.profissionais,
+    servicos: estado.servicos,
+    locais: estado.locais,
+    comoChamaServico: estado.comoChamaServico,
+  }
 }
 
 /**
