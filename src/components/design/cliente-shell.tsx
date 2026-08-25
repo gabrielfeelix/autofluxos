@@ -6,6 +6,7 @@ import { acaoDefinirPresenca, acaoSair } from '@/server/acoes-conta'
 import type { Cliente } from '@/server/repos/clientes'
 import { presencaDoUsuario } from '@/server/repos/usuarios'
 import { contasDoUsuario, ehAdminDaPlataforma, exigirAcessoAoCliente } from '@/server/sessao'
+import { BotaoDeAjuda } from './botao-de-ajuda'
 import { LogoDoCliente } from './logo-cliente'
 import { Marca } from './marca'
 
@@ -83,13 +84,18 @@ export async function ClienteShell({
   return (
     <div className="flex min-h-screen flex-col md:h-screen md:min-h-[700px] md:flex-row md:overflow-hidden">
       <aside className="flex shrink-0 flex-col border-white/[0.06] bg-white/[0.014] md:w-[226px] md:border-r md:px-3.5 md:pt-5 md:pb-4">
-        <div className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-3 md:mb-5 md:block md:border-0 md:px-2 md:py-0">
+        <div className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-3 md:mb-5 md:border-0 md:px-2 md:py-0">
           <Marca />
-          {/* No celular a barra vira faixa e a identidade da conta perde o
-              rodapé: sem isto, nada na tela diz de quem é a conta aberta. */}
-          <span className="ml-auto flex items-center gap-2 md:hidden">
-            <LogoDoCliente cliente={cliente} tamanho={26} />
-            <span className="max-w-[130px] truncate text-[12px] font-semibold">{cliente.nome}</span>
+          <span className="ml-auto flex items-center gap-2">
+            {/* No celular a barra vira faixa e a identidade da conta perde o
+                rodapé: sem isto, nada na tela diz de quem é a conta aberta. */}
+            <span className="flex items-center gap-2 md:hidden">
+              <LogoDoCliente cliente={cliente} tamanho={26} />
+              <span className="max-w-[110px] truncate text-[12px] font-semibold">
+                {cliente.nome}
+              </span>
+            </span>
+            <BotaoDeAjuda />
           </span>
         </div>
 

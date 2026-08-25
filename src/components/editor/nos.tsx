@@ -2,6 +2,7 @@
 
 import { Handle, Position, type NodeProps, type NodeTypes } from '@xyflow/react'
 import type { ReactNode } from 'react'
+import { CORES, ICONES, NOMES } from '@/core/flow/blocos'
 import { partesDaMensagem } from '@/core/flow/mensagem'
 import { NOME_DO_FORMATO, type FormatoDeResposta } from '@/core/flow/resposta'
 import {
@@ -24,66 +25,15 @@ import {
  * é a ramificação** — não existe tela de configurar branch em lugar nenhum.
  */
 
-const CORES = {
-  mensagem: 'border-sky-400/30',
-  pergunta: 'border-emerald-400/30',
-  condicao: 'border-violet-400/30',
-  'salvar-campo': 'border-amber-300/30',
-  ia: 'border-fuchsia-400/30',
-  handoff: 'border-rose-400/30',
-  http: 'border-cyan-400/30',
-  midia: 'border-sky-400/30',
-  etapa: 'border-teal-400/30',
-  'ir-fluxo': 'border-indigo-400/30',
-} as const
-
-export const ICONES = {
-  mensagem: '↗',
-  pergunta: '?',
-  condicao: '⑂',
-  'salvar-campo': '↓',
-  ia: '✦',
-  handoff: '♙',
-  http: '⇄',
-  midia: '▣',
-  etapa: '▤',
-  'ir-fluxo': '⇥',
-} as const
-
 /**
- * O nome que aparece no bloco e no catálogo.
+ * Nome, ícone e cor de cada bloco moram em `core/flow/blocos.ts`.
  *
- * `http` se chamava **"API"**, que é o nome da tecnologia, não o do trabalho.
- * Quem desenha o fluxo do estúdio de pilates não está procurando uma API: está
- * procurando "puxar a agenda", "mandar pro CRM", "consultar o sistema". Foi
- * exatamente o que o operador do concorrente apontou, e lá o bloco ainda se
- * chamava "Integração" — nós estávamos um degrau abaixo.
+ * Foram para lá quando a página de Ajuda passou a desenhar os mesmos dez
+ * blocos: este arquivo é `'use client'` e traz o React Flow inteiro junto, e a
+ * Ajuda não desenha grafo nenhum. O reexport mantém `import { NOMES } from
+ * './nos'` funcionando em quem já chamava assim.
  */
-export const NOMES = {
-  mensagem: 'Mensagem',
-  pergunta: 'Pergunta',
-  condicao: 'Condição',
-  'salvar-campo': 'Guardar',
-  ia: 'IA',
-  handoff: 'Falar com humano',
-  http: 'Serviços externos',
-  midia: 'Mídia',
-  /**
-   * "Etapa do quadro", e não "Kanban" nem "mover cartão".
-   *
-   * Quem desenha o fluxo pensa em "marcar que essa pessoa agendou a aula", não
-   * em mover um cartão — o cartão é o desenho da coisa, não a coisa. É a mesma
-   * correção que fez `http` deixar de se chamar "API".
-   */
-  etapa: 'Etapa do quadro',
-  /**
-   * "Ir para outra automação", e não "sub-fluxo" nem "chamar fluxo".
-   *
-   * "Chamar" promete volta, e não existe volta: quem salta termina no outro
-   * desenho. O nome diz exatamente o que acontece com a conversa.
-   */
-  'ir-fluxo': 'Ir para outra automação',
-} as const
+export { CORES, ICONES, NOMES } from '@/core/flow/blocos'
 
 function Caixa({
   tipo,

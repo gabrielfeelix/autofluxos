@@ -39,6 +39,7 @@ import {
 import { Modal } from '@/components/design/modal'
 import { SeloDoCanal } from '@/components/design/selo-do-canal'
 import { AcaoDaArestaProvider, tiposDeAresta } from './arestas'
+import { DESCRICOES } from '@/core/flow/blocos'
 import { ICONES, NOMES, tiposDeNo } from './nos'
 import { NomeDoFluxo } from './nome-do-fluxo'
 import { Painel } from './painel'
@@ -85,18 +86,6 @@ const TIPOS: TipoNo[] = [
   'http',
 ]
 
-const DESCRICOES: Record<TipoNo, string> = {
-  mensagem: 'Envia um texto',
-  midia: 'Envia foto ou arquivo',
-  pergunta: 'Pergunta e guarda',
-  condicao: 'Divide o caminho',
-  'salvar-campo': 'Registra no lead',
-  etapa: 'Move no quadro',
-  'ir-fluxo': 'Continua em outra',
-  ia: 'Responde pelo contexto',
-  handoff: 'Passa para uma pessoa',
-  http: 'Chama um sistema',
-}
 
 /**
  * O que viaja no arrasto da barra de blocos até o desenho.

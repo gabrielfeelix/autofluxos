@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
 import { acaoSair } from '@/server/acoes-conta'
 import { ehAdminDaPlataforma, sessaoAtual } from '@/server/sessao'
+import { BotaoDeAjuda } from './botao-de-ajuda'
 import { Marca } from './marca'
 
 /**
@@ -27,8 +28,11 @@ export async function PainelShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col md:h-screen md:min-h-[700px] md:flex-row md:overflow-hidden">
       <aside className="flex shrink-0 flex-row items-center gap-3 border-b border-white/[0.06] bg-white/[0.014] px-4 py-3 md:w-[226px] md:flex-col md:items-stretch md:gap-0 md:border-r md:border-b-0 md:px-3.5 md:pt-5 md:pb-4">
-        <div className="md:mb-5 md:px-2">
+        <div className="flex items-center gap-3 md:mb-5 md:px-2">
           <Marca />
+          <span className="ml-auto">
+            <BotaoDeAjuda />
+          </span>
         </div>
 
         <Link

@@ -27,8 +27,12 @@ primeira integração de ponta a ponta com um sistema de negócio, e está em §
 
 `npm test` → **818 passando, 8 pulados** (os pulados dependem de `IA_TESTE_REAL`
 e `API_TESTE_REAL`, por desenho). `typecheck`, `lint` e `build` limpos.
-**Migrations aplicadas em produção: `0001` a `0035`, todas. As `0036` e `0037`
-estão escritas no diretório; a próxima a escrever é a `0038`.**
+**Migrations aplicadas em produção: `0001` a `0037`, todas. A próxima a escrever
+é a `0038`.** Conferido em 24/ago contra o banco, e não contra este documento —
+`flows.ativo`, `flows.canal` e `contacts.nome_real` respondem. Ele dizia `0035`
+depois de a `0036` e a `0037` já terem sido aplicadas, que é exatamente o tipo de
+divergência que o [BANCO-COMPARTILHADO.md](BANCO-COMPARTILHADO.md) manda resolver
+olhando o disco e o banco, nunca o plano.
 
 ---
 
