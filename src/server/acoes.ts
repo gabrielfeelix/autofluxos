@@ -43,6 +43,7 @@ import { dentroDaJanela } from '@/channels/janela'
 import type { EstadoSalvar } from '@/components/design/formulario-salvar'
 import {
   atribuirContato,
+  calarBotNaConversa,
   contextoDeResposta,
   criarCanal,
   confirmarEntrega,
@@ -2188,6 +2189,20 @@ export async function acaoAssumirAtendimento(
 
   const ok = await atribuirContato(clienteId, contatoId, sessao.usuario.id)
   if (!ok) return { ok: false, erro: 'este contato não é deste cliente' }
+
+  /*
+   * Assumir cala o bot, e isso é o conserto de uma incoerência antiga.
+   *
+   * Antes daqui, assumir marcava o responsável e mais nada: o bot continuava
+   * conduzindo, e se a pessoa do outro lado respondesse rápido ele falava por
+   * cima de quem tinha acabado de pegar a conversa. Responder já calava — ou
+   * seja, era preciso digitar alguma coisa para o bot parar.
+   *
+   * Vem **depois** de atribuir porque atribuir é o que pode recusar: calar o
+   * bot de um contato que não é deste cliente seria um efeito de uma ação que
+   * não aconteceu.
+   */
+  await calarBotNaConversa(contatoId)
 
   // Uma pessoa assumiu: a conversa é dela agora, e um acompanhamento automático
   // por cima falaria junto com quem está atendendo (0031).

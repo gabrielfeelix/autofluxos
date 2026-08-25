@@ -6,8 +6,10 @@ import { db } from './db'
 import { receberMensagem } from './receber-mensagem'
 import { criarCliente } from './repos/clientes'
 import {
+  calarBotNaConversa,
   contextoDeResposta,
   criarCanal,
+  definirStatusDaSessao,
   encerrarAtendimento,
   ultimaSessao,
 } from './repos/conversas'
@@ -249,13 +251,51 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
    * e tratava uma aluna de dois anos como pessoa nova.
    */
   it('a conversa nova já sabe o telefone e o nome de quem escreveu', async () => {
-    const de = telefone(12)
-    await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-12a`), comMock)
+    const de = telefone(30)
+    await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-30a`), comMock)
 
     const { data: contato } = await db().from('contacts').select('id').eq('wa_id', de).single()
     const salva = await ultimaSessao(contato!.id as string, canalId)
 
     expect(salva?.sessao.vars.telefone).toBe(de)
+  })
+
+  /*
+   * Assumir marcava o responsável e mais nada: o bot continuava conduzindo, e
+   * se a pessoa respondesse rápido ele falava por cima de quem tinha acabado de
+   * pegar a conversa. Só responder calava — ou seja, era preciso digitar alguma
+   * coisa para o bot parar.
+   */
+  it('assumir cala o bot na conversa que está andando', async () => {
+    const de = telefone(31)
+    await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-31a`), comMock)
+
+    const { data: contato } = await db().from('contacts').select('id').eq('wa_id', de).single()
+    const contatoId = contato!.id as string
+    expect((await ultimaSessao(contatoId, canalId))?.sessao.status).toBe('ativa')
+
+    expect(await calarBotNaConversa(contatoId)).toBe(true)
+    expect((await ultimaSessao(contatoId, canalId))?.sessao.status).toBe('humano')
+
+    // O bot fica calado de verdade: a próxima mensagem entra e nada sai.
+    mock.enviadas.length = 0
+    await receberMensagem(webhookTexto(de, 'e aí?', `wamid-${marca}-31b`), comMock)
+    expect(mock.enviadas).toHaveLength(0)
+  })
+
+  // Promover uma conversa encerrada a `humano` reescreveria o histórico e faria
+  // a taxa de "resolvidas pelo bot" cair por uma conversa que ele resolveu.
+  it('não ressuscita como humana a conversa que já tinha terminado', async () => {
+    const de = telefone(32)
+    await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-32a`), comMock)
+
+    const { data: contato } = await db().from('contacts').select('id').eq('wa_id', de).single()
+    const contatoId = contato!.id as string
+    const salva = await ultimaSessao(contatoId, canalId)
+    await definirStatusDaSessao(salva!.id, 'encerrada')
+
+    expect(await calarBotNaConversa(contatoId)).toBe(false)
+    expect((await ultimaSessao(contatoId, canalId))?.sessao.status).toBe('encerrada')
   })
 
   it('áudio vai para uma pessoa em vez de "não entendi" (Regra B)', async () => {

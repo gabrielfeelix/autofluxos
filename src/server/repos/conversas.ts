@@ -242,6 +242,36 @@ export async function criarSessao(
 }
 
 /**
+ * Cala o bot na conversa que está andando agora.
+ *
+ * **É o que faltava para "assumir" significar o que a palavra diz.** Assumir
+ * marcava quem é o responsável e mais nada: o bot continuava conduzindo, e se a
+ * pessoa do outro lado respondesse rápido, ele falava por cima de quem tinha
+ * acabado de pegar a conversa. Quem assumia só descobria isso vendo duas
+ * respostas saírem para a mesma mensagem.
+ *
+ * Responder já fazia isto (`acaoResponderLead`), e é justamente essa a
+ * incoerência: era preciso digitar alguma coisa para o bot parar.
+ *
+ * **Só cala o que está falando.** Sessão já em `humano` não tem o que calar, e
+ * sessão `encerrada` fica como está — promovê-la a `humano` reescreveria o
+ * histórico e faria a taxa de "resolvidas pelo bot" cair por uma conversa que
+ * ele resolveu. Devolve se calou, para a tela saber o que dizer.
+ */
+export async function calarBotNaConversa(contatoId: string): Promise<boolean> {
+  const { data, error } = await db()
+    .from('sessions')
+    .update({ status: 'humano' })
+    .eq('contact_id', contatoId)
+    .in('status', ['ativa', 'aguardando_ia', 'aguardando_http'])
+    .select('id')
+
+  if (ehIdInvalido(error)) return false
+  if (error) throw new Error(`não deu para calar o bot: ${error.message}`)
+  return (data?.length ?? 0) > 0
+}
+
+/**
  * Muda só o status, sem tocar no resto da sessão.
  *
  * Existe separado de `guardarSessao` de propósito: quem quer calar o bot não

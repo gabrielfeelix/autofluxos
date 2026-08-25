@@ -13,6 +13,13 @@ import { Dropdown } from '@/components/design/dropdown'
  * **Não avisa a pessoa do outro lado**, e isso é decisão: assumir é organização
  * interna, e anunciar no WhatsApp que "a Ana assumiu" expõe a nossa mesa para
  * quem só quer ser respondido.
+ *
+ * **O bot cala junto.** Até aqui assumir marcava o responsável e mais nada: o
+ * robô continuava conduzindo, e se a pessoa respondesse rápido ele falava por
+ * cima de quem tinha acabado de pegar a conversa. Só responder calava — ou
+ * seja, era preciso digitar alguma coisa para o bot parar. O botão diz isso na
+ * dica, porque ação que muda o comportamento sem avisar é pior do que ação que
+ * não faz nada.
  */
 type Estado = { erro?: string }
 
@@ -51,6 +58,11 @@ export function Assumir({
       <button
         type="submit"
         disabled={pendente}
+        title={
+          souEu
+            ? 'Devolve a conversa para a fila. O bot continua calado até alguém marcar "Já atendi".'
+            : 'A conversa passa a ser sua e o bot para de responder. Ele só volta quando alguém marcar "Já atendi".'
+        }
         className="rounded-[8px] border border-white/[0.09] px-2.5 py-1.5 text-[10.5px] font-semibold text-muted transition hover:border-accent/40 hover:text-accent disabled:opacity-50"
       >
         {pendente ? '…' : souEu ? 'Liberar' : responsavel ? 'Assumir mesmo assim' : 'Assumir'}
