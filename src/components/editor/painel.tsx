@@ -140,12 +140,22 @@ export function Painel({
     )
   }
 
-  // As variáveis que **outros** blocos guardam. A do próprio bloco sai da lista
-  // porque escolher o nome que já está no campo não é escolha nenhuma — e
-  // porque é ela que faria o campo dizer "reaproveita" para si mesmo.
-  const deOutrosBlocos = variaveis.filter((v) =>
-    (origensDeVariaveis[v] ?? []).some((id) => id !== no.id),
-  )
+  /*
+   * As variáveis que **outros** blocos guardam. A do próprio bloco sai da lista
+   * porque escolher o nome que já está no campo não é escolha nenhuma — e
+   * porque é ela que faria o campo dizer "reaproveita" para si mesmo.
+   *
+   * Variável sem nenhuma origem neste desenho **fica**: ela vem de outra
+   * automação da conta, e é exatamente a que mais precisa ser oferecida. O que
+   * um fluxo guarda fica no contato e continua lá na conversa seguinte, então
+   * ler `{{plano}}` gravado pelo fluxo de matrícula é uso certo — e antes disto
+   * a única forma era digitar de cabeça, onde errar uma letra não estoura:
+   * a variável vira vazia e a mensagem sai com um buraco.
+   */
+  const deOutrosBlocos = variaveis.filter((v) => {
+    const origens = origensDeVariaveis[v] ?? []
+    return origens.length === 0 || origens.some((id) => id !== no.id)
+  })
 
   return (
     <div className="space-y-4 p-4">

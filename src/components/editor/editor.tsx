@@ -180,6 +180,7 @@ export function Editor({
   conexoes,
   etapas,
   fluxos,
+  variaveisDaConta = [],
   canal,
   nome,
   clienteNome,
@@ -199,6 +200,13 @@ export function Editor({
   etapas: EtapaDoCliente[]
   /** As automações desta conta, para o bloco "Ir para outra automação". */
   fluxos: FluxoDaConta[]
+  /**
+   * As variáveis que as **outras** automações desta conta guardam no contato.
+   *
+   * Elas sobrevivem à conversa, então um fluxo pode ler o que o outro escreveu.
+   * Sem esta lista, o editor fingia que só existe o que este desenho cria.
+   */
+  variaveisDaConta?: string[]
   /** Por onde esta automação conversa (0037). Escolhido ao criar, não muda. */
   canal: CanalId
   nome: string
@@ -296,8 +304,9 @@ export function Editor({
         temContextoDeNegocio,
         fluxos,
         fluxoAtualId: fluxoId,
+        variaveisDaConta,
       }),
-    [fluxo, comIa, idsDeConexao, temContextoDeNegocio, fluxos, fluxoId],
+    [fluxo, comIa, idsDeConexao, temContextoDeNegocio, fluxos, fluxoId, variaveisDaConta],
   )
 
   const assinatura = JSON.stringify(fluxo)
@@ -870,10 +879,29 @@ export function Editor({
 
   const noSelecionado = fluxo.nodes.find((n) => n.id === selecionado) ?? null
   const {
-    nomes: variaveis,
+    nomes: doDesenho,
     origens: origensDeVariaveis,
     valores: valoresDeVariaveis,
   } = variaveisDoFluxo(fluxo)
+
+  /**
+   * As variáveis que existem **na conta**, e não só neste desenho.
+   *
+   * O pedido veio como "tem que ter a opção de variáveis, criando variáveis
+   * isoladamente", e a falta que ele descreve é real: o que uma automação
+   * guarda fica no contato e continua lá na próxima conversa, mas o editor de
+   * outra automação não sabia disso. Quem quisesse usar `{{plano}}`, gravado
+   * pelo fluxo de matrícula, tinha que digitar de cabeça e torcer para não
+   * errar uma letra — e errar uma letra não estoura em lugar nenhum: a variável
+   * vira vazia e a mensagem sai com um buraco.
+   *
+   * **Sai do desenho das outras automações, e não de um cadastro à parte.** Um
+   * cadastro de variáveis seria uma segunda verdade para manter em dia; esta
+   * lista não tem como divergir, porque ela *é* o que os fluxos fazem. O preço é
+   * ela só conhecer o que alguém já desenhou — e é o preço certo, porque
+   * variável que nenhum bloco preenche não existe mesmo.
+   */
+  const variaveis = [...new Set([...doDesenho, ...variaveisDaConta])].sort()
 
   return (
     <div className="app-editor flex h-screen flex-col bg-canvas">
@@ -1651,7 +1679,7 @@ function EstadoSalvamento({ estado }: { estado: 'salvo' | 'salvando' | 'pendente
  * deixar nascer um `agendar_aula2` calado. Sem o dono, o próprio bloco
  * apareceria como se estivesse repetindo a si mesmo.
  */
-function variaveisDoFluxo(fluxo: Fluxo): {
+export function variaveisDoFluxo(fluxo: Fluxo): {
   nomes: string[]
   origens: Record<string, string[]>
   valores: Record<string, string[]>

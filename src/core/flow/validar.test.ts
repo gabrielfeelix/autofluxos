@@ -131,6 +131,23 @@ describe('validar', () => {
     expect(codigos(r.avisos)).toContain('VARIAVEL_DESCONHECIDA')
   })
 
+  /*
+   * O que uma automação guarda fica no contato e continua lá na conversa
+   * seguinte, então ler `{{plano}}` gravado pelo fluxo de matrícula é uso certo.
+   * Avisar aqui acusaria justamente o caso legítimo — e aviso que grita no caso
+   * certo é aviso que se aprende a ignorar, inclusive quando ele estiver certo.
+   */
+  it('não reclama de variável que outra automação da conta preenche', () => {
+    const fluxo = fluxoValido()
+    const oi = fluxo.nodes.find((n) => n.id === 'oi')
+    if (oi?.type === 'mensagem') oi.data.texto = 'Olá, {{plano}}!'
+
+    expect(codigos(validar(fluxo).avisos)).toContain('VARIAVEL_DESCONHECIDA')
+    expect(
+      codigos(validar(fluxo, { variaveisDaConta: ['plano'] }).avisos),
+    ).not.toContain('VARIAVEL_DESCONHECIDA')
+  })
+
   it('não reclama de variável que algum bloco preenche', () => {
     const fluxo = fluxoValido()
     const tchau = fluxo.nodes.find((n) => n.id === 'tchau')

@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
-import { Editor } from '@/components/editor/editor'
+import { Editor, variaveisDoFluxo } from '@/components/editor/editor'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarConexoes } from '@/server/repos/conexoes'
 import { listarQuadros } from '@/server/repos/quadros'
@@ -93,6 +93,25 @@ export default async function Pagina({
           publicado: f.versaoPublicadaId !== null,
           ativo: f.ativo,
         }))}
+        /* O que as **outras** automações guardam no contato.
+
+           O que um fluxo grava fica no contato e continua lá na conversa
+           seguinte, então um pode ler o que o outro escreveu. Sem esta lista, o
+           editor fingia que só existe o que este desenho cria, e quem quisesse
+           usar `{{plano}}` — gravado no fluxo de matrícula — digitava de cabeça.
+           Errar uma letra ali não estoura: a variável vira vazia e a mensagem
+           sai com um buraco.
+
+           Sai do desenho das outras, e não de um cadastro à parte: cadastro
+           seria uma segunda verdade para manter em dia, e esta lista não tem
+           como divergir porque ela é o que os fluxos fazem. */
+        variaveisDaConta={[
+          ...new Set(
+            fluxosDaConta
+              .filter((f) => f.id !== fluxo.id)
+              .flatMap((f) => variaveisDoFluxo(f.rascunho).nomes),
+          ),
+        ].sort()}
         /* Achatado aqui, e não no componente: o painel escolhe **uma etapa**, e
            um seletor de dois níveis custaria dois cliques para uma escolha só.
            O nome do quadro entra como prefixo porque duas etapas "Fechado" em

@@ -79,6 +79,18 @@ export type Capacidades = {
    */
   temContextoDeNegocio?: boolean
   /**
+   * As variáveis que **outras automações desta conta** guardam no contato.
+   *
+   * O que um fluxo grava fica no contato e continua lá na conversa seguinte,
+   * então um fluxo pode legitimamente ler o que o outro escreveu. Sem esta
+   * lista, o aviso de "variável que ninguém preenche" acusava exatamente o uso
+   * certo — e aviso que grita no caso legítimo é aviso que se aprende a
+   * ignorar, inclusive quando ele estiver certo.
+   *
+   * `undefined` = não sei, e aí só o próprio desenho conta.
+   */
+  variaveisDaConta?: string[]
+  /**
    * Ids das etapas de quadro que existem para este cliente (C1b).
    *
    * `undefined` significa "não sei" e o validador não cobra — é o editor
@@ -125,6 +137,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
     etapas,
     fluxos,
     fluxoAtualId,
+    variaveisDaConta,
   } = capacidades
   const erros: Problema[] = []
   const avisos: Problema[] = []
@@ -360,7 +373,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
     })
   }
 
-  for (const problema of conferirVariaveis(fluxo)) avisos.push(problema)
+  for (const problema of conferirVariaveis(fluxo, variaveisDaConta)) avisos.push(problema)
 
   return { ok: erros.length === 0, erros, avisos }
 }
@@ -925,9 +938,9 @@ function alcancaveisA_partirDe(fluxo: Fluxo): Set<string> {
   return vistos
 }
 
-/** Avisa sobre `{{variavel}}` que o fluxo nunca preenche. */
-function conferirVariaveis(fluxo: Fluxo): Problema[] {
-  const definidas = new Set<string>()
+/** Avisa sobre `{{variavel}}` que ninguém preenche — nem aqui, nem na conta. */
+function conferirVariaveis(fluxo: Fluxo, daConta: string[] = []): Problema[] {
+  const definidas = new Set<string>(daConta)
   for (const no of fluxo.nodes) {
     if (no.type === 'pergunta' && no.data.salvarEm) definidas.add(no.data.salvarEm)
     if (no.type === 'pergunta' && no.data.salvarValorEm) definidas.add(no.data.salvarValorEm)
