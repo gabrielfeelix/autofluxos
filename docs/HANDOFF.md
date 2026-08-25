@@ -21,10 +21,14 @@ O que sobra esbarra em coisas que só o dono resolve:
 A **Etapa C começou pela C1** — Quadros, inteira: o quadro (§5.9) e o quadro que
 se move sozinho (§5.10). O resto dela está em §8.2.
 
-`npm test` → **683 passando, 28 pulados** (os pulados dependem de `IA_TESTE_REAL`
+**A conversa fala com a agenda** desde 24/ago: o bot reconhece quem já é
+cliente pelo telefone, oferece os horários que existem de verdade e marca. É a
+primeira integração de ponta a ponta com um sistema de negócio, e está em §5.11.
+
+`npm test` → **818 passando, 8 pulados** (os pulados dependem de `IA_TESTE_REAL`
 e `API_TESTE_REAL`, por desenho). `typecheck`, `lint` e `build` limpos.
-**Migrations aplicadas em produção: `0001` a `0035`, todas. A próxima a escrever
-é a `0036`.**
+**Migrations aplicadas em produção: `0001` a `0035`, todas. As `0036` e `0037`
+estão escritas no diretório; a próxima a escrever é a `0038`.**
 
 ---
 
@@ -624,6 +628,84 @@ silêncio; há teste prendendo.
 
 ---
 
+### 5.11 — a conversa que marca horário, e a agenda do cliente
+
+Entrou em 24/ago/2026, depois de quem opera comentar treze prints. **É a
+primeira vez que o bot resolve uma tarefa de negócio inteira** em vez de
+qualificar e passar adiante.
+
+A Verandi é a agenda da 4YU, e daqui ela é **um sistema do cliente como qualquer
+outro**. A fronteira do [ARQUITETURA.md](ARQUITETURA.md) continua de pé: turma,
+matrícula e presença não moram aqui; o fluxo lê e escreve pela API, com a chave
+no cofre, e o dado fica lá.
+
+**As quatro peças que faltavam, e que servem para qualquer sistema:**
+
+| Peça | Onde | Por que era impossível sem ela |
+|---|---|---|
+| `[]` no mapeamento | `server/efeitos/http.ts` | toda API devolve lista, e o mapeamento só sabia campo raso: dez horários chegavam e não havia como virar menu |
+| lista de valores pareada | `core/engine/executar.ts` | o menu mostra `07:00` e o `POST` precisa do id daquele horário; o rótulo e o valor eram tratados como a mesma coisa |
+| formato da resposta | `core/flow/resposta.ts` | "me manda a data" aceitava "amanhã", e aquilo ia para o sistema do cliente |
+| `{{telefone}}` na sessão | `core/contatos/vars-iniciais.ts` | a sessão nascia com `vars` vazio, e toda integração que dependia de saber com quem se falava falhava **sem sintoma** |
+
+**Nove presets** (`core/presets.ts`, grupo `agenda`) e um **modelo de fluxo
+inteiro** (`exemplos/agendamento.ts`), na ordem da conversa: reconhecer, oferecer
+dia, oferecer horário, marcar, desmarcar, fila de espera.
+
+`exemplos/agendamento.test.ts` roda a conversa do "oi" ao horário marcado, com as
+respostas **copiadas da documentação da Verandi**. É o que protege do defeito
+mais provável desta integração: um `livres[].hora` escrito `livre[].hora`
+publica, valida, e devolve variável vazia para sempre — o menu chega sem opção
+nenhuma e ninguém descobre até um cliente tentar marcar.
+
+**Do lado da agenda** entrou `GET /pessoas?telefone=` (repositório `verandi`): a
+busca só olhava nome, e o robô chega com o identificador do WhatsApp. Ela procura
+todas as formas do mesmo aparelho — com e sem país, com e sem o nono dígito — e
+recusa número sem DDD, porque chutar o DDD casaria a conversa de uma pessoa com a
+ficha de outra.
+
+**A régua de "o que fazer quando a chamada falha" mudou de forma aqui.** Era
+`GET` → chama uma pessoa, `POST` → segue em frente, e isso separava certo por
+acidente enquanto os presets eram CRM e planilha. `POST /participacoes` é
+escrita, e falhar nela significa prometer um horário que ninguém marcou. A
+pergunta que decide é **se a conversa depende do resultado**: só quem apenas
+avisa um sistema de fora segue em frente.
+
+---
+
+### 5.12 — os defeitos que só aparecem com alguém usando
+
+A mesma leva de 24/ago trouxe seis correções vindas de quem estava desenhando
+fluxo de verdade. Estão aqui porque **as três primeiras tinham a mesma causa**, e
+essa causa vale para qualquer campo novo.
+
+**`maxLength` conta unidades UTF-16, e a Meta conta caracteres.** Emoji fora do
+plano básico ocupa duas unidades. O campo de rótulo de opção tinha
+`maxLength={20}`, e daí saíram três sintomas que pareciam três defeitos:
+
+- rótulo de 19 letras **recusava qualquer emoji**, sem dizer por quê;
+- colar texto longo cortava no meio do par substituto;
+- o pedaço solto atravessava o `JSON.stringify` e o **Postgres recusava o
+  `jsonb`** — o rascunho parava de gravar, e ao recarregar a opção e os emojis
+  tinham sumido.
+
+A regra que fica: **conte por caractere (`core/flow/texto.ts`), e nunca corte o
+que a pessoa digita.** Quem recusa é o validador, onde a recusa tem explicação
+junto.
+
+As outras três:
+
+- **O teste mostrava `*negrito*` cru.** O produto sempre soube escrever a
+  formatação; faltava **ler** de volta (`core/flow/marcacao.ts`). A aba Testar é
+  onde se decide se a mensagem está boa — mostrar outra coisa que o WhatsApp a
+  desqualifica inteira. O Inbox ganhou o mesmo desenho.
+- **Não dava para renomear um fluxo.** O nome era escolhido no modal de criação e
+  nunca mais.
+- **"Assumir" não calava o bot** — só responder calava. Quem assumia dividia a
+  conversa com o robô.
+
+---
+
 ## 6. As oito regras que não se negociam
 
 ### 6.1 O banco é compartilhado com outro produto
@@ -868,7 +950,7 @@ plataforma** (`af_usuarios.role`). Ser dono de três contas não abre `/admin/*`
 ### 9.1 O ciclo
 
 ```bash
-npm test          # 683 passando, 28 pulados
+npm test          # 818 passando, 8 pulados
 npm run typecheck
 npm run lint
 npm run build     # roda também sem DATABASE_URL, e tem que continuar rodando
