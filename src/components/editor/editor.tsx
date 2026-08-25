@@ -1009,6 +1009,25 @@ export function Editor({
 
         <span className="flex-1" />
 
+        {/*
+          A Ajuda abre em outra aba, e essa é a diferença que importa aqui.
+
+          Nas molduras do painel o `?` navega normalmente; deste cabeçalho, não.
+          Quem consulta a Ajuda no meio de um desenho quer voltar para o desenho
+          — com o mesmo bloco selecionado, o mesmo zoom e a mesma posição do
+          quadro, que são estado de tela e não sobrevivem a uma navegação.
+        */}
+        <a
+          href="/ajuda"
+          target="_blank"
+          rel="noopener"
+          title="Ajuda (abre em outra aba)"
+          aria-label="Ajuda"
+          className="flex size-[26px] shrink-0 items-center justify-center rounded-full border border-white/[0.12] text-[12px] font-bold text-dim transition hover:border-accent/50 hover:bg-accent/[0.1] hover:text-accent"
+        >
+          <span aria-hidden>?</span>
+        </a>
+
         <Versoes
           versoes={versoes}
           publicadaId={publicada?.id ?? null}
