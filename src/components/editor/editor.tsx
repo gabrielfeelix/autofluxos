@@ -26,8 +26,9 @@ import {
 } from 'react'
 import { Conversa } from '@/components/conversa'
 import type { CanalId } from '@/core/canais'
-import { fluxoSchema, type Fluxo, type No, type TipoNo } from '@/core/flow/schema'
+import { fluxoSchema, type Fluxo, type TipoNo } from '@/core/flow/schema'
 import type { Problema } from '@/core/flow/validar'
+import { variaveisDoFluxo } from '@/core/flow/variaveis'
 import { validar } from '@/core/flow/validar'
 import {
   acaoAlternarIa,
@@ -1679,49 +1680,3 @@ function EstadoSalvamento({ estado }: { estado: 'salvo' | 'salvando' | 'pendente
   )
 }
 
-/**
- * As variáveis do fluxo — **e quem guarda cada uma**.
- *
- * A origem não é enfeite: o painel precisa saber se um nome já é guardado por
- * *outro* bloco para dizer "isso reaproveita a variável de lá" em vez de
- * deixar nascer um `agendar_aula2` calado. Sem o dono, o próprio bloco
- * apareceria como se estivesse repetindo a si mesmo.
- */
-export function variaveisDoFluxo(fluxo: Fluxo): {
-  nomes: string[]
-  origens: Record<string, string[]>
-  valores: Record<string, string[]>
-} {
-  const origens: Record<string, string[]> = {}
-  const valores: Record<string, string[]> = {}
-  const anotar = (nome: string, noId: string) => {
-    ;(origens[nome] ??= []).push(noId)
-  }
-
-  for (const no of fluxo.nodes as No[]) {
-    if (no.type === 'pergunta' && no.data.salvarEm) {
-      anotar(no.data.salvarEm, no.id)
-      // Pergunta com opções desenhadas guarda **o rótulo do botão clicado**.
-      // São os únicos valores que aquela variável pode ter, e é por isso que a
-      // condição sobre ela não precisa ser digitada de cabeça: um "Agendar
-      // Aula" escrito diferente do botão manda todo mundo pelo ramo errado, e
-      // nada estoura — a conversa segue, segue pelo lado errado.
-      for (const opcao of no.data.opcoes) {
-        const lista = (valores[no.data.salvarEm] ??= [])
-        if (opcao.rotulo !== '' && !lista.includes(opcao.rotulo)) lista.push(opcao.rotulo)
-      }
-    }
-    // O valor da opção escolhida também é variável — e é justamente a que o
-    // bloco seguinte usa para chamar a API. Sem isto, `{{sessao_id}}` não
-    // apareceria na lista e quem desenha acharia que precisa digitar de cabeça.
-    if (no.type === 'pergunta' && no.data.salvarValorEm) anotar(no.data.salvarValorEm, no.id)
-    if (no.type === 'salvar-campo' && no.data.campo) anotar(no.data.campo, no.id)
-    if (no.type === 'ia' && no.data.salvarEm) anotar(no.data.salvarEm, no.id)
-    // O que a API guarda também é variável do fluxo. Sem isto, o painel não
-    // mostra `{{cidade}}` como disponível e quem desenha acha que não existe.
-    if (no.type === 'http')
-      for (const m of no.data.mapear) if (m.variavel) anotar(m.variavel, no.id)
-  }
-
-  return { nomes: Object.keys(origens).sort(), origens, valores }
-}

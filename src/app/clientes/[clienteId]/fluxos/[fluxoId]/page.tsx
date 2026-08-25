@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
-import { Editor, variaveisDoFluxo } from '@/components/editor/editor'
+import { Editor } from '@/components/editor/editor'
+import { variaveisDoFluxo } from '@/core/flow/variaveis'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarConexoes } from '@/server/repos/conexoes'
 import { listarQuadros } from '@/server/repos/quadros'

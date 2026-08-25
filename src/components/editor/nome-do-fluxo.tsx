@@ -107,7 +107,13 @@ export function NomeDoFluxo({
         type="button"
         onClick={() => setEditando(true)}
         title={`Renomear "${salvo}"`}
-        className="flex size-8 shrink-0 items-center justify-center rounded-lg text-[11px] text-dim transition hover:bg-white/[0.06] hover:text-accent"
+        /*
+          `pointer-events-auto` porque a linha da lista desliga o clique do
+          conteúdo para ele atravessar até o link que cobre a linha. Quem é
+          interativo devolve o clique para si mesmo — senão o lápis abriria a
+          automação em vez de renomear.
+        */
+        className="pointer-events-auto flex size-6 shrink-0 items-center justify-center rounded-md text-[11px] text-dim opacity-0 transition group-hover/linha:opacity-100 hover:bg-white/[0.08] hover:text-accent focus-visible:opacity-100"
       >
         <span aria-hidden>✎</span>
         <span className="sr-only">Renomear {salvo}</span>
@@ -116,7 +122,13 @@ export function NomeDoFluxo({
   }
 
   return (
-    <span className={variante === 'titulo' ? 'block' : 'inline-flex flex-col items-end gap-1'}>
+    <span
+      className={
+        variante === 'titulo'
+          ? 'block'
+          : 'pointer-events-auto inline-flex flex-col items-start gap-1'
+      }
+    >
       <input
         ref={campo}
         value={valor}

@@ -332,12 +332,33 @@ export default async function Pagina({
                 return (
                   <li
                     key={fluxo.id}
-                    className="flex items-center border-b border-white/[0.045] pr-4 transition last:border-0 hover:bg-white/[0.03]"
+                    className="group/linha relative flex items-center border-b border-white/[0.045] pr-4 transition last:border-0 hover:bg-white/[0.03]"
                   >
+                    {/*
+                      O link cobre a linha por baixo, em vez de envolvê-la.
+
+                      **O lápis precisa ficar colado no nome**, e o nome estava
+                      dentro do link — botão dentro de link é clique ambíguo, que
+                      é a regra que o botão de apagar já respeitava ficando de
+                      fora. Só que "de fora" o empurrava para a ponta direita,
+                      longe do que ele renomeia.
+
+                      Com o link em cobertura, o conteúdo é irmão dele: o lápis
+                      senta ao lado do nome e continua sendo um botão de verdade.
+                      A linha inteira continua clicável, que é o que a área
+                      grande de alvo garantia antes.
+                    */}
                     <Link
                       href={`/clientes/${cliente.id}/fluxos/${fluxo.id}`}
-                      className="flex min-w-0 flex-1 items-center gap-3.5 px-5 py-[15px]"
-                    >
+                      aria-label={`Abrir a automação ${fluxo.nome}`}
+                      className="absolute inset-0"
+                    />
+                    {/*
+                      `pointer-events-none` para o clique atravessar até o link;
+                      quem é interativo aqui dentro devolve `pointer-events-auto`
+                      para si mesmo.
+                    */}
+                    <span className="pointer-events-none relative flex min-w-0 flex-1 items-center gap-3.5 px-5 py-[15px]">
                       <span
                         className={`size-2 shrink-0 rounded-full ${fluxo.versaoPublicadaId && fluxo.ativo ? 'bg-emerald-400' : 'bg-dim'}`}
                         aria-hidden
@@ -347,8 +368,14 @@ export default async function Pagina({
                             seção: desde a 0037 duas automações da mesma conta
                             podem ser de canais diferentes, e um selo único lá
                             em cima mentiria sobre a que estivesse fora dele. */}
-                        <strong className="flex items-center gap-2 text-[13.5px] font-semibold">
+                        <strong className="flex items-center gap-1.5 text-[13.5px] font-semibold">
                           <span className="truncate">{fluxo.nome}</span>
+                          <NomeDoFluxo
+                            clienteId={cliente.id}
+                            fluxoId={fluxo.id}
+                            nome={fluxo.nome}
+                            variante="linha"
+                          />
                           <SeloDoCanal canal={fluxo.canal} compacto />
                         </strong>
                         <span className="mt-0.5 block text-[11px] text-dim">
@@ -384,13 +411,7 @@ export default async function Pagina({
                       >
                         {!fluxo.ativo ? 'DESLIGADO' : fluxo.versaoPublicadaId ? 'NO AR' : 'RASCUNHO'}
                       </span>
-                    </Link>
-                    <NomeDoFluxo
-                      clienteId={cliente.id}
-                      fluxoId={fluxo.id}
-                      nome={fluxo.nome}
-                      variante="linha"
-                    />
+                    </span>
                     {/* Fora do `Link` pelo mesmo motivo do botão de apagar. */}
                     <span className="mr-3">
                       <InterruptorDeFluxo
