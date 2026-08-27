@@ -1,8 +1,54 @@
-# Handoff — 19/ago/2026
+# Handoff — 19/ago/2026, atualizado em 27/ago
 
 Para quem pegar este projeto agora, humano ou agente. Leia isto inteiro, depois
 [PLANO-SISTEMA.md](PLANO-SISTEMA.md), e só então código. As decisões de produto
 que não estão aqui estão lá; as que estão aqui não se renegociam sem o dono.
+
+---
+
+## 0. O que mudou em 27/ago, e por quê
+
+Dois commits, os dois vindos de **quem opera montando fluxo com cliente na
+frente** — não de plano. Vale ler porque metade é conserto de coisa que a tela
+afirmava e não era verdade, que é o tipo de defeito que não aparece em teste.
+
+**`5c2a6e2` — a conversa sabe quantas reposições a pessoa tem**
+
+- `Mapeamento` ganhou **`quantos`**: guarda o número de itens da lista em vez
+  dos itens. É o que faz o bot abrir com "você tem 3 aulas para repor". Também
+  ramifica: `igual 0` não oferece reposição, `diferente de 1` chama gente.
+- Dois presets novos filtram por modalidade (`&servico=`, que a rota já aceitava
+  e ninguém chamava). Sem eles o bot oferecia o dia inteiro para quem escolheu
+  pilates.
+- Modelos novos: **reagendamento** e **lembrete**. O de agendar ganhou
+  conferência de telefone, escolha de modalidade e confirmação antes de gravar.
+- O par de campos do "Guardar da resposta" ganhou rótulo — eram duas caixas
+  idênticas e ninguém sabia qual era o nome que se escolhe e qual é o campo que
+  a API devolveu.
+
+**`0e7f011` — voltar ao menu, e o card diz o que está ligado**
+
+- Bloco novo **Voltar**: manda a conversa para um passo anterior do mesmo fluxo.
+  Nasce apontando para o início. A seta continua valendo e não foi substituída.
+- O card de Serviços externos no desenho mostra o **nome da integração** e
+  avisa quando falta credencial, em vez de só a URL.
+- **Bug corrigido:** clicar num preset o pintava de "selecionado" antes de
+  aplicar, então a tela dizia que o bloco era da agenda enquanto ele apontava
+  para o ViaCEP. Agora o destaque reflete o bloco, não o clique.
+
+**O que ficou faltando, e é o próximo pedido natural:** o lembrete tem a
+conversa inteira, mas **não dispara sozinho na véspera** — começar conversa fora
+da janela de 24h exige modelo aprovado da Meta (C4). É a mesma lacuna do §2.1 do
+[PLANO-AGENDA.md](PLANO-AGENDA.md), o webhook de entrada. As duas se resolvem
+juntas e são o maior valor parado hoje.
+
+`npm test` → **878 passando, 28 pulados**. `typecheck`, `lint` e `build` limpos.
+Deploy em produção conferido. **Nenhuma migration nova** — nada aqui tocou
+banco, e a próxima a escrever continua sendo a `0038`.
+
+> Um teste de `repos/` falhou uma vez e passou nas duas rodadas seguintes, sem
+> nenhuma mudança no meio. Eles batem no Supabase de verdade; se ele reaparecer,
+> é flakiness de rede e não regressão.
 
 ---
 
@@ -25,8 +71,9 @@ se move sozinho (§5.10). O resto dela está em §8.2.
 cliente pelo telefone, oferece os horários que existem de verdade e marca. É a
 primeira integração de ponta a ponta com um sistema de negócio, e está em §5.11.
 
-`npm test` → **818 passando, 8 pulados** (os pulados dependem de `IA_TESTE_REAL`
+`npm test` → **878 passando, 28 pulados** (os pulados dependem de `IA_TESTE_REAL`
 e `API_TESTE_REAL`, por desenho). `typecheck`, `lint` e `build` limpos.
+A contagem é de 27/ago; o §0 explica o que entrou.
 **Migrations aplicadas em produção: `0001` a `0037`, todas. A próxima a escrever
 é a `0038`.** Conferido em 24/ago contra o banco, e não contra este documento —
 `flows.ativo`, `flows.canal` e `contacts.nome_real` respondem. Ele dizia `0035`
