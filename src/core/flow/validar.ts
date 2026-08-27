@@ -283,6 +283,45 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
       }
     }
 
+    if (no.type === 'voltar') {
+      const destino = no.data.destino
+
+      /*
+       * Destino apagado não publica.
+       *
+       * Vazio é válido — quer dizer o início do fluxo, que é o padrão do
+       * bloco. O que não pode passar é apontar para um bloco que não existe
+       * mais: o motor segue em frente nesse caso para não travar conversa
+       * viva, e uma conversa que "volta ao menu" e simplesmente continua é
+       * pior de diagnosticar do que uma que recusa publicar.
+       */
+      if (destino !== '' && !porId.has(destino)) {
+        erros.push({
+          codigo: 'VOLTAR_SEM_DESTINO',
+          mensagem:
+            'Este bloco volta para um passo que não existe mais neste desenho. Escolha outro, ou deixe "o início do fluxo".',
+          noId: no.id,
+        })
+      }
+
+      /*
+       * Voltar para si mesmo é aviso, e não erro.
+       *
+       * Ele gira até `MAX_PASSOS` e vira handoff, então ninguém fica preso — e
+       * a tela já nem oferece o próprio bloco na lista. Isto alcança só grafo
+       * montado à mão ou herdado, e recusar publicar por causa disso seria
+       * travar alguém por um desenho que o motor sabe sobreviver.
+       */
+      if (destino === no.id) {
+        avisos.push({
+          codigo: 'VOLTAR_PARA_SI',
+          mensagem:
+            'Este bloco volta para ele mesmo, então a conversa gira sem sair do lugar até cair para uma pessoa. Escolha outro destino.',
+          noId: no.id,
+        })
+      }
+    }
+
     if (no.type === 'ir-fluxo') {
       const destino = fluxos?.find((f) => f.id === no.data.fluxoId)
 
@@ -423,6 +462,10 @@ function descrever(no: No): string {
       // `rotulo` é o nome do fluxo de destino guardado na hora da escolha. É
       // exatamente o que identifica o bloco para quem lê a lista de problemas.
       return rotular('Ir para', curto(no.data.rotulo))
+    case 'voltar':
+      // `rotulo` é o nome do bloco de destino no instante da escolha. Vazio
+      // quer dizer o início do fluxo, que é o padrão do bloco.
+      return rotular('Voltar', curto(no.data.rotulo || 'ao início'))
   }
 }
 
@@ -1078,6 +1121,10 @@ function variaveisDoNo(no: No): string[] {
       // Mesmo motivo da etapa: o destino é um id escolhido no editor. Deixar a
       // conversa escolher para qual automação ela pula seria entregar o roteiro
       // do atendimento para quem está do outro lado.
+      return []
+    case 'voltar':
+      // O destino é um id de bloco escolhido no editor, pelo mesmo motivo dos
+      // dois acima: a conversa não escolhe para onde ela própria volta.
       return []
   }
 }

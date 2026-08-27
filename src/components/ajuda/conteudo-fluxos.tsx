@@ -39,6 +39,8 @@ const ORDEM_DOS_BLOCOS: TipoNo[] = [
   'salvar-campo',
   'etapa',
   'ir-fluxo',
+  // Ao lado do ir-fluxo: os dois respondem "para onde a conversa vai daqui".
+  'voltar',
   'ia',
   'handoff',
   'http',
@@ -58,6 +60,8 @@ const QUANDO_USAR: Record<TipoNo, string> = {
     'Mandar quem falou de fisioterapia para o fluxo de fisioterapia, sem duplicar o desenho.',
   ia: 'Responder pergunta aberta usando o contexto do negócio. Nunca para dado que precisa estar certo.',
   handoff: 'Entregar a conversa para a equipe. É o final honesto de todo fluxo.',
+  voltar:
+    'O "voltar ao menu" que todo bot tem. Manda a conversa para um passo anterior deste mesmo fluxo, sem uma seta cruzando o desenho inteiro.',
   http: 'Consultar ou gravar no sistema do cliente: a agenda, o CRM, a planilha.',
 }
 

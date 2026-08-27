@@ -17,7 +17,7 @@ import {
   type No,
   type Opcao,
 } from '@/core/flow/schema'
-import { mensagensDoHandoff } from '@/core/flow/mensagem'
+import { mensagensDoHandoff, partesDaMensagem } from '@/core/flow/mensagem'
 import { Dropdown } from '@/components/design/dropdown'
 import { BarraDeFormato, SeletorDeEmoji } from './barra-de-formato'
 import { SeletorDeVariavel } from './escolher-variavel'
@@ -94,6 +94,7 @@ export function Painel({
   ehInicio,
   variaveis,
   origensDeVariaveis = {},
+  blocos = [],
   valoresDeVariaveis = {},
   conexoes = [],
   etapas = [],
@@ -113,6 +114,13 @@ export function Painel({
    * repetir a si mesmo.
    */
   origensDeVariaveis?: Record<string, string[]>
+  /**
+   * Todos os blocos do desenho. É o que o bloco de Voltar oferece como destino.
+   *
+   * Vem inteiro e não só os ids porque a lista precisa mostrar o texto de cada
+   * um — escolher entre onze uuids não é escolher.
+   */
+  blocos?: No[]
   /**
    * Que valores cada variável pode ter, quando isso é sabido: são os rótulos
    * dos botões das perguntas que guardam nela. A condição usa para oferecer o
@@ -615,6 +623,43 @@ export function Painel({
               </span>
             </>
           )}
+        </label>
+      )}
+
+      {/*
+        O bloco de Voltar.
+        Ver `noVoltarSchema` para por que ele existe ao lado da seta.
+      */}
+      {no.type === 'voltar' && (
+        <label className="block">
+          <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+            Voltar para qual passo
+          </span>
+          <Dropdown
+            valor={no.data.destino}
+            aoMudar={(destino) => {
+              const alvo = blocos.find((b) => b.id === destino)
+              // `rotulo` viaja junto pelo mesmo motivo do bloco de etapa e do
+              // de ir-fluxo: o desenho precisa dizer alguma coisa, e um uuid
+              // não diz. Quem manda é `destino`.
+              aoMudarDados({ destino, rotulo: alvo ? resumoDoBloco(alvo) : '' })
+            }}
+            rotuloAcessivel="Bloco de destino"
+            opcoes={[
+              { valor: '', rotulo: 'O início do fluxo', detalhe: 'o "voltar ao menu" de sempre' },
+              ...blocos
+                // O próprio bloco fora da lista: voltar para si mesmo é um
+                // ciclo sem nada no meio, e ele gira até o motor desistir e
+                // chamar uma pessoa.
+                .filter((b) => b.id !== no.id)
+                .map((b) => ({ valor: b.id, rotulo: resumoDoBloco(b), detalhe: NOMES[b.type] })),
+            ]}
+          />
+          <span className="mt-1 block text-[10.5px] leading-4 text-dim">
+            A conversa continua a partir do bloco escolhido, neste mesmo fluxo. O que já foi
+            guardado <strong className="text-muted">não é apagado</strong> — quem voltou ao menu
+            depois de dizer o nome não quer dizer o nome de novo.
+          </span>
         </label>
       )}
 
@@ -1233,6 +1278,53 @@ function Cabecalhos({
       </p>
     </div>
   )
+}
+
+/**
+ * Como um bloco se chama na lista de destinos do Voltar.
+ *
+ * É o **texto que se lê no desenho**, e não o tipo nem o id: quem escolhe para
+ * onde voltar está procurando "Podemos ajudar em algo mais?", que é o que está
+ * escrito na tela. Uma lista de onze uuids, ou de onze "Pergunta", não é uma
+ * escolha — é um sorteio.
+ *
+ * Deliberadamente separada da `descrever()` do validador e da `textoDoBloco()`
+ * do compartilhamento: aquelas respondem "qual bloco tem o problema" e "o que
+ * mostrar numa página pública", e as três divergiriam na primeira mudança de
+ * qualquer uma. Esta responde só "como escolher este numa lista".
+ */
+function resumoDoBloco(no: No): string {
+  const curto = (texto: string) => {
+    const limpo = texto.trim().replace(/\s+/g, ' ')
+    return limpo.length > 42 ? `${limpo.slice(0, 42)}…` : limpo
+  }
+
+  switch (no.type) {
+    case 'mensagem': {
+      const texto = partesDaMensagem(no).find((parte) => parte.tipo === 'texto')?.texto ?? ''
+      return curto(texto) || 'Mensagem sem texto'
+    }
+    case 'pergunta':
+      return curto(no.data.texto) || 'Pergunta sem texto'
+    case 'midia':
+      return curto(no.data.legenda ?? '') || `Envia ${no.data.midia}`
+    case 'condicao':
+      return curto(`Se ${no.data.variavel} ${no.data.operador} ${no.data.valor}`)
+    case 'salvar-campo':
+      return curto(`Guarda ${no.data.campo}`)
+    case 'ia':
+      return curto(no.data.instrucao) || 'IA sem instrução'
+    case 'handoff':
+      return curto(mensagensDoHandoff(no)[0] ?? '') || 'Falar com humano'
+    case 'http':
+      return curto(no.data.url) || 'Serviços externos'
+    case 'etapa':
+      return 'Move no quadro'
+    case 'ir-fluxo':
+      return curto(no.data.rotulo) || 'Ir para outra automação'
+    case 'voltar':
+      return no.data.destino === '' ? 'Volta ao início' : 'Volta a um passo'
+  }
 }
 
 function Mapeamentos({

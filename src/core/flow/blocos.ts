@@ -51,6 +51,15 @@ export const NOMES: Record<TipoNo, string> = {
    * desenho. O nome diz exatamente o que acontece com a conversa.
    */
   'ir-fluxo': 'Ir para outra automação',
+  /**
+   * "Voltar", e não "loop", "goto" nem "reiniciar".
+   *
+   * É o nome do gesto na conversa, e não o da estrutura no grafo: quem desenha
+   * está pondo o "voltar ao menu" que a pessoa do outro lado vai ler. "Loop"
+   * descreve o desenho para quem programa; ninguém escreve "loop" num botão de
+   * WhatsApp.
+   */
+  voltar: 'Voltar',
 }
 
 export const ICONES: Record<TipoNo, string> = {
@@ -64,6 +73,7 @@ export const ICONES: Record<TipoNo, string> = {
   midia: '▣',
   etapa: '▤',
   'ir-fluxo': '⇥',
+  voltar: '↺',
 }
 
 /** A linha de baixo na barra de blocos: o que ele faz, em três palavras. */
@@ -78,6 +88,7 @@ export const DESCRICOES: Record<TipoNo, string> = {
   ia: 'Responde pelo contexto',
   handoff: 'Passa para uma pessoa',
   http: 'Chama um sistema',
+  voltar: 'Volta ao menu',
 }
 
 /**
@@ -98,4 +109,5 @@ export const CORES: Record<TipoNo, string> = {
   midia: 'border-sky-400/30',
   etapa: 'border-teal-400/30',
   'ir-fluxo': 'border-indigo-400/30',
+  voltar: 'border-slate-300/30',
 }

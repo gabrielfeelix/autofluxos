@@ -456,6 +456,39 @@ function avancar(
         break
       }
 
+      /*
+       * Voltar para um ponto anterior da mesma conversa.
+       *
+       * **Não é uma ação, é um desvio** — o motor simplesmente continua a
+       * partir de outro nó, do mesmo jeito que continuaria por uma seta. Por
+       * isso não há nada para o servidor resolver depois, e nada que possa
+       * falhar: o destino ou existe no grafo, ou o bloco não faz nada.
+       *
+       * `MAX_PASSOS` é a rede embaixo disto. Um "voltar" que aponta para
+       * depois de si mesmo é um ciclo sem nenhuma pergunta no meio, e ele
+       * gira até o teto e vira handoff — que é o desfecho certo para um
+       * desenho que prende alguém.
+       */
+      case 'voltar': {
+        const destino = no.data.destino || fluxo.inicio
+
+        /*
+         * Destino que não existe mais **segue em frente**, e não trava.
+         *
+         * `validar()` recusa publicar assim, então isto só alcança grafo que
+         * já estava no ar quando o bloco de destino foi apagado. É a mesma
+         * defesa do bloco de etapa e do de ir-fluxo, e pelo mesmo motivo:
+         * uma conversa viva não pode morrer por causa de uma edição.
+         */
+        if (!porId.has(destino)) {
+          atual = proximo(fluxo, no.id)
+          break
+        }
+
+        atual = destino
+        break
+      }
+
       case 'ir-fluxo': {
         // Sem destino escolhido o bloco não faz nada e a conversa segue — a
         // mesma defesa do bloco de etapa, e pelo mesmo motivo: `validar()`

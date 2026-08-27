@@ -954,3 +954,48 @@ describe('as mensagens do bloco de falar com humano', () => {
     expect(codigos(r.avisos)).toContain('VARIAVEL_DESCONHECIDA')
   })
 })
+
+/**
+ * O bloco de Voltar.
+ *
+ * Duas regras, e a diferença entre elas é o que o motor consegue sobreviver:
+ * destino apagado é **erro** porque a conversa continuaria em silêncio para o
+ * bloco seguinte, e ninguém descobre; voltar para si mesmo é **aviso** porque o
+ * teto de passos já resolve, virando handoff.
+ */
+describe('o bloco de voltar', () => {
+  const comVoltar = (destino: string) =>
+    fluxoSchema.parse({
+      inicio: 'ola',
+      nodes: [
+        { id: 'ola', type: 'mensagem', position: p, data: { partes: [{ tipo: 'texto', texto: 'Oi!' }] } },
+        { id: 'volta', type: 'voltar', position: p, data: { destino, rotulo: '' } },
+        { id: 'gente', type: 'handoff', position: p, data: { motivo: 'x', mensagem: 'Já chamo.' } },
+      ],
+      edges: [
+        { id: 'e1', source: 'ola', target: 'volta' },
+        { id: 'e2', source: 'volta', target: 'gente' },
+      ],
+    })
+
+  it('destino vazio publica — é o início do fluxo, que é o padrão', () => {
+    const r = validar(comVoltar(''))
+    expect(codigos(r.erros)).not.toContain('VOLTAR_SEM_DESTINO')
+  })
+
+  it('destino que existe publica', () => {
+    const r = validar(comVoltar('ola'))
+    expect(r.ok).toBe(true)
+  })
+
+  it('destino apagado não publica', () => {
+    const r = validar(comVoltar('sumiu'))
+    expect(codigos(r.erros)).toContain('VOLTAR_SEM_DESTINO')
+  })
+
+  it('voltar para si mesmo avisa, mas não impede — o motor sobrevive', () => {
+    const r = validar(comVoltar('volta'))
+    expect(codigos(r.avisos)).toContain('VOLTAR_PARA_SI')
+    expect(codigos(r.erros)).not.toContain('VOLTAR_PARA_SI')
+  })
+})

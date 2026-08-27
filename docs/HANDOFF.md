@@ -55,7 +55,7 @@ O mapa que economiza a primeira hora de quem chega:
 | **quando um passo de sequência roda** | `src/core/sequencias.ts` (régua) · `server/sequencias.ts` (entra/sai) · `server/sequencias-passo.ts` (executa) |
 | **a etapa em que um contato está** | `src/core/quadros.ts` (régua) · `repos/quadros.ts` · `components/quadros/quadro.tsx` |
 | **um formulário de criar/editar** | `components/design/modal-formulario.tsx` (com Server Action) · `modal.tsx` (controlado). Ver §10.1 |
-| **um tipo de bloco novo no fluxo** | `core/flow/schema.ts`, `engine/types.ts`, `engine/executar.ts`, `flow/validar.ts`, e no editor `nos.tsx`+`editor.tsx`+`painel.tsx`. O compilador aponta os seis — todos os `switch` são exaustivos |
+| **um tipo de bloco novo no fluxo** | `core/flow/schema.ts`, `core/flow/blocos.ts` (nome, ícone, cor, descrição), `engine/executar.ts`, `flow/validar.ts` (duas funções), `core/compartilhar.ts`, `app/f/[token]/page.tsx`, e no editor `nos.tsx`+`editor.tsx` (`TIPOS` e `dadosPadrao`)+`painel.tsx`, mais `ajuda/conteudo-fluxos.tsx`. **O compilador aponta todos** — os `switch` e os `Record<TipoNo, …>` são exaustivos, então basta acrescentar o tipo no schema e seguir os erros do `typecheck`. Conferido em 27/ago com o bloco de Voltar |
 
 Duas leis de arquitetura que explicam o mapa: **`core/` não faz rede** (é o que
 faz o simulador e a produção rodarem o mesmo código), e **`repos/` não decide

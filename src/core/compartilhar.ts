@@ -315,6 +315,14 @@ function textoDoBloco(no: No): string {
       // conta de origem, e quem recebe o link não importa o destino junto — o
       // salto vira um bloco que ele vai ter que apontar para um fluxo dele.
       return 'continua em outra automação'
+    case 'voltar':
+      /*
+       * O destino é um bloco **deste mesmo desenho**, então dizer para onde não
+       * vaza nada de fora — mas o `rotulo` guarda o texto do bloco de destino,
+       * e esse texto é do cliente. "Volta para 'Qual seu CPF, dona Marina?'"
+       * numa página pública entrega o roteiro e às vezes mais do que ele.
+       */
+      return no.data.destino === '' ? 'volta ao início do fluxo' : 'volta a um passo anterior'
   }
 }
 

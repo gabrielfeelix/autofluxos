@@ -582,6 +582,41 @@ export const noIrFluxoSchema = z.object({
   }),
 })
 
+/**
+ * Voltar para um ponto anterior da **mesma** conversa.
+ *
+ * É o "voltar ao menu" que todo bot de plano de saúde, banco e operadora tem, e
+ * que aqui só existia arrastando uma seta pelo desenho inteiro. Quem monta
+ * fluxo desenhou o botão, procurou o bloco e não achou: *"quando tiver essa
+ * opção tem que ter algum bloco que consegue jogar diretamente para reiniciar o
+ * fluxo"*.
+ *
+ * **A seta continua funcionando, e este bloco não a substitui.** Ela é melhor
+ * quando o destino está perto e visível — a volta do "quer tentar outro dia?"
+ * para a pergunta da data é uma seta curta, e vê-la ajuda a entender o desenho.
+ * Este bloco é para o outro caso: o menu está a doze blocos de distância, a
+ * seta cruzaria a tela inteira por cima de tudo, e o desenho fica ilegível
+ * justamente onde ele mais precisa ser lido.
+ *
+ * `destino` vazio quer dizer **o início do fluxo**, que é o caso mais comum e
+ * evita que o bloco nasça quebrado: recém-arrastado, ele já reinicia.
+ *
+ * **As variáveis não são apagadas**, e isso é decisão. Quem voltou ao menu
+ * depois de dizer o nome não quer dizer o nome de novo, e um "voltar" que
+ * esquece tudo é indistinguível de desligar e ligar a conversa. Quem quiser
+ * limpar algo põe um Guardar com valor vazio no caminho.
+ */
+export const noVoltarSchema = z.object({
+  ...base,
+  type: z.literal('voltar'),
+  data: z.object({
+    /** O bloco de destino. Vazio = o início do fluxo. */
+    destino: z.string().default(''),
+    /** O nome do destino no instante da escolha, só para o desenho. */
+    rotulo: z.string().default(''),
+  }),
+})
+
 export const noSchema = z.discriminatedUnion('type', [
   noMensagemSchema,
   noMidiaSchema,
@@ -593,6 +628,7 @@ export const noSchema = z.discriminatedUnion('type', [
   noHttpSchema,
   noEtapaSchema,
   noIrFluxoSchema,
+  noVoltarSchema,
 ])
 
 export const arestaSchema = z.object({

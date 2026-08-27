@@ -3,6 +3,7 @@
 import { Handle, Position, type NodeProps, type NodeTypes } from '@xyflow/react'
 import type { ReactNode } from 'react'
 import { CORES, ICONES, NOMES } from '@/core/flow/blocos'
+import { presetDoBloco } from '@/core/presets'
 import { partesDaMensagem } from '@/core/flow/mensagem'
 import { NOME_DO_FORMATO, type FormatoDeResposta } from '@/core/flow/resposta'
 import {
@@ -355,14 +356,60 @@ function NoHandoff({ data, selected }: NodeProps) {
   )
 }
 
+/**
+ * O bloco de Serviços externos no desenho.
+ *
+ * **Ele diz qual integração está ligada, e não só o endereço.** Quem monta
+ * fluxo pediu exatamente isto: *"preciso que a opção selecionada apareça
+ * pequeno no card de alguma forma, pra pessoa ter o feedback"* — antes o card
+ * mostrava `GET https://viacep.com.br/ws/0131010…` e `guarda cidade`, e para
+ * saber se aquele bloco era a agenda ou uma chamada solta era preciso clicar
+ * nele e abrir a gaveta.
+ *
+ * O endereço continua embaixo, menor: ele é o que diferencia dois blocos da
+ * mesma integração num fluxo com quatro chamadas.
+ */
 function NoHttp({ data, selected }: NodeProps) {
-  const d = data as { metodo: string; url: string; mapear: { variavel: string }[] }
+  const d = data as {
+    metodo: string
+    url: string
+    mapear: { variavel: string }[]
+    conexaoId?: string
+  }
+
+  const preset = presetDoBloco(d)
+  // Preset que pede chave e ainda não tem nenhuma está preenchido e não roda —
+  // e no desenho isso precisa aparecer sem clicar, que é onde ele será visto.
+  const faltaCredencial =
+    preset !== undefined && preset.credencial !== 'nenhuma' && (d.conexaoId ?? '') === ''
+
   return (
     <Caixa tipo="http" selecionado={!!selected}>
-      <p className="truncate text-[12.5px] leading-5 text-soft">
-        <span className="font-mono text-[10px] text-[#8de2fa]">{d.metodo}</span>{' '}
-        {vazio(d.url, '(sem endereço)')}
-      </p>
+      {preset ? (
+        <>
+          <p className="flex items-start gap-1.5 text-[12.5px] leading-5 text-soft">
+            <span
+              aria-hidden
+              className={`mt-[6px] size-1.5 shrink-0 rounded-full ${
+                faltaCredencial ? 'bg-amber-300' : 'bg-emerald-400'
+              }`}
+            />
+            <span className="min-w-0 flex-1 truncate font-semibold">{preset.nome}</span>
+          </p>
+          {faltaCredencial && (
+            <p className="mt-1 truncate text-[10px] text-amber-200/90">falta a credencial</p>
+          )}
+          <p className="mt-1 truncate font-mono text-[10px] text-dim">
+            {d.metodo} {semEsquema(d.url)}
+          </p>
+        </>
+      ) : (
+        <p className="truncate text-[12.5px] leading-5 text-soft">
+          <span className="font-mono text-[10px] text-[#8de2fa]">{d.metodo}</span>{' '}
+          {vazio(d.url, '(sem endereço)')}
+        </p>
+      )}
+
       {d.mapear.length > 0 && (
         <p className="mt-1 truncate font-mono text-[10px] text-dim">
           guarda {d.mapear.map((m) => m.variavel || '?').join(', ')}
@@ -370,6 +417,17 @@ function NoHttp({ data, selected }: NodeProps) {
       )}
     </Caixa>
   )
+}
+
+/**
+ * O endereço sem `https://`, para caber no card.
+ *
+ * Com o nome da integração em cima, o esquema é a parte do endereço que menos
+ * informa: o que diferencia dois blocos da mesma agenda é a rota, e ela é a
+ * primeira coisa a sumir quando a linha estoura.
+ */
+function semEsquema(url: string): string {
+  return url.replace(/^https?:\/\//, '') || '(sem endereço)'
 }
 
 /**
@@ -391,6 +449,30 @@ function NoIrFluxo({ data, selected }: NodeProps) {
   )
 }
 
+/**
+ * O bloco que volta para um ponto anterior da mesma conversa.
+ *
+ * **Sem alça de saída** (`saidaUnica={false}`), pelo mesmo motivo do bloco de
+ * ir-fluxo: daqui não sai linha, porque a conversa continua no destino. Uma
+ * alça seria uma promessa que o motor não cumpre — e o destino não é uma seta,
+ * é um campo.
+ */
+function NoVoltar({ data, selected }: NodeProps) {
+  const d = data as { destino?: string; rotulo?: string }
+  const paraOInicio = !d.destino
+
+  return (
+    <Caixa tipo="voltar" selecionado={!!selected} saidaUnica={false}>
+      <p className="truncate text-[12.5px] leading-5 text-soft">
+        {paraOInicio ? 'ao início do fluxo' : d.rotulo?.trim() || 'a um passo anterior'}
+      </p>
+      <p className="mt-1 text-[10px] text-dim">
+        {paraOInicio ? 'a conversa recomeça daqui' : 'a conversa continua de lá'}
+      </p>
+    </Caixa>
+  )
+}
+
 export const tiposDeNo: NodeTypes = {
   mensagem: NoMensagem,
   midia: NoMidia,
@@ -402,4 +484,5 @@ export const tiposDeNo: NodeTypes = {
   http: NoHttp,
   etapa: NoEtapa,
   'ir-fluxo': NoIrFluxo,
+  voltar: NoVoltar,
 }

@@ -1,7 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { GRUPOS_DE_PRESET, NOME_DO_GRUPO, PRESETS, acharPreset, presetDoBloco } from '@/core/presets'
+import {
+  GRUPOS_DE_PRESET,
+  NOME_DO_GRUPO,
+  PRESETS,
+  presetDoBloco,
+  type Preset,
+} from '@/core/presets'
 
 /**
  * O menu de integrações que os concorrentes têm — feito por cima do bloco que
@@ -38,9 +44,6 @@ export function PresetsDeIntegracao({
   }
 }) {
   const [aberto, setAberto] = useState(false)
-  const [escolhido, setEscolhido] = useState<string | null>(null)
-
-  const preset = escolhido ? acharPreset(escolhido) : undefined
 
   /*
    * O que a gaveta fechada mostra.
@@ -58,6 +61,32 @@ export function PresetsDeIntegracao({
   const emUso = bloco ? presetDoBloco(bloco) : undefined
   const faltaCredencial =
     emUso !== undefined && emUso.credencial !== 'nenhuma' && bloco?.temCredencial === false
+
+  /*
+   * Aplicar no clique, com a confirmação **só quando há o que perder**.
+   *
+   * A confirmação existe porque aplicar sobrescreve endereço, corpo,
+   * cabeçalhos e mapeamento, e quem montou a chamada à mão perderia o
+   * trabalho. Mas num bloco recém-criado não há trabalho nenhum para perder, e
+   * ali ela só ensina a clicar em "ok" sem ler — que é o que faz a confirmação
+   * seguinte, a que importa, também passar batida.
+   *
+   * Reaplicar o preset que já está em uso não pergunta nada: é o gesto de quem
+   * mexeu demais e quer o preenchimento de volta.
+   */
+  const aplicar = (preset: Preset) => {
+    const temTrabalho =
+      (bloco?.url ?? '').trim() !== '' && presetDoBloco(bloco ?? { metodo: '', url: '' })?.id !== preset.id
+
+    if (temTrabalho) {
+      const ok = confirm(
+        `Aplicar “${preset.nome}”? Isso substitui o endereço, o corpo, os cabeçalhos e o que este bloco guarda.`,
+      )
+      if (!ok) return
+    }
+
+    aoAplicar({ ...preset.dados })
+  }
 
   return (
     <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.02] p-3">
@@ -118,58 +147,83 @@ export function PresetsDeIntegracao({
                   {NOME_DO_GRUPO[grupo]}
                 </p>
                 <div className="space-y-1.5">
-          {doGrupo.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setEscolhido(escolhido === item.id ? null : item.id)}
-              aria-pressed={escolhido === item.id}
-              className={`block w-full rounded-[9px] border px-3 py-2 text-left transition ${
-                escolhido === item.id
-                  ? 'border-accent/40 bg-accent/[0.09]'
-                  : 'border-white/[0.07] hover:border-white/[0.14]'
-              }`}
-            >
-              <strong className="block text-[12px] font-semibold text-soft">{item.nome}</strong>
-              <span className="mt-0.5 block text-[11px] leading-4 text-dim">{item.resumo}</span>
-            </button>
-                  ))}
+          {doGrupo.map((item) => {
+            /*
+             * **O destaque diz o que está em uso, e não o que foi clicado.**
+             *
+             * Era o defeito relatado por quem monta fluxo: *"não sei se não
+             * está funcionando ou funciona, porque se eu vou para o próximo
+             * quadro ele não mostra que essa opção foi realmente
+             * selecionada"*. Clicar num preset o pintava de selecionado
+             * **antes** de aplicar — e o bloco continuava apontando para outro
+             * endereço, com a tela afirmando o contrário. Quem clicou e viu o
+             * destaque não tinha por que procurar um botão de confirmar.
+             *
+             * Agora o destaque é consequência do bloco, não do clique: some
+             * ao trocar de bloco porque o bloco é outro, e é isso que ele
+             * deve fazer.
+             */
+            const estaEmUso = emUso?.id === item.id
+
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => aplicar(item)}
+                aria-pressed={estaEmUso}
+                className={`block w-full rounded-[9px] border px-3 py-2 text-left transition ${
+                  estaEmUso
+                    ? 'border-accent/40 bg-accent/[0.09]'
+                    : 'border-white/[0.07] hover:border-white/[0.14]'
+                }`}
+              >
+                <span className="flex items-baseline gap-1.5">
+                  <strong className="min-w-0 flex-1 text-[12px] font-semibold text-soft">
+                    {item.nome}
+                  </strong>
+                  {estaEmUso && (
+                    <span className="shrink-0 text-[9.5px] font-bold tracking-[0.06em] text-accent uppercase">
+                      em uso
+                    </span>
+                  )}
+                </span>
+                <span className="mt-0.5 block text-[11px] leading-4 text-dim">{item.resumo}</span>
+                {/*
+                  O que ele exige aparece **no item em uso**, e não numa caixa
+                  separada que só existia depois de clicar.
+
+                  Quem acabou de aplicar precisa saber o que falta agora; quem
+                  está só lendo a lista não precisa de quatorze avisos de
+                  credencial na tela ao mesmo tempo.
+                */}
+                {estaEmUso && (
+                  <span className="mt-1.5 block border-t border-white/[0.07] pt-1.5 text-[10.5px] leading-4 text-dim">
+                    {item.exige}
+                  </span>
+                )}
+                {estaEmUso && item.credencial !== 'nenhuma' && (
+                  <span
+                    className={`mt-1 block text-[10.5px] leading-4 ${
+                      bloco?.temCredencial ? 'text-emerald-300/90' : 'text-amber-200/90'
+                    }`}
+                  >
+                    {bloco?.temCredencial
+                      ? '✓ credencial escolhida'
+                      : '⚠ falta escolher a credencial abaixo'}
+                  </span>
+                )}
+              </button>
+            )
+          })}
                 </div>
               </div>
             )
           })}
 
-          {preset && (
-            <div className="rounded-[9px] border border-amber-300/25 bg-amber-300/[0.06] px-3 py-2.5">
-              <p className="text-[11.5px] leading-4 text-amber-100">
-                <strong className="font-semibold">Antes de aplicar:</strong> {preset.exige}
-              </p>
-              {preset.credencial !== 'nenhuma' && (
-                <p className="mt-1.5 text-[11px] leading-4 text-amber-200/80">
-                  Depois de aplicar, escolha a credencial no campo abaixo. Ela nunca
-                  entra no fluxo — o que fica gravado é só o id dela.
-                </p>
-              )}
-              <button
-                type="button"
-                onClick={() => {
-                  if (
-                    !confirm(
-                      `Aplicar “${preset.nome}”? Isso substitui o endereço, o corpo, os cabeçalhos e o mapeamento que estiverem escritos neste bloco.`,
-                    )
-                  ) {
-                    return
-                  }
-                  aoAplicar({ ...preset.dados })
-                  setAberto(false)
-                  setEscolhido(null)
-                }}
-                className="app-primary-button mt-2.5 px-3 py-1.5 text-[11.5px]"
-              >
-                Aplicar e preencher o bloco
-              </button>
-            </div>
-          )}
+          <p className="px-0.5 text-[10.5px] leading-4 text-dim">
+            Escolher preenche o endereço, o corpo, os cabeçalhos e o que guardar
+            deste bloco. Depois é um bloco comum, e você edita o que quiser.
+          </p>
         </div>
       )}
     </div>

@@ -84,6 +84,8 @@ const TIPOS: TipoNo[] = [
   'salvar-campo',
   'etapa',
   'ir-fluxo',
+  // Ao lado do ir-fluxo: os dois respondem "para onde a conversa vai daqui".
+  'voltar',
   'ia',
   'handoff',
   'http',
@@ -143,6 +145,19 @@ function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
         mapear: [{ variavel: 'cidade', caminho: 'localidade' }],
         aoFalhar: 'humano',
       }
+    case 'voltar':
+      /*
+       * Nasce apontando para o início, e é a exceção consciente à regra dos
+       * blocos acima.
+       *
+       * Etapa e ir-fluxo nascem vazios porque um destino chutado manda gente
+       * para um funil ou um desenho que ninguém escolheu. Aqui não há chute: o
+       * destino vazio **é** o início do fluxo, que é o "voltar ao menu" que
+       * quem arrasta este bloco está procurando em nove de cada dez vezes.
+       * Nascer já funcionando é o ponto — o bloco existe justamente porque a
+       * alternativa era arrastar uma seta pela tela inteira.
+       */
+      return { destino: '', rotulo: '' }
   }
 }
 
@@ -1394,6 +1409,7 @@ export function Editor({
                 ehInicio={selecionado === inicio}
                 variaveis={variaveis}
                 origensDeVariaveis={origensDeVariaveis}
+                blocos={fluxo.nodes}
                 valoresDeVariaveis={valoresDeVariaveis}
                 conexoes={conexoes}
                 etapas={etapas}

@@ -1207,3 +1207,128 @@ describe('o handoff se despede antes de transferir', () => {
     expect(tipos(acoes).at(-1)).toBe('transferir_humano')
   })
 })
+
+/**
+ * O bloco de Voltar.
+ *
+ * Existe porque quem monta fluxo desenhou o botão "Voltar ao Menu", procurou o
+ * bloco que fizesse isso e não achou: *"quando tiver essa opção tem que ter
+ * algum bloco que consegue jogar diretamente para reiniciar o fluxo"*.
+ *
+ * O que precisa ser provado aqui é que ele **desvia** — não manda ação nenhuma
+ * para o servidor resolver — e que os três jeitos de desenhá-lo errado não
+ * prendem ninguém.
+ */
+describe('o bloco de voltar', () => {
+  const p = { x: 0, y: 0 }
+  const msg = (id: string, texto: string) => ({
+    id,
+    type: 'mensagem',
+    position: p,
+    data: { partes: [{ tipo: 'texto', texto }] },
+  })
+
+  /** Um menu que pergunta, e uma opção que volta para ele. */
+  const comVoltar = (destino: string) =>
+    fluxoSchema.parse({
+      inicio: 'menu',
+      nodes: [
+        {
+          id: 'menu',
+          type: 'pergunta',
+          position: p,
+          data: {
+            texto: 'O que você quer?',
+            opcoes: [
+              { id: 'a', rotulo: 'Ver preço' },
+              { id: 'b', rotulo: 'Falar com alguém' },
+            ],
+          },
+        },
+        msg('preco', 'Custa R$ 100.'),
+        { id: 'volta', type: 'voltar', position: p, data: { destino, rotulo: '' } },
+        { id: 'gente', type: 'handoff', position: p, data: { motivo: 'x', mensagem: 'Já chamo.' } },
+      ],
+      edges: [
+        { id: 'e1', source: 'menu', sourceHandle: 'a', target: 'preco' },
+        { id: 'e2', source: 'menu', sourceHandle: 'b', target: 'gente' },
+        { id: 'e3', source: 'preco', target: 'volta' },
+      ],
+    })
+
+  it('volta ao início do fluxo quando o destino é vazio', () => {
+    const fluxo = comVoltar('')
+
+    let r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    r = executar(fluxo, r.sessao, { tipo: 'opcao', opcaoId: 'a' })
+
+    // Mandou o preço **e** voltou a fazer a pergunta, tudo no mesmo passo.
+    const ditos = r.acoes.flatMap((a) =>
+      a.tipo === 'enviar_texto' || a.tipo === 'enviar_opcoes' ? [a.texto] : [],
+    )
+    expect(ditos).toContain('Custa R$ 100.')
+    expect(ditos).toContain('O que você quer?')
+    expect(r.sessao.noAtual).toBe('menu')
+  })
+
+  it('volta para o bloco escolhido, e não só para o início', () => {
+    const fluxo = comVoltar('preco')
+
+    let r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    r = executar(fluxo, r.sessao, { tipo: 'opcao', opcaoId: 'a' })
+
+    // `preco` → `volta` → `preco` gira até o teto de passos e vai para uma
+    // pessoa: é um ciclo sem nenhuma pergunta no meio.
+    expect(r.acoes.some((a) => a.tipo === 'transferir_humano')).toBe(true)
+  })
+
+  /*
+   * **Não manda ação nenhuma.** É o que separa este bloco do de ir-fluxo: lá o
+   * servidor precisa resolver o salto, aqui o motor só continua de outro nó.
+   */
+  it('não pede nada ao servidor — é desvio, não ação', () => {
+    const fluxo = comVoltar('')
+
+    let r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    r = executar(fluxo, r.sessao, { tipo: 'opcao', opcaoId: 'a' })
+
+    expect(r.acoes.some((a) => a.tipo === 'ir_para_fluxo')).toBe(false)
+  })
+
+  /*
+   * Destino apagado segue em frente em vez de travar.
+   *
+   * `validar()` recusa publicar assim, então isto só alcança grafo que já
+   * estava no ar quando o bloco de destino foi apagado — e conversa viva não
+   * pode morrer por causa de uma edição no editor.
+   */
+  it('destino que não existe mais não trava a conversa', () => {
+    const fluxo = fluxoSchema.parse({
+      inicio: 'volta',
+      nodes: [
+        { id: 'volta', type: 'voltar', position: p, data: { destino: 'apagado', rotulo: '' } },
+        msg('depois', 'Segue.'),
+      ],
+      edges: [{ id: 'e', source: 'volta', target: 'depois' }],
+    })
+
+    const r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    expect(r.acoes.some((a) => a.tipo === 'enviar_texto' && a.texto === 'Segue.')).toBe(true)
+  })
+
+  /*
+   * As variáveis sobrevivem ao voltar, e é decisão.
+   *
+   * Um "voltar" que esquece tudo é indistinguível de desligar e ligar a
+   * conversa — e quem voltou ao menu depois de dizer o nome não quer dizer o
+   * nome de novo.
+   */
+  it('o que já foi guardado continua guardado', () => {
+    const fluxo = comVoltar('')
+
+    let r = executar(fluxo, { ...sessaoNova(), vars: { nome: 'Marina' } }, { tipo: 'inicio' })
+    r = executar(fluxo, r.sessao, { tipo: 'opcao', opcaoId: 'a' })
+
+    expect(r.sessao.vars.nome).toBe('Marina')
+  })
+})
