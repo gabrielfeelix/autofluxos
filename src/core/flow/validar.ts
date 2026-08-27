@@ -851,6 +851,33 @@ function conferirConteudo(no: No, erros: Problema[], avisos: Problema[]): void {
             noId: no.id,
           })
         }
+        /*
+         * Contar sem lista conta até um, e é aviso e não erro pelo mesmo
+         * motivo de `unicos`: o fluxo roda, só não faz o que quem montou
+         * imaginava. A variável viria `1` para todo mundo — e uma mensagem
+         * dizendo "você tem 1 aula para repor" para quem não tem nenhuma é
+         * pior do que não dizer nada.
+         */
+        if (item.quantos && !item.caminho.includes(MARCA_DE_LISTA)) {
+          avisos.push({
+            codigo: 'QUANTOS_SEM_LISTA',
+            mensagem: `"${item.variavel || 'um mapeamento'}" está marcado como "contar quantos", mas o caminho não percorre lista nenhuma. Sem [], não há o que contar.`,
+            noId: no.id,
+          })
+        }
+        /*
+         * Contar **e** montar rótulo é pedir duas coisas incompatíveis: o
+         * rótulo desenha a linha de um menu e a contagem devolve um número. O
+         * número ganha, e o modelo escrito ali some sem aviso — que é
+         * exatamente a configuração que não roda de que fala o caso acima.
+         */
+        if (item.quantos && !vazio(item.rotulo ?? '')) {
+          avisos.push({
+            codigo: 'QUANTOS_COM_ROTULO',
+            mensagem: `"${item.variavel || 'um mapeamento'}" conta quantos itens a lista tem, então o modelo de linha não é usado. Apague um dos dois.`,
+            noId: no.id,
+          })
+        }
       }
 
       if (no.data.metodo === 'POST' && !vazio(no.data.corpo)) {

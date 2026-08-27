@@ -477,6 +477,24 @@ export const mapeamentoSchema = z.object({
    * `{{nome}}` esperando o nome do lead.
    */
   rotulo: z.string().optional(),
+  /**
+   * Guarda **quantos** itens a lista tem, e não os itens.
+   *
+   * Nasceu de um pedido de quem opera: *"não deveria existir uma opção de
+   * quantas aulas tem para repor, mas sim que, ao identificar o aluno, ele já
+   * salve essa informação para podermos informar ao aluno"*. Para dizer "você
+   * tem 3 aulas para repor" a conversa precisa do número, e o mapeamento só
+   * sabia devolver a lista inteira — que numa mensagem sai como
+   * `18/08 07:00 · Pilates;25/08 07:00 · Pilates`, e não como "3".
+   *
+   * Só vale com `[]` no caminho: contar um campo raso é contar até um, e
+   * oferecer isso seria oferecer uma montagem que não responde nada.
+   *
+   * Convive com `unicos` — `dias[].data` com os dois conta **dias distintos**,
+   * que é a pergunta certa quando um dia tem quatro horários. Não convive com
+   * `rotulo`, que só monta linha de menu, e menu não é o que se pede aqui.
+   */
+  quantos: z.boolean().optional(),
 })
 
 export const noHttpSchema = z.object({

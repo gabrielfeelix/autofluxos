@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { GRUPOS_DE_PRESET, NOME_DO_GRUPO, PRESETS, acharPreset } from '@/core/presets'
+import { GRUPOS_DE_PRESET, NOME_DO_GRUPO, PRESETS, acharPreset, presetDoBloco } from '@/core/presets'
 
 /**
  * O menu de integrações que os concorrentes têm — feito por cima do bloco que
@@ -21,13 +21,43 @@ import { GRUPOS_DE_PRESET, NOME_DO_GRUPO, PRESETS, acharPreset } from '@/core/pr
  */
 export function PresetsDeIntegracao({
   aoAplicar,
+  bloco,
 }: {
   aoAplicar: (dados: Record<string, unknown>) => void
+  /**
+   * O que o bloco já tem, só para a gaveta fechada saber o que dizer.
+   *
+   * Não é usado para aplicar nada — o preset continua sendo resolvido e
+   * esquecido. É informação de tela, e por isso opcional.
+   */
+  bloco?: {
+    metodo: string
+    url: string
+    mapear: { variavel: string }[]
+    temCredencial: boolean
+  }
 }) {
   const [aberto, setAberto] = useState(false)
   const [escolhido, setEscolhido] = useState<string | null>(null)
 
   const preset = escolhido ? acharPreset(escolhido) : undefined
+
+  /*
+   * O que a gaveta fechada mostra.
+   *
+   * Quem monta fluxo relatou que **com a tela minimizada não dá para saber se
+   * a integração está funcional** — a gaveta fechada dizia a mesma coisa num
+   * bloco vazio e num bloco já ligado à agenda, e as duas pedem gestos opostos:
+   * num, escolher um preset; no outro, não mexer.
+   *
+   * São três estados, e o terceiro é o que evita a promessa falsa: um bloco que
+   * casa com um preset **que exige credencial** e ainda não tem nenhuma
+   * escolhida está preenchido e não roda. Dizer "pronto" ali seria repetir o
+   * defeito que a conferência da chave veio consertar em Conexões.
+   */
+  const emUso = bloco ? presetDoBloco(bloco) : undefined
+  const faltaCredencial =
+    emUso !== undefined && emUso.credencial !== 'nenhuma' && bloco?.temCredencial === false
 
   return (
     <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.02] p-3">
@@ -35,12 +65,37 @@ export function PresetsDeIntegracao({
         type="button"
         onClick={() => setAberto((estava) => !estava)}
         aria-expanded={aberto}
-        className="flex w-full items-center justify-between text-left"
+        className="flex w-full items-start justify-between gap-2 text-left"
       >
-        <span className="text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
-          Começar de uma integração pronta
+        <span className="min-w-0">
+          <span className="block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+            {emUso ? 'Integração pronta em uso' : 'Começar de uma integração pronta'}
+          </span>
+
+          {!aberto && emUso && (
+            <span className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1">
+              <span
+                className={`inline-block size-1.5 shrink-0 rounded-full ${
+                  faltaCredencial ? 'bg-amber-300' : 'bg-emerald-400'
+                }`}
+                aria-hidden
+              />
+              <span className="text-[11.5px] font-semibold text-soft">{emUso.nome}</span>
+              {faltaCredencial && (
+                <span className="text-[11px] text-amber-200/90">
+                  — falta escolher a credencial abaixo
+                </span>
+              )}
+            </span>
+          )}
+
+          {!aberto && !emUso && (
+            <span className="mt-1 block text-[11px] leading-4 text-dim">
+              Este bloco está montado à mão. Abra para partir de uma pronta.
+            </span>
+          )}
         </span>
-        <span className="text-[11px] text-dim">{aberto ? '−' : '+'}</span>
+        <span className="mt-0.5 shrink-0 text-[11px] text-dim">{aberto ? '−' : '+'}</span>
       </button>
 
       {aberto && (

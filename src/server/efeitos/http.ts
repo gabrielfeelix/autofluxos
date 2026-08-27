@@ -208,8 +208,8 @@ export async function chamarHttp(
   }
 
   const valores: Record<string, string> = {}
-  for (const { variavel, caminho, unicos, rotulo } of pedido.mapear) {
-    valores[variavel] = extrair(json, caminho, unicos ?? false, rotulo)
+  for (const { variavel, caminho, unicos, rotulo, quantos } of pedido.mapear) {
+    valores[variavel] = extrair(json, caminho, unicos ?? false, rotulo, quantos ?? false)
   }
 
   return { ok: true, valores }
@@ -343,6 +343,7 @@ export function extrair(
   caminho: string,
   unicos = false,
   rotulo?: string,
+  quantos = false,
 ): string {
   const [antes, depois] = separarNaLista(caminho)
 
@@ -358,7 +359,15 @@ export function extrair(
    * este produto não dá.
    */
   const lista = descer(json, antes)
-  if (!Array.isArray(lista)) return ''
+  /*
+   * Contar o que não é lista devolve `0`, e não vazio.
+   *
+   * A rota que não achou nada responde `reposicoesAbertas: []` num dia e
+   * omite o campo no outro, e as duas coisas querem dizer a mesma: nenhuma. Um
+   * vazio aqui viraria "você tem  aulas para repor" na mensagem, enquanto `0`
+   * é lido tanto pela pessoa quanto por uma condição `igual 0`.
+   */
+  if (!Array.isArray(lista)) return quantos ? '0' : ''
 
   const modelo = (rotulo ?? '').trim()
   const itens: string[] = []
@@ -390,6 +399,15 @@ export function extrair(
     if (unicos && itens.includes(texto)) continue
     itens.push(texto)
   }
+
+  /*
+   * O número vem depois da peneira, e não do tamanho cru da lista.
+   *
+   * É o que faz `unicos` responder "quantos dias distintos" em vez de "quantos
+   * horários", e é o que impede um item vazio de ser contado como uma aula que
+   * a pessoa não tem.
+   */
+  if (quantos) return String(itens.length)
 
   return cortar(itens.join(SEPARADOR_DE_LISTA))
 }

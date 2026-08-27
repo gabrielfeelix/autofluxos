@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { fluxoSchema, noHttpSchema } from './flow/schema'
 import { validar } from './flow/validar'
-import { PRESETS, acharPreset } from './presets'
+import { PRESETS, acharPreset, presetDoBloco } from './presets'
 
 /**
  * Os presets de integração (B6).
@@ -101,5 +101,141 @@ describe('o que os presets escolhem, e por quê', () => {
   it('a RD guarda o id do evento — é o que prova que a integração rodou', () => {
     const rd = acharPreset('rd-station-conversao')!
     expect(rd.dados.mapear).toEqual([{ variavel: 'rd_evento', caminho: 'event_uuid' }])
+  })
+})
+
+/**
+ * Reconhecer o preset que um bloco já usa.
+ *
+ * Existe para a gaveta fechada poder dizer o que o bloco é — quem monta fluxo
+ * relatou que *"se essa tela é minimizada não conseguimos identificar se está
+ * funcional"*. A conferência aqui é de que ela acerta e, mais importante, de
+ * que ela **não** afirma preset onde não há.
+ */
+describe('qual preset um bloco já está usando', () => {
+  it('acha pelo endereço, mesmo com a consulta preenchida', () => {
+    const horarios = acharPreset('verandi-horarios')!
+    const achado = presetDoBloco({
+      metodo: 'GET',
+      url: 'https://verandi.4yu.com.br/api/v1/disponibilidade?de=2026-08-21&ate=2026-08-21',
+      mapear: horarios.dados.mapear,
+    })
+    expect(achado?.id).toBe('verandi-horarios')
+  })
+
+  /*
+   * Duas integrações moram no mesmo endereço, e o que as separa é o que elas
+   * guardam: "quais dias têm vaga" traz `dias_livres`, "quais horários deste
+   * dia" traz o par `horarios` + `horarios_id`.
+   */
+  it('desempata pelo que o bloco guarda quando o endereço é o mesmo', () => {
+    const dias = acharPreset('verandi-dias')!
+    expect(
+      presetDoBloco({ metodo: 'GET', url: dias.dados.url, mapear: dias.dados.mapear })?.id,
+    ).toBe('verandi-dias')
+
+    const horarios = acharPreset('verandi-horarios')!
+    expect(
+      presetDoBloco({ metodo: 'GET', url: horarios.dados.url, mapear: horarios.dados.mapear })?.id,
+    ).toBe('verandi-horarios')
+  })
+
+  /*
+   * Sem o mapeamento não dá para desempatar, e aí o certo é calar.
+   *
+   * Anunciar "quais dias têm vaga" num bloco que busca horário seria a tela
+   * afirmando com confiança algo que ela não sabe — e quem lê a gaveta fechada
+   * lê justamente para não precisar abrir.
+   */
+  it('empate sem mapeamento não anuncia preset nenhum', () => {
+    expect(
+      presetDoBloco({
+        metodo: 'GET',
+        url: 'https://verandi.4yu.com.br/api/v1/disponibilidade?de=x&ate=y',
+      }),
+    ).toBeUndefined()
+  })
+
+  it('o método faz parte da identidade — mesma rota com verbo diferente é outro bloco', () => {
+    // `/participacoes` é POST no preset de marcar e DELETE no de desmarcar.
+    expect(
+      presetDoBloco({ metodo: 'POST', url: 'https://verandi.4yu.com.br/api/v1/participacoes' })?.id,
+    ).toBe('verandi-marcar')
+  })
+
+  it('bloco montado à mão não vira preset nenhum', () => {
+    expect(presetDoBloco({ metodo: 'GET', url: 'https://viacep.com.br/ws/01310100/json/' })).toBeUndefined()
+  })
+
+  it('bloco vazio não vira preset nenhum', () => {
+    expect(presetDoBloco({ metodo: 'GET', url: '' })).toBeUndefined()
+    expect(presetDoBloco({ metodo: 'GET', url: '   ' })).toBeUndefined()
+  })
+
+  /*
+   * Cada preset se reconhece a partir dos próprios dados.
+   *
+   * Sem isto, um preset novo com rota parecida com a de outro passaria a ser
+   * anunciado com o nome errado na gaveta fechada — e a tela estaria mentindo
+   * com toda a confiança.
+   */
+  it.each(PRESETS.map((preset) => preset.id))('%s se reconhece', (id) => {
+    const preset = acharPreset(id)!
+    expect(
+      presetDoBloco({
+        metodo: preset.dados.metodo,
+        url: preset.dados.url,
+        mapear: preset.dados.mapear,
+      })?.id,
+    ).toBe(id)
+  })
+})
+
+/**
+ * O que a agenda passou a responder depois do pedido de quem opera.
+ *
+ * Os dois casos abaixo são citações de um pedido só: *"ao identificar o aluno,
+ * ele conseguir salvar essa informação para que já possamos informar ao
+ * aluno"*, e *"ele consulta primeiro a modalidade que a pessoa citou"*.
+ */
+describe('a agenda responde o que a conversa precisa dizer', () => {
+  it('a ficha traz o número de reposições, e não só a lista delas', () => {
+    const ficha = acharPreset('verandi-minha-agenda')!
+    const contagem = ficha.dados.mapear.find((m) => m.variavel === 'quantas_reposicoes')
+
+    expect(contagem?.quantos).toBe(true)
+    // Contar exige `[]`: sem ele a variável viria `1` para todo mundo.
+    expect(contagem?.caminho).toContain('[]')
+  })
+
+  it('a ficha traz o nome, para a saudação não sair com o nome vazio', () => {
+    const ficha = acharPreset('verandi-minha-agenda')!
+    expect(ficha.dados.mapear.some((m) => m.variavel === 'nome_na_agenda')).toBe(true)
+  })
+
+  it('a busca por modalidade filtra na origem, e não peneira aqui', () => {
+    const filtrado = acharPreset('verandi-horarios-da-modalidade')!
+    // Peneirar do nosso lado esbarraria no teto de 10 itens do menu, que
+    // cortaria antes da peneira — escondendo os horários da modalidade pedida.
+    expect(filtrado.dados.url).toContain('servico={{servico_id}}')
+  })
+
+  /*
+   * O par que faz o menu virar agendamento não pode ter "sem repetir".
+   *
+   * Tirar um item de um lado desloca os valores do outro, e o agendamento vai
+   * para o horário de outra pessoa. Vale para todo preset que monte um par.
+   */
+  it('nenhuma lista pareada com ids está marcada como "sem repetir"', () => {
+    for (const preset of PRESETS) {
+      const temPar = preset.dados.mapear.some((m) => m.variavel.endsWith('_id') && m.caminho.includes('[]'))
+      if (!temPar) continue
+
+      for (const item of preset.dados.mapear) {
+        if (item.caminho.includes('[]')) {
+          expect(item.unicos ?? false, `${preset.id} · ${item.variavel}`).toBe(false)
+        }
+      }
+    }
   })
 })

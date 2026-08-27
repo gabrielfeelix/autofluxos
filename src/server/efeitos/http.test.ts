@@ -168,6 +168,47 @@ describe('extrair', () => {
     it('o modelo só vale sobre lista', () =>
       expect(extrair(agenda, 'livres.0.hora', false, '{hora}')).toBe('07:00'))
   })
+
+  /*
+   * Contar em vez de listar.
+   *
+   * Existe porque quem opera pediu a frase "você tem x aulas para repor" — e
+   * para ela a variável precisa ser o número. Com a lista, a mensagem sai com
+   * as datas todas no meio da frase.
+   */
+  describe('contar quantos itens a lista tem', () => {
+    const ficha = {
+      reposicoesAbertas: [
+        { participacaoId: 'r1', data: '2026-08-18', hora: '07:00', servico: 'Pilates' },
+        { participacaoId: 'r2', data: '2026-08-25', hora: '07:00', servico: 'Pilates' },
+      ],
+      dias: [{ data: '2026-08-21' }, { data: '2026-08-21' }, { data: '2026-08-22' }],
+    }
+
+    it('devolve o número, e não os itens', () =>
+      expect(extrair(ficha, 'reposicoesAbertas[].participacaoId', false, undefined, true)).toBe('2'))
+
+    /*
+     * Lista ausente conta zero, e não vazio.
+     *
+     * A rota omite o campo quando não há nada, e "você tem  aulas para repor"
+     * é pior do que "você tem 0" — que ainda por cima é o que uma condição
+     * `igual 0` sabe ler.
+     */
+    it('campo que não existe conta zero', () =>
+      expect(extrair({}, 'reposicoesAbertas[].participacaoId', false, undefined, true)).toBe('0'))
+
+    it('lista vazia conta zero', () =>
+      expect(extrair({ reposicoesAbertas: [] }, 'reposicoesAbertas[].x', false, undefined, true)).toBe('0'))
+
+    // Contar depois da peneira: com `unicos` a pergunta vira "quantos dias
+    // distintos", que é a certa quando um dia tem quatro horários.
+    it('conta depois de tirar os repetidos', () =>
+      expect(extrair(ficha, 'dias[].data', true, undefined, true)).toBe('2'))
+
+    it('sem contar, continua devolvendo a lista', () =>
+      expect(extrair(ficha, 'reposicoesAbertas[].participacaoId')).toBe('r1;r2'))
+  })
 })
 
 describe('a conexão é fixada no endereço aprovado', () => {

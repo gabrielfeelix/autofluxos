@@ -1,6 +1,8 @@
 import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
 import { fluxoNovo } from '@/core/flow/novo'
 import { agendamento } from './agendamento'
+import { lembrete } from './lembrete'
+import { reagendamento } from './reagendamento'
 import { triagem } from './triagem'
 
 /**
@@ -166,8 +168,22 @@ export const MODELOS: Modelo[] = [
     id: 'agendamento',
     nome: 'Agendar e remarcar na agenda',
     resumo:
-      'Reconhece quem já é cliente pelo telefone, oferece os horários livres de verdade e marca. Precisa da credencial da Verandi.',
+      'Reconhece quem já é cliente, confere o telefone, pergunta a modalidade e oferece só os horários dela. Confirma antes de gravar. Precisa da credencial da Verandi.',
     grafo: agendamento,
+  },
+  {
+    id: 'reagendamento',
+    nome: 'Reagendar uma reposição',
+    resumo:
+      'Reconhece o aluno, já diz quantas aulas ele tem para repor e remarca uma. Mais de uma reposição vai para a recepção. Precisa da credencial da Verandi.',
+    grafo: reagendamento,
+  },
+  {
+    id: 'lembrete',
+    nome: 'Lembrete de aula',
+    resumo:
+      'Lembra da aula e oferece confirmar ou avisar que não vem — avisar desmarca e devolve a vaga na hora. Precisa da credencial da Verandi.',
+    grafo: lembrete,
   },
   {
     id: 'triagem',

@@ -22,7 +22,8 @@ para metade delas era "não", e "não" precisa de prazo e de dono.
 | "reserva pra mim" | **sim** | `verandi-marcar`, com o `sessaoId` da opção escolhida |
 | "quais são meus horários?" | **sim** | `verandi-minha-agenda` |
 | "quero desmarcar" | **sim** | menu das próximas → `verandi-desmarcar` |
-| "quantas reposições eu tenho?" | **sim** | `reposicoes_abertas` |
+| "quantas reposições eu tenho?" | **sim** | `reposicoes_abertas` (a lista) e `quantas_reposicoes` (o número) |
+| "quero pilates, não fisio" | **sim** | `verandi-horarios-da-modalidade`, filtrando na origem |
 | "quais professores vocês têm?" | **sim** | `verandi-catalogo` |
 | "me avisa quando abrir vaga" | **não** | ver §2 — a fila é registrada, o aviso não chega |
 | "quero aula toda terça" (matrícula fixa) | **não** | a API não escreve `vaga`; é decisão de quem atende |
@@ -102,13 +103,45 @@ vaga fixa é compromisso mensal, não uma marcação avulsa. **Provavelmente dev
 continuar assim**, com o bot coletando a intenção e entregando para a recepção.
 Fica registrado como decisão consciente, e não como esquecimento.
 
+### 2.2b Feito em 27/ago — o que veio da conversa de quem opera
+
+Três pedidos de quem estava montando o fluxo com cliente na frente, e o que
+cada um virou:
+
+1. **"Ao identificar o aluno, já salvar quantas aulas ele tem para repor."** O
+   mapeamento ganhou **contar quantos** (`quantos` no `Mapeamento`): guarda o
+   número de itens da lista em vez dos itens. `verandi-minha-agenda` passou a
+   trazer `quantas_reposicoes`, e é o que faz a conversa abrir com *"você tem 3
+   aulas para repor"* em vez de despejar as datas no meio da frase. Ele também é
+   o que ramifica: `igual 0` não oferece reposição, `diferente de 1` chama gente.
+2. **"Ele consulta primeiro a modalidade que a pessoa citou."** Dois presets
+   novos — `verandi-horarios-da-modalidade` e `verandi-dias-da-modalidade` —
+   usam o `&servico=` que a rota já aceitava e ninguém chamava. Sem eles, o bot
+   oferecia o dia inteiro depois de a pessoa escolher pilates, e o erro só
+   aparecia com ela no estúdio.
+3. **"Conferindo o telefone: esse é o seu mesmo?"** Entrou no modelo de
+   agendar. Parece redundante — o número veio do WhatsApp — e não é: quem
+   escreve pelo aparelho de outra pessoa marcaria na ficha errada.
+
+Dois modelos novos saíram disso, `reagendamento` e `lembrete`, ambos descritos
+falando por quem opera e conferidos frase a frase em `src/exemplos/modelos.test.ts`.
+
+**O lembrete tem uma metade que não sai daqui, e ela é a §2.1.** A conversa do
+lembrete funciona inteira; o **disparo sozinho na véspera** não, porque começar
+conversa fora da janela de 24h exige modelo aprovado da Meta (C4). Dentro da
+janela uma sequência entrega. Fora dela, não — e um lembrete que não chega é
+pior do que nenhum, porque quem confia nele para de olhar a agenda.
+
 ### 2.3 O que o catálogo devolve e ninguém usa
 
 `vocabulario` diz como cada conta chama as coisas — um estúdio diz "aula", uma
 clínica diz "sessão". As mensagens do modelo dizem "aula" fixo. Barato de
 resolver e é o que faz o mesmo fluxo servir a barbearia sem reescrever texto.
 
-Também sobram `locais`, `duracaoMin` e `capacidadePadrao`.
+Também sobram `locais`, `duracaoMin` e `capacidadePadrao`. O `profissional` saiu
+da lista dos ignorados: o menu filtrado por modalidade usa
+`{hora} · {profissional}`, porque com a aula já escolhida quem atende é o que
+diferencia uma linha da outra.
 
 ### 2.4 Dia da semana legível
 

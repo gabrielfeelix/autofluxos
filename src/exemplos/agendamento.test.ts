@@ -56,6 +56,20 @@ const DISPONIBILIDADE = {
 
 const SEM_VAGA = { de: '2026-08-22', ate: '2026-08-22', livres: [], cheios: [] }
 
+/** `GET /catalogo` — o que a conta oferece, e quem atende. */
+const CATALOGO = {
+  profissionais: [
+    { profissionalId: '2b7e', nome: 'Marina' },
+    { profissionalId: '9c1d', nome: 'Carol' },
+  ],
+  servicos: [
+    { servicoId: 'p1', nome: 'Pilates solo' },
+    { servicoId: 'f2', nome: 'Fisioterapia' },
+  ],
+  locais: [{ localId: '6d33', nome: 'Sala 1' }],
+  vocabulario: { servico: { singular: 'Aula' } },
+}
+
 const MARCOU = {
   participacaoId: '5e90', pessoaId: '77c0', sessaoId: 'a41f',
   origem: 'avulso', status: 'esperada',
@@ -69,8 +83,8 @@ function valoresDoPreset(presetId: string, json: unknown): Record<string, string
   const valores: Record<string, string> = {}
   // Os quatro argumentos, na mesma ordem que `resolverHttp` usa no servidor —
   // esquecer o `rotulo` aqui faria o teste passar com o menu errado.
-  for (const { variavel, caminho, unicos, rotulo } of preset.dados.mapear) {
-    valores[variavel] = extrair(json, caminho, unicos ?? false, rotulo)
+  for (const { variavel, caminho, unicos, rotulo, quantos } of preset.dados.mapear) {
+    valores[variavel] = extrair(json, caminho, unicos ?? false, rotulo, quantos ?? false)
   }
   return valores
 }
@@ -146,30 +160,84 @@ describe('a conversa inteira, do "oi" ao horário marcado', () => {
       valores: valoresDoPreset(presetId, json),
     })
 
+  /**
+   * Do "oi" até a pergunta da data, para quem a agenda já conhece.
+   *
+   * O caminho ganhou dois passos que quem opera pediu — conferir o telefone e
+   * escolher a modalidade —, e repeti-los em cinco testes esconderia o que cada
+   * um está de fato conferindo.
+   */
+  const ateAData = (): Resultado => {
+    let r = executar(agendamento, comeco(), { tipo: 'inicio' })
+    r = responder(r, 'verandi-quem-e', ACHOU)
+    r = executar(agendamento, r.sessao, { tipo: 'opcao', opcaoId: 'sim' })
+    r = responder(r, 'verandi-catalogo', CATALOGO)
+    return executar(agendamento, r.sessao, { tipo: 'opcao', opcaoId: 'd1' })
+  }
+
   it('quem já é aluna é chamada pelo nome e marca sem dizer quem é', () => {
     let r = executar(agendamento, comeco(), { tipo: 'inicio' })
     expect(r.acoes[0]?.tipo).toBe('chamar_http')
 
     r = responder(r, 'verandi-quem-e', ACHOU)
     expect(textos(r.acoes).join(' ')).toContain('Marina Alves')
-    // Já está na pergunta da data, sem ter perguntado o nome.
-    expect(textos(r.acoes).join(' ')).toContain('21/08/2026')
 
-    r = executar(agendamento, r.sessao, { tipo: 'texto', texto: '21/08/2026' })
-    r = responder(r, 'verandi-horarios', DISPONIBILIDADE)
+    /*
+     * O telefone é conferido antes de tudo.
+     *
+     * Pedido de quem opera, e não formalidade: quem escreve pelo aparelho de
+     * outra pessoa marcaria a aula na ficha errada, e o erro só apareceria com
+     * as duas no estúdio.
+     */
+    expect(textos(r.acoes).join(' ')).toContain('5544998887766')
 
-    // O menu mostra o que a pessoa lê; os ids ficam guardados ao lado.
+    r = executar(agendamento, r.sessao, { tipo: 'opcao', opcaoId: 'sim' })
+    r = responder(r, 'verandi-catalogo', CATALOGO)
+
+    // As modalidades saem do catálogo da conta, e não de botões escritos aqui.
     expect(opcoesDe(r.acoes).map((o) => o.rotulo)).toEqual([
-      '07:00 · Pilates solo',
-      '10:00 · Pilates solo',
+      'Pilates solo',
+      'Fisioterapia',
     ])
 
     r = executar(agendamento, r.sessao, { tipo: 'opcao', opcaoId: 'd1' })
-    // **A prova do modelo inteiro:** o `POST` sai com o id do horário, e não
-    // com "07:00". Errar aqui é o defeito que valida, publica e não funciona.
+    expect(r.sessao.vars.servico_id).toBe('p1')
+    expect(textos(r.acoes).join(' ')).toContain('21/08/2026')
+
+    r = executar(agendamento, r.sessao, { tipo: 'texto', texto: '21/08/2026' })
+
+    /*
+     * **A busca vai filtrada pela modalidade.** Sem o `servico=`, o menu
+     * ofereceria fisioterapia para quem escolheu pilates, e o erro só
+     * apareceria com a pessoa já no estúdio.
+     */
+    const busca = r.acoes.find((a) => a.tipo === 'chamar_http')
+    if (busca?.tipo !== 'chamar_http') throw new Error('faltou buscar horários')
+    expect(busca.url).toContain('servico=p1')
+
+    r = responder(r, 'verandi-horarios-da-modalidade', DISPONIBILIDADE)
+
+    // O menu mostra o que a pessoa lê; os ids ficam guardados ao lado. Com a
+    // modalidade já escolhida, o rótulo usa o professor para diferenciar.
+    expect(opcoesDe(r.acoes).map((o) => o.rotulo)).toEqual([
+      '07:00 · Marina',
+      '10:00 · Carol',
+    ])
+
+    r = executar(agendamento, r.sessao, { tipo: 'opcao', opcaoId: 'd1' })
     expect(r.sessao.vars.sessao_id).toBe('a41f')
     expect(r.sessao.vars.pessoa_id).toBe('77c0')
 
+    // A confirmação repete modalidade, dia e hora antes de gravar qualquer coisa.
+    const conferindo = textos(r.acoes).join(' ')
+    expect(conferindo).toContain('Pilates solo')
+    expect(conferindo).toContain('21/08/2026')
+    expect(conferindo).toContain('07:00')
+
+    r = executar(agendamento, r.sessao, { tipo: 'opcao', opcaoId: 'sim' })
+
+    // **A prova do modelo inteiro:** o `POST` sai com o id do horário, e não
+    // com "07:00". Errar aqui é o defeito que valida, publica e não funciona.
     const chamada = r.acoes.find((a) => a.tipo === 'chamar_http')
     if (chamada?.tipo !== 'chamar_http') throw new Error('faltou a chamada de marcar')
     expect(chamada.metodo).toBe('POST')
@@ -178,6 +246,21 @@ describe('a conversa inteira, do "oi" ao horário marcado', () => {
     r = responder(r, 'verandi-marcar', MARCOU)
     // A confirmação usa a data como a pessoa escreveu, e não a padronizada.
     expect(textos(r.acoes).join(' ')).toContain('21/08/2026 às 07:00')
+  })
+
+  /*
+   * O telefone de outra pessoa não vira agendamento sozinho.
+   *
+   * É o ramo que a pergunta de conferência existe para pegar: seguir aqui
+   * marcaria a aula na ficha de quem não pediu.
+   */
+  it('telefone que não é da pessoa vai para a recepção, e não marca nada', () => {
+    let r = executar(agendamento, comeco(), { tipo: 'inicio' })
+    r = responder(r, 'verandi-quem-e', ACHOU)
+    r = executar(agendamento, r.sessao, { tipo: 'opcao', opcaoId: 'nao' })
+
+    expect(r.acoes.some((a) => a.tipo === 'transferir_humano')).toBe(true)
+    expect(r.acoes.some((a) => a.tipo === 'chamar_http')).toBe(false)
   })
 
   it('quem é novo é cadastrado antes de escolher horário', () => {
@@ -193,12 +276,14 @@ describe('a conversa inteira, do "oi" ao horário marcado', () => {
 
     r = responder(r, 'verandi-cadastrar', { pessoaId: 'novo1', nome: 'Bia Nova' })
     expect(r.sessao.vars.pessoa_id).toBe('novo1')
-    expect(textos(r.acoes).join(' ')).toContain('Para quando')
+
+    // Quem acabou de se cadastrar também escolhe a modalidade antes do dia.
+    r = responder(r, 'verandi-catalogo', CATALOGO)
+    expect(textos(r.acoes).join(' ')).toContain('Qual aula')
   })
 
   it('a data escrita errado é recusada com a frase do estúdio, sem sair da pergunta', () => {
-    let r = executar(agendamento, comeco(), { tipo: 'inicio' })
-    r = responder(r, 'verandi-quem-e', ACHOU)
+    let r = ateAData()
     r = executar(agendamento, r.sessao, { tipo: 'texto', texto: 'sexta que vem' })
 
     expect(textos(r.acoes).join(' ')).toContain('citando dia / mês / ano')
@@ -206,12 +291,13 @@ describe('a conversa inteira, do "oi" ao horário marcado', () => {
   })
 
   it('dia sem vaga oferece outro dia, e voltar cai na mesma pergunta', () => {
-    let r = executar(agendamento, comeco(), { tipo: 'inicio' })
-    r = responder(r, 'verandi-quem-e', ACHOU)
+    let r = ateAData()
     r = executar(agendamento, r.sessao, { tipo: 'texto', texto: '22/08/2026' })
-    r = responder(r, 'verandi-horarios', SEM_VAGA)
+    r = responder(r, 'verandi-horarios-da-modalidade', SEM_VAGA)
 
-    expect(textos(r.acoes).join(' ')).toContain('não temos horário livre')
+    // A frase agora diz **qual** modalidade não tem vaga: "não temos horário"
+    // num dia cheio de outra aula é a informação errada.
+    expect(textos(r.acoes).join(' ')).toContain('Pilates solo')
 
     // "Escolher outro dia" volta para a pergunta da data: duas setas chegando
     // no mesmo bloco, que é o desenho que todo "voltar ao menu" precisa.
@@ -220,8 +306,7 @@ describe('a conversa inteira, do "oi" ao horário marcado', () => {
   })
 
   it('a data padronizada é a que vai para a API, e a escrita é a que a pessoa lê', () => {
-    let r = executar(agendamento, comeco(), { tipo: 'inicio' })
-    r = responder(r, 'verandi-quem-e', ACHOU)
+    let r = ateAData()
     r = executar(agendamento, r.sessao, { tipo: 'texto', texto: '21/08/2026' })
 
     expect(r.sessao.vars.dia).toBe('2026-08-21')

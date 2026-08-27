@@ -607,6 +607,20 @@ export function SecaoListas() {
         </p>
       </Nota>
 
+      <Nota tom="dica" titulo="“Contar quantos” guarda o número, e não a lista">
+        <p>
+          Marque <strong className="text-soft">contar quantos</strong> quando a conversa precisar
+          dizer <em>quantos</em>, e não <em>quais</em>: “você tem <Var>3</Var> aulas para repor”.
+          Sem ele a variável traz a lista inteira, e a mensagem sai com as datas todas no meio da
+          frase.
+        </p>
+        <p>
+          Ele também serve para ramificar: uma {NOMES.condicao} com{' '}
+          <strong className="text-soft">igual</strong> <Cod>0</Cod> separa quem não tem nada de quem
+          tem, sem o bot precisar perguntar.
+        </p>
+      </Nota>
+
       <Nota tom="atencao" titulo="Limites do WhatsApp que o desenho precisa respeitar">
         <p>
           Até 3 opções, a Meta entrega como botões; de 4 a 10, como lista suspensa. Acima de 10 a

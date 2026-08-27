@@ -343,6 +343,79 @@ export const PRESETS: Preset[] = [
       aoFalhar: 'humano',
     },
   },
+  /*
+   * Filtrar por modalidade — o que faltava para o fluxo de agendamento.
+   *
+   * Veio de quem opera descrevendo a conversa real: *"ele consulta primeiro a
+   * modalidade que a pessoa citou — pode ter clicado em personal, pode ter
+   * clicado em pilates, pode ter clicado em fisioterapia — e a partir disso
+   * identifica a modalidade, depois cita os dias e horários com base naquela
+   * modalidade"*.
+   *
+   * Sem isto o bot oferecia o dia inteiro e a pessoa escolhia um horário de
+   * outra modalidade — e o erro só aparecia com ela já no estúdio. O `servico`
+   * é o mesmo id que o catálogo devolve em `servicos_id`, guardado por uma
+   * pergunta com lista de valores.
+   *
+   * **O filtro é da rota, e não uma peneira nossa**, pela mesma razão do
+   * preset de professor: o teto de 10 itens do menu cortaria antes da peneira,
+   * escondendo justamente os horários da modalidade pedida.
+   */
+  {
+    id: 'verandi-horarios-da-modalidade',
+    grupo: 'agenda',
+    nome: 'Verandi · horários livres de uma modalidade',
+    resumo:
+      'Os horários de um dia só da modalidade escolhida. É o que responde "quero pilates na quarta" sem oferecer aula de outra coisa.',
+    exige:
+      'A mesma credencial “bearer”. O `servico_id` sai do bloco de catálogo, guardado por uma pergunta com lista de valores.',
+    credencial: 'bearer',
+    dados: {
+      metodo: 'GET',
+      url: `${ENDERECO_DA_AGENDA}/disponibilidade?de={{dia}}&ate={{dia}}&servico={{servico_id}}`,
+      cabecalhos: [],
+      corpo: '',
+      mapear: [
+        { variavel: 'horarios', caminho: 'livres[]', rotulo: '{hora} · {profissional}' },
+        { variavel: 'horarios_id', caminho: 'livres[].sessaoId' },
+        { variavel: 'horarios_prof', caminho: 'livres[].profissional' },
+        { variavel: 'lotados', caminho: 'cheios[]', rotulo: '{hora} · {profissional}' },
+        { variavel: 'lotados_id', caminho: 'cheios[].sessaoId' },
+      ],
+      aoFalhar: 'humano',
+    },
+  },
+  /*
+   * Os dias que têm vaga numa modalidade, para o menu de "para quando?".
+   *
+   * É o par do de cima na outra ponta da conversa: primeiro *quais dias*, e só
+   * depois *quais horários daquele dia*. Quem opera descreveu exatamente essa
+   * ordem — "cita os dias e horários com base naquela modalidade".
+   *
+   * `unicos` aqui é obrigatório e **não** desalinha par nenhum: esta lista vai
+   * sozinha para o menu, sem uma lista de ids do lado. O que a pessoa escolhe é
+   * a própria data, que é o que a chamada seguinte precisa.
+   */
+  {
+    id: 'verandi-dias-da-modalidade',
+    grupo: 'agenda',
+    nome: 'Verandi · quais dias têm vaga numa modalidade',
+    resumo:
+      'Os dias com horário livre de uma modalidade, sem repetir. Vira o menu de "para quando você quer?" já filtrado.',
+    exige: 'A mesma credencial “bearer”. O `servico_id` sai do bloco de catálogo.',
+    credencial: 'bearer',
+    dados: {
+      metodo: 'GET',
+      url: `${ENDERECO_DA_AGENDA}/disponibilidade?de={{data_de}}&ate={{data_ate}}&servico={{servico_id}}`,
+      cabecalhos: [],
+      corpo: '',
+      mapear: [
+        { variavel: 'dias_livres', caminho: 'livres[].data', unicos: true },
+        { variavel: 'quantos_dias', caminho: 'livres[].data', unicos: true, quantos: true },
+      ],
+      aoFalhar: 'humano',
+    },
+  },
   {
     id: 'verandi-catalogo',
     grupo: 'agenda',
@@ -464,6 +537,7 @@ export const PRESETS: Preset[] = [
        * Com o modelo de rótulo, cada linha diz o dia, a hora e qual aula é.
        */
       mapear: [
+        { variavel: 'nome_na_agenda', caminho: 'nome' },
         { variavel: 'proximas', caminho: 'proximas[]', rotulo: '{data} {hora} · {servico}' },
         { variavel: 'proximas_id', caminho: 'proximas[].participacaoId' },
         {
@@ -472,6 +546,24 @@ export const PRESETS: Preset[] = [
           rotulo: '{data} {hora} · {servico}',
         },
         { variavel: 'reposicoes_id', caminho: 'reposicoesAbertas[].participacaoId' },
+        /*
+         * O **número** de reposições, e não a lista delas.
+         *
+         * Pedido de quem opera, literal: *"assim que identificar o aluno, ele
+         * conseguir salvar essa informação para que já possamos informar ao
+         * aluno — você tem x aulas para repor"*. A lista já existia acima, e
+         * ela não serve para essa frase: numa mensagem sai como
+         * `18/08 07:00 · Pilates;25/08 07:00 · Pilates`.
+         *
+         * Ele também é o que decide a conversa: `igual 0` não oferece
+         * reposição, `maior 1` oferece a recepção, porque remarcar duas de uma
+         * vez é conversa de gente.
+         */
+        {
+          variavel: 'quantas_reposicoes',
+          caminho: 'reposicoesAbertas[].participacaoId',
+          quantos: true,
+        },
         { variavel: 'horario_fixo', caminho: 'horariosFixos[]', rotulo: '{hora} · {servico}' },
         { variavel: 'situacao_na_agenda', caminho: 'situacao' },
       ],
@@ -527,4 +619,92 @@ export const PRESETS: Preset[] = [
 
 export function acharPreset(id: string): Preset | undefined {
   return PRESETS.find((preset) => preset.id === id)
+}
+
+/**
+ * Qual preset este bloco já está usando, olhando só para o endereço.
+ *
+ * Existe para a gaveta fechada poder dizer o que o bloco é. Quem monta fluxo
+ * relatou exatamente isto: *"se essa tela é minimizada não conseguimos
+ * identificar se está funcional"* — a gaveta fechada mostrava "Começar de uma
+ * integração pronta" tanto num bloco vazio quanto num bloco já preenchido pela
+ * agenda, e as duas situações pedem gestos opostos.
+ *
+ * **Casa por endereço, e não por um id gravado no bloco**, porque preset
+ * resolvido não deixa referência para trás — é a regra que faz versão publicada
+ * ser imutável. O endereço é o que sobra dele, e basta: quem edita a URL depois
+ * de aplicar deixou de estar no preset, e é honesto a tela parar de afirmar que
+ * está.
+ *
+ * **O caminho sozinho não basta**, e isso custou um teste para descobrir: cinco
+ * presets moram em `/disponibilidade` e só se distinguem pela consulta — os
+ * dias, os horários de um dia, os de um professor, os de uma modalidade. Casar
+ * só pelo caminho anunciava "quais dias têm vaga" num bloco que busca horário
+ * de professor.
+ *
+ * Então a comparação é caminho **mais os nomes dos parâmetros**, e não os
+ * valores: os presets carregam `{{variavel}}` na consulta, e trocar `{{dia}}`
+ * por outra variável não faz ninguém sair da integração. Trocar o conjunto de
+ * parâmetros, sim — aí é outra chamada.
+ */
+export function presetDoBloco(dados: {
+  metodo: string
+  url: string
+  /** O mapeamento do bloco, quando a tela tiver. É o desempate. */
+  mapear?: { variavel: string }[]
+}): Preset | undefined {
+  const alvo = assinatura(dados.url)
+  if (alvo === '') return undefined
+
+  const candidatos = PRESETS.filter(
+    (preset) => preset.dados.metodo === dados.metodo && assinatura(preset.dados.url) === alvo,
+  )
+
+  if (candidatos.length <= 1) return candidatos[0]
+
+  /*
+   * Empate: o endereço não distingue tudo.
+   *
+   * `/disponibilidade?de&ate` é a mesma chamada para "quais dias têm vaga" e
+   * "quais horários deste dia" — o que muda é o que se guarda dela: um traz
+   * `dias_livres` sem repetir, o outro traz o par `horarios` + `horarios_id`.
+   * O desempate é por isso o conjunto de variáveis guardadas, que é o que de
+   * fato diferencia as duas integrações.
+   *
+   * Sem mapeamento para comparar, **nenhum** é anunciado: dizer o nome errado
+   * na gaveta fechada é pior do que não dizer nada, porque quem lê confia.
+   */
+  const guardadas = new Set((dados.mapear ?? []).map((m) => m.variavel).filter((v) => v !== ''))
+  if (guardadas.size === 0) return undefined
+
+  return candidatos.find((preset) =>
+    preset.dados.mapear.every((m) => guardadas.has(m.variavel)),
+  )
+}
+
+/**
+ * O que identifica uma chamada: o endereço e **quais** parâmetros ela usa.
+ *
+ * Feito na mão, sem `new URL`, porque as URLs dos presets têm `{{variavel}}` no
+ * meio e nem toda interpolação sobrevive a um parser — e porque um endereço
+ * pela metade, ainda sendo digitado, não pode lançar aqui.
+ */
+function assinatura(url: string): string {
+  const limpa = url.trim()
+  if (limpa === '') return ''
+
+  const corte = limpa.indexOf('?')
+  const caminho = (corte === -1 ? limpa : limpa.slice(0, corte)).replace(/\/$/, '')
+  if (corte === -1) return caminho
+
+  const chaves = limpa
+    .slice(corte + 1)
+    .split('&')
+    .map((par) => par.split('=')[0]?.trim() ?? '')
+    .filter((chave) => chave !== '')
+    // Ordenado para a ordem em que os parâmetros foram escritos não contar:
+    // `?ate=&de=` é a mesma chamada que `?de=&ate=`.
+    .sort()
+
+  return `${caminho}?${chaves.join('&')}`
 }

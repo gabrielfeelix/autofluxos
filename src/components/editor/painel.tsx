@@ -670,7 +670,16 @@ export function Painel({
             o que uma conversa em andamento vai chamar — e versão publicada é
             imutável aqui também.
           */}
-          <PresetsDeIntegracao aoAplicar={aoMudarDados} />
+          <PresetsDeIntegracao
+            aoAplicar={aoMudarDados}
+            bloco={{
+              metodo: no.data.metodo,
+              url: no.data.url,
+              // O mapeamento desempata os presets que dividem o mesmo endereço.
+              mapear: no.data.mapear,
+              temCredencial: (no.data.conexaoId ?? '') !== '',
+            }}
+          />
 
           <label className="block">
             <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">Método</span>
@@ -1235,11 +1244,27 @@ function Mapeamentos({
 }) {
   return (
     <div>
-      <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+      <span className="mb-1 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
         Guardar da resposta
       </span>
 
-      <div className="space-y-1.5">
+      {/*
+        Uma linha dizendo o que a seção faz, antes dos campos.
+
+        Quem monta fluxo chegou aqui e disse "essa parte aqui eu não entendi" —
+        e tinha razão: o título "Guardar da resposta" nomeia a seção mas não
+        explica que o sistema respondeu um monte de campos e que aqui se escolhe
+        **quais** entram na conversa. Sem isso, os dois campos parecem pedir a
+        mesma coisa duas vezes.
+      */}
+      <p className="mb-2 text-[10.5px] leading-4 text-dim">
+        O sistema respondeu vários campos. Escolha quais deles a conversa vai
+        guardar, e com que nome — é assim que{' '}
+        <code className="font-mono text-[#8de2fa]">{'{{cidade}}'}</code> passa a
+        existir nas mensagens seguintes.
+      </p>
+
+      <div className="space-y-2.5">
         {mapear.map((m, i) => {
           const percorreLista = m.caminho.includes(MARCA_DE_LISTA)
           const trocar = (mudanca: Partial<Mapeamento>) => {
@@ -1250,16 +1275,41 @@ function Mapeamentos({
 
           return (
             <div key={i}>
-              <div className="flex gap-1.5">
+              {/*
+                Os dois campos ganharam rótulo depois de quem monta fluxo
+                apontar para eles e dizer "essa parte aqui eu não entendi".
+
+                Duas caixas do mesmo tamanho, lado a lado, com `cidade` numa e
+                `localidade` na outra, não dizem qual é qual — e a diferença é
+                justamente a que importa: a da esquerda é o **nome que você
+                escolhe** e vai usar em `{{cidade}}` na conversa; a da direita é
+                o **campo que a API devolveu**, e o nome dele é de quem fez a
+                API. Trocar as duas de lugar publica e nunca preenche.
+
+                A seta no meio é o que se lê sem ler: vem de lá, guarda aqui.
+              */}
+              <div className="mb-1 flex gap-1.5 pl-1">
+                <span className="min-w-0 flex-1 text-[9.5px] font-bold tracking-[0.06em] text-dim uppercase">
+                  guardar em
+                </span>
+                <span className="min-w-0 flex-1 text-[9.5px] font-bold tracking-[0.06em] text-dim uppercase">
+                  campo da resposta
+                </span>
+                <span className="size-8 shrink-0" aria-hidden />
+              </div>
+
+              <div className="flex items-center gap-1.5">
                 <input
                   value={m.variavel}
-                  placeholder="variável"
+                  placeholder="cidade"
+                  aria-label="nome da variável que vai guardar o valor"
                   onChange={(e) => trocar({ variavel: e.target.value })}
                   className="app-field min-w-0 flex-1 px-3 py-2 text-[12.5px]"
                 />
                 <input
                   value={m.caminho}
-                  placeholder="pedido.status"
+                  placeholder="localidade"
+                  aria-label="caminho do campo dentro da resposta da API"
                   onChange={(e) => trocar({ caminho: e.target.value })}
                   className="app-field min-w-0 flex-1 px-3 py-2 font-mono text-[12.5px]"
                 />
@@ -1314,6 +1364,25 @@ function Mapeamentos({
                       className="size-3.5 accent-[#56d0f5]"
                     />
                     sem repetir — use para menu de dias; não use quando esta lista for o par de outra
+                  </label>
+
+                  {/*
+                    Contar em vez de listar.
+
+                    Veio do pedido de quem opera: para o bot abrir a conversa com
+                    "você tem 3 aulas para repor", ele precisa do número. Sem
+                    isto a variável trazia a lista inteira e a mensagem saía com
+                    as datas todas no meio da frase.
+                  */}
+                  <label className="mt-1 flex cursor-pointer items-center gap-2 pl-1 text-[10.5px] leading-4 text-dim">
+                    <input
+                      type="checkbox"
+                      checked={m.quantos ?? false}
+                      onChange={(e) => trocar({ quantos: e.target.checked || undefined })}
+                      className="size-3.5 accent-[#56d0f5]"
+                    />
+                    contar quantos — guarda o número de itens (
+                    <code className="font-mono">3</code>), e não a lista
                   </label>
                 </>
               )}
