@@ -1350,10 +1350,9 @@ function Mapeamentos({
         mesma coisa duas vezes.
       */}
       <p className="mb-2 text-[10.5px] leading-4 text-dim">
-        O sistema respondeu vários campos. Escolha quais deles a conversa vai
-        guardar, e com que nome — é assim que{' '}
-        <code className="font-mono text-[#8de2fa]">{'{{cidade}}'}</code> passa a
-        existir nas mensagens seguintes.
+        O sistema respondeu vários campos. Escolha quais a conversa guarda, e com
+        que nome — é assim que <code className="font-mono">{'{{cidade}}'}</code>{' '}
+        passa a existir nas mensagens seguintes.
       </p>
 
       <div className="space-y-2.5">
@@ -1368,6 +1367,12 @@ function Mapeamentos({
           return (
             <div key={i}>
               {/*
+                O rótulo aparece **uma vez**, na primeira linha.
+
+                Repetido em cada uma ele vira ruído: quatro campos guardados
+                empilhavam quatro pares de "guardar em / campo da resposta",
+                e a coluna já é a mesma nas quatro.
+
                 Os dois campos ganharam rótulo depois de quem monta fluxo
                 apontar para eles e dizer "essa parte aqui eu não entendi".
 
@@ -1380,15 +1385,17 @@ function Mapeamentos({
 
                 A seta no meio é o que se lê sem ler: vem de lá, guarda aqui.
               */}
+              {i === 0 && (
               <div className="mb-1 flex gap-1.5 pl-1">
-                <span className="min-w-0 flex-1 text-[9.5px] font-bold tracking-[0.06em] text-dim uppercase">
+                <span className="min-w-0 flex-1 text-[9.5px] font-semibold tracking-[0.06em] text-dim/70 uppercase">
                   guardar em
                 </span>
-                <span className="min-w-0 flex-1 text-[9.5px] font-bold tracking-[0.06em] text-dim uppercase">
+                <span className="min-w-0 flex-1 text-[9.5px] font-semibold tracking-[0.06em] text-dim/70 uppercase">
                   campo da resposta
                 </span>
                 <span className="size-8 shrink-0" aria-hidden />
               </div>
+              )}
 
               <div className="flex items-center gap-1.5">
                 <input

@@ -97,30 +97,30 @@ export function PresetsDeIntegracao({
         className="flex w-full items-start justify-between gap-2 text-left"
       >
         <span className="min-w-0">
-          <span className="block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
-            {emUso ? 'Integração pronta em uso' : 'Começar de uma integração pronta'}
+          {/*
+            O título é sempre o mesmo, e quem muda é a linha de baixo.
+
+            Ele trocava de texto conforme o estado ("em uso" / "começar de"), e
+            um cabeçalho que se reescreve sozinho faz a pessoa reler a seção
+            inteira para achar o que mudou — quando o que mudou é uma linha só,
+            logo abaixo.
+          */}
+          <span className="block text-[10.5px] font-semibold tracking-[0.05em] text-dim/80 uppercase">
+            Integração pronta
           </span>
 
           {!aberto && emUso && (
-            <span className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1">
-              <span
-                className={`inline-block size-1.5 shrink-0 rounded-full ${
-                  faltaCredencial ? 'bg-amber-300' : 'bg-emerald-400'
-                }`}
-                aria-hidden
-              />
-              <span className="text-[11.5px] font-semibold text-soft">{emUso.nome}</span>
+            <span className="mt-1 flex flex-wrap items-center gap-x-1.5">
+              <span className="text-[12px] text-soft">{emUso.nome}</span>
               {faltaCredencial && (
-                <span className="text-[11px] text-amber-200/90">
-                  — falta escolher a credencial abaixo
-                </span>
+                <span className="text-[11px] text-amber-200/70">falta a credencial</span>
               )}
             </span>
           )}
 
           {!aberto && !emUso && (
-            <span className="mt-1 block text-[11px] leading-4 text-dim">
-              Este bloco está montado à mão. Abra para partir de uma pronta.
+            <span className="mt-1 block text-[11.5px] leading-4 text-dim">
+              montado à mão
             </span>
           )}
         </span>
@@ -143,25 +143,31 @@ export function PresetsDeIntegracao({
 
             return (
               <div key={grupo}>
-                <p className="mb-1 px-0.5 text-[9.5px] font-bold tracking-[0.07em] text-dim uppercase">
+                <p className="mb-1 px-2.5 text-[9.5px] font-semibold tracking-[0.07em] text-dim/70 uppercase">
                   {NOME_DO_GRUPO[grupo]}
                 </p>
-                <div className="space-y-1.5">
+                {/*
+                  `radiogroup` por gaveta, e não um para a lista inteira.
+
+                  Um `role="radio"` solto não é anunciado como escolha por
+                  leitor de tela nenhum — ele precisa do grupo em volta. Por
+                  gaveta porque é assim que a lista se lê: "Agenda (Verandi),
+                  1 de 9".
+                */}
+                <div role="radiogroup" aria-label={NOME_DO_GRUPO[grupo]} className="space-y-px">
           {doGrupo.map((item) => {
             /*
-             * **O destaque diz o que está em uso, e não o que foi clicado.**
+             * **O ponto diz o que está em uso, e não o que foi clicado.**
              *
              * Era o defeito relatado por quem monta fluxo: *"não sei se não
              * está funcionando ou funciona, porque se eu vou para o próximo
              * quadro ele não mostra que essa opção foi realmente
              * selecionada"*. Clicar num preset o pintava de selecionado
              * **antes** de aplicar — e o bloco continuava apontando para outro
-             * endereço, com a tela afirmando o contrário. Quem clicou e viu o
-             * destaque não tinha por que procurar um botão de confirmar.
+             * endereço, com a tela afirmando o contrário.
              *
-             * Agora o destaque é consequência do bloco, não do clique: some
-             * ao trocar de bloco porque o bloco é outro, e é isso que ele
-             * deve fazer.
+             * Agora é consequência do bloco: some ao trocar de bloco porque o
+             * bloco é outro, e é isso que ele deve fazer.
              */
             const estaEmUso = emUso?.id === item.id
 
@@ -170,48 +176,79 @@ export function PresetsDeIntegracao({
                 key={item.id}
                 type="button"
                 onClick={() => aplicar(item)}
-                aria-pressed={estaEmUso}
-                className={`block w-full rounded-[9px] border px-3 py-2 text-left transition ${
-                  estaEmUso
-                    ? 'border-accent/40 bg-accent/[0.09]'
-                    : 'border-white/[0.07] hover:border-white/[0.14]'
+                /*
+                 * `radio`, e não `pressed`.
+                 *
+                 * Um bloco de Serviços externos é **uma** chamada — um método,
+                 * um endereço, um corpo. Escolher o segundo preset troca o
+                 * primeiro, e é exatamente o que um rádio significa. O leitor
+                 * de tela passa a anunciar "1 de 14, marcado" em vez de catorze
+                 * botões independentes que dariam a entender que se pode
+                 * empilhar integração.
+                 */
+                role="radio"
+                aria-checked={estaEmUso}
+                className={`group flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left transition ${
+                  estaEmUso ? 'bg-white/[0.045]' : 'hover:bg-white/[0.025]'
                 }`}
               >
-                <span className="flex items-baseline gap-1.5">
-                  <strong className="min-w-0 flex-1 text-[12px] font-semibold text-soft">
-                    {item.nome}
-                  </strong>
-                  {estaEmUso && (
-                    <span className="shrink-0 text-[9.5px] font-bold tracking-[0.06em] text-accent uppercase">
-                      em uso
-                    </span>
-                  )}
-                </span>
-                <span className="mt-0.5 block text-[11px] leading-4 text-dim">{item.resumo}</span>
                 {/*
-                  O que ele exige aparece **no item em uso**, e não numa caixa
-                  separada que só existia depois de clicar.
+                  A marca do rádio.
 
-                  Quem acabou de aplicar precisa saber o que falta agora; quem
-                  está só lendo a lista não precisa de quatorze avisos de
-                  credencial na tela ao mesmo tempo.
+                  Pedido de quem monta fluxo: *"queria tipo um radio button que
+                  vai marcando selecionado"* — o estado morava só no fundo do
+                  item, e fundo é a coisa mais fácil de não notar numa lista de
+                  catorze. Aqui ele tem lugar fixo, na mesma coluna em todas as
+                  linhas, e some do caminho quando não está marcado.
                 */}
-                {estaEmUso && (
-                  <span className="mt-1.5 block border-t border-white/[0.07] pt-1.5 text-[10.5px] leading-4 text-dim">
-                    {item.exige}
-                  </span>
-                )}
-                {estaEmUso && item.credencial !== 'nenhuma' && (
+                <span
+                  aria-hidden
+                  className={`mt-[3px] flex size-[13px] shrink-0 items-center justify-center rounded-full border transition ${
+                    estaEmUso
+                      ? 'border-accent/70'
+                      : 'border-white/[0.18] group-hover:border-white/30'
+                  }`}
+                >
+                  {estaEmUso && <span className="size-[6px] rounded-full bg-accent" />}
+                </span>
+
+                <span className="min-w-0 flex-1">
                   <span
-                    className={`mt-1 block text-[10.5px] leading-4 ${
-                      bloco?.temCredencial ? 'text-emerald-300/90' : 'text-amber-200/90'
+                    className={`block text-[12px] leading-[1.35] transition ${
+                      estaEmUso ? 'font-semibold text-soft' : 'font-medium text-[#b7c0cf]'
                     }`}
                   >
-                    {bloco?.temCredencial
-                      ? '✓ credencial escolhida'
-                      : '⚠ falta escolher a credencial abaixo'}
+                    {item.nome}
                   </span>
-                )}
+                  <span className="mt-0.5 block text-[11px] leading-4 text-dim">{item.resumo}</span>
+
+                  {/*
+                    O que ele exige aparece **no item marcado**, e não numa
+                    caixa separada que só existia depois de clicar.
+
+                    Quem acabou de aplicar precisa saber o que falta agora; quem
+                    está lendo a lista não precisa de catorze avisos de
+                    credencial na tela ao mesmo tempo.
+                  */}
+                  {estaEmUso && (
+                    <>
+                      <span className="mt-1.5 block text-[10.5px] leading-4 text-dim">
+                        {item.exige}
+                      </span>
+                      {item.credencial !== 'nenhuma' && (
+                        <span
+                          className={`mt-1 block text-[10.5px] leading-4 ${
+                            bloco?.temCredencial ? 'text-emerald-300/70' : 'text-amber-200/75'
+                          }`}
+                        >
+                          {bloco?.temCredencial
+                            ? 'credencial escolhida'
+                            : 'falta escolher a credencial abaixo'}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </span>
               </button>
             )
           })}

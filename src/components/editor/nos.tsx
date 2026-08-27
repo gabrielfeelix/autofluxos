@@ -387,17 +387,17 @@ function NoHttp({ data, selected }: NodeProps) {
     <Caixa tipo="http" selecionado={!!selected}>
       {preset ? (
         <>
-          <p className="flex items-start gap-1.5 text-[12.5px] leading-5 text-soft">
-            <span
-              aria-hidden
-              className={`mt-[6px] size-1.5 shrink-0 rounded-full ${
-                faltaCredencial ? 'bg-amber-300' : 'bg-emerald-400'
-              }`}
-            />
-            <span className="min-w-0 flex-1 truncate font-semibold">{preset.nome}</span>
-          </p>
+          {/*
+            Sem ponto verde quando está tudo certo.
+            
+            O normal não precisa de aviso: o card já diz o nome da integração, e
+            um ponto em cada bloco de um fluxo com cinco chamadas vira ruído que
+            some por repetição — e aí o âmbar do que **está** faltando some
+            junto. Só o problema se marca.
+          */}
+          <p className="truncate text-[12.5px] leading-5 font-medium text-soft">{preset.nome}</p>
           {faltaCredencial && (
-            <p className="mt-1 truncate text-[10px] text-amber-200/90">falta a credencial</p>
+            <p className="mt-0.5 truncate text-[10.5px] text-amber-200/75">falta a credencial</p>
           )}
           <p className="mt-1 truncate font-mono text-[10px] text-dim">
             {d.metodo} {semEsquema(d.url)}
