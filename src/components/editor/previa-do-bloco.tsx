@@ -1,6 +1,7 @@
 'use client'
 
 import { presetDoBloco } from '@/core/presets'
+import { RealceDeVariaveis } from './realce-de-variaveis'
 import { CORES, ICONES, NOMES } from '@/core/flow/blocos'
 import { partesDaMensagem } from '@/core/flow/mensagem'
 import type { No, NoMensagem, TipoNo } from '@/core/flow/schema'
@@ -275,12 +276,16 @@ export function PreviaDoBloco({
         {detalhes.map((detalhe, i) => (
           <div key={i}>
             <p className="text-[9.5px] tracking-wide text-dim uppercase">{detalhe.rotulo}</p>
+            {/* O mesmo realce do campo e do card: a prévia é leitura, e é onde
+                se confere o texto inteiro sem corte — se a chave simples não
+                estivesse vermelha aqui, o único lugar que mostra a frase toda
+                seria o único que esconde o erro. Aqui sobra espaço. */}
             <p
               className={`mt-0.5 text-[12px] leading-[1.45] whitespace-pre-wrap ${
                 detalhe.tom === 'aviso' ? 'text-amber-200/85' : 'text-soft'
               }`}
             >
-              {detalhe.valor}
+              <RealceDeVariaveis texto={detalhe.valor} />
             </p>
           </div>
         ))}

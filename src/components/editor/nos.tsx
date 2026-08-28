@@ -4,6 +4,7 @@ import { Handle, Position, type NodeProps, type NodeTypes } from '@xyflow/react'
 import type { ReactNode } from 'react'
 import { CORES, ICONES, NOMES } from '@/core/flow/blocos'
 import { presetDoBloco } from '@/core/presets'
+import { RealceDeVariaveis } from './realce-de-variaveis'
 import { partesDaMensagem } from '@/core/flow/mensagem'
 import { NOME_DO_FORMATO, type FormatoDeResposta } from '@/core/flow/resposta'
 import {
@@ -107,6 +108,12 @@ const ROTULO_DA_MIDIA = {
  * procura o bloco que precisa mexer. `partesDaMensagem` lê os dois formatos,
  * então o grafo antigo continua desenhando igual.
  */
+/*
+ * O texto do card passa por `RealceDeVariaveis`: no desenho é onde se confere o
+ * fluxo inteiro, e sem marca ali `{{nome}}` (azul no painel) e `{nome}` (erro)
+ * ficavam iguais a texto comum. Ver `realce-de-variaveis.tsx` para o cuidado com
+ * o espaço — a marca não pode crescer a linha do `line-clamp`.
+ */
 function NoMensagem({ id, data, selected }: NodeProps) {
   const partes = partesDaMensagem({
     id,
@@ -126,7 +133,7 @@ function NoMensagem({ id, data, selected }: NodeProps) {
   return (
     <Caixa tipo="mensagem" selecionado={!!selected}>
       <p className="line-clamp-3 whitespace-pre-wrap text-[12.5px] leading-5 text-soft">
-        {vazio(texto, '(sem texto)')}
+        <RealceDeVariaveis texto={vazio(texto, '(sem texto)')} />
       </p>
       {outros.length > 0 && (
         <p className="mt-1 flex flex-wrap gap-x-2 text-[10px] text-dim">
@@ -169,7 +176,9 @@ function NoMidia({ data, selected }: NodeProps) {
         {arquivo === '' ? '(sem arquivo)' : arquivo}
       </p>
       {(d.legenda ?? '').trim() !== '' && (
-        <p className="mt-1.5 line-clamp-2 text-[12.5px] leading-5 text-soft">{d.legenda}</p>
+        <p className="mt-1.5 line-clamp-2 text-[12.5px] leading-5 text-soft">
+          <RealceDeVariaveis texto={d.legenda ?? ''} />
+        </p>
       )}
       {!!d.atraso && <p className="mt-1 text-[10px] text-dim">digita por {d.atraso}s</p>}
     </Caixa>
@@ -207,7 +216,9 @@ function NoPergunta({ data, selected }: NodeProps) {
       // duas, a de quem respondeu e a de quem não respondeu.
       saidaUnica={!dinamica && d.opcoes.length === 0 && prazo === null}
     >
-      <p className="line-clamp-2 text-[12.5px] leading-5 text-soft">{vazio(d.texto, '(sem texto)')}</p>
+      <p className="line-clamp-2 text-[12.5px] leading-5 text-soft">
+        <RealceDeVariaveis texto={vazio(d.texto, '(sem texto)')} />
+      </p>
       {d.salvarEm && <p className="mt-1 font-mono text-[10px] text-dim">guarda em {d.salvarEm}</p>}
 
       {dinamica ? (
@@ -316,7 +327,8 @@ function NoSalvarCampo({ data, selected }: NodeProps) {
   return (
     <Caixa tipo="salvar-campo" selecionado={!!selected}>
       <p className="text-soft">
-        <code className="font-mono text-[11px] text-[#8de2fa]">{d.campo}</code> = {vazio(d.valor, '(vazio)')}
+        <code className="font-mono text-[11px] text-[#8de2fa]">{d.campo}</code>{' = '}
+        <RealceDeVariaveis texto={vazio(d.valor, '(vazio)')} />
       </p>
     </Caixa>
   )
@@ -341,7 +353,7 @@ function NoIa({ data, selected }: NodeProps) {
   return (
     <Caixa tipo="ia" selecionado={!!selected}>
       <p className="line-clamp-3 text-[12.5px] leading-5 text-soft">
-        {vazio(d.instrucao, '(sem instrução)')}
+        <RealceDeVariaveis texto={vazio(d.instrucao, '(sem instrução)')} />
       </p>
     </Caixa>
   )

@@ -72,35 +72,72 @@ export function normalizar(texto: string): string {
     .toLowerCase()
 }
 
-/** Um pedaço de texto: literal, ou uma citação de variável. */
+/**
+ * Um pedaço de texto: literal, citação de variável, ou o engano de uma chave só.
+ *
+ * `chave-simples` existe para o editor pintar de vermelho **o pedaço errado**.
+ * Antes o erro só aparecia numa frase embaixo do campo, e quem lia não sabia
+ * qual das quatro linhas do texto tinha o problema.
+ */
 export type PedacoDeTexto =
   | { tipo: 'texto'; texto: string }
   | { tipo: 'variavel'; texto: string; nome: string }
+  | { tipo: 'chave-simples'; texto: string; nome: string }
 
 /**
- * Fatia o texto em literais e citações de variável.
+ * Fatia o texto em literais, citações de variável e chaves simples.
  *
- * Existe para o editor **mostrar** que `{{nome}}` não é texto comum. Escrito
- * como fatia e não como "troca por HTML" de propósito: quem monta o realce é o
- * React, com elementos de verdade — devolver marcação daqui viraria
- * `dangerouslySetInnerHTML` sobre texto que a pessoa digitou, que é XSS servido
- * pela porta da frente.
+ * Existe para o editor **mostrar** que `{{nome}}` não é texto comum, e que
+ * `{nome}` de uma chave só não é variável nenhuma. Escrito como fatia e não como
+ * "troca por HTML" de propósito: quem monta o realce é o React, com elementos de
+ * verdade — devolver marcação daqui viraria `dangerouslySetInnerHTML` sobre
+ * texto que a pessoa digitou, que é XSS servido pela porta da frente.
  *
  * Usa **o mesmo padrão** de `interpolar` e `variaveisCitadas`. Não é
  * coincidência: se o realce reconhecesse mais coisa que o motor, o editor
  * pintaria de azul um `{{ nome }}` que a conversa mandaria literal — e a pessoa
- * confiaria na cor.
+ * confiaria na cor. Pelo mesmo motivo `chavesSimplesCitadas` sai **daqui**:
+ * realce que reconhece coisa diferente do validador é o defeito que os dois
+ * vieram consertar.
  */
 export function fatiarVariaveis(texto: string): PedacoDeTexto[] {
-  const pedacos: PedacoDeTexto[] = []
-  const padrao = /\{\{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*\}\}/g
-  let cursor = 0
+  /*
+   * A máscara troca cada citação de chave dupla por espaços **do mesmo
+   * tamanho**. Isso faz duas coisas de uma vez: o miolo de `{{nome}}` deixa de
+   * ser lido como `{nome}` (senão todo fluxo correto ficaria vermelho), e os
+   * índices continuam valendo no texto original, que é o que permite fatiar.
+   *
+   * Máscara larga de propósito — qualquer `{{…}}`, inclusive o que `interpolar`
+   * recusa (`{{1abc}}`): ali o problema é outro, e marcar duas vezes confunde.
+   */
+  const mascara = texto.replace(/\{\{[^{}]*\}\}/g, (achado) => ' '.repeat(achado.length))
 
-  for (const achado of texto.matchAll(padrao)) {
-    const inicio = achado.index
+  const marcas: PedacoDeTexto[] = []
+  const onde: number[] = []
+
+  for (const achado of texto.matchAll(/\{\{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*\}\}/g)) {
+    marcas.push({ tipo: 'variavel', texto: achado[0], nome: achado[1] as string })
+    onde.push(achado.index)
+  }
+  for (const achado of mascara.matchAll(/\{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*\}/g)) {
+    marcas.push({
+      tipo: 'chave-simples',
+      texto: texto.slice(achado.index, achado.index + achado[0].length),
+      nome: achado[1] as string,
+    })
+    onde.push(achado.index)
+  }
+
+  const ordem = marcas.map((_, i) => i).sort((a, b) => (onde[a] as number) - (onde[b] as number))
+
+  const pedacos: PedacoDeTexto[] = []
+  let cursor = 0
+  for (const i of ordem) {
+    const inicio = onde[i] as number
+    const marca = marcas[i] as PedacoDeTexto
     if (inicio > cursor) pedacos.push({ tipo: 'texto', texto: texto.slice(cursor, inicio) })
-    pedacos.push({ tipo: 'variavel', texto: achado[0], nome: achado[1] as string })
-    cursor = inicio + achado[0].length
+    pedacos.push(marca)
+    cursor = inicio + marca.texto.length
   }
 
   if (cursor < texto.length) pedacos.push({ tipo: 'texto', texto: texto.slice(cursor) })
@@ -119,13 +156,10 @@ export function fatiarVariaveis(texto: string): PedacoDeTexto[] {
  * é o pior tipo de defeito que existe aqui — silencioso, e visível justo no
  * bloco de confirmação, que é o mais lido da conversa.
  *
- * As citações válidas saem primeiro. Sem isso o miolo de `{{nome}}` seria lido
- * como `{nome}` e todo fluxo correto passaria a avisar.
+ * Sai de `fatiarVariaveis` para o validador e o realce nunca discordarem: é a
+ * mesma passada, com a mesma máscara.
  */
 export function chavesSimplesCitadas(texto: string): string[] {
-  // Qualquer par de chaves duplas, inclusive o que `interpolar` recusa
-  // (`{{1abc}}`): ali o problema é outro, e avisar duas vezes confunde.
-  const semValidas = texto.replace(/\{\{[^{}]*\}\}/g, ' ')
-  const achadas = semValidas.matchAll(/\{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*\}/g)
-  return [...new Set([...achadas].map((m) => m[1] as string))]
+  const achadas = fatiarVariaveis(texto).filter((p) => p.tipo === 'chave-simples')
+  return [...new Set(achadas.map((p) => p.nome))]
 }

@@ -2,6 +2,7 @@
 
 import { useRef, type CSSProperties, type ReactNode, type RefObject } from 'react'
 import { chavesSimplesCitadas, fatiarVariaveis } from '@/core/engine/interpolar'
+import { DICA_CHAVE_SIMPLES } from './realce-de-variaveis'
 import { SeletorDeVariavel } from './escolher-variavel'
 
 /**
@@ -130,6 +131,33 @@ const REALCE_DESCONHECIDA: CSSProperties = {
   boxShadow: '0 0 0 2px rgba(252, 211, 77, 0.20)',
 }
 
+/**
+ * A chave de uma só, vermelha — o erro que sai literal na frente do cliente.
+ *
+ * Vermelho e não âmbar de propósito: âmbar aqui já quer dizer "variável que
+ * nenhum bloco preenche", que ao menos sai vazia. `{nome}` não é variável
+ * nenhuma; o texto viaja como está. São dois problemas diferentes e a cor não
+ * pode dizer que são o mesmo.
+ *
+ * Vale a regra do espelho, sem exceção: **só cor.** Nada de padding nem negrito
+ * — qualquer coisa que mova um glifo desalinha o cursor do campo por cima.
+ */
+const REALCE_CHAVE_SIMPLES: CSSProperties = {
+  borderRadius: 4,
+  background: 'rgba(251, 113, 133, 0.22)',
+  color: '#fda4af',
+  boxShadow: '0 0 0 2px rgba(251, 113, 133, 0.22)',
+}
+
+function estiloDoPedaco(
+  pedaco: { tipo: 'variavel' | 'chave-simples'; nome: string },
+  conhecidas?: string[],
+): CSSProperties {
+  if (pedaco.tipo === 'chave-simples') return REALCE_CHAVE_SIMPLES
+  if (conhecidas && !conhecidas.includes(pedaco.nome)) return REALCE_DESCONHECIDA
+  return REALCE_CONHECIDA
+}
+
 function Pedacos({ valor, conhecidas }: { valor: string; conhecidas?: string[] }) {
   return (
     <>
@@ -137,14 +165,7 @@ function Pedacos({ valor, conhecidas }: { valor: string; conhecidas?: string[] }
         pedaco.tipo === 'texto' ? (
           <span key={i}>{pedaco.texto}</span>
         ) : (
-          <span
-            key={i}
-            style={
-              conhecidas && !conhecidas.includes(pedaco.nome)
-                ? REALCE_DESCONHECIDA
-                : REALCE_CONHECIDA
-            }
-          >
+          <span key={i} style={estiloDoPedaco(pedaco, conhecidas)}>
             {pedaco.texto}
           </span>
         ),
@@ -152,6 +173,79 @@ function Pedacos({ valor, conhecidas }: { valor: string; conhecidas?: string[] }
       {/* Ver o comentário do topo: sem isto a última linha vazia some. */}
       {'​'}
     </>
+  )
+}
+
+/**
+ * A camada que faz a tag vermelha **responder ao mouse**.
+ *
+ * O espelho fica atrás do campo e tem `pointer-events: none`, então passar o
+ * mouse por cima dele nunca acontece: quem recebe o ponteiro é o `<textarea>`.
+ * Para a dica aparecer em cima do pedaço errado — e não numa frase solta embaixo
+ * do campo — é preciso uma terceira camada **por cima**, invisível, onde só os
+ * pedaços de chave simples recebem ponteiro.
+ *
+ * Ela é invisível porque o texto é transparente: existe apenas para ocupar
+ * exatamente as mesmas posições, com as mesmas medidas do espelho. Só nasce
+ * quando há chave simples no texto — sem erro, nada é sobreposto ao campo.
+ *
+ * Clicar na tag continua funcionando: o `mousedown` é devolvido ao campo, com o
+ * cursor logo depois do pedaço clicado, que é onde se conserta a chave que
+ * falta.
+ */
+function DicasDeChaveSimples({
+  valor,
+  campo,
+  camada,
+  estilo,
+}: {
+  valor: string
+  campo: { current: HTMLTextAreaElement | HTMLInputElement | null }
+  camada: { current: HTMLDivElement | null }
+  estilo?: CSSProperties
+}) {
+  const pedacos = fatiarVariaveis(valor)
+  if (!pedacos.some((p) => p.tipo === 'chave-simples')) return null
+
+  // Onde cada pedaço começa no texto — calculado antes de desenhar, porque é o
+  // que diz para onde mandar o cursor quando alguém clica na tag.
+  const inicios: number[] = []
+  pedacos.reduce((cursor, pedaco) => {
+    inicios.push(cursor)
+    return cursor + pedaco.texto.length
+  }, 0)
+
+  return (
+    <div
+      ref={camada}
+      aria-hidden
+      style={{ ...FUNDO, ...estilo, color: 'transparent', zIndex: 2 }}
+    >
+      {pedacos.map((pedaco, i) => {
+        const inicio = inicios[i] as number
+        const fim = inicio + pedaco.texto.length
+
+        if (pedaco.tipo !== 'chave-simples') return <span key={i}>{pedaco.texto}</span>
+
+        return (
+          <span
+            key={i}
+            title={DICA_CHAVE_SIMPLES}
+            style={{ pointerEvents: 'auto', cursor: 'text' }}
+            onMouseDown={(evento) => {
+              evento.preventDefault()
+              const alvo = campo.current
+              if (!alvo) return
+              alvo.focus()
+              alvo.setSelectionRange(inicio, fim)
+            }}
+          >
+            {pedaco.texto}
+          </span>
+        )
+      })}
+      {'​'}
+    </div>
   )
 }
 
@@ -178,6 +272,7 @@ export function TextoComVariaveis({
   const proprio = useRef<HTMLTextAreaElement>(null)
   const campo = area ?? proprio
   const fundo = useRef<HTMLDivElement>(null)
+  const dicas = useRef<HTMLDivElement>(null)
 
   return (
     <div className="relative">
@@ -192,7 +287,10 @@ export function TextoComVariaveis({
         rows={rows}
         onChange={(e) => aoMudar(e.target.value)}
         onScroll={(e) => {
+          // As três camadas rolam juntas, senão a cor — e a área que responde ao
+          // mouse — descola do texto a partir da quinta linha.
           if (fundo.current) fundo.current.scrollTop = e.currentTarget.scrollTop
+          if (dicas.current) dicas.current.scrollTop = e.currentTarget.scrollTop
         }}
         style={{
           ...CAMPO,
@@ -200,6 +298,8 @@ export function TextoComVariaveis({
           ...(erro ? { borderColor: 'rgba(251,113,133,0.6)' } : {}),
         }}
       />
+
+      <DicasDeChaveSimples valor={valor} campo={campo} camada={dicas} />
     </div>
   )
 }
@@ -234,6 +334,7 @@ export function LinhaComVariaveis({
 }) {
   const fundo = useRef<HTMLDivElement>(null)
   const campo = useRef<HTMLInputElement>(null)
+  const dicas = useRef<HTMLDivElement>(null)
 
   const espaco = variaveis ? { paddingRight: 34 } : {}
   const fonte = mono ? { fontFamily: 'var(--font-mono, ui-monospace, monospace)' } : {}
@@ -261,8 +362,16 @@ export function LinhaComVariaveis({
         onChange={(e) => aoMudar(e.target.value)}
         onScroll={(e) => {
           if (fundo.current) fundo.current.scrollLeft = e.currentTarget.scrollLeft
+          if (dicas.current) dicas.current.scrollLeft = e.currentTarget.scrollLeft
         }}
         style={{ ...CAMPO, ...espaco, ...fonte, whiteSpace: 'pre' }}
+      />
+
+      <DicasDeChaveSimples
+        valor={valor}
+        campo={campo}
+        camada={dicas}
+        estilo={{ ...espaco, ...fonte, whiteSpace: 'pre' }}
       />
 
       {variaveis && (
@@ -303,8 +412,10 @@ export function LegendaDeVariaveis({
    */
   const simples = chavesSimplesCitadas(valor)
   if (simples.length > 0) {
+    // Vermelha, como a tag dentro do campo: a frase embaixo e o pedaço realçado
+    // falam do mesmo erro, e cores diferentes fariam parecer dois.
     return (
-      <span className="mt-1 block text-[10.5px] leading-4 text-amber-200">
+      <span className="mt-1 block text-[10.5px] leading-4 text-rose-300">
         {simples.map((nome) => `{${nome}}`).join(', ')}{' '}
         {simples.length === 1 ? 'tem uma chave só' : 'têm uma chave só'} — o certo é{' '}
         {simples.map((nome) => `{{${nome}}}`).join(', ')}. Com uma, sai assim mesmo na conversa.

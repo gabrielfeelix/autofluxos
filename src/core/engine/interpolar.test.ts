@@ -29,6 +29,47 @@ describe('fatiarVariaveis — o realce do editor', () => {
     }
   })
 
+  it('marca a chave simples como erro, no lugar exato dela', () => {
+    // O motivo de existir o terceiro tipo: o vermelho tem que cair em cima do
+    // pedaço errado, e não numa frase embaixo do campo.
+    expect(fatiarVariaveis('Volta dia {dias} para {{nome}}.')).toEqual([
+      { tipo: 'texto', texto: 'Volta dia ' },
+      { tipo: 'chave-simples', texto: '{dias}', nome: 'dias' },
+      { tipo: 'texto', texto: ' para ' },
+      { tipo: 'variavel', texto: '{{nome}}', nome: 'nome' },
+      { tipo: 'texto', texto: '.' },
+    ])
+  })
+
+  it('o miolo de uma citação certa não vira chave simples', () => {
+    // Sem a máscara, `{{nome}}` seria lido como `{nome}` e todo fluxo correto
+    // ficaria vermelho.
+    expect(fatiarVariaveis('{{nome}}')).toEqual([
+      { tipo: 'variavel', texto: '{{nome}}', nome: 'nome' },
+    ])
+  })
+
+  it('marca exatamente o que o validador acusa', () => {
+    // A regra é uma só: se o realce e o `CHAVE_SIMPLES` discordassem, a cor
+    // mentiria para quem está escrevendo.
+    for (const texto of [
+      'dia {dias_reposicao} às {horario}',
+      'Olá, {{nome}}! {sobrenome} aqui',
+      '{{1abc}} e {abc}',
+      'function f() {} e {} e { }',
+      '{ nome } com espaço',
+    ]) {
+      const doRealce = [
+        ...new Set(
+          fatiarVariaveis(texto)
+            .filter((p) => p.tipo === 'chave-simples')
+            .map((p) => (p.tipo === 'chave-simples' ? p.nome : '')),
+        ),
+      ]
+      expect(doRealce).toEqual(chavesSimplesCitadas(texto))
+    }
+  })
+
   it('reconhece exatamente o que o motor reconhece', () => {
     // Se o realce pintasse mais coisa que `interpolar`, a pessoa confiaria na
     // cor e a conversa mandaria o literal.
