@@ -598,10 +598,20 @@ export const PRESETS: Preset[] = [
   {
     id: 'webhook',
     grupo: 'outros',
-    nome: 'Webhook · avisar um sistema seu',
+    /*
+     * "O meu próprio sistema", e não "Webhook".
+     *
+     * Todos os outros presets têm nome de produto — RD Station, Google Sheets —
+     * e quem tem um sistema feito sob medida procurava o nome do próprio
+     * sistema nessa lista, não achava, e concluía que o produto não servia.
+     * "Webhook" é a palavra de quem programa: o dono da pizzaria não sabe que
+     * é isso que o sobrinho fez para ele.
+     */
+    nome: 'O meu próprio sistema',
     resumo:
-      'Um POST com o que a conversa coletou. Serve para qualquer sistema que aceite receber JSON.',
-    exige: 'O endereço que vai receber. Se ele pedir token, cadastre em Credenciais como “bearer”.',
+      'Manda para um sistema seu o que a conversa coletou — o de pedidos, o de agendamento, o que alguém fez para você.',
+    exige:
+      'O endereço que recebe (pergunte a quem fez o sistema). Se ele pedir senha, cadastre em Credenciais como “bearer”.',
     credencial: 'bearer',
     dados: {
       metodo: 'POST',

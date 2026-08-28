@@ -77,6 +77,7 @@ export function CampoDeVariavel({
   modo,
   dica,
   nota,
+  ajuda,
 }: {
   rotulo: string
   valor: string
@@ -94,6 +95,14 @@ export function CampoDeVariavel({
    * uma variável por opção — e desenha três onde uma responde.
    */
   nota?: ReactNode
+  /**
+   * O “?” ao lado do rótulo, quando este campo tem explicação em algum lugar.
+   *
+   * Fica aqui e não só no painel porque este componente é o rótulo destes
+   * campos: pôr o ícone fora dele deixaria o alinhamento na mão de cada
+   * chamada, e uma delas erraria.
+   */
+  ajuda?: ReactNode
 }) {
   const [aberto, setAberto] = useState(false)
   const [busca, setBusca] = useState('')
@@ -119,6 +128,7 @@ export function CampoDeVariavel({
     <div className="block">
       <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
         {rotulo}
+        {ajuda}
       </span>
 
       <span className="relative block">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useId, useRef, useState } from 'react'
+import { useId, useRef, useState, type ReactNode } from 'react'
 import {
   LIMITE_BOTOES,
   LIMITE_LEGENDA,
@@ -46,6 +46,31 @@ import {
 } from '@/core/flow/resposta'
 
 /** Os quatro tipos, no nome que quem desenha o fluxo usa. */
+
+/**
+ * O “?” que abre a explicação daquele campo.
+ *
+ * Os dois testes com gente leiga bateram no mesmo ponto: a explicação boa
+ * existe, está na página de Ajuda, e ninguém sai do desenho no meio de montar
+ * um bloco para ir procurá-la. Ajuda que mora longe do campo é ajuda que não
+ * existe.
+ *
+ * Abre em aba nova de propósito — o rascunho fica onde estava, e voltar é
+ * fechar a aba.
+ */
+function Ajuda({ secao, oQue }: { secao: string; oQue: string }) {
+  return (
+    <a
+      href={`/ajuda#${secao}`}
+      target="_blank"
+      rel="noreferrer"
+      title={`Entender ${oQue}`}
+      className="ml-1 inline-flex size-[15px] shrink-0 translate-y-[1px] items-center justify-center rounded-full border border-white/15 text-[9px] leading-none font-bold text-dim normal-case transition hover:border-accent/50 hover:text-accent"
+    >
+      ?
+    </a>
+  )
+}
 
 /** O que o painel precisa saber de uma credencial: o nome, e nada mais. */
 export type ConexaoDoCliente = { id: string; nome: string; tipo: string }
@@ -312,6 +337,7 @@ export function Painel({
           />
           <CampoDeVariavel
             rotulo="Guardar resposta em"
+            ajuda={<Ajuda secao="variaveis" oQue="o que é guardar uma resposta" />}
             valor={no.data.salvarEm ?? ''}
             variaveis={deOutrosBlocos}
             modo="guarda"
@@ -332,6 +358,7 @@ export function Painel({
           />
           <CampoDeVariavel
             rotulo="Opções vêm da variável"
+            ajuda={<Ajuda secao="listas" oQue="como virar uma lista em botões" />}
             valor={no.data.opcoesDe ?? ''}
             variaveis={deOutrosBlocos}
             modo="usa"
@@ -546,10 +573,18 @@ export function Painel({
           {no.data.aceitaMidia && (
             <CampoDeVariavel
               rotulo="Guardar o arquivo em"
+              ajuda={<Ajuda secao="perguntas" oQue="o que é guardar o arquivo" />}
               valor={no.data.salvarMidiaEm ?? ''}
               variaveis={deOutrosBlocos}
               modo="guarda"
-              dica="ex: receita — guarda a referência do arquivo, para mandar ao seu sistema"
+              dica="ex: receita — dá um nome ao arquivo para usar depois na conversa"
+              nota={
+                <>
+                  Guarda uma etiqueta do arquivo que a pessoa mandou, não o arquivo em si. Serve
+                  para mandar a foto ao seu sistema, se você tiver um — e, se não tiver, pode
+                  deixar em branco: a foto continua aparecendo na conversa de quem atende.
+                </>
+              }
               aoMudar={(v) =>
                 aoMudarDados({ salvarMidiaEm: v.trim() === '' ? undefined : v.trim() })
               }
@@ -594,7 +629,10 @@ export function Painel({
             aoMudar={(variavel) => aoMudarDados({ variavel })}
           />
           <label className="block">
-            <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">Operador</span>
+            <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+              Operador
+              <Ajuda secao="blocos" oQue="como a condição separa os caminhos" />
+            </span>
             <Dropdown
               valor={no.data.operador}
               aoMudar={(operador) => aoMudarDados({ operador })}
@@ -780,6 +818,7 @@ export function Painel({
           />
           <CampoDeVariavel
             rotulo="Guardar resposta em"
+            ajuda={<Ajuda secao="variaveis" oQue="o que é guardar uma resposta" />}
             valor={no.data.salvarEm ?? ''}
             variaveis={deOutrosBlocos}
             modo="guarda"
@@ -855,9 +894,16 @@ export function Painel({
           {no.data.metodo === 'POST' && (
             <Area
               conhecidas={variaveis}
-              rotulo="Corpo (JSON)"
+              rotulo="O que mandar para o sistema"
               valor={no.data.corpo}
               aoMudar={(corpo) => aoMudarDados({ corpo })}
+              exemplo={'{\n  "nome": "{{nome}}",\n  "telefone": "{{telefone}}"\n}'}
+              dica={
+                <>
+                  Os dados que a conversa já tem, no formato que o seu sistema espera — quem faz o
+                  sistema diz quais campos ele quer. Cada valor entre aspas, e as variáveis também.
+                </>
+              }
             />
           )}
 
@@ -872,6 +918,7 @@ export function Painel({
           <label className="block">
             <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
               Credencial
+              <Ajuda secao="outros-sistemas" oQue="o que é uma credencial" />
             </span>
             <Dropdown
               valor={no.data.conexaoId ?? ''}
@@ -884,7 +931,7 @@ export function Painel({
             />
             <span className="mt-1 block text-[10.5px] leading-4 text-dim">
               {conexoes.length === 0
-                ? 'Nenhuma credencial cadastrada neste cliente ainda. Cadastre em Credenciais, na tela do cliente.'
+                ? 'Credencial é a senha que o seu sistema pede para deixar a gente consultar — quem fez o sistema te dá. Nenhuma cadastrada ainda: cadastre em Credenciais, na tela do cliente, e ela fica guardada em cofre, fora do desenho.'
                 : 'O valor fica no cofre. O fluxo guarda só a referência, então trocar a chave depois não exige republicar.'}
             </span>
           </label>
@@ -1099,11 +1146,17 @@ function Area({
   aoMudar,
   conhecidas,
   formatavel = false,
+  dica,
+  exemplo,
 }: {
   rotulo: string
   valor: string
   limite?: number
   aoMudar: (valor: string) => void
+  /** A frase embaixo do campo. Campo sem ela aparece pelado para quem nunca viu. */
+  dica?: ReactNode
+  /** O texto cinza dentro do campo vazio: ensina o formato sem precisar ler nada. */
+  exemplo?: string
   /** Para o realce distinguir variável conhecida de erro de digitação. */
   conhecidas?: string[]
   /**
@@ -1171,13 +1224,16 @@ function Area({
         aoMudar={aoMudar}
         erro={estourou}
         conhecidas={conhecidas}
+        {...(exemplo ? { placeholder: exemplo } : {})}
       />
       {estourou ? (
         <span className="mt-1 block text-[10.5px] text-rose-300">
           O WhatsApp recusa acima de {limite} caracteres — publicar fica barrado até encurtar.
         </span>
       ) : (
-        <LegendaDeVariaveis valor={valor} conhecidas={conhecidas} />
+        <LegendaDeVariaveis valor={valor} conhecidas={conhecidas}>
+          {dica}
+        </LegendaDeVariaveis>
       )}
     </div>
   )
@@ -1334,7 +1390,7 @@ function LinhaDeOpcao({
           <input
             value={opcao.valor ?? ''}
             onChange={(e) => aoMudarValor(e.target.value)}
-            placeholder="o que a API entende"
+            placeholder="ex: institucional"
             className="app-field min-w-0 flex-1 px-2.5 py-1.5 font-mono text-[11.5px]"
           />
         </div>
@@ -1359,7 +1415,14 @@ function Cabecalhos({
 }) {
   return (
     <div>
-      <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">Cabeçalhos</span>
+      <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+        Cabeçalhos
+      </span>
+      <p className="mb-1.5 text-[10.5px] leading-4 text-dim">
+        Quase sempre vazio. É onde vão informações extras que alguns sistemas exigem junto do
+        pedido — quem fez o sistema diz se precisa e o que escrever. Se ninguém te pediu, deixe em
+        branco.
+      </p>
 
       <div className="space-y-1.5">
         {cabecalhos.map((c, i) => (
@@ -1475,6 +1538,7 @@ function Mapeamentos({
     <div>
       <span className="mb-1 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
         Guardar da resposta
+        <Ajuda secao="listas" oQue="como guardar o que o sistema respondeu" />
       </span>
 
       {/*
@@ -1528,7 +1592,7 @@ function Mapeamentos({
                   guardar em
                 </span>
                 <span className="min-w-0 flex-1 text-[9.5px] font-semibold tracking-[0.06em] text-dim/70 uppercase">
-                  campo da resposta
+                  como o sistema chama
                 </span>
                 <span className="size-8 shrink-0" aria-hidden />
               </div>
@@ -1545,7 +1609,7 @@ function Mapeamentos({
                 <input
                   value={m.caminho}
                   placeholder="localidade"
-                  aria-label="caminho do campo dentro da resposta da API"
+                  aria-label="o nome que o sistema usa para esse campo"
                   onChange={(e) => trocar({ caminho: e.target.value })}
                   className="app-field min-w-0 flex-1 px-3 py-2 font-mono text-[12.5px]"
                 />

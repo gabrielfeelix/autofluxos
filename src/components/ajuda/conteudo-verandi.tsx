@@ -440,6 +440,31 @@ export function SecaoOutrosSistemas() {
         obrigatório quando ela tem nome de aluno.
       </p>
 
+      <Sub>Se o sistema é seu, feito sob medida</Sub>
+      <p>
+        Não precisa estar nesta lista. Se alguém fez um sistema para você — o de pedidos, o de
+        agendamento, a área do cliente —, ele serve, desde que quem fez consiga responder três
+        perguntas. Copie e mande para essa pessoa:
+      </p>
+      <Codigo titulo="o que pedir para quem fez o seu sistema">{`1. Qual endereço eu chamo para consultar isso? (o link, começando com https://)
+2. Ele precisa de senha? Se sim, qual e como ela vai junto?
+3. Como se chamam os campos que ele responde? (ex.: preco, prazo, status)`}</Codigo>
+      <p>
+        Com essas três respostas você preenche o bloco inteiro: o endereço no campo de cima, a senha
+        em <strong className="text-soft">Credenciais</strong>, e os nomes dos campos em{' '}
+        <strong className="text-soft">Guardar da resposta</strong>. Não precisa entender o que
+        acontece do outro lado.
+      </p>
+
+      <Nota tom="dica" titulo="Credencial, em uma frase">
+        <p>
+          É a senha que o seu sistema exige para deixar a gente consultar — como a senha do
+          seu e-mail, só que para programa falar com programa. Quem fez o sistema te dá. Ela fica
+          guardada num cofre, fora do desenho: quem receber um link do seu fluxo vê os blocos e
+          nunca a chave.
+        </p>
+      </Nota>
+
       <Nota tom="atencao" titulo="A chave nunca vai no desenho">
         <p>
           Vale para todos: cadastre em <strong className="text-soft">Configurações →
