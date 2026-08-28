@@ -868,7 +868,9 @@ export function Painel({
             a resposta é opcional e avançado, e estava separando as duas.
           */}
           <ConsultasDaIa
-            escolhidas={no.data.ferramentas}
+            // `?? []` porque um bloco recém-arrastado ainda não passou pelo
+            // Zod: o `default([])` do schema só age ao salvar o rascunho.
+            escolhidas={no.data.ferramentas ?? []}
             conexaoId={no.data.conexaoId ?? ''}
             conexoes={conexoes}
             clienteId={clienteId}
@@ -1838,14 +1840,24 @@ function ConsultasDaIa({
   clienteId,
   aoMudar,
 }: {
-  escolhidas: string[]
+  escolhidas: string[] | undefined
   conexaoId: string
   conexoes: ConexaoDoCliente[]
   clienteId: string
   aoMudar: (dados: { ferramentas?: string[]; conexaoId?: string | undefined }) => void
 }) {
-  const marcadas = new Set(escolhidas)
-  const grava = escolhidas.some((nome) => FERRAMENTAS.find((f) => f.nome === nome)?.escreve)
+  /*
+   * Tolera `undefined`, e isso não é paranoia — é o que já quebrou.
+   *
+   * Bloco arrastado agora existe só na memória do navegador, com o `data` que a
+   * fábrica do editor escreveu; o `default([])` do Zod só age quando o rascunho
+   * volta para o banco. Faltando o campo, `escolhidas.some()` estoura no meio
+   * do render e o editor inteiro vira tela de erro — o pior desfecho possível
+   * para quem estava desenhando.
+   */
+  const lista = escolhidas ?? []
+  const marcadas = new Set(lista)
+  const grava = lista.some((nome) => FERRAMENTAS.find((f) => f.nome === nome)?.escreve)
 
   const alternar = (nome: string, marcada: boolean) => {
     // A ordem do catálogo, e não a de clique: ela conta a conversa (catálogo,
@@ -1899,7 +1911,7 @@ function ConsultasDaIa({
         </fieldset>
       ))}
 
-      {escolhidas.length > 0 && (
+      {lista.length > 0 && (
         <label className="mt-2.5 block">
           <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
             Credencial das consultas

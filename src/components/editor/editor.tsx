@@ -132,7 +132,15 @@ const TIPOS: TipoNo[] = [
 const TIPO_ARRASTADO = 'application/autofluxos-bloco'
 
 /** Como cada bloco nasce ao ser arrastado da barra. */
-function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
+/**
+ * Exportado para o teste, e o teste existe por um motivo concreto.
+ *
+ * Bloco recém-arrastado vive só na memória do navegador com o `data` que esta
+ * função escreveu — o `default([])` do Zod só age quando o rascunho volta para
+ * o banco. Um campo esquecido aqui é uma tela de erro para quem arrastar o
+ * bloco, e nada no build, no typecheck ou nos testes de motor acusa.
+ */
+export function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
   switch (tipo) {
     case 'mensagem':
       return { texto: 'Escreva a mensagem aqui.' }
@@ -158,7 +166,14 @@ function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
       // escolheu, e o que já vem preenchido é o que ninguém revisa.
       return { fluxoId: '', rotulo: '' }
     case 'ia':
-      return { instrucao: 'Responda a dúvida do cliente usando o contexto do negócio.' }
+      // `ferramentas` explícito, e não confiando no `.default([])` do Zod: o
+      // bloco nasce **aqui**, no navegador, e só passa pelo schema quando o
+      // rascunho é salvo. Entre o arrastar e o salvar, quem lê `data` lê o que
+      // esta linha escreveu — e `undefined.some()` derruba o editor inteiro.
+      return {
+        instrucao: 'Responda a dúvida do cliente usando o contexto do negócio.',
+        ferramentas: [],
+      }
     case 'handoff':
       return {
         motivo: 'pedido pelo fluxo',
