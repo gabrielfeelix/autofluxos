@@ -1,4 +1,4 @@
-# Handoff — 19/ago/2026, atualizado em 27/ago
+# Handoff — 19/ago/2026, atualizado em 28/ago
 
 Para quem pegar este projeto agora, humano ou agente. Leia isto inteiro, depois
 [PLANO-SISTEMA.md](PLANO-SISTEMA.md), e só então código. As decisões de produto
@@ -6,7 +6,120 @@ que não estão aqui estão lá; as que estão aqui não se renegociam sem o don
 
 ---
 
-## 0. O que mudou em 27/ago, e por quê
+## 0. O que mudou em 28/ago, e por quê
+
+Três commits (`746d398`, `489eed5`, `12d306e`) mais o `9b77184`, todos saídos de
+**teste de uso, não de plano**. Oito pessoas de mentira com problemas de verdade:
+cinco donos de negócio montando a automação da própria empresa (farmácia com
+delivery, estúdio de pilates, produtora de vídeo, petshop, imobiliária) e três
+leigos avaliando se a tela se explica sozinha (dona de salão, dono de pizzaria,
+secretária de clínica). Os cenários e relatos não estão no repositório — o que
+importa deles está aqui e nos commits.
+
+**O que o produto passou a permitir**
+
+- **A foto pode ser a resposta.** A pergunta ganhou `aceitaMidia` (o interruptor
+  que faz nascer a saída `midia`, "mandou arquivo") e `salvarMidiaEm` (a
+  referência do anexo). Antes, qualquer imagem, áudio ou documento ia para uma
+  pessoa com o motivo "o bot só lê texto" — e quem atendia não sabia que aquilo
+  era uma receita. Sem a saída ligada, tudo se comporta como antes. O webhook
+  passou a carregar `id` e `caption` do anexo, e o simulador ganhou o botão 📷.
+- **A condição compara número.** Entraram `maior` e `menor`, e o campo de valor
+  passou a interpolar — dá para comparar `{{orcamento}}` com `{{preco}}`. Lado
+  que não é número dá falso, nunca ordem alfabética.
+- **Opção desenhada à mão tem valor técnico** (`opcao.valor`): a pessoa lê "Vídeo
+  institucional", a API recebe `institucional`. Antes custava uma condição por
+  opção.
+- **`core/flow/formatos.ts`**: data, hora, data e hora e dinheiro, escolhidos no
+  mapeamento. A aluna lia "2026-09-01".
+- **Prévia do bloco no hover** (`components/editor/previa-do-bloco.tsx`): o card
+  corta em catorze lugares, e conferir um desenho exigia clicar bloco a bloco.
+
+**Avisos falsos que treinavam a ignorar o painel de avisos**
+
+`{{nome}}` e `{{telefone}}` são preenchidas por `varsIniciais()` em toda conversa
+e eram acusadas de não existir — inclusive dentro dos presets do produto, que já
+vêm com `{{telefone}}` escrito. `salvarPadraoEm` tinha o mesmo problema. As
+nativas agora saem de `VARIAVEIS_NATIVAS`, em `core/contatos/vars-iniciais.ts`,
+lida pelo validador e pelo editor. Também entrou `CHAVE_SIMPLES`: `{nome}` de uma
+chave só saía literal na conversa e nada avisava.
+
+**Segurança: host de mídia vindo de variável**
+
+A regra continua — o host não pode vir do que a pessoa digita no WhatsApp, senão
+quem conversa escolhe de qual servidor a Meta baixa. A exceção aberta é estreita:
+quando **todas** as variáveis do host vêm de mapeamento de bloco `http`, quem
+escolheu o endereço foi o dono do fluxo no editor. Uma variável de origem mista
+derruba a exceção, e há teste para o caso misto. O `https://` desses endereços
+não dá para conferir no editor, então virou aviso (`MIDIA_HTTPS_NAO_CONFERIDO`),
+nunca silêncio.
+
+**A explicação foi morar no campo**
+
+Dez pontos de `?` no painel abrindo a seção certa da Ajuda em aba nova; "Corpo
+(JSON)" virou "O que mandar para o sistema" com exemplo dentro do campo;
+cabeçalhos, credencial, método, endereço, valor da condição e etapa do quadro
+ganharam a frase que faltava; "campo da resposta" virou "como o sistema chama"; e
+o preset "Webhook · avisar um sistema seu" virou **"O meu próprio sistema"** —
+todos os outros presets têm nome de produto conhecido, e quem tinha sistema feito
+sob medida procurava o próprio sistema na lista, não achava, e concluía que o
+produto não servia.
+
+`npm test` → **922 passando, 29 pulados**. `typecheck`, `lint` e `build` limpos.
+Deploy conferido: `12d306e` READY em produção. **Nenhuma migration** — nada aqui
+tocou banco, e a próxima a escrever continua sendo a `0038`.
+
+---
+
+## 0.1 PENDENTE, e é a próxima tarefa: para quem esta tela fala
+
+**O problema, na voz de quem o encontrou.** A dona de salão de 52 anos travou em
+algo que nenhum ajuste de texto resolve: o painel e a Ajuda dizem "o cliente",
+"este cliente", "a tela do cliente", "o sistema do cliente". Ela é a dona da
+loja. Para ela, "cliente" é **quem entra no salão** — o lead. O produto inteiro
+usa a palavra no sentido oposto ao dela, e o efeito é ler a tela como se ela não
+fosse dona de nada.
+
+**A decisão do dono, tomada em 28/ago:** o alvo é **a dona do estúdio**. Hoje
+quem monta são o Gabriel e o Edu, mas o vocabulário tem que ser o dela. "Cliente"
+passa a ser **o cliente dela** — o lead, o contato, o paciente, o aluno. Ela é a
+dona do negócio, não uma conta atendida por uma agência.
+
+**O que fazer, e nesta ordem:**
+
+1. **Pesquise antes de escrever.** Como resolvem isso os produtos que vivem do
+   mesmo problema — quem opera para si e quem opera para terceiros na mesma
+   ferramenta. Olhe pelo menos: as ferramentas de automação de WhatsApp
+   brasileiras (BotConversa, ManyChat, Take Blip), os CRMs de PME (RD Station,
+   Pipedrive, HubSpot) e as agendas verticais (Trinks, Belasis). A pergunta é
+   concreta: **que palavra eles usam para a conta, e que palavra para a pessoa
+   que chega pelo WhatsApp?** Alguns têm modo agência com troca de rótulo; outros
+   escolheram um lado. Traga o que acharam e por quê.
+2. **Decida o vocabulário e escreva num só lugar.** Como `blocos.ts` é a fonte
+   única do nome dos blocos, o vocabulário da conta precisa de fonte única
+   equivalente — a Ajuda e o painel não podem divergir, e hoje divergiriam na
+   primeira mudança.
+3. **Varra a tela.** `components/editor/painel.tsx`, `components/ajuda/*`, as
+   páginas em `app/clientes/[clienteId]/**` e os textos de erro do
+   `core/flow/validar.ts`. São dezenas de ocorrências; a que dói mais é a do
+   painel, que a pessoa lê enquanto monta.
+4. **Cuidado com o que NÃO é texto.** A rota é `/clientes/[clienteId]`, e há
+   tabela, coluna e função com esse nome. **Renomear rota ou banco não faz parte
+   desta tarefa** — o ganho é de vocabulário na tela, e mexer no resto multiplica
+   o risco sem melhorar nada para quem lê.
+5. **O caso agência não some.** O Gabriel e o Edu montam para vários negócios, e
+   a estrutura multi-conta continua valendo. Se a pesquisa disser que dá para
+   servir aos dois com um rótulo trocável, ótimo; se disser que é preciso
+   escolher um lado, o lado é o da dona do estúdio.
+
+**Também pendente, do mesmo teste:** o único preset de agenda é da **Verandi**,
+uma marca de terceiro. Quem tem outra agenda não encontra caminho pronto e cai no
+bloco de Serviços externos cru. Vale um preset genérico de agenda, ou pelo menos
+uma receita na Ajuda escrita para quem não usa a Verandi.
+
+---
+
+## 0.2 O que mudou em 27/ago, e por quê
 
 Dois commits, os dois vindos de **quem opera montando fluxo com cliente na
 frente** — não de plano. Vale ler porque metade é conserto de coisa que a tela
@@ -71,9 +184,9 @@ se move sozinho (§5.10). O resto dela está em §8.2.
 cliente pelo telefone, oferece os horários que existem de verdade e marca. É a
 primeira integração de ponta a ponta com um sistema de negócio, e está em §5.11.
 
-`npm test` → **878 passando, 28 pulados** (os pulados dependem de `IA_TESTE_REAL`
+`npm test` → **922 passando, 29 pulados** (os pulados dependem de `IA_TESTE_REAL`
 e `API_TESTE_REAL`, por desenho). `typecheck`, `lint` e `build` limpos.
-A contagem é de 27/ago; o §0 explica o que entrou.
+A contagem é de 28/ago; o §0 explica o que entrou.
 **Migrations aplicadas em produção: `0001` a `0037`, todas. A próxima a escrever
 é a `0038`.** Conferido em 24/ago contra o banco, e não contra este documento —
 `flows.ativo`, `flows.canal` e `contacts.nome_real` respondem. Ele dizia `0035`
