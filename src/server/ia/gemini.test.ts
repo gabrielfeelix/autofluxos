@@ -205,6 +205,30 @@ describe.skipIf(!chave)('o Gemini escolhendo consulta', () => {
     expect(Object.keys(r.argumentos)).not.toContain('pessoa_id')
   }, 45_000)
 
+  it('entende "semana que vem" e vira um período de datas', async () => {
+    /*
+     * O pedido de quem opera, literal: *"'esta semana', 'semana que vem' — o
+     * sistema identificar quando é e sugerir as disponibilidades"*.
+     *
+     * O fluxo desenhado à mão **não** consegue isto: a pergunta com formato
+     * `data` exige `AAAA-MM-DD` com ano de quatro dígitos, e `core/` não tem
+     * relógio de propósito. Quem resolve é a IA, porque ela recebe `hoje` no
+     * prompt de sistema e a ferramenta aceita período.
+     */
+    const r = await modelo.responder({
+      ...pedidoBase,
+      pergunta: 'quais horários vocês têm semana que vem?',
+    })
+
+    if (r.tipo !== 'usar_ferramenta') throw new Error(`não consultou nada: ${descrever(r)}`)
+    expect(r.nome).toBe('agenda_horarios')
+
+    // 2026-09-01 é uma terça. "Semana que vem" tem que cair depois deste sábado
+    // e não pode virar o dia de hoje — o erro clássico é ignorar o "que vem".
+    expect(r.argumentos.de! > '2026-09-05').toBe(true)
+    expect(r.argumentos.ate! > r.argumentos.de!).toBe(true)
+  }, 45_000)
+
   it('conversa fiada não vira consulta', async () => {
     // `AUTO`, e não `ANY`: a maior parte das mensagens de um atendimento não
     // tem consulta que sirva, e obrigar a chamar produziria uma consulta à toa
