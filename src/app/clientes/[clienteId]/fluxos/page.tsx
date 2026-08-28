@@ -42,18 +42,34 @@ import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { contarInscricoes, listarSequencias } from '@/server/repos/sequencias'
 import { listarQuadros } from '@/server/repos/quadros'
 import { SeloDoCanal } from '@/components/design/selo-do-canal'
-import { EscolherCanal } from '@/components/fluxos/escolher-canal'
 import { InterruptorDeFluxo } from '@/components/fluxos/interruptor'
 import { MoverFluxo } from '@/components/editor/mover-fluxo'
 import { NomeDoFluxo } from '@/components/editor/nome-do-fluxo'
-import { MODELOS } from '@/exemplos/modelos'
+import { ETIQUETAS, MODELOS } from '@/exemplos/modelos'
+import { AbaDeTemplates, NovaAutomacao } from '@/components/fluxos/templates'
 import { contatosPorCampanha, listarCampanhas } from '@/server/repos/campanhas'
 import { listarFluxos } from '@/server/repos/fluxos'
 import { contarExecucoesPorFluxo } from '@/server/repos/metricas'
 
 export const dynamic = 'force-dynamic'
 
-const ABAS_VALIDAS = ['fluxos', 'palavras', 'campanhas', 'sequencias'] as const
+const ABAS_VALIDAS = ['fluxos', 'templates', 'palavras', 'campanhas', 'sequencias'] as const
+
+/**
+ * A galeria recebe **só o texto** de cada modelo.
+ *
+ * O grafo fica no servidor: mandar treze fluxos inteiros para o navegador só
+ * para desenhar treze cartões é pagar o desenho de todos os blocos de todos os
+ * modelos em toda visita — e quem cria escolhe pelo id, que é o que o Server
+ * Action lê.
+ *
+ * O "em branco" sai da lista: ele é o botão *Do zero* do modal, não um
+ * template. Aparecer nos dois lugares faria a galeria prometer um desenho que
+ * não existe.
+ */
+const TEMPLATES = MODELOS.filter((modelo) => modelo.id !== 'vazio').map(
+  ({ id, nome, resumo, etiquetas, sinonimos }) => ({ id, nome, resumo, etiquetas, sinonimos }),
+)
 type Aba = (typeof ABAS_VALIDAS)[number]
 
 export default async function Pagina({
@@ -126,6 +142,7 @@ export default async function Pagina({
 
   const ABAS = [
     { chave: 'fluxos', rotulo: 'Fluxos', contagem: fluxos.length },
+    { chave: 'templates', rotulo: 'Templates', contagem: TEMPLATES.length },
     { chave: 'palavras', rotulo: 'Palavras-chave', contagem: gatilhos.length },
     { chave: 'campanhas', rotulo: 'Campanhas', contagem: campanhas.length },
     { chave: 'sequencias', rotulo: 'Sequências', contagem: sequencias.length },
@@ -229,43 +246,11 @@ export default async function Pagina({
               </label>
             </ModalFormulario>
 
-            <ModalFormulario
-              botao="+ Criar fluxo"
-              titulo="Novo fluxo"
-              descricao={
-                'Nasce como rascunho já válido. O modelo é só o ponto de partida: a partir daí o desenho é seu, e mudar o modelo depois não mexe no que você criou.'
-              }
-              action={criarComCliente}
-            >
-              <label>
-                <RotuloCampo>Nome do fluxo</RotuloCampo>
-                <input
-                  name="nome"
-                  required
-                  autoFocus
-                  placeholder="ex.: Atendimento comercial"
-                  className="app-field px-[13px] py-[11px] text-[13.5px]"
-                />
-              </label>
-              <div>
-                <RotuloCampo>Onde vai atender</RotuloCampo>
-                <EscolherCanal />
-              </div>
-
-              <label>
-                <RotuloCampo>Começar de</RotuloCampo>
-                <Dropdown
-                  nome="modelo"
-                  rotuloAcessivel="Modelo do fluxo"
-                  valorInicial="vazio"
-                  opcoes={MODELOS.map((modelo) => ({
-                    valor: modelo.id,
-                    rotulo: modelo.nome,
-                    detalhe: modelo.resumo,
-                  }))}
-                />
-              </label>
-            </ModalFormulario>
+            {/* O "Começar de" que ficava aqui virou a pergunta de abertura do
+                modal e a aba Templates — ver `components/fluxos/templates.tsx`.
+                Escondido num campo no fim do formulário, o modelo era escolhido
+                por um nome de três palavras e quase ninguém usava. */}
+            <NovaAutomacao acao={criarComCliente} modelos={TEMPLATES} etiquetas={ETIQUETAS} />
             </span>
           </header>
 
@@ -448,6 +433,22 @@ export default async function Pagina({
           )}
 
 
+        </section>
+        )}
+
+        {aba === 'templates' && (
+        <section className="app-card overflow-hidden">
+          <header className="border-b border-white/[0.06] px-5 py-4">
+            <h2 className="text-[14.5px] font-bold">Templates</h2>
+            <p className="mt-0.5 max-w-[78ch] text-[12px] leading-5 text-dim">
+              Desenhos prontos e conferidos: todos publicam sem erro e todos têm saída para uma
+              pessoa. Escolher cria uma automação nova como rascunho — o template não fica ligado a
+              ela, então mexer aqui depois não mexe no que você criou.
+            </p>
+          </header>
+          <div className="px-5 py-4">
+            <AbaDeTemplates acao={criarComCliente} modelos={TEMPLATES} etiquetas={ETIQUETAS} />
+          </div>
         </section>
         )}
 
