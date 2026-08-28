@@ -145,6 +145,16 @@ interpola e sai literal na conversa — foi o que aconteceu com quem escreveu
    consertar.
 4. O aviso `CHAVE_SIMPLES` do validador (`core/flow/validar.ts`) continua como
    está — ele é a rede de baixo, para quem publica sem olhar o campo.
+5. **O mesmo realce vale no card do desenho.** Hoje o bloco de Mensagem mostra
+   `{{nome}}` como texto cru (`NoMensagem` em `components/editor/nos.tsx`), então
+   a mesma citação aparece azul dentro do campo e sem nenhuma marca no desenho —
+   e é no desenho que se confere o fluxo inteiro. A citação certa fica com o
+   badge azul, a chave simples com o vermelho, e vale para todo card que mostra
+   texto interpolado: Mensagem, Pergunta, Mídia (legenda), IA e Guardar. Cuidado
+   com o espaço: o card tem `line-clamp-3` e largura fixa, então o badge não pode
+   crescer a linha — é cor e fundo sutil, não uma pílula com padding grande. A
+   prévia do hover (`previa-do-bloco.tsx`) ganha o mesmo tratamento, e ali há
+   espaço de sobra.
 
 **Decisão que NÃO foi tomada, e que não deve ser tomada sozinha:** inverter a
 sintaxe do produto para uma chave só (`{nome}`). Seria possível, e é caro por um
