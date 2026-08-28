@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect } from 'react'
+import { DetalheDoErro } from '@/components/design/detalhe-do-erro'
 
 /**
  * Deu errado.
@@ -10,9 +11,10 @@ import { useEffect } from 'react'
  * com a tela branca do Next, sem caminho de volta. Aqui ela tem duas saídas:
  * tentar de novo (`reset` refaz só o pedaço que quebrou) e voltar para o começo.
  *
- * O `digest` aparece porque em produção a mensagem real fica no servidor, de
- * propósito — mensagem de erro de banco costuma vazar nome de tabela e coluna.
- * O digest é o que liga o que a pessoa vê ao que está no log da Vercel.
+ * Embaixo vem sempre um bloco com o código e a mensagem técnica — inclusive
+ * quando quem quebrou foi o navegador, que é o caso sem `digest`. Ver
+ * `DetalheDoErro`: a caixa vazia de antes obrigava a abrir o console para
+ * descobrir qualquer coisa.
  */
 export default function Erro({
   error,
@@ -51,11 +53,8 @@ export default function Erro({
         </Link>
       </div>
 
-      {error.digest && (
-        <p className="mt-4 text-xs text-dim">
-          Se precisar reportar, mande este código: <code>{error.digest}</code>
-        </p>
-      )}
+      <DetalheDoErro erro={error} />
+      <p className="mt-2 text-[11px] text-dim">Mande este código para quem for consertar.</p>
       </div>
     </main>
   )

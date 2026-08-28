@@ -87,6 +87,26 @@ const LIMITE_DO_HISTORICO = 60
  */
 const SEGUNDOS_DO_DESFAZER = 5
 
+/**
+ * Estes três vivem fora do componente **de propósito**, e não é microotimização.
+ *
+ * O React Flow guarda cada uma destas props na store dele por identidade, e
+ * repõe a store toda vez que a identidade muda. Escritos direto no JSX, eles
+ * nasciam de novo a cada render do editor e enchiam a store de escrita inútil —
+ * que reacende todos os blocos e todas as linhas do desenho a cada tecla
+ * digitada no painel. Era metade do "canvas travado".
+ *
+ * Ver também `aoMudarSelecao`, onde a mesma armadilha não era lentidão: era
+ * laço infinito.
+ */
+const OPCOES_PADRAO_DA_ARESTA = { type: 'removivel' }
+/**
+ * Ctrl (ou ⌘) clicando junta blocos na seleção. O padrão do React Flow é ⌘
+ * **só** no Mac, e aqui quem monta está no Windows: sem esta linha, "seleciona
+ * vários com Ctrl" simplesmente não existia para ele.
+ */
+const TECLAS_DE_MULTISSELECAO = ['Control', 'Meta']
+
 const TIPOS: TipoNo[] = [
   'mensagem',
   'midia',
@@ -309,6 +329,52 @@ export function Editor({
     relogioDaPrevia.current = null
     setPrevia(null)
   }, [])
+
+  /**
+   * A seleção mudou no desenho.
+   *
+   * **Esta função precisa ser estável, e a lista precisa parar quando não muda.
+   * As duas coisas, ou o editor entra em laço infinito e cai na tela de erro.**
+   *
+   * O React Flow escuta a seleção num efeito com `[selectedNodes, selectedEdges,
+   * onSelectionChange]` nas dependências. Escrita direto no JSX, a função nasce
+   * de novo a cada render, então o efeito dispara a cada render. Enquanto ela só
+   * gravava um `id` (string), isso passava despercebido: o React compara, vê o
+   * mesmo valor e para. Quando entrou a seleção múltipla, ela passou a gravar
+   * uma **lista nova** — array novo é sempre "valor diferente", então o render
+   * chamava o efeito, o efeito trocava o estado, a troca causava outro render, e
+   * assim até o React desistir com "Maximum update depth exceeded" (erro 185) e
+   * derrubar o editor inteiro.
+   *
+   * `useCallback` sem dependências corta o gatilho; o `atuais.every` corta o
+   * combustível. Um dos dois já resolveria hoje — os dois juntos resolvem também
+   * o dia em que alguém precisar pôr uma dependência aqui.
+   */
+  const aoMudarSelecao = useCallback(({ nodes: sel }: { nodes: Node[] }) => {
+    const id = sel[0]?.id ?? null
+    const ids = sel.map((n) => n.id)
+    setSelecionado(id)
+    setSelecionados((atuais) =>
+      atuais.length === ids.length && atuais.every((v, i) => v === ids[i]) ? atuais : ids,
+    )
+    // Trocar de bloco leva para a aba "Bloco", porque é o que a pessoa quer ver
+    // ao clicar num bloco diferente.
+    //
+    // **Só quando o bloco muda de verdade.** O React Flow redispara este evento
+    // com a mesma seleção, inclusive no render causado por clicar na aba
+    // "Testar" — e aí o `setAba` daqui roda no mesmo lote e vence o do clique. O
+    // efeito para quem usa: com um bloco selecionado (que é o estado normal de
+    // quem está desenhando) a aba "Testar" simplesmente não abria, sem nem
+    // piscar. Parecia botão quebrado.
+    if (id && id !== ultimoSelecionado.current) setAba('bloco')
+    ultimoSelecionado.current = id
+  }, [])
+
+  /** Mexer na tela ou arrastar um bloco fecha o menu e a prévia. Ver o JSX. */
+  const largarOFlutuante = useCallback(() => {
+    setMenu(null)
+    fecharPrevia()
+  }, [fecharPrevia])
   /**
    * O menu do botão direito: em qual bloco (ou ligação) ele abriu e onde.
    *
@@ -1347,41 +1413,14 @@ export function Editor({
               )
             }}
             onNodeMouseLeave={fecharPrevia}
-            onNodeDragStart={() => {
-              setMenu(null)
-              fecharPrevia()
-            }}
-            onMoveStart={() => {
-              setMenu(null)
-              fecharPrevia()
-            }}
+            onNodeDragStart={largarOFlutuante}
+            onMoveStart={largarOFlutuante}
             // Todo grafo já salvo tem aresta sem `type`; o padrão faz as antigas
             // ganharem o ✕ sem precisar migrar nada no banco.
-            defaultEdgeOptions={{ type: 'removivel' }}
-            onSelectionChange={({ nodes: sel }) => {
-              const id = sel[0]?.id ?? null
-              setSelecionado(id)
-              setSelecionados(sel.map((n) => n.id))
-              // Trocar de bloco leva para a aba "Bloco", porque é o que a
-              // pessoa quer ver ao clicar num bloco diferente.
-              //
-              // **Só quando o bloco muda de verdade.** O React Flow redispara
-              // este evento com a mesma seleção a cada render, inclusive no
-              // render causado por clicar na aba "Testar" — e aí o `setAba`
-              // daqui roda no mesmo lote e vence o do clique. O efeito para
-              // quem usa: com um bloco selecionado (que é o estado normal de
-              // quem está desenhando) a aba "Testar" simplesmente não abre,
-              // sem nem piscar. Parecia botão quebrado.
-              if (id && id !== ultimoSelecionado.current) setAba('bloco')
-              ultimoSelecionado.current = id
-            }}
-            /**
-             * Ctrl (ou ⌘) clicando junta blocos na seleção; `Shift` arrastando
-             * laça uma área. O padrão do React Flow é ⌘ **só** no Mac, e aqui
-             * quem monta está no Windows: sem esta linha, "seleciona vários com
-             * Ctrl" simplesmente não existia para ele.
-             */
-            multiSelectionKeyCode={['Control', 'Meta']}
+            defaultEdgeOptions={OPCOES_PADRAO_DA_ARESTA}
+            onSelectionChange={aoMudarSelecao}
+            // `Shift` arrastando laça uma área; ver `TECLAS_DE_MULTISSELECAO`.
+            multiSelectionKeyCode={TECLAS_DE_MULTISSELECAO}
             selectionKeyCode="Shift"
             fitView
             colorMode="dark"

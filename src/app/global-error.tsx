@@ -1,5 +1,7 @@
 'use client'
 
+import { DetalheDoErro } from '@/components/design/detalhe-do-erro'
+
 /**
  * A rede embaixo da rede.
  *
@@ -27,7 +29,9 @@ export default function ErroGlobal({
         >
           Tentar de novo
         </button>
-        {error.digest && <p className="text-xs text-[#5a6478]">código: {error.digest}</p>}
+        <div className="w-full max-w-[430px]">
+          <DetalheDoErro erro={error} escuro />
+        </div>
       </body>
     </html>
   )
