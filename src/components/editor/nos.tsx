@@ -1,7 +1,7 @@
 'use client'
 
 import { Handle, Position, type NodeProps, type NodeTypes } from '@xyflow/react'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { CORES, ICONES, NOMES } from '@/core/flow/blocos'
 import { presetDoBloco } from '@/core/presets'
 import { RealceDeVariaveis } from './realce-de-variaveis'
@@ -172,6 +172,23 @@ function NoMidia({ data, selected }: NodeProps) {
       <p className="text-[11px] font-bold tracking-[0.04em] text-sky-200 uppercase">
         {ROTULO_DA_MIDIA[d.midia] ?? 'Mídia'}
       </p>
+
+      {/*
+        A miniatura no desenho, porque nome de arquivo não identifica imagem.
+        
+        `cadeiras-desktop-jwzani.png` é o nome que o upload gerou, e num fluxo
+        com quatro fotos do espaço os quatro cards ficam iguais: quem desenhou
+        precisa abrir um a um para lembrar qual é qual. A imagem responde de
+        relance, que é como se lê um fluxograma.
+        
+        **Só imagem.** Vídeo exigiria carregar o arquivo inteiro para mostrar um
+        quadro, e PDF não tem miniatura sem renderizar — os dois pagariam a rede
+        de um canvas com vinte blocos para devolver pouca informação.
+      */}
+      {d.midia === 'imagem' && d.url.trim() !== '' && (
+        <PreviaDaImagem url={d.url} descricao={arquivo} />
+      )}
+
       <p className="mt-0.5 truncate font-mono text-[10.5px] text-dim">
         {arquivo === '' ? '(sem arquivo)' : arquivo}
       </p>
@@ -182,6 +199,43 @@ function NoMidia({ data, selected }: NodeProps) {
       )}
       {!!d.atraso && <p className="mt-1 text-[10px] text-dim">digita por {d.atraso}s</p>}
     </Caixa>
+  )
+}
+
+/**
+ * A miniatura de uma imagem do bloco de mídia.
+ *
+ * **Endereço quebrado não pode deixar buraco no card.** URL colada errada,
+ * arquivo apagado do Storage, host fora do ar — em qualquer um deles o
+ * navegador mostraria o ícone de imagem partida, que num fluxograma parece
+ * defeito do editor. Um erro no `img` derruba a miniatura e o card volta a ser
+ * o que era: rótulo e nome do arquivo.
+ *
+ * `loading="lazy"` porque um canvas de vinte blocos com foto do espaço baixaria
+ * vinte imagens antes de a pessoa rolar até elas.
+ */
+function PreviaDaImagem({ url, descricao }: { url: string; descricao: string }) {
+  const [quebrou, setQuebrou] = useState(false)
+  if (quebrou) return null
+
+  return (
+    <div className="mt-1.5 overflow-hidden rounded-[8px] border border-white/10 bg-black/30">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={url}
+        alt={descricao === '' ? 'Prévia da imagem do bloco' : descricao}
+        loading="lazy"
+        draggable={false}
+        onError={() => setQuebrou(true)}
+        /*
+         * Altura fixa e `object-cover`: o card do desenho tem largura própria e
+         * uma imagem em pé empurraria tudo abaixo dela para fora da tela. O
+         * recorte perde parte da foto e mantém o fluxograma legível, que é para
+         * o que a miniatura serve — reconhecer, não conferir.
+         */
+        className="h-[84px] w-full object-cover"
+      />
+    </div>
   )
 }
 

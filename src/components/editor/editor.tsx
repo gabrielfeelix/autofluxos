@@ -1553,6 +1553,7 @@ export function Editor({
                 blocos={fluxo.nodes}
                 valoresDeVariaveis={valoresDeVariaveis}
                 conexoes={conexoes}
+                iaHabilitada={comIa}
                 etapas={etapas}
                 fluxos={fluxos}
                 aoMudarDados={mudarDados}

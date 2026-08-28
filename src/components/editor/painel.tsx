@@ -160,6 +160,7 @@ export function Painel({
   blocos = [],
   valoresDeVariaveis = {},
   conexoes = [],
+  iaHabilitada = false,
   etapas = [],
   fluxos = [],
   aoMudarDados,
@@ -191,6 +192,8 @@ export function Painel({
    */
   valoresDeVariaveis?: Record<string, string[]>
   conexoes?: ConexaoDoCliente[]
+  /** Este cliente tem o plano de IA. Muda o card inteiro do bloco de IA. */
+  iaHabilitada?: boolean
   etapas?: EtapaDoCliente[]
   fluxos?: FluxoDaConta[]
   aoMudarDados: (dados: Record<string, unknown>) => void
@@ -823,32 +826,64 @@ export function Painel({
 
       {no.type === 'ia' && (
         <>
+          {/*
+            O aviso do plano vem **primeiro e só quando é verdade**.
+            
+            Antes ele era o último parágrafo do card e aparecia sempre, inclusive
+            para quem tinha contratado — um aviso que mente metade das vezes é um
+            aviso que ninguém lê na vez em que importa. E ele vem no topo porque
+            muda se o que está abaixo vale alguma coisa.
+          */}
+          {!iaHabilitada && (
+            <p className="rounded-[10px] border border-amber-400/20 bg-amber-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-amber-200">
+              Este cliente ainda não tem IA contratada. Dá para desenhar e salvar, mas na conversa
+              real o bloco passa direto para uma pessoa.
+            </p>
+          )}
+
+          {/*
+            Uma linha dizendo o que o bloco é.
+            
+            Sem ela, quem abre vê uma caixa de texto vazia chamada "instrução" e
+            não tem como saber que existe um modelo do outro lado, nem que ele
+            pode consultar coisa.
+          */}
+          <p className="text-[11.5px] leading-5 text-dim">
+            A IA responde com o que estiver escrito no contexto do negócio — e, se você marcar
+            abaixo, com o que ela consultar no sistema do cliente. Quando não souber, passa para
+            uma pessoa.
+          </p>
+
           <Area
             conhecidas={variaveis}
             rotulo="Instrução para a IA"
             valor={no.data.instrucao}
             aoMudar={(instrucao) => aoMudarDados({ instrucao })}
           />
+
+          {/*
+            As consultas vêm **antes** de "guardar resposta em", e isso inverte a
+            ordem antiga de propósito: o que a IA pode consultar muda o que se
+            escreve na instrução, então as duas coisas se decidem juntas. Guardar
+            a resposta é opcional e avançado, e estava separando as duas.
+          */}
+          <ConsultasDaIa
+            escolhidas={no.data.ferramentas}
+            conexaoId={no.data.conexaoId ?? ''}
+            conexoes={conexoes}
+            clienteId={clienteId}
+            aoMudar={aoMudarDados}
+          />
+
           <CampoDeVariavel
             rotulo="Guardar resposta em"
             ajuda={<Ajuda secao="variaveis" oQue="o que é guardar uma resposta" />}
             valor={no.data.salvarEm ?? ''}
             variaveis={deOutrosBlocos}
             modo="guarda"
-            dica="nome sem espaço nem acento — ou escolha uma que o fluxo já tem em {x}"
+            dica="opcional — só se outro bloco precisar usar o que a IA respondeu"
             aoMudar={(v) => aoMudarDados({ salvarEm: v.trim() === '' ? undefined : v.trim() })}
           />
-          <ConsultasDaIa
-            escolhidas={no.data.ferramentas}
-            conexaoId={no.data.conexaoId ?? ''}
-            conexoes={conexoes}
-            aoMudar={aoMudarDados}
-          />
-
-          <p className="rounded-[10px] border border-violet-400/20 bg-violet-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-violet-300">
-            IA é plano à parte (Etapa 2). Enquanto o cliente não tiver contratado, o simulador
-            mostra a chamada mas não chama modelo nenhum.
-          </p>
         </>
       )}
 
@@ -1800,14 +1835,17 @@ function ConsultasDaIa({
   escolhidas,
   conexaoId,
   conexoes,
+  clienteId,
   aoMudar,
 }: {
   escolhidas: string[]
   conexaoId: string
   conexoes: ConexaoDoCliente[]
+  clienteId: string
   aoMudar: (dados: { ferramentas?: string[]; conexaoId?: string | undefined }) => void
 }) {
   const marcadas = new Set(escolhidas)
+  const grava = escolhidas.some((nome) => FERRAMENTAS.find((f) => f.nome === nome)?.escreve)
 
   const alternar = (nome: string, marcada: boolean) => {
     // A ordem do catálogo, e não a de clique: ela conta a conversa (catálogo,
@@ -1820,38 +1858,40 @@ function ConsultasDaIa({
   }
 
   const grupos = [
-    { titulo: 'Consultar', escreve: false },
-    { titulo: 'Agir na agenda', escreve: true },
+    { titulo: 'Pode consultar', escreve: false },
+    { titulo: 'Pode agir na agenda', escreve: true },
   ] as const
 
   return (
-    <div className="rounded-[10px] border border-white/10 bg-white/[0.028] p-3">
+    <div>
       <span className="mb-1 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
-        Consultas ao sistema
+        O que a IA pode fazer na Verandi
       </span>
-      <p className="mb-3 text-[10.5px] leading-4 text-dim">
-        Sem nenhuma marcada, a IA responde só com o que está escrito no contexto do negócio — que
-        já basta para preço, endereço e horário de funcionamento.
+      <p className="mb-2.5 text-[10.5px] leading-4 text-dim">
+        Nada marcado: a IA só responde com o contexto do negócio.
       </p>
 
       {grupos.map((grupo) => (
-        <fieldset key={grupo.titulo} className="mb-3 last:mb-0">
-          <legend className="mb-1.5 text-[10.5px] font-bold tracking-[0.04em] text-muted uppercase">
+        <fieldset key={grupo.titulo} className="mb-2.5 last:mb-0">
+          <legend className="mb-1 flex items-center gap-1.5 text-[10.5px] font-bold tracking-[0.04em] text-muted uppercase">
             {grupo.titulo}
             {grupo.escreve && (
-              <span className="ml-1.5 rounded-full bg-amber-400/15 px-1.5 py-px text-[9.5px] font-bold tracking-normal text-amber-300 normal-case">
+              <span className="rounded-full bg-amber-400/15 px-1.5 py-px text-[9.5px] font-bold tracking-normal text-amber-300 normal-case">
                 grava de verdade
               </span>
             )}
           </legend>
 
           {FERRAMENTAS.filter((f) => f.escreve === grupo.escreve).map((f) => (
-            <label key={f.nome} className="mb-1.5 flex items-start gap-2.5 last:mb-0">
+            <label
+              key={f.nome}
+              className="mb-1 flex items-center gap-2.5 rounded-[7px] px-1.5 py-1 last:mb-0 hover:bg-white/[0.03]"
+            >
               <input
                 type="checkbox"
                 checked={marcadas.has(f.nome)}
                 onChange={(evento) => alternar(f.nome, evento.currentTarget.checked)}
-                className="mt-px size-4 shrink-0 accent-[var(--accent)]"
+                className="size-4 shrink-0 accent-[var(--accent)]"
               />
               <span className="text-[12.5px] leading-4">{f.rotulo}</span>
             </label>
@@ -1860,36 +1900,58 @@ function ConsultasDaIa({
       ))}
 
       {escolhidas.length > 0 && (
-        <label className="mt-3 block border-t border-white/10 pt-3">
+        <label className="mt-2.5 block">
           <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
             Credencial das consultas
           </span>
-          <Dropdown
-            valor={conexaoId}
-            aoMudar={(id) => aoMudar({ conexaoId: id === '' ? undefined : id })}
-            rotuloAcessivel="Credencial das consultas da IA"
-            opcoes={[
-              { valor: '', rotulo: 'Escolha uma credencial' },
-              ...conexoes.map((conexao) => ({ valor: conexao.id, rotulo: conexao.nome })),
-            ]}
-          />
-          <span className="mt-1 block text-[10.5px] leading-4 text-dim">
-            {/*
-              Dizer o que acontece sem ela, e não só que ela é obrigatória: sem
-              credencial a consulta volta negada e a IA diz "não sei" para tudo,
-              que é o sintoma mais difícil de ligar à causa.
-            */}
-            Sem ela a consulta volta negada e a IA responde “não sei”. O valor fica no cofre; o
-            desenho guarda só a referência.
-          </span>
+
+          {/*
+            Sem credencial cadastrada, um dropdown vazio é um beco sem saída:
+            a pessoa vê que falta alguma coisa e não tem como saber onde
+            resolver. O link é a diferença entre um aviso e uma instrução.
+          */}
+          {conexoes.length === 0 ? (
+            <p className="rounded-[10px] border border-amber-400/20 bg-amber-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-amber-200">
+              Este cliente ainda não tem credencial cadastrada, e sem ela a consulta volta negada.
+              Cadastre em{' '}
+              <a
+                className="underline underline-offset-2 hover:text-amber-100"
+                href={`/clientes/${clienteId}/conexoes`}
+              >
+                Credenciais
+              </a>
+              .
+            </p>
+          ) : (
+            <>
+              <Dropdown
+                valor={conexaoId}
+                aoMudar={(id) => aoMudar({ conexaoId: id === '' ? undefined : id })}
+                rotuloAcessivel="Credencial das consultas da IA"
+                opcoes={[
+                  { valor: '', rotulo: 'Escolha uma credencial' },
+                  ...conexoes.map((conexao) => ({ valor: conexao.id, rotulo: conexao.nome })),
+                ]}
+              />
+              <span className="mt-1 block text-[10.5px] leading-4 text-dim">
+                {/*
+                  Dizer o que acontece sem ela, e não só que é obrigatória: sem
+                  credencial a consulta volta negada e a IA diz "não sei" para
+                  tudo, que é o sintoma mais difícil de ligar à causa.
+                */}
+                {conexaoId === ''
+                  ? 'Sem escolher, a consulta volta negada e a IA responde “não sei”.'
+                  : 'O valor fica no cofre; o desenho guarda só a referência.'}
+              </span>
+            </>
+          )}
         </label>
       )}
 
-      {escolhidas.some((nome) => FERRAMENTAS.find((f) => f.nome === nome)?.escreve) && (
-        <p className="mt-3 rounded-[10px] border border-amber-400/20 bg-amber-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-amber-200">
-          A IA vai marcar e desmarcar sozinha, a partir do que a pessoa escrever. Ela só age sobre
-          quem está conversando, e só com horários que ela mesma acabou de consultar — mas quem
-          confirma cada passo é o texto da sua instrução. Peça a confirmação lá.
+      {grava && (
+        <p className="mt-2.5 rounded-[10px] border border-amber-400/20 bg-amber-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-amber-200">
+          Antes de gravar, a IA pergunta “posso?” e espera a resposta. Ela só age sobre quem está
+          conversando, e só em horários que ela mesma acabou de consultar.
         </p>
       )}
     </div>
