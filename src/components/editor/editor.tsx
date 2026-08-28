@@ -5,6 +5,7 @@ import {
   Background,
   Controls,
   MiniMap,
+  Panel,
   ReactFlow,
   useEdgesState,
   useNodesState,
@@ -28,7 +29,15 @@ import { Conversa } from '@/components/conversa'
 import { VARIAVEIS_NATIVAS } from '@/core/contatos/vars-iniciais'
 import { PreviaDoBloco } from './previa-do-bloco'
 import type { CanalId } from '@/core/canais'
-import { fluxoSchema, noSchema, type Fluxo, type No, type TipoNo } from '@/core/flow/schema'
+import {
+  fluxoSchema,
+  noSchema,
+  LIMITE_ATRASO_SEGUNDOS,
+  type Fluxo,
+  type No,
+  type TipoNo,
+} from '@/core/flow/schema'
+import { aceitaAtraso, aplicarAtrasoEmLote } from '@/core/flow/atraso-em-lote'
 import type { Problema } from '@/core/flow/validar'
 import { variaveisDoFluxo } from '@/core/flow/variaveis'
 import { validar } from '@/core/flow/validar'
@@ -247,6 +256,14 @@ export function Editor({
   const [edges, setEdges, aoMudarArestas] = useEdgesState<Edge>(inicial.edges as Edge[])
   const [inicio, setInicio] = useState(inicial.inicio)
   const [selecionado, setSelecionado] = useState<string | null>(null)
+  /**
+   * Todos os blocos da seleção, não só o primeiro.
+   *
+   * O painel da direita continua sendo de um bloco — editar cinco perguntas
+   * diferentes num formulário só não quer dizer nada. O que a seleção múltipla
+   * serve é para a **ação em lote**, que é sempre a mesma decisão repetida.
+   */
+  const [selecionados, setSelecionados] = useState<string[]>([])
   /** Qual bloco a última seleção apontava — ver `onSelectionChange`. */
   const ultimoSelecionado = useRef<string | null>(null)
   const [aba, setAba] = useState<'bloco' | 'testar'>('bloco')
@@ -506,6 +523,24 @@ export function Editor({
     if (!tipo || !TIPOS.includes(tipo) || !tela) return
 
     criarNo(tipo, centralizar(tela.screenToFlowPosition({ x: evento.clientX, y: evento.clientY })))
+  }
+
+  /**
+   * A mesma decisão de ritmo aplicada em todos os blocos selecionados.
+   *
+   * Passa pela regra pura (`aplicarAtrasoEmLote`) porque quem decide o que é
+   * bloco que fala é o `core/`, não a tela — e o salvamento e o desfazer já
+   * pegam a mudança sozinhos, pelo efeito que observa `nodes`.
+   */
+  function aplicarAtrasoNoLote(segundos: number) {
+    setNodes(
+      (atuais) =>
+        aplicarAtrasoEmLote(
+          atuais as unknown as { id: string; type?: string; data: Record<string, unknown> }[],
+          selecionados,
+          segundos,
+        ).blocos as unknown as Node[],
+    )
   }
 
   function mudarDados(dados: Record<string, unknown>) {
@@ -1326,6 +1361,7 @@ export function Editor({
             onSelectionChange={({ nodes: sel }) => {
               const id = sel[0]?.id ?? null
               setSelecionado(id)
+              setSelecionados(sel.map((n) => n.id))
               // Trocar de bloco leva para a aba "Bloco", porque é o que a
               // pessoa quer ver ao clicar num bloco diferente.
               //
@@ -1339,10 +1375,31 @@ export function Editor({
               if (id && id !== ultimoSelecionado.current) setAba('bloco')
               ultimoSelecionado.current = id
             }}
+            /**
+             * Ctrl (ou ⌘) clicando junta blocos na seleção; `Shift` arrastando
+             * laça uma área. O padrão do React Flow é ⌘ **só** no Mac, e aqui
+             * quem monta está no Windows: sem esta linha, "seleciona vários com
+             * Ctrl" simplesmente não existia para ele.
+             */
+            multiSelectionKeyCode={['Control', 'Meta']}
+            selectionKeyCode="Shift"
             fitView
             colorMode="dark"
             proOptions={{ hideAttribution: false }}
           >
+            {selecionados.length > 1 && (
+              <Panel position="top-center">
+                <AcoesEmLote
+                  quantos={selecionados.length}
+                  quantosFalam={
+                    nodes.filter((n) => selecionados.includes(n.id) && aceitaAtraso(n.type ?? ''))
+                      .length
+                  }
+                  aoAtrasar={aplicarAtrasoNoLote}
+                />
+              </Panel>
+            )}
+
             <Background gap={24} size={1} color="rgba(255,255,255,.08)" />
             <Controls position="bottom-right" />
             <MiniMap
@@ -1600,6 +1657,71 @@ const ALTURA_MENU = 130
  * o recorte da área valem para ele, e o menu não sobra por cima do painel da
  * direita quando o clique é perto da borda.
  */
+/**
+ * A barra que aparece quando há mais de um bloco selecionado.
+ *
+ * **Por que ela existe.** O "digitando…" é decisão de ritmo da conversa
+ * inteira: quem quer que o bot pareça gente quer a pausa em toda fala, e num
+ * fluxo de vinte blocos isso custava vinte idas ao painel — com o risco de
+ * sobrar um bloco instantâneo no meio, que é justo o que denuncia o robô.
+ *
+ * Selecionar é o gesto que já existia (Ctrl clicando, `Shift` arrastando uma
+ * área); o que faltava era ter o que fazer com a seleção.
+ *
+ * **Ela diz quantos blocos de fato mudam.** Pergunta, condição e guardar não
+ * mandam texto e não têm o que atrasar. Prometer "aplicado em 9" quando 5
+ * ignoraram é o tipo de mentira de tela que faz alguém publicar achando que
+ * conferiu.
+ */
+function AcoesEmLote({
+  quantos,
+  quantosFalam,
+  aoAtrasar,
+}: {
+  quantos: number
+  quantosFalam: number
+  aoAtrasar: (segundos: number) => void
+}) {
+  const segundos = Array.from({ length: LIMITE_ATRASO_SEGUNDOS }, (_, i) => i + 1)
+
+  return (
+    <div className="flex items-center gap-2 rounded-full border border-white/[0.09] bg-[#0b1018]/95 px-3 py-1.5 text-[11px] shadow-[0_14px_34px_rgba(0,0,0,.45)] backdrop-blur-sm">
+      <span className="font-semibold text-soft">{quantos} blocos</span>
+      <span className="h-3 w-px bg-white/10" aria-hidden />
+      <span className="text-dim">digita antes de falar</span>
+
+      {segundos.map((valor) => (
+        <button
+          key={valor}
+          type="button"
+          disabled={quantosFalam === 0}
+          onClick={() => aoAtrasar(valor)}
+          title={`Põe ${valor}s de "digitando…" antes de cada uma das falas selecionadas`}
+          className="rounded-full border border-white/[0.09] px-2 py-0.5 font-semibold text-muted transition hover:border-accent/40 hover:text-accent disabled:opacity-40"
+        >
+          {valor}s
+        </button>
+      ))}
+
+      <button
+        type="button"
+        disabled={quantosFalam === 0}
+        onClick={() => aoAtrasar(0)}
+        title="Tira o atraso das falas selecionadas"
+        className="rounded-full border border-white/[0.09] px-2 py-0.5 font-semibold text-muted transition hover:border-white/25 hover:text-soft disabled:opacity-40"
+      >
+        tirar
+      </button>
+
+      <span className="text-dim">
+        {quantosFalam === 0
+          ? 'nenhum destes fala'
+          : `vale para ${quantosFalam} ${quantosFalam === 1 ? 'fala' : 'falas'}`}
+      </span>
+    </div>
+  )
+}
+
 function MenuDoBotaoDireito({
   menu,
   aoEditar,
