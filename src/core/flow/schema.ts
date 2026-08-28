@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { FORMATOS_DE_SAIDA } from './formatos'
 import { FORMATOS_DE_RESPOSTA } from './resposta'
 
 /**
@@ -37,6 +38,23 @@ export const LIMITE_TEXTO_INTERATIVO = 1024
 export const opcaoSchema = z.object({
   id: z.string().min(1),
   rotulo: z.string(),
+  /**
+   * O que o sistema do cliente entende, quando ele não entende o rótulo.
+   *
+   * A lista vinda de API já separava as duas coisas (`opcoesDe` para o menu,
+   * `valoresDe` para o id), mas a opção desenhada à mão só tinha o rótulo — e
+   * aí quem desenha um menu fixo de quatro serviços não tinha como mandar
+   * `institucional` para a API enquanto a pessoa lê "Vídeo institucional".
+   *
+   * A saída era condição em cima do rótulo: um bloco por opção, e o desenho
+   * inchando junto com o catálogo. Veio de um teste em que rotear quatro tipos
+   * de vídeo custou sete blocos que não deviam existir.
+   *
+   * **Opcional para sempre.** Sem ele, `salvarValorEm` guarda o rótulo, que é o
+   * comportamento que todo grafo já publicado tem — e `flow_versions` é
+   * imutável.
+   */
+  valor: z.string().optional(),
 })
 
 const posicaoSchema = z.object({ x: z.number(), y: z.number() })
@@ -305,6 +323,29 @@ export const noPerguntaSchema = z.object({
      */
     salvarPadraoEm: nomeVariavel.optional(),
     /**
+     * Esta pergunta aceita foto, áudio ou documento como resposta?
+     *
+     * É o interruptor que faz nascer a saída "mandou arquivo" no desenho.
+     * Existe como campo, e não só como "ligou a aresta", porque ninguém procura
+     * uma saída que não está desenhada: sem uma caixa para marcar no painel, a
+     * capacidade existiria e não seria encontrada — que é o mesmo que não
+     * existir.
+     *
+     * **Desligado é o padrão**, e é o comportamento que todo fluxo publicado
+     * tem hoje: foto vai direto para uma pessoa.
+     */
+    aceitaMidia: z.boolean().optional(),
+    /**
+     * Onde guardar a **referência** do arquivo que a pessoa mandou.
+     *
+     * É o id do anexo no WhatsApp, não o arquivo: `core/` não faz rede e não
+     * baixa nada. Serve para o bloco seguinte mandar a referência ao sistema do
+     * cliente, ou para quem atende achar a foto na conversa.
+     *
+     * Só vale com a saída `midia` ligada — sem ela a conversa nem chega aqui.
+     */
+    salvarMidiaEm: nomeVariavel.optional(),
+    /**
      * Quantos minutos esperar antes de desistir da resposta (B1).
      *
      * **Opcional, e ausente significa esperar para sempre** — que é o
@@ -321,7 +362,30 @@ export const noPerguntaSchema = z.object({
   }),
 })
 
-export const OPERADORES = ['igual', 'diferente', 'contem', 'vazio', 'preenchido'] as const
+/**
+ * O que a condição sabe comparar.
+ *
+ * Os cinco primeiros comparam **texto**, e por muito tempo foram os únicos —
+ * o que deixava de fora a pergunta mais comum de um negócio: "quantas aulas ela
+ * tem para repor?", "esse imóvel cabe na faixa dele?", "sumiu há mais de 60
+ * dias?". Sem `maior`/`menor`, isso só existia se o sistema do cliente já
+ * devolvesse a conta pronta — ou seja, só para quem já tinha um sistema que
+ * fizesse o trabalho que o produto promete fazer.
+ *
+ * `maior` e `menor` comparam **número**; quando qualquer um dos dois lados não
+ * for número, o motor devolve falso em vez de inventar uma ordem alfabética
+ * (ver `avaliar`). É a decisão menos surpreendente: "10 é maior que 9" tem que
+ * valer, e `'10' > '9'` em texto é falso.
+ */
+export const OPERADORES = [
+  'igual',
+  'diferente',
+  'contem',
+  'vazio',
+  'preenchido',
+  'maior',
+  'menor',
+] as const
 export type Operador = (typeof OPERADORES)[number]
 
 export const noCondicaoSchema = z.object({
@@ -495,6 +559,14 @@ export const mapeamentoSchema = z.object({
    * `rotulo`, que só monta linha de menu, e menu não é o que se pede aqui.
    */
   quantos: z.boolean().optional(),
+  /**
+   * Como o valor aparece para quem conversa: data, hora, data e hora, dinheiro.
+   *
+   * Vazio entrega o que a API mandou, que é o que sempre houve. Ver
+   * `core/flow/formatos.ts` — a conversão mora lá porque é regra pura, e o
+   * servidor só a aplica na hora de extrair.
+   */
+  formato: z.enum(FORMATOS_DE_SAIDA).optional(),
 })
 
 export const noHttpSchema = z.object({
@@ -693,6 +765,22 @@ export const SAIDA_VAZIO = 'vazio'
  * possível. Encerrar só acontece quando o cliente desenhou a saída para isso.
  */
 export const SAIDA_TIMEOUT = 'timeout'
+
+/**
+ * A saída de quando a pessoa manda **foto, áudio ou documento** em vez de
+ * responder.
+ *
+ * Sem esta saída ligada, a conversa vai para uma pessoa — é a Regra B, e ela
+ * continua sendo o padrão certo: quem manda áudio está engajado, e "não
+ * entendi" mata a conversa.
+ *
+ * O que ela conserta é o caso em que a foto **é** a resposta: a farmácia que
+ * pede a receita, o petshop que quer ver o pet, a imobiliária que recebe a
+ * planta. Nesses, o desenho sabia exatamente o que fazer com a imagem e não
+ * tinha como dizer — a conversa era transferida com o motivo "o bot só lê
+ * texto", e quem atendia nem sabia que aquilo era uma receita.
+ */
+export const SAIDA_MIDIA = 'midia'
 
 /** O prazo desta pergunta em minutos, ou `null` quando ela espera para sempre. */
 export function timeoutDaPergunta(no: NoPergunta): number | null {

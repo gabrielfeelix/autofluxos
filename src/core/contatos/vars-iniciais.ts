@@ -32,6 +32,16 @@ export type RetratoDoContato = {
   campos?: Record<string, string>
 }
 
+/**
+ * As que **sempre existem**, antes de qualquer bloco rodar.
+ *
+ * Exportadas daqui, e não repetidas no validador e no editor, porque as três
+ * verdades divergiriam no dia em que uma quarta variável nativa nascesse — e a
+ * divergência apareceria como aviso falso, que é o pior tipo: ele treina quem
+ * desenha a ignorar o painel de avisos inteiro.
+ */
+export const VARIAVEIS_NATIVAS = ['nome', 'telefone'] as const
+
 export function varsIniciais(contato: RetratoDoContato): Record<string, string> {
   const vars: Record<string, string> = {}
 

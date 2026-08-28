@@ -25,8 +25,10 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from 'react'
 import { Conversa } from '@/components/conversa'
+import { VARIAVEIS_NATIVAS } from '@/core/contatos/vars-iniciais'
+import { PreviaDoBloco } from './previa-do-bloco'
 import type { CanalId } from '@/core/canais'
-import { fluxoSchema, type Fluxo, type TipoNo } from '@/core/flow/schema'
+import { fluxoSchema, noSchema, type Fluxo, type No, type TipoNo } from '@/core/flow/schema'
 import type { Problema } from '@/core/flow/validar'
 import { variaveisDoFluxo } from '@/core/flow/variaveis'
 import { validar } from '@/core/flow/validar'
@@ -273,6 +275,23 @@ export function Editor({
   const [voltouDe, setVoltouDe] = useState<{ antiga: number; nova: number } | null>(null)
   const [comIa, setComIa] = useState(iaHabilitada)
   const [tela, setTela] = useState<ReactFlowInstance | null>(null)
+
+  /*
+   * A prévia do bloco no passar do mouse.
+   *
+   * O atraso não é enfeite: sem ele, atravessar o desenho com o mouse abre e
+   * fecha meia dúzia de painéis, e o que era leitura vira pisca-pisca. Some no
+   * primeiro sinal de que a pessoa parou de ler e voltou a desenhar — arrastar
+   * o bloco, mexer na tela, ou tirar o mouse de cima.
+   */
+  const [previa, setPrevia] = useState<{ no: No; x: number; y: number } | null>(null)
+  const relogioDaPrevia = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const fecharPrevia = useCallback(() => {
+    if (relogioDaPrevia.current) clearTimeout(relogioDaPrevia.current)
+    relogioDaPrevia.current = null
+    setPrevia(null)
+  }, [])
   /**
    * O menu do botão direito: em qual bloco (ou ligação) ele abriu e onde.
    *
@@ -922,7 +941,14 @@ export function Editor({
    * ela só conhecer o que alguém já desenhou — e é o preço certo, porque
    * variável que nenhum bloco preenche não existe mesmo.
    */
-  const variaveis = [...new Set([...doDesenho, ...variaveisDaConta])].sort()
+  /*
+   * As nativas entram sempre: quem escreve "Olá, {{nome}}" não deveria precisar
+   * saber que ela existe — o botão de variável tem que oferecê-la, como oferece
+   * as que o desenho cria.
+   */
+  const variaveis = [
+    ...new Set([...VARIAVEIS_NATIVAS, ...doDesenho, ...variaveisDaConta]),
+  ].sort()
 
   return (
     <div className="app-editor flex h-screen flex-col bg-canvas">
@@ -1274,8 +1300,26 @@ export function Editor({
             onEdgeContextMenu={(evento, aresta) => abrirMenu(evento, 'aresta', aresta.id)}
             // Arrastar ou mexer na tela com o menu aberto deixaria ele parado
             // apontando para um lugar que não existe mais.
-            onNodeDragStart={() => setMenu(null)}
-            onMoveStart={() => setMenu(null)}
+            onNodeMouseEnter={(evento, no) => {
+              const caixa = (evento.currentTarget as HTMLElement).getBoundingClientRect()
+              const analise = noSchema.safeParse(no)
+              if (!analise.success) return
+              const bloco = analise.data
+              if (relogioDaPrevia.current) clearTimeout(relogioDaPrevia.current)
+              relogioDaPrevia.current = setTimeout(
+                () => setPrevia({ no: bloco, x: caixa.right, y: caixa.top }),
+                420,
+              )
+            }}
+            onNodeMouseLeave={fecharPrevia}
+            onNodeDragStart={() => {
+              setMenu(null)
+              fecharPrevia()
+            }}
+            onMoveStart={() => {
+              setMenu(null)
+              fecharPrevia()
+            }}
             // Todo grafo já salvo tem aresta sem `type`; o padrão faz as antigas
             // ganharem o ✕ sem precisar migrar nada no banco.
             defaultEdgeOptions={{ type: 'removivel' }}
@@ -1310,6 +1354,7 @@ export function Editor({
               className="!h-24 !w-[150px]"
             />
           </ReactFlow>
+          {previa && <PreviaDoBloco no={previa.no} x={previa.x} y={previa.y} />}
           </AcaoDaArestaProvider>
 
           {menu && (

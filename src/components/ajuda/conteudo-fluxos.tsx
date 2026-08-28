@@ -244,6 +244,12 @@ export function SecaoEntrada() {
           anterior — ou não respondendo, se nunca houve uma. E o interruptor de cada automação
           desliga o desenho sem apagá-lo.
         </p>
+        <p>
+          Com automações que se chamam, <strong className="text-soft">publique de trás para
+          frente</strong>: o bloco “Ir para outra automação” recusa publicar apontando para uma que
+          nunca foi publicada, porque do outro lado não haveria o que executar. Numa cadeia de três,
+          a última é a primeira a publicar.
+        </p>
       </Nota>
     </Secao>
   )
@@ -298,6 +304,16 @@ export function SecaoVariaveis() {
         resposta da API. O nome não tem espaço nem acento: <Cod>valor_estimado</Cod> serve,{' '}
         <Cod>valor estimado</Cod> não.
       </p>
+
+      <Nota tom="dica" titulo="O que você guarda continua valendo na conversa de semana que vem">
+        <p>
+          Toda variável guardada — pela pergunta, pelo bloco <strong className="text-soft">Guardar</strong> ou
+          por uma chamada — fica registrada <em>naquele contato</em>. Na conversa seguinte, dias ou
+          meses depois, ela já está lá antes do primeiro bloco rodar, em qualquer automação da
+          conta. É assim que o petshop lembra o nome do cachorro e a academia lembra o plano, sem
+          precisar de sistema nenhum do outro lado.
+        </p>
+      </Nota>
 
       <Nota tom="atencao" titulo="Variável escrita antes de existir chega vazia">
         <p>
@@ -391,6 +407,30 @@ export function SecaoPerguntas() {
         <Cod>escolheu</Cod> e <Cod>veio vazia</Cod>. E toda pergunta com prazo ganha a saída{' '}
         <Cod>timeout</Cod>.
       </p>
+      <Nota tom="dica" titulo="A foto pode ser a resposta">
+        <p>
+          Marque <strong className="text-soft">aceitar foto, áudio ou documento aqui</strong> e a
+          pergunta ganha a saída <strong className="text-soft">“mandou arquivo”</strong>: a receita
+          da farmácia, o comprovante, a foto do pet deixam de virar transferência e seguem o
+          desenho. Sem marcar, quem manda foto continua indo para uma pessoa — que é o certo quando
+          o fluxo não sabe o que fazer com ela.
+        </p>
+        <p>
+          O campo <strong className="text-soft">guardar o arquivo em</strong> fica com a referência
+          do anexo, que é o que o bloco de Serviços externos manda para o seu sistema. A legenda
+          que a pessoa escreveu junto com a foto entra como a resposta escrita.
+        </p>
+      </Nota>
+
+      <Nota tom="dica" titulo="Cada opção pode ter um valor diferente do que se lê">
+        <p>
+          Preencha <strong className="text-soft">guardar o valor escolhido em</strong> e cada opção
+          desenhada ganha um campo de valor: a pessoa lê <strong className="text-soft">“Vídeo
+          institucional”</strong> e a sua API recebe <Cod>institucional</Cod>. Sem isso, o caminho
+          era uma condição por opção — e o desenho crescia junto com o catálogo.
+        </p>
+      </Nota>
+
       <Nota tom="dica" titulo="Ligue sempre a saída “veio vazia”">
         <p>
           Lista que vem de fora vem vazia com frequência: o dia não tem vaga, a API não respondeu
@@ -608,6 +648,17 @@ export function SecaoListas() {
         <p>
           Nunca a marque numa lista pareada com outra. Tirar um item de um lado empurra os valores
           do outro, e o agendamento vai para o horário de outra pessoa — sem erro nenhum aparecer.
+        </p>
+      </Nota>
+
+      <Nota tom="dica" titulo="“Mostrar como” arruma a data antes de ela chegar na conversa">
+        <p>
+          Sistema devolve <Cod>2026-09-01</Cod> porque é assim que sistema fala com sistema. Escolha{' '}
+          <strong className="text-soft">data</strong> em “mostrar como” e a conversa recebe{' '}
+          <Cod>01/09/2026</Cod>. Há também <strong className="text-soft">hora</strong> (tira os
+          segundos), <strong className="text-soft">data e hora</strong> e{' '}
+          <strong className="text-soft">dinheiro</strong> (<Cod>4200.5</Cod> vira{' '}
+          <Cod>4.200,50</Cod>). Vale para cada item, quando o campo trouxer uma lista.
         </p>
       </Nota>
 

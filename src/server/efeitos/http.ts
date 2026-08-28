@@ -1,4 +1,5 @@
 import 'server-only'
+import { formatarValor } from '@/core/flow/formatos'
 import { Agent, request } from 'undici'
 import type { Acao } from '@/core/engine/types'
 import { MARCA_DE_LISTA, SEPARADOR_DE_LISTA } from '@/core/flow/schema'
@@ -208,8 +209,10 @@ export async function chamarHttp(
   }
 
   const valores: Record<string, string> = {}
-  for (const { variavel, caminho, unicos, rotulo, quantos } of pedido.mapear) {
-    valores[variavel] = extrair(json, caminho, unicos ?? false, rotulo, quantos ?? false)
+  for (const { variavel, caminho, unicos, rotulo, quantos, formato } of pedido.mapear) {
+    const cru = extrair(json, caminho, unicos ?? false, rotulo, quantos ?? false)
+    // Contar itens devolve número; formatá-lo como data não faz sentido nenhum.
+    valores[variavel] = quantos ? cru : formatarValor(cru, formato)
   }
 
   return { ok: true, valores }

@@ -10,6 +10,7 @@ import {
   MARCA_DE_LISTA,
   SAIDA_ESCOLHEU,
   SAIDA_FALSO,
+  SAIDA_MIDIA,
   SAIDA_TIMEOUT,
   SAIDA_VAZIO,
   SAIDA_VERDADEIRO,
@@ -19,6 +20,7 @@ import {
   type TipoDeMidia,
 } from './schema'
 import { contarCaracteres, temMetadeDeCaractere } from './texto'
+import { VARIAVEIS_NATIVAS } from '../contatos/vars-iniciais'
 import { chavesSimplesCitadas, variaveisCitadas } from '../engine/interpolar'
 
 /**
@@ -168,9 +170,35 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
 
   const saidas = (noId: string) => fluxo.edges.filter((a) => a.source === noId)
 
+  /*
+   * As variáveis que **só** uma chamada de API preenche.
+   *
+   * Serve a uma decisão de segurança e só a ela: um endereço de arquivo cujo
+   * host venha daqui é escolha do dono do fluxo (ele escolheu a API), enquanto
+   * um que venha de pergunta é escolha de quem está conversando. Ver
+   * `hostSoDeSistema`.
+   *
+   * Nome preenchido em dois lugares — uma chamada e uma pergunta — **não**
+   * entra: aí a origem em produção depende do caminho que a conversa tomou, e
+   * segurança que depende do caminho não é segurança.
+   */
+  const deSistema = new Set<string>()
+  const deConversa = new Set<string>()
+  for (const no of fluxo.nodes) {
+    if (no.type === 'http') for (const m of no.data.mapear) if (m.variavel) deSistema.add(m.variavel)
+    if (no.type === 'pergunta') {
+      for (const nome of [no.data.salvarEm, no.data.salvarValorEm, no.data.salvarPadraoEm]) {
+        if (nome) deConversa.add(nome)
+      }
+    }
+    if (no.type === 'salvar-campo') deConversa.add(no.data.campo)
+    if (no.type === 'ia' && no.data.salvarEm) deConversa.add(no.data.salvarEm)
+  }
+  for (const nome of deConversa) deSistema.delete(nome)
+
   for (const no of fluxo.nodes) {
     const minhasSaidas = saidas(no.id)
-    conferirConteudo(no, erros, avisos)
+    conferirConteudo(no, erros, avisos, deSistema)
 
     if (no.type === 'pergunta' && perguntaEhDinamica(no)) {
       if (no.data.opcoes.length > 0) {
@@ -224,10 +252,30 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
         }
       }
 
-      // A aresta de timeout não conta como continuação: ela é o caminho de
-      // quem **não** respondeu. Contá-la deixaria passar uma pergunta que só
-      // sabe o que fazer com o silêncio, e não com a resposta.
-      const continuacoes = minhasSaidas.filter((a) => a.sourceHandle !== SAIDA_TIMEOUT)
+      // Nem a de timeout nem a de mídia contam como continuação: uma é o
+      // caminho de quem **não** respondeu, a outra o de quem respondeu com
+      // foto. Contá-las deixaria passar uma pergunta que só sabe o que fazer
+      // com o silêncio ou com o anexo, e não com a resposta.
+      /*
+       * Guardar o anexo sem a saída de mídia ligada nunca acontece: a conversa
+       * é transferida antes de chegar aqui. O campo preenchido promete uma
+       * variável que jamais existe — e o bloco seguinte sairia com um buraco.
+       */
+      if (
+        (no.data.aceitaMidia || (no.data.salvarMidiaEm ?? '').trim() !== '') &&
+        !minhasSaidas.some((a) => a.sourceHandle === SAIDA_MIDIA)
+      ) {
+        avisos.push({
+          codigo: 'MIDIA_SEM_SAIDA',
+          mensagem:
+            'Esta pergunta aceita foto ou áudio, mas a saída "mandou arquivo" não está ligada em lugar nenhum. Do jeito que está, o arquivo continua indo direto para uma pessoa.',
+          noId: no.id,
+        })
+      }
+
+      const continuacoes = minhasSaidas.filter(
+        (a) => a.sourceHandle !== SAIDA_TIMEOUT && a.sourceHandle !== SAIDA_MIDIA,
+      )
       if (opcoes.length === 0 && continuacoes.length === 0) {
         erros.push({
           codigo: 'PERGUNTA_SEM_SAIDA',
@@ -276,8 +324,9 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
       } else if (etapas && !etapas.includes(no.data.colunaId)) {
         erros.push({
           codigo: 'ETAPA_INEXISTENTE',
-          mensagem:
-            'Este bloco aponta para uma etapa que não existe mais neste cliente. Escolha outra — publicar assim entrega um fluxo que não move ninguém.',
+          // Com dois blocos de etapa no mesmo fluxo, a mensagem sem o nome
+          // saía idêntica duas vezes e não dizia qual arrumar.
+          mensagem: `${descrever(no)} aponta para uma etapa que não existe mais neste cliente. Escolha outra — publicar assim entrega um fluxo que não move ninguém.`,
           noId: no.id,
         })
       }
@@ -482,6 +531,14 @@ function conferirMidia(
   dados: { midia: TipoDeMidia; url: string; legenda?: string },
   noId: string,
   erros: Problema[],
+  avisos: Problema[],
+  /**
+   * As variáveis que **só** um bloco de Serviços externos preenche.
+   *
+   * Ver `deSistema` em `validar()`: é o que separa "o endereço veio da API do
+   * cliente" de "o endereço veio do que alguém digitou no WhatsApp".
+   */
+  deSistema: Set<string> = new Set(),
 ): void {
   const vazio = (texto: string) => texto.trim() === ''
 
@@ -491,25 +548,54 @@ function conferirMidia(
       mensagem: 'Este bloco não diz qual arquivo enviar.',
       noId,
     })
-  } else if (temVariavelNoHost(dados.url)) {
-    // Mesma regra do bloco de serviços externos, e pelo mesmo motivo: as
-    // variáveis vêm do que a pessoa digita no WhatsApp. Com o host vindo
-    // delas, quem conversa escolheria de qual servidor a Meta baixa — e o
-    // arquivo entregue em nome do cliente passaria a ser escolha de um
-    // estranho.
+  } else if (temVariavelNoHost(dados.url) && !hostSoDeSistema(dados.url, deSistema)) {
+    /*
+     * O host não pode vir do que a pessoa digita no WhatsApp: com ele vindo
+     * dali, quem conversa escolheria de qual servidor a Meta baixa, e o arquivo
+     * entregue em nome do cliente passaria a ser escolha de um estranho.
+     *
+     * **A exceção é o endereço que veio de uma chamada de API do próprio
+     * cliente** — a foto do imóvel, o PDF do contrato, o link assinado do S3.
+     * Esses endereços chegam completos e não passam por ninguém de fora: quem
+     * escolheu a API foi o dono do fluxo, no editor. Sem esta exceção, mostrar
+     * a foto de um item buscado dinamicamente era impossível, que era o caso
+     * número um de uma imobiliária.
+     *
+     * A conta continua conservadora: basta **uma** variável do host ter outra
+     * origem — pergunta, IA, valor livre — para o erro voltar.
+     */
     erros.push({
       codigo: 'HOST_VARIAVEL',
       mensagem:
-        'O endereço do servidor não pode vir de {{variavel}}. Use variável só depois da primeira barra.',
+        'O endereço do servidor não pode vir de uma variável que a conversa preenche. Use variável só depois da primeira barra, ou monte o endereço inteiro no bloco de Serviços externos e use a variável que ele guardar.',
       noId,
     })
   } else if (!dados.url.trim().startsWith('https://')) {
-    erros.push({
-      codigo: 'MIDIA_INSEGURA',
-      mensagem:
-        'O arquivo precisa vir de um endereço https:// — a Meta recusa buscar de qualquer outro.',
-      noId,
-    })
+    /*
+     * Endereço que é só `{{variavel}}` de uma chamada de API **não tem como**
+     * começar com `https://` escrito: o endereço inteiro chega pronto do
+     * sistema do cliente, e é ele quem sabe o esquema. Barrar aqui bloqueava o
+     * caso legítimo (a foto do imóvel, o PDF do contrato) sem proteger nada —
+     * quem confere de verdade é a Meta, na hora de buscar.
+     *
+     * Vira aviso, e não silêncio: se a API devolver `http://`, a mensagem falha
+     * em produção, e quem desenhou merece saber disso antes.
+     */
+    if (hostSoDeSistema(dados.url, deSistema)) {
+      avisos.push({
+        codigo: 'MIDIA_HTTPS_NAO_CONFERIDO',
+        mensagem:
+          'O endereço deste arquivo vem inteiro de uma chamada de API, então não dá para conferir aqui. Garanta que o seu sistema devolve um endereço https:// — a Meta recusa buscar de qualquer outro.',
+        noId,
+      })
+    } else {
+      erros.push({
+        codigo: 'MIDIA_INSEGURA',
+        mensagem:
+          'O arquivo precisa vir de um endereço https:// — a Meta recusa buscar de qualquer outro.',
+        noId,
+      })
+    }
   }
 
   // Áudio com legenda não é campo ignorado: a Meta recusa a mensagem. Vale
@@ -540,7 +626,12 @@ function conferirMidia(
  * faça sentido. A separação existe porque o rascunho passa por estados
  * incompletos enquanto alguém digita — o que não pode é isso ir ao ar.
  */
-function conferirConteudo(no: No, erros: Problema[], avisos: Problema[]): void {
+function conferirConteudo(
+  no: No,
+  erros: Problema[],
+  avisos: Problema[],
+  deSistema: Set<string> = new Set(),
+): void {
   const vazio = (texto: string) => texto.trim() === ''
 
   const conferirVariavel = (nome: string | undefined, campo: string) => {
@@ -610,7 +701,7 @@ function conferirConteudo(no: No, erros: Problema[], avisos: Problema[]): void {
             conferirTamanho(parte.texto, false)
             break
           case 'midia':
-            conferirMidia(parte, no.id, erros)
+            conferirMidia(parte, no.id, erros, avisos, deSistema)
             break
           case 'salvar':
             conferirVariavel(parte.campo, 'variável')
@@ -644,7 +735,7 @@ function conferirConteudo(no: No, erros: Problema[], avisos: Problema[]): void {
     }
 
     case 'midia':
-      conferirMidia(no.data, no.id, erros)
+      conferirMidia(no.data, no.id, erros, avisos, deSistema)
       break
 
     case 'pergunta': {
@@ -709,14 +800,22 @@ function conferirConteudo(no: No, erros: Problema[], avisos: Problema[]): void {
         })
       }
 
-      // Guardar o valor sem ter de onde tirá-lo grava vazio para sempre, e o
-      // `POST` seguinte sai com o campo em branco — que a API do cliente aceita
-      // ou recusa, mas nunca do jeito que quem desenhou esperava.
-      if (!vazio(no.data.salvarValorEm ?? '') && vazio(no.data.valoresDe ?? '')) {
+      /*
+       * Opção desenhada à mão carrega o valor nela mesma, então guardar o valor
+       * ali é legítimo — o que não pode é guardar o que não existe em lugar
+       * nenhum. A mensagem diz os **dois** jeitos de preencher: dizer só um
+       * deles mandava procurar um campo que aquele desenho não tem.
+       */
+      const temValorEscrito = no.data.opcoes.some((o) => !vazio(o.valor ?? ''))
+      if (
+        !vazio(no.data.salvarValorEm ?? '') &&
+        vazio(no.data.valoresDe ?? '') &&
+        !temValorEscrito
+      ) {
         erros.push({
           codigo: 'VALOR_SEM_LISTA',
           mensagem:
-            'Esta pergunta guarda o valor da escolha, mas não diz de qual variável os valores vêm.',
+            'Esta pergunta guarda o valor da escolha, mas nenhuma opção tem valor. Preencha o valor de cada opção, ou diga de qual variável os valores vêm quando a lista for de fora.',
           noId: no.id,
         })
       }
@@ -1028,10 +1127,22 @@ function alcancaveisA_partirDe(fluxo: Fluxo): Set<string> {
 
 /** Avisa sobre `{{variavel}}` que ninguém preenche — nem aqui, nem na conta. */
 function conferirVariaveis(fluxo: Fluxo, daConta: string[] = []): Problema[] {
-  const definidas = new Set<string>(daConta)
+  /*
+   * `nome` e `telefone` entram antes de tudo: `varsIniciais()` as preenche em
+   * toda conversa, inclusive na primeira mensagem. Sem elas aqui, o aviso
+   * disparava em cima do uso mais comum que existe — e os presets de integração
+   * do próprio produto já vêm com `{{telefone}}` escrito, então usar o preset
+   * gerava aviso do produto contra o produto.
+   */
+  const definidas = new Set<string>([...VARIAVEIS_NATIVAS, ...daConta])
   for (const no of fluxo.nodes) {
     if (no.type === 'pergunta' && no.data.salvarEm) definidas.add(no.data.salvarEm)
     if (no.type === 'pergunta' && no.data.salvarValorEm) definidas.add(no.data.salvarValorEm)
+    // A padronizada e a do anexo saem da mesma pergunta e existem do mesmo
+    // jeito. Faltavam aqui, então usar `{{data_iso}}` acusava variável que o
+    // bloco de cima acabara de criar.
+    if (no.type === 'pergunta' && no.data.salvarPadraoEm) definidas.add(no.data.salvarPadraoEm)
+    if (no.type === 'pergunta' && no.data.salvarMidiaEm) definidas.add(no.data.salvarMidiaEm)
     if (no.type === 'salvar-campo') definidas.add(no.data.campo)
     if (no.type === 'ia' && no.data.salvarEm) definidas.add(no.data.salvarEm)
     if (no.type === 'http') {
@@ -1201,6 +1312,23 @@ function textosDoNo(no: No): string[] {
  * Depois da primeira barra é caminho e consulta, e ali variável é o uso normal
  * e desejado — `/pedido/{{codigo}}`.
  */
+/**
+ * Todas as variáveis citadas no host vieram de uma chamada de API?
+ *
+ * Uma só de outra origem já derruba: o host é a decisão de para qual servidor
+ * a Meta vai, e ela não se divide em partes seguras e inseguras.
+ */
+function hostSoDeSistema(url: string, deSistema: Set<string>): boolean {
+  const limpa = url.trim()
+  const depoisDoEsquema = limpa.indexOf('://')
+  const inicio = depoisDoEsquema === -1 ? 0 : depoisDoEsquema + 3
+  const fim = limpa.slice(inicio).search(/[/?#]/)
+  const autoridade = fim === -1 ? limpa.slice(inicio) : limpa.slice(inicio, inicio + fim)
+  const citadas = variaveisCitadas(limpa.slice(0, inicio) + autoridade)
+
+  return citadas.length > 0 && citadas.every((nome) => deSistema.has(nome))
+}
+
 function temVariavelNoHost(url: string): boolean {
   const limpa = url.trim()
   const depoisDoEsquema = limpa.indexOf('://')

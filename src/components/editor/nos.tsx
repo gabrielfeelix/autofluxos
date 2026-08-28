@@ -9,6 +9,7 @@ import { NOME_DO_FORMATO, type FormatoDeResposta } from '@/core/flow/resposta'
 import {
   LIMITE_BOTOES,
   SAIDA_ESCOLHEU,
+  SAIDA_MIDIA,
   SAIDA_TIMEOUT,
   SAIDA_FALSO,
   SAIDA_VAZIO,
@@ -193,6 +194,7 @@ function NoPergunta({ data, selected }: NodeProps) {
     salvarValorEm?: string
     formato?: FormatoDeResposta
     timeoutMinutos?: number
+    aceitaMidia?: boolean
   }
   const dinamica = (d.opcoesDe ?? '').trim() !== ''
   const prazo = d.timeoutMinutos ?? null
@@ -266,6 +268,14 @@ function NoPergunta({ data, selected }: NodeProps) {
             <span className="text-[11px] text-amber-200">não respondeu</span>
           </Saida>
         </>
+      )}
+
+      {/* Só aparece quando o desenho pediu: saída que ninguém usa é fio a mais
+          para desviar com o mouse em todo bloco de pergunta do fluxo. */}
+      {d.aceitaMidia && (
+        <Saida id={SAIDA_MIDIA}>
+          <span className="text-[11px] text-sky-200">mandou arquivo</span>
+        </Saida>
       )}
     </Caixa>
   )

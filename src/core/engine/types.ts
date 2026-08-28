@@ -53,7 +53,18 @@ export const entradaSchema = z.discriminatedUnion('tipo', [
   /** a pessoa clicou num botão ou item de lista */
   z.object({ tipo: z.literal('opcao'), opcaoId: z.string().min(1) }),
   /** áudio, imagem, documento, figurinha... (Regra B) */
-  z.object({ tipo: z.literal('midia'), formato: z.string().min(1) }),
+  z.object({
+    tipo: z.literal('midia'),
+    formato: z.string().min(1),
+    /**
+     * O id do anexo no WhatsApp. **Opcional para sempre**: existe conversa
+     * gravada de antes deste campo, e `Entrada` é validada ao voltar do
+     * navegador — obrigatório aqui faria essas sessões pararem de dar parse.
+     */
+    midiaId: z.string().optional(),
+    /** A legenda que a pessoa escreveu junto com a foto, quando escreveu. */
+    legenda: z.string().optional(),
+  }),
   /** o servidor chamou o modelo e trouxe a resposta de volta */
   z.object({ tipo: z.literal('ia_respondeu'), texto: z.string() }),
   /**

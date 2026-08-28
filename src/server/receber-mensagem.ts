@@ -78,6 +78,12 @@ const referralSchema = z.object({
   ctwa_clid: z.string().optional(),
 })
 
+/** O que todo anexo do WhatsApp tem em comum. */
+const anexoSchema = z.object({
+  id: z.string().optional(),
+  caption: z.string().optional(),
+})
+
 const mensagemSchema = z.object({
   id: z.string(),
   from: z.string(),
@@ -90,6 +96,19 @@ const mensagemSchema = z.object({
       list_reply: z.object({ id: z.string(), title: z.string().optional() }).optional(),
     })
     .optional(),
+  /*
+   * O anexo. A Meta manda o objeto com o nome do próprio tipo (`image`,
+   * `audio`, `document`, `video`, `sticker`), e todos carregam `id` — a
+   * referência que serve para baixar depois — e alguns carregam `caption`.
+   *
+   * Lidos com `.passthrough()` fora: o que interessa aqui é o id e a legenda,
+   * e campo novo da Meta não pode derrubar o parse de uma mensagem inteira.
+   */
+  image: anexoSchema.optional(),
+  audio: anexoSchema.optional(),
+  video: anexoSchema.optional(),
+  document: anexoSchema.optional(),
+  sticker: anexoSchema.optional(),
 })
 
 export const webhookSchema = z.object({
@@ -1044,9 +1063,26 @@ function paraEntrada(mensagem: Mensagem): { entrada: Entrada; texto: string | nu
     }
   }
 
-  // Áudio, imagem, documento, figurinha, localização... (Regra B: vai para uma
-  // pessoa, nunca "não entendi").
-  return { entrada: { tipo: 'midia', formato: mensagem.type }, texto: null }
+  /*
+   * Áudio, imagem, documento, figurinha, localização.
+   *
+   * A referência e a legenda vão junto: o desenho pode ter dito que ali a foto
+   * **é** a resposta (saída "mandou arquivo"), e nesse caso ele precisa do id
+   * para mandar ao sistema do cliente. Quando o desenho não trata, nada disso é
+   * usado e a conversa vai para uma pessoa como sempre foi.
+   */
+  const anexo =
+    mensagem.image ?? mensagem.audio ?? mensagem.video ?? mensagem.document ?? mensagem.sticker
+
+  return {
+    entrada: {
+      tipo: 'midia',
+      formato: mensagem.type,
+      ...(anexo?.id ? { midiaId: anexo.id } : {}),
+      ...(anexo?.caption ? { legenda: anexo.caption } : {}),
+    },
+    texto: anexo?.caption ?? null,
+  }
 }
 
 /**

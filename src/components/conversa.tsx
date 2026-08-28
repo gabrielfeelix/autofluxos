@@ -552,6 +552,31 @@ export function Conversa({
               🎤
             </button>
             {/*
+              A foto é a resposta em muito fluxo real — receita, comprovante,
+              foto do pet —, e sem um jeito de mandar uma aqui o caminho novo só
+              seria testado com cliente de verdade conversando. O id é fixo e
+              falso de propósito: o simulador não sobe arquivo nenhum, ele prova
+              **para onde a conversa vai**.
+            */}
+            <button
+              type="button"
+              onClick={() =>
+                void enviar(
+                  { tipo: 'midia', formato: 'image', midiaId: 'foto-de-teste' },
+                  '📷 (foto)',
+                )
+              }
+              disabled={ocupado || status === 'aguardando_ia'}
+              title="Testar o que acontece quando a pessoa manda uma foto"
+              className={
+                modo === 'conversa'
+                  ? 'flex size-9 shrink-0 items-center justify-center rounded-full text-sm text-[#54656f] transition hover:bg-black/[0.05] disabled:opacity-40'
+                  : 'app-secondary-button flex size-9 shrink-0 items-center justify-center px-0 text-sm disabled:opacity-40'
+              }
+            >
+              📷
+            </button>
+            {/*
               Testar o prazo sem esperar meia hora.
               
               Só aparece quando a conversa está **parada numa pergunta com

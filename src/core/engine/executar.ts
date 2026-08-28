@@ -6,6 +6,7 @@ import {
   LIMITE_ROTULO,
   SAIDA_ESCOLHEU,
   SAIDA_FALSO,
+  SAIDA_MIDIA,
   SAIDA_TIMEOUT,
   SAIDA_VAZIO,
   SAIDA_VERDADEIRO,
@@ -112,9 +113,44 @@ export function executar(
     return transferir(s, acoes, 'a pessoa pediu para falar com um atendente', contexto)
   }
 
-  // Regra B: áudio, imagem e documento vão direto para uma pessoa. Quem manda
-  // áudio está engajado — responder "não entendi" mata a conversa.
+  /*
+   * Regra B: áudio, imagem e documento vão para uma pessoa — **a não ser que o
+   * desenho diga o que fazer com eles**.
+   *
+   * O padrão continua o mesmo, e por isso todo fluxo já publicado se comporta
+   * igual: sem a saída `midia` ligada na pergunta em que a conversa parou, a
+   * transferência acontece como sempre aconteceu. O que mudou é que agora
+   * existe como dizer "aqui a foto É a resposta" — a receita da farmácia, a
+   * planta do imóvel, a foto do pet.
+   */
   if (entrada.tipo === 'midia') {
+    const parada = s.noAtual === null ? undefined : porId.get(s.noAtual)
+    const tratada =
+      parada?.type === 'pergunta' ? proximo(fluxo, parada.id, SAIDA_MIDIA) : null
+
+    if (parada?.type === 'pergunta' && tratada !== null) {
+      const { salvarMidiaEm } = parada.data
+      if (salvarMidiaEm) {
+        // Sem id (simulador, canal que não manda) guarda o formato: é melhor
+        // que vazio para quem escreveu "recebi seu {{comprovante}}".
+        const valor = entrada.midiaId ?? entrada.formato
+        s.vars[salvarMidiaEm] = valor
+        acoes.push({ tipo: 'salvar_campo', campo: salvarMidiaEm, valor })
+      }
+
+      // A legenda da foto é resposta escrita, e quem desenhou pediu para
+      // guardar a resposta: jogá-la fora obrigaria a perguntar de novo o que a
+      // pessoa já escreveu.
+      const legenda = (entrada.legenda ?? '').trim()
+      if (legenda !== '' && parada.data.salvarEm) {
+        s.vars[parada.data.salvarEm] = legenda
+        acoes.push({ tipo: 'salvar_campo', campo: parada.data.salvarEm, valor: legenda })
+      }
+
+      s.tentativas = 0
+      return avancar(contexto, fluxo, porId, s, acoes, tratada)
+    }
+
     return transferir(s, acoes, `a pessoa mandou ${entrada.formato} e o bot só lê texto`, contexto)
   }
 
@@ -633,8 +669,17 @@ export function valorDaOpcao(
   vars: Record<string, string>,
   opcao: Opcao,
 ): string | null {
+  /*
+   * Opção desenhada à mão: o valor está nela mesma. Sem `valor` preenchido,
+   * devolve `null` e quem chamou guarda o rótulo — que é o que sempre houve.
+   */
+  if (!perguntaEhDinamica(no)) {
+    const escrito = (opcao.valor ?? '').trim()
+    return escrito === '' ? null : escrito
+  }
+
   const de = (no.data.valoresDe ?? '').trim()
-  if (!perguntaEhDinamica(no) || de === '') return null
+  if (de === '') return null
 
   // Os ids das opções dinâmicas são `d1`, `d2`, … — a posição é o próprio id.
   const posicao = Number(opcao.id.slice(1))
@@ -698,7 +743,15 @@ function avaliar(
   vars: Record<string, string>,
 ): boolean {
   const atual = normalizar(vars[variavel] ?? '')
-  const esperado = normalizar(valorEsperado)
+  /*
+   * O valor comparado **interpola**.
+   *
+   * Sem isto, a condição só sabia comparar uma variável contra texto fixo, e
+   * comparar duas coisas da conversa — o orçamento da pessoa contra o preço que
+   * a API devolveu — era impossível. O texto fixo continua funcionando igual:
+   * frase sem `{{ }}` atravessa `interpolar` sem mudar.
+   */
+  const esperado = normalizar(interpolar(valorEsperado, vars))
 
   switch (operador) {
     case 'igual':
@@ -711,9 +764,32 @@ function avaliar(
       return atual === ''
     case 'preenchido':
       return atual !== ''
+    case 'maior':
+    case 'menor': {
+      const a = comoNumero(atual)
+      const b = comoNumero(esperado)
+      // Um dos lados não é número: falso, e não uma ordem inventada. Comparar
+      // "amanhã" com 3 não tem resposta certa — tem resposta que engana.
+      if (a === null || b === null) return false
+      return operador === 'maior' ? a > b : a < b
+    }
     default:
       return false
   }
+}
+
+/**
+ * O texto como número, ou `null` quando ele não é um.
+ *
+ * Aceita a vírgula decimal porque é o que se digita em português, e ignora
+ * espaço em volta. Não aceita `1.234,56`: separador de milhar é ambíguo entre
+ * as duas convenções, e adivinhar errado muda o valor por mil.
+ */
+function comoNumero(texto: string): number | null {
+  const limpo = texto.trim().replace(',', '.')
+  if (limpo === '') return null
+  const numero = Number(limpo)
+  return Number.isFinite(numero) ? numero : null
 }
 
 /**
@@ -756,7 +832,10 @@ function proximo(fluxo: Fluxo, noId: string, saida?: string): string | null {
   if (saida !== undefined) {
     return saidas.find((a) => a.sourceHandle === saida)?.target ?? null
   }
-  return saidas.find((a) => a.sourceHandle !== SAIDA_TIMEOUT)?.target ?? null
+  return (
+    saidas.find((a) => a.sourceHandle !== SAIDA_TIMEOUT && a.sourceHandle !== SAIDA_MIDIA)
+      ?.target ?? null
+  )
 }
 
 /**

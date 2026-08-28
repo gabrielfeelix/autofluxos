@@ -12,6 +12,7 @@ import {
   MARCA_DE_LISTA,
   METODOS,
   OPERADORES,
+  type Operador,
   type Cabecalho,
   type Mapeamento,
   type No,
@@ -32,6 +33,11 @@ import {
 } from './texto-com-variaveis'
 import { NOMES } from './nos'
 import { contarCaracteres } from '@/core/flow/texto'
+import {
+  EXEMPLO_DO_FORMATO,
+  FORMATOS_DE_SAIDA,
+  type FormatoDeSaida,
+} from '@/core/flow/formatos'
 import {
   EXEMPLO_PADRONIZADO,
   FORMATOS_DE_RESPOSTA,
@@ -77,6 +83,31 @@ export type FluxoDaConta = { id: string; nome: string; publicado: boolean; ativo
  * passado dela não há como mandar texto livre, e um prazo que dispara para não
  * conseguir falar só gera handoff.
  */
+/**
+ * O operador escrito como quem fala.
+ *
+ * O dropdown mostrava a palavra crua do código — "contem", sem acento, e
+ * "maior" sem dizer maior o quê. Quem desenha lê a condição inteira como frase:
+ * "orcamento é maior que {{preco}}".
+ */
+const ROTULO_DO_OPERADOR: Record<Operador, string> = {
+  igual: 'é igual a',
+  diferente: 'é diferente de',
+  contem: 'contém',
+  vazio: 'está vazia',
+  preenchido: 'está preenchida',
+  maior: 'é maior que (número)',
+  menor: 'é menor que (número)',
+}
+
+/** O nome curto de cada formato; o exemplo vem de `EXEMPLO_DO_FORMATO`. */
+const NOME_DO_FORMATO_DE_SAIDA: Record<FormatoDeSaida, string> = {
+  data: 'data',
+  hora: 'hora',
+  data_hora: 'data e hora',
+  dinheiro: 'dinheiro',
+}
+
 const PRAZOS = [
   { valor: '0', rotulo: 'sem prazo', detalhe: 'espera para sempre' },
   { valor: '5', rotulo: '5 minutos' },
@@ -309,7 +340,38 @@ export function Painel({
           />
           {(no.data.opcoesDe ?? '').trim() === '' ? (
             <>
-              <Opcoes opcoes={no.data.opcoes} aoMudar={(opcoes) => aoMudarDados({ opcoes })} />
+              <Opcoes
+                opcoes={no.data.opcoes}
+                mostrarValor={(no.data.salvarValorEm ?? '').trim() !== ''}
+                aoMudar={(opcoes) => aoMudarDados({ opcoes })}
+              />
+
+              {/*
+                O mesmo campo do ramo dinâmico, e pelo mesmo motivo: o que a
+                pessoa lê e o que a API entende são coisas diferentes. Ele mora
+                aqui embaixo porque é ele que faz a coluna de valor aparecer
+                acima — preencher o destino é o que revela os campos de origem,
+                e não o contrário.
+              */}
+              <CampoDeVariavel
+                rotulo="Guardar o valor escolhido em"
+                valor={no.data.salvarValorEm ?? ''}
+                variaveis={deOutrosBlocos}
+                modo="guarda"
+                dica="deixe vazio se o texto do botão já serve para o resto do fluxo"
+                aoMudar={(v) =>
+                  aoMudarDados({ salvarValorEm: v.trim() === '' ? undefined : v.trim() })
+                }
+                nota={
+                  <>
+                    Com isto preenchido, cada opção ganha um campo de{' '}
+                    <strong className="text-muted">valor</strong>: a pessoa lê “Vídeo
+                    institucional” e a API recebe{' '}
+                    <code className="font-mono text-[#8de2fa]">institucional</code>. Sem isto, o
+                    fluxo guarda o próprio texto do botão.
+                  </>
+                }
+              />
 
               {/*
                 O formato só faz sentido sem opções.
@@ -452,6 +514,48 @@ export function Painel({
             </>
           )}
 
+          {/*
+            A foto como resposta.
+
+            Sem isto, foto, áudio e documento sempre iam para uma pessoa com o
+            motivo "o bot só lê texto" — e a farmácia que pede a receita, o
+            petshop que quer ver o pet e a imobiliária que recebe a planta não
+            tinham como dizer que ali o arquivo **é** a resposta certa.
+          */}
+          <label className="flex cursor-pointer items-start gap-2 text-[12px] leading-4 text-muted">
+            <input
+              type="checkbox"
+              checked={no.data.aceitaMidia ?? false}
+              onChange={(e) =>
+                aoMudarDados({
+                  aceitaMidia: e.target.checked || undefined,
+                  ...(e.target.checked ? {} : { salvarMidiaEm: undefined }),
+                })
+              }
+              className="mt-0.5 size-3.5 accent-[#56d0f5]"
+            />
+            <span>
+              aceitar foto, áudio ou documento aqui
+              <span className="mt-0.5 block text-[10.5px] leading-4 text-dim">
+                Cria a saída <strong className="text-muted">“mandou arquivo”</strong> no bloco. Sem
+                marcar, quem manda foto é passado para uma pessoa.
+              </span>
+            </span>
+          </label>
+
+          {no.data.aceitaMidia && (
+            <CampoDeVariavel
+              rotulo="Guardar o arquivo em"
+              valor={no.data.salvarMidiaEm ?? ''}
+              variaveis={deOutrosBlocos}
+              modo="guarda"
+              dica="ex: receita — guarda a referência do arquivo, para mandar ao seu sistema"
+              aoMudar={(v) =>
+                aoMudarDados({ salvarMidiaEm: v.trim() === '' ? undefined : v.trim() })
+              }
+            />
+          )}
+
           <label className="block">
             <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
               Prazo para responder
@@ -495,7 +599,10 @@ export function Painel({
               valor={no.data.operador}
               aoMudar={(operador) => aoMudarDados({ operador })}
               rotuloAcessivel="Operador"
-              opcoes={OPERADORES.map((operador) => ({ valor: operador, rotulo: operador }))}
+              opcoes={OPERADORES.map((operador) => ({
+                valor: operador,
+                rotulo: ROTULO_DO_OPERADOR[operador],
+              }))}
             />
           </label>
           {no.data.operador !== 'vazio' && no.data.operador !== 'preenchido' && (
@@ -1076,7 +1183,16 @@ function Area({
   )
 }
 
-function Opcoes({ opcoes, aoMudar }: { opcoes: Opcao[]; aoMudar: (opcoes: Opcao[]) => void }) {
+function Opcoes({
+  opcoes,
+  aoMudar,
+  mostrarValor = false,
+}: {
+  opcoes: Opcao[]
+  aoMudar: (opcoes: Opcao[]) => void
+  /** Só quando a pergunta guarda o valor: campo que ninguém usa é campo que atrapalha. */
+  mostrarValor?: boolean
+}) {
   const cheio = opcoes.length >= LIMITE_LISTA
 
   return (
@@ -1094,6 +1210,12 @@ function Opcoes({ opcoes, aoMudar }: { opcoes: Opcao[]; aoMudar: (opcoes: Opcao[
             aoMudarRotulo={(rotulo) => {
               const copia = [...opcoes]
               copia[i] = { ...opcao, rotulo }
+              aoMudar(copia)
+            }}
+            mostrarValor={mostrarValor}
+            aoMudarValor={(valor) => {
+              const copia = [...opcoes]
+              copia[i] = { ...opcao, valor: valor.trim() === '' ? undefined : valor }
               aoMudar(copia)
             }}
             aoRemover={() => aoMudar(opcoes.filter((o) => o.id !== opcao.id))}
@@ -1150,11 +1272,15 @@ function Opcoes({ opcoes, aoMudar }: { opcoes: Opcao[]; aoMudar: (opcoes: Opcao[
 function LinhaDeOpcao({
   opcao,
   aoMudarRotulo,
+  aoMudarValor,
   aoRemover,
+  mostrarValor = false,
 }: {
   opcao: Opcao
   aoMudarRotulo: (rotulo: string) => void
+  aoMudarValor: (valor: string) => void
   aoRemover: () => void
+  mostrarValor?: boolean
 }) {
   const campo = useRef<HTMLInputElement>(null)
   const [emojisAbertos, setEmojisAbertos] = useState(false)
@@ -1202,6 +1328,17 @@ function LinhaDeOpcao({
           ×
         </button>
       </div>
+      {mostrarValor && (
+        <div className="mt-1 flex items-center gap-1.5 pl-3">
+          <span className="shrink-0 text-[10.5px] text-dim">vale</span>
+          <input
+            value={opcao.valor ?? ''}
+            onChange={(e) => aoMudarValor(e.target.value)}
+            placeholder="o que a API entende"
+            className="app-field min-w-0 flex-1 px-2.5 py-1.5 font-mono text-[11.5px]"
+          />
+        </div>
+      )}
       {estourou && (
         <p className="mt-1 text-[10.5px] leading-4 text-rose-300">
           O WhatsApp corta em {LIMITE_ROTULO} caracteres — publicar fica barrado até encurtar.
@@ -1473,6 +1610,36 @@ function Mapeamentos({
                     isto a variável trazia a lista inteira e a mensagem saía com
                     as datas todas no meio da frase.
                   */}
+                  {/*
+                    O formato de saída.
+
+                    A API devolve `2026-09-01` porque é assim que sistema fala
+                    com sistema; quem lê no WhatsApp lê `01/09/2026`. Sem isto,
+                    a única saída era pedir para o cliente mudar a API dele.
+                  */}
+                  {!m.quantos && (
+                    <label className="mt-1 block pl-1">
+                      <span className="mb-1 block text-[10.5px] leading-4 text-dim">
+                        mostrar como
+                      </span>
+                      <Dropdown
+                        valor={m.formato ?? ''}
+                        aoMudar={(v) =>
+                          trocar({ formato: v === '' ? undefined : (v as FormatoDeSaida) })
+                        }
+                        rotuloAcessivel="Formato de saída"
+                        opcoes={[
+                          { valor: '', rotulo: 'como veio da API' },
+                          ...FORMATOS_DE_SAIDA.map((f) => ({
+                            valor: f,
+                            rotulo: NOME_DO_FORMATO_DE_SAIDA[f],
+                            detalhe: EXEMPLO_DO_FORMATO[f],
+                          })),
+                        ]}
+                      />
+                    </label>
+                  )}
+
                   <label className="mt-1 flex cursor-pointer items-center gap-2 pl-1 text-[10.5px] leading-4 text-dim">
                     <input
                       type="checkbox"

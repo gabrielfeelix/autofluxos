@@ -1332,3 +1332,170 @@ describe('o bloco de voltar', () => {
     expect(r.sessao.vars.nome).toBe('Marina')
   })
 })
+
+describe('valor técnico da opção desenhada à mão', () => {
+  const fluxoCom = (opcoes: unknown[]) =>
+    fluxoSchema.parse({
+      inicio: 'q',
+      nodes: [
+        {
+          id: 'q',
+          type: 'pergunta',
+          position: { x: 0, y: 0 },
+          data: { texto: 'Que tipo?', salvarEm: 'tipo', salvarValorEm: 'tipo_id', opcoes },
+        },
+        { id: 'fim', type: 'mensagem', position: { x: 0, y: 0 }, data: { texto: 'ok' } },
+      ],
+      edges: [
+        { id: 'e1', source: 'q', sourceHandle: 'a', target: 'fim' },
+        { id: 'e2', source: 'q', sourceHandle: 'b', target: 'fim' },
+      ],
+    })
+
+  it('guarda o valor da opção, e o rótulo separado — sem lista de fora', () => {
+    const fluxo = fluxoCom([
+      { id: 'a', rotulo: 'Vídeo institucional', valor: 'institucional' },
+      { id: 'b', rotulo: 'Social media', valor: 'social' },
+    ])
+
+    let r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    r = executar(fluxo, r.sessao, { tipo: 'opcao', opcaoId: 'a' })
+
+    expect(r.sessao.vars.tipo).toBe('Vídeo institucional')
+    expect(r.sessao.vars.tipo_id).toBe('institucional')
+  })
+
+  it('sem valor escrito, guarda o rótulo — é o que todo grafo já publicado faz', () => {
+    const fluxo = fluxoCom([
+      { id: 'a', rotulo: 'Vídeo institucional' },
+      { id: 'b', rotulo: 'Social media' },
+    ])
+
+    let r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    r = executar(fluxo, r.sessao, { tipo: 'opcao', opcaoId: 'a' })
+
+    expect(r.sessao.vars.tipo_id).toBe('')
+  })
+})
+
+describe('a foto como resposta', () => {
+  const fluxoCom = (dadosDaPergunta: object, ligarSaidaDeMidia: boolean) =>
+    fluxoSchema.parse({
+      inicio: 'q',
+      nodes: [
+        {
+          id: 'q',
+          type: 'pergunta',
+          position: { x: 0, y: 0 },
+          data: { texto: 'Manda a foto da receita', ...dadosDaPergunta },
+        },
+        { id: 'cotar', type: 'mensagem', position: { x: 0, y: 0 }, data: { texto: 'Recebi!' } },
+        { id: 'texto', type: 'mensagem', position: { x: 0, y: 0 }, data: { texto: 'obrigado' } },
+      ],
+      edges: [
+        { id: 'e1', source: 'q', target: 'texto' },
+        ...(ligarSaidaDeMidia
+          ? [{ id: 'e2', source: 'q', sourceHandle: 'midia', target: 'cotar' }]
+          : []),
+      ],
+    })
+
+  it('sem saída ligada, foto continua indo para uma pessoa — como sempre foi', () => {
+    const fluxo = fluxoCom({ salvarEm: 'resposta' }, false)
+    let r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    r = executar(fluxo, r.sessao, { tipo: 'midia', formato: 'image', midiaId: 'wamid.1' })
+
+    expect(r.sessao.status).toBe('humano')
+    expect(r.acoes.some((a) => a.tipo === 'transferir_humano')).toBe(true)
+  })
+
+  it('com a saída ligada, a conversa segue e guarda a referência do arquivo', () => {
+    const fluxo = fluxoCom({ aceitaMidia: true, salvarMidiaEm: 'receita' }, true)
+    let r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    r = executar(fluxo, r.sessao, { tipo: 'midia', formato: 'image', midiaId: 'wamid.abc' })
+
+    expect(r.sessao.status).not.toBe('humano')
+    expect(r.sessao.vars.receita).toBe('wamid.abc')
+    expect(r.acoes.some((a) => a.tipo === 'enviar_texto' && a.texto === 'Recebi!')).toBe(true)
+  })
+
+  it('a legenda da foto conta como a resposta escrita', () => {
+    const fluxo = fluxoCom(
+      { aceitaMidia: true, salvarMidiaEm: 'receita', salvarEm: 'observacao' },
+      true,
+    )
+    let r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    r = executar(fluxo, r.sessao, {
+      tipo: 'midia',
+      formato: 'image',
+      midiaId: 'wamid.abc',
+      legenda: 'é para o meu filho',
+    })
+
+    expect(r.sessao.vars.observacao).toBe('é para o meu filho')
+  })
+
+  it('sem id (simulador), guarda o formato em vez de vazio', () => {
+    const fluxo = fluxoCom({ aceitaMidia: true, salvarMidiaEm: 'receita' }, true)
+    let r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    r = executar(fluxo, r.sessao, { tipo: 'midia', formato: 'image' })
+
+    expect(r.sessao.vars.receita).toBe('image')
+  })
+
+  it('a saída de mídia não é confundida com a continuação normal da pergunta', () => {
+    const fluxo = fluxoCom({ aceitaMidia: true }, true)
+    let r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    r = executar(fluxo, r.sessao, { tipo: 'texto', texto: 'oi' })
+
+    expect(r.acoes.some((a) => a.tipo === 'enviar_texto' && a.texto === 'obrigado')).toBe(true)
+  })
+})
+
+describe('condição que compara número e variável', () => {
+  const fluxoCom = (dados: object) =>
+    fluxoSchema.parse({
+      inicio: 'c',
+      nodes: [
+        { id: 'c', type: 'condicao', position: { x: 0, y: 0 }, data: dados },
+        { id: 'sim', type: 'mensagem', position: { x: 0, y: 0 }, data: { texto: 'passou' } },
+        { id: 'nao', type: 'mensagem', position: { x: 0, y: 0 }, data: { texto: 'não passou' } },
+      ],
+      edges: [
+        { id: 'e1', source: 'c', sourceHandle: 'verdadeiro', target: 'sim' },
+        { id: 'e2', source: 'c', sourceHandle: 'falso', target: 'nao' },
+      ],
+    })
+
+  const rodar = (dados: object, vars: Record<string, string>) => {
+    const r = executar(fluxoCom(dados), { ...sessaoNova(), vars }, { tipo: 'inicio' })
+    return r.acoes.find((a) => a.tipo === 'enviar_texto')?.texto
+  }
+
+  it('compara número de verdade, e não texto', () => {
+    const dados = { variavel: 'faltas', operador: 'maior', valor: '9' }
+    expect(rodar(dados, { faltas: '10' })).toBe('passou')
+    expect(rodar(dados, { faltas: '2' })).toBe('não passou')
+  })
+
+  it('compara duas coisas da conversa', () => {
+    const dados = { variavel: 'orcamento', operador: 'maior', valor: '{{preco}}' }
+    expect(rodar(dados, { orcamento: '500000', preco: '420000' })).toBe('passou')
+    expect(rodar(dados, { orcamento: '300000', preco: '420000' })).toBe('não passou')
+  })
+
+  it('aceita a vírgula que se digita em português', () => {
+    const dados = { variavel: 'valor', operador: 'menor', valor: '10,5' }
+    expect(rodar(dados, { valor: '9,75' })).toBe('passou')
+  })
+
+  it('lado que não é número é falso, e não uma ordem inventada', () => {
+    const dados = { variavel: 'quando', operador: 'maior', valor: '3' }
+    expect(rodar(dados, { quando: 'amanhã' })).toBe('não passou')
+  })
+
+  it('texto fixo continua comparando como texto', () => {
+    const dados = { variavel: 'plano', operador: 'igual', valor: 'mensal' }
+    expect(rodar(dados, { plano: 'Mensal' })).toBe('passou')
+  })
+})

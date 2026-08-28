@@ -195,6 +195,19 @@ describe('validar', () => {
     expect(codigos(validar(fluxo).avisos)).not.toContain('CHAVE_SIMPLES')
   })
 
+  /*
+   * `varsIniciais()` preenche `nome` e `telefone` em toda conversa, e os presets
+   * de integração do produto já vêm com `{{telefone}}` escrito. Avisar aqui era
+   * o produto acusando o próprio preset.
+   */
+  it('não reclama das variáveis que toda conversa já tem', () => {
+    const fluxo = fluxoValido()
+    const oi = fluxo.nodes.find((n) => n.id === 'oi')
+    if (oi?.type === 'mensagem') oi.data.texto = 'Olá, {{nome}}! Confirma o {{telefone}}?'
+
+    expect(codigos(validar(fluxo).avisos)).not.toContain('VARIAVEL_DESCONHECIDA')
+  })
+
   it('não reclama de variável que algum bloco preenche', () => {
     const fluxo = fluxoValido()
     const tchau = fluxo.nodes.find((n) => n.id === 'tchau')
@@ -996,8 +1009,9 @@ describe('as mensagens do bloco de falar com humano', () => {
     expect(codigos(r.erros)).toContain('MENSAGENS_DEMAIS')
   })
 
+  // `nome` não serve de exemplo aqui: é nativa, e toda conversa já a tem.
   it('variável citada em qualquer uma das mensagens é conferida', () => {
-    const r = validar(comHandoff({ mensagens: ['Já te passo.', 'Valeu, {{nome}}!'] }))
+    const r = validar(comHandoff({ mensagens: ['Já te passo.', 'Valeu, {{apelido}}!'] }))
     expect(codigos(r.avisos)).toContain('VARIAVEL_DESCONHECIDA')
   })
 })
@@ -1044,5 +1058,73 @@ describe('o bloco de voltar', () => {
     const r = validar(comVoltar('volta'))
     expect(codigos(r.avisos)).toContain('VOLTAR_PARA_SI')
     expect(codigos(r.erros)).not.toContain('VOLTAR_PARA_SI')
+  })
+})
+
+describe('endereço de arquivo com variável no host', () => {
+  const comMidia = (url: string, extras: unknown[] = []) =>
+    fluxoSchema.parse({
+      inicio: 'foto',
+      nodes: [
+        { id: 'foto', type: 'midia', position: p, data: { midia: 'imagem', url } },
+        ...extras,
+      ],
+      edges: [],
+    })
+
+  const chamada = {
+    id: 'api',
+    type: 'http',
+    position: p,
+    data: {
+      metodo: 'GET',
+      url: 'https://sistema.exemplo.com/imoveis/1',
+      cabecalhos: [],
+      corpo: '',
+      mapear: [{ variavel: 'foto_url', caminho: 'fotos[0]' }],
+    },
+  }
+
+  it('recusa quando o host vem de resposta de quem conversa', () => {
+    const pergunta = {
+      id: 'q',
+      type: 'pergunta',
+      position: p,
+      data: { texto: 'Qual site?', salvarEm: 'foto_url', opcoes: [] },
+    }
+    const r = validar(comMidia('{{foto_url}}', [pergunta]))
+    expect(codigos(r.erros)).toContain('HOST_VARIAVEL')
+  })
+
+  it('aceita quando o endereço inteiro veio de uma chamada de API', () => {
+    const r = validar(comMidia('{{foto_url}}', [chamada]))
+    expect(codigos(r.erros)).not.toContain('HOST_VARIAVEL')
+  })
+
+  it('volta a recusar se a mesma variável também é preenchida por uma pergunta', () => {
+    const pergunta = {
+      id: 'q',
+      type: 'pergunta',
+      position: p,
+      data: { texto: 'Cole o link', salvarEm: 'foto_url', opcoes: [] },
+    }
+    const r = validar(comMidia('{{foto_url}}', [chamada, pergunta]))
+    expect(codigos(r.erros)).toContain('HOST_VARIAVEL')
+  })
+
+  it('endereço todo de API publica, com aviso de que o https não foi conferido', () => {
+    const r = validar(comMidia('{{foto_url}}', [chamada]))
+    expect(codigos(r.erros)).not.toContain('MIDIA_INSEGURA')
+    expect(codigos(r.avisos)).toContain('MIDIA_HTTPS_NAO_CONFERIDO')
+  })
+
+  it('endereço http:// escrito à mão continua barrado', () => {
+    const r = validar(comMidia('http://cdn.exemplo.com/foto.jpg'))
+    expect(codigos(r.erros)).toContain('MIDIA_INSEGURA')
+  })
+
+  it('variável depois da primeira barra continua livre', () => {
+    const r = validar(comMidia('https://cdn.exemplo.com/{{codigo}}.jpg'))
+    expect(codigos(r.erros)).not.toContain('HOST_VARIAVEL')
   })
 })
