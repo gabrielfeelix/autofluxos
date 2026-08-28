@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { Modal } from '@/components/design/modal'
 import { EscolherCanal } from '@/components/fluxos/escolher-canal'
 import { contarEtiquetas, filtrarModelos } from '@/core/flow/filtrar-modelos'
@@ -286,9 +286,166 @@ function CamposDoFluxo({
   )
 }
 
+/* --------------------------------------------------------------- miniaturas */
+
+/**
+ * As duas escolhas são desenhadas com **o material do próprio produto**: um
+ * pedaço do canvas do editor, com a mesma malha de pontos, os mesmos cartões de
+ * bloco e a mesma seta.
+ *
+ * O primeiro desenho desta tela usava dois emojis (✏️ e ✨) e estava certo em
+ * uma coisa só: era rápido. Emoji não é do produto — é do teclado —, e o
+ * resultado parecia qualquer caixa de diálogo de qualquer lugar. Aqui a
+ * miniatura **é a resposta da pergunta**: "em branco" mostra o canvas vazio,
+ * "de um template" mostra três blocos já ligados. Quem nunca abriu o editor
+ * entende o que vai receber antes de clicar.
+ *
+ * SVG e não imagem: acompanha o tema, não pesa, e as cores saem das mesmas
+ * variáveis do resto da tela.
+ */
+
+const PONTOS = 'malha-de-pontos'
+
+function Canvas({ children, id }: { children: ReactNode; id: string }) {
+  return (
+    <svg
+      viewBox="0 0 248 116"
+      aria-hidden
+      className="block w-full rounded-[10px] border border-white/[0.05]"
+    >
+      <defs>
+        <pattern id={`${PONTOS}-${id}`} width="12" height="12" patternUnits="userSpaceOnUse">
+          <circle cx="1.4" cy="1.4" r="1" fill="rgba(255,255,255,0.085)" />
+        </pattern>
+      </defs>
+      <rect width="248" height="116" fill="#070b11" />
+      <rect width="248" height="116" fill={`url(#${PONTOS}-${id})`} />
+      {children}
+    </svg>
+  )
+}
+
+/** Um cartão de bloco como o do desenho: faixa de cabeçalho e duas linhas. */
+function BlocoMini({
+  x,
+  y,
+  cor,
+}: {
+  x: number
+  y: number
+  /** A cor da faixa de cima, como no editor: cada tipo de bloco tem a sua. */
+  cor: string
+}) {
+  return (
+    <g transform={`translate(${x} ${y})`}>
+      <rect width="62" height="34" rx="6" fill="#0b1018" stroke="rgba(255,255,255,0.11)" />
+      <rect width="62" height="9" rx="6" fill={cor} opacity="0.85" />
+      <rect y="6" width="62" height="3" fill={cor} opacity="0.85" />
+      <rect x="8" y="16" width="34" height="3" rx="1.5" fill="rgba(255,255,255,0.22)" />
+      <rect x="8" y="23" width="22" height="3" rx="1.5" fill="rgba(255,255,255,0.13)" />
+    </g>
+  )
+}
+
+function MiniaturaEmBranco() {
+  return (
+    <Canvas id="branco">
+      <rect
+        x="93"
+        y="41"
+        width="62"
+        height="34"
+        rx="6"
+        fill="rgba(255,255,255,0.02)"
+        stroke="rgba(255,255,255,0.22)"
+        strokeWidth="1.2"
+        strokeDasharray="5 4"
+      />
+      <path
+        d="M124 52v12M118 58h12"
+        stroke="rgba(255,255,255,0.34)"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </Canvas>
+  )
+}
+
+function MiniaturaDeTemplate() {
+  return (
+    <Canvas id="template">
+      {/* As setas primeiro, para os cartões cobrirem as pontas — é o que o
+          editor faz, e é o que faz a ligação parecer entrar no bloco. */}
+      <path
+        d="M72 34C86 34 84 58 98 58"
+        fill="none"
+        stroke="var(--accent)"
+        strokeWidth="1.4"
+        opacity="0.75"
+      />
+      <path
+        d="M160 58C174 58 170 82 184 82"
+        fill="none"
+        stroke="var(--accent)"
+        strokeWidth="1.4"
+        opacity="0.75"
+      />
+      <BlocoMini x={10} y={17} cor="#56d0f5" />
+      <BlocoMini x={98} y={41} cor="#a78bfa" />
+      <BlocoMini x={176} y={65} cor="#34d399" />
+    </Canvas>
+  )
+}
+
 /* ------------------------------------------------------------------- modais */
 
 type Passo = 'como' | 'templates' | 'formulario'
+
+/**
+ * Um dos dois caminhos da primeira pergunta.
+ *
+ * O cartão inteiro é o botão — alvo grande, e nada de "clique aqui" dentro de
+ * uma caixa que já é clicável. A miniatura ocupa o topo porque é ela que
+ * responde primeiro; o texto confirma o que a imagem já disse.
+ */
+function EscolhaDeComeco({
+  titulo,
+  rodape,
+  miniatura,
+  aoClicar,
+  children,
+}: {
+  titulo: string
+  /** A linha miúda de baixo: o que vem junto, em vez de mais uma frase. */
+  rodape: string
+  miniatura: ReactNode
+  aoClicar: () => void
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={aoClicar}
+      className="group flex flex-col rounded-[14px] border border-white/[0.09] bg-white/[0.015] p-3 text-left transition hover:border-accent/45 hover:bg-accent/[0.045] focus-visible:border-accent/60 focus-visible:outline-none"
+    >
+      <span className="block overflow-hidden rounded-[10px] opacity-90 transition group-hover:opacity-100">
+        {miniatura}
+      </span>
+
+      <span className="mt-3 block text-[14px] font-bold text-soft">{titulo}</span>
+      {/* Altura reservada: sem ela, uma descrição de duas linhas e outra de três
+          desalinham os rodapés, e dois cartões lado a lado com linhas em
+          alturas diferentes parecem dois componentes distintos. */}
+      <span className="mt-1 block min-h-[52px] text-[11.5px] leading-[1.55] text-dim">
+        {children}
+      </span>
+
+      <span className="mt-2.5 block border-t border-white/[0.06] pt-2 text-[10.5px] tracking-[0.02em] text-muted">
+        {rodape}
+      </span>
+    </button>
+  )
+}
 
 /**
  * O botão "+ Criar automação" e o modal de duas perguntas.
@@ -346,40 +503,30 @@ export function NovaAutomacao({
               ? 'Desenhos prontos e válidos. Depois de criar, tudo é editável.'
               : 'Falta só o nome e onde ela vai atender.'
         }
-        largura={passo === 'templates' ? 760 : 440}
+        largura={passo === 'templates' ? 760 : passo === 'como' ? 620 : 440}
       >
         {passo === 'como' && (
-          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => {
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <EscolhaDeComeco
+              titulo="Em branco"
+              rodape="a tela vazia do editor"
+              aoClicar={() => {
                 setEscolhido(null)
                 setPasso('formulario')
               }}
-              className="flex flex-col items-start rounded-[13px] border border-white/[0.09] bg-white/[0.02] p-4 text-left transition hover:border-accent/45 hover:bg-accent/[0.05]"
+              miniatura={<MiniaturaEmBranco />}
             >
-              <span aria-hidden className="text-[20px]">
-                ✏️
-              </span>
-              <span className="mt-2 text-[13.5px] font-bold text-soft">Do zero</span>
-              <span className="mt-1 text-[11.5px] leading-[1.5] text-dim">
-                Uma automação em branco. Você desenha bloco a bloco.
-              </span>
-            </button>
+              Você põe os blocos na ordem que quiser, do primeiro “oi” até a saída para uma pessoa.
+            </EscolhaDeComeco>
 
-            <button
-              type="button"
-              onClick={() => setPasso('templates')}
-              className="flex flex-col items-start rounded-[13px] border border-white/[0.09] bg-white/[0.02] p-4 text-left transition hover:border-accent/45 hover:bg-accent/[0.05]"
+            <EscolhaDeComeco
+              titulo="De um template"
+              rodape={`${modelos.length} prontos, todos conferidos`}
+              aoClicar={() => setPasso('templates')}
+              miniatura={<MiniaturaDeTemplate />}
             >
-              <span aria-hidden className="text-[20px]">
-                ✨
-              </span>
-              <span className="mt-2 text-[13.5px] font-bold text-soft">De um template</span>
-              <span className="mt-1 text-[11.5px] leading-[1.5] text-dim">
-                {modelos.length} desenhos prontos — atendimento, agenda, vendas, cobrança.
-              </span>
-            </button>
+              Um desenho que já funciona: você troca os textos pelos seus e publica.
+            </EscolhaDeComeco>
           </div>
         )}
 
