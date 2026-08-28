@@ -114,55 +114,60 @@ dona do negócio, não uma conta atendida por uma agência.
 
 ---
 
-## 0.1.1 PENDENTE: a chave simples precisa ficar vermelha na hora, não só no aviso
+## 0.1.1 FEITO em 28/ago — a chave simples ficou vermelha no lugar dela
 
-**Antes de mexer, o fato que já foi confundido uma vez:** a citação de variável
-deste produto é **`{{nome}}`, com duas chaves**, e continua sendo. É o que
-`interpolar()` reconhece (`core/engine/interpolar.ts`), é o que `fatiarVariaveis`
-pinta de azul no editor, e é o que está gravado em toda versão publicada.
-**Nenhum fluxo existente precisa migrar.** O commit `9b77184` não trocou a
-sintaxe: ele passou a **avisar** sobre `{nome}` de uma chave só, que não
-interpola e sai literal na conversa — foi o que aconteceu com quem escreveu
-`{dias_reposicao}` num bloco de confirmação de reagendamento.
+Commits `c2c98e9` (realce) e `0572569` (atraso em lote).
 
-**O que falta fazer**, pedido por quem opera olhando o campo:
+**A sintaxe do produto continua `{{nome}}`, com duas chaves, e nenhum fluxo
+migrou.** O que mudou é onde o erro de `{nome}` aparece.
 
-1. **Pintar de vermelho no realce.** Hoje `{nome}` de uma chave não é pintado de
-   jeito nenhum: o realce só conhece `{{ }}`, e o aviso aparece embaixo do campo
-   (`LegendaDeVariaveis`, em `components/editor/texto-com-variaveis.tsx`). A
-   correção é o próprio realce marcar a chave simples como erro, do mesmo jeito
-   que marca a citação certa como variável — vermelho onde o azul estaria.
-2. **Help text ao passar o mouse na tag vermelha**, dizendo a coisa exata:
-   *"variável precisa de duas chaves — `{{nome}}`. Com uma só, sai escrito assim
-   mesmo na conversa."* Hoje só há a frase embaixo do campo, e ela não liga o
-   olho ao pedaço errado do texto.
-3. Onde mexer: `fatiarVariaveis` (ou um irmão dela) em
-   `core/engine/interpolar.ts` — hoje ela devolve `texto` e `variavel`, e precisa
-   de um terceiro tipo para a chave simples —, mais o espelho de realce em
-   `components/editor/texto-com-variaveis.tsx`. A conta de `chavesSimplesCitadas`
-   já existe e é a mesma regra; **use-a**, não escreva um regex parecido: realce
-   que reconhece coisa diferente do validador é o defeito que este item veio
-   consertar.
-4. O aviso `CHAVE_SIMPLES` do validador (`core/flow/validar.ts`) continua como
-   está — ele é a rede de baixo, para quem publica sem olhar o campo.
-5. **O mesmo realce vale no card do desenho.** Hoje o bloco de Mensagem mostra
-   `{{nome}}` como texto cru (`NoMensagem` em `components/editor/nos.tsx`), então
-   a mesma citação aparece azul dentro do campo e sem nenhuma marca no desenho —
-   e é no desenho que se confere o fluxo inteiro. A citação certa fica com o
-   badge azul, a chave simples com o vermelho, e vale para todo card que mostra
-   texto interpolado: Mensagem, Pergunta, Mídia (legenda), IA e Guardar. Cuidado
-   com o espaço: o card tem `line-clamp-3` e largura fixa, então o badge não pode
-   crescer a linha — é cor e fundo sutil, não uma pílula com padding grande. A
-   prévia do hover (`previa-do-bloco.tsx`) ganha o mesmo tratamento, e ali há
-   espaço de sobra.
+- `fatiarVariaveis` (`core/engine/interpolar.ts`) ganhou o terceiro tipo de
+  pedaço, `chave-simples`, e **`chavesSimplesCitadas` passou a sair dela** — uma
+  regra só, senão a cor diria uma coisa e o validador outra.
+- No campo (`components/editor/texto-com-variaveis.tsx`) a tag fica vermelha. O
+  âmbar continua querendo dizer outra coisa: variável que nenhum bloco preenche,
+  que ao menos sai vazia. A regra do espelho não abriu exceção — o realce só
+  muda cor.
+- **A dica no hover exigiu uma terceira camada.** O espelho fica *atrás* do
+  campo e tem `pointer-events: none`: quem recebe o ponteiro é sempre o
+  `<textarea>`, então `title` no espelho nunca apareceria. A camada nova fica
+  por cima, é invisível (texto transparente), só nasce quando há chave simples e
+  só os pedaços errados recebem ponteiro. Clicar na tag devolve o `mousedown` ao
+  campo, com o cursor dentro dela. As três camadas rolam juntas.
+- O mesmo realce no card do desenho e na prévia do hover, por
+  `components/editor/realce-de-variaveis.tsx`: Mensagem, Pergunta, legenda da
+  Mídia, IA e Guardar. Cor e fundo sutil, **sem padding** — o card tem
+  `line-clamp-3` e uma pílula comeria uma das três linhas.
+- O aviso `CHAVE_SIMPLES` do validador continua onde estava, como rede de baixo.
 
-**Decisão que NÃO foi tomada, e que não deve ser tomada sozinha:** inverter a
-sintaxe do produto para uma chave só (`{nome}`). Seria possível, e é caro por um
-motivo estrutural: `flow_versions` é **imutável**, então toda conversa em
-produção continuaria rodando grafos escritos com `{{ }}`, e o motor teria de
-aceitar as duas formas por tempo indeterminado — dois jeitos de escrever a mesma
-coisa é exatamente o que produz o erro que estamos consertando. Se alguém pedir
-isso, peça a decisão por escrito ao dono antes de encostar.
+**Continua valendo:** inverter a sintaxe para uma chave só (`{nome}`) é caro e
+não se decide sozinho. `flow_versions` é imutável, então toda conversa em
+produção seguiria rodando grafos com `{{ }}` e o motor teria de aceitar as duas
+formas por tempo indeterminado — dois jeitos de escrever a mesma coisa é
+exatamente o que produz o erro que acabamos de consertar. Se alguém pedir, peça
+a decisão por escrito ao dono antes de encostar.
+
+### Do mesmo dia: ação em lote na seleção
+
+Pedido de quem monta: pôr o "digitando…" em todas as falas de uma vez. Ctrl (ou
+⌘) clicando junta blocos; `Shift` arrastando laça uma área — o padrão do React
+Flow era ⌘ **só** no Mac, e quem monta está no Windows, então isso simplesmente
+não existia. Com mais de um selecionado nasce uma barra no topo do desenho:
+`1s`, `2s`, `3s` (o limite do schema) e `tirar`.
+
+A regra é pura, em `core/flow/atraso-em-lote.ts`, com teste. Vale só para quem
+fala — **Mensagem e Mídia**; pergunta, condição e guardar não mandam texto —, e
+a barra mostra quantas falas de fato mudam, para não prometer o que não fez. Na
+mensagem o atraso entra como **primeiro** pedaço da pilha: no meio dela, a
+espera aconteceria depois de a fala já ter saído. Grafo no formato antigo entra
+no lote sem migration, porque `partesDaMensagem` já o traduz.
+
+`npm test` → **936 passando, 28 pulados**. `typecheck`, `lint` e `build` limpos.
+**Nenhuma migration** — a próxima a escrever continua sendo a `0038`.
+
+Fica pendente a barra em si crescer: hoje ela só faz atraso. Apagar, duplicar e
+alinhar em lote são os próximos candidatos naturais, e o encanamento (`selecionados`
+em `editor.tsx`, mais uma regra pura por ação) já está no lugar.
 
 ---
 
