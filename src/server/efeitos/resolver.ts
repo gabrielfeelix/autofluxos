@@ -3,6 +3,7 @@ import { ATENDIMENTO_SEMPRE_ABERTO, avisoDeForaDoHorario, executar } from '@/cor
 import type { ContextoDoAtendimento } from '@/core/engine/executar'
 import type { Acao, Entrada, Resultado, Sessao } from '@/core/engine/types'
 import type { Fluxo } from '@/core/flow/schema'
+import { VARIAVEIS_DE_DATA } from '@/core/datas'
 import {
   acharFerramenta,
   ferramentasPermitidas,
@@ -81,6 +82,13 @@ export type OpcoesDeEfeitos = {
    * traduzir "amanhã", e o chute errado é um agendamento meses fora.
    */
   hoje?: string
+  /**
+   * As datas prontas do fluxo: `{{hoje}}`, `{{semana_de}}`, e as outras.
+   *
+   * Entram por parâmetro porque `core/` não tem relógio. Quem calcula é o
+   * servidor, no fuso da conta.
+   */
+  datas?: Record<string, string>
   /** A última mensagem da pessoa, quando não veio como texto na entrada. */
   perguntaDaPessoa?: string
   /**
@@ -143,13 +151,45 @@ export type ResultadoComEfeitos = Resultado & {
   destino?: { versaoId: string; grafo: Fluxo }
 }
 
+/**
+ * O motor com efeitos, e a garantia de que as datas não vazam para o banco.
+ *
+ * O invólucro existe para não depender de ninguém lembrar: `rodar()` tem uma
+ * dúzia de `return`, e limpar em cada um seria esquecer em um deles um dia. A
+ * limpeza acontece no único lugar por onde toda saída passa.
+ */
 export async function executarComEfeitos(
   fluxo: Fluxo,
-  sessao: Sessao,
+  sessaoRecebida: Sessao,
+  entrada: Entrada,
+  opcoes: OpcoesDeEfeitos,
+): Promise<ResultadoComEfeitos> {
+  const resultado = await rodar(fluxo, sessaoRecebida, entrada, opcoes)
+  return { ...resultado, sessao: semDatas(resultado.sessao) }
+}
+
+async function rodar(
+  fluxo: Fluxo,
+  sessaoRecebida: Sessao,
   entrada: Entrada,
   opcoes: OpcoesDeEfeitos,
 ): Promise<ResultadoComEfeitos> {
   const atendimento = opcoes.atendimento ?? ATENDIMENTO_SEMPRE_ABERTO
+
+  /*
+   * As datas entram na rodada e **saem antes de gravar**.
+   *
+   * Elas são derivadas do relógio, não coletadas da conversa: uma conversa que
+   * atravessa a virada do dia precisa de `{{hoje}}` novo, e um valor guardado
+   * seria o de ontem — o erro mais silencioso possível, porque a mensagem sai
+   * bonita e com a data errada.
+   *
+   * Por isso são calculadas a cada mensagem, sobrescrevem o que houver, e a
+   * lista exata é retirada de volta em `semDatas()` antes de a sessão ser
+   * persistida. Deixá-las gravadas também sujaria a ficha do lead com oito
+   * campos que ninguém preencheu.
+   */
+  const sessao = comDatas(sessaoRecebida, opcoes.datas)
 
   /*
    * A confirmação é lida **antes** do motor, e não dentro dele.
@@ -946,4 +986,30 @@ function alvoDe(ferramenta: Ferramenta, valores: Record<string, string>): string
 function conexaoDoNoDeIa(fluxo: Fluxo, noId: string | null): string | undefined {
   const no = fluxo.nodes.find((n) => n.id === noId)
   return no?.type === 'ia' ? no.data.conexaoId : undefined
+}
+
+/**
+ * Põe as datas do dia na sessão, para esta rodada.
+ *
+ * Sobrescrevem o que houver com o mesmo nome, e isso é o certo: se alguém
+ * desenhou um "Guardar em {{hoje}}", o valor do relógio vale mais que o valor
+ * congelado — e o validador já avisa que o nome é nativo.
+ */
+function comDatas(sessao: Sessao, datas: Record<string, string> | undefined): Sessao {
+  if (!datas) return sessao
+  return { ...sessao, vars: { ...sessao.vars, ...datas } }
+}
+
+/**
+ * Tira as datas antes de a sessão ser gravada.
+ *
+ * Sem isto, `{{hoje}}` de ontem sobreviveria numa conversa que atravessou a
+ * meia-noite e a próxima mensagem usaria a data velha — a mensagem sai bonita
+ * e com o dia errado, que é o defeito mais difícil de alguém reparar. E oito
+ * campos derivados iriam parar na ficha do lead sem ninguém ter preenchido.
+ */
+function semDatas(sessao: Sessao): Sessao {
+  const vars = { ...sessao.vars }
+  for (const nome of VARIAVEIS_DE_DATA) delete vars[nome]
+  return { ...sessao, vars }
 }

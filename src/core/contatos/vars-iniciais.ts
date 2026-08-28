@@ -1,3 +1,4 @@
+import { VARIAVEIS_DE_DATA } from '../datas'
 /**
  * O que a conversa já sabe antes de perguntar qualquer coisa.
  *
@@ -40,7 +41,7 @@ export type RetratoDoContato = {
  * divergência apareceria como aviso falso, que é o pior tipo: ele treina quem
  * desenha a ignorar o painel de avisos inteiro.
  */
-export const VARIAVEIS_NATIVAS = ['nome', 'telefone'] as const
+export const VARIAVEIS_NATIVAS = ['nome', 'telefone', ...VARIAVEIS_DE_DATA] as const
 
 export function varsIniciais(contato: RetratoDoContato): Record<string, string> {
   const vars: Record<string, string> = {}

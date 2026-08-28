@@ -25,6 +25,7 @@ import type { Fluxo } from '@/core/flow/schema'
 import type { Sessao } from '@/core/engine/types'
 import { dentroDaJanela } from '@/channels/janela'
 import { contarDisparo, gatilhosAtivos } from './repos/gatilhos'
+import { varsDeData } from '@/core/datas'
 import {
   SEMPRE_ABERTO,
   atendimentoAberto,
@@ -485,6 +486,10 @@ async function avancarConversa(
       // 21h em São Paulo, "hoje" já é amanhã — que é exatamente o horário em
       // que gente manda mensagem para marcar aula.
       hoje: hojeNaConta(horario?.fuso ?? SEMPRE_ABERTO.fuso),
+      // As mesmas datas que a IA recebe, agora também como `{{variavel}}` para
+      // o fluxo desenhado à mão — é o que faz "semana que vem" funcionar sem
+      // IA contratada, com um botão em vez de um modelo.
+      datas: varsDeData(horario?.fuso ?? SEMPRE_ABERTO.fuso),
       carregarFluxo: carregadorDeFluxo(canalSalvo.clienteId),
     },
   )
@@ -605,6 +610,10 @@ export async function rodarTimeoutDePergunta(
       // 21h em São Paulo, "hoje" já é amanhã — que é exatamente o horário em
       // que gente manda mensagem para marcar aula.
       hoje: hojeNaConta(horario?.fuso ?? SEMPRE_ABERTO.fuso),
+      // As mesmas datas que a IA recebe, agora também como `{{variavel}}` para
+      // o fluxo desenhado à mão — é o que faz "semana que vem" funcionar sem
+      // IA contratada, com um botão em vez de um modelo.
+      datas: varsDeData(horario?.fuso ?? SEMPRE_ABERTO.fuso),
       carregarFluxo: carregadorDeFluxo(canal.clienteId),
     })
 
@@ -750,6 +759,10 @@ export async function abrirFluxoParaContato(
       // 21h em São Paulo, "hoje" já é amanhã — que é exatamente o horário em
       // que gente manda mensagem para marcar aula.
       hoje: hojeNaConta(horario?.fuso ?? SEMPRE_ABERTO.fuso),
+      // As mesmas datas que a IA recebe, agora também como `{{variavel}}` para
+      // o fluxo desenhado à mão — é o que faz "semana que vem" funcionar sem
+      // IA contratada, com um botão em vez de um modelo.
+      datas: varsDeData(horario?.fuso ?? SEMPRE_ABERTO.fuso),
       carregarFluxo: carregadorDeFluxo(clienteId),
     })
 

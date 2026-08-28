@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { entradaSchema, sessaoSchema } from '@/core/engine/types'
 import { fluxoSchema } from '@/core/flow/schema'
+import { varsDeData } from '@/core/datas'
 import { SEMPRE_ABERTO, hojeNaConta } from '@/core/horario'
 import { executarComEfeitos } from '@/server/efeitos/resolver'
 import { escolherModelo } from '@/server/ia/modelo'
@@ -146,6 +147,7 @@ export async function POST(req: Request) {
       // O simulador roda no servidor da 4YU; sem isto a IA testaria com a data
       // de outro fuso e o desenho pareceria errado sem estar.
       hoje: hojeNaConta(SEMPRE_ABERTO.fuso),
+      datas: varsDeData(SEMPRE_ABERTO.fuso),
       // A aba Testar chama API de verdade. Dizer que veio daqui é o que permite
       // o sistema do cliente separar tráfego de teste do movimento real dele.
       origem: 'simulador',

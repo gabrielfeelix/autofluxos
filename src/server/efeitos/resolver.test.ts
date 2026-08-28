@@ -615,3 +615,81 @@ describe('ir para outra automação', () => {
     )
   })
 })
+
+/**
+ * As datas prontas entram na rodada e não ficam gravadas.
+ *
+ * **É a regra que, quebrada, produz o defeito mais silencioso do produto.**
+ * Elas são derivadas do relógio, não coletadas da conversa: uma conversa que
+ * atravessa a meia-noite precisa de `{{hoje}}` novo. Gravada, a data de ontem
+ * sobrevive e a próxima mensagem sai bonita e com o dia errado — e ninguém
+ * repara, porque não há erro nenhum na tela.
+ */
+describe('as datas prontas do fluxo', () => {
+  const fluxoQueUsaData: Fluxo = {
+    inicio: 'diz',
+    nodes: [
+      {
+        id: 'diz',
+        type: 'mensagem',
+        position: { x: 0, y: 0 },
+        data: { texto: 'Tenho horário de {{semana_de}} até {{semana_ate}}.' },
+      },
+      {
+        id: 'fim',
+        type: 'handoff',
+        position: { x: 0, y: 120 },
+        data: { motivo: 'fim', mensagem: 'Já te passo para alguém.' },
+      },
+    ],
+    edges: [{ id: 'a1', source: 'diz', target: 'fim' }],
+  }
+
+  const datas = {
+    hoje: '2026-09-01',
+    amanha: '2026-09-02',
+    hoje_br: '01/09/2026',
+    amanha_br: '02/09/2026',
+    semana_de: '2026-09-01',
+    semana_ate: '2026-09-06',
+    prox_semana_de: '2026-09-07',
+    prox_semana_ate: '2026-09-13',
+  }
+
+  it('a mensagem sai com as datas interpoladas', async () => {
+    const r = await executarComEfeitos(fluxoQueUsaData, sessaoNova(), { tipo: 'inicio' }, {
+      modelo: null,
+      contextoNegocio: '',
+      datas,
+    })
+
+    const texto = r.acoes.find((a) => a.tipo === 'enviar_texto')
+    expect(texto?.tipo === 'enviar_texto' && texto.texto).toBe(
+      'Tenho horário de 2026-09-01 até 2026-09-06.',
+    )
+  })
+
+  it('NENHUMA delas fica na sessão que vai para o banco', async () => {
+    const r = await executarComEfeitos(fluxoQueUsaData, sessaoNova(), { tipo: 'inicio' }, {
+      modelo: null,
+      contextoNegocio: '',
+      datas,
+    })
+
+    for (const nome of Object.keys(datas)) {
+      expect(r.sessao.vars, `"${nome}" ficou gravada`).not.toHaveProperty(nome)
+    }
+  })
+
+  it('sem datas informadas, o fluxo continua rodando', async () => {
+    // Fluxo antigo, chamador antigo: variável desconhecida vira vazio, como
+    // sempre foi. Nada pode estourar por causa de um parâmetro novo.
+    const r = await executarComEfeitos(fluxoQueUsaData, sessaoNova(), { tipo: 'inicio' }, {
+      modelo: null,
+      contextoNegocio: '',
+    })
+
+    const texto = r.acoes.find((a) => a.tipo === 'enviar_texto')
+    expect(texto?.tipo === 'enviar_texto' && texto.texto).toBe('Tenho horário de  até .')
+  })
+})
