@@ -31,7 +31,38 @@ const ENDERECO = 'https://generativelanguage.googleapis.com/v1beta/models'
 const MODELO_PADRAO = 'gemini-flash-latest'
 
 /**
- * Quinze segundos.
+ * Para onde ir quando o apelido está congestionado.
+ *
+ * **Medido em 28/ago/2026, e não suposto:** `gemini-flash-latest` devolveu 503
+ * `UNAVAILABLE` — *"this model is currently experiencing high demand"* — em
+ * toda tentativa ao longo de vários minutos, enquanto `gemini-3.5-flash`
+ * respondia em 6,9 s com a mesma chave. Não era cota nem credencial: chave
+ * ruim dá 401, cota estourada dá 429.
+ *
+ * Sem reserva, uma tarde ruim do lado do Google manda **toda** conversa do
+ * produto para atendimento humano, e a tela não diz por quê.
+ *
+ * A reserva é presa numa versão de propósito, e isso não contradiz o argumento
+ * do `-latest` acima: o apelido continua sendo o caminho normal, justamente
+ * para não envelhecer. Esta é a saída de emergência, e saída de emergência
+ * precisa ser um endereço fixo — um segundo apelido poderia estar congestionado
+ * pelo mesmo motivo que o primeiro.
+ */
+const MODELO_RESERVA = 'gemini-3.5-flash'
+
+/**
+ * O que merece uma segunda tentativa.
+ *
+ * 503 e 429 são o Google dizendo "agora não, tente de novo" — a mensagem
+ * literal do 503 pede isso. Sem retentar, cada pico do lado deles vira uma
+ * pessoa assumindo uma conversa que a IA responderia bem. 4xx de verdade
+ * (chave errada, pedido malformado) não melhora repetindo, e repetir só
+ * atrasaria o handoff.
+ */
+const VALE_RETENTAR = new Set([429, 500, 502, 503, 504])
+
+/**
+ * Quanto se espera pelo modelo.
  *
  * O webhook já respondeu 200 à Meta antes de chegar aqui (o processamento roda
  * no `after()`), então o teto não é o prazo dela — é a paciência de quem está
@@ -41,86 +72,194 @@ const MODELO_PADRAO = 'gemini-flash-latest'
  * gastou **416 tokens pensando para 38 de resposta**. A demora não é rede, é
  * raciocínio, e cortar cedo demais manda para um humano uma conversa que a IA
  * ia responder bem.
+ *
+ * **São dois tetos desde 28/ago/2026, e a assimetria é medida.** Contra o
+ * modelo de verdade, num modelo saudável nada passou de 12 s (11,3 · 8,0 · 5,6
+ * · 4,9 · 3,9 · 2,4 · 1,5). Tudo que estourou 15 s foi o modelo congestionado —
+ * lentidão ali é sintoma, não raciocínio.
+ *
+ * Então a primeira tentativa corta cedo **de propósito**: passou de 15 s, é
+ * congestionamento, e o certo é ir para a reserva em vez de esperar mais. A
+ * reserva ganha o teto folgado porque é a última chance — cortar ali manda para
+ * uma pessoa uma resposta que estava quase pronta.
+ *
+ * O pior caso somado é 40 s, com "digitando…" na tela o tempo todo. É muito, e
+ * é melhor que o handoff que acontecia antes.
+ *
+ * O teto não multiplica sem limite com ferramenta: as chamadas que **escolhem**
+ * consulta são curtas (1,5 s e 2,4 s medidos), porque a saída é uma linha. As
+ * demoradas são as que escrevem prosa, e há uma só por resposta.
  */
 const TIMEOUT_MS = 15_000
 
+/** O teto da reserva. Ver acima: última chance, então não se corta cedo. */
+const TIMEOUT_RESERVA_MS = 25_000
+
 export function gemini({ chave, modelo }: { chave: string; modelo?: string }): Modelo {
-  const nome = modelo ?? process.env.GEMINI_MODELO ?? MODELO_PADRAO
+  const escolhido = modelo ?? process.env.GEMINI_MODELO
+  const nome = escolhido ?? MODELO_PADRAO
+
+  /*
+   * Modelo escolhido à mão não ganha reserva.
+   *
+   * Quem passou `GEMINI_MODELO` ou o parâmetro está prendendo uma versão de
+   * propósito — para reproduzir um comportamento, ou porque a reserva é
+   * justamente o que ele quer testar. Trocar por baixo transformaria uma
+   * escolha explícita numa surpresa, e o teste que prende versão deixaria de
+   * provar o que diz provar.
+   */
+  const reserva = escolhido === undefined && MODELO_RESERVA !== nome ? MODELO_RESERVA : null
 
   return {
     async responder(pedido: PedidoDeIa): Promise<Resposta> {
-      const { sistema, usuario } = montarPrompt(pedido)
+      const corpo = montarCorpo(pedido)
 
-      try {
-        const resposta = await fetch(`${ENDERECO}/${nome}:generateContent`, {
-          method: 'POST',
-          // No cabeçalho, não na query: chave em URL vaza para log de acesso,
-          // histórico de proxy e mensagem de erro.
-          headers: { 'content-type': 'application/json', 'x-goog-api-key': chave },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: sistema }] },
-            contents: [{ role: 'user', parts: [{ text: usuario }] }],
-            ...declararFerramentas(pedido.ferramentas ?? []),
-            generationConfig: {
-              // Atendimento não é lugar de criatividade: a mesma pergunta tem
-              // que receber a mesma resposta.
-              temperature: 0.2,
-              // Folgado de propósito: os modelos novos gastam parte deste teto
-              // "pensando" antes de escrever. Com 400 a resposta chegou cortada
-              // no meio da frase — e resposta cortada vai para o WhatsApp de
-              // alguém. Quem encurta é o `prompt.ts`, por caractere, no fim.
-              maxOutputTokens: 1200,
-            },
-          }),
-          signal: AbortSignal.timeout(TIMEOUT_MS),
-        })
+      // Sem reserva não há para onde correr, então não se corta cedo: cortar
+      // ali é o mesmo que desistir.
+      const primeira = await tentar(
+        nome,
+        chave,
+        corpo,
+        reserva === null ? TIMEOUT_RESERVA_MS : TIMEOUT_MS,
+      )
+      if (primeira.tipo !== 'retentar') return primeira.resposta
 
-        if (!resposta.ok) {
-          const detalhe = await resposta.text().catch(() => '')
-          console.error(`[ia] gemini respondeu ${resposta.status}`, detalhe.slice(0, 300))
-          return { tipo: 'nao_sei', motivo: `o modelo respondeu ${resposta.status}` }
-        }
+      if (reserva === null) return primeira.desistencia
 
-        const corpo = (await resposta.json()) as RespostaGemini
-
-        // Filtro de segurança do Google. Não é erro nosso, e a saída é a mesma:
-        // uma pessoa assume.
-        const bloqueio = corpo.promptFeedback?.blockReason
-        if (bloqueio) return { tipo: 'nao_sei', motivo: `o modelo bloqueou (${bloqueio})` }
-
-        const partes = corpo.candidates?.[0]?.content?.parts ?? []
-
-        /*
-         * Pedido de consulta tem precedência sobre texto na mesma resposta.
-         *
-         * O modelo às vezes manda os dois: uma frase de espera ("deixa eu ver
-         * aqui") e a chamada junto. Mandar a frase e ignorar a chamada seria o
-         * pior desfecho — o bot promete olhar e nunca olha. Quem decide o que
-         * fazer com o pedido é o resolvedor.
-         */
-        const chamada = partes.find((p) => p.functionCall)?.functionCall
-        if (chamada?.name) {
-          return {
-            tipo: 'usar_ferramenta',
-            nome: chamada.name,
-            // O Gemini devolve os argumentos já como JSON, e com o tipo que
-            // ele achou que era. Tudo vira texto aqui porque é assim que o
-            // resolvedor interpola — e porque número virando `1e3` numa data
-            // é o tipo de surpresa que só aparece em produção.
-            argumentos: comoTexto(chamada.args),
-          }
-        }
-
-        return interpretarResposta(partes.find((p) => p.text !== undefined)?.text)
-      } catch (erro) {
-        const porTempo = erro instanceof Error && erro.name === 'TimeoutError'
-        console.error('[ia] gemini falhou', erro)
-        return {
-          tipo: 'nao_sei',
-          motivo: porTempo ? 'o modelo demorou demais' : 'não deu para falar com o modelo',
-        }
-      }
+      /*
+       * Uma segunda tentativa, e uma só.
+       *
+       * Duas seriam três esperas somadas na frente de quem está com o celular
+       * na mão. Se o segundo modelo também está fora, o problema não é pico —
+       * e insistir só atrasa a pessoa que vai assumir a conversa.
+       */
+      console.warn(`[ia] ${nome} devolveu ${primeira.status}; tentando ${reserva}`)
+      const segunda = await tentar(reserva, chave, corpo, TIMEOUT_RESERVA_MS)
+      return segunda.tipo === 'retentar' ? segunda.desistencia : segunda.resposta
     },
+  }
+}
+
+/** O corpo do pedido, montado uma vez e reaproveitado na retentativa. */
+function montarCorpo(pedido: PedidoDeIa): string {
+  const { sistema, usuario } = montarPrompt(pedido)
+
+  return JSON.stringify({
+    systemInstruction: { parts: [{ text: sistema }] },
+    contents: [{ role: 'user', parts: [{ text: usuario }] }],
+    ...declararFerramentas(pedido.ferramentas ?? []),
+    generationConfig: {
+      // Atendimento não é lugar de criatividade: a mesma pergunta tem que
+      // receber a mesma resposta.
+      temperature: 0.2,
+      // Folgado de propósito: os modelos novos gastam parte deste teto
+      // "pensando" antes de escrever. Com 400 a resposta chegou cortada no
+      // meio da frase — e resposta cortada vai para o WhatsApp de alguém. Quem
+      // encurta é o `prompt.ts`, por caractere, no fim.
+      maxOutputTokens: 1200,
+    },
+  })
+}
+
+/**
+ * Uma tentativa contra um modelo.
+ *
+ * `retentar` traz junto a `desistencia` já escrita: quem chama pode parar ali
+ * sem ter que reconstruir a frase, e assim não existe caminho em que o pedido
+ * termina sem resposta nenhuma.
+ */
+type Tentativa =
+  | { tipo: 'pronta'; resposta: Resposta }
+  | { tipo: 'retentar'; status: string; desistencia: Resposta }
+
+async function tentar(
+  nome: string,
+  chave: string,
+  corpo: string,
+  timeout: number,
+): Promise<Tentativa> {
+  try {
+    const resposta = await fetch(`${ENDERECO}/${nome}:generateContent`, {
+      method: 'POST',
+      // No cabeçalho, não na query: chave em URL vaza para log de acesso,
+      // histórico de proxy e mensagem de erro.
+      headers: { 'content-type': 'application/json', 'x-goog-api-key': chave },
+      body: corpo,
+      signal: AbortSignal.timeout(timeout),
+    })
+
+    if (!resposta.ok) {
+      const detalhe = await resposta.text().catch(() => '')
+      console.error(`[ia] gemini respondeu ${resposta.status}`, detalhe.slice(0, 300))
+
+      const desistencia: Resposta = {
+        tipo: 'nao_sei',
+        motivo: `o modelo respondeu ${resposta.status}`,
+      }
+
+      return VALE_RETENTAR.has(resposta.status)
+        ? { tipo: 'retentar', status: String(resposta.status), desistencia }
+        : { tipo: 'pronta', resposta: desistencia }
+    }
+
+    const json = (await resposta.json()) as RespostaGemini
+
+    // Filtro de segurança do Google. Não é erro nosso, e a saída é a mesma:
+    // uma pessoa assume. Não retenta — o outro modelo bloquearia igual.
+    const bloqueio = json.promptFeedback?.blockReason
+    if (bloqueio) {
+      return { tipo: 'pronta', resposta: { tipo: 'nao_sei', motivo: `o modelo bloqueou (${bloqueio})` } }
+    }
+
+    const partes = json.candidates?.[0]?.content?.parts ?? []
+
+    /*
+     * Pedido de consulta tem precedência sobre texto na mesma resposta.
+     *
+     * O modelo às vezes manda os dois: uma frase de espera ("deixa eu ver
+     * aqui") e a chamada junto. Mandar a frase e ignorar a chamada seria o
+     * pior desfecho — o bot promete olhar e nunca olha. Quem decide o que
+     * fazer com o pedido é o resolvedor.
+     */
+    const chamada = partes.find((p) => p.functionCall)?.functionCall
+    if (chamada?.name) {
+      return {
+        tipo: 'pronta',
+        resposta: {
+          tipo: 'usar_ferramenta',
+          nome: chamada.name,
+          // O Gemini devolve os argumentos já como JSON, e com o tipo que ele
+          // achou que era. Tudo vira texto aqui porque é assim que o resolvedor
+          // interpola — e porque número virando `1e3` numa data é o tipo de
+          // surpresa que só aparece em produção.
+          argumentos: comoTexto(chamada.args),
+        },
+      }
+    }
+
+    return {
+      tipo: 'pronta',
+      resposta: interpretarResposta(partes.find((p) => p.text !== undefined)?.text),
+    }
+  } catch (erro) {
+    const porTempo = erro instanceof Error && erro.name === 'TimeoutError'
+    console.error('[ia] gemini falhou', erro)
+
+    const desistencia: Resposta = {
+      tipo: 'nao_sei',
+      motivo: porTempo ? 'o modelo demorou demais' : 'não deu para falar com o modelo',
+    }
+
+    /*
+     * Timeout retenta; falha de rede não.
+     *
+     * Um modelo lento é exatamente o sintoma de congestionamento que a reserva
+     * existe para contornar. Já uma rede fora do ar deste lado não melhora
+     * trocando o endereço de destino, e a espera dobraria à toa.
+     */
+    return porTempo
+      ? { tipo: 'retentar', status: 'timeout', desistencia }
+      : { tipo: 'pronta', resposta: desistencia }
   }
 }
 

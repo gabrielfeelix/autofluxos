@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { ferramentasPermitidas } from '@/core/ferramentas'
 import { gemini } from './gemini'
 import type { Resposta } from './types'
 
@@ -8,6 +9,18 @@ import type { Resposta } from './types'
  * Com ferramenta no contrato existem duas maneiras de não ser texto — recusar
  * e pedir consulta —, e a mensagem de falha precisa dizer qual delas foi.
  */
+/**
+ * O modelo estava fora do ar, e não decidindo?
+ *
+ * Sem esta distinção, os testes negativos passam pelo motivo errado: um 503
+ * vira `nao_sei`, que satisfaz "não pediu consulta" — e a suíte fica verde
+ * enquanto prova nada. Aconteceu, e é como o congestionamento do
+ * `gemini-flash-latest` quase passou despercebido.
+ */
+function falhouPorInfra(r: Resposta): boolean {
+  return r.tipo === 'nao_sei' && /respondeu \d|demorou demais|não deu para falar/.test(r.motivo)
+}
+
 function descrever(r: Resposta): string {
   if (r.tipo === 'nao_sei') return `nao_sei: ${r.motivo}`
   if (r.tipo === 'usar_ferramenta') return `pediu a consulta ${r.nome}`
@@ -54,7 +67,7 @@ describe.skipIf(!chave)('o Gemini dentro do escopo do negócio', () => {
 
     if (r.tipo !== 'texto') throw new Error(`devia ter respondido, veio nao_sei: ${descrever(r)}`)
     expect(r.texto.toLowerCase()).toMatch(/gratuit|gr[áa]tis|sem custo|n[ãa]o.*cobra/)
-  }, 20_000)
+  }, 45_000)
 
   /**
    * O teste que justifica o arquivo, e o caso que mais dói na vida real:
@@ -73,7 +86,7 @@ describe.skipIf(!chave)('o Gemini dentro do escopo do negócio', () => {
     })
 
     expect(r.tipo).toBe('nao_sei')
-  }, 20_000)
+  }, 45_000)
 
   it('responde o que o contexto exclui, em vez de fugir', async () => {
     const r = await modelo.responder({
@@ -84,7 +97,7 @@ describe.skipIf(!chave)('o Gemini dentro do escopo do negócio', () => {
 
     if (r.tipo !== 'texto') throw new Error(`o contexto diz que não faz elétrica: ${descrever(r)}`)
     expect(r.texto.toLowerCase()).toMatch(/n[ãa]o/)
-  }, 20_000)
+  }, 45_000)
 
   /** A resposta vai direto para o WhatsApp: sem aspas em volta, sem comentário. */
   it('devolve só a mensagem, sem o modelo comentando o que fez', async () => {
@@ -97,7 +110,7 @@ describe.skipIf(!chave)('o Gemini dentro do escopo do negócio', () => {
     if (r.tipo !== 'texto') throw new Error(`devia ter respondido: ${descrever(r)}`)
     expect(r.texto).not.toMatch(/^["']|["']$/)
     expect(r.texto).not.toMatch(/\((Direct|This|Note|Answer)/i)
-  }, 20_000)
+  }, 45_000)
 
   it('recusa pedido de assistente de propósito geral (política da Meta)', async () => {
     const r = await modelo.responder({
@@ -107,7 +120,7 @@ describe.skipIf(!chave)('o Gemini dentro do escopo do negócio', () => {
     })
 
     expect(r.tipo).toBe('nao_sei')
-  }, 20_000)
+  }, 45_000)
 })
 
 describe.skipIf(!chave)('o adaptador nunca estoura', () => {
@@ -124,5 +137,93 @@ describe.skipIf(!chave)('o adaptador nunca estoura', () => {
     })
 
     expect(r.tipo).toBe('nao_sei')
-  }, 20_000)
+  }, 45_000)
+})
+
+/**
+ * A escolha entre ferramentas parecidas — o modo de falha que a pesquisa
+ * aponta e que mock nenhum reproduz.
+ *
+ * Descrições próximas degradam a seleção, e o erro é **silencioso**: o modelo
+ * responde com confiança sobre o dado errado. Foi por isso que o catálogo
+ * fundiu cinco presets de horário numa ferramenta com filtros; estes testes são
+ * o que prova que a fusão funciona com o modelo de verdade, e o que vai acusar
+ * se o próximo `-latest` regredir.
+ */
+describe.skipIf(!chave)('o Gemini escolhendo consulta', () => {
+  const modelo = gemini({ chave: chave! })
+  const ferramentas = ferramentasPermitidas([
+    'agenda_horarios',
+    'agenda_catalogo',
+    'agenda_minha',
+  ])
+
+  const pedidoBase = {
+    contextoNegocio: [
+      'Estúdio de pilates em Maringá-PR.',
+      'Aulas de pilates solo, pilates aparelho e fisioterapia.',
+      'Atende de segunda a sexta, das 6h às 21h.',
+    ].join('\n'),
+    instrucao: 'Ajude a pessoa com a agenda dela.',
+    hoje: '2026-09-01',
+    ferramentas,
+  }
+
+  it('pergunta sobre vaga vira consulta de horários, e não de catálogo', async () => {
+    const r = await modelo.responder({
+      ...pedidoBase,
+      pergunta: 'tem aula no dia 10 de setembro de 2026?',
+    })
+
+    if (r.tipo !== 'usar_ferramenta') throw new Error(`não consultou nada: ${descrever(r)}`)
+    expect(r.nome).toBe('agenda_horarios')
+    // A data tem que sair no formato da rota, e não como a pessoa escreveu.
+    expect(r.argumentos.de).toBe('2026-09-10')
+  }, 45_000)
+
+  it('"quais são meus horários" vira a agenda da pessoa, e não disponibilidade', async () => {
+    // As duas falam de horário. A diferença é de quem é o horário, e é
+    // exatamente o tipo de distinção que uma descrição preguiçosa perde.
+    const r = await modelo.responder({
+      ...pedidoBase,
+      pergunta: 'quais são as minhas próximas aulas?',
+    })
+
+    if (r.tipo !== 'usar_ferramenta') throw new Error(`não consultou nada: ${descrever(r)}`)
+    expect(r.nome).toBe('agenda_minha')
+  }, 45_000)
+
+  it('não tenta preencher a identidade sozinho', async () => {
+    // Se ele mandar `pessoa_id`, a conferência descarta — mas o certo é ele
+    // nem cogitar, porque o argumento não existe na declaração.
+    const r = await modelo.responder({
+      ...pedidoBase,
+      pergunta: 'quais são as minhas próximas aulas?',
+    })
+
+    if (r.tipo !== 'usar_ferramenta') throw new Error(`não consultou nada: ${descrever(r)}`)
+    expect(Object.keys(r.argumentos)).not.toContain('pessoa_id')
+  }, 45_000)
+
+  it('conversa fiada não vira consulta', async () => {
+    // `AUTO`, e não `ANY`: a maior parte das mensagens de um atendimento não
+    // tem consulta que sirva, e obrigar a chamar produziria uma consulta à toa
+    // em cada "obrigado".
+    const r = await modelo.responder({ ...pedidoBase, pergunta: 'obrigado, tenha um bom dia!' })
+
+    if (falhouPorInfra(r)) throw new Error(`o modelo não respondeu: ${descrever(r)}`)
+    expect(r.tipo).not.toBe('usar_ferramenta')
+  }, 45_000)
+
+  it('sem ferramenta autorizada, nunca pede consulta', async () => {
+    // A garantia de que fluxo publicado antes disto não muda de comportamento.
+    const r = await modelo.responder({
+      ...pedidoBase,
+      ferramentas: [],
+      pergunta: 'tem aula no dia 10 de setembro de 2026?',
+    })
+
+    if (falhouPorInfra(r)) throw new Error(`o modelo não respondeu: ${descrever(r)}`)
+    expect(r.tipo).not.toBe('usar_ferramenta')
+  }, 45_000)
 })
