@@ -137,7 +137,17 @@ export type Acao =
    */
   | { tipo: 'pausar_automacao' }
   /** chamar o modelo e reentrar no motor com `{ tipo: 'ia_respondeu' }` */
-  | { tipo: 'chamar_ia'; instrucao: string }
+  | {
+      tipo: 'chamar_ia'
+      instrucao: string
+      /**
+       * O que este nó autorizou a IA a consultar. Nomes, nunca a definição:
+       * o catálogo vive no servidor e a versão publicada guarda só a escolha.
+       */
+      ferramentas: string[]
+      /** De qual credencial as ferramentas se servem. Só o id — nunca o valor. */
+      conexaoId?: string
+    }
   /**
    * Chamar uma API e reentrar no motor com `{ tipo: 'http_respondeu' }`.
    *

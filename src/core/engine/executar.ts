@@ -567,7 +567,15 @@ function avancar(
       }
 
       case 'ia': {
-        acoes.push({ tipo: 'chamar_ia', instrucao: interpolar(no.data.instrucao, s.vars) })
+        acoes.push({
+          tipo: 'chamar_ia',
+          instrucao: interpolar(no.data.instrucao, s.vars),
+          // Nomes e id de credencial passam crus: nenhum dos dois é texto que
+          // a pessoa digitou, e interpolar aqui só criaria um lugar para um
+          // `{{...}}` vindo da conversa virar nome de ferramenta.
+          ferramentas: no.data.ferramentas,
+          ...(no.data.conexaoId ? { conexaoId: no.data.conexaoId } : {}),
+        })
         s.noAtual = no.id
         s.status = 'aguardando_ia'
         return { acoes, sessao: s }

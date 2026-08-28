@@ -1,5 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import { gemini } from './gemini'
+import type { Resposta } from './types'
+
+/**
+ * O que veio, quando não veio o texto esperado.
+ *
+ * Com ferramenta no contrato existem duas maneiras de não ser texto — recusar
+ * e pedir consulta —, e a mensagem de falha precisa dizer qual delas foi.
+ */
+function descrever(r: Resposta): string {
+  if (r.tipo === 'nao_sei') return `nao_sei: ${r.motivo}`
+  if (r.tipo === 'usar_ferramenta') return `pediu a consulta ${r.nome}`
+  return r.texto
+}
 
 /**
  * Fala com o Gemini de verdade, como os testes de banco falam com o Supabase.
@@ -39,7 +52,7 @@ describe.skipIf(!chave)('o Gemini dentro do escopo do negócio', () => {
       pergunta: 'vocês fazem orçamento? é cobrado?',
     })
 
-    if (r.tipo !== 'texto') throw new Error(`devia ter respondido, veio nao_sei: ${r.motivo}`)
+    if (r.tipo !== 'texto') throw new Error(`devia ter respondido, veio nao_sei: ${descrever(r)}`)
     expect(r.texto.toLowerCase()).toMatch(/gratuit|gr[áa]tis|sem custo|n[ãa]o.*cobra/)
   }, 20_000)
 
@@ -69,7 +82,7 @@ describe.skipIf(!chave)('o Gemini dentro do escopo do negócio', () => {
       pergunta: 'vocês trocam a fiação elétrica da casa?',
     })
 
-    if (r.tipo !== 'texto') throw new Error(`o contexto diz que não faz elétrica: ${r.motivo}`)
+    if (r.tipo !== 'texto') throw new Error(`o contexto diz que não faz elétrica: ${descrever(r)}`)
     expect(r.texto.toLowerCase()).toMatch(/n[ãa]o/)
   }, 20_000)
 
@@ -81,7 +94,7 @@ describe.skipIf(!chave)('o Gemini dentro do escopo do negócio', () => {
       pergunta: 'qual o horário de vocês?',
     })
 
-    if (r.tipo !== 'texto') throw new Error(`devia ter respondido: ${r.motivo}`)
+    if (r.tipo !== 'texto') throw new Error(`devia ter respondido: ${descrever(r)}`)
     expect(r.texto).not.toMatch(/^["']|["']$/)
     expect(r.texto).not.toMatch(/\((Direct|This|Note|Answer)/i)
   }, 20_000)

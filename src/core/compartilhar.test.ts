@@ -114,7 +114,7 @@ describe('os avisos aparecem antes de o link existir', () => {
 
   it('avisa que a IA não viaja', () => {
     const comIa = fluxo([
-      { id: 'a', type: 'ia', position: { x: 0, y: 0 }, data: { instrucao: 'responda' } },
+      { id: 'a', type: 'ia', position: { x: 0, y: 0 }, data: { instrucao: 'responda', ferramentas: [] } },
     ])
     expect(avisosDoCompartilhamento(comIa).map((a) => a.codigo)).toContain('IA_NAO_VIAJA')
   })

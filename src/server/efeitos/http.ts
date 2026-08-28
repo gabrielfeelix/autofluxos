@@ -30,7 +30,21 @@ export type CredencialDaChamada = {
 }
 
 export type RespostaHttp =
-  | { ok: true; valores: Record<string, string> }
+  | {
+      ok: true
+      valores: Record<string, string>
+      /**
+       * O JSON da resposta, sem achatar. Só vem com `comJson`.
+       *
+       * Existe para a IA, e não para o motor. `valores` achata lista em texto
+       * separado por `;` porque é o que um menu de WhatsApp come; para um
+       * modelo, achatar é perder — `07:00;10:00` do lado de `abc;def` obriga a
+       * reparear hora com id por posição, que é onde ele erra e marca a aula
+       * de outra pessoa. Quem recorta o que o modelo pode ver é a projeção da
+       * ferramenta, e não este campo.
+       */
+      json?: unknown
+    }
   | { ok: false; motivo: string }
 
 /**
@@ -47,7 +61,11 @@ const MAX_SALTOS = 3
 
 export async function chamarHttp(
   pedido: PedidoHttp,
-  { deTeste, credencial }: { deTeste: boolean; credencial?: CredencialDaChamada | null },
+  {
+    deTeste,
+    credencial,
+    comJson = false,
+  }: { deTeste: boolean; credencial?: CredencialDaChamada | null; comJson?: boolean },
 ): Promise<RespostaHttp> {
   // Um prazo para a chamada inteira, saltos incluídos. Os tempos do undici são
   // de **inatividade**: um servidor pingando um byte por segundo nunca os
@@ -192,7 +210,9 @@ export async function chamarHttp(
   // Sem mapeamento, o que voltou não interessa: é o webhook disparado e
   // esquecido, que é metade do valor deste nó. O corpo ainda precisa ser
   // consumido — deixar pendurado segura a conexão até o timeout.
-  if (pedido.mapear.length === 0) {
+  // Com `comJson` o corpo interessa mesmo sem mapeamento: é o caminho da IA,
+  // que não mapeia nada — quem recorta é a projeção da ferramenta.
+  if (pedido.mapear.length === 0 && !comJson) {
     await descartar(resposta)
     await fechar()
     return { ok: true, valores: {} }
@@ -215,7 +235,7 @@ export async function chamarHttp(
     valores[variavel] = quantos ? cru : formatarValor(cru, formato)
   }
 
-  return { ok: true, valores }
+  return { ok: true, valores, ...(comJson ? { json } : {}) }
 }
 
 /**

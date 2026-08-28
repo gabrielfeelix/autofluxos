@@ -360,7 +360,7 @@ describe('IA é plano à parte', () => {
         id: 'duvida',
         type: 'ia',
         position: { x: 0, y: 0 },
-        data: { instrucao: 'Responda a dúvida do cliente.' },
+        data: { instrucao: 'Responda a dúvida do cliente.', ferramentas: [] },
       },
       {
         id: 'humano',
@@ -619,7 +619,7 @@ describe('IA sem contexto de negócio não vai ao ar', () => {
   const comBlocoDeIa = fluxoSchema.parse({
     inicio: 'duvida',
     nodes: [
-      { id: 'duvida', type: 'ia', position: p, data: { instrucao: 'Responda a dúvida.' } },
+      { id: 'duvida', type: 'ia', position: p, data: { instrucao: 'Responda a dúvida.', ferramentas: [] } },
       { id: 'humano', type: 'handoff', position: p, data: {} },
     ],
     edges: [{ id: 'a1', source: 'duvida', target: 'humano' }],

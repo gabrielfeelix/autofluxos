@@ -26,7 +26,9 @@ import type { Sessao } from '@/core/engine/types'
 import { dentroDaJanela } from '@/channels/janela'
 import { contarDisparo, gatilhosAtivos } from './repos/gatilhos'
 import {
+  SEMPRE_ABERTO,
   atendimentoAberto,
+  hojeNaConta,
   proximaAbertura,
   type HorarioDeAtendimento,
 } from '@/core/horario'
@@ -479,6 +481,10 @@ async function avancarConversa(
     {
       ...opcoesDeIa,
       atendimento: contextoDeAtendimento(horario),
+      // A data vem do fuso da conta, e não do servidor. Em UTC, a partir das
+      // 21h em São Paulo, "hoje" já é amanhã — que é exatamente o horário em
+      // que gente manda mensagem para marcar aula.
+      hoje: hojeNaConta(horario?.fuso ?? SEMPRE_ABERTO.fuso),
       carregarFluxo: carregadorDeFluxo(canalSalvo.clienteId),
     },
   )
@@ -595,6 +601,10 @@ export async function rodarTimeoutDePergunta(
     const resultado = await executarComEfeitos(versao.grafo, agora.sessao, { tipo: 'timeout' }, {
       ...opcoesDeIa,
       atendimento: contextoDeAtendimento(horario),
+      // A data vem do fuso da conta, e não do servidor. Em UTC, a partir das
+      // 21h em São Paulo, "hoje" já é amanhã — que é exatamente o horário em
+      // que gente manda mensagem para marcar aula.
+      hoje: hojeNaConta(horario?.fuso ?? SEMPRE_ABERTO.fuso),
       carregarFluxo: carregadorDeFluxo(canal.clienteId),
     })
 
@@ -736,6 +746,10 @@ export async function abrirFluxoParaContato(
     const resultado = await executarComEfeitos(versao.grafo, salva.sessao, { tipo: 'inicio' }, {
       ...opcoesDeIa,
       atendimento: contextoDeAtendimento(horario),
+      // A data vem do fuso da conta, e não do servidor. Em UTC, a partir das
+      // 21h em São Paulo, "hoje" já é amanhã — que é exatamente o horário em
+      // que gente manda mensagem para marcar aula.
+      hoje: hojeNaConta(horario?.fuso ?? SEMPRE_ABERTO.fuso),
       carregarFluxo: carregadorDeFluxo(clienteId),
     })
 

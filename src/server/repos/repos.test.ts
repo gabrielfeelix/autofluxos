@@ -256,7 +256,7 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
       id: 'duvida',
       type: 'ia',
       position: { x: 400, y: 400 },
-      data: { instrucao: 'Responda a dúvida do cliente.' },
+      data: { instrucao: 'Responda a dúvida do cliente.', ferramentas: [] },
     })
     comIa.edges.push({ id: 'para-ia', source: 'abertura', target: 'duvida' })
 

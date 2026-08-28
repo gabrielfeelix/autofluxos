@@ -282,7 +282,7 @@ describe('nó de IA', () => {
     inicio: 'duvida',
     nodes: [
       { id: 'duvida', type: 'pergunta', position: p, data: { texto: 'Qual sua dúvida?', salvarEm: 'duvida' } },
-      { id: 'responder', type: 'ia', position: p, data: { instrucao: 'Responda: {{duvida}}', salvarEm: 'resposta_ia' } },
+      { id: 'responder', type: 'ia', position: p, data: { instrucao: 'Responda: {{duvida}}', salvarEm: 'resposta_ia', ferramentas: [] } },
       { id: 'humano', type: 'handoff', position: p, data: {} },
     ],
     edges: [
@@ -297,9 +297,13 @@ describe('nó de IA', () => {
       { tipo: 'texto', texto: 'vocês fazem vídeo institucional?' },
     ])
 
+    // `ferramentas` vazio é o padrão e é o que mantém o comportamento de
+    // sempre: sem consulta autorizada, a IA responde só com o contexto do
+    // negócio, como antes de o catálogo existir.
     expect(acoes).toContainEqual({
       tipo: 'chamar_ia',
       instrucao: 'Responda: vocês fazem vídeo institucional?',
+      ferramentas: [],
     })
     expect(sessao.status).toBe('aguardando_ia')
     expect(sessao.noAtual).toBe('responder')

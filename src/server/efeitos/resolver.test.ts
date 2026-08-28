@@ -38,7 +38,7 @@ const fluxoComIa: Fluxo = {
       id: 'duvida',
       type: 'ia',
       position: { x: 0, y: 0 },
-      data: { instrucao: 'Responda a dúvida sobre o serviço.' },
+      data: { instrucao: 'Responda a dúvida sobre o serviço.', ferramentas: [] },
     },
     {
       id: 'fim',
@@ -289,7 +289,7 @@ describe('resolvendo o nó de API', () => {
           position: { x: 0, y: 0 },
           data: { url: 'https://e.com', mapear: [{ variavel: 'situacao', caminho: 'status' }] },
         },
-        { id: 'duvida', type: 'ia', position: { x: 0, y: 0 }, data: { instrucao: 'explique {{situacao}}' } },
+        { id: 'duvida', type: 'ia', position: { x: 0, y: 0 }, data: { instrucao: 'explique {{situacao}}', ferramentas: [] } },
         { id: 'humano', type: 'handoff', position: { x: 0, y: 0 }, data: {} },
       ],
       edges: [
@@ -564,7 +564,7 @@ describe('ir para outra automação', () => {
           id: 'pergunta-ia',
           type: 'ia',
           position: { x: 0, y: 0 },
-          data: { instrucao: 'Responda a dúvida.' },
+          data: { instrucao: 'Responda a dúvida.', ferramentas: [] },
         },
       ],
       edges: [],

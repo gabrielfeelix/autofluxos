@@ -22,6 +22,10 @@ import {
 import { contarCaracteres, temMetadeDeCaractere } from './texto'
 import { VARIAVEIS_NATIVAS } from '../contatos/vars-iniciais'
 import { chavesSimplesCitadas, variaveisCitadas } from '../engine/interpolar'
+import { nomesDeFerramenta } from '../ferramentas'
+
+/** Os nomes que o catálogo de ferramentas da IA conhece hoje. */
+const CATALOGO = nomesDeFerramenta()
 
 /**
  * `{{segredo.nome}}` — o namespace reservado para o cofre da v2.
@@ -311,6 +315,45 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
         mensagem: `${descrever(no)} usa uma credencial que não existe mais neste cliente. Escolha outra, ou tire a credencial.`,
         noId: no.id,
       })
+    }
+
+    if (no.type === 'ia' && no.data.ferramentas.length > 0) {
+      /*
+       * Ferramenta que o catálogo não conhece é recusada **aqui**, e não em
+       * conversa.
+       *
+       * O motor ignora nome desconhecido de propósito — versão publicada é
+       * imutável e uma conversa em andamento não pode morrer porque o catálogo
+       * mudou. Mas ignorar em silêncio na hora de publicar seria entregar um
+       * bloco que a pessoa acha que consulta a agenda e que não consulta nada.
+       */
+      const desconhecidas = no.data.ferramentas.filter((f) => !CATALOGO.includes(f))
+      if (desconhecidas.length > 0) {
+        erros.push({
+          codigo: 'FERRAMENTA_INEXISTENTE',
+          mensagem: `${descrever(no)} deixa a IA usar ${desconhecidas.join(', ')}, que não existe. Escolha outra consulta, ou tire essa.`,
+          noId: no.id,
+        })
+      }
+
+      /*
+       * Ferramenta sem credencial não é meia integração: é uma chamada que sai
+       * sem `Authorization` e volta 401 em toda conversa. O bloco pareceria
+       * ligado e a IA diria "não sei" para tudo o que dependesse dele.
+       */
+      if (!no.data.conexaoId) {
+        erros.push({
+          codigo: 'FERRAMENTA_SEM_CREDENCIAL',
+          mensagem: `${descrever(no)} deixa a IA consultar o sistema, mas nenhuma credencial foi escolhida. Sem ela a consulta volta negada e a IA responderia "não sei".`,
+          noId: no.id,
+        })
+      } else if (conexoes && !conexoes.includes(no.data.conexaoId)) {
+        erros.push({
+          codigo: 'CONEXAO_INEXISTENTE',
+          mensagem: `${descrever(no)} usa uma credencial que não existe mais neste cliente. Escolha outra, ou tire as consultas.`,
+          noId: no.id,
+        })
+      }
     }
 
     if (no.type === 'etapa') {

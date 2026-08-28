@@ -414,6 +414,31 @@ export const noIaSchema = z.object({
   data: z.object({
     instrucao: z.string(),
     salvarEm: nomeVariavel.optional(),
+    /**
+     * O que este nó de IA pode consultar no sistema do cliente, por nome de
+     * ferramenta (ver `core/ferramentas.ts`).
+     *
+     * **Vazio é o padrão e não é omissão.** Sem ferramenta, a IA continua sendo
+     * o que sempre foi: redatora de escopo fechado em cima do contexto do
+     * negócio. Todo fluxo publicado antes disto continua se comportando igual.
+     *
+     * **Nunca "todas".** Lista explícita porque catálogo grande degrada a
+     * escolha do modelo, e porque uma ferramenta a mais é uma ação a mais que
+     * um estranho no WhatsApp pode tentar disparar. É a whitelist de
+     * `LLM06 — Excessive Agency`, e ela mora no grafo, que é congelado ao
+     * publicar: mudar o catálogo depois não amplia o poder de uma conversa em
+     * andamento.
+     */
+    ferramentas: z.array(z.string()).default([]),
+    /**
+     * Qual credencial as ferramentas usam. Só o **id**, pela mesma regra do nó
+     * de API: o valor nunca entra no fluxo nem na versão publicada.
+     *
+     * Obrigatório na prática quando há ferramenta — quem cobra é o `validar()`,
+     * como em toda a casa. Zod garante a estrutura, `validar()` garante o
+     * sentido.
+     */
+    conexaoId: z.string().optional(),
   }),
 })
 

@@ -94,6 +94,29 @@ export function agoraNaConta(
 }
 
 /**
+ * Que dia é hoje na conta, em `AAAA-MM-DD`.
+ *
+ * **Existe para a IA, e o erro que ela evita é caro.** Um modelo sem relógio
+ * não avisa que não sabe a data: ele chuta. E `new Date().toISOString()` em
+ * servidor UTC vira o dia seguinte a partir das 21h em São Paulo — a hora em
+ * que gente manda mensagem para marcar aula. O bot ofereceria a agenda de
+ * amanhã dizendo "hoje", e ninguém suspeitaria da resposta.
+ *
+ * O fuso é o da conta, e não o do servidor, pela mesma razão de
+ * `agoraNaConta`: quem tem horário de atendimento tem fuso configurado, e é
+ * ele que descreve o dia de quem está conversando.
+ */
+export function hojeNaConta(fuso: string, agora: Date = new Date()): string {
+  // `en-CA` produz `AAAA-MM-DD` direto, que é o formato que a agenda aceita.
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: fuso,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(agora)
+}
+
+/**
  * Tem gente para atender agora?
  *
  * **Nenhuma faixa em nenhum dia significa aberto**, e não fechado. É a

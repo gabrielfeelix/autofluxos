@@ -3,7 +3,14 @@ import { ATENDIMENTO_SEMPRE_ABERTO, avisoDeForaDoHorario, executar } from '@/cor
 import type { ContextoDoAtendimento } from '@/core/engine/executar'
 import type { Acao, Entrada, Resultado, Sessao } from '@/core/engine/types'
 import type { Fluxo } from '@/core/flow/schema'
-import type { Modelo, Turno } from '../ia/types'
+import { ferramentasPermitidas, idsVistos, projetar } from '@/core/ferramentas'
+import {
+  assinatura,
+  camposInjetadosTentados,
+  conferirPedido,
+  novaMemoria,
+} from '../ia/ferramentas-do-pedido'
+import type { Modelo, Resposta, Turno } from '../ia/types'
 import { alertar } from '../alertar'
 import { chamarHttp } from './http'
 import { lerCredencial } from '../repos/conexoes'
@@ -52,6 +59,13 @@ export type OpcoesDeEfeitos = {
   contextoNegocio: string
   /** A conversa até aqui, para a IA não repetir o que já foi dito. */
   historico?: Turno[]
+  /**
+   * Que dia é hoje, em `AAAA-MM-DD`, no fuso da conta (`core/horario.ts`).
+   *
+   * Sem isto a IA não tem relógio e não avisa que não tem: ela chuta o ano ao
+   * traduzir "amanhã", e o chute errado é um agendamento meses fora.
+   */
+  hoje?: string
   /** A última mensagem da pessoa, quando não veio como texto na entrada. */
   perguntaDaPessoa?: string
   /**
@@ -278,11 +292,12 @@ export async function executarComEfeitos(
     // fazer — hoje, mandar para uma pessoa. Nunca fingir que respondeu.
     if (!modelo) return { ...resultado, ...(destino ? { destino } : {}) }
 
-    const resposta = await modelo.responder({
-      contextoNegocio: opcoes.contextoNegocio,
-      instrucao: chamadaIa.instrucao,
+    const resposta = await responderComFerramentas({
+      modelo,
+      chamada: chamadaIa,
       pergunta,
-      historico: opcoes.historico,
+      opcoes,
+      vars: resultado.sessao.vars,
     })
 
     if (resposta.tipo === 'nao_sei') {
@@ -380,4 +395,204 @@ function semEfeito(acoes: Acao[], tipo: 'chamar_ia' | 'chamar_http' | 'ir_para_f
 
 function ultimaDaPessoa(historico: Turno[] | undefined): string | undefined {
   return [...(historico ?? [])].reverse().find((t) => t.de === 'pessoa')?.texto
+}
+
+/**
+ * Quantas consultas a IA pode fazer antes de responder.
+ *
+ * **Dois, e o número tem origem.** A prática assentada em tool calling é uma a
+ * duas voltas: cada volta melhora a cobertura e cobra em latência e token, e a
+ * terceira quase nunca acrescenta. Do lado de cá o custo é concreto — três
+ * chamadas ao modelo e duas à API do cliente já somam dezenas de segundos com
+ * alguém olhando o WhatsApp.
+ *
+ * Dois também é o que a conversa real pede: `agenda_catalogo` para achar o id
+ * da modalidade, `agenda_horarios` para ver o que tem. Quem precisar de mais
+ * está desenhando fluxo com IA em vez de desenhar fluxo.
+ */
+export const MAX_VOLTAS_DE_FERRAMENTA = 2
+
+/**
+ * O que o resolvedor devolve: texto ou desistência, nunca um pedido pendente.
+ *
+ * Quem executa consulta é este arquivo, então um `usar_ferramenta` saindo daqui
+ * seria um pedido que ninguém vai atender — e a conversa terminaria em
+ * silêncio, que é o único desfecho que este produto não aceita.
+ */
+type RespostaFinal = Exclude<Resposta, { tipo: 'usar_ferramenta' }>
+
+/**
+ * Pedido de consulta onde nenhuma foi oferecida vira desistência.
+ *
+ * O modelo não deveria conseguir — sem `tools` no corpo não há função para
+ * chamar. Mas "não deveria" não é uma garantia que se possa dar a partir do
+ * comportamento de um modelo, e a alternativa é uma resposta vazia chegando ao
+ * WhatsApp de alguém.
+ */
+function semPedido(resposta: Resposta): RespostaFinal {
+  if (resposta.tipo === 'usar_ferramenta') {
+    return { tipo: 'nao_sei', motivo: 'o modelo pediu uma consulta que este bloco não oferece' }
+  }
+  return resposta
+}
+
+/**
+ * A IA respondendo, com as consultas que este nó autorizou.
+ *
+ * Sem ferramenta, é exatamente a chamada única de sempre — nenhum fluxo
+ * publicado muda de comportamento.
+ *
+ * Com ferramenta, o laço é curto e todas as saídas terminam em resposta ou em
+ * `nao_sei`. Nunca em exceção: uma exceção subindo daqui cairia dentro do
+ * `after()` do webhook, a sessão não seria salva e a pessoa ficaria esperando
+ * uma resposta que não vem.
+ */
+async function responderComFerramentas({
+  modelo,
+  chamada,
+  pergunta,
+  opcoes,
+  vars,
+}: {
+  modelo: Modelo
+  chamada: Extract<Acao, { tipo: 'chamar_ia' }>
+  pergunta: string
+  opcoes: OpcoesDeEfeitos
+  vars: Record<string, string>
+}): Promise<RespostaFinal> {
+  const permitidas = ferramentasPermitidas(chamada.ferramentas)
+
+  const base = {
+    contextoNegocio: opcoes.contextoNegocio,
+    instrucao: chamada.instrucao,
+    pergunta,
+    hoje: opcoes.hoje,
+  }
+
+  if (permitidas.length === 0) {
+    return semPedido(await modelo.responder({ ...base, historico: opcoes.historico }))
+  }
+
+  /*
+   * A credencial é lida uma vez, fora do laço, e vive só o tempo desta
+   * resposta. Ela não entra na sessão, não é serializada e portanto não tem
+   * como chegar ao navegador pelo simulador — a mesma regra do nó de API.
+   */
+  let credencial = null
+  if (chamada.conexaoId && opcoes.clienteId) {
+    try {
+      credencial = await lerCredencial(chamada.conexaoId, opcoes.clienteId)
+    } catch (erro) {
+      await alertar('não deu para ler a credencial do cofre para a IA', erro, {
+        conexao: chamada.conexaoId,
+        cliente: opcoes.clienteId,
+      })
+    }
+  }
+
+  if (!credencial) {
+    // Consultar sem credencial volta 401 em toda conversa, e a IA diria "não
+    // sei" para tudo sem ninguém entender por quê. Melhor dizer o motivo.
+    return { tipo: 'nao_sei', motivo: 'a credencial das consultas não pôde ser lida' }
+  }
+
+  const deTeste = opcoes.origem === 'simulador'
+  const memoria = novaMemoria()
+  const conversa: Turno[] = [...(opcoes.historico ?? [])]
+
+  for (let volta = 0; volta <= MAX_VOLTAS_DE_FERRAMENTA; volta++) {
+    const resposta = await modelo.responder({
+      ...base,
+      historico: conversa,
+      // Na última volta o catálogo sai: o modelo tem que responder com o que
+      // já tem. Deixá-lo pedir de novo produziria um pedido que ninguém vai
+      // executar, e a conversa terminaria em silêncio.
+      ferramentas: volta === MAX_VOLTAS_DE_FERRAMENTA ? [] : permitidas,
+    })
+
+    if (resposta.tipo !== 'usar_ferramenta') return resposta
+
+    const conferida = conferirPedido({
+      nome: resposta.nome,
+      argumentos: resposta.argumentos,
+      permitidas,
+      injetados: vars,
+      memoria,
+    })
+
+    if (!conferida.ok) {
+      /*
+       * Pedido recusado vira handoff, e não uma segunda chance.
+       *
+       * Devolver o erro para o modelo tentar de novo é o desenho tentador e é
+       * o errado aqui: cada tentativa é uma volta a mais com alguém esperando,
+       * e as recusas que existem não são erro de digitação — são id inventado,
+       * ferramenta não autorizada e argumento faltando. Nenhuma delas melhora
+       * na segunda tentativa, e a primeira é sinal de que alguém está testando
+       * o limite.
+       */
+      console.warn(`[ia] consulta recusada: ${conferida.motivo}`)
+      return { tipo: 'nao_sei', motivo: conferida.motivo }
+    }
+
+    const { ferramenta, url, corpo } = conferida.chamada
+
+    /*
+     * Na aba Testar, consulta que grava não grava.
+     *
+     * O `X-AutoFluxos-Teste` avisa o outro lado, mas ele depende de o cliente
+     * filtrar. Com a IA escolhendo sozinha a chamada, isso deixa de ser
+     * aceitável: testar um fluxo marcaria aula de verdade na agenda de alguém.
+     * Ler continua real, porque uma lista falsa não testa nada.
+     */
+    if (deTeste && ferramenta.escreve) {
+      conversa.push({
+        de: 'ferramenta',
+        nome: ferramenta.nome,
+        texto: '{"simulado":true,"aviso":"Estamos em teste; nada foi gravado de verdade."}',
+      })
+      memoria.jaPedidos.add(assinatura(resposta.nome, resposta.argumentos))
+      continue
+    }
+
+    const tentouInjetado = camposInjetadosTentados(ferramenta, resposta.argumentos)
+    if (tentouInjetado.length > 0) {
+      // O valor já foi descartado pela conferência. O registro fica porque
+      // tentativa de escolher a identidade de quem sofre a ação é sinal, e
+      // sinal que ninguém conta é sinal que ninguém vê.
+      console.warn(
+        `[ia] o modelo tentou preencher ${tentouInjetado.join(', ')} em ${ferramenta.nome}`,
+      )
+    }
+
+    const bruta = await chamarHttp(
+      {
+        tipo: 'chamar_http',
+        metodo: ferramenta.chamada.metodo,
+        url,
+        cabecalhos: ferramenta.chamada.cabecalhos,
+        corpo,
+        mapear: [],
+        aoFalhar: 'humano',
+        ...(chamada.conexaoId ? { conexaoId: chamada.conexaoId } : {}),
+      },
+      { deTeste, credencial, comJson: true },
+    )
+
+    memoria.jaPedidos.add(assinatura(resposta.nome, resposta.argumentos))
+
+    if (!bruta.ok) {
+      // Falha de consulta é handoff pelo mesmo motivo do nó de API com
+      // `aoFalhar: humano`: responder sem o dado é responder chutando.
+      return { tipo: 'nao_sei', motivo: `a consulta ${ferramenta.nome} falhou — ${bruta.motivo}` }
+    }
+
+    const recorte = projetar(bruta.json, ferramenta.projecao)
+    idsVistos(recorte, memoria.ids)
+
+    conversa.push({ de: 'ferramenta', nome: ferramenta.nome, texto: JSON.stringify(recorte) })
+  }
+
+  /* istanbul ignore next -- o laço sempre sai por `return` acima. */
+  return { tipo: 'nao_sei', motivo: 'a IA consultou demais sem chegar a uma resposta' }
 }
