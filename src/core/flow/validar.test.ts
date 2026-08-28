@@ -148,6 +148,53 @@ describe('validar', () => {
     ).not.toContain('VARIAVEL_DESCONHECIDA')
   })
 
+  /*
+   * O caso real que motivou o aviso: quem monta fluxo escreveu
+   * `{dias_reposicao}` no bloco de confirmação. Não é variável desconhecida —
+   * não é variável nenhuma —, então nada avisava, e o aluno lia a chave.
+   */
+  it('avisa sobre {variavel} escrita com uma chave só', () => {
+    const fluxo = fluxoValido()
+    const oi = fluxo.nodes.find((n) => n.id === 'oi')
+    if (oi?.type === 'mensagem') oi.data.texto = 'Confirma o dia {dias_reposicao}?'
+
+    const r = validar(fluxo)
+    expect(r.ok).toBe(true) // é aviso: publicar continua sendo escolha de quem desenha
+    expect(codigos(r.avisos)).toContain('CHAVE_SIMPLES')
+    expect(r.avisos.find((a) => a.codigo === 'CHAVE_SIMPLES')?.mensagem).toContain(
+      '{{dias_reposicao}}',
+    )
+  })
+
+  it('não confunde a citação certa com chave simples', () => {
+    const fluxo = fluxoValido()
+    const tchau = fluxo.nodes.find((n) => n.id === 'tchau')
+    if (tchau?.type === 'mensagem') tchau.data.texto = 'Marquei {{quer}}, até!'
+
+    expect(codigos(validar(fluxo).avisos)).not.toContain('CHAVE_SIMPLES')
+  })
+
+  /*
+   * Condição e rótulo de opção não passam por `interpolar()`, então chave ali é
+   * texto comum. Avisar seria acusar quem escreveu certo.
+   */
+  it('não reclama de chave no valor de uma condição', () => {
+    const fluxo = fluxoValido()
+    fluxo.nodes.push({
+      id: 'cond',
+      type: 'condicao',
+      position: p,
+      data: { variavel: 'quer', operador: 'igual', valor: '{sim}' },
+    })
+    fluxo.edges.push(
+      { id: 'e3', source: 'tchau', target: 'cond' },
+      { id: 'e4', source: 'cond', sourceHandle: 'verdadeiro', target: 'humano' },
+      { id: 'e5', source: 'cond', sourceHandle: 'falso', target: 'humano' },
+    )
+
+    expect(codigos(validar(fluxo).avisos)).not.toContain('CHAVE_SIMPLES')
+  })
+
   it('não reclama de variável que algum bloco preenche', () => {
     const fluxo = fluxoValido()
     const tchau = fluxo.nodes.find((n) => n.id === 'tchau')

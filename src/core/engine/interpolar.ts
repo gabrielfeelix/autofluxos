@@ -106,3 +106,26 @@ export function fatiarVariaveis(texto: string): PedacoDeTexto[] {
   if (cursor < texto.length) pedacos.push({ tipo: 'texto', texto: texto.slice(cursor) })
   return pedacos
 }
+
+/**
+ * Lista os `{nome}` de **uma chave só** — o engano de digitação que sai literal.
+ *
+ * O motor só troca `{{nome}}`. Com uma chave, `interpolar()` não reconhece, o
+ * texto viaja como está, e o aluno lê *"reagendar sua aula para dia
+ * {dias_reposicao}"*. Nada estoura: não é variável desconhecida (não é variável
+ * nenhuma), então o aviso de `VARIAVEL_DESCONHECIDA` também não pega.
+ *
+ * Veio de quem monta fluxo com cliente na frente escrevendo exatamente assim, e
+ * é o pior tipo de defeito que existe aqui — silencioso, e visível justo no
+ * bloco de confirmação, que é o mais lido da conversa.
+ *
+ * As citações válidas saem primeiro. Sem isso o miolo de `{{nome}}` seria lido
+ * como `{nome}` e todo fluxo correto passaria a avisar.
+ */
+export function chavesSimplesCitadas(texto: string): string[] {
+  // Qualquer par de chaves duplas, inclusive o que `interpolar` recusa
+  // (`{{1abc}}`): ali o problema é outro, e avisar duas vezes confunde.
+  const semValidas = texto.replace(/\{\{[^{}]*\}\}/g, ' ')
+  const achadas = semValidas.matchAll(/\{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*\}/g)
+  return [...new Set([...achadas].map((m) => m[1] as string))]
+}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, type CSSProperties, type ReactNode, type RefObject } from 'react'
-import { fatiarVariaveis } from '@/core/engine/interpolar'
+import { chavesSimplesCitadas, fatiarVariaveis } from '@/core/engine/interpolar'
 import { SeletorDeVariavel } from './escolher-variavel'
 
 /**
@@ -295,6 +295,22 @@ export function LegendaDeVariaveis({
         (nome) => nome !== '' && !conhecidas.includes(nome),
       )
     : []
+
+  /*
+   * Uma chave só vem antes de tudo: é engano de digitação, não de desenho, e
+   * some da conversa sem deixar rastro — `interpolar()` não reconhece, então
+   * nem sai vazio, sai escrito.
+   */
+  const simples = chavesSimplesCitadas(valor)
+  if (simples.length > 0) {
+    return (
+      <span className="mt-1 block text-[10.5px] leading-4 text-amber-200">
+        {simples.map((nome) => `{${nome}}`).join(', ')}{' '}
+        {simples.length === 1 ? 'tem uma chave só' : 'têm uma chave só'} — o certo é{' '}
+        {simples.map((nome) => `{{${nome}}}`).join(', ')}. Com uma, sai assim mesmo na conversa.
+      </span>
+    )
+  }
 
   if (desconhecidas.length > 0) {
     return (

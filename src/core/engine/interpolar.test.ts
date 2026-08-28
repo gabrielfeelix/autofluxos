@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fatiarVariaveis, variaveisCitadas } from './interpolar'
+import { chavesSimplesCitadas, fatiarVariaveis, variaveisCitadas } from './interpolar'
 
 describe('fatiarVariaveis — o realce do editor', () => {
   it('separa literal de citação', () => {
@@ -37,5 +37,34 @@ describe('fatiarVariaveis — o realce do editor', () => {
       .filter((p) => p.tipo === 'variavel')
       .map((p) => (p.tipo === 'variavel' ? p.nome : ''))
     expect(pintadas).toEqual(variaveisCitadas(texto))
+  })
+})
+
+describe('chavesSimplesCitadas — o engano de uma chave só', () => {
+  it('acha a chave simples', () => {
+    expect(chavesSimplesCitadas('dia {dias_reposicao} às {horario}')).toEqual([
+      'dias_reposicao',
+      'horario',
+    ])
+  })
+
+  it('ignora a citação certa', () => {
+    expect(chavesSimplesCitadas('Olá, {{nome}}! Tudo bem?')).toEqual([])
+  })
+
+  it('não lê o miolo de uma citação certa como chave simples', () => {
+    expect(chavesSimplesCitadas('{{nome}} {{sobrenome}}')).toEqual([])
+  })
+
+  it('cala sobre {{1abc}}, que já tem aviso próprio', () => {
+    expect(chavesSimplesCitadas('{{1abc}}')).toEqual([])
+  })
+
+  it('não acusa chave sem nome dentro', () => {
+    expect(chavesSimplesCitadas('function f() {} e {} e { }')).toEqual([])
+  })
+
+  it('não repete a mesma chave', () => {
+    expect(chavesSimplesCitadas('{dia} e depois {dia}')).toEqual(['dia'])
   })
 })

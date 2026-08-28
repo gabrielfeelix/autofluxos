@@ -19,7 +19,7 @@ import {
   type TipoDeMidia,
 } from './schema'
 import { contarCaracteres, temMetadeDeCaractere } from './texto'
-import { variaveisCitadas } from '../engine/interpolar'
+import { chavesSimplesCitadas, variaveisCitadas } from '../engine/interpolar'
 
 /**
  * `{{segredo.nome}}` — o namespace reservado para o cofre da v2.
@@ -1052,6 +1052,21 @@ function conferirVariaveis(fluxo: Fluxo, daConta: string[] = []): Problema[] {
     }
   }
 
+  /*
+   * `{nome}` de uma chave só. Não é variável desconhecida — não é variável
+   * nenhuma —, então o laço acima nunca pegaria, e o texto sairia literal na
+   * frente de quem conversa.
+   */
+  for (const no of fluxo.nodes) {
+    for (const chave of textosDoNo(no).flatMap(chavesSimplesCitadas)) {
+      problemas.push({
+        codigo: 'CHAVE_SIMPLES',
+        mensagem: `${descrever(no)} escreve {${chave}} com uma chave só. O certo é {{${chave}}} — com uma, sai assim mesmo na conversa.`,
+        noId: no.id,
+      })
+    }
+  }
+
   for (const no of fluxo.nodes) {
     if (no.type !== 'http') continue
     const textos = [no.data.url, no.data.corpo, ...no.data.cabecalhos.map((c) => c.valor)]
@@ -1125,6 +1140,50 @@ function variaveisDoNo(no: No): string[] {
     case 'voltar':
       // O destino é um id de bloco escolhido no editor, pelo mesmo motivo dos
       // dois acima: a conversa não escolhe para onde ela própria volta.
+      return []
+  }
+}
+
+/**
+ * Os textos do bloco que **passam por `interpolar()`** — e só eles.
+ *
+ * Existe separado de `variaveisDoNo` porque as duas perguntas são diferentes:
+ * aquela quer os nomes já extraídos, esta quer a string crua, para conferir o
+ * que *não* virou citação. E o recorte importa: o valor de uma condição e o
+ * rótulo de uma opção estática **não** interpolam (ver `avaliar` e `perguntar`
+ * em `engine/executar.ts`), então `{x}` ali é texto e não é engano.
+ */
+function textosDoNo(no: No): string[] {
+  switch (no.type) {
+    case 'mensagem':
+      return partesDaMensagem(no).flatMap((parte) => {
+        switch (parte.tipo) {
+          case 'texto':
+            return [parte.texto]
+          case 'midia':
+            return [parte.url, parte.legenda ?? '', parte.nomeArquivo ?? '']
+          case 'salvar':
+            return [parte.valor]
+          default:
+            return []
+        }
+      })
+    case 'pergunta':
+      return [no.data.texto, no.data.mensagemDeErro ?? '']
+    case 'salvar-campo':
+      return [no.data.valor]
+    case 'midia':
+      return [no.data.url, no.data.legenda ?? '', no.data.nomeArquivo ?? '']
+    case 'ia':
+      return [no.data.instrucao]
+    case 'handoff':
+      return mensagensDoHandoff(no)
+    case 'http':
+      return [no.data.url, no.data.corpo, ...no.data.cabecalhos.map((c) => c.valor)]
+    case 'condicao':
+    case 'etapa':
+    case 'ir-fluxo':
+    case 'voltar':
       return []
   }
 }
