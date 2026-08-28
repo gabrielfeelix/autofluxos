@@ -152,7 +152,7 @@ export type SessaoComContexto = SessaoSalva & { contatoId: string; canalId: stri
 export async function acharSessao(sessaoId: string): Promise<SessaoComContexto | null> {
   const { data, error } = await db()
     .from('sessions')
-    .select('id, contact_id, channel_id, flow_version_id, no_atual, vars, tentativas, status')
+    .select('id, contact_id, channel_id, flow_version_id, no_atual, vars, tentativas, status, ia_pendente')
     .eq('id', sessaoId)
     .maybeSingle()
 
@@ -170,6 +170,7 @@ export async function acharSessao(sessaoId: string): Promise<SessaoComContexto |
       vars: data.vars ?? {},
       tentativas: data.tentativas,
       status: data.status,
+      iaPendente: data.ia_pendente ?? null,
     }),
   }
 }
@@ -195,7 +196,7 @@ export async function ultimaSessao(
 ): Promise<SessaoSalva | null> {
   const { data, error } = await db()
     .from('sessions')
-    .select('id, flow_version_id, no_atual, vars, tentativas, status')
+    .select('id, flow_version_id, no_atual, vars, tentativas, status, ia_pendente')
     .eq('contact_id', contatoId)
     .eq('channel_id', canalId)
     .order('criado_em', { ascending: false })
@@ -213,6 +214,7 @@ export async function ultimaSessao(
       vars: data.vars ?? {},
       tentativas: data.tentativas,
       status: data.status,
+      iaPendente: data.ia_pendente ?? null,
     }),
   }
 }
@@ -230,6 +232,10 @@ export async function criarSessao(
       channel_id: canalId,
       flow_version_id: flowVersionId,
       no_atual: sessao.noAtual,
+      // `?? null` e não omissão: a confirmação que foi respondida precisa
+      // **apagar** a linha antiga. Omitir deixaria o pendente vivo e a próxima
+      // mensagem cairia de novo na pergunta.
+      ia_pendente: sessao.iaPendente ?? null,
       vars: sessao.vars,
       tentativas: sessao.tentativas,
       status: sessao.status,
@@ -292,6 +298,10 @@ export async function guardarSessao(id: string, sessao: Sessao): Promise<void> {
     .from('sessions')
     .update({
       no_atual: sessao.noAtual,
+      // `?? null` e não omissão: a confirmação que foi respondida precisa
+      // **apagar** a linha antiga. Omitir deixaria o pendente vivo e a próxima
+      // mensagem cairia de novo na pergunta.
+      ia_pendente: sessao.iaPendente ?? null,
       vars: sessao.vars,
       tentativas: sessao.tentativas,
       status: sessao.status,

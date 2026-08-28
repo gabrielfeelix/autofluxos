@@ -24,6 +24,14 @@ export const statusSessaoSchema = z.enum([
   'aguardando_ia',
   /** parada num nó de API, esperando a resposta da chamada */
   'aguardando_http',
+  /**
+   * A IA quer gravar alguma coisa e está esperando a pessoa dizer se pode.
+   *
+   * Só existe porque ler e gravar não são a mesma coisa: ler é reversível,
+   * marcar e desmarcar não são. Quem sai desta parada é o resolvedor, lendo a
+   * resposta — o motor não conhece ferramenta.
+   */
+  'aguardando_confirmacao',
   /** o humano assumiu — o bot fica calado */
   'humano',
   /** o fluxo chegou ao fim */
@@ -43,6 +51,26 @@ export const sessaoSchema = z.object({
   /** Quantas vezes seguidas o motor não entendeu. Reseta ao avançar. */
   tentativas: z.number().int().min(0),
   status: statusSessaoSchema,
+  /**
+   * A gravação que a IA pediu e que espera um sim.
+   *
+   * Fica na sessão, e não numa tabela, porque é exatamente a definição dela:
+   * *tudo que o motor precisa lembrar de uma conversa*. Some junto com a
+   * conversa, que é o certo — confirmação de ontem não vale para hoje.
+   *
+   * **Não tem segredo dentro**, e por isso pode viajar para o navegador no
+   * simulador como o resto da sessão: nome de ferramenta, argumentos já
+   * conferidos e a frase que a pessoa leu. A credencial continua sendo lida no
+   * servidor, uma vez, na hora de disparar.
+   */
+  iaPendente: z
+    .object({
+      ferramenta: z.string(),
+      argumentos: z.record(z.string(), z.string()),
+      /** O que foi perguntado, em palavras. Vai para o log e para o handoff. */
+      resumo: z.string(),
+    })
+    .nullish(),
 })
 
 /** O que chegou. O motor não sabe se veio do WhatsApp ou do simulador. */

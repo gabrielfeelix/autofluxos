@@ -3,7 +3,22 @@ import { ATENDIMENTO_SEMPRE_ABERTO, avisoDeForaDoHorario, executar } from '@/cor
 import type { ContextoDoAtendimento } from '@/core/engine/executar'
 import type { Acao, Entrada, Resultado, Sessao } from '@/core/engine/types'
 import type { Fluxo } from '@/core/flow/schema'
-import { ferramentasPermitidas, idsVistos, projetar } from '@/core/ferramentas'
+import {
+  acharFerramenta,
+  ferramentasPermitidas,
+  idsVistos,
+  projetar,
+  rotulosDeId,
+  type Ferramenta,
+} from '@/core/ferramentas'
+import {
+  AVISO_DE_DUVIDA,
+  AVISO_DE_RECUSA,
+  lerConfirmacao,
+  perguntaDeConfirmacao,
+} from '@/core/confirmacao'
+import { lerPoliticas, politicaDe } from '../ia/politica'
+import { registrarChamada, type DecididoPor } from '../repos/ia-chamadas'
 import {
   assinatura,
   camposInjetadosTentados,
@@ -83,6 +98,13 @@ export type OpcoesDeEfeitos = {
    */
   clienteId?: string
   /**
+   * De quem é a conversa. Só para o log de chamadas da IA.
+   *
+   * Opcional porque o simulador não tem contato: lá a conversa é de ninguém, e
+   * registrar sem contato continua sendo registro útil — diz o que foi testado.
+   */
+  contatoId?: string
+  /**
    * Tem gente para atender agora, e quando volta.
    *
    * Vai para o motor, que decide o que dizer no handoff. O padrão é "sempre
@@ -128,6 +150,20 @@ export async function executarComEfeitos(
   opcoes: OpcoesDeEfeitos,
 ): Promise<ResultadoComEfeitos> {
   const atendimento = opcoes.atendimento ?? ATENDIMENTO_SEMPRE_ABERTO
+
+  /*
+   * A confirmação é lida **antes** do motor, e não dentro dele.
+   *
+   * O motor não conhece ferramenta, e não devia passar a conhecer só para
+   * entender um "pode sim". Do ponto de vista dele, a conversa continua parada
+   * no nó de IA — o que muda é que, antes de reentrar, o resolvedor gastou a
+   * resposta da pessoa decidindo se a gravação sai.
+   */
+  if (sessao.status === 'aguardando_confirmacao' && sessao.iaPendente) {
+    const respondido = await resolverConfirmacao(fluxo, sessao, entrada, opcoes, atendimento)
+    if (respondido) return respondido
+  }
+
   let resultado = executar(fluxo, sessao, entrada, atendimento)
 
   /**
@@ -300,6 +336,29 @@ export async function executarComEfeitos(
       vars: resultado.sessao.vars,
     })
 
+    if (resposta.tipo === 'confirmar') {
+      /*
+       * A conversa para aqui, e não é handoff.
+       *
+       * `enviar_texto` com a pergunta, a gravação guardada na sessão, e
+       * `aguardando_confirmacao`. A próxima mensagem cai em
+       * `resolverConfirmacao`, antes do motor — que continua achando que a
+       * conversa está parada no nó de IA, porque está.
+       */
+      return {
+        acoes: [
+          ...semEfeito(resultado.acoes, 'chamar_ia'),
+          { tipo: 'enviar_texto', texto: resposta.pergunta },
+        ],
+        sessao: {
+          ...resultado.sessao,
+          status: 'aguardando_confirmacao',
+          iaPendente: resposta.pendente,
+        },
+        ...(destino ? { destino } : {}),
+      }
+    }
+
     if (resposta.tipo === 'nao_sei') {
       // A saída de emergência do §6. Entre calar e inventar, uma pessoa assume.
       //
@@ -419,7 +478,20 @@ export const MAX_VOLTAS_DE_FERRAMENTA = 2
  * seria um pedido que ninguém vai atender — e a conversa terminaria em
  * silêncio, que é o único desfecho que este produto não aceita.
  */
-type RespostaFinal = Exclude<Resposta, { tipo: 'usar_ferramenta' }>
+type RespostaFinal =
+  | Exclude<Resposta, { tipo: 'usar_ferramenta' }>
+  /**
+   * A IA quer gravar e a política deste cliente manda perguntar antes.
+   *
+   * Não é `nao_sei` e não é `texto`: é uma terceira coisa, e espremê-la num dos
+   * dois esconderia justamente o que ela tem de diferente — a conversa não
+   * acabou, e existe uma gravação guardada esperando um sim.
+   */
+  | {
+      tipo: 'confirmar'
+      pendente: { ferramenta: string; argumentos: Record<string, string>; resumo: string }
+      pergunta: string
+    }
 
 /**
  * Pedido de consulta onde nenhuma foi oferecida vira desistência.
@@ -500,6 +572,18 @@ async function responderComFerramentas({
   const memoria = novaMemoria()
   const conversa: Turno[] = [...(opcoes.historico ?? [])]
 
+  /*
+   * As políticas vêm numa leitura só, antes do laço.
+   *
+   * Dentro dele seriam três idas ao banco por resposta, e a resposta já é a
+   * parte lenta da conversa. Elas também não mudam no meio de uma mensagem: se
+   * alguém trocar a política enquanto a pessoa digita, vale na próxima.
+   */
+  const politicas = opcoes.clienteId ? await lerPoliticas(opcoes.clienteId) : new Map()
+
+  /** Como cada id apareceu em palavras. Alimenta a pergunta de confirmação. */
+  const rotulos = new Map<string, string>()
+
   for (let volta = 0; volta <= MAX_VOLTAS_DE_FERRAMENTA; volta++) {
     const resposta = await modelo.responder({
       ...base,
@@ -535,7 +619,18 @@ async function responderComFerramentas({
       return { tipo: 'nao_sei', motivo: conferida.motivo }
     }
 
-    const { ferramenta, url, corpo } = conferida.chamada
+    const { ferramenta } = conferida.chamada
+    memoria.jaPedidos.add(assinatura(resposta.nome, resposta.argumentos))
+
+    const tentouInjetado = camposInjetadosTentados(ferramenta, resposta.argumentos)
+    if (tentouInjetado.length > 0) {
+      // O valor já foi descartado pela conferência. O registro fica porque
+      // tentativa de escolher a identidade de quem sofre a ação é sinal, e
+      // sinal que ninguém conta é sinal que ninguém vê.
+      console.warn(
+        `[ia] o modelo tentou preencher ${tentouInjetado.join(', ')} em ${ferramenta.nome}`,
+      )
+    }
 
     /*
      * Na aba Testar, consulta que grava não grava.
@@ -551,48 +646,304 @@ async function responderComFerramentas({
         nome: ferramenta.nome,
         texto: '{"simulado":true,"aviso":"Estamos em teste; nada foi gravado de verdade."}',
       })
-      memoria.jaPedidos.add(assinatura(resposta.nome, resposta.argumentos))
       continue
     }
 
-    const tentouInjetado = camposInjetadosTentados(ferramenta, resposta.argumentos)
-    if (tentouInjetado.length > 0) {
-      // O valor já foi descartado pela conferência. O registro fica porque
-      // tentativa de escolher a identidade de quem sofre a ação é sinal, e
-      // sinal que ninguém conta é sinal que ninguém vê.
-      console.warn(
-        `[ia] o modelo tentou preencher ${tentouInjetado.join(', ')} em ${ferramenta.nome}`,
-      )
+    /*
+     * A política manda perguntar antes. A resposta para aqui e volta depois.
+     *
+     * O laço termina **sem gravar nada**: o que sai é uma pergunta, e a
+     * gravação fica guardada na sessão até a pessoa responder. É o que torna a
+     * decisão não-unicamente-automatizada, no sentido do art. 20 da LGPD, e é
+     * o que impede o modelo de pular a etapa — pedir no prompt que ele
+     * confirme (regra 10) é pedir, não é garantir.
+     */
+    if (politicaDe(ferramenta, politicas) !== 'automatico') {
+      const resumo = rotulos.get(alvoDe(ferramenta, conferida.chamada.valores)) ?? ''
+      return {
+        tipo: 'confirmar',
+        pendente: {
+          ferramenta: ferramenta.nome,
+          argumentos: conferida.chamada.valores,
+          resumo,
+        },
+        pergunta: perguntaDeConfirmacao(ferramenta.acao ?? 'fazer isso', resumo),
+      }
     }
 
-    const bruta = await chamarHttp(
-      {
-        tipo: 'chamar_http',
-        metodo: ferramenta.chamada.metodo,
-        url,
-        cabecalhos: ferramenta.chamada.cabecalhos,
-        corpo,
-        mapear: [],
-        aoFalhar: 'humano',
-        ...(chamada.conexaoId ? { conexaoId: chamada.conexaoId } : {}),
-      },
-      { deTeste, credencial, comJson: true },
-    )
+    const disparo = await dispararFerramenta({
+      ferramenta,
+      argumentos: resposta.argumentos,
+      vars,
+      conexaoId: chamada.conexaoId,
+      opcoes,
+      decididoPor: 'ia',
+      idsConhecidos: memoria.ids,
+    })
 
-    memoria.jaPedidos.add(assinatura(resposta.nome, resposta.argumentos))
-
-    if (!bruta.ok) {
+    if (!disparo.ok) {
       // Falha de consulta é handoff pelo mesmo motivo do nó de API com
       // `aoFalhar: humano`: responder sem o dado é responder chutando.
-      return { tipo: 'nao_sei', motivo: `a consulta ${ferramenta.nome} falhou — ${bruta.motivo}` }
+      return { tipo: 'nao_sei', motivo: `a consulta ${ferramenta.nome} falhou — ${disparo.motivo}` }
     }
 
-    const recorte = projetar(bruta.json, ferramenta.projecao)
+    const recorte = projetar(disparo.json, ferramenta.projecao)
     idsVistos(recorte, memoria.ids)
+    rotulosDeId(recorte, rotulos)
 
     conversa.push({ de: 'ferramenta', nome: ferramenta.nome, texto: JSON.stringify(recorte) })
   }
 
   /* istanbul ignore next -- o laço sempre sai por `return` acima. */
   return { tipo: 'nao_sei', motivo: 'a IA consultou demais sem chegar a uma resposta' }
+}
+
+/**
+ * A pessoa respondeu à pergunta de confirmação. E agora?
+ *
+ * Três saídas, e elas são três de propósito. **Sim** dispara a gravação e
+ * devolve a conversa ao modelo com o resultado. **Não** cancela, não grava
+ * nada, e devolve a conversa ao modelo dizendo isso — para ele seguir
+ * atendendo, e não encerrar. **Qualquer outra coisa** repete a pergunta: quem
+ * escreveu "quanto custa?" não recusou nada, e tratar isso como recusa
+ * encerraria um assunto que a pessoa nem abordou.
+ *
+ * Devolve `null` quando não há o que fazer aqui — aí o motor toca normalmente.
+ */
+async function resolverConfirmacao(
+  fluxo: Fluxo,
+  sessao: Sessao,
+  entrada: Entrada,
+  opcoes: OpcoesDeEfeitos,
+  atendimento: ContextoDoAtendimento,
+): Promise<ResultadoComEfeitos | null> {
+  const pendente = sessao.iaPendente
+  if (!pendente) return null
+
+  // Só texto responde uma confirmação. Foto, áudio e timeout não são sim nem
+  // não, e adivinhar qualquer um dos dois grava ou cancela por conta própria.
+  const dito = entrada.tipo === 'texto' ? entrada.texto : ''
+  const resposta = dito === '' ? 'nao_entendi' : lerConfirmacao(dito)
+
+  if (resposta === 'nao_entendi') {
+    return {
+      acoes: [{ tipo: 'enviar_texto', texto: AVISO_DE_DUVIDA }],
+      sessao,
+    }
+  }
+
+  const ferramenta = acharFerramenta(pendente.ferramenta)
+  const limpa: Sessao = { ...sessao, iaPendente: null, status: 'aguardando_ia' }
+
+  if (resposta === 'nao' || !ferramenta) {
+    /*
+     * Recusa também vira linha no log, e isso não é excesso.
+     *
+     * "A IA não fez nada porque a pessoa disse não" é exatamente o tipo de coisa
+     * que alguém vai querer provar depois — inclusive para responder a um
+     * pedido de revisão do art. 20, onde a resposta certa é "não houve decisão
+     * automatizada nenhuma".
+     */
+    if (opcoes.clienteId) {
+      await registrarChamada({
+        clienteId: opcoes.clienteId,
+        ...(opcoes.contatoId ? { contatoId: opcoes.contatoId } : {}),
+        ferramenta: pendente.ferramenta,
+        argumentos: pendente.argumentos,
+        decididoPor: 'pessoa_recusou',
+        resumo: pendente.resumo,
+        ok: false,
+      })
+    }
+
+    // Volta ao modelo pela porta normal do motor: a conversa continua, e quem
+    // escreve a próxima frase é ele, não uma mensagem fixa nossa.
+    return comEfeitosDaIa(
+      fluxo,
+      limpa,
+      { tipo: 'ia_respondeu', texto: AVISO_DE_RECUSA },
+      opcoes,
+      atendimento,
+    )
+  }
+
+  const disparo = await dispararFerramenta({
+    ferramenta,
+    argumentos: pendente.argumentos,
+    vars: sessao.vars,
+    conexaoId: conexaoDoNoDeIa(fluxo, sessao.noAtual),
+    opcoes,
+    decididoPor: 'pessoa_confirmou',
+    resumo: pendente.resumo,
+    /*
+     * Os ids guardados já passaram pela conferência na hora de suspender.
+     * Reconferir contra uma rodada nova seria impossível — a rodada que os viu
+     * terminou quando a pergunta foi feita — e recusaria toda confirmação.
+     */
+    idsConhecidos: new Set(Object.values(pendente.argumentos)),
+  })
+
+  if (!disparo.ok) {
+    return {
+      acoes: [
+        { tipo: 'enviar_texto', texto: avisoDeForaDoHorario(atendimento) ?? AVISO_DE_HANDOFF },
+        { tipo: 'transferir_humano', motivo: `a consulta ${ferramenta.nome} falhou — ${disparo.motivo}` },
+      ],
+      sessao: { ...limpa, status: 'humano' },
+    }
+  }
+
+  return comEfeitosDaIa(
+    fluxo,
+    limpa,
+    { tipo: 'ia_respondeu', texto: `Pronto: ${pendente.resumo || 'feito'}.` },
+    opcoes,
+    atendimento,
+  )
+}
+
+/** Reentra no motor com o que a IA "respondeu", sem repetir o laço inteiro. */
+function comEfeitosDaIa(
+  fluxo: Fluxo,
+  sessao: Sessao,
+  entrada: Entrada,
+  _opcoes: OpcoesDeEfeitos,
+  atendimento: ContextoDoAtendimento,
+): ResultadoComEfeitos {
+  return executar(fluxo, sessao, entrada, atendimento)
+}
+
+/**
+ * Dispara uma ferramenta e registra o que aconteceu.
+ *
+ * **Um caminho só**, usado pelo laço da IA e pela retomada da confirmação. Dois
+ * caminhos divergiriam — e o que divergiria primeiro é o log, que é justamente
+ * a parte que ninguém percebe faltando até precisar dela.
+ */
+async function dispararFerramenta({
+  ferramenta,
+  argumentos,
+  vars,
+  conexaoId,
+  opcoes,
+  decididoPor,
+  resumo,
+  idsConhecidos,
+}: {
+  ferramenta: Ferramenta
+  argumentos: Record<string, string>
+  /** As variáveis da conversa, de onde saem os campos injetados. */
+  vars: Record<string, string>
+  conexaoId: string | undefined
+  opcoes: OpcoesDeEfeitos
+  decididoPor: DecididoPor
+  resumo?: string
+  /** Ids que a rodada já viu. Ver a trava `soDeResultadoAnterior`. */
+  idsConhecidos: Set<string>
+}): Promise<{ ok: true; json: unknown } | { ok: false; motivo: string }> {
+  const conferida = conferirPedido({
+    nome: ferramenta.nome,
+    argumentos,
+    permitidas: [ferramenta],
+    injetados: vars,
+    memoria: { ids: idsConhecidos, jaPedidos: new Set() },
+  })
+
+  if (!conferida.ok) {
+    await logar({ opcoes, ferramenta, argumentos, decididoPor: 'recusado_pela_trava', ok: false, detalhe: conferida.motivo, resumo })
+    return { ok: false, motivo: conferida.motivo }
+  }
+
+  let credencial = null
+  if (conexaoId && opcoes.clienteId) {
+    try {
+      credencial = await lerCredencial(conexaoId, opcoes.clienteId)
+    } catch (erro) {
+      await alertar('não deu para ler a credencial do cofre para a IA', erro, {
+        conexao: conexaoId,
+        cliente: opcoes.clienteId,
+      })
+    }
+  }
+
+  if (!credencial) {
+    await logar({ opcoes, ferramenta, argumentos: conferida.chamada.valores, decididoPor, ok: false, detalhe: 'sem credencial', resumo })
+    return { ok: false, motivo: 'a credencial das consultas não pôde ser lida' }
+  }
+
+  const bruta = await chamarHttp(
+    {
+      tipo: 'chamar_http',
+      metodo: ferramenta.chamada.metodo,
+      url: conferida.chamada.url,
+      cabecalhos: ferramenta.chamada.cabecalhos,
+      corpo: conferida.chamada.corpo,
+      mapear: [],
+      aoFalhar: 'humano',
+      ...(conexaoId ? { conexaoId } : {}),
+    },
+    { deTeste: opcoes.origem === 'simulador', credencial, comJson: true },
+  )
+
+  await logar({
+    opcoes,
+    ferramenta,
+    argumentos: conferida.chamada.valores,
+    decididoPor,
+    ok: bruta.ok,
+    ...(bruta.ok ? {} : { detalhe: bruta.motivo }),
+    resumo,
+  })
+
+  return bruta.ok ? { ok: true, json: bruta.json } : { ok: false, motivo: bruta.motivo }
+}
+
+async function logar({
+  opcoes,
+  ferramenta,
+  argumentos,
+  decididoPor,
+  ok,
+  detalhe,
+  resumo,
+}: {
+  opcoes: OpcoesDeEfeitos
+  ferramenta: Ferramenta
+  argumentos: Record<string, string>
+  decididoPor: DecididoPor
+  ok: boolean
+  detalhe?: string
+  resumo?: string
+}): Promise<void> {
+  if (!opcoes.clienteId) return
+
+  await registrarChamada({
+    clienteId: opcoes.clienteId,
+    ...(opcoes.contatoId ? { contatoId: opcoes.contatoId } : {}),
+    ferramenta: ferramenta.nome,
+    argumentos,
+    decididoPor,
+    ...(resumo ? { resumo } : {}),
+    ok,
+    ...(detalhe ? { detalhe } : {}),
+  })
+}
+
+/**
+ * Qual dos argumentos aponta para a coisa que vai ser gravada.
+ *
+ * O primeiro `id` obrigatório da ferramenta: é `sessao_id` em `agenda_marcar` e
+ * `participacao_id` em `agenda_desmarcar`. É esse valor que a conversa já viu
+ * com data e hora ao lado, e é por ele que se acha a frase que a pessoa
+ * reconhece.
+ */
+function alvoDe(ferramenta: Ferramenta, valores: Record<string, string>): string {
+  const argumento = ferramenta.argumentos.find((a) => a.tipo === 'id' && a.obrigatorio)
+  return argumento ? (valores[argumento.nome] ?? '') : ''
+}
+
+/** A credencial que o nó de IA onde a conversa parou usa. */
+function conexaoDoNoDeIa(fluxo: Fluxo, noId: string | null): string | undefined {
+  const no = fluxo.nodes.find((n) => n.id === noId)
+  return no?.type === 'ia' ? no.data.conexaoId : undefined
 }

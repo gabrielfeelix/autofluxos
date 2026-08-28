@@ -19,6 +19,15 @@ export type ChamadaMontada = {
   ferramenta: Ferramenta
   url: string
   corpo: string
+  /**
+   * Os argumentos **como saíram**: já conferidos, já com o que o servidor
+   * injetou por cima do que o modelo mandou.
+   *
+   * É o que vai para o log, e a diferença importa: registrar o que o modelo
+   * pediu esconderia justamente a coisa que alguém vai querer conferir depois,
+   * que é o que de fato chegou à API do cliente.
+   */
+  valores: Record<string, string>
 }
 
 export type Conferencia =
@@ -140,6 +149,7 @@ export function conferirPedido({
       ferramenta,
       url: limparQueryVazia(preencher(ferramenta.chamada.url, valores, encodeURIComponent)),
       corpo: preencher(ferramenta.chamada.corpo, valores, escaparJson),
+      valores,
     },
   }
 }

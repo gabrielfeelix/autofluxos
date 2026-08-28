@@ -809,6 +809,10 @@ async function prepararIa(
     modelo,
     origem: 'whatsapp',
     clienteId: canalSalvo.clienteId,
+    // De quem é a conversa, só para o log de chamadas da IA. Sem isto o
+    // registro existe e não responde "quem foi afetado?", que é metade do que
+    // o art. 20 cobra.
+    contatoId,
     contextoNegocio: cliente?.contextoNegocio ?? '',
     perguntaDaPessoa: perguntaDaPessoa ?? undefined,
     historico: conversa.mensagens.map((m) => ({

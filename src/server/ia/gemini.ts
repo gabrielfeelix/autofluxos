@@ -39,10 +39,17 @@ const ENDERECO = 'https://generativelanguage.googleapis.com/v1beta/models'
  * | `gemini-3.5-flash-lite` | **falha** | ok | 0,7-1,3 s |
  * | `gemini-3.1-flash-lite` | ok | ok | 0,6-1,5 s |
  *
- * O mais novo **não** é o melhor aqui, e o jeito de falhar é o caro: pedido que
- * o contexto responde ("vocês trocam fiação?" com o contexto dizendo que não
- * faz elétrica) vira `NAO_SEI` no 3.5-lite, e `NAO_SEI` é uma pessoa assumindo
- * uma conversa que a IA daria conta. Reproduzido duas vezes.
+ * O mais novo **não** passou, e o jeito de falhar é o caro: pedido que o
+ * contexto responde ("vocês trocam fiação?" com o contexto dizendo que não faz
+ * elétrica) vira `NAO_SEI` no 3.5-lite, e `NAO_SEI` é uma pessoa assumindo uma
+ * conversa que a IA daria conta.
+ *
+ * **O que isso estabelece, e o que não estabelece.** Estabelece que o 3.5-lite
+ * não passa nesta suíte com este prompt — reproduzido duas vezes. Não
+ * estabelece que ele é pior: um cenário repetido é n=2 num prompt só, e a causa
+ * pode muito bem ser a regra de escopo estar fraca em vez de o modelo estar.
+ * Antes de descartá-lo de vez, vale reescrever a regra 1 e rodar de novo. O que
+ * decidiu aqui foi o critério de sempre: entra o que passa.
  *
  * A suíte inteira contra o modelo de verdade passa 11/11 neste nome — obediência
  * de escopo, recusa de propósito geral (política da Meta) e escolha entre
@@ -54,11 +61,17 @@ const MODELO_PADRAO = 'gemini-3.1-flash-lite'
  * Para onde ir quando o padrão está congestionado ou sem cota.
  *
  * **É de outra faixa de propósito, e isso é metade do valor.** A cota diária do
- * free tier é *por modelo* (`GenerateRequestsPerDayPerProjectPerModel`, medida
- * em 20/dia na faixa flash), então a reserva não divide o teto com o padrão:
- * ela o soma. E congestionamento costuma bater numa faixa de cada vez — cair de
- * `flash-lite` para `flash` sai do lugar cheio, o que trocar de nome dentro da
- * mesma faixa não faria.
+ * free tier é *por modelo* (`GenerateRequestsPerDayPerProjectPerModel`), então
+ * a reserva não divide o teto com o padrão: ela o soma. E congestionamento
+ * costuma bater numa faixa de cada vez — cair de `flash-lite` para `flash` sai
+ * do lugar cheio, o que trocar de nome dentro da mesma faixa não faria.
+ *
+ * **Os baldes não têm o mesmo tamanho, e isso foi medido, não deduzido.** Em
+ * 28/ago/2026, com ~15 chamadas gastas no dia, `gemini-3.1-flash-lite` seguia
+ * respondendo 200 enquanto `gemini-3.5-flash` já devolvia 429 com
+ * `quotaValue = 20`. Ou seja: a reserva é a faixa **estreita**, e é ela que
+ * acaba primeiro. Serve mesmo assim — reserva não precisa aguentar o dia
+ * inteiro, precisa aguentar o pico.
  *
  * Sem reserva, uma tarde ruim do lado do Google manda **toda** conversa do
  * produto para atendimento humano, e a tela não diz por quê.
@@ -78,6 +91,54 @@ const MODELO_RESERVA = 'gemini-3.6-flash'
  * atrasaria o handoff.
  */
 const VALE_RETENTAR = new Set([429, 500, 502, 503, 504])
+
+/**
+ * Modelos que já estouraram a cota diária, e até quando ficam de fora.
+ *
+ * **Sem isto, o padrão que acabou às 10h é tentado em toda conversa até a
+ * meia-noite.** Não gasta cota — requisição rejeitada não conta —, mas paga o
+ * ida-e-volta antes de cair na reserva, em cada mensagem de cada pessoa. É
+ * latência cobrada de todo mundo por uma resposta que já se sabe qual é.
+ *
+ * Só `429` entra aqui, e a distinção é o ponto: `503` é pico e passa em
+ * segundos, então marcar o modelo como fora por causa dele desligaria o padrão
+ * bom por um soluço. Cota estourada, não — ela só volta na virada do dia.
+ *
+ * Guardado em memória do processo, e não no banco. É uma otimização de
+ * latência: perder o registro num deploy custa uma requisição a mais, e o
+ * preço de acertar isso com uma tabela é maior que o problema.
+ *
+ * O relógio é UTC porque é o do reset da cota do Google, e não o do cliente.
+ */
+const semCota = new Map<string, string>()
+
+/** O dia de hoje em UTC, que é como o Google conta a cota diária. */
+function diaDaCota(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function estaSemCota(nome: string): boolean {
+  return semCota.get(nome) === diaDaCota()
+}
+
+/**
+ * Esquece quem está sem cota.
+ *
+ * Existe para teste, e está exportado em vez de escondido porque a alternativa
+ * seria pior: sem ele, um teste do disjuntor deixaria o modelo marcado e o
+ * teste seguinte provaria outra coisa sem avisar. Estado de processo que
+ * atravessa teste é a forma mais silenciosa de suíte verde mentindo.
+ *
+ * Não é chamado em produção — lá o esquecimento é a virada do dia.
+ */
+export function esquecerCotas(): void {
+  semCota.clear()
+}
+
+function marcarSemCota(nome: string): void {
+  semCota.set(nome, diaDaCota())
+  console.warn(`[ia] ${nome} estourou a cota do dia; fica de fora até a virada`)
+}
 
 /**
  * Quanto se espera pelo modelo.
@@ -132,6 +193,17 @@ export function gemini({ chave, modelo }: { chave: string; modelo?: string }): M
     async responder(pedido: PedidoDeIa): Promise<Resposta> {
       const corpo = montarCorpo(pedido)
 
+      /*
+       * Padrão sem cota vai direto para a reserva, sem bater na porta fechada.
+       *
+       * Só quando há reserva: sem ela, tentar mesmo assim é a única chance de
+       * o Google ter liberado, e a resposta certa continua sendo tentar.
+       */
+      if (reserva !== null && estaSemCota(nome)) {
+        const direto = await tentar(reserva, chave, corpo, TIMEOUT_RESERVA_MS)
+        return direto.tipo === 'retentar' ? direto.desistencia : direto.resposta
+      }
+
       // Sem reserva não há para onde correr, então não se corta cedo: cortar
       // ali é o mesmo que desistir.
       const primeira = await tentar(
@@ -141,6 +213,8 @@ export function gemini({ chave, modelo }: { chave: string; modelo?: string }): M
         reserva === null ? TIMEOUT_RESERVA_MS : TIMEOUT_MS,
       )
       if (primeira.tipo !== 'retentar') return primeira.resposta
+
+      if (primeira.status === '429') marcarSemCota(nome)
 
       if (reserva === null) return primeira.desistencia
 
@@ -153,7 +227,10 @@ export function gemini({ chave, modelo }: { chave: string; modelo?: string }): M
        */
       console.warn(`[ia] ${nome} devolveu ${primeira.status}; tentando ${reserva}`)
       const segunda = await tentar(reserva, chave, corpo, TIMEOUT_RESERVA_MS)
-      return segunda.tipo === 'retentar' ? segunda.desistencia : segunda.resposta
+      if (segunda.tipo !== 'retentar') return segunda.resposta
+
+      if (segunda.status === '429') marcarSemCota(reserva)
+      return segunda.desistencia
     },
   }
 }

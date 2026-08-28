@@ -127,6 +127,15 @@ export type Ferramenta = {
    */
   escreve: boolean
   /**
+   * O que a pessoa lê na pergunta de confirmação, antes de a chamada sair.
+   *
+   * Só nas que gravam. É um verbo no infinitivo — "marcar você em", "desmarcar
+   * sua aula de" — porque a frase é montada em volta dele
+   * (`perguntaDeConfirmacao`), e porque o texto que descreve o que vai
+   * acontecer não pode ser inventado por quem vai fazer acontecer.
+   */
+  acao?: string
+  /**
    * A descrição lida pelo modelo.
    *
    * Escreva o que ela faz **e quando não usar**. A segunda metade é a que
@@ -331,6 +340,7 @@ export const FERRAMENTAS: Ferramenta[] = [
     nome: 'agenda_marcar',
     rotulo: 'Marcar em um horário',
     escreve: true,
+    acao: 'marcar você em',
     /*
      * A vaga é conferida na hora de gravar, não na hora em que a lista foi
      * lida. Entre uma coisa e outra alguém pode ter ocupado: a resposta é 409,
@@ -365,6 +375,7 @@ export const FERRAMENTAS: Ferramenta[] = [
     nome: 'agenda_desmarcar',
     rotulo: 'Desmarcar uma aula',
     escreve: true,
+    acao: 'avisar que você não vai em',
     /*
      * Apesar do verbo, nada é apagado do outro lado: a marcação vira falta
      * avisada, que libera a vaga e preserva o crédito de reposição.
@@ -511,6 +522,52 @@ export function limparQueryVazia(url: string): string {
     .join('&')
 
   return mantidos === '' ? base : `${base}?${mantidos}`
+}
+
+/**
+ * Como cada id apareceu para a pessoa, em palavras.
+ *
+ * **Existe para a confirmação poder dizer o que vai acontecer.** O modelo pede
+ * `agenda_marcar` com `sessao_id: "s7"`, e perguntar *"posso marcar você em
+ * s7?"* é pedir um sim no escuro. A projeção já trouxe `data`, `hora` e
+ * `servico` no mesmo objeto do id — juntar os três é o que transforma o id numa
+ * frase que a pessoa reconhece.
+ *
+ * Monta a partir do que **já** voltou, e não de uma consulta nova: o rótulo tem
+ * que descrever o que a conversa viu, e não o que a agenda diz agora.
+ */
+export function rotulosDeId(
+  projetado: unknown,
+  achados: Map<string, string> = new Map(),
+): Map<string, string> {
+  if (Array.isArray(projetado)) {
+    for (const item of projetado) rotulosDeId(item, achados)
+    return achados
+  }
+
+  if (projetado === null || typeof projetado !== 'object') return achados
+
+  const campos = projetado as Record<string, unknown>
+  const id = Object.entries(campos).find(
+    ([chave, valor]) => /Id$/.test(chave) && typeof valor === 'string' && valor !== '',
+  )?.[1] as string | undefined
+
+  if (id !== undefined) {
+    // Dia, hora e o que é. Nessa ordem porque é como se fala: "dia 10, sete da
+    // manhã, pilates". Campo que não veio simplesmente não entra.
+    const partes = ['data', 'hora', 'servico', 'nome'].flatMap((campo) => {
+      const valor = campos[campo]
+      return typeof valor === 'string' && valor !== '' ? [valor] : []
+    })
+
+    if (partes.length > 0) achados.set(id, partes.join(' '))
+  }
+
+  for (const valor of Object.values(campos)) {
+    if (typeof valor === 'object' && valor !== null) rotulosDeId(valor, achados)
+  }
+
+  return achados
 }
 
 /** Desce por `a.b.c`. Não percorre lista — projeção é de um nível. */

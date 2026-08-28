@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ferramentasPermitidas } from '@/core/ferramentas'
-import { gemini } from './gemini'
+import { esquecerCotas, gemini } from './gemini'
 import type { Resposta } from './types'
 
 /**
@@ -226,4 +226,90 @@ describe.skipIf(!chave)('o Gemini escolhendo consulta', () => {
     if (falhouPorInfra(r)) throw new Error(`o modelo não respondeu: ${descrever(r)}`)
     expect(r.tipo).not.toBe('usar_ferramenta')
   }, 45_000)
+})
+
+/**
+ * O disjuntor de cota.
+ *
+ * Sem ele, o modelo que estourou a cota às 10h continua sendo tentado em toda
+ * conversa até a virada do dia: não gasta cota — requisição rejeitada não
+ * conta —, mas cobra o ida-e-volta de cada pessoa por uma resposta que já se
+ * sabe qual é.
+ *
+ * Não fala com o Gemini: um `fetch` de mentira responde o que o teste precisa.
+ * Cota é comportamento nosso, e provar comportamento nosso com a rede no meio
+ * é provar duas coisas ao mesmo tempo.
+ */
+describe('o disjuntor de cota', () => {
+  const pedido = { contextoNegocio: 'x', instrucao: 'y', pergunta: 'z' }
+
+  function fingirFetch(respostas: (() => Response)[]) {
+    // O disjuntor vive no módulo. Sem limpar, o primeiro teste deixa o padrão
+    // marcado e o segundo prova outra coisa sem avisar.
+    esquecerCotas()
+    const chamadas: string[] = []
+    const original = globalThis.fetch
+
+    globalThis.fetch = (async (url: RequestInfo | URL) => {
+      chamadas.push(String(url))
+      const proxima = respostas.shift()
+      if (!proxima) throw new Error('fetch chamado mais vezes do que o teste previu')
+      return proxima()
+    }) as typeof fetch
+
+    return { chamadas, restaurar: () => void (globalThis.fetch = original) }
+  }
+
+  const quotaExcedida = () =>
+    new Response(JSON.stringify({ error: { code: 429 } }), { status: 429 })
+
+  const respondeu = (texto: string) =>
+    new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: texto }] } }] }), {
+      status: 200,
+    })
+
+  it('depois de um 429 no padrão, vai direto para a reserva', async () => {
+    const { chamadas, restaurar } = fingirFetch([
+      quotaExcedida, // padrão, primeira conversa
+      () => respondeu('primeira'), // reserva salva a primeira
+      () => respondeu('segunda'), // segunda conversa: reserva direto, sem bater no padrão
+    ])
+
+    try {
+      const modelo = gemini({ chave: 'k' })
+
+      const um = await modelo.responder(pedido)
+      const dois = await modelo.responder(pedido)
+
+      expect(um.tipo).toBe('texto')
+      expect(dois.tipo).toBe('texto')
+
+      // Três chamadas, e não quatro: a segunda conversa não tentou o padrão.
+      expect(chamadas).toHaveLength(3)
+      expect(chamadas[2]).toContain('gemini-3.6-flash')
+      expect(chamadas[2]).not.toContain('flash-lite')
+    } finally {
+      restaurar()
+    }
+  })
+
+  it('503 NÃO desliga o padrão — pico passa em segundos', async () => {
+    // Marcar o modelo bom como fora por causa de um soluço seria desligar o
+    // caminho normal do produto por um minuto ruim do Google.
+    const { chamadas, restaurar } = fingirFetch([
+      () => new Response('{}', { status: 503 }),
+      () => respondeu('pela reserva'),
+      () => respondeu('padrão de novo'),
+    ])
+
+    try {
+      const modelo = gemini({ chave: 'k' })
+      await modelo.responder(pedido)
+      await modelo.responder(pedido)
+
+      expect(chamadas[2]).toContain('flash-lite')
+    } finally {
+      restaurar()
+    }
+  })
 })
