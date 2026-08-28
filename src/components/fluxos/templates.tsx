@@ -4,6 +4,11 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { Modal } from '@/components/design/modal'
 import { EscolherCanal } from '@/components/fluxos/escolher-canal'
 import { contarEtiquetas, filtrarModelos } from '@/core/flow/filtrar-modelos'
+import {
+  DesenhoDoTemplate,
+  MiniaturaDeTemplate,
+  MiniaturaEmBranco,
+} from '@/components/fluxos/desenhos'
 
 /**
  * A galeria de templates, e o modal de criar automação que passou a usá-la.
@@ -106,6 +111,14 @@ function Busca({
   )
 }
 
+/**
+ * O cartão de um template.
+ *
+ * O desenho vem antes do nome porque é ele que responde primeiro: a forma do
+ * fluxo — leque, funil, laço, duas pistas — diz o que o template faz antes de
+ * qualquer palavra. Ver `desenhos.tsx` para a regra que mantém os doze como um
+ * sistema, e não como doze ícones sorteados.
+ */
 function CartaoDoTemplate({
   modelo,
   aoEscolher,
@@ -117,9 +130,12 @@ function CartaoDoTemplate({
     <button
       type="button"
       onClick={() => aoEscolher(modelo)}
-      className="flex h-full flex-col items-start rounded-[13px] border border-white/[0.08] bg-white/[0.02] p-3.5 text-left transition hover:border-accent/45 hover:bg-accent/[0.05]"
+      className="group flex h-full flex-col items-start rounded-[13px] border border-white/[0.08] bg-white/[0.02] p-3 text-left transition hover:border-accent/45 hover:bg-accent/[0.05]"
     >
-      <span className="text-[13px] font-bold text-soft">{modelo.nome}</span>
+      <span className="block w-full overflow-hidden rounded-[10px] opacity-90 transition group-hover:opacity-100">
+        <DesenhoDoTemplate id={modelo.id} />
+      </span>
+      <span className="mt-2.5 text-[13px] font-bold text-soft">{modelo.nome}</span>
       <span className="mt-1 text-[11.5px] leading-[1.5] text-dim">{modelo.resumo}</span>
       <span className="mt-2.5 flex flex-wrap gap-1">
         {modelo.etiquetas.map((etiqueta) => (
@@ -140,12 +156,19 @@ export function GaleriaDeTemplates({
   etiquetas,
   aoEscolher,
   altura,
+  colunas = 2,
 }: {
   modelos: readonly ModeloDeGaleria[]
   etiquetas: readonly string[]
   aoEscolher: (modelo: ModeloDeGaleria) => void
   /** Altura da lista rolável, em pixels. Sem valor, cresce com o conteúdo. */
   altura?: number
+  /**
+   * Quantas colunas na largura grande. Duas dentro do modal, três na aba —
+   * ponto de quebra do Tailwind é da janela, não do contentor, e três colunas
+   * dentro de um modal de 820px deixariam o desenho ilegível.
+   */
+  colunas?: 2 | 3
 }) {
   const [termo, setTermo] = useState('')
   const [marcadas, setMarcadas] = useState<string[]>([])
@@ -189,7 +212,9 @@ export function GaleriaDeTemplates({
         </p>
       ) : (
         <div
-          className="mt-3 grid grid-cols-1 gap-2 overflow-y-auto pr-0.5 sm:grid-cols-2"
+          className={`mt-3 grid grid-cols-1 gap-2.5 overflow-y-auto pr-0.5 sm:grid-cols-2 ${
+            colunas === 3 ? 'xl:grid-cols-3' : ''
+          }`}
           style={altura ? { maxHeight: altura } : undefined}
         >
           {achados.map((modelo) => (
@@ -283,117 +308,6 @@ function CamposDoFluxo({
         </button>
       </div>
     </form>
-  )
-}
-
-/* --------------------------------------------------------------- miniaturas */
-
-/**
- * As duas escolhas são desenhadas com **o material do próprio produto**: um
- * pedaço do canvas do editor, com a mesma malha de pontos, os mesmos cartões de
- * bloco e a mesma seta.
- *
- * O primeiro desenho desta tela usava dois emojis (✏️ e ✨) e estava certo em
- * uma coisa só: era rápido. Emoji não é do produto — é do teclado —, e o
- * resultado parecia qualquer caixa de diálogo de qualquer lugar. Aqui a
- * miniatura **é a resposta da pergunta**: "em branco" mostra o canvas vazio,
- * "de um template" mostra três blocos já ligados. Quem nunca abriu o editor
- * entende o que vai receber antes de clicar.
- *
- * SVG e não imagem: acompanha o tema, não pesa, e as cores saem das mesmas
- * variáveis do resto da tela.
- */
-
-const PONTOS = 'malha-de-pontos'
-
-function Canvas({ children, id }: { children: ReactNode; id: string }) {
-  return (
-    <svg
-      viewBox="0 0 248 116"
-      aria-hidden
-      className="block w-full rounded-[10px] border border-white/[0.05]"
-    >
-      <defs>
-        <pattern id={`${PONTOS}-${id}`} width="12" height="12" patternUnits="userSpaceOnUse">
-          <circle cx="1.4" cy="1.4" r="1" fill="rgba(255,255,255,0.085)" />
-        </pattern>
-      </defs>
-      <rect width="248" height="116" fill="#070b11" />
-      <rect width="248" height="116" fill={`url(#${PONTOS}-${id})`} />
-      {children}
-    </svg>
-  )
-}
-
-/** Um cartão de bloco como o do desenho: faixa de cabeçalho e duas linhas. */
-function BlocoMini({
-  x,
-  y,
-  cor,
-}: {
-  x: number
-  y: number
-  /** A cor da faixa de cima, como no editor: cada tipo de bloco tem a sua. */
-  cor: string
-}) {
-  return (
-    <g transform={`translate(${x} ${y})`}>
-      <rect width="62" height="34" rx="6" fill="#0b1018" stroke="rgba(255,255,255,0.11)" />
-      <rect width="62" height="9" rx="6" fill={cor} opacity="0.85" />
-      <rect y="6" width="62" height="3" fill={cor} opacity="0.85" />
-      <rect x="8" y="16" width="34" height="3" rx="1.5" fill="rgba(255,255,255,0.22)" />
-      <rect x="8" y="23" width="22" height="3" rx="1.5" fill="rgba(255,255,255,0.13)" />
-    </g>
-  )
-}
-
-function MiniaturaEmBranco() {
-  return (
-    <Canvas id="branco">
-      <rect
-        x="93"
-        y="41"
-        width="62"
-        height="34"
-        rx="6"
-        fill="rgba(255,255,255,0.02)"
-        stroke="rgba(255,255,255,0.22)"
-        strokeWidth="1.2"
-        strokeDasharray="5 4"
-      />
-      <path
-        d="M124 52v12M118 58h12"
-        stroke="rgba(255,255,255,0.34)"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
-    </Canvas>
-  )
-}
-
-function MiniaturaDeTemplate() {
-  return (
-    <Canvas id="template">
-      {/* As setas primeiro, para os cartões cobrirem as pontas — é o que o
-          editor faz, e é o que faz a ligação parecer entrar no bloco. */}
-      <path
-        d="M72 34C86 34 84 58 98 58"
-        fill="none"
-        stroke="var(--accent)"
-        strokeWidth="1.4"
-        opacity="0.75"
-      />
-      <path
-        d="M160 58C174 58 170 82 184 82"
-        fill="none"
-        stroke="var(--accent)"
-        strokeWidth="1.4"
-        opacity="0.75"
-      />
-      <BlocoMini x={10} y={17} cor="#56d0f5" />
-      <BlocoMini x={98} y={41} cor="#a78bfa" />
-      <BlocoMini x={176} y={65} cor="#34d399" />
-    </Canvas>
   )
 }
 
@@ -503,7 +417,7 @@ export function NovaAutomacao({
               ? 'Desenhos prontos e válidos. Depois de criar, tudo é editável.'
               : 'Falta só o nome e onde ela vai atender.'
         }
-        largura={passo === 'templates' ? 760 : passo === 'como' ? 620 : 440}
+        largura={passo === 'templates' ? 820 : passo === 'como' ? 620 : 440}
       >
         {passo === 'como' && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -535,7 +449,7 @@ export function NovaAutomacao({
             <GaleriaDeTemplates
               modelos={modelos}
               etiquetas={etiquetas}
-              altura={340}
+              altura={420}
               aoEscolher={(modelo) => {
                 setEscolhido(modelo)
                 setPasso('formulario')
@@ -583,7 +497,12 @@ export function AbaDeTemplates({
 
   return (
     <>
-      <GaleriaDeTemplates modelos={modelos} etiquetas={etiquetas} aoEscolher={setEscolhido} />
+      <GaleriaDeTemplates
+        modelos={modelos}
+        etiquetas={etiquetas}
+        aoEscolher={setEscolhido}
+        colunas={3}
+      />
 
       <Modal
         aberto={escolhido !== null}
