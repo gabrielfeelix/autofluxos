@@ -133,6 +133,12 @@ const NOME_DO_FORMATO_DE_SAIDA: Record<FormatoDeSaida, string> = {
   dinheiro: 'dinheiro',
 }
 
+/** O que cada método faz, na língua de quem monta o fluxo. */
+const METODO_EM_PORTUGUES: Record<string, string> = {
+  GET: 'consultar — trazer informação de lá para a conversa',
+  POST: 'mandar — entregar ao sistema o que a conversa coletou',
+}
+
 const PRAZOS = [
   { valor: '0', rotulo: 'sem prazo', detalhe: 'espera para sempre' },
   { valor: '5', rotulo: '5 minutos' },
@@ -675,7 +681,7 @@ export function Painel({
           <Linha
             rotulo="Valor"
             valor={no.data.valor}
-            dica="aceita {{variavel}}"
+            dica="com o que comparar: um texto que você escreve, ou outra informação da conversa"
             aoMudar={(valor) => aoMudarDados({ valor })}
             aceitaVariavel
             conhecidas={variaveis}
@@ -687,7 +693,13 @@ export function Painel({
         <label className="block">
           <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
             Etapa do quadro
+            <Ajuda secao="blocos" oQue="o que é o quadro" />
           </span>
+          <p className="mb-1.5 text-[10.5px] leading-4 text-dim">
+            O quadro é o painel de acompanhamento do atendimento — colunas como “chegou”,
+            “orçamento enviado”, “fechou”. Este bloco move a pessoa de coluna sozinho, conforme a
+            conversa anda.
+          </p>
           {etapas.length === 0 ? (
             <span className="block rounded-lg border border-dashed border-white/[0.15] px-3 py-3 text-[11.5px] leading-5 text-dim">
               Este cliente ainda não tem quadro nenhum. Crie um em Quadros, na tela do cliente — sem
@@ -873,19 +885,32 @@ export function Painel({
           />
 
           <label className="block">
-            <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">Método</span>
+            <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+              Método
+              <Ajuda secao="outros-sistemas" oQue="a diferença entre consultar e mandar" />
+            </span>
             <Dropdown
               valor={no.data.metodo}
               aoMudar={(metodo) => aoMudarDados({ metodo })}
               rotuloAcessivel="Método HTTP"
-              opcoes={METODOS.map((metodo) => ({ valor: metodo, rotulo: metodo }))}
+              opcoes={METODOS.map((metodo) => ({
+                valor: metodo,
+                rotulo: metodo,
+                detalhe: METODO_EM_PORTUGUES[metodo],
+              }))}
             />
+            <span className="mt-1.5 block text-[11px] leading-4 text-dim">
+              {no.data.metodo === 'GET'
+                ? 'Consultar: pergunta alguma coisa ao sistema e traz a resposta para a conversa.'
+                : 'Mandar: entrega ao sistema o que a conversa coletou — um pedido, um agendamento, um cadastro.'}
+            </span>
           </label>
 
           <Linha
             rotulo="Endereço"
             valor={no.data.url}
-            dica="precisa começar com https://. aceita {{variavel}} no meio"
+            dica="o link que quem fez o sistema te passou — começa com https://"
+            ajuda={<Ajuda secao="outros-sistemas" oQue="onde conseguir este endereço" />}
             aoMudar={(url) => aoMudarDados({ url })}
             aceitaVariavel
             conhecidas={variaveis}
@@ -1093,10 +1118,13 @@ function Linha({
   aoMudar,
   aceitaVariavel = false,
   conhecidas,
+  ajuda,
 }: {
   rotulo: string
   valor: string
   dica?: string
+  /** O “?” ao lado do rótulo, quando há explicação para este campo. */
+  ajuda?: ReactNode
   aoMudar: (valor: string) => void
   aceitaVariavel?: boolean
   /** Para o realce distinguir variável conhecida de erro de digitação. */
@@ -1108,7 +1136,10 @@ function Linha({
 
   return (
     <Moldura className="block">
-      <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">{rotulo}</span>
+      <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+        {rotulo}
+        {ajuda}
+      </span>
       {aceitaVariavel ? (
         <LinhaComVariaveis
           valor={valor}
