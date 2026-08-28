@@ -16,39 +16,57 @@ import type { Modelo, PedidoDeIa, Resposta } from './types'
 const ENDERECO = 'https://generativelanguage.googleapis.com/v1beta/models'
 
 /**
- * `-latest` de propósito, e não um número fixo.
+ * Versão presa, e não `-latest` — a decisão virou ao contrário em 28/ago/2026.
  *
- * A primeira chamada real deste módulo levou 404: `gemini-2.5-flash` "is no
- * longer available to new users". Versão presa é dívida com data marcada — um
- * dia o Google aposenta e o bot para de responder no meio de um atendimento,
- * sem ninguém ter mexido em nada. O apelido acompanha o Flash atual.
+ * O argumento antigo era bom: versão presa é dívida com data marcada, o Google
+ * aposenta e o bot para de responder no meio de um atendimento. O que ele não
+ * previu é o apelido apontar para um modelo **congestionado**. Medido com a
+ * chave de produção: `gemini-flash-latest` devolveu 503 UNAVAILABLE em toda
+ * tentativa ao longo de vários minutos, enquanto modelos presos respondiam em
+ * menos de dois segundos. Um apelido que aponta para o modelo mais popular
+ * aponta, por construção, para o mais disputado.
  *
- * O preço disso é o modelo mudar debaixo do prompt. É um preço que dá para
- * pagar porque o prompt é fechado e existe teste rodando contra o modelo de
- * verdade (`gemini.test.ts`): se a obediência ao escopo regredir, a suíte
- * acusa. Para prender uma versão, use `GEMINI_MODELO`.
+ * A dívida do apelido continua real — ela só passou a ser paga pela reserva e
+ * pela suíte contra o modelo de verdade, que acusa no dia em que este nome sair
+ * do ar ou regredir.
+ *
+ * **Por que este, e a escolha foi medida, não deduzida.** `flash-lite` é a faixa
+ * mais barata e a cota diária do free tier é por modelo, então lite rende mais
+ * conversa pelo mesmo nada. Entre os lite:
+ *
+ * | modelo | escopo | ferramenta | tempo |
+ * |---|---|---|---|
+ * | `gemini-3.5-flash-lite` | **falha** | ok | 0,7-1,3 s |
+ * | `gemini-3.1-flash-lite` | ok | ok | 0,6-1,5 s |
+ *
+ * O mais novo **não** é o melhor aqui, e o jeito de falhar é o caro: pedido que
+ * o contexto responde ("vocês trocam fiação?" com o contexto dizendo que não
+ * faz elétrica) vira `NAO_SEI` no 3.5-lite, e `NAO_SEI` é uma pessoa assumindo
+ * uma conversa que a IA daria conta. Reproduzido duas vezes.
+ *
+ * A suíte inteira contra o modelo de verdade passa 11/11 neste nome — obediência
+ * de escopo, recusa de propósito geral (política da Meta) e escolha entre
+ * consultas parecidas. Trocar de modelo sem rodar ela é trocar no escuro.
  */
-const MODELO_PADRAO = 'gemini-flash-latest'
+const MODELO_PADRAO = 'gemini-3.1-flash-lite'
 
 /**
- * Para onde ir quando o apelido está congestionado.
+ * Para onde ir quando o padrão está congestionado ou sem cota.
  *
- * **Medido em 28/ago/2026, e não suposto:** `gemini-flash-latest` devolveu 503
- * `UNAVAILABLE` — *"this model is currently experiencing high demand"* — em
- * toda tentativa ao longo de vários minutos, enquanto `gemini-3.5-flash`
- * respondia em 6,9 s com a mesma chave. Não era cota nem credencial: chave
- * ruim dá 401, cota estourada dá 429.
+ * **É de outra faixa de propósito, e isso é metade do valor.** A cota diária do
+ * free tier é *por modelo* (`GenerateRequestsPerDayPerProjectPerModel`, medida
+ * em 20/dia na faixa flash), então a reserva não divide o teto com o padrão:
+ * ela o soma. E congestionamento costuma bater numa faixa de cada vez — cair de
+ * `flash-lite` para `flash` sai do lugar cheio, o que trocar de nome dentro da
+ * mesma faixa não faria.
  *
  * Sem reserva, uma tarde ruim do lado do Google manda **toda** conversa do
  * produto para atendimento humano, e a tela não diz por quê.
  *
- * A reserva é presa numa versão de propósito, e isso não contradiz o argumento
- * do `-latest` acima: o apelido continua sendo o caminho normal, justamente
- * para não envelhecer. Esta é a saída de emergência, e saída de emergência
- * precisa ser um endereço fixo — um segundo apelido poderia estar congestionado
- * pelo mesmo motivo que o primeiro.
+ * Também passa a suíte contra o modelo de verdade — reserva que ninguém testou
+ * é reserva que só falha no dia em que é usada.
  */
-const MODELO_RESERVA = 'gemini-3.5-flash'
+const MODELO_RESERVA = 'gemini-3.6-flash'
 
 /**
  * O que merece uma segunda tentativa.
