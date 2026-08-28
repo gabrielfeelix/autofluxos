@@ -87,6 +87,9 @@ export type ContaComMembros = {
   slug: string
   logoUrl: string
   membros: { id: string; nome: string; email: string; papel: string }[]
+  /** Quantas automações a conta tem, e quantas estão atendendo gente agora. */
+  fluxos: number
+  noAr: number
 }
 
 /**
@@ -108,7 +111,24 @@ export async function listarContasComMembros(): Promise<ContaComMembros[]> {
                 order by m."role", u."name"
               ) filter (where u.id is not null),
               '[]'
-            ) as membros
+            ) as membros,
+            /*
+             * As duas contagens que fazem a lista dizer alguma coisa.
+             *
+             * Sem elas, quinze cartões idênticos só respondem "existe" — e a
+             * pergunta de quem administra é outra: esta conta está atendendo
+             * gente, ou é um teste esquecido? Subconsulta e não mais um join:
+             * o group by já é do json_agg dos membros, e somar outro join
+             * multiplicaria as linhas antes de contar.
+             * (Sem crase neste comentário: ele mora dentro de um template
+             * literal, e uma crase aqui encerra a string do TypeScript.)
+             */
+            (select count(*) from public.flows f where f.client_id = c.id) as fluxos,
+            (select count(*)
+               from public.flows f
+              where f.client_id = c.id
+                and f.versao_publicada_id is not null
+                and f.ativo) as no_ar
        from public.clients c
        left join public.af_membros m  on m."organizationId" = c.id
        left join public.af_usuarios u on u.id = m."userId"
@@ -127,6 +147,8 @@ export async function listarContasComMembros(): Promise<ContaComMembros[]> {
       email: String(membro.email),
       papel: String(membro.papel),
     })),
+    fluxos: Number(linha.fluxos ?? 0),
+    noAr: Number(linha.no_ar ?? 0),
   }))
 }
 
