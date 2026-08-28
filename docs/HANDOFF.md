@@ -112,6 +112,50 @@ dona do negócio, não uma conta atendida por uma agência.
    servir aos dois com um rótulo trocável, ótimo; se disser que é preciso
    escolher um lado, o lado é o da dona do estúdio.
 
+---
+
+## 0.1.1 PENDENTE: a chave simples precisa ficar vermelha na hora, não só no aviso
+
+**Antes de mexer, o fato que já foi confundido uma vez:** a citação de variável
+deste produto é **`{{nome}}`, com duas chaves**, e continua sendo. É o que
+`interpolar()` reconhece (`core/engine/interpolar.ts`), é o que `fatiarVariaveis`
+pinta de azul no editor, e é o que está gravado em toda versão publicada.
+**Nenhum fluxo existente precisa migrar.** O commit `9b77184` não trocou a
+sintaxe: ele passou a **avisar** sobre `{nome}` de uma chave só, que não
+interpola e sai literal na conversa — foi o que aconteceu com quem escreveu
+`{dias_reposicao}` num bloco de confirmação de reagendamento.
+
+**O que falta fazer**, pedido por quem opera olhando o campo:
+
+1. **Pintar de vermelho no realce.** Hoje `{nome}` de uma chave não é pintado de
+   jeito nenhum: o realce só conhece `{{ }}`, e o aviso aparece embaixo do campo
+   (`LegendaDeVariaveis`, em `components/editor/texto-com-variaveis.tsx`). A
+   correção é o próprio realce marcar a chave simples como erro, do mesmo jeito
+   que marca a citação certa como variável — vermelho onde o azul estaria.
+2. **Help text ao passar o mouse na tag vermelha**, dizendo a coisa exata:
+   *"variável precisa de duas chaves — `{{nome}}`. Com uma só, sai escrito assim
+   mesmo na conversa."* Hoje só há a frase embaixo do campo, e ela não liga o
+   olho ao pedaço errado do texto.
+3. Onde mexer: `fatiarVariaveis` (ou um irmão dela) em
+   `core/engine/interpolar.ts` — hoje ela devolve `texto` e `variavel`, e precisa
+   de um terceiro tipo para a chave simples —, mais o espelho de realce em
+   `components/editor/texto-com-variaveis.tsx`. A conta de `chavesSimplesCitadas`
+   já existe e é a mesma regra; **use-a**, não escreva um regex parecido: realce
+   que reconhece coisa diferente do validador é o defeito que este item veio
+   consertar.
+4. O aviso `CHAVE_SIMPLES` do validador (`core/flow/validar.ts`) continua como
+   está — ele é a rede de baixo, para quem publica sem olhar o campo.
+
+**Decisão que NÃO foi tomada, e que não deve ser tomada sozinha:** inverter a
+sintaxe do produto para uma chave só (`{nome}`). Seria possível, e é caro por um
+motivo estrutural: `flow_versions` é **imutável**, então toda conversa em
+produção continuaria rodando grafos escritos com `{{ }}`, e o motor teria de
+aceitar as duas formas por tempo indeterminado — dois jeitos de escrever a mesma
+coisa é exatamente o que produz o erro que estamos consertando. Se alguém pedir
+isso, peça a decisão por escrito ao dono antes de encostar.
+
+---
+
 **Também pendente, do mesmo teste:** o único preset de agenda é da **Verandi**,
 uma marca de terceiro. Quem tem outra agenda não encontra caminho pronto e cai no
 bloco de Serviços externos cru. Vale um preset genérico de agenda, ou pelo menos
