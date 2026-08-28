@@ -38,6 +38,23 @@ describe('o catálogo tem forma de catálogo', () => {
     }
   })
 
+  it('tem rótulo curto para a tela, diferente da descrição do modelo', () => {
+    // Se alguém encher o rótulo com a argumentação do modelo, a lista de
+    // caixinhas do editor vira três parágrafos por linha e ninguém lê.
+    for (const f of FERRAMENTAS) {
+      expect(f.rotulo.length).toBeGreaterThan(3)
+      expect(f.rotulo.length).toBeLessThan(45)
+      expect(f.rotulo).not.toBe(f.descricao)
+    }
+  })
+
+  it('tem ferramenta dos dois lados do eixo ler/gravar', () => {
+    // A tela separa em dois grupos. Um grupo vazio seria uma seção órfã, e
+    // ninguém repara numa seção que some.
+    expect(FERRAMENTAS.some((f) => f.escreve)).toBe(true)
+    expect(FERRAMENTAS.some((f) => !f.escreve)).toBe(true)
+  })
+
   it('descreve quando NÃO usar, e não só o que faz', () => {
     // É a metade que separa ferramentas parecidas. Sem ela o modelo escolhe a
     // primeira que soar perto, e erra em silêncio.

@@ -1,6 +1,7 @@
 'use client'
 
 import { useId, useRef, useState, type ReactNode } from 'react'
+import { FERRAMENTAS } from '@/core/ferramentas'
 import {
   LIMITE_BOTOES,
   LIMITE_LEGENDA,
@@ -837,6 +838,13 @@ export function Painel({
             dica="nome sem espaço nem acento — ou escolha uma que o fluxo já tem em {x}"
             aoMudar={(v) => aoMudarDados({ salvarEm: v.trim() === '' ? undefined : v.trim() })}
           />
+          <ConsultasDaIa
+            escolhidas={no.data.ferramentas}
+            conexaoId={no.data.conexaoId ?? ''}
+            conexoes={conexoes}
+            aoMudar={aoMudarDados}
+          />
+
           <p className="rounded-[10px] border border-violet-400/20 bg-violet-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-violet-300">
             IA é plano à parte (Etapa 2). Enquanto o cliente não tiver contratado, o simulador
             mostra a chamada mas não chama modelo nenhum.
@@ -1770,6 +1778,120 @@ function Mapeamentos({
         <code className="font-mono">07:00;10:00;15:00</code>, que é o formato que a Pergunta lê para
         virar menu. Um <code className="font-mono">[]</code> por caminho.
       </p>
+    </div>
+  )
+}
+
+/**
+ * Quais consultas este bloco de IA pode fazer no sistema do cliente.
+ *
+ * **A tela separa ler de gravar, e essa é a decisão inteira.** Marcar "ver
+ * horários" é deixar a IA saber; marcar "marcar em um horário" é deixar a IA
+ * agir na agenda de alguém, sozinha, a partir do que um estranho escreveu no
+ * WhatsApp. As duas caberiam na mesma lista corrida, e é justamente por caberem
+ * que elas não podem — quem marca dez caixinhas seguidas não pesa a décima.
+ *
+ * Nada vem marcado. Bloco de IA sem consulta é o que sempre existiu, e continua
+ * sendo a escolha certa para tirar dúvida sobre preço e horário de
+ * funcionamento — o que já está escrito no contexto do negócio não precisa de
+ * chamada nenhuma.
+ */
+function ConsultasDaIa({
+  escolhidas,
+  conexaoId,
+  conexoes,
+  aoMudar,
+}: {
+  escolhidas: string[]
+  conexaoId: string
+  conexoes: ConexaoDoCliente[]
+  aoMudar: (dados: { ferramentas?: string[]; conexaoId?: string | undefined }) => void
+}) {
+  const marcadas = new Set(escolhidas)
+
+  const alternar = (nome: string, marcada: boolean) => {
+    // A ordem do catálogo, e não a de clique: ela conta a conversa (catálogo,
+    // horários, marcar) e o fluxo é lido por gente depois.
+    const proximas = FERRAMENTAS.filter((f) =>
+      f.nome === nome ? marcada : marcadas.has(f.nome),
+    ).map((f) => f.nome)
+
+    aoMudar({ ferramentas: proximas })
+  }
+
+  const grupos = [
+    { titulo: 'Consultar', escreve: false },
+    { titulo: 'Agir na agenda', escreve: true },
+  ] as const
+
+  return (
+    <div className="rounded-[10px] border border-white/10 bg-white/[0.028] p-3">
+      <span className="mb-1 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+        Consultas ao sistema
+      </span>
+      <p className="mb-3 text-[10.5px] leading-4 text-dim">
+        Sem nenhuma marcada, a IA responde só com o que está escrito no contexto do negócio — que
+        já basta para preço, endereço e horário de funcionamento.
+      </p>
+
+      {grupos.map((grupo) => (
+        <fieldset key={grupo.titulo} className="mb-3 last:mb-0">
+          <legend className="mb-1.5 text-[10.5px] font-bold tracking-[0.04em] text-muted uppercase">
+            {grupo.titulo}
+            {grupo.escreve && (
+              <span className="ml-1.5 rounded-full bg-amber-400/15 px-1.5 py-px text-[9.5px] font-bold tracking-normal text-amber-300 normal-case">
+                grava de verdade
+              </span>
+            )}
+          </legend>
+
+          {FERRAMENTAS.filter((f) => f.escreve === grupo.escreve).map((f) => (
+            <label key={f.nome} className="mb-1.5 flex items-start gap-2.5 last:mb-0">
+              <input
+                type="checkbox"
+                checked={marcadas.has(f.nome)}
+                onChange={(evento) => alternar(f.nome, evento.currentTarget.checked)}
+                className="mt-px size-4 shrink-0 accent-[var(--accent)]"
+              />
+              <span className="text-[12.5px] leading-4">{f.rotulo}</span>
+            </label>
+          ))}
+        </fieldset>
+      ))}
+
+      {escolhidas.length > 0 && (
+        <label className="mt-3 block border-t border-white/10 pt-3">
+          <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+            Credencial das consultas
+          </span>
+          <Dropdown
+            valor={conexaoId}
+            aoMudar={(id) => aoMudar({ conexaoId: id === '' ? undefined : id })}
+            rotuloAcessivel="Credencial das consultas da IA"
+            opcoes={[
+              { valor: '', rotulo: 'Escolha uma credencial' },
+              ...conexoes.map((conexao) => ({ valor: conexao.id, rotulo: conexao.nome })),
+            ]}
+          />
+          <span className="mt-1 block text-[10.5px] leading-4 text-dim">
+            {/*
+              Dizer o que acontece sem ela, e não só que ela é obrigatória: sem
+              credencial a consulta volta negada e a IA diz "não sei" para tudo,
+              que é o sintoma mais difícil de ligar à causa.
+            */}
+            Sem ela a consulta volta negada e a IA responde “não sei”. O valor fica no cofre; o
+            desenho guarda só a referência.
+          </span>
+        </label>
+      )}
+
+      {escolhidas.some((nome) => FERRAMENTAS.find((f) => f.nome === nome)?.escreve) && (
+        <p className="mt-3 rounded-[10px] border border-amber-400/20 bg-amber-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-amber-200">
+          A IA vai marcar e desmarcar sozinha, a partir do que a pessoa escrever. Ela só age sobre
+          quem está conversando, e só com horários que ela mesma acabou de consultar — mas quem
+          confirma cada passo é o texto da sua instrução. Peça a confirmação lá.
+        </p>
+      )}
     </div>
   )
 }

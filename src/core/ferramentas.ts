@@ -110,6 +110,14 @@ export type Ferramenta = {
   /** O nome que o modelo chama. `snake_case`, sem acento. */
   nome: string
   /**
+   * Como ela aparece na tela de quem desenha o fluxo.
+   *
+   * Separado da `descricao` pela mesma razão que separou este arquivo de
+   * `presets.ts`: a descrição é argumentação para um modelo decidir, e sai com
+   * três frases e um "não use para". Numa lista de caixinhas isso não se lê.
+   */
+  rotulo: string
+  /**
    * Escrita muda o mundo do outro lado; leitura não.
    *
    * É o eixo que decide a política de aprovação, e ele **não** é campo de
@@ -173,6 +181,7 @@ export const FORMATO_DE_DATA = 'AAAA-MM-DD'
 export const FERRAMENTAS: Ferramenta[] = [
   {
     nome: 'agenda_horarios',
+    rotulo: 'Ver horários com vaga',
     escreve: false,
     /*
      * A fusão dos cinco presets de horário.
@@ -242,6 +251,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   {
     nome: 'agenda_catalogo',
+    rotulo: 'Ver modalidades e profissionais',
     escreve: false,
     /*
      * O vocabulário vem junto de propósito.
@@ -275,6 +285,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   {
     nome: 'agenda_minha',
+    rotulo: 'Ver a agenda de quem está conversando',
     escreve: false,
     /*
      * `pessoaId` é injetado, e é o pilar de tudo.
@@ -318,6 +329,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   {
     nome: 'agenda_marcar',
+    rotulo: 'Marcar em um horário',
     escreve: true,
     /*
      * A vaga é conferida na hora de gravar, não na hora em que a lista foi
@@ -351,6 +363,7 @@ export const FERRAMENTAS: Ferramenta[] = [
 
   {
     nome: 'agenda_desmarcar',
+    rotulo: 'Desmarcar uma aula',
     escreve: true,
     /*
      * Apesar do verbo, nada é apagado do outro lado: a marcação vira falta
