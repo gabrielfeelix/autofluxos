@@ -233,6 +233,14 @@ textarea::placeholder {
  */
 .app-dropdown-menu {
   position: fixed;
+  /*
+   * O `[popover]` do navegador chega com `inset: 0`, `margin: auto`, borda e
+   * fundo próprios. `inset: 0` com `left`/`width` no estilo inline deixa a
+   * caixa sobre-restrita e estica a altura até o rodapé da tela; zerar aqui é o
+   * que faz a lista respeitar a medida tirada do botão.
+   */
+  inset: auto;
+  margin: 0;
   z-index: 90;
   max-height: 235px;
   overflow-y: auto;
@@ -354,7 +362,21 @@ textarea::placeholder {
 }
 
 /**
- * O fim é `transform: none`, e **não** `scale(1)`.
+ * O fim é `transform: none`, e **não** `scale(1)` — mas isso **não** basta.
+ *
+ * Medido com Playwright no Chromium 141, com o modal aberto: o computado do
+ * `<dialog>` fica `matrix(1, 0, 0, 1, 0, 0)`, e não `none`. `animation-fill-mode:
+ * both` deixa o último quadro aplicado, e o último quadro é uma transformação —
+ * identidade, mas transformação. Ou seja, **o modal continua sendo bloco
+ * contentor de `position: fixed`**, e a explicação abaixo descreve uma cura que
+ * não curou: o `Dropdown` seguiu desenhando a lista deslocada pelo topo do
+ * modal, com barra de rolagem e tremor, até a lista virar `popover` na top
+ * layer (ver `components/design/dropdown.tsx`).
+ *
+ * O texto original fica porque o raciocínio é certo e o valor final também: com
+ * `scale(1)` explícito o problema seria o mesmo, e maior.
+ *
+ * ---------------------------------------------------------------------------
  *
  * Parecem a mesma coisa e não são: com `animation-fill-mode: both`, o `to` fica
  * aplicado para sempre — e qualquer transform, inclusive a identidade, faz o

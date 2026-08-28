@@ -34,12 +34,48 @@ export type OpcaoDropdown = {
  * A saída é um portal com `position: fixed`, medido a partir do botão. Isso
  * escapa de qualquer `overflow` e de qualquer contexto de empilhamento acima.
  *
- * **E o destino do portal não é sempre o `body`.** Modal aqui é `<dialog>`
- * nativo, que vive na *top layer* do navegador: qualquer coisa pendurada no
- * `body` é pintada **atrás** dele. Então o portal procura o `<dialog>` mais
- * próximo e, só quando não há nenhum, cai no `body` — senão os dropdowns
- * dentro de modal, que agora são a maioria, sumiriam.
+ * ---------------------------------------------------------------------------
+ * Por que a lista é `popover`, e o que quebrou antes
+ * ---------------------------------------------------------------------------
+ *
+ * Modal aqui é `<dialog>` nativo, que vive na *top layer*: coisa pendurada no
+ * `body` é pintada **atrás** dele. A tentativa anterior foi pendurar o portal
+ * dentro do próprio `<dialog>` — e foi ela que produziu o modal travado que
+ * três agentes não consertaram.
+ *
+ * **O que estava errado, medido e não deduzido** (Playwright, Chromium 141, no
+ * modal de "Novo fluxo"): `.app-dialog[open]` roda `animation: pop … both`, e
+ * `animation-fill-mode: both` deixa o último quadro aplicado para sempre. O
+ * último quadro é `transform: none`, mas o **computado** que fica é
+ * `matrix(1, 0, 0, 1, 0, 0)` — identidade, e mesmo assim um transform. Com
+ * transform, o `<dialog>` vira **bloco contentor de `position: fixed`**.
+ *
+ * O efeito em números: `style.top` do menu era `400.75px` (coordenada de
+ * janela, certa) e o retângulo real saía em `y = 589`, exatamente `400.75` mais
+ * o topo do modal. A lista caía fora do modal, o `overflow: auto` do `<dialog>`
+ * ganhava barra, a barra disparava o `scroll` que este componente escuta, a
+ * remedição movia a lista de novo — e o ciclo se alimentava. O comentário no
+ * `globals.css` dizia que `transform: none` matava a causa; não mata.
+ *
+ * **A saída é a top layer de verdade: a lista é um `popover`.** Elemento na
+ * top layer é posicionado a partir da janela — nenhum ancestral com transform o
+ * alcança — e não acrescenta área de rolagem a ancestral nenhum, que era o
+ * começo do laço.
+ *
+ * O portal **continua indo para dentro do `<dialog>`**, e isso é obrigatório:
+ * modal nativo torna inerte tudo que está fora dele. Pendurado no `body` o
+ * `popover` até aparece, mas não recebe clique — o teste mostrou o `<dialog>`
+ * interceptando o ponteiro em cima da opção. Quem conserta a posição é o
+ * `popover`, não o destino.
+ *
+ * Onde `showPopover` não existir, sobra o comportamento antigo: a lista aparece
+ * deslocada, que é menos ruim do que não aparecer.
  */
+/** O navegador sabe top layer sem `<dialog>`? Chrome 114+, Safari 17+, Firefox 125+. */
+function temPopover(): boolean {
+  return typeof HTMLElement !== 'undefined' && typeof HTMLElement.prototype.showPopover === 'function'
+}
+
 export function Dropdown({
   opcoes,
   nome,
@@ -122,11 +158,38 @@ export function Dropdown({
   // para o lugar.
   useLayoutEffect(() => {
     if (!aberto) return
-    // Ver o comentário do topo: dentro de modal o destino é o próprio
-    // `<dialog>`, senão a lista é pintada atrás dele.
+    /*
+     * O destino continua sendo o `<dialog>` mais próximo, e agora por um motivo
+     * diferente do antigo: **modal nativo torna inerte tudo que está fora
+     * dele**. Uma lista pendurada no `body` até é pintada, mas não recebe
+     * clique — foi o que o teste mostrou, com o `<dialog>` interceptando o
+     * ponteiro em cima da opção.
+     *
+     * O que conserta a posição não é o destino, é o `popover`: elemento na top
+     * layer é posicionado a partir da janela, então o transform do modal deixa
+     * de alcançá-lo, e ele não acrescenta área de rolagem ao modal.
+     */
     setDestino(raiz.current?.closest('dialog') ?? document.body)
     medir()
   }, [aberto, medir])
+
+  /**
+   * Entra na top layer assim que a lista existe no DOM.
+   *
+   * `manual` de propósito: o fechamento por clique fora já é nosso (e sabe
+   * distinguir o clique numa opção), e o `auto` do navegador fecharia o
+   * `popover` **e** competiria com o `<dialog>` que está aberto por baixo.
+   */
+  useLayoutEffect(() => {
+    const lista = menu.current
+    if (!aberto || !lista || !temPopover()) return
+    try {
+      lista.showPopover()
+    } catch {
+      // Já estava na top layer, ou o navegador recusou. A lista continua
+      // desenhada; no pior caso, atrás do modal — que é o comportamento antigo.
+    }
+  }, [aberto, caixa, destino])
 
   useEffect(() => {
     if (!aberto) return
@@ -224,6 +287,9 @@ export function Dropdown({
             id={listaId}
             role="listbox"
             aria-label={rotuloAcessivel}
+            // `manual`: quem fecha é o nosso `pointerdown`, que sabe a
+            // diferença entre clicar fora e clicar numa opção.
+            popover={temPopover() ? 'manual' : undefined}
             style={{ top: caixa.top, left: caixa.left, width: caixa.width }}
             className="app-dropdown-menu">
           {opcoes.map((opcao) => {
