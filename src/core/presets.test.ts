@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { fluxoSchema, noHttpSchema } from './flow/schema'
 import { validar } from './flow/validar'
-import { PRESETS, acharPreset, presetDoBloco } from './presets'
+import { PRESETS, acharPreset, exigeCredencial, presetDoBloco } from './presets'
 
 /**
  * Os presets de integração (B6).
@@ -237,5 +237,33 @@ describe('a agenda responde o que a conversa precisa dizer', () => {
         }
       }
     }
+  })
+})
+
+/**
+ * A cobrança de credencial precisa estar certa **nas duas direções**.
+ *
+ * Quem montou o primeiro fluxo de agendamento encontrou os dois lados no mesmo
+ * dia: um preset que exige chave e uma tela que não dizia onde cadastrar, e um
+ * preset que não exige nenhuma sendo acusado de estar sem ela. O segundo é o
+ * pior — um aviso que mente treina a ignorar o aviso que acerta.
+ */
+describe('quem exige credencial e quem não exige', () => {
+  it('o sistema próprio do cliente não exige — o endereço dele pode ser aberto', () => {
+    const meu = PRESETS.find((p) => p.nome === 'O meu próprio sistema')
+    expect(meu).toBeDefined()
+    expect(exigeCredencial(meu!)).toBe(false)
+  })
+
+  it('a agenda exige, porque a chave é o que separa um cliente do outro', () => {
+    const reconhecer = acharPreset('verandi-quem-e')
+    expect(reconhecer).toBeDefined()
+    expect(exigeCredencial(reconhecer!)).toBe(true)
+  })
+
+  it('nenhum preset de agenda escapa da cobrança', () => {
+    const agenda = PRESETS.filter((p) => p.grupo === 'agenda')
+    expect(agenda.length).toBeGreaterThan(0)
+    expect(agenda.every(exigeCredencial)).toBe(true)
   })
 })

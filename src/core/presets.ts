@@ -55,8 +55,14 @@ export type Preset = {
   /**
    * Como a credencial entra. `query` e `cabecalho` mudam o que o cliente
    * precisa cadastrar em Configurações → Credenciais, e a tela diz isso.
+   *
+   * `opcional` é o quarto caso, e ele existe porque a tela mentia sem ele: um
+   * endereço próprio do cliente pode ou não pedir senha, e tratar isso como
+   * exigência fazia o crachá do preset acusar "falta a credencial" num bloco
+   * que estava pronto. Quem lê um aviso que está errado metade das vezes
+   * aprende a ignorar as duas metades.
    */
-  credencial: 'query' | 'cabecalho' | 'bearer' | 'nenhuma'
+  credencial: 'query' | 'cabecalho' | 'bearer' | 'opcional' | 'nenhuma'
   dados: {
     metodo: Metodo
     url: string
@@ -614,7 +620,10 @@ export const PRESETS: Preset[] = [
       'Manda para um sistema seu o que a conversa coletou — o de pedidos, o de agendamento, o que alguém fez para você.',
     exige:
       'O endereço que recebe (pergunte a quem fez o sistema). Se ele pedir senha, cadastre em Credenciais como “bearer”.',
-    credencial: 'bearer',
+    // `opcional`, e não `bearer`: o próprio `exige` acima diz "**se** ele pedir
+    // senha". Muito sistema feito sob medida aceita a chamada sem nenhuma, e
+    // marcar como exigência fazia a tela cobrar uma credencial que não existe.
+    credencial: 'opcional',
     dados: {
       metodo: 'POST',
       url: 'https://',
@@ -628,6 +637,23 @@ export const PRESETS: Preset[] = [
     },
   },
 ]
+
+/**
+ * Este preset **exige** credencial?
+ *
+ * Fonte única de propósito: a regra vivia copiada em três telas (o card do
+ * desenho, a prévia do hover e a gaveta de integrações), e a quarta hipótese —
+ * `opcional` — teria sido acrescentada só numa delas. Aviso que diverge entre
+ * duas telas é pior do que aviso nenhum: uma delas passa a mentir, e não há
+ * como saber qual sem ler o código.
+ *
+ * `opcional` não exige. "O meu próprio sistema" fala com o endereço que o
+ * cliente já tem, e muito sistema feito sob medida aceita a chamada sem senha
+ * nenhuma — cobrar ali é acusar de faltar o que não falta.
+ */
+export function exigeCredencial(preset: Preset): boolean {
+  return preset.credencial !== 'nenhuma' && preset.credencial !== 'opcional'
+}
 
 export function acharPreset(id: string): Preset | undefined {
   return PRESETS.find((preset) => preset.id === id)

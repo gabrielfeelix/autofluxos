@@ -227,7 +227,16 @@ export type Acao =
    */
   | { tipo: 'ir_para_fluxo'; fluxoId: string }
   | { tipo: 'transferir_humano'; motivo: string }
-  | { tipo: 'encerrar' }
+  /**
+   * O desenho acabou.
+   *
+   * `motivo` é **diagnóstico para quem desenhou**, e não recado para quem
+   * conversa: ele nomeia o bloco e a saída que não levavam a lugar nenhum.
+   * Quem o lê é a aba Testar; o WhatsApp não envia nada disso. Sem ele, um
+   * botão desenhado e não ligado virava uma conversa que morria em silêncio, e
+   * "A conversa terminou." não dizia por onde começar a procurar.
+   */
+  | { tipo: 'encerrar'; motivo?: string }
 
 export type Resultado = {
   acoes: Acao[]

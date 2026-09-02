@@ -1013,7 +1013,9 @@ describe('o bloco de mensagem em pilha', () => {
     expect(r.acoes).toEqual([
       { tipo: 'salvar_campo', campo: 'etapa', valor: 'orcamento' },
       { tipo: 'enviar_texto', texto: 'Você está em orcamento' },
-      { tipo: 'encerrar' },
+      // O `motivo` do encerramento nomeia o beco sem saída — aqui, o bloco que
+      // não continua para lugar nenhum. Ver "o beco sem saída se identifica".
+      { tipo: 'encerrar', motivo: expect.any(String) },
     ])
   })
 
@@ -1059,7 +1061,7 @@ describe('o bloco de mensagem em pilha', () => {
 
     expect(executar(fluxo, sessao, { tipo: 'inicio' }).acoes).toEqual([
       { tipo: 'enviar_texto', texto: 'Oi Ana!', atrasoMs: 2000 },
-      { tipo: 'encerrar' },
+      { tipo: 'encerrar', motivo: expect.any(String) },
     ])
   })
 })
@@ -1580,5 +1582,107 @@ describe('o atraso e o "digitando"', () => {
     // O texto sai na hora: o atraso vem depois dele no desenho.
     expect(texto && 'atrasoMs' in texto ? texto.atrasoMs : undefined).toBeUndefined()
     expect(menu && 'atrasoMs' in menu ? menu.atrasoMs : undefined).toBe(1_000)
+  })
+})
+
+/**
+ * O beco sem saída se identifica.
+ *
+ * Nasceu de um relato de uso, e a frase é a do relato: *"ao clicar no 'voltar
+ * ao menu' e possui conexão de retomar o início do fluxo, não retoma"*. O
+ * motor estava certo — o desenho é que acabava ali —, mas o produto respondia
+ * só "A conversa terminou.", e quem desenhou não tinha por onde começar a
+ * procurar. Ele sabia qual bloco e qual saída morreram; era só contar.
+ */
+describe('o encerramento diz onde o desenho acabou', () => {
+  const p = { x: 0, y: 0 }
+
+  const menu = (edges: { id: string; source: string; sourceHandle?: string; target: string }[], extras: unknown[] = []) =>
+    fluxoSchema.parse({
+      inicio: 'menu',
+      nodes: [
+        {
+          id: 'menu',
+          type: 'pergunta',
+          position: p,
+          data: {
+            texto: 'Podemos ajudar em algo Mais?',
+            opcoes: [
+              { id: 'ag', rotulo: 'Agendar aula' },
+              { id: 'vlt', rotulo: 'Voltar ao Menu' },
+            ],
+          },
+        },
+        { id: 'gente', type: 'handoff', position: p, data: { motivo: 'x', mensagem: 'Já chamo.' } },
+        ...extras,
+      ],
+      edges,
+    })
+
+  const encerrou = (r: { acoes: { tipo: string; motivo?: string }[] }) =>
+    r.acoes.find((a) => a.tipo === 'encerrar')
+
+  it('nomeia a opção que não está ligada em nada', () => {
+    const fluxo = menu([{ id: 'e1', source: 'menu', sourceHandle: 'ag', target: 'gente' }])
+
+    let r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    r = executar(fluxo, r.sessao, { tipo: 'opcao', opcaoId: 'vlt' })
+
+    const fim = encerrou(r)
+    expect(fim?.motivo).toContain('Voltar ao Menu')
+    expect(fim?.motivo).toContain('não está ligada')
+  })
+
+  it('nomeia o bloco quando a saída é única', () => {
+    const fluxo = menu(
+      [
+        { id: 'e1', source: 'menu', sourceHandle: 'ag', target: 'gente' },
+        { id: 'e2', source: 'menu', sourceHandle: 'vlt', target: 'guarda' },
+      ],
+      [{ id: 'guarda', type: 'salvar-campo', position: p, data: { campo: 'x', valor: '1' } }],
+    )
+
+    let r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    r = executar(fluxo, r.sessao, { tipo: 'opcao', opcaoId: 'vlt' })
+
+    expect(encerrou(r)?.motivo).toContain('Guardar em "x"')
+  })
+
+  /*
+   * O caso que o relato descreve palavra por palavra: o botão está ligado, o
+   * bloco de Voltar existe, e mesmo assim a conversa acaba — porque o passo de
+   * destino foi apagado depois. O motor segue em frente para não travar
+   * conversa viva (ver o `case 'voltar'`), e o que ele não podia era seguir em
+   * silêncio.
+   */
+  it('acusa o "voltar" cujo destino foi apagado, em vez de acabar calado', () => {
+    const fluxo = menu(
+      [
+        { id: 'e1', source: 'menu', sourceHandle: 'ag', target: 'gente' },
+        { id: 'e2', source: 'menu', sourceHandle: 'vlt', target: 'bvolta' },
+      ],
+      [{ id: 'bvolta', type: 'voltar', position: p, data: { destino: 'apagado', rotulo: 'ao menu' } }],
+    )
+
+    let r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    r = executar(fluxo, r.sessao, { tipo: 'opcao', opcaoId: 'vlt' })
+
+    expect(encerrou(r)?.motivo).toContain('não existe mais neste desenho')
+  })
+
+  it('o "voltar" que funciona não encerra nada', () => {
+    const fluxo = menu(
+      [
+        { id: 'e1', source: 'menu', sourceHandle: 'ag', target: 'gente' },
+        { id: 'e2', source: 'menu', sourceHandle: 'vlt', target: 'bvolta' },
+      ],
+      [{ id: 'bvolta', type: 'voltar', position: p, data: { destino: '', rotulo: '' } }],
+    )
+
+    let r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    r = executar(fluxo, r.sessao, { tipo: 'opcao', opcaoId: 'vlt' })
+
+    expect(encerrou(r)).toBeUndefined()
+    expect(r.sessao.noAtual).toBe('menu')
   })
 })

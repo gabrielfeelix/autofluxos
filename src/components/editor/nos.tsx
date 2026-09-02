@@ -3,7 +3,7 @@
 import { Handle, Position, type NodeProps, type NodeTypes } from '@xyflow/react'
 import { useState, type ReactNode } from 'react'
 import { CORES, ICONES, NOMES } from '@/core/flow/blocos'
-import { presetDoBloco } from '@/core/presets'
+import { exigeCredencial, presetDoBloco } from '@/core/presets'
 import { RealceDeVariaveis } from './realce-de-variaveis'
 import { partesDaMensagem } from '@/core/flow/mensagem'
 import { NOME_DO_FORMATO, type FormatoDeResposta } from '@/core/flow/resposta'
@@ -457,7 +457,7 @@ function NoHttp({ data, selected }: NodeProps) {
   // Preset que pede chave e ainda não tem nenhuma está preenchido e não roda —
   // e no desenho isso precisa aparecer sem clicar, que é onde ele será visto.
   const faltaCredencial =
-    preset !== undefined && preset.credencial !== 'nenhuma' && (d.conexaoId ?? '') === ''
+    preset !== undefined && exigeCredencial(preset) && (d.conexaoId ?? '') === ''
 
   return (
     <Caixa tipo="http" selecionado={!!selected}>

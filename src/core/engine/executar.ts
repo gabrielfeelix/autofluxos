@@ -1,3 +1,4 @@
+import { descrever, nomeDaSaida } from '../flow/descrever'
 import { mensagensDoHandoff, partesDaMensagem } from '../flow/mensagem'
 import { PEDIDO_PADRAO, conferirResposta } from '../flow/resposta'
 import {
@@ -156,7 +157,10 @@ export function executar(
       }
 
       s.tentativas = 0
-      return avancar(contexto, fluxo, porId, s, acoes, tratada)
+      return avancar(contexto, fluxo, porId, s, acoes, tratada, {
+        no: parada,
+        saida: SAIDA_MIDIA,
+      })
     }
 
     return transferir(s, acoes, `a pessoa mandou ${entrada.formato} e o bot só lê texto`, contexto)
@@ -202,7 +206,10 @@ export function executar(
     }
 
     s.tentativas = 0
-    return avancar(contexto, fluxo, porId, s, acoes, saida)
+    return avancar(contexto, fluxo, porId, s, acoes, saida, {
+      no: atual,
+      saida: SAIDA_TIMEOUT,
+    })
   }
 
   if (atual.type === 'ia') {
@@ -212,7 +219,7 @@ export function executar(
     acoes.push({ tipo: 'enviar_texto', texto: entrada.texto })
     if (atual.data.salvarEm) s.vars[atual.data.salvarEm] = entrada.texto
     s.tentativas = 0
-    return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, atual.id))
+    return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, atual.id), { no: atual })
   }
 
   if (atual.type === 'http') {
@@ -227,7 +234,7 @@ export function executar(
     }
 
     s.tentativas = 0
-    return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, atual.id))
+    return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, atual.id), { no: atual })
   }
 
   if (atual.type === 'pergunta') {
@@ -235,7 +242,7 @@ export function executar(
   }
 
   // O motor nunca deveria ter parado num nó destes. Segue em frente.
-  return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, atual.id))
+  return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, atual.id), { no: atual })
 }
 
 function responderPergunta(
@@ -257,7 +264,10 @@ function responderPergunta(
     // segurança para sessão presa num nó que mudou de configuração.
     if (dinamica) {
       s.tentativas = 0
-      return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, no.id, SAIDA_VAZIO))
+      return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, no.id, SAIDA_VAZIO), {
+        no,
+        saida: SAIDA_VAZIO,
+      })
     }
 
     // Resposta livre em texto.
@@ -308,7 +318,7 @@ function responderPergunta(
     }
 
     s.tentativas = 0
-    return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, no.id))
+    return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, no.id), { no })
   }
 
   const escolhida = escolher(opcoes, entrada)
@@ -346,14 +356,11 @@ function responderPergunta(
   s.tentativas = 0
   // Desenhada ramifica por opção; dinâmica sai por uma porta só, porque não
   // existe aresta desenhada para uma opção que nasceu agora.
-  return avancar(
-    contexto,
-    fluxo,
-    porId,
-    s,
-    acoes,
-    proximo(fluxo, no.id, dinamica ? SAIDA_ESCOLHEU : escolhida.id),
-  )
+  const porta = dinamica ? SAIDA_ESCOLHEU : escolhida.id
+  return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, no.id, porta), {
+    no,
+    saida: porta,
+  })
 }
 
 /**
@@ -367,9 +374,30 @@ function avancar(
   s: Sessao,
   acoes: Acao[],
   primeiro: string | null,
+  /**
+   * De onde veio o primeiro salto, para o beco sem saída saber se identificar.
+   *
+   * O caso que mais dói é justamente o que o chamador conhece e o andarilho
+   * não: a pessoa clicou num botão, aquela opção não estava ligada em nada, e
+   * a conversa acabou em silêncio. Sem esta origem, o motor só saberia dizer
+   * "acabou" — que é exatamente o que não ajuda quem desenhou.
+   */
+  origem?: Passo,
 ): Resultado {
   let atual = primeiro
   let passos = 0
+  /** O último salto tentado. É o que nomeia o beco quando o desenho acaba. */
+  let ultimo: Passo | undefined = origem
+  /** Um "voltar" cujo destino não existe mais. É outro beco, e de outra causa. */
+  let destinoSumido: No | null = null
+  /** A última ligação apontava para um bloco que não está mais no desenho. */
+  let alvoSumido = false
+
+  /** Anda uma casa **e lembra de onde saiu**. */
+  const seguir = (de: No, saida?: string): string | null => {
+    ultimo = { no: de, saida }
+    return proximo(fluxo, de.id, saida)
+  }
 
   /**
    * A espera que ainda não foi gasta, viva **entre blocos**.
@@ -390,7 +418,13 @@ function avancar(
     }
 
     const no = porId.get(atual)
-    if (!no) break
+    // Aresta apontando para um bloco que não existe mais. É um beco de outra
+    // causa — a ligação existe, o destino é que sumiu — e dizer "não está
+    // ligada em nada" mandaria quem lê procurar a coisa errada.
+    if (!no) {
+      alvoSumido = true
+      break
+    }
 
     switch (no.type) {
       case 'mensagem': {
@@ -460,7 +494,7 @@ function avancar(
           }
         }
 
-        atual = proximo(fluxo, no.id)
+        atual = seguir(no)
         break
       }
 
@@ -481,7 +515,7 @@ function avancar(
             : {}),
           ...(no.data.atraso ? { atrasoMs: no.data.atraso * 1_000 } : {}),
         })
-        atual = proximo(fluxo, no.id)
+        atual = seguir(no)
         break
       }
 
@@ -489,7 +523,7 @@ function avancar(
         const valor = interpolar(no.data.valor, s.vars)
         s.vars[no.data.campo] = valor
         acoes.push({ tipo: 'salvar_campo', campo: no.data.campo, valor })
-        atual = proximo(fluxo, no.id)
+        atual = seguir(no)
         break
       }
 
@@ -506,7 +540,7 @@ function avancar(
             colunaId: no.data.colunaId,
           })
         }
-        atual = proximo(fluxo, no.id)
+        atual = seguir(no)
         break
       }
 
@@ -535,7 +569,12 @@ function avancar(
          * uma conversa viva não pode morrer por causa de uma edição.
          */
         if (!porId.has(destino)) {
-          atual = proximo(fluxo, no.id)
+          // Seguir em frente, mas **sem apagar o rastro**: nove em dez vezes
+          // não há nada depois de um "voltar", e a conversa acabava aqui em
+          // silêncio. Quem desenhou via o botão "Voltar ao Menu" ligado e a
+          // conversa morrendo, e não tinha como ligar uma coisa à outra.
+          destinoSumido = no
+          atual = seguir(no)
           break
         }
 
@@ -549,7 +588,7 @@ function avancar(
         // recusa publicar assim, então isto só alcança grafo que já estava no
         // ar quando o destino sumiu. Seguir é melhor do que travar alguém.
         if (!no.data.fluxoId) {
-          atual = proximo(fluxo, no.id)
+          atual = seguir(no)
           break
         }
 
@@ -564,7 +603,7 @@ function avancar(
 
       case 'condicao': {
         const passou = avaliar(no.data.variavel, no.data.operador, no.data.valor, s.vars)
-        atual = proximo(fluxo, no.id, passou ? SAIDA_VERDADEIRO : SAIDA_FALSO)
+        atual = seguir(no, passou ? SAIDA_VERDADEIRO : SAIDA_FALSO)
         break
       }
 
@@ -573,7 +612,7 @@ function avancar(
         // pessoa olhando uma pergunta sem nenhuma resposta possível — é o
         // "esse dia não tem horário livre" saindo pela saída própria.
         if (perguntaEhDinamica(no) && resolverOpcoes(no, s.vars).length === 0) {
-          atual = proximo(fluxo, no.id, SAIDA_VAZIO)
+          atual = seguir(no, SAIDA_VAZIO)
           break
         }
 
@@ -652,8 +691,43 @@ function avancar(
 
   s.noAtual = null
   s.status = 'encerrada'
-  acoes.push({ tipo: 'encerrar' })
+  const motivo = destinoSumido
+    ? `${descrever(destinoSumido)} aponta para um passo que não existe mais neste desenho, e depois dele não há mais nada. Escolha outro destino, ou "o início do fluxo".`
+    : ultimo
+      ? ondeAcabou(ultimo, alvoSumido)
+      : undefined
+  acoes.push({ tipo: 'encerrar', ...(motivo ? { motivo } : {}) })
   return { acoes, sessao: s }
+}
+
+/** Um salto tentado no grafo: de qual bloco, por qual saída. */
+type Passo = { no: No; saida?: string }
+
+/**
+ * A frase que o beco sem saída diz sobre si mesmo.
+ *
+ * O produto respondia só "A conversa terminou." a qualquer desenho que acabava
+ * — e quem desenhou o botão "Voltar ao Menu", ligou ele e viu a conversa morrer
+ * não tinha por onde começar a procurar. O motor sabe exatamente qual bloco e
+ * qual saída não levavam a lugar nenhum; era só ele contar.
+ *
+ * É diagnóstico de desenho, não recado para quem conversa: quem lê é a aba
+ * Testar. No WhatsApp esta frase não é enviada a ninguém.
+ */
+function ondeAcabou({ no, saida }: Passo, alvoSumido: boolean): string {
+  const porta = nomeDaSaida(no, saida)
+  const daqui = porta ? `${porta} de ${minuscula(descrever(no))}` : minuscula(descrever(no))
+
+  return alvoSumido
+    ? `O desenho acaba aqui: ${daqui} leva a um bloco que não existe mais.`
+    : porta
+      ? `O desenho acaba aqui: ${daqui} não está ligada em nenhum bloco.`
+      : `O desenho acaba aqui: ${descrever(no)} não tem nenhuma ligação saindo dele.`
+}
+
+/** "Pergunta X" no meio de uma frase vira "pergunta X". */
+function minuscula(descricao: string): string {
+  return descricao.charAt(0).toLowerCase() + descricao.slice(1)
 }
 
 /**

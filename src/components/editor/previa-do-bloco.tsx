@@ -1,6 +1,6 @@
 'use client'
 
-import { presetDoBloco } from '@/core/presets'
+import { exigeCredencial, presetDoBloco } from '@/core/presets'
 import { RealceDeVariaveis } from './realce-de-variaveis'
 import { CORES, ICONES, NOMES } from '@/core/flow/blocos'
 import { partesDaMensagem } from '@/core/flow/mensagem'
@@ -175,9 +175,7 @@ export function detalhesDoBloco(no: No): Detalhe[] {
     case 'http': {
       const preset = presetDoBloco(no.data)
       const faltaCredencial =
-        preset !== undefined &&
-        preset.credencial !== 'nenhuma' &&
-        (no.data.conexaoId ?? '') === ''
+        preset !== undefined && exigeCredencial(preset) && (no.data.conexaoId ?? '') === ''
 
       return [
         ...(preset ? [{ rotulo: 'Integração', valor: preset.nome }] : []),

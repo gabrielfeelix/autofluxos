@@ -1,4 +1,5 @@
-import { mensagensDoHandoff, partesDaMensagem, textoDaMensagem } from './mensagem'
+import { descrever } from './descrever'
+import { mensagensDoHandoff, partesDaMensagem } from './mensagem'
 import {
   FORMATO_VARIAVEL,
   LIMITE_LEGENDA,
@@ -513,58 +514,6 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
   for (const problema of conferirVariaveis(fluxo, variaveisDaConta)) avisos.push(problema)
 
   return { ok: erros.length === 0, erros, avisos }
-}
-
-/**
- * Como chamar um bloco dentro de uma mensagem para quem desenhou.
- *
- * Existe porque as listas de impedimento e de aviso são do **fluxo inteiro**,
- * não do bloco selecionado. Sem isto, dois blocos soltos viravam duas linhas
- * idênticas dizendo "Este bloco está solto" — e "este" não respondia qual, que
- * é exatamente o que a pessoa precisa saber para consertar.
- *
- * O texto do bloco é o que identifica melhor, porque é o que se lê no desenho.
- * Quando ele está vazio sobra o tipo, que ao menos estreita a busca.
- */
-function descrever(no: No): string {
-  const curto = (texto: string) => {
-    const limpo = texto.trim().replace(/\s+/g, ' ')
-    if (limpo === '') return ''
-    return limpo.length > 38 ? `"${limpo.slice(0, 38)}…"` : `"${limpo}"`
-  }
-  const rotular = (tipo: string, detalhe: string) =>
-    detalhe === '' ? `O bloco de ${tipo}` : `${tipo} ${detalhe}`
-
-  switch (no.type) {
-    case 'mensagem':
-      return rotular('Mensagem', curto(textoDaMensagem(no)))
-    case 'pergunta':
-      return rotular('Pergunta', curto(no.data.texto))
-    case 'condicao':
-      return rotular('Condição sobre', curto(no.data.variavel))
-    case 'salvar-campo':
-      return rotular('Guardar em', curto(no.data.campo))
-    case 'ia':
-      return rotular('IA', curto(no.data.instrucao))
-    case 'handoff':
-      return rotular('Falar com humano', curto(no.data.motivo))
-    case 'http':
-      return rotular('Serviços externos', curto(no.data.url))
-    case 'midia':
-      return rotular('Mídia', curto(no.data.legenda ?? no.data.url))
-    case 'etapa':
-      // O bloco de etapa não tem texto nenhum para citar — os dois campos são
-      // ids. Sobra o tipo, que é o que já acontece com qualquer bloco vazio.
-      return 'O bloco de etapa do quadro'
-    case 'ir-fluxo':
-      // `rotulo` é o nome do fluxo de destino guardado na hora da escolha. É
-      // exatamente o que identifica o bloco para quem lê a lista de problemas.
-      return rotular('Ir para', curto(no.data.rotulo))
-    case 'voltar':
-      // `rotulo` é o nome do bloco de destino no instante da escolha. Vazio
-      // quer dizer o início do fluxo, que é o padrão do bloco.
-      return rotular('Voltar', curto(no.data.rotulo || 'ao início'))
-  }
 }
 
 /**

@@ -928,7 +928,26 @@ export function Painel({
               mapear: no.data.mapear,
               temCredencial: (no.data.conexaoId ?? '') !== '',
             }}
+            semCredenciais={conexoes.length === 0}
           />
+
+          {/*
+            A pergunta que travou quem montou o primeiro fluxo de agendamento:
+            *"ele consegue ser o primeiro bloco? ele já reconhece com quem estou
+            falando pelo número?"*.
+
+            A resposta é sim nas duas, e ela não estava escrita em lugar nenhum
+            da tela. `varsIniciais()` semeia `{{telefone}}` e `{{nome}}` ao criar
+            a sessão, então este bloco pode ser o primeiro do desenho e procurar
+            a pessoa antes de o bot dizer qualquer coisa — que é exatamente o
+            que separa "Olá, qual é o seu nome?" de "Oi, Ana!".
+          */}
+          <p className="rounded-[10px] border border-white/[0.08] bg-white/[0.02] px-3 py-2.5 text-[11.5px] leading-5 text-dim">
+            Este bloco pode ser o <strong className="text-soft">primeiro do fluxo</strong>: a
+            conversa já sabe <code className="font-mono text-[#8de2fa]">{'{{telefone}}'}</code> e{' '}
+            <code className="font-mono text-[#8de2fa]">{'{{nome}}'}</code> antes de perguntar
+            qualquer coisa. Dá para procurar a pessoa pelo número e só então dar bom dia pelo nome.
+          </p>
 
           <label className="block">
             <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
@@ -991,20 +1010,58 @@ export function Painel({
               Credencial
               <Ajuda secao="outros-sistemas" oQue="o que é uma credencial" />
             </span>
-            <Dropdown
-              valor={no.data.conexaoId ?? ''}
-              aoMudar={(conexaoId) => aoMudarDados({ conexaoId: conexaoId === '' ? undefined : conexaoId })}
-              rotuloAcessivel="Credencial"
-              opcoes={[
-                { valor: '', rotulo: 'Nenhuma — o endereço não pede chave' },
-                ...conexoes.map((conexao) => ({ valor: conexao.id, rotulo: conexao.nome })),
-              ]}
-            />
-            <span className="mt-1 block text-[10.5px] leading-4 text-dim">
-              {conexoes.length === 0
-                ? 'Credencial é a senha que o seu sistema pede para deixar a gente consultar — quem fez o sistema te dá. Nenhuma cadastrada ainda: cadastre em Credenciais, na tela do cliente, e ela fica guardada em cofre, fora do desenho.'
-                : 'O valor fica no cofre. O fluxo guarda só a referência, então trocar a chave depois não exige republicar.'}
-            </span>
+
+            {/*
+              Sem nenhuma cadastrada, o campo virava um beco — e foi assim que
+              ele foi encontrado, montando o primeiro fluxo de agendamento.
+
+              O que havia aqui era um dropdown de uma opção só, "Nenhuma — o
+              endereço não pede chave", com a integração pronta logo acima
+              mandando escolher a credencial abaixo. Quem lê a única opção lê
+              uma afirmação, não uma escolha: *"nenhum endereço pede chave; mas
+              se nenhum pede, por que ele pede pra escolher credencial?"*. O
+              bloco de IA já tinha ganhado este mesmo aviso com o link — este
+              aqui não, e é o bloco por onde todo fluxo de agenda começa.
+            */}
+            {/*
+              A caixa substitui o campo, **menos** quando o bloco já aponta para
+              uma credencial: aí a lista está vazia porque a credencial escolhida
+              foi apagada, e esconder o campo tiraria o único jeito de desfazer a
+              escolha — o `validar()` recusaria publicar e a tela não ofereceria
+              saída nenhuma.
+            */}
+            {conexoes.length === 0 && !no.data.conexaoId ? (
+              <p className="rounded-[10px] border border-amber-400/20 bg-amber-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-amber-200">
+                Este cliente ainda não tem credencial cadastrada. Se o endereço acima pedir chave,
+                cadastre em{' '}
+                <a
+                  className="underline underline-offset-2 hover:text-amber-100"
+                  href={`/clientes/${clienteId}/conexoes`}
+                >
+                  Credenciais
+                </a>{' '}
+                e volte aqui para escolher. Se ele não pedir nada, o bloco já está pronto — não há
+                o que preencher.
+              </p>
+            ) : (
+              <>
+                <Dropdown
+                  valor={no.data.conexaoId ?? ''}
+                  aoMudar={(conexaoId) =>
+                    aoMudarDados({ conexaoId: conexaoId === '' ? undefined : conexaoId })
+                  }
+                  rotuloAcessivel="Credencial"
+                  opcoes={[
+                    { valor: '', rotulo: 'Nenhuma — o endereço não pede chave' },
+                    ...conexoes.map((conexao) => ({ valor: conexao.id, rotulo: conexao.nome })),
+                  ]}
+                />
+                <span className="mt-1 block text-[10.5px] leading-4 text-dim">
+                  O valor fica no cofre. O fluxo guarda só a referência, então trocar a chave
+                  depois não exige republicar.
+                </span>
+              </>
+            )}
           </label>
 
           <label className="block">

@@ -5,6 +5,7 @@ import {
   GRUPOS_DE_PRESET,
   NOME_DO_GRUPO,
   PRESETS,
+  exigeCredencial,
   presetDoBloco,
   type Preset,
 } from '@/core/presets'
@@ -28,8 +29,17 @@ import {
 export function PresetsDeIntegracao({
   aoAplicar,
   bloco,
+  semCredenciais = false,
 }: {
   aoAplicar: (dados: Record<string, unknown>) => void
+  /**
+   * Este cliente não tem nenhuma credencial cadastrada.
+   *
+   * Muda o que o crachá diz, e só isso: sem esta informação ele mandava
+   * "escolher a credencial abaixo" numa lista onde não havia nada para
+   * escolher — que é como se descobre que o aviso não sabe do que fala.
+   */
+  semCredenciais?: boolean
   /**
    * O que o bloco já tem, só para a gaveta fechada saber o que dizer.
    *
@@ -59,8 +69,7 @@ export function PresetsDeIntegracao({
    * defeito que a conferência da chave veio consertar em Conexões.
    */
   const emUso = bloco ? presetDoBloco(bloco) : undefined
-  const faltaCredencial =
-    emUso !== undefined && emUso.credencial !== 'nenhuma' && bloco?.temCredencial === false
+  const faltaCredencial = emUso !== undefined && exigeCredencial(emUso) && bloco?.temCredencial === false
 
   /*
    * Aplicar no clique, com a confirmação **só quando há o que perder**.
@@ -235,15 +244,28 @@ export function PresetsDeIntegracao({
                       <span className="mt-1.5 block text-[10.5px] leading-4 text-dim">
                         {item.exige}
                       </span>
-                      {item.credencial !== 'nenhuma' && (
+                      {exigeCredencial(item) && (
                         <span
                           className={`mt-1 block text-[10.5px] leading-4 ${
                             bloco?.temCredencial ? 'text-emerald-300/70' : 'text-amber-200/75'
                           }`}
                         >
+                          {/*
+                            "abaixo" só quando há algo abaixo para escolher.
+
+                            Este é o beco que quem montou o primeiro fluxo
+                            encontrou: o crachá mandava escolher a credencial
+                            abaixo, e abaixo — num cliente sem nenhuma
+                            cadastrada — só havia "Nenhuma, o endereço não pede
+                            chave". Ele leu a única opção como resposta e
+                            perguntou por que a tela cobrava uma credencial que
+                            ela mesma dizia não existir.
+                          */}
                           {bloco?.temCredencial
                             ? 'credencial escolhida'
-                            : 'falta escolher a credencial abaixo'}
+                            : semCredenciais
+                              ? 'falta a credencial — nenhuma cadastrada neste cliente ainda'
+                              : 'falta escolher a credencial abaixo'}
                         </span>
                       )}
                     </>

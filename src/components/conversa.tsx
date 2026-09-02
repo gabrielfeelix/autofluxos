@@ -130,6 +130,15 @@ export function Conversa({
   const [desatualizada, setDesatualizada] = useState(false)
   const [modo, setModo] = useState<ModoDaConversa>('conversa')
   const [avisoDaApiAberto, setAvisoDaApiAberto] = useState(true)
+  /**
+   * Por que a conversa acabou, quando ela acabou por engano.
+   *
+   * Fica fora da lista de itens de propósito: o modo Conversa esconde tudo que
+   * é `sistema` (é o ponto dele — parecer o WhatsApp), e era justamente ali que
+   * o beco sem saída precisava aparecer. Quem clicou num botão que ninguém
+   * ligou lia só "A conversa terminou." e ia procurar defeito no motor.
+   */
+  const [motivoDoFim, setMotivoDoFim] = useState<string | null>(null)
   /*
    * O teste começa sabendo com quem está falando, igual à produção.
    *
@@ -169,6 +178,7 @@ export function Conversa({
   async function enviar(entrada: Entrada, eco?: string) {
     setOcupado(true)
     setPendentes(null)
+    setMotivoDoFim(null)
     if (eco !== undefined) {
       setItens((atual) => [...atual, { chave: novaChave(), de: 'pessoa', texto: eco, hora: horaAtual() }])
     }
@@ -311,7 +321,21 @@ export function Conversa({
           adicionar({ chave, de: 'sistema', texto: `passou para um humano — ${acao.motivo}`, alerta: true })
           break
         case 'encerrar':
-          adicionar({ chave, de: 'sistema', texto: 'conversa encerrada' })
+          /*
+            O encerramento **diz onde o desenho acabou**, quando sabe.
+
+            Sem isto, clicar num botão que ninguém ligou dava uma conversa que
+            morria em silêncio e um "A conversa terminou." que não respondia
+            nada — foi exatamente o relato que trouxe o `motivo` para o motor.
+            Vira alerta, e não linha comum: acabar por engano é defeito de
+            desenho, e acabar de propósito não é.
+          */
+          adicionar(
+            acao.motivo
+              ? { chave, de: 'sistema', texto: acao.motivo, alerta: true }
+              : { chave, de: 'sistema', texto: 'conversa encerrada' },
+          )
+          setMotivoDoFim(acao.motivo ?? null)
           break
       }
     }
@@ -327,6 +351,7 @@ export function Conversa({
     assinaturaDoInicio.current = assinatura
     setDesatualizada(false)
     setStatus('ativa')
+    setMotivoDoFim(null)
     setItens([])
     setPendentes(null)
     setRascunho('')
@@ -612,10 +637,27 @@ export function Conversa({
             </button>
           </form>
         ) : (
-          <p className={`px-1 py-2 text-[12.5px] leading-5 ${modo === 'conversa' ? 'text-[#54656f]' : 'text-muted'}`}>
+          <p
+            className={
+              /*
+                Acabar de propósito é cinza; acabar por engano é âmbar.
+
+                Um fim que o desenho previu e um beco sem saída eram a mesma
+                tela, e só um dos dois pede conserto. A cor separa os dois sem
+                obrigar a ler a frase inteira.
+              */
+              `px-1 py-2 text-[12.5px] leading-5 ${
+                status !== 'humano' && motivoDoFim
+                  ? 'rounded-[10px] border border-amber-400/25 bg-amber-400/[0.08] px-3 text-amber-200'
+                  : modo === 'conversa'
+                    ? 'text-[#54656f]'
+                    : 'text-muted'
+              }`
+            }
+          >
             {status === 'humano'
               ? 'O bot saiu de cena — daqui em diante quem responde é uma pessoa.'
-              : 'A conversa terminou.'}{' '}
+              : (motivoDoFim ?? 'A conversa terminou.')}{' '}
             <button onClick={recomecar} className="font-bold text-accent underline underline-offset-2">
               recomeçar
             </button>
