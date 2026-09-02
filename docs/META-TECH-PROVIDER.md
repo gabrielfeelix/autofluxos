@@ -13,8 +13,14 @@ destranca a próxima.
 
 ```
 verificação do negócio  →  app review (Advanced Access)  →  Tech Provider  →  Coexistence
-        ↑ você está aqui
+      ✅ feito              ↑ você está aqui
 ```
+
+> **02/09/2026 — a verificação do negócio saiu.** `business_verification_status`
+> passou de `pending` para **`verified`** (conferido pela Graph API na data). Isso
+> destrava o app review, e **só ele**. Não destrava vender ainda: as duas
+> permissões continuam em Standard Access, então o Embedded Signup segue
+> funcionando só para números da própria conta. Ver "E agora?" no fim.
 
 1. **Verificação do negócio é bloqueante.** A documentação da Meta é literal:
    *"Your business must be verified before you can start the app review
@@ -46,11 +52,11 @@ Duas armadilhas que valem saber antes de prometer ao cliente:
 | WABA | `4YU Tech` (`2245936116250161`), `account_review_status: APPROVED` | `GET /{waba}` |
 | App assinando a WABA | **sim**, o `AutoFluxos` | `GET /{waba}/subscribed_apps` |
 | Número | `+55 44 7400-7438` (`1301107846409860`), `CLOUD_API`, `VERIFIED`, qualidade `GREEN`, throughput `STANDARD` | `GET /{waba}/phone_numbers` |
-| **Verificação do negócio** | **`pending`** | `GET /{waba}?fields=business_verification_status` |
+| **Verificação do negócio** | **`verified`** (02/09/2026; era `pending` em 19/08) | `GET /{waba}?fields=business_verification_status` |
 | Política de privacidade | **criada agora**: `https://autofluxos.4yu.com.br/privacidade` | `src/app/privacidade/page.tsx` |
 
 Ou seja: **o número não é de teste** — é número real, verificado e entregando.
-O que trava é só a verificação do negócio.
+O que trava agora é o **app review**; a verificação do negócio saiu em 02/09/2026.
 
 ### Os comandos
 
@@ -74,7 +80,7 @@ curl -s "https://graph.facebook.com/v21.0/$WABA?fields=id,name,account_review_st
 curl -s "https://graph.facebook.com/v21.0/$WABA/phone_numbers?fields=id,display_phone_number,verified_name,quality_rating,code_verification_status,platform_type,throughput&access_token=$WHATSAPP_TOKEN" | python3 -m json.tool
 ```
 
-## O que dá para adiantar enquanto a verificação corre
+## O que dá para adiantar (agora vale para o app review)
 
 - [x] **Webhook** apontando para produção e assinando `messages`. Já está.
 - [x] **Política de privacidade em URL pública** — exigência do app review, e o
@@ -107,10 +113,38 @@ produto WhatsApp adicionado. A conferência na tela é confirmação, não desco
 ## Onde ver a verificação do negócio
 
 `business.facebook.com` → **Configurações do negócio** → **Central de segurança**
-(ou *Informações do negócio* → *Verificação*). É lá que sai de `pending`. Quando
-sair, a próxima etapa — o app review — passa a estar disponível no painel do app,
+(ou *Informações do negócio* → *Verificação*). É lá que saiu de `pending` em
+02/09/2026. Com ela feita, a próxima etapa — o app review — passa a estar disponível no painel do app,
 em **Revisão do app** → **Permissões e recursos**, onde se pede o Advanced Access
 das duas permissões citadas acima.
+
+## E agora? (02/09/2026)
+
+**Ainda não dá para vender atendimento no número do cliente.** Verificação do
+negócio aprovada é o *primeiro* degrau, não o último. O que falta:
+
+1. **App review** — pedir **Advanced Access** de `whatsapp_business_messaging` e
+   `whatsapp_business_management` em *Revisão do app → Permissões e recursos*.
+   Enquanto estiverem em Standard, o Embedded Signup só embarca números da
+   própria conta: dá para atender **no nosso número**, não no do cliente.
+2. **Tech Provider** — sai do app review aprovado.
+3. **Coexistence** — último degrau, e exige já ser Tech Provider.
+
+Ou seja: a resposta a "já podemos começar os negócios?" é **sim, com o nosso
+número; não, no número do cliente**. E "tem que fazer o rolê do coexistence?" —
+tem, mas ainda não é a vez dele; coexistence é o fim da fila, não um atalho.
+
+**Bloqueadores concretos do app review, conferidos hoje:**
+
+- [ ] `privacy_policy_url` do app **continua vazio** na Graph API. A página
+      existe (`https://autofluxos.4yu.com.br/privacidade`), falta colar no painel
+      — Configurações → Básico. É campo de UI, sem API.
+- [ ] Ícone e categoria do app (mesma tela).
+- [ ] Os dois vídeos do app review (mensagem chegando; template sendo criado).
+
+O que já está pronto e não precisa refazer: token permanente com os escopos
+certos, webhook em produção assinando `messages`, WABA `APPROVED`, número real
+`+55 44 7400-7438` verificado com qualidade `GREEN`.
 
 ## Fontes
 
