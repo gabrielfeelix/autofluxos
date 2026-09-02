@@ -45,19 +45,50 @@
   background-size: 64px 64px;
   mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 20%, transparent 75%);
   pointer-events: none;
+  z-index: -1;
+  opacity: 0.5;
 }
 
-/* O brilho ciano atrás do título. Fica no fundo e não recebe clique. */
+/*
+ * Dois focos, não um.
+ *
+ * O branco vem de cima e é o que dá a sensação de luz batendo na página — é o
+ * truque que faz o fundo do knotch parecer textura em vez de preto chapado. O
+ * ciano fica atrás dele, mais fraco, só o suficiente para a marca aparecer.
+ */
 .brilho {
   position: absolute;
   left: 50%;
-  top: -180px;
-  width: min(900px, 120vw);
+  top: -260px;
+  width: min(1100px, 140vw);
   aspect-ratio: 1;
   translate: -50% 0;
-  background: radial-gradient(circle, rgba(86, 208, 245, 0.14), transparent 62%);
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.1), transparent 52%),
+    radial-gradient(circle at 50% 50%, rgba(86, 208, 245, 0.11), transparent 60%);
   pointer-events: none;
+  filter: blur(24px);
+}
+
+/* Focos soltos no meio da página, para o preto nunca ficar liso. */
+.focoLuz {
+  position: absolute;
+  width: min(760px, 100vw);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.055), transparent 62%);
   filter: blur(20px);
+}
+
+.focoEsquerda {
+  left: -18%;
+  top: 6%;
+}
+
+.focoDireita {
+  right: -18%;
+  top: 32%;
 }
 
 /* ─────────────────────────── cabeçalho ─────────────────────────── */
@@ -179,10 +210,47 @@
 
 /* ─────────────────────────── capa ─────────────────────────── */
 
+/*
+ * A capa é uma tela inteira, não uma seção com padding.
+ *
+ * O campo de partículas ocupa o fundo dela por trás de tudo, e o conteúdo fica
+ * centrado no espaço que sobra. `min-height` em vez de `height` porque em
+ * telefone deitado 100vh corta o texto.
+ */
 .capa {
   position: relative;
-  padding: clamp(60px, 11vw, 130px) 0 clamp(50px, 8vw, 90px);
+  display: grid;
+  place-items: center;
+  min-height: min(86svh, 760px);
+  padding: clamp(84px, 11vw, 132px) 0 clamp(64px, 8vw, 92px);
   isolation: isolate;
+  overflow: hidden;
+}
+
+/* O canvas das partículas. */
+.campo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -2;
+}
+
+/*
+ * A vinheta sobre o campo.
+ *
+ * Sem ela o texto disputa contraste com as partículas justamente no meio, que
+ * é onde ele está. O degradê escurece o centro e deixa as bordas vivas — o
+ * efeito continua visível, e a leitura para de brigar.
+ */
+.veu {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 62% 52% at 50% 48%, rgba(8, 11, 16, 0.94), rgba(8, 11, 16, 0.5) 62%, transparent 82%),
+    linear-gradient(180deg, var(--canvas) 0%, transparent 22%, transparent 74%, var(--canvas) 100%);
 }
 
 .capaInterno {
@@ -215,9 +283,9 @@
 }
 
 .titulo {
-  margin: 26px auto 0;
-  max-width: 17ch;
-  font-size: clamp(38px, 7.2vw, 78px);
+  margin: 22px auto 0;
+  max-width: 19ch;
+  font-size: clamp(32px, 5.4vw, 60px);
   line-height: 1.03;
   letter-spacing: -0.035em;
   font-weight: 600;
@@ -230,7 +298,7 @@
 }
 
 .subtitulo {
-  margin: 24px auto 0;
+  margin: 20px auto 0;
   max-width: 56ch;
   font-size: clamp(15.5px, 2vw, 18.5px);
   line-height: 1.6;
@@ -242,7 +310,7 @@
   flex-wrap: wrap;
   gap: 12px;
   justify-content: center;
-  margin-top: 34px;
+  margin-top: 28px;
 }
 
 .notaAcoes {
@@ -418,6 +486,7 @@
 .secao {
   position: relative;
   padding: clamp(64px, 10vw, 130px) 0;
+  isolation: isolate;
 }
 
 .olho {
@@ -474,24 +543,83 @@
   gap: 14px;
   grid-template-columns: repeat(6, 1fr);
   margin-top: 44px;
+  align-items: stretch;
 }
 
+/*
+ * O card do knotch, e a graça dele são **duas camadas de luz**, não uma cor.
+ *
+ * O fundo é quase preto; por cima vem um degradê diagonal que sobe para o
+ * branco translúcido num canto só. Isso lê como textura — luz batendo de
+ * viés — em vez de "caixa cinza". O `::after` acrescenta um foco no topo, que
+ * é o que dá a impressão de volume.
+ *
+ * Os valores vieram do bundle do knotch: `linear-gradient(114deg, rgba(255,
+ * 255,255,.2), transparent)` e borda `rgba(255,255,255,.06)`.
+ */
 .caixa {
   position: relative;
   overflow: hidden;
   grid-column: span 2;
   padding: 26px;
   border-radius: var(--raio);
-  border: 1px solid var(--line);
-  background: linear-gradient(180deg, var(--panel), color-mix(in srgb, var(--panel) 40%, var(--canvas)));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--canvas-deep);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
   transition:
-    border-color 0.3s var(--curva),
-    transform 0.3s var(--curva);
+    border-color 0.4s var(--curva),
+    transform 0.4s var(--curva);
+}
+
+/*
+ * A ilustração vem **antes** do texto e cresce para preencher o card. É o
+ * arranjo do knotch: a mini-UI é quem vende, a frase só confirma. Ela é
+ * cortada pelo `overflow: hidden` do card de propósito — o corte sugere que
+ * há mais interface além da borda.
+ */
+.caixaArte {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 168px;
+  display: grid;
+  place-items: center;
+}
+
+.caixaPe {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+}
+
+/* A luz diagonal. Fica no ::before para não brigar com o conteúdo. */
+.caixa::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(114deg, rgba(255, 255, 255, 0.11) 0%, rgba(255, 255, 255, 0) 46%);
+  pointer-events: none;
+  transition: opacity 0.4s var(--curva);
+}
+
+/* O foco de cima, que arredonda o volume. */
+.caixa::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(58% 46% at 50% 0%, rgba(255, 255, 255, 0.09), transparent 72%);
+  pointer-events: none;
 }
 
 .caixa:hover {
-  border-color: color-mix(in srgb, var(--accent) 34%, transparent);
+  border-color: rgba(255, 255, 255, 0.14);
   transform: translateY(-3px);
+}
+
+.caixa:hover::before {
+  opacity: 1.5;
 }
 
 .caixaLarga {
@@ -511,18 +639,22 @@
 }
 
 .caixaIcone {
+  position: relative;
+  z-index: 1;
   display: grid;
   place-items: center;
   width: 38px;
   height: 38px;
   border-radius: 11px;
-  background: color-mix(in srgb, var(--accent) 13%, transparent);
-  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
-  color: var(--accent);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: var(--ink);
   margin-bottom: 16px;
 }
 
 .caixaTitulo {
+  position: relative;
+  z-index: 1;
   margin: 0 0 8px;
   font-size: 17.5px;
   font-weight: 600;
@@ -530,6 +662,8 @@
 }
 
 .caixaTexto {
+  position: relative;
+  z-index: 1;
   margin: 0;
   font-size: 14.5px;
   line-height: 1.58;
@@ -543,18 +677,30 @@
   gap: 1px;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   margin-top: 44px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--raio);
   overflow: hidden;
-  background: var(--line);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .numeroItem {
+  position: relative;
   padding: 28px 24px;
-  background: var(--canvas);
+  background: var(--canvas-deep);
+}
+
+/* Cada célula recebe o foco de cima; juntas, viram uma faixa iluminada. */
+.numeroItem::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(70% 100% at 50% 0%, rgba(255, 255, 255, 0.06), transparent 72%);
+  pointer-events: none;
 }
 
 .numeroValor {
+  position: relative;
+  z-index: 1;
   font-size: clamp(30px, 4vw, 42px);
   font-weight: 600;
   letter-spacing: -0.035em;
@@ -563,6 +709,8 @@
 }
 
 .numeroRotulo {
+  position: relative;
+  z-index: 1;
   margin-top: 6px;
   font-size: 13.5px;
   color: var(--muted);
@@ -610,32 +758,78 @@
   counter-reset: passo;
 }
 
+/*
+ * O passo é um card com a mesma luz do bento, e a ilustração entra **acima**
+ * do texto. O número vira uma etiqueta no topo em vez de um marcador na
+ * margem — assim ele cabe dentro da moldura e não briga com a ilustração.
+ */
 .passo {
   counter-increment: passo;
   position: relative;
-  padding: 24px 26px 24px 68px;
+  overflow: hidden;
+  padding: 22px;
   border-radius: var(--raio);
-  border: 1px solid var(--line);
-  background: var(--panel);
-  transition: border-color 0.3s var(--curva);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--canvas-deep);
+  transition:
+    border-color 0.4s var(--curva),
+    transform 0.4s var(--curva);
 }
 
 .passo::before {
-  content: counter(passo, decimal-leading-zero);
+  content: '';
   position: absolute;
-  left: 24px;
-  top: 24px;
-  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--accent);
+  inset: 0;
+  background: linear-gradient(114deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0) 44%);
+  pointer-events: none;
+}
+
+.passo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(60% 40% at 50% 0%, rgba(255, 255, 255, 0.07), transparent 70%);
+  pointer-events: none;
 }
 
 .passo:hover {
-  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  border-color: rgba(255, 255, 255, 0.14);
+  transform: translateY(-3px);
+}
+
+.passoNumero {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 16px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.04);
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.passoNumero::before {
+  content: counter(passo, decimal-leading-zero);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.passoArte {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 20px;
 }
 
 .passoTitulo {
+  position: relative;
+  z-index: 1;
   margin: 0 0 7px;
   font-size: 17px;
   font-weight: 600;
@@ -643,6 +837,8 @@
 }
 
 .passoTexto {
+  position: relative;
+  z-index: 1;
   margin: 0;
   font-size: 14.5px;
   line-height: 1.58;
@@ -686,8 +882,8 @@
   gap: 9px;
   padding: 11px 18px;
   border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--panel);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--canvas-deep);
   font-size: 14px;
   color: var(--soft);
   white-space: nowrap;
@@ -713,13 +909,27 @@
 
 .plano {
   position: relative;
+  overflow: hidden;
   padding: 30px 28px;
   border-radius: var(--raio);
-  border: 1px solid var(--line);
-  background: var(--panel);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--canvas-deep);
   transition:
-    border-color 0.3s var(--curva),
-    transform 0.3s var(--curva);
+    border-color 0.4s var(--curva),
+    transform 0.4s var(--curva);
+}
+
+.plano::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(114deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 44%);
+  pointer-events: none;
+}
+
+.plano > * {
+  position: relative;
+  z-index: 1;
 }
 
 .plano:hover {
@@ -728,9 +938,21 @@
 
 /* O plano do meio é o que queremos vender: borda ciano e um degradê de fundo
    que os outros dois não têm. */
+/*
+ * O plano do meio, e o destaque vem de **luz**, não de cor chapada: um foco
+ * branco descendo do topo, que é o truque do knotch. Chapar ciano no fundo
+ * empurraria o preço para o segundo plano; a luz faz o contrário.
+ */
 .planoDestaque {
-  border-color: color-mix(in srgb, var(--accent) 42%, transparent);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 7%, var(--panel)), var(--panel));
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.planoDestaque::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(62% 44% at 50% 0%, rgba(255, 255, 255, 0.13), transparent 74%);
+  pointer-events: none;
 }
 
 .planoSelo {
@@ -832,14 +1054,14 @@
 
 .pergunta {
   border-radius: 15px;
-  border: 1px solid var(--line);
-  background: var(--panel);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--canvas-deep);
   overflow: hidden;
   transition: border-color 0.3s var(--curva);
 }
 
 .pergunta[open] {
-  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  border-color: rgba(255, 255, 255, 0.14);
 }
 
 .perguntaTitulo {
@@ -883,9 +1105,18 @@
   margin: clamp(20px, 4vw, 40px) 0;
   padding: clamp(48px, 8vw, 92px) clamp(24px, 5vw, 60px);
   border-radius: 28px;
-  border: 1px solid var(--line);
-  background: linear-gradient(160deg, var(--panel), var(--canvas-deep));
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--canvas-deep);
   text-align: center;
+}
+
+/* A luz diagonal do knotch, na maior superfície da página. */
+.fechamento::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(114deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0) 48%);
+  pointer-events: none;
 }
 
 .fechamentoBrilho {
@@ -895,7 +1126,7 @@
   width: 620px;
   aspect-ratio: 1;
   translate: -50% 0;
-  background: radial-gradient(circle, rgba(86, 208, 245, 0.16), transparent 62%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1), transparent 64%);
   pointer-events: none;
 }
 
@@ -986,6 +1217,653 @@
   .botao:hover,
   .caixa:hover,
   .plano:hover {
+    transform: none;
+  }
+}
+
+/* ═══════════════════ ilustrações animadas ═══════════════════
+
+   Mini-interfaces desenhadas em HTML, uma por card e uma por passo.
+
+   Elas existem porque a alternativa é print, e print de um produto que ainda
+   muda toda semana envelhece antes de a página ir ao ar. Desenhadas, elas
+   mostram o *mecanismo* — o fluxo ligando blocos, a fila que esvazia, a IA
+   entregando a conversa — que é o que não muda mesmo quando a tela muda.
+
+   Todas animam em laço e param sozinhas com `prefers-reduced-motion`.
+   ═══════════════════════════════════════════════════════════ */
+
+.arte {
+  width: 100%;
+  max-width: 300px;
+}
+
+/* ── blocos ligados por linha, com o traço se desenhando ── */
+
+.arteFluxo {
+  display: grid;
+  gap: 9px;
+}
+
+.blocoFluxo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 13px;
+  border-radius: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.035);
+  font-size: 12.5px;
+  color: var(--soft);
+  animation: acender 4s var(--curva) infinite;
+}
+
+.blocoFluxo:nth-child(2) {
+  animation-delay: 0.5s;
+}
+
+.blocoFluxo:nth-child(3) {
+  animation-delay: 1s;
+}
+
+@keyframes acender {
+  0%,
+  55%,
+  100% {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.035);
+  }
+  20%,
+  35% {
+    border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+    background: color-mix(in srgb, var(--accent) 9%, transparent);
+  }
+}
+
+.pontoBloco {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--accent);
+  flex: none;
+}
+
+.linhaBloco {
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.14);
+  flex: 1;
+}
+
+/* ── fila da caixa de entrada que esvazia ── */
+
+.arteFila {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  max-width: 300px;
+}
+
+.itemFila {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.03);
+  animation: resolver 5s var(--curva) infinite;
+}
+
+.itemFila:nth-child(2) {
+  animation-delay: 1.1s;
+}
+
+.itemFila:nth-child(3) {
+  animation-delay: 2.2s;
+}
+
+.itemFila:nth-child(4) {
+  animation-delay: 3.3s;
+}
+
+@keyframes resolver {
+  0%,
+  8% {
+    opacity: 1;
+    transform: none;
+  }
+  16%,
+  92% {
+    opacity: 0.28;
+    transform: translateX(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.avatarFila {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  flex: none;
+}
+
+.textoFila {
+  display: grid;
+  gap: 5px;
+  flex: 1;
+}
+
+.barraFila {
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.13);
+}
+
+.barraFilaCurta {
+  width: 55%;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.selinhoFila {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  flex: none;
+}
+
+/* ── a IA pensando e entregando ── */
+
+.arteIA {
+  display: grid;
+  gap: 12px;
+  place-items: center;
+}
+
+.nucleoIA {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--accent);
+}
+
+/* Dois anéis que saem do núcleo, defasados — o "pensando". */
+.nucleoIA::before,
+.nucleoIA::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  animation: onda 3s var(--curva) infinite;
+}
+
+.nucleoIA::after {
+  animation-delay: 1.5s;
+}
+
+@keyframes onda {
+  0% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.75);
+  }
+}
+
+.pontosIA {
+  display: flex;
+  gap: 5px;
+}
+
+.pontoIA {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  animation: pensar 1.4s ease-in-out infinite;
+}
+
+.pontoIA:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.pontoIA:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes pensar {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
+
+/* ── ficha do contato ── */
+
+.arteFicha {
+  width: 100%;
+  max-width: 250px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.fichaTopo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.fichaAvatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  flex: none;
+}
+
+.fichaEtiquetas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding-top: 12px;
+}
+
+.etiqueta {
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  font-size: 10.5px;
+  color: var(--muted);
+  animation: aparecer 4s var(--curva) infinite;
+}
+
+.etiqueta:nth-child(2) {
+  animation-delay: 0.4s;
+}
+
+.etiqueta:nth-child(3) {
+  animation-delay: 0.8s;
+}
+
+@keyframes aparecer {
+  0%,
+  70%,
+  100% {
+    opacity: 0.4;
+  }
+  20%,
+  50% {
+    opacity: 1;
+    border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+    color: var(--soft);
+  }
+}
+
+/* ── conexão com sistemas: pacotes correndo pela linha ── */
+
+.arteConexao {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 240px;
+}
+
+.noConexao {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--soft);
+  flex: none;
+  z-index: 1;
+}
+
+.trilhoConexao {
+  position: relative;
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+/* O pacote é um brilho que atravessa o trilho. */
+.trilhoConexao::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -30%;
+  width: 30%;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: atravessar 2.4s var(--curva) infinite;
+}
+
+@keyframes atravessar {
+  to {
+    left: 100%;
+  }
+}
+
+/* ── ilustrações dos passos (maiores, com moldura de janela) ── */
+
+.janela {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--canvas-deep);
+  overflow: hidden;
+}
+
+.janelaBarra {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 13px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.janelaPonto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.janelaTitulo {
+  margin-left: 6px;
+  font-size: 11px;
+  color: var(--dim);
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+
+.janelaCorpo {
+  padding: 15px;
+  display: grid;
+  gap: 9px;
+}
+
+.linhaMedidor {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.medidor {
+  flex: 1;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+
+.medidorPreenchido {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 60%, transparent), var(--accent));
+  animation: encher 3.4s var(--curva) infinite;
+  transform-origin: left;
+}
+
+@keyframes encher {
+  0%,
+  100% {
+    transform: scaleX(0.15);
+  }
+  45%,
+  70% {
+    transform: scaleX(1);
+  }
+}
+
+/* ═══════════════════ o que a 4YU já publicou ═══════════════════
+
+   Esta seção ocupa o lugar que, num template, seria "depoimentos de clientes".
+   **Ela não é isso de propósito**: o AutoFluxos ainda não tem cliente, e
+   inventar depoimento com foto de banco de imagens é fabricar prova social —
+   ainda mais numa página que a Meta vai revisar.
+
+   O que existe de verdade é a 4YU ter publicado outros produtos. Isso responde
+   à mesma pergunta ("dá para confiar em quem fez isso?") sem mentir.
+   ═══════════════════════════════════════════════════════════════ */
+
+.provas {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  margin-top: 44px;
+}
+
+.prova {
+  position: relative;
+  overflow: hidden;
+  padding: 26px;
+  border-radius: var(--raio);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--canvas-deep);
+  transition:
+    border-color 0.4s var(--curva),
+    transform 0.4s var(--curva);
+}
+
+.prova::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(114deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0) 46%);
+  pointer-events: none;
+}
+
+.prova:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+  transform: translateY(-3px);
+}
+
+.prova > * {
+  position: relative;
+  z-index: 1;
+}
+
+.provaTopo {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 18px;
+}
+
+.provaSigla {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  flex: none;
+}
+
+.provaNome {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.provaOnde {
+  font-size: 12px;
+  color: var(--dim);
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+
+.provaTexto {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.58;
+  color: var(--muted);
+}
+
+.provaEstado {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--soft);
+}
+
+/* ═══════════════════ o texto da capa ═══════════════════
+
+   O título entra **palavra por palavra**, subindo e saindo de foco.
+
+   O `filter: blur()` é o que diferencia de um fade comum: a palavra chega como
+   se estivesse se materializando, e o olho lê isso como profundidade em vez de
+   opacidade. Cada palavra é um `<span>` com o próprio `animation-delay`, e o
+   delay vem inline do componente — mantê-lo no CSS exigiria uma regra por
+   índice.
+   ═══════════════════════════════════════════════════════ */
+
+.palavra {
+  display: inline-block;
+  animation: materializar 0.9s var(--curva) both;
+}
+
+@keyframes materializar {
+  from {
+    opacity: 0;
+    filter: blur(11px);
+    transform: translateY(26px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: none;
+  }
+}
+
+/*
+ * O cursor que pisca no fim do título, como um terminal esperando.
+ *
+ * Ele entra depois da última palavra e fica — é o detalhe que faz a capa
+ * parecer viva em vez de uma imagem parada.
+ */
+.cursor {
+  display: inline-block;
+  width: 3px;
+  height: 0.82em;
+  margin-left: 6px;
+  vertical-align: text-bottom;
+  border-radius: 2px;
+  background: var(--accent);
+  animation:
+    materializar 0.6s var(--curva) both,
+    piscar 1.15s steps(1) infinite;
+}
+
+@keyframes piscar {
+  0%,
+  48% {
+    opacity: 1;
+  }
+  49%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* A linha de números logo abaixo do CTA: a prova em três dados. */
+.tiras {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 30px;
+  margin-top: 32px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.tira {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--dim);
+}
+
+.tiraValor {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A seta que convida a rolar. */
+.rolar {
+  position: absolute;
+  left: 50%;
+  bottom: 26px;
+  translate: -50% 0;
+  color: var(--dim);
+  animation: respirar 2.6s var(--curva) infinite;
+}
+
+@keyframes respirar {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.85;
+    transform: translateY(7px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .palavra,
+  .cursor,
+  .rolar {
+    animation: none !important;
+    opacity: 1;
+    filter: none;
     transform: none;
   }
 }

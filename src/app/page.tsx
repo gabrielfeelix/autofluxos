@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
+import { DerivaDeParticulas } from './(site)/deriva-de-particulas'
 import { Revelar } from './(site)/revelar'
 import s from './(site)/pagina-inicial.module.css'
 
@@ -74,8 +75,9 @@ export default function PaginaInicial() {
 
       <main>
         <section className={s.capa}>
+          <DerivaDeParticulas className={s.campo} />
+          <div className={s.veu} aria-hidden />
           <div className={s.grade} aria-hidden />
-          <div className={s.brilho} aria-hidden />
 
           <div className={`${s.faixa} ${s.capaInterno}`}>
             <p className={s.selo} data-revela>
@@ -83,18 +85,22 @@ export default function PaginaInicial() {
               Atendimento com IA, dentro dos seus limites
             </p>
 
-            <h1 className={s.titulo} data-revela data-atraso="60">
-              Seu WhatsApp responde sozinho.{' '}
-              <span className={s.tituloDestaque}>Até a hora de não responder.</span>
+            <h1 className={s.titulo}>
+              <TituloAnimado
+                linhas={[
+                  { texto: 'Seu WhatsApp responde sozinho.' },
+                  { texto: 'Até a hora de não responder.', destaque: true },
+                ]}
+              />
             </h1>
 
-            <p className={s.subtitulo} data-revela data-atraso="120">
+            <p className={s.subtitulo} data-revela data-atraso="820">
               O AutoFluxos atende as perguntas que se repetem — horário, preço, endereço,
               confirmação — e passa para a sua equipe o que precisa de gente. No número que
               seus clientes já conhecem, com a conversa inteira guardada.
             </p>
 
-            <div className={s.acoes} data-revela data-atraso="180">
+            <div className={s.acoes} data-revela data-atraso="920">
               <a className={`${s.botao} ${s.botaoPrincipal} ${s.botaoGrande}`} href="#precos">
                 Ver planos
               </a>
@@ -103,10 +109,34 @@ export default function PaginaInicial() {
               </a>
             </div>
 
-            <p className={s.notaAcoes} data-revela data-atraso="220">
-              Sem cartão para começar · Configuramos o primeiro fluxo com você
-            </p>
+            <div className={s.tiras} data-revela data-atraso="1010">
+              <span className={s.tira}>
+                <span className={s.tiraValor}>24/7</span> sem ninguém de plantão
+              </span>
+              <span className={s.tira}>
+                <span className={s.tiraValor}>API oficial</span> do WhatsApp Business
+              </span>
+              <span className={s.tira}>
+                <span className={s.tiraValor}>Seu número</span> continua sendo o seu
+              </span>
+            </div>
+          </div>
 
+          <span className={s.rolar} aria-hidden>
+            <IconeSeta />
+          </span>
+        </section>
+
+        <section className={s.secao}>
+          <div className={s.faixa}>
+            <div className={s.cabecaSecao}>
+              <span className={s.olho} data-revela>
+                Na prática
+              </span>
+              <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-atraso="60">
+                Uma conversa, do começo ao momento de chamar alguém
+              </h2>
+            </div>
             <ConversaDaCapa />
           </div>
         </section>
@@ -137,6 +167,7 @@ export default function PaginaInicial() {
         </section>
 
         <section className={s.secao}>
+          <div className={`${s.focoLuz} ${s.focoEsquerda}`} aria-hidden />
           <div className={s.faixa}>
             <span className={s.olho} data-revela>
               O que ele faz
@@ -148,34 +179,34 @@ export default function PaginaInicial() {
             <div className={s.bento}>
               <Caixa
                 larga
-                icone={<IconeBlocos />}
+                arte={<ArteFluxo />}
                 titulo="Fluxos montados bloco a bloco"
-                texto="Você desenha o caminho da conversa arrastando peças: mensagem, pergunta, condição, espera, guardar. Testa ali mesmo antes de publicar, e cada publicação vira uma versão — dá para voltar."
+                texto="Você desenha o caminho da conversa arrastando peças: mensagem, pergunta, condição, espera. Testa ali mesmo antes de publicar, e cada publicação vira uma versão — dá para voltar."
                 atraso={0}
               />
               <Caixa
                 larga
-                icone={<IconeCaixa />}
+                arte={<ArteFila />}
                 titulo="Caixa de entrada da equipe"
-                texto="Todas as conversas num lugar só. Quem está esperando resposta aparece primeiro, cada atendente vê o que é dele, e a conversa inteira está do lado quando alguém assume."
+                texto="Todas as conversas num lugar só. Quem está esperando aparece primeiro, cada atendente vê o que é dele, e a conversa inteira está do lado quando alguém assume."
                 atraso={80}
               />
               <Caixa
-                icone={<IconeIA />}
+                arte={<ArteIA />}
                 titulo="IA com coleira"
-                texto="Para o que não cabe num roteiro fixo. Ela responde dentro do que você definir e chama uma pessoa quando não sabe — nunca inventa."
+                texto="Para o que não cabe num roteiro fixo. Ela responde dentro do que você definir e chama uma pessoa quando não sabe."
                 atraso={160}
               />
               <Caixa
-                icone={<IconeFicha />}
+                arte={<ArteFicha />}
                 titulo="Ficha de cada contato"
-                texto="Histórico, etiquetas e o que já foi combinado. Quem entra no meio da conversa não começa do zero."
+                texto="Histórico, etiquetas e o que já foi combinado. Quem entra no meio não começa do zero."
                 atraso={200}
               />
               <Caixa
-                icone={<IconePlug />}
+                arte={<ArteConexao />}
                 titulo="Conecta no seu sistema"
-                texto="O fluxo consulta a sua agenda, o seu estoque ou o seu ERP durante a conversa, e responde com dado de verdade."
+                texto="O fluxo consulta a sua agenda ou o seu ERP durante a conversa, e responde com dado de verdade."
                 atraso={240}
               />
             </div>
@@ -183,6 +214,7 @@ export default function PaginaInicial() {
         </section>
 
         <section className={s.secao} id="como">
+          <div className={`${s.focoLuz} ${s.focoDireita}`} aria-hidden />
           <div className={s.faixa}>
             <div className={s.passos}>
               <div className={s.passosFixo}>
@@ -201,23 +233,31 @@ export default function PaginaInicial() {
 
               <ol className={s.passosLista}>
                 <Passo
+                  rotulo="Conectar"
+                  arte={<JanelaConexao />}
                   titulo="Você conecta o seu número"
-                  texto="A autorização é feita pelo próprio WhatsApp, com a sua conta. Nós não pedimos senha, e você revoga o acesso a qualquer momento pelo painel da Meta."
+                  texto="A autorização é feita pelo próprio WhatsApp, com a sua conta. Nós não pedimos senha, e você revoga o acesso quando quiser pelo painel da Meta."
                   atraso={0}
                 />
                 <Passo
+                  rotulo="Desenhar"
+                  arte={<JanelaDesenho />}
                   titulo="A gente monta o primeiro fluxo com você"
-                  texto="Nada de tela em branco. Configuramos junto o atendimento inicial do seu negócio, com as perguntas que você de fato recebe — não um exemplo genérico."
+                  texto="Nada de tela em branco. Configuramos junto o atendimento do seu negócio, com as perguntas que você de fato recebe — não um exemplo genérico."
                   atraso={80}
                 />
                 <Passo
+                  rotulo="Atender"
+                  arte={<JanelaAtendimento />}
                   titulo="Sua equipe entra na caixa de entrada"
                   texto="Cada pessoa com o próprio acesso. O que o fluxo não resolveu chega ali com a conversa inteira ao lado, e ninguém pergunta duas vezes a mesma coisa."
                   atraso={160}
                 />
                 <Passo
+                  rotulo="Ajustar"
+                  arte={<JanelaNumeros />}
                   titulo="Você ajusta olhando o que aconteceu"
-                  texto="Onde as pessoas desistem, o que elas perguntam e o bot não sabia, quanto tempo levou para alguém responder. O fluxo melhora com uso."
+                  texto="Onde as pessoas desistem, o que perguntam e o fluxo não sabia, quanto tempo levou para alguém responder. Ele melhora com uso."
                   atraso={240}
                 />
               </ol>
@@ -253,7 +293,54 @@ export default function PaginaInicial() {
           </div>
         </section>
 
+        <section className={s.secao}>
+          <div className={`${s.focoLuz} ${s.focoDireita}`} aria-hidden />
+          <div className={s.faixa}>
+            <div className={s.cabecaSecao}>
+              <span className={s.olho} data-revela>
+                Quem faz
+              </span>
+              <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-atraso="60">
+                A 4YU publica software, não promete
+              </h2>
+              <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
+                O AutoFluxos é novo e ainda não tem carteira de clientes para mostrar — não
+                vamos inventar uma. O que dá para conferir é o resto: os produtos que a 4YU
+                já colocou no ar e mantém.
+              </p>
+            </div>
+
+            <div className={s.provas}>
+              <Prova
+                sigla="DA"
+                nome="Deixei Aqui"
+                onde="Google Play · desde ago/2026"
+                texto="App de lembrete de onde você guardou as coisas. Publicado na produção da Play Store, com atualizações desde o lançamento."
+                estado="No ar"
+                atraso={0}
+              />
+              <Prova
+                sigla="QC"
+                nome="Quanto Cobro"
+                onde="Google Play · desde ago/2026"
+                texto="Calculadora de precificação para quem presta serviço. Também publicado e mantido na produção."
+                estado="No ar"
+                atraso={80}
+              />
+              <Prova
+                sigla="VE"
+                nome="Verandi"
+                onde="verandi.4yu.com.br"
+                texto="Agenda para estúdios e clínicas, com grade fixa, chamada e reposição. Desenhada a partir da planilha de um estúdio de verdade."
+                estado="No ar, com clientes"
+                atraso={160}
+              />
+            </div>
+          </div>
+        </section>
+
         <section className={s.secao} id="precos">
+          <div className={`${s.focoLuz} ${s.focoEsquerda}`} aria-hidden />
           <div className={s.faixa}>
             <div className={s.cabecaSecao}>
               <span className={s.olho} data-revela>
@@ -437,11 +524,15 @@ export default function PaginaInicial() {
 /* ─────────────────────────── peças ─────────────────────────── */
 
 /**
- * A conversa da capa.
+ * A conversa que mostra o produto funcionando.
  *
- * Ela é o herói da tela e substitui o print: mostra o produto sem prometer uma
- * interface que continua mudando. Os balões entram em cascata pelo `animation-delay`
- * inline — CSS puro, sem timer no cliente.
+ * **Ela saiu da capa quando o campo de partículas entrou** — as duas coisas
+ * competiam pela mesma atenção, e a capa ficou com o texto. Aqui embaixo ela
+ * tem a seção inteira, e é a primeira coisa que aparece depois da dobra.
+ *
+ * Substitui o print: mostra o produto sem prometer uma interface que continua
+ * mudando. Os balões entram em cascata pelo `animation-delay` inline — CSS
+ * puro, sem timer no cliente.
  */
 function ConversaDaCapa() {
   const falas = [
@@ -461,7 +552,7 @@ function ConversaDaCapa() {
   ]
 
   return (
-    <div className={s.palco} data-revela data-atraso="260">
+    <div className={s.palco} data-revela data-atraso="80">
       <div className={s.telefone}>
         <div className={s.telefoneTopo}>
           <span className={s.avatar} aria-hidden>
@@ -522,13 +613,13 @@ function Numero({ valor, rotulo }: { valor: string; rotulo: string }) {
 }
 
 function Caixa({
-  icone,
+  arte,
   titulo,
   texto,
   larga,
   atraso,
 }: {
-  icone: ReactNode
+  arte: ReactNode
   titulo: string
   texto: string
   larga?: boolean
@@ -540,18 +631,36 @@ function Caixa({
       data-revela
       data-atraso={atraso}
     >
-      <span className={s.caixaIcone} aria-hidden>
-        {icone}
-      </span>
-      <h3 className={s.caixaTitulo}>{titulo}</h3>
-      <p className={s.caixaTexto}>{texto}</p>
+      <div className={s.caixaArte} aria-hidden>
+        {arte}
+      </div>
+      <div className={s.caixaPe}>
+        <h3 className={s.caixaTitulo}>{titulo}</h3>
+        <p className={s.caixaTexto}>{texto}</p>
+      </div>
     </article>
   )
 }
 
-function Passo({ titulo, texto, atraso }: { titulo: string; texto: string; atraso: number }) {
+function Passo({
+  rotulo,
+  arte,
+  titulo,
+  texto,
+  atraso,
+}: {
+  rotulo: string
+  arte: ReactNode
+  titulo: string
+  texto: string
+  atraso: number
+}) {
   return (
     <li className={s.passo} data-revela data-atraso={atraso}>
+      <span className={s.passoNumero}>{rotulo}</span>
+      <div className={s.passoArte} aria-hidden>
+        {arte}
+      </div>
       <h3 className={s.passoTitulo}>{titulo}</h3>
       <p className={s.passoTexto}>{texto}</p>
     </li>
@@ -657,6 +766,260 @@ function Pergunta({ pergunta, resposta }: { pergunta: string; resposta: string }
   )
 }
 
+/**
+ * Um produto que a 4YU publicou.
+ *
+ * Ocupa o lugar do depoimento e responde à mesma pergunta — "dá para confiar
+ * em quem fez isso?" — com o que é verificável: os apps estão na Play Store e
+ * a Verandi está no ar. Ver o comentário da seção no CSS.
+ */
+function Prova({
+  sigla,
+  nome,
+  onde,
+  texto,
+  estado,
+  atraso,
+}: {
+  sigla: string
+  nome: string
+  onde: string
+  texto: string
+  estado: string
+  atraso: number
+}) {
+  return (
+    <article className={s.prova} data-revela data-atraso={atraso}>
+      <div className={s.provaTopo}>
+        <span className={s.provaSigla} aria-hidden>
+          {sigla}
+        </span>
+        <div>
+          <div className={s.provaNome}>{nome}</div>
+          <div className={s.provaOnde}>{onde}</div>
+        </div>
+      </div>
+      <p className={s.provaTexto}>{texto}</p>
+      <span className={s.provaEstado}>
+        <span className={s.pontoVivo} aria-hidden />
+        {estado}
+      </span>
+    </article>
+  )
+}
+
+/**
+ * O título da capa, palavra por palavra.
+ *
+ * **A quebra em palavras é o efeito.** Cada uma vira um `<span>` com o próprio
+ * atraso, e o CSS as materializa subindo e saindo do desfoque — o olho lê isso
+ * como profundidade, não como um fade.
+ *
+ * O texto continua legível para quem não executa JS e para leitor de tela: são
+ * spans com o texto dentro, na ordem, dentro de um `<h1>` de verdade. O
+ * `aria-hidden` ficaria errado aqui — é o título da página.
+ */
+function TituloAnimado({ linhas }: { linhas: { texto: string; destaque?: boolean }[] }) {
+  let indice = 0
+
+  return (
+    <>
+      {linhas.map((linha, iLinha) => (
+        <span key={iLinha} className={linha.destaque ? s.tituloDestaque : undefined}>
+          {iLinha > 0 && <br />}
+          {linha.texto.split(' ').map((palavra, iPalavra, todas) => {
+            // 78ms entre palavras: a frase inteira leva pouco mais de um
+            // segundo, que é o tempo que alguém leva para focar a tela.
+            const atraso = 120 + indice++ * 78
+            const ultima = iPalavra === todas.length - 1
+            return (
+              // O espaço fica **fora** do span animado: dentro de um
+              // `inline-block` ele é colapsado e as palavras se colam. Depois
+              // da última não há espaço nenhum, senão o cursor que vem em
+              // seguida quebra para a linha de baixo sozinho.
+              <span key={`${iLinha}-${palavra}-${atraso}`}>
+                <span className={s.palavra} style={{ animationDelay: `${atraso}ms` }}>
+                  {palavra}
+                </span>
+                {!ultima && ' '}
+              </span>
+            )
+          })}
+          {iLinha === linhas.length - 1 && (
+            <span
+              className={s.cursor}
+              style={{ animationDelay: `${120 + indice * 78}ms, ${420 + indice * 78}ms` }}
+              aria-hidden
+            />
+          )}
+        </span>
+      ))}
+    </>
+  )
+}
+
+/* ─────────────────────── ilustrações animadas ─────────────────────── */
+
+/*
+ * Mini-interfaces desenhadas em HTML, uma por card e uma por passo.
+ *
+ * **Elas existem porque a alternativa é print**, e print de um produto que
+ * muda toda semana envelhece antes de a página ir ao ar. Desenhadas, mostram o
+ * *mecanismo* — o fluxo acendendo bloco a bloco, a fila que esvazia, o pacote
+ * atravessando a integração — que é o que continua verdadeiro mesmo quando a
+ * tela muda.
+ *
+ * Todas são `aria-hidden` no ponto de uso: são figura, e o texto ao lado já
+ * diz o que elas mostram.
+ */
+
+/** Três blocos que acendem em sequência, como o fluxo executando. */
+function ArteFluxo() {
+  return (
+    <div className={`${s.arte} ${s.arteFluxo}`}>
+      {['Mensagem', 'Pergunta', 'Condição'].map((rotulo) => (
+        <div key={rotulo} className={s.blocoFluxo}>
+          <span className={s.pontoBloco} />
+          {rotulo}
+          <span className={s.linhaBloco} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** A fila da caixa de entrada esvaziando: cada item resolve e some. */
+function ArteFila() {
+  return (
+    <div className={s.arteFila}>
+      {[0, 1, 2, 3].map((i) => (
+        <div key={i} className={s.itemFila}>
+          <span className={s.avatarFila} />
+          <span className={s.textoFila}>
+            <span className={s.barraFila} />
+            <span className={`${s.barraFila} ${s.barraFilaCurta}`} />
+          </span>
+          {i === 0 && <span className={s.selinhoFila}>espera</span>}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** O núcleo da IA pulsando com dois anéis, e os três pontos de "pensando". */
+function ArteIA() {
+  return (
+    <div className={s.arteIA}>
+      <span className={s.nucleoIA}>
+        <IconeIA />
+      </span>
+      <span className={s.pontosIA}>
+        <span className={s.pontoIA} />
+        <span className={s.pontoIA} />
+        <span className={s.pontoIA} />
+      </span>
+    </div>
+  )
+}
+
+/** A ficha do contato, com as etiquetas acendendo uma a uma. */
+function ArteFicha() {
+  return (
+    <div className={s.arteFicha}>
+      <div className={s.fichaTopo}>
+        <span className={s.fichaAvatar}>MC</span>
+        <span className={s.textoFila}>
+          <span className={s.barraFila} />
+          <span className={`${s.barraFila} ${s.barraFilaCurta}`} />
+        </span>
+      </div>
+      <div className={s.fichaEtiquetas}>
+        <span className={s.etiqueta}>cliente</span>
+        <span className={s.etiqueta}>sábado</span>
+        <span className={s.etiqueta}>parcelar</span>
+      </div>
+    </div>
+  )
+}
+
+/** Dois sistemas ligados, com o pacote atravessando o trilho. */
+function ArteConexao() {
+  return (
+    <div className={s.arteConexao}>
+      <span className={s.noConexao}>
+        <IconeFluxo />
+      </span>
+      <span className={s.trilhoConexao} />
+      <span className={s.noConexao}>
+        <IconePlug />
+      </span>
+    </div>
+  )
+}
+
+/* As quatro janelas dos passos. A moldura é a mesma; muda o miolo. */
+
+function Janela({ titulo, children }: { titulo: string; children: ReactNode }) {
+  return (
+    <div className={s.janela}>
+      <div className={s.janelaBarra}>
+        <span className={s.janelaPonto} />
+        <span className={s.janelaPonto} />
+        <span className={s.janelaPonto} />
+        <span className={s.janelaTitulo}>{titulo}</span>
+      </div>
+      <div className={s.janelaCorpo}>{children}</div>
+    </div>
+  )
+}
+
+function JanelaConexao() {
+  return (
+    <Janela titulo="conectar número">
+      <ArteConexao />
+      <span className={s.linhaMedidor}>
+        <span className={s.pontoBloco} />
+        +55 44 7400-7438
+      </span>
+    </Janela>
+  )
+}
+
+function JanelaDesenho() {
+  return (
+    <Janela titulo="editor de fluxo">
+      <ArteFluxo />
+    </Janela>
+  )
+}
+
+function JanelaAtendimento() {
+  return (
+    <Janela titulo="caixa de entrada">
+      <ArteFila />
+    </Janela>
+  )
+}
+
+function JanelaNumeros() {
+  return (
+    <Janela titulo="o que aconteceu">
+      {[
+        ['resolvido pelo fluxo', 78],
+        ['passou para pessoa', 22],
+        ['sem resposta', 4],
+      ].map(([rotulo, pct]) => (
+        <span key={rotulo as string} className={s.linhaMedidor}>
+          <span className={s.medidor}>
+            <span className={s.medidorPreenchido} style={{ maxWidth: `${pct}%` }} />
+          </span>
+          {rotulo}
+        </span>
+      ))}
+    </Janela>
+  )
+}
+
 /* ─────────────────────────── ícones ─────────────────────────── */
 
 /*
@@ -729,6 +1092,14 @@ function IconeCheque() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6">
       <path d="m5 12.5 4.5 4.5L19 7.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function IconeSeta() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+      <path d="M12 5v13M6.5 12.5 12 18l5.5-5.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
