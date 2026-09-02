@@ -18,9 +18,9 @@ import s from './(site)/pagina-inicial.module.css'
  * produto.
  */
 export const metadata: Metadata = {
-  title: 'AutoFluxos — o WhatsApp da sua empresa respondendo sozinho',
+  title: 'AutoFluxos: o WhatsApp da sua empresa respondendo sozinho',
   description:
-    'Plataforma de atendimento no WhatsApp para pequenas e médias empresas. O fluxo responde o que se repete, sua equipe assume o resto — no número que seus clientes já conhecem.',
+    'Plataforma de atendimento no WhatsApp para pequenas e médias empresas. O fluxo responde o que se repete e sua equipe assume o resto, no número que seus clientes já conhecem.',
   // O painel inteiro é `noindex` pelo layout raiz. Esta página é a exceção:
   // ela existe para ser encontrada.
   robots: { index: true, follow: true },
@@ -30,9 +30,9 @@ export const metadata: Metadata = {
     locale: 'pt_BR',
     siteName: 'AutoFluxos',
     url: 'https://autofluxos.4yu.com.br/',
-    title: 'AutoFluxos — o WhatsApp da sua empresa respondendo sozinho',
+    title: 'AutoFluxos: o WhatsApp da sua empresa respondendo sozinho',
     description:
-      'O fluxo responde o que se repete, sua equipe assume o resto. No número que seus clientes já conhecem.',
+      'O fluxo responde o que se repete e sua equipe assume o resto, no número que seus clientes já conhecem.',
   },
 }
 
@@ -82,7 +82,7 @@ export default function PaginaInicial() {
           <div className={`${s.faixa} ${s.capaInterno}`}>
             <p className={s.selo} data-revela>
               <span className={s.seloTag}>Novo</span>
-              Atendimento com IA, dentro dos seus limites
+API oficial do WhatsApp Business
             </p>
 
             <h1 className={s.titulo}>
@@ -95,9 +95,9 @@ export default function PaginaInicial() {
             </h1>
 
             <p className={s.subtitulo} data-revela data-atraso="820">
-              O AutoFluxos atende as perguntas que se repetem — horário, preço, endereço,
-              confirmação — e passa para a sua equipe o que precisa de gente. No número que
-              seus clientes já conhecem, com a conversa inteira guardada.
+              Horário, preço, endereço, confirmação: o AutoFluxos responde sozinho as cinco
+              perguntas que chegam quarenta vezes por dia. O resto vai para a sua equipe,
+              com a conversa inteira do lado. Tudo no número que já está no seu cartão.
             </p>
 
             <div className={s.acoes} data-revela data-atraso="920">
@@ -128,16 +128,22 @@ export default function PaginaInicial() {
         </section>
 
         <section className={s.secao}>
+          <div className={`${s.focoLuz} ${s.focoDireita}`} aria-hidden />
           <div className={s.faixa}>
             <div className={s.cabecaSecao}>
               <span className={s.olho} data-revela>
                 Na prática
               </span>
               <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-atraso="60">
-                Uma conversa, do começo ao momento de chamar alguém
+                Isto é o que a sua equipe vê
               </h2>
+              <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
+                Uma tela com as conversas de todo mundo. Quem espera resposta sobe para o
+                topo, o histórico fica ao lado, e a ficha diz quem é a pessoa antes de você
+                digitar a primeira palavra.
+              </p>
             </div>
-            <ConversaDaCapa />
+            <Desktop />
           </div>
         </section>
 
@@ -148,20 +154,20 @@ export default function PaginaInicial() {
                 O problema
               </span>
               <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-atraso="60">
-                A mesma pergunta, quarenta vezes por dia
+                Você já sabe a resposta antes de ler a pergunta
               </h2>
               <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
-                Quem atende por WhatsApp conhece a cena: o celular na mão o dia inteiro, as
-                mesmas cinco perguntas se repetindo, e uma conversa importante que ficou sem
-                resposta porque entrou no meio das outras.
+                "Que horas vocês abrem?" pela oitava vez antes do almoço. Você responde,
+                volta pro que estava fazendo, e às sete da noite descobre que alguém
+                perguntando de orçamento ficou sem resposta desde as onze.
               </p>
             </div>
 
             <div className={s.numeros} data-revela data-atraso="140">
-              <Numero valor="70%" rotulo="das mensagens que um negócio recebe são as mesmas perguntas" />
-              <Numero valor="24/7" rotulo="o fluxo atende de madrugada, no fim de semana e no feriado" />
-              <Numero valor="1 número" rotulo="o seu — seus clientes não precisam decorar outro" />
-              <Numero valor="0 linhas" rotulo="de código para montar o atendimento" />
+              <Numero valor="70%" rotulo="das mensagens que chegam são as mesmas cinco perguntas" />
+              <Numero valor="24/7" rotulo="responde domingo de manhã e na véspera de feriado" />
+              <Numero valor="1 número" rotulo="o seu. Ninguém precisa decorar um número novo" />
+              <Numero valor="0 linhas" rotulo="de código. Você arrasta blocos e testa ali mesmo" />
             </div>
           </div>
         </section>
@@ -173,7 +179,7 @@ export default function PaginaInicial() {
               O que ele faz
             </span>
             <h2 className={s.tituloSecao} data-revela data-atraso="60">
-              Quatro peças, e elas se conversam
+              Cinco peças que trabalham juntas
             </h2>
 
             <div className={s.bento}>
@@ -181,32 +187,32 @@ export default function PaginaInicial() {
                 larga
                 arte={<ArteFluxo />}
                 titulo="Fluxos montados bloco a bloco"
-                texto="Você desenha o caminho da conversa arrastando peças: mensagem, pergunta, condição, espera. Testa ali mesmo antes de publicar, e cada publicação vira uma versão — dá para voltar."
+                texto="Você arrasta mensagem, pergunta, condição e espera até a conversa ficar do jeito que você atende. Testa ali mesmo. Cada publicação vira uma versão, então dá para voltar quando algo sai errado."
                 atraso={0}
               />
               <Caixa
                 larga
                 arte={<ArteFila />}
                 titulo="Caixa de entrada da equipe"
-                texto="Todas as conversas num lugar só. Quem está esperando aparece primeiro, cada atendente vê o que é dele, e a conversa inteira está do lado quando alguém assume."
+                texto="Todas as conversas numa tela. Quem espera sobe para o topo, cada atendente vê o que é dele, e quem assume no meio lê o que já foi dito antes de responder."
                 atraso={80}
               />
               <Caixa
                 arte={<ArteIA />}
                 titulo="IA com coleira"
-                texto="Para o que não cabe num roteiro fixo. Ela responde dentro do que você definir e chama uma pessoa quando não sabe."
+                texto="Para o que não cabe num roteiro fixo. Ela responde dentro do que você escrever e chama alguém quando não sabe, em vez de arriscar."
                 atraso={160}
               />
               <Caixa
                 arte={<ArteFicha />}
                 titulo="Ficha de cada contato"
-                texto="Histórico, etiquetas e o que já foi combinado. Quem entra no meio não começa do zero."
+                texto="Sete conversas anteriores, as etiquetas que você criou e o que já foi combinado. Quem entra no meio não pergunta de novo."
                 atraso={200}
               />
               <Caixa
                 arte={<ArteConexao />}
                 titulo="Conecta no seu sistema"
-                texto="O fluxo consulta a sua agenda ou o seu ERP durante a conversa, e responde com dado de verdade."
+                texto="O fluxo abre a sua agenda no meio da conversa e responde com o horário que está livre agora, não com um horário genérico."
                 atraso={240}
               />
             </div>
@@ -226,7 +232,7 @@ export default function PaginaInicial() {
                 </h2>
                 <p className={s.chamada} data-revela data-atraso="100">
                   O atendimento acontece no WhatsApp da sua empresa. Seus clientes continuam
-                  falando com o número que já está no cartão, no site e no Google — e você
+                  falando com o número que já está no cartão, no site e no Google. E você
                   desconecta quando quiser.
                 </p>
               </div>
@@ -236,28 +242,33 @@ export default function PaginaInicial() {
                   rotulo="Conectar"
                   arte={<JanelaConexao />}
                   titulo="Você conecta o seu número"
-                  texto="A autorização é feita pelo próprio WhatsApp, com a sua conta. Nós não pedimos senha, e você revoga o acesso quando quiser pelo painel da Meta."
+                  texto="A autorização acontece dentro do WhatsApp, com a sua conta. Nunca pedimos
+senha. Você corta o acesso quando quiser, no painel da Meta, sem falar com a
+gente."
                   atraso={0}
                 />
                 <Passo
                   rotulo="Desenhar"
                   arte={<JanelaDesenho />}
                   titulo="A gente monta o primeiro fluxo com você"
-                  texto="Nada de tela em branco. Configuramos junto o atendimento do seu negócio, com as perguntas que você de fato recebe — não um exemplo genérico."
+                  texto="Você não abre o sistema numa tela vazia. Sentamos junto e montamos o
+atendimento com as perguntas que chegam no seu WhatsApp de verdade."
                   atraso={80}
                 />
                 <Passo
                   rotulo="Atender"
                   arte={<JanelaAtendimento />}
                   titulo="Sua equipe entra na caixa de entrada"
-                  texto="Cada pessoa com o próprio acesso. O que o fluxo não resolveu chega ali com a conversa inteira ao lado, e ninguém pergunta duas vezes a mesma coisa."
+                  texto="Cada pessoa entra com o próprio acesso. O que o fluxo não resolveu chega ali
+com a conversa inteira do lado, e ninguém pergunta duas vezes a mesma coisa."
                   atraso={160}
                 />
                 <Passo
                   rotulo="Ajustar"
                   arte={<JanelaNumeros />}
                   titulo="Você ajusta olhando o que aconteceu"
-                  texto="Onde as pessoas desistem, o que perguntam e o fluxo não sabia, quanto tempo levou para alguém responder. Ele melhora com uso."
+                  texto="Em que bloco as pessoas param de responder, o que perguntaram e o fluxo não
+sabia, quanto tempo alguém levou para assumir. Você corrige olhando isso."
                   atraso={240}
                 />
               </ol>
@@ -272,7 +283,7 @@ export default function PaginaInicial() {
                 Para quem é
               </span>
               <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-atraso="60">
-                Feito para quem atende no WhatsApp o dia inteiro
+  Para quem atende no WhatsApp o dia inteiro
               </h2>
             </div>
           </div>
@@ -286,9 +297,8 @@ export default function PaginaInicial() {
 
           <div className={s.faixa}>
             <p className={`${s.chamada} ${s.chamadaCentro}`} style={{ marginTop: 34 }} data-revela>
-              Não serve para tudo: o AutoFluxos não emite nota fiscal, não controla estoque e
-              não substitui o seu sistema de gestão. Ele cuida do atendimento, e faz isso
-              inteiro.
+              Ele não emite nota fiscal, não controla estoque e não substitui o seu sistema de
+              gestão. Cuida do atendimento, e cuida inteiro.
             </p>
           </div>
         </section>
@@ -301,12 +311,11 @@ export default function PaginaInicial() {
                 Quem faz
               </span>
               <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-atraso="60">
-                A 4YU publica software, não promete
+A 4YU já tem software no ar
               </h2>
               <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
-                O AutoFluxos é novo e ainda não tem carteira de clientes para mostrar — não
-                vamos inventar uma. O que dá para conferir é o resto: os produtos que a 4YU
-                já colocou no ar e mantém.
+                O AutoFluxos é novo e ainda não tem carteira de clientes. Não vamos inventar
+                uma. O que dá para conferir hoje são os produtos que a 4YU publicou e mantém.
               </p>
             </div>
 
@@ -315,7 +324,7 @@ export default function PaginaInicial() {
                 sigla="DA"
                 nome="Deixei Aqui"
                 onde="Google Play · desde ago/2026"
-                texto="App de lembrete de onde você guardou as coisas. Publicado na produção da Play Store, com atualizações desde o lançamento."
+                texto="App para lembrar onde você guardou as coisas. Está na produção da Play Store desde agosto, com atualizações desde então."
                 estado="No ar"
                 atraso={0}
               />
@@ -323,7 +332,7 @@ export default function PaginaInicial() {
                 sigla="QC"
                 nome="Quanto Cobro"
                 onde="Google Play · desde ago/2026"
-                texto="Calculadora de precificação para quem presta serviço. Também publicado e mantido na produção."
+                texto="Calculadora de preço para quem presta serviço e nunca sabe quanto cobrar. Também na produção da Play Store."
                 estado="No ar"
                 atraso={80}
               />
@@ -331,7 +340,7 @@ export default function PaginaInicial() {
                 sigla="VE"
                 nome="Verandi"
                 onde="verandi.4yu.com.br"
-                texto="Agenda para estúdios e clínicas, com grade fixa, chamada e reposição. Desenhada a partir da planilha de um estúdio de verdade."
+                texto="Agenda para estúdios e clínicas: grade fixa, chamada, reposição. Nasceu da planilha de um estúdio de pilates que atende de verdade."
                 estado="No ar, com clientes"
                 atraso={160}
               />
@@ -347,11 +356,11 @@ export default function PaginaInicial() {
                 Preços
               </span>
               <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-atraso="60">
-                Um preço que cabe antes de dar resultado
+Um preço que cabe antes de dar resultado
               </h2>
               <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
-                Sem contrato de fidelidade e sem cobrança por atendente. O que muda entre os
-                planos é quantos fluxos e quantas conversas você precisa por mês.
+                Sem fidelidade e sem cobrar por atendente. O que muda entre os planos é
+                quantos fluxos e quantas conversas cabem no seu mês.
               </p>
             </div>
 
@@ -359,7 +368,7 @@ export default function PaginaInicial() {
               <Plano
                 nome="Essencial"
                 preco="197"
-                resumo="Para quem quer parar de responder as mesmas perguntas."
+                resumo="Para quem atende sozinho e quer parar de repetir horário e preço."
                 itens={[
                   '1 número de WhatsApp',
                   '3 fluxos publicados',
@@ -373,7 +382,7 @@ export default function PaginaInicial() {
                 destaque
                 nome="Operação"
                 preco="397"
-                resumo="Para quem já tem equipe atendendo e precisa organizar."
+                resumo="Para quem já tem três pessoas atendendo e perde conversa no meio."
                 itens={[
                   '1 número de WhatsApp',
                   'Fluxos ilimitados',
@@ -387,7 +396,7 @@ export default function PaginaInicial() {
               <Plano
                 nome="Sob medida"
                 preco={null}
-                resumo="Vários números, volume alto ou integração que exige desenho."
+                resumo="Mais de um número, volume alto, ou integração que precisa ser desenhada."
                 itens={[
                   'Múltiplos números e unidades',
                   'Volume combinado',
@@ -400,10 +409,9 @@ export default function PaginaInicial() {
             </div>
 
             <p className={s.notaPreco}>
-              Os valores são mensais, em reais, e não incluem o custo que a Meta cobra por
-              conversa iniciada pela empresa — ele é da sua conta do WhatsApp e varia com o
-              tipo de mensagem. A gente explica isso antes de você começar, com a conta do
-              seu volume.
+              Os valores são mensais e não incluem o que a Meta cobra por conversa iniciada
+              pela empresa. Essa cobrança é da sua conta do WhatsApp e muda conforme o tipo
+              de mensagem. Fazemos essa conta com o seu volume antes de você assinar.
             </p>
           </div>
         </section>
@@ -415,34 +423,34 @@ export default function PaginaInicial() {
                 Dúvidas
               </span>
               <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-atraso="60">
-                O que perguntam antes de começar
+O que perguntam antes de assinar
               </h2>
             </div>
 
             <div className={s.perguntas}>
               <Pergunta
                 pergunta="Vou perder o meu número atual?"
-                resposta="Não. O atendimento acontece no seu próprio número, e é ele que continua no cartão e no Google. A conexão é autorizada por você pelo WhatsApp e pode ser desfeita quando quiser."
+                resposta="Não. O atendimento acontece no seu próprio número, o mesmo que está no cartão e no Google. Você autoriza a conexão dentro do WhatsApp e desfaz quando quiser."
               />
               <Pergunta
                 pergunta="Preciso saber programar?"
-                resposta="Não. O fluxo é montado arrastando blocos, e a gente configura o primeiro com você. Quem mexe depois é quem atende, não um técnico."
+                resposta="Não. O fluxo se monta arrastando blocos, e configuramos o primeiro com você. Quem ajusta depois é quem atende, não um técnico."
               />
               <Pergunta
                 pergunta="A IA pode inventar coisa e falar besteira com meu cliente?"
-                resposta="Ela responde dentro dos limites que você escrever e, quando não sabe, chama uma pessoa em vez de arriscar. Você também pode usar o produto inteiro sem IA nenhuma — muitos fluxos não precisam dela."
+                resposta="Ela responde dentro dos limites que você escrever e chama uma pessoa quando não sabe, em vez de arriscar. Você também pode rodar o produto inteiro sem IA. Muitos fluxos não precisam dela."
               />
               <Pergunta
                 pergunta="Continuo conseguindo atender pessoalmente?"
-                resposta="Sim, e é o ponto. Quando a conversa sai do previsto, ela chega na caixa de entrada da sua equipe com todo o histórico. A pessoa assume no meio, sem o cliente repetir nada."
+                resposta="Sim, e é para isso que ele existe. Quando a conversa sai do previsto, ela cai na caixa de entrada com o histórico junto. A pessoa assume no meio e o cliente não repete nada."
               />
               <Pergunta
                 pergunta="Quanto tempo até estar no ar?"
-                resposta="Depende da autorização do seu número na Meta, que costuma levar alguns dias. O desenho do primeiro fluxo a gente faz numa conversa."
+                resposta="A autorização do número na Meta costuma levar alguns dias. O primeiro fluxo a gente desenha numa conversa de uma hora."
               />
               <Pergunta
                 pergunta="E os meus dados?"
-                resposta="As conversas ficam na sua conta e cada empresa vê só as próprias. O que fazemos com dado pessoal está escrito na política de privacidade, sem letra miúda."
+                resposta="As conversas ficam na sua conta e cada empresa vê só as próprias. O que fazemos com dado pessoal está na política de privacidade, sem letra miúda."
               />
             </div>
           </div>
@@ -458,9 +466,9 @@ export default function PaginaInicial() {
               A conta nasce pela nossa mão
             </h2>
             <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
-              Não há cadastro automático de propósito: a gente conecta o seu número e monta o
-              primeiro fluxo com você, para o sistema já abrir atendendo. Escreva contando o
-              que o seu negócio recebe de pergunta e a gente responde.
+              Não existe cadastro automático aqui, e isso é de propósito. Conectamos o seu
+              número e montamos o primeiro fluxo junto, para o sistema abrir já atendendo.
+              Escreva contando que perguntas chegam no seu WhatsApp.
             </p>
             <div className={s.acoes} data-revela data-atraso="140">
               <a
@@ -524,6 +532,121 @@ export default function PaginaInicial() {
 /* ─────────────────────────── peças ─────────────────────────── */
 
 /**
+ * A caixa de entrada, desenhada como o navegador a mostra.
+ *
+ * **A versão anterior era uma conversa solta**, e ela prova que o bot responde
+ * sem provar o que a pessoa compra: a tela onde o atendimento acontece. Aqui
+ * aparecem as três colunas que fazem a diferença no dia — a fila com quem
+ * espera, a conversa com o handoff no meio dela, e a ficha do contato.
+ *
+ * Desenhada em HTML pelo mesmo motivo das outras ilustrações: print de um
+ * produto que muda toda semana envelhece antes da página ir ao ar.
+ */
+function Desktop() {
+  const conversas = [
+    { sigla: 'MC', nome: 'Marina Costa', previa: 'Quero. Mas antes: dá pra parcelar?', hora: '09:42', espera: true, ativa: true },
+    { sigla: 'RS', nome: 'Rafael Souza', previa: 'Perfeito, obrigado!', hora: '09:31', espera: false, ativa: false },
+    { sigla: 'JP', nome: 'Julia Pereira', previa: 'Bot: confirmado para quinta às 15h', hora: '09:28', espera: false, ativa: false, bot: true },
+    { sigla: 'AL', nome: 'André Lima', previa: 'Vocês fazem orçamento?', hora: '09:15', espera: true, ativa: false },
+    { sigla: 'CF', nome: 'Carla Ferreira', previa: 'Bot: endereço enviado', hora: '08:57', espera: false, ativa: false, bot: true },
+  ]
+
+  return (
+    <div className={s.desktop} data-revela data-atraso="140">
+      <div className={s.desktopBarra} aria-hidden>
+        <span className={s.janelaPonto} />
+        <span className={s.janelaPonto} />
+        <span className={s.janelaPonto} />
+        <span className={s.desktopEndereco}>autofluxos.4yu.com.br/inbox</span>
+      </div>
+
+      <div className={s.desktopCorpo}>
+        <div className={s.colunaLista}>
+          <div className={s.tituloColuna}>
+            Conversas
+            <span className={s.contadorEspera}>2 esperando</span>
+          </div>
+
+          {conversas.map((c) => (
+            <div key={c.nome} className={`${s.itemLista} ${c.ativa ? s.itemListaAtivo : ''}`}>
+              <span className={`${s.avatarLista} ${c.bot ? s.avatarListaBot : ''}`} aria-hidden>
+                {c.sigla}
+              </span>
+              <span className={s.corpoLista}>
+                <span className={s.nomeLista}>{c.nome}</span>
+                <span className={s.previaLista}>{c.previa}</span>
+              </span>
+              {c.espera ? <span className={s.marcaLista} aria-hidden /> : <span className={s.horaLista}>{c.hora}</span>}
+            </div>
+          ))}
+        </div>
+
+        <div className={s.colunaThread}>
+          <div className={s.threadTopo}>
+            <span className={s.avatarLista} aria-hidden>
+              MC
+            </span>
+            <span>
+              <span className={s.threadNome}>Marina Costa</span>
+              <span className={s.threadSub}>+55 44 9•••-4412</span>
+            </span>
+            <span className={s.threadAcao}>Ana assumiu</span>
+          </div>
+
+          <div className={s.threadCorpo}>
+            <Falas />
+          </div>
+
+          <div className={s.threadRodape} aria-hidden>
+            <span className={s.campoFalso}>Escreva para Marina…</span>
+            <span className={s.botaoEnviar}>
+              <IconeEnviar />
+            </span>
+          </div>
+        </div>
+
+        <div className={s.colunaFicha}>
+          <div className={s.fichaCabeca}>
+            <span className={s.fichaAvatarGrande} aria-hidden>
+              MC
+            </span>
+            <span>
+              <span className={s.threadNome}>Marina Costa</span>
+              <span className={s.threadSub}>cliente desde mar/2026</span>
+            </span>
+          </div>
+
+          <div className={s.blocoFicha}>
+            <span className={s.rotuloFicha}>Etiquetas</span>
+            <div className={s.fichaEtiquetas}>
+              <span className={s.etiqueta}>quer sábado</span>
+              <span className={s.etiqueta}>parcelamento</span>
+              <span className={s.etiqueta}>volta sempre</span>
+            </div>
+          </div>
+
+          <div className={s.blocoFicha}>
+            <span className={s.rotuloFicha}>Histórico</span>
+            <span className={s.linhaFicha}>
+              <span>Conversas</span>
+              <span>7</span>
+            </span>
+            <span className={s.linhaFicha}>
+              <span>Último atendimento</span>
+              <span>12/ago</span>
+            </span>
+            <span className={s.linhaFicha}>
+              <span>Atendida por</span>
+              <span>Ana</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
  * A conversa que mostra o produto funcionando.
  *
  * **Ela saiu da capa quando o campo de partículas entrou** — as duas coisas
@@ -534,7 +657,7 @@ export default function PaginaInicial() {
  * mudando. Os balões entram em cascata pelo `animation-delay` inline — CSS
  * puro, sem timer no cliente.
  */
-function ConversaDaCapa() {
+function Falas() {
   const falas = [
     { quem: 'cliente' as const, texto: 'Oi! Vocês atendem sábado de manhã?' },
     {
@@ -547,59 +670,45 @@ function ConversaDaCapa() {
     {
       quem: 'pessoa' as const,
       autor: 'Ana · equipe',
-      texto: 'Oi Marina, aqui é a Ana. Vi que você quer sábado — me conta o seu caso.',
+      texto: 'Oi Marina, aqui é a Ana. Vi que você quer sábado. Me conta o seu caso.',
     },
   ]
 
   return (
-    <div className={s.palco} data-revela data-atraso="80">
-      <div className={s.telefone}>
-        <div className={s.telefoneTopo}>
-          <span className={s.avatar} aria-hidden>
-            MC
-          </span>
-          <div>
-            <div className={s.telefoneNome}>Marina Costa</div>
-            <div className={s.telefoneStatus}>+55 44 9•••-4412</div>
+    <>
+      {falas.map((fala, i) => {
+        // 420ms entre balões: rápido o bastante para não entediar, lento o
+        // bastante para o olho acompanhar quem fala.
+        const estilo = { animationDelay: `${600 + i * 420}ms` }
+
+        if (fala.quem === 'marco') {
+          return (
+            <span key={i} className={s.marcoHandoff} style={estilo}>
+              <span className={s.pontoVivo} aria-hidden />
+              {fala.texto}
+            </span>
+          )
+        }
+
+        const classe =
+          fala.quem === 'cliente'
+            ? s.balaoCliente
+            : fala.quem === 'bot'
+              ? s.balaoBot
+              : s.balaoPessoa
+
+        return (
+          <div key={i} className={`${s.balao} ${classe}`} style={estilo}>
+            {fala.quem !== 'cliente' && (
+              <span className={`${s.autor} ${fala.quem === 'bot' ? s.autorBot : s.autorPessoa}`}>
+                {fala.autor}
+              </span>
+            )}
+            {fala.texto}
           </div>
-        </div>
-
-        <div className={s.thread}>
-          {falas.map((fala, i) => {
-            // 420ms entre balões: rápido o bastante para não entediar, lento o
-            // bastante para o olho acompanhar quem fala.
-            const estilo = { animationDelay: `${600 + i * 420}ms` }
-
-            if (fala.quem === 'marco') {
-              return (
-                <span key={i} className={s.marcoHandoff} style={estilo}>
-                  <span className={s.pontoVivo} aria-hidden />
-                  {fala.texto}
-                </span>
-              )
-            }
-
-            const classe =
-              fala.quem === 'cliente'
-                ? s.balaoCliente
-                : fala.quem === 'bot'
-                  ? s.balaoBot
-                  : s.balaoPessoa
-
-            return (
-              <div key={i} className={`${s.balao} ${classe}`} style={estilo}>
-                {fala.quem !== 'cliente' && (
-                  <span className={`${s.autor} ${fala.quem === 'bot' ? s.autorBot : s.autorPessoa}`}>
-                    {fala.autor}
-                  </span>
-                )}
-                {fala.texto}
-              </div>
-            )
-          })}
-        </div>
-      </div>
-    </div>
+        )
+      })}
+    </>
   )
 }
 
@@ -1092,6 +1201,14 @@ function IconeCheque() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6">
       <path d="m5 12.5 4.5 4.5L19 7.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function IconeEnviar() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M4 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }

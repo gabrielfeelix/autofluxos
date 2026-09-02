@@ -5,11 +5,20 @@ import { useEffect, useRef } from 'react'
 type Particula = {
   x: number
   y: number
-  /** Velocidade em píxeis por segundo, não por quadro — ver o laço. */
+  /** Velocidade em píxeis por segundo, não por quadro. Ver o laço. */
   vx: number
   vy: number
   raio: number
   brilho: number
+  /**
+   * Quanto esta partícula obedece ao cursor, de 0.15 a 1.
+   *
+   * **A força é diferente em cada uma, e é isso que cria profundidade.** Com
+   * um valor só, o campo inteiro se move como uma chapa e o efeito vira gelatina.
+   * Variando, algumas correm atrás do mouse e outras mal se incomodam, e o olho
+   * lê as duas velocidades como dois planos.
+   */
+  magnetismo: number
 }
 
 /**
@@ -23,6 +32,10 @@ type Particula = {
  * Escrito em canvas 2D e sem biblioteca, de propósito. `three` ou
  * `framer-motion` custariam centenas de KB no primeiro carregamento da página
  * que existe para converter — e nada aqui precisa de 3D.
+ *
+ * **O cursor puxa a rede.** Cada partícula obedece com força própria, entre 15%
+ * e 100%, o que faz o campo se abrir em dois planos em vez de se mover como uma
+ * chapa. Perto do ponteiro os pontos incham e as linhas acendem.
  *
  * Três decisões que o tornam barato o bastante para rodar atrás de um texto:
  *
@@ -62,6 +75,17 @@ export function DerivaDeParticulas({ className }: { className?: string }) {
     const COR = '86, 208, 245'
     /** Acima desta distância dois pontos não se ligam. */
     const ALCANCE = 132
+    /** Até onde o cursor puxa. */
+    const RAIO_MOUSE = 190
+
+    /**
+     * Onde o cursor está, em coordenadas do canvas.
+     *
+     * Guardado num objeto mutável em vez de estado do React: o mouse dispara
+     * dezenas de eventos por segundo, e um `setState` a cada um redesenharia a
+     * árvore inteira para mover pontinhos que o canvas já sabe desenhar.
+     */
+    const cursor = { x: 0, y: 0, dentro: false }
 
     function semear() {
       const alvo = Math.min(90, Math.max(34, Math.round((largura * altura) / 19000)))
@@ -72,6 +96,7 @@ export function DerivaDeParticulas({ className }: { className?: string }) {
         vy: (Math.random() - 0.5) * 17,
         raio: Math.random() * 1.5 + 0.7,
         brilho: Math.random() * 0.5 + 0.25,
+        magnetismo: Math.random() * 0.85 + 0.15,
       }))
     }
 
@@ -100,8 +125,19 @@ export function DerivaDeParticulas({ className }: { className?: string }) {
 
           // A linha nasce forte e some conforme os dois se afastam.
           const forca = 1 - Math.sqrt(dist2) / ALCANCE
-          ctx!.strokeStyle = `rgba(${COR},${forca * 0.22})`
-          ctx!.lineWidth = forca * 1.05
+
+          // Perto do cursor a rede acende: é o que faz o campo responder ao
+          // mouse em vez de só se deformar.
+          let realce = 0
+          if (cursor.dentro) {
+            const mx = (a.x + b.x) / 2 - cursor.x
+            const my = (a.y + b.y) / 2 - cursor.y
+            const d = Math.sqrt(mx * mx + my * my)
+            if (d < RAIO_MOUSE) realce = (1 - d / RAIO_MOUSE) * 0.5
+          }
+
+          ctx!.strokeStyle = `rgba(${COR},${forca * (0.22 + realce)})`
+          ctx!.lineWidth = forca * (1.05 + realce * 1.4)
           ctx!.beginPath()
           ctx!.moveTo(a.x, a.y)
           ctx!.lineTo(b.x, b.y)
@@ -110,20 +146,50 @@ export function DerivaDeParticulas({ className }: { className?: string }) {
       }
 
       for (const p of particulas) {
-        ctx!.fillStyle = `rgba(${COR},${p.brilho})`
+        let brilho = p.brilho
+        let raio = p.raio
+
+        if (cursor.dentro) {
+          const dx = p.x - cursor.x
+          const dy = p.y - cursor.y
+          const d = Math.sqrt(dx * dx + dy * dy)
+          if (d < RAIO_MOUSE) {
+            const perto = 1 - d / RAIO_MOUSE
+            brilho = Math.min(1, brilho + perto * 0.6)
+            raio += perto * 1.1
+          }
+        }
+
+        ctx!.fillStyle = `rgba(${COR},${brilho})`
         ctx!.beginPath()
-        ctx!.arc(p.x, p.y, p.raio, 0, Math.PI * 2)
+        ctx!.arc(p.x, p.y, raio, 0, Math.PI * 2)
         ctx!.fill()
       }
     }
 
     function mover(delta: number) {
+      const temCursor = cursor.dentro
+
       for (const p of particulas) {
         p.x += p.vx * delta
         p.y += p.vy * delta
 
-        // Atravessa a borda e volta pelo outro lado: o campo não tem fim
-        // visível, e ninguém vê partícula "batendo na parede".
+        if (temCursor) {
+          const dx = cursor.x - p.x
+          const dy = cursor.y - p.y
+          const dist2 = dx * dx + dy * dy
+
+          if (dist2 < RAIO_MOUSE * RAIO_MOUSE && dist2 > 1) {
+            const dist = Math.sqrt(dist2)
+            // Cai com a distância: perto, puxa forte; na borda do raio, nada.
+            const forca = (1 - dist / RAIO_MOUSE) * p.magnetismo
+            p.x += (dx / dist) * forca * 62 * delta
+            p.y += (dy / dist) * forca * 62 * delta
+          }
+        }
+
+        // Atravessa a borda e volta pelo outro lado. O campo não tem fim
+        // visível, e ninguém vê partícula batendo na parede.
         if (p.x < -20) p.x = largura + 20
         else if (p.x > largura + 20) p.x = -20
         if (p.y < -20) p.y = altura + 20
@@ -181,6 +247,29 @@ export function DerivaDeParticulas({ className }: { className?: string }) {
     const aoTrocarDeAba = () => (document.hidden ? desligar() : ligar())
     document.addEventListener('visibilitychange', aoTrocarDeAba)
 
+    /*
+     * O ponteiro é ouvido na **seção inteira**, não no canvas.
+     *
+     * O canvas está atrás do texto e dos botões, e um `mousemove` nele pararia
+     * de disparar assim que o cursor passasse por cima do título — que é
+     * justamente o meio da tela, onde o efeito mais importa. Ouvindo no pai, o
+     * campo responde em qualquer ponto da capa.
+     */
+    const palco = canvas.parentElement ?? canvas
+
+    const aoMover = (e: PointerEvent) => {
+      const caixa = canvas.getBoundingClientRect()
+      cursor.x = e.clientX - caixa.left
+      cursor.y = e.clientY - caixa.top
+      cursor.dentro = true
+    }
+    const aoSair = () => {
+      cursor.dentro = false
+    }
+
+    palco.addEventListener('pointermove', aoMover as EventListener)
+    palco.addEventListener('pointerleave', aoSair)
+
     let esperaDoResize = 0
     const aoRedimensionar = () => {
       window.clearTimeout(esperaDoResize)
@@ -190,6 +279,8 @@ export function DerivaDeParticulas({ className }: { className?: string }) {
 
     return () => {
       desligar()
+      palco.removeEventListener('pointermove', aoMover as EventListener)
+      palco.removeEventListener('pointerleave', aoSair)
       observer.disconnect()
       document.removeEventListener('visibilitychange', aoTrocarDeAba)
       window.removeEventListener('resize', aoRedimensionar)

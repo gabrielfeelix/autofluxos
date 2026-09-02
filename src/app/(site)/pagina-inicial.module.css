@@ -1867,3 +1867,315 @@
     transform: none;
   }
 }
+
+/* ═══════════════════ o desktop da caixa de entrada ═══════════════════
+
+   A seção "Na prática" mostrava uma conversa solta num retângulo. Isso prova
+   que o bot responde, e não prova o que a pessoa compra: uma tela onde o
+   atendimento inteiro acontece.
+
+   Aqui ela vira o app: barra lateral com as conversas e quem espera, thread no
+   meio, ficha do contato à direita. Desenhada em HTML pelo mesmo motivo das
+   outras ilustrações — print de produto que muda toda semana envelhece antes
+   da página ir ao ar.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.desktop {
+  position: relative;
+  margin-top: 44px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--canvas-deep);
+  overflow: hidden;
+  box-shadow: 0 50px 100px -40px rgba(0, 0, 0, 0.9);
+}
+
+.desktop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(114deg, rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0) 42%);
+  pointer-events: none;
+}
+
+.desktopBarra {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 11px 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.022);
+}
+
+.desktopEndereco {
+  margin-left: 10px;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--dim);
+}
+
+.desktopCorpo {
+  display: grid;
+  grid-template-columns: 236px 1fr 232px;
+  min-height: 440px;
+}
+
+@media (max-width: 1000px) {
+  .desktopCorpo {
+    grid-template-columns: 200px 1fr;
+  }
+  .colunaFicha {
+    display: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .desktopCorpo {
+    grid-template-columns: 1fr;
+  }
+  .colunaLista {
+    display: none;
+  }
+}
+
+/* ── coluna da esquerda: as conversas ── */
+
+.colunaLista {
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 14px 12px;
+  display: grid;
+  gap: 4px;
+  align-content: start;
+}
+
+.tituloColuna {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px 12px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dim);
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+
+.contadorEspera {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+  letter-spacing: 0;
+}
+
+.itemLista {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  transition: background 0.25s var(--curva);
+}
+
+.itemListaAtivo {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+.avatarLista {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--soft);
+  flex: none;
+}
+
+.avatarListaBot {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  color: var(--accent);
+}
+
+.corpoLista {
+  flex: 1;
+  min-width: 0;
+  /* Grade e não bloco: os dois spans dentro dele são inline por padrão e
+     ficariam na mesma linha, colando nome e prévia. */
+  display: grid;
+  gap: 2px;
+}
+
+.nomeLista {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.previaLista {
+  display: block;
+  font-size: 11.5px;
+  color: var(--dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.marcaLista {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex: none;
+  animation: pulso 2s ease-in-out infinite;
+}
+
+.horaLista {
+  font-size: 10.5px;
+  color: var(--dim);
+  flex: none;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+
+/* ── coluna do meio: a conversa ── */
+
+.colunaThread {
+  display: flex;
+  flex-direction: column;
+}
+
+.threadTopo {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.threadNome {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.threadSub {
+  display: block;
+  font-size: 11.5px;
+  color: var(--dim);
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+
+.threadAcao {
+  margin-left: auto;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 11.5px;
+  color: var(--soft);
+}
+
+.threadCorpo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 18px;
+  overflow: hidden;
+}
+
+.threadRodape {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.campoFalso {
+  flex: 1;
+  padding: 9px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 12.5px;
+  color: var(--dim);
+}
+
+.botaoEnviar {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #04202b;
+  flex: none;
+}
+
+/* ── coluna da direita: a ficha ── */
+
+.colunaFicha {
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 16px 15px;
+  display: grid;
+  gap: 18px;
+  align-content: start;
+}
+
+.fichaCabeca {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  text-align: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.fichaAvatarGrande {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.blocoFicha {
+  display: grid;
+  gap: 8px;
+}
+
+.rotuloFicha {
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dim);
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+
+.linhaFicha {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12.5px;
+  color: var(--soft);
+}
+
+.linhaFicha span:last-child {
+  color: var(--dim);
+}
