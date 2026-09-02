@@ -516,3 +516,28 @@ textarea::placeholder {
   background: rgba(8, 11, 16, 0.7) !important;
   color: var(--dim) !important;
 }
+
+/*
+ * A landing desenha o próprio cursor (ver `(site)/cursor.tsx`), e para isso
+ * precisa esconder o do sistema.
+ *
+ * **A classe é posta pelo JS, não escrita no HTML.** Se o script falhar ou
+ * ainda não tiver rodado, o usuário fica com o cursor normal em vez de uma
+ * página onde o ponteiro sumiu.
+ *
+ * `input` e `textarea` ficam de fora: a barra de inserção diz onde a letra vai
+ * cair, e nenhum anel decorativo substitui isso.
+ */
+.temCursorProprio,
+.temCursorProprio a,
+.temCursorProprio button,
+.temCursorProprio summary,
+.temCursorProprio [role='button'] {
+  cursor: none;
+}
+
+.temCursorProprio input,
+.temCursorProprio textarea,
+.temCursorProprio select {
+  cursor: auto;
+}

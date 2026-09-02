@@ -43,7 +43,7 @@ type Particula = {
  *   cada quadro corre mais rápido num monitor de 144Hz que num de 60Hz. Com o
  *   delta, o movimento é o mesmo em qualquer tela.
  * - **A busca de vizinhos é O(n²) sobre poucas partículas.** A contagem sai da
- *   largura da tela e satura em 90; a 90 são ~4 mil pares por quadro, que o
+ *   largura da tela e satura em 130; a 130 são ~8 mil pares por quadro, que o
  *   navegador faz sem suar. Uma grade espacial resolveria melhor com dez mil,
  *   e dez mil não é o caso.
  * - **Ele para quando não está à vista.** Um `IntersectionObserver` desliga o
@@ -74,9 +74,9 @@ export function DerivaDeParticulas({ className }: { className?: string }) {
     // O ciano do produto (`--accent`), em componentes para caber no rgba().
     const COR = '86, 208, 245'
     /** Acima desta distância dois pontos não se ligam. */
-    const ALCANCE = 132
+    const ALCANCE = 158
     /** Até onde o cursor puxa. */
-    const RAIO_MOUSE = 190
+    const RAIO_MOUSE = 250
 
     /**
      * Onde o cursor está, em coordenadas do canvas.
@@ -88,14 +88,14 @@ export function DerivaDeParticulas({ className }: { className?: string }) {
     const cursor = { x: 0, y: 0, dentro: false }
 
     function semear() {
-      const alvo = Math.min(90, Math.max(34, Math.round((largura * altura) / 19000)))
+      const alvo = Math.min(130, Math.max(48, Math.round((largura * altura) / 13000)))
       particulas = Array.from({ length: alvo }, () => ({
         x: Math.random() * largura,
         y: Math.random() * altura,
         vx: (Math.random() - 0.5) * 17,
         vy: (Math.random() - 0.5) * 17,
-        raio: Math.random() * 1.5 + 0.7,
-        brilho: Math.random() * 0.5 + 0.25,
+        raio: Math.random() * 1.8 + 0.9,
+        brilho: Math.random() * 0.5 + 0.42,
         magnetismo: Math.random() * 0.85 + 0.15,
       }))
     }
@@ -112,6 +112,27 @@ export function DerivaDeParticulas({ className }: { className?: string }) {
 
     function desenhar() {
       ctx!.clearRect(0, 0, largura, altura)
+
+      /*
+       * O foco que acompanha o ponteiro.
+       *
+       * Ele fica atrás de tudo e é largo o bastante para o olho ler como luz
+       * ambiente, não como um círculo. É o que dá a sensação de que o mouse
+       * *ilumina* a rede em vez de só empurrá-la.
+       */
+      if (cursor.dentro) {
+        const foco = ctx!.createRadialGradient(
+          cursor.x, cursor.y, 0,
+          cursor.x, cursor.y, RAIO_MOUSE * 1.1,
+        )
+        foco.addColorStop(0, `rgba(${COR},0.1)`)
+        foco.addColorStop(1, `rgba(${COR},0)`)
+        ctx!.fillStyle = foco
+        ctx!.fillRect(
+          cursor.x - RAIO_MOUSE * 1.1, cursor.y - RAIO_MOUSE * 1.1,
+          RAIO_MOUSE * 2.2, RAIO_MOUSE * 2.2,
+        )
+      }
 
       // As ligações primeiro: elas ficam atrás dos pontos.
       for (let i = 0; i < particulas.length; i++) {
@@ -133,11 +154,11 @@ export function DerivaDeParticulas({ className }: { className?: string }) {
             const mx = (a.x + b.x) / 2 - cursor.x
             const my = (a.y + b.y) / 2 - cursor.y
             const d = Math.sqrt(mx * mx + my * my)
-            if (d < RAIO_MOUSE) realce = (1 - d / RAIO_MOUSE) * 0.5
+            if (d < RAIO_MOUSE) realce = (1 - d / RAIO_MOUSE) * 0.85
           }
 
-          ctx!.strokeStyle = `rgba(${COR},${forca * (0.22 + realce)})`
-          ctx!.lineWidth = forca * (1.05 + realce * 1.4)
+          ctx!.strokeStyle = `rgba(${COR},${forca * (0.34 + realce)})`
+          ctx!.lineWidth = forca * (1.25 + realce * 1.8)
           ctx!.beginPath()
           ctx!.moveTo(a.x, a.y)
           ctx!.lineTo(b.x, b.y)
@@ -155,9 +176,27 @@ export function DerivaDeParticulas({ className }: { className?: string }) {
           const d = Math.sqrt(dx * dx + dy * dy)
           if (d < RAIO_MOUSE) {
             const perto = 1 - d / RAIO_MOUSE
-            brilho = Math.min(1, brilho + perto * 0.6)
-            raio += perto * 1.1
+            brilho = Math.min(1, brilho + perto * 0.75)
+            raio += perto * 2.1
           }
+        }
+
+        /*
+         * O halo é o que faz o ponto **brilhar** em vez de só existir.
+         *
+         * Um degradê radial de três vezes o raio, quase transparente na borda.
+         * Só nos pontos que já estão claros: pintar halo em todos custaria um
+         * gradiente por partícula por quadro e o ganho visual seria zero, já
+         * que os fracos somem no fundo de qualquer jeito.
+         */
+        if (brilho > 0.45) {
+          const halo = ctx!.createRadialGradient(p.x, p.y, 0, p.x, p.y, raio * 3.4)
+          halo.addColorStop(0, `rgba(${COR},${brilho * 0.42})`)
+          halo.addColorStop(1, `rgba(${COR},0)`)
+          ctx!.fillStyle = halo
+          ctx!.beginPath()
+          ctx!.arc(p.x, p.y, raio * 3.4, 0, Math.PI * 2)
+          ctx!.fill()
         }
 
         ctx!.fillStyle = `rgba(${COR},${brilho})`
@@ -183,8 +222,8 @@ export function DerivaDeParticulas({ className }: { className?: string }) {
             const dist = Math.sqrt(dist2)
             // Cai com a distância: perto, puxa forte; na borda do raio, nada.
             const forca = (1 - dist / RAIO_MOUSE) * p.magnetismo
-            p.x += (dx / dist) * forca * 62 * delta
-            p.y += (dy / dist) * forca * 62 * delta
+            p.x += (dx / dist) * forca * 96 * delta
+            p.y += (dy / dist) * forca * 96 * delta
           }
         }
 

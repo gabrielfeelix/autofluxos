@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
+import { Cursor } from './(site)/cursor'
 import { DerivaDeParticulas } from './(site)/deriva-de-particulas'
 import { Revelar } from './(site)/revelar'
 import s from './(site)/pagina-inicial.module.css'
@@ -42,6 +43,7 @@ export default function PaginaInicial() {
   return (
     <div className={s.pagina}>
       <Revelar seletorCabecalho={s.cabecalho} classeRolado={s.cabecalhoRolado} />
+      <Cursor classePonto={s.cursorPonto} classeAnel={s.cursorAnel} classeAtivo={s.cursorAtivo} />
 
       <header className={s.cabecalho}>
         <div className={`${s.faixa} ${s.cabecalhoInterno}`}>
@@ -288,10 +290,50 @@ sabia, quanto tempo alguém levou para assumir. Você corrige olhando isso."
             </div>
           </div>
 
-          <div className={s.esteira} data-revela data-atraso="100">
-            <div className={s.esteiraTrilho}>
-              <Pastilhas />
-              <Pastilhas />
+          <div className={s.faixa}>
+            <div className={s.setores}>
+              <Setor
+                icone={<IconeAgenda />}
+                nome="Clínicas e estúdios"
+                pergunta="Tem horário sábado de manhã?"
+                resposta="Sábado das 8h às 12h. Tenho 9h e 10h30 livres. Qual prefere?"
+                atraso={0}
+              />
+              <Setor
+                icone={<IconeCaixa />}
+                nome="Lojas e e-commerce"
+                pergunta="Meu pedido já saiu?"
+                resposta="Pedido 4471 saiu ontem às 16h. Chega até quinta."
+                atraso={70}
+              />
+              <Setor
+                icone={<IconeCorte />}
+                nome="Salões e barbearias"
+                pergunta="Quanto tá o corte com barba?"
+                resposta="Corte e barba R$ 75. Quer que eu marque com o Diego?"
+                atraso={140}
+              />
+              <Setor
+                icone={<IconeAlvo />}
+                nome="Times de vendas"
+                pergunta="Queria saber sobre o serviço de vocês"
+                resposta="Claro! Me conta o tamanho da sua operação que eu chamo alguém."
+                atraso={210}
+              />
+              <Setor
+                icone={<IconeChave />}
+                nome="Imobiliárias"
+                pergunta="Ainda tem o apê do anúncio?"
+                resposta="O da Rua Palmeiras está disponível. Quer agendar visita?"
+                atraso={280}
+              />
+              <Setor
+                icone={<IconePrato />}
+                nome="Restaurantes e delivery"
+                pergunta="Vocês entregam no Zona 7?"
+                resposta="Entregamos! Taxa R$ 6, hoje saindo em 40 minutos."
+                atraso={350}
+              />
             </div>
           </div>
 
@@ -776,29 +818,42 @@ function Passo({
   )
 }
 
-function Pastilhas() {
-  const casos = [
-    'Clínicas e consultórios',
-    'Estúdios de pilates',
-    'Salões e barbearias',
-    'Escolas e cursos',
-    'Lojas e e-commerce',
-    'Imobiliárias',
-    'Oficinas',
-    'Restaurantes e delivery',
-    'Times de vendas',
-    'Prestadores de serviço',
-  ]
 
+/**
+ * Um segmento, com a pergunta que ele recebe e a resposta que o fluxo dá.
+ *
+ * **A lista de segmentos sozinha não vale nada.** "Clínicas · Lojas ·
+ * Oficinas" é o que todo concorrente publica, e quem lê não se reconhece numa
+ * categoria. Se reconhece na pergunta: quem tem barbearia já ouviu "quanto tá
+ * o corte com barba" mil vezes, e ver isso escrito diz mais que qualquer
+ * adjetivo sobre o produto.
+ */
+function Setor({
+  icone,
+  nome,
+  pergunta,
+  resposta,
+  atraso,
+}: {
+  icone: ReactNode
+  nome: string
+  pergunta: string
+  resposta: string
+  atraso: number
+}) {
   return (
-    <>
-      {casos.map((caso) => (
-        <span key={caso} className={s.pastilha}>
-          <span className={s.pastilhaPonto} aria-hidden />
-          {caso}
+    <article className={s.setor} data-revela data-atraso={atraso}>
+      <div className={s.setorTopo}>
+        <span className={s.setorIcone} aria-hidden>
+          {icone}
         </span>
-      ))}
-    </>
+        <h3 className={s.setorNome}>{nome}</h3>
+      </div>
+      <div className={s.setorTroca}>
+        <p className={`${s.setorBalao} ${s.setorPergunta}`}>{pergunta}</p>
+        <p className={`${s.setorBalao} ${s.setorResposta}`}>{resposta}</p>
+      </div>
+    </article>
   )
 }
 
@@ -823,8 +878,10 @@ function Plano({
       data-revela
       data-atraso={atraso}
     >
-      {destaque && <span className={s.planoSelo}>Mais escolhido</span>}
-      <h3 className={s.planoNome}>{nome}</h3>
+      <h3 className={s.planoNome}>
+        {nome}
+        {destaque && <span className={s.planoSelo}>Mais escolhido</span>}
+      </h3>
 
       <p className={s.planoPreco}>
         {preco ? (
@@ -834,7 +891,7 @@ function Plano({
             <span className={s.planoPeriodo}> /mês</span>
           </>
         ) : (
-          'Combinado'
+          <span className={s.planoPrecoTexto}>Combinado</span>
         )}
       </p>
 
@@ -1201,6 +1258,54 @@ function IconeCheque() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6">
       <path d="m5 12.5 4.5 4.5L19 7.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function IconeAgenda() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <rect x="3" y="5" width="18" height="16" rx="3" />
+      <path d="M3 10h18M8 3v4M16 3v4" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function IconeCorte() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <circle cx="6.5" cy="17.5" r="2.8" />
+      <circle cx="17.5" cy="17.5" r="2.8" />
+      <path d="M8.5 15.5 19 4M15.5 15.5 5 4" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function IconeAlvo() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <circle cx="12" cy="12" r="8.5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+function IconeChave() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="m3 21 8-8" strokeLinecap="round" />
+      <path d="m6 18 2 2M9 15l2 2" strokeLinecap="round" />
+      <circle cx="16" cy="8" r="5" />
+    </svg>
+  )
+}
+
+function IconePrato() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M4 11h16a8 8 0 0 1-16 0z" strokeLinejoin="round" />
+      <path d="M12 3v3M3 20h18" strokeLinecap="round" />
     </svg>
   )
 }
