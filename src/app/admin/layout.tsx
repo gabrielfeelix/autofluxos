@@ -32,7 +32,7 @@ export default async function LayoutDoAdmin({ children }: { children: ReactNode 
         </div>
 
         <Link
-          href="/"
+          href="/painel"
           className="hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11.5px] text-dim transition hover:text-accent md:mb-1.5 md:flex"
         >
           <span aria-hidden>‹</span> Todos os clientes

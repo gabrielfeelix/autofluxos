@@ -1,0 +1,991 @@
+/*
+ * A landing pública do AutoFluxos.
+ *
+ * **Ela usa os tokens do painel de propósito.** Quem clica em "Entrar" tem que
+ * sentir que continuou no mesmo lugar — a landing verde que existiu antes
+ * dessa não era cor de produto nenhum, era a paleta da Verandi escurecida.
+ * `--accent`, `--canvas` e `--panel` vêm de `globals.css` e mudam junto com o
+ * app.
+ *
+ * O motion todo respeita `prefers-reduced-motion` no fim do arquivo: quem pede
+ * para o sistema parar de animar recebe a página parada, não uma versão
+ * degradada dela.
+ */
+
+.pagina {
+  --largura: 1200px;
+  --raio: 20px;
+  /* Uma curva só para tudo. Ela veio dos sites de referência (Framer usa
+     cubic-bezier(.44,0,.56,1) como padrão) e é simétrica: acelera e desacelera
+     igual, que é o que faz o movimento parecer mecânico em vez de elástico. */
+  --curva: cubic-bezier(0.44, 0, 0.56, 1);
+  background: var(--canvas);
+  color: var(--ink);
+  overflow-x: clip;
+}
+
+.faixa {
+  width: min(100% - 40px, var(--largura));
+  margin-inline: auto;
+}
+
+/* ─────────────────────────── grid de fundo ─────────────────────────── */
+
+/*
+ * O grid é do <body> da capa, não uma imagem: duas linhas repetidas de 1px em
+ * 64px. A máscara radial apaga as bordas, senão o padrão bate no fim da tela
+ * com uma linha reta e denuncia que é CSS.
+ */
+.grade {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--line-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 20%, transparent 75%);
+  pointer-events: none;
+}
+
+/* O brilho ciano atrás do título. Fica no fundo e não recebe clique. */
+.brilho {
+  position: absolute;
+  left: 50%;
+  top: -180px;
+  width: min(900px, 120vw);
+  aspect-ratio: 1;
+  translate: -50% 0;
+  background: radial-gradient(circle, rgba(86, 208, 245, 0.14), transparent 62%);
+  pointer-events: none;
+  filter: blur(20px);
+}
+
+/* ─────────────────────────── cabeçalho ─────────────────────────── */
+
+.cabecalho {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(14px);
+  background: color-mix(in srgb, var(--canvas) 72%, transparent);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.3s var(--curva);
+}
+
+/* A borda só aparece depois que a página rola — antes disso ela seria uma
+   linha solta cortando a capa. O JS liga a classe. */
+.cabecalhoRolado {
+  border-bottom-color: var(--line);
+}
+
+.cabecalhoInterno {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+}
+
+.marca {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+}
+
+.marcaSigla {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--accent);
+}
+
+.menu {
+  display: flex;
+  gap: 28px;
+}
+
+@media (max-width: 860px) {
+  .menu {
+    display: none;
+  }
+}
+
+.menuItem {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s var(--curva);
+}
+
+.menuItem:hover {
+  color: var(--ink);
+}
+
+/* ─────────────────────────── botões ─────────────────────────── */
+
+.botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 12px;
+  font-size: 14.5px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    transform 0.2s var(--curva),
+    background 0.2s var(--curva),
+    border-color 0.2s var(--curva);
+}
+
+.botaoPrincipal {
+  background: var(--accent);
+  color: #04202b;
+}
+
+.botaoPrincipal:hover {
+  transform: translateY(-2px);
+  background: color-mix(in srgb, var(--accent) 85%, #fff);
+}
+
+.botaoVazado {
+  border: 1px solid var(--line);
+  color: var(--ink);
+  background: var(--surface);
+}
+
+.botaoVazado:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+.botaoGrande {
+  min-height: 52px;
+  padding: 0 26px;
+  font-size: 15.5px;
+}
+
+/* ─────────────────────────── capa ─────────────────────────── */
+
+.capa {
+  position: relative;
+  padding: clamp(60px, 11vw, 130px) 0 clamp(50px, 8vw, 90px);
+  isolation: isolate;
+}
+
+.capaInterno {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+/* A pílula de anúncio no topo — todos os sete sites de referência têm uma. */
+.selo {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 14px 6px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 13px;
+  color: var(--soft);
+}
+
+.seloTag {
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.titulo {
+  margin: 26px auto 0;
+  max-width: 17ch;
+  font-size: clamp(38px, 7.2vw, 78px);
+  line-height: 1.03;
+  letter-spacing: -0.035em;
+  font-weight: 600;
+}
+
+/* A segunda linha do título em ciano: o olho para nela, e é a metade que
+   carrega a promessa ("até a hora de não responder"). */
+.tituloDestaque {
+  color: var(--accent);
+}
+
+.subtitulo {
+  margin: 24px auto 0;
+  max-width: 56ch;
+  font-size: clamp(15.5px, 2vw, 18.5px);
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 34px;
+}
+
+.notaAcoes {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--dim);
+}
+
+/* ─────────────────────────── conversa animada ─────────────────────────── */
+
+/*
+ * A conversa é o herói da capa: ela mostra o produto sem print, e não
+ * envelhece quando a interface muda.
+ */
+.palco {
+  position: relative;
+  z-index: 1;
+  margin: clamp(46px, 7vw, 76px) auto 0;
+  max-width: 460px;
+}
+
+.telefone {
+  border-radius: 26px;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--panel), var(--canvas-deep));
+  padding: 16px;
+  box-shadow:
+    0 40px 80px -30px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+}
+
+.telefoneTopo {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 18%, var(--panel));
+  color: var(--accent);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.telefoneNome {
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.telefoneStatus {
+  font-size: 12px;
+  color: var(--dim);
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+
+.thread {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 16px;
+  /* Altura fixa para o layout não pular a cada balão que entra. */
+  min-height: 292px;
+}
+
+.balao {
+  max-width: 82%;
+  padding: 10px 14px;
+  border-radius: 15px;
+  font-size: 14px;
+  line-height: 1.48;
+  /* Cada balão entra por conta própria; o delay vem do style inline. */
+  animation: subir 0.5s var(--curva) both;
+}
+
+@keyframes subir {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.balaoCliente {
+  align-self: flex-start;
+  background: var(--surface-hover);
+  border-bottom-left-radius: 5px;
+  color: var(--soft);
+}
+
+.balaoBot {
+  align-self: flex-end;
+  background: color-mix(in srgb, var(--accent) 15%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  border-bottom-right-radius: 5px;
+  color: var(--ink);
+}
+
+.balaoPessoa {
+  align-self: flex-end;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-bottom-right-radius: 5px;
+  color: var(--ink);
+}
+
+.autor {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+
+.autorBot {
+  color: var(--accent);
+}
+
+.autorPessoa {
+  color: var(--muted);
+}
+
+/* A etiqueta que marca o momento do handoff. É o ponto da cena inteira. */
+.marcoHandoff {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 2px 0;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--canvas);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dim);
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  animation: subir 0.5s var(--curva) both;
+}
+
+.pontoVivo {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulso 2s ease-in-out infinite;
+}
+
+@keyframes pulso {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* ─────────────────────────── seções ─────────────────────────── */
+
+.secao {
+  position: relative;
+  padding: clamp(64px, 10vw, 130px) 0;
+}
+
+.olho {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+
+.tituloSecao {
+  margin: 14px 0 0;
+  max-width: 20ch;
+  font-size: clamp(28px, 4.4vw, 46px);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+}
+
+.tituloSecaoCentro {
+  margin-inline: auto;
+  text-align: center;
+}
+
+.chamada {
+  margin: 18px 0 0;
+  max-width: 58ch;
+  font-size: clamp(15px, 1.9vw, 17px);
+  line-height: 1.62;
+  color: var(--muted);
+}
+
+.chamadaCentro {
+  margin-inline: auto;
+  text-align: center;
+}
+
+.cabecaSecao {
+  text-align: center;
+}
+
+/* ─────────────────────────── bento ─────────────────────────── */
+
+/*
+ * O bento: quatro caixas de tamanhos diferentes. A primeira ocupa duas colunas
+ * porque é a que explica o produto; as outras três são iguais.
+ */
+.bento {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(6, 1fr);
+  margin-top: 44px;
+}
+
+.caixa {
+  position: relative;
+  overflow: hidden;
+  grid-column: span 2;
+  padding: 26px;
+  border-radius: var(--raio);
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--panel), color-mix(in srgb, var(--panel) 40%, var(--canvas)));
+  transition:
+    border-color 0.3s var(--curva),
+    transform 0.3s var(--curva);
+}
+
+.caixa:hover {
+  border-color: color-mix(in srgb, var(--accent) 34%, transparent);
+  transform: translateY(-3px);
+}
+
+.caixaLarga {
+  grid-column: span 3;
+}
+
+.caixaCheia {
+  grid-column: span 6;
+}
+
+@media (max-width: 900px) {
+  .caixa,
+  .caixaLarga,
+  .caixaCheia {
+    grid-column: span 6;
+  }
+}
+
+.caixaIcone {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--accent) 13%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+
+.caixaTitulo {
+  margin: 0 0 8px;
+  font-size: 17.5px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.caixaTexto {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.58;
+  color: var(--muted);
+}
+
+/* ─────────────────────────── números ─────────────────────────── */
+
+.numeros {
+  display: grid;
+  gap: 1px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  margin-top: 44px;
+  border: 1px solid var(--line);
+  border-radius: var(--raio);
+  overflow: hidden;
+  background: var(--line);
+}
+
+.numeroItem {
+  padding: 28px 24px;
+  background: var(--canvas);
+}
+
+.numeroValor {
+  font-size: clamp(30px, 4vw, 42px);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.numeroRotulo {
+  margin-top: 6px;
+  font-size: 13.5px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* ─────────────────────────── passos (sticky) ─────────────────────────── */
+
+.passos {
+  display: grid;
+  gap: 40px;
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+  margin-top: 50px;
+}
+
+@media (max-width: 900px) {
+  .passos {
+    grid-template-columns: 1fr;
+  }
+}
+
+/*
+ * A coluna da esquerda gruda enquanto a lista rola. É o padrão que o
+ * plat-form e o span usam, e resolve um problema real: sem ele, o leitor
+ * perde o contexto ("passos de quê?") ao chegar no terceiro item.
+ */
+.passosFixo {
+  position: sticky;
+  top: 110px;
+}
+
+@media (max-width: 900px) {
+  .passosFixo {
+    position: static;
+  }
+}
+
+.passosLista {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: passo;
+}
+
+.passo {
+  counter-increment: passo;
+  position: relative;
+  padding: 24px 26px 24px 68px;
+  border-radius: var(--raio);
+  border: 1px solid var(--line);
+  background: var(--panel);
+  transition: border-color 0.3s var(--curva);
+}
+
+.passo::before {
+  content: counter(passo, decimal-leading-zero);
+  position: absolute;
+  left: 24px;
+  top: 24px;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.passo:hover {
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.passoTitulo {
+  margin: 0 0 7px;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.passoTexto {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.58;
+  color: var(--muted);
+}
+
+/* ─────────────────────────── marquee ─────────────────────────── */
+
+/*
+ * A esteira de casos de uso. Duas cópias da lista correm lado a lado e a
+ * animação empurra 50% — quando a primeira sai, a segunda está no lugar exato
+ * dela, então o laço não tem emenda visível.
+ */
+.esteira {
+  position: relative;
+  margin-top: 40px;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+
+.esteiraTrilho {
+  display: flex;
+  gap: 12px;
+  width: max-content;
+  animation: correr 42s linear infinite;
+}
+
+.esteira:hover .esteiraTrilho {
+  animation-play-state: paused;
+}
+
+@keyframes correr {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.pastilha {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  font-size: 14px;
+  color: var(--soft);
+  white-space: nowrap;
+}
+
+.pastilhaPonto {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex: none;
+}
+
+/* ─────────────────────────── preços ─────────────────────────── */
+
+.planos {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  margin-top: 46px;
+  align-items: start;
+}
+
+.plano {
+  position: relative;
+  padding: 30px 28px;
+  border-radius: var(--raio);
+  border: 1px solid var(--line);
+  background: var(--panel);
+  transition:
+    border-color 0.3s var(--curva),
+    transform 0.3s var(--curva);
+}
+
+.plano:hover {
+  transform: translateY(-3px);
+}
+
+/* O plano do meio é o que queremos vender: borda ciano e um degradê de fundo
+   que os outros dois não têm. */
+.planoDestaque {
+  border-color: color-mix(in srgb, var(--accent) 42%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 7%, var(--panel)), var(--panel));
+}
+
+.planoSelo {
+  position: absolute;
+  top: -11px;
+  left: 28px;
+  padding: 3px 11px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #04202b;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.planoNome {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--soft);
+}
+
+.planoPreco {
+  margin: 14px 0 0;
+  font-size: 40px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.planoMoeda {
+  font-size: 19px;
+  color: var(--muted);
+  margin-right: 3px;
+  font-weight: 500;
+}
+
+.planoPeriodo {
+  font-size: 15px;
+  color: var(--dim);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.planoResumo {
+  margin: 12px 0 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--muted);
+  min-height: 44px;
+}
+
+.planoLista {
+  margin: 22px 0 26px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 11px;
+}
+
+.planoItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--soft);
+}
+
+.planoCheque {
+  flex: none;
+  margin-top: 2px;
+  color: var(--accent);
+}
+
+.planoBotao {
+  width: 100%;
+}
+
+.notaPreco {
+  margin: 26px auto 0;
+  max-width: 62ch;
+  text-align: center;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--dim);
+}
+
+/* ─────────────────────────── perguntas ─────────────────────────── */
+
+.perguntas {
+  margin-top: 44px;
+  display: grid;
+  gap: 10px;
+  max-width: 780px;
+  margin-inline: auto;
+}
+
+.pergunta {
+  border-radius: 15px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  overflow: hidden;
+  transition: border-color 0.3s var(--curva);
+}
+
+.pergunta[open] {
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.perguntaTitulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 19px 22px;
+  font-size: 15.5px;
+  font-weight: 500;
+  list-style: none;
+}
+
+.perguntaTitulo::-webkit-details-marker {
+  display: none;
+}
+
+.perguntaSinal {
+  flex: none;
+  color: var(--accent);
+  transition: transform 0.3s var(--curva);
+}
+
+.pergunta[open] .perguntaSinal {
+  transform: rotate(45deg);
+}
+
+.perguntaTexto {
+  margin: 0;
+  padding: 0 22px 21px;
+  font-size: 14.5px;
+  line-height: 1.62;
+  color: var(--muted);
+}
+
+/* ─────────────────────────── fechamento ─────────────────────────── */
+
+.fechamento {
+  position: relative;
+  overflow: hidden;
+  margin: clamp(20px, 4vw, 40px) 0;
+  padding: clamp(48px, 8vw, 92px) clamp(24px, 5vw, 60px);
+  border-radius: 28px;
+  border: 1px solid var(--line);
+  background: linear-gradient(160deg, var(--panel), var(--canvas-deep));
+  text-align: center;
+}
+
+.fechamentoBrilho {
+  position: absolute;
+  left: 50%;
+  bottom: -260px;
+  width: 620px;
+  aspect-ratio: 1;
+  translate: -50% 0;
+  background: radial-gradient(circle, rgba(86, 208, 245, 0.16), transparent 62%);
+  pointer-events: none;
+}
+
+/* ─────────────────────────── rodapé ─────────────────────────── */
+
+.rodape {
+  border-top: 1px solid var(--line);
+  padding: 44px 0 54px;
+}
+
+.rodapeGrade {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.rodapeLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 26px;
+}
+
+.rodapeLink {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s var(--curva);
+}
+
+.rodapeLink:hover {
+  color: var(--ink);
+}
+
+.rodapeEmpresa {
+  margin: 26px 0 0;
+  padding-top: 22px;
+  border-top: 1px solid var(--line-soft);
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--dim);
+}
+
+.rodapeEmpresa a {
+  color: var(--muted);
+}
+
+/* ───────────────────── revelação no scroll ───────────────────── */
+
+/*
+ * Tudo que tem `data-revela` começa deslocado e opaco; o observer no cliente
+ * acrescenta `data-revelado` quando o elemento entra na tela. Fica no CSS por
+ * seletor de atributo — e não por classe adicionada — para que o estado
+ * inicial já valha no HTML do servidor, sem piscar.
+ *
+ * O `.pagina` na frente não é decoração: CSS Module recusa seletor sem classe
+ * local ("not pure"), porque `[data-revela]` solto vazaria para o app inteiro.
+ */
+.pagina [data-revela] {
+  opacity: 0;
+  transform: translateY(22px);
+}
+
+.pagina [data-revelado] {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.7s var(--curva),
+    transform 0.7s var(--curva);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .esteiraTrilho,
+  .pontoVivo,
+  .balao,
+  .marcoHandoff {
+    animation: none !important;
+  }
+
+  .pagina [data-revela],
+  .pagina [data-revelado] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .botao:hover,
+  .caixa:hover,
+  .plano:hover {
+    transform: none;
+  }
+}

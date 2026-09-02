@@ -32,6 +32,19 @@ import { getSessionCookie } from 'better-auth/cookies'
  * do sistema. Ver `acoes-conta.ts`.
  */
 const PORTAS_ABERTAS = [
+  /**
+   * A raiz é a **landing pública**, não o painel — o painel mudou para
+   * `/painel` justamente por isto.
+   *
+   * Ela precisa abrir sem sessão pela mesma razão que a política de
+   * privacidade: a verificação de acesso da Meta exige um site que mostre o
+   * serviço, e quem revisa não tem conta aqui. Um domínio de produto que
+   * responde com a tela de login é, para efeito de análise, um site que não
+   * existe.
+   *
+   * Não vaza nada: a página é estática e não lê sessão nem banco.
+   */
+  '/',
   '/entrar',
   /**
    * A política de privacidade **precisa** abrir sem sessão.
@@ -103,7 +116,10 @@ export const config = {
   //
   // `api/auth` é o próprio login: entrar, sair, trocar de companhia. Exigir
   // sessão para chegar até ele seria exigir sessão para criar uma.
+  // `sitemap.xml` entra pelo mesmo motivo que o `robots.txt`: quem o lê é um
+  // rastreador sem cookie, e dentro do matcher ele receberia o redirecionamento
+  // para `/entrar` em vez da lista de páginas.
   matcher: [
-    '/((?!api/auth|api/webhook|api/manutencao|_next/static|_next/image|favicon.ico|robots.txt).*)',
+    '/((?!api/auth|api/webhook|api/manutencao|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)',
   ],
 }

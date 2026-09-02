@@ -374,7 +374,7 @@ export async function acaoEntrarComo(usuarioId: string) {
 /** Volta a ser você. */
 export async function acaoPararDeEntrarComo() {
   const sessao = await sessaoAtual()
-  if (!sessao?.impersonadoPor) redirect('/')
+  if (!sessao?.impersonadoPor) redirect('/painel')
 
   const administrador = await acharUsuario(sessao.impersonadoPor)
   await autenticacao().api.stopImpersonating({ headers: await headers() })

@@ -36,7 +36,7 @@ export async function PainelShell({ children }: { children: ReactNode }) {
         </div>
 
         <Link
-          href="/"
+          href="/painel"
           className="flex items-center gap-2.5 rounded-[10px] bg-accent/[0.12] px-2.5 py-2.5 text-[13px] font-semibold text-white transition hover:bg-accent/[0.16]"
         >
           <IconeClientes />

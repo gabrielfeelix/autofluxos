@@ -54,7 +54,15 @@ describe('a porta do painel', () => {
 
   it('manda quem não tem sessão para /entrar', async () => {
     expect(destinoDe(await proxy(pedir('/clientes/abc')))).toBe('/entrar')
-    expect(destinoDe(await proxy(pedir('/')))).toBe('/entrar')
+    expect(destinoDe(await proxy(pedir('/painel')))).toBe('/entrar')
+  })
+
+  it('a raiz é a landing pública e abre sem sessão', async () => {
+    // Ela deixou de ser o painel — ele mudou para `/painel`. A Meta exige, para
+    // a verificação de acesso, um site que mostre o serviço; um domínio de
+    // produto que responde com a tela de login é, para quem revisa, um site que
+    // não existe. A página é estática e não lê sessão nem banco.
+    expect(seguiu(await proxy(pedir('/')))).toBe(true)
   })
 
   it('deixa passar quem traz o cookie do Better Auth', async () => {

@@ -21,7 +21,7 @@ export default function NaoEncontrado() {
         O cliente, o fluxo ou o lead deste endereço não existe — ou não é deste painel.
       </p>
       <Link
-        href="/"
+        href="/painel"
         className="app-secondary-button inline-block px-5 py-2.5 text-[13px]"
       >
         Voltar para os clientes

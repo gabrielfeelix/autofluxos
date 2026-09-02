@@ -73,7 +73,7 @@ export default function Pagina() {
     <div className="min-h-screen">
       <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-canvas/85 backdrop-blur-md">
         <div className="mx-auto flex h-[54px] w-full max-w-[1180px] items-center gap-3 px-4 md:px-8">
-          <Link href="/" className="shrink-0" aria-label="Voltar ao painel">
+          <Link href="/painel" className="shrink-0" aria-label="Voltar ao painel">
             <Marca compacta />
           </Link>
           <span aria-hidden className="text-dim">
@@ -81,7 +81,7 @@ export default function Pagina() {
           </span>
           <span className="text-[13px] font-semibold text-soft">Ajuda</span>
           <Link
-            href="/"
+            href="/painel"
             className="ml-auto rounded-lg px-2.5 py-1.5 text-[12px] font-semibold text-dim transition hover:bg-white/[0.04] hover:text-accent"
           >
             Voltar ao painel

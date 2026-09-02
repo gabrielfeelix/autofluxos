@@ -46,7 +46,7 @@ export default function Erro({
           Tentar de novo
         </button>
         <Link
-          href="/"
+          href="/painel"
           className="app-secondary-button px-5 py-2.5 text-[13px]"
         >
           Voltar para os clientes

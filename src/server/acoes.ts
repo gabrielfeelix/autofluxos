@@ -1824,7 +1824,7 @@ export async function acaoApagarCliente(clienteId: string): Promise<{ ok: boolea
   if (!apagou) return { ok: false, erro: 'este cliente não existe mais' }
 
   revalidatePath('/')
-  redirect('/')
+  redirect('/painel')
 }
 
 /**

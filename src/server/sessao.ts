@@ -110,7 +110,7 @@ export function ehAdminDaPlataforma(sessao: SessaoAtual | null): boolean {
  */
 export async function exigirAdminDaPlataforma(): Promise<SessaoAtual> {
   const sessao = await exigirUsuario()
-  if (!ehAdminDaPlataforma(sessao)) redirect('/')
+  if (!ehAdminDaPlataforma(sessao)) redirect('/painel')
   return sessao
 }
 
