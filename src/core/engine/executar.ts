@@ -362,6 +362,17 @@ function avancar(
   let atual = primeiro
   let passos = 0
 
+  /**
+   * A espera que ainda não foi gasta, viva **entre blocos**.
+   *
+   * Era local ao bloco de mensagem, e por isso um atraso no fim dele sumia na
+   * borda: quem desenhava "texto → esperar 1s" e ligava numa Pergunta via a
+   * pausa acontecer sem nenhum "digitando", porque a espera nunca chegava a um
+   * envio. Agora ela atravessa e é gasta pelo próximo envio, seja ele texto,
+   * mídia ou o menu da pergunta.
+   */
+  let esperaMs = 0
+
   while (atual !== null) {
     if (passos++ >= MAX_PASSOS) {
       // Ciclo no desenho. Entregar para uma pessoa é sempre melhor do que
@@ -382,8 +393,6 @@ function avancar(
          * chegou, e é essa ignorância que mantém viva a conversa presa a uma
          * versão publicada antes desta mudança.
          */
-        let esperaMs = 0
-
         for (const parte of partesDaMensagem(no)) {
           switch (parte.tipo) {
             case 'atraso':
@@ -559,7 +568,8 @@ function avancar(
           break
         }
 
-        acoes.push(perguntar(no, s))
+        acoes.push(perguntar(no, s, esperaMs))
+        esperaMs = 0
         s.noAtual = no.id
         s.status = 'ativa'
         s.tentativas = 0
@@ -709,10 +719,12 @@ export function mensagemDeRecusa(no: NoPergunta): string {
   return no.data.formato ? PEDIDO_PADRAO[no.data.formato] : MENSAGEM_NAO_ENTENDI
 }
 
-function perguntar(no: NoPergunta, s: Sessao): Acao {
+function perguntar(no: NoPergunta, s: Sessao, esperaMs = 0): Acao {
   const texto = interpolar(no.data.texto, s.vars)
   const opcoes = resolverOpcoes(no, s.vars)
-  if (opcoes.length === 0) return { tipo: 'enviar_texto', texto }
+  if (opcoes.length === 0) {
+    return { tipo: 'enviar_texto', texto, ...(esperaMs > 0 ? { atrasoMs: esperaMs } : {}) }
+  }
 
   return {
     tipo: 'enviar_opcoes',
@@ -721,6 +733,7 @@ function perguntar(no: NoPergunta, s: Sessao): Acao {
     // Até 3 opções o WhatsApp mostra como botão, que dá muito mais clique.
     // Acima disso vira lista suspensa.
     formato: opcoes.length <= LIMITE_BOTOES ? 'botoes' : 'lista',
+    ...(esperaMs > 0 ? { atrasoMs: esperaMs } : {}),
   }
 }
 

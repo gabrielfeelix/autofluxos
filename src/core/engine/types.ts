@@ -134,6 +134,8 @@ export type Acao =
       opcoes: Opcao[]
       /** decidido pela quantidade: até 3 vira botão, até 10 vira lista */
       formato: 'botoes' | 'lista'
+      /** Esperar fora do motor antes do envio. Ausente = entregar na hora. */
+      atrasoMs?: number
     }
   /**
    * Entregar um arquivo: foto da sala, PDF do plano, vídeo do portfólio.

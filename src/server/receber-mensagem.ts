@@ -963,6 +963,11 @@ async function aplicar(
       }
 
       case 'enviar_opcoes': {
+        // O menu é o que mais aparece numa triagem, e era o único envio que
+        // esperava calado: a pausa parecia o bot travado em vez de alguém
+        // escrevendo do outro lado.
+        if (acao.atrasoMs && mensagemId) await canal.aguardarResposta(mensagemId, acao.atrasoMs)
+
         const registro = await registrarSaida({
           contatoId: contato.id,
           sessaoId,

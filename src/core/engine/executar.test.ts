@@ -1503,3 +1503,55 @@ describe('condição que compara número e variável', () => {
     expect(rodar(dados, { plano: 'Mensal' })).toBe('passou')
   })
 })
+
+describe('o atraso e o "digitando"', () => {
+  /**
+   * A espera atravessa a borda do bloco.
+   *
+   * "texto → esperar 1s" ligado numa Pergunta é o desenho que quem opera
+   * escreve sozinho, e ele produzia pausa sem "digitando": a espera morria no
+   * fim do bloco de mensagem e nunca chegava a um envio.
+   */
+  const comAtrasoNoFim = (): Fluxo =>
+    fluxoSchema.parse({
+      inicio: 'msg',
+      nodes: [
+        {
+          id: 'msg',
+          type: 'mensagem',
+          position: { x: 0, y: 0 },
+          data: {
+            partes: [
+              { tipo: 'texto', texto: 'O Personal pilates é...' },
+              { tipo: 'atraso', segundos: 1 },
+            ],
+          },
+        },
+        {
+          id: 'perg',
+          type: 'pergunta',
+          position: { x: 0, y: 160 },
+          data: {
+            texto: 'Quer agendar?',
+            salvarEm: 'resposta',
+            opcoes: [
+              { id: 'a', rotulo: 'Agendar aula' },
+              { id: 'b', rotulo: 'Agora não' },
+            ],
+          },
+        },
+      ],
+      edges: [{ id: 'e', source: 'msg', target: 'perg' }],
+    })
+
+  it('leva a espera do fim do bloco até o menu da pergunta', () => {
+    const r = executar(comAtrasoNoFim(), sessaoNova(), { tipo: 'inicio' })
+
+    const texto = r.acoes.find((a) => a.tipo === 'enviar_texto')
+    const menu = r.acoes.find((a) => a.tipo === 'enviar_opcoes')
+
+    // O texto sai na hora: o atraso vem depois dele no desenho.
+    expect(texto && 'atrasoMs' in texto ? texto.atrasoMs : undefined).toBeUndefined()
+    expect(menu && 'atrasoMs' in menu ? menu.atrasoMs : undefined).toBe(1_000)
+  })
+})
