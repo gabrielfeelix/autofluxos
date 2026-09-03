@@ -321,8 +321,9 @@ function responderPergunta(
   }
 
   if (salvarEm) {
-    s.vars[salvarEm] = escolhida.rotulo
-    acoes.push({ tipo: 'salvar_campo', campo: salvarEm, valor: escolhida.rotulo })
+    const rotulo = rotuloInteiro(no, s.vars, escolhida)
+    s.vars[salvarEm] = rotulo
+    acoes.push({ tipo: 'salvar_campo', campo: salvarEm, valor: rotulo })
   }
 
   // O valor da escolha, quando a lista veio pareada. É o que o `POST` seguinte
@@ -664,6 +665,33 @@ export function resolverOpcoes(no: NoPergunta, vars: Record<string, string>): Op
   return itensDaLista(vars[no.data.opcoesDe as string] ?? '')
     .slice(0, LIMITE_LISTA)
     .map((rotulo, i) => ({ id: `d${i + 1}`, rotulo: cortarCaracteres(rotulo, LIMITE_ROTULO) }))
+}
+
+/**
+ * O texto da escolha para o resto da conversa — inteiro, e não o que coube.
+ *
+ * O corte de `resolverOpcoes` é do **menu**: a Meta recusa a mensagem acima de
+ * 20 caracteres de rótulo. Mas a confirmação e o comprovante saem como texto
+ * comum, onde cabem 4096 — e estavam herdando o corte porque era o rótulo
+ * truncado que ficava guardado. Numa conversa real isso virou:
+ *
+ *     "Sua aula está marcada para 14/09/2026 às 09:00 · Pilates apar."
+ *
+ * Cortar para caber no menu é obrigação da Cloud API. Carregar esse corte para
+ * o resto da conversa é perder um dado que já estava na mão.
+ *
+ * Relê a lista original **por posição**, pelo mesmo motivo e do mesmo jeito que
+ * `valorDaOpcao`: o id `d{n}` é a posição, e a lista em `vars` nunca foi
+ * cortada. Pergunta desenhada não passa por aqui — ali o rótulo é o que quem
+ * montou o fluxo escreveu, e já é o texto final.
+ */
+function rotuloInteiro(no: NoPergunta, vars: Record<string, string>, opcao: Opcao): string {
+  if (!perguntaEhDinamica(no)) return opcao.rotulo
+
+  const posicao = Number(opcao.id.slice(1))
+  if (!Number.isInteger(posicao) || posicao < 1) return opcao.rotulo
+
+  return itensDaLista(vars[no.data.opcoesDe as string] ?? '')[posicao - 1] ?? opcao.rotulo
 }
 
 /**

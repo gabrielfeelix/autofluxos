@@ -684,6 +684,33 @@ describe('pergunta com opções dinâmicas', () => {
     expect(acao.opcoes).toHaveLength(10)
   })
 
+  /*
+   * O corte é do MENU, e o menu é a única coisa que a Meta mede.
+   *
+   * A confirmação e o comprovante saem como texto comum, onde cabem 4096
+   * caracteres — e estavam recebendo o rótulo truncado porque era ele que
+   * ficava guardado. A conversa real dizia:
+   *
+   *     "Sua aula está marcada para 14/09/2026 às 09:00 · Pilates apar."
+   *
+   * Cortar para caber no menu é obrigação; carregar esse corte para o resto da
+   * conversa é só perder o dado que já estava na mão.
+   */
+  it('o que fica guardado é o rótulo inteiro, e não o que coube no menu', () => {
+    const inteiro = '09:00 · Pilates aparelho'
+    let r = executar(agenda, comHorarios(inteiro), { tipo: 'inicio' })
+
+    const acao = r.acoes.find((a) => a.tipo === 'enviar_opcoes')
+    if (acao?.tipo !== 'enviar_opcoes') throw new Error('faltou a pergunta')
+    expect(acao.opcoes[0]?.rotulo).toBe('09:00 · Pilates apar')
+
+    r = executar(agenda, r.sessao, { tipo: 'opcao', opcaoId: 'd1' })
+    expect(r.sessao.vars.horario).toBe(inteiro)
+    expect(r.acoes.some((a) => a.tipo === 'enviar_texto' && a.texto === `Agendado ${inteiro}!`)).toBe(
+      true,
+    )
+  })
+
   it('rótulo comprido é cortado em vez de derrubar a mensagem', () => {
     const r = executar(agenda, comHorarios('quarta-feira às 10h00 com a professora Carol'), {
       tipo: 'inicio',

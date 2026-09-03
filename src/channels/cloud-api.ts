@@ -1,4 +1,5 @@
 import { LIMITE_ATRASO_SEGUNDOS, LIMITE_ROTULO, type Opcao } from '@/core/flow/schema'
+import { cortarCaracteres } from '@/core/flow/texto'
 import type { Canal } from './types'
 
 /**
@@ -147,7 +148,11 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
       // O validador já barra rótulo grande na publicação. Este corte é para a
       // versão que foi publicada antes daquela regra existir: melhor um rótulo
       // truncado do que a Meta recusar a mensagem inteira.
-      const curto = (o: Opcao) => o.rotulo.slice(0, LIMITE_ROTULO)
+      //
+      // `cortarCaracteres` e não `.slice`: os rótulos têm emoji ("📅 Escolher
+      // outro dia"), e cortar por unidade UTF-16 devolve meio par substituto —
+      // que o Postgres recusa dentro de `jsonb` na hora de gravar a mensagem.
+      const curto = (o: Opcao) => cortarCaracteres(o.rotulo, LIMITE_ROTULO)
 
       if (formato === 'botoes') {
         await mandar({
