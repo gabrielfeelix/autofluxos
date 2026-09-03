@@ -303,7 +303,13 @@ async function Conteudo({
         />
 
         {selecionado && conversa ? (
-          <section className="flex min-w-0 flex-col border-r border-white/[0.06]">
+          /*
+            `min-h-0` não é enfeite: item de flex/grid tem `min-height: auto`,
+            que o impede de encolher abaixo do próprio conteúdo. Sem ele esta
+            coluna estourava o teto da moldura, e o `overflow-auto` do
+            histórico — que já estava certo — nunca chegava a ter o que rolar.
+          */
+          <section className="flex min-h-0 min-w-0 flex-col border-r border-white/[0.06]">
             <CabecalhoDaConversa
               clienteId={clienteId}
               lead={selecionado}
