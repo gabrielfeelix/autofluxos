@@ -316,7 +316,20 @@ async function Conteudo({
               equipe={equipe}
               usuarioId={usuarioId}
             />
-            <div className="min-h-0 flex-1 overflow-auto bg-[radial-gradient(500px_320px_at_70%_5%,rgba(86,208,245,0.04),transparent_68%)] p-5">
+            {/*
+              `flex-col-reverse` é o que faz a conversa abrir na mensagem mais
+              recente, e não lá em cima nas antigas.
+
+              É CSS e não JavaScript de propósito. Um `scrollTo` num efeito
+              precisaria tornar isto um Client Component, e ainda assim
+              apareceria no topo por um quadro antes de pular — o flash que todo
+              chat feito assim tem. Com a coluna invertida o navegador ancora o
+              scroll no fim desde o primeiro render, sem piscar e sem JS.
+
+              O `Historico` reverte a lista de volta, para a leitura continuar
+              da mais antiga para a mais nova.
+            */}
+            <div className="flex min-h-0 flex-1 flex-col-reverse overflow-auto bg-[radial-gradient(500px_320px_at_70%_5%,rgba(86,208,245,0.04),transparent_68%)] p-5">
               <Historico mensagens={conversa.mensagens} cortada={conversa.cortada} nome={selecionado.nome} />
             </div>
             <CaixaDeResposta
@@ -750,13 +763,14 @@ function Historico({
     return <p className="py-16 text-center text-[12px] text-dim">Nenhuma mensagem registrada.</p>
   }
 
+  /*
+   * Invertido para compensar o `flex-col-reverse` do container que rola.
+   *
+   * Os dois se cancelam: a ordem na tela continua a de sempre — mais antiga em
+   * cima, mais nova embaixo —, e o scroll nasce ancorado no fim.
+   */
   return (
-    <div className="mx-auto flex max-w-[680px] flex-col gap-2.5">
-      {cortada && (
-        <p className="mb-1 self-center rounded-full border border-dashed border-white/[0.15] px-3 py-1.5 text-center font-mono text-[9.5px] text-dim">
-          mostrando as 500 mensagens mais recentes
-        </p>
-      )}
+    <div className="mx-auto flex max-w-[680px] flex-col-reverse gap-2.5">
       {mensagens.map((mensagem) => {
         const nossa = mensagem.direcao === 'saida'
         return (
@@ -778,6 +792,12 @@ function Historico({
           </div>
         )
       })}
+      {/* Por último no JSX = no topo da tela, por causa da inversão. */}
+      {cortada && (
+        <p className="mt-1 self-center rounded-full border border-dashed border-white/[0.15] px-3 py-1.5 text-center font-mono text-[9.5px] text-dim">
+          mostrando as 500 mensagens mais recentes
+        </p>
+      )}
     </div>
   )
 }
