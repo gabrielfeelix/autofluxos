@@ -1,12 +1,26 @@
 import 'server-only'
+import { ambienteAtual, gravarAlerta } from './repos/alertas'
 
 /**
  * Avisa uma pessoa que alguma coisa quebrou.
  *
- * **Por que webhook e não Sentry.** O plano grátis do Sentry existe, mas é mais
- * um cadastro, mais um SDK no bundle e mais um lugar para manter. O que resolve
- * aqui é um POST num webhook de Discord vindo do ambiente. Se um dia o volume
- * justificar, Sentry entra por cima disto sem reescrever nada.
+ * **Grava sempre; o webhook é o extra.** A primeira versão disto era só o POST
+ * num webhook de Discord vindo do ambiente — e `ALERTA_WEBHOOK_URL` nunca foi
+ * preenchida em lugar nenhum. Durante meses existiu um mecanismo de aviso
+ * completo, chamado nos seis lugares certos, que não avisava ninguém: tudo
+ * caía num `console.error` que vive algumas horas no log da Vercel e some.
+ *
+ * O erro de projeto foi pendurar a única cópia do aviso numa credencial que só
+ * uma pessoa consegue criar. Agora o alerta vira linha em `public.alertas`
+ * (tabela da 0039, tela em `/admin/alertas`), e o webhook toca por cima quando
+ * a variável existir. Ninguém precisa configurar nada para parar de perder
+ * falha.
+ *
+ * **Por que não Sentry.** O plano grátis existe, mas é mais um cadastro, mais
+ * um SDK no bundle e mais um lugar para manter — e continuaria sendo uma
+ * credencial a preencher. Uma tabela de seis colunas funciona no primeiro
+ * deploy. Se o volume justificar, Sentry entra por cima disto sem reescrever
+ * nada.
  *
  * **Onde ela é chamada, e só aí:** falha no `after()` do webhook, falha de
  * entrega na Cloud API e erro ao ler credencial do cofre. Alerta que toca para
@@ -22,7 +36,11 @@ import 'server-only'
  * nó de API, que existe para URL que alguém digita no editor.
  */
 
-/** Sem isto no ambiente, `alertar()` é no-op. Dev e CI não disparam nada. */
+/**
+ * O webhook opcional. Sem isto no ambiente, nada é postado — mas o alerta
+ * continua sendo gravado. Antes, a ausência desta variável era o suficiente
+ * para o aviso inteiro virar no-op.
+ */
 const VARIAVEL = 'ALERTA_WEBHOOK_URL'
 
 /** Curto de propósito: o orçamento da função é para atender, não para avisar. */
@@ -38,6 +56,14 @@ export async function alertar(
   detalhe: unknown,
   contexto: ContextoDoAlerta = {},
 ): Promise<void> {
+  const descrito = descrever(detalhe)
+
+  // Sempre no log, e primeiro. Se o banco for justamente o que está fora, é o
+  // único lugar que sobra — e este é o caminho em que isso é mais provável.
+  console.error(`[alerta] ${titulo}`, descrito, contexto)
+
+  await gravarAlerta({ titulo, detalhe: descrito, contexto })
+
   const url = process.env[VARIAVEL]
   if (!url) return
 
@@ -45,19 +71,19 @@ export async function alertar(
     await fetch(url, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ content: montarTexto(titulo, detalhe, contexto) }),
+      body: JSON.stringify({ content: montarTexto(titulo, descrito, contexto) }),
       signal: AbortSignal.timeout(TEMPO_LIMITE_MS),
     })
   } catch (erro) {
-    // O alerta falhou. Não existe a quem avisar disso a não ser o log — e
-    // insistir aqui só transformaria uma falha em duas.
-    console.error('[alerta] não deu para avisar', erro)
+    // O webhook falhou, e o alerta já está gravado — que é justamente o ponto
+    // de gravar antes. Insistir aqui só transformaria uma falha em duas.
+    console.error('[alerta] não deu para avisar pelo webhook', erro)
   }
 }
 
-function montarTexto(titulo: string, detalhe: unknown, contexto: ContextoDoAlerta): string {
-  const onde = process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? 'local'
-  const linhas = [`🔴 **AutoFluxos (${onde}) — ${titulo}**`, descrever(detalhe)]
+function montarTexto(titulo: string, detalhe: string, contexto: ContextoDoAlerta): string {
+  const onde = ambienteAtual()
+  const linhas = [`🔴 **AutoFluxos (${onde}) — ${titulo}**`, detalhe]
 
   for (const [chave, valor] of Object.entries(contexto)) {
     if (valor === null || valor === undefined || valor === '') continue

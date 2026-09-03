@@ -1,5 +1,6 @@
 import { alertar } from '@/server/alertar'
 import { iguais } from '@/lib/segredo'
+import { DIAS_DE_RETENCAO_DO_ALERTA, limparAlertasVencidos } from '@/server/repos/alertas'
 import { apagarContatosVencidos, MESES_DE_RETENCAO_PADRAO } from '@/server/repos/retencao'
 
 export const dynamic = 'force-dynamic'
@@ -35,10 +36,25 @@ export async function GET(req: Request) {
   }
 
   try {
-    const resultado = await apagarContatosVencidos({ agora: new Date() })
+    const agora = new Date()
+    const resultado = await apagarContatosVencidos({ agora })
+
+    /*
+     * Os alertas entram na mesma passada, e não numa tarefa própria.
+     *
+     * É a mesma natureza de trabalho — apagar o que passou do prazo — e o
+     * `contexto` de um alerta pode carregar id de contato, então guardá-lo para
+     * sempre seria guardar dado pessoal exatamente onde este arquivo existe
+     * para impedir. Uma segunda tarefa agendada custaria outra entrada no
+     * `vercel.json` e outro lugar de onde parar de rodar em silêncio.
+     */
+    const alertasApagados = await limparAlertasVencidos(agora)
+
     return Response.json({
       ...resultado,
       meses: MESES_DE_RETENCAO_PADRAO,
+      alertasApagados,
+      diasDeAlerta: DIAS_DE_RETENCAO_DO_ALERTA,
     })
   } catch (erro) {
     // Ninguém está olhando quando isto roda às quatro da manhã. Uma limpeza que
