@@ -54,6 +54,14 @@ const PORTAS_ABERTAS = [
    * página que não existe. Ela não lê dado nenhum — é texto.
    */
   '/privacidade',
+  /**
+   * Os termos e as instruções de exclusão de dados, pelo mesmo motivo da
+   * política: os três são campos obrigatórios das Configurações Básicas do app
+   * na Meta, e quem revisa não tem conta aqui. As três são texto e não leem
+   * banco nenhum.
+   */
+  '/termos',
+  '/exclusao-de-dados',
 ]
 
 /**

@@ -65,6 +65,16 @@ describe('a porta do painel', () => {
     expect(seguiu(await proxy(pedir('/')))).toBe(true)
   })
 
+  it('os três documentos exigidos pela Meta abrem sem sessão', async () => {
+    // Privacidade, termos e exclusão de dados são campos obrigatórios das
+    // Configurações Básicas do app, e quem revisa não tem conta aqui: uma
+    // dessas URLs redirecionando para o login é, para efeito de análise, uma
+    // página que não existe — e o app review não abre.
+    expect(seguiu(await proxy(pedir('/privacidade')))).toBe(true)
+    expect(seguiu(await proxy(pedir('/termos')))).toBe(true)
+    expect(seguiu(await proxy(pedir('/exclusao-de-dados')))).toBe(true)
+  })
+
   it('deixa passar quem traz o cookie do Better Auth', async () => {
     expect(seguiu(await proxy(pedir('/clientes/abc', COOKIE_DO_USUARIO)))).toBe(true)
   })

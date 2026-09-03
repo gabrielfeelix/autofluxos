@@ -581,6 +581,12 @@ O que perguntam antes de assinar
               <Link className={s.rodapeLink} data-n="003" href="/privacidade">
                 Privacidade
               </Link>
+              <Link className={s.rodapeLink} data-n="004" href="/termos">
+                Termos de serviço
+              </Link>
+              <Link className={s.rodapeLink} data-n="005" href="/exclusao-de-dados">
+                Exclusão de dados
+              </Link>
             </nav>
 
             <nav className={s.rodapeColuna}>
