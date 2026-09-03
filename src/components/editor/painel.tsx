@@ -132,6 +132,7 @@ const NOME_DO_FORMATO_DE_SAIDA: Record<FormatoDeSaida, string> = {
   hora: 'hora',
   data_hora: 'data e hora',
   dinheiro: 'dinheiro',
+  nomes: 'lista de nomes',
 }
 
 /** O que cada método faz, na língua de quem monta o fluxo. */

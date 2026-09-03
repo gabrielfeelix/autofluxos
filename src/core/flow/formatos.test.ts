@@ -40,3 +40,42 @@ describe('formatarValor — o dado do sistema virando texto de conversa', () => 
     expect(formatarValor('2026-09-01')).toBe('2026-09-01')
   })
 })
+
+describe('nomes — a lista de quem atende vira frase', () => {
+  it('cada nome uma vez só, na ordem em que apareceu', () => {
+    expect(formatarValor('Carol;Carol;Carol;Márcia;Thalya;Thalya;Márcia', 'nomes')).toBe(
+      'Carol, Márcia e Thalya',
+    )
+  })
+
+  it('um nome só não ganha vírgula nem "e"', () => {
+    expect(formatarValor('Carol;Carol;Carol', 'nomes')).toBe('Carol')
+  })
+
+  it('dois nomes ligam com "e", sem vírgula', () => {
+    expect(formatarValor('Carol;Márcia', 'nomes')).toBe('Carol e Márcia')
+  })
+
+  it('só quem colide ganha sobrenome — a Márcia sozinha continua Márcia', () => {
+    expect(formatarValor('Carol Silva;Carol Souza;Márcia Lima', 'nomes')).toBe(
+      'Carol Silva, Carol Souza e Márcia',
+    )
+  })
+
+  it('a mesma pessoa repetida por extenso conta uma vez, e não vira colisão', () => {
+    expect(formatarValor('Carol Silva;Carol Silva;Márcia Lima', 'nomes')).toBe('Carol e Márcia')
+  })
+
+  it('sem colisão, o sobrenome não aparece — "Carol" basta', () => {
+    expect(formatarValor('Carol Silva;Márcia Lima', 'nomes')).toBe('Carol e Márcia')
+  })
+
+  it('lista vazia vira vazio, e não " e "', () => {
+    expect(formatarValor('', 'nomes')).toBe('')
+    expect(formatarValor(';;', 'nomes')).toBe('')
+  })
+
+  it('espaço sobrando não inventa nome diferente', () => {
+    expect(formatarValor(' Carol ;Carol;  Márcia', 'nomes')).toBe('Carol e Márcia')
+  })
+})

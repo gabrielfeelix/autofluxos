@@ -291,7 +291,9 @@ export const PRESETS: Preset[] = [
        * "com quem?", que são as duas perguntas que sempre vêm em seguida.
        * O rótulo para em dois campos porque o botão do WhatsApp aceita 20
        * caracteres: `07:00 · Pilates solo` já são os 20. O professor fica em
-       * `horarios_prof`, para a mensagem antes do menu dizer quem atende.
+       * `horarios_prof`, para a mensagem antes do menu dizer quem atende — com
+       * `formato: 'nomes'`, porque a rota devolve **um professor por horário** e
+       * sem isso a frase saía "quem atende é: Carol;Carol;Carol;Márcia".
        *
        * `horarios_id` é o que a API entende. Na Pergunta: opções de `horarios`,
        * valores de `horarios_id`. **Nenhuma das duas pode ter "sem repetir"** —
@@ -306,7 +308,7 @@ export const PRESETS: Preset[] = [
       mapear: [
         { variavel: 'horarios', caminho: 'livres[]', rotulo: '{hora} · {servico}' },
         { variavel: 'horarios_id', caminho: 'livres[].sessaoId' },
-        { variavel: 'horarios_prof', caminho: 'livres[].profissional' },
+        { variavel: 'horarios_prof', caminho: 'livres[].profissional', formato: 'nomes' },
         { variavel: 'lotados', caminho: 'cheios[]', rotulo: '{hora} · {servico}' },
         { variavel: 'lotados_id', caminho: 'cheios[].sessaoId' },
       ],
@@ -378,7 +380,7 @@ export const PRESETS: Preset[] = [
       mapear: [
         { variavel: 'horarios', caminho: 'livres[]', rotulo: '{hora} · {profissional}' },
         { variavel: 'horarios_id', caminho: 'livres[].sessaoId' },
-        { variavel: 'horarios_prof', caminho: 'livres[].profissional' },
+        { variavel: 'horarios_prof', caminho: 'livres[].profissional', formato: 'nomes' },
         { variavel: 'lotados', caminho: 'cheios[]', rotulo: '{hora} · {profissional}' },
         { variavel: 'lotados_id', caminho: 'cheios[].sessaoId' },
       ],

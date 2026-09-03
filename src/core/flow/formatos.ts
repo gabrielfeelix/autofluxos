@@ -13,7 +13,7 @@ import { itensDaLista } from './schema'
  * de propósito — `new Date('2026-09-01')` interpreta como UTC e, no Brasil,
  * devolve o dia anterior.
  */
-export const FORMATOS_DE_SAIDA = ['data', 'hora', 'data_hora', 'dinheiro'] as const
+export const FORMATOS_DE_SAIDA = ['data', 'hora', 'data_hora', 'dinheiro', 'nomes'] as const
 export type FormatoDeSaida = (typeof FORMATOS_DE_SAIDA)[number]
 
 /** O nome de cada um no painel, com exemplo — que é o que ensina. */
@@ -22,6 +22,7 @@ export const EXEMPLO_DO_FORMATO: Record<FormatoDeSaida, string> = {
   hora: '07:00:00 vira 07:00',
   data_hora: '2026-09-01T07:30 vira 01/09/2026 07:30',
   dinheiro: '4200.5 vira 4.200,50',
+  nomes: 'Carol;Carol;Márcia vira Carol e Márcia',
 }
 
 /**
@@ -33,6 +34,15 @@ export const EXEMPLO_DO_FORMATO: Record<FormatoDeSaida, string> = {
  */
 export function formatarValor(valor: string, formato?: FormatoDeSaida): string {
   if (!formato) return valor
+
+  /*
+   * `nomes` é o único formato que olha a lista inteira, e não item a item.
+   *
+   * Deduplicar e ligar com "e" são decisões sobre o conjunto: dá para saber que
+   * "Carol" se repete olhando os vizinhos, nunca olhando "Carol" sozinho. Por
+   * isso ele sai antes do laço que formata cada item.
+   */
+  if (formato === 'nomes') return comoNomes(valor)
 
   const itens = itensDaLista(valor)
   if (itens.length <= 1) return formatarUm(valor.trim(), formato)
@@ -54,7 +64,64 @@ function formatarUm(valor: string, formato: FormatoDeSaida): string {
     }
     case 'dinheiro':
       return comoDinheiro(valor) ?? valor
+    /* Tratado em `formatarValor`, que olha a lista inteira. */
+    case 'nomes':
+      return valor
   }
+}
+
+/**
+ * `Carol;Carol;Márcia;Thalya;Thalya` → `Carol, Márcia e Thalya`.
+ *
+ * Nasceu de uma conversa real: a rota de disponibilidade devolve **um professor
+ * por horário**, então nove horários viravam
+ * `"quem atende é: Carol;Carol;Carol;Carol;Márcia;Thalya;Thalya;Thalya;Márcia."`
+ * — com o `;` do formato interno vazando para quem lê.
+ *
+ * Repetido não informa: a pessoa quer saber *quem* atende naquele dia, não
+ * quantas aulas cada uma dá. E a lista de professores não é pareada por posição
+ * com nenhuma outra, então tirar repetidos aqui é seguro — ao contrário de
+ * `horarios`/`horarios_id`, onde `unicos` desalinharia o agendamento.
+ *
+ * **O sobrenome só entra quando precisa.** Duas Carols diferentes viram
+ * "Carol Silva e Carol Souza"; uma Carol sozinha continua "Carol", porque
+ * apresentar todo mundo com nome completo soa como cadastro, não como conversa.
+ */
+function comoNomes(valor: string): string {
+  const inteiros: string[] = []
+  for (const item of itensDaLista(valor)) {
+    const nome = item.trim().replace(/\s+/g, ' ')
+    if (nome !== '' && !inteiros.includes(nome)) inteiros.push(nome)
+  }
+
+  /*
+   * Quantas pessoas distintas compartilham cada primeiro nome. Duas entradas
+   * com o mesmo primeiro nome só são a mesma pessoa se forem o mesmo texto
+   * inteiro — e essas já foram removidas acima.
+   */
+  const quantosPor = new Map<string, number>()
+  for (const inteiro of inteiros) {
+    const primeiro = primeiroNome(inteiro)
+    quantosPor.set(primeiro, (quantosPor.get(primeiro) ?? 0) + 1)
+  }
+
+  const exibidos = inteiros.map((inteiro) => {
+    const primeiro = primeiroNome(inteiro)
+    return (quantosPor.get(primeiro) ?? 0) > 1 ? inteiro : primeiro
+  })
+
+  return ligarComE(exibidos)
+}
+
+function primeiroNome(inteiro: string): string {
+  return inteiro.split(' ')[0] ?? inteiro
+}
+
+/** `[a, b, c]` → `a, b e c`. É como se lê em voz alta, e é o que o WhatsApp é. */
+function ligarComE(itens: string[]): string {
+  if (itens.length === 0) return ''
+  if (itens.length === 1) return itens[0] as string
+  return `${itens.slice(0, -1).join(', ')} e ${itens.at(-1) as string}`
 }
 
 /** `2026-09-01` → `01/09/2026`. Já brasileira, devolve como está. */
