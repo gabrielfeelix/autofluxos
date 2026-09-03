@@ -3,6 +3,7 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { Cursor } from './(site)/cursor'
 import { DerivaDeParticulas } from './(site)/deriva-de-particulas'
+import { ProgressoDosPassos } from './(site)/progresso-dos-passos'
 import { Revelar } from './(site)/revelar'
 import s from './(site)/pagina-inicial.module.css'
 
@@ -237,6 +238,26 @@ API oficial do WhatsApp Business
                   falando com o número que já está no cartão, no site e no Google. E você
                   desconecta quando quiser.
                 </p>
+
+                <ProgressoDosPassos
+                  seletorPasso={s.passo}
+                  classes={{
+                    caixa: s.progresso,
+                    conta: s.progressoConta,
+                    atual: s.progressoAtual,
+                    total: s.progressoTotal,
+                    trilho: s.progressoTrilho,
+                    segmento: s.progressoSegmento,
+                    segmentoAtivo: s.progressoSegmentoAtivo,
+                    rotulo: s.progressoRotulo,
+                  }}
+                  rotulos={[
+                    'Você conecta o seu número',
+                    'A gente monta o primeiro fluxo com você',
+                    'Sua equipe entra na caixa de entrada',
+                    'Você ajusta olhando o que aconteceu',
+                  ]}
+                />
               </div>
 
               <ol className={s.passosLista}>
@@ -342,51 +363,6 @@ sabia, quanto tempo alguém levou para assumir. Você corrige olhando isso."
               Ele não emite nota fiscal, não controla estoque e não substitui o seu sistema de
               gestão. Cuida do atendimento, e cuida inteiro.
             </p>
-          </div>
-        </section>
-
-        <section className={s.secao}>
-          <div className={`${s.focoLuz} ${s.focoDireita}`} aria-hidden />
-          <div className={s.faixa}>
-            <div className={s.cabecaSecao}>
-              <span className={s.olho} data-revela>
-                Quem faz
-              </span>
-              <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-atraso="60">
-A 4YU já tem software no ar
-              </h2>
-              <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
-                O AutoFluxos é novo e ainda não tem carteira de clientes. Não vamos inventar
-                uma. O que dá para conferir hoje são os produtos que a 4YU publicou e mantém.
-              </p>
-            </div>
-
-            <div className={s.provas}>
-              <Prova
-                sigla="DA"
-                nome="Deixei Aqui"
-                onde="Google Play · desde ago/2026"
-                texto="App para lembrar onde você guardou as coisas. Está na produção da Play Store desde agosto, com atualizações desde então."
-                estado="No ar"
-                atraso={0}
-              />
-              <Prova
-                sigla="QC"
-                nome="Quanto Cobro"
-                onde="Google Play · desde ago/2026"
-                texto="Calculadora de preço para quem presta serviço e nunca sabe quanto cobrar. Também na produção da Play Store."
-                estado="No ar"
-                atraso={80}
-              />
-              <Prova
-                sigla="VE"
-                nome="Verandi"
-                onde="verandi.4yu.com.br"
-                texto="Agenda para estúdios e clínicas: grade fixa, chamada, reposição. Nasceu da planilha de um estúdio de pilates que atende de verdade."
-                estado="No ar, com clientes"
-                atraso={160}
-              />
-            </div>
           </div>
         </section>
 
@@ -528,43 +504,93 @@ O que perguntam antes de assinar
       </main>
 
       <footer className={s.rodape}>
-        <div className={s.faixa}>
-          <div className={s.rodapeGrade}>
-            <Link className={s.marca} href="/">
-              <span className={s.marcaSigla} aria-hidden>
-                <IconeFluxo />
-              </span>
-              AutoFluxos
-            </Link>
+        <div className={s.rodapeGrade2} aria-hidden />
 
-            <nav className={s.rodapeLinks}>
-              <a className={s.rodapeLink} href="#produto">
-                O produto
+        <div className={s.faixa}>
+          <div className={s.rodapeTopo}>
+            <div className={s.rodapeSobre}>
+              <Link className={s.marca} href="/">
+                <span className={s.marcaSigla} aria-hidden>
+                  <IconeFluxo />
+                </span>
+                AutoFluxos
+              </Link>
+              <p className={s.rodapeTexto}>
+                Atendimento no WhatsApp da sua empresa. O fluxo responde o que se repete e
+                sua equipe assume o resto.
+              </p>
+              <span className={s.rodapeStatus}>
+                <span className={s.rodapeStatusPonto} aria-hidden />
+                Atendendo em +55 44 7400-7438
+              </span>
+            </div>
+
+            <nav className={s.rodapeColuna}>
+              <span className={s.rodapeTitulo}>Produto</span>
+              <a className={s.rodapeLink} data-n="001" href="#produto">
+                O que ele faz
               </a>
-              <a className={s.rodapeLink} href="#precos">
+              <a className={s.rodapeLink} data-n="002" href="#como">
+                Como funciona
+              </a>
+              <a className={s.rodapeLink} data-n="003" href="#precos">
                 Preços
               </a>
-              <Link className={s.rodapeLink} href="/privacidade">
-                Privacidade
-              </Link>
-              <a className={s.rodapeLink} href="https://4yu.com.br" rel="noopener">
-                4YU
+              <a className={s.rodapeLink} data-n="004" href="#duvidas">
+                Dúvidas
               </a>
-              <Link className={s.rodapeLink} href={ENTRAR}>
+            </nav>
+
+            <nav className={s.rodapeColuna}>
+              <span className={s.rodapeTitulo}>Conta</span>
+              <Link className={s.rodapeLink} data-n="001" href={ENTRAR}>
                 Entrar
               </Link>
+              <a
+                className={s.rodapeLink}
+                data-n="002"
+                href="mailto:contato@4yu.com.br?subject=AutoFluxos%3A%20quero%20conhecer"
+              >
+                Falar com a gente
+              </a>
+              <Link className={s.rodapeLink} data-n="003" href="/privacidade">
+                Privacidade
+              </Link>
+            </nav>
+
+            <nav className={s.rodapeColuna}>
+              <span className={s.rodapeTitulo}>4YU</span>
+              <a className={s.rodapeLink} data-n="001" href="https://4yu.com.br" rel="noopener">
+                Todos os produtos
+              </a>
+              <a
+                className={s.rodapeLink}
+                data-n="002"
+                href="https://verandi.4yu.com.br"
+                rel="noopener"
+              >
+                Verandi
+              </a>
+              <a className={s.rodapeLink} data-n="003" href="mailto:contato@4yu.com.br">
+                contato@4yu.com.br
+              </a>
             </nav>
           </div>
 
-          <p className={s.rodapeEmpresa}>
-            AutoFluxos é um produto da 4YU · Gabriel Felix Barbosa · CNPJ 68.770.493/0001-82
-            <br />
-            Contato: <a href="mailto:contato@4yu.com.br">contato@4yu.com.br</a> · WhatsApp
-            oficial +55 44 7400-7438
-            <br />
-            WhatsApp é uma marca da Meta Platforms, Inc. Este produto usa a API oficial do
-            WhatsApp Business e não é afiliado à Meta.
-          </p>
+          <div className={s.rodapeMarca} aria-hidden>
+            <p className={s.rodapeNome}>AutoFluxos</p>
+          </div>
+
+          <div className={s.rodapePe}>
+            <span>
+              Um produto da <a href="https://4yu.com.br" rel="noopener">4YU</a> · Gabriel Felix
+              Barbosa · CNPJ 68.770.493/0001-82 · Maringá, PR
+            </span>
+            <span className={s.rodapeAviso}>
+              WhatsApp é marca da Meta Platforms. Usamos a API oficial do WhatsApp Business e
+              não somos afiliados à Meta.
+            </span>
+          </div>
         </div>
       </footer>
     </div>
@@ -933,48 +959,6 @@ function Pergunta({ pergunta, resposta }: { pergunta: string; resposta: string }
 }
 
 /**
- * Um produto que a 4YU publicou.
- *
- * Ocupa o lugar do depoimento e responde à mesma pergunta — "dá para confiar
- * em quem fez isso?" — com o que é verificável: os apps estão na Play Store e
- * a Verandi está no ar. Ver o comentário da seção no CSS.
- */
-function Prova({
-  sigla,
-  nome,
-  onde,
-  texto,
-  estado,
-  atraso,
-}: {
-  sigla: string
-  nome: string
-  onde: string
-  texto: string
-  estado: string
-  atraso: number
-}) {
-  return (
-    <article className={s.prova} data-revela data-atraso={atraso}>
-      <div className={s.provaTopo}>
-        <span className={s.provaSigla} aria-hidden>
-          {sigla}
-        </span>
-        <div>
-          <div className={s.provaNome}>{nome}</div>
-          <div className={s.provaOnde}>{onde}</div>
-        </div>
-      </div>
-      <p className={s.provaTexto}>{texto}</p>
-      <span className={s.provaEstado}>
-        <span className={s.pontoVivo} aria-hidden />
-        {estado}
-      </span>
-    </article>
-  )
-}
-
-/**
  * O título da capa, palavra por palavra.
  *
  * **A quebra em palavras é o efeito.** Cada uma vira um `<span>` com o próprio
@@ -1204,16 +1188,6 @@ function IconeFluxo() {
   )
 }
 
-function IconeBlocos() {
-  return (
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <rect x="3" y="3" width="7" height="7" rx="2" />
-      <rect x="14" y="3" width="7" height="7" rx="2" />
-      <rect x="3" y="14" width="7" height="7" rx="2" />
-      <path d="M14 17.5h7M17.5 14v7" strokeLinecap="round" />
-    </svg>
-  )
-}
 
 function IconeCaixa() {
   return (
@@ -1234,15 +1208,6 @@ function IconeIA() {
   )
 }
 
-function IconeFicha() {
-  return (
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <rect x="4" y="3" width="16" height="18" rx="2.5" />
-      <circle cx="12" cy="10" r="2.6" />
-      <path d="M8 17c.9-1.7 2.3-2.5 4-2.5s3.1.8 4 2.5" strokeLinecap="round" />
-    </svg>
-  )
-}
 
 function IconePlug() {
   return (
