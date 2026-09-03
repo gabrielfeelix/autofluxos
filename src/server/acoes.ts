@@ -7,6 +7,7 @@ import { fluxoSchema, type Fluxo, type TipoDeMidia } from '@/core/flow/schema'
 import type { Problema } from '@/core/flow/validar'
 import { db } from './db'
 import { canalValido } from '@/core/canais'
+import { assinar, avisoDeEntrada } from '@/core/atendente'
 import {
   ehAdminDaPlataforma,
   exigirAcessoAoCliente,
@@ -1686,6 +1687,10 @@ export async function acaoResponderLead(
     }
   }
 
+  // Quem está respondendo, para assinar a mensagem. `null` quando a sessão veio
+  // da senha única — aí a mensagem sai sem assinatura, e não com um nome falso.
+  const quemResponde = await sessaoAtual()
+
   // A ordem importa: primeiro o que é sobre esta conversa, depois o que é sobre
   // o servidor. Dizer "falta WHATSAPP_TOKEN" para quem esbarrou na janela de
   // 24h manda a pessoa investigar a caixa errada.
@@ -1709,10 +1714,15 @@ export async function acaoResponderLead(
   // Grava antes para não perder do histórico uma mensagem que saiu no instante
   // em que a função morreu. Enquanto a API não confirmar, a tela a marca como
   // envio não confirmado — ela nunca a apresenta como entregue por certeza.
+  //
+  // Grava o texto **sem** a assinatura: o Inbox já mostra quem respondeu ao
+  // lado do balão, e guardar `*Leinara:*` junto faria o nome aparecer duas
+  // vezes na tela de quem atende. A assinatura é da entrega, não do conteúdo —
+  // é o que muda entre o que a pessoa lê no WhatsApp e o que a equipe lê aqui.
   const registro = await registrarSaida({ contatoId, sessaoId: contexto.sessaoId, texto })
 
   try {
-    await canal.enviarTexto(contexto.waId, texto)
+    await canal.enviarTexto(contexto.waId, assinar(texto, quemResponde?.usuario.nome))
   } catch (erro) {
     // O texto da Meta é específico e é ele que resolve. Engolir aqui devolveria
     // "não deu certo" para quem precisa saber que o token expirou.
@@ -2256,9 +2266,22 @@ export async function acaoSalvarHorario(
  * conversa ficava esperando qualquer pessoa. Esperar "qualquer pessoa" é o
  * mesmo que esperar ninguém quando há mais de uma.
  *
- * Assumir não muda o que a pessoa do outro lado vê: é organização interna. Por
- * isso não manda mensagem nenhuma — anunciar no WhatsApp que "a Ana assumiu"
- * seria expor a nossa mesa para quem só quer ser respondido.
+ * **Assumir avisa quem está do outro lado, e isso mudou de ideia.**
+ *
+ * A regra aqui era o contrário: assumir seria organização interna, e anunciar
+ * no WhatsApp que "a Ana assumiu" exporia a nossa mesa para quem só quer ser
+ * respondido.
+ *
+ * O que derrubou o argumento foi ler uma conversa inteira: sem aviso, **quem
+ * recebe não sabe que virou gente**. As mensagens seguem chegando do mesmo
+ * número, com a mesma cara das do bot, e a pessoa continua falando com o robô
+ * que ela acha que ainda está lá — inclusive esperando o menu que não vem
+ * mais. Dizer o nome não expõe a mesa; dá conta de quem responde.
+ *
+ * O aviso é **melhor-esforço e nunca derruba o assumir**: janela de 24h
+ * fechada, número desconectado ou Meta fora do ar não podem impedir alguém de
+ * pegar a conversa. Mesma postura de `rodarPosAtendimento` — quem chamou já
+ * resolveu o que importava, e um erro daqui não desfaz isso.
  */
 export async function acaoAssumirAtendimento(
   clienteId: string,
@@ -2294,9 +2317,50 @@ export async function acaoAssumirAtendimento(
   // por cima falaria junto com quem está atendendo (0031).
   await sairPorEvento(contatoId, 'atendimento')
 
+  await avisarQueEntrou(clienteId, contatoId, sessao.usuario.nome)
+
   revalidatePath(`/clientes/${clienteId}/inbox`)
   revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
   return { ok: true }
+}
+
+/**
+ * "Fulana entrou na conversa" — o aviso de que agora tem gente do outro lado.
+ *
+ * Engole os próprios erros de propósito. Ele é um acréscimo ao assumir, não uma
+ * condição dele: se a janela de 24h fechou, se o número não está conectado ou
+ * se a Meta recusou, a conversa continua sendo de quem clicou. Falhar aqui e
+ * derrubar o botão seria trocar a função pela cortesia.
+ *
+ * A janela é conferida antes de falar pelo mesmo motivo de
+ * `abrirFluxoParaContato`: ninguém escreveu agora, então ela pode estar fechada
+ * — e o WhatsApp recusaria com `(#131047)`.
+ */
+async function avisarQueEntrou(
+  clienteId: string,
+  contatoId: string,
+  nome: string | null,
+): Promise<void> {
+  const aviso = avisoDeEntrada(nome)
+  if (!aviso) return
+
+  try {
+    const contexto = await contextoDeResposta(clienteId, contatoId)
+    if (!contexto || !dentroDaJanela(contexto.ultimaEntradaEm)) return
+
+    const token = process.env.WHATSAPP_TOKEN
+    if (!token) return
+
+    const canal = canalCloudApi({ phoneNumberId: contexto.canal.phoneNumberId, token })
+    const registro = await registrarSaida({ contatoId, sessaoId: contexto.sessaoId, texto: aviso })
+    await canal.enviarTexto(contexto.waId, aviso)
+    await confirmarEntrega(registro)
+  } catch (erro) {
+    console.error(
+      '[assumir] não deu para avisar que o atendente entrou',
+      erro instanceof Error ? erro.message : erro,
+    )
+  }
 }
 
 /** Devolve a conversa para a fila de todo mundo. */
