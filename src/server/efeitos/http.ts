@@ -460,14 +460,36 @@ export function extrair(
  * Campo que não existe vira vazio, pela mesma razão que `{{variavel}}`
  * desconhecida vira vazio numa mensagem: um menu com `{servico}` literal é pior
  * do que um menu com um espaço a mais. Espaço sobrando nas pontas sai fora.
+ *
+ * ---------------------------------------------------------------------------
+ * `{campo|texto se vazio}` — e por que ele precisou existir
+ * ---------------------------------------------------------------------------
+ *
+ * A agenda devolveu quatro horários sem profissional definido, e o menu do
+ * WhatsApp mostrou `14:00 ·`: o campo sumiu, o separador ficou, e quem lia não
+ * tinha como saber quem daria a aula. Pior, a mensagem acima dizia "com Márcia,
+ * Thalya e Carol" — nomes que não valiam para aquele horário.
+ *
+ * `{hora} · {profissional|a confirmar}` resolve sem esconder o horário: a vaga
+ * existe e some-la tiraria opção de quem quer marcar.
+ *
+ * O padrão vale para **vazio também**, e não só para ausente: uma API que
+ * responde `""` está dizendo a mesma coisa que uma que omite o campo, e quem lê
+ * a conversa não vê diferença nenhuma entre as duas.
  */
 function montar(modelo: string, item: unknown): string {
   return modelo
-    .replace(/\{\s*([a-zA-Z][a-zA-Z0-9_.]*)\s*\}/g, (_, campo: string) => {
-      const valor = descer(item, campo)
-      if (valor === null || valor === undefined) return ''
-      return typeof valor === 'object' ? '' : String(valor)
-    })
+    .replace(
+      /\{\s*([a-zA-Z][a-zA-Z0-9_.]*)\s*(?:\|([^}]*))?\}/g,
+      (_, campo: string, padrao: string | undefined) => {
+        const valor = descer(item, campo)
+        const texto =
+          valor === null || valor === undefined || typeof valor === 'object'
+            ? ''
+            : String(valor).trim()
+        return texto === '' ? (padrao ?? '').trim() : texto
+      },
+    )
     .replace(/\s+/g, ' ')
     .trim()
 }

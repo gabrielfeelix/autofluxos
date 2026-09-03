@@ -1,6 +1,7 @@
 import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
 import { fluxoNovo } from '@/core/flow/novo'
 import { agendamento } from './agendamento'
+import { atendenteIa } from './atendente-ia'
 import { carrinhoAbandonado } from './carrinho-abandonado'
 import { cobrancaAmigavel } from './cobranca-amigavel'
 import { lembrete } from './lembrete'
@@ -250,6 +251,15 @@ export const MODELOS: Modelo[] = [
     etiquetas: ['WhatsApp', 'Instagram', 'Atendimento'],
     sinonimos: ['faq', 'dúvidas frequentes', 'menu', 'horário', 'endereço', 'preço', 'atendimento'],
     grafo: menuAtendimento,
+  },
+  {
+    id: 'atendente-ia',
+    nome: 'Atendente de IA (responde em texto livre)',
+    resumo:
+      'A pessoa escreve o que quiser e a IA responde com o contexto do negócio, quantas vezes precisar. O que ela não souber vira conversa com uma pessoa.',
+    etiquetas: ['WhatsApp', 'Atendimento'],
+    sinonimos: ['ia', 'inteligência artificial', 'chatgpt', 'gpt', 'gemini', 'bot', 'dúvidas', 'texto livre'],
+    grafo: atendenteIa,
   },
   {
     id: 'qualificar-sdr',

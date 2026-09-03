@@ -378,10 +378,10 @@ export const PRESETS: Preset[] = [
       cabecalhos: [],
       corpo: '',
       mapear: [
-        { variavel: 'horarios', caminho: 'livres[]', rotulo: '{hora} · {profissional}' },
+        { variavel: 'horarios', caminho: 'livres[]', rotulo: '{hora} · {profissional|a confirmar}' },
         { variavel: 'horarios_id', caminho: 'livres[].sessaoId' },
         { variavel: 'horarios_prof', caminho: 'livres[].profissional', formato: 'nomes' },
-        { variavel: 'lotados', caminho: 'cheios[]', rotulo: '{hora} · {profissional}' },
+        { variavel: 'lotados', caminho: 'cheios[]', rotulo: '{hora} · {profissional|a confirmar}' },
         { variavel: 'lotados_id', caminho: 'cheios[].sessaoId' },
       ],
       aoFalhar: 'humano',

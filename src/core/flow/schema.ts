@@ -564,6 +564,12 @@ export const mapeamentoSchema = z.object({
    * Chave simples e não `{{...}}` de propósito: o que está aqui não é variável
    * da conversa, é campo da resposta. Usar a mesma marca convidaria a escrever
    * `{{nome}}` esperando o nome do lead.
+   *
+   * **`{campo|texto se vazio}`** dá um padrão para quando a API não mandar
+   * nada. Nasceu de um menu que mostrou `14:00 ·`: a agenda devolveu quatro
+   * horários sem profissional, o campo sumiu e o separador ficou — e quem lia
+   * não tinha como saber quem daria a aula. `{hora} · {profissional|a
+   * confirmar}` diz a verdade sem esconder a vaga.
    */
   rotulo: z.string().optional(),
   /**

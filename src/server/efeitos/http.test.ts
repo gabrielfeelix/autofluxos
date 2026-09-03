@@ -628,3 +628,38 @@ describe('aceitarStatus — nem todo status fora de 2xx é erro de conversa', ()
     if (r.ok) expect(r.valores.id).toBe('p-2')
   })
 })
+
+describe('{campo|padrão} — o horário sem professor', () => {
+  /*
+   * O caso real: a agenda devolveu 4 de 11 horários sem profissional, e o menu
+   * mostrou "14:00 ·" — o campo sumiu e o separador ficou. Quem lia não tinha
+   * como saber quem daria a aula.
+   */
+  const comVazio = {
+    livres: [
+      { hora: '09:00', profissional: 'Márcia' },
+      { hora: '14:00', profissional: '' },
+      { hora: '19:00' },
+    ],
+  }
+
+  it('usa o padrão quando o campo vem vazio ou ausente', () => {
+    expect(extrair(comVazio, 'livres[]', false, '{hora} · {profissional|a confirmar}')).toBe(
+      '09:00 · Márcia;14:00 · a confirmar;19:00 · a confirmar',
+    )
+  })
+
+  it('sem padrão declarado, nada muda — o comportamento antigo continua', () => {
+    expect(extrair(comVazio, 'livres[]', false, '{hora} · {profissional}')).toBe(
+      '09:00 · Márcia;14:00 ·;19:00 ·',
+    )
+  })
+
+  it('campo preenchido ignora o padrão', () => {
+    expect(extrair({ l: [{ n: 'Ana' }] }, 'l[]', false, '{n|ninguém}')).toBe('Ana')
+  })
+
+  it('espaço em branco conta como vazio — a API que manda " " diz o mesmo que nada', () => {
+    expect(extrair({ l: [{ n: '   ' }] }, 'l[]', false, '{n|a confirmar}')).toBe('a confirmar')
+  })
+})
