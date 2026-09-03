@@ -243,6 +243,13 @@ export default function Pagina() {
             <p>
               <a href="mailto:contato@4yu.com.br">contato@4yu.com.br</a>
             </p>
+            <p>
+              WhatsApp <a href="https://wa.me/5544998775978">+55 44 99877-5978</a>
+            </p>
+            <p>
+              68.770.493 GABRIEL FELIX BARBOSA (4YU) · CNPJ 68.770.493/0001-82 · Rua Osvaldo Cruz,
+              297 — Zona 07 — Maringá/PR — CEP 87020-200.
+            </p>
           </Secao>
 
           <Secao n={9} id="mudancas" titulo="Mudanças">
