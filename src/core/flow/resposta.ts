@@ -27,6 +27,7 @@
 
 export const FORMATOS_DE_RESPOSTA = [
   'data',
+  'data_futura',
   'hora',
   'numero',
   'email',
@@ -39,6 +40,7 @@ export type FormatoDeResposta = (typeof FORMATOS_DE_RESPOSTA)[number]
 /** O nome do formato na tela de quem desenha. */
 export const NOME_DO_FORMATO: Record<FormatoDeResposta, string> = {
   data: 'Data',
+  data_futura: 'Data (só daqui para a frente)',
   hora: 'Hora',
   numero: 'Número',
   email: 'E-mail',
@@ -49,6 +51,7 @@ export const NOME_DO_FORMATO: Record<FormatoDeResposta, string> = {
 /** Como fica o valor padronizado. É o que a tela promete e o que o motor grava. */
 export const EXEMPLO_PADRONIZADO: Record<FormatoDeResposta, string> = {
   data: '2026-08-21',
+  data_futura: '2026-08-21',
   hora: '07:00',
   numero: '1250.5',
   email: 'nome@dominio.com',
@@ -66,6 +69,8 @@ export const EXEMPLO_PADRONIZADO: Record<FormatoDeResposta, string> = {
  */
 export const PEDIDO_PADRAO: Record<FormatoDeResposta, string> = {
   data: 'Desculpe, não entendi a data. Pode escrever de novo com dia, mês e ano? Por exemplo: 21/08/2026.',
+  data_futura:
+    'Essa data já passou. Pode escolher um dia de hoje em diante? Por exemplo: 21/08/2026.',
   hora: 'Desculpe, não entendi o horário. Pode escrever de novo assim: 07:00.',
   numero: 'Desculpe, não entendi o número. Pode escrever só o valor? Por exemplo: 1250.',
   email: 'Desculpe, esse e-mail não parece completo. Pode escrever de novo? Por exemplo: nome@dominio.com.',
@@ -88,18 +93,44 @@ export type Conferida =
 export function conferirResposta(
   formato: FormatoDeResposta | undefined,
   texto: string,
+  /**
+   * Que dia é hoje na conta, em `AAAA-MM-DD`. Só `data_futura` usa.
+   *
+   * Entra por parâmetro porque `core/` não lê relógio: o simulador e a produção
+   * rodam o mesmo código, e um teste que dependesse de esperar a meia-noite não
+   * seria teste. Quem lê a hora é o servidor, com o fuso da conta.
+   *
+   * Ausente, `data_futura` se comporta como `data` — sem saber que dia é hoje,
+   * recusar seria chutar, e chutar contra a pessoa é pior do que aceitar.
+   */
+  hoje?: string,
 ): Conferida {
   const valor = texto.trim()
   if (formato === undefined) return { ok: true, valor, padrao: valor }
   if (valor === '') return { ok: false }
 
   const padrao = padronizar(formato, valor)
-  return padrao === null ? { ok: false } : { ok: true, valor, padrao }
+  if (padrao === null) return { ok: false }
+
+  /*
+   * A data existe no calendário — mas já passou.
+   *
+   * Sem isto o bot aceitava `01/09/2026` numa conversa de setembro, ia
+   * consultar a agenda de um dia que não volta, e ainda oferecia horários.
+   * Comparação de texto basta: `AAAA-MM-DD` ordena igual à data que ele
+   * representa, e é por isso que a forma canônica é essa.
+   */
+  if (formato === 'data_futura' && hoje !== undefined && padrao < hoje) return { ok: false }
+
+  return { ok: true, valor, padrao }
 }
 
 function padronizar(formato: FormatoDeResposta, valor: string): string | null {
   switch (formato) {
     case 'data':
+    // Mesma leitura de calendário; o que muda é a conferência contra hoje, em
+    // `conferirResposta` — aqui não há relógio para comparar.
+    case 'data_futura':
       return comoData(valor)
     case 'hora':
       return comoHora(valor)

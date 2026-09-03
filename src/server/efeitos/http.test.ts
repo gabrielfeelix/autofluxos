@@ -565,3 +565,66 @@ describe('cabeçalho inválido não derruba a conversa', () => {
     expect(r.ok).toBe(false)
   })
 })
+
+describe('aceitarStatus — nem todo status fora de 2xx é erro de conversa', () => {
+  /*
+   * O caso real: a aula foi marcada, a Verandi respondeu 409 ("já existe essa
+   * participação") e o bot disse "vou te passar para um atendente". O pedido
+   * tinha sido atendido, e a pessoa recebeu handoff em vez de confirmação.
+   */
+  it('409 declarado vira sucesso, e o corpo é lido', async () => {
+    conferirEndereco.mockResolvedValue(aprovado)
+    pedirUndici.mockResolvedValue(resposta({ participacaoId: 'p-1' }, 409))
+
+    const r = await chamarHttp(
+      pedido({
+        metodo: 'POST',
+        aceitarStatus: [409],
+        mapear: [{ variavel: 'participacao_id', caminho: 'participacaoId' }],
+      }),
+      { deTeste: false },
+    )
+
+    expect(r.ok).toBe(true)
+    if (r.ok) expect(r.valores.participacao_id).toBe('p-1')
+  })
+
+  it('sem declarar, 409 continua sendo falha — nada muda para quem já existe', async () => {
+    conferirEndereco.mockResolvedValue(aprovado)
+    pedirUndici.mockResolvedValue(resposta({ participacaoId: 'p-1' }, 409))
+
+    const r = await chamarHttp(
+      pedido({ metodo: 'POST', mapear: [{ variavel: 'x', caminho: 'participacaoId' }] }),
+      { deTeste: false },
+    )
+
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.motivo).toContain('409')
+  })
+
+  it('declarar 409 não passa a aceitar 500 — a lista é exata', async () => {
+    conferirEndereco.mockResolvedValue(aprovado)
+    pedirUndici.mockResolvedValue(resposta({ erro: 'explodiu' }, 500))
+
+    const r = await chamarHttp(
+      pedido({ metodo: 'POST', aceitarStatus: [409], mapear: [{ variavel: 'x', caminho: 'erro' }] }),
+      { deTeste: false },
+    )
+
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.motivo).toContain('500')
+  })
+
+  it('2xx continua passando sem precisar declarar nada', async () => {
+    conferirEndereco.mockResolvedValue(aprovado)
+    pedirUndici.mockResolvedValue(resposta({ participacaoId: 'p-2' }, 201))
+
+    const r = await chamarHttp(
+      pedido({ metodo: 'POST', mapear: [{ variavel: 'id', caminho: 'participacaoId' }] }),
+      { deTeste: false },
+    )
+
+    expect(r.ok).toBe(true)
+    if (r.ok) expect(r.valores.id).toBe('p-2')
+  })
+})

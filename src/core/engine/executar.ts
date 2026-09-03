@@ -61,6 +61,14 @@ export type ContextoDoAtendimento = {
   atendimentoAberto: boolean
   /** Quando abre de novo, em palavras: "amanhã a partir das 08:00". */
   proximaAbertura: string | null
+  /**
+   * Que dia é hoje **na conta**, em `AAAA-MM-DD`. Quem usa é `data_futura`.
+   *
+   * Pelo mesmo motivo do resto deste tipo: o motor não lê relógio. E é o dia da
+   * conta, não do servidor — em UTC, a partir das 21h em São Paulo "hoje" já é
+   * amanhã, que é justamente o horário em que se remarca aula.
+   */
+  hoje?: string
 }
 
 export const ATENDIMENTO_SEMPRE_ABERTO: ContextoDoAtendimento = {
@@ -267,7 +275,7 @@ function responderPergunta(
      * e a conversa vai para uma pessoa. Insistir para sempre com quem não
      * consegue responder é a definição de bot ruim.
      */
-    const conferida = conferirResposta(no.data.formato, entrada.texto)
+    const conferida = conferirResposta(no.data.formato, entrada.texto, contexto.hoje)
     if (!conferida.ok) {
       s.tentativas += 1
       if (s.tentativas >= MAX_TENTATIVAS) {
@@ -607,6 +615,7 @@ function avancar(
           corpo: interpolar(no.data.corpo, s.vars, comoJson),
           mapear: no.data.mapear,
           aoFalhar: no.data.aoFalhar,
+          ...(no.data.aceitarStatus?.length ? { aceitarStatus: no.data.aceitarStatus } : {}),
           conexaoId: no.data.conexaoId,
         })
         s.noAtual = no.id

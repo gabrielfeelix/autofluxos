@@ -607,6 +607,28 @@ export const noHttpSchema = z.object({
     mapear: z.array(mapeamentoSchema).default([]),
     aoFalhar: z.enum(AO_FALHAR).default('humano'),
     /**
+     * Status fora da faixa 2xx que ainda contam como **sucesso**.
+     *
+     * Nasceu de uma conversa que deu certo e terminou em handoff: a aula foi
+     * marcada, a Verandi respondeu **409** ("já existe essa participação") e o
+     * bot disse *"vou te passar para um atendente"*. Do ponto de vista de quem
+     * conversa, o pedido tinha sido atendido — e o produto entregou o oposto
+     * da autonomia que ele promete.
+     *
+     * Nem todo 4xx é erro de conversa. `409` costuma dizer "já estava feito",
+     * `202` "aceitei e vou processar", `304` "não mudou nada". Tratar tudo
+     * fora de 2xx como falha transforma respostas normais de API em pedido de
+     * socorro.
+     *
+     * Fica no fluxo, e não no código, porque **só quem conhece a API sabe**: o
+     * mesmo 409 que aqui significa "já marcado" pode, em outro sistema,
+     * significar um conflito de verdade. Chutar por nós seria decidir sobre um
+     * sistema que não é nosso.
+     *
+     * Vazio mantém o comportamento de sempre — 2xx passa, o resto é falha.
+     */
+    aceitarStatus: z.array(z.number().int().min(100).max(599)).optional(),
+    /**
      * Qual credencial do cliente usar. É só o **id** — o valor nunca entra no
      * fluxo, e portanto nunca entra na versão publicada, que é imutável por
      * gatilho. Quem resolve é o servidor, depois do motor.

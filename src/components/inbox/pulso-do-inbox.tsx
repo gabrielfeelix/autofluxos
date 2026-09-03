@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { z } from 'zod'
+import { precisaAtualizar } from './pulso'
 
 const respostaSchema = z.object({ pulso: z.string().nullable() })
 
@@ -44,9 +45,33 @@ const INTERVALO = 5_000
  * estado do React — o que está escrito na caixa de resposta, o scroll, o foco.
  * Um reload jogaria fora a mensagem que alguém estava digitando.
  */
-export function PulsoDoInbox({ clienteId }: { clienteId: string }) {
+export function PulsoDoInbox({
+  clienteId,
+  pulsoNaTela,
+}: {
+  clienteId: string
+  /**
+   * O pulso no instante em que o servidor desenhou esta página.
+   *
+   * **Vem de fora, e não de um `useRef`, e isso é o conserto de um bug real.**
+   * Na primeira versão o componente guardava a última leitura em si mesmo — e
+   * `router.refresh()` remonta a árvore, o que zerava essa memória. Toda
+   * leitura virava "linha de base", nenhuma comparação acontecia, e o Inbox
+   * seguia parado: exatamente o defeito que este componente existe para
+   * consertar.
+   *
+   * Comparar contra uma prop tira a dúvida: ela é, por definição, o estado da
+   * tela que está à vista. Se o banco tem um carimbo diferente, a tela está
+   * velha — não importa quantas vezes o React remontou nada.
+   */
+  pulsoNaTela: string | null
+}) {
   const router = useRouter()
-  const ultimo = useRef<string | null | undefined>(undefined)
+  /*
+   * Guarda o que já mandou atualizar, para não pedir duas vezes o mesmo
+   * refresh enquanto o servidor ainda não respondeu com a tela nova.
+   */
+  const pedido = useRef<string | null>(null)
 
   useEffect(() => {
     let ativo = true
@@ -73,27 +98,27 @@ export function PulsoDoInbox({ clienteId }: { clienteId: string }) {
         if (!dados.success || !ativo) return
 
         const agora = dados.data.pulso
-        /*
-         * A primeira leitura é a linha de base, e nunca atualiza.
-         *
-         * Sem isto, abrir o Inbox dispararia um `refresh` imediato da tela que
-         * o servidor acabou de desenhar — trabalho dobrado em toda visita.
-         */
-        if (ultimo.current === undefined) {
-          ultimo.current = agora
+        if (!precisaAtualizar({ doBanco: agora, naTela: pulsoNaTela, jaPedido: pedido.current })) {
           return
         }
 
-        if (agora !== ultimo.current) {
-          ultimo.current = agora
-          router.refresh()
-        }
+        pedido.current = agora
+        router.refresh()
       } catch {
         // Igual ao polling de alertas: isto é conveniência. Uma oscilação de
         // rede não pode virar erro na cara de quem está atendendo — na próxima
         // volta o pulso é lido de novo e a tela se acerta sozinha.
       }
     }
+
+    /*
+     * Uma conferência na entrada, e não só depois do primeiro intervalo.
+     *
+     * Entre o servidor desenhar a página e o navegador montar isto já passou
+     * tempo — e é justamente aí que chega a mensagem que a pessoa está
+     * esperando. Sem esta linha, ela demoraria os 5 segundos inteiros.
+     */
+    void conferir()
 
     const intervalo = window.setInterval(() => void conferir(), INTERVALO)
     const aoVoltar = () => {
@@ -106,7 +131,7 @@ export function PulsoDoInbox({ clienteId }: { clienteId: string }) {
       window.clearInterval(intervalo)
       document.removeEventListener('visibilitychange', aoVoltar)
     }
-  }, [clienteId, router])
+  }, [clienteId, router, pulsoNaTela])
 
   // Não desenha nada: o efeito é a tela inteira ficando em dia.
   return null

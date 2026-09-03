@@ -194,6 +194,8 @@ export type Acao =
       corpo: string
       mapear: Mapeamento[]
       aoFalhar: AoFalhar
+      /** Status fora de 2xx que ainda contam como sucesso. Ver `noHttpSchema`. */
+      aceitarStatus?: number[]
       /**
        * Referência à credencial, nunca a credencial. O motor não sabe o que há
        * do outro lado deste id, e é por isso que segredo nenhum consegue

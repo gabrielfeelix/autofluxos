@@ -199,7 +199,26 @@ export async function chamarHttp(
     urlBase = proxima.toString()
   }
 
-  if (resposta.statusCode < 200 || resposta.statusCode >= 300) {
+  /*
+   * Sucesso é 2xx **mais** o que o fluxo tiver declarado em `aceitarStatus`.
+   *
+   * Sem isso, uma conversa que deu certo terminava em handoff: a aula era
+   * marcada, a Verandi respondia **409** ("já existe essa participação") e o
+   * bot dizia "vou te passar para um atendente". O pedido tinha sido atendido,
+   * e o produto entregava o oposto da autonomia que promete.
+   *
+   * Quem decide é o fluxo porque só quem conhece a API sabe: o mesmo 409 que
+   * aqui quer dizer "já estava feito" pode, noutro sistema, ser conflito de
+   * verdade. Ver `noHttpSchema.aceitarStatus`.
+   *
+   * O corpo continua sendo lido no caminho aceito — é ele que traz o id da
+   * participação que a conversa vai citar.
+   */
+  const aceito =
+    (resposta.statusCode >= 200 && resposta.statusCode < 300) ||
+    (pedido.aceitarStatus ?? []).includes(resposta.statusCode)
+
+  if (!aceito) {
     // Mesmo motivo dos outros `descartar`: uma resposta 500 com corpo grande
     // deixaria o stream pendurado e a exceção cairia dentro do `after()`.
     await descartar(resposta)

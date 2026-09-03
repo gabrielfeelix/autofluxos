@@ -1129,10 +1129,22 @@ function paraEntrada(mensagem: Mensagem): { entrada: Entrada; texto: string | nu
  * causa de uma coluna nova é bem pior que um que continua respondendo.
  */
 function contextoDeAtendimento(horario: HorarioDeAtendimento | null): ContextoDoAtendimento {
-  if (!horario) return ATENDIMENTO_SEMPRE_ABERTO
+  /*
+   * `hoje` vai nos dois caminhos, inclusive no da conta sem expediente
+   * configurado: quem nunca mexeu em horário de atendimento também não pode
+   * marcar aula para uma data que já passou.
+   *
+   * O fuso é o da conta quando existe, e o de São Paulo quando não — o mesmo
+   * padrão de `SEMPRE_ABERTO`. Ler o dia em UTC faria o bot recusar "hoje"
+   * depois das 21h, que é justamente quando se remarca aula.
+   */
+  const hoje = hojeNaConta(horario?.fuso ?? SEMPRE_ABERTO.fuso)
+
+  if (!horario) return { ...ATENDIMENTO_SEMPRE_ABERTO, hoje }
 
   return {
     atendimentoAberto: atendimentoAberto(horario),
     proximaAbertura: proximaAbertura(horario),
+    hoje,
   }
 }

@@ -24,6 +24,7 @@ import {
   limparBusca,
   lerConversa,
   paginarLeads,
+  pulsoDaConta,
   type Lead,
   type MensagemDoLead,
 } from '@/server/repos/leads'
@@ -147,6 +148,10 @@ export default async function Pagina({
    * vezes na mesma navegação escreve o mesmo relógio duas vezes. Sem usuário —
    * quem ainda não tem usuário na conta — as duas funções não fazem nada.
    */
+  // O pulso de agora vira a linha de base da tela: é contra ele que o poll
+  // compara para saber se o que está à vista envelheceu.
+  const pulso = await pulsoDaConta(clienteId)
+
   const usuarioId = sessao?.usuario.id ?? null
   if (selecionado) await marcarComoLida(usuarioId, selecionado.contatoId)
   const naoLidas = await naoLidasPorContato(
@@ -161,7 +166,7 @@ export default async function Pagina({
         contatos a cada mensagem que chega seria intromissão. O Inbox é a única
         tela cujo conteúdo é a conversa acontecendo agora.
       */}
-      <PulsoDoInbox clienteId={cliente.id} />
+      <PulsoDoInbox clienteId={cliente.id} pulsoNaTela={pulso} />
       <main className="px-4 md:px-[42px] pt-[26px] pb-[42px]">
         {/*
           O estado vazio é para **cliente sem conversa nenhuma**, e não para

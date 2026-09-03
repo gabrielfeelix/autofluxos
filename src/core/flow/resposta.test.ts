@@ -119,3 +119,45 @@ describe('cpf', () => {
     expect(conferirResposta('cpf', '1234567890').ok).toBe(false)
   })
 })
+
+describe('data_futura — a data que já passou não serve para marcar aula', () => {
+  const HOJE = '2026-09-03'
+
+  it('recusa data anterior a hoje', () => {
+    // O caso real: em 03/09, o bot aceitou 01/09 e foi consultar a agenda de
+    // um dia que não volta — e ainda ofereceu horários.
+    expect(conferirResposta('data_futura', '01/09/2026', HOJE).ok).toBe(false)
+  })
+
+  it('aceita hoje — marcar para daqui a pouco é legítimo', () => {
+    const r = conferirResposta('data_futura', '03/09/2026', HOJE)
+    expect(r.ok).toBe(true)
+    if (r.ok) expect(r.padrao).toBe('2026-09-03')
+  })
+
+  it('aceita data futura', () => {
+    expect(conferirResposta('data_futura', '14/09/2026', HOJE).ok).toBe(true)
+  })
+
+  it('vira ano: 31/12 do ano passado é passado, 01/01 do que vem é futuro', () => {
+    expect(conferirResposta('data_futura', '31/12/2025', HOJE).ok).toBe(false)
+    expect(conferirResposta('data_futura', '01/01/2027', HOJE).ok).toBe(true)
+  })
+
+  it('data que não existe continua sendo recusada', () => {
+    expect(conferirResposta('data_futura', '31/02/2027', HOJE).ok).toBe(false)
+  })
+
+  /*
+   * Sem saber que dia é hoje, recusar seria chutar — e chutar contra a pessoa
+   * é pior do que aceitar. Acontece só onde o contexto não é montado (o motor
+   * é puro e recebe o dia de fora).
+   */
+  it('sem "hoje", se comporta como `data`', () => {
+    expect(conferirResposta('data_futura', '01/09/2020').ok).toBe(true)
+  })
+
+  it('o formato `data` comum não passou a recusar nada', () => {
+    expect(conferirResposta('data', '01/09/2020', HOJE).ok).toBe(true)
+  })
+})
