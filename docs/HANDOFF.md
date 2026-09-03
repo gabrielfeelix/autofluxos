@@ -1,4 +1,4 @@
-# Handoff — 19/ago/2026, atualizado em 28/ago
+# Handoff — 19/ago/2026, atualizado em 03/set
 
 Para quem pegar este projeto agora, humano ou agente. Leia isto inteiro, depois
 [PLANO-SISTEMA.md](PLANO-SISTEMA.md), e só então código. As decisões de produto
@@ -6,7 +6,218 @@ que não estão aqui estão lá; as que estão aqui não se renegociam sem o don
 
 ---
 
-## 0. O que mudou em 28/ago, e por quê
+## 0. O estado em 03/set/2026, e a fila do que falta
+
+Esta seção existe para ser lida primeiro e sozinha. Ela responde três
+perguntas: o que entrou hoje, o que trava, e quem destrava cada coisa.
+
+### 0.0 O que entrou em 03/set
+
+Cinco commits, de `89ea8af` a `66712eb`.
+
+- **`89ea8af`** — a política de privacidade passou a identificar o operador
+  (CNPJ, endereço, WhatsApp). Exigência do app review.
+- **`2879428`** — `alertar()` deixou de depender de `ALERTA_WEBHOOK_URL`. Todo
+  alerta grava em `public.alertas` e aparece em `/admin/alertas`. O webhook
+  virou extra opcional. Migration `0039`.
+- **`c1193b5`** — o Inbox recebe empurrão do servidor por SSE
+  (`/api/clientes/<id>/inbox/stream`). Latência de 5s caiu para ~1s.
+- **`18f9dee`** — Instagram inteiro: adaptador, webhook, OAuth com `state`
+  assinado, token no Vault, tela de conectar. Migration `0040`.
+- **`66712eb`** — correção de documentação, incluindo uma afirmação falsa sobre
+  `grant` que valia mais que as duas migrations (ver 0.4).
+
+Migrations `0039` e `0040` **aplicadas em produção** em 03/set com autorização
+explícita do dono. `npm test` passa inteiro: 1142 testes.
+
+### 0.1 O que só o dono resolve — em ordem de prioridade
+
+Nada aqui é código. Cada item diz o que trava enquanto não for feito.
+
+#### 1º — O ícone do app, que **não existe em lugar nenhum**
+
+**Trava:** o app review da Meta não fecha sem ícone, e o site não tem favicon.
+
+A marca do AutoFluxos é **só CSS**. Está em
+[`src/components/design/marca.tsx`](../src/components/design/marca.tsx): um
+quadrado com gradiente 135° de `#56d0f5` (o `--accent`) para `#7c6cff`, com um
+losango escuro `#080b10` girado 45° dentro. Não existe `.png`, `.svg` nem
+`favicon.ico` no repositório — `public/` só tem `logos/mgm-pilates.png`, que é
+de cliente.
+
+Então **não há arquivo para apontar**. Alguém precisa exportar a marca. Onde
+colar depois:
+
+| Para quê | Caminho | Formato |
+|---|---|---|
+| Ícone do app na Meta | `public/icone-1024.png` | PNG **1024×1024**, fundo sólido, **sem transparência** (a Meta rejeita alpha) |
+| Favicon do site | `src/app/icon.png` | PNG 512×512; o Next serve sozinho, sem configurar nada |
+| Atalho no iPhone | `src/app/apple-icon.png` | PNG 180×180 |
+
+O nome do arquivo em `src/app/` **é** a configuração no App Router: `icon.png`
+vira `<link rel="icon">` automaticamente. Não invente outro nome.
+
+#### 2º — Duas páginas que não existem, e sem elas o formulário da Meta não fecha
+
+**Trava:** os campos "Termos de Serviço" e "Instruções de exclusão de dados" são
+obrigatórios em Configurações Básicas, e o app review não abre com eles vazios.
+
+Não existe `src/app/termos/` nem nada de exclusão de dados. Existe só
+`src/app/privacidade/`, que é o molde a seguir — mesma moldura, mesmo
+`SECOES`, mesmo CSS module.
+
+O que cada uma precisa dizer:
+
+- **`/termos`** — quem opera (a mesma razão social da política), o que o serviço
+  faz, que a empresa cliente é a controladora dos dados das conversas dela,
+  suspensão por uso indevido, ausência de garantia de disponibilidade, foro.
+- **`/exclusao-de-dados`** — como uma pessoa pede que os dados dela sumam, em
+  quanto tempo respondemos, e o que é apagado. **Tem que casar com o que o
+  código faz de verdade**: `apagarContato()` cascateia sessões, mensagens,
+  handoffs e a trava da conversa, e a retenção automática é de 12 meses do
+  último sinal de vida (ver `repos/retencao.ts`). Prometer coisa diferente do
+  que o código faz é o problema que esta página existe para não criar.
+
+A Meta aceita uma página com instruções; não precisa de callback.
+
+#### 3º — Configurações Básicas do app
+
+**https://developers.facebook.com/apps/1063817842847269/settings/basic/**
+
+Conferido na Graph API em 03/set: `privacy_policy_url`, `terms_of_service_url`,
+`category` e `app_domains` estão **vazios**, e `icon_url` ainda é o cinza padrão
+da Meta.
+
+| Campo | Valor |
+|---|---|
+| Ícone | o PNG 1024×1024 do item 1 |
+| Categoria | **Empresas e páginas** |
+| Política de Privacidade | `https://autofluxos.4yu.com.br/privacidade` |
+| Termos de Serviço | `https://autofluxos.4yu.com.br/termos` |
+| Exclusão de dados | `https://autofluxos.4yu.com.br/exclusao-de-dados` |
+| Domínios do app | `autofluxos.4yu.com.br` |
+| E-mail de contato | `contato@4yu.com.br` |
+
+Salvar no rodapé — sem isso nada persiste.
+
+#### 4º — Um login descartável para o revisor
+
+**Trava:** o revisor é uma pessoa de verdade, em outro país, que vai tentar
+entrar. Sem login funcionando, rejeição imediata e a fila recomeça.
+
+`/admin/usuarios` → `+ Cadastrar pessoa`; depois `/admin/contas` → `+ Ligar
+pessoa` como dono de uma conta de demonstração. Guarde e-mail e senha para
+colar no formulário do app review.
+
+#### 5º — Os dois vídeos do app review
+
+Gravação de tela (`Win+Alt+R` serve), sem cortes, com a **URL do navegador
+visível o tempo todo**. Corte no meio é motivo de rejeição.
+
+- **`whatsapp_business_messaging`** (~90s): entrar no painel com o login de
+  teste → abrir o Inbox → mandar mensagem do celular para `+55 44 7400-7438` →
+  mostrar ela chegando na tela → responder pelo painel → mostrar chegando no
+  celular.
+- **`whatsapp_business_management`** (~60s): mesmo login → Configurações →
+  Número do WhatsApp → mostrar o número e o fluxo de cada papel → trocar o
+  fluxo de um papel → mostrar que persistiu.
+
+Submissão em
+**https://developers.facebook.com/apps/1063817842847269/app-review/permissions/**,
+pedindo `Request advanced access` nas duas.
+
+#### 6º — O produto Instagram no app da Meta
+
+**https://developers.facebook.com/apps/1063817842847269/add/** → **Instagram** →
+**API com Instagram Login**.
+
+Depois, em Instagram → Configuração da API:
+
+- Copiar o **Instagram App ID** e o **Instagram App Secret**. **Não são** o
+  `1063817842847269` — são outro par, específico do produto. Usar o id do app
+  aqui devolve um erro de OAuth que parece falta de permissão.
+- **URI de redirecionamento OAuth**:
+  `https://autofluxos.4yu.com.br/api/instagram/retorno` — byte a byte, sem
+  barra no fim. Ele precisa bater com o que o código monta em
+  `enderecoDeRetorno()`, senão a troca do código falha com "redirect_uri
+  mismatch".
+- **Webhook**: `https://autofluxos.4yu.com.br/api/webhook/instagram`, campo
+  `messages`. O verify token cai no `WHATSAPP_VERIFY_TOKEN` enquanto
+  `INSTAGRAM_VERIFY_TOKEN` não existir — de propósito.
+
+Os dois valores entram em `4yu-apps/.secrets/4yu.env` como
+`AUTOFLUXOS_INSTAGRAM_APP_ID` e `AUTOFLUXOS_INSTAGRAM_APP_SECRET`, e como
+`INSTAGRAM_APP_ID` / `INSTAGRAM_APP_SECRET` no ambiente da Vercel. **Nunca**
+dentro do repositório — ele é público.
+
+Sem eles, a tela `/clientes/<id>/instagram` mostra o botão desligado e explica
+o que falta. Nada quebra.
+
+#### 7º — `ALERTA_WEBHOOK_URL`, agora opcional de verdade
+
+Deixou de ser bloqueio: os alertas já são gravados e aparecem em
+`/admin/alertas`. Só preencha se quiser ser avisado sem abrir o painel.
+
+### 0.2 O que falta de código, e não depende de ninguém de fora
+
+- **As duas páginas do item 2** — `/termos` e `/exclusao-de-dados`. É o único
+  item desta lista que trava o dono, então é o primeiro a escrever.
+- **Renovação automática do token do Instagram.** `renovarToken()` existe em
+  `server/instagram/conexao.ts` e **ninguém a chama**. O token vale 60 dias e
+  `channels.token_expira_em` já guarda a validade; falta uma tarefa em
+  `server/tarefas.ts` que renove o que estiver perto de vencer. Sem isso, a
+  conta para de responder no dia 61 e só o dono do perfil resolve.
+- **O nome do perfil do Instagram vem `null`.** O webhook não traz nome junto
+  da mensagem — exige um `GET /{igsid}`. Uma consulta a mais por mensagem
+  dentro do orçamento do webhook; decidido deixar para depois do app review.
+- **`canais.ts` mantém `instagram.disponivel: false`**, de propósito. Vira
+  `true` quando o Advanced Access sair. É uma linha.
+- **Os limites de `canais.ts` ainda não alimentam `validar()`.** O adaptador do
+  Instagram corta em 13 quick replies para a Meta não recusar a mensagem
+  inteira, mas o editor não avisa quem desenha. É o item 2 da receita escrita
+  no cabeçalho de `core/canais.ts`.
+
+### 0.3 As armadilhas já pagas — não redescubra
+
+- **Websocket direto no Supabase Realtime está fechado.** A chave que assina o
+  JWT do projeto é **ES256** e a metade privada fica dentro do Supabase: não há
+  como emitir token de canal privado, e o produto autentica com Better Auth,
+  não com Supabase Auth. Canal público entregaria a quem soubesse o uuid do
+  cliente *quando* aquele negócio recebe mensagem. Fazer funcionar exigiria
+  rotacionar a chave do projeto para HS256 — mudança global num banco
+  compartilhado com a Verandi e sem backup. Por isso é SSE. Está escrito por
+  extenso no cabeçalho de
+  `app/api/clientes/[clienteId]/inbox/stream/route.ts`.
+- **Direct do Instagram não passa pelo Facebook Login.** A tabela de permissões
+  da Meta exclui `messages` daquele lado. São **dois app reviews
+  independentes**, e dá para submeter os dois na mesma leva.
+- **`403` com código `1010` na Management API do Supabase é Cloudflare, não
+  credencial.** Ele recusa o User-Agent do `urllib` do Python. O mesmo POST com
+  `curl` passa. Custou uma investigação inteira do token à toa.
+- **Documento não é fonte de verdade sobre o banco.** `PENDENCIAS-DO-DONO.md`
+  dizia que `0030` e `0031` esperavam autorização; estavam aplicadas havia
+  semanas. Confira no banco, sempre.
+
+### 0.4 A correção que vale mais que tudo acima
+
+O §6 de [BANCO-COMPARTILHADO.md](BANCO-COMPARTILHADO.md) afirmava que as tabelas
+de `public` não têm `grant` para `anon`/`authenticated`.
+
+**É falso, e nunca foi verdade.** Conferido em 03/set: as 13 tabelas têm os 7
+privilégios concedidos aos dois papéis, herdados do default do projeto Supabase.
+Uma tabela nova nasce assim.
+
+O produto continua protegido porque **RLS ligada sem política nenhuma nega
+tudo** que não venha da `service_role`. Mas quem lesse a linha antiga e criasse
+uma política "inofensiva" numa tabela achando que o grant não existe abriria a
+tabela inteira para o PostgREST — que é o mesmo dos dois produtos.
+
+A regra que passa a valer: **nunca crie política em `public` sem tratar isso
+como exposição pública.**
+
+---
+
+## 0.5 O que mudou em 28/ago, e por quê
 
 Três commits (`746d398`, `489eed5`, `12d306e`) mais o `9b77184`, todos saídos de
 **teste de uso, não de plano**. Oito pessoas de mentira com problemas de verdade:
@@ -71,7 +282,7 @@ tocou banco, e a próxima a escrever continua sendo a `0038`.
 
 ---
 
-## 0.1 PENDENTE, e é a próxima tarefa: para quem esta tela fala
+## 0.6 PENDENTE, e é a próxima tarefa: para quem esta tela fala
 
 **O problema, na voz de quem o encontrou.** A dona de salão de 52 anos travou em
 algo que nenhum ajuste de texto resolve: o painel e a Ajuda dizem "o cliente",
@@ -114,7 +325,7 @@ dona do negócio, não uma conta atendida por uma agência.
 
 ---
 
-## 0.1.1 FEITO em 28/ago — a chave simples ficou vermelha no lugar dela
+## 0.6.1 FEITO em 28/ago — a chave simples ficou vermelha no lugar dela
 
 Commits `c2c98e9` (realce) e `0572569` (atraso em lote).
 
@@ -178,7 +389,7 @@ uma receita na Ajuda escrita para quem não usa a Verandi.
 
 ---
 
-## 0.2 O que mudou em 27/ago, e por quê
+## 0.7 O que mudou em 27/ago, e por quê
 
 Dois commits, os dois vindos de **quem opera montando fluxo com cliente na
 frente** — não de plano. Vale ler porque metade é conserto de coisa que a tela
