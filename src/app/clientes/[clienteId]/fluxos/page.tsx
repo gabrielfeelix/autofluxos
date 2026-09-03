@@ -382,7 +382,7 @@ export default async function Pagina({
                         Três estados, e não dois. "Publicado" e "atendendo" são
                         perguntas diferentes desde a 0036: um fluxo desligado
                         continua com a versão dele no ar — ele só não abre
-                        conversa nova. Mostrar "NO AR" nele seria mentir
+                        conversa nova. Mostrar "ATIVA" nele seria mentir
                         exatamente para quem acabou de desligar.
                       */}
                       <span
@@ -394,11 +394,17 @@ export default async function Pagina({
                               : 'border-white/10 bg-white/[0.04] text-muted'
                         }`}
                       >
-                        {!fluxo.ativo ? 'DESLIGADO' : fluxo.versaoPublicadaId ? 'NO AR' : 'RASCUNHO'}
+                        {!fluxo.ativo ? 'DESLIGADO' : fluxo.versaoPublicadaId ? 'ATIVA' : 'RASCUNHO'}
                       </span>
                     </span>
-                    {/* Fora do `Link` pelo mesmo motivo do botão de apagar. */}
-                    <span className="mr-3">
+                    {/*
+                      `relative` aqui não é enfeite: o link de cobertura é
+                      `absolute inset-0` e vem antes no DOM, então tudo o que
+                      é irmão dele e fica `static` é pintado por baixo — o
+                      clique chega no link, e o botão parece não funcionar.
+                      Foi exatamente o que acontecia com Apagar e Mover.
+                    */}
+                    <span className="relative mr-3">
                       <InterruptorDeFluxo
                         clienteId={cliente.id}
                         fluxoId={fluxo.id}
@@ -407,7 +413,7 @@ export default async function Pagina({
                       />
                     </span>
                     {pastas.length > 0 && (
-                      <span className="mr-3">
+                      <span className="relative mr-3">
                         <MoverFluxo
                           clienteId={cliente.id}
                           fluxoId={fluxo.id}
@@ -417,11 +423,13 @@ export default async function Pagina({
                       </span>
                     )}
                     {/* Fora do `Link`: botão dentro de link é clique ambíguo. */}
-                    <BotaoPerigo
-                      titulo="Apaga esta automação. Recusa enquanto ela estiver ligada a um número."
-                      pergunta={`Apagar a automação "${fluxo.nome}"? O desenho e as versões publicadas dela somem.`}
-                      acao={acaoApagarFluxo.bind(null, cliente.id, fluxo.id)}
-                    />
+                    <span className="relative">
+                      <BotaoPerigo
+                        titulo="Apaga esta automação. Recusa enquanto ela estiver ligada a um número."
+                        pergunta={`Apagar a automação "${fluxo.nome}"? O desenho e as versões publicadas dela somem.`}
+                        acao={acaoApagarFluxo.bind(null, cliente.id, fluxo.id)}
+                      />
+                    </span>
                   </li>
                 )
                       })}
