@@ -31,3 +31,7 @@ npm-debug.log*
 .vercel
 .env*
 !.env.example
+
+# Lixo do WSL: o Windows marca todo arquivo baixado com um par ":Zone.Identifier"
+# que o git vê como arquivo novo a cada download.
+*:Zone.Identifier
