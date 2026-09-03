@@ -13,7 +13,7 @@ perguntas: o que entrou hoje, o que trava, e quem destrava cada coisa.
 
 ### 0.0 O que entrou em 03/set
 
-Cinco commits, de `89ea8af` a `66712eb`.
+Seis commits, de `89ea8af` em diante.
 
 - **`89ea8af`** — a política de privacidade passou a identificar o operador
   (CNPJ, endereço, WhatsApp). Exigência do app review.
@@ -27,8 +27,11 @@ Cinco commits, de `89ea8af` a `66712eb`.
 - **`66712eb`** — correção de documentação, incluindo uma afirmação falsa sobre
   `grant` que valia mais que as duas migrations (ver 0.4).
 
-Migrations `0039` e `0040` **aplicadas em produção** em 03/set com autorização
-explícita do dono. `npm test` passa inteiro: 1142 testes.
+- **`0041`** — `public` deixou de nascer aberto para a Data API. Ver 0.4: a
+  correção de documentação do `66712eb` tinha parado na decisão errada.
+
+Migrations `0039`, `0040` e `0041` **aplicadas em produção** em 03/set com
+autorização explícita do dono. `npm test` passa inteiro: 1142 testes.
 
 ### 0.1 O que só o dono resolve — em ordem de prioridade
 
@@ -198,22 +201,39 @@ Deixou de ser bloqueio: os alertas já são gravados e aparecem em
   dizia que `0030` e `0031` esperavam autorização; estavam aplicadas havia
   semanas. Confira no banco, sempre.
 
-### 0.4 A correção que vale mais que tudo acima
+### 0.4 A correção que vale mais que tudo acima — feita na `0041`
 
 O §6 de [BANCO-COMPARTILHADO.md](BANCO-COMPARTILHADO.md) afirmava que as tabelas
-de `public` não têm `grant` para `anon`/`authenticated`.
+de `public` não têm `grant` para `anon`/`authenticated`. Era falso: 13 dos 42
+objetos tinham os 7 privilégios concedidos aos dois papéis, herdados do default
+do projeto Supabase.
 
-**É falso, e nunca foi verdade.** Conferido em 03/set: as 13 tabelas têm os 7
-privilégios concedidos aos dois papéis, herdados do default do projeto Supabase.
-Uma tabela nova nasce assim.
+A primeira correção parou cedo demais. Ela registrou o fato e concluiu que
+bastava **nunca criar política sem tratar como exposição pública**, porque RLS
+ligada sem política nega tudo. Isso é verdade para tabela. **Função não é
+protegida por RLS**, e a conferência do banco em 03/set achou o resto:
 
-O produto continua protegido porque **RLS ligada sem política nenhuma nega
-tudo** que não venha da `service_role`. Mas quem lesse a linha antiga e criasse
-uma política "inofensiva" numa tabela achando que o grant não existe abriria a
-tabela inteira para o PostgREST — que é o mesmo dos dois produtos.
+- `public` **está** exposto na Data API (`db_schema` do PostgREST é
+  `public,graphql_public,app_verandi`);
+- as 21 funções de `public` eram executáveis por `anon` e `authenticated`,
+  **inclusive as que uma migration já tentara fechar**. `revoke execute ...
+  from anon, authenticated` não faz nada enquanto o `GRANT EXECUTE TO PUBLIC`
+  implícito do Postgres continua de pé — os dois herdam de `PUBLIC` o que se
+  revoga deles. A `0026` revogou `pegar_tarefas` dos dois e ela seguiu
+  executável pelos dois. Só a `0040` acertou a forma;
+- `limpar_segredo_da_conexao` é `security definer`, apaga de `vault.secrets` e
+  estava aberta. É gêmea da `apagar_token_do_canal`, que a `0040` fechou. Hoje
+  não é alcançável por RPC porque o PostgREST não expõe função que retorna
+  `trigger` — uma garantia de outro projeto, que pode mudar sem nos avisar.
 
-A regra que passa a valer: **nunca crie política em `public` sem tratar isso
-como exposição pública.**
+A `0041` fecha `public` por padrão: `anon` e `authenticated` perdem tudo
+(tabela, view, sequence, função), `service_role` recebe de volta o que precisa,
+e o default do papel `postgres` no schema passa a criar objeto **fechado**. A
+regra deixa de depender de alguém lembrar.
+
+Continua valendo escrever `revoke all on function ... from public, anon,
+authenticated` em função criada fora de `public` — o default corrigido só
+alcança este schema.
 
 ---
 
@@ -1426,15 +1446,14 @@ curl -s "https://api.vercel.com/v6/deployments?limit=1&app=autofluxos&target=pro
 
 **2. O banco: objetos no lugar, ninguém a mais alcançando, Verandi intacta.**
 
-Antes das consultas, o que **não** é sinal de problema: dez tabelas antigas
-(`clients`, `flows`, `contacts`, `sessions`, `messages`…) têm `grant` para
-`anon`/`authenticated`, herdado do padrão do Supabase. Elas não vazam nada
-porque **a RLS está ligada e não existe política nenhuma** — é o desenho da
-0001, e é a segunda camada que fecha. As tabelas novas revogam o `grant` também,
-por isso não aparecem. Procurar "zero grants" aqui manda alguém consertar o que
-não está quebrado.
+Este parágrafo dizia, até a `0041`, que treze objetos com `grant` para
+`anon`/`authenticated` eram o esperado e que procurar "zero grants" mandava
+alguém consertar o que não estava quebrado. **Inverteu.** Desde a `0041` o
+número certo é **zero**, em tabela, view, sequence e função, e o default do
+schema faz objeto novo nascer assim. Qualquer coisa acima de zero em 2a–2e é
+regressão: alguém criou objeto com outro papel, ou desfez o default.
 
-As quatro que valem:
+As cinco que valem:
 
 ```sql
 -- 2a. tabela de `public` sem RLS — tem que vir VAZIO
@@ -1443,20 +1462,25 @@ select relname from pg_class c
  where n.nspname = 'public' and c.relkind = 'r' and not c.relrowsecurity;
 
 -- 2b. qualquer política em `public` — tem que vir VAZIO.
---     O dia em que aparecer uma, a primeira camada deixou de ser irrelevante e
---     os `grant` acima passam a importar de verdade.
+--     A RLS sem política é a camada que barra o acesso do lado da tabela.
 select tablename, policyname from pg_policies where schemaname = 'public';
 
--- 2c. view alcançável por anon/authenticated — tem que vir VAZIO.
+-- 2c. tabela, view ou sequence alcançável por anon/authenticated — VAZIO.
 --     View não obedece RLS por si: `leads` e as `metricas_*` dependem do
 --     `revoke` e do `security_invoker`.
-select distinct g.table_name from information_schema.role_table_grants g
-  join pg_class c on c.relname = g.table_name
-  join pg_namespace n on n.oid = c.relnamespace and n.nspname = 'public'
- where g.table_schema = 'public' and g.grantee in ('anon', 'authenticated')
-   and c.relkind = 'v';
+select distinct table_name from information_schema.role_table_grants
+ where table_schema = 'public' and grantee in ('anon', 'authenticated');
 
--- 2d. nenhum objeto NOSSO em `app_verandi`.
+-- 2d. função alcançável por anon/authenticated — VAZIO.
+--     Função NÃO é protegida por RLS, e `has_function_privilege` enxerga o
+--     `EXECUTE` herdado de `PUBLIC` — que foi o furo que a `0041` fechou.
+select p.proname from pg_proc p
+  join pg_namespace n on n.oid = p.pronamespace
+ where n.nspname = 'public'
+   and (has_function_privilege('anon', p.oid, 'execute')
+     or has_function_privilege('authenticated', p.oid, 'execute'));
+
+-- 2e. nenhum objeto NOSSO em `app_verandi`.
 --
 --     Era `count(*) = 40`, e o número envelheceu no primeiro dia em que a
 --     Verandi aplicou uma migration dela — passou a 41 sem nada de errado ter
@@ -1473,9 +1497,14 @@ select table_name from information_schema.tables
 **3. O comportamento: as rotas de serviço respondem o que deviam.**
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' https://autofluxos.4yu.com.br/login                   # 200
+curl -s -o /dev/null -w '%{http_code}\n' https://autofluxos.4yu.com.br/login                   # 307 -> /entrar
 curl -s -o /dev/null -w '%{http_code}\n' https://autofluxos.4yu.com.br/api/manutencao/tarefas  # 401
 curl -s -o /dev/null -w '%{http_code}\n' https://autofluxos.4yu.com.br/api/webhook/whatsapp    # 403
+
+# a única leitura de banco que abre sem sessão. Token inválido tem que render
+# "NÃO ENCONTRADO" com 200 — se vier erro de aplicação, o `service_role` perdeu
+# acesso a `public` e é a primeira coisa a conferir depois de mexer em `grant`.
+curl -s https://autofluxos.4yu.com.br/f/token-invalido | grep -c 'NÃO ENCONTRADO'  # 1
 
 # o agendador de verdade, com o segredo do cofre. Fila vazia responde zerado.
 curl -s -H "Authorization: Bearer $AUTOFLUXOS_CRON_SECRET" \

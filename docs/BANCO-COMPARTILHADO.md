@@ -38,7 +38,7 @@ extração explícito para os objetos de `public`.
    dependa do `search_path` do projeto e nunca cite `app_verandi` numa migration
    deste repositório.
 3. **O nome da próxima migration vem do disco, não de plano antigo.** Hoje o
-   AutoFluxos termina em `0040`; a próxima é `0041`. Este parágrafo já esteve
+   AutoFluxos termina em `0041`; a próxima é `0042`. Este parágrafo já esteve
    errado — dizia `0029` quando o disco tinha `0038` —, e é exatamente por isso
    que a regra é olhar o diretório, inclusive quando um documento afirma um
    número. Os nomes `0008_limites` e
@@ -54,22 +54,46 @@ extração explícito para os objetos de `public`.
    infraestrutura de produção. Configurar o cliente para o schema certo evita
    acidentes, mas uma aplicação comprometida com essa chave ainda pode alcançar
    o outro schema. Nunca aceite schema, tabela ou SQL vindos de usuário.
-6. **RLS e `GRANT` são camadas diferentes.** Uma tabela nova precisa da decisão
-   explícita das duas. No AutoFluxos, o padrão real é **RLS ligada e sem
-   política nenhuma** — é isso, e só isso, que barra o acesso.
+6. **RLS e `GRANT` são camadas diferentes, e desde a `0041` o `GRANT` é a que
+   fecha.** `public` está exposto na Data API — o `db_schema` do PostgREST é
+   `public,graphql_public,app_verandi` —, então "exposto" aqui nunca foi
+   teórico.
 
-   Este parágrafo já afirmou que também não havia `grant` para
-   `anon`/`authenticated`. **Não é verdade, e nunca foi:** conferido em
-   03/set/2026, as 13 tabelas de `public` têm os 7 privilégios concedidos aos
-   dois papéis, herdados do default do projeto Supabase. Uma tabela nova nasce
-   assim, e a `0039` nasceu assim.
+   Este parágrafo já teve duas versões erradas, e as duas custam caro se forem
+   lidas hoje:
 
-   O produto continua protegido porque RLS sem política nega tudo que não vem
-   da `service_role`. Mas quem ler a linha antiga e criar uma política
-   "inofensiva" numa tabela achando que o `grant` não existe abre a tabela
-   inteira para o PostgREST — que é compartilhado com a Verandi. Revogar os
-   grants em massa é mudança global e não foi feita; o que vale hoje é: **nunca
-   crie política em `public` sem tratar isso como exposição pública.**
+   - a primeira afirmava que não havia `grant` para `anon`/`authenticated`.
+     Era falso: 13 dos 42 objetos de `public` tinham os 7 privilégios
+     concedidos aos dois papéis, herdados do default do projeto Supabase;
+   - a segunda registrou o fato certo e parou na decisão errada — disse que
+     revogar em massa "é mudança global e não foi feita", e que bastava
+     **nunca criar política sem tratar como exposição pública**. Isso vale
+     para tabela e **não vale para função**: função não é protegida por RLS, e
+     nenhuma política a alcança.
+
+   O que a `0041` fez, e o que passa a valer:
+
+   - `anon` e `authenticated` não alcançam mais nenhuma tabela, view, sequence
+     ou função de `public`;
+   - o default do papel `postgres` no schema foi alterado, então **objeto novo
+     nasce fechado** — não depende mais de alguém lembrar de revogar;
+   - `service_role` recebeu de volta, explicitamente, tudo o que o revoke
+     tirou. Parte do que ele tinha vinha herdada de `PUBLIC`.
+
+   **`revoke ... from anon, authenticated` sozinho não fecha função.** O
+   Postgres concede `EXECUTE` a `PUBLIC` implicitamente na criação, e os dois
+   papéis herdam de lá o que se revoga deles. A `0026` revogou `pegar_tarefas`
+   dos dois e a função seguiu executável pelos dois por meses. A forma certa
+   inclui `public` na lista, como a `0040` fez. Migration nova em `public` já
+   nasce fechada pelo default; migration que cria função em qualquer outro
+   schema continua precisando escrever
+   `revoke all on function ... from public, anon, authenticated`.
+
+   O default do papel `supabase_admin` continua concedendo tudo em `public`, e
+   `postgres` não é membro dele. Objeto criado por nós nasce como `postgres`,
+   então isso não nos alcança — mas objeto criado pela infraestrutura do
+   Supabase dentro de `public` pode nascer aberto. Confira depois de qualquer
+   coisa que o painel crie sozinho.
 7. **Função `security definer` precisa de `search_path` fixo e permissões
    mínimas.** View que encosta em dado protegido precisa de
    `security_invoker = true`. RPC sensível deve revogar `public`, `anon` e
@@ -86,9 +110,8 @@ extração explícito para os objetos de `public`.
 
 - arquivos em `supabase/migrations/`;
 - objetos de domínio em `public`;
-- `0001` a `0038` aplicadas em produção (conferido no banco em 03/set/2026);
-  `0039` e `0040` escritas e ainda não aplicadas — ver
-  `docs/PENDENCIAS-DO-DONO.md` §5.1;
+- `0001` a `0040` aplicadas em produção (`0039` e `0040` em 03/set/2026, com
+  autorização explícita do dono); `0041` escrita e ainda não aplicada;
 - aplicação em produção pela Management API do Supabase;
 - nunca deve executar o aplicador da Verandi nem registrar versão em
   `app_verandi.migrations_aplicadas`.
