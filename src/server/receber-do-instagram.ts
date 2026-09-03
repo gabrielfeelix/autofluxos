@@ -1,0 +1,216 @@
+import 'server-only'
+import { z } from 'zod'
+import { adaptadorDoCanal } from './adaptador-do-canal'
+import { type CanalSalvo, acharCanalPorContaDoInstagram } from './repos/conversas'
+import { type FabricaDeCanal, type Mensagem, tratarUma } from './receber-mensagem'
+
+/**
+ * O caminho de um direct do Instagram até a resposta.
+ *
+ * ---------------------------------------------------------------------------
+ * Por que este arquivo existe, em vez de mais um `if` no do WhatsApp
+ * ---------------------------------------------------------------------------
+ *
+ * O que difere entre os dois canais é só o **formato do webhook**. O WhatsApp
+ * manda `entry[].changes[].value.messages[]` com `metadata.phone_number_id`; o
+ * Instagram manda `entry[].messaging[]` com `sender`/`recipient` e um
+ * `message` de forma completamente outra.
+ *
+ * O que acontece depois é idêntico — deduplicar, achar o contato, pegar a
+ * trava da conversa, rodar o motor, gravar, entregar. É por isso que a
+ * tradução mora aqui e `tratarUma` mora lá, exportada: um `if (canal ===
+ * 'instagram')` dentro daquele arquivo espalharia a diferença por todo o
+ * caminho, e é exatamente assim que dedupe e handoff ganham duas versões que
+ * discordam entre si.
+ *
+ * ---------------------------------------------------------------------------
+ * As três armadilhas deste webhook, todas pagas por outra gente antes
+ * ---------------------------------------------------------------------------
+ *
+ * 1. **`is_echo`.** A Meta devolve as **nossas próprias** mensagens no mesmo
+ *    webhook, marcadas com essa bandeira. Sem descartar, o bot lê o que ele
+ *    mesmo escreveu, responde a si mesmo, e a conversa entra em laço. É o
+ *    primeiro erro que todo mundo comete aqui.
+ * 2. **`quick_reply` vem dentro de `message`, junto do `text`.** A pessoa que
+ *    tocou num botão manda as duas coisas: o rótulo como texto e o `payload`
+ *    como resposta. Ler o texto primeiro transformaria toda escolha de menu
+ *    numa resposta escrita, e o motor perderia a saída certa.
+ * 3. **`recipient.id` é a conta do cliente, `sender.id` é quem escreveu.** No
+ *    WhatsApp o par é `metadata.phone_number_id` e `from`. Trocar os dois faz o
+ *    produto procurar um canal com o id do contato — e não achar nada, em
+ *    silêncio, para sempre.
+ */
+
+/** O que a Meta manda de anexo. Só o tipo e a url interessam por enquanto. */
+const anexoSchema = z.object({
+  type: z.string(),
+  payload: z.object({ url: z.string().optional() }).optional(),
+})
+
+const mensagemDoInstagramSchema = z.object({
+  mid: z.string(),
+  text: z.string().optional(),
+  /** A resposta de um botão. `payload` é o id da opção que mandamos. */
+  quick_reply: z.object({ payload: z.string() }).optional(),
+  attachments: z.array(anexoSchema).optional(),
+  /** Nossa própria mensagem, devolvida pela Meta. Ver a armadilha 1. */
+  is_echo: z.boolean().optional(),
+})
+
+export const webhookDoInstagramSchema = z.object({
+  object: z.string().optional(),
+  entry: z
+    .array(
+      z.object({
+        messaging: z
+          .array(
+            z.object({
+              sender: z.object({ id: z.string() }),
+              recipient: z.object({ id: z.string() }),
+              message: mensagemDoInstagramSchema.optional(),
+            }),
+          )
+          .default([]),
+      }),
+    )
+    .default([]),
+})
+
+/**
+ * O tipo do nosso lado para um anexo do Instagram.
+ *
+ * A Meta usa `image`, `video`, `audio`, `file`, `share`, `story_mention`,
+ * `ig_reel`. `paraEntrada` do lado do WhatsApp guarda o `type` cru em
+ * `formato`, e é isso que o desenho vê na saída "mandou arquivo" — então
+ * traduzir para o vocabulário do WhatsApp é o que faz o mesmo fluxo se
+ * comportar igual nos dois canais.
+ */
+const TIPO_DO_ANEXO: Record<string, string> = {
+  image: 'image',
+  video: 'video',
+  audio: 'audio',
+  file: 'document',
+  // Figurinha, reel compartilhado, menção em story: não são arquivo que o
+  // fluxo saiba tratar, mas também não podem virar texto vazio. Caem no mesmo
+  // caminho de mídia, que leva a conversa para uma pessoa quando o desenho
+  // não trata — o comportamento certo para "chegou algo que não sei ler".
+  share: 'sticker',
+  story_mention: 'sticker',
+  ig_reel: 'video',
+}
+
+/**
+ * Traduz uma mensagem do Instagram para a forma interna.
+ *
+ * Exportada para o teste: é aqui que as três armadilhas do cabeçalho viram
+ * código, e testar isso pelo webhook inteiro esconderia qual delas quebrou.
+ */
+export function paraMensagemInterna(
+  de: string,
+  mensagem: z.infer<typeof mensagemDoInstagramSchema>,
+): Mensagem | null {
+  // Armadilha 1: nossa própria mensagem voltando. Descartar aqui é o que
+  // impede o bot de conversar consigo mesmo.
+  if (mensagem.is_echo) return null
+
+  const base = { id: mensagem.mid, from: de }
+
+  // Armadilha 2: o botão vem antes do texto. Quem tocou numa opção manda as
+  // duas coisas, e só o `payload` diz qual saída seguir.
+  if (mensagem.quick_reply) {
+    return {
+      ...base,
+      type: 'interactive',
+      interactive: {
+        button_reply: {
+          id: mensagem.quick_reply.payload,
+          // O rótulo que a pessoa viu é o texto que veio junto. É o que fica no
+          // histórico — "Agendar aula" em vez de `agendar`.
+          ...(mensagem.text ? { title: mensagem.text } : {}),
+        },
+      },
+    }
+  }
+
+  const anexo = mensagem.attachments?.[0]
+  if (anexo) {
+    const tipo = TIPO_DO_ANEXO[anexo.type] ?? 'sticker'
+    return {
+      ...base,
+      type: tipo,
+      /*
+       * O Instagram manda a **url** do anexo, e o WhatsApp manda um **id** para
+       * baixar depois. O campo interno se chama `id` porque nasceu do WhatsApp,
+       * e guardar a url nele é honesto: os dois são "a referência para pegar o
+       * arquivo", e é assim que o nó de API a recebe.
+       */
+      [tipo === 'document' ? 'document' : tipo]: {
+        ...(anexo.payload?.url ? { id: anexo.payload.url } : {}),
+      },
+    }
+  }
+
+  if (typeof mensagem.text === 'string') {
+    return { ...base, type: 'text', text: { body: mensagem.text } }
+  }
+
+  // Reação, entrega, leitura — eventos que não são mensagem. Ignorar é a
+  // resposta certa, e ignorar em silêncio também: eles chegam o tempo todo.
+  return null
+}
+
+/**
+ * Monta o adaptador de saída de um canal, lendo o token do cofre.
+ *
+ * **É `async`, e `FabricaDeCanal` não é** — de propósito nos dois lados. A
+ * fábrica é chamada de dentro do laço de ações, onde um `await` a mais por
+ * mensagem entraria no orçamento do webhook; ler o Vault é uma ida ao banco.
+ * Resolver aqui, uma vez por conversa, e devolver a função já pronta concilia
+ * as duas coisas.
+ *
+ * Diferente do WhatsApp, não existe fallback para o ambiente: o token é da
+ * conta que autorizou, e uma variável global aqui seria uma conta falando pela
+ * outra. Ver o cabeçalho da 0040.
+ */
+export async function fabricaDoInstagram(canal: CanalSalvo): Promise<FabricaDeCanal> {
+  const adaptador = await adaptadorDoCanal(canal)
+  return () => adaptador
+}
+
+export async function receberDoInstagram(
+  payload: unknown,
+  fabricaDeCanal?: FabricaDeCanal,
+): Promise<void> {
+  const analise = webhookDoInstagramSchema.safeParse(payload)
+  if (!analise.success) return
+
+  for (const entrada of analise.data.entry) {
+    for (const evento of entrada.messaging) {
+      if (!evento.message) continue
+
+      // Armadilha 3: `recipient` é a conta do cliente; `sender` é quem
+      // escreveu. Invertidos, a busca nunca acha canal nenhum e o produto fica
+      // mudo sem nenhum erro para investigar.
+      const canalSalvo = await acharCanalPorContaDoInstagram(evento.recipient.id)
+      if (!canalSalvo || canalSalvo.status !== 'ativo') continue
+
+      const mensagem = paraMensagemInterna(evento.sender.id, evento.message)
+      if (!mensagem) continue
+
+      // Injetável para os testes rodarem sem rede e sem cofre, como no
+      // WhatsApp. Fora do teste, o token vem do Vault.
+      const fabrica = fabricaDeCanal ?? (await fabricaDoInstagram(canalSalvo))
+
+      /*
+       * O nome do perfil vem `null`.
+       *
+       * O webhook do Instagram não traz o nome junto da mensagem, ao contrário
+       * do WhatsApp — ele exige um GET em `/{igsid}` com a permissão de perfil.
+       * Uma consulta a mais por mensagem, dentro do orçamento do webhook, para
+       * um dado que a tela já sabe mostrar quando falta. Fica para quando o app
+       * review liberar a permissão e valer a pena.
+       */
+      await tratarUma(canalSalvo, mensagem, null, fabrica)
+    }
+  }
+}
