@@ -38,7 +38,7 @@ extração explícito para os objetos de `public`.
    dependa do `search_path` do projeto e nunca cite `app_verandi` numa migration
    deste repositório.
 3. **O nome da próxima migration vem do disco, não de plano antigo.** Hoje o
-   AutoFluxos termina em `0041`; a próxima é `0042`. Este parágrafo já esteve
+   AutoFluxos termina em `0042`; a próxima é `0043`. Este parágrafo já esteve
    errado — dizia `0029` quando o disco tinha `0038` —, e é exatamente por isso
    que a regra é olhar o diretório, inclusive quando um documento afirma um
    número. Os nomes `0008_limites` e
@@ -110,11 +110,40 @@ extração explícito para os objetos de `public`.
 
 - arquivos em `supabase/migrations/`;
 - objetos de domínio em `public`;
-- `0001` a `0040` aplicadas em produção (`0039` e `0040` em 03/set/2026, com
-  autorização explícita do dono); `0041` escrita e ainda não aplicada;
+- `0001` a `0041` aplicadas em produção (`0039`, `0040` e `0041` em
+  03/set/2026, com autorização explícita do dono); `0042` escrita e **ainda não
+  aplicada**;
+- **a `0042` conserta um efeito colateral da `0041`**: o `grant all on all
+  tables in schema public to service_role` do passo 2 alcançou
+  `public.af_auditoria` e devolveu `update`, `delete` e `truncate` à chave da
+  aplicação, desfazendo o append-only que a `0021` tinha garantido. Quem
+  escrever outro grant amplo em `public` reabre de novo — o comentário da
+  tabela avisa, e o revoke da `0042` precisa ser reexecutado depois;
 - aplicação em produção pela Management API do Supabase;
 - nunca deve executar o aplicador da Verandi nem registrar versão em
   `app_verandi.migrations_aplicadas`.
+
+### Testar migration antes de produção, em Docker
+
+O projeto de produção é dividido com a Verandi e **não tem backup**. Antes de
+aplicar qualquer migration lá, replay local:
+
+```bash
+npx supabase start     # sobe o stack e aplica supabase/migrations em ordem
+npx supabase db reset  # replay do zero, para conferir uma migration nova
+npx supabase stop
+```
+
+O `supabase/config.toml` deste repositório existe **só** para isso, com portas
+`5643x` para não colidir com o stack local da Verandi (`5642x`). Ele não está
+ligado a projeto remoto nenhum, e `link`/`db push` continuam proibidos.
+
+O que o local prova: que a migration roda, na ordem, e que o estado final de
+`grant` é o pretendido — foi assim que a `0042` foi conferida, com `set role
+service_role` tentando `update`, `delete` e `truncate` em `af_auditoria` e
+levando `permission denied` nos três. O que ele **não** prova: o estado herdado
+da produção, que tem anos de `grant` acumulado que um banco novo não tem. Para
+isso, a conferência é uma consulta na produção depois de aplicar.
 
 ### Verandi
 
