@@ -484,23 +484,29 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
   }
 
   /**
-   * O salto para outro fluxo **conta como saída humana**.
+   * Saída para uma pessoa é **recomendação, não exigência**.
    *
-   * Não é frouxidão: o destino só pode ser um fluxo publicado, e nenhum fluxo
-   * publica sem ter caminho até uma pessoa. A escapatória continua garantida —
-   * ela só passou a estar do outro lado da porta. Sem isto, um fluxo de triagem
-   * que só distribui para os fluxos especializados seria obrigado a ter um
-   * handoff decorativo que ninguém alcança.
+   * Era um impedimento, e cobrava caro de quem estava certo: fluxo de aula
+   * experimental, confirmação de presença, pesquisa de uma pergunta — todos
+   * começam e terminam sozinhos, e obrigá-los a um handoff produzia um bloco
+   * decorativo que ninguém alcança. Um bloco que existe só para calar o
+   * validador ensina a ignorar o validador.
+   *
+   * Continua avisando, porque na maioria dos fluxos a falta é mesmo um
+   * esquecimento. Quem sabe que não precisa, publica assim mesmo.
+   *
+   * O salto para outro fluxo conta como saída: o destino só pode ser um fluxo
+   * publicado, então a escapatória só passou para o outro lado da porta.
    */
   const temSaidaHumana = [...alcancaveis].some((id) => {
     const tipo = porId.get(id)?.type
     return tipo === 'handoff' || tipo === 'ir-fluxo'
   })
   if (!temSaidaHumana) {
-    erros.push({
+    avisos.push({
       codigo: 'SEM_SAIDA_HUMANA',
       mensagem:
-        'Nenhum caminho do fluxo chega a um bloco "Falar com humano". Todo fluxo precisa ter como escapar para uma pessoa.',
+        'Nenhum caminho do fluxo chega a um bloco "Falar com humano". Se a conversa puder precisar de uma pessoa, vale acrescentar um.',
     })
   }
 

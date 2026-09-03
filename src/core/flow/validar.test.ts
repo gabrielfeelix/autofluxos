@@ -43,14 +43,17 @@ describe('validar', () => {
     expect(r.ok).toBe(true)
   })
 
-  it('BLOQUEIA fluxo sem nenhuma saída para humano', () => {
+  it('AVISA, mas publica, fluxo sem nenhuma saída para humano', () => {
+    // Aula experimental, confirmação de presença e pesquisa de uma pergunta
+    // terminam sozinhas. Obrigá-las a um handoff só produzia bloco decorativo.
     const fluxo = fluxoValido()
     fluxo.nodes = fluxo.nodes.filter((n) => n.id !== 'humano')
     fluxo.edges = fluxo.edges.map((a) => (a.target === 'humano' ? { ...a, target: 'tchau' } : a))
 
     const r = validar(fluxo)
-    expect(r.ok).toBe(false)
-    expect(codigos(r.erros)).toContain('SEM_SAIDA_HUMANA')
+    expect(r.ok).toBe(true)
+    expect(codigos(r.erros)).not.toContain('SEM_SAIDA_HUMANA')
+    expect(codigos(r.avisos)).toContain('SEM_SAIDA_HUMANA')
   })
 
   it('reclama de opção que não leva a lugar nenhum', () => {
@@ -930,7 +933,7 @@ describe('ir para outra automação', () => {
     // ela só está do outro lado da porta. Sem isto, um fluxo de triagem que só
     // distribui precisaria de um handoff decorativo que ninguém alcança.
     const r = validar(comSalto('fisio'), { fluxos: fisioPronta })
-    expect(r.erros.map((e) => e.codigo)).not.toContain('SEM_SAIDA_HUMANA')
+    expect(r.avisos.map((e) => e.codigo)).not.toContain('SEM_SAIDA_HUMANA')
     expect(r.ok).toBe(true)
   })
 

@@ -172,23 +172,49 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
    * O portão de qualidade tem que estar no servidor. O botão desabilitado no
    * editor é conveniência; isto aqui é a garantia.
    */
-  it('RECUSA publicar fluxo sem caminho até um humano', async () => {
-    const cliente = await criarCliente(`${marca} sem humano`)
+  it('RECUSA publicar fluxo com desenho quebrado', async () => {
+    const cliente = await criarCliente(`${marca} quebrado`)
     criados.push(cliente.id)
 
-    const semSaida = structuredClone(fluxoNovo())
-    semSaida.nodes = semSaida.nodes.filter((n) => n.type !== 'handoff')
-    semSaida.edges = semSaida.edges.filter((a) => a.target !== 'humano')
+    // Uma ligação que chega em nó inexistente: a conversa cairia no vazio.
+    const quebrado = structuredClone(fluxoNovo())
+    quebrado.edges = [...quebrado.edges, { id: 'solta', source: 'abertura', target: 'nao-existe' }]
 
-    const fluxo = await criarFluxo(cliente.id, `${marca} f`, semSaida)
+    const fluxo = await criarFluxo(cliente.id, `${marca} f`, quebrado)
     const r = await publicar(fluxo.id, cliente.id, fluxo.rascunho)
 
     expect(r.ok).toBe(false)
-    expect(!r.ok && r.erros.map((e) => e.codigo)).toContain('SEM_SAIDA_HUMANA')
+    expect(!r.ok && r.erros.map((e) => e.codigo)).toContain('ARESTA_SOLTA')
 
     const relido = await acharFluxo(fluxo.id)
     expect(relido?.versaoPublicadaId).toBeNull()
     expect(await listarVersoes(fluxo.id)).toEqual([])
+  })
+
+  /**
+   * Sem caminho até uma pessoa é **aviso**, não impedimento: aula
+   * experimental e confirmação de presença terminam sozinhas.
+   */
+  it('publica fluxo sem caminho até um humano', async () => {
+    const cliente = await criarCliente(`${marca} sem humano`)
+    criados.push(cliente.id)
+
+    // O handoff sai e a opção que ia até ele passa a terminar a conversa —
+    // o desenho de quem não precisa de atendente, e não um grafo quebrado.
+    const semSaida = structuredClone(fluxoNovo())
+    const fim = semSaida.nodes.find((n) => n.type === 'mensagem' && n.id !== semSaida.inicio)!
+    semSaida.nodes = semSaida.nodes.filter((n) => n.type !== 'handoff')
+    semSaida.edges = semSaida.edges.map((a) =>
+      a.target === 'humano' ? { ...a, target: fim.id } : a,
+    )
+
+    const fluxo = await criarFluxo(cliente.id, `${marca} f`, semSaida)
+    const r = await publicar(fluxo.id, cliente.id, fluxo.rascunho)
+
+    expect(r.ok).toBe(true)
+
+    const relido = await acharFluxo(fluxo.id)
+    expect(relido?.versaoPublicadaId).not.toBeNull()
   })
 
   it('a versão publicada não muda quando o rascunho muda depois', async () => {
