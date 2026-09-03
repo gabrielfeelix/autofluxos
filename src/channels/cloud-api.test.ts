@@ -18,7 +18,10 @@ describe('indicador de digitação da Cloud API', () => {
       versaoGraph: 'v25.0',
     })
 
-    const espera = canal.aguardarResposta('wamid-entrada-1', 1_000)
+    const espera = canal.aguardarResposta(
+      { mensagemId: 'wamid-entrada-1', contato: '5544999' },
+      1_000,
+    )
     await vi.runAllTimersAsync()
     await espera
 
@@ -47,9 +50,11 @@ describe('indicador de digitação da Cloud API', () => {
     })
     let terminou = false
 
-    const espera = canal.aguardarResposta('wamid-entrada-2', 1_000).then(() => {
-      terminou = true
-    })
+    const espera = canal
+      .aguardarResposta({ mensagemId: 'wamid-entrada-2', contato: '5544999' }, 1_000)
+      .then(() => {
+        terminou = true
+      })
     await vi.advanceTimersByTimeAsync(999)
     expect(terminou).toBe(false)
 

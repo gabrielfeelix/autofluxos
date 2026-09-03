@@ -79,9 +79,22 @@ export const DEFINICAO_DO_CANAL: Record<CanalId, DefinicaoDeCanal> = {
     nome: 'Instagram',
     resumo: 'Responde no direct — comentário que vira conversa, resposta a story.',
     cor: '#E1306C',
+    /*
+     * O adaptador existe (`channels/instagram.ts`), o webhook existe, e a tela
+     * de conectar existe. O que falta não é código: as permissões
+     * `instagram_business_basic` e `instagram_business_manage_messages` estão
+     * em **Standard Access** até o app review passar, e em Standard o Business
+     * Login só embarca contas da própria conta da Meta da 4YU.
+     *
+     * Manter `false` é a regra deste arquivo sendo cumprida, não contornada:
+     * oferecer o canal na criação de automação faria alguém desenhar um fluxo
+     * inteiro para descobrir na hora de publicar que não há conta de cliente
+     * para ligar. A tela `/clientes/<id>/instagram` já conecta e já recebe —
+     * com o nosso perfil, que é exatamente o que o Standard permite.
+     */
     disponivel: false,
     falta:
-      'adaptador da Messenger Platform (Instagram Messaging), permissões instagram_manage_messages e conta profissional ligada a uma página',
+      'aprovação do app review da Meta (Advanced Access em instagram_business_manage_messages). O adaptador, o webhook e a tela de conectar já existem.',
     // 13 quick replies, rótulo de 20, e a mesma janela de 24h da Meta.
     limites: { botoes: 3, opcoes: 13, rotulo: 20, janelaHoras: 24 },
   },

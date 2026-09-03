@@ -19,7 +19,7 @@ export function canalMock(): Canal & { enviadas: Enviada[] } {
 
   return {
     enviadas,
-    async aguardarResposta(mensagemId, atrasoMs) {
+    async aguardarResposta({ mensagemId }, atrasoMs) {
       // O mock prova a ordem sem tornar a suíte três segundos mais lenta.
       enviadas.push({ tipo: 'espera', mensagemId, atrasoMs })
     },

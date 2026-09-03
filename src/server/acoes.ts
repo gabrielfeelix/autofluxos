@@ -39,7 +39,7 @@ import {
   criarContato,
   salvarNotas,
 } from './repos/leads'
-import { canalCloudApi } from '@/channels/cloud-api'
+import { adaptadorDoCanal } from './adaptador-do-canal'
 import { dentroDaJanela } from '@/channels/janela'
 import type { EstadoSalvar } from '@/components/design/formulario-salvar'
 import {
@@ -1706,10 +1706,16 @@ export async function acaoResponderLead(
     }
   }
 
-  const token = process.env.WHATSAPP_TOKEN
-  if (!token) return { ok: false, erro: 'falta WHATSAPP_TOKEN no ambiente deste servidor' }
-
-  const canal = canalCloudApi({ phoneNumberId: contexto.canal.phoneNumberId, token })
+  // O adaptador depende do canal: WhatsApp pela Cloud API, Instagram pela
+  // Messaging API com o token da conta conectada. Montar `canalCloudApi` aqui
+  // na mão, como era antes, mandava a resposta manual de uma conversa de
+  // Instagram para a API errada.
+  let canal
+  try {
+    canal = await adaptadorDoCanal(contexto.canal)
+  } catch (erro) {
+    return { ok: false, erro: erro instanceof Error ? erro.message : String(erro) }
+  }
 
   // Grava antes para não perder do histórico uma mensagem que saiu no instante
   // em que a função morreu. Enquanto a API não confirmar, a tela a marca como
@@ -2348,10 +2354,7 @@ async function avisarQueEntrou(
     const contexto = await contextoDeResposta(clienteId, contatoId)
     if (!contexto || !dentroDaJanela(contexto.ultimaEntradaEm)) return
 
-    const token = process.env.WHATSAPP_TOKEN
-    if (!token) return
-
-    const canal = canalCloudApi({ phoneNumberId: contexto.canal.phoneNumberId, token })
+    const canal = await adaptadorDoCanal(contexto.canal)
     const registro = await registrarSaida({ contatoId, sessaoId: contexto.sessaoId, texto: aviso })
     await canal.enviarTexto(contexto.waId, aviso)
     await confirmarEntrega(registro)

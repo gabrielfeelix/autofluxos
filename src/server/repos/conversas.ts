@@ -14,7 +14,25 @@ import { db, ehIdInvalido } from '../db'
 export type CanalSalvo = {
   id: string
   clienteId: string
-  phoneNumberId: string
+  /**
+   * `cloud-api` (WhatsApp) ou `instagram`. Ele é o que decide qual adaptador
+   * monta as mensagens de saída, e quais dos dois ids abaixo estão preenchidos
+   * — o `check` da 0040 garante que sempre é exatamente um.
+   */
+  provider: string
+  /** Nulo quando o canal é de Instagram. */
+  phoneNumberId: string | null
+  /** A conta profissional do Instagram (IGSID). Nulo quando o canal é WhatsApp. */
+  igUserId: string | null
+  /** O @ do perfil, para a tela. Não é identificador: o dono pode trocá-lo. */
+  igUsername: string | null
+  /**
+   * Referência do token no Vault. O valor **nunca** vem junto: quem precisa
+   * dele chama `lerTokenDoCanal()`, que é a única porta.
+   */
+  tokenRef: string | null
+  /** O token de longa duração do Instagram vale 60 dias. Nulo = não expira. */
+  tokenExpiraEm: string | null
   flowId: string | null
   /** A primeira conversa deste contato neste número. Nulo = usa o principal. */
   fluxoBoasVindasId: string | null
@@ -34,13 +52,18 @@ export const COLUNA_DO_PAPEL: Record<PapelDoNumero, string> = {
 }
 
 const COLUNAS_DO_CANAL =
-  'id, client_id, phone_number_id, flow_id, flow_boas_vindas_id, flow_midia_id, flow_pos_atendimento_id, status'
+  'id, client_id, provider, phone_number_id, ig_user_id, ig_username, token_ref, token_expira_em, flow_id, flow_boas_vindas_id, flow_midia_id, flow_pos_atendimento_id, status'
 
 function paraCanal(linha: Record<string, unknown>): CanalSalvo {
   return {
     id: linha.id as string,
     clienteId: linha.client_id as string,
-    phoneNumberId: linha.phone_number_id as string,
+    provider: linha.provider as string,
+    phoneNumberId: (linha.phone_number_id ?? null) as string | null,
+    igUserId: (linha.ig_user_id ?? null) as string | null,
+    igUsername: (linha.ig_username ?? null) as string | null,
+    tokenRef: (linha.token_ref ?? null) as string | null,
+    tokenExpiraEm: (linha.token_expira_em ?? null) as string | null,
     flowId: (linha.flow_id ?? null) as string | null,
     fluxoBoasVindasId: (linha.flow_boas_vindas_id ?? null) as string | null,
     fluxoMidiaId: (linha.flow_midia_id ?? null) as string | null,
@@ -92,6 +115,47 @@ export async function acharCanalPorNumero(phoneNumberId: string): Promise<CanalS
   if (!data) return null
 
   return paraCanal(data as Record<string, unknown>)
+}
+
+/**
+ * O canal de uma conta do Instagram.
+ *
+ * Espelha `acharCanalPorNumero`, e o par existe porque os dois ids são
+ * diferentes por natureza: o webhook do WhatsApp diz de qual `phone_number_id`
+ * a mensagem é, e o do Instagram diz de qual conta profissional. Uma função só
+ * recebendo "o id, sabe-se lá de quê" trocaria uma coluna pela outra no dia em
+ * que um id parecesse com o outro.
+ */
+export async function acharCanalPorContaDoInstagram(igUserId: string): Promise<CanalSalvo | null> {
+  const { data, error } = await db()
+    .from('channels')
+    .select(COLUNAS_DO_CANAL)
+    .eq('ig_user_id', igUserId)
+    .maybeSingle()
+
+  if (error) throw new Error(`não deu para achar o canal do Instagram: ${error.message}`)
+  if (!data) return null
+
+  return paraCanal(data as Record<string, unknown>)
+}
+
+/**
+ * O token de um canal, lido do Vault — a única porta para o valor.
+ *
+ * Segue a mesma regra de `conexoes.ts`: `CanalSalvo` não tem campo de token, e
+ * isso não é disciplina de quem escreve a tela, é o tipo não permitindo. O
+ * valor sai daqui uma vez e só para quem vai fazer a requisição.
+ */
+export async function lerTokenDoCanal(canal: CanalSalvo): Promise<string> {
+  if (!canal.tokenRef) {
+    throw new Error('este canal não tem token guardado; reconecte a conta')
+  }
+
+  const { data, error } = await db().rpc('ler_segredo', { alvo: canal.tokenRef })
+  if (error) throw new Error(`não deu para ler o token do canal: ${error.message}`)
+  if (!data) throw new Error('o cofre não devolveu o token do canal')
+
+  return data as string
 }
 
 export async function acharOuCriarContato(

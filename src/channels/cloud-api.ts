@@ -88,7 +88,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
   }
 
   return {
-    async aguardarResposta(mensagemId, atrasoMs) {
+    async aguardarResposta({ mensagemId }, atrasoMs) {
       try {
         // A Meta exige o id da entrada: o mesmo pedido marca como lida e liga
         // o indicador até a resposta sair (ou por no máximo 25 segundos).

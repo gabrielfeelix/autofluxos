@@ -141,7 +141,15 @@ export const webhookSchema = z.object({
     .default([]),
 })
 
-type Mensagem = z.infer<typeof mensagemSchema>
+/**
+ * A forma normalizada de uma mensagem que chegou.
+ *
+ * O nome vem do WhatsApp porque foi o primeiro canal, e ela virou **a forma
+ * interna** quando o Instagram entrou: `receber-do-instagram.ts` traduz o
+ * webhook de lá para cá antes de chamar `tratarUma`. Traduzir na entrada é o
+ * que impede o motor, o histórico e o handoff de ganharem um `if` por canal.
+ */
+export type Mensagem = z.infer<typeof mensagemSchema>
 type Referral = z.infer<typeof referralSchema>
 
 /** Como o canal é montado. Injetável para os testes rodarem sem rede. */
@@ -150,6 +158,7 @@ export type FabricaDeCanal = (canal: CanalSalvo) => Canal
 function canalPadrao(canal: CanalSalvo): Canal {
   const token = process.env.WHATSAPP_TOKEN
   if (!token) throw new Error('falta WHATSAPP_TOKEN no ambiente')
+  if (!canal.phoneNumberId) throw new Error('este canal não tem número do WhatsApp')
   return canalCloudApi({ phoneNumberId: canal.phoneNumberId, token })
 }
 
@@ -179,7 +188,14 @@ export async function receberMensagem(
   }
 }
 
-async function tratarUma(
+/**
+ * Uma mensagem, do registro até a resposta.
+ *
+ * Exportada para `receber-do-instagram.ts`: os dois webhooks têm formatos
+ * diferentes e o que acontece **depois** da tradução é idêntico. Duplicar isto
+ * por canal seria duplicar dedupe, trava de conversa, handoff e histórico.
+ */
+export async function tratarUma(
   canalSalvo: CanalSalvo,
   mensagem: Mensagem,
   nomeDoPerfil: string | null,
@@ -909,7 +925,9 @@ async function aplicar(
   for (const acao of acoes) {
     switch (acao.tipo) {
       case 'enviar_texto': {
-        if (acao.atrasoMs && mensagemId) await canal.aguardarResposta(mensagemId, acao.atrasoMs)
+        if (acao.atrasoMs && mensagemId) {
+          await canal.aguardarResposta({ mensagemId, contato: contato.waId }, acao.atrasoMs)
+        }
 
         // Grava antes de mandar e confirma depois — ver `registrarSaida`.
         const registro = await registrarSaida({
@@ -929,7 +947,9 @@ async function aplicar(
       }
 
       case 'enviar_midia': {
-        if (acao.atrasoMs && mensagemId) await canal.aguardarResposta(mensagemId, acao.atrasoMs)
+        if (acao.atrasoMs && mensagemId) {
+          await canal.aguardarResposta({ mensagemId, contato: contato.waId }, acao.atrasoMs)
+        }
 
         // O que fica na conversa é a legenda, e sem legenda o rótulo do tipo.
         // Uma linha em branco no histórico do lead esconderia que algo foi
@@ -966,7 +986,9 @@ async function aplicar(
         // O menu é o que mais aparece numa triagem, e era o único envio que
         // esperava calado: a pausa parecia o bot travado em vez de alguém
         // escrevendo do outro lado.
-        if (acao.atrasoMs && mensagemId) await canal.aguardarResposta(mensagemId, acao.atrasoMs)
+        if (acao.atrasoMs && mensagemId) {
+          await canal.aguardarResposta({ mensagemId, contato: contato.waId }, acao.atrasoMs)
+        }
 
         const registro = await registrarSaida({
           contatoId: contato.id,

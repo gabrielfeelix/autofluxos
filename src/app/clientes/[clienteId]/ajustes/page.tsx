@@ -6,6 +6,7 @@ import { ApagarCliente } from '@/components/cliente/apagar'
 import { acaoApagarCliente } from '@/server/acoes'
 import { listarAcervo } from '@/server/repos/acervo'
 import { acharCliente, contarOQueSomeCom } from '@/server/repos/clientes'
+import { canalDoInstagram } from '@/server/repos/canais-instagram'
 import { listarConexoes } from '@/server/repos/conexoes'
 import { listarCanais } from '@/server/repos/conversas'
 import { listarRespostasRapidas } from '@/server/repos/respostas-rapidas'
@@ -30,14 +31,16 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [conexoes, canais, respostasRapidas, acervo, estrago, etiquetas] = await Promise.all([
-    listarConexoes(cliente.id),
-    listarCanais(cliente.id),
-    listarRespostasRapidas(cliente.id),
-    listarAcervo(cliente.id),
-    contarOQueSomeCom(cliente.id),
-    listarEtiquetas(cliente.id),
-  ])
+  const [conexoes, canais, respostasRapidas, acervo, estrago, etiquetas, contaDoInstagram] =
+    await Promise.all([
+      listarConexoes(cliente.id),
+      listarCanais(cliente.id),
+      listarRespostasRapidas(cliente.id),
+      listarAcervo(cliente.id),
+      contarOQueSomeCom(cliente.id),
+      listarEtiquetas(cliente.id),
+      canalDoInstagram(cliente.id),
+    ])
   const semContexto = cliente.contextoNegocio.trim() === ''
 
   // A equipe fala Postgres direto e pode estourar sem `DATABASE_URL`. Um índice
@@ -150,6 +153,18 @@ export default async function Pagina({
                 {canais.length === 0
                   ? 'nenhum'
                   : `${canais.length} ${canais.length === 1 ? 'número' : 'números'}`}
+              </Selo>
+            }
+          />
+          <Linha
+            href={`/clientes/${cliente.id}/instagram`}
+            titulo="Instagram"
+            descricao="Ligar o direct de uma conta profissional para as mensagens chegarem no mesmo Inbox."
+            estado={
+              <Selo tom={contaDoInstagram ? 'ok' : 'neutro'}>
+                {contaDoInstagram
+                  ? (contaDoInstagram.igUsername ?? 'ligada')
+                  : 'nenhuma'}
               </Selo>
             }
           />
