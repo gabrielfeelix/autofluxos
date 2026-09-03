@@ -26,6 +26,12 @@ import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
  *
  * **A pergunta do laço não tem opções de propósito.** Opção vira botão, e botão
  * é o oposto do que este fluxo oferece: aqui a pessoa escreve o que quiser.
+ *
+ * **Fora da galeria de modelos, e não por esquecimento.** `MODELOS` só oferece
+ * fluxo que *qualquer* cliente publica, e o `validar()` recusa um bloco de IA
+ * quando o plano não a contratou (`IA_NAO_CONTRATADA`) — um modelo com IA na
+ * galeria mostraria erro na cara de quem só escolheu da lista. Este grafo é
+ * ponto de partida para quem tem IA no plano e contexto do negócio escrito.
  */
 export const atendenteIa: Fluxo = fluxoSchema.parse({
   inicio: 'abertura',
