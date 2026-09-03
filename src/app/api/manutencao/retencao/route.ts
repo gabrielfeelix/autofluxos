@@ -1,6 +1,7 @@
 import { alertar } from '@/server/alertar'
 import { iguais } from '@/lib/segredo'
 import { DIAS_DE_RETENCAO_DO_ALERTA, limparAlertasVencidos } from '@/server/repos/alertas'
+import { DIAS_DE_FOLGA, renovarTokensDoInstagram } from '@/server/instagram/renovacao'
 import { apagarContatosVencidos, MESES_DE_RETENCAO_PADRAO } from '@/server/repos/retencao'
 
 export const dynamic = 'force-dynamic'
@@ -9,7 +10,10 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
 /**
- * A limpeza de retenção, chamada pela tarefa agendada da Vercel.
+ * A manutenção diária, chamada pela tarefa agendada da Vercel: apagar o que
+ * venceu (contatos e alertas) e renovar o token do Instagram antes que ele
+ * vença. O nome da rota é `retencao` por história, e mudá-lo agora quebraria o
+ * `vercel.json` em troca de nada.
  *
  * **Esta rota fica fora do `proxy`** — quem chama é a plataforma, não uma
  * pessoa com cookie de painel. Em troca, ela exige `CRON_SECRET` e **falha
@@ -50,11 +54,27 @@ export async function GET(req: Request) {
      */
     const alertasApagados = await limparAlertasVencidos(agora)
 
+    /*
+     * A renovação do token do Instagram pega carona aqui, e a razão é o plano.
+     *
+     * No Hobby a Vercel dá **duas** tarefas agendadas por projeto, e as duas já
+     * estão em uso: esta e a do agendador. Uma terceira entrada no `vercel.json`
+     * simplesmente não roda — e a renovação não pode ser a coisa que ninguém
+     * percebe que parou, porque o sintoma dela é uma conta que fica muda no dia
+     * 61 sem ninguém ter mexido em nada.
+     *
+     * A natureza do trabalho também é a mesma das duas linhas acima: cuidar de
+     * prazo que corre sozinho. Ela nunca lança — falha de uma conta vira alerta
+     * lá dentro —, então não tem como derrubar a limpeza que veio antes.
+     */
+    const instagram = await renovarTokensDoInstagram({ agora })
+
     return Response.json({
       ...resultado,
       meses: MESES_DE_RETENCAO_PADRAO,
       alertasApagados,
       diasDeAlerta: DIAS_DE_RETENCAO_DO_ALERTA,
+      instagram: { ...instagram, diasDeFolga: DIAS_DE_FOLGA },
     })
   } catch (erro) {
     // Ninguém está olhando quando isto roda às quatro da manhã. Uma limpeza que

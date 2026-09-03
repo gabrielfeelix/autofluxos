@@ -155,6 +155,64 @@ export async function desligarContaDoInstagram(clienteId: string): Promise<void>
 }
 
 /**
+ * As contas cujo token vence até `limite` — a fila da renovação automática.
+ *
+ * **Sem `client_id` no filtro, de propósito**: quem chama é a tarefa agendada,
+ * que varre o sistema inteiro. Toda outra leitura deste arquivo é por cliente
+ * porque a URL vem de fora; aqui não há URL nenhuma, e a rota que chama exige
+ * `CRON_SECRET`.
+ *
+ * Quem não tem `token_expira_em` fica de fora: canal sem validade guardada é
+ * canal de antes da 0040, e renovar às cegas gastaria uma chamada à Meta por
+ * dia para descobrir o que já se sabe.
+ */
+export async function canaisDoInstagramQueVencemAte(limite: Date): Promise<CanalSalvo[]> {
+  const { data, error } = await db()
+    .from('channels')
+    .select(COLUNAS)
+    .eq('provider', 'instagram')
+    .not('token_expira_em', 'is', null)
+    .lt('token_expira_em', limite.toISOString())
+
+  if (error) throw new Error(`não deu para listar as contas do Instagram: ${error.message}`)
+  return (data ?? []).map((linha) => paraCanal(linha as Record<string, unknown>))
+}
+
+/**
+ * Guarda o token renovado no mesmo segredo, e a nova validade na linha.
+ *
+ * **No mesmo segredo, e não em um novo**, pela mesma razão de
+ * `salvarContaDoInstagram`: `token_ref` é o que liga o canal ao cofre, e trocar
+ * a referência a cada renovação deixaria um segredo órfão por mês — token órfão
+ * é token que ninguém revoga.
+ *
+ * A validade só é gravada **depois** de o cofre aceitar o valor novo. Na ordem
+ * inversa, uma falha no cofre deixaria a linha jurando ter mais 60 dias com o
+ * token velho dentro, e a conta pararia de responder sem nenhum aviso.
+ */
+export async function trocarTokenDoCanal(
+  canal: CanalSalvo,
+  novo: { token: string; expiraEm: Date },
+): Promise<void> {
+  if (!canal.tokenRef) {
+    throw new Error('este canal não tem token guardado; reconecte a conta')
+  }
+
+  const { error: erroDoCofre } = await db().rpc('trocar_segredo', {
+    alvo: canal.tokenRef,
+    valor: novo.token,
+  })
+  if (erroDoCofre) throw new Error(`não deu para guardar o token renovado: ${erroDoCofre.message}`)
+
+  const { error } = await db()
+    .from('channels')
+    .update({ token_expira_em: novo.expiraEm.toISOString() })
+    .eq('id', canal.id)
+
+  if (error) throw new Error(`não deu para gravar a nova validade: ${error.message}`)
+}
+
+/**
  * Quantos dias faltam para o token vencer. Negativo = já venceu.
  *
  * Pura e recebendo `agora` pelo mesmo motivo dos outros cálculos de prazo do
