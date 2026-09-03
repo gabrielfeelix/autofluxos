@@ -38,7 +38,10 @@ extração explícito para os objetos de `public`.
    dependa do `search_path` do projeto e nunca cite `app_verandi` numa migration
    deste repositório.
 3. **O nome da próxima migration vem do disco, não de plano antigo.** Hoje o
-   AutoFluxos termina em `0029`; a próxima é `0030`. Os nomes `0008_limites` e
+   AutoFluxos termina em `0040`; a próxima é `0041`. Este parágrafo já esteve
+   errado — dizia `0029` quando o disco tinha `0038` —, e é exatamente por isso
+   que a regra é olhar o diretório, inclusive quando um documento afirma um
+   número. Os nomes `0008_limites` e
    `0009_retencao` escritos no plano de endurecimento são exemplos antigos e
    colidem com migrations que já existem — e a tabela do §4 do PLANO-SISTEMA
    divergiu inteira do disco a partir da `0024`, porque a ordem de execução foi
@@ -70,7 +73,9 @@ extração explícito para os objetos de `public`.
 
 - arquivos em `supabase/migrations/`;
 - objetos de domínio em `public`;
-- atualmente `0001` a `0029`, todas aplicadas em produção;
+- `0001` a `0038` aplicadas em produção (conferido no banco em 03/set/2026);
+  `0039` e `0040` escritas e ainda não aplicadas — ver
+  `docs/PENDENCIAS-DO-DONO.md` §5.1;
 - aplicação em produção pela Management API do Supabase;
 - nunca deve executar o aplicador da Verandi nem registrar versão em
   `app_verandi.migrations_aplicadas`.

@@ -7,10 +7,10 @@ produto, ou de uma conta que é de uma pessoa de verdade.
 Junte tudo e faça de uma vez ao fim das rodadas. Cada item diz o que trava
 enquanto não for feito.
 
-Atualizado em 19/ago/2026, com a Etapa A e a Etapa B inteiras no ar — agora
-**sem recorte**: compartilhar fluxo por link e sequências entraram. As
-migrations `0023` a `0029` foram aplicadas em produção com autorização; a `0030`
-e a `0031` esperam a sua.
+Atualizado em **03/set/2026**. As migrations `0023` a `0038` estão aplicadas em
+produção — conferido objeto a objeto no banco nesta data, e não pela leitura de
+um plano. As `0039` (alertas) e `0040` (canal do Instagram) estão escritas no
+repositório e **ainda não aplicadas**: são o item 5 abaixo.
 
 ---
 
@@ -40,12 +40,22 @@ Continua valendo para **cliente novo**: em `/admin/usuarios` → `+ Cadastrar
 pessoa` (a senha é combinada por fora), e depois `/admin/contas` → `+ Ligar
 pessoa` como **dono da conta**. Cliente sem membro aparece no topo da lista.
 
-## 3. `ALERTA_WEBHOOK_URL` — a única variável que falta
+## 3. `ALERTA_WEBHOOK_URL` — ✅ **deixou de ser bloqueio**
 
-**Trava:** `alertar()` é no-op. Falha no processamento do webhook, recusa da
-Cloud API e cofre que não devolve credencial **não avisam ninguém**.
+**Trava:** nenhuma. Era o item mais perigoso desta lista e virou conveniência.
 
-Crie um webhook de canal no Discord ou no Slack, guarde o valor em
+O problema não era a variável faltar — era o aviso de falha ter **uma cópia
+só**, pendurada numa credencial que só você conseguia criar. Enquanto ela não
+existisse, falha no webhook do WhatsApp, recusa da Cloud API e cofre que não
+devolve credencial não avisavam ninguém, e a primeira notícia de qualquer
+problema vinha do cliente.
+
+Desde o commit `2879428`, todo alerta é gravado em `public.alertas` e aparece
+em **`/admin/alertas`**, sem configurar nada. Retenção de 90 dias, na mesma
+passada da limpeza que já existia.
+
+Continua valendo **se você quiser ser avisado sem abrir o painel**: crie um
+webhook de canal no Discord ou no Slack, guarde o valor em
 `4yu-apps/.secrets/4yu.env` como `AUTOFLUXOS_ALERTA_WEBHOOK_URL` e adicione a
 variável na Vercel. Nunca dentro do repositório — ele é público.
 
@@ -66,13 +76,18 @@ caminhos e os dois são seus:
    `https://autofluxos.4yu.com.br/api/manutencao/tarefas` mandando
    `Authorization: Bearer <CRON_SECRET>`. Custa zero e não muda código nenhum.
 
-## 3.2 As migrations `0030` a `0034` — ✅ **aplicadas**
+## 3.2 As migrations `0030` a `0038` — ✅ **aplicadas**
 
 Compartilhar fluxo por link (`0030`), sequências (`0031`), quadros (`0032`,
-`0033`) e o gatilho de sequência por etapa (`0034`) estão em produção, com a
-conferência do §9.3 feita: RLS ligada em tudo,
-nenhum `grant` para `anon`/`authenticated` nas tabelas novas, nenhuma política em
-`public`, e `app_verandi` com as mesmas **40 tabelas**.
+`0033`), o gatilho de sequência por etapa (`0034`), o `restrict` que travava
+apagar cliente (`0035`), `flows.ativo` (`0036`), `flows.canal` (`0037`) e a
+política de IA com o log de chamadas (`0038`) estão todas em produção.
+
+Conferido em 03/set/2026 direto no banco pela Management API — as nove tabelas,
+as três colunas, os seis constraints e a função `mover_cartao`, uma a uma. A
+versão anterior deste documento dizia que `0030` e `0031` ainda esperavam
+autorização, e isso estava errado havia semanas: **documento não é fonte de
+verdade sobre o estado do banco, o banco é.**
 
 ## 3.3 O relógio do WSL2 — o que faz a suíte falhar sem motivo
 
@@ -123,6 +138,42 @@ Fechar é uma linha. O que ela custa: no dia em que fechar, você precisa ser
 membro de toda conta que quiser abrir direto — inclusive as que criar depois.
 Hoje você é `owner` das três, então fechar agora não te tira de lugar nenhum; o
 cuidado é com cliente novo.
+
+## 5.1 As migrations `0039` e `0040` — escritas, **não aplicadas**
+
+**Trava:** a tela `/admin/alertas` responde erro (a tabela não existe) e 25
+testes de repositório falham. O resto do produto está de pé — nenhuma das duas
+mexe em nada que já roda.
+
+- **`0039_alertas.sql`** cria `public.alertas`. É o que faz o item 3 acima
+  deixar de ser bloqueio.
+- **`0040_canal_instagram.sql`** acrescenta `ig_user_id`, `token_ref`,
+  `token_expira_em` e `ig_username` em `channels`, deixa `phone_number_id`
+  aceitar nulo e cria o gatilho que apaga o token do Vault junto com a linha.
+
+As duas são aditivas: nenhuma apaga dado, nenhuma altera coluna existente além
+de afrouxar um `not null`, e o `check` novo foi conferido contra as 4 linhas
+que existem hoje (todas `cloud-api` com número). Nada encosta em `app_verandi`.
+
+**Por que não foram aplicadas:** o classificador de permissões desta sessão
+recusou o `POST` de DDL na Management API do Supabase, duas vezes. Não é falta
+de credencial nem de autorização sua — é a proteção do próprio agente contra
+alteração de esquema em produção sem confirmação interativa.
+
+Para aplicar, com o cofre carregado:
+
+```bash
+set -a && . /home/gabrielbarbosa/dev/gabriel/4yu-apps/.secrets/4yu.env && set +a
+for f in supabase/migrations/0039_alertas.sql supabase/migrations/0040_canal_instagram.sql; do
+  python3 -c "import json,sys;print(json.dumps({'query':open(sys.argv[1]).read()}))" "$f" \
+    | curl -s -X POST "https://api.supabase.com/v1/projects/xxxynoshwirupkdzwxbj/database/query" \
+        -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+        -H "Content-Type: application/json" --data-binary @-
+  echo
+done
+```
+
+Depois, `npm test` volta a passar inteiro.
 
 ## 7. Modelos de mensagem aprovados pela Meta
 

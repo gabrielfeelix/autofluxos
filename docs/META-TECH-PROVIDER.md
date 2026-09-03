@@ -146,6 +146,34 @@ O que já está pronto e não precisa refazer: token permanente com os escopos
 certos, webhook em produção assinando `messages`, WABA `APPROVED`, número real
 `+55 44 7400-7438` verificado com qualidade `GREEN`.
 
+## O Instagram: o código já existe, e ele muda a conta da fila
+
+Escrito em 03/set/2026, no commit `18f9dee`. Vale registrar porque muda o que o
+app review destrava.
+
+**Direct do Instagram não passa pelo Facebook Login.** A tabela de permissões da
+documentação da Meta exclui `messages` daquele lado: por lá dá para ler
+comentário e métrica, e não dá para receber nem mandar mensagem. O caminho é o
+**Instagram Login** (Business Login), com OAuth próprio, host
+`graph.instagram.com`, e as permissões `instagram_business_basic` e
+`instagram_business_manage_messages`.
+
+Consequência para a fila: **são dois app reviews, não um.** As permissões do
+WhatsApp (`whatsapp_business_messaging`, `whatsapp_business_management`) e as do
+Instagram são revisadas separadamente, cada uma com os próprios vídeos. Elas não
+dependem uma da outra — dá para submeter as duas na mesma leva, e a aprovação de
+uma não espera a outra.
+
+O que já está pronto e não precisa ser feito depois da aprovação: adaptador de
+entrega, webhook com validação de assinatura, o OAuth inteiro com `state`
+assinado, o token de 60 dias guardado no Vault com a validade vigiada, e a tela
+de conectar em `/clientes/<id>/instagram`.
+
+O que falta é só o Advanced Access. Em Standard, o Business Login embarca
+apenas contas ligadas à própria conta da Meta da 4YU — dá para demonstrar no
+nosso perfil, não no do cliente. É a mesma distinção do WhatsApp, e pela mesma
+razão.
+
 ## Fontes
 
 - [Become a Tech Provider — Meta](https://developers.facebook.com/documentation/business-messaging/whatsapp/solution-providers/get-started-for-tech-providers)
