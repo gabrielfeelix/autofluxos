@@ -110,9 +110,10 @@ extração explícito para os objetos de `public`.
 
 - arquivos em `supabase/migrations/`;
 - objetos de domínio em `public`;
-- `0001` a `0041` aplicadas em produção (`0039`, `0040` e `0041` em
-  03/set/2026, com autorização explícita do dono); `0042` escrita e **ainda não
-  aplicada**;
+- `0001` a `0042` aplicadas em produção (`0039` a `0042` em 03/set/2026, com
+  autorização explícita do dono). A `0042` foi replayada em Docker antes, e
+  conferida depois na produção: `af_auditoria` devolve
+  `service_role → INSERT, SELECT` e nada mais;
 - **a `0042` conserta um efeito colateral da `0041`**: o `grant all on all
   tables in schema public to service_role` do passo 2 alcançou
   `public.af_auditoria` e devolveu `update`, `delete` e `truncate` à chave da
