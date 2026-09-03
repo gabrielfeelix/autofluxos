@@ -35,6 +35,7 @@ import { SeletorDeEtiquetas, type EtiquetaEscolhivel } from '@/components/etique
 import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { marcarComoLida, naoLidasPorContato, TETO_DA_INSIGNIA } from '@/server/repos/leituras'
 import { TextoDoWhatsApp } from '@/components/texto-do-whatsapp'
+import { PulsoDoInbox } from '@/components/inbox/pulso-do-inbox'
 
 export const dynamic = 'force-dynamic'
 
@@ -155,6 +156,12 @@ export default async function Pagina({
 
   return (
     <ClienteShell cliente={cliente} ativa="inbox">
+      {/*
+        Só aqui, e não na moldura do cliente: recarregar a tela de fluxos ou de
+        contatos a cada mensagem que chega seria intromissão. O Inbox é a única
+        tela cujo conteúdo é a conversa acontecendo agora.
+      */}
+      <PulsoDoInbox clienteId={cliente.id} />
       <main className="px-4 md:px-[42px] pt-[26px] pb-[42px]">
         {/*
           O estado vazio é para **cliente sem conversa nenhuma**, e não para

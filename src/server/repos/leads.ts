@@ -555,6 +555,35 @@ export async function paginarLeads(
 }
 
 /**
+ * O carimbo da mensagem mais recente da conta — o "tem coisa nova?" do Inbox.
+ *
+ * Existe para a tela se atualizar sozinha sem recarregar a página inteira a
+ * cada poucos segundos. É de propósito a consulta mais barata do arquivo: uma
+ * linha, uma coluna, ordenada por um índice que já existe. Quem chama compara
+ * com o que tinha e só então pede o `refresh` — que aí sim custa.
+ *
+ * Vem por `contacts!inner` porque `messages` não guarda o cliente: o vínculo é
+ * o contato. Sem o `inner`, mensagem de outra conta entraria na conta errada e
+ * um Inbox piscaria por causa do movimento de outro.
+ *
+ * `null` quando a conta ainda não tem mensagem nenhuma — que é diferente de
+ * erro, e quem chama trata como "nada novo".
+ */
+export async function pulsoDaConta(clienteId: string): Promise<string | null> {
+  const { data, error } = await db()
+    .from('messages')
+    .select('ts, contacts!inner(client_id)')
+    .eq('contacts.client_id', clienteId)
+    .order('ts', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return null
+  if (error) throw new Error(`não deu para ler o pulso da conta: ${error.message}`)
+  return (data as { ts: string } | null)?.ts ?? null
+}
+
+/**
  * Os contatos deste cliente que têm uma etiqueta.
  *
  * Lê os ids do cliente e depois o histórico deles. É a consulta mais pesada do
