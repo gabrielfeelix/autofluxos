@@ -55,8 +55,21 @@ extração explícito para os objetos de `public`.
    acidentes, mas uma aplicação comprometida com essa chave ainda pode alcançar
    o outro schema. Nunca aceite schema, tabela ou SQL vindos de usuário.
 6. **RLS e `GRANT` são camadas diferentes.** Uma tabela nova precisa da decisão
-   explícita das duas. No AutoFluxos, o padrão atual é RLS ligada sem política e
-   sem acesso para `anon`/`authenticated`.
+   explícita das duas. No AutoFluxos, o padrão real é **RLS ligada e sem
+   política nenhuma** — é isso, e só isso, que barra o acesso.
+
+   Este parágrafo já afirmou que também não havia `grant` para
+   `anon`/`authenticated`. **Não é verdade, e nunca foi:** conferido em
+   03/set/2026, as 13 tabelas de `public` têm os 7 privilégios concedidos aos
+   dois papéis, herdados do default do projeto Supabase. Uma tabela nova nasce
+   assim, e a `0039` nasceu assim.
+
+   O produto continua protegido porque RLS sem política nega tudo que não vem
+   da `service_role`. Mas quem ler a linha antiga e criar uma política
+   "inofensiva" numa tabela achando que o `grant` não existe abre a tabela
+   inteira para o PostgREST — que é compartilhado com a Verandi. Revogar os
+   grants em massa é mudança global e não foi feita; o que vale hoje é: **nunca
+   crie política em `public` sem tratar isso como exposição pública.**
 7. **Função `security definer` precisa de `search_path` fixo e permissões
    mínimas.** View que encosta em dado protegido precisa de
    `security_invoker = true`. RPC sensível deve revogar `public`, `anon` e

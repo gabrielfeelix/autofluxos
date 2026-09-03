@@ -139,41 +139,24 @@ membro de toda conta que quiser abrir direto — inclusive as que criar depois.
 Hoje você é `owner` das três, então fechar agora não te tira de lugar nenhum; o
 cuidado é com cliente novo.
 
-## 5.1 As migrations `0039` e `0040` — escritas, **não aplicadas**
+## 5.1 As migrations `0039` e `0040` — ✅ **aplicadas**
 
-**Trava:** a tela `/admin/alertas` responde erro (a tabela não existe) e 25
-testes de repositório falham. O resto do produto está de pé — nenhuma das duas
-mexe em nada que já roda.
+Aplicadas em 03/set/2026 com sua autorização explícita, pela Management API.
+`0039` criou `public.alertas`; `0040` acrescentou `ig_user_id`, `token_ref`,
+`token_expira_em` e `ig_username` em `channels`, soltou o `not null` de
+`phone_number_id` e criou o gatilho que apaga o token do Vault junto com a
+linha.
 
-- **`0039_alertas.sql`** cria `public.alertas`. É o que faz o item 3 acima
-  deixar de ser bloqueio.
-- **`0040_canal_instagram.sql`** acrescenta `ig_user_id`, `token_ref`,
-  `token_expira_em` e `ig_username` em `channels`, deixa `phone_number_id`
-  aceitar nulo e cria o gatilho que apaga o token do Vault junto com a linha.
+Conferido depois: RLS ligada em `alertas` com zero políticas, os três
+constraints e o gatilho de `channels` no lugar, e `app_verandi` intacta com as
+**42 tabelas**. `npm test` passa inteiro — 1142 testes.
 
-As duas são aditivas: nenhuma apaga dado, nenhuma altera coluna existente além
-de afrouxar um `not null`, e o `check` novo foi conferido contra as 4 linhas
-que existem hoje (todas `cloud-api` com número). Nada encosta em `app_verandi`.
-
-**Por que não foram aplicadas:** o classificador de permissões desta sessão
-recusou o `POST` de DDL na Management API do Supabase, duas vezes. Não é falta
-de credencial nem de autorização sua — é a proteção do próprio agente contra
-alteração de esquema em produção sem confirmação interativa.
-
-Para aplicar, com o cofre carregado:
-
-```bash
-set -a && . /home/gabrielbarbosa/dev/gabriel/4yu-apps/.secrets/4yu.env && set +a
-for f in supabase/migrations/0039_alertas.sql supabase/migrations/0040_canal_instagram.sql; do
-  python3 -c "import json,sys;print(json.dumps({'query':open(sys.argv[1]).read()}))" "$f" \
-    | curl -s -X POST "https://api.supabase.com/v1/projects/xxxynoshwirupkdzwxbj/database/query" \
-        -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
-        -H "Content-Type: application/json" --data-binary @-
-  echo
-done
-```
-
-Depois, `npm test` volta a passar inteiro.
+**A tentativa anterior falhou por um motivo que não era o esperado.** O erro
+não foi permissão da Supabase nem falta de autorização: foi `403` do
+Cloudflare, código `1010`, recusando o User-Agent do `urllib` do Python. O
+mesmo POST com `curl` passou na primeira. Fica registrado porque o sintoma
+(403 numa chamada de DDL) parece exatamente um problema de credencial, e
+mandaria a próxima pessoa investigar o token por horas.
 
 ## 7. Modelos de mensagem aprovados pela Meta
 
