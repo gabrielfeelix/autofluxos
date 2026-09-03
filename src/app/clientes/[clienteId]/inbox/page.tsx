@@ -272,7 +272,21 @@ async function Conteudo({
         <h1 className="mt-0.5 text-[19px] font-bold tracking-[-0.02em]">Inbox</h1>
       </header>
 
-      <div className="grid min-h-[640px] grid-cols-[292px_minmax(390px,1fr)_250px] overflow-hidden rounded-[16px] border border-white/[0.075] bg-[#0c1118] shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
+      {/*
+        A moldura tem **altura máxima**, e é isso que faz o histórico rolar por dentro.
+
+        Com `min-h` só, a caixa crescia com a conversa e quem rolava era a
+        página inteira: o cabeçalho da conversa e a caixa de resposta subiam
+        para fora da tela, e uma conversa longa deixava de ter onde responder
+        sem voltar ao topo. As três colunas já tinham `overflow` próprio — o
+        que faltava era um teto para elas medirem.
+
+        `h-[calc(100dvh-…)]` desconta o cabeçalho "Atendimento" e a margem da
+        moldura. `dvh` e não `vh`: no celular a barra do navegador entra e sai,
+        e `vh` congela a altura da barra escondida — a caixa de resposta ficava
+        atrás dela.
+      */}
+      <div className="grid h-[calc(100dvh-116px)] min-h-[420px] grid-cols-[292px_minmax(390px,1fr)_250px] overflow-hidden rounded-[16px] border border-white/[0.075] bg-[#0c1118] shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
         <Fila
           clienteId={clienteId}
           leads={leads}
@@ -775,7 +789,9 @@ function DadosDoLead({
   const aguardandoPessoa = lead.aguardando !== null
   const botPausado = !lead.automacaoAtiva
   return (
-    <aside className="min-w-0 bg-white/[0.012]">
+    // Rola por dentro, como as outras duas colunas: agora que a moldura tem
+    // teto, a ficha de um lead com muitos campos seria cortada sem isto.
+    <aside className="min-w-0 overflow-y-auto bg-white/[0.012]">
       <header className="border-b border-white/[0.06] px-4 py-[17px]">
         <p className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-dim">CONTATO</p>
         <h2 className="mt-1 text-[13px] font-bold">Contexto do lead</h2>
