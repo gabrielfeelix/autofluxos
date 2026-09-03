@@ -136,10 +136,15 @@ tem, mas ainda não é a vez dele; coexistence é o fim da fila, não um atalho.
 
 **Bloqueadores concretos do app review, conferidos hoje:**
 
-- [ ] `privacy_policy_url` do app **continua vazio** na Graph API. A página
-      existe (`https://autofluxos.4yu.com.br/privacidade`), falta colar no painel
-      — Configurações → Básico. É campo de UI, sem API.
-- [ ] Ícone e categoria do app (mesma tela).
+- [x] `privacy_policy_url` **preenchido** — `https://autofluxos.4yu.com.br/privacidade`.
+      Estava vazio em 02/09; foi colado no painel e o MCP confirmou em 03/09.
+      `terms_of_service_url` também entrou (`/termos`).
+- [x] Categoria do app: `BUSINESS`.
+- [ ] `data_deletion_url` está com o valor de placeholder `https://www.facebook.com/`.
+      Isso reprova a submissão. Ver a seção de 03/09 abaixo.
+- [ ] Ícone do app (`app_icon_url` continua nulo) e `description`, em
+      Configurações → Básico.
+- [ ] `contact_email` (`contato@4yu.com.br`) **não verificado**.
 - [ ] Os dois vídeos do app review (mensagem chegando; template sendo criado).
 
 O que já está pronto e não precisa refazer: token permanente com os escopos
@@ -173,6 +178,94 @@ O que falta é só o Advanced Access. Em Standard, o Business Login embarca
 apenas contas ligadas à própria conta da Meta da 4YU — dá para demonstrar no
 nosso perfil, não no do cliente. É a mesma distinção do WhatsApp, e pela mesma
 razão.
+
+## 03/09/2026 — o que o MCP DevTools da Meta mostrou
+
+A partir daqui o estado do app dá para apurar sem abrir o painel: a Meta publica
+um servidor MCP oficial que lê configuração, permissões, webhooks, compliance e
+app review. Instalação e uso estão na seção seguinte.
+
+**Compliance: limpo.** `overall_status: compliant`, zero violação aberta, zero
+ação obrigatória. Rate limit em 0%, `effective_users_count: 1` — número que não
+serve para decidir nada enquanto só nós usamos o app.
+
+**App review: existe um rascunho parado.** `submission_status: UNSUBMITTED`,
+`submission_id 1082311667664553`. Dentro dele estão `public_profile`,
+`business_management`, `manage_app_solution`, `whatsapp_business_messaging`,
+`whatsapp_business_management` e `whatsapp_business_manage_events`. Nunca foi
+enviado.
+
+**Só uma permissão está concedida de fato:**
+
+| Permissão | grant_status | access_level |
+|---|---|---|
+| `openid` | `DEVOPS_APPROVED` | `standard` |
+| `whatsapp_business_messaging` | `REJECTED` | `none` |
+| `whatsapp_business_management` | `REJECTED` | `none` |
+| `business_management` | `REJECTED` | `none` |
+| `manage_app_solution` | `REJECTED` | `none` |
+| `whatsapp_business_manage_events` | `REJECTED` | `none` |
+| `public_profile`, `email` | `REJECTED` | `none` |
+
+O `REJECTED` assusta e não é reprova de análise: `rejection_reasons` vem vazio em
+todas, e a submissão nunca saiu. É o estado default de quem ainda não pediu. O
+efeito prático, porém, é idêntico ao de uma reprova — `access_level: none`.
+
+Isso não contradiz o que está escrito acima sobre o token funcionar: o token é
+`SYSTEM_USER` da própria conta, e Standard Access atende número da própria
+conta. O que `none`/Standard impede é o número **do cliente**.
+
+**Três coisas que o painel não deixa óbvias:**
+
+1. **`data_deletion_url` é placeholder.** Está em `https://www.facebook.com/`.
+   É o item mais barato de arrumar e trava a submissão inteira depois. Precisa
+   ser uma URL nossa que realmente apague dado de usuário mediante pedido.
+2. **`contact_email_verified: false`** para `contato@4yu.com.br`.
+3. **Não existe webhook de Instagram.** A única assinatura do app é
+   `whatsapp_business_account`. O Inbox de direct (commit `a86efab`) não recebe
+   evento nenhum em produção: falta a subscription de `instagram`, e as
+   permissões `instagram_business_basic` / `instagram_business_manage_messages`
+   sequer estão no rascunho de submissão.
+
+**Ordem sugerida:** arrumar o `data_deletion_url` → verificar o e-mail de
+contato → subir ícone e descrição → acrescentar o Instagram ao rascunho →
+gravar os vídeos → submeter.
+
+## Instalar o MCP DevTools da Meta (para continuar de outra máquina)
+
+O servidor é oficial da Meta e é HTTP remoto — não instala nada local, só
+autentica no navegador com a conta que tem papel no app.
+
+```
+https://mcp.facebook.com/devtools
+```
+
+**Neste repositório já está configurado** em `.mcp.json` (commit `c91be7f`), e o
+arquivo é versionado. Então, na máquina de casa, basta clonar o repositório e
+abrir o Claude Code nele: ele oferece o servidor `meta-devtools`, você aprova, e
+na primeira chamada abre o OAuth no navegador. Faça o login com a conta que é
+**admin do app `AutoFluxos`** — o MCP só enxerga app em que a conta tem papel de
+developer, admin ou tester.
+
+Fora deste repositório, ou em outro cliente MCP:
+
+```bash
+claude mcp add --transport http meta-devtools https://mcp.facebook.com/devtools
+```
+
+Confirme que ficou de pé listando os apps — devem aparecer três
+(`garimpo-rede social`, `claude-garimpo`, `AutoFluxos` id `1063817842847269`),
+todos com papel `admin` e permissões `read` + `manage`.
+
+O que ele responde, e que evita abrir o painel: configuração básica e avançada
+do app, segurança e restrições, status e histórico de app review com as
+permissões uma a uma, compliance, rate limit e volume de chamadas, depreciações
+da Graph API, tópicos e assinaturas de webhook (inclusive disparar teste), e
+busca na documentação da Meta.
+
+O que ele **não** faz: nada de WhatsApp Business em si — WABA, número,
+qualidade e template continuam sendo `curl` na Graph API, com os comandos que já
+estão na seção "Os comandos" acima.
 
 ## Fontes
 
