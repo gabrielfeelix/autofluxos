@@ -338,8 +338,11 @@ async function Conteudo({
               chat feito assim tem. Com a coluna invertida o navegador ancora o
               scroll no fim desde o primeiro render, sem piscar e sem JS.
 
-              O `Historico` reverte a lista de volta, para a leitura continuar
-              da mais antiga para a mais nova.
+              O `Historico` fica em ordem NORMAL. Como ele é filho único deste
+              container, a inversão daqui não mexe na ordem das mensagens — ela
+              só decide de que ponta o scroll nasce. Inverter os dois (o que
+              esta tela já fez) inverte a conversa de verdade: a mensagem de
+              duas horas atrás aparecia acima da de três.
             */}
             <div className="flex min-h-0 flex-1 flex-col-reverse overflow-auto bg-[radial-gradient(500px_320px_at_70%_5%,rgba(86,208,245,0.04),transparent_68%)] p-5">
               <Historico mensagens={conversa.mensagens} cortada={conversa.cortada} nome={selecionado.nome} />
@@ -776,13 +779,20 @@ function Historico({
   }
 
   /*
-   * Invertido para compensar o `flex-col-reverse` do container que rola.
+   * Ordem normal: mais antiga em cima, mais nova embaixo.
    *
-   * Os dois se cancelam: a ordem na tela continua a de sempre — mais antiga em
-   * cima, mais nova embaixo —, e o scroll nasce ancorado no fim.
+   * O `flex-col-reverse` mora no container que ROLA, uma camada acima, e não
+   * aqui. Como este bloco é filho único dele, a inversão de lá só escolhe de
+   * que ponta o scroll nasce — não mexe na ordem. Inverter aqui também (o que
+   * esta tela chegou a fazer) invertia a conversa de verdade.
    */
   return (
-    <div className="mx-auto flex max-w-[680px] flex-col-reverse gap-2.5">
+    <div className="mx-auto flex max-w-[680px] flex-col gap-2.5">
+      {cortada && (
+        <p className="mb-1 self-center rounded-full border border-dashed border-white/[0.15] px-3 py-1.5 text-center font-mono text-[9.5px] text-dim">
+          mostrando as 500 mensagens mais recentes
+        </p>
+      )}
       {mensagens.map((mensagem) => {
         const nossa = mensagem.direcao === 'saida'
         return (
@@ -804,12 +814,7 @@ function Historico({
           </div>
         )
       })}
-      {/* Por último no JSX = no topo da tela, por causa da inversão. */}
-      {cortada && (
-        <p className="mt-1 self-center rounded-full border border-dashed border-white/[0.15] px-3 py-1.5 text-center font-mono text-[9.5px] text-dim">
-          mostrando as 500 mensagens mais recentes
-        </p>
-      )}
+
     </div>
   )
 }

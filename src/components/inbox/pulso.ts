@@ -2,31 +2,30 @@
  * A decisão do pulso: a tela à vista está velha?
  *
  * Vive fora do componente para poder ser testada sem navegador — e ela merece
- * teste, porque a primeira versão errou aqui.
+ * teste, porque já errou duas vezes.
  *
- * **O erro que isto documenta:** o componente guardava a última leitura num
- * `useRef`. Só que `router.refresh()` remonta a árvore e zera o ref; toda
- * leitura virava "primeira leitura", nenhuma comparação acontecia, e o Inbox
- * ficava parado — o defeito exato que ele existia para consertar.
+ * **Erro 1.** O componente guardava a última leitura num `useRef`. Como
+ * `router.refresh()` remonta a árvore, o ref zerava, toda leitura virava
+ * "primeira leitura" e nada acontecia.
  *
- * A comparação certa é contra o que o **servidor desenhou**, que é um fato
- * sobre a tela e não sobre a memória do componente.
+ * **Erro 2.** A correção guardava "já pedi refresh para este carimbo" para não
+ * repetir trabalho — e isso virou uma trava permanente: bastava UM refresh não
+ * chegar até a tela para a comparação passar a devolver `false` para sempre. O
+ * Inbox congelava de vez, que é pior do que o defeito original.
+ *
+ * A regra sobrou de uma linha, e é a certa: **se o banco não bate com a tela, a
+ * tela está velha.** Pedir refresh a mais custa uma renderização no servidor;
+ * pedir de menos deixa quem atende olhando para uma conversa que não existe
+ * mais.
  */
 export function precisaAtualizar({
   doBanco,
   naTela,
-  jaPedido,
 }: {
   /** O pulso que a rota acabou de devolver. */
   doBanco: string | null
   /** O pulso de quando o servidor desenhou esta página. */
   naTela: string | null
-  /** O último carimbo para o qual já pedimos refresh, e ainda não voltou. */
-  jaPedido: string | null
 }): boolean {
-  // Nada mudou desde que a página foi desenhada.
-  if (doBanco === naTela) return false
-  // O refresh deste carimbo já foi pedido; pedir de novo é trabalho repetido.
-  if (doBanco === jaPedido) return false
-  return true
+  return doBanco !== naTela
 }

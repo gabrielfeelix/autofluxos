@@ -14,6 +14,15 @@ const respostaSchema = z.object({ pulso: z.string().nullable() })
 const INTERVALO = 5_000
 
 /**
+ * Quantos `router.refresh()` sem efeito antes de apelar para o reload.
+ *
+ * Três é folga suficiente para um refresh lento (o servidor remonta a lista, o
+ * histórico e a barra lateral) sem deixar ninguém mais de quinze segundos
+ * olhando para uma tela que já não é verdade.
+ */
+const TENTATIVAS_ATE_RECARREGAR = 3
+
+/**
  * O Inbox se atualizando sozinho quando chega mensagem.
  *
  * ---------------------------------------------------------------------------
@@ -68,10 +77,18 @@ export function PulsoDoInbox({
 }) {
   const router = useRouter()
   /*
-   * Guarda o que já mandou atualizar, para não pedir duas vezes o mesmo
-   * refresh enquanto o servidor ainda não respondeu com a tela nova.
+   * Quantas vezes seguidas pedimos refresh sem a tela alcançar o banco.
+   *
+   * `router.refresh()` é a forma boa de atualizar — mantém o que está digitado
+   * na caixa de resposta, o scroll e o foco. Mas quando ele não resolve, ficar
+   * repetindo em silêncio deixa quem atende olhando para uma conversa
+   * congelada, que é o pior resultado possível.
+   *
+   * Depois de `TENTATIVAS_ATE_RECARREGAR`, recarrega a página. É o martelo, e
+   * por isso vem só no fim: perde o rascunho da resposta, mas mostra a
+   * verdade.
    */
-  const pedido = useRef<string | null>(null)
+  const tentativas = useRef(0)
 
   useEffect(() => {
     let ativo = true
@@ -98,11 +115,17 @@ export function PulsoDoInbox({
         if (!dados.success || !ativo) return
 
         const agora = dados.data.pulso
-        if (!precisaAtualizar({ doBanco: agora, naTela: pulsoNaTela, jaPedido: pedido.current })) {
+        if (!precisaAtualizar({ doBanco: agora, naTela: pulsoNaTela })) {
+          tentativas.current = 0
           return
         }
 
-        pedido.current = agora
+        tentativas.current += 1
+        if (tentativas.current >= TENTATIVAS_ATE_RECARREGAR) {
+          window.location.reload()
+          return
+        }
+
         router.refresh()
       } catch {
         // Igual ao polling de alertas: isto é conveniência. Uma oscilação de
