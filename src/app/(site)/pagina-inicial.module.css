@@ -1020,24 +1020,46 @@
  */
 .fechamento {
   position: relative;
-  overflow: hidden;
   margin: clamp(30px, 5vw, 60px) 0;
   padding: clamp(56px, 9vw, 104px) clamp(24px, 5vw, 60px);
   text-align: center;
+  isolation: isolate;
 }
 
+/*
+ * O brilho do fechamento.
+ *
+ * **Ele era um círculo cortado pelo `overflow: hidden` do pai**, e o corte
+ * aparecia como uma linha reta no fim da luz. Duas coisas mudaram: o pai não
+ * recorta mais (o `isolation` já contém o `z-index` sem precisar de overflow),
+ * e a forma virou uma elipse larga e rasa em vez de um círculo de 860px.
+ *
+ * A elipse é o formato certo aqui: a luz vem de baixo, do rodapé, e luz que
+ * sobe do chão é achatada, não redonda. As paradas do degradê são suaves até o
+ * transparente, então não existe borda para cortar.
+ */
 .fechamentoBrilho {
   position: absolute;
   left: 50%;
-  bottom: -300px;
-  width: min(860px, 120vw);
-  aspect-ratio: 1;
+  bottom: -18%;
+  z-index: -1;
+  width: min(1180px, 150vw);
+  height: 90%;
   translate: -50% 0;
   background:
-    radial-gradient(circle at 50% 46%, rgba(255, 255, 255, 0.09), transparent 56%),
-    radial-gradient(circle at 50% 52%, rgba(86, 208, 245, 0.11), transparent 62%);
+    radial-gradient(
+      ellipse 60% 100% at 50% 100%,
+      rgba(86, 208, 245, 0.13),
+      rgba(86, 208, 245, 0.05) 42%,
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 44% 80% at 50% 100%,
+      rgba(255, 255, 255, 0.08),
+      transparent 66%
+    );
   pointer-events: none;
-  filter: blur(18px);
+  filter: blur(26px);
 }
 
 /* ─────────────────────────── rodapé ─────────────────────────── */
@@ -1062,15 +1084,44 @@
  */
 .pagina [data-revela] {
   opacity: 0;
-  transform: translateY(22px);
+  transform: translateY(26px);
 }
 
 .pagina [data-revelado] {
   opacity: 1;
   transform: none;
   transition:
-    opacity 0.7s var(--curva),
-    transform 0.7s var(--curva);
+    opacity 0.75s var(--curva),
+    transform 0.75s var(--curva),
+    filter 0.75s var(--curva);
+}
+
+/*
+ * Três entradas diferentes, escolhidas pelo `data-como`.
+ *
+ * **Tudo subindo do mesmo jeito vira monotonia depois da terceira seção.** Um
+ * card que cresce lê diferente de um título que sai do desfoque, e a variação é
+ * o que mantém a rolagem interessante sem virar circo.
+ *
+ * Título e texto usam `desfoque`; card e grade usam `escala`; o que vem da
+ * lateral usa `lado`. A escolha é do componente, não automática, porque só quem
+ * escreve a seção sabe o que ela deve enfatizar.
+ */
+.pagina [data-revela][data-como='desfoque'] {
+  transform: translateY(16px);
+  filter: blur(9px);
+}
+
+.pagina [data-revelado][data-como='desfoque'] {
+  filter: blur(0);
+}
+
+.pagina [data-revela][data-como='escala'] {
+  transform: translateY(30px) scale(0.965);
+}
+
+.pagina [data-revela][data-como='lado'] {
+  transform: translateX(-26px);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1084,6 +1135,7 @@
   .pagina [data-revelado] {
     opacity: 1;
     transform: none;
+    filter: none;
     transition: none;
   }
 
@@ -2549,5 +2601,111 @@
 @media (max-width: 900px) {
   .progresso {
     display: none;
+  }
+}
+
+/* ═══════════════════ movimento na rolagem ═══════════════════
+
+   Duas coisas que dão vida à página sem exigir JS por elemento.
+   ═══════════════════════════════════════════════════════════ */
+
+/*
+ * A linha que se desenha sob o título de seção.
+ *
+ * Ela nasce com largura zero e cresce quando a seção é revelada. Custa uma
+ * transição e faz o título parecer que *acontece* em vez de já estar ali.
+ */
+/*
+ * O risco é irmão do `<h2>`, e a margem dos dois colapsa se ele for `block` —
+ * o resultado é o traço subindo até encostar na última linha do título. O
+ * `flow-root` cria um contexto próprio e a margem para de colapsar.
+ */
+.risco {
+  display: flow-root;
+  position: relative;
+  width: 0;
+  height: 2px;
+  margin-top: 24px;
+  margin-bottom: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  transition: width 1.1s var(--curva) 0.15s;
+}
+
+.riscoCentro {
+  margin-inline: auto;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+}
+
+.pagina [data-revelado] > .risco,
+.pagina [data-revelado].risco {
+  width: 88px;
+}
+
+.pagina [data-revelado] > .riscoCentro,
+.pagina [data-revelado].riscoCentro {
+  width: 132px;
+}
+
+/*
+ * O brilho que passa pelo card quando ele entra na tela.
+ *
+ * Uma faixa clara atravessa a diagonal uma única vez, como reflexo passando por
+ * vidro. Chama atenção sem piscar nem repetir: repetido viraria enfeite e o
+ * olho pararia de ver.
+ *
+ * **É um `<span>` de verdade, não um `::after`.** Os cards já gastaram os dois
+ * pseudo-elementos com a luz diagonal e o foco de cima, e um terceiro efeito
+ * sobrescreveria um deles em silêncio. Um elemento próprio também deixa o
+ * lustro entrar em qualquer card sem saber o que ele já usa.
+ */
+.lustro {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(
+    114deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.13) 46%,
+    transparent 62%
+  );
+  transform: translateX(-130%);
+  pointer-events: none;
+  opacity: 0;
+}
+
+.pagina [data-revelado] > .lustro {
+  animation: lustrar 1.5s var(--curva) 0.25s both;
+}
+
+@keyframes lustrar {
+  0% {
+    transform: translateX(-130%);
+    opacity: 0;
+  }
+  16% {
+    opacity: 1;
+  }
+  84% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(130%);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .risco {
+    transition: none;
+    width: 88px;
+  }
+
+  .riscoCentro {
+    width: 132px;
+  }
+
+  .pagina [data-revelado] > .lustro {
+    animation: none;
   }
 }

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { Cursor } from './(site)/cursor'
 import { DerivaDeParticulas } from './(site)/deriva-de-particulas'
+import { NumeroQueSobe } from './(site)/numero-que-sobe'
 import { ProgressoDosPassos } from './(site)/progresso-dos-passos'
 import { Revelar } from './(site)/revelar'
 import s from './(site)/pagina-inicial.module.css'
@@ -137,9 +138,10 @@ API oficial do WhatsApp Business
               <span className={s.olho} data-revela>
                 Na prática
               </span>
-              <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-atraso="60">
+              <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
                 Isto é o que a sua equipe vê
               </h2>
+              <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
               <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
                 Uma tela com as conversas de todo mundo. Quem espera resposta sobe para o
                 topo, o histórico fica ao lado, e a ficha diz quem é a pessoa antes de você
@@ -156,9 +158,10 @@ API oficial do WhatsApp Business
               <span className={s.olho} data-revela>
                 O problema
               </span>
-              <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-atraso="60">
+              <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
                 Você já sabe a resposta antes de ler a pergunta
               </h2>
+              <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
               <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
                 "Que horas vocês abrem?" pela oitava vez antes do almoço. Você responde,
                 volta pro que estava fazendo, e às sete da noite descobre que alguém
@@ -166,11 +169,27 @@ API oficial do WhatsApp Business
               </p>
             </div>
 
-            <div className={s.numeros} data-revela data-atraso="140">
-              <Numero valor="70%" rotulo="das mensagens que chegam são as mesmas cinco perguntas" />
-              <Numero valor="24/7" rotulo="responde domingo de manhã e na véspera de feriado" />
-              <Numero valor="1 número" rotulo="o seu. Ninguém precisa decorar um número novo" />
-              <Numero valor="0 linhas" rotulo="de código. Você arrasta blocos e testa ali mesmo" />
+            <div className={s.numeros}>
+              <Numero
+                valor="70%"
+                rotulo="das mensagens que chegam são as mesmas cinco perguntas"
+                atraso={0}
+              />
+              <Numero
+                valor="24/7"
+                rotulo="responde domingo de manhã e na véspera de feriado"
+                atraso={110}
+              />
+              <Numero
+                valor="1 número"
+                rotulo="o seu. Ninguém precisa decorar um número novo"
+                atraso={220}
+              />
+              <Numero
+                valor="0 linhas"
+                rotulo="de código. Você arrasta blocos e testa ali mesmo"
+                atraso={330}
+              />
             </div>
           </div>
         </section>
@@ -181,9 +200,10 @@ API oficial do WhatsApp Business
             <span className={s.olho} data-revela>
               O que ele faz
             </span>
-            <h2 className={s.tituloSecao} data-revela data-atraso="60">
+            <h2 className={s.tituloSecao} data-revela data-como="desfoque" data-atraso="60">
               Cinco peças que trabalham juntas
             </h2>
+              <span className={s.risco} data-revela data-atraso="90" aria-hidden />
 
             <div className={s.bento}>
               <Caixa
@@ -227,12 +247,13 @@ API oficial do WhatsApp Business
           <div className={s.faixa}>
             <div className={s.passos}>
               <div className={s.passosFixo}>
-                <span className={s.olho} data-revela>
+                <span className={s.olho} data-revela data-como="lado">
                   Como funciona
                 </span>
-                <h2 className={s.tituloSecao} data-revela data-atraso="60">
+                <h2 className={s.tituloSecao} data-revela data-como="desfoque" data-atraso="60">
                   Do seu número, não do nosso
                 </h2>
+              <span className={s.risco} data-revela data-atraso="90" aria-hidden />
                 <p className={s.chamada} data-revela data-atraso="100">
                   O atendimento acontece no WhatsApp da sua empresa. Seus clientes continuam
                   falando com o número que já está no cartão, no site e no Google. E você
@@ -305,9 +326,10 @@ sabia, quanto tempo alguém levou para assumir. Você corrige olhando isso."
               <span className={s.olho} data-revela>
                 Para quem é
               </span>
-              <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-atraso="60">
+              <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
   Para quem atende no WhatsApp o dia inteiro
               </h2>
+              <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
             </div>
           </div>
 
@@ -373,9 +395,10 @@ sabia, quanto tempo alguém levou para assumir. Você corrige olhando isso."
               <span className={s.olho} data-revela>
                 Preços
               </span>
-              <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-atraso="60">
+              <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
 Um preço que cabe antes de dar resultado
               </h2>
+              <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
               <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
                 Sem fidelidade e sem cobrar por atendente. O que muda entre os planos é
                 quantos fluxos e quantas conversas cabem no seu mês.
@@ -440,9 +463,10 @@ Um preço que cabe antes de dar resultado
               <span className={s.olho} data-revela>
                 Dúvidas
               </span>
-              <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-atraso="60">
+              <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
 O que perguntam antes de assinar
               </h2>
+              <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
             </div>
 
             <div className={s.perguntas}>
@@ -480,9 +504,10 @@ O que perguntam antes de assinar
             <span className={s.olho} data-revela>
               Começar
             </span>
-            <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-atraso="60">
+            <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
               A conta nasce pela nossa mão
             </h2>
+              <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
             <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
               Não existe cadastro automático aqui, e isso é de propósito. Conectamos o seu
               número e montamos o primeiro fluxo junto, para o sistema abrir já atendendo.
@@ -620,7 +645,8 @@ function Desktop() {
   ]
 
   return (
-    <div className={s.desktop} data-revela data-atraso="140">
+    <div className={s.desktop} data-revela data-como="escala" data-atraso="140">
+      <span className={s.lustro} aria-hidden />
       <div className={s.desktopBarra} aria-hidden>
         <span className={s.janelaPonto} />
         <span className={s.janelaPonto} />
@@ -780,10 +806,12 @@ function Falas() {
   )
 }
 
-function Numero({ valor, rotulo }: { valor: string; rotulo: string }) {
+function Numero({ valor, rotulo, atraso }: { valor: string; rotulo: string; atraso: number }) {
   return (
-    <div className={s.numeroItem}>
-      <div className={s.numeroValor}>{valor}</div>
+    <div className={s.numeroItem} data-revela data-como="escala" data-atraso={atraso}>
+      <div className={s.numeroValor}>
+        <NumeroQueSobe texto={valor} />
+      </div>
       <div className={s.numeroRotulo}>{rotulo}</div>
     </div>
   )
@@ -806,8 +834,10 @@ function Caixa({
     <article
       className={`${s.caixa} ${larga ? s.caixaLarga : ''}`}
       data-revela
+      data-como="escala"
       data-atraso={atraso}
     >
+      <span className={s.lustro} aria-hidden />
       <div className={s.caixaArte} aria-hidden>
         {arte}
       </div>
@@ -833,7 +863,8 @@ function Passo({
   atraso: number
 }) {
   return (
-    <li className={s.passo} data-revela data-atraso={atraso}>
+    <li className={s.passo} data-revela data-como="escala" data-atraso={atraso}>
+      <span className={s.lustro} aria-hidden />
       <span className={s.passoNumero}>{rotulo}</span>
       <div className={s.passoArte} aria-hidden>
         {arte}
@@ -868,7 +899,8 @@ function Setor({
   atraso: number
 }) {
   return (
-    <article className={s.setor} data-revela data-atraso={atraso}>
+    <article className={s.setor} data-revela data-como="escala" data-atraso={atraso}>
+      <span className={s.lustro} aria-hidden />
       <div className={s.setorTopo}>
         <span className={s.setorIcone} aria-hidden>
           {icone}
@@ -902,8 +934,10 @@ function Plano({
     <article
       className={`${s.plano} ${destaque ? s.planoDestaque : ''}`}
       data-revela
+      data-como="escala"
       data-atraso={atraso}
     >
+      <span className={s.lustro} aria-hidden />
       <h3 className={s.planoNome}>
         {nome}
         {destaque && <span className={s.planoSelo}>Mais escolhido</span>}
