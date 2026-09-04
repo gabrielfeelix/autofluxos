@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { adaptadorDoCanal } from './adaptador-do-canal'
 import { type CanalSalvo, acharCanalPorContaDoInstagram } from './repos/conversas'
 import { type FabricaDeCanal, type Mensagem, tratarUma } from './receber-mensagem'
+import { alertar } from './alertar'
 
 /**
  * O caminho de um direct do Instagram até a resposta.
@@ -192,7 +193,26 @@ export async function receberDoInstagram(
       // escreveu. Invertidos, a busca nunca acha canal nenhum e o produto fica
       // mudo sem nenhum erro para investigar.
       const canalSalvo = await acharCanalPorContaDoInstagram(evento.recipient.id)
-      if (!canalSalvo || canalSalvo.status !== 'ativo') continue
+
+      /*
+       * Não achar canal era um `continue` mudo, e isso custou uma tarde.
+       *
+       * A conta aparecia conectada, o webhook chegava, e a mensagem sumia aqui
+       * sem deixar rastro em lugar nenhum — nem log, nem alerta, nem linha no
+       * banco. O identificador que a Meta manda em `recipient.id` precisa ser o
+       * mesmo que foi gravado em `channels.ig_user_id` na conexão, e quando não
+       * é, a única forma de descobrir qual ele é de verdade é esta: dizer.
+       */
+      if (!canalSalvo) {
+        await alertar(
+          'o Instagram mandou mensagem para uma conta que não está ligada a nenhum cliente',
+          new Error(`recipient.id ${evento.recipient.id} não casa com nenhum channels.ig_user_id`),
+          { recipiente: evento.recipient.id, remetente: evento.sender.id },
+        )
+        continue
+      }
+
+      if (canalSalvo.status !== 'ativo') continue
 
       const mensagem = paraMensagemInterna(evento.sender.id, evento.message)
       if (!mensagem) continue
