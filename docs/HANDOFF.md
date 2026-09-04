@@ -1,4 +1,4 @@
-# Handoff — 19/ago/2026, atualizado em 03/set
+# Handoff — 19/ago/2026, atualizado em 04/set
 
 Para quem pegar este projeto agora, humano ou agente. Leia isto inteiro, depois
 [PLANO-SISTEMA.md](PLANO-SISTEMA.md), e só então código. As decisões de produto
@@ -6,181 +6,123 @@ que não estão aqui estão lá; as que estão aqui não se renegociam sem o don
 
 ---
 
-## 0. O estado em 03/set/2026, e a fila do que falta
+## 0. O estado em 04/set/2026, e a fila do que falta
 
 Esta seção existe para ser lida primeiro e sozinha. Ela responde três
-perguntas: o que entrou hoje, o que trava, e quem destrava cada coisa.
+perguntas: o que entrou, o que trava, e quem destrava cada coisa.
 
-### 0.0 O que entrou em 03/set
+### 0.0 O dia 04/set em uma linha
 
-Seis commits, de `89ea8af` em diante.
+**A análise do app foi submetida à Meta**, com seis permissões, e no caminho
+foram encontrados e corrigidos **quatro defeitos no canal de Instagram** que
+teriam derrubado o produto mesmo depois da aprovação.
 
-- **`89ea8af`** — a política de privacidade passou a identificar o operador
-  (CNPJ, endereço, WhatsApp). Exigência do app review.
-- **`2879428`** — `alertar()` deixou de depender de `ALERTA_WEBHOOK_URL`. Todo
-  alerta grava em `public.alertas` e aparece em `/admin/alertas`. O webhook
-  virou extra opcional. Migration `0039`.
-- **`c1193b5`** — o Inbox recebe empurrão do servidor por SSE
-  (`/api/clientes/<id>/inbox/stream`). Latência de 5s caiu para ~1s.
-- **`18f9dee`** — Instagram inteiro: adaptador, webhook, OAuth com `state`
-  assinado, token no Vault, tela de conectar. Migration `0040`.
-- **`66712eb`** — correção de documentação, incluindo uma afirmação falsa sobre
-  `grant` que valia mais que as duas migrations (ver 0.4).
+O gatilho foi banal: gravar o vídeo do app review. A conta conectava, o direct
+saía do celular, e o Inbox ficava vazio. Cada defeito escondia o seguinte, e
+nenhum deles aparecia em log, alerta ou banco.
 
-- **`0041`** — `public` deixou de nascer aberto para a Data API. Ver 0.4: a
-  correção de documentação do `66712eb` tinha parado na decisão errada.
+### 0.1 Os quatro defeitos do Instagram — todos corrigidos e em produção
 
-Migrations `0039`, `0040` e `0041` **aplicadas em produção** em 03/set com
-autorização explícita do dono. `npm test` passa inteiro: 1142 testes.
-
-### 0.1 O que só o dono resolve — em ordem de prioridade
-
-Nada aqui é código. Cada item diz o que trava enquanto não for feito.
-
-#### 1º — O ícone do app, que **não existe em lugar nenhum**
-
-**Trava:** o app review da Meta não fecha sem ícone, e o site não tem favicon.
-
-A marca do AutoFluxos é **só CSS**. Está em
-[`src/components/design/marca.tsx`](../src/components/design/marca.tsx): um
-quadrado com gradiente 135° de `#56d0f5` (o `--accent`) para `#7c6cff`, com um
-losango escuro `#080b10` girado 45° dentro. Não existe `.png`, `.svg` nem
-`favicon.ico` no repositório — `public/` só tem `logos/mgm-pilates.png`, que é
-de cliente.
-
-Então **não há arquivo para apontar**. Alguém precisa exportar a marca. Onde
-colar depois:
-
-| Para quê | Caminho | Formato |
-|---|---|---|
-| Ícone do app na Meta | `public/icone-1024.png` | PNG **1024×1024**, fundo sólido, **sem transparência** (a Meta rejeita alpha) |
-| Favicon do site | `src/app/icon.png` | PNG 512×512; o Next serve sozinho, sem configurar nada |
-| Atalho no iPhone | `src/app/apple-icon.png` | PNG 180×180 |
-
-O nome do arquivo em `src/app/` **é** a configuração no App Router: `icon.png`
-vira `<link rel="icon">` automaticamente. Não invente outro nome.
-
-#### 2º — Duas páginas que não existem, e sem elas o formulário da Meta não fecha
-
-**Trava:** os campos "Termos de Serviço" e "Instruções de exclusão de dados" são
-obrigatórios em Configurações Básicas, e o app review não abre com eles vazios.
-
-Não existe `src/app/termos/` nem nada de exclusão de dados. Existe só
-`src/app/privacidade/`, que é o molde a seguir — mesma moldura, mesmo
-`SECOES`, mesmo CSS module.
-
-O que cada uma precisa dizer:
-
-- **`/termos`** — quem opera (a mesma razão social da política), o que o serviço
-  faz, que a empresa cliente é a controladora dos dados das conversas dela,
-  suspensão por uso indevido, ausência de garantia de disponibilidade, foro.
-- **`/exclusao-de-dados`** — como uma pessoa pede que os dados dela sumam, em
-  quanto tempo respondemos, e o que é apagado. **Tem que casar com o que o
-  código faz de verdade**: `apagarContato()` cascateia sessões, mensagens,
-  handoffs e a trava da conversa, e a retenção automática é de 12 meses do
-  último sinal de vida (ver `repos/retencao.ts`). Prometer coisa diferente do
-  que o código faz é o problema que esta página existe para não criar.
-
-A Meta aceita uma página com instruções; não precisa de callback.
-
-#### 3º — Configurações Básicas do app
-
-**https://developers.facebook.com/apps/1063817842847269/settings/basic/**
-
-Conferido na Graph API em 03/set: `privacy_policy_url`, `terms_of_service_url`,
-`category` e `app_domains` estão **vazios**, e `icon_url` ainda é o cinza padrão
-da Meta.
-
-| Campo | Valor |
+| Commit | O que estava errado |
 |---|---|
-| Ícone | o PNG 1024×1024 do item 1 |
-| Categoria | **Empresas e páginas** |
-| Política de Privacidade | `https://autofluxos.4yu.com.br/privacidade` |
-| Termos de Serviço | `https://autofluxos.4yu.com.br/termos` |
-| Exclusão de dados | `https://autofluxos.4yu.com.br/exclusao-de-dados` |
-| Domínios do app | `autofluxos.4yu.com.br` |
-| E-mail de contato | `contato@4yu.com.br` |
+| `1081da9` | A assinatura do webhook era conferida só com `META_APP_SECRET`. O Direct é assinado com a chave do **app do Instagram** (`AutoFluxos-IG`, id `2275979176586034`), que é outro par. Todo evento levava **401** na porta. |
+| `3ebed53` | `trocarCodigoPorConta` gravava `curto.user_id` — o id com escopo do app, `27914774691477704`. O webhook manda em `recipient.id` o id da **conta profissional**, `17841400183953038`. O `/me` já era chamado e o `user_id` era lido e descartado na mesma linha. |
+| `b5b1d61` + `5c5fef8` | Canal não encontrado e corpo fora do formato saíam com `continue` mudo. Sem esses dois alertas o quarto defeito não teria sido encontrado. |
+| `e474672` | **O que realmente segurava tudo.** `entry[].messaging` mistura a mensagem com avisos (`read`, `seen`, reação) que não têm `sender` nem `recipient`. O schema exigia os dois em todos os itens, e o zod reprova o payload inteiro quando um item falha — um aviso de leitura no mesmo lote **descartava a mensagem junto**, com 200 na resposta. |
 
-Salvar no rodapé — sem isso nada persiste.
+O corpo que provou os defeitos 2 e 4 de uma vez, colhido pelo alerta do
+`5c5fef8`:
 
-#### 4º — Um login descartável para o revisor
+```json
+{"object":"instagram","entry":[{"id":"17841400183953038",
+ "messaging":[{"timestamp":1788530071837,"read":{"mid":"..."}}]}]}
+```
 
-**Trava:** o revisor é uma pessoa de verdade, em outro país, que vai tentar
-entrar. Sem login funcionando, rejeição imediata e a fila recomeça.
+`entry.0.messaging.0.sender: Required`.
 
-`/admin/usuarios` → `+ Cadastrar pessoa`; depois `/admin/contas` → `+ Ligar
-pessoa` como dono de uma conta de demonstração. Guarde e-mail e senha para
-colar no formulário do app review.
+Também entrou `c5ed171`, que loga o corpo cru quando o webhook não produz
+mensagem nenhuma — diagnóstico temporário, dá para remover depois da aprovação.
 
-#### 5º — Os dois vídeos do app review
+### 0.2 O que a análise da Meta está esperando
 
-Gravação de tela (`Win+Alt+R` serve), sem cortes, com a **URL do navegador
-visível o tempo todo**. Corte no meio é motivo de rejeição.
+Submetida em **04/set/2026**, prazo de até 20 dias. Seis permissões:
+`instagram_business_basic`, `instagram_business_manage_messages`,
+`whatsapp_business_messaging`, `whatsapp_business_management`,
+`business_management`, `public_profile`.
 
-- **`whatsapp_business_messaging`** (~90s): entrar no painel com o login de
-  teste → abrir o Inbox → mandar mensagem do celular para `+55 44 7400-7438` →
-  mostrar ela chegando na tela → responder pelo painel → mostrar chegando no
-  celular.
-- **`whatsapp_business_management`** (~60s): mesmo login → Configurações →
-  Número do WhatsApp → mostrar o número e o fluxo de cada papel → trocar o
-  fluxo de um papel → mostrar que persistiu.
+Enquanto o acesso for **Standard**, o webhook `messages` só entrega eventos da
+própria conta conectada — foi por isso que o `read` chegava e a mensagem de
+outra pessoa nunca chegou. Isso está escrito na justificativa da permissão de
+mensagens, e não é motivo de rejeição.
 
-Submissão em
-**https://developers.facebook.com/apps/1063817842847269/app-review/permissions/**,
-pedindo `Request advanced access` nas duas.
+**Conta de teste dada ao revisor** (apagar ou trocar a senha depois da
+aprovação):
 
-#### 6º — O produto Instagram no app da Meta
+```
+revisor.meta@4yu.com.br / RevisorMeta2026
+```
 
-**https://developers.facebook.com/apps/1063817842847269/add/** → **Instagram** →
-**API com Instagram Login**.
+É dona do cliente `Estúdio de exemplo` (`22ee56d8-48e3-4763-a5af-d863db5eee62`).
 
-Depois, em Instagram → Configuração da API:
+### 0.3 O que o dono já resolveu — não refaça
 
-- Copiar o **Instagram App ID** e o **Instagram App Secret**. **Não são** o
-  `1063817842847269` — são outro par, específico do produto. Usar o id do app
-  aqui devolve um erro de OAuth que parece falta de permissão.
-- **URI de redirecionamento OAuth**:
-  `https://autofluxos.4yu.com.br/api/instagram/retorno` — byte a byte, sem
-  barra no fim. Ele precisa bater com o que o código monta em
-  `enderecoDeRetorno()`, senão a troca do código falha com "redirect_uri
-  mismatch".
-- **Webhook**: `https://autofluxos.4yu.com.br/api/webhook/instagram`, campo
-  `messages`. O verify token cai no `WHATSAPP_VERIFY_TOKEN` enquanto
-  `INSTAGRAM_VERIFY_TOKEN` não existir — de propósito.
+Toda a lista de bloqueios do handoff anterior saiu do caminho em 04/set:
 
-Os dois valores entram em `4yu-apps/.secrets/4yu.env` como
-`AUTOFLUXOS_INSTAGRAM_APP_ID` e `AUTOFLUXOS_INSTAGRAM_APP_SECRET`, e como
-`INSTAGRAM_APP_ID` / `INSTAGRAM_APP_SECRET` no ambiente da Vercel. **Nunca**
-dentro do repositório — ele é público.
+- **Ícone do app**: enviado. `app_icon_url` deixou de ser nulo.
+- **`/termos` e `/exclusao-de-dados`**: existem e respondem 200.
+- **Configurações Básicas**: `privacy_policy_url`, `terms_of_service_url`,
+  `data_deletion_url` (era o placeholder `https://www.facebook.com/`, o que
+  reprovaria sozinho), `category` = `BUSINESS` e `base_domains` preenchidos.
+- **Login do revisor**: criado e ligado como dono do cliente de demonstração.
+- **Vídeos**: gravados e anexados às seis permissões.
+- **Produto Instagram no app**: adicionado, com redirect
+  `https://autofluxos.4yu.com.br/api/instagram/retorno`, webhook em
+  `/api/webhook/instagram` e o campo `messages` assinado.
+- **`INSTAGRAM_APP_ID` e `INSTAGRAM_APP_SECRET`**: na Vercel, target
+  production, o secret marcado como sensitive. O id é `2275979176586034`.
+- **Testadores do Instagram**: `gaabriel.feelix` e `mangudos_`, os dois
+  aceitos.
+- **Política de privacidade** ganhou a seção **Pedidos de autoridades
+  públicas** (`72ac8b5`), que é o texto público das quatro práticas declaradas
+  no formulário da Meta.
 
-Sem eles, a tela `/clientes/<id>/instagram` mostra o botão desligado e explica
-o que falta. Nada quebra.
+### 0.4 O que falta
 
-#### 7º — `ALERTA_WEBHOOK_URL`, agora opcional de verdade
+**Depende da Meta, não de nós:** a aprovação. Sem Advanced Access, o Embedded
+Signup do WhatsApp embarca só números da própria conta, e o Direct só entrega
+eventos da conta conectada.
 
-Deixou de ser bloqueio: os alertas já são gravados e aparecem em
-`/admin/alertas`. Só preencha se quiser ser avisado sem abrir o painel.
+**Depende de código, e não de ninguém de fora:**
 
-### 0.2 O que falta de código, e não depende de ninguém de fora
-
-- **As duas páginas do item 2** — `/termos` e `/exclusao-de-dados`. É o único
-  item desta lista que trava o dono, então é o primeiro a escrever.
+- **`subscribed_apps` não é chamado no fim do OAuth.** A inscrição da conta
+  `gaabriel.feelix` no campo `messages` foi feita pelo toggle do painel, que só
+  vale para conta adicionada lá na mão. **Cliente que conectar pelo OAuth cai no
+  mesmo buraco** — a doc da Meta chama isso de Step 3, e é
+  `POST /{ig-user-id}/subscribed_apps?subscribed_fields=messages`.
 - **Renovação automática do token do Instagram.** `renovarToken()` existe em
   `server/instagram/conexao.ts` e **ninguém a chama**. O token vale 60 dias e
-  `channels.token_expira_em` já guarda a validade; falta uma tarefa em
-  `server/tarefas.ts` que renove o que estiver perto de vencer. Sem isso, a
-  conta para de responder no dia 61 e só o dono do perfil resolve.
-- **O nome do perfil do Instagram vem `null`.** O webhook não traz nome junto
-  da mensagem — exige um `GET /{igsid}`. Uma consulta a mais por mensagem
-  dentro do orçamento do webhook; decidido deixar para depois do app review.
+  `channels.token_expira_em` já guarda a validade. Sem isso a conta para de
+  responder no dia 61.
+- **O nome do perfil do Instagram vem `null`.** Exige um `GET /{igsid}`.
+  Decidido deixar para depois do app review.
 - **`canais.ts` mantém `instagram.disponivel: false`**, de propósito. Vira
   `true` quando o Advanced Access sair. É uma linha.
-- **Os limites de `canais.ts` ainda não alimentam `validar()`.** O adaptador do
-  Instagram corta em 13 quick replies para a Meta não recusar a mensagem
-  inteira, mas o editor não avisa quem desenha. É o item 2 da receita escrita
-  no cabeçalho de `core/canais.ts`.
+- **Os limites de `canais.ts` ainda não alimentam `validar()`.** O adaptador
+  corta em 13 quick replies e o editor não avisa quem desenha.
+- **`acaoVincularMembro` estoura ao ligar um membro que já existe.** Better Auth
+  recusa duplicado e o erro sobe como erro de Server Component (tela genérica,
+  React #441). O vínculo já foi gravado na primeira tentativa — o segundo
+  clique é que quebra. Falta tratar o duplicado como sucesso.
+- **`c5ed171` é diagnóstico temporário** e pode sair depois da aprovação.
 
-### 0.3 As armadilhas já pagas — não redescubra
+**Depende do dono:**
+
+- Verificar o e-mail `contato@4yu.com.br` — `contact_email_verified` continua
+  `false`. Não bloqueou a submissão.
+- Trocar a senha do usuário `revisor.meta@4yu.com.br` (ou apagá-lo) depois da
+  aprovação. A senha está em texto puro no formulário da Meta e no `.env`.
+
+### 0.5 As armadilhas já pagas — não redescubra
 
 - **Websocket direto no Supabase Realtime está fechado.** A chave que assina o
   JWT do projeto é **ES256** e a metade privada fica dentro do Supabase: não há
@@ -197,11 +139,32 @@ Deixou de ser bloqueio: os alertas já são gravados e aparecem em
 - **`403` com código `1010` na Management API do Supabase é Cloudflare, não
   credencial.** Ele recusa o User-Agent do `urllib` do Python. O mesmo POST com
   `curl` passa. Custou uma investigação inteira do token à toa.
+- **A assinatura do webhook do Instagram não usa o segredo do app da Meta.** O
+  produto Instagram Login cria um app próprio, com id e chave secreta
+  separados, e é essa chave que assina o Direct. Conferir só com
+  `META_APP_SECRET` dá 401 em tudo, e o 401 sai antes de qualquer alerta.
+- **`recipient.id` do webhook é o id da conta profissional**
+  (`17841400183953038`), não o `user_id` que a troca do código OAuth devolve
+  (`27914774691477704`). Os dois números coexistem e são parecidos o bastante
+  para ninguém desconfiar.
+- **`entry[].messaging` não é homogêneo.** Validar o array inteiro de uma vez
+  faz um aviso de leitura derrubar a mensagem que veio junto. Cada item precisa
+  ser validado sozinho.
+- **Não crie a assinatura `object=instagram` no app do Facebook** quando o
+  produto for Instagram Login. Foi tentado em 04/set, não ajudou, e gastou
+  tempo até ser removida. A assinatura que vale é a da tela do produto.
+- **A Meta entrega o webhook e responde "sucesso" no botão Teste mesmo quando o
+  produto não funciona.** O teste do painel usa o formato `changes/field/value`,
+  e o Direct real usa `entry[].messaging[]` — passar no teste não prova nada
+  sobre a mensagem de verdade.
+- **O `VERCEL_TOKEN` não tem escopo de logs.** `runtime-logs`, `observability` e
+  o MCP da Vercel devolvem 403 ou 404. Para ver requisição chegando, ou é a UI
+  com a conta certa, ou é instrumentar o código.
 - **Documento não é fonte de verdade sobre o banco.** `PENDENCIAS-DO-DONO.md`
   dizia que `0030` e `0031` esperavam autorização; estavam aplicadas havia
   semanas. Confira no banco, sempre.
 
-### 0.4 A correção que vale mais que tudo acima — feita na `0041`
+### 0.6 A correção que vale mais que tudo acima — feita na `0041`
 
 O §6 de [BANCO-COMPARTILHADO.md](BANCO-COMPARTILHADO.md) afirmava que as tabelas
 de `public` não têm `grant` para `anon`/`authenticated`. Era falso: 13 dos 42
