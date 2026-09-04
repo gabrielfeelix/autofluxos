@@ -221,6 +221,16 @@ export async function receberDoInstagram(
     return
   }
 
+  /*
+   * Quantas mensagens este corpo produziu.
+   *
+   * Zero é normal e frequente — leitura, reação e entrega chegam no mesmo
+   * endereço e não viram nada. O que não é normal é a conta receber direct e
+   * nunca produzir mensagem, e nesse caso o corpo cru no log é a única forma de
+   * descobrir que evento a Meta está mandando no lugar de `messages`.
+   */
+  let tratadas = 0
+
   for (const entrada of analise.data.entry) {
     for (const evento of entrada.messaging) {
       // `null` é o aviso que não é mensagem — leitura, reação, entrega.
@@ -268,6 +278,11 @@ export async function receberDoInstagram(
        * review liberar a permissão e valer a pena.
        */
       await tratarUma(canalSalvo, mensagem, null, fabrica)
+      tratadas += 1
     }
+  }
+
+  if (tratadas === 0) {
+    console.error('[webhook instagram] corpo sem mensagem tratada', JSON.stringify(payload))
   }
 }
