@@ -122,7 +122,7 @@ eventos da conta conectada.
 - Trocar a senha do usuário `revisor.meta@4yu.com.br` (ou apagá-lo) depois da
   aprovação. A senha está em texto puro no formulário da Meta e no `.env`.
 
-### 0.5 As armadilhas já pagas — não redescubra
+### 0.4.1 As armadilhas já pagas — não redescubra
 
 - **Websocket direto no Supabase Realtime está fechado.** A chave que assina o
   JWT do projeto é **ES256** e a metade privada fica dentro do Supabase: não há
@@ -164,7 +164,7 @@ eventos da conta conectada.
   dizia que `0030` e `0031` esperavam autorização; estavam aplicadas havia
   semanas. Confira no banco, sempre.
 
-### 0.6 A correção que vale mais que tudo acima — feita na `0041`
+### 0.4.2 A correção que vale mais que tudo acima — feita na `0041`
 
 O §6 de [BANCO-COMPARTILHADO.md](BANCO-COMPARTILHADO.md) afirmava que as tabelas
 de `public` não têm `grant` para `anon`/`authenticated`. Era falso: 13 dos 42
