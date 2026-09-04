@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     'Como o AutoFluxos trata os dados das conversas de WhatsApp atendidas pelas automações dos seus clientes.',
 }
 
-const ATUALIZADA_EM = '19 de agosto de 2026'
+const ATUALIZADA_EM = '4 de setembro de 2026'
 
 const SECOES: readonly SecaoLegal[] = [
   {
@@ -148,6 +148,46 @@ const SECOES: readonly SecaoLegal[] = [
         conta enxerga apenas os dados da empresa de que é membro. Credenciais de integração são
         guardadas cifradas e nunca aparecem no desenho do fluxo, nos registros ou nas telas.
       </p>
+    ),
+  },
+  {
+    id: 'autoridades',
+    titulo: 'Pedidos de autoridades públicas',
+    conteudo: (
+      <>
+        <p>
+          Autoridades públicas podem pedir dados pessoais de quem usa o serviço. Estes são os
+          compromissos que assumimos com esses pedidos, e eles valem tanto para os dados das
+          conversas quanto para os dados que recebemos das plataformas da Meta:
+        </p>
+        <Lista>
+          <Item>
+            <strong>Analisamos a legitimidade de cada pedido antes de responder.</strong> Um
+            pedido só é atendido se vier de autoridade competente, na forma que a lei exige, e
+            com fundamento identificável. Pedido informal, por canal não oficial ou sem base
+            legal não é atendido.
+          </Item>
+          <Item>
+            <strong>Contestamos o que consideramos ilegal.</strong> Pedido que exceda a
+            competência de quem pede, que não tenha fundamento, ou que peça mais do que a
+            investigação justifica é recusado ou impugnado pelos meios cabíveis.
+          </Item>
+          <Item>
+            <strong>Entregamos o mínimo necessário.</strong> Respondemos com o recorte estrito do
+            que foi pedido e do que a lei obriga — nunca a conversa inteira quando bastam
+            metadados, nunca a base inteira quando basta um contato.
+          </Item>
+          <Item>
+            <strong>Registramos todos os pedidos.</strong> Guardamos o pedido, a resposta dada, o
+            raciocínio jurídico e quem participou da decisão. Sem esse registro não há como
+            prestar contas depois, nem para o titular dos dados nem para a própria autoridade.
+          </Item>
+        </Lista>
+        <p>
+          Quando a empresa cliente for a controladora dos dados pedidos e a lei permitir avisá-la,
+          nós a avisamos antes de responder, para que ela possa exercer os próprios direitos.
+        </p>
+      </>
     ),
   },
   {
