@@ -17,6 +17,11 @@ perguntas: o que entrou, o que trava, e quem destrava cada coisa.
 foram encontrados e corrigidos **quatro defeitos no canal de Instagram** que
 teriam derrubado o produto mesmo depois da aprovação.
 
+**Na parte da tarde**, a fila do que dependia de código foi zerada — quatro
+commits, todos em produção, listados em [0.4](#04-o-que-falta). O maior deles é
+o `subscribed_apps`: sem ele, a aprovação chegaria e nenhuma conta de cliente
+receberia mensagem, pelo mesmo tipo de silêncio dos quatro defeitos da manhã.
+
 O gatilho foi banal: gravar o vídeo do app review. A conta conectava, o direct
 saía do celular, e o Inbox ficava vazio. Cada defeito escondia o seguinte, e
 nenhum deles aparecia em log, alerta ou banco.
@@ -88,32 +93,36 @@ Toda a lista de bloqueios do handoff anterior saiu do caminho em 04/set:
 
 ### 0.4 O que falta
 
-**Depende da Meta, não de nós:** a aprovação. Sem Advanced Access, o Embedded
-Signup do WhatsApp embarca só números da própria conta, e o Direct só entrega
-eventos da conta conectada.
+**Depende da Meta, não de nós:** a aprovação. Conferida pela API em 04/set às
+12h35 — `submission_status: PENDING`, `review_completed_time: null`, e as seis
+permissões da submissão com `access_level: none`. Sem Advanced Access, o
+Embedded Signup do WhatsApp embarca só números da própria conta, e o Direct só
+entrega eventos da conta conectada.
 
-**Depende de código, e não de ninguém de fora:**
+**Duas linhas de código esperam essa aprovação, e só ela:**
 
-- **`subscribed_apps` não é chamado no fim do OAuth.** A inscrição da conta
-  `gaabriel.feelix` no campo `messages` foi feita pelo toggle do painel, que só
-  vale para conta adicionada lá na mão. **Cliente que conectar pelo OAuth cai no
-  mesmo buraco** — a doc da Meta chama isso de Step 3, e é
-  `POST /{ig-user-id}/subscribed_apps?subscribed_fields=messages`.
-- **Renovação automática do token do Instagram.** `renovarToken()` existe em
-  `server/instagram/conexao.ts` e **ninguém a chama**. O token vale 60 dias e
-  `channels.token_expira_em` já guarda a validade. Sem isso a conta para de
-  responder no dia 61.
-- **O nome do perfil do Instagram vem `null`.** Exige um `GET /{igsid}`.
-  Decidido deixar para depois do app review.
 - **`canais.ts` mantém `instagram.disponivel: false`**, de propósito. Vira
-  `true` quando o Advanced Access sair. É uma linha.
-- **Os limites de `canais.ts` ainda não alimentam `validar()`.** O adaptador
-  corta em 13 quick replies e o editor não avisa quem desenha.
-- **`acaoVincularMembro` estoura ao ligar um membro que já existe.** Better Auth
-  recusa duplicado e o erro sobe como erro de Server Component (tela genérica,
-  React #441). O vínculo já foi gravado na primeira tentativa — o segundo
-  clique é que quebra. Falta tratar o duplicado como sucesso.
-- **`c5ed171` é diagnóstico temporário** e pode sair depois da aprovação.
+  `true` quando o Advanced Access sair. Antes disso, ligar o canal faria alguém
+  desenhar um fluxo inteiro para descobrir na publicação que não há conta de
+  cliente para ligar.
+- **`c5ed171` é diagnóstico temporário** — o `console.error` com o corpo cru
+  quando o webhook não produz mensagem. Pode sair depois da aprovação; até lá é
+  a única janela para o que a Meta manda de verdade.
+
+**O que dependia de código foi feito em 04/set, e está em produção:**
+
+| Commit | O que entrou |
+|---|---|
+| `34824a9` | `subscribed_apps` no fim do OAuth. Autorizar entrega o token e **não** inscreve a conta no webhook: quem conectasse pelo OAuth ficaria verde na tela e com o Inbox vazio para sempre. Vai depois de o canal estar guardado; falhar só nela troca o aviso da tela (`resultado=sem_webhook`) e grava alerta, sem descartar a conexão. |
+| `98e14e6` | `acaoVincularMembro` lê o papel na conta antes. Igual = nada a fazer; diferente = troca de papel. O `addMember` também é protegido, e quem decide é o banco depois do erro, não o texto do erro do plugin. |
+| `c2e3bea` | Os limites de `canais.ts` alimentam o `validar()`, por `Capacidades.canal`. O nome do canal entra nas mensagens junto com o número. Ligar canal novo passa a ser duas coisas em vez de três. |
+| `db8fa3a` | O nome de quem manda direct, por `GET /{igsid}` — uma consulta por pessoa, com cache de processo. Junto: `acharOuCriarContato` parou de escrever `nome = null` por cima do nome que já estava lá. |
+
+**A renovação automática do token já existia** — `f7561e6`, `renovarTokensDoInstagram()`
+em `server/instagram/renovacao.ts`, chamada pelo cron diário
+`/api/manutencao/retencao` (07:00, `vercel.json`). O handoff anterior dizia que
+`renovarToken()` não era chamada por ninguém; era, e é. Confira o código antes
+de refazer.
 
 **Depende do dono:**
 
@@ -163,6 +172,10 @@ eventos da conta conectada.
 - **Documento não é fonte de verdade sobre o banco.** `PENDENCIAS-DO-DONO.md`
   dizia que `0030` e `0031` esperavam autorização; estavam aplicadas havia
   semanas. Confira no banco, sempre.
+- **Nem sobre o código.** Este mesmo handoff dizia, em 04/set de manhã, que
+  `renovarToken()` não era chamada por ninguém — a rotina inteira estava
+  escrita, testada e no cron desde `f7561e6`. Um `grep` custa segundos e vale
+  mais que qualquer parágrafo daqui.
 
 ### 0.4.2 A correção que vale mais que tudo acima — feita na `0041`
 
