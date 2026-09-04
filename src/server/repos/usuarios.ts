@@ -209,6 +209,23 @@ export async function presencaDoUsuario(usuarioId: string): Promise<string | nul
 }
 
 /**
+ * O papel desta pessoa nesta conta, ou `null` se ela não está nela.
+ *
+ * Existe para "dar acesso" saber que não tem nada a fazer. O plugin de
+ * organização recusa membro repetido com um erro que sobe como erro de Server
+ * Component — tela genérica, sem dizer o que houve —, e o vínculo já foi
+ * gravado na primeira tentativa: quem clica de novo está pedindo algo que já
+ * está feito, e isso é sucesso, não falha.
+ */
+export async function papelNaConta(contaId: string, usuarioId: string): Promise<string | null> {
+  const { rows } = await bancoDoLogin().query(
+    'select "role" from public.af_membros where "organizationId" = $1 and "userId" = $2',
+    [contaId, usuarioId],
+  )
+  return rows.length > 0 ? String(rows[0].role) : null
+}
+
+/**
  * Troca o papel de alguém **dentro de uma conta**.
  *
  * Por SQL e não pelo plugin de organização: os endpoints dele exigem a sessão

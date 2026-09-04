@@ -64,6 +64,7 @@ const VERBOS: Record<string, string> = {
   criou_conta: 'criou a conta',
   vinculou_membro: 'ligou à conta',
   trocou_papel: 'mudou o papel de',
+  trocou_papel_na_conta: 'mudou o papel na conta de',
   revogou_sessoes: 'derrubou as sessões de',
   suspendeu_acesso: 'suspendeu',
   devolveu_acesso: 'devolveu o acesso de',

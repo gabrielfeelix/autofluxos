@@ -12,7 +12,7 @@ import {
   contarOQueSomeCom,
   type EstragoDaExclusao,
 } from './repos/clientes'
-import { definirPresenca } from './repos/usuarios'
+import { definirPapelNaConta, definirPresenca, papelNaConta } from './repos/usuarios'
 import type { UsuarioDaSessao } from './sessao'
 import {
   acharUsuario,
@@ -423,12 +423,48 @@ export async function acaoVincularMembro(formData: FormData) {
   const alvo = await acharUsuario(usuarioId)
   if (!alvo) return
 
-  await autenticacao().api.addMember({
-    body: { userId: usuarioId, role: papel, organizationId: contaId },
-  })
+  /*
+   * Já é membro? Então "dar acesso" não tem o que criar.
+   *
+   * O plugin de organização recusa membro repetido, e o erro dele sobe como
+   * erro de Server Component: tela genérica, React #441, sem dizer nada a quem
+   * clicou. Só que o vínculo **já foi gravado na primeira tentativa** — o
+   * segundo clique é que quebrava, e quebrava depois de a coisa ter dado certo.
+   *
+   * O papel diferente vira troca de papel, porque é o que a pessoa pediu ao
+   * escolher outro no formulário; o papel igual é um clique repetido, e clique
+   * repetido não tem por que virar linha de auditoria.
+   */
+  const papelAtual = await papelNaConta(contaId, usuarioId)
+
+  if (papelAtual === papel) {
+    revalidatePath('/admin/contas')
+    revalidatePath('/admin/usuarios')
+    return
+  }
+
+  if (papelAtual) {
+    await definirPapelNaConta(contaId, usuarioId, papel)
+  } else {
+    try {
+      await autenticacao().api.addMember({
+        body: { userId: usuarioId, role: papel, organizationId: contaId },
+      })
+    } catch (erro) {
+      /*
+       * A leitura acima não fecha a janela sozinha: dois cliques rápidos leem
+       * "não é membro" antes de qualquer um dos dois escrever. O que decide não
+       * é o texto do erro do plugin — que muda de versão para versão — e sim o
+       * banco depois dele. Se o vínculo está lá, alguém o criou e o pedido foi
+       * atendido; se não está, o erro é de verdade e precisa subir.
+       */
+      if ((await papelNaConta(contaId, usuarioId)) === null) throw erro
+      await definirPapelNaConta(contaId, usuarioId, papel)
+    }
+  }
 
   await registrar({
-    acao: 'vinculou_membro',
+    acao: papelAtual ? 'trocou_papel_na_conta' : 'vinculou_membro',
     autorId: sessao.usuario.id,
     autorEmail: sessao.usuario.email,
     contaId,
