@@ -6,6 +6,12 @@ import { redirect } from 'next/navigation'
 import { autenticacao, bancoDoLogin } from './auth'
 import { chaveDeLimite, consumirLimite } from './limite'
 import { registrar } from './repos/auditoria'
+import {
+  acharCliente,
+  apagarCliente,
+  contarOQueSomeCom,
+  type EstragoDaExclusao,
+} from './repos/clientes'
 import { definirPresenca } from './repos/usuarios'
 import type { UsuarioDaSessao } from './sessao'
 import {
@@ -549,4 +555,82 @@ export async function acaoDefinirPresenca(presenca: 'disponivel' | 'ausente') {
 
   await definirPresenca(sessao.usuario.id, presenca)
   revalidatePath('/', 'layout')
+}
+
+// ---------------------------------------------------------------------------
+// Apagar uma conta inteira, da lista do administrador
+// ---------------------------------------------------------------------------
+
+/**
+ * O que a exclusão levaria junto, para a confirmação mostrar número.
+ *
+ * Vive numa ação separada, e não nos dados da lista, porque contar quatro
+ * tabelas por conta a cada abertura da tela pagaria uma consulta por cartão
+ * para um número que quase ninguém vai olhar. Aqui só é contado o que a pessoa
+ * está de fato prestes a apagar.
+ */
+export async function acaoEstragoDaConta(contaId: string): Promise<EstragoDaExclusao | null> {
+  await exigirAdminDaPlataforma()
+  if (!ehUuid(contaId)) return null
+
+  const cliente = await acharCliente(contaId)
+  if (!cliente) return null
+
+  return await contarOQueSomeCom(contaId)
+}
+
+/**
+ * Apaga a conta e tudo que é dela.
+ *
+ * **É a mesma exclusão de `acaoApagarCliente`, com outro portão e outro
+ * destino.** Aquela é do próprio cliente nos ajustes dele, guardada por
+ * `exigirAcessoAoCliente`, e termina redirecionando para `/painel`. Esta é de
+ * quem administra a plataforma, guardada por `exigirAdminDaPlataforma`, e
+ * precisa devolver o controle para a lista sem sair da tela — quem apaga daqui
+ * costuma apagar três de uma vez (as contas de teste), e um redirect por
+ * exclusão transformaria isso em três viagens de volta.
+ *
+ * O cascade da 0001 em diante leva leads, conversas, fluxos, credenciais e
+ * membros; a auditoria fica, com `conta_id` nulo e o nome guardado no registro
+ * — log que some junto com o que ele registra não prova nada.
+ */
+export async function acaoApagarConta(contaId: string): Promise<{ ok: boolean; erro?: string }> {
+  const sessao = await exigirAdminDaPlataforma()
+  if (!ehUuid(contaId)) return { ok: false, erro: 'conta inválida' }
+
+  const cliente = await acharCliente(contaId)
+  if (!cliente) return { ok: false, erro: 'esta conta não existe mais' }
+
+  // O registro vai **antes** da exclusão: `af_auditoria.conta_id` é
+  // `on delete set null` (0021), então gravar depois perderia o vínculo de
+  // qualquer jeito, e gravar antes garante que existe linha mesmo se o delete
+  // estourar no meio.
+  await registrar({
+    acao: 'apagou_conta',
+    autorId: sessao.usuario.id,
+    autorEmail: sessao.usuario.email,
+    contaId,
+    contaNome: cliente.nome,
+    alvoTipo: 'client',
+    alvoId: contaId,
+    alvoNome: cliente.nome,
+    impersonadoPor: sessao.impersonadoPor,
+  })
+
+  const apagou = await apagarCliente(contaId)
+  if (!apagou) return { ok: false, erro: 'esta conta não existe mais' }
+
+  revalidatePath('/admin/contas')
+  revalidatePath('/admin/usuarios')
+  revalidatePath('/', 'layout')
+  return { ok: true }
+}
+
+/**
+ * O id vem do navegador, e vira `eq('id', …)` numa exclusão em cascata. Sem
+ * esta conferência, um valor torto vira erro de banco no meio do caminho em vez
+ * de recusa limpa aqui.
+ */
+function ehUuid(valor: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(valor)
 }

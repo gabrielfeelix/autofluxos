@@ -1,11 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import { Dropdown } from '@/components/design/dropdown'
 import { LogoDoCliente } from '@/components/design/logo-cliente'
 import { Modal } from '@/components/design/modal'
 import { normalizar } from '@/core/engine/interpolar'
+import { acaoApagarConta, acaoEstragoDaConta } from '@/server/acoes-conta'
 
 /**
  * A lista de contas de quem administra o painel.
@@ -134,12 +135,26 @@ function iniciais(nome: string): string {
 function Cartao({
   conta,
   aoLigarPessoa,
+  aoAbrirMenu,
+  marcado,
 }: {
   conta: ContaDaLista
   aoLigarPessoa: (() => void) | null
+  /** Botão direito em qualquer ponto do cartão. */
+  aoAbrirMenu: (x: number, y: number) => void
+  /** O cartão de que o menu aberto fala — sem isso o menu flutua sem dono. */
+  marcado: boolean
 }) {
   return (
-    <li className="group relative flex flex-col rounded-[14px] border border-white/[0.085] bg-[#0b1018] p-4 shadow-[0_10px_26px_rgba(0,0,0,0.28)] transition hover:border-accent/45 hover:bg-[#0d1622]">
+    <li
+      onContextMenu={(evento) => {
+        evento.preventDefault()
+        aoAbrirMenu(evento.clientX, evento.clientY)
+      }}
+      className={`group relative flex flex-col rounded-[14px] border bg-[#0b1018] p-4 shadow-[0_10px_26px_rgba(0,0,0,0.28)] transition hover:border-accent/45 hover:bg-[#0d1622] ${
+        marcado ? 'border-accent/55 bg-[#0d1622]' : 'border-white/[0.085]'
+      }`}
+    >
       {/* O link cobre o cartão inteiro; o botão de acesso vive acima dele. */}
       <Link
         href={`/clientes/${conta.id}`}
@@ -203,6 +218,213 @@ function Cartao({
   )
 }
 
+type Estrago = { leads: number; fluxos: number; conexoes: number; numeros: number }
+
+/**
+ * O menu do botão direito.
+ *
+ * **Por que menu de contexto e não um `⋮` no cartão.** Apagar conta é a ação
+ * mais rara e mais destrutiva desta tela; um botão permanente em cada cartão
+ * põe o gesto perigoso a um clique de distância do gesto comum (abrir a conta),
+ * e os dois alvos ficam a poucos pixels um do outro. O botão direito esconde a
+ * ação de quem não a procura sem escondê-la de quem a procura.
+ *
+ * Fica preso à janela por `position: fixed` com as coordenadas do clique, e é
+ * empurrado para dentro da borda quando o clique acontece perto da direita ou
+ * do rodapé — menu que nasce metade fora da tela é menu que não abre.
+ */
+function MenuDeContexto({
+  x,
+  y,
+  aoFechar,
+  aoApagar,
+}: {
+  x: number
+  y: number
+  aoFechar: () => void
+  aoApagar: () => void
+}) {
+  useEffect(() => {
+    const fechar = () => aoFechar()
+    const escapou = (evento: KeyboardEvent) => {
+      if (evento.key === 'Escape') aoFechar()
+    }
+
+    // `mousedown` em vez de `click`: o clique que abre o menu ainda está
+    // subindo, e ouvir `click` faria o menu se fechar no mesmo gesto que o
+    // abriu. O `contextmenu` está aqui para o botão direito em outro cartão
+    // trocar o menu de lugar em vez de empilhar dois.
+    document.addEventListener('mousedown', fechar)
+    document.addEventListener('contextmenu', fechar)
+    window.addEventListener('resize', fechar)
+    window.addEventListener('scroll', fechar, true)
+    document.addEventListener('keydown', escapou)
+    return () => {
+      document.removeEventListener('mousedown', fechar)
+      document.removeEventListener('contextmenu', fechar)
+      window.removeEventListener('resize', fechar)
+      window.removeEventListener('scroll', fechar, true)
+      document.removeEventListener('keydown', escapou)
+    }
+  }, [aoFechar])
+
+  const largura = 168
+  const altura = 44
+  const esquerda = Math.min(x, (typeof window === 'undefined' ? x : window.innerWidth) - largura - 8)
+  const topo = Math.min(y, (typeof window === 'undefined' ? y : window.innerHeight) - altura - 8)
+
+  return (
+    <div
+      role="menu"
+      style={{ left: Math.max(8, esquerda), top: Math.max(8, topo), width: largura }}
+      onMouseDown={(evento) => evento.stopPropagation()}
+      onContextMenu={(evento) => evento.preventDefault()}
+      className="fixed z-50 overflow-hidden rounded-[11px] border border-white/10 bg-panel p-1 shadow-[0_24px_60px_rgba(0,0,0,0.6)]"
+    >
+      <button
+        type="button"
+        role="menuitem"
+        onClick={() => {
+          aoFechar()
+          aoApagar()
+        }}
+        className="flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-left text-[12.5px] font-semibold text-rose-300 transition hover:bg-rose-400/[0.12]"
+      >
+        <span aria-hidden>✕</span> Deletar
+      </button>
+    </div>
+  )
+}
+
+/**
+ * A confirmação, com o nome digitado à mão.
+ *
+ * É a mesma trava de `components/cliente/apagar.tsx`, e pelo mesmo motivo:
+ * apagar a conta certa pelo motivo errado é raro, apagar a conta errada é o
+ * caso comum, e um `confirm()` não pega o segundo. Aqui a chance de errar é
+ * maior ainda — na lista do administrador as contas estão lado a lado, e o
+ * menu foi aberto com um clique que não mostra em qual cartão caiu.
+ *
+ * Os números chegam depois do modal abrir, porque contá-los para as quinze
+ * contas da tela custaria quatro consultas por cartão. Enquanto não chegam, o
+ * botão de apagar espera: apagar sem ler o que some é o que a tela existe para
+ * impedir.
+ */
+function ApagarConta({
+  conta,
+  aoFechar,
+}: {
+  conta: ContaDaLista
+  aoFechar: () => void
+}) {
+  const [estrago, setEstrago] = useState<Estrago | null>(null)
+  const [digitado, setDigitado] = useState('')
+  const [erro, setErro] = useState<string | null>(null)
+  const [apagando, comecar] = useTransition()
+
+  useEffect(() => {
+    let vivo = true
+    acaoEstragoDaConta(conta.id)
+      .then((resposta) => {
+        if (vivo) setEstrago(resposta)
+      })
+      .catch(() => {
+        if (vivo) setErro('não deu para conferir o que some com esta conta')
+      })
+    return () => {
+      vivo = false
+    }
+  }, [conta.id])
+
+  const confere = digitado.trim() === conta.nome.trim()
+
+  return (
+    <Modal
+      aberto
+      aoFechar={aoFechar}
+      titulo={`Apagar ${conta.nome}?`}
+      descricao="Isto apaga a conta e tudo que é dela, de uma vez e sem desfazer."
+      largura={460}
+    >
+      <div className="rounded-[12px] border border-rose-400/20 bg-rose-400/[0.05] px-4 py-3 text-[12.5px] text-rose-100">
+        {estrago === null ? (
+          <p className="text-rose-200/70">conferindo o que some junto…</p>
+        ) : (
+          <ul className="space-y-1.5">
+            <li>
+              <strong>{estrago.leads}</strong> {estrago.leads === 1 ? 'lead' : 'leads'} com as
+              conversas inteiras
+            </li>
+            <li>
+              <strong>{estrago.fluxos}</strong>{' '}
+              {estrago.fluxos === 1 ? 'automação' : 'automações'} e o histórico de versões
+            </li>
+            <li>
+              <strong>{estrago.conexoes}</strong>{' '}
+              {estrago.conexoes === 1 ? 'credencial guardada' : 'credenciais guardadas'} no cofre
+            </li>
+            <li>
+              <strong>{estrago.numeros}</strong> {estrago.numeros === 1 ? 'número' : 'números'}{' '}
+              desconectados do WhatsApp
+            </li>
+            <li>
+              <strong>{conta.membros.length}</strong>{' '}
+              {conta.membros.length === 1 ? 'pessoa perde' : 'pessoas perdem'} o acesso
+            </li>
+          </ul>
+        )}
+      </div>
+
+      <p className="mt-4 text-[12.5px] leading-6 text-muted">
+        Para confirmar, digite <strong className="text-ink">{conta.nome}</strong> abaixo.
+      </p>
+
+      <input
+        type="text"
+        value={digitado}
+        onChange={(evento) => setDigitado(evento.target.value)}
+        aria-label={`Digite ${conta.nome} para confirmar`}
+        autoComplete="off"
+        className="app-field mt-2 px-3 py-2.5 text-[13px]"
+      />
+
+      {erro && (
+        <p
+          role="alert"
+          className="mt-3 rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2.5 text-[12px] leading-5 text-rose-200"
+        >
+          {erro}
+        </p>
+      )}
+
+      <div className="mt-5 flex gap-2.5">
+        <button
+          type="button"
+          onClick={aoFechar}
+          className="app-secondary-button flex-1 px-4 py-2.5 text-[13px]"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          disabled={!confere || apagando || estrago === null}
+          onClick={() => {
+            setErro(null)
+            comecar(async () => {
+              const r = await acaoApagarConta(conta.id)
+              if (!r.ok) setErro(r.erro ?? 'não deu para apagar')
+              else aoFechar()
+            })
+          }}
+          className="flex-[1.35] rounded-[10px] border border-rose-400/40 bg-rose-400/[0.16] px-4 py-2.5 text-[13px] font-bold text-rose-100 transition hover:bg-rose-400/[0.24] disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {apagando ? 'apagando…' : 'Apagar para sempre'}
+        </button>
+      </div>
+    </Modal>
+  )
+}
+
 export function ContasAdmin({
   contas,
   usuarios,
@@ -215,6 +437,8 @@ export function ContasAdmin({
   const [termo, setTermo] = useState('')
   const [soSemAcesso, setSoSemAcesso] = useState(false)
   const [ligando, setLigando] = useState<ContaDaLista | null>(null)
+  const [menu, setMenu] = useState<{ conta: ContaDaLista; x: number; y: number } | null>(null)
+  const [apagando, setApagando] = useState<ContaDaLista | null>(null)
   const [papel, setPapel] = useState<string>('owner')
   const [usuario, setUsuario] = useState<string>(usuarios[0]?.id ?? '')
 
@@ -297,11 +521,21 @@ export function ContasAdmin({
           .
         </p>
       ) : (
-        <ul className="grid grid-cols-1 gap-2.5 md:grid-cols-2 xl:grid-cols-3">
+        /*
+         * Quatro colunas na tela larga.
+         *
+         * A grade parava em três, e num monitor de 1600px isso dava cartões de
+         * meio palmo de largura com o nome sozinho no meio — espaço vazio que
+         * não vira informação. Quatro colunas devolvem o cartão ao tamanho em
+         * que ele foi desenhado e ainda mostram uma linha a mais na dobra.
+         */
+        <ul className="grid grid-cols-1 gap-2.5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {lista.map((conta) => (
             <Cartao
               key={conta.id}
               conta={conta}
+              marcado={menu?.conta.id === conta.id || apagando?.id === conta.id}
+              aoAbrirMenu={(x, y) => setMenu({ conta, x, y })}
               aoLigarPessoa={
                 usuarios.length > 0
                   ? () => {
@@ -315,6 +549,17 @@ export function ContasAdmin({
           ))}
         </ul>
       )}
+
+      {menu && (
+        <MenuDeContexto
+          x={menu.x}
+          y={menu.y}
+          aoFechar={() => setMenu(null)}
+          aoApagar={() => setApagando(menu.conta)}
+        />
+      )}
+
+      {apagando && <ApagarConta conta={apagando} aoFechar={() => setApagando(null)} />}
 
       <Modal
         aberto={ligando !== null}

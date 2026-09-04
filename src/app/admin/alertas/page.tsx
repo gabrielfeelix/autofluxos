@@ -26,7 +26,7 @@ export default async function Alertas() {
   const abertos = alertas.filter((a) => a.vistoEm === null).length
 
   return (
-    <main className="w-full max-w-[1280px] px-4 pt-[38px] pb-[46px] md:px-[46px]">
+    <main className="w-full px-4 pt-[38px] pb-[46px] md:px-[46px]">
       <header className="mb-7 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-[25px] font-bold tracking-[-0.02em]">Alertas</h1>

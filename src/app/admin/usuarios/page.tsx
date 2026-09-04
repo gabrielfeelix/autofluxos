@@ -23,7 +23,7 @@ export default async function Usuarios() {
   const [sessao, usuarios] = await Promise.all([exigirAdminDaPlataforma(), listarUsuarios()])
 
   return (
-    <main className="w-full max-w-[1280px] px-4 pt-[38px] pb-[46px] md:px-[46px]">
+    <main className="w-full px-4 pt-[38px] pb-[46px] md:px-[46px]">
       <header className="mb-7 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-[25px] font-bold tracking-[-0.02em]">Usuários</h1>
