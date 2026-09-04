@@ -7,7 +7,7 @@ produto, ou de uma conta que é de uma pessoa de verdade.
 Junte tudo e faça de uma vez ao fim das rodadas. Cada item diz o que trava
 enquanto não for feito.
 
-Atualizado em **03/set/2026**. As migrations `0023` a `0038` estão aplicadas em
+Atualizado em **04/set/2026**. As migrations `0023` a `0038` estão aplicadas em
 produção — conferido objeto a objeto no banco nesta data, e não pela leitura de
 um plano. As `0039` (alertas) e `0040` (canal do Instagram) estão escritas no
 repositório e **ainda não aplicadas**: são o item 5 abaixo.
@@ -173,7 +173,8 @@ correndo quando o acompanhamento começa. Com modelos aprovados, o teto sobe e
 nunca entregue, e a tela diz isso em vez de deixar a pessoa descobrir sozinha.
 
 Depende de verificação da empresa e App Review na Meta. Não é código nosso que
-destrava.
+destrava. A verificação da empresa **já saiu** (02/set/2026); o App Review é o
+item 10 desta lista, com o passo a passo.
 
 ## 8. `BETTER_AUTH_URL` — opcional, e talvez nunca
 
@@ -187,3 +188,136 @@ O painel "eu entro e vejo meus lucros" está em espera a seu pedido, aguardando
 mais prints. Não temos dado de dinheiro, e inventar por multiplicação vira
 mentira no relatório do cliente — o caminho honesto é ler valor fechado do CRM
 na Etapa B.
+
+## 10. O App Review da Meta — a fila inteira, na ordem
+
+**Trava:** atender no **número do cliente** (WhatsApp) e receber **direct do
+Instagram** em produção. Trava também o item 7 acima, porque modelo aprovado
+depende deste review. Não trava o que já funciona hoje: nosso próprio número
+segue entregando.
+
+Apurado em 03/set/2026 pelo MCP DevTools da Meta. O detalhe técnico de cada
+achado está em [`META-TECH-PROVIDER.md`](META-TECH-PROVIDER.md); aqui é só o
+passo a passo.
+
+O app é o **AutoFluxos**, id `1063817842847269`. Existe uma submissão em
+rascunho (`1082311667664553`) com seis permissões dentro, **nunca enviada** —
+não é reprova, é fila parada. Hoje só `openid` está concedida.
+
+Os passos 1 a 3 são a mesma tela, então são uma viagem só.
+
+### Passos 1 a 3 — Configurações → Básico
+
+<https://developers.facebook.com/apps/1063817842847269/settings/basic/>
+
+(Se a URL mudar: painel do app → menu da esquerda → **Configurações** →
+**Básico**.)
+
+**1. `data_deletion_url` — o mais barato, e o que reprova sozinho.**
+
+Hoje está com o placeholder `https://www.facebook.com/`. A Meta reprova
+submissão com esse valor.
+
+O campo se chama **"URL de instruções de exclusão de dados"** (*Data Deletion
+Instructions URL*). Cole:
+
+```
+https://autofluxos.4yu.com.br/exclusao-de-dados
+```
+
+A página **já existe e está no ar** (`src/app/exclusao-de-dados/page.tsx`,
+responde 200 — conferido nesta data). Não há nada para programar; é colar.
+
+Cuidado com o campo vizinho: existe também **"URL de callback de exclusão de
+dados"**, que é outro mecanismo, exige endpoint que recebe `signed_request` e
+**não é o que queremos**. Se o painel oferecer os dois num seletor, escolha
+*instruções*.
+
+**2. Verificar o e-mail de contato.**
+
+`contato@4yu.com.br` está preenchido mas com `contact_email_verified: false`.
+Na mesma tela há um aviso de verificação — dispare e clique no link que chega
+na caixa. É a caixa humana da Hostinger, não passa por app nenhum.
+
+**3. Ícone e descrição.**
+
+`app_icon_url` e `description` estão nulos. O ícone é **PNG 1024×1024**, sem
+transparência (a Meta rejeita canal alfa em alguns fluxos). A categoria já está
+certa (`BUSINESS`), não mexa.
+
+Se quiser, eu escrevo o texto da descrição — é só pedir; o resto desta tela é
+upload e clique, que não tem API.
+
+### Passo 4 — adicionar o produto Instagram ao app
+
+<https://developers.facebook.com/apps/1063817842847269/dashboard/>
+
+Painel → **Adicionar caso de uso** / **Add use case** → **Instagram** (o de
+mensagens, não o de mídia pública). O WhatsApp já está adicionado.
+
+**Este passo vem antes do 5 e do 8.** Sem o produto no app, as permissões de
+Instagram nem aparecem na lista do review, e a assinatura do webhook falha.
+
+### Passo 5 — acrescentar o Instagram ao rascunho da submissão
+
+<https://developers.facebook.com/apps/1063817842847269/app-review/permissions/>
+
+(Menu da esquerda → **Revisão do app** → **Permissões e recursos**.)
+
+O rascunho já pede as do WhatsApp. Marque *Solicitar acesso avançado* também
+em:
+
+- `instagram_business_basic`
+- `instagram_business_manage_messages`
+
+E confirme que estas continuam marcadas, porque são as que destravam o número
+do cliente:
+
+- `whatsapp_business_messaging`
+- `whatsapp_business_management`
+
+São **dois reviews independentes** no fundo — WhatsApp e Instagram são julgados
+separados, cada um com seus vídeos. Podem ir na mesma leva; a aprovação de um
+não espera o outro.
+
+### Passo 6 — os dois (na prática, quatro) vídeos
+
+É o que mais atrasa gente. Cada permissão pedida exige uma gravação de tela
+mostrando **um usuário real usando o recurso**, do login até o resultado.
+
+WhatsApp:
+1. uma mensagem sendo criada no AutoFluxos e **chegando** num WhatsApp;
+2. um **template** sendo criado (painel ou API).
+
+Instagram:
+3. conectar uma conta em `/clientes/<id>/instagram` — o OAuth inteiro na tela;
+4. um direct chegando no Inbox e sendo respondido.
+
+Grave com o nosso número `+55 44 7400-7438` e o nosso perfil — em Standard
+Access é exatamente o que dá para demonstrar, e é aceito.
+
+### Passo 7 — submeter
+
+Mesma tela do passo 5, botão de envio no fim. Depois disso é espera da Meta.
+
+### Passo 8 — meu, e só depois do 4
+
+Assinar o webhook `instagram` do app. A rota já existe
+(`src/app/api/webhook/instagram/route.ts`) e valida `hub.verify_token`; eu faço
+pelo MCP com `webhook_manage subscribe`.
+
+Hoje a **única** assinatura do app é `whatsapp_business_account` — ou seja, o
+Inbox de direct que entrou no commit `a86efab` não recebe evento nenhum em
+produção. Isso vale mesmo antes da aprovação: com o produto adicionado, o
+webhook já passa a entregar para contas nossas.
+
+Um aviso: passar o `INSTAGRAM_VERIFY_TOKEN` na chamada do MCP deixa o valor
+visível no histórico da sessão. Se preferir, você assina pela tela
+**Webhooks** do painel e eu só confiro depois.
+
+### O que já está pronto e não precisa refazer
+
+Verificação do negócio **`verified`** (02/set/2026), WABA `4YU Tech`
+`APPROVED`, número real verificado com qualidade `GREEN`, webhook de WhatsApp
+em produção assinando `messages`, token permanente, `privacy_policy_url` e
+`terms_of_service_url` preenchidos, compliance sem violação aberta.
