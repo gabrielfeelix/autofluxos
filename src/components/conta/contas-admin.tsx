@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useState, useTransition } from 'react'
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { Dropdown } from '@/components/design/dropdown'
 import { LogoDoCliente } from '@/components/design/logo-cliente'
 import { Modal } from '@/components/design/modal'
@@ -244,26 +244,39 @@ function MenuDeContexto({
   aoFechar: () => void
   aoApagar: () => void
 }) {
+  const raiz = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
-    const fechar = () => aoFechar()
+    /*
+     * A checagem é por conteúdo, não por `stopPropagation`.
+     *
+     * O App Router hidrata o **documento inteiro**, então o listener de React
+     * mora no mesmo `document` que este aqui. `stopPropagation` impede o evento
+     * de subir para outro nó, e não impede o segundo listener do mesmo nó de
+     * rodar — era por isso que o menu fechava no `mousedown` do próprio
+     * "Deletar", o botão sumia antes do `click` nascer, e o clique terminava no
+     * `<Link>` do cartão que estava por baixo. Perguntar "o alvo está dentro do
+     * menu?" não depende de ordem de registro nenhuma.
+     */
+    const foraDaqui = (evento: MouseEvent) => {
+      if (!raiz.current?.contains(evento.target as Node)) aoFechar()
+    }
     const escapou = (evento: KeyboardEvent) => {
       if (evento.key === 'Escape') aoFechar()
     }
 
-    // `mousedown` em vez de `click`: o clique que abre o menu ainda está
-    // subindo, e ouvir `click` faria o menu se fechar no mesmo gesto que o
-    // abriu. O `contextmenu` está aqui para o botão direito em outro cartão
-    // trocar o menu de lugar em vez de empilhar dois.
-    document.addEventListener('mousedown', fechar)
-    document.addEventListener('contextmenu', fechar)
-    window.addEventListener('resize', fechar)
-    window.addEventListener('scroll', fechar, true)
+    // `mousedown`, e não `click`: o botão direito em outro cartão precisa fechar
+    // este menu **antes** do `contextmenu` que abre o próximo — e `mousedown`
+    // vem primeiro na sequência do navegador. Ouvir `contextmenu` aqui faria o
+    // contrário: fecharia o menu que o cartão acabou de mandar abrir.
+    document.addEventListener('mousedown', foraDaqui)
+    window.addEventListener('resize', aoFechar)
+    window.addEventListener('scroll', aoFechar, true)
     document.addEventListener('keydown', escapou)
     return () => {
-      document.removeEventListener('mousedown', fechar)
-      document.removeEventListener('contextmenu', fechar)
-      window.removeEventListener('resize', fechar)
-      window.removeEventListener('scroll', fechar, true)
+      document.removeEventListener('mousedown', foraDaqui)
+      window.removeEventListener('resize', aoFechar)
+      window.removeEventListener('scroll', aoFechar, true)
       document.removeEventListener('keydown', escapou)
     }
   }, [aoFechar])
@@ -275,9 +288,9 @@ function MenuDeContexto({
 
   return (
     <div
+      ref={raiz}
       role="menu"
       style={{ left: Math.max(8, esquerda), top: Math.max(8, topo), width: largura }}
-      onMouseDown={(evento) => evento.stopPropagation()}
       onContextMenu={(evento) => evento.preventDefault()}
       className="fixed z-50 overflow-hidden rounded-[11px] border border-white/10 bg-panel p-1 shadow-[0_24px_60px_rgba(0,0,0,0.6)]"
     >
