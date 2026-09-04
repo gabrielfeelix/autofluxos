@@ -25,6 +25,11 @@ export const dynamic = 'force-dynamic'
 
 const RESULTADOS: Record<string, { tom: 'bom' | 'ruim'; texto: string }> = {
   conectado: { tom: 'bom', texto: 'Conta ligada. Os direct já chegam no Inbox.' },
+  sem_webhook: {
+    tom: 'ruim',
+    texto:
+      'Conta ligada, mas a Meta recusou a inscrição no webhook — os direct não vão chegar. Desligue e conecte de novo; se repetir, o detalhe está em Alertas.',
+  },
   cancelado: {
     tom: 'ruim',
     texto: 'A autorização foi cancelada na tela do Instagram. Nada mudou por aqui.',

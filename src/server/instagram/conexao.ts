@@ -244,3 +244,50 @@ export async function renovarToken(token: string): Promise<{ token: string; expi
 
   return { token: novo.access_token, expiraEm: new Date(Date.now() + segundos * 1_000) }
 }
+
+const assinaturaSchema = z.object({ success: z.boolean().optional() })
+
+/**
+ * Inscreve a conta no campo `messages` do webhook — o Step 3 da doc da Meta.
+ *
+ * **Sem isto a conta conecta e nunca recebe nada.** Autorizar no OAuth dá o
+ * token; ele não diz à Meta que queremos os eventos daquela conta. São duas
+ * coisas separadas, e a que falta não deixa rastro: a conexão aparece verde na
+ * tela, o direct sai do celular, e o Inbox fica vazio para sempre.
+ *
+ * A inscrição da nossa conta de teste tinha sido feita **na mão**, pelo toggle
+ * do painel da Meta — que só alcança conta adicionada lá. Toda conta de cliente
+ * que entrasse pelo OAuth cairia no mesmo buraco, e o buraco só apareceria
+ * depois da aprovação, com cliente de verdade do outro lado.
+ *
+ * `graph.instagram.com`, e não `graph.facebook.com`: o produto é o Instagram
+ * Login, e o app dele é outro. Ver o cabeçalho deste arquivo.
+ */
+export async function assinarMensagens(opcoes: {
+  igUserId: string
+  token: string
+  versaoGraph?: string
+}): Promise<void> {
+  const versao = opcoes.versaoGraph ?? process.env.META_GRAPH_VERSION ?? VERSAO_PADRAO
+  const url = `https://graph.instagram.com/${versao}/${opcoes.igUserId}/subscribed_apps`
+
+  const resposta = assinaturaSchema.parse(
+    await pedir(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        subscribed_fields: 'messages',
+        access_token: opcoes.token,
+      }),
+    }),
+  )
+
+  /*
+   * A Meta responde 200 com `{"success": false}` quando recusa por permissão.
+   * Sem esta linha, o caso mais provável de falha — a permissão de mensagens
+   * ainda não liberada para aquela conta — passaria por sucesso.
+   */
+  if (resposta.success === false) {
+    throw new Error('o Instagram recusou a inscrição no webhook de mensagens')
+  }
+}

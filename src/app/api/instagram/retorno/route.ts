@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { alertar } from '@/server/alertar'
-import { trocarCodigoPorConta } from '@/server/instagram/conexao'
+import { assinarMensagens, trocarCodigoPorConta } from '@/server/instagram/conexao'
 import { lerEstado } from '@/server/instagram/estado'
 import { salvarContaDoInstagram } from '@/server/repos/canais-instagram'
 import { conferirAcessoAoCliente } from '@/server/sessao'
@@ -53,6 +53,17 @@ export async function GET(req: Request) {
   const codigo = parametros.get('code')
   if (!codigo) redirect(`${destino}?resultado=sem_codigo`)
 
+  /*
+   * Ligou a conta, mas o webhook não quis: a conexão vale e o aviso muda.
+   *
+   * A inscrição é um passo separado do OAuth e pode falhar sozinha — e quando
+   * falha, a conta fica conectada sem receber mensagem nenhuma. Descartar a
+   * conexão por causa disso jogaria fora um token que custou o dono do perfil
+   * na frente da tela; dizer "conectado" e pronto esconderia justamente o
+   * defeito que mais custou tempo neste canal.
+   */
+  let assinou = true
+
   try {
     const conta = await trocarCodigoPorConta({
       codigo,
@@ -66,6 +77,21 @@ export async function GET(req: Request) {
       token: conta.token,
       expiraEm: conta.expiraEm,
     })
+
+    /*
+     * **Depois de guardar, e não antes.** Se a inscrição vier primeiro e o
+     * `salvar` falhar, a Meta passa a mandar direct de uma conta que não existe
+     * do nosso lado — mensagem de gente de verdade caindo em canal nenhum.
+     */
+    try {
+      await assinarMensagens({ igUserId: conta.igUserId, token: conta.token })
+    } catch (erro) {
+      assinou = false
+      await alertar('a conta do Instagram ligou mas não assinou o webhook', erro, {
+        cliente: clienteId,
+        conta: conta.igUserId,
+      })
+    }
   } catch (erro) {
     /*
      * `redirect()` funciona lançando uma exceção, então ele **não pode** ficar
@@ -76,5 +102,5 @@ export async function GET(req: Request) {
     redirect(`${destino}?resultado=falhou`)
   }
 
-  redirect(`${destino}?resultado=conectado`)
+  redirect(`${destino}?resultado=${assinou ? 'conectado' : 'sem_webhook'}`)
 }
