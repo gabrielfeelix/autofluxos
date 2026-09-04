@@ -183,7 +183,24 @@ export async function receberDoInstagram(
   fabricaDeCanal?: FabricaDeCanal,
 ): Promise<void> {
   const analise = webhookDoInstagramSchema.safeParse(payload)
-  if (!analise.success) return
+
+  /*
+   * Corpo que não encaixa no formato também vira alerta, e não silêncio.
+   *
+   * A Meta manda no mesmo endereço eventos que não são mensagem, e a maioria
+   * deles não interessa. O problema é que "não interessa" e "chegou uma
+   * mensagem que não soubemos ler" saíam iguais daqui: `return`, sem rastro. Um
+   * resumo do corpo é o suficiente para diferenciar os dois na próxima vez, e é
+   * barato porque só é gravado quando o corpo não encaixa.
+   */
+  if (!analise.success) {
+    await alertar(
+      'o Instagram mandou um corpo que não encaixa no formato de mensagem',
+      new Error(analise.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')),
+      { corpo: JSON.stringify(payload).slice(0, 800) },
+    )
+    return
+  }
 
   for (const entrada of analise.data.entry) {
     for (const evento of entrada.messaging) {
