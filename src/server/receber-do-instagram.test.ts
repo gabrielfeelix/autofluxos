@@ -158,3 +158,49 @@ describe('o formato do webhook', () => {
     expect(lido.entry[0]!.messaging[0]!.message).toBeUndefined()
   })
 })
+
+/**
+ * O caso real que segurou o canal de Instagram: o array `messaging` mistura a
+ * mensagem com avisos de leitura, e o aviso não tem `sender` nem `recipient`.
+ * Validando o lote inteiro de uma vez, o aviso derrubava a mensagem junto.
+ */
+describe('lote com aviso de leitura no meio', () => {
+  const LEITURA = {
+    timestamp: 1788530071837,
+    read: { mid: 'aWdfZAG1faXRlbToxOklHTWVzc2FnZAUlE' },
+  }
+
+  it('aceita um lote que só tem aviso de leitura, sem reprovar o payload', () => {
+    const analise = webhookDoInstagramSchema.safeParse({
+      object: 'instagram',
+      entry: [{ time: 1788530072319, id: '17841400183953038', messaging: [LEITURA] }],
+    })
+
+    expect(analise.success).toBe(true)
+    expect(analise.success && analise.data.entry[0]?.messaging).toEqual([null])
+  })
+
+  it('mantém a mensagem quando ela vem no mesmo lote que o aviso', () => {
+    const analise = webhookDoInstagramSchema.safeParse({
+      object: 'instagram',
+      entry: [
+        {
+          id: '17841400183953038',
+          messaging: [
+            LEITURA,
+            {
+              sender: { id: '999' },
+              recipient: { id: '17841400183953038' },
+              message: { mid: 'm1', text: 'oi' },
+            },
+          ],
+        },
+      ],
+    })
+
+    expect(analise.success).toBe(true)
+    const eventos = analise.success ? analise.data.entry[0]?.messaging : []
+    expect(eventos?.[0]).toBeNull()
+    expect(eventos?.[1]?.message?.text).toBe('oi')
+  })
+})

@@ -58,20 +58,39 @@ const mensagemDoInstagramSchema = z.object({
   is_echo: z.boolean().optional(),
 })
 
+/**
+ * Um evento de mensagem: quem mandou, para quem, e o quê.
+ *
+ * Vale só para os eventos que **têm** remetente e destinatário. O mesmo array
+ * `messaging` carrega outros — ver abaixo por que isso importa.
+ */
+const eventoDeMensagemSchema = z.object({
+  sender: z.object({ id: z.string() }),
+  recipient: z.object({ id: z.string() }),
+  message: mensagemDoInstagramSchema.optional(),
+})
+
 export const webhookDoInstagramSchema = z.object({
   object: z.string().optional(),
   entry: z
     .array(
       z.object({
-        messaging: z
-          .array(
-            z.object({
-              sender: z.object({ id: z.string() }),
-              recipient: z.object({ id: z.string() }),
-              message: mensagemDoInstagramSchema.optional(),
-            }),
-          )
-          .default([]),
+        /*
+         * **Cada evento é validado sozinho, e um que não encaixa vira `null` em
+         * vez de derrubar o lote.** Esta linha é a diferença entre o Direct
+         * funcionar e não funcionar.
+         *
+         * O array `messaging` mistura coisas: a mensagem em si, e também
+         * `read`, `seen`, `reaction` e outros avisos que não trazem `sender`
+         * nem `recipient`. Com um `z.array(objeto)` comum, o zod reprova o
+         * **payload inteiro** quando qualquer item não encaixa — então um aviso
+         * de leitura chegando no mesmo lote fazia a mensagem de verdade ser
+         * descartada junto, sem erro visível em lugar nenhum.
+         *
+         * `.nullable().catch(null)` faz o item inválido virar `null`; o laço
+         * pula os nulos e trata os que sobraram.
+         */
+        messaging: z.array(eventoDeMensagemSchema.nullable().catch(null)).default([]),
       }),
     )
     .default([]),
@@ -204,7 +223,8 @@ export async function receberDoInstagram(
 
   for (const entrada of analise.data.entry) {
     for (const evento of entrada.messaging) {
-      if (!evento.message) continue
+      // `null` é o aviso que não é mensagem — leitura, reação, entrega.
+      if (!evento?.message) continue
 
       // Armadilha 3: `recipient` é a conta do cliente; `sender` é quem
       // escreveu. Invertidos, a busca nunca acha canal nenhum e o produto fica
