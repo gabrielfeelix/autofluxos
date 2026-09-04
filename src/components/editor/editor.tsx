@@ -437,8 +437,11 @@ export function Editor({
         fluxos,
         fluxoAtualId: fluxoId,
         variaveisDaConta,
+        // O aviso tem que chegar enquanto a pessoa desenha, e não na publicação:
+        // descobrir na hora de publicar que a lista não cabe é refazer o menu.
+        canal,
       }),
-    [fluxo, comIa, idsDeConexao, temContextoDeNegocio, fluxos, fluxoId, variaveisDaConta],
+    [fluxo, comIa, idsDeConexao, temContextoDeNegocio, fluxos, fluxoId, variaveisDaConta, canal],
   )
 
   const assinatura = JSON.stringify(fluxo)

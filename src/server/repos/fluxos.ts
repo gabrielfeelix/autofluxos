@@ -304,6 +304,9 @@ export async function publicar(
     conexoes,
     etapas,
     temContextoDeNegocio: (cliente?.contextoNegocio ?? '').trim() !== '',
+    // Sem isto, um fluxo de Instagram publicava com as medidas do WhatsApp — e
+    // era o adaptador quem cortava depois, calado, na conversa de alguém.
+    canal: fluxo.canal,
   })
   if (!conferido.ok) return { ok: false, erros: conferido.erros }
 

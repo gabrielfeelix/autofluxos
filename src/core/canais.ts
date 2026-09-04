@@ -32,11 +32,15 @@
  * porque automação que não entrega mensagem é pior do que automação que não
  * existe.
  *
- * Para ligar um canal novo, três coisas e nenhuma a mais:
+ * Para ligar um canal novo, duas coisas e nenhuma a mais:
  *
  * 1. um adaptador que implemente `Canal` (`src/channels/types.ts`);
- * 2. os limites daqui passando a alimentar o `validar()`;
- * 3. `disponivel: true`.
+ * 2. `disponivel: true`.
+ *
+ * Os limites daqui **já alimentam o `validar()`**: ele recebe o canal do fluxo
+ * em `Capacidades.canal` e cobra por estas medidas, com o nome do canal na
+ * mensagem. Preencher a tabela abaixo é o que basta — não há segunda cópia
+ * destes números dentro do validador.
  */
 export const CANAIS = ['whatsapp', 'instagram', 'telegram'] as const
 

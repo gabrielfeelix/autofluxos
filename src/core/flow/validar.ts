@@ -3,9 +3,7 @@ import { mensagensDoHandoff, partesDaMensagem } from './mensagem'
 import {
   FORMATO_VARIAVEL,
   LIMITE_LEGENDA,
-  LIMITE_LISTA,
   LIMITE_MENSAGENS_HANDOFF,
-  LIMITE_ROTULO,
   LIMITE_TEXTO,
   LIMITE_TEXTO_INTERATIVO,
   MARCA_DE_LISTA,
@@ -21,6 +19,7 @@ import {
   type TipoDeMidia,
 } from './schema'
 import { contarCaracteres, temMetadeDeCaractere } from './texto'
+import { CANAL_PADRAO, DEFINICAO_DO_CANAL, type CanalId, type DefinicaoDeCanal } from '../canais'
 import { VARIAVEIS_NATIVAS } from '../contatos/vars-iniciais'
 import { chavesSimplesCitadas, variaveisCitadas } from '../engine/interpolar'
 import { nomesDeFerramenta } from '../ferramentas'
@@ -126,6 +125,21 @@ export type Capacidades = {
   fluxos?: { id: string; nome: string; publicado: boolean; ativo: boolean }[]
   /** Qual é este fluxo, para avisar sobre salto para ele mesmo. */
   fluxoAtualId?: string
+  /**
+   * Por onde esta automação conversa — e, portanto, por quais medidas ela é
+   * cobrada.
+   *
+   * **Um desenho não é certo ou errado sozinho.** Uma pergunta com 13 opções
+   * está certa no Instagram e errada no WhatsApp; um rótulo de 30 caracteres
+   * cabe no Telegram e é cortado nos outros dois. Sem o canal aqui, o
+   * validador cobrava de todo mundo as medidas do WhatsApp — e o desenho de
+   * Instagram que passava era justamente o que o adaptador ia cortar depois,
+   * em silêncio, na conversa de alguém.
+   *
+   * `undefined` cai no canal padrão, que é o WhatsApp: toda automação anterior
+   * à 0037 é dele, e as medidas dele são as mais apertadas dos três.
+   */
+  canal?: CanalId
 }
 
 /**
@@ -145,7 +159,14 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
     fluxos,
     fluxoAtualId,
     variaveisDaConta,
+    canal = CANAL_PADRAO,
   } = capacidades
+
+  // O nome entra nas mensagens junto com o número: "13 opções, o WhatsApp
+  // aceita 10" manda a pessoa procurar o erro no lugar certo, e "aceita 10" sem
+  // dizer quem manda procurar no manual.
+  const { nome: nomeDoCanal, limites } = DEFINICAO_DO_CANAL[canal]
+
   const erros: Problema[] = []
   const avisos: Problema[] = []
 
@@ -203,7 +224,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
 
   for (const no of fluxo.nodes) {
     const minhasSaidas = saidas(no.id)
-    conferirConteudo(no, erros, avisos, deSistema)
+    conferirConteudo(no, erros, avisos, deSistema, { nome: nomeDoCanal, limites })
 
     if (no.type === 'pergunta' && perguntaEhDinamica(no)) {
       if (no.data.opcoes.length > 0) {
@@ -229,10 +250,10 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
     } else if (no.type === 'pergunta') {
       const { opcoes } = no.data
 
-      if (opcoes.length > LIMITE_LISTA) {
+      if (opcoes.length > limites.opcoes) {
         erros.push({
           codigo: 'OPCOES_DEMAIS',
-          mensagem: `"${no.data.texto}" tem ${opcoes.length} opções. O WhatsApp aceita no máximo ${LIMITE_LISTA}.`,
+          mensagem: `"${no.data.texto}" tem ${opcoes.length} opções. O ${nomeDoCanal} aceita no máximo ${limites.opcoes}.`,
           noId: no.id,
         })
       }
@@ -624,12 +645,29 @@ function conferirMidia(
  * faça sentido. A separação existe porque o rascunho passa por estados
  * incompletos enquanto alguém digita — o que não pode é isso ir ao ar.
  */
+/**
+ * As medidas de quem vai executar o desenho.
+ *
+ * Vêm por parâmetro, e não de uma constante importada, porque a mesma opção com
+ * 25 caracteres é válida no Telegram e cortada no WhatsApp — o conteúdo só é
+ * conferível depois de se saber por onde ele sai. O padrão mantém o
+ * comportamento de antes para quem chama sem dizer o canal.
+ */
+type MedidasDoCanal = { nome: string; limites: DefinicaoDeCanal['limites'] }
+
+const MEDIDAS_PADRAO: MedidasDoCanal = {
+  nome: DEFINICAO_DO_CANAL[CANAL_PADRAO].nome,
+  limites: DEFINICAO_DO_CANAL[CANAL_PADRAO].limites,
+}
+
 function conferirConteudo(
   no: No,
   erros: Problema[],
   avisos: Problema[],
   deSistema: Set<string> = new Set(),
+  medidas: MedidasDoCanal = MEDIDAS_PADRAO,
 ): void {
+  const { nome: nomeDoCanal, limites } = medidas
   const vazio = (texto: string) => texto.trim() === ''
 
   const conferirVariavel = (nome: string | undefined, campo: string) => {
@@ -657,8 +695,8 @@ function conferirConteudo(
       erros.push({
         codigo: 'TEXTO_LONGO',
         mensagem: interativa
-          ? `São ${usados} caracteres. Mensagem com botões ou lista aceita ${limite} — acima disso o WhatsApp recusa a mensagem inteira, e a pessoa não recebe nada.`
-          : `São ${usados} caracteres. O WhatsApp aceita ${limite}.`,
+          ? `São ${usados} caracteres. Mensagem com botões ou lista aceita ${limite} — acima disso o ${nomeDoCanal} recusa a mensagem inteira, e a pessoa não recebe nada.`
+          : `São ${usados} caracteres. O ${nomeDoCanal} aceita ${limite}.`,
         noId: no.id,
       })
     }
@@ -820,10 +858,10 @@ function conferirConteudo(
       for (const opcao of no.data.opcoes) {
         if (vazio(opcao.rotulo)) {
           erros.push({ codigo: 'ROTULO_VAZIO', mensagem: 'Uma das opções está sem rótulo.', noId: no.id })
-        } else if (contarCaracteres(opcao.rotulo) > LIMITE_ROTULO) {
+        } else if (contarCaracteres(opcao.rotulo) > limites.rotulo) {
           erros.push({
             codigo: 'ROTULO_LONGO',
-            mensagem: `"${opcao.rotulo}" tem ${contarCaracteres(opcao.rotulo)} caracteres. O WhatsApp corta em ${LIMITE_ROTULO}.`,
+            mensagem: `"${opcao.rotulo}" tem ${contarCaracteres(opcao.rotulo)} caracteres. O ${nomeDoCanal} corta em ${limites.rotulo}.`,
             noId: no.id,
           })
         }

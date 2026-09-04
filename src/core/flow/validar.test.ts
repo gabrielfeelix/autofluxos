@@ -111,6 +111,55 @@ describe('validar', () => {
     expect(codigos(validar(fluxo).erros)).toContain('OPCOES_DEMAIS')
   })
 
+  it('cobra pelas medidas do canal do fluxo, e não pelas do WhatsApp sempre', () => {
+    /*
+     * As mesmas 12 opções: cabem no Instagram (13) e não cabem no WhatsApp
+     * (10). É o caso inteiro do canal ser da automação — cobrar de todo mundo
+     * a medida mais apertada reprovava desenho válido, e cobrar a mais folgada
+     * deixaria o adaptador cortar depois, calado, na conversa de alguém.
+     */
+    const doze = 12
+    const fluxo = {
+      inicio: 'q',
+      nodes: [
+        {
+          id: 'q',
+          type: 'pergunta' as const,
+          position: p,
+          data: {
+            texto: 'Escolha:',
+            opcoes: Array.from({ length: doze }, (_, i) => ({ id: `o${i}`, rotulo: `Op ${i}` })),
+          },
+        },
+        { id: 'h', type: 'handoff' as const, position: p, data: { motivo: 'x', mensagem: 'y' } },
+      ],
+      edges: Array.from({ length: doze }, (_, i) => ({
+        id: `e${i}`,
+        source: 'q',
+        sourceHandle: `o${i}`,
+        target: 'h',
+      })),
+    } as unknown as Fluxo
+
+    expect(codigos(validar(fluxo, { canal: 'whatsapp' }).erros)).toContain('OPCOES_DEMAIS')
+    expect(codigos(validar(fluxo, { canal: 'instagram' }).erros)).not.toContain('OPCOES_DEMAIS')
+  })
+
+  it('diz o nome do canal na mensagem, para o número não mandar procurar no manual', () => {
+    const fluxo = fluxoValido()
+    const pergunta = fluxo.nodes.find((no) => no.id === 'q')!
+    // 32 caracteres: passa no Telegram e é cortado nos outros dois.
+    ;(pergunta.data as { opcoes: { id: string; rotulo: string }[] }).opcoes[0]!.rotulo =
+      'Sim, quero falar com uma pessoa'
+
+    const doWhatsapp = validar(fluxo, { canal: 'whatsapp' }).erros.find(
+      (erro) => erro.codigo === 'ROTULO_LONGO',
+    )
+    expect(doWhatsapp?.mensagem).toContain('O WhatsApp corta em 20')
+
+    expect(codigos(validar(fluxo, { canal: 'telegram' }).erros)).not.toContain('ROTULO_LONGO')
+  })
+
   it('avisa sobre bloco solto que a conversa nunca alcança', () => {
     const fluxo = fluxoValido()
     fluxo.nodes.push({

@@ -308,6 +308,7 @@ export default async function Pagina({
                       {grupo.fluxos.map((fluxo) => {
                 const validacao = validar(fluxo.rascunho, {
                   iaHabilitada: fluxo.iaHabilitada,
+                  canal: fluxo.canal,
                 })
                 // Fluxo ligado a um número é o que está atendendo agora. Dizer
                 // isso aqui evita a viagem até a tela do número só para conferir.
