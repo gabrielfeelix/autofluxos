@@ -192,21 +192,35 @@ export async function trocarCodigoPorConta(opcoes: {
 
   const longo = tokenLongoSchema.parse(await pedir(trocaLonga.toString()))
 
-  // Passo 3: o @ do perfil, só para a tela ter o que mostrar. Se falhar, a
-  // conexão continua: o identificador é o `user_id`, e o @ é enfeite.
+  /*
+   * Passo 3: quem é a conta.
+   *
+   * **O `user_id` daqui é o identificador que vale, e não o `user_id` da troca
+   * do código.** Os dois existem, são parecidos e não são iguais: o da troca é
+   * um número com escopo do app, e o de `/me` é o ID da conta profissional — o
+   * mesmo que o painel da Meta mostra embaixo do @ e o mesmo que chega em
+   * `recipient.id` no webhook do Direct. Guardar o errado faz a conta aparecer
+   * conectada, o webhook chegar, e a mensagem não achar canal nenhum.
+   *
+   * O `@` continua sendo enfeite: se esta chamada falhar, a conexão sobrevive
+   * com o identificador da troca, que é melhor do que não ligar a conta.
+   */
   let username: string | null = null
+  let idDaConta: string | null = null
   try {
     const perfil = new URL(`https://graph.instagram.com/${versao}/me`)
     perfil.searchParams.set('fields', 'user_id,username')
     perfil.searchParams.set('access_token', longo.access_token)
-    username = perfilSchema.parse(await pedir(perfil.toString())).username ?? null
+    const lido = perfilSchema.parse(await pedir(perfil.toString()))
+    username = lido.username ?? null
+    idDaConta = lido.user_id ?? null
   } catch (erro) {
-    console.warn('[instagram] conectou mas não leu o @ do perfil', erro)
+    console.warn('[instagram] conectou mas não leu o perfil', erro)
   }
 
   const segundos = longo.expires_in ?? DIAS_DO_TOKEN_LONGO * 24 * 60 * 60
   return {
-    igUserId: curto.user_id,
+    igUserId: idDaConta ?? curto.user_id,
     username,
     token: longo.access_token,
     expiraEm: new Date(Date.now() + segundos * 1_000),
