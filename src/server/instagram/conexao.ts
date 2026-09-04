@@ -291,3 +291,44 @@ export async function assinarMensagens(opcoes: {
     throw new Error('o Instagram recusou a inscrição no webhook de mensagens')
   }
 }
+
+const perfilDoContatoSchema = z.object({
+  name: z.string().optional(),
+  username: z.string().optional(),
+})
+
+/**
+ * Como se chama quem mandou o direct.
+ *
+ * **O webhook do Instagram não traz o nome junto da mensagem**, ao contrário do
+ * WhatsApp, que manda `contacts[].profile.name` de graça. Aqui é uma consulta a
+ * mais, com a mesma permissão de mensagens — e sem ela o Inbox mostra uma
+ * fileira de números de 17 dígitos, que é a mesma coisa que não mostrar
+ * ninguém.
+ *
+ * O `name` é o nome escrito no perfil e pode estar vazio; o `username` é o @ e
+ * sempre existe. Cair no @ é melhor do que cair no id: quem atende reconhece um
+ * arroba.
+ *
+ * Devolve `null` em vez de estourar. Nome é enfeite do Inbox — perder o nome
+ * não pode fazer a mensagem se perder junto.
+ */
+export async function nomeDoPerfil(opcoes: {
+  igsid: string
+  token: string
+  versaoGraph?: string
+}): Promise<string | null> {
+  const versao = opcoes.versaoGraph ?? process.env.META_GRAPH_VERSION ?? VERSAO_PADRAO
+  const url = new URL(`https://graph.instagram.com/${versao}/${opcoes.igsid}`)
+  url.searchParams.set('fields', 'name,username')
+  url.searchParams.set('access_token', opcoes.token)
+
+  try {
+    const perfil = perfilDoContatoSchema.parse(await pedir(url.toString()))
+    const nome = perfil.name?.trim() || perfil.username?.trim()
+    return nome ? nome : null
+  } catch (erro) {
+    console.warn('[instagram] não deu para ler o nome de quem mandou', erro)
+    return null
+  }
+}

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { assinarMensagens } from './conexao'
+import { assinarMensagens, nomeDoPerfil } from './conexao'
 
 /**
  * O passo que faltava no OAuth: inscrever a conta no webhook.
@@ -62,5 +62,33 @@ describe('assinarMensagens', () => {
     await expect(
       assinarMensagens({ igUserId: '17841400183953038', token: 'token-longo' }),
     ).rejects.toThrow(/Permissions error/)
+  })
+})
+
+describe('nomeDoPerfil', () => {
+  it('pergunta name e username de uma vez, no perfil de quem mandou', async () => {
+    const espiao = fingirFetch(
+      async () => new Response('{"name":"Ana Ribeiro","username":"ana.rib"}', { status: 200 }),
+    )
+
+    const nome = await nomeDoPerfil({ igsid: 'igsid-do-contato', token: 'token-longo' })
+
+    const [url] = espiao.mock.calls[0] as unknown as [string]
+    expect(url).toContain('https://graph.instagram.com/v25.0/igsid-do-contato?')
+    expect(url).toContain('fields=name%2Cusername')
+    expect(nome).toBe('Ana Ribeiro')
+  })
+
+  it('cai no @ quando o perfil não tem nome escrito', async () => {
+    fingirFetch(async () => new Response('{"username":"ana.rib"}', { status: 200 }))
+
+    // O arroba é reconhecível; um id de 17 dígitos não é.
+    expect(await nomeDoPerfil({ igsid: 'igsid', token: 't' })).toBe('ana.rib')
+  })
+
+  it('devolve nulo em vez de estourar — nome é enfeite, mensagem não é', async () => {
+    fingirFetch(async () => new Response('{"error":{"message":"nope"}}', { status: 400 }))
+
+    expect(await nomeDoPerfil({ igsid: 'igsid', token: 't' })).toBeNull()
   })
 })

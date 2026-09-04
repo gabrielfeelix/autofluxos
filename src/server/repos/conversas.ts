@@ -158,6 +158,16 @@ export async function lerTokenDoCanal(canal: CanalSalvo): Promise<string> {
   return data as string
 }
 
+/**
+ * O contato desta conversa, criando na primeira mensagem.
+ *
+ * **Nome nulo não apaga o nome que já existe.** O `upsert` do PostgREST escreve
+ * só as colunas que vão no corpo, então omitir `nome` quando ele é nulo é a
+ * diferença entre "não sei como a pessoa se chama agora" e "esqueça como ela se
+ * chamava". No WhatsApp o nome vem em toda mensagem e isso nunca apareceu; no
+ * Instagram ele exige uma consulta à parte, que pode falhar — e falhar não pode
+ * custar o nome que já estava no Inbox.
+ */
 export async function acharOuCriarContato(
   clienteId: string,
   waId: string,
@@ -165,7 +175,10 @@ export async function acharOuCriarContato(
 ): Promise<Contato> {
   const { data, error } = await db()
     .from('contacts')
-    .upsert({ client_id: clienteId, wa_id: waId, nome }, { onConflict: 'client_id,wa_id' })
+    .upsert(
+      { client_id: clienteId, wa_id: waId, ...(nome === null ? {} : { nome }) },
+      { onConflict: 'client_id,wa_id' },
+    )
     .select('id, client_id, wa_id, nome, nome_real, campos, automacao_ativa')
     .single()
 

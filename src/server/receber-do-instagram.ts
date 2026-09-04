@@ -1,7 +1,12 @@
 import 'server-only'
 import { z } from 'zod'
 import { adaptadorDoCanal } from './adaptador-do-canal'
-import { type CanalSalvo, acharCanalPorContaDoInstagram } from './repos/conversas'
+import { nomeDoPerfil } from './instagram/conexao'
+import {
+  type CanalSalvo,
+  acharCanalPorContaDoInstagram,
+  lerTokenDoCanal,
+} from './repos/conversas'
 import { type FabricaDeCanal, type Mensagem, tratarUma } from './receber-mensagem'
 import { alertar } from './alertar'
 
@@ -197,6 +202,50 @@ export async function fabricaDoInstagram(canal: CanalSalvo): Promise<FabricaDeCa
   return () => adaptador
 }
 
+/**
+ * Quem já se apresentou nesta instância, para não perguntar de novo.
+ *
+ * **O nome custa uma consulta e não muda quase nunca.** Pedir a cada mensagem
+ * gastaria uma ida à Meta dentro do orçamento do webhook para reconfirmar o que
+ * já se sabe; guardar aqui faz o custo ser uma vez por pessoa por instância
+ * quente, e uma instância fria só refaz o que já estava certo.
+ *
+ * Memória de processo, e de propósito: é enfeite do Inbox, não estado do
+ * produto. O estado mora em `contacts.nome`, e é ele que sobrevive ao deploy.
+ */
+const NOMES_VISTOS = new Map<string, string | null>()
+
+/** Acima disso, esquece tudo. Um Map sem teto num processo longo é vazamento. */
+const TETO_DE_NOMES = 500
+
+/**
+ * Como se chama quem mandou, quando dá para saber.
+ *
+ * O webhook do Instagram não traz o nome junto da mensagem — ao contrário do
+ * WhatsApp, que manda de graça. Sem esta consulta o Inbox mostra uma fileira de
+ * números de 17 dígitos, e quem atende não reconhece ninguém.
+ *
+ * Falhar devolve `null`, e `acharOuCriarContato` trata nulo como "não sei
+ * agora", não como "apague o que sabia". Nome é enfeite; a mensagem não pode se
+ * perder junto com ele.
+ */
+async function nomeDeQuemMandou(canal: CanalSalvo, igsid: string): Promise<string | null> {
+  const chave = `${canal.id}:${igsid}`
+  const guardado = NOMES_VISTOS.get(chave)
+  if (guardado !== undefined) return guardado
+
+  let nome: string | null = null
+  try {
+    nome = await nomeDoPerfil({ igsid, token: await lerTokenDoCanal(canal) })
+  } catch (erro) {
+    console.warn('[instagram] não deu para ler o nome de quem mandou', erro)
+  }
+
+  if (NOMES_VISTOS.size >= TETO_DE_NOMES) NOMES_VISTOS.clear()
+  NOMES_VISTOS.set(chave, nome)
+  return nome
+}
+
 export async function receberDoInstagram(
   payload: unknown,
   fabricaDeCanal?: FabricaDeCanal,
@@ -268,16 +317,11 @@ export async function receberDoInstagram(
       // WhatsApp. Fora do teste, o token vem do Vault.
       const fabrica = fabricaDeCanal ?? (await fabricaDoInstagram(canalSalvo))
 
-      /*
-       * O nome do perfil vem `null`.
-       *
-       * O webhook do Instagram não traz o nome junto da mensagem, ao contrário
-       * do WhatsApp — ele exige um GET em `/{igsid}` com a permissão de perfil.
-       * Uma consulta a mais por mensagem, dentro do orçamento do webhook, para
-       * um dado que a tela já sabe mostrar quando falta. Fica para quando o app
-       * review liberar a permissão e valer a pena.
-       */
-      await tratarUma(canalSalvo, mensagem, null, fabrica)
+      // O nome não vem no webhook, vem de uma consulta — e ela é feita uma vez
+      // por pessoa, não uma por mensagem. Ver `nomeDeQuemMandou`.
+      const nome = await nomeDeQuemMandou(canalSalvo, evento.sender.id)
+
+      await tratarUma(canalSalvo, mensagem, nome, fabrica)
       tratadas += 1
     }
   }
