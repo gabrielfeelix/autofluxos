@@ -20,6 +20,7 @@ import { listarRespostasRapidas } from '@/server/repos/respostas-rapidas'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { quadrosDoContato } from '@/server/repos/quadros'
 import { comoParado, estaParado } from '@/core/quadros'
+import { rotuloDoCampo } from '@/core/contatos/rotulo-do-campo'
 import { SeletorDeEtiquetas } from '@/components/etiquetas/seletor'
 import { AnexoNaConversa, SemTexto } from '@/components/lead/anexo'
 import { NomeDoContato, NotasDoContato } from '@/components/lead/identidade'
@@ -201,7 +202,7 @@ export default async function Pagina({
               <dl>
                 {campos.map(([chave, valor]) => (
                   <div key={chave} className="border-b border-white/[0.045] px-[18px] py-[11px] last:border-0">
-                    <dt className="font-mono text-[10px] tracking-[0.04em] text-dim">{chave}</dt>
+                    <dt className="text-[10.5px] font-semibold text-dim">{rotuloDoCampo(chave) || chave}</dt>
                     <dd className="mt-1 truncate text-[13px] font-semibold">{valor}</dd>
                   </div>
                 ))}

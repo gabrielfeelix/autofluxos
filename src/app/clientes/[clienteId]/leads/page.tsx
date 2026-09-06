@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { rotuloDoCampo } from '@/core/contatos/rotulo-do-campo'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
@@ -331,7 +332,11 @@ async function Tabela({
                     <CaixaDeTodos ids={leads.map((lead) => lead.contatoId)} />
                   </th>
                   <Cabecalho>Contato</Cabecalho>
-                  {colunas.map((coluna) => <Cabecalho key={coluna} mono>{coluna}</Cabecalho>)}
+                  {/* O rótulo, não a chave: `objetivo_aluno` em fonte de código
+                      era o mesmo problema do painel do Inbox, numa tabela. */}
+                  {colunas.map((coluna) => (
+                    <Cabecalho key={coluna}>{rotuloDoCampo(coluna) || coluna}</Cabecalho>
+                  ))}
                   <Cabecalho>Situação</Cabecalho>
                   <Cabecalho>Última mensagem</Cabecalho>
                   <th scope="col" className="w-10 px-2 py-2.5">
@@ -361,7 +366,7 @@ async function Tabela({
                     </div>
                   </td>
                   {colunas.map((coluna) => (
-                    <td key={coluna} className="max-w-48 truncate px-3.5 py-3 font-mono text-[11px] text-[#97a2b4]">
+                    <td key={coluna} className="max-w-48 truncate px-3.5 py-3 text-[11.5px] text-[#97a2b4]">
                       {lead.campos[coluna] || <span className="text-dim">—</span>}
                     </td>
                   ))}
@@ -500,9 +505,9 @@ function classeDoFiltro(ativo: boolean): string {
   }`
 }
 
-function Cabecalho({ children, mono = false }: { children: React.ReactNode; mono?: boolean }) {
+function Cabecalho({ children }: { children: React.ReactNode }) {
   return (
-    <th className={`px-3.5 py-3.5 text-[10.5px] font-bold tracking-[0.06em] text-dim uppercase ${mono ? 'font-mono normal-case tracking-[0.02em]' : ''}`}>
+    <th className="px-3.5 py-3.5 text-[10.5px] font-bold tracking-[0.06em] text-dim uppercase">
       {children}
     </th>
   )

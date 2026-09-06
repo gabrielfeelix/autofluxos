@@ -7,6 +7,7 @@ import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 import { sessaoAtual } from '@/server/sessao'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { ControleDeAutomacao } from '@/components/lead/controle-automacao'
+import { CamposColetados } from '@/components/lead/campos-coletados'
 import { CaixaDeResposta } from '@/components/lead/responder'
 import {
   acaoAssumirAtendimento,
@@ -876,6 +877,20 @@ function DadosDoLead({
           />
         </div>
 
+        {/*
+          A anotação vem antes dos campos.
+          Ela é o que mais se usa nesta coluna e estava no fim, depois do
+          despejo de tudo que o fluxo coletou — num contato com muitos campos,
+          fora da dobra.
+        */}
+        <div className="mt-5">
+          <h3 className="text-[11px] font-bold text-soft">Anotação da equipe</h3>
+          <NotaRapida
+            inicial={lead.notas}
+            salvar={acaoSalvarNotas.bind(null, clienteId, lead.contatoId)}
+          />
+        </div>
+
         <div className="mt-5">
           <div className="flex items-center justify-between">
             <h3 className="text-[11px] font-bold text-soft">O que o fluxo coletou</h3>
@@ -883,26 +898,7 @@ function DadosDoLead({
               Ficha
             </Link>
           </div>
-          {campos.length === 0 ? (
-            <p className="mt-2 text-[11px] leading-5 text-dim">Ainda não houve campo preenchido nesta conversa.</p>
-          ) : (
-            <dl className="mt-2.5 divide-y divide-white/[0.045] border-y border-white/[0.045]">
-              {campos.map(([chave, valor]) => (
-                <div key={chave} className="py-2.5">
-                  <dt className="font-mono text-[9.5px] text-dim">{chave}</dt>
-                  <dd className="mt-0.5 break-words text-[11.5px] font-semibold text-soft">{valor}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
-        </div>
-
-        <div className="mt-5">
-          <h3 className="text-[11px] font-bold text-soft">Anotação da equipe</h3>
-          <NotaRapida
-            inicial={lead.notas}
-            salvar={acaoSalvarNotas.bind(null, clienteId, lead.contatoId)}
-          />
+          <CamposColetados campos={campos} />
         </div>
       </div>
     </aside>
