@@ -19,21 +19,25 @@ import { db, ehIdInvalido } from '../db'
 export type Quadro = {
   id: string
   nome: string
+  /** Recebe contato novo sozinho. No máximo um por conta (0043). */
+  padrao: boolean
   etapas: Etapa[]
 }
 
 type LinhaDoQuadro = {
   id: string
   nome: string
+  padrao: boolean
   quadro_colunas: { id: string; nome: string; ordem: number; criado_em: string }[] | null
 }
 
-const COLUNAS = 'id, nome, quadro_colunas (id, nome, ordem, criado_em)'
+const COLUNAS = 'id, nome, padrao, quadro_colunas (id, nome, ordem, criado_em)'
 
 function paraQuadro(linha: LinhaDoQuadro): Quadro {
   return {
     id: linha.id,
     nome: linha.nome,
+    padrao: linha.padrao ?? false,
     etapas: etapasEmOrdem(
       (linha.quadro_colunas ?? []).map((coluna) => ({
         id: coluna.id,
@@ -154,6 +158,72 @@ export async function apagarQuadro(clienteId: string, quadroId: string): Promise
   if (ehIdInvalido(error)) return false
   if (error) throw new Error(`não deu para apagar o quadro: ${error.message}`)
   return data !== null
+}
+
+/**
+ * O quadro que recebe contato novo sozinho, ou `null` quando não há nenhum
+ * marcado (0043).
+ *
+ * **`null` é resposta legítima e é o padrão**, não um erro a tratar: conta sem
+ * quadro marcado é conta que não quer a automação, e quem chama isto no
+ * caminho da mensagem tem que seguir em frente sem reclamar.
+ *
+ * Devolve só o id porque o único uso é `porNoQuadro` logo em seguida; puxar as
+ * etapas aqui seria carregar a junção inteira em **toda** mensagem recebida
+ * para descartá-la.
+ */
+export async function acharQuadroPadrao(clienteId: string): Promise<string | null> {
+  const { data, error } = await db()
+    .from('quadros')
+    .select('id')
+    .eq('client_id', clienteId)
+    .eq('padrao', true)
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return null
+  if (error) throw new Error(`não deu para achar o quadro padrão: ${error.message}`)
+  return data ? (data as { id: string }).id : null
+}
+
+/**
+ * Marca (ou desmarca, com `null`) o quadro que recebe contato novo.
+ *
+ * **Desmarcar vem antes de marcar, e não é ordem à toa.** O índice parcial
+ * `quadros_padrao_unico_idx` recusa a segunda linha marcada da mesma conta, e
+ * marcar primeiro estouraria com `23505` justamente no caso normal — trocar o
+ * padrão de um quadro para outro. Limpar a conta inteira primeiro deixa a
+ * marcação sempre livre.
+ *
+ * O intervalo entre as duas escritas é o preço: por um instante a conta fica
+ * sem padrão, e uma mensagem que chegue exatamente ali não põe ninguém no
+ * quadro. É aceitável de propósito — a alternativa seria uma transação, que o
+ * PostgREST não dá, e o custo do azar é um cartão que a tela cria com um
+ * clique, contra o risco de deixar a conta com dois padrões.
+ */
+export async function definirQuadroPadrao(
+  clienteId: string,
+  quadroId: string | null,
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  const { error: erroAoLimpar } = await db()
+    .from('quadros')
+    .update({ padrao: false })
+    .eq('client_id', clienteId)
+    .eq('padrao', true)
+
+  if (erroAoLimpar) throw new Error(`não deu para limpar o quadro padrão: ${erroAoLimpar.message}`)
+  if (quadroId === null) return { ok: true }
+
+  const { data, error } = await db()
+    .from('quadros')
+    .update({ padrao: true })
+    .eq('id', quadroId)
+    .eq('client_id', clienteId)
+    .select('id')
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return { ok: false, motivo: 'este quadro não existe mais' }
+  if (error) throw new Error(`não deu para definir o quadro padrão: ${error.message}`)
+  return data ? { ok: true } : { ok: false, motivo: 'este quadro não existe mais' }
 }
 
 // ---------------------------------------------------------------------------

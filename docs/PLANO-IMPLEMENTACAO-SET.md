@@ -15,7 +15,24 @@ parar ali. As decisões técnicas estão tomadas aqui; quem executa escreve os p
 
 ---
 
-## Rodada 1 — o cartão entra sozinho no quadro
+## Rodada 1 — o cartão entra sozinho no quadro ✅ FEITO (06/set/2026)
+
+> **Entregue.** Migration `0043` aplicada em produção com autorização do dono e
+> conferida no banco (coluna, índice parcial e PostgREST). O quadro padrão é
+> opt-in: todas as contas existentes ficaram em `padrao = false`, ou seja,
+> ninguém ganhou automação sem marcar a caixa. 11 testes novos (7 de repo, 4 do
+> webhook), suíte em 1200 passando.
+>
+> Onde ficou: `acharQuadroPadrao`/`definirQuadroPadrao` em `repos/quadros.ts`,
+> `porNoQuadroPadrao` em `receber-mensagem.ts`, `acaoDefinirQuadroPadrao` em
+> `acoes.ts` e a caixa em `components/quadros/quadro-padrao.tsx`.
+>
+> **A decisão do dono foi tomada:** quadro padrão explícito, a opção recomendada
+> abaixo. Fica registrada aqui a que **não** era óbvia e apareceu no código:
+> `acharOuCriarContato` não sabia dizer se tinha criado ou achado, e
+> `criado_em == atualizado_em` seria acidente de não haver gatilho na tabela.
+> Agora ela insere com `ignoreDuplicates` primeiro e devolve `criadoAgora` —
+> atômico, então duas mensagens simultâneas não criam dois cartões.
 
 **Por quê:** é a queixa literal do dono — *"o lead não vai automático, tem que
 clicar e puxar"*. E ele está certo: `porNoQuadro` (`repos/quadros.ts:335`) só é

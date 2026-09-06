@@ -4,6 +4,7 @@ import { BotaoPerigo } from '@/components/design/botao-perigo'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { Quadro } from '@/components/quadros/quadro'
+import { QuadroPadrao } from '@/components/quadros/quadro-padrao'
 import { LIMITE_DO_NOME } from '@/core/quadros'
 import { acaoApagarQuadro, acaoCriarQuadro } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
@@ -111,6 +112,13 @@ export default async function Pagina({
           )}
 
           <span className="ml-auto flex items-center gap-2">
+            {aberto && (
+              <QuadroPadrao
+                clienteId={cliente.id}
+                quadroId={aberto.id}
+                padraoInicial={aberto.padrao}
+              />
+            )}
             {novoQuadro}
             {aberto && (
               <BotaoPerigo

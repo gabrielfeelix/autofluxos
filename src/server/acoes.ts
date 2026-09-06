@@ -125,6 +125,7 @@ import {
   apagarQuadro,
   criarEtapa,
   criarQuadro,
+  definirQuadroPadrao,
   moverCartao,
   moverEtapa,
   porNaEtapa,
@@ -1110,6 +1111,25 @@ export async function acaoApagarQuadro(
   const apagou = await apagarQuadro(clienteId, quadroId)
   revalidatePath(`/clientes/${clienteId}/quadros`)
   return apagou ? { ok: true } : { ok: false, erro: 'este quadro não existe mais' }
+}
+
+/**
+ * Marca o quadro que recebe contato novo sozinho — ou desmarca (0043).
+ *
+ * **Desmarcar é passar `false`, e é um caminho de primeira classe.** A conta
+ * volta ao comportamento anterior: nada entra sozinho. Quem experimentou a
+ * automação e não gostou precisa poder sair dela sem apagar o quadro.
+ */
+export async function acaoDefinirQuadroPadrao(
+  clienteId: string,
+  quadroId: string,
+  padrao: boolean,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const r = await definirQuadroPadrao(clienteId, padrao ? quadroId : null)
+  revalidatePath(`/clientes/${clienteId}/quadros`)
+  return r.ok ? { ok: true } : { ok: false, erro: r.motivo }
 }
 
 export async function acaoCriarEtapa(

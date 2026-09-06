@@ -5,10 +5,12 @@ import { criarCliente } from './clientes'
 import { acharOuCriarContato } from './conversas'
 import {
   acharQuadro,
+  acharQuadroPadrao,
   apagarEtapa,
   apagarQuadro,
   criarEtapa,
   criarQuadro,
+  definirQuadroPadrao,
   listarCartoes,
   listarQuadros,
   moverCartao,
@@ -225,5 +227,78 @@ describe.skipIf(!temCredencial)('apagar', () => {
 
     const { data } = await db().from('contacts').select('id').eq('id', bruno).maybeSingle()
     expect(data).not.toBeNull()
+  })
+})
+
+/**
+ * O quadro padrão (0043).
+ *
+ * O que só o Postgres prova aqui é o índice parcial: várias linhas `false`
+ * convivendo e só a marcada colidindo. Um teste de unidade com repo falso
+ * acharia que `unique (client_id, padrao)` serviria — e ele proibiria dois
+ * quadros comuns na mesma conta, que é o caso normal.
+ */
+describe.skipIf(!temCredencial)('quadro padrão', () => {
+  let umId = ''
+  let outroDaMesmaContaId = ''
+
+  beforeAll(async () => {
+    if (!temCredencial) return
+    const [um, dois] = await Promise.all([
+      criarQuadro(clienteId, `${marca} padrao a`),
+      criarQuadro(clienteId, `${marca} padrao b`),
+    ])
+    umId = um.ok ? um.id : ''
+    outroDaMesmaContaId = dois.ok ? dois.id : ''
+  })
+
+  it('conta sem marcação nenhuma não tem padrão, e isso não é erro', async () => {
+    expect(await acharQuadroPadrao(clienteId)).toBeNull()
+  })
+
+  it('marcar um quadro faz `acharQuadroPadrao` devolver ele', async () => {
+    expect(await definirQuadroPadrao(clienteId, umId)).toEqual({ ok: true })
+    expect(await acharQuadroPadrao(clienteId)).toBe(umId)
+  })
+
+  it('marcar o segundo desmarca o primeiro — nunca dois padrões na mesma conta', async () => {
+    expect(await definirQuadroPadrao(clienteId, outroDaMesmaContaId)).toEqual({ ok: true })
+    expect(await acharQuadroPadrao(clienteId)).toBe(outroDaMesmaContaId)
+
+    // O índice parcial é a garantia real; a consulta confirma que ela valeu.
+    const { data } = await db()
+      .from('quadros')
+      .select('id')
+      .eq('client_id', clienteId)
+      .eq('padrao', true)
+    expect(data).toHaveLength(1)
+  })
+
+  it('desmarcar devolve a conta ao comportamento de antes', async () => {
+    expect(await definirQuadroPadrao(clienteId, null)).toEqual({ ok: true })
+    expect(await acharQuadroPadrao(clienteId)).toBeNull()
+  })
+
+  it('o padrão é por conta: o de um cliente não vaza para o outro', async () => {
+    const alheio = await criarQuadro(outroId, `${marca} padrao alheio`)
+    expect(alheio.ok).toBe(true)
+    if (!alheio.ok) return
+
+    expect(await definirQuadroPadrao(outroId, alheio.id)).toEqual({ ok: true })
+    expect(await definirQuadroPadrao(clienteId, umId)).toEqual({ ok: true })
+
+    // Os dois convivem porque o índice é por `client_id`.
+    expect(await acharQuadroPadrao(outroId)).toBe(alheio.id)
+    expect(await acharQuadroPadrao(clienteId)).toBe(umId)
+  })
+
+  it('não marca quadro de outra conta pelo id', async () => {
+    const r = await definirQuadroPadrao(outroId, umId)
+    expect(r.ok).toBe(false)
+  })
+
+  it('`listarQuadros` traz a marcação, que é o que a tela desenha', async () => {
+    const quadros = await listarQuadros(clienteId)
+    expect(quadros.filter((q) => q.padrao).map((q) => q.id)).toEqual([umId])
   })
 })

@@ -57,10 +57,10 @@ segundos e vale mais que qualquer parágrafo de documento.**
 | Verificação do negócio | ✅ `verified` |
 | Tech Provider / verificação de acesso | ✅ verificado |
 | Coexistence | Libera quando o app review aprovar. Sem formulário novo |
-| Última migration | **`0042`** — confira pelo diretório, sempre |
+| Última migration | **`0043`** — confira pelo diretório, sempre |
 
-Números do produto: 42 migrations · 18 telas do cliente + 5 do admin · 11 blocos
-no editor · 10 ações no motor · 81 server actions · WhatsApp no ar, Instagram
+Números do produto: 43 migrations · 18 telas do cliente + 5 do admin · 11 blocos
+no editor · 10 ações no motor · 82 server actions · WhatsApp no ar, Instagram
 pronto e travado, Telegram só no catálogo.
 
 ---
@@ -91,15 +91,16 @@ Detalhe, decisão técnica e critério de prova em
 
 | # | O quê | Decisão pendente? |
 |---|---|---|
-| 1 | **Cartão entra sozinho no quadro** — hoje o cliente tem que clicar e puxar | Sim: qual quadro. Recomendação escrita: quadro padrão explícito, migration `0043` |
+| 1 | ✅ **Feito em 06/set.** Cartão entra sozinho no quadro | Decidida: quadro padrão explícito. `0043` **aplicada em produção** |
 | 2 | **Fluxo aplica etiqueta e escreve nota** — as 10 ações do motor não fazem nenhuma das duas | Não |
 | 3 | **Webhook de entrada** — o preset `verandi-espera` promete "te aviso se abrir" e não há rota para receber | Não |
 | 4 | **Painel direito do Inbox** — `Object.entries(lead.campos)` despeja tudo com a chave crua | Não |
 | 5 | **Aviso de handoff** — só avisa quem está com o Inbox aberto | Não |
 | 6 | **Auditoria OWASP escrita** — 7 dos 9 blocos de endurecimento já estão fechados | Não |
 
-**A rodada 1 tem uma decisão do dono embutida** e é a única. As outras cinco
-podem começar sem perguntar nada.
+**A rodada 1 tinha a única decisão do dono embutida** e ela foi tomada em
+06/set: quadro padrão explícito, marcado numa caixa no cabeçalho do quadro. As
+outras cinco podem começar sem perguntar nada.
 
 ---
 
@@ -107,7 +108,9 @@ podem começar sem perguntar nada.
 
 Não decida por ele; pergunte no momento certo e siga com o resto.
 
-1. **Qual quadro recebe o contato novo** (rodada 1) — recomendação registrada.
+1. ~~**Qual quadro recebe o contato novo** (rodada 1)~~ — **decidida em 06/set**:
+   quadro padrão explícito, opt-in por conta. Nenhuma conta existente foi
+   ligada.
 2. **Subfluxo volta ao chamador?** Recomendação registrada: **não**. É a decisão
    nº 1 do `PLANO-MESTRE` e nunca foi fechada. Bloqueia a coluna `Conexões`.
 3. **Cobrança**: o que é cobrado e por qual gateway. Nada existe no código —

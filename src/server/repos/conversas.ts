@@ -96,6 +96,15 @@ export type Contato = {
   campos: Record<string, string>
   /** A pausa é do contato, não de uma sessão: sobrevive à próxima conversa. */
   automacaoAtiva: boolean
+  /**
+   * Esta chamada foi quem criou o contato — é a **primeira** mensagem dele.
+   *
+   * Existe para o quadro padrão (0043): contato novo entra sozinho no funil, e
+   * contato que já existia e voltou a escrever não pode ser jogado de volta
+   * para a primeira etapa. Sem esta distinção, toda mensagem apagaria o
+   * progresso de quem alguém já arrastou até o fim do quadro.
+   */
+  criadoAgora: boolean
 }
 
 export type SessaoSalva = {
@@ -158,6 +167,20 @@ export async function lerTokenDoCanal(canal: CanalSalvo): Promise<string> {
   return data as string
 }
 
+const COLUNAS_DO_CONTATO = 'id, client_id, wa_id, nome, nome_real, campos, automacao_ativa'
+
+function paraContato(linha: Record<string, unknown>): Omit<Contato, 'criadoAgora'> {
+  return {
+    id: linha.id as string,
+    clienteId: linha.client_id as string,
+    waId: linha.wa_id as string,
+    nome: linha.nome as string | null,
+    nomeReal: linha.nome_real as string | null,
+    campos: (linha.campos ?? {}) as Record<string, string>,
+    automacaoAtiva: linha.automacao_ativa as boolean,
+  }
+}
+
 /**
  * O contato desta conversa, criando na primeira mensagem.
  *
@@ -173,47 +196,64 @@ export async function acharOuCriarContato(
   waId: string,
   nome: string | null,
 ): Promise<Contato> {
+  /**
+   * **Duas escritas para responder "este contato nasceu agora?".**
+   *
+   * O `upsert` sozinho devolve a linha e não diz se ela foi inserida ou
+   * atualizada — PostgREST não expõe nada equivalente ao `xmax` do Postgres. E
+   * `criado_em == atualizado_em` não serve: é acidente de não haver gatilho
+   * nesta tabela hoje, e viraria um bug silencioso no dia em que houver.
+   *
+   * O `ignoreDuplicates` faz a pergunta direto ao índice único
+   * `(client_id, wa_id)`: linha devolvida = fomos nós que criamos; nada
+   * devolvido = já existia. É atômico, então duas mensagens simultâneas da
+   * mesma pessoa não podem **ambas** dizer que criaram — que é exatamente o
+   * caso em que dois cartões apareceriam no quadro.
+   */
+  const { data: inserido, error: erroAoInserir } = await db()
+    .from('contacts')
+    .insert({ client_id: clienteId, wa_id: waId, ...(nome === null ? {} : { nome }) })
+    .select(COLUNAS_DO_CONTATO)
+    .maybeSingle()
+
+  // `23505` é o caminho normal: o contato já existia. Qualquer outro erro é
+  // erro de verdade e não pode virar "então crio de novo".
+  if (erroAoInserir && erroAoInserir.code !== '23505') {
+    throw new Error(`não deu para registrar o contato: ${erroAoInserir.message}`)
+  }
+
+  // Criamos agora: a linha já veio inteira, e a segunda escrita seria uma ida
+  // ao banco em toda primeira mensagem para reescrever o que acabou de entrar.
+  if (inserido && !erroAoInserir) {
+    return { ...paraContato(inserido as Record<string, unknown>), criadoAgora: true }
+  }
+
   const { data, error } = await db()
     .from('contacts')
     .upsert(
       { client_id: clienteId, wa_id: waId, ...(nome === null ? {} : { nome }) },
       { onConflict: 'client_id,wa_id' },
     )
-    .select('id, client_id, wa_id, nome, nome_real, campos, automacao_ativa')
+    .select(COLUNAS_DO_CONTATO)
     .single()
 
   if (error) throw new Error(`não deu para registrar o contato: ${error.message}`)
 
-  return {
-    id: data.id as string,
-    clienteId: data.client_id as string,
-    waId: data.wa_id as string,
-    nome: data.nome as string | null,
-    nomeReal: data.nome_real as string | null,
-    campos: (data.campos ?? {}) as Record<string, string>,
-    automacaoAtiva: data.automacao_ativa as boolean,
-  }
+  return { ...paraContato(data as Record<string, unknown>), criadoAgora: false }
 }
 
 export async function acharContato(contatoId: string): Promise<Contato | null> {
   const { data, error } = await db()
     .from('contacts')
-    .select('id, client_id, wa_id, nome, nome_real, campos, automacao_ativa')
+    .select(COLUNAS_DO_CONTATO)
     .eq('id', contatoId)
     .maybeSingle()
 
   if (error) throw new Error(`não deu para achar o contato: ${error.message}`)
   if (!data) return null
 
-  return {
-    id: data.id as string,
-    clienteId: data.client_id as string,
-    waId: data.wa_id as string,
-    nome: data.nome as string | null,
-    nomeReal: data.nome_real as string | null,
-    campos: (data.campos ?? {}) as Record<string, string>,
-    automacaoAtiva: data.automacao_ativa as boolean,
-  }
+  // Ler nunca cria: quem chega por aqui é contato que já existia.
+  return { ...paraContato(data as Record<string, unknown>), criadoAgora: false }
 }
 
 /**

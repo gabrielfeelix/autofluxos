@@ -14,6 +14,13 @@ import {
   ultimaSessao,
 } from './repos/conversas'
 import { criarFluxo, publicar, salvarRascunho } from './repos/fluxos'
+import {
+  acharQuadro,
+  criarQuadro,
+  definirQuadroPadrao,
+  listarCartoes,
+  moverCartao,
+} from './repos/quadros'
 import { acharLead, lerConversa } from './repos/leads'
 
 /**
@@ -717,3 +724,96 @@ function canalQueRecusa(motivo: string, aPartirDe = 0) {
     enviarMidia: recusar,
   }
 }
+
+/**
+ * O contato novo entra sozinho no quadro padrão (0043).
+ *
+ * A queixa que originou isto foi literal — *"o lead não vai automático, tem que
+ * clicar e puxar"*. O que precisa ser provado aqui não é só que ele entra: é
+ * que **quem já estava no quadro não é jogado de volta para a primeira etapa**.
+ * Esse é o modo de falhar que apagaria o funil de todo mundo a cada mensagem, e
+ * só aparece no caminho inteiro, do webhook até o banco.
+ */
+describe.skipIf(!temCredencial)('o contato novo entra no quadro padrão', () => {
+  let quadroId = ''
+
+  beforeAll(async () => {
+    if (!temCredencial) return
+    const quadro = await criarQuadro(clienteId, `${marca} funil`)
+    if (!quadro.ok) throw new Error('o quadro do teste deveria ser criado')
+    quadroId = quadro.id
+  })
+
+  it('sem quadro padrão marcado, nada entra — e a mensagem é atendida igual', async () => {
+    mock.enviadas.length = 0
+    const de = telefone(40)
+
+    await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-qp-1`), comMock)
+
+    expect(await listarCartoes(clienteId, quadroId)).toHaveLength(0)
+    // O que importa tanto quanto: a conversa andou.
+    expect(mock.enviadas.some((e) => e.tipo === 'texto')).toBe(true)
+  })
+
+  it('com quadro padrão, o contato vira cartão na primeira etapa sozinho', async () => {
+    await definirQuadroPadrao(clienteId, quadroId)
+    const de = telefone(41)
+
+    await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-qp-2`), comMock)
+
+    const cartoes = await listarCartoes(clienteId, quadroId)
+    const meu = cartoes.find((c) => c.telefone === de)
+    expect(meu).toBeDefined()
+
+    const primeira = (await acharQuadro(clienteId, quadroId))!.etapas[0]!
+    expect(meu!.colunaId).toBe(primeira.id)
+  })
+
+  it('contato que já existia e voltou a escrever NÃO volta para a primeira etapa', async () => {
+    const de = telefone(42)
+    await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-qp-3`), comMock)
+
+    const quadro = (await acharQuadro(clienteId, quadroId))!
+    const adiante = quadro.etapas[1]!
+    const cartao = (await listarCartoes(clienteId, quadroId)).find((c) => c.telefone === de)!
+    expect((await moverCartao(clienteId, cartao.id, adiante.id)).ok).toBe(true)
+
+    // A segunda mensagem da mesma pessoa: é aqui que o funil seria apagado.
+    await receberMensagem(webhookTexto(de, 'de novo', `wamid-${marca}-qp-4`), comMock)
+
+    const depois = (await listarCartoes(clienteId, quadroId)).filter((c) => c.telefone === de)
+    expect(depois).toHaveLength(1)
+    expect(depois[0]!.colunaId).toBe(adiante.id)
+  })
+
+  it('quadro padrão sem etapa nenhuma não derruba a mensagem', async () => {
+    const vazio = await criarQuadro(clienteId, `${marca} funil sem etapa`)
+    if (!vazio.ok) throw new Error('o quadro deveria ser criado')
+
+    // Um quadro nasce com três etapas; tirar todas é o estado quebrado que
+    // `porNoQuadro` recusa — e essa recusa não pode custar o atendimento.
+    const doVazio = (await acharQuadro(clienteId, vazio.id))!
+    for (const etapa of doVazio.etapas) {
+      await db().from('quadro_colunas').delete().eq('id', etapa.id)
+    }
+    await definirQuadroPadrao(clienteId, vazio.id)
+
+    mock.enviadas.length = 0
+    const de = telefone(43)
+    await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-qp-5`), comMock)
+
+    // A conversa seguiu, que é a regra: quadro mal configurado nunca pode fazer
+    // alguém deixar de ser atendido.
+    expect(mock.enviadas.some((e) => e.tipo === 'texto')).toBe(true)
+
+    // E o problema ficou registrado em vez de sumir.
+    const { data } = await db()
+      .from('alertas')
+      .select('titulo')
+      .ilike('titulo', '%quadro padrão%')
+      .limit(1)
+    expect(data ?? []).not.toHaveLength(0)
+
+    await definirQuadroPadrao(clienteId, quadroId)
+  })
+})
