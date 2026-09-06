@@ -12,44 +12,74 @@ semanas em que **nenhum cliente novo pode ser embarcado**.
 
 ---
 
-## 0. A pergunta que decide tudo: somos CRM ou não?
+## 0. Correção: o Kanban existe, e faz mais do que se pediu
 
-O dono pediu, nesta ordem: temperatura do lead, tags automáticas, observações
-escritas pelo bot, e o lead caindo sozinho em estágios **"no Kanban que a gente
-criou"**.
+**A primeira versão deste plano abriu com uma pergunta errada.** Ela dizia que
+não havia Kanban no código e propunha decidir se deveríamos ter um. Estava
+errado, e o erro foi de busca: procurei por `*kanban*` no nome do arquivo, e no
+código a coisa se chama **quadros**.
 
-**Não existe Kanban no código.** `find src -iname "*kanban*"` não devolve nada, e
-não é esquecimento — é decisão registrada duas vezes:
+O que existe, conferido arquivo a arquivo em 06/set:
 
-- [PLANO-PRODUTO.md §8](PLANO-PRODUTO.md): *"**Kanban / CRM** — Outro produto. A
-  Fase F integra com o CRM do cliente em vez de virar um."*
-- A fronteira do dado, decidida em 12/ago: **nosso** é estado de execução
-  (mensagem, sessão, entrega); **do cliente** é o registro de negócio (funil,
-  status, tag, follow-up). O risco não é volume, é virar a **segunda fonte da
-  verdade** — o dado existe nos dois lugares e eles divergem.
+| Camada | Onde |
+|---|---|
+| Motor puro | `src/core/quadros.ts` — até 8 etapas, ordenação estável, "parado há quanto tempo" |
+| Persistência | `src/server/repos/quadros.ts` |
+| Tela | `/clientes/[clienteId]/quadros` + `src/components/quadros/quadro.tsx` (745 linhas) |
+| Banco | migrations `0032`–`0035` |
+| Testes | `src/core/quadros.test.ts` e `src/server/repos/quadros.test.ts` |
 
-O mesmo argumento já barrou modelar a agenda do pilates aqui dentro.
+A tela já tem **arrastar e soltar**, criar/renomear/apagar/reordenar etapa,
+busca com respiro e adicionar contatos em lote.
 
-**Isto é uma decisão de produto, não de código, e é do dono.** Ela não pode ser
-tomada por dentro de uma tarefa de UI — é por isso que abre este plano em vez de
-virar um item no meio da lista.
+**Mas o automático não acontece na prática, e o dono está certo: hoje é clicar e
+puxar.** A peça existe e não vem montada. São dois buracos, e o segundo é o que
+dói:
 
-### As três saídas honestas
+**a) O cartão não nasce.** Quando chega mensagem de um contato novo, ninguém
+chama `porNoQuadro`. As duas únicas chamadas estão em `acoes.ts` (a tela) e o
+`porContatoNaEtapa` do webhook **move** quem já é cartão — não cria. Contato que
+nunca foi adicionado à mão simplesmente não aparece no quadro. É a causa direta
+do "o lead não vai automático".
 
-| Caminho | O que significa | Custo |
-|---|---|---|
-| **A. Manter a fronteira** | Temperatura/tag/estágio viram **campos que o fluxo escreve e um conector empurra** para o CRM do cliente (Fase F). Nós continuamos automação. | Baixo. Fase F já está desenhada, e o bloco `http` + cofre já falam com qualquer API |
-| **B. Mini-CRM assumido** | Kanban, estágio e temperatura viram tabela nossa. Vira produto de gestão. | Alto, e **irreversível na prática**: cliente que usa nosso funil não migra mais |
-| **C. Terceira via** | Kanban **de atendimento**, não de vendas: as colunas são estados da conversa que o motor já conhece (aguardando pessoa, bot em pausa, resolvida). Não duplica CRM porque não guarda dado de negócio novo | Médio. Só lê o que já existe |
+**b) Mover exige o bloco desenhado.** O bloco `etapa` existe no editor e o motor
+o executa (`executar.ts:530` → `mover_etapa` → `receber-mensagem.ts:1031`), mas
+só age se alguém tiver **arrastado o bloco para dentro do fluxo** e escolhido
+quadro e coluna. Fluxo que ninguém equipou nunca move nada.
 
-**Recomendação: C.** Ela dá ao dono a tela que ele descreveu — arrastar, ver
-onde cada conversa está — sem criar a segunda fonte da verdade que a decisão de
-agosto barrou. O que o BotConversa chama de funil, no nosso caso, é o estado do
-atendimento; e esse estado **é nosso por definição**, porque sem ele o motor não
-roda.
+O que está escrito está bem escrito — quadro sumido vira log e a conversa segue,
+porque versão publicada é imutável e etapa é estado vivo; e `etapa_alcancada` é
+um dos três eventos que inscrevem em sequência (0034). **O que falta é o
+padrão**: o quadro deveria se manter sozinho sem exigir que cada cliente monte a
+fiação.
 
-Se a resposta for **B**, este plano muda: os itens 3 e 4 abaixo saem e viram uma
-fase inteira de modelagem. Por isso a decisão vem antes.
+### A correção: entrar no quadro é o padrão, não uma tarefa
+
+1. **Contato novo entra na primeira etapa sozinho**, no mesmo ponto em que o
+   contato é criado no `receber-mensagem`. Se o cliente tem quadro, o lead
+   aparece nele — sem bloco, sem configuração. Falhar aqui não pode derrubar a
+   mensagem: mesmo tratamento do `mover_etapa`, log e segue.
+2. **Uma etapa marcada como destino de handoff.** Quando o fluxo transfere para
+   humano (`transferir_humano`, que já existe), o cartão anda. É o movimento que
+   todo negócio quer e que ninguém deveria precisar desenhar.
+3. **O bloco `etapa` continua existindo** para quem quer controle fino. Ele passa
+   a ser o ajuste, não o requisito.
+
+Isso é o que transforma o quadro de "tela que eu mantenho" em "tela que me
+conta o que está acontecendo" — que é a diferença que o dono descreveu quando
+falou do funcionário que vai mexendo sozinho.
+
+**Consequência para a fronteira do dado:** a decisão que este plano apresentava
+como aberta **já foi tomada**, e foi na direção que ele ia recomendar. O §8 do
+[PLANO-PRODUTO.md](PLANO-PRODUTO.md) ("Kanban / CRM — outro produto") é de
+17/ago; os quadros vieram depois e o superaram. As colunas descrevem
+**atendimento**, não venda — `ETAPAS_INICIAIS` é `Novo · Em conversa · Fechado`,
+e o comentário do código explica por que são neutras: empty state ensina o
+negócio de quem olha.
+
+Fica valendo, porém, o que a fronteira protege: **etapa é estado de execução, e
+por isso é nossa.** Valor de negócio (preço fechado, contrato, histórico de
+compra) continua sendo do sistema do cliente — ver [[fronteira-dado-autofluxos]].
 
 ---
 
@@ -151,14 +181,26 @@ Isso **não é um recurso**, são quatro, e três já têm metade construída:
 |---|---|---|
 | **Etiquetas** | Existem, e o Inbox já tem `SeletorDeEtiquetas` | O **fluxo** aplicar etiqueta sozinho — hoje é manual |
 | **Anotação** | Existe (`NotaRapida`), manual | O bot escrever nota ao encerrar |
-| **Temperatura** | Não existe | Decidir se é campo nosso ou do CRM — **depende do item 0** |
-| **Estágio / Kanban** | Não existe | **Depende do item 0** |
+| **Etapa / quadro** | Tela completa, mas **o cartão não nasce sozinho** | Entrada automática no quadro — ver §0 |
+| **Temperatura** | Não existe | Provavelmente **não deve existir** como campo: é etapa com outro nome. Ver abaixo |
 
-Os dois primeiros são baratos e não esbarram na decisão de fronteira: aplicar
-etiqueta e escrever nota são **ações do fluxo sobre o estado do atendimento**,
-que é território nosso. Dá para fazer nesta janela.
+**A lacuna real são as duas primeiras linhas.** O `switch` de ações do fluxo em
+`receber-mensagem.ts` tem dez casos — `enviar_texto`, `enviar_midia`,
+`enviar_opcoes`, `salvar_campo`, `pausar_automacao`, `mover_etapa`,
+`transferir_humano`, `chamar_ia`, `chamar_http`, `encerrar` — e **nenhum deles
+aplica etiqueta ou escreve nota**. Etiqueta e anotação existem só como ação
+humana no Inbox.
 
-Os dois últimos ficam parados até o item 0 ser respondido.
+São duas ações novas no mesmo `switch`, ao lado de `mover_etapa`, que é o molde
+pronto: mesma forma, mesma regra de não derrubar a conversa quando o alvo sumiu.
+É o item mais barato desta lista com efeito visível — é o que faz o bot "parecer
+um funcionário mexendo".
+
+**Sobre temperatura:** antes de criar campo, vale perguntar se ela não é a
+própria etapa. Um quadro com `Novo · Aquecendo · Quente · Fechado` responde
+"temperatura" sem inventar dado novo, e mantém uma coisa só para manter. Campo
+separado só se o dono quiser temperatura **cruzando** etapas (um lead frio no
+fim do funil), que é uma pergunta diferente.
 
 ---
 
@@ -210,7 +252,7 @@ Assumindo 3 a 5 semanas e que a análise pode voltar a qualquer momento:
 | 2 | **Painel direito do Inbox** (item 3) | Barato, aditivo, e melhora a tela que o revisor abre |
 | 3 | **Bloco 8 — leads que aguentam** | Fecha a pendência de LGPD, que é lei |
 | 4 | **Etiqueta e nota automáticas** (item 4, metade de cima) | Não depende da decisão de fronteira |
-| 5 | **Kanban de atendimento** *(só se o item 0 for C)* | O que o dono descreveu, sem virar CRM |
+| 5 | **Entrada automática no quadro** (§0) | É o que faz o quadro parar de exigir clique e puxar |
 
 O item 5 da cobrança corre **em paralelo**, porque é decisão, não código.
 
