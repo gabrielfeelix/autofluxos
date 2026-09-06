@@ -270,7 +270,37 @@ outro seria pior.
 
 ---
 
-## Rodada 4 — o painel direito do Inbox para de parecer técnico
+## Rodada 4 — o painel direito do Inbox para de parecer técnico ✅ FEITO (06/set/2026)
+
+> **Entregue, sem migration.** 16 testes novos, suíte em 1265. Commit `6631255`.
+>
+> **O que o plano previa e o código desmentiu:** o item 1 mandava "guardar o
+> rótulo junto do campo". Não fecha — nem todo campo nasce de pergunta com
+> texto. `salvar_campo` também é emitido pela resposta de um `http` (chave vinda
+> do JSON de outro sistema), pela legenda de mídia, pelo `salvarPadraoEm` de uma
+> data e pelo `salvarValorEm` de uma escolha pareada: quatro origens sem
+> pergunta para copiar. Guardar rótulo mudaria a forma da ação no motor, a
+> coluna no banco e cinco pontos de escrita para continuar sem resposta em
+> metade dos casos. **Formatar a chave responde a todos**, e virou
+> `core/contatos/rotulo-do-campo.ts`.
+>
+> **Caixa de frase, não de título:** "Objetivo Do Aluno" é o erro clássico de
+> title case no português, e mesmo "Valor Total" numa coluna estreita volta a
+> parecer identificador técnico.
+>
+> **Dois lugares a mais do que o plano listava** despejavam chave crua em
+> `font-mono`: a ficha do lead e os cabeçalhos das colunas de campo na lista de
+> leads. Foram junto — o ponto da rodada é o produto não falar em código, e não
+> uma tela específica.
+>
+> **A prova não foi Playwright:** não há testing-library nem Playwright neste
+> repositório. O recorte saiu do componente como função pura
+> (`recorteDosCampos`), que é onde os erros silenciosos moram — cortar um campo
+> a mais, dizer "1 campos", oferecer o botão numa conversa que cabia inteira.
+>
+> O caminho do revisor da Meta não mudou: nenhuma rota, nome de menu ou ordem de
+> tela. Esconder não apaga — o dado está a um clique e inteiro na Ficha.
+
 
 **Por quê:** queixa do dono — *"muita informação técnica na direita, código,
 número esquisito, e eu nunca vou usar aquilo"*. A causa é uma linha,
@@ -305,7 +335,40 @@ todos; nenhum `font-mono` com nome de variável na tela.
 
 ---
 
-## Rodada 5 — o handoff avisa quem não está com o Inbox aberto
+## Rodada 5 — o handoff avisa quem não está com o Inbox aberto ✅ FEITO (06/set/2026)
+
+> **Entregue pela metade que dava para entregar, e a outra metade tem dono.**
+> Migration `0045` aplicada em produção e conferida no banco. 17 testes novos,
+> suíte em 1282. Commit `fae777a`.
+>
+> **O e-mail NÃO entrou, e o plano estava errado sobre ele.** Este plano dizia
+> "o Better Auth já tem SMTP configurado para verificação; reusar". Não tem:
+> `auth.ts:89` desliga a verificação por e-mail **porque** exigiria SMTP, que é
+> global ao projeto compartilhado com a Verandi. Não há credencial de SMTP no
+> `.secrets` nem na Vercel, e contratá-la atinge os dois produtos — decisão do
+> dono. Push não depende de terceiro nenhum (a chave VAPID é nossa, gerada
+> aqui), então ele entrou inteiro. Ver `PENDENCIAS-DO-DONO.md`.
+>
+> **Duas armadilhas que teriam entregado a rodada muda:**
+>
+> - **Os papéis do Better Auth são em inglês** — `owner`, `admin`, `member`. Uma
+>   lista escrita em português (`dono`, `atendente`) teria filtrado a conta
+>   inteira: em produção os quatro membros que existem são `owner`, e nenhum
+>   receberia aviso. O defeito passaria nos testes e apareceria como lead sem
+>   resposta.
+> - **Presença `null` não é ausência.** A maioria das contas nunca abriu o
+>   seletor; tratar `null` como ausente calaria tudo.
+>
+> **O horário vence a presença**, e não o contrário: quem esqueceu o navegador
+> aberto marcado como disponível às 3h da manhã não é motivo para um telefone
+> tocar.
+>
+> Onde ficou: `core/aviso-de-handoff.ts` (a decisão, pura),
+> `server/avisar-handoff.ts` (o envio), `repos/assinaturas-de-push.ts`,
+> `acoes-push.ts`, `public/sw-push.js` e o registro dentro do
+> `NotificacoesDaFila` que já existia — a permissão do navegador é a mesma para
+> os dois avisos, então pedir duas vezes seria pedir duas vezes a mesma coisa.
+
 
 **Por quê:** o `PLANO-SISTEMA` §3.10.1 chama isto de *"o elo mais fraco do
 produto"*, e continua verdade: `NotificacoesDaFila` consulta a cada 30s e só
@@ -335,7 +398,35 @@ conversa.
 
 ---
 
-## Rodada 6 — auditoria OWASP escrita
+## Rodada 6 — auditoria OWASP escrita ✅ FEITO (06/set/2026)
+
+> **Entregue: `docs/SEGURANCA.md`.** Sem código, como previsto.
+>
+> Os quatro pontos que o plano mandava olhar foram olhados, e o resultado é
+> desigual — que é o motivo de a auditoria existir:
+>
+> 1. **Rate limit nas ações autenticadas: confirmado como lacuna.** As 88 Server
+>    Actions de `acoes.ts` não chamam `consumirLimite`; o arquivo sequer importa
+>    o módulo. Virou item S1 do backlog, com gatilho.
+> 2. **RLS objeto a objeto, conferido no banco:** 39 de 39 tabelas com RLS,
+>    **zero** grants para `anon`/`authenticated` — em tabelas e nas 6 views. As 8
+>    funções `SECURITY DEFINER` têm `search_path` fixado. Medido por consulta, não
+>    lido em migration.
+> 3. **A rota da rodada 3** entrou na auditoria já nascida, em A04 e A08.
+> 4. **Bloco 8 (LGPD): está feito**, e por caminho diferente do planejado —
+>    cron da Vercel em vez de `pg_cron`, porque extensão é global ao projeto
+>    compartilhado.
+>
+> **Achados que o plano não previa:** três verbos de auditoria documentados como
+> canônicos (`publicou_fluxo`, `apagou_contato`) que **nenhum código grava**, e
+> login sem registro nenhum. Treze itens de backlog, cada um com o gatilho em que
+> deixa de ser aceitável — inclusive S13, remover o log do corpo cru do Instagram
+> **no dia da aprovação da Meta**.
+>
+> A defesa de SSRF (`efeitos/rede.ts` + `efeitos/http.ts`) é a melhor coisa da
+> base: bloqueia `169.254.169.254`, fecha rebinding de DNS fixando a conexão nos
+> endereços já aprovados, e reconfere a cada redirecionamento.
+
 
 **Por quê:** responde o medo declarado pelo dono — *"ficar fácil de ser hackeado
 e as pessoas perderem dinheiro"* — e transforma "acho que está seguro" em

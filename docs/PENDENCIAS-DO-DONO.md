@@ -111,6 +111,21 @@ SMTP é **global ao projeto Supabase**, compartilhado com a Verandi. Ligar afeta
 os dois produtos, então é decisão sua, não do código. Ver
 [BANCO-COMPARTILHADO.md](BANCO-COMPARTILHADO.md).
 
+**06/set/2026 — ganhou um terceiro dependente, e o custo de não decidir subiu.**
+A rodada 5 entregou o aviso de handoff por push do navegador; o e-mail, que era a
+outra metade planejada, **não saiu por falta de SMTP**. Push alcança quem
+instalou o painel no celular e deu a permissão; e-mail alcançaria quem não fez
+nem uma coisa nem outra — que é justamente quem o aviso mais precisa achar.
+
+O plano da rodada afirmava que "o Better Auth já tem SMTP configurado para
+verificação, é só reusar". **Não tem**, e o código diz o contrário em
+`server/auth.ts:89`: a verificação por e-mail está desligada *porque* exigiria
+SMTP. Não há credencial nem no `.secrets` nem na Vercel.
+
+Então hoje o SMTP trava três coisas, não uma: convite por e-mail, recuperação de
+senha e o aviso de handoff por e-mail. O código dos três está pronto para
+receber a credencial — nenhum deles espera decisão de arquitetura, só a sua.
+
 ## 5. Provar a mídia no WhatsApp de verdade
 
 **Trava:** nada, mas é um risco aberto — e maior a cada frente: a A6 deu ao
