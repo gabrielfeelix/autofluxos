@@ -13,7 +13,8 @@ destranca a próxima.
 
 ```
 verificação do negócio  →  app review (Advanced Access)  →  Tech Provider  →  Coexistence
-      ✅ feito              ↑ você está aqui
+      ✅ 02/09/2026            ⏳ enviado 03/09, EM ANÁLISE
+                               ↑ você está aqui
 ```
 
 > **02/09/2026 — a verificação do negócio saiu.** `business_verification_status`
@@ -40,6 +41,60 @@ Duas armadilhas que valem saber antes de prometer ao cliente:
 - **Coexistência não vale para todo número nem toda região**, e exige WhatsApp
   Business App **2.24.17 ou mais novo** no celular do cliente.
 
+## 06/09/2026 — o app review foi enviado, e está em análise
+
+Lido pelo **Meta Devtools MCP** (`https://mcp.facebook.com/devtools`), que é
+quem responde isso — a Graph API não expõe app review (ver "Por que não pela
+Graph API", abaixo).
+
+| O quê | Estado |
+|---|---|
+| Envio | `submission_status: PENDING`, id `1082311667664553`, enviado em **03/09/2026** |
+| Review concluído alguma vez? | **não** — `has_been_previously_reviewed: false` |
+| Reenviar? | não — `can_submit: false`, *"não é possível enviar enquanto um envio anterior estiver em análise"* |
+| Política de privacidade | `has_privacy_policy: true` ✅ |
+| Verificação do negócio | `business_verification_passes: true` ✅ |
+| Compliance | `compliant`, zero violação aberta |
+
+**O ✅ "Análise do app" no painel quer dizer *envio feito*, não *aprovado*.** É a
+mesma armadilha do contêiner GTM que dizia "publicado" sem estar no ar: o console
+relata o passo, não o resultado.
+
+### A armadilha de ler `privileges`
+
+`action: privileges` devolve **todas** as permissões como
+`grant_status: REJECTED` / `access_level: none`, inclusive
+`whatsapp_business_messaging` e `whatsapp_business_management`. Isso **não é
+reprovação**: é o estado "nunca concedida", coerente com
+`has_been_previously_reviewed: false`. Quem responde o que falta é
+`action: requirements`.
+
+### O que falta: os vídeos não foram registrados
+
+Nas **cinco** permissões do envio, o passo `screencast` está `is_completed: false`:
+
+| Permissão | use_case | screencast | api_precheck | data_use_checkup |
+|---|---|---|---|---|
+| `whatsapp_business_messaging` | ✅ | ❌ | ❌ | ✅ |
+| `whatsapp_business_management` | ✅ | ❌ | ❌ | ✅ |
+| `business_management` | ✅ | ❌ | ❌ | ✅ |
+| `instagram_business_basic` | ✅ | ❌ | — | ✅ |
+| `instagram_business_manage_messages` | ✅ | ❌ | — | ✅ |
+
+Os vídeos foram gravados e enviados, mas a Meta não os marcou como completos em
+nenhuma permissão. Conferir um a um em
+`developers.facebook.com/apps/1063817842847269/app-review/permissions/`. Enquanto
+o envio estiver em análise não dá para reenviar — se o review voltar pedindo
+screencast, é por isso.
+
+### Por que não pela Graph API
+
+Apurado em 06/09/2026 com o token de sistema: `/{app}/permissions` devolve
+`{"data": []}`; `/{app}/app_permissions` e `/{app}/review_status` não existem;
+os campos `is_tech_provider`, `solutions` e `solution_id` não existem;
+`me/businesses` devolve `[]` (o system user é restrito à WABA). O caminho é o
+MCP `devtools` — **não** o `mcp.facebook.com/ads`, que só faz campanha.
+
 ## O que já está pronto (apurado, não suposto)
 
 | Item | Estado | Como foi conferido |
@@ -56,7 +111,7 @@ Duas armadilhas que valem saber antes de prometer ao cliente:
 | Política de privacidade | **criada agora**: `https://autofluxos.4yu.com.br/privacidade` | `src/app/privacidade/page.tsx` |
 
 Ou seja: **o número não é de teste** — é número real, verificado e entregando.
-O que trava agora é o **app review**; a verificação do negócio saiu em 02/09/2026.
+O que trava agora é o **app review**, enviado em 03/09/2026 e **em análise** — ver o bloco de 06/09 acima.
 
 ### Os comandos
 
