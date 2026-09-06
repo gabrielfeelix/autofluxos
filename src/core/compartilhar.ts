@@ -310,6 +310,22 @@ function textoDoBloco(no: No): string {
       // dizer "move para Aula agendada" contaria o funil de um cliente a quem
       // só recebeu um desenho. O que o bloco faz basta.
       return 'move o contato no quadro'
+    case 'etiqueta':
+      // Mesma razão da etapa, e aqui ela é mais forte: o nome da etiqueta é o
+      // vocabulário interno da conta ("cliente VIP", "caloteiro"), e o link é
+      // público. O que o bloco faz basta.
+      return 'põe uma etiqueta no contato'
+    case 'nota': {
+      /*
+       * **O texto da anotação não vai para o link público.**
+       *
+       * É o único bloco cujo conteúdo é escrito para consumo interno — ninguém
+       * do outro lado da conversa lê a nota —, e quem escreve para dentro
+       * escreve diferente. É o mesmo motivo de o corpo do bloco de API não
+       * aparecer aqui: o campo atrai o que não deve sair da conta.
+       */
+      return 'escreve na anotação do contato'
+    }
     case 'ir-fluxo':
       // Pelo mesmo motivo da etapa: o nome da outra automação é informação da
       // conta de origem, e quem recebe o link não importa o destino junto — o

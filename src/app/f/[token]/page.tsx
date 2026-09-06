@@ -38,6 +38,8 @@ const ROTULO_DO_BLOCO: Record<LinhaDoRoteiro['tipo'], string> = {
   handoff: 'Chama uma pessoa',
   http: 'API',
   etapa: 'Etapa do quadro',
+  etiqueta: 'Etiqueta',
+  nota: 'Anotação',
   'ir-fluxo': 'Vai para outra automação',
   voltar: 'Volta ao menu',
 }

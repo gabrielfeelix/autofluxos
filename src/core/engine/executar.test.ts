@@ -1686,3 +1686,90 @@ describe('o encerramento diz onde o desenho acabou', () => {
     expect(r.sessao.noAtual).toBe('menu')
   })
 })
+
+describe('os blocos de etiqueta e anotação (0044)', () => {
+  const p = { x: 0, y: 0 }
+
+  it('a etiqueta vira ação e a conversa segue', () => {
+    // Como o bloco de etapa: o motor **descreve** e não executa. Ele não sabe
+    // que aplicar etiqueta pode começar uma sequência — quem sabe é o servidor.
+    const fluxo = fluxoSchema.parse({
+      inicio: 'marca',
+      nodes: [
+        { id: 'marca', type: 'etiqueta', position: p, data: { etiquetaId: 'et1' } },
+        { id: 'fim', type: 'mensagem', position: p, data: { partes: [{ tipo: 'texto', texto: 'Pronto!' }] } },
+      ],
+      edges: [{ id: 'e', source: 'marca', target: 'fim' }],
+    })
+
+    const r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    expect(r.acoes).toContainEqual({ tipo: 'aplicar_etiqueta', etiquetaId: 'et1' })
+    expect(r.acoes.some((a) => a.tipo === 'enviar_texto' && a.texto === 'Pronto!')).toBe(true)
+  })
+
+  it('etiqueta não escolhida não marca ninguém, e a conversa não morre', () => {
+    // O grafo que já estava no ar quando a etiqueta foi apagada. Seguir é o
+    // único desfecho aceitável: a alternativa é a conversa de alguém morrer
+    // porque outra pessoa arrumou a lista de etiquetas.
+    const fluxo = fluxoSchema.parse({
+      inicio: 'marca',
+      nodes: [
+        { id: 'marca', type: 'etiqueta', position: p, data: { etiquetaId: '' } },
+        { id: 'fim', type: 'mensagem', position: p, data: { partes: [{ tipo: 'texto', texto: 'Segue.' }] } },
+      ],
+      edges: [{ id: 'e', source: 'marca', target: 'fim' }],
+    })
+
+    const r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    expect(r.acoes.some((a) => a.tipo === 'aplicar_etiqueta')).toBe(false)
+    expect(r.acoes.some((a) => a.tipo === 'enviar_texto' && a.texto === 'Segue.')).toBe(true)
+  })
+
+  it('a anotação interpola as variáveis da conversa', () => {
+    // É o que separa a nota que registra a conversa da frase fixa repetida em
+    // todo contato.
+    const fluxo = fluxoSchema.parse({
+      inicio: 'guarda',
+      nodes: [
+        { id: 'guarda', type: 'salvar-campo', position: p, data: { campo: 'servico', valor: 'pilates' } },
+        { id: 'anota', type: 'nota', position: p, data: { texto: 'pediu {{servico}}' } },
+      ],
+      edges: [{ id: 'e', source: 'guarda', target: 'anota' }],
+    })
+
+    const r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    expect(r.acoes).toContainEqual({ tipo: 'escrever_nota', texto: 'pediu pilates' })
+  })
+
+  it('anotação vazia não vira ação', () => {
+    // Acrescentar linha em branco à ficha de alguém é ruído com cara de
+    // registro — e ninguém apaga o que não sabe de onde veio.
+    const fluxo = fluxoSchema.parse({
+      inicio: 'anota',
+      nodes: [
+        { id: 'anota', type: 'nota', position: p, data: { texto: '   ' } },
+        { id: 'fim', type: 'mensagem', position: p, data: { partes: [{ tipo: 'texto', texto: 'Segue.' }] } },
+      ],
+      edges: [{ id: 'e', source: 'anota', target: 'fim' }],
+    })
+
+    const r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    expect(r.acoes.some((a) => a.tipo === 'escrever_nota')).toBe(false)
+    expect(r.acoes.some((a) => a.tipo === 'enviar_texto' && a.texto === 'Segue.')).toBe(true)
+  })
+
+  it('variável que não existe some do texto, e a nota ainda é escrita', () => {
+    // `interpolar` já apaga a citação sem valor. O que importa provar é que
+    // isso não vira nota vazia por acidente quando sobra texto de verdade.
+    const fluxo = fluxoSchema.parse({
+      inicio: 'anota',
+      nodes: [{ id: 'anota', type: 'nota', position: p, data: { texto: 'pediu {{servico}} hoje' } }],
+      edges: [],
+    })
+
+    const r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    const nota = r.acoes.find((a) => a.tipo === 'escrever_nota')
+    expect(nota).toBeDefined()
+    expect(nota).toMatchObject({ tipo: 'escrever_nota' })
+  })
+})

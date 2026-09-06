@@ -6,6 +6,7 @@ import { validar, type Problema } from '@/core/flow/validar'
 import { db, ehIdInvalido, pareceUuid } from '../db'
 import { listarConexoes } from './conexoes'
 import { sequenciasQueUsamOFluxo } from './sequencias'
+import { listarEtiquetas } from './etiquetas'
 import { listarQuadros } from './quadros'
 import { acharCliente } from './clientes'
 
@@ -299,10 +300,14 @@ export async function publicar(
   const etapas = (await listarQuadros(fluxo.clienteId)).flatMap((quadro) =>
     quadro.etapas.map((etapa) => etapa.id),
   )
+  // E as etiquetas pelo mesmo motivo das etapas (0044): publicar apontando para
+  // etiqueta apagada entrega um bloco que não marca ninguém, calado.
+  const etiquetas = (await listarEtiquetas(fluxo.clienteId)).map((e) => e.id)
   const conferido = validar(analise.data, {
     iaHabilitada: fluxo.iaHabilitada,
     conexoes,
     etapas,
+    etiquetas,
     temContextoDeNegocio: (cliente?.contextoNegocio ?? '').trim() !== '',
     // Sem isto, um fluxo de Instagram publicava com as medidas do WhatsApp — e
     // era o adaptador quem cortava depois, calado, na conversa de alguém.

@@ -214,6 +214,25 @@ export type Acao =
    */
   | { tipo: 'mover_etapa'; quadroId: string; colunaId: string }
   /**
+   * Pôr uma etiqueta no contato (0044).
+   *
+   * Como `mover_etapa`, o motor **descreve** e não executa: ele não sabe que
+   * existe `contato_etiquetas`, nem que aplicar etiqueta pode começar uma
+   * sequência. Guarda referência e não cópia pelo mesmo motivo do quadro —
+   * etiqueta é estado vivo, e o cartão precisa cair na etiqueta que existe
+   * hoje. Etiqueta apagada depois da publicação é nada-a-fazer do lado de fora.
+   */
+  | { tipo: 'aplicar_etiqueta'; etiquetaId: string }
+  /**
+   * Escrever na anotação do contato (0044).
+   *
+   * O texto já vem **interpolado** com as variáveis da sessão — é o que permite
+   * "pediu {{servico}} para {{dia}}". Quem acrescenta ao que já estava escrito
+   * é o servidor: o motor não lê banco, então não sabe o que a equipe anotou, e
+   * é justamente por isso que ele não pode mandar "substitua por isto".
+   */
+  | { tipo: 'escrever_nota'; texto: string }
+  /**
    * Continuar a conversa em **outra automação** (0036).
    *
    * O motor não carrega fluxo nenhum — ele não fala com banco, e é essa

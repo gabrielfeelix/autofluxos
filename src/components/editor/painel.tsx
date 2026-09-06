@@ -19,6 +19,7 @@ import {
   type No,
   type Opcao,
 } from '@/core/flow/schema'
+import { LIMITE_DA_NOTA } from '@/core/flow/limites'
 import { mensagensDoHandoff, partesDaMensagem } from '@/core/flow/mensagem'
 import { Dropdown } from '@/components/design/dropdown'
 import { BarraDeFormato, SeletorDeEmoji } from './barra-de-formato'
@@ -85,6 +86,15 @@ export type ConexaoDoCliente = { id: string; nome: string; tipo: string }
  * duas etapas "Fechado" em funis diferentes.
  */
 export type EtapaDoCliente = { quadroId: string; colunaId: string; rotulo: string }
+
+/**
+ * As etiquetas do cliente, para o bloco de etiqueta (0044).
+ *
+ * A cor vem junto porque é assim que a etiqueta é reconhecida em toda a casa —
+ * no Inbox, na ficha, no filtro. Um seletor que mostrasse só o nome faria a
+ * pessoa escolher às cegas o que ela identifica pela cor no resto do produto.
+ */
+export type EtiquetaDoCliente = { id: string; nome: string; cor: string }
 
 /**
  * Uma automação da conta, como o bloco "Ir para outra automação" a enxerga.
@@ -163,6 +173,7 @@ export function Painel({
   conexoes = [],
   iaHabilitada = false,
   etapas = [],
+  etiquetas = [],
   fluxos = [],
   aoMudarDados,
   aoDefinirInicio,
@@ -196,6 +207,7 @@ export function Painel({
   /** Este cliente tem o plano de IA. Muda o card inteiro do bloco de IA. */
   iaHabilitada?: boolean
   etapas?: EtapaDoCliente[]
+  etiquetas?: EtiquetaDoCliente[]
   fluxos?: FluxoDaConta[]
   aoMudarDados: (dados: Record<string, unknown>) => void
   aoDefinirInicio: () => void
@@ -738,6 +750,66 @@ export function Painel({
             </>
           )}
         </label>
+      )}
+
+      {no.type === 'etiqueta' && (
+        <label className="block">
+          <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+            Etiqueta no contato
+          </span>
+          <p className="mb-1.5 text-[10.5px] leading-4 text-dim">
+            Etiqueta é o que a pessoa é — “quer pilates”, “já é aluno”. Ela pode ter várias ao
+            mesmo tempo, e é por elas que se filtra a lista de contatos depois.
+          </p>
+          {etiquetas.length === 0 ? (
+            <span className="block rounded-lg border border-dashed border-white/[0.15] px-3 py-3 text-[11.5px] leading-5 text-dim">
+              Este cliente ainda não tem etiqueta nenhuma. Crie uma em Ajustes → Etiquetas — sem
+              etiqueta para escolher, este bloco não tem o que fazer.
+            </span>
+          ) : (
+            <>
+              <Dropdown
+                valor={no.data.etiquetaId}
+                aoMudar={(etiquetaId) => aoMudarDados({ etiquetaId })}
+                rotuloAcessivel="Etiqueta"
+                opcoes={[
+                  { valor: '', rotulo: 'Nenhuma — o bloco não faz nada' },
+                  ...etiquetas.map((e) => ({ valor: e.id, rotulo: e.nome })),
+                ]}
+              />
+              <span className="mt-1 block text-[10.5px] leading-4 text-dim">
+                Vale o mesmo que pôr a etiqueta à mão no Inbox — inclusive começar a sequência que
+                ela dispara. Quem já tem a etiqueta não a recebe duas vezes.
+              </span>
+            </>
+          )}
+        </label>
+      )}
+
+      {no.type === 'nota' && (
+        <>
+          {/*
+            `formatavel` fica de fora, e é decisão e não esquecimento: a
+            anotação **não** vira mensagem no WhatsApp. Oferecer a barra de
+            negrito aqui ensinaria a escrever `*isto*` num campo que ninguém
+            renderiza — o asterisco apareceria literal para quem lê a ficha.
+          */}
+          <Area
+            rotulo="Anotação"
+            valor={no.data.texto}
+            limite={LIMITE_DA_NOTA}
+            aoMudar={(texto) => aoMudarDados({ texto })}
+            conhecidas={variaveis}
+            exemplo="pediu {{servico}} para {{dia}}"
+            dica={
+              <>
+                Vai para a anotação da ficha, onde a equipe escreve — e{' '}
+                <strong className="text-muted">acrescenta</strong>, nunca apaga o que já estava lá.
+                Ninguém do outro lado da conversa lê isto.
+              </>
+            }
+          />
+        </>
       )}
 
       {no.type === 'ir-fluxo' && (
@@ -1654,6 +1726,10 @@ function resumoDoBloco(no: No): string {
       return curto(no.data.url) || 'Serviços externos'
     case 'etapa':
       return 'Move no quadro'
+    case 'etiqueta':
+      return 'Põe uma etiqueta'
+    case 'nota':
+      return curto(no.data.texto) || 'Escreve na anotação'
     case 'ir-fluxo':
       return curto(no.data.rotulo) || 'Ir para outra automação'
     case 'voltar':

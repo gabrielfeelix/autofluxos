@@ -38,6 +38,10 @@ const ORDEM_DOS_BLOCOS: TipoNo[] = [
   'condicao',
   'salvar-campo',
   'etapa',
+  // Ao lado da etapa: os três são "o que o fluxo registra sobre a pessoa" —
+  // onde ela está, o que ela é, e o que se sabe dela.
+  'etiqueta',
+  'nota',
   'ir-fluxo',
   // Ao lado do ir-fluxo: os dois respondem "para onde a conversa vai daqui".
   'voltar',
@@ -56,6 +60,9 @@ const QUANDO_USAR: Record<TipoNo, string> = {
   condicao: 'Separar o caminho de quem já é cliente do caminho de quem chegou agora.',
   'salvar-campo': 'Marcar algo no contato sem perguntar nada — a origem, o plano, o interesse.',
   etapa: 'Empurrar o cartão da pessoa no quadro quando ela agenda, desmarca ou fecha.',
+  etiqueta:
+    'Marcar o que a pessoa é — "quer pilates", "já é aluno" — para filtrar depois e para começar uma sequência.',
+  nota: 'Deixar escrito na ficha o que a conversa apurou, para quem for atender ler antes de falar.',
   'ir-fluxo':
     'Mandar quem falou de fisioterapia para o fluxo de fisioterapia, sem duplicar o desenho.',
   ia: 'Responder pergunta aberta usando o contexto do negócio. Nunca para dado que precisa estar certo.',

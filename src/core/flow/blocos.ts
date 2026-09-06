@@ -45,6 +45,21 @@ export const NOMES: Record<TipoNo, string> = {
    */
   etapa: 'Etapa do quadro',
   /**
+   * "Etiqueta", e não "marcar" nem "tag".
+   *
+   * É o nome que a etiqueta já tem em toda a casa — no Inbox, na ficha e no
+   * filtro de Contatos. Um bloco chamado "Tag" obrigaria quem desenha a
+   * descobrir que as duas palavras são a mesma coisa.
+   */
+  etiqueta: 'Etiqueta no contato',
+  /**
+   * "Anotação", e não "nota interna" nem "comentário".
+   *
+   * "Anotação" é o rótulo do campo no Inbox, e o bloco escreve exatamente ali.
+   * Nome diferente do campo faria parecer que existem dois lugares.
+   */
+  nota: 'Anotação',
+  /**
    * "Ir para outra automação", e não "sub-fluxo" nem "chamar fluxo".
    *
    * "Chamar" promete volta, e não existe volta: quem salta termina no outro
@@ -72,6 +87,8 @@ export const ICONES: Record<TipoNo, string> = {
   http: '⇄',
   midia: '▣',
   etapa: '▤',
+  etiqueta: '◆',
+  nota: '✎',
   'ir-fluxo': '⇥',
   voltar: '↺',
 }
@@ -84,6 +101,8 @@ export const DESCRICOES: Record<TipoNo, string> = {
   condicao: 'Divide o caminho',
   'salvar-campo': 'Registra no lead',
   etapa: 'Move no quadro',
+  etiqueta: 'Marca o contato',
+  nota: 'Escreve na ficha',
   'ir-fluxo': 'Continua em outra',
   ia: 'Responde pelo contexto',
   handoff: 'Passa para uma pessoa',
@@ -108,6 +127,8 @@ export const CORES: Record<TipoNo, string> = {
   http: 'border-cyan-400/30',
   midia: 'border-sky-400/30',
   etapa: 'border-teal-400/30',
+  etiqueta: 'border-amber-400/30',
+  nota: 'border-stone-300/30',
   'ir-fluxo': 'border-indigo-400/30',
   voltar: 'border-slate-300/30',
 }

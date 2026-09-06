@@ -13,7 +13,10 @@ import {
   encerrarAtendimento,
   ultimaSessao,
 } from './repos/conversas'
+import { criarEtiqueta, listarEtiquetas } from './repos/etiquetas'
 import { criarFluxo, publicar, salvarRascunho } from './repos/fluxos'
+import { acrescentarNota, salvarNotas } from './repos/leads'
+import { criarPasso, criarSequencia } from './repos/sequencias'
 import {
   acharQuadro,
   criarQuadro,
@@ -815,5 +818,188 @@ describe.skipIf(!temCredencial)('o contato novo entra no quadro padrão', () => 
     expect(data ?? []).not.toHaveLength(0)
 
     await definirQuadroPadrao(clienteId, quadroId)
+  })
+})
+
+/**
+ * O fluxo etiqueta e anota sozinho (0044).
+ *
+ * O que precisa ser provado aqui não é que a etiqueta gruda — isso o repo já
+ * prova. É que **etiquetar pelo fluxo faz o mesmo que etiquetar pela mão**,
+ * inclusive começar a sequência que a etiqueta dispara. Dois caminhos com o
+ * mesmo nome e efeitos diferentes é o tipo de divergência que ninguém descobre
+ * até doer.
+ */
+describe.skipIf(!temCredencial)('o fluxo etiqueta e anota', () => {
+  let etiquetaId = ''
+  let sequenciaId = ''
+  let fluxoDoBlocoId = ''
+
+  beforeAll(async () => {
+    if (!temCredencial) return
+
+    await criarEtiqueta(clienteId, { nome: `${marca} quer pilates`, cor: 'azul' })
+    etiquetaId = (await listarEtiquetas(clienteId)).find((e) => e.nome.includes(marca))!.id
+
+    // A sequência que a etiqueta dispara. É ela que prova a paridade com o
+    // clique no Inbox.
+    const sequencia = await criarSequencia(clienteId, {
+      nome: `${marca} acompanhamento`,
+      evento: 'etiqueta_aplicada',
+      etiquetaId,
+      etiquetaDeSaidaId: null,
+      colunaId: null,
+    })
+    if (!sequencia.ok) throw new Error('a sequência do teste deveria ser criada')
+    sequenciaId = sequencia.id
+    const passo = await criarPasso(clienteId, sequenciaId, { atrasoMinutos: 60, fluxoId })
+    if (!passo.ok) throw new Error(`o passo deveria ser criado: ${passo.motivo}`)
+
+    // Um fluxo que só etiqueta, anota e passa para uma pessoa.
+    const grafo = {
+      inicio: 'marca',
+      nodes: [
+        { id: 'marca', type: 'etiqueta' as const, position: { x: 0, y: 0 }, data: { etiquetaId } },
+        {
+          id: 'anota',
+          type: 'nota' as const,
+          position: { x: 0, y: 0 },
+          data: { texto: 'veio pelo fluxo do teste' },
+        },
+        {
+          id: 'fala',
+          type: 'handoff' as const,
+          position: { x: 0, y: 0 },
+          data: { motivo: 'fim do teste', mensagem: 'já chamo alguém' },
+        },
+      ],
+      edges: [
+        { id: 'e1', source: 'marca', target: 'anota' },
+        { id: 'e2', source: 'anota', target: 'fala' },
+      ],
+    }
+    const fluxoDoBloco = await criarFluxo(clienteId, `${marca} etiqueta e nota`, grafo)
+    fluxoDoBlocoId = fluxoDoBloco.id
+    const pub = await publicar(fluxoDoBloco.id, clienteId, grafo)
+    if (!pub.ok) throw new Error(`o fluxo deveria publicar: ${JSON.stringify(pub.erros)}`)
+
+    // O canal passa a abrir este fluxo, para o webhook cair nele.
+    await db().from('channels').update({ flow_id: fluxoDoBloco.id }).eq('id', canalId)
+  })
+
+  afterAll(async () => {
+    if (!temCredencial || !fluxoDoBlocoId) return
+    // Devolve o canal ao fluxo de triagem: os outros testes contam com ele.
+    await db().from('channels').update({ flow_id: fluxoId }).eq('id', canalId)
+  })
+
+  /** O contato pelo telefone — `acharLead` quer o id, e o webhook só deu o número. */
+  const leadDoTelefone = async (de: string) => {
+    const { data } = await db()
+      .from('contacts')
+      .select('id')
+      .eq('client_id', clienteId)
+      .eq('wa_id', de)
+      .maybeSingle()
+    return data ? await acharLead(clienteId, (data as { id: string }).id) : null
+  }
+
+  it('a etiqueta do fluxo gruda no contato e começa a sequência, igual à mão', async () => {
+    const de = telefone(50)
+    await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-et-1`), comMock)
+
+    const contato = await leadDoTelefone(de)
+    expect(contato).not.toBeNull()
+
+    const { data: marcado } = await db()
+      .from('contato_etiquetas')
+      .select('etiqueta_id')
+      .eq('contato_id', contato!.contatoId)
+      .eq('etiqueta_id', etiquetaId)
+    expect(marcado ?? []).toHaveLength(1)
+
+    // **A parte que importa.** Sem isto, etiquetar pelo fluxo e pela mão teriam
+    // efeitos diferentes com o mesmo nome.
+    const { data: inscrito } = await db()
+      .from('sequencia_inscricoes')
+      .select('id')
+      .eq('contact_id', contato!.contatoId)
+      .eq('sequencia_id', sequenciaId)
+    expect(inscrito ?? []).toHaveLength(1)
+  })
+
+  it('a anotação do fluxo acrescenta, e não apaga o que a equipe escreveu', async () => {
+    const de = telefone(51)
+    await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-et-2`), comMock)
+
+    const contato = (await leadDoTelefone(de))!
+    // O bot já escreveu ao passar pelo bloco. A equipe escreve **por cima**
+    // pela tela, que é o caminho de verdade: `salvarNotas` substitui, porque é
+    // uma caixa de texto que a pessoa edita inteira.
+    await salvarNotas(clienteId, contato.contatoId, 'anotação da equipe')
+
+    // E o bot volta a passar por ali depois.
+    await acrescentarNota(clienteId, contato.contatoId, 'segunda linha do bot')
+
+    const depois = (await leadDoTelefone(de))!
+    // **A regra:** o que a equipe escreveu continua lá. O bot acrescentou.
+    expect(depois.notas).toContain('anotação da equipe')
+    expect(depois.notas).toContain('segunda linha do bot')
+    expect(depois.notas.indexOf('anotação da equipe')).toBeLessThan(
+      depois.notas.indexOf('segunda linha do bot'),
+    )
+  })
+
+  it('a anotação do fluxo diz que foi automação, e não uma pessoa', async () => {
+    // Quem abre a ficha precisa saber se foi um colega ou o bot que escreveu —
+    // sem isso, uma frase automática vira afirmação humana sobre o cliente.
+    const de = telefone(52)
+    await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-et-3`), comMock)
+
+    const contato = (await leadDoTelefone(de))!
+    expect(contato.notas).toContain('veio pelo fluxo do teste')
+    expect(contato.notas).toMatch(/automação/)
+  })
+
+  it('etiqueta apagada não derruba a conversa', async () => {
+    // O grafo publicado é imutável e a etiqueta é estado vivo. Apagá-la não
+    // pode fazer a mensagem de alguém falhar.
+    await criarEtiqueta(clienteId, { nome: `${marca} efêmera`, cor: 'verde' })
+    const efemera = (await listarEtiquetas(clienteId)).find((e) => e.nome.includes('efêmera'))!
+
+    const grafo = {
+      inicio: 'marca',
+      nodes: [
+        {
+          id: 'marca',
+          type: 'etiqueta' as const,
+          position: { x: 0, y: 0 },
+          data: { etiquetaId: efemera.id },
+        },
+        {
+          id: 'fala',
+          type: 'handoff' as const,
+          position: { x: 0, y: 0 },
+          data: { motivo: 'x', mensagem: 'já chamo alguém' },
+        },
+      ],
+      edges: [{ id: 'e', source: 'marca', target: 'fala' }],
+    }
+    const fluxoEfemero = await criarFluxo(clienteId, `${marca} efêmero`, grafo)
+    const pub = await publicar(fluxoEfemero.id, clienteId, grafo)
+    expect(pub.ok).toBe(true)
+
+    // Apagada **depois** de publicada — que é o caso real.
+    await db().from('etiquetas').delete().eq('id', efemera.id)
+    await db().from('channels').update({ flow_id: fluxoEfemero.id }).eq('id', canalId)
+
+    mock.enviadas.length = 0
+    const de = telefone(53)
+    await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-et-4`), comMock)
+
+    // A conversa seguiu até o handoff, que é o desfecho certo.
+    expect(mock.enviadas.some((e) => e.tipo === 'texto')).toBe(true)
+
+    await db().from('channels').update({ flow_id: fluxoDoBlocoId }).eq('id', canalId)
   })
 })

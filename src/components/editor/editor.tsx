@@ -57,7 +57,7 @@ import { NomeDoFluxo } from './nome-do-fluxo'
 import { PuxadorDeLargura } from './puxador'
 import { useLarguraGuardada } from './largura-guardada'
 import { Painel } from './painel'
-import type { ConexaoDoCliente, EtapaDoCliente, FluxoDaConta } from './painel'
+import type { ConexaoDoCliente, EtapaDoCliente, EtiquetaDoCliente, FluxoDaConta } from './painel'
 import { Versoes, type VersaoNaLista } from './versoes'
 import { Compartilhar } from './compartilhar'
 
@@ -114,6 +114,10 @@ const TIPOS: TipoNo[] = [
   'condicao',
   'salvar-campo',
   'etapa',
+  // Ao lado da etapa: os três registram o que se sabe da pessoa — onde ela
+  // está no funil, o que ela é, e o que a conversa apurou.
+  'etiqueta',
+  'nota',
   'ir-fluxo',
   // Ao lado do ir-fluxo: os dois respondem "para onde a conversa vai daqui".
   'voltar',
@@ -160,6 +164,15 @@ export function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
       // a primeira etapa do primeiro quadro poria gente num funil que quem
       // desenhou não escolheu — e ninguém revisa o que já veio preenchido.
       return { quadroId: '', colunaId: '' }
+    case 'etiqueta':
+      // Nasce sem etiqueta, pelo mesmo motivo da etapa: uma etiqueta chutada
+      // classificaria contato de verdade com um rótulo que ninguém escolheu.
+      return { etiquetaId: '' }
+    case 'nota':
+      // Nasce vazia e o validador recusa publicar assim. Um texto de exemplo
+      // que fosse publicado por engano escreveria a frase de exemplo na ficha
+      // de gente de verdade — e a anotação é lida por quem vai atender.
+      return { texto: '' }
     case 'ir-fluxo':
       // Nasce sem destino, pelo mesmo motivo da etapa: chutar a primeira
       // automação da lista mandaria conversa para um desenho que ninguém
@@ -232,6 +245,7 @@ export function Editor({
   clienteId,
   conexoes,
   etapas,
+  etiquetas,
   fluxos,
   variaveisDaConta = [],
   canal,
@@ -251,6 +265,8 @@ export function Editor({
   conexoes: ConexaoDoCliente[]
   /** As etapas de quadro deste cliente, para o bloco de etapa (C1b). */
   etapas: EtapaDoCliente[]
+  /** As etiquetas deste cliente, para o bloco de etiqueta (0044). */
+  etiquetas: EtiquetaDoCliente[]
   /** As automações desta conta, para o bloco "Ir para outra automação". */
   fluxos: FluxoDaConta[]
   /**
@@ -1573,6 +1589,7 @@ export function Editor({
                 conexoes={conexoes}
                 iaHabilitada={comIa}
                 etapas={etapas}
+                etiquetas={etiquetas}
                 fluxos={fluxos}
                 aoMudarDados={mudarDados}
                 aoDefinirInicio={definirInicio}

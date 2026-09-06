@@ -544,6 +544,31 @@ function avancar(
         break
       }
 
+      case 'etiqueta': {
+        // Sem etiqueta escolhida o bloco não faz nada e a conversa segue — a
+        // mesma regra do bloco de etapa, e pelo mesmo motivo: a defesa aqui é
+        // para o grafo que já estava no ar quando a etiqueta foi apagada.
+        if (no.data.etiquetaId) {
+          acoes.push({ tipo: 'aplicar_etiqueta', etiquetaId: no.data.etiquetaId })
+        }
+        atual = seguir(no)
+        break
+      }
+
+      case 'nota': {
+        // Interpolado aqui, como em `salvar-campo`: é o que faz a nota
+        // registrar a conversa — "pediu {{servico}} para {{dia}}" — em vez de
+        // repetir a mesma frase em todo contato.
+        //
+        // Nota vazia não vira ação. Acrescentar uma linha em branco à anotação
+        // de alguém é ruído com cara de registro, e ninguém consegue apagar o
+        // que não sabe de onde veio.
+        const texto = interpolar(no.data.texto, s.vars).trim()
+        if (texto) acoes.push({ tipo: 'escrever_nota', texto })
+        atual = seguir(no)
+        break
+      }
+
       /*
        * Voltar para um ponto anterior da mesma conversa.
        *

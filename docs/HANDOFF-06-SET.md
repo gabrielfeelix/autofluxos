@@ -59,8 +59,8 @@ segundos e vale mais que qualquer parágrafo de documento.**
 | Coexistence | Libera quando o app review aprovar. Sem formulário novo |
 | Última migration | **`0043`** — confira pelo diretório, sempre |
 
-Números do produto: 43 migrations · 18 telas do cliente + 5 do admin · 11 blocos
-no editor · 10 ações no motor · 82 server actions · WhatsApp no ar, Instagram
+Números do produto: 43 migrations · 18 telas do cliente + 5 do admin · 13 blocos
+no editor · 12 ações no motor · 82 server actions · WhatsApp no ar, Instagram
 pronto e travado, Telegram só no catálogo.
 
 ---
@@ -92,7 +92,7 @@ Detalhe, decisão técnica e critério de prova em
 | # | O quê | Decisão pendente? |
 |---|---|---|
 | 1 | ✅ **Feito em 06/set.** Cartão entra sozinho no quadro | Decidida: quadro padrão explícito. `0043` **aplicada em produção** |
-| 2 | **Fluxo aplica etiqueta e escreve nota** — as 10 ações do motor não fazem nenhuma das duas | Não |
+| 2 | ✅ **Feito em 06/set.** Fluxo aplica etiqueta e escreve nota | Não |
 | 3 | **Webhook de entrada** — o preset `verandi-espera` promete "te aviso se abrir" e não há rota para receber | Não |
 | 4 | **Painel direito do Inbox** — `Object.entries(lead.campos)` despeja tudo com a chave crua | Não |
 | 5 | **Aviso de handoff** — só avisa quem está com o Inbox aberto | Não |

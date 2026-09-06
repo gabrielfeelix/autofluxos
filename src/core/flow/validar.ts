@@ -110,6 +110,15 @@ export type Capacidades = {
    */
   etapas?: string[]
   /**
+   * Ids das etiquetas que existem para este cliente (0044).
+   *
+   * Espelha `etapas`, e pelo mesmo motivo: o bloco guarda referência porque
+   * etiqueta é estado vivo, e o preço é ela poder ser apagada depois de o fluxo
+   * ir ao ar. `undefined` = não sei, e aí não se cobra — é o editor validando
+   * enquanto alguém desenha, sem ter ido ao banco.
+   */
+  etiquetas?: string[]
+  /**
    * As outras automações deste cliente, para o bloco "Ir para outro fluxo".
    *
    * `undefined` = não sei, e aí não se cobra (o editor validando sem ter ido ao
@@ -156,6 +165,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
     conexoes,
     temContextoDeNegocio,
     etapas,
+    etiquetas,
     fluxos,
     fluxoAtualId,
     variaveisDaConta,
@@ -395,6 +405,32 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
           noId: no.id,
         })
       }
+    }
+
+    if (no.type === 'etiqueta') {
+      if (!no.data.etiquetaId) {
+        erros.push({
+          codigo: 'ETIQUETA_NAO_ESCOLHIDA',
+          mensagem:
+            'Este bloco põe uma etiqueta no contato, mas nenhuma etiqueta foi escolhida. Do jeito que está ele não faria nada.',
+          noId: no.id,
+        })
+      } else if (etiquetas && !etiquetas.includes(no.data.etiquetaId)) {
+        erros.push({
+          codigo: 'ETIQUETA_INEXISTENTE',
+          mensagem: `${descrever(no)} aponta para uma etiqueta que não existe mais neste cliente. Escolha outra — publicar assim entrega um fluxo que não marca ninguém.`,
+          noId: no.id,
+        })
+      }
+    }
+
+    if (no.type === 'nota' && no.data.texto.trim() === '') {
+      erros.push({
+        codigo: 'NOTA_VAZIA',
+        mensagem:
+          'Este bloco escreve na anotação do contato, mas o texto está vazio. Do jeito que está ele não escreveria nada.',
+        noId: no.id,
+      })
     }
 
     if (no.type === 'voltar') {
@@ -1279,6 +1315,17 @@ function variaveisDoNo(no: No): string[] {
       // Ids, não variáveis. Interpolar `{{}}` aqui seria deixar a conversa
       // escolher em que etapa a pessoa cai, e o id não é coisa que se digite.
       return []
+    case 'etiqueta':
+      // Mesmo motivo da etapa: a etiqueta é escolhida no editor, e deixar a
+      // conversa escolher qual marcar seria entregar a classificação dos
+      // contatos a quem está do outro lado.
+      return []
+    case 'nota':
+      // Esta **interpola** — é a diferença entre "pediu {{servico}}" e uma
+      // frase fixa repetida em todo contato. Então a citação é conferida como
+      // a de qualquer texto: variável que ninguém preenche vira nota com
+      // buraco, e o aviso aparece antes de publicar.
+      return variaveisCitadas(no.data.texto)
     case 'ir-fluxo':
       // Mesmo motivo da etapa: o destino é um id escolhido no editor. Deixar a
       // conversa escolher para qual automação ela pula seria entregar o roteiro
@@ -1327,8 +1374,11 @@ function textosDoNo(no: No): string[] {
       return mensagensDoHandoff(no)
     case 'http':
       return [no.data.url, no.data.corpo, ...no.data.cabecalhos.map((c) => c.valor)]
+    case 'nota':
+      return [no.data.texto]
     case 'condicao':
     case 'etapa':
+    case 'etiqueta':
     case 'ir-fluxo':
     case 'voltar':
       return []

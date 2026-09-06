@@ -1180,3 +1180,59 @@ describe('endereço de arquivo com variável no host', () => {
     expect(codigos(r.erros)).not.toContain('HOST_VARIAVEL')
   })
 })
+
+describe('o bloco de etiqueta e o de anotação (0044)', () => {
+  const p = { x: 0, y: 0 }
+
+  const comBloco = (no: Record<string, unknown>) =>
+    fluxoSchema.parse({
+      inicio: 'bloco',
+      nodes: [
+        { id: 'bloco', position: p, ...no },
+        { id: 'fala', type: 'handoff', position: p, data: { motivo: 'x', mensagem: 'já chamo' } },
+      ],
+      edges: [{ id: 'e', source: 'bloco', target: 'fala' }],
+    })
+
+  it('recusa publicar sem etiqueta escolhida', () => {
+    const r = validar(comBloco({ type: 'etiqueta', data: { etiquetaId: '' } }))
+    expect(r.ok).toBe(false)
+    expect(r.erros.map((e) => e.codigo)).toContain('ETIQUETA_NAO_ESCOLHIDA')
+  })
+
+  it('recusa publicar apontando para etiqueta que não existe mais', () => {
+    // A contrapartida de guardar referência, igual à etapa: etiqueta é estado
+    // vivo, e o preço de ela poder ser apagada é cobrado aqui, antes de a
+    // conversa de alguém pagar por ele.
+    const r = validar(comBloco({ type: 'etiqueta', data: { etiquetaId: 'sumida' } }), {
+      etiquetas: ['outra'],
+    })
+    expect(r.ok).toBe(false)
+    expect(r.erros.map((e) => e.codigo)).toContain('ETIQUETA_INEXISTENTE')
+  })
+
+  it('não cobra quando a lista de etiquetas não veio — é o editor sem ir ao banco', () => {
+    const r = validar(comBloco({ type: 'etiqueta', data: { etiquetaId: 'qualquer' } }))
+    expect(r.erros.map((e) => e.codigo)).not.toContain('ETIQUETA_INEXISTENTE')
+  })
+
+  it('aceita a etiqueta que existe', () => {
+    const r = validar(comBloco({ type: 'etiqueta', data: { etiquetaId: 'et1' } }), {
+      etiquetas: ['et1'],
+    })
+    expect(r.erros.map((e) => e.codigo)).not.toContain('ETIQUETA_INEXISTENTE')
+  })
+
+  it('recusa publicar anotação vazia', () => {
+    const r = validar(comBloco({ type: 'nota', data: { texto: '   ' } }))
+    expect(r.ok).toBe(false)
+    expect(r.erros.map((e) => e.codigo)).toContain('NOTA_VAZIA')
+  })
+
+  it('a variável citada na anotação é conferida como a de qualquer texto', () => {
+    // A nota interpola, então `{{servico}}` que ninguém preenche é uma nota com
+    // buraco — e o aviso tem que aparecer antes de publicar, não na ficha.
+    const r = validar(comBloco({ type: 'nota', data: { texto: 'pediu {{ninguem_preenche}}' } }))
+    expect(r.avisos.map((a) => a.codigo)).toContain('VARIAVEL_DESCONHECIDA')
+  })
+})

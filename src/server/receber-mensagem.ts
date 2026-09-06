@@ -9,7 +9,7 @@ import { executarComEfeitos, type OpcoesDeEfeitos } from './efeitos/resolver'
 import { escolherModelo } from './ia/modelo'
 import { acharCliente, horarioDoCliente } from './repos/clientes'
 import { acharFluxo, acharVersao, type VersaoPublicada } from './repos/fluxos'
-import { lerConversa } from './repos/leads'
+import { acrescentarNota, lerConversa } from './repos/leads'
 import {
   ATENDIMENTO_SEMPRE_ABERTO,
   pediuAtendente,
@@ -57,7 +57,8 @@ import {
   type SessaoSalva,
 } from './repos/conversas'
 import { travarContato } from './repos/travas'
-import { inscreverNoEvento, sairPorEvento } from './sequencias'
+import { inscreverNoEvento, sairPelaEtiqueta, sairPorEvento } from './sequencias'
+import { marcarContatos } from './repos/etiquetas'
 import { acharQuadroPadrao, porContatoNaEtapa, porNoQuadro } from './repos/quadros'
 
 /**
@@ -1088,6 +1089,60 @@ async function aplicar(
         await inscreverNoEvento(contato.clienteId, [contato.id], 'etapa_alcancada', acao.colunaId)
         break
       }
+
+      case 'aplicar_etiqueta': {
+        /**
+         * O bloco de etiqueta (0044).
+         *
+         * **Faz exatamente o que o clique no Inbox faz** — inclusive sair da
+         * sequência que essa etiqueta encerra e entrar na que ela começa. Se
+         * etiquetar pelo fluxo e etiquetar pela mão tivessem efeitos
+         * diferentes, o cliente teria dois comportamentos com o mesmo nome, e
+         * ninguém descobre esse tipo de divergência até ela doer.
+         *
+         * **Nada aqui pode derrubar a conversa.** Etiqueta apagada depois da
+         * publicação é nada-a-fazer, como a etapa sumida: `marcarContatos`
+         * devolve `ok: false` e a conversa segue.
+         */
+        const marcou = await marcarContatos(
+          contato.clienteId,
+          acao.etiquetaId,
+          [contato.id],
+          true,
+        )
+        if (!marcou.ok) {
+          console.error('[etiquetas] a etiqueta do fluxo não existe mais', acao.etiquetaId)
+          break
+        }
+        await sairPelaEtiqueta(contato.clienteId, acao.etiquetaId, marcou.validos)
+        await inscreverNoEvento(
+          contato.clienteId,
+          marcou.validos,
+          'etiqueta_aplicada',
+          acao.etiquetaId,
+        )
+        break
+      }
+
+      case 'escrever_nota':
+        /**
+         * O bloco de anotação (0044).
+         *
+         * O texto já veio interpolado pelo motor. Quem **acrescenta** é o repo,
+         * e é lá que está a razão: a anotação da equipe não pode ser apagada
+         * pelo bot.
+         *
+         * Falhar aqui é log e segue. Uma nota que não foi escrita custa um
+         * registro; uma exceção custaria a resposta de alguém.
+         */
+        try {
+          await acrescentarNota(contato.clienteId, contato.id, acao.texto)
+        } catch (erro) {
+          await alertar('não deu para escrever a anotação do fluxo', erro, {
+            contato: contato.id,
+          })
+        }
+        break
 
       case 'transferir_humano':
         await registrarHandoff(sessaoId, acao.motivo)

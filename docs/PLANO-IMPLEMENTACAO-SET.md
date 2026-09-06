@@ -97,7 +97,31 @@ Docker, e **não aplicar em produção sem autorização explícita do dono**.
 
 ---
 
-## Rodada 2 — o fluxo aplica etiqueta e escreve nota
+## Rodada 2 — o fluxo aplica etiqueta e escreve nota ✅ FEITO (06/set/2026)
+
+> **Entregue, e sem migration** — os dois blocos escrevem em tabela que já
+> existia. 15 testes novos (5 do motor, 6 do `validar()`, 4 do webhook), suíte
+> em 1215 passando.
+>
+> **O que o plano não previa e o código cobrou:** o `switch` de `TipoNo` é
+> exaustivo em **treze** lugares, não nos quatro listados aqui — o typecheck
+> apontou cada um (editor, prévia do bloco, painel, ajuda, página pública do
+> link, `descrever`, `compartilhar`, `validar` duas vezes). Isso é a rede
+> funcionando, não atrito: bloco novo sem tratamento em qualquer um deles seria
+> tela quebrada em produção.
+>
+> Três decisões que o plano deixava em aberto:
+>
+> - **`sairPelaEtiqueta` entrou junto com `inscreverNoEvento`.** O plano citava
+>   só o segundo, mas o caminho manual (`acoes.ts:649`) faz os dois — e o ponto
+>   da rodada era justamente etiquetar pelo fluxo ser idêntico a etiquetar pela
+>   mão. O teste do webhook prova a inscrição na sequência.
+> - **O texto da anotação não vai para o link público** (`compartilhar.ts`). É o
+>   único campo escrito para consumo interno, e o link é público.
+> - **`LIMITE_DA_NOTA` mudou de `repos/leads.ts` para `core/flow/limites.ts`.**
+>   O campo é editado no navegador e `leads.ts` é `server-only`; copiar o número
+>   criaria o par que um dia diverge. `leads.ts` reexporta.
+
 
 **Por quê:** é o que o dono descreveu como *"um funcionário mexendo: vai
 colocando tags, vai escrevendo observações"*. Hoje o `switch` de ações tem dez

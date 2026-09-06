@@ -676,6 +676,53 @@ export const noEtapaSchema = z.object({
 })
 
 /**
+ * Põe uma etiqueta no contato (0044).
+ *
+ * **É o outro metade do "funcionário mexendo".** O quadro diz *onde* a pessoa
+ * está; a etiqueta diz *o que ela é* — e ela pode ter várias ao mesmo tempo,
+ * que é a diferença entre as duas coisas. Até aqui etiqueta só existia como
+ * clique humano no Inbox, o que significa que ela não acompanhava a automação:
+ * o bot descobria que a pessoa queria pilates e ninguém marcava isso.
+ *
+ * **Referência, e não cópia**, pela mesma razão da etapa: etiqueta é estado
+ * vivo, e o contato precisa receber a que existe hoje. O preço — etiqueta
+ * apagada depois de publicada — é pago nos mesmos dois lugares: `validar()`
+ * recusa publicar apontando para etiqueta que não existe, e o servidor trata
+ * etiqueta sumida como nada-a-fazer em vez de estourar.
+ *
+ * Texto livre no schema porque o editor passa por estado vazio enquanto alguém
+ * escolhe. Quem cobra o preenchimento é o `validar()`.
+ */
+export const noEtiquetaSchema = z.object({
+  ...base,
+  type: z.literal('etiqueta'),
+  data: z.object({
+    etiquetaId: z.string().default(''),
+  }),
+})
+
+/**
+ * Escreve na anotação do contato (0044).
+ *
+ * **Acrescenta, nunca substitui** — e isso é decisão de produto, não detalhe de
+ * implementação. A anotação é onde a equipe escreve o que sabe da pessoa; um
+ * bot que sobrescrevesse aquilo apagaria trabalho humano em silêncio, e a
+ * primeira vez que alguém percebesse seria a vez em que a informação fez falta.
+ * Quem acrescenta é o servidor, que é quem lê o que já estava lá.
+ *
+ * **O texto interpola variáveis**, como o Guardar campo: é o que permite
+ * *"pediu {{servico}} para {{dia}}"*, que é a única forma de a nota registrar a
+ * conversa em vez de repetir uma frase fixa em todo contato.
+ */
+export const noNotaSchema = z.object({
+  ...base,
+  type: z.literal('nota'),
+  data: z.object({
+    texto: z.string().default(''),
+  }),
+})
+
+/**
  * **Ir para outro fluxo** — a interligação entre automações.
  *
  * O caso que pediu isto é literal: o estúdio tem um fluxo de pilates e um de
@@ -752,6 +799,8 @@ export const noSchema = z.discriminatedUnion('type', [
   noHandoffSchema,
   noHttpSchema,
   noEtapaSchema,
+  noEtiquetaSchema,
+  noNotaSchema,
   noIrFluxoSchema,
   noVoltarSchema,
 ])

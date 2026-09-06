@@ -49,6 +49,12 @@ export function descrever(no: No): string {
       // O bloco de etapa não tem texto nenhum para citar — os dois campos são
       // ids. Sobra o tipo, que é o que já acontece com qualquer bloco vazio.
       return 'O bloco de etapa do quadro'
+    case 'etiqueta':
+      // Como a etapa: o campo é um id, e id não identifica bloco nenhum para
+      // quem lê a lista de problemas.
+      return 'O bloco de etiqueta'
+    case 'nota':
+      return rotular('Anotação', curto(no.data.texto))
     case 'ir-fluxo':
       // `rotulo` é o nome do fluxo de destino guardado na hora da escolha. É
       // exatamente o que identifica o bloco para quem lê a lista de problemas.

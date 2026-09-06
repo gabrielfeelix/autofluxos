@@ -14,3 +14,14 @@
  * empurra os controles da direita para fora em vez de informar mais.
  */
 export const LIMITE_NOME_DO_FLUXO = 80
+
+/**
+ * O teto da anotação do contato.
+ *
+ * Nota é lembrete, não prontuário — o histórico da conversa é a conversa. Mora
+ * aqui, e não em `repos/leads.ts` onde nasceu, porque o bloco de Anotação
+ * (0044) é editado no navegador e o campo precisa contar os caracteres na
+ * frente de quem escreve. `leads.ts` tem `server-only`: importá-lo do editor
+ * quebra o build, e copiar o número seria criar o par que um dia diverge.
+ */
+export const LIMITE_DA_NOTA = 2_000

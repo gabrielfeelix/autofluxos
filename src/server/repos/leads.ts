@@ -2,6 +2,7 @@ import 'server-only'
 import { z } from 'zod'
 import type { Conciliacao, ContatoConhecido } from '@/core/contatos/planilha'
 import { chavesDoTelefone } from '@/core/contatos/telefone'
+import { LIMITE_DA_NOTA } from '@/core/flow/limites'
 import { TIPOS_DE_MIDIA, type TipoDeMidia } from '@/core/flow/schema'
 import { db, ehIdInvalido } from '../db'
 import { contatosComEtiqueta as contatosComEtiquetaManual, etiquetasDeContatos, type Etiqueta } from './etiquetas'
@@ -725,8 +726,10 @@ export async function corrigirNome(
   return data !== null
 }
 
-/** Teto da anotação. Nota é lembrete, não prontuário — o histórico é a conversa. */
-export const LIMITE_DA_NOTA = 2_000
+// O teto mora em `core/flow/limites.ts` desde a 0044: o bloco de Anotação é
+// editado no navegador, e este arquivo é `server-only`. Reexportado aqui para
+// quem já o importava daqui não ter que saber que ele mudou de casa.
+export { LIMITE_DA_NOTA }
 
 export async function salvarNotas(
   clienteId: string,
@@ -744,6 +747,60 @@ export async function salvarNotas(
   if (ehIdInvalido(error)) return false
   if (error) throw new Error(`não deu para salvar a anotação: ${error.message}`)
   return data !== null
+}
+
+/**
+ * Acrescenta uma linha à anotação do contato — o bloco de Anotação (0044).
+ *
+ * **Acrescenta, e nunca substitui.** A anotação é onde a equipe escreve o que
+ * sabe da pessoa; um bot que sobrescrevesse aquilo apagaria trabalho humano em
+ * silêncio, e a primeira vez que alguém percebesse seria a vez em que a
+ * informação fez falta. Por isso é leitura seguida de escrita, e não `update`
+ * direto.
+ *
+ * **O cabeçalho com data e origem não é enfeite.** Quem abre a ficha e lê uma
+ * frase precisa saber se foi um colega ou o bot que escreveu — sem isso, uma
+ * anotação automática vira uma afirmação humana sobre o cliente. Ler "o texto
+ * apareceu sozinho e ninguém confirmou" é a diferença entre um registro e um
+ * boato.
+ *
+ * O teto é o mesmo do campo, e ele corta **pelo começo**: numa anotação que
+ * encheu, o que interessa é o fim — o que aconteceu por último. Cortar pelo fim
+ * apagaria justamente a linha que acabou de ser escrita.
+ */
+export async function acrescentarNota(
+  clienteId: string,
+  contatoId: string,
+  texto: string,
+  quando: Date = new Date(),
+): Promise<boolean> {
+  const limpo = texto.trim()
+  if (limpo === '') return false
+
+  const { data, error } = await db()
+    .from('contacts')
+    .select('notas')
+    .eq('id', contatoId)
+    .eq('client_id', clienteId)
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return false
+  if (error) throw new Error(`não deu para ler a anotação: ${error.message}`)
+  if (!data) return false
+
+  const anterior = ((data as { notas: string | null }).notas ?? '').trim()
+  const dia = quando.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+  const linha = `[${dia} · automação] ${limpo}`
+  const junto = anterior === '' ? linha : `${anterior}\n\n${linha}`
+
+  const { error: erroAoSalvar } = await db()
+    .from('contacts')
+    .update({ notas: junto.slice(-LIMITE_DA_NOTA) })
+    .eq('id', contatoId)
+    .eq('client_id', clienteId)
+
+  if (erroAoSalvar) throw new Error(`não deu para acrescentar a anotação: ${erroAoSalvar.message}`)
+  return true
 }
 
 /** O que a conciliação precisa saber dos contatos deste cliente. */

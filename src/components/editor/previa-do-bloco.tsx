@@ -212,6 +212,12 @@ export function detalhesDoBloco(no: No): Detalhe[] {
         { rotulo: 'Etapa', valor: texto(no.data.colunaId, '(não escolhida)') },
       ]
 
+    case 'etiqueta':
+      return [{ rotulo: 'Etiqueta', valor: texto(no.data.etiquetaId, '(não escolhida)') }]
+
+    case 'nota':
+      return [{ rotulo: 'Escreve', valor: texto(no.data.texto, '(nada — o texto está vazio)') }]
+
     case 'ir-fluxo':
       return [
         {

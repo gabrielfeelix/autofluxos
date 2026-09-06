@@ -4,6 +4,7 @@ import { Editor } from '@/components/editor/editor'
 import { variaveisDoFluxo } from '@/core/flow/variaveis'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarConexoes } from '@/server/repos/conexoes'
+import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { listarQuadros } from '@/server/repos/quadros'
 import { acharFluxo, acharVersao, listarFluxos, listarVersoes } from '@/server/repos/fluxos'
 import { ehAdminDaPlataforma, exigirAcessoAoCliente } from '@/server/sessao'
@@ -34,11 +35,12 @@ export default async function Pagina({
 }) {
   const { clienteId, fluxoId } = await params
 
-  const [cliente, fluxo, conexoes, quadros, fluxosDaConta] = await Promise.all([
+  const [cliente, fluxo, conexoes, quadros, etiquetas, fluxosDaConta] = await Promise.all([
     acharCliente(clienteId),
     acharFluxo(fluxoId),
     listarConexoes(clienteId),
     listarQuadros(clienteId),
+    listarEtiquetas(clienteId),
     listarFluxos(clienteId),
   ])
   if (!cliente || !fluxo || fluxo.clienteId !== cliente.id) notFound()
@@ -124,6 +126,7 @@ export default async function Pagina({
             rotulo: `${quadro.nome} · ${etapa.nome}`,
           })),
         )}
+        etiquetas={etiquetas.map((e) => ({ id: e.id, nome: e.nome, cor: e.cor }))}
         publicadaInicial={
           publicada
             ? {
