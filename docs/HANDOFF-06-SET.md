@@ -1,5 +1,10 @@
 # Handoff — 06/set/2026
 
+> **Continuação:** as rodadas 1, 2 e 3 foram feitas na noite de 06/set. O que
+> mudou, o que os planos diziam errado e o que falta está em
+> [HANDOFF-06-SET-NOITE.md](HANDOFF-06-SET-NOITE.md). Este documento continua
+> valendo por inteiro — principalmente o §4 e o §7.
+
 Para quem pegar este projeto agora, humano ou agente. **Leia este documento
 inteiro antes de abrir código.** Ele existe porque a sessão anterior errou duas
 vezes por não ter lido o que já estava escrito, e as duas foram corrigidas pelo
