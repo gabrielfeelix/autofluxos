@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { z } from 'zod'
 import { idsDosAlertas, novosAlertas, type AlertaDaFila } from './alertas'
+import { assinarPush, pushDisponivel } from './assinar-push'
+import { acaoAssinarAvisos } from '@/server/acoes-push'
 
 const respostaSchema = z.object({
   alertas: z.array(
@@ -114,10 +116,44 @@ export function NotificacoesDaFila({
     }
   }, [clienteId, router])
 
+  /*
+   * Permissão dada = também assina o push.
+   *
+   * O aviso local (a `Notification` acima) só existe com a aba aberta. O push
+   * é o que alcança o telefone no bolso com o painel fechado — e as duas
+   * coisas nascem da **mesma** permissão do navegador, então pedir duas vezes,
+   * em dois botões, seria pedir duas vezes a mesma coisa.
+   *
+   * Assinar falhando não desliga nada: o aviso local continua, e o produto
+   * segue como sempre foi. Por isso não há estado de erro na tela.
+   */
+  const registrarPush = useCallback(async () => {
+    if (!pushDisponivel()) return
+    const assinatura = await assinarPush()
+    if (!assinatura) return
+    try {
+      await acaoAssinarAvisos(clienteId, assinatura)
+    } catch {
+      // Ver acima: o push é o extra. A fila continua sendo a verdade.
+    }
+  }, [clienteId])
+
+  /*
+   * Quem já tinha dado a permissão antes desta rodada nunca passaria pelo
+   * clique — e ficaria com o aviso local de sempre, sem push nenhum, sem ter
+   * como descobrir por quê. Registrar na montagem cobre esse caso, e é barato:
+   * `assinarPush` reaproveita a assinatura que já existe.
+   */
+  useEffect(() => {
+    if (permissao !== 'granted') return
+    void registrarPush()
+  }, [permissao, registrarPush])
+
   async function pedirPermissao() {
     if (permissaoAtual() !== 'default') return setPermissao(permissaoAtual())
     const novaPermissao = await window.Notification.requestPermission()
     setPermissao(novaPermissao)
+    if (novaPermissao === 'granted') await registrarPush()
   }
 
   if (permissao === 'indisponivel') return null

@@ -5,6 +5,7 @@ import type { Canal } from '@/channels/types'
 import { sessaoNova, type Acao, type Entrada } from '@/core/engine/types'
 import { varsIniciais } from '@/core/contatos/vars-iniciais'
 import { alertar, type ContextoDoAlerta } from './alertar'
+import { avisarHandoff } from './avisar-handoff'
 import { executarComEfeitos, type OpcoesDeEfeitos } from './efeitos/resolver'
 import { escolherModelo } from './ia/modelo'
 import { acharCliente, horarioDoCliente } from './repos/clientes'
@@ -957,6 +958,28 @@ async function aplicar(
       tentativas: 0,
       status: 'humano',
     })
+    await avisarDoHandoff(motivo)
+  }
+
+  /*
+   * O aviso sai **depois** de o handoff estar registrado, e nunca antes.
+   *
+   * Quem está esperando tem que aparecer na tela mesmo que push nenhum saia —
+   * o aviso é o extra, a fila é a verdade. `avisarHandoff` já engole a própria
+   * falha; o `catch` aqui é a segunda rede, para uma exceção nova nunca poder
+   * desfazer uma transferência que já aconteceu.
+   */
+  const avisarDoHandoff = async (motivo: string) => {
+    try {
+      await avisarHandoff({
+        clienteId: contato.clienteId,
+        contatoId: contato.id,
+        nomeDoContato: contato.nomeReal ?? contato.nome,
+        motivo,
+      })
+    } catch (erro) {
+      await alertar('não deu para avisar a equipe do handoff', erro, alvo)
+    }
   }
 
   for (const acao of acoes) {
@@ -1146,6 +1169,7 @@ async function aplicar(
 
       case 'transferir_humano':
         await registrarHandoff(sessaoId, acao.motivo)
+        await avisarDoHandoff(acao.motivo)
         break
 
       case 'chamar_ia': {
