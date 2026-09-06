@@ -104,4 +104,17 @@ describe('a porta do painel', () => {
     // chamada `/faturamento` nasceria pública sem ninguém notar.
     expect(destinoDe(await proxy(pedir('/faturamento')))).toBe('/entrar')
   })
+
+  it('o service worker do push abre sem sessão — redirecionado, ele não registra', async () => {
+    /*
+     * Este teste existe porque o defeito aconteceu: no primeiro deploy da
+     * rodada 5, `GET /sw-push.js` respondia 307 para `/entrar`.
+     *
+     * E é o pior tipo de defeito. O navegador recusa registrar um service
+     * worker cuja resposta não seja o script — então o push simplesmente nunca
+     * chegava, sem erro em tela e sem erro em log. O aviso de handoff parecia
+     * entregue e não era.
+     */
+    expect(seguiu(await proxy(pedir('/sw-push.js')))).toBe(true)
+  })
 })

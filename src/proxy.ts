@@ -62,6 +62,21 @@ const PORTAS_ABERTAS = [
    */
   '/termos',
   '/exclusao-de-dados',
+  /**
+   * O service worker do aviso de handoff (0045).
+   *
+   * **Um service worker redirecionado não registra**, e falha calado: o
+   * navegador recusa qualquer resposta que não seja o script em si, e o push
+   * simplesmente nunca chega — sem erro em tela, sem erro em log. Foi assim que
+   * ele saiu no primeiro deploy desta rodada: `GET /sw-push.js` respondia 307
+   * para `/entrar`.
+   *
+   * É o mesmo problema que o comentário de `/logos/` abaixo descreve, e a
+   * mesma correção. O arquivo é estático, não lê sessão nem banco: é código de
+   * desenhar notificação. O que ele exibe chega cifrado, e as chaves para
+   * decifrar são do navegador de quem assinou.
+   */
+  '/sw-push.js',
 ]
 
 /**
