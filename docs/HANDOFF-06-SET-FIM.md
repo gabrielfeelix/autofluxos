@@ -26,7 +26,8 @@ em [HANDOFF-06-SET.md](HANDOFF-06-SET.md) e continuou em
 |---|---|---|
 | `6631255` | O painel direito para de falar em código — rodada 4 | — |
 | `fae777a` | O aviso de handoff alcança quem fechou o painel — rodada 5 | `0045` **aplicada** |
-| _(este)_ | Auditoria OWASP escrita — rodada 6 | — |
+| `64d8f03` | Auditoria OWASP escrita — rodada 6 | — |
+| `178bffb` | O service worker do push precisa abrir sem sessão | — |
 
 **As seis rodadas do [PLANO-IMPLEMENTACAO-SET.md](PLANO-IMPLEMENTACAO-SET.md)
 estão fechadas.** Suíte em **1282 passando**, 14 puladas. Typecheck e build
@@ -91,6 +92,16 @@ verdade sobre o código.**
   Supabase que o handoff da noite descreve. Reexecute antes de caçar bug.
 - **Push só funciona em HTTPS** — em `localhost` o navegador libera, em rede
   local por IP não. Testar em produção ou com túnel.
+- **Arquivo em `public/` que precisa abrir sem sessão tem que entrar no
+  `proxy.ts`.** Aconteceu nesta sessão: `/sw-push.js` subiu no deploy da rodada
+  5 respondendo **307 para `/entrar`**, porque caiu no matcher como qualquer
+  rota do painel. O navegador recusa registrar um service worker cuja resposta
+  não seja o script, então o push nunca chegaria — **sem erro em tela e sem
+  erro em log**. Corrigido em `178bffb`, com teste.
+  Foi `curl` na produção que pegou: o deploy dizia READY, a suíte estava verde,
+  o typecheck também. **Nenhum dos três sabe o que o proxy faz com uma URL.** É
+  a lição do contêiner GTM errado outra vez, e a razão de "provar fora do
+  console" ser regra e não zelo.
 - **Não existe ícone do produto em `public/`.** O service worker não aponta
   `icon`/`badge` de propósito: apontar para arquivo que não existe faz o
   navegador desenhar quadrado vazio, que é pior que o ícone genérico dele.
@@ -137,5 +148,7 @@ Depois: commit por rodada, **atualizar o documento de origem**, e — para
 qualquer coisa que vá ao ar — **provar fora do console**.
 
 **A regra que vale mais que todas:** afirmar que algo funciona só depois de ver
-a saída do comando que prova. Foi ela que pegou o `owner`, e foi ela que impediu
-esta auditoria de repetir o erro que ela própria documenta.
+a saída do comando que prova. Foi ela que pegou o `owner`, foi ela que impediu
+esta auditoria de repetir o erro que ela própria documenta, e foi ela que achou
+o service worker redirecionado — que a suíte, o typecheck, o build e o "READY"
+da Vercel deixaram passar juntos.
