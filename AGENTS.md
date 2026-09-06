@@ -18,8 +18,10 @@ Storage, extensão, função/view SQL ou Data API, leia por inteiro
 - AutoFluxos mora em `public`; Verandi mora em `app_verandi`.
 - Nunca crie ou altere objeto da Verandi a partir deste repositório.
 - Nunca rode `supabase db push` ou `supabase db reset` contra produção.
-- Descubra a próxima migration pelo diretório atual. Não copie numeração de
-  planos antigos; a próxima do AutoFluxos é `0030` enquanto `0029` for a última.
+- Descubra a próxima migration **pelo diretório atual** (`ls supabase/migrations/
+  | tail -1`). Não copie numeração de plano nenhum, **inclusive deste arquivo**:
+  em 06/set/2026 esta linha dizia `0030` quando a última já era `0042`, e planos
+  de agosto ainda dizem `0019` e `0038`. O diretório é a única fonte de verdade.
 - Auth, `auth.users`, Storage, extensões, Data API, cotas e backup são globais ao
   projeto. Uma alteração neles exige avaliar os dois produtos.
 - A `service_role` ignora RLS e não isola um produto do outro. Mantenha schema e
