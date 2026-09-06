@@ -38,7 +38,7 @@ extração explícito para os objetos de `public`.
    dependa do `search_path` do projeto e nunca cite `app_verandi` numa migration
    deste repositório.
 3. **O nome da próxima migration vem do disco, não de plano antigo.** Hoje o
-   AutoFluxos termina em `0043`; a próxima é `0044`. Este parágrafo já esteve
+   AutoFluxos termina em `0044`; a próxima é `0045`. Este parágrafo já esteve
    errado — dizia `0029` quando o disco tinha `0038` —, e é exatamente por isso
    que a regra é olhar o diretório, inclusive quando um documento afirma um
    número. Os nomes `0008_limites` e

@@ -9,6 +9,8 @@ import {
 import { validar } from '@/core/flow/validar'
 import { Dropdown } from '@/components/design/dropdown'
 import { InterruptorDeGatilho } from '@/components/gatilhos/interruptor'
+import { InterruptorDeEvento } from '@/components/gatilhos/interruptor-de-evento'
+import { WebhooksDeEntrada } from '@/components/gatilhos/webhooks-de-entrada'
 import { InterruptorDeCampanha } from '@/components/gatilhos/interruptor-de-campanha'
 import { InterruptorDeSequencia } from '@/components/sequencias/interruptor'
 import { CamposDaSequencia } from '@/components/sequencias/campos'
@@ -24,10 +26,12 @@ import {
   acaoApagarCampanha,
   acaoApagarFluxo,
   acaoApagarGatilho,
+  acaoApagarGatilhoDeEvento,
   acaoCriarCampanha,
   acaoApagarPasta,
   acaoCriarFluxo,
   acaoCriarGatilho,
+  acaoCriarGatilhoDeEvento,
   acaoCriarPasta,
   acaoApagarSequencia,
   acaoApagarPassoDaSequencia,
@@ -36,7 +40,9 @@ import {
 } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { fluxoDoPapel, listarCanais } from '@/server/repos/conversas'
+import { enderecoDoPainel } from '@/server/endereco'
 import { listarGatilhos } from '@/server/repos/gatilhos'
+import { listarGatilhosDeEvento, listarWebhooks } from '@/server/repos/webhooks-de-entrada'
 import { listarPastas } from '@/server/repos/pastas'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { contarInscricoes, listarSequencias } from '@/server/repos/sequencias'
@@ -53,7 +59,7 @@ import { contarExecucoesPorFluxo } from '@/server/repos/metricas'
 
 export const dynamic = 'force-dynamic'
 
-const ABAS_VALIDAS = ['fluxos', 'templates', 'palavras', 'campanhas', 'sequencias'] as const
+const ABAS_VALIDAS = ['fluxos', 'templates', 'palavras', 'eventos', 'campanhas', 'sequencias'] as const
 
 /**
  * A galeria recebe **só o texto** de cada modelo.
@@ -94,6 +100,8 @@ export default async function Pagina({
     canais,
     execucoes,
     gatilhos,
+    gatilhosDeEvento,
+    webhooksDeEntrada,
     campanhas,
     contatosDaCampanha,
     sequencias,
@@ -105,6 +113,8 @@ export default async function Pagina({
     listarCanais(cliente.id),
     contarExecucoesPorFluxo(cliente.id),
     listarGatilhos(cliente.id),
+    listarGatilhosDeEvento(cliente.id),
+    listarWebhooks(cliente.id),
     listarCampanhas(cliente.id),
     contatosPorCampanha(cliente.id),
     listarSequencias(cliente.id),
@@ -144,6 +154,7 @@ export default async function Pagina({
     { chave: 'fluxos', rotulo: 'Fluxos', contagem: fluxos.length },
     { chave: 'templates', rotulo: 'Templates', contagem: TEMPLATES.length },
     { chave: 'palavras', rotulo: 'Palavras-chave', contagem: gatilhos.length },
+    { chave: 'eventos', rotulo: 'Eventos', contagem: gatilhosDeEvento.length },
     { chave: 'campanhas', rotulo: 'Campanhas', contagem: campanhas.length },
     { chave: 'sequencias', rotulo: 'Sequências', contagem: sequencias.length },
   ] as const
@@ -577,6 +588,116 @@ export default async function Pagina({
           )}
 
 
+        </section>
+        )}
+
+        {aba === 'eventos' && (
+        <section className="app-card overflow-hidden">
+          <header className="flex flex-wrap items-start justify-between gap-4 border-b border-white/[0.06] px-5 py-4">
+            <span>
+              <h2 className="text-[14px] font-bold tracking-[-0.01em]">Eventos de outro sistema</h2>
+              <p className="mt-0.5 text-[11.5px] leading-5 text-dim">
+                Palavra-chave é o que a <strong className="text-muted">pessoa</strong> escreve.
+                Evento é o que <strong className="text-muted">outro sistema</strong> avisa — a vaga
+                que abriu, o pagamento que caiu.
+              </p>
+            </span>
+
+            {fluxos.length > 0 && (
+              <ModalFormulario
+                botao="+ Evento"
+                titulo="Novo evento"
+                descricao="O nome vem do sistema que avisa (vaga.aberta, pedido.pago). Ele precisa ser exatamente igual ao que o outro lado manda — aqui não há “contém”."
+                rotuloEnviar="Criar evento"
+                variante="secundario"
+                action={acaoCriarGatilhoDeEvento.bind(null, cliente.id, {})}
+              >
+                <label>
+                  <RotuloCampo>Nome do evento</RotuloCampo>
+                  <input
+                    name="evento"
+                    required
+                    autoFocus
+                    maxLength={120}
+                    placeholder="ex.: vaga.aberta"
+                    className="app-field px-[13px] py-[11px] font-mono text-[13px]"
+                  />
+                </label>
+                <label>
+                  <RotuloCampo>Fluxo que ele abre</RotuloCampo>
+                  <Dropdown
+                    nome="fluxoId"
+                    rotuloAcessivel="Fluxo que este evento abre"
+                    opcoes={fluxos.map((item) => ({
+                      valor: item.id,
+                      rotulo: item.nome,
+                      ...(item.versaoPublicadaId ? {} : { detalhe: 'rascunho' }),
+                    }))}
+                  />
+                </label>
+              </ModalFormulario>
+            )}
+          </header>
+
+          {gatilhosDeEvento.length === 0 ? (
+            <div className="border-b border-white/[0.045] px-5 py-10 text-center">
+              <p className="text-[13px] font-semibold text-soft">Nenhum evento ainda</p>
+              <p className="mx-auto mt-1 max-w-[460px] text-xs leading-5 text-dim">
+                Sem eles, o “te aviso quando abrir” do fluxo de espera é uma promessa que ninguém
+                cumpre: o outro sistema avisa e não há o que fazer com o aviso.
+              </p>
+            </div>
+          ) : (
+            <ul>
+              {gatilhosDeEvento.map((gatilho) => {
+                const destino = fluxos.find((item) => item.id === gatilho.fluxoId)
+
+                return (
+                  <li
+                    key={gatilho.id}
+                    className="flex items-center gap-3 border-b border-white/[0.045] px-5 py-3.5"
+                  >
+                    <InterruptorDeEvento
+                      clienteId={cliente.id}
+                      gatilhoId={gatilho.id}
+                      ativo={gatilho.ativo}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <strong
+                        className={`block truncate font-mono text-[12.5px] font-semibold ${gatilho.ativo ? '' : 'text-dim line-through'}`}
+                      >
+                        {gatilho.evento}
+                      </strong>
+                      <span className="mt-0.5 block truncate text-[11px] text-dim">
+                        abre{' '}
+                        <strong className="font-semibold text-muted">
+                          {destino?.nome ?? 'um fluxo que sumiu'}
+                        </strong>
+                        {destino && !destino.versaoPublicadaId
+                          ? ' · ainda não publicado, então não abre nada'
+                          : ''}
+                      </span>
+                    </span>
+                    <span className="whitespace-nowrap text-[11px] text-dim">
+                      <strong className="font-semibold text-soft">{gatilho.execucoes}</strong>{' '}
+                      {gatilho.execucoes === 1 ? 'disparo' : 'disparos'}
+                    </span>
+                    <BotaoPerigo
+                      titulo="Apaga o evento e a contagem dele. Para só desligar, use o interruptor."
+                      pergunta={`Apagar o evento “${gatilho.evento}”? A contagem de ${gatilho.execucoes} disparo(s) some junto.`}
+                      acao={acaoApagarGatilhoDeEvento.bind(null, cliente.id, gatilho.id)}
+                    />
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+
+          <WebhooksDeEntrada
+            clienteId={cliente.id}
+            webhooks={webhooksDeEntrada}
+            endereco={`${enderecoDoPainel()}/api/webhook/entrada/${cliente.id}`}
+          />
         </section>
         )}
 

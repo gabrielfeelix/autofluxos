@@ -57,10 +57,10 @@ segundos e vale mais que qualquer parágrafo de documento.**
 | Verificação do negócio | ✅ `verified` |
 | Tech Provider / verificação de acesso | ✅ verificado |
 | Coexistence | Libera quando o app review aprovar. Sem formulário novo |
-| Última migration | **`0043`** — confira pelo diretório, sempre |
+| Última migration | **`0044`** — confira pelo diretório, sempre |
 
-Números do produto: 43 migrations · 18 telas do cliente + 5 do admin · 13 blocos
-no editor · 12 ações no motor · 82 server actions · WhatsApp no ar, Instagram
+Números do produto: 44 migrations · 18 telas do cliente + 5 do admin · 13 blocos
+no editor · 12 ações no motor · 88 server actions · WhatsApp no ar, Instagram
 pronto e travado, Telegram só no catálogo.
 
 ---
@@ -93,7 +93,7 @@ Detalhe, decisão técnica e critério de prova em
 |---|---|---|
 | 1 | ✅ **Feito em 06/set.** Cartão entra sozinho no quadro | Decidida: quadro padrão explícito. `0043` **aplicada em produção** |
 | 2 | ✅ **Feito em 06/set.** Fluxo aplica etiqueta e escreve nota | Não |
-| 3 | **Webhook de entrada** — o preset `verandi-espera` promete "te aviso se abrir" e não há rota para receber | Não |
+| 3 | ✅ **Feito em 06/set.** Webhook de entrada, `POST /api/webhook/entrada/[clienteId]` | Não |
 | 4 | **Painel direito do Inbox** — `Object.entries(lead.campos)` despeja tudo com a chave crua | Não |
 | 5 | **Aviso de handoff** — só avisa quem está com o Inbox aberto | Não |
 | 6 | **Auditoria OWASP escrita** — 7 dos 9 blocos de endurecimento já estão fechados | Não |

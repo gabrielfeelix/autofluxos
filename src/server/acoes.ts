@@ -136,6 +136,14 @@ import {
   renomearQuadro,
   tirarDoQuadro,
 } from './repos/quadros'
+import {
+  alternarGatilhoDeEvento,
+  alternarWebhook,
+  apagarGatilhoDeEvento,
+  apagarWebhook,
+  criarGatilhoDeEvento,
+  criarWebhook,
+} from './repos/webhooks-de-entrada'
 
 /**
  * **Toda ação deste arquivo confere quem é antes de tocar em qualquer coisa.**
@@ -489,6 +497,101 @@ export async function acaoDefinirFluxosDoNumero(
   revalidatePath(`/clientes/${clienteId}/numero`)
   revalidatePath(`/clientes/${clienteId}`)
   return { ok: true }
+}
+
+/**
+ * Cadastra um evento de sistema externo que abre um fluxo (0044).
+ *
+ * Irmão de `acaoCriarGatilho`, e separado pelo mesmo motivo que as tabelas são
+ * separadas: palavra-chave casa o texto que a **pessoa** escreveu, com
+ * `igual`/`contem`; evento casa o nome exato que **outro sistema** manda. Um
+ * formulário só ofereceria operador que não significa nada para um evento.
+ */
+export async function acaoCriarGatilhoDeEvento(
+  clienteId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const evento = String(formData.get('evento') ?? '').trim()
+  const fluxoId = String(formData.get('fluxoId') ?? '').trim()
+
+  if (evento === '') return { erro: 'escreva o nome do evento' }
+  if (fluxoId === '') return { erro: 'escolha qual fluxo este evento abre' }
+
+  const r = await criarGatilhoDeEvento(clienteId, evento, fluxoId)
+  if (!r.ok) return { erro: r.motivo }
+
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  return { ok: true }
+}
+
+export async function acaoAlternarGatilhoDeEvento(
+  clienteId: string,
+  gatilhoId: string,
+  ativo: boolean,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const mudou = await alternarGatilhoDeEvento(clienteId, gatilhoId, ativo)
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  return mudou ? { ok: true } : { ok: false, erro: 'este gatilho não existe mais' }
+}
+
+export async function acaoApagarGatilhoDeEvento(
+  clienteId: string,
+  gatilhoId: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const apagou = await apagarGatilhoDeEvento(clienteId, gatilhoId)
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  return apagou ? { ok: true } : { ok: false, erro: 'este gatilho não existe mais' }
+}
+
+/**
+ * Cria o webhook de entrada e **devolve o segredo uma única vez**.
+ *
+ * O segredo volta no retorno da ação, e não numa tela que se possa reabrir: não
+ * há segunda chance de vê-lo. Guardar um jeito de reexibir é guardar um jeito
+ * de vazar — e quem perder gera outro, que é um clique.
+ */
+export async function acaoCriarWebhookDeEntrada(
+  clienteId: string,
+  nome: string,
+): Promise<{ ok: true; segredo: string } | { ok: false; erro: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const r = await criarWebhook(clienteId, nome)
+  if (!r.ok) return { ok: false, erro: r.motivo }
+
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  return { ok: true, segredo: r.segredo }
+}
+
+export async function acaoAlternarWebhookDeEntrada(
+  clienteId: string,
+  webhookId: string,
+  ativo: boolean,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const mudou = await alternarWebhook(clienteId, webhookId, ativo)
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  return mudou ? { ok: true } : { ok: false, erro: 'este webhook não existe mais' }
+}
+
+/** Apaga o webhook e o segredo dele. Quem chamava passa a levar 401. */
+export async function acaoApagarWebhookDeEntrada(
+  clienteId: string,
+  webhookId: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const apagou = await apagarWebhook(clienteId, webhookId)
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  return apagou ? { ok: true } : { ok: false, erro: 'este webhook não existe mais' }
 }
 
 /** Cadastra uma palavra-chave que abre um fluxo. */

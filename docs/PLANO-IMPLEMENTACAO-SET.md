@@ -190,7 +190,35 @@ Dois `case` novos, ao lado do `mover_etapa`:
 
 ---
 
-## Rodada 3 — webhook de entrada
+## Rodada 3 — webhook de entrada ✅ FEITO (06/set/2026)
+
+> **Entregue.** Migration `0044` aplicada em produção com autorização do dono e
+> conferida no banco (duas tabelas, RLS ligada, `anon`/`authenticated` sem grant
+> nenhum, função de contagem). 30 testes novos (13 das defesas da rota, 15 do
+> caminho do evento, 2 de gatilho), suíte em 1249 passando.
+>
+> **Duas coisas que o plano dizia e o código desmentiu:**
+>
+> - *"teto de corpo, como o webhook do WhatsApp já faz"* — **o webhook do
+>   WhatsApp não tem teto de corpo.** Quem tem é `/api/simular`, e foi de lá que
+>   o padrão veio (confere o `content-length` **e** os bytes de verdade, porque
+>   o cabeçalho é escolhido por quem chama).
+> - *"um gatilho por evento, na tabela de gatilhos que já existe"* — não dá.
+>   `gatilhos` casa **texto de conversa** por `igual`/`contem`, com desempate por
+>   especificidade (`casarGatilho`). Evento casa **nome exato** vindo de outro
+>   sistema. Na mesma tabela, toda leitura teria que perguntar "de que tipo é
+>   esta linha?" e a tela ofereceria operador que não significa nada para um
+>   evento. Tabela própria: `gatilhos_de_evento`.
+>
+> **A ordem das defesas é deliberada:** teto de corpo → limite por cliente →
+> assinatura. Conferir assinatura primeiro obrigaria a ir ao cofre antes de
+> saber se o corpo tem tamanho aceitável — uma inundação de lixo viraria uma
+> inundação de leituras do Vault.
+>
+> O limite é **por cliente**, e não por endereço: vários clientes são servidos
+> pelo mesmo servidor de fora (a Verandi é literalmente isso), e chavear por IP
+> faria o volume de um calar o webhook de outro.
+
 
 **Por quê:** é o único item desta lista que conserta uma **promessa falsa já em
 produção**. O preset `verandi-espera` (`core/presets.ts:582`) diz, com estas
