@@ -244,16 +244,32 @@ describe.skipIf(!temCredencial)('quadro padrão', () => {
 
   beforeAll(async () => {
     if (!temCredencial) return
-    const [um, dois] = await Promise.all([
-      criarQuadro(clienteId, `${marca} padrao a`),
-      criarQuadro(clienteId, `${marca} padrao b`),
-    ])
+    /*
+     * Em série, e não em `Promise.all`: agora que "o mais antigo recebe" é
+     * regra, os dois quadros precisam ter `criado_em` distinto. Criados juntos,
+     * o relógio empata e o desempate vira sorteio — o teste passaria ou não
+     * conforme a ordem que o Postgres devolvesse.
+     */
+    const um = await criarQuadro(clienteId, `${marca} padrao a`)
+    const dois = await criarQuadro(clienteId, `${marca} padrao b`)
     umId = um.ok ? um.id : ''
     outroDaMesmaContaId = dois.ok ? dois.id : ''
   })
 
-  it('conta sem marcação nenhuma não tem padrão, e isso não é erro', async () => {
-    expect(await acharQuadroPadrao(clienteId)).toBeNull()
+  /*
+   * A regra mudou, e mudou porque a anterior entregou o recurso desligado: com
+   * cinco quadros em produção, nenhum estava marcado, e lead nenhum entrava em
+   * quadro nenhum. Do lado de fora isso é indistinguível de recurso quebrado.
+   *
+   * O alvo é o **primeiro da conta**, e esta conta já tinha quadros criados
+   * pelos blocos acima — por isso a expectativa sai de `listarQuadros`, que
+   * ordena por `criado_em`, e não do quadro que este bloco criou. Fixar o id
+   * daqui seria fixar uma coincidência de ordem de execução.
+   */
+  it('sem marcação nenhuma, quem recebe é o quadro mais antigo — não é ninguém', async () => {
+    const [maisAntigo] = await listarQuadros(clienteId)
+    expect(maisAntigo).toBeDefined()
+    expect(await acharQuadroPadrao(clienteId)).toBe(maisAntigo!.id)
   })
 
   it('marcar um quadro faz `acharQuadroPadrao` devolver ele', async () => {
@@ -274,9 +290,22 @@ describe.skipIf(!temCredencial)('quadro padrão', () => {
     expect(data).toHaveLength(1)
   })
 
-  it('desmarcar devolve a conta ao comportamento de antes', async () => {
+  it('desmarcar não desliga a automação: volta a valer o mais antigo', async () => {
     expect(await definirQuadroPadrao(clienteId, null)).toEqual({ ok: true })
-    expect(await acharQuadroPadrao(clienteId)).toBeNull()
+    const [maisAntigo] = await listarQuadros(clienteId)
+    expect(await acharQuadroPadrao(clienteId)).toBe(maisAntigo!.id)
+  })
+
+  // A marcação escolhe o destino, e por isso ela tem que vencer a idade.
+  it('o quadro marcado vence o mais antigo', async () => {
+    expect(await definirQuadroPadrao(clienteId, outroDaMesmaContaId)).toEqual({ ok: true })
+    expect(await acharQuadroPadrao(clienteId)).toBe(outroDaMesmaContaId)
+  })
+
+  // O único caso em que não há mesmo o que fazer, e ele tem que seguir mudo.
+  it('conta sem quadro nenhum devolve null, e isso não é erro', async () => {
+    const vazio = await criarCliente(`${marca} sem quadro`)
+    expect(await acharQuadroPadrao(vazio.id)).toBeNull()
   })
 
   it('o padrão é por conta: o de um cliente não vaza para o outro', async () => {

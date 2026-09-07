@@ -10,6 +10,17 @@ import { acaoDefinirQuadroPadrao } from '@/server/acoes'
  * como se chama.** "Quadro padrão" não significa nada para quem abre a tela;
  * "novo contato entra aqui" responde a pergunta que a pessoa tem.
  *
+ * **A caixa não liga mais a automação — ela escolhe o destino.** Lead novo cai
+ * no funil sempre: sem ninguém marcar nada, vai para o quadro mais antigo da
+ * conta. Marcar serve para dizer "prefiro aquele outro". A versão anterior era
+ * opt-in e o resultado foi que, com cinco quadros em produção, nenhum estava
+ * marcado — e lead nenhum entrava em lugar nenhum.
+ *
+ * Daí `recebePorSerOPrimeiro`: um quadro que recebe sem estar marcado precisa
+ * dizer isso na tela. Caixa desmarcada num quadro que recebe do mesmo jeito é
+ * a tela mentindo sobre o produto — e é justamente o tipo de mentira que faz
+ * alguém concluir que o recurso está quebrado.
+ *
  * O estado é otimista porque a marcação é um clique cujo efeito só aparece na
  * próxima mensagem que chegar — sem resposta imediata, a caixa parece não ter
  * funcionado e a pessoa clica de novo. Erro volta ao valor anterior e diz o
@@ -19,10 +30,13 @@ export function QuadroPadrao({
   clienteId,
   quadroId,
   padraoInicial,
+  recebePorSerOPrimeiro = false,
 }: {
   clienteId: string
   quadroId: string
   padraoInicial: boolean
+  /** Nenhum quadro marcado na conta e este é o mais antigo: recebe assim mesmo. */
+  recebePorSerOPrimeiro?: boolean
 }) {
   const [padrao, setPadrao] = useState(padraoInicial)
   const [erro, setErro] = useState<string | null>(null)
@@ -48,14 +62,25 @@ export function QuadroPadrao({
     })
   }
 
+  // Recebe de fato: marcado, ou o mais antigo quando ninguém marcou nada.
+  const recebendo = padrao || recebePorSerOPrimeiro
+
   return (
     <label
-      title="Quando alguém escreve pela primeira vez, o contato vira cartão na primeira etapa deste quadro. Só um quadro por conta pode receber."
-      className="flex cursor-pointer items-center gap-1.5 rounded-full border border-white/[0.09] bg-white/[0.03] px-3 py-1 text-[12px] text-muted transition hover:border-white/20"
+      title={
+        recebePorSerOPrimeiro && !padrao
+          ? 'Contato novo entra aqui por ser o quadro mais antigo da conta. Marque outro quadro para mudar o destino.'
+          : 'Quando alguém escreve pela primeira vez, o contato vira cartão na primeira etapa deste quadro. Só um quadro por conta pode receber.'
+      }
+      className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] transition ${
+        recebendo
+          ? 'border-emerald-400/25 bg-emerald-400/[0.07] text-emerald-200'
+          : 'border-white/[0.09] bg-white/[0.03] text-muted hover:border-white/20'
+      }`}
     >
       <input
         type="checkbox"
-        checked={padrao}
+        checked={recebendo}
         disabled={pendente}
         onChange={(e) => alternar(e.target.checked)}
         className="h-3.5 w-3.5 accent-accent"

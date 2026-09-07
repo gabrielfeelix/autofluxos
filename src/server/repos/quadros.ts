@@ -161,12 +161,26 @@ export async function apagarQuadro(clienteId: string, quadroId: string): Promise
 }
 
 /**
- * O quadro que recebe contato novo sozinho, ou `null` quando não há nenhum
- * marcado (0043).
+ * O quadro que recebe contato novo sozinho.
  *
- * **`null` é resposta legítima e é o padrão**, não um erro a tratar: conta sem
- * quadro marcado é conta que não quer a automação, e quem chama isto no
- * caminho da mensagem tem que seguir em frente sem reclamar.
+ * **Lead novo cai no funil sempre, sem ninguém marcar nada.** A `0043` nasceu
+ * opt-in — só entrava quem tivesse marcado a caixa — e a consequência apareceu
+ * na primeira vez que alguém foi olhar: nenhum dos cinco quadros em produção
+ * estava marcado, então lead nenhum entrava em quadro nenhum. Do lado de fora
+ * isso é indistinguível de recurso quebrado, e a queixa que gerou a rodada 1
+ * (*"o lead não vai automático, tem que clicar e puxar"*) continuava valendo
+ * inteira.
+ *
+ * Então a caixa deixou de decidir **se** entra e passou a decidir **onde**:
+ *
+ * - quadro marcado → é aquele;
+ * - nenhum marcado → o **mais antigo** da conta, que é o primeiro que a pessoa
+ *   criou e o que a tela de quadros já mostra primeiro (`listarQuadros` ordena
+ *   por `criado_em`). Coincide com o quadro que quem tem um só está olhando;
+ * - conta sem quadro nenhum → `null`, e aí não há mesmo o que fazer.
+ *
+ * `null` continua sendo resposta legítima, e quem chama isto no caminho da
+ * mensagem segue em frente sem reclamar.
  *
  * Devolve só o id porque o único uso é `porNoQuadro` logo em seguida; puxar as
  * etapas aqui seria carregar a junção inteira em **toda** mensagem recebida
@@ -177,7 +191,18 @@ export async function acharQuadroPadrao(clienteId: string): Promise<string | nul
     .from('quadros')
     .select('id')
     .eq('client_id', clienteId)
-    .eq('padrao', true)
+    /*
+     * `padrao` primeiro, `criado_em` como desempate — numa consulta só.
+     *
+     * Duas idas ao banco (procurar o marcado, depois o mais antigo) custariam
+     * uma viagem a mais em toda mensagem de contato novo para responder o que
+     * um `order` responde de graça. `padrao` desc põe `true` na frente; sem
+     * nenhum `true`, a lista inteira desempata por idade e o primeiro é o mais
+     * antigo.
+     */
+    .order('padrao', { ascending: false })
+    .order('criado_em', { ascending: true })
+    .limit(1)
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null

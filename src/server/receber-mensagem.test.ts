@@ -747,13 +747,28 @@ describe.skipIf(!temCredencial)('o contato novo entra no quadro padrão', () => 
     quadroId = quadro.id
   })
 
-  it('sem quadro padrão marcado, nada entra — e a mensagem é atendida igual', async () => {
+  /*
+   * **Este teste era o contrário, e o contrário estava errado.**
+   *
+   * Ele afirmava "sem quadro marcado, nada entra" — e era verdade: em produção,
+   * nenhum dos cinco quadros estava marcado e lead nenhum entrava em lugar
+   * nenhum. A queixa que gerou a rodada 1 (*"o lead não vai automático, tem que
+   * clicar e puxar"*) continuava valendo inteira, com a suíte verde.
+   *
+   * Agora entra sempre: sem marcação, no quadro mais antigo da conta.
+   */
+  it('sem marcação nenhuma o lead entra do mesmo jeito, no quadro mais antigo', async () => {
     mock.enviadas.length = 0
     const de = telefone(40)
 
     await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-qp-1`), comMock)
 
-    expect(await listarCartoes(clienteId, quadroId)).toHaveLength(0)
+    const meu = (await listarCartoes(clienteId, quadroId)).find((c) => c.telefone === de)
+    expect(meu).toBeDefined()
+
+    const primeira = (await acharQuadro(clienteId, quadroId))!.etapas[0]!
+    expect(meu!.colunaId).toBe(primeira.id)
+
     // O que importa tanto quanto: a conversa andou.
     expect(mock.enviadas.some((e) => e.tipo === 'texto')).toBe(true)
   })

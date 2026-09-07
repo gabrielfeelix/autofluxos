@@ -117,6 +117,15 @@ export default async function Pagina({
                 clienteId={cliente.id}
                 quadroId={aberto.id}
                 padraoInicial={aberto.padrao}
+                /*
+                 * Sem ninguém marcar, quem recebe é o mais antigo — a mesma
+                 * regra de `acharQuadroPadrao`. A tela precisa dizer isso:
+                 * caixa desmarcada num quadro que recebe do mesmo jeito é a
+                 * tela mentindo sobre o que o produto faz.
+                 */
+                recebePorSerOPrimeiro={
+                  !quadros.some((quadro) => quadro.padrao) && quadros[0]?.id === aberto.id
+                }
               />
             )}
             {novoQuadro}
