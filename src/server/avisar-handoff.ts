@@ -63,11 +63,19 @@ export async function avisarHandoff({
   contatoId,
   nomeDoContato,
   motivo,
+  avisarUsuarioId,
 }: {
   clienteId: string
   contatoId: string
   nomeDoContato: string | null
   motivo: string
+  /**
+   * Quando o bloco de handoff endereçou o aviso a alguém.
+   *
+   * Ausente = a equipe toda, que é o padrão e o certo para a maioria dos
+   * casos: quem estiver disponível pega.
+   */
+  avisarUsuarioId?: string
 }): Promise<void> {
   if (!pushConfigurado()) return
 
@@ -91,9 +99,27 @@ export async function avisarHandoff({
     )
     if (!decisao.avisar) return
 
+    /*
+     * O bloco escolheu alguém: avisa só essa pessoa — **se ela ainda atende**.
+     *
+     * "Ainda atende" é o resultado de `quemAvisar`, ou seja, ela continua na
+     * conta, com papel de atendimento e não marcada como ausente. Fora disso,
+     * o aviso volta a ser da equipe inteira: um aviso endereçado a quem saiu
+     * da empresa, ou a quem está de férias, é um aviso que ninguém recebe — e
+     * o handoff continuaria esperando calado, que é exatamente o buraco que
+     * este módulo existe para fechar.
+     *
+     * Fora do horário e presença continuam valendo antes disto: escolher uma
+     * pessoa no desenho do fluxo não autoriza tocar o telefone dela às 3h.
+     */
+    const escolhidos = avisarUsuarioId
+      ? decisao.destinatarios.filter((d) => d.usuarioId === avisarUsuarioId)
+      : []
+    const destinatarios = escolhidos.length > 0 ? escolhidos : decisao.destinatarios
+
     const assinaturas = await assinaturasDe(
       clienteId,
-      decisao.destinatarios.map((d) => d.usuarioId),
+      destinatarios.map((d) => d.usuarioId),
     )
     if (assinaturas.length === 0) return
 

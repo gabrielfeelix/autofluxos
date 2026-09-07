@@ -706,7 +706,12 @@ function avancar(
 
         // O motivo também interpola: "lead qualificado - {{tipo}}" chega no
         // painel já dizendo qual lead é, sem ninguém precisar abrir a conversa.
-        acoes.push({ tipo: 'transferir_humano', motivo: interpolar(no.data.motivo, s.vars) })
+        acoes.push({
+          tipo: 'transferir_humano',
+          motivo: interpolar(no.data.motivo, s.vars),
+          // Só quando o bloco escolheu alguém; ausente segue avisando a equipe.
+          ...(no.data.avisarUsuarioId ? { avisarUsuarioId: no.data.avisarUsuarioId } : {}),
+        })
         s.noAtual = no.id
         s.status = 'humano'
         return { acoes, sessao: s }

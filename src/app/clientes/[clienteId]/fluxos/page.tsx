@@ -1001,7 +1001,7 @@ export default async function Pagina({
                           <ModalFormulario
                             botao="+ Adicionar passo"
                             titulo="Novo passo"
-                            descricao="O tempo conta do evento que inscreveu a pessoa, não do passo anterior. O teto é 24h — a janela do WhatsApp."
+                            descricao="O tempo conta do evento que inscreveu a pessoa, não do passo anterior. O teto é 24h porque é a janela do WhatsApp: passado disso a Meta recusa texto livre, e o passo não atrasaria — simplesmente não seria entregue."
                             rotuloEnviar="Adicionar passo"
                             variante="secundario"
                             action={criarPassoComCliente}

@@ -12,6 +12,7 @@ import {
   definirIa,
   listarFluxos,
   listarVersoes,
+  fluxosQueSaltamPara,
   publicar,
   salvarRascunho,
 } from './fluxos'
@@ -396,5 +397,68 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
     expect((await acharFluxo(fluxo.id))?.rascunho).toEqual(fluxo.rascunho)
     expect((await acharFluxo(fluxo.id))?.iaHabilitada).toBe(false)
     expect(await listarVersoes(fluxo.id)).toEqual([])
+  })
+})
+
+/**
+ * O salto entre automações não tem chave estrangeira: o destino mora dentro do
+ * `rascunho`, que é `jsonb`. Sem a conferência, apagar o fluxo de destino era
+ * aceito sem reclamar e quebrava o outro em silêncio — quem chegasse ao salto
+ * ia para uma pessoa, e isso só aparecia no validador do outro fluxo, na
+ * próxima vez que alguém fosse publicá-lo.
+ */
+describe.skipIf(!temCredencial)('quem salta para um fluxo', () => {
+  async function comSalto(nomeDoDestino: string) {
+    const cliente = await criarCliente(`${marca} salto`)
+    criados.push(cliente.id)
+
+    const destino = await criarFluxo(cliente.id, nomeDoDestino, fluxoNovo())
+    const origem = await criarFluxo(cliente.id, `${marca} origem`, fluxoNovo())
+
+    const grafo = structuredClone(origem.rascunho)
+    grafo.nodes.push({
+      id: 'salta',
+      type: 'ir-fluxo',
+      position: { x: 0, y: 400 },
+      data: { fluxoId: destino.id, rotulo: nomeDoDestino },
+    })
+    await salvarRascunho(origem.id, cliente.id, grafo)
+
+    return { clienteId: cliente.id, destinoId: destino.id, origemNome: origem.nome }
+  }
+
+  it('acha quem aponta para ele, pelo nome', async () => {
+    const { clienteId, destinoId, origemNome } = await comSalto(`${marca} destino`)
+    expect(await fluxosQueSaltamPara(clienteId, destinoId)).toEqual([origemNome])
+  })
+
+  it('recusa apagar o destino, e diz onde tirar o bloco', async () => {
+    const { clienteId, destinoId, origemNome } = await comSalto(`${marca} destino 2`)
+
+    const r = await apagarFluxo(clienteId, destinoId)
+    expect(r.ok).toBe(false)
+    if (!r.ok) {
+      expect(r.motivo).toContain(origemNome)
+      expect(r.motivo).toContain('ir para outra automação')
+    }
+  })
+
+  // Sem isto, a frase de recusa citaria o nome de uma automação de outro
+  // cliente — vazamento de dado por mensagem de erro.
+  it('não enxerga salto de outro cliente', async () => {
+    const { destinoId } = await comSalto(`${marca} destino 3`)
+    const estranho = await criarCliente(`${marca} estranho`)
+    criados.push(estranho.id)
+
+    expect(await fluxosQueSaltamPara(estranho.id, destinoId)).toEqual([])
+  })
+
+  it('fluxo que ninguém aponta é apagado normalmente', async () => {
+    const cliente = await criarCliente(`${marca} sem salto`)
+    criados.push(cliente.id)
+    const sozinho = await criarFluxo(cliente.id, `${marca} sozinho`, fluxoNovo())
+
+    expect(await fluxosQueSaltamPara(cliente.id, sozinho.id)).toEqual([])
+    expect(await apagarFluxo(cliente.id, sozinho.id)).toEqual({ ok: true })
   })
 })

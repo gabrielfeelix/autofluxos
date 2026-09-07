@@ -404,9 +404,81 @@ export async function apagarFluxo(
     }
   }
 
+  /*
+   * **E os outros fluxos que saltam para este.**
+   *
+   * O bloco `ir-fluxo` vive dentro do grafo, não numa tabela, então não existe
+   * chave estrangeira para o banco recusar — diferente do número e da
+   * sequência acima. Sem esta conferência, apagar um fluxo de destino deixava
+   * o salto apontando para o vazio: quem chegasse ali ia para uma pessoa, e o
+   * único lugar onde isso aparecia era o validador **do outro fluxo**, na
+   * próxima vez que alguém fosse publicá-lo.
+   */
+  const apontam = await fluxosQueSaltamPara(clienteId, fluxoId)
+  if (apontam.length > 0) {
+    return {
+      ok: false,
+      motivo: `${apontam.length === 1 ? 'a automação' : 'as automações'} ${apontam.join(', ')} ${apontam.length === 1 ? 'salta' : 'saltam'} para esta. Tire o bloco "ir para outra automação" de lá primeiro — apagar agora deixaria o salto sem destino.`,
+    }
+  }
+
   const { error } = await db().from('flows').delete().eq('id', fluxoId).eq('client_id', clienteId)
   if (error) throw new Error(`não deu para apagar a automação: ${error.message}`)
   return { ok: true }
+}
+
+/**
+ * Quem salta para este fluxo — a consulta reversa do bloco `ir-fluxo`.
+ *
+ * **Existe porque o salto não tem chave estrangeira.** O destino mora dentro do
+ * `rascunho`, que é `jsonb`, então o banco não sabe que uma automação depende
+ * da outra: apagar a de destino é aceito sem reclamar e quebra a de origem em
+ * silêncio.
+ *
+ * Filtra por `client_id` como toda leitura daqui — e aqui isso importa duas
+ * vezes: sem o filtro, a frase de recusa citaria o **nome de uma automação de
+ * outro cliente**, que é vazamento de dado por mensagem de erro.
+ *
+ * Lê o rascunho, e não a versão publicada, de propósito: quem está desenhando
+ * um salto para este fluxo agora ainda não publicou, e apagar o destino
+ * quebraria justamente o trabalho em curso.
+ */
+export async function fluxosQueSaltamPara(
+  clienteId: string,
+  fluxoId: string,
+): Promise<string[]> {
+  if (!pareceUuid(fluxoId)) return []
+
+  const { data, error } = await db()
+    .from('flows')
+    .select('id, nome, rascunho')
+    .eq('client_id', clienteId)
+    .neq('id', fluxoId)
+
+  if (ehIdInvalido(error)) return []
+  if (error) throw new Error(`não deu para conferir os saltos: ${error.message}`)
+
+  const linhas = (data ?? []) as unknown as { id: string; nome: string; rascunho: unknown }[]
+
+  return linhas
+    .filter((linha) => {
+      /*
+       * Lê o grafo cru, sem passar pelo schema.
+       *
+       * Um rascunho que não dá parse — grafo de uma versão antiga, meio
+       * salvo — não pode fazer a conferência estourar e impedir que alguém
+       * apague qualquer coisa. Aqui só interessa uma pergunta: existe um nó
+       * `ir-fluxo` apontando para este id?
+       */
+      const nos = (linha.rascunho as { nodes?: unknown } | null)?.nodes
+      if (!Array.isArray(nos)) return false
+      return nos.some(
+        (no) =>
+          (no as { type?: string })?.type === 'ir-fluxo' &&
+          (no as { data?: { fluxoId?: string } })?.data?.fluxoId === fluxoId,
+      )
+    })
+    .map((linha) => linha.nome)
 }
 
 /**

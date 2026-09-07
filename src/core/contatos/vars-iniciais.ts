@@ -1,4 +1,5 @@
 import { VARIAVEIS_DE_DATA } from '../datas'
+import { VARIAVEIS_DO_ATENDIMENTO } from '../vars-do-atendimento'
 /**
  * O que a conversa já sabe antes de perguntar qualquer coisa.
  *
@@ -41,7 +42,14 @@ export type RetratoDoContato = {
  * divergência apareceria como aviso falso, que é o pior tipo: ele treina quem
  * desenha a ignorar o painel de avisos inteiro.
  */
-export const VARIAVEIS_NATIVAS = ['nome', 'telefone', ...VARIAVEIS_DE_DATA] as const
+export const VARIAVEIS_NATIVAS = [
+  'nome',
+  'telefone',
+  ...VARIAVEIS_DE_DATA,
+  // Derivadas do horário da conta, e não da conversa: entram na rodada e saem
+  // antes de gravar, como as datas. Ver `core/vars-do-atendimento.ts`.
+  ...VARIAVEIS_DO_ATENDIMENTO,
+] as const
 
 export function varsIniciais(contato: RetratoDoContato): Record<string, string> {
   const vars: Record<string, string> = {}

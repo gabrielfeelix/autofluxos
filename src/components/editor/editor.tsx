@@ -57,7 +57,13 @@ import { NomeDoFluxo } from './nome-do-fluxo'
 import { PuxadorDeLargura } from './puxador'
 import { useLarguraGuardada } from './largura-guardada'
 import { Painel } from './painel'
-import type { ConexaoDoCliente, EtapaDoCliente, EtiquetaDoCliente, FluxoDaConta } from './painel'
+import type {
+  ConexaoDoCliente,
+  EtapaDoCliente,
+  EtiquetaDoCliente,
+  FluxoDaConta,
+  MembroDoCliente,
+} from './painel'
 import { Versoes, type VersaoNaLista } from './versoes'
 import { Compartilhar } from './compartilhar'
 
@@ -246,6 +252,7 @@ export function Editor({
   conexoes,
   etapas,
   etiquetas,
+  equipe,
   fluxos,
   variaveisDaConta = [],
   canal,
@@ -267,6 +274,8 @@ export function Editor({
   etapas: EtapaDoCliente[]
   /** As etiquetas deste cliente, para o bloco de etiqueta (0044). */
   etiquetas: EtiquetaDoCliente[]
+  /** Quem atende, para o handoff poder endereçar o aviso a uma pessoa. */
+  equipe: MembroDoCliente[]
   /** As automações desta conta, para o bloco "Ir para outra automação". */
   fluxos: FluxoDaConta[]
   /**
@@ -1590,6 +1599,7 @@ export function Editor({
                 iaHabilitada={comIa}
                 etapas={etapas}
                 etiquetas={etiquetas}
+                equipe={equipe}
                 fluxos={fluxos}
                 aoMudarDados={mudarDados}
                 aoDefinirInicio={definirInicio}

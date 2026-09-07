@@ -470,6 +470,24 @@ export const noHandoffSchema = z.object({
     mensagem: z.string().default('Vou te passar para um atendente. Só um instante!'),
     /** Formato novo: as mensagens em ordem, todas antes da transferência. */
     mensagens: z.array(z.string()).optional(),
+    /**
+     * Quem recebe o aviso deste handoff, quando é para ser alguém específico.
+     *
+     * **Ausente = a equipe toda**, que é como o aviso nasceu (rodada 5) e
+     * continua sendo o certo para a maioria dos handoffs: quem estiver
+     * disponível pega. Escolher uma pessoa é para o caso em que o bloco já
+     * sabe de quem é o assunto — "orçamento acima de X é com a Marina",
+     * "cancelamento é com o dono".
+     *
+     * Opcional pelo mesmo motivo de `timeoutMinutos`: `flow_versions` é
+     * imutável e há conversa em produção rodando grafo publicado antes deste
+     * campo. Campo obrigatório faria todas pararem de dar parse.
+     *
+     * **Se a pessoa saiu da conta, o aviso volta a ser da equipe** — ver
+     * `avisarHandoff`. Um aviso endereçado a quem não existe mais é um aviso
+     * que ninguém recebe, e o handoff continuaria esperando calado.
+     */
+    avisarUsuarioId: z.string().optional(),
   }),
 })
 

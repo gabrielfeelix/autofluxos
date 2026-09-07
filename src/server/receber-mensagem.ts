@@ -969,13 +969,14 @@ async function aplicar(
    * falha; o `catch` aqui é a segunda rede, para uma exceção nova nunca poder
    * desfazer uma transferência que já aconteceu.
    */
-  const avisarDoHandoff = async (motivo: string) => {
+  const avisarDoHandoff = async (motivo: string, avisarUsuarioId?: string) => {
     try {
       await avisarHandoff({
         clienteId: contato.clienteId,
         contatoId: contato.id,
         nomeDoContato: contato.nomeReal ?? contato.nome,
         motivo,
+        avisarUsuarioId,
       })
     } catch (erro) {
       await alertar('não deu para avisar a equipe do handoff', erro, alvo)
@@ -1169,7 +1170,8 @@ async function aplicar(
 
       case 'transferir_humano':
         await registrarHandoff(sessaoId, acao.motivo)
-        await avisarDoHandoff(acao.motivo)
+        // O bloco pode ter endereçado o aviso a alguém; sem isso, a equipe.
+        await avisarDoHandoff(acao.motivo, acao.avisarUsuarioId)
         break
 
       case 'chamar_ia': {

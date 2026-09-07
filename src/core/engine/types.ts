@@ -245,7 +245,18 @@ export type Acao =
    * mudou de arquivo.
    */
   | { tipo: 'ir_para_fluxo'; fluxoId: string }
-  | { tipo: 'transferir_humano'; motivo: string }
+  | {
+      tipo: 'transferir_humano'
+      motivo: string
+      /**
+       * A quem endereçar o aviso, quando o bloco escolheu alguém.
+       *
+       * Ausente = a equipe toda, que é o padrão. O motor só carrega o id: quem
+       * decide se essa pessoa ainda atende — e o que fazer se não atende — é o
+       * servidor, porque isso é uma pergunta ao banco.
+       */
+      avisarUsuarioId?: string
+    }
   /**
    * O desenho acabou.
    *

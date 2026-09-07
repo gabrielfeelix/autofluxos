@@ -540,7 +540,22 @@ function Fila({
                   <small className="shrink-0 text-[9.5px] text-muted">{lead.ultimaEm ? quando(lead.ultimaEm) : ''}</small>
                 </span>
                 <span className="mt-0.5 flex items-center gap-1.5">
-                  <span className={`min-w-0 flex-1 truncate text-[10.5px] ${lead.aguardando ? 'text-rose-300' : semLer > 0 ? 'text-soft' : 'text-muted'}`}>
+                  {/*
+                    O `title` existe porque o motivo do handoff **é a
+                    informação que resolve o problema** — "a chamada respondeu
+                    500", "o modelo demorou demais" — e ele chega a 75
+                    caracteres numa coluna de 292px. Truncado e sem `title`, a
+                    linha vermelha só dizia que havia algo errado e escondia o
+                    quê: nem o mouse, nem outra tela contavam.
+                  */}
+                  <span
+                    title={
+                      lead.aguardando
+                        ? `Aguardando pessoa: ${lead.aguardando.motivo}`
+                        : undefined
+                    }
+                    className={`min-w-0 flex-1 truncate text-[10.5px] ${lead.aguardando ? 'text-rose-300' : semLer > 0 ? 'text-soft' : 'text-muted'}`}
+                  >
                     {lead.aguardando ? `Pessoa: ${lead.aguardando.motivo}` : resumoDaConversa(lead)}
                   </span>
                   {/*
@@ -848,7 +863,20 @@ function DadosDoLead({
           </p>
           {aguardandoPessoa ? (
             <>
-              <p className="mt-1 text-[11px] leading-4 text-muted">{lead.aguardando?.motivo}</p>
+              {/*
+                O motivo **inteiro**, quebrando linha, e não truncado.
+                Este é o lugar onde a pessoa vem entender o que aconteceu
+                depois de ver a linha vermelha na fila: cortar aqui também
+                deixaria o problema sem nenhum lugar onde possa ser lido.
+              */}
+              <p className="mt-1 text-[11px] leading-4 break-words text-soft">
+                {lead.aguardando?.motivo}
+              </p>
+              {lead.aguardando?.desde && (
+                <p className="mt-1 text-[10px] text-dim">
+                  esperando desde {horaExata(lead.aguardando.desde)}
+                </p>
+              )}
               <form action={acaoEncerrarAtendimento.bind(null, clienteId, lead.contatoId)}>
                 <button
                   type="submit"

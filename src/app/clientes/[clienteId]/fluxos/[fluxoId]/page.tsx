@@ -5,6 +5,7 @@ import { variaveisDoFluxo } from '@/core/flow/variaveis'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarConexoes } from '@/server/repos/conexoes'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
+import { membrosDaConta } from '@/server/repos/usuarios'
 import { listarQuadros } from '@/server/repos/quadros'
 import { acharFluxo, acharVersao, listarFluxos, listarVersoes } from '@/server/repos/fluxos'
 import { ehAdminDaPlataforma, exigirAcessoAoCliente } from '@/server/sessao'
@@ -44,6 +45,25 @@ export default async function Pagina({
     listarFluxos(clienteId),
   ])
   if (!cliente || !fluxo || fluxo.clienteId !== cliente.id) notFound()
+
+  /*
+   * A equipe, para o bloco de handoff poder endereçar o aviso a uma pessoa.
+   *
+   * Em `try` porque `membrosDaConta` fala Postgres direto (as tabelas do login
+   * ficam fora da Data API) e estoura num ambiente sem `DATABASE_URL` — o mesmo
+   * cuidado que o Inbox já toma. Sem equipe, o campo simplesmente não aparece e
+   * o aviso continua sendo da conta inteira: o editor não pode parar de abrir
+   * porque o login não está configurado.
+   */
+  let equipe: { id: string; nome: string }[] = []
+  try {
+    equipe = (await membrosDaConta(cliente.id)).map((m) => ({ id: m.id, nome: m.nome }))
+  } catch (erro) {
+    console.error(
+      '[editor] não deu para ler a equipe',
+      erro instanceof Error ? erro.message : erro,
+    )
+  }
 
   /**
    * O editor não usa a moldura do cliente — é tela cheia por natureza —, então
@@ -127,6 +147,7 @@ export default async function Pagina({
           })),
         )}
         etiquetas={etiquetas.map((e) => ({ id: e.id, nome: e.nome, cor: e.cor }))}
+        equipe={equipe}
         publicadaInicial={
           publicada
             ? {

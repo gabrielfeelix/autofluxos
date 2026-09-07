@@ -4,6 +4,7 @@ import type { ContextoDoAtendimento } from '@/core/engine/executar'
 import type { Acao, Entrada, Resultado, Sessao } from '@/core/engine/types'
 import type { Fluxo } from '@/core/flow/schema'
 import { VARIAVEIS_DE_DATA } from '@/core/datas'
+import { VARIAVEIS_DO_ATENDIMENTO, varsDoAtendimento } from '@/core/vars-do-atendimento'
 import {
   acharFerramenta,
   ferramentasPermitidas,
@@ -189,7 +190,15 @@ async function rodar(
    * persistida. Deixá-las gravadas também sujaria a ficha do lead com oito
    * campos que ninguém preencheu.
    */
-  const sessao = comDatas(sessaoRecebida, opcoes.datas)
+  /*
+   * O horário de atendimento entra pelo mesmo caminho, e pelo mesmo motivo:
+   * é derivado do relógio, vale só para esta rodada, e gravado viraria um
+   * "sim" que amanhã de madrugada é mentira. Ver `core/vars-do-atendimento`.
+   */
+  const sessao = comDatas(sessaoRecebida, {
+    ...varsDoAtendimento(atendimento),
+    ...opcoes.datas,
+  })
 
   /*
    * A confirmação é lida **antes** do motor, e não dentro dele.
@@ -1011,5 +1020,8 @@ function comDatas(sessao: Sessao, datas: Record<string, string> | undefined): Se
 function semDatas(sessao: Sessao): Sessao {
   const vars = { ...sessao.vars }
   for (const nome of VARIAVEIS_DE_DATA) delete vars[nome]
+  // Pelo mesmo motivo: `atendimento_aberto` gravado é um "sim" que às 3h da
+  // manhã continua dizendo que tem gente atendendo.
+  for (const nome of VARIAVEIS_DO_ATENDIMENTO) delete vars[nome]
   return { ...sessao, vars }
 }

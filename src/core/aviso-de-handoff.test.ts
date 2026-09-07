@@ -101,6 +101,48 @@ describe('quemAvisar', () => {
   })
 })
 
+/*
+ * Endereçar o aviso a uma pessoa é decisão do bloco de handoff, mas **quem
+ * ainda atende** continua sendo decisão daqui. Estes casos existem porque o
+ * modo de falhar é silencioso: um aviso mandado para quem saiu da conta não dá
+ * erro nenhum — só não chega, e o lead segue esperando.
+ */
+describe('quemAvisar, com o handoff endereçado a alguém', () => {
+  const marina = membro({ usuarioId: 'marina', nome: 'Marina' })
+  const dono = membro({ usuarioId: 'dono', nome: 'Dono' })
+
+  it('a pessoa escolhida está entre quem seria avisado', () => {
+    const decisao = quemAvisar([marina, dono], COMERCIAL, NO_EXPEDIENTE)
+    expect(decisao.avisar).toBe(true)
+    if (decisao.avisar) {
+      expect(decisao.destinatarios.map((d) => d.usuarioId)).toContain('marina')
+    }
+  })
+
+  // O filtro por pessoa acontece no servidor, DEPOIS desta decisão — então
+  // alguém ausente nunca chega lá, e o aviso volta a ser da equipe.
+  it('quem está ausente não entra na lista, mesmo sendo a escolhida', () => {
+    const decisao = quemAvisar(
+      [membro({ usuarioId: 'marina', presenca: 'ausente' }), dono],
+      COMERCIAL,
+      NO_EXPEDIENTE,
+    )
+    expect(decisao.avisar).toBe(true)
+    if (decisao.avisar) {
+      expect(decisao.destinatarios.map((d) => d.usuarioId)).toEqual(['dono'])
+    }
+  })
+
+  // Escolher uma pessoa no desenho do fluxo não autoriza tocar o telefone dela
+  // às 3h da manhã: o horário vem antes de tudo.
+  it('fora do horário não avisa ninguém, nem a pessoa escolhida', () => {
+    expect(quemAvisar([marina, dono], COMERCIAL, MADRUGADA)).toEqual({
+      avisar: false,
+      motivo: 'fora-do-horario',
+    })
+  })
+})
+
 describe('textoDoAviso', () => {
   it('o nome de quem espera vem primeiro — é o que faz largar o que se está fazendo', () => {
     expect(textoDoAviso('Marina', 'o bot não entendeu 3 vezes')).toEqual({

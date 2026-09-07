@@ -693,3 +693,92 @@ describe('as datas prontas do fluxo', () => {
     expect(texto?.tipo === 'enviar_texto' && texto.texto).toBe('Tenho horário de  até .')
   })
 })
+
+/**
+ * Desviar o fluxo pelo horário de atendimento.
+ *
+ * O produto sabia se estava aberto desde a `0022`, mas só usava isso numa frase
+ * pronta no handoff. Quem desenha não conseguia ramificar — "de madrugada,
+ * ofereça o formulário em vez de prometer atendente" era impossível.
+ */
+describe('o fluxo desvia pelo horário de atendimento', () => {
+  const fluxoQueDesvia: Fluxo = {
+    inicio: 'confere',
+    nodes: [
+      {
+        id: 'confere',
+        type: 'condicao',
+        position: { x: 0, y: 0 },
+        data: { variavel: 'atendimento_aberto', operador: 'igual', valor: 'sim' },
+      },
+      {
+        id: 'aberto',
+        type: 'mensagem',
+        position: { x: 0, y: 120 },
+        data: { texto: 'Já te atendo!' },
+      },
+      {
+        id: 'fechado',
+        type: 'mensagem',
+        position: { x: 200, y: 120 },
+        data: { texto: 'Estamos fechados, voltamos {{proxima_abertura}}.' },
+      },
+    ],
+    edges: [
+      // As portas da condição são `verdadeiro`/`falso` (schema.ts:847); o
+      // `sim`/`nao` é o *valor comparado*, que é outra coisa.
+      { id: 'sim', source: 'confere', sourceHandle: 'verdadeiro', target: 'aberto' },
+      { id: 'nao', source: 'confere', sourceHandle: 'falso', target: 'fechado' },
+    ],
+  }
+
+  const texto = (r: { acoes: { tipo: string }[] }) => {
+    const acao = r.acoes.find((a) => a.tipo === 'enviar_texto')
+    return acao && 'texto' in acao ? (acao.texto as string) : null
+  }
+
+  it('dentro do horário, vai pelo "sim"', async () => {
+    const r = await executarComEfeitos(fluxoQueDesvia, sessaoNova(), { tipo: 'inicio' }, {
+      modelo: null,
+      contextoNegocio: '',
+      atendimento: { atendimentoAberto: true, proximaAbertura: null },
+    })
+    expect(texto(r)).toBe('Já te atendo!')
+  })
+
+  it('fora do horário, vai pelo "nao" e diz quando volta', async () => {
+    const r = await executarComEfeitos(fluxoQueDesvia, sessaoNova(), { tipo: 'inicio' }, {
+      modelo: null,
+      contextoNegocio: '',
+      atendimento: {
+        atendimentoAberto: false,
+        proximaAbertura: 'amanhã a partir das 08:00',
+      },
+    })
+    expect(texto(r)).toBe('Estamos fechados, voltamos amanhã a partir das 08:00.')
+  })
+
+  /*
+   * O motivo de elas serem efêmeras: gravado, `atendimento_aberto: 'sim'`
+   * continuaria dizendo às 3h da manhã que tem gente atendendo — e ainda
+   * apareceria como campo na ficha do lead, preenchido por ninguém.
+   */
+  it('as duas somem antes de a sessão ir para o banco', async () => {
+    const r = await executarComEfeitos(fluxoQueDesvia, sessaoNova(), { tipo: 'inicio' }, {
+      modelo: null,
+      contextoNegocio: '',
+      atendimento: { atendimentoAberto: true, proximaAbertura: null },
+    })
+    expect(r.sessao.vars).not.toHaveProperty('atendimento_aberto')
+    expect(r.sessao.vars).not.toHaveProperty('proxima_abertura')
+  })
+
+  // Chamador que não informa nada continua como sempre: aberto.
+  it('sem contexto informado, o padrão é aberto', async () => {
+    const r = await executarComEfeitos(fluxoQueDesvia, sessaoNova(), { tipo: 'inicio' }, {
+      modelo: null,
+      contextoNegocio: '',
+    })
+    expect(texto(r)).toBe('Já te atendo!')
+  })
+})

@@ -97,6 +97,15 @@ export type EtapaDoCliente = { quadroId: string; colunaId: string; rotulo: strin
 export type EtiquetaDoCliente = { id: string; nome: string; cor: string }
 
 /**
+ * Quem atende nesta conta, para o handoff poder endereçar o aviso.
+ *
+ * Só id e nome: o painel não tem o que fazer com e-mail nem com papel, e
+ * carregar mais do que a tela mostra é dado pessoal viajando de graça até o
+ * navegador.
+ */
+export type MembroDoCliente = { id: string; nome: string }
+
+/**
  * Uma automação da conta, como o bloco "Ir para outra automação" a enxerga.
  *
  * `publicado` e `ativo` vêm junto porque o seletor precisa **dizer o que está
@@ -174,6 +183,7 @@ export function Painel({
   iaHabilitada = false,
   etapas = [],
   etiquetas = [],
+  equipe = [],
   fluxos = [],
   aoMudarDados,
   aoDefinirInicio,
@@ -208,6 +218,8 @@ export function Painel({
   iaHabilitada?: boolean
   etapas?: EtapaDoCliente[]
   etiquetas?: EtiquetaDoCliente[]
+  /** Quem atende, para escolher a quem endereçar o aviso do handoff. */
+  equipe?: MembroDoCliente[]
   fluxos?: FluxoDaConta[]
   aoMudarDados: (dados: Record<string, unknown>) => void
   aoDefinirInicio: () => void
@@ -637,6 +649,28 @@ export function Painel({
                 <strong className="text-muted">a partir</strong> do prazo, não no minuto exato.
               </span>
             )}
+            {/*
+              **O aviso que só existia depois do estrago.**
+
+              A janela do WhatsApp fecha 24h depois da última mensagem *dela*, e
+              o prazo aqui conta a partir da pergunta — que é sempre depois. Num
+              prazo de 12h ou mais, o disparo por fila (que acontece "a partir
+              do prazo", nunca antes) tem chance real de cair já fora da janela:
+              a Meta recusa com `(#131047)`, a retomada não chega e a conversa
+              vira handoff.
+
+              Nada disso aparecia no editor. Quem desenhava só descobria em
+              produção, e o sintoma — "a mensagem não chegou" — não aponta para
+              o campo que a causou.
+            */}
+            {(no.data.timeoutMinutos ?? 0) >= 720 && (
+              <span className="mt-1.5 block rounded-[8px] border border-amber-300/25 bg-amber-300/[0.06] px-2.5 py-2 text-[11px] leading-4 text-amber-100">
+                Prazo longo: a janela do WhatsApp fecha 24h depois da{' '}
+                <strong>última mensagem dela</strong>, e este prazo conta da
+                pergunta. Perto do teto, a retomada pode ser recusada pela Meta e
+                a conversa vai para uma pessoa em vez de receber o texto.
+              </span>
+            )}
           </label>
         </>
       )}
@@ -977,6 +1011,38 @@ export function Painel({
             aceitaVariavel
             conhecidas={variaveis}
           />
+          {/*
+            **Avisar a equipe toda é o padrão, e continua sendo o certo na
+            maioria dos handoffs**: quem estiver disponível pega. Escolher uma
+            pessoa é para quando o bloco já sabe de quem é o assunto —
+            "cancelamento é com o dono", "orçamento acima de X é com a Marina".
+
+            Só aparece com mais de uma pessoa na conta: num time de um, o campo
+            ofereceria uma escolha que não existe.
+          */}
+          {equipe.length > 1 && (
+            <label className="block">
+              <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+                Avisar quem
+              </span>
+              <Dropdown
+                valor={no.data.avisarUsuarioId ?? ''}
+                aoMudar={(v) =>
+                  aoMudarDados({ avisarUsuarioId: v === '' ? undefined : v })
+                }
+                rotuloAcessivel="Quem recebe o aviso deste handoff"
+                opcoes={[
+                  { valor: '', rotulo: 'a equipe', detalhe: 'quem estiver disponível' },
+                  ...equipe.map((membro) => ({ valor: membro.id, rotulo: membro.nome })),
+                ]}
+              />
+              <span className="mt-1.5 block text-[11px] leading-4 text-dim">
+                {no.data.avisarUsuarioId
+                  ? 'Se essa pessoa sair da conta ou estiver ausente, o aviso volta a ser da equipe — aviso endereçado a quem não está é aviso que ninguém recebe.'
+                  : 'Todo mundo que estiver disponível recebe, respeitando o horário de atendimento.'}
+              </span>
+            </label>
+          )}
         </>
       )}
 
