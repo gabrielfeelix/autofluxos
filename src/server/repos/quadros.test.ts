@@ -305,7 +305,17 @@ describe.skipIf(!temCredencial)('quadro padrão', () => {
   // O único caso em que não há mesmo o que fazer, e ele tem que seguir mudo.
   it('conta sem quadro nenhum devolve null, e isso não é erro', async () => {
     const vazio = await criarCliente(`${marca} sem quadro`)
-    expect(await acharQuadroPadrao(vazio.id)).toBeNull()
+    try {
+      expect(await acharQuadroPadrao(vazio.id)).toBeNull()
+    } finally {
+      /*
+       * Apaga aqui, e não num `afterAll`: este é o único cliente que o bloco
+       * cria, e a produção já carrega doze contas `zz-` de suítes que
+       * esqueceram de limpar. Os testes rodam contra o banco de produção — o
+       * que não se apaga fica.
+       */
+      await db().from('clients').delete().eq('id', vazio.id)
+    }
   })
 
   it('o padrão é por conta: o de um cliente não vaza para o outro', async () => {

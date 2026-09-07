@@ -336,3 +336,43 @@ Verificação do negócio **`verified`** (02/set/2026), WABA `4YU Tech`
 `APPROVED`, número real verificado com qualidade `GREEN`, webhook de WhatsApp
 em produção assinando `messages`, token permanente, `privacy_policy_url` e
 `terms_of_service_url` preenchidos, compliance sem violação aberta.
+
+## 11. O layout tem cara de template de IA — redesenho pendente
+
+**07/set/2026, palavras do dono:** *"tem muita cara de inteligência artificial.
+Esse tanto de textura, essa cor, esse fundo preto — não tem cara de SaaS
+moderno."*
+
+Ele está certo, e dá para apontar o dedo no que causa isso. Não é impressão:
+
+1. **Os dois gradientes radiais no fundo** (`globals.css`, `body::before`) —
+   ciano em cima à esquerda, roxo embaixo à direita. É *a* assinatura de
+   template gerado: nenhum SaaS que se leva a sério pinta aurora atrás do
+   conteúdo.
+2. **O ciano `#56d0f5` como cor de marca**, que é a cor que todo dashboard de
+   demonstração usa.
+3. **O fundo quase preto** (`#080b10`) com **vidro translúcido em tudo**
+   (`bg-white/[0.03]`, `border-white/[0.09]`). Escuro por escolha é uma coisa;
+   escuro porque o gerador entregou assim é outra, e a segunda se reconhece de
+   longe.
+4. **Densidade uniforme**: quase todo texto entre 10px e 13px, sem hierarquia
+   real. Produto de verdade tem título que é título.
+
+**O que é barato e o que é caro.** Barato: a paleta inteira sai de tokens em
+`globals.css` (`--canvas`, `--accent`, `--panel`, `--ink`...), então trocar
+fundo, marca e superfícies é um arquivo. Apagar os dois gradientes é uma linha.
+
+Caro: **143 usos de `bg-white/[0.0x]` e `border-white/[0.xx]` escritos à mão em
+55 arquivos**, fora dos tokens. Enquanto eles existirem, mudar o fundo para
+claro deixa metade da interface com vidro branco sobre branco. O redesenho de
+verdade passa por transformar esses 143 em duas ou três classes
+(`.app-card`, `.app-surface`) — que já existem em `globals.css` e são usadas
+pela metade.
+
+**Decisão sua, e é de produto, não de código:** claro ou escuro, e qual a cor
+da 4YU. Com isso respondido, a troca de pele é uma rodada; sem isso, mexer em
+cor é chute que vai ser refeito.
+
+**Não fazer isso enquanto a Meta analisa** sem ler o §4 do
+[HANDOFF-06-SET.md](HANDOFF-06-SET.md): o revisor abre Clientes → Estúdio de
+exemplo → Inbox. Mudar cor não muda caminho de tela, mas mudar layout pode.
