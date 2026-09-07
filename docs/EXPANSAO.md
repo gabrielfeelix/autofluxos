@@ -19,6 +19,68 @@ cada tela nossa faz), [BRIEF-AGENDA.md](BRIEF-AGENDA.md),
 
 Escrito em 13/ago/2026.
 
+> ## ⚠️ Cruzado com o código em 07/set/2026 — leia antes de usar este plano
+>
+> **Este documento envelheceu, e envelheceu para melhor: quase tudo que ele
+> pede já existe.** Três semanas de trabalho passaram por caminhos que ele não
+> previa (o plano de setembro, as seis rodadas), e a numeração daqui deixou de
+> corresponder ao que falta. Usá-lo como fila de trabalho hoje faria alguém
+> reconstruir Inbox, Agendador e Sequências, que estão prontos.
+>
+> O cruzamento foi feito item a item, contra o código, com arquivo e linha:
+>
+> | Item | Estado real em 07/set |
+> |---|---|
+> | 0–5 | ✅ como o documento já dizia |
+> | 6. Inserir `{{variavel}}` por clique | ✅ **feito** (`components/editor/escolher-variavel.tsx`) |
+> | 7. Notificar pessoa | ⚠️ **por outro caminho** — resolvido com push do navegador (rodada 5), não por WhatsApp ao atendente |
+> | 8. Horário de atendimento | ⚠️ **quase** — falta só o operador `dentro_do_horario` na condição |
+> | 9. Respostas rápidas | ✅ **feito** |
+> | 10. Automação ligada/desligada | ✅ **feito** |
+> | 11. Inbox | ✅ **feito**, com atribuição a atendente, que este plano adiava |
+> | 12. Agendador | ✅ **feito** (`tarefas`, cron + carona no webhook) |
+> | 13a. Modelos da Meta (HSM) | ❌ **não existe** — travado na Meta, e o código nem foi escrito |
+> | 13b. Janela de 24h **no bloco** | ⚠️ **em execução sim, no desenho não** — ver abaixo |
+> | 13c. Sequências | ✅ **feito** |
+> | 13d. Timeout de pergunta | ✅ **feito** |
+> | 13e. Transmissão | ❌ **não existe** — e os nossos Termos proíbem disparo em massa |
+> | 15. Papéis de usuário | ✅ **feito**, e as duas falhas de segurança citadas aqui estão fechadas |
+> | 16. Subfluxos | ✅ **feito** (`ir-fluxo`, sem volta, como recomendado) |
+> | 17. Integrações de primeira parte | ✅ **feito** — presets, e a Agenda entrou com nove blocos |
+> | 18. Alavanca de agência | ✅ **feito** nos quatro sub-itens |
+> | 19. Mídia no motor | ✅ **feito** — a citação `types.ts:70-78` deste documento está obsoleta |
+>
+> ### O que sobrou de verdade, e é curto
+>
+> 1. **Operador `dentro_do_horario` na condição** (item 8). Hoje o bot responde
+>    "voltamos amanhã às 8h" sozinho, mas o desenhista **não consegue ramificar
+>    o fluxo por horário** — `OPERADORES` (`core/flow/schema.ts:380`) tem
+>    `igual`, `contem`, `vazio`… e nada de horário. É o menor item da lista e o
+>    mais pedido por quem desenha.
+> 2. **A janela de 24h não aparece no editor** (13b). O cálculo existe e é bom
+>    (`channels/janela.ts`), a mensagem não sai e vira handoff — mas quem
+>    desenha uma retomada de 48h só descobre em produção. Falta o aviso em
+>    tempo de desenho.
+> 3. **Avisar pessoa por WhatsApp, e escolher quem no bloco** (item 7). O push
+>    resolveu o caso urgente; o aviso por bloco ("este handoff é da Marina")
+>    continua sem existir.
+> 4. **"Chamado por N fluxos"** (item 16, ponto 6). Não há consulta reversa,
+>    então não dá para ver fluxo órfão nem saber quem aponta para quem antes de
+>    apagar.
+> 5. **HSM e Transmissão** (13a, 13e), travados na Meta — e a transmissão
+>    precisa de decisão de produto antes de código, porque os Termos a proíbem.
+>
+> ### Duas decisões que foram tomadas ao contrário do que este plano recomendou
+>
+> Ambas com o raciocínio registrado no código, e as duas parecem certas:
+>
+> - **Ciclo entre fluxos não é recusado no validador**, é travado em execução
+>   por `MAX_SALTOS` (`server/efeitos/resolver.ts`). Ver `flow/validar.ts:487`.
+> - **Não há congelamento em cascata na publicação.** O salto pega o destino de
+>   **hoje** de propósito — "quem salta quer o fluxo de fisioterapia de hoje, e
+>   não a foto dele do dia em que o salto foi desenhado"
+>   (`core/flow/schema.ts:735`).
+
 > **Sobre as imagens.** Os prints chegaram como conteúdo de conversa, não como
 > arquivo — não há PNG para commitar. Cada tela foi **redesenhada como layout**
 > nas seções abaixo. Perde cor e tipografia; mantém estrutura, rótulos e números
