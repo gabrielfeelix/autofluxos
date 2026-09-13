@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { after } from 'next/server'
 import { alertar } from '@/server/alertar'
+import { receberCoexistencia, tratarAtualizacaoDaConta } from '@/server/receber-coexistencia'
 import { receberMensagem } from '@/server/receber-mensagem'
 import { rodarTarefas } from '@/server/tarefas'
 
@@ -68,6 +69,25 @@ export async function POST(req: Request) {
   after(async () => {
     try {
       await receberMensagem(payload)
+
+      /*
+       * Os campos de coexistência, no mesmo corpo.
+       *
+       * **Depois da mensagem e não junto**: o mesmo POST da Meta pode trazer
+       * `messages` e `history` ao mesmo tempo, e a mensagem que acabou de
+       * chegar de uma pessoa de verdade tem prioridade sobre a importação de
+       * conversa antiga. Cada um lê a sua parte do mesmo payload e ignora a do
+       * outro — ver `receber-coexistencia.ts`.
+       */
+      await receberCoexistencia(payload)
+
+      /*
+       * `ACCOUNT_OFFBOARDED` / `ACCOUNT_RECONNECTED`.
+       *
+       * O cliente trocou de celular e o companion caiu sozinho. Sem isto, os
+       * envios daquele número falham em silêncio até alguém reclamar.
+       */
+      await tratarAtualizacaoDaConta(payload)
     } catch (erro) {
       // Já respondemos 200. Deixar estourar aqui só produziria um unhandled
       // rejection sem ninguém para ver.
