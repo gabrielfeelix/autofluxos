@@ -95,8 +95,40 @@ o entende vira erro silencioso em produção.
 
 ### 2. Onboarding: Embedded Signup v4 com session logging
 
-Não existe **uma linha** de Embedded Signup no `src/` hoje — só menção em docs.
-Isto nasce do zero.
+> **PARE ANTES DE COMEÇAR ESTA FRENTE — decisão em aberto (13/09, fim do dia).**
+>
+> O painel de Tech Provider oferece **"Cadastro incorporado hospedado pela Meta"**
+> (Hosted Embedded Signup): a Meta hospeda a tela e devolve o cliente num URI
+> nosso, sem SDK. Se ele suportar Coexistence, **boa parte desta frente e da
+> frente 4 deixa de existir**.
+>
+> O que não sabemos: se o Hosted aceita
+> `featureType: whatsapp_business_app_onboarding`. Sem isso ele faz onboarding
+> comum e **não serve** para o nosso caso.
+>
+> Como se decide (o dono está fazendo, no painel): gerar o link e abrir. Se a
+> tela oferecer *"conectar sua conta existente do WhatsApp Business"*, Hosted
+> serve e o SDK abaixo é desnecessário. Se pedir seleção de WABA, é fluxo comum
+> e vale o SDK.
+>
+> **Não construa o SDK até essa resposta chegar.** Faça as frentes 1 e 3 e a
+> rota de retorno (abaixo), que servem nos dois caminhos.
+
+**A rota de retorno serve aos dois caminhos** — Hosted e SDK ambos devolvem o
+cliente numa URL nossa. Pode construir já. O URI cadastrado no painel é:
+
+```
+https://autofluxos.4yu.com.br/api/whatsapp/retorno
+```
+
+Espelhe [instagram/retorno/route.ts](src/app/api/instagram/retorno/route.ts), que
+já resolveu esse problema: `state` prova **qual cliente** começou (impede link
+forjado ligar um número ao cliente errado), a sessão prova **quem está pedindo**
+(a rota é pública por obrigação, quem chama é o navegador vindo da Meta), o
+cancelamento vem como `error=access_denied` e é resposta e não falha, e o retorno
+é **sempre um redirect para a tela**, nunca JSON na cara de quem clicou.
+
+O resto desta seção vale **apenas se a resposta for "SDK"**:
 
 A customização de Coexistence é uma propriedade no `extras` do launch:
 
@@ -224,10 +256,12 @@ em silêncio.
 1. Handler dos três campos (com testes de payload) → **depois** assinar na Meta.
 2. `ACCOUNT_OFFBOARDED` / `ACCOUNT_RECONNECTED` — barato, e evita falha silenciosa.
 3. Migration do estado de coexistência em `channels`.
-4. Embedded Signup v4 com session logging + `featureType`.
-5. Disparo automático dos dois syncs ao fim do onboarding, dentro das 24h.
+4. Rota `/api/whatsapp/retorno`, espelhando a do Instagram.
+5. **Espere a decisão Hosted × SDK** antes do Embedded Signup em si.
+6. Disparo automático dos dois syncs ao fim do onboarding, dentro das 24h.
 
-1 a 3 não dependem de nada do painel. Comece por eles.
+1 a 4 valem em qualquer cenário e não dependem do painel. Comece por eles.
+Só o passo 5 está em aberto — ver o aviso na frente 2.
 
 ## Como conferir de verdade
 
