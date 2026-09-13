@@ -1,5 +1,17 @@
 # Handoff — Coexistence: o trabalho de código
 
+> ⚠️ **Parte deste documento está desatualizada. Leia
+> [HANDOFF-13-SET-TARDE.md](HANDOFF-13-SET-TARDE.md) primeiro.**
+>
+> A decisão *"é o Hosted, não construa SDK"* (seção 2) **foi revertida em
+> 13/set à tarde**, depois de duas conexões reais falharem por causa dela: o
+> Hosted **não faz coexistência** e **não redireciona de volta** — a doc da Meta
+> é explícita nos dois pontos. A URL do Hosted montada naquela seção foi
+> inventada; ele não lê `extras`, `config_id` nem `redirect_uri` da query.
+>
+> Hoje o fluxo é o **SDK do JavaScript** (`FB.login`), e o resto deste documento
+> — webhooks, syncs, janela de 24h, banco, limitações — continua válido.
+
 > Escrito em 13/set/2026. O dono e outra sessão cuidam do **painel da Meta**;
 > este documento é o **código**, e as duas frentes não se bloqueiam.
 > Leia também [META-TECH-PROVIDER.md](META-TECH-PROVIDER.md) e, antes de tocar
