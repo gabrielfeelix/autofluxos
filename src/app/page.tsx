@@ -163,7 +163,7 @@ API oficial do WhatsApp Business
               </h2>
               <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
               <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
-                "Que horas vocês abrem?" pela oitava vez antes do almoço. Você responde,
+                “Que horas vocês abrem?” pela oitava vez antes do almoço. Você responde,
                 volta pro que estava fazendo, e às sete da noite descobre que alguém
                 perguntando de orçamento ficou sem resposta desde as onze.
               </p>

@@ -130,6 +130,7 @@ function padronizar(formato: FormatoDeResposta, valor: string): string | null {
     case 'data':
     // Mesma leitura de calendário; o que muda é a conferência contra hoje, em
     // `conferirResposta` — aqui não há relógio para comparar.
+    // falls through
     case 'data_futura':
       return comoData(valor)
     case 'hora':

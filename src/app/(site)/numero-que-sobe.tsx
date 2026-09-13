@@ -34,8 +34,6 @@ export function NumeroQueSobe({ texto, className }: { texto: string; className?:
     const antes = texto.slice(0, inicio)
     const depois = texto.slice(inicio + digitos[0].length)
 
-    setMostrado(antes + '0' + depois)
-
     let quadro = 0
     let comecou = 0
 
@@ -52,6 +50,20 @@ export function NumeroQueSobe({ texto, className }: { texto: string; className?:
       ([entrada]) => {
         if (!entrada?.isIntersecting) return
         observer.disconnect()
+        /*
+         * **O zero nasce aqui, e não no corpo do efeito.**
+         *
+         * Zerar assim que o efeito roda faz duas coisas ruins. A primeira é um
+         * render em cascata logo na montagem, que é o que o
+         * `react-hooks/set-state-in-effect` aponta. A segunda é visível: o
+         * número fica `0` desde o carregamento, mesmo estando longe da área
+         * visível — quem rola devagar até ele vê um zero parado e só então a
+         * contagem, em vez do valor final dando lugar à animação.
+         *
+         * Dentro do observer, o zero e o primeiro quadro acontecem juntos, no
+         * instante em que o número entra na tela.
+         */
+        setMostrado(antes + '0' + depois)
         quadro = requestAnimationFrame(passo)
       },
       { threshold: 0.5 },
