@@ -851,7 +851,21 @@ function Historico({
    * esta tela chegou a fazer) invertia a conversa de verdade.
    */
   return (
-    <div className="mx-auto flex max-w-[680px] flex-col gap-2.5">
+    /*
+     * **A conversa ocupa a largura toda, sem coluna centralizada.**
+     *
+     * Havia aqui um `mx-auto max-w-[680px]`. O alinhamento das bolhas estava
+     * certo — entrada à esquerda, saída à direita —, mas relativo a essa
+     * coluna, não à tela: numa área larga, a coluna flutuava no meio e a
+     * conversa inteira aparecia deslocada para o centro, com as mensagens
+     * recebidas começando longe da borda esquerda. Parecia bug de alinhamento
+     * e era o contêiner.
+     *
+     * Largura cheia é também o que o WhatsApp faz, e é o que faz a direção da
+     * mensagem ser legível de relance — que é a única coisa que o alinhamento
+     * precisa comunicar.
+     */
+    <div className="flex flex-col gap-2.5">
       {cortada && (
         <p className="mb-1 self-center rounded-full border border-dashed border-white/[0.15] px-3 py-1.5 text-center font-mono text-[9.5px] text-dim">
           mostrando as 500 mensagens mais recentes
