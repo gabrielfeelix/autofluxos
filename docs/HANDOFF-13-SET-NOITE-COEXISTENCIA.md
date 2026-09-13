@@ -5,6 +5,15 @@
 > certo contra a análise. Cada afirmação abaixo vem com **como foi verificada**,
 > justamente para você poder refazer em vez de acreditar.
 
+> ⚠️ **REVISADO EM 13/set 23h UTC. Leia
+> [HANDOFF-13-SET-NOITE-COEXISTENCIA-REVISAO.md](HANDOFF-13-SET-NOITE-COEXISTENCIA-REVISAO.md)
+> ANTES de agir por este.**
+>
+> Duas coisas aqui não se sustentam: o "zero alertas" é de uma janela em que o
+> diário de bordo ainda não existia (subiu 22:15, o cliente conectou 21:04), e o
+> `override_callback_uri` **é legível** com o token do canal — está correto,
+> apontando para nós. **Não faça o POST sugerido na hipótese 1.**
+
 ## O problema, em uma linha
 
 O primeiro cliente conectado por **coexistência** (WhatsApp Business no celular
