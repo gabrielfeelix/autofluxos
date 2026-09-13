@@ -128,9 +128,10 @@ export function PendenciasDaMeta({
       </ol>
 
       <p className="border-t border-white/[0.06] px-5 py-3 text-[11.5px] leading-5 text-muted/70">
-        A Meta costuma levar alguns minutos para reconhecer. Você não precisa
-        reconectar o número nem refazer nada por aqui: as conversas passam a
-        entrar sozinhas.
+        Já preencheu e o aviso continua? Recarregue a página: a Meta costuma
+        levar alguns minutos para reconhecer. Se insistir, confira se preencheu
+        no lugar exato que o item indica — há campos parecidos em telas
+        diferentes. Você não precisa reconectar o número nem refazer nada aqui.
       </p>
     </section>
   )

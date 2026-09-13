@@ -108,3 +108,19 @@ describe('os links levam à tela que resolve', () => {
     expect(p[0]?.link).toBeNull()
   })
 })
+
+describe('o fuso avisa que são dois campos diferentes', () => {
+  /*
+   * O defeito que isto trava: o cliente preencheu "Fuso horário" em
+   * **Informações da empresa**, viu America/Sao_Paulo na tela, e o aviso não
+   * saiu — porque o `timezone_id` que a Meta cobra é o da **WABA**, outro
+   * objeto, em outra aba. Dois campos com o mesmo nome, e só um resolve.
+   *
+   * Sem esse alerta no texto, a pessoa preenche o errado, conclui que o painel
+   * está quebrado, e para de confiar no aviso inteiro.
+   */
+  it('diz explicitamente que o da empresa não resolve', () => {
+    const fuso = pendenciasDaMeta(SAUDE_REAL).find((p) => p.id === 'fuso')
+    expect(fuso?.efeito).toContain('não o da empresa')
+  })
+})

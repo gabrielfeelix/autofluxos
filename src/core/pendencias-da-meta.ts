@@ -72,11 +72,11 @@ const CATALOGO: Record<number, Pendencia> = {
   },
   141007: {
     id: 'fuso',
-    titulo: 'Fuso horário',
+    titulo: 'Fuso horário da conta do WhatsApp',
     efeito:
-      'A Meta usa o fuso para organizar os horários das conversas. É escolher na lista, leva alguns segundos.',
-    onde: 'Abre as configurações da sua conta do WhatsApp no Gerenciador da Meta.',
-    rotuloDoLink: 'Escolher fuso',
+      'Atenção: é o fuso da conta do WhatsApp, não o da empresa. São dois campos parecidos em telas diferentes, e preencher o da empresa não resolve este aviso.',
+    onde: 'Abre a sua conta do WhatsApp. O campo fica junto com Moeda, na aba Preferências.',
+    rotuloDoLink: 'Abrir conta do WhatsApp',
     bloqueia: true,
   },
   141010: {
