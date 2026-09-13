@@ -861,11 +861,18 @@ function Historico({
      * recebidas começando longe da borda esquerda. Parecia bug de alinhamento
      * e era o contêiner.
      *
+     * O `w-full` não é decoração: o pai que rola é um `flex-col-reverse`, e
+     * num contêiner flex em coluna o filho é dimensionado pelo conteúdo no
+     * eixo cruzado em vez de esticar. Sem ele, este bloco encolhe até a maior
+     * bolha e fica centrado — que foi exatamente o sintoma que sobrou depois
+     * de tirar o `max-w`: as bolhas alinhavam certo entre si, e o conjunto
+     * todo flutuava no meio, longe das duas bordas.
+     *
      * Largura cheia é também o que o WhatsApp faz, e é o que faz a direção da
      * mensagem ser legível de relance — que é a única coisa que o alinhamento
      * precisa comunicar.
      */
-    <div className="flex flex-col gap-2.5">
+    <div className="flex w-full flex-col gap-2.5">
       {cortada && (
         <p className="mb-1 self-center rounded-full border border-dashed border-white/[0.15] px-3 py-1.5 text-center font-mono text-[9.5px] text-dim">
           mostrando as 500 mensagens mais recentes
