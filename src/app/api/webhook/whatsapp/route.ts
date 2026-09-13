@@ -58,22 +58,6 @@ export async function POST(req: Request) {
     return new Response('assinatura inválida', { status: 401 })
   }
 
-  /*
-   * **Diário de bordo temporário (13/set/2026).**
-   *
-   * Investigando por que nenhuma mensagem chega no Inbox de um cliente
-   * coexistente. Tudo indica que a Meta não está chamando — mas "não chega" e
-   * "chega e é descartado no meio" são indistinguíveis sem registrar a entrada.
-   *
-   * Fica só até a causa aparecer: alerta por chamada é barulho, e barulho em
-   * alerta faz parar de ler alerta. Remover assim que fechar o diagnóstico.
-   */
-  await alertar(
-    'webhook do WhatsApp recebido (diagnóstico)',
-    new Error(corpo.slice(0, 700)),
-    {},
-  ).catch(() => {})
-
   let payload: unknown
   try {
     payload = JSON.parse(corpo)

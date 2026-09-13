@@ -148,3 +148,35 @@ export function identidadeNaTela(
   const nome = estado?.verifiedName?.trim()
   return { titulo: telefone, abaixo: nome ? `${nome} · ${id}` : id }
 }
+
+/**
+ * Quantas horas a sincronização costuma levar antes de valer a pena estranhar.
+ *
+ * A doc da Meta diz "de alguns minutos a várias horas", e provedores relatam o
+ * mesmo: **enquanto o sync não termina, mensagem nova não chega por webhook**.
+ * Seis horas erra para o lado de explicar demais, o que é o lado certo: dizer
+ * "é normal" para quem já devia estar recebendo custa uma pergunta; não dizer
+ * nada faz a pessoa concluir que quebrou e ir mexer no que estava bom.
+ */
+export const RECEM_CONECTADO_H = 6
+
+/**
+ * Este número acabou de conectar e ainda pode estar sincronizando?
+ *
+ * Serve para a tela explicar um Inbox vazio sem acusar ninguém — foi a dúvida
+ * real do primeiro cliente coexistente, que conectou e ficou uma tarde achando
+ * que havia defeito.
+ *
+ * Sync terminado (progresso 100) tira o "recém": aí o silêncio já não tem essa
+ * explicação, e oferecê-la seria desculpa, não informação.
+ */
+export function recemConectado(
+  estado: EstadoNaTela | undefined,
+  agora: Date = new Date(),
+): boolean {
+  if (!estado?.coexistenciaEm) return false
+  if ((estado.historicoProgresso ?? 0) >= 100) return false
+
+  const desde = agora.getTime() - new Date(estado.coexistenciaEm).getTime()
+  return desde >= 0 && desde < RECEM_CONECTADO_H * 60 * 60 * 1_000
+}

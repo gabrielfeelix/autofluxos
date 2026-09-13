@@ -147,12 +147,21 @@ function linkDa(id: Pendencia['id'], saude: SaudeDaMeta): string | null {
 }
 
 /**
- * As mensagens estão travadas agora?
+ * A Meta está sinalizando pendência que ela mesma classifica como bloqueante?
  *
- * **Só `BLOCKED` conta.** `LIMITED` é conta que entrega com teto menor, e tratar
- * as duas igual faria a tela gritar "nada funciona" para quem está funcionando.
- * Estado que não conhecemos não vira alarme: na dúvida, a tela cala.
+ * **Não é prova de bloqueio, e o nome antigo (`temPendenciaBloqueante`) mentia.** Em
+ * 13/set/2026 uma WABA respondia `BLOCKED` enquanto **aceitava envio
+ * normalmente** — um `POST /messages` devolveu `wamid`. O `health_status` fica
+ * em cache e não recalcula quando o cliente resolve.
+ *
+ * Custo de ter acreditado nele: um cliente cadastrou cartão e fuso à toa, e a
+ * tela dizia "a Meta está segurando suas mensagens" para uma conta que
+ * enviava. Por isso o texto agora fala de **pendências abertas**, nunca de
+ * causa: a lista continua certa, a explicação é que não podia ser afirmada.
+ *
+ * `LIMITED` não entra: é conta que entrega com teto menor. Estado desconhecido
+ * também não — na dúvida, a tela cala.
  */
-export function estaBloqueado(saude: SaudeDaMeta | null | undefined): boolean {
+export function temPendenciaBloqueante(saude: SaudeDaMeta | null | undefined): boolean {
   return saude?.podeEnviar === 'BLOCKED'
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { estaBloqueado, pendenciasDaMeta } from './pendencias-da-meta'
+import { temPendenciaBloqueante, pendenciasDaMeta } from './pendencias-da-meta'
 
 /**
  * O caso real que originou isto: a conta do primeiro cliente coexistente
@@ -52,19 +52,19 @@ describe('pendenciasDaMeta', () => {
   })
 })
 
-describe('estaBloqueado', () => {
+describe('temPendenciaBloqueante — sinal, não prova', () => {
   it('BLOCKED trava', () => {
-    expect(estaBloqueado(SAUDE_REAL)).toBe(true)
+    expect(temPendenciaBloqueante(SAUDE_REAL)).toBe(true)
   })
 
   it('LIMITED não é travado — entrega com teto menor', () => {
-    expect(estaBloqueado({ podeEnviar: 'LIMITED', codigos: [141010] })).toBe(false)
+    expect(temPendenciaBloqueante({ podeEnviar: 'LIMITED', codigos: [141010] })).toBe(false)
   })
 
   it('AVAILABLE e desconhecido não alarmam', () => {
-    expect(estaBloqueado({ podeEnviar: 'AVAILABLE', codigos: [] })).toBe(false)
-    expect(estaBloqueado({ podeEnviar: 'COISA_NOVA', codigos: [] })).toBe(false)
-    expect(estaBloqueado(null)).toBe(false)
+    expect(temPendenciaBloqueante({ podeEnviar: 'AVAILABLE', codigos: [] })).toBe(false)
+    expect(temPendenciaBloqueante({ podeEnviar: 'COISA_NOVA', codigos: [] })).toBe(false)
+    expect(temPendenciaBloqueante(null)).toBe(false)
   })
 })
 

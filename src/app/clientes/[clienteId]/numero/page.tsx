@@ -180,7 +180,7 @@ export default async function Pagina({
          * é a única coisa nesta tela que importa: mexer em fluxo ou papel não
          * adianta enquanto a conta estiver travada.
          */}
-        <PendenciasDaMeta saude={saude} contexto="numero" />
+        <PendenciasDaMeta saude={saude} />
 
         {/*
          * Conectar o número que o cliente já usa.

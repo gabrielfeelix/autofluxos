@@ -8,8 +8,10 @@ import { sessaoAtual } from '@/server/sessao'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { IlustracaoInbox } from '@/components/design/ilustracoes'
 import { PendenciasDaMeta } from '@/components/cliente/pendencias-da-meta'
-import { estaBloqueado, type SaudeDaMeta } from '@/core/pendencias-da-meta'
+import { type SaudeDaMeta } from '@/core/pendencias-da-meta'
 import { saudeDoCliente } from '@/server/whatsapp/saude-do-cliente'
+import { recemConectado } from '@/core/coexistencia-na-tela'
+import { coexistenciaDoCliente } from '@/server/repos/coexistencia'
 import { ControleDeAutomacao } from '@/components/lead/controle-automacao'
 import { CamposColetados } from '@/components/lead/campos-coletados'
 import { CaixaDeResposta } from '@/components/lead/responder'
@@ -86,7 +88,8 @@ export default async function Pagina({
   const pagina = Math.max(1, Number(primeiro(busca.pagina)) || 1)
   const termo = limparBusca(primeiro(busca.busca))
 
-  const [cliente, fila, respostasRapidas, contagem, etiquetas, saude] = await Promise.all([
+  const [cliente, fila, respostasRapidas, contagem, etiquetas, saude, coexistencia] =
+    await Promise.all([
     acharCliente(clienteId),
     paginarLeads(clienteId, {
       atribuicao,
@@ -103,8 +106,16 @@ export default async function Pagina({
      * numa tela que já espera cinco consultas.
      */
     saudeDoCliente(clienteId),
+    coexistenciaDoCliente(clienteId),
   ])
   if (!cliente) notFound()
+
+  /*
+   * Qualquer número coexistente ainda sincronizando serve: a explicação é sobre
+   * a conta, e um cliente com dois números conectados no mesmo dia não precisa
+   * de dois avisos dizendo a mesma coisa.
+   */
+  const recem = Object.values(coexistencia).some((estado) => recemConectado(estado))
 
   const leads = fila.leads
 
@@ -190,7 +201,7 @@ export default async function Pagina({
           não tinha como corrigir o que digitou.
         */}
         {contagem.total === 0 ? (
-          <EstadoVazio clienteId={cliente.id} saude={saude} />
+          <EstadoVazio clienteId={cliente.id} saude={saude} recemConectado={recem} />
         ) : (
           <Conteudo
             clienteId={cliente.id}
@@ -226,33 +237,25 @@ function escolherLead(leads: Lead[], contatoId: string | undefined): Lead | null
 function EstadoVazio({
   clienteId,
   saude,
+  recemConectado: recem,
 }: {
   clienteId: string
   saude: SaudeDaMeta | null
+  recemConectado: boolean
 }) {
   /*
-   * **Inbox vazio tem duas causas, e elas não podem ter a mesma tela.**
+   * **O aviso acompanha a tela vazia, não toma o lugar dela.**
    *
-   * "Quando alguém falar com o número, a conversa aparece aqui" é verdade
-   * quando não há nada errado — e é mentira quando a Meta está segurando as
-   * mensagens. Foi exatamente essa frase que fez um cliente esperar por
-   * conversas que nunca iam chegar.
+   * A primeira versão substituía o estado vazio inteiro quando a Meta apontava
+   * pendência, dizendo que o Inbox estava vazio *por causa disso*. Era afirmar
+   * causa a partir de um sinal que mente: o `health_status` fica em cache, e a
+   * mesma conta que ele dava como bloqueada aceitava envio normalmente.
+   *
+   * Agora a tela diz o que sabe — não há conversa, e a Meta tem pendências
+   * abertas — sem amarrar uma coisa na outra. Inbox recém-conectado costuma
+   * demorar mesmo: enquanto a sincronização não termina, mensagem nova não
+   * chega, e isso não é defeito nem culpa de pendência nenhuma.
    */
-  if (estaBloqueado(saude)) {
-    return (
-      <section className="mx-auto mt-10 max-w-[620px]">
-        <PendenciasDaMeta saude={saude} contexto="inbox" />
-        <p className="text-center text-[12.5px] leading-6 text-muted">
-          Enquanto isso, a tela de{' '}
-          <Link href={`/clientes/${clienteId}/leads`} className="underline underline-offset-2">
-            Leads
-          </Link>{' '}
-          continua com todos os contatos já registrados.
-        </p>
-      </section>
-    )
-  }
-
   return (
     <section className="mx-auto mt-16 max-w-[440px] text-center">
       <IlustracaoInbox />
@@ -262,6 +265,23 @@ function EstadoVazio({
         Quando alguém falar com o número ligado ao bot, a conversa aparece aqui. A tela de Leads
         continua sendo o lugar para analisar todos os contatos.
       </p>
+
+      {/*
+       * Número recém-conectado demora: enquanto a Meta não termina de
+       * sincronizar, mensagem nova não chega. Dizer isso evita a conclusão de
+       * que algo quebrou — que foi o que aconteceu com o primeiro cliente.
+       */}
+      {recem && (
+        <p className="mt-3 rounded-[10px] border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-left text-[12px] leading-5 text-dim">
+          Este número foi conectado há pouco. A Meta ainda está sincronizando, e
+          isso pode levar algumas horas — até terminar, é normal nenhuma
+          conversa nova aparecer aqui.
+        </p>
+      )}
+
+      <div className="mt-4 text-left">
+        <PendenciasDaMeta saude={saude} />
+      </div>
       <Link href={`/clientes/${clienteId}/leads`} className="app-secondary-button mt-5 inline-block px-4 py-2.5 text-[12.5px]">
         Ver Leads
       </Link>

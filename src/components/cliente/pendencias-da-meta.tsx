@@ -1,5 +1,5 @@
 import { LogoDoCanal } from '@/components/design/selo-do-canal'
-import { estaBloqueado, pendenciasDaMeta, type SaudeDaMeta } from '@/core/pendencias-da-meta'
+import { temPendenciaBloqueante, pendenciasDaMeta, type SaudeDaMeta } from '@/core/pendencias-da-meta'
 
 /**
  * O aviso que explica por que as mensagens não estão chegando.
@@ -32,22 +32,11 @@ import { estaBloqueado, pendenciasDaMeta, type SaudeDaMeta } from '@/core/penden
  * e tratar como falha faria alguém abrir chamado em vez de resolver em dois
  * cliques.
  */
-export function PendenciasDaMeta({
-  saude,
-  contexto,
-}: {
-  saude: SaudeDaMeta | null
-  /**
-   * Muda só a primeira frase. No Inbox a pessoa chegou estranhando uma lista
-   * vazia; na tela do número ela chegou para configurar. A mesma informação,
-   * respondendo a pergunta que cada uma trouxe.
-   */
-  contexto: 'inbox' | 'numero'
-}) {
+export function PendenciasDaMeta({ saude }: { saude: SaudeDaMeta | null }) {
   const pendencias = pendenciasDaMeta(saude)
   if (pendencias.length === 0) return null
 
-  const travado = estaBloqueado(saude)
+  const travado = temPendenciaBloqueante(saude)
 
   return (
     <section
@@ -73,12 +62,10 @@ export function PendenciasDaMeta({
           <p className="mt-1 max-w-[64ch] text-[12.5px] leading-6 text-dim">
             {travado ? (
               <>
-                {contexto === 'inbox'
-                  ? 'Seu Inbox está vazio por causa disso, e não porque ninguém te procurou. '
-                  : 'Seu número está conectado certinho aqui no painel. '}
+                Seu número está conectado certinho aqui no painel.{' '}
                 {pendencias.length > 1
-                  ? 'Assim que você completar os dados abaixo na conta do WhatsApp, as conversas começam a entrar.'
-                  : 'Assim que você completar o dado abaixo na conta do WhatsApp, as conversas começam a entrar.'}
+                  ? 'A Meta pede estes dados na conta do WhatsApp, e sem eles ela pode segurar suas conversas.'
+                  : 'A Meta pede este dado na conta do WhatsApp, e sem ele ela pode segurar suas conversas.'}
               </>
             ) : (
               'Suas mensagens estão entrando normalmente. Completar isso aumenta o limite de conversas por dia, quando você tiver um tempo.'
@@ -128,10 +115,10 @@ export function PendenciasDaMeta({
       </ol>
 
       <p className="border-t border-white/[0.06] px-5 py-3 text-[11.5px] leading-5 text-muted/70">
-        Já preencheu e o aviso continua? Recarregue a página: a Meta costuma
-        levar alguns minutos para reconhecer. Se insistir, confira se preencheu
-        no lugar exato que o item indica — há campos parecidos em telas
-        diferentes. Você não precisa reconectar o número nem refazer nada aqui.
+        Já preencheu e o aviso continua? A Meta demora para reconhecer, e às
+        vezes leva horas — o aviso sair não é o que libera as conversas, então
+        não precisa refazer nada. Se quiser conferir, veja se preencheu no lugar
+        exato que o item indica: há campos parecidos em telas diferentes.
       </p>
     </section>
   )

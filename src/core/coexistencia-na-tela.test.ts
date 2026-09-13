@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   PARADO_MS,
+  RECEM_CONECTADO_H,
   identidadeNaTela,
+  recemConectado,
   progressoGeral,
   situacaoDoNumero,
   type EstadoNaTela,
@@ -253,5 +255,41 @@ describe('identidadeNaTela', () => {
 
   it('canal sem phone_number_id não quebra a tela', () => {
     expect(identidadeNaTela(undefined, null).titulo).toBe('sem número')
+  })
+})
+
+describe('recemConectado', () => {
+  const agora = new Date('2026-09-13T22:00:00Z')
+  const hAtras = (h: number) =>
+    new Date(agora.getTime() - h * 60 * 60 * 1_000).toISOString()
+
+  /*
+   * O caso real: conectou às 21:04, e uma hora depois nenhuma mensagem entrava.
+   * Não era defeito — a Meta ainda não tinha terminado de sincronizar. Sem a
+   * tela dizer isso, a conclusão foi "quebrou", e horas foram gastas nisso.
+   */
+  it('uma hora depois de conectar ainda é recente', () => {
+    expect(recemConectado({ coexistenciaEm: hAtras(1) }, agora)).toBe(true)
+  })
+
+  it('passada a janela, para de explicar', () => {
+    expect(recemConectado({ coexistenciaEm: hAtras(RECEM_CONECTADO_H + 1) }, agora)).toBe(false)
+  })
+
+  it('sync terminado tira o recém — aí o silêncio não tem essa desculpa', () => {
+    expect(
+      recemConectado({ coexistenciaEm: hAtras(1), historicoProgresso: 100 }, agora),
+    ).toBe(false)
+  })
+
+  it('sync andando mas incompleto continua explicando', () => {
+    expect(
+      recemConectado({ coexistenciaEm: hAtras(1), historicoProgresso: 40 }, agora),
+    ).toBe(true)
+  })
+
+  it('número que nunca foi coexistente não recebe o aviso', () => {
+    expect(recemConectado(undefined, agora)).toBe(false)
+    expect(recemConectado({ coexistenciaEm: null }, agora)).toBe(false)
   })
 })
