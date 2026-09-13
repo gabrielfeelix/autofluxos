@@ -7,6 +7,9 @@ import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 import { sessaoAtual } from '@/server/sessao'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { IlustracaoInbox } from '@/components/design/ilustracoes'
+import { PendenciasDaMeta } from '@/components/cliente/pendencias-da-meta'
+import { estaBloqueado, type SaudeDaMeta } from '@/core/pendencias-da-meta'
+import { saudeDoCliente } from '@/server/whatsapp/saude-do-cliente'
 import { ControleDeAutomacao } from '@/components/lead/controle-automacao'
 import { CamposColetados } from '@/components/lead/campos-coletados'
 import { CaixaDeResposta } from '@/components/lead/responder'
@@ -83,7 +86,7 @@ export default async function Pagina({
   const pagina = Math.max(1, Number(primeiro(busca.pagina)) || 1)
   const termo = limparBusca(primeiro(busca.busca))
 
-  const [cliente, fila, respostasRapidas, contagem, etiquetas] = await Promise.all([
+  const [cliente, fila, respostasRapidas, contagem, etiquetas, saude] = await Promise.all([
     acharCliente(clienteId),
     paginarLeads(clienteId, {
       atribuicao,
@@ -94,6 +97,12 @@ export default async function Pagina({
     listarRespostasRapidas(clienteId),
     contarPorAtribuicao(clienteId),
     listarEtiquetas(clienteId),
+    /*
+     * Só custa quando o Inbox está vazio, que é quando a resposta importa —
+     * mas a chamada vai junto das outras para não somar ida de rede em série
+     * numa tela que já espera cinco consultas.
+     */
+    saudeDoCliente(clienteId),
   ])
   if (!cliente) notFound()
 
@@ -181,7 +190,7 @@ export default async function Pagina({
           não tinha como corrigir o que digitou.
         */}
         {contagem.total === 0 ? (
-          <EstadoVazio clienteId={cliente.id} />
+          <EstadoVazio clienteId={cliente.id} saude={saude} />
         ) : (
           <Conteudo
             clienteId={cliente.id}
@@ -214,7 +223,36 @@ function escolherLead(leads: Lead[], contatoId: string | undefined): Lead | null
   )
 }
 
-function EstadoVazio({ clienteId }: { clienteId: string }) {
+function EstadoVazio({
+  clienteId,
+  saude,
+}: {
+  clienteId: string
+  saude: SaudeDaMeta | null
+}) {
+  /*
+   * **Inbox vazio tem duas causas, e elas não podem ter a mesma tela.**
+   *
+   * "Quando alguém falar com o número, a conversa aparece aqui" é verdade
+   * quando não há nada errado — e é mentira quando a Meta está segurando as
+   * mensagens. Foi exatamente essa frase que fez um cliente esperar por
+   * conversas que nunca iam chegar.
+   */
+  if (estaBloqueado(saude)) {
+    return (
+      <section className="mx-auto mt-10 max-w-[620px]">
+        <PendenciasDaMeta saude={saude} contexto="inbox" />
+        <p className="text-center text-[12.5px] leading-6 text-muted">
+          Enquanto isso, a tela de{' '}
+          <Link href={`/clientes/${clienteId}/leads`} className="underline underline-offset-2">
+            Leads
+          </Link>{' '}
+          continua com todos os contatos já registrados.
+        </p>
+      </section>
+    )
+  }
+
   return (
     <section className="mx-auto mt-16 max-w-[440px] text-center">
       <IlustracaoInbox />

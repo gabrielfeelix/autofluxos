@@ -42,6 +42,8 @@ export type EstadoDeCoexistencia = {
    */
   displayPhoneNumber?: string | null
   verifiedName?: string | null
+  /** A conta do WhatsApp na Meta. Preenche os links da tela de pendências. */
+  wabaId?: string | null
 }
 
 const COLUNAS =
@@ -478,7 +480,7 @@ export async function coexistenciaDoCliente(
   const { data, error } = await db()
     .from('channels')
     .select(
-      `id, ${COLUNAS}, contatos_sync_progresso, contatos_sync_visto_em, historico_sync_progresso, historico_sync_visto_em, display_phone_number, verified_name`,
+      `id, ${COLUNAS}, contatos_sync_progresso, contatos_sync_visto_em, historico_sync_progresso, historico_sync_visto_em, display_phone_number, verified_name, waba_id`,
     )
     .eq('client_id', clienteId)
 
@@ -495,6 +497,7 @@ export async function coexistenciaDoCliente(
       historicoVistoEm: (linha.historico_sync_visto_em ?? null) as string | null,
       displayPhoneNumber: (linha.display_phone_number ?? null) as string | null,
       verifiedName: (linha.verified_name ?? null) as string | null,
+      wabaId: (linha.waba_id ?? null) as string | null,
     }
   }
   return mapa

@@ -349,3 +349,58 @@ export async function wabasDoToken(token: string): Promise<string[]> {
       ?.target_ids ?? []
   )
 }
+
+const saudeSchema = z.object({
+  owner_business_info: z.object({ id: z.string().optional() }).optional(),
+  health_status: z
+    .object({
+      can_send_message: z.string().optional(),
+      entities: z
+        .array(
+          z.object({
+            can_send_message: z.string().optional(),
+            errors: z.array(z.object({ error_code: z.number() })).optional(),
+          }),
+        )
+        .optional(),
+    })
+    .optional(),
+})
+
+/**
+ * A Meta está deixando este número conversar?
+ *
+ * **A pergunta que faltava.** Um cliente conectou, tudo ficou verde do nosso
+ * lado, e nenhuma mensagem chegou — a conta dele estava `BLOCKED` por falta de
+ * cartão. Sem isto não há como a tela dizer o motivo, e o silêncio é
+ * indistinguível de "ninguém falou com você ainda".
+ *
+ * Os erros vêm espalhados por entidade (WABA, negócio, app); achatamos, porque
+ * quem lê a tela não precisa saber de qual delas veio a queixa — precisa saber
+ * o que fazer.
+ */
+export async function saudeDaWaba(
+  wabaId: string,
+  token: string,
+): Promise<{ podeEnviar: string | null; codigos: number[]; negocioId: string | null }> {
+  const url = `https://graph.facebook.com/${versaoGraph()}/${wabaId}?fields=health_status,owner_business_info`
+  const lido = saudeSchema.parse(
+    await pedir(url, { headers: { Authorization: `Bearer ${token}` } }),
+  )
+
+  const saude = lido.health_status
+  const codigos = (saude?.entities ?? []).flatMap((e) =>
+    (e.errors ?? []).map((erro) => erro.error_code),
+  )
+
+  /*
+   * O id do negócio vem junto porque é o que completa os links da tela: as
+   * telas de cobrança e de segurança da Meta pedem `business_id` na URL, e sem
+   * ele o cliente cai num seletor de contas em vez da tela que resolve.
+   */
+  return {
+    podeEnviar: saude?.can_send_message ?? null,
+    codigos,
+    negocioId: lido.owner_business_info?.id ?? null,
+  }
+}

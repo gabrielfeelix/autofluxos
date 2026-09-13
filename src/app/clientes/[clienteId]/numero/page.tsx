@@ -7,6 +7,7 @@ import { BotaoPerigo } from '@/components/design/botao-perigo'
 import { Dropdown } from '@/components/design/dropdown'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { LogoDoCanal } from '@/components/design/selo-do-canal'
+import { PendenciasDaMeta } from '@/components/cliente/pendencias-da-meta'
 import {
   acaoConectarNumero,
   acaoDefinirFluxosDoNumero,
@@ -27,6 +28,7 @@ import { coexistenciaDoCliente } from '@/server/repos/coexistencia'
 import { fluxoDoPapel, listarCanais } from '@/server/repos/conversas'
 import { listarFluxos } from '@/server/repos/fluxos'
 import { whatsappConfigurado } from '@/server/whatsapp/conexao'
+import { saudeDoCliente } from '@/server/whatsapp/saude-do-cliente'
 
 export const dynamic = 'force-dynamic'
 
@@ -98,11 +100,12 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [fluxos, canais, coexistencia, cabecalhos] = await Promise.all([
+  const [fluxos, canais, coexistencia, cabecalhos, saude] = await Promise.all([
     listarFluxos(cliente.id),
     listarCanais(cliente.id),
     coexistenciaDoCliente(cliente.id),
     headers(),
+    saudeDoCliente(cliente.id),
   ])
 
   // `erro` cobre os dois que a rota manda para `/painel?erro=`; quem chegar
@@ -171,6 +174,13 @@ export default async function Pagina({
             {aviso.texto}
           </p>
         )}
+
+        {/*
+         * **Antes de tudo o mais.** Se a Meta está segurando as mensagens, essa
+         * é a única coisa nesta tela que importa: mexer em fluxo ou papel não
+         * adianta enquanto a conta estiver travada.
+         */}
+        <PendenciasDaMeta saude={saude} contexto="numero" />
 
         {/*
          * Conectar o número que o cliente já usa.
