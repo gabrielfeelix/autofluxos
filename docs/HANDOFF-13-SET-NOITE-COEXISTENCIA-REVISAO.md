@@ -142,3 +142,94 @@ A causa provável acima é **inferência**, não fato provado — está marcada 
 "provável" de propósito. O que está provado é o que tem comando ao lado: o
 caminho de código funciona, e o roteamento da Meta aponta para nós. A resposta
 que falta está com o Eduardo, não no repositório.
+
+---
+
+# ATUALIZAÇÃO — 23:15 UTC: **são duas WABAs, e estávamos inscritos na errada**
+
+O dono confirmou que **o Eduardo aceitou compartilhar o histórico** — ele viu a
+tela. Isso derruba a "causa provável" que eu tinha escrito acima (confirmação
+pendente no aparelho). Boa: era inferência, e caiu no primeiro fato novo.
+
+Procurando outra coisa, o `debug_token` do canal entregou o que faltava:
+
+```
+granular_scopes:
+  whatsapp_business_management -> ['2042524849790437', '101920619426215']
+  whatsapp_business_messaging  -> ['2042524849790437', '101920619426215']
+```
+
+**Duas WABAs.** Nenhum documento anterior menciona a segunda.
+
+| | `2042524849790437` (gravada em `channels`) | `101920619426215` (a que ninguém viu) |
+|---|---|---|
+| `name` | `unknown` | **`Eduardo Yamamoto \| Gestor de Growth`** |
+| Portfólio | Portfólio EXTRA | Portfólio EXTRA |
+| Contém o número `110549275215531` | sim | **sim** |
+| App AutoFluxos inscrito | sim | **NÃO (estava vazio)** |
+
+O número aparece nas duas — por isso as sondas de leitura não decidiam qual
+roteia. Mas só uma delas tinha `subscribed_apps` vazio, e **é a que leva o nome
+real do negócio**, enquanto a que gravamos responde `name: unknown`.
+
+Isso explica todos os sintomas de uma vez, e melhor que a hipótese 1 do
+documento original: o roteamento não estava sobrescrito para o lugar errado —
+**nós é que estávamos escutando a WABA errada.** Webhook de WABA em que o app
+não está inscrito simplesmente não é entregue, sem erro e sem aviso.
+
+## O que foi feito (autorizado pelo dono, 23:14 UTC)
+
+```
+POST /v21.0/101920619426215/subscribed_apps  → {"success": true}
+```
+
+Confirmado: `subscribed_apps` da `101920619426215` agora lista AutoFluxos.
+Nada na outra WABA foi alterado. É reversível com `DELETE` no mesmo endpoint.
+
+## O que NÃO deu para recuperar
+
+Os dois syncs de uso único **já estão gastos**, e foram gastos apontando para a
+WABA errada:
+
+```
+POST /110549275215531/smb_app_data (smb_app_state_sync) → (#4) Limite de
+  solicitações de sincronização excedido
+POST /110549275215531/smb_app_data (history)            → idem
+```
+
+Ou seja: **a agenda e o histórico daquele onboarding não voltam.** Para
+recuperá-los, o Eduardo precisa ser desembarcado e refazer o Embedded Signup —
+e aí os syncs saem já com a inscrição certa.
+
+**As mensagens novas (`smb_message_echoes` e `messages`) não dependem disso.**
+Elas devem passar a chegar agora. É o que o próximo teste mede.
+
+## O teste que fecha o caso
+
+Peça ao Eduardo para **mandar uma mensagem pelo celular** (ou alguém mandar para
+ele). Depois:
+
+```bash
+# o diário de bordo grava toda chamada recebida, antes de qualquer filtro
+curl -s "$AUTOFLUXOS_SUPABASE_URL/rest/v1/alertas?select=criado_em,titulo,detalhe&order=criado_em.desc&limit=5" \
+  -H "apikey: $AUTOFLUXOS_SUPABASE_SECRET_KEY" -H "authorization: Bearer $AUTOFLUXOS_SUPABASE_SECRET_KEY"
+```
+
+- **Chegou alerta** → resolvido; o problema era a inscrição. Aí sim remova o
+  diário de bordo e trate o histórico perdido como decisão de produto
+  (refazer o onboarding ou não).
+- **Não chegou** → a inscrição não era a causa, e a próxima suspeita passa a ser
+  a hipótese 3 do documento original (os dois portfólios), que segue não
+  investigada.
+
+## O bug de produto que isto revela
+
+`terminarOnboarding` confia no `waba_id` que vem na query do retorno do Embedded
+Signup e **nunca confere se o número está mesmo naquela WABA**. Quando o cliente
+tem mais de uma, dá para inscrever numa e o número viver na outra — exatamente
+o que aconteceu aqui, em silêncio, gastando a janela de 24h.
+
+A correção certa é usar o `debug_token` (que já temos, em `conexao.ts`) para
+listar **todas** as WABAs do token e inscrever-se na que realmente contém o
+`phone_number_id`, em vez de confiar na query. **Não foi feito ainda** — é
+código, e o caso ainda não fechou.
