@@ -30,6 +30,7 @@ function canal(parcial: Partial<CanalSalvo> = {}): CanalSalvo {
     fluxoBoasVindasId: null,
     fluxoMidiaId: null,
     fluxoPosAtendimentoId: null,
+    desembarcadoEm: null,
     status: 'ativo',
     ...parcial,
   }

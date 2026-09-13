@@ -123,6 +123,27 @@ export const webhookSchema = z.object({
         changes: z
           .array(
             z.object({
+              /**
+               * **Qual campo do webhook chegou. Ler isto não é zelo: é o que
+               * impede o bot de responder ao próprio dono do negócio.**
+               *
+               * `smb_message_echoes` — o eco do que o dono manda pelo celular —
+               * traz `metadata.phone_number_id` e um `messages[]` com a mesma
+               * forma de uma mensagem recebida. Sem olhar o `field`, ele passa
+               * por este schema, o `from` (que é o número **do negócio**) vira
+               * um contato novo, a mensagem é gravada como `entrada`, e o motor
+               * responde. O dono recebe uma resposta automática do próprio bot,
+               * na conversa errada — exatamente o atropelo que a coexistência
+               * existe para evitar.
+               *
+               * `history` não cai nessa porque as mensagens dele moram em
+               * `value.history[]`, não em `value.messages`. É só o eco.
+               *
+               * Opcional porque payload antigo de teste não traz o campo; o
+               * filtro no laço trata a ausência como `messages`, que era o
+               * único campo quando eles foram escritos.
+               */
+              field: z.string().optional(),
               value: z.object({
                 metadata: z.object({ phone_number_id: z.string() }).optional(),
                 contacts: z
@@ -175,6 +196,16 @@ export async function receberMensagem(
     for (const mudanca of entrada.changes) {
       const valor = mudanca.value
       const numero = valor.metadata?.phone_number_id
+
+      /*
+       * **Só `messages`.** Ver o comentário do `field` no schema: o eco de
+       * coexistência tem a mesma forma de uma mensagem recebida, e quem o trata
+       * é `receberCoexistencia`, que sabe que ali o `from` é o negócio.
+       *
+       * Ausente conta como `messages`: quando estes payloads foram escritos,
+       * era o único campo que chegava aqui.
+       */
+      if (mudanca.field !== undefined && mudanca.field !== 'messages') continue
 
       // Sem `messages` é evento de status (entregue, lido). Não nos interessa.
       if (!numero || !valor.messages?.length) continue

@@ -40,6 +40,13 @@ export type CanalSalvo = {
   fluxoMidiaId: string | null
   /** Roda quando uma pessoa clica em "Já atendi". Nulo = não roda nada. */
   fluxoPosAtendimentoId: string | null
+  /**
+   * `ACCOUNT_OFFBOARDED` chegou: o cliente trocou de celular ou reinstalou o
+   * WhatsApp Business, e o companion da Cloud API foi desembarcado sozinho.
+   * Enquanto estiver preenchido, **o envio falha na Meta** — então quem envia
+   * pergunta isto antes. `ACCOUNT_RECONNECTED` limpa, e normalmente em minutos.
+   */
+  desembarcadoEm: string | null
   status: string
 }
 
@@ -52,7 +59,7 @@ export const COLUNA_DO_PAPEL: Record<PapelDoNumero, string> = {
 }
 
 const COLUNAS_DO_CANAL =
-  'id, client_id, provider, phone_number_id, ig_user_id, ig_username, token_ref, token_expira_em, flow_id, flow_boas_vindas_id, flow_midia_id, flow_pos_atendimento_id, status'
+  'id, client_id, provider, phone_number_id, ig_user_id, ig_username, token_ref, token_expira_em, flow_id, flow_boas_vindas_id, flow_midia_id, flow_pos_atendimento_id, status, desembarcado_em'
 
 function paraCanal(linha: Record<string, unknown>): CanalSalvo {
   return {
@@ -68,6 +75,7 @@ function paraCanal(linha: Record<string, unknown>): CanalSalvo {
     fluxoBoasVindasId: (linha.flow_boas_vindas_id ?? null) as string | null,
     fluxoMidiaId: (linha.flow_midia_id ?? null) as string | null,
     fluxoPosAtendimentoId: (linha.flow_pos_atendimento_id ?? null) as string | null,
+    desembarcadoEm: (linha.desembarcado_em ?? null) as string | null,
     status: linha.status as string,
   }
 }
@@ -552,7 +560,12 @@ export type ContextoDeResposta = {
   canal: CanalSalvo
   /** A sessão mais recente, para o bot calar quando uma pessoa assume. */
   sessaoId: string | null
-  /** Quando a pessoa escreveu pela última vez. `null` = nunca escreveu. */
+  /**
+   * Quando a pessoa escreveu pela última vez **por aqui**. `null` = nunca.
+   *
+   * Conversa importada pelo sync de coexistência não conta: ela é passado, e
+   * janela de 24h é presente. Ver o filtro `historico` na consulta.
+   */
   ultimaEntradaEm: string | null
   /**
    * O id, na Meta, da última mensagem que ela mandou.
@@ -589,11 +602,26 @@ export async function contextoDeResposta(
         .order('criado_em', { ascending: false })
         .limit(1)
         .maybeSingle(),
+      /*
+       * **`historico = false` não é filtro de arrumação: é a janela de 24h.**
+       *
+       * O sync de coexistência importa conversas de até 180 dias atrás, e elas
+       * entram como `direcao: 'entrada'` — são mensagens que a pessoa mandou
+       * mesmo, só que no passado. Sem este filtro, uma conversa importada vira
+       * "a última vez que ela falou", `dentroDaJanela` responde que dá para
+       * mandar texto livre, e a Meta recusa a entrega.
+       *
+       * A doc da Meta é explícita no ponto vizinho, e ele reforça a regra:
+       * mensagem que o dono manda **pelo app do celular** não cria nem estende
+       * janela nenhuma da Cloud API. Só o que chega pelo webhook `messages`
+       * abre janela — e é exatamente o que sobra aqui.
+       */
       db()
         .from('messages')
         .select('ts, wa_message_id')
         .eq('contact_id', contatoId)
         .eq('direcao', 'entrada')
+        .eq('historico', false)
         .order('ts', { ascending: false })
         .limit(1)
         .maybeSingle(),

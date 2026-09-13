@@ -28,6 +28,8 @@ function paraCanal(linha: Record<string, unknown>): CanalSalvo {
     fluxoBoasVindasId: (linha.flow_boas_vindas_id ?? null) as string | null,
     fluxoMidiaId: (linha.flow_midia_id ?? null) as string | null,
     fluxoPosAtendimentoId: (linha.flow_pos_atendimento_id ?? null) as string | null,
+    // Coexistência é coisa de WhatsApp; canal de Instagram nunca desembarca.
+    desembarcadoEm: null,
     status: linha.status as string,
   }
 }

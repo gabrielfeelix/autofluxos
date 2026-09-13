@@ -9,6 +9,22 @@ import { terminarOnboarding } from '@/server/whatsapp/onboarding'
 export const dynamic = 'force-dynamic'
 
 /**
+ * Um minuto, e não o padrão.
+ *
+ * Esta rota faz **cinco chamadas à Meta em sequência** antes de responder:
+ * trocar o `code` por token, ler o número, inscrever o app na WABA do cliente,
+ * e disparar os dois syncs. Cada uma é rede, e a soma passa folgadamente de
+ * alguns segundos num dia ruim da Graph API.
+ *
+ * O que um timeout aqui custa é desproporcional ao que ele parece: a função
+ * morre no meio, e o que já foi disparado **não volta atrás** — cada sync só
+ * pode ser disparado uma vez na vida daquele número. Terminar a sequência é
+ * mais importante que responder rápido, porque quem espera é uma pessoa que
+ * acabou de conectar e vai ver a tela de qualquer jeito.
+ */
+export const maxDuration = 60
+
+/**
  * Onde a Meta devolve o cliente depois do Embedded Signup **hospedado**.
  *
  * A Meta hospeda a tela inteira (o link do painel já vem com Coexistence
