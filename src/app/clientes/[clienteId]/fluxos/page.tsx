@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
+import { IlustracaoAutomacoes } from '@/components/design/ilustracoes'
 import { BotaoPerigo } from '@/components/design/botao-perigo'
 import {
   ModalFormulario,
@@ -269,7 +270,8 @@ export default async function Pagina({
 
           {fluxos.length === 0 && pastas.length === 0 ? (
             <div className="px-5 py-14 text-center">
-              <p className="text-[13.5px] font-semibold text-soft">
+              <IlustracaoAutomacoes />
+              <p className="mt-6 text-[13.5px] font-semibold text-soft">
                 Nenhum fluxo ainda
               </p>
               <p className="mt-1 text-xs leading-5 text-dim">

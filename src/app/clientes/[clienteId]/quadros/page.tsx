@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { BotaoPerigo } from '@/components/design/botao-perigo'
 import { ClienteShell } from '@/components/design/cliente-shell'
+import { IlustracaoQuadros } from '@/components/design/ilustracoes'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { Quadro } from '@/components/quadros/quadro'
 import { QuadroPadrao } from '@/components/quadros/quadro-padrao'
@@ -142,7 +143,8 @@ export default async function Pagina({
 
         {!aberto ? (
           <section className="app-card px-5 py-16 text-center">
-            <p className="text-[13.5px] font-semibold text-soft">Nenhum quadro ainda</p>
+            <IlustracaoQuadros />
+            <p className="mt-6 text-[13.5px] font-semibold text-soft">Nenhum quadro ainda</p>
             <p className="mx-auto mt-1.5 max-w-[440px] text-xs leading-5 text-dim">
               Um quadro é o seu funil desenhado: as etapas por onde um contato passa, do primeiro
               contato até o desfecho. Etiqueta é um fato sobre a pessoa e ela pode ter várias; etapa

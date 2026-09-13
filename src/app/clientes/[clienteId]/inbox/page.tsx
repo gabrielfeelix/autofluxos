@@ -6,6 +6,7 @@ import { NotaRapida } from '@/components/inbox/nota-rapida'
 import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 import { sessaoAtual } from '@/server/sessao'
 import { ClienteShell } from '@/components/design/cliente-shell'
+import { IlustracaoInbox } from '@/components/design/ilustracoes'
 import { ControleDeAutomacao } from '@/components/lead/controle-automacao'
 import { CamposColetados } from '@/components/lead/campos-coletados'
 import { CaixaDeResposta } from '@/components/lead/responder'
@@ -216,10 +217,8 @@ function escolherLead(leads: Lead[], contatoId: string | undefined): Lead | null
 function EstadoVazio({ clienteId }: { clienteId: string }) {
   return (
     <section className="mx-auto mt-16 max-w-[440px] text-center">
-      <span className="mx-auto flex size-12 items-center justify-center rounded-2xl border border-white/[0.1] bg-white/[0.035] text-xl">
-        ◌
-      </span>
-      <p className="mt-5 font-mono text-[10px] font-bold tracking-[0.16em] text-dim">INBOX VAZIO</p>
+      <IlustracaoInbox />
+      <p className="mt-6 font-mono text-[10px] font-bold tracking-[0.16em] text-dim">INBOX VAZIO</p>
       <h2 className="mt-2 text-[18px] font-bold tracking-[-0.02em]">Nenhuma conversa para atender</h2>
       <p className="mt-2 text-[13px] leading-6 text-muted">
         Quando alguém falar com o número ligado ao bot, a conversa aparece aqui. A tela de Leads

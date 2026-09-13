@@ -3,6 +3,7 @@ import { rotuloDoCampo } from '@/core/contatos/rotulo-do-campo'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
+import { IlustracaoContatos } from '@/components/design/ilustracoes'
 import { Suspense } from 'react'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarCanais } from '@/server/repos/conversas'
@@ -471,7 +472,8 @@ function PrimeiraVez({ clienteId, temCanal }: { clienteId: string; temCanal: boo
           <span className="mb-3.5 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/[0.08] px-3 py-1 text-[11px] font-bold text-emerald-300">
             <span className="size-1.5 rounded-full bg-emerald-400" /> Número no ar
           </span>
-          <h2 className="text-[15.5px] font-bold">Nenhum contato ainda</h2>
+          <IlustracaoContatos />
+          <h2 className="mt-6 text-[15.5px] font-bold">Nenhum contato ainda</h2>
           <p className="mt-1.5 text-[12.5px] leading-6 text-muted">
             Quando alguém conversar com o bot, a pessoa aparece aqui com tudo o que o fluxo coletar.
           </p>
