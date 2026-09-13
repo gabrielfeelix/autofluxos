@@ -283,20 +283,22 @@ descobrir pelo silêncio.
 
 Nada aqui está na documentação da Meta. Veio de quem implementou, e muda decisão.
 
-**1. Sincronizar pode quebrar o WhatsApp Business do cliente.** Há relato aberto
-e não resolvido no Chatwoot ([issue #12469](https://github.com/chatwoot/chatwoot/issues/12469),
-severidade 1, *"deal breaker, no workaround"*): durante a sincronização de
-mensagens e contatos, o app do celular **parou de enviar e receber**, e as
-tentativas de reconectar falharam. O relator diz que aquilo "destruiu o negócio"
-dele, que vendia só por WhatsApp.
+**1. Um relato de que a sincronização quebrou o WhatsApp Business do cliente —
+e a força dessa evidência é fraca.** No Chatwoot
+([issue #12469](https://github.com/chatwoot/chatwoot/issues/12469)): durante a
+sincronização, o app do celular parou de enviar e receber, e reconectar falhou.
 
-Isso é o pior cenário possível do nosso produto: a gente conecta e o cliente
-**perde o celular dele**. Duas consequências práticas:
+**Leia o tamanho disso antes de agir:** é de **18/set/2025** (quase um ano),
+é **um único relato**, está **sem nenhum comentário** desde então — ninguém
+confirmou nem reproduziu — e **não há causa raiz**: não se sabe se foi bug do
+Chatwoot ou da plataforma. O rótulo "severidade 1" é triagem do Chatwoot, não
+diagnóstico. Um bug de plataforma que derrubasse o WhatsApp de clientes teria
+mais de um relato em um ano.
 
-- **Teste em sandbox antes de qualquer cliente real** (ver 2c). Não estreie no
-  número do Eduardo.
-- Avise o cliente que a sincronização é o momento de risco, e faça num horário
-  em que ele não dependa do WhatsApp — nunca na sexta à tarde.
+Uma versão anterior deste documento tratou isso como alerta grave e disse "nunca
+estreie em cliente real". **Era peso demais para a evidência.** O que se
+justifica: acompanhar a primeira conexão de perto e não fazê-la num momento em
+que o cliente dependa do WhatsApp. Não justifica travar cronograma.
 
 **2. O cliente precisa abrir o WhatsApp Business a cada 14 dias.** Se não abrir,
 a Meta **derruba a conexão** e a entrega de mensagem para. Isso não aparece em
