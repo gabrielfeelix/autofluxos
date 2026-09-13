@@ -218,9 +218,23 @@ export function ConectarWhatsapp({
          *
          * Nascer em v4 não é preferência: o v2 morre em 15/out/2026.
          */
+        /*
+         * **São três campos, e faltava um.**
+         *
+         * O exemplo da doc de Coexistence traz `sessionInfoVersion: "3"` junto
+         * do `featureType` — e nós tínhamos só o `featureType`. A v4 funciona
+         * sem ele em fluxo comum, mas é o session logging que entrega o
+         * `phone_number_id` pelo `message`, e a própria lista de requisitos da
+         * Meta exige *"using Embedded Signup with session logging"*.
+         *
+         * Sem declarar a versão, o payload chega noutro formato — ou não chega.
+         * Foi exatamente o sintoma de 13/set: cliente terminando o fluxo e o
+         * número nunca aparecendo no navegador.
+         */
         extras: {
           setup: {},
           featureType: 'whatsapp_business_app_onboarding',
+          sessionInfoVersion: '3',
         },
       },
     )
