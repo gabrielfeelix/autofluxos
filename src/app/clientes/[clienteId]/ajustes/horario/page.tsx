@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
+import { Trilha } from '@/components/design/trilha'
 import { HorarioDeAtendimentoForm } from '@/components/cliente/horario'
 import { acaoSalvarHorario } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
@@ -37,6 +38,12 @@ export default async function Pagina({
           <span className="text-soft">Horário de atendimento</span>
         </nav>
 
+        <Trilha
+          caminho={[
+            { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },
+            { rotulo: 'Horário de atendimento' },
+          ]}
+        />
         <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">
           Horário de atendimento
         </h1>

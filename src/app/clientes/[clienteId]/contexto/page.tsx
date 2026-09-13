@@ -1,6 +1,6 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
+import { Trilha } from '@/components/design/trilha'
 import { FormularioSalvar } from '@/components/design/formulario-salvar'
 import { acaoSalvarContexto } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
@@ -44,13 +44,13 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   return (
     <ClienteShell cliente={cliente} ativa="ajustes">
       <main className="w-full max-w-[1100px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
-        <Link
-          href={`/clientes/${clienteId}/ajustes`}
-          className="mb-3.5 inline-block text-[12.5px] text-muted transition hover:text-accent"
-        >
-          ← Ajustes
-        </Link>
 
+        <Trilha
+          caminho={[
+            { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },
+            { rotulo: 'Contexto do negócio' },
+          ]}
+        />
         <h1 className="text-[25px] font-bold tracking-[-0.02em]">Contexto do negócio</h1>
         <p className="mt-1.5 mb-6 max-w-[620px] text-[13px] leading-6 text-dim">
           É a <strong className="text-soft">única fonte de verdade</strong> do bloco de IA. Ela
