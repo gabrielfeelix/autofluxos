@@ -74,7 +74,9 @@ import {
   criarFluxo,
   definirAtivo,
   definirIa,
+  duplicarFluxo,
   publicar,
+  reordenarFluxos,
   renomearFluxo,
   salvarRascunho,
 } from './repos/fluxos'
@@ -413,6 +415,43 @@ export async function acaoRenomearFluxo(
   revalidatePath(`/clientes/${clienteId}/fluxos`)
   revalidatePath(`/clientes/${clienteId}/fluxos/${fluxoId}`)
   return { ok: true, nome: r.nome }
+}
+
+/**
+ * Duplicar a automação.
+ *
+ * Revalida só a lista: a cópia nasce lá, desligada, e o editor do original não
+ * mudou nada. Quem duplicou continua olhando para o fluxo de onde partiu.
+ */
+export async function acaoDuplicarFluxo(
+  clienteId: string,
+  fluxoId: string,
+): Promise<{ ok: boolean; id?: string; nome?: string; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const r = await duplicarFluxo(clienteId, fluxoId)
+  if (!r.ok) return { ok: false, erro: r.motivo }
+
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  return { ok: true, id: r.id, nome: r.nome }
+}
+
+/**
+ * Gravar a ordem da lista.
+ *
+ * Recebe a lista inteira na ordem nova, e não "este subiu uma posição": a tela
+ * já sabe a ordem final depois do arrasto, e mandar a lista fecha a porta para
+ * as duas metades discordarem sobre qual era a posição anterior.
+ */
+export async function acaoReordenarFluxos(
+  clienteId: string,
+  idsNaOrdem: string[],
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  await reordenarFluxos(clienteId, idsNaOrdem)
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  return { ok: true }
 }
 
 /**

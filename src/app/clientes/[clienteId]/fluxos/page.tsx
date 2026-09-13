@@ -50,6 +50,8 @@ import { listarQuadros } from '@/server/repos/quadros'
 import { SeloDoCanal } from '@/components/design/selo-do-canal'
 import { InterruptorDeFluxo } from '@/components/fluxos/interruptor'
 import { MoverFluxo } from '@/components/editor/mover-fluxo'
+import { DuplicarFluxo } from '@/components/fluxos/duplicar'
+import { OrdenarFluxo } from '@/components/fluxos/ordenar'
 import { NomeDoFluxo } from '@/components/editor/nome-do-fluxo'
 import { ETIQUETAS, MODELOS } from '@/exemplos/modelos'
 import { AbaDeTemplates, NovaAutomacao } from '@/components/fluxos/templates'
@@ -416,6 +418,17 @@ export default async function Pagina({
                       clique chega no link, e o botão parece não funcionar.
                       Foi exatamente o que acontecia com Apagar e Mover.
                     */}
+                    {/*
+                      Subir/descer antes do interruptor: a ordem é do grupo, e
+                      os ids do grupo são o que a ação precisa receber inteiro.
+                    */}
+                    <span className="relative mr-2">
+                      <OrdenarFluxo
+                        clienteId={cliente.id}
+                        fluxoId={fluxo.id}
+                        idsDoGrupo={grupo.fluxos.map((f) => f.id)}
+                      />
+                    </span>
                     <span className="relative mr-3">
                       <InterruptorDeFluxo
                         clienteId={cliente.id}
@@ -435,6 +448,13 @@ export default async function Pagina({
                       </span>
                     )}
                     {/* Fora do `Link`: botão dentro de link é clique ambíguo. */}
+                    <span className="relative mr-1">
+                      <DuplicarFluxo
+                        clienteId={cliente.id}
+                        fluxoId={fluxo.id}
+                        nome={fluxo.nome}
+                      />
+                    </span>
                     <span className="relative">
                       <BotaoPerigo
                         titulo="Apaga esta automação. Recusa enquanto ela estiver ligada a um número."

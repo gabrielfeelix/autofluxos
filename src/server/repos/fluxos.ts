@@ -85,10 +85,11 @@ type Linha = {
   pasta_id: string | null
   ativo: boolean
   canal: string
+  ordem: number | null
 }
 
 const COLUNAS =
-  'id, client_id, nome, rascunho, atualizado_em, versao_publicada_id, ia_habilitada, pasta_id, ativo, canal'
+  'id, client_id, nome, rascunho, atualizado_em, versao_publicada_id, ia_habilitada, pasta_id, ativo, canal, ordem'
 
 /**
  * `rascunho` é `jsonb`: o banco aceita qualquer coisa ali. Uma migração
@@ -126,6 +127,11 @@ export async function listarFluxos(clienteId: string): Promise<FluxoSalvo[]> {
     .from('flows')
     .select(COLUNAS)
     .eq('client_id', clienteId)
+    /*
+     * A posição escolhida primeiro; quem nunca foi arrastado vai para o fim,
+     * na ordem em que nasceu — que é como a lista sempre saiu (migration 0046).
+     */
+    .order('ordem', { ascending: true, nullsFirst: false })
     .order('criado_em', { ascending: true })
 
   if (ehIdInvalido(error)) return []
@@ -541,6 +547,99 @@ export async function renomearFluxo(
   if (error) throw new Error(`não deu para renomear a automação: ${error.message}`)
   if ((data?.length ?? 0) !== 1) return { ok: false, motivo: 'esta automação não existe mais' }
   return { ok: true, nome: limpo }
+}
+
+/**
+ * Duplicar uma automação.
+ *
+ * O pedido foi literal: *"tem que ser possível duplicar algum fluxo existente
+ * também"*. Quem opera monta uma variação do fluxo que já funciona — o mesmo
+ * atendimento com outro texto, outro canal — e até aqui a única saída era
+ * redesenhar tudo à mão e errar um nó no meio.
+ *
+ * **A cópia nasce desligada e sem versão publicada, e isso não é detalhe.**
+ * `ativo` é o que decide se o gatilho entra; `versao_publicada_id` é o que o
+ * motor executa. Copiar os dois colocaria um bot novo no ar no instante do
+ * clique, atendendo gente de verdade com um desenho que ninguém revisou. A
+ * cópia é rascunho até alguém publicar, que é o mesmo caminho de qualquer
+ * automação nova.
+ *
+ * O que vem junto: o desenho, o canal, a pasta e o ajuste de IA — tudo que
+ * descreve **como** ela funciona. O que fica para trás: o estado de publicação,
+ * as métricas e o histórico de versões, que descrevem o que a original fez e
+ * não pertencem à cópia.
+ */
+export async function duplicarFluxo(
+  clienteId: string,
+  fluxoId: string,
+): Promise<{ ok: true; id: string; nome: string } | { ok: false; motivo: string }> {
+  if (!pareceUuid(fluxoId)) return { ok: false, motivo: 'esta automação não existe mais' }
+
+  const original = await acharFluxo(fluxoId)
+  if (!original || original.clienteId !== clienteId) {
+    return { ok: false, motivo: 'esta automação não existe mais' }
+  }
+
+  /*
+   * O nome precisa caber no limite depois do sufixo, e não antes: "(cópia)"
+   * são sete caracteres, e um nome no teto viraria um `check` recusado pelo
+   * banco — erro de banco numa tela que devia só copiar.
+   */
+  const SUFIXO = ' (cópia)'
+  const base = original.nome.slice(0, LIMITE_NOME_DO_FLUXO - SUFIXO.length).trimEnd()
+
+  const { data, error } = await db()
+    .from('flows')
+    .insert({
+      client_id: clienteId,
+      nome: `${base}${SUFIXO}`,
+      rascunho: original.rascunho,
+      ia_habilitada: original.iaHabilitada,
+      canal: original.canal,
+      pasta_id: original.pastaId,
+      ativo: false,
+    })
+    .select('id, nome')
+    .single()
+
+  if (error) throw new Error(`não deu para duplicar a automação: ${error.message}`)
+  return { ok: true, id: data.id as string, nome: data.nome as string }
+}
+
+/**
+ * A nova ordem da lista, inteira.
+ *
+ * Recebe os ids na ordem desejada e grava a posição de cada um. Reescrever
+ * todos numa passada — em vez de "troque o 3 com o 4" — é o que mantém a lista
+ * consistente quando duas abas arrastam ao mesmo tempo: a última a gravar
+ * ganha por inteiro, em vez de as duas aplicarem trocas parciais e sobrar uma
+ * ordem que ninguém pediu.
+ *
+ * Ids que não são do cliente são ignorados pelo `eq('client_id')` de cada
+ * escrita — a URL é adivinhável, e reordenar não pode virar uma forma de
+ * descobrir se um id existe em outra conta.
+ */
+export async function reordenarFluxos(
+  clienteId: string,
+  idsNaOrdem: string[],
+): Promise<void> {
+  const ids = idsNaOrdem.filter(pareceUuid)
+  if (ids.length === 0) return
+
+  /*
+   * Uma escrita por linha. São dezenas, não milhares, e a alternativa
+   * (`upsert` em lote) exigiria mandar a linha inteira de volta — inclusive o
+   * `rascunho`, que é o campo grande — só para mudar um inteiro.
+   */
+  for (const [posicao, id] of ids.entries()) {
+    const { error } = await db()
+      .from('flows')
+      .update({ ordem: posicao })
+      .eq('id', id)
+      .eq('client_id', clienteId)
+
+    if (error) throw new Error(`não deu para reordenar as automações: ${error.message}`)
+  }
 }
 
 /** Liga ou desliga a IA desta automação. É o que se vende, então é explícito. */

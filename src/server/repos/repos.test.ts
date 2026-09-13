@@ -10,7 +10,9 @@ import {
   apagarFluxo,
   criarFluxo,
   definirIa,
+  duplicarFluxo,
   listarFluxos,
+  reordenarFluxos,
   listarVersoes,
   fluxosQueSaltamPara,
   publicar,
@@ -343,6 +345,83 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
    * um fluxo que um número executa deixa o bot mudo no WhatsApp de gente de
    * verdade, e desligar o número tem que ser um ato deliberado.
    */
+  /**
+   * Duplicar copia o desenho e **não** copia o estado de publicação.
+   *
+   * É a parte que erra caro: uma cópia que nascesse ligada e publicada
+   * colocaria um bot que ninguém revisou atendendo gente de verdade no
+   * instante do clique.
+   */
+  it('duplica o desenho, e a cópia nasce desligada e sem publicar', async () => {
+    const cliente = await criarCliente(`${marca} duplicar`)
+    criados.push(cliente.id)
+
+    const original = await criarFluxo(cliente.id, `${marca} original`, fluxoNovo())
+    await publicar(original.id, cliente.id, original.rascunho)
+
+    const depoisDePublicar = await acharFluxo(original.id)
+    expect(depoisDePublicar?.versaoPublicadaId).not.toBeNull()
+
+    const r = await duplicarFluxo(cliente.id, original.id)
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+
+    const copia = await acharFluxo(r.id)
+    expect(copia?.nome).toBe(`${marca} original (cópia)`)
+    expect(copia?.rascunho).toEqual(depoisDePublicar?.rascunho)
+    expect(copia?.ativo).toBe(false)
+    expect(copia?.versaoPublicadaId).toBeNull()
+  })
+
+  it('não duplica a automação de um cliente pelo id de outro', async () => {
+    const dono = await criarCliente(`${marca} dono-dup`)
+    const intruso = await criarCliente(`${marca} intruso-dup`)
+    criados.push(dono.id, intruso.id)
+
+    const fluxo = await criarFluxo(dono.id, `${marca} alheio`, fluxoNovo())
+    const r = await duplicarFluxo(intruso.id, fluxo.id)
+
+    expect(r.ok).toBe(false)
+    expect(await listarFluxos(intruso.id)).toEqual([])
+  })
+
+  /**
+   * A lista sai na ordem escolhida, e quem nunca foi arrastado vai para o fim
+   * por `criado_em` — que é como ela sempre saiu.
+   */
+  it('reordena a lista, e quem não tem ordem fica no fim', async () => {
+    const cliente = await criarCliente(`${marca} ordem`)
+    criados.push(cliente.id)
+
+    const a = await criarFluxo(cliente.id, `${marca} a`, fluxoNovo())
+    const b = await criarFluxo(cliente.id, `${marca} b`, fluxoNovo())
+    const c = await criarFluxo(cliente.id, `${marca} c`, fluxoNovo())
+
+    // sem ordem nenhuma: a ordem de nascimento
+    expect((await listarFluxos(cliente.id)).map((f) => f.id)).toEqual([a.id, b.id, c.id])
+
+    await reordenarFluxos(cliente.id, [c.id, a.id, b.id])
+    expect((await listarFluxos(cliente.id)).map((f) => f.id)).toEqual([c.id, a.id, b.id])
+
+    // o que nasce depois não tem ordem, e cai no fim mesmo tendo nascido por último
+    const d = await criarFluxo(cliente.id, `${marca} d`, fluxoNovo())
+    expect((await listarFluxos(cliente.id)).map((f) => f.id)).toEqual([c.id, a.id, b.id, d.id])
+  })
+
+  it('reordenar não alcança a automação de outro cliente', async () => {
+    const dono = await criarCliente(`${marca} dono-ord`)
+    const intruso = await criarCliente(`${marca} intruso-ord`)
+    criados.push(dono.id, intruso.id)
+
+    const primeiro = await criarFluxo(dono.id, `${marca} 1o`, fluxoNovo())
+    const segundo = await criarFluxo(dono.id, `${marca} 2o`, fluxoNovo())
+
+    // o intruso manda a ordem invertida dos fluxos do dono
+    await reordenarFluxos(intruso.id, [segundo.id, primeiro.id])
+
+    expect((await listarFluxos(dono.id)).map((f) => f.id)).toEqual([primeiro.id, segundo.id])
+  })
+
   it('RECUSA apagar automação ligada a um número, e aceita depois de desligar', async () => {
     const cliente = await criarCliente(`${marca} apagar`)
     criados.push(cliente.id)
