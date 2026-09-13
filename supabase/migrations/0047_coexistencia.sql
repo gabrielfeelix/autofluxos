@@ -142,3 +142,30 @@ comment on column public.messages.historico is
 create index if not exists messages_historico_idx
   on public.messages (contact_id, ts desc)
   where historico = true;
+
+-- ---------------------------------------------------------------------------
+-- 4. O progresso da sincronização
+-- ---------------------------------------------------------------------------
+--
+-- **A sincronização pode levar até 6 horas, e pode falhar de vez.** Não está na
+-- doc da Meta; veio de quem implementou (ver "O que a doc oficial não conta" no
+-- HANDOFF-COEXISTENCE.md).
+--
+-- Sem guardar o progresso, "ainda rodando" e "morreu no meio" são exatamente a
+-- mesma coisa do lado de fora: nenhum dado novo chegando. O webhook manda
+-- `progress` de 0 a 100 em cada lote, e gravá-lo é o que separa as duas — e o
+-- que permite a tela mostrar andamento em vez de uma ampulheta de seis horas.
+--
+-- `visto_em` é o par necessário: progresso parado em 40 **há duas horas** é uma
+-- falha; parado em 40 há dez segundos é a sincronização andando. O número
+-- sozinho não distingue.
+alter table public.channels
+  add column if not exists contatos_sync_progresso smallint,
+  add column if not exists contatos_sync_visto_em timestamptz,
+  add column if not exists historico_sync_progresso smallint,
+  add column if not exists historico_sync_visto_em timestamptz;
+
+comment on column public.channels.contatos_sync_progresso is
+  'Último progress (0-100) do smb_app_state_sync. Com visto_em, separa "andando" de "travou".';
+comment on column public.channels.historico_sync_progresso is
+  'Último progress (0-100) do history. A sincronização pode levar até 6h — ver HANDOFF-COEXISTENCE.md.';

@@ -8,6 +8,7 @@ import {
   type CanalSalvo,
 } from './repos/conversas'
 import {
+  anotarProgressoDoSync,
   apagarContatosDaAgenda,
   guardarContatosDaAgenda,
   marcarDesembarque,
@@ -384,6 +385,47 @@ async function tratarAgenda(
 
   await guardarContatosDaAgenda(canal.clienteId, canal.id, aGravar)
   await apagarContatosDaAgenda(canal.clienteId, aApagar)
+
+  await anotar(canal, 'contatos', ultimoProgresso(itens.map((i) => i.metadata?.progress)))
+}
+
+/**
+ * O último progresso informado no lote, se algum veio.
+ *
+ * `undefined` quando nenhum item trouxe o campo — que é diferente de `0`, o
+ * progresso legítimo de uma sincronização que acabou de começar.
+ */
+function ultimoProgresso(valores: (number | undefined)[]): number | undefined {
+  for (let i = valores.length - 1; i >= 0; i -= 1) {
+    const valor = valores[i]
+    if (typeof valor === 'number') return valor
+  }
+  return undefined
+}
+
+/**
+ * Anota o progresso sem deixar isso derrubar a importação.
+ *
+ * **Melhor-esforço de propósito.** O lote que chegou junto já foi gravado; uma
+ * falha ao anotar o andamento não pode desfazer isso nem impedir o próximo
+ * lote. O progresso serve para a tela saber que a coisa anda — perder um ponto
+ * dele é bem menos grave que perder um pedaço do histórico, que não volta.
+ */
+async function anotar(
+  canal: CanalSalvo,
+  tipo: 'contatos' | 'historico',
+  progresso: number | undefined,
+): Promise<void> {
+  if (progresso === undefined) return
+
+  try {
+    await anotarProgressoDoSync(canal.id, tipo, progresso)
+  } catch (erro) {
+    await alertar('não deu para anotar o progresso da sincronização', erro, {
+      cliente: canal.clienteId,
+      sync: tipo,
+    })
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -427,6 +469,13 @@ async function tratarHistorico(
       }
     }
   }
+
+  /*
+   * O progresso vem do último lote **na ordem de `chunk_order`**, não na de
+   * chegada — os lotes chegam fora de ordem, e o progresso do que chegou por
+   * último não é necessariamente o mais adiantado.
+   */
+  await anotar(canal, 'historico', ultimoProgresso(lotes.map((l) => l.metadata?.progress)))
 }
 
 /**

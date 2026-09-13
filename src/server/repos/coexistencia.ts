@@ -410,3 +410,36 @@ export async function salvarNumeroDoOnboarding(entrada: {
 
   return { canalId: (data as { id: string }).id }
 }
+
+/**
+ * O progresso de uma sincronização, como o último lote reportou.
+ *
+ * **A sincronização pode levar até 6 horas e pode falhar de vez** — não está na
+ * doc da Meta, veio de quem implementou. Sem gravar isto, "ainda rodando" e
+ * "morreu no meio" são a mesma coisa vista de fora: nenhum dado novo chegando.
+ *
+ * Grava o número **e** a hora. Progresso parado em 40 há duas horas é falha;
+ * parado em 40 há dez segundos é a sincronização andando. O número sozinho não
+ * distingue os dois, e é a distinção que importa para quem olha a tela.
+ *
+ * Melhor-esforço: falhar em anotar o progresso não pode derrubar a importação
+ * do lote que chegou junto. Quem chama trata o erro, não propaga.
+ */
+export async function anotarProgressoDoSync(
+  canalId: string,
+  tipo: 'contatos' | 'historico',
+  progresso: number,
+): Promise<void> {
+  const prefixo = tipo === 'contatos' ? 'contatos_sync' : 'historico_sync'
+
+  const { error } = await db()
+    .from('channels')
+    .update({
+      // A Meta manda 0 a 100. Um valor fora disso é ruído e não vale gravar.
+      [`${prefixo}_progresso`]: Math.max(0, Math.min(100, Math.round(progresso))),
+      [`${prefixo}_visto_em`]: new Date().toISOString(),
+    })
+    .eq('id', canalId)
+
+  if (error) throw new Error(`não deu para anotar o progresso: ${error.message}`)
+}

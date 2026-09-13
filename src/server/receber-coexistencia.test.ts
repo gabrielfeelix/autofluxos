@@ -301,6 +301,42 @@ describe('o envelope', () => {
   })
 
   /**
+   * A sincronização pode levar **até 6 horas** e pode falhar de vez (relato de
+   * quem implementou, não da doc da Meta). O `progress` é o que separa "ainda
+   * rodando" de "morreu no meio" — se o schema não o lesse, as duas situações
+   * ficariam idênticas vistas de fora: nenhum dado novo chegando.
+   */
+  it('lê o progresso dos dois syncs', () => {
+    const analise = webhookDeCoexistenciaSchema.safeParse({
+      entry: [
+        {
+          changes: [
+            {
+              field: 'history',
+              value: {
+                metadata: { phone_number_id: '1301107846409860' },
+                history: [{ metadata: { phase: 1, chunk_order: 3, progress: 75 }, threads: [] }],
+              },
+            },
+            {
+              field: 'smb_app_state_sync',
+              value: {
+                metadata: { phone_number_id: '1301107846409860' },
+                state_sync: [{ type: 'contact', metadata: { progress: 40 } }],
+              },
+            },
+          ],
+        },
+      ],
+    })
+
+    expect(analise.success).toBe(true)
+    const mudancas = analise.success ? analise.data.entry[0]?.changes : []
+    expect(mudancas?.[0]?.value.history?.[0]?.metadata?.progress).toBe(75)
+    expect(mudancas?.[1]?.value.state_sync?.[0]?.metadata?.progress).toBe(40)
+  })
+
+  /**
    * O echo de uma mensagem que o dono mandou pelo celular: é o que cala o bot.
    * A direção precisa sair `saida` do payload cru, senão o handoff não dispara
    * e o bot atropela a conversa que ele já estava tendo.
