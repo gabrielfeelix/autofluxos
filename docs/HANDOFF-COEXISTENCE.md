@@ -279,6 +279,58 @@ Não é bloqueio nosso, mas é onde ele trava calado — a tela de conexão tem 
 avisar disso, e o ideal é conferir e mostrar o estado em vez de deixar o cliente
 descobrir pelo silêncio.
 
+## O que a doc oficial não conta (apurado na web em 13/09)
+
+Nada aqui está na documentação da Meta. Veio de quem implementou, e muda decisão.
+
+**1. Sincronizar pode quebrar o WhatsApp Business do cliente.** Há relato aberto
+e não resolvido no Chatwoot ([issue #12469](https://github.com/chatwoot/chatwoot/issues/12469),
+severidade 1, *"deal breaker, no workaround"*): durante a sincronização de
+mensagens e contatos, o app do celular **parou de enviar e receber**, e as
+tentativas de reconectar falharam. O relator diz que aquilo "destruiu o negócio"
+dele, que vendia só por WhatsApp.
+
+Isso é o pior cenário possível do nosso produto: a gente conecta e o cliente
+**perde o celular dele**. Duas consequências práticas:
+
+- **Teste em sandbox antes de qualquer cliente real** (ver 2c). Não estreie no
+  número do Eduardo.
+- Avise o cliente que a sincronização é o momento de risco, e faça num horário
+  em que ele não dependa do WhatsApp — nunca na sexta à tarde.
+
+**2. O cliente precisa abrir o WhatsApp Business a cada 14 dias.** Se não abrir,
+a Meta **derruba a conexão** e a entrega de mensagem para. Isso não aparece em
+lugar nenhum da doc oficial e é uma fonte silenciosa de "parou de funcionar".
+Vale monitorar e avisar antes de cair.
+
+**3. O nome do negócio trava depois do onboarding.** A Meta congela para manter
+consistência entre os dois lados. Se o cliente quiser mudar, é antes, não depois.
+
+**4. A sincronização é lenta e pode falhar.** Relatos de **até 6 horas**, e de
+falhar de vez. Não desenhe a tela supondo que termina em minutos: ela precisa
+mostrar progresso (o webhook traz `progress` 0–100) e tolerar falha.
+
+**5. Grupos não vêm.** Mensagens de grupo não entram na sincronização — nem
+histórico, nem echo. Se o cliente atende em grupo, aquilo é invisível para nós.
+
+**6. Taxa de rejeição alta.** Há relato de números recusados na conexão sem
+motivo claro. Trate "não deu" como resultado possível do onboarding, com
+mensagem honesta na tela, não como bug nosso.
+
+**7. Brasil é suportado** — e desde jun/2026 a cobertura é global, inclusive UE e
+Reino Unido, que antes estavam de fora. Mas a elegibilidade é decidida **por
+número** no onboarding, não só pelo país: um erro de país não significa que o
+mercado está fechado.
+
+**8. Linha de crédito de Coexistence não migra.** Para quem usa (não é o nosso
+caso, ver acima), ela não pode ser removida nem transferida para outro provedor.
+Vale saber porque significa que **trocar de provedor depois é caro para o
+cliente** — é um argumento de venda, e também um motivo para não prometer
+portabilidade fácil.
+
+> Fontes: a issue do Chatwoot acima, e as bases de conhecimento de respond.io,
+> chakrahq, wati.io e gohighlevel, que documentam o que veem no suporte.
+
 ## Limitações que valem dizer ao cliente antes de vender
 
 - Número em coexistência fica travado em **20 mensagens/s**.
