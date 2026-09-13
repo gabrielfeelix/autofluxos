@@ -213,7 +213,9 @@ export async function dispararSync(
 
 /** O app do WhatsApp está configurado neste ambiente? A tela pergunta isso. */
 export function whatsappConfigurado(): boolean {
-  return Boolean(process.env.META_APP_ID && process.env.META_WHATSAPP_CONFIG_ID)
+  // `.trim()` pelo mesmo motivo da tela: variável gravada com `echo` carrega
+  // um `\n` que passa despercebido em toda tela e quebra a chamada à Meta.
+  return Boolean(process.env.META_APP_ID?.trim() && process.env.META_WHATSAPP_CONFIG_ID?.trim())
 }
 
 /**

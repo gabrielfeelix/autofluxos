@@ -109,8 +109,20 @@ export default async function Pagina({
    * construção — aparecem na URL de qualquer Embedded Signup. O que nunca sai
    * do servidor é o `META_APP_SECRET`, que é quem troca o `code` por token.
    */
-  const appId = process.env.META_APP_ID ?? ''
-  const configId = process.env.META_WHATSAPP_CONFIG_ID ?? ''
+  /*
+   * **`.trim()` não é zelo: um `\n` aqui derrubou a conexão de um cliente
+   * real.**
+   *
+   * A variável foi gravada na Vercel com `echo`, que acrescenta quebra de
+   * linha. Ela viajou até o `FB.login` e apareceu na URL como
+   * `config_id=1616632909867069%0A` — a Meta não achou configuração com esse
+   * id e respondeu "Falha ao iniciar sessão", sem dizer o motivo.
+   *
+   * Custou uma tarde porque o valor *parece* certo em toda tela que o mostra:
+   * o painel da Vercel esconde o caractere, e o erro da Meta é genérico.
+   */
+  const appId = (process.env.META_APP_ID ?? '').trim()
+  const configId = (process.env.META_WHATSAPP_CONFIG_ID ?? '').trim()
   const podeConectar = whatsappConfigurado()
   /*
    * O botão não aparece para quem já conectou.
