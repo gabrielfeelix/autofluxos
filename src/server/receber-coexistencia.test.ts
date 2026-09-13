@@ -400,4 +400,56 @@ describe('PARTNER_ADDED — o onboarding que a Meta avisa por webhook', () => {
       expect(evento).not.toBe('PARTNER_ADDED')
     }
   })
+
+  /**
+   * **O payload literal da doc da Meta, copiado de `smb_message_echoes`.**
+   *
+   * Este teste existe porque o anterior passava verde com o bug presente: ele
+   * montava o echo em `messages`, que é o formato que *nós* inventamos, não o
+   * que a Meta manda. O campo real é `message_echoes`, e `tratarEcos` lia
+   * `messages` — o laço não achava nada, a função terminava com sucesso, e o
+   * echo sumia sem erro nem alerta.
+   *
+   * Custou o Inbox de um cliente e horas concluindo que "a Meta não manda".
+   * Teste escrito a partir do nosso próprio formato não prova integração
+   * nenhuma: ele confirma que combinamos com nós mesmos.
+   */
+  it('lê o echo em message_echoes, como a Meta manda de verdade', () => {
+    const analise = webhookDeCoexistenciaSchema.safeParse({
+      entry: [
+        {
+          id: '102290129340398',
+          changes: [
+            {
+              field: 'smb_message_echoes',
+              value: {
+                messaging_product: 'whatsapp',
+                metadata: {
+                  display_phone_number: '15550783881',
+                  phone_number_id: '106540352242922',
+                },
+                message_echoes: [
+                  {
+                    from: '15550783881',
+                    to: '16505551234',
+                    id: 'wamid.HBgLMTY0NjcwNDM1OTUVAgARGBIyNDlBOEI5QUQ4NDc0N0FCNjMA',
+                    timestamp: '1739321024',
+                    type: 'text',
+                    text: { body: "Here's the info you requested!" },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    })
+
+    expect(analise.success).toBe(true)
+    const valor = analise.success ? analise.data.entry[0]?.changes[0]?.value : undefined
+    expect(valor?.message_echoes?.[0]?.id).toBe(
+      'wamid.HBgLMTY0NjcwNDM1OTUVAgARGBIyNDlBOEI5QUQ4NDc0N0FCNjMA',
+    )
+    expect(valor?.message_echoes?.[0]?.text?.body).toBe("Here's the info you requested!")
+  })
 })

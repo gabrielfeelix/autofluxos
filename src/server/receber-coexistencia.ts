@@ -157,6 +157,21 @@ const valorSchema = z
       )
       .optional(),
 
+    /*
+     * **`smb_message_echoes` chega em `message_echoes`, não em `messages`.**
+     *
+     * Custou o Inbox de um cliente inteiro: `tratarEcos` lia `valor.messages`,
+     * que neste campo **nunca vem preenchido**. O echo entrava, o schema
+     * aceitava por causa do `.passthrough()`, o laço não achava nada para
+     * iterar e a função terminava com sucesso sem gravar nada.
+     *
+     * O pior tipo de defeito: 200 na resposta, zero alerta, zero log. Do lado
+     * de fora é idêntico a "a Meta não mandou" — e foi exatamente essa a
+     * conclusão errada a que chegamos por horas, até simular o payload real da
+     * doc e ver que ele sumia.
+     */
+    message_echoes: z.array(mensagemDoHistoricoSchema).optional(),
+
     /* `smb_app_state_sync` — a agenda do celular. */
     state_sync: z
       .array(
@@ -556,7 +571,12 @@ async function tratarEcos(
   canal: CanalSalvo,
   valor: z.infer<typeof valorSchema>,
 ): Promise<void> {
-  for (const mensagem of valor.messages ?? []) {
+  /*
+   * `message_echoes` é onde a Meta põe o echo (doc de `smb_message_echoes`).
+   * `messages` fica de reserva porque payloads antigos chegavam assim, e ler os
+   * dois não custa nada — deixar de ler um custou o Inbox de um cliente.
+   */
+  for (const mensagem of valor.message_echoes ?? valor.messages ?? []) {
     const waId = contatoDaMensagem(mensagem, canal.phoneNumberId)
     if (!waId) continue
 
