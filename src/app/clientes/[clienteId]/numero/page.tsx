@@ -161,66 +161,146 @@ export default async function Pagina({
             </span>
             Conectar o WhatsApp que você já usa
           </h2>
-          <p className="mt-1.5 max-w-[70ch] text-[12.5px] leading-6 text-dim">
+          <p className="mt-1.5 max-w-[62ch] text-[12.5px] leading-6 text-dim">
             <strong className="text-muted">Você não perde o seu WhatsApp.</strong> Continua
-            respondendo pelo celular como sempre — o que muda é que este painel passa a enxergar
-            as mesmas conversas, e pode responder junto.
+            respondendo pelo celular como sempre — o painel só passa a enxergar as mesmas
+            conversas.
           </p>
 
-          <div className="mt-4 rounded-[10px] border border-white/[0.06] bg-white/[0.014] px-4 py-3.5">
-            <p className="text-[12px] font-semibold text-muted">O que vai acontecer</p>
-            <ol className="mt-2 space-y-1.5 text-[12px] leading-5 text-dim">
-              <li>1. A Meta abre uma tela e pede o seu número.</li>
-              <li>
-                2. Ela mostra um <strong className="text-muted">código de verificação</strong> e
-                manda uma mensagem da <strong className="text-muted">Conta Oficial do Facebook
-                Business</strong> no seu WhatsApp Business.
-              </li>
-              <li>
-                3. Você toca em <strong className="text-muted">Connect</strong>, depois em{' '}
-                <strong className="text-muted">Confirm</strong>, e cola o código.
-              </li>
-              <li>
-                4. Você escolhe se quer trazer as conversas antigas —{' '}
-                <strong className="text-muted">é escolha sua</strong>, não obrigação.
-              </li>
-            </ol>
-            {/*
-             * Dito com todas as letras porque quem espera QR code trava na
-             * tela e liga achando que está quebrado. O fluxo mudou e a memória
-             * de quem já conectou outro serviço atrapalha.
-             */}
-            <p className="mt-2.5 text-[11.5px] text-amber-200/90">
-              Não é QR code — a confirmação é por código, dentro do seu WhatsApp Business.
-            </p>
-          </div>
+          {/*
+           * **O passo a passo desceu para um `details`, e o motivo é o clique.**
+           *
+           * A versão anterior abria com quatro passos numerados, o aviso de QR
+           * code e os requisitos — tudo antes do botão. Quem chega aqui já
+           * decidiu conectar; fazê-lo ler a tela inteira para achar o botão
+           * atrasa a única ação que a tela tem.
+           *
+           * O conteúdo não sai, porque ele resolve chamado de suporte de
+           * verdade (quem espera QR code trava e liga achando que quebrou).
+           * Fica a um clique, para quem quiser saber antes.
+           */}
+          <details className="group mt-3.5">
+            <summary className="cursor-pointer list-none text-[12px] font-semibold text-muted transition hover:text-accent">
+              Como funciona, passo a passo
+              <span className="ml-1 text-dim transition group-open:hidden">▸</span>
+              <span className="ml-1 hidden text-dim group-open:inline">▾</span>
+            </summary>
 
-          <p className="mt-3.5 text-[11.5px] leading-5 text-dim">
-            Para funcionar: <strong className="text-muted">WhatsApp Business 2.24.17 ou mais
-            novo</strong>, e o número já em uso no aplicativo.
-          </p>
+            <div className="mt-2.5 rounded-[10px] border border-white/[0.06] bg-white/[0.014] px-4 py-3.5">
+              <ol className="space-y-1.5 text-[12px] leading-5 text-dim">
+                <li>1. A Meta abre uma tela e pede o seu número.</li>
+                <li>
+                  2. Ela mostra um <strong className="text-muted">código de verificação</strong> e
+                  manda uma mensagem da <strong className="text-muted">Conta Oficial do Facebook
+                  Business</strong> no seu WhatsApp Business.
+                </li>
+                <li>
+                  3. Você toca em <strong className="text-muted">Connect</strong>, depois em{' '}
+                  <strong className="text-muted">Confirm</strong>, e cola o código.
+                </li>
+                <li>
+                  4. Você escolhe se quer trazer as conversas antigas —{' '}
+                  <strong className="text-muted">é escolha sua</strong>, não obrigação.
+                </li>
+              </ol>
+              <p className="mt-2.5 text-[11.5px] text-amber-200/90">
+                Não é QR code — a confirmação é por código, dentro do seu WhatsApp Business.
+              </p>
+              <p className="mt-2 text-[11.5px] leading-5 text-dim">
+                Precisa do <strong className="text-muted">WhatsApp Business 2.24.17 ou mais
+                novo</strong>, com o número já em uso no aplicativo.
+              </p>
+            </div>
+          </details>
 
           <form action={acaoConectarWhatsapp} className="mt-4">
             <input type="hidden" name="clienteId" value={cliente.id} />
+            {/*
+             * **O verde do WhatsApp aqui é exceção deliberada à regra do
+             * `SeloDoCanal`**, que manda a cor do canal ficar só no selo para
+             * não trocar a identidade do produto pela do canal.
+             *
+             * Este botão é outro caso: ele não descreve um fluxo, entrega a
+             * pessoa à Meta para ligar a conta dela. Quem vai digitar o próprio
+             * número precisa reconhecer de imediato a quem está entregando — a
+             * marca aqui é confirmação, e é o padrão de todo botão de conectar
+             * conta de terceiro.
+             *
+             * `#25D366` escrito na mão, e não como token: token o faria parecer
+             * disponível para o resto da interface, que é o que não deve
+             * acontecer.
+             */}
             <button
               type="submit"
               disabled={!podeConectar}
-              className="rounded-[9px] bg-accent px-4 py-2.5 text-[13px] font-semibold text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+              style={{ backgroundColor: '#25D366' }}
+              className="inline-flex items-center gap-2 rounded-[9px] px-[18px] py-3 text-[13.5px] font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
             >
+              <LogoDoCanal canal="whatsapp" tamanho={17} />
               Conectar meu WhatsApp
             </button>
           </form>
 
           {!podeConectar && (
-            <p className="mt-3 text-[12px] text-amber-300">
-              Falta <code className="font-mono">META_APP_ID</code> e{' '}
-              <code className="font-mono">META_WHATSAPP_CONFIG_ID</code> no ambiente deste
-              servidor.
-            </p>
+            <>
+              <p className="mt-3 text-[12px] text-amber-300">
+                Falta <code className="font-mono">META_APP_ID</code> e{' '}
+                <code className="font-mono">META_WHATSAPP_CONFIG_ID</code> no ambiente deste
+                servidor.
+              </p>
+              {/*
+               * Sem as variáveis o botão acima não funciona, e o cadastro
+               * manual está escondido enquanto não há número — o que deixaria
+               * esta tela sem saída nenhuma. O modal é o mesmo da seção de
+               * baixo; aqui ele aparece como escape, e só neste caso.
+               */}
+              <div className="mt-3">
+                <ModalFormulario
+                  botao="Cadastrar número manualmente"
+                  titulo="Conectar um número"
+                  descricao="Para quem já tem número na Cloud API: a identificação está no painel da Meta, em WhatsApp → Configuração da API."
+                  rotuloEnviar="Conectar"
+                  variante="secundario"
+                  action={conectarComCliente}
+                >
+                  <label>
+                    <RotuloCampo>Identificação do número (Meta)</RotuloCampo>
+                    <input
+                      name="phoneNumberId"
+                      required
+                      autoFocus
+                      placeholder="ex.: 123456789012345"
+                      className="app-field px-[13px] py-[11px] text-[13.5px]"
+                    />
+                  </label>
+                </ModalFormulario>
+              </div>
+            </>
           )}
         </section>
         )}
 
+        {/*
+         * **Tudo daqui para baixo só existe depois que há um número.**
+         *
+         * Antes, a tela abria com dois botões que pareciam a mesma coisa —
+         * "Conectar meu WhatsApp" e "+ Conectar número" — e nada dizia qual
+         * usar. São caminhos diferentes: o de cima é o Embedded Signup (o
+         * número que a pessoa já usa no celular, em coexistência); este é o
+         * cadastro manual, que pede `phone_number_id` copiado do painel da
+         * Meta e serve a quem já tem número na Cloud API.
+         *
+         * Oferecer os dois ao mesmo tempo para quem não tem número nenhum faz
+         * a escolha errada parecer disponível: quem clicasse no manual cairia
+         * num formulário pedindo um id que ele não tem, e não há como voltar
+         * disso sem entender a diferença entre as duas APIs.
+         *
+         * Com um número conectado a pergunta muda e passa a fazer sentido —
+         * "conectar **outro** número" é operação de quem já entendeu o que é
+         * um. O webhook segue a mesma regra: é endereço para configurar um
+         * número que ainda não existe.
+         */}
+        {canais.length > 0 && (
         <section className="app-card mb-[18px] overflow-hidden">
           <header className="flex items-start justify-between gap-4 border-b border-white/[0.06] px-5 py-4">
             <div className="min-w-0 max-w-[70ch]">
@@ -458,7 +538,9 @@ export default async function Pagina({
           )}
 
         </section>
+        )}
 
+        {canais.length > 0 && (
         <section className="app-card p-5">
           <h2 className="text-[13px] font-bold">
             Endereço para o painel da Meta
@@ -470,6 +552,7 @@ export default async function Pagina({
             {webhook}
           </code>
         </section>
+        )}
       </main>
     </ClienteShell>
   )
