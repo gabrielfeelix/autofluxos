@@ -167,14 +167,25 @@ export function ConectarWhatsapp({
         response_type: 'code',
         override_default_response_type: true,
         /*
-         * **Vazio, e é assim mesmo em v4.** A doc: *"The extras object is
-         * purposely empty for v4."* O `featureType` que fazia a coexistência em
-         * v2/v3 não existe mais aqui — em v4 isso vem da **configuração** do
-         * Facebook Login for Business (o `config_id` acima).
+         * **`featureType` continua sendo código, mesmo em v4.**
+         *
+         * A página de *Versions* da Meta diz que o `extras` de v4 é
+         * "purposely empty", e ler só ela leva a tirar o `featureType` daqui —
+         * que foi o que aconteceu na primeira escrita deste arquivo. A doc de
+         * Coexistence e os guias de quem implementou dizem o contrário, e é o
+         * contrário que vale: **sem esta linha o cliente nunca vê a tela de
+         * conectar a conta existente**, e o fluxo cai no onboarding comum, que
+         * tira o WhatsApp do celular dele.
+         *
+         * A configuração do Facebook Login (o `config_id`) habilita; o
+         * `featureType` pede. As duas coisas, não uma ou outra.
          *
          * Nascer em v4 não é preferência: o v2 morre em 15/out/2026.
          */
-        extras: { setup: {} },
+        extras: {
+          setup: {},
+          featureType: 'whatsapp_business_app_onboarding',
+        },
       },
     )
   }
