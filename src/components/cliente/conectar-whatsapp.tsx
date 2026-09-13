@@ -111,27 +111,50 @@ export function ConectarWhatsapp({
       // aceitar dado de terceiro como se fosse da Meta.
       if (!evento.origin.endsWith('facebook.com')) return
 
-      try {
-        const dado = JSON.parse(evento.data) as {
-          type?: string
-          event?: string
-          data?: { phone_number_id?: string; waba_id?: string }
-        }
-        if (dado.type !== 'WA_EMBEDDED_SIGNUP') return
-
-        if (dado.data?.phone_number_id) {
-          numero.current = {
-            phoneNumberId: dado.data.phone_number_id,
-            wabaId: dado.data.waba_id,
-          }
-          tentarConcluir()
-        }
-
-        // A pessoa fechou a janela no meio. Não é erro — é desistência.
-        if (dado.event === 'CANCEL' && !codigo.current) setEstado('parado')
-      } catch {
-        // `message` que não é JSON nosso. O Facebook manda vários.
+      /*
+       * **`event.data` nem sempre é string, e presumir que é custou uma
+       * conexão real.**
+       *
+       * A primeira escrita fazia `JSON.parse(evento.data)` direto dentro de um
+       * `try` com `catch` vazio. Quando o Facebook manda o payload já como
+       * **objeto** — e ele manda —, o `parse` estoura, o `catch` engole, e o
+       * `phone_number_id` é descartado em silêncio. Sem o número,
+       * `tentarConcluir` nunca dispara: o cliente vê "Concluir" na tela da
+       * Meta, tudo parece ter dado certo, e o nosso banco não recebe nada.
+       *
+       * Nem alerta sobrava para investigar, porque a rota do servidor jamais
+       * chegava a ser chamada.
+       */
+      let dado: {
+        type?: string
+        event?: string
+        data?: { phone_number_id?: string; waba_id?: string }
       }
+
+      if (typeof evento.data === 'string') {
+        try {
+          dado = JSON.parse(evento.data)
+        } catch {
+          return // `message` que não é JSON. O Facebook manda vários.
+        }
+      } else if (evento.data && typeof evento.data === 'object') {
+        dado = evento.data as typeof dado
+      } else {
+        return
+      }
+
+      if (dado.type !== 'WA_EMBEDDED_SIGNUP') return
+
+      if (dado.data?.phone_number_id) {
+        numero.current = {
+          phoneNumberId: dado.data.phone_number_id,
+          wabaId: dado.data.waba_id,
+        }
+        tentarConcluir()
+      }
+
+      // A pessoa fechou a janela no meio. Não é erro — é desistência.
+      if (dado.event === 'CANCEL' && !codigo.current) setEstado('parado')
     }
 
     window.addEventListener('message', aoReceber)
@@ -161,6 +184,19 @@ export function ConectarWhatsapp({
         }
         codigo.current = recebido
         tentarConcluir()
+
+        /*
+         * **Se o número não chegar, manda mesmo assim depois de um instante.**
+         *
+         * O `code` vive 30 segundos, e ficar esperando um `message` que pode
+         * não vir gasta essa janela calado — foi o que aconteceu na primeira
+         * conexão real. Mandando, o servidor grava o que dá e **alerta** com o
+         * que falta, que é infinitamente melhor que silêncio: alguém consegue
+         * terminar à mão dentro das 24h.
+         */
+        setTimeout(() => {
+          if (codigo.current && !numero.current.phoneNumberId) void concluir()
+        }, 2500)
       },
       {
         config_id: configId,
