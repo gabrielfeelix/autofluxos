@@ -1,0 +1,222 @@
+'use client'
+
+import Script from 'next/script'
+import { useRouter } from 'next/navigation'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { LogoDoCanal } from '@/components/design/selo-do-canal'
+
+/**
+ * O botão que abre o Embedded Signup **pelo SDK do JavaScript**.
+ *
+ * ---------------------------------------------------------------------------
+ * Por que SDK, e não o link hospedado que estava aqui antes
+ * ---------------------------------------------------------------------------
+ *
+ * O hospedado é mais simples e **não serve**. A doc da Meta: *"Hosted Embedded
+ * Signup can only be used to onboard business customers to Cloud API, and the
+ * flow cannot be customized."* Sem customização não há como pedir coexistência,
+ * e o cliente perderia o WhatsApp do celular — o oposto do que a tela promete.
+ *
+ * O hospedado também não devolve ninguém: ele não tem redirect de volta, e foi
+ * isso que fez duas conexões reais terminarem com o cliente vendo "pronto" na
+ * tela da Meta e o nosso banco vazio, em 13/set/2026.
+ *
+ * Aqui o `code` chega **em JavaScript**, na própria página, e vai para
+ * `/api/whatsapp/concluir` pela nossa origem — com o cookie de sessão junto,
+ * que é o que dispensa o `state` assinado do outro fluxo.
+ *
+ * ---------------------------------------------------------------------------
+ * Duas respostas, e as duas são necessárias
+ * ---------------------------------------------------------------------------
+ *
+ * 1. **O callback do `FB.login`** traz o `code` — e só ele. Vive **30
+ *    segundos**, então é trocado no servidor imediatamente.
+ * 2. **O `message` do session logging** traz `phone_number_id` e `waba_id`. Sem
+ *    o número não há o que gravar, e o callback não o carrega.
+ *
+ * Elas chegam em **ordem imprevisível**, e é por isso que o envio só acontece
+ * quando as duas estão na mão (`tentarConcluir`). Mandar na primeira que
+ * chegar é o erro clássico aqui: metade das vezes falta o número, metade das
+ * vezes falta o código, e o sintoma parece intermitência de rede.
+ */
+
+declare global {
+  interface Window {
+    FB?: {
+      init: (opcoes: Record<string, unknown>) => void
+      login: (cb: (r: RespostaDoLogin) => void, opcoes: Record<string, unknown>) => void
+    }
+  }
+}
+
+type RespostaDoLogin = { authResponse?: { code?: string } | null }
+
+export function ConectarWhatsapp({
+  clienteId,
+  appId,
+  configId,
+}: {
+  clienteId: string
+  appId: string
+  configId: string
+}) {
+  const router = useRouter()
+  const [estado, setEstado] = useState<'parado' | 'abrindo' | 'concluindo' | 'erro'>('parado')
+  const [erro, setErro] = useState<string | null>(null)
+  const [pronto, setPronto] = useState(false)
+
+  // `ref` e não `state`: as duas metades chegam por callbacks que não devem
+  // reagir a re-render, e um `state` aqui traria valor velho para dentro deles.
+  const codigo = useRef<string | null>(null)
+  const numero = useRef<{ phoneNumberId?: string; wabaId?: string }>({})
+
+  const concluir = useCallback(async () => {
+    setEstado('concluindo')
+    try {
+      const resposta = await fetch('/api/whatsapp/concluir', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clienteId,
+          code: codigo.current,
+          phoneNumberId: numero.current.phoneNumberId,
+          wabaId: numero.current.wabaId,
+        }),
+      })
+
+      if (!resposta.ok) {
+        const corpo = (await resposta.json().catch(() => ({}))) as { erro?: string }
+        setErro(corpo.erro ?? 'não deu para concluir a conexão')
+        setEstado('erro')
+        return
+      }
+
+      // A tela lê o canal do servidor; `refresh` a repinta sem perder o lugar.
+      router.refresh()
+    } catch {
+      setErro('não deu para falar com o servidor; tente de novo')
+      setEstado('erro')
+    }
+  }, [clienteId, router])
+
+  /** Só quando as duas metades chegaram. Ver o cabeçalho. */
+  const tentarConcluir = useCallback(() => {
+    if (codigo.current && numero.current.phoneNumberId) void concluir()
+  }, [concluir])
+
+  useEffect(() => {
+    function aoReceber(evento: MessageEvent) {
+      // A origem é conferida **antes** de olhar o conteúdo: esta janela recebe
+      // `message` de qualquer um, e confiar no corpo sem saber quem mandou é
+      // aceitar dado de terceiro como se fosse da Meta.
+      if (!evento.origin.endsWith('facebook.com')) return
+
+      try {
+        const dado = JSON.parse(evento.data) as {
+          type?: string
+          event?: string
+          data?: { phone_number_id?: string; waba_id?: string }
+        }
+        if (dado.type !== 'WA_EMBEDDED_SIGNUP') return
+
+        if (dado.data?.phone_number_id) {
+          numero.current = {
+            phoneNumberId: dado.data.phone_number_id,
+            wabaId: dado.data.waba_id,
+          }
+          tentarConcluir()
+        }
+
+        // A pessoa fechou a janela no meio. Não é erro — é desistência.
+        if (dado.event === 'CANCEL' && !codigo.current) setEstado('parado')
+      } catch {
+        // `message` que não é JSON nosso. O Facebook manda vários.
+      }
+    }
+
+    window.addEventListener('message', aoReceber)
+    return () => window.removeEventListener('message', aoReceber)
+  }, [tentarConcluir])
+
+  function abrir() {
+    if (!window.FB) {
+      setErro('o SDK do Facebook não carregou; recarregue a página')
+      setEstado('erro')
+      return
+    }
+
+    setErro(null)
+    setEstado('abrindo')
+    codigo.current = null
+    numero.current = {}
+
+    window.FB.login(
+      (resposta: RespostaDoLogin) => {
+        const recebido = resposta.authResponse?.code
+        if (!recebido) {
+          // Sem `authResponse` = a pessoa cancelou ou negou. Voltar ao início
+          // sem mensagem de erro: não há o que investigar numa decisão dela.
+          setEstado('parado')
+          return
+        }
+        codigo.current = recebido
+        tentarConcluir()
+      },
+      {
+        config_id: configId,
+        response_type: 'code',
+        override_default_response_type: true,
+        /*
+         * **Vazio, e é assim mesmo em v4.** A doc: *"The extras object is
+         * purposely empty for v4."* O `featureType` que fazia a coexistência em
+         * v2/v3 não existe mais aqui — em v4 isso vem da **configuração** do
+         * Facebook Login for Business (o `config_id` acima).
+         *
+         * Nascer em v4 não é preferência: o v2 morre em 15/out/2026.
+         */
+        extras: { setup: {} },
+      },
+    )
+  }
+
+  return (
+    <>
+      <Script
+        src="https://connect.facebook.net/pt_BR/sdk.js"
+        strategy="afterInteractive"
+        onLoad={() => {
+          window.FB?.init({
+            appId,
+            autoLogAppEvents: true,
+            xfbml: true,
+            version: 'v25.0',
+          })
+          setPronto(true)
+        }}
+      />
+
+      <button
+        type="button"
+        onClick={abrir}
+        disabled={!pronto || estado === 'abrindo' || estado === 'concluindo'}
+        style={{ backgroundColor: '#25D366' }}
+        className="inline-flex items-center gap-2 rounded-[9px] px-[18px] py-3 text-[13.5px] font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <LogoDoCanal canal="whatsapp" tamanho={17} />
+        {estado === 'concluindo'
+          ? 'Conectando…'
+          : estado === 'abrindo'
+            ? 'Siga na janela da Meta…'
+            : pronto
+              ? 'Conectar meu WhatsApp'
+              : 'Carregando…'}
+      </button>
+
+      {erro && (
+        <p role="alert" className="mt-3 text-[12px] leading-5 text-rose-300">
+          {erro}
+        </p>
+      )}
+    </>
+  )
+}

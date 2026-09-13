@@ -1,6 +1,7 @@
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
+import { ConectarWhatsapp } from '@/components/cliente/conectar-whatsapp'
 import { Trilha } from '@/components/design/trilha'
 import { BotaoPerigo } from '@/components/design/botao-perigo'
 import { Dropdown } from '@/components/design/dropdown'
@@ -16,7 +17,6 @@ import {
   PAPEIS_DO_NUMERO,
   ROTULO_DO_PAPEL,
 } from '@/core/papeis-do-numero'
-import { acaoConectarWhatsapp } from '@/server/acoes-whatsapp'
 import { progressoGeral, situacaoDoNumero } from '@/core/coexistencia-na-tela'
 import { acharCliente } from '@/server/repos/clientes'
 import { coexistenciaDoCliente } from '@/server/repos/coexistencia'
@@ -104,6 +104,13 @@ export default async function Pagina({
   // `erro` cobre os dois que a rota manda para `/painel?erro=`; quem chegar
   // aqui com um deles na URL vê o mesmo texto.
   const aviso = RESULTADOS[resultado ?? erro ?? '']
+  /*
+   * Vão para o navegador, e podem: `app_id` e `config_id` são **públicos** por
+   * construção — aparecem na URL de qualquer Embedded Signup. O que nunca sai
+   * do servidor é o `META_APP_SECRET`, que é quem troca o `code` por token.
+   */
+  const appId = process.env.META_APP_ID ?? ''
+  const configId = process.env.META_WHATSAPP_CONFIG_ID ?? ''
   const podeConectar = whatsappConfigurado()
   /*
    * O botão não aparece para quem já conectou.
@@ -220,33 +227,19 @@ export default async function Pagina({
             </div>
           </details>
 
-          <form action={acaoConectarWhatsapp} className="mt-4">
-            <input type="hidden" name="clienteId" value={cliente.id} />
-            {/*
-             * **O verde do WhatsApp aqui é exceção deliberada à regra do
-             * `SeloDoCanal`**, que manda a cor do canal ficar só no selo para
-             * não trocar a identidade do produto pela do canal.
-             *
-             * Este botão é outro caso: ele não descreve um fluxo, entrega a
-             * pessoa à Meta para ligar a conta dela. Quem vai digitar o próprio
-             * número precisa reconhecer de imediato a quem está entregando — a
-             * marca aqui é confirmação, e é o padrão de todo botão de conectar
-             * conta de terceiro.
-             *
-             * `#25D366` escrito na mão, e não como token: token o faria parecer
-             * disponível para o resto da interface, que é o que não deve
-             * acontecer.
-             */}
-            <button
-              type="submit"
-              disabled={!podeConectar}
-              style={{ backgroundColor: '#25D366' }}
-              className="inline-flex items-center gap-2 rounded-[9px] px-[18px] py-3 text-[13.5px] font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <LogoDoCanal canal="whatsapp" tamanho={17} />
-              Conectar meu WhatsApp
-            </button>
-          </form>
+          {/*
+           * **O SDK, e não mais o link hospedado.**
+           *
+           * O hospedado é um link e não precisaria de componente nenhum — mas a
+           * doc da Meta diz que ele *"can only be used to onboard business
+           * customers to Cloud API, and the flow cannot be customized"*, e sem
+           * customização não há coexistência: o cliente perderia o WhatsApp do
+           * celular. Ele também não redireciona de volta, o que fez duas
+           * conexões reais terminarem sem o nosso banco saber.
+           */}
+          <div className="mt-4">
+            <ConectarWhatsapp clienteId={cliente.id} appId={appId} configId={configId} />
+          </div>
 
           {!podeConectar && (
             <>
