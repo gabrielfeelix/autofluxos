@@ -117,4 +117,27 @@ describe('a porta do painel', () => {
      */
     expect(seguiu(await proxy(pedir('/sw-push.js')))).toBe(true)
   })
+
+  it('os webhooks da Meta abrem sem sessão — o servidor dela não tem cookie', async () => {
+    /*
+     * Este teste existe porque o defeito aconteceu **três vezes**: em
+     * `/api/whatsapp/retorno`, no equivalente do Instagram, e por fim aqui, no
+     * webhook — onde custou o Inbox inteiro de um cliente recém-conectado.
+     *
+     * Quem chama é o servidor da Meta, que nunca terá cookie de sessão. Sem
+     * estar aberta, a rota nem executa: o proxy devolve 401 e a Meta desiste.
+     * Nada em tela, nada em alerta — o código que alerta está depois do ponto
+     * que nunca é alcançado.
+     *
+     * Abrir não afrouxa: a rota confere `x-hub-signature-256` sozinha.
+     */
+    expect(seguiu(await proxy(pedir('/api/webhook/whatsapp')))).toBe(true)
+    expect(seguiu(await proxy(pedir('/api/webhook/instagram')))).toBe(true)
+  })
+
+  it('a abertura do webhook é de prefixo com barra, e não pega vizinho parecido', async () => {
+    // `/api/webhook/` e não `/api/webhook`: sem a barra, uma rota futura
+    // chamada `/api/webhooks-admin` nasceria pública sem ninguém notar.
+    expect(seguiu(await proxy(pedir('/api/webhooks-admin')))).toBe(false)
+  })
 })

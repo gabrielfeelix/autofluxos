@@ -132,6 +132,26 @@ const PREFIXOS_ABERTOS = [
   '/api/whatsapp/retorno',
   '/api/instagram/retorno',
   /**
+   * **Os webhooks da Meta. Mesmo bug das rotas de retorno, e custou o Inbox.**
+   *
+   * Quem chama aqui é o **servidor da Meta**, que não tem cookie nenhum — nunca
+   * teve e nunca vai ter. Sem esta linha o `getSessionCookie` não acha nada, a
+   * requisição cai no 401 de `/api/`, e a rota jamais executa.
+   *
+   * O sintoma foi o de 13/set: o número do cliente conectado e ativo, a WABA
+   * inscrita no app, `messages` assinado no painel — e **nada chegando no
+   * Inbox**. Tudo certo dos dois lados, e o proxy comendo a mensagem no meio.
+   *
+   * Um `curl -X POST` contra a URL do webhook devolvia `401` em produção: é o
+   * teste de trinta segundos que prova isto, e vale mais que qualquer tela de
+   * configuração da Meta dizendo "assinado".
+   *
+   * Não afrouxa nada. Estas rotas se defendem sozinhas pela **assinatura
+   * `X-Hub-Signature-256`**, que é o mecanismo certo aqui: sessão de usuário
+   * não existe nesta chamada, e exigir uma só garante que ela nunca aconteça.
+   */
+  '/api/webhook/',
+  /**
    * Os logos de cliente servidos para o `=IMAGE()` do Google Sheets (ver
    * `public/logos/README.md`).
    *
