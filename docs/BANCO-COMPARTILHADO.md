@@ -38,8 +38,9 @@ extração explícito para os objetos de `public`.
    dependa do `search_path` do projeto e nunca cite `app_verandi` numa migration
    deste repositório.
 3. **O nome da próxima migration vem do disco, não de plano antigo.** Hoje o
-   AutoFluxos termina em `0044`; a próxima é `0045`. Este parágrafo já esteve
-   errado — dizia `0029` quando o disco tinha `0038` —, e é exatamente por isso
+   AutoFluxos termina em `0046`; a próxima é `0047`. Este parágrafo já esteve
+   errado duas vezes — dizia `0029` quando o disco tinha `0038`, e `0044`
+   quando o disco já tinha `0046` —, e é exatamente por isso
    que a regra é olhar o diretório, inclusive quando um documento afirma um
    número. Os nomes `0008_limites` e
    `0009_retencao` escritos no plano de endurecimento são exemplos antigos e
@@ -110,10 +111,10 @@ extração explícito para os objetos de `public`.
 
 - arquivos em `supabase/migrations/`;
 - objetos de domínio em `public`;
-- `0001` a `0042` aplicadas em produção (`0039` a `0042` em 03/set/2026, com
-  autorização explícita do dono). A `0042` foi replayada em Docker antes, e
-  conferida depois na produção: `af_auditoria` devolve
-  `service_role → INSERT, SELECT` e nada mais;
+- `0001` a `0046` aplicadas em produção (`0039` a `0042` em 03/set/2026 e a
+  `0046` em 12/set/2026, as duas com autorização explícita do dono). A `0042`
+  foi replayada em Docker antes, e conferida depois na produção:
+  `af_auditoria` devolve `service_role → INSERT, SELECT` e nada mais;
 - **a `0042` conserta um efeito colateral da `0041`**: o `grant all on all
   tables in schema public to service_role` do passo 2 alcançou
   `public.af_auditoria` e devolveu `update`, `delete` e `truncate` à chave da
@@ -138,6 +139,15 @@ npx supabase stop
 O `supabase/config.toml` deste repositório existe **só** para isso, com portas
 `5643x` para não colidir com o stack local da Verandi (`5642x`). Ele não está
 ligado a projeto remoto nenhum, e `link`/`db push` continuam proibidos.
+
+**Quando não há Docker** — foi o caso em 12/set/2026, numa WSL2 sem
+integração ligada —, o substituto é o ensaio em transação: mandar
+`begin; <a migration>; rollback;` pela Management API. Ele prova mais que o
+Docker numa coisa e menos em outra. Mais: roda contra o estado real da
+produção, com os anos de `grant` acumulados que um banco novo não tem. Menos:
+não prova a ordem das migrations desde o zero, porque não replaya nada. Serve
+para migration aditiva conferida objeto a objeto depois; não serve para trocar
+o replay quando a migration mexe em dado que já existe.
 
 O que o local prova: que a migration roda, na ordem, e que o estado final de
 `grant` é o pretendido — foi assim que a `0042` foi conferida, com `set role
