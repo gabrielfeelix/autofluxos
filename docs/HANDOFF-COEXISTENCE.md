@@ -40,6 +40,8 @@ não o que está vigente.
 | Nossa WABA | `2245936116250161` (`4YU Tech`), `verified`, `APPROVED` |
 | Nosso número | `1301107846409860` — `+55 44 7400-7438` |
 | Webhook | `https://autofluxos.4yu.com.br/api/webhook/whatsapp` |
+| `config_id` do Hosted | `1071840912286349` |
+| Retorno do OAuth | `https://autofluxos.4yu.com.br/api/whatsapp/retorno` |
 | Última migration | `0046_ordem_do_fluxo` — **confira com `ls supabase/migrations/ \| tail -1`** |
 
 > A WABA `468946307261350` citada no `HANDOFF-13-SET.md` **não existe** (erro 100
@@ -72,6 +74,8 @@ Não reescreva nada disto:
 
 ## O trabalho, em quatro frentes
 
+> A frente 2 encolheu: o Embedded Signup é hospedado pela Meta. Ver o aviso lá.
+
 ### 1. Webhook: três campos novos
 
 Confirmei pelo MCP (`devtools_webhook_list action: list_topics`) que os três
@@ -95,27 +99,33 @@ o entende vira erro silencioso em produção.
 
 ### 2. Onboarding: Embedded Signup v4 com session logging
 
-> **PARE ANTES DE COMEÇAR ESTA FRENTE — decisão em aberto (13/09, fim do dia).**
+> **DECIDIDO (13/09): é o Hosted. Não construa SDK de Embedded Signup.**
 >
-> O painel de Tech Provider oferece **"Cadastro incorporado hospedado pela Meta"**
-> (Hosted Embedded Signup): a Meta hospeda a tela e devolve o cliente num URI
-> nosso, sem SDK. Se ele suportar Coexistence, **boa parte desta frente e da
-> frente 4 deixa de existir**.
+> O link gerado no painel de Tech Provider já vem com Coexistence ligado — é a
+> URL que o cliente abre, e ela está pronta:
 >
-> O que não sabemos: se o Hosted aceita
-> `featureType: whatsapp_business_app_onboarding`. Sem isso ele faz onboarding
-> comum e **não serve** para o nosso caso.
+> ```
+> https://business.facebook.com/messaging/whatsapp/onboard/
+>   ?app_id=1063817842847269
+>   &config_id=1071840912286349
+>   &extras={"version":"v4","sessionInfoVersion":"3",
+>            "featureType":"whatsapp_business_app_onboarding"}
+>   &redirect_uri=https://autofluxos.4yu.com.br/api/whatsapp/retorno
+> ```
 >
-> Como se decide (o dono está fazendo, no painel): gerar o link e abrir. Se a
-> tela oferecer *"conectar sua conta existente do WhatsApp Business"*, Hosted
-> serve e o SDK abaixo é desnecessário. Se pedir seleção de WABA, é fluxo comum
-> e vale o SDK.
+> `featureType: whatsapp_business_app_onboarding` é exatamente o que a doc exige
+> para Coexistence, e `version: v4` já evita o v2 que morre em 15/out/2026.
 >
-> **Não construa o SDK até essa resposta chegar.** Faça as frentes 1 e 3 e a
-> rota de retorno (abaixo), que servem nos dois caminhos.
+> **Não é preciso**: SDK do JavaScript, `FB.login`, lista de domínios permitidos,
+> nem montar o `extras` no nosso código. A Meta hospeda a tela inteira.
+>
+> **É preciso**: a rota de retorno abaixo, e trocar o `code` por token
+> servidor-a-servidor (a seção "Trocar token" do painel).
+>
+> Guarde `config_id = 1071840912286349` junto dos outros IDs fixos.
 
-**A rota de retorno serve aos dois caminhos** — Hosted e SDK ambos devolvem o
-cliente numa URL nossa. Pode construir já. O URI cadastrado no painel é:
+**A rota de retorno é o nosso lado do Hosted** — é para onde a Meta devolve o
+cliente com o `code`. Já está cadastrada no painel:
 
 ```
 https://autofluxos.4yu.com.br/api/whatsapp/retorno
@@ -128,28 +138,8 @@ forjado ligar um número ao cliente errado), a sessão prova **quem está pedind
 cancelamento vem como `error=access_denied` e é resposta e não falha, e o retorno
 é **sempre um redirect para a tela**, nunca JSON na cara de quem clicou.
 
-O resto desta seção vale **apenas se a resposta for "SDK"**:
-
-A customização de Coexistence é uma propriedade no `extras` do launch:
-
-```js
-{
-  "config_id": "<CONFIGURATION_ID>",
-  "response_type": "code",
-  "override_default_response_type": true,
-  "extras": {
-    "setup": {},
-    "featureType": "whatsapp_business_app_onboarding",
-    "sessionInfoVersion": "3"
-  }
-}
-```
-
-Como saber que pegou: na tela do Embedded Signup, a seleção de WABA é
-**substituída** por uma tela oferecendo conectar a conta existente. Se ainda
-aparece a seleção de WABA, não pegou.
-
-Session logging é **requisito**, não enfeite — a Meta lista entre os requirements.
+Depois do retorno, **troque o `code` por token servidor-a-servidor** — nunca no
+navegador. É a seção "Trocar token" do configurador no painel.
 
 Conferir se um número embarcou em coexistência:
 
@@ -256,12 +246,12 @@ em silêncio.
 1. Handler dos três campos (com testes de payload) → **depois** assinar na Meta.
 2. `ACCOUNT_OFFBOARDED` / `ACCOUNT_RECONNECTED` — barato, e evita falha silenciosa.
 3. Migration do estado de coexistência em `channels`.
-4. Rota `/api/whatsapp/retorno`, espelhando a do Instagram.
-5. **Espere a decisão Hosted × SDK** antes do Embedded Signup em si.
-6. Disparo automático dos dois syncs ao fim do onboarding, dentro das 24h.
+4. Rota `/api/whatsapp/retorno`, espelhando a do Instagram, + troca do `code`
+   por token servidor-a-servidor.
+5. Disparo automático dos dois syncs ao fim do onboarding, dentro das 24h.
+6. Onde o cliente clica: guardar o link do Hosted e levar o cliente até ele.
 
-1 a 4 valem em qualquer cenário e não dependem do painel. Comece por eles.
-Só o passo 5 está em aberto — ver o aviso na frente 2.
+Nada aqui depende mais do painel — a decisão Hosted × SDK está fechada.
 
 ## Como conferir de verdade
 
