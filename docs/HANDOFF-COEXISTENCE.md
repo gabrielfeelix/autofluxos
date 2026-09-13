@@ -401,7 +401,9 @@ Se alguém sugerir ligar *"Allow API Access to App Settings"* para resolver: já
 tentado, não resolve, e **deve ficar desligado** — ligado, quem tiver o app secret
 pode reconfigurar o app.
 
-**`contact_email_verified: false`** continua aberto e é do dono: não há botão na
-tela nem API. O caminho é a caixa de `contato@4yu.com.br` (conferir spam) ou o
-suporte da Meta. Importa porque é por onde a Meta avisa de violação e suspensão —
-mas **não bloqueia Coexistence**.
+**`contact_email_verified: false` não é pendência — está resolvido.** O dono
+validou o e-mail há tempos; a flag segue `false` na API mesmo assim. É a flag que
+está errada, não o e-mail. **Não levante isso de novo.**
+
+**"Allow API Access to App Settings" fica ligado, por decisão do dono.** Não
+sugira desligar.
