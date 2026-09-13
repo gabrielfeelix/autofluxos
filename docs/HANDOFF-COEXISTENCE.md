@@ -356,6 +356,94 @@ Normalmente reconecta sozinho em minutos, sem ação nossa. Mas sem tratar esses
 dois eventos, a troca de aparelho de um cliente vira uma fila de envios falhando
 em silêncio.
 
+## Frente 5: a tela onde o cliente clica (a única que falta)
+
+Hoje o link do Hosted só existe num campo do painel da Meta. Para conectar
+alguém, é copiar e mandar no WhatsApp, na mão. Falta a ponta visível.
+
+### Onde mora: `/clientes/[clienteId]/numero`
+
+Não crie tela nova. **A rota de retorno já redireciona para lá**
+(`destino = /clientes/${clienteId}/numero` em
+[retorno/route.ts](src/app/api/whatsapp/retorno/route.ts)), a tela já existe e já
+lista os números do cliente. Página nova quebraria o retorno.
+
+### O modelo já está pronto, e é o do Instagram
+
+[instagram/page.tsx](src/app/clientes/[clienteId]/instagram/page.tsx) resolveu
+exatamente este problema. Copie a estrutura:
+
+- um `RESULTADOS` mapeando `?resultado=` para o aviso no topo — a rota de retorno
+  já manda `conectado`, `cancelado`, `sem_codigo`, `sem_numero`, `falhou`, e
+  `/painel?erro=` para `whatsapp_estado` / `whatsapp_acesso`. **São seis estados,
+  todos precisam de texto.** Em especial: `cancelado` **não é erro** — é alguém
+  que desistiu, e a tela não deve pedir para investigar uma decisão;
+- um cartão "nenhum número conectado" com o botão;
+- uma server action que monta a URL e redireciona (espelhe `acaoConectarInstagram`).
+
+### O link, montado no servidor
+
+```
+https://business.facebook.com/messaging/whatsapp/onboard/
+  ?app_id=1063817842847269
+  &config_id=1071840912286349
+  &extras={"version":"v4","sessionInfoVersion":"3",
+           "featureType":"whatsapp_business_app_onboarding"}
+  &redirect_uri=https://autofluxos.4yu.com.br/api/whatsapp/retorno
+  &state=<criarEstado(clienteId)>
+```
+
+**O `state` é obrigatório e não é burocracia.** É ele que diz de qual cliente é a
+conexão que está voltando — sem ele, dois clientes conectando no mesmo dia viram
+uma dúvida sobre qual número é de quem, e pior: a rota de retorno rejeita
+(`redirect('/painel?erro=whatsapp_estado')`). Use `criarEstado` de
+[instagram/estado.ts](src/server/instagram/estado.ts), que a rota de retorno já
+usa para ler — ele assina um `clienteId` e não sabe de que canal se trata, então
+serve aos dois. **Não invente um segundo mecanismo.**
+
+`app_id` e `config_id` vêm do ambiente, não hard-coded na tela.
+
+### O que o texto da tela precisa dizer
+
+Aqui está o que diferencia esta tela de um botão qualquer. Quem vai clicar é o
+dono de um negócio que **atende pelo celular todo dia**, e o medo dele é perder
+isso. O texto tem que responder, antes do clique:
+
+1. **"vou perder meu WhatsApp?"** — não. Ele continua respondendo pelo celular
+   normalmente; o que muda é que o painel passa a enxergar as mesmas conversas.
+2. **o que vai acontecer na tela da Meta** — vai pedir o número, mostrar um
+   **código de verificação**, e chegar uma mensagem da **Conta Oficial do
+   Facebook Business** no WhatsApp Business dele. Ele toca em *Connect*, depois
+   *Confirm*, e cola o código. **Não é QR code** — quem escreveu esperando QR vai
+   confundir o cliente.
+3. **que ele vai poder escolher compartilhar o histórico** — e que é escolha
+   dele, não obrigação.
+4. **os requisitos que fazem falhar**: WhatsApp Business **2.24.17+** e o número
+   já em uso no app.
+
+Depois de conectado, a tela precisa dizer duas coisas que ninguém adivinha:
+
+- **abrir o WhatsApp Business ao menos uma vez a cada 14 dias**, ou a Meta
+  derruba a conexão e a entrega para;
+- **o nome do negócio trava** depois do onboarding.
+
+### O estado "sincronizando", que não é instantâneo
+
+A sincronização leva de minutos a **6 horas**, e a migration `0047` já guarda o
+progresso. A tela deve mostrar isso (`progress` 0–100, e as fases 0/1/2), porque
+um cliente que vê "conectado" e não vê a conversa antiga aparecer vai achar que
+quebrou. "Andando" e "travou" **não podem parecer a mesma coisa**.
+
+Se o cliente recusou compartilhar histórico, chega o erro **2593109** — e isso é
+resposta, não falha: a tela diz "sem histórico, conversas novas a partir de
+agora", não "erro".
+
+### O que NÃO fazer
+
+- Não faça o botão aparecer para um número que já está conectado.
+- Não prometa "instantâneo" em lugar nenhum do texto.
+- Não trate `cancelado` como erro.
+
 ## Ordem sugerida
 
 1. Handler dos três campos (com testes de payload) → **depois** assinar na Meta.
