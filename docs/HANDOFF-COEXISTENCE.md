@@ -216,6 +216,34 @@ Um cuidado de produto que o schema não resolve sozinho: mensagem que chega por
 bot naquela conversa, como um handoff. Já existe `handoffs` e lógica de
 `aguardando_http` em `receber-mensagem.ts` — reaproveite em vez de inventar.
 
+## Quem paga o quê (apurado na doc em 13/09, e é contraintuitivo)
+
+**Tech Provider não tem linha de crédito, e isso é bom.** A doc da Meta é
+literal: *"Unlike Solution Partners, Tech Providers do not have credit lines.
+Instead, clients onboarded by Tech Providers must provide their own payment
+method after onboarding is complete. Meta will then bill these clients for API
+usage, and the Tech Provider will bill for other services."*
+
+| | Solution Partner | **Tech Provider (nós)** |
+|---|---|---|
+| Tem linha de crédito | sim | **não** |
+| Cliente pula o método de pagamento | sim | **não** |
+| Fatura o cliente pelo uso da API | sim | **não — a Meta fatura** |
+
+Ou seja: **a Meta cobra do cliente** pelas conversas, com o cartão dele; **nós
+cobramos do cliente** a mensalidade do AutoFluxos, por fora. Não há custo
+variável de conversa na nossa conta, nem exposição se um cliente disparar muito.
+
+Se você leu em alguma página do painel que é preciso "compartilhar sua linha de
+crédito", repare no sujeito da frase: é *"os Parceiros da Solução precisam"*.
+Não é o nosso caso, e no nosso painel a seção aparece vazia.
+
+**A consequência é de produto, e é o que importa aqui:** depois de conectar, o
+cliente **precisa cadastrar um cartão** na conta dele, senão a mensagem não sai.
+Não é bloqueio nosso, mas é onde ele trava calado — a tela de conexão tem que
+avisar disso, e o ideal é conferir e mostrar o estado em vez de deixar o cliente
+descobrir pelo silêncio.
+
 ## Limitações que valem dizer ao cliente antes de vender
 
 - Número em coexistência fica travado em **20 mensagens/s**.
