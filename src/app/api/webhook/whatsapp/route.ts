@@ -58,6 +58,24 @@ export async function POST(req: Request) {
     return new Response('assinatura inválida', { status: 401 })
   }
 
+  /*
+   * **Diário de bordo (13/set/2026). Temporário, mas volta enquanto doer.**
+   *
+   * Nada chega no Inbox de um cliente coexistente, e sem registrar a entrada
+   * não há como separar "a Meta não chamou" de "chegou e foi descartado no
+   * meio". Essa diferença já custou horas hoje — e uma vez o culpado era nosso
+   * (`tratarEcos` lia `messages` onde a Meta manda `message_echoes`), com 200
+   * na resposta e zero alerta.
+   *
+   * Sai quando o caso fechar: alerta por chamada é barulho, e barulho em
+   * alerta faz parar de ler alerta.
+   */
+  await alertar(
+    'webhook do WhatsApp recebido (diagnóstico)',
+    new Error(corpo.slice(0, 900)),
+    {},
+  ).catch(() => {})
+
   let payload: unknown
   try {
     payload = JSON.parse(corpo)
