@@ -15,6 +15,7 @@ import {
   nomeNaAgenda,
   registrarMensagemDeCoexistencia,
   type ContatoDaAgenda,
+  existeCanalComWaba,
 } from './repos/coexistencia'
 
 /**
@@ -603,6 +604,33 @@ export async function tratarAtualizacaoDaConta(payload: unknown): Promise<void> 
       if (!mudanca || mudanca.field !== 'account_update') continue
 
       const evento = (mudanca.value as Record<string, unknown>).event
+
+      /*
+       * **`PARTNER_ADDED` é a prova de que o cliente terminou o Embedded
+       * Signup, e ela chega mesmo quando o navegador dele não volta.**
+       *
+       * A doc da Meta é literal: *"You must be subscribed to the
+       * `account_update` webhook, as this webhook is triggered whenever a
+       * customer successfully completes the Embedded Signup flow"*.
+       *
+       * Isso importa porque o retorno pelo navegador é frágil de um jeito que
+       * não depende do nosso código: se o `redirect_uri` não estiver na lista
+       * de *Valid OAuth redirect URIs* do painel, a Meta conclui a conexão e
+       * **para na tela dela** — o cliente vê "pronto", e nós não ficamos
+       * sabendo de nada. Aconteceu duas vezes em 13/set/2026 antes de alguém
+       * entender o que estava havendo.
+       *
+       * O que este evento traz é `waba_info.waba_id`. O que ele **não** traz é
+       * o `phone_number_id` nem um token — o token só sai da troca do `code`,
+       * e o `code` só existe no retorno pelo navegador. Então aqui não dá para
+       * completar o onboarding sozinho; dá para **registrar que ele aconteceu**
+       * e dizer isso a alguém, que é muito melhor que silêncio.
+       */
+      if (evento === 'PARTNER_ADDED') {
+        await registrarOnboardingPelaMeta(mudanca.value as Record<string, unknown>)
+        continue
+      }
+
       if (evento !== 'ACCOUNT_OFFBOARDED' && evento !== 'ACCOUNT_RECONNECTED') continue
 
       const numero = mudanca.value.metadata?.phone_number_id
@@ -622,4 +650,37 @@ export async function tratarAtualizacaoDaConta(payload: unknown): Promise<void> 
       }
     }
   }
+}
+
+/**
+ * O `PARTNER_ADDED` chegou: alguém terminou o Embedded Signup.
+ *
+ * **Não conclui o onboarding, e não finge que conclui.** Faltam duas coisas que
+ * este webhook não carrega: o token do cliente (que só sai da troca do `code`,
+ * e o `code` só existe no retorno pelo navegador) e o `phone_number_id`.
+ *
+ * O que dá para fazer, e é o que importa, é **não perder o evento**. Se a WABA
+ * já é de um canal nosso, a conexão se completou pelos dois caminhos e não há o
+ * que fazer. Se não é, alguém conectou e o retorno não chegou — e aí o alerta
+ * carrega o `waba_id`, que é exatamente o que falta para terminar à mão.
+ *
+ * O alerta é deliberadamente específico sobre a causa provável, porque quem for
+ * lê-lo daqui a seis meses não vai ter o contexto de hoje.
+ */
+async function registrarOnboardingPelaMeta(valor: Record<string, unknown>): Promise<void> {
+  const info = (valor.waba_info ?? {}) as Record<string, unknown>
+  const wabaId = typeof info.waba_id === 'string' ? info.waba_id : null
+  if (!wabaId) return
+
+  // Já conhecemos esta WABA? Então o retorno pelo navegador funcionou e o
+  // canal existe. Nada a fazer — o evento é só confirmação.
+  if (await existeCanalComWaba(wabaId)) return
+
+  await alertar(
+    'um cliente terminou o Embedded Signup e o retorno não chegou até nós',
+    new Error(
+      `A Meta avisou por webhook (PARTNER_ADDED) que a WABA ${wabaId} foi conectada, mas nenhum canal nosso tem essa WABA — ou seja, o navegador do cliente não voltou para /api/whatsapp/retorno e o onboarding não foi concluído deste lado. Causa mais provável: o redirect_uri https://autofluxos.4yu.com.br/api/whatsapp/retorno não está em "Valid OAuth redirect URIs" no painel da Meta (Facebook Login for Business → Settings). Sem ele a Meta conclui a conexão e para na tela dela. A janela de 24h para sincronizar contatos e histórico **já está correndo**.`,
+    ),
+    { waba: wabaId },
+  )
 }

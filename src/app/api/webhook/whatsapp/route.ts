@@ -82,10 +82,14 @@ export async function POST(req: Request) {
       await receberCoexistencia(payload)
 
       /*
-       * `ACCOUNT_OFFBOARDED` / `ACCOUNT_RECONNECTED`.
+       * `account_update`: `PARTNER_ADDED`, `ACCOUNT_OFFBOARDED`,
+       * `ACCOUNT_RECONNECTED`.
        *
-       * O cliente trocou de celular e o companion caiu sozinho. Sem isto, os
-       * envios daquele número falham em silêncio até alguém reclamar.
+       * `PARTNER_ADDED` é a Meta avisando que alguém **terminou o Embedded
+       * Signup** — e é o único aviso que chega quando o navegador do cliente
+       * não volta para a nossa rota de retorno. Os outros dois são a troca de
+       * aparelho, que derruba o companion sozinho e faria os envios daquele
+       * número falharem em silêncio.
        */
       await tratarAtualizacaoDaConta(payload)
     } catch (erro) {

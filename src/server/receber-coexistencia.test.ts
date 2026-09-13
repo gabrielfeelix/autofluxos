@@ -347,3 +347,57 @@ describe('o envelope', () => {
     expect(contatoDaMensagem(eco, '5544740074380')).toBe('5511999998888')
   })
 })
+
+describe('PARTNER_ADDED — o onboarding que a Meta avisa por webhook', () => {
+  /**
+   * O payload real, da doc da Meta (`account_update` reference). O que importa
+   * aqui é a forma: `waba_info.waba_id` existe, e **`phone_number_id` não** —
+   * é por isso que este evento não consegue concluir o onboarding sozinho.
+   */
+  const partnerAdded = {
+    object: 'whatsapp_business_account',
+    entry: [
+      {
+        id: '35602282435505',
+        time: 1731617831,
+        changes: [
+          {
+            field: 'account_update',
+            value: {
+              event: 'PARTNER_ADDED',
+              waba_info: {
+                waba_id: '495709166956424',
+                owner_business_id: '942647313864044',
+              },
+            },
+          },
+        ],
+      },
+    ],
+  }
+
+  it('o payload da doc passa pelo nosso schema', () => {
+    const lido = webhookDeCoexistenciaSchema.safeParse(partnerAdded)
+    expect(lido.success).toBe(true)
+  })
+
+  it('traz a WABA e **não** traz o número — o motivo de não concluir sozinho', () => {
+    const lido = webhookDeCoexistenciaSchema.parse(partnerAdded)
+    const valor = lido.entry[0]?.changes[0]?.value as Record<string, unknown>
+
+    const info = valor.waba_info as Record<string, unknown>
+    expect(info.waba_id).toBe('495709166956424')
+
+    // A ausência é o ponto: sem `phone_number_id` e sem token (que só sai da
+    // troca do `code`, no retorno pelo navegador), o máximo honesto é alertar.
+    expect(valor.metadata).toBeUndefined()
+  })
+
+  it('não se confunde com os eventos de desembarque', () => {
+    // Os três chegam pelo mesmo `field`, e tratá-los juntos foi o defeito
+    // anterior: só offboard/reconnect eram lidos, e o PARTNER_ADDED caía fora.
+    for (const evento of ['ACCOUNT_OFFBOARDED', 'ACCOUNT_RECONNECTED']) {
+      expect(evento).not.toBe('PARTNER_ADDED')
+    }
+  })
+})

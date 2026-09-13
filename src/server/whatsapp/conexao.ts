@@ -272,3 +272,33 @@ export function urlDoOnboarding(opcoes: { origem: string; state: string }): stri
 
   return url.toString()
 }
+
+const numerosDaWabaSchema = z.object({
+  data: z
+    .array(z.object({ id: z.string(), display_phone_number: z.string().optional() }))
+    .default([]),
+})
+
+/**
+ * Os números de uma WABA.
+ *
+ * Existe porque **o `PARTNER_ADDED` não traz o `phone_number_id`** — ele traz
+ * só `waba_info.waba_id`. E é justamente por esse webhook que descobrimos um
+ * onboarding quando o navegador do cliente não volta para a nossa rota de
+ * retorno, que é o caso comum quando o `redirect_uri` não está cadastrado no
+ * painel da Meta.
+ *
+ * Uma WABA recém-criada por coexistência tem **um** número, que é o do celular
+ * do cliente. Devolvemos a lista mesmo assim, e quem chama decide: com mais de
+ * um, escolher por conta própria seria chutar de qual número é a conexão.
+ */
+export async function numerosDaWaba(
+  wabaId: string,
+  token: string,
+): Promise<{ id: string; telefone: string | null }[]> {
+  const url = `https://graph.facebook.com/${versaoGraph()}/${wabaId}/phone_numbers?fields=id,display_phone_number`
+  const lido = numerosDaWabaSchema.parse(
+    await pedir(url, { headers: { Authorization: `Bearer ${token}` } }),
+  )
+  return lido.data.map((n) => ({ id: n.id, telefone: n.display_phone_number ?? null }))
+}

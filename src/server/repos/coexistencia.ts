@@ -486,3 +486,22 @@ export async function coexistenciaDoCliente(
   }
   return mapa
 }
+
+/**
+ * Já existe canal com esta WABA?
+ *
+ * A pergunta do `PARTNER_ADDED`: a Meta avisa que uma WABA foi conectada, e
+ * precisamos saber se é uma que já conhecemos (o retorno pelo navegador
+ * funcionou) ou uma que nunca chegou até aqui (o cliente conectou e nós não
+ * ficamos sabendo). Ver `registrarOnboardingPelaMeta`.
+ */
+export async function existeCanalComWaba(wabaId: string): Promise<boolean> {
+  const { data, error } = await db()
+    .from('channels')
+    .select('id')
+    .eq('waba_id', wabaId)
+    .limit(1)
+
+  if (error) throw new Error(`não deu para procurar o canal pela WABA: ${error.message}`)
+  return (data?.length ?? 0) > 0
+}
