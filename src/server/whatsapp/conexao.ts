@@ -350,57 +350,65 @@ export async function wabasDoToken(token: string): Promise<string[]> {
   )
 }
 
-const saudeSchema = z.object({
-  owner_business_info: z.object({ id: z.string().optional() }).optional(),
-  health_status: z
-    .object({
-      can_send_message: z.string().optional(),
-      entities: z
-        .array(
-          z.object({
-            can_send_message: z.string().optional(),
-            errors: z.array(z.object({ error_code: z.number() })).optional(),
-          }),
-        )
-        .optional(),
-    })
-    .optional(),
-})
-
 /**
- * A Meta está deixando este número conversar?
+ * A WABA que **realmente contém** aquele número.
  *
- * **A pergunta que faltava.** Um cliente conectou, tudo ficou verde do nosso
- * lado, e nenhuma mensagem chegou — a conta dele estava `BLOCKED` por falta de
- * cartão. Sem isto não há como a tela dizer o motivo, e o silêncio é
- * indistinguível de "ninguém falou com você ainda".
+ * ---------------------------------------------------------------------------
+ * Por que confiar no `waba_id` do retorno não basta
+ * ---------------------------------------------------------------------------
  *
- * Os erros vêm espalhados por entidade (WABA, negócio, app); achatamos, porque
- * quem lê a tela não precisa saber de qual delas veio a queixa — precisa saber
- * o que fazer.
+ * O Embedded Signup devolve um `waba_id` na query, e até 13/set/2026 nós o
+ * gravávamos sem conferir nada. O custo apareceu no primeiro cliente com
+ * **duas** WABAs: o `waba_id` que chegou apontava para uma, o número dele vivia
+ * na outra, e o app foi inscrito na errada.
+ *
+ * O resultado é o pior tipo de falha — **silenciosa e cara**. Webhook de WABA
+ * em que o app não está inscrito simplesmente não é entregue: sem erro, sem
+ * log, sem diferença visível de "ninguém mandou mensagem". Nada entrou no
+ * Inbox daquele cliente por horas, e os dois syncs de uso único queimaram
+ * apontados para a WABA errada — a agenda e o histórico dele não voltam sem
+ * refazer o Embedded Signup inteiro.
+ *
+ * O agravante é que o número aparecia em `phone_numbers` das **duas** WABAs, e
+ * `subscribed_apps` da errada respondia com o nosso app listado. Do lado de
+ * fora, tudo parecia certo. O único sinal honesto era perguntar, número por
+ * número, qual WABA o contém.
+ *
+ * ---------------------------------------------------------------------------
+ * O desempate
+ * ---------------------------------------------------------------------------
+ *
+ * Percorre as WABAs do token e devolve a primeira cujo `phone_numbers` lista o
+ * `phoneNumberId`. `granular_scopes` vem com a mais recente primeiro (doc da
+ * Meta), então a ordem já favorece a conexão que acabou de acontecer.
+ *
+ * **Uma WABA que não responde não derruba a busca.** Token sem permissão de
+ * leitura numa delas é normal quando o cliente tem contas antigas, e desistir
+ * por causa disso devolveria `null` com a resposta certa na WABA seguinte.
+ *
+ * Devolve `null` quando nenhuma contém o número — e aí quem chama decide, que é
+ * melhor que gravar um palpite.
  */
-export async function saudeDaWaba(
-  wabaId: string,
+export async function wabaQueContemONumero(
+  phoneNumberId: string,
   token: string,
-): Promise<{ podeEnviar: string | null; codigos: number[]; negocioId: string | null }> {
-  const url = `https://graph.facebook.com/${versaoGraph()}/${wabaId}?fields=health_status,owner_business_info`
-  const lido = saudeSchema.parse(
-    await pedir(url, { headers: { Authorization: `Bearer ${token}` } }),
-  )
-
-  const saude = lido.health_status
-  const codigos = (saude?.entities ?? []).flatMap((e) =>
-    (e.errors ?? []).map((erro) => erro.error_code),
-  )
-
-  /*
-   * O id do negócio vem junto porque é o que completa os links da tela: as
-   * telas de cobrança e de segurança da Meta pedem `business_id` na URL, e sem
-   * ele o cliente cai num seletor de contas em vez da tela que resolve.
-   */
-  return {
-    podeEnviar: saude?.can_send_message ?? null,
-    codigos,
-    negocioId: lido.owner_business_info?.id ?? null,
+): Promise<string | null> {
+  let wabas: string[]
+  try {
+    wabas = await wabasDoToken(token)
+  } catch {
+    return null
   }
+
+  for (const waba of wabas) {
+    try {
+      const numeros = await numerosDaWaba(waba, token)
+      if (numeros.some((n) => n.id === phoneNumberId)) return waba
+    } catch {
+      // Ver o cabeçalho: uma WABA ilegível não invalida as outras.
+      continue
+    }
+  }
+
+  return null
 }

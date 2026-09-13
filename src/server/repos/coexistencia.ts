@@ -84,6 +84,21 @@ export async function marcarCoexistente(canalId: string): Promise<void> {
 }
 
 /**
+ * Corrige a WABA do canal para a que de fato contém o número.
+ *
+ * O `waba_id` gravado no onboarding vem da query do Embedded Signup, e ela
+ * pode apontar para outra WABA do mesmo cliente — aconteceu em 13/set/2026.
+ * Quando `wabaQueContemONumero` descobre a certa, é ela que tem que ficar no
+ * canal: é por este campo que qualquer depuração futura começa, e um valor
+ * errado aqui manda a próxima pessoa investigar a conta errada.
+ */
+export async function anotarWaba(canalId: string, wabaId: string): Promise<void> {
+  const { error } = await db().from('channels').update({ waba_id: wabaId }).eq('id', canalId)
+
+  if (error) throw new Error(`não deu para corrigir a WABA do canal: ${error.message}`)
+}
+
+/**
  * Reserva um disparo de sync, **antes** de ele acontecer.
  *
  * Devolve `true` se a reserva é nossa e o disparo pode sair; `false` se alguém

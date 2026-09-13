@@ -2,11 +2,18 @@ import 'server-only'
 import { alertar } from '../alertar'
 import {
   anotarIdentidade,
+  anotarWaba,
   guardarRequestIdDoSync,
   marcarCoexistente,
   reservarSync,
 } from '../repos/coexistencia'
-import { dispararSync, ehCoexistente, inscreverNaWaba, lerNumero } from './conexao'
+import {
+  dispararSync,
+  ehCoexistente,
+  inscreverNaWaba,
+  lerNumero,
+  wabaQueContemONumero,
+} from './conexao'
 
 /**
  * O que acontece depois que o cliente volta do Embedded Signup hospedado.
@@ -95,25 +102,86 @@ export async function terminarOnboarding(entrada: {
   await marcarCoexistente(entrada.canalId)
 
   /*
+   * **Qual WABA contém este número — perguntado, não presumido.**
+   *
+   * O `waba_id` da query do Embedded Signup era tratado como verdade até
+   * 13/set/2026, quando o primeiro cliente com **duas** WABAs mostrou o preço:
+   * o retorno apontava uma, o número dele estava na outra, e nos inscrevemos na
+   * errada. Nada entrou no Inbox dele, sem um erro sequer — webhook de WABA sem
+   * app inscrito não é entregue nem reclama. Ver `wabaQueContemONumero`.
+   *
+   * Por isso a resposta da Meta **vence** o que veio na query. Só se a busca
+   * não achar nada é que o `waba_id` do retorno serve de último recurso: ele
+   * ainda é melhor que desistir, e o alerta diz que estamos no palpite.
+   */
+  let wabaId = entrada.wabaId
+  const encontrada = await wabaQueContemONumero(entrada.phoneNumberId, entrada.token)
+
+  if (encontrada) {
+    if (entrada.wabaId && entrada.wabaId !== encontrada) {
+      /*
+       * Aconteceu de verdade, e em silêncio. O alerta existe para que a
+       * próxima vez seja percebida na hora — e para deixar no histórico que a
+       * WABA gravada no canal não é a que o retorno trouxe.
+       */
+      await alertar(
+        'o Embedded Signup apontou uma WABA e o número está em outra',
+        new Error(
+          `o retorno trouxe waba_id ${entrada.wabaId}, mas o número ${entrada.phoneNumberId} está na WABA ${encontrada}. Seguindo a Meta: a inscrição e os syncs vão para ${encontrada}.`,
+        ),
+        { ...contexto, waba: encontrada },
+      )
+    }
+    wabaId = encontrada
+  } else if (wabaId) {
+    await alertar(
+      'nenhuma WABA do token contém este número; usando a do retorno',
+      new Error(
+        `wabaQueContemONumero não achou ${entrada.phoneNumberId} em nenhuma WABA do token; seguindo com ${wabaId}, que veio da query do Embedded Signup`,
+      ),
+      { ...contexto, waba: wabaId },
+    )
+  }
+
+  /*
    * A inscrição na WABA **do cliente**, antes de qualquer disparo.
    *
    * Se ela falhar, parar aqui é o certo: disparar mesmo assim gastaria as duas
    * chances mandando resposta para um webhook que não escuta.
    */
-  if (entrada.wabaId) {
+  if (wabaId) {
     try {
-      await inscreverNaWaba(entrada.wabaId, entrada.token)
+      await inscreverNaWaba(wabaId, entrada.token)
     } catch (erro) {
       await alertar('o app não se inscreveu na WABA do cliente; os syncs não foram disparados', erro, {
         ...contexto,
-        waba: entrada.wabaId,
+        waba: wabaId,
       })
       return
+    }
+
+    /*
+     * A WABA descoberta é gravada no canal.
+     *
+     * Sem isto, `channels.waba_id` guardaria a WABA do retorno enquanto a
+     * inscrição e os webhooks vivem noutra — e quem for depurar daqui a seis
+     * meses leria o campo errado, que foi exatamente o que atrasou este caso.
+     *
+     * Melhor-esforço: a inscrição já valeu, e falhar ao anotar não pode
+     * impedir os syncs de saírem dentro da janela de 24h.
+     */
+    if (wabaId !== entrada.wabaId) {
+      await anotarWaba(entrada.canalId, wabaId).catch(async (erro) => {
+        await alertar('não deu para corrigir a WABA do canal', erro, {
+          ...contexto,
+          waba: wabaId,
+        })
+      })
     }
   } else {
     await alertar(
       'o número é coexistente mas não sabemos a WABA dele; os syncs não foram disparados',
-      new Error('channels.waba_id está vazio'),
+      new Error('channels.waba_id está vazio e nenhuma WABA do token contém o número'),
       contexto,
     )
     return

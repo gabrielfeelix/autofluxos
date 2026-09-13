@@ -7,9 +7,6 @@ import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 import { sessaoAtual } from '@/server/sessao'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { IlustracaoInbox } from '@/components/design/ilustracoes'
-import { PendenciasDaMeta } from '@/components/cliente/pendencias-da-meta'
-import { type SaudeDaMeta } from '@/core/pendencias-da-meta'
-import { saudeDoCliente } from '@/server/whatsapp/saude-do-cliente'
 import { recemConectado } from '@/core/coexistencia-na-tela'
 import { coexistenciaDoCliente } from '@/server/repos/coexistencia'
 import { ControleDeAutomacao } from '@/components/lead/controle-automacao'
@@ -88,7 +85,7 @@ export default async function Pagina({
   const pagina = Math.max(1, Number(primeiro(busca.pagina)) || 1)
   const termo = limparBusca(primeiro(busca.busca))
 
-  const [cliente, fila, respostasRapidas, contagem, etiquetas, saude, coexistencia] =
+  const [cliente, fila, respostasRapidas, contagem, etiquetas, coexistencia] =
     await Promise.all([
     acharCliente(clienteId),
     paginarLeads(clienteId, {
@@ -105,7 +102,6 @@ export default async function Pagina({
      * mas a chamada vai junto das outras para não somar ida de rede em série
      * numa tela que já espera cinco consultas.
      */
-    saudeDoCliente(clienteId),
     coexistenciaDoCliente(clienteId),
   ])
   if (!cliente) notFound()
@@ -201,7 +197,7 @@ export default async function Pagina({
           não tinha como corrigir o que digitou.
         */}
         {contagem.total === 0 ? (
-          <EstadoVazio clienteId={cliente.id} saude={saude} recemConectado={recem} />
+          <EstadoVazio clienteId={cliente.id} recemConectado={recem} />
         ) : (
           <Conteudo
             clienteId={cliente.id}
@@ -236,25 +232,23 @@ function escolherLead(leads: Lead[], contatoId: string | undefined): Lead | null
 
 function EstadoVazio({
   clienteId,
-  saude,
   recemConectado: recem,
 }: {
   clienteId: string
-  saude: SaudeDaMeta | null
   recemConectado: boolean
 }) {
   /*
-   * **O aviso acompanha a tela vazia, não toma o lugar dela.**
+   * **A tela diz o que sabe, e só isso: não há conversa.**
    *
-   * A primeira versão substituía o estado vazio inteiro quando a Meta apontava
-   * pendência, dizendo que o Inbox estava vazio *por causa disso*. Era afirmar
-   * causa a partir de um sinal que mente: o `health_status` fica em cache, e a
-   * mesma conta que ele dava como bloqueada aceitava envio normalmente.
+   * Aqui já houve um card de pendências da Meta (cartão, fuso, verificação),
+   * e ele foi removido em 13/set/2026 por ser falso: o cliente que o via
+   * conectou e passou a receber mensagem **sem** ter resolvido nenhum dos
+   * três itens. A causa real era outra — o app estava inscrito na WABA errada.
    *
-   * Agora a tela diz o que sabe — não há conversa, e a Meta tem pendências
-   * abertas — sem amarrar uma coisa na outra. Inbox recém-conectado costuma
-   * demorar mesmo: enquanto a sincronização não termina, mensagem nova não
-   * chega, e isso não é defeito nem culpa de pendência nenhuma.
+   * A fonte daquele card é o `health_status`, que fica em cache e mente: a
+   * mesma conta que ele dava como bloqueada aceitava envio normalmente. Pedir
+   * ao cliente que cadastre cartão para destravar algo que não está travado é
+   * pior que não dizer nada.
    */
   return (
     <section className="mx-auto mt-16 max-w-[440px] text-center">
@@ -279,9 +273,6 @@ function EstadoVazio({
         </p>
       )}
 
-      <div className="mt-4 text-left">
-        <PendenciasDaMeta saude={saude} />
-      </div>
       <Link href={`/clientes/${clienteId}/leads`} className="app-secondary-button mt-5 inline-block px-4 py-2.5 text-[12.5px]">
         Ver Leads
       </Link>
