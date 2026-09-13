@@ -383,8 +383,25 @@ Graph API **não** expõe status de Tech Provider: `solutions`,
 `client_whatsapp_business_accounts` e `owned_whatsapp_business_accounts` todos
 respondem "nonexisting field". Não perca tempo — isso é MCP e painel.
 
-## Pendências de painel (não são suas)
+## `description` e `short_description`: não são pendência, são impossibilidade
 
-Com o dono, mas aparecem para o cliente na tela do Embedded Signup:
-`contact_email_verified: false` (é por onde a Meta avisa de suspensão) e
-`description` / `short_description` nulos. Nenhum tem API.
+Apurado em 13/09, tentando de todos os jeitos. **Não insista nisso.**
+
+- Não há campo na tela `settings/basic` — a tela é só ID, nome, domínios, e-mail,
+  URLs, ícone e categoria.
+- Pela Graph API, `short_description` responde *"nonexisting field"*, e
+  `description` **não volta na leitura** mesmo depois de um POST.
+- O POST responde **`{"success":true}` e descarta os campos em silêncio** — o
+  `success` não prova nada aqui.
+
+O motivo provável: este app é do formato **Caso de Uso**; esses campos são do
+formato antigo. `description: null` no MCP é permanente e não é descuido.
+
+Se alguém sugerir ligar *"Allow API Access to App Settings"* para resolver: já foi
+tentado, não resolve, e **deve ficar desligado** — ligado, quem tiver o app secret
+pode reconfigurar o app.
+
+**`contact_email_verified: false`** continua aberto e é do dono: não há botão na
+tela nem API. O caminho é a caixa de `contato@4yu.com.br` (conferir spam) ou o
+suporte da Meta. Importa porque é por onde a Meta avisa de violação e suspensão —
+mas **não bloqueia Coexistence**.
