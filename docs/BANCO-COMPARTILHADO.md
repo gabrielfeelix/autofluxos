@@ -38,7 +38,7 @@ extração explícito para os objetos de `public`.
    dependa do `search_path` do projeto e nunca cite `app_verandi` numa migration
    deste repositório.
 3. **O nome da próxima migration vem do disco, não de plano antigo.** Hoje o
-   AutoFluxos termina em `0046`; a próxima é `0047`. Este parágrafo já esteve
+   AutoFluxos termina em `0047`; a próxima é `0048`. Este parágrafo já esteve
    errado duas vezes — dizia `0029` quando o disco tinha `0038`, e `0044`
    quando o disco já tinha `0046` —, e é exatamente por isso
    que a regra é olhar o diretório, inclusive quando um documento afirma um
@@ -111,8 +111,14 @@ extração explícito para os objetos de `public`.
 
 - arquivos em `supabase/migrations/`;
 - objetos de domínio em `public`;
-- `0001` a `0046` aplicadas em produção (`0039` a `0042` em 03/set/2026 e a
-  `0046` em 12/set/2026, as duas com autorização explícita do dono). A `0042`
+- `0001` a `0047` aplicadas em produção (`0039` a `0042` em 03/set/2026, a
+  `0046` em 12/set/2026 e a `0047` em 13/set/2026, todas com autorização
+  explícita do dono). A `0047` é a primeira conferida pelos **dois** testes: o
+  replay do zero em Docker (que prova a ordem) e o ensaio em transação contra a
+  produção (que prova o estado herdado). O Docker voltou a funcionar quando a
+  integração WSL foi ligada para o Ubuntu — sem ela, o CLI do Supabase sobe os
+  containers e falha no health check com "The command 'docker' could not be
+  found in this WSL 2 distro". A `0042`
   foi replayada em Docker antes, e conferida depois na produção:
   `af_auditoria` devolve `service_role → INSERT, SELECT` e nada mais;
 - **a `0042` conserta um efeito colateral da `0041`**: o `grant all on all
