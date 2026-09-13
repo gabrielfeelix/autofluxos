@@ -111,9 +111,12 @@ extração explícito para os objetos de `public`.
 
 - arquivos em `supabase/migrations/`;
 - objetos de domínio em `public`;
-- `0001` a `0047` aplicadas em produção (`0039` a `0042` em 03/set/2026, a
-  `0046` em 12/set/2026 e a `0047` em 13/set/2026, todas com autorização
-  explícita do dono). A `0047` é a primeira conferida pelos **dois** testes: o
+- `0001` a `0048` aplicadas em produção (`0039` a `0042` em 03/set/2026, a
+  `0046` em 12/set/2026 e as `0047`/`0048` em 13/set/2026, todas com autorização
+  explícita do dono). A `0048` é aditiva (duas colunas anuláveis em
+  `public.channels`, sem toque em dado existente) e foi conferida só pelo ensaio
+  em transação contra a produção — o suficiente para o que ela faz, segundo a
+  regra da seção de Docker abaixo. A `0047` é a primeira conferida pelos **dois** testes: o
   replay do zero em Docker (que prova a ordem) e o ensaio em transação contra a
   produção (que prova o estado herdado). O Docker voltou a funcionar quando a
   integração WSL foi ligada para o Ubuntu — sem ela, o CLI do Supabase sobe os
