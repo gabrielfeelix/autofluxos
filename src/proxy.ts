@@ -108,6 +108,30 @@ const PORTAS_ABERTAS = [
 const PREFIXOS_ABERTOS = [
   '/f/',
   /**
+   * **As rotas de retorno do OAuth. Sem isto elas nunca rodam.**
+   *
+   * Quem chega aqui é o navegador do cliente **voltando do facebook.com** — uma
+   * navegação cross-site. O cookie de sessão do Better Auth é `SameSite=Lax`, e
+   * `Lax` manda o navegador **não enviar o cookie** num redirect vindo de outro
+   * site. Então o `getSessionCookie` abaixo não acha nada, a requisição cai no
+   * 401 de `/api/`, e a rota de retorno — que já sabe se defender sozinha —
+   * jamais executa.
+   *
+   * O sintoma é cruel de diagnosticar porque **tudo parece certo dos dois
+   * lados**: a Meta diz "conectado", o cliente vê a tela de sucesso dela, e o
+   * nosso banco não tem linha nenhuma. Nem alerta sobra, porque o código que
+   * alerta está depois do ponto que nunca é alcançado. Foi exatamente assim que
+   * a primeira conexão real falhou, em 13/set/2026.
+   *
+   * Abrir isto não afrouxa nada, e é por isso que as duas rotas foram escritas
+   * como foram: elas conferem o `state` assinado (qual cliente começou) e a
+   * sessão (quem está pedindo) por conta própria, nesta ordem, e redirecionam
+   * para a tela em vez de responder JSON. Ver o cabeçalho de
+   * `api/whatsapp/retorno/route.ts`.
+   */
+  '/api/whatsapp/retorno',
+  '/api/instagram/retorno',
+  /**
    * Os logos de cliente servidos para o `=IMAGE()` do Google Sheets (ver
    * `public/logos/README.md`).
    *

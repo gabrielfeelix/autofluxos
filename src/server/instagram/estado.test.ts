@@ -44,14 +44,21 @@ describe('o bilhete do OAuth', () => {
     expect(lerEstado(`${outro}.${carimbo}.${assinatura}`, AGORA)).toBeNull()
   })
 
-  it('vence depois de dez minutos', () => {
+  it('vence depois de trinta minutos', () => {
     const estado = criarEstado(CLIENTE, AGORA)
 
-    const nove = new Date(AGORA.getTime() + 9 * 60 * 1_000)
-    expect(lerEstado(estado, nove)).toBe(CLIENTE)
+    /*
+     * Vinte ainda vale, e é o número que importa: o Embedded Signup do WhatsApp
+     * em coexistência passa de dez minutos com facilidade — o cliente espera
+     * uma mensagem chegar no celular, sai do navegador e volta. Com o prazo
+     * antigo, o bilhete vencia bem no fim, depois de a Meta já ter dito
+     * "conectado".
+     */
+    const vinte = new Date(AGORA.getTime() + 20 * 60 * 1_000)
+    expect(lerEstado(estado, vinte)).toBe(CLIENTE)
 
-    const onze = new Date(AGORA.getTime() + 11 * 60 * 1_000)
-    expect(lerEstado(estado, onze)).toBeNull()
+    const trintaEUm = new Date(AGORA.getTime() + 31 * 60 * 1_000)
+    expect(lerEstado(estado, trintaEUm)).toBeNull()
   })
 
   /**

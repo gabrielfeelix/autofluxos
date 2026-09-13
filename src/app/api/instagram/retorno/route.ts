@@ -3,7 +3,7 @@ import { alertar } from '@/server/alertar'
 import { assinarMensagens, trocarCodigoPorConta } from '@/server/instagram/conexao'
 import { lerEstado } from '@/server/instagram/estado'
 import { salvarContaDoInstagram } from '@/server/repos/canais-instagram'
-import { conferirAcessoAoCliente } from '@/server/sessao'
+import { conferirAcessoAoCliente, sessaoAtual } from '@/server/sessao'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,9 +33,18 @@ export async function GET(req: Request) {
 
   const destino = `/clientes/${clienteId}/instagram`
 
-  // Quem autorizou pode não ser quem tem acesso a este cliente. O bilhete diz
-  // qual cliente; só a sessão diz se esta pessoa pode mexer nele.
-  if (!(await conferirAcessoAoCliente(clienteId))) {
+  /*
+   * **A sessão pode não vir aqui, e isso é normal.** Mesmo motivo da rota do
+   * WhatsApp, que tinha o defeito idêntico: quem chega é o navegador voltando
+   * do `facebook.com`, e o cookie `SameSite=Lax` não acompanha um redirect
+   * vindo de outro site. Exigir sessão recusava toda conexão real.
+   *
+   * Com sessão, ela vale: sem direito àquele cliente, recusa. Sem sessão, quem
+   * responde é o `state` assinado — ele diz qual cliente, que é o que esta rota
+   * precisa saber para gravar a conexão no lugar certo.
+   */
+  const acesso = await conferirAcessoAoCliente(clienteId)
+  if ((await sessaoAtual()) !== null && !acesso) {
     redirect('/painel?erro=instagram_acesso')
   }
 

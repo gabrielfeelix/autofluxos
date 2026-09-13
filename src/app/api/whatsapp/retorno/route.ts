@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { alertar } from '@/server/alertar'
 import { lerEstado } from '@/server/instagram/estado'
 import { salvarNumeroDoOnboarding } from '@/server/repos/coexistencia'
-import { conferirAcessoAoCliente } from '@/server/sessao'
+import { conferirAcessoAoCliente, sessaoAtual } from '@/server/sessao'
 import { trocarCodigoPorToken } from '@/server/whatsapp/conexao'
 import { terminarOnboarding } from '@/server/whatsapp/onboarding'
 
@@ -51,7 +51,28 @@ export async function GET(req: Request) {
 
   const destino = `/clientes/${clienteId}/numero`
 
-  if (!(await conferirAcessoAoCliente(clienteId))) {
+  /*
+   * **A sessão pode não vir aqui, e isso é normal — não é invasão.**
+   *
+   * Quem chega é o navegador voltando do `facebook.com`: navegação cross-site.
+   * O cookie do Better Auth é `SameSite=Lax`, e `Lax` manda o navegador **não
+   * enviar o cookie** num redirect vindo de outro site. Exigir sessão aqui
+   * recusava toda conexão real com `?erro=whatsapp_acesso` — e pior, sem
+   * alerta, porque a recusa acontece antes do código que alerta.
+   *
+   * Quando ela vem, vale: sessão presente e sem direito àquele cliente é
+   * tentativa de ligar um número na conta de outro, e continua recusada.
+   *
+   * Quando não vem, quem responde é o `state` — e ele basta, porque é o que
+   * esta rota precisa saber. Ele é **assinado por nós** e vale dez minutos:
+   * quem não tem o segredo não fabrica um, então o `clienteId` que chega aqui
+   * só pode ter saído de uma tela onde alguém com acesso apertou "conectar".
+   * O que ele não prova é *quem* está voltando, e para gravar o número
+   * conectado essa pergunta não muda a resposta.
+   */
+  const acesso = await conferirAcessoAoCliente(clienteId)
+  const temSessao = (await sessaoAtual()) !== null
+  if (temSessao && !acesso) {
     redirect('/painel?erro=whatsapp_acesso')
   }
 

@@ -21,8 +21,23 @@ import { iguais } from '@/lib/segredo'
  * a conexão começou; a sessão prova quem é. As duas coisas, sempre.
  */
 
-/** Um OAuth leva menos de um minuto. Dez é folga para quem hesitou na tela. */
-const VALIDADE_MS = 10 * 60 * 1_000
+/**
+ * Trinta minutos, e os dez de antes eram pouco.
+ *
+ * Dez foi dimensionado para o OAuth do Instagram, que é uma tela e um clique.
+ * O Embedded Signup do WhatsApp em coexistência é outro bicho: o cliente digita
+ * o número, **espera chegar uma mensagem** da Conta Oficial do Facebook Business
+ * no WhatsApp dele, sai do navegador para tocar em *Connect* e *Confirm* no
+ * celular, volta, e cola o código. Na primeira vez, sem saber o que vem, isso
+ * passa de dez minutos com facilidade — e o bilhete vencido derruba a conexão
+ * bem no fim, depois de a Meta já ter dito "conectado".
+ *
+ * Alongar não enfraquece o que o bilhete faz: ele continua assinado, e o que
+ * ele protege é a troca de cliente, não um segredo que envelhece. Trinta
+ * minutos é folga para o fluxo mais lento e ainda fecha a janela muito antes de
+ * um link esquecido num histórico virar problema.
+ */
+const VALIDADE_MS = 30 * 60 * 1_000
 
 function segredo(): string {
   const valor = process.env.BETTER_AUTH_SECRET ?? process.env.PAINEL_SEGREDO
