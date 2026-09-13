@@ -12,10 +12,15 @@ que ele já usa no WhatsApp Business App, o que a Meta chama de **Coexistence**
 destranca a próxima.
 
 ```
-verificação do negócio  →  app review (Advanced Access)  →  Tech Provider  →  Coexistence
-      ✅ 02/09/2026            ⏳ enviado 03/09, EM ANÁLISE
-                               ↑ você está aqui
+verificação do negócio  →  app review (Advanced Access)  →  app em Live  →  Tech Provider  →  Coexistence
+      ✅ 02/09/2026            ✅ 12/09/2026 (WhatsApp)     ⏳ dev_mode
+                                                            ↑ você está aqui
 ```
+
+> **12/09/2026 — o app review saiu, e o WhatsApp passou.** Ver a seção
+> "12/09/2026" abaixo: as duas permissões de WhatsApp estão **live com acesso
+> padrão**; as três do Instagram foram rejeitadas por screencast. O degrau que
+> falta agora **não é o Instagram** — é o app sair de `dev_mode`.
 
 > **02/09/2026 — a verificação do negócio saiu.** `business_verification_status`
 > passou de `pending` para **`verified`** (conferido pela Graph API na data). Isso
@@ -172,6 +177,82 @@ produto WhatsApp adicionado. A conferência na tela é confirmação, não desco
 02/09/2026. Com ela feita, a próxima etapa — o app review — passa a estar disponível no painel do app,
 em **Revisão do app** → **Permissões e recursos**, onde se pede o Advanced Access
 das duas permissões citadas acima.
+
+## 13/09/2026 — o review saiu; o que trava agora é o `dev_mode`
+
+Lido pelo Meta Devtools MCP nesta data (app `1063817842847269`).
+
+### O resultado, permissão a permissão
+
+| Permissão | Estado |
+|---|---|
+| `whatsapp_business_messaging` | ✅ **live**, acesso padrão |
+| `whatsapp_business_management` | ✅ **live**, acesso padrão |
+| `public_profile` | ✅ live |
+| `instagram_business_basic` | ❌ rejeitada |
+| `instagram_business_manage_messages` | ❌ rejeitada |
+| `business_management` | ❌ rejeitada |
+
+Submissão `1082311667664553`, enviada 03/09, concluída **12/09/2026**.
+
+**Rejeição de permissão não derruba as aprovadas.** O `is_approved: false` do
+`action: status` descreve o *envio* ("nem tudo passou"), não cada permissão —
+quem responde por permissão é `action: privileges`. Não existe, nem é preciso,
+"desistir" das rejeitadas para usar as aprovadas.
+
+**A armadilha de leitura da versão anterior deste documento se inverteu.** Em
+06/09, `grant_status: REJECTED` em tudo significava *"nunca concedida"*, porque
+nenhum review tinha acontecido. Agora houve review: `REJECTED` ali é rejeição de
+verdade, e `DEVOPS_APPROVED` é aprovação de verdade. O que separa os dois casos é
+`has_been_previously_reviewed`.
+
+### Por que o Instagram caiu
+
+As três compartilham o código de motivo `642518292152406` — é uma causa só. A
+nota do analista é específica, e o problema **não era a ausência do vídeo**: era
+o vídeo não mostrar a mensagem chegando do outro lado.
+
+> *"the screencast does not show a message being sent from your app UI and the
+> same message appearing in the native client (Messenger, Instagram, or
+> WhatsApp). Please re-record showing: (1) asset selection (Page, account, or
+> number visible), (2) a live send action from your app, and (3) the delivered
+> message in the native client."*
+
+Mais: interface em inglês, legendas explicando cada botão, e declarar
+explicitamente se o app é servidor-a-servidor (quando não há login de front-end
+visível, é preciso avisar — senão o analista procura um fluxo que não existe).
+
+`can_submit: true`: dá para reenviar. Quando for, mande **só as três
+rejeitadas** — reenviar as aprovadas junto as devolveria para análise sem motivo.
+
+### O degrau seguinte não é o Instagram: é `dev_mode`
+
+```
+app_status: dev_mode     is_live: false
+```
+
+**Permissão aprovada não vale enquanto o app estiver em desenvolvimento.** Em
+`dev_mode`, a API só responde para quem tem papel no app (admin, dev, tester) —
+o que explica por que tudo funciona hoje na nossa conta e não provaria nada num
+cliente. Sair para Live é chave para Tech Provider e para Coexistence, e é uma
+troca de estado no painel, não uma fila.
+
+Conferido nesta data, e tudo que costuma barrar o Live já está preenchido:
+
+| Campo | Estado |
+|---|---|
+| `privacy_policy_url` | ✅ `/privacidade` |
+| `terms_of_service_url` | ✅ `/termos` |
+| `data_deletion_url` | ✅ `/exclusao-de-dados` — o placeholder do Facebook saiu |
+| `app_icon_url` | ✅ preenchido |
+| `category` | ✅ `BUSINESS` |
+| Compliance | ✅ `compliant`, zero violação, zero ação requerida |
+| `contact_email_verified` | ⚠️ **`false`** — `contato@4yu.com.br` não confirmado |
+| `description` / `short_description` | ⚠️ nulos |
+
+Os dois ⚠️ são os candidatos a serem cobrados na hora de virar a chave. Nenhum
+deles tem API: confirmar e-mail é clicar no link que a Meta manda; descrição é
+campo de painel.
 
 ## E agora? (02/09/2026)
 
