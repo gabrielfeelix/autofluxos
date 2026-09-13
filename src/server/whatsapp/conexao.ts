@@ -304,3 +304,48 @@ export async function numerosDaWaba(
   )
   return lido.data.map((n) => ({ id: n.id, telefone: n.display_phone_number ?? null }))
 }
+
+const debugTokenSchema = z.object({
+  data: z
+    .object({
+      granular_scopes: z
+        .array(z.object({ scope: z.string(), target_ids: z.array(z.string()).optional() }))
+        .optional(),
+    })
+    .optional(),
+})
+
+/**
+ * As WABAs que o token acabou de ganhar, perguntando à própria Meta.
+ *
+ * ---------------------------------------------------------------------------
+ * Por que isto existe: o número pode não vir, e o `code` sabia a resposta
+ * ---------------------------------------------------------------------------
+ *
+ * O SDK entrega o `phone_number_id` pelo `message` de session logging, e esse
+ * `message` **pode simplesmente não chegar** — aconteceu numa conexão real em
+ * 13/set, com o cliente indo até o fim e a tela dizendo *"a Meta não disse qual
+ * número foi conectado"*.
+ *
+ * A primeira versão da rota desistia aí: alertava e devolvia 422 **sem trocar o
+ * `code`**. Era jogar fora a peça que respondia a pergunta — o token que o
+ * `code` vira carrega, ele mesmo, quais WABAs foram compartilhadas. Bastava
+ * perguntar.
+ *
+ * `granular_scopes` traz as WABAs mais recentes primeiro (doc da Meta), e é
+ * dessa ordem que depende o desempate quando o cliente já tinha outras.
+ */
+export async function wabasDoToken(token: string): Promise<string[]> {
+  const { appId, appSecret } = credenciais()
+
+  const url = new URL(`https://graph.facebook.com/${versaoGraph()}/debug_token`)
+  url.searchParams.set('input_token', token)
+  url.searchParams.set('access_token', `${appId}|${appSecret}`)
+
+  const lido = debugTokenSchema.parse(await pedir(url.toString()))
+
+  return (
+    lido.data?.granular_scopes?.find((e) => e.scope === 'whatsapp_business_management')
+      ?.target_ids ?? []
+  )
+}

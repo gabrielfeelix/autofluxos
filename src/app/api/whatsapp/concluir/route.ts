@@ -2,7 +2,7 @@ import { after } from 'next/server'
 import { alertar } from '@/server/alertar'
 import { salvarNumeroDoOnboarding } from '@/server/repos/coexistencia'
 import { conferirAcessoAoCliente } from '@/server/sessao'
-import { trocarCodigoPorToken } from '@/server/whatsapp/conexao'
+import { numerosDaWaba, trocarCodigoPorToken, wabasDoToken } from '@/server/whatsapp/conexao'
 import { terminarOnboarding } from '@/server/whatsapp/onboarding'
 
 export const dynamic = 'force-dynamic'
@@ -61,8 +61,8 @@ export async function POST(req: Request) {
 
   const clienteId = typeof corpo.clienteId === 'string' ? corpo.clienteId : ''
   const codigo = typeof corpo.code === 'string' ? corpo.code : ''
-  const phoneNumberId = typeof corpo.phoneNumberId === 'string' ? corpo.phoneNumberId : ''
-  const wabaId = typeof corpo.wabaId === 'string' ? corpo.wabaId : null
+  let phoneNumberId = typeof corpo.phoneNumberId === 'string' ? corpo.phoneNumberId : ''
+  let wabaId = typeof corpo.wabaId === 'string' ? corpo.wabaId : null
 
   if (!clienteId || !codigo) {
     return Response.json({ erro: 'faltou cliente ou código' }, { status: 400 })
@@ -73,23 +73,70 @@ export async function POST(req: Request) {
     return Response.json({ erro: 'sem acesso a este cliente' }, { status: 403 })
   }
 
-  if (!phoneNumberId) {
-    /*
-     * O SDK manda o número pelo `message` de session logging, e ele pode faltar
-     * se o cliente fechou a janela no meio. Sem número não há o que gravar: ele
-     * é a chave pela qual o webhook descobre de quem é a mensagem.
-     */
-    await alertar(
-      'o Embedded Signup terminou sem phone_number_id',
-      new Error('o session logging não trouxe o número; o cliente pode ter fechado a janela'),
-      { cliente: clienteId },
-    )
-    return Response.json({ erro: 'a Meta não disse qual número foi conectado' }, { status: 422 })
-  }
-
   let canalId: string
   try {
+    /*
+     * **A troca vem antes de tudo, inclusive de desistir por falta de número.**
+     *
+     * O `code` vive 30 segundos, e a primeira versão desta rota o descartava
+     * quando o `phoneNumberId` faltava: alertava e devolvia 422 sem nunca
+     * trocá-lo. Isso jogava fora exatamente a peça que respondia a pergunta —
+     * o token carrega quais WABAs foram compartilhadas agora.
+     *
+     * Aconteceu de verdade em 13/set: o cliente foi até o fim e viu *"a Meta
+     * não disse qual número foi conectado"*, com o `code` válido na mão.
+     */
     const { token, expiraEm } = await trocarCodigoPorToken(codigo)
+
+    if (!phoneNumberId) {
+      /*
+       * O `message` de session logging não veio. Em vez de desistir, pergunta
+       * à Meta: `debug_token` devolve as WABAs do token (mais recente
+       * primeiro), e cada WABA lista seus números.
+       *
+       * Uma WABA nascida de coexistência tem **um** número — o do celular do
+       * cliente. Com mais de um, não dá para saber qual é o da conexão, e
+       * chutar grava o número errado: aí sim é caso de alertar e parar.
+       */
+      const wabas = await wabasDoToken(token)
+      const descoberta = wabas[0]
+
+      if (descoberta) {
+        const numeros = await numerosDaWaba(descoberta, token)
+        const unico = numeros.length === 1 ? numeros[0] : undefined
+
+        if (unico) {
+          phoneNumberId = unico.id
+          wabaId = wabaId ?? descoberta
+          await alertar(
+            'o número não veio pelo navegador, mas foi descoberto na Meta',
+            new Error(
+              `session logging sem phone_number_id; recuperado ${unico.telefone ?? unico.id} pela WABA ${descoberta}`,
+            ),
+            { cliente: clienteId },
+          )
+        } else {
+          await alertar(
+            'o Embedded Signup terminou sem phone_number_id',
+            new Error(
+              `a WABA ${descoberta} tem ${numeros.length} números; escolher seria chutar qual é o da conexão`,
+            ),
+            { cliente: clienteId },
+          )
+        }
+      } else {
+        await alertar(
+          'o Embedded Signup terminou sem phone_number_id',
+          new Error('o token não trouxe nenhuma WABA em granular_scopes'),
+          { cliente: clienteId },
+        )
+      }
+    }
+
+    if (!phoneNumberId) {
+      return Response.json({ erro: 'a Meta não disse qual número foi conectado' }, { status: 422 })
+    }
+
     const salvo = await salvarNumeroDoOnboarding({
       clienteId,
       phoneNumberId,
