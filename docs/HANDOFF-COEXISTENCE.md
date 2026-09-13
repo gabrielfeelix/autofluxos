@@ -89,6 +89,11 @@ Hoje assinamos: `messages`, `account_alerts`, `account_review_update`,
 | `smb_app_state_sync` | contatos da agenda dele (e toda mudança futura) |
 | `smb_message_echoes` | **mensagens que ele mandar pelo celular, dali em diante** |
 
+**Não confunda com `message_echoes`** (sem o `smb_`), que também aparece na lista
+do painel: aquele é do **Messenger**, com outro payload (`sender`/`recipient`,
+`is_echo`), e não tem nada a ver com Coexistence. O nosso é `smb_message_echoes`
+— e, confusamente, o array dentro do payload dele **se chama** `message_echoes`.
+
 `smb_message_echoes` é o mais importante dos três para o produto: é o que impede
 o bot de atropelar uma conversa que o dono do negócio já está tendo à mão.
 
@@ -148,6 +153,36 @@ curl 'https://graph.facebook.com/v21.0/<PHONE_NUMBER_ID>?fields=is_on_biz_app,pl
   -H 'Authorization: Bearer <TOKEN>'
 # coexistente = is_on_biz_app: true  E  platform_type: CLOUD_API
 ```
+
+### 2b. O fluxo do cliente mudou — **não é mais QR code**
+
+A doc foi atualizada em **21/mai/2026** e descreve outro fluxo. Qualquer tutorial
+(ou versão anterior deste documento) que fale em "escanear QR code" está velho.
+O que acontece hoje, na tela do cliente:
+
+1. ele escolhe conectar a conta existente e digita o número;
+2. a tela mostra um **código de verificação**;
+3. ele recebe uma mensagem da **Conta Oficial do Facebook Business** no
+   WhatsApp Business dele e toca em **Connect**;
+4. toca em **Connect to the Business Platform**, depois **Confirm** — é aqui que
+   ele decide compartilhar (ou não) o histórico;
+5. **cola o código** e termina o Embedded Signup.
+
+Importa para o suporte: quando um cliente travar, a pergunta certa é "chegou a
+mensagem do Facebook Business?" e não "conseguiu ler o QR?".
+
+### 2c. Teste sem cliente real: conta de sandbox
+
+Em **Ferramentas de parceiros → Obter conta de sandbox** a Meta dá uma WABA de
+mentira (com portfólio próprio) que completa o Embedded Signup como se fosse um
+cliente de verdade — devolve WABA ID, phone number ID e token trocável.
+
+É assim que se testa a frente 3 inteira sem depender do Eduardo nem de um celular
+real. No fluxo, escolher **Sandbox Business** como portfólio e **Sandbox WhatsApp
+Business Account** como conta.
+
+**Vale 30 dias**, depois desativa e precisa ser reivindicada de novo — então não
+reivindique antes de ter o que testar.
 
 ### 3. Sincronização: a janela de 24h
 
