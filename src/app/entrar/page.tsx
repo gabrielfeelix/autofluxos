@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { FormularioDeConta } from '@/components/conta/formulario'
 import { Portico } from '@/components/design/portico'
@@ -28,6 +29,15 @@ export default async function Entrar() {
       rodape={
         <>
           <p>
+            Não tem conta?{' '}
+            <Link
+              href="/cadastrar"
+              className="text-muted underline underline-offset-2 transition hover:text-accent"
+            >
+              Cadastre-se
+            </Link>
+          </p>
+          <p className="mt-2">
             Não existe recuperação por e-mail ainda — ela depende de SMTP, que é
             compartilhado com outro produto. Peça uma senha nova a quem administra o painel.
           </p>

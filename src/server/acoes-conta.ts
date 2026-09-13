@@ -9,6 +9,8 @@ import { registrar } from './repos/auditoria'
 import {
   acharCliente,
   apagarCliente,
+  atualizarCadastro,
+  atualizarContexto,
   contarOQueSomeCom,
   type EstragoDaExclusao,
 } from './repos/clientes'
@@ -42,7 +44,7 @@ import {
  * reconstruído a cada tentativa, e redigitar o e-mail depois de errar a senha é
  * castigo sem motivo.
  */
-export type EstadoDeConta = { erro?: string; email?: string; nome?: string }
+export type EstadoDeConta = { erro?: string; email?: string; nome?: string; telefone?: string }
 
 /**
  * A mensagem de erro é sempre a mesma para senha errada e para e-mail que não
@@ -669,4 +671,183 @@ export async function acaoApagarConta(contaId: string): Promise<{ ok: boolean; e
  */
 function ehUuid(valor: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(valor)
+}
+
+// ---------------------------------------------------------------------------
+// Cadastro aberto ao público
+// ---------------------------------------------------------------------------
+
+/**
+ * Quem se cadastra sozinho, sem ninguém da 4YU no meio.
+ *
+ * **Isto abre uma porta que estava fechada de propósito**, e vale dizer por quê
+ * ela estava. Até aqui a conta de um cliente nascia junto com a venda: um
+ * administrador criava, ligava o número de WhatsApp e entregava pronta. O
+ * cadastro aberto troca esse modelo pelo de produto — a pessoa chega pelo site,
+ * cria a empresa dela e conecta o próprio número.
+ *
+ * A diferença com `acaoCriarPrimeiroAdministrador` é o que **não** acontece
+ * aqui: ninguém nasce `admin` de plataforma. `papelDePlataforma` fica nulo, e a
+ * pessoa é `owner` só da empresa que ela criar no primeiro acesso. É a linha que
+ * separa "cliente do AutoFluxos" de "quem opera a 4YU", e ela não pode depender
+ * de lembrança: `role` simplesmente não é tocado neste caminho.
+ *
+ * **Não há confirmação por e-mail**, e isso é decisão registrada, não descuido.
+ * Verificar exige SMTP, que é global ao projeto compartilhado com a Verandi (ver
+ * BANCO-COMPARTILHADO.md) — uma dependência de infraestrutura inteira para um
+ * produto que ainda está sendo testado. O campo existe e a verificação entra
+ * depois; enquanto isso `emailVerified` fica falso e ninguém depende dele.
+ *
+ * O limite por IP é o mesmo do cadastro de administrador (`cadastro`, cinco por
+ * cinco minutos). Numa porta pública ele deixa de ser zelo e vira o que impede
+ * um script de encher `af_usuarios` numa tarde.
+ */
+export async function acaoCadastrarSe(
+  _estado: EstadoDeConta,
+  formData: FormData,
+): Promise<EstadoDeConta> {
+  const nome = String(formData.get('nome') ?? '').trim()
+  const email = String(formData.get('email') ?? '').trim()
+  const telefone = String(formData.get('telefone') ?? '').trim()
+  const senha = String(formData.get('senha') ?? '')
+
+  const cabecalhos = await headers()
+  if (!(await consumirLimite(chaveDeLimite('cadastro', cabecalhos)))) {
+    return {
+      erro: 'Muitas tentativas, espere alguns minutos antes de tentar novamente.',
+      email,
+      nome,
+      telefone,
+    }
+  }
+
+  if (nome === '' || email === '') {
+    return { erro: 'Nome e e-mail são obrigatórios.', email, nome, telefone }
+  }
+
+  try {
+    await autenticacao().api.signUpEmail({
+      body: { name: nome, email, password: senha },
+    })
+  } catch (erro) {
+    return { erro: motivo(erro), email, nome, telefone }
+  }
+
+  /*
+   * Entrar logo depois, na mesma ação.
+   *
+   * Mandar para a tela de login quem acabou de digitar e-mail e senha é pedir
+   * as mesmas duas coisas duas vezes seguidas. E o passo seguinte — criar a
+   * empresa — exige sessão: sem ela o primeiro acesso começaria deslogado.
+   */
+  await autenticacao().api.signInEmail({ body: { email, password: senha }, headers: cabecalhos })
+
+  /*
+   * O telefone é **da pessoa**, e ainda não há empresa onde guardá-lo: ele só
+   * ganha lugar quando o primeiro acesso criar a conta. Guardar em
+   * `af_usuarios` exigiria coluna nova numa tabela que é da biblioteca, então
+   * ele viaja até lá pela URL e é gravado em `clients.telefone` junto do resto.
+   *
+   * Não é segredo (é o telefone de quem acabou de digitá-lo na mesma tela) e
+   * some do endereço assim que o primeiro acesso termina.
+   */
+  const destino = telefone === '' ? '/primeiro-acesso' : `/primeiro-acesso?telefone=${encodeURIComponent(telefone)}`
+  redirect(destino)
+}
+
+/**
+ * O primeiro acesso: a empresa nasce aqui.
+ *
+ * Quem se cadastra sozinho chega sem companhia nenhuma, e uma conta sem empresa
+ * não mostra nada — é a tela vazia de `/contas`, que hoje diz "fale com quem
+ * administra". Para quem veio pelo cadastro aberto essa frase é uma porta
+ * fechada na cara, então esta ação existe para que o caminho não tenha buraco:
+ * cadastrou, criou a empresa, entrou.
+ *
+ * **Reusa `createOrganization` do plugin em vez de inserir em `clients`.** É ele
+ * que grava a linha em `af_membros` com `creatorRole: 'owner'` (ver `auth.ts`),
+ * e é essa linha — não a da `clients` — que faz `papelNaConta` responder e a
+ * pessoa enxergar a própria empresa. Um insert direto criaria a empresa **sem
+ * dono**, visível para ninguém.
+ *
+ * O que o formulário pergunta é curto de propósito, e isso saiu de olhar o
+ * concorrente: o Botconversa não pergunta segmento, tamanho de equipe nem
+ * objetivo em lugar nenhum do cadastro. O que pedimos aqui ou vira configuração
+ * que o produto usa de verdade (`contexto_negocio` alimenta a IA) ou não é
+ * perguntado.
+ */
+export async function acaoPrimeiroAcesso(
+  formData: FormData,
+): Promise<{ ok: boolean; erro?: string } | void> {
+  const sessao = await sessaoAtual()
+  if (!sessao) redirect('/entrar')
+
+  const nome = String(formData.get('empresa') ?? '').trim()
+  const telefone = String(formData.get('telefone') ?? '').trim()
+  const contexto = String(formData.get('contexto') ?? '').trim()
+
+  if (nome === '') return { ok: false, erro: 'O nome da empresa é obrigatório.' }
+
+  /*
+   * Quem já tem empresa não passa por aqui de novo.
+   *
+   * A tela já redireciona nesse caso, mas a ação é um POST na rota e não pode
+   * depender da tela ter feito a conferência: reenviar o formulário criaria uma
+   * segunda empresa vazia para quem só apertou o botão duas vezes.
+   */
+  const [jaTem] = await contasDoUsuario(sessao.usuario.id)
+  if (jaTem) redirect(`/clientes/${jaTem.id}`)
+
+  let id: string
+  try {
+    const conta = await autenticacao().api.createOrganization({
+      headers: await headers(),
+      body: { name: nome, slug: sugerirSlug(nome) },
+    })
+    if (!conta) return { ok: false, erro: 'não deu para criar a empresa' }
+    id = conta.id
+
+    /*
+     * O cadastro entra **depois** de a empresa existir, e a falha dele não
+     * derruba o primeiro acesso.
+     *
+     * Quem responde pela empresa é quem acabou de criá-la, então `responsavel`
+     * e `email` saem da sessão em vez de serem perguntados de novo — a pessoa
+     * digitou os dois na tela anterior.
+     */
+    await atualizarCadastro(id, {
+      nome,
+      responsavel: sessao.usuario.nome,
+      telefone,
+      email: sessao.usuario.email,
+      cnpj: '',
+      observacoes: '',
+    })
+
+    if (contexto !== '') await atualizarContexto(id, contexto)
+
+    await registrar({
+      acao: 'criou_conta',
+      autorId: sessao.usuario.id,
+      autorEmail: sessao.usuario.email,
+      contaId: id,
+      contaNome: nome,
+      alvoTipo: 'client',
+      alvoId: id,
+      alvoNome: nome,
+      detalhes: { origem: 'primeiro_acesso' },
+      impersonadoPor: sessao.impersonadoPor,
+    })
+  } catch (erro) {
+    return { ok: false, erro: motivo(erro) }
+  }
+
+  revalidatePath('/', 'layout')
+  /*
+   * Direto para a aba **Número**, e não para a visão geral.
+   *
+   * Quem acabou de criar a empresa não tem nada para ver num painel vazio; o
+   * que ele quer é ligar o WhatsApp dele, que é a razão de ter se cadastrado.
+   */
+  redirect(`/clientes/${id}/numero`)
 }

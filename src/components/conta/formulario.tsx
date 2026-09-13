@@ -18,11 +18,18 @@ export function FormularioDeConta({
   action,
   botao,
   pedirNome = false,
+  pedirTelefone = false,
   ajuda,
 }: {
   action: (estado: EstadoDeConta, formData: FormData) => Promise<EstadoDeConta>
   botao: string
   pedirNome?: boolean
+  /**
+   * Só o cadastro aberto pede telefone, e ele é **opcional** — a mesma escolha
+   * que o Botconversa faz na tela equivalente. Exigir um telefone para deixar
+   * alguém experimentar o produto é atrito cobrado antes de entregar valor.
+   */
+  pedirTelefone?: boolean
   ajuda?: string
 }) {
   const [estado, enviar, pendente] = useActionState(action, INICIAL)
@@ -63,6 +70,25 @@ export function FormularioDeConta({
           className="app-field px-[13px] py-[11px] text-[13.5px]"
         />
       </label>
+
+      {pedirTelefone && (
+        <label>
+          <Rotulo>Telefone</Rotulo>
+          <input
+            type="tel"
+            name="telefone"
+            autoComplete="tel"
+            placeholder="(44) 90000-0000"
+            key={estado.telefone ?? ''}
+            defaultValue={estado.telefone ?? ''}
+            className="app-field px-[13px] py-[11px] text-[13.5px]"
+          />
+          <span className="mt-1.5 block text-[11px] text-dim">
+            Opcional. É como a gente fala com você se algo travar — não é o número que o
+            bot atende.
+          </span>
+        </label>
+      )}
 
       <CampoDeSenha
         minimo={10}

@@ -47,6 +47,20 @@ const PORTAS_ABERTAS = [
   '/',
   '/entrar',
   /**
+   * O cadastro aberto ao público — a porta de quem chega pelo site.
+   *
+   * **`/primeiro-acesso` não entra nesta lista, e é de propósito.** Ele é o
+   * segundo passo do mesmo cadastro, mas só se alcança já logado: a ação de
+   * cadastrar cria a sessão antes de redirecionar para lá. Deixá-lo aberto
+   * daria a uma URL digitada à mão uma tela que fala "bem-vindo" para quem não
+   * entrou.
+   *
+   * Não confunda com `/criar-conta`, logo abaixo do comentário do topo: aquele
+   * é o cadastro **interno** (primeira execução e administrador cadastrando
+   * gente) e continua fora daqui.
+   */
+  '/cadastrar',
+  /**
    * A política de privacidade **precisa** abrir sem sessão.
    *
    * É a URL que o app review da Meta exige, e quem revisa não tem conta aqui:

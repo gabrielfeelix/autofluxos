@@ -63,15 +63,22 @@ export default async function Contas() {
           <section className="app-card border-dashed px-8 py-12 text-center">
             <p className="text-[14px] font-semibold text-soft">Nenhuma companhia ainda</p>
             {/*
-              O estado vazio conta **o que fazer**, e o que fazer aqui depende
-              de quem está olhando: a conta de um cliente é criada pela 4YU
-              junto com o número de WhatsApp dele. Estado vazio que ensina o
-              caminho errado é pior que estado vazio mudo.
+              O estado vazio conta **o que fazer**, e o que fazer mudou quando o
+              cadastro abriu ao público: antes a conta nascia junto com a venda e
+              este texto mandava falar com quem administra. Hoje a pessoa cria a
+              dela, e mandá-la pedir a alguém seria ensinar o caminho errado —
+              que é pior que estado vazio mudo.
             */}
             <p className="mx-auto mt-1.5 max-w-md text-[12.5px] leading-6 text-dim">
-              A conta do seu negócio é criada pela 4YU junto com o número de WhatsApp. Se você
-              deveria ver alguma coisa aqui, fale com quem administra o painel.
+              Crie a companhia do seu negócio para começar — leva menos de um minuto. Se você
+              deveria fazer parte de uma que já existe, peça a quem cuida dela para adicionar o
+              seu e-mail.
             </p>
+            <div className="mt-5 flex justify-center">
+              <Link href="/primeiro-acesso" className="app-primary-button px-[18px] py-2.5 text-[13px]">
+                Criar minha companhia
+              </Link>
+            </div>
           </section>
         ) : (
           <ul className="flex flex-col gap-2">
