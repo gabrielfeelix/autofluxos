@@ -4,6 +4,7 @@ import { ClienteShell } from '@/components/design/cliente-shell'
 import { BotaoPerigo } from '@/components/design/botao-perigo'
 import { Dropdown } from '@/components/design/dropdown'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
+import { LogoDoCanal } from '@/components/design/selo-do-canal'
 import {
   acaoConectarNumero,
   acaoDefinirFluxosDoNumero,
@@ -151,7 +152,15 @@ export default async function Pagina({
          */}
         {!temCoexistente && (
         <section className="app-card mb-[18px] px-5 py-5">
-          <h2 className="text-[14.5px] font-bold">Conectar o WhatsApp que você já usa</h2>
+          <h2 className="flex items-center gap-2.5 text-[14.5px] font-bold">
+            <span
+              style={{ color: '#25D366' }}
+              className="inline-flex size-[26px] shrink-0 items-center justify-center rounded-full bg-[#25D366]/10"
+            >
+              <LogoDoCanal canal="whatsapp" tamanho={15} />
+            </span>
+            Conectar o WhatsApp que você já usa
+          </h2>
           <p className="mt-1.5 max-w-[70ch] text-[12.5px] leading-6 text-dim">
             <strong className="text-muted">Você não perde o seu WhatsApp.</strong> Continua
             respondendo pelo celular como sempre — o que muda é que este painel passa a enxergar

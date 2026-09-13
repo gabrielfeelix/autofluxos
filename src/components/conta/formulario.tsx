@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react'
 import { CampoDeSenha } from '@/components/design/campo-de-senha'
+import { CampoDeTelefone } from '@/components/design/campo-de-telefone'
 import type { EstadoDeConta } from '@/server/acoes-conta'
 
 const INICIAL: EstadoDeConta = {}
@@ -72,22 +73,13 @@ export function FormularioDeConta({
       </label>
 
       {pedirTelefone && (
-        <label>
-          <Rotulo>Telefone</Rotulo>
-          <input
-            type="tel"
-            name="telefone"
-            autoComplete="tel"
-            placeholder="(44) 90000-0000"
-            key={estado.telefone ?? ''}
-            defaultValue={estado.telefone ?? ''}
-            className="app-field px-[13px] py-[11px] text-[13.5px]"
-          />
-          <span className="mt-1.5 block text-[11px] text-dim">
-            Opcional. É como a gente fala com você se algo travar — não é o número que o
-            bot atende.
-          </span>
-        </label>
+        <CampoDeTelefone
+          // `key` força o campo a renascer com o que o servidor devolveu depois
+          // de um erro — sem ela, o estado interno da máscara ignoraria o valor.
+          key={estado.telefone ?? ''}
+          valorInicial={estado.telefone ?? ''}
+          ajuda="Opcional. É como a gente fala com você se algo travar — não é o número que o bot atende."
+        />
       )}
 
       <CampoDeSenha

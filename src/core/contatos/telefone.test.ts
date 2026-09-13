@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { chavesDoTelefone, digitos, telefoneCanonico, telefoneLegivel } from './telefone'
+import {
+  chavesDoTelefone,
+  digitos,
+  mascaraDeTelefone,
+  telefoneCanonico,
+  telefoneCompleto,
+  telefoneLegivel,
+} from './telefone'
 
 describe('chaves do telefone', () => {
   const casa = (a: string, b: string) =>
@@ -100,5 +107,51 @@ describe('forma legível', () => {
 describe('digitos', () => {
   it('deixa só número', () => {
     expect(digitos('+55 (11) 98765-4321')).toBe('5511987654321')
+  })
+})
+
+describe('mascaraDeTelefone', () => {
+  it('põe o parêntese no primeiro dígito, e fecha no segundo', () => {
+    expect(mascaraDeTelefone('4')).toBe('(4')
+    expect(mascaraDeTelefone('44')).toBe('(44) ')
+  })
+
+  it('formata como fixo até dez dígitos e vira celular no décimo primeiro', () => {
+    // O mesmo prefixo muda de forma quando o nono dígito chega — é o caso que
+    // um corte fixo em 4 ou em 5 erraria metade das vezes.
+    expect(mascaraDeTelefone('4430001234')).toBe('(44) 3000-1234')
+    expect(mascaraDeTelefone('44900012345')).toBe('(44) 90001-2345')
+  })
+
+  it('para no décimo primeiro dígito', () => {
+    expect(mascaraDeTelefone('449000123456789')).toBe('(44) 90001-2345')
+  })
+
+  it('aceita texto já formatado sem duplicar pontuação', () => {
+    // É o que acontece ao colar um número da agenda, e ao reformatar o próprio
+    // valor do campo a cada tecla.
+    expect(mascaraDeTelefone('(44) 90001-2345')).toBe('(44) 90001-2345')
+    expect(mascaraDeTelefone('+55 (44) 9 0001-2345')).toBe('(55) 44900-0123')
+  })
+
+  it('vazio continua vazio, e não vira um parêntese solto', () => {
+    expect(mascaraDeTelefone('')).toBe('')
+    expect(mascaraDeTelefone('abc')).toBe('')
+  })
+})
+
+describe('telefoneCompleto', () => {
+  it('vazio vale, porque o campo é opcional', () => {
+    expect(telefoneCompleto('')).toBe(true)
+  })
+
+  it('aceita fixo e celular completos', () => {
+    expect(telefoneCompleto('(44) 3000-1234')).toBe(true)
+    expect(telefoneCompleto('(44) 90001-2345')).toBe(true)
+  })
+
+  it('recusa meio telefone', () => {
+    expect(telefoneCompleto('(44) 9000')).toBe(false)
+    expect(telefoneCompleto('449')).toBe(false)
   })
 })

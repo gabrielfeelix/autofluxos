@@ -98,3 +98,59 @@ export function telefoneLegivel(bruto: string): string {
   const corte = numero.length === 9 ? 5 : 4
   return `+55 (${ddd}) ${numero.slice(0, corte)}-${numero.slice(corte)}`
 }
+
+/**
+ * A máscara **enquanto se digita**: `(44) 90000-0000`, montada dígito a dígito.
+ *
+ * É prima de `telefoneLegivel` e não a mesma função, e a diferença é o estado em
+ * que o número chega. Aquela formata um telefone **pronto** e devolve o cru
+ * quando não reconhece — comportamento certo para exibir o que já está gravado,
+ * e péssimo para um campo em uso: quem digitou três dígitos ainda não tem um
+ * telefone válido, e receber o texto de volta sem máscara faria os parênteses
+ * aparecerem só no fim, pulando na frente de quem está escrevendo.
+ *
+ * Aqui cada estado incompleto tem a sua forma, então a pontuação nasce embaixo
+ * do dedo: `4` → `(4`, `44` → `(44) `, e o hífen entra quando há o que separar.
+ *
+ * **O corte do hífen depende do tamanho**, e é por isso que ele só aparece
+ * depois do DDD completo: celular é `(44) 90000-0000` (5 antes do traço) e fixo
+ * é `(44) 3000-0000` (4). Cortar sempre em 4 poria o traço no lugar errado de
+ * todo celular; cortar sempre em 5 quebraria todo fixo. Como não dá para saber
+ * qual é antes de o número terminar, o traço segue o que já foi digitado: até
+ * dez dígitos ele formata como fixo, no décimo primeiro vira celular.
+ *
+ * O DDI fica de fora de propósito. Ele é constante para todo mundo que usa isto
+ * hoje, e um `+55` fixo no começo do campo é um pedaço que a pessoa apaga sem
+ * querer e depois não sabe repor.
+ */
+export function mascaraDeTelefone(bruto: string): string {
+  // Onze é o teto do celular brasileiro com DDD. Cortar aqui é o que impede o
+  // campo de aceitar um décimo segundo dígito que não caberia em máscara
+  // nenhuma — e é mais honesto que aceitar e recusar depois.
+  const so = digitos(bruto).slice(0, 11)
+  if (so === '') return ''
+
+  // Menos de dois dígitos é DDD incompleto: abre o parêntese e espera. No
+  // segundo ele fecha sozinho, e o espaço depois evita que o próximo dígito
+  // pareça grudado no DDD.
+  if (so.length < 2) return `(${so}`
+
+  const ddd = so.slice(0, 2)
+  const numero = so.slice(2)
+  if (numero.length <= 4) return `(${ddd}) ${numero}`
+
+  const corte = numero.length > 8 ? 5 : 4
+  return `(${ddd}) ${numero.slice(0, corte)}-${numero.slice(corte)}`
+}
+
+/**
+ * O telefone digitado está completo o bastante para ser aceito?
+ *
+ * Vazio **é válido**: o campo é opcional, e tratar "não quis informar" como erro
+ * seria transformar a escolha num obstáculo. O que não vale é meio telefone —
+ * dez ou onze dígitos, nada entre.
+ */
+export function telefoneCompleto(bruto: string): boolean {
+  const so = digitos(bruto)
+  return so.length === 0 || so.length === 10 || so.length === 11
+}

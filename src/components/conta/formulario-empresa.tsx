@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { CampoDeTelefone } from '@/components/design/campo-de-telefone'
 
 /**
  * O formulário do primeiro acesso.
@@ -54,17 +55,7 @@ export function FormularioDeEmpresa({
         </span>
       </label>
 
-      <label>
-        <Rotulo>Telefone</Rotulo>
-        <input
-          type="tel"
-          name="telefone"
-          autoComplete="tel"
-          placeholder="(44) 90000-0000"
-          defaultValue={telefoneInicial}
-          className="app-field px-[13px] py-[11px] text-[13.5px]"
-        />
-      </label>
+      <CampoDeTelefone valorInicial={telefoneInicial} />
 
       <label>
         <Rotulo>O que o seu negócio faz</Rotulo>
