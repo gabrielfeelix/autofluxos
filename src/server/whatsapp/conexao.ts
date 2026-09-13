@@ -206,3 +206,69 @@ export async function dispararSync(
 
   return lido.request_id ?? null
 }
+
+/* -------------------------------------------------------------------------- */
+/* O link do Embedded Signup hospedado                                         */
+/* -------------------------------------------------------------------------- */
+
+/** O app do WhatsApp está configurado neste ambiente? A tela pergunta isso. */
+export function whatsappConfigurado(): boolean {
+  return Boolean(process.env.META_APP_ID && process.env.META_WHATSAPP_CONFIG_ID)
+}
+
+/**
+ * A URL que o cliente abre para conectar o WhatsApp dele.
+ *
+ * **A Meta hospeda a tela inteira**, então isto é só a montagem do endereço —
+ * não há SDK, `FB.login`, nem `extras` montado em JavaScript no navegador.
+ *
+ * O `extras` carrega o que faz esta conexão ser **coexistência** e não
+ * onboarding comum:
+ *
+ * - `featureType: whatsapp_business_app_onboarding` — é o que troca a seleção
+ *   de WABA por "conectar sua conta existente". Sem ele, a tela pede para o
+ *   cliente escolher uma WABA e o número dele não entra em coexistência.
+ * - `version: v4` — o v2 morre em 15/out/2026. Nascer em v4 é o que evita
+ *   retrabalho contratado.
+ * - `sessionInfoVersion: 3` — o session logging, que a Meta lista entre os
+ *   requisitos.
+ *
+ * **O `state` não é burocracia.** É ele que diz de qual cliente é a conexão que
+ * está voltando: sem ele, a rota de retorno rejeita
+ * (`/painel?erro=whatsapp_estado`), e dois clientes conectando no mesmo dia
+ * viram dúvida sobre qual número é de quem. Vem de `criarEstado`, o mesmo do
+ * Instagram — ele assina um `clienteId` e não sabe de que canal se trata, então
+ * serve aos dois e não há por que inventar um segundo mecanismo.
+ */
+export function urlDoOnboarding(opcoes: { origem: string; state: string }): string {
+  const appId = process.env.META_APP_ID
+  const configId = process.env.META_WHATSAPP_CONFIG_ID
+
+  if (!appId || !configId) {
+    throw new Error('faltam META_APP_ID e META_WHATSAPP_CONFIG_ID no ambiente')
+  }
+
+  const url = new URL('https://business.facebook.com/messaging/whatsapp/onboard/')
+  url.searchParams.set('app_id', appId)
+  url.searchParams.set('config_id', configId)
+  url.searchParams.set(
+    'extras',
+    JSON.stringify({
+      version: 'v4',
+      sessionInfoVersion: '3',
+      featureType: 'whatsapp_business_app_onboarding',
+    }),
+  )
+  /*
+   * A origem vem de quem chama (que a lê do cabeçalho), e não de uma variável.
+   *
+   * O `redirect_uri` precisa bater byte a byte com o cadastrado no painel da
+   * Meta e com o que a rota de retorno atende. Ler da requisição faz preview e
+   * produção funcionarem sem cada um ter a sua variável — o preço é cadastrar
+   * cada origem no painel, que é obrigatório de qualquer forma.
+   */
+  url.searchParams.set('redirect_uri', `${opcoes.origem}/api/whatsapp/retorno`)
+  url.searchParams.set('state', opcoes.state)
+
+  return url.toString()
+}

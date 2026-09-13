@@ -1,0 +1,215 @@
+import { describe, expect, it } from 'vitest'
+import {
+  PARADO_MS,
+  progressoGeral,
+  situacaoDoNumero,
+  type EstadoNaTela,
+} from './coexistencia-na-tela'
+
+/**
+ * "Andando" e "travou" não podem parecer a mesma coisa.
+ *
+ * É o pedido da spec, e é a regra inteira deste módulo: um cliente que vê
+ * "conectado" e não vê a conversa antiga aparecer vai achar que quebrou. Testado
+ * aqui, e não pela página, porque é decisão de produto — a tela só desenha.
+ */
+
+const AGORA = new Date('2026-09-13T12:00:00Z')
+const minutosAtras = (m: number) => new Date(AGORA.getTime() - m * 60_000).toISOString()
+
+const coexistente: EstadoNaTela = { isOnBizApp: true, coexistenciaEm: minutosAtras(60) }
+
+describe('a situação de um número', () => {
+  /** Cloud API pura não tem coexistência para mostrar. */
+  it('número comum não vira coexistente por engano', () => {
+    expect(situacaoDoNumero(undefined, AGORA)).toBe('comum')
+    expect(situacaoDoNumero({ isOnBizApp: false }, AGORA)).toBe('comum')
+    // `null` é "nunca verificamos", que também não é coexistente.
+    expect(situacaoDoNumero({ isOnBizApp: null }, AGORA)).toBe('comum')
+  })
+
+  /**
+   * O desembarque vence tudo: o envio está parado **agora**, e é o que pede
+   * ação imediata de quem olha a tela.
+   */
+  it('desembarcado vence sincronizando', () => {
+    expect(
+      situacaoDoNumero(
+        {
+          ...coexistente,
+          desembarcadoEm: minutosAtras(2),
+          historicoSyncEm: minutosAtras(5),
+          historicoVistoEm: minutosAtras(1),
+        },
+        AGORA,
+      ),
+    ).toBe('desembarcado')
+  })
+
+  it('sync com sinal recente está sincronizando', () => {
+    expect(
+      situacaoDoNumero(
+        {
+          ...coexistente,
+          historicoSyncEm: minutosAtras(90),
+          historicoProgresso: 40,
+          historicoVistoEm: minutosAtras(3),
+        },
+        AGORA,
+      ),
+    ).toBe('sincronizando')
+  })
+
+  /**
+   * Noventa minutos correndo **não** é travado: a sincronização leva até 6
+   * horas, e chamar isso de falha faria alguém mexer no que está funcionando.
+   * O que conta é o silêncio desde o último lote.
+   */
+  it('demorar muito não é travar, desde que dê sinal', () => {
+    expect(
+      situacaoDoNumero(
+        {
+          ...coexistente,
+          historicoSyncEm: minutosAtras(300),
+          historicoProgresso: 70,
+          historicoVistoEm: minutosAtras(10),
+        },
+        AGORA,
+      ),
+    ).toBe('sincronizando')
+  })
+
+  it('meia hora sem sinal nenhum é travado', () => {
+    expect(
+      situacaoDoNumero(
+        {
+          ...coexistente,
+          historicoSyncEm: minutosAtras(120),
+          historicoProgresso: 40,
+          historicoVistoEm: minutosAtras(31),
+        },
+        AGORA,
+      ),
+    ).toBe('travado')
+  })
+
+  /**
+   * O caso que a referência dupla resolve: disparou e **nenhum lote chegou**.
+   * Sem contar o tempo desde o disparo, isto ficaria "sincronizando" para
+   * sempre — que é exatamente a confusão que o módulo existe para desfazer.
+   */
+  it('disparado e sem nenhum lote há muito tempo é travado', () => {
+    expect(
+      situacaoDoNumero({ ...coexistente, historicoSyncEm: minutosAtras(45) }, AGORA),
+    ).toBe('travado')
+  })
+
+  it('disparado agora, ainda sem lote, está sincronizando', () => {
+    expect(
+      situacaoDoNumero({ ...coexistente, contatosSyncEm: minutosAtras(2) }, AGORA),
+    ).toBe('sincronizando')
+  })
+
+  /** Cem por cento é fim, e o silêncio depois disso é o silêncio bom. */
+  it('sync a 100 está pronto, mesmo em silêncio longo', () => {
+    expect(
+      situacaoDoNumero(
+        {
+          ...coexistente,
+          contatosSyncEm: minutosAtras(600),
+          contatosProgresso: 100,
+          contatosVistoEm: minutosAtras(400),
+          historicoSyncEm: minutosAtras(600),
+          historicoProgresso: 100,
+          historicoVistoEm: minutosAtras(300),
+        },
+        AGORA,
+      ),
+    ).toBe('pronto')
+  })
+
+  it('coexistente sem nenhum sync disparado está pronto', () => {
+    expect(situacaoDoNumero(coexistente, AGORA)).toBe('pronto')
+  })
+
+  /** Um travado e um andando: manda o pior, que é o que pede ação. */
+  it('travado vence sincronizando', () => {
+    expect(
+      situacaoDoNumero(
+        {
+          ...coexistente,
+          contatosSyncEm: minutosAtras(90),
+          contatosVistoEm: minutosAtras(60),
+          historicoSyncEm: minutosAtras(90),
+          historicoProgresso: 50,
+          historicoVistoEm: minutosAtras(1),
+        },
+        AGORA,
+      ),
+    ).toBe('travado')
+  })
+
+  it('o limite é o PARADO_MS documentado', () => {
+    const noLimite = new Date(AGORA.getTime() - PARADO_MS + 1_000).toISOString()
+    expect(
+      situacaoDoNumero(
+        { ...coexistente, historicoSyncEm: minutosAtras(120), historicoVistoEm: noLimite },
+        AGORA,
+      ),
+    ).toBe('sincronizando')
+  })
+})
+
+describe('o progresso somado', () => {
+  it('sem sync nenhum, não há barra para mostrar', () => {
+    expect(progressoGeral(coexistente)).toBeNull()
+    expect(progressoGeral(undefined)).toBeNull()
+  })
+
+  /**
+   * O sync que nem começou conta como zero, não como ausente — senão a barra
+   * mostraria 100% com metade do trabalho por fazer.
+   */
+  it('um sync a 100 e o outro nem começado é 50, não 100', () => {
+    expect(
+      progressoGeral({ ...coexistente, contatosSyncEm: minutosAtras(10), contatosProgresso: 100 }),
+    ).toBe(50)
+  })
+
+  it('os dois pela metade é metade', () => {
+    expect(
+      progressoGeral({
+        ...coexistente,
+        contatosSyncEm: minutosAtras(10),
+        contatosProgresso: 50,
+        historicoSyncEm: minutosAtras(10),
+        historicoProgresso: 50,
+      }),
+    ).toBe(50)
+  })
+
+  it('os dois no fim é cem', () => {
+    expect(
+      progressoGeral({
+        ...coexistente,
+        contatosSyncEm: minutosAtras(10),
+        contatosProgresso: 100,
+        historicoSyncEm: minutosAtras(10),
+        historicoProgresso: 100,
+      }),
+    ).toBe(100)
+  })
+
+  /** Valor fora da faixa é ruído da Meta e não pode virar barra de 300%. */
+  it('valor absurdo é contido na faixa', () => {
+    expect(
+      progressoGeral({
+        ...coexistente,
+        contatosSyncEm: minutosAtras(10),
+        contatosProgresso: 900,
+        historicoSyncEm: minutosAtras(10),
+        historicoProgresso: -5,
+      }),
+    ).toBe(50)
+  })
+})

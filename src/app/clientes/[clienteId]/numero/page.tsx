@@ -14,9 +14,13 @@ import {
   PAPEIS_DO_NUMERO,
   ROTULO_DO_PAPEL,
 } from '@/core/papeis-do-numero'
+import { acaoConectarWhatsapp } from '@/server/acoes-whatsapp'
+import { progressoGeral, situacaoDoNumero } from '@/core/coexistencia-na-tela'
 import { acharCliente } from '@/server/repos/clientes'
+import { coexistenciaDoCliente } from '@/server/repos/coexistencia'
 import { fluxoDoPapel, listarCanais } from '@/server/repos/conversas'
 import { listarFluxos } from '@/server/repos/fluxos'
+import { whatsappConfigurado } from '@/server/whatsapp/conexao'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,21 +29,88 @@ export const dynamic = 'force-dynamic'
  *
  * As duas coisas ficam na mesma tela porque falham juntas: número cadastrado
  * aqui sem o webhook cadastrado lá é um bot que existe e nunca recebe nada.
+ *
+ * **A conexão por Embedded Signup mora aqui, e não em tela nova**: a rota de
+ * retorno já manda o cliente para cá (`/clientes/[clienteId]/numero`), e uma
+ * página separada quebraria o próprio retorno.
  */
+
+/**
+ * O que o `?resultado=` da rota de retorno diz para quem voltou.
+ *
+ * São seis, e **`cancelado` não é erro**: é alguém que desistiu de propósito na
+ * tela da Meta. Pedir para essa pessoa investigar uma decisão que ela mesma
+ * tomou é o jeito de fazer a tela parecer quebrada quando nada quebrou.
+ */
+const RESULTADOS: Record<string, { tom: 'bom' | 'neutro' | 'ruim'; texto: string }> = {
+  conectado: {
+    tom: 'bom',
+    texto:
+      'Número conectado. Se você escolheu trazer as conversas antigas, elas aparecem aos poucos — pode levar de alguns minutos a algumas horas.',
+  },
+  cancelado: {
+    tom: 'neutro',
+    texto: 'A conexão foi cancelada na tela da Meta. Nada mudou por aqui.',
+  },
+  falhou: {
+    tom: 'ruim',
+    texto: 'A Meta recusou a conexão. O detalhe está em Alertas, na administração.',
+  },
+  sem_codigo: {
+    tom: 'ruim',
+    texto: 'A Meta devolveu sem o código de autorização. Tente conectar de novo.',
+  },
+  sem_numero: {
+    tom: 'ruim',
+    texto:
+      'A Meta devolveu sem dizer qual número foi conectado. Tente de novo; se repetir, o detalhe está em Alertas.',
+  },
+  whatsapp_estado: {
+    tom: 'ruim',
+    texto:
+      'O link de conexão venceu ou não era deste cliente. Comece de novo por esta tela — o link vale por 10 minutos.',
+  },
+  whatsapp_acesso: {
+    tom: 'ruim',
+    texto: 'Você não tem acesso a este cliente para conectar um número nele.',
+  },
+  sem_app: {
+    tom: 'ruim',
+    texto:
+      'Este ambiente não tem o app do WhatsApp configurado (META_APP_ID e META_WHATSAPP_CONFIG_ID).',
+  },
+}
 export default async function Pagina({
   params,
+  searchParams,
 }: {
   params: Promise<{ clienteId: string }>
+  searchParams: Promise<{ resultado?: string; erro?: string }>
 }) {
   const { clienteId } = await params
+  const { resultado, erro } = await searchParams
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [fluxos, canais, cabecalhos] = await Promise.all([
+  const [fluxos, canais, coexistencia, cabecalhos] = await Promise.all([
     listarFluxos(cliente.id),
     listarCanais(cliente.id),
+    coexistenciaDoCliente(cliente.id),
     headers(),
   ])
+
+  // `erro` cobre os dois que a rota manda para `/painel?erro=`; quem chegar
+  // aqui com um deles na URL vê o mesmo texto.
+  const aviso = RESULTADOS[resultado ?? erro ?? '']
+  const podeConectar = whatsappConfigurado()
+  /*
+   * O botão não aparece para quem já conectou.
+   *
+   * Não é só arrumação de tela: clicar de novo manda o cliente refazer o
+   * Embedded Signup de um número que já está ligado, e a Meta trata isso como
+   * reconexão — que desvincula os aparelhos dele outra vez, sem necessidade.
+   */
+  const temCoexistente = canais.some((canal) => coexistencia[canal.id]?.isOnBizApp === true)
 
   const host =
     cabecalhos.get('x-forwarded-host') ??
@@ -55,6 +126,91 @@ export default async function Pagina({
         <h1 className="mb-5 text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">
           Número do WhatsApp
         </h1>
+
+        {aviso && (
+          <p
+            className={`mb-5 rounded-[10px] border px-3.5 py-2.5 text-[12.5px] leading-6 ${
+              aviso.tom === 'bom'
+                ? 'border-emerald-400/25 bg-emerald-400/[0.07] text-emerald-200'
+                : aviso.tom === 'neutro'
+                  ? 'border-white/10 bg-white/[0.03] text-muted'
+                  : 'border-amber-400/25 bg-amber-400/[0.07] text-amber-200'
+            }`}
+          >
+            {aviso.texto}
+          </p>
+        )}
+
+        {/*
+         * Conectar o número que o cliente já usa.
+         *
+         * **O texto é o produto aqui.** Quem vai clicar é o dono de um negócio
+         * que atende pelo celular todo dia, e o medo dele é perder isso. Um
+         * botão sozinho, sem responder "vou perder meu WhatsApp?", faz a pessoa
+         * não clicar — ou clicar sem saber no que está entrando, que é pior.
+         */}
+        {!temCoexistente && (
+        <section className="app-card mb-[18px] px-5 py-5">
+          <h2 className="text-[14.5px] font-bold">Conectar o WhatsApp que você já usa</h2>
+          <p className="mt-1.5 max-w-[70ch] text-[12.5px] leading-6 text-dim">
+            <strong className="text-muted">Você não perde o seu WhatsApp.</strong> Continua
+            respondendo pelo celular como sempre — o que muda é que este painel passa a enxergar
+            as mesmas conversas, e pode responder junto.
+          </p>
+
+          <div className="mt-4 rounded-[10px] border border-white/[0.06] bg-white/[0.014] px-4 py-3.5">
+            <p className="text-[12px] font-semibold text-muted">O que vai acontecer</p>
+            <ol className="mt-2 space-y-1.5 text-[12px] leading-5 text-dim">
+              <li>1. A Meta abre uma tela e pede o seu número.</li>
+              <li>
+                2. Ela mostra um <strong className="text-muted">código de verificação</strong> e
+                manda uma mensagem da <strong className="text-muted">Conta Oficial do Facebook
+                Business</strong> no seu WhatsApp Business.
+              </li>
+              <li>
+                3. Você toca em <strong className="text-muted">Connect</strong>, depois em{' '}
+                <strong className="text-muted">Confirm</strong>, e cola o código.
+              </li>
+              <li>
+                4. Você escolhe se quer trazer as conversas antigas —{' '}
+                <strong className="text-muted">é escolha sua</strong>, não obrigação.
+              </li>
+            </ol>
+            {/*
+             * Dito com todas as letras porque quem espera QR code trava na
+             * tela e liga achando que está quebrado. O fluxo mudou e a memória
+             * de quem já conectou outro serviço atrapalha.
+             */}
+            <p className="mt-2.5 text-[11.5px] text-amber-200/90">
+              Não é QR code — a confirmação é por código, dentro do seu WhatsApp Business.
+            </p>
+          </div>
+
+          <p className="mt-3.5 text-[11.5px] leading-5 text-dim">
+            Para funcionar: <strong className="text-muted">WhatsApp Business 2.24.17 ou mais
+            novo</strong>, e o número já em uso no aplicativo.
+          </p>
+
+          <form action={acaoConectarWhatsapp} className="mt-4">
+            <input type="hidden" name="clienteId" value={cliente.id} />
+            <button
+              type="submit"
+              disabled={!podeConectar}
+              className="rounded-[9px] bg-accent px-4 py-2.5 text-[13px] font-semibold text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Conectar meu WhatsApp
+            </button>
+          </form>
+
+          {!podeConectar && (
+            <p className="mt-3 text-[12px] text-amber-300">
+              Falta <code className="font-mono">META_APP_ID</code> e{' '}
+              <code className="font-mono">META_WHATSAPP_CONFIG_ID</code> no ambiente deste
+              servidor.
+            </p>
+          )}
+        </section>
+        )}
 
         <section className="app-card mb-[18px] overflow-hidden">
           <header className="flex items-start justify-between gap-4 border-b border-white/[0.06] px-5 py-4">
@@ -121,6 +277,9 @@ export default async function Pagina({
                   canal.id,
                   {},
                 )
+                const estado = coexistencia[canal.id]
+                const situacao = situacaoDoNumero(estado)
+                const progresso = progressoGeral(estado)
 
                 return (
                   <li
@@ -150,6 +309,86 @@ export default async function Pagina({
                       <p className="mt-2 ml-4 rounded-lg border border-amber-300/25 bg-amber-300/[0.08] px-2.5 py-2 text-[11.5px] text-amber-200">
                         {aviso}
                       </p>
+                    )}
+
+                    {situacao !== 'comum' && (
+                      <div className="mt-2.5 ml-4">
+                        {situacao === 'sincronizando' && (
+                          <div className="rounded-lg border border-sky-400/25 bg-sky-400/[0.07] px-3 py-2.5">
+                            <p className="text-[11.5px] font-semibold text-sky-200">
+                              Trazendo as conversas antigas
+                              {progresso !== null ? ` — ${progresso}%` : ''}
+                            </p>
+                            {/*
+                             * A barra existe para o caso que a spec nomeia:
+                             * "conectado" sem a conversa antiga aparecer faz o
+                             * cliente achar que quebrou. Progresso visível é a
+                             * diferença entre esperar e desconfiar.
+                             */}
+                            {progresso !== null && (
+                              <div
+                                className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10"
+                                role="progressbar"
+                                aria-valuenow={progresso}
+                                aria-valuemin={0}
+                                aria-valuemax={100}
+                                aria-label="Progresso da importação das conversas"
+                              >
+                                <div
+                                  className="h-full rounded-full bg-sky-400 transition-all"
+                                  style={{ width: `${progresso}%` }}
+                                />
+                              </div>
+                            )}
+                            <p className="mt-2 text-[11px] leading-5 text-sky-200/80">
+                              Leva de alguns minutos a algumas horas. Pode fechar esta tela — as
+                              conversas vão aparecendo sozinhas no Inbox.
+                            </p>
+                          </div>
+                        )}
+
+                        {situacao === 'travado' && (
+                          <p className="rounded-lg border border-amber-300/25 bg-amber-300/[0.08] px-3 py-2.5 text-[11.5px] leading-5 text-amber-200">
+                            A importação parou de dar sinal
+                            {progresso !== null ? ` em ${progresso}%` : ''}. O que já chegou está no
+                            Inbox. O detalhe está em Alertas, na administração.
+                          </p>
+                        )}
+
+                        {situacao === 'desembarcado' && (
+                          <p className="rounded-lg border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2.5 text-[11.5px] leading-5 text-rose-200">
+                            A conexão caiu — costuma acontecer quando o celular é trocado ou o
+                            WhatsApp Business é reinstalado. Normalmente volta sozinha em alguns
+                            minutos; enquanto isso, o envio por aqui fica parado.
+                          </p>
+                        )}
+
+                        {situacao === 'pronto' && (
+                          <div className="rounded-lg border border-white/[0.06] bg-white/[0.014] px-3 py-2.5">
+                            <p className="text-[11.5px] font-semibold text-emerald-300">
+                              Conectado ao WhatsApp Business deste número
+                            </p>
+                            {/*
+                             * As duas coisas que ninguém adivinha, e que só
+                             * aparecem depois de conectado porque é quando elas
+                             * passam a valer.
+                             */}
+                            <ul className="mt-1.5 space-y-1 text-[11px] leading-5 text-dim">
+                              <li>
+                                · Abra o WhatsApp Business no celular{' '}
+                                <strong className="text-muted">ao menos uma vez a cada 14
+                                dias</strong> — sem isso a Meta derruba a conexão e as mensagens
+                                param de chegar.
+                              </li>
+                              <li>
+                                · O <strong className="text-muted">nome do negócio ficou
+                                travado</strong> na Meta. Para mudar, é preciso desconectar e
+                                conectar de novo.
+                              </li>
+                            </ul>
+                          </div>
+                        )}
+                      </div>
                     )}
 
                     <div className="mt-3 ml-4">

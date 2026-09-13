@@ -22,6 +22,17 @@ export type EstadoDeCoexistencia = {
   historicoSyncRequestId: string | null
   /** Preenchido = `ACCOUNT_OFFBOARDED` chegou e a reconexão não. */
   desembarcadoEm: string | null
+  /**
+   * O andamento dos dois syncs, para a tela.
+   *
+   * Só `coexistenciaDoCliente` preenche — as leituras do caminho quente não
+   * precisam disso e não pagam por ele. `null` em toda parte é o normal de um
+   * número que nunca sincronizou.
+   */
+  contatosProgresso?: number | null
+  contatosVistoEm?: string | null
+  historicoProgresso?: number | null
+  historicoVistoEm?: string | null
 }
 
 const COLUNAS =
@@ -442,4 +453,36 @@ export async function anotarProgressoDoSync(
     .eq('id', canalId)
 
   if (error) throw new Error(`não deu para anotar o progresso: ${error.message}`)
+}
+
+/**
+ * O estado de coexistência de todos os números de um cliente, de uma vez.
+ *
+ * Existe para a tela: `listarCanais` devolve `CanalSalvo`, que não tem nenhuma
+ * coluna desta migration — e uma leitura por número transformaria a tela de um
+ * cliente com três números em quatro idas ao banco. Devolve um mapa por id de
+ * canal, que é como a tela já tem os números na mão.
+ */
+export async function coexistenciaDoCliente(
+  clienteId: string,
+): Promise<Record<string, EstadoDeCoexistencia>> {
+  const { data, error } = await db()
+    .from('channels')
+    .select(`id, ${COLUNAS}, contatos_sync_progresso, contatos_sync_visto_em, historico_sync_progresso, historico_sync_visto_em`)
+    .eq('client_id', clienteId)
+
+  if (ehIdInvalido(error)) return {}
+  if (error) throw new Error(`não deu para ler a coexistência do cliente: ${error.message}`)
+
+  const mapa: Record<string, EstadoDeCoexistencia> = {}
+  for (const linha of (data ?? []) as Record<string, unknown>[]) {
+    mapa[linha.id as string] = {
+      ...paraEstado(linha),
+      contatosProgresso: (linha.contatos_sync_progresso ?? null) as number | null,
+      contatosVistoEm: (linha.contatos_sync_visto_em ?? null) as string | null,
+      historicoProgresso: (linha.historico_sync_progresso ?? null) as number | null,
+      historicoVistoEm: (linha.historico_sync_visto_em ?? null) as string | null,
+    }
+  }
+  return mapa
 }
