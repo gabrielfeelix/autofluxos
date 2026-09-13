@@ -458,6 +458,52 @@ agora", não "erro".
 
 Nada aqui depende mais do painel — a decisão Hosted × SDK está fechada.
 
+## Onde a coisa parou (13/09, fim do dia) — leia isto primeiro
+
+**Código: as cinco frentes estão feitas.** Webhooks dos três campos,
+offboard/reconnect, migration `0047` (já em produção), rota de retorno com troca
+de token e disparo automático dos syncs, e a tela de conectar (`8050825`).
+Assinatura dos três campos: **feita** na Meta, conferida pelo MCP.
+
+**O que falta é uma coisa só: testar de ponta a ponta, com número real.**
+
+### Como testar, e com qual número
+
+O dono tem um **segundo número, WhatsApp Business real**, usado hoje no projeto
+"radar de ofertas". É com ele que se testa — e é melhor que conta de sandbox,
+porque é aparelho de verdade com conversas de verdade, que é justamente o que o
+sandbox não simula. Já autorizado por ele, inclusive sabendo que:
+
+- o histórico daquele número vem para o nosso banco e aparece na tela de leads;
+- a automação do radar pode ser atrapalhada, e ele conserta depois;
+- receber e sincronizar **não** custa; só **enviar** geraria cobrança, e em Tech
+  Provider a Meta cobra do dono do número, não de nós.
+
+**Não use conta de sandbox.** Foi considerada e descartada: ela não testa o que
+importa (celular real) e o relógio de 30 dias dela corre à toa.
+
+### O caminho do teste
+
+1. **Criar um cliente de teste** — existe em `/painel` (`acaoCriarCliente`). Não
+   há cadastro de conta próprio no AutoFluxos; o dono já sabe e quer resolver
+   isso **depois** do teste. Não invente fluxo de signup agora.
+2. Abrir o cliente → aba **Número** → botão de conectar.
+3. O botão só aparece com `META_APP_ID` e `META_WHATSAPP_CONFIG_ID`
+   (`1071840912286349`) no ambiente da Vercel. Se não aparecer, é isso.
+4. Abrir o link no celular do número de teste e seguir: digitar o número, receber
+   a mensagem da **Conta Oficial do Facebook Business**, tocar em *Connect*,
+   depois *Confirm*, colar o código. **Não é QR code.**
+5. Conferir o retorno (`?resultado=conectado`) e, no banco, se os dois syncs
+   dispararam (`channels`, colunas de coexistência) e se `contatos_da_agenda` e
+   `messages.historico` começaram a encher.
+
+### O que ainda ninguém viu com os próprios olhos
+
+A tela da Meta oferecendo **"conectar sua conta existente do WhatsApp Business"**.
+Todo o resto foi conferido por consulta; essa tela, não. Se ela pedir seleção de
+WABA em vez de oferecer a conta existente, o `featureType` não pegou — e aí o
+problema é o `config_id`, não o nosso código.
+
 ## Como conferir de verdade
 
 Console não é evidência. O que responde:
