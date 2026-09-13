@@ -14,38 +14,44 @@ Leia, nesta ordem: este arquivo, depois
 
 ```
 verificação do negócio → app review → app em Live → Tech Provider → Coexistence
-    ✅ 02/09              ✅ 12/09      ⏳ dev_mode
-                                        ↑ aqui
+    ✅ 02/09              ✅ 12/09      ✅ 13/09       ↑ aqui
 ```
 
 **O app review saiu em 12/09 e o WhatsApp passou.** `whatsapp_business_messaging`
-e `whatsapp_business_management` estão live com acesso padrão. As três do
+e `whatsapp_business_management` estão live (em Advanced desde a publicação de
+13/09, abaixo). As três do
 Instagram (`instagram_business_basic`, `instagram_business_manage_messages`,
 `business_management`) foram rejeitadas — **e foi decisão do dono deixá-las de
 lado por ora**, porque a pressa é o WhatsApp. Rejeição de permissão não derruba
 as aprovadas; não há nada a "cancelar".
 
-### O bloqueio real, e ele não é o Instagram
+### O app foi publicado em 13/09, e isso mudou o acesso
 
 ```
-app_status: dev_mode      is_live: false
+app_status: live_mode     is_live: true
 ```
 
-**Permissão aprovada não vale em `dev_mode`.** A API só responde para quem tem
-papel no app. Hoje tudo funciona na nossa conta e isso não prova nada sobre um
-cliente. Sair para Live é o próximo passo concreto, e é troca de estado no
-painel — não é fila, não tem análise.
+**As permissões de WhatsApp subiram de Standard para `advanced`** na publicação.
+É o que destrava embarcar o número **do cliente**: em Standard, o Embedded Signup
+só aceitava números da própria conta.
 
-Tudo que costuma barrar o Live já está pronto (política, termos, exclusão de
-dados, ícone, categoria, compliance limpo). Sobram dois pendentes, os dois sem
-API:
+| Permissão | `access_level` |
+|---|---|
+| `whatsapp_business_messaging` | **advanced** |
+| `whatsapp_business_management` | **advanced** |
 
-- `contact_email_verified: false` — o `contato@4yu.com.br` nunca foi confirmado;
-- `description` e `short_description` nulos.
+**O próximo degrau é Tech Provider**, e daí Coexistence.
 
-**Primeira coisa a fazer:** conferir o estado com o MCP (não pelo painel — ver
-"como não se enganar" abaixo), pedir ao dono que confirme o e-mail e preencha a
-descrição, e então virar a chave para Live.
+Dois campos seguem em aberto — **não** barraram o Live, mas valem por outro
+motivo, e nenhum tem API:
+
+- `contact_email_verified: false` — é por onde a Meta avisa de violação e
+  suspensão; `contato@4yu.com.br` nunca foi confirmado;
+- `description` / `short_description` nulos — aparecem para o cliente na tela do
+  Embedded Signup.
+
+**Primeira coisa a fazer:** conferir o estado com o MCP (nunca pelo painel — ver
+"como não se enganar" abaixo) antes de agir sobre qualquer suposição daqui.
 
 ---
 

@@ -13,14 +13,14 @@ destranca a próxima.
 
 ```
 verificação do negócio  →  app review (Advanced Access)  →  app em Live  →  Tech Provider  →  Coexistence
-      ✅ 02/09/2026            ✅ 12/09/2026 (WhatsApp)     ⏳ dev_mode
-                                                            ↑ você está aqui
+      ✅ 02/09/2026            ✅ 12/09/2026 (WhatsApp)      ✅ 13/09/2026    ↑ você está aqui
 ```
 
-> **12/09/2026 — o app review saiu, e o WhatsApp passou.** Ver a seção
-> "12/09/2026" abaixo: as duas permissões de WhatsApp estão **live com acesso
-> padrão**; as três do Instagram foram rejeitadas por screencast. O degrau que
-> falta agora **não é o Instagram** — é o app sair de `dev_mode`.
+> **13/09/2026 — o app foi publicado, e as permissões subiram para Advanced.**
+> As duas de WhatsApp estão `access_level: advanced`, que é o que destrava
+> embarcar o número **do cliente** (em Standard, só números da própria conta).
+> O próximo degrau é Tech Provider. As três do Instagram seguem rejeitadas, e
+> **foi decisão do dono deixá-las de lado** — não bloqueiam nada do WhatsApp.
 
 > **02/09/2026 — a verificação do negócio saiu.** `business_verification_status`
 > passou de `pending` para **`verified`** (conferido pela Graph API na data). Isso
@@ -178,7 +178,7 @@ produto WhatsApp adicionado. A conferência na tela é confirmação, não desco
 em **Revisão do app** → **Permissões e recursos**, onde se pede o Advanced Access
 das duas permissões citadas acima.
 
-## 13/09/2026 — o review saiu; o que trava agora é o `dev_mode`
+## 12–13/09/2026 — o review saiu, o app foi publicado, e o acesso virou Advanced
 
 Lido pelo Meta Devtools MCP nesta data (app `1063817842847269`).
 
@@ -225,19 +225,36 @@ visível, é preciso avisar — senão o analista procura um fluxo que não exis
 `can_submit: true`: dá para reenviar. Quando for, mande **só as três
 rejeitadas** — reenviar as aprovadas junto as devolveria para análise sem motivo.
 
-### O degrau seguinte não é o Instagram: é `dev_mode`
+### 13/09 — o app foi publicado, e o acesso virou Advanced
 
 ```
-app_status: dev_mode     is_live: false
+app_status: live_mode     is_live: true
 ```
 
-**Permissão aprovada não vale enquanto o app estiver em desenvolvimento.** Em
-`dev_mode`, a API só responde para quem tem papel no app (admin, dev, tester) —
-o que explica por que tudo funciona hoje na nossa conta e não provaria nada num
-cliente. Sair para Live é chave para Tech Provider e para Coexistence, e é uma
-troca de estado no painel, não uma fila.
+**A publicação subiu as permissões de Standard para Advanced**, conferido logo
+depois pelo MCP:
 
-Conferido nesta data, e tudo que costuma barrar o Live já está preenchido:
+| Permissão | `access_level` |
+|---|---|
+| `whatsapp_business_messaging` | **advanced** |
+| `whatsapp_business_management` | **advanced** |
+| `public_profile` · `openid` | advanced |
+
+Isso é o que muda o negócio: em Standard, o Embedded Signup só embarcava números
+da própria conta — dava para atender **no nosso número**, não no do cliente. Em
+Advanced, o número do cliente entra. O degrau seguinte é **Tech Provider**.
+
+**Permissão aprovada não valia enquanto o app estava em `dev_mode`**: ali a API
+só responde para quem tem papel no app (admin, dev, tester), o que fazia tudo
+funcionar na nossa conta sem provar nada sobre um cliente.
+
+**Duas coisas que este documento supôs e o fato desmentiu:** a publicação passou
+mesmo com `contact_email_verified: false` e `description`/`short_description`
+nulos. Eles **não** barram o Live. Continuam valendo a pena por outro motivo —
+e-mail de contato não confirmado é onde a Meta avisa de violação e suspensão, e
+a descrição aparece para o cliente no Embedded Signup.
+
+Estado dos campos, conferido em 13/09:
 
 | Campo | Estado |
 |---|---|
@@ -247,12 +264,12 @@ Conferido nesta data, e tudo que costuma barrar o Live já está preenchido:
 | `app_icon_url` | ✅ preenchido |
 | `category` | ✅ `BUSINESS` |
 | Compliance | ✅ `compliant`, zero violação, zero ação requerida |
-| `contact_email_verified` | ⚠️ **`false`** — `contato@4yu.com.br` não confirmado |
-| `description` / `short_description` | ⚠️ nulos |
+| `app_status` | ✅ `live_mode`, `is_live: true` |
+| `contact_email_verified` | ⚠️ **`false`** — não barrou o Live, mas é por onde a Meta avisa |
+| `description` / `short_description` | ⚠️ nulos — aparecem para o cliente no Embedded Signup |
 
-Os dois ⚠️ são os candidatos a serem cobrados na hora de virar a chave. Nenhum
-deles tem API: confirmar e-mail é clicar no link que a Meta manda; descrição é
-campo de painel.
+Nenhum dos dois ⚠️ tem API: confirmar e-mail é clicar no link que a Meta manda;
+descrição é campo de painel.
 
 ## E agora? (02/09/2026)
 
