@@ -1,6 +1,7 @@
 import 'server-only'
 import { alertar } from '../alertar'
 import {
+  anotarIdentidade,
   guardarRequestIdDoSync,
   marcarCoexistente,
   reservarSync,
@@ -57,6 +58,24 @@ export async function terminarOnboarding(entrada: {
   try {
     const numero = await lerNumero(entrada.phoneNumberId, entrada.token)
     coexistente = ehCoexistente(numero)
+
+    /*
+     * **O telefone de verdade, para a tela ter o que mostrar.**
+     *
+     * Esta resposta já trazia `display_phone_number` e `verified_name`, e nós
+     * jogávamos os dois fora — a tela então exibia o `phone_number_id`, um
+     * número que o cliente nunca viu. Ele olhava a lista, não achava o seu
+     * telefone, e concluía que não tinha conectado.
+     *
+     * Melhor-esforço de propósito: é enfeite de tela, e falhar aqui não pode
+     * impedir a conexão de existir. Sem isso a tela cai de volta no id.
+     */
+    await anotarIdentidade(entrada.canalId, {
+      displayPhoneNumber: numero.display_phone_number ?? null,
+      verifiedName: numero.verified_name ?? null,
+    }).catch(async (erro) => {
+      await alertar('não deu para anotar o telefone de exibição do número', erro, contexto)
+    })
   } catch (erro) {
     /*
      * Não deu para perguntar. **Não assumimos que é coexistente**: seguir em

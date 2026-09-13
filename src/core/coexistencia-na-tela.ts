@@ -17,6 +17,10 @@ export type EstadoNaTela = {
   contatosVistoEm?: string | null
   historicoVistoEm?: string | null
   desembarcadoEm?: string | null
+  /** O telefone como a Meta exibe. `null` em canal conectado antes de 0048. */
+  displayPhoneNumber?: string | null
+  /** O nome de exibição aprovado na Meta. */
+  verifiedName?: string | null
 }
 
 export type SituacaoDoNumero =
@@ -115,4 +119,32 @@ export function progressoGeral(estado: EstadoNaTela | undefined): number | null 
     valor(estado.historicoSyncEm, estado.historicoProgresso)
 
   return Math.round(soma / 2)
+}
+
+/**
+ * Como este número se apresenta na lista: o telefone primeiro, o id embaixo.
+ *
+ * **O `phone_number_id` não é o telefone de ninguém.** A tela mostrava
+ * `110549275215531` como título — um número que o cliente nunca viu. Quem
+ * acabou de conectar o próprio celular olhava a lista, não achava o seu, via
+ * "Conectar número" ao lado e concluía que não tinha conectado. Foi relatado
+ * como UX ruim em 13/set/2026, e com razão.
+ *
+ * O id não some: ele é a identidade do canal e o que se procura no painel da
+ * Meta. Só deixa de ser o título.
+ *
+ * Canal antigo não tem `displayPhoneNumber` — conectou antes de guardarmos
+ * isto. Aí o id volta a ser o título, porque mostrar nada seria pior.
+ */
+export function identidadeNaTela(
+  estado: EstadoNaTela | undefined,
+  phoneNumberId: string | null,
+): { titulo: string; abaixo: string | null } {
+  // Canal sem número ainda (criado à mão, ou conexão pela metade).
+  const id = phoneNumberId ?? 'sem número'
+  const telefone = estado?.displayPhoneNumber?.trim()
+  if (!telefone) return { titulo: id, abaixo: null }
+
+  const nome = estado?.verifiedName?.trim()
+  return { titulo: telefone, abaixo: nome ? `${nome} · ${id}` : id }
 }

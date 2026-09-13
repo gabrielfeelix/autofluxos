@@ -33,6 +33,15 @@ export type EstadoDeCoexistencia = {
   contatosVistoEm?: string | null
   historicoProgresso?: number | null
   historicoVistoEm?: string | null
+  /**
+   * O número e o nome como a Meta os exibe — para a tela dizer qual telefone
+   * está ali, em vez do `phone_number_id` que ninguém reconhece.
+   *
+   * `null` em canal antigo, que conectou antes de guardarmos isto. A tela cai
+   * de volta no id quando falta.
+   */
+  displayPhoneNumber?: string | null
+  verifiedName?: string | null
 }
 
 const COLUNAS =
@@ -468,7 +477,9 @@ export async function coexistenciaDoCliente(
 ): Promise<Record<string, EstadoDeCoexistencia>> {
   const { data, error } = await db()
     .from('channels')
-    .select(`id, ${COLUNAS}, contatos_sync_progresso, contatos_sync_visto_em, historico_sync_progresso, historico_sync_visto_em`)
+    .select(
+      `id, ${COLUNAS}, contatos_sync_progresso, contatos_sync_visto_em, historico_sync_progresso, historico_sync_visto_em, display_phone_number, verified_name`,
+    )
     .eq('client_id', clienteId)
 
   if (ehIdInvalido(error)) return {}
@@ -482,6 +493,8 @@ export async function coexistenciaDoCliente(
       contatosVistoEm: (linha.contatos_sync_visto_em ?? null) as string | null,
       historicoProgresso: (linha.historico_sync_progresso ?? null) as number | null,
       historicoVistoEm: (linha.historico_sync_visto_em ?? null) as string | null,
+      displayPhoneNumber: (linha.display_phone_number ?? null) as string | null,
+      verifiedName: (linha.verified_name ?? null) as string | null,
     }
   }
   return mapa
@@ -504,4 +517,27 @@ export async function existeCanalComWaba(wabaId: string): Promise<boolean> {
 
   if (error) throw new Error(`não deu para procurar o canal pela WABA: ${error.message}`)
   return (data?.length ?? 0) > 0
+}
+
+/**
+ * O telefone e o nome como a Meta os exibe, para a tela ter o que mostrar.
+ *
+ * **Enfeite de tela, e só.** A identidade do canal continua sendo o
+ * `phone_number_id`; estes dois campos existem porque `110549275215531` não
+ * significa nada para quem conectou o próprio celular. Anuláveis: canal antigo
+ * não tem, e a tela sabe cair de volta no id.
+ */
+export async function anotarIdentidade(
+  canalId: string,
+  dados: { displayPhoneNumber: string | null; verifiedName: string | null },
+): Promise<void> {
+  const { error } = await db()
+    .from('channels')
+    .update({
+      display_phone_number: dados.displayPhoneNumber,
+      verified_name: dados.verifiedName,
+    })
+    .eq('id', canalId)
+
+  if (error) throw new Error(`não deu para anotar a identidade do número: ${error.message}`)
 }

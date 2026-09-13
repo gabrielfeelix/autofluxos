@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   PARADO_MS,
+  identidadeNaTela,
   progressoGeral,
   situacaoDoNumero,
   type EstadoNaTela,
@@ -211,5 +212,46 @@ describe('o progresso somado', () => {
         historicoProgresso: -5,
       }),
     ).toBe(50)
+  })
+})
+
+describe('identidadeNaTela', () => {
+  /*
+   * O defeito que isto trava: a tela mostrava `110549275215531` como título, e
+   * quem tinha acabado de conectar o próprio celular não reconhecia o número.
+   * Com "Conectar número" logo ao lado, a conclusão era "não conectou".
+   */
+  it('mostra o telefone como título, não o phone_number_id', () => {
+    expect(
+      identidadeNaTela(
+        { displayPhoneNumber: '+55 11 91100-1414', verifiedName: 'Academia' },
+        '110549275215531',
+      ),
+    ).toEqual({ titulo: '+55 11 91100-1414', abaixo: 'Academia · 110549275215531' })
+  })
+
+  it('sem nome verificado, o id fica sozinho embaixo', () => {
+    expect(
+      identidadeNaTela({ displayPhoneNumber: '+55 11 91100-1414' }, '110549275215531'),
+    ).toEqual({ titulo: '+55 11 91100-1414', abaixo: '110549275215531' })
+  })
+
+  it('canal antigo, sem telefone guardado, volta a mostrar o id', () => {
+    // Conectou antes da 0048. Mostrar nada seria pior que mostrar o id.
+    expect(identidadeNaTela(undefined, '110549275215531')).toEqual({
+      titulo: '110549275215531',
+      abaixo: null,
+    })
+  })
+
+  it('telefone em branco conta como ausente', () => {
+    // String vazia ou só espaços não é telefone; cair no id é o certo.
+    expect(identidadeNaTela({ displayPhoneNumber: '   ' }, '110549275215531').titulo).toBe(
+      '110549275215531',
+    )
+  })
+
+  it('canal sem phone_number_id não quebra a tela', () => {
+    expect(identidadeNaTela(undefined, null).titulo).toBe('sem número')
   })
 })

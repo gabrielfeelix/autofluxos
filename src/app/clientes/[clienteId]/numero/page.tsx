@@ -17,7 +17,11 @@ import {
   PAPEIS_DO_NUMERO,
   ROTULO_DO_PAPEL,
 } from '@/core/papeis-do-numero'
-import { progressoGeral, situacaoDoNumero } from '@/core/coexistencia-na-tela'
+import {
+  identidadeNaTela,
+  progressoGeral,
+  situacaoDoNumero,
+} from '@/core/coexistencia-na-tela'
 import { acharCliente } from '@/server/repos/clientes'
 import { coexistenciaDoCliente } from '@/server/repos/coexistencia'
 import { fluxoDoPapel, listarCanais } from '@/server/repos/conversas'
@@ -381,24 +385,55 @@ export default async function Pagina({
                 const estado = coexistencia[canal.id]
                 const situacao = situacaoDoNumero(estado)
                 const progresso = progressoGeral(estado)
+                const identidade = identidadeNaTela(estado, canal.phoneNumberId)
 
                 return (
                   <li
                     key={canal.id}
                     className="border-b border-white/[0.045] px-5 py-3.5"
                   >
-                    <div className="flex items-center gap-2 text-[12.5px] font-semibold">
+                    <div className="flex items-center gap-2.5 text-[12.5px] font-semibold">
+                      {/*
+                       * **A logo volta depois de conectar, e o telefone vira o
+                       * título.**
+                       *
+                       * Antes daqui havia só uma bolinha de status e o
+                       * `phone_number_id` em fonte mono: `110549275215531`. Quem
+                       * acabou de plugar o próprio celular olhava a lista,
+                       * não achava o seu número, via "Conectar número" ao lado
+                       * e concluía que não tinha conectado.
+                       *
+                       * O selo verde é o mesmo do card de antes de conectar —
+                       * é o que dá continuidade: a tela que convidou e a tela
+                       * que confirma falam a mesma língua.
+                       *
+                       * O id não some, só desce: ele ainda é a identidade do
+                       * canal e o que se procura no painel da Meta.
+                       */}
                       <span
-                        className={`size-2 rounded-full ${aviso ? 'bg-amber-300' : 'bg-emerald-400'}`}
-                        aria-hidden
-                      />
-                      <code className="min-w-0 flex-1 truncate font-mono text-[11px] text-soft">
-                        {canal.phoneNumberId}
-                      </code>
+                        style={{ color: '#25D366' }}
+                        className="relative inline-flex size-[26px] shrink-0 items-center justify-center rounded-full bg-[#25D366]/10"
+                      >
+                        <LogoDoCanal canal="whatsapp" tamanho={14} />
+                        <span
+                          className={`absolute -right-0.5 -bottom-0.5 size-[9px] rounded-full border-2 border-[#12161c] ${aviso ? 'bg-amber-300' : 'bg-emerald-400'}`}
+                          aria-hidden
+                        />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[13px] text-soft">
+                          {identidade.titulo}
+                        </span>
+                        {identidade.abaixo && (
+                          <span className="block truncate text-[11px] font-normal text-dim">
+                            {identidade.abaixo}
+                          </span>
+                        )}
+                      </span>
                       <BotaoPerigo
                         rotulo="Desconectar"
                         titulo="Tira este número deste cliente. As conversas já registradas impedem — elas são o histórico dos leads."
-                        pergunta={`Desconectar o número ${canal.phoneNumberId}? O bot para de responder nele.`}
+                        pergunta={`Desconectar o número ${identidade.titulo}? O bot para de responder nele.`}
                         acao={acaoDesconectarNumero.bind(
                           null,
                           cliente.id,
