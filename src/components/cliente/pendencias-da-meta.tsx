@@ -67,23 +67,21 @@ export function PendenciasDaMeta({
         <div className="min-w-0">
           <h2 className="text-[14.5px] font-bold tracking-[-0.01em]">
             {travado
-              ? 'A Meta está segurando as mensagens deste número'
-              : 'A Meta pediu mais uma coisa neste número'}
+              ? 'A Meta pede mais algumas informações'
+              : 'A Meta pede mais uma informação'}
           </h2>
           <p className="mt-1 max-w-[64ch] text-[12.5px] leading-6 text-dim">
             {travado ? (
               <>
                 {contexto === 'inbox'
-                  ? 'O Inbox está vazio por isso, e não porque ninguém falou com você. '
-                  : 'O número está conectado certinho do nosso lado. '}
-                Falta{' '}
+                  ? 'Seu Inbox está vazio por causa disso, e não porque ninguém te procurou. '
+                  : 'Seu número está conectado certinho aqui no painel. '}
                 {pendencias.length > 1
-                  ? 'resolver estas pendências na conta do WhatsApp'
-                  : 'resolver esta pendência na conta do WhatsApp'}
-                , e aí as conversas voltam a entrar sozinhas.
+                  ? 'Assim que você completar os dados abaixo na conta do WhatsApp, as conversas começam a entrar.'
+                  : 'Assim que você completar o dado abaixo na conta do WhatsApp, as conversas começam a entrar.'}
               </>
             ) : (
-              'As mensagens estão entrando normalmente. Isto aqui aumenta o limite de conversas por dia quando você tiver tempo.'
+              'Suas mensagens estão entrando normalmente. Completar isso aumenta o limite de conversas por dia, quando você tiver um tempo.'
             )}
           </p>
         </div>
@@ -130,9 +128,9 @@ export function PendenciasDaMeta({
       </ol>
 
       <p className="border-t border-white/[0.06] px-5 py-3 text-[11.5px] leading-5 text-muted/70">
-        Depois de resolver, pode levar alguns minutos até a Meta liberar. Não
-        precisa reconectar o número: assim que ela liberar, as conversas entram
-        sozinhas.
+        A Meta costuma levar alguns minutos para reconhecer. Você não precisa
+        reconectar o número nem refazer nada por aqui: as conversas passam a
+        entrar sozinhas.
       </p>
     </section>
   )

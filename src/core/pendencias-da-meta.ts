@@ -63,29 +63,29 @@ export type Pendencia = {
 const CATALOGO: Record<number, Pendencia> = {
   141006: {
     id: 'pagamento',
-    titulo: 'Cadastrar um cartão na conta do WhatsApp',
+    titulo: 'Forma de pagamento',
     efeito:
-      'Sem cartão a Meta bloqueia a conta, e nenhuma mensagem entra nem sai. É o que precisa ser resolvido primeiro.',
-    onde: 'Abre no Gerenciador de Negócios da Meta, em Cobrança e pagamentos.',
-    rotuloDoLink: 'Cadastrar cartão na Meta',
+      'A Meta cobra as conversas direto de você, e pede um cartão cadastrado antes de liberar o número.',
+    onde: 'Abre em Cobrança e pagamentos, no Gerenciador de Negócios da Meta.',
+    rotuloDoLink: 'Cadastrar cartão',
     bloqueia: true,
   },
   141007: {
     id: 'fuso',
-    titulo: 'Definir o fuso horário da conta',
+    titulo: 'Fuso horário',
     efeito:
-      'A Meta exige o fuso antes de liberar os envios. É rápido, some com dois cliques.',
-    onde: 'Abre as configurações da conta do WhatsApp no Gerenciador da Meta.',
-    rotuloDoLink: 'Definir o fuso horário',
+      'A Meta usa o fuso para organizar os horários das conversas. É escolher na lista, leva alguns segundos.',
+    onde: 'Abre as configurações da sua conta do WhatsApp no Gerenciador da Meta.',
+    rotuloDoLink: 'Escolher fuso',
     bloqueia: true,
   },
   141010: {
     id: 'verificacao',
-    titulo: 'Verificar o negócio na Meta',
+    titulo: 'Verificação do seu negócio',
     efeito:
-      'Sem verificação a conta funciona, mas com limite baixo de conversas por dia. Dá para deixar por último.',
-    onde: 'Abre a Central de Segurança da Meta, onde a verificação é feita.',
-    rotuloDoLink: 'Verificar o negócio',
+      'Sem ela tudo funciona, só com um limite menor de conversas por dia. Pode deixar para depois: a Meta pede documento da empresa e leva alguns dias.',
+    onde: 'Abre a Central de Segurança da Meta, onde a verificação começa.',
+    rotuloDoLink: 'Começar verificação',
     bloqueia: false,
   },
 }
