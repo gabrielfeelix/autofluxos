@@ -1,6 +1,9 @@
 import 'server-only'
 import { db, ehIdInvalido } from '../db'
 
+// Reexportado de `core/` para não quebrar quem já o importava daqui.
+export { TETO_DA_INSIGNIA } from '@/core/insignia'
+
 /**
  * O que cada pessoa já leu (`af_leituras`, 0023 + a função da 0025).
  *
@@ -12,9 +15,6 @@ import { db, ehIdInvalido } from '../db'
  * não há de quem contar. As duas funções tratam `null` devolvendo o vazio, em
  * vez de o chamador ter que lembrar de perguntar antes.
  */
-
-/** Acima disto a tela mostra "99+". Contar mais não muda decisão nenhuma. */
-export const TETO_DA_INSIGNIA = 99
 
 export async function naoLidasPorContato(
   usuarioId: string | null,

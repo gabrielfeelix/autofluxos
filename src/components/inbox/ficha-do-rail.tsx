@@ -41,6 +41,7 @@ export function FichaDoRail({
   contagem,
   alerta = false,
   ausente = false,
+  aoEscolher,
 }: {
   href: string
   acesa: boolean
@@ -49,7 +50,42 @@ export function FichaDoRail({
   /** "Sem dono" com fila é o que precisa de gente — merece cor. */
   alerta?: boolean
   ausente?: boolean
+  /**
+   * **Presente = a fila inteira está no navegador**, e trocar de aba é um
+   * `filter()` — sem ida ao servidor, sem estado pendente, instantâneo.
+   *
+   * Ausente = a fila está paginada e quem filtra é o servidor; aí a ficha
+   * volta a ser `<Link>`, com `useLinkStatus` avisando que está carregando.
+   * Ver `TETO_DA_FILA_LOCAL`.
+   */
+  aoEscolher?: () => void
 }) {
+  /*
+   * No modo local não há navegação, então não há pendência para mostrar: a
+   * lista já mudou antes de o clique terminar. Um `<button>` também é o
+   * elemento honesto aqui — `<Link>` que não leva a lugar nenhum mente para
+   * quem navega por teclado e para quem abre em nova aba.
+   */
+  if (aoEscolher) {
+    return (
+      <button
+        type="button"
+        onClick={aoEscolher}
+        aria-current={acesa ? 'page' : undefined}
+        className="shrink-0 rounded-full"
+      >
+        <Aparencia
+          acesa={acesa}
+          rotulo={rotulo}
+          contagem={contagem}
+          alerta={alerta}
+          ausente={ausente}
+          pendente={false}
+        />
+      </button>
+    )
+  }
+
   return (
     /*
      * `prefetch={false}`: a doc é explícita em que o estado pendente é pulado
@@ -63,7 +99,13 @@ export function FichaDoRail({
       aria-current={acesa ? 'page' : undefined}
       className="shrink-0 rounded-full"
     >
-      <Aparencia acesa={acesa} rotulo={rotulo} contagem={contagem} alerta={alerta} ausente={ausente} />
+      <AparenciaComLink
+        acesa={acesa}
+        rotulo={rotulo}
+        contagem={contagem}
+        alerta={alerta}
+        ausente={ausente}
+      />
     </Link>
   )
 }
@@ -73,13 +115,7 @@ export function FichaDoRail({
  * `<Link>`** — num componente acima dele o hook devolve `pending: false` para
  * sempre, e o clique volta a não ter resposta.
  */
-function Aparencia({
-  acesa,
-  rotulo,
-  contagem,
-  alerta,
-  ausente,
-}: {
+function AparenciaComLink(props: {
   acesa: boolean
   rotulo: string
   contagem: number
@@ -87,16 +123,34 @@ function Aparencia({
   ausente: boolean
 }) {
   const { pending } = useLinkStatus()
+  return <Aparencia {...props} pendente={pending} />
+}
 
+/** O desenho da ficha. `pendente` só existe no modo servidor. */
+function Aparencia({
+  acesa,
+  rotulo,
+  contagem,
+  alerta,
+  ausente,
+  pendente,
+}: {
+  acesa: boolean
+  rotulo: string
+  contagem: number
+  alerta: boolean
+  ausente: boolean
+  pendente: boolean
+}) {
   // Enquanto a navegação corre, esta ficha é a escolhida — é o que o clique
   // acabou de pedir, e mostrar isso antes da confirmação é o ponto.
-  const viva = acesa || pending
+  const viva = acesa || pendente
   const destaque = alerta && contagem > 0 && !viva
 
   return (
     <span
       className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10.5px] font-semibold transition ${
-        pending ? 'opacity-60' : ''
+        pendente ? 'opacity-60' : ''
       } ${
         viva
           ? 'border-accent/40 bg-accent/[0.14] text-white'

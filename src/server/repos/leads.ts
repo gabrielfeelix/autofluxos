@@ -441,6 +441,33 @@ export type FiltroDeAtribuicao = 'todos' | 'sem-dono' | (string & {})
  */
 export type FiltroDeEstado = 'aberta' | 'adiada' | 'resolvida' | 'todas'
 
+/**
+ * Até quantas conversas a fila inteira vai para o navegador de uma vez.
+ *
+ * ---------------------------------------------------------------------------
+ * Por que existe um teto, e por que ele é a condição de honestidade
+ * ---------------------------------------------------------------------------
+ *
+ * Os dois rails do Inbox (estado e atribuição) filtram campos que **já vêm em
+ * cada `Lead`** — `estadoEfetivo` e `atribuidoA`. Quando a fila inteira está
+ * na mão do navegador, trocar de aba é trocar um `filter()`: instantâneo, sem
+ * ida ao servidor.
+ *
+ * Isso só é verdade enquanto a lista **não está paginada**. Com 500 conversas
+ * em páginas de 50, filtrar o que está carregado responde "Adiadas 40" e mostra
+ * três, porque as outras 37 estão na página 2. Não é lentidão: é resposta
+ * errada, que é pior.
+ *
+ * Daí o teto. Abaixo dele a fila vem inteira e os rails são locais; acima, o
+ * servidor volta a filtrar e pagina como antes. A troca é automática e o
+ * comportamento antigo continua inteiro do outro lado.
+ *
+ * **200 sai de medida, não de palpite**: um lead pesa ~490 bytes no banco
+ * (média real em 13/set/2026), então 200 são ~100KB de JSON — menos que uma
+ * foto de perfil. O gargalo não é o tamanho; é a honestidade do filtro.
+ */
+export const TETO_DA_FILA_LOCAL = 200
+
 export type FiltroDeLeads = {
   /** Nome ou telefone, parcial. Vazio = sem busca. */
   busca?: string
@@ -1107,4 +1134,59 @@ export async function contarPorEstado(
     else contagem.aberta += 1
   }
   return contagem
+}
+
+/**
+ * A fila inteira de um cliente, **sem filtro de estado nem de dono**, para os
+ * rails filtrarem no navegador.
+ *
+ * ---------------------------------------------------------------------------
+ * O que ela devolve, e o que o `null` significa
+ * ---------------------------------------------------------------------------
+ *
+ * `null` é a resposta para "esta conta é grande demais para isto". Não é erro
+ * nem lista vazia: é o sinal de que a tela deve continuar pedindo página por
+ * página ao servidor, como sempre fez. Ver {@link TETO_DA_FILA_LOCAL}.
+ *
+ * Conta antes de trazer: uma consulta de contagem é barata, e trazer 5.000
+ * linhas para descobrir que são demais seria pagar exatamente o preço que o
+ * teto existe para evitar.
+ *
+ * A **busca por texto continua no servidor** e por isso entra aqui como
+ * filtro: ela casa telefone por formas normalizadas (`chavesDoTelefone`), e
+ * repetir essa regra no navegador seria duplicar a parte que já erra sozinha —
+ * quem procura "(11) 98765-4321" não acha `551187654321` com comparação de
+ * texto crua.
+ */
+export async function filaInteira(
+  clienteId: string,
+  opcoes: { busca?: string } = {},
+): Promise<Lead[] | null> {
+  const termo = (opcoes.busca ?? '').trim()
+
+  // Só o tamanho, primeiro. `head: true` não traz linha nenhuma.
+  const { count, error: erroDaContagem } = await db()
+    .from('leads')
+    .select('contact_id', { count: 'exact', head: true })
+    .eq('client_id', clienteId)
+
+  if (ehIdInvalido(erroDaContagem)) return []
+  if (erroDaContagem) throw new Error(`não deu para medir a fila: ${erroDaContagem.message}`)
+  if ((count ?? 0) > TETO_DA_FILA_LOCAL) return null
+
+  /*
+   * Reusa `paginarLeads` com `estado: 'todas'` em vez de repetir a montagem da
+   * consulta: é ela que sabe juntar etiquetas, aplicar a busca por telefone e
+   * ordenar por última mensagem. Uma segunda versão daquilo seria uma segunda
+   * versão para manter — e a que erra é sempre a que ninguém lembra que existe.
+   */
+  const pagina = await paginarLeads(clienteId, {
+    estado: 'todas',
+    atribuicao: 'todos',
+    busca: termo,
+    pagina: 1,
+    porPagina: TETO_DA_FILA_LOCAL,
+  })
+
+  return pagina.leads
 }
