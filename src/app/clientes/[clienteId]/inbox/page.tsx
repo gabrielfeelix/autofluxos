@@ -11,6 +11,7 @@ import { recemConectado } from '@/core/coexistencia-na-tela'
 import { coexistenciaDoCliente } from '@/server/repos/coexistencia'
 import { ControleDeAutomacao } from '@/components/lead/controle-automacao'
 import { CamposColetados } from '@/components/lead/campos-coletados'
+import { QuemE } from '@/components/lead/quem-e'
 import { CaixaDeResposta } from '@/components/lead/responder'
 import {
   acaoAssumirAtendimento,
@@ -741,6 +742,19 @@ function DadosDoLead({
             />
           )}
         </div>
+
+        {/*
+          Quem é a pessoa vem antes de tudo que se faz com ela.
+
+          A coluna abria em "Etiquetas", e o telefone não aparecia em tela
+          nenhuma do Inbox — para ver o número era preciso sair daqui e abrir a
+          Ficha, no meio de um atendimento.
+        */}
+        <QuemE
+          waId={lead.waId}
+          criadoEm={lead.criadoEm}
+          ultimaEntradaEm={lead.ultimaEntradaEm}
+        />
 
         <div className="mt-5">
           <h3 className="mb-2 text-[11px] font-bold text-soft">Etiquetas</h3>
