@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
+import { useAcaoOtimista } from '@/components/design/acao-otimista'
 import { Dropdown } from '@/components/design/dropdown'
 
 /**
@@ -35,16 +36,25 @@ export function Assumir({
   responsavel: string | null
   souEu: boolean
 }) {
-  const [estado, agir, pendente] = useActionState<Estado, FormData>(async (_anterior, formData) => {
-    const r = formData.get('acao') === 'liberar' ? await liberar() : await assumir()
-    return { erro: r.ok ? undefined : r.erro }
-  }, {})
+  /*
+   * **Quem assume vê o próprio nome na hora.**
+   *
+   * Era um `useActionState` num `<form>`: o rótulo virava "…" e só mudava
+   * depois do servidor. Assumir é o gesto de abrir uma conversa — esperar por
+   * ele é esperar para começar a trabalhar.
+   *
+   * A aposta é o próprio `souEu`: clicar em "Assumir" já mostra "você está
+   * atendendo", e o servidor só é notado quando discorda.
+   */
+  const { valor: meu, erro, pendente, agir } = useAcaoOtimista(souEu)
+
+  const alternar = () => agir(!meu, () => (meu ? liberar() : assumir()))
 
   return (
-    <form action={agir} className="flex shrink-0 items-center gap-2">
-      {responsavel && (
+    <div className="flex shrink-0 items-center gap-2">
+      {(responsavel || meu) && (
         <span className="max-w-[140px] truncate text-[10.5px] text-dim">
-          {souEu ? 'você está atendendo' : `com ${responsavel}`}
+          {meu ? 'você está atendendo' : `com ${responsavel}`}
         </span>
       )}
 
@@ -54,26 +64,26 @@ export function Assumir({
         gente sai de férias no meio de um atendimento, e o caminho de destravar
         não pode ser pedir para alguém voltar do almoço.
       */}
-      <input type="hidden" name="acao" value={souEu ? 'liberar' : 'assumir'} />
       <button
-        type="submit"
+        type="button"
+        onClick={alternar}
         disabled={pendente}
         title={
-          souEu
+          meu
             ? 'Devolve a conversa para a fila. O bot continua calado até alguém marcar "Já atendi".'
             : 'A conversa passa a ser sua e o bot para de responder. Ele só volta quando alguém marcar "Já atendi".'
         }
         className="rounded-[8px] border border-white/[0.09] px-2.5 py-1.5 text-[10.5px] font-semibold text-muted transition hover:border-accent/40 hover:text-accent disabled:opacity-50"
       >
-        {pendente ? '…' : souEu ? 'Liberar' : responsavel ? 'Assumir mesmo assim' : 'Assumir'}
+        {meu ? 'Liberar' : responsavel ? 'Assumir mesmo assim' : 'Assumir'}
       </button>
 
-      {estado.erro && (
+      {erro && (
         <span role="alert" className="max-w-[180px] text-[10.5px] leading-4 text-rose-300">
-          {estado.erro}
+          {erro}
         </span>
       )}
-    </form>
+    </div>
   )
 }
 

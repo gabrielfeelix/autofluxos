@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
+import { useAcaoOtimista } from '@/components/design/acao-otimista'
 import { PRAZOS_DE_ADIAMENTO, type PrazoDeAdiamento } from '@/core/adiamento'
 import { acaoAdiarConversa, acaoDefinirEstadoDaConversa } from '@/server/acoes'
 
@@ -38,34 +39,35 @@ export function EstadoDaConversa({
   contatoId: string
   estado: 'aberta' | 'adiada' | 'resolvida'
 }) {
-  const [erro, setErro] = useState<string | null>(null)
   const [menuAberto, setMenuAberto] = useState(false)
-  const [rodando, comecar] = useTransition()
 
-  const agir = (acao: () => Promise<{ ok: boolean; erro?: string }>) => {
-    setErro(null)
+  /*
+   * O estado da conversa é a própria aposta: clicar em "Resolver" pinta a
+   * conversa como resolvida na hora e só desfaz se o servidor recusar. É a
+   * diferença entre um botão que responde e um que parece não ter funcionado.
+   */
+  const { valor: estadoNaTela, erro, pendente, agir } = useAcaoOtimista(estado)
+
+  const mudar = (novo: typeof estado, acao: () => Promise<{ ok: boolean; erro?: string }>) => {
     setMenuAberto(false)
-    comecar(async () => {
-      const r = await acao()
-      if (!r.ok) setErro(r.erro ?? 'não deu para mudar a conversa')
-    })
+    agir(novo, acao)
   }
 
   /*
    * Fora da fila aberta, o único gesto que falta é voltar. Oferecer "adiar"
    * numa conversa já adiada seria oferecer o que ela já é.
    */
-  if (estado !== 'aberta') {
+  if (estadoNaTela !== 'aberta') {
     return (
       <div className="flex shrink-0 items-center gap-2">
         {erro && <span className="text-[10.5px] text-rose-300">{erro}</span>}
         <button
           type="button"
-          disabled={rodando}
-          onClick={() => agir(() => acaoDefinirEstadoDaConversa(clienteId, contatoId, 'aberta'))}
+          disabled={pendente}
+          onClick={() => mudar('aberta', () => acaoDefinirEstadoDaConversa(clienteId, contatoId, 'aberta'))}
           className="app-secondary-button shrink-0 px-2.5 py-1.5 text-[11px] disabled:opacity-50"
         >
-          {rodando ? '…' : 'Reabrir'}
+          Reabrir
         </button>
       </div>
     )
@@ -77,7 +79,7 @@ export function EstadoDaConversa({
 
       <button
         type="button"
-        disabled={rodando}
+        disabled={pendente}
         onClick={() => setMenuAberto((aberto) => !aberto)}
         aria-expanded={menuAberto}
         title="Tirar da fila agora e trazer de volta depois"
@@ -88,12 +90,14 @@ export function EstadoDaConversa({
 
       <button
         type="button"
-        disabled={rodando}
-        onClick={() => agir(() => acaoDefinirEstadoDaConversa(clienteId, contatoId, 'resolvida'))}
+        disabled={pendente}
+        onClick={() =>
+          mudar('resolvida', () => acaoDefinirEstadoDaConversa(clienteId, contatoId, 'resolvida'))
+        }
         title="Sai da fila. Se a pessoa escrever de novo, volta sozinha."
         className="app-secondary-button shrink-0 px-2.5 py-1.5 text-[11px] disabled:opacity-50"
       >
-        {rodando ? '…' : 'Resolver'}
+        Resolver
       </button>
 
       {menuAberto && (
@@ -113,7 +117,7 @@ export function EstadoDaConversa({
               <button
                 key={prazo}
                 type="button"
-                onClick={() => agir(() => acaoAdiarConversa(clienteId, contatoId, prazo))}
+                onClick={() => mudar('adiada', () => acaoAdiarConversa(clienteId, contatoId, prazo))}
                 className="block w-full border-b border-white/[0.06] px-3 py-2 text-left text-[11.5px] text-soft transition last:border-0 hover:bg-white/[0.05] hover:text-white"
               >
                 {PRAZOS_DE_ADIAMENTO[prazo].rotulo}

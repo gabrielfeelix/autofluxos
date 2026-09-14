@@ -34,6 +34,13 @@ export function SeletorDeEtiquetas({
   const [, comecar] = useTransition()
   const [criando, setCriando] = useState(false)
   const [nova, setNova] = useState('')
+  /*
+   * A lista é estado local porque a etiqueta criada aqui precisa aparecer
+   * **antes** de o servidor responder. Vinda de fora por prop, ela só
+   * chegaria depois de a página ser refeita — que é a espera que este arquivo
+   * inteiro existe para evitar.
+   */
+  const [lista, setLista] = useState(disponiveis)
 
   const alternar = (etiquetaId: string) => {
     const aplicar = !marcadas.includes(etiquetaId)
@@ -72,26 +79,56 @@ export function SeletorDeEtiquetas({
     const nome = nova.trim()
     if (nome === '') return
 
+    /*
+     * **A etiqueta entra na lista já acesa, e o servidor confirma atrás.**
+     *
+     * O id provisório existe porque o de verdade só volta do banco. Ele vive
+     * poucos milissegundos e é trocado pelo real na resposta — nunca chega a
+     * ser enviado em nada, porque a única coisa que se faz com ele antes disso
+     * é desenhar.
+     */
+    const provisorio = `novo-${Date.now()}`
+    const otimista = { id: provisorio, nome, cor: 'cinza' as CorDeEtiqueta }
+
     setErro(null)
+    setLista((atuais) => [...atuais, otimista])
+    setMarcadas((atuais) => [...atuais, provisorio])
+    setNova('')
+    setCriando(false)
+
     comecar(async () => {
       const dados = new FormData()
       dados.set('nome', nome)
       dados.set('cor', 'cinza')
 
       const r = await acaoCriarEtiqueta(clienteId, {}, dados)
-      if (r.erro) {
-        setErro(r.erro)
+
+      if (r.erro || !r.etiqueta) {
+        // Tira a aposta: uma etiqueta que o servidor recusou não pode ficar na
+        // tela, senão ela some sozinha no próximo carregamento sem explicação.
+        setLista((atuais) => atuais.filter((e) => e.id !== provisorio))
+        setMarcadas((atuais) => atuais.filter((id) => id !== provisorio))
+        setErro(r.erro ?? 'não deu para criar a etiqueta')
         return
       }
-      setNova('')
-      setCriando(false)
+
+      const criada = r.etiqueta
+      setLista((atuais) => atuais.map((e) => (e.id === provisorio ? criada : e)))
+      setMarcadas((atuais) => atuais.map((id) => (id === provisorio ? criada.id : id)))
+
+      // Já nasce aplicada a este contato: quem cria uma etiqueta olhando uma
+      // conversa quer justamente marcá-la nela.
+      const marcou = await acaoMarcarEtiqueta(clienteId, criada.id, [contatoId], true)
+      if (!marcou.ok) {
+        setMarcadas((atuais) => atuais.filter((id) => id !== criada.id))
+      }
     })
   }
 
   return (
     <div>
       <div className="flex flex-wrap gap-1.5">
-        {disponiveis.map((etiqueta) => {
+        {lista.map((etiqueta) => {
           const acesa = marcadas.includes(etiqueta.id)
           return (
             <button

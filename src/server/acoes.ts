@@ -105,7 +105,7 @@ import {
   editarEtiqueta,
   marcarContatos,
 } from './repos/etiquetas'
-import { ehCorDeEtiqueta } from '@/core/etiquetas'
+import { ehCorDeEtiqueta, type CorDeEtiqueta } from '@/core/etiquetas'
 import { OPERADORES_DE_GATILHO, type OperadorDeGatilho } from '@/core/gatilhos'
 import { rodarPosAtendimento } from './receber-mensagem'
 import { inscreverNoEvento, sairPelaEtiqueta, sairPorEvento } from './sequencias'
@@ -699,11 +699,19 @@ export async function acaoApagarGatilho(
  * `check` no banco: um valor torto não daria erro nenhum — a etiqueta só
  * ficaria sem cor, invisível, e ninguém ligaria a causa ao efeito.
  */
+/**
+ * Devolve a etiqueta criada junto do `ok`.
+ *
+ * `EstadoSalvar` é o contrato do `FormularioSalvar`, que só olha `ok` e `erro`
+ * — o campo extra passa por ele sem ruído. Quem precisa é o seletor dentro da
+ * conversa: com o id em mãos ele acrescenta a etiqueta à lista na hora, em vez
+ * de esperar a página inteira ser refeita no servidor.
+ */
 export async function acaoCriarEtiqueta(
   clienteId: string,
   _estado: EstadoSalvar,
   formData: FormData,
-): Promise<EstadoSalvar> {
+): Promise<EstadoSalvar & { etiqueta?: { id: string; nome: string; cor: CorDeEtiqueta } }> {
   await exigirAcessoAoCliente(clienteId)
 
   const nome = String(formData.get('nome') ?? '')
@@ -713,9 +721,20 @@ export async function acaoCriarEtiqueta(
   const r = await criarEtiqueta(clienteId, { nome, cor })
   if (!r.ok) return { erro: r.motivo }
 
+  /*
+   * **Só a tela de gerenciar.**
+   *
+   * Havia um `revalidatePath` de `/leads` aqui, e ele custava caro sem servir
+   * a ninguém: `revalidatePath` refaz a página inteira no servidor — no Inbox
+   * são sete consultas — antes de a tela mudar. Criar uma etiqueta virava
+   * segundos de espera por uma escrita de milissegundos.
+   *
+   * Quem cria a etiqueta de dentro de uma conversa já a vê aparecer na hora,
+   * porque o seletor a acrescenta à lista sem esperar resposta. E quem cria em
+   * Configurações está *nesta* página, que é a única que precisa ser refeita.
+   */
   revalidatePath(`/clientes/${clienteId}/ajustes/etiquetas`)
-  revalidatePath(`/clientes/${clienteId}/leads`)
-  return { ok: true }
+  return { ok: true, etiqueta: r.etiqueta }
 }
 
 /** Renomear e repintar. Não recria: recriar tiraria a etiqueta de todo mundo. */

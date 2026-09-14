@@ -66,13 +66,21 @@ describe.skipIf(!temCredencial)('criar, editar e apagar', () => {
       motivo: 'escreva o nome da etiqueta',
     })
 
-    expect(await criarEtiqueta(clienteId, { nome: 'VIP', cor: 'azul' })).toEqual({ ok: true })
+    // `criarEtiqueta` devolve a etiqueta criada, e não só `ok`: é o id dela
+    // que a tela usa para pintá-la na lista sem esperar o servidor.
+    expect(await criarEtiqueta(clienteId, { nome: 'VIP', cor: 'azul' })).toMatchObject({
+      ok: true,
+      etiqueta: { nome: 'VIP', cor: 'azul' },
+    })
     const repetida = await criarEtiqueta(clienteId, { nome: '  vip ', cor: 'rosa' })
     expect(repetida.ok).toBe(false)
   })
 
   it('a mesma palavra em outra conta é outra etiqueta', async () => {
-    expect(await criarEtiqueta(outroId, { nome: 'VIP', cor: 'verde' })).toEqual({ ok: true })
+    expect(await criarEtiqueta(outroId, { nome: 'VIP', cor: 'verde' })).toMatchObject({
+      ok: true,
+      etiqueta: { nome: 'VIP', cor: 'verde' },
+    })
   })
 
   it('editar mantém a etiqueta em quem já a tinha — renomear não é recriar', async () => {

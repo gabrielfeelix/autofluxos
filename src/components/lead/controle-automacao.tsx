@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useAcaoOtimista } from '@/components/design/acao-otimista'
 import { acaoAlternarAutomacaoDoLead } from '@/server/acoes'
 
 /**
@@ -27,12 +27,16 @@ export function ControleDeAutomacao({
   contatoId: string
   automacaoAtiva: boolean
 }) {
-  const [erro, setErro] = useState<string | null>(null)
-  const [rodando, comecar] = useTransition()
+  /*
+   * O botão troca de rótulo no clique. Pausar o bot é o que se faz **antes**
+   * de digitar uma resposta — esperar o servidor para saber se pausou é
+   * esperar para começar a escrever.
+   */
+  const { valor: ativa, erro, pendente, agir } = useAcaoOtimista(automacaoAtiva)
 
-  const proximoEstado = !automacaoAtiva
-  const texto = automacaoAtiva ? 'Pausar bot' : 'Religar bot'
-  const explicacao = automacaoAtiva
+  const proximoEstado = !ativa
+  const texto = ativa ? 'Pausar bot' : 'Religar bot'
+  const explicacao = ativa
     ? 'As próximas mensagens serão registradas, mas não receberão resposta automática.'
     : 'O bot volta a responder a partir da próxima mensagem.'
 
@@ -40,22 +44,20 @@ export function ControleDeAutomacao({
     <div>
       <button
         type="button"
-        disabled={rodando}
+        disabled={pendente}
         title={explicacao}
-        onClick={() => {
-          setErro(null)
-          comecar(async () => {
-            const r = await acaoAlternarAutomacaoDoLead(clienteId, contatoId, proximoEstado)
-            if (!r.ok) setErro(r.erro ?? 'não deu para mudar a automação')
-          })
-        }}
+        onClick={() =>
+          agir(proximoEstado, () =>
+            acaoAlternarAutomacaoDoLead(clienteId, contatoId, proximoEstado),
+          )
+        }
         className={`mt-2.5 w-full rounded-[8px] border px-2.5 py-2 text-[11px] font-bold transition disabled:opacity-50 ${
-          automacaoAtiva
+          ativa
             ? 'border-amber-300/25 bg-amber-300/[0.08] text-amber-100 hover:bg-amber-300/[0.15]'
             : 'border-emerald-400/30 bg-emerald-400/[0.1] text-emerald-200 hover:bg-emerald-400/[0.18]'
         }`}
       >
-        {rodando ? '…' : texto}
+        {texto}
       </button>
 
       {erro && (

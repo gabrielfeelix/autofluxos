@@ -75,20 +75,39 @@ export async function listarEtiquetasComContagem(clienteId: string): Promise<Eti
   return etiquetas.map((etiqueta) => ({ ...etiqueta, contatos: total.get(etiqueta.id) ?? 0 }))
 }
 
+/**
+ * Cria e **devolve a etiqueta criada**, com id e nome já normalizados.
+ *
+ * O `select().single()` no fim não é enfeite: quem cria a etiqueta de dentro
+ * de uma conversa precisa pintá-la na lista imediatamente, sem esperar a
+ * página ser refeita no servidor. Sem o id vindo daqui, a tela teria que
+ * inventar um provisório e trocá-lo depois — ou recarregar tudo, que é
+ * exatamente a espera que se quer evitar.
+ *
+ * O `nome` volta do banco, e não do argumento, porque ele passou por `trim` e
+ * corte de tamanho: devolver o que foi digitado faria a tela mostrar um nome
+ * diferente do que ficou gravado.
+ */
 export async function criarEtiqueta(
   clienteId: string,
   dados: { nome: string; cor: CorDeEtiqueta },
-): Promise<{ ok: true } | { ok: false; motivo: string }> {
+): Promise<
+  { ok: true; etiqueta: { id: string; nome: string; cor: CorDeEtiqueta } } | { ok: false; motivo: string }
+> {
   const nome = dados.nome.trim().slice(0, LIMITE_DO_NOME)
   if (nome === '') return { ok: false, motivo: 'escreva o nome da etiqueta' }
 
-  const { error } = await db()
+  const { data, error } = await db()
     .from('etiquetas')
     .insert({ client_id: clienteId, nome, cor: dados.cor })
+    .select('id, nome, cor')
+    .single()
 
   if (error?.code === '23505') return { ok: false, motivo: `já existe uma etiqueta “${nome}”` }
   if (error) throw new Error(`não deu para criar a etiqueta: ${error.message}`)
-  return { ok: true }
+
+  const criada = data as { id: string; nome: string; cor: CorDeEtiqueta }
+  return { ok: true, etiqueta: criada }
 }
 
 /**
