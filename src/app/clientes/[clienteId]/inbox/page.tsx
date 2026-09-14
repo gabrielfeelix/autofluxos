@@ -37,6 +37,8 @@ import { AnexoNaConversa, SemTexto } from '@/components/lead/anexo'
 import { horaExata, quando } from '@/lib/quando'
 import { nomeDoTipo } from '@/core/tipo-da-mensagem'
 import { SeletorDeEtiquetas, type EtiquetaEscolhivel } from '@/components/etiquetas/seletor'
+import { FichaDoRail } from '@/components/inbox/ficha-do-rail'
+import { clienteTemAutomacao } from '@/server/repos/fluxos'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { marcarComoLida, naoLidasPorContato, TETO_DA_INSIGNIA } from '@/server/repos/leituras'
 import { TextoDoWhatsApp } from '@/components/texto-do-whatsapp'
@@ -85,7 +87,7 @@ export default async function Pagina({
   const pagina = Math.max(1, Number(primeiro(busca.pagina)) || 1)
   const termo = limparBusca(primeiro(busca.busca))
 
-  const [cliente, fila, respostasRapidas, contagem, etiquetas, coexistencia] =
+  const [cliente, fila, respostasRapidas, contagem, etiquetas, coexistencia, temAutomacao] =
     await Promise.all([
     acharCliente(clienteId),
     paginarLeads(clienteId, {
@@ -103,6 +105,12 @@ export default async function Pagina({
      * numa tela que já espera cinco consultas.
      */
     coexistenciaDoCliente(clienteId),
+    /*
+     * Duas contagens curtas com `limit(1)`: a pergunta é "existe?", não
+     * "quantos". Vai no mesmo `Promise.all` para não somar ida de rede em
+     * série numa tela que já espera várias consultas.
+     */
+    clienteTemAutomacao(clienteId),
   ])
   if (!cliente) notFound()
 
@@ -213,6 +221,7 @@ export default async function Pagina({
             termo={termo}
             pagina={fila.pagina}
             paginas={fila.paginas}
+            temAutomacao={temAutomacao}
           />
         )}
       </main>
@@ -294,6 +303,7 @@ async function Conteudo({
   termo,
   pagina,
   paginas,
+  temAutomacao,
 }: {
   clienteId: string
   leads: Lead[]
@@ -312,6 +322,8 @@ async function Conteudo({
   termo: string
   pagina: number
   paginas: number
+  /** Ver `DadosDoLead`: sem automação o card não fala de bot. */
+  temAutomacao: boolean
 }) {
   // `selecionado` veio de `paginarLeads(clienteId, ...)`. Só depois desse vínculo
   // cliente–contato confirmado é seguro ler as mensagens pelo id do contato.
@@ -401,6 +413,7 @@ async function Conteudo({
               restaDaJanela={janela}
               nome={primeiroNome}
               respostasRapidas={respostasRapidas}
+              temAutomacao={temAutomacao}
             />
           </section>
         ) : (
@@ -414,7 +427,12 @@ async function Conteudo({
         )}
 
         {selecionado && (
-          <DadosDoLead clienteId={clienteId} lead={selecionado} etiquetas={etiquetas} />
+          <DadosDoLead
+            clienteId={clienteId}
+            lead={selecionado}
+            etiquetas={etiquetas}
+            temAutomacao={temAutomacao}
+          />
         )}
       </div>
     </>
@@ -671,46 +689,6 @@ function Fila({
   )
 }
 
-function FichaDoRail({
-  href,
-  acesa,
-  rotulo,
-  contagem,
-  alerta = false,
-  ausente = false,
-}: {
-  href: string
-  acesa: boolean
-  rotulo: string
-  contagem: number
-  /** "Sem dono" com fila é o que precisa de gente — merece cor. */
-  alerta?: boolean
-  ausente?: boolean
-}) {
-  const destaque = alerta && contagem > 0 && !acesa
-
-  return (
-    <Link
-      href={href}
-      aria-current={acesa ? 'page' : undefined}
-      className={`flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10.5px] font-semibold transition ${
-        acesa
-          ? 'border-accent/40 bg-accent/[0.14] text-white'
-          : destaque
-            ? 'border-amber-400/30 bg-amber-400/[0.08] text-amber-200 hover:bg-amber-400/[0.14]'
-            : 'border-white/[0.08] text-muted hover:border-white/[0.16] hover:text-white'
-      }`}
-    >
-      {/* Ausente aparece como ponto apagado: atribuir para quem está de férias é
-          o mesmo que não atribuir, e pior — fica um nome ao lado dando a
-          impressão de que alguém está cuidando. */}
-      {ausente && <span aria-label="ausente" title="ausente" className="size-1.5 rounded-full bg-white/25" />}
-      {rotulo}
-      <span className="font-mono opacity-70">{contagem}</span>
-    </Link>
-  )
-}
-
 function PassoDaPagina({
   href,
   desabilitado,
@@ -908,13 +886,26 @@ function DadosDoLead({
   clienteId,
   lead,
   etiquetas,
+  temAutomacao,
 }: {
   clienteId: string
   lead: Lead
   etiquetas: EtiquetaEscolhivel[]
+  /**
+   * Existe fluxo ligado a um papel do número, ou gatilho ativo. **Sem isto o
+   * card mentia**: dizia "BOT RESPONDENDO" numa conta sem fluxo nenhum e
+   * oferecia "Pausar bot" para pausar o que não existe.
+   */
+  temAutomacao: boolean
 }) {
   const campos = Object.entries(lead.campos)
   const aguardandoPessoa = lead.aguardando !== null
+  /*
+   * `automacao_ativa` é um interruptor **por conversa**, não a existência do
+   * robô: ele nasce ligado e quer dizer "esta conversa não foi silenciada".
+   * Numa conta sem automação ele fica ligado para sempre — e era por ler só
+   * ele que a tela afirmava um estado impossível.
+   */
   const botPausado = !lead.automacaoAtiva
   return (
     // Rola por dentro, como as outras duas colunas: agora que a moldura tem
@@ -926,9 +917,27 @@ function DadosDoLead({
       </header>
 
       <div className="p-4">
-        <div className={`rounded-[11px] border px-3 py-2.5 ${aguardandoPessoa ? 'border-rose-400/25 bg-rose-400/[0.07]' : botPausado ? 'border-amber-300/25 bg-amber-300/[0.065]' : 'border-emerald-400/20 bg-emerald-400/[0.055]'}`}>
-          <p className={`text-[10px] font-bold tracking-[0.04em] ${aguardandoPessoa ? 'text-rose-300' : botPausado ? 'text-amber-200' : 'text-emerald-300'}`}>
-            {aguardandoPessoa ? 'AGUARDANDO PESSOA' : botPausado ? 'BOT EM PAUSA' : 'BOT RESPONDENDO'}
+        {/*
+          **Sem automação, o card não fala de bot.**
+
+          Antes ele dizia "BOT RESPONDENDO" numa conta sem fluxo nenhum e se
+          contradizia na altura seguinte, explicando que as mensagens "não
+          receberão resposta automática". Quem lia concluía que havia um robô
+          escondido — e o botão "Pausar bot" oferecia pausar o que não existia.
+
+          Quem atende sem automação precisa de uma informação só: esta conversa
+          é atendida por gente. É o que fica aqui, sem botão, porque não há o
+          que ligar ou desligar.
+        */}
+        <div className={`rounded-[11px] border px-3 py-2.5 ${aguardandoPessoa ? 'border-rose-400/25 bg-rose-400/[0.07]' : !temAutomacao ? 'border-white/[0.09] bg-white/[0.03]' : botPausado ? 'border-amber-300/25 bg-amber-300/[0.065]' : 'border-emerald-400/20 bg-emerald-400/[0.055]'}`}>
+          <p className={`text-[10px] font-bold tracking-[0.04em] ${aguardandoPessoa ? 'text-rose-300' : !temAutomacao ? 'text-muted' : botPausado ? 'text-amber-200' : 'text-emerald-300'}`}>
+            {aguardandoPessoa
+              ? 'AGUARDANDO PESSOA'
+              : !temAutomacao
+                ? 'ATENDIMENTO MANUAL'
+                : botPausado
+                  ? 'BOT EM PAUSA'
+                  : 'BOT RESPONDENDO'}
           </p>
           {aguardandoPessoa ? (
             <>
@@ -955,6 +964,11 @@ function DadosDoLead({
                 </button>
               </form>
             </>
+          ) : !temAutomacao ? (
+            <p className="mt-1 text-[11px] leading-4 text-muted">
+              Nenhum fluxo está ligado a este número, então as mensagens só são
+              registradas aqui. Responder é com a equipe.
+            </p>
           ) : (
             <ControleDeAutomacao
               clienteId={clienteId}

@@ -683,3 +683,59 @@ export async function resumirAutomacoes(): Promise<Map<string, ResumoDeAutomacoe
   }
   return mapa
 }
+
+/**
+ * Existe alguma automação capaz de responder por este cliente?
+ *
+ * ---------------------------------------------------------------------------
+ * Por que a pergunta precisa existir
+ * ---------------------------------------------------------------------------
+ *
+ * O Inbox dizia **"BOT RESPONDENDO"** para uma conta sem fluxo nenhum, e
+ * oferecia um botão "Pausar bot" que pausava o que não existia. O card se
+ * contradizia na própria altura: o título afirmava que o bot respondia, e a
+ * linha de baixo dizia que as mensagens "não receberão resposta automática".
+ *
+ * A causa era ler só `leads.automacao_ativa`, que é um **interruptor por
+ * conversa** — ele nasce ligado e significa "esta conversa não foi silenciada",
+ * não "existe robô". Sem fluxo, ele fica ligado para sempre e a tela afirma um
+ * estado impossível.
+ *
+ * ---------------------------------------------------------------------------
+ * O que conta como automação
+ * ---------------------------------------------------------------------------
+ *
+ * Os dois caminhos que fazem o produto responder sozinho:
+ *
+ * - um **canal com fluxo** em qualquer um dos quatro papéis (`flow_id` é o
+ *   principal; boas-vindas, mídia e pós-atendimento são os outros três);
+ * - um **gatilho ativo**, que dispara fluxo sem depender do papel do número.
+ *
+ * Fluxo que existe mas não está ligado a papel nem a gatilho **não conta**: ele
+ * é rascunho, e rascunho não responde ninguém. É por isso que a pergunta não é
+ * "tem linha em `flows`?".
+ *
+ * Devolve `false` na dúvida — **nunca estoura**. Esta resposta decide um texto
+ * de tela, e derrubar o Inbox inteiro porque uma contagem falhou seria trocar
+ * um rótulo errado por uma página quebrada.
+ */
+export async function clienteTemAutomacao(clienteId: string): Promise<boolean> {
+  const banco = db()
+
+  const [canais, gatilhos] = await Promise.all([
+    banco
+      .from('channels')
+      .select('id')
+      .eq('client_id', clienteId)
+      .or(
+        'flow_id.not.is.null,flow_boas_vindas_id.not.is.null,flow_midia_id.not.is.null,flow_pos_atendimento_id.not.is.null',
+      )
+      .limit(1),
+    banco.from('gatilhos').select('id').eq('client_id', clienteId).eq('ativo', true).limit(1),
+  ])
+
+  if (canais.error && !ehIdInvalido(canais.error)) return false
+  if (gatilhos.error && !ehIdInvalido(gatilhos.error)) return false
+
+  return (canais.data?.length ?? 0) > 0 || (gatilhos.data?.length ?? 0) > 0
+}

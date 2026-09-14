@@ -24,12 +24,20 @@ export function CaixaDeResposta({
   restaDaJanela,
   nome,
   respostasRapidas = [],
+  temAutomacao = true,
 }: {
   acao: (formData: FormData) => Promise<{ ok: boolean; erro?: string }>
   /** `null` = fora da janela, ou a pessoa nunca escreveu. */
   restaDaJanela: string | null
   nome: string
   respostasRapidas?: { atalho: string; texto: string }[]
+  /**
+   * Existe automação nesta conta? **Sem ela o rodapé não fala de bot** — dizer
+   * "o bot para de falar" numa conta sem fluxo nenhum descreve um robô que não
+   * existe, e faz procurar onde desligá-lo. Só a janela de 24h continua, que é
+   * regra da Meta e vale com ou sem automação.
+   */
+  temAutomacao?: boolean
 }) {
   const campo = useRef<HTMLTextAreaElement>(null)
   const [erro, setErro] = useState<string | null>(null)
@@ -122,8 +130,14 @@ export function CaixaDeResposta({
 
       <div className="mt-2 flex items-center gap-3">
         <span className="flex-1 text-[10.5px] leading-4 text-dim">
-          Responder daqui assume a conversa: o bot para de falar com {nome} até você clicar em
-          &ldquo;Já atendi&rdquo;. Janela do WhatsApp fecha em {restaDaJanela}.
+          {temAutomacao ? (
+            <>
+              Responder daqui assume a conversa: o bot para de falar com {nome} até você clicar em
+              &ldquo;Já atendi&rdquo;. Janela do WhatsApp fecha em {restaDaJanela}.
+            </>
+          ) : (
+            <>Janela do WhatsApp fecha em {restaDaJanela}.</>
+          )}
         </span>
         <button
           type="submit"

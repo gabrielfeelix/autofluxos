@@ -5,6 +5,7 @@ import { Suspense } from 'react'
 import { comoFalta, restaDaJanela } from '@/channels/janela'
 import { BotaoPerigo } from '@/components/design/botao-perigo'
 import { ControleDeAutomacao } from '@/components/lead/controle-automacao'
+import { clienteTemAutomacao } from '@/server/repos/fluxos'
 import { CaixaDeResposta } from '@/components/lead/responder'
 import {
   acaoApagarContato,
@@ -35,12 +36,18 @@ export default async function Pagina({
   params: Promise<{ clienteId: string; contatoId: string }>
 }) {
   const { clienteId, contatoId } = await params
-  const [cliente, lead, respostasRapidas, etiquetas, noQuadro] = await Promise.all([
+  const [cliente, lead, respostasRapidas, etiquetas, noQuadro, temAutomacao] = await Promise.all([
     acharCliente(clienteId),
     acharLead(clienteId, contatoId),
     listarRespostasRapidas(clienteId),
     listarEtiquetas(clienteId),
     quadrosDoContato(clienteId, contatoId),
+    /*
+     * Sem fluxo ligado a papel nem gatilho ativo, **não existe bot** — e o
+     * cartão abaixo dizia "Bot respondendo este contato" assim mesmo, com um
+     * botão para pausar o que não existe. Ver `clienteTemAutomacao`.
+     */
+    clienteTemAutomacao(clienteId),
   ])
   if (!cliente || !lead) notFound()
 
@@ -121,7 +128,7 @@ export default async function Pagina({
           </div>
         )}
 
-        {!lead.aguardando && (
+        {!lead.aguardando && temAutomacao && (
           <div className={`mb-[18px] flex items-center gap-3 rounded-[13px] border px-[17px] py-[13px] ${lead.automacaoAtiva ? 'border-emerald-400/20 bg-emerald-400/[0.045]' : 'border-amber-300/25 bg-amber-300/[0.06]'}`}>
             <span className={`size-2 shrink-0 rounded-full ${lead.automacaoAtiva ? 'bg-emerald-400' : 'bg-amber-300'}`} />
             <div className="min-w-0 flex-1">
@@ -228,6 +235,7 @@ export default async function Pagina({
               restaDaJanela={janela}
               nome={primeiroNome}
               respostasRapidas={respostasRapidas}
+              temAutomacao={temAutomacao}
             />
           </section>
         </div>
