@@ -67,48 +67,61 @@ O link "Criar" que levava para Configurações era a mesma volta que fazia
 ninguém anotar nada antes da `NotaRapida` existir. Agora é `+ Etiqueta` no
 padrão do `+ Anotar`, otimista, e já nasce aplicada ao contato.
 
-## O que ficou pela metade — a Camada 3
+## A Camada 3 — fechada
 
-**Filtros ainda são navegação de página inteira.** É o que o dono reclamou e o
-que não fechou.
+**Filtros deixaram de ser navegação de página inteira.** Trocar de aba é um
+`filter()` no navegador.
 
-### O que já existe e funciona
+A `Fila` (~330 linhas) saiu do `page.tsx` para `components/inbox/fila.tsx` como
+`'use client'` — a extração que o handoff anterior apontava como o caminho, e
+era mesmo: os rails vivem dentro do `<header>` e a lista fora dele, então só um
+pai cliente envolvendo os dois resolve. Os dois atalhos tentados antes falharam
+exatamente aí.
 
-| Peça | Onde | Estado |
-|---|---|---|
-| `filaInteira()` | `repos/leads.ts` | pronta — traz a fila toda até `TETO_DA_FILA_LOCAL` (200), `null` acima |
-| `recortarFila` / `contarEstados` / `contarDonos` | `components/inbox/fila-local.tsx` | prontas, **9 testes passando** |
-| `RailsLocais` | idem | pronto, não ligado |
-| `FichaDoRail` em dois modos | `components/inbox/ficha-do-rail.tsx` | pronta — `aoEscolher` = botão local; sem ele = `<Link>` |
+`Avatar` virou `components/inbox/avatar.tsx`: é usado pela linha da fila
+(cliente) **e** pelo cabeçalho da conversa (servidor). Sem `'use client'` — não
+tem estado, então serve aos dois sem obrigar ninguém a virar cliente.
 
-### Por que o teto de 200, e por que ele não é opcional
+### Os dois modos
 
-Filtrar no cliente **mente** se a lista estiver paginada: "Adiadas 40" mostrando
-três porque as outras 37 estão na página 2. Não é lentidão, é resposta errada.
+| | |
+|---|---|
+| Até `TETO_DA_FILA_LOCAL` (200) | `filaInteira` traz tudo; os rails são `filter()` |
+| Acima | `filaInteira` devolve `null`; o servidor filtra e pagina, como sempre |
 
-200 sai de medida: um lead pesa **~490 bytes** (média real no banco), então 200
-são ~100KB de JSON. O gargalo nunca foi tamanho — é a honestidade do filtro.
+A troca é automática. O modo paginado não foi tocado — continua inteiro do
+outro lado do teto.
 
-### O que falta, exatamente
+**A busca continua no servidor nos dois modos**, de propósito: ela casa telefone
+por formas normalizadas (`chavesDoTelefone`), e repetir isso no navegador
+duplicaria justamente a parte que erra sozinha — quem procura "(11) 98765-4321"
+não acha `551187654321` com comparação de texto crua.
 
-Ligar `RailsLocais` na `Fila` do `inbox/page.tsx`. **O bloqueio é estrutural:**
-os rails vivem dentro do `<header>` e a lista fora dele, então o componente não
-consegue envolver as duas coisas sem reorganizar o JSX.
+### Duas contas que passavam a mentir no modo local
 
-O caminho certo é **extrair a `Fila` (~330 linhas) para arquivo próprio como
-`'use client'`**. Ela é elegível:
+Achadas ao ligar, não depois. As duas vinham de o servidor calcular sobre a
+**página filtrada** enquanto a tela passou a desenhar a **fila inteira**:
 
-- não usa `await`, `async`, nem Server Action — conferido;
-- o último bloqueio caiu nesta sessão: `TETO_DA_INSIGNIA` estava em
-  `repos/leituras.ts`, que é `server-only`, e foi movido para `core/insignia.ts`.
+1. **`naoLidas`** cobria só a página. Conversa que aparece ao clicar em
+   "Adiadas" nasceria sem insígnia — e insígnia que some conforme a aba é pior
+   que insígnia nenhuma, porque ninguém desconfia de um zero. Agora cobre
+   `local ?? leads`.
+2. **`esperando`** contava a página. No modo local a linha fica fixa enquanto se
+   troca de aba, então ela tem que falar da conta, não do recorte — senão cairia
+   para zero em "Resolvidas", verdade sobre a aba e mentira sobre o que precisa
+   de alguém.
 
-Dependências a levar junto: `RelogioDaJanela`, `resumoDaConversa`,
-`PassoDaPagina` (locais ao `page.tsx`) e `quando`/`restaDaJanela` (já importadas
-de fora).
+### O teste que faltava
 
-**Duas tentativas de atalho falharam e foram revertidas** — uma quebrou o JSX,
-a outra esbarrou no callback precisando de pai cliente. Não insista no atalho: a
-extração é o caminho.
+A `Fila` pinta o primeiro quadro com a página do servidor e só depois troca pelo
+recorte que `RailsLocais` publica. Se os dois discordassem para os mesmos
+filtros, a lista **saltaria na hidratação** — apareceria uma conversa e sumiria
+outra, sem nada quebrar para avisar. O teste novo prova que
+`paginarLeads(estado, dono)` e `recortarFila(estado, dono)` respondem a mesma
+pergunta. São 15 testes em `fila-local.test.ts`.
+
+Verificado antes do commit: `typecheck`, `lint`, `build` e a suíte inteira —
+1388 passando, 0 falhas.
 
 ## Um problema do projeto, descoberto de lado
 
