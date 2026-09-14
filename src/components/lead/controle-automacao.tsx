@@ -22,12 +22,10 @@ export function ControleDeAutomacao({
   clienteId,
   contatoId,
   automacaoAtiva,
-  compacto = false,
 }: {
   clienteId: string
   contatoId: string
   automacaoAtiva: boolean
-  compacto?: boolean
 }) {
   const [erro, setErro] = useState<string | null>(null)
   const [rodando, comecar] = useTransition()
@@ -40,7 +38,6 @@ export function ControleDeAutomacao({
 
   return (
     <div>
-      {!compacto && <p className="mt-1 text-[11px] leading-4 text-muted">{explicacao}</p>}
       <button
         type="button"
         disabled={rodando}

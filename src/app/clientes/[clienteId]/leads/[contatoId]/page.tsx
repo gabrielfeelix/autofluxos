@@ -146,7 +146,6 @@ export default async function Pagina({
                 clienteId={clienteId}
                 contatoId={contatoId}
                 automacaoAtiva={lead.automacaoAtiva}
-                compacto
               />
             </div>
           </div>
