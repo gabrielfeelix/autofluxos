@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useTransition } from 'react'
 import { CLASSE_DA_COR, type CorDeEtiqueta } from '@/core/etiquetas'
 import { acaoMarcarEtiqueta } from '@/server/acoes'
@@ -33,10 +34,21 @@ export function SeletorDeEtiquetas({
   const [erro, setErro] = useState<string | null>(null)
   const [, comecar] = useTransition()
 
+  /*
+   * Sem etiqueta, o estado é um fato curto e um caminho — não uma instrução.
+   * Antes esta linha explicava onde ficam as etiquetas; o link leva lá, o que
+   * torna a explicação desnecessária.
+   */
   if (disponiveis.length === 0) {
     return (
       <p className="text-[11px] leading-4 text-dim">
-        Nenhuma etiqueta criada ainda. Elas ficam em Configurações → Etiquetas.
+        Nenhuma etiqueta criada.{' '}
+        <Link
+          href={`/clientes/${clienteId}/ajustes/etiquetas`}
+          className="font-semibold text-accent hover:underline"
+        >
+          Criar
+        </Link>
       </p>
     )
   }

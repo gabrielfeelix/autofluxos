@@ -918,16 +918,9 @@ function DadosDoLead({
 
       <div className="p-4">
         {/*
-          **Sem automação, o card não fala de bot.**
-
-          Antes ele dizia "BOT RESPONDENDO" numa conta sem fluxo nenhum e se
-          contradizia na altura seguinte, explicando que as mensagens "não
-          receberão resposta automática". Quem lia concluía que havia um robô
-          escondido — e o botão "Pausar bot" oferecia pausar o que não existia.
-
-          Quem atende sem automação precisa de uma informação só: esta conversa
-          é atendida por gente. É o que fica aqui, sem botão, porque não há o
-          que ligar ou desligar.
+          Sem automação a tag é a resposta inteira: não há bot, então não há o
+          que ligar, desligar ou explicar. O card vira rótulo e para por aí —
+          antes ele dizia "BOT RESPONDENDO" numa conta sem fluxo nenhum.
         */}
         <div className={`rounded-[11px] border px-3 py-2.5 ${aguardandoPessoa ? 'border-rose-400/25 bg-rose-400/[0.07]' : !temAutomacao ? 'border-white/[0.09] bg-white/[0.03]' : botPausado ? 'border-amber-300/25 bg-amber-300/[0.065]' : 'border-emerald-400/20 bg-emerald-400/[0.055]'}`}>
           <p className={`text-[10px] font-bold tracking-[0.04em] ${aguardandoPessoa ? 'text-rose-300' : !temAutomacao ? 'text-muted' : botPausado ? 'text-amber-200' : 'text-emerald-300'}`}>
@@ -964,12 +957,7 @@ function DadosDoLead({
                 </button>
               </form>
             </>
-          ) : !temAutomacao ? (
-            <p className="mt-1 text-[11px] leading-4 text-muted">
-              Nenhum fluxo está ligado a este número, então as mensagens só são
-              registradas aqui. Responder é com a equipe.
-            </p>
-          ) : (
+          ) : !temAutomacao ? null : (
             <ControleDeAutomacao
               clienteId={clienteId}
               contatoId={lead.contatoId}
