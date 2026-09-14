@@ -193,6 +193,32 @@ describe.skipIf(!temCredencial)('cartões', () => {
     )
   })
 
+  /*
+   * Os ids são o que deixa a conversa mover o cartão sem sair da tela. Nome não
+   * serve: dois quadros podem ter etapa "Fechado", e casar por texto moveria o
+   * cartão do funil errado.
+   */
+  it('devolve os ids, e eles são os que `moverCartao` aceita', async () => {
+    const posicao = (await quadrosDoContato(clienteId, ana)).find(
+      (p) => p.quadroId === quadroId,
+    )!
+    expect(posicao).toBeDefined()
+
+    const destino = (await acharQuadro(clienteId, quadroId))!.etapas[1]!
+    expect(posicao.etapaId).not.toBe(destino.id)
+
+    // O cartaoId que veio daqui move de verdade — a prova de que é o id certo.
+    expect((await moverCartao(clienteId, posicao.cartaoId, destino.id)).ok).toBe(true)
+
+    const depois = (await quadrosDoContato(clienteId, ana)).find(
+      (p) => p.quadroId === quadroId,
+    )!
+    expect(depois.etapaId).toBe(destino.id)
+    expect(depois.etapa).toBe(destino.nome)
+    // O cartão é o mesmo; o que mudou foi a etapa dele.
+    expect(depois.cartaoId).toBe(posicao.cartaoId)
+  })
+
   it('tirar do quadro não apaga o contato', async () => {
     const cartao = (await listarCartoes(clienteId, outroQuadroId))[0]!
     expect(await tirarDoQuadro(clienteId, cartao.id)).toBe(true)

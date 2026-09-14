@@ -704,20 +704,42 @@ export async function porContatoNaEtapa(
   return true
 }
 
+/** Onde um contato está num quadro, com o que é preciso para movê-lo de lá. */
+export type PosicaoNoFunil = {
+  /** O cartão. É por ele que `moverCartao` anda — não pelo contato. */
+  cartaoId: string
+  quadroId: string
+  quadro: string
+  etapaId: string
+  etapa: string
+  entrouEm: string
+}
+
 /**
  * Em que quadros e etapas este contato está.
  *
  * É o que a ficha do contato mostra, e o que impede o quadro de virar uma
  * ilha: quem abre a conversa precisa ver em que ponto do funil a pessoa está
  * sem trocar de tela.
+ *
+ * **Devolve os ids junto dos nomes**, e não só os nomes. Ver a conversa e não
+ * poder mover o cartão dali é a metade inútil do recurso — quem descobre que a
+ * pessoa fechou negócio no meio do atendimento tem que sair para o quadro,
+ * achar o cartão e arrastar. Com `cartaoId` e `quadroId` na mão, a própria
+ * conversa move.
+ *
+ * Nome não serve como id: dois quadros podem ter etapa "Fechado", e casar por
+ * texto moveria o cartão do funil errado.
  */
 export async function quadrosDoContato(
   clienteId: string,
   contatoId: string,
-): Promise<{ quadro: string; etapa: string; entrouEm: string }[]> {
+): Promise<PosicaoNoFunil[]> {
   const { data, error } = await db()
     .from('quadro_cartoes')
-    .select('entrou_na_coluna_em, quadros!inner (nome), quadro_colunas!inner (nome)')
+    .select(
+      'id, entrou_na_coluna_em, quadros!inner (id, nome), quadro_colunas!inner (id, nome)',
+    )
     .eq('client_id', clienteId)
     .eq('contact_id', contatoId)
 
@@ -726,12 +748,16 @@ export async function quadrosDoContato(
 
   return (
     data as unknown as {
+      id: string
       entrou_na_coluna_em: string
-      quadros: { nome: string }
-      quadro_colunas: { nome: string }
+      quadros: { id: string; nome: string }
+      quadro_colunas: { id: string; nome: string }
     }[]
   ).map((linha) => ({
+    cartaoId: linha.id,
+    quadroId: linha.quadros.id,
     quadro: linha.quadros.nome,
+    etapaId: linha.quadro_colunas.id,
     etapa: linha.quadro_colunas.nome,
     entrouEm: linha.entrou_na_coluna_em,
   }))

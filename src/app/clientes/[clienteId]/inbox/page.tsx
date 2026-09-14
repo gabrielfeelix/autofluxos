@@ -45,6 +45,8 @@ import { EstadoDaConversa } from '@/components/inbox/estado-da-conversa'
 import { Fila, type Contagem } from '@/components/inbox/fila'
 import { clienteTemAutomacao } from '@/server/repos/fluxos'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
+import { listarQuadros, quadrosDoContato } from '@/server/repos/quadros'
+import { FunilDaConversa, type FunilDoContato } from '@/components/inbox/funil-da-conversa'
 import { marcarComoLida, naoLidasPorContato } from '@/server/repos/leituras'
 import { TextoDoWhatsApp } from '@/components/texto-do-whatsapp'
 import { PulsoDoInbox } from '@/components/inbox/pulso-do-inbox'
@@ -400,12 +402,31 @@ async function Conteudo({
 }) {
   // `selecionado` veio de `paginarLeads(clienteId, ...)`. Só depois desse vínculo
   // cliente–contato confirmado é seguro ler as mensagens pelo id do contato.
-  const [conversa, contexto] = selecionado
+  const [conversa, contexto, posicoes, quadros] = selecionado
     ? await Promise.all([
         lerConversa(selecionado.contatoId),
         contextoDeResposta(clienteId, selecionado.contatoId),
+        /*
+         * Onde este contato está no funil, e as etapas de cada quadro para o
+         * menu de mover. As duas juntas porque uma sem a outra não desenha
+         * nada: a posição diz "está em Contactado", e só a lista de etapas diz
+         * para onde dá para ir.
+         */
+        quadrosDoContato(clienteId, selecionado.contatoId),
+        listarQuadros(clienteId),
       ])
-    : [null, null]
+    : [null, null, [], []]
+
+  /*
+   * Junta a posição do contato com as etapas do quadro dela. Quadro que sumiu
+   * entre uma consulta e outra é descartado em vez de virar um menu vazio —
+   * `flatMap` com `[]` é o jeito de dizer isso sem um `filter` a mais.
+   */
+  const funis: FunilDoContato[] = posicoes.flatMap((posicao) => {
+    const quadro = quadros.find((q) => q.id === posicao.quadroId)
+    if (!quadro) return []
+    return [{ ...posicao, etapas: quadro.etapas.map((e) => ({ id: e.id, nome: e.nome })) }]
+  })
   const restante = restaDaJanela(contexto?.ultimaEntradaEm ?? null)
   const janela = restante && restante > 0 ? comoFalta(restante) : null
   const primeiroNome = selecionado?.nome?.split(' ')[0] ?? 'esta pessoa'
@@ -514,6 +535,7 @@ async function Conteudo({
             clienteId={clienteId}
             lead={selecionado}
             etiquetas={etiquetas}
+            funis={funis}
             temAutomacao={temAutomacao}
           />
         )}
@@ -663,11 +685,14 @@ function DadosDoLead({
   clienteId,
   lead,
   etiquetas,
+  funis,
   temAutomacao,
 }: {
   clienteId: string
   lead: Lead
   etiquetas: EtiquetaEscolhivel[]
+  /** Um por quadro em que o contato está. Vazio = fora de todo funil. */
+  funis: FunilDoContato[]
   /**
    * Existe fluxo ligado a um papel do número, ou gatilho ativo. **Sem isto o
    * card mentia**: dizia "BOT RESPONDENDO" numa conta sem fluxo nenhum e
@@ -765,6 +790,8 @@ function DadosDoLead({
             aplicadas={lead.etiquetasManuais.map((etiqueta) => etiqueta.id)}
           />
         </div>
+
+        <FunilDaConversa clienteId={clienteId} funis={funis} />
 
         {/*
           A anotação vem antes dos campos.
