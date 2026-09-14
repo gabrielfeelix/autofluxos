@@ -63,6 +63,11 @@ export type Lead = {
   aguardando: { motivo: string; desde: string } | null
   /** Quem assumiu este contato. `null` = ninguém. */
   atribuidoA: string | null
+  /** Ver a 0049. `estadoEfetivo` já considera o prazo de um adiamento vencido. */
+  estado: 'aberta' | 'adiada' | 'resolvida'
+  estadoEfetivo: 'aberta' | 'adiada' | 'resolvida'
+  adiadaAte: string | null
+  adiadaNota: string | null
   /** Sinais derivados do histórico; nunca são gravados de volta no contato. */
   etiquetas: EtiquetaDeLead[]
   /** As que uma pessoa criou e aplicou (0025). Estas são linha no banco. */
@@ -135,6 +140,10 @@ type Linha = {
   ultima_entrada_em: string | null
   ultima_direcao: string | null
   atribuido_a: string | null
+  estado?: string | null
+  estado_efetivo?: string | null
+  adiada_ate?: string | null
+  adiada_nota?: string | null
   ultimo_texto: string | null
   ultima_entregue: boolean | null
   automacao_ativa: boolean
@@ -149,7 +158,7 @@ type Linha = {
 // tipo para saber o formato do retorno, e concatenação vira `string` genérica —
 // aí o tipo do `data` desanda e o `tsc` acusa.
 const COLUNAS =
-  'contact_id, client_id, wa_id, nome, nome_real, notas, campos, criado_em, ultima_em, ultima_entrada_em, ultima_direcao, ultimo_texto, ultimo_tipo, handoff_motivo, handoff_em, ultima_entregue, automacao_ativa, atribuido_a'
+  'contact_id, client_id, wa_id, nome, nome_real, notas, campos, criado_em, ultima_em, ultima_entrada_em, ultima_direcao, ultimo_texto, ultimo_tipo, handoff_motivo, handoff_em, ultima_entregue, automacao_ativa, atribuido_a, estado, estado_efetivo, adiada_ate, adiada_nota'
 
 /**
  * `campos` é `jsonb`: o banco aceita qualquer coisa ali. Hoje só o motor
@@ -204,6 +213,13 @@ function paraLead(linha: Linha): Lead {
         ? { motivo: linha.handoff_motivo, desde: linha.handoff_em }
         : null,
     atribuidoA: linha.atribuido_a,
+    estado: (linha.estado ?? 'aberta') as 'aberta' | 'adiada' | 'resolvida',
+    estadoEfetivo: (linha.estado_efetivo ?? linha.estado ?? 'aberta') as
+      | 'aberta'
+      | 'adiada'
+      | 'resolvida',
+    adiadaAte: (linha.adiada_ate ?? null) as string | null,
+    adiadaNota: (linha.adiada_nota ?? null) as string | null,
     etiquetas: [],
     etiquetasManuais: [],
     criadoEm: linha.criado_em,
@@ -413,6 +429,18 @@ const LIMITE_DA_BUSCA = 60
  */
 export type FiltroDeAtribuicao = 'todos' | 'sem-dono' | (string & {})
 
+/**
+ * Em que pé está a conversa — o eixo que o rail de atribuição não responde.
+ *
+ * `aberta` é o que a fila mostra por padrão: o que precisa de alguém hoje.
+ * `adiada` é "volto nisso dia tal" e `resolvida` é "acabou". Ver a 0049.
+ *
+ * **A leitura usa `estado_efetivo`, não `estado`**: uma conversa adiada cujo
+ * prazo venceu já é uma conversa aberta, e a view resolve isso para que nenhum
+ * chamador precise lembrar de comparar a data.
+ */
+export type FiltroDeEstado = 'aberta' | 'adiada' | 'resolvida' | 'todas'
+
 export type FiltroDeLeads = {
   /** Nome ou telefone, parcial. Vazio = sem busca. */
   busca?: string
@@ -420,6 +448,8 @@ export type FiltroDeLeads = {
   /** Etiqueta manual (0025). Combina com `etiqueta` — as duas restringem. */
   etiquetaId?: string | null
   atribuicao?: FiltroDeAtribuicao
+  /** Em que pé está. Ausente = `aberta`, que é o que a fila deve mostrar. */
+  estado?: FiltroDeEstado
   /** Só quem espera uma pessoa. É o que a fila do Inbox olha primeiro. */
   soEsperando?: boolean
   /** Começa em 1. Fora da faixa, cai na primeira. */
@@ -526,6 +556,17 @@ export async function paginarLeads(
     else if (filtro.atribuicao && filtro.atribuicao !== 'todos') {
       q = q.eq('atribuido_a', filtro.atribuicao)
     }
+
+    /*
+     * O estado, por `estado_efetivo`.
+     *
+     * O default é `aberta` e não `todas` de propósito: uma fila que mostra
+     * tudo é a fila que existia antes da 0049, onde a conversa resolvida
+     * ontem disputa espaço com quem espera resposta agora. Quem quiser o
+     * conjunto inteiro pede `todas` explicitamente.
+     */
+    const estado = filtro.estado ?? 'aberta'
+    if (estado !== 'todas') q = q.eq('estado_efetivo', estado)
 
     if (filtro.soEsperando) q = q.not('handoff_em', 'is', null)
 
@@ -974,4 +1015,96 @@ export async function criarContato(
   if (error?.code === '23505') return { ok: false, motivo: 'este telefone já está na lista' }
   if (error) throw new Error(`não deu para criar o contato: ${error.message}`)
   return { ok: true, contatoId: data.id as string }
+}
+
+/* -------------------------------------------------------------------------- */
+/* O estado da conversa (0049)                                                 */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Adia a conversa: ela sai da fila e volta na data.
+ *
+ * **A volta não é agendada, é comparada.** Não há processo que devolva nada —
+ * `estado_efetivo` na view já trata prazo vencido como aberta. É o que faz o
+ * adiamento sobreviver a um servidor que ficou fora do ar no fim de semana.
+ *
+ * A nota é opcional e vale a pena: adiamento sem motivo vira reaparecimento
+ * sem contexto, e quem retoma na terça não lembra por que adiou na sexta.
+ */
+export async function adiarConversa(
+  clienteId: string,
+  contatoId: string,
+  ate: Date,
+  nota: string | null,
+): Promise<void> {
+  const { error } = await db()
+    .from('contacts')
+    .update({
+      estado: 'adiada',
+      adiada_ate: ate.toISOString(),
+      adiada_nota: nota?.trim() ? nota.trim().slice(0, 280) : null,
+      resolvida_em: null,
+    })
+    .eq('id', contatoId)
+    .eq('client_id', clienteId)
+
+  if (error) throw new Error(`não deu para adiar a conversa: ${error.message}`)
+}
+
+/**
+ * Marca como resolvida, ou devolve para a fila.
+ *
+ * O mesmo caminho para os dois sentidos porque é o mesmo gesto — e porque
+ * reabrir precisa limpar o adiamento junto: uma conversa que estava adiada e
+ * foi reaberta à mão não pode voltar a sumir na data antiga.
+ */
+export async function definirEstadoDaConversa(
+  clienteId: string,
+  contatoId: string,
+  estado: 'aberta' | 'resolvida',
+): Promise<void> {
+  const { error } = await db()
+    .from('contacts')
+    .update({
+      estado,
+      adiada_ate: null,
+      adiada_nota: null,
+      resolvida_em: estado === 'resolvida' ? new Date().toISOString() : null,
+    })
+    .eq('id', contatoId)
+    .eq('client_id', clienteId)
+
+  if (error) throw new Error(`não deu para mudar o estado da conversa: ${error.message}`)
+}
+
+/**
+ * Quantas conversas em cada estado, para o rail dizer o tamanho de cada aba.
+ *
+ * **Sem a contagem, escolher uma aba é apostar** — a pessoa clica em "Adiadas"
+ * para descobrir se tem algo lá. É a mesma razão pela qual `contarPorAtribuicao`
+ * existe.
+ *
+ * Lê `estado_efetivo`: o adiamento vencido conta como aberta, que é onde ele
+ * de fato vai aparecer.
+ */
+export async function contarPorEstado(
+  clienteId: string,
+): Promise<{ aberta: number; adiada: number; resolvida: number }> {
+  const { data, error } = await db()
+    .from('leads')
+    .select('estado_efetivo')
+    .eq('client_id', clienteId)
+
+  const vazio = { aberta: 0, adiada: 0, resolvida: 0 }
+  if (ehIdInvalido(error)) return vazio
+  if (error) throw new Error(`não deu para contar por estado: ${error.message}`)
+
+  const contagem = { ...vazio }
+  for (const linha of (data ?? []) as { estado_efetivo: string | null }[]) {
+    const estado = linha.estado_efetivo ?? 'aberta'
+    if (estado === 'adiada') contagem.adiada += 1
+    else if (estado === 'resolvida') contagem.resolvida += 1
+    else contagem.aberta += 1
+  }
+  return contagem
 }

@@ -1,9 +1,8 @@
 'use client'
 
-import Link from 'next/link'
 import { useState, useTransition } from 'react'
 import { CLASSE_DA_COR, type CorDeEtiqueta } from '@/core/etiquetas'
-import { acaoMarcarEtiqueta } from '@/server/acoes'
+import { acaoCriarEtiqueta, acaoMarcarEtiqueta } from '@/server/acoes'
 
 export type EtiquetaEscolhivel = { id: string; nome: string; cor: CorDeEtiqueta }
 
@@ -33,25 +32,8 @@ export function SeletorDeEtiquetas({
   const [marcadas, setMarcadas] = useState<string[]>(aplicadas)
   const [erro, setErro] = useState<string | null>(null)
   const [, comecar] = useTransition()
-
-  /*
-   * Sem etiqueta, o estado é um fato curto e um caminho — não uma instrução.
-   * Antes esta linha explicava onde ficam as etiquetas; o link leva lá, o que
-   * torna a explicação desnecessária.
-   */
-  if (disponiveis.length === 0) {
-    return (
-      <p className="text-[11px] leading-4 text-dim">
-        Nenhuma etiqueta criada.{' '}
-        <Link
-          href={`/clientes/${clienteId}/ajustes/etiquetas`}
-          className="font-semibold text-accent hover:underline"
-        >
-          Criar
-        </Link>
-      </p>
-    )
-  }
+  const [criando, setCriando] = useState(false)
+  const [nova, setNova] = useState('')
 
   const alternar = (etiquetaId: string) => {
     const aplicar = !marcadas.includes(etiquetaId)
@@ -70,6 +52,39 @@ export function SeletorDeEtiquetas({
         )
         setErro(r.erro ?? 'não deu para mudar a etiqueta')
       }
+    })
+  }
+
+  /*
+   * Criar aqui, e não em Configurações.
+   *
+   * A etiqueta nasce **no momento em que alguém precisa dela** — olhando uma
+   * conversa e pensando "isso é um orçamento". Mandar essa pessoa para outra
+   * tela para criar e voltar é a mesma volta que fazia ninguém anotar nada
+   * antes da `NotaRapida` existir: quem tem que ir e voltar, não vai.
+   *
+   * A cor não é perguntada. Seis cores e nenhuma delas muda o que a etiqueta
+   * faz — decidir entre elas no meio de um atendimento é escolha que só
+   * atrasa. Nasce `cinza` e quem quiser pintar tem a tela de Configurações,
+   * que continua existindo para gerenciar.
+   */
+  const criar = () => {
+    const nome = nova.trim()
+    if (nome === '') return
+
+    setErro(null)
+    comecar(async () => {
+      const dados = new FormData()
+      dados.set('nome', nome)
+      dados.set('cor', 'cinza')
+
+      const r = await acaoCriarEtiqueta(clienteId, {}, dados)
+      if (r.erro) {
+        setErro(r.erro)
+        return
+      }
+      setNova('')
+      setCriando(false)
     })
   }
 
@@ -95,6 +110,41 @@ export function SeletorDeEtiquetas({
           )
         })}
       </div>
+
+      {criando ? (
+        <div className="mt-2 flex gap-1.5">
+          <input
+            autoFocus
+            value={nova}
+            onChange={(e) => setNova(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') criar()
+              if (e.key === 'Escape') {
+                setNova('')
+                setCriando(false)
+              }
+            }}
+            placeholder="Nome da etiqueta"
+            aria-label="Nome da nova etiqueta"
+            className="app-field min-w-0 flex-1 px-2.5 py-1.5 text-[11px]"
+          />
+          <button
+            type="button"
+            onClick={criar}
+            className="app-secondary-button shrink-0 px-2.5 py-1.5 text-[11px]"
+          >
+            Criar
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setCriando(true)}
+          className="mt-2 w-full rounded-[8px] border border-dashed border-white/[0.12] px-2.5 py-2 text-[11px] text-dim transition hover:border-accent/40 hover:text-accent"
+        >
+          + Etiqueta
+        </button>
+      )}
 
       {erro && (
         <p role="alert" className="mt-1.5 text-[10.5px] leading-4 text-rose-300">

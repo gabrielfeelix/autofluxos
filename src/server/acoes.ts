@@ -31,12 +31,15 @@ import {
   pedirEnvioAssinado,
   type EnvioAssinado,
 } from './repos/acervo'
+import { PRAZOS_DE_ADIAMENTO, type PrazoDeAdiamento } from '@/core/adiamento'
 import { acharColunas, conciliar, lerCsv } from '@/core/contatos/planilha'
 import {
+  adiarConversa,
   aplicarImportacao,
   contatosConhecidos,
   corrigirNome,
   criarContato,
+  definirEstadoDaConversa,
   salvarNotas,
 } from './repos/leads'
 import { adaptadorDoCanal } from './adaptador-do-canal'
@@ -2451,6 +2454,72 @@ export async function acaoSalvarHorario(
  * pegar a conversa. Mesma postura de `rodarPosAtendimento` — quem chamou já
  * resolveu o que importava, e um erro daqui não desfaz isso.
  */
+/* -------------------------------------------------------------------------- */
+/* O estado da conversa (0049)                                                 */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Adia a conversa: ela sai da fila agora e volta sozinha na data.
+ *
+ * **É o recurso que impede o lead de esfriar por esquecimento.** Sem ele,
+ * "falar com ele terça" só existe na cabeça de quem atendeu — e numa conta com
+ * volume, o que está na cabeça de alguém é o que se perde primeiro.
+ *
+ * Prazos fixos em vez de calendário: são quatro escolhas e nenhuma exige
+ * pensar. Data livre é a próxima coisa a acrescentar se alguém sentir falta,
+ * não a primeira.
+ */
+export async function acaoAdiarConversa(
+  clienteId: string,
+  contatoId: string,
+  prazo: PrazoDeAdiamento,
+  nota?: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const escolha = PRAZOS_DE_ADIAMENTO[prazo]
+  if (!escolha) return { ok: false, erro: 'prazo inválido' }
+
+  const ate = new Date(Date.now() + escolha.horas * 60 * 60 * 1000)
+
+  try {
+    await adiarConversa(clienteId, contatoId, ate, nota ?? null)
+  } catch (erro) {
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para adiar' }
+  }
+
+  revalidatePath(`/clientes/${clienteId}/inbox`)
+  return { ok: true }
+}
+
+/**
+ * Resolve a conversa, ou devolve para a fila.
+ *
+ * **Resolver não é apagar**: a conversa continua inteira, só sai da fila do que
+ * precisa de alguém hoje. E se a pessoa escrever de novo, o gatilho da 0049 a
+ * reabre sozinho — resolver nunca faz alguém deixar de ser atendido.
+ */
+export async function acaoDefinirEstadoDaConversa(
+  clienteId: string,
+  contatoId: string,
+  estado: 'aberta' | 'resolvida',
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  if (estado !== 'aberta' && estado !== 'resolvida') {
+    return { ok: false, erro: 'estado inválido' }
+  }
+
+  try {
+    await definirEstadoDaConversa(clienteId, contatoId, estado)
+  } catch (erro) {
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para mudar' }
+  }
+
+  revalidatePath(`/clientes/${clienteId}/inbox`)
+  return { ok: true }
+}
+
 export async function acaoAssumirAtendimento(
   clienteId: string,
   contatoId: string,

@@ -25,10 +25,12 @@ import { contextoDeResposta } from '@/server/repos/conversas'
 import {
   acharLead,
   contarPorAtribuicao,
+  contarPorEstado,
   limparBusca,
   lerConversa,
   paginarLeads,
   pulsoDaConta,
+  type FiltroDeEstado,
   type Lead,
   type MensagemDoLead,
 } from '@/server/repos/leads'
@@ -37,6 +39,7 @@ import { AnexoNaConversa, SemTexto } from '@/components/lead/anexo'
 import { horaExata, quando } from '@/lib/quando'
 import { nomeDoTipo } from '@/core/tipo-da-mensagem'
 import { SeletorDeEtiquetas, type EtiquetaEscolhivel } from '@/components/etiquetas/seletor'
+import { EstadoDaConversa } from '@/components/inbox/estado-da-conversa'
 import { FichaDoRail } from '@/components/inbox/ficha-do-rail'
 import { clienteTemAutomacao } from '@/server/repos/fluxos'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
@@ -52,6 +55,16 @@ type Busca = {
   de?: string | string[]
   pagina?: string | string[]
   busca?: string | string[]
+  /** O rail `Estado` (0049): `aberta`, `adiada` ou `resolvida`. */
+  estado?: string | string[]
+}
+
+/**
+ * O `?estado=` veio de um endereço, então pode ser qualquer coisa. Só os três
+ * valores conhecidos passam — o resto cai no default, que é a fila aberta.
+ */
+function ehEstadoValido(valor: string | undefined): valor is FiltroDeEstado {
+  return valor === 'aberta' || valor === 'adiada' || valor === 'resolvida'
 }
 
 /**
@@ -84,20 +97,41 @@ export default async function Pagina({
 }) {
   const [{ clienteId }, busca] = await Promise.all([params, searchParams])
   const atribuicao = primeiro(busca.de) || 'todos'
+  /*
+   * O eixo "em que pé está", separado do "de quem é" (0049).
+   *
+   * O default é `aberta` e não `todas`: a fila existe para mostrar o que
+   * precisa de alguém hoje. Sem isso, a conversa resolvida ontem disputa
+   * espaço com quem está esperando resposta agora — que era o estado anterior
+   * desta tela.
+   */
+  const estadoPedido = primeiro(busca.estado)
+  const estado: FiltroDeEstado = ehEstadoValido(estadoPedido) ? estadoPedido : 'aberta'
   const pagina = Math.max(1, Number(primeiro(busca.pagina)) || 1)
   const termo = limparBusca(primeiro(busca.busca))
 
-  const [cliente, fila, respostasRapidas, contagem, etiquetas, coexistencia, temAutomacao] =
+  const [
+    cliente,
+    fila,
+    respostasRapidas,
+    contagem,
+    porEstado,
+    etiquetas,
+    coexistencia,
+    temAutomacao,
+  ] =
     await Promise.all([
     acharCliente(clienteId),
     paginarLeads(clienteId, {
       atribuicao,
+      estado,
       busca: termo,
       pagina,
       porPagina: CONVERSAS_POR_PAGINA,
     }),
     listarRespostasRapidas(clienteId),
     contarPorAtribuicao(clienteId),
+    contarPorEstado(clienteId),
     listarEtiquetas(clienteId),
     /*
      * Só custa quando o Inbox está vazio, que é quando a resposta importa —
@@ -217,7 +251,9 @@ export default async function Pagina({
             naoLidas={naoLidas}
             etiquetas={etiquetas}
             contagem={contagem}
+            porEstado={porEstado}
             atribuicao={atribuicao}
+            estado={estado}
             termo={termo}
             pagina={fila.pagina}
             paginas={fila.paginas}
@@ -299,7 +335,9 @@ async function Conteudo({
   naoLidas,
   etiquetas,
   contagem,
+  porEstado,
   atribuicao,
+  estado,
   termo,
   pagina,
   paginas,
@@ -318,7 +356,10 @@ async function Conteudo({
   /** Quantas entradas cada conversa tem depois da última vez que **eu** abri. */
   naoLidas: Map<string, number>
   contagem: Contagem
+  /** Quantas em cada estado, para o rail dizer o tamanho de cada aba. */
+  porEstado: { aberta: number; adiada: number; resolvida: number }
   atribuicao: string
+  estado: FiltroDeEstado
   termo: string
   pagina: number
   paginas: number
@@ -367,7 +408,9 @@ async function Conteudo({
           esperando={esperando}
           equipe={equipe}
           contagem={contagem}
+          porEstado={porEstado}
           atribuicao={atribuicao}
+          estado={estado}
           termo={termo}
           usuarioId={usuarioId}
           naoLidas={naoLidas}
@@ -448,7 +491,9 @@ function Fila({
   esperando,
   equipe,
   contagem,
+  porEstado,
   atribuicao,
+  estado,
   termo,
   usuarioId,
   naoLidas,
@@ -461,7 +506,9 @@ function Fila({
   esperando: number
   equipe: MembroDaConta[]
   contagem: Contagem
+  porEstado: { aberta: number; adiada: number; resolvida: number }
   atribuicao: string
+  estado: FiltroDeEstado
   termo: string
   usuarioId: string | null
   naoLidas: Map<string, number>
@@ -484,8 +531,15 @@ function Fila({
   /** O endereço de uma aba do rail, preservando a conversa aberta. */
   const comBusca = termo === '' ? '' : `&busca=${encodeURIComponent(termo)}`
   const conversaAberta = selecionado ? `&conversa=${encodeURIComponent(selecionado.contatoId)}` : ''
+  /*
+   * Os dois eixos convivem no endereço: trocar de dono não pode jogar a pessoa
+   * de volta para a fila aberta, nem trocar de estado perder o filtro de quem
+   * atende. Cada link mexe num e carrega o outro.
+   */
   const linkDe = (valor: string) =>
-    `/clientes/${clienteId}/inbox?de=${encodeURIComponent(valor)}${comBusca}${conversaAberta}`
+    `/clientes/${clienteId}/inbox?de=${encodeURIComponent(valor)}&estado=${estado}${comBusca}${conversaAberta}`
+  const linkDoEstado = (valor: FiltroDeEstado) =>
+    `/clientes/${clienteId}/inbox?de=${encodeURIComponent(atribuicao)}&estado=${valor}${comBusca}${conversaAberta}`
   return (
     <aside className="flex min-h-0 min-w-0 flex-col border-r border-white/[0.06] bg-white/[0.015]">
       <header className="border-b border-white/[0.06] px-4 py-[17px]">
@@ -542,6 +596,35 @@ function Fila({
             Buscar
           </button>
         </form>
+
+        {/*
+          **O eixo do estado vem antes do de dono, e é sempre visível.**
+
+          A ordem não é estética: "o que precisa de mim agora" é a primeira
+          pergunta de quem abre a tela, e "de quem é" só faz sentido depois de
+          respondida. O rail de dono continua condicionado à equipe existir —
+          este não, porque adiar e resolver valem para quem atende sozinho.
+        */}
+        <nav aria-label="Estado da conversa" className="-mx-1 mt-2.5 flex gap-1 overflow-x-auto pb-0.5">
+          <FichaDoRail
+            href={linkDoEstado('aberta')}
+            acesa={estado === 'aberta'}
+            rotulo="Abertas"
+            contagem={porEstado.aberta}
+          />
+          <FichaDoRail
+            href={linkDoEstado('adiada')}
+            acesa={estado === 'adiada'}
+            rotulo="Adiadas"
+            contagem={porEstado.adiada}
+          />
+          <FichaDoRail
+            href={linkDoEstado('resolvida')}
+            acesa={estado === 'resolvida'}
+            rotulo="Resolvidas"
+            contagem={porEstado.resolvida}
+          />
+        </nav>
 
         {(equipe.length > 0 || contagem.semDono < contagem.total) && (
           <nav
@@ -787,6 +870,17 @@ function CabecalhoDaConversa({
           equipe={equipe}
         />
       )}
+
+      {/*
+        Resolver e adiar antes de Assumir: são o que se faz **ao terminar** de
+        olhar a conversa, e é esse o gesto mais frequente. Assumir é o que se
+        faz ao começar, e só importa quando há mais de uma pessoa.
+      */}
+      <EstadoDaConversa
+        clienteId={clienteId}
+        contatoId={lead.contatoId}
+        estado={lead.estadoEfetivo}
+      />
 
       {(usuarioId || responsavel) && (
         <Assumir
