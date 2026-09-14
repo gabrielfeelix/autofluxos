@@ -89,3 +89,39 @@ describe('contarDonos', () => {
     expect(resolvidas.porUsuario.has('ana')).toBe(false)
   })
 })
+
+/**
+ * O que liga a `Fila` ao servidor, e é onde a extração poderia ter quebrado.
+ *
+ * A `Fila` pinta o primeiro quadro com a **página que o servidor filtrou** e só
+ * depois troca pelo recorte que `RailsLocais` publica. Se os dois discordassem
+ * para os mesmos filtros, a lista saltaria na hidratação — apareceria uma
+ * conversa e sumiria outra, sem nada quebrar para avisar.
+ *
+ * Aqui o servidor é simulado pelo mesmo recorte, que é justamente o contrato:
+ * `paginarLeads(estado, atribuicao)` e `recortarFila(estado, atribuicao)`
+ * respondem a mesma pergunta por caminhos diferentes.
+ */
+describe('o recorte local e a página do servidor concordam', () => {
+  /** O que `paginarLeads` devolve para os mesmos filtros, em ordem de fila. */
+  const comoOServidor = (estado: Falso['estadoEfetivo'], atribuicao: string) =>
+    FILA.filter((l) => {
+      if (l.estadoEfetivo !== estado) return false
+      if (atribuicao === 'sem-dono') return l.atribuidoA === null
+      if (atribuicao !== 'todos') return l.atribuidoA === atribuicao
+      return true
+    })
+
+  it.each([
+    ['aberta', 'todos'],
+    ['aberta', 'sem-dono'],
+    ['aberta', 'ana'],
+    ['adiada', 'todos'],
+    ['resolvida', 'todos'],
+    ['resolvida', 'ana'],
+  ] as const)('%s + %s dá a mesma lista nos dois caminhos', (estado, atribuicao) => {
+    expect(recortarFila(FILA, estado, atribuicao).map((l) => l.contatoId)).toEqual(
+      comoOServidor(estado, atribuicao).map((l) => l.contatoId),
+    )
+  })
+})

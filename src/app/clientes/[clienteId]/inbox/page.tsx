@@ -26,6 +26,7 @@ import {
   acharLead,
   contarPorAtribuicao,
   contarPorEstado,
+  filaInteira,
   limparBusca,
   lerConversa,
   paginarLeads,
@@ -37,13 +38,13 @@ import {
 import { listarRespostasRapidas, type RespostaRapida } from '@/server/repos/respostas-rapidas'
 import { AnexoNaConversa, SemTexto } from '@/components/lead/anexo'
 import { horaExata, quando } from '@/lib/quando'
-import { nomeDoTipo } from '@/core/tipo-da-mensagem'
 import { SeletorDeEtiquetas, type EtiquetaEscolhivel } from '@/components/etiquetas/seletor'
+import { Avatar } from '@/components/inbox/avatar'
 import { EstadoDaConversa } from '@/components/inbox/estado-da-conversa'
-import { FichaDoRail } from '@/components/inbox/ficha-do-rail'
+import { Fila, type Contagem } from '@/components/inbox/fila'
 import { clienteTemAutomacao } from '@/server/repos/fluxos'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
-import { marcarComoLida, naoLidasPorContato, TETO_DA_INSIGNIA } from '@/server/repos/leituras'
+import { marcarComoLida, naoLidasPorContato } from '@/server/repos/leituras'
 import { TextoDoWhatsApp } from '@/components/texto-do-whatsapp'
 import { PulsoDoInbox } from '@/components/inbox/pulso-do-inbox'
 
@@ -113,6 +114,7 @@ export default async function Pagina({
   const [
     cliente,
     fila,
+    local,
     respostasRapidas,
     contagem,
     porEstado,
@@ -129,6 +131,16 @@ export default async function Pagina({
       pagina,
       porPagina: CONVERSAS_POR_PAGINA,
     }),
+    /*
+     * A fila inteira, para os rails filtrarem no navegador — ou `null` quando a
+     * conta passou de `TETO_DA_FILA_LOCAL` e a tela precisa continuar
+     * paginando. Ver `filaInteira`: ela conta antes de trazer, então numa conta
+     * grande isto é uma contagem barata, não 5.000 linhas jogadas fora.
+     *
+     * Vai junto das outras no mesmo `Promise.all` — em série somaria uma ida de
+     * rede à tela mais aberta do produto.
+     */
+    filaInteira(clienteId, { busca: termo }),
     listarRespostasRapidas(clienteId),
     contarPorAtribuicao(clienteId),
     contarPorEstado(clienteId),
@@ -214,9 +226,20 @@ export default async function Pagina({
 
   const usuarioId = sessao?.usuario.id ?? null
   if (selecionado) await marcarComoLida(usuarioId, selecionado.contatoId)
+  /*
+   * **As não lidas cobrem a fila local, não só a página do servidor.**
+   *
+   * Quem filtra no navegador troca de aba sem voltar aqui: uma conversa que
+   * aparece só depois de clicar em "Adiadas" precisa da insígnia já calculada,
+   * senão ela nasce sem — e uma insígnia que some conforme a aba é pior que
+   * insígnia nenhuma, porque ninguém desconfia de um zero.
+   *
+   * `local` é no máximo `TETO_DA_FILA_LOCAL` contatos, e a consulta é um
+   * `in (...)` de ids. Quando ele é `null` a lista é a página, como antes.
+   */
   const naoLidas = await naoLidasPorContato(
     usuarioId,
-    leads.map((lead) => lead.contatoId),
+    (local ?? leads).map((lead) => lead.contatoId),
   )
 
   return (
@@ -244,6 +267,7 @@ export default async function Pagina({
           <Conteudo
             clienteId={cliente.id}
             leads={leads}
+            local={local}
             selecionado={selecionado}
             respostasRapidas={respostasRapidas}
             equipe={equipe}
@@ -328,6 +352,7 @@ function EstadoVazio({
 async function Conteudo({
   clienteId,
   leads,
+  local,
   selecionado,
   respostasRapidas,
   equipe,
@@ -345,6 +370,12 @@ async function Conteudo({
 }: {
   clienteId: string
   leads: Lead[]
+  /**
+   * A fila inteira, sem filtro de estado nem de dono — ou `null` quando a conta
+   * é grande demais para isso e a tela continua paginando. Ver
+   * `TETO_DA_FILA_LOCAL`.
+   */
+  local: Lead[] | null
   /** `null` quando o filtro ou a busca não deixou nenhuma conversa para abrir. */
   selecionado: Lead | null
   respostasRapidas: RespostaRapida[]
@@ -377,7 +408,14 @@ async function Conteudo({
   const restante = restaDaJanela(contexto?.ultimaEntradaEm ?? null)
   const janela = restante && restante > 0 ? comoFalta(restante) : null
   const primeiroNome = selecionado?.nome?.split(' ')[0] ?? 'esta pessoa'
-  const esperando = leads.filter((lead) => lead.aguardando).length
+  /*
+   * Conta a fila inteira quando ela veio, e não a página: a linha diz "N
+   * esperando uma pessoa" **sobre a conta**, e no modo local ela fica fixa
+   * enquanto a pessoa troca de aba. Contar só o recorte faria o número cair
+   * para zero em "Resolvidas" — que é verdade sobre a aba e mentira sobre o
+   * que precisa de alguém.
+   */
+  const esperando = (local ?? leads).filter((lead) => lead.aguardando).length
 
   return (
     <>
@@ -404,6 +442,7 @@ async function Conteudo({
         <Fila
           clienteId={clienteId}
           leads={leads}
+          local={local}
           selecionado={selecionado}
           esperando={esperando}
           equipe={equipe}
@@ -479,363 +518,6 @@ async function Conteudo({
         )}
       </div>
     </>
-  )
-}
-
-type Contagem = { total: number; semDono: number; porUsuario: Map<string, number> }
-
-function Fila({
-  clienteId,
-  leads,
-  selecionado,
-  esperando,
-  equipe,
-  contagem,
-  porEstado,
-  atribuicao,
-  estado,
-  termo,
-  usuarioId,
-  naoLidas,
-  pagina,
-  paginas,
-}: {
-  clienteId: string
-  leads: Lead[]
-  selecionado: Lead | null
-  esperando: number
-  equipe: MembroDaConta[]
-  contagem: Contagem
-  porEstado: { aberta: number; adiada: number; resolvida: number }
-  atribuicao: string
-  estado: FiltroDeEstado
-  termo: string
-  usuarioId: string | null
-  naoLidas: Map<string, number>
-  pagina: number
-  paginas: number
-}) {
-  const nomeDe = (id: string | null) =>
-    id ? (equipe.find((membro) => membro.id === id)?.nome.split(' ')[0] ?? 'alguém') : null
-
-  /**
-   * A coluna é flex, e não tem altura calculada.
-   *
-   * A lista usava `max-h-[calc(100vh-264px)]`: um número mágico amarrado à
-   * altura exata do cabeçalho da página. O rail e a paginação mudaram essa
-   * altura, e um `calc` desses erra em silêncio — a lista some por baixo ou
-   * sobra espaço em branco, sem nada quebrar para avisar. Com `flex-1` e
-   * `min-h-0`, quem decide é o próprio layout.
-   */
-
-  /** O endereço de uma aba do rail, preservando a conversa aberta. */
-  const comBusca = termo === '' ? '' : `&busca=${encodeURIComponent(termo)}`
-  const conversaAberta = selecionado ? `&conversa=${encodeURIComponent(selecionado.contatoId)}` : ''
-  /*
-   * Os dois eixos convivem no endereço: trocar de dono não pode jogar a pessoa
-   * de volta para a fila aberta, nem trocar de estado perder o filtro de quem
-   * atende. Cada link mexe num e carrega o outro.
-   */
-  const linkDe = (valor: string) =>
-    `/clientes/${clienteId}/inbox?de=${encodeURIComponent(valor)}&estado=${estado}${comBusca}${conversaAberta}`
-  const linkDoEstado = (valor: FiltroDeEstado) =>
-    `/clientes/${clienteId}/inbox?de=${encodeURIComponent(atribuicao)}&estado=${valor}${comBusca}${conversaAberta}`
-  return (
-    <aside className="flex min-h-0 min-w-0 flex-col border-r border-white/[0.06] bg-white/[0.015]">
-      <header className="border-b border-white/[0.06] px-4 py-[17px]">
-        <div className="flex items-center gap-2">
-          <h2 className="flex-1 text-[14px] font-bold tracking-[-0.01em]">Inbox</h2>
-          <span className="rounded-full border border-white/[0.09] bg-white/[0.035] px-2 py-0.5 font-mono text-[10px] text-muted">
-            {contagem.total}
-          </span>
-        </div>
-        <p className="mt-1 text-[11px] text-dim">
-          {esperando > 0 ? `${esperando} esperando uma pessoa` : 'Todas as conversas estão com o bot'}
-        </p>
-
-        {/*
-          O rail `Atribuído`, e ele é **horizontal**, não uma quarta coluna.
-          
-          O desenho de referência põe um painel só para isto, e num Inbox de
-          três colunas a quarta come a largura da conversa — que é onde se
-          trabalha. Com três a cinco entradas, uma linha de fichas diz a mesma
-          coisa e não tira espaço de ninguém.
-          
-          **A contagem é o que faz o rail valer a pena.** Sem ela, escolher uma
-          aba é apostar: a pessoa clica em "sem dono" para descobrir se tem
-          alguma coisa lá.
-        */}
-        {/*
-          A busca é o "[+] iniciar conversa" do desenho de referência, na forma
-          que faz sentido aqui.
-          
-          Escrever primeiro para alguém só é possível **dentro da janela de 24
-          horas** — fora dela a Meta exige modelo aprovado, que este produto
-          ainda não tem. E quem está dentro da janela já está nesta lista: o que
-          falta não é um botão de começar, é achar a pessoa quando a conversa
-          dela já rolou para baixo.
-          
-          Formulário `GET`: a busca vira endereço, e endereço de busca dá para
-          guardar e recarregar.
-        */}
-        <form method="get" className="mt-2.5 flex gap-1.5">
-          <input type="hidden" name="de" value={atribuicao} />
-          {selecionado && <input type="hidden" name="conversa" value={selecionado.contatoId} />}
-          <input
-            type="search"
-            name="busca"
-            defaultValue={termo}
-            placeholder="Nome ou telefone"
-            aria-label="Buscar conversa"
-            className="app-field min-w-0 flex-1 px-2.5 py-1.5 text-[11.5px]"
-          />
-          <button
-            type="submit"
-            className="shrink-0 rounded-lg border border-white/[0.09] px-2.5 py-1.5 text-[11px] font-semibold text-muted transition hover:border-accent/40 hover:text-accent"
-          >
-            Buscar
-          </button>
-        </form>
-
-        {/*
-          **O eixo do estado vem antes do de dono, e é sempre visível.**
-
-          A ordem não é estética: "o que precisa de mim agora" é a primeira
-          pergunta de quem abre a tela, e "de quem é" só faz sentido depois de
-          respondida. O rail de dono continua condicionado à equipe existir —
-          este não, porque adiar e resolver valem para quem atende sozinho.
-        */}
-        <nav aria-label="Estado da conversa" className="-mx-1 mt-2.5 flex gap-1 overflow-x-auto pb-0.5">
-          <FichaDoRail
-            href={linkDoEstado('aberta')}
-            acesa={estado === 'aberta'}
-            rotulo="Abertas"
-            contagem={porEstado.aberta}
-          />
-          <FichaDoRail
-            href={linkDoEstado('adiada')}
-            acesa={estado === 'adiada'}
-            rotulo="Adiadas"
-            contagem={porEstado.adiada}
-          />
-          <FichaDoRail
-            href={linkDoEstado('resolvida')}
-            acesa={estado === 'resolvida'}
-            rotulo="Resolvidas"
-            contagem={porEstado.resolvida}
-          />
-        </nav>
-
-        {(equipe.length > 0 || contagem.semDono < contagem.total) && (
-          <nav
-            aria-label="Filtrar por quem atende"
-            className="-mx-1 mt-2.5 flex gap-1 overflow-x-auto pb-0.5"
-          >
-            <FichaDoRail href={linkDe('todos')} acesa={atribuicao === 'todos'} rotulo="Todos" contagem={contagem.total} />
-            <FichaDoRail
-              href={linkDe('sem-dono')}
-              acesa={atribuicao === 'sem-dono'}
-              rotulo="Sem dono"
-              contagem={contagem.semDono}
-              alerta
-            />
-            {usuarioId && (
-              <FichaDoRail
-                href={linkDe(usuarioId)}
-                acesa={atribuicao === usuarioId}
-                rotulo="Meus"
-                contagem={contagem.porUsuario.get(usuarioId) ?? 0}
-              />
-            )}
-            {equipe
-              .filter((membro) => membro.id !== usuarioId)
-              .map((membro) => (
-                <FichaDoRail
-                  key={membro.id}
-                  href={linkDe(membro.id)}
-                  acesa={atribuicao === membro.id}
-                  rotulo={membro.nome.split(' ')[0] ?? membro.nome}
-                  contagem={contagem.porUsuario.get(membro.id) ?? 0}
-                  ausente={membro.presenca !== 'disponivel'}
-                />
-              ))}
-          </nav>
-        )}
-      </header>
-
-      <nav aria-label="Conversas" className="min-h-0 flex-1 overflow-y-auto py-1.5">
-        {leads.map((lead) => {
-          const ativa = lead.contatoId === selecionado?.contatoId
-          const nome = lead.nome ?? 'sem nome'
-          const semLer = naoLidas.get(lead.contatoId) ?? 0
-          return (
-            <Link
-              key={lead.contatoId}
-              href={`/clientes/${clienteId}/inbox?conversa=${encodeURIComponent(lead.contatoId)}`}
-              aria-current={ativa ? 'page' : undefined}
-              scroll={false}
-              className={`group mx-1.5 mb-0.5 flex gap-2.5 rounded-[10px] px-2.5 py-3 transition ${
-                ativa ? 'bg-accent/[0.12]' : 'hover:bg-white/[0.045]'
-              }`}
-            >
-              <Avatar nome={lead.nome} alerta={Boolean(lead.aguardando)} />
-              <span className="min-w-0 flex-1">
-                <span className="flex items-baseline gap-2">
-                  <strong
-                    className={`min-w-0 flex-1 truncate text-[12.5px] ${ativa ? 'text-white' : semLer > 0 ? 'font-bold text-white' : 'text-soft'}`}
-                  >
-                    {nome}
-                  </strong>
-                  <small className="shrink-0 text-[9.5px] text-muted">{lead.ultimaEm ? quando(lead.ultimaEm) : ''}</small>
-                </span>
-                <span className="mt-0.5 flex items-center gap-1.5">
-                  {/*
-                    O `title` existe porque o motivo do handoff **é a
-                    informação que resolve o problema** — "a chamada respondeu
-                    500", "o modelo demorou demais" — e ele chega a 75
-                    caracteres numa coluna de 292px. Truncado e sem `title`, a
-                    linha vermelha só dizia que havia algo errado e escondia o
-                    quê: nem o mouse, nem outra tela contavam.
-                  */}
-                  <span
-                    title={
-                      lead.aguardando
-                        ? `Aguardando pessoa: ${lead.aguardando.motivo}`
-                        : undefined
-                    }
-                    className={`min-w-0 flex-1 truncate text-[10.5px] ${lead.aguardando ? 'text-rose-300' : semLer > 0 ? 'text-soft' : 'text-muted'}`}
-                  >
-                    {lead.aguardando ? `Pessoa: ${lead.aguardando.motivo}` : resumoDaConversa(lead)}
-                  </span>
-                  {/*
-                    A insígnia é **minha**, não da conversa: ela conta o que
-                    entrou depois da última vez que *eu* abri. "Alguém leu" é
-                    exatamente a informação que não ajuda ninguém a decidir o
-                    que abrir agora.
-                  */}
-                  {semLer > 0 && (
-                    <span
-                      title={`${semLer} mensagem(ns) desde a última vez que você abriu`}
-                      className="shrink-0 rounded-full bg-accent px-1.5 py-px text-[9.5px] font-bold text-black"
-                    >
-                      {semLer > TETO_DA_INSIGNIA ? `${TETO_DA_INSIGNIA}+` : semLer}
-                    </span>
-                  )}
-                </span>
-                {lead.aguardando && <RelogioDaJanela ultimaEntradaEm={lead.ultimaEntradaEm} />}
-                {/*
-                  Quem assumiu aparece na fila, e não só na conversa aberta: a
-                  fila é onde se decide o que pegar, e pegar o que já tem dono é
-                  o trabalho duplicado que a atribuição existe para evitar.
-                */}
-                {nomeDe(lead.atribuidoA) && (
-                  <span className="mt-0.5 block truncate text-[10px] text-dim">
-                    com {nomeDe(lead.atribuidoA)}
-                  </span>
-                )}
-              </span>
-            </Link>
-          )
-        })}
-
-        {leads.length === 0 && (
-          <p className="px-4 py-8 text-center text-[11.5px] leading-5 text-dim">
-            {termo === ''
-              ? 'Nenhuma conversa nesta aba.'
-              : `Ninguém com “${termo}” nesta aba.`}
-          </p>
-        )}
-      </nav>
-
-      {paginas > 1 && (
-        <div className="flex items-center justify-between gap-2 border-t border-white/[0.06] px-3 py-2.5">
-          <PassoDaPagina
-            href={`/clientes/${clienteId}/inbox?de=${encodeURIComponent(atribuicao)}${comBusca}&pagina=${pagina - 1}`}
-            desabilitado={pagina <= 1}
-            rotulo="Página anterior"
-          >
-            ‹
-          </PassoDaPagina>
-          <span className="font-mono text-[10px] text-dim">
-            {pagina} / {paginas}
-          </span>
-          <PassoDaPagina
-            href={`/clientes/${clienteId}/inbox?de=${encodeURIComponent(atribuicao)}${comBusca}&pagina=${pagina + 1}`}
-            desabilitado={pagina >= paginas}
-            rotulo="Próxima página"
-          >
-            ›
-          </PassoDaPagina>
-        </div>
-      )}
-    </aside>
-  )
-}
-
-function PassoDaPagina({
-  href,
-  desabilitado,
-  rotulo,
-  children,
-}: {
-  href: string
-  desabilitado: boolean
-  rotulo: string
-  children: string
-}) {
-  if (desabilitado) {
-    return (
-      <span aria-disabled className="rounded-md px-2 py-0.5 text-[13px] text-white/15">
-        {children}
-      </span>
-    )
-  }
-  return (
-    <Link
-      href={href}
-      aria-label={rotulo}
-      scroll={false}
-      className="rounded-md px-2 py-0.5 text-[13px] text-muted transition hover:bg-white/[0.06] hover:text-white"
-    >
-      {children}
-    </Link>
-  )
-}
-
-/**
- * Quanto tempo ainda dá para responder em texto livre.
- *
- * **Só aparece em quem espera uma pessoa**, e isso é decisão de desenho: a
- * fila já carrega nome, horário e prévia, e um quarto dado em toda linha vira
- * ruído. Onde o relógio decide alguma coisa é exatamente aqui — quem escolhe o
- * que atender primeiro precisa saber de quem a janela está fechando, não de
- * quem está conversando com o bot.
- *
- * §3.10.1: *"a fila precisa mostrar quanto tempo resta, não só que alguém
- * espera"*. Passada a janela, a Meta só aceita modelo aprovado — que este
- * produto ainda não tem —, então "fechada" quer dizer que não dá para
- * responder por texto, e é a informação mais importante da linha.
- */
-function RelogioDaJanela({ ultimaEntradaEm }: { ultimaEntradaEm: string | null }) {
-  const restante = restaDaJanela(ultimaEntradaEm)
-  if (restante === null) return null
-
-  if (restante === 0) {
-    return (
-      <span className="mt-0.5 block text-[10px] font-semibold text-rose-300">
-        janela fechada — só modelo aprovado
-      </span>
-    )
-  }
-
-  // Duas horas é o limite em que avisar ainda muda a decisão de alguém. Acima
-  // disso, cor de alerta em toda linha treina a pessoa a ignorar a cor.
-  const apertado = restante < 2 * 60 * 60 * 1000
-
-  return (
-    <span className={`mt-0.5 block text-[10px] ${apertado ? 'font-semibold text-amber-300' : 'text-dim'}`}>
-      responder em {comoFalta(restante)}
-    </span>
   )
 }
 
@@ -1096,32 +778,4 @@ function DadosDoLead({
       </div>
     </aside>
   )
-}
-
-function Avatar({ nome, alerta }: { nome: string | null; alerta: boolean }) {
-  const iniciais = (nome ?? '?')
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((parte) => parte[0])
-    .join('')
-    .toUpperCase()
-
-  return (
-    <span className="relative flex size-9 shrink-0 items-center justify-center rounded-full border border-white/[0.11] bg-white/[0.05] text-[10px] font-bold text-[#b9c2d0]">
-      {iniciais}
-      {alerta && <span className="absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border-2 border-[#0c1118] bg-rose-400" />}
-    </span>
-  )
-}
-
-function resumoDaConversa(lead: Lead): string {
-  const prefixo = lead.ultimaDirecao === 'saida' ? 'atendimento: ' : ''
-  if (lead.ultimoTexto) return `${prefixo}${lead.ultimoTexto}`
-  if (!lead.ultimaEm) return 'sem mensagem'
-
-  // O tipo quando ele existe, a frase genérica quando não. Ver
-  // `core/tipo-da-mensagem.ts` sobre por que "mídia ou mensagem sem texto"
-  // sozinho era pior do que nada.
-  return `${prefixo}${nomeDoTipo(lead.ultimoTipo) ?? 'mensagem sem texto'}`
 }
