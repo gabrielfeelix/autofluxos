@@ -4,7 +4,7 @@ import Link from 'next/link'
  * Onde você está — a trilha acima do título.
  *
  * A barra lateral acende "Configurações" para **nove** telas diferentes
- * (número, Instagram, credenciais, contexto, acervo, equipe, etiquetas,
+ * (WhatsApp, Instagram, chaves de API, contexto, acervo, equipe, etiquetas,
  * horário, respostas rápidas). Isso responde "em que seção estou", e nenhuma
  * delas respondia "em qual das nove" — o título dizia "Número do WhatsApp" sem
  * nada ligando aquilo a Configurações, e o caminho de volta era o item já aceso

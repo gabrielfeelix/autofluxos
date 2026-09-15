@@ -189,13 +189,29 @@ export function lerValor(
   return { ok: true, valor }
 }
 
-/** "R$ 1.500,00". Formatado no servidor: `Intl` no cliente diverge na hidratação. */
+/**
+ * "R$ 1.500,00", escrito à mão.
+ *
+ * **Sem `Intl`, e o motivo é um defeito real de hidratação.** O
+ * `Intl.NumberFormat` do Node e o do navegador vêm de versões diferentes do
+ * ICU, e elas discordam do separador entre o símbolo e o número: uma escreve
+ * espaço estreito (U+202F), a outra espaço não separável (U+00A0). O React
+ * compara o texto que veio do servidor com o que o cliente produz, vê dois
+ * caracteres diferentes, e derruba a hidratação inteira com o erro #418 — que
+ * no console aparece minificado e sem dizer onde.
+ *
+ * Um número de dinheiro não precisa de biblioteca: duas casas, ponto no milhar,
+ * vírgula no centavo. Determinístico dos dois lados, que é a única coisa que
+ * esta função precisa garantir.
+ */
 export function comoDinheiro(valor: number | null): string {
   if (valor === null) return ''
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(valor)
+
+  const negativo = valor < 0
+  const [inteiro, centavos] = Math.abs(valor).toFixed(2).split('.')
+  const comMilhar = (inteiro ?? '0').replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+
+  return `${negativo ? '-' : ''}R$ ${comMilhar},${centavos}`
 }
 
 /**

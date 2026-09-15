@@ -27,7 +27,7 @@ export async function GET(req: Request) {
   const clienteId = lerEstado(parametros.get('state'))
   if (!clienteId) redirect('/painel?erro=anuncios_estado')
 
-  const destino = `/clientes/${clienteId}/anuncios`
+  const destino = `/clientes/${clienteId}/ajustes/anuncios`
 
   const acesso = await conferirAcessoAoCliente(clienteId)
   if ((await sessaoAtual()) !== null && !acesso) {

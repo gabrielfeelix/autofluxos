@@ -151,11 +151,11 @@ export default async function Pagina({
         <Trilha
           caminho={[
             { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },
-            { rotulo: 'Número do WhatsApp' },
+            { rotulo: 'WhatsApp' },
           ]}
         />
         <h1 className="mb-5 text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">
-          Número do WhatsApp
+          WhatsApp
         </h1>
 
         {aviso && (

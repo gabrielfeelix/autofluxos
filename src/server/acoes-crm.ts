@@ -2,11 +2,14 @@
 
 import { revalidatePath } from 'next/cache'
 import { lerValor, type Estagio, type Situacao, type TipoDeEtapa } from '@/core/crm'
-import { linhaDoTempo } from './repos/eventos'
+import { anotar, linhaDoTempo } from './repos/eventos'
 import { listarMotivos, criarMotivo, apagarMotivo } from './repos/motivos-de-perda'
 import { definirEstagio, resumoDoContato } from './repos/crm'
+import { atribuirContato } from './repos/conversas'
+import { membrosDaConta } from './repos/usuarios'
 import {
   atribuirCartao,
+  criarQuadro,
   definirTipoDaEtapa,
   descreverCartao,
   encadearQuadro,
@@ -244,4 +247,67 @@ export async function acaoTrazerTodosParaOQuadro(
 
   quadros(clienteId)
   return { ok: true, postos: r.postos, faltaram: r.faltaram }
+}
+
+/**
+ * Cria o quadro a partir de um modelo, e devolve o que aconteceu.
+ *
+ * Existe separada de `acaoCriarQuadro` porque o modal de criação **não é mais um
+ * formulário**: ele precisa fechar sozinho no sucesso e mostrar a recusa sem
+ * recarregar — "já existe um quadro com este nome" chegava como nada, e a tela
+ * ficava parada com o botão clicado, parecendo travada.
+ */
+export async function acaoCriarQuadroComModelo(
+  clienteId: string,
+  nome: string,
+  modeloId: string | null,
+): Promise<{ ok: boolean; erro?: string; id?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const r = await criarQuadro(clienteId, String(nome ?? ''), modeloId)
+  if (!r.ok) return { ok: false, erro: r.motivo }
+
+  quadros(clienteId)
+  return { ok: true, id: r.id }
+}
+
+/**
+ * Quem cuida desta pessoa, mudado da ficha dela.
+ *
+ * O Inbox já tinha o gesto ("Assumir"), e ele era sobre si mesmo: eu pego, eu
+ * largo. Na ficha a pergunta é outra — quem *deveria* cuidar —, e a resposta
+ * costuma ser outra pessoa. Por isso aqui a lista é a equipe inteira, e
+ * `null` devolve o contato à fila de ninguém, que é estado legítimo.
+ *
+ * Grava o mesmo evento `assumiu` que o cartão grava: a linha do tempo não tem
+ * por que distinguir se o nome mudou pelo funil ou pela ficha.
+ */
+export async function acaoAtribuirContato(
+  clienteId: string,
+  contatoId: string,
+  usuarioId: string | null,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const equipe = await membrosDaConta(clienteId)
+  const escolhido = usuarioId === null ? null : equipe.find((membro) => membro.id === usuarioId)
+  if (usuarioId !== null && !escolhido) {
+    return { ok: false, erro: 'essa pessoa não atende nesta conta' }
+  }
+
+  const ok = await atribuirContato(clienteId, contatoId, usuarioId)
+  if (!ok) return { ok: false, erro: 'este contato não é deste cliente' }
+
+  const quemFez = await sessaoAtual()
+  await anotar(
+    clienteId,
+    contatoId,
+    'assumiu',
+    { quem: escolhido?.nome ?? '' },
+    quemFez?.usuario.nome ?? null,
+  )
+
+  revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
+  revalidatePath(`/clientes/${clienteId}/inbox`)
+  return { ok: true }
 }

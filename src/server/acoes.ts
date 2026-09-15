@@ -537,7 +537,7 @@ export async function acaoDefinirFluxosDoNumero(
   const r = await definirFluxosDoNumero(clienteId, canalId, fluxos)
   if (!r.ok) return { erro: r.motivo }
 
-  revalidatePath(`/clientes/${clienteId}/numero`)
+  revalidatePath(`/clientes/${clienteId}/ajustes/whatsapp`)
   revalidatePath(`/clientes/${clienteId}`)
   return { ok: true }
 }
@@ -1674,7 +1674,7 @@ export async function acaoLigarAgenda(
     return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para guardar' }
   }
 
-  revalidatePath(`/clientes/${clienteId}/conexoes`)
+  revalidatePath(`/clientes/${clienteId}/ajustes/chaves`)
   return { ok: true }
 }
 
@@ -1758,7 +1758,7 @@ export async function acaoCriarConexao(
     return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para guardar' }
   }
 
-  revalidatePath(`/clientes/${clienteId}/conexoes`)
+  revalidatePath(`/clientes/${clienteId}/ajustes/chaves`)
   return { ok: true }
 }
 
@@ -1775,7 +1775,7 @@ export async function acaoTrocarValorDaConexao(
   } catch (erro) {
     return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para trocar' }
   }
-  revalidatePath(`/clientes/${clienteId}/conexoes`)
+  revalidatePath(`/clientes/${clienteId}/ajustes/chaves`)
   return { ok: true }
 }
 
@@ -1783,7 +1783,7 @@ export async function acaoApagarConexao(clienteId: string, conexaoId: string) {
   await exigirAcessoAoCliente(clienteId)
 
   await apagarConexao(conexaoId, clienteId)
-  revalidatePath(`/clientes/${clienteId}/conexoes`)
+  revalidatePath(`/clientes/${clienteId}/ajustes/chaves`)
 }
 
 /** O maior texto que a Cloud API aceita numa mensagem. */
@@ -2103,7 +2103,7 @@ export async function acaoSalvarContexto(
     return { erro: erro instanceof Error ? erro.message : 'não deu para salvar' }
   }
 
-  revalidatePath(`/clientes/${clienteId}/contexto`)
+  revalidatePath(`/clientes/${clienteId}/ajustes/contexto`)
   revalidatePath(`/clientes/${clienteId}`)
   return { ok: true }
 }
@@ -2255,7 +2255,7 @@ export async function acaoPrepararEnvioDeArquivo(
 export async function acaoConfirmarEnvio(clienteId: string): Promise<{ ok: boolean }> {
   await exigirAcessoAoCliente(clienteId)
 
-  revalidatePath(`/clientes/${clienteId}/acervo`)
+  revalidatePath(`/clientes/${clienteId}/ajustes/acervo`)
   return { ok: true }
 }
 
@@ -2309,7 +2309,7 @@ export async function acaoApagarDoAcervo(
   } catch (erro) {
     return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para apagar' }
   }
-  revalidatePath(`/clientes/${clienteId}/acervo`)
+  revalidatePath(`/clientes/${clienteId}/ajustes/acervo`)
   return { ok: true }
 }
 

@@ -1,34 +1,33 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
-import { FichaDoCliente } from '@/components/cliente/ficha'
 import { ClienteShell } from '@/components/design/cliente-shell'
-import { acaoRemoverLogo, acaoSalvarCadastro, acaoSalvarLogo } from '@/server/acoes'
+import { telefoneLegivel } from '@/core/contatos/telefone'
+import { comoDinheiro } from '@/core/crm'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarCanais } from '@/server/repos/conversas'
 import { listarFluxos } from '@/server/repos/fluxos'
-import { contarEsperandoPessoa, contarLeads } from '@/server/repos/leads'
-import {
-  medirFunil,
-  medirPessoas,
-  medirTempos,
-  serieDiaria,
-  type MedidasDoMes,
-} from '@/server/repos/metricas'
-import { GraficoDaSerie } from '@/components/cliente/grafico'
+import { contarLeads } from '@/server/repos/leads'
+import { medirFunil, medirPessoas, medirTempos } from '@/server/repos/metricas'
+import { fechamentos, filaDoPainel, type ItemDaFila } from '@/server/repos/painel'
 import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 
 export const dynamic = 'force-dynamic'
 
 /**
- * A primeira tela do cliente responde uma pergunta só: **ele está sendo
- * atendido agora?**
+ * A primeira tela responde, nesta ordem: **quem está esperando por mim agora**
+ * e, se ninguém está, **o negócio andou?**
  *
- * Três coisas precisam ser verdade ao mesmo tempo para o bot responder no
- * WhatsApp — existir fluxo publicado, existir número conectado, e o número
- * apontar para um fluxo que está no ar. Cada uma tinha a sua tela, então
- * descobrir que faltava a segunda exigia visitar as três. Aqui a resposta vem
- * antes de qualquer navegação, e quando é "não", diz qual peça falta.
+ * A ordem é a decisão inteira, e está defendida em `docs/PLANO-HOMEPAGE.md`. A
+ * versão anterior fazia o contrário — cinco blocos de medida e nenhuma lista —,
+ * o que é contar o mês para quem abriu o navegador querendo saber a próxima
+ * meia hora. Home de produto de atendimento é fila com placar em cima, não
+ * placar com gráfico embaixo.
+ *
+ * O que sobreviveu inteiro da tela antiga é o princípio da faixa de estado: as
+ * três condições para o bot responder no WhatsApp moravam em três telas, e
+ * descobrir qual faltava exigia visitar as três. Aqui a resposta vem antes de
+ * qualquer navegação e, quando é "não", diz **qual peça** falta.
  */
 export default async function Pagina({ params }: { params: Promise<{ clienteId: string }> }) {
   const { clienteId } = await params
@@ -37,148 +36,373 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
   return (
     <ClienteShell cliente={cliente} ativa="inicio">
-      <main className="w-full max-w-[1440px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
-        <header className="mb-5">
-          <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Painel</h1>
-          <p className="mt-1 text-[13px] text-muted">{cliente.nome}</p>
+      <main className="w-full max-w-[1100px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
+        <header className="mb-5 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+          <div>
+            <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Painel</h1>
+            <p className="mt-1 text-[13px] text-muted">{cliente.nome}</p>
+          </div>
+          <Link
+            href={`/clientes/${cliente.id}/leads`}
+            className="text-[12.5px] font-semibold text-muted transition hover:text-primary"
+          >
+            Todos os contatos
+          </Link>
         </header>
 
-        <Suspense fallback={<div className="app-card mb-[18px] h-[104px] animate-pulse" />}>
-          <Atendimento clienteId={cliente.id} />
+        {/*
+          Estado e fila num bloco só, com uma leitura só.
+
+          Separados, cada um precisaria de `listarFluxos` e `listarCanais` para
+          decidir o que mostrar quando a conta é nova — o dobro das consultas
+          para desenhar a mesma decisão. As duas são baratas e a fila tem teto
+          de seis linhas, então nada aqui segura a tela por muito tempo.
+        */}
+        <Suspense
+          fallback={<div className="mb-5 h-[248px] animate-pulse rounded-[14px] bg-surface" />}
+        >
+          <Abertura clienteId={cliente.id} />
         </Suspense>
 
-        <Suspense fallback={<div className="app-card mb-[18px] h-[96px] animate-pulse" />}>
-          <Funil clienteId={cliente.id} />
+        <Suspense fallback={<div className="app-card mb-[18px] h-[92px] animate-pulse" />}>
+          <Numeros clienteId={cliente.id} />
         </Suspense>
 
-        <Suspense fallback={<div className="app-card mb-[18px] h-[110px] animate-pulse" />}>
-          <Tempos clienteId={cliente.id} />
+        <Suspense fallback={null}>
+          <Fechamentos clienteId={cliente.id} />
         </Suspense>
 
-        <Suspense fallback={<div className="app-card mb-[18px] h-[240px] animate-pulse" />}>
-          <Serie clienteId={cliente.id} />
-        </Suspense>
-
-        <Suspense fallback={<div className="app-card mb-[18px] h-[120px] animate-pulse" />}>
+        <Suspense fallback={null}>
           <Pessoas clienteId={cliente.id} />
         </Suspense>
-
-        <FichaDoCliente
-          cliente={cliente}
-          salvarCadastro={acaoSalvarCadastro.bind(null, cliente.id)}
-          salvarLogo={acaoSalvarLogo.bind(null, cliente.id)}
-          removerLogo={acaoRemoverLogo.bind(null, cliente.id)}
-        />
       </main>
     </ClienteShell>
   )
 }
 
-async function Funil({ clienteId }: { clienteId: string }) {
-  const funil = await medirFunil(clienteId)
-  const percentual = funil.atual.conversas
-    ? Math.round((funil.atual.resolvidasPeloBot / funil.atual.conversas) * 100)
-    : 0
-  const percentualAnterior = funil.anterior.conversas
-    ? Math.round((funil.anterior.resolvidasPeloBot / funil.anterior.conversas) * 100)
-    : 0
+// ---------------------------------------------------------------------------
+// Estado do atendimento e fila
+// ---------------------------------------------------------------------------
+
+async function Abertura({ clienteId }: { clienteId: string }) {
+  const [fluxos, canais, contatos, fila] = await Promise.all([
+    listarFluxos(clienteId),
+    listarCanais(clienteId),
+    contarLeads(clienteId),
+    filaDoPainel(clienteId),
+  ])
+
+  const noAr = fluxos.filter((fluxo) => fluxo.versaoPublicadaId)
+  const publicados = new Set(noAr.map((fluxo) => fluxo.id))
+  const atendendo = canais.filter((canal) => canal.flowId && publicados.has(canal.flowId))
+
+  // A ordem importa: a primeira peça que falta é a que adianta resolver. Listar
+  // tudo que está errado de uma vez faz parecer que há quatro problemas quando
+  // há um, e os seguintes às vezes somem sozinhos quando o primeiro sai.
+  const passos = [
+    {
+      feito: fluxos.length > 0,
+      titulo: 'Desenhar a automação',
+      explica: 'o roteiro do que o bot responde',
+      acao: 'Criar a primeira',
+      href: '/fluxos',
+    },
+    {
+      feito: noAr.length > 0,
+      titulo: 'Publicar a automação',
+      explica: 'o desenho existe, mas não atende ninguém até ser publicado',
+      acao: 'Abrir as automações',
+      href: '/fluxos',
+    },
+    {
+      feito: canais.length > 0 && atendendo.length > 0,
+      titulo: 'Conectar o número',
+      explica:
+        canais.length === 0
+          ? 'sem isso o WhatsApp não chega até aqui'
+          : 'o número conectado ainda não aponta para uma automação publicada',
+      acao: canais.length === 0 ? 'Conectar' : 'Ajustar o número',
+      href: '/ajustes/whatsapp',
+    },
+  ]
+
+  const proximo = passos.find((passo) => !passo.feito)
 
   return (
-    <section className="app-card mb-[18px] px-6 py-5" aria-labelledby="titulo-funil">
-      <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
-        <div className="min-w-[130px]">
-          <h2 id="titulo-funil" className="text-[12px] font-bold uppercase tracking-[0.08em] text-dim">
-            Este mês
-          </h2>
-          <p className="mt-1 text-[11.5px] text-dim">Mês passado: {resumoDoMes(funil.anterior)}</p>
-        </div>
+    <section className="mb-5">
+      <div
+        className={`flex flex-wrap items-center gap-x-6 gap-y-2 rounded-t-[14px] border border-b-0 px-5 py-3 ${
+          proximo ? 'border-amber-300/30 bg-amber-300/[0.06]' : 'border-line bg-surface'
+        }`}
+      >
+        <p className="flex items-center gap-2.5 text-[14px] font-bold">
+          <span
+            aria-hidden
+            className={`size-2.5 rounded-full ${proximo ? 'bg-amber-300' : 'bg-emerald-400'}`}
+          />
+          {proximo ? 'Ainda não está atendendo' : 'Atendendo no WhatsApp'}
+        </p>
 
-        <span aria-hidden className="h-[38px] w-px bg-surface-strong" />
+        {!proximo && (
+          <p className="text-[12px] text-muted">
+            {noAr.length} {noAr.length === 1 ? 'automação no ar' : 'automações no ar'} ·{' '}
+            {canais.length} {canais.length === 1 ? 'número' : 'números'} · {contatos}{' '}
+            {contatos === 1 ? 'contato' : 'contatos'}
+          </p>
+        )}
 
-        <Medida valor={funil.atual.conversas} rotulo="conversas" />
-        <Medida
-          valor={funil.atual.resolvidasPeloBot}
-          rotulo={`resolvidas pelo bot (${percentual}%)`}
-        />
-        <Medida
-          valor={funil.atual.esperandoPessoa}
-          rotulo="esperando pessoa"
-          alerta={funil.atual.esperandoPessoa > 0}
-        />
+        <span className="flex-1" />
+
+        <Link
+          href={`/clientes/${clienteId}/ajustes/negocio`}
+          className="text-[12px] text-dim transition hover:text-primary"
+        >
+          Dados do negócio
+        </Link>
       </div>
 
-      {/*
-        A barra proporcional em vez dos números soltos (§3.1 do plano).
-        
-        "26%" sozinho não é informação — 26% pode ser ótimo ou péssimo. O que dá
-        referência é a proporção desenhada **e** o mesmo número do mês passado
-        ao lado. Sem conversa nenhuma ela não aparece: uma barra vazia com 0%
-        parece um bot que falhou, quando o que houve foi ninguém escrever.
-      */}
-      {funil.atual.conversas > 0 && (
-        <div className="mt-4">
-          <div
-            className="flex h-2 overflow-hidden rounded-full bg-surface-strong"
-            role="img"
-            aria-label={`${percentual}% das conversas resolvidas pelo bot`}
-          >
-            <span className="bg-emerald-400/80" style={{ width: `${percentual}%` }} />
-            <span
-              className="bg-rose-400/70"
-              style={{
-                width: `${funil.atual.conversas ? Math.round((funil.atual.esperandoPessoa / funil.atual.conversas) * 100) : 0}%`,
-              }}
-            />
-          </div>
-          <p className="mt-1.5 text-[11px] text-dim">
-            O bot resolveu <strong className="text-soft">{percentual}%</strong> —{' '}
-            {funil.anterior.conversas === 0
-              ? 'não há mês anterior para comparar'
-              : `no mês passado foram ${percentualAnterior}%`}
-          </p>
-        </div>
-      )}
+      <div className="rounded-b-[14px] border border-line bg-panel">
+        {proximo ? (
+          <Estreia passos={passos} clienteId={clienteId} />
+        ) : (
+          <Fila fila={fila} clienteId={clienteId} contatos={contatos} />
+        )}
+      </div>
     </section>
   )
 }
 
 /**
- * Quanto alguém esperou.
+ * O checklist de estreia.
  *
- * Mediana **e** média lado a lado, sempre — ver `medirTempos`. Mostrar só a
- * média esconde a conversa esquecida no fim de semana dentro de um número
- * razoável; mostrar só a mediana esconde que ela existiu.
+ * Três passos, cada um levando a uma tela concreta, e **ele morre sozinho**:
+ * quando o terceiro fica verde, o mesmo espaço passa a mostrar a fila. Não há
+ * botão de fechar porque não precisa haver — checklist que depende de alguém
+ * dispensá-lo é o que vira ruído permanente.
+ *
+ * Só o próximo passo tem botão. Três botões lado a lado transformam uma
+ * sequência em um menu, e a sequência é justamente a informação: o segundo
+ * passo não existe antes do primeiro.
  */
-async function Tempos({ clienteId }: { clienteId: string }) {
-  const tempos = await medirTempos(clienteId)
-  if (tempos.atual.entraramNaFila === 0) return null
+function Estreia({
+  passos,
+  clienteId,
+}: {
+  passos: { feito: boolean; titulo: string; explica: string; acao: string; href: string }[]
+  clienteId: string
+}) {
+  const prontos = passos.filter((passo) => passo.feito).length
+  const proximo = passos.findIndex((passo) => !passo.feito)
+  const faltam = passos.length - prontos
 
   return (
-    <section className="app-card mb-[18px] px-6 py-5" aria-labelledby="titulo-tempos">
-      <h2
-        id="titulo-tempos"
-        className="text-[12px] font-bold tracking-[0.08em] text-dim uppercase"
-      >
-        Tempo de atendimento · este mês
+    <div className="px-5 py-5">
+      <h2 className="text-[15px] font-bold tracking-[-0.01em]">
+        {faltam === 1 ? 'Falta uma coisa' : `Faltam ${faltam} coisas`} para o WhatsApp responder
+        sozinho
       </h2>
 
-      <div className="mt-3 grid gap-4 sm:grid-cols-2">
-        <Tempo
-          rotulo="Até a primeira resposta"
-          mediana={tempos.atual.medianaAteResponder}
-          media={tempos.atual.mediaAteResponder}
-          detalhe={`${tempos.atual.responderam} de ${tempos.atual.entraramNaFila} respondidas`}
-        />
-        <Tempo
-          rotulo="Até o fechamento"
-          mediana={tempos.atual.medianaAteFechar}
-          media={tempos.atual.mediaAteFechar}
-          detalhe={`${tempos.atual.fecharam} de ${tempos.atual.entraramNaFila} fechadas`}
-        />
-      </div>
+      <ol className="mt-4">
+        {passos.map((passo, indice) => (
+          <li
+            key={passo.titulo}
+            className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line-soft py-3 first:border-0 first:pt-0"
+          >
+            <span
+              aria-hidden
+              className={`grid size-[22px] shrink-0 place-items-center rounded-full text-[11px] font-bold ${
+                passo.feito
+                  ? 'bg-emerald-400/15 text-ok'
+                  : indice === proximo
+                    ? 'bg-primary text-white'
+                    : 'border border-line text-dim'
+              }`}
+            >
+              {passo.feito ? '✓' : indice + 1}
+            </span>
+
+            <span className="min-w-0 flex-1">
+              <span
+                className={`block text-[13.5px] font-semibold ${
+                  passo.feito ? 'text-muted line-through decoration-line' : ''
+                }`}
+              >
+                {passo.titulo}
+              </span>
+              {!passo.feito && (
+                <span className="mt-0.5 block text-[12px] text-dim">{passo.explica}</span>
+              )}
+            </span>
+
+            {indice === proximo && (
+              <Link
+                href={`/clientes/${clienteId}${passo.href}`}
+                className="app-primary-button shrink-0 px-3.5 py-1.5 text-[12px]"
+              >
+                {passo.acao}
+              </Link>
+            )}
+          </li>
+        ))}
+      </ol>
+
+      <p className="mt-4 border-t border-line-soft pt-3 text-[11.5px] text-dim">
+        {prontos} de {passos.length} prontos
+      </p>
+    </div>
+  )
+}
+
+/**
+ * Quem precisa de uma pessoa agora.
+ *
+ * A linha inteira é o botão e leva direto à conversa no Inbox: a fila da home
+ * só vale se o caminho entre ver e responder for um clique.
+ *
+ * Os dois vazios são duas frases diferentes de propósito. "Ninguém escreveu
+ * ainda" numa conta recém-configurada é notícia boa esperando a primeira
+ * mensagem; "ninguém esperando" numa conta cheia é o dia em que o trabalho
+ * acabou. Dizer a mesma coisa nos dois casos faria o segundo parecer defeito.
+ */
+function Fila({
+  fila,
+  clienteId,
+  contatos,
+}: {
+  fila: Awaited<ReturnType<typeof filaDoPainel>>
+  clienteId: string
+  contatos: number
+}) {
+  const restantes = fila.total - fila.itens.length
+
+  return (
+    <div>
+      <header className="flex items-center gap-3 px-5 py-3.5">
+        <h2 className="text-[15px] font-bold tracking-[-0.01em]">Precisa de você</h2>
+        {fila.total > 0 && (
+          <span className="rounded-full bg-primary-weak px-2 py-0.5 text-[11.5px] font-bold text-primary-strong">
+            {fila.total}
+          </span>
+        )}
+        <span className="flex-1" />
+        <Link
+          href={`/clientes/${clienteId}/inbox`}
+          className="text-[12px] font-semibold text-primary transition hover:opacity-80"
+        >
+          Abrir o Inbox
+        </Link>
+      </header>
+
+      {fila.itens.length === 0 ? (
+        <p className="border-t border-line-soft px-5 py-6 text-[13px] text-muted">
+          {contatos === 0
+            ? 'Está no ar e ninguém escreveu ainda. A primeira conversa aparece aqui assim que chegar.'
+            : 'Ninguém esperando. O bot deu conta e nada ficou sem resposta.'}
+        </p>
+      ) : (
+        <ul>
+          {fila.itens.map((item) => (
+            <LinhaDaFila key={item.contatoId} item={item} clienteId={clienteId} />
+          ))}
+        </ul>
+      )}
+
+      {restantes > 0 && (
+        <p className="border-t border-line-soft px-5 py-2.5 text-[12px]">
+          <Link
+            href={`/clientes/${clienteId}/inbox`}
+            className="font-semibold text-primary transition hover:opacity-80"
+          >
+            {restantes === 1 ? 'ver mais 1 na fila' : `ver os outros ${restantes} na fila`}
+          </Link>
+        </p>
+      )}
+    </div>
+  )
+}
+
+function LinhaDaFila({ item, clienteId }: { item: ItemDaFila; clienteId: string }) {
+  const pediu = item.motivo === 'pediu-pessoa'
+
+  return (
+    <li className="border-t border-line-soft">
+      <Link
+        href={`/clientes/${clienteId}/inbox?conversa=${encodeURIComponent(item.contatoId)}`}
+        className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3 transition hover:bg-surface"
+      >
+        <span className="min-w-[140px] flex-1 truncate text-[13.5px] font-semibold">
+          {item.nome ?? telefoneLegivel(item.telefone)}
+        </span>
+
+        <span
+          className={`shrink-0 truncate text-[12px] ${pediu ? 'font-semibold text-aviso' : 'text-muted'}`}
+        >
+          {pediu ? (item.detalhe ?? 'pediu uma pessoa') : 'esperando resposta'}
+        </span>
+
+        <span className="w-[84px] shrink-0 text-right text-[12px] text-dim">
+          {haQuantoTempo(item.desde)}
+        </span>
+      </Link>
+    </li>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// O placar
+// ---------------------------------------------------------------------------
+
+/**
+ * O mês em duas frases, e não em quatro cartões.
+ *
+ * Quatro números do mesmo tamanho dizem que nenhum importa mais que os outros,
+ * o que é sempre mentira — e é o formato que o dono reconheceu como "cara de
+ * IA". Aqui cada número mora dentro da frase que o explica, e nenhum percentual
+ * aparece sem a base e sem o mês passado ao lado: "26%" sozinho pode ser ótimo
+ * ou péssimo.
+ */
+async function Numeros({ clienteId }: { clienteId: string }) {
+  const [funil, tempos] = await Promise.all([medirFunil(clienteId), medirTempos(clienteId)])
+  if (funil.atual.conversas === 0 && funil.anterior.conversas === 0) return null
+
+  const contencao = funil.atual.conversas
+    ? Math.round((funil.atual.resolvidasPeloBot / funil.atual.conversas) * 100)
+    : 0
+  const contencaoAnterior = funil.anterior.conversas
+    ? Math.round((funil.anterior.resolvidasPeloBot / funil.anterior.conversas) * 100)
+    : null
+
+  return (
+    <section className="app-card mb-[18px] px-5 py-4" aria-labelledby="titulo-mes">
+      <h2 id="titulo-mes" className="text-[12.5px] font-bold text-muted">
+        Este mês
+      </h2>
+
+      <p className="mt-2 text-[13.5px] leading-[1.7] text-soft">
+        <strong className="text-[17px] font-bold tracking-[-0.02em] text-ink">
+          {funil.atual.conversas}
+        </strong>{' '}
+        {funil.atual.conversas === 1 ? 'conversa' : 'conversas'}, e o bot resolveu{' '}
+        <strong className="font-bold text-ink">{contencao}%</strong> delas
+        {contencaoAnterior === null
+          ? ' (não há mês anterior para comparar)'
+          : ` — no mês passado foram ${contencaoAnterior}% de ${funil.anterior.conversas}`}
+        .
+      </p>
+
+      {tempos.atual.entraramNaFila > 0 && (
+        <p className="mt-1.5 text-[13.5px] leading-[1.7] text-soft">
+          Quem precisou de uma pessoa esperou{' '}
+          <strong className="font-bold text-ink">
+            {comoDuracao(tempos.atual.medianaAteResponder)}
+          </strong>{' '}
+          pela primeira resposta na mediana, {comoDuracao(tempos.atual.mediaAteResponder)} na média
+          — {tempos.atual.responderam} de {tempos.atual.entraramNaFila} respondidas.
+        </p>
+      )}
 
       {tempos.atual.responderam < tempos.atual.entraramNaFila && (
-        <p className="mt-3 text-[11.5px] text-aviso">
+        <p className="mt-2 text-[12px] text-aviso">
           {tempos.atual.entraramNaFila - tempos.atual.responderam} conversa(s) entraram na fila e
           ninguém respondeu ainda — elas não entram na conta acima.
         </p>
@@ -187,32 +411,108 @@ async function Tempos({ clienteId }: { clienteId: string }) {
   )
 }
 
-function Tempo({
-  rotulo,
-  mediana,
-  media,
-  detalhe,
-}: {
-  rotulo: string
-  mediana: number | null
-  media: number | null
-  detalhe: string
-}) {
+/**
+ * O que fechou nos últimos trinta dias.
+ *
+ * Some inteiro quando não há quadro ou quando nada fechou: um bloco de vendas
+ * zerado numa conta que ainda não usa funil cobra por algo que ninguém
+ * prometeu.
+ */
+async function Fechamentos({ clienteId }: { clienteId: string }) {
+  const fechou = await fechamentos(clienteId)
+  if (fechou.ganhos === 0 && fechou.perdidos === 0) return null
+
   return (
-    <div className="rounded-[11px] border border-line bg-panel px-4 py-3">
-      <p className="text-[11.5px] font-semibold text-muted">{rotulo}</p>
-      <p className="mt-1 flex items-baseline gap-2">
-        <strong className="text-[20px] font-bold tracking-[-0.02em]">
-          {comoDuracao(mediana)}
-        </strong>
-        <span className="text-[11px] text-dim">mediana</span>
+    <section className="app-card mb-[18px] px-5 py-4" aria-labelledby="titulo-fechamentos">
+      <h2 id="titulo-fechamentos" className="text-[12.5px] font-bold text-muted">
+        Fechamentos · últimos {fechou.dias} dias
+      </h2>
+
+      <p className="mt-2 text-[13.5px] leading-[1.7] text-soft">
+        <strong className="text-[17px] font-bold tracking-[-0.02em] text-ok">
+          {fechou.ganhos}
+        </strong>{' '}
+        {fechou.ganhos === 1 ? 'ganho' : 'ganhos'}
+        {fechou.valor !== null && (
+          <>
+            , somando <strong className="font-bold text-ink">{comoDinheiro(fechou.valor)}</strong>
+          </>
+        )}
+        {' · '}
+        <strong className="font-bold text-ink">{fechou.perdidos}</strong>{' '}
+        {fechou.perdidos === 1 ? 'perdido' : 'perdidos'}.
       </p>
-      <p className="mt-0.5 text-[11px] text-dim">
-        média {comoDuracao(media)} · {detalhe}
-      </p>
-    </div>
+
+      {fechou.valor === null && fechou.ganhos > 0 && (
+        <p className="mt-1 text-[12px] text-dim">
+          Nenhum dos ganhos tinha valor anotado — por isso não há soma aqui.
+        </p>
+      )}
+    </section>
   )
 }
+
+/**
+ * Quanto cada pessoa atendeu.
+ *
+ * **Só com duas pessoas ou mais.** Com uma, é a própria pessoa lendo o próprio
+ * volume numa tabela chamada "desempenho" — cobrança sem destinatário, a mesma
+ * razão pela qual a versão anterior já escondia a tabela vazia.
+ *
+ * Volume, e não tempo: a responsabilidade por um contato pode trocar de mãos no
+ * meio, e dividir a espera entre quem assumiu depois seria cobrar de alguém o
+ * atraso de outro.
+ */
+async function Pessoas({ clienteId }: { clienteId: string }) {
+  const desempenho = await medirPessoas(clienteId)
+  if (desempenho.length < 2) return null
+
+  let equipe: MembroDaConta[] = []
+  try {
+    equipe = await membrosDaConta(clienteId)
+  } catch (erro) {
+    // A lista fala Postgres direto e pode estourar sem `DATABASE_URL`. Sem os
+    // nomes o bloco ainda vale: os números continuam certos.
+    console.error('[painel] não deu para ler a equipe', erro instanceof Error ? erro.message : erro)
+  }
+
+  return (
+    <section className="app-card mb-[18px] overflow-hidden" aria-labelledby="titulo-pessoas">
+      <header className="px-5 py-3.5">
+        <h2 id="titulo-pessoas" className="text-[12.5px] font-bold text-muted">
+          Quem atendeu · este mês
+        </h2>
+      </header>
+
+      <ul>
+        {desempenho.map((pessoa) => {
+          const nome = equipe.find((membro) => membro.id === pessoa.usuarioId)?.nome
+          return (
+            <li
+              key={pessoa.usuarioId}
+              className="flex items-center gap-4 border-t border-line-soft px-5 py-2.5"
+            >
+              <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">
+                {nome ?? 'alguém que saiu da conta'}
+              </span>
+              <span className="whitespace-nowrap text-[12px] text-dim">
+                <strong className="font-semibold text-soft">{pessoa.atendimentos}</strong>{' '}
+                {pessoa.atendimentos === 1 ? 'atendimento' : 'atendimentos'}
+              </span>
+              <span className="whitespace-nowrap text-[12px] text-dim">
+                <strong className="font-semibold text-soft">{pessoa.fechados}</strong> fechados
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Tempo
+// ---------------------------------------------------------------------------
 
 /** "3 min", "1h20", "2 dias". `null` vira travessão: não há o que dizer. */
 function comoDuracao(segundos: number | null): string {
@@ -232,168 +532,16 @@ function comoDuracao(segundos: number | null): string {
   return dias === 1 ? '1 dia' : `${dias} dias`
 }
 
-async function Serie({ clienteId }: { clienteId: string }) {
-  const serie = await serieDiaria(clienteId)
-  return <GraficoDaSerie serie={serie} />
-}
-
 /**
- * Quanto cada pessoa atendeu.
+ * "há 12 min", "há 1h20", "há 3 dias" — calculado no servidor.
  *
- * Não aparece quando não há ninguém atribuído: uma tabela vazia de "desempenho
- * pessoal" numa conta sem equipe é uma cobrança sem destinatário.
+ * A mesma régua de `comoDuracao`, de propósito: a espera na fila e o tempo de
+ * resposta do mês são a mesma grandeza, e duas escalas diferentes na mesma tela
+ * dariam "1h20" aqui e "80 min" ali.
  */
-async function Pessoas({ clienteId }: { clienteId: string }) {
-  const desempenho = await medirPessoas(clienteId)
-  if (desempenho.length === 0) return null
-
-  let equipe: MembroDaConta[] = []
-  try {
-    equipe = await membrosDaConta(clienteId)
-  } catch (erro) {
-    // A lista fala Postgres direto e pode estourar sem `DATABASE_URL`. Sem os
-    // nomes o bloco ainda vale: os números continuam certos.
-    console.error('[painel] não deu para ler a equipe', erro instanceof Error ? erro.message : erro)
-  }
-
-  return (
-    <section className="app-card mb-[18px] overflow-hidden" aria-labelledby="titulo-pessoas">
-      <header className="border-b border-line px-6 py-4">
-        <h2
-          id="titulo-pessoas"
-          className="text-[12px] font-bold tracking-[0.08em] text-dim uppercase"
-        >
-          Quem atendeu · este mês
-        </h2>
-        <p className="mt-1 text-[11.5px] text-dim">
-          Volume, e não tempo: a responsabilidade por um contato pode trocar de
-          mãos no meio, e dividir a espera entre quem assumiu depois seria cobrar
-          de alguém o atraso de outro.
-        </p>
-      </header>
-
-      <ul>
-        {desempenho.map((pessoa) => {
-          const nome = equipe.find((m) => m.id === pessoa.usuarioId)?.nome
-          return (
-            <li
-              key={pessoa.usuarioId}
-              className="flex items-center gap-4 border-b border-line px-6 py-3 last:border-0"
-            >
-              <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">
-                {nome ?? 'alguém que saiu da conta'}
-              </span>
-              <span className="whitespace-nowrap text-[11.5px] text-dim">
-                <strong className="font-semibold text-soft">{pessoa.atendimentos}</strong>{' '}
-                {pessoa.atendimentos === 1 ? 'atendimento' : 'atendimentos'}
-              </span>
-              <span className="whitespace-nowrap text-[11.5px] text-dim">
-                <strong className="font-semibold text-soft">{pessoa.fechados}</strong> fechados
-              </span>
-            </li>
-          )
-        })}
-      </ul>
-    </section>
-  )
-}
-
-function resumoDoMes(medidas: MedidasDoMes): string {
-  return `${medidas.conversas} conversas · ${medidas.resolvidasPeloBot} pelo bot · ${medidas.esperandoPessoa} para pessoa`
-}
-
-async function Atendimento({ clienteId }: { clienteId: string }) {
-  // Só a contagem, e não a lista inteira: esta tela abre a cada visita ao
-  // cliente e o único uso dos leads aqui é o número de quem espera pessoa.
-  const [fluxos, canais, totalDeLeads, esperando] = await Promise.all([
-    listarFluxos(clienteId),
-    listarCanais(clienteId),
-    contarLeads(clienteId),
-    contarEsperandoPessoa(clienteId),
-  ])
-
-  const noAr = fluxos.filter((fluxo) => fluxo.versaoPublicadaId)
-  const publicados = new Set(noAr.map((fluxo) => fluxo.id))
-  const atendendo = canais.filter((canal) => canal.flowId && publicados.has(canal.flowId))
-
-  // A ordem importa: a primeira peça que falta é a que adianta resolver. Listar
-  // tudo que está errado de uma vez faz parecer que há quatro problemas quando
-  // há um, e os seguintes às vezes somem sozinhos quando o primeiro sai.
-  const pendencia =
-    fluxos.length === 0
-      ? { texto: 'Nenhum fluxo desenhado ainda.', acao: 'Criar o primeiro fluxo', href: '/fluxos' }
-      : noAr.length === 0
-        ? {
-            texto: 'Nenhum fluxo publicado — o desenho existe, mas não atende ninguém.',
-            acao: 'Abrir os fluxos',
-            href: '/fluxos',
-          }
-        : canais.length === 0
-          ? {
-              texto: 'Nenhum número conectado — sem isso o WhatsApp não chega até aqui.',
-              acao: 'Conectar um número',
-              href: '/numero',
-            }
-          : atendendo.length === 0
-            ? {
-                texto: 'O número conectado não aponta para um fluxo publicado.',
-                acao: 'Ajustar o número',
-                href: '/numero',
-              }
-            : null
-
-  return (
-    <section
-      className={`app-card mb-[18px] px-6 py-5 ${pendencia ? 'border-amber-300/25' : 'border-emerald-400/20'}`}
-    >
-      <div className="flex flex-wrap items-center gap-x-7 gap-y-3">
-        <p className="flex items-center gap-2.5 text-[15px] font-bold">
-          <span
-            aria-hidden
-            className={`size-2.5 rounded-full ${pendencia ? 'bg-amber-300' : 'bg-emerald-400'}`}
-          />
-          {pendencia ? 'Ainda não está atendendo' : 'Atendendo no WhatsApp'}
-        </p>
-
-        <span aria-hidden className="h-[26px] w-px bg-surface-strong" />
-
-        <Medida valor={noAr.length} rotulo={noAr.length === 1 ? 'fluxo no ar' : 'fluxos no ar'} />
-        <Medida valor={canais.length} rotulo={canais.length === 1 ? 'número' : 'números'} />
-        <Medida valor={totalDeLeads} rotulo="contatos" />
-        <Medida valor={esperando} rotulo="esperando" alerta={esperando > 0} />
-
-        <span className="flex-1" />
-
-        <Link
-          href={`/clientes/${clienteId}/leads`}
-          className="text-[13px] font-bold text-primary transition hover:opacity-80"
-        >
-          Ver leads →
-        </Link>
-      </div>
-
-      {pendencia && (
-        <p className="mt-4 flex flex-wrap items-center gap-3 border-t border-line pt-3.5 text-[12.5px] text-aviso">
-          {pendencia.texto}
-          <Link
-            href={`/clientes/${clienteId}${pendencia.href}`}
-            className="rounded-lg border border-amber-300/30 bg-amber-300/[0.08] px-2.5 py-1 text-[11.5px] font-bold transition hover:bg-amber-300/[0.14]"
-          >
-            {pendencia.acao} →
-          </Link>
-        </p>
-      )}
-    </section>
-  )
-}
-
-function Medida({ valor, rotulo, alerta }: { valor: number; rotulo: string; alerta?: boolean }) {
-  return (
-    <p className="flex items-baseline gap-1.5">
-      <strong className={`text-[19px] tracking-[-0.02em] ${alerta ? 'text-perigo' : ''}`}>
-        {valor}
-      </strong>
-      <span className="text-[11.5px] text-muted">{rotulo}</span>
-    </p>
-  )
+function haQuantoTempo(desde: string): string {
+  const segundos = (Date.now() - new Date(desde).getTime()) / 1000
+  if (!Number.isFinite(segundos) || segundos < 0) return ''
+  if (segundos < 60) return 'agora'
+  return `há ${comoDuracao(segundos)}`
 }

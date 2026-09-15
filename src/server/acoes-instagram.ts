@@ -21,7 +21,7 @@ export async function acaoConectarInstagram(dados: FormData): Promise<void> {
   await exigirAcessoAoCliente(clienteId)
 
   if (!instagramConfigurado()) {
-    redirect(`/clientes/${clienteId}/instagram?resultado=sem_app`)
+    redirect(`/clientes/${clienteId}/ajustes/instagram?resultado=sem_app`)
   }
 
   /*
@@ -46,5 +46,5 @@ export async function acaoDesligarInstagram(dados: FormData): Promise<void> {
   await exigirAcessoAoCliente(clienteId)
 
   await desligarContaDoInstagram(clienteId)
-  revalidatePath(`/clientes/${clienteId}/instagram`)
+  revalidatePath(`/clientes/${clienteId}/ajustes/instagram`)
 }

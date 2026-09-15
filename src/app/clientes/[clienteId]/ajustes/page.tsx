@@ -21,7 +21,13 @@ export const dynamic = 'force-dynamic'
  *
  * Cada linha mostra **o estado atual** antes de mandar para a tela. Isso é o
  * que separa um índice de um menu: conferir se o contexto está preenchido ou
- * quantas credenciais existem deixa de exigir abrir as três telas e voltar.
+ * quantas chaves existem deixa de exigir abrir as três telas e voltar.
+ *
+ * As linhas moram em **quatro grupos** — Canais, Atendimento, Integrações e
+ * Conta —, e todas as telas de configuração moram sob `/ajustes/`. As duas
+ * coisas são da mesma decisão, e o porquê de cada uma está em
+ * `docs/PLANO-CONFIGURACOES.md`. Rota que mudou de endereço continua
+ * respondendo pelo redirecionamento escrito em `next.config.ts`.
  */
 export default async function Pagina({
   params,
@@ -61,9 +67,62 @@ export default async function Pagina({
           Configurações
         </h1>
 
-        <ul className="app-card divide-y divide-line overflow-hidden">
+        {/*
+          Quatro grupos, não dez linhas soltas.
+
+          Dez linhas planas é o tamanho em que a lista deixa de ser lida e passa
+          a ser varrida: tudo tem o mesmo peso, e "ligar o WhatsApp" (sem o qual
+          não existe produto) aparece igual a "respostas rápidas". O cabeçalho
+          de grupo custa uma linha de texto e devolve a hierarquia.
+
+          **Continua sendo uma página só.** Menu de duas colunas é o padrão de
+          Intercom e HubSpot e só compensa acima de umas 25 telas, quando o
+          índice vira rolagem — com onze, a segunda coluna seria moldura
+          ocupando espaço sem responder nada.
+
+          A ordem dos grupos é a ordem em que uma conta nova precisa deles:
+          sem canal não há produto; atendimento se ajusta toda semana;
+          integração é episódica; conta é administração.
+
+          O raciocínio inteiro, com a pesquisa de mercado que o sustenta, está
+          em `docs/PLANO-CONFIGURACOES.md`.
+        */}
+        <Grupo
+          titulo="Canais"
+          descricao="Por onde a conversa entra e sai. Canal caído é cliente sem atendimento."
+        >
           <Linha
-            href={`/clientes/${cliente.id}/contexto`}
+            href={`/clientes/${cliente.id}/ajustes/whatsapp`}
+            titulo="WhatsApp"
+            descricao="Qual número atende, que fluxo ele executa em cada papel, e o endereço para o painel da Meta."
+            estado={
+              <Selo tom={canais.length === 0 ? 'alerta' : 'ok'}>
+                {canais.length === 0
+                  ? 'nenhum'
+                  : `${canais.length} ${canais.length === 1 ? 'número' : 'números'}`}
+              </Selo>
+            }
+          />
+          <Linha
+            href={`/clientes/${cliente.id}/ajustes/instagram`}
+            titulo="Instagram"
+            descricao="Ligar o direct de uma conta profissional para as mensagens chegarem no mesmo Inbox."
+            estado={
+              <Selo tom={contaDoInstagram ? 'ok' : 'neutro'}>
+                {contaDoInstagram
+                  ? (contaDoInstagram.igUsername ?? 'ligada')
+                  : 'nenhuma'}
+              </Selo>
+            }
+          />
+        </Grupo>
+
+        <Grupo
+          titulo="Atendimento"
+          descricao="Como o atendimento funciona — o que o bot sabe, quando há gente, e o que já está pronto para usar."
+        >
+          <Linha
+            href={`/clientes/${cliente.id}/ajustes/contexto`}
             titulo="Contexto do negócio"
             descricao="A única coisa que o bloco de IA pode dizer. Sem isto, ele responde “não sei” a tudo."
             estado={
@@ -86,56 +145,15 @@ export default async function Pagina({
               )
             }
           />
-          {/*
-            Anúncios vem antes de Credenciais de propósito: é o caminho que o
-            cliente procura por nome ("como ligo meus anúncios?"), enquanto
-            Credenciais é onde ele só chega sabendo o que é uma chave de API.
-          */}
           <Linha
-            href={`/clientes/${cliente.id}/anuncios`}
-            titulo="Anúncios"
-            descricao="Receber como lead quem preenche o formulário de um anúncio no Facebook ou no Instagram."
+            href={`/clientes/${cliente.id}/ajustes/respostas-rapidas`}
+            titulo="Respostas rápidas"
+            descricao="Frases prontas para inserir na conversa sem reescrever todo dia."
             estado={
-              <Selo tom={paginasDeLead.length === 0 ? 'neutro' : 'ok'}>
-                {paginasDeLead.length === 0
-                  ? 'não ligado'
-                  : `${paginasDeLead.length} ${paginasDeLead.length === 1 ? 'página' : 'páginas'}`}
-              </Selo>
-            }
-          />
-          <Linha
-            href={`/clientes/${cliente.id}/conexoes`}
-            titulo="Credenciais"
-            descricao="As chaves que os blocos de Serviços externos usam para falar com os sistemas deste cliente."
-            estado={
-              <Selo tom={conexoes.length === 0 ? 'neutro' : 'ok'}>
-                {conexoes.length === 0
+              <Selo tom={respostasRapidas.length === 0 ? 'neutro' : 'ok'}>
+                {respostasRapidas.length === 0
                   ? 'nenhuma'
-                  : `${conexoes.length} ${conexoes.length === 1 ? 'chave' : 'chaves'}`}
-              </Selo>
-            }
-          />
-          <Linha
-            href={`/clientes/${cliente.id}/acervo`}
-            titulo="Acervo"
-            descricao="Foto, vídeo, áudio e PDF que o bloco de Mídia pode enviar na conversa."
-            estado={
-              <Selo tom={acervo.length === 0 ? 'neutro' : 'ok'}>
-                {acervo.length === 0
-                  ? 'vazio'
-                  : `${acervo.length} ${acervo.length === 1 ? 'arquivo' : 'arquivos'}`}
-              </Selo>
-            }
-          />
-          <Linha
-            href={`/clientes/${cliente.id}/ajustes/equipe`}
-            titulo="Equipe"
-            descricao="Quem entra nesta conta e o que cada um pode fazer. É de onde sai o rail de atribuição do Inbox."
-            estado={
-              <Selo tom={equipe.length === 0 ? 'alerta' : 'ok'}>
-                {equipe.length === 0
-                  ? 'ninguém'
-                  : `${equipe.length} ${equipe.length === 1 ? 'pessoa' : 'pessoas'}`}
+                  : `${respostasRapidas.length} ${respostasRapidas.length === 1 ? 'resposta' : 'respostas'}`}
               </Selo>
             }
           />
@@ -152,42 +170,73 @@ export default async function Pagina({
             }
           />
           <Linha
-            href={`/clientes/${cliente.id}/ajustes/respostas-rapidas`}
-            titulo="Respostas rápidas"
-            descricao="Frases prontas para inserir na conversa sem reescrever todo dia."
+            href={`/clientes/${cliente.id}/ajustes/acervo`}
+            titulo="Acervo"
+            descricao="Foto, vídeo, áudio e PDF que o bloco de Mídia pode enviar na conversa."
             estado={
-              <Selo tom={respostasRapidas.length === 0 ? 'neutro' : 'ok'}>
-                {respostasRapidas.length === 0
+              <Selo tom={acervo.length === 0 ? 'neutro' : 'ok'}>
+                {acervo.length === 0
+                  ? 'vazio'
+                  : `${acervo.length} ${acervo.length === 1 ? 'arquivo' : 'arquivos'}`}
+              </Selo>
+            }
+          />
+        </Grupo>
+
+        {/*
+          Anúncios e Chaves de API são integração e não canal porque nenhum dos
+          dois produz conversa no Inbox: um traz lead, o outro é o fluxo falando
+          com o sistema do próprio cliente. É o mesmo corte que o Intercom faz
+          entre Channels e Integrations.
+
+          Anúncios vem primeiro de propósito: é o caminho que o cliente procura
+          por nome ("como ligo meus anúncios?"), enquanto Chaves de API é onde
+          ele só chega sabendo o que é uma chave.
+        */}
+        <Grupo
+          titulo="Integrações"
+          descricao="Com quem o sistema fala além dos canais — o que entra de fora e o que sai para os sistemas deste cliente."
+        >
+          <Linha
+            href={`/clientes/${cliente.id}/ajustes/anuncios`}
+            titulo="Anúncios"
+            descricao="Receber como lead quem preenche o formulário de um anúncio no Facebook ou no Instagram."
+            estado={
+              <Selo tom={paginasDeLead.length === 0 ? 'neutro' : 'ok'}>
+                {paginasDeLead.length === 0
+                  ? 'não ligado'
+                  : `${paginasDeLead.length} ${paginasDeLead.length === 1 ? 'página' : 'páginas'}`}
+              </Selo>
+            }
+          />
+          <Linha
+            href={`/clientes/${cliente.id}/ajustes/chaves`}
+            titulo="Chaves de API"
+            descricao="As chaves que os blocos de Serviços externos usam para falar com os sistemas deste cliente."
+            estado={
+              <Selo tom={conexoes.length === 0 ? 'neutro' : 'ok'}>
+                {conexoes.length === 0
                   ? 'nenhuma'
-                  : `${respostasRapidas.length} ${respostasRapidas.length === 1 ? 'resposta' : 'respostas'}`}
+                  : `${conexoes.length} ${conexoes.length === 1 ? 'chave' : 'chaves'}`}
               </Selo>
             }
           />
+        </Grupo>
+
+        <Grupo titulo="Conta" descricao="Quem entra nesta conta e o que cada um pode fazer.">
           <Linha
-            href={`/clientes/${cliente.id}/numero`}
-            titulo="Número do WhatsApp"
-            descricao="Qual número atende, que fluxo ele executa em cada papel, e o endereço para o painel da Meta."
+            href={`/clientes/${cliente.id}/ajustes/equipe`}
+            titulo="Equipe"
+            descricao="Quem entra nesta conta e o que cada um pode fazer. É de onde sai o rail de atribuição do Inbox."
             estado={
-              <Selo tom={canais.length === 0 ? 'alerta' : 'ok'}>
-                {canais.length === 0
-                  ? 'nenhum'
-                  : `${canais.length} ${canais.length === 1 ? 'número' : 'números'}`}
+              <Selo tom={equipe.length === 0 ? 'alerta' : 'ok'}>
+                {equipe.length === 0
+                  ? 'ninguém'
+                  : `${equipe.length} ${equipe.length === 1 ? 'pessoa' : 'pessoas'}`}
               </Selo>
             }
           />
-          <Linha
-            href={`/clientes/${cliente.id}/instagram`}
-            titulo="Instagram"
-            descricao="Ligar o direct de uma conta profissional para as mensagens chegarem no mesmo Inbox."
-            estado={
-              <Selo tom={contaDoInstagram ? 'ok' : 'neutro'}>
-                {contaDoInstagram
-                  ? (contaDoInstagram.igUsername ?? 'ligada')
-                  : 'nenhuma'}
-              </Selo>
-            }
-          />
-        </ul>
+        </Grupo>
 
         {/* Longe do resto e por último, porque a tela de ajustes é onde se
             entra para mexer numa coisa e sair — e este botão não é uma
@@ -207,6 +256,30 @@ export default async function Pagina({
         </section>
       </main>
     </ClienteShell>
+  )
+}
+
+/**
+ * Um grupo do índice — cabeçalho, uma linha de motivo, e o cartão.
+ *
+ * O cabeçalho fica **fora** do cartão de propósito: dentro, ele viraria mais
+ * uma linha da lista e competiria com os itens em vez de organizá-los.
+ */
+function Grupo({
+  titulo,
+  descricao,
+  children,
+}: {
+  titulo: string
+  descricao: string
+  children: ReactNode
+}) {
+  return (
+    <section className="mb-7">
+      <h2 className="text-[13.5px] font-bold tracking-[-0.01em]">{titulo}</h2>
+      <p className="mt-0.5 mb-2.5 max-w-[620px] text-[12px] leading-5 text-muted">{descricao}</p>
+      <ul className="app-card divide-y divide-line overflow-hidden">{children}</ul>
+    </section>
   )
 }
 

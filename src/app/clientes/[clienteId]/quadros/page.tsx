@@ -8,7 +8,7 @@ import { QuadroPadrao } from '@/components/quadros/quadro-padrao'
 import { NovoQuadro } from '@/components/quadros/novo-quadro'
 import { EntregaDoQuadro } from '@/components/quadros/entrega-do-quadro'
 import { TrazerTodos } from '@/components/quadros/trazer-todos'
-import { acaoApagarQuadro, acaoCriarQuadro } from '@/server/acoes'
+import { acaoApagarQuadro } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { contarForaDoQuadro, listarCartoes, listarQuadros } from '@/server/repos/quadros'
 import { listarMotivos } from '@/server/repos/motivos-de-perda'
@@ -81,10 +81,7 @@ export default async function Pagina({
     : [[], [], 0]
 
   const novoQuadro = (
-    <NovoQuadro
-      acao={acaoCriarQuadro.bind(null, cliente.id, {})}
-      primeiro={quadros.length === 0}
-    />
+    <NovoQuadro clienteId={cliente.id} primeiro={quadros.length === 0} />
   )
 
   return (

@@ -1174,7 +1174,7 @@ export function Painel({
                 cadastre em{' '}
                 <a
                   className="underline underline-offset-2 hover:text-aviso"
-                  href={`/clientes/${clienteId}/conexoes`}
+                  href={`/clientes/${clienteId}/ajustes/chaves`}
                 >
                   Credenciais
                 </a>{' '}
@@ -2128,7 +2128,7 @@ function ConsultasDaIa({
               Cadastre em{' '}
               <a
                 className="underline underline-offset-2 hover:text-aviso"
-                href={`/clientes/${clienteId}/conexoes`}
+                href={`/clientes/${clienteId}/ajustes/chaves`}
               >
                 Credenciais
               </a>

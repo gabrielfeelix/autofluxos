@@ -84,7 +84,7 @@ export async function acaoLigarAds(
     }
   }
 
-  revalidatePath(`/clientes/${clienteId}/anuncios`)
+  revalidatePath(`/clientes/${clienteId}/ajustes/anuncios`)
   return { ok: true }
 }
 
@@ -105,7 +105,7 @@ export async function acaoLigarPagina(
   const r = await ligarPagina({ clienteId, pageId, nome })
   if (!r.ok) return { ok: false, erro: r.motivo }
 
-  revalidatePath(`/clientes/${clienteId}/anuncios`)
+  revalidatePath(`/clientes/${clienteId}/ajustes/anuncios`)
   return { ok: true }
 }
 
@@ -125,7 +125,7 @@ export async function acaoDesligarPagina(
   const saiu = await desligarPagina(clienteId, pageId)
   if (!saiu) return { ok: false, erro: 'esta página não está ligada a esta conta' }
 
-  revalidatePath(`/clientes/${clienteId}/anuncios`)
+  revalidatePath(`/clientes/${clienteId}/ajustes/anuncios`)
   return { ok: true }
 }
 
@@ -172,7 +172,7 @@ export async function acaoImportarLeadsAntigos(
       desde: new Date(Date.now() - 90 * 24 * 3_600_000),
     })
 
-    revalidatePath(`/clientes/${clienteId}/anuncios`)
+    revalidatePath(`/clientes/${clienteId}/ajustes/anuncios`)
     revalidatePath(`/clientes/${clienteId}/leads`)
 
     /*

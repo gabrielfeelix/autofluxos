@@ -849,5 +849,5 @@ export async function acaoPrimeiroAcesso(
    * Quem acabou de criar a empresa não tem nada para ver num painel vazio; o
    * que ele quer é ligar o WhatsApp dele, que é a razão de ter se cadastrado.
    */
-  redirect(`/clientes/${id}/numero`)
+  redirect(`/clientes/${id}/ajustes/whatsapp`)
 }

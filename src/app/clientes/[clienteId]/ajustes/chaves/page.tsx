@@ -81,10 +81,10 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             <Trilha
           caminho={[
             { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },
-            { rotulo: 'Credenciais' },
+            { rotulo: 'Chaves de API' },
           ]}
         />
-            <h1 className="text-[25px] font-bold tracking-[-0.02em]">Credenciais</h1>
+            <h1 className="text-[25px] font-bold tracking-[-0.02em]">Chaves de API</h1>
             <p className="mt-1.5 max-w-[560px] text-[13px] leading-6 text-dim">
               As chaves que os blocos de API usam para falar com os sistemas deste cliente. O valor
               é guardado num cofre e <strong className="text-soft">nunca volta para esta tela</strong> —
@@ -93,8 +93,8 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           </div>
 
           <ModalFormulario
-            botao="+ Nova credencial"
-            titulo="Nova credencial"
+            botao="+ Nova chave"
+            titulo="Nova chave"
             descricao="Ela fica guardada num cofre. Depois de gravada, o valor não volta para a tela."
             rotuloEnviar="Guardar"
             action={acaoCriarConexao.bind(null, clienteId)}
@@ -109,7 +109,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
               <Dropdown
                 nome="tipo"
                 valorInicial="bearer"
-                rotuloAcessivel="Como a credencial entra na chamada"
+                rotuloAcessivel="Como a chave entra na chamada"
                 opcoes={[
                   { valor: 'bearer', rotulo: 'Authorization: Bearer', detalhe: 'O mais comum em CRM' },
                   { valor: 'cabecalho', rotulo: 'Um cabeçalho próprio', detalhe: 'Ex.: x-api-key' },
@@ -172,7 +172,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
               botao={`Ligar a ${NOME_DA_AGENDA}`}
               variante="secundario"
               titulo={`Ligar a agenda ${NOME_DA_AGENDA}`}
-              descricao={`A chave fica num cofre e não volta para esta tela. Antes de guardar, a gente pergunta à agenda se ela vale — chave recusada não vira credencial nenhuma.`}
+              descricao={`A chave fica num cofre e não volta para esta tela. Antes de guardar, a gente pergunta à agenda se ela vale — chave recusada não vira chave guardada.`}
               rotuloEnviar="Conferir e ligar"
               action={acaoLigarAgenda.bind(null, clienteId)}
             >
@@ -197,7 +197,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
         {conexoes.length === 0 ? (
           <div className="app-card px-6 py-10 text-center">
-            <p className="text-[13.5px] text-soft">Nenhuma credencial ainda.</p>
+            <p className="text-[13.5px] text-soft">Nenhuma chave ainda.</p>
             <p className="mx-auto mt-2 max-w-[440px] text-[12.5px] leading-6 text-dim">
               Enquanto não houver, os blocos de API só alcançam endereços que não pedem chave — como
               webhook, ou uma planilha publicada pelo Apps Script.
@@ -237,7 +237,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
                   botao="Trocar valor"
                   variante="secundario"
                   titulo={`Trocar o valor de "${conexao.nome}"`}
-                  descricao="Os fluxos apontam para esta credencial pelo id, então a troca vale na próxima conversa. Nada precisa ser republicado."
+                  descricao="Os fluxos apontam para esta chave pelo id, então a troca vale na próxima conversa. Nada precisa ser republicado."
                   rotuloEnviar="Guardar"
                   action={acaoTrocarValorDaConexao.bind(null, clienteId, conexao.id)}
                 >
@@ -256,7 +256,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
                 <form action={acaoApagarConexao.bind(null, clienteId, conexao.id)}>
                   <button
                     className="rounded-lg border border-rose-400/30 px-2.5 py-1.5 text-[11px] font-semibold text-perigo transition hover:bg-rose-400/10"
-                    title="Apagar. Fluxo que usa esta credencial para de funcionar."
+                    title="Apagar. Fluxo que usa esta chave para de funcionar."
                   >
                     Apagar
                   </button>

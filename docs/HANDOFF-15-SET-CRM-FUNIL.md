@@ -193,6 +193,32 @@ fuso, convite e lembrete.
 
 ---
 
+## O que quebrou em uso, e o que era cada coisa
+
+Dois defeitos apareceram assim que o Gabriel usou a tela, e os dois já estão
+corrigidos — ficam aqui porque a causa se repete.
+
+- **Criar quadro por modelo travava.** O modal era um `<form action={…}>` em
+  cima de `acaoCriarQuadro`, que devolve o estado que o modal *antigo* lia com
+  `useActionState`. Sem ninguém lendo, a recusa ("já existe um quadro com este
+  nome") sumia: a tela ficava parada, com o botão clicado, parecendo travada.
+  Agora o botão chama `acaoCriarQuadroComModelo` numa transição, mostra o erro,
+  fecha no sucesso e abre o quadro recém-criado. **Regra geral: ação que pode
+  recusar não vai como `form action` sem alguém ler a resposta.**
+- **Erro `#418` no console** (hidratação) vinha do dinheiro. `Intl.NumberFormat`
+  no Node e no navegador usa versões diferentes de ICU, e elas discordam do
+  separador entre `R$` e o número — uma escreve espaço estreito (U+202F), a
+  outra espaço não separável (U+00A0). O React compara os dois textos e derruba
+  a hidratação. `comoDinheiro` agora formata à mão, sem `Intl`. **Qualquer
+  formatação que rode no servidor e no cliente precisa ser determinística** —
+  vale para data também: `toLocaleString` só dentro de componente que não é
+  renderizado no servidor.
+
+Os outros erros do console **não são nossos**: `wrs_env.js` e
+`"A listener indicated an asynchronous response…"` vêm de extensão do navegador
+(o primeiro é o MathType/WIRIS; o segundo é o padrão de qualquer extensão que
+usa `chrome.runtime`). Testar numa janela anônima sem extensão confirma.
+
 ## Duas armadilhas já pagas, para ninguém pagar de novo
 
 - **`af_usuarios` tem a coluna `name`, não `nome`.** É tabela do better-auth; só

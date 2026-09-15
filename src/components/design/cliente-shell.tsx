@@ -19,15 +19,24 @@ import { Marca } from './marca'
  * cresce para baixo, que é a direção em que sobra espaço.
  *
  * **Os itens são os que têm tela.** O desenho da §2.1 do PLANO-SISTEMA lista
- * sete, e dois deles — Campanhas e Integrações — são Etapa B. A regra escrita
- * no próprio plano, a propósito de Quadros, vale para eles: *item de menu para
- * tela que não existe é promessa que a interface faz e o produto não cumpre*.
- * Cada um entra junto com a frente que o constrói.
+ * sete, e um deles — Campanhas — é Etapa B. A regra escrita no próprio plano,
+ * a propósito de Quadros, vale para ele: *item de menu para tela que não existe
+ * é promessa que a interface faz e o produto não cumpre*. Ele entra junto com a
+ * frente que o constrói.
+ *
+ * **Integrações saiu dessa lista e não volta.** Aquele desenho a previa como
+ * sétimo item, e a decisão foi outra: ela é seção de Configurações. O primeiro
+ * nível é trabalho diário — Inbox, Contatos, Quadros, Automações —, e ligar um
+ * canal é trabalho de uma vez só. Item permanente para tarefa episódica gasta a
+ * única coisa escassa aqui, que é a posição fixa na tela de quem usa o produto
+ * o dia inteiro. É também o que Intercom, HubSpot e Chatwoot fazem com o mesmo
+ * punhado de conexões. O raciocínio está em `docs/PLANO-CONFIGURACOES.md` §1.1.
  *
  * **Continua sendo componente e não `layout.tsx`.** Como layout ele envolveria
  * também o editor de fluxo, que é tela cheia por natureza — e layout no Next
  * não se desliga num filho. O custo é passar `ativa` na mão, e é esse mesmo
- * custo que permite `contexto`, `numero` e `conexoes` acenderem "Configurações".
+ * custo que permite `ajustes/contexto`, `ajustes/whatsapp` e `ajustes/chaves`
+ * acenderem "Configurações".
  */
 export type AbaDoCliente = 'inicio' | 'fluxos' | 'leads' | 'quadros' | 'inbox' | 'ajustes'
 

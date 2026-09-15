@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useState, useTransition } from 'react'
 import { LIMITE_DO_NOME } from '@/core/quadros'
 import { MODELOS_DE_QUADRO, type ModeloDeQuadro } from '@/core/quadros-modelos'
 import { Modal } from '@/components/design/modal'
+import { acaoCriarQuadroComModelo } from '@/server/acoes-crm'
 
 /**
  * Criar quadro: primeiro **como**, depois o nome.
@@ -21,25 +23,56 @@ import { Modal } from '@/components/design/modal'
  * perda em rosa. É o que responde "esse funil é o meu?" antes de qualquer
  * palavra — e o que impede o template de ser um nome bonito que ninguém entende.
  */
-/**
- * O `acaoCriarQuadro` já ligado ao cliente.
- *
- * Devolve o estado do formulário porque a ação é a mesma que o modal antigo
- * usava — e o retorno é ignorado aqui de propósito: `revalidatePath` já repinta
- * a página com o quadro novo, e o erro que importa (nome repetido) chega pela
- * própria recarga.
- */
-type Acao = (formData: FormData) => Promise<{ ok?: boolean; erro?: string }>
-
-export function NovoQuadro({ acao, primeiro }: { acao: Acao; primeiro: boolean }) {
+export function NovoQuadro({ clienteId, primeiro }: { clienteId: string; primeiro: boolean }) {
   const [aberto, setAberto] = useState(false)
   const [passo, setPasso] = useState<'como' | 'modelos' | 'nome'>('como')
   const [modelo, setModelo] = useState<ModeloDeQuadro | null>(null)
+  const [nome, setNome] = useState('')
+  const [erro, setErro] = useState<string | null>(null)
+  const [rodando, comecar] = useTransition()
+  const router = useRouter()
 
   function fechar() {
     setAberto(false)
     setPasso('como')
     setModelo(null)
+    setNome('')
+    setErro(null)
+  }
+
+  /**
+   * Criar **não é envio de formulário**.
+   *
+   * Era, e travava: a ação devolve o estado que o modal antigo lia com
+   * `useActionState`, então a recusa ("já existe um quadro com este nome")
+   * chegava e não ia para lugar nenhum — o modal ficava aberto, sem mensagem,
+   * com o botão clicado. Aqui a resposta decide: erro aparece, sucesso fecha e
+   * abre o quadro novo.
+   */
+  function criar() {
+    const limpo = nome.trim()
+    if (limpo === '') {
+      setErro('dê um nome ao quadro')
+      return
+    }
+
+    setErro(null)
+    comecar(async () => {
+      try {
+        const r = await acaoCriarQuadroComModelo(clienteId, limpo, modelo?.id ?? 'branco')
+        if (!r.ok) {
+          setErro(r.erro ?? 'não deu para criar o quadro')
+          return
+        }
+        fechar()
+        // Abre o quadro recém-criado em vez de deixar a pessoa procurá-lo no
+        // seletor: quem acabou de desenhar um funil quer vê-lo.
+        if (r.id) router.push(`?q=${r.id}`)
+        router.refresh()
+      } catch {
+        setErro('não deu para criar agora — tente de novo')
+      }
+    })
   }
 
   return (
@@ -96,6 +129,7 @@ export function NovoQuadro({ acao, primeiro }: { acao: Acao; primeiro: boolean }
                 type="button"
                 onClick={() => {
                   setModelo(m)
+                  setNome((atual) => atual || m.nome)
                   setPasso('nome')
                 }}
                 className="group rounded-xl border border-line bg-panel p-3 text-left transition hover:border-primary/45 hover:bg-primary/[0.04]"
@@ -114,20 +148,7 @@ export function NovoQuadro({ acao, primeiro }: { acao: Acao; primeiro: boolean }
         )}
 
         {passo === 'nome' && (
-          <form
-            /*
-             * O retorno da ação é descartado aqui, e é isso que o `void`
-             * documenta: `acaoCriarQuadro` devolve o estado que o modal antigo
-             * lia com `useActionState`. Quem repinta a tela é o
-             * `revalidatePath` de dentro dela.
-             */
-            action={(dados) => {
-              void acao(dados)
-            }}
-            className="flex flex-col gap-4"
-          >
-            <input type="hidden" name="modelo" value={modelo?.id ?? 'branco'} />
-
+          <div className="flex flex-col gap-4">
             {modelo && (
               <div className="flex items-start justify-between gap-3 rounded-xl border border-primary/30 bg-primary/[0.06] px-3 py-2.5">
                 <span className="min-w-0">
@@ -151,15 +172,22 @@ export function NovoQuadro({ acao, primeiro }: { acao: Acao; primeiro: boolean }
                 Nome do quadro
               </span>
               <input
-                name="nome"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && criar()}
                 required
                 autoFocus
                 maxLength={LIMITE_DO_NOME}
-                defaultValue={modelo?.nome ?? ''}
-                placeholder="ex.: Comercial"
+                placeholder={modelo?.nome ?? 'ex.: Comercial'}
                 className="app-field w-full px-[13px] py-[11px] text-[13.5px]"
               />
             </label>
+
+            {erro && (
+              <p role="alert" className="text-[11.5px] leading-5 text-perigo">
+                {erro}
+              </p>
+            )}
 
             <p className="text-[11.5px] leading-[1.5] text-dim">
               A mesma pessoa pode estar em vários quadros, cada um na sua etapa. Renomear, mover e
@@ -174,12 +202,18 @@ export function NovoQuadro({ acao, primeiro }: { acao: Acao; primeiro: boolean }
               >
                 Cancelar
               </button>
-              <button type="submit" className="app-primary-button px-4 py-2 text-[12.5px]">
-                Criar quadro
+              <button
+                type="button"
+                disabled={rodando}
+                onClick={criar}
+                className="app-primary-button px-4 py-2 text-[12.5px] disabled:opacity-50"
+              >
+                {rodando ? 'criando…' : 'Criar quadro'}
               </button>
             </div>
-          </form>
+          </div>
         )}
+
       </Modal>
     </>
   )
