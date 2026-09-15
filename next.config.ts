@@ -48,9 +48,41 @@ export const cabecalhos = [
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(self), geolocation=()' },
 ]
 
+/**
+ * As telas de configuração que mudaram de endereço.
+ *
+ * Seis delas moravam na raiz da conta (`/numero`, `/conexoes`, `/instagram`,
+ * `/anuncios`, `/acervo`, `/contexto`) por histórico, e não por regra: as
+ * outras quatro já estavam sob `/ajustes/`. Agora todas estão, e o endereço
+ * diz em que seção a pessoa está — o que importa porque **o dono manda print
+ * com a URL na barra**, e porque ele tem link salvo.
+ *
+ * `permanent: true` (308) e não 307: o endereço antigo não volta, e o 308
+ * preserva o método — essas telas recebem `POST` de Server Action, e um 307/308
+ * trocado por 302 transformaria o POST em GET no meio do caminho.
+ *
+ * O motivo de cada nome novo está em `docs/PLANO-CONFIGURACOES.md` §2.
+ */
+const TELAS_QUE_MUDARAM: { de: string; para: string }[] = [
+  { de: 'numero', para: 'ajustes/whatsapp' },
+  { de: 'instagram', para: 'ajustes/instagram' },
+  { de: 'conexoes', para: 'ajustes/chaves' },
+  { de: 'anuncios', para: 'ajustes/anuncios' },
+  { de: 'acervo', para: 'ajustes/acervo' },
+  { de: 'contexto', para: 'ajustes/contexto' },
+]
+
 const config: NextConfig = {
   async headers() {
     return [{ source: '/:path*', headers: cabecalhos }]
+  },
+
+  async redirects() {
+    return TELAS_QUE_MUDARAM.map(({ de, para }) => ({
+      source: `/clientes/:clienteId/${de}`,
+      destination: `/clientes/:clienteId/${para}`,
+      permanent: true,
+    }))
   },
 
   /**
