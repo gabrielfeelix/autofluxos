@@ -130,7 +130,7 @@ export default async function Pagina({
       logo: <LogoTelegram />,
       saude: 'nao-ligada',
       href: null,
-      emBreve: 'Desenhado, sem adaptador de entrega. Não dá para ligar ainda.',
+      emBreve: 'O envio já existe; falta onde guardar o bot e receber as mensagens dele.',
     },
   ]
 
