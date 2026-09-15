@@ -355,15 +355,32 @@ de despejar na primeira etapa do funil de vendas.
 
 ### Escadinha, do mais barato ao mais caro
 
-| # | Etapa | Depende da Meta? | Esforço |
-|---|---|---|---|
-| 1 | Origem em destaque no Inbox (`QuemE`) | **não** | pequeno |
-| 2 | Guardar `body`/`source_url`/`ctwa_clid` | **não** | pequeno |
-| 3 | Filtro "veio de anúncio" nos rails | **não** | médio |
-| 4 | Extrair `porNoQuadroPadrao()` para uso fora da conversa | **não** | pequeno |
-| 5 | Resolver `ad_id` → nome de campanha (serve CTWA **e** Lead Ads) | token de Ads | médio |
-| 6 | Webhook `leadgen` + busca + reconciliação diária | 6 permissões, talvez review | grande |
-| 7 | Conversions API com `ctwa_clid` | integração de Ads | outro projeto |
+| # | Etapa | Depende da Meta? | Esforço | Estado |
+|---|---|---|---|---|
+| 1 | Origem em destaque no Inbox (`QuemE`) | **não** | pequeno | **feito em 14/set** |
+| 2 | Guardar `body`/`source_url`/`ctwa_clid` | **não** | pequeno | **feito em 14/set** |
+| 3 | Filtro "veio de anúncio" nos rails | **não** | médio | aberto, de propósito |
+| 4 | Extrair `porNoQuadroPadrao()` para uso fora da conversa | **não** | pequeno | **feito em 14/set** |
+| 5 | Resolver `ad_id` → nome de campanha (serve CTWA **e** Lead Ads) | token de Ads | médio | aberto |
+| 6 | Webhook `leadgen` + busca + reconciliação diária | 6 permissões, talvez review | grande | aberto |
+| 7 | Conversions API com `ctwa_clid` | integração de Ads | outro projeto | aberto |
+
+### O que foi feito em 14/set/2026
+
+- **`src/core/contatos/origem.ts`** — leitura pura da origem, com a lista de
+  chaves como fonte única: quem mostra lê dela, quem esconde esconde por ela.
+  `deAnuncio` testa o rótulo gravado e não a presença do id, para não
+  classificar anúncio de Status como orgânico.
+- **`QuemE` mostra a origem**, logo abaixo do telefone, com o `headline` na
+  frente e o `source_id` no `title`. O despejo de campos deixou de repeti-la.
+- **`atribuirOrigem` guarda o referral inteiro** — `body`, `source_url`,
+  `media_type` e `ctwa_clid`. Sem migration: `campos` é `jsonb`.
+- **`porNoQuadroPadrao` saiu para `src/server/quadro-de-entrada.ts`**, para que
+  a segunda porta de lead tenha onde chamar.
+
+**O item 3 ficou aberto por decisão, não por falta de tempo:** filtro local
+resolve 200 conversas e filtro de verdade pede coluna indexada. Qual dos dois
+vale depende de ver a origem em uso — e agora ela aparece.
 
 **1 a 4 não dependem da Meta para nada** e entregam a maior parte do valor
 percebido: o atendente abre a conversa e vê de qual anúncio a pessoa veio.
@@ -378,9 +395,12 @@ System User/BM, que decide se há App Review no caminho.
 
 ### Recomendação
 
-Fazer 1, 2 e 4 agora. Medir 3 com uso real antes de escolher entre filtro local
-e coluna indexada. Tratar 5 como a próxima decisão de produto — ela vale por si
-só, mesmo sem Lead Ads. Só entrar em 6 com demanda concreta do BME na mesa.
+1, 2 e 4 estão feitos. Medir 3 com uso real antes de escolher entre filtro
+local e coluna indexada. Tratar 5 como a próxima decisão de produto — ela vale
+por si só, mesmo sem Lead Ads, e é o que nenhum concorrente brasileiro entrega.
+Só entrar em 6 com demanda concreta do BME na mesa, e começando pelo teste
+empírico do arranjo System User/BM, que é o que decide se há App Review no
+caminho.
 
 Isso não é desvio de proposta: a **Fase 10** do `PLANO-MESTRE.md` já prevê
 "campanhas: várias portas de entrada por número e **atribuição por anúncio**" e
