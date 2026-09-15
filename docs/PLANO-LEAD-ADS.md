@@ -361,7 +361,7 @@ de despejar na primeira etapa do funil de vendas.
 | 2 | Guardar `body`/`source_url`/`ctwa_clid` | **não** | pequeno | **feito em 14/set** |
 | 3 | Filtro "veio de anúncio" nos rails | **não** | médio | aberto, de propósito |
 | 4 | Extrair `porNoQuadroPadrao()` para uso fora da conversa | **não** | pequeno | **feito em 14/set** |
-| 5 | Resolver `ad_id` → nome de campanha (serve CTWA **e** Lead Ads) | token de Ads | médio | aberto |
+| 5 | Resolver `ad_id` → nome de campanha (serve CTWA **e** Lead Ads) | token de Ads | médio | **feito em 14/set** |
 | 6 | Webhook `leadgen` + busca + reconciliação diária | 6 permissões, talvez review | grande | aberto |
 | 7 | Conversions API com `ctwa_clid` | integração de Ads | outro projeto | aberto |
 
@@ -377,6 +377,24 @@ de despejar na primeira etapa do funil de vendas.
   `media_type` e `ctwa_clid`. Sem migration: `campos` é `jsonb`.
 - **`porNoQuadroPadrao` saiu para `src/server/quadro-de-entrada.ts`**, para que
   a segunda porta de lead tenha onde chamar.
+
+### O item 5, feito na mesma noite
+
+- **`src/core/anuncios.ts`** — a regra de qual nome mostrar (campanha → título
+  → rótulo, nunca o id) e quando o cache vence. Puro, 11 testes.
+- **`src/channels/marketing-api.ts`** — uma chamada ao nó `Ad` com field
+  expansion traz os três nomes. Nunca lança; devolve o código da Meta, porque
+  190 (reconectar) e limite (esperar) pedem ações opostas.
+- **Migration `0050`** — uma linha por `ad_id`, não três colunas em cada
+  contato. O nome é cache; `campos->>'origem_anuncio'` continua sendo a verdade.
+- **`src/server/resolver-anuncios.ts`** — lê o cache em lote, pergunta só o que
+  venceu, e degrada de forma **visível**: o nome some e o alerta vai à auditoria.
+- **`src/server/token-de-anuncios.ts`** — o token vive numa Conexão `meta-ads`
+  do tipo `bearer` que já existia. Sem tipo novo, sem migration de credencial.
+  Como ligar está em [CONEXOES.md](CONEXOES.md).
+
+Com isso o produto passa a fazer o que, entre os CRMs e inboxes pesquisados, só
+o PipeRun faz no Brasil — e nenhuma das inboxes de WhatsApp faz.
 
 **O item 3 ficou aberto por decisão, não por falta de tempo:** filtro local
 resolve 200 conversas e filtro de verdade pede coluna indexada. Qual dos dois
@@ -395,10 +413,8 @@ System User/BM, que decide se há App Review no caminho.
 
 ### Recomendação
 
-1, 2 e 4 estão feitos. Medir 3 com uso real antes de escolher entre filtro
-local e coluna indexada. Tratar 5 como a próxima decisão de produto — ela vale
-por si só, mesmo sem Lead Ads, e é o que nenhum concorrente brasileiro entrega.
-Só entrar em 6 com demanda concreta do BME na mesa, e começando pelo teste
+1, 2, 4 e **5** estão feitos. Medir 3 com uso real antes de escolher entre filtro
+local e coluna indexada. Só entrar em 6 com demanda concreta do BME na mesa, e começando pelo teste
 empírico do arranjo System User/BM, que é o que decide se há App Review no
 caminho.
 

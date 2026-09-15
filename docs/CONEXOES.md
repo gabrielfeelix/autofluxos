@@ -178,3 +178,71 @@ cliente com CRM de produção é o gatilho para construir.
 **OAuth2.** Ver acima: entra como tipo, quando houver quem exija.
 
 **Rotação automática e auditoria de uso.** Quando houver mais de um operador.
+
+---
+
+## A conexão `meta-ads` — o nome da campanha na conversa
+
+> Escrito em 14/set/2026, junto com a 0050.
+
+### O que ela faz
+
+O `referral` do CTWA traz o `ad_id` e o título do criativo, nunca o **nome da
+campanha** que o gestor deu no Gerenciador de Anúncios. Esse nome existe só
+atrás de uma chamada ao nó `Ad` da Marketing API, com um token de Ads. Com a
+conexão ligada, a coluna do contato mostra `Institucional Set26` em vez de
+`Filme institucional para sua empresa` — e o conjunto e o criativo numa segunda
+linha.
+
+Sem ela, a linha continua mostrando o título. **Não conectar é uma escolha
+legítima**, não um defeito: a conta que só atende no WhatsApp não perde nada, e
+o código não alerta sobre isso.
+
+### Como o cliente liga
+
+1. No Business Manager dele: **Configurações do negócio → Usuários do sistema →
+   Adicionar**, papel de administrador.
+2. **Gerar novo token**, escolhendo o app e marcando `ads_read`.
+   Um System User token **não expira**, que é o que evita a quebra silenciosa
+   de 60 dias que os concorrentes documentam.
+3. Atribuir a **conta de anúncios** a esse usuário do sistema.
+4. No AutoFluxos: **Conexões → Nova**, nome exatamente `meta-ads`, tipo
+   `bearer`, valor = o token.
+
+O nome é a convenção que liga as duas pontas — ver `NOME_DA_CONEXAO_DE_ADS` em
+`src/server/token-de-anuncios.ts`. Conexão com outro nome não é usada para isto,
+e é assim que a mesma conta pode ter um token de CRM e um de Ads sem se
+confundirem.
+
+### Por que `ads_read` e não `ads_management`
+
+Porque só lemos três textos. `ads_management` autoriza criar campanha e mexer
+em orçamento — poder que o produto não usa e não quer ter guardado. A doc de
+Lead Ads pede `ads_management` para o fluxo dela; para ler o nó `Ad` o escopo de
+leitura basta, e é o que está no passo 2.
+
+Se um dia o Lead Ads entrar (ver [PLANO-LEAD-ADS.md](PLANO-LEAD-ADS.md)), o
+token daquele fluxo é outro, com outras permissões, e não substitui este.
+
+### O que quebra, e como aparece
+
+| Sintoma | Causa | O que fazer |
+|---|---|---|
+| Nome some, volta o título | token vencido/revogado (código 190) | refazer o passo 2 e trocar o valor da conexão |
+| Nome some sem alerta | limite de chamadas da Meta | nada; o cache cobre e resolve sozinho |
+| Nunca aparece nome | conexão ausente ou com outro nome | conferir se o nome é exatamente `meta-ads` |
+| Nome errado/velho | campanha renomeada há menos de 24h | esperar o cache vencer |
+
+A degradação é **visível de propósito**: o nome desaparece e o alerta vai para
+a auditoria. A queixa documentada no mercado é o oposto — o sync que morre em
+silêncio e deixa tudo parecendo certo enquanto o dado apodrece.
+
+### O que isto não é
+
+Não é OAuth, e não é gerenciamento de anúncios. O cliente cola um token, como
+em qualquer outra conexão. OAuth com a Meta continua sendo Fase 10 do
+[PLANO-MESTRE.md](PLANO-MESTRE.md), e só se paga quando houver cliente pedindo.
+
+E a fronteira do produto não mudou: saber de qual campanha a pessoa veio é
+contexto de atendimento, do mesmo tipo que o telefone. Criar campanha, mexer em
+orçamento e ler métrica são outro produto.
