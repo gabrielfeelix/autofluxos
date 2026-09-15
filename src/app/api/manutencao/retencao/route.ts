@@ -3,6 +3,8 @@ import { iguais } from '@/lib/segredo'
 import { DIAS_DE_RETENCAO_DO_ALERTA, limparAlertasVencidos } from '@/server/repos/alertas'
 import { DIAS_DE_FOLGA, renovarTokensDoInstagram } from '@/server/instagram/renovacao'
 import { apagarContatosVencidos, MESES_DE_RETENCAO_PADRAO } from '@/server/repos/retencao'
+import { marcarQuemSumiu } from '@/server/repos/crm'
+import { DIAS_PARA_INATIVAR } from '@/core/crm'
 
 export const dynamic = 'force-dynamic'
 
@@ -69,12 +71,24 @@ export async function GET(req: Request) {
      */
     const instagram = await renovarTokensDoInstagram({ agora })
 
+    /*
+     * E quem sumiu vira inativo (0058), pela mesma carona.
+     *
+     * É trabalho de prazo como os de cima, e é o único fato do CRM que nenhuma
+     * ação humana produz: ninguém clica em "esse cliente parou de falar comigo".
+     * Sem isto, a lista de clientes ativos só cresce, e "cliente ativo" deixa de
+     * querer dizer alguma coisa.
+     */
+    const inativados = await marcarQuemSumiu()
+
     return Response.json({
       ...resultado,
       meses: MESES_DE_RETENCAO_PADRAO,
       alertasApagados,
       diasDeAlerta: DIAS_DE_RETENCAO_DO_ALERTA,
       instagram: { ...instagram, diasDeFolga: DIAS_DE_FOLGA },
+      inativados,
+      diasParaInativar: DIAS_PARA_INATIVAR,
     })
   } catch (erro) {
     // Ninguém está olhando quando isto roda às quatro da manhã. Uma limpeza que

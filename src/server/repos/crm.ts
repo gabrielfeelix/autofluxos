@@ -190,3 +190,41 @@ export async function contatosQueSumiram(clienteId: string, limite = 200): Promi
 
   return (data as { id: string }[]).map((linha) => linha.id)
 }
+
+/**
+ * Marca como inativo quem sumiu, em todas as contas.
+ *
+ * Pega carona na manutenção diária que já existe, pelo mesmo motivo que a
+ * renovação do Instagram pegou: o plano Hobby da Vercel dá poucas tarefas
+ * agendadas, e as que existem já estão em uso. A natureza do trabalho é a mesma
+ * das outras — cuidar de prazo que corre sozinho.
+ *
+ * Passa por `aplicarFato` contato a contato em vez de um `update ... where`
+ * porque é lá que mora a regra de que **cliente vira `inativo` e nunca
+ * `perdido`**, e duplicá-la num `where` criaria um segundo lugar onde ela pode
+ * divergir. O teto por conta existe para a rota não estourar o tempo dela.
+ *
+ * Nunca lança: falha de uma conta não pode impedir as outras de serem cuidadas.
+ */
+export async function marcarQuemSumiu(limitePorConta = 200): Promise<number> {
+  const { data, error } = await db().from('clients').select('id')
+  if (error) {
+    console.error('[crm] não deu para listar as contas:', error.message)
+    return 0
+  }
+
+  let marcados = 0
+  for (const { id: clienteId } of (data as { id: string }[]) ?? []) {
+    try {
+      const sumidos = await contatosQueSumiram(clienteId, limitePorConta)
+      for (const contatoId of sumidos) {
+        const novo = await aplicarFato(clienteId, contatoId, 'sumiu')
+        if (novo) marcados += 1
+      }
+    } catch (erro) {
+      console.error('[crm] não deu para marcar inativos da conta', clienteId, erro)
+    }
+  }
+
+  return marcados
+}

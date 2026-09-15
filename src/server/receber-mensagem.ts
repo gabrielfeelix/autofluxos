@@ -64,6 +64,8 @@ import { inscreverNoEvento, sairPelaEtiqueta, sairPorEvento } from './sequencias
 import { marcarContatos } from './repos/etiquetas'
 import { porContatoNaEtapa } from './repos/quadros'
 import { porNoQuadroPadrao } from './quadro-de-entrada'
+import { aplicarFato, marcarUltimaMensagem } from './repos/crm'
+import { anotar } from './repos/eventos'
 import { registrarPassagem } from './repos/passagens'
 
 /**
@@ -261,6 +263,27 @@ export async function tratarUma(
   const contato = await acharOuCriarContato(canalSalvo.clienteId, mensagem.from, nomeDoPerfil)
 
   if (contato.criadoAgora) await porNoQuadroPadrao(contato)
+
+  /**
+   * O CRM toma conhecimento de que essa pessoa falou (0058).
+   *
+   * Duas escritas, e as duas de propósito fora de `registrarEntrada`: aquela
+   * função é o registro da mensagem, e isto é o que a mensagem **significa para
+   * o relacionamento** — "de quem estou devendo resposta" e "voltou quem tinha
+   * sumido".
+   *
+   * Nenhuma das duas pode derrubar o atendimento, e por isso nenhuma é
+   * esperada com `throw`: `marcarUltimaMensagem` engole o erro, e o fato só é
+   * aplicado para quem já existia — contato criado agora nasce em `novo`, e
+   * perguntar ao banco o que ele já era seria uma consulta com resposta
+   * conhecida.
+   */
+  await marcarUltimaMensagem(canalSalvo.clienteId, contato.id)
+  if (contato.criadoAgora) {
+    await anotar(canalSalvo.clienteId, contato.id, 'chegou', { origem: canalSalvo.provider === 'instagram' ? 'Instagram' : 'WhatsApp' })
+  } else {
+    await aplicarFato(canalSalvo.clienteId, contato.id, 'voltou-a-falar')
+  }
 
   const mensagemId = await registrarEntrada({
     contatoId: contato.id,
