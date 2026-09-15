@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AjustesShell } from '@/components/design/ajustes-shell'
+import { ICONE_DA_TELA } from '@/components/design/icones-de-ajustes'
 import { saudeDoInstagram, saudeDoWhatsApp } from '@/core/saude-da-conexao'
 import type { ReactNode } from 'react'
 import { ApagarCliente } from '@/components/cliente/apagar'
@@ -75,9 +76,13 @@ export default async function Pagina({
   return (
     <AjustesShell cliente={cliente} ativa="inicio">
       <main className="w-full max-w-[1100px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
-        <h1 className="mb-5 text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">
+        <h1 className="text-[22px] font-bold tracking-[-0.02em] md:text-[28px]">
           Configurações
         </h1>
+        <p className="mt-1.5 mb-7 max-w-[640px] text-[13px] leading-6 text-dim">
+          Tudo que muda como esta conta atende: por onde as conversas entram, o que o bot sabe
+          responder, com quem o sistema fala e quem tem acesso.
+        </p>
 
         {/*
           Quatro grupos, não dez linhas soltas.
@@ -103,8 +108,9 @@ export default async function Pagina({
           titulo="Canais"
           descricao="Por onde a conversa entra e sai. Canal caído é cliente sem atendimento."
         >
-          <Linha
+          <Cartao
             href={`/clientes/${cliente.id}/ajustes/whatsapp`}
+            icone={ICONE_DA_TELA['whatsapp']}
             titulo="WhatsApp"
             descricao="Qual número atende, que fluxo ele executa em cada papel, e o endereço para o painel da Meta."
             estado={
@@ -119,8 +125,9 @@ export default async function Pagina({
               )
             }
           />
-          <Linha
+          <Cartao
             href={`/clientes/${cliente.id}/ajustes/instagram`}
+            icone={ICONE_DA_TELA['instagram']}
             titulo="Instagram"
             descricao="Ligar o direct de uma conta profissional para as mensagens chegarem no mesmo Inbox."
             estado={
@@ -143,8 +150,9 @@ export default async function Pagina({
           titulo="Atendimento"
           descricao="Como o atendimento funciona — o que o bot sabe, quando há gente, e o que já está pronto para usar."
         >
-          <Linha
+          <Cartao
             href={`/clientes/${cliente.id}/ajustes/contexto`}
+            icone={ICONE_DA_TELA['contexto']}
             titulo="Contexto do negócio"
             descricao="A única coisa que o bloco de IA pode dizer. Sem isto, ele responde “não sei” a tudo."
             estado={
@@ -155,8 +163,9 @@ export default async function Pagina({
               )
             }
           />
-          <Linha
+          <Cartao
             href={`/clientes/${cliente.id}/ajustes/horario`}
+            icone={ICONE_DA_TELA['horario']}
             titulo="Horário de atendimento"
             descricao="Quando há gente para atender. Fora disso, o bot avisa em vez de prometer um atendente."
             estado={
@@ -167,8 +176,9 @@ export default async function Pagina({
               )
             }
           />
-          <Linha
+          <Cartao
             href={`/clientes/${cliente.id}/ajustes/respostas-rapidas`}
+            icone={ICONE_DA_TELA['respostas-rapidas']}
             titulo="Respostas rápidas"
             descricao="Frases prontas para inserir na conversa sem reescrever todo dia."
             estado={
@@ -179,8 +189,9 @@ export default async function Pagina({
               </Selo>
             }
           />
-          <Linha
+          <Cartao
             href={`/clientes/${cliente.id}/ajustes/etiquetas`}
+            icone={ICONE_DA_TELA['etiquetas']}
             titulo="Etiquetas"
             descricao="As que uma pessoa cria e aplica. Viram filtro na lista de contatos."
             estado={
@@ -191,8 +202,9 @@ export default async function Pagina({
               </Selo>
             }
           />
-          <Linha
+          <Cartao
             href={`/clientes/${cliente.id}/ajustes/acervo`}
+            icone={ICONE_DA_TELA['acervo']}
             titulo="Acervo"
             descricao="Foto, vídeo, áudio e PDF que o bloco de Mídia pode enviar na conversa."
             estado={
@@ -219,8 +231,9 @@ export default async function Pagina({
           titulo="Integrações"
           descricao="Com quem o sistema fala além dos canais — o que entra de fora e o que sai para os sistemas deste cliente."
         >
-          <Linha
+          <Cartao
             href={`/clientes/${cliente.id}/ajustes/anuncios`}
+            icone={ICONE_DA_TELA['anuncios']}
             titulo="Anúncios"
             descricao="Receber como lead quem preenche o formulário de um anúncio no Facebook ou no Instagram."
             estado={
@@ -231,8 +244,9 @@ export default async function Pagina({
               </Selo>
             }
           />
-          <Linha
+          <Cartao
             href={`/clientes/${cliente.id}/ajustes/chaves`}
+            icone={ICONE_DA_TELA['chaves']}
             titulo="Chaves de API"
             descricao="As chaves que os blocos de Serviços externos usam para falar com os sistemas deste cliente."
             estado={
@@ -257,8 +271,9 @@ export default async function Pagina({
             por lá —, e passa a ter também o caminho que uma pessoa procura
             quando vai mexer nela de propósito.
           */}
-          <Linha
+          <Cartao
             href={`/clientes/${cliente.id}/ajustes/negocio`}
+            icone={ICONE_DA_TELA['negocio']}
             titulo="Dados do negócio"
             descricao="O cadastro e o logo desta conta. Nada daqui vai para o WhatsApp — é o que a 4YU usa para saber com quem fala."
             estado={
@@ -267,8 +282,9 @@ export default async function Pagina({
               </Selo>
             }
           />
-          <Linha
+          <Cartao
             href={`/clientes/${cliente.id}/ajustes/equipe`}
+            icone={ICONE_DA_TELA['equipe']}
             titulo="Equipe"
             descricao="Quem entra nesta conta e o que cada um pode fazer. É de onde sai o rail de atribuição do Inbox."
             estado={
@@ -318,43 +334,56 @@ function Grupo({
   children: ReactNode
 }) {
   return (
-    <section className="mb-7">
-      <h2 className="text-[13.5px] font-bold tracking-[-0.01em]">{titulo}</h2>
-      <p className="mt-0.5 mb-2.5 max-w-[620px] text-[12px] leading-5 text-muted">{descricao}</p>
-      <ul className="app-card divide-y divide-line overflow-hidden">{children}</ul>
+    <section className="mb-9">
+      <h2 className="text-[14px] font-bold tracking-[-0.01em]">{titulo}</h2>
+      <p className="mt-0.5 mb-3.5 max-w-[640px] text-[12px] leading-5 text-muted">{descricao}</p>
+      {/*
+        Três por linha no monitor, uma no celular.
+
+        Quatro caberiam em largura, e o cartão ficaria estreito demais para a
+        frase de explicação — que é justamente a parte que faz o cartão valer
+        mais do que a linha de lista que havia aqui antes.
+      */}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{children}</div>
     </section>
   )
 }
 
-function Linha({
+function Cartao({
   href,
   titulo,
   descricao,
   estado,
+  icone,
 }: {
   href: string
   titulo: string
   descricao: string
   estado: ReactNode
+  icone: ReactNode
 }) {
   return (
-    <li>
-      <Link
-        href={href}
-        className="flex items-center gap-4 px-6 py-[18px] transition hover:bg-surface"
-      >
-        <span className="min-w-0 flex-1">
-          <strong className="block text-[13.5px] font-bold">{titulo}</strong>
-          <span className="mt-0.5 block text-[12px] leading-5 text-dim">
-            {descricao}
-          </span>
+    /*
+      O cartão **inteiro** é o link, e não um botão "Configurar" no rodapé.
+
+      A referência que inspirou esta tela põe o botão porque o cartão dela não é
+      clicável; copiar o botão sem copiar o motivo seria trocar um alvo do
+      tamanho do cartão por um do tamanho de uma palavra, e ainda gastar uma
+      linha de altura em todos eles.
+    */
+    <Link
+      href={href}
+      className="app-card app-card-interactive flex min-h-[148px] flex-col p-4 no-underline"
+    >
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-[11px] bg-primary-weak text-primary">
+          {icone}
         </span>
         {estado}
-        <span aria-hidden className="text-[15px] text-muted">
-          ›
-        </span>
-      </Link>
-    </li>
+      </div>
+      <p className="text-[13.5px] font-bold tracking-[-0.01em]">{titulo}</p>
+      <p className="mt-1 text-[12px] leading-5 text-muted">{descricao}</p>
+    </Link>
   )
 }
 
