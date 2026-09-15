@@ -131,6 +131,20 @@
    * Como token eles trocam junto com o tema. Como classe fixa do Tailwind,
    * teriam que estar certos nos dois ao mesmo tempo, o que nenhum tom faz.
    */
+  /*
+   * O azul da bolha que nós mandamos, **capturado aqui e não lá**.
+   *
+   * `.bolha-nossa` redefine `--primary` para branco, porque link e destaque
+   * dentro dela precisam ser brancos. Só que propriedade customizada declarada
+   * num elemento vale **para o próprio elemento**: com `bg-primary` na bolha, o
+   * fundo resolvia para o branco que a classe tinha acabado de escrever, e a
+   * mensagem virava texto branco sobre fundo branco. Sumiu tudo que saía.
+   *
+   * Capturado no `:root`, este token guarda o azul já substituído — e continua
+   * azul lá dentro, onde `--primary` já não é.
+   */
+  --bolha-nossa: var(--primary);
+
   --perigo: #dc2626;
   --aviso: #b45309;
   --ok: #047857;
@@ -659,6 +673,13 @@ textarea::placeholder {
  * sétimo — o que alguém escrever no ano que vem — nascendo errado.
  */
 .bolha-nossa {
+  /*
+   * O fundo vem de `--bolha-nossa`, e **nunca** de `--primary`: a linha logo
+   * abaixo troca `--primary` por branco, e propriedade customizada vale para o
+   * próprio elemento que a declara. Usar `bg-primary` aqui pinta branco sobre
+   * branco — foi exatamente o que aconteceu, e sumiu com toda mensagem enviada.
+   */
+  background: var(--bolha-nossa);
   color: #ffffff;
 
   --ink: #ffffff;

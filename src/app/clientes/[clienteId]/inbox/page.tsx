@@ -847,7 +847,7 @@ function Historico({
             */}
             <p className={`max-w-[78%] px-3.5 py-2 text-[13px] leading-[1.5] whitespace-pre-wrap [overflow-wrap:anywhere] ${
               nossa
-                ? 'bolha-nossa rounded-[15px_15px_4px_15px] bg-primary'
+                ? 'bolha-nossa rounded-[15px_15px_4px_15px]'
                 : 'rounded-[15px_15px_15px_4px] bg-surface-strong text-ink'
             }`}>
               {mensagem.cita && <CitacaoNaBolha cita={mensagem.cita} nome={nome} />}
