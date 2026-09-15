@@ -223,7 +223,28 @@ export default async function Pagina({
           />
         </Grupo>
 
-        <Grupo titulo="Conta" descricao="Quem entra nesta conta e o que cada um pode fazer.">
+        <Grupo
+          titulo="Conta"
+          descricao="Quem é este cliente para a 4YU, quem entra na conta e o que cada um pode fazer."
+        >
+          {/*
+            Dados do negócio morava no Painel, acima de tudo, e saiu de lá pelo
+            motivo que vale para qualquer cadastro: nome, CNPJ e logo não se
+            olham todo dia, e ocupavam o espaço mais caro do produto. A tela
+            continua acessível pelo Painel — quem acabou de criar a conta chega
+            por lá —, e passa a ter também o caminho que uma pessoa procura
+            quando vai mexer nela de propósito.
+          */}
+          <Linha
+            href={`/clientes/${cliente.id}/ajustes/negocio`}
+            titulo="Dados do negócio"
+            descricao="O cadastro e o logo desta conta. Nada daqui vai para o WhatsApp — é o que a 4YU usa para saber com quem fala."
+            estado={
+              <Selo tom={cliente.logoUrl ? 'ok' : 'neutro'}>
+                {cliente.logoUrl ? 'com logo' : 'sem logo'}
+              </Selo>
+            }
+          />
           <Linha
             href={`/clientes/${cliente.id}/ajustes/equipe`}
             titulo="Equipe"
