@@ -178,6 +178,38 @@ extração explícito para os objetos de `public`.
   ninguém que a faça cumprir. Fechar isso é outra migration, e depende de o
   envio por `id` estar provado em campo — ver
   `docs/HANDOFF-15-SET-VOZ-E-ENVIO-POR-ID.md`;
+- **a `0057` foi aplicada em 15/set/2026**, com autorização explícita do dono.
+  Ela cria `public.mensagens_agendadas` (a fila de mensagens marcadas para
+  depois) e adiciona `public.messages.transcricao`. É aditiva: tabela nova e
+  coluna anulável, sem tocar em dado existente.
+
+  Conferida pelos **dois** testes. Replay do zero em Docker — `npx supabase db
+  reset` aplicou `0001`–`0057` em ordem, sem erro. Ensaio em transação contra a
+  produção (`begin; <a migration sem o notify>; rollback;`), que voltou limpo:
+  nem a tabela nem a coluna sobraram depois do rollback.
+
+  Estado conferido na produção depois de aplicar: a tabela com as 12 colunas
+  desenhadas, **RLS ligada e zero policies**, 3 índices (a chave primária mais
+  os dois do plano), `messages.transcricao` presente, e os `grant` só para
+  `postgres` e `service_role` — `anon` e `authenticated` **não aparecem**, o que
+  confirma que o default fechado da `0041` continua valendo para objeto novo.
+  Do outro lado: `app_verandi.migrations_aplicadas` com as mesmas **32** linhas
+  e as **16** policies de `storage.objects` intactas.
+
+  **Ela tem `notify pgrst`, ao contrário da `0056`, e isso é a decisão.** A
+  `0057` cria tabela em `public`, que é schema exposto na Data API, e o servidor
+  fala com ela pelo PostgREST: sem recarregar o cache,
+  `from('mensagens_agendadas')` responde 404 até a próxima reinicialização. O
+  cache é o mesmo dos dois produtos e o reload é breve — é o mesmo movimento que
+  a `0052` fez.
+
+  **O que ela deixa em aberto, escrito para ninguém descobrir depois:** a coluna
+  `transcricao` guarda o que um modelo de fala devolveu, e hoje esse modelo é o
+  Gemini com a **chave da 4YU no free tier**, que treina com o que passa por
+  ela. A regra de `server/ia/modelo.ts` vale aqui com mais força, porque voz
+  identifica pessoa: por isso a transcrição **nunca é automática** — só acontece
+  quando alguém do atendimento clica. Quando `clients.ia_chave_ref` sair do
+  papel, `server/transcrever-audio.ts` passa a usar a chave paga do cliente;
 - nunca deve executar o aplicador da Verandi nem registrar versão em
   `app_verandi.migrations_aplicadas`.
 

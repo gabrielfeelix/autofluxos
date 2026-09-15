@@ -216,7 +216,7 @@ significam coisas opostas. A tela da Ficha (`leads/[contatoId]`) ganhou a mesma
 pílula no cabeçalho "Conversa": duas telas que dizem a mesma coisa em lugares
 diferentes são dois produtos para quem usa as duas.
 
-### 2.3 Agendar mensagem
+### 2.3 Agendar mensagem — **feito, e a migration já está em produção**
 
 **Precisa de banco.** Leia [BANCO-COMPARTILHADO.md](BANCO-COMPARTILHADO.md)
 inteiro antes. A próxima migration é a **`0057`** — confira com
@@ -288,7 +288,48 @@ só deste contato" — vai na barra de filtros do Inbox, à direita, junto de "N
 esperando uma pessoa". Clicar abre a lista de todas as agendadas da conta, com
 cancelar. Conta por `cliente_id`, não por contato.
 
-### 2.4 Transcrição de áudio
+**Como ficou, e o que não foi como o plano dizia.**
+
+A migration é a **`0057`** e ela cobre as duas coisas — a tabela e a coluna de
+transcrição do §2.4 —, porque as duas são aditivas e separá-las custaria duas
+idas ao banco compartilhado. Aplicada em produção em 15/set com os dois testes
+(replay em Docker e ensaio em transação). O estado conferido está em
+[BANCO-COMPARTILHADO.md](BANCO-COMPARTILHADO.md).
+
+O plano dizia para conferir a granularidade do cron antes de prometer precisão
+de minuto. **Conferido, e não dá:** o time na Vercel é `hobby`, e lá o cron
+dispara uma vez por dia. Não há quarta tarefa agendada no `vercel.json` de
+propósito — o Hobby limita o número delas, e uma que a plataforma recuse não
+falha sozinha: reprova o deploy inteiro. Então a passada das agendadas roda
+junto do cron de tarefas que já existe.
+
+Quem dá resolução de verdade são **três gatilhos**, o mesmo desenho que
+`rodarTarefas` já usava:
+
+1. carona no webhook do WhatsApp — a conta que tem mensagem marcada é, quase
+   sempre, a que está conversando;
+2. **carona no pulso do Inbox**, uma vez por minuto dentro do SSE que já roda de
+   segundo em segundo enquanto alguém tem a tela aberta. É isto que cobre a
+   mensagem marcada para uma conversa parada;
+3. o cron diário, como piso.
+
+A tela **diz isso**, em vez de prometer o minuto: *"sai no horário marcado
+enquanto alguém estiver com o Inbox aberto ou chegar mensagem na conta."*
+
+A janela de 24h **avisa e não trava**, e essa foi a decisão que mais mudou em
+relação ao esboço: ela reabre a cada mensagem do cliente, então recusar no
+momento de marcar impediria o caso normal — marcar a resposta de amanhã numa
+conversa que continua hoje à noite. A conferência de verdade é no envio, e a
+recusa da Meta fica guardada em `erro` e aparece na lista.
+
+`enviando` é um estado da máquina e existe para duas passadas simultâneas não
+mandarem a mesma mensagem duas vezes: quem consegue **escrever** o estado é dono
+da linha. Linha presa em `enviando` por mais de cinco minutos volta para a fila
+— e sim, isso pode repetir uma mensagem se a função morreu entre a Meta aceitar
+e o `marcarEnviada`. Entre repetir e sumir em silêncio, repetir é o trato, e é o
+mesmo de `devolverDesconhecidas`.
+
+### 2.4 Transcrição de áudio — **feito**
 
 O dono perguntou se depende de IA. **Depende — não existe transcrição sem
 modelo de fala.** A resposta prática é que a chave já existe: `GEMINI_API_KEY`
@@ -302,7 +343,15 @@ Desenho proposto:
   conversa vira uma conta na fatura.
 - Só funciona para áudio com cópia guardada. Os antigos não têm (ver §3.2).
 
-### 2.5 A fonte dentro da conversa (pedido do dono)
+**Sobre o §2.4, o que precisa ser sabido antes de mexer:** transcrever manda a
+voz do cliente para o Gemini, hoje com a chave da 4YU no free tier — que treina
+modelo com o que passa por ela. Por isso é **sob demanda**, nunca automático: o
+clique é o consentimento de quem atende. O resultado é guardado em
+`messages.transcricao` para uma conversa aberta dez vezes não virar dez
+chamadas. Está escrito em `server/transcrever-audio.ts` e resumido na dica do
+botão.
+
+### 2.5 A fonte dentro da conversa (pedido do dono) — **feito**
 
 **O problema.** O produto inteiro usa **Outfit** (`--font-outfit`,
 `app/layout.tsx`), e a bolha de mensagem herda. Outfit é uma geométrica de
@@ -378,6 +427,47 @@ autor nenhum.
 `max-w-[460px]` deixavam pouco mais de trinta caracteres à vista: nome completo
 não cabia. Foi para `680px`, com o campo um pouco mais alto. O `mx-auto`
 continua centrando entre o título e a engrenagem.
+
+### 2.8 A linha de escrever, segunda passada — **feito**
+
+Pedidos do dono depois de ver a primeira versão em produção:
+
+- **os três ícones viraram traço** (`components/lead/icones-da-barra.tsx`) e
+  subiram para 18px, com o botão em 40. Eram emoji do sistema, e o `🎤` do
+  Windows é um microfone de palco — o dono leu como karaokê. Emoji também não
+  obedece `currentColor`, então o hover não os alcançava;
+- **a barra de rolagem só aparece ao bater o teto.** O padrão do `<textarea>` é
+  `overflow: auto`, e "auto" mente enquanto a altura é reescrita a cada tecla:
+  desenha a barra por um quadro no meio do crescimento. Agora é `hidden` abaixo
+  do teto e `auto` nele.
+
+### 2.9 Link na conversa — **azul feito, prévia na fila**
+
+Endereço colado virava texto comum: não dava para clicar e não parecia link. A
+`TextoDoWhatsApp` agora reconhece `https://`, `http://` e `www.`, e desenha em
+`text-primary` com sublinhado — que fica azul no que chega e **branco no que
+sai**, porque `.bolha-nossa` redefine `--primary` (§1.3, a armadilha jogando a
+favor desta vez). A pontuação final fica fora do endereço, senão "veja em
+exemplo.com." abriria uma página que não existe.
+
+**Falta a prévia**, que é o que o dono pediu de verdade: cartão com título,
+domínio e imagem, como o WhatsApp mostra ao colar. Ela é maior do que parece e
+não é só front-end:
+
+- alguém precisa **buscar** o `<title>`, `og:title`, `og:description` e
+  `og:image` do endereço. Isso é uma requisição do nosso servidor para um host
+  que um desconhecido escolheu — ou seja, **SSRF**: precisa recusar IP privado,
+  `localhost`, redirecionamento para rede interna, e ter teto de tamanho e de
+  tempo;
+- o resultado tem que ser **guardado**, senão cada abertura da conversa refaz a
+  busca de todos os links dela;
+- a imagem não pode ser servida do host de origem direto na tela (vaza o IP de
+  quem olha e some quando o site sai do ar): ou passa pelo nosso Storage, ou a
+  prévia fica só com texto.
+
+Uma tabela `previas_de_link` (endereço normalizado como chave, campos da prévia,
+`buscada_em`) resolve as duas primeiras. Migration nova; leia
+[BANCO-COMPARTILHADO.md](BANCO-COMPARTILHADO.md) antes.
 
 ---
 
