@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   comoMostrar,
   idsParaResolver,
+  passagensComNome,
   venceu,
   VALIDADE_DO_NOME_EM_HORAS,
   type AnuncioEmCache,
@@ -88,5 +89,37 @@ describe('idsParaResolver', () => {
 
   it('ignora id vazio', () => {
     expect(idsParaResolver(['', '   '], new Map(), agora)).toEqual([])
+  })
+})
+
+describe('passagensComNome', () => {
+  const passagens = [
+    { adId: 'a2', titulo: 'Promoção de setembro', criadoEm: '2026-09-10T10:00:00Z' },
+    { adId: 'a1', titulo: 'Filme institucional', criadoEm: '2026-08-02T10:00:00Z' },
+  ]
+
+  it('usa o nome da campanha quando ele foi resolvido', () => {
+    const cache = new Map([['a1', emCache('a1', 1)]])
+    const r = passagensComNome(passagens, cache)
+
+    expect(r[0]?.texto).toBe('Promoção de setembro')
+    expect(r[1]?.texto).toBe('campanha a1')
+  })
+
+  /*
+   * O ponto do modelo novo: duas chegadas pelo mesmo anúncio são duas linhas,
+   * e não uma deduplicada. Clicar de novo em outro dia é um fato a mais.
+   */
+  it('a mesma campanha duas vezes continua sendo duas passagens', () => {
+    const duas = [
+      { adId: 'a1', titulo: 'Filme', criadoEm: '2026-09-10T10:00:00Z' },
+      { adId: 'a1', titulo: 'Filme', criadoEm: '2026-08-02T10:00:00Z' },
+    ]
+    expect(passagensComNome(duas, new Map())).toHaveLength(2)
+  })
+
+  it('sem cache nenhum, o título do dia responde', () => {
+    const r = passagensComNome(passagens, new Map())
+    expect(r.map((p) => p.texto)).toEqual(['Promoção de setembro', 'Filme institucional'])
   })
 })

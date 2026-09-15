@@ -55,6 +55,44 @@ export type AnuncioEmCache = NomesDoAnuncio & {
 }
 
 /**
+ * Uma chegada pelo anúncio, como ela aconteceu.
+ *
+ * **É evento, não atributo.** Quem veio pela campanha de agosto, sumiu e voltou
+ * pela de setembro tem duas — e as duas são verdade. O contato é a entidade; a
+ * campanha é o meio por onde ele chegou, daquela vez.
+ *
+ * `titulo` é o que a pessoa **leu antes de clicar**, congelado. Difere de
+ * `NomesDoAnuncio`, que é como o anúncio se chama hoje: o criativo pode ter
+ * sido trocado, e as duas perguntas têm respostas diferentes.
+ */
+export type Passagem = {
+  adId: string
+  titulo: string
+  criadoEm: string
+}
+
+/**
+ * As passagens com o melhor nome que existir para cada uma.
+ *
+ * O cache entra por `ad_id`. Passagem cujo anúncio ainda não foi resolvido
+ * mantém o título do dia — que é informação de verdade, não um vazio.
+ */
+export function passagensComNome(
+  passagens: Passagem[],
+  cache: Map<string, AnuncioEmCache>,
+): { adId: string; texto: string; detalhe: string | null; criadoEm: string }[] {
+  return passagens.map((passagem) => {
+    const nomes = cache.get(passagem.adId) ?? null
+    const { texto, detalhe } = comoMostrar({
+      rotulo: 'Anúncio',
+      titulo: passagem.titulo,
+      nomes,
+    })
+    return { adId: passagem.adId, texto, detalhe, criadoEm: passagem.criadoEm }
+  })
+}
+
+/**
  * O cache venceu?
  *
  * **Vencido não é inútil.** Um nome de 30 horas continua sendo o melhor palpite
