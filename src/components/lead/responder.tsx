@@ -258,13 +258,7 @@ export function CaixaDeResposta({
         meio de um retângulo alto.
       */}
       <div className="flex items-end gap-1">
-        {anexo && !gravando && (
-          <BotaoDeAnexo
-            clienteId={anexo.clienteId}
-            contatoId={anexo.contatoId}
-            desabilitado={enviando}
-          />
-        )}
+        {anexo && !gravando && <BotaoDeAnexo desabilitado={enviando} />}
         {/*
           O emoji entra pelo mesmo caminho da resposta rápida: `inserirResposta`
           escreve no cursor e confere o teto de 4.096 caracteres. Um caminho só

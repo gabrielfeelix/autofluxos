@@ -24,6 +24,7 @@ import { CaixaDeResposta } from '@/components/lead/responder'
 import { RodapeDaMensagem } from '@/components/lead/rodape-da-mensagem'
 import { Transcricao } from '@/components/lead/transcricao'
 import { ProvedorDeCitacao } from '@/components/lead/citacao'
+import { ProvedorDeEntrega } from '@/components/lead/entrega-de-arquivos'
 import {
   acaoAssumirAtendimento,
   acaoAtribuirPara,
@@ -635,37 +636,48 @@ async function Conteudo({
             */}
             <ProvedorDeCitacao key={selecionado.contatoId}>
               {/*
-                `overflow-x-hidden`, e não `overflow-auto` nos dois eixos.
+                Arrastar um arquivo para dentro da conversa cai aqui, e o painel
+                de revisão abre **dentro desta coluna** — sem escurecer a fila
+                da esquerda nem o cabeçalho de quem está do outro lado.
 
-                Uma URL de anúncio com 180 caracteres e nenhum espaço não tem
-                onde quebrar: ela esticava a bolha para além da coluna, o
-                contêiner ganhava rolagem horizontal, e arrastar de lado
-                deslocava a conversa inteira para fora da moldura. O `max-w` da
-                bolha não segurava porque `overflow-wrap` nasce em `normal` —
-                palavra sem espaço simplesmente transborda.
-
-                A quebra é resolvida na bolha (`[overflow-wrap:anywhere]`); isto
-                aqui é a garantia de que nenhum outro conteúdo largo — uma
-                tabela colada, um anexo fora de medida — reintroduza o mesmo
-                defeito.
+                A `key` do provedor de cima também protege este: trocar de
+                conversa não pode levar junto um anexo escolhido para outra
+                pessoa.
               */}
-              <div className="flex min-h-0 flex-1 flex-col-reverse overflow-x-hidden overflow-y-auto bg-panel p-5">
-                <Historico
-                  mensagens={conversa.mensagens}
-                  cortada={conversa.cortada}
-                  nome={selecionado.nome}
-                  clienteId={clienteId}
-                  contatoId={selecionado.contatoId}
+              <ProvedorDeEntrega clienteId={clienteId} contatoId={selecionado.contatoId}>
+                {/*
+                  `overflow-x-hidden`, e não `overflow-auto` nos dois eixos.
+
+                  Uma URL de anúncio com 180 caracteres e nenhum espaço não tem
+                  onde quebrar: ela esticava a bolha para além da coluna, o
+                  contêiner ganhava rolagem horizontal, e arrastar de lado
+                  deslocava a conversa inteira para fora da moldura. O `max-w` da
+                  bolha não segurava porque `overflow-wrap` nasce em `normal` —
+                  palavra sem espaço simplesmente transborda.
+
+                  A quebra é resolvida na bolha (`[overflow-wrap:anywhere]`); isto
+                  aqui é a garantia de que nenhum outro conteúdo largo — uma
+                  tabela colada, um anexo fora de medida — reintroduza o mesmo
+                  defeito.
+                */}
+                <div className="flex min-h-0 flex-1 flex-col-reverse overflow-x-hidden overflow-y-auto bg-panel p-5">
+                  <Historico
+                    mensagens={conversa.mensagens}
+                    cortada={conversa.cortada}
+                    nome={selecionado.nome}
+                    clienteId={clienteId}
+                    contatoId={selecionado.contatoId}
+                  />
+                </div>
+                <CaixaDeResposta
+                  acao={acaoResponderLead.bind(null, clienteId, selecionado.contatoId)}
+                  restaDaJanela={janela}
+                  nome={primeiroNome}
+                  respostasRapidas={respostasRapidas}
+                  temAutomacao={temAutomacao}
+                  anexo={{ clienteId, contatoId: selecionado.contatoId }}
                 />
-              </div>
-              <CaixaDeResposta
-                acao={acaoResponderLead.bind(null, clienteId, selecionado.contatoId)}
-                restaDaJanela={janela}
-                nome={primeiroNome}
-                respostasRapidas={respostasRapidas}
-                temAutomacao={temAutomacao}
-                anexo={{ clienteId, contatoId: selecionado.contatoId }}
-              />
+              </ProvedorDeEntrega>
             </ProvedorDeCitacao>
           </section>
         ) : (
