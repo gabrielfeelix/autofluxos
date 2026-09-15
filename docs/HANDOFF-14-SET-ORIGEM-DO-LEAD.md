@@ -11,8 +11,22 @@ Catorze commits, árvore limpa, `main` em `a886114`. Typecheck e lint limpos,
 682 testes de `core/` + `channels/` passando, 33 de `receber-mensagem` passando
 contra o banco local.
 
-**Nada foi aplicado em produção.** A migration `0050` está escrita, aplicada e
-verificada **só no Supabase local**.
+**A `0050` foi aplicada em produção em 14/set/2026**, com autorização explícita
+do dono, pela Management API (o aplicador do AutoFluxos — nunca `db push`).
+
+Roteiro seguido, na ordem do [BANCO-COMPARTILHADO.md](BANCO-COMPARTILHADO.md):
+
+1. ensaio `begin; <migration>; rollback;` contra a produção — criou as duas
+   tabelas e desfez, com `0` objetos remanescentes conferidos depois;
+2. aplicação;
+3. conferência objeto a objeto: `passagens` (10 colunas) e `anuncios` (7), RLS
+   ligada nas duas, seis índices, PostgREST respondendo `200` em ambas;
+4. **Verandi intacta** — 42 tabelas em `app_verandi` antes e depois; `public`
+   foi de 46 para 48;
+5. teste de fumaça em transação com rollback: duas passagens gravadas e o retry
+   do webhook recusado pelo índice de dedupe.
+
+Nenhum dado de teste ficou no banco.
 
 ## A pergunta que originou tudo
 
@@ -106,9 +120,7 @@ imutável. Está comentado no arquivo.
 
 ## O que falta, em ordem
 
-1. **Aplicar a `0050` em produção.** Não foi feito e exige autorização
-   explícita do dono (`AGENTS.md`). Sem ela o registro de passagem falha em
-   silêncio (vira alerta) e a tela mostra o que mostrava antes — nada quebra.
+1. ~~Aplicar a `0050` em produção.~~ **Feito em 14/set.** Ver acima.
 2. **Criar a conexão `meta-ads`** para o nome da campanha aparecer. Sem ela a
    lista de passagens funciona igual, com o título que a pessoa leu no dia.
 3. **Testar com anúncio real.** Ninguém clicou num CTWA de verdade ainda; a
