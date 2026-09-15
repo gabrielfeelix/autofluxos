@@ -127,3 +127,142 @@ export async function lerNomesDoAnuncio(entrada: {
     clearTimeout(prazo)
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* Lead Ads: o formulário nativo                                               */
+/* -------------------------------------------------------------------------- */
+
+export type RespostaDeLead =
+  | { ok: true; fieldData: unknown; adId: string; criadoEm: string }
+  | { ok: false; erro: ErroDaMarketingApi }
+
+/**
+ * Busca um lead pelo `leadgen_id`.
+ *
+ * **O webhook só manda IDs.** Nunca vem `field_data` no aviso — é preciso vir
+ * aqui buscar, e é por isso que o handler do webhook responde `200` antes e
+ * processa depois: buscar dentro dele transformaria lentidão da Graph em falha
+ * de entrega, e a Meta reentregaria o lote inteiro.
+ *
+ * `fields` explícito, sempre. Sem ele a Graph devolve o conjunto default, que é
+ * menor que o disponível, e some com `ad_id` sem dizer por quê — o erro que faz
+ * alguém concluir que a Meta não manda atribuição.
+ */
+export async function lerLeadDoFormularioNaMeta(entrada: {
+  leadgenId: string
+  token: string
+  versaoGraph?: string
+}): Promise<RespostaDeLead> {
+  const versao = entrada.versaoGraph ?? process.env.META_GRAPH_VERSAO ?? VERSAO_PADRAO
+  const url = new URL(`https://graph.facebook.com/${versao}/${entrada.leadgenId}`)
+  url.searchParams.set('fields', 'id,created_time,ad_id,form_id,field_data')
+
+  const controle = new AbortController()
+  const prazo = setTimeout(() => controle.abort(), TIMEOUT_MS)
+
+  try {
+    const resposta = await fetch(url, {
+      headers: { Authorization: `Bearer ${entrada.token}` },
+      signal: controle.signal,
+    })
+
+    const corpo = (await resposta.json().catch(() => null)) as {
+      field_data?: unknown
+      ad_id?: unknown
+      created_time?: unknown
+      error?: { message?: unknown; code?: unknown } | null
+    } | null
+
+    if (!resposta.ok || corpo?.error) {
+      const codigo = corpo?.error?.code
+      return {
+        ok: false,
+        erro: {
+          codigo: typeof codigo === 'number' ? codigo : null,
+          mensagem: texto(corpo?.error?.message) || `a Meta respondeu ${resposta.status}`,
+        },
+      }
+    }
+
+    return {
+      ok: true,
+      fieldData: corpo?.field_data ?? [],
+      adId: texto(corpo?.ad_id),
+      criadoEm: texto(corpo?.created_time),
+    }
+  } catch (erro) {
+    const detalhe = erro instanceof Error ? erro.message : String(erro)
+    return { ok: false, erro: { codigo: null, mensagem: detalhe } }
+  } finally {
+    clearTimeout(prazo)
+  }
+}
+
+/**
+ * Os leads de um formulário, para a reconciliação diária.
+ *
+ * **Não é luxo, é o que fecha o buraco do webhook.** A Meta não reentrega
+ * depois de um `200`, e o mercado documenta o que isso custa: a RD Station
+ * perdeu 18 dias de leads em jul/2024, e a SleekFlow recupera só os 30 minutos
+ * anteriores a uma reconexão. Como a retenção da Meta é de 90 dias, o que não
+ * for buscado a tempo **não existe mais em lugar nenhum**.
+ *
+ * Varrer o formulário de tempos em tempos é barato e transforma "lead perdido
+ * para sempre" em "lead que chegou algumas horas depois".
+ */
+export async function listarLeadsDoFormulario(entrada: {
+  formId: string
+  token: string
+  desde?: Date
+  versaoGraph?: string
+}): Promise<{ ok: true; leads: { id: string; fieldData: unknown; adId: string }[] } | { ok: false; erro: ErroDaMarketingApi }> {
+  const versao = entrada.versaoGraph ?? process.env.META_GRAPH_VERSAO ?? VERSAO_PADRAO
+  const url = new URL(`https://graph.facebook.com/${versao}/${entrada.formId}/leads`)
+  url.searchParams.set('fields', 'id,created_time,ad_id,field_data')
+  url.searchParams.set('limit', '100')
+  if (entrada.desde) {
+    url.searchParams.set('filtering', JSON.stringify([
+      { field: 'time_created', operator: 'GREATER_THAN', value: Math.floor(entrada.desde.getTime() / 1000) },
+    ]))
+  }
+
+  const controle = new AbortController()
+  const prazo = setTimeout(() => controle.abort(), TIMEOUT_MS)
+
+  try {
+    const resposta = await fetch(url, {
+      headers: { Authorization: `Bearer ${entrada.token}` },
+      signal: controle.signal,
+    })
+
+    const corpo = (await resposta.json().catch(() => null)) as {
+      data?: unknown
+      error?: { message?: unknown; code?: unknown } | null
+    } | null
+
+    if (!resposta.ok || corpo?.error) {
+      const codigo = corpo?.error?.code
+      return {
+        ok: false,
+        erro: {
+          codigo: typeof codigo === 'number' ? codigo : null,
+          mensagem: texto(corpo?.error?.message) || `a Meta respondeu ${resposta.status}`,
+        },
+      }
+    }
+
+    const linhas = Array.isArray(corpo?.data) ? corpo.data : []
+    return {
+      ok: true,
+      leads: linhas.map((linha) => {
+        const l = linha as { id?: unknown; field_data?: unknown; ad_id?: unknown }
+        return { id: texto(l.id), fieldData: l.field_data ?? [], adId: texto(l.ad_id) }
+      }),
+    }
+  } catch (erro) {
+    const detalhe = erro instanceof Error ? erro.message : String(erro)
+    return { ok: false, erro: { codigo: null, mensagem: detalhe } }
+  } finally {
+    clearTimeout(prazo)
+  }
+}
