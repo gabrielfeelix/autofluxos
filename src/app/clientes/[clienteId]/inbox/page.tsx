@@ -11,8 +11,9 @@ import { recemConectado } from '@/core/coexistencia-na-tela'
 import { coexistenciaDoCliente } from '@/server/repos/coexistencia'
 import { ControleDeAutomacao } from '@/components/lead/controle-automacao'
 import { CamposColetados } from '@/components/lead/campos-coletados'
-import { camposSemOrigem, origemDoContato } from '@/core/contatos/origem'
-import type { NomesDoAnuncio } from '@/core/anuncios'
+import { camposSemOrigem } from '@/core/contatos/origem'
+import type { AnuncioEmCache, Passagem } from '@/core/anuncios'
+import { passagensDoContato } from '@/server/repos/passagens'
 import { resolverAnuncios } from '@/server/resolver-anuncios'
 import { tokenDeAnuncios } from '@/server/token-de-anuncios'
 import { QuemE } from '@/components/lead/quem-e'
@@ -433,7 +434,10 @@ async function Conteudo({
    * Sai do `Promise.all` acima porque depende do `selecionado` que ele resolve,
    * e porque o caso comum — conta sem Ads conectado — devolve sem ir à rede.
    */
-  const nomesDoAnuncio = await nomesDoContatoAberto(clienteId, selecionado?.campos ?? null)
+  const { passagens, nomesDosAnuncios } = await historicoDoContatoAberto(
+    clienteId,
+    selecionado?.contatoId ?? null,
+  )
 
   /*
    * Junta a posição do contato com as etapas do quadro dela. Quadro que sumiu
@@ -555,7 +559,8 @@ async function Conteudo({
             etiquetas={etiquetas}
             funis={funis}
             temAutomacao={temAutomacao}
-            nomesDoAnuncio={nomesDoAnuncio}
+            passagens={passagens}
+            nomesDosAnuncios={nomesDosAnuncios}
           />
         )}
       </div>
@@ -706,13 +711,16 @@ function DadosDoLead({
   etiquetas,
   funis,
   temAutomacao,
-  nomesDoAnuncio,
+  passagens,
+  nomesDosAnuncios,
 }: {
   clienteId: string
   lead: Lead
   etiquetas: EtiquetaEscolhivel[]
-  /** Nomes da Marketing API. `null` quando a conta não conectou o Ads. */
-  nomesDoAnuncio: NomesDoAnuncio | null
+  /** Por onde o contato já chegou, da mais recente para a mais antiga. */
+  passagens: Passagem[]
+  /** Nomes da Marketing API por `ad_id`. Vazio quando a conta não conectou o Ads. */
+  nomesDosAnuncios: Map<string, AnuncioEmCache>
   /** Um por quadro em que o contato está. Vazio = fora de todo funil. */
   funis: FunilDoContato[]
   /**
@@ -807,7 +815,8 @@ function DadosDoLead({
           criadoEm={lead.criadoEm}
           ultimaEntradaEm={lead.ultimaEntradaEm}
           campos={lead.campos}
-          nomesDoAnuncio={nomesDoAnuncio}
+          passagens={passagens}
+          nomesDosAnuncios={nomesDosAnuncios}
         />
 
         <div className="mt-5">
@@ -851,28 +860,35 @@ function DadosDoLead({
 }
 
 /**
- * Os nomes do anúncio que trouxe o contato aberto, quando há o que resolver.
+ * O histórico de chegadas do contato aberto, com o nome de cada anúncio.
  *
- * Três saídas sem rede, na ordem em que cortam mais: contato sem origem
- * gravada, origem que não é de anúncio, e conta que não conectou o Ads — que é
+ * Três saídas sem rede, na ordem em que cortam mais: nenhum contato aberto,
+ * contato que nunca chegou por anúncio, e conta que não conectou o Ads — que é
  * o caso da esmagadora maioria. Só o que sobra chega em `resolverAnuncios`, e
  * mesmo ali o cache costuma responder sem falar com a Meta.
+ *
+ * Sem token, as passagens voltam mesmo assim: cada uma tem o título que a
+ * pessoa leu no dia, e é isso que a lista mostra. Conectar o Ads melhora o
+ * rótulo; não conectar não esconde o histórico.
  */
-async function nomesDoContatoAberto(
+async function historicoDoContatoAberto(
   clienteId: string,
-  campos: Record<string, string> | null,
-): Promise<NomesDoAnuncio | null> {
-  if (!campos) return null
+  contatoId: string | null,
+): Promise<{ passagens: Passagem[]; nomesDosAnuncios: Map<string, AnuncioEmCache> }> {
+  const vazio = { passagens: [], nomesDosAnuncios: new Map<string, AnuncioEmCache>() }
+  if (!contatoId) return vazio
 
-  const origem = origemDoContato(campos)
-  if (!origem || !origem.deAnuncio || origem.anuncio === '') return null
+  const passagens = await passagensDoContato(contatoId)
+  if (passagens.length === 0) return vazio
 
   const token = await tokenDeAnuncios(clienteId)
-  if (!token) return null
+  if (!token) return { passagens, nomesDosAnuncios: new Map() }
 
-  const cache = await resolverAnuncios({ clienteId, adIds: [origem.anuncio], token })
-  const achado = cache.get(origem.anuncio)
-  if (!achado) return null
+  const nomesDosAnuncios = await resolverAnuncios({
+    clienteId,
+    adIds: passagens.map((p) => p.adId),
+    token,
+  })
 
-  return { anuncio: achado.anuncio, conjunto: achado.conjunto, campanha: achado.campanha }
+  return { passagens, nomesDosAnuncios }
 }

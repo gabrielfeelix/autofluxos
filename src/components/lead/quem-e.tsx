@@ -1,4 +1,4 @@
-import { comoMostrar, type NomesDoAnuncio } from '@/core/anuncios'
+import { passagensComNome, type AnuncioEmCache, type Passagem } from '@/core/anuncios'
 import { origemDoContato } from '@/core/contatos/origem'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import { horaExata, quando } from '@/lib/quando'
@@ -45,7 +45,8 @@ export function QuemE({
   criadoEm,
   ultimaEntradaEm,
   campos,
-  nomesDoAnuncio = null,
+  passagens = [],
+  nomesDosAnuncios,
 }: {
   /** O telefone como o WhatsApp manda: só dígitos, com DDI. */
   waId: string
@@ -55,14 +56,19 @@ export function QuemE({
   /** O que está gravado no contato. A origem sai daqui. */
   campos: Record<string, string>
   /**
-   * Os nomes resolvidos na Marketing API, quando a conta conectou o Ads.
+   * Por onde a pessoa já chegou, da mais recente para a mais antiga.
    *
-   * `null` é o caso comum — conta sem Ads conectado, token vencido, Meta fora
-   * do ar. A linha continua aparecendo com o título do anúncio, e é por isso
-   * que este parâmetro tem default: quem não sabe de anúncio nenhum não
-   * precisa saber que ele existe.
+   * Vazio é o caso comum — a maioria escreve direto, sem anúncio no meio.
    */
-  nomesDoAnuncio?: NomesDoAnuncio | null
+  passagens?: Passagem[]
+  /**
+   * Os nomes resolvidos na Marketing API, por `ad_id`.
+   *
+   * Mapa vazio é normal: conta sem Ads conectado, token vencido, Meta fora do
+   * ar. Cada passagem cai para o título que a pessoa leu no dia, que já está
+   * guardado — a lista nunca fica vazia por causa disso.
+   */
+  nomesDosAnuncios?: Map<string, AnuncioEmCache>
 }) {
   const origem = origemDoContato(campos)
 
@@ -95,7 +101,9 @@ export function QuemE({
         então ele é o que a linha mostra; o id fica no `title`, para quem
         precisar casar com o Gerenciador de Anúncios.
       */}
-      {origem !== null && <LinhaDeOrigem origem={origem} nomes={nomesDoAnuncio} />}
+      {origem !== null && (
+        <LinhaDeOrigem origem={origem} passagens={passagens} nomes={nomesDosAnuncios} />
+      )}
 
       {/*
         O relativo é o que se lê; o exato fica no `title`. "há 3 meses" responde
@@ -131,42 +139,79 @@ export function QuemE({
 }
 
 /**
- * A origem, com o melhor nome que existir para ela.
+ * Por onde a pessoa chegou — todas as vezes.
  *
- * A escolha do texto está em `comoMostrar`, e não aqui, porque ela é a regra do
- * produto — nome da campanha ganha do título do anúncio, que ganha do rótulo —
- * e regra de produto testada por `npm test` não depende de alguém abrir a tela.
+ * ---------------------------------------------------------------------------
+ * Por que uma lista, e não um campo
+ * ---------------------------------------------------------------------------
  *
- * O `title` carrega o `ad_id` mesmo quando o nome aparece: é o número que casa
- * com o Gerenciador de Anúncios, e quem for conferir investimento precisa dele.
+ * Porque o contato é a entidade e a campanha é o meio por onde ele chegou,
+ * daquela vez. Quem veio pela campanha de agosto, sumiu e voltou pela de
+ * setembro passou por duas, e as duas explicam alguma coisa: a primeira, como
+ * essa pessoa virou nossa; a segunda, por que ela está escrevendo hoje.
+ *
+ * A mais recente vem em cima porque é a que responde o presente — é ela que diz
+ * o que a pessoa acabou de ver antes de abrir a conversa.
+ *
+ * **Contato sem passagem nenhuma ainda mostra a linha**, com o rótulo que está
+ * gravado ("Direto"). Ela responde de qualquer forma: essa pessoa não veio de
+ * anúncio, veio sozinha.
  */
 function LinhaDeOrigem({
   origem,
+  passagens,
   nomes,
 }: {
   origem: { rotulo: string; titulo: string; anuncio: string }
-  nomes: NomesDoAnuncio | null
+  passagens: Passagem[]
+  nomes?: Map<string, AnuncioEmCache>
 }) {
-  const { texto, detalhe } = comoMostrar({
-    rotulo: origem.rotulo,
-    titulo: origem.titulo,
-    nomes,
-  })
+  const comNome = passagensComNome(passagens, nomes ?? new Map())
+
+  if (comNome.length === 0) {
+    return (
+      <Linha rotulo="Origem">
+        <span
+          title={origem.anuncio === '' ? undefined : `Anúncio ${origem.anuncio}`}
+          className="text-[11px] text-soft"
+        >
+          {origem.titulo !== '' ? origem.titulo : origem.rotulo}
+        </span>
+      </Linha>
+    )
+  }
 
   return (
-    <Linha rotulo="Origem">
-      <span
-        title={origem.anuncio === '' ? undefined : `Anúncio ${origem.anuncio}`}
-        className="text-[11px] text-soft"
-      >
-        {texto}
-      </span>
-      {/*
-        O conjunto e o criativo numa segunda linha, menor: eles distinguem duas
-        conversas da mesma campanha, o que importa a quem analisa e é ruído a
-        quem só vai responder "oi". Some quando não há nome resolvido.
-      */}
-      {detalhe !== null && <span className="block text-[10px] text-dim">{detalhe}</span>}
+    <Linha rotulo={comNome.length === 1 ? 'Origem' : `Origem · ${comNome.length}`}>
+      <ul className="space-y-1">
+        {comNome.map((passagem) => (
+          <li key={`${passagem.adId}-${passagem.criadoEm}`}>
+            <span title={`Anúncio ${passagem.adId}`} className="text-[11px] text-soft">
+              {passagem.texto}
+            </span>
+            {/*
+              O conjunto e o criativo saem numa segunda linha, menores: eles
+              distinguem duas chegadas da mesma campanha, o que importa a quem
+              analisa e é ruído a quem só vai responder "oi".
+            */}
+            {passagem.detalhe !== null && (
+              <span className="block text-[10px] text-dim">{passagem.detalhe}</span>
+            )}
+            {/*
+              A data é o que transforma a lista em linha do tempo. Sem ela,
+              "duas campanhas" é um fato solto; com ela, vira "essa pessoa é
+              nossa desde agosto e voltou agora".
+            */}
+            <time
+              dateTime={passagem.criadoEm}
+              title={horaExata(passagem.criadoEm)}
+              className="block text-[10px] text-dim"
+            >
+              {quando(passagem.criadoEm)}
+            </time>
+          </li>
+        ))}
+      </ul>
     </Linha>
   )
 }
