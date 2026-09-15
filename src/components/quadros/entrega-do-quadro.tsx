@@ -41,7 +41,7 @@ export function EntregaDoQuadro({
         rotuloAcessivel="Para qual funil este quadro entrega ao ganhar"
         valor={seguinteId ?? ''}
         desabilitado={rodando}
-        className="w-[220px] shrink-0"
+        className="w-[200px] shrink-0"
         opcoes={[
           { valor: '', rotulo: 'Nenhum funil' },
           ...outros.map((quadro) => ({ valor: quadro.id, rotulo: quadro.nome })),

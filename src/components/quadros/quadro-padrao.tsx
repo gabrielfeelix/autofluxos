@@ -72,7 +72,10 @@ export function QuadroPadrao({
           ? 'Contato novo entra aqui por ser o quadro mais antigo da conta. Marque outro quadro para mudar o destino.'
           : 'Quando alguém escreve pela primeira vez, o contato vira cartão na primeira etapa deste quadro. Só um quadro por conta pode receber.'
       }
-      className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] transition ${
+      /* `shrink-0` e `whitespace-nowrap`: sem os dois o chip encolhia no
+         cabeçalho apertado e o texto vazava para fora da própria borda, indo
+         parar atrás do dropdown vizinho. */
+      className={`flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] whitespace-nowrap transition ${
         recebendo
           ? 'border-emerald-400/25 bg-emerald-400/[0.07] text-ok'
           : 'border-line bg-surface text-muted hover:border-strong'

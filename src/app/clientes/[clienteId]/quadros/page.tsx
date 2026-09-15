@@ -111,7 +111,10 @@ export default async function Pagina({
             </nav>
           )}
 
-          <span className="ml-auto flex items-center gap-2">
+          {/* Quebra linha em vez de espremer: são quatro controles de larguras
+              diferentes, e num cabeçalho estreito espremer significa um passar
+              por cima do outro. */}
+          <span className="ml-auto flex flex-wrap items-center justify-end gap-2">
             {aberto && (
               <EntregaDoQuadro
                 clienteId={cliente.id}
