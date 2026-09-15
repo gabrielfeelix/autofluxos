@@ -97,7 +97,7 @@ function UmFunil({ clienteId, funil }: { clienteId: string; funil: FunilDoContat
     <div className="rounded-[10px] border border-line bg-panel px-3 py-2.5">
       <div className="flex items-baseline justify-between gap-2">
         <span className="min-w-0 truncate text-[10px] text-dim">{funil.quadro}</span>
-        {erro && <span className="shrink-0 text-[10px] text-rose-300">{erro}</span>}
+        {erro && <span className="shrink-0 text-[10px] text-perigo">{erro}</span>}
       </div>
 
       <div className="relative mt-1">

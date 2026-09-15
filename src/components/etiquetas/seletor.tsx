@@ -184,7 +184,7 @@ export function SeletorDeEtiquetas({
       )}
 
       {erro && (
-        <p role="alert" className="mt-1.5 text-[10.5px] leading-4 text-rose-300">
+        <p role="alert" className="mt-1.5 text-[10.5px] leading-4 text-perigo">
           {erro}
         </p>
       )}

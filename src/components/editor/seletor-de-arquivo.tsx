@@ -218,7 +218,7 @@ export function SeletorDeArquivo({
           <button
             type="button"
             onClick={() => aoEscolher({ url: '', midia })}
-            className="rounded-lg px-2 py-1 text-[11px] font-semibold text-dim transition hover:bg-surface-strong hover:text-rose-300"
+            className="rounded-lg px-2 py-1 text-[11px] font-semibold text-dim transition hover:bg-surface-strong hover:text-perigo"
           >
             Trocar
           </button>
@@ -372,7 +372,7 @@ export function SeletorDeArquivo({
       )}
 
       {erro && (
-        <p role="alert" className="text-[11px] leading-4 text-rose-300">
+        <p role="alert" className="text-[11px] leading-4 text-perigo">
           {erro}
         </p>
       )}

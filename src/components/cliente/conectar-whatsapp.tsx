@@ -274,7 +274,7 @@ export function ConectarWhatsapp({
       </button>
 
       {erro && (
-        <p role="alert" className="mt-3 text-[12px] leading-5 text-rose-300">
+        <p role="alert" className="mt-3 text-[12px] leading-5 text-perigo">
           {erro}
         </p>
       )}

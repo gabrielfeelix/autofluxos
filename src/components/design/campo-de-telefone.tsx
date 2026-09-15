@@ -52,7 +52,7 @@ export function CampoDeTelefone({
         className="app-field px-[13px] py-[11px] text-[13.5px]"
       />
       {incompleto ? (
-        <span role="alert" className="mt-1.5 block text-[11px] text-rose-300">
+        <span role="alert" className="mt-1.5 block text-[11px] text-perigo">
           Faltam dígitos — são 10 com fixo e 11 com celular, contando o DDD. Ou deixe em branco.
         </span>
       ) : (

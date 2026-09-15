@@ -127,7 +127,7 @@ export function PilhaDeMensagem({
               type="button"
               aria-label={`Remover o pedaço ${indice + 1}`}
               onClick={() => remover(indice)}
-              className="rounded-md px-1.5 py-0.5 text-[12px] text-dim transition hover:bg-rose-400/10 hover:text-rose-300"
+              className="rounded-md px-1.5 py-0.5 text-[12px] text-dim transition hover:bg-rose-400/10 hover:text-perigo"
             >
               ✕
             </button>
@@ -368,7 +368,7 @@ function CampoDeTexto({
     <div>
       <BarraDeFormato area={area} aoMudar={aoMudar} variaveis={conhecidas}>
         <span
-          className={`font-mono text-[10px] ${estourou ? 'font-bold text-rose-300' : 'text-dim'}`}
+          className={`font-mono text-[10px] ${estourou ? 'font-bold text-perigo' : 'text-dim'}`}
         >
           {valor.length}/{LIMITE_TEXTO}
         </span>

@@ -154,7 +154,7 @@ export function Compartilhar({
           {avisos.length > 0 && (
             <ul className="mt-4 flex flex-col gap-2 rounded-xl border border-amber-300/20 bg-amber-300/[0.05] p-3.5">
               {avisos.map((aviso) => (
-                <li key={aviso.codigo} className="text-[11.5px] leading-[1.6] text-amber-100/90">
+                <li key={aviso.codigo} className="text-[11.5px] leading-[1.6] text-aviso/90">
                   {aviso.mensagem}
                 </li>
               ))}
@@ -196,7 +196,7 @@ export function Compartilhar({
           </div>
 
           {erro && (
-            <p role="alert" className="mt-3 text-[11.5px] text-rose-300">
+            <p role="alert" className="mt-3 text-[11.5px] text-perigo">
               {erro}
             </p>
           )}
@@ -241,7 +241,7 @@ export function Compartilhar({
                             onClick={() => revogar(link.id)}
                             disabled={rodando}
                             title="Fecha o link. A contagem do que ele já fez fica."
-                            className="shrink-0 rounded-lg border border-rose-400/25 px-2.5 py-1.5 text-[11px] text-rose-300 transition hover:bg-rose-400/10"
+                            className="shrink-0 rounded-lg border border-rose-400/25 px-2.5 py-1.5 text-[11px] text-perigo transition hover:bg-rose-400/10"
                           >
                             revogar
                           </button>

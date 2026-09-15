@@ -275,7 +275,7 @@ export function BotaoDeAnexo({
                   className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-[12px] outline-none transition focus:border-primary/50 disabled:opacity-50"
                 />
                 {legendaGrande && (
-                  <p className="mt-1 text-[10.5px] text-rose-200">
+                  <p className="mt-1 text-[10.5px] text-perigo">
                     a legenda aceita {LIMITE_LEGENDA} caracteres, e esta tem {legenda.length}
                   </p>
                 )}
@@ -283,7 +283,7 @@ export function BotaoDeAnexo({
             )}
 
             {erro && (
-              <p className="rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2 text-[11.5px] leading-5 text-rose-200">
+              <p className="rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2 text-[11.5px] leading-5 text-perigo">
                 {erro}
               </p>
             )}
@@ -312,7 +312,7 @@ export function BotaoDeAnexo({
 
       {/* Erro que sobra depois de o diálogo fechar — raro, mas não pode sumir. */}
       {erro && !escolhido && (
-        <p className="mt-2 w-full rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2 text-[11.5px] leading-5 text-rose-200">
+        <p className="mt-2 w-full rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2 text-[11.5px] leading-5 text-perigo">
           {erro}
         </p>
       )}

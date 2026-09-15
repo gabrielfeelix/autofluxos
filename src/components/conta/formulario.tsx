@@ -97,7 +97,7 @@ export function FormularioDeConta({
       {estado.erro && (
         <p
           role="alert"
-          className="border-l-2 border-rose-400 py-0.5 pl-3 text-[12.5px] leading-5 text-rose-300"
+          className="border-l-2 border-rose-400 py-0.5 pl-3 text-[12.5px] leading-5 text-perigo"
         >
           {estado.erro}
         </p>

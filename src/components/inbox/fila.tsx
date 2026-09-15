@@ -379,7 +379,7 @@ export function Fila({
                         ? `Aguardando pessoa: ${lead.aguardando.motivo}`
                         : undefined
                     }
-                    className={`min-w-0 flex-1 truncate text-[10.5px] ${lead.aguardando ? 'text-rose-300' : semLer > 0 ? 'text-soft' : 'text-muted'}`}
+                    className={`min-w-0 flex-1 truncate text-[10.5px] ${lead.aguardando ? 'text-perigo' : semLer > 0 ? 'text-soft' : 'text-muted'}`}
                   >
                     {lead.aguardando ? `Pessoa: ${lead.aguardando.motivo}` : resumoDaConversa(lead)}
                   </span>
@@ -502,7 +502,7 @@ function RelogioDaJanela({ ultimaEntradaEm }: { ultimaEntradaEm: string | null }
 
   if (restante === 0) {
     return (
-      <span className="mt-0.5 block text-[10px] font-semibold text-rose-300">
+      <span className="mt-0.5 block text-[10px] font-semibold text-perigo">
         janela fechada — só modelo aprovado
       </span>
     )
@@ -513,7 +513,7 @@ function RelogioDaJanela({ ultimaEntradaEm }: { ultimaEntradaEm: string | null }
   const apertado = restante < 2 * 60 * 60 * 1000
 
   return (
-    <span className={`mt-0.5 block text-[10px] ${apertado ? 'font-semibold text-amber-300' : 'text-dim'}`}>
+    <span className={`mt-0.5 block text-[10px] ${apertado ? 'font-semibold text-aviso' : 'text-dim'}`}>
       responder em {comoFalta(restante)}
     </span>
   )

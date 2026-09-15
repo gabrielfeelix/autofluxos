@@ -49,18 +49,18 @@ export function ImportarContatos({
       </form>
 
       {estado.erro && (
-        <p className="mt-4 rounded-lg border border-rose-400/25 bg-rose-400/[0.07] px-3.5 py-2.5 text-[12.5px] leading-5 text-rose-200">
+        <p className="mt-4 rounded-lg border border-rose-400/25 bg-rose-400/[0.07] px-3.5 py-2.5 text-[12.5px] leading-5 text-perigo">
           {estado.erro}
         </p>
       )}
 
       {estado.ok && estado.resumo && (
         <div className="mt-4 rounded-lg border border-emerald-400/25 bg-emerald-400/[0.06] px-3.5 py-2.5">
-          <p className="text-[12.5px] font-semibold text-emerald-200">{estado.resumo}</p>
+          <p className="text-[12.5px] font-semibold text-ok">{estado.resumo}</p>
 
           {estado.pendentes && estado.pendentes.length > 0 && (
             <details className="mt-2.5">
-              <summary className="cursor-pointer text-[12px] text-amber-200">
+              <summary className="cursor-pointer text-[12px] text-aviso">
                 Ver as {estado.pendentes.length} que não entraram
               </summary>
               {/* Com o número da linha, porque "40 sem importar" não diz quais

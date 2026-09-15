@@ -80,7 +80,7 @@ export async function PainelShell({ children }: { children: ReactNode }) {
           <form action={acaoSair}>
             <button
               type="submit"
-              className="rounded-[7px] px-1.5 py-1 text-[11.5px] font-semibold text-dim transition hover:bg-rose-400/[0.08] hover:text-rose-300"
+              className="rounded-[7px] px-1.5 py-1 text-[11.5px] font-semibold text-dim transition hover:bg-rose-400/[0.08] hover:text-perigo"
             >
               Sair
             </button>

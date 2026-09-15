@@ -193,7 +193,7 @@ export function RodapeDaMensagem({
       )}
 
       {erro && (
-        <span className="max-w-[220px] text-[10px] leading-4 text-rose-200" role="alert">
+        <span className="max-w-[220px] text-[10px] leading-4 text-perigo" role="alert">
           {erro}
         </span>
       )}

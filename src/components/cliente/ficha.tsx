@@ -140,7 +140,7 @@ function Logo({
       </div>
       {cliente.logoUrl && (
         <form action={removerLogo}>
-          <button className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-[12px] font-semibold text-dim transition hover:border-rose-400/30 hover:text-rose-300">
+          <button className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-[12px] font-semibold text-dim transition hover:border-rose-400/30 hover:text-perigo">
             Tirar logo
           </button>
         </form>

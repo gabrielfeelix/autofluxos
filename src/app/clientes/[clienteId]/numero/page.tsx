@@ -162,10 +162,10 @@ export default async function Pagina({
           <p
             className={`mb-5 rounded-[10px] border px-3.5 py-2.5 text-[12.5px] leading-6 ${
               aviso.tom === 'bom'
-                ? 'border-emerald-400/25 bg-emerald-400/[0.07] text-emerald-200'
+                ? 'border-emerald-400/25 bg-emerald-400/[0.07] text-ok'
                 : aviso.tom === 'neutro'
                   ? 'border-line bg-surface text-muted'
-                  : 'border-amber-400/25 bg-amber-400/[0.07] text-amber-200'
+                  : 'border-amber-400/25 bg-amber-400/[0.07] text-aviso'
             }`}
           >
             {aviso.texto}
@@ -239,7 +239,7 @@ export default async function Pagina({
                   <strong className="text-muted">é escolha sua</strong>, não obrigação.
                 </li>
               </ol>
-              <p className="mt-2.5 text-[11.5px] text-amber-200/90">
+              <p className="mt-2.5 text-[11.5px] text-aviso/90">
                 Não é QR code — a confirmação é por código, dentro do seu WhatsApp Business.
               </p>
               <p className="mt-2 text-[11.5px] leading-5 text-dim">
@@ -265,7 +265,7 @@ export default async function Pagina({
 
           {!podeConectar && (
             <>
-              <p className="mt-3 text-[12px] text-amber-300">
+              <p className="mt-3 text-[12px] text-aviso">
                 Falta <code className="font-mono">META_APP_ID</code> e{' '}
                 <code className="font-mono">META_WHATSAPP_CONFIG_ID</code> no ambiente deste
                 servidor.
@@ -448,7 +448,7 @@ export default async function Pagina({
                       />
                     </div>
                     {aviso && (
-                      <p className="mt-2 ml-4 rounded-lg border border-amber-300/25 bg-amber-300/[0.08] px-2.5 py-2 text-[11.5px] text-amber-200">
+                      <p className="mt-2 ml-4 rounded-lg border border-amber-300/25 bg-amber-300/[0.08] px-2.5 py-2 text-[11.5px] text-aviso">
                         {aviso}
                       </p>
                     )}
@@ -457,7 +457,7 @@ export default async function Pagina({
                       <div className="mt-2.5 ml-4">
                         {situacao === 'sincronizando' && (
                           <div className="rounded-lg border border-sky-400/25 bg-sky-400/[0.07] px-3 py-2.5">
-                            <p className="text-[11.5px] font-semibold text-sky-200">
+                            <p className="text-[11.5px] font-semibold text-info">
                               Trazendo as conversas antigas
                               {progresso !== null ? ` — ${progresso}%` : ''}
                             </p>
@@ -482,7 +482,7 @@ export default async function Pagina({
                                 />
                               </div>
                             )}
-                            <p className="mt-2 text-[11px] leading-5 text-sky-200/80">
+                            <p className="mt-2 text-[11px] leading-5 text-info/80">
                               Leva de alguns minutos a algumas horas. Pode fechar esta tela — as
                               conversas vão aparecendo sozinhas no Inbox.
                             </p>
@@ -490,7 +490,7 @@ export default async function Pagina({
                         )}
 
                         {situacao === 'travado' && (
-                          <p className="rounded-lg border border-amber-300/25 bg-amber-300/[0.08] px-3 py-2.5 text-[11.5px] leading-5 text-amber-200">
+                          <p className="rounded-lg border border-amber-300/25 bg-amber-300/[0.08] px-3 py-2.5 text-[11.5px] leading-5 text-aviso">
                             A importação parou de dar sinal
                             {progresso !== null ? ` em ${progresso}%` : ''}. O que já chegou está no
                             Inbox. O detalhe está em Alertas, na administração.
@@ -498,7 +498,7 @@ export default async function Pagina({
                         )}
 
                         {situacao === 'desembarcado' && (
-                          <p className="rounded-lg border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2.5 text-[11.5px] leading-5 text-rose-200">
+                          <p className="rounded-lg border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2.5 text-[11.5px] leading-5 text-perigo">
                             A conexão caiu — costuma acontecer quando o celular é trocado ou o
                             WhatsApp Business é reinstalado. Normalmente volta sozinha em alguns
                             minutos; enquanto isso, o envio por aqui fica parado.
@@ -507,7 +507,7 @@ export default async function Pagina({
 
                         {situacao === 'pronto' && (
                           <div className="rounded-lg border border-line bg-panel px-3 py-2.5">
-                            <p className="text-[11.5px] font-semibold text-emerald-300">
+                            <p className="text-[11.5px] font-semibold text-ok">
                               Conectado ao WhatsApp Business deste número
                             </p>
                             {/*
@@ -573,7 +573,7 @@ export default async function Pagina({
                                   ]}
                                 />
                                 {naoPublicado && (
-                                  <p className="mt-1 text-[11px] text-amber-200">
+                                  <p className="mt-1 text-[11px] text-aviso">
                                     Este fluxo ainda não foi publicado — enquanto
                                     estiver assim, este papel não fala.
                                   </p>

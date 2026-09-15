@@ -62,7 +62,7 @@ export function Sub({ children }: { children: ReactNode }) {
 /** Uma variável do fluxo, escrita como se escreve no campo. */
 export function Var({ children }: { children: string }) {
   return (
-    <code className="rounded-[5px] border border-emerald-400/20 bg-emerald-400/[0.09] px-[5px] py-[1px] font-mono text-[12px] whitespace-nowrap text-emerald-200">
+    <code className="rounded-[5px] border border-emerald-400/20 bg-emerald-400/[0.09] px-[5px] py-[1px] font-mono text-[12px] whitespace-nowrap text-ok">
       {'{{'}
       {children}
       {'}}'}
@@ -98,12 +98,12 @@ export function Codigo({ titulo, children }: { titulo?: string; children: string
 const TOM_DA_NOTA = {
   atencao: {
     borda: 'border-amber-300/25 bg-amber-300/[0.05]',
-    marca: 'text-amber-200',
+    marca: 'text-aviso',
     simbolo: '!',
   },
   erro: {
     borda: 'border-rose-400/25 bg-rose-400/[0.05]',
-    marca: 'text-rose-200',
+    marca: 'text-perigo',
     simbolo: '×',
   },
   dica: {

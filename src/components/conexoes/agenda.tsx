@@ -61,7 +61,7 @@ export function CartaoDaAgenda({
               */
               <>
                 A chave está guardada, mas{' '}
-                <strong className="text-amber-200">nenhuma automação usa ela ainda</strong> — o bot
+                <strong className="text-aviso">nenhuma automação usa ela ainda</strong> — o bot
                 não consulta a agenda até um bloco apontar para cá.
               </>
             )}
@@ -87,7 +87,7 @@ export function CartaoDaAgenda({
       {resultado && !resultado.ok && (
         <p
           role="status"
-          className="mt-2.5 rounded-[9px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2 text-[11.5px] leading-4 text-rose-200"
+          className="mt-2.5 rounded-[9px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2 text-[11.5px] leading-4 text-perigo"
         >
           ✕ {resultado.erro ?? 'não deu para conferir'}
         </p>
@@ -106,7 +106,7 @@ export function CartaoDaAgenda({
           role="status"
           className="mt-2.5 rounded-[9px] border border-emerald-400/25 bg-emerald-400/[0.07] px-3 py-2.5"
         >
-          <p className="text-[11.5px] font-semibold text-emerald-200">
+          <p className="text-[11.5px] font-semibold text-ok">
             ✓ A agenda respondeu. É isto que o bot enxerga:
           </p>
           <dl className="mt-2 space-y-1.5">

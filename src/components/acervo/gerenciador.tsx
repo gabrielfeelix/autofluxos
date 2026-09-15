@@ -133,12 +133,12 @@ export function GerenciadorDoAcervo({
         />
 
         {enviado && (
-          <p role="status" className="mt-2.5 text-[12px] font-semibold text-emerald-300">
+          <p role="status" className="mt-2.5 text-[12px] font-semibold text-ok">
             {enviado} entrou no acervo.
           </p>
         )}
         {erro && (
-          <p role="alert" className="mt-2.5 text-[12px] font-semibold text-rose-300">
+          <p role="alert" className="mt-2.5 text-[12px] font-semibold text-perigo">
             {erro}
           </p>
         )}

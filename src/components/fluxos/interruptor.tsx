@@ -65,7 +65,7 @@ export function InterruptorDeFluxo({
       </button>
 
       {erro && (
-        <span role="alert" className="max-w-[220px] text-right text-[10.5px] leading-4 text-rose-300">
+        <span role="alert" className="max-w-[220px] text-right text-[10.5px] leading-4 text-perigo">
           {erro}
         </span>
       )}

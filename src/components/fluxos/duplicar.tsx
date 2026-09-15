@@ -52,7 +52,7 @@ export function DuplicarFluxo({
       {recado && (
         <span
           role="status"
-          className={`text-[10.5px] ${recado.tipo === 'ok' ? 'text-emerald-300' : 'text-rose-300'}`}
+          className={`text-[10.5px] ${recado.tipo === 'ok' ? 'text-ok' : 'text-perigo'}`}
         >
           {recado.texto}
         </span>

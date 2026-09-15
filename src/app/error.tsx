@@ -31,7 +31,7 @@ export default function Erro({
   return (
     <main className="flex min-h-screen items-center justify-center p-10 text-center">
       <div className="app-page-enter max-w-[430px]">
-      <span className="mx-auto mb-4 flex size-11 items-center justify-center rounded-full border border-rose-400/30 bg-rose-400/10 text-lg font-bold text-rose-300">!</span>
+      <span className="mx-auto mb-4 flex size-11 items-center justify-center rounded-full border border-rose-400/30 bg-rose-400/10 text-lg font-bold text-perigo">!</span>
       <h1 className="text-[19px] font-bold">Alguma coisa quebrou aqui.</h1>
       <p className="mt-2 mb-5 text-[12.5px] leading-[1.65] text-muted">
         Nada do que você fez se perdeu — o rascunho do fluxo é salvo sozinho. Tentar de novo costuma

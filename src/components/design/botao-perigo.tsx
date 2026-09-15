@@ -42,13 +42,13 @@ export function BotaoPerigo({
             if (!r.ok) setErro(r.erro ?? 'não deu para apagar')
           })
         }}
-        className="rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:border-rose-400/40 hover:bg-rose-400/[0.09] hover:text-rose-300 disabled:opacity-50"
+        className="rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:border-rose-400/40 hover:bg-rose-400/[0.09] hover:text-perigo disabled:opacity-50"
       >
         {rodando ? '…' : rotulo}
       </button>
 
       {erro && (
-        <span role="alert" className="max-w-[280px] text-right text-[10.5px] leading-4 text-rose-300">
+        <span role="alert" className="max-w-[280px] text-right text-[10.5px] leading-4 text-perigo">
           {erro}
         </span>
       )}

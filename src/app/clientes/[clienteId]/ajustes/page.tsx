@@ -193,7 +193,7 @@ export default async function Pagina({
             entra para mexer numa coisa e sair — e este botão não é uma
             configuração, é o fim do cliente. */}
         <section className="mt-10 rounded-[14px] border border-rose-400/[0.18] bg-rose-400/[0.03] px-6 py-5">
-          <h2 className="text-[13.5px] font-bold text-rose-200">Apagar o cliente</h2>
+          <h2 className="text-[13.5px] font-bold text-perigo">Apagar o cliente</h2>
           <p className="mt-1 mb-4 max-w-[520px] text-[12px] leading-5 text-muted">
             Some com {cliente.nome} e com tudo que é dele: leads, conversas inteiras, automações,
             versões publicadas e as credenciais guardadas no cofre. Não existe cópia em outro lugar
@@ -250,8 +250,8 @@ function Selo({
   tom: 'ok' | 'alerta' | 'neutro'
 }) {
   const cor = {
-    ok: 'border-emerald-400/25 bg-emerald-400/[0.08] text-emerald-300',
-    alerta: 'border-amber-300/30 bg-amber-300/[0.1] text-amber-200',
+    ok: 'border-emerald-400/25 bg-emerald-400/[0.08] text-ok',
+    alerta: 'border-amber-300/30 bg-amber-300/[0.1] text-aviso',
     neutro: 'border-line bg-surface text-muted',
   }[tom]
 

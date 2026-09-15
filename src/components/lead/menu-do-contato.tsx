@@ -130,13 +130,13 @@ export function MenuDoContato({
             type="button"
             disabled={rodando}
             onClick={apagar}
-            className="block w-full border-t border-line px-3 py-2 text-left text-[12px] text-rose-300 transition hover:bg-rose-400/[0.09] disabled:opacity-40"
+            className="block w-full border-t border-line px-3 py-2 text-left text-[12px] text-perigo transition hover:bg-rose-400/[0.09] disabled:opacity-40"
           >
             Apagar contato
           </button>
 
           {erro && (
-            <p role="alert" className="px-3 py-2 text-[10.5px] leading-4 text-rose-300">
+            <p role="alert" className="px-3 py-2 text-[10.5px] leading-4 text-perigo">
               {erro}
             </p>
           )}

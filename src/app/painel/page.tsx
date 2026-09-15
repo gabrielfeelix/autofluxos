@@ -76,7 +76,7 @@ export default async function Pagina() {
             <p className="mt-1 text-[13px] text-muted">
               {esperandoNoTotal > 0 ? (
                 <>
-                  <strong className="font-semibold text-amber-300">
+                  <strong className="font-semibold text-aviso">
                     {esperandoNoTotal}{' '}
                     {esperandoNoTotal === 1 ? 'pessoa espera' : 'pessoas esperam'} atendimento
                   </strong>{' '}
@@ -184,7 +184,7 @@ function LinhaDoCliente({
           âmbar de cinza lê "3 esperando" do mesmo jeito. A cor só reforça.
         */}
         {esperando > 0 ? (
-          <span className="font-semibold text-amber-300">
+          <span className="font-semibold text-aviso">
             <strong className="font-mono text-[13px] font-bold">{esperando}</strong> esperando
           </span>
         ) : (

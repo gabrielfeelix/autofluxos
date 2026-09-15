@@ -87,7 +87,7 @@ function ArestaRemovivel({
             // Fica de leve à mostra sempre, e acende no ponteiro. Só no hover
             // ninguém descobre que dá para apagar a ligação — foi exatamente o
             // que aconteceu: a saída conhecida era apagar um dos blocos.
-            className={`pointer-events-auto flex size-[20px] items-center justify-center rounded-full border border-line bg-panel text-[10px] text-muted transition hover:scale-110 hover:border-rose-400/50 hover:bg-rose-400/15 hover:text-rose-300 ${
+            className={`pointer-events-auto flex size-[20px] items-center justify-center rounded-full border border-line bg-panel text-[10px] text-muted transition hover:scale-110 hover:border-rose-400/50 hover:bg-rose-400/15 hover:text-perigo ${
               selected ? 'opacity-100' : 'opacity-30 hover:opacity-100'
             }`}
           >

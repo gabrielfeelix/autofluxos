@@ -276,7 +276,7 @@ export function Painel({
               Tornar início
             </button>
           )}
-          <button onClick={aoApagar} className="rounded-lg border border-rose-400/30 px-2.5 py-1 text-[10px] font-semibold text-rose-300 transition hover:bg-rose-400/10">
+          <button onClick={aoApagar} className="rounded-lg border border-rose-400/30 px-2.5 py-1 text-[10px] font-semibold text-perigo transition hover:bg-rose-400/10">
             Apagar
           </button>
         </div>
@@ -664,7 +664,7 @@ export function Painel({
               o campo que a causou.
             */}
             {(no.data.timeoutMinutos ?? 0) >= 720 && (
-              <span className="mt-1.5 block rounded-[8px] border border-amber-300/25 bg-amber-300/[0.06] px-2.5 py-2 text-[11px] leading-4 text-amber-100">
+              <span className="mt-1.5 block rounded-[8px] border border-amber-300/25 bg-amber-300/[0.06] px-2.5 py-2 text-[11px] leading-4 text-aviso">
                 Prazo longo: a janela do WhatsApp fecha 24h depois da{' '}
                 <strong>última mensagem dela</strong>, e este prazo conta da
                 pergunta. Perto do teto, a retomada pode ser recusada pela Meta e
@@ -942,7 +942,7 @@ export function Painel({
             muda se o que está abaixo vale alguma coisa.
           */}
           {!iaHabilitada && (
-            <p className="rounded-[10px] border border-amber-400/20 bg-amber-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-amber-200">
+            <p className="rounded-[10px] border border-amber-400/20 bg-amber-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-aviso">
               Este cliente ainda não tem IA contratada. Dá para desenhar e salvar, mas na conversa
               real o bloco passa direto para uma pessoa.
             </p>
@@ -1169,11 +1169,11 @@ export function Painel({
               saída nenhuma.
             */}
             {conexoes.length === 0 && !no.data.conexaoId ? (
-              <p className="rounded-[10px] border border-amber-400/20 bg-amber-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-amber-200">
+              <p className="rounded-[10px] border border-amber-400/20 bg-amber-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-aviso">
                 Este cliente ainda não tem credencial cadastrada. Se o endereço acima pedir chave,
                 cadastre em{' '}
                 <a
-                  className="underline underline-offset-2 hover:text-amber-100"
+                  className="underline underline-offset-2 hover:text-aviso"
                   href={`/clientes/${clienteId}/conexoes`}
                 >
                   Credenciais
@@ -1215,7 +1215,7 @@ export function Painel({
             />
           </label>
 
-          <p className="rounded-[10px] border border-cyan-400/20 bg-cyan-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-cyan-300">
+          <p className="rounded-[10px] border border-cyan-400/20 bg-cyan-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-info">
             A aba Testar chama este endereço <strong>de verdade</strong>. Os disparos vindos dali
             levam o cabeçalho <code className="font-mono">X-AutoFluxos-Teste: 1</code>.
           </p>
@@ -1312,7 +1312,7 @@ function MensagensDoHandoff({
                 type="button"
                 onClick={() => aoMudar(mensagens.filter((_, j) => j !== i))}
                 title="remover esta mensagem"
-                className="rounded-lg px-2 py-0.5 text-[10px] font-semibold text-dim transition hover:bg-rose-400/[0.08] hover:text-rose-300"
+                className="rounded-lg px-2 py-0.5 text-[10px] font-semibold text-dim transition hover:bg-rose-400/[0.08] hover:text-perigo"
               >
                 remover
               </button>
@@ -1450,7 +1450,7 @@ function Area({
   const contador =
     limite !== undefined ? (
       <span
-        className={`font-mono text-[10px] normal-case ${estourou ? 'font-bold text-rose-300' : 'text-dim'}`}
+        className={`font-mono text-[10px] normal-case ${estourou ? 'font-bold text-perigo' : 'text-dim'}`}
       >
         {valor.length}/{limite}
       </span>
@@ -1499,7 +1499,7 @@ function Area({
         {...(exemplo ? { placeholder: exemplo } : {})}
       />
       {estourou ? (
-        <span className="mt-1 block text-[10.5px] text-rose-300">
+        <span className="mt-1 block text-[10.5px] text-perigo">
           O WhatsApp recusa acima de {limite} caracteres — publicar fica barrado até encurtar.
         </span>
       ) : (
@@ -1644,14 +1644,14 @@ function LinhaDeOpcao({
           }}
         />
         <span
-          className={`w-9 shrink-0 text-right font-mono text-[10px] ${estourou ? 'font-bold text-rose-300' : 'text-dim'}`}
+          className={`w-9 shrink-0 text-right font-mono text-[10px] ${estourou ? 'font-bold text-perigo' : 'text-dim'}`}
         >
           {usados}/{LIMITE_ROTULO}
         </span>
         <button
           onClick={aoRemover}
           title="remover opção"
-          className="flex size-8 shrink-0 items-center justify-center rounded-lg text-xs text-dim transition hover:bg-rose-400/[0.08] hover:text-rose-300"
+          className="flex size-8 shrink-0 items-center justify-center rounded-lg text-xs text-dim transition hover:bg-rose-400/[0.08] hover:text-perigo"
         >
           ×
         </button>
@@ -1668,7 +1668,7 @@ function LinhaDeOpcao({
         </div>
       )}
       {estourou && (
-        <p className="mt-1 text-[10.5px] leading-4 text-rose-300">
+        <p className="mt-1 text-[10.5px] leading-4 text-perigo">
           O WhatsApp corta em {LIMITE_ROTULO} caracteres — publicar fica barrado até encurtar.
         </p>
       )}
@@ -1728,7 +1728,7 @@ function Cabecalhos({
             <button
               onClick={() => aoMudar(cabecalhos.filter((_, j) => j !== i))}
               title="remover cabeçalho"
-              className="flex size-8 shrink-0 items-center justify-center rounded-lg text-xs text-dim transition hover:bg-rose-400/[0.08] hover:text-rose-300"
+              className="flex size-8 shrink-0 items-center justify-center rounded-lg text-xs text-dim transition hover:bg-rose-400/[0.08] hover:text-perigo"
             >
               ×
             </button>
@@ -1892,7 +1892,7 @@ function Mapeamentos({
                 <button
                   onClick={() => aoMudar(mapear.filter((_, j) => j !== i))}
                   title="remover"
-                  className="flex size-8 shrink-0 items-center justify-center rounded-lg text-xs text-dim transition hover:bg-rose-400/[0.08] hover:text-rose-300"
+                  className="flex size-8 shrink-0 items-center justify-center rounded-lg text-xs text-dim transition hover:bg-rose-400/[0.08] hover:text-perigo"
                 >
                   ×
                 </button>
@@ -2088,7 +2088,7 @@ function ConsultasDaIa({
           <legend className="mb-1 flex items-center gap-1.5 text-[10.5px] font-bold tracking-[0.04em] text-muted uppercase">
             {grupo.titulo}
             {grupo.escreve && (
-              <span className="rounded-full bg-amber-400/15 px-1.5 py-px text-[9.5px] font-bold tracking-normal text-amber-300 normal-case">
+              <span className="rounded-full bg-amber-400/15 px-1.5 py-px text-[9.5px] font-bold tracking-normal text-aviso normal-case">
                 grava de verdade
               </span>
             )}
@@ -2123,11 +2123,11 @@ function ConsultasDaIa({
             resolver. O link é a diferença entre um aviso e uma instrução.
           */}
           {conexoes.length === 0 ? (
-            <p className="rounded-[10px] border border-amber-400/20 bg-amber-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-amber-200">
+            <p className="rounded-[10px] border border-amber-400/20 bg-amber-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-aviso">
               Este cliente ainda não tem credencial cadastrada, e sem ela a consulta volta negada.
               Cadastre em{' '}
               <a
-                className="underline underline-offset-2 hover:text-amber-100"
+                className="underline underline-offset-2 hover:text-aviso"
                 href={`/clientes/${clienteId}/conexoes`}
               >
                 Credenciais
@@ -2161,7 +2161,7 @@ function ConsultasDaIa({
       )}
 
       {grava && (
-        <p className="mt-2.5 rounded-[10px] border border-amber-400/20 bg-amber-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-amber-200">
+        <p className="mt-2.5 rounded-[10px] border border-amber-400/20 bg-amber-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-aviso">
           Antes de gravar, a IA pergunta “posso?” e espera a resposta. Ela só age sobre quem está
           conversando, e só em horários que ela mesma acabou de consultar.
         </p>

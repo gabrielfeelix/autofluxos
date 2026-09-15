@@ -204,10 +204,10 @@ export function NotificacoesDaFila({
         }
         className={`rounded-full border px-3 py-1.5 text-[10.5px] font-bold transition ${
           ativo
-            ? 'border-emerald-400/20 bg-emerald-400/[0.07] text-emerald-300'
+            ? 'border-emerald-400/20 bg-emerald-400/[0.07] text-ok'
             : bloqueado
-              ? 'cursor-not-allowed border-rose-400/20 bg-rose-400/[0.06] text-rose-300/70'
-              : 'border-amber-300/25 bg-amber-300/[0.07] text-amber-100 hover:bg-amber-300/[0.13]'
+              ? 'cursor-not-allowed border-rose-400/20 bg-rose-400/[0.06] text-perigo/70'
+              : 'border-amber-300/25 bg-amber-300/[0.07] text-aviso hover:bg-amber-300/[0.13]'
         }`}
       >
         {ativo ? 'Alertas ativos' : bloqueado ? 'Alertas bloqueados' : 'Ativar alertas'}

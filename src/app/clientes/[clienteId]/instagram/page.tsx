@@ -87,8 +87,8 @@ export default async function Pagina({
           <p
             className={`mb-5 rounded-[10px] border px-3.5 py-2.5 text-[12.5px] ${
               aviso.tom === 'bom'
-                ? 'border-emerald-400/25 bg-emerald-400/[0.07] text-emerald-200'
-                : 'border-amber-400/25 bg-amber-400/[0.07] text-amber-200'
+                ? 'border-emerald-400/25 bg-emerald-400/[0.07] text-ok'
+                : 'border-amber-400/25 bg-amber-400/[0.07] text-aviso'
             }`}
           >
             {aviso.texto}
@@ -110,7 +110,7 @@ export default async function Pagina({
                 <input type="hidden" name="clienteId" value={clienteId} />
                 <button
                   type="submit"
-                  className="rounded-[9px] border border-line px-3 py-2 text-[12.5px] font-semibold text-dim transition hover:bg-rose-400/[0.08] hover:text-rose-300"
+                  className="rounded-[9px] border border-line px-3 py-2 text-[12.5px] font-semibold text-dim transition hover:bg-rose-400/[0.08] hover:text-perigo"
                 >
                   Desligar
                 </button>
@@ -127,7 +127,7 @@ export default async function Pagina({
             {dias !== null && (
               <p
                 className={`mt-4 border-t border-line pt-3.5 text-[12px] ${
-                  dias <= 7 ? 'text-amber-300' : 'text-dim'
+                  dias <= 7 ? 'text-aviso' : 'text-dim'
                 }`}
               >
                 {dias <= 0
@@ -168,7 +168,7 @@ export default async function Pagina({
             </form>
 
             {!configurado && (
-              <p className="mt-3 text-[12px] text-amber-300">
+              <p className="mt-3 text-[12px] text-aviso">
                 Falta <code className="font-mono">INSTAGRAM_APP_ID</code> e{' '}
                 <code className="font-mono">INSTAGRAM_APP_SECRET</code> no ambiente deste servidor.
               </p>

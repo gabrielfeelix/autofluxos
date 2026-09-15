@@ -169,7 +169,7 @@ function NoMidia({ data, selected }: NodeProps) {
 
   return (
     <Caixa tipo="midia" selecionado={!!selected}>
-      <p className="text-[11px] font-bold tracking-[0.04em] text-sky-200 uppercase">
+      <p className="text-[11px] font-bold tracking-[0.04em] text-info uppercase">
         {ROTULO_DA_MIDIA[d.midia] ?? 'Mídia'}
       </p>
 
@@ -287,7 +287,7 @@ function NoPergunta({ data, selected }: NodeProps) {
             </p>
           )}
           <Saida id={SAIDA_ESCOLHEU}>
-            <span className="text-[11px] text-emerald-300">escolheu</span>
+            <span className="text-[11px] text-ok">escolheu</span>
           </Saida>
           <Saida id={SAIDA_VAZIO}>
             <span className="text-[11px] text-muted">veio vazia</span>
@@ -330,7 +330,7 @@ function NoPergunta({ data, selected }: NodeProps) {
         <>
           <p className="mt-1.5 text-[10px] text-dim">espera {comoPrazo(prazo)}</p>
           <Saida id={SAIDA_TIMEOUT}>
-            <span className="text-[11px] text-amber-200">não respondeu</span>
+            <span className="text-[11px] text-aviso">não respondeu</span>
           </Saida>
         </>
       )}
@@ -339,7 +339,7 @@ function NoPergunta({ data, selected }: NodeProps) {
           para desviar com o mouse em todo bloco de pergunta do fluxo. */}
       {d.aceitaMidia && (
         <Saida id={SAIDA_MIDIA}>
-          <span className="text-[11px] text-sky-200">mandou arquivo</span>
+          <span className="text-[11px] text-info">mandou arquivo</span>
         </Saida>
       )}
     </Caixa>
@@ -367,7 +367,7 @@ function NoCondicao({ data, selected }: NodeProps) {
         {d.valor && <code className="font-mono text-[11px]">{d.valor}</code>}
       </p>
       <Saida id={SAIDA_VERDADEIRO}>
-        <span className="text-[11px] text-emerald-300">verdadeiro</span>
+        <span className="text-[11px] text-ok">verdadeiro</span>
       </Saida>
       <Saida id={SAIDA_FALSO}>
         <span className="text-[11px] text-muted">falso</span>
@@ -473,7 +473,7 @@ function NoHttp({ data, selected }: NodeProps) {
           */}
           <p className="truncate text-[12.5px] leading-5 font-medium text-soft">{preset.nome}</p>
           {faltaCredencial && (
-            <p className="mt-0.5 truncate text-[10.5px] text-amber-200/75">falta a credencial</p>
+            <p className="mt-0.5 truncate text-[10.5px] text-aviso/75">falta a credencial</p>
           )}
           <p className="mt-1 truncate font-mono text-[10px] text-dim">
             {d.metodo} {semEsquema(d.url)}

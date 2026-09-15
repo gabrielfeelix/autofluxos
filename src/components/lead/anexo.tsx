@@ -36,7 +36,22 @@ export function AnexoNaConversa({ anexo }: { anexo: AnexoDaMensagem }) {
   }
 
   if (anexo.midia === 'audio') {
-    return <audio src={anexo.url} controls className="mb-1.5 w-full max-w-[240px]" />
+    /*
+     * **Largura fixa, e não `w-full`.** A bolha é um item de flex com
+     * `items-end`, ou seja, largura de conteúdo — e `w-full` dentro de um pai
+     * que se mede pelo filho é circular: o navegador resolve para quase nada.
+     *
+     * Dava para não perceber enquanto só o áudio recebido aparecia, porque
+     * aquela bolha trazia junto a frase "(áudio, imagem ou documento)" e era a
+     * frase que lhe dava largura. O áudio que sai não tem texto nenhum: a bolha
+     * encolhia até o player virar uma pílula com um traço e três pontinhos,
+     * abaixo dos ~200px em que o Chrome desiste de desenhar os controles.
+     *
+     * 260px é a medida em que os controles nativos aparecem inteiros —
+     * play, tempo, barra e volume. `max-w-full` é o que impede que ela estoure
+     * a coluna numa janela estreita.
+     */
+    return <audio src={anexo.url} controls className="mb-1.5 w-[260px] max-w-full" />
   }
 
   return (

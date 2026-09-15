@@ -95,7 +95,7 @@ export function Versoes({
                     <span className="text-[11.5px] text-dim">{v.quando}</span>
                     <span className="flex-1" />
                     {noAr ? (
-                      <span className="rounded-full border border-emerald-400/20 bg-emerald-400/[0.08] px-2.5 py-0.5 text-[11px] text-emerald-300">
+                      <span className="rounded-full border border-emerald-400/20 bg-emerald-400/[0.08] px-2.5 py-0.5 text-[11px] text-ok">
                         No ar
                       </span>
                     ) : (

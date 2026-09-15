@@ -122,7 +122,7 @@ export function PresetsDeIntegracao({
             <span className="mt-1 flex flex-wrap items-center gap-x-1.5">
               <span className="text-[12px] text-soft">{emUso.nome}</span>
               {faltaCredencial && (
-                <span className="text-[11px] text-amber-200/70">falta a credencial</span>
+                <span className="text-[11px] text-aviso/70">falta a credencial</span>
               )}
             </span>
           )}
@@ -247,7 +247,7 @@ export function PresetsDeIntegracao({
                       {exigeCredencial(item) && (
                         <span
                           className={`mt-1 block text-[10.5px] leading-4 ${
-                            bloco?.temCredencial ? 'text-emerald-300/70' : 'text-amber-200/75'
+                            bloco?.temCredencial ? 'text-ok/70' : 'text-aviso/75'
                           }`}
                         >
                           {/*

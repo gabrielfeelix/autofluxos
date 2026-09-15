@@ -1164,7 +1164,7 @@ export function Editor({
           comIa && (
             <span
               title="Esta automação tem o plano de IA (Etapa 2). Para mudar, fale com a 4YU."
-              className="shrink-0 rounded-full border border-violet-400/25 bg-violet-400/[0.09] px-3 py-1 text-xs text-violet-200"
+              className="shrink-0 rounded-full border border-violet-400/25 bg-violet-400/[0.09] px-3 py-1 text-xs text-info"
             >
               IA contratada
             </span>
@@ -1180,7 +1180,7 @@ export function Editor({
         */}
         {publicada ? (
           <span
-            className={`shrink-0 rounded-full border px-3 py-1 text-xs ${haNovidade ? 'border-amber-300/25 bg-amber-300/[0.08] text-amber-200' : 'border-emerald-400/20 bg-emerald-400/[0.08] text-emerald-300'}`}
+            className={`shrink-0 rounded-full border px-3 py-1 text-xs ${haNovidade ? 'border-amber-300/25 bg-amber-300/[0.08] text-aviso' : 'border-emerald-400/20 bg-emerald-400/[0.08] text-ok'}`}
           >
             {haNovidade ? 'Desenho difere do publicado' : `No ar · v${publicada.versao}`}
           </span>
@@ -1203,7 +1203,7 @@ export function Editor({
               if (primeiro?.noId) focar(primeiro.noId)
             }}
             title="Ver o que está impedindo a publicação"
-            className="shrink-0 rounded-full border border-rose-400/30 bg-rose-400/10 px-3 py-1 text-xs font-bold text-rose-300 transition hover:bg-rose-400/20"
+            className="shrink-0 rounded-full border border-rose-400/30 bg-rose-400/10 px-3 py-1 text-xs font-bold text-perigo transition hover:bg-rose-400/20"
           >
             {validacao.erros.length} impedimento(s)
           </button>
@@ -1256,7 +1256,7 @@ export function Editor({
             type="button"
             onClick={() => setConfirmandoDescarte(true)}
             title="Joga fora as alterações não publicadas e volta ao desenho que está no ar"
-            className="rounded-lg border border-line px-3 py-2 text-[12.5px] font-semibold text-muted transition hover:border-amber-300/40 hover:text-amber-200"
+            className="rounded-lg border border-line px-3 py-2 text-[12.5px] font-semibold text-muted transition hover:border-amber-300/40 hover:text-aviso"
           >
             Descartar
           </button>
@@ -1292,7 +1292,7 @@ export function Editor({
       </header>
 
       {errosDePublicacao && (
-        <div className="shrink-0 border-b border-rose-400/30 bg-rose-400/10 px-4 py-2 text-xs text-rose-300">
+        <div className="shrink-0 border-b border-rose-400/30 bg-rose-400/10 px-4 py-2 text-xs text-perigo">
           <strong>Não publicou.</strong>{' '}
           {errosDePublicacao.map((e) => e.mensagem).join(' ')}
         </div>
@@ -1301,7 +1301,7 @@ export function Editor({
       {publicadoAgora !== null && (
         <div
           role="status"
-          className="flex shrink-0 items-center gap-2 border-b border-emerald-400/25 bg-emerald-400/[0.09] px-4 py-2 text-xs text-emerald-300"
+          className="flex shrink-0 items-center gap-2 border-b border-emerald-400/25 bg-emerald-400/[0.09] px-4 py-2 text-xs text-ok"
         >
           <span className="size-1.5 rounded-full bg-emerald-400" />
           <span className="flex-1">
@@ -1320,7 +1320,7 @@ export function Editor({
       {voltouDe && (
         <div
           role="status"
-          className="flex shrink-0 items-center gap-2 border-b border-emerald-400/25 bg-emerald-400/[0.09] px-4 py-2 text-xs text-emerald-300"
+          className="flex shrink-0 items-center gap-2 border-b border-emerald-400/25 bg-emerald-400/[0.09] px-4 py-2 text-xs text-ok"
         >
           <span className="size-1.5 rounded-full bg-emerald-400" />
           <span className="flex-1">
@@ -1572,7 +1572,7 @@ export function Editor({
           {aba === 'bloco' ? (
             <div className="min-h-0 flex-1 overflow-y-auto">
               {desfazer && (
-                <div className="flex items-center gap-2 border-b border-amber-300/20 bg-amber-300/[0.07] px-3.5 py-2.5 text-[11.5px] text-amber-200">
+                <div className="flex items-center gap-2 border-b border-amber-300/20 bg-amber-300/[0.07] px-3.5 py-2.5 text-[11.5px] text-aviso">
                   <span className="min-w-0 flex-1">
                     Bloco apagado
                     {desfazer.edges.length > 0 && ` — e ${desfazer.edges.length} ligação(ões) com ele`}.
@@ -1629,7 +1629,7 @@ export function Editor({
                       <li key={i}>
                         <button
                           onClick={() => erro.noId && focar(erro.noId)}
-                          className="flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left text-[11.5px] leading-4 text-rose-300 transition hover:bg-rose-400/[0.07]"
+                          className="flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left text-[11.5px] leading-4 text-perigo transition hover:bg-rose-400/[0.07]"
                         >
                           <span className="mt-1 size-1.5 shrink-0 rounded-full bg-rose-400" />
                           <span>{erro.mensagem}</span>
@@ -1650,7 +1650,7 @@ export function Editor({
                       <li key={i}>
                         <button
                           onClick={() => aviso.noId && focar(aviso.noId)}
-                          className="flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left text-[11.5px] leading-4 text-amber-200 transition hover:bg-amber-300/[0.07]"
+                          className="flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left text-[11.5px] leading-4 text-aviso transition hover:bg-amber-300/[0.07]"
                         >
                           <span className="mt-1 size-1.5 shrink-0 rounded-full bg-amber-300" />
                           <span>{aviso.mensagem}</span>
@@ -1699,7 +1699,7 @@ export function Editor({
             type="button"
             disabled={descartando}
             onClick={descartar}
-            className="rounded-lg border border-amber-300/40 bg-amber-300/[0.12] px-3.5 py-2 text-[12px] font-bold text-amber-200 transition hover:bg-amber-300/20 disabled:opacity-50"
+            className="rounded-lg border border-amber-300/40 bg-amber-300/[0.12] px-3.5 py-2 text-[12px] font-bold text-aviso transition hover:bg-amber-300/20 disabled:opacity-50"
           >
             {descartando ? 'descartando…' : 'Descartar alterações'}
           </button>
@@ -1849,7 +1849,7 @@ function MenuDoBotaoDireito({
           <button
             type="button"
             onClick={aoApagar}
-            className={`${item} text-rose-300 hover:bg-rose-400/[0.12] hover:text-rose-200`}
+            className={`${item} text-perigo hover:bg-rose-400/[0.12] hover:text-perigo`}
           >
             <span aria-hidden className="w-4 text-center">
               ✕
@@ -1861,7 +1861,7 @@ function MenuDoBotaoDireito({
         <button
           type="button"
           onClick={aoApagar}
-          className={`${item} text-rose-300 hover:bg-rose-400/[0.12] hover:text-rose-200`}
+          className={`${item} text-perigo hover:bg-rose-400/[0.12] hover:text-perigo`}
         >
           <span aria-hidden className="w-4 text-center">
             ✕
@@ -1911,7 +1911,7 @@ function ConfirmarApagar({
       }
     >
       {ehInicio && (
-        <p className="mb-4 rounded-[10px] border border-amber-300/25 bg-amber-300/[0.07] px-3 py-2 text-[12px] leading-5 text-amber-200">
+        <p className="mb-4 rounded-[10px] border border-amber-300/25 bg-amber-300/[0.07] px-3 py-2 text-[12px] leading-5 text-aviso">
           Este é o bloco de <strong>início</strong>. Sem ele, o fluxo não publica até você escolher
           outro.
         </p>
@@ -1930,7 +1930,7 @@ function ConfirmarApagar({
         <button
           type="button"
           onClick={aoConfirmar}
-          className="rounded-lg border border-rose-400/40 bg-rose-400/[0.12] px-3.5 py-2 text-[12px] font-bold text-rose-300 transition hover:bg-rose-400/20"
+          className="rounded-lg border border-rose-400/40 bg-rose-400/[0.12] px-3.5 py-2 text-[12px] font-bold text-perigo transition hover:bg-rose-400/20"
         >
           Apagar bloco
         </button>
@@ -2006,7 +2006,7 @@ function EstadoSalvamento({ estado }: { estado: 'salvo' | 'salvando' | 'pendente
   }[estado]
 
   return (
-    <span className={`flex items-center gap-2 text-xs ${estado === 'erro' ? 'text-rose-300' : 'text-muted'}`}>
+    <span className={`flex items-center gap-2 text-xs ${estado === 'erro' ? 'text-perigo' : 'text-muted'}`}>
       <span
         className={`size-1.5 rounded-full ${
           estado === 'erro'

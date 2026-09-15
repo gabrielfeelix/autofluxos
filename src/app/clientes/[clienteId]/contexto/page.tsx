@@ -60,7 +60,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         </p>
 
         {vazio && (
-          <p className="mb-5 rounded-[11px] border border-amber-300/25 bg-amber-300/[0.08] px-4 py-3 text-[12.5px] leading-5 text-amber-200">
+          <p className="mb-5 rounded-[11px] border border-amber-300/25 bg-amber-300/[0.08] px-4 py-3 text-[12.5px] leading-5 text-aviso">
             Está vazio. Enquanto ficar assim, um fluxo com bloco de IA não publica — ele responderia
             &quot;não sei&quot; a tudo.
           </p>

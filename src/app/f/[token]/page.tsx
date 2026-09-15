@@ -153,7 +153,7 @@ export default async function Pagina({ params }: { params: Promise<{ token: stri
                   {!linha.alcancavel && (
                     <span
                       title="Nenhuma seta chega até aqui. Quem importar precisa ligá-lo ou apagá-lo."
-                      className="rounded-full border border-amber-300/25 bg-amber-300/[0.08] px-2 py-0.5 text-[10px] font-bold text-amber-200"
+                      className="rounded-full border border-amber-300/25 bg-amber-300/[0.08] px-2 py-0.5 text-[10px] font-bold text-aviso"
                     >
                       solto
                     </span>
@@ -193,7 +193,7 @@ function Selo({ children, destaque = false }: { children: React.ReactNode; desta
     <li
       className={`rounded-full border px-2.5 py-1 text-[11px] ${
         destaque
-          ? 'border-emerald-400/25 bg-emerald-400/[0.08] text-emerald-300'
+          ? 'border-emerald-400/25 bg-emerald-400/[0.08] text-ok'
           : 'border-line bg-surface text-muted'
       }`}
     >

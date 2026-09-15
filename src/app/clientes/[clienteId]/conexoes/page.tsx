@@ -220,7 +220,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
                   <p className="mt-1 text-[11px] text-dim">
                     {(() => {
                       const uso = usoPorConexao.get(conexao.id)
-                      if (!uso) return <span className="text-amber-200">nenhum bloco usa</span>
+                      if (!uso) return <span className="text-aviso">nenhum bloco usa</span>
                       return (
                         <>
                           usada em <strong className="text-soft">{uso.blocos}</strong>{' '}
@@ -255,7 +255,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
                 <form action={acaoApagarConexao.bind(null, clienteId, conexao.id)}>
                   <button
-                    className="rounded-lg border border-rose-400/30 px-2.5 py-1.5 text-[11px] font-semibold text-rose-300 transition hover:bg-rose-400/10"
+                    className="rounded-lg border border-rose-400/30 px-2.5 py-1.5 text-[11px] font-semibold text-perigo transition hover:bg-rose-400/10"
                     title="Apagar. Fluxo que usa esta credencial para de funcionar."
                   >
                     Apagar

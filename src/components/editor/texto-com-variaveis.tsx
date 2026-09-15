@@ -415,7 +415,7 @@ export function LegendaDeVariaveis({
     // Vermelha, como a tag dentro do campo: a frase embaixo e o pedaço realçado
     // falam do mesmo erro, e cores diferentes fariam parecer dois.
     return (
-      <span className="mt-1 block text-[10.5px] leading-4 text-rose-300">
+      <span className="mt-1 block text-[10.5px] leading-4 text-perigo">
         {simples.map((nome) => `{${nome}}`).join(', ')}{' '}
         {simples.length === 1 ? 'tem uma chave só' : 'têm uma chave só'} — o certo é{' '}
         {simples.map((nome) => `{{${nome}}}`).join(', ')}. Com uma, sai assim mesmo na conversa.
@@ -425,7 +425,7 @@ export function LegendaDeVariaveis({
 
   if (desconhecidas.length > 0) {
     return (
-      <span className="mt-1 block text-[10.5px] leading-4 text-amber-200">
+      <span className="mt-1 block text-[10.5px] leading-4 text-aviso">
         {desconhecidas.map((nome) => `{{${nome}}}`).join(', ')}{' '}
         {desconhecidas.length === 1 ? 'não é preenchida' : 'não são preenchidas'} por nenhum bloco
         antes daqui — vai sair vazio na conversa.

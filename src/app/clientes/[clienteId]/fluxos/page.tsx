@@ -386,7 +386,7 @@ export default async function Pagina({
                         </span>
                       </span>
                       {!validacao.ok && (
-                        <span className="rounded-full border border-rose-400/25 bg-rose-400/10 px-2.5 py-1 text-[10.5px] font-bold text-rose-300">
+                        <span className="rounded-full border border-rose-400/25 bg-rose-400/10 px-2.5 py-1 text-[10.5px] font-bold text-perigo">
                           {validacao.erros.length} impedimento(s)
                         </span>
                       )}
@@ -404,9 +404,9 @@ export default async function Pagina({
                       <span
                         className={`rounded-full border px-2.5 py-1 text-[10.5px] font-bold ${
                           !fluxo.ativo
-                            ? 'border-amber-300/25 bg-amber-300/[0.08] text-amber-200'
+                            ? 'border-amber-300/25 bg-amber-300/[0.08] text-aviso'
                             : fluxo.versaoPublicadaId
-                              ? 'border-emerald-400/25 bg-emerald-400/[0.08] text-emerald-300'
+                              ? 'border-emerald-400/25 bg-emerald-400/[0.08] text-ok'
                               : 'border-line bg-surface text-muted'
                         }`}
                       >
@@ -857,7 +857,7 @@ export default async function Pagina({
               ganhar a etiqueta de saída. É essa regra que separa acompanhar de
               importunar.
             </p>
-            <p className="mt-2 rounded-lg border border-amber-300/20 bg-amber-300/[0.05] px-3 py-2 text-[11.5px] leading-[1.6] text-amber-100/90">
+            <p className="mt-2 rounded-lg border border-amber-300/20 bg-amber-300/[0.05] px-3 py-2 text-[11.5px] leading-[1.6] text-aviso/90">
               O limite de cada passo é {comoAtraso(ATRASO_MAXIMO_MINUTOS)}, e ele não é
               nosso: o WhatsApp só aceita texto livre dentro da janela de 24h
               contada da última mensagem da pessoa. Passado disso só vai mensagem
@@ -927,7 +927,7 @@ export default async function Pagina({
                             : ''}
                           {' · '}
                           {sequencia.passos.length === 0 ? (
-                            <strong className="font-semibold text-amber-200">
+                            <strong className="font-semibold text-aviso">
                               sem passo — não inscreve ninguém
                             </strong>
                           ) : (
@@ -947,7 +947,7 @@ export default async function Pagina({
                         {contagem.bloqueadas > 0 && (
                           <span
                             title="A janela de 24h fechou antes do próximo passo. Encurte os prazos."
-                            className="block text-amber-200"
+                            className="block text-aviso"
                           >
                             {contagem.bloqueadas} fora da janela
                           </span>
@@ -986,7 +986,7 @@ export default async function Pagina({
                                     {destino?.nome ?? 'um fluxo que sumiu'}
                                   </strong>
                                   {destino && !destino.versaoPublicadaId && (
-                                    <span className="text-amber-200">
+                                    <span className="text-aviso">
                                       {' '}
                                       · não publicado, então este passo não entrega nada
                                     </span>

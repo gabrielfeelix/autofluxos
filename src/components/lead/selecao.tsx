@@ -195,7 +195,7 @@ export function SelecaoDeContatos({
                 type="button"
                 disabled={ocupado}
                 onClick={apagar}
-                className="ml-auto rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:border-rose-400/40 hover:bg-rose-400/[0.09] hover:text-rose-300 disabled:opacity-50"
+                className="ml-auto rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:border-rose-400/40 hover:bg-rose-400/[0.09] hover:text-perigo disabled:opacity-50"
               >
                 {ocupado ? '…' : 'Apagar'}
               </button>
@@ -203,12 +203,12 @@ export function SelecaoDeContatos({
           )}
 
           {aviso && (
-            <p role="status" className="mt-1 text-[11.5px] font-semibold text-emerald-300">
+            <p role="status" className="mt-1 text-[11.5px] font-semibold text-ok">
               {aviso}
             </p>
           )}
           {erro && (
-            <p role="alert" className="mt-1 text-[11.5px] font-semibold text-rose-300">
+            <p role="alert" className="mt-1 text-[11.5px] font-semibold text-perigo">
               {erro}
             </p>
           )}

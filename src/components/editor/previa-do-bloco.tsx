@@ -286,7 +286,7 @@ export function PreviaDoBloco({
                 seria o único que esconde o erro. Aqui sobra espaço. */}
             <p
               className={`mt-0.5 text-[12px] leading-[1.45] whitespace-pre-wrap ${
-                detalhe.tom === 'aviso' ? 'text-amber-200/85' : 'text-soft'
+                detalhe.tom === 'aviso' ? 'text-aviso/85' : 'text-soft'
               }`}
             >
               <RealceDeVariaveis texto={detalhe.valor} />

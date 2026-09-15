@@ -32,7 +32,7 @@ export function RealceDeVariaveis({ texto }: { texto: string }) {
             <span
               key={i}
               title={DICA_CHAVE_SIMPLES}
-              className="rounded-[3px] bg-rose-400/20 text-rose-300"
+              className="rounded-[3px] bg-rose-400/20 text-perigo"
             >
               {pedaco.texto}
             </span>

@@ -53,15 +53,15 @@ export function ControleDeAutomacao({
         }
         className={`mt-2.5 w-full rounded-[8px] border px-2.5 py-2 text-[11px] font-bold transition disabled:opacity-50 ${
           ativa
-            ? 'border-amber-300/25 bg-amber-300/[0.08] text-amber-100 hover:bg-amber-300/[0.15]'
-            : 'border-emerald-400/30 bg-emerald-400/[0.1] text-emerald-200 hover:bg-emerald-400/[0.18]'
+            ? 'border-amber-300/25 bg-amber-300/[0.08] text-aviso hover:bg-amber-300/[0.15]'
+            : 'border-emerald-400/30 bg-emerald-400/[0.1] text-ok hover:bg-emerald-400/[0.18]'
         }`}
       >
         {texto}
       </button>
 
       {erro && (
-        <p role="alert" className="mt-1.5 text-[10.5px] leading-4 text-rose-300">
+        <p role="alert" className="mt-1.5 text-[10.5px] leading-4 text-perigo">
           {erro}
         </p>
       )}

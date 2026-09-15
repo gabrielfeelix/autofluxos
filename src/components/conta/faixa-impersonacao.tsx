@@ -26,21 +26,21 @@ export async function FaixaDeImpersonacao() {
       role="status"
       className="sticky top-0 z-50 flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 border-b border-amber-400/30 bg-amber-400/[0.13] px-4 py-2 backdrop-blur md:px-6"
     >
-      <p className="text-[12.5px] leading-5 text-amber-100">
+      <p className="text-[12.5px] leading-5 text-aviso">
         {/* Ícone **e** texto: quem não distingue âmbar de cinza precisa ler o
             aviso do mesmo jeito (WCAG 1.4.1). */}
         <span aria-hidden className="mr-1.5">
           ⚠
         </span>
         Você está no painel <strong className="font-semibold">como {sessao.usuario.nome}</strong>{' '}
-        <span className="text-amber-200/70">({sessao.usuario.email})</span>. Tudo que você fizer
+        <span className="text-aviso/70">({sessao.usuario.email})</span>. Tudo que você fizer
         aqui fica registrado no nome dele.
       </p>
 
       <form action={acaoPararDeEntrarComo}>
         <button
           type="submit"
-          className="rounded-lg border border-amber-300/40 bg-amber-300/10 px-2.5 py-1 text-[11.5px] font-bold text-amber-100 transition hover:bg-amber-300/20"
+          className="rounded-lg border border-amber-300/40 bg-amber-300/10 px-2.5 py-1 text-[11.5px] font-bold text-aviso transition hover:bg-amber-300/20"
         >
           Voltar a ser {administrador?.nome ?? 'você'}
         </button>

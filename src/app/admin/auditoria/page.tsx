@@ -79,20 +79,20 @@ function Linha({ ato }: { ato: LinhaDeAuditoria }) {
     <article className="flex flex-wrap items-baseline gap-x-2 gap-y-1 px-4 py-3">
       <span
         aria-hidden
-        className={`text-[11px] ${impersonacao ? 'text-amber-300' : 'text-transparent'}`}
+        className={`text-[11px] ${impersonacao ? 'text-aviso' : 'text-transparent'}`}
       >
         ⚠
       </span>
 
       <p className="min-w-0 flex-1 text-[12.5px] leading-6">
         <strong className="font-semibold text-soft">{ato.autorEmail || 'alguém'}</strong>{' '}
-        <span className={impersonacao ? 'text-amber-300' : 'text-muted'}>
+        <span className={impersonacao ? 'text-aviso' : 'text-muted'}>
           {VERBOS[ato.acao] ?? ato.acao}
         </span>{' '}
         {ato.alvoNome && <strong className="font-semibold text-soft">{ato.alvoNome}</strong>}
         {ato.contaNome && <span className="text-dim"> · {ato.contaNome}</span>}
         {ato.impersonadoPor && (
-          <span className="text-amber-300/80"> · feito de dentro de um “entrar como”</span>
+          <span className="text-aviso/80"> · feito de dentro de um “entrar como”</span>
         )}
       </p>
 

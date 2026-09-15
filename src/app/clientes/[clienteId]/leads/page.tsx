@@ -185,7 +185,7 @@ async function Tabela({
           {filtrando && ' no filtro'}
         </span>
         {esperando > 0 && (
-          <span className="rounded-full border border-rose-400/25 bg-rose-400/[0.09] px-3 py-1 text-[11px] font-bold text-rose-300">
+          <span className="rounded-full border border-rose-400/25 bg-rose-400/[0.09] px-3 py-1 text-[11px] font-bold text-perigo">
             {esperando} esperando humano nesta página
           </span>
         )}
@@ -374,7 +374,7 @@ async function Tabela({
                   <td className="px-3.5 py-3">
                     {lead.aguardando ? (
                       <>
-                        <span className="inline-flex rounded-full border border-rose-400/25 bg-rose-400/[0.09] px-2.5 py-1 text-[10.5px] font-bold text-rose-300">
+                        <span className="inline-flex rounded-full border border-rose-400/25 bg-rose-400/[0.09] px-2.5 py-1 text-[10.5px] font-bold text-perigo">
                           AGUARDANDO HUMANO
                         </span>
                         <span className="mt-1 block max-w-52 truncate text-[10.5px] text-dim" title={horaExata(lead.aguardando.desde)}>
@@ -382,7 +382,7 @@ async function Tabela({
                         </span>
                       </>
                     ) : (
-                      <span className="inline-flex rounded-full border border-emerald-400/20 bg-emerald-400/[0.07] px-2.5 py-1 text-[10.5px] font-bold text-emerald-300">
+                      <span className="inline-flex rounded-full border border-emerald-400/20 bg-emerald-400/[0.07] px-2.5 py-1 text-[10.5px] font-bold text-ok">
                         COM O BOT
                       </span>
                     )}
@@ -469,7 +469,7 @@ function PrimeiraVez({ clienteId, temCanal }: { clienteId: string; temCanal: boo
         </>
       ) : (
         <>
-          <span className="mb-3.5 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/[0.08] px-3 py-1 text-[11px] font-bold text-emerald-300">
+          <span className="mb-3.5 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/[0.08] px-3 py-1 text-[11px] font-bold text-ok">
             <span className="size-1.5 rounded-full bg-emerald-400" /> Número no ar
           </span>
           <IlustracaoContatos />

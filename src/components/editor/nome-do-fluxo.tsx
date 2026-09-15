@@ -153,7 +153,7 @@ export function NomeDoFluxo({
         } ${erro ? 'border-rose-400/40' : ''}`}
       />
       {erro ? (
-        <span role="alert" className="mt-0.5 block text-[10px] leading-4 text-rose-300">
+        <span role="alert" className="mt-0.5 block text-[10px] leading-4 text-perigo">
           {erro}
         </span>
       ) : (

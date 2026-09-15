@@ -106,7 +106,7 @@ export function HorarioDeAtendimentoForm({
         ) : (
           <p className="text-[13px] leading-6 text-muted">
             Agora:{' '}
-            <strong className={aberto ? 'text-emerald-300' : 'text-amber-300'}>
+            <strong className={aberto ? 'text-ok' : 'text-aviso'}>
               {aberto ? 'aberto' : 'fechado'}
             </strong>
             {!aberto && (
@@ -182,7 +182,7 @@ export function HorarioDeAtendimentoForm({
                         type="button"
                         aria-label={`Remover faixa de ${nome}`}
                         onClick={() => remover(dia, indice)}
-                        className="rounded-md px-1.5 py-0.5 text-[12px] text-dim transition hover:bg-rose-400/10 hover:text-rose-300"
+                        className="rounded-md px-1.5 py-0.5 text-[12px] text-dim transition hover:bg-rose-400/10 hover:text-perigo"
                       >
                         ✕
                       </button>

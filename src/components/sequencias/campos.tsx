@@ -55,7 +55,7 @@ export function CamposDaSequencia({
 
       {porEtiqueta &&
         (etiquetas.length === 0 ? (
-          <p className="text-[11.5px] leading-5 text-amber-200/90 md:col-span-2">
+          <p className="text-[11.5px] leading-5 text-aviso/90 md:col-span-2">
             Crie uma etiqueta primeiro, em Configurações → Etiquetas. Sem ela este gatilho não tem o
             que observar.
           </p>
@@ -74,7 +74,7 @@ export function CamposDaSequencia({
 
       {porEtapa &&
         (etapas.length === 0 ? (
-          <p className="text-[11.5px] leading-5 text-amber-200/90 md:col-span-2">
+          <p className="text-[11.5px] leading-5 text-aviso/90 md:col-span-2">
             Crie um quadro primeiro, em Quadros. Sem etapa este gatilho não tem o que observar.
           </p>
         ) : (

@@ -66,6 +66,10 @@
   --color-soft: var(--soft);
   --color-muted: var(--muted);
   --color-dim: var(--dim);
+  --color-perigo: var(--perigo);
+  --color-aviso: var(--aviso);
+  --color-ok: var(--ok);
+  --color-info: var(--info);
 }
 
 :root {
@@ -116,6 +120,21 @@
    */
   --dim: #8b94a1;
   --placeholder: #a3abb7;
+
+  /*
+   * Os quatro estados, como token.
+   *
+   * Eles eram `text-rose-300`, `text-amber-200`, `text-emerald-300` — 219
+   * lugares com o tom pálido que o tema escuro pede. Sobre branco, `rose-300`
+   * dá 2,1:1: o aviso mais importante da tela era o mais difícil de ler.
+   *
+   * Como token eles trocam junto com o tema. Como classe fixa do Tailwind,
+   * teriam que estar certos nos dois ao mesmo tempo, o que nenhum tom faz.
+   */
+  --perigo: #dc2626;
+  --aviso: #b45309;
+  --ok: #047857;
+  --info: #0369a1;
   /* O polegar da barra de rolagem: a borda dele é sempre a cor do fundo. */
   --barra: #c8cfd8;
   --barra-forte: #aeb7c2;
@@ -166,6 +185,11 @@
   --muted: #8a94a6;
   --dim: #7d8799;
   --placeholder: #5c667a;
+
+  --perigo: #fca5a5;
+  --aviso: #fcd34d;
+  --ok: #6ee7b7;
+  --info: #7dd3fc;
 
   --barra: #2c3648;
   --barra-forte: #3a4658;

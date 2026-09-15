@@ -49,7 +49,7 @@ export function ApagarCliente({
       <button
         type="button"
         onClick={() => dialogo.current?.showModal()}
-        className="rounded-lg border border-rose-400/25 px-3.5 py-2 text-[12px] font-semibold text-rose-300 transition hover:bg-rose-400/[0.1]"
+        className="rounded-lg border border-rose-400/25 px-3.5 py-2 text-[12px] font-semibold text-perigo transition hover:bg-rose-400/[0.1]"
       >
         Apagar este cliente
       </button>
@@ -71,7 +71,7 @@ export function ApagarCliente({
           Isto apaga o cliente e tudo que é dele, de uma vez e sem desfazer:
         </p>
 
-        <ul className="mt-3 space-y-1.5 rounded-[12px] border border-rose-400/20 bg-rose-400/[0.05] px-4 py-3 text-[12.5px] text-rose-100">
+        <ul className="mt-3 space-y-1.5 rounded-[12px] border border-rose-400/20 bg-rose-400/[0.05] px-4 py-3 text-[12.5px] text-perigo">
           <Item quantidade={estrago.leads} singular="lead" plural="leads" complemento="com as conversas inteiras" />
           <Item quantidade={estrago.fluxos} singular="automação" plural="automações" complemento="e o histórico de versões" />
           <Item quantidade={estrago.conexoes} singular="credencial" plural="credenciais" complemento="guardadas no cofre" />
@@ -92,7 +92,7 @@ export function ApagarCliente({
         />
 
         {erro && (
-          <p role="alert" className="mt-3 rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2.5 text-[12px] leading-5 text-rose-200">
+          <p role="alert" className="mt-3 rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2.5 text-[12px] leading-5 text-perigo">
             {erro}
           </p>
         )}
@@ -111,7 +111,7 @@ export function ApagarCliente({
                 if (!r.ok) setErro(r.erro ?? 'não deu para apagar')
               })
             }}
-            className="flex-[1.35] rounded-[10px] border border-rose-400/40 bg-rose-400/[0.16] px-4 py-2.5 text-[13px] font-bold text-rose-100 transition hover:bg-rose-400/[0.24] disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex-[1.35] rounded-[10px] border border-rose-400/40 bg-rose-400/[0.16] px-4 py-2.5 text-[13px] font-bold text-perigo transition hover:bg-rose-400/[0.24] disabled:cursor-not-allowed disabled:opacity-40"
           >
             {apagando ? 'apagando…' : 'Apagar para sempre'}
           </button>

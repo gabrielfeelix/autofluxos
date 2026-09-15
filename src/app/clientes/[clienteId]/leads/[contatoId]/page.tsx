@@ -99,7 +99,7 @@ export default async function Pagina({
             salvar={acaoCorrigirNome.bind(null, clienteId, contatoId)}
           />
           <span className="flex-1" />
-          <span className={`rounded-full border px-3 py-1 text-[10.5px] font-bold ${lead.aguardando ? 'border-rose-400/25 bg-rose-400/[0.09] text-rose-300' : !lead.automacaoAtiva ? 'border-amber-300/25 bg-amber-300/[0.08] text-amber-200' : 'border-emerald-400/20 bg-emerald-400/[0.07] text-emerald-300'}`}>
+          <span className={`rounded-full border px-3 py-1 text-[10.5px] font-bold ${lead.aguardando ? 'border-rose-400/25 bg-rose-400/[0.09] text-perigo' : !lead.automacaoAtiva ? 'border-amber-300/25 bg-amber-300/[0.08] text-aviso' : 'border-emerald-400/20 bg-emerald-400/[0.07] text-ok'}`}>
             {lead.aguardando ? 'AGUARDANDO HUMANO' : !lead.automacaoAtiva ? 'BOT EM PAUSA' : 'COM O BOT'}
           </span>
           {/* O pedido de exclusão da LGPD vira este botão. A pergunta diz o que
@@ -117,7 +117,7 @@ export default async function Pagina({
           <div className="mb-[18px] flex items-center gap-3 rounded-[13px] border border-rose-400/25 bg-rose-400/[0.06] px-[17px] py-[13px]">
             <span className="size-2 shrink-0 animate-pulse rounded-full bg-rose-400" />
             <div className="min-w-0 flex-1">
-              <strong className="block text-[13px] text-rose-300">Esperando uma pessoa {quando(lead.aguardando.desde)}</strong>
+              <strong className="block text-[13px] text-perigo">Esperando uma pessoa {quando(lead.aguardando.desde)}</strong>
               <span className="mt-0.5 block text-[11.5px] text-muted">Motivo do handoff: {lead.aguardando.motivo}</span>
             </div>
             {/*
@@ -131,7 +131,7 @@ export default async function Pagina({
               <button
                 type="submit"
                 title="Resolve o handoff. A próxima mensagem desta pessoa começa uma conversa nova com o bot."
-                className="shrink-0 rounded-[9px] border border-rose-400/30 bg-rose-400/[0.12] px-3.5 py-2 text-[12px] font-bold text-rose-200 transition hover:bg-rose-400/[0.2]"
+                className="shrink-0 rounded-[9px] border border-rose-400/30 bg-rose-400/[0.12] px-3.5 py-2 text-[12px] font-bold text-perigo transition hover:bg-rose-400/[0.2]"
               >
                 Já atendi
               </button>
@@ -143,7 +143,7 @@ export default async function Pagina({
           <div className={`mb-[18px] flex items-center gap-3 rounded-[13px] border px-[17px] py-[13px] ${lead.automacaoAtiva ? 'border-emerald-400/20 bg-emerald-400/[0.045]' : 'border-amber-300/25 bg-amber-300/[0.06]'}`}>
             <span className={`size-2 shrink-0 rounded-full ${lead.automacaoAtiva ? 'bg-emerald-400' : 'bg-amber-300'}`} />
             <div className="min-w-0 flex-1">
-              <strong className={`block text-[13px] ${lead.automacaoAtiva ? 'text-emerald-300' : 'text-amber-200'}`}>
+              <strong className={`block text-[13px] ${lead.automacaoAtiva ? 'text-ok' : 'text-aviso'}`}>
                 {lead.automacaoAtiva ? 'Bot respondendo este contato' : 'Bot pausado para este contato'}
               </strong>
               <span className="mt-0.5 block text-[11.5px] text-muted">
@@ -194,7 +194,7 @@ export default async function Pagina({
                     </span>
                     <strong className="font-semibold text-soft">{posicao.etapa}</strong>{' '}
                     <span
-                      className={estaParado(posicao.entrouEm) ? 'text-amber-200' : 'text-dim'}
+                      className={estaParado(posicao.entrouEm) ? 'text-aviso' : 'text-dim'}
                     >
                       · {comoParado(posicao.entrouEm)}
                     </span>
@@ -333,7 +333,7 @@ async function Historico({
                 {nossa ? 'bot' : (nomeDoLead ?? 'cliente')} · {horaDoRelogio(mensagem.ts)}
               </span>
               {nossa && !mensagem.entregue && (
-                <span className="ml-2 text-[9.5px] text-amber-200">envio não confirmado</span>
+                <span className="ml-2 text-[9.5px] text-aviso">envio não confirmado</span>
               )}
             </p>
             {(mensagem.waMessageId || mensagem.reacoes) && (

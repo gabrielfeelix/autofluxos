@@ -58,7 +58,7 @@ export function WebhooksDeEntrada({
 
       {novo && (
         <div className="mb-4 rounded-lg border border-amber-400/30 bg-amber-400/[0.07] px-4 py-3">
-          <p className="text-[12px] font-semibold text-amber-200">
+          <p className="text-[12px] font-semibold text-aviso">
             Copie o segredo agora — ele não aparece de novo.
           </p>
           <code className="mt-2 block overflow-x-auto rounded bg-black/30 px-2.5 py-2 font-mono text-[11px] break-all text-soft">
@@ -102,7 +102,7 @@ export function WebhooksDeEntrada({
       </div>
 
       {erro && (
-        <p role="alert" className="mb-3 text-[11.5px] text-rose-300">
+        <p role="alert" className="mb-3 text-[11.5px] text-perigo">
           {erro}
         </p>
       )}
@@ -230,7 +230,7 @@ function BotaoApagar({
         type="button"
         onClick={() => setConfirmando(true)}
         title="Apaga o webhook e o segredo. Quem chamava passa a levar 401."
-        className="shrink-0 rounded-lg border border-line px-2.5 py-1 text-[11px] text-dim transition hover:border-rose-400/40 hover:text-rose-300"
+        className="shrink-0 rounded-lg border border-line px-2.5 py-1 text-[11px] text-dim transition hover:border-rose-400/40 hover:text-perigo"
       >
         Apagar
       </button>
@@ -244,7 +244,7 @@ function BotaoApagar({
         type="button"
         disabled={rodando}
         onClick={() => comecar(async () => void (await acaoApagarWebhookDeEntrada(clienteId, webhookId)))}
-        className="rounded-lg border border-rose-400/40 px-2.5 py-1 text-[11px] text-rose-300 disabled:opacity-50"
+        className="rounded-lg border border-rose-400/40 px-2.5 py-1 text-[11px] text-perigo disabled:opacity-50"
       >
         Apagar
       </button>

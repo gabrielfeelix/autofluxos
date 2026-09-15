@@ -51,7 +51,7 @@ export function MoverFluxo({
         }}
       />
       {erro && (
-        <span role="alert" className="text-[10.5px] text-rose-300">
+        <span role="alert" className="text-[10.5px] text-perigo">
           {erro}
         </span>
       )}

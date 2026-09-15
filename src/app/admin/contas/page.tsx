@@ -31,7 +31,7 @@ export default async function Contas() {
           {noAr > 0 && (
             <>
               {' · '}
-              <span className="text-emerald-300/90">
+              <span className="text-ok/90">
                 {noAr} atendendo {noAr === 1 ? 'gente' : 'gente'} agora
               </span>
             </>

@@ -178,7 +178,7 @@ async function Tempos({ clienteId }: { clienteId: string }) {
       </div>
 
       {tempos.atual.responderam < tempos.atual.entraramNaFila && (
-        <p className="mt-3 text-[11.5px] text-amber-200">
+        <p className="mt-3 text-[11.5px] text-aviso">
           {tempos.atual.entraramNaFila - tempos.atual.responderam} conversa(s) entraram na fila e
           ninguém respondeu ainda — elas não entram na conta acima.
         </p>
@@ -373,7 +373,7 @@ async function Atendimento({ clienteId }: { clienteId: string }) {
       </div>
 
       {pendencia && (
-        <p className="mt-4 flex flex-wrap items-center gap-3 border-t border-line pt-3.5 text-[12.5px] text-amber-200">
+        <p className="mt-4 flex flex-wrap items-center gap-3 border-t border-line pt-3.5 text-[12.5px] text-aviso">
           {pendencia.texto}
           <Link
             href={`/clientes/${clienteId}${pendencia.href}`}
@@ -390,7 +390,7 @@ async function Atendimento({ clienteId }: { clienteId: string }) {
 function Medida({ valor, rotulo, alerta }: { valor: number; rotulo: string; alerta?: boolean }) {
   return (
     <p className="flex items-baseline gap-1.5">
-      <strong className={`text-[19px] tracking-[-0.02em] ${alerta ? 'text-rose-300' : ''}`}>
+      <strong className={`text-[19px] tracking-[-0.02em] ${alerta ? 'text-perigo' : ''}`}>
         {valor}
       </strong>
       <span className="text-[11.5px] text-muted">{rotulo}</span>

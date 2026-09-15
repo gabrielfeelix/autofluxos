@@ -333,14 +333,14 @@ export function BotaoDeMicrofone({
           onClick={() => parar(true)}
           title="Descartar a gravação"
           aria-label="Descartar a gravação"
-          className="shrink-0 rounded-lg px-1.5 py-1 text-[15px] text-dim transition hover:text-rose-300"
+          className="shrink-0 rounded-lg px-1.5 py-1 text-[15px] text-dim transition hover:text-perigo"
         >
           🗑
         </button>
 
         <span
           aria-live="polite"
-          className="flex shrink-0 items-center gap-1.5 text-[12px] tabular-nums text-rose-200"
+          className="flex shrink-0 items-center gap-1.5 text-[12px] tabular-nums text-perigo"
         >
           <span aria-hidden className="h-2 w-2 animate-pulse rounded-full bg-rose-400" />
           {duracaoLegivel(segundos)}
@@ -401,7 +401,7 @@ export function BotaoDeMicrofone({
       </button>
 
       {erro && (
-        <p className="mt-2 w-full rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2 text-[11.5px] leading-5 text-rose-200">
+        <p className="mt-2 w-full rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2 text-[11.5px] leading-5 text-perigo">
           {erro}
         </p>
       )}

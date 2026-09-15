@@ -79,7 +79,7 @@ export function Assumir({
       </button>
 
       {erro && (
-        <span role="alert" className="max-w-[180px] text-[10.5px] leading-4 text-rose-300">
+        <span role="alert" className="max-w-[180px] text-[10.5px] leading-4 text-perigo">
           {erro}
         </span>
       )}
@@ -130,7 +130,7 @@ export function PassarPara({
         {pendente ? '…' : 'Passar'}
       </button>
       {estado.erro && (
-        <span role="alert" className="max-w-[160px] text-[10.5px] leading-4 text-rose-300">
+        <span role="alert" className="max-w-[160px] text-[10.5px] leading-4 text-perigo">
           {estado.erro}
         </span>
       )}

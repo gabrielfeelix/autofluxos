@@ -202,7 +202,7 @@ export function CampoDeVariavel({
         <span
           className={`mt-1 block text-[10.5px] leading-4 ${
             legenda.tom === 'aviso'
-              ? 'text-amber-200'
+              ? 'text-aviso'
               : legenda.tom === 'reuso'
                 ? 'text-primary'
                 : 'text-dim'

@@ -21,7 +21,7 @@ export default function ErroGlobal({
   return (
     <html lang="pt-BR">
       <body className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#f6f7f9] p-6 text-center font-sans text-[#131922]">
-        <span className="flex size-11 items-center justify-center rounded-full border border-rose-400/30 bg-rose-400/10 text-lg font-bold text-rose-300">!</span>
+        <span className="flex size-11 items-center justify-center rounded-full border border-rose-400/30 bg-rose-400/10 text-lg font-bold text-perigo">!</span>
         <h1 className="text-[19px] font-bold">O painel não conseguiu carregar.</h1>
         <button
           onClick={reset}

@@ -94,7 +94,7 @@ type Acao = (formData: FormData) => void | Promise<void>
 function Pessoas({ membros }: { membros: ContaDaLista['membros'] }) {
   if (membros.length === 0) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-[11.5px] text-amber-300/90">
+      <span className="inline-flex items-center gap-1.5 text-[11.5px] text-aviso/90">
         <span aria-hidden className="size-1.5 rounded-full bg-amber-300/80" />
         ninguém entra nela
       </span>
@@ -194,7 +194,7 @@ function Cartao({
             <span className="font-semibold text-soft">{conta.fluxos}</span>{' '}
             {conta.fluxos === 1 ? 'automação' : 'automações'}
             <span className="text-dim">·</span>
-            <span className={conta.noAr > 0 ? 'text-emerald-300/90' : 'text-dim'}>
+            <span className={conta.noAr > 0 ? 'text-ok/90' : 'text-dim'}>
               {conta.noAr === 0 ? 'nenhuma no ar' : `${conta.noAr} no ar`}
             </span>
           </>
@@ -301,7 +301,7 @@ function MenuDeContexto({
           aoFechar()
           aoApagar()
         }}
-        className="flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-left text-[12.5px] font-semibold text-rose-300 transition hover:bg-rose-400/[0.12]"
+        className="flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-left text-[12.5px] font-semibold text-perigo transition hover:bg-rose-400/[0.12]"
       >
         <span aria-hidden>✕</span> Deletar
       </button>
@@ -359,9 +359,9 @@ function ApagarConta({
       descricao="Isto apaga a conta e tudo que é dela, de uma vez e sem desfazer."
       largura={460}
     >
-      <div className="rounded-[12px] border border-rose-400/20 bg-rose-400/[0.05] px-4 py-3 text-[12.5px] text-rose-100">
+      <div className="rounded-[12px] border border-rose-400/20 bg-rose-400/[0.05] px-4 py-3 text-[12.5px] text-perigo">
         {estrago === null ? (
-          <p className="text-rose-200/70">conferindo o que some junto…</p>
+          <p className="text-perigo/70">conferindo o que some junto…</p>
         ) : (
           <ul className="space-y-1.5">
             <li>
@@ -404,7 +404,7 @@ function ApagarConta({
       {erro && (
         <p
           role="alert"
-          className="mt-3 rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2.5 text-[12px] leading-5 text-rose-200"
+          className="mt-3 rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2.5 text-[12px] leading-5 text-perigo"
         >
           {erro}
         </p>
@@ -429,7 +429,7 @@ function ApagarConta({
               else aoFechar()
             })
           }}
-          className="flex-[1.35] rounded-[10px] border border-rose-400/40 bg-rose-400/[0.16] px-4 py-2.5 text-[13px] font-bold text-rose-100 transition hover:bg-rose-400/[0.24] disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex-[1.35] rounded-[10px] border border-rose-400/40 bg-rose-400/[0.16] px-4 py-2.5 text-[13px] font-bold text-perigo transition hover:bg-rose-400/[0.24] disabled:cursor-not-allowed disabled:opacity-40"
         >
           {apagando ? 'apagando…' : 'Apagar para sempre'}
         </button>
@@ -504,7 +504,7 @@ export function ContasAdmin({
             title="Contas em que nenhuma pessoa consegue entrar com login próprio"
             className={`h-[38px] shrink-0 rounded-[10px] border px-3 text-[12px] font-semibold transition ${
               soSemAcesso
-                ? 'border-amber-300/50 bg-amber-300/[0.12] text-amber-200'
+                ? 'border-amber-300/50 bg-amber-300/[0.12] text-aviso'
                 : 'border-line text-muted hover:border-strong hover:text-soft'
             }`}
           >

@@ -74,7 +74,7 @@ export function QuadroPadrao({
       }
       className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] transition ${
         recebendo
-          ? 'border-emerald-400/25 bg-emerald-400/[0.07] text-emerald-200'
+          ? 'border-emerald-400/25 bg-emerald-400/[0.07] text-ok'
           : 'border-line bg-surface text-muted hover:border-strong'
       }`}
     >

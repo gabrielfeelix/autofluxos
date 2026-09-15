@@ -566,7 +566,22 @@ async function Conteudo({
               resposta citando a mensagem de alguém que não é essa.
             */}
             <ProvedorDeCitacao key={selecionado.contatoId}>
-              <div className="flex min-h-0 flex-1 flex-col-reverse overflow-auto bg-canvas p-5">
+              {/*
+                `overflow-x-hidden`, e não `overflow-auto` nos dois eixos.
+
+                Uma URL de anúncio com 180 caracteres e nenhum espaço não tem
+                onde quebrar: ela esticava a bolha para além da coluna, o
+                contêiner ganhava rolagem horizontal, e arrastar de lado
+                deslocava a conversa inteira para fora da moldura. O `max-w` da
+                bolha não segurava porque `overflow-wrap` nasce em `normal` —
+                palavra sem espaço simplesmente transborda.
+
+                A quebra é resolvida na bolha (`[overflow-wrap:anywhere]`); isto
+                aqui é a garantia de que nenhum outro conteúdo largo — uma
+                tabela colada, um anexo fora de medida — reintroduza o mesmo
+                defeito.
+              */}
+              <div className="flex min-h-0 flex-1 flex-col-reverse overflow-x-hidden overflow-y-auto bg-canvas p-5">
                 <Historico
                   mensagens={conversa.mensagens}
                   cortada={conversa.cortada}
@@ -804,9 +819,16 @@ function Historico({
              * toda.
              */}
           <div
-            className={`flex flex-col gap-0 ${nossa ? 'items-end' : 'items-start'}`}
+            className={`flex min-w-0 max-w-full flex-col gap-0 ${nossa ? 'items-end' : 'items-start'}`}
           >
-            <p className={`max-w-[78%] px-3 py-2 text-[12.5px] leading-[1.5] whitespace-pre-wrap shadow-[0_1px_1px_rgba(19,25,34,0.026)] ${
+            {/*
+              `[overflow-wrap:anywhere]` e não `break-words`: `break-word` só
+              quebra a palavra depois de tentar empurrá-la para uma linha só —
+              e uma URL que já é maior que a linha inteira nunca chega a caber,
+              então ele desiste e deixa transbordar. `anywhere` quebra onde
+              precisar, que é o comportamento certo para link colado.
+            */}
+            <p className={`max-w-[78%] px-3 py-2 text-[12.5px] leading-[1.5] whitespace-pre-wrap [overflow-wrap:anywhere] shadow-[0_1px_1px_rgba(19,25,34,0.026)] ${
               nossa
                 ? 'rounded-[13px_13px_4px_13px] border border-primary/[0.2] bg-primary/[0.12]'
                 : 'rounded-[13px_13px_13px_4px] border border-line bg-surface'
@@ -828,16 +850,26 @@ function Historico({
                 deixar a frase genérica embaixo diria que falta algo que não
                 falta.
               */}
+              {/*
+                A frase "(áudio, imagem ou documento)" é para quando **não há
+                arquivo nenhum** para mostrar — mídia recebida que o webhook
+                registrou sem baixar. Ela aparecia também embaixo do player, o
+                que é dizer que não dá para ver o que está ali tocando.
+              */}
               {mensagem.texto !== null ? (
                 <TextoDoWhatsApp texto={mensagem.texto} />
               ) : (
-                !mensagem.local && !mensagem.cartoes && <SemTexto />
+                !mensagem.local &&
+                !mensagem.cartoes &&
+                !mensagem.anexo &&
+                !mensagem.recebido &&
+                !mensagem.semCopia && <SemTexto />
               )}
               <span className="ml-2 text-[9.5px] text-muted" title={horaExata(mensagem.ts)}>
                 {nossa ? 'atendimento' : (nome ?? 'cliente')} · {horaDoRelogio(mensagem.ts)}
               </span>
               {nossa && !mensagem.entregue && (
-                <span className="ml-2 text-[9.5px] text-amber-200">envio não confirmado</span>
+                <span className="ml-2 text-[9.5px] text-aviso">envio não confirmado</span>
               )}
             </p>
             {(mensagem.waMessageId || mensagem.reacoes) && (

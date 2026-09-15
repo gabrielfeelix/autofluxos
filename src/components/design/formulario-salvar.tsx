@@ -39,11 +39,11 @@ export function FormularioSalvar({
         </button>
 
         {estado.erro ? (
-          <span role="alert" className="text-[12px] font-semibold text-rose-300">
+          <span role="alert" className="text-[12px] font-semibold text-perigo">
             {estado.erro}
           </span>
         ) : estado.ok ? (
-          <span role="status" className="flex items-center gap-1.5 text-[12px] font-semibold text-emerald-300">
+          <span role="status" className="flex items-center gap-1.5 text-[12px] font-semibold text-ok">
             <span className="size-1.5 rounded-full bg-emerald-400" />
             Salvo
           </span>

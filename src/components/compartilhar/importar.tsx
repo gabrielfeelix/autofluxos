@@ -81,7 +81,7 @@ export function ImportarFluxo({
       </p>
 
       {erro && (
-        <p role="alert" className="text-[11.5px] text-rose-300">
+        <p role="alert" className="text-[11.5px] text-perigo">
           {erro}
         </p>
       )}

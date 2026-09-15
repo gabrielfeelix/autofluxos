@@ -66,7 +66,7 @@ export default async function Usuarios() {
 
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 {usuario.contas.length === 0 ? (
-                  <span className="text-[12px] text-amber-300">
+                  <span className="text-[12px] text-aviso">
                     sem conta nenhuma — entra e não vê nada
                   </span>
                 ) : (
@@ -124,7 +124,7 @@ export default async function Usuarios() {
                       className={`rounded-[10px] border px-3 py-1.5 text-[11.5px] font-semibold transition ${
                         usuario.banido
                           ? 'border-strong bg-surface text-soft hover:text-primary'
-                          : 'border-rose-400/25 bg-rose-400/[0.07] text-rose-300 hover:bg-rose-400/[0.13]'
+                          : 'border-rose-400/25 bg-rose-400/[0.07] text-perigo hover:bg-rose-400/[0.13]'
                       }`}
                     >
                       {usuario.banido ? 'Devolver acesso' : 'Suspender acesso'}
@@ -149,7 +149,7 @@ function Selo({ children, tom }: { children: string; tom: 'neutro' | 'destaque' 
   const cores = {
     neutro: 'border-strong bg-surface text-dim',
     destaque: 'border-primary/30 bg-primary/[0.12] text-primary',
-    alerta: 'border-rose-400/30 bg-rose-400/[0.1] text-rose-300',
+    alerta: 'border-rose-400/30 bg-rose-400/[0.1] text-perigo',
   }[tom]
 
   return (
