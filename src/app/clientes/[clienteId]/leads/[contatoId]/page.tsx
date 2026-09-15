@@ -7,7 +7,8 @@ import { BotaoPerigo } from '@/components/design/botao-perigo'
 import { ControleDeAutomacao } from '@/components/lead/controle-automacao'
 import { clienteTemAutomacao } from '@/server/repos/fluxos'
 import { CaixaDeResposta } from '@/components/lead/responder'
-import { BarraDaMensagem } from '@/components/lead/barra-da-mensagem'
+import { RodapeDaMensagem } from '@/components/lead/rodape-da-mensagem'
+import { assinaturaDasReacoes } from '@/core/reacoes'
 import { ProvedorDeCitacao } from '@/components/lead/citacao'
 import {
   acaoApagarContato,
@@ -27,8 +28,9 @@ import { rotuloDoCampo } from '@/core/contatos/rotulo-do-campo'
 import { SeletorDeEtiquetas } from '@/components/etiquetas/seletor'
 import {
   AnexoNaConversa,
+  CartoesNaBolha,
   CitacaoNaBolha,
-  ReacoesNaBolha,
+  LocalNaBolha,
   SemTexto,
 } from '@/components/lead/anexo'
 import { NomeDoContato, NotasDoContato } from '@/components/lead/identidade'
@@ -301,7 +303,19 @@ async function Historico({
             <p className={`max-w-[78%] px-3 py-2 text-[12.5px] leading-[1.45] whitespace-pre-wrap ${nossa ? 'rounded-[13px_13px_4px_13px] border border-accent/[0.22] bg-accent/[0.13]' : 'rounded-[13px_13px_13px_4px] border border-white/[0.07] bg-white/[0.055]'}`}>
               {mensagem.cita && <CitacaoNaBolha cita={mensagem.cita} nome={nomeDoLead} />}
               {mensagem.anexo && <AnexoNaConversa anexo={mensagem.anexo} />}
-              {mensagem.texto !== null ? <TextoDoWhatsApp texto={mensagem.texto} /> : <SemTexto />}
+              {mensagem.local && <LocalNaBolha local={mensagem.local} />}
+              {mensagem.cartoes && <CartoesNaBolha cartoes={mensagem.cartoes} />}
+              {/*
+                Lugar e cartão **substituem** o "(áudio, imagem ou documento)".
+                Eles são a mensagem inteira, e quase nunca vêm com legenda —
+                deixar a frase genérica embaixo diria que falta algo que não
+                falta.
+              */}
+              {mensagem.texto !== null ? (
+                <TextoDoWhatsApp texto={mensagem.texto} />
+              ) : (
+                !mensagem.local && !mensagem.cartoes && <SemTexto />
+              )}
               <span className="ml-2 text-[9.5px] text-muted" title={horaExata(mensagem.ts)}>
                 {nossa ? 'bot' : (nomeDoLead ?? 'cliente')} · {quando(mensagem.ts)}
               </span>
@@ -309,16 +323,16 @@ async function Historico({
                 <span className="ml-2 text-[9.5px] text-amber-200">envio não confirmado</span>
               )}
             </p>
-            {mensagem.reacoes && <ReacoesNaBolha reacoes={mensagem.reacoes} nome={nomeDoLead} />}
-            {mensagem.waMessageId && (
-              <BarraDaMensagem
+            {(mensagem.waMessageId || mensagem.reacoes) && (
+              /* A `key` devolve a palavra final ao servidor — ver o Inbox. */
+              <RodapeDaMensagem
+                key={assinaturaDasReacoes(mensagem.reacoes)}
                 clienteId={clienteId}
                 contatoId={contatoId}
-                waMessageId={mensagem.waMessageId}
+                waMessageId={mensagem.waMessageId ?? null}
                 podeReagir={podeReagir(mensagem.ts)}
-                {...(mensagem.reacoes?.find((r) => r.de === 'saida')?.emoji
-                  ? { minhaReacao: mensagem.reacoes.find((r) => r.de === 'saida')!.emoji }
-                  : {})}
+                reacoes={mensagem.reacoes ?? []}
+                nome={nomeDoLead}
                 texto={mensagem.texto}
                 deQuem={nossa ? 'ao atendimento' : `a ${nomeDoLead ?? 'cliente'}`}
                 nossa={nossa}

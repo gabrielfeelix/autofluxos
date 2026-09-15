@@ -1,3 +1,4 @@
+import { after } from 'next/server'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { comoFalta, podeReagir, restaDaJanela } from '@/channels/janela'
@@ -8,6 +9,7 @@ import { sessaoAtual } from '@/server/sessao'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { IlustracaoInbox } from '@/components/design/ilustracoes'
 import { recemConectado } from '@/core/coexistencia-na-tela'
+import { assinaturaDasReacoes } from '@/core/reacoes'
 import { coexistenciaDoCliente } from '@/server/repos/coexistencia'
 import { ControleDeAutomacao } from '@/components/lead/controle-automacao'
 import { CamposColetados } from '@/components/lead/campos-coletados'
@@ -18,7 +20,7 @@ import { resolverAnuncios } from '@/server/resolver-anuncios'
 import { tokenDeAnuncios } from '@/server/token-de-anuncios'
 import { QuemE } from '@/components/lead/quem-e'
 import { CaixaDeResposta } from '@/components/lead/responder'
-import { BarraDaMensagem } from '@/components/lead/barra-da-mensagem'
+import { RodapeDaMensagem } from '@/components/lead/rodape-da-mensagem'
 import { ProvedorDeCitacao } from '@/components/lead/citacao'
 import {
   acaoAssumirAtendimento,
@@ -46,8 +48,9 @@ import {
 import { listarRespostasRapidas, type RespostaRapida } from '@/server/repos/respostas-rapidas'
 import {
   AnexoNaConversa,
+  CartoesNaBolha,
   CitacaoNaBolha,
-  ReacoesNaBolha,
+  LocalNaBolha,
   SemTexto,
 } from '@/components/lead/anexo'
 import { horaExata, quando } from '@/lib/quando'
@@ -59,7 +62,8 @@ import { clienteTemAutomacao } from '@/server/repos/fluxos'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { listarQuadros, quadrosDoContato } from '@/server/repos/quadros'
 import { FunilDaConversa, type FunilDoContato } from '@/components/inbox/funil-da-conversa'
-import { marcarComoLida, naoLidasPorContato } from '@/server/repos/leituras'
+import { marcarComoLida, naoLidasPorContato, quandoLeu } from '@/server/repos/leituras'
+import { avisarQueLeu } from '@/server/recibo-de-leitura'
 import { TextoDoWhatsApp } from '@/components/texto-do-whatsapp'
 import { PulsoDoInbox } from '@/components/inbox/pulso-do-inbox'
 
@@ -240,7 +244,28 @@ export default async function Pagina({
   const pulso = await pulsoDaConta(clienteId)
 
   const usuarioId = sessao?.usuario.id ?? null
-  if (selecionado) await marcarComoLida(usuarioId, selecionado.contatoId)
+  if (selecionado) {
+    /*
+     * A ordem importa: **ler o relógio antes de empurrá-lo.**
+     *
+     * `marcarComoLida` escreve `now()`. Se o recibo de leitura do WhatsApp
+     * fosse decidido depois disso, a comparação "chegou algo desde a última
+     * olhada?" sempre daria não, e o tique azul nunca sairia.
+     */
+    const leuAntesEm = await quandoLeu(usuarioId, selecionado.contatoId)
+    await marcarComoLida(usuarioId, selecionado.contatoId)
+
+    /*
+     * O tique azul sai **depois** da resposta, pelo `after`: é uma chamada de
+     * rede à Meta, e ela não pode entrar no caminho de desenhar a conversa.
+     *
+     * Sem usuário na sessão não há de quem saber "quando leu", e sem isso cada
+     * atualização da tela mandaria outro recibo. Fica sem — o bot ainda marca
+     * lida quando vai responder.
+     */
+    const contatoAberto = selecionado.contatoId
+    if (usuarioId) after(() => avisarQueLeu(clienteId, contatoAberto, leuAntesEm))
+  }
   /*
    * **As não lidas cobrem a fila local, não só a página do servidor.**
    *
@@ -716,7 +741,6 @@ function Historico({
          * a Meta só o devolve depois de aceitar. Oferecer o botão ali daria um
          * clique que falharia sempre.
          */
-        const minhaReacao = mensagem.reacoes?.find((r) => r.de === 'saida')?.emoji
         return (
           /*
            * A coluna existe para a reação ter onde ficar.
@@ -737,7 +761,19 @@ function Historico({
             }`}>
               {mensagem.cita && <CitacaoNaBolha cita={mensagem.cita} nome={nome} />}
               {mensagem.anexo && <AnexoNaConversa anexo={mensagem.anexo} />}
-              {mensagem.texto !== null ? <TextoDoWhatsApp texto={mensagem.texto} /> : <SemTexto />}
+              {mensagem.local && <LocalNaBolha local={mensagem.local} />}
+              {mensagem.cartoes && <CartoesNaBolha cartoes={mensagem.cartoes} />}
+              {/*
+                Lugar e cartão **substituem** o "(áudio, imagem ou documento)".
+                Eles são a mensagem inteira, e quase nunca vêm com legenda —
+                deixar a frase genérica embaixo diria que falta algo que não
+                falta.
+              */}
+              {mensagem.texto !== null ? (
+                <TextoDoWhatsApp texto={mensagem.texto} />
+              ) : (
+                !mensagem.local && !mensagem.cartoes && <SemTexto />
+              )}
               <span className="ml-2 text-[9.5px] text-muted" title={horaExata(mensagem.ts)}>
                 {nossa ? 'atendimento' : (nome ?? 'cliente')} · {quando(mensagem.ts)}
               </span>
@@ -745,14 +781,25 @@ function Historico({
                 <span className="ml-2 text-[9.5px] text-amber-200">envio não confirmado</span>
               )}
             </p>
-            {mensagem.reacoes && <ReacoesNaBolha reacoes={mensagem.reacoes} nome={nome} />}
-            {mensagem.waMessageId && (
-              <BarraDaMensagem
+            {(mensagem.waMessageId || mensagem.reacoes) && (
+              /*
+               * A `key` é o que devolve a palavra final ao servidor.
+               *
+               * O rodapé guarda a nossa reação em estado para poder mostrá-la
+               * antes da resposta. Quando a leitura seguinte trouxer outra
+               * coisa — alguém reagiu do celular, a Meta recusou, a outra
+               * pessoa reagiu também —, a chave muda, o componente remonta, e
+               * o otimismo pendurado ali morre junto. Sem isso, a tela ficaria
+               * com a aposta para sempre.
+               */
+              <RodapeDaMensagem
+                key={assinaturaDasReacoes(mensagem.reacoes)}
                 clienteId={clienteId}
                 contatoId={contatoId}
-                waMessageId={mensagem.waMessageId}
+                waMessageId={mensagem.waMessageId ?? null}
                 podeReagir={podeReagir(mensagem.ts)}
-                {...(minhaReacao ? { minhaReacao } : {})}
+                reacoes={mensagem.reacoes ?? []}
+                nome={nome}
                 texto={mensagem.texto}
                 deQuem={nossa ? 'ao atendimento' : `a ${nome ?? 'cliente'}`}
                 nossa={nossa}

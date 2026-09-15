@@ -78,3 +78,23 @@ export function casarReacoes<Lado extends string>(
   }
   return saida
 }
+
+/**
+ * Uma string que muda quando as reações de uma mensagem mudam.
+ *
+ * Serve de `key` para o rodapé da bolha, que guarda a **nossa** reação em
+ * estado para mostrá-la antes de a Meta responder. Enquanto o servidor disser
+ * a mesma coisa, a chave é a mesma e o estado local sobrevive; na primeira
+ * leitura que discordar, o componente remonta e a verdade do servidor volta a
+ * valer.
+ *
+ * Mora em `core/` e não no componente porque quem monta a `key` é a página, que
+ * roda no servidor — e `'use client'` não exporta função para o servidor
+ * chamar.
+ */
+export function assinaturaDasReacoes(
+  reacoes: { emoji: string; de: string }[] | undefined,
+): string {
+  if (!reacoes || reacoes.length === 0) return 'sem-reacao'
+  return reacoes.map((r) => `${r.de}:${r.emoji}`).join('|')
+}

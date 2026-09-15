@@ -1,4 +1,4 @@
-import type { AnexoDaMensagem, Citada, ReacaoNaMensagem } from '@/server/repos/leads'
+import type { AnexoDaMensagem, CartaoDeContato, Citada, LocalDaMensagem } from '@/server/repos/leads'
 
 /**
  * O arquivo dentro da bolha, nas telas de Lead e de Inbox.
@@ -110,32 +110,82 @@ export function CitacaoNaBolha({ cita, nome }: { cita: Citada; nome: string | nu
 }
 
 /**
- * As reações penduradas na mensagem.
+ * O lugar que a pessoa mandou, dentro da bolha.
  *
- * Ficam **fora** da bolha, encostadas na borda de baixo, como no WhatsApp: a
- * reação comenta a mensagem, não faz parte dela. Dentro, viraria parte do
- * texto — e a diferença importa quando a mensagem é longa.
+ * ---------------------------------------------------------------------------
+ * Por que um link, e não um mapa
+ * ---------------------------------------------------------------------------
  *
- * `de` distingue os dois lados porque numa conversa os dois reagem, e saber
- * quem reagiu é metade da informação: "ela curtiu o preço" e "nós curtimos o
- * que ela disse" são fatos diferentes para quem abre a conversa depois.
+ * Um mapa embutido custa uma chave de API, um domínio a mais no `next.config` e
+ * um iframe de terceiro em cima da conversa — por um recurso que aparece em uma
+ * conversa em cem. O link abre o mapa que a pessoa já usa, com o caminho de
+ * casa dela já configurado, e é o que quem atende vai querer de qualquer jeito:
+ * **traçar a rota**, não olhar a figura.
+ *
+ * As coordenadas ficam à vista embaixo do nome porque às vezes é só isso que
+ * chega: arrastando o pino, a Meta não manda nem nome nem endereço, e uma bolha
+ * dizendo apenas "Localização" não diria nada.
  */
-export function ReacoesNaBolha({
-  reacoes,
-  nome,
-}: {
-  reacoes: ReacaoNaMensagem[]
-  nome: string | null
-}) {
+export function LocalNaBolha({ local }: { local: LocalDaMensagem }) {
+  const titulo = local.nome?.trim() || 'Localização'
+  const coordenadas = `${local.latitude.toFixed(5)}, ${local.longitude.toFixed(5)}`
+
   return (
-    <span className="-mt-1.5 flex flex-wrap gap-1">
-      {reacoes.map((reacao) => (
+    <a
+      href={`https://www.google.com/maps/search/?api=1&query=${local.latitude},${local.longitude}`}
+      target="_blank"
+      rel="noreferrer"
+      className="mb-1.5 flex items-start gap-2 rounded-lg border border-white/[0.09] bg-white/[0.04] px-2.5 py-2 transition hover:border-accent/40"
+    >
+      <span className="text-[15px] leading-none">📍</span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[11.5px] font-bold text-white">{titulo}</span>
+        {local.endereco && (
+          <span className="block text-[11px] leading-4 text-muted">{local.endereco}</span>
+        )}
+        <span className="block font-mono text-[9.5px] text-dim">{coordenadas}</span>
+        <span className="mt-0.5 block text-[10px] font-bold text-accent">Abrir no mapa →</span>
+      </span>
+    </a>
+  )
+}
+
+/**
+ * Os cartões de contato encaminhados.
+ *
+ * Cada telefone é um link `tel:` — no celular disca, no computador abre o que a
+ * pessoa usa para ligar. Antes disto a bolha vinha vazia e o número ficava
+ * preso no `payload`, onde ninguém olha.
+ *
+ * Um cartão pode chegar **sem telefone nenhum** (a Meta manda o vCard como
+ * está), e nesse caso a bolha diz isso em vez de mostrar um cartão que parece
+ * quebrado.
+ */
+export function CartoesNaBolha({ cartoes }: { cartoes: CartaoDeContato[] }) {
+  return (
+    <span className="mb-1.5 flex flex-col gap-1">
+      {cartoes.map((cartao, i) => (
         <span
-          key={reacao.id}
-          title={`${reacao.de === 'saida' ? 'atendimento' : (nome ?? 'cliente')} reagiu`}
-          className="rounded-full border border-white/[0.1] bg-[#1c2230] px-1.5 py-0.5 text-[11px] leading-none shadow-[0_1px_2px_rgba(0,0,0,0.25)]"
+          key={`${cartao.nome}-${i}`}
+          className="flex items-start gap-2 rounded-lg border border-white/[0.09] bg-white/[0.04] px-2.5 py-2"
         >
-          {reacao.emoji}
+          <span className="text-[15px] leading-none">👤</span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[11.5px] font-bold text-white">{cartao.nome}</span>
+            {cartao.telefones.length > 0 ? (
+              cartao.telefones.map((telefone) => (
+                <a
+                  key={telefone}
+                  href={`tel:${telefone.replace(/[^+\d]/g, '')}`}
+                  className="block font-mono text-[11px] text-accent hover:underline"
+                >
+                  {telefone}
+                </a>
+              ))
+            ) : (
+              <span className="block text-[11px] text-dim italic">sem telefone no cartão</span>
+            )}
+          </span>
         </span>
       ))}
     </span>

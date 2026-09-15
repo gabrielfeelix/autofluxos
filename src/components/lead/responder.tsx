@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from 'react'
 import { BotaoDeAnexo } from '@/components/lead/botao-de-anexo'
 import { useCitacao } from '@/components/lead/citacao'
+import { SeletorDeEmoji } from '@/components/lead/seletor-de-emoji'
 
 /**
  * A caixa de responder do painel.
@@ -183,6 +184,12 @@ export function CaixaDeResposta({
           manda por conta própria. Fica aqui na linha do rodapé porque é onde
           todo mundo procura: ao lado do botão de enviar.
         */}
+        {/*
+          O emoji entra pelo mesmo caminho da resposta rápida: `inserirResposta`
+          escreve no cursor e confere o teto de 4.096 caracteres. Um caminho só
+          é o que evita a tela aceitar por aqui o que recusa por ali.
+        */}
+        <SeletorDeEmoji aoEscolher={inserirResposta} desabilitado={enviando} />
         {anexo && (
           <BotaoDeAnexo
             clienteId={anexo.clienteId}

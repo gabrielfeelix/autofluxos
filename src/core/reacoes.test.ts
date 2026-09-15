@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { casarReacoes, type LinhaDeReacao } from './reacoes'
+import { assinaturaDasReacoes, casarReacoes, type LinhaDeReacao } from './reacoes'
 
 type Lado = 'entrada' | 'saida'
 
@@ -116,5 +116,28 @@ describe('casar reações com as mensagens que elas comentam', () => {
 
   it('conversa sem reação nenhuma devolve mapa vazio', () => {
     expect(casarReacoes<Lado>([mensagem('m1'), mensagem('m2', 'saida')]).size).toBe(0)
+  })
+})
+
+describe('a assinatura das reações', () => {
+  it('muda quando o emoji muda', () => {
+    const antes = assinaturaDasReacoes([{ emoji: '👍', de: 'saida' }])
+    const depois = assinaturaDasReacoes([{ emoji: '❤️', de: 'saida' }])
+    expect(antes).not.toBe(depois)
+  })
+
+  it('muda quando a outra pessoa também reage', () => {
+    const so = assinaturaDasReacoes([{ emoji: '👍', de: 'saida' }])
+    const dois = assinaturaDasReacoes([
+      { emoji: '👍', de: 'saida' },
+      { emoji: '😂', de: 'entrada' },
+    ])
+    expect(so).not.toBe(dois)
+  })
+
+  /* Sem isso, a `key` seria `''` e o React trataria como "sem chave". */
+  it('tem valor para mensagem sem reação nenhuma', () => {
+    expect(assinaturaDasReacoes([])).toBe('sem-reacao')
+    expect(assinaturaDasReacoes(undefined)).toBe('sem-reacao')
   })
 })

@@ -74,4 +74,16 @@ export type Canal = {
    * botão — ver `PODE_REAGIR_ATE_DIAS`.
    */
   reagir?(para: string, mensagemId: string, emoji: string): Promise<void>
+  /**
+   * Marca a última mensagem que chegou como **lida** — o segundo tique azul.
+   *
+   * Existe separado de `aguardarResposta`, que também marca lida, porque as
+   * duas respondem a perguntas diferentes: lá o bot vai responder e o "lido"
+   * vem junto do "digitando"; aqui uma pessoa abriu a conversa no painel e pode
+   * não responder nada. Amarrar os dois faria abrir a conversa mostrar
+   * "digitando" para alguém que ninguém está atendendo.
+   *
+   * Opcional pelo mesmo motivo de `reagir`: nem todo canal tem o recurso.
+   */
+  marcarLida?(mensagemId: string): Promise<void>
 }

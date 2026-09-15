@@ -156,6 +156,17 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
       })
     },
 
+    /**
+     * O segundo tique, sem o "digitando".
+     *
+     * A Meta marca a conversa inteira como lida a partir de **uma** mensagem:
+     * mandar o id da última que chegou cobre as anteriores. Por isso aqui não
+     * há laço nem lista — um pedido por conversa aberta, e não um por mensagem.
+     */
+    async marcarLida(mensagemId) {
+      await mandar({ status: 'read', message_id: mensagemId }, TIMEOUT_INDICADOR_MS)
+    },
+
     async enviarMidia(para, { midia, url, legenda, nomeArquivo }, citando) {
       // A Meta baixa do `link` na hora de entregar; o outro caminho é subir o
       // arquivo antes e mandar um `id`. Ficamos no link de propósito: o `id`

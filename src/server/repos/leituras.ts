@@ -66,3 +66,38 @@ export async function marcarComoLida(usuarioId: string | null, contatoId: string
 
   if (error) console.error('[leituras] não deu para marcar como lida', error.message)
 }
+
+/**
+ * Quando esta pessoa abriu esta conversa pela última vez. `null` = nunca.
+ *
+ * Existe para o tique azul do WhatsApp, e por isso precisa ser lido **antes**
+ * de `marcarComoLida` escrever `now()`: é a comparação entre este relógio e o
+ * da última mensagem recebida que responde "chegou algo desde a última vez que
+ * alguém daqui olhou?". Sem essa pergunta, cada atualização da tela mandaria
+ * mais um recibo de leitura para a Meta — a tela do Inbox fica aberta o dia
+ * inteiro e se refaz sozinha.
+ *
+ * Falha em silêncio, como o resto do arquivo: sem a resposta, o recibo deixa de
+ * ser mandado naquela volta, e ninguém perde trabalho por isso.
+ */
+export async function quandoLeu(
+  usuarioId: string | null,
+  contatoId: string,
+): Promise<string | null> {
+  if (!usuarioId) return null
+
+  const { data, error } = await db()
+    .from('af_leituras')
+    .select('lida_em')
+    .eq('usuario_id', usuarioId)
+    .eq('contato_id', contatoId)
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return null
+  if (error) {
+    console.error('[leituras] não deu para saber quando foi lida', error.message)
+    return null
+  }
+
+  return (data as { lida_em: string } | null)?.lida_em ?? null
+}

@@ -3,6 +3,12 @@ import { z } from 'zod'
 import type { Conciliacao, ContatoConhecido } from '@/core/contatos/planilha'
 import { chavesDoTelefone } from '@/core/contatos/telefone'
 import { LIMITE_DA_NOTA } from '@/core/flow/limites'
+import {
+  cartoesDoPayload,
+  localDoPayload,
+  type CartaoDeContato,
+  type LocalDaMensagem,
+} from '@/core/payload-da-mensagem'
 import { TIPOS_DE_MIDIA, type TipoDeMidia } from '@/core/flow/schema'
 import { casarReacoes } from '@/core/reacoes'
 import { db, ehIdInvalido } from '../db'
@@ -93,6 +99,11 @@ export type AnexoDaMensagem = {
   nomeArquivo?: string
 }
 
+// Os dois moram em `core/` porque são regra sobre dados, sem banco e sem rede
+// — o mesmo motivo de `core/reacoes.ts`. Reexportados para as telas, que já
+// pegam o resto dos tipos da conversa daqui.
+export type { CartaoDeContato, LocalDaMensagem }
+
 /** Uma reação grudada numa mensagem. `de` diz de que lado ela veio. */
 export type ReacaoNaMensagem = {
   emoji: string
@@ -124,6 +135,16 @@ export type MensagemDoLead = {
    * atende não descobre que a foto do plano já foi.
    */
   anexo?: AnexoDaMensagem
+  /**
+   * O lugar que ela mandou. Ausente em quase toda linha.
+   *
+   * Sem isto, "📍 localização" aparecia na fila e a bolha ficava **vazia** —
+   * quem abria a conversa via que algo tinha chegado e não via o quê. O dado
+   * sempre esteve no `payload`; faltava desenhar.
+   */
+  local?: LocalDaMensagem
+  /** Os cartões de contato encaminhados, pelo mesmo motivo do `local`. */
+  cartoes?: CartaoDeContato[]
   /**
    * O id da mensagem na Meta.
    *
@@ -854,6 +875,8 @@ export async function lerConversa(
       .filter((m) => m.reagiu_a === null)
       .map((m) => {
         const anexo = anexoDoPayload(m.payload)
+        const local = localDoPayload(m.payload)
+        const cartoes = cartoesDoPayload(m.payload)
         const reacoes = m.wa_message_id ? reacoesPorAlvo.get(m.wa_message_id) : undefined
         const cita = m.cita ? citadaDoHistorico(m.cita, porWaId) : null
         return {
@@ -863,6 +886,8 @@ export async function lerConversa(
           ts: m.ts,
           entregue: m.entregue,
           ...(anexo ? { anexo } : {}),
+          ...(local ? { local } : {}),
+          ...(cartoes.length ? { cartoes } : {}),
           ...(m.wa_message_id ? { waMessageId: m.wa_message_id } : {}),
           ...(reacoes?.length ? { reacoes } : {}),
           ...(cita ? { cita } : {}),
