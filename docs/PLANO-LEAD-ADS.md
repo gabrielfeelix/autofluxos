@@ -254,17 +254,19 @@ Regras de implementação:
 | **PipeRun** (BR) | sim | **sim — anúncio, conjunto e campanha** |
 | HubSpot | sim, até no Free | só na timeline; não vira propriedade de workflow |
 | Kommo | sim | só o formulário |
-| Ploomes | sim | só o formulário, explicitamente |
+| Ploomes | sim | **admite por escrito que não tem** campanha |
 | SleekFlow | sim | só o Form ID |
 | Wati | foco CTWA | só `source_id` — ID, não nome |
-| RD Station | **não é nativo** — exige Pluga à parte | — |
+| RD Station | Marketing sim; **o CRM não** — vai por Pluga | só o **nome do formulário** |
+| Zoho (LeadChain) | sim | **sim — Ad Name e Campaign Name** |
+| Agendor | não — via Pluga | nativo **só no CTWA**, em add-on de R$312/mês |
 | Pipedrive | sem app próprio (Outfunnel, terceiro pago) | — |
 | Manychat | **não integra Lead Ads** — só Zapier | — |
 | Chatwoot | não captura referral de CTWA (issue aberta) | — |
 | Zenvia | sim | polling a cada 30 min |
 
 **A brecha é nítida:** no Brasil, praticamente só o PipeRun resolve o **nome**
-automaticamente. O resto entrega ID ou empurra o cliente para Zapier/Pluga por
+automaticamente (o Zoho também, mas é de fora e cobra por volume de sync). O resto entrega ID ou empurra o cliente para Zapier/Pluga por
 cima do CRM — no caso do RD Station, o cliente paga os dois e ainda fica com
 15 minutos de atraso.
 
@@ -274,7 +276,13 @@ Dores que o mercado documenta e que viram diferencial se resolvidas:
   "resultado vazio", não como erro.
 - SleekFlow, no pior caso documentado: ao reconectar, recupera **só os 30
   minutos anteriores**. Todo o período desconectado se perde.
-- Latência: HubSpot documenta **até 2h**; Pluga→RD **até 15 min**.
+- Latência: HubSpot documenta **até 2h**; Pluga→RD **até 15 min**; Zoho admite
+  fallback horário mesmo no modo "tempo real".
+- **E quebra de verdade, com data.** A RD Station registrou no status page
+  oficial **18 dias de leads sumindo** (12–30/jul/2024) — a importação manual
+  oferecida vinha com aviso de que geraria duplicados — e **~23h com o app
+  restringido pela própria Meta** (nov/2024), sem nada a fazer além de esperar.
+  Isso é o risco real de depender de Lead Ads, e não se resolve com código bom.
 
 Ou seja, **webhook real-time + nome da campanha + alerta ativo de token
 expirando** é, junto, o que quase ninguém entrega.
@@ -411,6 +419,11 @@ aplicar nada em produção sem autorização explícita.
 - [Zenvia — informações dos leads das campanhas Meta](https://support.zenvia.com/kb/pt-br/article/379631/visualizar-as-informacoes-dos-leads-das-campanhas-meta)
 - [Zenvia — chatbot para campanhas CTWA (beta)](https://support.zenvia.com/kb/pt-br/article/544990/configurando-chatbot-campanhas-ctwa-zcc)
 - [Zenvia — integração Facebook Leads (polling de 30 min)](https://support.zenvia.com/kb/pt-br/article/502452/integracao-do-facebook-leads-com-zenvia-customer-cloud)
+- [Ploomes — "não há informação nativa da campanha específica"](https://suporte.ploomes.com/pt-BR/articles/5452431-integracao-com-facebook-leads-ads)
+- [Zoho LeadChain — mapear Ad Name e Campaign Name](https://help.zoho.com/portal/en/kb/zoho-lead-chain/creating-chains/facebook/articles/integrating-facebook-lead-ads-with-zoho-crm)
+- [RD Station — incidente de 18 dias (jul/2024)](https://status.rdstation.com/incidents/01J2KPJ6EBA85HTWT55CDB3W8T)
+- [RD Station — app restringido pela Meta (nov/2024)](https://status.rdstation.com/incidents/01JC3CEDY9AB77VASDV7GK4V40)
+- [Agendor — atribuição completa, só no CTWA do Agendor Chat](https://ajuda.agendor.com.br/pt-BR/articles/13534427-como-funciona-a-integracao-com-meta-ads-no-agendor-chat)
 
 ## Não confirmado (não vire premissa)
 
