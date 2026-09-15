@@ -29,6 +29,23 @@ O cartão antigo não some ao passar: ele fica `ganha` no quadro do SDR, que é
 como o SDR vê o próprio resultado no fim do mês. O novo cartão nasce no quadro
 seguinte com o mesmo contato e o mesmo responsável.
 
+## Onde isto está (15/set/2026, fim da tarde)
+
+**Pronto e verde.** As cinco camadas estão no `main`, a `0058` foi aplicada em
+produção, e a suíte inteira passa (1635 testes).
+
+Aplicar cedo pagou: dois defeitos só apareceram contra o banco de verdade, e
+nenhum dos dois tem como aparecer em teste puro.
+
+- `af_usuarios` tem a coluna **`name`**, não `nome` — é tabela do plugin de
+  login, e o nome dela é em inglês. O cartão inteiro deixava de listar por
+  causa disso (`column af_usuarios_1.nome does not exist`).
+- semear os motivos com `upsert ... on conflict (client_id, nome)` falha em
+  silêncio: o índice da tabela é sobre `lower(trim(nome))`, uma **expressão**, e
+  `on conflict` não casa com índice de expressão. A lista abria vazia, que é
+  exatamente o que a semeadura existe para impedir. Agora é `insert` tolerante
+  a duplicata seguido de releitura.
+
 ## Ordem de execução
 
 Cada camada é um commit e se sustenta sozinha.

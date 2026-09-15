@@ -208,7 +208,7 @@ cartão ganho ou perdido, mensagem agendada, automação pausada, nota criada.
 Sem ela, "o que aconteceu com essa pessoa" só existe espalhado entre a conversa
 e a memória de quem atendeu.
 
-## O que muda no banco (migration `0058_crm_funil.sql`, ainda não aplicada)
+## O que muda no banco (migration `0058_crm_funil.sql`, aplicada em 15/set/2026)
 
 ```
 contacts        + estagio text not null default 'novo'
@@ -227,8 +227,8 @@ motivos_de_perda (client_id, nome, ordem)
 eventos_do_contato (client_id, contact_id, tipo, dados jsonb, autor, criado_em)
 ```
 
-Produção é compartilhada com a Verandi: nada disso vai ao ar sem autorização
-explícita, e tudo mora em `public`. Ver `docs/BANCO-COMPARTILHADO.md`.
+Aplicada em 15/set/2026, com autorização, tudo em `public` e nada tocando
+`app_verandi`. Ver `docs/BANCO-COMPARTILHADO.md`.
 
 ## Fontes
 

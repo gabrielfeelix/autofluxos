@@ -42,22 +42,38 @@ export async function listarMotivos(clienteId: string): Promise<Motivo[]> {
 }
 
 async function semear(clienteId: string): Promise<Motivo[]> {
-  const { data, error } = await db()
+  /*
+   * `insert` simples, e não `upsert`.
+   *
+   * O único índice da tabela é sobre `lower(trim(nome))` — expressão, e não
+   * coluna —, e `on conflict (client_id, nome)` não casa com índice de
+   * expressão: o Postgres responde "no unique or exclusion constraint matching"
+   * e a semeadura falha inteira, em silêncio, deixando a lista vazia. Foi
+   * exatamente o que aconteceu na primeira versão disto.
+   *
+   * Duas abas semeando ao mesmo tempo dão erro de duplicata na segunda, que é o
+   * caso em que reler resolve — e é o que o `select` do fim faz.
+   */
+  const { error } = await db()
     .from('motivos_de_perda')
-    .upsert(
-      MOTIVOS_INICIAIS.map((nome, ordem) => ({ client_id: clienteId, nome, ordem })),
-      { onConflict: 'client_id,nome', ignoreDuplicates: true },
-    )
-    .select('id, nome, ordem')
+    .insert(MOTIVOS_INICIAIS.map((nome, ordem) => ({ client_id: clienteId, nome, ordem })))
 
-  // Semear é conveniência. Se falhar — duas abas semeando ao mesmo tempo, por
-  // exemplo —, a tela ainda funciona com a lista que conseguir ler depois.
-  if (error) {
+  if (error && error.code !== '23505') {
     console.error('[motivos] não deu para semear:', error.message)
+  }
+
+  const { data, error: erroDaLeitura } = await db()
+    .from('motivos_de_perda')
+    .select('id, nome, ordem')
+    .eq('client_id', clienteId)
+    .order('ordem', { ascending: true })
+
+  if (erroDaLeitura) {
+    console.error('[motivos] não deu para reler:', erroDaLeitura.message)
     return []
   }
 
-  return ((data as Motivo[]) ?? []).sort((a, b) => a.ordem - b.ordem)
+  return (data as Motivo[]) ?? []
 }
 
 export async function criarMotivo(

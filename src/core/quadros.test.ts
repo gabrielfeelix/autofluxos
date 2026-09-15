@@ -133,13 +133,33 @@ describe('as etapas iniciais não descrevem um ramo', () => {
 })
 
 describe('a coluna é uma fila de trabalho', () => {
-  const cartao = (id: string, colunaId: string, entrouNaColunaEm: string): Cartao => ({
+  const cartao = (
+    id: string,
+    colunaId: string,
+    entrouNaColunaEm: string,
+    extras: Partial<Cartao> = {},
+  ): Cartao => ({
     id,
     contatoId: id,
     colunaId,
     nome: id,
     telefone: '5511999999999',
     entrouNaColunaEm,
+    ...extras,
+  })
+
+  it('cartão fechado desce, mesmo sendo o mais antigo da coluna', () => {
+    // Ganho e perdido continuam no quadro de propósito — é como o time vê o
+    // próprio resultado no fim do mês. Mas eles não são trabalho pendente, e
+    // deixá-los no topo inverteria o sentido da coluna.
+    const cartoes = [
+      cartao('ganho-antigo', 'a', '2026-08-01T00:00:00Z', { situacao: 'ganha' }),
+      cartao('aberto-novo', 'a', '2026-08-20T00:00:00Z'),
+    ]
+    expect(cartoesPorEtapa(cartoes).get('a')?.map((c) => c.id)).toEqual([
+      'aberto-novo',
+      'ganho-antigo',
+    ])
   })
 
   it('quem está parado há mais tempo fica em cima', () => {
@@ -161,5 +181,24 @@ describe('a coluna é uma fila de trabalho', () => {
     const mapa = cartoesPorEtapa([cartao('x', 'a', '2026-08-01T00:00:00Z')])
     expect(mapa.get('a')).toHaveLength(1)
     expect(mapa.get('b')).toBeUndefined()
+  })
+})
+
+describe('a paciência é por etapa', () => {
+  const agora = Date.parse('2026-09-15T12:00:00Z')
+  const haCincoDias = '2026-09-10T12:00:00Z'
+
+  it('usa o padrão do produto quando a etapa não tem limite', () => {
+    expect(estaParado(haCincoDias, agora)).toBe(true)
+    expect(estaParado(haCincoDias, agora, null)).toBe(true)
+  })
+
+  it('respeita o limite maior de uma etapa que espera mais', () => {
+    // "Aguardando pagamento" com dez dias de prazo não pode acender no quinto.
+    expect(estaParado(haCincoDias, agora, 10)).toBe(false)
+  })
+
+  it('respeita o limite menor de uma etapa impaciente', () => {
+    expect(estaParado('2026-09-14T12:00:00Z', agora, 1)).toBe(true)
   })
 })
