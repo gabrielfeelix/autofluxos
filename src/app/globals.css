@@ -620,6 +620,53 @@ textarea::placeholder {
   animation: fade-up 350ms ease both;
 }
 
+/*
+ * O esqueleto — o retângulo cinza que **segura o lugar** do conteúdo enquanto
+ * ele vem do servidor.
+ *
+ * Existe porque a tela parada não diz nada. As telas daqui são renderizadas no
+ * servidor e várias abrem uma dúzia de consultas; entre o clique e a resposta
+ * havia meio segundo em que a interface ficava exatamente igual — e interface
+ * que não muda depois do clique é lida como travada, não como carregando.
+ *
+ * O brilho corre da esquerda para a direita, na direção da leitura, em vez de
+ * piscar: pulsar o bloco inteiro compete com o resto da tela e cansa em lista
+ * longa. Quem pediu menos movimento no sistema fica só com o cinza parado, que
+ * continua cumprindo o papel de mostrar o formato do que vem.
+ */
+.app-esqueleto {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--surface-strong);
+}
+
+.app-esqueleto::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--ink) 7%, transparent),
+    transparent
+  );
+  animation: esqueleto-brilho 1.5s ease-in-out infinite;
+}
+
+@keyframes esqueleto-brilho {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-esqueleto::after {
+    animation: none;
+  }
+}
+
 .app-dialog::backdrop {
   background: rgba(8, 11, 16, 0.45);
   backdrop-filter: blur(4px);

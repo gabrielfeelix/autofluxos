@@ -1,7 +1,9 @@
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { BotaoPerigo } from '@/components/design/botao-perigo'
 import { ClienteShell } from '@/components/design/cliente-shell'
+import { Esqueleto, EsqueletoDeQuadro } from '@/components/design/esqueleto'
 import { IlustracaoQuadros } from '@/components/design/ilustracoes'
 import { Quadro } from '@/components/quadros/quadro'
 import { QuadroPadrao } from '@/components/quadros/quadro-padrao'
@@ -9,7 +11,7 @@ import { NovoQuadro } from '@/components/quadros/novo-quadro'
 import { EntregaDoQuadro } from '@/components/quadros/entrega-do-quadro'
 import { TrazerTodos } from '@/components/quadros/trazer-todos'
 import { acaoApagarQuadro } from '@/server/acoes'
-import { acharCliente } from '@/server/repos/clientes'
+import { acharCliente, type Cliente } from '@/server/repos/clientes'
 import { contarForaDoQuadro, listarCartoes, listarQuadros } from '@/server/repos/quadros'
 import { listarMotivos } from '@/server/repos/motivos-de-perda'
 import { membrosDaConta } from '@/server/repos/usuarios'
@@ -58,6 +60,48 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
+  return (
+    <ClienteShell cliente={cliente} ativa="quadros">
+      {/* A tela inteira, e não um `max-w` no meio dela: um quadro que não usa a
+          largura disponível mostra menos colunas do que caberia, que é o oposto
+          do que ele existe para fazer. */}
+      <main className="flex h-full min-h-0 flex-col px-4 pt-[26px] pb-5 md:px-[42px]">
+        {/*
+          O funil desce depois da moldura.
+
+          Abrir um funil são quatro consultas — os funis, os cartões, a equipe e
+          os motivos —, e trocar de funil pelo seletor refaz todas elas. Sem esta
+          fronteira a tela ficava idêntica durante a troca; com ela, as colunas
+          cinzas aparecem no ato e dizem que a troca foi registrada.
+
+          A `key` é o funil pedido porque é ele que muda sem trocar de rota.
+        */}
+        <Suspense key={q ?? 'padrao'} fallback={<Espera />}>
+          <Conteudo cliente={cliente} q={q} />
+        </Suspense>
+      </main>
+    </ClienteShell>
+  )
+}
+
+/** A moldura do funil enquanto as colunas vêm. */
+function Espera() {
+  return (
+    <>
+      <header className="mb-4 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2">
+        <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Funis</h1>
+        <Esqueleto className="h-[26px] w-28 rounded-full" />
+        <span className="ml-auto flex flex-wrap items-center justify-end gap-2">
+          <Esqueleto className="h-8 w-32 rounded-lg" />
+          <Esqueleto className="h-8 w-28 rounded-lg" />
+        </span>
+      </header>
+      <EsqueletoDeQuadro />
+    </>
+  )
+}
+
+async function Conteudo({ cliente, q }: { cliente: Cliente; q?: string }) {
   const agora = agoraDoServidor()
   const quadros = await listarQuadros(cliente.id)
   // Id que não é deste cliente cai no primeiro em vez de dar erro: o valor vem
@@ -85,11 +129,7 @@ export default async function Pagina({
   )
 
   return (
-    <ClienteShell cliente={cliente} ativa="quadros">
-      {/* A tela inteira, e não um `max-w` no meio dela: um quadro que não usa a
-          largura disponível mostra menos colunas do que caberia, que é o oposto
-          do que ele existe para fazer. */}
-      <main className="flex h-full min-h-0 flex-col px-4 pt-[26px] pb-5 md:px-[42px]">
+    <>
         <header className="mb-4 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2">
           <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Funis</h1>
 
@@ -178,7 +218,6 @@ export default async function Pagina({
             />
           </>
         )}
-      </main>
-    </ClienteShell>
+    </>
   )
 }

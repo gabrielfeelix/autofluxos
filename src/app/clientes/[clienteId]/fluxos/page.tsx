@@ -1,6 +1,12 @@
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
+import {
+  EsqueletoDeAbas,
+  EsqueletoDeCartoes,
+  EsqueletoDeLista,
+} from '@/components/design/esqueleto'
 import { IlustracaoAutomacoes } from '@/components/design/ilustracoes'
 import { BotaoPerigo } from '@/components/design/botao-perigo'
 import {
@@ -39,7 +45,7 @@ import {
   acaoCriarPassoDaSequencia,
   acaoCriarSequencia,
 } from '@/server/acoes'
-import { acharCliente } from '@/server/repos/clientes'
+import { acharCliente, type Cliente } from '@/server/repos/clientes'
 import { fluxoDoPapel, listarCanais } from '@/server/repos/conversas'
 import { enderecoDoPainel } from '@/server/endereco'
 import { listarGatilhos } from '@/server/repos/gatilhos'
@@ -81,6 +87,23 @@ const TEMPLATES = MODELOS.filter((modelo) => modelo.id !== 'vazio').map(
 )
 type Aba = (typeof ABAS_VALIDAS)[number]
 
+/**
+ * Os rótulos, separados das contagens de propósito.
+ *
+ * O rótulo não depende de consulta nenhuma; a contagem depende de seis. Manter
+ * os dois juntos obrigava a barra inteira a esperar o banco — e era o que fazia
+ * a tela parecer travada no clique da aba. Assim o esqueleto desenha a barra de
+ * verdade, com a aba certa acesa, e só a pastilha do número fica cinza.
+ */
+const ABAS_ROTULOS = [
+  { chave: 'fluxos', rotulo: 'Fluxos' },
+  { chave: 'templates', rotulo: 'Templates' },
+  { chave: 'palavras', rotulo: 'Palavras-chave' },
+  { chave: 'eventos', rotulo: 'Eventos' },
+  { chave: 'campanhas', rotulo: 'Campanhas' },
+  { chave: 'sequencias', rotulo: 'Sequências' },
+] as const satisfies readonly { chave: Aba; rotulo: string }[]
+
 export default async function Pagina({
   params,
   searchParams,
@@ -98,6 +121,48 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
+  return (
+    <ClienteShell cliente={cliente} ativa="fluxos">
+      <main className="w-full max-w-[1440px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
+        <h1 className="mb-5 text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Automações</h1>
+
+        {/*
+          O conteúdo desce depois do título, e não junto com ele.
+
+          Esta tela abre uma dúzia de consultas. Sem esta fronteira, o navegador
+          só recebia a primeira letra da página quando a última consulta voltava:
+          entre clicar na aba e ver qualquer coisa a tela ficava idêntica, o que
+          se lê como travada. Agora o título e a barra de abas aparecem no ato e
+          o miolo chega em seguida.
+
+          A `key` é a aba porque é ela que muda sem trocar de rota. Sem a chave,
+          o React entende que é a mesma fronteira de antes e segura o conteúdo
+          velho na tela até o novo ficar pronto — que é o congelamento de novo,
+          agora por dentro.
+        */}
+        <Suspense key={aba} fallback={<Espera aba={aba} />}>
+          <Conteudo cliente={cliente} aba={aba} />
+        </Suspense>
+      </main>
+    </ClienteShell>
+  )
+}
+
+/** O que ocupa a tela entre o clique na aba e a resposta do banco. */
+function Espera({ aba }: { aba: Aba }) {
+  return (
+    <>
+      <EsqueletoDeAbas abas={ABAS_ROTULOS} ativa={aba} />
+      {aba === 'templates' ? (
+        <EsqueletoDeCartoes quantidade={6} rotulo="Carregando os templates…" />
+      ) : (
+        <EsqueletoDeLista linhas={4} rotulo="Carregando as automações…" />
+      )}
+    </>
+  )
+}
+
+async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
   const [
     fluxos,
     canais,
@@ -153,14 +218,18 @@ export default async function Pagina({
   const criarCampanhaComCliente = acaoCriarCampanha.bind(null, cliente.id, {})
   const criarSequenciaComCliente = acaoCriarSequencia.bind(null, cliente.id, {})
 
-  const ABAS = [
-    { chave: 'fluxos', rotulo: 'Fluxos', contagem: fluxos.length },
-    { chave: 'templates', rotulo: 'Templates', contagem: TEMPLATES.length },
-    { chave: 'palavras', rotulo: 'Palavras-chave', contagem: gatilhos.length },
-    { chave: 'eventos', rotulo: 'Eventos', contagem: gatilhosDeEvento.length },
-    { chave: 'campanhas', rotulo: 'Campanhas', contagem: campanhas.length },
-    { chave: 'sequencias', rotulo: 'Sequências', contagem: sequencias.length },
-  ] as const
+  const CONTAGEM: Record<Aba, number> = {
+    fluxos: fluxos.length,
+    templates: TEMPLATES.length,
+    palavras: gatilhos.length,
+    eventos: gatilhosDeEvento.length,
+    campanhas: campanhas.length,
+    sequencias: sequencias.length,
+  }
+  // Derivado dos rótulos, e não reescrito: a barra do esqueleto e a barra de
+  // verdade precisam ter os mesmos itens na mesma ordem, senão a tela pula
+  // quando o conteúdo chega.
+  const ABAS = ABAS_ROTULOS.map((item) => ({ ...item, contagem: CONTAGEM[item.chave] }))
   const nomeDaEtiqueta = (id: string | null) =>
     etiquetas.find((etiqueta) => etiqueta.id === id)?.nome ?? 'uma etiqueta apagada'
 
@@ -190,11 +259,7 @@ export default async function Pagina({
   ]
 
   return (
-    <ClienteShell cliente={cliente} ativa="fluxos">
-      <main className="w-full max-w-[1440px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
-        <h1 className="mb-5 text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Automações</h1>
-
-
+    <>
         {/*
           Abas, e não quatro seções empilhadas.
           A tela tinha fluxos, palavras-chave, campanhas e sequências uma embaixo
@@ -1078,7 +1143,6 @@ export default async function Pagina({
 
         </section>
         )}
-      </main>
-    </ClienteShell>
+    </>
   )
 }

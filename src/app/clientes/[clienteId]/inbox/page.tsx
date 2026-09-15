@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from 'react'
+import { Fragment, Suspense, type ReactNode } from 'react'
 import { after } from 'next/server'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -33,7 +33,7 @@ import {
   acaoResponderLead,
   acaoSalvarNotas,
 } from '@/server/acoes'
-import { acharCliente } from '@/server/repos/clientes'
+import { acharCliente, type Cliente } from '@/server/repos/clientes'
 import { contextoDeResposta } from '@/server/repos/conversas'
 import {
   agendadasDaConta as listarAgendadasDaConta,
@@ -78,6 +78,7 @@ import { avisarQueLeu } from '@/server/recibo-de-leitura'
 import { TextoDoWhatsApp } from '@/components/texto-do-whatsapp'
 import { FaixaDeCanalCaido } from '@/components/inbox/faixa-canal-caido'
 import { PulsoDoInbox } from '@/components/inbox/pulso-do-inbox'
+import { EsqueletoDeInbox } from '@/components/design/esqueleto'
 
 export const dynamic = 'force-dynamic'
 
@@ -128,6 +129,49 @@ export default async function Pagina({
   searchParams: Promise<Busca>
 }) {
   const [{ clienteId }, busca] = await Promise.all([params, searchParams])
+  const cliente = await acharCliente(clienteId)
+  if (!cliente) notFound()
+
+  /*
+   * A chave é o **filtro**, e não a conversa aberta.
+   *
+   * Trocar de rail refaz a fila inteira: é uma tela nova, e merece o esqueleto.
+   * Clicar numa conversa da lista, não — a fila continua a mesma, e apagá-la
+   * para um cinza a cada clique seria piscar a coluna que a pessoa está usando
+   * justamente enquanto ela a usa.
+   */
+  const chaveDoFiltro = [
+    primeiro(busca.de),
+    primeiro(busca.estado),
+    primeiro(busca.pagina),
+    primeiro(busca.busca),
+  ].join('|')
+
+  return (
+    <ClienteShell cliente={cliente} ativa="inbox">
+      {/*
+        O Inbox são sete consultas antes da primeira letra aparecer. Sem esta
+        fronteira, sair de qualquer outra tela e cair aqui era meio segundo de
+        tela idêntica — e a impressão não é "está carregando", é "não clicou".
+      */}
+      <Suspense key={chaveDoFiltro} fallback={<Espera />}>
+        <Tela cliente={cliente} busca={busca} />
+      </Suspense>
+    </ClienteShell>
+  )
+}
+
+/** A fila e a conversa em cinza, enquanto as consultas voltam. */
+function Espera() {
+  return (
+    <main className="flex min-h-0 flex-1 flex-col p-3">
+      <EsqueletoDeInbox />
+    </main>
+  )
+}
+
+async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
+  const clienteId = cliente.id
   const atribuicao = primeiro(busca.de) || 'todos'
   /*
    * O eixo "em que pé está", separado do "de quem é" (0049).
@@ -143,7 +187,6 @@ export default async function Pagina({
   const termo = limparBusca(primeiro(busca.busca))
 
   const [
-    cliente,
     fila,
     local,
     respostasRapidas,
@@ -154,7 +197,6 @@ export default async function Pagina({
     temAutomacao,
   ] =
     await Promise.all([
-    acharCliente(clienteId),
     paginarLeads(clienteId, {
       atribuicao,
       estado,
@@ -189,7 +231,6 @@ export default async function Pagina({
      */
     clienteTemAutomacao(clienteId),
   ])
-  if (!cliente) notFound()
 
   /*
    * Qualquer número coexistente ainda sincronizando serve: a explicação é sobre
@@ -295,7 +336,7 @@ export default async function Pagina({
   )
 
   return (
-    <ClienteShell cliente={cliente} ativa="inbox">
+    <>
       {/*
         Só aqui, e não na moldura do cliente: recarregar a tela de fluxos ou de
         contatos a cada mensagem que chega seria intromissão. O Inbox é a única
@@ -355,7 +396,7 @@ export default async function Pagina({
           />
         )}
       </main>
-    </ClienteShell>
+    </>
   )
 }
 

@@ -5,6 +5,7 @@ import { ComoFunciona } from '@/components/cliente/como-funciona'
 import { IconeAutomacao, IconeConversa, IconeFunil } from '@/components/cliente/icones'
 import { PrimeirosPassos, type PassoDaConta } from '@/components/cliente/primeiros-passos'
 import { ClienteShell } from '@/components/design/cliente-shell'
+import { Esqueleto, EsqueletoDeLista } from '@/components/design/esqueleto'
 import { Avatar } from '@/components/inbox/avatar'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import { comoDinheiro } from '@/core/crm'
@@ -101,7 +102,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           <div className="flex min-w-0 flex-col gap-5">
             <Atalhos clienteId={cliente.id} />
 
-            <Suspense fallback={<div className="app-card h-[220px] animate-pulse" />}>
+            <Suspense fallback={<EsqueletoDeLista linhas={3} comRosto rotulo="Carregando a fila…" />}>
               <Fila clienteId={cliente.id} contatos={contatos} />
             </Suspense>
 
@@ -111,7 +112,15 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           <aside className="flex min-w-0 flex-col gap-5">
             {faltaPasso && <PrimeirosPassos passos={passos} />}
 
-            <Suspense fallback={<div className="app-card h-[128px] animate-pulse" />}>
+            <Suspense
+              fallback={
+                <div className="app-card flex flex-col gap-3 p-4">
+                  <Esqueleto className="h-3 w-24" />
+                  <Esqueleto className="h-7 w-32" />
+                  <Esqueleto className="h-2.5 w-full" />
+                </div>
+              }
+            >
               <Numeros clienteId={cliente.id} />
             </Suspense>
 
