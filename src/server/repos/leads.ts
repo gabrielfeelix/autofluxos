@@ -9,6 +9,7 @@ import {
   type CartaoDeContato,
   type LocalDaMensagem,
 } from '@/core/payload-da-mensagem'
+import { autorDoPayload, comoChamarOAutor } from '@/core/autor-da-mensagem'
 import { ehArquivoGuardado, midiaDoTipo } from '@/core/midia-recebida'
 import { urlsAssinadas } from './midia-recebida'
 import { TIPOS_DE_MIDIA, type TipoDeMidia } from '@/core/flow/schema'
@@ -163,6 +164,15 @@ export type MensagemDoLead = {
    * um quebrado é uma frase.
    */
   semCopia?: true
+  /**
+   * Quem produziu esta mensagem, já escrito para a tela: "Gabriel Barbosa" ou
+   * "automação". Ausente = não sabemos, e aí a bolha mostra só a hora.
+   *
+   * Só faz sentido em saída. Na entrada, quem escreveu é a pessoa cujo nome
+   * está no cabeçalho da conversa — repeti-lo embaixo de cada bolha era ruído
+   * numa tela que só tem duas vozes.
+   */
+  autor?: string
   local?: LocalDaMensagem
   /** Os cartões de contato encaminhados, pelo mesmo motivo do `local`. */
   cartoes?: CartaoDeContato[]
@@ -701,12 +711,23 @@ export async function paginarLeads(
 }
 
 /**
- * O carimbo da mensagem mais recente da conta — o "tem coisa nova?" do Inbox.
+ * Quantas mensagens do fim da conversa entram no pulso.
+ *
+ * Uma só não bastava — ver o defeito do arquivo que chega atrasado, logo
+ * abaixo. Cinco cobre a rajada: figurinha atrás de figurinha, foto e legenda,
+ * o áudio seguido do "escuta isso". Acima disso a consulta começa a pagar por
+ * um caso que não acontece.
+ */
+const MENSAGENS_NO_PULSO = 5
+
+/**
+ * O carimbo do fim da conversa da conta — o "tem coisa nova?" do Inbox.
  *
  * Existe para a tela se atualizar sozinha sem recarregar a página inteira a
- * cada poucos segundos. É de propósito a consulta mais barata do arquivo: uma
- * linha, uma coluna, ordenada por um índice que já existe. Quem chama compara
- * com o que tinha e só então pede o `refresh` — que aí sim custa.
+ * cada poucos segundos. É de propósito uma das consultas mais baratas do
+ * arquivo: cinco linhas, duas colunas, ordenadas por um índice que já existe.
+ * Quem chama compara com o que tinha e só então pede o `refresh` — que aí sim
+ * custa.
  *
  * Vem por `contacts!inner` porque `messages` não guarda o cliente: o vínculo é
  * o contato. Sem o `inner`, mensagem de outra conta entraria na conta errada e
@@ -714,19 +735,46 @@ export async function paginarLeads(
  *
  * `null` quando a conta ainda não tem mensagem nenhuma — que é diferente de
  * erro, e quem chama trata como "nada novo".
+ *
+ * ---------------------------------------------------------------------------
+ * Por que o arquivo entra no pulso, e não só o carimbo
+ * ---------------------------------------------------------------------------
+ *
+ * **Este é o conserto de um defeito visto em produção**: o dono mandou duas
+ * figurinhas seguidas e a primeira — a animada, de 438 KB — ficou para sempre
+ * dizendo "arquivo recebido, sem cópia guardada", enquanto a segunda, estática
+ * e menor, apareceu inteira. O arquivo das duas estava no bucket.
+ *
+ * A causa é uma corrida. A mensagem é gravada primeiro e a mídia baixa depois
+ * (`guardarMidiaRecebida`, que é assim de propósito: gravar a conversa não pode
+ * esperar um download). O pulso era `max(ts)`, e `ts` não muda quando o arquivo
+ * chega — então a tela que se atualizou no instante entre as duas coisas
+ * desenhava a bolha sem arquivo **e nunca mais tinha motivo para redesenhar**.
+ * Quanto maior o arquivo, mais certo o defeito: GIF animado, vídeo e áudio
+ * longo perdem essa corrida sempre.
+ *
+ * Somar ao carimbo um dígito por mensagem — tem arquivo? — faz o pulso mudar no
+ * instante em que a mídia desce, sem coluna nova e sem migration. O formato é
+ * opaco de propósito: quem compara só pergunta se é igual (`precisaAtualizar`),
+ * e ninguém deve tentar ler data daqui.
  */
 export async function pulsoDaConta(clienteId: string): Promise<string | null> {
   const { data, error } = await db()
     .from('messages')
-    .select('ts, contacts!inner(client_id)')
+    .select('ts, arquivo, contacts!inner(client_id)')
     .eq('contacts.client_id', clienteId)
     .order('ts', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+    .limit(MENSAGENS_NO_PULSO)
 
   if (ehIdInvalido(error)) return null
   if (error) throw new Error(`não deu para ler o pulso da conta: ${error.message}`)
-  return (data as { ts: string } | null)?.ts ?? null
+
+  const linhas = (data ?? []) as { ts: string; arquivo: unknown }[]
+  const ultima = linhas[0]
+  if (!ultima) return null
+
+  const arquivos = linhas.map((linha) => (ehArquivoGuardado(linha.arquivo) ? '1' : '0')).join('')
+  return `${ultima.ts}|${arquivos}`
 }
 
 /**
@@ -922,6 +970,7 @@ export async function lerConversa(
          * Os dois últimos viram o mesmo aviso na tela, porque para quem lê dão
          * no mesmo: o arquivo não está aqui.
          */
+        const autor = comoChamarOAutor(autorDoPayload(m.payload))
         const guardado = ehArquivoGuardado(m.arquivo) ? m.arquivo : null
         const assinada = guardado ? assinadas.get(guardado.caminho) : undefined
         const recebido =
@@ -945,6 +994,7 @@ export async function lerConversa(
           ...(anexo ? { anexo } : {}),
           ...(recebido ? { recebido } : {}),
           ...(semCopia ? { semCopia: true as const } : {}),
+          ...(autor ? { autor } : {}),
           ...(local ? { local } : {}),
           ...(cartoes.length ? { cartoes } : {}),
           ...(m.wa_message_id ? { waMessageId: m.wa_message_id } : {}),

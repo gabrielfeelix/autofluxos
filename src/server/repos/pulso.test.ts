@@ -49,7 +49,15 @@ describe.skipIf(!temTudo)('pulso da conta', () => {
 
     const pulso = await pulsoDaConta(clienteA)
     expect(pulso).not.toBeNull()
-    expect(Number.isNaN(Date.parse(pulso as string))).toBe(false)
+    /*
+     * O pulso é **opaco**: carimbo, uma barra, e um dígito por mensagem do fim
+     * da conversa dizendo se ela já tem arquivo guardado. Quem compara só
+     * pergunta se mudou. O teste confere o formato justamente para ninguém
+     * voltar a tratá-lo como data — ele já foi uma, e voltar a ser quebraria o
+     * conserto do arquivo que chega atrasado.
+     */
+    expect(pulso).toMatch(/^.+\|[01]+$/)
+    expect(Number.isNaN(Date.parse((pulso as string).split('|')[0] as string))).toBe(false)
   })
 
   it('mensagem nova muda o pulso — é isso que dispara o refresh', async () => {
@@ -62,6 +70,32 @@ describe.skipIf(!temTudo)('pulso da conta', () => {
       waMessageId: `wamid.${marca}.2`,
       payload: {},
     })
+
+    expect(await pulsoDaConta(clienteA)).not.toBe(antes)
+  })
+
+  /**
+   * O defeito que este teste tranca: o GIF animado que nunca aparecia.
+   *
+   * A mensagem é gravada primeiro e a mídia baixa depois. Enquanto o pulso era
+   * só `max(ts)`, a chegada do arquivo não mudava nada — e a tela que se
+   * atualizou no meio do caminho ficava para sempre dizendo "sem cópia
+   * guardada" para um arquivo que estava no bucket.
+   */
+  it('arquivo que chega depois da mensagem muda o pulso', async () => {
+    const antes = await pulsoDaConta(clienteA)
+
+    await db()
+      .from('messages')
+      .update({
+        arquivo: {
+          midia: 'imagem',
+          caminho: `${marca}/fingido.webp`,
+          mime: 'image/webp',
+          bytes: 1234,
+        },
+      })
+      .eq('wa_message_id', `wamid.${marca}.2`)
 
     expect(await pulsoDaConta(clienteA)).not.toBe(antes)
   })
