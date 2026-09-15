@@ -40,7 +40,27 @@ export type Etapa = {
   ordem: number
   /** Só para desempatar `ordem` igual. Ver a 0032 sobre não haver único. */
   criadoEm: string
+
+  /**
+   * O papel da etapa (0058).
+   *
+   * `normal` é coluna comum. Cair em `ganho` fecha a negociação e faz o contato
+   * virar cliente; cair em `perdido` pede o motivo. Sem isso, "Fechado" é um
+   * nome que só o humano entende — o sistema não pode agir a partir dele.
+   */
+  tipo?: TipoDeEtapa
+
+  /**
+   * A partir de quantos dias parado esta etapa acende o alerta.
+   *
+   * Por etapa porque a paciência é por etapa: três dias em "Aguardando
+   * pagamento" é rotina, três dias em "Primeiro contato" é lead perdido. Null
+   * usa o padrão do produto.
+   */
+  limiteDeDias?: number | null
 }
+
+export type TipoDeEtapa = 'normal' | 'ganho' | 'perdido'
 
 export type Cartao = {
   id: string
@@ -49,7 +69,32 @@ export type Cartao = {
   nome: string
   telefone: string
   entrouNaColunaEm: string
+
+  /**
+   * A negociação dentro do cartão (0058).
+   *
+   * Opcionais porque cartão antigo não tem nada disso, e porque a maioria dos
+   * cartões vivos também não vai ter: quem atende no WhatsApp anota valor quando
+   * fecha, não quando a pessoa manda "oi". Campo obrigatório aqui viraria zero
+   * na tela — e "R$ 0,00" em cada cartão é pior que nada escrito.
+   */
+  titulo?: string | null
+  valor?: number | null
+  situacao?: Situacao
+  responsavelId?: string | null
+  responsavelNome?: string | null
+
+  /**
+   * Quando essa pessoa falou pela última vez.
+   *
+   * É a informação de maior valor do cartão: a pergunta de quem abre o quadro é
+   * "de quem estou devendo resposta", não "em que fase está o processo".
+   */
+  ultimaMensagemEm?: string | null
 }
+
+/** Ver `core/crm.ts`. Repetido aqui como tipo para o cartão não importar o CRM. */
+export type Situacao = 'aberta' | 'ganha' | 'perdida'
 
 /**
  * A ordem das etapas na tela.
@@ -120,8 +165,13 @@ export function diasParado(entrouNaColunaEm: string, agora: number = Date.now())
  */
 export const DIAS_PARA_MARCAR_PARADO = 3
 
-export function estaParado(entrouNaColunaEm: string, agora: number = Date.now()): boolean {
-  return diasParado(entrouNaColunaEm, agora) >= DIAS_PARA_MARCAR_PARADO
+export function estaParado(
+  entrouNaColunaEm: string,
+  agora: number = Date.now(),
+  /** O limite da etapa, quando ela tem um. Null usa o padrão do produto. */
+  limiteDaEtapa?: number | null,
+): boolean {
+  return diasParado(entrouNaColunaEm, agora) >= (limiteDaEtapa ?? DIAS_PARA_MARCAR_PARADO)
 }
 
 /** "hoje", "há 1 dia", "há 6 dias" — já formatado no servidor. */
@@ -167,11 +217,23 @@ export function cartoesPorEtapa(cartoes: Cartao[]): Map<string, Cartao[]> {
     mapa.set(cartao.colunaId, lista)
   }
 
-  // **Quem está parado há mais tempo fica em cima.** A coluna é uma fila de
-  // trabalho, e ordenar por chegada esconderia o esquecido no fim dela — que é
-  // exatamente a pessoa que o quadro precisa mostrar.
+  /**
+   * **Quem está parado há mais tempo fica em cima.** A coluna é uma fila de
+   * trabalho, e ordenar por chegada esconderia o esquecido no fim dela — que é
+   * exatamente a pessoa que o quadro precisa mostrar.
+   *
+   * Antes disso, porém, **cartão fechado desce**. Ganho e perdido continuam no
+   * quadro de propósito (é assim que o time vê o próprio resultado no fim do
+   * mês), mas eles não são trabalho pendente — deixá-los disputando o topo da
+   * coluna com quem espera resposta inverteria o sentido da tela.
+   */
   for (const lista of mapa.values()) {
-    lista.sort((a, b) => a.entrouNaColunaEm.localeCompare(b.entrouNaColunaEm))
+    lista.sort((a, b) => {
+      const fechadoA = a.situacao && a.situacao !== 'aberta' ? 1 : 0
+      const fechadoB = b.situacao && b.situacao !== 'aberta' ? 1 : 0
+      if (fechadoA !== fechadoB) return fechadoA - fechadoB
+      return a.entrouNaColunaEm.localeCompare(b.entrouNaColunaEm)
+    })
   }
   return mapa
 }

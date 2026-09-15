@@ -6,8 +6,14 @@ import {
   trocaDeLugar,
   type Cartao,
   type Etapa,
+  type Situacao,
+  type TipoDeEtapa,
 } from '@/core/quadros'
+import { comoDinheiro, conferirFechamento, podeEncadear, LIMITE_DO_TITULO } from '@/core/crm'
 import { db, ehIdInvalido } from '../db'
+import { aplicarFato } from './crm'
+import { anotar } from './eventos'
+import { listarMotivos } from './motivos-de-perda'
 
 /**
  * Os quadros de uma conta (0032).
@@ -21,6 +27,8 @@ export type Quadro = {
   nome: string
   /** Recebe contato novo sozinho. No máximo um por conta (0043). */
   padrao: boolean
+  /** Ganhar aqui abre cartão lá. Null = fim da cadeia (0058). */
+  seguinteId: string | null
   etapas: Etapa[]
 }
 
@@ -28,22 +36,36 @@ type LinhaDoQuadro = {
   id: string
   nome: string
   padrao: boolean
-  quadro_colunas: { id: string; nome: string; ordem: number; criado_em: string }[] | null
+  seguinte_id: string | null
+  quadro_colunas:
+    | {
+        id: string
+        nome: string
+        ordem: number
+        criado_em: string
+        tipo: TipoDeEtapa | null
+        limite_de_dias: number | null
+      }[]
+    | null
 }
 
-const COLUNAS = 'id, nome, padrao, quadro_colunas (id, nome, ordem, criado_em)'
+const COLUNAS =
+  'id, nome, padrao, seguinte_id, quadro_colunas (id, nome, ordem, criado_em, tipo, limite_de_dias)'
 
 function paraQuadro(linha: LinhaDoQuadro): Quadro {
   return {
     id: linha.id,
     nome: linha.nome,
     padrao: linha.padrao ?? false,
+    seguinteId: linha.seguinte_id ?? null,
     etapas: etapasEmOrdem(
       (linha.quadro_colunas ?? []).map((coluna) => ({
         id: coluna.id,
         nome: coluna.nome,
         ordem: coluna.ordem,
         criadoEm: coluna.criado_em,
+        tipo: coluna.tipo ?? 'normal',
+        limiteDeDias: coluna.limite_de_dias ?? null,
       })),
     ),
   }
@@ -382,7 +404,17 @@ type LinhaDoCartao = {
   contact_id: string
   coluna_id: string
   entrou_na_coluna_em: string
-  contacts: { nome_real: string | null; nome: string | null; wa_id: string } | null
+  titulo: string | null
+  valor: string | number | null
+  situacao: Situacao
+  responsavel: string | null
+  contacts: {
+    nome_real: string | null
+    nome: string | null
+    wa_id: string
+    ultima_mensagem_em: string | null
+  } | null
+  af_usuarios: { nome: string | null } | null
 }
 
 /**
@@ -395,7 +427,10 @@ type LinhaDoCartao = {
 export async function listarCartoes(clienteId: string, quadroId: string): Promise<Cartao[]> {
   const { data, error } = await db()
     .from('quadro_cartoes')
-    .select('id, contact_id, coluna_id, entrou_na_coluna_em, contacts (nome_real, nome, wa_id)')
+    .select(
+      'id, contact_id, coluna_id, entrou_na_coluna_em, titulo, valor, situacao, responsavel, ' +
+        'contacts (nome_real, nome, wa_id, ultima_mensagem_em), af_usuarios (nome)',
+    )
     .eq('client_id', clienteId)
     .eq('quadro_id', quadroId)
 
@@ -412,6 +447,14 @@ export async function listarCartoes(clienteId: string, quadroId: string): Promis
     nome: linha.contacts?.nome_real || linha.contacts?.nome || linha.contacts?.wa_id || '',
     telefone: linha.contacts?.wa_id ?? '',
     entrouNaColunaEm: linha.entrou_na_coluna_em,
+    titulo: linha.titulo,
+    // `numeric` chega como string no supabase-js. Sem converter, o cabeçalho da
+    // coluna somaria "200" com "350.50" e escreveria "200350.50".
+    valor: linha.valor === null || linha.valor === undefined ? null : Number(linha.valor),
+    situacao: linha.situacao ?? 'aberta',
+    responsavelId: linha.responsavel,
+    responsavelNome: linha.af_usuarios?.nome ?? null,
+    ultimaMensagemEm: linha.contacts?.ultima_mensagem_em ?? null,
   }))
 }
 
@@ -761,4 +804,304 @@ export async function quadrosDoContato(
     etapa: linha.quadro_colunas.nome,
     entrouEm: linha.entrou_na_coluna_em,
   }))
+}
+
+// ---------------------------------------------------------------------------
+// A negociação: ganhar, perder, assumir, encadear (0058)
+// ---------------------------------------------------------------------------
+
+/**
+ * Fecha o cartão como ganho ou perdido.
+ *
+ * As três coisas que acontecem juntas, e por quê:
+ *
+ * 1. **o cartão fecha e fica onde está.** Cartão fechado não some do quadro: é
+ *    assim que o time enxerga o próprio resultado no fim do mês. Quem desce ele
+ *    para o fim da coluna é `cartoesPorEtapa`, na tela;
+ * 2. **o contato muda de estágio**, mas só se a régua deixar — quem já é cliente
+ *    não vira `perdido` por causa de uma negociação nova que não deu certo;
+ * 3. **ganhar abre o cartão seguinte**, quando o quadro aponta para outro. É a
+ *    passagem do SDR para o vendedor, e do vendedor para o pós-venda, sem botão
+ *    novo: o gesto continua sendo ganhar.
+ *
+ * Não é transação. Se o passo 3 falhar, o cartão continua ganho e a passagem não
+ * aconteceu — e é a ordem certa de falhar: perder a venda registrada seria pior
+ * que precisar arrastar alguém à mão para o funil seguinte.
+ */
+export async function fecharCartao(
+  clienteId: string,
+  cartaoId: string,
+  situacao: Exclude<Situacao, 'aberta'>,
+  dados: { valor?: number | null; motivo?: string | null; titulo?: string | null },
+  autor: string | null = null,
+): Promise<{ ok: true; abriuEm?: string } | { ok: false; motivo: string }> {
+  const { data: cartao, error } = await db()
+    .from('quadro_cartoes')
+    .select('id, quadro_id, contact_id, responsavel, titulo')
+    .eq('client_id', clienteId)
+    .eq('id', cartaoId)
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return { ok: false, motivo: 'este cartão não existe mais' }
+  if (error) throw new Error(`não deu para ler o cartão: ${error.message}`)
+  if (!cartao) return { ok: false, motivo: 'este cartão não existe mais' }
+
+  const linha = cartao as {
+    id: string
+    quadro_id: string
+    contact_id: string
+    responsavel: string | null
+    titulo: string | null
+  }
+
+  const motivos = situacao === 'perdida' ? (await listarMotivos(clienteId)).map((m) => m.nome) : []
+  const conferido = conferirFechamento(situacao, dados, motivos)
+  if (!conferido.ok) return { ok: false, motivo: conferido.motivo }
+
+  const agora = new Date().toISOString()
+  const { error: erroDaEscrita } = await db()
+    .from('quadro_cartoes')
+    .update({
+      situacao,
+      valor: dados.valor ?? null,
+      motivo: situacao === 'perdida' ? (dados.motivo ?? null) : null,
+      titulo: dados.titulo?.trim() || linha.titulo,
+      fechado_em: agora,
+    })
+    .eq('client_id', clienteId)
+    .eq('id', cartaoId)
+
+  if (erroDaEscrita) throw new Error(`não deu para fechar o cartão: ${erroDaEscrita.message}`)
+
+  await anotar(
+    clienteId,
+    linha.contact_id,
+    situacao === 'ganha' ? 'ganhou' : 'perdeu',
+    situacao === 'ganha'
+      ? { valor: comoDinheiro(dados.valor ?? null), titulo: dados.titulo ?? linha.titulo ?? '' }
+      : { motivo: dados.motivo ?? '' },
+    autor,
+  )
+
+  await aplicarFato(clienteId, linha.contact_id, situacao === 'ganha' ? 'ganhou' : 'perdeu', autor)
+
+  if (situacao === 'ganha') {
+    const abriuEm = await passarParaOSeguinte(clienteId, linha.quadro_id, linha.contact_id, {
+      responsavel: linha.responsavel,
+      titulo: dados.titulo ?? linha.titulo,
+      autor,
+    })
+    return abriuEm ? { ok: true, abriuEm } : { ok: true }
+  }
+
+  return { ok: true }
+}
+
+/**
+ * Abre o cartão no quadro seguinte da cadeia.
+ *
+ * Devolve o nome do quadro de destino para a tela poder dizer "foi para
+ * Pós-venda" — passagem silenciosa faria o cartão sumir do funil do SDR sem
+ * explicação nenhuma.
+ *
+ * O relógio de parado começa do zero lá, e é o correto: a espera de quem acabou
+ * de chegar na mão do vendedor não é a espera de quem estava com o SDR.
+ */
+async function passarParaOSeguinte(
+  clienteId: string,
+  quadroId: string,
+  contatoId: string,
+  extras: { responsavel: string | null; titulo: string | null; autor: string | null },
+): Promise<string | null> {
+  const { data, error } = await db()
+    .from('quadros')
+    .select('seguinte_id')
+    .eq('client_id', clienteId)
+    .eq('id', quadroId)
+    .maybeSingle()
+
+  if (error || !data) return null
+  const seguinteId = (data as { seguinte_id: string | null }).seguinte_id
+  if (!seguinteId) return null
+
+  const seguinte = await acharQuadro(clienteId, seguinteId)
+  const primeira = seguinte?.etapas[0]
+  if (!seguinte || !primeira) return null
+
+  const { error: erroDoInsert } = await db()
+    .from('quadro_cartoes')
+    .upsert(
+      {
+        client_id: clienteId,
+        quadro_id: seguinte.id,
+        coluna_id: primeira.id,
+        contact_id: contatoId,
+        responsavel: extras.responsavel,
+        titulo: extras.titulo,
+      },
+      // Já estar no funil seguinte não é erro: é alguém que comprou de novo, e o
+      // cartão que já existe lá é o que vale. Mover de volta para a primeira
+      // etapa desfaria o trabalho de quem o arrastou até o fim.
+      { onConflict: 'quadro_id,contact_id', ignoreDuplicates: true },
+    )
+
+  if (erroDoInsert) {
+    console.error('[quadros] não deu para passar ao quadro seguinte:', erroDoInsert.message)
+    return null
+  }
+
+  await anotar(clienteId, contatoId, 'entrou-no-quadro', { quadro: seguinte.nome }, extras.autor)
+  return seguinte.nome
+}
+
+/**
+ * Reabre um cartão fechado.
+ *
+ * Existe porque fechar é um clique e errar o clique é rotina. **Não desfaz o
+ * estágio do contato**: quem virou cliente comprou de verdade em algum momento,
+ * e reabrir uma negociação não apaga o histórico. O estágio se corrige sozinho
+ * no próximo fato, ou na mão.
+ */
+export async function reabrirCartao(
+  clienteId: string,
+  cartaoId: string,
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  const { data, error } = await db()
+    .from('quadro_cartoes')
+    .update({ situacao: 'aberta', motivo: null, fechado_em: null })
+    .eq('client_id', clienteId)
+    .eq('id', cartaoId)
+    .select('id')
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return { ok: false, motivo: 'este cartão não existe mais' }
+  if (error) throw new Error(`não deu para reabrir o cartão: ${error.message}`)
+  return data ? { ok: true } : { ok: false, motivo: 'este cartão não existe mais' }
+}
+
+/**
+ * Quem assumiu o cartão.
+ *
+ * `null` devolve à fila de ninguém — e isso é uma ação legítima, não um engano:
+ * quem sai de férias precisa poder largar o que pegou.
+ */
+export async function atribuirCartao(
+  clienteId: string,
+  cartaoId: string,
+  usuarioId: string | null,
+  autor: string | null = null,
+): Promise<{ ok: true; quem: string | null } | { ok: false; motivo: string }> {
+  const { data, error } = await db()
+    .from('quadro_cartoes')
+    .update({ responsavel: usuarioId })
+    .eq('client_id', clienteId)
+    .eq('id', cartaoId)
+    .select('id, contact_id, af_usuarios (nome)')
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return { ok: false, motivo: 'este cartão não existe mais' }
+  if (error) throw new Error(`não deu para atribuir o cartão: ${error.message}`)
+  if (!data) return { ok: false, motivo: 'este cartão não existe mais' }
+
+  const linha = data as unknown as {
+    contact_id: string
+    af_usuarios: { nome: string | null } | null
+  }
+  const quem = linha.af_usuarios?.nome ?? null
+
+  await anotar(clienteId, linha.contact_id, 'assumiu', { quem: quem ?? '' }, autor)
+  return { ok: true, quem }
+}
+
+/**
+ * O que está sendo vendido, e por quanto.
+ *
+ * Texto livre e número, sem catálogo: exigir cadastro de produto antes de poder
+ * anotar uma venda é o imposto que este CRM não cobra (ver `docs/MODELO-CRM.md`).
+ */
+export async function descreverCartao(
+  clienteId: string,
+  cartaoId: string,
+  dados: { titulo?: string | null; valor?: number | null },
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  const titulo = dados.titulo?.trim() ?? null
+  if (titulo && titulo.length > LIMITE_DO_TITULO) {
+    return { ok: false, motivo: `o título cabe em ${LIMITE_DO_TITULO} caracteres` }
+  }
+
+  const { data, error } = await db()
+    .from('quadro_cartoes')
+    .update({ titulo: titulo || null, valor: dados.valor ?? null })
+    .eq('client_id', clienteId)
+    .eq('id', cartaoId)
+    .select('id')
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return { ok: false, motivo: 'este cartão não existe mais' }
+  if (error) throw new Error(`não deu para descrever o cartão: ${error.message}`)
+  return data ? { ok: true } : { ok: false, motivo: 'este cartão não existe mais' }
+}
+
+/**
+ * Liga este quadro ao seguinte da cadeia — ou desliga, com `null`.
+ *
+ * A checagem de ciclo mora em `core/crm.ts` e acontece **antes** da escrita: o
+ * banco barra só `A → A`, e A → B → C → A passaria por ele sem reclamar,
+ * produzindo um repasse que não termina.
+ */
+export async function encadearQuadro(
+  clienteId: string,
+  quadroId: string,
+  seguinteId: string | null,
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  const { data, error } = await db()
+    .from('quadros')
+    .select('id, seguinte_id')
+    .eq('client_id', clienteId)
+
+  if (error) throw new Error(`não deu para ler a cadeia: ${error.message}`)
+
+  const quadros = (data as { id: string; seguinte_id: string | null }[]) ?? []
+  if (!quadros.some((q) => q.id === quadroId)) {
+    return { ok: false, motivo: 'este quadro não existe mais' }
+  }
+  if (seguinteId && !quadros.some((q) => q.id === seguinteId)) {
+    return { ok: false, motivo: 'o quadro de destino não existe mais' }
+  }
+
+  const cadeia = new Map(quadros.map((q) => [q.id, q.seguinte_id]))
+  const pode = podeEncadear(quadroId, seguinteId, cadeia)
+  if (!pode.ok) return { ok: false, motivo: pode.motivo }
+
+  const { error: erroDaEscrita } = await db()
+    .from('quadros')
+    .update({ seguinte_id: seguinteId })
+    .eq('client_id', clienteId)
+    .eq('id', quadroId)
+
+  if (erroDaEscrita) throw new Error(`não deu para encadear: ${erroDaEscrita.message}`)
+  return { ok: true }
+}
+
+/** O papel de uma etapa: `normal`, `ganho` ou `perdido`. */
+export async function definirTipoDaEtapa(
+  clienteId: string,
+  quadroId: string,
+  etapaId: string,
+  tipo: TipoDeEtapa,
+  limiteDeDias: number | null = null,
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  const quadro = await acharQuadro(clienteId, quadroId)
+  if (!quadro || !quadro.etapas.some((e) => e.id === etapaId)) {
+    return { ok: false, motivo: 'esta etapa não existe mais' }
+  }
+
+  const { error } = await db()
+    .from('quadro_colunas')
+    .update({ tipo, limite_de_dias: limiteDeDias })
+    .eq('id', etapaId)
+    .eq('quadro_id', quadroId)
+
+  if (error) throw new Error(`não deu para mudar a etapa: ${error.message}`)
+  return { ok: true }
 }
