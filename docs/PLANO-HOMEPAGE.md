@@ -108,48 +108,51 @@ hierarquia (fila), um lugar com peso visual (a linha de estado), o resto quieto.
 
 ---
 
-## 4. Os dois estados
+## 4. A forma da tela, e os dois estados
 
-**Vazio** (conta sem nenhuma conversa recebida):
-
-```
-┌────────────────────────────────────────────────────────┐
-│ ● Ainda não está atendendo                             │
-├────────────────────────────────────────────────────────┤
-│ Faltam três coisas para o WhatsApp responder sozinho   │
-│                                                        │
-│ ✓ 1  Desenhar a automação            [ver]             │
-│ ○ 2  Publicar a automação            [publicar →]      │
-│ ○ 3  Conectar o número               [conectar →]      │
-│                                                        │
-│ 1 de 3 prontos                                         │
-└────────────────────────────────────────────────────────┘
-```
-
-**Cheio**:
+**É uma tela de boas-vindas, não um painel.** O nome interno continua Painel; o
+que ela faz é receber. Saudação com o nome de quem entrou, o estado do
+atendimento numa faixa, e duas colunas.
 
 ```
-● Atendendo no WhatsApp · 2 automações no ar · 1 número        [Novo contato]
-┌────────────────────────────────────────────────────────┐
-│ Precisa de você                                   4    │
-│                                                        │
-│ Marina Alves      pediu uma pessoa      há 12 min   →  │
-│ (11) 99312-8877   esperando resposta    há 1h20     →  │
-│ Rafael Lima       esperando resposta    há 3 dias   →  │
-│ Júlia Prado       esperando resposta    há 5 dias   →  │
-│                                       ver os 4 na fila │
-└────────────────────────────────────────────────────────┘
+Que bom ter você aqui, Gabriel!
+Vamos deixar o atendimento de 4YU Tech rodando sozinho.
 
-Este mês  412 conversas · bot resolveu 26% (mês passado 31%) · 1ª resposta 8 min
-Fechamentos (30 dias)  7 ganhos · R$ 12.400 · 3 perdidos
-Quem atendeu  …                          (só com duas pessoas ou mais)
+● Ainda não está atendendo · nenhum canal ligado          [Resolver]
+
+┌──────────────────────────────────┐  ┌───────────────────────┐
+│ Inbox ›  │ Funil › │ Automações ›│  │ Comece a usar         │
+├──────────────────────────────────┤  │ ▓▓▓░░░░░░  1 de 5     │
+│ Precisa de você            4     │  │ ✓ Criar a conta       │
+│ Marina Alves  pediu pessoa  12min│  │ ○ Ligar um canal      │
+│ Rafael Lima   esperando    3 dias│  │   [WhatsApp][IG][Anún]│
+├──────────────────────────────────┤  │ ○ Publicar automação  │
+│ Como funciona o AutoFluxos       │  │ ○ Primeira conversa   │
+│ Canal › Automação › Conversa ›   │  │ ○ Organizar no funil  │
+│ Funil        [Ver explicado]     │  └───────────────────────┘
+└──────────────────────────────────┘  │ Este mês · Fechamentos│
+                                      └───────────────────────┘
 ```
 
-A troca é **a fila virar checklist e nada mais**: mesma moldura, mesma posição,
-mesmo peso. Conta nova, conta com um contato e conta com mil têm a mesma forma —
-é a lista que enche.
+**O checklist é coluna, não faixa.** Em largura cheia ele transforma a conta num
+formulário a preencher e some da tela no dia em que termina, deixando um buraco.
+Encostado na lateral, ele acompanha enquanto o meio mostra o produto — e quando
+acaba, a mesma coluna passa a carregar o resumo do mês. A tela não muda de
+forma, muda de conteúdo.
 
----
+**Os passos falam de canal, não de WhatsApp.** A primeira versão dizia "faltam
+três coisas para o WhatsApp responder sozinho" e presumia o canal errado metade
+das vezes: tem quem chegue para o direct do Instagram, tem quem chegue por causa
+de anúncio. O passo é um só — *ligar um canal* — com três caminhos, e a escolha
+é de quem abriu a conta.
+
+**O primeiro passo já nasce feito.** Barra em zero parece castigo; o primeiro
+progresso é o que faz alguém querer o segundo.
+
+**"Como funciona o AutoFluxos" fica sempre.** Quatro peças desenhadas — canal,
+automação, conversa, funil — e um modal com a explicação inteira. É a ilustração
+da tela e é a resposta à primeira dúvida de quem entra, que não é "onde clico" e
+sim "o que isto faz com a minha conversa".
 
 ## 5. De onde sai cada número
 
