@@ -26,6 +26,7 @@ import {
 import { BarraDoQuadro } from './barra-do-quadro'
 import { Avatar } from '@/components/inbox/avatar'
 import { Dropdown } from '@/components/design/dropdown'
+import { IlustracaoQuadros } from '@/components/design/ilustracoes'
 import { FecharCartao } from './fechar-cartao'
 import { PainelDoContato } from './painel-do-contato'
 import {
@@ -215,8 +216,18 @@ export function Quadro({
 
       {/* `min-h-0` é o que faz a rolagem acontecer **dentro** das colunas em vez
           de a página inteira crescer. Sem ele o flex não deixa o filho encolher,
-          e a altura calculada some por baixo sem nada quebrar para avisar. */}
-      <div className="flex min-h-0 flex-1 items-start gap-3 overflow-x-auto pb-2">
+          e a altura calculada some por baixo sem nada quebrar para avisar.
+
+          **`flex-1` só quando há cartão.** Com o funil vazio as colunas têm um
+          palmo de altura, e mandá-las ocupar a tela toda empurrava o convite
+          logo abaixo para o rodapé da janela — longe do kanban que ele explica,
+          com um vão de tela vazia no meio. Sem cartão elas ficam do tamanho que
+          têm, e o convite encosta nelas. */}
+      <div
+        className={`flex min-h-0 items-start gap-3 overflow-x-auto pb-2 ${
+          cartoes.length === 0 ? 'shrink-0' : 'flex-1'
+        }`}
+      >
         {etapas.map((etapa, indice) => {
           const daEtapa = porEtapa.get(etapa.id) ?? []
           const alvoDoArrasto = sobre === etapa.id && arrastando !== null
@@ -455,8 +466,9 @@ export function Quadro({
           dizem o que este quadro faz. O convite responde "e agora?", que é a
           pergunta seguinte, e pergunta seguinte fica no lugar seguinte.
         */
-        <div className="mt-3 shrink-0 rounded-xl border border-dashed border-line bg-panel px-5 py-6 text-center">
-          <p className="text-[13.5px] font-semibold text-soft">Nenhuma pessoa neste funil</p>
+        <div className="mt-3 shrink-0 rounded-xl border border-dashed border-line bg-panel px-5 py-7 text-center">
+          <IlustracaoQuadros />
+          <p className="mt-4 text-[13.5px] font-semibold text-soft">Nenhuma pessoa neste funil</p>
           <p className="mx-auto mt-1.5 max-w-[460px] text-[12px] leading-5 text-dim">
             O funil só recebe sozinho quem chega depois que ele existe. Quem já estava na sua lista
             entra por aqui.
@@ -476,10 +488,15 @@ export function Quadro({
         </div>
       )}
 
-      <p className="mt-2 shrink-0 text-[11px] text-dim">
-        O ponto âmbar marca quem está parado há {DIAS_PARA_MARCAR_PARADO} dias ou mais na mesma
-        etapa — ou além do limite da etapa, quando ela tem um.
-      </p>
+      {/* A legenda some no funil vazio: ela explica uma marca que não tem como
+          aparecer sem cartão, e explicação sobre o que não está na tela é ruído
+          justamente embaixo do convite que pede uma ação. */}
+      {cartoes.length > 0 && (
+        <p className="mt-2 shrink-0 text-[11px] text-dim">
+          O ponto âmbar marca quem está parado há {DIAS_PARA_MARCAR_PARADO} dias ou mais na mesma
+          etapa — ou além do limite da etapa, quando ela tem um.
+        </p>
+      )}
 
       {aviso && (
         <p
