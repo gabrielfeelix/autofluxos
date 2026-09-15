@@ -52,6 +52,33 @@ const ENDERECO = 'https://generativelanguage.googleapis.com/v1beta/models'
 const MODELO = 'gemini-flash-latest'
 
 /**
+ * A reserva, e por que ela não é zelo.
+ *
+ * **Medido**: a primeira tentativa de transcrever um áudio real de produção
+ * voltou `503 UNAVAILABLE — "This model is currently experiencing high demand"`.
+ * A segunda, no mesmo áudio, transcreveu inteiro. Congestionamento do free tier
+ * é o modo normal de falhar aqui, não a exceção.
+ *
+ * Sem reserva, quem clicou lê "não deu para transcrever" num áudio que o modelo
+ * transcreveria perfeitamente trinta segundos depois — e a conclusão de quem
+ * usa é que o recurso não funciona.
+ *
+ * É o mesmo desenho de `ia/gemini.ts`, que já mantém uma reserva pelo mesmo
+ * motivo, e `gemini-3.6-flash` é a mesma que ele escolheu.
+ */
+const MODELO_RESERVA = 'gemini-3.6-flash'
+
+/**
+ * Os códigos que valem uma segunda tentativa noutro modelo.
+ *
+ * `429` é cota, `503` é fila. Os dois dizem "este modelo agora não", e nenhum
+ * diz "este áudio não presta" — que é a diferença entre trocar de modelo e
+ * insistir num pedido que vai falhar igual. `400` e `404` ficam de fora de
+ * propósito: repetir não muda o resultado e só gasta a cota.
+ */
+const CONGESTIONADO = new Set([429, 503])
+
+/**
  * Trinta segundos.
  *
  * Mais folgado que a conversa (15 s) porque aqui **alguém está olhando e
@@ -125,11 +152,23 @@ export async function transcreverAudio(
 
   let texto: string
   try {
-    texto = await pedirAoGemini(chave, arquivo.bytes, linha.arquivo.mime)
+    texto = await comReserva(chave, arquivo.bytes, linha.arquivo.mime)
   } catch (erro) {
     const motivo = erro instanceof Error ? erro.message : String(erro)
     console.error('[transcricao] falhou', mensagemId, motivo)
-    return { ok: false, erro: 'não deu para transcrever agora; tente de novo' }
+    /*
+     * A palavra muda quando os dois modelos estavam ocupados.
+     *
+     * "Não deu" faz procurar defeito no áudio ou no painel. "Está
+     * congestionado, tente de novo" diz a verdade e diz o que fazer — e o que
+     * fazer funciona, porque a fila do Google anda.
+     */
+    return {
+      ok: false,
+      erro: motivo.startsWith('ocupado')
+        ? 'o modelo está congestionado agora; tente de novo em alguns segundos'
+        : 'não deu para transcrever agora; tente de novo',
+    }
   }
 
   if (texto.trim() === '') return { ok: false, erro: 'o modelo não devolveu nada' }
@@ -151,7 +190,29 @@ export async function transcreverAudio(
   return { ok: true, texto }
 }
 
-async function pedirAoGemini(chave: string, bytes: Uint8Array, mime: string): Promise<string> {
+/**
+ * Tenta no modelo bom e, se ele estiver ocupado, na reserva.
+ *
+ * Uma tentativa em cada, e não um laço: a pessoa está olhando a tela esperando.
+ * Três tentativas com espera entre elas transformariam um clique numa espera de
+ * um minuto e meio para, provavelmente, o mesmo resultado.
+ */
+async function comReserva(chave: string, bytes: Uint8Array, mime: string): Promise<string> {
+  try {
+    return await pedirAoGemini(chave, bytes, mime, MODELO)
+  } catch (erro) {
+    if (!(erro instanceof Error) || !erro.message.startsWith('ocupado')) throw erro
+    console.warn('[transcricao] o modelo principal estava ocupado; indo para a reserva')
+    return pedirAoGemini(chave, bytes, mime, MODELO_RESERVA)
+  }
+}
+
+async function pedirAoGemini(
+  chave: string,
+  bytes: Uint8Array,
+  mime: string,
+  modelo: string,
+): Promise<string> {
   const corpo = {
     contents: [
       {
@@ -178,7 +239,7 @@ async function pedirAoGemini(chave: string, bytes: Uint8Array, mime: string): Pr
   }
 
   const corte = AbortSignal.timeout(TIMEOUT_MS)
-  const resposta = await fetch(`${ENDERECO}/${MODELO}:generateContent`, {
+  const resposta = await fetch(`${ENDERECO}/${modelo}:generateContent`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-goog-api-key': chave },
     body: JSON.stringify(corpo),
@@ -188,7 +249,10 @@ async function pedirAoGemini(chave: string, bytes: Uint8Array, mime: string): Pr
   if (!resposta.ok) {
     // O texto do Google é específico e é ele que resolve — chave sem cota, modelo
     // desativado, áudio recusado. Só o status não diz nada a quem for ler o log.
-    throw new Error(`${resposta.status}: ${(await resposta.text()).slice(0, 300)}`)
+    const detalhe = `${resposta.status}: ${(await resposta.text()).slice(0, 300)}`
+    // O prefixo é o que `comReserva` e a tela leem para separar "agora não" de
+    // "nunca". Fica no começo da mensagem para não depender de procurar no meio.
+    throw new Error(CONGESTIONADO.has(resposta.status) ? `ocupado — ${detalhe}` : detalhe)
   }
 
   const json = (await resposta.json()) as {
