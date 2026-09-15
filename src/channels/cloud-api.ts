@@ -27,6 +27,15 @@ const VERSAO_PADRAO = 'v25.0'
 const TIMEOUT_MS = 15_000
 /** Indicador é conveniência; ele não pode consumir o prazo de um envio real. */
 const TIMEOUT_INDICADOR_MS = 2_000
+/**
+ * Baixar arquivo é outro tipo de espera.
+ *
+ * Os outros pedidos trocam JSON pequeno; aqui trafega até 16 MB, e numa conexão
+ * ruim isso não cabe em quinze segundos. Ainda assim tem teto: sem ele, um
+ * download travado seguraria a função até o limite da Vercel e levaria a
+ * conversa junto.
+ */
+const TIMEOUT_DOWNLOAD_MS = 30_000
 
 export type ConfigCloudApi = {
   phoneNumberId: string
@@ -68,7 +77,8 @@ function citacao(mensagemId: string | undefined): Record<string, unknown> {
 
 export function canalCloudApi(config: ConfigCloudApi): Canal {
   const versao = config.versaoGraph ?? process.env.META_GRAPH_VERSION ?? VERSAO_PADRAO
-  const url = `https://graph.facebook.com/${versao}/${config.phoneNumberId}/messages`
+  const raiz = `https://graph.facebook.com/${versao}`
+  const url = `${raiz}/${config.phoneNumberId}/messages`
 
   async function mandar(
     corpo: Record<string, unknown>,
@@ -165,6 +175,93 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
      */
     async marcarLida(mensagemId) {
       await mandar({ status: 'read', message_id: mensagemId }, TIMEOUT_INDICADOR_MS)
+    },
+
+    /**
+     * Baixar o que a pessoa mandou, antes de a Meta apagar.
+     *
+     * -----------------------------------------------------------------------
+     * O relógio, que é a razão de esta função existir
+     * -----------------------------------------------------------------------
+     *
+     * O `id` que chega no webhook **vive 7 dias**. A URL que o `GET /{id}`
+     * devolve vive **5 minutos**. Depois disso o arquivo não existe em lugar
+     * nenhum: os termos da Cloud API (4.5) dizem que a Meta não guarda cópia e
+     * que o backup é nosso. Não baixar não é adiar — é perder.
+     *
+     * -----------------------------------------------------------------------
+     * Por que o token vai no segundo pedido também
+     * -----------------------------------------------------------------------
+     *
+     * A URL parece pública e não é: baixar sem o `Authorization` falha. É fácil
+     * errar porque a URL já vem assinada, e o erro só aparece em produção.
+     *
+     * Devolve `null` em vez de estourar: quem chama roda depois de a mensagem
+     * já estar gravada, e uma foto que não desceu não pode derrubar a conversa.
+     */
+    async baixarMidia(mediaId) {
+      let endereco: string
+      let mime: string
+      let nomeArquivo: string | undefined
+
+      try {
+        const resposta = await fetch(`${raiz}/${mediaId}`, {
+          headers: { Authorization: `Bearer ${config.token}` },
+          signal: AbortSignal.timeout(TIMEOUT_MS),
+        })
+        if (!resposta.ok) {
+          const detalhe = await resposta.text().catch(() => '')
+          console.warn(
+            `[whatsapp] a Meta recusou o id da mídia (${resposta.status})`,
+            detalhe.slice(0, 200),
+          )
+          return null
+        }
+
+        const dados = (await resposta.json()) as {
+          url?: string
+          mime_type?: string
+          file_name?: string
+        }
+        if (!dados.url) return null
+
+        endereco = dados.url
+        mime = dados.mime_type ?? 'application/octet-stream'
+        nomeArquivo = dados.file_name
+      } catch (erro) {
+        console.warn(
+          '[whatsapp] não deu para pedir a URL da mídia',
+          erro instanceof Error ? erro.message : String(erro),
+        )
+        return null
+      }
+
+      try {
+        /*
+         * `TIMEOUT_DOWNLOAD_MS` é maior que o dos outros pedidos porque aqui
+         * trafega arquivo, não JSON: um vídeo de 16 MB numa conexão ruim leva
+         * mais que os segundos que bastam para uma resposta de texto. Ainda
+         * assim tem teto — sem ele, um download travado seguraria a função até
+         * o limite da Vercel e levaria a conversa junto.
+         */
+        const arquivo = await fetch(endereco, {
+          headers: { Authorization: `Bearer ${config.token}` },
+          signal: AbortSignal.timeout(TIMEOUT_DOWNLOAD_MS),
+        })
+        if (!arquivo.ok) {
+          console.warn(`[whatsapp] a mídia não desceu (${arquivo.status})`)
+          return null
+        }
+
+        const bytes = new Uint8Array(await arquivo.arrayBuffer())
+        return { bytes, mime, ...(nomeArquivo ? { nomeArquivo } : {}) }
+      } catch (erro) {
+        console.warn(
+          '[whatsapp] não deu para baixar a mídia',
+          erro instanceof Error ? erro.message : String(erro),
+        )
+        return null
+      }
     },
 
     async enviarMidia(para, { midia, url, legenda, nomeArquivo }, citando) {

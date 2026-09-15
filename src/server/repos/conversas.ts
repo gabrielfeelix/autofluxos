@@ -468,10 +468,16 @@ export async function trocarVersaoDaSessao(id: string, versaoId: string): Promis
 /**
  * Registra uma mensagem recebida.
  *
- * Devolve `false` quando ela já estava lá. A Meta reenvia o webhook se não
+ * Devolve o **id da linha**, ou `null` quando ela já estava lá. A Meta reenvia o
+ * webhook se não
  * receber 200 a tempo; sem esta checagem, uma lentidão nossa viraria conversa
  * andando duas vezes. Quem garante é a constraint `unique` do banco, não uma
  * consulta anterior que poderia perder a corrida.
+ *
+ * O id sobe porque a mídia recebida precisa dele: o arquivo no bucket é nomeado
+ * pela mensagem (`0055`), e sem o id ele teria que ser buscado de novo pelo
+ * `wa_message_id` logo depois de inserido. Quem só quer saber se era inédita
+ * continua testando a veracidade, como antes.
  */
 export async function registrarEntrada(dados: {
   contatoId: string
@@ -489,8 +495,8 @@ export async function registrarEntrada(dados: {
   reagiuA?: string | null
   reacao?: string | null
   cita?: string | null
-}): Promise<boolean> {
-  const { error } = await db().from('messages').insert({
+}): Promise<string | null> {
+  const { data, error } = await db().from('messages').insert({
     contact_id: dados.contatoId,
     session_id: dados.sessaoId,
     direcao: 'entrada',
@@ -501,12 +507,14 @@ export async function registrarEntrada(dados: {
     reacao: dados.reacao ?? null,
     cita: dados.cita ?? null,
   })
+    .select('id')
+    .single()
 
   if (error) {
-    if (error.code === '23505') return false
+    if (error.code === '23505') return null
     throw new Error(`não deu para registrar a mensagem: ${error.message}`)
   }
-  return true
+  return data.id as string
 }
 
 /**

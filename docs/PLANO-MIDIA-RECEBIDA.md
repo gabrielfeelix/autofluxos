@@ -263,11 +263,31 @@ bytes.
 4. **Coluna `arquivo jsonb` em `messages`** (migration `0055`), e não mais chaves
    nossas dentro do `payload` cru — o `payload` é o que a Meta mandou, e misturar
    os dois já confunde quem lê `anexoDoPayload`.
-5. **Retenção de mídia mais curta que a de texto.** Sugestão: **90 dias para
-   arquivo, 12 meses para o texto da conversa.** É minimização de verdade, corta
-   o custo de storage, e reduz a janela de exposição exatamente no dado que tem
-   agravante. O texto continua contando a história do atendimento depois que o
-   arquivo sai.
+5. **A mídia não tem prazo próprio: ela herda o do contato.** — *decidido em
+   15/set, e a proposta anterior de 90 dias foi descartada.*
+
+   A ideia de expurgar mídia em 7, 14 ou 90 dias parecia certa por analogia com
+   o WhatsApp, e a analogia é falsa: **o WhatsApp não apaga mídia antiga do
+   celular.** O que expira em 7 dias é a cópia nos servidores da Meta — no
+   aparelho o arquivo fica até alguém limpar, e é por isso que o WhatsApp Web
+   diz "baixando" ao abrir conversa velha: ele busca do celular, não da nuvem. O
+   celular é o arquivo permanente. No nosso caso não existe celular.
+
+   E o mercado não expurga: o Zendesk arquiva o ticket em 120 dias mas não apaga
+   anexo sem o admin configurar um *deletion schedule*; o Freshdesk só apaga 90
+   dias depois de a conta ser encerrada; o Chatwoot não tem expurgo nenhum. Há
+   até um mercado de apps de terceiros que existem só para apagar anexo do
+   Zendesk — sinal de que não é nativo e de que há demanda.
+
+   **Mas "nunca apagar" não se sustenta**, e não por gosto: os Meta Platform
+   Terms 3.d.i.2 obrigam a apagar quando não há mais fim comercial legítimo, e a
+   Meta pode auditar uma vez por ano. O Chatwoot não apaga por **falta do
+   recurso**, não por ter decidido que não deve.
+
+   A saída não precisa de regra nova, porque a regra já existe: o arquivo vive
+   enquanto a conversa viver, e **o expurgo de 12 meses do contato leva o
+   arquivo junto**. Isso é política de retenção escrita e defensável, sem prazo
+   mágico que alguém teria de justificar depois.
 6. **Expurgo real:** o cron de retenção apaga o objeto do bucket junto com a
    linha, e apagar contato apaga os arquivos dele.
 7. **Botão de exclusão a pedido do titular** — exigência contratual da Meta

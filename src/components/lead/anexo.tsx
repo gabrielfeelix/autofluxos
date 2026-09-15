@@ -191,3 +191,34 @@ export function CartoesNaBolha({ cartoes }: { cartoes: CartaoDeContato[] }) {
     </span>
   )
 }
+
+/**
+ * Chegou arquivo e não temos cópia dele.
+ *
+ * ---------------------------------------------------------------------------
+ * Por que uma frase, e não nada
+ * ---------------------------------------------------------------------------
+ *
+ * Três caminhos levam aqui: o arquivo passou do teto de 16 MB, o download da
+ * Meta falhou, ou a mensagem é anterior à `0055` — e nesse caso o `id` dela já
+ * expirou nos 7 dias e o arquivo não existe mais em lugar nenhum do mundo.
+ *
+ * Para quem lê, os três dão no mesmo, e o que **não** pode acontecer é a bolha
+ * ficar vazia. "Sumiu minha foto" é a reclamação mais comum do mercado neste
+ * recurso — Digisac, Huggy e Chatwoot todos a colecionam (ver
+ * `docs/PLANO-MIDIA-RECEBIDA.md`). A diferença entre um produto que perdeu algo
+ * e um produto quebrado é uma frase que assume o que aconteceu.
+ *
+ * Não promete recuperação, porque não há: a Meta não guarda cópia, e depois de
+ * sete dias ninguém guarda.
+ */
+export function ArquivoSemCopia() {
+  return (
+    <span className="mb-1.5 flex items-center gap-2 rounded-lg border border-dashed border-white/[0.14] px-2.5 py-2">
+      <span className="text-[13px] leading-none">📎</span>
+      <span className="text-[11px] leading-4 text-dim italic">
+        arquivo recebido, sem cópia guardada — peça para enviar de novo
+      </span>
+    </span>
+  )
+}

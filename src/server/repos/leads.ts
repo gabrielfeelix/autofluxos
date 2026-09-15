@@ -9,6 +9,8 @@ import {
   type CartaoDeContato,
   type LocalDaMensagem,
 } from '@/core/payload-da-mensagem'
+import { ehArquivoGuardado, midiaDoTipo } from '@/core/midia-recebida'
+import { urlsAssinadas } from './midia-recebida'
 import { TIPOS_DE_MIDIA, type TipoDeMidia } from '@/core/flow/schema'
 import { casarReacoes } from '@/core/reacoes'
 import { db, ehIdInvalido } from '../db'
@@ -142,6 +144,25 @@ export type MensagemDoLead = {
    * quem abria a conversa via que algo tinha chegado e não via o quê. O dado
    * sempre esteve no `payload`; faltava desenhar.
    */
+  /**
+   * O arquivo que a pessoa mandou, já com URL assinada para a tela.
+   *
+   * Reusa `AnexoDaMensagem` de propósito: a bolha já sabe desenhar imagem,
+   * vídeo, áudio e documento, e um tipo novo obrigaria a desenhar duas vezes a
+   * mesma coisa. A diferença mora em quem produz a `url` — na saída ela é
+   * pública e permanente; aqui é assinada e morre em cinco minutos.
+   */
+  recebido?: AnexoDaMensagem
+  /**
+   * Chegou arquivo e **não temos cópia**: passou do teto de 16 MB, ou o
+   * download falhou, ou a mensagem é anterior à `0055`.
+   *
+   * Existe para a bolha dizer isso em vez de ficar vazia. "Sumiu minha foto" é
+   * a reclamação mais comum do mercado neste recurso — ver
+   * `docs/PLANO-MIDIA-RECEBIDA.md` —, e a diferença entre um produto honesto e
+   * um quebrado é uma frase.
+   */
+  semCopia?: true
   local?: LocalDaMensagem
   /** Os cartões de contato encaminhados, pelo mesmo motivo do `local`. */
   cartoes?: CartaoDeContato[]
@@ -808,7 +829,7 @@ export async function lerConversa(
 ): Promise<Conversa> {
   const { data, error } = await db()
     .from('messages')
-    .select('id, direcao, texto, ts, entregue, payload, wa_message_id, reagiu_a, reacao, cita')
+    .select('id, direcao, texto, ts, entregue, payload, wa_message_id, reagiu_a, reacao, cita, arquivo')
     .eq('contact_id', contatoId)
     .order('ts', { ascending: false })
     .limit(teto + 1)
@@ -827,6 +848,7 @@ export async function lerConversa(
     reagiu_a: string | null
     reacao: string | null
     cita: string | null
+    arquivo: unknown
   }[]
   const cortada = linhas.length > teto
 
@@ -861,6 +883,19 @@ export async function lerConversa(
     })),
   )
 
+  /*
+   * As URLs são assinadas **em lote e aqui**, não numa por bolha.
+   *
+   * Uma conversa com trinta fotos faria trinta chamadas ao Storage se cada
+   * bolha assinasse a sua. E assinar aqui, e não gravar no banco, é a regra que
+   * não se dobra: URL assinada guardada em coluna é link público com um passo a
+   * mais — ela viaja em log e em backup e continua valendo até expirar.
+   */
+  const caminhos = visiveis
+    .map((m) => (ehArquivoGuardado(m.arquivo) ? m.arquivo.caminho : null))
+    .filter((caminho): caminho is string => caminho !== null)
+  const assinadas = await urlsAssinadas(caminhos)
+
   return {
     cortada,
     mensagens: visiveis
@@ -877,6 +912,28 @@ export async function lerConversa(
         const anexo = anexoDoPayload(m.payload)
         const local = localDoPayload(m.payload)
         const cartoes = cartoesDoPayload(m.payload)
+
+        /*
+         * Três estados, e a bolha precisa distinguir os três: temos o arquivo e
+         * a assinatura saiu; temos o registro mas a assinatura falhou; e chegou
+         * arquivo do qual nunca houve cópia — grande demais, download falhado,
+         * ou mensagem anterior à `0055`.
+         *
+         * Os dois últimos viram o mesmo aviso na tela, porque para quem lê dão
+         * no mesmo: o arquivo não está aqui.
+         */
+        const guardado = ehArquivoGuardado(m.arquivo) ? m.arquivo : null
+        const assinada = guardado ? assinadas.get(guardado.caminho) : undefined
+        const recebido =
+          guardado && assinada
+            ? {
+                midia: guardado.midia,
+                url: assinada,
+                ...(guardado.nomeArquivo ? { nomeArquivo: guardado.nomeArquivo } : {}),
+              }
+            : null
+        const semCopia =
+          !recebido && midiaDoTipo((m.payload as { type?: string } | null)?.type) !== null
         const reacoes = m.wa_message_id ? reacoesPorAlvo.get(m.wa_message_id) : undefined
         const cita = m.cita ? citadaDoHistorico(m.cita, porWaId) : null
         return {
@@ -886,6 +943,8 @@ export async function lerConversa(
           ts: m.ts,
           entregue: m.entregue,
           ...(anexo ? { anexo } : {}),
+          ...(recebido ? { recebido } : {}),
+          ...(semCopia ? { semCopia: true as const } : {}),
           ...(local ? { local } : {}),
           ...(cartoes.length ? { cartoes } : {}),
           ...(m.wa_message_id ? { waMessageId: m.wa_message_id } : {}),

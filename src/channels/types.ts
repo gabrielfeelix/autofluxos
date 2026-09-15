@@ -86,4 +86,19 @@ export type Canal = {
    * Opcional pelo mesmo motivo de `reagir`: nem todo canal tem o recurso.
    */
   marcarLida?(mensagemId: string): Promise<void>
+  /**
+   * Baixa o arquivo que a pessoa mandou. `null` quando não deu.
+   *
+   * São **dois** pedidos à Meta, e não um: o primeiro troca o id por uma URL, o
+   * segundo baixa dela — e a URL só vale 5 minutos e exige o token no header.
+   * Quem chama não precisa saber disso, e é por isso que os dois moram dentro
+   * do adaptador.
+   *
+   * Devolve `null` em vez de estourar quando o arquivo não vem. Perder uma
+   * mídia é ruim; derrubar a conversa por causa dela é pior, e a mensagem em si
+   * já está gravada quando isto roda.
+   */
+  baixarMidia?(
+    mediaId: string,
+  ): Promise<{ bytes: Uint8Array; mime: string; nomeArquivo?: string } | null>
 }

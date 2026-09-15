@@ -48,6 +48,7 @@ import {
 import { listarRespostasRapidas, type RespostaRapida } from '@/server/repos/respostas-rapidas'
 import {
   AnexoNaConversa,
+  ArquivoSemCopia,
   CartoesNaBolha,
   CitacaoNaBolha,
   LocalNaBolha,
@@ -761,6 +762,13 @@ function Historico({
             }`}>
               {mensagem.cita && <CitacaoNaBolha cita={mensagem.cita} nome={nome} />}
               {mensagem.anexo && <AnexoNaConversa anexo={mensagem.anexo} />}
+              {/*
+                O arquivo que a pessoa mandou. Mesma bolha do que sai, e a
+                diferença está em quem produziu a URL: aqui ela é assinada e
+                morre em cinco minutos.
+              */}
+              {mensagem.recebido && <AnexoNaConversa anexo={mensagem.recebido} />}
+              {mensagem.semCopia && <ArquivoSemCopia />}
               {mensagem.local && <LocalNaBolha local={mensagem.local} />}
               {mensagem.cartoes && <CartoesNaBolha cartoes={mensagem.cartoes} />}
               {/*

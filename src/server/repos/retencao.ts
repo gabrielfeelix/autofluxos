@@ -1,5 +1,6 @@
 import 'server-only'
 import { db, ehIdInvalido } from '../db'
+import { apagarArquivosDoContato } from './midia-recebida'
 
 /**
  * Apagar contato e política de retenção.
@@ -46,6 +47,21 @@ export function limiteDaRetencao(meses: number, agora: Date): Date {
  * diferença entre "apaguei" e "não era seu".
  */
 export async function apagarContato(clienteId: string, contatoId: string): Promise<boolean> {
+  /*
+   * O arquivo sai **antes** da linha, e a ordem não é estética.
+   *
+   * `contacts` cascateia as mensagens (0003 e 0007), mas cascade de banco não
+   * alcança o Storage. Apagando a linha primeiro, a lista de caminhos vai junto
+   * e o arquivo fica no bucket para sempre — dado pessoal órfão, que é o pior
+   * resultado possível: some da tela e continua existindo.
+   *
+   * `apagarArquivosDoContato` não estoura, então uma falha ali não impede o
+   * contato de ser apagado. Um arquivo que resistiu é um problema; um contato
+   * que não se apaga porque o Storage piscou é outro, maior — e é o pedido do
+   * titular que fica sem resposta.
+   */
+  await apagarArquivosDoContato(contatoId)
+
   const { data, error } = await db()
     .from('contacts')
     .delete()
@@ -72,6 +88,11 @@ export async function apagarContatos(
   contatos: string[],
 ): Promise<number> {
   if (contatos.length === 0) return 0
+
+  // Os arquivos primeiro, e um contato por vez: ver `apagarContato`. Em série
+  // de propósito — o expurgo roda num cron sem ninguém esperando, e o teto por
+  // passada (`TETO_POR_LIMPEZA`) já limita o tamanho da fila.
+  for (const contatoId of contatos) await apagarArquivosDoContato(contatoId)
 
   const { data, error } = await db()
     .from('contacts')

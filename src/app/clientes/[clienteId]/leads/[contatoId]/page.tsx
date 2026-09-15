@@ -28,6 +28,7 @@ import { rotuloDoCampo } from '@/core/contatos/rotulo-do-campo'
 import { SeletorDeEtiquetas } from '@/components/etiquetas/seletor'
 import {
   AnexoNaConversa,
+  ArquivoSemCopia,
   CartoesNaBolha,
   CitacaoNaBolha,
   LocalNaBolha,
@@ -303,6 +304,13 @@ async function Historico({
             <p className={`max-w-[78%] px-3 py-2 text-[12.5px] leading-[1.45] whitespace-pre-wrap ${nossa ? 'rounded-[13px_13px_4px_13px] border border-accent/[0.22] bg-accent/[0.13]' : 'rounded-[13px_13px_13px_4px] border border-white/[0.07] bg-white/[0.055]'}`}>
               {mensagem.cita && <CitacaoNaBolha cita={mensagem.cita} nome={nomeDoLead} />}
               {mensagem.anexo && <AnexoNaConversa anexo={mensagem.anexo} />}
+              {/*
+                O arquivo que a pessoa mandou. Mesma bolha do que sai, e a
+                diferença está em quem produziu a URL: aqui ela é assinada e
+                morre em cinco minutos.
+              */}
+              {mensagem.recebido && <AnexoNaConversa anexo={mensagem.recebido} />}
+              {mensagem.semCopia && <ArquivoSemCopia />}
               {mensagem.local && <LocalNaBolha local={mensagem.local} />}
               {mensagem.cartoes && <CartoesNaBolha cartoes={mensagem.cartoes} />}
               {/*

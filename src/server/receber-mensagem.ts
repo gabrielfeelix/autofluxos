@@ -7,6 +7,7 @@ import { varsIniciais } from '@/core/contatos/vars-iniciais'
 import { alertar, type ContextoDoAlerta } from './alertar'
 import { avisarHandoff } from './avisar-handoff'
 import { executarComEfeitos, type OpcoesDeEfeitos } from './efeitos/resolver'
+import { guardarMidiaRecebida } from './guardar-midia-recebida'
 import { escolherModelo } from './ia/modelo'
 import { acharCliente, horarioDoCliente } from './repos/clientes'
 import { acharFluxo, acharVersao, type VersaoPublicada } from './repos/fluxos'
@@ -265,7 +266,7 @@ export async function tratarUma(
 
   if (contato.criadoAgora) await porNoQuadroPadrao(contato)
 
-  const inedita = await registrarEntrada({
+  const mensagemId = await registrarEntrada({
     contatoId: contato.id,
     sessaoId: null,
     waMessageId: mensagem.id,
@@ -288,7 +289,43 @@ export async function tratarUma(
   // A Meta reenviou algo que já processamos. Sair aqui é o que impede a
   // conversa de andar duas vezes. Vem **antes** da trava de propósito: reenvio
   // não precisa esperar fila nenhuma para ser descartado.
-  if (!inedita) return
+  if (!mensagemId) return
+
+  /*
+   * A cópia do arquivo, antes de o prazo da Meta fechar.
+   *
+   * Vem **logo depois do dedupe** e antes de tudo o mais de propósito: o `id`
+   * da mídia vive 7 dias, a Meta não guarda backup (Cloud API Terms 4.5), e
+   * qualquer caminho que adie isto pode não acontecer — a função pode morrer no
+   * `maxDuration`, e o arquivo não volta de lugar nenhum.
+   *
+   * Depois do dedupe porque reenvio da Meta não pode baixar o mesmo arquivo
+   * duas vezes, e antes do resto porque perder mídia é irreversível e atrasar a
+   * resposta não é. Ver `guardar-midia-recebida.ts` sobre o custo aceito.
+   */
+  const midiaParaGuardar = entrada.tipo === 'midia' ? entrada.midiaId : undefined
+  if (midiaParaGuardar) {
+    /*
+     * O canal é montado aqui dentro, e não acima, porque `fabricaDeCanal` pode
+     * estourar quando falta token no ambiente. Mensagem de texto não precisa de
+     * canal nenhum para ser gravada, e montar um por precaução transformaria
+     * "falta configurar o token" em conversa que não entra.
+     */
+    try {
+      await guardarMidiaRecebida(
+        fabricaDeCanal(canalSalvo),
+        canalSalvo.clienteId,
+        contato.id,
+        mensagemId,
+        { tipo: mensagem.type, midiaId: midiaParaGuardar },
+      )
+    } catch (erro) {
+      console.warn(
+        '[midia] não deu para montar o canal para baixar a mídia',
+        erro instanceof Error ? erro.message : String(erro),
+      )
+    }
+  }
 
   /**
    * **Reação não faz a conversa andar, e parar aqui é o conserto do bug.**

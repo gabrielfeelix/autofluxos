@@ -37,12 +37,16 @@ extração explícito para os objetos de `public`.
 2. **Toda migration do AutoFluxos qualifica seus objetos com `public.`.** Não
    dependa do `search_path` do projeto e nunca cite `app_verandi` numa migration
    deste repositório.
-3. **O nome da próxima migration vem do disco, não de plano antigo.** Hoje o
-   AutoFluxos termina em `0047`; a próxima é `0048`. Este parágrafo já esteve
-   errado duas vezes — dizia `0029` quando o disco tinha `0038`, e `0044`
-   quando o disco já tinha `0046` —, e é exatamente por isso
-   que a regra é olhar o diretório, inclusive quando um documento afirma um
-   número. Os nomes `0008_limites` e
+3. **O nome da próxima migration vem do disco, não de plano antigo** — e nem
+   deste parágrafo. Rode `ls supabase/migrations/ | tail -1`.
+
+   **Este parágrafo não diz mais qual é o número, de propósito.** Ele já esteve
+   errado três vezes: dizia `0029` quando o disco tinha `0038`, `0044` quando o
+   disco tinha `0046`, e `0047` quando o disco já tinha `0055`. Um documento que
+   afirma o número compete com o diretório e perde toda vez, porque ninguém
+   lembra de atualizar os dois — e, pior, ele é convincente o bastante para
+   alguém confiar nele em vez de olhar. A regra é olhar o diretório, inclusive
+   quando um documento afirma um número. Os nomes `0008_limites` e
    `0009_retencao` escritos no plano de endurecimento são exemplos antigos e
    colidem com migrations que já existem — e a tabela do §4 do PLANO-SISTEMA
    divergiu inteira do disco a partir da `0024`, porque a ordem de execução foi
