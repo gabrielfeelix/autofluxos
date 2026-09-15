@@ -25,8 +25,20 @@ import { acharLead, lerConversa, LIMITE_DA_NOTA } from '@/server/repos/leads'
 import { listarRespostasRapidas } from '@/server/repos/respostas-rapidas'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { quadrosDoContato } from '@/server/repos/quadros'
-import { comoParado, estaParado } from '@/core/quadros'
+import { estagioDoContato, resumoDoContato } from '@/server/repos/crm'
+import { linhaDoTempo } from '@/server/repos/eventos'
+import { membrosDaConta } from '@/server/repos/usuarios'
+import { listarMotivos } from '@/server/repos/motivos-de-perda'
 import { rotuloDoCampo } from '@/core/contatos/rotulo-do-campo'
+import { origemDoContato } from '@/core/contatos/origem'
+import { telefoneLegivel } from '@/core/contatos/telefone'
+import { Avatar } from '@/components/inbox/avatar'
+import { Abas } from '@/components/lead-crm/abas'
+import { EstagioDoContato } from '@/components/lead-crm/estagio-do-contato'
+import { Historico as HistoricoDoContato } from '@/components/lead-crm/historico'
+import { Negociacoes } from '@/components/lead-crm/negociacoes'
+import { ResponsavelDoContato } from '@/components/lead-crm/responsavel-do-contato'
+import { ResumoDoContato } from '@/components/lead-crm/resumo-do-contato'
 import { SeletorDeEtiquetas } from '@/components/etiquetas/seletor'
 import {
   AnexoNaConversa,
@@ -49,12 +61,37 @@ export default async function Pagina({
   params: Promise<{ clienteId: string; contatoId: string }>
 }) {
   const { clienteId, contatoId } = await params
-  const [cliente, lead, respostasRapidas, etiquetas, noQuadro, temAutomacao] = await Promise.all([
+  const [
+    cliente,
+    lead,
+    respostasRapidas,
+    etiquetas,
+    noQuadro,
+    /*
+     * O CRM da ficha (0058), tudo na mesma leva.
+     *
+     * São cinco consultas curtas e independentes, e nenhuma delas vale uma
+     * espera própria: a tela só existe inteira. Equipe e motivos vêm com a
+     * página pelo mesmo motivo do quadro — são listas que mudam uma vez por
+     * mês, e buscá-las ao abrir cada menu seria uma ida ao banco por clique.
+     */
+    estagio,
+    resumo,
+    eventos,
+    equipe,
+    motivos,
+    temAutomacao,
+  ] = await Promise.all([
     acharCliente(clienteId),
     acharLead(clienteId, contatoId),
     listarRespostasRapidas(clienteId),
     listarEtiquetas(clienteId),
     quadrosDoContato(clienteId, contatoId),
+    estagioDoContato(clienteId, contatoId),
+    resumoDoContato(clienteId, contatoId),
+    linhaDoTempo(clienteId, contatoId),
+    membrosDaConta(clienteId),
+    listarMotivos(clienteId),
     /*
      * Sem fluxo ligado a papel nem gatilho ativo, **não existe bot** — e o
      * cartão abaixo dizia "Bot respondendo este contato" assim mesmo, com um
@@ -66,7 +103,9 @@ export default async function Pagina({
 
   const campos = Object.entries(lead.campos)
   const nome = lead.nome ?? 'sem nome'
-  const iniciais = nome.split(' ').filter(Boolean).slice(0, 2).map((parte) => parte[0]).join('').toUpperCase()
+  /* De onde a pessoa veio, quando isso foi medido. Quem não tem origem não
+     ganha linha — escrever "Direto" seria afirmar o que ninguém mediu. */
+  const origem = origemDoContato(lead.campos)
 
   // O primeiro nome basta na caixa de resposta: "Responder Maria Aparecida da
   // Silva pelo WhatsApp…" não cabe e não ajuda.
@@ -92,17 +131,40 @@ export default async function Pagina({
         </Link>
 
         <header className="mb-4 flex flex-wrap items-center gap-3.5">
-          <span className="flex size-11 items-center justify-center rounded-full border border-strong bg-surface text-[12px] font-bold text-muted">
-            {iniciais}
-          </span>
-          <NomeDoContato
-            nome={lead.nome}
-            nomeDoPerfil={lead.nomeDoPerfil}
-            nomeReal={lead.nomeReal}
-            waId={lead.waId}
-            salvar={acaoCorrigirNome.bind(null, clienteId, contatoId)}
-          />
+          <Avatar nome={lead.nome} tamanho={44} />
+          <div className="min-w-0">
+            <NomeDoContato
+              nome={lead.nome}
+              nomeDoPerfil={lead.nomeDoPerfil}
+              nomeReal={lead.nomeReal}
+              waId={lead.waId}
+              salvar={acaoCorrigirNome.bind(null, clienteId, contatoId)}
+            />
+            {/* Telefone e origem numa linha só, embaixo do nome: são as duas
+                coisas que se procura com a ficha aberta — para onde eu ligo, e
+                de onde essa pessoa veio. */}
+            <p className="mt-0.5 text-[11.5px] text-dim">
+              {telefoneLegivel(lead.waId)} · WhatsApp
+              {origem &&
+                (origem.deAnuncio && origem.titulo
+                  ? ` · veio do anúncio “${origem.titulo}”`
+                  : ` · veio de ${origem.rotulo}`)}
+            </p>
+          </div>
           <span className="flex-1" />
+          {/* O estágio e o responsável, lado a lado: em que pé está, e com
+              quem. Ver `components/lead-crm/estagio-do-contato.tsx`. */}
+          <EstagioDoContato
+            clienteId={clienteId}
+            contatoId={contatoId}
+            estagio={estagio ?? 'novo'}
+          />
+          <ResponsavelDoContato
+            clienteId={clienteId}
+            contatoId={contatoId}
+            equipe={equipe.map(({ id, nome: comoSeChama }) => ({ id, nome: comoSeChama }))}
+            responsavelId={lead.atribuidoA}
+          />
           <span className={`rounded-full border px-3 py-1 text-[10.5px] font-bold ${lead.aguardando ? 'border-rose-400/25 bg-rose-400/[0.09] text-perigo' : !lead.automacaoAtiva ? 'border-amber-300/25 bg-amber-300/[0.08] text-aviso' : 'border-emerald-400/20 bg-emerald-400/[0.07] text-ok'}`}>
             {lead.aguardando ? 'AGUARDANDO HUMANO' : !lead.automacaoAtiva ? 'BOT EM PAUSA' : 'COM O BOT'}
           </span>
@@ -168,6 +230,25 @@ export default async function Pagina({
 
         <div className="grid grid-cols-1 items-start gap-[18px] md:grid-cols-[280px_minmax(0,1fr)]">
           <div className="flex flex-col gap-[18px]">
+          {/* **O que a pessoa já rendeu e o que está em jogo vêm antes de
+              etiqueta e anotação.** A coluna abria em "Etiquetas", e a primeira
+              informação sobre a pessoa era o que o bot perguntou — o mesmo
+              defeito que a coluna do Inbox já tinha corrigido. */}
+          <ResumoDoContato resumo={resumo} />
+          <Negociacoes
+            clienteId={clienteId}
+            nome={nome}
+            negociacoes={noQuadro.map((posicao) => ({
+              cartaoId: posicao.cartaoId,
+              quadro: posicao.quadro,
+              etapa: posicao.etapa,
+              entrouEm: posicao.entrouEm,
+              titulo: posicao.titulo,
+              valor: posicao.valor,
+              situacao: posicao.situacao,
+            }))}
+            motivos={motivos.map(({ id, nome: comoSeChama }) => ({ id, nome: comoSeChama }))}
+          />
           <section className="app-card overflow-hidden">
             <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
               Etiquetas
@@ -181,33 +262,6 @@ export default async function Pagina({
               />
             </div>
           </section>
-          {/* **O quadro não pode ser uma ilha.** Quem abre a conversa precisa
-              ver em que ponto do funil a pessoa está sem trocar de tela — senão
-              o quadro vira um lugar que alguém atualiza e ninguém consulta, que
-              é como um quadro passa a mentir. */}
-          {noQuadro.length > 0 && (
-            <section className="app-card overflow-hidden">
-              <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
-                No funil
-              </h2>
-              <ul className="flex flex-col gap-2.5 px-[18px] py-4">
-                {noQuadro.map((posicao) => (
-                  <li key={`${posicao.quadro}-${posicao.etapa}`} className="text-[12px]">
-                    <span className="block text-[10.5px] tracking-[0.04em] text-dim uppercase">
-                      {posicao.quadro}
-                    </span>
-                    <strong className="font-semibold text-soft">{posicao.etapa}</strong>{' '}
-                    <span
-                      className={estaParado(posicao.entrouEm) ? 'text-aviso' : 'text-dim'}
-                    >
-                      · {comoParado(posicao.entrouEm)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
           <NotasDoContato
             notas={lead.notas}
             limite={LIMITE_DA_NOTA}
@@ -232,17 +286,19 @@ export default async function Pagina({
           </section>
           </div>
 
-          <section className="app-card flex max-h-[620px] min-h-[360px] flex-col overflow-hidden">
-            <header className="flex items-center gap-2 border-b border-line px-[18px] py-3.5">
-              <h2 className="flex-1 text-[13px] font-bold">Conversa</h2>
-              {/*
+          {/* A conversa e o histórico no mesmo cartão, e a conversa primeiro:
+              quem abre a ficha quase sempre vai responder. Ver
+              `components/lead-crm/abas.tsx`. */}
+          <Abas
+            extra={
+              /*
                 A contagem da janela de 24h fica aqui, e não no rodapé da caixa
                 de resposta. Mesma decisão do Inbox, pelo mesmo motivo: ela é
                 estado da conversa e não consequência de responder — e as duas
                 telas precisam dizer a mesma coisa no mesmo lugar, senão quem
                 usa as duas aprende dois produtos.
-              */}
-              {janela && (
+              */
+              janela ? (
                 <Dica texto="Depois disso o WhatsApp só aceita modelo aprovado pela Meta">
                   <span
                     className={`flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
@@ -253,31 +309,30 @@ export default async function Pagina({
                     {janela}
                   </span>
                 </Dica>
-              )}
-              <span className="flex items-center gap-1.5 text-[11px] text-dim">
-                <span className="size-1.5 rounded-full bg-dim" /> {lead.waId}
-              </span>
-            </header>
-            {/* Envolve conversa e caixa: a citação nasce numa e é usada na outra. */}
-            <ProvedorDeCitacao>
-              <div className="min-h-0 flex-1 overflow-auto p-[18px]">
-                <Suspense fallback={<HistoricoEsqueleto />}>
-                  <Historico
-                    contatoId={contatoId}
-                    nomeDoLead={lead.nome}
-                    clienteId={clienteId}
-                  />
-                </Suspense>
-              </div>
-              <CaixaDeResposta
-                acao={acaoResponderLead.bind(null, clienteId, contatoId)}
-                restaDaJanela={janela}
-                nome={primeiroNome}
-                respostasRapidas={respostasRapidas}
-                temAutomacao={temAutomacao}
-              />
-            </ProvedorDeCitacao>
-          </section>
+              ) : null
+            }
+            conversa={
+              <ProvedorDeCitacao>
+                <div className="min-h-0 flex-1 overflow-auto p-[18px]">
+                  <Suspense fallback={<HistoricoEsqueleto />}>
+                    <Historico
+                      contatoId={contatoId}
+                      nomeDoLead={lead.nome}
+                      clienteId={clienteId}
+                    />
+                  </Suspense>
+                </div>
+                <CaixaDeResposta
+                  acao={acaoResponderLead.bind(null, clienteId, contatoId)}
+                  restaDaJanela={janela}
+                  nome={primeiroNome}
+                  respostasRapidas={respostasRapidas}
+                  temAutomacao={temAutomacao}
+                />
+              </ProvedorDeCitacao>
+            }
+            historico={<HistoricoDoContato eventos={eventos} />}
+          />
         </div>
       </main>
     </ClienteShell>
