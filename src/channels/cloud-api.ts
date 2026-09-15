@@ -36,6 +36,20 @@ const TIMEOUT_INDICADOR_MS = 2_000
  * conversa junto.
  */
 const TIMEOUT_DOWNLOAD_MS = 30_000
+/**
+ * O orçamento **inteiro** de subir um arquivo para a Meta antes de enviar.
+ *
+ * Um prazo só para as duas pernas (ler do Storage e subir para a Meta), e não
+ * um prazo para cada uma. Com um prazo por perna, o pior caso soma — e o envio
+ * de mídia roda dentro do `after()` do webhook, que morre no `maxDuration` de
+ * 60s da Vercel. Dois prazos de 30s mais os 15s do envio passariam desse teto,
+ * e a função morreria no meio: a mensagem gravada, nada entregue, e nenhum
+ * erro que explique.
+ *
+ * Vinte segundos deixa 40s de folga para o envio em si. Estourar aqui não
+ * perde a mensagem — devolve `null` e o envio sai pelo `link`, como antes.
+ */
+const TIMEOUT_SUBIDA_MS = 20_000
 
 export type ConfigCloudApi = {
   phoneNumberId: string
@@ -75,6 +89,27 @@ function citacao(mensagemId: string | undefined): Record<string, unknown> {
   return { context: { message_id: mensagemId } }
 }
 
+/**
+ * O nome de arquivo que está no fim de uma URL.
+ *
+ * Serve só como rótulo do `multipart` no upload — o nome que o cliente vê num
+ * documento é o `filename` da mensagem, que vem de quem chamou. Mas rótulo
+ * vazio faz a Meta recusar o `multipart` inteiro, então nunca devolve vazio.
+ *
+ * `decodeURIComponent` estoura em `%` solto, que aparece em nome vindo de fora.
+ * Aqui isso viraria "o upload falhou" e o envio cairia para o `link` por causa
+ * de um acento — cara caro demais para um rótulo.
+ */
+function nomeNaUrl(endereco: string): string {
+  const semConsulta = endereco.split('?')[0] ?? endereco
+  const ultimo = semConsulta.split('/').pop() ?? ''
+  try {
+    return decodeURIComponent(ultimo) || 'arquivo'
+  } catch {
+    return ultimo || 'arquivo'
+  }
+}
+
 export function canalCloudApi(config: ConfigCloudApi): Canal {
   const versao = config.versaoGraph ?? process.env.META_GRAPH_VERSION ?? VERSAO_PADRAO
   const raiz = `https://graph.facebook.com/${versao}`
@@ -111,6 +146,88 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
       // 30 segundos numa tarde de investigação.
       const detalhe = await resposta.text().catch(() => '')
       throw new Error(`Cloud API respondeu ${resposta.status}: ${detalhe.slice(0, 400)}`)
+    }
+  }
+
+  /**
+   * Sobe um arquivo para a Meta e devolve o `id` dela. `null` quando não deu.
+   *
+   * ---------------------------------------------------------------------------
+   * Devolver `null` é a parte importante
+   * ---------------------------------------------------------------------------
+   *
+   * Nunca estoura. Quem chama trata `null` mandando o `link`, que é o que este
+   * código fazia antes — então toda falha aqui degrada para o comportamento
+   * antigo em vez de virar mensagem não entregue. É o que permite trocar o
+   * caminho de envio sem ter podido testar num WhatsApp de verdade.
+   *
+   * ---------------------------------------------------------------------------
+   * O `content-type` vem da origem, e não de um palpite pela extensão
+   * ---------------------------------------------------------------------------
+   *
+   * A Meta decide o que aceita pelo tipo declarado no `multipart`. O Storage
+   * devolve o tipo com que o arquivo subiu — que é o mesmo que o acervo já
+   * validou contra a tabela dela. Adivinhar pela extensão aqui criaria uma
+   * terceira opinião sobre o tipo do mesmo arquivo.
+   */
+  async function subirParaAMeta(endereco: string): Promise<string | null> {
+    /*
+     * Um prazo só para as duas pernas. `AbortSignal.timeout` começa a contar
+     * quando é criado, então criá-lo aqui fora e passá-lo aos dois `fetch` é
+     * literalmente "vinte segundos para tudo isto" — e não vinte para cada,
+     * que somaria além do teto da função. Ver `TIMEOUT_SUBIDA_MS`.
+     */
+    const prazo = AbortSignal.timeout(TIMEOUT_SUBIDA_MS)
+
+    try {
+      const arquivo = await fetch(endereco, { signal: prazo })
+      if (!arquivo.ok) {
+        console.warn(`[whatsapp] não deu para ler o arquivo para subir (${arquivo.status})`)
+        return null
+      }
+
+      const bytes = await arquivo.blob()
+      const mime = arquivo.headers.get('content-type') ?? 'application/octet-stream'
+
+      /*
+       * O nome vem do fim da URL. A Meta o usa só como rótulo do `multipart` —
+       * o nome que o cliente vê num documento é o `filename` da mensagem, que
+       * segue vindo de quem chamou. Um nome vazio faria a Meta recusar o
+       * `multipart` inteiro, então há um padrão.
+       */
+      const nome = nomeNaUrl(endereco)
+
+      const formulario = new FormData()
+      formulario.append('messaging_product', 'whatsapp')
+      formulario.append('file', new File([bytes], nome, { type: mime }))
+
+      const resposta = await fetch(`${raiz}/${config.phoneNumberId}/media`, {
+        method: 'POST',
+        // Sem `content-type` à mão: o `fetch` monta o `boundary` do multipart
+        // sozinho, e escrever o cabeçalho aqui apaga esse boundary — o pedido
+        // sai malformado e a Meta responde 400 sem dizer por quê.
+        headers: { Authorization: `Bearer ${config.token}` },
+        body: formulario,
+        signal: prazo,
+      })
+
+      if (!resposta.ok) {
+        const detalhe = await resposta.text().catch(() => '')
+        console.warn(
+          `[whatsapp] a Meta recusou o upload da mídia (${resposta.status})`,
+          detalhe.slice(0, 200),
+        )
+        return null
+      }
+
+      const dados = (await resposta.json()) as { id?: string }
+      return dados.id ?? null
+    } catch (erro) {
+      console.warn(
+        '[whatsapp] não deu para subir a mídia',
+        erro instanceof Error ? erro.message : String(erro),
+      )
+      return null
     }
   }
 
@@ -265,21 +382,48 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
     },
 
     async enviarMidia(para, { midia, url, legenda, nomeArquivo }, citando) {
-      // A Meta baixa do `link` na hora de entregar; o outro caminho é subir o
-      // arquivo antes e mandar um `id`. Ficamos no link de propósito: o `id`
-      // expira em 30 dias e obrigaria a guardar validade e reenviar sozinho,
-      // que é um cache com invalidação para economizar um GET da Meta.
-      //
-      // O preço do link é ser público enquanto durar. Quem publica o endereço
-      // decide isso; o canal só entrega o que o fluxo mandou.
+      /*
+       * -------------------------------------------------------------------
+       * Por que o arquivo sobe antes, em vez de ir como `link`
+       * -------------------------------------------------------------------
+       *
+       * A Cloud API aceita os dois: um `link` que **ela** baixa na hora de
+       * entregar, ou um `id` de um arquivo que **nós** subimos antes.
+       *
+       * Este código mandava `link`, e o comentário que estava aqui defendia a
+       * escolha dizendo que o `id` expira em 30 dias e viraria "um cache com
+       * invalidação para economizar um GET da Meta". O argumento estava certo
+       * sobre o cache e errado sobre o que estava em jogo — e o handoff de
+       * 15/set nomeou o que faltava: **mandar `link` obriga o arquivo a estar
+       * num endereço que a Meta alcança sem credencial nossa**, e é por isso
+       * que o `autofluxos-acervo` é público e permanente. A `0017` escreveu a
+       * fronteira ("documento pessoal não entra") e nada no código a faz valer.
+       *
+       * Subindo antes, não há cache nenhum: o `id` é usado no mesmo pedido em
+       * que nasce. Os 30 dias de validade nunca chegam a importar.
+       *
+       * **E não é gambiarra nossa**: a doc da Meta lista o upload como caminho
+       * de primeira classe, e é o que ela recomenda para arquivo próprio.
+       *
+       * O preço é honesto e está medido: os bytes passam por nós duas vezes —
+       * uma para baixar do Storage, outra para subir. Em troca, o endereço de
+       * origem só precisa ser alcançável por **nós**, o que é o que permite
+       * fechar o bucket depois (item 2 do handoff de 15/set).
+       *
+       * **A queda para `link` fica, e é ela que torna esta troca segura.** Se
+       * o upload falhar por qualquer motivo, o envio sai como saía antes. O
+       * pior caso desta mudança é o comportamento de ontem, e isso é o que
+       * permite subi-la sem ter podido testar num WhatsApp de verdade.
+       */
       const tipo = TIPO_NA_META[midia]
+      const mediaId = await subirParaAMeta(url)
 
       await mandar({
         to: para,
         type: tipo,
         ...citacao(citando),
         [tipo]: {
-          link: url,
+          ...(mediaId ? { id: mediaId } : { link: url }),
           // Áudio não aceita legenda e o motor já não a produz. Repetir a
           // condição aqui não é redundância: o adaptador é o último ponto
           // antes da Meta, e uma versão publicada antes desta regra pode
