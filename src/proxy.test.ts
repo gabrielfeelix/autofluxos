@@ -135,6 +135,17 @@ describe('a porta do painel', () => {
     expect(seguiu(await proxy(pedir('/api/webhook/instagram')))).toBe(true)
   })
 
+  it('o ícone da aba abre sem sessão — senão a tela de login fica sem ícone', async () => {
+    /*
+     * `icon.png` e `apple-icon.png` são **rotas** do App Router, e não arquivos
+     * de `public/`: sem estarem abertas, o navegador de quem ainda não entrou
+     * recebe o redirecionamento para `/entrar` e desenha o quadrado de imagem
+     * quebrada na aba.
+     */
+    expect(seguiu(await proxy(pedir('/icon.png')))).toBe(true)
+    expect(seguiu(await proxy(pedir('/apple-icon.png')))).toBe(true)
+  })
+
   it('a abertura do webhook é de prefixo com barra, e não pega vizinho parecido', async () => {
     // `/api/webhook/` e não `/api/webhook`: sem a barra, uma rota futura
     // chamada `/api/webhooks-admin` nasceria pública sem ninguém notar.

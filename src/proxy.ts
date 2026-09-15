@@ -165,6 +165,22 @@ const PREFIXOS_ABERTOS = [
    * área autenticada. O caminho novo não colide com rota de tela nenhuma.
    */
   '/logos/',
+  /**
+   * O ícone da aba do navegador.
+   *
+   * O App Router serve `src/app/icon.png` em `/icon.png` (e o da Apple em
+   * `/apple-icon.png`) — são rotas, não arquivos de `public/`, então o matcher
+   * as pega e quem não tem sessão recebe um redirecionamento para `/entrar` no
+   * lugar da imagem. O resultado é a **tela de login sem ícone**, que é
+   * justamente a primeira tela que qualquer pessoa vê.
+   *
+   * `favicon.ico` já estava fora do matcher pelo mesmo motivo; estes dois
+   * nasceram depois e não foram junto.
+   *
+   * Abrir não expõe nada: é a marca do produto, que também está na landing.
+   */
+  '/icon.png',
+  '/apple-icon.png',
 ]
 
 export async function proxy(req: NextRequest) {
