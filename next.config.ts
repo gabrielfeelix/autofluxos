@@ -13,20 +13,39 @@ import type { NextConfig } from 'next'
  *   ele, conteúdo que chega como texto pode acabar executado como script.
  * - **`Referrer-Policy`** evita mandar a URL inteira para fora — e as nossas
  *   carregam id de cliente e de contato no caminho.
- * - **`Permissions-Policy`** desliga câmera, microfone e localização, que este
- *   painel nunca usa. É gratuito e fecha a porta antes de alguém abri-la.
+ * - **`Permissions-Policy`** desliga câmera e localização, que este painel nunca
+ *   usa. É gratuito e fecha a porta antes de alguém abri-la.
+ *
+ * **O microfone é `(self)` e não `()`, e a diferença custou uma sessão.** Até
+ * 15/set/2026 ele estava em `microphone=()` — lista **vazia**, que proíbe
+ * *todas* as origens, **inclusive a nossa**. Quando a caixa de resposta ganhou
+ * o botão de gravar áudio, `getUserMedia` passou a ser recusado pelo navegador
+ * **sem pedir permissão nenhuma**: não aparece prompt, não aparece cadeado, não
+ * há o que a pessoa possa liberar. O comentário que estava aqui dizia "que este
+ * painel nunca usa", e era verdade quando foi escrito — deixou de ser no dia em
+ * que o microfone entrou, e nada acusou.
+ *
+ * `(self)` libera só a nossa própria origem: o navegador volta a perguntar, e
+ * nenhum iframe de terceiro ganha nada (o `frame-ancestors 'none'` acima já
+ * impede que exista iframe nosso, e `self` não se propaga para iframes de
+ * outra origem embutidos por nós).
+ *
+ * **Regra para a próxima vez:** recurso de navegador novo (câmera, geolocation,
+ * clipboard, notificações) começa desligado aqui, e quem for usá-lo precisa
+ * ligar na mesma mudança. Endurecimento que ninguém revisita vira recurso que
+ * falha calado.
  *
  * Não há CSP completa de propósito: o Next injeta script inline e uma política
  * escrita no chute quebraria a hidratação da página inteira. `frame-ancestors`
  * é a parte que dá para afirmar sem risco; a CSP inteira é tarefa própria, com
  * nonce, quando alguém puder testá-la de verdade.
  */
-const cabecalhos = [
+export const cabecalhos = [
   { key: 'Content-Security-Policy', value: "frame-ancestors 'none'" },
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(self), geolocation=()' },
 ]
 
 const config: NextConfig = {

@@ -151,6 +151,17 @@ export function BotaoDeMicrofone({
       return
     }
 
+    /*
+     * `navigator.mediaDevices` **não existe** fora de contexto seguro — http
+     * puro, ou o painel aberto por IP na rede local. Sem esta conferência o
+     * `getUserMedia` estoura `TypeError` e cai na frase genérica, que manda
+     * procurar um cadeado que não vai resolver nada.
+     */
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setErro('Gravar áudio só funciona em endereço https. Abra o painel pelo endereço oficial.')
+      return
+    }
+
     setFase('pedindo')
 
     let trilha: MediaStream
