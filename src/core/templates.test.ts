@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
   BOTOES_SEGUROS_NO_DESKTOP,
+  componentesParaMeta,
   condutaPara,
   explicarErro,
+  statusDaMeta,
   lerStatusDeEnvio,
   LIMITE_BODY,
   LIMITE_FOOTER,
@@ -282,5 +284,155 @@ describe('explicarErro', () => {
 
   it('código desconhecido ainda diz qual foi', () => {
     expect(explicarErro(4242)).toContain('4242')
+  })
+})
+
+describe('a tradução para o formato da Meta', () => {
+  it('sempre manda o corpo, que é o único componente obrigatório', () => {
+    expect(componentesParaMeta({ corpo: 'Olá, tudo bem?' })).toEqual([
+      { type: 'BODY', text: 'Olá, tudo bem?' },
+    ])
+  })
+
+  /*
+   * O exemplo é a recusa mais comum de template novo: sem ele a Meta responde
+   * INVALID_FORMAT, porque o revisor não consegue avaliar um texto cheio de
+   * lacunas.
+   */
+  it('põe o exemplo do corpo como array DE arrays', () => {
+    const saida = componentesParaMeta({ corpo: 'Oi {{1}}, sua consulta é {{2}}' }, {
+      corpo: ['Ana', '15/10'],
+    })
+
+    expect(saida[0]).toEqual({
+      type: 'BODY',
+      text: 'Oi {{1}}, sua consulta é {{2}}',
+      example: { body_text: [['Ana', '15/10']] },
+    })
+  })
+
+  it('põe o exemplo do cabeçalho como array raso — o formato é outro', () => {
+    const saida = componentesParaMeta(
+      { cabecalho: { tipo: 'texto', texto: 'Olá {{1}}' }, corpo: 'tudo bem?' },
+      { cabecalho: ['Ana'] },
+    )
+
+    // Raso aqui, aninhado no corpo. Trocar os dois é recusa certa.
+    expect(saida[0]).toEqual({
+      type: 'HEADER',
+      format: 'TEXT',
+      text: 'Olá {{1}}',
+      example: { header_text: ['Ana'] },
+    })
+  })
+
+  it('não manda `example` quando não há variável', () => {
+    const saida = componentesParaMeta({ corpo: 'Sua consulta foi confirmada.' }, {
+      corpo: ['sobra'],
+    })
+
+    expect(saida[0]).not.toHaveProperty('example')
+  })
+
+  it('não manda `example` quando há variável mas ninguém deu exemplo', () => {
+    const saida = componentesParaMeta({ corpo: 'Oi {{1}}' })
+
+    // Vai ser recusado pela Meta, e é isso mesmo: inventar "exemplo" aqui
+    // esconderia de quem escreve que faltou preencher.
+    expect(saida[0]).not.toHaveProperty('example')
+  })
+
+  it('descarta exemplo sobrando, porque a contagem tem que bater', () => {
+    const saida = componentesParaMeta({ corpo: 'Oi {{1}}' }, { corpo: ['Ana', 'sobra'] })
+
+    expect(saida[0]).toMatchObject({ example: { body_text: [['Ana']] } })
+  })
+
+  it('manda o cabeçalho de mídia só com o formato, sem texto', () => {
+    const saida = componentesParaMeta({ cabecalho: { tipo: 'imagem' }, corpo: 'veja' })
+
+    expect(saida[0]).toEqual({ type: 'HEADER', format: 'IMAGE' })
+  })
+
+  it('omite o rodapé vazio em vez de mandar string vazia', () => {
+    const saida = componentesParaMeta({ corpo: 'oi', rodape: '   ' })
+
+    expect(saida.some((c) => c.type === 'FOOTER')).toBe(false)
+  })
+
+  it('omite `buttons` quando não há botão — array vazio é recusa', () => {
+    const saida = componentesParaMeta({ corpo: 'oi', botoes: [] })
+
+    expect(saida.some((c) => c.type === 'BUTTONS')).toBe(false)
+  })
+
+  it('traduz cada tipo de botão para o campo que a Meta espera', () => {
+    const saida = componentesParaMeta({
+      corpo: 'oi',
+      botoes: [
+        { tipo: 'QUICK_REPLY', texto: 'Confirmar' },
+        { tipo: 'URL', texto: 'Abrir', valor: 'https://exemplo.com/a' },
+        { tipo: 'PHONE_NUMBER', texto: 'Ligar', valor: '+5544999' },
+        { tipo: 'COPY_CODE', texto: 'Copiar', valor: 'ABC123' },
+      ],
+    })
+
+    expect(saida.at(-1)).toEqual({
+      type: 'BUTTONS',
+      buttons: [
+        { type: 'QUICK_REPLY', text: 'Confirmar' },
+        { type: 'URL', text: 'Abrir', url: 'https://exemplo.com/a' },
+        { type: 'PHONE_NUMBER', text: 'Ligar', phone_number: '+5544999' },
+        { type: 'COPY_CODE', example: 'ABC123' },
+      ],
+    })
+  })
+
+  it('dá exemplo à URL com variável, já preenchida', () => {
+    const saida = componentesParaMeta({
+      corpo: 'oi',
+      botoes: [{ tipo: 'URL', texto: 'Ver', valor: 'https://exemplo.com/{{1}}' }],
+    })
+
+    const botoes = saida.at(-1) as { buttons: Record<string, unknown>[] }
+    // A variável mora dentro da URL, e o exemplo é a URL inteira.
+    expect(botoes.buttons[0]!.example).toEqual(['https://exemplo.com/exemplo'])
+  })
+
+  it('mantém a ordem: cabeçalho, corpo, rodapé, botões', () => {
+    const saida = componentesParaMeta({
+      cabecalho: { tipo: 'texto', texto: 'Oi' },
+      corpo: 'tudo bem?',
+      rodape: 'até logo',
+      botoes: [{ tipo: 'QUICK_REPLY', texto: 'Sim' }],
+    })
+
+    expect(saida.map((c) => c.type)).toEqual(['HEADER', 'BODY', 'FOOTER', 'BUTTONS'])
+  })
+})
+
+describe('o status que a Meta manda', () => {
+  it('traduz os que conhecemos', () => {
+    expect(statusDaMeta('APPROVED')).toBe('aprovado')
+    expect(statusDaMeta('PENDING')).toBe('pendente')
+    expect(statusDaMeta('REJECTED')).toBe('recusado')
+    expect(statusDaMeta('PAUSED')).toBe('pausado')
+    expect(statusDaMeta('DISABLED')).toBe('desativado')
+  })
+
+  it('conta IN_APPEAL e PENDING_DELETION como pendente', () => {
+    // Nenhum dos dois pode enviar, e nenhum é veredito final.
+    expect(statusDaMeta('IN_APPEAL')).toBe('pendente')
+    expect(statusDaMeta('PENDING_DELETION')).toBe('pendente')
+  })
+
+  /*
+   * O único erro aqui capaz de fazer mal de verdade é um status novo virar
+   * `aprovado` por engano — seria transmissão saindo com template que não
+   * passou.
+   */
+  it('não chuta: status desconhecido nunca vira aprovado', () => {
+    expect(statusDaMeta('ALGO_NOVO_DA_META')).toBe('desconhecido')
+    expect(statusDaMeta(undefined)).toBe('desconhecido')
   })
 })

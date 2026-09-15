@@ -400,3 +400,148 @@ export function explicarErro(codigo: number): string {
       return `A Meta recusou com o código ${codigo}.`
   }
 }
+
+// ---------------------------------------------------------------------------
+// A tradução para o formato da Meta
+// ---------------------------------------------------------------------------
+
+/**
+ * Os nossos `Componentes` no formato que `POST /message_templates` espera.
+ *
+ * Fica aqui, e não no adaptador, porque é **regra e não rede**: dá para provar
+ * cada detalhe com um teste, e cada detalhe errado aqui é uma recusa que só
+ * chega horas depois, em inglês, sem dizer qual campo estava errado.
+ *
+ * Três coisas que a Meta exige e que não são óbvias:
+ *
+ * 1. **`example` é obrigatório onde há variável.** Sem valor de exemplo, a
+ *    recusa vem com `INVALID_FORMAT` — o revisor não consegue avaliar um texto
+ *    cheio de lacunas. É a recusa mais comum de template novo.
+ * 2. **O formato do exemplo difere entre header e body**: o header quer um
+ *    array raso (`header_text: [...]`), o body quer um array de arrays
+ *    (`body_text: [[...]]`), porque o body prevê múltiplos conjuntos de
+ *    exemplo. Trocar os dois é recusa certa.
+ * 3. **Botão de URL guarda a variável na própria URL**, não num campo à parte.
+ *
+ * Os exemplos vêm de quem chama porque são conteúdo, não forma: "Ana" é um
+ * exemplo bom para `{{1}}` de um lembrete e péssimo para o de uma cobrança.
+ */
+export type ComponenteDaMeta = Record<string, unknown>
+
+/** O que preenche `{{1}}`, `{{2}}`... na hora de mostrar o template ao revisor. */
+export type Exemplos = {
+  cabecalho?: string[]
+  corpo?: string[]
+}
+
+const TIPO_DE_CABECALHO_NA_META = {
+  texto: 'TEXT',
+  imagem: 'IMAGE',
+  video: 'VIDEO',
+  documento: 'DOCUMENT',
+} as const
+
+/**
+ * Monta o array `components` do `POST /message_templates`.
+ *
+ * Componente vazio não entra: mandar `footer` com string vazia ou `buttons: []`
+ * faz a Meta recusar por formato, e o template sem rodapé é caso comum.
+ */
+export function componentesParaMeta(
+  componentes: Componentes,
+  exemplos: Exemplos = {},
+): ComponenteDaMeta[] {
+  const saida: ComponenteDaMeta[] = []
+
+  const cabecalho = componentes.cabecalho
+  if (cabecalho) {
+    if (cabecalho.tipo === 'texto') {
+      const variaveis = variaveisDe(cabecalho.texto)
+      const doExemplo = (exemplos.cabecalho ?? []).slice(0, variaveis.length)
+      saida.push({
+        type: 'HEADER',
+        format: 'TEXT',
+        text: cabecalho.texto,
+        // Array raso aqui — o body usa array de arrays. Ver o comentário acima.
+        ...(variaveis.length > 0 && doExemplo.length > 0
+          ? { example: { header_text: doExemplo } }
+          : {}),
+      })
+    } else {
+      // Header de mídia não tem texto nem exemplo de texto: o exemplo dele
+      // seria um handle de arquivo subido antes, que é outro fluxo.
+      saida.push({ type: 'HEADER', format: TIPO_DE_CABECALHO_NA_META[cabecalho.tipo] })
+    }
+  }
+
+  const corpo = componentes.corpo?.trim() ?? ''
+  const doCorpo = variaveisDe(corpo)
+  const exemploDoCorpo = (exemplos.corpo ?? []).slice(0, doCorpo.length)
+  saida.push({
+    type: 'BODY',
+    text: corpo,
+    // Array de arrays: a Meta prevê vários conjuntos de exemplo para o corpo.
+    ...(doCorpo.length > 0 && exemploDoCorpo.length > 0
+      ? { example: { body_text: [exemploDoCorpo] } }
+      : {}),
+  })
+
+  const rodape = componentes.rodape?.trim()
+  if (rodape) saida.push({ type: 'FOOTER', text: rodape })
+
+  const botoes = componentes.botoes ?? []
+  if (botoes.length > 0) {
+    saida.push({
+      type: 'BUTTONS',
+      buttons: botoes.map((botao) => {
+        if (botao.tipo === 'URL') {
+          // A variável de um botão de URL mora **dentro** da URL, e o exemplo
+          // dela é a URL inteira já preenchida.
+          return {
+            type: 'URL',
+            text: botao.texto,
+            url: botao.valor ?? '',
+            ...(variaveisDe(botao.valor ?? '').length > 0
+              ? { example: [(botao.valor ?? '').replace(/\{\{\d+\}\}/g, 'exemplo')] }
+              : {}),
+          }
+        }
+        if (botao.tipo === 'PHONE_NUMBER') {
+          return { type: 'PHONE_NUMBER', text: botao.texto, phone_number: botao.valor ?? '' }
+        }
+        if (botao.tipo === 'COPY_CODE') {
+          return { type: 'COPY_CODE', example: botao.valor ?? '123456' }
+        }
+        return { type: 'QUICK_REPLY', text: botao.texto }
+      }),
+    })
+  }
+
+  return saida
+}
+
+/**
+ * O status que a Meta manda, no nosso.
+ *
+ * `desconhecido` em vez de um palpite: status novo dela não pode virar
+ * `aprovado` por engano, que é o único erro aqui capaz de fazer uma transmissão
+ * sair com template que não passou.
+ */
+export function statusDaMeta(status: string | undefined): StatusDoTemplate | 'desconhecido' {
+  switch ((status ?? '').toUpperCase()) {
+    case 'APPROVED':
+      return 'aprovado'
+    case 'PENDING':
+    case 'IN_APPEAL':
+    case 'PENDING_DELETION':
+      return 'pendente'
+    case 'REJECTED':
+      return 'recusado'
+    case 'PAUSED':
+      return 'pausado'
+    case 'DISABLED':
+      return 'desativado'
+    default:
+      return 'desconhecido'
+  }
+}
