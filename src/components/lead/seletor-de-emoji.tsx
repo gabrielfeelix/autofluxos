@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { Dica } from '@/components/design/dica'
+import { BOTAO_DA_BARRA } from '@/components/lead/botao-da-barra'
 import { buscarEmojis, emojiDoItem, GRUPOS_DE_EMOJI } from '@/core/emojis'
 
 /**
@@ -70,18 +72,19 @@ export function SeletorDeEmoji({
     : (GRUPOS_DE_EMOJI[grupo]?.itens ?? []).map(emojiDoItem)
 
   return (
-    <div className="relative" ref={caixa}>
-      <button
-        type="button"
-        disabled={desabilitado}
-        onClick={() => setAberto((a) => !a)}
-        title="Emoji"
-        aria-label="Escolher emoji"
-        aria-expanded={aberto}
-        className="rounded-full border border-line bg-surface px-2.5 py-1.5 text-[13px] leading-none transition hover:border-primary/40 disabled:opacity-40"
-      >
-        😊
-      </button>
+    <div className="relative shrink-0" ref={caixa}>
+      <Dica texto="Emoji" lado="cima">
+        <button
+          type="button"
+          disabled={desabilitado}
+          onClick={() => setAberto((a) => !a)}
+          aria-label="Escolher emoji"
+          aria-expanded={aberto}
+          className={BOTAO_DA_BARRA}
+        >
+          😊
+        </button>
+      </Dica>
 
       {aberto && (
         <div

@@ -50,7 +50,12 @@ export function Dica({
   lado?: 'cima' | 'baixo'
 }) {
   return (
-    <span className="group/dica relative inline-flex">
+    /*
+      `shrink-0`: a dica embrulha o botão, e dentro de uma linha flex sem quebra
+      — a de escrever, por exemplo — um embrulho que encolhe amassa o ícone que
+      ele carrega assim que o texto ao lado cresce.
+    */
+    <span className="group/dica relative inline-flex shrink-0">
       {children}
       <span
         aria-hidden

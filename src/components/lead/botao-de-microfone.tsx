@@ -1,6 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Dica } from '@/components/design/dica'
+import { BOTAO_DA_BARRA } from '@/components/lead/botao-da-barra'
 import {
   AVISO_DE_FIM_S,
   CODEC_TROCADO,
@@ -382,29 +384,49 @@ export function BotaoDeMicrofone({
     )
   }
 
+  /*
+   * O que a dica diz quando o botão está ocupado.
+   *
+   * Sendo só um ícone, o rótulo de texto que existia aqui ("Abrindo…",
+   * "Subindo…") não tem mais onde caber. Ele não some: vira a dica e o
+   * `aria-label`, porque "por que o microfone não responde" é justamente a
+   * pergunta que essas três palavras existiam para responder.
+   */
+  const rotulo =
+    fase === 'pedindo'
+      ? 'Abrindo o microfone…'
+      : fase === 'subindo'
+        ? 'Subindo o áudio…'
+        : fase === 'enviando'
+          ? 'Enviando o áudio…'
+          : 'Gravar um áudio'
+
   return (
-    <>
-      <button
-        type="button"
-        disabled={ocupado}
-        onClick={comecar}
-        title="Gravar um áudio"
-        className="rounded-lg border border-line px-2.5 py-1.5 text-[11.5px] text-soft transition hover:border-strong disabled:opacity-50"
-      >
-        {fase === 'pedindo'
-          ? 'Abrindo…'
-          : fase === 'subindo'
-            ? 'Subindo…'
-            : fase === 'enviando'
-              ? 'Enviando…'
-              : '🎤 Gravar'}
-      </button>
+    /*
+     * `relative`, e o erro flutuando por cima.
+     *
+     * A linha de escrever é um flex sem quebra: um parágrafo de erro como irmão
+     * do botão espremeria o campo de texto até sumir. Flutuando acima, ele
+     * aparece onde se estava olhando e não move nada de lugar.
+     */
+    <span className="relative shrink-0">
+      <Dica texto={rotulo} lado="cima">
+        <button
+          type="button"
+          disabled={ocupado}
+          onClick={comecar}
+          aria-label={rotulo}
+          className={`${BOTAO_DA_BARRA}${fase === 'parado' ? '' : ' animate-pulse'}`}
+        >
+          🎤
+        </button>
+      </Dica>
 
       {erro && (
-        <p className="mt-2 w-full rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2 text-[11.5px] leading-5 text-perigo">
+        <p className="absolute right-0 bottom-[calc(100%+8px)] z-30 w-[260px] rounded-[10px] border border-rose-400/25 bg-panel px-3 py-2 text-[11.5px] leading-5 text-perigo shadow-pop">
           {erro}
         </p>
       )}
-    </>
+    </span>
   )
 }

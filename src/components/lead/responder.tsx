@@ -7,6 +7,16 @@ import { useCitacao } from '@/components/lead/citacao'
 import { SeletorDeEmoji } from '@/components/lead/seletor-de-emoji'
 
 /**
+ * Até onde o campo cresce sozinho antes de virar rolagem.
+ *
+ * 132px são cerca de seis linhas: o suficiente para ver um parágrafo inteiro
+ * antes de mandar, e pouco o bastante para a conversa continuar à vista. Um
+ * campo que cresce sem teto empurra o histórico para fora da tela e faz quem
+ * escreve perder de vista o que está respondendo.
+ */
+const TETO_DA_ALTURA = 132
+
+/**
  * A caixa de responder do painel.
  *
  * Ela existe porque o handoff era um beco: o bot calava e não havia de onde
@@ -17,11 +27,24 @@ import { SeletorDeEmoji } from '@/components/lead/seletor-de-emoji'
  *
  * - **Não limpa o campo antes de a mensagem sair.** Erro de envio com o texto
  *   apagado faz a pessoa reescrever um parágrafo que ela acabou de pensar.
- * - **Diz quanto falta da janela de 24h antes de alguém digitar**, em vez de
- *   deixar descobrir no erro. Fora da janela o campo nem abre.
+ * - **Diz que responder assume a conversa**, em vez de deixar descobrir depois
+ *   que o bot calou. Fora da janela de 24h o campo nem abre.
  *
  * A recusa de verdade é a do servidor (`acaoResponderLead`); isto aqui é
  * conveniência, como o botão desabilitado de publicar.
+ *
+ * ---------------------------------------------------------------------------
+ * A linha de baixo: quatro controles viraram três, e o da direita troca
+ * ---------------------------------------------------------------------------
+ *
+ * Antes havia "📎 Anexar", "😊", "🎤 Gravar" e "Enviar" — quatro botões com
+ * borda disputando a linha, e um "Enviar" sempre aceso que perguntava "enviar o
+ * quê?" com o campo vazio.
+ *
+ * Agora é o desenho que WhatsApp, Instagram e Telegram usam, e que a mão já
+ * sabe sem ler: clipe e emoji à esquerda, sem borda; o campo no meio; e **um
+ * botão só à direita**, que é microfone enquanto não há texto e vira avião de
+ * papel assim que há. O gesto disponível é sempre o gesto que faz sentido.
  */
 export function CaixaDeResposta({
   acao,
@@ -39,8 +62,8 @@ export function CaixaDeResposta({
   /**
    * Existe automação nesta conta? **Sem ela o rodapé não fala de bot** — dizer
    * "o bot para de falar" numa conta sem fluxo nenhum descreve um robô que não
-   * existe, e faz procurar onde desligá-lo. Só a janela de 24h continua, que é
-   * regra da Meta e vale com ou sem automação.
+   * existe, e faz procurar onde desligá-lo. A janela de 24h não mora mais aqui:
+   * ela é estado da conversa e subiu para o cabeçalho.
    */
   temAutomacao?: boolean
   /**
@@ -53,9 +76,23 @@ export function CaixaDeResposta({
   const campo = useRef<HTMLTextAreaElement>(null)
   const [erro, setErro] = useState<string | null>(null)
   /*
+   * **Um booleano, e o campo continua não controlado.**
+   *
+   * A tentação é tornar o `<textarea>` controlado para saber se há texto. Isso
+   * quebraria `inserirResposta`, que usa `setRangeText` direto no DOM para
+   * escrever no cursor — é o que faz `/atalho` e emoji entrarem no meio da
+   * frase em vez de no fim dela, e o que respeita o teto de 4.096 caracteres
+   * sem contar duas vezes.
+   *
+   * Então o React guarda só a resposta da única pergunta que a tela faz ao
+   * texto: tem alguma coisa aí? Quem escreve no campo — a digitação, a inserção
+   * e o envio — é quem atualiza.
+   */
+  const [temTexto, setTemTexto] = useState(false)
+  /*
    * Gravar áudio toma a barra inteira. O estado mora aqui, e não dentro do
-   * botão de microfone, porque quem precisa sair de cena é o rodapé — o campo
-   * de texto, o clipe, o emoji e o "Enviar" do formulário.
+   * botão de microfone, porque quem precisa sair de cena é o resto da linha —
+   * o campo de texto, o clipe e o emoji.
    */
   const [gravando, setGravando] = useState(false)
   const [enviando, comecar] = useTransition()
@@ -72,6 +109,26 @@ export function CaixaDeResposta({
         </p>
       </div>
     )
+  }
+
+  /**
+   * O campo cresce com o que se escreve, até o teto.
+   *
+   * Zerar a altura antes de medir não é gambiarra: `scrollHeight` devolve o
+   * maior entre o conteúdo e a altura atual, então sem o zero o campo cresce e
+   * nunca mais encolhe ao apagar.
+   */
+  function ajustarAltura(textarea: HTMLTextAreaElement) {
+    textarea.style.height = '0px'
+    textarea.style.height = `${Math.min(textarea.scrollHeight, TETO_DA_ALTURA)}px`
+  }
+
+  /** Depois de qualquer escrita que não veio da digitação. */
+  function conferirTexto() {
+    const textarea = campo.current
+    if (!textarea) return
+    setTemTexto(textarea.value.trim() !== '')
+    ajustarAltura(textarea)
   }
 
   function enviar(dados: FormData) {
@@ -92,6 +149,7 @@ export function CaixaDeResposta({
       }
       // Só depois de sair. O texto fica onde está enquanto houver erro.
       if (campo.current) campo.current.value = ''
+      conferirTexto()
       // A citação some junto com o texto, e pelo mesmo motivo: ela era daquela
       // mensagem. Deixá-la faria a resposta seguinte citar sem querer.
       citacao?.limpar()
@@ -112,11 +170,22 @@ export function CaixaDeResposta({
 
     textarea.setRangeText(texto, inicio, fim, 'end')
     textarea.focus()
+    conferirTexto()
     setErro(null)
   }
 
+  /*
+   * Quem ocupa a direita.
+   *
+   * O microfone é o padrão com o campo vazio — mas só existe onde há para onde
+   * mandar (`anexo`). Na Ficha, que não passa os ids, a direita fica sendo o
+   * avião sempre: um canto vazio faria procurar o botão de enviar.
+   */
+  const mostrarMicrofone = Boolean(anexo) && (!temTexto || gravando)
+  const mostrarEnviar = !gravando && (temTexto || !anexo)
+
   return (
-    <form action={enviar} className="border-t border-line px-[18px] py-3.5">
+    <form action={enviar} className="border-t border-line px-[18px] py-3">
       {/*
         A citação escolhida, acima do campo.
 
@@ -144,32 +213,14 @@ export function CaixaDeResposta({
           </button>
         </div>
       )}
-      {/*
-        O campo some enquanto grava, e `hidden` em vez de desmontar: desmontar
-        levaria junto o texto já digitado, e quem grava um áudio no meio de uma
-        frase perderia a frase. Ele continua no formulário, só sai de vista.
-      */}
-      <textarea
-        hidden={gravando}
-        ref={campo}
-        name="texto"
-        rows={2}
-        maxLength={4096}
-        disabled={enviando}
-        placeholder={`Responder ${nome} pelo WhatsApp…`}
-        className="w-full resize-y rounded-[11px] border border-line bg-surface px-3 py-2.5 text-[12.5px] leading-[1.45] outline-none transition placeholder:text-dim focus:border-primary/40 disabled:opacity-50"
-        onKeyDown={(evento) => {
-          // Enter manda, Shift+Enter quebra linha — o hábito de todo mundo que
-          // usa WhatsApp. `requestSubmit` para o `action` do form valer.
-          if (evento.key === 'Enter' && !evento.shiftKey) {
-            evento.preventDefault()
-            evento.currentTarget.form?.requestSubmit()
-          }
-        }}
-      />
 
-      {respostasRapidas.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Inserir resposta rápida">
+      {/*
+        As respostas rápidas vêm **acima** da linha de escrever, e não abaixo.
+        Elas são o que se escolhe antes de escrever; embaixo, empurravam o campo
+        para longe do botão de enviar a cada conta que tem muitos atalhos.
+      */}
+      {respostasRapidas.length > 0 && !gravando && (
+        <div className="mb-2 flex flex-wrap gap-1.5" aria-label="Inserir resposta rápida">
           {respostasRapidas.map((resposta) => (
             <button
               key={resposta.atalho}
@@ -186,31 +237,17 @@ export function CaixaDeResposta({
       )}
 
       {erro && (
-        <p className="mt-2 rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2 text-[11.5px] leading-5 text-perigo">
+        <p className="mb-2 rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2 text-[11.5px] leading-5 text-perigo">
           {erro}
         </p>
       )}
 
-      <div className="mt-2 flex flex-wrap items-center gap-3">
-        {/*
-          Gravando, a barra é só da gravação.
-          -------------------------------------------------------------------
-          Antes o "⏹ Enviar" do áudio convivia com o "Enviar" do formulário na
-          mesma linha: dois botões com o mesmo nome, e o da direita respondia
-          "escreva a mensagem antes de enviar" porque é o do texto. Não há como
-          adivinhar qual é qual — então enquanto grava, o resto sai de cena.
-        */}
-        {/*
-          O clipe fica fora do `<form>` em comportamento — ele não é `submit`,
-          manda por conta própria. Fica aqui na linha do rodapé porque é onde
-          todo mundo procura: ao lado do botão de enviar.
-        */}
-        {/*
-          O emoji entra pelo mesmo caminho da resposta rápida: `inserirResposta`
-          escreve no cursor e confere o teto de 4.096 caracteres. Um caminho só
-          é o que evita a tela aceitar por aqui o que recusa por ali.
-        */}
-        {!gravando && <SeletorDeEmoji aoEscolher={inserirResposta} desabilitado={enviando} />}
+      {/*
+        A linha de escrever. `items-end` para que, quando o campo cresce, os
+        ícones fiquem alinhados com a última linha do texto — e não flutuando no
+        meio de um retângulo alto.
+      */}
+      <div className="flex items-end gap-1">
         {anexo && !gravando && (
           <BotaoDeAnexo
             clienteId={anexo.clienteId}
@@ -219,11 +256,51 @@ export function CaixaDeResposta({
           />
         )}
         {/*
-          O microfone entra ao lado do clipe porque é o mesmo gesto: mandar algo
-          que não é texto. Ele manda por conta própria, como o clipe — não é
-          `submit` deste formulário.
+          O emoji entra pelo mesmo caminho da resposta rápida: `inserirResposta`
+          escreve no cursor e confere o teto de 4.096 caracteres. Um caminho só
+          é o que evita a tela aceitar por aqui o que recusa por ali.
         */}
-        {anexo && (
+        {!gravando && <SeletorDeEmoji aoEscolher={inserirResposta} desabilitado={enviando} />}
+
+        {/*
+          O campo some enquanto grava, e `hidden` em vez de desmontar: desmontar
+          levaria junto o texto já digitado, e quem grava um áudio no meio de
+          uma frase perderia a frase. Ele continua no formulário, só sai de
+          vista.
+        */}
+        <textarea
+          hidden={gravando}
+          ref={campo}
+          name="texto"
+          rows={1}
+          maxLength={4096}
+          disabled={enviando}
+          placeholder={`Responder ${nome} pelo WhatsApp…`}
+          className="min-h-9 flex-1 resize-none rounded-[19px] border border-line bg-surface px-3.5 py-2 text-[13px] leading-[1.45] outline-none transition placeholder:text-dim focus:border-primary/40 disabled:opacity-50"
+          onChange={(evento) => {
+            setTemTexto(evento.currentTarget.value.trim() !== '')
+            ajustarAltura(evento.currentTarget)
+          }}
+          onKeyDown={(evento) => {
+            // Enter manda, Shift+Enter quebra linha — o hábito de todo mundo que
+            // usa WhatsApp. `requestSubmit` para o `action` do form valer.
+            if (evento.key === 'Enter' && !evento.shiftKey) {
+              evento.preventDefault()
+              evento.currentTarget.form?.requestSubmit()
+            }
+          }}
+        />
+
+        {/*
+          Gravando, a linha é só da gravação — o microfone se encarrega disso
+          sozinho e ocupa tudo.
+          -------------------------------------------------------------------
+          Antes o "⏹ Enviar" do áudio convivia com o "Enviar" do formulário na
+          mesma linha: dois botões com o mesmo nome, e o da direita respondia
+          "escreva a mensagem antes de enviar" porque é o do texto. Não há como
+          adivinhar qual é qual — então enquanto grava, o resto sai de cena.
+        */}
+        {mostrarMicrofone && anexo && (
           <BotaoDeMicrofone
             clienteId={anexo.clienteId}
             contatoId={anexo.contatoId}
@@ -231,28 +308,33 @@ export function CaixaDeResposta({
             aoGravar={setGravando}
           />
         )}
-        {!gravando && (
-        <span className="flex-1 text-[10.5px] leading-4 text-dim">
-          {temAutomacao ? (
-            <>
-              Responder daqui assume a conversa: o bot para de falar com {nome} até você clicar em
-              &ldquo;Já atendi&rdquo;. Janela do WhatsApp fecha em {restaDaJanela}.
-            </>
-          ) : (
-            <>Janela do WhatsApp fecha em {restaDaJanela}.</>
-          )}
-        </span>
-        )}
-        {!gravando && (
+
+        {mostrarEnviar && (
           <button
             type="submit"
             disabled={enviando}
-            className="app-primary-button shrink-0 px-4 py-2 text-[12px] disabled:opacity-50"
+            aria-label={enviando ? 'Enviando' : 'Enviar a mensagem'}
+            className="app-primary-button flex size-9 shrink-0 items-center justify-center rounded-full text-[13px] leading-none disabled:opacity-50"
           >
-            {enviando ? 'Enviando…' : 'Enviar'}
+            {enviando ? '…' : '➤'}
           </button>
         )}
       </div>
+
+      {/*
+        O rodapé diz **a consequência do gesto**, e só ela.
+
+        A contagem da janela de 24h saiu daqui e subiu para o cabeçalho: ela é
+        estado da conversa, vale para qualquer coisa que se faça nela, e no
+        rodapé só era lida por quem já estava prestes a escrever. O que fica é o
+        que só importa a quem vai responder agora.
+      */}
+      {!gravando && temAutomacao && (
+        <p className="mt-1.5 px-1 text-[10.5px] leading-4 text-dim">
+          Responder daqui assume a conversa: o bot para de falar com {nome} até você clicar em
+          &ldquo;Já atendi&rdquo;.
+        </p>
+      )}
     </form>
   )
 }

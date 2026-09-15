@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { Dica } from '@/components/design/dica'
+import { BOTAO_DA_BARRA } from '@/components/lead/botao-da-barra'
 import { LIMITE_LEGENDA } from '@/core/flow/schema'
 import { acaoPrepararEnvioDeArquivo } from '@/server/acoes'
 import { acaoEnviarMidiaDoInbox } from '@/server/acoes-midia-do-inbox'
@@ -189,15 +191,17 @@ export function BotaoDeAnexo({
         }}
       />
 
-      <button
-        type="button"
-        disabled={desabilitado || ocupado}
-        onClick={() => entrada.current?.click()}
-        title="Enviar foto, vídeo, áudio ou PDF"
-        className="rounded-lg border border-line px-2.5 py-1.5 text-[11.5px] text-soft transition hover:border-strong disabled:opacity-50"
-      >
-        📎 Anexar
-      </button>
+      <Dica texto="Foto, vídeo, áudio ou PDF" lado="cima">
+        <button
+          type="button"
+          disabled={desabilitado || ocupado}
+          onClick={() => entrada.current?.click()}
+          aria-label="Enviar foto, vídeo, áudio ou PDF"
+          className={BOTAO_DA_BARRA}
+        >
+          📎
+        </button>
+      </Dica>
 
       {escolhido && (
         <div
