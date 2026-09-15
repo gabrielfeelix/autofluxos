@@ -4,16 +4,17 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   AVISO_DE_FIM_S,
   CODEC_TROCADO,
-  codecServeParaAMeta,
   duracaoLegivel,
   escolherFormato,
-  formatoEntregue,
+  gravouOpus,
   LIMITE_DE_GRAVACAO_S,
   motivoDoMicrofone,
   nomeDoAudio,
   RESTRICOES_DO_MICROFONE,
   SEM_FORMATO,
+  type FormatoDeGravacao,
 } from '@/core/audio-de-voz'
+import { webmOpusParaOgg } from '@/core/ogg-opus'
 import { acaoPrepararEnvioDeArquivo } from '@/server/acoes'
 import { acaoEnviarMidiaDoInbox } from '@/server/acoes-midia-do-inbox'
 
@@ -183,6 +184,39 @@ export function BotaoDeMicrofone({
     [clienteId, contatoId],
   )
 
+  /**
+   * Deixa o arquivo no formato que a Meta entrega e manda.
+   *
+   * O Firefox já grava OGG/Opus e nada precisa acontecer. Chrome, Edge e Opera
+   * gravam Opus dentro de WebM, que não tem linha na tabela da Meta — e aí o
+   * contêiner é trocado aqui, no navegador, sem decodificar nada: os pacotes
+   * Opus de um WebM são byte a byte os mesmos de um OGG.
+   *
+   * O remux devolve `null` quando a entrada não é o que ele sabe ler (lacing,
+   * faixa que não é Opus). Isso vira frase na tela, e não um arquivo que a
+   * Cloud API aceita com 200 e nunca entrega — que foi o modo de falha das duas
+   * tentativas anteriores.
+   */
+  const prepararEEnviar = useCallback(
+    async (gravado: Blob, formato: FormatoDeGravacao) => {
+      let audio = gravado
+      if (formato.remux) {
+        setFase('subindo')
+        const bytes = new Uint8Array(await gravado.arrayBuffer())
+        const ogg = webmOpusParaOgg(bytes)
+        if (!ogg) {
+          setErro('Não deu para preparar o áudio neste navegador. Tente pelo Firefox.')
+          return
+        }
+        audio = new Blob([ogg as unknown as BlobPart])
+      }
+      await enviar(audio, formato.mime, formato.extensao)
+    },
+    // `enviar` é estável — depende só de clienteId e contatoId.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [clienteId, contatoId],
+  )
+
   async function comecar() {
     setErro(null)
 
@@ -227,8 +261,7 @@ export function BotaoDeMicrofone({
      * subir e não entrega.
      */
     const efetivo = gravador.mimeType || formato.mimeType
-    const entregue = formatoEntregue(efetivo)
-    if (!codecServeParaAMeta(efetivo) || !entregue) {
+    if (!gravouOpus(efetivo)) {
       setErro(`${CODEC_TROCADO} (o navegador gravou ${efetivo})`)
       soltarMicrofone()
       setFase('parado')
@@ -255,22 +288,17 @@ export function BotaoDeMicrofone({
         return
       }
 
-      /*
-       * `type: entregue.mime` e não o do gravador: o `Blob` vem carimbado com
-       * `;codecs=`, e esse carimbo viraria o `content-type` do `PUT`, que o
-       * bucket compara como string exata. Os bytes são os mesmos.
-       */
-      const audio = new Blob(pedacos, { type: entregue.mime })
+      const gravado = new Blob(pedacos)
 
       // Toque de microfone: `stop()` imediato produz um arquivo de cabeçalho e
       // nada mais. Mandar isso seria mandar silêncio para o cliente.
-      if (audio.size < 1024) {
+      if (gravado.size < 1024) {
         setErro('a gravação ficou vazia; segure por pelo menos um segundo')
         setFase('parado')
         return
       }
 
-      void enviar(audio, entregue.mime, entregue.extensao).finally(() => setFase('parado'))
+      void prepararEEnviar(gravado, formato).finally(() => setFase('parado'))
     }
 
     setSegundos(0)
@@ -361,7 +389,7 @@ export function BotaoDeMicrofone({
         disabled={ocupado}
         onClick={comecar}
         title="Gravar um áudio"
-        className="rounded-lg border border-line px-2.5 py-1.5 text-[11.5px] text-soft transition hover:border-white/20 disabled:opacity-50"
+        className="rounded-lg border border-line px-2.5 py-1.5 text-[11.5px] text-soft transition hover:border-strong disabled:opacity-50"
       >
         {fase === 'pedindo'
           ? 'Abrindo…'
