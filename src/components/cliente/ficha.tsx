@@ -42,7 +42,7 @@ export function FichaDoCliente({
         </div>
         <button
           onClick={() => setEditando((antes) => !antes)}
-          className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-[12px] font-bold text-soft transition hover:border-white/20 hover:bg-surface-strong"
+          className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-[12px] font-bold text-soft transition hover:border-strong hover:bg-surface-strong"
         >
           {editando ? 'Cancelar' : 'Editar'}
         </button>

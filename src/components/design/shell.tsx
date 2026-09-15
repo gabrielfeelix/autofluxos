@@ -5,6 +5,7 @@ import { acaoSair } from '@/server/acoes-conta'
 import { ehAdminDaPlataforma, sessaoAtual } from '@/server/sessao'
 import { BotaoDeAjuda } from './botao-de-ajuda'
 import { Marca } from './marca'
+import { BotaoDeTema } from '@/components/design/tema'
 
 /**
  * A moldura da lista de clientes — a visão de quem opera a 4YU.
@@ -55,8 +56,15 @@ export async function PainelShell({ children }: { children: ReactNode }) {
 
         <div className="flex-1" />
 
-        <div className="flex items-center gap-2.5 border-line md:border-t md:px-1.5 md:pt-3.5">
-          <span className="flex size-[30px] shrink-0 items-center justify-center rounded-full border border-strong bg-[linear-gradient(135deg,#334155,#1e293b)] text-[11px] font-bold text-[#b9c2d0]">
+        {/* O tema fica no rodapé, junto da conta: é preferência de quem usa o
+            painel, e o topo é da marca. Esta casca não recolhe — ela veste as
+            telas fora de um cliente, que são curtas e não disputam largura. */}
+        <div className="hidden border-line md:block md:border-t md:pt-2.5">
+          <BotaoDeTema />
+        </div>
+
+        <div className="flex items-center gap-2.5 md:px-1.5 md:pt-2.5">
+          <span className="flex size-[30px] shrink-0 items-center justify-center rounded-full border border-line bg-surface text-[11px] font-bold text-muted">
             {sessao ? iniciais(sessao.usuario.nome) : '4Y'}
           </span>
           {/* Nome e papel são contexto, não navegação: some no celular para o

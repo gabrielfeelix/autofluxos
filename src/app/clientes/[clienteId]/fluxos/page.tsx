@@ -407,7 +407,7 @@ export default async function Pagina({
                             ? 'border-amber-300/25 bg-amber-300/[0.08] text-amber-200'
                             : fluxo.versaoPublicadaId
                               ? 'border-emerald-400/25 bg-emerald-400/[0.08] text-emerald-300'
-                              : 'border-white/10 bg-surface text-muted'
+                              : 'border-line bg-surface text-muted'
                         }`}
                       >
                         {!fluxo.ativo ? 'DESLIGADO' : fluxo.versaoPublicadaId ? 'ATIVA' : 'RASCUNHO'}

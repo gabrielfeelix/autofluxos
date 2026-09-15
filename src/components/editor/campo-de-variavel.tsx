@@ -189,7 +189,7 @@ export function CampoDeVariavel({
                   evento.preventDefault()
                   escolher(v)
                 }}
-                className="block w-full truncate rounded-md px-2 py-1.5 text-left font-mono text-[11.5px] text-[#8de2fa] transition hover:bg-primary/[0.12]"
+                className="block w-full truncate rounded-md px-2 py-1.5 text-left font-mono text-[11.5px] text-primary transition hover:bg-primary/[0.12]"
               >
                 {v}
               </button>
@@ -204,7 +204,7 @@ export function CampoDeVariavel({
             legenda.tom === 'aviso'
               ? 'text-amber-200'
               : legenda.tom === 'reuso'
-                ? 'text-[#8de2fa]'
+                ? 'text-primary'
                 : 'text-dim'
           }`}
         >

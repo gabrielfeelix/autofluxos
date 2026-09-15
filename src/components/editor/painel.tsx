@@ -67,7 +67,7 @@ function Ajuda({ secao, oQue }: { secao: string; oQue: string }) {
       target="_blank"
       rel="noreferrer"
       title={`Entender ${oQue}`}
-      className="ml-1 inline-flex size-[15px] shrink-0 translate-y-[1px] items-center justify-center rounded-full border border-white/15 text-[9px] leading-none font-bold text-dim normal-case transition hover:border-primary/50 hover:text-primary"
+      className="ml-1 inline-flex size-[15px] shrink-0 translate-y-[1px] items-center justify-center rounded-full border border-line text-[9px] leading-none font-bold text-dim normal-case transition hover:border-primary/50 hover:text-primary"
     >
       ?
     </a>
@@ -229,7 +229,7 @@ export function Painel({
   if (!no) {
     return (
       <div className="p-4">
-        <div className="rounded-[14px] border border-dashed border-white/10 px-[18px] py-[34px] text-center text-[12.5px] leading-6 text-dim">
+        <div className="rounded-[14px] border border-dashed border-line px-[18px] py-[34px] text-center text-[12.5px] leading-6 text-dim">
           Selecione um bloco na área de desenho
           <br />
           ou adicione um novo pelo catálogo.
@@ -271,7 +271,7 @@ export function Painel({
           ) : (
             <button
               onClick={aoDefinirInicio}
-              className="rounded-lg border border-white/10 px-2.5 py-1 text-[10px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
+              className="rounded-lg border border-line px-2.5 py-1 text-[10px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
             >
               Tornar início
             </button>
@@ -337,7 +337,7 @@ export function Painel({
           )}
 
           {no.data.midia === 'audio' ? (
-            <p className="rounded-lg border border-white/10 bg-surface px-3 py-2.5 text-[11.5px] leading-5 text-muted">
+            <p className="rounded-lg border border-line bg-surface px-3 py-2.5 text-[11.5px] leading-5 text-muted">
               Áudio não aceita legenda no WhatsApp — a Meta recusa a mensagem
               inteira, não ignora o campo. Para dizer algo junto, use um bloco de
               Mensagem antes ou depois deste.
@@ -429,7 +429,7 @@ export function Painel({
                     Com isto preenchido, cada opção ganha um campo de{' '}
                     <strong className="text-muted">valor</strong>: a pessoa lê “Vídeo
                     institucional” e a API recebe{' '}
-                    <code className="font-mono text-[#8de2fa]">institucional</code>. Sem isto, o
+                    <code className="font-mono text-primary">institucional</code>. Sem isto, o
                     fluxo guarda o próprio texto do botão.
                   </>
                 }
@@ -525,7 +525,7 @@ export function Painel({
             <>
               <p className="text-[11px] leading-4 text-dim">
                 As opções saem de{' '}
-                <code className="font-mono text-[#8de2fa]">{no.data.opcoesDe}</code>, separadas por{' '}
+                <code className="font-mono text-primary">{no.data.opcoesDe}</code>, separadas por{' '}
                 <code className="font-mono">;</code> ou quebra de linha — normalmente preenchida por
                 um bloco de API antes deste. Como elas só existem durante a conversa, o bloco deixa
                 de ramificar por opção: ligue as saídas{' '}
@@ -554,8 +554,8 @@ export function Painel({
                     Use quando o que a pessoa lê e o que o sistema entende são coisas diferentes —
                     ela escolhe <strong className="text-muted">“07:00”</strong> e a API precisa do
                     id daquele horário. No bloco de Serviços externos, mapeie duas vezes a mesma
-                    lista: <code className="font-mono text-[#8de2fa]">livres[].hora</code> para as
-                    opções e <code className="font-mono text-[#8de2fa]">livres[].sessaoId</code>{' '}
+                    lista: <code className="font-mono text-primary">livres[].hora</code> para as
+                    opções e <code className="font-mono text-primary">livres[].sessaoId</code>{' '}
                     para os valores. O casamento é <strong className="text-muted">por posição</strong>.
                   </>
                 }
@@ -1082,8 +1082,8 @@ export function Painel({
           */}
           <p className="rounded-[10px] border border-line bg-panel px-3 py-2.5 text-[11.5px] leading-5 text-dim">
             Este bloco pode ser o <strong className="text-soft">primeiro do fluxo</strong>: a
-            conversa já sabe <code className="font-mono text-[#8de2fa]">{'{{telefone}}'}</code> e{' '}
-            <code className="font-mono text-[#8de2fa]">{'{{nome}}'}</code> antes de perguntar
+            conversa já sabe <code className="font-mono text-primary">{'{{telefone}}'}</code> e{' '}
+            <code className="font-mono text-primary">{'{{nome}}'}</code> antes de perguntar
             qualquer coisa. Dá para procurar a pessoa pelo número e só então dar bom dia pelo nome.
           </p>
 
@@ -1263,7 +1263,7 @@ function ValoresConhecidos({
             className={`max-w-full truncate rounded-lg border px-2 py-0.5 text-[11px] transition ${
               igual
                 ? 'border-primary/40 bg-primary/[0.12] text-primary'
-                : 'border-white/10 text-muted hover:border-primary/40 hover:text-primary'
+                : 'border-line text-muted hover:border-primary/40 hover:text-primary'
             }`}
           >
             {valor}
@@ -1333,7 +1333,7 @@ function MensagensDoHandoff({
         <button
           type="button"
           onClick={() => aoMudar([...mensagens, ''])}
-          className="w-full rounded-lg border border-dashed border-white/12 px-3 py-2 text-[11.5px] text-muted transition hover:border-primary/40 hover:text-primary"
+          className="w-full rounded-lg border border-dashed border-line px-3 py-2 text-[11.5px] text-muted transition hover:border-primary/40 hover:text-primary"
         >
           + outra mensagem antes de transferir
         </button>
@@ -2010,7 +2010,7 @@ function Mapeamentos({
         leads sozinho.
       </p>
       <p className="mt-1 text-[10.5px] leading-4 text-dim">
-        Para percorrer uma lista inteira, use <code className="font-mono text-[#8de2fa]">[]</code>:{' '}
+        Para percorrer uma lista inteira, use <code className="font-mono text-primary">[]</code>:{' '}
         <code className="font-mono">livres[].hora</code> guarda{' '}
         <code className="font-mono">07:00;10:00;15:00</code>, que é o formato que a Pergunta lê para
         virar menu. Um <code className="font-mono">[]</code> por caminho.

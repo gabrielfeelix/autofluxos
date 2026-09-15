@@ -1100,7 +1100,7 @@ export function Editor({
         <Link
           href={voltarHref}
           title={`Voltar para ${clienteNome}`}
-          className="flex size-[30px] shrink-0 items-center justify-center rounded-lg border border-white/10 text-base text-muted transition hover:border-primary/50 hover:text-primary"
+          className="flex size-[30px] shrink-0 items-center justify-center rounded-lg border border-line text-base text-muted transition hover:border-primary/50 hover:text-primary"
         >
           ‹
         </Link>
@@ -1256,7 +1256,7 @@ export function Editor({
             type="button"
             onClick={() => setConfirmandoDescarte(true)}
             title="Joga fora as alterações não publicadas e volta ao desenho que está no ar"
-            className="rounded-lg border border-white/10 px-3 py-2 text-[12.5px] font-semibold text-muted transition hover:border-amber-300/40 hover:text-amber-200"
+            className="rounded-lg border border-line px-3 py-2 text-[12.5px] font-semibold text-muted transition hover:border-amber-300/40 hover:text-amber-200"
           >
             Descartar
           </button>
@@ -1269,7 +1269,7 @@ export function Editor({
           className={`rounded-lg border px-3.5 py-2 text-[12.5px] font-semibold transition ${
             aba === 'testar'
               ? 'border-primary/50 bg-primary/[0.12] text-primary'
-              : 'border-white/10 text-muted hover:border-primary/40 hover:text-primary'
+              : 'border-line text-muted hover:border-primary/40 hover:text-primary'
           }`}
         >
           Testar
@@ -1524,7 +1524,7 @@ export function Editor({
               onClick={() => setPainelAberto(true)}
               title="Abrir o painel"
               aria-label="Abrir o painel"
-              className="flex size-[30px] items-center justify-center rounded-lg border border-white/10 text-base text-muted transition hover:border-primary/50 hover:text-primary"
+              className="flex size-[30px] items-center justify-center rounded-lg border border-line text-base text-muted transition hover:border-primary/50 hover:text-primary"
             >
               ‹
             </button>
@@ -1691,7 +1691,7 @@ export function Editor({
             type="button"
             autoFocus
             onClick={() => setConfirmandoDescarte(false)}
-            className="rounded-lg border border-white/10 px-3.5 py-2 text-[12px] font-semibold text-muted transition hover:border-white/25 hover:text-ink"
+            className="rounded-lg border border-line px-3.5 py-2 text-[12px] font-semibold text-muted transition hover:border-strong hover:text-ink"
           >
             Cancelar
           </button>
@@ -1770,9 +1770,9 @@ function AcoesEmLote({
   const segundos = Array.from({ length: LIMITE_ATRASO_SEGUNDOS }, (_, i) => i + 1)
 
   return (
-    <div className="flex items-center gap-2 rounded-full border border-line bg-[#0b1018]/95 px-3 py-1.5 text-[11px] shadow-[0_14px_34px_rgba(19,25,34,0.132)] backdrop-blur-sm">
+    <div className="flex items-center gap-2 rounded-full border border-line bg-panel/95 px-3 py-1.5 text-[11px] shadow-[0_14px_34px_rgba(19,25,34,0.132)] backdrop-blur-sm">
       <span className="font-semibold text-soft">{quantos} blocos</span>
-      <span className="h-3 w-px bg-white/10" aria-hidden />
+      <span className="h-3 w-px bg-line" aria-hidden />
       <span className="text-dim">digita antes de falar</span>
 
       {segundos.map((valor) => (
@@ -1793,7 +1793,7 @@ function AcoesEmLote({
         disabled={quantosFalam === 0}
         onClick={() => aoAtrasar(0)}
         title="Tira o atraso das falas selecionadas"
-        className="rounded-full border border-line px-2 py-0.5 font-semibold text-muted transition hover:border-white/25 hover:text-soft disabled:opacity-40"
+        className="rounded-full border border-line px-2 py-0.5 font-semibold text-muted transition hover:border-strong hover:text-soft disabled:opacity-40"
       >
         tirar
       </button>
@@ -1828,7 +1828,7 @@ function MenuDoBotaoDireito({
         top: menu.y,
         transform: `translate(${menu.paraEsquerda ? '-100%' : '0'}, ${menu.paraCima ? '-100%' : '0'})`,
       }}
-      className="absolute z-20 w-[176px] rounded-[12px] border border-white/10 bg-panel p-1.5 shadow-[0_24px_60px_rgba(19,25,34,0.121)]"
+      className="absolute z-20 w-[176px] rounded-[12px] border border-line bg-panel p-1.5 shadow-[0_24px_60px_rgba(19,25,34,0.121)]"
       onContextMenu={(evento) => evento.preventDefault()}
     >
       {menu.alvo === 'no' ? (
@@ -1921,7 +1921,7 @@ function ConfirmarApagar({
           type="button"
           autoFocus
           onClick={aoFechar}
-          className="rounded-lg border border-white/10 px-3.5 py-2 text-[12px] font-semibold text-muted transition hover:border-white/25 hover:text-ink"
+          className="rounded-lg border border-line px-3.5 py-2 text-[12px] font-semibold text-muted transition hover:border-strong hover:text-ink"
         >
           Cancelar
         </button>

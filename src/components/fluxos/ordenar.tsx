@@ -53,7 +53,7 @@ export function OrdenarFluxo({
 
   const botao =
     'grid h-5 w-5 place-items-center rounded text-dim transition ' +
-    'hover:bg-white/10 hover:text-soft disabled:opacity-25 disabled:hover:bg-transparent'
+    'hover:bg-surface-strong hover:text-soft disabled:opacity-25 disabled:hover:bg-transparent'
 
   return (
     <span className="inline-flex flex-col items-center gap-px">

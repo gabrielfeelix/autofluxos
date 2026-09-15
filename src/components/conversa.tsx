@@ -493,7 +493,7 @@ export function Conversa({
 
       {modo === 'conversa' && (
         <div className="flex shrink-0 items-center gap-2.5 border-b border-black/10 bg-[#f0f2f5] px-3 py-2 text-[#111b21]">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#00a884] text-[10px] font-extrabold text-ink">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#00a884] text-[10px] font-extrabold text-white">
             {iniciais || 'AF'}
           </span>
           <span className="min-w-0">
@@ -629,7 +629,7 @@ export function Conversa({
               disabled={ocupado || rascunho.trim() === ''}
               className={
                 modo === 'conversa'
-                  ? 'flex size-9 shrink-0 items-center justify-center rounded-full bg-[#00a884] px-0 text-base text-ink transition hover:bg-[#008f72] disabled:opacity-40'
+                  ? 'flex size-9 shrink-0 items-center justify-center rounded-full bg-[#00a884] px-0 text-base text-white transition hover:bg-[#008f72] disabled:opacity-40'
                   : 'app-primary-button flex size-9 shrink-0 items-center justify-center px-0 text-lg disabled:opacity-40'
               }
             >

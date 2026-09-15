@@ -141,7 +141,7 @@ export function Compartilhar({
           if (evento.target === dialogo.current) dialogo.current?.close()
         }}
         onClose={() => setCopiado(null)}
-        className="app-dialog m-auto w-[min(560px,92vw)] rounded-[18px] border border-white/10 bg-panel text-ink shadow-[0_40px_100px_rgba(19,25,34,0.132)]"
+        className="app-dialog m-auto w-[min(560px,92vw)] rounded-[18px] border border-line bg-panel text-ink shadow-[0_40px_100px_rgba(19,25,34,0.132)]"
       >
         <div className="p-[26px]">
           <h2 className="text-[15px] font-bold">Compartilhar por link</h2>

@@ -215,7 +215,7 @@ export function PresetsDeIntegracao({
                   className={`mt-[3px] flex size-[13px] shrink-0 items-center justify-center rounded-full border transition ${
                     estaEmUso
                       ? 'border-primary/70'
-                      : 'border-strong group-hover:border-white/30'
+                      : 'border-strong group-hover:border-strong'
                   }`}
                 >
                   {estaEmUso && <span className="size-[6px] rounded-full bg-primary" />}
@@ -224,7 +224,7 @@ export function PresetsDeIntegracao({
                 <span className="min-w-0 flex-1">
                   <span
                     className={`block text-[12px] leading-[1.35] transition ${
-                      estaEmUso ? 'font-semibold text-soft' : 'font-medium text-[#b7c0cf]'
+                      estaEmUso ? 'font-semibold text-soft' : 'font-medium text-soft'
                     }`}
                   >
                     {item.nome}

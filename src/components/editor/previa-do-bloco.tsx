@@ -265,10 +265,10 @@ export function PreviaDoBloco({
 
   return (
     <div
-      className={`pointer-events-none fixed z-50 overflow-hidden rounded-xl border bg-[#0b1018]/95 shadow-[0_18px_40px_rgba(19,25,34,0.132)] backdrop-blur-sm ${CORES[no.type as TipoNo]}`}
+      className={`pointer-events-none fixed z-50 overflow-hidden rounded-xl border bg-panel/95 shadow-[0_18px_40px_rgba(19,25,34,0.132)] backdrop-blur-sm ${CORES[no.type as TipoNo]}`}
       style={{ left: esquerda, top: topo, width: LARGURA, maxHeight: ALTURA_MAX }}
     >
-      <p className="flex items-center gap-1.5 border-b border-white/10 px-3 py-1.5 text-[10.5px] tracking-wide text-dim uppercase">
+      <p className="flex items-center gap-1.5 border-b border-line px-3 py-1.5 text-[10.5px] tracking-wide text-dim uppercase">
         <span aria-hidden>{ICONES[no.type as TipoNo]}</span>
         {NOMES[no.type as TipoNo]}
       </p>

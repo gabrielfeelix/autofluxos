@@ -12,7 +12,8 @@
  * degradada dela.
  */
 
-.pagina {
+/* Tres vezes o mesmo nome: ver o comentario dentro do bloco. */
+.pagina.pagina.pagina {
   /*
    * **A landing continua escura, e agora ela diz isso em vez de herdar.**
    *
@@ -25,6 +26,12 @@
    * aqui, no escopo da página, porque é aqui que alguém que mexer no visual
    * dela vai procurar — e porque assim a landing deixa de quebrar toda vez que
    * o produto decide sua própria cor.
+   *
+   * **O nome aparece três vezes no seletor** para a especificidade (0,3,0)
+   * passar na frente do `:root[data-theme='escuro']` de `globals.css` (0,2,0).
+   * Sem isso, quem ligasse o tema escuro no painel e viesse para cá receberia
+   * metade desta paleta e metade da do produto — os dois escuros, e nenhum
+   * dos dois inteiro.
    */
   color-scheme: dark;
   --accent: #56d0f5;

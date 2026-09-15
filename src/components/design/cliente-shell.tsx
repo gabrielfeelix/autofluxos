@@ -6,7 +6,7 @@ import { acaoDefinirPresenca, acaoSair } from '@/server/acoes-conta'
 import type { Cliente } from '@/server/repos/clientes'
 import { presencaDoUsuario } from '@/server/repos/usuarios'
 import { contasDoUsuario, ehAdminDaPlataforma, exigirAcessoAoCliente } from '@/server/sessao'
-import { BotaoDeAjuda } from './botao-de-ajuda'
+import { BarraLateral } from './barra-lateral'
 import { LogoDoCliente } from './logo-cliente'
 import { Marca } from './marca'
 
@@ -83,88 +83,58 @@ export async function ClienteShell({
 
   return (
     <div className="flex min-h-screen flex-col md:h-screen md:min-h-[700px] md:flex-row md:overflow-hidden">
-      <aside className="flex shrink-0 flex-col border-line bg-panel md:w-[226px] md:border-r md:px-3.5 md:pt-5 md:pb-4">
-        <div className="flex items-center gap-3 border-b border-line px-4 py-3 md:mb-5 md:border-0 md:px-2 md:py-0">
-          <Marca />
-          <span className="ml-auto flex items-center gap-2">
-            {/* No celular a barra vira faixa e a identidade da conta perde o
-                rodapé: sem isto, nada na tela diz de quem é a conta aberta. */}
-            <span className="flex items-center gap-2 md:hidden">
-              <LogoDoCliente cliente={cliente} tamanho={26} />
-              <span className="max-w-[110px] truncate text-[12px] font-semibold">
-                {cliente.nome}
-              </span>
-            </span>
-            <BotaoDeAjuda />
-          </span>
-        </div>
-
-        {podeVerTodosOsClientes && (
-          <Link
-            href="/painel"
-            className="hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11.5px] text-dim transition hover:text-primary md:mb-1.5 md:flex"
-          >
-            <span aria-hidden>‹</span> Todos os clientes
-          </Link>
-        )}
-
-        {/* Rola na horizontal no celular: nenhum item some, e a página não
-            passa a rolar de lado por causa da navegação. */}
-        <nav
-          aria-label="Seções do cliente"
-          className="flex gap-1 overflow-x-auto border-b border-line px-3 py-2 md:flex-col md:gap-0.5 md:overflow-visible md:border-0 md:p-0"
-        >
-          {ITENS.map((item) => {
-            const acesa = item.chave === ativa
-            return (
-              <Link
-                key={item.chave}
-                href={`/clientes/${cliente.id}${item.href}`}
-                aria-current={acesa ? 'page' : undefined}
-                className={`flex shrink-0 items-center gap-2.5 rounded-[10px] px-2.5 py-2.5 text-[13px] font-semibold transition ${
-                  acesa
-                    ? 'bg-primary/[0.12] text-ink hover:bg-primary/[0.16]'
-                    : 'text-muted hover:bg-surface hover:text-ink'
-                }`}
-              >
-                <span className={acesa ? 'text-primary' : 'text-dim'}>{item.icone}</span>
-                {item.rotulo}
-              </Link>
-            )
-          })}
-        </nav>
-
-        <div className="hidden flex-1 md:block" />
-
-        <div className="hidden border-t border-line pt-3 md:block">
-          <SeletorDeConta
-            cliente={cliente}
-            outrasContas={contas.length}
-            papel={acesso.papel}
-          />
-
-          {/*
-            O aviso de fila vive **aqui**, e não só no Inbox.
-            
-            Era o buraco do §3.10.1: o handoff acontecia e ninguém percebia, a
-            não ser que a pessoa estivesse com o Inbox aberto. Quem está
-            desenhando um fluxo ou conferindo contatos está no painel do mesmo
-            jeito — e é justamente quem dá para avisar de graça.
-          */}
-          <NotificacoesDaFila clienteId={cliente.id} compacto />
-
-          {presenca && <Presenca atual={presenca} />}
-
-          <form action={acaoSair} className="mt-2 px-1.5">
-            <button
-              type="submit"
-              className="rounded-[7px] px-1.5 py-1 text-[11.5px] font-semibold text-dim transition hover:bg-rose-400/[0.08] hover:text-rose-300"
+      <BarraLateral
+        marca={<Marca />}
+        identidadeNoCelular={
+          <>
+            <LogoDoCliente cliente={cliente} tamanho={26} />
+            <span className="max-w-[110px] truncate text-[12px] font-semibold">{cliente.nome}</span>
+          </>
+        }
+        voltar={
+          podeVerTodosOsClientes ? (
+            <Link
+              href="/painel"
+              className="hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11.5px] text-dim transition hover:text-primary md:mb-1.5 md:flex"
             >
-              Sair
-            </button>
-          </form>
-        </div>
-      </aside>
+              <span aria-hidden>‹</span> Todos os clientes
+            </Link>
+          ) : null
+        }
+        itens={ITENS.map((item) => ({
+          chave: item.chave,
+          rotulo: item.rotulo,
+          href: `/clientes/${cliente.id}${item.href}`,
+          icone: item.icone,
+          acesa: item.chave === ativa,
+        }))}
+        rodape={
+          <>
+            <SeletorDeConta cliente={cliente} outrasContas={contas.length} papel={acesso.papel} />
+
+            {/*
+              O aviso de fila vive **aqui**, e não só no Inbox.
+
+              Era o buraco do §3.10.1: o handoff acontecia e ninguém percebia, a
+              não ser que a pessoa estivesse com o Inbox aberto. Quem está
+              desenhando um fluxo ou conferindo contatos está no painel do mesmo
+              jeito — e é justamente quem dá para avisar de graça.
+            */}
+            <NotificacoesDaFila clienteId={cliente.id} compacto />
+
+            {presenca && <Presenca atual={presenca} />}
+
+            <form action={acaoSair} className="mt-2 px-1.5">
+              <button
+                type="submit"
+                className="rounded-[7px] px-1.5 py-1 text-[11.5px] font-semibold text-dim transition hover:bg-rose-400/[0.08] hover:text-rose-400"
+              >
+                Sair
+              </button>
+            </form>
+          </>
+        }
+      />
 
       <div className="relative min-w-0 flex-1 md:overflow-auto">
         <FaixaDeImpersonacao />
@@ -256,7 +226,7 @@ function Presenca({ atual }: { atual: string }) {
             do mesmo jeito (WCAG 1.4.1). */}
         <span
           aria-hidden
-          className={`size-2 shrink-0 rounded-full ${disponivel ? 'bg-emerald-400' : 'bg-white/25'}`}
+          className={`size-2 shrink-0 rounded-full ${disponivel ? 'bg-emerald-400' : 'bg-dim'}`}
         />
         <span className="flex-1 text-[11.5px] text-muted">
           {disponivel ? 'Disponível' : 'Ausente'}

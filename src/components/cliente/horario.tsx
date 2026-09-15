@@ -193,7 +193,7 @@ export function HorarioDeAtendimentoForm({
                 <button
                   type="button"
                   onClick={() => acrescentar(dia)}
-                  className="shrink-0 rounded-lg border border-white/10 px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
+                  className="shrink-0 rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
                 >
                   + faixa
                 </button>

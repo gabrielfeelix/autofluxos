@@ -52,12 +52,12 @@ function Caixa({
 }) {
   return (
     <div
-      className={`w-[248px] overflow-hidden rounded-xl border bg-[#0b1018] text-xs shadow-[0_14px_34px_rgba(19,25,34,0.077)] transition ${CORES[tipo]} ${
+      className={`w-[248px] overflow-hidden rounded-xl border bg-panel text-xs shadow-[0_14px_34px_rgba(19,25,34,0.077)] transition ${CORES[tipo]} ${
         selecionado ? '!border-primary ring-1 ring-primary/30' : ''
       }`}
     >
-      <Handle type="target" position={Position.Left} className="!left-[-7px] !size-[15px] !border-2 !border-white/30 !bg-[#0b1018] transition hover:!border-primary" />
-      <p className="flex h-[38px] items-center gap-2 border-b border-line px-3 text-[10px] font-bold tracking-[0.06em] text-[#97a2b4] uppercase">
+      <Handle type="target" position={Position.Left} className="!left-[-7px] !size-[15px] !border-2 !border-strong !bg-panel transition hover:!border-primary" />
+      <p className="flex h-[38px] items-center gap-2 border-b border-line px-3 text-[10px] font-bold tracking-[0.06em] text-muted uppercase">
         <span aria-hidden className="flex size-6 items-center justify-center rounded-[7px] bg-surface text-[13px] text-soft">
           {ICONES[tipo]}
         </span>
@@ -74,7 +74,7 @@ function Caixa({
 /** Uma linha com a própria alça de saída à direita. */
 function Saida({ id, children }: { id: string; children: ReactNode }) {
   return (
-    <div className="relative mt-1.5 rounded-[7px] border border-line bg-surface px-2 py-1.5 pr-5 text-[#b9c2d0]">
+    <div className="relative mt-1.5 rounded-[7px] border border-line bg-surface px-2 py-1.5 pr-5 text-soft">
       {children}
       <Handle
         type="source"
@@ -219,7 +219,7 @@ function PreviaDaImagem({ url, descricao }: { url: string; descricao: string }) 
   if (quebrou) return null
 
   return (
-    <div className="mt-1.5 overflow-hidden rounded-[8px] border border-white/10 bg-black/30">
+    <div className="mt-1.5 overflow-hidden rounded-[8px] border border-line bg-black/30">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={url}
@@ -278,11 +278,11 @@ function NoPergunta({ data, selected }: NodeProps) {
       {dinamica ? (
         <>
           <p className="mt-1 text-[10px] text-dim">
-            opções de <code className="font-mono text-[#8de2fa]">{d.opcoesDe}</code>
+            opções de <code className="font-mono text-primary">{d.opcoesDe}</code>
           </p>
           {d.valoresDe && (
             <p className="text-[10px] text-dim">
-              valores de <code className="font-mono text-[#8de2fa]">{d.valoresDe}</code>
+              valores de <code className="font-mono text-primary">{d.valoresDe}</code>
               {d.salvarValorEm && <> → guarda em {d.salvarValorEm}</>}
             </p>
           )}
@@ -362,7 +362,7 @@ function NoCondicao({ data, selected }: NodeProps) {
   return (
     <Caixa tipo="condicao" selecionado={!!selected} saidaUnica={false}>
       <p className="text-soft">
-        <code className="font-mono text-[11px] text-[#8de2fa]">{d.variavel}</code>{' '}
+        <code className="font-mono text-[11px] text-primary">{d.variavel}</code>{' '}
         <span className="text-muted">{d.operador}</span>{' '}
         {d.valor && <code className="font-mono text-[11px]">{d.valor}</code>}
       </p>
@@ -381,7 +381,7 @@ function NoSalvarCampo({ data, selected }: NodeProps) {
   return (
     <Caixa tipo="salvar-campo" selecionado={!!selected}>
       <p className="text-soft">
-        <code className="font-mono text-[11px] text-[#8de2fa]">{d.campo}</code>{' = '}
+        <code className="font-mono text-[11px] text-primary">{d.campo}</code>{' = '}
         <RealceDeVariaveis texto={vazio(d.valor, '(vazio)')} />
       </p>
     </Caixa>
@@ -481,7 +481,7 @@ function NoHttp({ data, selected }: NodeProps) {
         </>
       ) : (
         <p className="truncate text-[12.5px] leading-5 text-soft">
-          <span className="font-mono text-[10px] text-[#8de2fa]">{d.metodo}</span>{' '}
+          <span className="font-mono text-[10px] text-primary">{d.metodo}</span>{' '}
           {vazio(d.url, '(sem endereço)')}
         </p>
       )}

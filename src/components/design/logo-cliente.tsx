@@ -48,7 +48,7 @@ export function LogoDoCliente({
     <span
       aria-hidden
       style={{ ...lado, fontSize: Math.max(10, Math.round(tamanho * 0.28)) }}
-      className="flex shrink-0 items-center justify-center rounded-[12px] border border-strong bg-[linear-gradient(135deg,#243244,#151d29)] font-bold text-[#9aa6b8]"
+      className="flex shrink-0 items-center justify-center rounded-[12px] border border-line bg-surface font-bold text-muted"
     >
       {iniciaisDe(cliente.nome)}
     </span>

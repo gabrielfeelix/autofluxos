@@ -455,7 +455,7 @@ function NovaEtapa({ clienteId, quadroId }: { clienteId: string; quadroId: strin
       <button
         type="button"
         onClick={() => setAberto(true)}
-        className="w-[220px] shrink-0 rounded-xl border border-dashed border-strong px-3 py-3 text-left text-[12px] text-dim transition hover:border-white/25 hover:bg-surface hover:text-soft"
+        className="w-[220px] shrink-0 rounded-xl border border-dashed border-strong px-3 py-3 text-left text-[12px] text-dim transition hover:border-strong hover:bg-surface hover:text-soft"
       >
         + Nova etapa
       </button>
@@ -574,7 +574,7 @@ function MenuDaEtapa({
       {aberto && (
         <>
           <span className="fixed inset-0 z-10" onClick={() => setAberto(false)} />
-          <span className="absolute top-5 right-0 z-20 flex w-[178px] flex-col rounded-lg border border-white/10 bg-panel p-1 shadow-[0_18px_40px_rgba(19,25,34,0.11)]">
+          <span className="absolute top-5 right-0 z-20 flex w-[178px] flex-col rounded-lg border border-line bg-panel p-1 shadow-[0_18px_40px_rgba(19,25,34,0.11)]">
             <button
               type="button"
               onClick={() => {
@@ -705,7 +705,7 @@ function MenuDoCartao({
       {aberto && (
         <>
           <span className="fixed inset-0 z-10" onClick={() => setAberto(false)} />
-          <span className="absolute top-5 right-0 z-20 flex w-[190px] flex-col rounded-lg border border-white/10 bg-panel p-1 shadow-[0_18px_40px_rgba(19,25,34,0.11)]">
+          <span className="absolute top-5 right-0 z-20 flex w-[190px] flex-col rounded-lg border border-line bg-panel p-1 shadow-[0_18px_40px_rgba(19,25,34,0.11)]">
             <span className="px-2 py-1 text-[10px] font-bold tracking-[0.05em] text-dim uppercase">
               Mover para
             </span>

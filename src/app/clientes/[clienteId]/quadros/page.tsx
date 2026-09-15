@@ -103,7 +103,7 @@ export default async function Pagina({
                   className={`rounded-full border px-3 py-1 text-[12px] transition ${
                     quadro.id === aberto?.id
                       ? 'border-primary/40 bg-primary/[0.1] text-primary'
-                      : 'border-line bg-surface text-muted hover:border-white/20'
+                      : 'border-line bg-surface text-muted hover:border-strong'
                   }`}
                 >
                   {quadro.nome}

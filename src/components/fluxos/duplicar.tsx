@@ -34,7 +34,7 @@ export function DuplicarFluxo({
         title={`Cria uma cópia de "${nome}", desligada e sem publicar.`}
         aria-label={`Duplicar a automação ${nome}`}
         disabled={rodando}
-        className="rounded px-2 py-1 text-[11px] text-dim transition hover:bg-white/10 hover:text-soft disabled:opacity-40"
+        className="rounded px-2 py-1 text-[11px] text-dim transition hover:bg-surface-strong hover:text-soft disabled:opacity-40"
         onClick={() => {
           setRecado(null)
           comecar(async () => {

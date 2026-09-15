@@ -87,7 +87,7 @@ export function MenuDoContato({
       {aberto && (
         <div
           role="menu"
-          className="absolute right-0 z-20 mt-1 w-[196px] overflow-hidden rounded-[10px] border border-line bg-[#141a23] py-1 shadow-xl"
+          className="absolute right-0 z-20 mt-1 w-[196px] overflow-hidden rounded-[10px] border border-line bg-panel py-1 shadow-xl"
         >
           <Link
             role="menuitem"

@@ -361,7 +361,7 @@ export function SeletorDeArquivo({
                 className={`rounded-full border px-2 py-0.5 text-[10.5px] font-semibold transition ${
                   midia === tipo
                     ? 'border-primary/40 bg-primary/[0.14] text-primary'
-                    : 'border-line text-dim hover:border-white/20 hover:text-muted'
+                    : 'border-line text-dim hover:border-strong hover:text-muted'
                 }`}
               >
                 {ROTULO_DA_MIDIA[tipo]}

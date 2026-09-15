@@ -164,7 +164,7 @@ export default async function Pagina({
               aviso.tom === 'bom'
                 ? 'border-emerald-400/25 bg-emerald-400/[0.07] text-emerald-200'
                 : aviso.tom === 'neutro'
-                  ? 'border-white/10 bg-surface text-muted'
+                  ? 'border-line bg-surface text-muted'
                   : 'border-amber-400/25 bg-amber-400/[0.07] text-amber-200'
             }`}
           >
@@ -469,7 +469,7 @@ export default async function Pagina({
                              */}
                             {progresso !== null && (
                               <div
-                                className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10"
+                                className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-strong"
                                 role="progressbar"
                                 aria-valuenow={progresso}
                                 aria-valuemin={0}
@@ -601,7 +601,7 @@ export default async function Pagina({
           <p className="mt-1 text-[11.5px] text-dim">
             Cadastre este webhook na configuração do WhatsApp Business.
           </p>
-          <code className="mt-2.5 block truncate rounded-lg border border-line bg-black/30 px-3 py-2.5 font-mono text-[11.5px] text-[#8de2fa]">
+          <code className="mt-2.5 block truncate rounded-lg border border-line bg-black/30 px-3 py-2.5 font-mono text-[11.5px] text-primary">
             {webhook}
           </code>
         </section>

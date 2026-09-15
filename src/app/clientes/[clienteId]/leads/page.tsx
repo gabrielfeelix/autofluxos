@@ -180,7 +180,7 @@ async function Tabela({
   return (
     <>
       <div className="mb-[22px] flex flex-wrap items-center justify-end gap-2 md:-mt-[53px]">
-        <span className="rounded-full border border-white/10 bg-surface px-3 py-1 text-[11px] font-semibold text-muted">
+        <span className="rounded-full border border-line bg-surface px-3 py-1 text-[11px] font-semibold text-muted">
           {total} {total === 1 ? 'pessoa' : 'pessoas'}
           {filtrando && ' no filtro'}
         </span>
@@ -367,7 +367,7 @@ async function Tabela({
                     </div>
                   </td>
                   {colunas.map((coluna) => (
-                    <td key={coluna} className="max-w-48 truncate px-3.5 py-3 text-[11.5px] text-[#97a2b4]">
+                    <td key={coluna} className="max-w-48 truncate px-3.5 py-3 text-[11.5px] text-muted">
                       {lead.campos[coluna] || <span className="text-dim">—</span>}
                     </td>
                   ))}
@@ -493,7 +493,7 @@ function Passo({ href, ativo, children }: { href: string; ativo: boolean; childr
     )
   }
   return (
-    <Link href={href} scroll={false} className={`${classe} border-white/10 text-muted hover:border-white/20 hover:text-ink`}>
+    <Link href={href} scroll={false} className={`${classe} border-line text-muted hover:border-strong hover:text-ink`}>
       {children}
     </Link>
   )
@@ -503,7 +503,7 @@ function classeDoFiltro(ativo: boolean): string {
   return `rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${
     ativo
       ? 'border-primary/35 bg-primary/12 text-primary'
-      : 'border-white/10 bg-panel text-muted hover:border-white/20 hover:text-ink'
+      : 'border-line bg-panel text-muted hover:border-strong hover:text-ink'
   }`
 }
 
@@ -518,7 +518,7 @@ function Cabecalho({ children }: { children: React.ReactNode }) {
 function Avatar({ nome }: { nome: string | null }) {
   const iniciais = (nome ?? '?').split(' ').filter(Boolean).slice(0, 2).map((parte) => parte[0]).join('').toUpperCase()
   return (
-    <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-strong bg-surface text-[10px] font-bold text-[#97a2b4]">
+    <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-strong bg-surface text-[10px] font-bold text-muted">
       {iniciais}
     </span>
   )

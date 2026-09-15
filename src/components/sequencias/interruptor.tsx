@@ -53,7 +53,7 @@ export function InterruptorDeSequencia({
           })
         }}
         className={`relative h-[18px] w-8 shrink-0 rounded-full border transition disabled:opacity-50 ${
-          ativa ? 'border-emerald-400/40 bg-emerald-400/25' : 'border-white/10 bg-surface-strong'
+          ativa ? 'border-emerald-400/40 bg-emerald-400/25' : 'border-line bg-surface-strong'
         }`}
       >
         <span

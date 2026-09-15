@@ -252,7 +252,7 @@ function Selo({
   const cor = {
     ok: 'border-emerald-400/25 bg-emerald-400/[0.08] text-emerald-300',
     alerta: 'border-amber-300/30 bg-amber-300/[0.1] text-amber-200',
-    neutro: 'border-white/10 bg-surface text-muted',
+    neutro: 'border-line bg-surface text-muted',
   }[tom]
 
   return (

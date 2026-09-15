@@ -128,7 +128,7 @@ function UmFunil({ clienteId, funil }: { clienteId: string; funil: FunilDoContat
               onClick={() => setMenuAberto(false)}
               className="fixed inset-0 z-10 cursor-default"
             />
-            <ul className="absolute right-0 left-0 z-20 mt-1 overflow-hidden rounded-[10px] border border-line bg-[#131a24] py-1 shadow-[0_16px_40px_rgba(19,25,34,0.099)]">
+            <ul className="absolute right-0 left-0 z-20 mt-1 overflow-hidden rounded-[10px] border border-line bg-panel py-1 shadow-[0_16px_40px_rgba(19,25,34,0.099)]">
               {funil.etapas.map((etapa) => {
                 const aqui = etapa.id === etapaId
                 return (

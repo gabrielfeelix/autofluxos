@@ -1,7 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { FichaDoRail } from '@/components/inbox/ficha-do-rail'
+import {
+  ESTADOS_DA_FILA,
+  PilulaMenu,
+  type OpcaoDaPilula,
+} from '@/components/inbox/pilulas'
 import { origemDoContato } from '@/core/contatos/origem'
 import type { FiltroDeEstado } from '@/server/repos/leads'
 
@@ -254,115 +258,90 @@ export function RailsLocais<T extends LeadDoRail>({
     aoRecortar(recorte)
   }, [recorte, aoRecortar])
 
+  /*
+   * As mesmas pílulas do modo paginado, com callback no lugar de `href`.
+   *
+   * **O desenho é o mesmo de propósito.** Os dois modos existem por causa do
+   * tamanho da conta, e isso não é assunto de quem atende: uma fila que muda de
+   * cara ao passar de 500 conversas faria a pessoa reaprender a tela num dia em
+   * que ninguém avisou que algo mudou.
+   */
+  const opcoesDeDono: OpcaoDaPilula[] = [
+    { chave: 'todos', rotulo: 'Todos os atendentes', contagem: donos.total },
+    {
+      chave: 'sem-dono',
+      rotulo: 'Sem dono',
+      descricao: 'Ninguém assumiu ainda',
+      contagem: donos.semDono,
+    },
+    ...(usuarioId
+      ? [
+          {
+            chave: usuarioId,
+            rotulo: 'Meus atendimentos',
+            contagem: donos.porUsuario.get(usuarioId) ?? 0,
+          },
+        ]
+      : []),
+    ...equipe
+      .filter((membro) => membro.id !== usuarioId)
+      .map((membro) => ({
+        chave: membro.id,
+        rotulo: membro.nome,
+        contagem: donos.porUsuario.get(membro.id) ?? 0,
+        ausente: membro.presenca !== undefined && membro.presenca !== 'disponivel',
+      })),
+  ]
+
+  const opcoesDeOrigem: OpcaoDaPilula[] = [
+    {
+      chave: 'todas',
+      rotulo: 'Toda origem',
+      contagem: origens.anuncio + origens.direto + origens.desconhecida,
+    },
+    {
+      chave: 'anuncio',
+      rotulo: 'Veio de anúncio',
+      descricao: 'Clicou num anúncio que abre conversa',
+      contagem: origens.anuncio,
+    },
+    { chave: 'direto', rotulo: 'Chegou direto', contagem: origens.direto },
+  ]
+
   return (
     <>
-      <nav
-        aria-label="Estado da conversa"
-        className="-mx-1 mt-2.5 flex gap-1 overflow-x-auto pb-0.5"
-      >
-        <FichaDoRail
-          href="#"
-          aoEscolher={() => setEstado('aberta')}
-          acesa={estado === 'aberta'}
-          rotulo="Abertas"
-          contagem={porEstado.aberta}
-        />
-        <FichaDoRail
-          href="#"
-          aoEscolher={() => setEstado('adiada')}
-          acesa={estado === 'adiada'}
-          rotulo="Adiadas"
-          contagem={porEstado.adiada}
-        />
-        <FichaDoRail
-          href="#"
-          aoEscolher={() => setEstado('resolvida')}
-          acesa={estado === 'resolvida'}
-          rotulo="Resolvidas"
-          contagem={porEstado.resolvida}
-        />
-      </nav>
+      <PilulaMenu
+        aria="Estado da conversa"
+        escolhida={estado}
+        rotulo={ESTADOS_DA_FILA.find((e) => e.chave === estado)?.rotulo ?? 'Conversas'}
+        opcoes={ESTADOS_DA_FILA.map((opcao) => ({ ...opcao, contagem: porEstado[opcao.chave] }))}
+        aoEscolher={(chave) => setEstado(chave as FiltroDeEstado)}
+      />
 
       {(equipe.length > 0 || donos.semDono < donos.total) && (
-        <nav
-          aria-label="Filtrar por quem atende"
-          className="-mx-1 mt-2.5 flex gap-1 overflow-x-auto pb-0.5"
-        >
-          <FichaDoRail
-            href="#"
-            aoEscolher={() => setAtribuicao('todos')}
-            acesa={atribuicao === 'todos'}
-            rotulo="Todos"
-            contagem={donos.total}
-          />
-          <FichaDoRail
-            href="#"
-            aoEscolher={() => setAtribuicao('sem-dono')}
-            acesa={atribuicao === 'sem-dono'}
-            rotulo="Sem dono"
-            contagem={donos.semDono}
-            alerta
-          />
-          {usuarioId && (
-            <FichaDoRail
-              href="#"
-              aoEscolher={() => setAtribuicao(usuarioId)}
-              acesa={atribuicao === usuarioId}
-              rotulo="Meus"
-              contagem={donos.porUsuario.get(usuarioId) ?? 0}
-            />
-          )}
-          {equipe
-            .filter((membro) => membro.id !== usuarioId)
-            .map((membro) => (
-              <FichaDoRail
-                key={membro.id}
-                href="#"
-                aoEscolher={() => setAtribuicao(membro.id)}
-                acesa={atribuicao === membro.id}
-                rotulo={membro.nome.split(' ')[0] ?? membro.nome}
-                contagem={donos.porUsuario.get(membro.id) ?? 0}
-                ausente={membro.presenca !== undefined && membro.presenca !== 'disponivel'}
-              />
-            ))}
-        </nav>
+        <PilulaMenu
+          aria="Filtrar por quem atende"
+          escolhida={atribuicao}
+          rotulo={opcoesDeDono.find((o) => o.chave === atribuicao)?.rotulo ?? 'Todos os atendentes'}
+          opcoes={opcoesDeDono}
+          aoEscolher={setAtribuicao}
+        />
       )}
 
       {/*
-        O rail de origem só aparece quando há o que separar.
-        Numa conta em que ninguém veio de anúncio, ele seria três botões que
-        filtram nada — e rail que não recorta é ruído na tela mais usada do
-        produto.
+        A origem só aparece quando há o que separar. Numa conta em que ninguém
+        veio de anúncio, ela seria um menu que filtra nada — e filtro que não
+        recorta é ruído na tela mais usada do produto.
       */}
       {origens.anuncio > 0 && (
-        <nav
-          aria-label="Filtrar por origem"
-          className="-mx-1 mt-2.5 flex gap-1 overflow-x-auto pb-0.5"
-        >
-          <FichaDoRail
-            href="#"
-            aoEscolher={() => setOrigem('todas')}
-            acesa={origem === 'todas'}
-            rotulo="Toda origem"
-            contagem={origens.anuncio + origens.direto + origens.desconhecida}
-          />
-          <FichaDoRail
-            href="#"
-            aoEscolher={() => setOrigem('anuncio')}
-            acesa={origem === 'anuncio'}
-            rotulo="De anúncio"
-            contagem={origens.anuncio}
-          />
-          <FichaDoRail
-            href="#"
-            aoEscolher={() => setOrigem('direto')}
-            acesa={origem === 'direto'}
-            rotulo="Direto"
-            contagem={origens.direto}
-          />
-        </nav>
+        <PilulaMenu
+          aria="Filtrar por origem"
+          escolhida={origem}
+          rotulo={opcoesDeOrigem.find((o) => o.chave === origem)?.rotulo ?? 'Toda origem'}
+          opcoes={opcoesDeOrigem}
+          aoEscolher={(chave) => setOrigem(chave as FiltroDeOrigem)}
+        />
       )}
-
     </>
   )
 }

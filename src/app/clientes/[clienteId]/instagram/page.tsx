@@ -110,7 +110,7 @@ export default async function Pagina({
                 <input type="hidden" name="clienteId" value={clienteId} />
                 <button
                   type="submit"
-                  className="rounded-[9px] border border-white/10 px-3 py-2 text-[12.5px] font-semibold text-dim transition hover:bg-rose-400/[0.08] hover:text-rose-300"
+                  className="rounded-[9px] border border-line px-3 py-2 text-[12.5px] font-semibold text-dim transition hover:bg-rose-400/[0.08] hover:text-rose-300"
                 >
                   Desligar
                 </button>
@@ -161,7 +161,7 @@ export default async function Pagina({
               <button
                 type="submit"
                 disabled={!configurado}
-                className="rounded-[9px] bg-primary px-4 py-2.5 text-[13px] font-semibold text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-[9px] bg-primary px-4 py-2.5 text-[13px] font-semibold text-white transition hover:bg-primary-strong disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Conectar conta do Instagram
               </button>

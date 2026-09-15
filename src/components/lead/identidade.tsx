@@ -69,7 +69,7 @@ export function NomeDoContato({
         <button
           type="button"
           onClick={() => setEditando(true)}
-          className="rounded-lg border border-white/10 px-2 py-0.5 text-[10.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
+          className="rounded-lg border border-line px-2 py-0.5 text-[10.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
         >
           {nomeReal === '' ? 'corrigir nome' : 'editar'}
         </button>
@@ -117,7 +117,7 @@ export function NotasDoContato({
           <button
             type="button"
             onClick={() => setEditando(true)}
-            className="rounded-lg border border-white/10 px-2 py-0.5 text-[10.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
+            className="rounded-lg border border-line px-2 py-0.5 text-[10.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
           >
             {notas === '' ? 'anotar' : 'editar'}
           </button>

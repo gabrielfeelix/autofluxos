@@ -76,7 +76,7 @@ export function GraficoDaSerie({ serie }: { serie: PontoDaSerie[] }) {
               className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
                 metrica === m.chave
                   ? 'border-primary/40 bg-primary/[0.14] text-primary'
-                  : 'border-line text-dim hover:border-white/20 hover:text-muted'
+                  : 'border-line text-dim hover:border-strong hover:text-muted'
               }`}
             >
               {m.rotulo}
@@ -87,7 +87,7 @@ export function GraficoDaSerie({ serie }: { serie: PontoDaSerie[] }) {
             onClick={() => setBarras((estava) => !estava)}
             title={barras ? 'Ver como linha' : 'Ver como barras'}
             aria-label={barras ? 'Ver como linha' : 'Ver como barras'}
-            className="rounded-full border border-line px-2.5 py-1 text-[11px] text-dim transition hover:border-white/20 hover:text-muted"
+            className="rounded-full border border-line px-2.5 py-1 text-[11px] text-dim transition hover:border-strong hover:text-muted"
           >
             {barras ? '📈' : '📊'}
           </button>

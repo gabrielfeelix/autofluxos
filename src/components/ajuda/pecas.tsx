@@ -82,7 +82,7 @@ export function Cod({ children }: { children: ReactNode }) {
 /** Um bloco de código de verdade — JSON de resposta, corpo de requisição. */
 export function Codigo({ titulo, children }: { titulo?: string; children: string }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-line bg-[#070a0e]">
+    <div className="overflow-hidden rounded-xl border border-line bg-surface">
       {titulo && (
         <p className="border-b border-line px-3.5 py-2 font-mono text-[10.5px] tracking-[0.08em] text-dim uppercase">
           {titulo}
@@ -171,9 +171,9 @@ export function Bloco({
 }) {
   return (
     <div
-      className={`relative w-full max-w-[262px] overflow-hidden rounded-xl border bg-[#0b1018] shadow-[0_14px_34px_rgba(19,25,34,0.077)] ${CORES[tipo]}`}
+      className={`relative w-full max-w-[262px] overflow-hidden rounded-xl border bg-panel shadow-[0_14px_34px_rgba(19,25,34,0.077)] ${CORES[tipo]}`}
     >
-      <p className="flex h-[38px] items-center gap-2 border-b border-line px-3 text-[10px] font-bold tracking-[0.06em] text-[#97a2b4] uppercase">
+      <p className="flex h-[38px] items-center gap-2 border-b border-line px-3 text-[10px] font-bold tracking-[0.06em] text-muted uppercase">
         <span
           aria-hidden
           className="flex size-6 items-center justify-center rounded-[7px] bg-surface text-[13px] text-soft"
@@ -233,8 +233,8 @@ export function Zap({
       <div
         className={`max-w-[85%] rounded-[13px] px-3 py-2 text-[12.5px] leading-[1.5] whitespace-pre-line ${
           daPessoa
-            ? 'rounded-br-[4px] bg-[#1d4b46] text-[#e6f4f1]'
-            : 'rounded-bl-[4px] bg-[#141a24] text-soft'
+            ? 'rounded-br-[4px] bg-[#d9fdd3] text-[#111b21]'
+            : 'rounded-bl-[4px] border border-line bg-white text-[#111b21]'
         }`}
       >
         {children}
@@ -258,11 +258,11 @@ export function Zap({
 /** O celular em volta da conversa. Dá contexto sem virar mockup de loja. */
 export function Conversa({ titulo, children }: { titulo?: string; children: ReactNode }) {
   return (
-    <div className="w-full max-w-[300px] overflow-hidden rounded-2xl border border-line bg-[#0a0e15]">
+    <div className="w-full max-w-[300px] overflow-hidden rounded-2xl border border-line bg-[#efeae2]">
       <p className="flex items-center gap-2 border-b border-line bg-panel px-3.5 py-2.5">
         <span
           aria-hidden
-          className="flex size-[22px] items-center justify-center rounded-full bg-[#1d4b46] text-[10px] font-bold text-[#7ee3c8]"
+          className="flex size-[22px] items-center justify-center rounded-full bg-[#25d366] text-[10px] font-bold text-white"
         >
           W
         </span>

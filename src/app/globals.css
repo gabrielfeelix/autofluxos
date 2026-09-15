@@ -15,15 +15,15 @@
  * depender de vista boa e monitor bom.
  */
 /*
- * **O tema claro é o tema.** Não existe um escuro esperando um interruptor, e
- * isso é decisão, não pendência: manter dois custa o dobro de revisão de
- * contraste a cada tela nova, e o escuro era o que dava ao painel a cara de
- * template genérico.
+ * **O claro é o padrão; o escuro é escolha.** São dois temas, e o custo de
+ * manter dois é justamente o que esta camada elimina: **nenhuma cor é escrita
+ * na mão fora deste arquivo**. O escuro é o mesmo conjunto de nomes com outros
+ * valores, num bloco só, lá embaixo.
  *
- * O que fica montado para o dia em que existir é a camada: **nenhuma cor é
- * escrita na mão fora deste arquivo**. Quem quiser o escuro depois redefine os
- * mesmos nomes dentro de um `@media (prefers-color-scheme: dark)` e pronto —
- * o trabalho caro é este aqui, e ele está feito uma vez só.
+ * O padrão é claro mesmo para quem tem o sistema no escuro, e isso é
+ * deliberado: `prefers-color-scheme` diz o gosto da pessoa para o sistema
+ * dela, não para uma ferramenta de trabalho que ela vai olhar oito horas por
+ * dia. Quem quiser o escuro liga no botão, e a escolha fica gravada.
  *
  * `@theme inline` e `:root` dizem a mesma coisa duas vezes de propósito:
  * `:root` serve o CSS escrito à mão (`var(--line)`), e só o `@theme` gera os
@@ -115,6 +115,65 @@
    * visual não pode custar a leitura.
    */
   --dim: #8b94a1;
+  --placeholder: #a3abb7;
+  /* O polegar da barra de rolagem: a borda dele é sempre a cor do fundo. */
+  --barra: #c8cfd8;
+  --barra-forte: #aeb7c2;
+}
+
+/*
+ * ---------------------------------------------------------------------------
+ * O tema escuro
+ * ---------------------------------------------------------------------------
+ *
+ * **Só por escolha explícita.** O atributo é posto por um script no `<head>`
+ * (ver `layout.tsx`) a partir do que está gravado no navegador; sem nada
+ * gravado, nada é posto, e o claro acima vale. É por isso que não há
+ * `@media (prefers-color-scheme: dark)` nenhum aqui — ele faria o tema mudar
+ * sem ninguém pedir, e no meio de um atendimento.
+ *
+ * **Os valores não são os antigos do painel.** O azul subiu para `#3b82f6`
+ * porque `#2563eb` sobre `#111722` dá 3,1:1 — reprovado para texto — e as
+ * superfícies são um degrau mais claras do que o preto de antes: o painel
+ * escuro anterior era quase `#080b10`, e uma tela de trabalho com fundo preto
+ * puro cansa a vista mais do que um cinza-azulado.
+ *
+ * O que **não** muda de tema, de propósito: a bolha do WhatsApp e o papel de
+ * parede da conversa. Eles imitam um aplicativo que existe, e o verde do
+ * WhatsApp não tem versão escura.
+ */
+:root[data-tema='escuro'] {
+  color-scheme: dark;
+
+  --primary: #3b82f6;
+  --primary-strong: #60a5fa;
+  --primary-weak: #172742;
+  --primary-ink: #0b1220;
+
+  --canvas: #0b0f16;
+  --canvas-deep: #080b10;
+  --panel: #111722;
+  --surface: #161d2a;
+  --surface-strong: #1e2634;
+  --surface-hover: #1e2634;
+
+  --line: #242d3b;
+  --line-soft: #1b2330;
+  --line-strong: #323d4e;
+
+  --ink: #e9eef5;
+  --soft: #b9c2d0;
+  --muted: #8a94a6;
+  --dim: #7d8799;
+  --placeholder: #5c667a;
+
+  --barra: #2c3648;
+  --barra-forte: #3a4658;
+
+  /* Sombra sobre escuro precisa de preto de verdade para existir. */
+  --shadow-pop: 0 8px 20px rgba(0, 0, 0, 0.45);
+  --shadow-menu: 0 14px 34px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-modal: 0 28px 70px rgba(0, 0, 0, 0.6), 0 4px 14px rgba(0, 0, 0, 0.45);
 }
 
 * {
@@ -207,11 +266,11 @@ body {
    */
   border: 3px solid var(--canvas);
   border-radius: 8px;
-  background: #c8cfd8;
+  background: var(--barra);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #aeb7c2;
+  background: var(--barra-forte);
 }
 
 ::-webkit-scrollbar-track {
@@ -232,7 +291,7 @@ a {
 
 input::placeholder,
 textarea::placeholder {
-  color: #a3abb7;
+  color: var(--placeholder);
 }
 
 .app-field {
@@ -246,7 +305,7 @@ textarea::placeholder {
 }
 
 .app-field:hover:not(:disabled) {
-  border-color: #d3d9e1;
+  border-color: var(--line-strong);
 }
 
 .app-field:focus {
@@ -294,7 +353,7 @@ textarea::placeholder {
 }
 
 .app-dropdown-trigger:hover:not(:disabled) {
-  border-color: #d3d9e1;
+  border-color: var(--line-strong);
   background: var(--surface);
 }
 
@@ -339,7 +398,7 @@ textarea::placeholder {
    * Sombra de tema claro é curta e pouco opaca. A do escuro (48% de preto,
    * 45px de raio) sobre branco não lê como elevação, lê como sujeira.
    */
-  box-shadow: 0 10px 28px rgba(19, 25, 34, 0.1), 0 2px 6px rgba(19, 25, 34, 0.06);
+  box-shadow: var(--shadow-menu);
   animation: dropdown-in 130ms ease both;
 }
 
@@ -390,7 +449,7 @@ textarea::placeholder {
 .app-card-interactive:hover {
   border-color: color-mix(in oklab, var(--primary) 45%, transparent);
   background: var(--panel);
-  box-shadow: 0 8px 20px rgba(19, 25, 34, 0.07);
+  box-shadow: var(--shadow-pop);
   transform: translateY(-2px);
 }
 
@@ -450,7 +509,7 @@ textarea::placeholder {
 }
 
 .app-dialog::backdrop {
-  background: rgba(19, 25, 34, 0.38);
+  background: rgba(8, 11, 16, 0.45);
   backdrop-filter: blur(4px);
 }
 
@@ -583,11 +642,11 @@ textarea::placeholder {
 }
 
 .react-flow__background pattern circle {
-  fill: rgba(19, 25, 34, 0.12);
+  fill: color-mix(in oklab, var(--dim) 55%, transparent);
 }
 
 .react-flow__edge-path {
-  stroke: #b6bec9;
+  stroke: var(--line-strong);
   stroke-width: 1.5;
 }
 
@@ -602,7 +661,7 @@ textarea::placeholder {
   border: 1px solid var(--line);
   border-radius: 11px;
   background: var(--panel);
-  box-shadow: 0 6px 18px rgba(19, 25, 34, 0.08);
+  box-shadow: var(--shadow-pop);
 }
 
 .react-flow__controls-button {
@@ -621,7 +680,7 @@ textarea::placeholder {
 }
 
 .react-flow__attribution {
-  background: rgba(255, 255, 255, 0.72) !important;
+  background: color-mix(in oklab, var(--panel) 80%, transparent) !important;
   color: var(--dim) !important;
 }
 

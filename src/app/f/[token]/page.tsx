@@ -83,7 +83,7 @@ export default async function Pagina({ params }: { params: Promise<{ token: stri
     <main className="mx-auto min-h-screen w-full max-w-[760px] px-4 py-10 md:px-8 md:py-14">
       <div className="mb-8 flex items-center gap-2.5">
         <Marca compacta />
-        <span className="rounded-md border border-white/10 px-2 py-0.5 font-mono text-[10px] text-dim">
+        <span className="rounded-md border border-line px-2 py-0.5 font-mono text-[10px] text-dim">
           fluxo compartilhado
         </span>
       </div>

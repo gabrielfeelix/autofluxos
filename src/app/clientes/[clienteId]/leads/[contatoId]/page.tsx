@@ -88,7 +88,7 @@ export default async function Pagina({
         </Link>
 
         <header className="mb-4 flex flex-wrap items-center gap-3.5">
-          <span className="flex size-11 items-center justify-center rounded-full border border-strong bg-surface text-[12px] font-bold text-[#97a2b4]">
+          <span className="flex size-11 items-center justify-center rounded-full border border-strong bg-surface text-[12px] font-bold text-muted">
             {iniciais}
           </span>
           <NomeDoContato
@@ -293,7 +293,7 @@ async function Historico({
   return (
     <div className="flex flex-col gap-2.5">
       {conversa.cortada && (
-        <p className="self-center rounded-xl border border-dashed border-strong px-3.5 py-2 text-center font-mono text-[10px] text-[#6b7689]">
+        <p className="self-center rounded-xl border border-dashed border-strong px-3.5 py-2 text-center font-mono text-[10px] text-muted">
           conversa longa — mostrando só as mensagens mais recentes
         </p>
       )}

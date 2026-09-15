@@ -141,7 +141,7 @@ export function SelecaoDeContatos({
                 limpar
               </button>
 
-              <span className="mx-1 h-4 w-px bg-white/10" aria-hidden />
+              <span className="mx-1 h-4 w-px bg-line" aria-hidden />
 
               {etiquetas.length === 0 ? (
                 <span className="text-[11.5px] text-dim">
@@ -165,7 +165,7 @@ export function SelecaoDeContatos({
                       onClick={() => etiquetar(etiqueta.id, false)}
                       title={`Tirar “${etiqueta.nome}” dos selecionados`}
                       aria-label={`Tirar ${etiqueta.nome} dos selecionados`}
-                      className="rounded-full border border-line px-1.5 py-0.5 text-[10.5px] font-bold text-dim transition hover:border-white/20 hover:text-muted disabled:opacity-50"
+                      className="rounded-full border border-line px-1.5 py-0.5 text-[10.5px] font-bold text-dim transition hover:border-strong hover:text-muted disabled:opacity-50"
                     >
                       −
                     </button>
@@ -175,7 +175,7 @@ export function SelecaoDeContatos({
 
               {quadros.length > 0 && (
                 <>
-                  <span className="mx-1 h-4 w-px bg-white/10" aria-hidden />
+                  <span className="mx-1 h-4 w-px bg-line" aria-hidden />
                   {quadros.map((quadro) => (
                     <button
                       key={quadro.id}

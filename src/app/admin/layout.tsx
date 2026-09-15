@@ -26,7 +26,7 @@ export default async function LayoutDoAdmin({ children }: { children: ReactNode 
       <aside className="flex shrink-0 flex-col border-line bg-panel md:w-[226px] md:border-r md:px-3.5 md:pt-5 md:pb-4">
         <div className="flex items-center gap-2.5 border-b border-line px-4 py-3 md:mb-5 md:border-0 md:px-2 md:py-0">
           <Marca />
-          <span className="rounded-md border border-white/10 px-1.5 py-0.5 font-mono text-[9.5px] text-dim">
+          <span className="rounded-md border border-line px-1.5 py-0.5 font-mono text-[9.5px] text-dim">
             admin
           </span>
         </div>

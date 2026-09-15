@@ -125,7 +125,7 @@ export function RodapeDaMensagem({
         <span
           key={chip.chave}
           title={`${chip.dono} reagiu`}
-          className="rounded-full border border-line bg-[#1c2230] px-1.5 py-0.5 text-[11px] leading-none shadow-[0_1px_2px_rgba(19,25,34,0.055)]"
+          className="rounded-full border border-line bg-panel px-1.5 py-0.5 text-[11px] leading-none shadow-[0_1px_2px_rgba(19,25,34,0.055)]"
         >
           {chip.emoji}
         </span>
@@ -173,7 +173,7 @@ export function RodapeDaMensagem({
           {aberto && (
             <span
               role="menu"
-              className={`absolute bottom-full z-20 mb-1 flex gap-0.5 rounded-full border border-line bg-[#161b26] px-1.5 py-1 shadow-[0_4px_16px_rgba(19,25,34,0.099)] ${nossa ? 'right-0' : 'left-0'}`}
+              className={`absolute bottom-full z-20 mb-1 flex gap-0.5 rounded-full border border-line bg-panel px-1.5 py-1 shadow-[0_4px_16px_rgba(19,25,34,0.099)] ${nossa ? 'right-0' : 'left-0'}`}
             >
               {EMOJIS.map((emoji) => (
                 <button

@@ -151,8 +151,8 @@ function Cartao({
         evento.preventDefault()
         aoAbrirMenu(evento.clientX, evento.clientY)
       }}
-      className={`group relative flex flex-col rounded-[14px] border bg-[#0b1018] p-4 shadow-[0_10px_26px_rgba(19,25,34,0.062)] transition hover:border-primary/45 hover:bg-[#0d1622] ${
-        marcado ? 'border-primary/55 bg-[#0d1622]' : 'border-line'
+      className={`group relative flex flex-col rounded-[14px] border bg-panel p-4 shadow-[0_10px_26px_rgba(19,25,34,0.062)] transition hover:border-primary/45 hover:bg-primary-weak ${
+        marcado ? 'border-primary/55 bg-primary-weak' : 'border-line'
       }`}
     >
       {/* O link cobre o cartão inteiro; o botão de acesso vive acima dele. */}
@@ -185,7 +185,7 @@ function Cartao({
       <p className="mt-3.5 flex items-center gap-2 text-[11.5px] text-muted">
         <span
           aria-hidden
-          className={`size-1.5 rounded-full ${conta.noAr > 0 ? 'bg-emerald-400' : 'bg-white/20'}`}
+          className={`size-1.5 rounded-full ${conta.noAr > 0 ? 'bg-emerald-400' : 'bg-dim'}`}
         />
         {conta.fluxos === 0 ? (
           'nenhuma automação ainda'
@@ -292,7 +292,7 @@ function MenuDeContexto({
       role="menu"
       style={{ left: Math.max(8, esquerda), top: Math.max(8, topo), width: largura }}
       onContextMenu={(evento) => evento.preventDefault()}
-      className="fixed z-50 overflow-hidden rounded-[11px] border border-white/10 bg-panel p-1 shadow-[0_24px_60px_rgba(19,25,34,0.132)]"
+      className="fixed z-50 overflow-hidden rounded-[11px] border border-line bg-panel p-1 shadow-[0_24px_60px_rgba(19,25,34,0.132)]"
     >
       <button
         type="button"
@@ -505,7 +505,7 @@ export function ContasAdmin({
             className={`h-[38px] shrink-0 rounded-[10px] border px-3 text-[12px] font-semibold transition ${
               soSemAcesso
                 ? 'border-amber-300/50 bg-amber-300/[0.12] text-amber-200'
-                : 'border-line text-muted hover:border-white/25 hover:text-soft'
+                : 'border-line text-muted hover:border-strong hover:text-soft'
             }`}
           >
             sem acesso
@@ -623,13 +623,13 @@ export function ContasAdmin({
               <button
                 type="button"
                 onClick={() => setLigando(null)}
-                className="rounded-[10px] border border-line px-3.5 py-2 text-[12.5px] font-semibold text-muted transition hover:border-white/25 hover:text-soft"
+                className="rounded-[10px] border border-line px-3.5 py-2 text-[12.5px] font-semibold text-muted transition hover:border-strong hover:text-soft"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                className="rounded-[10px] bg-primary px-4 py-2 text-[12.5px] font-bold text-[#04202a] transition hover:brightness-110"
+                className="rounded-[10px] bg-primary px-4 py-2 text-[12.5px] font-bold text-white transition hover:bg-primary-strong"
               >
                 Dar acesso
               </button>

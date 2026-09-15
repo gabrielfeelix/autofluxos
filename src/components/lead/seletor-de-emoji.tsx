@@ -91,7 +91,7 @@ export function SeletorDeEmoji({
            * Abre para cima porque o campo de resposta mora no rodapé da tela:
            * para baixo, a telinha nasceria fora da janela.
            */
-          className="absolute bottom-full left-0 z-30 mb-2 w-[286px] rounded-[12px] border border-line bg-[#161b26] p-2 shadow-[0_10px_30px_rgba(19,25,34,0.11)]"
+          className="absolute bottom-full left-0 z-30 mb-2 w-[286px] rounded-[12px] border border-line bg-panel p-2 shadow-[0_10px_30px_rgba(19,25,34,0.11)]"
         >
           <input
             type="search"

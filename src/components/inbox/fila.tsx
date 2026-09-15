@@ -1,11 +1,18 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { comoFalta, restaDaJanela } from '@/channels/janela'
+import { LogoDoCanal } from '@/components/design/selo-do-canal'
 import { Avatar } from '@/components/inbox/avatar'
-import { FichaDoRail } from '@/components/inbox/ficha-do-rail'
 import { RailsLocais } from '@/components/inbox/fila-local'
+import {
+  ESTADOS_DA_FILA,
+  PilulaFixa,
+  PilulaInterruptor,
+  PilulaMenu,
+  type OpcaoDaPilula,
+} from '@/components/inbox/pilulas'
 import { TETO_DA_INSIGNIA } from '@/core/insignia'
 import { nomeDoTipo } from '@/core/tipo-da-mensagem'
 import { quando } from '@/lib/quando'
@@ -100,7 +107,28 @@ export function Fila({
    */
   const aoRecortar = useCallback((novo: Lead[]) => setRecorte(novo), [])
 
-  const naTela = local ? recorte : leads
+  /*
+   * Os dois filtros que moram aqui em cima, e **só existem no modo local**.
+   *
+   * Eles trabalham sobre a lista que está na memória. No modo paginado essa
+   * lista é uma página de cinquenta, e filtrar ou ordenar cinquenta de cinco
+   * mil é pior do que não oferecer: "Não lidas 3" mostrando três porque as
+   * outras trinta estão na página 4 é um número que mente sem avisar.
+   *
+   * A mesma regra que decide se os rails filtram no navegador decide se estas
+   * pílulas aparecem — ver `TETO_DA_FILA_LOCAL`.
+   */
+  const [soNaoLidas, setSoNaoLidas] = useState(false)
+  const [ordem, setOrdem] = useState<Ordem>('recentes')
+
+  const naTela = useMemo(() => {
+    const base = local ? recorte : leads
+    if (!local) return base
+    const recortada = soNaoLidas
+      ? base.filter((lead) => (naoLidas.get(lead.contatoId) ?? 0) > 0)
+      : base
+    return ordenar(recortada, ordem)
+  }, [local, recorte, leads, soNaoLidas, naoLidas, ordem])
 
   const nomeDe = (id: string | null) =>
     id ? (equipe.find((membro) => membro.id === id)?.nome.split(' ')[0] ?? 'alguém') : null
@@ -127,31 +155,71 @@ export function Fila({
     `/clientes/${clienteId}/inbox?de=${encodeURIComponent(valor)}&estado=${estado}${comBusca}${conversaAberta}`
   const linkDoEstado = (valor: FiltroDeEstado) =>
     `/clientes/${clienteId}/inbox?de=${encodeURIComponent(atribuicao)}&estado=${valor}${comBusca}${conversaAberta}`
+  /** As opções do eixo "de quem é", montadas da equipe da conta. */
+  const opcoesDeDono: OpcaoDaPilula[] = [
+    { chave: 'todos', rotulo: 'Todos os atendentes', contagem: contagem.total, href: linkDe('todos') },
+    {
+      chave: 'sem-dono',
+      rotulo: 'Sem dono',
+      descricao: 'Ninguém assumiu ainda',
+      contagem: contagem.semDono,
+      href: linkDe('sem-dono'),
+    },
+    ...(usuarioId
+      ? [
+          {
+            chave: usuarioId,
+            rotulo: 'Meus atendimentos',
+            contagem: contagem.porUsuario.get(usuarioId) ?? 0,
+            href: linkDe(usuarioId),
+          },
+        ]
+      : []),
+    ...equipe
+      .filter((membro) => membro.id !== usuarioId)
+      .map((membro) => ({
+        chave: membro.id,
+        rotulo: membro.nome,
+        contagem: contagem.porUsuario.get(membro.id) ?? 0,
+        ausente: membro.presenca !== 'disponivel',
+        href: linkDe(membro.id),
+      })),
+  ]
+
   return (
     <aside className="flex min-h-0 min-w-0 flex-col border-r border-line bg-panel">
-      <header className="border-b border-line px-4 py-[17px]">
+      <header className="border-b border-line px-4 pt-4 pb-3">
         <div className="flex items-center gap-2">
-          <h2 className="flex-1 text-[14px] font-bold tracking-[-0.01em]">Inbox</h2>
-          <span className="rounded-full border border-line bg-surface px-2 py-0.5 font-mono text-[10px] text-muted">
+          <h2 className="min-w-0 flex-1 truncate text-[17px] font-bold tracking-[-0.02em]">
+            Caixa de Entrada
+          </h2>
+          <span
+            title={`${contagem.total} conversa(s) nesta conta`}
+            className="shrink-0 rounded-full border border-line bg-surface px-2 py-0.5 font-mono text-[10px] text-muted"
+          >
             {contagem.total}
           </span>
+          {/*
+            A engrenagem leva para os ajustes de atendimento — etiquetas,
+            respostas rápidas, horário, equipe. Ela fica aqui e não num menu
+            porque é o caminho que se percorre no meio do trabalho: alguém
+            precisa de uma etiqueta nova enquanto atende, não numa sessão
+            separada de configuração.
+          */}
+          <Link
+            href={`/clientes/${clienteId}/ajustes`}
+            title="Ajustes do atendimento"
+            aria-label="Ajustes do atendimento"
+            className="flex size-7 shrink-0 items-center justify-center rounded-lg text-dim transition hover:bg-surface hover:text-ink"
+          >
+            <Engrenagem />
+          </Link>
         </div>
-        <p className="mt-1 text-[11px] text-dim">
+
+        <p className="mt-0.5 text-[11px] text-dim">
           {esperando > 0 ? `${esperando} esperando uma pessoa` : 'Todas as conversas estão com o bot'}
         </p>
 
-        {/*
-          O rail `Atribuído`, e ele é **horizontal**, não uma quarta coluna.
-
-          O desenho de referência põe um painel só para isto, e num Inbox de
-          três colunas a quarta come a largura da conversa — que é onde se
-          trabalha. Com três a cinco entradas, uma linha de fichas diz a mesma
-          coisa e não tira espaço de ninguém.
-
-          **A contagem é o que faz o rail valer a pena.** Sem ela, escolher uma
-          aba é apostar: a pessoa clica em "sem dono" para descobrir se tem
-          alguma coisa lá.
-        */}
         {/*
           A busca é o "[+] iniciar conversa" do desenho de referência, na forma
           que faz sentido aqui.
@@ -169,112 +237,106 @@ export function Fila({
           duplicar justamente a parte que erra sozinha — quem procura
           "(11) 98765-4321" não acha `551187654321` com comparação de texto.
         */}
-        <form method="get" className="mt-2.5 flex gap-1.5">
+        <form method="get" className="relative mt-3">
           <input type="hidden" name="de" value={atribuicao} />
+          <input type="hidden" name="estado" value={estado} />
           {selecionado && <input type="hidden" name="conversa" value={selecionado.contatoId} />}
+          <Lupa />
           <input
             type="search"
             name="busca"
             defaultValue={termo}
-            placeholder="Nome ou telefone"
-            aria-label="Buscar conversa"
-            className="app-field min-w-0 flex-1 px-2.5 py-1.5 text-[11.5px]"
+            placeholder="Pesquisar em conversas"
+            aria-label="Pesquisar em conversas"
+            className="app-field py-2 pr-3 pl-8 text-[12px]"
           />
-          <button
-            type="submit"
-            className="shrink-0 rounded-lg border border-line px-2.5 py-1.5 text-[11px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
-          >
+          {/* O Enter já envia. O botão existe para o comando estar dito em
+              algum lugar para quem usa leitor de tela. */}
+          <button type="submit" className="sr-only">
             Buscar
           </button>
         </form>
 
-        {local ? (
-          /*
-            A fila inteira está aqui: os dois rails viram `filter()`, sem ida ao
-            servidor. As contagens saem da própria lista carregada — e batem com
-            o que se vê logo abaixo, que é a condição de um número valer alguma
-            coisa.
-          */
-          <RailsLocais
-            clienteId={clienteId}
-            leads={local}
-            estadoInicial={estado}
-            atribuicaoInicial={atribuicao}
-            busca={termo}
-            conversaAberta={selecionado?.contatoId ?? null}
-            equipe={equipe}
-            usuarioId={usuarioId}
-            aoRecortar={aoRecortar}
-          />
-        ) : (
-          <>
-            {/*
-              **O eixo do estado vem antes do de dono, e é sempre visível.**
+        {/*
+          Uma linha de pílulas no lugar de três linhas de fichas empilhadas.
 
-              A ordem não é estética: "o que precisa de mim agora" é a primeira
-              pergunta de quem abre a tela, e "de quem é" só faz sentido depois
-              de respondida. O rail de dono continua condicionado à equipe
-              existir — este não, porque adiar e resolver valem para quem atende
-              sozinho.
-            */}
-            <nav aria-label="Estado da conversa" className="-mx-1 mt-2.5 flex gap-1 overflow-x-auto pb-0.5">
-              <FichaDoRail
-                href={linkDoEstado('aberta')}
-                acesa={estado === 'aberta'}
-                rotulo="Abertas"
-                contagem={porEstado.aberta}
+          O eixo do estado vem primeiro porque "o que precisa de mim agora" é a
+          primeira pergunta de quem abre a tela; "de quem é" só faz sentido
+          depois de respondida.
+        */}
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+          {local ? (
+            <RailsLocais
+              clienteId={clienteId}
+              leads={local}
+              estadoInicial={estado}
+              atribuicaoInicial={atribuicao}
+              busca={termo}
+              conversaAberta={selecionado?.contatoId ?? null}
+              equipe={equipe}
+              usuarioId={usuarioId}
+              aoRecortar={aoRecortar}
+            />
+          ) : (
+            <>
+              <PilulaMenu
+                aria="Estado da conversa"
+                escolhida={estado}
+                rotulo={ESTADOS_DA_FILA.find((e) => e.chave === estado)?.rotulo ?? 'Conversas'}
+                opcoes={ESTADOS_DA_FILA.map((opcao) => ({
+                  ...opcao,
+                  contagem: porEstado[opcao.chave],
+                  href: linkDoEstado(opcao.chave),
+                }))}
               />
-              <FichaDoRail
-                href={linkDoEstado('adiada')}
-                acesa={estado === 'adiada'}
-                rotulo="Adiadas"
-                contagem={porEstado.adiada}
-              />
-              <FichaDoRail
-                href={linkDoEstado('resolvida')}
-                acesa={estado === 'resolvida'}
-                rotulo="Resolvidas"
-                contagem={porEstado.resolvida}
-              />
-            </nav>
-
-            {(equipe.length > 0 || contagem.semDono < contagem.total) && (
-              <nav
-                aria-label="Filtrar por quem atende"
-                className="-mx-1 mt-2.5 flex gap-1 overflow-x-auto pb-0.5"
-              >
-                <FichaDoRail href={linkDe('todos')} acesa={atribuicao === 'todos'} rotulo="Todos" contagem={contagem.total} />
-                <FichaDoRail
-                  href={linkDe('sem-dono')}
-                  acesa={atribuicao === 'sem-dono'}
-                  rotulo="Sem dono"
-                  contagem={contagem.semDono}
-                  alerta
+              {(equipe.length > 0 || contagem.semDono < contagem.total) && (
+                <PilulaMenu
+                  aria="Filtrar por quem atende"
+                  escolhida={atribuicao}
+                  rotulo={
+                    opcoesDeDono.find((o) => o.chave === atribuicao)?.rotulo ?? 'Todos os atendentes'
+                  }
+                  opcoes={opcoesDeDono}
                 />
-                {usuarioId && (
-                  <FichaDoRail
-                    href={linkDe(usuarioId)}
-                    acesa={atribuicao === usuarioId}
-                    rotulo="Meus"
-                    contagem={contagem.porUsuario.get(usuarioId) ?? 0}
-                  />
-                )}
-                {equipe
-                  .filter((membro) => membro.id !== usuarioId)
-                  .map((membro) => (
-                    <FichaDoRail
-                      key={membro.id}
-                      href={linkDe(membro.id)}
-                      acesa={atribuicao === membro.id}
-                      rotulo={membro.nome.split(' ')[0] ?? membro.nome}
-                      contagem={contagem.porUsuario.get(membro.id) ?? 0}
-                      ausente={membro.presenca !== 'disponivel'}
-                    />
-                  ))}
-              </nav>
-            )}
-          </>
-        )}
+              )}
+            </>
+          )}
+
+          {local && (
+            <>
+              <PilulaInterruptor
+                rotulo="Não lidas"
+                ligada={soNaoLidas}
+                aoAlternar={() => setSoNaoLidas((x) => !x)}
+                contagem={naoLidas.size}
+              />
+              <PilulaMenu
+                aria="Ordem da lista"
+                escolhida={ordem}
+                rotulo={`Classificar: ${ORDENS.find((o) => o.chave === ordem)?.curto ?? ''}`}
+                opcoes={ORDENS.map(({ chave, rotulo, descricao }) => ({ chave, rotulo, descricao }))}
+                aoEscolher={(chave) => setOrdem(chave as Ordem)}
+              />
+            </>
+          )}
+
+          {/*
+            O canal é uma pílula **fixa**, e não um menu.
+
+            O desenho de referência filtra por canal porque lá há vários. Aqui
+            o Inbox recebe de um só: o adaptador do Instagram existe mas está
+            `disponivel: false` (ver `core/canais.ts`), e o contato nem carrega
+            de que canal veio. Um menu "Todos os canais" com uma opção só seria
+            a promessa de um filtro que não filtra — e no dia em que o segundo
+            canal entregar, ele vira `PilulaMenu` sem mudar mais nada aqui.
+          */}
+          <PilulaFixa>
+            <span className="text-[#25d366]">
+              <LogoDoCanal canal="whatsapp" tamanho={13} />
+            </span>
+            WhatsApp
+          </PilulaFixa>
+        </div>
       </header>
 
       <nav aria-label="Conversas" className="min-h-0 flex-1 overflow-y-auto py-1.5">
@@ -330,7 +392,7 @@ export function Fila({
                   {semLer > 0 && (
                     <span
                       title={`${semLer} mensagem(ns) desde a última vez que você abriu`}
-                      className="shrink-0 rounded-full bg-primary px-1.5 py-px text-[9.5px] font-bold text-black"
+                      className="shrink-0 rounded-full bg-primary px-1.5 py-px text-[9.5px] font-bold text-white"
                     >
                       {semLer > TETO_DA_INSIGNIA ? `${TETO_DA_INSIGNIA}+` : semLer}
                     </span>
@@ -466,4 +528,101 @@ function resumoDaConversa(lead: Lead): string {
   // `core/tipo-da-mensagem.ts` sobre por que "mídia ou mensagem sem texto"
   // sozinho era pior do que nada.
   return `${prefixo}${nomeDoTipo(lead.ultimoTipo) ?? 'mensagem sem texto'}`
+}
+
+/* -------------------------------------------------------------------------- */
+/* Ordem da lista                                                             */
+/* -------------------------------------------------------------------------- */
+
+type Ordem = 'recentes' | 'antigas' | 'espera'
+
+/**
+ * As três ordens, e o que cada uma responde.
+ *
+ * `espera` é a que justifica o menu existir: as outras duas são a mesma
+ * pergunta invertida, e "quem está esperando há mais tempo" é uma pergunta
+ * diferente — é a fila pela ordem em que ela deveria ser atendida, e não pela
+ * ordem em que as mensagens chegaram.
+ */
+const ORDENS = [
+  { chave: 'recentes', curto: 'Mais recentes', rotulo: 'Mais recentes', descricao: 'A última mensagem no topo' },
+  { chave: 'antigas', curto: 'Mais antigas', rotulo: 'Mais antigas', descricao: 'A conversa parada há mais tempo no topo' },
+  {
+    chave: 'espera',
+    curto: 'Esperando há mais tempo',
+    rotulo: 'Esperando há mais tempo',
+    descricao: 'Quem pediu gente primeiro vem primeiro; o resto segue por data',
+  },
+] as const
+
+/**
+ * Copia antes de ordenar. A lista vem do recorte dos rails, e `sort` no lugar
+ * mutaria um array que o React considera imutável — o sintoma é a lista
+ * trocando de ordem sozinha ao voltar de outra aba. (`toSorted` faria isso
+ * numa linha, mas o `lib` deste projeto ainda é anterior ao ES2023.)
+ */
+function ordenar(leads: Lead[], ordem: Ordem): Lead[] {
+  const data = (lead: Lead) => (lead.ultimaEm ? Date.parse(lead.ultimaEm) : 0)
+
+  if (ordem === 'antigas') return [...leads].sort((a, b) => data(a) - data(b))
+
+  if (ordem === 'espera') {
+    return [...leads].sort((a, b) => {
+      // Quem tem handoff aberto sobe, e entre eles ganha quem espera há mais
+      // tempo. `desde` é a hora em que o bot desistiu, que é quando a espera
+      // dessa pessoa realmente começou.
+      const esperaA = a.aguardando ? Date.parse(a.aguardando.desde) : null
+      const esperaB = b.aguardando ? Date.parse(b.aguardando.desde) : null
+      if (esperaA !== null && esperaB !== null) return esperaA - esperaB
+      if (esperaA !== null) return -1
+      if (esperaB !== null) return 1
+      return data(b) - data(a)
+    })
+  }
+
+  return [...leads].sort((a, b) => data(b) - data(a))
+}
+
+/* -------------------------------------------------------------------------- */
+/* Ícones                                                                     */
+/* -------------------------------------------------------------------------- */
+
+/** Dentro do campo de busca, e por isso `pointer-events-none`: clicar na lupa
+    tem que focar o campo, não parar no ícone. */
+function Lupa() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      width="14"
+      height="14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-dim"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.2-3.2" />
+    </svg>
+  )
+}
+
+function Engrenagem() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      width="15"
+      height="15"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6 1.65 1.65 0 0 0 10 3.09V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.35.4.65.73.85.3.18.64.27 1 .26H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+    </svg>
+  )
 }

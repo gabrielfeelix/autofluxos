@@ -115,7 +115,7 @@ export default function Pagina() {
               Faltou alguma coisa aqui? Fale com a 4YU — esta página cresce com a pergunta que você
               não achou.
             </p>
-            <p className="mt-2 font-mono text-[10.5px] text-[#454f60]">
+            <p className="mt-2 font-mono text-[10.5px] text-dim">
               AutoFluxos · 4YU · uso interno
             </p>
           </footer>
@@ -138,7 +138,7 @@ function Capa() {
     <div className="relative overflow-hidden border-b border-line">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(rgba(255,255,255,.04)_1px,transparent_1.3px)] bg-[length:26px_26px]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(rgba(19,25,34,.05)_1px,transparent_1.3px)] bg-[length:26px_26px]"
       />
       <div className="relative mx-auto grid w-full max-w-[1180px] gap-9 px-4 pt-12 pb-14 md:grid-cols-[1fr_auto] md:items-center md:px-8 md:pt-16">
         <div className="max-w-[560px]">

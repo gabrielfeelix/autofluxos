@@ -40,7 +40,7 @@ export default async function Alertas() {
           <form action={acaoMarcarTodosOsAlertasVistos}>
             <button
               type="submit"
-              className="rounded-[9px] border border-white/10 px-3 py-2 text-[12.5px] font-semibold text-muted transition hover:bg-surface hover:text-ink"
+              className="rounded-[9px] border border-line px-3 py-2 text-[12.5px] font-semibold text-muted transition hover:bg-surface hover:text-ink"
             >
               Marcar {abertos} como {abertos === 1 ? 'visto' : 'vistos'}
             </button>
@@ -90,7 +90,7 @@ function Linha({ alerta }: { alerta: Alerta }) {
          * branch de teste, pode respirar".
          */}
         {alerta.ambiente !== 'production' && (
-          <span className="rounded-md border border-white/10 px-1.5 py-0.5 font-mono text-[9.5px] text-dim">
+          <span className="rounded-md border border-line px-1.5 py-0.5 font-mono text-[9.5px] text-dim">
             {alerta.ambiente}
           </span>
         )}

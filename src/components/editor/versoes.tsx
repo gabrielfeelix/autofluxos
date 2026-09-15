@@ -66,7 +66,7 @@ export function Versoes({
           if (evento.target === dialogo.current) fechar()
         }}
         onClose={() => setConfirmando(null)}
-        className="app-dialog m-auto w-[440px] rounded-[18px] border border-white/10 bg-panel p-[26px] text-ink shadow-[0_40px_100px_rgba(19,25,34,0.132)]"
+        className="app-dialog m-auto w-[440px] rounded-[18px] border border-line bg-panel p-[26px] text-ink shadow-[0_40px_100px_rgba(19,25,34,0.132)]"
       >
         <h2 className="text-[17px] font-bold">Histórico de publicações</h2>
         <p className="mt-1 mb-5 text-[12.5px] leading-6 text-muted">

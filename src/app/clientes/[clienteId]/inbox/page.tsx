@@ -1,18 +1,17 @@
-import { Fragment } from 'react'
+import { Fragment, type ReactNode } from 'react'
 import { after } from 'next/server'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { comoFalta, podeReagir, restaDaJanela } from '@/channels/janela'
 import { Assumir, PassarPara } from '@/components/inbox/assumir'
-import { NotaRapida } from '@/components/inbox/nota-rapida'
 import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 import { sessaoAtual } from '@/server/sessao'
 import { ClienteShell } from '@/components/design/cliente-shell'
+import { LogoDoCanal } from '@/components/design/selo-do-canal'
 import { IlustracaoInbox } from '@/components/design/ilustracoes'
 import { recemConectado } from '@/core/coexistencia-na-tela'
 import { assinaturaDasReacoes } from '@/core/reacoes'
 import { coexistenciaDoCliente } from '@/server/repos/coexistencia'
-import { ControleDeAutomacao } from '@/components/lead/controle-automacao'
 import { CamposColetados } from '@/components/lead/campos-coletados'
 import { camposSemOrigem } from '@/core/contatos/origem'
 import type { AnuncioEmCache, Passagem } from '@/core/anuncios'
@@ -56,9 +55,10 @@ import {
   SemTexto,
 } from '@/components/lead/anexo'
 import { etiquetasDeDia, horaDoRelogio, horaExata } from '@/lib/quando'
-import { SeletorDeEtiquetas, type EtiquetaEscolhivel } from '@/components/etiquetas/seletor'
+import type { EtiquetaEscolhivel } from '@/components/etiquetas/seletor'
+import { AcoesRapidas } from '@/components/inbox/acoes-rapidas'
 import { Avatar } from '@/components/inbox/avatar'
-import { EstadoDaConversa } from '@/components/inbox/estado-da-conversa'
+import { MolduraDoInbox } from '@/components/inbox/moldura'
 import { Fila, type Contagem } from '@/components/inbox/fila'
 import { clienteTemAutomacao } from '@/server/repos/fluxos'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
@@ -377,7 +377,7 @@ function EstadoVazio({
        * que algo quebrou — que foi o que aconteceu com o primeiro cliente.
        */}
       {recem && (
-        <p className="mt-3 rounded-[10px] border border-white/10 bg-surface px-3.5 py-2.5 text-left text-[12px] leading-5 text-dim">
+        <p className="mt-3 rounded-[10px] border border-line bg-surface px-3.5 py-2.5 text-left text-[12px] leading-5 text-dim">
           Este número foi conectado há pouco. A Meta ainda está sincronizando, e
           isso pode levar algumas horas — até terminar, é normal nenhuma
           conversa nova aparecer aqui.
@@ -496,27 +496,16 @@ async function Conteudo({
   const esperando = (local ?? leads).filter((lead) => lead.aguardando).length
 
   return (
-    <>
-      <header className="mb-3">
-        <p className="font-mono text-[10px] font-bold tracking-[0.14em] text-dim">ATENDIMENTO</p>
-        <h1 className="mt-0.5 text-[19px] font-bold tracking-[-0.02em]">Inbox</h1>
-      </header>
+    /*
+      A página do Inbox **não tem título próprio**, e é a única do painel assim.
 
-      {/*
-        A moldura tem **altura máxima**, e é isso que faz o histórico rolar por dentro.
-
-        Com `min-h` só, a caixa crescia com a conversa e quem rolava era a
-        página inteira: o cabeçalho da conversa e a caixa de resposta subiam
-        para fora da tela, e uma conversa longa deixava de ter onde responder
-        sem voltar ao topo. As três colunas já tinham `overflow` próprio — o
-        que faltava era um teto para elas medirem.
-
-        `h-[calc(100dvh-…)]` desconta o cabeçalho "Atendimento" e a margem da
-        moldura. `dvh` e não `vh`: no celular a barra do navegador entra e sai,
-        e `vh` congela a altura da barra escondida — a caixa de resposta ficava
-        atrás dela.
-      */}
-      <div className="grid h-[calc(100dvh-116px)] min-h-[420px] grid-cols-[292px_minmax(390px,1fr)_250px] overflow-hidden rounded-[16px] border border-line bg-[#0c1118] shadow-[0_24px_80px_rgba(19,25,34,0.053)]">
+      Ela tinha um: "ATENDIMENTO / Inbox", duas linhas acima da moldura. Com a
+      coluna da fila dizendo "Caixa de Entrada" em corpo 17, o título de cima
+      repetia a palavra e cobrava 24px de altura — numa tela que só perde com
+      isso, porque o que ela quer é caber conversa.
+    */
+    <MolduraDoInbox
+      fila={
         <Fila
           clienteId={clienteId}
           leads={leads}
@@ -534,8 +523,9 @@ async function Conteudo({
           pagina={pagina}
           paginas={paginas}
         />
-
-        {selecionado && conversa ? (
+      }
+      conversa={
+        selecionado && conversa ? (
           /*
             `min-h-0` não é enfeite: item de flex/grid tem `min-height: auto`,
             que o impede de encolher abaixo do próprio conteúdo. Sem ele esta
@@ -548,6 +538,8 @@ async function Conteudo({
               lead={selecionado}
               equipe={equipe}
               usuarioId={usuarioId}
+              etiquetas={etiquetas}
+              temAutomacao={temAutomacao}
             />
             {/*
               `flex-col-reverse` é o que faz a conversa abrir na mensagem mais
@@ -574,7 +566,7 @@ async function Conteudo({
               resposta citando a mensagem de alguém que não é essa.
             */}
             <ProvedorDeCitacao key={selecionado.contatoId}>
-              <div className="flex min-h-0 flex-1 flex-col-reverse overflow-auto bg-[radial-gradient(500px_320px_at_70%_5%,rgba(86,208,245,0.04),transparent_68%)] p-5">
+              <div className="flex min-h-0 flex-1 flex-col-reverse overflow-auto bg-canvas p-5">
                 <Historico
                   mensagens={conversa.mensagens}
                   cortada={conversa.cortada}
@@ -594,90 +586,130 @@ async function Conteudo({
             </ProvedorDeCitacao>
           </section>
         ) : (
-          <section className="col-span-2 flex min-w-0 items-center justify-center border-r border-line p-10 text-center">
+          <section className="flex min-w-0 items-center justify-center p-10 text-center">
             <p className="max-w-[280px] text-[12.5px] leading-6 text-dim">
               Nenhuma conversa nesta seleção.
               <br />
-              Limpe a busca ou escolha outra aba à esquerda.
+              Limpe a busca ou escolha outro filtro à esquerda.
             </p>
           </section>
-        )}
-
-        {selecionado && (
+        )
+      }
+      ficha={
+        selecionado ? (
           <DadosDoLead
             clienteId={clienteId}
             lead={selecionado}
-            etiquetas={etiquetas}
             funis={funis}
             temAutomacao={temAutomacao}
             passagens={passagens}
             nomesDosAnuncios={nomesDosAnuncios}
           />
-        )}
-      </div>
-    </>
+        ) : null
+      }
+    />
   )
 }
 
+/**
+ * O cabeçalho da conversa: quem é, de quem é, e o que dá para fazer.
+ *
+ * **As três coisas em duas linhas, e a segunda é a do canal.** O desenho de
+ * referência põe o canal como aba sublinhada acima das mensagens, e ele acerta:
+ * a mesma pessoa pode escrever por caminhos diferentes, e "por onde esta
+ * conversa está acontecendo" é a primeira coisa que muda o que se pode
+ * responder — janela de 24h, botões, mídia. Estava dito em lugar nenhum.
+ */
 function CabecalhoDaConversa({
   clienteId,
   lead,
   equipe,
   usuarioId,
+  etiquetas,
+  temAutomacao,
 }: {
   clienteId: string
   lead: Lead
   equipe: MembroDaConta[]
   usuarioId: string | null
+  etiquetas: EtiquetaEscolhivel[]
+  temAutomacao: boolean
 }) {
   const nome = lead.nome ?? 'sem nome'
   const responsavel = equipe.find((membro) => membro.id === lead.atribuidoA) ?? null
+
   return (
-    <header className="flex min-h-[69px] items-center gap-3 border-b border-line px-5">
-      <Avatar nome={lead.nome} alerta={Boolean(lead.aguardando)} />
-      <div className="min-w-0 flex-1">
-        <h2 className="truncate text-[13px] font-bold">{nome}</h2>
-        <p className="mt-0.5 font-mono text-[10px] text-dim">{lead.waId}</p>
+    <>
+      <header className="flex min-h-[62px] items-center gap-3 border-b border-line px-4">
+        <Avatar nome={lead.nome} alerta={Boolean(lead.aguardando)} />
+        <div className="min-w-0 flex-1">
+          <h2 className="truncate text-[13.5px] font-bold">{nome}</h2>
+          {/*
+            De quem é a conversa fica **embaixo do nome**, e não num botão à
+            direita. É estado, não ação: quem lê o cabeçalho precisa saber se
+            alguém já está nessa antes de decidir responder.
+          */}
+          <p className="mt-0.5 truncate text-[11px] text-dim">
+            {responsavel
+              ? `com ${responsavel.nome}`
+              : lead.atribuidoA
+                ? 'com alguém fora da equipe'
+                : 'Não atribuído'}
+          </p>
+        </div>
+
+        {/*
+          Assumir e passar continuam sendo botão de texto: mudam **de quem é** a
+          conversa, que é a única decisão desta tela que afeta o trabalho de
+          outra pessoa — e a que mais precisa dizer em palavras o que vai fazer.
+          Só aparecem quando há para quem passar.
+        */}
+        {equipe.length > 1 && (
+          <PassarPara
+            atribuir={acaoAtribuirPara.bind(null, clienteId, lead.contatoId)}
+            equipe={equipe}
+          />
+        )}
+
+        {(usuarioId || responsavel) && (
+          <Assumir
+            assumir={acaoAssumirAtendimento.bind(null, clienteId, lead.contatoId)}
+            liberar={acaoLiberarAtendimento.bind(null, clienteId, lead.contatoId)}
+            responsavel={responsavel?.nome ?? null}
+            souEu={Boolean(usuarioId) && lead.atribuidoA === usuarioId}
+          />
+        )}
+
+        <AcoesRapidas
+          clienteId={clienteId}
+          contatoId={lead.contatoId}
+          estado={lead.estadoEfetivo}
+          etiquetas={etiquetas}
+          etiquetasAplicadas={lead.etiquetasManuais.map((etiqueta) => etiqueta.id)}
+          notas={lead.notas}
+          salvarNotas={acaoSalvarNotas.bind(null, clienteId, lead.contatoId)}
+          automacaoAtiva={lead.automacaoAtiva}
+          temAutomacao={temAutomacao}
+        />
+      </header>
+
+      {/*
+        A aba do canal.
+
+        É **uma** hoje, e mesmo assim desenhada como aba: o Inbox recebe só de
+        WhatsApp (ver `core/canais.ts`), e o dia em que o segundo canal entregar
+        é o dia em que esta linha ganha a segunda aba, sem mudar de forma.
+      */}
+      <div className="flex items-end gap-4 border-b border-line px-4">
+        <span className="flex items-center gap-1.5 border-b-2 border-[#25d366] py-2 text-[11.5px] font-semibold text-ink">
+          <span className="text-[#25d366]">
+            <LogoDoCanal canal="whatsapp" tamanho={14} />
+          </span>
+          WhatsApp
+        </span>
+        <span className="ml-auto py-2 font-mono text-[10.5px] text-dim">{lead.waId}</span>
       </div>
-      {/*
-        Só aparece quando há **alguém para assumir**. Sem ninguém na equipe
-        não existe usuário, e um botão que só sabe dizer "entre com a sua conta"
-        seria um convite a clicar em nada.
-      */}
-      {equipe.length > 1 && (
-        <PassarPara
-          atribuir={acaoAtribuirPara.bind(null, clienteId, lead.contatoId)}
-          equipe={equipe}
-        />
-      )}
-
-      {/*
-        Resolver e adiar antes de Assumir: são o que se faz **ao terminar** de
-        olhar a conversa, e é esse o gesto mais frequente. Assumir é o que se
-        faz ao começar, e só importa quando há mais de uma pessoa.
-      */}
-      <EstadoDaConversa
-        clienteId={clienteId}
-        contatoId={lead.contatoId}
-        estado={lead.estadoEfetivo}
-      />
-
-      {(usuarioId || responsavel) && (
-        <Assumir
-          assumir={acaoAssumirAtendimento.bind(null, clienteId, lead.contatoId)}
-          liberar={acaoLiberarAtendimento.bind(null, clienteId, lead.contatoId)}
-          responsavel={responsavel?.nome ?? null}
-          souEu={Boolean(usuarioId) && lead.atribuidoA === usuarioId}
-        />
-      )}
-
-      <Link
-        href={`/clientes/${clienteId}/leads/${lead.contatoId}`}
-        className="rounded-[8px] border border-line px-2.5 py-1.5 text-[10.5px] font-semibold text-muted transition hover:border-strong hover:text-ink"
-      >
-        Abrir ficha
-      </Link>
-    </header>
+    </>
   )
 }
 
@@ -856,10 +888,33 @@ function EtiquetaDoDia({ rotulo }: { rotulo: string }) {
   )
 }
 
+/**
+ * A coluna da direita: quem é a pessoa, e tudo que o sistema sabe dela.
+ *
+ * ---------------------------------------------------------------------------
+ * Ela é de leitura, e isso é a decisão
+ * ---------------------------------------------------------------------------
+ *
+ * Aqui havia dois editores — o seletor de etiquetas e a anotação da equipe — e
+ * os dois foram para as ações rápidas do cabeçalho. Não por espaço: **cada um
+ * deles guarda estado local semeado pelo servidor**, e ter a mesma etiqueta
+ * editável em dois lugares da mesma tela significa duas cópias que divergem no
+ * primeiro clique — marcar aqui não marcaria lá, e uma das duas estaria
+ * mentindo até a próxima navegação.
+ *
+ * Um editor por informação. Esta coluna mostra o resultado.
+ *
+ * ---------------------------------------------------------------------------
+ * A ordem
+ * ---------------------------------------------------------------------------
+ *
+ * Estado do atendimento primeiro, porque é o que muda o que fazer agora. Depois
+ * quem é a pessoa, e só então o que foi acumulado sobre ela — etiquetas, funil,
+ * anotação, campos. É a ordem em que alguém que abre uma conversa pergunta.
+ */
 function DadosDoLead({
   clienteId,
   lead,
-  etiquetas,
   funis,
   temAutomacao,
   passagens,
@@ -867,7 +922,6 @@ function DadosDoLead({
 }: {
   clienteId: string
   lead: Lead
-  etiquetas: EtiquetaEscolhivel[]
   /** Por onde o contato já chegou, da mais recente para a mais antiga. */
   passagens: Passagem[]
   /** Nomes da Marketing API por `ad_id`. Vazio quando a conta não conectou o Ads. */
@@ -883,7 +937,7 @@ function DadosDoLead({
 }) {
   /*
    * Sem as chaves de origem: elas já aparecem em destaque no `QuemE`, logo
-   * acima. Repetir gastaria o teto de quatro campos visíveis dizendo duas
+   * abaixo. Repetir gastaria o teto de quatro campos visíveis dizendo duas
    * vezes a mesma coisa.
    */
   const campos = camposSemOrigem(Object.entries(lead.campos))
@@ -895,14 +949,30 @@ function DadosDoLead({
    * ele que a tela afirmava um estado impossível.
    */
   const botPausado = !lead.automacaoAtiva
+
   return (
     // Rola por dentro, como as outras duas colunas: agora que a moldura tem
     // teto, a ficha de um lead com muitos campos seria cortada sem isto.
-    <aside className="min-w-0 overflow-y-auto bg-panel">
-      <header className="border-b border-line px-4 py-[17px]">
-        <p className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-dim">CONTATO</p>
-        <h2 className="mt-1 text-[13px] font-bold">Contexto do lead</h2>
-      </header>
+    <aside className="min-w-0 overflow-y-auto border-l border-line bg-panel">
+      {/*
+        O topo repete foto e nome de propósito — é o mesmo gesto do desenho de
+        referência. A coluna rola, e depois de duas telas de campos coletados
+        nada nela dizia mais de quem era aquela ficha.
+      */}
+      <div className="flex flex-col items-center border-b border-line px-4 py-5 text-center">
+        <Avatar nome={lead.nome} tamanho={56} />
+        <h2 className="mt-2.5 max-w-full truncate text-[13.5px] font-bold">
+          {lead.nome ?? 'sem nome'}
+        </h2>
+        <p className="mt-0.5 font-mono text-[10.5px] text-dim">{lead.waId}</p>
+
+        <Link
+          href={`/clientes/${clienteId}/leads/${lead.contatoId}`}
+          className="app-secondary-button mt-3 w-full px-3 py-1.5 text-center text-[11.5px]"
+        >
+          Abrir ficha completa
+        </Link>
+      </div>
 
       <div className="p-4">
         {/*
@@ -910,8 +980,12 @@ function DadosDoLead({
           que ligar, desligar ou explicar. O card vira rótulo e para por aí —
           antes ele dizia "BOT RESPONDENDO" numa conta sem fluxo nenhum.
         */}
-        <div className={`rounded-[11px] border px-3 py-2.5 ${aguardandoPessoa ? 'border-rose-400/25 bg-rose-400/[0.07]' : !temAutomacao ? 'border-line bg-surface' : botPausado ? 'border-amber-300/25 bg-amber-300/[0.065]' : 'border-emerald-400/20 bg-emerald-400/[0.055]'}`}>
-          <p className={`text-[10px] font-bold tracking-[0.04em] ${aguardandoPessoa ? 'text-rose-300' : !temAutomacao ? 'text-muted' : botPausado ? 'text-amber-200' : 'text-emerald-300'}`}>
+        <div
+          className={`rounded-[11px] border px-3 py-2.5 ${aguardandoPessoa ? 'border-rose-400/35 bg-rose-50' : !temAutomacao ? 'border-line bg-surface' : botPausado ? 'border-amber-400/40 bg-amber-50' : 'border-emerald-500/30 bg-emerald-50'}`}
+        >
+          <p
+            className={`text-[10px] font-bold tracking-[0.04em] ${aguardandoPessoa ? 'text-rose-600' : !temAutomacao ? 'text-muted' : botPausado ? 'text-amber-700' : 'text-emerald-700'}`}
+          >
             {aguardandoPessoa
               ? 'AGUARDANDO PESSOA'
               : !temAutomacao
@@ -920,7 +994,7 @@ function DadosDoLead({
                   ? 'BOT EM PAUSA'
                   : 'BOT RESPONDENDO'}
           </p>
-          {aguardandoPessoa ? (
+          {aguardandoPessoa && (
             <>
               {/*
                 O motivo **inteiro**, quebrando linha, e não truncado.
@@ -939,18 +1013,12 @@ function DadosDoLead({
               <form action={acaoEncerrarAtendimento.bind(null, clienteId, lead.contatoId)}>
                 <button
                   type="submit"
-                  className="mt-2.5 w-full rounded-[8px] border border-rose-400/30 bg-rose-400/[0.11] px-2.5 py-2 text-[11px] font-bold text-rose-200 transition hover:bg-rose-400/[0.18]"
+                  className="mt-2.5 w-full rounded-[8px] border border-rose-400/40 bg-white px-2.5 py-2 text-[11px] font-bold text-rose-600 transition hover:bg-rose-100"
                 >
                   Já atendi
                 </button>
               </form>
             </>
-          ) : !temAutomacao ? null : (
-            <ControleDeAutomacao
-              clienteId={clienteId}
-              contatoId={lead.contatoId}
-              automacaoAtiva={lead.automacaoAtiva}
-            />
           )}
         </div>
 
@@ -970,43 +1038,62 @@ function DadosDoLead({
           nomesDosAnuncios={nomesDosAnuncios}
         />
 
-        <div className="mt-5">
-          <h3 className="mb-2 text-[11px] font-bold text-soft">Etiquetas</h3>
-          <SeletorDeEtiquetas
-            clienteId={clienteId}
-            contatoId={lead.contatoId}
-            disponiveis={etiquetas}
-            aplicadas={lead.etiquetasManuais.map((etiqueta) => etiqueta.id)}
-          />
-        </div>
+        <Secao titulo="Etiquetas do contato" vazio="Nenhuma etiqueta aplicada.">
+          {lead.etiquetasManuais.length > 0 && (
+            <span className="flex flex-wrap gap-1">
+              {lead.etiquetasManuais.map((etiqueta) => (
+                <span
+                  key={etiqueta.id}
+                  className="rounded-full border border-line bg-surface px-2 py-0.5 text-[10.5px] font-semibold text-soft"
+                >
+                  {etiqueta.nome}
+                </span>
+              ))}
+            </span>
+          )}
+        </Secao>
 
         <FunilDaConversa clienteId={clienteId} funis={funis} />
 
-        {/*
-          A anotação vem antes dos campos.
-          Ela é o que mais se usa nesta coluna e estava no fim, depois do
-          despejo de tudo que o fluxo coletou — num contato com muitos campos,
-          fora da dobra.
-        */}
-        <div className="mt-5">
-          <h3 className="text-[11px] font-bold text-soft">Anotação da equipe</h3>
-          <NotaRapida
-            inicial={lead.notas}
-            salvar={acaoSalvarNotas.bind(null, clienteId, lead.contatoId)}
-          />
-        </div>
+        <Secao titulo="Anotação da equipe" vazio="Sem anotação.">
+          {lead.notas.trim() !== '' && (
+            <p className="rounded-[10px] border border-line bg-surface px-2.5 py-2 text-[11.5px] leading-5 whitespace-pre-line text-soft">
+              {lead.notas}
+            </p>
+          )}
+        </Secao>
 
         <div className="mt-5">
-          <div className="flex items-center justify-between">
-            <h3 className="text-[11px] font-bold text-soft">O que o fluxo coletou</h3>
-            <Link href={`/clientes/${clienteId}/leads/${lead.contatoId}`} className="text-[10.5px] font-semibold text-primary hover:underline">
-              Ficha
-            </Link>
-          </div>
+          <h3 className="text-[11px] font-bold text-soft">O que o fluxo coletou</h3>
           <CamposColetados campos={campos} />
         </div>
       </div>
     </aside>
+  )
+}
+
+/**
+ * Uma seção da coluna, com o que dizer quando ela está vazia.
+ *
+ * O vazio é escrito, e não omitido: "Nenhuma etiqueta aplicada" responde a
+ * pergunta; a seção sumindo faz a pessoa procurar onde ficaram as etiquetas.
+ * O caminho para preencher é o ícone lá em cima, e por isso o rótulo diz o
+ * mesmo nome que o `title` do botão.
+ */
+function Secao({
+  titulo,
+  vazio,
+  children,
+}: {
+  titulo: string
+  vazio: string
+  children: ReactNode
+}) {
+  return (
+    <div className="mt-5">
+      <h3 className="mb-1.5 text-[11px] font-bold text-soft">{titulo}</h3>
+      {children || <p className="text-[11px] text-dim">{vazio}</p>}
+    </div>
   )
 }
 

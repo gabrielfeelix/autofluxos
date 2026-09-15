@@ -94,7 +94,7 @@ export function PilhaDeMensagem({
   return (
     <div className="space-y-3">
       {partes.length === 0 && (
-        <p className="rounded-[12px] border border-dashed border-white/10 px-3 py-5 text-center text-[12px] leading-5 text-dim">
+        <p className="rounded-[12px] border border-dashed border-line px-3 py-5 text-center text-[12px] leading-5 text-dim">
           Esta mensagem está vazia.
           <br />
           Comece por um texto ou um arquivo.

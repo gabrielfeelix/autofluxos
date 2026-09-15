@@ -98,7 +98,7 @@ function Busca({
               className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
                 ativa
                   ? 'border-primary/50 bg-primary/[0.13] text-primary'
-                  : 'border-line text-muted hover:border-white/25 hover:text-soft'
+                  : 'border-line text-muted hover:border-strong hover:text-soft'
               }`}
             >
               {etiqueta}
@@ -296,13 +296,13 @@ function CamposDoFluxo({
         <button
           type="button"
           onClick={aoCancelar}
-          className="rounded-[10px] border border-line px-3.5 py-2 text-[12.5px] font-semibold text-muted transition hover:border-white/25 hover:text-soft"
+          className="rounded-[10px] border border-line px-3.5 py-2 text-[12.5px] font-semibold text-muted transition hover:border-strong hover:text-soft"
         >
           Cancelar
         </button>
         <button
           type="submit"
-          className="rounded-[10px] bg-primary px-4 py-2 text-[12.5px] font-bold text-[#04202a] transition hover:brightness-110"
+          className="rounded-[10px] bg-primary px-4 py-2 text-[12.5px] font-bold text-white transition hover:bg-primary-strong"
         >
           Criar e abrir
         </button>
@@ -401,7 +401,7 @@ export function NovaAutomacao({
       <button
         type="button"
         onClick={abrir}
-        className="rounded-[10px] bg-primary px-3.5 py-2 text-[12.5px] font-bold text-[#04202a] transition hover:brightness-110"
+        className="rounded-[10px] bg-primary px-3.5 py-2 text-[12.5px] font-bold text-white transition hover:bg-primary-strong"
       >
         + Criar automação
       </button>

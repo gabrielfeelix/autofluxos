@@ -69,11 +69,11 @@ export function DetalheDoErro({
 
   // O `global-error` substitui o layout raiz, então lá as cores do tema não
   // existem — só as classes cruas do Tailwind. Daí os hex escritos à mão.
-  const rotulo = escuro ? 'text-[#5a6478]' : 'text-dim'
-  const corpo = escuro ? 'text-[#8d97a8]' : 'text-muted'
+  const rotulo = escuro ? 'text-dim' : 'text-dim'
+  const corpo = escuro ? 'text-muted' : 'text-muted'
 
   return (
-    <div className="mt-5 rounded-[10px] border border-white/10 bg-surface p-3 text-left">
+    <div className="mt-5 rounded-[10px] border border-line bg-surface p-3 text-left">
       <div className="flex items-center justify-between gap-3">
         <span className={`text-[10px] font-bold tracking-wider uppercase ${rotulo}`}>
           Código do erro
@@ -81,12 +81,12 @@ export function DetalheDoErro({
         <button
           type="button"
           onClick={copiar}
-          className={`rounded-md border border-white/10 px-2 py-1 text-[10.5px] font-bold transition hover:border-white/25 ${corpo}`}
+          className={`rounded-md border border-line px-2 py-1 text-[10.5px] font-bold transition hover:border-strong ${corpo}`}
         >
           {copiado ? 'Copiado' : 'Copiar'}
         </button>
       </div>
-      <code className={`mt-1.5 block font-mono text-[12px] break-all ${escuro ? 'text-[#e9eef5]' : 'text-ink'}`}>
+      <code className={`mt-1.5 block font-mono text-[12px] break-all ${escuro ? 'text-ink' : 'text-ink'}`}>
         {codigo}
       </code>
       {erro.message && (

@@ -139,7 +139,7 @@ export function SeletorDeEtiquetas({
               className={`rounded-full border px-2 py-0.5 text-[10.5px] font-semibold transition ${
                 acesa
                   ? CLASSE_DA_COR[etiqueta.cor]
-                  : 'border-line bg-transparent text-dim hover:border-white/20 hover:text-muted'
+                  : 'border-line bg-transparent text-dim hover:border-strong hover:text-muted'
               }`}
             >
               {etiqueta.nome}

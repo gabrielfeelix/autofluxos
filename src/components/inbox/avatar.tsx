@@ -28,20 +28,25 @@
  * Classe inteira, e não `bg-[hsl(${x})]`: o Tailwind lê o código fonte para
  * decidir o que gerar, e classe montada em tempo de execução simplesmente não
  * sai no CSS. O sintoma seria um avatar transparente, sem erro nenhum.
+ *
+ * **Os tons são de tema claro** — fundo `50`, texto `700`. Eles eram `400/[0.14]`
+ * com texto `200`, medida de fundo preto: sobre branco o texto claro sobre o
+ * fundo claro dava menos de 2:1, e as iniciais sumiam. No escuro o par continua
+ * legível porque a superfície do card escuro é cinza-azulada, não preta.
  */
 const CORES = [
-  'border-sky-400/25 bg-sky-400/[0.14] text-sky-200',
-  'border-violet-400/25 bg-violet-400/[0.14] text-violet-200',
-  'border-emerald-400/25 bg-emerald-400/[0.14] text-emerald-200',
-  'border-amber-400/25 bg-amber-400/[0.14] text-amber-200',
-  'border-rose-400/25 bg-rose-400/[0.14] text-rose-200',
-  'border-teal-400/25 bg-teal-400/[0.14] text-teal-200',
-  'border-indigo-400/25 bg-indigo-400/[0.14] text-indigo-200',
-  'border-orange-400/25 bg-orange-400/[0.14] text-orange-200',
+  'border-sky-200 bg-sky-50 text-sky-700',
+  'border-violet-200 bg-violet-50 text-violet-700',
+  'border-emerald-200 bg-emerald-50 text-emerald-700',
+  'border-amber-200 bg-amber-50 text-amber-700',
+  'border-rose-200 bg-rose-50 text-rose-700',
+  'border-teal-200 bg-teal-50 text-teal-700',
+  'border-indigo-200 bg-indigo-50 text-indigo-700',
+  'border-orange-200 bg-orange-50 text-orange-700',
 ] as const
 
 /** Cinza para quem não tem nome: inventar cor para "?" seria dar identidade ao vazio. */
-const SEM_NOME = 'border-strong bg-surface text-[#b9c2d0]'
+const SEM_NOME = 'border-strong bg-surface text-soft'
 
 /**
  * A mesma pessoa cai sempre na mesma cor.
@@ -57,7 +62,16 @@ function corDoNome(nome: string): string {
   return CORES[soma % CORES.length] ?? SEM_NOME
 }
 
-export function Avatar({ nome, alerta }: { nome: string | null; alerta: boolean }) {
+export function Avatar({
+  nome,
+  alerta = false,
+  tamanho = 36,
+}: {
+  nome: string | null
+  alerta?: boolean
+  /** Em pixels. 36 na fila e no cabeçalho; 56 no topo da ficha. */
+  tamanho?: number
+}) {
   const limpo = nome?.trim() ?? ''
   const iniciais = (limpo || '?')
     .split(' ')
@@ -69,10 +83,15 @@ export function Avatar({ nome, alerta }: { nome: string | null; alerta: boolean 
 
   return (
     <span
-      className={`relative flex size-9 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold ${limpo ? corDoNome(limpo) : SEM_NOME}`}
+      style={{ width: tamanho, height: tamanho, fontSize: Math.round(tamanho * 0.3) }}
+      className={`relative flex shrink-0 items-center justify-center rounded-full border font-bold ${limpo ? corDoNome(limpo) : SEM_NOME}`}
     >
       {iniciais}
-      {alerta && <span className="absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border-2 border-[#0c1118] bg-rose-400" />}
+      {/* A borda do ponto é da cor do painel: é ela que separa o vermelho do
+          avatar sem desenhar um anel. */}
+      {alerta && (
+        <span className="absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border-2 border-panel bg-rose-500" />
+      )}
     </span>
   )
 }

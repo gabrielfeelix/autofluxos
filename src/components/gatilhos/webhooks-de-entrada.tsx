@@ -95,7 +95,7 @@ export function WebhooksDeEntrada({
           type="button"
           disabled={rodando || nome.trim() === ''}
           onClick={criar}
-          className="rounded-lg border border-line bg-surface px-3.5 py-[11px] text-[12.5px] transition hover:border-white/20 disabled:opacity-50"
+          className="rounded-lg border border-line bg-surface px-3.5 py-[11px] text-[12.5px] transition hover:border-strong disabled:opacity-50"
         >
           Gerar segredo
         </button>
@@ -200,7 +200,7 @@ function InterruptorDoWebhook({
       }
       onClick={() => comecar(async () => void (await acaoAlternarWebhookDeEntrada(clienteId, webhookId, !ativo)))}
       className={`relative h-[18px] w-8 shrink-0 rounded-full border transition disabled:opacity-50 ${
-        ativo ? 'border-emerald-400/40 bg-emerald-400/25' : 'border-white/10 bg-surface-strong'
+        ativo ? 'border-emerald-400/40 bg-emerald-400/25' : 'border-line bg-surface-strong'
       }`}
     >
       <span

@@ -26,12 +26,11 @@ export function Portico({
   return (
     <main className="flex min-h-screen bg-canvas md:h-screen md:min-h-[700px] md:overflow-hidden">
       <section className="relative hidden min-w-0 flex-[1.15] flex-col justify-between overflow-hidden px-[52px] py-11 md:flex">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(rgba(255,255,255,.045)_1px,transparent_1.3px)] bg-[length:26px_26px]" />
-        <div className="pointer-events-none absolute -bottom-40 -left-[120px] size-[520px] rounded-full bg-[radial-gradient(circle,rgba(86,208,245,.09),transparent_65%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(rgba(19,25,34,.06)_1px,transparent_1.3px)] bg-[length:26px_26px]" />
 
         <div className="relative flex items-center gap-2.5">
           <Marca compacta />
-          <span className="ml-0.5 rounded-md border border-white/10 px-2 py-0.5 font-mono text-[10px] text-dim">
+          <span className="ml-0.5 rounded-md border border-line px-2 py-0.5 font-mono text-[10px] text-dim">
             by 4YU
           </span>
         </div>
@@ -58,7 +57,7 @@ export function Portico({
           </div>
         </div>
 
-        <p className="relative font-mono text-[10.5px] text-[#454f60]">© 2026 4YU · uso interno</p>
+        <p className="relative font-mono text-[10.5px] text-dim">© 2026 4YU · uso interno</p>
       </section>
 
       <section className="flex w-full shrink-0 items-center justify-center border-line bg-panel p-6 md:w-[440px] md:border-l md:p-10">
