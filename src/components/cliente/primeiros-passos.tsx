@@ -75,7 +75,7 @@ export function PrimeirosPassos({ passos }: { passos: PassoDaConta[] }) {
                 onClick={() => setAberto(expandido ? null : passo.chave)}
                 aria-expanded={expandido}
                 disabled={passo.feito}
-                className="flex w-full items-center gap-3 px-5 py-3.5 text-left transition enabled:hover:bg-surface disabled:cursor-default"
+                className="flex w-full items-center gap-3 px-5 py-3.5 text-left transition enabled:hover:bg-surface enabled:active:bg-surface-strong disabled:cursor-default"
               >
                 <span
                   aria-hidden

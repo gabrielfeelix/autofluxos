@@ -1,6 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import {
+  IconeAutomacao,
+  IconeCanal,
+  IconeConversa,
+  IconeFunil,
+} from '@/components/cliente/icones'
 import { Modal } from '@/components/design/modal'
 
 /**
@@ -76,7 +82,7 @@ export function ComoFunciona() {
         <button
           type="button"
           onClick={() => setAberto(true)}
-          className="text-[12px] font-semibold text-primary transition hover:opacity-80"
+          className="text-[12px] font-semibold text-primary transition hover:opacity-80 active:opacity-60"
         >
           Ver explicado
         </button>
@@ -90,7 +96,7 @@ export function ComoFunciona() {
       <ol className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-stretch">
         {PECAS.map((peca, indice) => (
           <li key={peca.chave} className="flex min-w-0 flex-1 items-center gap-2">
-            <div className="min-w-0 flex-1 rounded-[11px] border border-line bg-surface px-3.5 py-3">
+            <div className="min-w-0 flex-1 rounded-[11px] border border-line bg-surface px-3.5 py-3 transition hover:border-strong">
               <span aria-hidden className="block text-primary">
                 {peca.icone}
               </span>
@@ -135,56 +141,5 @@ export function ComoFunciona() {
         </ol>
       </Modal>
     </section>
-  )
-}
-
-/*
- * Os ícones: traço, `currentColor`, 20px — a mesma regra das ilustrações de
- * estado vazio. Herdar a cor é o que faz o tema escuro funcionar sem uma
- * segunda cópia de cada desenho.
- */
-const TRACO = {
-  fill: 'none',
-  stroke: 'currentColor',
-  strokeWidth: 1.6,
-  strokeLinecap: 'round' as const,
-  strokeLinejoin: 'round' as const,
-}
-
-function IconeCanal() {
-  return (
-    <svg viewBox="0 0 24 24" className="size-5" aria-hidden>
-      <path {...TRACO} d="M4.5 18.5 5.6 15A7 7 0 1 1 9 18.4l-4.5 1.1Z" />
-    </svg>
-  )
-}
-
-function IconeAutomacao() {
-  return (
-    <svg viewBox="0 0 24 24" className="size-5" aria-hidden>
-      <rect {...TRACO} x="3" y="3.5" width="7" height="5" rx="1.6" />
-      <rect {...TRACO} x="14" y="9.5" width="7" height="5" rx="1.6" />
-      <rect {...TRACO} x="3" y="15.5" width="7" height="5" rx="1.6" />
-      <path {...TRACO} d="M10 6h2a2 2 0 0 1 2 2v2m0 4.5v1.5a2 2 0 0 1-2 2h-2" />
-    </svg>
-  )
-}
-
-function IconeConversa() {
-  return (
-    <svg viewBox="0 0 24 24" className="size-5" aria-hidden>
-      <path {...TRACO} d="M3.5 6.5A2.5 2.5 0 0 1 6 4h8a2.5 2.5 0 0 1 2.5 2.5v4A2.5 2.5 0 0 1 14 13H8l-4.5 3v-9.5Z" />
-      <path {...TRACO} d="M18 8.5h.5a2 2 0 0 1 2 2V19l-3-2h-4a2 2 0 0 1-1.6-.8" />
-    </svg>
-  )
-}
-
-function IconeFunil() {
-  return (
-    <svg viewBox="0 0 24 24" className="size-5" aria-hidden>
-      <rect {...TRACO} x="3.5" y="4" width="5" height="16" rx="1.6" />
-      <rect {...TRACO} x="10.5" y="4" width="5" height="11" rx="1.6" />
-      <rect {...TRACO} x="17.5" y="4" width="3" height="7" rx="1.4" />
-    </svg>
   )
 }

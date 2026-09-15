@@ -2,8 +2,10 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { ComoFunciona } from '@/components/cliente/como-funciona'
+import { IconeAutomacao, IconeConversa, IconeFunil } from '@/components/cliente/icones'
 import { PrimeirosPassos, type PassoDaConta } from '@/components/cliente/primeiros-passos'
 import { ClienteShell } from '@/components/design/cliente-shell'
+import { Avatar } from '@/components/inbox/avatar'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import { comoDinheiro } from '@/core/crm'
 import { acharCliente } from '@/server/repos/clientes'
@@ -72,7 +74,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
   return (
     <ClienteShell cliente={cliente} ativa="inicio">
-      <main className="w-full max-w-[1280px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
+      <main className="mx-auto w-full max-w-[1280px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
         <header className="mb-5">
           <h1 className="text-[22px] font-bold tracking-[-0.02em] md:text-[27px]">
             {faltaPasso
@@ -276,7 +278,7 @@ function Estado({
       {pendencia && (
         <Link
           href={`/clientes/${clienteId}${pendencia.href}`}
-          className="rounded-lg border border-amber-300/40 bg-amber-300/[0.12] px-3 py-1.5 text-[12px] font-bold transition hover:bg-amber-300/20"
+          className="rounded-lg border border-amber-300/40 bg-amber-300/[0.12] px-3 py-1.5 text-[12px] font-bold transition hover:bg-amber-300/20 active:translate-y-px active:bg-amber-300/30"
         >
           Resolver
         </Link>
@@ -302,16 +304,19 @@ function Atalhos({ clienteId }: { clienteId: string }) {
       href: `/clientes/${clienteId}/inbox`,
       titulo: 'Inbox',
       texto: 'Responder quem está falando com o negócio agora.',
+      icone: <IconeConversa className="size-[18px]" />,
     },
     {
       href: `/clientes/${clienteId}/quadros`,
       titulo: 'Funil',
       texto: 'Ver em que ponto cada negociação está.',
+      icone: <IconeFunil className="size-[18px]" />,
     },
     {
       href: `/clientes/${clienteId}/fluxos`,
       titulo: 'Automações',
       texto: 'Desenhar e publicar o que o bot responde.',
+      icone: <IconeAutomacao className="size-[18px]" />,
     },
   ]
 
@@ -321,15 +326,27 @@ function Atalhos({ clienteId }: { clienteId: string }) {
         <Link
           key={atalho.href}
           href={atalho.href}
-          className="app-card group px-4 py-3.5 transition hover:border-strong"
+          className="app-card app-card-interactive group flex items-start gap-3 px-4 py-3.5"
         >
-          <p className="flex items-center justify-between text-[13.5px] font-bold">
-            {atalho.titulo}
-            <span aria-hidden className="text-[13px] text-dim transition group-hover:text-primary">
-              ›
+          <span
+            aria-hidden
+            className="mt-px grid size-8 shrink-0 place-items-center rounded-[10px] bg-primary-weak text-primary-strong transition group-hover:bg-primary group-hover:text-white"
+          >
+            {atalho.icone}
+          </span>
+
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center justify-between text-[13.5px] font-bold">
+              {atalho.titulo}
+              <span
+                aria-hidden
+                className="text-[13px] text-dim transition group-hover:translate-x-0.5 group-hover:text-primary"
+              >
+                ›
+              </span>
             </span>
-          </p>
-          <p className="mt-1 text-[11.5px] leading-[1.45] text-dim">{atalho.texto}</p>
+            <span className="mt-1 block text-[11.5px] leading-[1.45] text-dim">{atalho.texto}</span>
+          </span>
         </Link>
       ))}
     </nav>
@@ -369,7 +386,7 @@ async function Fila({ clienteId, contatos }: { clienteId: string; contatos: numb
         <span className="flex-1" />
         <Link
           href={`/clientes/${clienteId}/inbox`}
-          className="text-[12px] font-semibold text-primary transition hover:opacity-80"
+          className="text-[12px] font-semibold text-primary transition hover:opacity-80 active:opacity-60"
         >
           Abrir o Inbox
         </Link>
@@ -410,9 +427,17 @@ function LinhaDaFila({ item, clienteId }: { item: ItemDaFila; clienteId: string 
     <li className="border-t border-line-soft">
       <Link
         href={`/clientes/${clienteId}/inbox?conversa=${encodeURIComponent(item.contatoId)}`}
-        className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3 transition hover:bg-surface"
+        className="flex flex-wrap items-center gap-x-3.5 gap-y-1 px-5 py-2.5 transition hover:bg-surface active:bg-surface-strong"
       >
-        <span className="min-w-[140px] flex-1 truncate text-[13.5px] font-semibold">
+        {/*
+          As iniciais, e não uma foto: a Cloud API não entrega foto de perfil de
+          contato — o único `profile_picture_url` que existe é o do próprio
+          negócio. O avatar é o mesmo do Inbox de propósito, com a mesma cor por
+          nome, para a pessoa que você viu aqui ser reconhecida lá.
+        */}
+        <Avatar nome={item.nome} alerta={pediu} tamanho={32} />
+
+        <span className="min-w-[120px] flex-1 truncate text-[13.5px] font-semibold">
           {item.nome ?? telefoneLegivel(item.telefone)}
         </span>
 

@@ -376,3 +376,45 @@ cor é chute que vai ser refeito.
 **Não fazer isso enquanto a Meta analisa** sem ler o §4 do
 [HANDOFF-06-SET.md](HANDOFF-06-SET.md): o revisor abre Clientes → Estúdio de
 exemplo → Inbox. Mudar cor não muda caminho de tela, mas mudar layout pode.
+
+---
+
+## 12. As perguntas do cadastro — decisão sua, e um dia ela expira
+
+Anotado em **15/set/2026**, a pedido do dono, para quando houver tempo.
+
+RD Station pergunta sete coisas na criação da conta: nome da empresa, se tem
+site, qual o site, segmento, cargo, nível de experiência com ferramenta de
+vendas, se vende para pessoa física ou jurídica, quantas pessoas vão usar e qual
+o objetivo com a ferramenta. Vale copiar? **Em parte, e o motivo de cada metade
+é diferente.**
+
+**Guardar é barato; perguntar é que é caro.** Cada pergunta é um passo antes de
+alguém ver valor, e é aí que se abandona cadastro. Mas dado que não foi coletado
+não volta: ninguém consegue perguntar retroativamente a trezentas contas qual era
+o segmento delas no dia em que entraram. Se um dia houver alguém vendendo aqui
+dentro, essa é a informação que ele vai pedir primeiro — e ela só existe se tiver
+sido perguntada lá atrás.
+
+**A decisão proposta, para quando o dono disser sim:**
+
+1. **Duas perguntas na porta**, num passo curto depois de criar a conta, e elas
+   precisam **fazer** alguma coisa na hora: *segmento* e *o que você quer
+   resolver primeiro* escolhem o modelo de funil (já existe) e reordenam o
+   checklist de primeiros passos. Pergunta que muda a tela não parece
+   formulário.
+2. **Duas depois**, dentro do produto, quando já houve valor: *quantas pessoas
+   vão usar* aparece ao abrir Equipe, e *como conheceu a 4YU* vira um passo
+   opcional do checklist.
+3. **Colunas de verdade em `clients`** — `segmento`, `objetivo`,
+   `tamanho_equipe`, `como_conheceu` —, nunca texto livre dentro de `campos`.
+   Livre produz "barbearia", "Barbearia" e "salão de barba" como três respostas
+   diferentes, e agrupar é a única razão de guardar. Lista fechada, como os
+   motivos de perda da `0058`.
+4. **Tudo pulável.** Quem pula fica `null`, que é o registro honesto de "não
+   perguntamos".
+
+**O que trava:** é migration no Supabase de produção, que é compartilhado com a
+Verandi — precisa da sua autorização explícita e de conferir antes se o outro
+produto não está no meio de uma alteração. O número sai de
+`ls supabase/migrations | tail -1` na hora, nunca deste documento.

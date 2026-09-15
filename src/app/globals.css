@@ -497,6 +497,24 @@ textarea::placeholder {
   transform: translateY(-2px);
 }
 
+/*
+ * O pressionado, e por que ele existe separado do hover.
+ *
+ * Hover diz "dá para clicar"; pressed diz "o clique chegou". Sem o segundo, o
+ * intervalo entre apertar e a tela trocar é silêncio — e num painel que navega
+ * pelo servidor esse intervalo é justamente onde alguém clica de novo achando
+ * que não pegou. O cartão desce de volta para o lugar, que é o gesto físico de
+ * um botão sendo afundado.
+ *
+ * `:active` sozinho não cobre teclado, e por isso os `:focus-visible` de cada
+ * componente continuam onde estão.
+ */
+.app-card-interactive:active {
+  box-shadow: none;
+  transform: translateY(0);
+  background: var(--surface);
+}
+
 .app-primary-button {
   border: 0;
   border-radius: 10px;
@@ -509,11 +527,16 @@ textarea::placeholder {
    */
   font-weight: 700;
   cursor: pointer;
-  transition: background 150ms ease, opacity 150ms ease;
+  transition: background 150ms ease, opacity 150ms ease, transform 100ms ease;
 }
 
 .app-primary-button:hover:not(:disabled) {
   background: var(--primary-strong);
+}
+
+.app-primary-button:active:not(:disabled) {
+  background: var(--primary-strong);
+  transform: translateY(1px);
 }
 
 .app-primary-button:focus-visible {
@@ -533,13 +556,19 @@ textarea::placeholder {
   color: var(--soft);
   font-weight: 600;
   cursor: pointer;
-  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease,
+    transform 100ms ease;
 }
 
 .app-secondary-button:hover:not(:disabled) {
   border-color: color-mix(in oklab, var(--primary) 45%, transparent);
   background: var(--primary-weak);
   color: var(--primary-strong);
+}
+
+.app-secondary-button:active:not(:disabled) {
+  background: var(--primary-weak);
+  transform: translateY(1px);
 }
 
 .app-secondary-button:focus-visible {
