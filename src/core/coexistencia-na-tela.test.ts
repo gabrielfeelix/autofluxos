@@ -97,6 +97,41 @@ describe('a situação de um número', () => {
   })
 
   /**
+   * O defeito que o dono viu em produção: contatos chegaram, a Meta nunca mandou
+   * andamento nenhum, e a tela repetia "parou de dar sinal em 0%" todos os dias.
+   * Passado um dia, o aviso sai — ver `ABANDONADO_MS`.
+   */
+  it('um dia inteiro sem sinal deixa de ser travado', () => {
+    expect(
+      situacaoDoNumero({ ...coexistente, historicoSyncEm: minutosAtras(60 * 25) }, AGORA),
+    ).toBe('pronto')
+  })
+
+  it('ainda dentro do dia, o aviso continua de pé', () => {
+    expect(
+      situacaoDoNumero({ ...coexistente, historicoSyncEm: minutosAtras(60 * 23) }, AGORA),
+    ).toBe('travado')
+  })
+
+  /**
+   * Abandonar um sync não pode apagar o alerta do outro: o segundo continua
+   * dentro da janela, e é ele que ainda pede ação.
+   */
+  it('um sync abandonado não silencia o outro que acabou de travar', () => {
+    expect(
+      situacaoDoNumero(
+        {
+          ...coexistente,
+          contatosSyncEm: minutosAtras(60 * 30),
+          historicoSyncEm: minutosAtras(120),
+          historicoVistoEm: minutosAtras(45),
+        },
+        AGORA,
+      ),
+    ).toBe('travado')
+  })
+
+  /**
    * O caso que a referência dupla resolve: disparou e **nenhum lote chegou**.
    * Sem contar o tempo desde o disparo, isto ficaria "sincronizando" para
    * sempre — que é exatamente a confusão que o módulo existe para desfazer.

@@ -54,6 +54,30 @@ export type SituacaoDoNumero =
 export const PARADO_MS = 30 * 60 * 1_000
 
 /**
+ * Depois de quanto tempo "travado" para de ser notícia.
+ *
+ * **Vinte e quatro horas, e este número existe por causa de um aviso que ficou
+ * na tela para sempre.** A Meta manda o andamento da importação por webhook, e
+ * quando ela simplesmente para de mandar — o que acontece, e não é raro — o
+ * número congelava em 0% e a tela dizia "a importação parou de dar sinal" todos
+ * os dias, para um cliente cujos contatos tinham chegado inteiros.
+ *
+ * O aviso era duplamente ruim: não descrevia a realidade (o Inbox estava
+ * cheio), e não havia o que fazer com ele. **Alerta permanente que ninguém pode
+ * resolver deixa de ser alerta e vira moldura** — e, pior, ensina a pessoa a
+ * ignorar a faixa amarela no dia em que ela disser algo urgente.
+ *
+ * Passado um dia, a importação é história: o que chegou está no Inbox, e o que
+ * não chegou não vai chegar por esperar mais. Quem quiser a conversa antiga
+ * desconecta e conecta o número de novo, que é o que a tela passa a dizer
+ * enquanto o aviso está de pé.
+ *
+ * O silêncio entre `PARADO_MS` e aqui continua sendo avisado, porque nessa
+ * janela ainda é informação nova: acabou de acontecer.
+ */
+export const ABANDONADO_MS = 24 * 60 * 60 * 1_000
+
+/**
  * Em que pé está este número.
  *
  * A ordem das perguntas é a ordem da gravidade: desembarcado vence tudo (o
@@ -89,6 +113,9 @@ export function situacaoDoNumero(
     const referencia = sync.visto ?? sync.comecou
     const desde = agora.getTime() - new Date(referencia).getTime()
 
+    // Silêncio de mais de um dia: a importação acabou, bem ou mal, e o aviso
+    // já foi dado a quem estava olhando. Ver `ABANDONADO_MS`.
+    if (desde > ABANDONADO_MS) continue
     if (desde > PARADO_MS) return 'travado'
     algumCorrendo = true
   }

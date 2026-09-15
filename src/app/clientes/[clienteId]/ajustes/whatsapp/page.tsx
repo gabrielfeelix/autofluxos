@@ -1,6 +1,7 @@
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
+import { CampoParaCopiar } from '@/components/design/copiar'
 import { ConectarWhatsapp } from '@/components/cliente/conectar-whatsapp'
 import { Trilha } from '@/components/design/trilha'
 import { BotaoPerigo } from '@/components/design/botao-perigo'
@@ -339,7 +340,7 @@ export default async function Pagina({
             <ModalFormulario
               botao="+ Conectar número"
               titulo="Conectar um número"
-              descricao="A identificação é a do painel da Meta, em WhatsApp → Configuração da API. Os outros três papéis do número se configuram depois, na linha dele."
+              descricao="A identificação é a do painel da Meta, em WhatsApp → Configuração da API. Os outros fluxos deste número (boas-vindas, mídia recebida, pós-atendimento) se escolhem depois, na linha dele."
               rotuloEnviar="Conectar"
               variante={canais.length === 0 ? 'primario' : 'secundario'}
               action={conectarComCliente}
@@ -491,9 +492,11 @@ export default async function Pagina({
 
                         {situacao === 'travado' && (
                           <p className="rounded-lg border border-amber-300/25 bg-amber-300/[0.08] px-3 py-2.5 text-[11.5px] leading-5 text-aviso">
-                            A importação parou de dar sinal
-                            {progresso !== null ? ` em ${progresso}%` : ''}. O que já chegou está no
-                            Inbox. O detalhe está em Alertas, na administração.
+                            A Meta parou de informar como vai a importação das conversas antigas
+                            {progresso !== null ? ` (ficou em ${progresso}%)` : ''}. Isso não
+                            atrapalha o que já chegou: confira no Inbox. Se faltar conversa antiga
+                            daqui a algumas horas, desconecte e conecte o número de novo. Este aviso
+                            sai sozinho em um dia.
                           </p>
                         )}
 
@@ -535,9 +538,17 @@ export default async function Pagina({
 
                     <div className="mt-3 ml-4">
                       <ModalFormulario
-                        botao="Configurar os 4 papéis"
-                        titulo={`Fluxos do número ${canal.phoneNumberId}`}
-                        descricao="Cada papel decide quando o número fala. Vazio = papel desligado."
+                        /*
+                          O botão dizia "Configurar os 4 papéis", e "papel" é
+                          palavra nossa: ela existe no `core/papeis-do-numero.ts`
+                          porque o servidor precisa de um nome para a coisa, e
+                          vazou para a tela. Quem chega aqui não sabe que tem
+                          quatro de nada, nem o que é um papel — sabe que quer
+                          escolher o que o bot responde.
+                        */
+                        botao="Escolher os fluxos deste número"
+                        titulo={`Fluxos de ${identidade.titulo}`}
+                        descricao="Cada situação abaixo pode rodar um fluxo diferente. Em branco, o bot não responde naquela situação — a conversa vai para uma pessoa."
                         rotuloEnviar="Salvar fluxos"
                         variante="secundario"
                         action={salvarFluxos}
@@ -601,9 +612,9 @@ export default async function Pagina({
           <p className="mt-1 text-[11.5px] text-dim">
             Cadastre este webhook na configuração do WhatsApp Business.
           </p>
-          <code className="mt-2.5 block truncate rounded-lg border border-line bg-black/30 px-3 py-2.5 font-mono text-[11.5px] text-primary">
-            {webhook}
-          </code>
+          <div className="mt-2.5">
+            <CampoParaCopiar valor={webhook} rotuloAcessivel="Copiar o endereço do webhook" />
+          </div>
         </section>
         )}
       </main>
