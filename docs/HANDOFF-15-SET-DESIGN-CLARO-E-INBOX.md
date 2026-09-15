@@ -138,7 +138,7 @@ clique. **Um editor por informação.**
 
 ## 2. O que falta — a fila, em ordem
 
-### 2.1 Botão de enviar condicional (pedido explícito do dono)
+### 2.1 Botão de enviar condicional (pedido explícito do dono) — **feito**
 
 **O problema.** A caixa de resposta tem um botão "Enviar" sempre ativo, ao lado
 de "📎 Anexar", "😊" e um botão de microfone com rótulo de texto. Quatro
@@ -178,7 +178,14 @@ atualizado no `onChange`, depois de `inserirResposta` e depois do envio.
 **Enquanto grava**, `BotaoDeMicrofone` toma a linha inteira e o resto sai de
 cena (`gravando` já existe em `responder.tsx`). Mantenha.
 
-### 2.2 Tirar a contagem da janela do rodapé
+**Como ficou.** A aparência dos três ícones mora em `components/lead/botao-da-barra.ts`
+(`BOTAO_DA_BARRA`), num lugar só porque eles são irmãos na mesma linha e já
+tinham nascido diferentes. Os rótulos de texto do microfone ("Abrindo…",
+"Subindo…") viraram a `Dica` e o `aria-label` — a informação não sumiu, mudou de
+lugar. O erro do microfone flutua por cima em vez de ser irmão na linha: a linha
+é um flex sem quebra, e um parágrafo ali espremia o campo até sumir.
+
+### 2.2 Tirar a contagem da janela do rodapé — **feito, na casa 1**
 
 Hoje o rodapé da caixa de resposta diz *"Responder daqui assume a conversa: o
 bot para de falar com Guti até você clicar em 'Já atendi'. Janela do WhatsApp
@@ -202,6 +209,12 @@ cabeçalho, passe-a de `Conteudo` para `CabecalhoDaConversa` — a variável
 Cuidado: `restaDaJanela === null` significa **fora da janela**, e nesse caso a
 caixa de resposta inteira vira um aviso e não há campo. Esse caminho não pode
 sumir.
+
+**Como ficou.** Casa 1 — pílula ao lado de "Não atribuído", com relógio, e em
+`text-aviso` abaixo de duas horas, porque "22h18" e "1h04" são a mesma frase e
+significam coisas opostas. A tela da Ficha (`leads/[contatoId]`) ganhou a mesma
+pílula no cabeçalho "Conversa": duas telas que dizem a mesma coisa em lugares
+diferentes são dois produtos para quem usa as duas.
 
 ### 2.3 Agendar mensagem
 
@@ -338,6 +351,36 @@ ligado no `body` e resolve a maior parte.
 
 ---
 
+### 2.6 O rodapé da bolha: quem falou — **feito**
+
+O rodapé dizia `atendimento · 20:20` em tudo que saía, e `Gabriel Felix · 20:20`
+em tudo que entrava. Os dois estavam errados por motivos opostos: o da entrada
+repetia dezenas de vezes o nome que já está no cabeçalho, e o da saída era uma
+palavra que o dono leu e perguntou o que significava — ela valia igual para o
+bot e para gente.
+
+Agora: **entrada mostra só a hora**; saída mostra quem respondeu (nome e um
+sobrenome, `nomeCurto` em `core/atendente.ts`), ou "automação" quando foi o
+fluxo, ou **nada além da hora** quando não sabemos.
+
+O autor é gravado **dentro do `payload`**, não numa coluna — `core/autor-da-mensagem.ts`
+explica por quê em detalhe, e o resumo é que uma coluna custaria uma migration
+no banco compartilhado para resolver um rótulo. Quando o agendamento (§2.3)
+pedir a `0057` de qualquer jeito, isto vira coluna; a leitura já passa toda por
+`autorDoPayload`, então é um lugar só para mudar.
+
+"Não sabemos" cobre dois casos reais e nenhum deles é bug: mensagem anterior a
+isto existir, e o eco do que o dono manda pelo celular — que chega pela Meta sem
+autor nenhum.
+
+### 2.7 A busca do Inbox estava apertada — **feito**
+
+`max-w-[460px]` deixavam pouco mais de trinta caracteres à vista: nome completo
+não cabia. Foi para `680px`, com o campo um pouco mais alto. O `mx-auto`
+continua centrando entre o título e a engrenagem.
+
+---
+
 ## 3. Defeitos conhecidos e dívidas
 
 ### 3.1 `src/core/ogg-opus.ts:213` reprova no ESLint
@@ -347,13 +390,35 @@ ligado no `body` e resolve a maior parte.
 troca esconde o defeito em vez de mostrar. Arquivo de trabalho em andamento do
 dono, não desta leva.
 
-### 3.2 Mídia antiga de eco não volta
+### 3.2 O GIF animado que dizia "sem cópia guardada" — **consertado**
+
+O dono mandou duas figurinhas seguidas. A segunda, estática e de 193 KB,
+apareceu inteira; a primeira, **animada e de 438 KB**, ficou para sempre
+dizendo *"arquivo recebido, sem cópia guardada — peça para enviar de novo"*.
+As duas estavam no bucket, e as duas assinavam URL sem erro.
+
+**Não era mídia: era o pulso.** A mensagem é gravada primeiro e o arquivo baixa
+depois (`guardarMidiaRecebida`, e é assim de propósito — gravar a conversa não
+espera download). O pulso do Inbox era `max(messages.ts)`, e `ts` não muda
+quando o arquivo chega. A tela que se atualizou no intervalo entre as duas
+coisas desenhava a bolha sem arquivo **e nunca mais tinha motivo para
+redesenhar**. Quanto maior o arquivo, mais certa a derrota: GIF animado, vídeo
+e áudio longo perdem essa corrida sempre.
+
+O conserto está em `pulsoDaConta` (`server/repos/leads.ts`): o pulso passou a
+ser o carimbo da última mensagem **mais um dígito por mensagem** das cinco
+últimas, dizendo se ela já tem arquivo. Sem coluna nova e sem migration. O
+formato virou opaco — `2026-09-15T17:47:16+00:00|10110` — e quem compara só
+pergunta se mudou (`precisaAtualizar`). **Não volte a tratar o pulso como
+data**; o teste em `repos/pulso.test.ts` tranca isso.
+
+### 3.3 Mídia antiga de eco não volta
 
 O eco passou a baixar cópia em `52cf07b`, mas o `id` da Meta vive 7 dias. Tudo
 que o dono mandou pelo celular antes disso está perdido, e a bolha diz isso.
 Não prometa recuperação.
 
-### 3.3 Filtros que só existem no modo local
+### 3.4 Filtros que só existem no modo local
 
 "Não lidas" e "Classificar" só aparecem quando a fila inteira está no navegador
 (`local !== null`, abaixo de `TETO_DA_FILA_LOCAL`). Acima do teto eles
@@ -364,7 +429,7 @@ precisa descer para a consulta.
 A busca segue a mesma regra: filtra ao vivo no modo local, e o Enter vai ao
 servidor sempre.
 
-### 3.4 Não há filtro de canal, e é de propósito
+### 3.5 Não há filtro de canal, e é de propósito
 
 O contato não guarda de que canal veio, e o Instagram está `disponivel: false`
 em `core/canais.ts`. A aba dentro da conversa diz o canal; um menu "Todos os
