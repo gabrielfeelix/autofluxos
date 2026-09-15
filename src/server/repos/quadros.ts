@@ -414,7 +414,9 @@ type LinhaDoCartao = {
     wa_id: string
     ultima_mensagem_em: string | null
   } | null
-  af_usuarios: { nome: string | null } | null
+  // A coluna se chama `name`: `af_usuarios` é tabela do plugin de login, e o
+  // nome dela é em inglês. `membrosDaConta` faz o mesmo apelido em SQL.
+  af_usuarios: { name: string | null } | null
 }
 
 /**
@@ -429,7 +431,18 @@ export async function listarCartoes(clienteId: string, quadroId: string): Promis
     .from('quadro_cartoes')
     .select(
       'id, contact_id, coluna_id, entrou_na_coluna_em, titulo, valor, situacao, responsavel, ' +
-        'contacts (nome_real, nome, wa_id, ultima_mensagem_em), af_usuarios (nome)',
+        /*
+         * `nome:name` é apelido, e não capricho: a coluna de `af_usuarios`
+         * chama `name`, em inglês, porque a tabela nasceu do Better Auth e não
+         * do nosso vocabulário. Pedir `nome` direto devolve
+         * `column af_usuarios_1.nome does not exist` — e o erro só aparece em
+         * tempo de execução, porque o PostgREST não é conferido pelo TypeScript.
+         *
+         * O apelido mantém o resto do arquivo em português, que é onde ele deve
+         * estar. Traduzir a coluna no banco seria mexer numa tabela que o Auth
+         * gerencia.
+         */
+        'contacts (nome_real, nome, wa_id, ultima_mensagem_em), af_usuarios (nome:name)',
     )
     .eq('client_id', clienteId)
     .eq('quadro_id', quadroId)
@@ -453,7 +466,7 @@ export async function listarCartoes(clienteId: string, quadroId: string): Promis
     valor: linha.valor === null || linha.valor === undefined ? null : Number(linha.valor),
     situacao: linha.situacao ?? 'aberta',
     responsavelId: linha.responsavel,
-    responsavelNome: linha.af_usuarios?.nome ?? null,
+    responsavelNome: linha.af_usuarios?.name ?? null,
     ultimaMensagemEm: linha.contacts?.ultima_mensagem_em ?? null,
   }))
 }
@@ -996,7 +1009,8 @@ export async function atribuirCartao(
     .update({ responsavel: usuarioId })
     .eq('client_id', clienteId)
     .eq('id', cartaoId)
-    .select('id, contact_id, af_usuarios (nome)')
+    // `nome:name` pelo mesmo motivo de `listarCartoes` — ver o comentário lá.
+    .select('id, contact_id, af_usuarios (nome:name)')
     .maybeSingle()
 
   if (ehIdInvalido(error)) return { ok: false, motivo: 'este cartão não existe mais' }
@@ -1005,9 +1019,9 @@ export async function atribuirCartao(
 
   const linha = data as unknown as {
     contact_id: string
-    af_usuarios: { nome: string | null } | null
+    af_usuarios: { name: string | null } | null
   }
-  const quem = linha.af_usuarios?.nome ?? null
+  const quem = linha.af_usuarios?.name ?? null
 
   await anotar(clienteId, linha.contact_id, 'assumiu', { quem: quem ?? '' }, autor)
   return { ok: true, quem }
