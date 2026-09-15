@@ -246,7 +246,17 @@ export function Fila({
             como se pede a resposta autoritativa, e o endereço resultante dá
             para guardar e mandar para alguém.
           */}
-          <form method="get" className="relative mx-auto w-full max-w-[460px]">
+          {/*
+            **`max-w` largo e `mx-auto`**, e não uma medida apertada.
+
+            460px deixavam o campo com pouco mais de trinta caracteres à vista:
+            um nome completo já não cabia, e quem cola um telefone formatado
+            perdia o começo dele de vista enquanto digitava. A busca é o
+            controle mais usado desta barra — ela merece a sobra, e o `mx-auto`
+            continua mantendo-a centrada entre o título e a engrenagem em
+            qualquer largura de janela.
+          */}
+          <form method="get" className="relative mx-auto w-full max-w-[680px]">
             <input type="hidden" name="de" value={atribuicao} />
             <input type="hidden" name="estado" value={estado} />
             {selecionado && <input type="hidden" name="conversa" value={selecionado.contatoId} />}
@@ -258,14 +268,14 @@ export function Fila({
               onChange={(e) => setDigitado(e.target.value)}
               placeholder="Pesquisar em conversas"
               aria-label="Pesquisar em conversas"
-              className="app-field rounded-full py-2 pr-8 pl-8 text-[12px]"
+              className="app-field rounded-full py-2.5 pr-9 pl-9 text-[12.5px]"
             />
             {digitado !== '' && (
               <button
                 type="button"
                 onClick={() => setDigitado('')}
                 aria-label="Limpar a busca"
-                className="absolute top-1/2 right-2 flex size-5 -translate-y-1/2 items-center justify-center rounded-full text-dim transition hover:bg-surface hover:text-ink"
+                className="absolute top-1/2 right-2.5 flex size-5 -translate-y-1/2 items-center justify-center rounded-full text-dim transition hover:bg-surface hover:text-ink"
               >
                 <span aria-hidden className="text-[13px] leading-none">
                   ×
@@ -758,7 +768,7 @@ function Lupa() {
       stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
-      className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-dim"
+      className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-dim"
     >
       <circle cx="11" cy="11" r="7" />
       <path d="m20 20-3.2-3.2" />

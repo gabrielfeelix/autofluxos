@@ -7,6 +7,7 @@ import { Assumir, PassarPara } from '@/components/inbox/assumir'
 import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 import { sessaoAtual } from '@/server/sessao'
 import { ClienteShell } from '@/components/design/cliente-shell'
+import { Dica } from '@/components/design/dica'
 import { LogoDoCanal } from '@/components/design/selo-do-canal'
 import { IlustracaoInbox } from '@/components/design/ilustracoes'
 import { recemConectado } from '@/core/coexistencia-na-tela'
@@ -502,6 +503,15 @@ async function Conteudo({
   })
   const restante = restaDaJanela(contexto?.ultimaEntradaEm ?? null)
   const janela = restante && restante > 0 ? comoFalta(restante) : null
+  /*
+   * Abaixo de duas horas a contagem muda de cor.
+   *
+   * Não é enfeite: "22h18" e "1h04" são a mesma frase e significam coisas
+   * opostas — uma diz que dá tempo de pensar, a outra que a conversa está
+   * prestes a exigir modelo aprovado. Quem olha de relance lê a cor, não o
+   * número.
+   */
+  const apertado = restante !== null && restante > 0 && restante < 2 * 60 * 60 * 1000
   const primeiroNome = selecionado?.nome?.split(' ')[0] ?? 'esta pessoa'
   /*
    * Conta a fila inteira quando ela veio, e não a página: a linha diz "N
@@ -557,6 +567,8 @@ async function Conteudo({
               usuarioId={usuarioId}
               etiquetas={etiquetas}
               temAutomacao={temAutomacao}
+              janela={janela}
+              janelaApertada={apertado}
             />
             {/*
               `flex-col-reverse` é o que faz a conversa abrir na mensagem mais
@@ -659,6 +671,8 @@ function CabecalhoDaConversa({
   usuarioId,
   etiquetas,
   temAutomacao,
+  janela,
+  janelaApertada,
 }: {
   clienteId: string
   lead: Lead
@@ -666,6 +680,18 @@ function CabecalhoDaConversa({
   usuarioId: string | null
   etiquetas: EtiquetaEscolhivel[]
   temAutomacao: boolean
+  /**
+   * Quanto falta da janela de 24h, já escrito (`22h18`). `null` = fora dela, e
+   * aí quem avisa é a caixa de resposta, que vira um aviso e não abre campo.
+   *
+   * **Morava no rodapé da caixa de resposta e subiu para cá.** Lá ela era lida
+   * só por quem já ia escrever, no fim de uma frase sobre outro assunto. A
+   * janela não é sobre responder: ela limita anexar, reagir e agendar, e quem
+   * abre a conversa precisa dela antes de decidir o que fazer.
+   */
+  janela: string | null
+  /** Menos de duas horas — a contagem muda de cor. */
+  janelaApertada: boolean
 }) {
   const nome = lead.nome ?? 'sem nome'
   const responsavel = equipe.find((membro) => membro.id === lead.atribuidoA) ?? null
@@ -681,12 +707,26 @@ function CabecalhoDaConversa({
             direita. É estado, não ação: quem lê o cabeçalho precisa saber se
             alguém já está nessa antes de decidir responder.
           */}
-          <p className="mt-0.5 truncate text-[11px] text-dim">
-            {responsavel
-              ? `com ${responsavel.nome}`
-              : lead.atribuidoA
-                ? 'com alguém fora da equipe'
-                : 'Não atribuído'}
+          <p className="mt-0.5 flex items-center gap-2 truncate text-[11px] text-dim">
+            <span className="truncate">
+              {responsavel
+                ? `com ${responsavel.nome}`
+                : lead.atribuidoA
+                  ? 'com alguém fora da equipe'
+                  : 'Não atribuído'}
+            </span>
+            {janela && (
+              <Dica texto="Depois disso o WhatsApp só aceita modelo aprovado pela Meta">
+                <span
+                  className={`flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
+                    janelaApertada ? 'bg-amber-400/15 text-aviso' : 'bg-surface text-muted'
+                  }`}
+                >
+                  <span aria-hidden>🕐</span>
+                  {janela}
+                </span>
+              </Dica>
+            )}
           </p>
         </div>
 
@@ -882,8 +922,25 @@ function Historico({
                 !mensagem.recebido &&
                 !mensagem.semCopia && <SemTexto />
               )}
+              {/*
+                O rodapé da bolha diz a hora, e **quem escreveu só quando isso
+                acrescenta alguma coisa**.
+
+                Na entrada não acrescenta: a conversa tem duas vozes, o nome de
+                quem está do outro lado já está no cabeçalho, e repeti-lo em
+                cada bolha recebida era a mesma palavra dezenas de vezes na
+                mesma tela.
+
+                Na saída acrescenta, e muito — mas o rótulo antigo era
+                "atendimento" em toda mensagem, do bot ou de gente. Não dizia
+                nada e parecia dizer. Agora sai o nome de quem respondeu, ou
+                "automação" quando foi o fluxo; quando não sabemos (mensagem
+                antiga, ou o eco do que o dono mandou pelo celular), fica só a
+                hora — ver `core/autor-da-mensagem.ts`.
+              */}
               <span className="ml-2 text-[10px] text-muted" title={horaExata(mensagem.ts)}>
-                {nossa ? 'atendimento' : (nome ?? 'cliente')} · {horaDoRelogio(mensagem.ts)}
+                {nossa && mensagem.autor ? `${mensagem.autor} · ` : ''}
+                {horaDoRelogio(mensagem.ts)}
               </span>
               {nossa && !mensagem.entregue && (
                 <span className="ml-2 text-[10px] font-semibold text-soft">envio não confirmado</span>

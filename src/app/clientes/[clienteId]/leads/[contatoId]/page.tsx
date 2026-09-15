@@ -5,6 +5,7 @@ import { ClienteShell } from '@/components/design/cliente-shell'
 import { Suspense } from 'react'
 import { comoFalta, podeReagir, restaDaJanela } from '@/channels/janela'
 import { BotaoPerigo } from '@/components/design/botao-perigo'
+import { Dica } from '@/components/design/dica'
 import { ControleDeAutomacao } from '@/components/lead/controle-automacao'
 import { clienteTemAutomacao } from '@/server/repos/fluxos'
 import { CaixaDeResposta } from '@/components/lead/responder'
@@ -76,6 +77,8 @@ export default async function Pagina({
   const contexto = await contextoDeResposta(clienteId, contatoId)
   const restante = restaDaJanela(contexto?.ultimaEntradaEm ?? null)
   const janela = restante && restante > 0 ? comoFalta(restante) : null
+  /** Menos de duas horas — a contagem muda de cor. Mesma régua do Inbox. */
+  const apertado = restante !== null && restante > 0 && restante < 2 * 60 * 60 * 1000
 
   return (
     <ClienteShell cliente={cliente} ativa="leads">
@@ -231,6 +234,25 @@ export default async function Pagina({
           <section className="app-card flex max-h-[620px] min-h-[360px] flex-col overflow-hidden">
             <header className="flex items-center gap-2 border-b border-line px-[18px] py-3.5">
               <h2 className="flex-1 text-[13px] font-bold">Conversa</h2>
+              {/*
+                A contagem da janela de 24h fica aqui, e não no rodapé da caixa
+                de resposta. Mesma decisão do Inbox, pelo mesmo motivo: ela é
+                estado da conversa e não consequência de responder — e as duas
+                telas precisam dizer a mesma coisa no mesmo lugar, senão quem
+                usa as duas aprende dois produtos.
+              */}
+              {janela && (
+                <Dica texto="Depois disso o WhatsApp só aceita modelo aprovado pela Meta">
+                  <span
+                    className={`flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
+                      apertado ? 'bg-amber-400/15 text-aviso' : 'bg-surface text-muted'
+                    }`}
+                  >
+                    <span aria-hidden>🕐</span>
+                    {janela}
+                  </span>
+                </Dica>
+              )}
               <span className="flex items-center gap-1.5 text-[11px] text-dim">
                 <span className="size-1.5 rounded-full bg-dim" /> {lead.waId}
               </span>
@@ -329,8 +351,14 @@ async function Historico({
               ) : (
                 !mensagem.local && !mensagem.cartoes && <SemTexto />
               )}
+              {/*
+                Mesma regra do Inbox: a hora sempre, o autor só na saída e só
+                quando ele é sabido. "bot" estava fixo aqui e mentia toda vez
+                que quem respondeu foi gente — ver `core/autor-da-mensagem.ts`.
+              */}
               <span className="ml-2 text-[9.5px] text-muted" title={horaExata(mensagem.ts)}>
-                {nossa ? 'bot' : (nomeDoLead ?? 'cliente')} · {horaDoRelogio(mensagem.ts)}
+                {nossa && mensagem.autor ? `${mensagem.autor} · ` : ''}
+                {horaDoRelogio(mensagem.ts)}
               </span>
               {nossa && !mensagem.entregue && (
                 <span className="ml-2 text-[9.5px] text-aviso">envio não confirmado</span>
