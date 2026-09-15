@@ -2,6 +2,7 @@ import 'server-only'
 import { lerLeadDoFormularioNaMeta } from '@/channels/marketing-api'
 import { lerLeadDoFormulario, type AvisoDeLead } from '@/core/lead-ads'
 import { alertar } from './alertar'
+import { db } from './db'
 import { porNoQuadroPadrao } from './quadro-de-entrada'
 import { guardarCampo } from './repos/conversas'
 import { criarContato } from './repos/leads'
@@ -202,7 +203,6 @@ async function acharContatoPeloTelefone(
   clienteId: string,
   telefone: string,
 ): Promise<string | null> {
-  const { db } = await import('./db')
   const { data } = await db()
     .from('contacts')
     .select('id')
