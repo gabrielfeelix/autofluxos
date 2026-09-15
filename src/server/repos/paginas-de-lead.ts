@@ -95,3 +95,55 @@ export async function desligarPagina(clienteId: string, pageId: string): Promise
   if (error) throw new Error(`não deu para desligar a página: ${error.message}`)
   return (count ?? 0) > 0
 }
+
+/**
+ * Os formulários que a reconciliação precisa varrer.
+ *
+ * Sai de `passagens`? Não: sai dos leads já recebidos. Um formulário só é
+ * conhecido depois que o primeiro lead dele chegou — o que é suficiente, porque
+ * a reconciliação existe para pegar o que **falhou**, e falha de formulário que
+ * nunca entregou nada é problema de configuração, não de entrega perdida.
+ */
+export async function formulariosAtivos(): Promise<
+  { clienteId: string; pageId: string; formId: string }[]
+> {
+  const { data, error } = await db()
+    .from('formularios_de_lead')
+    .select('client_id, page_id, form_id')
+
+  if (error) {
+    if (ehIdInvalido(error)) return []
+    throw new Error(`não deu para listar os formulários: ${error.message}`)
+  }
+
+  return ((data ?? []) as { client_id: string; page_id: string; form_id: string }[]).map((l) => ({
+    clienteId: l.client_id,
+    pageId: l.page_id,
+    formId: l.form_id,
+  }))
+}
+
+/**
+ * Anota o formulário na primeira vez que um lead dele chega.
+ *
+ * Silencioso por decisão: é registro de apoio à reconciliação, e falhar aqui
+ * não pode impedir o lead de entrar — que é o trabalho de verdade.
+ */
+export async function anotarFormulario(entrada: {
+  clienteId: string
+  pageId: string
+  formId: string
+}): Promise<void> {
+  if (entrada.formId.trim() === '') return
+
+  await db()
+    .from('formularios_de_lead')
+    .upsert(
+      {
+        client_id: entrada.clienteId,
+        page_id: entrada.pageId,
+        form_id: entrada.formId.trim(),
+      },
+      { onConflict: 'form_id' },
+    )
+}

@@ -11,6 +11,10 @@
     {
       "path": "/api/manutencao/tarefas",
       "schedule": "15 7 * * *"
+    },
+    {
+      "path": "/api/manutencao/leads-do-formulario",
+      "schedule": "30 7 * * *"
     }
   ]
 }

@@ -5,6 +5,7 @@ import { alertar } from './alertar'
 import { porNoQuadroPadrao } from './quadro-de-entrada'
 import { guardarCampo } from './repos/conversas'
 import { criarContato } from './repos/leads'
+import { anotarFormulario } from './repos/paginas-de-lead'
 import { registrarPassagem } from './repos/passagens'
 
 /**
@@ -67,6 +68,17 @@ export async function receberLeadsDoFormulario(entrada: {
 
   for (const aviso of entrada.avisos) {
     try {
+      /*
+       * Anota o formulário antes de tratar: é o que a reconciliação diária vai
+       * varrer amanhã. Silencioso de propósito — se falhar, o lead de hoje
+       * entra do mesmo jeito, e é ele que importa agora.
+       */
+      await anotarFormulario({
+        clienteId: entrada.clienteId,
+        pageId: aviso.pageId,
+        formId: aviso.formId,
+      }).catch(() => {})
+
       const passo = await umLead(entrada.clienteId, aviso, entrada.token)
       resultado[passo] += 1
     } catch (erro) {
