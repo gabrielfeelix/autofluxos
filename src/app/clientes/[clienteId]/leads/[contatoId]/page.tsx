@@ -328,7 +328,8 @@ async function Historico({
             {etiqueta && <EtiquetaDoDia rotulo={etiqueta} />}
             {/* A coluna é o que dá lugar à reação embaixo da bolha — ver o Inbox. */}
             <div className={`flex flex-col gap-0 ${nossa ? 'items-end' : 'items-start'}`}>
-            <p className={`max-w-[78%] px-3 py-2 text-[12.5px] leading-[1.45] whitespace-pre-wrap ${nossa ? 'rounded-[13px_13px_4px_13px] border border-primary/[0.22] bg-primary/[0.13]' : 'rounded-[13px_13px_13px_4px] border border-line bg-surface'}`}>
+            {/* Mesma fonte e mesmo corpo do Inbox — ver o comentário de lá. */}
+            <p className={`max-w-[78%] px-3 py-2 font-texto text-[14.5px] leading-[1.45] whitespace-pre-wrap ${nossa ? 'rounded-[13px_13px_4px_13px] border border-primary/[0.22] bg-primary/[0.13]' : 'rounded-[13px_13px_13px_4px] border border-line bg-surface'}`}>
               {mensagem.cita && <CitacaoNaBolha cita={mensagem.cita} nome={nomeDoLead} />}
               {mensagem.anexo && <AnexoNaConversa anexo={mensagem.anexo} />}
               {/*

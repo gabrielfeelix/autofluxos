@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Dica } from '@/components/design/dica'
+import { IconeCarinha } from '@/components/lead/icones-da-barra'
 import { BOTAO_DA_BARRA } from '@/components/lead/botao-da-barra'
 import { buscarEmojis, emojiDoItem, GRUPOS_DE_EMOJI } from '@/core/emojis'
 
@@ -82,7 +83,7 @@ export function SeletorDeEmoji({
           aria-expanded={aberto}
           className={BOTAO_DA_BARRA}
         >
-          😊
+          <IconeCarinha />
         </button>
       </Dica>
 

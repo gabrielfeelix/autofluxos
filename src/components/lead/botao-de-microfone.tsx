@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Dica } from '@/components/design/dica'
+import { IconeMicrofone } from '@/components/lead/icones-da-barra'
 import { BOTAO_DA_BARRA } from '@/components/lead/botao-da-barra'
 import {
   AVISO_DE_FIM_S,
@@ -418,7 +419,7 @@ export function BotaoDeMicrofone({
           aria-label={rotulo}
           className={`${BOTAO_DA_BARRA}${fase === 'parado' ? '' : ' animate-pulse'}`}
         >
-          🎤
+          <IconeMicrofone />
         </button>
       </Dica>
 

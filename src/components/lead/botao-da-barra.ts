@@ -12,9 +12,13 @@
  * clipe com borda disputa atenção com os dois e não tem nada a decidir; ele é o
  * caminho para outro gesto. Todo chat que a mão conhece desenha assim.
  *
- * 36px é a medida do alvo: o mínimo confortável de toque (WCAG 2.5.8 pede 24,
- * as diretrizes de plataforma pedem 44 no dedo e 32 no mouse) e a mesma altura
- * do campo com uma linha, o que faz a fileira encostar reta.
+ * 40px é a medida do alvo: acima do mínimo de toque (WCAG 2.5.8 pede 24, as
+ * diretrizes de plataforma pedem 44 no dedo e 32 no mouse) e alto o bastante
+ * para o ícone de 18px respirar dentro do círculo do hover.
+ *
+ * Os ícones são de traço e não emoji — `icones-da-barra.tsx` explica por quê, e
+ * é de lá que sai o tamanho. Aqui não há mais `text-[…]`: não há glifo nenhum
+ * para dimensionar.
  */
 export const BOTAO_DA_BARRA =
-  'flex size-9 shrink-0 items-center justify-center rounded-full text-[15px] leading-none text-muted transition hover:bg-surface hover:text-ink disabled:cursor-not-allowed disabled:opacity-40'
+  'flex size-10 shrink-0 items-center justify-center rounded-full leading-none text-muted transition hover:bg-surface hover:text-ink disabled:cursor-not-allowed disabled:opacity-40'

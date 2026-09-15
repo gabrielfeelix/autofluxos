@@ -112,15 +112,25 @@ export function CaixaDeResposta({
   }
 
   /**
-   * O campo cresce com o que se escreve, até o teto.
+   * O campo cresce com o que se escreve, até o teto — e **só aí** ganha rolagem.
    *
    * Zerar a altura antes de medir não é gambiarra: `scrollHeight` devolve o
    * maior entre o conteúdo e a altura atual, então sem o zero o campo cresce e
    * nunca mais encolhe ao apagar.
+   *
+   * A barra de rolagem é ligada e desligada na mão porque o padrão do
+   * `<textarea>` é `overflow: auto`, e "auto" aqui mente: enquanto a altura
+   * está sendo reescrita a cada tecla, o navegador desenha a barra por um
+   * quadro no meio do crescimento — uma linha cinza que pisca do lado do texto
+   * enquanto ainda há espaço de sobra. Escondida abaixo do teto e só então
+   * `auto`, o campo se comporta como o do WhatsApp: cresce em silêncio, e a
+   * barra aparece no exato momento em que ele para de crescer.
    */
   function ajustarAltura(textarea: HTMLTextAreaElement) {
     textarea.style.height = '0px'
-    textarea.style.height = `${Math.min(textarea.scrollHeight, TETO_DA_ALTURA)}px`
+    const desejada = textarea.scrollHeight
+    textarea.style.height = `${Math.min(desejada, TETO_DA_ALTURA)}px`
+    textarea.style.overflowY = desejada > TETO_DA_ALTURA ? 'auto' : 'hidden'
   }
 
   /** Depois de qualquer escrita que não veio da digitação. */
@@ -274,9 +284,22 @@ export function CaixaDeResposta({
           name="texto"
           rows={1}
           maxLength={4096}
+          /*
+            Nasce sem barra. O `ajustarAltura` liga e desliga daí em diante, mas
+            o primeiro render acontece antes de qualquer digitação — e sem isto
+            o campo vazio já mostrava a barra em navegador que desenha a de
+            reserva.
+          */
+          style={{ overflowY: 'hidden' }}
           disabled={enviando}
           placeholder={`Responder ${nome} pelo WhatsApp…`}
-          className="min-h-9 flex-1 resize-none rounded-[19px] border border-line bg-surface px-3.5 py-2 text-[13px] leading-[1.45] outline-none transition placeholder:text-dim focus:border-primary/40 disabled:opacity-50"
+          /*
+            `font-texto` aqui pelo mesmo motivo da bolha, e mais um: o que se
+            escreve tem que parecer com o que sai. Campo numa fonte e bolha em
+            outra faz a mensagem "mudar" ao ser enviada, e quem escreve passa a
+            revisar duas vezes o mesmo parágrafo.
+          */
+          className="min-h-9 flex-1 resize-none rounded-[19px] border border-line bg-surface px-3.5 py-2 font-texto text-[14px] leading-[1.45] outline-none transition placeholder:text-dim focus:border-primary/40 disabled:opacity-50"
           onChange={(evento) => {
             setTemTexto(evento.currentTarget.value.trim() !== '')
             ajustarAltura(evento.currentTarget)

@@ -33,6 +33,12 @@
  */
 @theme inline {
   --font-sans: var(--font-outfit);
+  /*
+   * `font-texto` é o utilitário que a bolha e o campo de resposta usam. Nome
+   * pelo papel e não pela fonte: o dia em que a escolha mudar, muda aqui e não
+   * em cada bolha.
+   */
+  --font-texto: var(--font-inter);
   --font-mono: var(--font-jetbrains-mono);
   --color-primary: var(--primary);
   --color-primary-strong: var(--primary-strong);

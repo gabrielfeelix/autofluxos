@@ -2,7 +2,7 @@ import { Fragment, type ReactNode } from 'react'
 import { after } from 'next/server'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { comoFalta, podeReagir, restaDaJanela } from '@/channels/janela'
+import { comoFalta, JANELA_MS, podeReagir, restaDaJanela } from '@/channels/janela'
 import { Assumir, PassarPara } from '@/components/inbox/assumir'
 import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 import { sessaoAtual } from '@/server/sessao'
@@ -22,6 +22,7 @@ import { tokenDeAnuncios } from '@/server/token-de-anuncios'
 import { QuemE } from '@/components/lead/quem-e'
 import { CaixaDeResposta } from '@/components/lead/responder'
 import { RodapeDaMensagem } from '@/components/lead/rodape-da-mensagem'
+import { Transcricao } from '@/components/lead/transcricao'
 import { ProvedorDeCitacao } from '@/components/lead/citacao'
 import {
   acaoAssumirAtendimento,
@@ -33,6 +34,11 @@ import {
 } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { contextoDeResposta } from '@/server/repos/conversas'
+import {
+  agendadasDaConta as listarAgendadasDaConta,
+  agendadasDoContato,
+  type MensagemAgendada,
+} from '@/server/repos/mensagens-agendadas'
 import {
   acharLead,
   contarPorAtribuicao,
@@ -457,9 +463,22 @@ async function Conteudo({
   /** Ver `DadosDoLead`: sem automação o card não fala de bot. */
   temAutomacao: boolean
 }) {
+  /*
+   * Tudo o que ainda vai sair nesta conta.
+   *
+   * A promessa começa **antes** do bloco abaixo e é esperada depois: assim ela
+   * corre junto da leitura da conversa em vez de somar uma ida de rede em série.
+   * Não entra naquele `Promise.all` porque ele é condicional ao `selecionado`,
+   * e o contador da barra existe mesmo sem nenhuma conversa aberta.
+   *
+   * Vem inteiro e não contado porque o número da barra é um botão: clicar abre
+   * a lista com o cancelar. O teto de 200 está no repositório.
+   */
+  const agendadasDaContaPromessa = listarAgendadasDaConta(clienteId)
+
   // `selecionado` veio de `paginarLeads(clienteId, ...)`. Só depois desse vínculo
   // cliente–contato confirmado é seguro ler as mensagens pelo id do contato.
-  const [conversa, contexto, posicoes, quadros] = selecionado
+  const [conversa, contexto, posicoes, quadros, agendadasDaConversa] = selecionado
     ? await Promise.all([
         lerConversa(selecionado.contatoId),
         contextoDeResposta(clienteId, selecionado.contatoId),
@@ -471,8 +490,13 @@ async function Conteudo({
          */
         quadrosDoContato(clienteId, selecionado.contatoId),
         listarQuadros(clienteId),
+        // O que já está marcado para esta conversa: a barra de ações mostra o
+        // ícone aceso, e o painel lista com o botão de cancelar.
+        agendadasDoContato(clienteId, selecionado.contatoId),
       ])
-    : [null, null, [], []]
+    : [null, null, [], [], []]
+
+  const agendadasDaConta = await agendadasDaContaPromessa
 
   /*
    * O nome da campanha, só do contato aberto.
@@ -514,6 +538,17 @@ async function Conteudo({
   const apertado = restante !== null && restante > 0 && restante < 2 * 60 * 60 * 1000
   const primeiroNome = selecionado?.nome?.split(' ')[0] ?? 'esta pessoa'
   /*
+   * O instante em que a janela fecha, e não quanto falta.
+   *
+   * A pílula do cabeçalho quer a frase pronta ("22h18"); o agendamento quer o
+   * instante, para comparar com o horário que a pessoa escolheu. Derivar um do
+   * outro seria refazer a subtração com menos informação.
+   */
+  const fimDaJanela =
+    contexto?.ultimaEntradaEm && restante !== null && restante > 0
+      ? new Date(Date.parse(contexto.ultimaEntradaEm) + JANELA_MS).toISOString()
+      : null
+  /*
    * Conta a fila inteira quando ela veio, e não a página: a linha diz "N
    * esperando uma pessoa" **sobre a conta**, e no modo local ela fica fixa
    * enquanto a pessoa troca de aba. Contar só o recorte faria o número cair
@@ -549,6 +584,7 @@ async function Conteudo({
           naoLidas={naoLidas}
           pagina={pagina}
           paginas={paginas}
+          agendadas={agendadasDaConta}
         />
       }
       conversa={
@@ -569,6 +605,8 @@ async function Conteudo({
               temAutomacao={temAutomacao}
               janela={janela}
               janelaApertada={apertado}
+              fimDaJanela={fimDaJanela}
+              agendadas={agendadasDaConversa}
             />
             {/*
               `flex-col-reverse` é o que faz a conversa abrir na mensagem mais
@@ -673,6 +711,8 @@ function CabecalhoDaConversa({
   temAutomacao,
   janela,
   janelaApertada,
+  fimDaJanela,
+  agendadas,
 }: {
   clienteId: string
   lead: Lead
@@ -692,6 +732,10 @@ function CabecalhoDaConversa({
   janela: string | null
   /** Menos de duas horas — a contagem muda de cor. */
   janelaApertada: boolean
+  /** O instante em que a janela fecha, para o agendamento comparar. */
+  fimDaJanela: string | null
+  /** O que já está marcado nesta conversa. */
+  agendadas: MensagemAgendada[]
 }) {
   const nome = lead.nome ?? 'sem nome'
   const responsavel = equipe.find((membro) => membro.id === lead.atribuidoA) ?? null
@@ -762,6 +806,9 @@ function CabecalhoDaConversa({
           salvarNotas={acaoSalvarNotas.bind(null, clienteId, lead.contatoId)}
           automacaoAtiva={lead.automacaoAtiva}
           temAutomacao={temAutomacao}
+          fimDaJanela={fimDaJanela}
+          agendadas={agendadas}
+          nomeDoContato={lead.nome?.split(' ')[0] ?? 'esta pessoa'}
         />
       </header>
 
@@ -885,7 +932,21 @@ function Historico({
               então ele desiste e deixa transbordar. `anywhere` quebra onde
               precisar, que é o comportamento certo para link colado.
             */}
-            <p className={`max-w-[78%] px-3.5 py-2 text-[13px] leading-[1.5] whitespace-pre-wrap [overflow-wrap:anywhere] ${
+            {/*
+              `font-texto` e 14.5px, e não a fonte da casca em 13.
+
+              A Outfit é geométrica de display — traço de espessura uniforme,
+              aberturas fechadas, pouca diferença entre formas parecidas. Ela dá
+              a cara do produto num título e cansa num parágrafo, e a conversa é
+              o único lugar do painel onde se lê texto corrido, de outra pessoa,
+              o dia inteiro. Aqui entra a Inter (ver `layout.tsx`).
+
+              O corpo sobe para 14.5 e a entrelinha desce para 1.45: o ganho de
+              legibilidade vem do tamanho e da forma da letra. **Não engorde o
+              peso** — 500 numa bolha azul com texto branco vira borrão em tela
+              comum.
+            */}
+            <p className={`max-w-[78%] px-3.5 py-2 font-texto text-[14.5px] leading-[1.45] whitespace-pre-wrap [overflow-wrap:anywhere] ${
               nossa
                 ? 'bolha-nossa rounded-[15px_15px_4px_15px]'
                 : 'rounded-[15px_15px_15px_4px] bg-surface-strong text-ink'
@@ -898,6 +959,21 @@ function Historico({
                 morre em cinco minutos.
               */}
               {mensagem.recebido && <AnexoNaConversa anexo={mensagem.recebido} />}
+              {/*
+                Transcrever só o áudio **recebido**.
+
+                O que sai foi escrito ou gravado por quem atende, que sabe o que
+                disse. Oferecer transcrição ali seria mandar a própria voz para
+                um modelo para ler de volta o que se acabou de falar.
+              */}
+              {mensagem.recebido?.midia === 'audio' && (
+                <Transcricao
+                  clienteId={clienteId}
+                  contatoId={contatoId}
+                  mensagemId={mensagem.id}
+                  inicial={mensagem.transcricao ?? null}
+                />
+              )}
               {mensagem.semCopia && <ArquivoSemCopia nossa={nossa} />}
               {mensagem.local && <LocalNaBolha local={mensagem.local} />}
               {mensagem.cartoes && <CartoesNaBolha cartoes={mensagem.cartoes} />}

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { Dica } from '@/components/design/dica'
+import { IconeClipe } from '@/components/lead/icones-da-barra'
 import { BOTAO_DA_BARRA } from '@/components/lead/botao-da-barra'
 import { LIMITE_LEGENDA } from '@/core/flow/schema'
 import { acaoPrepararEnvioDeArquivo } from '@/server/acoes'
@@ -199,7 +200,7 @@ export function BotaoDeAnexo({
           aria-label="Enviar foto, vídeo, áudio ou PDF"
           className={BOTAO_DA_BARRA}
         >
-          📎
+          <IconeClipe />
         </button>
       </Dica>
 
