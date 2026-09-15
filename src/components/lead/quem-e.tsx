@@ -1,3 +1,4 @@
+import { origemDoContato } from '@/core/contatos/origem'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import { horaExata, quando } from '@/lib/quando'
 
@@ -26,23 +27,34 @@ import { horaExata, quando } from '@/lib/quando'
  * aberta: para onde eu ligo, há quanto tempo essa pessoa é nossa, e quando ela
  * falou pela última vez.
  *
- * **"Origem" não entra porque não existe.** O `Lead` não guarda de onde o
- * contato veio — não há campo, não há coluna. Mostrar "WhatsApp" para todo
- * mundo seria escrever na tela uma informação que não foi medida, e dado que
- * não distingue ninguém ocupa espaço sem responder nada. Quando houver origem
- * de verdade (anúncio, link, importação), ela entra aqui.
+ * **"Origem" entrou em 14/set/2026, e ela sempre existiu.** O comentário antigo
+ * daqui dizia que o `Lead` não guardava de onde o contato veio e que a linha
+ * entraria "quando houver origem de verdade". Havia: `atribuirOrigem` grava
+ * `origem`, `origem_anuncio` e `origem_titulo` na primeira mensagem desde que o
+ * `referral` do CTWA passou a ser lido, com teste. O dado estava na tela o
+ * tempo todo — no despejo de "O que o fluxo coletou", indistinguível do que o
+ * bot perguntou. Não faltava medir; faltava mostrar.
+ *
+ * **Quem não tem origem não ganha linha.** Contato anterior a `atribuirOrigem`
+ * devolve `null`, e a tela cala. Escrever "Direto" para ele seria afirmar o que
+ * ninguém mediu — o mesmo erro que o comentário antigo evitava com razão.
  */
 export function QuemE({
   waId,
   criadoEm,
   ultimaEntradaEm,
+  campos,
 }: {
   /** O telefone como o WhatsApp manda: só dígitos, com DDI. */
   waId: string
   criadoEm: string
   /** A última vez que **a pessoa** falou. `null` = ela nunca escreveu. */
   ultimaEntradaEm: string | null
+  /** O que está gravado no contato. A origem sai daqui. */
+  campos: Record<string, string>
 }) {
+  const origem = origemDoContato(campos)
+
   return (
     <dl className="mt-4 space-y-1.5 rounded-[11px] border border-white/[0.07] bg-white/[0.02] px-3 py-2.5">
       <Linha rotulo="Telefone">
@@ -59,6 +71,38 @@ export function QuemE({
           {telefoneLegivel(waId)}
         </a>
       </Linha>
+
+      {/*
+        A origem vem em segundo, logo abaixo do telefone: é a informação que
+        muda a primeira frase do atendimento. Quem sabe que a pessoa clicou em
+        "Filme institucional" abre a conversa sabendo do que ela quer falar.
+
+        **O título ganha do número.** `origem_anuncio` é o `source_id` da Meta —
+        16 dígitos que não dizem nada a quem atende, e que só viram nome de
+        campanha com um segundo token, de Ads, que o produto ainda não tem. O
+        `headline` já é legível por gente e chega de graça no mesmo webhook,
+        então ele é o que a linha mostra; o id fica no `title`, para quem
+        precisar casar com o Gerenciador de Anúncios.
+      */}
+      {origem !== null && (
+        <Linha rotulo="Origem">
+          {origem.deAnuncio && origem.titulo !== '' ? (
+            <span
+              title={origem.anuncio === '' ? undefined : `Anúncio ${origem.anuncio}`}
+              className="text-[11px] text-soft"
+            >
+              {origem.titulo}
+            </span>
+          ) : (
+            <span
+              title={origem.anuncio === '' ? undefined : `Anúncio ${origem.anuncio}`}
+              className="text-[11px] text-soft"
+            >
+              {origem.rotulo}
+            </span>
+          )}
+        </Linha>
+      )}
 
       {/*
         O relativo é o que se lê; o exato fica no `title`. "há 3 meses" responde

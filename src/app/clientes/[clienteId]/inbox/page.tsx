@@ -11,6 +11,7 @@ import { recemConectado } from '@/core/coexistencia-na-tela'
 import { coexistenciaDoCliente } from '@/server/repos/coexistencia'
 import { ControleDeAutomacao } from '@/components/lead/controle-automacao'
 import { CamposColetados } from '@/components/lead/campos-coletados'
+import { camposSemOrigem } from '@/core/contatos/origem'
 import { QuemE } from '@/components/lead/quem-e'
 import { CaixaDeResposta } from '@/components/lead/responder'
 import {
@@ -700,7 +701,12 @@ function DadosDoLead({
    */
   temAutomacao: boolean
 }) {
-  const campos = Object.entries(lead.campos)
+  /*
+   * Sem as chaves de origem: elas já aparecem em destaque no `QuemE`, logo
+   * acima. Repetir gastaria o teto de quatro campos visíveis dizendo duas
+   * vezes a mesma coisa.
+   */
+  const campos = camposSemOrigem(Object.entries(lead.campos))
   const aguardandoPessoa = lead.aguardando !== null
   /*
    * `automacao_ativa` é um interruptor **por conversa**, não a existência do
@@ -779,6 +785,7 @@ function DadosDoLead({
           waId={lead.waId}
           criadoEm={lead.criadoEm}
           ultimaEntradaEm={lead.ultimaEntradaEm}
+          campos={lead.campos}
         />
 
         <div className="mt-5">
