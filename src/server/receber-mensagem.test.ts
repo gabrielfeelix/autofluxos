@@ -238,6 +238,55 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
     expect(data?.campos).not.toHaveProperty('origem_clique')
   })
 
+  /*
+   * O caso que o modelo antigo perdia: remarketing pegando quem já é da base.
+   * A origem (primeiro toque) não pode mudar — senão a campanha de setembro
+   * leva o crédito de quem agosto trouxe — mas a segunda chegada É um fato e
+   * tem de aparecer no histórico.
+   */
+  it('quem volta por outra campanha ganha passagem nova, sem trocar a origem', async () => {
+    const de = telefone(18)
+
+    await receberMensagem(
+      webhookTexto(de, 'quero orçamento', `wamid-${marca}-passagem-1`, {
+        source_type: 'ad',
+        source_id: 'ad_agosto',
+        headline: 'Filme institucional',
+      }),
+      comMock,
+    )
+
+    await receberMensagem(
+      webhookTexto(de, 'voltei', `wamid-${marca}-passagem-2`, {
+        source_type: 'ad',
+        source_id: 'ad_setembro',
+        headline: 'Promoção de setembro',
+      }),
+      comMock,
+    )
+
+    const { data: contato } = await db()
+      .from('contacts')
+      .select('id, campos')
+      .eq('wa_id', de)
+      .single()
+
+    // O primeiro toque continua sendo agosto.
+    expect(contato?.campos).toMatchObject({ origem_anuncio: 'ad_agosto' })
+
+    // E as duas chegadas estão no histórico, da mais nova para a mais velha.
+    const { data: passagens } = await db()
+      .from('passagens')
+      .select('ad_id')
+      .eq('contact_id', contato?.id as string)
+      .order('criado_em', { ascending: false })
+
+    expect((passagens ?? []).map((p) => (p as { ad_id: string }).ad_id)).toEqual([
+      'ad_setembro',
+      'ad_agosto',
+    ])
+  })
+
   it('marca entrada direta e não troca a origem numa mensagem futura', async () => {
     const de = telefone(16)
 

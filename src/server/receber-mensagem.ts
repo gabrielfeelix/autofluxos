@@ -62,6 +62,7 @@ import { inscreverNoEvento, sairPelaEtiqueta, sairPorEvento } from './sequencias
 import { marcarContatos } from './repos/etiquetas'
 import { porContatoNaEtapa } from './repos/quadros'
 import { porNoQuadroPadrao } from './quadro-de-entrada'
+import { registrarPassagem } from './repos/passagens'
 
 /**
  * O caminho de uma mensagem do WhatsApp até a resposta.
@@ -294,7 +295,58 @@ export async function tratarUma(
   }
 }
 
+/**
+ * Registra por onde a pessoa chegou — desta vez, e da primeira.
+ *
+ * ---------------------------------------------------------------------------
+ * São duas perguntas, e por isso são dois lugares
+ * ---------------------------------------------------------------------------
+ *
+ * **`campos.origem` é o primeiro toque, e continua congelado de propósito.** É
+ * a atribuição no sentido em que a Meta e o mercado usam a palavra: quem trouxe
+ * esta pessoa para a base. Reescrever isso a cada anúncio novo faria a campanha
+ * de remarketing levar o crédito de uma pessoa que já era nossa — que é
+ * exatamente o erro que a regra de primeiro toque existe para evitar.
+ *
+ * **`passagens` é o histórico, e aceita quantas vierem.** Veio pela campanha de
+ * agosto, sumiu, voltou pela de setembro: as duas aconteceram, e quem atende
+ * hoje precisa ver as duas para entender por que a pessoa está escrevendo. O
+ * contato é a entidade; a campanha é o meio por onde ele chegou, daquela vez.
+ *
+ * Guardar só o primeiro toque perderia a segunda chegada. Guardar só o
+ * histórico faria "de onde veio" depender de ler a lista inteira e escolher.
+ * As duas juntas custam uma linha a mais e respondem as duas perguntas.
+ */
 async function atribuirOrigem(contato: Contato, referral?: Referral): Promise<Contato> {
+  /*
+   * O histórico vem primeiro, e fora do `if` abaixo: ele registra **toda**
+   * chegada por anúncio, inclusive a de quem já tem origem gravada há meses.
+   * Era aqui que a informação se perdia.
+   */
+  if (referral?.source_id) {
+    try {
+      await registrarPassagem({
+        clienteId: contato.clienteId,
+        contatoId: contato.id,
+        adId: referral.source_id,
+        titulo: referral.headline ?? '',
+        texto: referral.body ?? '',
+        url: referral.source_url ?? '',
+        clique: referral.ctwa_clid ?? '',
+      })
+    } catch (erro) {
+      /*
+       * Histórico não pode custar atendimento. Falhar aqui viraria webhook com
+       * erro, reentrega da Meta e mensagem duplicada — preço alto demais por
+       * uma linha de contexto.
+       */
+      const detalhe = erro instanceof Error ? erro.message : String(erro)
+      await alertar('não deu para registrar a passagem pelo anúncio', detalhe, {
+        contato: contato.id,
+      })
+    }
+  }
+
   if (Object.hasOwn(contato.campos, 'origem')) return contato
 
   const campos = {
