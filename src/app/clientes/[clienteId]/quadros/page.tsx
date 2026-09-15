@@ -7,10 +7,11 @@ import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formular
 import { Quadro } from '@/components/quadros/quadro'
 import { QuadroPadrao } from '@/components/quadros/quadro-padrao'
 import { EntregaDoQuadro } from '@/components/quadros/entrega-do-quadro'
+import { TrazerTodos } from '@/components/quadros/trazer-todos'
 import { LIMITE_DO_NOME } from '@/core/quadros'
 import { acaoApagarQuadro, acaoCriarQuadro } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
-import { listarCartoes, listarQuadros } from '@/server/repos/quadros'
+import { contarForaDoQuadro, listarCartoes, listarQuadros } from '@/server/repos/quadros'
 import { listarMotivos } from '@/server/repos/motivos-de-perda'
 import { membrosDaConta } from '@/server/repos/usuarios'
 
@@ -72,9 +73,13 @@ export default async function Pagina({
    * menu de cartão seria uma ida ao banco por clique — num lugar onde a pessoa
    * clica em dezenas de cartões seguidos.
    */
-  const [equipe, motivos] = aberto
-    ? await Promise.all([membrosDaConta(cliente.id), listarMotivos(cliente.id)])
-    : [[], []]
+  const [equipe, motivos, fora] = aberto
+    ? await Promise.all([
+        membrosDaConta(cliente.id),
+        listarMotivos(cliente.id),
+        contarForaDoQuadro(cliente.id, aberto.id),
+      ])
+    : [[], [], 0]
 
   const novoQuadro = (
     <ModalFormulario
@@ -177,15 +182,18 @@ export default async function Pagina({
             <span className="mt-6 inline-block">{novoQuadro}</span>
           </section>
         ) : (
-          <Quadro
-            clienteId={cliente.id}
-            quadroId={aberto.id}
-            etapas={aberto.etapas}
-            cartoesIniciais={cartoes}
-            agora={agora}
-            equipe={equipe.map(({ id, nome }) => ({ id, nome }))}
-            motivos={motivos.map(({ id, nome }) => ({ id, nome }))}
-          />
+          <>
+            <TrazerTodos clienteId={cliente.id} quadroId={aberto.id} fora={fora} />
+            <Quadro
+              clienteId={cliente.id}
+              quadroId={aberto.id}
+              etapas={aberto.etapas}
+              cartoesIniciais={cartoes}
+              agora={agora}
+              equipe={equipe.map(({ id, nome }) => ({ id, nome }))}
+              motivos={motivos.map(({ id, nome }) => ({ id, nome }))}
+            />
+          </>
         )}
       </main>
     </ClienteShell>

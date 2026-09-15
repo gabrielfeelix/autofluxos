@@ -12,6 +12,7 @@ import {
   encadearQuadro,
   fecharCartao,
   reabrirCartao,
+  trazerTodosParaOQuadro,
 } from './repos/quadros'
 import { exigirAcessoAoCliente, sessaoAtual } from './sessao'
 
@@ -222,4 +223,25 @@ export async function acaoDefinirEstagio(
   quadros(clienteId)
   revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
   return { ok: true }
+}
+
+/**
+ * Traz para o funil todo mundo que ainda está de fora.
+ *
+ * Existe porque a entrada automática só alcança contato **criado agora** — e
+ * está certo assim: quem já existia e voltou a escrever não pode ser jogado de
+ * volta para a primeira etapa a cada mensagem. O preço disso é quadro novo em
+ * conta antiga abrindo vazio com o inbox cheio, e este botão é o conserto.
+ */
+export async function acaoTrazerTodosParaOQuadro(
+  clienteId: string,
+  quadroId: string,
+): Promise<{ ok: boolean; erro?: string; postos?: number; faltaram?: number }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const r = await trazerTodosParaOQuadro(clienteId, quadroId)
+  if (!r.ok) return { ok: false, erro: r.motivo }
+
+  quadros(clienteId)
+  return { ok: true, postos: r.postos, faltaram: r.faltaram }
 }

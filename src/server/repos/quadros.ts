@@ -49,6 +49,19 @@ type LinhaDoQuadro = {
     | null
 }
 
+/**
+ * Por que o responsável é lido como `nome:name`.
+ *
+ * `af_usuarios` é a tabela do **better-auth** — só o nome dela foi traduzido,
+ * pelo `modelName` em `server/auth.ts`; as colunas continuam as da biblioteca
+ * (`name`, `emailVerified`, `createdAt`, `banned`). Renomear a coluna no banco
+ * obrigaria a mapear campo por campo na configuração e quebraria os `update`
+ * que a própria lib faz, em troca de nada.
+ *
+ * O apelido do PostgREST resolve no lugar certo: o banco continua sendo o que a
+ * biblioteca espera, e o TypeScript daqui para dentro fala português como o
+ * resto do repositório. `membrosDaConta` já fazia o mesmo apelido, em SQL.
+ */
 const COLUNAS =
   'id, nome, padrao, seguinte_id, quadro_colunas (id, nome, ordem, criado_em, tipo, limite_de_dias)'
 
@@ -414,9 +427,7 @@ type LinhaDoCartao = {
     wa_id: string
     ultima_mensagem_em: string | null
   } | null
-  // A coluna se chama `name`: `af_usuarios` é tabela do plugin de login, e o
-  // nome dela é em inglês. `membrosDaConta` faz o mesmo apelido em SQL.
-  af_usuarios: { name: string | null } | null
+  af_usuarios: { nome: string | null } | null
 }
 
 /**
@@ -466,7 +477,7 @@ export async function listarCartoes(clienteId: string, quadroId: string): Promis
     valor: linha.valor === null || linha.valor === undefined ? null : Number(linha.valor),
     situacao: linha.situacao ?? 'aberta',
     responsavelId: linha.responsavel,
-    responsavelNome: linha.af_usuarios?.name ?? null,
+    responsavelNome: linha.af_usuarios?.nome ?? null,
     ultimaMensagemEm: linha.contacts?.ultima_mensagem_em ?? null,
   }))
 }
@@ -1019,9 +1030,9 @@ export async function atribuirCartao(
 
   const linha = data as unknown as {
     contact_id: string
-    af_usuarios: { name: string | null } | null
+    af_usuarios: { nome: string | null } | null
   }
-  const quem = linha.af_usuarios?.name ?? null
+  const quem = linha.af_usuarios?.nome ?? null
 
   await anotar(clienteId, linha.contact_id, 'assumiu', { quem: quem ?? '' }, autor)
   return { ok: true, quem }
@@ -1118,4 +1129,81 @@ export async function definirTipoDaEtapa(
 
   if (error) throw new Error(`não deu para mudar a etapa: ${error.message}`)
   return { ok: true }
+}
+
+// ---------------------------------------------------------------------------
+// Trazer quem já existia
+// ---------------------------------------------------------------------------
+//
+// A entrada automática (0043) só alcança contato **criado agora**, e está certo:
+// quem já existia e voltou a escrever não pode ser jogado de volta para a
+// primeira etapa a cada mensagem. O efeito colateral é que quadro novo em conta
+// antiga abre vazio com o inbox cheio — que é a tela dizendo que não há nada a
+// fazer quando há dezenas de pessoas esperando.
+//
+// Estas duas funções existem para esse momento, e só para ele: contar quem está
+// de fora e trazer todos de uma vez.
+
+/** Quantos contatos da conta ainda não têm cartão neste quadro. */
+export async function contarForaDoQuadro(clienteId: string, quadroId: string): Promise<number> {
+  const [{ count: total, error: erroDosContatos }, { data: dentro, error: erroDosCartoes }] =
+    await Promise.all([
+      db()
+        .from('contacts')
+        .select('id', { count: 'exact', head: true })
+        .eq('client_id', clienteId),
+      db().from('quadro_cartoes').select('contact_id').eq('quadro_id', quadroId),
+    ])
+
+  if (ehIdInvalido(erroDosContatos) || ehIdInvalido(erroDosCartoes)) return 0
+  if (erroDosContatos) throw new Error(`não deu para contar os contatos: ${erroDosContatos.message}`)
+  if (erroDosCartoes) throw new Error(`não deu para ler o quadro: ${erroDosCartoes.message}`)
+
+  return Math.max(0, (total ?? 0) - new Set((dentro as { contact_id: string }[]).map((l) => l.contact_id)).size)
+}
+
+/**
+ * Põe no quadro todo mundo que ainda está de fora.
+ *
+ * Teto de 500 por chamada, e não porque o banco sofreria: quinhentos cartões já
+ * são mais do que qualquer pessoa consegue olhar, e uma conta com milhares de
+ * contatos antigos quer escolher quem entra — não despejar o histórico inteiro
+ * num funil de trabalho. Acima do teto a tela avisa e a pessoa repete.
+ */
+export async function trazerTodosParaOQuadro(
+  clienteId: string,
+  quadroId: string,
+  teto = 500,
+): Promise<{ ok: true; postos: number; faltaram: number } | { ok: false; motivo: string }> {
+  const quadro = await acharQuadro(clienteId, quadroId)
+  if (!quadro) return { ok: false, motivo: 'este quadro não existe mais' }
+  if (!quadro.etapas[0]) {
+    return { ok: false, motivo: 'crie uma etapa antes de trazer gente para o quadro' }
+  }
+
+  const { data, error } = await db()
+    .from('contacts')
+    .select('id')
+    .eq('client_id', clienteId)
+    .order('criado_em', { ascending: false })
+
+  if (ehIdInvalido(error)) return { ok: false, motivo: 'conta inválida' }
+  if (error) throw new Error(`não deu para listar os contatos: ${error.message}`)
+
+  const { data: jaEstao, error: erroDosCartoes } = await db()
+    .from('quadro_cartoes')
+    .select('contact_id')
+    .eq('quadro_id', quadroId)
+
+  if (erroDosCartoes) throw new Error(`não deu para ler o quadro: ${erroDosCartoes.message}`)
+
+  const dentro = new Set((jaEstao as { contact_id: string }[]).map((l) => l.contact_id))
+  const fora = (data as { id: string }[]).map((l) => l.id).filter((id) => !dentro.has(id))
+  if (fora.length === 0) return { ok: true, postos: 0, faltaram: 0 }
+
+  const agora = fora.slice(0, teto)
+  const posto = await porNoQuadro(clienteId, quadroId, agora)
+  if (!posto.ok) return posto
+
+  return { ok: true, postos: posto.postos, faltaram: fora.length - agora.length }
 }
