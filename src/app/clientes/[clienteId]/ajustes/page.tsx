@@ -8,6 +8,7 @@ import { listarAcervo } from '@/server/repos/acervo'
 import { acharCliente, contarOQueSomeCom } from '@/server/repos/clientes'
 import { canalDoInstagram } from '@/server/repos/canais-instagram'
 import { listarConexoes } from '@/server/repos/conexoes'
+import { paginasDaConta } from '@/server/repos/paginas-de-lead'
 import { listarCanais } from '@/server/repos/conversas'
 import { listarRespostasRapidas } from '@/server/repos/respostas-rapidas'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
@@ -31,7 +32,7 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [conexoes, canais, respostasRapidas, acervo, estrago, etiquetas, contaDoInstagram] =
+  const [conexoes, canais, respostasRapidas, acervo, estrago, etiquetas, contaDoInstagram, paginasDeLead] =
     await Promise.all([
       listarConexoes(cliente.id),
       listarCanais(cliente.id),
@@ -40,6 +41,7 @@ export default async function Pagina({
       contarOQueSomeCom(cliente.id),
       listarEtiquetas(cliente.id),
       canalDoInstagram(cliente.id),
+      paginasDaConta(cliente.id),
     ])
   const semContexto = cliente.contextoNegocio.trim() === ''
 
@@ -82,6 +84,23 @@ export default async function Pagina({
               ) : (
                 <Selo tom="alerta">atende sempre</Selo>
               )
+            }
+          />
+          {/*
+            Anúncios vem antes de Credenciais de propósito: é o caminho que o
+            cliente procura por nome ("como ligo meus anúncios?"), enquanto
+            Credenciais é onde ele só chega sabendo o que é uma chave de API.
+          */}
+          <Linha
+            href={`/clientes/${cliente.id}/anuncios`}
+            titulo="Anúncios"
+            descricao="Receber como lead quem preenche o formulário de um anúncio no Facebook ou no Instagram."
+            estado={
+              <Selo tom={paginasDeLead.length === 0 ? 'neutro' : 'ok'}>
+                {paginasDeLead.length === 0
+                  ? 'não ligado'
+                  : `${paginasDeLead.length} ${paginasDeLead.length === 1 ? 'página' : 'páginas'}`}
+              </Selo>
             }
           />
           <Linha
