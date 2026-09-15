@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useAcaoOtimista } from '@/components/design/acao-otimista'
+import { Dica } from '@/components/design/dica'
 import { SeletorDeEtiquetas, type EtiquetaEscolhivel } from '@/components/etiquetas/seletor'
 import { NotaRapida } from '@/components/inbox/nota-rapida'
 import { useFicha } from '@/components/inbox/moldura'
@@ -29,9 +30,12 @@ import {
  * quem se está falando, que é a única informação do cabeçalho que não é uma
  * ação.
  *
- * **Todo ícone tem `title` e `aria-label`.** Ícone sozinho é adivinhação: a
+ * **Todo ícone tem dica e `aria-label`.** Ícone sozinho é adivinhação: a
  * etiqueta e o relógio são reconhecíveis, o quadrado que abre a ficha não é de
- * jeito nenhum, e quem usa leitor de tela não vê nenhum deles.
+ * jeito nenhum, e quem usa leitor de tela não vê nenhum deles. A dica é a do
+ * produto (ver `Dica`), e não o `title` do navegador — numa fileira em que ela
+ * é a única legenda, o segundo de atraso do sistema operacional é a diferença
+ * entre ler a barra e adivinhar.
  *
  * ---------------------------------------------------------------------------
  * O que ficou fora
@@ -208,19 +212,20 @@ function BotaoDeIcone({
   children: ReactNode
 }) {
   return (
-    <button
-      type="button"
-      title={rotulo}
-      aria-label={rotulo}
-      aria-pressed={marcada}
-      disabled={desabilitado}
-      onClick={aoClicar}
-      className={`flex size-8 shrink-0 items-center justify-center rounded-[9px] transition disabled:opacity-40 ${
-        marcada ? 'bg-primary-weak text-primary' : 'text-muted hover:bg-surface hover:text-ink'
-      }`}
-    >
-      {children}
-    </button>
+    <Dica texto={rotulo}>
+      <button
+        type="button"
+        aria-label={rotulo}
+        aria-pressed={marcada}
+        disabled={desabilitado}
+        onClick={aoClicar}
+        className={`flex size-8 shrink-0 items-center justify-center rounded-[9px] transition disabled:opacity-40 ${
+          marcada ? 'bg-primary-weak text-primary' : 'text-muted hover:bg-surface hover:text-ink'
+        }`}
+      >
+        {children}
+      </button>
+    </Dica>
   )
 }
 

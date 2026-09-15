@@ -1,28 +1,41 @@
 'use client'
 
 import { createContext, useContext, useState, type ReactNode } from 'react'
+import { LARGURA_DA_FILA } from '@/components/design/tema'
 
 /**
- * A moldura de três colunas do Inbox, e o interruptor da terceira.
+ * A moldura do Inbox: a barra de filtros em cima, três colunas embaixo.
  *
  * ---------------------------------------------------------------------------
- * Por que ela virou componente de cliente
+ * A barra atravessa, e as colunas ficam embaixo dela
  * ---------------------------------------------------------------------------
  *
- * A coluna da direita — quem é a pessoa, etiquetas, funil, campos coletados —
- * é contexto, não trabalho. Numa janela estreita ela come 300px da conversa,
- * que é onde se lê e se escreve, e há atendimento inteiro que não precisa
- * olhar nada dela.
+ * Busca e filtros moravam dentro da coluna da esquerda, empilhados. Numa coluna
+ * de 320px isso é um campo de busca curto e pílulas quebrando em três linhas —
+ * e come a altura de quatro conversas na lista, que é para o que a coluna
+ * existe.
  *
- * Esconder e mostrar é estado, e estado é cliente. Mas **o conteúdo das três
- * colunas continua sendo servidor**: elas chegam aqui prontas, por `props`, e
- * este arquivo só decide a grade. É a diferença entre tornar cliente a moldura
- * e tornar cliente o Inbox — a segunda mandaria para o navegador a consulta de
- * conversas, os anúncios resolvidos e o histórico inteiro.
+ * Em cima e atravessando a largura toda, a busca fica larga, os filtros cabem
+ * numa linha só, e a lista recomeça do topo. É o desenho do produto que serviu
+ * de referência, e o motivo dele é esse.
  *
- * A escolha **não é gravada**. Gravar exigiria ler o armazenamento antes de
- * pintar, como o tema faz, e diferente do tema o custo de errar aqui é um
- * clique — não uma tela inteira na cor errada.
+ * A `Fila` desenha as duas partes — a barra e a lista — e entrega as duas como
+ * **irmãs**, num fragmento. Elas caem direto na grade daqui: a barra com
+ * `col-span-full` na primeira faixa, a lista na segunda. Envolver as duas num
+ * `<div>` tiraria a barra da grade e ela deixaria de atravessar.
+ *
+ * ---------------------------------------------------------------------------
+ * O que é estado aqui, e o que continua do servidor
+ * ---------------------------------------------------------------------------
+ *
+ * Esconder a ficha do contato é estado, e estado é cliente. Mas **o conteúdo
+ * das três colunas continua sendo servidor**: elas chegam prontas, por `props`.
+ * É a diferença entre tornar cliente a moldura e tornar cliente o Inbox — a
+ * segunda mandaria para o navegador a consulta de conversas, os anúncios
+ * resolvidos e o histórico inteiro.
+ *
+ * A ficha **não é gravada**: é um gesto por conversa. A largura da coluna é,
+ * porque é preferência de trabalho — ver `LARGURA_DA_FILA`.
  */
 
 type EstadoDaFicha = { aberta: boolean; alternar: () => void }
@@ -41,6 +54,7 @@ export function MolduraDoInbox({
   conversa,
   ficha,
 }: {
+  /** A barra de filtros e a lista, nesta ordem, como irmãs. */
   fila: ReactNode
   conversa: ReactNode
   /** `null` quando não há conversa aberta: aí não há ficha para mostrar. */
@@ -58,20 +72,42 @@ export function MolduraDoInbox({
         Com `min-h` só, a caixa crescia com a conversa e quem rolava era a
         página inteira: o cabeçalho da conversa e a caixa de resposta subiam
         para fora da tela, e uma conversa longa deixava de ter onde responder
-        sem voltar ao topo. As três colunas já tinham `overflow` próprio — o
-        que faltava era um teto para elas medirem.
+        sem voltar ao topo. As colunas já tinham `overflow` próprio — o que
+        faltava era um teto para elas medirem.
 
-        `h-[calc(100dvh-…)]` desconta o cabeçalho da página e a margem da
-        moldura. `dvh` e não `vh`: no celular a barra do navegador entra e sai,
-        e `vh` congela a altura da barra escondida — a caixa de resposta ficava
-        atrás dela.
+        No computador o teto é `h-full`: a casca do cliente é `h-screen`, então
+        "cheio" já é a janela menos nada — a tela encosta no topo. No celular a
+        casca cresce com o conteúdo e não há altura de que herdar, então ali a
+        conta é em `dvh`, descontando a faixa de navegação que a barra lateral
+        vira nessa largura.
+
+        `dvh` e não `vh`: no celular a barra do navegador entra e sai, e `vh`
+        congela a altura da barra escondida — a caixa de resposta ficava atrás
+        dela.
       */}
       <div
-        className={`grid h-[calc(100dvh-92px)] min-h-[420px] overflow-hidden rounded-[16px] border border-line bg-panel shadow-pop ${
-          mostrandoFicha
-            ? 'grid-cols-[320px_minmax(380px,1fr)_296px]'
-            : 'grid-cols-[320px_minmax(380px,1fr)]'
-        }`}
+        style={{
+          /*
+            A largura da primeira coluna é variável de CSS, e não estado do
+            React. Durante o arrasto quem escreve nela é o `pointermove` direto
+            no `<html>` (ver `PuxadorDaFila`): um `setState` por quadro
+            renderizaria a lista inteira sessenta vezes por segundo para mudar
+            uma medida que o CSS resolve sozinho.
+
+            O padrão vive dentro do próprio `var()`: sem nada gravado, não há
+            variável, e o CSS cai nele.
+          */
+          gridTemplateColumns: `var(${LARGURA_DA_FILA.variavel}, ${LARGURA_DA_FILA.padrao}px) minmax(380px, 1fr)${
+            mostrandoFicha ? ' 296px' : ''
+          }`,
+          gridTemplateRows: 'auto minmax(0, 1fr)',
+        }}
+        /*
+          Sem canto redondo, sem sombra e sem borda externa: ela não é um cartão
+          sobre a página, ela **é** a página. Quem a separa da barra lateral é a
+          borda que a barra já tem — desenhar outra aqui daria uma linha dupla.
+        */
+        className="grid h-[calc(100dvh-132px)] min-h-[420px] overflow-hidden bg-panel md:h-full"
       >
         {fila}
         {conversa}

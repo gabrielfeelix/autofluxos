@@ -1,14 +1,14 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { comoFalta, restaDaJanela } from '@/channels/janela'
-import { LogoDoCanal } from '@/components/design/selo-do-canal'
+import { Dica } from '@/components/design/dica'
+import { LARGURA_DA_FILA } from '@/components/design/tema'
 import { Avatar } from '@/components/inbox/avatar'
 import { RailsLocais } from '@/components/inbox/fila-local'
 import {
   ESTADOS_DA_FILA,
-  PilulaFixa,
   PilulaInterruptor,
   PilulaMenu,
   type OpcaoDaPilula,
@@ -187,18 +187,59 @@ export function Fila({
   ]
 
   return (
-    <aside className="flex min-h-0 min-w-0 flex-col border-r border-line bg-panel">
-      <header className="border-b border-line px-4 pt-4 pb-3">
-        <div className="flex items-center gap-2">
-          <h2 className="min-w-0 flex-1 truncate text-[17px] font-bold tracking-[-0.02em]">
-            Caixa de Entrada
-          </h2>
+    <>
+      {/*
+        A barra atravessa a moldura inteira — ver `MolduraDoInbox`. Ela e a
+        lista são **irmãs** num fragmento, e não pai e filho: envolvê-las num
+        `<div>` tiraria as duas da grade e a barra deixaria de atravessar.
+      */}
+      <header className="col-span-full border-b border-line">
+        <div className="flex items-center gap-3 px-4 pt-3.5 pb-2.5">
+          <h2 className="shrink-0 text-[17px] font-bold tracking-[-0.02em]">Caixa de Entrada</h2>
           <span
             title={`${contagem.total} conversa(s) nesta conta`}
             className="shrink-0 rounded-full border border-line bg-surface px-2 py-0.5 font-mono text-[10px] text-muted"
           >
             {contagem.total}
           </span>
+
+          {/*
+            A busca é o "[+] iniciar conversa" do desenho de referência, na
+            forma que faz sentido aqui.
+
+            Escrever primeiro para alguém só é possível **dentro da janela de 24
+            horas** — fora dela a Meta exige modelo aprovado, que este produto
+            ainda não tem. E quem está dentro da janela já está nesta lista: o
+            que falta não é um botão de começar, é achar a pessoa quando a
+            conversa dela já rolou para baixo.
+
+            Formulário `GET`: a busca vira endereço, e endereço de busca dá para
+            guardar e recarregar. **Continua indo ao servidor mesmo no modo
+            local**, e de propósito: a busca casa telefone por formas
+            normalizadas (`chavesDoTelefone`), e repetir essa regra aqui seria
+            duplicar justamente a parte que erra sozinha — quem procura
+            "(11) 98765-4321" não acha `551187654321` com comparação de texto.
+          */}
+          <form method="get" className="relative mx-auto w-full max-w-[460px]">
+            <input type="hidden" name="de" value={atribuicao} />
+            <input type="hidden" name="estado" value={estado} />
+            {selecionado && <input type="hidden" name="conversa" value={selecionado.contatoId} />}
+            <Lupa />
+            <input
+              type="search"
+              name="busca"
+              defaultValue={termo}
+              placeholder="Pesquisar em conversas"
+              aria-label="Pesquisar em conversas"
+              className="app-field rounded-full py-2 pr-3 pl-8 text-[12px]"
+            />
+            {/* O Enter já envia. O botão existe para o comando estar dito em
+                algum lugar para quem usa leitor de tela. */}
+            <button type="submit" className="sr-only">
+              Buscar
+            </button>
+          </form>
+
           {/*
             A engrenagem leva para os ajustes de atendimento — etiquetas,
             respostas rápidas, horário, equipe. Ela fica aqui e não num menu
@@ -206,65 +247,25 @@ export function Fila({
             precisa de uma etiqueta nova enquanto atende, não numa sessão
             separada de configuração.
           */}
-          <Link
-            href={`/clientes/${clienteId}/ajustes`}
-            title="Ajustes do atendimento"
-            aria-label="Ajustes do atendimento"
-            className="flex size-7 shrink-0 items-center justify-center rounded-lg text-dim transition hover:bg-surface hover:text-ink"
-          >
-            <Engrenagem />
-          </Link>
+          <Dica texto="Ajustes do atendimento" lado="baixo">
+            <Link
+              href={`/clientes/${clienteId}/ajustes`}
+              aria-label="Ajustes do atendimento"
+              className="flex size-8 shrink-0 items-center justify-center rounded-lg text-dim transition hover:bg-surface hover:text-ink"
+            >
+              <Engrenagem />
+            </Link>
+          </Dica>
         </div>
 
-        <p className="mt-0.5 text-[11px] text-dim">
-          {esperando > 0 ? `${esperando} esperando uma pessoa` : 'Todas as conversas estão com o bot'}
-        </p>
-
         {/*
-          A busca é o "[+] iniciar conversa" do desenho de referência, na forma
-          que faz sentido aqui.
-
-          Escrever primeiro para alguém só é possível **dentro da janela de 24
-          horas** — fora dela a Meta exige modelo aprovado, que este produto
-          ainda não tem. E quem está dentro da janela já está nesta lista: o que
-          falta não é um botão de começar, é achar a pessoa quando a conversa
-          dela já rolou para baixo.
-
-          Formulário `GET`: a busca vira endereço, e endereço de busca dá para
-          guardar e recarregar. **Continua indo ao servidor mesmo no modo
-          local**, e de propósito: a busca casa telefone por formas
-          normalizadas (`chavesDoTelefone`), e repetir essa regra aqui seria
-          duplicar justamente a parte que erra sozinha — quem procura
-          "(11) 98765-4321" não acha `551187654321` com comparação de texto.
-        */}
-        <form method="get" className="relative mt-3">
-          <input type="hidden" name="de" value={atribuicao} />
-          <input type="hidden" name="estado" value={estado} />
-          {selecionado && <input type="hidden" name="conversa" value={selecionado.contatoId} />}
-          <Lupa />
-          <input
-            type="search"
-            name="busca"
-            defaultValue={termo}
-            placeholder="Pesquisar em conversas"
-            aria-label="Pesquisar em conversas"
-            className="app-field py-2 pr-3 pl-8 text-[12px]"
-          />
-          {/* O Enter já envia. O botão existe para o comando estar dito em
-              algum lugar para quem usa leitor de tela. */}
-          <button type="submit" className="sr-only">
-            Buscar
-          </button>
-        </form>
-
-        {/*
-          Uma linha de pílulas no lugar de três linhas de fichas empilhadas.
+          Os filtros numa linha só, atravessando.
 
           O eixo do estado vem primeiro porque "o que precisa de mim agora" é a
           primeira pergunta de quem abre a tela; "de quem é" só faz sentido
           depois de respondida.
         */}
-        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5 px-4 pb-2.5">
           {local ? (
             <RailsLocais
               clienteId={clienteId}
@@ -321,23 +322,19 @@ export function Fila({
           )}
 
           {/*
-            O canal é uma pílula **fixa**, e não um menu.
-
-            O desenho de referência filtra por canal porque lá há vários. Aqui
-            o Inbox recebe de um só: o adaptador do Instagram existe mas está
-            `disponivel: false` (ver `core/canais.ts`), e o contato nem carrega
-            de que canal veio. Um menu "Todos os canais" com uma opção só seria
-            a promessa de um filtro que não filtra — e no dia em que o segundo
-            canal entregar, ele vira `PilulaMenu` sem mudar mais nada aqui.
+            O estado da fila no canto: é a única linha desta barra que não é um
+            controle, e por isso fica do outro lado, sem competir com as
+            pílulas por atenção.
           */}
-          <PilulaFixa>
-            <span className="text-[#25d366]">
-              <LogoDoCanal canal="whatsapp" tamanho={13} />
-            </span>
-            WhatsApp
-          </PilulaFixa>
+          <p className="ml-auto shrink-0 text-[11px] text-dim">
+            {esperando > 0
+              ? `${esperando} esperando uma pessoa`
+              : 'Todas as conversas estão com o bot'}
+          </p>
         </div>
       </header>
+
+      <aside className="relative flex min-h-0 min-w-0 flex-col border-r border-line bg-panel">
 
       <nav aria-label="Conversas" className="min-h-0 flex-1 overflow-y-auto py-1.5">
         {naTela.map((lead) => {
@@ -448,7 +445,90 @@ export function Fila({
           </PassoDaPagina>
         </div>
       )}
-    </aside>
+
+        <PuxadorDaFila />
+      </aside>
+    </>
+  )
+}
+
+/* -------------------------------------------------------------------------- */
+/* A borda que se arrasta                                                     */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * O puxador que muda a largura da coluna de conversas.
+ *
+ * ---------------------------------------------------------------------------
+ * Por que ele existe
+ * ---------------------------------------------------------------------------
+ *
+ * 320px é um bom padrão e não serve a todo mundo. Quem trabalha com nomes
+ * longos e prévia de mensagem quer mais; quem passa o dia lendo a conversa
+ * quer menos. É a mesma escolha que todo cliente de e-mail e de chat oferece, e
+ * pela mesma razão: a proporção certa depende do trabalho, não do produto.
+ *
+ * ---------------------------------------------------------------------------
+ * Por que o arrasto não passa pelo React
+ * ---------------------------------------------------------------------------
+ *
+ * O `pointermove` escreve direto na variável de CSS do `<html>`. Um `setState`
+ * por quadro renderizaria a lista inteira — que pode ter quinhentas conversas —
+ * sessenta vezes por segundo, para mudar uma medida que o CSS resolve sozinho.
+ * O React só volta a participar no `pointerup`, para gravar.
+ *
+ * `setPointerCapture` é o que faz o arrasto sobreviver ao ponteiro sair de cima
+ * da faixa de 5px — sem ele, mover rápido solta o puxador no meio do gesto.
+ */
+function PuxadorDaFila() {
+  const arrasto = useRef<{ x: number; largura: number } | null>(null)
+
+  const larguraAtual = () => {
+    const escrita = getComputedStyle(document.documentElement).getPropertyValue(
+      LARGURA_DA_FILA.variavel,
+    )
+    return parseInt(escrita, 10) || LARGURA_DA_FILA.padrao
+  }
+
+  const aplicar = (px: number) => {
+    const preso = Math.min(Math.max(px, LARGURA_DA_FILA.minimo), LARGURA_DA_FILA.maximo)
+    document.documentElement.style.setProperty(LARGURA_DA_FILA.variavel, `${preso}px`)
+    return preso
+  }
+
+  return (
+    /*
+      Faixa de 5px sobre a borda, meio para cada lado — é a área de acerto, e a
+      borda continua sendo o que se vê. `touch-none` impede o navegador de
+      entender o arrasto como rolagem no celular.
+
+      `aria-hidden` porque o teclado tem o próprio caminho logo abaixo: o botão
+      invisível que só aparece no foco. Uma faixa arrastável não é operável por
+      teclado, e anunciar uma não ajuda ninguém.
+    */
+    <div
+      aria-hidden
+      onPointerDown={(e) => {
+        e.currentTarget.setPointerCapture(e.pointerId)
+        arrasto.current = { x: e.clientX, largura: larguraAtual() }
+      }}
+      onPointerMove={(e) => {
+        if (!arrasto.current) return
+        aplicar(arrasto.current.largura + (e.clientX - arrasto.current.x))
+      }}
+      onPointerUp={(e) => {
+        if (!arrasto.current) return
+        const final = aplicar(arrasto.current.largura + (e.clientX - arrasto.current.x))
+        arrasto.current = null
+        e.currentTarget.releasePointerCapture(e.pointerId)
+        try {
+          localStorage.setItem(LARGURA_DA_FILA.chave, String(final))
+        } catch {
+          // Sem onde gravar, a largura vale só para esta aba.
+        }
+      }}
+      className="absolute top-0 -right-[2px] bottom-0 z-20 hidden w-[5px] cursor-col-resize touch-none md:block hover:bg-primary/25 active:bg-primary/40"
+    />
   )
 }
 

@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 /**
  * As pílulas de filtro do topo da fila.
@@ -232,11 +232,6 @@ export function PilulaInterruptor({
       )}
     </button>
   )
-}
-
-/** Uma pílula que é só um rótulo estático — usada para o canal da conta. */
-export function PilulaFixa({ children }: { children: ReactNode }) {
-  return <span className={`${PILULA} ${PILULA_PARADA} cursor-default`}>{children}</span>
 }
 
 function Seta({ aberta }: { aberta: boolean }) {

@@ -17,6 +17,27 @@ export const PREFERENCIAS = {
 export type Preferencia = keyof typeof PREFERENCIAS
 
 /**
+ * A largura da coluna de conversas do Inbox.
+ *
+ * Fica fora de `PREFERENCIAS` porque não é um interruptor: é um número, e ele
+ * chega ao CSS como variável em vez de atributo. O motivo de estar aqui mesmo
+ * assim é o mesmo das outras — precisa valer **antes da primeira pintura**, ou
+ * a coluna nasce com 320px e salta para a largura escolhida na frente da
+ * pessoa, empurrando a conversa junto.
+ *
+ * A variável é lida em `MolduraDoInbox`, com `320px` de padrão embutido no
+ * próprio `var()`: sem nada gravado, não há o que aplicar e o CSS resolve
+ * sozinho.
+ */
+export const LARGURA_DA_FILA = {
+  chave: 'autofluxos:fila',
+  variavel: '--fila',
+  padrao: 320,
+  minimo: 264,
+  maximo: 520,
+} as const
+
+/**
  * O script que roda **antes da primeira pintura**, no `<head>`.
  *
  * Sem ele existe o defeito clássico de todo tema gravado: a página pinta clara,
@@ -28,13 +49,17 @@ export type Preferencia = keyof typeof PREFERENCIAS
  * tudo. O `try` existe porque `localStorage` lança em janela anônima com dados
  * de site bloqueados, e um tema que não carrega não pode derrubar o painel.
  */
-export const SCRIPT_DAS_PREFERENCIAS = Object.values(PREFERENCIAS)
-  .map(
-    (p) =>
-      `try{if(localStorage.getItem('${p.chave}')==='${p.quandoVale}')d.setAttribute('${p.atributo}','${p.quandoVale}')}catch(e){}`,
-  )
-  .join('')
-  .replace(/^/, 'var d=document.documentElement;')
+export const SCRIPT_DAS_PREFERENCIAS =
+  'var d=document.documentElement;' +
+  Object.values(PREFERENCIAS)
+    .map(
+      (p) =>
+        `try{if(localStorage.getItem('${p.chave}')==='${p.quandoVale}')d.setAttribute('${p.atributo}','${p.quandoVale}')}catch(e){}`,
+    )
+    .join('') +
+  `try{var w=parseInt(localStorage.getItem('${LARGURA_DA_FILA.chave}'),10);` +
+  `if(w>=${LARGURA_DA_FILA.minimo}&&w<=${LARGURA_DA_FILA.maximo})` +
+  `d.style.setProperty('${LARGURA_DA_FILA.variavel}',w+'px')}catch(e){}`
 
 /** Escreve a preferência no `<html>` e no navegador, nesta ordem. */
 export function definirPreferencia(qual: Preferencia, ligada: boolean) {

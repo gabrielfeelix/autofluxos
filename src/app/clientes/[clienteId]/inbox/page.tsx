@@ -292,7 +292,22 @@ export default async function Pagina({
         tela cujo conteúdo é a conversa acontecendo agora.
       */}
       <PulsoDoInbox clienteId={cliente.id} pulsoNaTela={pulso} />
-      <main className="px-4 md:px-[42px] pt-[26px] pb-[42px]">
+      {/*
+        **Sem respiro em volta, e essa é a diferença mais visível desta tela.**
+
+        As outras páginas do painel são documentos: um cartão sobre o fundo, com
+        margem, canto redondo e sombra. O Inbox não é documento, é a ferramenta
+        — ela ocupa a janela inteira, encosta na barra lateral e no topo, e quem
+        separa é a borda que a barra já tem.
+
+        Com margem de 42px e canto de 16px ele virava um retângulo boiando num
+        fundo cinza: o produto todo parecia um modal aberto por engano, e cada
+        pixel daquela moldura era pixel que não era conversa.
+
+        O respiro volta para o estado vazio, que **é** documento: uma explicação
+        curta no meio da tela não quer encostar em nada.
+      */}
+      <main className="flex min-h-0 flex-1 flex-col">
         {/*
           O estado vazio é para **cliente sem conversa nenhuma**, e não para
           filtro sem resultado.
@@ -304,7 +319,9 @@ export default async function Pagina({
           não tinha como corrigir o que digitou.
         */}
         {contagem.total === 0 ? (
-          <EstadoVazio clienteId={cliente.id} recemConectado={recem} />
+          <div className="px-4 pt-[26px] pb-[42px] md:px-[42px]">
+            <EstadoVazio clienteId={cliente.id} recemConectado={recem} />
+          </div>
         ) : (
           <Conteudo
             clienteId={cliente.id}

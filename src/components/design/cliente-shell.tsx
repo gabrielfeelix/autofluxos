@@ -150,7 +150,7 @@ export async function ClienteShell({
           Quem diz onde você está é o item aceso na barra; quem dá nome à página
           é a página.
         */}
-        <div className="app-page-enter flex min-h-full flex-col">{children}</div>
+        <div className="app-page-enter flex min-h-full flex-col md:h-full">{children}</div>
       </div>
     </div>
   )
