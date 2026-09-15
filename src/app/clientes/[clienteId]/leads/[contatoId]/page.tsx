@@ -31,7 +31,6 @@ import { membrosDaConta } from '@/server/repos/usuarios'
 import { listarMotivos } from '@/server/repos/motivos-de-perda'
 import { rotuloDoCampo } from '@/core/contatos/rotulo-do-campo'
 import { origemDoContato } from '@/core/contatos/origem'
-import { telefoneLegivel } from '@/core/contatos/telefone'
 import { Avatar } from '@/components/inbox/avatar'
 import { Abas } from '@/components/lead-crm/abas'
 import { EstagioDoContato } from '@/components/lead-crm/estagio-do-contato'
@@ -140,15 +139,17 @@ export default async function Pagina({
               waId={lead.waId}
               salvar={acaoCorrigirNome.bind(null, clienteId, contatoId)}
             />
-            {/* Telefone e origem numa linha só, embaixo do nome: são as duas
-                coisas que se procura com a ficha aberta — para onde eu ligo, e
-                de onde essa pessoa veio. */}
+            {/* Canal e origem embaixo do nome. **O telefone não entra aqui**:
+                `NomeDoContato` já o imprime, e o mesmo número duas vezes em
+                duas linhas seguidas é ruído que parece defeito. */}
             <p className="mt-0.5 text-[11.5px] text-dim">
-              {telefoneLegivel(lead.waId)} · WhatsApp
+              WhatsApp
               {origem &&
                 (origem.deAnuncio && origem.titulo
                   ? ` · veio do anúncio “${origem.titulo}”`
-                  : ` · veio de ${origem.rotulo}`)}
+                  : origem.rotulo.toLowerCase() === 'direto'
+                    ? ' · veio direto'
+                    : ` · veio de ${origem.rotulo.toLowerCase()}`)}
             </p>
           </div>
           <span className="flex-1" />
