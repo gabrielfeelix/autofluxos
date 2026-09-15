@@ -118,6 +118,28 @@ IMMUTABLE`), porque a versão `(text, timestamptz)` depende do fuso da sessão. 
 saída foi coluna gerada com `at time zone 'utc'`, que torna a expressão
 imutável. Está comentado no arquivo.
 
+## Lead Ads — o formulário nativo (feito em 14/set, noite)
+
+É o que o cliente do BME realmente pediu: hoje eles pagam um intermediário
+(LeadsBridge/Pluga) para tirar o lead do Facebook e jogar numa planilha. Agora
+o lead entra direto.
+
+- `src/core/lead-ads.ts` — traduz o `field_data` da Meta. Busca telefone por
+  *conter*, não por igualdade, porque campo customizado tem a chave que o
+  anunciante digitou (`qual_seu_whatsapp` é o caso brasileiro).
+- `src/app/api/webhook/leadgen/route.ts` — objeto `page`, campo `leadgen`.
+  Responde `200` e processa no `after()`.
+- `src/server/receber-lead-do-formulario.ts` — do aviso ao cartão no funil.
+- `0051_paginas_de_lead` — traduz `page_id` para conta. **Não vem do corpo**: a
+  assinatura prova que a Meta mandou, não de quem é o lead.
+- `0052_formularios_de_lead` + cron `/api/manutencao/leads-do-formulario` — a
+  reconciliação de 48h, porque a Meta não reentrega depois de um `200` e apaga
+  o lead em 90 dias.
+
+Como ligar, passo a passo, em [LEAD-ADS.md](LEAD-ADS.md). **As três migrations
+(0050, 0051, 0052) estão aplicadas em produção**, cada uma com ensaio em
+transação antes e Verandi conferida depois (42 tabelas, sempre).
+
 ## O que falta, em ordem
 
 1. ~~Aplicar a `0050` em produção.~~ **Feito em 14/set.** Ver acima.
@@ -126,13 +148,16 @@ imutável. Está comentado no arquivo.
 3. **Testar com anúncio real.** Ninguém clicou num CTWA de verdade ainda; a
    prova até aqui é payload da doc da Meta em teste automatizado. **Contato
    antigo não ganha passagem retroativa** — só conversa nova.
-4. **Filtro "veio de anúncio" nos rails** — aberto de propósito. Filtro local
-   resolve 200 conversas; filtro de verdade pede coluna indexada. Decidir com
-   uso real.
-5. **Lead Ads** (formulário nativo) — não começou. Seis permissões e talvez App
-   Review. O primeiro passo não é código: é testar se o arranjo System User +
-   Business Manager dispensa o review, o que muda o tamanho do projeto. Ver
-   [PLANO-LEAD-ADS.md](PLANO-LEAD-ADS.md).
+4. ~~Filtro "veio de anúncio" nos rails.~~ **Feito em 14/set.** Terceiro eixo
+   da fila, em memória, com contagem por grupo. Não vai para a URL de propósito
+   — é recorte de análise, não "onde eu parei".
+5. ~~Lead Ads.~~ **Feito em 14/set.** Falta só o degrau que não é código:
+   confirmar as permissões com um cliente real (ver [LEAD-ADS.md](LEAD-ADS.md)),
+   e uma tela para ligar Página sem `insert` no banco.
+6. **Conversions API** — mandar de volta "este lead virou venda". Não começou.
+   O `ctwa_clid` e o `lead_da_meta` já são guardados, que é o que mantém a porta
+   aberta: HubSpot e Zoho não guardam o lead id e ficam trancados fora desse
+   loop.
 
 ## Armadilhas registradas
 
