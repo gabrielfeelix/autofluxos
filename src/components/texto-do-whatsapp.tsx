@@ -32,7 +32,7 @@ function desenhar(trechos: Trecho[]): ReactNode {
         return <s key={i}>{filhos}</s>
       case 'mono':
         return (
-          <code key={i} className="rounded bg-black/[0.07] px-1 font-mono text-[0.92em]">
+          <code key={i} className="rounded bg-ink/[0.09] px-1 font-mono text-[0.92em]">
             {filhos}
           </code>
         )

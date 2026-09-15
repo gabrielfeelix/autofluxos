@@ -627,6 +627,58 @@ textarea::placeholder {
   }
 }
 
+/*
+ * A bolha do que **nós** mandamos: azul sólido, texto branco.
+ *
+ * ---------------------------------------------------------------------------
+ * Por que sólido, e não o azul a 12% que estava aqui
+ * ---------------------------------------------------------------------------
+ *
+ * As duas bolhas eram tintas quase brancas — `primary/12` de um lado, o cinza
+ * da superfície do outro — sobre um fundo também quase branco. Três tons de
+ * branco empilhados: lia-se o texto, mas não se lia **de quem** é a mensagem,
+ * que é a única coisa que a cor da bolha precisa dizer.
+ *
+ * Todo aplicativo de conversa resolve isso do mesmo jeito, e nenhum deles com
+ * sutileza: o WhatsApp põe verde contra branco, o Instagram azul cheio com
+ * letra branca, o Telegram idem. A direção da mensagem é a informação mais
+ * lida da tela, e informação mais lida não se comunica com 12% de opacidade.
+ *
+ * ---------------------------------------------------------------------------
+ * Por que uma classe que redefine token, e não classes de cor no JSX
+ * ---------------------------------------------------------------------------
+ *
+ * Dentro da bolha mora meia dúzia de componentes — citação, anexo, cartão,
+ * lugar, rodapé de hora, `<code>` — e todos eles já pintam por token. Trocar os
+ * tokens **no escopo da bolha** faz os seis se adaptarem sem saber que existe
+ * uma versão azul: a citação clareia a borda, a hora vira branco translúcido, o
+ * código escurece o próprio fundo.
+ *
+ * A alternativa seria passar um `nossa` para cada um deles e duplicar cada
+ * classe de cor. Seriam seis componentes sabendo de um detalhe do pai, e o
+ * sétimo — o que alguém escrever no ano que vem — nascendo errado.
+ */
+.bolha-nossa {
+  color: #ffffff;
+
+  --ink: #ffffff;
+  --soft: rgba(255, 255, 255, 0.9);
+  --muted: rgba(255, 255, 255, 0.75);
+  --dim: rgba(255, 255, 255, 0.62);
+  --line: rgba(255, 255, 255, 0.3);
+  --line-soft: rgba(255, 255, 255, 0.18);
+  --line-strong: rgba(255, 255, 255, 0.45);
+  --surface: rgba(255, 255, 255, 0.16);
+  --surface-strong: rgba(255, 255, 255, 0.24);
+  --panel: rgba(255, 255, 255, 0.12);
+  /* Link e destaque dentro da bolha azul só podem ser brancos: qualquer azul
+     sobre azul é o mesmo problema que esta classe existe para resolver. */
+  --primary: #ffffff;
+  --primary-strong: #ffffff;
+  --primary-weak: rgba(255, 255, 255, 0.2);
+  --primary-ink: #1d4ed8;
+}
+
 /* A visualização usa textura própria em vez de uma imagem externa: continua
    reconhecível como conversa e não adiciona ativo de terceiro ao repositório. */
 .whatsapp-wallpaper {

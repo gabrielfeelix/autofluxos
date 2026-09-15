@@ -5,6 +5,7 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import { comoFalta, restaDaJanela } from '@/channels/janela'
 import { Dica } from '@/components/design/dica'
 import { LARGURA_DA_FILA } from '@/components/design/tema'
+import { chavesDoTelefone } from '@/core/contatos/telefone'
 import { Avatar } from '@/components/inbox/avatar'
 import { RailsLocais } from '@/components/inbox/fila-local'
 import {
@@ -121,14 +122,24 @@ export function Fila({
   const [soNaoLidas, setSoNaoLidas] = useState(false)
   const [ordem, setOrdem] = useState<Ordem>('recentes')
 
+  /*
+   * O que está escrito na busca **agora**, que não é o mesmo que `termo`.
+   *
+   * `termo` é o que o servidor já filtrou e está no endereço; este é o que a
+   * pessoa está digitando. No modo local os dois divergem entre a primeira
+   * letra e o Enter, e é justamente nesse intervalo que a lista precisa
+   * responder.
+   */
+  const [digitado, setDigitado] = useState(termo)
+
   const naTela = useMemo(() => {
     const base = local ? recorte : leads
     if (!local) return base
     const recortada = soNaoLidas
       ? base.filter((lead) => (naoLidas.get(lead.contatoId) ?? 0) > 0)
       : base
-    return ordenar(recortada, ordem)
-  }, [local, recorte, leads, soNaoLidas, naoLidas, ordem])
+    return ordenar(procurar(recortada, digitado), ordem)
+  }, [local, recorte, leads, soNaoLidas, naoLidas, ordem, digitado])
 
   const nomeDe = (id: string | null) =>
     id ? (equipe.find((membro) => membro.id === id)?.nome.split(' ')[0] ?? 'alguém') : null
@@ -220,6 +231,21 @@ export function Fila({
             duplicar justamente a parte que erra sozinha — quem procura
             "(11) 98765-4321" não acha `551187654321` com comparação de texto.
           */}
+          {/*
+            **Filtra enquanto se digita, e ainda assim é um formulário `GET`.**
+
+            No modo local a fila inteira está no navegador: filtrar é um
+            `filter()` e não há razão para esperar o Enter — quem procura alguém
+            numa lista de trezentas quer ver a lista encolher na terceira letra.
+
+            O formulário continua existindo, e o Enter continua indo ao
+            servidor, por dois motivos. No modo paginado ele é a única busca que
+            existe, porque filtrar uma página de cinquenta de cinco mil acharia
+            só quem por acaso estava carregado. E mesmo no local, a busca do
+            servidor casa telefone por formas normalizadas do banco — o Enter é
+            como se pede a resposta autoritativa, e o endereço resultante dá
+            para guardar e mandar para alguém.
+          */}
           <form method="get" className="relative mx-auto w-full max-w-[460px]">
             <input type="hidden" name="de" value={atribuicao} />
             <input type="hidden" name="estado" value={estado} />
@@ -228,11 +254,24 @@ export function Fila({
             <input
               type="search"
               name="busca"
-              defaultValue={termo}
+              value={digitado}
+              onChange={(e) => setDigitado(e.target.value)}
               placeholder="Pesquisar em conversas"
               aria-label="Pesquisar em conversas"
-              className="app-field rounded-full py-2 pr-3 pl-8 text-[12px]"
+              className="app-field rounded-full py-2 pr-8 pl-8 text-[12px]"
             />
+            {digitado !== '' && (
+              <button
+                type="button"
+                onClick={() => setDigitado('')}
+                aria-label="Limpar a busca"
+                className="absolute top-1/2 right-2 flex size-5 -translate-y-1/2 items-center justify-center rounded-full text-dim transition hover:bg-surface hover:text-ink"
+              >
+                <span aria-hidden className="text-[13px] leading-none">
+                  ×
+                </span>
+              </button>
+            )}
             {/* O Enter já envia. O botão existe para o comando estar dito em
                 algum lugar para quem usa leitor de tela. */}
             <button type="submit" className="sr-only">
@@ -413,9 +452,9 @@ export function Fila({
 
         {naTela.length === 0 && (
           <p className="px-4 py-8 text-center text-[11.5px] leading-5 text-dim">
-            {termo === ''
-              ? 'Nenhuma conversa nesta aba.'
-              : `Ninguém com “${termo}” nesta aba.`}
+            {(local ? digitado : termo) === ''
+              ? 'Nenhuma conversa neste filtro.'
+              : `Ninguém com “${local ? digitado : termo}” aqui. Enter procura no servidor.`}
           </p>
         )}
       </nav>
@@ -608,6 +647,45 @@ function resumoDaConversa(lead: Lead): string {
   // `core/tipo-da-mensagem.ts` sobre por que "mídia ou mensagem sem texto"
   // sozinho era pior do que nada.
   return `${prefixo}${nomeDoTipo(lead.ultimoTipo) ?? 'mensagem sem texto'}`
+}
+
+/* -------------------------------------------------------------------------- */
+/* A busca enquanto se digita                                                 */
+/* -------------------------------------------------------------------------- */
+
+/** Sem acento e em minúsculas: quem digita "fabricio" tem que achar "Fabrício". */
+const achatar = (texto: string) =>
+  texto
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+
+/**
+ * O recorte por texto, feito no navegador.
+ *
+ * **O telefone usa `chavesDoTelefone`, a mesma função do servidor.** Ela mora
+ * em `core/`, sem banco e sem rede, justamente para os dois lados poderem
+ * chamá-la: quem digita "(11) 98765-4321" precisa achar `5511987654321`, e
+ * resolver isso com comparação de texto erraria em todo número com nono dígito.
+ *
+ * O que sobra é comparação de nome e da última mensagem, que é o que se procura
+ * quando não se está procurando um número.
+ */
+function procurar(leads: Lead[], termo: string): Lead[] {
+  const alvo = achatar(termo.trim())
+  if (alvo === '') return leads
+
+  const so = termo.replace(/\D/g, '')
+  const chaves = so === '' ? [] : chavesDoTelefone(termo)
+
+  return leads.filter((lead) => {
+    if (achatar(lead.nome ?? '').includes(alvo)) return true
+    if (achatar(lead.ultimoTexto ?? '').includes(alvo)) return true
+    // `includes` e não igualdade: digitar só o DDD e o começo do número já
+    // recorta, que é como se busca telefone de cabeça.
+    if (so !== '' && lead.waId.includes(so)) return true
+    return chaves.some((chave) => lead.waId === chave)
+  })
 }
 
 /* -------------------------------------------------------------------------- */

@@ -598,7 +598,7 @@ async function Conteudo({
                 tabela colada, um anexo fora de medida — reintroduza o mesmo
                 defeito.
               */}
-              <div className="flex min-h-0 flex-1 flex-col-reverse overflow-x-hidden overflow-y-auto bg-canvas p-5">
+              <div className="flex min-h-0 flex-1 flex-col-reverse overflow-x-hidden overflow-y-auto bg-panel p-5">
                 <Historico
                   mensagens={conversa.mensagens}
                   cortada={conversa.cortada}
@@ -845,10 +845,10 @@ function Historico({
               então ele desiste e deixa transbordar. `anywhere` quebra onde
               precisar, que é o comportamento certo para link colado.
             */}
-            <p className={`max-w-[78%] px-3 py-2 text-[12.5px] leading-[1.5] whitespace-pre-wrap [overflow-wrap:anywhere] shadow-[0_1px_1px_rgba(19,25,34,0.026)] ${
+            <p className={`max-w-[78%] px-3.5 py-2 text-[13px] leading-[1.5] whitespace-pre-wrap [overflow-wrap:anywhere] ${
               nossa
-                ? 'rounded-[13px_13px_4px_13px] border border-primary/[0.2] bg-primary/[0.12]'
-                : 'rounded-[13px_13px_13px_4px] border border-line bg-surface'
+                ? 'bolha-nossa rounded-[15px_15px_4px_15px] bg-primary'
+                : 'rounded-[15px_15px_15px_4px] bg-surface-strong text-ink'
             }`}>
               {mensagem.cita && <CitacaoNaBolha cita={mensagem.cita} nome={nome} />}
               {mensagem.anexo && <AnexoNaConversa anexo={mensagem.anexo} />}
@@ -882,11 +882,11 @@ function Historico({
                 !mensagem.recebido &&
                 !mensagem.semCopia && <SemTexto />
               )}
-              <span className="ml-2 text-[9.5px] text-muted" title={horaExata(mensagem.ts)}>
+              <span className="ml-2 text-[10px] text-muted" title={horaExata(mensagem.ts)}>
                 {nossa ? 'atendimento' : (nome ?? 'cliente')} · {horaDoRelogio(mensagem.ts)}
               </span>
               {nossa && !mensagem.entregue && (
-                <span className="ml-2 text-[9.5px] text-aviso">envio não confirmado</span>
+                <span className="ml-2 text-[10px] font-semibold text-soft">envio não confirmado</span>
               )}
             </p>
             {(mensagem.waMessageId || mensagem.reacoes) && (
