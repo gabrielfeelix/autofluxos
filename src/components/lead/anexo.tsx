@@ -224,12 +224,18 @@ export function CartoesNaBolha({ cartoes }: { cartoes: CartaoDeContato[] }) {
  * Não promete recuperação, porque não há: a Meta não guarda cópia, e depois de
  * sete dias ninguém guarda.
  */
-export function ArquivoSemCopia() {
+export function ArquivoSemCopia({ nossa = false }: { nossa?: boolean }) {
   return (
-    <span className="mb-1.5 flex items-center gap-2 rounded-lg border border-dashed border-strong px-2.5 py-2">
+    /*
+      `inline-flex` e `max-w-full`: era `flex`, que é bloco e esticava até os
+      78% da bolha — um retângulo grande e vazio para dizer uma frase curta.
+    */
+    <span className="mb-1.5 inline-flex max-w-full items-center gap-2 rounded-lg border border-dashed border-strong px-2.5 py-1.5">
       <span className="text-[13px] leading-none">📎</span>
       <span className="text-[11px] leading-4 text-dim italic">
-        arquivo recebido, sem cópia guardada — peça para enviar de novo
+        {nossa
+          ? 'arquivo enviado pelo celular, sem cópia por aqui'
+          : 'arquivo recebido, sem cópia guardada — peça para enviar de novo'}
       </span>
     </span>
   )

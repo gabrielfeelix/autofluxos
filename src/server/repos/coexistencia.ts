@@ -303,8 +303,15 @@ export async function registrarMensagemDeCoexistencia(dados: {
   /** `null` = use o `now()` do banco. */
   ts: string | null
   historico: boolean
-}): Promise<boolean> {
-  const { error } = await db()
+  /*
+   * Devolve o **id da linha gravada**, e `null` quando era repetida.
+   *
+   * Era `boolean`. O id passou a ser necessário quando o eco começou a baixar
+   * a cópia da mídia: `guardarMidiaRecebida` grava o arquivo **na mensagem**, e
+   * para isso precisa saber em qual. `true` dizia que gravou e não dizia onde.
+   */
+}): Promise<string | null> {
+  const { data, error } = await db()
     .from('messages')
     .insert({
       contact_id: dados.contatoId,
@@ -324,12 +331,14 @@ export async function registrarMensagemDeCoexistencia(dados: {
        */
       ...(dados.direcao === 'saida' ? { entregue: true } : {}),
     })
+    .select('id')
+    .single()
 
   if (error) {
-    if (error.code === '23505') return false
+    if (error.code === '23505') return null
     throw new Error(`não deu para registrar a mensagem de coexistência: ${error.message}`)
   }
-  return true
+  return data.id as string
 }
 
 /* -------------------------------------------------------------------------- */

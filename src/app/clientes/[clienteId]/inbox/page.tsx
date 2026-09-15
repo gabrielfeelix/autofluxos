@@ -858,7 +858,7 @@ function Historico({
                 morre em cinco minutos.
               */}
               {mensagem.recebido && <AnexoNaConversa anexo={mensagem.recebido} />}
-              {mensagem.semCopia && <ArquivoSemCopia />}
+              {mensagem.semCopia && <ArquivoSemCopia nossa={nossa} />}
               {mensagem.local && <LocalNaBolha local={mensagem.local} />}
               {mensagem.cartoes && <CartoesNaBolha cartoes={mensagem.cartoes} />}
               {/*

@@ -2,6 +2,8 @@ import 'server-only'
 import { z } from 'zod'
 import { digitos } from '@/core/contatos/telefone'
 import { alertar } from './alertar'
+import { guardarMidiaRecebida } from './guardar-midia-recebida'
+import { canalDoWhatsApp } from './canal-do-whatsapp'
 import {
   acharCanalPorNumero,
   acharOuCriarContato,
@@ -542,7 +544,7 @@ async function gravarMensagemImportada(
   const nome = await nomeNaAgenda(canal.clienteId, waId)
   const contato = await acharOuCriarContato(canal.clienteId, waId, nome)
 
-  await registrarMensagemDeCoexistencia({
+  const mensagemId = await registrarMensagemDeCoexistencia({
     contatoId: contato.id,
     waMessageId: mensagem.id,
     direcao,
@@ -552,6 +554,56 @@ async function gravarMensagemImportada(
     ts: carimboDaMeta(mensagem.timestamp),
     historico,
   })
+
+  /*
+   * **A cópia do arquivo do eco.**
+   *
+   * Sem isto, todo áudio, foto ou figurinha que o dono manda pelo celular
+   * aparece no Inbox como "arquivo sem cópia guardada". Não era uma falha de
+   * download: o eco nunca chegou a tentar baixar. A mensagem **recebida** baixa
+   * desde a 0055 (ver `receber-mensagem.ts`); o eco só gravava o payload cru, e
+   * o payload cru tem o `id` da mídia, que expira em 7 dias e não volta.
+   *
+   * `mensagemId` nulo é repetição — a Meta reenvia, e baixar duas vezes o mesmo
+   * arquivo é pagar duas vezes pelo que já está guardado.
+   *
+   * O erro é engolido com aviso, como no caminho de entrada: mídia que não
+   * baixou é uma bolha com placeholder, e derrubar o webhook por causa dela
+   * faria a Meta reenviar o lote inteiro.
+   */
+  if (mensagemId) {
+    const idDaMidia = midiaIdDaMensagem(mensagem)
+    if (idDaMidia) {
+      try {
+        await guardarMidiaRecebida(canalDoWhatsApp(canal), canal.clienteId, contato.id, mensagemId, {
+          tipo: mensagem.type,
+          midiaId: idDaMidia,
+        })
+      } catch (erro) {
+        console.warn(
+          '[coexistencia] não deu para guardar a mídia do eco',
+          erro instanceof Error ? erro.message : String(erro),
+        )
+      }
+    }
+  }
+}
+
+/**
+ * O `id` da mídia dentro de uma mensagem da Meta.
+ *
+ * O payload põe o arquivo numa chave com o **nome do tipo** — `audio.id`,
+ * `image.id`, `sticker.id`, `document.id`. Ler por `mensagem[mensagem.type]` é
+ * o que faz tipo novo funcionar sem uma lista aqui para manter; quem decide se
+ * o tipo interessa é `midiaDoTipo`, dentro de `guardarMidiaRecebida`.
+ */
+function midiaIdDaMensagem(mensagem: z.infer<typeof mensagemDoHistoricoSchema>): string | undefined {
+  const tipo = mensagem.type
+  if (!tipo) return undefined
+  const parte = (mensagem as Record<string, unknown>)[tipo]
+  if (!parte || typeof parte !== 'object') return undefined
+  const id = (parte as { id?: unknown }).id
+  return typeof id === 'string' && id !== '' ? id : undefined
 }
 
 /**

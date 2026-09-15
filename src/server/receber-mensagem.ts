@@ -1,7 +1,7 @@
 import 'server-only'
 import { z } from 'zod'
-import { canalCloudApi } from '@/channels/cloud-api'
 import type { Canal } from '@/channels/types'
+import { canalDoWhatsApp } from './canal-do-whatsapp'
 import { sessaoNova, type Acao, type Entrada } from '@/core/engine/types'
 import { varsIniciais } from '@/core/contatos/vars-iniciais'
 import { alertar, type ContextoDoAlerta } from './alertar'
@@ -205,12 +205,7 @@ type Referral = z.infer<typeof referralSchema>
 /** Como o canal é montado. Injetável para os testes rodarem sem rede. */
 export type FabricaDeCanal = (canal: CanalSalvo) => Canal
 
-function canalPadrao(canal: CanalSalvo): Canal {
-  const token = process.env.WHATSAPP_TOKEN
-  if (!token) throw new Error('falta WHATSAPP_TOKEN no ambiente')
-  if (!canal.phoneNumberId) throw new Error('este canal não tem número do WhatsApp')
-  return canalCloudApi({ phoneNumberId: canal.phoneNumberId, token })
-}
+const canalPadrao = canalDoWhatsApp
 
 export async function receberMensagem(
   payload: unknown,
