@@ -6,6 +6,7 @@ import { IlustracaoQuadros } from '@/components/design/ilustracoes'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { Quadro } from '@/components/quadros/quadro'
 import { QuadroPadrao } from '@/components/quadros/quadro-padrao'
+import { EntregaDoQuadro } from '@/components/quadros/entrega-do-quadro'
 import { LIMITE_DO_NOME } from '@/core/quadros'
 import { acaoApagarQuadro, acaoCriarQuadro } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
@@ -126,6 +127,16 @@ export default async function Pagina({
           )}
 
           <span className="ml-auto flex items-center gap-2">
+            {aberto && (
+              <EntregaDoQuadro
+                clienteId={cliente.id}
+                quadroId={aberto.id}
+                seguinteId={aberto.seguinteId}
+                outros={quadros
+                  .filter((quadro) => quadro.id !== aberto.id)
+                  .map(({ id, nome }) => ({ id, nome }))}
+              />
+            )}
             {aberto && (
               <QuadroPadrao
                 clienteId={cliente.id}

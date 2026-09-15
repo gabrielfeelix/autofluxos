@@ -10,9 +10,10 @@ import {
   estaParado,
   type Cartao,
   type Etapa,
+  type TipoDeEtapa,
 } from '@/core/quadros'
 import { comoDinheiro } from '@/core/crm'
-import { acaoAtribuirCartao, acaoReabrirCartao } from '@/server/acoes-crm'
+import { acaoAtribuirCartao, acaoDefinirTipoDaEtapa, acaoReabrirCartao } from '@/server/acoes-crm'
 import { FecharCartao } from './fechar-cartao'
 import { PainelDoContato } from './painel-do-contato'
 import {
@@ -204,6 +205,25 @@ export function Quadro({
                 <h3 className="min-w-0 flex-1 truncate text-[12.5px] font-bold text-soft">
                   {etapa.nome}
                 </h3>
+                {/* A etapa de ganho e a de perda precisam se anunciar: soltar um
+                    cartão nelas tem consequência, e consequência sem aviso na
+                    coluna é surpresa. */}
+                {etapa.tipo && etapa.tipo !== 'normal' && (
+                  <span
+                    title={
+                      etapa.tipo === 'ganho'
+                        ? 'Soltar aqui fecha a venda como ganha'
+                        : 'Soltar aqui pede o motivo da perda'
+                    }
+                    className={`shrink-0 rounded-full px-1.5 py-[1px] text-[9.5px] font-bold ${
+                      etapa.tipo === 'ganho'
+                        ? 'bg-emerald-400/15 text-emerald-600'
+                        : 'bg-rose-400/15 text-rose-600'
+                    }`}
+                  >
+                    {etapa.tipo === 'ganho' ? 'ganho' : 'perda'}
+                  </span>
+                )}
                 <span className="shrink-0 rounded-full bg-surface-strong px-1.5 py-0.5 text-[10.5px] text-dim">
                   {daEtapa.length}
                 </span>
@@ -713,6 +733,9 @@ function MenuDaEtapa({
 }) {
   const [aberto, setAberto] = useState(false)
   const [renomeando, setRenomeando] = useState(false)
+  const [configurando, setConfigurando] = useState(false)
+  const [tipo, setTipo] = useState<TipoDeEtapa>(etapa.tipo ?? 'normal')
+  const [limite, setLimite] = useState(etapa.limiteDeDias ? String(etapa.limiteDeDias) : '')
   const [nome, setNome] = useState(etapa.nome)
   const [erro, setErro] = useState<string | null>(null)
   const [, comecar] = useTransition()
@@ -759,6 +782,16 @@ function MenuDaEtapa({
             </button>
             <button
               type="button"
+              onClick={() => {
+                setAberto(false)
+                setConfigurando(true)
+              }}
+              className="rounded px-2 py-1.5 text-left text-[12px] transition hover:bg-surface-strong"
+            >
+              O que esta etapa significa
+            </button>
+            <button
+              type="button"
               disabled={ehPrimeira}
               onClick={() => agir(() => acaoMoverEtapa(clienteId, quadroId, etapa.id, 'esquerda'))}
               className="rounded px-2 py-1.5 text-left text-[12px] transition hover:bg-surface-strong disabled:opacity-30 disabled:hover:bg-transparent"
@@ -802,6 +835,74 @@ function MenuDaEtapa({
           {erro}
         </span>
       )}
+
+      <Modal
+        aberto={configurando}
+        aoFechar={() => setConfigurando(false)}
+        titulo={`O que "${etapa.nome}" significa`}
+        descricao="Etapa de ganho e de perda são as duas que o sistema entende: soltar um cartão nelas abre o fechamento da venda, e ganhar faz o contato virar cliente."
+      >
+        <label className="block">
+          <span className="mb-1 block text-[11px] font-bold tracking-[0.04em] text-dim uppercase">
+            Papel da etapa
+          </span>
+          <select
+            autoFocus
+            value={tipo}
+            onChange={(e) => setTipo(e.target.value as TipoDeEtapa)}
+            className="app-field w-full px-3 py-2.5 text-[12.5px]"
+          >
+            <option value="normal">Etapa comum — só uma posição no funil</option>
+            <option value="ganho">Etapa de ganho — fecha a venda</option>
+            <option value="perdido">Etapa de perda — pede o motivo</option>
+          </select>
+        </label>
+
+        <label className="mt-3 block">
+          <span className="mb-1 block text-[11px] font-bold tracking-[0.04em] text-dim uppercase">
+            Avisar quando parar aqui por <span className="font-normal normal-case">(dias)</span>
+          </span>
+          <input
+            value={limite}
+            onChange={(e) => setLimite(e.target.value.replace(/\D/g, ''))}
+            inputMode="numeric"
+            placeholder={`vazio usa ${DIAS_PARA_MARCAR_PARADO} dias`}
+            className="app-field w-full px-3 py-2.5 text-[12.5px]"
+          />
+          <span className="mt-1.5 block text-[11px] leading-4 text-dim">
+            A paciência é por etapa: três dias em &ldquo;Aguardando pagamento&rdquo; é rotina, três
+            dias em &ldquo;Primeiro contato&rdquo; é lead perdido.
+          </span>
+        </label>
+
+        <div className="mt-4 flex gap-2.5">
+          <button
+            type="button"
+            onClick={() => setConfigurando(false)}
+            className="app-secondary-button flex-1 px-4 py-2.5 text-[13px]"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setConfigurando(false)
+              agir(() =>
+                acaoDefinirTipoDaEtapa(
+                  clienteId,
+                  quadroId,
+                  etapa.id,
+                  tipo,
+                  limite === '' ? null : Number(limite),
+                ),
+              )
+            }}
+            className="app-primary-button flex-[1.35] px-4 py-2.5 text-[13px]"
+          >
+            Salvar
+          </button>
+        </div>
+      </Modal>
 
       <Modal
         aberto={renomeando}
