@@ -65,21 +65,34 @@ export async function aplicarFato(
   return novo
 }
 
-/** O estágio de uma pessoa, sozinho. É o que o perfil dela mostra no topo. */
+/**
+ * O estágio de uma pessoa, e desde quando.
+ *
+ * **A data vem junto porque ela é metade da informação.** "Negociando" não diz
+ * nada sozinho: negociando desde ontem é uma conversa viva, negociando desde
+ * abril é uma venda que ninguém teve coragem de marcar como perdida. A coluna
+ * `estagio_mudou_em` existe desde a 0058 e não estava sendo lida por ninguém.
+ *
+ * `desde` é nulo para quem nunca mudou de estágio — o contato nasce `novo`, e
+ * nascer não é mudar.
+ */
 export async function estagioDoContato(
   clienteId: string,
   contatoId: string,
-): Promise<Estagio | null> {
+): Promise<{ estagio: Estagio; desde: string | null } | null> {
   const { data, error } = await db()
     .from('contacts')
-    .select('estagio')
+    .select('estagio, estagio_mudou_em')
     .eq('client_id', clienteId)
     .eq('id', contatoId)
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
   if (error) throw new Error(`não deu para ler o estágio: ${error.message}`)
-  return ((data as { estagio: string } | null)?.estagio ?? null) as Estagio | null
+  if (!data) return null
+
+  const linha = data as { estagio: string; estagio_mudou_em: string | null }
+  return { estagio: linha.estagio as Estagio, desde: linha.estagio_mudou_em }
 }
 
 /** O ajuste na mão. Existe, e é exceção — ver `docs/MODELO-CRM.md`. */

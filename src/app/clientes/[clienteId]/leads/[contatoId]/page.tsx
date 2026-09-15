@@ -29,6 +29,11 @@ import { estagioDoContato, resumoDoContato } from '@/server/repos/crm'
 import { linhaDoTempo } from '@/server/repos/eventos'
 import { membrosDaConta } from '@/server/repos/usuarios'
 import { listarMotivos } from '@/server/repos/motivos-de-perda'
+import { agendadasDoContato } from '@/server/repos/mensagens-agendadas'
+import { passagensDoContato } from '@/server/repos/passagens'
+import { resolverAnuncios } from '@/server/resolver-anuncios'
+import { tokenDeAnuncios } from '@/server/token-de-anuncios'
+import type { AnuncioEmCache, Passagem } from '@/core/anuncios'
 import { rotuloDoCampo } from '@/core/contatos/rotulo-do-campo'
 import { origemDoContato } from '@/core/contatos/origem'
 import { Avatar } from '@/components/inbox/avatar'
@@ -38,6 +43,10 @@ import { Historico as HistoricoDoContato } from '@/components/lead-crm/historico
 import { Negociacoes } from '@/components/lead-crm/negociacoes'
 import { ResponsavelDoContato } from '@/components/lead-crm/responsavel-do-contato'
 import { ResumoDoContato } from '@/components/lead-crm/resumo-do-contato'
+import { AcoesDaFicha } from '@/components/lead-crm/acoes-da-ficha'
+import { Agendadas } from '@/components/lead-crm/agendadas'
+import { Informacoes } from '@/components/lead-crm/informacoes'
+import { Jornada } from '@/components/lead-crm/jornada'
 import { SeletorDeEtiquetas } from '@/components/etiquetas/seletor'
 import {
   AnexoNaConversa,
@@ -79,6 +88,7 @@ export default async function Pagina({
     eventos,
     equipe,
     motivos,
+    agendadas,
     temAutomacao,
   ] = await Promise.all([
     acharCliente(clienteId),
@@ -91,6 +101,7 @@ export default async function Pagina({
     linhaDoTempo(clienteId, contatoId),
     membrosDaConta(clienteId),
     listarMotivos(clienteId),
+    agendadasDoContato(clienteId, contatoId),
     /*
      * Sem fluxo ligado a papel nem gatilho ativo, **não existe bot** — e o
      * cartão abaixo dizia "Bot respondendo este contato" assim mesmo, com um
@@ -113,6 +124,13 @@ export default async function Pagina({
   // Quanto ainda dá para responder em texto livre. `null` fecha a caixa — e a
   // conta é feita aqui, no servidor, porque o relógio do navegador de quem abre
   // a tela não é fonte de verdade para uma regra da Meta.
+  /*
+   * A jornada por anúncio, e só dela: as passagens são baratas, mas resolver o
+   * nome de cada anúncio fala com a Meta. Sem token, a lista volta igual com o
+   * título que a pessoa leu no dia — ver `jornadaDoContato`.
+   */
+  const jornada = await jornadaDoContato(clienteId, contatoId)
+
   const contexto = await contextoDeResposta(clienteId, contatoId)
   const restante = restaDaJanela(contexto?.ultimaEntradaEm ?? null)
   const janela = restante && restante > 0 ? comoFalta(restante) : null
@@ -158,13 +176,23 @@ export default async function Pagina({
           <EstagioDoContato
             clienteId={clienteId}
             contatoId={contatoId}
-            estagio={estagio ?? 'novo'}
+            estagio={estagio?.estagio ?? 'novo'}
           />
           <ResponsavelDoContato
             clienteId={clienteId}
             contatoId={contatoId}
             equipe={equipe.map(({ id, nome: comoSeChama }) => ({ id, nome: comoSeChama }))}
             responsavelId={lead.atribuidoA}
+          />
+          {/* As ações sobre o contato, no alto e à direita — o lugar em que a
+              ficha do Brevo e a do RD as põem, e pelo mesmo motivo: é onde o
+              olho chega depois de ler quem é a pessoa. */}
+          <AcoesDaFicha
+            clienteId={clienteId}
+            contatoId={contatoId}
+            nome={nome}
+            fimDaJanela={contexto?.ultimaEntradaEm ?? null}
+            agendadas={agendadas}
           />
           <span className={`rounded-full border px-3 py-1 text-[10.5px] font-bold ${lead.aguardando ? 'border-rose-400/25 bg-rose-400/[0.09] text-perigo' : !lead.automacaoAtiva ? 'border-amber-300/25 bg-amber-300/[0.08] text-aviso' : 'border-emerald-400/20 bg-emerald-400/[0.07] text-ok'}`}>
             {lead.aguardando ? 'AGUARDANDO HUMANO' : !lead.automacaoAtiva ? 'BOT EM PAUSA' : 'COM O BOT'}
@@ -236,6 +264,16 @@ export default async function Pagina({
               informação sobre a pessoa era o que o bot perguntou — o mesmo
               defeito que a coluna do Inbox já tinha corrigido. */}
           <ResumoDoContato resumo={resumo} />
+          <Informacoes
+            waId={lead.waId}
+            campos={lead.campos}
+            criadoEm={lead.criadoEm}
+            ultimaEntradaEm={lead.ultimaEntradaEm}
+            estagioDesde={estagio?.desde ?? null}
+            estado={lead.estadoEfetivo}
+            adiadaAte={lead.adiadaAte}
+            adiadaNota={lead.adiadaNota}
+          />
           <Negociacoes
             clienteId={clienteId}
             nome={nome}
@@ -250,7 +288,8 @@ export default async function Pagina({
             }))}
             motivos={motivos.map(({ id, nome: comoSeChama }) => ({ id, nome: comoSeChama }))}
           />
-          <section className="app-card overflow-hidden">
+          <Agendadas agendadas={agendadas} />
+          <section id="etiquetas" className="app-card overflow-hidden">
             <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
               Etiquetas
             </h2>
@@ -263,11 +302,13 @@ export default async function Pagina({
               />
             </div>
           </section>
-          <NotasDoContato
+          <div id="anotacao">
+            <NotasDoContato
             notas={lead.notas}
             limite={LIMITE_DA_NOTA}
             salvar={acaoSalvarNotas.bind(null, clienteId, contatoId)}
-          />
+            />
+          </div>
           <section className="app-card overflow-hidden">
             <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">O que o fluxo coletou</h2>
             {campos.length === 0 ? (
@@ -312,7 +353,12 @@ export default async function Pagina({
                 </Dica>
               ) : null
             }
-            conversa={
+            abas={[
+              {
+                chave: 'conversa',
+                rotulo: 'Conversa',
+                solta: true,
+                conteudo: (
               <ProvedorDeCitacao>
                 <div className="min-h-0 flex-1 overflow-auto p-[18px]">
                   <Suspense fallback={<HistoricoEsqueleto />}>
@@ -331,8 +377,26 @@ export default async function Pagina({
                   temAutomacao={temAutomacao}
                 />
               </ProvedorDeCitacao>
-            }
-            historico={<HistoricoDoContato eventos={eventos} />}
+                ),
+              },
+              {
+                chave: 'historico',
+                rotulo: 'Histórico',
+                contagem: eventos.length,
+                conteudo: <HistoricoDoContato eventos={eventos} />,
+              },
+              {
+                chave: 'jornada',
+                rotulo: 'Jornada',
+                contagem: jornada.passagens.length,
+                conteudo: (
+                  <Jornada
+                    passagens={jornada.passagens}
+                    nomesDosAnuncios={jornada.nomesDosAnuncios}
+                  />
+                ),
+              },
+            ]}
           />
         </div>
       </main>
@@ -456,4 +520,33 @@ function EtiquetaDoDia({ rotulo }: { rotulo: string }) {
       {rotulo}
     </p>
   )
+}
+
+/**
+ * Por onde a pessoa passou antes de escrever.
+ *
+ * Gêmeo do que o Inbox faz, e duplicado de propósito: importar de dentro da
+ * página do Inbox amarraria duas telas que o handoff pede para manter
+ * separadas. As duas chamam os mesmos dois repositórios.
+ *
+ * **Sem o Ads conectado a lista volta igual**, com o título que a pessoa leu no
+ * dia. Resolver o nome atual do anúncio é um luxo; o histórico não é.
+ */
+async function jornadaDoContato(
+  clienteId: string,
+  contatoId: string,
+): Promise<{ passagens: Passagem[]; nomesDosAnuncios: Map<string, AnuncioEmCache> }> {
+  const passagens = await passagensDoContato(contatoId)
+  if (passagens.length === 0) return { passagens: [], nomesDosAnuncios: new Map() }
+
+  const token = await tokenDeAnuncios(clienteId)
+  if (!token) return { passagens, nomesDosAnuncios: new Map() }
+
+  const nomesDosAnuncios = await resolverAnuncios({
+    clienteId,
+    adIds: passagens.map((passagem) => passagem.adId),
+    token,
+  })
+
+  return { passagens, nomesDosAnuncios }
 }

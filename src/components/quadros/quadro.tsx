@@ -24,7 +24,6 @@ import {
   acaoTrazerTodosParaOQuadro,
 } from '@/server/acoes-crm'
 import { BarraDoQuadro } from './barra-do-quadro'
-import { IlustracaoQuadros } from '@/components/design/ilustracoes'
 import { Avatar } from '@/components/inbox/avatar'
 import { Dropdown } from '@/components/design/dropdown'
 import { FecharCartao } from './fechar-cartao'
@@ -201,34 +200,7 @@ export function Quadro({
         </p>
       )}
 
-      {cartoes.length === 0 ? (
-        /*
-          **Funil vazio precisa dizer o que fazer, não que está vazio.** As três
-          colunas com "Arraste um cartão" descrevem um gesto que não tem de onde
-          partir: não há cartão nenhum para arrastar. Os dois botões daqui são
-          os dois caminhos reais — trazer quem já é seu, ou pôr uma pessoa.
-        */
-        <div className="mb-3 shrink-0 rounded-xl border border-dashed border-line bg-panel px-5 py-7 text-center">
-          <IlustracaoQuadros />
-          <p className="mt-4 text-[13.5px] font-semibold text-soft">Nenhuma pessoa neste funil</p>
-          <p className="mx-auto mt-1.5 max-w-[460px] text-[12px] leading-5 text-dim">
-            O funil só recebe sozinho quem chega depois que ele existe. Quem já estava na sua lista
-            entra por aqui.
-          </p>
-          <span className="mt-4 flex flex-wrap items-center justify-center gap-2">
-            <TrazerMeusContatos clienteId={clienteId} quadroId={quadroId} aoAvisar={setAviso} />
-            {etapas[0] && (
-              <AdicionarContato
-                clienteId={clienteId}
-                quadroId={quadroId}
-                colunaId={etapas[0].id}
-                etapaNome={etapas[0].nome}
-                aparencia="botao"
-              />
-            )}
-          </span>
-        </div>
-      ) : (
+      {cartoes.length > 0 && (
         <BarraDoQuadro
           filtro={filtro}
           aoFiltrar={setFiltro}
@@ -473,6 +445,36 @@ export function Quadro({
           </p>
         )}
       </div>
+
+      {cartoes.length === 0 && (
+        /*
+          **O convite fica embaixo das colunas, não acima delas.**
+          
+          Ele nasceu no topo e empurrava o funil inteiro para fora da tela: quem
+          abre a tela de Funis quer ver o funil, mesmo vazio — são as etapas que
+          dizem o que este quadro faz. O convite responde "e agora?", que é a
+          pergunta seguinte, e pergunta seguinte fica no lugar seguinte.
+        */
+        <div className="mt-3 shrink-0 rounded-xl border border-dashed border-line bg-panel px-5 py-6 text-center">
+          <p className="text-[13.5px] font-semibold text-soft">Nenhuma pessoa neste funil</p>
+          <p className="mx-auto mt-1.5 max-w-[460px] text-[12px] leading-5 text-dim">
+            O funil só recebe sozinho quem chega depois que ele existe. Quem já estava na sua lista
+            entra por aqui.
+          </p>
+          <span className="mt-4 flex flex-wrap items-center justify-center gap-2">
+            <TrazerMeusContatos clienteId={clienteId} quadroId={quadroId} aoAvisar={setAviso} />
+            {etapas[0] && (
+              <AdicionarContato
+                clienteId={clienteId}
+                quadroId={quadroId}
+                colunaId={etapas[0].id}
+                etapaNome={etapas[0].nome}
+                aparencia="botao"
+              />
+            )}
+          </span>
+        </div>
+      )}
 
       <p className="mt-2 shrink-0 text-[11px] text-dim">
         O ponto âmbar marca quem está parado há {DIAS_PARA_MARCAR_PARADO} dias ou mais na mesma
