@@ -279,15 +279,17 @@ create index if not exists consentimento_do_contato
 -- 5. `atualizado_em` que se mantém sozinho
 -- ---------------------------------------------------------------------------
 
-create or replace function public.tocar_atualizado_em()
-returns trigger
-language plpgsql
-as $$
-begin
-  new.atualizado_em = now();
-  return new;
-end;
-$$;
+-- **Não redefinir `tocar_atualizado_em`.** Ela já existe desde a 0001, com
+-- `security invoker` e `set search_path = ''`, e é usada por gatilho em quase
+-- toda tabela do banco. Um `create or replace` aqui sem essas duas cláusulas
+-- não daria erro nenhum — ele **apagaria a proteção em silêncio**, para todas
+-- as tabelas de uma vez, e num banco de produção compartilhado com a Verandi
+-- (ver docs/BANCO-COMPARTILHADO.md).
+--
+-- Function sem `search_path` fixo é o vetor clássico de escalonamento no
+-- Postgres: quem consegue criar objeto num schema que esteja à frente no
+-- caminho de busca faz a function chamar o código dele. Por isso aqui só se
+-- **usa** a função que já está lá.
 
 drop trigger if exists templates_tocar on public.templates;
 create trigger templates_tocar
