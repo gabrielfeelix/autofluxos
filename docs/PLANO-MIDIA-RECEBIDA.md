@@ -245,9 +245,11 @@ Management API) — **1 GB de storage, 5 GB de egress/mês, sem backup**,
 compartilhados com a Verandi. Pro custa **US$ 25/mês** com 100 GB de storage,
 250 GB de egress e backup diário de 7 dias.
 
-**Número que falta:** quantas mensagens de entrada já são mídia hoje. A consulta
-de produção foi **bloqueada** nesta sessão e a estimativa de volume continua em
-aberto.
+**O número, medido em 15/set:** 17 arquivos de mídia em três dias, com um cliente
+piloto, e **nenhum documento** ainda. O Storage tem 12 MB usados de 1 GB. A conta
+completa está em [A.1](#a1-volume-real-em-produção-medido-não-estimado): no ritmo
+de hoje o free dura meses, com dez clientes dura 22 dias, e o vídeo é 88% dos
+bytes.
 
 ---
 
@@ -306,3 +308,221 @@ Não é parecer jurídico. As citações dos termos da Meta vieram de leitura de
 página, não de conferência palavra por palavra do texto vigente em cada idioma —
 e os termos da Meta mudam. Antes de virar cláusula de contrato com cliente, isso
 se confere nas URLs citadas.
+
+---
+
+# Anexo — a pesquisa inteira, com fonte
+
+> Acrescentado em **15/set/2026**, depois de o dono liberar a leitura de
+> produção. O corpo do documento resume; este anexo guarda o material bruto,
+> para ninguém ter que pesquisar de novo — e para dar de onde discordar.
+
+## A.1 Volume real em produção (medido, não estimado)
+
+Consulta na `public.messages` do projeto `xxxynoshwirupkdzwxbj`, em 15/set/2026.
+
+**Mensagens de entrada, por tipo:**
+
+| Tipo | Total | Primeira | Última |
+|---|---|---|---|
+| `text` | 128 | 12/08 | 15/09 |
+| `interactive` | 36 | 03/09 | 09/09 |
+| `image` | 8 | 14/09 | 14/09 |
+| `video` | 4 | 13/09 | 14/09 |
+| `revoke` | 3 | 14/09 | 14/09 |
+| `audio` | 3 | 14/09 | 15/09 |
+| `sticker` | 2 | 13/09 | 14/09 |
+| `reaction` | 2 | 14/09 | 14/09 |
+| `unsupported` | 1 | 14/09 | 14/09 |
+
+**Documento: zero.** Nenhum PDF ou planilha chegou até hoje — o que não quer
+dizer que não vá chegar, e é justamente o tipo com teto de 100 MB.
+
+**Storage hoje:** `autofluxos-acervo` com **5 arquivos e 12 MB**. Nenhum outro
+bucket tem objeto. Ou seja, o 1 GB do plano free está praticamente intocado.
+
+### A conta de storage
+
+17 arquivos de mídia em 3 dias, com um cliente piloto. Com tamanho típico de
+WhatsApp — imagem já comprimida pela Meta ~150 KB, vídeo 1–5 MB, áudio de um
+minuto ~100 KB, figurinha ~60 KB — isso dá **~14 MB**, ou **~4,5 MB/dia**.
+
+| Cenário | Consumo | 1 GB dura |
+|---|---|---|
+| Hoje (1 piloto) | 4,5 MB/dia | ~7 meses |
+| 10 clientes no mesmo ritmo | 45 MB/dia | **22 dias** |
+
+Com expurgo de 90 dias o volume **estabiliza** em vez de crescer: ~400 MB no
+ritmo de hoje, ~4 GB com dez clientes.
+
+**O vilão é o vídeo.** São 23% dos arquivos e cerca de **88% dos bytes**. Foto
+de WhatsApp é barata porque a Meta já comprime; vídeo vai até 16 MB. Apertar só
+o vídeo corta o storage quase oito vezes.
+
+**O que aperta antes do storage é o egress: 5 GB/mês no free.** Storage se paga
+uma vez por arquivo; egress se paga **toda vez que alguém abre a conversa**. Um
+atendente revendo conversas o dia inteiro consome isso mais rápido que o
+acúmulo.
+
+### O gatilho para sair do free
+
+Não é data, é cliente: **o terceiro cliente pagante**. Até lá o free cabe com
+folga. A partir dele, o Pro (US$ 25/mês) resolve storage, egress e backup de uma
+vez — e o "sem backup" deixa de ser aposta aceitável quando há dinheiro de
+terceiro em jogo.
+
+## A.2 Meta — prazos e limites (fonte primária)
+
+https://developers.facebook.com/docs/whatsapp/cloud-api/reference/media
+
+- `id` de mídia do webhook: **7 dias**.
+- URL do `GET /{media-id}`: **5 minutos**.
+- `id` de mídia que subimos: 30 dias.
+- Download exige o token no header; sem token, falha.
+- Teto de download: 100 MB.
+- Tetos por tipo: figurinha estática **100 KB**, animada **500 KB**; imagem
+  JPEG/PNG **5 MB**; áudio (AAC, AMR, MP3, M4A, OGG) 16 MB; vídeo (MP4, 3GPP)
+  16 MB; documento (PDF, Word, Excel, PPT, TXT) **100 MB**.
+
+Cloud API Terms, seç. 4.5
+(https://www.facebook.com/legal/WhatsApp-Business-Platform-Cloud-API):
+*"Meta does not offer archiving service or backup features, and you will be the
+sole person responsible for creating backups."* Ao encerrar o uso, a Meta apaga
+o conteúdo remanescente do lado dela em **90 dias**.
+
+## A.3 Meta — obrigações contratuais (Platform Terms)
+
+https://developers.facebook.com/terms — incorporados à Cloud API pela seç. 1.3.2
+dos termos da Cloud API.
+
+- **3.d.i.2** — apagar "assim que razoavelmente possível" quando: (a) não houver
+  mais fim comercial legítimo; (b) o produto parar de operar; (c) a Meta pedir
+  para proteger usuários; (d) **o usuário pedir exclusão ou deixar de ter conta**;
+  (e) a lei exigir.
+- **3.d.i.1** — oferecer forma "facilmente acessível e claramente marcada" de
+  pedir alteração ou exclusão.
+- **6.a.i** — proteções que "cumpram ou excedam padrões do setor, considerando a
+  sensibilidade dos Dados da Plataforma", impedindo processamento não autorizado.
+- **6.a.ii** — canal de reporte de vulnerabilidade.
+- **7.c.i / 7.c.iii** — auditoria uma vez por ano civil, com acesso a registros e
+  sistemas.
+- **5.a.i / 5.a.iv** — contrato escrito com prestadores de serviço, e lista deles
+  à Meta quando pedida.
+
+**WhatsApp Business Data Processing Terms, seç. 3.f**
+(https://www.whatsapp.com/legal/business-data-processing-terms/): o negócio é
+**Controller**, a WhatsApp apenas assiste em pedidos de titular. No nosso
+arranjo: o cliente é **controlador**, o AutoFluxos é **operador**.
+
+**O que não existe (procurado e não achado):**
+- Exigência explícita de criptografia em repouso para mídia baixada pelo Tech
+  Provider. A palavra criptografia não aparece nos Platform Terms; a exigência
+  explícita que existe é para **senhas**, em documento cuja aplicabilidade à
+  Cloud API não foi confirmada.
+- Webhook de exclusão para usuário final do WhatsApp. O "Data Deletion Callback"
+  (https://developers.facebook.com/docs/development/create-an-app/app-dashboard/data-deletion-callback/)
+  é do Facebook Login.
+- Cláusula que proíba ou autorize expressamente reter mídia baixada
+  indefinidamente.
+
+## A.4 Mercado — o que foi verificado em código e doc
+
+**Chatwoot** (`app/services/whatsapp/incoming_message_base_service.rb`,
+`incoming_message_service_helpers.rb`): baixa da Graph API e faz cópia permanente
+via ActiveStorage (local/S3/GCS/Azure/MinIO por `ACTIVE_STORAGE_SERVICE`). Não
+volta a referenciar a URL da Meta. `location` e `contacts` têm caminho separado
+da mídia. **Sem rotina de expurgo.**
+
+Issues conferidas na API do GitHub:
+- **#15072** (fechada, 19/07/2026) — *"Unauthenticated ActiveStorage
+  direct-upload (missing authentication) on the conversation direct_uploads
+  endpoint"*. Corrigida pela **#15329**.
+- **#11019** (**aberta desde 04/03/2025**) — *"Configurable Signed URLs
+  expiration time for active_storage"*.
+- #6402 — anexo some quando o Redis reinicia. #14511 e #14644 — áudio dá 404 no
+  primeiro carregamento. #15540 — anexo não carrega no navegador de quem enviou,
+  porque `message.created` é transmitido antes de o upload terminar.
+
+**Evolution API**: S3/MinIO opcional (`S3_ENABLED`), URL por `presignedGetObject`
+— assinada, expiração fixa de **7 dias**, não configurável (issue #1404).
+
+**360dialog** — o único fornecedor com número público
+(https://docs.360dialog.com/partner/messaging/media-messages/upload-retrieve-delete-media):
+mídia enviada 30 dias após o último uso; mídia recebida **7 dias**; URL de
+download assinada por hash, válida por **5 minutos**.
+
+**Sem número público:** Take Blip (documenta criptografia e diz não ter acesso ao
+conteúdo, sem prazo), Kommo (Files API documenta escopo de acesso e deleção, sem
+retenção), Zenvia, Digisac, Huggy, Respond.io, Sleekflow. Afirmação de marketing
+sobre segurança entra aqui como **não verificada**.
+
+**Reclamações de usuário** (relato, não código): Digisac e Huggy no Reclame Aqui
+com instabilidade e perda de mensagem; Chatwoot com os anexos acima. **A dor real
+é mídia que some, não mídia exposta.**
+
+**Vazamento de mídia de atendimento por bucket aberto nessas plataformas:
+nenhum caso encontrado.**
+
+**Custo publicado com premissa realista de mídia de WhatsApp: nenhum encontrado.**
+
+### Erro da pesquisa, registrado de propósito
+
+A pesquisa devolveu o advisory `GHSA-5h82-j98m-7r5c` para a falha do Chatwoot.
+**Esse identificador não existe** — 404. As issues existem e batem com a
+descrição. Fica aqui porque o próximo levantamento vai usar as mesmas
+ferramentas, e saber que elas inventam identificador plausível vale mais que a
+citação certa.
+
+## A.5 LGPD — o que já foi punido
+
+**Sanções da ANPD:**
+- **TikTok/ByteDance — R$ 153,7 milhões**, DOU 25/08/2026, falhas na proteção de
+  dados de crianças e adolescentes; inclui **determinação de eliminar os dados
+  coletados irregularmente**
+  (https://www.gov.br/anpd/pt-br/assuntos/noticias/anpd-multa-tiktok-em-r-153-7-milhoes-por-falhas-na-protecao-de-dados-de-criancas-e-adolescentes).
+- **Telekall Infoservice** — R$ 14.400 (2 × R$ 7.200) e advertência por falta de
+  encarregado; venda de lista de contatos de WhatsApp sem base legal. Processo
+  00261.000489/2022-62, DOU 06/07/2023. Primeira multa da LGPD.
+- **INSS** — exposição de CPF e dados bancários; sanção foi comunicado público
+  de 60 dias (órgão público não leva multa). Processo 00261.001888/2023-21.
+- **Instituto Saúde e Cidadania** — ransomware, ~500 mil pacientes; processo
+  aberto em 08/07/2026, **sem sanção definida**.
+
+**Vazamentos brasileiros por bucket S3 aberto** (documentados, nenhum com sanção
+da ANPD confirmada):
+- **WSpot** (Wi-Fi de Pizza Hut, Sicredi, Unimed) — ~2,5 milhões de pessoas, com
+  CPF.
+- **Prisma Promotora** — 717.068 arquivos, ~10 mil clientes: **fotos de
+  documento, cartão e gravações de áudio**.
+- **FutebolCard/Palmeiras** — sócio-torcedor, CPF exposto.
+
+**Jurisprudência:**
+- **STJ, REsp 1.903.273-PR** (Nancy Andrighi, 24/08/2021) — divulgar conversa de
+  WhatsApp sem autorização gera dever de indenizar quando há dano.
+- **STJ, AREsp 2.130.619** (17/03/2023) — para dado **comum**, é preciso provar
+  dano efetivo; condenação de R$ 5 mil contra a Eletropaulo foi reformada.
+- **TJ-AC, 0700406-91.2019.8.01.0007** — clínica divulgou exame em grupo de
+  WhatsApp; R$ 4.000 de dano moral.
+- **TJ-SP** — Sodimac condenada a R$ 2.000 por vazar dado de cliente em venda
+  online.
+
+**Resolução CD/ANPD nº 15/2024**, confirmada em fonte oficial
+(https://www.gov.br/anpd/pt-br/assuntos/noticias/anpd-aprova-o-regulamento-de-comunicacao-de-incidente-de-seguranca):
+comunicar ANPD e titulares em **3 dias úteis** da ciência; prazo dobrado para
+agente de pequeno porte; complementos em até 20 dias úteis. A obrigação nasce
+com risco relevante somado a agravante: **dado sensível, dado financeiro, dado
+de criança ou idoso, credencial, ou larga escala**.
+
+**Retenção:** a LGPD não fixa prazo geral — elimina-se quando a finalidade se
+esgota (arts. 15 e 16). O art. 27 do CDC é prazo **prescricional** para ação por
+fato do serviço, **não** obrigação de guardar cinco anos; confundir os dois é
+erro comum de mercado.
+
+### O achado que mais calibra a decisão
+
+**Nenhum caso encontrado** — nem sanção da ANPD, nem condenação judicial — por
+**reter passivamente** histórico de atendimento além do necessário. Todo o
+padrão real de punição no Brasil é **divulgação ativa** ou **falha técnica que
+expõe**.
+
+Guardar não é o que pune. **Vazar é.**
