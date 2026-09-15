@@ -89,6 +89,14 @@ export const ICONE_DA_TELA: Record<TelaDeAjustes, React.ReactNode> = {
       <path d="m14 14.5 1.8-1.7a1.6 1.6 0 0 1 2.2 0l2.4 2.2" />
     </Svg>
   ),
+  integracoes: (
+    <Svg>
+      <rect x="3" y="3" width="7.5" height="7.5" rx="2" />
+      <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2" />
+      <path d="M10.5 6.8h4a2.5 2.5 0 0 1 2.5 2.5v4.2" />
+      <path d="M13.5 17.2h-4A2.5 2.5 0 0 1 7 14.7v-4.2" />
+    </Svg>
+  ),
   anuncios: (
     <Svg>
       <path d="M4 9.5h3l8-4.5v14l-8-4.5H4a1.5 1.5 0 0 1-1.5-1.5v-2A1.5 1.5 0 0 1 4 9.5Z" />

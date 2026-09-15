@@ -35,6 +35,7 @@ export type TelaDeAjustes =
   | 'respostas-rapidas'
   | 'etiquetas'
   | 'acervo'
+  | 'integracoes'
   | 'anuncios'
   | 'chaves'
   | 'negocio'
@@ -64,6 +65,8 @@ const GRUPOS: { titulo: string | null; itens: { chave: TelaDeAjustes; rotulo: st
   {
     titulo: 'Integrações',
     itens: [
+      // "Todas" primeiro porque é a visão, e as outras duas são o detalhe dela.
+      { chave: 'integracoes', rotulo: 'Todas as integrações' },
       { chave: 'anuncios', rotulo: 'Anúncios' },
       { chave: 'chaves', rotulo: 'Chaves de API' },
     ],

@@ -18,6 +18,9 @@ import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 
 export const dynamic = 'force-dynamic'
 
+/** Quantas integrações o catálogo conhece, contando o Telegram, que é "em breve". */
+const TOTAL_DE_INTEGRACOES = 5
+
 /**
  * O índice da configuração.
  *
@@ -63,6 +66,18 @@ export default async function Pagina({
    */
   const saudeDoWhats = saudeDoWhatsApp(canais)
   const saudeDoIg = saudeDoInstagram(contaDoInstagram)
+
+  /*
+   * Quantas das cinco do catálogo estão de pé. O número mora aqui e a lista
+   * mora na tela de Integrações — contar dos dois lados divergiria no dia em
+   * que uma entrasse.
+   */
+  const conectadas = [
+    saudeDoWhats !== 'nao-ligada',
+    saudeDoIg !== 'nao-ligada',
+    paginasDeLead.length > 0,
+    conexoes.length > 0,
+  ].filter(Boolean).length
 
   // A equipe fala Postgres direto e pode estourar sem `DATABASE_URL`. Um índice
   // de configurações não pode deixar de abrir por causa de um selo.
@@ -231,6 +246,17 @@ export default async function Pagina({
           titulo="Integrações"
           descricao="Com quem o sistema fala além dos canais — o que entra de fora e o que sai para os sistemas deste cliente."
         >
+          <Cartao
+            href={`/clientes/${cliente.id}/ajustes/integracoes`}
+            icone={ICONE_DA_TELA['integracoes']}
+            titulo="Todas as integrações"
+            descricao="O catálogo: o que dá para ligar nesta conta, o que já está ligado, e o que ainda está por vir."
+            estado={
+              <Selo tom="neutro">
+                {`${conectadas} de ${TOTAL_DE_INTEGRACOES}`}
+              </Selo>
+            }
+          />
           <Cartao
             href={`/clientes/${cliente.id}/ajustes/anuncios`}
             icone={ICONE_DA_TELA['anuncios']}

@@ -76,6 +76,24 @@
   --color-aviso: var(--aviso);
   --color-ok: var(--ok);
   --color-info: var(--info);
+
+  /*
+   * As cores das marcas com que o produto conversa.
+   *
+   * Elas moram aqui, e não no componente, pela mesma regra que vale para todo o
+   * resto — e por um motivo extra: **cor de marca não é escolha nossa.** Quando
+   * o WhatsApp muda o verde dele, o lugar de corrigir é uma linha, e não sete
+   * arquivos com o hex copiado.
+   *
+   * Não mudam no tema escuro: o verde do WhatsApp é o verde do WhatsApp em
+   * qualquer fundo, e "adaptar" a marca ao nosso tema é justamente o que faz
+   * uma logo deixar de ser reconhecida — que é a única coisa que ela precisa
+   * fazer nesta tela.
+   */
+  --color-marca-whatsapp: var(--marca-whatsapp);
+  --color-marca-instagram: var(--marca-instagram);
+  --color-marca-meta: var(--marca-meta);
+  --color-marca-telegram: var(--marca-telegram);
 }
 
 :root {
@@ -155,6 +173,13 @@
   --aviso: #b45309;
   --ok: #047857;
   --info: #0369a1;
+
+  /* Ver o comentário em `@theme inline`: cor de marca não é escolha nossa. */
+  --marca-whatsapp: #25d366;
+  --marca-instagram: #e1306c;
+  --marca-meta: #0866ff;
+  --marca-telegram: #229ed9;
+
   /* O polegar da barra de rolagem: a borda dele é sempre a cor do fundo. */
   --barra: #c8cfd8;
   --barra-forte: #aeb7c2;
