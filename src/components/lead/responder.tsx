@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState, useTransition } from 'react'
+import { BotaoDeAnexo } from '@/components/lead/botao-de-anexo'
 
 /**
  * A caixa de responder do painel.
@@ -25,6 +26,7 @@ export function CaixaDeResposta({
   nome,
   respostasRapidas = [],
   temAutomacao = true,
+  anexo,
 }: {
   acao: (formData: FormData) => Promise<{ ok: boolean; erro?: string }>
   /** `null` = fora da janela, ou a pessoa nunca escreveu. */
@@ -38,6 +40,12 @@ export function CaixaDeResposta({
    * regra da Meta e vale com ou sem automação.
    */
   temAutomacao?: boolean
+  /**
+   * De onde sai o clipe de anexar. Opcional porque a tela da Ficha usa a mesma
+   * caixa e não precisa dele — passar os dois ids só onde faz sentido evita
+   * inventar um botão que não teria para onde enviar.
+   */
+  anexo?: { clienteId: string; contatoId: string }
 }) {
   const campo = useRef<HTMLTextAreaElement>(null)
   const [erro, setErro] = useState<string | null>(null)
@@ -128,7 +136,19 @@ export function CaixaDeResposta({
         </p>
       )}
 
-      <div className="mt-2 flex items-center gap-3">
+      <div className="mt-2 flex flex-wrap items-center gap-3">
+        {/*
+          O clipe fica fora do `<form>` em comportamento — ele não é `submit`,
+          manda por conta própria. Fica aqui na linha do rodapé porque é onde
+          todo mundo procura: ao lado do botão de enviar.
+        */}
+        {anexo && (
+          <BotaoDeAnexo
+            clienteId={anexo.clienteId}
+            contatoId={anexo.contatoId}
+            desabilitado={enviando}
+          />
+        )}
         <span className="flex-1 text-[10.5px] leading-4 text-dim">
           {temAutomacao ? (
             <>

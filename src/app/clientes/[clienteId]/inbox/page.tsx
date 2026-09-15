@@ -540,6 +540,7 @@ async function Conteudo({
               nome={primeiroNome}
               respostasRapidas={respostasRapidas}
               temAutomacao={temAutomacao}
+              anexo={{ clienteId, contatoId: selecionado.contatoId }}
             />
           </section>
         ) : (
