@@ -3,12 +3,11 @@ import { notFound } from 'next/navigation'
 import { BotaoPerigo } from '@/components/design/botao-perigo'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { IlustracaoQuadros } from '@/components/design/ilustracoes'
-import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { Quadro } from '@/components/quadros/quadro'
 import { QuadroPadrao } from '@/components/quadros/quadro-padrao'
+import { NovoQuadro } from '@/components/quadros/novo-quadro'
 import { EntregaDoQuadro } from '@/components/quadros/entrega-do-quadro'
 import { TrazerTodos } from '@/components/quadros/trazer-todos'
-import { LIMITE_DO_NOME } from '@/core/quadros'
 import { acaoApagarQuadro, acaoCriarQuadro } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { contarForaDoQuadro, listarCartoes, listarQuadros } from '@/server/repos/quadros'
@@ -82,26 +81,10 @@ export default async function Pagina({
     : [[], [], 0]
 
   const novoQuadro = (
-    <ModalFormulario
-      botao="+ Novo quadro"
-      titulo="Novo quadro"
-      descricao="Um funil por assunto — comercial e suporte não têm as mesmas etapas. A mesma pessoa pode estar em vários, cada um na sua etapa. Ele nasce com três etapas para você renomear."
-      rotuloEnviar="Criar quadro"
-      variante={quadros.length === 0 ? 'primario' : 'secundario'}
-      action={acaoCriarQuadro.bind(null, cliente.id, {})}
-    >
-      <label>
-        <RotuloCampo>Nome do quadro</RotuloCampo>
-        <input
-          name="nome"
-          required
-          autoFocus
-          maxLength={LIMITE_DO_NOME}
-          placeholder="ex.: Comercial"
-          className="app-field px-[13px] py-[11px] text-[13.5px]"
-        />
-      </label>
-    </ModalFormulario>
+    <NovoQuadro
+      acao={acaoCriarQuadro.bind(null, cliente.id, {})}
+      primeiro={quadros.length === 0}
+    />
   )
 
   return (

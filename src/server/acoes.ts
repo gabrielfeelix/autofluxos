@@ -1247,7 +1247,11 @@ export async function acaoCriarQuadro(
 ): Promise<EstadoSalvar> {
   await exigirAcessoAoCliente(clienteId)
 
-  const r = await criarQuadro(clienteId, String(formData.get('nome') ?? ''))
+  const r = await criarQuadro(
+    clienteId,
+    String(formData.get('nome') ?? ''),
+    String(formData.get('modelo') ?? '') || null,
+  )
   if (!r.ok) return { erro: r.motivo }
 
   revalidatePath(`/clientes/${clienteId}/quadros`)

@@ -10,6 +10,7 @@ import {
   type TipoDeEtapa,
 } from '@/core/quadros'
 import { comoDinheiro, conferirFechamento, podeEncadear, LIMITE_DO_TITULO } from '@/core/crm'
+import { etapasDoModelo, type EtapaDoModelo } from '@/core/quadros-modelos'
 import { db, ehIdInvalido } from '../db'
 import { aplicarFato } from './crm'
 import { anotar } from './eventos'
@@ -123,6 +124,8 @@ export async function acharQuadro(clienteId: string, quadroId: string): Promise<
 export async function criarQuadro(
   clienteId: string,
   nome: string,
+  /** Qual funil desenhar. Ver `core/quadros-modelos.ts`; nulo nasce em branco. */
+  modeloId?: string | null,
 ): Promise<{ ok: true; id: string } | { ok: false; motivo: string }> {
   const limpo = nome.trim()
   if (limpo === '') return { ok: false, motivo: 'dê um nome ao quadro' }
@@ -137,13 +140,25 @@ export async function criarQuadro(
   if (error) throw new Error(`não deu para criar o quadro: ${error.message}`)
 
   const quadroId = (data as { id: string }).id
+
+  /*
+   * Sem modelo escolhido, as três etapas neutras de sempre — é o que a criação
+   * antiga fazia, e quem chama de outro lugar (teste, importação) não precisa
+   * saber que modelos existem.
+   */
+  const etapas: readonly EtapaDoModelo[] = modeloId
+    ? etapasDoModelo(modeloId)
+    : ETAPAS_INICIAIS.map((nomeDaEtapa) => ({ nome: nomeDaEtapa }))
+
   const { error: erroDasEtapas } = await db()
     .from('quadro_colunas')
     .insert(
-      ETAPAS_INICIAIS.map((nomeDaEtapa, indice) => ({
+      etapas.map((etapa, indice) => ({
         quadro_id: quadroId,
-        nome: nomeDaEtapa,
+        nome: etapa.nome,
         ordem: indice,
+        tipo: etapa.tipo ?? 'normal',
+        limite_de_dias: etapa.dias ?? null,
       })),
     )
 
@@ -780,6 +795,10 @@ export type PosicaoNoFunil = {
   etapaId: string
   etapa: string
   entrouEm: string
+  /** A negociação (0058). `titulo` e `valor` são nulos enquanto ninguém anotou. */
+  titulo: string | null
+  valor: number | null
+  situacao: Situacao
 }
 
 /**
@@ -805,7 +824,8 @@ export async function quadrosDoContato(
   const { data, error } = await db()
     .from('quadro_cartoes')
     .select(
-      'id, entrou_na_coluna_em, quadros!inner (id, nome), quadro_colunas!inner (id, nome)',
+      'id, entrou_na_coluna_em, titulo, valor, situacao, ' +
+        'quadros!inner (id, nome), quadro_colunas!inner (id, nome)',
     )
     .eq('client_id', clienteId)
     .eq('contact_id', contatoId)
@@ -817,6 +837,9 @@ export async function quadrosDoContato(
     data as unknown as {
       id: string
       entrou_na_coluna_em: string
+      titulo: string | null
+      valor: string | number | null
+      situacao: Situacao | null
       quadros: { id: string; nome: string }
       quadro_colunas: { id: string; nome: string }
     }[]
@@ -827,6 +850,9 @@ export async function quadrosDoContato(
     etapaId: linha.quadro_colunas.id,
     etapa: linha.quadro_colunas.nome,
     entrouEm: linha.entrou_na_coluna_em,
+    titulo: linha.titulo,
+    valor: linha.valor === null || linha.valor === undefined ? null : Number(linha.valor),
+    situacao: linha.situacao ?? 'aberta',
   }))
 }
 

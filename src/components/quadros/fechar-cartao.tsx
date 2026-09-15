@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { LIMITE_DO_TITULO } from '@/core/crm'
+import { Dropdown } from '@/components/design/dropdown'
 import { Modal } from '@/components/design/modal'
 import { acaoFecharCartao } from '@/server/acoes-crm'
 
@@ -85,28 +86,21 @@ export function FecharCartao({
           </label>
         </div>
       ) : (
-        <label>
-          <span className="mb-1 block text-[11px] font-bold tracking-[0.04em] text-dim uppercase">
-            Por que perdemos
-          </span>
-          <select
-            autoFocus
-            value={motivo}
-            onChange={(e) => setMotivo(e.target.value)}
-            className="app-field w-full px-3 py-2.5 text-[12.5px]"
-          >
-            {motivos.map((m) => (
-              <option key={m.id} value={m.nome}>
-                {m.nome}
-              </option>
-            ))}
-          </select>
+        <div>
+          <span className="mb-1 block text-[11.5px] font-semibold text-soft">Por que perdemos</span>
+          <Dropdown
+            rotuloAcessivel="Motivo da perda"
+            valor={motivo}
+            aoMudar={setMotivo}
+            className="w-full"
+            opcoes={motivos.map((m) => ({ valor: m.nome, rotulo: m.nome }))}
+          />
           <span className="mt-1.5 block text-[11px] leading-4 text-dim">
             A lista é da conta, e é curta de propósito: motivo digitado à mão vira
             &ldquo;preço&rdquo;, &ldquo;Preço&rdquo; e &ldquo;achou caro&rdquo; como três coisas
             diferentes, e aí não dá para agrupar nada.
           </span>
-        </label>
+        </div>
       )}
 
       {erro && (

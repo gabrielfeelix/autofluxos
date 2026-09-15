@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { Dropdown } from '@/components/design/dropdown'
 import { acaoEncadearQuadro } from '@/server/acoes-crm'
 
 /**
@@ -34,13 +35,19 @@ export function EntregaDoQuadro({
   if (outros.length === 0) return null
 
   return (
-    <label className="flex items-center gap-1.5 text-[11.5px] text-dim">
+    <span className="flex items-center gap-1.5 text-[11.5px] text-dim">
       <span className="whitespace-nowrap">Ao ganhar, mandar para</span>
-      <select
-        value={seguinteId ?? ''}
-        disabled={rodando}
-        onChange={(e) => {
-          const destino = e.target.value === '' ? null : e.target.value
+      <Dropdown
+        rotuloAcessivel="Para qual funil este quadro entrega ao ganhar"
+        valor={seguinteId ?? ''}
+        desabilitado={rodando}
+        className="w-[186px]"
+        opcoes={[
+          { valor: '', rotulo: 'ninguém', detalhe: 'fim da cadeia' },
+          ...outros.map((quadro) => ({ valor: quadro.id, rotulo: quadro.nome })),
+        ]}
+        aoMudar={(escolhido) => {
+          const destino = escolhido === '' ? null : escolhido
           setErro(null)
           comecar(async () => {
             try {
@@ -51,20 +58,12 @@ export function EntregaDoQuadro({
             }
           })
         }}
-        className="app-field max-w-[170px] px-2 py-1 text-[11.5px]"
-      >
-        <option value="">ninguém (fim da cadeia)</option>
-        {outros.map((quadro) => (
-          <option key={quadro.id} value={quadro.id}>
-            {quadro.nome}
-          </option>
-        ))}
-      </select>
+      />
       {erro && (
         <span role="alert" className="text-perigo">
           {erro}
         </span>
       )}
-    </label>
+    </span>
   )
 }

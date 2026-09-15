@@ -65,6 +65,23 @@ export async function aplicarFato(
   return novo
 }
 
+/** O estágio de uma pessoa, sozinho. É o que o perfil dela mostra no topo. */
+export async function estagioDoContato(
+  clienteId: string,
+  contatoId: string,
+): Promise<Estagio | null> {
+  const { data, error } = await db()
+    .from('contacts')
+    .select('estagio')
+    .eq('client_id', clienteId)
+    .eq('id', contatoId)
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return null
+  if (error) throw new Error(`não deu para ler o estágio: ${error.message}`)
+  return ((data as { estagio: string } | null)?.estagio ?? null) as Estagio | null
+}
+
 /** O ajuste na mão. Existe, e é exceção — ver `docs/MODELO-CRM.md`. */
 export async function definirEstagio(
   clienteId: string,

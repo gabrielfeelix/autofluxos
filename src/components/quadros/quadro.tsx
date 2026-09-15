@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import {
   DIAS_PARA_MARCAR_PARADO,
   LIMITE_DE_ETAPAS,
@@ -14,6 +14,8 @@ import {
 } from '@/core/quadros'
 import { comoDinheiro } from '@/core/crm'
 import { acaoAtribuirCartao, acaoDefinirTipoDaEtapa, acaoReabrirCartao } from '@/server/acoes-crm'
+import { Avatar } from '@/components/inbox/avatar'
+import { Dropdown } from '@/components/design/dropdown'
 import { FecharCartao } from './fechar-cartao'
 import { PainelDoContato } from './painel-do-contato'
 import {
@@ -272,81 +274,94 @@ export function Quadro({
                         setArrastando(null)
                         setSobre(null)
                       }}
-                      className={`group cursor-grab rounded-lg border bg-panel px-2.5 py-2 shadow-[0_1px_2px_rgba(19,25,34,0.077)] transition active:cursor-grabbing ${
+                      className={`group cursor-grab overflow-hidden rounded-lg border bg-panel py-2 pr-2 pl-2.5 shadow-[0_1px_2px_rgba(19,25,34,0.06)] transition active:cursor-grabbing ${
                         arrastando === cartao.id
                           ? 'border-primary/40 opacity-40'
-                          : 'border-line hover:border-strong'
+                          : cartao.situacao && cartao.situacao !== 'aberta'
+                            ? 'border-line opacity-70 hover:opacity-100'
+                            : 'border-line hover:border-strong hover:shadow-[0_2px_8px_rgba(19,25,34,0.08)]'
                       }`}
                     >
-                      <div className="flex items-start gap-1.5">
+                      <div className="flex items-start gap-2">
                         {/*
-                          Clicar abre o painel, e não outra página: conferir quem
-                          é alguém não pode custar a visão do funil e a rolagem
-                          de cada coluna. A conversa continua a um clique, no pé
-                          do painel.
+                          A barra à esquerda substituiu o pontinho âmbar: com ela
+                          a coluna inteira se lê de cima a baixo sem ler texto
+                          nenhum — quem está esperando demais, o que já fechou, e
+                          o que está em dia.
                         */}
+                        <span
+                          aria-hidden
+                          className={`-my-2 -ml-2.5 w-[3px] self-stretch rounded-l-lg ${
+                            cartao.situacao === 'ganha'
+                              ? 'bg-emerald-400'
+                              : cartao.situacao === 'perdida'
+                                ? 'bg-rose-300'
+                                : parado(cartao, etapa, agora)
+                                  ? 'bg-amber-300'
+                                  : 'bg-transparent'
+                          }`}
+                        />
+
                         <button
                           type="button"
                           onClick={() => setNoPainel(cartao)}
-                          className="min-w-0 flex-1 text-left"
+                          className="flex min-w-0 flex-1 items-start gap-2 text-left"
                         >
-                          <span className="flex items-center gap-1.5">
-                            <strong className="min-w-0 flex-1 truncate text-[12.5px] font-semibold">
-                              {cartao.nome}
-                            </strong>
-                            {cartao.situacao && cartao.situacao !== 'aberta' && (
-                              <span
-                                className={`shrink-0 rounded-full px-1.5 py-[1px] text-[9.5px] font-bold ${
-                                  cartao.situacao === 'ganha'
-                                    ? 'bg-emerald-400/15 text-emerald-600'
-                                    : 'bg-rose-400/15 text-rose-600'
-                                }`}
-                              >
-                                {cartao.situacao === 'ganha' ? 'ganho' : 'perdido'}
-                              </span>
-                            )}
-                          </span>
+                          {/*
+                            O mesmo avatar da fila do Inbox, e não um parecido:
+                            a cor derivada do nome só vira identificação se for a
+                            mesma cor nas duas telas. Dois geradores de cor
+                            fariam a mesma pessoa mudar de cor ao trocar de aba.
+                          */}
+                          <Avatar nome={cartao.nome} tamanho={26} />
 
-                          {(cartao.titulo || cartao.valor != null) && (
-                            <span className="mt-0.5 flex items-baseline gap-1.5">
-                              <span className="min-w-0 flex-1 truncate text-[10.5px] text-dim">
-                                {cartao.titulo}
-                              </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-baseline gap-2">
+                              <strong className="min-w-0 flex-1 truncate text-[12.5px] leading-[1.3] font-semibold">
+                                {cartao.nome}
+                              </strong>
                               {cartao.valor != null && (
-                                <span className="shrink-0 text-[10.5px] font-semibold text-soft">
+                                <span className="shrink-0 text-[11.5px] font-semibold tabular-nums text-soft">
                                   {comoDinheiro(cartao.valor)}
                                 </span>
                               )}
                             </span>
-                          )}
 
-                          {/*
-                            A linha de baixo responde a pergunta que faz alguém
-                            agir — "de quem estou devendo resposta" —, e por isso
-                            a espera vem antes do responsável.
-                          */}
-                          <span className="mt-1 flex items-center gap-1.5">
-                            {parado(cartao, etapa, agora) && (
-                              <span
-                                aria-hidden
-                                className="size-1.5 shrink-0 rounded-full bg-amber-300"
-                              />
-                            )}
-                            <span
-                              className={`truncate text-[10.5px] ${
-                                parado(cartao, etapa, agora) ? 'text-aviso' : 'text-dim'
-                              }`}
-                            >
-                              {espera(cartao, agora)}
-                            </span>
-                            {cartao.responsavelNome && (
-                              <span
-                                title={cartao.responsavelNome}
-                                className="ml-auto shrink-0 rounded-full bg-surface-strong px-1.5 py-[1px] text-[9.5px] font-bold text-dim"
-                              >
-                                {iniciais(cartao.responsavelNome)}
+                            {cartao.titulo && (
+                              <span className="mt-[3px] block truncate text-[11px] leading-4 text-muted">
+                                {cartao.titulo}
                               </span>
                             )}
+
+                            <span className="mt-[5px] flex items-center gap-1.5">
+                              <span
+                                className={`truncate text-[10.5px] ${
+                                  parado(cartao, etapa, agora) ? 'text-aviso' : 'text-dim'
+                                }`}
+                              >
+                                {espera(cartao, agora)}
+                              </span>
+
+                              {cartao.situacao === 'ganha' && (
+                                <span className="shrink-0 text-[10.5px] font-semibold text-ok">
+                                  ganho
+                                </span>
+                              )}
+                              {cartao.situacao === 'perdida' && (
+                                <span className="shrink-0 text-[10.5px] font-semibold text-perigo">
+                                  perdido
+                                </span>
+                              )}
+
+                              {cartao.responsavelNome && (
+                                <span
+                                  title={cartao.responsavelNome}
+                                  className="ml-auto shrink-0 rounded-full border border-line px-1.5 text-[9.5px] font-bold text-muted"
+                                >
+                                  {iniciais(cartao.responsavelNome)}
+                                </span>
+                              )}
+                            </span>
                           </span>
                         </button>
 
@@ -842,25 +857,24 @@ function MenuDaEtapa({
         titulo={`O que "${etapa.nome}" significa`}
         descricao="Etapa de ganho e de perda são as duas que o sistema entende: soltar um cartão nelas abre o fechamento da venda, e ganhar faz o contato virar cliente."
       >
-        <label className="block">
-          <span className="mb-1 block text-[11px] font-bold tracking-[0.04em] text-dim uppercase">
-            Papel da etapa
-          </span>
-          <select
-            autoFocus
-            value={tipo}
-            onChange={(e) => setTipo(e.target.value as TipoDeEtapa)}
-            className="app-field w-full px-3 py-2.5 text-[12.5px]"
-          >
-            <option value="normal">Etapa comum — só uma posição no funil</option>
-            <option value="ganho">Etapa de ganho — fecha a venda</option>
-            <option value="perdido">Etapa de perda — pede o motivo</option>
-          </select>
-        </label>
+        <div className="block">
+          <span className="mb-1 block text-[11.5px] font-semibold text-soft">Papel da etapa</span>
+          <Dropdown
+            rotuloAcessivel="Papel da etapa"
+            valor={tipo}
+            aoMudar={(escolhido) => setTipo(escolhido as TipoDeEtapa)}
+            className="w-full"
+            opcoes={[
+              { valor: 'normal', rotulo: 'Etapa comum', detalhe: 'só uma posição no funil' },
+              { valor: 'ganho', rotulo: 'Etapa de ganho', detalhe: 'fecha a venda' },
+              { valor: 'perdido', rotulo: 'Etapa de perda', detalhe: 'pede o motivo' },
+            ]}
+          />
+        </div>
 
         <label className="mt-3 block">
-          <span className="mb-1 block text-[11px] font-bold tracking-[0.04em] text-dim uppercase">
-            Avisar quando parar aqui por <span className="font-normal normal-case">(dias)</span>
+          <span className="mb-1 block text-[11.5px] font-semibold text-soft">
+            Avisar quando parar aqui por <span className="text-dim">(dias)</span>
           </span>
           <input
             value={limite}
@@ -976,6 +990,35 @@ function MenuDoCartao({
   const [vendo, setVendo] = useState<'acoes' | 'mover' | 'assumir'>('acoes')
   const [, comecar] = useTransition()
 
+  /**
+   * O menu é **posicionado no clique, em coordenadas de tela**.
+   *
+   * Ele já foi `absolute` dentro do cartão, e aí não havia CSS que o salvasse: a
+   * coluna rola por dentro (`overflow-y-auto`), e overflow corta filho
+   * posicionado por mais alto que seja o `z-index`. O resultado era o menu
+   * aparecendo dentro do próprio cartão, com metade das opções invisíveis.
+   *
+   * `fixed` escapa do corte porque sai do fluxo da coluna — e como nenhum
+   * ancestral usa `transform`, ele fica preso à janela, que é o que se quer.
+   */
+  const botao = useRef<HTMLButtonElement>(null)
+  const [onde, setOnde] = useState<{ topo: number; direita: number } | null>(null)
+
+  function abrir() {
+    const caixa = botao.current?.getBoundingClientRect()
+    if (caixa) {
+      // Abre para cima quando não há espaço embaixo: menu que nasce cortado no
+      // rodapé da tela é o mesmo defeito por outro caminho.
+      const cabeEmbaixo = window.innerHeight - caixa.bottom > 300
+      setOnde({
+        topo: cabeEmbaixo ? caixa.bottom + 4 : Math.max(8, caixa.top - 304),
+        direita: Math.max(8, window.innerWidth - caixa.right),
+      })
+    }
+    setVendo('acoes')
+    setAberto(true)
+  }
+
   const fechado = Boolean(cartao.situacao && cartao.situacao !== 'aberta')
 
   function agir(acao: () => Promise<{ ok: boolean; erro?: string }>, feito?: string) {
@@ -994,13 +1037,11 @@ function MenuDoCartao({
   return (
     <span className="relative shrink-0">
       <button
+        ref={botao}
         type="button"
         aria-label="Ações do cartão"
         aria-expanded={aberto}
-        onClick={() => {
-          setVendo('acoes')
-          setAberto((a) => !a)
-        }}
+        onClick={() => (aberto ? setAberto(false) : abrir())}
         className="rounded px-1 text-[13px] leading-none text-dim opacity-0 transition group-hover:opacity-100 hover:text-soft focus:opacity-100"
       >
         ⋯
@@ -1008,8 +1049,11 @@ function MenuDoCartao({
 
       {aberto && (
         <>
-          <span className="fixed inset-0 z-10" onClick={() => setAberto(false)} />
-          <span className="absolute top-5 right-0 z-20 flex max-h-[320px] w-[210px] flex-col overflow-y-auto rounded-lg border border-line bg-panel p-1 shadow-[0_18px_40px_rgba(19,25,34,0.11)]">
+          <span className="fixed inset-0 z-40" onClick={() => setAberto(false)} />
+          <span
+            style={onde ? { top: onde.topo, right: onde.direita } : undefined}
+            className="fixed z-50 flex max-h-[300px] w-[214px] flex-col overflow-y-auto rounded-xl border border-line bg-panel p-1 shadow-[0_24px_60px_rgba(19,25,34,0.18)]"
+          >
             {vendo === 'acoes' && (
               <>
                 {/*
