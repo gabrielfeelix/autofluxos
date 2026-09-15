@@ -42,6 +42,33 @@ export function dentroDaJanela(ultimaEntradaEm: string | null, agora: number = D
   return resta !== null && resta > 0
 }
 
+/**
+ * O outro prazo da Meta: **reagir só vale para mensagem de até 30 dias.**
+ *
+ * É prazo diferente do de responder, conta de outro ponto e vale para os dois
+ * lados da conversa — reagir ao que a pessoa mandou e ao que nós mandamos
+ * expira igual. Por isso ele não reusa `JANELA_MS`: são duas regras da Meta
+ * que por acaso são ambas sobre tempo, e amarrá-las faria uma mudança lá
+ * mexer na outra aqui.
+ *
+ * Existe para a tela **esconder o botão** em vez de deixar a Meta recusar. Um
+ * botão de reagir que some sem explicação vira chamado de suporte; um que não
+ * aparece numa mensagem de março não é notado por ninguém.
+ */
+export const PRAZO_DE_REACAO_MS = 30 * 24 * 60 * 60 * 1000
+
+/**
+ * Ainda dá para reagir a esta mensagem?
+ *
+ * Data ilegível responde `false` pelo mesmo motivo de `restaDaJanela`: falhar
+ * fechado é a tela não oferecer, e não a Meta recusar depois do clique.
+ */
+export function podeReagir(tsDaMensagem: string, agora: number = Date.now()): boolean {
+  const quando = Date.parse(tsDaMensagem)
+  if (Number.isNaN(quando)) return false
+  return agora - quando < PRAZO_DE_REACAO_MS
+}
+
 /** "faltam 3h" / "faltam 12min". Para a tela avisar antes de a pessoa digitar. */
 export function comoFalta(restanteMs: number): string {
   const minutos = Math.floor(restanteMs / 60_000)

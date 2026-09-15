@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from 'react'
 import { BotaoDeAnexo } from '@/components/lead/botao-de-anexo'
+import { useCitacao } from '@/components/lead/citacao'
 
 /**
  * A caixa de responder do painel.
@@ -50,6 +51,8 @@ export function CaixaDeResposta({
   const campo = useRef<HTMLTextAreaElement>(null)
   const [erro, setErro] = useState<string | null>(null)
   const [enviando, comecar] = useTransition()
+  /** `null` fora do provedor — a tela da Ficha não monta citação. */
+  const citacao = useCitacao()
 
   if (restaDaJanela === null) {
     return (
@@ -65,6 +68,14 @@ export function CaixaDeResposta({
 
   function enviar(dados: FormData) {
     setErro(null)
+
+    /*
+     * A citação entra no `FormData` aqui, e não como campo escondido no
+     * formulário: ela vive em contexto, não no DOM. Um `<input type="hidden">`
+     * daria o mesmo resultado e mais um lugar para os dois saírem de sincronia.
+     */
+    if (citacao?.citando) dados.set('cita', citacao.citando.waMessageId)
+
     comecar(async () => {
       const r = await acao(dados)
       if (!r.ok) {
@@ -73,6 +84,9 @@ export function CaixaDeResposta({
       }
       // Só depois de sair. O texto fica onde está enquanto houver erro.
       if (campo.current) campo.current.value = ''
+      // A citação some junto com o texto, e pelo mesmo motivo: ela era daquela
+      // mensagem. Deixá-la faria a resposta seguinte citar sem querer.
+      citacao?.limpar()
     })
   }
 
@@ -95,6 +109,33 @@ export function CaixaDeResposta({
 
   return (
     <form action={enviar} className="border-t border-white/[0.06] px-[18px] py-3.5">
+      {/*
+        A citação escolhida, acima do campo.
+
+        Com o X para desfazer: escolher a mensagem errada é o erro mais comum
+        aqui, e sem saída a pessoa manda a resposta citando a frase errada — que
+        é pior do que não citar.
+      */}
+      {citacao?.citando && (
+        <div className="mb-2 flex items-start gap-2 rounded-[10px] border-l-2 border-accent/60 bg-white/[0.04] px-2.5 py-2">
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-bold text-accent/90">
+              Respondendo {citacao.citando.deQuem}
+            </p>
+            <p className="truncate text-[11.5px] text-muted">
+              {citacao.citando.texto?.trim() || <span className="italic">mensagem sem texto</span>}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={citacao.limpar}
+            aria-label="Não citar esta mensagem"
+            className="shrink-0 rounded-full px-1.5 py-0.5 text-[12px] leading-none text-dim transition hover:bg-white/[0.08] hover:text-white"
+          >
+            ×
+          </button>
+        </div>
+      )}
       <textarea
         ref={campo}
         name="texto"

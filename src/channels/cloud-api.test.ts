@@ -122,3 +122,77 @@ describe('o corte do rótulo conta caracteres, e não unidades UTF-16', () => {
     )
   })
 })
+
+describe('reagir e citar', () => {
+  function canal() {
+    return canalCloudApi({
+      phoneNumberId: 'numero-1',
+      token: 'token-de-teste',
+      versaoGraph: 'v25.0',
+    })
+  }
+
+  function espiar() {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    return fetchMock
+  }
+
+  /** O corpo que saiu, já como objeto. */
+  function corpo(fetchMock: ReturnType<typeof vi.fn>, chamada = 0) {
+    return JSON.parse(fetchMock.mock.calls[chamada]![1].body as string)
+  }
+
+  it('manda a reação com o id da mensagem e o emoji', async () => {
+    const fetchMock = espiar()
+    await canal().reagir!('5544999', 'wamid-alvo', '❤️')
+
+    expect(corpo(fetchMock)).toEqual({
+      messaging_product: 'whatsapp',
+      to: '5544999',
+      type: 'reaction',
+      reaction: { message_id: 'wamid-alvo', emoji: '❤️' },
+    })
+  })
+
+  /*
+   * O emoji vazio é como a Meta desfaz uma reação — não existe endpoint de
+   * "desreagir". Se alguém "limpar" a string vazia por achá-la um bug, tirar a
+   * reação para de funcionar e nada acusa.
+   */
+  it('emoji vazio remove a reação, e não vira envio sem emoji', async () => {
+    const fetchMock = espiar()
+    await canal().reagir!('5544999', 'wamid-alvo', '')
+
+    expect(corpo(fetchMock).reaction).toEqual({ message_id: 'wamid-alvo', emoji: '' })
+  })
+
+  it('cita no nível de cima do corpo, irmão do type — não dentro do text', async () => {
+    const fetchMock = espiar()
+    await canal().enviarTexto('5544999', 'claro, pode ser terça', 'wamid-citada')
+
+    const enviado = corpo(fetchMock)
+    expect(enviado.context).toEqual({ message_id: 'wamid-citada' })
+    expect(enviado.text).toEqual({ preview_url: true, body: 'claro, pode ser terça' })
+  })
+
+  it('sem citação, o corpo não ganha context nenhum', async () => {
+    const fetchMock = espiar()
+    await canal().enviarTexto('5544999', 'oi')
+
+    expect(corpo(fetchMock)).not.toHaveProperty('context')
+  })
+
+  it('mídia também cita, e a citação não invade o objeto da mídia', async () => {
+    const fetchMock = espiar()
+    await canal().enviarMidia(
+      '5544999',
+      { midia: 'imagem', url: 'https://exemplo/tabela.png', legenda: 'a tabela' },
+      'wamid-citada',
+    )
+
+    const enviado = corpo(fetchMock)
+    expect(enviado.context).toEqual({ message_id: 'wamid-citada' })
+    expect(enviado.image).toEqual({ link: 'https://exemplo/tabela.png', caption: 'a tabela' })
+  })
+})

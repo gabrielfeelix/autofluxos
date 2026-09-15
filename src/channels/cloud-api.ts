@@ -49,6 +49,23 @@ const TIPO_NA_META = {
   audio: 'audio',
 } as const
 
+/**
+ * O trecho `context` que transforma um envio em resposta citada.
+ *
+ * Fica numa função só porque entra em mais de um tipo de mensagem — texto e
+ * mídia hoje — e porque o formato é a parte fácil de errar: a Meta quer
+ * `context.message_id` no **nível de cima** do corpo, irmão do `type`, e não
+ * dentro do objeto do tipo. Escrever nos dois lugares e ver qual pega é como
+ * isso costuma ser descoberto.
+ *
+ * Citação vazia devolve `{}` e o envio segue sem citar: quem chama não precisa
+ * montar o espalhamento condicional em cada chamada.
+ */
+function citacao(mensagemId: string | undefined): Record<string, unknown> {
+  if (!mensagemId) return {}
+  return { context: { message_id: mensagemId } }
+}
+
 export function canalCloudApi(config: ConfigCloudApi): Canal {
   const versao = config.versaoGraph ?? process.env.META_GRAPH_VERSION ?? VERSAO_PADRAO
   const url = `https://graph.facebook.com/${versao}/${config.phoneNumberId}/messages`
@@ -115,11 +132,31 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
       await new Promise((resolver) => setTimeout(resolver, esperaMs))
     },
 
-    async enviarTexto(para, texto) {
-      await mandar({ to: para, type: 'text', text: { preview_url: true, body: texto } })
+    async enviarTexto(para, texto, citando) {
+      await mandar({
+        to: para,
+        type: 'text',
+        ...citacao(citando),
+        text: { preview_url: true, body: texto },
+      })
     },
 
-    async enviarMidia(para, { midia, url, legenda, nomeArquivo }) {
+    /**
+     * Reagir a uma mensagem.
+     *
+     * `emoji: ''` é **remoção**, e é assim que a própria Meta documenta: não há
+     * endpoint de "desreagir". Passar a string vazia adiante em vez de barrá-la
+     * é o que faz tirar a reação funcionar.
+     */
+    async reagir(para, mensagemId, emoji) {
+      await mandar({
+        to: para,
+        type: 'reaction',
+        reaction: { message_id: mensagemId, emoji },
+      })
+    },
+
+    async enviarMidia(para, { midia, url, legenda, nomeArquivo }, citando) {
       // A Meta baixa do `link` na hora de entregar; o outro caminho é subir o
       // arquivo antes e mandar um `id`. Ficamos no link de propósito: o `id`
       // expira em 30 dias e obrigaria a guardar validade e reenviar sozinho,
@@ -132,6 +169,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
       await mandar({
         to: para,
         type: tipo,
+        ...citacao(citando),
         [tipo]: {
           link: url,
           // Áudio não aceita legenda e o motor já não a produz. Repetir a

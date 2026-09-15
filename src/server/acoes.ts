@@ -1909,10 +1909,26 @@ export async function acaoResponderLead(
   // lado do balão, e guardar `*Leinara:*` junto faria o nome aparecer duas
   // vezes na tela de quem atende. A assinatura é da entrega, não do conteúdo —
   // é o que muda entre o que a pessoa lê no WhatsApp e o que a equipe lê aqui.
-  const registro = await registrarSaida({ contatoId, sessaoId: contexto.sessaoId, texto })
+  /*
+   * A mensagem citada, quando quem responde escolheu uma.
+   *
+   * Vem do `FormData` como o texto vem, e é o `wa_message_id` da outra — o id
+   * da Meta, que é o único que ela entende. Não é conferido contra o histórico
+   * de propósito: a Meta é quem sabe se aquele id existe naquela conversa, e
+   * uma checagem nossa só recusaria antes com menos informação. Id inválido
+   * volta como erro dela, com motivo.
+   */
+  const citando = String(formData.get('cita') ?? '').trim() || undefined
+
+  const registro = await registrarSaida({
+    contatoId,
+    sessaoId: contexto.sessaoId,
+    texto,
+    ...(citando ? { cita: citando } : {}),
+  })
 
   try {
-    await canal.enviarTexto(contexto.waId, assinar(texto, quemResponde?.usuario.nome))
+    await canal.enviarTexto(contexto.waId, assinar(texto, quemResponde?.usuario.nome), citando)
   } catch (erro) {
     // O texto da Meta é específico e é ele que resolve. Engolir aqui devolveria
     // "não deu certo" para quem precisa saber que o token expirou.

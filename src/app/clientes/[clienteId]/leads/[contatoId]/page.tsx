@@ -2,11 +2,13 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { Suspense } from 'react'
-import { comoFalta, restaDaJanela } from '@/channels/janela'
+import { comoFalta, podeReagir, restaDaJanela } from '@/channels/janela'
 import { BotaoPerigo } from '@/components/design/botao-perigo'
 import { ControleDeAutomacao } from '@/components/lead/controle-automacao'
 import { clienteTemAutomacao } from '@/server/repos/fluxos'
 import { CaixaDeResposta } from '@/components/lead/responder'
+import { BarraDaMensagem } from '@/components/lead/barra-da-mensagem'
+import { ProvedorDeCitacao } from '@/components/lead/citacao'
 import {
   acaoApagarContato,
   acaoCorrigirNome,
@@ -23,7 +25,12 @@ import { quadrosDoContato } from '@/server/repos/quadros'
 import { comoParado, estaParado } from '@/core/quadros'
 import { rotuloDoCampo } from '@/core/contatos/rotulo-do-campo'
 import { SeletorDeEtiquetas } from '@/components/etiquetas/seletor'
-import { AnexoNaConversa, SemTexto } from '@/components/lead/anexo'
+import {
+  AnexoNaConversa,
+  CitacaoNaBolha,
+  ReacoesNaBolha,
+  SemTexto,
+} from '@/components/lead/anexo'
 import { NomeDoContato, NotasDoContato } from '@/components/lead/identidade'
 import { horaExata, quando } from '@/lib/quando'
 import { TextoDoWhatsApp } from '@/components/texto-do-whatsapp'
@@ -224,18 +231,25 @@ export default async function Pagina({
                 <span className="size-1.5 rounded-full bg-dim" /> {lead.waId}
               </span>
             </header>
-            <div className="min-h-0 flex-1 overflow-auto p-[18px]">
-              <Suspense fallback={<HistoricoEsqueleto />}>
-                <Historico contatoId={contatoId} nomeDoLead={lead.nome} />
-              </Suspense>
-            </div>
-            <CaixaDeResposta
-              acao={acaoResponderLead.bind(null, clienteId, contatoId)}
-              restaDaJanela={janela}
-              nome={primeiroNome}
-              respostasRapidas={respostasRapidas}
-              temAutomacao={temAutomacao}
-            />
+            {/* Envolve conversa e caixa: a citação nasce numa e é usada na outra. */}
+            <ProvedorDeCitacao>
+              <div className="min-h-0 flex-1 overflow-auto p-[18px]">
+                <Suspense fallback={<HistoricoEsqueleto />}>
+                  <Historico
+                    contatoId={contatoId}
+                    nomeDoLead={lead.nome}
+                    clienteId={clienteId}
+                  />
+                </Suspense>
+              </div>
+              <CaixaDeResposta
+                acao={acaoResponderLead.bind(null, clienteId, contatoId)}
+                restaDaJanela={janela}
+                nome={primeiroNome}
+                respostasRapidas={respostasRapidas}
+                temAutomacao={temAutomacao}
+              />
+            </ProvedorDeCitacao>
           </section>
         </div>
       </main>
@@ -254,7 +268,15 @@ function HistoricoEsqueleto() {
   )
 }
 
-async function Historico({ contatoId, nomeDoLead }: { contatoId: string; nomeDoLead: string | null }) {
+async function Historico({
+  contatoId,
+  nomeDoLead,
+  clienteId,
+}: {
+  contatoId: string
+  nomeDoLead: string | null
+  clienteId: string
+}) {
   const conversa = await lerConversa(contatoId)
 
   if (conversa.mensagens.length === 0) {
@@ -271,8 +293,13 @@ async function Historico({ contatoId, nomeDoLead }: { contatoId: string; nomeDoL
       {conversa.mensagens.map((mensagem) => {
         const nossa = mensagem.direcao === 'saida'
         return (
-          <div key={mensagem.id} className={nossa ? 'flex justify-end' : 'flex justify-start'}>
+          /* A coluna é o que dá lugar à reação embaixo da bolha — ver o Inbox. */
+          <div
+            key={mensagem.id}
+            className={`flex flex-col gap-0 ${nossa ? 'items-end' : 'items-start'}`}
+          >
             <p className={`max-w-[78%] px-3 py-2 text-[12.5px] leading-[1.45] whitespace-pre-wrap ${nossa ? 'rounded-[13px_13px_4px_13px] border border-accent/[0.22] bg-accent/[0.13]' : 'rounded-[13px_13px_13px_4px] border border-white/[0.07] bg-white/[0.055]'}`}>
+              {mensagem.cita && <CitacaoNaBolha cita={mensagem.cita} nome={nomeDoLead} />}
               {mensagem.anexo && <AnexoNaConversa anexo={mensagem.anexo} />}
               {mensagem.texto !== null ? <TextoDoWhatsApp texto={mensagem.texto} /> : <SemTexto />}
               <span className="ml-2 text-[9.5px] text-muted" title={horaExata(mensagem.ts)}>
@@ -282,6 +309,21 @@ async function Historico({ contatoId, nomeDoLead }: { contatoId: string; nomeDoL
                 <span className="ml-2 text-[9.5px] text-amber-200">envio não confirmado</span>
               )}
             </p>
+            {mensagem.reacoes && <ReacoesNaBolha reacoes={mensagem.reacoes} nome={nomeDoLead} />}
+            {mensagem.waMessageId && (
+              <BarraDaMensagem
+                clienteId={clienteId}
+                contatoId={contatoId}
+                waMessageId={mensagem.waMessageId}
+                podeReagir={podeReagir(mensagem.ts)}
+                {...(mensagem.reacoes?.find((r) => r.de === 'saida')?.emoji
+                  ? { minhaReacao: mensagem.reacoes.find((r) => r.de === 'saida')!.emoji }
+                  : {})}
+                texto={mensagem.texto}
+                deQuem={nossa ? 'ao atendimento' : `a ${nomeDoLead ?? 'cliente'}`}
+                nossa={nossa}
+              />
+            )}
           </div>
         )
       })}

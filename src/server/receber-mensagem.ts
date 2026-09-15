@@ -116,6 +116,30 @@ const mensagemSchema = z.object({
   video: anexoSchema.optional(),
   document: anexoSchema.optional(),
   sticker: anexoSchema.optional(),
+  /*
+   * **A mensagem que esta está citando.** Chega em toda resposta citada, de
+   * qualquer tipo — a Meta põe `context` no nível de cima, irmão do `type`.
+   *
+   * `id` é o `wa_message_id` da citada, e é o que liga uma à outra. Os outros
+   * campos que a Meta manda aqui (`from`, `forwarded`, `referred_product`) não
+   * são lidos: o schema não é `.strict()`, então eles passam sem derrubar nada
+   * e continuam guardados no `payload` cru.
+   *
+   * Cuidado que vale registrar: `context` também aparece quando alguém responde
+   * **um anúncio** e quando a mensagem é encaminhada. Nos dois casos o `id`
+   * aponta para algo que não está no nosso histórico, e a tela precisa
+   * aguentar isso — ver `citadaDoPayload` em `repos/leads.ts`.
+   */
+  context: z.object({ id: z.string() }).optional(),
+  /*
+   * A reação.
+   *
+   * `emoji` é opcional **porque a remoção o manda vazio ou o omite**, e as
+   * duas formas significam a mesma coisa: tirar a reação que estava lá. Quem
+   * lê normaliza para string vazia, que é o que distingue "removeu" de "não é
+   * reação" no banco (coluna `reacao`, migration 0054).
+   */
+  reaction: z.object({ message_id: z.string(), emoji: z.string().optional() }).optional(),
 })
 
 export const webhookSchema = z.object({
@@ -247,11 +271,45 @@ export async function tratarUma(
     waMessageId: mensagem.id,
     texto,
     payload: mensagem,
+    /*
+     * A reação e a citação viram coluna aqui.
+     *
+     * `?? ''` na remoção de propósito: a Meta manda `emoji` vazio **ou** omite
+     * o campo quando alguém tira a reação, e as duas formas querem dizer a
+     * mesma coisa. Normalizar na entrada é o que deixa a coluna significar só
+     * duas coisas — `null` não é reação, string vazia é reação removida — em
+     * vez de três.
+     */
+    ...(mensagem.reaction
+      ? { reagiuA: mensagem.reaction.message_id, reacao: mensagem.reaction.emoji ?? '' }
+      : {}),
+    ...(mensagem.context ? { cita: mensagem.context.id } : {}),
   })
   // A Meta reenviou algo que já processamos. Sair aqui é o que impede a
   // conversa de andar duas vezes. Vem **antes** da trava de propósito: reenvio
   // não precisa esperar fila nenhuma para ser descartado.
   if (!inedita) return
+
+  /**
+   * **Reação não faz a conversa andar, e parar aqui é o conserto do bug.**
+   *
+   * Antes da 0054 a reação caía no ramo de mídia de `paraEntrada` e chegava ao
+   * motor como se fosse um arquivo, com `formato: 'reaction'` e sem id nenhum.
+   * Numa conversa parada numa pergunta, um "❤️" respondia a pergunta: o motor
+   * via entrada de mídia, dava a resposta de "não entendi" ou seguia o ramo
+   * errado, e ninguém do lado de cá entendia por quê.
+   *
+   * A regra que vale é a do WhatsApp, e é a que a pessoa espera: reagir
+   * comenta uma mensagem, não manda uma. Ela já está gravada logo acima — a
+   * tela a mostra grudada na mensagem reagida —, então tudo que falta é não
+   * acordar o motor.
+   *
+   * Vem **depois** do dedupe e **antes** de `sairPorEvento` de propósito: um
+   * "👍" não é a pessoa voltando a falar, e tirá-la da sequência de
+   * acompanhamento por causa dele seria perder o acompanhamento por um
+   * emoji.
+   */
+  if (mensagem.reaction) return
 
   /**
    * Quem responde sai das sequências (0031).
@@ -1304,6 +1362,27 @@ function paraEntrada(mensagem: Mensagem): { entrada: Entrada; texto: string | nu
     return {
       entrada: { tipo: 'opcao', opcaoId: resposta.id },
       texto: resposta.title ?? resposta.id,
+    }
+  }
+
+  /*
+   * A reação, cujo `texto` é o próprio emoji.
+   *
+   * Quem chama já para antes do motor quando `mensagem.reaction` existe
+   * (ver `tratarUma`), então a `Entrada` devolvida aqui **não é usada para
+   * avançar nada** — ela existe porque o tipo de retorno a exige. O que vale
+   * deste ramo é o `texto`: é ele que vai para a coluna e vira a prévia da
+   * fila.
+   *
+   * Sem este ramo, a reação caía no fallback de mídia logo abaixo e gravava
+   * `texto: null` — a fila mostrava "mídia ou mensagem sem texto" para um
+   * "❤️", e a bolha ficava vazia.
+   */
+  if (mensagem.reaction) {
+    const emoji = mensagem.reaction.emoji ?? ''
+    return {
+      entrada: { tipo: 'midia', formato: 'reaction' },
+      texto: emoji === '' ? null : emoji,
     }
   }
 

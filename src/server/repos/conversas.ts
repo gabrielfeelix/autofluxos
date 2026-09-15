@@ -479,6 +479,16 @@ export async function registrarEntrada(dados: {
   waMessageId: string
   texto: string | null
   payload: unknown
+  /**
+   * Os três campos da 0054, quando a mensagem é reação ou citação.
+   *
+   * Vêm separados do `payload` mesmo estando dentro dele: o cru continua sendo
+   * a verdade, e estas colunas existem para **juntar** uma mensagem à outra
+   * sem varrer `jsonb`. Ver o cabeçalho da migration.
+   */
+  reagiuA?: string | null
+  reacao?: string | null
+  cita?: string | null
 }): Promise<boolean> {
   const { error } = await db().from('messages').insert({
     contact_id: dados.contatoId,
@@ -487,6 +497,9 @@ export async function registrarEntrada(dados: {
     wa_message_id: dados.waMessageId,
     texto: dados.texto,
     payload: dados.payload,
+    reagiu_a: dados.reagiuA ?? null,
+    reacao: dados.reacao ?? null,
+    cita: dados.cita ?? null,
   })
 
   if (error) {
@@ -516,6 +529,10 @@ export async function registrarSaida(dados: {
   sessaoId: string | null
   texto: string
   payload?: unknown
+  /** Ver `registrarEntrada`: quem atende também cita e reage, não só quem escreve. */
+  reagiuA?: string | null
+  reacao?: string | null
+  cita?: string | null
 }): Promise<string> {
   const { data, error } = await db()
     .from('messages')
@@ -526,6 +543,9 @@ export async function registrarSaida(dados: {
       texto: dados.texto,
       payload: dados.payload ?? null,
       entregue: false,
+      reagiu_a: dados.reagiuA ?? null,
+      reacao: dados.reacao ?? null,
+      cita: dados.cita ?? null,
     })
     .select('id')
     .single()

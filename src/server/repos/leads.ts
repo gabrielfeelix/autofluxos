@@ -4,6 +4,7 @@ import type { Conciliacao, ContatoConhecido } from '@/core/contatos/planilha'
 import { chavesDoTelefone } from '@/core/contatos/telefone'
 import { LIMITE_DA_NOTA } from '@/core/flow/limites'
 import { TIPOS_DE_MIDIA, type TipoDeMidia } from '@/core/flow/schema'
+import { casarReacoes } from '@/core/reacoes'
 import { db, ehIdInvalido } from '../db'
 import { contatosComEtiqueta as contatosComEtiquetaManual, etiquetasDeContatos, type Etiqueta } from './etiquetas'
 
@@ -92,6 +93,22 @@ export type AnexoDaMensagem = {
   nomeArquivo?: string
 }
 
+/** Uma reação grudada numa mensagem. `de` diz de que lado ela veio. */
+export type ReacaoNaMensagem = {
+  emoji: string
+  de: Direcao
+  /** O id **nosso** da linha da reação, para poder desfazê-la. */
+  id: string
+}
+
+/** A mensagem citada, resumida ao que a bolha da citação mostra. */
+export type Citada = {
+  /** Ausente quando a citada não está no nosso histórico. Ver `citadaDoHistorico`. */
+  id?: string
+  texto: string | null
+  direcao?: Direcao
+}
+
 export type MensagemDoLead = {
   id: string
   direcao: Direcao
@@ -107,6 +124,24 @@ export type MensagemDoLead = {
    * atende não descobre que a foto do plano já foi.
    */
   anexo?: AnexoDaMensagem
+  /**
+   * O id da mensagem na Meta.
+   *
+   * Sobe até a tela porque **reagir exige o id da Meta, não o nosso** — e
+   * porque é por ele que reação e citação se ligam. Ausente em saída ainda não
+   * confirmada: a Meta só devolve o id depois de aceitar.
+   */
+  waMessageId?: string
+  /**
+   * As reações nesta mensagem, se houver.
+   *
+   * Lista e não uma só: a conversa tem dois lados, e os dois podem reagir à
+   * mesma frase. Cada lado tem no máximo uma — reagir de novo troca — e quem
+   * garante isso é `casarReacoes`, que fica com a mais recente.
+   */
+  reacoes?: ReacaoNaMensagem[]
+  /** A mensagem que esta cita, quando ela cita alguma. */
+  cita?: Citada
 }
 
 export type Conversa = {
@@ -702,13 +737,57 @@ export async function acharLead(clienteId: string, contatoId: string): Promise<L
  * bater no teto, `cortada` avisa — teto silencioso mente dizendo que aquilo é
  * a conversa toda.
  */
+/**
+ * A mensagem a que alguém quer reagir, conferindo que ela é desta conversa.
+ *
+ * Existe separada de `lerConversa` porque a pergunta é outra: não é "o que
+ * aconteceu aqui", é "este id é mesmo desta conversa, e quando ele foi?". A
+ * segunda parte é o que decide o prazo de 30 dias.
+ *
+ * O par `(contato, cliente)` vai na consulta pelo mesmo motivo do resto do
+ * repo: id vindo da tela não prova de quem ele é, e uma reação disparada para o
+ * número errado é uma mensagem nossa aparecendo na conversa de outra pessoa.
+ *
+ * `null` quando não é desta conversa — ou não existe, que para quem chama dá no
+ * mesmo.
+ */
+export async function acharMensagemParaReagir(
+  clienteId: string,
+  contatoId: string,
+  waMessageId: string,
+): Promise<{ ts: string } | null> {
+  const { data: contato, error: erroDoContato } = await db()
+    .from('contacts')
+    .select('id')
+    .eq('id', contatoId)
+    .eq('client_id', clienteId)
+    .maybeSingle()
+
+  if (ehIdInvalido(erroDoContato)) return null
+  if (erroDoContato) throw new Error(`não deu para achar o contato: ${erroDoContato.message}`)
+  if (!contato) return null
+
+  const { data, error } = await db()
+    .from('messages')
+    .select('ts')
+    .eq('contact_id', contatoId)
+    .eq('wa_message_id', waMessageId)
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return null
+  if (error) throw new Error(`não deu para achar a mensagem: ${error.message}`)
+  if (!data) return null
+
+  return { ts: (data as { ts: string }).ts }
+}
+
 export async function lerConversa(
   contatoId: string,
   teto: number = TETO_DE_MENSAGENS,
 ): Promise<Conversa> {
   const { data, error } = await db()
     .from('messages')
-    .select('id, direcao, texto, ts, entregue, payload')
+    .select('id, direcao, texto, ts, entregue, payload, wa_message_id, reagiu_a, reacao, cita')
     .eq('contact_id', contatoId)
     .order('ts', { ascending: false })
     .limit(teto + 1)
@@ -723,16 +802,60 @@ export async function lerConversa(
     ts: string
     entregue: boolean
     payload: unknown
+    wa_message_id: string | null
+    reagiu_a: string | null
+    reacao: string | null
+    cita: string | null
   }[]
   const cortada = linhas.length > teto
 
+  const visiveis = linhas.slice(0, teto).reverse()
+
+  /*
+   * Duas passadas, e não uma.
+   *
+   * A reação pode chegar **antes** na ordem de leitura da mensagem que ela
+   * comenta? Não — mas a citação pode citar uma mensagem que veio muito antes,
+   * e os dois casamentos precisam do conjunto inteiro já em mãos. Montar os
+   * índices primeiro é o que evita um `find` por linha, que numa conversa no
+   * teto de 500 seria quadrático.
+   */
+  const porWaId = new Map<string, (typeof visiveis)[number]>()
+  for (const m of visiveis) if (m.wa_message_id) porWaId.set(m.wa_message_id, m)
+
+  /*
+   * A direção é validada aqui, e não confiada como veio do banco.
+   *
+   * A coluna é `text` com `check`, então o Postgres já garante — mas o tipo
+   * que o supabase-js devolve é `string` cru, e `casarReacoes` agrupa **por
+   * lado**. Fazer o `parse` na entrada do casamento é o que mantém "uma reação
+   * por lado" sendo uma garantia do tipo, e não uma esperança.
+   */
+  const reacoesPorAlvo = casarReacoes(
+    visiveis.map((m) => ({
+      id: m.id,
+      direcao: direcaoSchema.parse(m.direcao),
+      reagiu_a: m.reagiu_a,
+      reacao: m.reacao,
+    })),
+  )
+
   return {
     cortada,
-    mensagens: linhas
-      .slice(0, teto)
-      .reverse()
+    mensagens: visiveis
+      /*
+       * **A reação some da lista como linha própria.** Ela já foi grudada na
+       * mensagem que comenta, e deixá-la também solta no fim da conversa é
+       * exatamente o defeito que a 0054 conserta.
+       *
+       * Reação removida (`reacao === ''`) some junto e não gruda em nada:
+       * `casarReacoes` já a descartou.
+       */
+      .filter((m) => m.reagiu_a === null)
       .map((m) => {
         const anexo = anexoDoPayload(m.payload)
+        const reacoes = m.wa_message_id ? reacoesPorAlvo.get(m.wa_message_id) : undefined
+        const cita = m.cita ? citadaDoHistorico(m.cita, porWaId) : null
         return {
           id: m.id,
           direcao: direcaoSchema.parse(m.direcao),
@@ -740,9 +863,31 @@ export async function lerConversa(
           ts: m.ts,
           entregue: m.entregue,
           ...(anexo ? { anexo } : {}),
+          ...(m.wa_message_id ? { waMessageId: m.wa_message_id } : {}),
+          ...(reacoes?.length ? { reacoes } : {}),
+          ...(cita ? { cita } : {}),
         }
       }),
   }
+}
+
+/**
+ * A mensagem citada, quando ela está no histórico que carregamos.
+ *
+ * **O caso de não estar é normal, não é erro.** A conversa é cortada no teto de
+ * 500, a Meta deixa citar mensagem antiga, e `context` também chega quando
+ * alguém responde a um anúncio ou encaminha algo — nesses dois a citada nunca
+ * esteve aqui. Devolver a citação sem texto, em vez de `null`, é o que faz a
+ * bolha mostrar "mensagem original" em cinza em vez de esconder que houve
+ * citação: quem lê precisa saber que aquela resposta comenta outra coisa.
+ */
+function citadaDoHistorico(
+  waId: string,
+  porWaId: Map<string, { id: string; direcao: string; texto: string | null }>,
+): Citada {
+  const alvo = porWaId.get(waId)
+  if (!alvo) return { texto: null }
+  return { id: alvo.id, texto: alvo.texto, direcao: direcaoSchema.parse(alvo.direcao) }
 }
 
 /**

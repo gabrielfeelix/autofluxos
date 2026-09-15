@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { comoFalta, restaDaJanela } from '@/channels/janela'
+import { comoFalta, podeReagir, restaDaJanela } from '@/channels/janela'
 import { Assumir, PassarPara } from '@/components/inbox/assumir'
 import { NotaRapida } from '@/components/inbox/nota-rapida'
 import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
@@ -18,6 +18,8 @@ import { resolverAnuncios } from '@/server/resolver-anuncios'
 import { tokenDeAnuncios } from '@/server/token-de-anuncios'
 import { QuemE } from '@/components/lead/quem-e'
 import { CaixaDeResposta } from '@/components/lead/responder'
+import { BarraDaMensagem } from '@/components/lead/barra-da-mensagem'
+import { ProvedorDeCitacao } from '@/components/lead/citacao'
 import {
   acaoAssumirAtendimento,
   acaoAtribuirPara,
@@ -42,7 +44,12 @@ import {
   type MensagemDoLead,
 } from '@/server/repos/leads'
 import { listarRespostasRapidas, type RespostaRapida } from '@/server/repos/respostas-rapidas'
-import { AnexoNaConversa, SemTexto } from '@/components/lead/anexo'
+import {
+  AnexoNaConversa,
+  CitacaoNaBolha,
+  ReacoesNaBolha,
+  SemTexto,
+} from '@/components/lead/anexo'
 import { horaExata, quando } from '@/lib/quando'
 import { SeletorDeEtiquetas, type EtiquetaEscolhivel } from '@/components/etiquetas/seletor'
 import { Avatar } from '@/components/inbox/avatar'
@@ -531,17 +538,33 @@ async function Conteudo({
               esta tela já fez) inverte a conversa de verdade: a mensagem de
               duas horas atrás aparecia acima da de três.
             */}
-            <div className="flex min-h-0 flex-1 flex-col-reverse overflow-auto bg-[radial-gradient(500px_320px_at_70%_5%,rgba(86,208,245,0.04),transparent_68%)] p-5">
-              <Historico mensagens={conversa.mensagens} cortada={conversa.cortada} nome={selecionado.nome} />
-            </div>
-            <CaixaDeResposta
-              acao={acaoResponderLead.bind(null, clienteId, selecionado.contatoId)}
-              restaDaJanela={janela}
-              nome={primeiroNome}
-              respostasRapidas={respostasRapidas}
-              temAutomacao={temAutomacao}
-              anexo={{ clienteId, contatoId: selecionado.contatoId }}
-            />
+            {/*
+              O provedor envolve a conversa **e** a caixa porque a citação
+              nasce numa e é usada na outra.
+
+              A `key` é o que faz trocar de conversa esquecer a citação. Sem
+              ela, citar aqui, clicar noutra pessoa e responder mandaria a
+              resposta citando a mensagem de alguém que não é essa.
+            */}
+            <ProvedorDeCitacao key={selecionado.contatoId}>
+              <div className="flex min-h-0 flex-1 flex-col-reverse overflow-auto bg-[radial-gradient(500px_320px_at_70%_5%,rgba(86,208,245,0.04),transparent_68%)] p-5">
+                <Historico
+                  mensagens={conversa.mensagens}
+                  cortada={conversa.cortada}
+                  nome={selecionado.nome}
+                  clienteId={clienteId}
+                  contatoId={selecionado.contatoId}
+                />
+              </div>
+              <CaixaDeResposta
+                acao={acaoResponderLead.bind(null, clienteId, selecionado.contatoId)}
+                restaDaJanela={janela}
+                nome={primeiroNome}
+                respostasRapidas={respostasRapidas}
+                temAutomacao={temAutomacao}
+                anexo={{ clienteId, contatoId: selecionado.contatoId }}
+              />
+            </ProvedorDeCitacao>
           </section>
         ) : (
           <section className="col-span-2 flex min-w-0 items-center justify-center border-r border-white/[0.06] p-10 text-center">
@@ -635,10 +658,14 @@ function Historico({
   mensagens,
   cortada,
   nome,
+  clienteId,
+  contatoId,
 }: {
   mensagens: MensagemDoLead[]
   cortada: boolean
   nome: string | null
+  clienteId: string
+  contatoId: string
 }) {
   if (mensagens.length === 0) {
     return <p className="py-16 text-center text-[12px] text-dim">Nenhuma mensagem registrada.</p>
@@ -682,13 +709,33 @@ function Historico({
       )}
       {mensagens.map((mensagem) => {
         const nossa = mensagem.direcao === 'saida'
+        /*
+         * A barra só aparece onde há id da Meta.
+         *
+         * Reagir e citar pedem esse id, e saída ainda não confirmada não tem —
+         * a Meta só o devolve depois de aceitar. Oferecer o botão ali daria um
+         * clique que falharia sempre.
+         */
+        const minhaReacao = mensagem.reacoes?.find((r) => r.de === 'saida')?.emoji
         return (
-          <div key={mensagem.id} className={nossa ? 'flex justify-end' : 'flex justify-start'}>
+          /*
+           * A coluna existe para a reação ter onde ficar.
+           *
+           * Antes a bolha era filha direta do `flex justify-*`. A reação
+           * pendura embaixo dela e alinhada com ela, então as duas precisam de
+           * um pai que empilhe — e `items-end`/`items-start` é o que mantém a
+           * bolha do tamanho do conteúdo em vez de esticar na linha toda.
+           */
+          <div
+            key={mensagem.id}
+            className={`flex flex-col gap-0 ${nossa ? 'items-end' : 'items-start'}`}
+          >
             <p className={`max-w-[78%] px-3 py-2 text-[12.5px] leading-[1.5] whitespace-pre-wrap shadow-[0_1px_1px_rgba(0,0,0,0.12)] ${
               nossa
                 ? 'rounded-[13px_13px_4px_13px] border border-accent/[0.2] bg-accent/[0.12]'
                 : 'rounded-[13px_13px_13px_4px] border border-white/[0.07] bg-white/[0.055]'
             }`}>
+              {mensagem.cita && <CitacaoNaBolha cita={mensagem.cita} nome={nome} />}
               {mensagem.anexo && <AnexoNaConversa anexo={mensagem.anexo} />}
               {mensagem.texto !== null ? <TextoDoWhatsApp texto={mensagem.texto} /> : <SemTexto />}
               <span className="ml-2 text-[9.5px] text-muted" title={horaExata(mensagem.ts)}>
@@ -698,6 +745,19 @@ function Historico({
                 <span className="ml-2 text-[9.5px] text-amber-200">envio não confirmado</span>
               )}
             </p>
+            {mensagem.reacoes && <ReacoesNaBolha reacoes={mensagem.reacoes} nome={nome} />}
+            {mensagem.waMessageId && (
+              <BarraDaMensagem
+                clienteId={clienteId}
+                contatoId={contatoId}
+                waMessageId={mensagem.waMessageId}
+                podeReagir={podeReagir(mensagem.ts)}
+                {...(minhaReacao ? { minhaReacao } : {})}
+                texto={mensagem.texto}
+                deQuem={nossa ? 'ao atendimento' : `a ${nome ?? 'cliente'}`}
+                nossa={nossa}
+              />
+            )}
           </div>
         )
       })}
