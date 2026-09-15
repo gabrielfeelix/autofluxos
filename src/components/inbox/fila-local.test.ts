@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { contarDonos, contarEstados, recortarFila } from './fila-local'
+import { contarDonos, contarEstados, contarOrigens, recortarFila } from './fila-local'
 
 /**
  * As três funções que decidem o que a pessoa vê quando a fila inteira está no
@@ -123,5 +123,73 @@ describe('o recorte local e a página do servidor concordam', () => {
     expect(recortarFila(FILA, estado, atribuicao).map((l) => l.contatoId)).toEqual(
       comoOServidor(estado, atribuicao).map((l) => l.contatoId),
     )
+  })
+})
+
+/* -------------------------------------------------------------------------- */
+/* O terceiro eixo: de onde a pessoa veio                                      */
+/* -------------------------------------------------------------------------- */
+
+type ComOrigem = Falso & { campos: Record<string, string> }
+
+const comOrigem = (
+  contatoId: string,
+  estadoEfetivo: Falso['estadoEfetivo'],
+  campos: Record<string, string>,
+): ComOrigem => ({ contatoId, estadoEfetivo, atribuidoA: null, campos })
+
+const POR_ORIGEM: ComOrigem[] = [
+  comOrigem('anuncio1', 'aberta', { origem: 'Anúncio', origem_anuncio: 'ad_1' }),
+  comOrigem('anuncio2', 'resolvida', { origem: 'Anúncio', origem_anuncio: 'ad_2' }),
+  comOrigem('direto1', 'aberta', { origem: 'Direto' }),
+  // Contato anterior a `atribuirOrigem`: não tem o campo, e não é "direto".
+  comOrigem('antigo', 'aberta', {}),
+]
+
+describe('recortarFila por origem', () => {
+  it('acha quem veio de anúncio', () => {
+    expect(recortarFila(POR_ORIGEM, 'todas', 'todos', 'anuncio').map((l) => l.contatoId)).toEqual([
+      'anuncio1',
+      'anuncio2',
+    ])
+  })
+
+  it('quem chegou sozinho é "direto", e o contato antigo não', () => {
+    expect(recortarFila(POR_ORIGEM, 'todas', 'todos', 'direto').map((l) => l.contatoId)).toEqual([
+      'direto1',
+    ])
+    expect(
+      recortarFila(POR_ORIGEM, 'todas', 'todos', 'desconhecida').map((l) => l.contatoId),
+    ).toEqual(['antigo'])
+  })
+
+  it('combina com o estado, sem atropelar', () => {
+    expect(recortarFila(POR_ORIGEM, 'aberta', 'todos', 'anuncio').map((l) => l.contatoId)).toEqual([
+      'anuncio1',
+    ])
+  })
+
+  it('"todas" não filtra nada — é o padrão de quem não escolheu', () => {
+    expect(recortarFila(POR_ORIGEM, 'todas', 'todos')).toHaveLength(4)
+    expect(recortarFila(POR_ORIGEM, 'todas', 'todos', 'todas')).toHaveLength(4)
+  })
+})
+
+describe('contarOrigens', () => {
+  it('conta os três grupos', () => {
+    expect(contarOrigens(POR_ORIGEM, 'todas')).toEqual({
+      anuncio: 2,
+      direto: 1,
+      desconhecida: 1,
+    })
+  })
+
+  /* O número do rail tem de bater com a lista logo abaixo dele. */
+  it('respeita o estado escolhido', () => {
+    expect(contarOrigens(POR_ORIGEM, 'aberta')).toEqual({
+      anuncio: 1,
+      direto: 1,
+      desconhecida: 1,
+    })
   })
 })

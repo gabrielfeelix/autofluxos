@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { FichaDoRail } from '@/components/inbox/ficha-do-rail'
+import { origemDoContato } from '@/core/contatos/origem'
 import type { FiltroDeEstado } from '@/server/repos/leads'
 
 /**
@@ -72,14 +73,62 @@ export function useFilaLocal(entrada: {
  * conversa escondida na aba de adiadas no dia em que ela deveria reaparecer.
  */
 export function recortarFila<
-  T extends { estadoEfetivo: 'aberta' | 'adiada' | 'resolvida'; atribuidoA: string | null },
->(leads: T[], estado: FiltroDeEstado, atribuicao: string): T[] {
+  T extends {
+    estadoEfetivo: 'aberta' | 'adiada' | 'resolvida'
+    atribuidoA: string | null
+    campos?: Record<string, string>
+  },
+>(leads: T[], estado: FiltroDeEstado, atribuicao: string, origem: FiltroDeOrigem = 'todas'): T[] {
   return leads.filter((lead) => {
     if (estado !== 'todas' && lead.estadoEfetivo !== estado) return false
+    if (origem !== 'todas' && !casaOrigem(lead.campos, origem)) return false
     if (atribuicao === 'sem-dono') return lead.atribuidoA === null
     if (atribuicao !== 'todos') return lead.atribuidoA === atribuicao
     return true
   })
+}
+
+/**
+ * O terceiro eixo da fila: de onde a pessoa veio.
+ *
+ * **Por que ele vale a pena.** Os dois eixos antigos respondem "em que pé está"
+ * e "de quem é". Nenhum responde *"quem chegou por anúncio"* — que é a pergunta
+ * de quem paga mídia e quer saber se o dinheiro virou conversa. Com o funil
+ * cheio, achar essas pessoas na lista exigia abrir uma por uma.
+ *
+ * `desconhecida` existe porque contato anterior a `atribuirOrigem` não tem o
+ * campo, e some-los em "direto" seria afirmar o que ninguém mediu — o mesmo
+ * cuidado que `origemDoContato` já tem ao devolver `null`.
+ */
+export type FiltroDeOrigem = 'todas' | 'anuncio' | 'direto' | 'desconhecida'
+
+function casaOrigem(campos: Record<string, string> | undefined, alvo: FiltroDeOrigem): boolean {
+  const origem = origemDoContato(campos ?? {})
+  if (origem === null) return alvo === 'desconhecida'
+  if (alvo === 'anuncio') return origem.deAnuncio
+  if (alvo === 'direto') return !origem.deAnuncio
+  return false
+}
+
+/**
+ * Quantas conversas por origem, **dentro do estado escolhido**.
+ *
+ * Mesmo motivo de `contarDonos` recortar por estado: um número que não bate com
+ * a lista logo abaixo é pior que número nenhum.
+ */
+export function contarOrigens<
+  T extends { estadoEfetivo: 'aberta' | 'adiada' | 'resolvida'; campos?: Record<string, string> },
+>(leads: T[], estado: FiltroDeEstado): { anuncio: number; direto: number; desconhecida: number } {
+  const noEstado = estado === 'todas' ? leads : leads.filter((l) => l.estadoEfetivo === estado)
+
+  const total = { anuncio: 0, direto: 0, desconhecida: 0 }
+  for (const lead of noEstado) {
+    const origem = origemDoContato(lead.campos ?? {})
+    if (origem === null) total.desconhecida += 1
+    else if (origem.deAnuncio) total.anuncio += 1
+    else total.direto += 1
+  }
+  return total
 }
 
 /** Quantas conversas em cada estado, contadas na própria lista carregada. */
@@ -123,6 +172,8 @@ export type LeadDoRail = {
   contatoId: string
   estadoEfetivo: 'aberta' | 'adiada' | 'resolvida'
   atribuidoA: string | null
+  /** O que está gravado no contato. A origem sai daqui. */
+  campos?: Record<string, string>
 }
 
 /**
@@ -175,11 +226,23 @@ export function RailsLocais<T extends LeadDoRail>({
     conversaAberta,
   })
 
+  /*
+   * A origem é estado local e **não vai para a URL**, diferente dos outros dois.
+   *
+   * Os rails de estado e dono respondem "onde eu parei" — dá para recarregar a
+   * página na aba certa, e o link serve para mandar para alguém. A origem é
+   * recorte de análise: alguém pergunta "quem veio de anúncio?", olha, e volta.
+   * Carregá-la na URL faria o link compartilhado levar o filtro de quem
+   * mandou, que quase nunca é o que a outra pessoa quer ver.
+   */
+  const [origem, setOrigem] = useState<FiltroDeOrigem>('todas')
+
   const porEstado = useMemo(() => contarEstados(leads), [leads])
   const donos = useMemo(() => contarDonos(leads, estado), [leads, estado])
+  const origens = useMemo(() => contarOrigens(leads, estado), [leads, estado])
   const recorte = useMemo(
-    () => recortarFila(leads, estado, atribuicao),
-    [leads, estado, atribuicao],
+    () => recortarFila(leads, estado, atribuicao, origem),
+    [leads, estado, atribuicao, origem],
   )
 
   /*
@@ -262,6 +325,41 @@ export function RailsLocais<T extends LeadDoRail>({
                 ausente={membro.presenca !== undefined && membro.presenca !== 'disponivel'}
               />
             ))}
+        </nav>
+      )}
+
+      {/*
+        O rail de origem só aparece quando há o que separar.
+        Numa conta em que ninguém veio de anúncio, ele seria três botões que
+        filtram nada — e rail que não recorta é ruído na tela mais usada do
+        produto.
+      */}
+      {origens.anuncio > 0 && (
+        <nav
+          aria-label="Filtrar por origem"
+          className="-mx-1 mt-2.5 flex gap-1 overflow-x-auto pb-0.5"
+        >
+          <FichaDoRail
+            href="#"
+            aoEscolher={() => setOrigem('todas')}
+            acesa={origem === 'todas'}
+            rotulo="Toda origem"
+            contagem={origens.anuncio + origens.direto + origens.desconhecida}
+          />
+          <FichaDoRail
+            href="#"
+            aoEscolher={() => setOrigem('anuncio')}
+            acesa={origem === 'anuncio'}
+            rotulo="De anúncio"
+            contagem={origens.anuncio}
+          />
+          <FichaDoRail
+            href="#"
+            aoEscolher={() => setOrigem('direto')}
+            acesa={origem === 'direto'}
+            rotulo="Direto"
+            contagem={origens.direto}
+          />
         </nav>
       )}
 
