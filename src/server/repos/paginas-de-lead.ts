@@ -107,9 +107,20 @@ export async function desligarPagina(clienteId: string, pageId: string): Promise
 export async function formulariosAtivos(): Promise<
   { clienteId: string; pageId: string; formId: string }[]
 > {
+  /*
+   * Em ordem de quem foi varrido há mais tempo.
+   *
+   * A reconciliação pega só os primeiros N por execução — o limite da Meta é
+   * por Página e proporcional ao volume de leads, então varrer tudo todo dia
+   * estoura o teto de quem está começando. Ordenar por `varrido_em` faz a fila
+   * girar: quem esperou mais vai primeiro, e ninguém fica para trás para
+   * sempre. `nulls first` põe o formulário nunca varrido na frente de todos,
+   * que é onde ele tem de estar.
+   */
   const { data, error } = await db()
     .from('formularios_de_lead')
     .select('client_id, page_id, form_id')
+    .order('varrido_em', { ascending: true, nullsFirst: true })
 
   if (error) {
     if (ehIdInvalido(error)) return []
@@ -146,4 +157,19 @@ export async function anotarFormulario(entrada: {
       },
       { onConflict: 'form_id' },
     )
+}
+
+/**
+ * Marca que estes formulários acabaram de ser varridos.
+ *
+ * É o que faz a fila girar. Sem isto, `formulariosAtivos` devolveria sempre a
+ * mesma ordem e os mesmos trinta seriam varridos todo dia.
+ */
+export async function marcarVarredura(formIds: string[]): Promise<void> {
+  if (formIds.length === 0) return
+
+  await db()
+    .from('formularios_de_lead')
+    .update({ varrido_em: new Date().toISOString() })
+    .in('form_id', formIds)
 }
