@@ -301,11 +301,11 @@ export function SecaoDepoisDoFluxo() {
           </Cel>
         </Linha>
         <Linha>
-          <Cel forte>Quadros</Cel>
+          <Cel forte>Funis</Cel>
           <Cel>Em que ponto cada pessoa está: novo, agendado, compareceu, virou aluno.</Cel>
           <Cel>
-            O bloco {NOMES.etapa} move o cartão sozinho. Quadro que depende de digitação manual é
-            quadro que mente com cara de dado.
+            O bloco {NOMES.etapa} move o cartão sozinho. Funil que depende de digitação manual é
+            funil que mente com cara de dado.
           </Cel>
         </Linha>
         <Linha>

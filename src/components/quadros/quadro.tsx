@@ -7,13 +7,24 @@ import {
   LIMITE_DO_NOME,
   cartoesPorEtapa,
   comoParado,
+  FILTRO_VAZIO,
+  filtrarCartoes,
   estaParado,
   type Cartao,
   type Etapa,
+  type FiltroDoQuadro,
+  type OrdemDoQuadro,
   type TipoDeEtapa,
 } from '@/core/quadros'
 import { comoDinheiro } from '@/core/crm'
-import { acaoAtribuirCartao, acaoDefinirTipoDaEtapa, acaoReabrirCartao } from '@/server/acoes-crm'
+import {
+  acaoAtribuirCartao,
+  acaoDefinirTipoDaEtapa,
+  acaoReabrirCartao,
+  acaoTrazerTodosParaOQuadro,
+} from '@/server/acoes-crm'
+import { BarraDoQuadro } from './barra-do-quadro'
+import { IlustracaoQuadros } from '@/components/design/ilustracoes'
 import { Avatar } from '@/components/inbox/avatar'
 import { Dropdown } from '@/components/design/dropdown'
 import { FecharCartao } from './fechar-cartao'
@@ -29,6 +40,7 @@ import {
   acaoTirarDoQuadro,
 } from '@/server/acoes'
 import { Modal } from '@/components/design/modal'
+import { Caixa } from '@/components/design/caixa'
 
 /**
  * O quadro (C1), redesenhado para funcionar como um quadro de verdade.
@@ -80,6 +92,14 @@ export function Quadro({
     null,
   )
   const [noPainel, setNoPainel] = useState<Cartao | null>(null)
+  /*
+   * A barra de ações é **estado de cliente**, e some numa navegação — de
+   * propósito. Filtro que sobrevive à visita seguinte é a causa clássica do
+   * "sumiram os cartões": alguém filtra por si mesmo numa terça, volta na
+   * quinta e vê um funil vazio que ninguém quebrou.
+   */
+  const [filtro, setFiltro] = useState<FiltroDoQuadro>(FILTRO_VAZIO)
+  const [ordem, setOrdem] = useState<OrdemDoQuadro>('espera')
   const [, comecar] = useTransition()
 
   /**
@@ -96,7 +116,16 @@ export function Quadro({
     setCartoes(cartoesIniciais)
   }
 
-  const porEtapa = cartoesPorEtapa(cartoes)
+  const visiveis = filtrarCartoes(cartoes, filtro)
+  const porEtapa = cartoesPorEtapa(visiveis, ordem)
+
+  /*
+   * Só quem tem cartão aqui aparece na barra. Uma conta com doze pessoas e um
+   * funil tocado por duas encheria a barra de avatares que filtram para o
+   * vazio — e clicar num deles seria indistinguível de um defeito.
+   */
+  const comCartao = new Set(cartoes.map((cartao) => cartao.responsavelId).filter(Boolean))
+  const equipeDoQuadro = equipe.filter((pessoa) => comCartao.has(pessoa.id))
 
   function mover(cartaoId: string, colunaId: string) {
     const antes = cartoes
@@ -170,6 +199,46 @@ export function Quadro({
         <p role="alert" className="mb-2 shrink-0 text-[12px] font-semibold text-perigo">
           {erro}
         </p>
+      )}
+
+      {cartoes.length === 0 ? (
+        /*
+          **Funil vazio precisa dizer o que fazer, não que está vazio.** As três
+          colunas com "Arraste um cartão" descrevem um gesto que não tem de onde
+          partir: não há cartão nenhum para arrastar. Os dois botões daqui são
+          os dois caminhos reais — trazer quem já é seu, ou pôr uma pessoa.
+        */
+        <div className="mb-3 shrink-0 rounded-xl border border-dashed border-line bg-panel px-5 py-7 text-center">
+          <IlustracaoQuadros />
+          <p className="mt-4 text-[13.5px] font-semibold text-soft">Nenhuma pessoa neste funil</p>
+          <p className="mx-auto mt-1.5 max-w-[460px] text-[12px] leading-5 text-dim">
+            O funil só recebe sozinho quem chega depois que ele existe. Quem já estava na sua lista
+            entra por aqui.
+          </p>
+          <span className="mt-4 flex flex-wrap items-center justify-center gap-2">
+            <TrazerMeusContatos clienteId={clienteId} quadroId={quadroId} aoAvisar={setAviso} />
+            {etapas[0] && (
+              <AdicionarContato
+                clienteId={clienteId}
+                quadroId={quadroId}
+                colunaId={etapas[0].id}
+                etapaNome={etapas[0].nome}
+                aparencia="botao"
+              />
+            )}
+          </span>
+        </div>
+      ) : (
+        <BarraDoQuadro
+          filtro={filtro}
+          aoFiltrar={setFiltro}
+          ordem={ordem}
+          aoOrdenar={setOrdem}
+          equipe={equipeDoQuadro}
+          visiveis={visiveis.length}
+          somaAberta={somaDosAbertos(visiveis)}
+          escondidos={cartoes.length - visiveis.length}
+        />
       )}
 
       {/* `min-h-0` é o que faz a rolagem acontecer **dentro** das colunas em vez
@@ -499,11 +568,14 @@ function AdicionarContato({
   quadroId,
   colunaId,
   etapaNome,
+  aparencia = 'coluna',
 }: {
   clienteId: string
   quadroId: string
   colunaId: string
   etapaNome: string
+  /** `coluna` é o rodapé da etapa; `botao` é o estado vazio do funil. */
+  aparencia?: 'coluna' | 'botao'
 }) {
   const [aberto, setAberto] = useState(false)
   const [termo, setTermo] = useState('')
@@ -546,9 +618,13 @@ function AdicionarContato({
       <button
         type="button"
         onClick={() => setAberto(true)}
-        className="shrink-0 rounded-b-xl border-t border-line px-3 py-2 text-left text-[11.5px] text-dim transition hover:bg-surface hover:text-soft"
+        className={
+          aparencia === 'botao'
+            ? 'app-secondary-button px-4 py-2 text-[12.5px]'
+            : 'shrink-0 rounded-b-xl border-t border-line px-3 py-2 text-left text-[11.5px] text-dim transition hover:bg-surface hover:text-soft'
+        }
       >
-        + Adicionar contato
+        {aparencia === 'botao' ? 'Adicionar contato' : '+ Adicionar contato'}
       </button>
 
       <Modal
@@ -579,17 +655,15 @@ function AdicionarContato({
             achados.map((contato) => (
               <li key={contato.id}>
                 <label className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 transition hover:bg-surface-strong">
-                  <input
-                    type="checkbox"
-                    checked={marcados.includes(contato.id)}
-                    onChange={() =>
+                  <Caixa
+                    marcada={marcados.includes(contato.id)}
+                    aoMudar={() =>
                       setMarcados((atuais) =>
                         atuais.includes(contato.id)
                           ? atuais.filter((id) => id !== contato.id)
                           : [...atuais, contato.id],
                       )
                     }
-                    className="size-3.5 accent-[#56d0f5]"
                   />
                   <span className="min-w-0 flex-1">
                     <strong className="block truncate text-[12.5px] font-semibold">
@@ -1219,6 +1293,54 @@ function Voltar({ children, aoVoltar }: { children: React.ReactNode; aoVoltar: (
       className="mb-0.5 flex items-center gap-1 rounded px-2 py-1 text-left text-[10px] font-bold tracking-[0.05em] text-dim uppercase transition hover:bg-surface-strong"
     >
       ← {children}
+    </button>
+  )
+}
+
+/**
+ * "Trazer meus contatos", no estado vazio.
+ *
+ * A faixa `TrazerTodos` já faz isso no topo da página, e ela some quando não há
+ * ninguém de fora. Aqui o botão aparece junto do que explica o vazio — e diz o
+ * resultado em número, porque "trazidos" sem quantidade deixa quem clicou sem
+ * saber se aconteceu alguma coisa.
+ */
+function TrazerMeusContatos({
+  clienteId,
+  quadroId,
+  aoAvisar,
+}: {
+  clienteId: string
+  quadroId: string
+  aoAvisar: (aviso: string) => void
+}) {
+  const [rodando, comecar] = useTransition()
+
+  return (
+    <button
+      type="button"
+      disabled={rodando}
+      onClick={() =>
+        comecar(async () => {
+          try {
+            const r = await acaoTrazerTodosParaOQuadro(clienteId, quadroId)
+            if (!r.ok) {
+              aoAvisar(r.erro ?? 'não deu para trazer')
+              return
+            }
+            aoAvisar(
+              r.faltaram
+                ? `${r.postos} trazidos. Faltaram ${r.faltaram} — clique de novo.`
+                : `${r.postos} trazidos para a primeira etapa.`,
+            )
+          } catch {
+            aoAvisar('não deu para trazer agora — tente de novo')
+          }
+        })
+      }
+      className="app-primary-button px-4 py-2 text-[12.5px] disabled:opacity-50"
+    >
+      {rodando ? 'trazendo…' : 'Trazer meus contatos'}
     </button>
   )
 }

@@ -66,6 +66,7 @@ import type {
 } from './painel'
 import { Versoes, type VersaoNaLista } from './versoes'
 import { Compartilhar } from './compartilhar'
+import { Caixa } from '@/components/design/caixa'
 
 const PAUSA_ANTES_DE_SALVAR = 800
 
@@ -1143,20 +1144,17 @@ export function Editor({
             title="Etapa 2 (IA) é plano à parte. Sem isto, fluxo com bloco de IA não publica. Só a 4YU marca."
             className="flex cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-xs text-muted transition hover:bg-surface"
           >
-            <input
-              type="checkbox"
-              checked={comIa}
-              onChange={async (e) => {
-                const novo = e.target.checked
-                setComIa(novo)
+            <Caixa
+              marcada={comIa}
+              aoMudar={async (marcada) => {
+                setComIa(marcada)
                 try {
-                  const r = await acaoAlternarIa(fluxoId, clienteId, novo)
-                  if (!r.ok) setComIa(!novo)
+                  const r = await acaoAlternarIa(fluxoId, clienteId, marcada)
+                  if (!r.ok) setComIa(!marcada)
                 } catch {
-                  setComIa(!novo)
+                  setComIa(!marcada)
                 }
               }}
-              className="size-3.5 accent-violet-400"
             />
             IA contratada
           </label>

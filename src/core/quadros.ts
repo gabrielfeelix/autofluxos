@@ -209,7 +209,18 @@ export function conferirEtapa(
 }
 
 /** Os cartões de cada etapa, na ordem em que a coluna os mostra. */
-export function cartoesPorEtapa(cartoes: Cartao[]): Map<string, Cartao[]> {
+export function cartoesPorEtapa(
+  cartoes: Cartao[],
+  /**
+   * A ordem escolhida na barra. O padrão é o do produto — ver abaixo.
+   *
+   * As outras duas existem para perguntas diferentes da fila de trabalho:
+   * "maior valor" é a do fim do mês, "mais recente" é a de quem quer ver o que
+   * entrou hoje. Nenhuma das duas serve de padrão: as duas escondem o
+   * esquecido no fim da coluna, que é quem o quadro existe para mostrar.
+   */
+  ordem: OrdemDoQuadro = 'espera',
+): Map<string, Cartao[]> {
   const mapa = new Map<string, Cartao[]>()
   for (const cartao of cartoes) {
     const lista = mapa.get(cartao.colunaId) ?? []
@@ -229,11 +240,104 @@ export function cartoesPorEtapa(cartoes: Cartao[]): Map<string, Cartao[]> {
    */
   for (const lista of mapa.values()) {
     lista.sort((a, b) => {
+      // Cartão fechado desce em qualquer ordem: ele não é trabalho pendente.
       const fechadoA = a.situacao && a.situacao !== 'aberta' ? 1 : 0
       const fechadoB = b.situacao && b.situacao !== 'aberta' ? 1 : 0
       if (fechadoA !== fechadoB) return fechadoA - fechadoB
+
+      if (ordem === 'valor') {
+        // Sem valor anotado vai para o fim: zero e "não sei" não são a mesma
+        // coisa, e misturá-los faria a coluna parecer cheia de venda de R$ 0.
+        const valorA = a.valor ?? -1
+        const valorB = b.valor ?? -1
+        if (valorA !== valorB) return valorB - valorA
+      }
+
+      if (ordem === 'recente') return b.entrouNaColunaEm.localeCompare(a.entrouNaColunaEm)
+
       return a.entrouNaColunaEm.localeCompare(b.entrouNaColunaEm)
     })
   }
   return mapa
+}
+
+// ---------------------------------------------------------------------------
+// Filtrar e ordenar o quadro (a barra de ações)
+// ---------------------------------------------------------------------------
+
+/** O que a barra filtra por situação. `todas` inclui ganhas e perdidas. */
+export type SituacaoFiltro = 'abertas' | 'ganhas' | 'perdidas' | 'todas'
+
+/** Por onde a coluna é ordenada. `espera` é o padrão do produto. */
+export type OrdemDoQuadro = 'espera' | 'valor' | 'recente'
+
+export type FiltroDoQuadro = {
+  busca: string
+  /** `null` = qualquer um · `'ninguem'` = os sem dono · id = aquela pessoa. */
+  responsavel: string | null
+  situacao: SituacaoFiltro
+}
+
+export const FILTRO_VAZIO: FiltroDoQuadro = {
+  busca: '',
+  responsavel: null,
+  situacao: 'abertas',
+}
+
+/**
+ * Acento e maiúscula não podem separar ninguém da própria busca.
+ *
+ * Quem procura "jose" tem que achar "José", e quem digita com pressa não vai
+ * voltar para pôr o acento — vai concluir que a pessoa não está no quadro.
+ */
+function comparavel(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+}
+
+/**
+ * O cartão passa pelo filtro?
+ *
+ * A busca varre **nome, telefone e título da negociação** — as três coisas que
+ * alguém tem na cabeça ao procurar ("a Ana", "o 98851", "o plano trimestral").
+ * Só dígitos no telefone dos dois lados, senão procurar por "11 98851" não acha
+ * o que está guardado como "5511988519314".
+ */
+export function passaNoFiltro(cartao: Cartao, filtro: FiltroDoQuadro): boolean {
+  const situacao = cartao.situacao ?? 'aberta'
+  if (filtro.situacao === 'abertas' && situacao !== 'aberta') return false
+  if (filtro.situacao === 'ganhas' && situacao !== 'ganha') return false
+  if (filtro.situacao === 'perdidas' && situacao !== 'perdida') return false
+
+  if (filtro.responsavel === 'ninguem' && cartao.responsavelId) return false
+  if (
+    filtro.responsavel !== null &&
+    filtro.responsavel !== 'ninguem' &&
+    cartao.responsavelId !== filtro.responsavel
+  ) {
+    return false
+  }
+
+  const busca = filtro.busca.trim()
+  if (busca === '') return true
+
+  const alvo = comparavel(busca)
+  const soDigitos = busca.replace(/\D/g, '')
+
+  return (
+    comparavel(cartao.nome).includes(alvo) ||
+    comparavel(cartao.titulo ?? '').includes(alvo) ||
+    (soDigitos.length >= 3 && cartao.telefone.replace(/\D/g, '').includes(soDigitos))
+  )
+}
+
+export function filtrarCartoes(cartoes: Cartao[], filtro: FiltroDoQuadro): Cartao[] {
+  return cartoes.filter((cartao) => passaNoFiltro(cartao, filtro))
+}
+
+/** Quantos cartões sobraram de fora do filtro. A barra precisa dizer isso. */
+export function escondidosPeloFiltro(cartoes: Cartao[], filtro: FiltroDoQuadro): number {
+  return cartoes.length - filtrarCartoes(cartoes, filtro).length
 }

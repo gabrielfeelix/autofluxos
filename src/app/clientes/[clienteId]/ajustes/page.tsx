@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
+import { saudeDoInstagram, saudeDoWhatsApp } from '@/core/saude-da-conexao'
 import type { ReactNode } from 'react'
 import { ApagarCliente } from '@/components/cliente/apagar'
 import { acaoApagarCliente } from '@/server/acoes'
@@ -51,6 +52,17 @@ export default async function Pagina({
     ])
   const semContexto = cliente.contextoNegocio.trim() === ''
 
+  /*
+   * A saúde dos canais é calculada aqui e desenhada nos selos abaixo.
+   *
+   * O índice é a tela em que alguém pergunta "está tudo ligado?", e até agora
+   * ele respondia só "quantos" — um número derrubado pela Meta aparecia como
+   * "1 número", em verde, exatamente igual a um número funcionando. Quem contava
+   * a verdade era a tela de dentro, que ninguém abre sem motivo.
+   */
+  const saudeDoWhats = saudeDoWhatsApp(canais)
+  const saudeDoIg = saudeDoInstagram(contaDoInstagram)
+
   // A equipe fala Postgres direto e pode estourar sem `DATABASE_URL`. Um índice
   // de configurações não pode deixar de abrir por causa de um selo.
   let equipe: MembroDaConta[] = []
@@ -96,11 +108,15 @@ export default async function Pagina({
             titulo="WhatsApp"
             descricao="Qual número atende, que fluxo ele executa em cada papel, e o endereço para o painel da Meta."
             estado={
-              <Selo tom={canais.length === 0 ? 'alerta' : 'ok'}>
-                {canais.length === 0
-                  ? 'nenhum'
-                  : `${canais.length} ${canais.length === 1 ? 'número' : 'números'}`}
-              </Selo>
+              saudeDoWhats === 'reconectar' ? (
+                <Selo tom="perigo">reconectar</Selo>
+              ) : (
+                <Selo tom={canais.length === 0 ? 'alerta' : 'ok'}>
+                  {canais.length === 0
+                    ? 'nenhum'
+                    : `${canais.length} ${canais.length === 1 ? 'número' : 'números'}`}
+                </Selo>
+              )
             }
           />
           <Linha
@@ -108,11 +124,17 @@ export default async function Pagina({
             titulo="Instagram"
             descricao="Ligar o direct de uma conta profissional para as mensagens chegarem no mesmo Inbox."
             estado={
-              <Selo tom={contaDoInstagram ? 'ok' : 'neutro'}>
-                {contaDoInstagram
-                  ? (contaDoInstagram.igUsername ?? 'ligada')
-                  : 'nenhuma'}
-              </Selo>
+              saudeDoIg === 'reconectar' ? (
+                <Selo tom="perigo">reconectar</Selo>
+              ) : saudeDoIg === 'vencendo' ? (
+                <Selo tom="alerta">vence em breve</Selo>
+              ) : (
+                <Selo tom={contaDoInstagram ? 'ok' : 'neutro'}>
+                  {contaDoInstagram
+                    ? (contaDoInstagram.igUsername ?? 'ligada')
+                    : 'nenhuma'}
+                </Selo>
+              )
             }
           />
         </Grupo>
@@ -341,11 +363,15 @@ function Selo({
   tom,
 }: {
   children: ReactNode
-  tom: 'ok' | 'alerta' | 'neutro'
+  tom: 'ok' | 'alerta' | 'perigo' | 'neutro'
 }) {
   const cor = {
     ok: 'border-emerald-400/25 bg-emerald-400/[0.08] text-ok',
     alerta: 'border-amber-300/30 bg-amber-300/[0.1] text-aviso',
+    // `perigo` é para canal caído, e só. Amarelo já significa "falta
+    // configurar"; um canal fora do ar não é uma configuração faltando, é
+    // atendimento parado agora.
+    perigo: 'border-rose-400/30 bg-rose-400/[0.09] text-perigo',
     neutro: 'border-line bg-surface text-muted',
   }[tom]
 

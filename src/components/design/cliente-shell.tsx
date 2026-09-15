@@ -60,7 +60,20 @@ const ITENS: {
   // Quadros entra ao lado de Contatos, e não no fim, porque é a mesma gente
   // olhada de outro jeito: a lista responde "quem existe", o quadro responde
   // "em que ponto cada um está".
-  { chave: 'quadros', rotulo: 'Quadros', href: '/quadros', icone: <IconeQuadros /> },
+  /*
+   * **"Funis", e não "Quadros" — a rota continua `/quadros`.**
+   *
+   * O nome foi escolhido quando a tela era só a posição da pessoa no funil.
+   * Agora que ela tem negociação, valor, ganho e perda, o nome que o mercado
+   * brasileiro usa é funil: o RD chama a tela de "Funil" e a lista de
+   * "Negociações", Pipedrive e HubSpot chamam de "Negócios", Kommo de
+   * "Pipeline". "Quadros" descreve o desenho (colunas), não o trabalho.
+   *
+   * Plural porque são vários — captação, comercial, pós-venda —, e cada coluna
+   * continua sendo uma **etapa**. A URL não muda: link salvo quebrado em troca
+   * de um rótulo não se paga.
+   */
+  { chave: 'quadros', rotulo: 'Funis', href: '/quadros', icone: <IconeQuadros /> },
   { chave: 'fluxos', rotulo: 'Automações', href: '/fluxos', icone: <IconeAutomacoes /> },
   { chave: 'ajustes', rotulo: 'Configurações', href: '/ajustes', icone: <IconeConfiguracoes /> },
 ]

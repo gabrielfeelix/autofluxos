@@ -76,6 +76,7 @@ import { FunilDaConversa, type FunilDoContato } from '@/components/inbox/funil-d
 import { marcarComoLida, naoLidasPorContato, quandoLeu } from '@/server/repos/leituras'
 import { avisarQueLeu } from '@/server/recibo-de-leitura'
 import { TextoDoWhatsApp } from '@/components/texto-do-whatsapp'
+import { FaixaDeCanalCaido } from '@/components/inbox/faixa-canal-caido'
 import { PulsoDoInbox } from '@/components/inbox/pulso-do-inbox'
 
 export const dynamic = 'force-dynamic'
@@ -301,6 +302,7 @@ export default async function Pagina({
         tela cujo conteúdo é a conversa acontecendo agora.
       */}
       <PulsoDoInbox clienteId={cliente.id} pulsoNaTela={pulso} />
+      <FaixaDeCanalCaido clienteId={cliente.id} />
       {/*
         **Sem respiro em volta, e essa é a diferença mais visível desta tela.**
 

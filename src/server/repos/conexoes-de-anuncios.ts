@@ -8,6 +8,19 @@ import { NOME_DA_CONEXAO_DE_ADS } from '../token-de-anuncios'
  * Os dois caminhos gravam no **mesmo lugar** — uma Conexão `meta-ads` do tipo
  * bearer — e é isso que mantém o resto do produto sem saber de onde ele veio.
  * `tokenDeAnuncios()` lê um só, e trocar de caminho não muda nada para quem usa.
+ *
+ * **`expiraEm` é recebido e descartado, e isso é uma dívida conhecida.** A
+ * tabela `connections` não tem coluna de validade: ela guarda chave de API
+ * genérica, que não vence. O token do diálogo da Meta vence em 60 dias, e
+ * quando vencer o Lead Ads para de chegar sem nada na tela dizer por quê —
+ * exatamente a falha calada que `core/saude-da-conexao.ts` existe para acabar,
+ * e a única conexão que ele ainda não consegue avaliar.
+ *
+ * O parâmetro continua aqui de propósito: quem chama já sabe a validade, e
+ * apagá-la da assinatura faria a informação se perder mais longe ainda do lugar
+ * onde ela precisa chegar. Consertar exige `alter table connections add column
+ * expira_em` em produção compartilhada com a Verandi — Etapa 3 do
+ * `docs/PLANO-CONFIGURACOES.md`, e não se aplica sem autorização do dono.
  */
 export async function guardarTokenDeAnuncios(entrada: {
   clienteId: string

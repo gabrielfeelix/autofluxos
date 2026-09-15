@@ -62,7 +62,7 @@ export function Negociacoes({
         {/* Fora de todo funil a frase diz onde se resolve isso, e não só que
             está vazio: pôr alguém num funil é decisão de quem vende. */}
         <p className="px-[18px] py-[22px] text-xs leading-5 text-dim">
-          Esta pessoa não está em nenhum funil. Ela entra pela tela de Quadros — arrastando o
+          Esta pessoa não está em nenhum funil. Ela entra pela tela de Funis — arrastando o
           cartão, ou pelo botão de trazer os contatos que ainda estão de fora.
         </p>
       </section>

@@ -213,18 +213,25 @@ export function PilulaInterruptor({
   ligada,
   aoAlternar,
   contagem,
+  titulo,
+  desabilitada = false,
 }: {
   rotulo: string
   ligada: boolean
   aoAlternar: () => void
   contagem?: number
+  /** A explicação no `title`, para os interruptores cujo efeito não é imediato. */
+  titulo?: string
+  desabilitada?: boolean
 }) {
   return (
     <button
       type="button"
       aria-pressed={ligada}
       onClick={aoAlternar}
-      className={`${PILULA} ${ligada ? PILULA_ACESA : PILULA_PARADA}`}
+      title={titulo}
+      disabled={desabilitada}
+      className={`${PILULA} ${ligada ? PILULA_ACESA : PILULA_PARADA} disabled:opacity-60`}
     >
       {rotulo}
       {contagem !== undefined && contagem > 0 && (

@@ -91,7 +91,7 @@ export default async function Pagina({
           do que ele existe para fazer. */}
       <main className="flex h-full min-h-0 flex-col px-4 pt-[26px] pb-5 md:px-[42px]">
         <header className="mb-4 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2">
-          <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Quadros</h1>
+          <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Funis</h1>
 
           {quadros.length > 1 && (
             <nav className="flex flex-wrap gap-1.5">
@@ -144,9 +144,9 @@ export default async function Pagina({
             {novoQuadro}
             {aberto && (
               <BotaoPerigo
-                rotulo="Apagar quadro"
-                titulo="Apaga o quadro e as etapas. Nenhum contato é apagado."
-                pergunta={`Apagar o quadro “${aberto.nome}”? Some a posição das ${cartoes.length} pessoa(s) no funil — os contatos, as conversas e as etiquetas ficam.`}
+                rotulo="Apagar funil"
+                titulo="Apaga o funil e as etapas. Nenhum contato é apagado."
+                pergunta={`Apagar o funil “${aberto.nome}”? Some a posição das ${cartoes.length} pessoa(s) nele — os contatos, as conversas e as etiquetas ficam.`}
                 acao={acaoApagarQuadro.bind(null, cliente.id, aberto.id)}
               />
             )}
@@ -156,11 +156,11 @@ export default async function Pagina({
         {!aberto ? (
           <section className="app-card px-5 py-16 text-center">
             <IlustracaoQuadros />
-            <p className="mt-6 text-[13.5px] font-semibold text-soft">Nenhum quadro ainda</p>
+            <p className="mt-6 text-[13.5px] font-semibold text-soft">Nenhum funil ainda</p>
             <p className="mx-auto mt-1.5 max-w-[440px] text-xs leading-5 text-dim">
-              Um quadro é o seu funil desenhado: as etapas por onde um contato passa, do primeiro
-              contato até o desfecho. Etiqueta é um fato sobre a pessoa e ela pode ter várias; etapa
-              é onde ela está, e é uma só.
+              Um funil é o seu processo desenhado: as etapas por onde um contato passa, do
+              primeiro contato até o desfecho. Etiqueta é um fato sobre a pessoa e ela pode ter
+              várias; etapa é onde ela está, e é uma só.
             </p>
             <span className="mt-6 inline-block">{novoQuadro}</span>
           </section>

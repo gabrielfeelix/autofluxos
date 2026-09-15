@@ -1,6 +1,7 @@
 'use client'
 
 import { useId, useRef, useState, type ReactNode } from 'react'
+import { Caixa } from '@/components/design/caixa'
 import { FERRAMENTAS } from '@/core/ferramentas'
 import {
   LIMITE_BOTOES,
@@ -585,16 +586,15 @@ export function Painel({
             tinham como dizer que ali o arquivo **é** a resposta certa.
           */}
           <label className="flex cursor-pointer items-start gap-2 text-[12px] leading-4 text-muted">
-            <input
-              type="checkbox"
-              checked={no.data.aceitaMidia ?? false}
-              onChange={(e) =>
+            <Caixa
+              className="mt-0.5"
+              marcada={no.data.aceitaMidia ?? false}
+              aoMudar={(marcada) =>
                 aoMudarDados({
-                  aceitaMidia: e.target.checked || undefined,
-                  ...(e.target.checked ? {} : { salvarMidiaEm: undefined }),
+                  aceitaMidia: marcada || undefined,
+                  ...(marcada ? {} : { salvarMidiaEm: undefined }),
                 })
               }
-              className="mt-0.5 size-3.5 accent-[#56d0f5]"
             />
             <span>
               aceitar foto, áudio ou documento aqui
@@ -1933,11 +1933,9 @@ function Mapeamentos({
                   )}
 
                   <label className="mt-1 flex cursor-pointer items-center gap-2 pl-1 text-[10.5px] leading-4 text-dim">
-                    <input
-                      type="checkbox"
-                      checked={m.unicos ?? false}
-                      onChange={(e) => trocar({ unicos: e.target.checked || undefined })}
-                      className="size-3.5 accent-[#56d0f5]"
+                    <Caixa
+                      marcada={m.unicos ?? false}
+                      aoMudar={(marcada) => trocar({ unicos: marcada || undefined })}
                     />
                     sem repetir — use para menu de dias; não use quando esta lista for o par de outra
                   </label>
@@ -1981,11 +1979,9 @@ function Mapeamentos({
                   )}
 
                   <label className="mt-1 flex cursor-pointer items-center gap-2 pl-1 text-[10.5px] leading-4 text-dim">
-                    <input
-                      type="checkbox"
-                      checked={m.quantos ?? false}
-                      onChange={(e) => trocar({ quantos: e.target.checked || undefined })}
-                      className="size-3.5 accent-[#56d0f5]"
+                    <Caixa
+                      marcada={m.quantos ?? false}
+                      aoMudar={(marcada) => trocar({ quantos: marcada || undefined })}
                     />
                     contar quantos — guarda o número de itens (
                     <code className="font-mono">3</code>), e não a lista
@@ -2099,11 +2095,9 @@ function ConsultasDaIa({
               key={f.nome}
               className="mb-1 flex items-center gap-2.5 rounded-[7px] px-1.5 py-1 last:mb-0 hover:bg-surface"
             >
-              <input
-                type="checkbox"
-                checked={marcadas.has(f.nome)}
-                onChange={(evento) => alternar(f.nome, evento.currentTarget.checked)}
-                className="size-4 shrink-0 accent-[var(--primary)]"
+              <Caixa
+                marcada={marcadas.has(f.nome)}
+                aoMudar={(marcada) => alternar(f.nome, marcada)}
               />
               <span className="text-[12.5px] leading-4">{f.rotulo}</span>
             </label>

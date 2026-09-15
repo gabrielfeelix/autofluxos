@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { PilulaInterruptor } from '@/components/inbox/pilulas'
 import { acaoDefinirQuadroPadrao } from '@/server/acoes'
 
 /**
@@ -66,29 +67,24 @@ export function QuadroPadrao({
   const recebendo = padrao || recebePorSerOPrimeiro
 
   return (
-    <label
-      title={
+    /*
+      **É um interruptor, e não uma caixa de formulário.** Ele nasceu como
+      `<input type="checkbox">` dentro de um chip e ficava ao lado de um
+      dropdown no mesmo cabeçalho — dois controles com a mesma função de
+      "escolher" e dois desenhos diferentes. O interruptor do Inbox é o
+      controle da casa para ligar e desligar coisa, e usar o mesmo aqui é o que
+      faz as duas telas parecerem um produto só.
+    */
+    <PilulaInterruptor
+      rotulo={erro ?? 'Novo contato entra aqui'}
+      titulo={
         recebePorSerOPrimeiro && !padrao
           ? 'Contato novo entra aqui por ser o quadro mais antigo da conta. Marque outro quadro para mudar o destino.'
           : 'Quando alguém escreve pela primeira vez, o contato vira cartão na primeira etapa deste quadro. Só um quadro por conta pode receber.'
       }
-      /* `shrink-0` e `whitespace-nowrap`: sem os dois o chip encolhia no
-         cabeçalho apertado e o texto vazava para fora da própria borda, indo
-         parar atrás do dropdown vizinho. */
-      className={`flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] whitespace-nowrap transition ${
-        recebendo
-          ? 'border-emerald-400/25 bg-emerald-400/[0.07] text-ok'
-          : 'border-line bg-surface text-muted hover:border-strong'
-      }`}
-    >
-      <input
-        type="checkbox"
-        checked={recebendo}
-        disabled={pendente}
-        onChange={(e) => alternar(e.target.checked)}
-        className="h-3.5 w-3.5 accent-primary"
-      />
-      {erro ?? 'Novo contato entra aqui'}
-    </label>
+      ligada={recebendo}
+      desabilitada={pendente}
+      aoAlternar={() => alternar(!recebendo)}
+    />
   )
 }

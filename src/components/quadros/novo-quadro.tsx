@@ -86,16 +86,16 @@ export function NovoQuadro({ clienteId, primeiro }: { clienteId: string; primeir
             : 'app-secondary-button px-3.5 py-2 text-[12.5px]'
         }
       >
-        + Novo quadro
+        + Novo funil
       </button>
 
       <Modal
         aberto={aberto}
         aoFechar={fechar}
-        titulo={passo === 'nome' ? 'Dê um nome ao quadro' : 'Novo quadro'}
+        titulo={passo === 'nome' ? 'Dê um nome ao funil' : 'Novo funil'}
         descricao={
           passo === 'como'
-            ? 'Um quadro é o seu funil desenhado: as etapas por onde a pessoa passa, do primeiro contato ao desfecho.'
+            ? 'Um funil é o seu processo desenhado: as etapas por onde a pessoa passa, do primeiro contato ao desfecho.'
             : passo === 'modelos'
               ? 'Cada modelo já vem com as etapas, o prazo de cada uma e onde fica o ganho e a perda. Dá para mudar tudo depois.'
               : undefined

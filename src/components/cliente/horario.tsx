@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Caixa } from '@/components/design/caixa'
 import { FormularioSalvar, type EstadoSalvar } from '@/components/design/formulario-salvar'
 import { Dropdown } from '@/components/design/dropdown'
 import {
@@ -123,12 +124,7 @@ export function HorarioDeAtendimentoForm({
       </section>
 
       <label className="mb-4 flex items-center gap-2.5">
-        <input
-          type="checkbox"
-          checked={ligado}
-          onChange={(evento) => setLigado(evento.currentTarget.checked)}
-          className="size-4 accent-[var(--primary)]"
-        />
+        <Caixa marcada={ligado} aoMudar={setLigado} />
         <span className="text-[13px] font-semibold">Definir horário de atendimento</span>
       </label>
 
