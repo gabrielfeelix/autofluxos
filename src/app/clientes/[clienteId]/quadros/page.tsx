@@ -10,6 +10,8 @@ import { LIMITE_DO_NOME } from '@/core/quadros'
 import { acaoApagarQuadro, acaoCriarQuadro } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarCartoes, listarQuadros } from '@/server/repos/quadros'
+import { listarMotivos } from '@/server/repos/motivos-de-perda'
+import { membrosDaConta } from '@/server/repos/usuarios'
 
 export const dynamic = 'force-dynamic'
 
@@ -61,6 +63,17 @@ export default async function Pagina({
   // da URL, e link velho não pode virar tela quebrada.
   const aberto = quadros.find((quadro) => quadro.id === q) ?? quadros[0] ?? null
   const cartoes = aberto ? await listarCartoes(cliente.id, aberto.id) : []
+
+  /*
+   * Equipe e motivos vêm com a página, e não sob demanda no menu.
+   *
+   * São duas listas curtas que mudam uma vez por mês, e buscá-las ao abrir cada
+   * menu de cartão seria uma ida ao banco por clique — num lugar onde a pessoa
+   * clica em dezenas de cartões seguidos.
+   */
+  const [equipe, motivos] = aberto
+    ? await Promise.all([membrosDaConta(cliente.id), listarMotivos(cliente.id)])
+    : [[], []]
 
   const novoQuadro = (
     <ModalFormulario
@@ -159,6 +172,8 @@ export default async function Pagina({
             etapas={aberto.etapas}
             cartoesIniciais={cartoes}
             agora={agora}
+            equipe={equipe.map(({ id, nome }) => ({ id, nome }))}
+            motivos={motivos.map(({ id, nome }) => ({ id, nome }))}
           />
         )}
       </main>

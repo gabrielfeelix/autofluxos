@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useState, useTransition } from 'react'
 import {
   DIAS_PARA_MARCAR_PARADO,
@@ -12,6 +11,10 @@ import {
   type Cartao,
   type Etapa,
 } from '@/core/quadros'
+import { comoDinheiro } from '@/core/crm'
+import { acaoAtribuirCartao, acaoReabrirCartao } from '@/server/acoes-crm'
+import { FecharCartao } from './fechar-cartao'
+import { PainelDoContato } from './painel-do-contato'
 import {
   acaoApagarEtapa,
   acaoBuscarContatosDoQuadro,
@@ -51,18 +54,29 @@ export function Quadro({
   cartoesIniciais,
   /** Calculado no servidor: data relativa no cliente diverge na hidratação. */
   agora,
+  equipe,
+  motivos,
 }: {
   clienteId: string
   quadroId: string
   etapas: Etapa[]
   cartoesIniciais: Cartao[]
   agora: number
+  /** Quem pode assumir um cartão. Disponíveis primeiro — ver `membrosDaConta`. */
+  equipe: { id: string; nome: string }[]
+  /** A lista fechada de por que se perde nesta conta. */
+  motivos: { id: string; nome: string }[]
 }) {
   const [cartoes, setCartoes] = useState(cartoesIniciais)
   const [ultimoDoServidor, setUltimoDoServidor] = useState(cartoesIniciais)
   const [arrastando, setArrastando] = useState<string | null>(null)
   const [sobre, setSobre] = useState<string | null>(null)
   const [erro, setErro] = useState<string | null>(null)
+  const [aviso, setAviso] = useState<string | null>(null)
+  const [fechando, setFechando] = useState<{ cartao: Cartao; situacao: 'ganha' | 'perdida' } | null>(
+    null,
+  )
+  const [noPainel, setNoPainel] = useState<Cartao | null>(null)
   const [, comecar] = useTransition()
 
   /**
@@ -85,6 +99,24 @@ export function Quadro({
     const antes = cartoes
     const alvo = cartoes.find((c) => c.id === cartaoId)
     if (!alvo || alvo.colunaId === colunaId) return
+
+    /**
+     * Arrastar para uma etapa de ganho ou de perda **abre o fechamento**, não
+     * fecha sozinho.
+     *
+     * Perder exige motivo, e fechar em silêncio no solte produziria exatamente o
+     * relatório que o motivo existe para evitar. Ganhar poderia ser automático,
+     * mas tratar os dois gestos igual é o que faz a etapa significar a mesma
+     * coisa nos dois lados do funil — e o modal ainda é onde se anota o valor,
+     * que é a informação que ninguém volta para preencher depois.
+     */
+    const destino = etapas.find((e) => e.id === colunaId)
+    if (destino?.tipo === 'ganho' || destino?.tipo === 'perdido') {
+      setFechando({
+        cartao: { ...alvo, colunaId },
+        situacao: destino.tipo === 'ganho' ? 'ganha' : 'perdida',
+      })
+    }
 
     setErro(null)
     // O relógio também é otimista: deixar o cartão dizendo "há 6 dias" logo
@@ -175,6 +207,19 @@ export function Quadro({
                 <span className="shrink-0 rounded-full bg-surface-strong px-1.5 py-0.5 text-[10.5px] text-dim">
                   {daEtapa.length}
                 </span>
+                {/*
+                  A soma é **só dos abertos**. Somar os fechados junto faria a
+                  coluna de ganho crescer para sempre e a previsão do funil
+                  virar um número que nunca desce.
+                */}
+                {somaDosAbertos(daEtapa) > 0 && (
+                  <span
+                    title="Soma das negociações abertas nesta etapa"
+                    className="shrink-0 text-[10.5px] font-semibold text-dim"
+                  >
+                    {comoDinheiro(somaDosAbertos(daEtapa))}
+                  </span>
+                )}
                 <MenuDaEtapa
                   clienteId={clienteId}
                   quadroId={quadroId}
@@ -214,15 +259,54 @@ export function Quadro({
                       }`}
                     >
                       <div className="flex items-start gap-1.5">
-                        <Link
-                          href={`/clientes/${clienteId}/leads/${cartao.contatoId}`}
-                          className="min-w-0 flex-1"
+                        {/*
+                          Clicar abre o painel, e não outra página: conferir quem
+                          é alguém não pode custar a visão do funil e a rolagem
+                          de cada coluna. A conversa continua a um clique, no pé
+                          do painel.
+                        */}
+                        <button
+                          type="button"
+                          onClick={() => setNoPainel(cartao)}
+                          className="min-w-0 flex-1 text-left"
                         >
-                          <strong className="block truncate text-[12.5px] font-semibold">
-                            {cartao.nome}
-                          </strong>
-                          <span className="mt-0.5 flex items-center gap-1.5">
-                            {estaParado(cartao.entrouNaColunaEm, agora) && (
+                          <span className="flex items-center gap-1.5">
+                            <strong className="min-w-0 flex-1 truncate text-[12.5px] font-semibold">
+                              {cartao.nome}
+                            </strong>
+                            {cartao.situacao && cartao.situacao !== 'aberta' && (
+                              <span
+                                className={`shrink-0 rounded-full px-1.5 py-[1px] text-[9.5px] font-bold ${
+                                  cartao.situacao === 'ganha'
+                                    ? 'bg-emerald-400/15 text-emerald-600'
+                                    : 'bg-rose-400/15 text-rose-600'
+                                }`}
+                              >
+                                {cartao.situacao === 'ganha' ? 'ganho' : 'perdido'}
+                              </span>
+                            )}
+                          </span>
+
+                          {(cartao.titulo || cartao.valor != null) && (
+                            <span className="mt-0.5 flex items-baseline gap-1.5">
+                              <span className="min-w-0 flex-1 truncate text-[10.5px] text-dim">
+                                {cartao.titulo}
+                              </span>
+                              {cartao.valor != null && (
+                                <span className="shrink-0 text-[10.5px] font-semibold text-soft">
+                                  {comoDinheiro(cartao.valor)}
+                                </span>
+                              )}
+                            </span>
+                          )}
+
+                          {/*
+                            A linha de baixo responde a pergunta que faz alguém
+                            agir — "de quem estou devendo resposta" —, e por isso
+                            a espera vem antes do responsável.
+                          */}
+                          <span className="mt-1 flex items-center gap-1.5">
+                            {parado(cartao, etapa, agora) && (
                               <span
                                 aria-hidden
                                 className="size-1.5 shrink-0 rounded-full bg-amber-300"
@@ -230,21 +314,33 @@ export function Quadro({
                             )}
                             <span
                               className={`truncate text-[10.5px] ${
-                                estaParado(cartao.entrouNaColunaEm, agora)
-                                  ? 'text-aviso'
-                                  : 'text-dim'
+                                parado(cartao, etapa, agora) ? 'text-aviso' : 'text-dim'
                               }`}
                             >
-                              {comoParado(cartao.entrouNaColunaEm, agora)}
+                              {espera(cartao, agora)}
                             </span>
+                            {cartao.responsavelNome && (
+                              <span
+                                title={cartao.responsavelNome}
+                                className="ml-auto shrink-0 rounded-full bg-surface-strong px-1.5 py-[1px] text-[9.5px] font-bold text-dim"
+                              >
+                                {iniciais(cartao.responsavelNome)}
+                              </span>
+                            )}
                           </span>
-                        </Link>
+                        </button>
 
                         <MenuDoCartao
                           etapas={etapas}
                           etapaAtual={etapa.id}
+                          cartao={cartao}
+                          equipe={equipe}
+                          clienteId={clienteId}
                           aoMover={(destino) => mover(cartao.id, destino)}
                           aoTirar={() => tirar(cartao.id)}
+                          aoFechar={(situacao) => setFechando({ cartao, situacao })}
+                          aoAbrirPainel={() => setNoPainel(cartao)}
+                          aoAvisar={setAviso}
                         />
                       </div>
                     </li>
@@ -276,10 +372,85 @@ export function Quadro({
 
       <p className="mt-2 shrink-0 text-[11px] text-dim">
         O ponto âmbar marca quem está parado há {DIAS_PARA_MARCAR_PARADO} dias ou mais na mesma
-        etapa.
+        etapa — ou além do limite da etapa, quando ela tem um.
       </p>
+
+      {aviso && (
+        <p
+          role="status"
+          className="mt-1 shrink-0 rounded-lg border border-line bg-surface px-3 py-2 text-[11.5px] text-soft"
+        >
+          {aviso}
+        </p>
+      )}
+
+      <FecharCartao
+        key={fechando?.cartao.id ?? 'vazio'}
+        clienteId={clienteId}
+        cartao={fechando?.cartao ?? null}
+        situacao={fechando?.situacao ?? 'ganha'}
+        motivos={motivos}
+        aoFechar={() => setFechando(null)}
+        aoConcluir={({ abriuEm }) => {
+          setFechando(null)
+          // A passagem para o funil seguinte precisa ser dita: o cartão some do
+          // quadro do SDR sem explicação nenhuma se ninguém avisar.
+          setAviso(abriuEm ? `Ganho. O contato entrou no funil ${abriuEm}.` : null)
+        }}
+      />
+
+      {/*
+        A `key` é o que reseta o painel ao trocar de cartão. Sem ela, o painel
+        abriria com a linha do tempo da pessoa anterior até a nova chegar — e
+        limpar isso à mão dentro de um efeito é o padrão que o React pede para
+        não usar.
+      */}
+      <PainelDoContato
+        key={noPainel?.id ?? 'vazio'}
+        clienteId={clienteId}
+        contato={noPainel}
+        aoFechar={() => setNoPainel(null)}
+      />
     </div>
   )
+}
+
+/**
+ * A espera que o cartão mostra.
+ *
+ * **Quando a pessoa falou** ganha de **quando o cartão mudou de etapa**, e a
+ * ordem importa: o cartão parado há seis dias numa etapa em que a pessoa
+ * escreveu ontem não é um esquecimento, e o cartão movido hoje cuja última
+ * mensagem é de semana passada é. A segunda é a informação que faz agir.
+ */
+function espera(cartao: Cartao, agora: number): string {
+  if (!cartao.ultimaMensagemEm) return comoParado(cartao.entrouNaColunaEm, agora)
+
+  const dias = Math.max(0, Math.floor((agora - Date.parse(cartao.ultimaMensagemEm)) / 86_400_000))
+  if (dias === 0) return 'falou hoje'
+  return dias === 1 ? 'falou há 1 dia' : `falou há ${dias} dias`
+}
+
+/** O alerta usa o limite da etapa quando ela tem um. Cartão fechado nunca acende. */
+function parado(cartao: Cartao, etapa: Etapa, agora: number): boolean {
+  if (cartao.situacao && cartao.situacao !== 'aberta') return false
+  return estaParado(cartao.entrouNaColunaEm, agora, etapa.limiteDeDias)
+}
+
+function somaDosAbertos(cartoes: Cartao[]): number {
+  return cartoes.reduce(
+    (soma, cartao) =>
+      soma + (!cartao.situacao || cartao.situacao === 'aberta' ? (cartao.valor ?? 0) : 0),
+    0,
+  )
+}
+
+/** "Ana Paula" vira "AP". Duas letras cabem no cartão; um nome inteiro não. */
+function iniciais(nome: string): string {
+  const partes = nome.trim().split(/\s+/)
+  const primeira = partes[0]?.[0] ?? ''
+  const ultima = partes.length > 1 ? (partes[partes.length - 1]?.[0] ?? '') : ''
+  return (primeira + ultima).toUpperCase()
 }
 
 /**
@@ -680,15 +851,44 @@ function MenuDaEtapa({
 function MenuDoCartao({
   etapas,
   etapaAtual,
+  cartao,
+  equipe,
+  clienteId,
   aoMover,
   aoTirar,
+  aoFechar,
+  aoAbrirPainel,
+  aoAvisar,
 }: {
   etapas: Etapa[]
   etapaAtual: string
+  cartao: Cartao
+  equipe: { id: string; nome: string }[]
+  clienteId: string
   aoMover: (colunaId: string) => void
   aoTirar: () => void
+  aoFechar: (situacao: 'ganha' | 'perdida') => void
+  aoAbrirPainel: () => void
+  aoAvisar: (texto: string | null) => void
 }) {
   const [aberto, setAberto] = useState(false)
+  const [vendo, setVendo] = useState<'acoes' | 'mover' | 'assumir'>('acoes')
+  const [, comecar] = useTransition()
+
+  const fechado = Boolean(cartao.situacao && cartao.situacao !== 'aberta')
+
+  function agir(acao: () => Promise<{ ok: boolean; erro?: string }>, feito?: string) {
+    setAberto(false)
+    setVendo('acoes')
+    comecar(async () => {
+      try {
+        const r = await acao()
+        aoAvisar(r.ok ? (feito ?? null) : (r.erro ?? 'não deu certo'))
+      } catch {
+        aoAvisar('não deu certo agora — tente de novo')
+      }
+    })
+  }
 
   return (
     <span className="relative shrink-0">
@@ -696,7 +896,10 @@ function MenuDoCartao({
         type="button"
         aria-label="Ações do cartão"
         aria-expanded={aberto}
-        onClick={() => setAberto((a) => !a)}
+        onClick={() => {
+          setVendo('acoes')
+          setAberto((a) => !a)
+        }}
         className="rounded px-1 text-[13px] leading-none text-dim opacity-0 transition group-hover:opacity-100 hover:text-soft focus:opacity-100"
       >
         ⋯
@@ -705,41 +908,172 @@ function MenuDoCartao({
       {aberto && (
         <>
           <span className="fixed inset-0 z-10" onClick={() => setAberto(false)} />
-          <span className="absolute top-5 right-0 z-20 flex w-[190px] flex-col rounded-lg border border-line bg-panel p-1 shadow-[0_18px_40px_rgba(19,25,34,0.11)]">
-            <span className="px-2 py-1 text-[10px] font-bold tracking-[0.05em] text-dim uppercase">
-              Mover para
-            </span>
-            {etapas
-              .filter((etapa) => etapa.id !== etapaAtual)
-              .map((etapa) => (
-                <button
-                  key={etapa.id}
-                  type="button"
+          <span className="absolute top-5 right-0 z-20 flex max-h-[320px] w-[210px] flex-col overflow-y-auto rounded-lg border border-line bg-panel p-1 shadow-[0_18px_40px_rgba(19,25,34,0.11)]">
+            {vendo === 'acoes' && (
+              <>
+                {/*
+                  Ganhar e perder vêm primeiro porque são o que fecha o trabalho,
+                  e porque é o gesto que o resto do sistema escuta: é ele que faz
+                  o contato virar cliente e abre o cartão no funil seguinte.
+                */}
+                {fechado ? (
+                  <Item
+                    onClick={() =>
+                      agir(() => acaoReabrirCartao(clienteId, cartao.id), 'Cartão reaberto.')
+                    }
+                  >
+                    Reabrir negociação
+                  </Item>
+                ) : (
+                  <>
+                    <Item
+                      onClick={() => {
+                        setAberto(false)
+                        aoFechar('ganha')
+                      }}
+                    >
+                      Marcar como ganho
+                    </Item>
+                    <Item
+                      onClick={() => {
+                        setAberto(false)
+                        aoFechar('perdida')
+                      }}
+                    >
+                      Marcar como perdido
+                    </Item>
+                  </>
+                )}
+
+                <span className="my-1 border-t border-line" />
+
+                <Item onClick={() => setVendo('assumir')}>
+                  {cartao.responsavelNome ? `Com ${cartao.responsavelNome} →` : 'Atribuir a →'}
+                </Item>
+                <Item onClick={() => setVendo('mover')}>Mover para →</Item>
+                <Item
                   onClick={() => {
                     setAberto(false)
-                    aoMover(etapa.id)
+                    aoAbrirPainel()
                   }}
-                  className="truncate rounded px-2 py-1.5 text-left text-[12px] transition hover:bg-surface-strong"
                 >
-                  {etapa.nome}
-                </button>
-              ))}
+                  Abrir perfil
+                </Item>
 
-            <span className="my-1 border-t border-line" />
-            <button
-              type="button"
-              onClick={() => {
-                setAberto(false)
-                aoTirar()
-              }}
-              title="Tira do quadro. O contato continua na lista, na conversa e nas etiquetas."
-              className="rounded px-2 py-1.5 text-left text-[12px] text-perigo transition hover:bg-rose-400/10"
-            >
-              Tirar do quadro
-            </button>
+                <span className="my-1 border-t border-line" />
+                <Item
+                  perigo
+                  title="Tira do quadro. O contato continua na lista, na conversa e nas etiquetas."
+                  onClick={() => {
+                    setAberto(false)
+                    aoTirar()
+                  }}
+                >
+                  Tirar do quadro
+                </Item>
+              </>
+            )}
+
+            {vendo === 'mover' && (
+              <>
+                <Voltar aoVoltar={() => setVendo('acoes')}>Mover para</Voltar>
+                {etapas
+                  .filter((etapa) => etapa.id !== etapaAtual)
+                  .map((etapa) => (
+                    <Item
+                      key={etapa.id}
+                      onClick={() => {
+                        setAberto(false)
+                        setVendo('acoes')
+                        aoMover(etapa.id)
+                      }}
+                    >
+                      {etapa.nome}
+                    </Item>
+                  ))}
+              </>
+            )}
+
+            {vendo === 'assumir' && (
+              <>
+                <Voltar aoVoltar={() => setVendo('acoes')}>Atribuir a</Voltar>
+                {equipe.length === 0 && (
+                  <span className="px-2 py-1.5 text-[11.5px] leading-4 text-dim">
+                    Ninguém na equipe ainda. Convide alguém em Ajustes.
+                  </span>
+                )}
+                {equipe.map((pessoa) => (
+                  <Item
+                    key={pessoa.id}
+                    onClick={() =>
+                      agir(
+                        () => acaoAtribuirCartao(clienteId, cartao.id, pessoa.id),
+                        `${pessoa.nome} assumiu ${cartao.nome}.`,
+                      )
+                    }
+                  >
+                    {pessoa.nome}
+                  </Item>
+                ))}
+                {cartao.responsavelId && (
+                  <>
+                    <span className="my-1 border-t border-line" />
+                    {/* Largar o que se pegou é ação legítima: quem sai de férias
+                        precisa poder devolver o cartão à fila de ninguém. */}
+                    <Item
+                      onClick={() =>
+                        agir(
+                          () => acaoAtribuirCartao(clienteId, cartao.id, null),
+                          'Cartão devolvido para a fila.',
+                        )
+                      }
+                    >
+                      Ninguém
+                    </Item>
+                  </>
+                )}
+              </>
+            )}
           </span>
         </>
       )}
     </span>
+  )
+}
+
+function Item({
+  children,
+  onClick,
+  perigo,
+  title,
+}: {
+  children: React.ReactNode
+  onClick: () => void
+  perigo?: boolean
+  title?: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={`truncate rounded px-2 py-1.5 text-left text-[12px] transition ${
+        perigo ? 'text-perigo hover:bg-rose-400/10' : 'hover:bg-surface-strong'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+function Voltar({ children, aoVoltar }: { children: React.ReactNode; aoVoltar: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={aoVoltar}
+      className="mb-0.5 flex items-center gap-1 rounded px-2 py-1 text-left text-[10px] font-bold tracking-[0.05em] text-dim uppercase transition hover:bg-surface-strong"
+    >
+      ← {children}
+    </button>
   )
 }
