@@ -56,6 +56,7 @@ import { listarRespostasRapidas, type RespostaRapida } from '@/server/repos/resp
 import {
   AnexoNaConversa,
   ArquivoSemCopia,
+  MensagemNaoSuportada,
   CartoesNaBolha,
   CitacaoNaBolha,
   LocalNaBolha,
@@ -975,6 +976,7 @@ function Historico({
                 />
               )}
               {mensagem.semCopia && <ArquivoSemCopia nossa={nossa} />}
+              {mensagem.naoSuportada && <MensagemNaoSuportada />}
               {mensagem.local && <LocalNaBolha local={mensagem.local} />}
               {mensagem.cartoes && <CartoesNaBolha cartoes={mensagem.cartoes} />}
               {/*
@@ -996,7 +998,8 @@ function Historico({
                 !mensagem.cartoes &&
                 !mensagem.anexo &&
                 !mensagem.recebido &&
-                !mensagem.semCopia && <SemTexto />
+                !mensagem.semCopia &&
+                !mensagem.naoSuportada && <SemTexto />
               )}
               {/*
                 O rodapé da bolha diz a hora, e **quem escreveu só quando isso

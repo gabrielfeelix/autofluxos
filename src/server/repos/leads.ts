@@ -165,6 +165,16 @@ export type MensagemDoLead = {
    */
   semCopia?: true
   /**
+   * A Meta disse `unsupported`: existe uma mensagem ali e ela **não vem** para
+   * a API.
+   *
+   * É o caso de "ver uma vez", enquete, pagamento, evento e alguns cartões —
+   * coisas que o WhatsApp entrega ao celular e não ao número de negócio. Não é
+   * mídia sem cópia e não é mensagem vazia: os dois já tinham desenho próprio e
+   * nenhum dos dois descreve isto.
+   */
+  naoSuportada?: true
+  /**
    * Quem produziu esta mensagem, já escrito para a tela: "Gabriel Barbosa" ou
    * "automação". Ausente = não sabemos, e aí a bolha mostra só a hora.
    *
@@ -991,8 +1001,15 @@ export async function lerConversa(
                 ...(guardado.nomeArquivo ? { nomeArquivo: guardado.nomeArquivo } : {}),
               }
             : null
-        const semCopia =
-          !recebido && midiaDoTipo((m.payload as { type?: string } | null)?.type) !== null
+        const tipoDaMeta = (m.payload as { type?: string } | null)?.type
+        const semCopia = !recebido && midiaDoTipo(tipoDaMeta) !== null
+        /*
+         * `unsupported` é uma resposta da Meta, não uma falha nossa, e a bolha
+         * precisa dizer isso com essa palavra. Antes ela caía no genérico
+         * "(áudio, imagem ou documento)" — que é um chute sobre o que havia
+         * ali, e parecia defeito do painel.
+         */
+        const naoSuportada = tipoDaMeta === 'unsupported'
         const reacoes = m.wa_message_id ? reacoesPorAlvo.get(m.wa_message_id) : undefined
         const cita = m.cita ? citadaDoHistorico(m.cita, porWaId) : null
         return {
@@ -1004,6 +1021,7 @@ export async function lerConversa(
           ...(anexo ? { anexo } : {}),
           ...(recebido ? { recebido } : {}),
           ...(semCopia ? { semCopia: true as const } : {}),
+          ...(naoSuportada ? { naoSuportada: true as const } : {}),
           ...(autor ? { autor } : {}),
           ...(m.transcricao ? { transcricao: m.transcricao } : {}),
           ...(local ? { local } : {}),

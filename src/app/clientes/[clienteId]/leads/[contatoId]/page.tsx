@@ -31,6 +31,7 @@ import { SeletorDeEtiquetas } from '@/components/etiquetas/seletor'
 import {
   AnexoNaConversa,
   ArquivoSemCopia,
+  MensagemNaoSuportada,
   CartoesNaBolha,
   CitacaoNaBolha,
   LocalNaBolha,
@@ -339,6 +340,7 @@ async function Historico({
               */}
               {mensagem.recebido && <AnexoNaConversa anexo={mensagem.recebido} />}
               {mensagem.semCopia && <ArquivoSemCopia />}
+              {mensagem.naoSuportada && <MensagemNaoSuportada />}
               {mensagem.local && <LocalNaBolha local={mensagem.local} />}
               {mensagem.cartoes && <CartoesNaBolha cartoes={mensagem.cartoes} />}
               {/*
@@ -350,7 +352,10 @@ async function Historico({
               {mensagem.texto !== null ? (
                 <TextoDoWhatsApp texto={mensagem.texto} />
               ) : (
-                !mensagem.local && !mensagem.cartoes && <SemTexto />
+                !mensagem.local &&
+                !mensagem.cartoes &&
+                !mensagem.semCopia &&
+                !mensagem.naoSuportada && <SemTexto />
               )}
               {/*
                 Mesma regra do Inbox: a hora sempre, o autor só na saída e só

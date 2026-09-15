@@ -205,6 +205,35 @@ export function CartoesNaBolha({ cartoes }: { cartoes: CartaoDeContato[] }) {
 }
 
 /**
+ * A Meta mandou `unsupported`: houve mensagem, e ela não vem para cá.
+ *
+ * ---------------------------------------------------------------------------
+ * Por que isto não é "(áudio, imagem ou documento)"
+ * ---------------------------------------------------------------------------
+ *
+ * Caía no genérico antes, e o genérico mentia duas vezes: chuta que era mídia
+ * (pode ser enquete, pagamento, evento, um "ver uma vez") e não diz que **o
+ * conteúdo não existe deste lado** — o que faz quem lê procurar o botão de
+ * baixar que nunca vai aparecer, e concluir que o painel está quebrado.
+ *
+ * O que a Cloud API não entrega, ela não entrega para ninguém: é limite dela, e
+ * o caminho é abrir a conversa no celular. Dizer isso é a única coisa útil que
+ * esta bolha pode fazer — e não prometer recuperação, porque não há.
+ */
+export function MensagemNaoSuportada() {
+  return (
+    <span className="inline-flex max-w-full items-center gap-2 rounded-lg border border-dashed border-strong px-2.5 py-1.5">
+      <span aria-hidden className="text-[13px] leading-none">
+        🚫
+      </span>
+      <span className="text-[11px] leading-4 text-dim italic">
+        mensagem que o WhatsApp não entrega para o painel — veja no celular
+      </span>
+    </span>
+  )
+}
+
+/**
  * Chegou arquivo e não temos cópia dele.
  *
  * ---------------------------------------------------------------------------
