@@ -22,6 +22,7 @@ function canal(parcial: Partial<CanalSalvo> = {}): CanalSalvo {
     clienteId: 'cliente-1',
     provider: 'instagram',
     phoneNumberId: null,
+    displayPhoneNumber: null,
     igUserId: '17841400000000000',
     igUsername: 'estudio',
     tokenRef: 'ref-1',

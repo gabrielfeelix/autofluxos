@@ -1,5 +1,6 @@
 import 'server-only'
 import { z } from 'zod'
+import { digitos } from '@/core/contatos/telefone'
 import { alertar } from './alertar'
 import {
   acharCanalPorNumero,
@@ -236,23 +237,43 @@ export const HISTORICO_RECUSADO = 2593109
 /**
  * Quem falou: o negócio ou a pessoa.
  *
- * **É a decisão que o handoff de `HANDOFF-COEXISTENCE.md` deixou em aberto**, e
- * ela tem uma regra só: `from` igual ao número do negócio significa saída. O
- * echo ainda traz `to`, então quando `from` falta, um `to` diferente do número
- * do negócio também é saída.
+ * ---------------------------------------------------------------------------
+ * O bug de 14/set, e por que ele passou
+ * ---------------------------------------------------------------------------
  *
- * Errar aqui inverte a conversa inteira na tela — o que o cliente disse aparece
- * como resposta nossa e vice-versa —, e como o histórico é importado uma vez
- * só, não há segunda chance de corrigir sem reimportar.
+ * Esta função recebia o **`phone_number_id`** como "número do negócio", e a
+ * Meta manda no `from` o **número de telefone**. São coisas diferentes:
+ * `110549275215531` contra `5511911001414`. A comparação nunca dava verdadeira,
+ * então **toda** mensagem virava entrada — e o histórico importado do primeiro
+ * cliente apareceu na tela como se ele nunca tivesse respondido nada.
+ *
+ * Passou porque os dois são strings de dígitos com tamanho parecido: o tipo não
+ * reclama, o teste com dado inventado passa (basta usar o mesmo valor dos dois
+ * lados), e o defeito só aparece com payload real de um número real. A doc é
+ * explícita — *"se o valor é o número do negócio, a mensagem foi enviada pelo
+ * negócio"* —, e o campo certo vem em `metadata.display_phone_number`.
+ *
+ * ---------------------------------------------------------------------------
+ * A comparação é por dígitos
+ * ---------------------------------------------------------------------------
+ *
+ * `display_phone_number` vem formatado (`+55 11 91100-1414`) e o `from` vem cru
+ * (`5511911001414`). Comparar as duas formas como texto erraria sempre, pelo
+ * mesmo motivo de antes — só que de um jeito mais difícil de ver.
+ *
+ * Errar aqui inverte a conversa inteira na tela, e como o histórico chega uma
+ * vez só, não há segunda chance sem reimportar.
  */
 export function direcaoDaMensagem(
   mensagem: { from?: string; to?: string },
   numeroDoNegocio: string | null,
 ): 'entrada' | 'saida' {
-  if (!numeroDoNegocio) return 'entrada'
-  if (mensagem.from) return mensagem.from === numeroDoNegocio ? 'saida' : 'entrada'
-  // Sem `from`: um `to` que não é o número do negócio significa que ele mandou.
-  if (mensagem.to) return mensagem.to === numeroDoNegocio ? 'entrada' : 'saida'
+  const nosso = numeroDoNegocio ? digitos(numeroDoNegocio) : ''
+  if (nosso === '') return 'entrada'
+
+  if (mensagem.from) return digitos(mensagem.from) === nosso ? 'saida' : 'entrada'
+  // Sem `from`: um `to` que não é o nosso número significa que fomos nós.
+  if (mensagem.to) return digitos(mensagem.to) === nosso ? 'entrada' : 'saida'
   return 'entrada'
 }
 
@@ -507,10 +528,10 @@ async function gravarMensagemImportada(
   mensagem: z.infer<typeof mensagemDoHistoricoSchema>,
   historico: boolean,
 ): Promise<void> {
-  const waId = contatoDaMensagem(mensagem, canal.phoneNumberId)
+  const waId = contatoDaMensagem(mensagem, numeroDoNegocio(canal))
   if (!waId) return
 
-  const direcao = direcaoDaMensagem(mensagem, canal.phoneNumberId)
+  const direcao = direcaoDaMensagem(mensagem, numeroDoNegocio(canal))
 
   /*
    * O nome vem da agenda dele quando existe.
@@ -577,7 +598,7 @@ async function tratarEcos(
    * dois não custa nada — deixar de ler um custou o Inbox de um cliente.
    */
   for (const mensagem of valor.message_echoes ?? valor.messages ?? []) {
-    const waId = contatoDaMensagem(mensagem, canal.phoneNumberId)
+    const waId = contatoDaMensagem(mensagem, numeroDoNegocio(canal))
     if (!waId) continue
 
     await gravarMensagemImportada(canal, mensagem, false)
@@ -589,7 +610,7 @@ async function tratarEcos(
      * `messages` de sempre já a trata, e calar o bot por causa dela desligaria a
      * automação a cada mensagem recebida, que é o oposto do produto.
      */
-    if (direcaoDaMensagem(mensagem, canal.phoneNumberId) !== 'saida') continue
+    if (direcaoDaMensagem(mensagem, numeroDoNegocio(canal)) !== 'saida') continue
 
     const contato = await acharOuCriarContato(canal.clienteId, waId, null)
     await calarBotNaConversa(contato.id)
@@ -703,4 +724,21 @@ async function registrarOnboardingPelaMeta(valor: Record<string, unknown>): Prom
     ),
     { waba: wabaId },
   )
+}
+
+/**
+ * O número do negócio, para comparar com o `from` que a Meta manda.
+ *
+ * **Não é o `phone_number_id`.** Esse é o identificador interno da Cloud API;
+ * o histórico e os echos trazem o número de telefone. Trocar um pelo outro é o
+ * bug de 14/set, que fez a conversa inteira do primeiro cliente aparecer como
+ * se ele nunca tivesse respondido — ver `direcaoDaMensagem`.
+ *
+ * `null` quando o canal não tem o número gravado: aí `direcaoDaMensagem` trata
+ * tudo como entrada, que é o comportamento conservador. Errar para "entrada"
+ * mostra a mensagem no lugar errado; errar para "saída" faria o bot ignorar
+ * gente de verdade.
+ */
+function numeroDoNegocio(canal: CanalSalvo): string | null {
+  return canal.displayPhoneNumber
 }

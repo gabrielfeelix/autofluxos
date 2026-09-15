@@ -20,6 +20,8 @@ function paraCanal(linha: Record<string, unknown>): CanalSalvo {
     clienteId: linha.client_id as string,
     provider: linha.provider as string,
     phoneNumberId: (linha.phone_number_id ?? null) as string | null,
+    // Instagram não tem número; o campo existe para o tipo bater com o canal de WhatsApp.
+    displayPhoneNumber: null,
     igUserId: (linha.ig_user_id ?? null) as string | null,
     igUsername: (linha.ig_username ?? null) as string | null,
     tokenRef: (linha.token_ref ?? null) as string | null,

@@ -22,6 +22,15 @@ export type CanalSalvo = {
   provider: string
   /** Nulo quando o canal é de Instagram. */
   phoneNumberId: string | null
+  /**
+   * O número em si, como a Meta o escreve: `+55 11 91100-1414`.
+   *
+   * **Não confundir com `phoneNumberId`**, e a diferença já custou caro: o
+   * histórico de coexistência traz `from` com o *número*, e comparar com o *id*
+   * nunca dá verdadeiro — foi assim que a conversa inteira do primeiro cliente
+   * apareceu como se só ele tivesse falado. Ver `direcaoDaMensagem`.
+   */
+  displayPhoneNumber: string | null
   /** A conta profissional do Instagram (IGSID). Nulo quando o canal é WhatsApp. */
   igUserId: string | null
   /** O @ do perfil, para a tela. Não é identificador: o dono pode trocá-lo. */
@@ -59,7 +68,7 @@ export const COLUNA_DO_PAPEL: Record<PapelDoNumero, string> = {
 }
 
 const COLUNAS_DO_CANAL =
-  'id, client_id, provider, phone_number_id, ig_user_id, ig_username, token_ref, token_expira_em, flow_id, flow_boas_vindas_id, flow_midia_id, flow_pos_atendimento_id, status, desembarcado_em'
+  'id, client_id, provider, phone_number_id, display_phone_number, ig_user_id, ig_username, token_ref, token_expira_em, flow_id, flow_boas_vindas_id, flow_midia_id, flow_pos_atendimento_id, status, desembarcado_em'
 
 function paraCanal(linha: Record<string, unknown>): CanalSalvo {
   return {
@@ -67,6 +76,7 @@ function paraCanal(linha: Record<string, unknown>): CanalSalvo {
     clienteId: linha.client_id as string,
     provider: linha.provider as string,
     phoneNumberId: (linha.phone_number_id ?? null) as string | null,
+    displayPhoneNumber: (linha.display_phone_number ?? null) as string | null,
     igUserId: (linha.ig_user_id ?? null) as string | null,
     igUsername: (linha.ig_username ?? null) as string | null,
     tokenRef: (linha.token_ref ?? null) as string | null,

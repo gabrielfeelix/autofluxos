@@ -35,6 +35,36 @@ describe('a direção de uma mensagem importada', () => {
     expect(direcaoDaMensagem({ from: '5511999998888' }, NUMERO_DO_NEGOCIO)).toBe('entrada')
   })
 
+  /*
+   * O bug de 14/set, com os valores reais que o causaram.
+   *
+   * Passava-se o `phone_number_id` (110549275215531) onde a Meta manda o
+   * número (5511911001414). Os dois são dígitos de tamanho parecido, então o
+   * tipo não reclamava e o teste acima passava — porque usava o mesmo valor dos
+   * dois lados. Em produção, nenhuma comparação dava verdadeira e o histórico
+   * inteiro do primeiro cliente virou "entrada": a tela mostrava só o que o
+   * contato escreveu, como se o dono nunca tivesse respondido.
+   */
+  it('o id do número NÃO é o número, e comparar com ele erra tudo', () => {
+    const idDoNumero = '110549275215531'
+    const numeroReal = '5511911001414'
+
+    // O que acontecia: comparar com o id fazia a própria mensagem virar entrada.
+    expect(direcaoDaMensagem({ from: numeroReal }, idDoNumero)).toBe('entrada')
+
+    // O que tem de acontecer: comparado com o número, é saída.
+    expect(direcaoDaMensagem({ from: numeroReal }, numeroReal)).toBe('saida')
+  })
+
+  /*
+   * `display_phone_number` vem formatado da Meta e o `from` vem cru. Comparar
+   * como texto erraria sempre — de um jeito ainda mais difícil de ver.
+   */
+  it('número formatado casa com o cru', () => {
+    expect(direcaoDaMensagem({ from: '5511911001414' }, '+55 11 91100-1414')).toBe('saida')
+    expect(direcaoDaMensagem({ from: '5511999998888' }, '+55 11 91100-1414')).toBe('entrada')
+  })
+
   /** O echo ainda traz `to`. Sem `from`, é ele que decide. */
   it('sem `from`, um `to` que não é o negócio significa que o negócio mandou', () => {
     expect(direcaoDaMensagem({ to: '5511999998888' }, NUMERO_DO_NEGOCIO)).toBe('saida')
