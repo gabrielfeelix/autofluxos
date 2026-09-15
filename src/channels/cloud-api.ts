@@ -1,6 +1,7 @@
 import { LIMITE_ATRASO_SEGUNDOS, LIMITE_ROTULO, type Opcao } from '@/core/flow/schema'
 import { cortarCaracteres } from '@/core/flow/texto'
-import type { Canal } from './types'
+import { lerStatusDeEnvio } from '@/core/templates'
+import type { Canal, EnvioDeTemplate, Template } from './types'
 
 /**
  * A Cloud API oficial da Meta.
@@ -110,15 +111,36 @@ function nomeNaUrl(endereco: string): string {
   }
 }
 
+/**
+ * O que a Cloud API devolve num 200 de `/messages`.
+ *
+ * Tudo opcional porque é resposta de fora: campo que a Meta renomear vira
+ * `undefined` aqui em vez de estourar no meio de uma transmissão de 5.000.
+ */
+type RespostaDeEnvio = {
+  messages?: { id?: string; message_status?: string }[]
+}
+
 export function canalCloudApi(config: ConfigCloudApi): Canal {
   const versao = config.versaoGraph ?? process.env.META_GRAPH_VERSION ?? VERSAO_PADRAO
   const raiz = `https://graph.facebook.com/${versao}`
   const url = `${raiz}/${config.phoneNumberId}/messages`
 
+  /**
+   * O POST de `/messages`, com o corpo da resposta de volta.
+   *
+   * **Devolvia `void` e agora devolve a resposta** por causa do template: para
+   * todos os outros envios o 200 basta, e o corpo só repete o que já se sabe.
+   * Para template não: é ali que vêm o `wamid` — a chave que liga o webhook de
+   * status de volta à linha do destinatário — e o `message_status`, que pode
+   * dizer que a Meta **segurou** a mensagem. Ver `enviarTemplate`.
+   *
+   * Quem não quer a resposta simplesmente ignora o retorno, como antes.
+   */
   async function mandar(
     corpo: Record<string, unknown>,
     timeoutMs: number = TIMEOUT_MS,
-  ): Promise<void> {
+  ): Promise<RespostaDeEnvio> {
     let resposta: Response
     try {
       resposta = await fetch(url, {
@@ -147,6 +169,14 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
       const detalhe = await resposta.text().catch(() => '')
       throw new Error(`Cloud API respondeu ${resposta.status}: ${detalhe.slice(0, 400)}`)
     }
+
+    /*
+     * Corpo ilegível num 200 não é motivo para desfazer um envio que **já
+     * aconteceu**. Quem precisa do `wamid` trata a ausência; quem não precisa
+     * nem olha. Estourar aqui faria o motor de disparo tentar de novo uma
+     * mensagem que a pessoa já recebeu.
+     */
+    return ((await resposta.json().catch(() => ({}))) ?? {}) as RespostaDeEnvio
   }
 
   /**
@@ -432,6 +462,83 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
           ...(nomeArquivo && midia === 'documento' ? { filename: nomeArquivo } : {}),
         },
       })
+    },
+
+    /**
+     * O modelo aprovado — o único caminho para fora da janela de 24h.
+     *
+     * -------------------------------------------------------------------
+     * Por que este envio lê a resposta e os outros não
+     * -------------------------------------------------------------------
+     *
+     * A Meta responde **200** e manda `message_status` junto, com três valores
+     * possíveis: `accepted`, `held_for_quality_assessment` e `paused`. O do
+     * meio significa que ela **segurou** a mensagem para avaliar a qualidade —
+     * acontece com template novo, com template sem nota verde e, desde 2026,
+     * com portfólio novo de pouco histórico.
+     *
+     * Se o veredito for ruim, o template é pausado e **cada mensagem retida é
+     * descartada**, chegando depois no webhook `messages` como `failed` com
+     * código 132015.
+     *
+     * Quem lê só o status HTTP mostra "campanha enviada" para o cliente e nada
+     * saiu. É por isso que aqui se devolve `EnvioDeTemplate` e não `void`, e
+     * por que a tradução mora em `lerStatusDeEnvio()` — a mesma função que o
+     * banco e a tela usam, para que os três não discordem sobre o que é
+     * "enviado".
+     *
+     * -------------------------------------------------------------------
+     * O formato dos parâmetros
+     * -------------------------------------------------------------------
+     *
+     * A Meta liga valor e lacuna **pela posição** dentro de cada componente, e
+     * numera cabeçalho e corpo separadamente. Componente sem variável não pode
+     * ir no payload: mandar `parameters: []` faz ela recusar com 132000
+     * ("contagem de parâmetros não bate") mesmo o template não tendo lacuna
+     * nenhuma. Por isso os dois só entram quando têm o que carregar.
+     */
+    async enviarTemplate(para, { nome, idioma, valores }): Promise<EnvioDeTemplate> {
+      const componentes: Record<string, unknown>[] = []
+
+      const doCabecalho = valores?.cabecalho ?? []
+      if (doCabecalho.length > 0) {
+        componentes.push({
+          type: 'header',
+          parameters: doCabecalho.map((texto) => ({ type: 'text', text: texto })),
+        })
+      }
+
+      const doCorpo = valores?.corpo ?? []
+      if (doCorpo.length > 0) {
+        componentes.push({
+          type: 'body',
+          parameters: doCorpo.map((texto) => ({ type: 'text', text: texto })),
+        })
+      }
+
+      const resposta = await mandar({
+        to: para,
+        type: 'template',
+        template: {
+          name: nome,
+          language: { code: idioma },
+          ...(componentes.length > 0 ? { components: componentes } : {}),
+        },
+      })
+
+      const primeira = resposta.messages?.[0]
+
+      return {
+        /*
+         * Sem `wamid` o webhook de status nunca acha esta linha — a entrega
+         * fica parada em "aceita" para sempre. É perda de informação, não de
+         * mensagem: a mensagem saiu. String vazia deixa isso explícito para
+         * quem grava, em vez de um `undefined` que se confunde com "ainda não
+         * tentamos".
+         */
+        wamid: primeira?.id ?? '',
+        situacao: lerStatusDeEnvio(primeira?.message_status),
+      }
     },
 
     async enviarOpcoes(para, texto, opcoes, formato) {

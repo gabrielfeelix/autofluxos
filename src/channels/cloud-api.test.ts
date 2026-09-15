@@ -319,3 +319,144 @@ describe('enviar mídia sobe o arquivo antes', () => {
     expect(corpo(fetchMock, 2).audio).toEqual({ id: 'media-id-1' })
   })
 })
+
+describe('o envio de template', () => {
+  function canal() {
+    return canalCloudApi({
+      phoneNumberId: 'numero-1',
+      token: 'token-de-teste',
+      versaoGraph: 'v25.0',
+    })
+  }
+
+  /** A resposta que a Meta dá num envio aceito. */
+  function espiar(messageStatus = 'accepted', id = 'wamid-saida-1') {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({ messages: [{ id, message_status: messageStatus }] }),
+        { status: 200 },
+      ),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    return fetchMock
+  }
+
+  function corpo(fetchMock: ReturnType<typeof vi.fn>, chamada = 0) {
+    return JSON.parse(fetchMock.mock.calls[chamada]![1].body as string)
+  }
+
+  it('manda nome e idioma, e nenhum componente quando não há variável', async () => {
+    const fetchMock = espiar()
+    await canal().enviarTemplate!('5544999', { nome: 'lembrete', idioma: 'pt_BR' })
+
+    // `components` ausente e não `[]`: array vazio faz a Meta recusar com
+    // 132000, mesmo o template não tendo lacuna nenhuma.
+    expect(corpo(fetchMock)).toEqual({
+      messaging_product: 'whatsapp',
+      to: '5544999',
+      type: 'template',
+      template: { name: 'lembrete', language: { code: 'pt_BR' } },
+    })
+  })
+
+  it('separa os valores do cabeçalho dos do corpo, na ordem em que vieram', async () => {
+    const fetchMock = espiar()
+    await canal().enviarTemplate!('5544999', {
+      nome: 'lembrete',
+      idioma: 'pt_BR',
+      valores: { cabecalho: ['Consulta'], corpo: ['Ana', '15/10', '14h'] },
+    })
+
+    // Cabeçalho e corpo são numerados separadamente pela Meta: o {{1}} de um
+    // não é o {{1}} do outro.
+    expect(corpo(fetchMock).template.components).toEqual([
+      { type: 'header', parameters: [{ type: 'text', text: 'Consulta' }] },
+      {
+        type: 'body',
+        parameters: [
+          { type: 'text', text: 'Ana' },
+          { type: 'text', text: '15/10' },
+          { type: 'text', text: '14h' },
+        ],
+      },
+    ])
+  })
+
+  it('omite o cabeçalho quando só o corpo tem variável', async () => {
+    const fetchMock = espiar()
+    await canal().enviarTemplate!('5544999', {
+      nome: 'lembrete',
+      idioma: 'pt_BR',
+      valores: { corpo: ['Ana'] },
+    })
+
+    const componentes = corpo(fetchMock).template.components
+    expect(componentes).toHaveLength(1)
+    expect(componentes[0].type).toBe('body')
+  })
+
+  it('devolve o wamid e a situação que a Meta informou', async () => {
+    espiar('accepted', 'wamid-real')
+    const envio = await canal().enviarTemplate!('5544999', {
+      nome: 'lembrete',
+      idioma: 'pt_BR',
+    })
+
+    expect(envio).toEqual({ wamid: 'wamid-real', situacao: 'aceita' })
+  })
+
+  /*
+   * A armadilha que este arquivo inteiro existe para não cair: 200 com
+   * `held_for_quality_assessment` NÃO é entrega. A Meta segurou a mensagem, e
+   * se o veredito for ruim ela é descartada e chega depois como `failed` 132015.
+   */
+  it('não confunde mensagem retida com aceita, mesmo a Meta respondendo 200', async () => {
+    espiar('held_for_quality_assessment')
+    const envio = await canal().enviarTemplate!('5544999', {
+      nome: 'novo_em_folha',
+      idioma: 'pt_BR',
+    })
+
+    expect(envio.situacao).toBe('retida')
+  })
+
+  it('trata `paused` como falha, porque a mensagem não vai sair', async () => {
+    espiar('paused')
+    const envio = await canal().enviarTemplate!('5544999', {
+      nome: 'pausado',
+      idioma: 'pt_BR',
+    })
+
+    expect(envio.situacao).toBe('falhou')
+  })
+
+  it('não desfaz um envio que já aconteceu quando o corpo do 200 é ilegível', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response('isto não é json', { status: 200 })),
+    )
+
+    // A mensagem saiu. Sem wamid perdemos o rastreio do status, não a entrega.
+    const envio = await canal().enviarTemplate!('5544999', {
+      nome: 'lembrete',
+      idioma: 'pt_BR',
+    })
+
+    expect(envio).toEqual({ wamid: '', situacao: 'aceita' })
+  })
+
+  it('estoura quando a Meta recusa, com o motivo dela no erro', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response('{"error":{"code":132001,"message":"template does not exist"}}', {
+          status: 400,
+        }),
+      ),
+    )
+
+    await expect(
+      canal().enviarTemplate!('5544999', { nome: 'sumiu', idioma: 'pt_BR' }),
+    ).rejects.toThrow(/132001/)
+  })
+})

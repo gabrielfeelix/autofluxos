@@ -1,11 +1,12 @@
 import type { Opcao } from '@/core/flow/schema'
-import type { Canal, Midia } from './types'
+import type { Canal, EnvioDeTemplate, Midia, Template } from './types'
 
 export type Enviada =
   | { tipo: 'espera'; mensagemId: string; atrasoMs: number }
   | { tipo: 'texto'; para: string; texto: string }
   | { tipo: 'opcoes'; para: string; texto: string; opcoes: Opcao[]; formato: 'botoes' | 'lista' }
   | ({ tipo: 'midia'; para: string } & Midia)
+  | ({ tipo: 'template'; para: string } & Template)
 
 /**
  * O canal que não envia nada — guarda o que enviaria.
@@ -31,6 +32,18 @@ export function canalMock(): Canal & { enviadas: Enviada[] } {
     },
     async enviarMidia(para, midia) {
       enviadas.push({ tipo: 'midia', para, ...midia })
+    },
+    /**
+     * O mock sempre aceita.
+     *
+     * `retida` não se simula aqui: quem precisa provar o caminho da mensagem
+     * segurada testa `lerStatusDeEnvio()` direto, que é onde a regra mora. Um
+     * mock que às vezes retém faria os testes do motor de disparo dependerem de
+     * qual resposta ele resolveu dar.
+     */
+    async enviarTemplate(para, template): Promise<EnvioDeTemplate> {
+      enviadas.push({ tipo: 'template', para, ...template })
+      return { wamid: `mock-${enviadas.length}`, situacao: 'aceita' }
     },
   }
 }

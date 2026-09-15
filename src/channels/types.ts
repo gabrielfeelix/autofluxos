@@ -44,6 +44,61 @@ export type AlvoDoIndicador = {
 }
 
 /**
+ * Os valores que preenchem as lacunas de um modelo aprovado.
+ *
+ * A Meta liga valor e lacuna **pela posição**, não pelo nome: o primeiro item
+ * da lista vai para `{{1}}`, o segundo para `{{2}}`. Por isso é um array e não
+ * um objeto — um `Record<string, string>` daria a impressão de que a ordem não
+ * importa, e ela é a única coisa que importa.
+ *
+ * `cabecalho` é separado do `corpo` porque a Meta os numera **de forma
+ * independente**: o `{{1}}` do cabeçalho e o `{{1}}` do corpo são lacunas
+ * diferentes, em componentes diferentes do mesmo payload. Juntar os dois num
+ * array só faria o valor do cabeçalho aparecer no meio do texto.
+ */
+export type ValoresDoTemplate = {
+  /** O header aceita **uma** variável no máximo — ver `LIMITE_VARIAVEIS_NO_HEADER`. */
+  cabecalho?: string[]
+  corpo?: string[]
+}
+
+/**
+ * O que o canal precisa para entregar um modelo aprovado.
+ *
+ * `idioma` vai junto e não é opcional porque **o mesmo nome existe em vários
+ * idiomas**: é assim que se faz um template bilíngue, e mandar sem o idioma
+ * faz a Meta recusar com 132001 ("não existe nesse idioma") mesmo o template
+ * estando aprovado.
+ */
+export type Template = {
+  nome: string
+  idioma: string
+  valores?: ValoresDoTemplate
+}
+
+/**
+ * O que a Meta respondeu a um envio de template.
+ *
+ * **`retida` não é `aceita`, e é por isso que este tipo existe.** Os outros
+ * envios do `Canal` devolvem `void` porque para eles 200 é sucesso. Para
+ * template não é: a Meta responde 200 e manda `message_status`, que pode dizer
+ * `held_for_quality_assessment` — ela **segurou** a mensagem para avaliar, e se
+ * o veredito for ruim a mensagem é descartada e chega depois como `failed` com
+ * código 132015.
+ *
+ * Quem trata o 200 como entrega mostra "campanha enviada" e nada saiu. Ver
+ * `lerStatusDeEnvio()` em `core/templates.ts`.
+ *
+ * `wamid` é o id da Meta para esta mensagem — a única chave que liga o webhook
+ * de status de volta a esta linha, porque o webhook não sabe nada de
+ * transmissão.
+ */
+export type EnvioDeTemplate = {
+  wamid: string
+  situacao: 'aceita' | 'retida' | 'falhou'
+}
+
+/**
  * Por onde as mensagens saem.
  *
  * O motor nunca conhece este arquivo: ele descreve ações, e quem executa é um
@@ -61,6 +116,19 @@ export type Canal = {
     formato: 'botoes' | 'lista',
   ): Promise<void>
   enviarMidia(para: string, midia: Midia, citando?: Citacao): Promise<void>
+  /**
+   * Manda um modelo aprovado — a única coisa que atravessa a janela fechada.
+   *
+   * Opcional pelo mesmo motivo de `reagir`: é recurso de WhatsApp. O Telegram
+   * e o Instagram não têm janela de 24h nem aprovação prévia, então para eles o
+   * conceito não existe — e fingir que existe faria o motor de disparo achar
+   * que pode transmitir por qualquer canal.
+   *
+   * **Devolve o resultado em vez de `void`**, ao contrário de todos os outros
+   * envios daqui. Ver `EnvioDeTemplate`: para template, o 200 da Meta não
+   * significa entrega.
+   */
+  enviarTemplate?(para: string, template: Template): Promise<EnvioDeTemplate>
   /**
    * Reage a uma mensagem com um emoji. String vazia **remove** a reação.
    *
