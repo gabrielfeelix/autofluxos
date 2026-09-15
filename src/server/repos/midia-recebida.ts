@@ -144,6 +144,34 @@ export async function urlsAssinadas(caminhos: string[]): Promise<Map<string, str
 }
 
 /**
+ * Baixa o arquivo de volta, para o servidor mexer nele.
+ *
+ * É o caminho da transcrição: o áudio precisa chegar inteiro ao processo para
+ * virar base64 no corpo do pedido ao Gemini. **Não passa por URL assinada** —
+ * assinar para baixar em seguida no mesmo processo é criar um link público de
+ * cinco minutos que ninguém precisava que existisse.
+ *
+ * `null` quando não deu, e quem chama trata como "não dá para transcrever" em
+ * vez de estourar: o arquivo pode ter sido apagado pelo expurgo entre a tela
+ * desenhar o botão e alguém clicar nele.
+ */
+export async function baixarArquivo(
+  caminho: string,
+): Promise<{ bytes: Uint8Array; mime: string } | null> {
+  const { data, error } = await db().storage.from(BUCKET_DOS_RECEBIDOS).download(caminho)
+
+  if (error || !data) {
+    console.error('[midia] não deu para baixar o arquivo', error?.message ?? 'sem corpo')
+    return null
+  }
+
+  return {
+    bytes: new Uint8Array(await data.arrayBuffer()),
+    mime: data.type || 'application/octet-stream',
+  }
+}
+
+/**
  * Apaga os arquivos de um contato do bucket.
  *
  * **É o que fecha a política de retenção.** `contacts` cascateia as mensagens

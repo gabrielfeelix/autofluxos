@@ -1,0 +1,202 @@
+import 'server-only'
+import { ehArquivoGuardado } from '@/core/midia-recebida'
+import { db } from './db'
+import { baixarArquivo } from './repos/midia-recebida'
+
+/**
+ * O que o áudio diz, em texto.
+ *
+ * ---------------------------------------------------------------------------
+ * Depende de IA, e não havia como não depender
+ * ---------------------------------------------------------------------------
+ *
+ * O dono perguntou se dava para transcrever sem IA. Não dá: transcrição **é**
+ * um modelo de fala, e a alternativa seria contratar outro provedor para fazer
+ * a mesma coisa. A chave que já existe (`GEMINI_API_KEY`) transcreve áudio
+ * nativamente, então o custo desta funcionalidade é uma chamada, não um
+ * contrato novo.
+ *
+ * ---------------------------------------------------------------------------
+ * A linha de privacidade, que é a mesma do `ia/modelo.ts` e vale mais aqui
+ * ---------------------------------------------------------------------------
+ *
+ * Aquele arquivo escreve a regra: enquanto a chave é a da 4YU no free tier, o
+ * Google **treina modelo com o que passa por ela, inclusive com revisão
+ * humana**. Isso era aceitável para demonstração, com dado nosso.
+ *
+ * Aqui é a voz do cliente do cliente. É dado pessoal de terceiro, e é mais
+ * sensível do que texto — voz identifica pessoa. Por isso:
+ *
+ * - **nunca automático.** Só transcreve quando alguém clica, e o clique é o
+ *   consentimento de quem atende, que sabe o que está mandando para fora;
+ * - o resultado é **guardado**, para uma conversa aberta dez vezes não virar
+ *   dez chamadas e dez envios do mesmo áudio;
+ * - quando `clients.ia_chave_ref` sair do papel, esta função passa a usar a
+ *   chave paga do cliente junto com o resto — e aí o áudio para de ir para
+ *   treino.
+ *
+ * Isto está dito na tela, ao lado do botão, e não só aqui.
+ */
+
+const ENDERECO = 'https://generativelanguage.googleapis.com/v1beta/models'
+
+/**
+ * O modelo, e por que não é o mesmo objeto `Modelo` do resto.
+ *
+ * `ia/gemini.ts` monta um cliente de **conversa**: histórico, ferramentas,
+ * reserva, cota, `system_instruction`. Transcrever não tem nada disso — é um
+ * pedido só, sem estado, com um arquivo dentro. Passar por lá exigiria abrir o
+ * contrato de `Modelo` para áudio e carregar toda a máquina de conversa numa
+ * chamada que não conversa.
+ */
+const MODELO = 'gemini-flash-latest'
+
+/**
+ * Trinta segundos.
+ *
+ * Mais folgado que a conversa (15 s) porque aqui **alguém está olhando e
+ * esperando de propósito**: clicou em transcrever e sabe que vai demorar. O que
+ * não pode é passar do teto da Server Action e morrer sem dizer nada.
+ */
+const TIMEOUT_MS = 30_000
+
+/**
+ * O teto do áudio que vale a pena mandar.
+ *
+ * O bucket já limita em 16 MB. Isto aqui é outro limite, e mais baixo: base64
+ * infla o arquivo em um terço, e o corpo do pedido viaja inteiro. 8 MB de áudio
+ * são uns vinte minutos de fala — muito além de qualquer recado de WhatsApp, e
+ * o suficiente para o erro ser "esse áudio é grande demais" em vez de um
+ * timeout sem explicação.
+ */
+const TETO_DO_AUDIO = 8 * 1024 * 1024
+
+const INSTRUCAO =
+  'Transcreva este áudio em português do Brasil. Devolva apenas o que foi dito, ' +
+  'sem comentários seus, sem aspas e sem descrever sons. Se não houver fala ' +
+  'inteligível, responda exatamente: (sem fala audível)'
+
+export type ResultadoDaTranscricao =
+  | { ok: true; texto: string }
+  | { ok: false; erro: string }
+
+/**
+ * Transcreve e guarda. Devolve o que já estava guardado, se houver.
+ *
+ * O `clienteId` entra na consulta e não é decoração: é ele que impede um id de
+ * mensagem de outra conta ser transcrito por quem tem acesso a esta. Quem chama
+ * já conferiu o acesso ao cliente; isto aqui é a segunda tranca, no lugar onde
+ * o dado é lido.
+ */
+export async function transcreverAudio(
+  clienteId: string,
+  contatoId: string,
+  mensagemId: string,
+): Promise<ResultadoDaTranscricao> {
+  const { data, error } = await db()
+    .from('messages')
+    .select('id, arquivo, transcricao, contacts!inner(id, client_id)')
+    .eq('id', mensagemId)
+    .eq('contact_id', contatoId)
+    .eq('contacts.client_id', clienteId)
+    .maybeSingle()
+
+  if (error) return { ok: false, erro: 'não deu para achar esta mensagem' }
+  if (!data) return { ok: false, erro: 'esta mensagem não é desta conversa' }
+
+  const linha = data as { transcricao: string | null; arquivo: unknown }
+
+  // Já transcrita: devolve o que está guardado. Transcrever de novo custaria
+  // uma chamada para produzir o mesmo texto.
+  if (linha.transcricao) return { ok: true, texto: linha.transcricao }
+
+  if (!ehArquivoGuardado(linha.arquivo) || linha.arquivo.midia !== 'audio') {
+    return { ok: false, erro: 'não há áudio guardado nesta mensagem' }
+  }
+  if (linha.arquivo.bytes > TETO_DO_AUDIO) {
+    return { ok: false, erro: 'este áudio é grande demais para transcrever' }
+  }
+
+  const chave = process.env.GEMINI_API_KEY
+  if (!chave) return { ok: false, erro: 'falta GEMINI_API_KEY no ambiente' }
+
+  const arquivo = await baixarArquivo(linha.arquivo.caminho)
+  if (!arquivo) return { ok: false, erro: 'o arquivo não está mais no acervo' }
+
+  let texto: string
+  try {
+    texto = await pedirAoGemini(chave, arquivo.bytes, linha.arquivo.mime)
+  } catch (erro) {
+    const motivo = erro instanceof Error ? erro.message : String(erro)
+    console.error('[transcricao] falhou', mensagemId, motivo)
+    return { ok: false, erro: 'não deu para transcrever agora; tente de novo' }
+  }
+
+  if (texto.trim() === '') return { ok: false, erro: 'o modelo não devolveu nada' }
+
+  /*
+   * Guardar é o ponto da funcionalidade, e um erro ao guardar **não** invalida
+   * a transcrição: quem clicou já pode ler. O que se perde é a economia da
+   * próxima abertura, e isso aparece no log em vez de na cara da pessoa.
+   */
+  const { error: erroAoGuardar } = await db()
+    .from('messages')
+    .update({ transcricao: texto })
+    .eq('id', mensagemId)
+
+  if (erroAoGuardar) {
+    console.error('[transcricao] não deu para guardar', mensagemId, erroAoGuardar.message)
+  }
+
+  return { ok: true, texto }
+}
+
+async function pedirAoGemini(chave: string, bytes: Uint8Array, mime: string): Promise<string> {
+  const corpo = {
+    contents: [
+      {
+        role: 'user',
+        parts: [
+          { text: INSTRUCAO },
+          {
+            inline_data: {
+              mime_type: mime,
+              data: Buffer.from(bytes).toString('base64'),
+            },
+          },
+        ],
+      },
+    ],
+    /*
+     * Temperatura no chão.
+     *
+     * Transcrição não é criação: qualquer liberdade aqui vira palavra inventada
+     * onde o áudio estava sujo — e uma palavra inventada numa transcrição é
+     * pior do que uma lacuna, porque parece o que a pessoa disse.
+     */
+    generationConfig: { temperature: 0 },
+  }
+
+  const corte = AbortSignal.timeout(TIMEOUT_MS)
+  const resposta = await fetch(`${ENDERECO}/${MODELO}:generateContent`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-goog-api-key': chave },
+    body: JSON.stringify(corpo),
+    signal: corte,
+  })
+
+  if (!resposta.ok) {
+    // O texto do Google é específico e é ele que resolve — chave sem cota, modelo
+    // desativado, áudio recusado. Só o status não diz nada a quem for ler o log.
+    throw new Error(`${resposta.status}: ${(await resposta.text()).slice(0, 300)}`)
+  }
+
+  const json = (await resposta.json()) as {
+    candidates?: { content?: { parts?: { text?: string }[] } }[]
+  }
+
+  return (json.candidates?.[0]?.content?.parts ?? [])
+    .map((parte) => parte.text ?? '')
+    .join('')
+    .trim()
+}

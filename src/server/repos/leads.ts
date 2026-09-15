@@ -173,6 +173,13 @@ export type MensagemDoLead = {
    * numa tela que só tem duas vozes.
    */
   autor?: string
+  /**
+   * O que o áudio diz, quando alguém já pediu para transcrever.
+   *
+   * Ausente = ninguém pediu, e a bolha mostra o botão. Guardado, ele some:
+   * transcrever de novo produziria o mesmo texto e mais uma chamada a modelo.
+   */
+  transcricao?: string
   local?: LocalDaMensagem
   /** Os cartões de contato encaminhados, pelo mesmo motivo do `local`. */
   cartoes?: CartaoDeContato[]
@@ -877,7 +884,9 @@ export async function lerConversa(
 ): Promise<Conversa> {
   const { data, error } = await db()
     .from('messages')
-    .select('id, direcao, texto, ts, entregue, payload, wa_message_id, reagiu_a, reacao, cita, arquivo')
+    .select(
+      'id, direcao, texto, ts, entregue, payload, wa_message_id, reagiu_a, reacao, cita, arquivo, transcricao',
+    )
     .eq('contact_id', contatoId)
     .order('ts', { ascending: false })
     .limit(teto + 1)
@@ -897,6 +906,7 @@ export async function lerConversa(
     reacao: string | null
     cita: string | null
     arquivo: unknown
+    transcricao: string | null
   }[]
   const cortada = linhas.length > teto
 
@@ -995,6 +1005,7 @@ export async function lerConversa(
           ...(recebido ? { recebido } : {}),
           ...(semCopia ? { semCopia: true as const } : {}),
           ...(autor ? { autor } : {}),
+          ...(m.transcricao ? { transcricao: m.transcricao } : {}),
           ...(local ? { local } : {}),
           ...(cartoes.length ? { cartoes } : {}),
           ...(m.wa_message_id ? { waMessageId: m.wa_message_id } : {}),
