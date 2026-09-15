@@ -335,6 +335,25 @@ async function atribuirOrigem(contato: Contato, referral?: Referral): Promise<Co
     origem: referral ? 'Anúncio' : 'Direto',
     ...(referral?.source_id ? { origem_anuncio: referral.source_id } : {}),
     ...(referral?.headline ? { origem_titulo: referral.headline } : {}),
+    /*
+     * O resto do `referral`, que o schema já validava e o código jogava fora.
+     *
+     * **Guardar agora é de graça; não guardar é irreversível.** `campos` é
+     * `jsonb`, então nada disto custa migration — e o `referral` chega **uma
+     * vez só**, na primeira mensagem da conversa. O que não for gravado aqui
+     * não volta: a Meta não reenvia, e depois de 90 dias nem a API dela sabe
+     * mais. É o oposto de uma coluna que dá para preencher depois.
+     *
+     * `ctwa_clid` é o que fecha o laço de atribuição pela Conversions API — é
+     * com ele que a Meta credita a venda ao anúncio, e é o único destes que
+     * não tem nenhum uso hoje. Está aqui exatamente por isso: o dia em que o
+     * produto quiser medir ROAS por anúncio, a conversa que começou hoje ainda
+     * vai poder ser contada.
+     */
+    ...(referral?.body ? { origem_texto: referral.body } : {}),
+    ...(referral?.source_url ? { origem_url: referral.source_url } : {}),
+    ...(referral?.media_type ? { origem_midia: referral.media_type } : {}),
+    ...(referral?.ctwa_clid ? { origem_clique: referral.ctwa_clid } : {}),
   }
 
   await guardarCampo(contato.id, campos)

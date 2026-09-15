@@ -209,7 +209,33 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
       origem: 'Anúncio',
       origem_anuncio: referral.source_id,
       origem_titulo: referral.headline,
+      origem_texto: referral.body,
+      origem_url: referral.source_url,
+      origem_midia: referral.media_type,
+      origem_clique: referral.ctwa_clid,
     })
+  })
+
+  /*
+   * Anúncio de WhatsApp Status chega **sem** `ctwa_clid` — a doc da Meta diz
+   * que a propriedade é omitida por completo nessa colocação. Continua sendo
+   * anúncio, e o que veio tem que ser guardado.
+   */
+  it('guarda o anúncio de Status, que vem sem o id do clique', async () => {
+    const de = telefone(17)
+
+    await receberMensagem(
+      webhookTexto(de, 'vi seu story', `wamid-${marca}-status-1`, {
+        source_type: 'ad',
+        source_id: '120210000000003',
+        headline: 'Aula experimental',
+      }),
+      comMock,
+    )
+
+    const { data } = await db().from('contacts').select('campos').eq('wa_id', de).single()
+    expect(data?.campos).toMatchObject({ origem: 'Anúncio', origem_titulo: 'Aula experimental' })
+    expect(data?.campos).not.toHaveProperty('origem_clique')
   })
 
   it('marca entrada direta e não troca a origem numa mensagem futura', async () => {
