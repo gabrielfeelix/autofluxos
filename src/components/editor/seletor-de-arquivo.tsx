@@ -42,7 +42,8 @@ const ROTULO_DA_MIDIA: Record<TipoDeMidia, string> = {
   audio: 'Áudio',
 }
 
-const ACEITOS = 'image/png,image/jpeg,image/webp,video/mp4,audio/mpeg,audio/ogg,application/pdf'
+const ACEITOS =
+  'image/png,image/jpeg,image/webp,video/mp4,audio/mpeg,audio/ogg,audio/mp4,audio/aac,application/pdf'
 
 export function SeletorDeArquivo({
   clienteId,

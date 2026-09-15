@@ -7,7 +7,8 @@ import type { ArquivoDoAcervo } from '@/server/repos/acervo'
 
 /** O mesmo teto do bucket e da Cloud API (0017). */
 const LIMITE_MB = 16
-const ACEITOS = 'image/png,image/jpeg,image/webp,video/mp4,audio/mpeg,audio/ogg,application/pdf'
+const ACEITOS =
+  'image/png,image/jpeg,image/webp,video/mp4,audio/mpeg,audio/ogg,audio/mp4,audio/aac,application/pdf'
 
 /**
  * O acervo de arquivos do cliente.

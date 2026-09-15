@@ -25,9 +25,16 @@ export type ArquivoDoAcervo = {
 /**
  * O que a Cloud API aceita, e em qual bloco cada coisa cai.
  *
- * A lista repete a do bucket (migration 0017) de propósito: lá ela é a recusa
- * que vale mesmo se alguém subir por outro caminho; aqui ela é o que traduz
- * tipo MIME em tipo de bloco, e ainda faz o erro chegar em português na tela.
+ * A lista repete a do bucket (migrations 0017 e 0056) de propósito: lá ela é a
+ * recusa que vale mesmo se alguém subir por outro caminho; aqui ela é o que
+ * traduz tipo MIME em tipo de bloco, e ainda faz o erro chegar em português na
+ * tela.
+ *
+ * **As duas listas têm que andar juntas.** Tipo que está aqui e não está no
+ * bucket dá 400 do Storage no `PUT`, longe de qualquer código nosso; tipo que
+ * está no bucket e não aqui é recusado por nós antes mesmo de tentar. Foi por
+ * isso que `audio/mp4` precisou da `0056` no mesmo dia em que o botão de gravar
+ * áudio entrou — ver docs/PESQUISA-VOZ-E-CHAMADA.md.
  */
 export const TIPOS_ACEITOS: Record<string, { extensao: string; midia: TipoDeMidia }> = {
   'image/png': { extensao: 'png', midia: 'imagem' },
@@ -36,6 +43,10 @@ export const TIPOS_ACEITOS: Record<string, { extensao: string; midia: TipoDeMidi
   'video/mp4': { extensao: 'mp4', midia: 'video' },
   'audio/mpeg': { extensao: 'mp3', midia: 'audio' },
   'audio/ogg': { extensao: 'ogg', midia: 'audio' },
+  // Gravação do navegador: `audio/mp4` no Chrome, Edge, Opera e Safari;
+  // `audio/aac` como alternativa que alguns oferecem. A Meta lista os dois.
+  'audio/mp4': { extensao: 'm4a', midia: 'audio' },
+  'audio/aac': { extensao: 'aac', midia: 'audio' },
   'application/pdf': { extensao: 'pdf', midia: 'documento' },
 }
 
@@ -135,7 +146,7 @@ export async function pedirEnvioAssinado(
 ): Promise<{ ok: true; envio: EnvioAssinado } | { ok: false; motivo: string }> {
   const aceito = TIPOS_ACEITOS[arquivo.tipo]
   if (!aceito) {
-    return { ok: false, motivo: 'O WhatsApp não envia este tipo. Use imagem, MP4, MP3, OGG ou PDF.' }
+    return { ok: false, motivo: 'O WhatsApp não envia este tipo. Use imagem, MP4, MP3, M4A, OGG ou PDF.' }
   }
   if (arquivo.bytes <= 0) return { ok: false, motivo: 'Escolha um arquivo.' }
   if (arquivo.bytes > LIMITE_DO_ARQUIVO) {

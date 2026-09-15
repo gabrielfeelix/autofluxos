@@ -98,7 +98,7 @@ export function BotaoDeAnexo({
         ref={entrada}
         type="file"
         hidden
-        accept="image/jpeg,image/png,video/mp4,audio/mpeg,audio/ogg,application/pdf"
+        accept="image/jpeg,image/png,video/mp4,audio/mpeg,audio/ogg,audio/mp4,audio/aac,application/pdf"
         onChange={(evento) => {
           const arquivo = evento.target.files?.[0]
           if (arquivo) escolher(arquivo)

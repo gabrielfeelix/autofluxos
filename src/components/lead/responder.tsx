@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from 'react'
 import { BotaoDeAnexo } from '@/components/lead/botao-de-anexo'
+import { BotaoDeMicrofone } from '@/components/lead/botao-de-microfone'
 import { useCitacao } from '@/components/lead/citacao'
 import { SeletorDeEmoji } from '@/components/lead/seletor-de-emoji'
 
@@ -192,6 +193,18 @@ export function CaixaDeResposta({
         <SeletorDeEmoji aoEscolher={inserirResposta} desabilitado={enviando} />
         {anexo && (
           <BotaoDeAnexo
+            clienteId={anexo.clienteId}
+            contatoId={anexo.contatoId}
+            desabilitado={enviando}
+          />
+        )}
+        {/*
+          O microfone entra ao lado do clipe porque é o mesmo gesto: mandar algo
+          que não é texto. Ele manda por conta própria, como o clipe — não é
+          `submit` deste formulário.
+        */}
+        {anexo && (
+          <BotaoDeMicrofone
             clienteId={anexo.clienteId}
             contatoId={anexo.contatoId}
             desabilitado={enviando}

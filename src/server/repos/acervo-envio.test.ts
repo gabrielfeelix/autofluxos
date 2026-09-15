@@ -85,7 +85,7 @@ describe.skipIf(!temCredencial)('envio assinado', () => {
       await pedirEnvioAssinado(clienteId, { nome: 'planilha.xlsx', tipo: 'application/zip', bytes: 100 }),
     ).toEqual({
       ok: false,
-      motivo: 'O WhatsApp não envia este tipo. Use imagem, MP4, MP3, OGG ou PDF.',
+      motivo: 'O WhatsApp não envia este tipo. Use imagem, MP4, MP3, M4A, OGG ou PDF.',
     })
   })
 
