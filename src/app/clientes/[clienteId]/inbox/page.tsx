@@ -11,7 +11,10 @@ import { recemConectado } from '@/core/coexistencia-na-tela'
 import { coexistenciaDoCliente } from '@/server/repos/coexistencia'
 import { ControleDeAutomacao } from '@/components/lead/controle-automacao'
 import { CamposColetados } from '@/components/lead/campos-coletados'
-import { camposSemOrigem } from '@/core/contatos/origem'
+import { camposSemOrigem, origemDoContato } from '@/core/contatos/origem'
+import type { NomesDoAnuncio } from '@/core/anuncios'
+import { resolverAnuncios } from '@/server/resolver-anuncios'
+import { tokenDeAnuncios } from '@/server/token-de-anuncios'
 import { QuemE } from '@/components/lead/quem-e'
 import { CaixaDeResposta } from '@/components/lead/responder'
 import {
@@ -419,6 +422,20 @@ async function Conteudo({
     : [null, null, [], []]
 
   /*
+   * O nome da campanha, só do contato aberto.
+   *
+   * **Um id, e não a fila inteira**, de propósito. Resolver as 200 conversas
+   * encheria o cache de nomes que ninguém vai ler — a origem aparece na coluna
+   * do contato, que mostra uma pessoa por vez. Quando o rail "veio de anúncio"
+   * existir e precisar dos nomes na lista, `resolverAnuncios` já recebe lista;
+   * é só passar outra.
+   *
+   * Sai do `Promise.all` acima porque depende do `selecionado` que ele resolve,
+   * e porque o caso comum — conta sem Ads conectado — devolve sem ir à rede.
+   */
+  const nomesDoAnuncio = await nomesDoContatoAberto(clienteId, selecionado?.campos ?? null)
+
+  /*
    * Junta a posição do contato com as etapas do quadro dela. Quadro que sumiu
    * entre uma consulta e outra é descartado em vez de virar um menu vazio —
    * `flatMap` com `[]` é o jeito de dizer isso sem um `filter` a mais.
@@ -538,6 +555,7 @@ async function Conteudo({
             etiquetas={etiquetas}
             funis={funis}
             temAutomacao={temAutomacao}
+            nomesDoAnuncio={nomesDoAnuncio}
           />
         )}
       </div>
@@ -688,10 +706,13 @@ function DadosDoLead({
   etiquetas,
   funis,
   temAutomacao,
+  nomesDoAnuncio,
 }: {
   clienteId: string
   lead: Lead
   etiquetas: EtiquetaEscolhivel[]
+  /** Nomes da Marketing API. `null` quando a conta não conectou o Ads. */
+  nomesDoAnuncio: NomesDoAnuncio | null
   /** Um por quadro em que o contato está. Vazio = fora de todo funil. */
   funis: FunilDoContato[]
   /**
@@ -786,6 +807,7 @@ function DadosDoLead({
           criadoEm={lead.criadoEm}
           ultimaEntradaEm={lead.ultimaEntradaEm}
           campos={lead.campos}
+          nomesDoAnuncio={nomesDoAnuncio}
         />
 
         <div className="mt-5">
@@ -826,4 +848,31 @@ function DadosDoLead({
       </div>
     </aside>
   )
+}
+
+/**
+ * Os nomes do anúncio que trouxe o contato aberto, quando há o que resolver.
+ *
+ * Três saídas sem rede, na ordem em que cortam mais: contato sem origem
+ * gravada, origem que não é de anúncio, e conta que não conectou o Ads — que é
+ * o caso da esmagadora maioria. Só o que sobra chega em `resolverAnuncios`, e
+ * mesmo ali o cache costuma responder sem falar com a Meta.
+ */
+async function nomesDoContatoAberto(
+  clienteId: string,
+  campos: Record<string, string> | null,
+): Promise<NomesDoAnuncio | null> {
+  if (!campos) return null
+
+  const origem = origemDoContato(campos)
+  if (!origem || !origem.deAnuncio || origem.anuncio === '') return null
+
+  const token = await tokenDeAnuncios(clienteId)
+  if (!token) return null
+
+  const cache = await resolverAnuncios({ clienteId, adIds: [origem.anuncio], token })
+  const achado = cache.get(origem.anuncio)
+  if (!achado) return null
+
+  return { anuncio: achado.anuncio, conjunto: achado.conjunto, campanha: achado.campanha }
 }

@@ -1,3 +1,4 @@
+import { comoMostrar, type NomesDoAnuncio } from '@/core/anuncios'
 import { origemDoContato } from '@/core/contatos/origem'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import { horaExata, quando } from '@/lib/quando'
@@ -44,6 +45,7 @@ export function QuemE({
   criadoEm,
   ultimaEntradaEm,
   campos,
+  nomesDoAnuncio = null,
 }: {
   /** O telefone como o WhatsApp manda: só dígitos, com DDI. */
   waId: string
@@ -52,6 +54,15 @@ export function QuemE({
   ultimaEntradaEm: string | null
   /** O que está gravado no contato. A origem sai daqui. */
   campos: Record<string, string>
+  /**
+   * Os nomes resolvidos na Marketing API, quando a conta conectou o Ads.
+   *
+   * `null` é o caso comum — conta sem Ads conectado, token vencido, Meta fora
+   * do ar. A linha continua aparecendo com o título do anúncio, e é por isso
+   * que este parâmetro tem default: quem não sabe de anúncio nenhum não
+   * precisa saber que ele existe.
+   */
+  nomesDoAnuncio?: NomesDoAnuncio | null
 }) {
   const origem = origemDoContato(campos)
 
@@ -84,25 +95,7 @@ export function QuemE({
         então ele é o que a linha mostra; o id fica no `title`, para quem
         precisar casar com o Gerenciador de Anúncios.
       */}
-      {origem !== null && (
-        <Linha rotulo="Origem">
-          {origem.deAnuncio && origem.titulo !== '' ? (
-            <span
-              title={origem.anuncio === '' ? undefined : `Anúncio ${origem.anuncio}`}
-              className="text-[11px] text-soft"
-            >
-              {origem.titulo}
-            </span>
-          ) : (
-            <span
-              title={origem.anuncio === '' ? undefined : `Anúncio ${origem.anuncio}`}
-              className="text-[11px] text-soft"
-            >
-              {origem.rotulo}
-            </span>
-          )}
-        </Linha>
-      )}
+      {origem !== null && <LinhaDeOrigem origem={origem} nomes={nomesDoAnuncio} />}
 
       {/*
         O relativo é o que se lê; o exato fica no `title`. "há 3 meses" responde
@@ -134,6 +127,47 @@ export function QuemE({
         )}
       </Linha>
     </dl>
+  )
+}
+
+/**
+ * A origem, com o melhor nome que existir para ela.
+ *
+ * A escolha do texto está em `comoMostrar`, e não aqui, porque ela é a regra do
+ * produto — nome da campanha ganha do título do anúncio, que ganha do rótulo —
+ * e regra de produto testada por `npm test` não depende de alguém abrir a tela.
+ *
+ * O `title` carrega o `ad_id` mesmo quando o nome aparece: é o número que casa
+ * com o Gerenciador de Anúncios, e quem for conferir investimento precisa dele.
+ */
+function LinhaDeOrigem({
+  origem,
+  nomes,
+}: {
+  origem: { rotulo: string; titulo: string; anuncio: string }
+  nomes: NomesDoAnuncio | null
+}) {
+  const { texto, detalhe } = comoMostrar({
+    rotulo: origem.rotulo,
+    titulo: origem.titulo,
+    nomes,
+  })
+
+  return (
+    <Linha rotulo="Origem">
+      <span
+        title={origem.anuncio === '' ? undefined : `Anúncio ${origem.anuncio}`}
+        className="text-[11px] text-soft"
+      >
+        {texto}
+      </span>
+      {/*
+        O conjunto e o criativo numa segunda linha, menor: eles distinguem duas
+        conversas da mesma campanha, o que importa a quem analisa e é ruído a
+        quem só vai responder "oi". Some quando não há nome resolvido.
+      */}
+      {detalhe !== null && <span className="block text-[10px] text-dim">{detalhe}</span>}
+    </Linha>
   )
 }
 
