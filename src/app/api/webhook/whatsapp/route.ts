@@ -3,6 +3,7 @@ import { after } from 'next/server'
 import { alertar } from '@/server/alertar'
 import { receberCoexistencia, tratarAtualizacaoDaConta } from '@/server/receber-coexistencia'
 import { receberMensagem } from '@/server/receber-mensagem'
+import { enviarAgendadas } from '@/server/enviar-agendadas'
 import { rodarTarefas } from '@/server/tarefas'
 
 /**
@@ -146,6 +147,24 @@ export async function POST(req: Request) {
       // O agendador atrasar é ruim; ele derrubar o processamento da mensagem
       // que acabou de chegar seria muito pior.
       console.error('[webhook] a carona do agendador falhou', erro)
+    }
+
+    /*
+     * As mensagens marcadas para depois pegam a mesma carona, e pelo mesmo
+     * motivo — cron uma vez por dia não manda mensagem às 15h.
+     *
+     * Vale ainda mais aqui do que para as tarefas: a janela de 24h reabre
+     * quando o cliente escreve, então o instante em que chega uma mensagem dele
+     * é exatamente o instante em que uma agendada para aquela conversa passa a
+     * poder sair.
+     *
+     * Teto pequeno pela mesma razão: isto roda depois do 200 para a Meta, mas
+     * ainda dentro do orçamento da função.
+     */
+    try {
+      await enviarAgendadas(5)
+    } catch (erro) {
+      console.error('[webhook] a carona das agendadas falhou', erro)
     }
   })
 

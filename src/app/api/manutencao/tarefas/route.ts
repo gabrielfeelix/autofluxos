@@ -1,5 +1,6 @@
 import { alertar } from '@/server/alertar'
 import { iguais } from '@/lib/segredo'
+import { enviarAgendadas } from '@/server/enviar-agendadas'
 import { rodarTarefas } from '@/server/tarefas'
 
 export const dynamic = 'force-dynamic'
@@ -43,7 +44,30 @@ export async function GET(req: Request) {
   }
 
   try {
-    return Response.json(await rodarTarefas())
+    /*
+     * As mensagens agendadas pegam carona neste cron, e não ganharam um
+     * `crons` próprio no `vercel.json`.
+     *
+     * **O plano Hobby limita o número de tarefas agendadas**, e o repositório
+     * já declara três. Uma quarta que a plataforma recuse não falha sozinha:
+     * ela reprova o deploy inteiro, e um deploy reprovado por causa do piso de
+     * um recurso derruba junto tudo o que ia com ele.
+     *
+     * Rodar as duas coisas na mesma passada não custa nada — o piso existe para
+     * a conta que passou o dia inteiro sem movimento, e nessa conta as duas
+     * filas estão vazias. A rota `/api/manutencao/agendadas` continua existindo
+     * para o dia em que houver um disparador externo ou o plano subir.
+     *
+     * Uma fila não pode derrubar a outra: a de agendadas manda mensagem para
+     * gente de verdade, e um erro nela não pode impedir a cobrança de pergunta
+     * de acontecer.
+     */
+    const agendadas = await enviarAgendadas().catch((erro) => {
+      console.error('[tarefas] a passada das agendadas falhou', erro)
+      return null
+    })
+
+    return Response.json({ ...(await rodarTarefas()), agendadas })
   } catch (erro) {
     // Ninguém está olhando quando isto roda. Um agendador que para de acontecer
     // em silêncio é uma fila crescendo com conversas esperando algo que nunca

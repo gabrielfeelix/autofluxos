@@ -19,6 +19,8 @@ import { nomeDoTipo } from '@/core/tipo-da-mensagem'
 import { quando } from '@/lib/quando'
 import type { FiltroDeEstado, Lead } from '@/server/repos/leads'
 import type { MembroDaConta } from '@/server/repos/usuarios'
+import { ContadorDeAgendadas } from '@/components/inbox/contador-de-agendadas'
+import type { MensagemAgendada } from '@/server/repos/mensagens-agendadas'
 
 export type Contagem = { total: number; semDono: number; porUsuario: Map<string, number> }
 
@@ -71,6 +73,7 @@ export function Fila({
   naoLidas,
   pagina,
   paginas,
+  agendadas,
 }: {
   clienteId: string
   /** A página que o servidor filtrou. É o que a lista mostra no modo paginado. */
@@ -92,6 +95,14 @@ export function Fila({
   naoLidas: Map<string, number>
   pagina: number
   paginas: number
+  /**
+   * Tudo o que ainda vai sair nesta conta, com o nome do contato junto.
+   *
+   * Vem inteiro e não só contado porque o número é um botão: clicar abre a
+   * lista com o cancelar. Buscar de novo ao abrir daria uma espera no clique
+   * para carregar o que já cabia na mesma consulta.
+   */
+  agendadas: (MensagemAgendada & { nomeDoContato: string | null })[]
 }) {
   /*
    * O recorte que os rails locais publicam. Começa na página do servidor para
@@ -375,11 +386,23 @@ export function Fila({
             controle, e por isso fica do outro lado, sem competir com as
             pílulas por atenção.
           */}
-          <p className="ml-auto shrink-0 text-[11px] text-dim">
-            {esperando > 0
-              ? `${esperando} esperando uma pessoa`
-              : 'Todas as conversas estão com o bot'}
-          </p>
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <p className="text-[11px] text-dim">
+              {esperando > 0
+                ? `${esperando} esperando uma pessoa`
+                : 'Todas as conversas estão com o bot'}
+            </p>
+            {/*
+              O contador de agendadas vem depois do estado da fila porque a
+              ordem é a da urgência: quem está esperando agora vem antes do que
+              vai sair amanhã. Ele some sozinho quando não há nenhuma.
+            */}
+            <ContadorDeAgendadas
+              clienteId={clienteId}
+              quantas={agendadas.length}
+              lista={agendadas}
+            />
+          </div>
         </div>
       </header>
 

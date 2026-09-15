@@ -8,6 +8,8 @@ import { NotaRapida } from '@/components/inbox/nota-rapida'
 import { useFicha } from '@/components/inbox/moldura'
 import { PRAZOS_DE_ADIAMENTO, type PrazoDeAdiamento } from '@/core/adiamento'
 import type { EstadoSalvar } from '@/components/design/formulario-salvar'
+import { AgendarMensagem, IconeAgendar } from '@/components/inbox/agendar'
+import type { MensagemAgendada } from '@/server/repos/mensagens-agendadas'
 import {
   acaoAdiarConversa,
   acaoAlternarAutomacaoDoLead,
@@ -56,6 +58,9 @@ export function AcoesRapidas({
   salvarNotas,
   automacaoAtiva,
   temAutomacao,
+  fimDaJanela,
+  agendadas,
+  nomeDoContato,
 }: {
   clienteId: string
   contatoId: string
@@ -67,6 +72,12 @@ export function AcoesRapidas({
   automacaoAtiva: boolean
   /** Sem fluxo ligado não há bot: o botão de pausar não aparece. */
   temAutomacao: boolean
+  /** Quando a janela de 24h fecha, em ISO — o agendamento avisa a partir dela. */
+  fimDaJanela: string | null
+  /** O que já está marcado nesta conversa, para listar e cancelar sem sair daqui. */
+  agendadas: MensagemAgendada[]
+  /** Como chamar o contato dentro do painel de agendar. */
+  nomeDoContato: string
 }) {
   const ficha = useFicha()
 
@@ -133,6 +144,30 @@ export function AcoesRapidas({
           )}
         </AcaoComPainel>
       )}
+
+      {/*
+        Agendar fica entre adiar e resolver porque os três são a mesma família:
+        decidem **quando** algo acontece. Marcada quando já há mensagem
+        esperando, do mesmo jeito que etiqueta e anotação — o ponto é a barra
+        dizer o que esta conversa já tem sem ninguém abrir nada.
+      */}
+      <AcaoComPainel
+        rotulo="Agendar mensagem"
+        icone={<IconeAgendar />}
+        marcada={agendadas.some((a) => a.estado === 'agendada' || a.estado === 'enviando')}
+        largura={320}
+      >
+        {(fechar) => (
+          <AgendarMensagem
+            clienteId={clienteId}
+            contatoId={contatoId}
+            nome={nomeDoContato}
+            fimDaJanela={fimDaJanela}
+            agendadas={agendadas}
+            aoFechar={fechar}
+          />
+        )}
+      </AcaoComPainel>
 
       {/*
         Resolver e reabrir são o mesmo botão, e o ícone conta qual dos dois:

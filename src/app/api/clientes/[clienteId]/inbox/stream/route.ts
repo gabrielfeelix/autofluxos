@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { enviarAgendadas } from '@/server/enviar-agendadas'
 import { pulsoDaConta } from '@/server/repos/leads'
 import { conferirAcessoAoCliente } from '@/server/sessao'
 
@@ -32,6 +33,15 @@ const DURACAO_MS = 50_000
 
 /** Comentário SSE só para a conexão não ser considerada morta no caminho. */
 const BATIDA_MS = 15_000
+
+/**
+ * De quanto em quanto tempo esta conexão confere as mensagens agendadas.
+ *
+ * Um minuto: é a resolução que o produto promete na tela de marcar, e é o
+ * intervalo em que uma escrita no banco por conexão aberta continua sendo
+ * barata. Ver `server/enviar-agendadas.ts` para por que a carona existe.
+ */
+const PASSADA_DAS_AGENDADAS_MS = 60_000
 
 /**
  * O Inbox em tempo real.
@@ -101,6 +111,7 @@ export async function GET(
         vivo = false
         clearInterval(relogio)
         clearInterval(batida)
+        clearInterval(agendadas)
         clearTimeout(prazo)
         try {
           controlador.close()
@@ -144,6 +155,29 @@ export async function GET(
            */
         }
       }
+
+      /*
+       * A carona das mensagens agendadas, uma vez por minuto.
+       *
+       * Este laço já olha o banco de segundo em segundo enquanto alguém está
+       * com o Inbox aberto — é a coisa mais frequente que acontece no servidor
+       * deste produto. Aproveitá-lo é o que dá resolução de minuto ao
+       * agendamento numa plataforma cujo cron dispara uma vez por dia (ver
+       * `server/enviar-agendadas.ts`).
+       *
+       * **Um minuto e não um segundo**: o pulso é um `select` com índice, a
+       * passada das agendadas é uma escrita. Misturar as duas frequências faria
+       * o Inbox aberto escrever no banco 3.600 vezes por hora para, quase
+       * sempre, não achar nada.
+       *
+       * Falha em silêncio de propósito, como o `conferir`: quem está olhando a
+       * conversa não pode perder a conexão porque uma fila vazia deu erro.
+       */
+      const agendadas = setInterval(() => {
+        void enviarAgendadas(5).catch((erro) => {
+          console.error('[stream] a carona das agendadas falhou', erro)
+        })
+      }, PASSADA_DAS_AGENDADAS_MS)
 
       const relogio = setInterval(() => void conferir(), INTERVALO_MS)
       // Comentário SSE: linha que começa com `:` é ignorada pelo `EventSource`
