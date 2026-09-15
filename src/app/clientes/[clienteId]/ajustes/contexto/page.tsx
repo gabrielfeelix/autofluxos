@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { ClienteShell } from '@/components/design/cliente-shell'
+import { AjustesShell } from '@/components/design/ajustes-shell'
 import { Trilha } from '@/components/design/trilha'
 import { FormularioSalvar } from '@/components/design/formulario-salvar'
 import { acaoSalvarContexto } from '@/server/acoes'
@@ -42,7 +42,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const vazio = cliente.contextoNegocio.trim() === ''
 
   return (
-    <ClienteShell cliente={cliente} ativa="ajustes">
+    <AjustesShell cliente={cliente} ativa="contexto">
       <main className="w-full max-w-[1100px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
 
         <Trilha
@@ -79,6 +79,6 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           />
         </FormularioSalvar>
       </main>
-    </ClienteShell>
+    </AjustesShell>
   )
 }

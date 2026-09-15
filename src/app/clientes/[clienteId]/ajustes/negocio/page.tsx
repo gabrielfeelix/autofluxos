@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { FichaDoCliente } from '@/components/cliente/ficha'
-import { ClienteShell } from '@/components/design/cliente-shell'
+import { AjustesShell } from '@/components/design/ajustes-shell'
 import { Trilha } from '@/components/design/trilha'
 import { acaoRemoverLogo, acaoSalvarCadastro, acaoSalvarLogo } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
@@ -24,7 +24,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   if (!cliente) notFound()
 
   return (
-    <ClienteShell cliente={cliente} ativa="ajustes">
+    <AjustesShell cliente={cliente} ativa="negocio">
       <main className="w-full max-w-[1100px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
         <Trilha
           caminho={[
@@ -45,6 +45,6 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           removerLogo={acaoRemoverLogo.bind(null, cliente.id)}
         />
       </main>
-    </ClienteShell>
+    </AjustesShell>
   )
 }

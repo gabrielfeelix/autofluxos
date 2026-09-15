@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { ClienteShell } from '@/components/design/cliente-shell'
+import { AjustesShell } from '@/components/design/ajustes-shell'
 import { Trilha } from '@/components/design/trilha'
 import { DEFINICAO_DO_CANAL } from '@/core/canais'
 import { acaoConectarInstagram, acaoDesligarInstagram } from '@/server/acoes-instagram'
@@ -68,7 +68,7 @@ export default async function Pagina({
   const aviso = resultado ? RESULTADOS[resultado] : undefined
 
   return (
-    <ClienteShell cliente={cliente} ativa="ajustes">
+    <AjustesShell cliente={cliente} ativa="instagram">
       <main className="w-full max-w-[820px] px-4 pt-[38px] pb-[46px] md:px-[46px]">
         <Trilha
           caminho={[
@@ -194,6 +194,6 @@ export default async function Pagina({
           </p>
         </section>
       </main>
-    </ClienteShell>
+    </AjustesShell>
   )
 }

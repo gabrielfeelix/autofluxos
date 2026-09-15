@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ClienteShell } from '@/components/design/cliente-shell'
+import { AjustesShell } from '@/components/design/ajustes-shell'
 import { saudeDoInstagram, saudeDoWhatsApp } from '@/core/saude-da-conexao'
 import type { ReactNode } from 'react'
 import { ApagarCliente } from '@/components/cliente/apagar'
@@ -73,7 +73,7 @@ export default async function Pagina({
   }
 
   return (
-    <ClienteShell cliente={cliente} ativa="ajustes">
+    <AjustesShell cliente={cliente} ativa="inicio">
       <main className="w-full max-w-[1100px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <h1 className="mb-5 text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">
           Configurações
@@ -298,7 +298,7 @@ export default async function Pagina({
           />
         </section>
       </main>
-    </ClienteShell>
+    </AjustesShell>
   )
 }
 

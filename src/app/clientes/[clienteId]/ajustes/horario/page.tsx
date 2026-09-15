@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ClienteShell } from '@/components/design/cliente-shell'
+import { AjustesShell } from '@/components/design/ajustes-shell'
 import { Trilha } from '@/components/design/trilha'
 import { HorarioDeAtendimentoForm } from '@/components/cliente/horario'
 import { acaoSalvarHorario } from '@/server/acoes'
@@ -25,7 +25,7 @@ export default async function Pagina({
   if (!cliente) notFound()
 
   return (
-    <ClienteShell cliente={cliente} ativa="ajustes">
+    <AjustesShell cliente={cliente} ativa="horario">
       <main className="w-full max-w-[1100px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
         <nav className="mb-3 text-[12.5px] text-dim">
           <Link
@@ -58,6 +58,6 @@ export default async function Pagina({
           salvar={acaoSalvarHorario.bind(null, cliente.id)}
         />
       </main>
-    </ClienteShell>
+    </AjustesShell>
   )
 }

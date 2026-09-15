@@ -1,6 +1,6 @@
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
-import { ClienteShell } from '@/components/design/cliente-shell'
+import { AjustesShell } from '@/components/design/ajustes-shell'
 import { CampoParaCopiar } from '@/components/design/copiar'
 import { ConectarWhatsapp } from '@/components/cliente/conectar-whatsapp'
 import { Trilha } from '@/components/design/trilha'
@@ -147,7 +147,7 @@ export default async function Pagina({
   const conectarComCliente = acaoConectarNumero.bind(null, cliente.id, {})
 
   return (
-    <ClienteShell cliente={cliente} ativa="ajustes">
+    <AjustesShell cliente={cliente} ativa="whatsapp">
       <main className="w-full max-w-[1100px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <Trilha
           caminho={[
@@ -618,6 +618,6 @@ export default async function Pagina({
         </section>
         )}
       </main>
-    </ClienteShell>
+    </AjustesShell>
   )
 }

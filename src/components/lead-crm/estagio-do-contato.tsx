@@ -32,19 +32,21 @@ export function EstagioDoContato({
 
   return (
     <span className="flex flex-col">
-      <Dropdown
-        rotuloAcessivel="Estágio deste contato"
-        valor={otimista.valor}
-        aoMudar={(novo) =>
-          otimista.agir(novo as Estagio, () =>
-            acaoDefinirEstagio(clienteId, contatoId, novo as Estagio),
-          )
-        }
-        /* 168px: a lista é medida pelo gatilho, e "qualificado" precisa caber
-           inteiro — ver a régua de largura em `docs/HANDOFF-15-SET-CRM-FUNIL.md`. */
-        className="w-[168px] text-[12.5px]"
-        opcoes={ESTAGIOS.map((valor) => ({ valor, rotulo: NOME_DO_ESTAGIO[valor] }))}
-      />
+      {/* A largura vive no invólucro: `.app-dropdown` fixa 100% e o `Dropdown`
+          mede a lista pelo gatilho — 168px é o que "qualificado" precisa. */}
+      <span className="w-[168px] shrink-0">
+        <Dropdown
+          rotuloAcessivel="Estágio deste contato"
+          valor={otimista.valor}
+          aoMudar={(novo) =>
+            otimista.agir(novo as Estagio, () =>
+              acaoDefinirEstagio(clienteId, contatoId, novo as Estagio),
+            )
+          }
+          className="w-full text-[12.5px]"
+          opcoes={ESTAGIOS.map((valor) => ({ valor, rotulo: NOME_DO_ESTAGIO[valor] }))}
+        />
+      </span>
       {otimista.erro && (
         <span role="alert" className="mt-1 text-[10.5px] text-perigo">
           {otimista.erro}

@@ -38,18 +38,21 @@ export function ResponsavelDoContato({
     <span className="flex flex-col">
       <span className="flex items-center gap-2">
         <Avatar nome={nome} tamanho={28} />
-        <Dropdown
-          rotuloAcessivel="Quem cuida deste contato"
-          valor={otimista.valor}
-          aoMudar={(novo) =>
-            otimista.agir(novo, () => acaoAtribuirContato(clienteId, contatoId, novo || null))
-          }
-          className="w-[186px] text-[12.5px]"
-          opcoes={[
-            { valor: '', rotulo: 'sem responsável' },
-            ...equipe.map((pessoa) => ({ valor: pessoa.id, rotulo: pessoa.nome })),
-          ]}
-        />
+        {/* Largura no invólucro, pelo mesmo motivo do estágio. */}
+        <span className="w-[186px] shrink-0">
+          <Dropdown
+            rotuloAcessivel="Quem cuida deste contato"
+            valor={otimista.valor}
+            aoMudar={(novo) =>
+              otimista.agir(novo, () => acaoAtribuirContato(clienteId, contatoId, novo || null))
+            }
+            className="w-full text-[12.5px]"
+            opcoes={[
+              { valor: '', rotulo: 'sem responsável' },
+              ...equipe.map((pessoa) => ({ valor: pessoa.id, rotulo: pessoa.nome })),
+            ]}
+          />
+        </span>
       </span>
       {otimista.erro && (
         <span role="alert" className="mt-1 text-[10.5px] text-perigo">

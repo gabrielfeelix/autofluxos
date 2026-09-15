@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { ClienteShell } from '@/components/design/cliente-shell'
+import { AjustesShell } from '@/components/design/ajustes-shell'
 import { Trilha } from '@/components/design/trilha'
 import { GerenciadorDoAcervo } from '@/components/acervo/gerenciador'
 import { acaoApagarDoAcervo } from '@/server/acoes'
@@ -14,7 +14,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   if (!cliente) notFound()
 
   return (
-    <ClienteShell cliente={cliente} ativa="ajustes">
+    <AjustesShell cliente={cliente} ativa="acervo">
       <main className="w-full max-w-[1280px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <Trilha
           caminho={[
@@ -39,6 +39,6 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           apagar={acaoApagarDoAcervo.bind(null, cliente.id)}
         />
       </main>
-    </ClienteShell>
+    </AjustesShell>
   )
 }

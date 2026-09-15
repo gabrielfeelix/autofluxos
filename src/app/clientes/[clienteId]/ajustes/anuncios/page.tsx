@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { ClienteShell } from '@/components/design/cliente-shell'
+import { AjustesShell } from '@/components/design/ajustes-shell'
 import { Trilha } from '@/components/design/trilha'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { CartaoDaPagina } from '@/components/anuncios/cartao-da-pagina'
@@ -51,7 +51,7 @@ export default async function Pagina({
   )
 
   return (
-    <ClienteShell cliente={cliente} ativa="ajustes">
+    <AjustesShell cliente={cliente} ativa="anuncios">
       <main className="w-full max-w-[1280px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         {busca.ok === '1' && (
           <p className="mb-4 rounded-[10px] border border-primary/30 bg-primary/[0.08] px-4 py-3 text-[12px] text-soft">
@@ -245,6 +245,6 @@ export default async function Pagina({
           </div>
         )}
       </main>
-    </ClienteShell>
+    </AjustesShell>
   )
 }

@@ -40,7 +40,16 @@ export function BarraLateral({
   voltar,
   itens,
   rodape,
+  forcarRecolhida = false,
 }: {
+  /**
+   * Recolhida por decisão da tela, e não da pessoa (ver `ClienteShell`).
+   *
+   * Quando é a tela que manda, a seta de recolher **some**: um botão que a
+   * pessoa aperta e nada acontece é pior do que botão nenhum. A preferência
+   * gravada continua intocada e volta a valer na próxima tela.
+   */
+  forcarRecolhida?: boolean
   marca: ReactNode
   /** No celular a barra vira faixa e o rodapé some: sem isto, nada diz de quem é a conta. */
   identidadeNoCelular: ReactNode
@@ -49,7 +58,7 @@ export function BarraLateral({
   itens: { chave: string; rotulo: string; href: string; icone: ReactNode; acesa: boolean }[]
   rodape: ReactNode
 }) {
-  const recolhida = usePreferencia('barra')
+  const recolhida = usePreferencia('barra') || forcarRecolhida
 
   return (
     <aside
@@ -116,7 +125,7 @@ export function BarraLateral({
         */}
         <div className={recolhida ? 'flex flex-col items-center gap-1' : ''}>
           <BotaoDeTema recolhida={recolhida} />
-          <BotaoDeRecolher recolhida={recolhida} />
+          {!forcarRecolhida && <BotaoDeRecolher recolhida={recolhida} />}
         </div>
 
         {!recolhida && rodape}

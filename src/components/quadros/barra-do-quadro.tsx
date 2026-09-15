@@ -130,19 +130,21 @@ export function BarraDoQuadro({
         ))}
       </span>
 
-      <Dropdown
-        rotuloAcessivel="Ordem dos cartões na etapa"
-        valor={ordem}
-        aoMudar={(valor) => aoOrdenar(valor as OrdemDoQuadro)}
-        /* 208px: a lista é medida pelo gatilho, e "quem espera há mais tempo"
-           não cabe em menos que isso sem virar reticências. */
-        className="w-[208px] text-[12px]"
-        opcoes={[
-          { valor: 'espera', rotulo: 'Quem espera há mais tempo' },
-          { valor: 'valor', rotulo: 'Maior valor' },
-          { valor: 'recente', rotulo: 'Mais recente' },
-        ]}
-      />
+      {/* O invólucro de largura fixa, e não só a classe no `Dropdown`: a lista
+          é medida pelo gatilho, e gatilho que estica ocupa a linha inteira. */}
+      <span className="w-[214px] shrink-0">
+        <Dropdown
+          rotuloAcessivel="Ordem dos cartões na etapa"
+          valor={ordem}
+          aoMudar={(valor) => aoOrdenar(valor as OrdemDoQuadro)}
+          className="w-full text-[12px]"
+          opcoes={[
+            { valor: 'espera', rotulo: 'Quem espera há mais tempo' },
+            { valor: 'valor', rotulo: 'Maior valor' },
+            { valor: 'recente', rotulo: 'Mais recente' },
+          ]}
+        />
+      </span>
 
       <span className="ml-auto flex items-center gap-2 text-[11.5px] text-dim">
         <span>

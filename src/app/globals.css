@@ -374,9 +374,23 @@ textarea::placeholder {
   opacity: 0.45;
 }
 
-.app-dropdown {
-  position: relative;
-  width: 100%;
+/*
+ * **Vai dentro de `@layer components`, e essa linha é o conserto de um bug.**
+ *
+ * Solta, esta regra vence qualquer utilitário do Tailwind: CSS sem camada ganha
+ * de CSS em camada, não importa a ordem nem a especificidade. O efeito era que
+ * `<Dropdown className="w-[208px]" />` continuava com 100% de largura — na
+ * barra do funil ele ocupava a linha inteira, e no cabeçalho ele era pintado
+ * por cima do interruptor e do botão vizinhos.
+ *
+ * Dentro da camada, `w-[208px]` e `w-full` voltam a mandar, e quem não passa
+ * largura nenhuma continua ocupando tudo, como antes.
+ */
+@layer components {
+  .app-dropdown {
+    position: relative;
+    width: 100%;
+  }
 }
 
 .app-dropdown-trigger {
