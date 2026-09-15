@@ -703,7 +703,7 @@ async function Conteudo({
                   tabela colada, um anexo fora de medida — reintroduza o mesmo
                   defeito.
                 */}
-                <div className="flex min-h-0 flex-1 flex-col-reverse overflow-x-hidden overflow-y-auto bg-panel p-5">
+                <div className="app-conversa flex min-h-0 flex-1 flex-col-reverse overflow-x-hidden overflow-y-auto p-5">
                   <Historico
                     mensagens={conversa.mensagens}
                     cortada={conversa.cortada}

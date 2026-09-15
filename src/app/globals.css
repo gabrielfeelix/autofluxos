@@ -634,6 +634,30 @@ textarea::placeholder {
  * longa. Quem pediu menos movimento no sistema fica só com o cinza parado, que
  * continua cumprindo o papel de mostrar o formato do que vem.
  */
+/*
+ * O fundo do histórico da conversa — um azul quase invisível.
+ *
+ * Pedido do dono, e ele resolve um problema real: a coluna do meio e a coluna
+ * da fila eram os dois o mesmo branco de painel, e a fronteira entre "a lista"
+ * e "a conversa" dependia só da borda de 1px. Um véu de azul dá à conversa um
+ * lugar próprio sem transformá-la num cartão.
+ *
+ * **Sai do `--primary`, e não de um hex escrito na mão**: assim o véu segue a
+ * marca se ela mudar, e não vira uma cor órfã que ninguém sabe de onde veio.
+ * A dose é maior no escuro porque 3% sobre `#111722` não se vê — a percepção
+ * não é linear, e igualar o número igualaria só o número.
+ *
+ * Só aqui. A fila e a ficha continuam em `--panel`: tingir as três é não tingir
+ * nenhuma.
+ */
+.app-conversa {
+  background: color-mix(in oklab, var(--primary) 3%, var(--panel));
+}
+
+:root[data-tema='escuro'] .app-conversa {
+  background: color-mix(in oklab, var(--primary) 7%, var(--panel));
+}
+
 .app-esqueleto {
   position: relative;
   overflow: hidden;
