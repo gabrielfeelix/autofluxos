@@ -1,6 +1,12 @@
 'use server'
 
+import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { urlDeAutorizacao } from './anuncios/conexao'
+import { criarEstado } from './instagram/estado'
+import { importarLeadsAntigos } from './importar-leads-antigos'
+import { tokenDeAnuncios } from './token-de-anuncios'
 import { lerNomesDoAnuncio } from '@/channels/marketing-api'
 import { exigirAcessoAoCliente } from './sessao'
 import { criarConexao, listarConexoes, trocarValor } from './repos/conexoes'
@@ -121,4 +127,65 @@ export async function acaoDesligarPagina(
 
   revalidatePath(`/clientes/${clienteId}/anuncios`)
   return { ok: true }
+}
+
+/**
+ * Manda a pessoa para o diálogo da Meta.
+ *
+ * **A origem vem do cabeçalho, e não de uma variável.** O `redirect_uri`
+ * precisa bater byte a byte com o que a rota de retorno atende e com o que está
+ * cadastrado no painel da Meta — ler da requisição faz produção e preview
+ * funcionarem sem cada uma ter a sua variável. Mesmo padrão do WhatsApp.
+ */
+export async function acaoConectarComFacebook(clienteId: string): Promise<void> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const cabecalhos = await headers()
+  const host = cabecalhos.get('x-forwarded-host') ?? cabecalhos.get('host')
+  const protocolo = cabecalhos.get('x-forwarded-proto') ?? 'https'
+  const origem = `${protocolo}://${host}`
+
+  redirect(urlDeAutorizacao({ origem, state: criarEstado(clienteId) }))
+}
+
+/**
+ * Traz os leads que já existiam antes de a conta ser ligada.
+ *
+ * Noventa dias porque é tudo o que a Meta ainda guarda — passado isso o lead
+ * não existe mais nem na API dela. Pedir menos deixaria dado recuperável para
+ * trás; pedir mais não traria nada.
+ */
+export async function acaoImportarLeadsAntigos(
+  clienteId: string,
+  pageId: string,
+): Promise<{ ok: boolean; erro?: string; resumo?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const token = await tokenDeAnuncios(clienteId)
+  if (!token) return { ok: false, erro: 'ligue a conta de anúncios antes de importar' }
+
+  try {
+    const r = await importarLeadsAntigos({
+      clienteId,
+      pageId,
+      token,
+      desde: new Date(Date.now() - 90 * 24 * 3_600_000),
+    })
+
+    revalidatePath(`/clientes/${clienteId}/anuncios`)
+    revalidatePath(`/clientes/${clienteId}/leads`)
+
+    /*
+     * O resumo conta os três, e não só os criados. "Nenhum lead novo" sozinho
+     * parece falha; "40 já estavam aqui" explica — e quem importa duas vezes
+     * precisa entender que a segunda não fez nada porque não tinha o que fazer.
+     */
+    const partes = [`${r.criados} novo(s)`]
+    if (r.repetidos > 0) partes.push(`${r.repetidos} já estavam aqui`)
+    if (r.recusados > 0) partes.push(`${r.recusados} sem telefone`)
+
+    return { ok: true, resumo: partes.join(' · ') }
+  } catch (erro) {
+    return { ok: false, erro: erro instanceof Error ? erro.message : String(erro) }
+  }
 }

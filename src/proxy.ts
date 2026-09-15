@@ -131,6 +131,7 @@ const PREFIXOS_ABERTOS = [
    */
   '/api/whatsapp/retorno',
   '/api/instagram/retorno',
+  '/api/anuncios/retorno',
   /**
    * **Os webhooks da Meta. Mesmo bug das rotas de retorno, e custou o Inbox.**
    *

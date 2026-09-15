@@ -1,7 +1,7 @@
 'use client'
 
-import { useTransition } from 'react'
-import { acaoDesligarPagina } from '@/server/acoes-lead-ads'
+import { useState, useTransition } from 'react'
+import { acaoDesligarPagina, acaoImportarLeadsAntigos } from '@/server/acoes-lead-ads'
 
 /**
  * Uma Página ligada, e se ela está mesmo pronta para receber lead.
@@ -23,6 +23,8 @@ export function CartaoDaPagina({
   temToken: boolean
 }) {
   const [saindo, comecar] = useTransition()
+  const [importando, importar] = useTransition()
+  const [resultado, setResultado] = useState<string | null>(null)
 
   return (
     <div className="app-card flex flex-wrap items-center gap-3 px-5 py-3.5">
@@ -51,6 +53,28 @@ export function CartaoDaPagina({
         </span>
       )}
 
+      {/*
+        Importar só aparece com o acesso ligado, porque sem token não há o que
+        buscar — e um botão que só sabe dizer "ligue antes" é um botão que
+        ensina a errar.
+      */}
+      {temToken && (
+        <button
+          type="button"
+          disabled={importando}
+          onClick={() =>
+            importar(async () => {
+              const r = await acaoImportarLeadsAntigos(clienteId, pageId)
+              setResultado(r.ok ? (r.resumo ?? 'pronto') : (r.erro ?? 'não deu'))
+            })
+          }
+          className="rounded-lg border border-white/[0.08] px-3 py-1.5 text-[11.5px] text-soft transition hover:border-white/20 disabled:opacity-50"
+          title="Traz os leads que já existiam antes de ligar — a Meta guarda 90 dias"
+        >
+          {importando ? 'Importando…' : 'Importar leads antigos'}
+        </button>
+      )}
+
       <button
         type="button"
         disabled={saindo}
@@ -59,6 +83,15 @@ export function CartaoDaPagina({
       >
         {saindo ? 'Desligando…' : 'Desligar'}
       </button>
+
+      {/*
+        O resultado fica na própria linha da Página, e não some sozinho: quem
+        importou precisa poder ler com calma quantos entraram — e conferir
+        depois, na lista de leads, se bate.
+      */}
+      {resultado !== null && (
+        <p className="w-full text-[11px] text-dim">{resultado}</p>
+      )}
     </div>
   )
 }

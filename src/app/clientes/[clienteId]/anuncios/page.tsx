@@ -3,7 +3,7 @@ import { ClienteShell } from '@/components/design/cliente-shell'
 import { Trilha } from '@/components/design/trilha'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { CartaoDaPagina } from '@/components/anuncios/cartao-da-pagina'
-import { acaoLigarAds, acaoLigarPagina } from '@/server/acoes-lead-ads'
+import { acaoConectarComFacebook, acaoLigarAds, acaoLigarPagina } from '@/server/acoes-lead-ads'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarConexoes } from '@/server/repos/conexoes'
 import { paginasDaConta } from '@/server/repos/paginas-de-lead'
@@ -30,8 +30,14 @@ export const dynamic = 'force-dynamic'
  * tudo parecendo configurado. Uma tela que mostra as duas lado a lado é o que
  * transforma "não está chegando lead" numa resposta em vez de uma caça.
  */
-export default async function Pagina({ params }: { params: Promise<{ clienteId: string }> }) {
-  const { clienteId } = await params
+export default async function Pagina({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ clienteId: string }>
+  searchParams: Promise<{ ok?: string; erro?: string }>
+}) {
+  const [{ clienteId }, busca] = await Promise.all([params, searchParams])
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
@@ -47,6 +53,19 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   return (
     <ClienteShell cliente={cliente} ativa="ajustes">
       <main className="w-full max-w-[1280px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
+        {busca.ok === '1' && (
+          <p className="mb-4 rounded-[10px] border border-accent/30 bg-accent/[0.08] px-4 py-3 text-[12px] text-soft">
+            Conta de anúncios ligada. Agora ligue a página de onde vêm os leads, abaixo.
+          </p>
+        )}
+        {busca.erro && (
+          <p className="mb-4 rounded-[10px] border border-white/[0.09] bg-white/[0.03] px-4 py-3 text-[12px] text-soft">
+            {busca.erro === 'cancelado'
+              ? 'A conexão foi cancelada na tela da Meta. Nada mudou.'
+              : 'Não deu para ligar a conta de anúncios. Tente de novo.'}
+          </p>
+        )}
+
         <div className="mb-[30px]">
           <Trilha
             caminho={[
@@ -91,9 +110,26 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
               </p>
             </div>
 
+            {/*
+              O botão da Meta vem primeiro, e o de colar token vira segunda via.
+
+              É o caminho que o cliente consegue seguir sozinho — e o único que
+              mostra o diálogo de autorização, que é o que a Meta exige ver no
+              vídeo do App Review. Colar token continua existindo para quem quer
+              um acesso que nunca vence (usuário do sistema).
+            */}
+            <form action={acaoConectarComFacebook.bind(null, clienteId)}>
+              <button
+                type="submit"
+                className="rounded-lg bg-accent px-3.5 py-2 text-[12.5px] font-bold text-black transition hover:brightness-110"
+              >
+                {temToken ? 'Reconectar com Facebook' : 'Conectar com Facebook'}
+              </button>
+            </form>
+
             <ModalFormulario
-              botao={temToken ? 'Trocar o acesso' : 'Ligar a conta de anúncios'}
-              variante={temToken ? 'secundario' : 'primario'}
+              botao={temToken ? 'Trocar o token' : 'Colar um token'}
+              variante="secundario"
               titulo="Ligar a conta de anúncios da Meta"
               descricao="O token fica guardado num cofre e não volta para esta tela. Antes de guardar, a gente pergunta à Meta se ele vale — token recusado não vira nada."
               rotuloEnviar="Conferir e guardar"
