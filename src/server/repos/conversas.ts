@@ -1,4 +1,5 @@
 import 'server-only'
+import type { AutorDaSaida } from '@/core/autor-da-mensagem'
 import { sessaoSchema, type Sessao } from '@/core/engine/types'
 import type { PapelDoNumero } from '@/core/papeis-do-numero'
 import { db, ehIdInvalido } from '../db'
@@ -537,11 +538,32 @@ export async function registrarSaida(dados: {
   sessaoId: string | null
   texto: string
   payload?: unknown
+  /**
+   * Quem produziu esta mensagem — a pessoa que atende ou o bot.
+   *
+   * Entra **dentro do `payload`** e não numa coluna; o porquê está em
+   * `core/autor-da-mensagem.ts`. Quem não passa nada deixa a bolha sem rótulo,
+   * que é o registro honesto de "não sabemos".
+   */
+  autor?: AutorDaSaida | null
   /** Ver `registrarEntrada`: quem atende também cita e reage, não só quem escreve. */
   reagiuA?: string | null
   reacao?: string | null
   cita?: string | null
 }): Promise<string> {
+  /*
+   * O autor é somado ao `payload` em vez de substituí-lo: o envio de mídia já
+   * grava `{ midia, url }` ali, e é esse objeto que faz a foto aparecer na
+   * conversa. Trocar um pelo outro apagaria a foto para escrever o nome de
+   * quem a mandou.
+   */
+  const payloadBase =
+    dados.payload && typeof dados.payload === 'object' ? (dados.payload as object) : null
+  const payload =
+    dados.autor || payloadBase
+      ? { ...(payloadBase ?? {}), ...(dados.autor ? { autor: dados.autor } : {}) }
+      : (dados.payload ?? null)
+
   const { data, error } = await db()
     .from('messages')
     .insert({
@@ -549,7 +571,7 @@ export async function registrarSaida(dados: {
       session_id: dados.sessaoId,
       direcao: 'saida',
       texto: dados.texto,
-      payload: dados.payload ?? null,
+      payload,
       entregue: false,
       reagiu_a: dados.reagiuA ?? null,
       reacao: dados.reacao ?? null,

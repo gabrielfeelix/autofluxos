@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { dentroDaJanela } from '@/channels/janela'
+import { autorDaPessoa } from '@/core/autor-da-mensagem'
 import { LIMITE_LEGENDA, TIPOS_DE_MIDIA, type TipoDeMidia } from '@/core/flow/schema'
 import { adaptadorDoCanal } from './adaptador-do-canal'
 import {
@@ -116,6 +117,9 @@ export async function acaoEnviarMidiaDoInbox(
       url,
       ...(entrada.nomeArquivo ? { nomeArquivo: entrada.nomeArquivo } : {}),
     },
+    // O autor é somado ao `payload` acima, não o substitui — senão a foto
+    // sumiria da conversa para o nome caber.
+    autor: autorDaPessoa(quemResponde?.usuario),
   })
 
   try {

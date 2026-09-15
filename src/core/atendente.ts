@@ -52,3 +52,23 @@ export function avisoDeEntrada(nome: string | null | undefined): string | null {
 function primeiroNome(nome: string | null | undefined): string {
   return (nome ?? '').trim().split(/\s+/)[0] ?? ''
 }
+
+/**
+ * Como a equipe é nomeada **dentro do painel**, embaixo da bolha que saiu.
+ *
+ * ---------------------------------------------------------------------------
+ * Nome e um sobrenome, e não o cadastro inteiro
+ * ---------------------------------------------------------------------------
+ *
+ * Aqui não vale a regra de `assinar`. Lá é o cliente lendo no WhatsApp, e só o
+ * primeiro nome é o jeito de se apresentar no balcão. Aqui é a equipe olhando a
+ * própria conversa, e primeiro nome sozinho não distingue duas Anas — que é
+ * exatamente a hora em que alguém precisa saber quem respondeu o quê.
+ *
+ * Do outro lado, "Maria Eduarda Gonçalves de Almeida Souza" embaixo de uma
+ * bolha é uma linha de cadastro no lugar de uma etiqueta. Duas palavras é o
+ * ponto em que o nome identifica sem virar formulário.
+ */
+export function nomeCurto(nome: string | null | undefined): string {
+  return (nome ?? '').trim().split(/\s+/).slice(0, 2).join(' ')
+}

@@ -7,6 +7,7 @@ import { fluxoSchema, type Fluxo, type TipoDeMidia } from '@/core/flow/schema'
 import type { Problema } from '@/core/flow/validar'
 import { db } from './db'
 import { canalValido } from '@/core/canais'
+import { autorDaPessoa } from '@/core/autor-da-mensagem'
 import { assinar, avisoDeEntrada } from '@/core/atendente'
 import {
   ehAdminDaPlataforma,
@@ -1924,6 +1925,12 @@ export async function acaoResponderLead(
     contatoId,
     sessaoId: contexto.sessaoId,
     texto,
+    /*
+     * O mesmo nome que vai assinado para o cliente fica gravado para a equipe.
+     * Os dois saem de `quemResponde`, e é por isso que a bolha no painel nunca
+     * discorda da assinatura que a pessoa recebeu no WhatsApp.
+     */
+    autor: autorDaPessoa(quemResponde?.usuario),
     ...(citando ? { cita: citando } : {}),
   })
 
@@ -2621,7 +2628,12 @@ async function avisarQueEntrou(
     if (!contexto || !dentroDaJanela(contexto.ultimaEntradaEm)) return
 
     const canal = await adaptadorDoCanal(contexto.canal)
-    const registro = await registrarSaida({ contatoId, sessaoId: contexto.sessaoId, texto: aviso })
+    const registro = await registrarSaida({
+      contatoId,
+      sessaoId: contexto.sessaoId,
+      texto: aviso,
+      autor: autorDaPessoa({ nome }),
+    })
     await canal.enviarTexto(contexto.waId, aviso)
     await confirmarEntrega(registro)
   } catch (erro) {

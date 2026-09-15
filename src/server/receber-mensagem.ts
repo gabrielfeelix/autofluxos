@@ -2,6 +2,7 @@ import 'server-only'
 import { z } from 'zod'
 import type { Canal } from '@/channels/types'
 import { canalDoWhatsApp } from './canal-do-whatsapp'
+import { AUTOR_AUTOMACAO } from '@/core/autor-da-mensagem'
 import { sessaoNova, type Acao, type Entrada } from '@/core/engine/types'
 import { varsIniciais } from '@/core/contatos/vars-iniciais'
 import { alertar, type ContextoDoAlerta } from './alertar'
@@ -1153,6 +1154,8 @@ async function aplicar(
         const registro = await registrarSaida({
           contatoId: contato.id,
           sessaoId,
+          // Saiu daqui: é o motor de fluxo falando, não gente.
+          autor: AUTOR_AUTOMACAO,
           texto: acao.texto,
         })
         const entrega = await entregar(() => canal.enviarTexto(contato.waId, acao.texto), alvo)
@@ -1177,6 +1180,8 @@ async function aplicar(
         const registro = await registrarSaida({
           contatoId: contato.id,
           sessaoId,
+          // Saiu daqui: é o motor de fluxo falando, não gente.
+          autor: AUTOR_AUTOMACAO,
           texto: acao.legenda ?? '',
           payload: {
             midia: acao.midia,
@@ -1213,6 +1218,8 @@ async function aplicar(
         const registro = await registrarSaida({
           contatoId: contato.id,
           sessaoId,
+          // Saiu daqui: é o motor de fluxo falando, não gente.
+          autor: AUTOR_AUTOMACAO,
           texto: acao.texto,
           payload: { opcoes: acao.opcoes, formato: acao.formato },
         })
@@ -1344,6 +1351,8 @@ async function aplicar(
         const registro = await registrarSaida({
           contatoId: contato.id,
           sessaoId,
+          // Saiu daqui: é o motor de fluxo falando, não gente.
+          autor: AUTOR_AUTOMACAO,
           texto: AVISO_DE_HANDOFF,
         })
         const entrega = await entregar(() => canal.enviarTexto(contato.waId, AVISO_DE_HANDOFF), alvo)
@@ -1363,6 +1372,8 @@ async function aplicar(
         const registro = await registrarSaida({
           contatoId: contato.id,
           sessaoId,
+          // Saiu daqui: é o motor de fluxo falando, não gente.
+          autor: AUTOR_AUTOMACAO,
           texto: AVISO_DE_HANDOFF,
         })
         const entrega = await entregar(() => canal.enviarTexto(contato.waId, AVISO_DE_HANDOFF), alvo)
