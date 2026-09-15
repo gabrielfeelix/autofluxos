@@ -210,6 +210,31 @@ extração explícito para os objetos de `public`.
   identifica pessoa: por isso a transcrição **nunca é automática** — só acontece
   quando alguém do atendimento clica. Quando `clients.ia_chave_ref` sair do
   papel, `server/transcrever-audio.ts` passa a usar a chave paga do cliente;
+- **a `0058` foi aplicada em 15/set/2026**, com autorização explícita do dono.
+  Ela é o funil do CRM: três colunas em `public.contacts` (`estagio`,
+  `estagio_mudou_em`, `ultima_mensagem_em`), `seguinte_id` em `public.quadros`,
+  duas colunas em `public.quadro_colunas`, seis em `public.quadro_cartoes`, e as
+  tabelas novas `public.motivos_de_perda` e `public.eventos_do_contato`.
+
+  **É aditiva, mas mexe em tabela que já tem dado** — e por isso o replay em
+  Docker não era opcional aqui, ao contrário da `0048`. Feitos os dois: replay
+  do zero (`0001`–`0058` em ordem, sem erro) e ensaio em transação contra a
+  produção, que voltou limpo.
+
+  O que a produção mostrou depois de aplicar: as 3 + 2 + 6 colunas presentes, as
+  2 tabelas criadas, e **o dado existente intacto** — 27 contatos, todos caindo
+  em `estagio = 'novo'` pelo default, e os 5 cartões seguindo `situacao =
+  'aberta'`. Grants das tabelas novas só para `postgres` e `service_role`. Do
+  outro lado: `app_verandi.migrations_aplicadas` com as mesmas **32** linhas e as
+  **16** policies de `storage.objects` intactas.
+
+  **A ordem importou e quase custou caro.** Os commits de CRM que dependem desta
+  migration foram escritos antes de ela existir em produção, e
+  `receber-mensagem.ts` passou a chamar `anotar` e `aplicarFato` no caminho de
+  **toda mensagem que chega**. Publicar o código antes de aplicar o SQL faria o
+  webhook estourar em cada mensagem — o bot mudo, sem erro visível na tela de
+  ninguém. Migration primeiro, deploy depois, sempre que o código novo escrever
+  em objeto novo;
 - nunca deve executar o aplicador da Verandi nem registrar versão em
   `app_verandi.migrations_aplicadas`.
 
