@@ -60,7 +60,8 @@ import {
 import { travarContato } from './repos/travas'
 import { inscreverNoEvento, sairPelaEtiqueta, sairPorEvento } from './sequencias'
 import { marcarContatos } from './repos/etiquetas'
-import { acharQuadroPadrao, porContatoNaEtapa, porNoQuadro } from './repos/quadros'
+import { porContatoNaEtapa } from './repos/quadros'
+import { porNoQuadroPadrao } from './quadro-de-entrada'
 
 /**
  * O caminho de uma mensagem do WhatsApp até a resposta.
@@ -218,40 +219,6 @@ export async function receberMensagem(
         await tratarUma(canalSalvo, mensagem, perfil?.profile?.name ?? null, fabricaDeCanal)
       }
     }
-  }
-}
-
-/**
- * O contato novo entra sozinho no quadro padrão (0043).
- *
- * **Só contato recém-criado.** Quem já existia e voltou a escrever não pode ser
- * jogado de volta para a primeira etapa — isso apagaria o progresso de alguém
- * que a equipe já arrastou até o fim do funil, e apagaria a cada mensagem.
- * `porNoQuadro` ignora duplicata, mas a garantia certa é não chamar.
- *
- * **Nada aqui pode derrubar a mensagem.** É a mesma regra do bloco de etapa: um
- * quadro mal configurado — sem etapa, apagado entre a leitura e a escrita — não
- * pode fazer alguém deixar de ser atendido. Vira alerta e a conversa segue.
- *
- * Conta sem quadro marcado sai em uma consulta e não faz nada, que é o
- * comportamento correto para quem não quer a automação.
- */
-async function porNoQuadroPadrao(contato: Contato): Promise<void> {
-  try {
-    const quadroId = await acharQuadroPadrao(contato.clienteId)
-    if (!quadroId) return
-
-    const posto = await porNoQuadro(contato.clienteId, quadroId, [contato.id])
-    if (!posto.ok) {
-      await alertar('o contato novo não entrou no quadro padrão', posto.motivo, {
-        contato: contato.id,
-      })
-    }
-  } catch (erro) {
-    const detalhe = erro instanceof Error ? erro.message : String(erro)
-    await alertar('o quadro padrão falhou ao receber o contato novo', detalhe, {
-      contato: contato.id,
-    })
   }
 }
 
