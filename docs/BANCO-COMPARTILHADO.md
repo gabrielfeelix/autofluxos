@@ -135,6 +135,26 @@ extração explícito para os objetos de `public`.
   escrever outro grant amplo em `public` reabre de novo — o comentário da
   tabela avisa, e o revoke da `0042` precisa ser reexecutado depois;
 - aplicação em produção pela Management API do Supabase;
+- **a `0055` foi aplicada em 15/set/2026**, com autorização explícita do dono e
+  conferida pelos dois testes: replay ordenado em Docker (as `0043`–`0055`
+  aplicadas em sequência sobre o stack local, que já tinha até a `0042`) e
+  verificação objeto a objeto **na** produção. Bucket `autofluxos-recebidos`
+  com `public = false`, teto de 16 MB e 18 mime types; coluna
+  `public.messages.arquivo` em `jsonb` anulável; índice parcial
+  `messages_arquivo_idx`; `app_verandi.migrations_aplicadas` intacta com 32
+  linhas; e `autofluxos-acervo` seguindo público, como deve.
+
+  **O que só a produção mostrou, e o Docker não podia:** lá existem **16
+  policies** em `storage.objects` — todas da Verandi — enquanto o stack local
+  tem zero. Foram conferidas uma a uma: as quatro de `INSERT` guardam a regra em
+  `with_check` e não em `qual` (por isso aparecem como "sem qual" numa consulta
+  ingênua), e **todas as 16 filtram por `bucket_id`**. Nenhuma alcança
+  `autofluxos-recebidos`, e com RLS ligado e nenhuma policy casando, `anon` e
+  `authenticated` não leem nem escrevem nada nele. Provado no Docker com
+  `set local role`: `service_role` enxerga o objeto, `anon` e `authenticated`
+  enxergam zero. **Quem criar policy nova em `storage.objects` sem filtrar
+  bucket abre este bucket junto** — é o mesmo tipo de armadilha que a `0042`
+  documentou para os `grant` amplos em `public`;
 - nunca deve executar o aplicador da Verandi nem registrar versão em
   `app_verandi.migrations_aplicadas`.
 
