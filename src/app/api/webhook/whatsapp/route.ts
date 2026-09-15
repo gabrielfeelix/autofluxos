@@ -3,6 +3,10 @@ import { after } from 'next/server'
 import { alertar } from '@/server/alertar'
 import { receberCoexistencia, tratarAtualizacaoDaConta } from '@/server/receber-coexistencia'
 import { receberMensagem } from '@/server/receber-mensagem'
+import {
+  receberStatusDeEntrega,
+  receberStatusDeTemplate,
+} from '@/server/receber-status-de-template'
 import { enviarAgendadas } from '@/server/enviar-agendadas'
 import { rodarTarefas } from '@/server/tarefas'
 
@@ -111,6 +115,26 @@ export async function POST(req: Request) {
        * número falharem em silêncio.
        */
       await tratarAtualizacaoDaConta(payload)
+
+      /*
+       * O modelo aprovado, e o que aconteceu com cada mensagem dele.
+       *
+       * São dois campos diferentes do mesmo envelope, e os dois são a única
+       * forma de a tela não mentir:
+       *
+       * - `message_template_status_update` diz se o modelo foi aprovado,
+       *   recusado ou pausado. Sem ele, um template fica "em análise" para
+       *   sempre quando o webhook chega e ninguém o lê.
+       * - o `statuses` do campo `messages` diz se cada mensagem foi entregue,
+       *   lida ou **falhou** — e é ali que aparece a mensagem que a Meta tinha
+       *   retido e acabou descartando (132015). Sem ler isso, uma transmissão
+       *   com 5.000 falhas segue mostrando "enviada".
+       *
+       * Depois da mensagem e da coexistência de propósito: quem está falando
+       * agora tem prioridade sobre registro de entrega.
+       */
+      await receberStatusDeTemplate(payload)
+      await receberStatusDeEntrega(payload)
     } catch (erro) {
       // Já respondemos 200. Deixar estourar aqui só produziria um unhandled
       // rejection sem ninguém para ver.

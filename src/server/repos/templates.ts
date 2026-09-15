@@ -243,6 +243,29 @@ export async function atualizarStatusPorWabaId(
 }
 
 /**
+ * Só a categoria, sem tocar no status.
+ *
+ * Existe porque `template_category_update` é um webhook **à parte**: ele avisa
+ * que a Meta reclassificou o modelo — o que muda o **preço** da mensagem — e
+ * não diz nada sobre a revisão. Reaproveitar `atualizarStatusPorWabaId` aqui
+ * obrigaria a inventar um status, e um palpite faria um template aprovado
+ * virar outra coisa por causa de uma mudança de preço.
+ */
+export async function atualizarCategoriaPorWabaId(
+  wabaTemplateId: string,
+  categoria: string,
+): Promise<boolean> {
+  const { data, error } = await db()
+    .from('templates')
+    .update({ categoria })
+    .eq('waba_template_id', wabaTemplateId)
+    .select('id')
+
+  if (error) throw error
+  return (data ?? []).length > 0
+}
+
+/**
  * Casa pelo par nome+idioma quando o id da Meta ainda não foi gravado.
  *
  * É o caminho da reconciliação: o template foi criado, o webhook que traria o
