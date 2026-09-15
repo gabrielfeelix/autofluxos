@@ -164,7 +164,7 @@ export default async function Pagina({
               aviso.tom === 'bom'
                 ? 'border-emerald-400/25 bg-emerald-400/[0.07] text-emerald-200'
                 : aviso.tom === 'neutro'
-                  ? 'border-white/10 bg-white/[0.03] text-muted'
+                  ? 'border-white/10 bg-surface text-muted'
                   : 'border-amber-400/25 bg-amber-400/[0.07] text-amber-200'
             }`}
           >
@@ -216,13 +216,13 @@ export default async function Pagina({
            * Fica a um clique, para quem quiser saber antes.
            */}
           <details className="group mt-3.5">
-            <summary className="cursor-pointer list-none text-[12px] font-semibold text-muted transition hover:text-accent">
+            <summary className="cursor-pointer list-none text-[12px] font-semibold text-muted transition hover:text-primary">
               Como funciona, passo a passo
               <span className="ml-1 text-dim transition group-open:hidden">▸</span>
               <span className="ml-1 hidden text-dim group-open:inline">▾</span>
             </summary>
 
-            <div className="mt-2.5 rounded-[10px] border border-white/[0.06] bg-white/[0.014] px-4 py-3.5">
+            <div className="mt-2.5 rounded-[10px] border border-line bg-panel px-4 py-3.5">
               <ol className="space-y-1.5 text-[12px] leading-5 text-dim">
                 <li>1. A Meta abre uma tela e pede o seu número.</li>
                 <li>
@@ -324,7 +324,7 @@ export default async function Pagina({
          */}
         {canais.length > 0 && (
         <section className="app-card mb-[18px] overflow-hidden">
-          <header className="flex items-start justify-between gap-4 border-b border-white/[0.06] px-5 py-4">
+          <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
             <div className="min-w-0 max-w-[70ch]">
             <h2 className="text-[14.5px] font-bold">Números do WhatsApp</h2>
             <p className="mt-0.5 text-[12px] leading-5 text-dim">
@@ -369,7 +369,7 @@ export default async function Pagina({
           </header>
 
           {canais.length === 0 ? (
-            <p className="border-b border-white/[0.045] px-5 py-8 text-center text-xs leading-5 text-dim">
+            <p className="border-b border-line px-5 py-8 text-center text-xs leading-5 text-dim">
               Nenhum número conectado ainda — sem isto o WhatsApp não chega até
               aqui.
             </p>
@@ -396,7 +396,7 @@ export default async function Pagina({
                 return (
                   <li
                     key={canal.id}
-                    className="border-b border-white/[0.045] px-5 py-3.5"
+                    className="border-b border-line px-5 py-3.5"
                   >
                     <div className="flex items-center gap-2.5 text-[12.5px] font-semibold">
                       {/*
@@ -506,7 +506,7 @@ export default async function Pagina({
                         )}
 
                         {situacao === 'pronto' && (
-                          <div className="rounded-lg border border-white/[0.06] bg-white/[0.014] px-3 py-2.5">
+                          <div className="rounded-lg border border-line bg-panel px-3 py-2.5">
                             <p className="text-[11.5px] font-semibold text-emerald-300">
                               Conectado ao WhatsApp Business deste número
                             </p>
@@ -601,7 +601,7 @@ export default async function Pagina({
           <p className="mt-1 text-[11.5px] text-dim">
             Cadastre este webhook na configuração do WhatsApp Business.
           </p>
-          <code className="mt-2.5 block truncate rounded-lg border border-white/[0.08] bg-black/30 px-3 py-2.5 font-mono text-[11.5px] text-[#8de2fa]">
+          <code className="mt-2.5 block truncate rounded-lg border border-line bg-black/30 px-3 py-2.5 font-mono text-[11.5px] text-[#8de2fa]">
             {webhook}
           </code>
         </section>

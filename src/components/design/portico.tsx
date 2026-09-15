@@ -49,10 +49,10 @@ export function Portico({
                 de entrada é a primeira coisa que alguém confere — já anunciou
                 seis quando eram sete. */}
             <span>
-              <strong className="font-normal text-accent">8</strong> tipos de bloco
+              <strong className="font-normal text-primary">8</strong> tipos de bloco
             </span>
             <span>
-              <strong className="font-normal text-accent">1</strong> arrasto = 1 ramificação
+              <strong className="font-normal text-primary">1</strong> arrasto = 1 ramificação
             </span>
             <span>handoff sempre garantido</span>
           </div>
@@ -61,7 +61,7 @@ export function Portico({
         <p className="relative font-mono text-[10.5px] text-[#454f60]">© 2026 4YU · uso interno</p>
       </section>
 
-      <section className="flex w-full shrink-0 items-center justify-center border-white/[0.07] bg-white/[0.018] p-6 md:w-[440px] md:border-l md:p-10">
+      <section className="flex w-full shrink-0 items-center justify-center border-line bg-panel p-6 md:w-[440px] md:border-l md:p-10">
         <div className="app-page-enter w-full max-w-[312px]">
           <div className="mb-6 md:hidden">
             <Marca />
@@ -73,7 +73,7 @@ export function Portico({
           {children}
 
           {rodape && (
-            <div className="mt-[22px] border-t border-white/[0.06] pt-4 text-[11.5px] leading-[1.6] text-dim">
+            <div className="mt-[22px] border-t border-line pt-4 text-[11.5px] leading-[1.6] text-dim">
               {rodape}
             </div>
           )}

@@ -40,7 +40,7 @@ export function RealceDeVariaveis({ texto }: { texto: string }) {
         }
 
         return (
-          <span key={i} className="rounded-[3px] bg-accent/15 text-accent">
+          <span key={i} className="rounded-[3px] bg-primary/15 text-primary">
             {pedaco.texto}
           </span>
         )

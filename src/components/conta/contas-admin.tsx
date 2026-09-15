@@ -110,7 +110,7 @@ function Pessoas({ membros }: { membros: ContaDaLista['membros'] }) {
           <span
             key={membro.id}
             title={`${membro.nome} · ${NOME_DO_PAPEL[membro.papel] ?? membro.papel} · ${membro.email}`}
-            className="flex size-[22px] items-center justify-center rounded-full border border-[#0b1018] bg-white/[0.11] text-[9.5px] font-bold text-soft"
+            className="flex size-[22px] items-center justify-center rounded-full border border-[#0b1018] bg-surface-strong text-[9.5px] font-bold text-soft"
           >
             {iniciais(membro.nome)}
           </span>
@@ -151,14 +151,14 @@ function Cartao({
         evento.preventDefault()
         aoAbrirMenu(evento.clientX, evento.clientY)
       }}
-      className={`group relative flex flex-col rounded-[14px] border bg-[#0b1018] p-4 shadow-[0_10px_26px_rgba(0,0,0,0.28)] transition hover:border-accent/45 hover:bg-[#0d1622] ${
-        marcado ? 'border-accent/55 bg-[#0d1622]' : 'border-white/[0.085]'
+      className={`group relative flex flex-col rounded-[14px] border bg-[#0b1018] p-4 shadow-[0_10px_26px_rgba(19,25,34,0.062)] transition hover:border-primary/45 hover:bg-[#0d1622] ${
+        marcado ? 'border-primary/55 bg-[#0d1622]' : 'border-line'
       }`}
     >
       {/* O link cobre o cartão inteiro; o botão de acesso vive acima dele. */}
       <Link
         href={`/clientes/${conta.id}`}
-        className="absolute inset-0 rounded-[14px] focus-visible:ring-1 focus-visible:ring-accent/60 focus-visible:outline-none"
+        className="absolute inset-0 rounded-[14px] focus-visible:ring-1 focus-visible:ring-primary/60 focus-visible:outline-none"
         aria-label={`Abrir o painel de ${conta.nome}`}
       />
 
@@ -176,7 +176,7 @@ function Cartao({
 
         <span
           aria-hidden
-          className="translate-x-[-4px] text-[13px] text-dim opacity-0 transition group-hover:translate-x-0 group-hover:text-accent group-hover:opacity-100"
+          className="translate-x-[-4px] text-[13px] text-dim opacity-0 transition group-hover:translate-x-0 group-hover:text-primary group-hover:opacity-100"
         >
           →
         </span>
@@ -201,14 +201,14 @@ function Cartao({
         )}
       </p>
 
-      <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/[0.05] pt-3">
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-3">
         <Pessoas membros={conta.membros} />
 
         {aoLigarPessoa && (
           <button
             type="button"
             onClick={aoLigarPessoa}
-            className="relative z-10 shrink-0 rounded-full border border-white/[0.09] px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:border-accent/45 hover:text-accent"
+            className="relative z-10 shrink-0 rounded-full border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:border-primary/45 hover:text-primary"
           >
             + acesso
           </button>
@@ -292,7 +292,7 @@ function MenuDeContexto({
       role="menu"
       style={{ left: Math.max(8, esquerda), top: Math.max(8, topo), width: largura }}
       onContextMenu={(evento) => evento.preventDefault()}
-      className="fixed z-50 overflow-hidden rounded-[11px] border border-white/10 bg-panel p-1 shadow-[0_24px_60px_rgba(0,0,0,0.6)]"
+      className="fixed z-50 overflow-hidden rounded-[11px] border border-white/10 bg-panel p-1 shadow-[0_24px_60px_rgba(19,25,34,0.132)]"
     >
       <button
         type="button"
@@ -505,7 +505,7 @@ export function ContasAdmin({
             className={`h-[38px] shrink-0 rounded-[10px] border px-3 text-[12px] font-semibold transition ${
               soSemAcesso
                 ? 'border-amber-300/50 bg-amber-300/[0.12] text-amber-200'
-                : 'border-white/[0.09] text-muted hover:border-white/25 hover:text-soft'
+                : 'border-line text-muted hover:border-white/25 hover:text-soft'
             }`}
           >
             sem acesso
@@ -527,7 +527,7 @@ export function ContasAdmin({
               setTermo('')
               setSoSemAcesso(false)
             }}
-            className="font-semibold text-accent underline-offset-2 hover:underline"
+            className="font-semibold text-primary underline-offset-2 hover:underline"
           >
             Limpar a busca
           </button>
@@ -623,13 +623,13 @@ export function ContasAdmin({
               <button
                 type="button"
                 onClick={() => setLigando(null)}
-                className="rounded-[10px] border border-white/[0.09] px-3.5 py-2 text-[12.5px] font-semibold text-muted transition hover:border-white/25 hover:text-soft"
+                className="rounded-[10px] border border-line px-3.5 py-2 text-[12.5px] font-semibold text-muted transition hover:border-white/25 hover:text-soft"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                className="rounded-[10px] bg-accent px-4 py-2 text-[12.5px] font-bold text-[#04202a] transition hover:brightness-110"
+                className="rounded-[10px] bg-primary px-4 py-2 text-[12.5px] font-bold text-[#04202a] transition hover:brightness-110"
               >
                 Dar acesso
               </button>

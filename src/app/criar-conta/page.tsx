@@ -56,7 +56,7 @@ export default async function CriarConta() {
           cadastrado.
         </p>
         <p className="mt-4 text-[12.5px] text-dim">
-          <Link href="/entrar" className="text-muted underline underline-offset-2 transition hover:text-accent">
+          <Link href="/entrar" className="text-muted underline underline-offset-2 transition hover:text-primary">
             Voltar para entrar
           </Link>
         </p>
@@ -72,7 +72,7 @@ export default async function CriarConta() {
           com o número de WhatsApp dele. Se você deveria ter acesso, peça a quem administra.
         </p>
         <p className="mt-4 text-[12.5px] text-dim">
-          <Link href="/entrar" className="text-muted underline underline-offset-2 transition hover:text-accent">
+          <Link href="/entrar" className="text-muted underline underline-offset-2 transition hover:text-primary">
             Já tenho conta
           </Link>
         </p>
@@ -92,7 +92,7 @@ export default async function CriarConta() {
         jaTemGente ? (
           <p>
             O usuário nasce sem conta nenhuma. Ligue ele a um cliente em{' '}
-            <Link href="/admin/contas" className="text-muted underline underline-offset-2 transition hover:text-accent">
+            <Link href="/admin/contas" className="text-muted underline underline-offset-2 transition hover:text-primary">
               Contas
             </Link>{' '}
             — sem isso ele entra e não vê nada.

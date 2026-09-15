@@ -94,7 +94,7 @@ export function NomeDoFluxo({
         type="button"
         onClick={() => setEditando(true)}
         title="Renomear esta automação"
-        className="group flex items-center gap-1.5 rounded-lg px-1 py-0.5 text-left transition hover:bg-white/[0.05]"
+        className="group flex items-center gap-1.5 rounded-lg px-1 py-0.5 text-left transition hover:bg-surface-strong"
       >
         <span className="text-sm font-bold tracking-[-0.01em]">{salvo}</span>
         <span aria-hidden className="text-[11px] text-dim opacity-0 transition group-hover:opacity-100">
@@ -113,7 +113,7 @@ export function NomeDoFluxo({
           interativo devolve o clique para si mesmo — senão o lápis abriria a
           automação em vez de renomear.
         */
-        className="pointer-events-auto flex size-6 shrink-0 items-center justify-center rounded-md text-[11px] text-dim opacity-0 transition group-hover/linha:opacity-100 hover:bg-white/[0.08] hover:text-accent focus-visible:opacity-100"
+        className="pointer-events-auto flex size-6 shrink-0 items-center justify-center rounded-md text-[11px] text-dim opacity-0 transition group-hover/linha:opacity-100 hover:bg-surface-strong hover:text-primary focus-visible:opacity-100"
       >
         <span aria-hidden>✎</span>
         <span className="sr-only">Renomear {salvo}</span>

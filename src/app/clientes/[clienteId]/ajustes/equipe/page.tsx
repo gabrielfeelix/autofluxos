@@ -55,7 +55,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         </p>
 
         <section className="app-card overflow-hidden">
-          <header className="flex items-center justify-between gap-4 border-b border-white/[0.06] px-5 py-4">
+          <header className="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
             <h2 className="text-[14.5px] font-bold">
               {equipe.length} {equipe.length === 1 ? 'pessoa' : 'pessoas'}
             </h2>

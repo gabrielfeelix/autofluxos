@@ -44,7 +44,7 @@ export function InterruptorDeCampanha({
           })
         }}
         className={`relative h-[18px] w-8 shrink-0 rounded-full border transition disabled:opacity-50 ${
-          ativa ? 'border-emerald-400/40 bg-emerald-400/25' : 'border-white/10 bg-white/[0.06]'
+          ativa ? 'border-emerald-400/40 bg-emerald-400/25' : 'border-white/10 bg-surface-strong'
         }`}
       >
         <span

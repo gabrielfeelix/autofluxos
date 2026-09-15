@@ -102,8 +102,8 @@ export default async function Pagina({
                   href={`/clientes/${cliente.id}/quadros?q=${quadro.id}`}
                   className={`rounded-full border px-3 py-1 text-[12px] transition ${
                     quadro.id === aberto?.id
-                      ? 'border-accent/40 bg-accent/[0.1] text-accent'
-                      : 'border-white/[0.09] bg-white/[0.03] text-muted hover:border-white/20'
+                      ? 'border-primary/40 bg-primary/[0.1] text-primary'
+                      : 'border-line bg-surface text-muted hover:border-white/20'
                   }`}
                 >
                   {quadro.nome}

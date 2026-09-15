@@ -53,7 +53,7 @@ export function LinhaDaEquipe({
   }
 
   return (
-    <li className="border-b border-white/[0.045] px-5 py-4 last:border-0">
+    <li className="border-b border-line px-5 py-4 last:border-0">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <span className="min-w-0 flex-1">
           <strong className="flex items-center gap-2 text-[13.5px] font-semibold">
@@ -80,7 +80,7 @@ export function LinhaDaEquipe({
               type="button"
               disabled={rodando}
               onClick={remover}
-              className="rounded-lg border border-white/[0.09] px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:border-rose-400/40 hover:bg-rose-400/[0.09] hover:text-rose-300 disabled:opacity-50"
+              className="rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:border-rose-400/40 hover:bg-rose-400/[0.09] hover:text-rose-300 disabled:opacity-50"
             >
               {rodando ? '…' : 'Remover'}
             </button>

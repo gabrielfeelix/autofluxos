@@ -65,7 +65,7 @@ export function CamposColetados({ campos }: { campos: [string, string][] }) {
 
   return (
     <>
-      <dl className="mt-2.5 divide-y divide-white/[0.045] border-y border-white/[0.045]">
+      <dl className="mt-2.5 divide-y divide-line border-y border-line">
         {visiveis.map(([chave, valor]) => (
           <div key={chave} className="py-2.5">
             {/*
@@ -83,7 +83,7 @@ export function CamposColetados({ campos }: { campos: [string, string][] }) {
         <button
           type="button"
           onClick={() => setAberto((estava) => !estava)}
-          className="mt-2 text-[10.5px] font-semibold text-accent transition hover:underline"
+          className="mt-2 text-[10.5px] font-semibold text-primary transition hover:underline"
         >
           {rotuloDoBotao}
         </button>

@@ -142,7 +142,7 @@ export default async function Contas() {
           {ehAdminDaPlataforma(sessao) && (
             <Link
               href="/admin/contas"
-              className="text-[12.5px] text-muted underline underline-offset-2 transition hover:text-accent"
+              className="text-[12.5px] text-muted underline underline-offset-2 transition hover:text-primary"
             >
               Área de administração
             </Link>

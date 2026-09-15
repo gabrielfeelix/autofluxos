@@ -32,7 +32,7 @@ export function FichaDoCliente({
 
   return (
     <section className="app-card overflow-hidden">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-4 sm:px-6">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-4 sm:px-6">
         <div>
           <h2 className="text-[14.5px] font-bold">Cadastro</h2>
           <p className="mt-0.5 text-[12px] text-dim">
@@ -42,7 +42,7 @@ export function FichaDoCliente({
         </div>
         <button
           onClick={() => setEditando((antes) => !antes)}
-          className="shrink-0 rounded-lg border border-white/[0.1] px-3 py-1.5 text-[12px] font-bold text-soft transition hover:border-white/20 hover:bg-white/[0.05]"
+          className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-[12px] font-bold text-soft transition hover:border-white/20 hover:bg-surface-strong"
         >
           {editando ? 'Cancelar' : 'Editar'}
         </button>
@@ -124,7 +124,7 @@ function Logo({
   removerLogo: () => Promise<void>
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-center gap-5 border-b border-white/[0.06] pb-6">
+    <div className="mb-6 flex flex-wrap items-center gap-5 border-b border-line pb-6">
       <LogoDoCliente cliente={cliente} tamanho={72} />
       <div className="min-w-0 flex-1">
         <FormularioSalvar action={salvarLogo} rotulo="Enviar logo">
@@ -133,14 +133,14 @@ function Logo({
             name="logo"
             type="file"
             accept="image/png,image/jpeg,image/webp"
-            className="block w-full text-[12px] text-muted file:mr-3 file:cursor-pointer file:rounded-lg file:border file:border-white/[0.12] file:bg-white/[0.05] file:px-3 file:py-1.5 file:text-[12px] file:font-bold file:text-soft hover:file:bg-white/[0.09]"
+            className="block w-full text-[12px] text-muted file:mr-3 file:cursor-pointer file:rounded-lg file:border file:border-strong file:bg-surface file:px-3 file:py-1.5 file:text-[12px] file:font-bold file:text-soft hover:file:bg-surface-strong"
           />
           <p className="mt-1.5 text-[11px] text-dim">PNG, JPG ou WebP, até 512 KB.</p>
         </FormularioSalvar>
       </div>
       {cliente.logoUrl && (
         <form action={removerLogo}>
-          <button className="shrink-0 rounded-lg border border-white/[0.1] px-3 py-1.5 text-[12px] font-semibold text-dim transition hover:border-rose-400/30 hover:text-rose-300">
+          <button className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-[12px] font-semibold text-dim transition hover:border-rose-400/30 hover:text-rose-300">
             Tirar logo
           </button>
         </form>

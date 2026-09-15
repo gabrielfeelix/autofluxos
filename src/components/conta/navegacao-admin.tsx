@@ -29,7 +29,7 @@ export function NavegacaoDoAdmin() {
   return (
     <nav
       aria-label="Administração"
-      className="flex gap-1 overflow-x-auto border-b border-white/[0.06] px-3 py-2 md:flex-col md:gap-0.5 md:overflow-visible md:border-0 md:p-0"
+      className="flex gap-1 overflow-x-auto border-b border-line px-3 py-2 md:flex-col md:gap-0.5 md:overflow-visible md:border-0 md:p-0"
     >
       {ITENS.map((item) => {
         const acesa = caminho === item.href || caminho.startsWith(`${item.href}/`)
@@ -40,8 +40,8 @@ export function NavegacaoDoAdmin() {
             aria-current={acesa ? 'page' : undefined}
             className={`shrink-0 rounded-[10px] px-2.5 py-2.5 text-[13px] font-semibold transition ${
               acesa
-                ? 'bg-accent/[0.12] text-white hover:bg-accent/[0.16]'
-                : 'text-muted hover:bg-white/[0.04] hover:text-white'
+                ? 'bg-primary/[0.12] text-ink hover:bg-primary/[0.16]'
+                : 'text-muted hover:bg-surface hover:text-ink'
             }`}
           >
             {item.rotulo}

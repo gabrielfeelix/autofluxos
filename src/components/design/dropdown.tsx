@@ -309,7 +309,7 @@ export function Dropdown({
                   {opcao.detalhe && <span className="mt-0.5 block truncate text-[10.5px] text-dim">{opcao.detalhe}</span>}
                 </span>
                 {selecionada && (
-                  <svg aria-hidden="true" viewBox="0 0 16 16" className="size-4 shrink-0 text-accent">
+                  <svg aria-hidden="true" viewBox="0 0 16 16" className="size-4 shrink-0 text-primary">
                     <path d="m3.2 8.2 2.8 2.8 6.8-6.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 )}

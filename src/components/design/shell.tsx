@@ -27,7 +27,7 @@ export async function PainelShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col md:h-screen md:min-h-[700px] md:flex-row md:overflow-hidden">
-      <aside className="flex shrink-0 flex-row items-center gap-3 border-b border-white/[0.06] bg-white/[0.014] px-4 py-3 md:w-[226px] md:flex-col md:items-stretch md:gap-0 md:border-r md:border-b-0 md:px-3.5 md:pt-5 md:pb-4">
+      <aside className="flex shrink-0 flex-row items-center gap-3 border-b border-line bg-panel px-4 py-3 md:w-[226px] md:flex-col md:items-stretch md:gap-0 md:border-r md:border-b-0 md:px-3.5 md:pt-5 md:pb-4">
         <div className="flex items-center gap-3 md:mb-5 md:px-2">
           <Marca />
           <span className="ml-auto">
@@ -37,7 +37,7 @@ export async function PainelShell({ children }: { children: ReactNode }) {
 
         <Link
           href="/painel"
-          className="flex items-center gap-2.5 rounded-[10px] bg-accent/[0.12] px-2.5 py-2.5 text-[13px] font-semibold text-white transition hover:bg-accent/[0.16]"
+          className="flex items-center gap-2.5 rounded-[10px] bg-primary/[0.12] px-2.5 py-2.5 text-[13px] font-semibold text-ink transition hover:bg-primary/[0.16]"
         >
           <IconeClientes />
           Clientes
@@ -46,7 +46,7 @@ export async function PainelShell({ children }: { children: ReactNode }) {
         {ehAdminDaPlataforma(sessao) && (
           <Link
             href="/admin/contas"
-            className="mt-0.5 hidden items-center gap-2.5 rounded-[10px] px-2.5 py-2.5 text-[13px] font-semibold text-muted transition hover:bg-white/[0.04] hover:text-white md:flex"
+            className="mt-0.5 hidden items-center gap-2.5 rounded-[10px] px-2.5 py-2.5 text-[13px] font-semibold text-muted transition hover:bg-surface hover:text-ink md:flex"
           >
             <IconeAdministracao />
             Administração
@@ -55,8 +55,8 @@ export async function PainelShell({ children }: { children: ReactNode }) {
 
         <div className="flex-1" />
 
-        <div className="flex items-center gap-2.5 border-white/[0.06] md:border-t md:px-1.5 md:pt-3.5">
-          <span className="flex size-[30px] shrink-0 items-center justify-center rounded-full border border-white/[0.12] bg-[linear-gradient(135deg,#334155,#1e293b)] text-[11px] font-bold text-[#b9c2d0]">
+        <div className="flex items-center gap-2.5 border-line md:border-t md:px-1.5 md:pt-3.5">
+          <span className="flex size-[30px] shrink-0 items-center justify-center rounded-full border border-strong bg-[linear-gradient(135deg,#334155,#1e293b)] text-[11px] font-bold text-[#b9c2d0]">
             {sessao ? iniciais(sessao.usuario.nome) : '4Y'}
           </span>
           {/* Nome e papel são contexto, não navegação: some no celular para o
@@ -98,7 +98,7 @@ function iniciais(nome: string): string {
 
 function IconeClientes() {
   return (
-    <svg aria-hidden width="15" height="15" viewBox="0 0 15 15" className="text-accent">
+    <svg aria-hidden width="15" height="15" viewBox="0 0 15 15" className="text-primary">
       <rect x="1" y="1" width="5.5" height="5.5" rx="1.6" fill="currentColor" />
       <rect x="8.5" y="1" width="5.5" height="5.5" rx="1.6" fill="currentColor" opacity=".45" />
       <rect x="1" y="8.5" width="5.5" height="5.5" rx="1.6" fill="currentColor" opacity=".45" />

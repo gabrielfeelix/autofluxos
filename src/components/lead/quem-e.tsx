@@ -73,7 +73,7 @@ export function QuemE({
   const origem = origemDoContato(campos)
 
   return (
-    <dl className="mt-4 space-y-1.5 rounded-[11px] border border-white/[0.07] bg-white/[0.02] px-3 py-2.5">
+    <dl className="mt-4 space-y-1.5 rounded-[11px] border border-line bg-panel px-3 py-2.5">
       <Linha rotulo="Telefone">
         {/*
           `tel:` e não texto solto: num celular o toque liga, e no desktop o
@@ -83,7 +83,7 @@ export function QuemE({
         */}
         <a
           href={`tel:+${waId}`}
-          className="font-mono text-[11px] text-soft transition hover:text-accent"
+          className="font-mono text-[11px] text-soft transition hover:text-primary"
         >
           {telefoneLegivel(waId)}
         </a>

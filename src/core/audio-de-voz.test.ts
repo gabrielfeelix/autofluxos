@@ -8,6 +8,8 @@ import {
   motivoDoMicrofone,
   nomeDoAudio,
   RESTRICOES_DO_MICROFONE,
+  codecServeParaAMeta,
+  formatoEntregue,
 } from './audio-de-voz'
 import { TIPOS_ACEITOS } from '@/server/repos/acervo'
 
@@ -18,12 +20,25 @@ import { TIPOS_ACEITOS } from '@/server/repos/acervo'
  * navegador, sem microfone e sem rede.
  */
 
-/** O que cada navegador responde a `MediaRecorder.isTypeSupported`. */
+/**
+ * O que cada navegador responde a `MediaRecorder.isTypeSupported`.
+ *
+ * `audio/mp4` aparece em quase todos e **não está mais na lista que pedimos**:
+ * ele é o tipo genérico que deixa o codec com o navegador, e foi assim que o
+ * Chrome entregou Opus dentro de MP4 em produção. Está aqui de propósito, para
+ * os testes provarem que a escolha o ignora.
+ */
 const NAVEGADORES = {
   chrome: ['audio/mp4', 'audio/mp4;codecs=mp4a.40.2', 'audio/webm', 'audio/webm;codecs=opus'],
-  safari: ['audio/mp4'],
+  safari: ['audio/mp4', 'audio/mp4;codecs=mp4a.40.2'],
   firefox: ['audio/ogg', 'audio/ogg;codecs=opus', 'audio/webm', 'audio/webm;codecs=opus'],
   chromeAntigo: ['audio/webm', 'audio/webm;codecs=opus'],
+  /*
+   * O caso que ainda não foi observado mas é plausível: build sem codificador
+   * AAC (AAC tem patente, e alguns Chromium não o embarcam). Sobraria só
+   * Opus-em-MP4 — que a Meta não entrega. Recusar é a resposta certa.
+   */
+  chromiumSemAac: ['audio/mp4', 'audio/mp4;codecs=opus', 'audio/webm;codecs=opus'],
 }
 
 const suporte = (lista: string[]) => (m: string) => lista.includes(m)
@@ -46,6 +61,14 @@ describe('escolherFormato', () => {
 
   it('recusa quando só há WebM, que a Meta não aceita', () => {
     expect(escolherFormato(suporte(NAVEGADORES.chromeAntigo))).toBeNull()
+  })
+
+  it('ignora `audio/mp4` genérico, que foi o que entregou Opus em produção', () => {
+    expect(escolherFormato(suporte(['audio/mp4']))).toBeNull()
+  })
+
+  it('recusa navegador que só tem Opus-em-MP4, em vez de mandar o que não chega', () => {
+    expect(escolherFormato(suporte(NAVEGADORES.chromiumSemAac))).toBeNull()
   })
 
   it('nunca devolve WebM, mesmo se o navegador disser que suporta tudo', () => {
@@ -149,5 +172,78 @@ describe('os limites', () => {
     // não limite de tamanho — e este teste é o que registra isso.
     const bytesEstimados = (LIMITE_DE_GRAVACAO_S * 32_000) / 8
     expect(bytesEstimados).toBeLessThan(16 * 1024 * 1024)
+  })
+})
+
+/*
+ * -----------------------------------------------------------------------------
+ * A armadilha que passou em produção
+ * -----------------------------------------------------------------------------
+ *
+ * Em 15/set/2026 o áudio foi gravado, subiu, a Cloud API respondeu 200, a
+ * mensagem foi marcada como entregue — e nada chegou no celular. O arquivo foi
+ * aberto byte a byte: `mp4a` e `esds` ausentes, `Opus` e `dOps` presentes. O
+ * Chrome tinha gravado Opus dentro de MP4, porque o pedido foi `audio/mp4` sem
+ * codec.
+ *
+ * Estes testes são o que impede isso de voltar.
+ */
+describe('o codec, que é o que a Meta realmente olha', () => {
+  it('nenhum formato é pedido sem `;codecs=`', () => {
+    for (const formato of FORMATOS_DE_GRAVACAO) {
+      expect(formato.mimeType, `${formato.mimeType} não declara o codec`).toContain(';codecs=')
+    }
+  })
+
+  it('`audio/mp4` sem codec não volta para a lista', () => {
+    expect(FORMATOS_DE_GRAVACAO.map((f) => f.mimeType)).not.toContain('audio/mp4')
+  })
+
+  it('recusa Opus dentro de MP4 — o caso real de 15/set', () => {
+    expect(codecServeParaAMeta('audio/mp4;codecs=opus')).toBe(false)
+  })
+
+  it('aceita AAC em MP4 e Opus em OGG, que é como a Meta documenta', () => {
+    expect(codecServeParaAMeta('audio/mp4;codecs=mp4a.40.2')).toBe(true)
+    expect(codecServeParaAMeta('audio/ogg;codecs=opus')).toBe(true)
+  })
+
+  it('recusa Vorbis em OGG, que é o padrão do Firefox sem codec explícito', () => {
+    expect(codecServeParaAMeta('audio/ogg;codecs=vorbis')).toBe(false)
+  })
+
+  it('recusa WebM, que não tem linha na tabela da Meta', () => {
+    expect(codecServeParaAMeta('audio/webm;codecs=opus')).toBe(false)
+    expect(codecServeParaAMeta('audio/webm')).toBe(false)
+  })
+
+  it('aceita contêiner sem codec declarado, para não barrar gravação boa', () => {
+    expect(codecServeParaAMeta('audio/mp4')).toBe(true)
+  })
+
+  it('lida com aspas e espaço, que alguns navegadores põem', () => {
+    expect(codecServeParaAMeta('audio/mp4; codecs="mp4a.40.2"')).toBe(true)
+    expect(codecServeParaAMeta('audio/mp4; codecs="opus"')).toBe(false)
+  })
+})
+
+describe('formatoEntregue', () => {
+  /*
+   * O acervo decide o tipo de mídia pela EXTENSÃO. Gravar um `.m4a` que por
+   * dentro é OGG faria a mentira chegar até a bolha.
+   */
+  it('a extensão segue o contêiner que saiu, não o que foi pedido', () => {
+    expect(formatoEntregue('audio/ogg;codecs=opus')).toEqual({
+      mime: 'audio/ogg',
+      extensao: 'ogg',
+    })
+    expect(formatoEntregue('audio/mp4;codecs=mp4a.40.2')).toEqual({
+      mime: 'audio/mp4',
+      extensao: 'm4a',
+    })
+  })
+
+  it('devolve null para contêiner que a Meta não aceita', () => {
+    expect(formatoEntregue('audio/webm;codecs=opus')).toBeNull()
   })
 })

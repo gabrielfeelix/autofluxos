@@ -40,7 +40,7 @@ export function CartaoDaAgenda({
   return (
     <div className="app-card mb-4 px-5 py-4">
       <div className="flex flex-wrap items-center gap-3">
-        <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent/[0.12] text-[15px]">
+        <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/[0.12] text-[15px]">
           📅
         </span>
         <div className="min-w-0 flex-1">

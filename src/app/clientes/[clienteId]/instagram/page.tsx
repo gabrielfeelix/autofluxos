@@ -126,7 +126,7 @@ export default async function Pagina({
              */}
             {dias !== null && (
               <p
-                className={`mt-4 border-t border-white/[0.06] pt-3.5 text-[12px] ${
+                className={`mt-4 border-t border-line pt-3.5 text-[12px] ${
                   dias <= 7 ? 'text-amber-300' : 'text-dim'
                 }`}
               >
@@ -148,7 +148,7 @@ export default async function Pagina({
             <ul className="mt-4 space-y-1.5">
               {ESCOPOS.map((escopo) => (
                 <li key={escopo} className="flex gap-2 text-[12px] text-dim">
-                  <span aria-hidden className="text-accent">
+                  <span aria-hidden className="text-primary">
                     ·
                   </span>
                   <code className="font-mono">{escopo}</code>
@@ -161,7 +161,7 @@ export default async function Pagina({
               <button
                 type="submit"
                 disabled={!configurado}
-                className="rounded-[9px] bg-accent px-4 py-2.5 text-[13px] font-semibold text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-[9px] bg-primary px-4 py-2.5 text-[13px] font-semibold text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Conectar conta do Instagram
               </button>
@@ -184,7 +184,7 @@ export default async function Pagina({
          * Deixar isso implícito é o caminho para alguém prometer numa reunião
          * o que a permissão ainda não permite.
          */}
-        <section className="mt-5 rounded-[12px] border border-white/[0.06] bg-white/[0.014] px-5 py-4">
+        <section className="mt-5 rounded-[12px] border border-line bg-panel px-5 py-4">
           <p className="text-[12.5px] font-semibold text-muted">Enquanto o app review não sai</p>
           <p className="mt-1.5 text-[12px] leading-6 text-dim">
             As permissões de mensagem estão em <strong>Standard Access</strong>. Nesse estágio o

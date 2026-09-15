@@ -18,7 +18,7 @@ export function BotaoDeAjuda() {
       href="/ajuda"
       title="Ajuda"
       aria-label="Ajuda"
-      className="flex size-[26px] shrink-0 items-center justify-center rounded-full border border-white/[0.12] text-[12px] font-bold text-dim transition hover:border-accent/50 hover:bg-accent/[0.1] hover:text-accent"
+      className="flex size-[26px] shrink-0 items-center justify-center rounded-full border border-strong text-[12px] font-bold text-dim transition hover:border-primary/50 hover:bg-primary/[0.1] hover:text-primary"
     >
       <span aria-hidden>?</span>
     </Link>

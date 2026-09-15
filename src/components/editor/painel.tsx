@@ -67,7 +67,7 @@ function Ajuda({ secao, oQue }: { secao: string; oQue: string }) {
       target="_blank"
       rel="noreferrer"
       title={`Entender ${oQue}`}
-      className="ml-1 inline-flex size-[15px] shrink-0 translate-y-[1px] items-center justify-center rounded-full border border-white/15 text-[9px] leading-none font-bold text-dim normal-case transition hover:border-accent/50 hover:text-accent"
+      className="ml-1 inline-flex size-[15px] shrink-0 translate-y-[1px] items-center justify-center rounded-full border border-white/15 text-[9px] leading-none font-bold text-dim normal-case transition hover:border-primary/50 hover:text-primary"
     >
       ?
     </a>
@@ -260,18 +260,18 @@ export function Painel({
     <div className="space-y-4 p-4">
       <div className="flex items-center justify-between">
         <h3 className="flex items-center gap-2 text-sm font-bold">
-          <span className="flex size-7 items-center justify-center rounded-lg bg-white/[0.05] text-[13px] text-accent">{NOMES[no.type].slice(0, 1)}</span>
+          <span className="flex size-7 items-center justify-center rounded-lg bg-surface text-[13px] text-primary">{NOMES[no.type].slice(0, 1)}</span>
           {NOMES[no.type]}
         </h3>
         <div className="flex items-center gap-2">
           {ehInicio ? (
-            <span className="rounded-lg border border-accent/30 bg-accent/[0.12] px-2.5 py-1 text-[10px] font-bold text-accent">
+            <span className="rounded-lg border border-primary/30 bg-primary/[0.12] px-2.5 py-1 text-[10px] font-bold text-primary">
               INÍCIO
             </span>
           ) : (
             <button
               onClick={aoDefinirInicio}
-              className="rounded-lg border border-white/10 px-2.5 py-1 text-[10px] font-semibold text-muted transition hover:border-accent/40 hover:text-accent"
+              className="rounded-lg border border-white/10 px-2.5 py-1 text-[10px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
             >
               Tornar início
             </button>
@@ -337,7 +337,7 @@ export function Painel({
           )}
 
           {no.data.midia === 'audio' ? (
-            <p className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-[11.5px] leading-5 text-muted">
+            <p className="rounded-lg border border-white/10 bg-surface px-3 py-2.5 text-[11.5px] leading-5 text-muted">
               Áudio não aceita legenda no WhatsApp — a Meta recusa a mensagem
               inteira, não ignora o campo. Para dizer algo junto, use um bloco de
               Mensagem antes ou depois deste.
@@ -752,7 +752,7 @@ export function Painel({
             conversa anda.
           </p>
           {etapas.length === 0 ? (
-            <span className="block rounded-lg border border-dashed border-white/[0.15] px-3 py-3 text-[11.5px] leading-5 text-dim">
+            <span className="block rounded-lg border border-dashed border-strong px-3 py-3 text-[11.5px] leading-5 text-dim">
               Este cliente ainda não tem quadro nenhum. Crie um em Quadros, na tela do cliente — sem
               etapa para escolher, este bloco não tem o que fazer.
             </span>
@@ -796,7 +796,7 @@ export function Painel({
             mesmo tempo, e é por elas que se filtra a lista de contatos depois.
           </p>
           {etiquetas.length === 0 ? (
-            <span className="block rounded-lg border border-dashed border-white/[0.15] px-3 py-3 text-[11.5px] leading-5 text-dim">
+            <span className="block rounded-lg border border-dashed border-strong px-3 py-3 text-[11.5px] leading-5 text-dim">
               Este cliente ainda não tem etiqueta nenhuma. Crie uma em Ajustes → Etiquetas — sem
               etiqueta para escolher, este bloco não tem o que fazer.
             </span>
@@ -852,7 +852,7 @@ export function Painel({
             Continuar em qual automação
           </span>
           {fluxos.length === 0 ? (
-            <span className="block rounded-lg border border-dashed border-white/[0.15] px-3 py-3 text-[11.5px] leading-5 text-dim">
+            <span className="block rounded-lg border border-dashed border-strong px-3 py-3 text-[11.5px] leading-5 text-dim">
               Esta conta ainda não tem automação para escolher. Crie outra em Automações — sem um
               destino, este bloco não tem para onde mandar a conversa.
             </span>
@@ -1080,7 +1080,7 @@ export function Painel({
             a pessoa antes de o bot dizer qualquer coisa — que é exatamente o
             que separa "Olá, qual é o seu nome?" de "Oi, Ana!".
           */}
-          <p className="rounded-[10px] border border-white/[0.08] bg-white/[0.02] px-3 py-2.5 text-[11.5px] leading-5 text-dim">
+          <p className="rounded-[10px] border border-line bg-panel px-3 py-2.5 text-[11.5px] leading-5 text-dim">
             Este bloco pode ser o <strong className="text-soft">primeiro do fluxo</strong>: a
             conversa já sabe <code className="font-mono text-[#8de2fa]">{'{{telefone}}'}</code> e{' '}
             <code className="font-mono text-[#8de2fa]">{'{{nome}}'}</code> antes de perguntar
@@ -1262,8 +1262,8 @@ function ValoresConhecidos({
             title={igual ? 'é o valor deste ramo' : `usar “${valor}”`}
             className={`max-w-full truncate rounded-lg border px-2 py-0.5 text-[11px] transition ${
               igual
-                ? 'border-accent/40 bg-accent/[0.12] text-accent'
-                : 'border-white/10 text-muted hover:border-accent/40 hover:text-accent'
+                ? 'border-primary/40 bg-primary/[0.12] text-primary'
+                : 'border-white/10 text-muted hover:border-primary/40 hover:text-primary'
             }`}
           >
             {valor}
@@ -1333,7 +1333,7 @@ function MensagensDoHandoff({
         <button
           type="button"
           onClick={() => aoMudar([...mensagens, ''])}
-          className="w-full rounded-lg border border-dashed border-white/12 px-3 py-2 text-[11.5px] text-muted transition hover:border-accent/40 hover:text-accent"
+          className="w-full rounded-lg border border-dashed border-white/12 px-3 py-2 text-[11.5px] text-muted transition hover:border-primary/40 hover:text-primary"
         >
           + outra mensagem antes de transferir
         </button>
@@ -1556,7 +1556,7 @@ function Opcoes({
         onClick={() =>
           aoMudar([...opcoes, { id: crypto.randomUUID().slice(0, 8), rotulo: 'Nova opção' }])
         }
-        className="mt-2 w-full rounded-lg border border-dashed border-white/[0.12] py-2 text-xs font-semibold text-muted transition hover:border-accent/40 hover:text-accent disabled:opacity-40"
+        className="mt-2 w-full rounded-lg border border-dashed border-strong py-2 text-xs font-semibold text-muted transition hover:border-primary/40 hover:text-primary disabled:opacity-40"
       >
         + adicionar opção
       </button>
@@ -1738,7 +1738,7 @@ function Cabecalhos({
 
       <button
         onClick={() => aoMudar([...cabecalhos, { chave: '', valor: '' }])}
-        className="mt-2 w-full rounded-lg border border-dashed border-white/[0.12] py-2 text-xs font-semibold text-muted transition hover:border-accent/40 hover:text-accent"
+        className="mt-2 w-full rounded-lg border border-dashed border-strong py-2 text-xs font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
       >
         + adicionar cabeçalho
       </button>
@@ -1999,7 +1999,7 @@ function Mapeamentos({
 
       <button
         onClick={() => aoMudar([...mapear, { variavel: '', caminho: '' }])}
-        className="mt-2 w-full rounded-lg border border-dashed border-white/[0.12] py-2 text-xs font-semibold text-muted transition hover:border-accent/40 hover:text-accent"
+        className="mt-2 w-full rounded-lg border border-dashed border-strong py-2 text-xs font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
       >
         + guardar um campo
       </button>
@@ -2097,13 +2097,13 @@ function ConsultasDaIa({
           {FERRAMENTAS.filter((f) => f.escreve === grupo.escreve).map((f) => (
             <label
               key={f.nome}
-              className="mb-1 flex items-center gap-2.5 rounded-[7px] px-1.5 py-1 last:mb-0 hover:bg-white/[0.03]"
+              className="mb-1 flex items-center gap-2.5 rounded-[7px] px-1.5 py-1 last:mb-0 hover:bg-surface"
             >
               <input
                 type="checkbox"
                 checked={marcadas.has(f.nome)}
                 onChange={(evento) => alternar(f.nome, evento.currentTarget.checked)}
-                className="size-4 shrink-0 accent-[var(--accent)]"
+                className="size-4 shrink-0 accent-[var(--primary)]"
               />
               <span className="text-[12.5px] leading-4">{f.rotulo}</span>
             </label>

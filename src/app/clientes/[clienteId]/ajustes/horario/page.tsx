@@ -30,7 +30,7 @@ export default async function Pagina({
         <nav className="mb-3 text-[12.5px] text-dim">
           <Link
             href={`/clientes/${cliente.id}/ajustes`}
-            className="text-muted underline underline-offset-2 transition hover:text-accent"
+            className="text-muted underline underline-offset-2 transition hover:text-primary"
           >
             Configurações
           </Link>

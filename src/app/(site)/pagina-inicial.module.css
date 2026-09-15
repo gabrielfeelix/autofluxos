@@ -13,6 +13,33 @@
  */
 
 .pagina {
+  /*
+   * **A landing continua escura, e agora ela diz isso em vez de herdar.**
+   *
+   * Os tokens de `globals.css` viraram claros: o painel é branco, fundo sólido
+   * e azul de marca. Esta página não acompanhou de propósito — ela é peça de
+   * venda, com partículas, brilho e cursor próprio, e nada disso existe sem
+   * fundo escuro. Herdar o claro não a deixaria clara, deixaria ilegível.
+   *
+   * Os valores são exatamente os que o painel usava antes da virada. Ficam
+   * aqui, no escopo da página, porque é aqui que alguém que mexer no visual
+   * dela vai procurar — e porque assim a landing deixa de quebrar toda vez que
+   * o produto decide sua própria cor.
+   */
+  color-scheme: dark;
+  --accent: #56d0f5;
+  --canvas: #080b10;
+  --canvas-deep: #070a0e;
+  --panel: #0e131c;
+  --ink: #e9eef5;
+  --soft: #b9c2d0;
+  --muted: #8a94a6;
+  --dim: #7d8799;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-soft: rgba(255, 255, 255, 0.055);
+  --surface: rgba(255, 255, 255, 0.028);
+  --surface-hover: rgba(255, 255, 255, 0.05);
+
   --largura: 1200px;
   --raio: 20px;
   /* Uma curva só para tudo. Ela veio dos sites de referência (Framer usa

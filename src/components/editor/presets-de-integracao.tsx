@@ -98,7 +98,7 @@ export function PresetsDeIntegracao({
   }
 
   return (
-    <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.02] p-3">
+    <div className="rounded-[10px] border border-line bg-panel p-3">
       <button
         type="button"
         onClick={() => setAberto((estava) => !estava)}
@@ -198,7 +198,7 @@ export function PresetsDeIntegracao({
                 role="radio"
                 aria-checked={estaEmUso}
                 className={`group flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left transition ${
-                  estaEmUso ? 'bg-white/[0.045]' : 'hover:bg-white/[0.025]'
+                  estaEmUso ? 'bg-surface' : 'hover:bg-surface'
                 }`}
               >
                 {/*
@@ -214,11 +214,11 @@ export function PresetsDeIntegracao({
                   aria-hidden
                   className={`mt-[3px] flex size-[13px] shrink-0 items-center justify-center rounded-full border transition ${
                     estaEmUso
-                      ? 'border-accent/70'
-                      : 'border-white/[0.18] group-hover:border-white/30'
+                      ? 'border-primary/70'
+                      : 'border-strong group-hover:border-white/30'
                   }`}
                 >
-                  {estaEmUso && <span className="size-[6px] rounded-full bg-accent" />}
+                  {estaEmUso && <span className="size-[6px] rounded-full bg-primary" />}
                 </span>
 
                 <span className="min-w-0 flex-1">

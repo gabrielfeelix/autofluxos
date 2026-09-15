@@ -30,7 +30,7 @@ export function CartaoDaPagina({
     <div className="app-card flex flex-wrap items-center gap-3 px-5 py-3.5">
       <span
         aria-hidden
-        className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.05] text-[15px]"
+        className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-[15px]"
       >
         📄
       </span>
@@ -41,12 +41,12 @@ export function CartaoDaPagina({
       </div>
 
       {temToken ? (
-        <span className="rounded-full bg-accent/[0.12] px-2.5 py-1 text-[10.5px] font-bold text-accent">
+        <span className="rounded-full bg-primary/[0.12] px-2.5 py-1 text-[10.5px] font-bold text-primary">
           recebendo
         </span>
       ) : (
         <span
-          className="rounded-full bg-white/[0.06] px-2.5 py-1 text-[10.5px] font-bold text-dim"
+          className="rounded-full bg-surface-strong px-2.5 py-1 text-[10.5px] font-bold text-dim"
           title="Ligue a conta de anúncios acima para os leads desta página entrarem"
         >
           falta o acesso
@@ -68,7 +68,7 @@ export function CartaoDaPagina({
               setResultado(r.ok ? (r.resumo ?? 'pronto') : (r.erro ?? 'não deu'))
             })
           }
-          className="rounded-lg border border-white/[0.08] px-3 py-1.5 text-[11.5px] text-soft transition hover:border-white/20 disabled:opacity-50"
+          className="rounded-lg border border-line px-3 py-1.5 text-[11.5px] text-soft transition hover:border-white/20 disabled:opacity-50"
           title="Traz os leads que já existiam antes de ligar — a Meta guarda 90 dias"
         >
           {importando ? 'Importando…' : 'Importar leads antigos'}
@@ -79,7 +79,7 @@ export function CartaoDaPagina({
         type="button"
         disabled={saindo}
         onClick={() => comecar(() => void acaoDesligarPagina(clienteId, pageId))}
-        className="rounded-lg border border-white/[0.08] px-3 py-1.5 text-[11.5px] text-soft transition hover:border-white/20 disabled:opacity-50"
+        className="rounded-lg border border-line px-3 py-1.5 text-[11.5px] text-soft transition hover:border-white/20 disabled:opacity-50"
       >
         {saindo ? 'Desligando…' : 'Desligar'}
       </button>

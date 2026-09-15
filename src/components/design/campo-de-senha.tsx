@@ -93,7 +93,7 @@ export function CampoDeSenha({
           // → Entrar. Quem quer ver a senha usa o mouse ou chega pelo leitor de
           // tela, que alcança o botão sem depender do Tab.
           tabIndex={-1}
-          className="absolute top-1/2 right-[10px] -translate-y-1/2 rounded-[6px] px-1.5 py-1 text-[10.5px] font-semibold tracking-[0.05em] text-dim uppercase transition hover:text-accent focus-visible:text-accent"
+          className="absolute top-1/2 right-[10px] -translate-y-1/2 rounded-[6px] px-1.5 py-1 text-[10.5px] font-semibold tracking-[0.05em] text-dim uppercase transition hover:text-primary focus-visible:text-primary"
         >
           {visivel ? 'Ocultar' : 'Mostrar'}
         </button>

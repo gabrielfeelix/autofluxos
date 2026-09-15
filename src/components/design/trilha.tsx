@@ -38,7 +38,7 @@ export function Trilha({
             {pedaco.href && !ultimo ? (
               <Link
                 href={pedaco.href}
-                className="text-[11.5px] text-dim transition hover:text-accent"
+                className="text-[11.5px] text-dim transition hover:text-primary"
               >
                 {pedaco.rotulo}
               </Link>

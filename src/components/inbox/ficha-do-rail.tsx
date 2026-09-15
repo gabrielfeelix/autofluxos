@@ -153,10 +153,10 @@ function Aparencia({
         pendente ? 'opacity-60' : ''
       } ${
         viva
-          ? 'border-accent/40 bg-accent/[0.14] text-white'
+          ? 'border-primary/40 bg-primary/[0.14] text-ink'
           : destaque
             ? 'border-amber-400/30 bg-amber-400/[0.08] text-amber-200 hover:bg-amber-400/[0.14]'
-            : 'border-white/[0.08] text-muted hover:border-white/[0.16] hover:text-white'
+            : 'border-line text-muted hover:border-strong hover:text-ink'
       }`}
     >
       {/* Ausente aparece como ponto apagado: atribuir para quem está de férias é

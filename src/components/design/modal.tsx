@@ -59,7 +59,7 @@ export function Modal({
         if (evento.target === dialogo.current) aoFechar()
       }}
       style={{ width: `min(${largura}px, 92vw)` }}
-      className="app-dialog m-auto rounded-[18px] border border-white/10 bg-panel p-[26px] text-ink shadow-[0_40px_100px_rgba(0,0,0,0.6)]"
+      className="app-dialog m-auto rounded-[18px] border border-white/10 bg-panel p-[26px] text-ink shadow-[0_40px_100px_rgba(19,25,34,0.132)]"
     >
       <h2 className="text-[17px] font-bold">{titulo}</h2>
       {descricao && <p className="mt-1 text-[12.5px] leading-6 text-muted">{descricao}</p>}

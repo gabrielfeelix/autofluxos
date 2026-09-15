@@ -119,9 +119,9 @@ const CAMPO: CSSProperties = {
  */
 const REALCE_CONHECIDA: CSSProperties = {
   borderRadius: 4,
-  background: 'color-mix(in oklab, var(--accent) 20%, transparent)',
-  color: 'var(--accent)',
-  boxShadow: '0 0 0 2px color-mix(in oklab, var(--accent) 20%, transparent)',
+  background: 'color-mix(in oklab, var(--primary) 20%, transparent)',
+  color: 'var(--primary)',
+  boxShadow: '0 0 0 2px color-mix(in oklab, var(--primary) 20%, transparent)',
 }
 
 const REALCE_DESCONHECIDA: CSSProperties = {

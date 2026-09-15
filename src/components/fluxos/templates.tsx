@@ -97,8 +97,8 @@ function Busca({
               aria-pressed={ativa}
               className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
                 ativa
-                  ? 'border-accent/50 bg-accent/[0.13] text-accent'
-                  : 'border-white/[0.09] text-muted hover:border-white/25 hover:text-soft'
+                  ? 'border-primary/50 bg-primary/[0.13] text-primary'
+                  : 'border-line text-muted hover:border-white/25 hover:text-soft'
               }`}
             >
               {etiqueta}
@@ -130,7 +130,7 @@ function CartaoDoTemplate({
     <button
       type="button"
       onClick={() => aoEscolher(modelo)}
-      className="group flex h-full flex-col items-start rounded-[13px] border border-white/[0.08] bg-white/[0.02] p-3 text-left transition hover:border-accent/45 hover:bg-accent/[0.05]"
+      className="group flex h-full flex-col items-start rounded-[13px] border border-line bg-panel p-3 text-left transition hover:border-primary/45 hover:bg-primary/[0.05]"
     >
       <span className="block w-full overflow-hidden rounded-[10px] opacity-90 transition group-hover:opacity-100">
         <DesenhoDoTemplate id={modelo.id} />
@@ -141,7 +141,7 @@ function CartaoDoTemplate({
         {modelo.etiquetas.map((etiqueta) => (
           <span
             key={etiqueta}
-            className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] text-muted"
+            className="rounded-full bg-surface-strong px-2 py-0.5 text-[10px] text-muted"
           >
             {etiqueta}
           </span>
@@ -204,7 +204,7 @@ export function GaleriaDeTemplates({
               setTermo('')
               setMarcadas([])
             }}
-            className="font-semibold text-accent underline-offset-2 hover:underline"
+            className="font-semibold text-primary underline-offset-2 hover:underline"
           >
             Limpar a busca
           </button>
@@ -247,7 +247,7 @@ function CamposDoFluxo({
       <input type="hidden" name="modelo" value={modelo?.id ?? ''} />
 
       {modelo && (
-        <div className="flex items-start justify-between gap-3 rounded-[12px] border border-accent/30 bg-accent/[0.07] px-3 py-2.5">
+        <div className="flex items-start justify-between gap-3 rounded-[12px] border border-primary/30 bg-primary/[0.07] px-3 py-2.5">
           <span className="min-w-0">
             <span className="block text-[12.5px] font-bold text-soft">{modelo.nome}</span>
             <span className="mt-0.5 block text-[11px] leading-[1.45] text-dim">{modelo.resumo}</span>
@@ -256,7 +256,7 @@ function CamposDoFluxo({
             <button
               type="button"
               onClick={aoTrocarTemplate}
-              className="shrink-0 text-[11px] font-semibold text-accent hover:underline"
+              className="shrink-0 text-[11px] font-semibold text-primary hover:underline"
             >
               trocar
             </button>
@@ -296,13 +296,13 @@ function CamposDoFluxo({
         <button
           type="button"
           onClick={aoCancelar}
-          className="rounded-[10px] border border-white/[0.09] px-3.5 py-2 text-[12.5px] font-semibold text-muted transition hover:border-white/25 hover:text-soft"
+          className="rounded-[10px] border border-line px-3.5 py-2 text-[12.5px] font-semibold text-muted transition hover:border-white/25 hover:text-soft"
         >
           Cancelar
         </button>
         <button
           type="submit"
-          className="rounded-[10px] bg-accent px-4 py-2 text-[12.5px] font-bold text-[#04202a] transition hover:brightness-110"
+          className="rounded-[10px] bg-primary px-4 py-2 text-[12.5px] font-bold text-[#04202a] transition hover:brightness-110"
         >
           Criar e abrir
         </button>
@@ -340,7 +340,7 @@ function EscolhaDeComeco({
     <button
       type="button"
       onClick={aoClicar}
-      className="group flex flex-col rounded-[14px] border border-white/[0.09] bg-white/[0.015] p-3 text-left transition hover:border-accent/45 hover:bg-accent/[0.045] focus-visible:border-accent/60 focus-visible:outline-none"
+      className="group flex flex-col rounded-[14px] border border-line bg-panel p-3 text-left transition hover:border-primary/45 hover:bg-primary/[0.045] focus-visible:border-primary/60 focus-visible:outline-none"
     >
       <span className="block overflow-hidden rounded-[10px] opacity-90 transition group-hover:opacity-100">
         {miniatura}
@@ -354,7 +354,7 @@ function EscolhaDeComeco({
         {children}
       </span>
 
-      <span className="mt-2.5 block border-t border-white/[0.06] pt-2 text-[10.5px] tracking-[0.02em] text-muted">
+      <span className="mt-2.5 block border-t border-line pt-2 text-[10.5px] tracking-[0.02em] text-muted">
         {rodape}
       </span>
     </button>
@@ -401,7 +401,7 @@ export function NovaAutomacao({
       <button
         type="button"
         onClick={abrir}
-        className="rounded-[10px] bg-accent px-3.5 py-2 text-[12.5px] font-bold text-[#04202a] transition hover:brightness-110"
+        className="rounded-[10px] bg-primary px-3.5 py-2 text-[12.5px] font-bold text-[#04202a] transition hover:brightness-110"
       >
         + Criar automação
       </button>

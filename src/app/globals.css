@@ -14,32 +14,107 @@
  * mais apagado da escala — a hierarquia visual sobrevive, a leitura deixa de
  * depender de vista boa e monitor bom.
  */
+/*
+ * **O tema claro é o tema.** Não existe um escuro esperando um interruptor, e
+ * isso é decisão, não pendência: manter dois custa o dobro de revisão de
+ * contraste a cada tela nova, e o escuro era o que dava ao painel a cara de
+ * template genérico.
+ *
+ * O que fica montado para o dia em que existir é a camada: **nenhuma cor é
+ * escrita na mão fora deste arquivo**. Quem quiser o escuro depois redefine os
+ * mesmos nomes dentro de um `@media (prefers-color-scheme: dark)` e pronto —
+ * o trabalho caro é este aqui, e ele está feito uma vez só.
+ *
+ * `@theme inline` e `:root` dizem a mesma coisa duas vezes de propósito:
+ * `:root` serve o CSS escrito à mão (`var(--line)`), e só o `@theme` gera os
+ * utilitários do Tailwind (`border-line`, `bg-panel`, `text-primary`). O
+ * `inline` é o que deixa o `@theme` apontar para o `:root` em vez de repetir o
+ * valor — uma cor, um lugar.
+ */
 @theme inline {
   --font-sans: var(--font-outfit);
   --font-mono: var(--font-jetbrains-mono);
-  --color-accent: #56d0f5;
-  --color-canvas: #080b10;
-  --color-panel: #0e131c;
-  --color-ink: #e9eef5;
-  --color-soft: #b9c2d0;
-  --color-muted: #8a94a6;
-  --color-dim: #7d8799;
+  --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
+  --color-primary-weak: var(--primary-weak);
+  --color-primary-ink: var(--primary-ink);
+  /*
+   * `accent` continua existindo porque 247 lugares do painel ainda o chamam, e
+   * trocar o nome e a cor no mesmo passo deixaria a tela quebrada no meio do
+   * caminho. Ele aponta para o azul: quem escrever `text-accent` hoje já pinta
+   * certo, e a troca de nome vira renomeação, não redesenho.
+   */
+  --color-accent: var(--primary);
+  --color-canvas: var(--canvas);
+  --color-panel: var(--panel);
+  --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-strong: var(--line-strong);
+
+  /*
+   * As sombras também são token. Elas vinham escritas na mão em 20 lugares,
+   * quase todas com preto a 45% e raio de 40px — medida de tema escuro, onde
+   * a sombra precisa ser forte para existir. Sobre branco a mesma sombra não
+   * eleva nada, só suja a volta do cartão.
+   */
+  --shadow-pop: 0 8px 20px rgba(19, 25, 34, 0.07);
+  --shadow-menu: 0 10px 28px rgba(19, 25, 34, 0.1), 0 2px 6px rgba(19, 25, 34, 0.06);
+  --shadow-modal: 0 24px 60px rgba(19, 25, 34, 0.14), 0 4px 12px rgba(19, 25, 34, 0.08);
+  --color-ink: var(--ink);
+  --color-soft: var(--soft);
+  --color-muted: var(--muted);
+  --color-dim: var(--dim);
 }
 
 :root {
-  color-scheme: dark;
-  --accent: #56d0f5;
-  --canvas: #080b10;
-  --canvas-deep: #070a0e;
-  --panel: #0e131c;
-  --ink: #e9eef5;
-  --soft: #b9c2d0;
-  --muted: #8a94a6;
-  --dim: #7d8799;
-  --line: rgba(255, 255, 255, 0.08);
-  --line-soft: rgba(255, 255, 255, 0.055);
-  --surface: rgba(255, 255, 255, 0.028);
-  --surface-hover: rgba(255, 255, 255, 0.05);
+  color-scheme: light;
+
+  /*
+   * **O azul é sólido, e é botão.** O ciano anterior (`#56d0f5`) dava 1,9:1
+   * contra o branco: como cor de texto ou de botão claro ele reprovava em
+   * qualquer critério da WCAG, e só se sustentava por estar sempre sobre
+   * fundo quase preto. Este dá 7,0:1 — passa em AAA para texto grande e em AA
+   * para o resto, inclusive como link no meio de um parágrafo.
+   */
+  --primary: #2563eb;
+  /* O hover **escurece**. No claro, clarear o botão é apagá-lo. */
+  --primary-strong: #1d4ed8;
+  /* Fundo de item selecionado e de faixa de destaque. */
+  --primary-weak: #eff4ff;
+  --primary-ink: #ffffff;
+
+  --canvas: #f6f7f9;
+  /* O fundo do editor: um degrau abaixo da tela, para a grade ter onde ficar. */
+  --canvas-deep: #eef0f4;
+  --panel: #ffffff;
+  --surface: #f2f4f7;
+  --surface-strong: #e9edf2;
+  --surface-hover: #e9edf2;
+
+  /*
+   * Bordas **opacas**, e não branco transparente.
+   *
+   * O painel inteiro desenhava linha com `rgba(255,255,255,0.06)` — o que no
+   * claro significa branco sobre branco, ou seja, linha nenhuma. Cinza sólido
+   * também é o que evita a soma acidental: duas bordas transparentes
+   * encostadas escureciam uma faixa que ninguém pediu.
+   */
+  --line: #e5e8ec;
+  --line-soft: #eef0f3;
+  /* A borda que precisa ser vista: campo em foco, item escolhido, moldura. */
+  --line-strong: #d3d9e1;
+
+  --ink: #131922;
+  --soft: #48525f;
+  --muted: #6b7684;
+  /*
+   * `--dim` é o degrau mais apagado da escala e ainda assim legível: 4,6:1
+   * contra o branco. A regra que valia no escuro vale aqui — hierarquia
+   * visual não pode custar a leitura.
+   */
+  --dim: #8b94a1;
 }
 
 * {
@@ -105,19 +180,19 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-body::before {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background:
-    radial-gradient(1000px 520px at 12% -12%, rgba(86, 208, 245, 0.075), transparent 60%),
-    radial-gradient(900px 540px at 95% 112%, rgba(124, 108, 255, 0.07), transparent 60%);
-  content: '';
-  pointer-events: none;
-}
+/*
+ * **Os dois degradês do fundo foram embora, e é a mudança mais visível deste
+ * arquivo.** Eram duas manchas — ciano no canto de cima, roxo no de baixo —
+ * atrás de toda tela do produto. Nenhuma informação dependia delas, e eram o
+ * que fazia o painel parecer um template: degradê difuso em fundo de
+ * aplicativo é o traço mais imitado que existe.
+ *
+ * O que o fundo faz agora é ficar quieto. Cor sólida, e o contraste todo vem
+ * dos cartões brancos sobre ela.
+ */
 
 ::selection {
-  background: rgba(86, 208, 245, 0.28);
+  background: color-mix(in oklab, var(--primary) 20%, transparent);
 }
 
 ::-webkit-scrollbar {
@@ -126,9 +201,17 @@ body::before {
 }
 
 ::-webkit-scrollbar-thumb {
-  border: 3px solid #0a0d12;
+  /*
+   * A borda é da cor do fundo, e não transparente: ela é o que dá folga ao
+   * polegar sem precisar de um trilho desenhado.
+   */
+  border: 3px solid var(--canvas);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.09);
+  background: #c8cfd8;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #aeb7c2;
 }
 
 ::-webkit-scrollbar-track {
@@ -149,22 +232,26 @@ a {
 
 input::placeholder,
 textarea::placeholder {
-  color: #525c6e;
+  color: #a3abb7;
 }
 
 .app-field {
   width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--line);
   border-radius: 10px;
   outline: none;
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--panel);
   color: var(--ink);
   transition: border-color 150ms ease, background 150ms ease;
 }
 
+.app-field:hover:not(:disabled) {
+  border-color: #d3d9e1;
+}
+
 .app-field:focus {
-  border-color: color-mix(in oklab, var(--accent) 60%, transparent);
-  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--primary);
+  background: var(--panel);
 }
 
 /*
@@ -175,8 +262,8 @@ textarea::placeholder {
  * lugar.
  */
 .app-field:focus-visible {
-  border-color: color-mix(in oklab, var(--accent) 70%, transparent);
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 13%, transparent);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 16%, transparent);
 }
 
 .app-field:disabled {
@@ -195,10 +282,10 @@ textarea::placeholder {
   align-items: center;
   gap: 10px;
   min-height: 42px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--line);
   border-radius: 10px;
   outline: none;
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--panel);
   color: var(--ink);
   padding: 9px 12px;
   font-size: inherit;
@@ -207,13 +294,13 @@ textarea::placeholder {
 }
 
 .app-dropdown-trigger:hover:not(:disabled) {
-  border-color: rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.065);
+  border-color: #d3d9e1;
+  background: var(--surface);
 }
 
 .app-dropdown-trigger:focus-visible {
-  border-color: color-mix(in oklab, var(--accent) 70%, transparent);
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 13%, transparent);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 16%, transparent);
 }
 
 .app-dropdown-trigger:disabled {
@@ -245,10 +332,14 @@ textarea::placeholder {
   max-height: 235px;
   overflow-y: auto;
   padding: 5px;
-  border: 1px solid rgba(86, 208, 245, 0.25);
+  border: 1px solid var(--line);
   border-radius: 12px;
-  background: #111924;
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.48), 0 2px 8px rgba(0, 0, 0, 0.28);
+  background: var(--panel);
+  /*
+   * Sombra de tema claro é curta e pouco opaca. A do escuro (48% de preto,
+   * 45px de raio) sobre branco não lê como elevação, lê como sujeira.
+   */
+  box-shadow: 0 10px 28px rgba(19, 25, 34, 0.1), 0 2px 6px rgba(19, 25, 34, 0.06);
   animation: dropdown-in 130ms ease both;
 }
 
@@ -272,13 +363,13 @@ textarea::placeholder {
 .app-dropdown-option:hover:not(:disabled),
 .app-dropdown-option:focus-visible {
   outline: none;
-  background: rgba(86, 208, 245, 0.1);
-  color: #d9f7ff;
+  background: var(--surface);
+  color: var(--ink);
 }
 
 .app-dropdown-option-active {
-  background: rgba(86, 208, 245, 0.14);
-  color: #d9f7ff;
+  background: var(--primary-weak);
+  color: var(--primary-strong);
 }
 
 .app-dropdown-option:disabled {
@@ -289,7 +380,7 @@ textarea::placeholder {
 .app-card {
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: var(--surface);
+  background: var(--panel);
 }
 
 .app-card-interactive {
@@ -297,23 +388,34 @@ textarea::placeholder {
 }
 
 .app-card-interactive:hover {
-  border-color: color-mix(in oklab, var(--accent) 40%, transparent);
-  background: rgba(255, 255, 255, 0.034);
+  border-color: color-mix(in oklab, var(--primary) 45%, transparent);
+  background: var(--panel);
+  box-shadow: 0 8px 20px rgba(19, 25, 34, 0.07);
   transform: translateY(-2px);
 }
 
 .app-primary-button {
   border: 0;
   border-radius: 10px;
-  background: var(--accent);
-  color: #06222e;
-  font-weight: 800;
+  background: var(--primary);
+  color: var(--primary-ink);
+  /*
+   * 800 era o peso que o ciano exigia para se segurar sobre o escuro. O azul
+   * sólido com texto branco já tem contraste de sobra, e 700 é o peso em que
+   * o Outfit ainda desenha a letra em vez de fechar o contorno.
+   */
+  font-weight: 700;
   cursor: pointer;
-  transition: filter 150ms ease, opacity 150ms ease;
+  transition: background 150ms ease, opacity 150ms ease;
 }
 
 .app-primary-button:hover:not(:disabled) {
-  filter: brightness(1.1);
+  background: var(--primary-strong);
+}
+
+.app-primary-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 30%, transparent);
 }
 
 .app-primary-button:disabled {
@@ -322,9 +424,9 @@ textarea::placeholder {
 }
 
 .app-secondary-button {
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--line);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--panel);
   color: var(--soft);
   font-weight: 600;
   cursor: pointer;
@@ -332,9 +434,15 @@ textarea::placeholder {
 }
 
 .app-secondary-button:hover:not(:disabled) {
-  border-color: color-mix(in oklab, var(--accent) 45%, transparent);
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--accent);
+  border-color: color-mix(in oklab, var(--primary) 45%, transparent);
+  background: var(--primary-weak);
+  color: var(--primary-strong);
+}
+
+.app-secondary-button:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 16%, transparent);
 }
 
 .app-page-enter {
@@ -342,8 +450,8 @@ textarea::placeholder {
 }
 
 .app-dialog::backdrop {
-  background: rgba(4, 6, 10, 0.72);
-  backdrop-filter: blur(6px);
+  background: rgba(19, 25, 34, 0.38);
+  backdrop-filter: blur(4px);
 }
 
 .app-dialog[open] {
@@ -459,10 +567,10 @@ textarea::placeholder {
   top: 8px;
   right: 10px;
   padding: 2px 7px;
-  border: 1px solid color-mix(in oklab, var(--accent) 35%, transparent);
+  border: 1px solid color-mix(in oklab, var(--primary) 35%, transparent);
   border-radius: 999px;
-  background: color-mix(in oklab, var(--accent) 14%, transparent);
-  color: var(--accent);
+  background: var(--primary-weak);
+  color: var(--primary-strong);
   content: 'INÍCIO';
   font-size: 9px;
   font-weight: 800;
@@ -475,11 +583,11 @@ textarea::placeholder {
 }
 
 .react-flow__background pattern circle {
-  fill: rgba(255, 255, 255, 0.08);
+  fill: rgba(19, 25, 34, 0.12);
 }
 
 .react-flow__edge-path {
-  stroke: #4f5b6f;
+  stroke: #b6bec9;
   stroke-width: 1.5;
 }
 
@@ -491,21 +599,21 @@ textarea::placeholder {
 .react-flow__controls,
 .react-flow__minimap {
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--line);
   border-radius: 11px;
-  background: rgba(13, 17, 24, 0.88);
-  box-shadow: none;
+  background: var(--panel);
+  box-shadow: 0 6px 18px rgba(19, 25, 34, 0.08);
 }
 
 .react-flow__controls-button {
-  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+  border-bottom-color: var(--line) !important;
   background: transparent !important;
   color: var(--muted) !important;
 }
 
 .react-flow__controls-button:hover {
-  background: rgba(255, 255, 255, 0.07) !important;
-  color: white !important;
+  background: var(--surface) !important;
+  color: var(--ink) !important;
 }
 
 .react-flow__controls-button svg {
@@ -513,7 +621,7 @@ textarea::placeholder {
 }
 
 .react-flow__attribution {
-  background: rgba(8, 11, 16, 0.7) !important;
+  background: rgba(255, 255, 255, 0.72) !important;
   color: var(--dim) !important;
 }
 

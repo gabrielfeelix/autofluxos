@@ -110,7 +110,7 @@ export default async function Pagina({ params }: { params: Promise<{ token: stri
           </Selo>
         </ul>
 
-        <div className="mt-6 border-t border-white/[0.06] pt-5">
+        <div className="mt-6 border-t border-line pt-5">
           {destinos.length > 0 ? (
             <ImportarFluxo token={token} destinos={destinos} />
           ) : (
@@ -118,7 +118,7 @@ export default async function Pagina({ params }: { params: Promise<{ token: stri
               Para trazer este fluxo para uma conta,{' '}
               <Link
                 href="/entrar"
-                className="text-muted underline underline-offset-2 transition hover:text-accent"
+                className="text-muted underline underline-offset-2 transition hover:text-primary"
               >
                 entre no AutoFluxos
               </Link>{' '}
@@ -129,7 +129,7 @@ export default async function Pagina({ params }: { params: Promise<{ token: stri
       </header>
 
       <section className="app-card mt-[18px] overflow-hidden">
-        <header className="border-b border-white/[0.06] px-5 py-4 md:px-6">
+        <header className="border-b border-line px-5 py-4 md:px-6">
           <h2 className="text-[14.5px] font-bold">O atendimento, na ordem</h2>
           <p className="mt-0.5 text-[12px] leading-5 text-dim">
             Como a conversa acontece, do primeiro bloco em diante.
@@ -140,7 +140,7 @@ export default async function Pagina({ params }: { params: Promise<{ token: stri
           {roteiro.map((linha, indice) => (
             <li
               key={linha.id}
-              className="flex gap-3.5 border-b border-white/[0.045] px-5 py-4 last:border-0 md:px-6"
+              className="flex gap-3.5 border-b border-line px-5 py-4 last:border-0 md:px-6"
             >
               <span className="mt-0.5 w-5 shrink-0 text-right font-mono text-[11px] text-dim">
                 {indice + 1}
@@ -167,7 +167,7 @@ export default async function Pagina({ params }: { params: Promise<{ token: stri
                     {linha.saidas.map((saida, i) => (
                       <span
                         key={`${linha.id}-${i}`}
-                        className="rounded-md border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 text-[10.5px] text-dim"
+                        className="rounded-md border border-line bg-surface px-2 py-0.5 text-[10.5px] text-dim"
                       >
                         {saida}
                       </span>
@@ -194,7 +194,7 @@ function Selo({ children, destaque = false }: { children: React.ReactNode; desta
       className={`rounded-full border px-2.5 py-1 text-[11px] ${
         destaque
           ? 'border-emerald-400/25 bg-emerald-400/[0.08] text-emerald-300'
-          : 'border-white/[0.09] bg-white/[0.03] text-muted'
+          : 'border-line bg-surface text-muted'
       }`}
     >
       {children}

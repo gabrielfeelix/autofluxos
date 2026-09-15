@@ -94,7 +94,7 @@ function UmFunil({ clienteId, funil }: { clienteId: string; funil: FunilDoContat
   }
 
   return (
-    <div className="rounded-[10px] border border-white/[0.07] bg-white/[0.02] px-3 py-2.5">
+    <div className="rounded-[10px] border border-line bg-panel px-3 py-2.5">
       <div className="flex items-baseline justify-between gap-2">
         <span className="min-w-0 truncate text-[10px] text-dim">{funil.quadro}</span>
         {erro && <span className="shrink-0 text-[10px] text-rose-300">{erro}</span>}
@@ -107,7 +107,7 @@ function UmFunil({ clienteId, funil }: { clienteId: string; funil: FunilDoContat
           onClick={() => setMenuAberto((aberto) => !aberto)}
           aria-expanded={menuAberto}
           title="Mover para outra etapa"
-          className="flex w-full items-center justify-between gap-2 rounded-[8px] border border-white/[0.09] bg-white/[0.03] px-2.5 py-1.5 text-left text-[11.5px] font-semibold text-soft transition hover:border-accent/40 hover:text-accent disabled:opacity-50"
+          className="flex w-full items-center justify-between gap-2 rounded-[8px] border border-line bg-surface px-2.5 py-1.5 text-left text-[11.5px] font-semibold text-soft transition hover:border-primary/40 hover:text-primary disabled:opacity-50"
         >
           <span className="min-w-0 truncate">{etapaAtual}</span>
           <span aria-hidden className="shrink-0 text-[9px] text-muted">
@@ -128,7 +128,7 @@ function UmFunil({ clienteId, funil }: { clienteId: string; funil: FunilDoContat
               onClick={() => setMenuAberto(false)}
               className="fixed inset-0 z-10 cursor-default"
             />
-            <ul className="absolute right-0 left-0 z-20 mt-1 overflow-hidden rounded-[10px] border border-white/[0.1] bg-[#131a24] py-1 shadow-[0_16px_40px_rgba(0,0,0,0.45)]">
+            <ul className="absolute right-0 left-0 z-20 mt-1 overflow-hidden rounded-[10px] border border-line bg-[#131a24] py-1 shadow-[0_16px_40px_rgba(19,25,34,0.099)]">
               {funil.etapas.map((etapa) => {
                 const aqui = etapa.id === etapaId
                 return (
@@ -139,8 +139,8 @@ function UmFunil({ clienteId, funil }: { clienteId: string; funil: FunilDoContat
                       aria-current={aqui ? 'step' : undefined}
                       className={`block w-full truncate px-2.5 py-1.5 text-left text-[11.5px] transition ${
                         aqui
-                          ? 'bg-accent/[0.12] font-semibold text-white'
-                          : 'text-muted hover:bg-white/[0.06] hover:text-white'
+                          ? 'bg-primary/[0.12] font-semibold text-ink'
+                          : 'text-muted hover:bg-surface-strong hover:text-ink'
                       }`}
                     >
                       {etapa.nome}

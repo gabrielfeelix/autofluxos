@@ -30,7 +30,7 @@ export function AnexoNaConversa({ anexo }: { anexo: AnexoDaMensagem }) {
       <video
         src={anexo.url}
         controls
-        className="mb-1.5 max-h-56 w-full rounded-lg border border-white/[0.08] bg-black"
+        className="mb-1.5 max-h-56 w-full rounded-lg border border-line bg-black"
       />
     )
   }
@@ -44,7 +44,7 @@ export function AnexoNaConversa({ anexo }: { anexo: AnexoDaMensagem }) {
       href={anexo.url}
       target="_blank"
       rel="noreferrer"
-      className="mb-1.5 flex items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.04] px-2.5 py-2 transition hover:border-accent/40"
+      className="mb-1.5 flex items-center gap-2 rounded-lg border border-line bg-surface px-2.5 py-2 transition hover:border-primary/40"
     >
       <span aria-hidden className="text-sm">
         📄
@@ -82,10 +82,10 @@ export function CitacaoNaBolha({ cita, nome }: { cita: Citada; nome: string | nu
   const deQuem = cita.direcao === 'saida' ? 'atendimento' : (nome ?? 'cliente')
 
   return (
-    <span className="mb-1.5 flex gap-2 rounded-md border-l-2 border-accent/50 bg-white/[0.045] px-2 py-1.5">
+    <span className="mb-1.5 flex gap-2 rounded-md border-l-2 border-primary/50 bg-surface px-2 py-1.5">
       <span className="min-w-0 flex-1">
         {cita.direcao && (
-          <span className="block text-[10px] font-bold text-accent/90">{deQuem}</span>
+          <span className="block text-[10px] font-bold text-primary/90">{deQuem}</span>
         )}
         <span className="block truncate text-[11px] text-muted">
           {cita.texto?.trim() ? (
@@ -132,16 +132,16 @@ export function LocalNaBolha({ local }: { local: LocalDaMensagem }) {
       href={`https://www.google.com/maps/search/?api=1&query=${local.latitude},${local.longitude}`}
       target="_blank"
       rel="noreferrer"
-      className="mb-1.5 flex items-start gap-2 rounded-lg border border-white/[0.09] bg-white/[0.04] px-2.5 py-2 transition hover:border-accent/40"
+      className="mb-1.5 flex items-start gap-2 rounded-lg border border-line bg-surface px-2.5 py-2 transition hover:border-primary/40"
     >
       <span className="text-[15px] leading-none">📍</span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[11.5px] font-bold text-white">{titulo}</span>
+        <span className="block text-[11.5px] font-bold text-ink">{titulo}</span>
         {local.endereco && (
           <span className="block text-[11px] leading-4 text-muted">{local.endereco}</span>
         )}
         <span className="block font-mono text-[9.5px] text-dim">{coordenadas}</span>
-        <span className="mt-0.5 block text-[10px] font-bold text-accent">Abrir no mapa →</span>
+        <span className="mt-0.5 block text-[10px] font-bold text-primary">Abrir no mapa →</span>
       </span>
     </a>
   )
@@ -164,17 +164,17 @@ export function CartoesNaBolha({ cartoes }: { cartoes: CartaoDeContato[] }) {
       {cartoes.map((cartao, i) => (
         <span
           key={`${cartao.nome}-${i}`}
-          className="flex items-start gap-2 rounded-lg border border-white/[0.09] bg-white/[0.04] px-2.5 py-2"
+          className="flex items-start gap-2 rounded-lg border border-line bg-surface px-2.5 py-2"
         >
           <span className="text-[15px] leading-none">👤</span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[11.5px] font-bold text-white">{cartao.nome}</span>
+            <span className="block text-[11.5px] font-bold text-ink">{cartao.nome}</span>
             {cartao.telefones.length > 0 ? (
               cartao.telefones.map((telefone) => (
                 <a
                   key={telefone}
                   href={`tel:${telefone.replace(/[^+\d]/g, '')}`}
-                  className="block font-mono text-[11px] text-accent hover:underline"
+                  className="block font-mono text-[11px] text-primary hover:underline"
                 >
                   {telefone}
                 </a>
@@ -211,7 +211,7 @@ export function CartoesNaBolha({ cartoes }: { cartoes: CartaoDeContato[] }) {
  */
 export function ArquivoSemCopia() {
   return (
-    <span className="mb-1.5 flex items-center gap-2 rounded-lg border border-dashed border-white/[0.14] px-2.5 py-2">
+    <span className="mb-1.5 flex items-center gap-2 rounded-lg border border-dashed border-strong px-2.5 py-2">
       <span className="text-[13px] leading-none">📎</span>
       <span className="text-[11px] leading-4 text-dim italic">
         arquivo recebido, sem cópia guardada — peça para enviar de novo

@@ -73,7 +73,7 @@ export function DetalheDoErro({
   const corpo = escuro ? 'text-[#8d97a8]' : 'text-muted'
 
   return (
-    <div className="mt-5 rounded-[10px] border border-white/10 bg-white/[0.03] p-3 text-left">
+    <div className="mt-5 rounded-[10px] border border-white/10 bg-surface p-3 text-left">
       <div className="flex items-center justify-between gap-3">
         <span className={`text-[10px] font-bold tracking-wider uppercase ${rotulo}`}>
           Código do erro
@@ -86,7 +86,7 @@ export function DetalheDoErro({
           {copiado ? 'Copiado' : 'Copiar'}
         </button>
       </div>
-      <code className={`mt-1.5 block font-mono text-[12px] break-all ${escuro ? 'text-[#e9eef5]' : 'text-white'}`}>
+      <code className={`mt-1.5 block font-mono text-[12px] break-all ${escuro ? 'text-[#e9eef5]' : 'text-ink'}`}>
         {codigo}
       </code>
       {erro.message && (

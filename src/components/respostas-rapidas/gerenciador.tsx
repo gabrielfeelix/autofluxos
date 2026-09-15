@@ -22,7 +22,7 @@ export function GerenciadorDeRespostasRapidas({
   return (
     <div className="space-y-6">
       <section className="app-card overflow-hidden">
-        <header className="flex items-start justify-between gap-4 border-b border-white/[0.06] px-6 py-4">
+        <header className="flex items-start justify-between gap-4 border-b border-line px-6 py-4">
           <div className="min-w-0">
           <h2 className="text-[14.5px] font-bold">Respostas salvas</h2>
           <p className="mt-0.5 text-[12px] text-dim">
@@ -41,7 +41,7 @@ export function GerenciadorDeRespostasRapidas({
           >
             <label className="block">
               <RotuloCampo>Atalho</RotuloCampo>
-              <span className="flex items-center rounded-[10px] border border-white/[0.1] bg-white/[0.045] focus-within:border-accent/60">
+              <span className="flex items-center rounded-[10px] border border-line bg-surface focus-within:border-primary/60">
                 <span className="pl-3 text-[13px] text-dim">/</span>
                 <input
                   required
@@ -76,10 +76,10 @@ export function GerenciadorDeRespostasRapidas({
         {respostas.length === 0 ? (
           <p className="px-6 py-10 text-center text-[12.5px] text-dim">Cadastre a primeira frase que a equipe repete todo dia.</p>
         ) : (
-          <ul className="divide-y divide-white/[0.045]">
+          <ul className="divide-y divide-line">
             {respostas.map((resposta) => (
               <li key={resposta.id} className="flex items-start gap-4 px-6 py-4">
-                <span className="mt-0.5 rounded-lg border border-accent/25 bg-accent/[0.08] px-2 py-1 font-mono text-[10.5px] font-bold text-accent">
+                <span className="mt-0.5 rounded-lg border border-primary/25 bg-primary/[0.08] px-2 py-1 font-mono text-[10.5px] font-bold text-primary">
                   /{resposta.atalho}
                 </span>
                 <p className="min-w-0 flex-1 text-[12.5px] leading-5 whitespace-pre-wrap text-soft">{resposta.texto}</p>

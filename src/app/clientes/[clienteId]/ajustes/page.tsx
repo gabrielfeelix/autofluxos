@@ -61,7 +61,7 @@ export default async function Pagina({
           Configurações
         </h1>
 
-        <ul className="app-card divide-y divide-white/[0.045] overflow-hidden">
+        <ul className="app-card divide-y divide-line overflow-hidden">
           <Linha
             href={`/clientes/${cliente.id}/contexto`}
             titulo="Contexto do negócio"
@@ -225,7 +225,7 @@ function Linha({
     <li>
       <Link
         href={href}
-        className="flex items-center gap-4 px-6 py-[18px] transition hover:bg-white/[0.03]"
+        className="flex items-center gap-4 px-6 py-[18px] transition hover:bg-surface"
       >
         <span className="min-w-0 flex-1">
           <strong className="block text-[13.5px] font-bold">{titulo}</strong>
@@ -252,7 +252,7 @@ function Selo({
   const cor = {
     ok: 'border-emerald-400/25 bg-emerald-400/[0.08] text-emerald-300',
     alerta: 'border-amber-300/30 bg-amber-300/[0.1] text-amber-200',
-    neutro: 'border-white/10 bg-white/[0.04] text-muted',
+    neutro: 'border-white/10 bg-surface text-muted',
   }[tom]
 
   return (

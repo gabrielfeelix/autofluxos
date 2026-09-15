@@ -26,7 +26,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
       <main className="w-full max-w-[1100px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <Link
           href={`/clientes/${clienteId}/leads`}
-          className="mb-3.5 inline-block text-[12.5px] text-muted transition hover:text-accent"
+          className="mb-3.5 inline-block text-[12.5px] text-muted transition hover:text-primary"
         >
           ← Contatos
         </Link>

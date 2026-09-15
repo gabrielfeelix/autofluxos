@@ -78,7 +78,7 @@ export function SeletorDeEmoji({
         title="Emoji"
         aria-label="Escolher emoji"
         aria-expanded={aberto}
-        className="rounded-full border border-white/[0.09] bg-white/[0.04] px-2.5 py-1.5 text-[13px] leading-none transition hover:border-accent/40 disabled:opacity-40"
+        className="rounded-full border border-line bg-surface px-2.5 py-1.5 text-[13px] leading-none transition hover:border-primary/40 disabled:opacity-40"
       >
         😊
       </button>
@@ -91,7 +91,7 @@ export function SeletorDeEmoji({
            * Abre para cima porque o campo de resposta mora no rodapé da tela:
            * para baixo, a telinha nasceria fora da janela.
            */
-          className="absolute bottom-full left-0 z-30 mb-2 w-[286px] rounded-[12px] border border-white/[0.1] bg-[#161b26] p-2 shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
+          className="absolute bottom-full left-0 z-30 mb-2 w-[286px] rounded-[12px] border border-line bg-[#161b26] p-2 shadow-[0_10px_30px_rgba(19,25,34,0.11)]"
         >
           <input
             type="search"
@@ -114,7 +114,7 @@ export function SeletorDeEmoji({
               if (primeiro) aoEscolher(primeiro)
             }}
             placeholder="Procurar: festa, obrigado, foto…"
-            className="mb-2 w-full rounded-[9px] border border-white/[0.09] bg-white/[0.03] px-2.5 py-1.5 text-[11.5px] outline-none placeholder:text-dim focus:border-accent/40"
+            className="mb-2 w-full rounded-[9px] border border-line bg-surface px-2.5 py-1.5 text-[11.5px] outline-none placeholder:text-dim focus:border-primary/40"
           />
 
           {!procurando && (
@@ -128,7 +128,7 @@ export function SeletorDeEmoji({
                   title={g.nome}
                   onClick={() => setGrupo(i)}
                   className={`flex-1 rounded-[8px] py-1 text-[14px] leading-none transition ${
-                    i === grupo ? 'bg-accent/20' : 'hover:bg-white/[0.06]'
+                    i === grupo ? 'bg-primary/20' : 'hover:bg-surface-strong'
                   }`}
                 >
                   {g.aba}
@@ -151,7 +151,7 @@ export function SeletorDeEmoji({
                    */
                 }}
                 title={emoji}
-                className="rounded-[7px] py-1 text-[18px] leading-none transition hover:bg-white/[0.09]"
+                className="rounded-[7px] py-1 text-[18px] leading-none transition hover:bg-surface-strong"
               >
                 {emoji}
               </button>

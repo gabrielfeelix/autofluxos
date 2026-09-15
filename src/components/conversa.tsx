@@ -70,7 +70,7 @@ function Anexo({ anexo, claro = false }: { anexo: AnexoDaFala; claro?: boolean }
   return (
     <span
       className={`flex items-center gap-2.5 px-3 py-2.5 ${
-        claro ? 'bg-[#f5f6f6] text-[#111b21]' : 'bg-white/[0.05]'
+        claro ? 'bg-[#f5f6f6] text-[#111b21]' : 'bg-surface'
       }`}
     >
       <span aria-hidden className="text-base">
@@ -414,8 +414,8 @@ export function Conversa({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/[0.06] px-3 py-2">
-        <div className="flex rounded-lg border border-white/[0.08] bg-black/20 p-0.5" role="group" aria-label="Modo do teste">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-line px-3 py-2">
+        <div className="flex rounded-lg border border-line bg-black/20 p-0.5" role="group" aria-label="Modo do teste">
           {(['conversa', 'bastidores'] as const).map((opcao) => (
             <button
               key={opcao}
@@ -423,7 +423,7 @@ export function Conversa({
               onClick={() => setModo(opcao)}
               aria-pressed={modo === opcao}
               className={`rounded-md px-2.5 py-1.5 text-[10.5px] font-bold transition ${
-                modo === opcao ? 'bg-white/[0.11] text-ink shadow-sm' : 'text-dim hover:text-soft'
+                modo === opcao ? 'bg-surface-strong text-ink shadow-sm' : 'text-dim hover:text-soft'
               }`}
             >
               {opcao === 'conversa' ? 'Conversa' : 'Bastidores'}
@@ -435,7 +435,7 @@ export function Conversa({
             <button
               type="button"
               onClick={() => setModo('bastidores')}
-              className="rounded-full border border-white/[0.08] px-2 py-1 text-[9.5px] font-semibold text-dim transition hover:border-white/[0.16] hover:text-soft"
+              className="rounded-full border border-line px-2 py-1 text-[9.5px] font-semibold text-dim transition hover:border-strong hover:text-soft"
               title="Ver eventos nos bastidores"
             >
               {eventos} {eventos === 1 ? 'evento' : 'eventos'}
@@ -444,7 +444,7 @@ export function Conversa({
           <button
             type="button"
             onClick={recomecar}
-            className="rounded-lg px-2 py-1.5 text-[10.5px] font-bold text-soft transition hover:bg-white/[0.07] hover:text-ink"
+            className="rounded-lg px-2 py-1.5 text-[10.5px] font-bold text-soft transition hover:bg-surface-strong hover:text-ink"
             title="Reiniciar o teste desde o começo"
           >
             ↻ Reiniciar
@@ -493,7 +493,7 @@ export function Conversa({
 
       {modo === 'conversa' && (
         <div className="flex shrink-0 items-center gap-2.5 border-b border-black/10 bg-[#f0f2f5] px-3 py-2 text-[#111b21]">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#00a884] text-[10px] font-extrabold text-white">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#00a884] text-[10px] font-extrabold text-ink">
             {iniciais || 'AF'}
           </span>
           <span className="min-w-0">
@@ -523,7 +523,7 @@ export function Conversa({
             className={`flex w-fit gap-1 rounded-[13px_13px_13px_4px] px-3.5 py-3 ${
               modo === 'conversa'
                 ? 'bg-white shadow-[0_1px_1px_rgba(11,20,26,0.13)]'
-                : 'border border-white/[0.08] bg-white/[0.055]'
+                : 'border border-line bg-surface'
             }`}
           >
             {[0, 1, 2].map((i) => (
@@ -547,7 +547,7 @@ export function Conversa({
         </p>
       )}
 
-      <div className={`border-t p-3 ${modo === 'conversa' ? 'border-black/10 bg-[#f0f2f5]' : 'border-white/[0.06]'}`}>
+      <div className={`border-t p-3 ${modo === 'conversa' ? 'border-black/10 bg-[#f0f2f5]' : 'border-line'}`}>
         {viva ? (
           <form onSubmit={submeter} className="flex gap-2">
             <input
@@ -629,7 +629,7 @@ export function Conversa({
               disabled={ocupado || rascunho.trim() === ''}
               className={
                 modo === 'conversa'
-                  ? 'flex size-9 shrink-0 items-center justify-center rounded-full bg-[#00a884] px-0 text-base text-white transition hover:bg-[#008f72] disabled:opacity-40'
+                  ? 'flex size-9 shrink-0 items-center justify-center rounded-full bg-[#00a884] px-0 text-base text-ink transition hover:bg-[#008f72] disabled:opacity-40'
                   : 'app-primary-button flex size-9 shrink-0 items-center justify-center px-0 text-lg disabled:opacity-40'
               }
             >
@@ -658,7 +658,7 @@ export function Conversa({
             {status === 'humano'
               ? 'O bot saiu de cena — daqui em diante quem responde é uma pessoa.'
               : (motivoDoFim ?? 'A conversa terminou.')}{' '}
-            <button onClick={recomecar} className="font-bold text-accent underline underline-offset-2">
+            <button onClick={recomecar} className="font-bold text-primary underline underline-offset-2">
               recomeçar
             </button>
           </p>
@@ -666,7 +666,7 @@ export function Conversa({
       </div>
 
       {modo === 'bastidores' && (
-        <div className="shrink-0 border-t border-white/[0.06] p-3 text-[11px]">
+        <div className="shrink-0 border-t border-line p-3 text-[11px]">
           <p className="text-dim">
             bloco atual: <code>{sessaoExibida.noAtual ?? '—'}</code> · {sessaoExibida.status}
           </p>
@@ -675,7 +675,7 @@ export function Conversa({
               {Object.entries(sessaoExibida.vars).map(([chave, valor]) => (
                 <span
                   key={chave}
-                  className="rounded-md border border-white/[0.08] bg-white/[0.045] px-2 py-1 font-mono text-[10px] text-muted"
+                  className="rounded-md border border-line bg-surface px-2 py-1 font-mono text-[10px] text-muted"
                 >
                   {chave}: {valor}
                 </span>
@@ -705,7 +705,7 @@ function Bolha({
     return (
       <p
         className={`mx-auto w-fit rounded-full border border-dashed px-3 py-1 text-center font-mono text-[9.5px] ${
-          item.alerta ? 'border-amber-300/25 text-amber-200' : 'border-white/[0.14] text-[#6b7689]'
+          item.alerta ? 'border-amber-300/25 text-amber-200' : 'border-strong text-[#6b7689]'
         }`}
       >
         {item.texto}
@@ -720,7 +720,7 @@ function Bolha({
           className={`max-w-[85%] rounded-[13px_13px_4px_13px] px-3 py-2 text-[12.5px] leading-[1.5] ${
             modo === 'conversa'
               ? 'bg-[#d9fdd3] text-[#111b21] shadow-[0_1px_1px_rgba(11,20,26,0.13)]'
-              : 'border border-accent/[0.24] bg-accent/[0.14] text-ink'
+              : 'border border-primary/[0.24] bg-primary/[0.14] text-ink'
           }`}
         >
           <span>{item.texto}</span>
@@ -780,7 +780,7 @@ function Bolha({
 
   return (
     <div className="flex flex-col items-start gap-2">
-      <div className="max-w-[88%] overflow-hidden rounded-[13px_13px_13px_4px] border border-white/[0.08] bg-white/[0.055]">
+      <div className="max-w-[88%] overflow-hidden rounded-[13px_13px_13px_4px] border border-line bg-surface">
         {item.anexo && <Anexo anexo={item.anexo} />}
         {item.texto.trim() !== '' && (
           <p className="px-3 py-2 text-[12.5px] leading-[1.5] whitespace-pre-wrap">
@@ -794,7 +794,7 @@ function Bolha({
           className={
             item.formato === 'botoes'
               ? 'flex max-w-[88%] flex-wrap gap-1.5'
-              : 'flex w-full max-w-[88%] flex-col overflow-hidden rounded-xl border border-white/[0.1]'
+              : 'flex w-full max-w-[88%] flex-col overflow-hidden rounded-xl border border-line'
           }
         >
           {item.opcoes.map((opcao) => (
@@ -805,8 +805,8 @@ function Bolha({
               onClick={() => aoEscolher({ tipo: 'opcao', opcaoId: opcao.id }, opcao.rotulo)}
               className={
                 item.formato === 'botoes'
-                  ? 'rounded-lg border border-accent/[0.28] bg-accent/[0.07] px-3 py-1.5 text-xs font-semibold text-accent transition enabled:hover:bg-accent/[0.14] disabled:opacity-40'
-                  : 'border-b border-white/[0.08] px-3 py-2 text-left text-xs text-soft transition last:border-0 enabled:hover:bg-white/[0.05] disabled:opacity-40'
+                  ? 'rounded-lg border border-primary/[0.28] bg-primary/[0.07] px-3 py-1.5 text-xs font-semibold text-primary transition enabled:hover:bg-primary/[0.14] disabled:opacity-40'
+                  : 'border-b border-line px-3 py-2 text-left text-xs text-soft transition last:border-0 enabled:hover:bg-surface-strong disabled:opacity-40'
               }
             >
               {opcao.rotulo}

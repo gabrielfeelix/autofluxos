@@ -45,7 +45,7 @@ function Tela({ children, titulo }: { children: React.ReactNode; titulo: string 
       viewBox="0 0 200 120"
       role="img"
       aria-label={titulo}
-      className="mx-auto h-[116px] w-auto text-accent/75"
+      className="mx-auto h-[116px] w-auto text-primary/75"
     >
       {children}
     </svg>

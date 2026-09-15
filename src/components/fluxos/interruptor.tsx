@@ -54,7 +54,7 @@ export function InterruptorDeFluxo({
           })
         }}
         className={`relative h-[18px] w-8 shrink-0 rounded-full border transition disabled:opacity-50 ${
-          ativo ? 'border-emerald-400/40 bg-emerald-400/25' : 'border-white/10 bg-white/[0.06]'
+          ativo ? 'border-emerald-400/40 bg-emerald-400/25' : 'border-white/10 bg-surface-strong'
         }`}
       >
         <span

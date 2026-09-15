@@ -62,7 +62,7 @@ function ArestaRemovivel({
         style={{
           ...style,
           strokeWidth: selected ? 2.5 : 1.5,
-          stroke: selected ? 'var(--color-accent, #38bdf8)' : (style?.stroke ?? '#5b6577'),
+          stroke: selected ? 'var(--color-primary, #38bdf8)' : (style?.stroke ?? '#5b6577'),
         }}
       />
       <EdgeLabelRenderer>

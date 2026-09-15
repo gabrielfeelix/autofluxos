@@ -52,7 +52,7 @@ export function EscolherCanal({ nome = 'canal' }: { nome?: string }) {
                   : undefined
               }
               className={`flex flex-col items-center justify-center gap-1.5 rounded-[12px] border px-2 py-3 text-center transition ${
-                ativo ? '' : 'border-white/[0.09] bg-white/[0.02] hover:border-white/20'
+                ativo ? '' : 'border-line bg-panel hover:border-white/20'
               } ${canal.disponivel ? '' : 'cursor-not-allowed opacity-45'}`}
             >
               <span style={{ color: canal.cor }} className="flex items-center justify-center">

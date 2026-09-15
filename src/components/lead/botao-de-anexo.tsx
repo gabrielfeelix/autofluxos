@@ -194,7 +194,7 @@ export function BotaoDeAnexo({
         disabled={desabilitado || ocupado}
         onClick={() => entrada.current?.click()}
         title="Enviar foto, vídeo, áudio ou PDF"
-        className="rounded-lg border border-white/[0.09] px-2.5 py-1.5 text-[11.5px] text-soft transition hover:border-white/20 disabled:opacity-50"
+        className="rounded-lg border border-line px-2.5 py-1.5 text-[11.5px] text-soft transition hover:border-white/20 disabled:opacity-50"
       >
         📎 Anexar
       </button>
@@ -209,7 +209,7 @@ export function BotaoDeAnexo({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="flex w-full max-w-md flex-col gap-3 rounded-2xl border border-white/[0.1] bg-[#15171b] p-4 shadow-2xl"
+            className="flex w-full max-w-md flex-col gap-3 rounded-2xl border border-line bg-[#15171b] p-4 shadow-2xl"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -223,13 +223,13 @@ export function BotaoDeAnexo({
                 onClick={desistir}
                 disabled={ocupado}
                 aria-label="Cancelar"
-                className="shrink-0 rounded-lg border border-white/[0.12] px-2 py-1 text-[12px] text-dim transition hover:border-white/30 hover:text-soft disabled:opacity-40"
+                className="shrink-0 rounded-lg border border-strong px-2 py-1 text-[12px] text-dim transition hover:border-white/30 hover:text-soft disabled:opacity-40"
               >
                 ✕
               </button>
             </div>
 
-            <div className="flex max-h-[45vh] items-center justify-center overflow-hidden rounded-xl border border-white/[0.07] bg-black/30 p-2">
+            <div className="flex max-h-[45vh] items-center justify-center overflow-hidden rounded-xl border border-line bg-black/30 p-2">
               {previa && ehImagem && (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
@@ -272,7 +272,7 @@ export function BotaoDeAnexo({
                   }}
                   disabled={ocupado}
                   placeholder="Escreva uma legenda (opcional)"
-                  className="w-full rounded-lg border border-white/[0.1] bg-white/[0.04] px-3 py-2 text-[12px] outline-none transition focus:border-accent/50 disabled:opacity-50"
+                  className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-[12px] outline-none transition focus:border-primary/50 disabled:opacity-50"
                 />
                 {legendaGrande && (
                   <p className="mt-1 text-[10.5px] text-rose-200">
@@ -293,7 +293,7 @@ export function BotaoDeAnexo({
                 type="button"
                 onClick={desistir}
                 disabled={ocupado}
-                className="rounded-lg border border-white/[0.12] px-3 py-1.5 text-[11.5px] text-soft transition hover:border-white/30 disabled:opacity-40"
+                className="rounded-lg border border-strong px-3 py-1.5 text-[11.5px] text-soft transition hover:border-white/30 disabled:opacity-40"
               >
                 Cancelar
               </button>

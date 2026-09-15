@@ -73,7 +73,7 @@ export default async function Usuarios() {
                   usuario.contas.map((conta) => (
                     <span
                       key={conta.id}
-                      className="rounded-full border border-white/[0.09] bg-white/[0.03] px-2.5 py-1 text-[11.5px] text-soft"
+                      className="rounded-full border border-line bg-surface px-2.5 py-1 text-[11.5px] text-soft"
                     >
                       {conta.nome} <span className="text-dim">· {conta.papel}</span>
                     </span>
@@ -81,7 +81,7 @@ export default async function Usuarios() {
                 )}
               </div>
 
-              <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-white/[0.05] pt-3">
+              <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
                 {/*
                   Fora quando não faz sentido, e não desabilitado: entrar como
                   si mesmo não é nada, e entrar como quem não tem conta nenhuma
@@ -123,7 +123,7 @@ export default async function Usuarios() {
                       type="submit"
                       className={`rounded-[10px] border px-3 py-1.5 text-[11.5px] font-semibold transition ${
                         usuario.banido
-                          ? 'border-white/[0.12] bg-white/[0.05] text-soft hover:text-accent'
+                          ? 'border-strong bg-surface text-soft hover:text-primary'
                           : 'border-rose-400/25 bg-rose-400/[0.07] text-rose-300 hover:bg-rose-400/[0.13]'
                       }`}
                     >
@@ -147,8 +147,8 @@ export default async function Usuarios() {
 
 function Selo({ children, tom }: { children: string; tom: 'neutro' | 'destaque' | 'alerta' }) {
   const cores = {
-    neutro: 'border-white/[0.12] bg-white/[0.05] text-dim',
-    destaque: 'border-accent/30 bg-accent/[0.12] text-accent',
+    neutro: 'border-strong bg-surface text-dim',
+    destaque: 'border-primary/30 bg-primary/[0.12] text-primary',
     alerta: 'border-rose-400/30 bg-rose-400/[0.1] text-rose-300',
   }[tom]
 

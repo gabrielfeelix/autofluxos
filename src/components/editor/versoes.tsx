@@ -66,7 +66,7 @@ export function Versoes({
           if (evento.target === dialogo.current) fechar()
         }}
         onClose={() => setConfirmando(null)}
-        className="app-dialog m-auto w-[440px] rounded-[18px] border border-white/10 bg-panel p-[26px] text-ink shadow-[0_40px_100px_rgba(0,0,0,0.6)]"
+        className="app-dialog m-auto w-[440px] rounded-[18px] border border-white/10 bg-panel p-[26px] text-ink shadow-[0_40px_100px_rgba(19,25,34,0.132)]"
       >
         <h2 className="text-[17px] font-bold">Histórico de publicações</h2>
         <p className="mt-1 mb-5 text-[12.5px] leading-6 text-muted">
@@ -75,7 +75,7 @@ export function Versoes({
         </p>
 
         {versoes.length === 0 ? (
-          <p className="rounded-[10px] border border-dashed border-white/[0.15] px-3 py-4 text-center text-[12px] text-muted">
+          <p className="rounded-[10px] border border-dashed border-strong px-3 py-4 text-center text-[12px] text-muted">
             Esta automação ainda não foi publicada nenhuma vez.
           </p>
         ) : (
@@ -88,7 +88,7 @@ export function Versoes({
               return (
                 <li
                   key={v.id}
-                  className="rounded-[12px] border border-white/[0.08] bg-white/[0.02] px-3 py-2.5"
+                  className="rounded-[12px] border border-line bg-panel px-3 py-2.5"
                 >
                   <div className="flex items-center gap-2.5">
                     <span className="text-[13px] font-bold">v{v.versao}</span>
@@ -113,7 +113,7 @@ export function Versoes({
                   </div>
 
                   {emConfirmacao && (
-                    <div className="mt-2.5 border-t border-white/[0.07] pt-2.5">
+                    <div className="mt-2.5 border-t border-line pt-2.5">
                       <p className="text-[12px] leading-5 text-muted">
                         A v{v.versao} vai ao ar como versão nova e passa a atender as conversas que
                         começarem a partir de agora. Quem já estava conversando termina na versão em

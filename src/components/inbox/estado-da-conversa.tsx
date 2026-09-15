@@ -112,13 +112,13 @@ export function EstadoDaConversa({
             onClick={() => setMenuAberto(false)}
             className="fixed inset-0 z-40 cursor-default"
           />
-          <div className="absolute top-full right-0 z-50 mt-1.5 w-[168px] overflow-hidden rounded-[10px] border border-white/[0.1] bg-[#131923] shadow-[0_16px_40px_rgba(0,0,0,0.45)]">
+          <div className="absolute top-full right-0 z-50 mt-1.5 w-[168px] overflow-hidden rounded-[10px] border border-line bg-[#131923] shadow-[0_16px_40px_rgba(19,25,34,0.099)]">
             {(Object.keys(PRAZOS_DE_ADIAMENTO) as PrazoDeAdiamento[]).map((prazo) => (
               <button
                 key={prazo}
                 type="button"
                 onClick={() => mudar('adiada', () => acaoAdiarConversa(clienteId, contatoId, prazo))}
-                className="block w-full border-b border-white/[0.06] px-3 py-2 text-left text-[11.5px] text-soft transition last:border-0 hover:bg-white/[0.05] hover:text-white"
+                className="block w-full border-b border-line px-3 py-2 text-left text-[11.5px] text-soft transition last:border-0 hover:bg-surface-strong hover:text-ink"
               >
                 {PRAZOS_DE_ADIAMENTO[prazo].rotulo}
               </button>

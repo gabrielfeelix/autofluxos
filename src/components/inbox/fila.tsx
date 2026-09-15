@@ -128,11 +128,11 @@ export function Fila({
   const linkDoEstado = (valor: FiltroDeEstado) =>
     `/clientes/${clienteId}/inbox?de=${encodeURIComponent(atribuicao)}&estado=${valor}${comBusca}${conversaAberta}`
   return (
-    <aside className="flex min-h-0 min-w-0 flex-col border-r border-white/[0.06] bg-white/[0.015]">
-      <header className="border-b border-white/[0.06] px-4 py-[17px]">
+    <aside className="flex min-h-0 min-w-0 flex-col border-r border-line bg-panel">
+      <header className="border-b border-line px-4 py-[17px]">
         <div className="flex items-center gap-2">
           <h2 className="flex-1 text-[14px] font-bold tracking-[-0.01em]">Inbox</h2>
-          <span className="rounded-full border border-white/[0.09] bg-white/[0.035] px-2 py-0.5 font-mono text-[10px] text-muted">
+          <span className="rounded-full border border-line bg-surface px-2 py-0.5 font-mono text-[10px] text-muted">
             {contagem.total}
           </span>
         </div>
@@ -182,7 +182,7 @@ export function Fila({
           />
           <button
             type="submit"
-            className="shrink-0 rounded-lg border border-white/[0.09] px-2.5 py-1.5 text-[11px] font-semibold text-muted transition hover:border-accent/40 hover:text-accent"
+            className="shrink-0 rounded-lg border border-line px-2.5 py-1.5 text-[11px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
           >
             Buscar
           </button>
@@ -289,14 +289,14 @@ export function Fila({
               aria-current={ativa ? 'page' : undefined}
               scroll={false}
               className={`group mx-1.5 mb-0.5 flex gap-2.5 rounded-[10px] px-2.5 py-3 transition ${
-                ativa ? 'bg-accent/[0.12]' : 'hover:bg-white/[0.045]'
+                ativa ? 'bg-primary/[0.12]' : 'hover:bg-surface'
               }`}
             >
               <Avatar nome={lead.nome} alerta={Boolean(lead.aguardando)} />
               <span className="min-w-0 flex-1">
                 <span className="flex items-baseline gap-2">
                   <strong
-                    className={`min-w-0 flex-1 truncate text-[12.5px] ${ativa ? 'text-white' : semLer > 0 ? 'font-bold text-white' : 'text-soft'}`}
+                    className={`min-w-0 flex-1 truncate text-[12.5px] ${ativa ? 'text-ink' : semLer > 0 ? 'font-bold text-ink' : 'text-soft'}`}
                   >
                     {nome}
                   </strong>
@@ -330,7 +330,7 @@ export function Fila({
                   {semLer > 0 && (
                     <span
                       title={`${semLer} mensagem(ns) desde a última vez que você abriu`}
-                      className="shrink-0 rounded-full bg-accent px-1.5 py-px text-[9.5px] font-bold text-black"
+                      className="shrink-0 rounded-full bg-primary px-1.5 py-px text-[9.5px] font-bold text-black"
                     >
                       {semLer > TETO_DA_INSIGNIA ? `${TETO_DA_INSIGNIA}+` : semLer}
                     </span>
@@ -366,7 +366,7 @@ export function Fila({
         aba não muda isso. Os `paginas > 1` só acontecem do outro lado do teto.
       */}
       {!local && paginas > 1 && (
-        <div className="flex items-center justify-between gap-2 border-t border-white/[0.06] px-3 py-2.5">
+        <div className="flex items-center justify-between gap-2 border-t border-line px-3 py-2.5">
           <PassoDaPagina
             href={`/clientes/${clienteId}/inbox?de=${encodeURIComponent(atribuicao)}${comBusca}&pagina=${pagina - 1}`}
             desabilitado={pagina <= 1}
@@ -403,7 +403,7 @@ function PassoDaPagina({
 }) {
   if (desabilitado) {
     return (
-      <span aria-disabled className="rounded-md px-2 py-0.5 text-[13px] text-white/15">
+      <span aria-disabled className="rounded-md px-2 py-0.5 text-[13px] text-ink/15">
         {children}
       </span>
     )
@@ -413,7 +413,7 @@ function PassoDaPagina({
       href={href}
       aria-label={rotulo}
       scroll={false}
-      className="rounded-md px-2 py-0.5 text-[13px] text-muted transition hover:bg-white/[0.06] hover:text-white"
+      className="rounded-md px-2 py-0.5 text-[13px] text-muted transition hover:bg-surface-strong hover:text-ink"
     >
       {children}
     </Link>

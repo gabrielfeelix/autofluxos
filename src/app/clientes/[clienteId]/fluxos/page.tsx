@@ -207,20 +207,20 @@ export default async function Pagina({
           leva de volta ao mesmo lugar, o botão "voltar" do navegador funciona, e
           a página continua sendo renderizada no servidor.
         */}
-        <nav className="mb-5 flex flex-wrap gap-1 border-b border-white/[0.07]">
+        <nav className="mb-5 flex flex-wrap gap-1 border-b border-line">
           {ABAS.map((item) => (
             <Link
               key={item.chave}
               href={`/clientes/${cliente.id}/fluxos?aba=${item.chave}`}
               className={`-mb-px border-b-2 px-3.5 py-2.5 text-[13px] font-semibold transition ${
                 item.chave === aba
-                  ? 'border-accent text-accent'
+                  ? 'border-primary text-primary'
                   : 'border-transparent text-dim hover:text-soft'
               }`}
             >
               {item.rotulo}
               {item.contagem > 0 && (
-                <span className="ml-1.5 rounded-full bg-white/[0.07] px-1.5 py-0.5 text-[10.5px] font-normal text-dim">
+                <span className="ml-1.5 rounded-full bg-surface-strong px-1.5 py-0.5 text-[10.5px] font-normal text-dim">
                   {item.contagem}
                 </span>
               )}
@@ -230,7 +230,7 @@ export default async function Pagina({
 
         {aba === 'fluxos' && (
         <section className="app-card overflow-hidden">
-          <header className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-5 py-4">
+          <header className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
             <div>
               <h2 className="text-[14.5px] font-bold">Fluxos</h2>
               <p className="mt-0.5 text-[12px] text-dim">
@@ -295,7 +295,7 @@ export default async function Pagina({
                 grupo.id === null && grupo.fluxos.length === 0 ? null : (
                   <li key={grupo.id ?? 'raiz'}>
                     {grupo.nome !== '' && (
-                      <div className="flex items-center gap-2 border-b border-white/[0.045] bg-white/[0.015] px-5 py-2">
+                      <div className="flex items-center gap-2 border-b border-line bg-panel px-5 py-2">
                         <span className="text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
                           {grupo.nome}
                         </span>
@@ -316,7 +316,7 @@ export default async function Pagina({
                     )}
                     <ul>
                       {grupo.fluxos.length === 0 && (
-                        <li className="border-b border-white/[0.045] px-5 py-4 text-[11.5px] text-dim">
+                        <li className="border-b border-line px-5 py-4 text-[11.5px] text-dim">
                           Pasta vazia — mova um fluxo para cá pelo botão de pasta na linha dele.
                         </li>
                       )}
@@ -333,7 +333,7 @@ export default async function Pagina({
                 return (
                   <li
                     key={fluxo.id}
-                    className="group/linha relative flex items-center border-b border-white/[0.045] pr-4 transition last:border-0 hover:bg-white/[0.03]"
+                    className="group/linha relative flex items-center border-b border-line pr-4 transition last:border-0 hover:bg-surface"
                   >
                     {/*
                       O link cobre a linha por baixo, em vez de envolvê-la.
@@ -407,7 +407,7 @@ export default async function Pagina({
                             ? 'border-amber-300/25 bg-amber-300/[0.08] text-amber-200'
                             : fluxo.versaoPublicadaId
                               ? 'border-emerald-400/25 bg-emerald-400/[0.08] text-emerald-300'
-                              : 'border-white/10 bg-white/[0.04] text-muted'
+                              : 'border-white/10 bg-surface text-muted'
                         }`}
                       >
                         {!fluxo.ativo ? 'DESLIGADO' : fluxo.versaoPublicadaId ? 'ATIVA' : 'RASCUNHO'}
@@ -480,7 +480,7 @@ export default async function Pagina({
 
         {aba === 'templates' && (
         <section className="app-card overflow-hidden">
-          <header className="border-b border-white/[0.06] px-5 py-4">
+          <header className="border-b border-line px-5 py-4">
             <h2 className="text-[14.5px] font-bold">Templates</h2>
             <p className="mt-0.5 max-w-[78ch] text-[12px] leading-5 text-dim">
               Desenhos prontos e conferidos: todos publicam sem erro e todos têm saída para uma
@@ -496,7 +496,7 @@ export default async function Pagina({
 
         {aba === 'palavras' && (
         <section className="app-card overflow-hidden">
-          <header className="flex items-start justify-between gap-4 border-b border-white/[0.06] px-5 py-4">
+          <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
             <div className="min-w-0">
             <h2 className="text-[14.5px] font-bold">Palavras-chave</h2>
             <p className="mt-0.5 max-w-[78ch] text-[12px] leading-5 text-dim">
@@ -554,7 +554,7 @@ export default async function Pagina({
           </header>
 
           {gatilhos.length === 0 ? (
-            <div className="border-b border-white/[0.045] px-5 py-10 text-center">
+            <div className="border-b border-line px-5 py-10 text-center">
               <p className="text-[13px] font-semibold text-soft">
                 Nenhuma palavra-chave ainda
               </p>
@@ -571,7 +571,7 @@ export default async function Pagina({
                 return (
                   <li
                     key={gatilho.id}
-                    className="flex items-center gap-3 border-b border-white/[0.045] px-5 py-3.5 last:border-0"
+                    className="flex items-center gap-3 border-b border-line px-5 py-3.5 last:border-0"
                   >
                     <InterruptorDeGatilho
                       clienteId={cliente.id}
@@ -615,7 +615,7 @@ export default async function Pagina({
 
         {aba === 'eventos' && (
         <section className="app-card overflow-hidden">
-          <header className="flex flex-wrap items-start justify-between gap-4 border-b border-white/[0.06] px-5 py-4">
+          <header className="flex flex-wrap items-start justify-between gap-4 border-b border-line px-5 py-4">
             <span>
               <h2 className="text-[14px] font-bold tracking-[-0.01em]">Eventos de outro sistema</h2>
               <p className="mt-0.5 text-[11.5px] leading-5 text-dim">
@@ -662,7 +662,7 @@ export default async function Pagina({
           </header>
 
           {gatilhosDeEvento.length === 0 ? (
-            <div className="border-b border-white/[0.045] px-5 py-10 text-center">
+            <div className="border-b border-line px-5 py-10 text-center">
               <p className="text-[13px] font-semibold text-soft">Nenhum evento ainda</p>
               <p className="mx-auto mt-1 max-w-[460px] text-xs leading-5 text-dim">
                 Sem eles, o “te aviso quando abrir” do fluxo de espera é uma promessa que ninguém
@@ -677,7 +677,7 @@ export default async function Pagina({
                 return (
                   <li
                     key={gatilho.id}
-                    className="flex items-center gap-3 border-b border-white/[0.045] px-5 py-3.5"
+                    className="flex items-center gap-3 border-b border-line px-5 py-3.5"
                   >
                     <InterruptorDeEvento
                       clienteId={cliente.id}
@@ -725,7 +725,7 @@ export default async function Pagina({
 
         {aba === 'campanhas' && (
         <section className="app-card overflow-hidden">
-          <header className="flex items-start justify-between gap-4 border-b border-white/[0.06] px-5 py-4">
+          <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
             <div className="min-w-0">
             <h2 className="text-[14.5px] font-bold">Campanhas</h2>
             <p className="mt-0.5 max-w-[78ch] text-[12px] leading-5 text-dim">
@@ -783,7 +783,7 @@ export default async function Pagina({
           </header>
 
           {campanhas.length === 0 ? (
-            <div className="border-b border-white/[0.045] px-5 py-10 text-center">
+            <div className="border-b border-line px-5 py-10 text-center">
               <p className="text-[13px] font-semibold text-soft">Nenhuma campanha ainda</p>
               <p className="mt-1 text-xs leading-5 text-dim">
                 Sem elas, todo mundo que vem de anúncio entra pela mesma porta —
@@ -799,7 +799,7 @@ export default async function Pagina({
                 return (
                   <li
                     key={campanha.id}
-                    className="flex items-center gap-3 border-b border-white/[0.045] px-5 py-3.5 last:border-0"
+                    className="flex items-center gap-3 border-b border-line px-5 py-3.5 last:border-0"
                   >
                     <InterruptorDeCampanha
                       clienteId={cliente.id}
@@ -845,7 +845,7 @@ export default async function Pagina({
 
         {aba === 'sequencias' && (
         <section className="app-card overflow-hidden">
-          <header className="flex items-start justify-between gap-4 border-b border-white/[0.06] px-5 py-4">
+          <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
             <div className="min-w-0 max-w-[86ch]">
             <h2 className="text-[14.5px] font-bold">Sequências</h2>
             <p className="mt-0.5 text-[12px] leading-5 text-dim">
@@ -881,7 +881,7 @@ export default async function Pagina({
           </header>
 
           {sequencias.length === 0 ? (
-            <div className="border-b border-white/[0.045] px-5 py-10 text-center">
+            <div className="border-b border-line px-5 py-10 text-center">
               <p className="text-[13px] font-semibold text-soft">Nenhuma sequência ainda</p>
               <p className="mt-1 text-xs leading-5 text-dim">
                 Sem elas, quem não respondeu depois do atendimento simplesmente some.
@@ -904,7 +904,7 @@ export default async function Pagina({
                 )
 
                 return (
-                  <li key={sequencia.id} className="border-b border-white/[0.045] last:border-0">
+                  <li key={sequencia.id} className="border-b border-line last:border-0">
                     <div className="flex items-center gap-3 px-5 py-3.5">
                       <InterruptorDeSequencia
                         clienteId={cliente.id}
@@ -960,7 +960,7 @@ export default async function Pagina({
                       />
                     </div>
 
-                    <details className="border-t border-white/[0.03] bg-white/[0.012] px-5 py-3">
+                    <details className="border-t border-line-soft bg-panel px-5 py-3">
                       <summary className="cursor-pointer text-[11.5px] text-muted">
                         Passos ({sequencia.passos.length}/{LIMITE_DE_PASSOS})
                       </summary>
@@ -972,7 +972,7 @@ export default async function Pagina({
                             return (
                               <li
                                 key={passo.id}
-                                className="flex items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2"
+                                className="flex items-center gap-3 rounded-lg border border-line bg-panel px-3 py-2"
                               >
                                 <span className="w-4 shrink-0 font-mono text-[11px] text-dim">
                                   {indice + 1}

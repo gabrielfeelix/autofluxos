@@ -127,7 +127,7 @@ export function SelecaoDeContatos({
   return (
     <SelecaoContexto.Provider value={valor}>
       {(marcados.length > 0 || aviso || erro) && (
-        <div className="mb-3 rounded-[12px] border border-white/[0.09] bg-white/[0.035] px-4 py-3">
+        <div className="mb-3 rounded-[12px] border border-line bg-surface px-4 py-3">
           {marcados.length > 0 && (
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               <strong className="text-[12.5px] font-bold">
@@ -136,7 +136,7 @@ export function SelecaoDeContatos({
               <button
                 type="button"
                 onClick={() => setMarcados([])}
-                className="text-[11.5px] font-semibold text-accent hover:underline"
+                className="text-[11.5px] font-semibold text-primary hover:underline"
               >
                 limpar
               </button>
@@ -165,7 +165,7 @@ export function SelecaoDeContatos({
                       onClick={() => etiquetar(etiqueta.id, false)}
                       title={`Tirar “${etiqueta.nome}” dos selecionados`}
                       aria-label={`Tirar ${etiqueta.nome} dos selecionados`}
-                      className="rounded-full border border-white/[0.08] px-1.5 py-0.5 text-[10.5px] font-bold text-dim transition hover:border-white/20 hover:text-muted disabled:opacity-50"
+                      className="rounded-full border border-line px-1.5 py-0.5 text-[10.5px] font-bold text-dim transition hover:border-white/20 hover:text-muted disabled:opacity-50"
                     >
                       −
                     </button>
@@ -183,7 +183,7 @@ export function SelecaoDeContatos({
                       disabled={ocupado}
                       onClick={() => porNoQuadro(quadro.id)}
                       title={`Põe os selecionados na primeira etapa de “${quadro.nome}”. Quem já está lá não é movido.`}
-                      className="rounded-full border border-white/[0.09] bg-white/[0.03] px-2.5 py-0.5 text-[10.5px] font-semibold text-muted transition hover:border-accent/40 hover:text-accent disabled:opacity-50"
+                      className="rounded-full border border-line bg-surface px-2.5 py-0.5 text-[10.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary disabled:opacity-50"
                     >
                       → {quadro.nome}
                     </button>
@@ -195,7 +195,7 @@ export function SelecaoDeContatos({
                 type="button"
                 disabled={ocupado}
                 onClick={apagar}
-                className="ml-auto rounded-lg border border-white/[0.09] px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:border-rose-400/40 hover:bg-rose-400/[0.09] hover:text-rose-300 disabled:opacity-50"
+                className="ml-auto rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:border-rose-400/40 hover:bg-rose-400/[0.09] hover:text-rose-300 disabled:opacity-50"
               >
                 {ocupado ? '…' : 'Apagar'}
               </button>

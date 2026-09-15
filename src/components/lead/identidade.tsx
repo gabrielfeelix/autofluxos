@@ -54,7 +54,7 @@ export function NomeDoContato({
         <button
           type="button"
           onClick={() => setEditando(false)}
-          className="mt-1.5 text-[11.5px] text-muted transition hover:text-accent"
+          className="mt-1.5 text-[11.5px] text-muted transition hover:text-primary"
         >
           cancelar
         </button>
@@ -69,7 +69,7 @@ export function NomeDoContato({
         <button
           type="button"
           onClick={() => setEditando(true)}
-          className="rounded-lg border border-white/10 px-2 py-0.5 text-[10.5px] font-semibold text-muted transition hover:border-accent/40 hover:text-accent"
+          className="rounded-lg border border-white/10 px-2 py-0.5 text-[10.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
         >
           {nomeReal === '' ? 'corrigir nome' : 'editar'}
         </button>
@@ -117,7 +117,7 @@ export function NotasDoContato({
           <button
             type="button"
             onClick={() => setEditando(true)}
-            className="rounded-lg border border-white/10 px-2 py-0.5 text-[10.5px] font-semibold text-muted transition hover:border-accent/40 hover:text-accent"
+            className="rounded-lg border border-white/10 px-2 py-0.5 text-[10.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
           >
             {notas === '' ? 'anotar' : 'editar'}
           </button>
@@ -148,7 +148,7 @@ export function NotasDoContato({
           <button
             type="button"
             onClick={() => setEditando(false)}
-            className="mt-1.5 text-[11.5px] text-muted transition hover:text-accent"
+            className="mt-1.5 text-[11.5px] text-muted transition hover:text-primary"
           >
             cancelar
           </button>

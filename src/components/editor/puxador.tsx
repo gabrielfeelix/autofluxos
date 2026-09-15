@@ -125,7 +125,7 @@ export function PuxadorDeLargura({
     >
       <span
         aria-hidden
-        className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-accent/0 transition group-hover/puxador:bg-accent/50 group-focus-visible/puxador:bg-accent"
+        className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-primary/0 transition group-hover/puxador:bg-primary/50 group-focus-visible/puxador:bg-primary"
       />
     </div>
   )

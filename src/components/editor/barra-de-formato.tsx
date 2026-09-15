@@ -130,7 +130,7 @@ function BotaoDeMarca({
         evento.preventDefault()
         aoClicar(marca)
       }}
-      className="w-6 rounded-md py-0.5 text-[12px] text-dim transition hover:bg-white/[0.06] hover:text-white"
+      className="w-6 rounded-md py-0.5 text-[12px] text-dim transition hover:bg-surface-strong hover:text-ink"
     >
       {children}
     </button>
@@ -186,7 +186,7 @@ export function SeletorDeEmoji({
           aoAbrir(!aberto)
         }}
         className={`rounded-md px-1.5 py-0.5 text-[12px] transition ${
-          aberto ? 'bg-accent/15 text-accent' : 'text-dim hover:bg-white/[0.06] hover:text-white'
+          aberto ? 'bg-primary/15 text-primary' : 'text-dim hover:bg-surface-strong hover:text-ink'
         }`}
       >
         ☺
@@ -244,7 +244,7 @@ function Grade({
             evento.preventDefault()
             aoEscolher(emoji)
           }}
-          className="rounded p-1 text-[17px] leading-none transition hover:bg-white/[0.08]"
+          className="rounded p-1 text-[17px] leading-none transition hover:bg-surface-strong"
         >
           {emoji}
         </button>

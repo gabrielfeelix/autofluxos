@@ -44,7 +44,7 @@ export default async function Contas() {
           Não existe nenhum usuário ainda.{' '}
           <Link
             href="/criar-conta"
-            className="text-soft underline underline-offset-2 transition hover:text-accent"
+            className="text-soft underline underline-offset-2 transition hover:text-primary"
           >
             Cadastre alguém
           </Link>{' '}

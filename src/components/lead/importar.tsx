@@ -37,7 +37,7 @@ export function ImportarContatos({
           name="planilha"
           required
           accept=".csv,text/csv"
-          className="app-field max-w-[380px] px-3 py-2.5 text-[13px] file:mr-3 file:rounded-lg file:border-0 file:bg-white/[0.08] file:px-3 file:py-1.5 file:text-[12px] file:font-semibold file:text-soft"
+          className="app-field max-w-[380px] px-3 py-2.5 text-[13px] file:mr-3 file:rounded-lg file:border-0 file:bg-surface-strong file:px-3 file:py-1.5 file:text-[12px] file:font-semibold file:text-soft"
         />
         <button
           type="submit"

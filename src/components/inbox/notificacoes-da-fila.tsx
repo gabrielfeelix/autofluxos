@@ -174,7 +174,7 @@ export function NotificacoesDaFila({
               ? 'Os alertas foram bloqueados no navegador. Libere nas permissões do site.'
               : 'Ative o aviso de novo atendimento.'
         }
-        className="flex w-full items-center gap-2 rounded-[10px] px-1.5 py-1.5 text-left transition hover:bg-white/[0.04] disabled:cursor-not-allowed"
+        className="flex w-full items-center gap-2 rounded-[10px] px-1.5 py-1.5 text-left transition hover:bg-surface disabled:cursor-not-allowed"
       >
         <span
           aria-hidden

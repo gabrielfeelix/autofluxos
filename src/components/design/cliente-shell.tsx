@@ -83,8 +83,8 @@ export async function ClienteShell({
 
   return (
     <div className="flex min-h-screen flex-col md:h-screen md:min-h-[700px] md:flex-row md:overflow-hidden">
-      <aside className="flex shrink-0 flex-col border-white/[0.06] bg-white/[0.014] md:w-[226px] md:border-r md:px-3.5 md:pt-5 md:pb-4">
-        <div className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-3 md:mb-5 md:border-0 md:px-2 md:py-0">
+      <aside className="flex shrink-0 flex-col border-line bg-panel md:w-[226px] md:border-r md:px-3.5 md:pt-5 md:pb-4">
+        <div className="flex items-center gap-3 border-b border-line px-4 py-3 md:mb-5 md:border-0 md:px-2 md:py-0">
           <Marca />
           <span className="ml-auto flex items-center gap-2">
             {/* No celular a barra vira faixa e a identidade da conta perde o
@@ -102,7 +102,7 @@ export async function ClienteShell({
         {podeVerTodosOsClientes && (
           <Link
             href="/painel"
-            className="hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11.5px] text-dim transition hover:text-accent md:mb-1.5 md:flex"
+            className="hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11.5px] text-dim transition hover:text-primary md:mb-1.5 md:flex"
           >
             <span aria-hidden>‹</span> Todos os clientes
           </Link>
@@ -112,7 +112,7 @@ export async function ClienteShell({
             passa a rolar de lado por causa da navegação. */}
         <nav
           aria-label="Seções do cliente"
-          className="flex gap-1 overflow-x-auto border-b border-white/[0.06] px-3 py-2 md:flex-col md:gap-0.5 md:overflow-visible md:border-0 md:p-0"
+          className="flex gap-1 overflow-x-auto border-b border-line px-3 py-2 md:flex-col md:gap-0.5 md:overflow-visible md:border-0 md:p-0"
         >
           {ITENS.map((item) => {
             const acesa = item.chave === ativa
@@ -123,11 +123,11 @@ export async function ClienteShell({
                 aria-current={acesa ? 'page' : undefined}
                 className={`flex shrink-0 items-center gap-2.5 rounded-[10px] px-2.5 py-2.5 text-[13px] font-semibold transition ${
                   acesa
-                    ? 'bg-accent/[0.12] text-white hover:bg-accent/[0.16]'
-                    : 'text-muted hover:bg-white/[0.04] hover:text-white'
+                    ? 'bg-primary/[0.12] text-ink hover:bg-primary/[0.16]'
+                    : 'text-muted hover:bg-surface hover:text-ink'
                 }`}
               >
-                <span className={acesa ? 'text-accent' : 'text-dim'}>{item.icone}</span>
+                <span className={acesa ? 'text-primary' : 'text-dim'}>{item.icone}</span>
                 {item.rotulo}
               </Link>
             )
@@ -136,7 +136,7 @@ export async function ClienteShell({
 
         <div className="hidden flex-1 md:block" />
 
-        <div className="hidden border-t border-white/[0.06] pt-3 md:block">
+        <div className="hidden border-t border-line pt-3 md:block">
           <SeletorDeConta
             cliente={cliente}
             outrasContas={contas.length}
@@ -225,7 +225,7 @@ function SeletorDeConta({
     return (
       <Link
         href="/contas"
-        className="flex items-center gap-2.5 rounded-[10px] px-1.5 py-1.5 transition hover:bg-white/[0.04]"
+        className="flex items-center gap-2.5 rounded-[10px] px-1.5 py-1.5 transition hover:bg-surface"
       >
         {miolo}
       </Link>
@@ -250,7 +250,7 @@ function Presenca({ atual }: { atual: string }) {
     <form action={acaoDefinirPresenca.bind(null, disponivel ? 'ausente' : 'disponivel')}>
       <button
         type="submit"
-        className="flex w-full items-center gap-2 rounded-[10px] px-1.5 py-1.5 text-left transition hover:bg-white/[0.04]"
+        className="flex w-full items-center gap-2 rounded-[10px] px-1.5 py-1.5 text-left transition hover:bg-surface"
       >
         {/* Ponto **e** palavra: quem não distingue as duas cores lê o estado
             do mesmo jeito (WCAG 1.4.1). */}

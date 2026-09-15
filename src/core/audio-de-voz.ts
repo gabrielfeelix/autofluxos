@@ -22,11 +22,22 @@
  * — este último com a letra miúda que decide tudo: *"OPUS codecs only; base
  * audio/ogg not supported; mono input only"*.
  *
- * **`audio/webm` não está na lista**, e é o padrão histórico do Chrome. Era o
- * risco apontado no handoff de 15/set, e ele deixou de existir sozinho: o
- * Chrome passou a gravar em contêiner MP4, o Safari sempre gravou, e o Firefox
- * grava OGG/Opus. Os três caem em formato que a Meta aceita **sem conversão
- * nenhuma** — nada de WASM, nada de remux, nada de dependência nova.
+ * **`audio/webm` não está na lista**, e é o padrão histórico do Chrome. Isso é
+ * resolvido pedindo MP4 ou OGG — mas **pedir o contêiner não basta**, e é o que
+ * a primeira versão deste arquivo errou.
+ *
+ * Contêiner e codec são coisas separadas. `audio/mp4` pedido sem codec deixa a
+ * escolha com o navegador, e o Chrome entrega **Opus dentro de MP4** — que a
+ * Meta não toca, porque para ela `audio/mp4` significa AAC e Opus só vale em
+ * OGG. O arquivo gravado em 15/set foi aberto byte a byte e confirmou: `mp4a`
+ * ausente, `dOps` presente.
+ *
+ * Daí as duas metades deste módulo:
+ *
+ * 1. **`escolherFormato`** pede sempre com `;codecs=` explícito.
+ * 2. **`codecServeParaAMeta`** confere o que o gravador devolveu, porque pedir
+ *    não garante receber — e o modo de falha é silencioso: o Storage aceita, a
+ *    Cloud API responde 200, e nada chega no celular.
  *
  * Levantamento com as URLs da Meta em `docs/PESQUISA-VOZ-E-CHAMADA.md`.
  */
@@ -47,20 +58,105 @@ export type FormatoDeGravacao = {
 }
 
 /**
- * A ordem importa, e não é alfabética.
+ * A ordem importa, e **o codec é obrigatório em todo item desta lista**.
  *
- * MP4/AAC vem primeiro porque é o que Chrome, Edge, Opera e Safari produzem —
- * a esmagadora maioria de quem atende. OGG/Opus é o Firefox. Um navegador que
- * não suporte nenhum dos dois só sabe gravar WebM, e WebM não tem linha na
- * tabela da Meta: nesse caso a resposta certa é recusar com motivo, não subir
- * um arquivo que vai ser recusado três passos adiante.
+ * ---------------------------------------------------------------------------
+ * `audio/mp4` sem codec é uma armadilha, e ela custou um envio silencioso
+ * ---------------------------------------------------------------------------
+ *
+ * A primeira versão desta lista pedia `audio/mp4` puro, na suposição de que
+ * contêiner MP4 implica AAC. **Não implica.** Pedir sem codec deixa a escolha
+ * com o navegador, e o Chrome escolhe **Opus dentro de MP4**.
+ *
+ * O arquivo gravado em 15/set/2026 foi inspecionado byte a byte: `mp4a` e
+ * `esds` ausentes, `Opus` e `dOps` presentes. E a linha da Meta é específica —
+ * `audio/mp4` significa **AAC**; Opus ela só aceita em contêiner **OGG**
+ * (`audio/ogg`, "OPUS codecs only").
+ *
+ * O estrago foi o pior formato possível: o Storage aceitou (o MIME `audio/mp4`
+ * confere), a Cloud API respondeu **200**, a mensagem foi gravada como
+ * entregue — e nada chegou no celular. Como o webhook `statuses` da Meta não é
+ * tratado, a falha não aparece em lugar nenhum.
+ *
+ * Por isso: `mp4a.40.2` (AAC-LC) escrito por extenso, e `audio/mp4` sem codec
+ * **não volta para esta lista**. O que sobra é OGG/Opus, do Firefox, que já
+ * vinha com o codec explícito pelo mesmo motivo.
  */
 export const FORMATOS_DE_GRAVACAO: readonly FormatoDeGravacao[] = [
-  { mimeType: 'audio/mp4', mime: 'audio/mp4', extensao: 'm4a' },
+  // AAC-LC em contêiner MP4. `mp4a.40.2` é o AAC-LC da tabela do MPEG-4.
   { mimeType: 'audio/mp4;codecs=mp4a.40.2', mime: 'audio/mp4', extensao: 'm4a' },
+  { mimeType: 'audio/mp4;codecs=mp4a.40.5', mime: 'audio/mp4', extensao: 'm4a' },
   { mimeType: 'audio/ogg;codecs=opus', mime: 'audio/ogg', extensao: 'ogg' },
-  { mimeType: 'audio/aac', mime: 'audio/aac', extensao: 'aac' },
 ] as const
+
+/**
+ * Os pares (contêiner, codec) que a Meta entrega. Tudo fora daqui ela recusa.
+ *
+ * Existe separado de `FORMATOS_DE_GRAVACAO` porque as duas perguntas são
+ * diferentes: aquela é *o que pedir*, esta é *o que aceitar de volta*. O
+ * navegador pode entregar coisa diferente do que foi pedido, e foi assim que o
+ * Opus-em-MP4 passou.
+ */
+const COMBINACOES_ACEITAS: readonly { container: string; codec: RegExp }[] = [
+  { container: 'audio/mp4', codec: /^mp4a/i },
+  { container: 'audio/aac', codec: /^(mp4a|aac)/i },
+  { container: 'audio/mpeg', codec: /./ },
+  { container: 'audio/ogg', codec: /^opus$/i },
+] as const
+
+/**
+ * Confere o que o gravador **realmente** produziu, e não o que foi pedido.
+ *
+ * `MediaRecorder.mimeType`, lido depois do `start()`, devolve o tipo efetivo
+ * com o codec — é a única fonte que revela a troca. Chamar isto antes de subir
+ * é o que transforma "a Meta aceitou e nada chegou" em uma frase na tela.
+ *
+ * Tipo sem `;codecs=` passa: alguns navegadores não declaram o codec, e recusar
+ * por omissão barraria gravação boa. O que esta função pega é a contradição
+ * explícita — MP4 dizendo que tem Opus dentro.
+ */
+export function codecServeParaAMeta(mimeTypeEfetivo: string): boolean {
+  const [container = '', ...parametros] = mimeTypeEfetivo.split(';').map((p) => p.trim())
+  const aceita = COMBINACOES_ACEITAS.find((c) => c.container === container.toLowerCase())
+  if (!aceita) return false
+
+  const declarado = parametros
+    .find((p) => p.toLowerCase().startsWith('codecs='))
+    ?.slice('codecs='.length)
+    .replace(/["']/g, '')
+    .trim()
+
+  if (!declarado) return true
+  // `codecs="mp4a.40.2, avc1"` é lista. Todo item precisa servir.
+  return declarado.split(',').every((c) => aceita.codec.test(c.trim()))
+}
+
+/**
+ * O `mime` e a extensão a partir do tipo **efetivo** do gravador.
+ *
+ * Existe porque o navegador pode entregar contêiner diferente do pedido. Usar
+ * a extensão do formato pedido nesse caso gravaria um `.m4a` que por dentro é
+ * OGG — e o acervo decide o tipo de mídia **pela extensão** (`midiaDaExtensao`),
+ * então a mentira se propagaria até a bolha.
+ *
+ * `null` quando o contêiner não é nenhum dos que a Meta aceita.
+ */
+export function formatoEntregue(
+  mimeTypeEfetivo: string,
+): { mime: string; extensao: string } | null {
+  const container = (mimeTypeEfetivo.split(';')[0] ?? '').trim().toLowerCase()
+  const daLista = FORMATOS_DE_GRAVACAO.find((f) => f.mime === container)
+  if (daLista) return { mime: daLista.mime, extensao: daLista.extensao }
+  // Contêineres que a Meta aceita mas que não pedimos — um navegador pode
+  // devolver um deles por conta própria, e recusar seria recusar algo bom.
+  if (container === 'audio/aac') return { mime: 'audio/aac', extensao: 'aac' }
+  if (container === 'audio/mpeg') return { mime: 'audio/mpeg', extensao: 'mp3' }
+  return null
+}
+
+/** A frase de quando o navegador entregou codec que a Meta não toca. */
+export const CODEC_TROCADO =
+  'Este navegador gravou num formato que o WhatsApp não entrega. Atualize o navegador ou use o Firefox.'
 
 /**
  * O primeiro formato que este navegador grava **e** a Meta aceita.

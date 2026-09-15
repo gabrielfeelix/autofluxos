@@ -187,7 +187,7 @@ export function SeletorDeArquivo({
   return (
     <div className="space-y-2">
       {escolhido ? (
-        <div className="flex items-center gap-2.5 rounded-[10px] border border-white/[0.09] bg-white/[0.03] p-2">
+        <div className="flex items-center gap-2.5 rounded-[10px] border border-line bg-surface p-2">
           {midia === 'imagem' && !url.includes('{{') ? (
             /* O otimizador do Next exige domínio declarado, e aqui o endereço
                é o Storage do cliente **ou** qualquer host de fora — não há
@@ -203,7 +203,7 @@ export function SeletorDeArquivo({
               }}
             />
           ) : (
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-white/[0.06] text-[15px]">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-surface-strong text-[15px]">
               {midia === 'video' ? '🎬' : midia === 'audio' ? '🎤' : '📄'}
             </span>
           )}
@@ -218,7 +218,7 @@ export function SeletorDeArquivo({
           <button
             type="button"
             onClick={() => aoEscolher({ url: '', midia })}
-            className="rounded-lg px-2 py-1 text-[11px] font-semibold text-dim transition hover:bg-white/[0.06] hover:text-rose-300"
+            className="rounded-lg px-2 py-1 text-[11px] font-semibold text-dim transition hover:bg-surface-strong hover:text-rose-300"
           >
             Trocar
           </button>
@@ -236,7 +236,7 @@ export function SeletorDeArquivo({
             enviar(e.dataTransfer.files[0])
           }}
           className={`rounded-[10px] border border-dashed px-3 py-5 text-center transition ${
-            arrastando ? 'border-accent/60 bg-accent/[0.08]' : 'border-white/[0.14] bg-white/[0.02]'
+            arrastando ? 'border-primary/60 bg-primary/[0.08]' : 'border-strong bg-panel'
           }`}
         >
           <p className="text-[12px] font-semibold text-soft">
@@ -277,7 +277,7 @@ export function SeletorDeArquivo({
             setMostrandoAcervo((aberto) => !aberto)
             setColando(false)
           }}
-          className="font-semibold text-accent transition hover:underline"
+          className="font-semibold text-primary transition hover:underline"
         >
           {mostrandoAcervo ? 'fechar o acervo' : 'usar do acervo'}
         </button>
@@ -288,14 +288,14 @@ export function SeletorDeArquivo({
             setColando((aberto) => !aberto)
             setMostrandoAcervo(false)
           }}
-          className="font-semibold text-muted transition hover:text-accent hover:underline"
+          className="font-semibold text-muted transition hover:text-primary hover:underline"
         >
           {colando ? 'fechar' : 'colar um endereço'}
         </button>
       </div>
 
       {mostrandoAcervo && (
-        <div className="max-h-[190px] overflow-y-auto rounded-[10px] border border-white/[0.09] p-1.5">
+        <div className="max-h-[190px] overflow-y-auto rounded-[10px] border border-line p-1.5">
           {acervo === null ? (
             <p className="px-2 py-3 text-center text-[11px] text-dim">carregando…</p>
           ) : acervo.length === 0 ? (
@@ -310,7 +310,7 @@ export function SeletorDeArquivo({
                   <button
                     type="button"
                     onClick={() => aplicar(arquivo)}
-                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition hover:bg-white/[0.06]"
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition hover:bg-surface-strong"
                   >
                     <span className="text-[13px]">
                       {arquivo.midia === 'imagem'
@@ -360,8 +360,8 @@ export function SeletorDeArquivo({
                 onClick={() => aoEscolher({ url, midia: tipo })}
                 className={`rounded-full border px-2 py-0.5 text-[10.5px] font-semibold transition ${
                   midia === tipo
-                    ? 'border-accent/40 bg-accent/[0.14] text-accent'
-                    : 'border-white/[0.08] text-dim hover:border-white/20 hover:text-muted'
+                    ? 'border-primary/40 bg-primary/[0.14] text-primary'
+                    : 'border-line text-dim hover:border-white/20 hover:text-muted'
                 }`}
               >
                 {ROTULO_DA_MIDIA[tipo]}

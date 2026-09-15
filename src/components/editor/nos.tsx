@@ -52,20 +52,20 @@ function Caixa({
 }) {
   return (
     <div
-      className={`w-[248px] overflow-hidden rounded-xl border bg-[#0b1018] text-xs shadow-[0_14px_34px_rgba(0,0,0,0.35)] transition ${CORES[tipo]} ${
-        selecionado ? '!border-accent ring-1 ring-accent/30' : ''
+      className={`w-[248px] overflow-hidden rounded-xl border bg-[#0b1018] text-xs shadow-[0_14px_34px_rgba(19,25,34,0.077)] transition ${CORES[tipo]} ${
+        selecionado ? '!border-primary ring-1 ring-primary/30' : ''
       }`}
     >
-      <Handle type="target" position={Position.Left} className="!left-[-7px] !size-[15px] !border-2 !border-white/30 !bg-[#0b1018] transition hover:!border-accent" />
-      <p className="flex h-[38px] items-center gap-2 border-b border-white/[0.06] px-3 text-[10px] font-bold tracking-[0.06em] text-[#97a2b4] uppercase">
-        <span aria-hidden className="flex size-6 items-center justify-center rounded-[7px] bg-white/[0.05] text-[13px] text-soft">
+      <Handle type="target" position={Position.Left} className="!left-[-7px] !size-[15px] !border-2 !border-white/30 !bg-[#0b1018] transition hover:!border-primary" />
+      <p className="flex h-[38px] items-center gap-2 border-b border-line px-3 text-[10px] font-bold tracking-[0.06em] text-[#97a2b4] uppercase">
+        <span aria-hidden className="flex size-6 items-center justify-center rounded-[7px] bg-surface text-[13px] text-soft">
           {ICONES[tipo]}
         </span>
         {NOMES[tipo]}
       </p>
       <div className="px-3 py-2.5">{children}</div>
       {saidaUnica && (
-        <Handle type="source" position={Position.Right} className="!right-[-7px] !size-[13px] !border-2 !border-[#0b1018] !bg-accent transition hover:!ring-2 hover:!ring-accent/40" />
+        <Handle type="source" position={Position.Right} className="!right-[-7px] !size-[13px] !border-2 !border-[#0b1018] !bg-primary transition hover:!ring-2 hover:!ring-primary/40" />
       )}
     </div>
   )
@@ -74,13 +74,13 @@ function Caixa({
 /** Uma linha com a própria alça de saída à direita. */
 function Saida({ id, children }: { id: string; children: ReactNode }) {
   return (
-    <div className="relative mt-1.5 rounded-[7px] border border-white/[0.07] bg-white/[0.035] px-2 py-1.5 pr-5 text-[#b9c2d0]">
+    <div className="relative mt-1.5 rounded-[7px] border border-line bg-surface px-2 py-1.5 pr-5 text-[#b9c2d0]">
       {children}
       <Handle
         type="source"
         id={id}
         position={Position.Right}
-        className="!right-[-7px] !size-[13px] !border-2 !border-[#0b1018] !bg-accent transition hover:!ring-2 hover:!ring-accent/40"
+        className="!right-[-7px] !size-[13px] !border-2 !border-[#0b1018] !bg-primary transition hover:!ring-2 hover:!ring-primary/40"
         style={{ top: '50%' }}
       />
     </div>

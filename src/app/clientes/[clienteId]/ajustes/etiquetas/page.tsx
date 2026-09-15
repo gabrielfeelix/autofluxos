@@ -48,7 +48,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         </p>
 
         <section className="app-card overflow-hidden">
-          <header className="flex items-center justify-between gap-4 border-b border-white/[0.06] px-5 py-4">
+          <header className="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
             <h2 className="text-[14.5px] font-bold">
               {etiquetas.length} {etiquetas.length === 1 ? 'etiqueta' : 'etiquetas'}
             </h2>
@@ -91,7 +91,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           ) : (
             <ul>
               {etiquetas.map((etiqueta) => (
-                <li key={etiqueta.id} className="border-b border-white/[0.045] px-5 py-4 last:border-0">
+                <li key={etiqueta.id} className="border-b border-line px-5 py-4 last:border-0">
                   <div className="mb-2.5 flex items-center gap-3">
                     <FichaDeEtiqueta nome={etiqueta.nome} cor={etiqueta.cor} />
                     <span className="flex-1 text-[11px] text-dim">

@@ -93,7 +93,7 @@ async function Funil({ clienteId }: { clienteId: string }) {
           <p className="mt-1 text-[11.5px] text-dim">Mês passado: {resumoDoMes(funil.anterior)}</p>
         </div>
 
-        <span aria-hidden className="h-[38px] w-px bg-white/[0.07]" />
+        <span aria-hidden className="h-[38px] w-px bg-surface-strong" />
 
         <Medida valor={funil.atual.conversas} rotulo="conversas" />
         <Medida
@@ -118,7 +118,7 @@ async function Funil({ clienteId }: { clienteId: string }) {
       {funil.atual.conversas > 0 && (
         <div className="mt-4">
           <div
-            className="flex h-2 overflow-hidden rounded-full bg-white/[0.06]"
+            className="flex h-2 overflow-hidden rounded-full bg-surface-strong"
             role="img"
             aria-label={`${percentual}% das conversas resolvidas pelo bot`}
           >
@@ -199,7 +199,7 @@ function Tempo({
   detalhe: string
 }) {
   return (
-    <div className="rounded-[11px] border border-white/[0.07] bg-white/[0.02] px-4 py-3">
+    <div className="rounded-[11px] border border-line bg-panel px-4 py-3">
       <p className="text-[11.5px] font-semibold text-muted">{rotulo}</p>
       <p className="mt-1 flex items-baseline gap-2">
         <strong className="text-[20px] font-bold tracking-[-0.02em]">
@@ -258,7 +258,7 @@ async function Pessoas({ clienteId }: { clienteId: string }) {
 
   return (
     <section className="app-card mb-[18px] overflow-hidden" aria-labelledby="titulo-pessoas">
-      <header className="border-b border-white/[0.06] px-6 py-4">
+      <header className="border-b border-line px-6 py-4">
         <h2
           id="titulo-pessoas"
           className="text-[12px] font-bold tracking-[0.08em] text-dim uppercase"
@@ -278,7 +278,7 @@ async function Pessoas({ clienteId }: { clienteId: string }) {
           return (
             <li
               key={pessoa.usuarioId}
-              className="flex items-center gap-4 border-b border-white/[0.045] px-6 py-3 last:border-0"
+              className="flex items-center gap-4 border-b border-line px-6 py-3 last:border-0"
             >
               <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">
                 {nome ?? 'alguém que saiu da conta'}
@@ -355,7 +355,7 @@ async function Atendimento({ clienteId }: { clienteId: string }) {
           {pendencia ? 'Ainda não está atendendo' : 'Atendendo no WhatsApp'}
         </p>
 
-        <span aria-hidden className="h-[26px] w-px bg-white/[0.07]" />
+        <span aria-hidden className="h-[26px] w-px bg-surface-strong" />
 
         <Medida valor={noAr.length} rotulo={noAr.length === 1 ? 'fluxo no ar' : 'fluxos no ar'} />
         <Medida valor={canais.length} rotulo={canais.length === 1 ? 'número' : 'números'} />
@@ -366,14 +366,14 @@ async function Atendimento({ clienteId }: { clienteId: string }) {
 
         <Link
           href={`/clientes/${clienteId}/leads`}
-          className="text-[13px] font-bold text-accent transition hover:opacity-80"
+          className="text-[13px] font-bold text-primary transition hover:opacity-80"
         >
           Ver leads →
         </Link>
       </div>
 
       {pendencia && (
-        <p className="mt-4 flex flex-wrap items-center gap-3 border-t border-white/[0.06] pt-3.5 text-[12.5px] text-amber-200">
+        <p className="mt-4 flex flex-wrap items-center gap-3 border-t border-line pt-3.5 text-[12.5px] text-amber-200">
           {pendencia.texto}
           <Link
             href={`/clientes/${clienteId}${pendencia.href}`}

@@ -54,12 +54,12 @@ export default async function Pagina({
     <ClienteShell cliente={cliente} ativa="ajustes">
       <main className="w-full max-w-[1280px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         {busca.ok === '1' && (
-          <p className="mb-4 rounded-[10px] border border-accent/30 bg-accent/[0.08] px-4 py-3 text-[12px] text-soft">
+          <p className="mb-4 rounded-[10px] border border-primary/30 bg-primary/[0.08] px-4 py-3 text-[12px] text-soft">
             Conta de anúncios ligada. Agora ligue a página de onde vêm os leads, abaixo.
           </p>
         )}
         {busca.erro && (
-          <p className="mb-4 rounded-[10px] border border-white/[0.09] bg-white/[0.03] px-4 py-3 text-[12px] text-soft">
+          <p className="mb-4 rounded-[10px] border border-line bg-surface px-4 py-3 text-[12px] text-soft">
             {busca.erro === 'cancelado'
               ? 'A conexão foi cancelada na tela da Meta. Nada mudou.'
               : 'Não deu para ligar a conta de anúncios. Tente de novo.'}
@@ -91,7 +91,7 @@ export default async function Pagina({
             <span
               aria-hidden
               className={`flex size-8 shrink-0 items-center justify-center rounded-lg text-[15px] ${
-                temToken ? 'bg-accent/[0.12]' : 'bg-white/[0.05]'
+                temToken ? 'bg-primary/[0.12]' : 'bg-surface'
               }`}
             >
               🔑
@@ -121,7 +121,7 @@ export default async function Pagina({
             <form action={acaoConectarComFacebook.bind(null, clienteId)}>
               <button
                 type="submit"
-                className="rounded-lg bg-accent px-3.5 py-2 text-[12.5px] font-bold text-black transition hover:brightness-110"
+                className="rounded-lg bg-primary px-3.5 py-2 text-[12.5px] font-bold text-black transition hover:brightness-110"
               >
                 {temToken ? 'Reconectar com Facebook' : 'Conectar com Facebook'}
               </button>
@@ -143,7 +143,7 @@ export default async function Pagina({
                 onde a pessoa desiste — e o caminho tem cinco cliques em telas
                 que ela não visita nunca.
               */}
-              <div className="rounded-[10px] border border-white/[0.07] bg-white/[0.02] px-3.5 py-3">
+              <div className="rounded-[10px] border border-line bg-panel px-3.5 py-3">
                 <p className="text-[11px] font-bold text-soft">Onde gerar este token</p>
                 <ol className="mt-2 list-decimal space-y-1.5 pl-4 text-[11px] leading-[17px] text-dim">
                   <li>

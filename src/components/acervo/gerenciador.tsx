@@ -102,7 +102,7 @@ export function GerenciadorDoAcervo({
             e.preventDefault()
             enviar(e.dataTransfer.files[0])
           }}
-          className="mt-5 rounded-[11px] border border-dashed border-white/[0.14] bg-white/[0.02] px-4 py-6 text-center"
+          className="mt-5 rounded-[11px] border border-dashed border-strong bg-panel px-4 py-6 text-center"
         >
           <p className="text-[12.5px] font-semibold text-soft">
             {enviando ? 'Enviando…' : 'Arraste o arquivo aqui'}
@@ -145,7 +145,7 @@ export function GerenciadorDoAcervo({
       </section>
 
       <section className="app-card overflow-hidden">
-        <header className="border-b border-white/[0.06] px-6 py-4">
+        <header className="border-b border-line px-6 py-4">
           <h2 className="text-[14.5px] font-bold">Arquivos</h2>
           <p className="mt-0.5 text-[12px] text-dim">
             {arquivos.length === 0
@@ -190,7 +190,7 @@ function Cartao({
   const [copiado, setCopiado] = useState(false)
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-[12px] border border-white/[0.08] bg-white/[0.02]">
+    <div className="flex h-full flex-col overflow-hidden rounded-[12px] border border-line bg-panel">
       <div className="flex h-[118px] items-center justify-center bg-black/25">
         {arquivo.midia === 'imagem' ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -222,7 +222,7 @@ function Cartao({
               // passa a ser rótulo do botão.
               setTimeout(() => setCopiado(false), 1600)
             }}
-            className="flex-1 rounded-lg border border-accent/30 bg-accent/[0.08] px-2 py-1.5 text-[11px] font-semibold text-accent transition hover:bg-accent/[0.15]"
+            className="flex-1 rounded-lg border border-primary/30 bg-primary/[0.08] px-2 py-1.5 text-[11px] font-semibold text-primary transition hover:bg-primary/[0.15]"
           >
             {copiado ? 'copiado!' : 'Copiar endereço'}
           </button>

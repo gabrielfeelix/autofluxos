@@ -39,7 +39,7 @@ export function LogoDoCliente({
         src={cliente.logoUrl}
         alt={`Logo de ${cliente.nome}`}
         style={lado}
-        className="shrink-0 rounded-[12px] border border-white/[0.1] bg-white/[0.04] object-contain p-1"
+        className="shrink-0 rounded-[12px] border border-line bg-surface object-contain p-1"
       />
     )
   }
@@ -48,7 +48,7 @@ export function LogoDoCliente({
     <span
       aria-hidden
       style={{ ...lado, fontSize: Math.max(10, Math.round(tamanho * 0.28)) }}
-      className="flex shrink-0 items-center justify-center rounded-[12px] border border-white/[0.11] bg-[linear-gradient(135deg,#243244,#151d29)] font-bold text-[#9aa6b8]"
+      className="flex shrink-0 items-center justify-center rounded-[12px] border border-strong bg-[linear-gradient(135deg,#243244,#151d29)] font-bold text-[#9aa6b8]"
     >
       {iniciaisDe(cliente.nome)}
     </span>

@@ -37,7 +37,7 @@ export default async function Auditoria() {
           </p>
         </section>
       ) : (
-        <ul className="app-card divide-y divide-white/[0.045] overflow-hidden">
+        <ul className="app-card divide-y divide-line overflow-hidden">
           {atos.map((ato) => (
             <li key={ato.id}>
               <Linha ato={ato} />

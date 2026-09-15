@@ -261,7 +261,7 @@ export function ConectarWhatsapp({
         onClick={abrir}
         disabled={!pronto || estado === 'abrindo' || estado === 'concluindo'}
         style={{ backgroundColor: '#25D366' }}
-        className="inline-flex items-center gap-2 rounded-[9px] px-[18px] py-3 text-[13.5px] font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex items-center gap-2 rounded-[9px] px-[18px] py-3 text-[13.5px] font-semibold text-ink transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <LogoDoCanal canal="whatsapp" tamanho={17} />
         {estado === 'concluindo'

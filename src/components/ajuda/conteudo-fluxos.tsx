@@ -112,7 +112,7 @@ export function SecaoComoFunciona() {
           <li key={etapa.titulo} className="app-card relative p-4">
             <span
               aria-hidden
-              className="font-mono text-[11px] font-bold tracking-[0.1em] text-accent"
+              className="font-mono text-[11px] font-bold tracking-[0.1em] text-primary"
             >
               {String(i + 1).padStart(2, '0')}
             </span>
@@ -160,7 +160,7 @@ export function SecaoBlocos() {
             <p className="flex items-center gap-2.5">
               <span
                 aria-hidden
-                className="flex size-7 items-center justify-center rounded-lg bg-white/[0.05] text-[14px] text-soft"
+                className="flex size-7 items-center justify-center rounded-lg bg-surface text-[14px] text-soft"
               >
                 {ICONES[tipo]}
               </span>
@@ -222,7 +222,7 @@ export function SecaoEntrada() {
           <li key={porta.nome} className="app-card flex gap-3.5 p-4">
             <span
               aria-hidden
-              className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-white/[0.05] font-mono text-[12px] font-bold text-dim"
+              className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-surface font-mono text-[12px] font-bold text-dim"
             >
               {i + 1}
             </span>

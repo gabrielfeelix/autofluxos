@@ -141,7 +141,7 @@ export function Compartilhar({
           if (evento.target === dialogo.current) dialogo.current?.close()
         }}
         onClose={() => setCopiado(null)}
-        className="app-dialog m-auto w-[min(560px,92vw)] rounded-[18px] border border-white/10 bg-panel text-ink shadow-[0_40px_100px_rgba(0,0,0,0.6)]"
+        className="app-dialog m-auto w-[min(560px,92vw)] rounded-[18px] border border-white/10 bg-panel text-ink shadow-[0_40px_100px_rgba(19,25,34,0.132)]"
       >
         <div className="p-[26px]">
           <h2 className="text-[15px] font-bold">Compartilhar por link</h2>
@@ -201,7 +201,7 @@ export function Compartilhar({
             </p>
           )}
 
-          <div className="mt-5 border-t border-white/[0.06] pt-4">
+          <div className="mt-5 border-t border-line pt-4">
             {links === null ? (
               <p className="text-[11.5px] text-dim">carregando…</p>
             ) : links.length === 0 ? (
@@ -216,7 +216,7 @@ export function Compartilhar({
                   return (
                     <li
                       key={link.id}
-                      className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-3"
+                      className="rounded-xl border border-line bg-panel p-3"
                     >
                       <div className="flex items-center gap-2">
                         <input

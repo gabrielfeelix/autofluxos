@@ -159,7 +159,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           />
         ) : (
           <div className="app-card mb-4 flex flex-wrap items-center gap-3 px-5 py-4">
-            <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.05] text-[15px]">
+            <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-[15px]">
               📅
             </span>
             <div className="min-w-0 flex-1">

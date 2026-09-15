@@ -79,7 +79,7 @@ export function MenuDoContato({
         aria-expanded={aberto}
         aria-label={`Ações de ${nome}`}
         onClick={() => setAberto((estava) => !estava)}
-        className="rounded-lg px-2 py-1 text-[13px] leading-none text-dim transition hover:bg-white/[0.06] hover:text-soft"
+        className="rounded-lg px-2 py-1 text-[13px] leading-none text-dim transition hover:bg-surface-strong hover:text-soft"
       >
         ⋮
       </button>
@@ -87,19 +87,19 @@ export function MenuDoContato({
       {aberto && (
         <div
           role="menu"
-          className="absolute right-0 z-20 mt-1 w-[196px] overflow-hidden rounded-[10px] border border-white/[0.1] bg-[#141a23] py-1 shadow-xl"
+          className="absolute right-0 z-20 mt-1 w-[196px] overflow-hidden rounded-[10px] border border-line bg-[#141a23] py-1 shadow-xl"
         >
           <Link
             role="menuitem"
             href={`/clientes/${clienteId}/inbox?conversa=${encodeURIComponent(contatoId)}`}
-            className="block px-3 py-2 text-[12px] text-soft transition hover:bg-white/[0.06]"
+            className="block px-3 py-2 text-[12px] text-soft transition hover:bg-surface-strong"
           >
             Abrir no Inbox
           </Link>
           <Link
             role="menuitem"
             href={`/clientes/${clienteId}/leads/${contatoId}`}
-            className="block px-3 py-2 text-[12px] text-soft transition hover:bg-white/[0.06]"
+            className="block px-3 py-2 text-[12px] text-soft transition hover:bg-surface-strong"
           >
             Ver a ficha
           </Link>
@@ -120,7 +120,7 @@ export function MenuDoContato({
                 : undefined
             }
             onClick={alternarBot}
-            className="block w-full px-3 py-2 text-left text-[12px] text-soft transition hover:bg-white/[0.06] disabled:opacity-40"
+            className="block w-full px-3 py-2 text-left text-[12px] text-soft transition hover:bg-surface-strong disabled:opacity-40"
           >
             {automacaoAtiva ? 'Pausar o bot' : 'Religar o bot'}
           </button>
@@ -130,7 +130,7 @@ export function MenuDoContato({
             type="button"
             disabled={rodando}
             onClick={apagar}
-            className="block w-full border-t border-white/[0.06] px-3 py-2 text-left text-[12px] text-rose-300 transition hover:bg-rose-400/[0.09] disabled:opacity-40"
+            className="block w-full border-t border-line px-3 py-2 text-left text-[12px] text-rose-300 transition hover:bg-rose-400/[0.09] disabled:opacity-40"
           >
             Apagar contato
           </button>

@@ -122,7 +122,7 @@ export function Popover({
     <div
       ref={painel}
       style={{ position: 'fixed', top: caixa.top, left: caixa.left, width: largura, zIndex: 95 }}
-      className="rounded-[12px] border border-accent/25 bg-[#111924] p-1.5 shadow-[0_18px_45px_rgba(0,0,0,0.48),0_2px_8px_rgba(0,0,0,0.28)]"
+      className="rounded-[12px] border border-primary/25 bg-[#111924] p-1.5 shadow-[0_18px_45px_rgba(19,25,34,0.106),0_2px_8px_rgba(19,25,34,0.062)]"
     >
       {children}
     </div>,

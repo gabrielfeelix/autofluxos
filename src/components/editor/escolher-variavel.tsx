@@ -87,7 +87,7 @@ export function SeletorDeVariavel({
           setAberto((estava) => !estava)
         }}
         className={`rounded-md px-1.5 py-0.5 font-mono text-[12px] transition disabled:opacity-40 ${
-          aberto ? 'bg-accent/15 text-accent' : 'text-dim hover:bg-white/[0.06] hover:text-accent'
+          aberto ? 'bg-primary/15 text-primary' : 'text-dim hover:bg-surface-strong hover:text-primary'
         }`}
       >
         {'{x}'}
@@ -125,7 +125,7 @@ export function SeletorDeVariavel({
                   evento.preventDefault()
                   inserir(v)
                 }}
-                className="block w-full truncate rounded-md px-2 py-1.5 text-left font-mono text-[11.5px] text-[#8de2fa] transition hover:bg-accent/[0.12]"
+                className="block w-full truncate rounded-md px-2 py-1.5 text-left font-mono text-[11.5px] text-[#8de2fa] transition hover:bg-primary/[0.12]"
               >{`{{${v}}}`}</button>
             ))
           )}

@@ -36,7 +36,7 @@ export default async function Cadastrar() {
           Já tem conta?{' '}
           <Link
             href="/entrar"
-            className="text-muted underline underline-offset-2 transition hover:text-accent"
+            className="text-muted underline underline-offset-2 transition hover:text-primary"
           >
             Entrar
           </Link>

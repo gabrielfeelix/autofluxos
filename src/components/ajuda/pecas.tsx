@@ -35,8 +35,8 @@ export function Secao({
   children: ReactNode
 }) {
   return (
-    <section id={id} className="scroll-mt-[86px] border-t border-white/[0.06] pt-11 first:border-0">
-      <p className="font-mono text-[10.5px] font-bold tracking-[0.16em] text-accent uppercase">
+    <section id={id} className="scroll-mt-[86px] border-t border-line pt-11 first:border-0">
+      <p className="font-mono text-[10.5px] font-bold tracking-[0.16em] text-primary uppercase">
         {etiqueta}
       </p>
       <h2 className="mt-2 text-[24px] leading-[1.15] font-bold tracking-[-0.025em] text-balance md:text-[29px]">
@@ -73,7 +73,7 @@ export function Var({ children }: { children: string }) {
 /** Um valor literal: um caminho de JSON, um endereço, uma resposta. */
 export function Cod({ children }: { children: ReactNode }) {
   return (
-    <code className="rounded-[5px] border border-white/[0.09] bg-white/[0.045] px-[5px] py-[1px] font-mono text-[12px] text-soft">
+    <code className="rounded-[5px] border border-line bg-surface px-[5px] py-[1px] font-mono text-[12px] text-soft">
       {children}
     </code>
   )
@@ -82,9 +82,9 @@ export function Cod({ children }: { children: ReactNode }) {
 /** Um bloco de código de verdade — JSON de resposta, corpo de requisição. */
 export function Codigo({ titulo, children }: { titulo?: string; children: string }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-white/[0.07] bg-[#070a0e]">
+    <div className="overflow-hidden rounded-xl border border-line bg-[#070a0e]">
       {titulo && (
-        <p className="border-b border-white/[0.06] px-3.5 py-2 font-mono text-[10.5px] tracking-[0.08em] text-dim uppercase">
+        <p className="border-b border-line px-3.5 py-2 font-mono text-[10.5px] tracking-[0.08em] text-dim uppercase">
           {titulo}
         </p>
       )}
@@ -107,8 +107,8 @@ const TOM_DA_NOTA = {
     simbolo: '×',
   },
   dica: {
-    borda: 'border-accent/25 bg-accent/[0.05]',
-    marca: 'text-accent',
+    borda: 'border-primary/25 bg-primary/[0.05]',
+    marca: 'text-primary',
     simbolo: '→',
   },
 } as const
@@ -171,12 +171,12 @@ export function Bloco({
 }) {
   return (
     <div
-      className={`relative w-full max-w-[262px] overflow-hidden rounded-xl border bg-[#0b1018] shadow-[0_14px_34px_rgba(0,0,0,0.35)] ${CORES[tipo]}`}
+      className={`relative w-full max-w-[262px] overflow-hidden rounded-xl border bg-[#0b1018] shadow-[0_14px_34px_rgba(19,25,34,0.077)] ${CORES[tipo]}`}
     >
-      <p className="flex h-[38px] items-center gap-2 border-b border-white/[0.06] px-3 text-[10px] font-bold tracking-[0.06em] text-[#97a2b4] uppercase">
+      <p className="flex h-[38px] items-center gap-2 border-b border-line px-3 text-[10px] font-bold tracking-[0.06em] text-[#97a2b4] uppercase">
         <span
           aria-hidden
-          className="flex size-6 items-center justify-center rounded-[7px] bg-white/[0.05] text-[13px] text-soft"
+          className="flex size-6 items-center justify-center rounded-[7px] bg-surface text-[13px] text-soft"
         >
           {ICONES[tipo]}
         </span>
@@ -188,14 +188,14 @@ export function Bloco({
         </div>
       )}
       {saidas && (
-        <ul className="border-t border-white/[0.06]">
+        <ul className="border-t border-line">
           {saidas.map((saida) => (
             <li
               key={saida}
-              className="flex items-center justify-between gap-2 border-b border-white/[0.04] px-3 py-1.5 text-[11px] text-muted last:border-0"
+              className="flex items-center justify-between gap-2 border-b border-line-soft px-3 py-1.5 text-[11px] text-muted last:border-0"
             >
               {saida}
-              <span aria-hidden className="size-[7px] rounded-full bg-accent/70" />
+              <span aria-hidden className="size-[7px] rounded-full bg-primary/70" />
             </li>
           ))}
         </ul>
@@ -239,11 +239,11 @@ export function Zap({
       >
         {children}
         {botoes && (
-          <span className="mt-2 block space-y-1 border-t border-white/[0.09] pt-2">
+          <span className="mt-2 block space-y-1 border-t border-line pt-2">
             {botoes.map((botao) => (
               <span
                 key={botao}
-                className="block rounded-[7px] border border-white/[0.09] py-1 text-center text-[11.5px] font-semibold text-accent"
+                className="block rounded-[7px] border border-line py-1 text-center text-[11.5px] font-semibold text-primary"
               >
                 {botao}
               </span>
@@ -258,8 +258,8 @@ export function Zap({
 /** O celular em volta da conversa. Dá contexto sem virar mockup de loja. */
 export function Conversa({ titulo, children }: { titulo?: string; children: ReactNode }) {
   return (
-    <div className="w-full max-w-[300px] overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0a0e15]">
-      <p className="flex items-center gap-2 border-b border-white/[0.06] bg-white/[0.02] px-3.5 py-2.5">
+    <div className="w-full max-w-[300px] overflow-hidden rounded-2xl border border-line bg-[#0a0e15]">
+      <p className="flex items-center gap-2 border-b border-line bg-panel px-3.5 py-2.5">
         <span
           aria-hidden
           className="flex size-[22px] items-center justify-center rounded-full bg-[#1d4b46] text-[10px] font-bold text-[#7ee3c8]"
@@ -303,7 +303,7 @@ export function Espelho({
           </p>
           {conversa}
         </div>
-        <div className="min-w-0 md:border-l md:border-white/[0.06] md:pl-7">
+        <div className="min-w-0 md:border-l md:border-line md:pl-7">
           <p className="mb-2.5 font-mono text-[10px] tracking-[0.12em] text-dim uppercase">
             O que você desenha
           </p>
@@ -311,7 +311,7 @@ export function Espelho({
         </div>
       </div>
       {nota && (
-        <p className="border-t border-white/[0.06] bg-white/[0.015] px-5 py-3 text-[12.5px] leading-[1.6] text-muted">
+        <p className="border-t border-line bg-panel px-5 py-3 text-[12.5px] leading-[1.6] text-muted">
           {nota}
         </p>
       )}
@@ -337,7 +337,7 @@ export function Passo({ n, titulo, children }: { n: number; titulo: string; chil
     <li className="app-card flex gap-3.5 p-4">
       <span
         aria-hidden
-        className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-accent/[0.12] font-mono text-[12px] font-bold text-accent"
+        className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/[0.12] font-mono text-[12px] font-bold text-primary"
       >
         {n}
       </span>
@@ -356,13 +356,13 @@ export function Duvida({ p, children }: { p: string; children: ReactNode }) {
       <summary className="flex list-none items-start gap-3 px-4 py-3.5 text-[13.5px] font-semibold text-ink [&::-webkit-details-marker]:hidden">
         <span
           aria-hidden
-          className="mt-[3px] shrink-0 font-mono text-[11px] text-accent transition-transform group-open:rotate-90"
+          className="mt-[3px] shrink-0 font-mono text-[11px] text-primary transition-transform group-open:rotate-90"
         >
           ▸
         </span>
         {p}
       </summary>
-      <div className="space-y-2.5 border-t border-white/[0.06] px-4 py-3.5 pl-[34px] text-[13px] leading-[1.7] text-muted">
+      <div className="space-y-2.5 border-t border-line px-4 py-3.5 pl-[34px] text-[13px] leading-[1.7] text-muted">
         {children}
       </div>
     </details>
@@ -375,7 +375,7 @@ export function Tabela({ cabecalho, children }: { cabecalho: string[]; children:
     <div className="app-card overflow-x-auto">
       <table className="w-full min-w-[520px] border-collapse text-left text-[12.5px]">
         <thead>
-          <tr className="border-b border-white/[0.07]">
+          <tr className="border-b border-line">
             {cabecalho.map((coluna) => (
               <th
                 key={coluna}
@@ -387,7 +387,7 @@ export function Tabela({ cabecalho, children }: { cabecalho: string[]; children:
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-white/[0.045]">{children}</tbody>
+        <tbody className="divide-y divide-line">{children}</tbody>
       </table>
     </div>
   )

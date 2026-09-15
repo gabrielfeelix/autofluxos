@@ -123,11 +123,11 @@ export default async function Pagina({
 function Esqueleto() {
   return (
     <div className="app-card overflow-hidden">
-      <div className="h-11 border-b border-white/[0.07] bg-white/[0.018]" />
+      <div className="h-11 border-b border-line bg-panel" />
       {[0, 1, 2, 3].map((i) => (
-        <div key={i} className="flex h-14 animate-pulse items-center gap-3 border-b border-white/[0.045] px-3.5">
-          <span className="size-8 rounded-full bg-white/[0.06]" />
-          <span className="h-3 w-36 rounded bg-white/[0.06]" />
+        <div key={i} className="flex h-14 animate-pulse items-center gap-3 border-b border-line px-3.5">
+          <span className="size-8 rounded-full bg-surface-strong" />
+          <span className="h-3 w-36 rounded bg-surface-strong" />
         </div>
       ))}
       <span className="sr-only">Carregando os contatos…</span>
@@ -180,7 +180,7 @@ async function Tabela({
   return (
     <>
       <div className="mb-[22px] flex flex-wrap items-center justify-end gap-2 md:-mt-[53px]">
-        <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-semibold text-muted">
+        <span className="rounded-full border border-white/10 bg-surface px-3 py-1 text-[11px] font-semibold text-muted">
           {total} {total === 1 ? 'pessoa' : 'pessoas'}
           {filtrando && ' no filtro'}
         </span>
@@ -249,7 +249,7 @@ async function Tabela({
         {termo !== '' && (
           <Link
             href={endereco(clienteId, { etiqueta, marca })}
-            className="self-center text-[11.5px] font-semibold text-accent hover:underline"
+            className="self-center text-[11.5px] font-semibold text-primary hover:underline"
           >
             Limpar busca
           </Link>
@@ -313,7 +313,7 @@ async function Tabela({
           </p>
           <Link
             href={`/clientes/${clienteId}/leads`}
-            className="mt-2 inline-block text-[11.5px] font-semibold text-accent hover:underline"
+            className="mt-2 inline-block text-[11.5px] font-semibold text-primary hover:underline"
             scroll={false}
           >
             Limpar filtro
@@ -328,7 +328,7 @@ async function Tabela({
           <div className="app-card overflow-x-auto overflow-y-hidden">
             <table className="w-full min-w-[820px] border-collapse text-left">
               <thead>
-                <tr className="border-b border-white/[0.07]">
+                <tr className="border-b border-line">
                   <th scope="col" className="w-9 px-3.5 py-2.5">
                     <CaixaDeTodos ids={leads.map((lead) => lead.contatoId)} />
                   </th>
@@ -347,7 +347,7 @@ async function Tabela({
               </thead>
               <tbody>
                 {leads.map((lead) => (
-                <tr key={lead.contatoId} className="border-b border-white/[0.045] transition last:border-0 hover:bg-white/[0.03]">
+                <tr key={lead.contatoId} className="border-b border-line transition last:border-0 hover:bg-surface">
                   <td className="px-3.5 py-3 align-top">
                     <CaixaDeSelecao id={lead.contatoId} rotulo={lead.nome ?? lead.waId} />
                   </td>
@@ -357,7 +357,7 @@ async function Tabela({
                       <div className="min-w-0">
                         <Link
                           href={`/clientes/${clienteId}/leads/${lead.contatoId}`}
-                          className="block truncate text-[13px] font-bold transition hover:text-accent"
+                          className="block truncate text-[13px] font-bold transition hover:text-primary"
                         >
                           {lead.nome ?? 'sem nome'}
                         </Link>
@@ -487,13 +487,13 @@ function Passo({ href, ativo, children }: { href: string; ativo: boolean; childr
   const classe = 'rounded-lg border px-3 py-1.5 text-[11.5px] font-semibold transition'
   if (!ativo) {
     return (
-      <span aria-disabled="true" className={`${classe} border-white/[0.06] text-dim`}>
+      <span aria-disabled="true" className={`${classe} border-line text-dim`}>
         {children}
       </span>
     )
   }
   return (
-    <Link href={href} scroll={false} className={`${classe} border-white/10 text-muted hover:border-white/20 hover:text-white`}>
+    <Link href={href} scroll={false} className={`${classe} border-white/10 text-muted hover:border-white/20 hover:text-ink`}>
       {children}
     </Link>
   )
@@ -502,8 +502,8 @@ function Passo({ href, ativo, children }: { href: string; ativo: boolean; childr
 function classeDoFiltro(ativo: boolean): string {
   return `rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${
     ativo
-      ? 'border-accent/35 bg-accent/12 text-accent'
-      : 'border-white/10 bg-white/[0.025] text-muted hover:border-white/20 hover:text-white'
+      ? 'border-primary/35 bg-primary/12 text-primary'
+      : 'border-white/10 bg-panel text-muted hover:border-white/20 hover:text-ink'
   }`
 }
 
@@ -518,7 +518,7 @@ function Cabecalho({ children }: { children: React.ReactNode }) {
 function Avatar({ nome }: { nome: string | null }) {
   const iniciais = (nome ?? '?').split(' ').filter(Boolean).slice(0, 2).map((parte) => parte[0]).join('').toUpperCase()
   return (
-    <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-white/[0.11] bg-white/[0.05] text-[10px] font-bold text-[#97a2b4]">
+    <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-strong bg-surface text-[10px] font-bold text-[#97a2b4]">
       {iniciais}
     </span>
   )

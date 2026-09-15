@@ -73,7 +73,7 @@ export function Assumir({
             ? 'Devolve a conversa para a fila. O bot continua calado até alguém marcar "Já atendi".'
             : 'A conversa passa a ser sua e o bot para de responder. Ele só volta quando alguém marcar "Já atendi".'
         }
-        className="rounded-[8px] border border-white/[0.09] px-2.5 py-1.5 text-[10.5px] font-semibold text-muted transition hover:border-accent/40 hover:text-accent disabled:opacity-50"
+        className="rounded-[8px] border border-line px-2.5 py-1.5 text-[10.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary disabled:opacity-50"
       >
         {meu ? 'Liberar' : responsavel ? 'Assumir mesmo assim' : 'Assumir'}
       </button>
@@ -125,7 +125,7 @@ export function PassarPara({
       <button
         type="submit"
         disabled={pendente}
-        className="rounded-[8px] border border-white/[0.09] px-2.5 py-1.5 text-[10.5px] font-semibold text-muted transition hover:border-accent/40 hover:text-accent disabled:opacity-50"
+        className="rounded-[8px] border border-line px-2.5 py-1.5 text-[10.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary disabled:opacity-50"
       >
         {pendente ? '…' : 'Passar'}
       </button>

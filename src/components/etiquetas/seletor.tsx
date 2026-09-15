@@ -139,7 +139,7 @@ export function SeletorDeEtiquetas({
               className={`rounded-full border px-2 py-0.5 text-[10.5px] font-semibold transition ${
                 acesa
                   ? CLASSE_DA_COR[etiqueta.cor]
-                  : 'border-white/[0.08] bg-transparent text-dim hover:border-white/20 hover:text-muted'
+                  : 'border-line bg-transparent text-dim hover:border-white/20 hover:text-muted'
               }`}
             >
               {etiqueta.nome}
@@ -177,7 +177,7 @@ export function SeletorDeEtiquetas({
         <button
           type="button"
           onClick={() => setCriando(true)}
-          className="mt-2 w-full rounded-[8px] border border-dashed border-white/[0.12] px-2.5 py-2 text-[11px] text-dim transition hover:border-accent/40 hover:text-accent"
+          className="mt-2 w-full rounded-[8px] border border-dashed border-strong px-2.5 py-2 text-[11px] text-dim transition hover:border-primary/40 hover:text-primary"
         >
           + Etiqueta
         </button>

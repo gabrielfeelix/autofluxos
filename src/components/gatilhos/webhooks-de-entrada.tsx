@@ -95,7 +95,7 @@ export function WebhooksDeEntrada({
           type="button"
           disabled={rodando || nome.trim() === ''}
           onClick={criar}
-          className="rounded-lg border border-white/[0.09] bg-white/[0.05] px-3.5 py-[11px] text-[12.5px] transition hover:border-white/20 disabled:opacity-50"
+          className="rounded-lg border border-line bg-surface px-3.5 py-[11px] text-[12.5px] transition hover:border-white/20 disabled:opacity-50"
         >
           Gerar segredo
         </button>
@@ -108,7 +108,7 @@ export function WebhooksDeEntrada({
       )}
 
       {webhooks.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-white/[0.12] px-4 py-6 text-center text-[11.5px] leading-5 text-dim">
+        <p className="rounded-lg border border-dashed border-strong px-4 py-6 text-center text-[11.5px] leading-5 text-dim">
           Nenhum sistema pode avisar esta conta ainda. Sem um segredo, o endereço recusa toda
           chamada — que é o certo para um endereço público.
         </p>
@@ -117,7 +117,7 @@ export function WebhooksDeEntrada({
           {webhooks.map((webhook) => (
             <li
               key={webhook.id}
-              className="flex items-center gap-3 border-b border-white/[0.045] py-3 last:border-0"
+              className="flex items-center gap-3 border-b border-line py-3 last:border-0"
             >
               <InterruptorDoWebhook
                 clienteId={clienteId}
@@ -145,7 +145,7 @@ export function WebhooksDeEntrada({
         </ul>
       )}
 
-      <details className="rounded-lg border border-white/[0.07] bg-white/[0.02] px-4 py-3">
+      <details className="rounded-lg border border-line bg-panel px-4 py-3">
         <summary className="cursor-pointer text-[12px] font-semibold text-soft">
           Como o outro sistema chama
         </summary>
@@ -200,7 +200,7 @@ function InterruptorDoWebhook({
       }
       onClick={() => comecar(async () => void (await acaoAlternarWebhookDeEntrada(clienteId, webhookId, !ativo)))}
       className={`relative h-[18px] w-8 shrink-0 rounded-full border transition disabled:opacity-50 ${
-        ativo ? 'border-emerald-400/40 bg-emerald-400/25' : 'border-white/10 bg-white/[0.06]'
+        ativo ? 'border-emerald-400/40 bg-emerald-400/25' : 'border-white/10 bg-surface-strong'
       }`}
     >
       <span
@@ -230,7 +230,7 @@ function BotaoApagar({
         type="button"
         onClick={() => setConfirmando(true)}
         title="Apaga o webhook e o segredo. Quem chamava passa a levar 401."
-        className="shrink-0 rounded-lg border border-white/[0.09] px-2.5 py-1 text-[11px] text-dim transition hover:border-rose-400/40 hover:text-rose-300"
+        className="shrink-0 rounded-lg border border-line px-2.5 py-1 text-[11px] text-dim transition hover:border-rose-400/40 hover:text-rose-300"
       >
         Apagar
       </button>
@@ -251,7 +251,7 @@ function BotaoApagar({
       <button
         type="button"
         onClick={() => setConfirmando(false)}
-        className="rounded-lg border border-white/[0.09] px-2.5 py-1 text-[11px] text-dim"
+        className="rounded-lg border border-line px-2.5 py-1 text-[11px] text-dim"
       >
         Não
       </button>

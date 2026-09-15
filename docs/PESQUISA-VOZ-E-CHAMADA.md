@@ -15,7 +15,7 @@
 | Recurso | Dá? | O que falta |
 |---|---|---|
 | **Emoji** | ✅ já está no ar | nada — entrou em `f5597bc` |
-| **Áudio gravado na hora** | ✅ **e foi implementado nesta sessão** | migration `0056` aplicada em produção |
+| **Áudio gravado na hora** | ✅ implementado | ver a armadilha do codec abaixo |
 | **Áudio como arquivo** (MP3/OGG) | ✅ já estava no ar | nada |
 | **Figurinha** | ⚠️ tecnicamente sim | acervo de WebP por cliente — camada 3 |
 | **Ligar** | ❌ **não hoje** | volume de 2.000 destinatários/dia + pilha WebRTC |
@@ -102,20 +102,44 @@ Chrome passou a aceitar contêiner MP4 no `MediaRecorder`
 e o Safari sempre gravou em MP4. Sobra o Firefox, que grava OGG/Opus — que a
 Meta aceita direto.
 
-| Navegador | Primeiro formato suportado | Meta aceita? |
+| Navegador | O que pedir | Meta aceita? |
 |---|---|---|
-| Chrome / Edge / Opera | `audio/mp4` (AAC) | ✅ |
-| Safari | `audio/mp4` (AAC) | ✅ |
+| Chrome / Edge / Opera | `audio/mp4;codecs=mp4a.40.2` | ✅ |
+| Safari | `audio/mp4;codecs=mp4a.40.2` | ✅ |
 | Firefox | `audio/ogg;codecs=opus` | ✅ |
-| Chrome antigo (só WebM) | `audio/webm` | ❌ → recusa com motivo em português |
+| Só WebM | — | ❌ → recusa com motivo em português |
 
-**A negociação de formato é a implementação inteira.** Sem conversão, sem WASM,
-sem dependência nova. `MediaRecorder.isTypeSupported` responde qual usar, na
-ordem da tabela; o que não achar nenhum recebe uma mensagem que diz o que fazer
-em vez de falhar calado.
+### ⚠️ Pedir `audio/mp4` sem codec é a armadilha, e ela custou um envio
 
-Isso é o oposto do que o handoff temia, e é uma boa notícia que só apareceu
-porque a doc foi lida em vez de presumida.
+**Esta seção foi reescrita em 15/set/2026, depois de o primeiro áudio não
+chegar.** A versão anterior dizia que os navegadores "gravam `audio/mp4`" e
+tratava isso como suficiente. **Não é.**
+
+Contêiner e codec são coisas separadas. `audio/mp4` pedido **sem** `;codecs=`
+deixa a escolha com o navegador, e o Chrome escolhe **Opus dentro de MP4**. Para
+a Meta, `audio/mp4` significa **AAC**; Opus ela só entrega em contêiner **OGG**.
+
+O arquivo que não chegou foi aberto byte a byte e confirmou:
+
+```
+mp4a  -> AUSENTE      esds -> AUSENTE
+Opus  -> offset 530   dOps -> offset 586
+ftyp  -> isom / iso6 / iso2 / vp09 / mp41
+```
+
+**O modo de falha é o pior possível:** o Storage aceita (o MIME `audio/mp4`
+confere), a Cloud API responde **200**, a mensagem é gravada como entregue — e
+nada chega no celular. Como o webhook `statuses` da Meta não é tratado, não há
+onde a falha apareça.
+
+Duas defesas, e as duas são necessárias:
+
+1. **Pedir sempre com `;codecs=`.** `audio/mp4` puro não volta para a lista.
+2. **Conferir `MediaRecorder.mimeType` depois do `start()`** — o tipo efetivo,
+   que revela o que o navegador realmente fez. Pedir não garante receber.
+
+Continua sem conversão, sem WASM e sem dependência nova. O que mudou é que a
+negociação passou a ser verificada, não presumida.
 
 ### Mono, porque a Meta exige e ninguém lê a letra miúda
 

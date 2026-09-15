@@ -41,7 +41,7 @@ const CORES = [
 ] as const
 
 /** Cinza para quem não tem nome: inventar cor para "?" seria dar identidade ao vazio. */
-const SEM_NOME = 'border-white/[0.11] bg-white/[0.05] text-[#b9c2d0]'
+const SEM_NOME = 'border-strong bg-surface text-[#b9c2d0]'
 
 /**
  * A mesma pessoa cai sempre na mesma cor.

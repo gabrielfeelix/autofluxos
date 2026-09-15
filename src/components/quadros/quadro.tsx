@@ -164,15 +164,15 @@ export function Quadro({
               }}
               className={`flex max-h-full w-[272px] shrink-0 flex-col rounded-xl border transition ${
                 alvoDoArrasto
-                  ? 'border-accent/50 bg-accent/[0.07]'
-                  : 'border-white/[0.07] bg-white/[0.025]'
+                  ? 'border-primary/50 bg-primary/[0.07]'
+                  : 'border-line bg-panel'
               }`}
             >
               <header className="flex shrink-0 items-center gap-2 px-3 py-2.5">
                 <h3 className="min-w-0 flex-1 truncate text-[12.5px] font-bold text-soft">
                   {etapa.nome}
                 </h3>
-                <span className="shrink-0 rounded-full bg-white/[0.07] px-1.5 py-0.5 text-[10.5px] text-dim">
+                <span className="shrink-0 rounded-full bg-surface-strong px-1.5 py-0.5 text-[10.5px] text-dim">
                   {daEtapa.length}
                 </span>
                 <MenuDaEtapa
@@ -188,7 +188,7 @@ export function Quadro({
 
               <ul className="flex min-h-[52px] flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2">
                 {daEtapa.length === 0 ? (
-                  <li className="rounded-lg border border-dashed border-white/[0.08] px-2 py-4 text-center text-[11px] leading-4 text-dim">
+                  <li className="rounded-lg border border-dashed border-line px-2 py-4 text-center text-[11px] leading-4 text-dim">
                     {/* Estado vazio que responde a pergunta certa: não é "não há
                         ninguém", é "o que eu faço aqui". */}
                     Arraste um cartão, ou use + abaixo
@@ -207,10 +207,10 @@ export function Quadro({
                         setArrastando(null)
                         setSobre(null)
                       }}
-                      className={`group cursor-grab rounded-lg border bg-panel px-2.5 py-2 shadow-[0_1px_2px_rgba(0,0,0,0.35)] transition active:cursor-grabbing ${
+                      className={`group cursor-grab rounded-lg border bg-panel px-2.5 py-2 shadow-[0_1px_2px_rgba(19,25,34,0.077)] transition active:cursor-grabbing ${
                         arrastando === cartao.id
-                          ? 'border-accent/40 opacity-40'
-                          : 'border-white/[0.08] hover:border-white/[0.18]'
+                          ? 'border-primary/40 opacity-40'
+                          : 'border-line hover:border-strong'
                       }`}
                     >
                       <div className="flex items-start gap-1.5">
@@ -267,7 +267,7 @@ export function Quadro({
         {etapas.length < LIMITE_DE_ETAPAS ? (
           <NovaEtapa clienteId={clienteId} quadroId={quadroId} />
         ) : (
-          <p className="w-[220px] shrink-0 rounded-xl border border-dashed border-white/[0.1] p-3 text-[11px] leading-[1.6] text-dim">
+          <p className="w-[220px] shrink-0 rounded-xl border border-dashed border-line p-3 text-[11px] leading-[1.6] text-dim">
             {LIMITE_DE_ETAPAS} etapas é o teto — acima disso elas não cabem lado a lado, e funil
             maior que isso costuma ser dois funis.
           </p>
@@ -340,7 +340,7 @@ function AdicionarContato({
       <button
         type="button"
         onClick={() => setAberto(true)}
-        className="shrink-0 rounded-b-xl border-t border-white/[0.05] px-3 py-2 text-left text-[11.5px] text-dim transition hover:bg-white/[0.04] hover:text-soft"
+        className="shrink-0 rounded-b-xl border-t border-line px-3 py-2 text-left text-[11.5px] text-dim transition hover:bg-surface hover:text-soft"
       >
         + Adicionar contato
       </button>
@@ -372,7 +372,7 @@ function AdicionarContato({
           ) : (
             achados.map((contato) => (
               <li key={contato.id}>
-                <label className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 transition hover:bg-white/[0.05]">
+                <label className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 transition hover:bg-surface-strong">
                   <input
                     type="checkbox"
                     checked={marcados.includes(contato.id)}
@@ -455,7 +455,7 @@ function NovaEtapa({ clienteId, quadroId }: { clienteId: string; quadroId: strin
       <button
         type="button"
         onClick={() => setAberto(true)}
-        className="w-[220px] shrink-0 rounded-xl border border-dashed border-white/[0.12] px-3 py-3 text-left text-[12px] text-dim transition hover:border-white/25 hover:bg-white/[0.03] hover:text-soft"
+        className="w-[220px] shrink-0 rounded-xl border border-dashed border-strong px-3 py-3 text-left text-[12px] text-dim transition hover:border-white/25 hover:bg-surface hover:text-soft"
       >
         + Nova etapa
       </button>
@@ -574,7 +574,7 @@ function MenuDaEtapa({
       {aberto && (
         <>
           <span className="fixed inset-0 z-10" onClick={() => setAberto(false)} />
-          <span className="absolute top-5 right-0 z-20 flex w-[178px] flex-col rounded-lg border border-white/10 bg-panel p-1 shadow-[0_18px_40px_rgba(0,0,0,0.5)]">
+          <span className="absolute top-5 right-0 z-20 flex w-[178px] flex-col rounded-lg border border-white/10 bg-panel p-1 shadow-[0_18px_40px_rgba(19,25,34,0.11)]">
             <button
               type="button"
               onClick={() => {
@@ -582,7 +582,7 @@ function MenuDaEtapa({
                 setNome(etapa.nome)
                 setRenomeando(true)
               }}
-              className="rounded px-2 py-1.5 text-left text-[12px] transition hover:bg-white/[0.06]"
+              className="rounded px-2 py-1.5 text-left text-[12px] transition hover:bg-surface-strong"
             >
               Renomear
             </button>
@@ -590,7 +590,7 @@ function MenuDaEtapa({
               type="button"
               disabled={ehPrimeira}
               onClick={() => agir(() => acaoMoverEtapa(clienteId, quadroId, etapa.id, 'esquerda'))}
-              className="rounded px-2 py-1.5 text-left text-[12px] transition hover:bg-white/[0.06] disabled:opacity-30 disabled:hover:bg-transparent"
+              className="rounded px-2 py-1.5 text-left text-[12px] transition hover:bg-surface-strong disabled:opacity-30 disabled:hover:bg-transparent"
             >
               ← Mover para a esquerda
             </button>
@@ -598,11 +598,11 @@ function MenuDaEtapa({
               type="button"
               disabled={ehUltima}
               onClick={() => agir(() => acaoMoverEtapa(clienteId, quadroId, etapa.id, 'direita'))}
-              className="rounded px-2 py-1.5 text-left text-[12px] transition hover:bg-white/[0.06] disabled:opacity-30 disabled:hover:bg-transparent"
+              className="rounded px-2 py-1.5 text-left text-[12px] transition hover:bg-surface-strong disabled:opacity-30 disabled:hover:bg-transparent"
             >
               → Mover para a direita
             </button>
-            <span className="my-1 border-t border-white/[0.06]" />
+            <span className="my-1 border-t border-line" />
             <button
               type="button"
               disabled={ehUnica}
@@ -705,7 +705,7 @@ function MenuDoCartao({
       {aberto && (
         <>
           <span className="fixed inset-0 z-10" onClick={() => setAberto(false)} />
-          <span className="absolute top-5 right-0 z-20 flex w-[190px] flex-col rounded-lg border border-white/10 bg-panel p-1 shadow-[0_18px_40px_rgba(0,0,0,0.5)]">
+          <span className="absolute top-5 right-0 z-20 flex w-[190px] flex-col rounded-lg border border-white/10 bg-panel p-1 shadow-[0_18px_40px_rgba(19,25,34,0.11)]">
             <span className="px-2 py-1 text-[10px] font-bold tracking-[0.05em] text-dim uppercase">
               Mover para
             </span>
@@ -719,13 +719,13 @@ function MenuDoCartao({
                     setAberto(false)
                     aoMover(etapa.id)
                   }}
-                  className="truncate rounded px-2 py-1.5 text-left text-[12px] transition hover:bg-white/[0.06]"
+                  className="truncate rounded px-2 py-1.5 text-left text-[12px] transition hover:bg-surface-strong"
                 >
                   {etapa.nome}
                 </button>
               ))}
 
-            <span className="my-1 border-t border-white/[0.06]" />
+            <span className="my-1 border-t border-line" />
             <button
               type="button"
               onClick={() => {

@@ -52,7 +52,7 @@ type ReacaoNaBolha = {
 const EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏'] as const
 
 const BOTAO =
-  'rounded-full border border-white/[0.09] bg-white/[0.04] px-1.5 py-0.5 text-[10px] leading-none text-muted transition hover:border-accent/40 hover:text-accent'
+  'rounded-full border border-line bg-surface px-1.5 py-0.5 text-[10px] leading-none text-muted transition hover:border-primary/40 hover:text-primary'
 
 export function RodapeDaMensagem({
   clienteId,
@@ -125,7 +125,7 @@ export function RodapeDaMensagem({
         <span
           key={chip.chave}
           title={`${chip.dono} reagiu`}
-          className="rounded-full border border-white/[0.1] bg-[#1c2230] px-1.5 py-0.5 text-[11px] leading-none shadow-[0_1px_2px_rgba(0,0,0,0.25)]"
+          className="rounded-full border border-line bg-[#1c2230] px-1.5 py-0.5 text-[11px] leading-none shadow-[0_1px_2px_rgba(19,25,34,0.055)]"
         >
           {chip.emoji}
         </span>
@@ -173,7 +173,7 @@ export function RodapeDaMensagem({
           {aberto && (
             <span
               role="menu"
-              className={`absolute bottom-full z-20 mb-1 flex gap-0.5 rounded-full border border-white/[0.1] bg-[#161b26] px-1.5 py-1 shadow-[0_4px_16px_rgba(0,0,0,0.45)] ${nossa ? 'right-0' : 'left-0'}`}
+              className={`absolute bottom-full z-20 mb-1 flex gap-0.5 rounded-full border border-line bg-[#161b26] px-1.5 py-1 shadow-[0_4px_16px_rgba(19,25,34,0.099)] ${nossa ? 'right-0' : 'left-0'}`}
             >
               {EMOJIS.map((emoji) => (
                 <button
@@ -182,7 +182,7 @@ export function RodapeDaMensagem({
                   role="menuitem"
                   onClick={() => reagir(emoji)}
                   title={emoji === minhaReacao ? 'Tirar a reação' : `Reagir com ${emoji}`}
-                  className={`rounded-full px-1 py-0.5 text-[14px] leading-none transition hover:scale-125 ${emoji === minhaReacao ? 'bg-accent/25' : ''}`}
+                  className={`rounded-full px-1 py-0.5 text-[14px] leading-none transition hover:scale-125 ${emoji === minhaReacao ? 'bg-primary/25' : ''}`}
                 >
                   {emoji}
                 </button>

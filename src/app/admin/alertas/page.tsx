@@ -40,7 +40,7 @@ export default async function Alertas() {
           <form action={acaoMarcarTodosOsAlertasVistos}>
             <button
               type="submit"
-              className="rounded-[9px] border border-white/10 px-3 py-2 text-[12.5px] font-semibold text-muted transition hover:bg-white/[0.04] hover:text-white"
+              className="rounded-[9px] border border-white/10 px-3 py-2 text-[12.5px] font-semibold text-muted transition hover:bg-surface hover:text-ink"
             >
               Marcar {abertos} como {abertos === 1 ? 'visto' : 'vistos'}
             </button>
@@ -57,7 +57,7 @@ export default async function Alertas() {
           </p>
         </section>
       ) : (
-        <ul className="app-card divide-y divide-white/[0.045] overflow-hidden">
+        <ul className="app-card divide-y divide-line overflow-hidden">
           {alertas.map((alerta) => (
             <li key={alerta.id}>
               <Linha alerta={alerta} />
@@ -121,11 +121,11 @@ function Linha({ alerta }: { alerta: Alerta }) {
        * elemento nativo faz as duas coisas sem estado nenhum.
        */}
       <details className="group mt-2">
-        <summary className="cursor-pointer list-none text-[11.5px] font-semibold text-dim transition hover:text-accent">
+        <summary className="cursor-pointer list-none text-[11.5px] font-semibold text-dim transition hover:text-primary">
           <span className="group-open:hidden">Ver o detalhe</span>
           <span className="hidden group-open:inline">Esconder</span>
         </summary>
-        <pre className="mt-2 max-h-[280px] overflow-auto rounded-[9px] border border-white/[0.06] bg-black/25 p-3 font-mono text-[11px] leading-5 whitespace-pre-wrap text-muted">
+        <pre className="mt-2 max-h-[280px] overflow-auto rounded-[9px] border border-line bg-black/25 p-3 font-mono text-[11px] leading-5 whitespace-pre-wrap text-muted">
           {alerta.detalhe}
         </pre>
       </details>
@@ -135,7 +135,7 @@ function Linha({ alerta }: { alerta: Alerta }) {
           <input type="hidden" name="id" value={alerta.id} />
           <button
             type="submit"
-            className="text-[11.5px] font-semibold text-dim transition hover:text-accent"
+            className="text-[11.5px] font-semibold text-dim transition hover:text-primary"
           >
             Marcar como visto
           </button>

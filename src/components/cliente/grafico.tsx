@@ -52,7 +52,7 @@ export function GraficoDaSerie({ serie }: { serie: PontoDaSerie[] }) {
 
   return (
     <section className="app-card mb-[18px] overflow-hidden" aria-labelledby="titulo-serie">
-      <header className="flex flex-wrap items-center gap-3 border-b border-white/[0.06] px-6 py-4">
+      <header className="flex flex-wrap items-center gap-3 border-b border-line px-6 py-4">
         <div className="min-w-0 flex-1">
           <h2
             id="titulo-serie"
@@ -61,7 +61,7 @@ export function GraficoDaSerie({ serie }: { serie: PontoDaSerie[] }) {
             Últimos {serie.length} dias
           </h2>
           <p className="mt-1 text-[13px] text-soft">
-            <strong className="text-[17px] font-bold text-white">{total}</strong>{' '}
+            <strong className="text-[17px] font-bold text-ink">{total}</strong>{' '}
             {escolhida.rotulo.toLowerCase()} no período
           </p>
         </div>
@@ -75,8 +75,8 @@ export function GraficoDaSerie({ serie }: { serie: PontoDaSerie[] }) {
               aria-pressed={metrica === m.chave}
               className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
                 metrica === m.chave
-                  ? 'border-accent/40 bg-accent/[0.14] text-accent'
-                  : 'border-white/[0.08] text-dim hover:border-white/20 hover:text-muted'
+                  ? 'border-primary/40 bg-primary/[0.14] text-primary'
+                  : 'border-line text-dim hover:border-white/20 hover:text-muted'
               }`}
             >
               {m.rotulo}
@@ -87,7 +87,7 @@ export function GraficoDaSerie({ serie }: { serie: PontoDaSerie[] }) {
             onClick={() => setBarras((estava) => !estava)}
             title={barras ? 'Ver como linha' : 'Ver como barras'}
             aria-label={barras ? 'Ver como linha' : 'Ver como barras'}
-            className="rounded-full border border-white/[0.08] px-2.5 py-1 text-[11px] text-dim transition hover:border-white/20 hover:text-muted"
+            className="rounded-full border border-line px-2.5 py-1 text-[11px] text-dim transition hover:border-white/20 hover:text-muted"
           >
             {barras ? '📈' : '📊'}
           </button>

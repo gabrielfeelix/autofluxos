@@ -82,13 +82,13 @@ export default async function Pagina({
       <main className="w-full max-w-[1440px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <Link
         href={`/clientes/${cliente.id}/leads`}
-        className="mb-3.5 inline-block text-[12.5px] text-muted transition hover:text-accent"
+        className="mb-3.5 inline-block text-[12.5px] text-muted transition hover:text-primary"
         >
         ← Leads
         </Link>
 
         <header className="mb-4 flex flex-wrap items-center gap-3.5">
-          <span className="flex size-11 items-center justify-center rounded-full border border-white/[0.11] bg-white/[0.05] text-[12px] font-bold text-[#97a2b4]">
+          <span className="flex size-11 items-center justify-center rounded-full border border-strong bg-surface text-[12px] font-bold text-[#97a2b4]">
             {iniciais}
           </span>
           <NomeDoContato
@@ -165,7 +165,7 @@ export default async function Pagina({
         <div className="grid grid-cols-1 items-start gap-[18px] md:grid-cols-[280px_minmax(0,1fr)]">
           <div className="flex flex-col gap-[18px]">
           <section className="app-card overflow-hidden">
-            <h2 className="border-b border-white/[0.06] px-[18px] py-3.5 text-[13px] font-bold">
+            <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
               Etiquetas
             </h2>
             <div className="px-[18px] py-4">
@@ -183,7 +183,7 @@ export default async function Pagina({
               é como um quadro passa a mentir. */}
           {noQuadro.length > 0 && (
             <section className="app-card overflow-hidden">
-              <h2 className="border-b border-white/[0.06] px-[18px] py-3.5 text-[13px] font-bold">
+              <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
                 No funil
               </h2>
               <ul className="flex flex-col gap-2.5 px-[18px] py-4">
@@ -210,7 +210,7 @@ export default async function Pagina({
             salvar={acaoSalvarNotas.bind(null, clienteId, contatoId)}
           />
           <section className="app-card overflow-hidden">
-            <h2 className="border-b border-white/[0.06] px-[18px] py-3.5 text-[13px] font-bold">O que o fluxo coletou</h2>
+            <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">O que o fluxo coletou</h2>
             {campos.length === 0 ? (
               <p className="px-[18px] py-[22px] text-xs leading-5 text-dim">
                 Nada coletado — a conversa não chegou a preencher nenhuma variável.
@@ -218,7 +218,7 @@ export default async function Pagina({
             ) : (
               <dl>
                 {campos.map(([chave, valor]) => (
-                  <div key={chave} className="border-b border-white/[0.045] px-[18px] py-[11px] last:border-0">
+                  <div key={chave} className="border-b border-line px-[18px] py-[11px] last:border-0">
                     <dt className="text-[10.5px] font-semibold text-dim">{rotuloDoCampo(chave) || chave}</dt>
                     <dd className="mt-1 truncate text-[13px] font-semibold">{valor}</dd>
                   </div>
@@ -229,7 +229,7 @@ export default async function Pagina({
           </div>
 
           <section className="app-card flex max-h-[620px] min-h-[360px] flex-col overflow-hidden">
-            <header className="flex items-center gap-2 border-b border-white/[0.06] px-[18px] py-3.5">
+            <header className="flex items-center gap-2 border-b border-line px-[18px] py-3.5">
               <h2 className="flex-1 text-[13px] font-bold">Conversa</h2>
               <span className="flex items-center gap-1.5 text-[11px] text-dim">
                 <span className="size-1.5 rounded-full bg-dim" /> {lead.waId}
@@ -264,9 +264,9 @@ export default async function Pagina({
 function HistoricoEsqueleto() {
   return (
     <div className="flex animate-pulse flex-col gap-3">
-      <div className="h-9 w-[46%] self-end rounded-[13px_13px_4px_13px] bg-accent/[0.07]" />
-      <div className="h-9 w-[34%] rounded-[13px_13px_13px_4px] bg-white/[0.05]" />
-      <div className="h-9 w-[52%] self-end rounded-[13px_13px_4px_13px] bg-accent/[0.07]" />
+      <div className="h-9 w-[46%] self-end rounded-[13px_13px_4px_13px] bg-primary/[0.07]" />
+      <div className="h-9 w-[34%] rounded-[13px_13px_13px_4px] bg-surface" />
+      <div className="h-9 w-[52%] self-end rounded-[13px_13px_4px_13px] bg-primary/[0.07]" />
       <span className="sr-only">Carregando a conversa…</span>
     </div>
   )
@@ -293,7 +293,7 @@ async function Historico({
   return (
     <div className="flex flex-col gap-2.5">
       {conversa.cortada && (
-        <p className="self-center rounded-xl border border-dashed border-white/[0.14] px-3.5 py-2 text-center font-mono text-[10px] text-[#6b7689]">
+        <p className="self-center rounded-xl border border-dashed border-strong px-3.5 py-2 text-center font-mono text-[10px] text-[#6b7689]">
           conversa longa — mostrando só as mensagens mais recentes
         </p>
       )}
@@ -306,7 +306,7 @@ async function Historico({
             {etiqueta && <EtiquetaDoDia rotulo={etiqueta} />}
             {/* A coluna é o que dá lugar à reação embaixo da bolha — ver o Inbox. */}
             <div className={`flex flex-col gap-0 ${nossa ? 'items-end' : 'items-start'}`}>
-            <p className={`max-w-[78%] px-3 py-2 text-[12.5px] leading-[1.45] whitespace-pre-wrap ${nossa ? 'rounded-[13px_13px_4px_13px] border border-accent/[0.22] bg-accent/[0.13]' : 'rounded-[13px_13px_13px_4px] border border-white/[0.07] bg-white/[0.055]'}`}>
+            <p className={`max-w-[78%] px-3 py-2 text-[12.5px] leading-[1.45] whitespace-pre-wrap ${nossa ? 'rounded-[13px_13px_4px_13px] border border-primary/[0.22] bg-primary/[0.13]' : 'rounded-[13px_13px_13px_4px] border border-line bg-surface'}`}>
               {mensagem.cita && <CitacaoNaBolha cita={mensagem.cita} nome={nomeDoLead} />}
               {mensagem.anexo && <AnexoNaConversa anexo={mensagem.anexo} />}
               {/*
@@ -362,7 +362,7 @@ async function Historico({
 /** A etiqueta de dia. Gêmea da do Inbox — a bolha vive duplicada nas duas telas. */
 function EtiquetaDoDia({ rotulo }: { rotulo: string }) {
   return (
-    <p className="my-1 self-center rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1 text-center text-[10px] font-medium text-dim">
+    <p className="my-1 self-center rounded-full border border-line bg-surface px-3 py-1 text-center text-[10px] font-medium text-dim">
       {rotulo}
     </p>
   )

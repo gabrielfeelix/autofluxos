@@ -52,13 +52,19 @@ export function CaixaDeResposta({
 }) {
   const campo = useRef<HTMLTextAreaElement>(null)
   const [erro, setErro] = useState<string | null>(null)
+  /*
+   * Gravar áudio toma a barra inteira. O estado mora aqui, e não dentro do
+   * botão de microfone, porque quem precisa sair de cena é o rodapé — o campo
+   * de texto, o clipe, o emoji e o "Enviar" do formulário.
+   */
+  const [gravando, setGravando] = useState(false)
   const [enviando, comecar] = useTransition()
   /** `null` fora do provedor — a tela da Ficha não monta citação. */
   const citacao = useCitacao()
 
   if (restaDaJanela === null) {
     return (
-      <div className="border-t border-white/[0.06] px-[18px] py-3.5">
+      <div className="border-t border-line px-[18px] py-3.5">
         <p className="text-[11.5px] leading-5 text-dim">
           <strong className="text-muted">Não dá para responder por aqui agora.</strong> O WhatsApp
           só aceita texto livre até 24h depois da última mensagem de {nome}. Passado isso, retomar
@@ -110,7 +116,7 @@ export function CaixaDeResposta({
   }
 
   return (
-    <form action={enviar} className="border-t border-white/[0.06] px-[18px] py-3.5">
+    <form action={enviar} className="border-t border-line px-[18px] py-3.5">
       {/*
         A citação escolhida, acima do campo.
 
@@ -119,9 +125,9 @@ export function CaixaDeResposta({
         é pior do que não citar.
       */}
       {citacao?.citando && (
-        <div className="mb-2 flex items-start gap-2 rounded-[10px] border-l-2 border-accent/60 bg-white/[0.04] px-2.5 py-2">
+        <div className="mb-2 flex items-start gap-2 rounded-[10px] border-l-2 border-primary/60 bg-surface px-2.5 py-2">
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold text-accent/90">
+            <p className="text-[10px] font-bold text-primary/90">
               Respondendo {citacao.citando.deQuem}
             </p>
             <p className="truncate text-[11.5px] text-muted">
@@ -132,20 +138,26 @@ export function CaixaDeResposta({
             type="button"
             onClick={citacao.limpar}
             aria-label="Não citar esta mensagem"
-            className="shrink-0 rounded-full px-1.5 py-0.5 text-[12px] leading-none text-dim transition hover:bg-white/[0.08] hover:text-white"
+            className="shrink-0 rounded-full px-1.5 py-0.5 text-[12px] leading-none text-dim transition hover:bg-surface-strong hover:text-ink"
           >
             ×
           </button>
         </div>
       )}
+      {/*
+        O campo some enquanto grava, e `hidden` em vez de desmontar: desmontar
+        levaria junto o texto já digitado, e quem grava um áudio no meio de uma
+        frase perderia a frase. Ele continua no formulário, só sai de vista.
+      */}
       <textarea
+        hidden={gravando}
         ref={campo}
         name="texto"
         rows={2}
         maxLength={4096}
         disabled={enviando}
         placeholder={`Responder ${nome} pelo WhatsApp…`}
-        className="w-full resize-y rounded-[11px] border border-white/[0.09] bg-white/[0.03] px-3 py-2.5 text-[12.5px] leading-[1.45] outline-none transition placeholder:text-dim focus:border-accent/40 disabled:opacity-50"
+        className="w-full resize-y rounded-[11px] border border-line bg-surface px-3 py-2.5 text-[12.5px] leading-[1.45] outline-none transition placeholder:text-dim focus:border-primary/40 disabled:opacity-50"
         onKeyDown={(evento) => {
           // Enter manda, Shift+Enter quebra linha — o hábito de todo mundo que
           // usa WhatsApp. `requestSubmit` para o `action` do form valer.
@@ -165,7 +177,7 @@ export function CaixaDeResposta({
               disabled={enviando}
               title={resposta.texto}
               onClick={() => inserirResposta(resposta.texto)}
-              className="rounded-full border border-accent/20 bg-accent/[0.07] px-2.5 py-1 text-[10.5px] font-bold text-accent transition hover:border-accent/40 hover:bg-accent/[0.13] disabled:opacity-50"
+              className="rounded-full border border-primary/20 bg-primary/[0.07] px-2.5 py-1 text-[10.5px] font-bold text-primary transition hover:border-primary/40 hover:bg-primary/[0.13] disabled:opacity-50"
             >
               /{resposta.atalho}
             </button>
@@ -181,6 +193,14 @@ export function CaixaDeResposta({
 
       <div className="mt-2 flex flex-wrap items-center gap-3">
         {/*
+          Gravando, a barra é só da gravação.
+          -------------------------------------------------------------------
+          Antes o "⏹ Enviar" do áudio convivia com o "Enviar" do formulário na
+          mesma linha: dois botões com o mesmo nome, e o da direita respondia
+          "escreva a mensagem antes de enviar" porque é o do texto. Não há como
+          adivinhar qual é qual — então enquanto grava, o resto sai de cena.
+        */}
+        {/*
           O clipe fica fora do `<form>` em comportamento — ele não é `submit`,
           manda por conta própria. Fica aqui na linha do rodapé porque é onde
           todo mundo procura: ao lado do botão de enviar.
@@ -190,8 +210,8 @@ export function CaixaDeResposta({
           escreve no cursor e confere o teto de 4.096 caracteres. Um caminho só
           é o que evita a tela aceitar por aqui o que recusa por ali.
         */}
-        <SeletorDeEmoji aoEscolher={inserirResposta} desabilitado={enviando} />
-        {anexo && (
+        {!gravando && <SeletorDeEmoji aoEscolher={inserirResposta} desabilitado={enviando} />}
+        {anexo && !gravando && (
           <BotaoDeAnexo
             clienteId={anexo.clienteId}
             contatoId={anexo.contatoId}
@@ -208,8 +228,10 @@ export function CaixaDeResposta({
             clienteId={anexo.clienteId}
             contatoId={anexo.contatoId}
             desabilitado={enviando}
+            aoGravar={setGravando}
           />
         )}
+        {!gravando && (
         <span className="flex-1 text-[10.5px] leading-4 text-dim">
           {temAutomacao ? (
             <>
@@ -220,13 +242,16 @@ export function CaixaDeResposta({
             <>Janela do WhatsApp fecha em {restaDaJanela}.</>
           )}
         </span>
-        <button
-          type="submit"
-          disabled={enviando}
-          className="app-primary-button shrink-0 px-4 py-2 text-[12px] disabled:opacity-50"
-        >
-          {enviando ? 'Enviando…' : 'Enviar'}
-        </button>
+        )}
+        {!gravando && (
+          <button
+            type="submit"
+            disabled={enviando}
+            className="app-primary-button shrink-0 px-4 py-2 text-[12px] disabled:opacity-50"
+          >
+            {enviando ? 'Enviando…' : 'Enviar'}
+          </button>
+        )}
       </div>
     </form>
   )

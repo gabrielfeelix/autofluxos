@@ -27,7 +27,7 @@ export function NotaRapida({
       <button
         type="button"
         onClick={() => setAberta(true)}
-        className="mt-2 w-full rounded-[8px] border border-dashed border-white/[0.12] px-2.5 py-2 text-[11px] text-dim transition hover:border-accent/40 hover:text-accent"
+        className="mt-2 w-full rounded-[8px] border border-dashed border-strong px-2.5 py-2 text-[11px] text-dim transition hover:border-primary/40 hover:text-primary"
       >
         + Anotar
       </button>

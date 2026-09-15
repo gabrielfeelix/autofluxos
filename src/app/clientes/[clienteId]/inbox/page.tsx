@@ -377,7 +377,7 @@ function EstadoVazio({
        * que algo quebrou — que foi o que aconteceu com o primeiro cliente.
        */}
       {recem && (
-        <p className="mt-3 rounded-[10px] border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-left text-[12px] leading-5 text-dim">
+        <p className="mt-3 rounded-[10px] border border-white/10 bg-surface px-3.5 py-2.5 text-left text-[12px] leading-5 text-dim">
           Este número foi conectado há pouco. A Meta ainda está sincronizando, e
           isso pode levar algumas horas — até terminar, é normal nenhuma
           conversa nova aparecer aqui.
@@ -516,7 +516,7 @@ async function Conteudo({
         e `vh` congela a altura da barra escondida — a caixa de resposta ficava
         atrás dela.
       */}
-      <div className="grid h-[calc(100dvh-116px)] min-h-[420px] grid-cols-[292px_minmax(390px,1fr)_250px] overflow-hidden rounded-[16px] border border-white/[0.075] bg-[#0c1118] shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
+      <div className="grid h-[calc(100dvh-116px)] min-h-[420px] grid-cols-[292px_minmax(390px,1fr)_250px] overflow-hidden rounded-[16px] border border-line bg-[#0c1118] shadow-[0_24px_80px_rgba(19,25,34,0.053)]">
         <Fila
           clienteId={clienteId}
           leads={leads}
@@ -542,7 +542,7 @@ async function Conteudo({
             coluna estourava o teto da moldura, e o `overflow-auto` do
             histórico — que já estava certo — nunca chegava a ter o que rolar.
           */
-          <section className="flex min-h-0 min-w-0 flex-col border-r border-white/[0.06]">
+          <section className="flex min-h-0 min-w-0 flex-col border-r border-line">
             <CabecalhoDaConversa
               clienteId={clienteId}
               lead={selecionado}
@@ -594,7 +594,7 @@ async function Conteudo({
             </ProvedorDeCitacao>
           </section>
         ) : (
-          <section className="col-span-2 flex min-w-0 items-center justify-center border-r border-white/[0.06] p-10 text-center">
+          <section className="col-span-2 flex min-w-0 items-center justify-center border-r border-line p-10 text-center">
             <p className="max-w-[280px] text-[12.5px] leading-6 text-dim">
               Nenhuma conversa nesta seleção.
               <br />
@@ -633,7 +633,7 @@ function CabecalhoDaConversa({
   const nome = lead.nome ?? 'sem nome'
   const responsavel = equipe.find((membro) => membro.id === lead.atribuidoA) ?? null
   return (
-    <header className="flex min-h-[69px] items-center gap-3 border-b border-white/[0.06] px-5">
+    <header className="flex min-h-[69px] items-center gap-3 border-b border-line px-5">
       <Avatar nome={lead.nome} alerta={Boolean(lead.aguardando)} />
       <div className="min-w-0 flex-1">
         <h2 className="truncate text-[13px] font-bold">{nome}</h2>
@@ -673,7 +673,7 @@ function CabecalhoDaConversa({
 
       <Link
         href={`/clientes/${clienteId}/leads/${lead.contatoId}`}
-        className="rounded-[8px] border border-white/[0.09] px-2.5 py-1.5 text-[10.5px] font-semibold text-muted transition hover:border-white/[0.18] hover:text-white"
+        className="rounded-[8px] border border-line px-2.5 py-1.5 text-[10.5px] font-semibold text-muted transition hover:border-strong hover:text-ink"
       >
         Abrir ficha
       </Link>
@@ -739,7 +739,7 @@ function Historico({
      */
     <div className="flex w-full flex-col gap-2.5">
       {cortada && (
-        <p className="mb-1 self-center rounded-full border border-dashed border-white/[0.15] px-3 py-1.5 text-center font-mono text-[9.5px] text-dim">
+        <p className="mb-1 self-center rounded-full border border-dashed border-strong px-3 py-1.5 text-center font-mono text-[9.5px] text-dim">
           mostrando as 500 mensagens mais recentes
         </p>
       )}
@@ -774,10 +774,10 @@ function Historico({
           <div
             className={`flex flex-col gap-0 ${nossa ? 'items-end' : 'items-start'}`}
           >
-            <p className={`max-w-[78%] px-3 py-2 text-[12.5px] leading-[1.5] whitespace-pre-wrap shadow-[0_1px_1px_rgba(0,0,0,0.12)] ${
+            <p className={`max-w-[78%] px-3 py-2 text-[12.5px] leading-[1.5] whitespace-pre-wrap shadow-[0_1px_1px_rgba(19,25,34,0.026)] ${
               nossa
-                ? 'rounded-[13px_13px_4px_13px] border border-accent/[0.2] bg-accent/[0.12]'
-                : 'rounded-[13px_13px_13px_4px] border border-white/[0.07] bg-white/[0.055]'
+                ? 'rounded-[13px_13px_4px_13px] border border-primary/[0.2] bg-primary/[0.12]'
+                : 'rounded-[13px_13px_13px_4px] border border-line bg-surface'
             }`}>
               {mensagem.cita && <CitacaoNaBolha cita={mensagem.cita} nome={nome} />}
               {mensagem.anexo && <AnexoNaConversa anexo={mensagem.anexo} />}
@@ -850,7 +850,7 @@ function Historico({
  */
 function EtiquetaDoDia({ rotulo }: { rotulo: string }) {
   return (
-    <p className="my-1 self-center rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1 text-center text-[10px] font-medium text-dim">
+    <p className="my-1 self-center rounded-full border border-line bg-surface px-3 py-1 text-center text-[10px] font-medium text-dim">
       {rotulo}
     </p>
   )
@@ -898,8 +898,8 @@ function DadosDoLead({
   return (
     // Rola por dentro, como as outras duas colunas: agora que a moldura tem
     // teto, a ficha de um lead com muitos campos seria cortada sem isto.
-    <aside className="min-w-0 overflow-y-auto bg-white/[0.012]">
-      <header className="border-b border-white/[0.06] px-4 py-[17px]">
+    <aside className="min-w-0 overflow-y-auto bg-panel">
+      <header className="border-b border-line px-4 py-[17px]">
         <p className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-dim">CONTATO</p>
         <h2 className="mt-1 text-[13px] font-bold">Contexto do lead</h2>
       </header>
@@ -910,7 +910,7 @@ function DadosDoLead({
           que ligar, desligar ou explicar. O card vira rótulo e para por aí —
           antes ele dizia "BOT RESPONDENDO" numa conta sem fluxo nenhum.
         */}
-        <div className={`rounded-[11px] border px-3 py-2.5 ${aguardandoPessoa ? 'border-rose-400/25 bg-rose-400/[0.07]' : !temAutomacao ? 'border-white/[0.09] bg-white/[0.03]' : botPausado ? 'border-amber-300/25 bg-amber-300/[0.065]' : 'border-emerald-400/20 bg-emerald-400/[0.055]'}`}>
+        <div className={`rounded-[11px] border px-3 py-2.5 ${aguardandoPessoa ? 'border-rose-400/25 bg-rose-400/[0.07]' : !temAutomacao ? 'border-line bg-surface' : botPausado ? 'border-amber-300/25 bg-amber-300/[0.065]' : 'border-emerald-400/20 bg-emerald-400/[0.055]'}`}>
           <p className={`text-[10px] font-bold tracking-[0.04em] ${aguardandoPessoa ? 'text-rose-300' : !temAutomacao ? 'text-muted' : botPausado ? 'text-amber-200' : 'text-emerald-300'}`}>
             {aguardandoPessoa
               ? 'AGUARDANDO PESSOA'
@@ -999,7 +999,7 @@ function DadosDoLead({
         <div className="mt-5">
           <div className="flex items-center justify-between">
             <h3 className="text-[11px] font-bold text-soft">O que o fluxo coletou</h3>
-            <Link href={`/clientes/${clienteId}/leads/${lead.contatoId}`} className="text-[10.5px] font-semibold text-accent hover:underline">
+            <Link href={`/clientes/${clienteId}/leads/${lead.contatoId}`} className="text-[10.5px] font-semibold text-primary hover:underline">
               Ficha
             </Link>
           </div>

@@ -104,7 +104,7 @@ export function PilhaDeMensagem({
       {partes.map((parte, indice) => (
         <section
           key={indice}
-          className="rounded-[12px] border border-white/[0.08] bg-white/[0.02] p-2.5"
+          className="rounded-[12px] border border-line bg-panel p-2.5"
         >
           <header className="mb-2 flex items-center gap-1.5">
             <span className="text-[10.5px] font-bold tracking-[0.06em] text-muted uppercase">
@@ -149,7 +149,7 @@ export function PilhaDeMensagem({
         grade, cada pedaço vira alvo grande e igual, o ícone diz o que é antes
         da leitura, e a coluna do painel deixa de ter uma faixa de sobras.
       */}
-      <div className="grid grid-cols-3 gap-1.5 border-t border-white/[0.06] pt-3">
+      <div className="grid grid-cols-3 gap-1.5 border-t border-line pt-3">
         {(['texto', 'midia', 'atraso', 'salvar', 'auto-off'] as const).map((tipo) => (
           <button
             key={tipo}
@@ -157,11 +157,11 @@ export function PilhaDeMensagem({
             onClick={() => acrescentar(tipo)}
             disabled={partes.length >= LIMITE_PARTES}
             title={DICA_DA_PARTE[tipo]}
-            className="flex flex-col items-center justify-center gap-1 rounded-[11px] border border-white/[0.09] bg-white/[0.02] px-1.5 py-2.5 text-center transition hover:border-accent/40 hover:bg-accent/[0.07] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-white/[0.09] disabled:hover:bg-white/[0.02]"
+            className="flex flex-col items-center justify-center gap-1 rounded-[11px] border border-line bg-panel px-1.5 py-2.5 text-center transition hover:border-primary/40 hover:bg-primary/[0.07] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-line disabled:hover:bg-surface"
           >
             <span
               aria-hidden
-              className="flex size-7 items-center justify-center rounded-[9px] border border-white/[0.08] bg-white/[0.05] text-[13px] text-accent"
+              className="flex size-7 items-center justify-center rounded-[9px] border border-line bg-surface text-[13px] text-primary"
             >
               {ICONE_DA_PARTE[tipo]}
             </span>
@@ -199,7 +199,7 @@ function BotaoDeOrdem({
       aria-label={rotulo}
       disabled={desabilitado}
       onClick={aoClicar}
-      className="rounded-md px-1.5 py-0.5 text-[12px] text-dim transition hover:bg-white/[0.06] hover:text-white disabled:cursor-not-allowed disabled:opacity-25"
+      className="rounded-md px-1.5 py-0.5 text-[12px] text-dim transition hover:bg-surface-strong hover:text-ink disabled:cursor-not-allowed disabled:opacity-25"
     >
       {sinal}
     </button>

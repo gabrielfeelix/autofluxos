@@ -75,7 +75,7 @@ export function QuadroPadrao({
       className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] transition ${
         recebendo
           ? 'border-emerald-400/25 bg-emerald-400/[0.07] text-emerald-200'
-          : 'border-white/[0.09] bg-white/[0.03] text-muted hover:border-white/20'
+          : 'border-line bg-surface text-muted hover:border-white/20'
       }`}
     >
       <input
@@ -83,7 +83,7 @@ export function QuadroPadrao({
         checked={recebendo}
         disabled={pendente}
         onChange={(e) => alternar(e.target.checked)}
-        className="h-3.5 w-3.5 accent-accent"
+        className="h-3.5 w-3.5 accent-primary"
       />
       {erro ?? 'Novo contato entra aqui'}
     </label>

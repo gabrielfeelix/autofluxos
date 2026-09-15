@@ -47,7 +47,7 @@ export function Canvas({
     <svg
       viewBox={`0 0 248 ${altura}`}
       aria-hidden
-      className="block w-full rounded-[10px] border border-white/[0.05]"
+      className="block w-full rounded-[10px] border border-line"
     >
       <defs>
         <pattern id={`malha-${id}`} width="12" height="12" patternUnits="userSpaceOnUse">
@@ -106,7 +106,7 @@ export function Fio({ d, tracejado = false }: { d: string; tracejado?: boolean }
     <path
       d={d}
       fill="none"
-      stroke="var(--accent)"
+      stroke="var(--primary)"
       strokeWidth="1.4"
       opacity={tracejado ? 0.5 : 0.75}
       strokeDasharray={tracejado ? '4 3' : undefined}
@@ -351,14 +351,14 @@ function DesenhoReagenda() {
       <path
         d="M49 36C56 40 58 46 55 52"
         fill="none"
-        stroke="var(--accent)"
+        stroke="var(--primary)"
         strokeWidth="1.4"
         opacity="0.8"
       />
       <path
         d="M52 49l3 4 4-2"
         fill="none"
-        stroke="var(--accent)"
+        stroke="var(--primary)"
         strokeWidth="1.4"
         strokeLinecap="round"
         strokeLinejoin="round"

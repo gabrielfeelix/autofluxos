@@ -127,7 +127,7 @@ export function HorarioDeAtendimentoForm({
           type="checkbox"
           checked={ligado}
           onChange={(evento) => setLigado(evento.currentTarget.checked)}
-          className="size-4 accent-[var(--accent)]"
+          className="size-4 accent-[var(--primary)]"
         />
         <span className="text-[13px] font-semibold">Definir horário de atendimento</span>
       </label>
@@ -149,7 +149,7 @@ export function HorarioDeAtendimentoForm({
             </span>
           </div>
 
-          <ul className="app-card divide-y divide-white/[0.045] overflow-hidden">
+          <ul className="app-card divide-y divide-line overflow-hidden">
             {DIAS_DA_SEMANA.map((nome, dia) => (
               <li key={nome} className="flex flex-wrap items-start gap-x-4 gap-y-2 px-4 py-3">
                 <span className="w-[74px] shrink-0 pt-1.5 text-[12.5px] font-semibold capitalize">
@@ -193,7 +193,7 @@ export function HorarioDeAtendimentoForm({
                 <button
                   type="button"
                   onClick={() => acrescentar(dia)}
-                  className="shrink-0 rounded-lg border border-white/10 px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:border-accent/40 hover:text-accent"
+                  className="shrink-0 rounded-lg border border-white/10 px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
                 >
                   + faixa
                 </button>
@@ -204,7 +204,7 @@ export function HorarioDeAtendimentoForm({
           <button
             type="button"
             onClick={repetirNaSemana}
-            className="mt-3 text-[11.5px] text-muted underline underline-offset-2 transition hover:text-accent"
+            className="mt-3 text-[11.5px] text-muted underline underline-offset-2 transition hover:text-primary"
           >
             Repetir o primeiro horário de segunda a sexta
           </button>

@@ -1096,11 +1096,11 @@ export function Editor({
 
   return (
     <div className="app-editor flex h-screen flex-col bg-canvas">
-      <header className="flex h-[54px] shrink-0 items-center gap-3 border-b border-white/[0.07] bg-white/[0.018] px-4">
+      <header className="flex h-[54px] shrink-0 items-center gap-3 border-b border-line bg-panel px-4">
         <Link
           href={voltarHref}
           title={`Voltar para ${clienteNome}`}
-          className="flex size-[30px] shrink-0 items-center justify-center rounded-lg border border-white/10 text-base text-muted transition hover:border-accent/50 hover:text-accent"
+          className="flex size-[30px] shrink-0 items-center justify-center rounded-lg border border-white/10 text-base text-muted transition hover:border-primary/50 hover:text-primary"
         >
           ‹
         </Link>
@@ -1121,9 +1121,9 @@ export function Editor({
             <SeloDoCanal canal={canal} compacto />
           </p>
         </div>
-        <span className="mx-0.5 h-6 w-px bg-white/[0.08]" />
+        <span className="mx-0.5 h-6 w-px bg-surface-strong" />
         <EstadoSalvamento estado={salvamento} />
-        <span className="mx-0.5 h-6 w-px bg-white/[0.08]" />
+        <span className="mx-0.5 h-6 w-px bg-surface-strong" />
 
         {/*
           O contrato da Etapa 2 desta automação — e **quem** pode mexer nele.
@@ -1141,7 +1141,7 @@ export function Editor({
         {podeContratarIa ? (
           <label
             title="Etapa 2 (IA) é plano à parte. Sem isto, fluxo com bloco de IA não publica. Só a 4YU marca."
-            className="flex cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-xs text-muted transition hover:bg-white/[0.04]"
+            className="flex cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-xs text-muted transition hover:bg-surface"
           >
             <input
               type="checkbox"
@@ -1185,7 +1185,7 @@ export function Editor({
             {haNovidade ? 'Desenho difere do publicado' : `No ar · v${publicada.versao}`}
           </span>
         ) : (
-          <span className="shrink-0 rounded-full border border-dashed border-white/[0.15] px-3 py-1 text-xs text-muted">
+          <span className="shrink-0 rounded-full border border-dashed border-strong px-3 py-1 text-xs text-muted">
             Nunca publicado
           </span>
         )}
@@ -1225,7 +1225,7 @@ export function Editor({
           rel="noopener"
           title="Ajuda (abre em outra aba)"
           aria-label="Ajuda"
-          className="flex size-[26px] shrink-0 items-center justify-center rounded-full border border-white/[0.12] text-[12px] font-bold text-dim transition hover:border-accent/50 hover:bg-accent/[0.1] hover:text-accent"
+          className="flex size-[26px] shrink-0 items-center justify-center rounded-full border border-strong text-[12px] font-bold text-dim transition hover:border-primary/50 hover:bg-primary/[0.1] hover:text-primary"
         >
           <span aria-hidden>?</span>
         </a>
@@ -1268,8 +1268,8 @@ export function Editor({
           title="Conversar com este desenho sem sair do editor"
           className={`rounded-lg border px-3.5 py-2 text-[12.5px] font-semibold transition ${
             aba === 'testar'
-              ? 'border-accent/50 bg-accent/[0.12] text-accent'
-              : 'border-white/10 text-muted hover:border-accent/40 hover:text-accent'
+              ? 'border-primary/50 bg-primary/[0.12] text-primary'
+              : 'border-white/10 text-muted hover:border-primary/40 hover:text-primary'
           }`}
         >
           Testar
@@ -1348,7 +1348,7 @@ export function Editor({
         */}
         <nav
           style={{ width: larguraDosBlocos }}
-          className="relative shrink-0 overflow-y-auto border-r border-white/[0.06] bg-white/[0.012] px-3 py-3.5"
+          className="relative shrink-0 overflow-y-auto border-r border-line bg-panel px-3 py-3.5"
         >
           <PuxadorDeLargura
             largura={larguraDosBlocos}
@@ -1373,13 +1373,13 @@ export function Editor({
               // A dica do bloco entra no `title` quando ela sai da tela: quem
               // apertou a barra não deveria perder a explicação junto.
               title={apertada ? `${NOMES[tipo]} — ${DESCRICOES[tipo]}` : undefined}
-              className={`mb-1 flex w-full cursor-grab items-start gap-3 rounded-[11px] border border-transparent text-left transition select-none hover:border-white/[0.07] hover:bg-white/[0.04] active:cursor-grabbing ${
+              className={`mb-1 flex w-full cursor-grab items-start gap-3 rounded-[11px] border border-transparent text-left transition select-none hover:border-line hover:bg-surface active:cursor-grabbing ${
                 apertada ? 'p-1.5' : 'p-2.5'
               }`}
             >
               <span
                 aria-hidden
-                className={`flex shrink-0 items-center justify-center rounded-[10px] border border-white/[0.08] bg-white/[0.045] text-accent ${
+                className={`flex shrink-0 items-center justify-center rounded-[10px] border border-line bg-surface text-primary ${
                   apertada ? 'size-7 text-[13px]' : 'size-9 text-[15px]'
                 }`}
               >
@@ -1519,12 +1519,12 @@ export function Editor({
           um clique a mais do que deveria.
         */}
         {!painelAberto ? (
-          <aside className="flex w-[42px] shrink-0 flex-col items-center gap-2 border-l border-white/[0.06] bg-white/[0.014] py-2.5">
+          <aside className="flex w-[42px] shrink-0 flex-col items-center gap-2 border-l border-line bg-panel py-2.5">
             <button
               onClick={() => setPainelAberto(true)}
               title="Abrir o painel"
               aria-label="Abrir o painel"
-              className="flex size-[30px] items-center justify-center rounded-lg border border-white/10 text-base text-muted transition hover:border-accent/50 hover:text-accent"
+              className="flex size-[30px] items-center justify-center rounded-lg border border-white/10 text-base text-muted transition hover:border-primary/50 hover:text-primary"
             >
               ‹
             </button>
@@ -1536,7 +1536,7 @@ export function Editor({
                   setPainelAberto(true)
                 }}
                 className={`rounded-lg px-1 py-3 text-[10.5px] font-bold [writing-mode:vertical-rl] transition ${
-                  aba === chave ? 'text-white' : 'text-muted hover:text-white'
+                  aba === chave ? 'text-ink' : 'text-muted hover:text-ink'
                 }`}
               >
                 {chave === 'bloco' ? 'Bloco' : 'Testar'}
@@ -1544,16 +1544,16 @@ export function Editor({
             ))}
           </aside>
         ) : (
-        <aside className="flex w-[356px] shrink-0 flex-col border-l border-white/[0.06] bg-white/[0.014]">
-          <div className="flex shrink-0 items-center gap-1 border-b border-white/[0.06] px-3 pt-2.5 text-xs">
+        <aside className="flex w-[356px] shrink-0 flex-col border-l border-line bg-panel">
+          <div className="flex shrink-0 items-center gap-1 border-b border-line px-3 pt-2.5 text-xs">
             {(['bloco', 'testar'] as const).map((chave) => (
               <button
                 key={chave}
                 onClick={() => setAba(chave)}
                 className={`rounded-t-lg border-b-2 px-4 py-2.5 font-bold transition ${
                   aba === chave
-                    ? 'border-accent text-white'
-                    : 'border-transparent text-muted hover:text-white'
+                    ? 'border-primary text-ink'
+                    : 'border-transparent text-muted hover:text-ink'
                 }`}
               >
                 {chave === 'bloco' ? 'Bloco' : 'Testar'}
@@ -1563,7 +1563,7 @@ export function Editor({
               onClick={() => setPainelAberto(false)}
               title="Recolher o painel e ver o desenho inteiro"
               aria-label="Recolher o painel"
-              className="mb-1 ml-auto rounded-lg px-2 py-1 text-[13px] leading-4 text-dim transition hover:bg-white/[0.07] hover:text-ink"
+              className="mb-1 ml-auto rounded-lg px-2 py-1 text-[13px] leading-4 text-dim transition hover:bg-surface-strong hover:text-ink"
             >
               −
             </button>
@@ -1620,7 +1620,7 @@ export function Editor({
                 no cabeçalho, que leva direto ao bloco culpado.
               */}
               {!selecionado && !validacao.ok && (
-                <div className="border-t border-white/[0.06] p-4">
+                <div className="border-t border-line p-4">
                   <p className="mb-2 text-[11px] font-bold tracking-[0.04em] text-soft uppercase">
                     Impede de publicar
                   </p>
@@ -1641,7 +1641,7 @@ export function Editor({
               )}
 
               {!selecionado && validacao.avisos.length > 0 && (
-                <div className="border-t border-white/[0.06] p-4">
+                <div className="border-t border-line p-4">
                   <p className="mb-2 text-[11px] font-bold tracking-[0.04em] text-soft uppercase">
                     Vale olhar
                   </p>
@@ -1682,7 +1682,7 @@ export function Editor({
         titulo="Descartar as alterações?"
         descricao={`O desenho volta a ser a versão ${publicada?.versao ?? ''} — a que está no ar agora. O que está publicado não muda: quem está conversando no WhatsApp não sente nada.`}
       >
-        <p className="mb-4 rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[12px] leading-5 text-muted">
+        <p className="mb-4 rounded-[10px] border border-line bg-surface px-3 py-2 text-[12px] leading-5 text-muted">
           Dá para voltar atrás com <strong className="text-soft">Ctrl+Z</strong> logo depois — o
           descarte entra no histórico de desfazer como qualquer outra mudança.
         </p>
@@ -1691,7 +1691,7 @@ export function Editor({
             type="button"
             autoFocus
             onClick={() => setConfirmandoDescarte(false)}
-            className="rounded-lg border border-white/10 px-3.5 py-2 text-[12px] font-semibold text-muted transition hover:border-white/25 hover:text-white"
+            className="rounded-lg border border-white/10 px-3.5 py-2 text-[12px] font-semibold text-muted transition hover:border-white/25 hover:text-ink"
           >
             Cancelar
           </button>
@@ -1770,7 +1770,7 @@ function AcoesEmLote({
   const segundos = Array.from({ length: LIMITE_ATRASO_SEGUNDOS }, (_, i) => i + 1)
 
   return (
-    <div className="flex items-center gap-2 rounded-full border border-white/[0.09] bg-[#0b1018]/95 px-3 py-1.5 text-[11px] shadow-[0_14px_34px_rgba(0,0,0,.45)] backdrop-blur-sm">
+    <div className="flex items-center gap-2 rounded-full border border-line bg-[#0b1018]/95 px-3 py-1.5 text-[11px] shadow-[0_14px_34px_rgba(19,25,34,0.132)] backdrop-blur-sm">
       <span className="font-semibold text-soft">{quantos} blocos</span>
       <span className="h-3 w-px bg-white/10" aria-hidden />
       <span className="text-dim">digita antes de falar</span>
@@ -1782,7 +1782,7 @@ function AcoesEmLote({
           disabled={quantosFalam === 0}
           onClick={() => aoAtrasar(valor)}
           title={`Põe ${valor}s de "digitando…" antes de cada uma das falas selecionadas`}
-          className="rounded-full border border-white/[0.09] px-2 py-0.5 font-semibold text-muted transition hover:border-accent/40 hover:text-accent disabled:opacity-40"
+          className="rounded-full border border-line px-2 py-0.5 font-semibold text-muted transition hover:border-primary/40 hover:text-primary disabled:opacity-40"
         >
           {valor}s
         </button>
@@ -1793,7 +1793,7 @@ function AcoesEmLote({
         disabled={quantosFalam === 0}
         onClick={() => aoAtrasar(0)}
         title="Tira o atraso das falas selecionadas"
-        className="rounded-full border border-white/[0.09] px-2 py-0.5 font-semibold text-muted transition hover:border-white/25 hover:text-soft disabled:opacity-40"
+        className="rounded-full border border-line px-2 py-0.5 font-semibold text-muted transition hover:border-white/25 hover:text-soft disabled:opacity-40"
       >
         tirar
       </button>
@@ -1819,7 +1819,7 @@ function MenuDoBotaoDireito({
   aoApagar: () => void
 }) {
   const item =
-    'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-soft transition hover:bg-white/[0.07] hover:text-white'
+    'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-soft transition hover:bg-surface-strong hover:text-ink'
 
   return (
     <div
@@ -1828,7 +1828,7 @@ function MenuDoBotaoDireito({
         top: menu.y,
         transform: `translate(${menu.paraEsquerda ? '-100%' : '0'}, ${menu.paraCima ? '-100%' : '0'})`,
       }}
-      className="absolute z-20 w-[176px] rounded-[12px] border border-white/10 bg-panel p-1.5 shadow-[0_24px_60px_rgba(0,0,0,0.55)]"
+      className="absolute z-20 w-[176px] rounded-[12px] border border-white/10 bg-panel p-1.5 shadow-[0_24px_60px_rgba(19,25,34,0.121)]"
       onContextMenu={(evento) => evento.preventDefault()}
     >
       {menu.alvo === 'no' ? (
@@ -1845,7 +1845,7 @@ function MenuDoBotaoDireito({
             </span>
             Duplicar
           </button>
-          <div className="my-1 h-px bg-white/[0.07]" />
+          <div className="my-1 h-px bg-surface-strong" />
           <button
             type="button"
             onClick={aoApagar}
@@ -1921,7 +1921,7 @@ function ConfirmarApagar({
           type="button"
           autoFocus
           onClick={aoFechar}
-          className="rounded-lg border border-white/10 px-3.5 py-2 text-[12px] font-semibold text-muted transition hover:border-white/25 hover:text-white"
+          className="rounded-lg border border-white/10 px-3.5 py-2 text-[12px] font-semibold text-muted transition hover:border-white/25 hover:text-ink"
         >
           Cancelar
         </button>
@@ -2014,7 +2014,7 @@ function EstadoSalvamento({ estado }: { estado: 'salvo' | 'salvando' | 'pendente
             : estado === 'salvo'
               ? 'bg-emerald-400'
               : estado === 'salvando'
-                ? 'animate-pulse bg-accent'
+                ? 'animate-pulse bg-primary'
                 : 'bg-amber-300'
         }`}
       />

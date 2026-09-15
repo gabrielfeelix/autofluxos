@@ -71,7 +71,7 @@ const INDICE = [
 export default function Pagina() {
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-canvas/85 backdrop-blur-md">
+      <header className="sticky top-0 z-20 border-b border-line bg-canvas/85 backdrop-blur-md">
         <div className="mx-auto flex h-[54px] w-full max-w-[1180px] items-center gap-3 px-4 md:px-8">
           <Link href="/painel" className="shrink-0" aria-label="Voltar ao painel">
             <Marca compacta />
@@ -82,7 +82,7 @@ export default function Pagina() {
           <span className="text-[13px] font-semibold text-soft">Ajuda</span>
           <Link
             href="/painel"
-            className="ml-auto rounded-lg px-2.5 py-1.5 text-[12px] font-semibold text-dim transition hover:bg-white/[0.04] hover:text-accent"
+            className="ml-auto rounded-lg px-2.5 py-1.5 text-[12px] font-semibold text-dim transition hover:bg-surface hover:text-primary"
           >
             Voltar ao painel
           </Link>
@@ -110,7 +110,7 @@ export default function Pagina() {
           <SecaoDepoisDoFluxo />
           <SecaoDuvidas />
 
-          <footer className="border-t border-white/[0.06] pt-8 text-[12.5px] leading-[1.7] text-dim">
+          <footer className="border-t border-line pt-8 text-[12.5px] leading-[1.7] text-dim">
             <p>
               Faltou alguma coisa aqui? Fale com a 4YU — esta página cresce com a pergunta que você
               não achou.
@@ -135,14 +135,14 @@ export default function Pagina() {
  */
 function Capa() {
   return (
-    <div className="relative overflow-hidden border-b border-white/[0.06]">
+    <div className="relative overflow-hidden border-b border-line">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(rgba(255,255,255,.04)_1px,transparent_1.3px)] bg-[length:26px_26px]"
       />
       <div className="relative mx-auto grid w-full max-w-[1180px] gap-9 px-4 pt-12 pb-14 md:grid-cols-[1fr_auto] md:items-center md:px-8 md:pt-16">
         <div className="max-w-[560px]">
-          <p className="font-mono text-[10.5px] font-bold tracking-[0.18em] text-accent uppercase">
+          <p className="font-mono text-[10.5px] font-bold tracking-[0.18em] text-primary uppercase">
             Ajuda
           </p>
           <h1 className="mt-3 text-[34px] leading-[1.06] font-bold tracking-[-0.03em] text-balance md:text-[46px]">
@@ -162,7 +162,7 @@ function Capa() {
               <a
                 key={atalho.id}
                 href={`#${atalho.id}`}
-                className="rounded-full border border-white/[0.1] bg-white/[0.03] px-3.5 py-1.5 text-[12.5px] font-semibold text-soft transition hover:border-accent/45 hover:bg-accent/[0.09] hover:text-accent"
+                className="rounded-full border border-line bg-surface px-3.5 py-1.5 text-[12.5px] font-semibold text-soft transition hover:border-primary/45 hover:bg-primary/[0.09] hover:text-primary"
               >
                 {atalho.rotulo}
               </a>
@@ -221,7 +221,7 @@ function Indice() {
               <li key={item.id}>
                 <a
                   href={`#${item.id}`}
-                  className="block rounded-lg px-2 py-1.5 text-[12.5px] leading-[1.4] text-muted transition hover:bg-white/[0.04] hover:text-accent"
+                  className="block rounded-lg px-2 py-1.5 text-[12.5px] leading-[1.4] text-muted transition hover:bg-surface hover:text-primary"
                 >
                   {item.rotulo}
                 </a>
