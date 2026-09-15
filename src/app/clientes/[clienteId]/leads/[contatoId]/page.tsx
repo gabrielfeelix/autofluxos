@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
@@ -35,7 +36,7 @@ import {
   SemTexto,
 } from '@/components/lead/anexo'
 import { NomeDoContato, NotasDoContato } from '@/components/lead/identidade'
-import { horaExata, quando } from '@/lib/quando'
+import { etiquetasDeDia, horaDoRelogio, horaExata, quando } from '@/lib/quando'
 import { TextoDoWhatsApp } from '@/components/texto-do-whatsapp'
 
 export const dynamic = 'force-dynamic'
@@ -286,6 +287,9 @@ async function Historico({
     return <p className="py-10 text-center text-xs text-dim">Nenhuma mensagem registrada.</p>
   }
 
+  /* Onde cada dia começa — mesma regra do Inbox, ver `lib/quando.ts`. */
+  const diasDaConversa = etiquetasDeDia(conversa.mensagens, (m) => m.ts)
+
   return (
     <div className="flex flex-col gap-2.5">
       {conversa.cortada && (
@@ -293,14 +297,15 @@ async function Historico({
           conversa longa — mostrando só as mensagens mais recentes
         </p>
       )}
-      {conversa.mensagens.map((mensagem) => {
+      {conversa.mensagens.map((mensagem, indice) => {
         const nossa = mensagem.direcao === 'saida'
+        const etiqueta = diasDaConversa[indice]
         return (
-          /* A coluna é o que dá lugar à reação embaixo da bolha — ver o Inbox. */
-          <div
-            key={mensagem.id}
-            className={`flex flex-col gap-0 ${nossa ? 'items-end' : 'items-start'}`}
-          >
+          /* O `Fragment` deixa a etiqueta de dia ser irmã da bolha — ver o Inbox. */
+          <Fragment key={mensagem.id}>
+            {etiqueta && <EtiquetaDoDia rotulo={etiqueta} />}
+            {/* A coluna é o que dá lugar à reação embaixo da bolha — ver o Inbox. */}
+            <div className={`flex flex-col gap-0 ${nossa ? 'items-end' : 'items-start'}`}>
             <p className={`max-w-[78%] px-3 py-2 text-[12.5px] leading-[1.45] whitespace-pre-wrap ${nossa ? 'rounded-[13px_13px_4px_13px] border border-accent/[0.22] bg-accent/[0.13]' : 'rounded-[13px_13px_13px_4px] border border-white/[0.07] bg-white/[0.055]'}`}>
               {mensagem.cita && <CitacaoNaBolha cita={mensagem.cita} nome={nomeDoLead} />}
               {mensagem.anexo && <AnexoNaConversa anexo={mensagem.anexo} />}
@@ -325,7 +330,7 @@ async function Historico({
                 !mensagem.local && !mensagem.cartoes && <SemTexto />
               )}
               <span className="ml-2 text-[9.5px] text-muted" title={horaExata(mensagem.ts)}>
-                {nossa ? 'bot' : (nomeDoLead ?? 'cliente')} · {quando(mensagem.ts)}
+                {nossa ? 'bot' : (nomeDoLead ?? 'cliente')} · {horaDoRelogio(mensagem.ts)}
               </span>
               {nossa && !mensagem.entregue && (
                 <span className="ml-2 text-[9.5px] text-amber-200">envio não confirmado</span>
@@ -346,9 +351,19 @@ async function Historico({
                 nossa={nossa}
               />
             )}
-          </div>
+            </div>
+          </Fragment>
         )
       })}
     </div>
+  )
+}
+
+/** A etiqueta de dia. Gêmea da do Inbox — a bolha vive duplicada nas duas telas. */
+function EtiquetaDoDia({ rotulo }: { rotulo: string }) {
+  return (
+    <p className="my-1 self-center rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1 text-center text-[10px] font-medium text-dim">
+      {rotulo}
+    </p>
   )
 }

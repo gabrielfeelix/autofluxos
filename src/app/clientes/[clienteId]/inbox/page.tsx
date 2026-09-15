@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import { after } from 'next/server'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -54,7 +55,7 @@ import {
   LocalNaBolha,
   SemTexto,
 } from '@/components/lead/anexo'
-import { horaExata, quando } from '@/lib/quando'
+import { etiquetasDeDia, horaDoRelogio, horaExata } from '@/lib/quando'
 import { SeletorDeEtiquetas, type EtiquetaEscolhivel } from '@/components/etiquetas/seletor'
 import { Avatar } from '@/components/inbox/avatar'
 import { EstadoDaConversa } from '@/components/inbox/estado-da-conversa'
@@ -698,6 +699,15 @@ function Historico({
   }
 
   /*
+   * Onde cada dia começa, calculado **uma vez** para a conversa inteira.
+   *
+   * Dentro do `map` isso viraria "comparar com a mensagem anterior" espalhado
+   * pelo JSX, e a regra é chata o bastante (fuso de São Paulo, virada da
+   * meia-noite) para merecer estar num lugar testado. Ver `lib/quando.ts`.
+   */
+  const diasDaConversa = etiquetasDeDia(mensagens, (m) => m.ts)
+
+  /*
    * Ordem normal: mais antiga em cima, mais nova embaixo.
    *
    * O `flex-col-reverse` mora no container que ROLA, uma camada acima, e não
@@ -733,8 +743,9 @@ function Historico({
           mostrando as 500 mensagens mais recentes
         </p>
       )}
-      {mensagens.map((mensagem) => {
+      {mensagens.map((mensagem, indice) => {
         const nossa = mensagem.direcao === 'saida'
+        const etiqueta = diasDaConversa[indice]
         /*
          * A barra só aparece onde há id da Meta.
          *
@@ -744,15 +755,23 @@ function Historico({
          */
         return (
           /*
-           * A coluna existe para a reação ter onde ficar.
-           *
-           * Antes a bolha era filha direta do `flex justify-*`. A reação
-           * pendura embaixo dela e alinhada com ela, então as duas precisam de
-           * um pai que empilhe — e `items-end`/`items-start` é o que mantém a
-           * bolha do tamanho do conteúdo em vez de esticar na linha toda.
+           * O `Fragment` existe para a etiqueta de dia ser **irmã** da bolha, e
+           * não filha dela: ela atravessa a conversa inteira e fica centrada,
+           * enquanto a bolha alinha a um dos lados. A `key` sobe para cá junto,
+           * porque agora é o fragmento que é o item da lista.
            */
+          <Fragment key={mensagem.id}>
+            {etiqueta && <EtiquetaDoDia rotulo={etiqueta} />}
+            {/*
+             * A coluna existe para a reação ter onde ficar.
+             *
+             * Antes a bolha era filha direta do `flex justify-*`. A reação
+             * pendura embaixo dela e alinhada com ela, então as duas precisam
+             * de um pai que empilhe — e `items-end`/`items-start` é o que
+             * mantém a bolha do tamanho do conteúdo em vez de esticar na linha
+             * toda.
+             */}
           <div
-            key={mensagem.id}
             className={`flex flex-col gap-0 ${nossa ? 'items-end' : 'items-start'}`}
           >
             <p className={`max-w-[78%] px-3 py-2 text-[12.5px] leading-[1.5] whitespace-pre-wrap shadow-[0_1px_1px_rgba(0,0,0,0.12)] ${
@@ -783,7 +802,7 @@ function Historico({
                 !mensagem.local && !mensagem.cartoes && <SemTexto />
               )}
               <span className="ml-2 text-[9.5px] text-muted" title={horaExata(mensagem.ts)}>
-                {nossa ? 'atendimento' : (nome ?? 'cliente')} · {quando(mensagem.ts)}
+                {nossa ? 'atendimento' : (nome ?? 'cliente')} · {horaDoRelogio(mensagem.ts)}
               </span>
               {nossa && !mensagem.entregue && (
                 <span className="ml-2 text-[9.5px] text-amber-200">envio não confirmado</span>
@@ -814,10 +833,26 @@ function Historico({
               />
             )}
           </div>
+          </Fragment>
         )
       })}
 
     </div>
+  )
+}
+
+/**
+ * A etiqueta que separa os dias dentro da conversa.
+ *
+ * Ela não é enfeite: sem ela a hora de relógio mente. `09:14` de hoje e `09:14`
+ * de terça ficam idênticos na tela, e quem atende lê a conversa de cima para
+ * baixo sem nenhuma pista de onde um dia acabou.
+ */
+function EtiquetaDoDia({ rotulo }: { rotulo: string }) {
+  return (
+    <p className="my-1 self-center rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1 text-center text-[10px] font-medium text-dim">
+      {rotulo}
+    </p>
   )
 }
 

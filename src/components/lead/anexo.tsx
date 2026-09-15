@@ -1,3 +1,4 @@
+import { ImagemDaConversa } from '@/components/lead/visor-de-imagem'
 import type { AnexoDaMensagem, CartaoDeContato, Citada, LocalDaMensagem } from '@/server/repos/leads'
 
 /**
@@ -15,17 +16,13 @@ import type { AnexoDaMensagem, CartaoDeContato, Citada, LocalDaMensagem } from '
 export function AnexoNaConversa({ anexo }: { anexo: AnexoDaMensagem }) {
   const nome = anexo.nomeArquivo?.trim() || 'arquivo'
 
+  /*
+   * A imagem abre num visor por cima da conversa, e não numa aba nova. Além do
+   * conforto, há um motivo técnico: a mídia recebida vive em bucket privado com
+   * URL assinada de cinco minutos, e uma aba com essa URL expira sozinha.
+   */
   if (anexo.midia === 'imagem') {
-    return (
-      <a href={anexo.url} target="_blank" rel="noreferrer" className="mb-1.5 block">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={anexo.url}
-          alt={nome}
-          className="max-h-56 w-full rounded-lg border border-white/[0.08] object-cover"
-        />
-      </a>
-    )
+    return <ImagemDaConversa url={anexo.url} nome={nome} />
   }
 
   if (anexo.midia === 'video') {
