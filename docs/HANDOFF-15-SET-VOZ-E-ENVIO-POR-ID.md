@@ -14,8 +14,10 @@
 
 ## Onde parou
 
-Migration **`0056` aplicada no Docker e conferida**. **Não aplicada em
-produção** — falta autorização do dono.
+Migration **`0056` aplicada em produção** em 15/set/2026, com autorização
+explícita do dono, e conferida pelos dois testes que o
+[BANCO-COMPARTILHADO.md](BANCO-COMPARTILHADO.md) exige — leia o parágrafo dela
+lá antes de mexer em Storage.
 
 Typecheck, lint e `npm run build` limpos.
 
@@ -118,18 +120,10 @@ primeiro item.**
 |---|---|
 | Mídia que **sai** ainda chega | Mandar uma foto pelo clipe. **Se chegar, o envio por `id` funcionou.** |
 | Confirmar que foi por `id` e não pela queda | Procurar `[whatsapp] não deu para subir a mídia` no log da Vercel. **Ausência dessa linha = foi por `id`.** |
-| Gravar áudio | Só depois de aplicar a `0056`. Gravar 5s, enviar, ouvir no celular. |
+| Gravar áudio | Gravar 5s, enviar, ouvir no celular. A `0056` já está em produção. |
 | Áudio no Firefox | Mesmo teste — é o único que usa o caminho OGG/Opus. |
 
-### 2. Aplicar a `0056` em produção
-
-Ela só amplia uma lista de MIME de um bucket que já é nosso. Não cria bucket,
-não cria policy, não toca a Verandi. **Mas continua precisando de autorização
-explícita** — leia [BANCO-COMPARTILHADO.md](BANCO-COMPARTILHADO.md) antes.
-
-Sem ela, gravar áudio funciona e o envio falha com 400 no `PUT`.
-
-### 3. Fechar o bucket — **só depois do item 1**
+### 2. Fechar o bucket — **só depois do item 1**
 
 Agora que o envio não depende mais de URL pública, o `autofluxos-acervo` pode
 ficar privado. **Não escrevi essa migration de propósito**: um arquivo parado na
@@ -160,12 +154,12 @@ faça cumprir**: *"documento pessoal não entra, e isso é regra de uso, não de
 banco"*. Um atendente que suba a foto de um RG põe isso em URL pública e
 permanente. **Isso é risco de hoje, não do futuro.**
 
-### 4. Camada 4 — chamada perdida
+### 3. Camada 4 — chamada perdida
 
 Inalterada. A pesquisa só confirmou que o campo de webhook se chama `calls`.
 Continua precisando de uma chamada real para saber quais campos vêm.
 
-### 5. Marcar como lida sem usuário na sessão
+### 4. Marcar como lida sem usuário na sessão
 
 Inalterado. Ver `server/recibo-de-leitura.ts`.
 

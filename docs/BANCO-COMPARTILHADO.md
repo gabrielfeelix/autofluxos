@@ -155,6 +155,29 @@ extração explícito para os objetos de `public`.
   enxergam zero. **Quem criar policy nova em `storage.objects` sem filtrar
   bucket abre este bucket junto** — é o mesmo tipo de armadilha que a `0042`
   documentou para os `grant` amplos em `public`;
+- **a `0056` foi aplicada em 15/set/2026**, com autorização explícita do dono.
+  Ela só amplia a lista de `allowed_mime_types` do `autofluxos-acervo` para
+  incluir `audio/mp4` e `audio/aac` — o formato que o navegador grava quando
+  quem atende manda um áudio pela caixa de resposta. Conferida pelos dois
+  testes: replay em Docker (as `0043`–`0056` aplicadas em sequência sobre o
+  stack local) e verificação na produção depois. Estado final lá: acervo com
+  **9 mime types**, `audio/mp4` e `audio/aac` presentes, `public = true` e teto
+  de 16 MB **inalterados**; `autofluxos-recebidos` seguindo privado com 18 mime
+  types; os quatro buckets da Verandi (`assinatura-recibo`, `foto-avaliacao`,
+  `foto-pessoa`, `foto-profissional`) e o `logos` intocados;
+  `app_verandi.migrations_aplicadas` com as mesmas 32 linhas; e as **16
+  policies** de `storage.objects` intactas.
+
+  **Ela não tem `notify pgrst`, e isso é a decisão.** O cache do PostgREST é o
+  mesmo dos dois produtos, e a `0056` não muda schema nenhum que a Data API
+  exponha — recarregar o cache seria arriscar a API da Verandi para nada.
+
+  **Ela não mexe no `public` do bucket**, que segue sendo o risco em aberto
+  registrado no handoff de 15/set: a mídia que sai vai para URL pública e
+  permanente, e a regra da `0017` ("documento pessoal não entra") continua sem
+  ninguém que a faça cumprir. Fechar isso é outra migration, e depende de o
+  envio por `id` estar provado em campo — ver
+  `docs/HANDOFF-15-SET-VOZ-E-ENVIO-POR-ID.md`;
 - nunca deve executar o aplicador da Verandi nem registrar versão em
   `app_verandi.migrations_aplicadas`.
 
