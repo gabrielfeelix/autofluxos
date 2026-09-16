@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import type { Categoria, StatusDoTemplate } from '@/core/templates'
 import { acaoApagarTemplate, acaoCriarTemplate } from '@/server/acoes-transmissoes'
 import type { Template } from '@/server/repos/templates'
+import { Dropdown } from '@/components/design/dropdown'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 
 /**
@@ -196,7 +197,11 @@ function FormularioDeTemplate({ clienteId }: { clienteId: string }) {
     >
       <div>
         <RotuloCampo>Nome</RotuloCampo>
-        <input name="nome" className="app-field w-full" placeholder="Lembrete de consulta" />
+        <input
+          name="nome"
+          placeholder="Lembrete de consulta"
+          className="app-field px-[13px] py-[11px] text-[13.5px]"
+        />
         <p className="mt-1 text-[11.5px] leading-5 text-muted">
           Pode escrever normal — a gente ajusta o formato.
         </p>
@@ -204,11 +209,21 @@ function FormularioDeTemplate({ clienteId }: { clienteId: string }) {
 
       <div>
         <RotuloCampo>Categoria</RotuloCampo>
-        <select name="categoria" defaultValue="UTILITY" className="app-field w-full">
-          <option value="UTILITY">Utilidade — confirmação, lembrete, atualização</option>
-          <option value="MARKETING">Marketing — promoção, novidade, convite</option>
-          <option value="AUTHENTICATION">Autenticação — código de verificação</option>
-        </select>
+        {/*
+          O `Dropdown` da casa, e não um `<select>`: o nativo abre com o desenho
+          do sistema operacional — fundo branco em cima de um modal — e é
+          exatamente o que esse componente existe para evitar.
+        */}
+        <Dropdown
+          nome="categoria"
+          rotuloAcessivel="Categoria do modelo"
+          valorInicial="UTILITY"
+          opcoes={[
+            { valor: 'UTILITY', rotulo: 'Utilidade', detalhe: 'confirmação, lembrete' },
+            { valor: 'MARKETING', rotulo: 'Marketing', detalhe: 'promoção, novidade' },
+            { valor: 'AUTHENTICATION', rotulo: 'Autenticação', detalhe: 'código de verificação' },
+          ]}
+        />
         {/*
           A categoria muda o PREÇO da mensagem, e a Meta reclassifica sozinha o
           que julga promocional. Dizer isso antes evita a conversa de "por que a
@@ -225,7 +240,7 @@ function FormularioDeTemplate({ clienteId }: { clienteId: string }) {
           name="corpo"
           value={corpo}
           onChange={(e) => setCorpo(e.target.value)}
-          className="app-field min-h-[110px] w-full"
+          className="app-field min-h-[96px] px-[13px] py-[11px] text-[13.5px]"
           placeholder="Oi {{1}}, sua consulta é dia {{2}}. Confirma?"
         />
         <p className="mt-1 text-[11.5px] leading-5 text-muted">
@@ -247,7 +262,7 @@ function FormularioDeTemplate({ clienteId }: { clienteId: string }) {
             <input
               key={i}
               name={`exemplo-${i}`}
-              className="app-field mb-2 w-full"
+              className="app-field mb-2 px-[13px] py-[11px] text-[13.5px]"
               placeholder={`Exemplo para {{${i + 1}}}`}
             />
           ))}
