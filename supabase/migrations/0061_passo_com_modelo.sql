@@ -67,3 +67,17 @@ alter table public.sequencia_passos
 comment on column public.sequencia_passos.template_id is
   'O modelo aprovado que este passo manda. Obrigatório acima de 1440 minutos: '
   'fora da janela de 24h o WhatsApp só entrega modelo aprovado.';
+
+-- ---------------------------------------------------------------------------
+-- 3. O cache do PostgREST
+-- ---------------------------------------------------------------------------
+--
+-- `template_id` é coluna nova numa tabela que o servidor lê pela Data API
+-- (`sequencia_passos` entra no `select` de `listarSequencias`). Sem recarregar
+-- o cache, o PostgREST não devolve a coluna — e o passo aparece sem modelo
+-- nenhum na tela, como se ninguém o tivesse escolhido.
+--
+-- O cache é o mesmo dos dois produtos; conferir `app_verandi` depois do reload
+-- faz parte do movimento, não é zelo extra.
+
+notify pgrst, 'reload schema';

@@ -41,8 +41,16 @@ create table if not exists public.templates (
 
   -- O nome na Meta. A regra é deles: só minúsculas, números e underscore.
   -- Conferida aqui porque a recusa deles vem tarde e sem explicação boa.
+  --
+  -- **O teto de 512 é conferido por `length`, e não dentro da regex.** O
+  -- Postgres recusa repetição acima de **255** (`invalid repetition count(s)`),
+  -- e `{1,512}` é uma bomba-relógio silenciosa: o `create table` passa, a
+  -- tabela nasce com o `check` aparentemente certo, e o erro só aparece no
+  -- primeiro `insert` — ou seja, em produção, no dia em que alguém criar o
+  -- primeiro modelo. Foi pego no replay em Docker, que é para isso que ele
+  -- existe.
   nome        text not null
-              check (nome ~ '^[a-z0-9_]{1,512}$'),
+              check (nome ~ '^[a-z0-9_]+$' and length(nome) between 1 and 512),
 
   -- `pt_BR` e afins. Texto livre: a lista de locales da Meta é grande e muda.
   idioma      text not null default 'pt_BR'
@@ -274,6 +282,52 @@ create table if not exists public.consentimentos (
 -- categoria?". A resposta é a linha mais recente.
 create index if not exists consentimento_do_contato
   on public.consentimentos (contato_id, categoria, criado_em desc);
+
+-- ---------------------------------------------------------------------------
+-- 6. RLS e permissões
+-- ---------------------------------------------------------------------------
+--
+-- **Ligar RLS aqui não é enfeite, é a camada que as outras 40 tabelas já têm.**
+-- O schema `public` está exposto na Data API (o `db_schema` do PostgREST é
+-- `public,graphql_public,app_verandi`), então "exposto" nunca foi teórico — ver
+-- docs/BANCO-COMPARTILHADO.md, §6.
+--
+-- RLS ligada e **zero políticas** é o desenho do AutoFluxos inteiro: só o
+-- servidor acessa, com a chave secreta, que ignora RLS. Sem política, qualquer
+-- outro papel não lê nem escreve nada.
+--
+-- O `revoke` é a segunda camada, e é a que fecha de verdade — o default da
+-- `0041` já faz objeto novo nascer fechado, mas escrever aqui é o que mantém a
+-- migration verdadeira se ela for replayada num banco sem aquele default.
+--
+-- `transmissao_destinatarios` guarda telefone de gente por tabelagem, e
+-- `consentimentos` guarda prova de LGPD: são as duas que mais doeriam abertas.
+
+alter table public.templates enable row level security;
+revoke all on public.templates from anon, authenticated;
+
+alter table public.transmissoes enable row level security;
+revoke all on public.transmissoes from anon, authenticated;
+
+alter table public.transmissao_destinatarios enable row level security;
+revoke all on public.transmissao_destinatarios from anon, authenticated;
+
+alter table public.consentimentos enable row level security;
+revoke all on public.consentimentos from anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- 7. O cache do PostgREST
+-- ---------------------------------------------------------------------------
+--
+-- Quatro tabelas novas em `public`, que é schema exposto na Data API, e o
+-- servidor fala com elas pelo PostgREST: sem recarregar o cache,
+-- `from('templates')` responde **404** até a próxima reinicialização.
+--
+-- O cache é o mesmo dos dois produtos. O reload é breve, mas depois dele vale
+-- conferir que `app_verandi` continua respondendo — recarregá-lo sem olhar o
+-- outro lado é apostar a API da Verandi num movimento nosso.
+
+notify pgrst, 'reload schema';
 
 -- ---------------------------------------------------------------------------
 -- 5. `atualizado_em` que se mantém sozinho
