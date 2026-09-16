@@ -9,6 +9,52 @@ a Meta para depois. Foi o que aconteceu.
 
 ---
 
+## Comece por aqui
+
+Se você está abrindo este repositório agora, leia nesta ordem e pare quando
+souber o bastante para a tarefa que recebeu:
+
+1. **`AGENTS.md`** na raiz. É curto e tem a regra que mais custa quebrar: o
+   Supabase de produção é dividido com outro produto (Verandi), e `supabase db
+   push` e `db reset` são proibidos contra ele.
+2. **`docs/BANCO-COMPARTILHADO.md`**, inteiro, antes de qualquer coisa que toque
+   banco, migration, Auth, RLS, Storage ou Data API. Não é aviso genérico: cada
+   regra ali custou tempo de alguém.
+3. **Este arquivo**, para saber onde o trabalho parou.
+4. **`docs/PLANO-DISTRIBUICAO.md`** se a tarefa encostar em atribuição de
+   conversa, e **`docs/HANDOFF-16-SET-TRANSMISSOES-E-DISTRIBUICAO.md`** se
+   encostar em modelo aprovado ou transmissão. O segundo continua valendo inteiro
+   na parte da Meta.
+
+**A numeração da próxima migration sai do disco, nunca de documento**, inclusive
+deste. Rode `ls supabase/migrations/ | tail -1`. Este parágrafo já esteve errado
+três vezes em outros arquivos, sempre porque alguém confiou no número escrito.
+
+Comandos que este repositório usa:
+
+```bash
+npx vitest run src/core src/channels    # os puros, sem banco, rápidos
+npx tsc --noEmit | grep -v "^\.next/"
+npx next build
+ls supabase/migrations/ | tail -1       # a próxima migration
+```
+
+A suíte inteira demora e alguns testes de `src/server/repos/*` estouram por
+timeout quando duas sessões falam com o Supabase ao mesmo tempo. Isso é
+concorrência, não regressão: valide com `tsc` e `build`, e rode os testes por
+pasta.
+
+**Não aplique migration em produção sem autorização explícita do dono.** Quando
+ela vier, o caminho é a Management API com o ref literal `xxxynoshwirupkdzwxbj`,
+sempre com ensaio em transação antes (`begin; ...; rollback;`) e conferência
+objeto a objeto depois. As duas últimas migrations estão documentadas assim em
+`docs/BANCO-COMPARTILHADO.md` e servem de modelo.
+
+**Travessão é proibido** em texto de tela, comentário e nome de teste. Cada
+arquivo que você abrir deve sair sem, inclusive os travessões que já estavam lá.
+
+---
+
 ## O que entrou
 
 | Commit | O quê |
