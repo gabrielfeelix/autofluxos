@@ -1,7 +1,13 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { criarTemplateNaMeta, apagarTemplateNaMeta } from '@/channels/templates-api'
+import {
+  apagarTemplateNaMeta,
+  criarDaBibliotecaNaMeta,
+  criarTemplateNaMeta,
+  listarBibliotecaDaMeta,
+  type ModeloDaBiblioteca,
+} from '@/channels/templates-api'
 import { podeTransmitir } from '@/core/disparo'
 import {
   CAMPOS,
@@ -225,6 +231,96 @@ export async function acaoCriarModelo(
     componentes: { corpo },
     exemplos: exemplosPara(campos),
   })
+}
+
+/**
+ * Os modelos pré-aprovados da Meta, prontos para a galeria.
+ *
+ * **Devolve lista vazia quando qualquer coisa dá errado**, e isso é decisão: a
+ * galeria mostra os nossos modelos do lado, e eles funcionam sozinhos. Fazer a
+ * tela inteira falhar porque o catálogo da Meta não respondeu seria trocar um
+ * recurso a mais por um recurso a menos.
+ *
+ * O `erro` volta junto para a tela poder dizer por quê, quando quiser — sem
+ * transformar isso num bloqueio.
+ */
+export async function acaoListarBiblioteca(
+  clienteId: string,
+  busca?: string,
+): Promise<{ modelos: ModeloDaBiblioteca[]; erro: string | null }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const conta = await contaNaMeta(clienteId)
+  if ('erro' in conta) return { modelos: [], erro: conta.erro }
+
+  const r = await listarBibliotecaDaMeta({
+    token: conta.token,
+    ...(busca ? { busca } : {}),
+    idioma: 'pt_BR',
+  })
+
+  if (!r.ok) return { modelos: [], erro: r.erro.mensagem }
+  return { modelos: r.modelos, erro: null }
+}
+
+/**
+ * Cria a partir da biblioteca — o caminho da aprovação quase imediata.
+ *
+ * **O texto não vai no pedido**, e é isso que dá a rapidez: quem manda o
+ * conteúdo é a Meta, pelo `library_template_name`, porque ela já o revisou.
+ * Alterar o texto devolveria o template para a fila comum de 24h — por isso a
+ * tela não deixa editar o corpo de um modelo da biblioteca.
+ */
+export async function acaoCriarDaBiblioteca(
+  clienteId: string,
+  dados: { nomeNaBiblioteca: string; idioma: string; categoria: Categoria },
+): Promise<ResultadoDoTemplate> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const conta = await contaNaMeta(clienteId)
+  if ('erro' in conta) return { ok: false, erro: conta.erro }
+
+  const nome = nomeAutomatico(dados.nomeNaBiblioteca)
+  const idioma = dados.idioma || 'pt_BR'
+
+  let rascunho
+  try {
+    rascunho = await criarRascunho({
+      clienteId,
+      nome,
+      idioma,
+      categoria: dados.categoria,
+      // O corpo fica vazio de propósito: o texto é da Meta, e copiá-lo aqui
+      // criaria uma segunda versão que envelheceria sozinha se ela mudar o
+      // dela. A reconciliação preenche o que interessa.
+      componentes: { corpo: '' },
+    })
+  } catch {
+    return { ok: false, erro: 'Não deu para salvar o modelo.' }
+  }
+
+  const resposta = await criarDaBibliotecaNaMeta({
+    wabaId: conta.wabaId,
+    token: conta.token,
+    nome,
+    nomeNaBiblioteca: dados.nomeNaBiblioteca,
+    idioma,
+    categoria: dados.categoria,
+  })
+
+  if (!resposta.ok) {
+    telas(clienteId)
+    return { ok: false, erro: `A Meta recusou: ${resposta.erro.mensagem}`, templateId: rascunho.id }
+  }
+
+  await marcarSubmetido(rascunho.id, {
+    wabaTemplateId: resposta.template.wabaTemplateId,
+    status: resposta.template.status === 'desconhecido' ? 'pendente' : resposta.template.status,
+    categoria: resposta.template.categoria,
+  })
+
+  telas(clienteId)
+  return { ok: true, templateId: rascunho.id }
 }
 
 /**
