@@ -1,5 +1,6 @@
 import 'server-only'
 import { z } from 'zod'
+import { distribuirSeSemDono } from './distribuir-atendimento'
 import type { Canal } from '@/channels/types'
 import { canalDoWhatsApp } from './canal-do-whatsapp'
 import { AUTOR_AUTOMACAO } from '@/core/autor-da-mensagem'
@@ -110,8 +111,8 @@ const mensagemSchema = z.object({
     .optional(),
   /*
    * O anexo. A Meta manda o objeto com o nome do próprio tipo (`image`,
-   * `audio`, `document`, `video`, `sticker`), e todos carregam `id` — a
-   * referência que serve para baixar depois — e alguns carregam `caption`.
+   * `audio`, `document`, `video`, `sticker`), e todos carregam `id`, a
+   * referência que serve para baixar depois, e alguns carregam `caption`.
    *
    * Lidos com `.passthrough()` fora: o que interessa aqui é o id e a legenda,
    * e campo novo da Meta não pode derrubar o parse de uma mensagem inteira.
@@ -123,7 +124,7 @@ const mensagemSchema = z.object({
   sticker: anexoSchema.optional(),
   /*
    * **A mensagem que esta está citando.** Chega em toda resposta citada, de
-   * qualquer tipo — a Meta põe `context` no nível de cima, irmão do `type`.
+   * qualquer tipo, a Meta põe `context` no nível de cima, irmão do `type`.
    *
    * `id` é o `wa_message_id` da citada, e é o que liga uma à outra. Os outros
    * campos que a Meta manda aqui (`from`, `forwarded`, `referred_product`) não
@@ -133,7 +134,7 @@ const mensagemSchema = z.object({
    * Cuidado que vale registrar: `context` também aparece quando alguém responde
    * **um anúncio** e quando a mensagem é encaminhada. Nos dois casos o `id`
    * aponta para algo que não está no nosso histórico, e a tela precisa
-   * aguentar isso — ver `citadaDoPayload` em `repos/leads.ts`.
+   * aguentar isso, ver `citadaDoPayload` em `repos/leads.ts`.
    */
   context: z.object({ id: z.string() }).optional(),
   /*
@@ -158,13 +159,13 @@ export const webhookSchema = z.object({
                * **Qual campo do webhook chegou. Ler isto não é zelo: é o que
                * impede o bot de responder ao próprio dono do negócio.**
                *
-               * `smb_message_echoes` — o eco do que o dono manda pelo celular —
+               * `smb_message_echoes`, o eco do que o dono manda pelo celular,
                * traz `metadata.phone_number_id` e um `messages[]` com a mesma
                * forma de uma mensagem recebida. Sem olhar o `field`, ele passa
                * por este schema, o `from` (que é o número **do negócio**) vira
                * um contato novo, a mensagem é gravada como `entrada`, e o motor
                * responde. O dono recebe uma resposta automática do próprio bot,
-               * na conversa errada — exatamente o atropelo que a coexistência
+               * na conversa errada, exatamente o atropelo que a coexistência
                * existe para evitar.
                *
                * `history` não cai nessa porque as mensagens dele moram em
@@ -270,12 +271,12 @@ export async function tratarUma(
    *
    * Duas escritas, e as duas de propósito fora de `registrarEntrada`: aquela
    * função é o registro da mensagem, e isto é o que a mensagem **significa para
-   * o relacionamento** — "de quem estou devendo resposta" e "voltou quem tinha
+   * o relacionamento**, "de quem estou devendo resposta" e "voltou quem tinha
    * sumido".
    *
    * Nenhuma das duas pode derrubar o atendimento, e por isso nenhuma é
    * esperada com `throw`: `marcarUltimaMensagem` engole o erro, e o fato só é
-   * aplicado para quem já existia — contato criado agora nasce em `novo`, e
+   * aplicado para quem já existia, contato criado agora nasce em `novo`, e
    * perguntar ao banco o que ele já era seria uma consulta com resposta
    * conhecida.
    */
@@ -298,7 +299,7 @@ export async function tratarUma(
      * `?? ''` na remoção de propósito: a Meta manda `emoji` vazio **ou** omite
      * o campo quando alguém tira a reação, e as duas formas querem dizer a
      * mesma coisa. Normalizar na entrada é o que deixa a coluna significar só
-     * duas coisas — `null` não é reação, string vazia é reação removida — em
+     * duas coisas, `null` não é reação, string vazia é reação removida, em
      * vez de três.
      */
     ...(mensagem.reaction
@@ -316,7 +317,7 @@ export async function tratarUma(
    *
    * Vem **logo depois do dedupe** e antes de tudo o mais de propósito: o `id`
    * da mídia vive 7 dias, a Meta não guarda backup (Cloud API Terms 4.5), e
-   * qualquer caminho que adie isto pode não acontecer — a função pode morrer no
+   * qualquer caminho que adie isto pode não acontecer, a função pode morrer no
    * `maxDuration`, e o arquivo não volta de lugar nenhum.
    *
    * Depois do dedupe porque reenvio da Meta não pode baixar o mesmo arquivo
@@ -357,8 +358,8 @@ export async function tratarUma(
    * errado, e ninguém do lado de cá entendia por quê.
    *
    * A regra que vale é a do WhatsApp, e é a que a pessoa espera: reagir
-   * comenta uma mensagem, não manda uma. Ela já está gravada logo acima — a
-   * tela a mostra grudada na mensagem reagida —, então tudo que falta é não
+   * comenta uma mensagem, não manda uma. Ela já está gravada logo acima, a
+   * tela a mostra grudada na mensagem reagida , então tudo que falta é não
    * acordar o motor.
    *
    * Vem **depois** do dedupe e **antes** de `sairPorEvento` de propósito: um
@@ -373,7 +374,7 @@ export async function tratarUma(
    *
    * **É a regra que separa acompanhamento de spam**, e ela vale mesmo quando o
    * bot está pausado, mesmo fora do expediente e mesmo que a conversa não vá
-   * avançar por nenhum outro motivo — por isso está aqui em cima, e não lá
+   * avançar por nenhum outro motivo, por isso está aqui em cima, e não lá
    * dentro. A pessoa voltou a falar; lembrá-la de falar é o que não pode
    * acontecer.
    *
@@ -384,7 +385,7 @@ export async function tratarUma(
   await sairPorEvento(contato.id, 'respondeu')
 
   // Daqui para baixo a conversa avança, e duas mensagens da mesma pessoa não
-  // podem avançar juntas — ver `repos/travas.ts` e a migration 0007.
+  // podem avançar juntas, ver `repos/travas.ts` e a migration 0007.
   const destravar = await travarContato(contato.id)
   if (!destravar) {
     await desistirDaVez(canalSalvo, contato)
@@ -411,7 +412,7 @@ export async function tratarUma(
 }
 
 /**
- * Registra por onde a pessoa chegou — desta vez, e da primeira.
+ * Registra por onde a pessoa chegou, desta vez, e da primeira.
  *
  * ---------------------------------------------------------------------------
  * São duas perguntas, e por isso são dois lugares
@@ -420,7 +421,7 @@ export async function tratarUma(
  * **`campos.origem` é o primeiro toque, e continua congelado de propósito.** É
  * a atribuição no sentido em que a Meta e o mercado usam a palavra: quem trouxe
  * esta pessoa para a base. Reescrever isso a cada anúncio novo faria a campanha
- * de remarketing levar o crédito de uma pessoa que já era nossa — que é
+ * de remarketing levar o crédito de uma pessoa que já era nossa, que é
  * exatamente o erro que a regra de primeiro toque existe para evitar.
  *
  * **`passagens` é o histórico, e aceita quantas vierem.** Veio pela campanha de
@@ -452,7 +453,7 @@ async function atribuirOrigem(contato: Contato, referral?: Referral): Promise<Co
     } catch (erro) {
       /*
        * Histórico não pode custar atendimento. Falhar aqui viraria webhook com
-       * erro, reentrega da Meta e mensagem duplicada — preço alto demais por
+       * erro, reentrega da Meta e mensagem duplicada, preço alto demais por
        * uma linha de contexto.
        */
       const detalhe = erro instanceof Error ? erro.message : String(erro)
@@ -473,12 +474,12 @@ async function atribuirOrigem(contato: Contato, referral?: Referral): Promise<Co
      * O resto do `referral`, que o schema já validava e o código jogava fora.
      *
      * **Guardar agora é de graça; não guardar é irreversível.** `campos` é
-     * `jsonb`, então nada disto custa migration — e o `referral` chega **uma
+     * `jsonb`, então nada disto custa migration, e o `referral` chega **uma
      * vez só**, na primeira mensagem da conversa. O que não for gravado aqui
      * não volta: a Meta não reenvia, e depois de 90 dias nem a API dela sabe
      * mais. É o oposto de uma coluna que dá para preencher depois.
      *
-     * `ctwa_clid` é o que fecha o laço de atribuição pela Conversions API — é
+     * `ctwa_clid` é o que fecha o laço de atribuição pela Conversions API, é
      * com ele que a Meta credita a venda ao anúncio, e é o único destes que
      * não tem nenhum uso hoje. Está aqui exatamente por isso: o dia em que o
      * produto quiser medir ROAS por anúncio, a conversa que começou hoje ainda
@@ -510,10 +511,11 @@ async function desistirDaVez(canalSalvo: CanalSalvo, contato: Contato): Promise<
 
   await registrarHandoff(salva.id, 'a conversa ficou presa e a mensagem não foi processada')
   await definirStatusDaSessao(salva.id, 'humano')
+  await distribuirSeSemDono(contato.clienteId, contato.id)
 }
 
 /**
- * Qual fluxo esta mensagem abre — e por quê.
+ * Qual fluxo esta mensagem abre, e por quê.
  *
  * `null` significa "não abre nada": ou continua a conversa que já estava
  * andando, ou não há nada publicado para dizer.
@@ -527,7 +529,7 @@ type Abertura = {
 }
 
 /**
- * A ordem de decisão da entrada — o coração da A6.
+ * A ordem de decisão da entrada, o coração da A6.
  *
  * Até aqui era uma linha só: conversa nova roda `channels.flow_id`. Agora são
  * quatro papéis e as palavras-chave da conta, e a ordem entre eles **é** a
@@ -543,10 +545,10 @@ type Abertura = {
  * 2. **Gatilho por palavra-chave**, e ele **interrompe** a conversa em
  *    andamento. Parece agressivo e é o comportamento que já existia: o escape
  *    global sempre funcionou de dentro de qualquer pergunta. Um gatilho é o
- *    escape do cliente — tratá-lo diferente seria duas regras para a mesma
+ *    escape do cliente, tratá-lo diferente seria duas regras para a mesma
  *    ideia. Só casa em texto digitado: clique em botão nunca é sequestrado.
  * 3. **Fluxo de mídia**, que é o que aposenta a Regra B. Também interrompe,
- *    pelo mesmo motivo — e porque o que ele substitui (handoff imediato)
+ *    pelo mesmo motivo, e porque o que ele substitui (handoff imediato)
  *    interrompia ainda mais.
  * 4. **Boas-vindas**, só na primeira conversa deste contato **neste número**.
  * 5. **O principal**, que é a resposta padrão, só quando não há conversa viva
@@ -592,8 +594,8 @@ async function escolherAbertura(
 
   for (const candidato of candidatos) {
     const fluxo = await acharFluxo(candidato.fluxoId)
-    // Nada publicado: este candidato não fala. Melhor o próximo — ou o silêncio
-    // — do que responder com um rascunho que ninguém revisou.
+    // Nada publicado: este candidato não fala. Melhor o próximo, ou o silêncio,
+    // do que responder com um rascunho que ninguém revisou.
     //
     // Desligado (0036) cai para o próximo pelo mesmo caminho, e de propósito:
     // quem desliga o fluxo de boas-vindas quer que o principal atenda, não que
@@ -611,7 +613,7 @@ async function escolherAbertura(
 }
 
 /**
- * Como um salto entre automações alcança o destino — e o que ele **não** pode
+ * Como um salto entre automações alcança o destino, e o que ele **não** pode
  * alcançar.
  *
  * O id do destino vem do grafo, e grafo é coisa que gente edita: amarrar o
@@ -644,7 +646,7 @@ async function avancarConversa(
 ): Promise<void> {
   const anterior = await ultimaSessao(contato.id, canalSalvo.id)
 
-  // O humano assumiu. O bot fica calado — a mensagem fica registrada, e quem
+  // O humano assumiu. O bot fica calado, a mensagem fica registrada, e quem
   // responde é a pessoa, do celular dela. Vale inclusive contra gatilho: o
   // cliente cadastrou palavra-chave para o bot, não para atropelar quem já
   // está conversando com a pessoa.
@@ -670,7 +672,7 @@ async function avancarConversa(
     if (viva) await definirStatusDaSessao(viva.id, 'encerrada')
 
     // A sessão nasce sabendo com quem está falando. Sem isto, `{{telefone}}` e
-    // `{{nome}}` chegam vazios no primeiro bloco de toda conversa — e quem
+    // `{{nome}}` chegam vazios no primeiro bloco de toda conversa, e quem
     // depende deles falha em silêncio. Ver `core/contatos/vars-iniciais.ts`.
     salva = await criarSessao(contato.id, canalSalvo.id, abertura.versaoId, {
       ...sessaoNova(),
@@ -710,7 +712,7 @@ async function avancarConversa(
   ])
 
   // Conversa nova começa pelo início do fluxo. A primeira mensagem da pessoa
-  // é o gatilho, não uma resposta — ela ainda não foi perguntada nada. Vale
+  // é o gatilho, não uma resposta, ela ainda não foi perguntada nada. Vale
   // também para gatilho e para mídia: a frase que abriu o fluxo não é para ser
   // consumida como resposta do primeiro bloco dele.
   const resultado = await executarComEfeitos(
@@ -721,11 +723,11 @@ async function avancarConversa(
       ...opcoesDeIa,
       atendimento: contextoDeAtendimento(horario),
       // A data vem do fuso da conta, e não do servidor. Em UTC, a partir das
-      // 21h em São Paulo, "hoje" já é amanhã — que é exatamente o horário em
+      // 21h em São Paulo, "hoje" já é amanhã, que é exatamente o horário em
       // que gente manda mensagem para marcar aula.
       hoje: hojeNaConta(horario?.fuso ?? SEMPRE_ABERTO.fuso),
       // As mesmas datas que a IA recebe, agora também como `{{variavel}}` para
-      // o fluxo desenhado à mão — é o que faz "semana que vem" funcionar sem
+      // o fluxo desenhado à mão, é o que faz "semana que vem" funcionar sem
       // IA contratada, com um botão em vez de um modelo.
       datas: varsDeData(horario?.fuso ?? SEMPRE_ABERTO.fuso),
       carregarFluxo: carregadorDeFluxo(canalSalvo.clienteId),
@@ -735,7 +737,7 @@ async function avancarConversa(
   await guardarSessao(salva.id, resultado.sessao)
   // Saltou de automação: a sessão passa a executar a versão do destino, senão a
   // próxima mensagem voltaria para o fluxo de origem com um nó que não existe
-  // lá — e o motor recomeçaria a saudação no meio da conversa.
+  // lá, e o motor recomeçaria a saudação no meio da conversa.
   if (resultado.destino) await trocarVersaoDaSessao(salva.id, resultado.destino.versaoId)
   await sincronizarTimeout(
     canalSalvo.clienteId,
@@ -751,7 +753,7 @@ async function avancarConversa(
 /**
  * Acerta o prazo da pergunta depois de cada rodada (B1).
  *
- * Uma chamada só para as duas metades — agendar e cancelar — porque elas são a
+ * Uma chamada só para as duas metades, agendar e cancelar, porque elas são a
  * mesma decisão vista de dois lados: **a conversa parou numa pergunta com
  * prazo, ou não parou.** Separar em duas funções é como se esquece de chamar a
  * segunda, e esquecer o cancelamento é cobrar quem já respondeu.
@@ -795,7 +797,7 @@ async function sincronizarTimeout(
  * importa: a tarefa foi agendada minutos ou horas atrás, e no meio disso a
  * conversa pode ter andado, sido assumida por uma pessoa, encerrada, ou o bot
  * pode ter sido pausado. Agir sobre um estado que mudou é acordar alguém com
- * uma cobrança que não faz mais sentido — e o agendador é justamente a peça em
+ * uma cobrança que não faz mais sentido, e o agendador é justamente a peça em
  * que ninguém está olhando quando ela erra.
  *
  * Devolve o que aconteceu para o cron poder contar, e não para decidir nada.
@@ -824,7 +826,7 @@ export async function rodarTimeoutDePergunta(
   if (!contato.automacaoAtiva) return 'ignorada'
 
   // A mesma trava do webhook. Não conseguir a vez significa que uma mensagem
-  // está sendo processada agora — e a mensagem ganha do prazo, sempre.
+  // está sendo processada agora, e a mensagem ganha do prazo, sempre.
   const destravar = await travarContato(contatoId)
   if (!destravar) return 'ignorada'
 
@@ -845,11 +847,11 @@ export async function rodarTimeoutDePergunta(
       ...opcoesDeIa,
       atendimento: contextoDeAtendimento(horario),
       // A data vem do fuso da conta, e não do servidor. Em UTC, a partir das
-      // 21h em São Paulo, "hoje" já é amanhã — que é exatamente o horário em
+      // 21h em São Paulo, "hoje" já é amanhã, que é exatamente o horário em
       // que gente manda mensagem para marcar aula.
       hoje: hojeNaConta(horario?.fuso ?? SEMPRE_ABERTO.fuso),
       // As mesmas datas que a IA recebe, agora também como `{{variavel}}` para
-      // o fluxo desenhado à mão — é o que faz "semana que vem" funcionar sem
+      // o fluxo desenhado à mão, é o que faz "semana que vem" funcionar sem
       // IA contratada, com um botão em vez de um modelo.
       datas: varsDeData(horario?.fuso ?? SEMPRE_ABERTO.fuso),
       carregarFluxo: carregadorDeFluxo(canal.clienteId),
@@ -880,7 +882,7 @@ export async function rodarTimeoutDePergunta(
  *
  * - **a janela de 24h é conferida antes de falar.** Nos outros papéis a pessoa
  *   acabou de escrever, então a janela está aberta por definição. Aqui pode
- *   fazer dias — e o WhatsApp recusaria, virando handoff logo depois de alguém
+ *   fazer dias, e o WhatsApp recusaria, virando handoff logo depois de alguém
  *   ter marcado a conversa como resolvida;
  * - **a automação pausada é respeitada.** AutoOff cala o bot para aquele
  *   contato, e encerrar um atendimento não é motivo para ele voltar a falar;
@@ -935,7 +937,7 @@ export type AberturaPorNossaConta =
  *
  * - **a janela de 24h é conferida antes de falar.** No webhook a pessoa acabou
  *   de escrever, então a janela está aberta por definição. Aqui pode fazer
- *   dias — e o WhatsApp recusaria com `(#131047)`, virando handoff logo depois
+ *   dias, e o WhatsApp recusaria com `(#131047)`, virando handoff logo depois
  *   de alguém ter marcado a conversa como resolvida;
  * - **a automação pausada é respeitada.** AutoOff cala o bot naquele contato, e
  *   nem encerrar um atendimento nem um prazo de sequência é motivo para ele
@@ -962,7 +964,7 @@ export async function abrirFluxoParaContato(
 
   const fluxo = await acharFluxo(fluxoId)
   if (!fluxo || fluxo.clienteId !== clienteId || !fluxo.versaoPublicadaId) return 'sem_fluxo'
-  // Desligado não abre conversa nova (0036) — nem por sequência, nem por
+  // Desligado não abre conversa nova (0036), nem por sequência, nem por
   // campanha, nem por qualquer outro caminho que passe por aqui.
   if (!fluxo.ativo) return 'sem_fluxo'
 
@@ -994,11 +996,11 @@ export async function abrirFluxoParaContato(
       ...opcoesDeIa,
       atendimento: contextoDeAtendimento(horario),
       // A data vem do fuso da conta, e não do servidor. Em UTC, a partir das
-      // 21h em São Paulo, "hoje" já é amanhã — que é exatamente o horário em
+      // 21h em São Paulo, "hoje" já é amanhã, que é exatamente o horário em
       // que gente manda mensagem para marcar aula.
       hoje: hojeNaConta(horario?.fuso ?? SEMPRE_ABERTO.fuso),
       // As mesmas datas que a IA recebe, agora também como `{{variavel}}` para
-      // o fluxo desenhado à mão — é o que faz "semana que vem" funcionar sem
+      // o fluxo desenhado à mão, é o que faz "semana que vem" funcionar sem
       // IA contratada, com um botão em vez de um modelo.
       datas: varsDeData(horario?.fuso ?? SEMPRE_ABERTO.fuso),
       carregarFluxo: carregadorDeFluxo(clienteId),
@@ -1021,7 +1023,7 @@ export async function abrirFluxoParaContato(
 }
 
 /**
- * O que a IA precisa para responder — buscado **só quando o fluxo tem IA**.
+ * O que a IA precisa para responder, buscado **só quando o fluxo tem IA**.
  *
  * A checagem no grafo evita duas consultas por mensagem em todo cliente que não
  * contratou Etapa 2, que hoje é a maioria. Custo zero para quem não usa.
@@ -1042,7 +1044,7 @@ async function prepararIa(
 
   // **O fluxo vem da versão que está rodando, não do número.** Eram a mesma
   // coisa enquanto um número executava um fluxo só; com quatro papéis e
-  // gatilhos, `channels.flow_id` passou a ser só um dos fluxos possíveis — e
+  // gatilhos, `channels.flow_id` passou a ser só um dos fluxos possíveis, e
   // ler o contrato de IA dele decidiria pelo fluxo errado justamente no portão
   // que separa quem paga a Etapa 2 de quem não paga.
   const [fluxo, cliente, conversa] = await Promise.all([
@@ -1101,10 +1103,10 @@ async function entregar(
     // texto da Meta é longo; a versão inteira é o que resolve a investigação.
     console.error('[whatsapp] não deu para entregar a mensagem', detalhe)
     // O handoff cobre a pessoa, mas token expirado e número bloqueado derrubam
-    // *todas* as conversas do cliente ao mesmo tempo — é o tipo de falha que
+    // *todas* as conversas do cliente ao mesmo tempo, é o tipo de falha que
     // precisa chegar em alguém antes de virar um dia inteiro de leads perdidos.
     await alertar('a Cloud API recusou a entrega', detalhe, contexto)
-    return { ok: false, motivo: `não deu para entregar a mensagem — ${detalhe.slice(0, 200)}` }
+    return { ok: false, motivo: `não deu para entregar a mensagem, ${detalhe.slice(0, 200)}` }
   }
 }
 
@@ -1142,13 +1144,22 @@ async function aplicar(
       tentativas: 0,
       status: 'humano',
     })
+    /*
+     * Dar dono vem **antes** do aviso, e não depois.
+     *
+     * O aviso é o que faz a equipe olhar a conversa. Avisar primeiro e atribuir
+     * depois abre uma janela em que todo mundo vê "alguém precisa de gente" sem
+     * dono nenhum ao lado, que é exatamente a corrida que a distribuição existe
+     * para evitar.
+     */
+    await distribuirSeSemDono(contato.clienteId, contato.id)
     await avisarDoHandoff(motivo)
   }
 
   /*
    * O aviso sai **depois** de o handoff estar registrado, e nunca antes.
    *
-   * Quem está esperando tem que aparecer na tela mesmo que push nenhum saia —
+   * Quem está esperando tem que aparecer na tela mesmo que push nenhum saia,
    * o aviso é o extra, a fila é a verdade. `avisarHandoff` já engole a própria
    * falha; o `catch` aqui é a segunda rede, para uma exceção nova nunca poder
    * desfazer uma transferência que já aconteceu.
@@ -1174,7 +1185,7 @@ async function aplicar(
           await canal.aguardarResposta({ mensagemId, contato: contato.waId }, acao.atrasoMs)
         }
 
-        // Grava antes de mandar e confirma depois — ver `registrarSaida`.
+        // Grava antes de mandar e confirma depois, ver `registrarSaida`.
         const registro = await registrarSaida({
           contatoId: contato.id,
           sessaoId,
@@ -1268,7 +1279,7 @@ async function aplicar(
          * chama ninguém.** Ninguém entra na fila, ninguém é avisado, e o bot
          * simplesmente para de responder para esta pessoa.
          *
-         * A pausa é do **contato** e não da sessão — sobrevive à próxima
+         * A pausa é do **contato** e não da sessão, sobrevive à próxima
          * conversa, que é o comportamento que a coluna `automacao_ativa`
          * sempre teve quando alguém desliga pela tela. Um AutoOff que valesse
          * só até o fim da conversa não desligaria nada na prática.
@@ -1286,7 +1297,7 @@ async function aplicar(
          * **Nada aqui pode derrubar a conversa.** A versão publicada é imutável
          * e a etapa é estado vivo: quem arrumou o quadro semana passada não
          * pode fazer a mensagem de alguém falhar hoje. Etapa sumida vira log e
-         * a conversa segue — o repo já devolve `false` em vez de estourar.
+         * a conversa segue, o repo já devolve `false` em vez de estourar.
          */
         const entrou = await porContatoNaEtapa(
           contato.clienteId,
@@ -1299,7 +1310,7 @@ async function aplicar(
           break
         }
         // Chegar numa etapa é um ato deliberado sobre um contato, como aplicar
-        // etiqueta — e é o terceiro evento que inscreve em sequência (0034).
+        // etiqueta, e é o terceiro evento que inscreve em sequência (0034).
         await inscreverNoEvento(contato.clienteId, [contato.id], 'etapa_alcancada', acao.colunaId)
         break
       }
@@ -1308,7 +1319,7 @@ async function aplicar(
         /**
          * O bloco de etiqueta (0044).
          *
-         * **Faz exatamente o que o clique no Inbox faz** — inclusive sair da
+         * **Faz exatamente o que o clique no Inbox faz**, inclusive sair da
          * sequência que essa etiqueta encerra e entrar na que ela começa. Se
          * etiquetar pelo fluxo e etiquetar pela mão tivessem efeitos
          * diferentes, o cliente teria dois comportamentos com o mesmo nome, e
@@ -1364,12 +1375,12 @@ async function aplicar(
        * **Nada aqui pode derrubar a conversa**, como a etiqueta e a nota: o
        * repo engole o próprio erro e devolve `null`. Uma nota perdida custa um
        * número no relatório; uma exceção custaria a próxima mensagem de alguém
-       * que acabou de ser atendido — e é justamente a mensagem de agradecimento
+       * que acabou de ser atendido, e é justamente a mensagem de agradecimento
        * que viria logo depois.
        *
        * `origem: 'fluxo'` sempre: esta ação só nasce de um bloco num desenho. A
        * pesquisa que sai do botão "resolver" no Inbox também passa por aqui,
-       * mas ela **roda um fluxo** (o de pós-atendimento) — do ponto de vista do
+       * mas ela **roda um fluxo** (o de pós-atendimento), do ponto de vista do
        * registro, é o bloco que está perguntando.
        */
       case 'guardar_nota':
@@ -1382,6 +1393,7 @@ async function aplicar(
 
       case 'transferir_humano':
         await registrarHandoff(sessaoId, acao.motivo)
+        await distribuirSeSemDono(contato.clienteId, contato.id)
         // O bloco pode ter endereçado o aviso a alguém; sem isso, a equipe.
         await avisarDoHandoff(acao.motivo, acao.avisarUsuarioId)
         break
@@ -1412,7 +1424,7 @@ async function aplicar(
       }
 
       case 'chamar_http': {
-        // O resolvedor sempre atende esta ação — inclusive quando a chamada
+        // O resolvedor sempre atende esta ação, inclusive quando a chamada
         // falha, porque `aoFalhar` decide lá. Chegar aqui é defeito nosso, e
         // entre deixar alguém pendurado e passar para uma pessoa, passa.
         const registro = await registrarSaida({
@@ -1459,12 +1471,12 @@ function paraEntrada(mensagem: Mensagem): { entrada: Entrada; texto: string | nu
    *
    * Quem chama já para antes do motor quando `mensagem.reaction` existe
    * (ver `tratarUma`), então a `Entrada` devolvida aqui **não é usada para
-   * avançar nada** — ela existe porque o tipo de retorno a exige. O que vale
+   * avançar nada**, ela existe porque o tipo de retorno a exige. O que vale
    * deste ramo é o `texto`: é ele que vai para a coluna e vira a prévia da
    * fila.
    *
    * Sem este ramo, a reação caía no fallback de mídia logo abaixo e gravava
-   * `texto: null` — a fila mostrava "mídia ou mensagem sem texto" para um
+   * `texto: null`, a fila mostrava "mídia ou mensagem sem texto" para um
    * "❤️", e a bolha ficava vazia.
    */
   if (mensagem.reaction) {
@@ -1500,7 +1512,7 @@ function paraEntrada(mensagem: Mensagem): { entrada: Entrada; texto: string | nu
 /**
  * Traduz o expediente da conta no que o motor entende.
  *
- * `null` — conta que nunca configurou — vira "sempre aberto". É o que a coluna
+ * `null`, conta que nunca configurou, vira "sempre aberto". É o que a coluna
  * vazia significa, e o lado seguro do erro: um produto que emudece sozinho por
  * causa de uma coluna nova é bem pior que um que continua respondendo.
  */
@@ -1510,7 +1522,7 @@ function contextoDeAtendimento(horario: HorarioDeAtendimento | null): ContextoDo
    * configurado: quem nunca mexeu em horário de atendimento também não pode
    * marcar aula para uma data que já passou.
    *
-   * O fuso é o da conta quando existe, e o de São Paulo quando não — o mesmo
+   * O fuso é o da conta quando existe, e o de São Paulo quando não, o mesmo
    * padrão de `SEMPRE_ABERTO`. Ler o dia em UTC faria o bot recusar "hoje"
    * depois das 21h, que é justamente quando se remarca aula.
    */

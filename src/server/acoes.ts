@@ -1,5 +1,6 @@
 'use server'
 
+import { podeResponderAgora } from './distribuir-atendimento'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
@@ -158,7 +159,7 @@ import {
  * chama `exigirOperadorDa4YU`. Não é redundância com o `proxy.ts`: Server
  * Action é um POST na rota onde ela é usada, o `clienteId` chega do formulário,
  * e nada impede alguém de postar o id de outro cliente. Enquanto havia uma
- * senha só isso era inofensivo — quem entrava já podia tudo. Com login por
+ * senha só isso era inofensivo, quem entrava já podia tudo. Com login por
  * usuário, é escalada de privilégio.
  *
  * `src/server/acoes.test.ts` recusa ação nova que esqueça a linha. Trinta e cinco
@@ -192,7 +193,7 @@ export async function acaoCriarExemplo() {
  * Salva o desenho. Chamada pelo editor a cada pausa na digitação.
  *
  * Aceita rascunho incompleto de propósito: mensagem sem texto, opção sem
- * rótulo. O que impede de ir ao ar é o `validar()`, não o salvar — senão o
+ * rótulo. O que impede de ir ao ar é o `validar()`, não o salvar, senão o
  * editor perderia trabalho toda vez que alguém parasse no meio de uma frase.
  * O `fluxoSchema.parse` aqui é a garantia de que a *estrutura* está sã.
  */
@@ -245,7 +246,7 @@ export async function acaoCriarFluxo(clienteId: string, formData: FormData) {
 /**
  * Joga o rascunho fora e volta ao que **está no ar**.
  *
- * O editor salva sozinho, e isso é certo — ninguém deveria perder trabalho por
+ * O editor salva sozinho, e isso é certo, ninguém deveria perder trabalho por
  * esquecer de clicar. Mas autosave sem descarte é uma via de mão única: quem
  * mexeu em cinco blocos e se arrependeu não tinha para onde voltar, porque não
  * existe "penúltimo rascunho" (o rascunho é um só, sobrescrito).
@@ -253,7 +254,7 @@ export async function acaoCriarFluxo(clienteId: string, formData: FormData) {
  * Volta para a **versão publicada**, e não para um ponto qualquer: é o único
  * estado que o sistema sabe que já esteve bom o bastante para atender gente.
  *
- * Não republica nada — o que está no ar continua exatamente como está. O que
+ * Não republica nada, o que está no ar continua exatamente como está. O que
  * muda é só o desenho de trabalho.
  */
 export async function acaoDescartarRascunho(
@@ -269,7 +270,7 @@ export async function acaoDescartarRascunho(
   if (!fluxo.versaoPublicadaId) {
     return {
       ok: false,
-      erro: 'esta automação nunca foi publicada — não há versão no ar para voltar',
+      erro: 'esta automação nunca foi publicada, não há versão no ar para voltar',
     }
   }
 
@@ -315,7 +316,7 @@ export async function acaoPublicar(fluxoId: string, clienteId: string, grafo: un
  * reescreve, e quem já estava conversando termina na versão em que começou.
  *
  * Passa pelo mesmo `publicar()` de propósito. Uma versão antiga pode ter ficado
- * inválida depois de publicada — a conexão que ela usa foi apagada, a IA foi
+ * inválida depois de publicada, a conexão que ela usa foi apagada, a IA foi
  * descontratada, o contexto do negócio sumiu. Republicar sem revalidar poria no
  * ar um fluxo que o editor recusaria hoje.
  */
@@ -462,16 +463,16 @@ export async function acaoReordenarFluxos(
  * Liga/desliga a IA de uma automação já criada.
  *
  * Não republica nada de propósito: o que está no ar continua no ar. Desligar a
- * IA de um fluxo publicado que usa nó de IA só impede a **próxima** publicação
- * — mexer no que já roda no WhatsApp de alguém tem que ser um ato deliberado.
+ * IA de um fluxo publicado que usa nó de IA só impede a **próxima** publicação,
+ * mexer no que já roda no WhatsApp de alguém tem que ser um ato deliberado.
  */
 /**
- * Contrata (ou descontrata) a Etapa 2 nesta automação — e **só a 4YU pode**.
+ * Contrata (ou descontrata) a Etapa 2 nesta automação, e **só a 4YU pode**.
  *
  * Este é o portão comercial que o `validar()` cobra ao publicar: sem ele, fluxo
  * com bloco de IA não vai ao ar. Até aqui bastava ter acesso à conta para
  * marcá-lo, o que fazia do portão um passo a mais antes de publicar o mesmo
- * fluxo — um portão que quem está do lado de fora abre sozinho não é portão.
+ * fluxo, um portão que quem está do lado de fora abre sozinho não é portão.
  *
  * A tela já esconde o interruptor de quem não é da 4YU, mas a conferência que
  * vale é esta: Server Action é endereço, e endereço se chama de fora da tela.
@@ -514,7 +515,7 @@ export async function acaoAlternarFluxoAtivo(
 }
 
 /**
- * Troca os fluxos que um número executa — os quatro papéis de uma vez (A6).
+ * Troca os fluxos que um número executa, os quatro papéis de uma vez (A6).
  *
  * Campo em branco significa "sem fluxo neste papel", e não "não mexa": a tela
  * manda os quatro sempre, então tirar um fluxo é escolher a opção vazia. Um
@@ -598,7 +599,7 @@ export async function acaoApagarGatilhoDeEvento(
  *
  * O segredo volta no retorno da ação, e não numa tela que se possa reabrir: não
  * há segunda chance de vê-lo. Guardar um jeito de reexibir é guardar um jeito
- * de vazar — e quem perder gera outro, que é um clique.
+ * de vazar, e quem perder gera outro, que é um clique.
  */
 export async function acaoCriarWebhookDeEntrada(
   clienteId: string,
@@ -669,7 +670,7 @@ export async function acaoCriarGatilho(
   return { ok: true }
 }
 
-/** Liga/desliga sem apagar — a contagem de execuções é o histórico dele. */
+/** Liga/desliga sem apagar, a contagem de execuções é o histórico dele. */
 export async function acaoAlternarGatilho(
   clienteId: string,
   gatilhoId: string,
@@ -697,14 +698,14 @@ export async function acaoApagarGatilho(
  * Cria uma etiqueta manual da conta (A7).
  *
  * A cor chega de um formulário e vira classe CSS depois. Lista fechada aqui e
- * `check` no banco: um valor torto não daria erro nenhum — a etiqueta só
+ * `check` no banco: um valor torto não daria erro nenhum, a etiqueta só
  * ficaria sem cor, invisível, e ninguém ligaria a causa ao efeito.
  */
 /**
  * Devolve a etiqueta criada junto do `ok`.
  *
- * `EstadoSalvar` é o contrato do `FormularioSalvar`, que só olha `ok` e `erro`
- * — o campo extra passa por ele sem ruído. Quem precisa é o seletor dentro da
+ * `EstadoSalvar` é o contrato do `FormularioSalvar`, que só olha `ok` e `erro`,
+ * o campo extra passa por ele sem ruído. Quem precisa é o seletor dentro da
  * conversa: com o id em mãos ele acrescenta a etiqueta à lista na hora, em vez
  * de esperar a página inteira ser refeita no servidor.
  */
@@ -726,8 +727,8 @@ export async function acaoCriarEtiqueta(
    * **Só a tela de gerenciar.**
    *
    * Havia um `revalidatePath` de `/leads` aqui, e ele custava caro sem servir
-   * a ninguém: `revalidatePath` refaz a página inteira no servidor — no Inbox
-   * são sete consultas — antes de a tela mudar. Criar uma etiqueta virava
+   * a ninguém: `revalidatePath` refaz a página inteira no servidor, no Inbox
+   * são sete consultas, antes de a tela mudar. Criar uma etiqueta virava
    * segundos de espera por uma escrita de milissegundos.
    *
    * Quem cria a etiqueta de dentro de uma conversa já a vê aparecer na hora,
@@ -804,7 +805,7 @@ export async function acaoMarcarEtiqueta(
    * também não significa que a pessoa voltou a dever o acompanhamento de que já
    * saiu.
    *
-   * Nenhuma das duas pode derrubar a etiquetagem, que é o que a pessoa pediu —
+   * Nenhuma das duas pode derrubar a etiquetagem, que é o que a pessoa pediu,
    * as duas engolem o próprio erro, ver `server/sequencias.ts`.
    */
   // `r.validos`, e nunca `contatos`: a lista crua veio do formulário e pode
@@ -827,8 +828,8 @@ export async function acaoMarcarEtiqueta(
  * Cria um contato à mão (B2).
  *
  * A tela de contatos era só de leitura do que o WhatsApp trouxe. Existe o caso
- * contrário — o cliente tem o telefone de alguém e quer a pessoa na lista antes
- * de ela escrever — e sem isto a única entrada era a importação por planilha,
+ * contrário, o cliente tem o telefone de alguém e quer a pessoa na lista antes
+ * de ela escrever, e sem isto a única entrada era a importação por planilha,
  * que é ferramenta demais para um contato só.
  */
 export async function acaoCriarContato(
@@ -878,7 +879,7 @@ export async function acaoApagarContatos(
 /**
  * Cria uma campanha: a frase de um anúncio que abre um fluxo específico (B4).
  *
- * A frase é guardada como a pessoa escreveu e comparada normalizada — ver
+ * A frase é guardada como a pessoa escreveu e comparada normalizada, ver
  * `core/campanhas.ts`. O produto de onde o desenho veio pede ao anunciante que
  * não termine com ponto porque o WhatsApp às vezes o come; pedir isso é
  * empurrar um detalhe da plataforma para quem está pagando o anúncio, então a
@@ -903,7 +904,7 @@ export async function acaoCriarCampanha(
   return { ok: true }
 }
 
-/** Liga/desliga sem apagar — a contagem é o histórico do anúncio que já rodou. */
+/** Liga/desliga sem apagar, a contagem é o histórico do anúncio que já rodou. */
 export async function acaoAlternarCampanha(
   clienteId: string,
   campanhaId: string,
@@ -931,7 +932,7 @@ export async function acaoApagarCampanha(
 /**
  * Cria uma gaveta para organizar fluxos (B5).
  *
- * Pasta não tem permissão e não herda nada — é um rótulo com nome. Pasta que
+ * Pasta não tem permissão e não herda nada, é um rótulo com nome. Pasta que
  * decide quem vê o quê seria um segundo sistema de autorização paralelo ao de
  * contas, e dois sistemas de autorização é como um deles fica para trás.
  */
@@ -985,7 +986,7 @@ export async function acaoMoverFluxo(
  *
  * **Compartilhar é escrita, e não leitura**, ainda que nada do fluxo mude: o
  * que muda é quem alcança o desenho. Por isso passa pela mesma conferência de
- * acesso das outras ações e por isso deixa rastro na auditoria — um link que
+ * acesso das outras ações e por isso deixa rastro na auditoria, um link que
  * apareceu do nada e ninguém sabe quem criou é o pior desfecho possível aqui.
  */
 export async function acaoCriarLinkDoFluxo(
@@ -1017,7 +1018,7 @@ export async function acaoCriarLinkDoFluxo(
   return { ok: true, link: r.link }
 }
 
-/** Fecha o link. A contagem do que ele já fez fica — ver `revogarLink`. */
+/** Fecha o link. A contagem do que ele já fez fica, ver `revogarLink`. */
 export async function acaoRevogarLinkDoFluxo(
   clienteId: string,
   fluxoId: string,
@@ -1062,7 +1063,7 @@ export async function acaoListarLinksDoFluxo(
  *   este produto conseguiria fazer sozinho;
  * - **nasce sem IA**, mesmo que a origem a tivesse. IA é plano à parte, e
  *   importar não pode ser o caminho de contratá-la de graça;
- * - **as credenciais não viajam** — `limparParaCompartilhar` tira `conexaoId`
+ * - **as credenciais não viajam**, `limparParaCompartilhar` tira `conexaoId`
  *   antes de gravar. Quem importa escolhe as dele em Conexões.
  *
  * A conferência do destino é a de sempre: `exigirAcessoAoCliente`. O
@@ -1110,12 +1111,12 @@ export async function acaoImportarFluxoCompartilhado(
 // ---------------------------------------------------------------------------
 
 /**
- * Cria a sequência — sem passo nenhum, de propósito.
+ * Cria a sequência, sem passo nenhum, de propósito.
  *
  * Um formulário que pedisse nome, evento, etiqueta, prazo e fluxo de uma vez
  * teria cinco campos e produziria uma sequência de um passo só, que é o caso
  * menos comum. Aqui ela nasce vazia e **não inscreve ninguém enquanto não tiver
- * passo** (ver `sequenciasDoEvento`) — então o estado intermediário é seguro em
+ * passo** (ver `sequenciasDoEvento`), então o estado intermediário é seguro em
  * vez de ser uma armadilha.
  */
 export async function acaoCriarSequencia(
@@ -1148,7 +1149,7 @@ export async function acaoCriarSequencia(
 /**
  * Liga e desliga.
  *
- * Desligar não tira ninguém de dentro na hora — quem está inscrito continua
+ * Desligar não tira ninguém de dentro na hora, quem está inscrito continua
  * inscrito, e é o executor do passo que encerra a inscrição quando encontra a
  * sequência desligada. Tirar todo mundo aqui apagaria o histórico de quem já
  * tinha recebido metade do acompanhamento, e desligar costuma ser "pausa",
@@ -1243,7 +1244,7 @@ export async function acaoApagarPassoDaSequencia(
  * Cria um quadro, já com as três etapas neutras.
  *
  * O nome é do cliente; as etapas são um ponto de partida para renomear. Ver
- * `ETAPAS_INICIAIS` sobre por que elas não podem descrever um ramo — empty
+ * `ETAPAS_INICIAIS` sobre por que elas não podem descrever um ramo, empty
  * state ensina o negócio de quem está olhando.
  */
 export async function acaoCriarQuadro(
@@ -1289,7 +1290,7 @@ export async function acaoApagarQuadro(
 }
 
 /**
- * Marca o quadro que recebe contato novo sozinho — ou desmarca (0043).
+ * Marca o quadro que recebe contato novo sozinho, ou desmarca (0043).
  *
  * **Desmarcar é passar `false`, e é um caminho de primeira classe.** A conta
  * volta ao comportamento anterior: nada entra sozinho. Quem experimentou a
@@ -1318,7 +1319,7 @@ export async function acaoCriarEtapa(
   const quadro = await acharQuadro(clienteId, quadroId)
   if (!quadro) return { erro: 'este quadro não existe mais' }
 
-  // A régua mora em `core/` e é a mesma que a tela usa — inclusive o teto de
+  // A régua mora em `core/` e é a mesma que a tela usa, inclusive o teto de
   // oito, que é de tela antes de ser de produto.
   const regua = conferirEtapa(
     String(formData.get('nome') ?? ''),
@@ -1334,7 +1335,7 @@ export async function acaoCriarEtapa(
 }
 
 /**
- * Criar etapa a partir do modal do quadro — sem `FormData`.
+ * Criar etapa a partir do modal do quadro, sem `FormData`.
  *
  * A irmã com `FormData` continua servindo a formulário renderizado no servidor;
  * esta serve ao modal, que é de cliente e já tem o valor em estado. Duas
@@ -1389,7 +1390,7 @@ export async function acaoMoverEtapa(
   return moveu ? { ok: true } : { ok: false, erro: 'esta etapa já está na ponta' }
 }
 
-/** Recusa etapa com gente dentro, e diz quantos são — ver `apagarEtapa`. */
+/** Recusa etapa com gente dentro, e diz quantos são, ver `apagarEtapa`. */
 export async function acaoApagarEtapa(
   clienteId: string,
   quadroId: string,
@@ -1407,7 +1408,7 @@ export async function acaoApagarEtapa(
  *
  * Chamada da barra de seleção da tela de Contatos, que é o caminho real: pôr
  * trinta leads no funil de uma vez é o que se faz depois de uma importação.
- * Quem já está no quadro **não é movido de volta** — ver `porNoQuadro`.
+ * Quem já está no quadro **não é movido de volta**, ver `porNoQuadro`.
  */
 export async function acaoPorNoQuadro(
   clienteId: string,
@@ -1444,7 +1445,7 @@ export async function acaoBuscarContatosDoQuadro(
   return { ok: true, contatos: await contatosForaDoQuadro(clienteId, quadroId, String(termo ?? '')) }
 }
 
-/** Põe contatos **na etapa em que a pessoa clicou** — não na primeira. */
+/** Põe contatos **na etapa em que a pessoa clicou**, não na primeira. */
 export async function acaoPorNaEtapa(
   clienteId: string,
   quadroId: string,
@@ -1467,7 +1468,7 @@ export async function acaoPorNaEtapa(
 /**
  * Move o cartão de etapa.
  *
- * O relógio da etapa só reinicia quando ela muda de verdade — arrastar o cartão
+ * O relógio da etapa só reinicia quando ela muda de verdade, arrastar o cartão
  * de volta para onde ele já estava é engano de mão, e zerar a espera por causa
  * dele apagaria o número que denuncia o esquecimento. A regra mora na função do
  * banco, junto da escrita, porque as duas não podem se separar.
@@ -1486,7 +1487,7 @@ export async function acaoMoverCartao(
   return { ok: true }
 }
 
-/** Tirar do quadro **não apaga o contato** — some só a posição no funil. */
+/** Tirar do quadro **não apaga o contato**, some só a posição no funil. */
 export async function acaoTirarDoQuadro(
   clienteId: string,
   cartaoId: string,
@@ -1507,7 +1508,7 @@ export async function acaoTirarDoQuadro(
  *
  * `owner` manda na conta; `admin` mexe na equipe; `member` atende. A lista é
  * fechada porque o valor é escrito em `af_membros."role"` e vira decisão de
- * permissão depois — aceitar o que vier do formulário seria deixar o navegador
+ * permissão depois, aceitar o que vier do formulário seria deixar o navegador
  * inventar um papel que o código não conhece.
  */
 const PAPEIS_DA_CONTA = ['owner', 'admin', 'member'] as const
@@ -1520,13 +1521,13 @@ const ehPapelDaConta = (valor: string): valor is PapelDaConta =>
 const SO_QUEM_ADMINISTRA = 'só quem administra a conta mexe na equipe'
 
 /**
- * Põe uma pessoa na conta — cadastrando ou vinculando quem já existe.
+ * Põe uma pessoa na conta, cadastrando ou vinculando quem já existe.
  *
  * **É a tela de Equipe funcionando sem SMTP.** O convite por e-mail depende de
  * um servidor de e-mail que é global ao projeto compartilhado com a Verandi
  * (ver BANCO-COMPARTILHADO.md), e enquanto ele não existir uma tela de equipe
  * seria uma lista vazia com um botão que não faz nada. Aqui a senha é definida
- * por quem cadastra e combinada por fora — é o mesmo caminho de
+ * por quem cadastra e combinada por fora, é o mesmo caminho de
  * `/criar-conta`, que é como todo usuário do sistema nasce hoje.
  *
  * E-mail que já existe **vincula em vez de recusar**: quem administra duas
@@ -1622,7 +1623,7 @@ export async function acaoDefinirPapelNaConta(
   return { ok: true }
 }
 
-/** Tira alguém da conta. Não apaga a pessoa — ela pode ser dona de outra. */
+/** Tira alguém da conta. Não apaga a pessoa, ela pode ser dona de outra. */
 export async function acaoRemoverDaConta(
   clienteId: string,
   usuarioId: string,
@@ -1648,11 +1649,11 @@ export async function acaoRemoverDaConta(
 }
 
 /**
- * Ligar a agenda deste cliente — conferindo antes de guardar.
+ * Ligar a agenda deste cliente, conferindo antes de guardar.
  *
  * **A ordem é o ponto: confere, depois grava.** Guardar primeiro e conferir
  * depois deixaria uma credencial errada cadastrada, com cara de pronta, e o erro
- * apareceria só no meio de uma conversa de verdade — como um handoff sem
+ * apareceria só no meio de uma conversa de verdade, como um handoff sem
  * explicação. Aqui, chave recusada não vira linha nenhuma.
  *
  * O que a conferência devolve é a resposta para a outra pergunta que a tela não
@@ -1687,14 +1688,14 @@ export async function acaoLigarAgenda(
 /**
  * Conferir de novo uma credencial da agenda já guardada.
  *
- * A chave sai do cofre, vai para a agenda e **não volta para a tela** — o que
+ * A chave sai do cofre, vai para a agenda e **não volta para a tela**, o que
  * volta é o que a conta tem. É a diferença entre "cadastrada" e "funcionando",
  * e sem este botão as duas eram a mesma coisa aos olhos de quem opera.
  */
 export type RespostaDaAgenda = {
   ok: boolean
   erro?: string
-  /** O que a conta tem — é o que a tela mostra no lugar de descrever. */
+  /** O que a conta tem, é o que a tela mostra no lugar de descrever. */
   profissionais?: string[]
   servicos?: string[]
   locais?: string[]
@@ -1720,7 +1721,7 @@ export async function acaoConferirAgenda(
    * "3 profissionais" prova que a chave vale e não responde a pergunta que veio
    * junto: *"qual informação o bot vai puxar?"*. Ver "Marina, Carol, Júlia" na
    * tela responde as duas de uma vez, e ainda pega o erro mais silencioso de
-   * todos — a chave certa da conta errada.
+   * todos, a chave certa da conta errada.
    */
   return {
     ok: true,
@@ -1735,7 +1736,7 @@ export async function acaoConferirAgenda(
  * Cadastra uma credencial de um cliente.
  *
  * O valor entra por aqui, vai para o cofre, e **nunca mais volta para a tela**.
- * Trocar significa gravar de novo — não existe "ver o token atual", porque o
+ * Trocar significa gravar de novo, não existe "ver o token atual", porque o
  * único jeito de garantir que ele não vaza pela interface é a interface não
  * ter como pedir.
  */
@@ -1854,7 +1855,7 @@ export async function acaoApagarRespostaRapida(
  *
  * Até aqui, o handoff era um beco: o bot calava, a tela avisava que alguém
  * precisava assumir, e assumir tinha que acontecer fora do sistema. Como o
- * número roda na Cloud API, o celular do cliente não é caixa de entrada — não
+ * número roda na Cloud API, o celular do cliente não é caixa de entrada, não
  * existia lugar nenhum de onde responder.
  *
  * **Responder daqui assume a conversa.** A sessão vai para `humano`, e o bot
@@ -1863,7 +1864,7 @@ export async function acaoApagarRespostaRapida(
  * cala o bot.
  *
  * A janela de 24h é conferida **aqui**, e não só na tela: a tela desabilita o
- * campo por conveniência, mas quem garante é o servidor — mesma postura de
+ * campo por conveniência, mas quem garante é o servidor, mesma postura de
  * `publicar()` e de `efeitos/rede.ts`.
  */
 export async function acaoResponderLead(
@@ -1883,8 +1884,18 @@ export async function acaoResponderLead(
   }
 
   // Quem está respondendo, para assinar a mensagem. `null` quando a sessão veio
-  // da senha única — aí a mensagem sai sem assinatura, e não com um nome falso.
+  // da senha única, aí a mensagem sai sem assinatura, e não com um nome falso.
   const quemResponde = await sessaoAtual()
+
+  /*
+   * A trava de "só quem assumiu responde", quando a conta a ligou.
+   *
+   * Vem antes de tudo o que custa rede porque é a recusa mais barata e a mais
+   * provável numa equipe de quatro: não adianta conferir janela de 24h e montar
+   * adaptador de canal para descobrir no fim que a conversa é de outra pessoa.
+   */
+  const trava = await podeResponderAgora(clienteId, contatoId, quemResponde?.usuario.id ?? null)
+  if (!trava.ok) return trava
 
   // A ordem importa: primeiro o que é sobre esta conversa, depois o que é sobre
   // o servidor. Dizer "falta WHATSAPP_TOKEN" para quem esbarrou na janela de
@@ -1914,16 +1925,16 @@ export async function acaoResponderLead(
 
   // Grava antes para não perder do histórico uma mensagem que saiu no instante
   // em que a função morreu. Enquanto a API não confirmar, a tela a marca como
-  // envio não confirmado — ela nunca a apresenta como entregue por certeza.
+  // envio não confirmado, ela nunca a apresenta como entregue por certeza.
   //
   // Grava o texto **sem** a assinatura: o Inbox já mostra quem respondeu ao
   // lado do balão, e guardar `*Leinara:*` junto faria o nome aparecer duas
-  // vezes na tela de quem atende. A assinatura é da entrega, não do conteúdo —
+  // vezes na tela de quem atende. A assinatura é da entrega, não do conteúdo,
   // é o que muda entre o que a pessoa lê no WhatsApp e o que a equipe lê aqui.
   /*
    * A mensagem citada, quando quem responde escolheu uma.
    *
-   * Vem do `FormData` como o texto vem, e é o `wa_message_id` da outra — o id
+   * Vem do `FormData` como o texto vem, e é o `wa_message_id` da outra, o id
    * da Meta, que é o único que ela entende. Não é conferido contra o histórico
    * de propósito: a Meta é quem sabe se aquele id existe naquela conversa, e
    * uma checagem nossa só recusaria antes com menos informação. Id inválido
@@ -1979,13 +1990,13 @@ export async function acaoEncerrarAtendimento(clienteId: string, contatoId: stri
   // O quarto papel do número (A6). Vem **depois** de encerrar, e nunca antes:
   // encerrar é o que tira a pessoa da fila, e é a única coisa aqui que não pode
   // deixar de acontecer. O fluxo de pós-atendimento engole os próprios erros
-  // pelo mesmo motivo — ver `rodarPosAtendimento`.
+  // pelo mesmo motivo, ver `rodarPosAtendimento`.
   await rodarPosAtendimento(clienteId, contatoId)
 
   // O segundo evento que inscreve numa sequência (0031). Vem depois do
   // pós-atendimento porque os dois falam com a mesma pessoa e a ordem importa:
   // o pós-atendimento é a mensagem de agora, a sequência é o acompanhamento de
-  // depois. Inscrever antes não muda o horário do passo — muda a chance de a
+  // depois. Inscrever antes não muda o horário do passo, muda a chance de a
   // sequência falar primeiro se algum passo for de um minuto.
   await inscreverNoEvento(clienteId, [contatoId], 'atendimento_encerrado')
 
@@ -2026,7 +2037,7 @@ export async function acaoAlternarAutomacaoDoLead(
   }
 
   // Pausar o bot cala o bot inteiro, e sequência é bot (0031). Só na pausa:
-  // religar não devolve ninguém a um acompanhamento de que já saiu — quem
+  // religar não devolve ninguém a um acompanhamento de que já saiu, quem
   // decide inscrever é o evento, não o interruptor.
   if (!ativa) await sairPorEvento(contatoId, 'automacao_pausada')
 
@@ -2039,7 +2050,7 @@ export async function acaoAlternarAutomacaoDoLead(
 /**
  * Apaga o cliente inteiro.
  *
- * A confirmação por digitação mora na tela — ver `components/cliente/apagar.tsx`
+ * A confirmação por digitação mora na tela, ver `components/cliente/apagar.tsx`
  * sobre por que ela não é um `confirm()`. Aqui não há segunda checagem do que
  * foi digitado de propósito: repetir a comparação no servidor daria a impressão
  * de que ela é uma trava de segurança, e não é. Quem alcança esta ação já tem a
@@ -2065,8 +2076,8 @@ export async function acaoApagarCliente(clienteId: string): Promise<{ ok: boolea
  *
  * É o pedido de exclusão da LGPD virando botão. Não existe arquivamento por
  * baixo: `contacts` cascateia sessão, mensagem, handoff e trava, e não há cópia
- * do histórico em outro lugar. A tela precisa dizer isso **antes** de perguntar
- * — desfazer não é uma opção que exista aqui.
+ * do histórico em outro lugar. A tela precisa dizer isso **antes** de perguntar,
+ * desfazer não é uma opção que exista aqui.
  */
 export async function acaoApagarContato(
   clienteId: string,
@@ -2118,7 +2129,7 @@ export async function acaoSalvarContexto(
  * Salva a ficha do cliente. Ver `clientes/[clienteId]/page.tsx`.
  *
  * Devolve estado, como o contexto: formulário que grava em silêncio deixa quem
- * digitou sem saber se pegou — e nome de cliente é o tipo de campo que a pessoa
+ * digitou sem saber se pegou, e nome de cliente é o tipo de campo que a pessoa
  * corrige, sai da tela e volta para conferir.
  */
 export async function acaoSalvarCadastro(
@@ -2163,13 +2174,13 @@ const TIPOS_DE_LOGO: Record<string, string> = {
 /**
  * Guarda a logo do cliente e aponta a linha para ela.
  *
- * O arquivo vai para um bucket público — logo de empresa é identidade, não
+ * O arquivo vai para um bucket público, logo de empresa é identidade, não
  * segredo, e URL assinada exigiria assinar de novo a cada linha da lista de
  * clientes sem proteger nada que já não esteja no site do cliente.
  *
  * O nome no bucket é o id do cliente, então trocar a logo sobrescreve em vez de
  * acumular arquivo órfão. Como o endereço não muda, ele ganha `?v=` com o
- * instante — sem isso o navegador continuaria mostrando a logo antiga.
+ * instante, sem isso o navegador continuaria mostrando a logo antiga.
  */
 export async function acaoSalvarLogo(
   clienteId: string,
@@ -2208,7 +2219,7 @@ export async function acaoSalvarLogo(
   return { ok: true }
 }
 
-/** Tira a logo e volta para as iniciais. O arquivo fica — trocar depois sobrescreve. */
+/** Tira a logo e volta para as iniciais. O arquivo fica, trocar depois sobrescreve. */
 export async function acaoRemoverLogo(clienteId: string) {
   await exigirAcessoAoCliente(clienteId)
 
@@ -2222,13 +2233,13 @@ export async function acaoRemoverLogo(clienteId: string) {
  *
  * **O arquivo não passa por aqui, e é esse o ponto.** Um `File` dentro de uma
  * Server Action bate no teto de 1 MB do Next (`serverActions.bodySizeLimit`) e
- * o framework devolve 413 **antes** de esta função rodar — foi assim que soltar
+ * o framework devolve 413 **antes** de esta função rodar, foi assim que soltar
  * um PDF de 3 MB no bloco de arquivo derrubava a página inteira: nada nosso
  * chegava a executar, então nem o motivo dava para dizer.
  *
  * O que trafega aqui é só nome, tipo e tamanho: alguns bytes. Quem sobe o
  * arquivo é o navegador, direto para o Storage, na URL assinada que isto
- * devolve — e ela vale para **um caminho só**, escolhido no servidor depois de
+ * devolve, e ela vale para **um caminho só**, escolhido no servidor depois de
  * conferir o dono da conta.
  */
 export async function acaoPrepararEnvioDeArquivo(
@@ -2252,7 +2263,7 @@ export async function acaoPrepararEnvioDeArquivo(
 }
 
 /**
- * O envio terminou — atualize as telas que listam o acervo.
+ * O envio terminou, atualize as telas que listam o acervo.
  *
  * Existe porque o upload agora acontece **fora** do servidor: sem esta chamada,
  * a tela de Configurações continuaria mostrando a lista de antes até alguém
@@ -2363,7 +2374,7 @@ export async function acaoSalvarNotas(
 /**
  * Importa a planilha de contatos do cliente.
  *
- * Faz tudo numa passada — ler, conciliar e aplicar — em vez de uma prévia com
+ * Faz tudo numa passada, ler, conciliar e aplicar, em vez de uma prévia com
  * confirmação depois. A prévia seria melhor e custaria guardar o arquivo entre
  * duas requisições; o resultado devolvido cobre a mesma necessidade, porque
  * **nada aqui é destrutivo**: renomear é reversível apagando o campo, criar
@@ -2418,7 +2429,7 @@ export async function acaoImportarContatos(
     // As pendências voltam com o número da linha para a pessoa consertar na
     // planilha dela. Sem isso, "40 sem importar" não diz quais.
     pendentes: resultado.pendentes.map(
-      (p) => `linha ${p.numero}${p.nome ? ` (${p.nome})` : ''} — ${p.motivo}`,
+      (p) => `linha ${p.numero}${p.nome ? ` (${p.nome})` : ''}, ${p.motivo}`,
     ),
   }
 }
@@ -2431,7 +2442,7 @@ export async function acaoImportarContatos(
  * calculados que o servidor teria que remontar do outro lado.
  *
  * **Campo vazio volta a "atende sempre"**, que é o que `null` significa na
- * coluna — e não "nunca atende". Confundir os dois faria o bot anunciar que
+ * coluna, e não "nunca atende". Confundir os dois faria o bot anunciar que
  * está fechado para quem só quis desligar a regra.
  */
 export async function acaoSalvarHorario(
@@ -2460,7 +2471,7 @@ export async function acaoSalvarHorario(
   /**
    * Faixa invertida é recusada aqui, e não ignorada em silêncio.
    *
-   * O motor já a ignora — ele fecha o atendimento em vez de abrir —, mas
+   * O motor já a ignora, ele fecha o atendimento em vez de abrir , mas
    * deixar salvar entrega uma tela que mostra "18:00 até 08:00" como se
    * valesse. O erro tem que aparecer onde a pessoa consegue consertar.
    */
@@ -2482,10 +2493,10 @@ export async function acaoSalvarHorario(
 }
 
 /**
- * "Assumir" — o botão que faltava para alguém **virar** atendente.
+ * "Assumir", o botão que faltava para alguém **virar** atendente.
  *
  * A pergunta do dono era essa: *"como que o atendente vai virar atendente?"*.
- * Até aqui ninguém virava — a sessão ia para `humano`, o bot calava, e a
+ * Até aqui ninguém virava, a sessão ia para `humano`, o bot calava, e a
  * conversa ficava esperando qualquer pessoa. Esperar "qualquer pessoa" é o
  * mesmo que esperar ninguém quando há mais de uma.
  *
@@ -2498,12 +2509,12 @@ export async function acaoSalvarHorario(
  * O que derrubou o argumento foi ler uma conversa inteira: sem aviso, **quem
  * recebe não sabe que virou gente**. As mensagens seguem chegando do mesmo
  * número, com a mesma cara das do bot, e a pessoa continua falando com o robô
- * que ela acha que ainda está lá — inclusive esperando o menu que não vem
+ * que ela acha que ainda está lá, inclusive esperando o menu que não vem
  * mais. Dizer o nome não expõe a mesa; dá conta de quem responde.
  *
  * O aviso é **melhor-esforço e nunca derruba o assumir**: janela de 24h
  * fechada, número desconectado ou Meta fora do ar não podem impedir alguém de
- * pegar a conversa. Mesma postura de `rodarPosAtendimento` — quem chamou já
+ * pegar a conversa. Mesma postura de `rodarPosAtendimento`, quem chamou já
  * resolveu o que importava, e um erro daqui não desfaz isso.
  */
 /* -------------------------------------------------------------------------- */
@@ -2514,7 +2525,7 @@ export async function acaoSalvarHorario(
  * Adia a conversa: ela sai da fila agora e volta sozinha na data.
  *
  * **É o recurso que impede o lead de esfriar por esquecimento.** Sem ele,
- * "falar com ele terça" só existe na cabeça de quem atendeu — e numa conta com
+ * "falar com ele terça" só existe na cabeça de quem atendeu, e numa conta com
  * volume, o que está na cabeça de alguém é o que se perde primeiro.
  *
  * Prazos fixos em vez de calendário: são quatro escolhas e nenhuma exige
@@ -2549,7 +2560,7 @@ export async function acaoAdiarConversa(
  *
  * **Resolver não é apagar**: a conversa continua inteira, só sai da fila do que
  * precisa de alguém hoje. E se a pessoa escrever de novo, o gatilho da 0049 a
- * reabre sozinho — resolver nunca faz alguém deixar de ser atendido.
+ * reabre sozinho, resolver nunca faz alguém deixar de ser atendido.
  */
 export async function acaoDefinirEstadoDaConversa(
   clienteId: string,
@@ -2593,7 +2604,7 @@ export async function acaoAssumirAtendimento(
    *
    * Antes daqui, assumir marcava o responsável e mais nada: o bot continuava
    * conduzindo, e se a pessoa do outro lado respondesse rápido ele falava por
-   * cima de quem tinha acabado de pegar a conversa. Responder já calava — ou
+   * cima de quem tinha acabado de pegar a conversa. Responder já calava, ou
    * seja, era preciso digitar alguma coisa para o bot parar.
    *
    * Vem **depois** de atribuir porque atribuir é o que pode recusar: calar o
@@ -2614,7 +2625,7 @@ export async function acaoAssumirAtendimento(
 }
 
 /**
- * "Fulana entrou na conversa" — o aviso de que agora tem gente do outro lado.
+ * "Fulana entrou na conversa", o aviso de que agora tem gente do outro lado.
  *
  * Engole os próprios erros de propósito. Ele é um acréscimo ao assumir, não uma
  * condição dele: se a janela de 24h fechou, se o número não está conectado ou
@@ -2622,8 +2633,8 @@ export async function acaoAssumirAtendimento(
  * derrubar o botão seria trocar a função pela cortesia.
  *
  * A janela é conferida antes de falar pelo mesmo motivo de
- * `abrirFluxoParaContato`: ninguém escreveu agora, então ela pode estar fechada
- * — e o WhatsApp recusaria com `(#131047)`.
+ * `abrirFluxoParaContato`: ninguém escreveu agora, então ela pode estar fechada,
+ * e o WhatsApp recusaria com `(#131047)`.
  */
 async function avisarQueEntrou(
   clienteId: string,

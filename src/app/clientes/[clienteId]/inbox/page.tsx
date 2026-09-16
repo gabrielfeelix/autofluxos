@@ -76,6 +76,7 @@ import { listarQuadros, quadrosDoContato } from '@/server/repos/quadros'
 import { FunilDaConversa, type FunilDoContato } from '@/components/inbox/funil-da-conversa'
 import { marcarComoLida, naoLidasPorContato, quandoLeu } from '@/server/repos/leituras'
 import { favoritasEntre, fixadasDoUsuario } from '@/server/repos/marcadores'
+import { ajustesDaConta } from '@/server/repos/distribuicao'
 import { avisarQueLeu } from '@/server/recibo-de-leitura'
 import { TextoDoWhatsApp } from '@/components/texto-do-whatsapp'
 import { FaixaDeCanalCaido } from '@/components/inbox/faixa-canal-caido'
@@ -768,6 +769,24 @@ async function ColunaDaConversa({
   )
 
   /*
+   * A trava de "só quem assumiu responde", se a conta a ligou.
+   *
+   * A recusa também existe no servidor (`podeResponderAgora`), e as duas não são
+   * repetição: a de lá impede o envio, e esta impede a pessoa de escrever três
+   * parágrafos antes de descobrir que não podia. Campo que aceita texto e recusa
+   * no fim é a pior forma de dizer não.
+   */
+  const ajustesDeAtendimento = await ajustesDaConta(clienteId)
+  const donoDaConversa = lead.atribuidoA
+  const travada =
+    ajustesDeAtendimento.exigeAssumir &&
+    usuarioId !== null &&
+    donoDaConversa !== null &&
+    donoDaConversa !== usuarioId
+  const nomeDoDono =
+    equipe.find((membro) => membro.id === donoDaConversa)?.nome.split(' ')[0] ?? null
+
+  /*
    * O nome da campanha, só do contato aberto.
    *
    * **Um id, e não a fila inteira**, de propósito. Resolver as 200 conversas
@@ -898,6 +917,26 @@ async function ColunaDaConversa({
                 favoritas={favoritas}
               />
             </div>
+            {travada ? (
+              /*
+                O lugar da caixa de resposta, e não um aviso acima dela.
+
+                A caixa desabilitada com um recado em cima seria um campo cinza
+                que a pessoa tenta clicar assim mesmo. Aqui o espaço diz o que é
+                preciso fazer, e o botão que faz isso está no cabeçalho desta
+                mesma coluna, a poucos centímetros de onde o olho já está.
+              */
+              <div className="shrink-0 border-t border-line bg-panel px-4 py-5 text-center">
+                <p className="text-[12.5px] font-semibold text-soft">
+                  {nomeDoDono ? `${nomeDoDono} está atendendo` : 'esta conversa já tem dono'}
+                </p>
+                <p className="mx-auto mt-1 max-w-[420px] text-[11.5px] leading-5 text-dim">
+                  Esta conta pediu que só quem assumiu responda, para duas pessoas não
+                  escreverem ao mesmo tempo. Use o botão de assumir, no topo da conversa,
+                  se precisar entrar nela.
+                </p>
+              </div>
+            ) : (
             <CaixaDeResposta
               /*
                 A `key` é a conversa, e sem ela o rascunho de uma vazava para a
@@ -914,6 +953,7 @@ async function ColunaDaConversa({
               temAutomacao={temAutomacao}
               anexo={{ clienteId, contatoId: selecionado.contatoId }}
             />
+            )}
           </ProvedorDeEntrega>
         </ProvedorDeCitacao>
       </section>

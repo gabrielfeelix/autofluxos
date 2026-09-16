@@ -4,9 +4,12 @@ import { Trilha } from '@/components/design/trilha'
 import { Dropdown } from '@/components/design/dropdown'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { LinhaDaEquipe } from '@/components/conta/linha-da-equipe'
+import { Distribuicao, type PessoaNaDistribuicao } from '@/components/conta/distribuicao'
 import { acaoCadastrarPessoaNaConta } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
+import { ajustesDaConta, atendentesDaConta } from '@/server/repos/distribuicao'
+import { contarAbertasPorAtendente } from '@/server/repos/leads'
 import { conferirAcessoAoCliente, podeAdministrarConta } from '@/server/sessao'
 
 export const dynamic = 'force-dynamic'
@@ -38,6 +41,35 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
     console.error('[equipe] não deu para ler a equipe', erro instanceof Error ? erro.message : erro)
   }
 
+  /*
+   * A distribuição é lida sempre, e não só quando há equipe.
+   *
+   * Uma conta de uma pessoa também pode ter ligado a trava de "só quem assumiu
+   * responde", e esconder o cartão nesse caso deixaria a chave ligada sem tela
+   * nenhuma para desligá-la.
+   *
+   * As três leituras degradam sozinhas (ver os repositórios): esta tela não
+   * pode parar de abrir porque a distribuição falhou.
+   */
+  const [ajustes, configurados, abertas] = await Promise.all([
+    ajustesDaConta(clienteId),
+    atendentesDaConta(clienteId),
+    contarAbertasPorAtendente(clienteId).catch(() => new Map<string, number>()),
+  ])
+
+  const pessoas: PessoaNaDistribuicao[] = equipe.map((membro) => {
+    const ajuste = configurados.get(membro.id)
+    return {
+      id: membro.id,
+      nome: membro.nome,
+      papel: membro.papel,
+      presenca: membro.presenca,
+      entraNoRodizio: ajuste?.entraNoRodizio ?? null,
+      tetoSimultaneo: ajuste?.tetoSimultaneo ?? null,
+      abertas: abertas.get(membro.id) ?? 0,
+    }
+  })
+
   return (
     <AjustesShell cliente={cliente} ativa="equipe">
       <main className="w-full max-w-[1100px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
@@ -50,7 +82,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         <h1 className="text-[25px] font-bold tracking-[-0.02em]">Equipe</h1>
         <p className="mt-1.5 mb-6 max-w-[650px] text-[13px] leading-6 text-dim">
           Quem entra nesta conta e o que cada um pode fazer. É desta lista que sai
-          o rail <strong className="text-muted">Atribuído</strong> do Inbox — quem
+          o rail <strong className="text-muted">Atribuído</strong> do Inbox, quem
           não está aqui não aparece para assumir conversa.
         </p>
 
@@ -63,7 +95,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
               <ModalFormulario
                 botao="+ Cadastrar pessoa"
                 titulo="Adicionar alguém"
-                descricao="A senha é definida aqui e combinada por fora — ainda não há convite por e-mail, porque o servidor é compartilhado com outro produto. E-mail que já existe apenas liga a pessoa a esta conta."
+                descricao="A senha é definida aqui e combinada por fora, ainda não há convite por e-mail, porque o servidor é compartilhado com outro produto. E-mail que já existe apenas liga a pessoa a esta conta."
                 rotuloEnviar="Adicionar"
                 variante={equipe.length === 0 ? 'primario' : 'secundario'}
                 action={acaoCadastrarPessoaNaConta.bind(null, clienteId, {})}
@@ -129,6 +161,14 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             </ul>
           )}
         </section>
+
+        <Distribuicao
+          clienteId={clienteId}
+          distribuicao={ajustes.distribuicao}
+          exigeAssumir={ajustes.exigeAssumir}
+          pessoas={pessoas}
+          podeMexer={podeMexer}
+        />
 
       </main>
     </AjustesShell>

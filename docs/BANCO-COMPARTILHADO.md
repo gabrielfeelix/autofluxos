@@ -278,6 +278,32 @@ extração explícito para os objetos de `public`.
   é a inversa do aviso da `0058`: a migration foi primeiro, e o bloco `nps` só
   chega à produção no próximo deploy. Enquanto isso a tabela fica vazia — o que
   é seguro, porque nada no caminho de mensagem que já está no ar a procura;
+- **a `0064` foi aplicada em 16/set/2026**, com autorização explícita do dono.
+  Ela cria `public.af_atendentes` e acrescenta duas colunas a `public.clients`:
+  `distribuicao` (`manual` por padrão) e `exige_assumir` (`false` por padrão).
+
+  **É a primeira desta sequência que encosta em tabela com dado de produção**, e
+  por isso vale registrar o que a torna segura: `add column ... default` não
+  reescreve a tabela desde o Postgres 11, o valor fica no catálogo, e o `check`
+  de `distribuicao` foi adicionado depois da coluna, quando toda linha já tinha
+  o default válido.
+
+  Conferida pelo ensaio em transação antes de aplicar, com as contagens contra o
+  dado real: as duas colunas existem, as **9 contas** ficaram em `manual` e
+  `false` (zero com valor inesperado), `af_atendentes` nasce com RLS ligada e
+  grants só de `postgres` e `service_role`, o `clients_distribuicao_check`
+  existe, e `app_verandi` segue com 42 tabelas. Tudo reconferido na produção
+  depois de aplicar.
+
+  **O Docker não estava disponível nesta máquina** (integração do WSL
+  desligada), então o replay do zero não rodou. Para esta migration o ensaio em
+  transação cobre o que importa, porque o risco dela é o dado existente e não a
+  ordem das migrations, e o ensaio rodou contra o dado existente. Quem for
+  aplicar a próxima migration não aditiva precisa do Docker de volta.
+
+  Nada aqui liga nada sozinho: a conta acorda exatamente como estava, e a
+  distribuição só passa a agir quando alguém a escolher na tela da equipe.
+
 - **a `0063` foi aplicada em 16/set/2026**, com autorização explícita do dono.
   Ela cria duas tabelas novas, `public.af_fixadas` e `public.af_favoritas` — o
   alfinete e a estrela do Inbox, por atendente. Não toca em tabela existente,

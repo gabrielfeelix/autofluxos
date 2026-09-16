@@ -1561,3 +1561,51 @@ export async function leadsPorContatos(clienteId: string, ids: string[]): Promis
 
   return classificar((data as Linha[]).map(paraLead))
 }
+
+/**
+ * Quantas conversas **abertas** cada pessoa tem nesta conta.
+ *
+ * Existe separada de `contarPorAtribuicao`, que conta tudo o que já foi
+ * atribuído alguma vez. As duas perguntas são diferentes e a diferença é o que
+ * torna a distribuição justa: quem atendeu quatrocentas pessoas em dois anos e
+ * tem duas conversas abertas agora está com a mão mais livre que o colega novo
+ * com nove. Carga é o que está aberto, não o histórico.
+ *
+ * `estado_efetivo` e não `estado`: adiamento vencido já volta a contar como
+ * aberta, e é a view que sabe disso (ver a 0049).
+ */
+export async function contarAbertasPorAtendente(clienteId: string): Promise<Map<string, number>> {
+  const { data, error } = await db()
+    .from('leads')
+    .select('atribuido_a')
+    .eq('client_id', clienteId)
+    .eq('estado_efetivo', 'aberta')
+    .not('atribuido_a', 'is', null)
+
+  const porUsuario = new Map<string, number>()
+  if (ehIdInvalido(error)) return porUsuario
+  if (error) throw new Error(`não deu para contar as conversas abertas: ${error.message}`)
+
+  for (const linha of data as { atribuido_a: string }[]) {
+    porUsuario.set(linha.atribuido_a, (porUsuario.get(linha.atribuido_a) ?? 0) + 1)
+  }
+  return porUsuario
+}
+
+/** Quem é o dono da conversa agora. `undefined` quando o contato não é desta conta. */
+export async function donoDoContato(
+  clienteId: string,
+  contatoId: string,
+): Promise<string | null | undefined> {
+  const { data, error } = await db()
+    .from('contacts')
+    .select('atribuido_a')
+    .eq('id', contatoId)
+    .eq('client_id', clienteId)
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return undefined
+  if (error) throw new Error(`não deu para saber de quem é a conversa: ${error.message}`)
+  if (!data) return undefined
+  return (data as { atribuido_a: string | null }).atribuido_a
+}

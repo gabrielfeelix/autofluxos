@@ -1,5 +1,6 @@
 'use server'
 
+import { podeResponderAgora } from './distribuir-atendimento'
 import { revalidatePath } from 'next/cache'
 import { dentroDaJanela } from '@/channels/janela'
 import { autorDaPessoa } from '@/core/autor-da-mensagem'
@@ -20,11 +21,11 @@ import { exigirAcessoAoCliente, sessaoAtual } from './sessao'
  * A peça que faltava, e por que ela faltava
  * ---------------------------------------------------------------------------
  *
- * O adaptador já sabia enviar mídia desde a Fase 11 do motor — `enviarMidia`
+ * O adaptador já sabia enviar mídia desde a Fase 11 do motor, `enviarMidia`
  * existe em `channels/cloud-api.ts` e o bloco de mídia do fluxo usa há meses.
  * O que nunca existiu foi **alguém do atendimento** poder mandar: a caixa do
  * Inbox só produzia texto. Quem atende não conseguia mandar uma foto de tabela
- * de preço nem o PDF do contrato — as duas coisas que mais se manda num
+ * de preço nem o PDF do contrato, as duas coisas que mais se manda num
  * atendimento de verdade.
  *
  * ---------------------------------------------------------------------------
@@ -36,7 +37,7 @@ import { exigirAcessoAoCliente, sessaoAtual } from './sessao'
  * atravessando Server Action bate no teto de 1 MB do Next, e um vídeo de 12 MB
  * morreria no caminho sem erro que ajude.
  *
- * O caminho é o mesmo do Acervo de propósito — mesmo bucket, mesma validação de
+ * O caminho é o mesmo do Acervo de propósito, mesmo bucket, mesma validação de
  * tipo e tamanho, mesma limpeza quando o cliente é apagado. Um segundo lugar
  * para guardar arquivo seria um segundo lugar para vazar e um segundo lugar
  * para esquecer na LGPD.
@@ -46,7 +47,14 @@ export async function acaoEnviarMidiaDoInbox(
   contatoId: string,
   entrada: { url: string; midia: string; legenda?: string; nomeArquivo?: string },
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirAcessoAoCliente(clienteId)
+
+  /*
+   * A mesma trava do texto: mandar foto na conversa de outra pessoa é o mesmo
+   * atropelo que mandar texto. Ver `podeResponderAgora`.
+   */
+  const trava = await podeResponderAgora(clienteId, contatoId, acesso.sessao.usuario.id)
+  if (!trava.ok) return trava
 
   const url = entrada.url?.trim() ?? ''
   if (url === '') return { ok: false, erro: 'o arquivo não terminou de subir' }
@@ -76,7 +84,7 @@ export async function acaoEnviarMidiaDoInbox(
   if (!contexto) return { ok: false, erro: 'este lead não tem um número conectado para responder' }
 
   /*
-   * A janela de 24h vale para mídia igual ao texto — a Meta recusa os dois
+   * A janela de 24h vale para mídia igual ao texto, a Meta recusa os dois
    * fora dela. Conferir aqui evita gastar upload e dá o motivo certo em vez do
    * erro cru da Meta.
    */
@@ -98,7 +106,7 @@ export async function acaoEnviarMidiaDoInbox(
 
   /*
    * Grava antes de enviar, como o texto: uma função que morre no meio não pode
-   * apagar do histórico algo que já saiu. O `payload` guarda o tipo e a URL —
+   * apagar do histórico algo que já saiu. O `payload` guarda o tipo e a URL,
    * é o que faz a conversa saber desenhar a foto em vez de uma linha vazia.
    */
   const quemResponde = await sessaoAtual()
@@ -108,7 +116,7 @@ export async function acaoEnviarMidiaDoInbox(
     texto: legenda,
     /*
      * `midia` em português, e não o `type` da Meta: é o formato que
-     * `anexoDoPayload` já lê para desenhar a bolha — o mesmo que o bloco de
+     * `anexoDoPayload` já lê para desenhar a bolha, o mesmo que o bloco de
      * mídia do fluxo grava. Inventar um segundo formato aqui faria a foto que
      * o atendente mandou não aparecer na conversa, enquanto a do bot aparece.
      */
@@ -117,7 +125,7 @@ export async function acaoEnviarMidiaDoInbox(
       url,
       ...(entrada.nomeArquivo ? { nomeArquivo: entrada.nomeArquivo } : {}),
     },
-    // O autor é somado ao `payload` acima, não o substitui — senão a foto
+    // O autor é somado ao `payload` acima, não o substitui, senão a foto
     // sumiria da conversa para o nome caber.
     autor: autorDaPessoa(quemResponde?.usuario),
   })
