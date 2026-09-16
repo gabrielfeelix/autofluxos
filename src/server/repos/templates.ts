@@ -320,3 +320,49 @@ export async function apagarTemplate(id: string): Promise<void> {
   const { error } = await db().from('templates').delete().eq('id', id)
   if (error) throw error
 }
+
+/**
+ * Os clientes que têm template para reconciliar, com a WABA de cada um.
+ *
+ * Uma consulta e não uma por cliente: a reconciliação roda periodicamente e
+ * varrer cliente por cliente faria uma ida ao banco por conta, toda vez.
+ *
+ * Só quem tem template em estado que a Meta ainda pode mudar. Template
+ * `rascunho` nunca foi submetido, e `desativado` não volta — nenhum dos dois
+ * ganha nada com uma consulta à Meta.
+ */
+export async function clientesComTemplatesPendentes(): Promise<
+  { clienteId: string; wabaId: string }[]
+> {
+  const { data, error } = await db()
+    .from('templates')
+    .select('cliente_id')
+    .in('status', ['pendente', 'aprovado', 'pausado', 'recusado'])
+
+  if (error) throw error
+
+  const clientes = [...new Set(((data ?? []) as { cliente_id: string }[]).map((l) => l.cliente_id))]
+  if (clientes.length === 0) return []
+
+  const { data: canais, error: erroDosCanais } = await db()
+    .from('channels')
+    .select('client_id, waba_id')
+    .in('client_id', clientes)
+    .not('waba_id', 'is', null)
+
+  if (erroDosCanais) throw erroDosCanais
+
+  const vistos = new Set<string>()
+  const saida: { clienteId: string; wabaId: string }[] = []
+
+  for (const linha of (canais ?? []) as { client_id: string; waba_id: string | null }[]) {
+    // Um cliente pode ter mais de um número na mesma WABA. Reconciliar duas
+    // vezes a mesma conta só gastaria chamada da Meta.
+    const chave = `${linha.client_id}:${linha.waba_id}`
+    if (!linha.waba_id || vistos.has(chave)) continue
+    vistos.add(chave)
+    saida.push({ clienteId: linha.client_id, wabaId: linha.waba_id })
+  }
+
+  return saida
+}

@@ -5,6 +5,7 @@ import { DIAS_DE_FOLGA, renovarTokensDoInstagram } from '@/server/instagram/reno
 import { apagarContatosVencidos, MESES_DE_RETENCAO_PADRAO } from '@/server/repos/retencao'
 import { marcarQuemSumiu } from '@/server/repos/crm'
 import { DIAS_PARA_INATIVAR } from '@/core/crm'
+import { reconciliarTemplates } from '@/server/reconciliar-templates'
 
 export const dynamic = 'force-dynamic'
 
@@ -81,6 +82,22 @@ export async function GET(req: Request) {
      */
     const inativados = await marcarQuemSumiu()
 
+    /*
+     * E os templates são reconferidos contra a Meta, pela mesma carona e pelo
+     * mesmo motivo do Instagram: no Hobby são duas tarefas agendadas, e as duas
+     * já estão em uso.
+     *
+     * **Webhook perdido é questão de quando, não de se.** A Meta entrega
+     * `message_template_status_update` uma vez; se a função estiver em deploy
+     * naquele segundo, o template fica "em análise" para sempre no nosso banco
+     * enquanto já está aprovado há dias — e não há erro nenhum no log, porque do
+     * nosso lado nada falhou.
+     *
+     * Nunca lança: falha de uma conta é contada lá dentro e não derruba o que
+     * veio antes.
+     */
+    const templates = await reconciliarTemplates()
+
     return Response.json({
       ...resultado,
       meses: MESES_DE_RETENCAO_PADRAO,
@@ -89,6 +106,7 @@ export async function GET(req: Request) {
       instagram: { ...instagram, diasDeFolga: DIAS_DE_FOLGA },
       inativados,
       diasParaInativar: DIAS_PARA_INATIVAR,
+      templates,
     })
   } catch (erro) {
     // Ninguém está olhando quando isto roda às quatro da manhã. Uma limpeza que
