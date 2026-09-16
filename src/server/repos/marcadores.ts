@@ -8,13 +8,13 @@ import { db, ehIdInvalido } from '../db'
  * Por que isto é irmão de `repos/leituras.ts`, e não parte dele
  * ---------------------------------------------------------------------------
  *
- * As três tabelas respondem a mesma forma de pergunta — "o que ESTA pessoa
- * marcou neste contato?" — e por isso o desenho é o mesmo: par
+ * As três tabelas respondem a mesma forma de pergunta, "o que ESTA pessoa
+ * marcou neste contato?", e por isso o desenho é o mesmo: par
  * `usuario_id + contato_id`, chave primária composta, sem `cliente_id`.
  *
  * Ficam em arquivos separados porque o que elas guardam decide coisas
  * diferentes: leitura é contagem (e degrada em silêncio, porque insígnia é
- * conforto), enquanto fixar e favoritar são gestos deliberados — quem clica no
+ * conforto), enquanto fixar e favoritar são gestos deliberados, quem clica no
  * alfinete e não vê a conversa subir precisa saber que não funcionou, e por
  * isso aqui os erros **voltam** em vez de virar `console.error`.
  *
@@ -67,7 +67,7 @@ export async function fixadasDoUsuario(usuarioId: string | null): Promise<Map<st
  *
  * **O teto é por conta, e não por pessoa.** Quem atende dois clientes tem dois
  * conjuntos de urgências, e somar os dois faria o quinto alfinete de um cliente
- * ser recusado por causa de conversas do outro — uma recusa que a tela não teria
+ * ser recusado por causa de conversas do outro, uma recusa que a tela não teria
  * como explicar, porque o que a bloqueou não está nela.
  *
  * São duas consultas em vez de um join embutido: PostgREST resolveria com
@@ -139,7 +139,7 @@ export async function soltar(usuarioId: string, contatoId: string): Promise<{ ok
  *
  * Recebe os ids que já estão na tela em vez de ler tudo o que a pessoa
  * favoritou: a conversa aberta traz até 500 bolhas, e a pergunta que a tela faz
- * é sobre elas — "quais destas estão com estrela" —, não sobre o acervo.
+ * é sobre elas, "quais destas estão com estrela" , não sobre o acervo.
  */
 export async function favoritasEntre(
   usuarioId: string | null,
@@ -182,12 +182,12 @@ export type Favorita = {
  * **O join com `contacts` não é enfeite: é o filtro de conta.** `af_favoritas`
  * não guarda `cliente_id` (ver a 0063), e sem cruzar com o contato a lista
  * mostraria mensagens de um cliente dentro da tela de outro. É o mesmo cuidado
- * do resto do repo — id vindo de outro lugar não prova de quem ele é.
+ * do resto do repo, id vindo de outro lugar não prova de quem ele é.
  *
  * Sem embedding do PostgREST, e sim três consultas explícitas. É o mesmo
  * caminho de `acharMensagemParaReagir`: a relação aqui tem dois saltos
  * (`af_favoritas → messages → contacts`), e embedding de dois saltos depende do
- * nome que o PostgREST deduz da chave estrangeira — a parte que passa a
+ * nome que o PostgREST deduz da chave estrangeira, a parte que passa a
  * responder 400 no dia em que a chave mudar, sem nada no código mudando junto.
  */
 export async function listarFavoritas(
@@ -237,7 +237,7 @@ export async function listarFavoritas(
    *
    * `af_favoritas` não guarda `cliente_id` (ver a 0063), então até esta linha a
    * lista é "o que esta pessoa guardou em qualquer conta que ela atende".
-   * Quem não estiver entre os contatos deste cliente sai — e sai por ausência,
+   * Quem não estiver entre os contatos deste cliente sai, e sai por ausência,
    * que é o jeito que falha fechado: contato que não voltou da consulta
    * simplesmente não entra.
    */

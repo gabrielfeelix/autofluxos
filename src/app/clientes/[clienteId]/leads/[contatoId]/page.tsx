@@ -10,6 +10,8 @@ import { ControleDeAutomacao } from '@/components/lead/controle-automacao'
 import { clienteTemAutomacao } from '@/server/repos/fluxos'
 import { CaixaDeResposta } from '@/components/lead/responder'
 import { RodapeDaMensagem } from '@/components/lead/rodape-da-mensagem'
+import { favoritasEntre } from '@/server/repos/marcadores'
+import { sessaoAtual } from '@/server/sessao'
 import { assinaturaDasReacoes } from '@/core/reacoes'
 import { ProvedorDeCitacao } from '@/components/lead/citacao'
 import {
@@ -80,7 +82,7 @@ export default async function Pagina({
      *
      * São cinco consultas curtas e independentes, e nenhuma delas vale uma
      * espera própria: a tela só existe inteira. Equipe e motivos vêm com a
-     * página pelo mesmo motivo do quadro — são listas que mudam uma vez por
+     * página pelo mesmo motivo do quadro, são listas que mudam uma vez por
      * mês, e buscá-las ao abrir cada menu seria uma ida ao banco por clique.
      */
     estagio,
@@ -103,7 +105,7 @@ export default async function Pagina({
     listarMotivos(clienteId),
     agendadasDoContato(clienteId, contatoId),
     /*
-     * Sem fluxo ligado a papel nem gatilho ativo, **não existe bot** — e o
+     * Sem fluxo ligado a papel nem gatilho ativo, **não existe bot**, e o
      * cartão abaixo dizia "Bot respondendo este contato" assim mesmo, com um
      * botão para pausar o que não existe. Ver `clienteTemAutomacao`.
      */
@@ -114,27 +116,27 @@ export default async function Pagina({
   const campos = Object.entries(lead.campos)
   const nome = lead.nome ?? 'sem nome'
   /* De onde a pessoa veio, quando isso foi medido. Quem não tem origem não
-     ganha linha — escrever "Direto" seria afirmar o que ninguém mediu. */
+     ganha linha, escrever "Direto" seria afirmar o que ninguém mediu. */
   const origem = origemDoContato(lead.campos)
 
   // O primeiro nome basta na caixa de resposta: "Responder Maria Aparecida da
   // Silva pelo WhatsApp…" não cabe e não ajuda.
   const primeiroNome = lead.nome?.split(' ')[0] ?? 'esta pessoa'
 
-  // Quanto ainda dá para responder em texto livre. `null` fecha a caixa — e a
+  // Quanto ainda dá para responder em texto livre. `null` fecha a caixa, e a
   // conta é feita aqui, no servidor, porque o relógio do navegador de quem abre
   // a tela não é fonte de verdade para uma regra da Meta.
   /*
    * A jornada por anúncio, e só dela: as passagens são baratas, mas resolver o
    * nome de cada anúncio fala com a Meta. Sem token, a lista volta igual com o
-   * título que a pessoa leu no dia — ver `jornadaDoContato`.
+   * título que a pessoa leu no dia, ver `jornadaDoContato`.
    */
   const jornada = await jornadaDoContato(clienteId, contatoId)
 
   const contexto = await contextoDeResposta(clienteId, contatoId)
   const restante = restaDaJanela(contexto?.ultimaEntradaEm ?? null)
   const janela = restante && restante > 0 ? comoFalta(restante) : null
-  /** Menos de duas horas — a contagem muda de cor. Mesma régua do Inbox. */
+  /** Menos de duas horas, a contagem muda de cor. Mesma régua do Inbox. */
   const apertado = restante !== null && restante > 0 && restante < 2 * 60 * 60 * 1000
 
   return (
@@ -184,7 +186,7 @@ export default async function Pagina({
             equipe={equipe.map(({ id, nome: comoSeChama }) => ({ id, nome: comoSeChama }))}
             responsavelId={lead.atribuidoA}
           />
-          {/* As ações sobre o contato, no alto e à direita — o lugar em que a
+          {/* As ações sobre o contato, no alto e à direita, o lugar em que a
               ficha do Brevo e a do RD as põem, e pelo mesmo motivo: é onde o
               olho chega depois de ler quem é a pessoa. */}
           <AcoesDaFicha
@@ -218,7 +220,7 @@ export default async function Pagina({
             {/*
               O que este botão faz, e por que ele é um só: tira o lead da fila e
               devolve o contato ao bot. Enquanto a sessão estiver com uma pessoa,
-              o bot fica calado com esse número — então "atendi" e "pode voltar
+              o bot fica calado com esse número, então "atendi" e "pode voltar
               a atender" são o mesmo ato, e separar os dois só criaria um estado
               em que ninguém responde.
             */}
@@ -261,7 +263,7 @@ export default async function Pagina({
           <div className="flex flex-col gap-[18px]">
           {/* **O que a pessoa já rendeu e o que está em jogo vêm antes de
               etiqueta e anotação.** A coluna abria em "Etiquetas", e a primeira
-              informação sobre a pessoa era o que o bot perguntou — o mesmo
+              informação sobre a pessoa era o que o bot perguntou, o mesmo
               defeito que a coluna do Inbox já tinha corrigido. */}
           <ResumoDoContato resumo={resumo} />
           <Informacoes
@@ -313,7 +315,7 @@ export default async function Pagina({
             <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">O que o fluxo coletou</h2>
             {campos.length === 0 ? (
               <p className="px-[18px] py-[22px] text-xs leading-5 text-dim">
-                Nada coletado — a conversa não chegou a preencher nenhuma variável.
+                Nada coletado, a conversa não chegou a preencher nenhuma variável.
               </p>
             ) : (
               <dl>
@@ -336,7 +338,7 @@ export default async function Pagina({
               /*
                 A contagem da janela de 24h fica aqui, e não no rodapé da caixa
                 de resposta. Mesma decisão do Inbox, pelo mesmo motivo: ela é
-                estado da conversa e não consequência de responder — e as duas
+                estado da conversa e não consequência de responder, e as duas
                 telas precisam dizer a mesma coisa no mesmo lugar, senão quem
                 usa as duas aprende dois produtos.
               */
@@ -426,30 +428,41 @@ async function Historico({
 }) {
   const conversa = await lerConversa(contatoId)
 
+  /*
+   * Quais destas bolhas **eu** guardei. Mesma leitura do Inbox, e é ela que faz
+   * a estrela ser a mesma nos dois lugares: guardar na ficha e ver cheia no
+   * Inbox é o mínimo que se espera de uma marcação que é da pessoa.
+   */
+  const sessao = await sessaoAtual()
+  const favoritas = await favoritasEntre(
+    sessao?.usuario.id ?? null,
+    conversa.mensagens.map((mensagem) => mensagem.id),
+  )
+
   if (conversa.mensagens.length === 0) {
     return <p className="py-10 text-center text-xs text-dim">Nenhuma mensagem registrada.</p>
   }
 
-  /* Onde cada dia começa — mesma regra do Inbox, ver `lib/quando.ts`. */
+  /* Onde cada dia começa, mesma regra do Inbox, ver `lib/quando.ts`. */
   const diasDaConversa = etiquetasDeDia(conversa.mensagens, (m) => m.ts)
 
   return (
     <div className="flex flex-col gap-2.5">
       {conversa.cortada && (
         <p className="self-center rounded-xl border border-dashed border-strong px-3.5 py-2 text-center font-mono text-[10px] text-muted">
-          conversa longa — mostrando só as mensagens mais recentes
+          conversa longa, mostrando só as mensagens mais recentes
         </p>
       )}
       {conversa.mensagens.map((mensagem, indice) => {
         const nossa = mensagem.direcao === 'saida'
         const etiqueta = diasDaConversa[indice]
         return (
-          /* O `Fragment` deixa a etiqueta de dia ser irmã da bolha — ver o Inbox. */
+          /* O `Fragment` deixa a etiqueta de dia ser irmã da bolha, ver o Inbox. */
           <Fragment key={mensagem.id}>
             {etiqueta && <EtiquetaDoDia rotulo={etiqueta} />}
-            {/* A coluna é o que dá lugar à reação embaixo da bolha — ver o Inbox. */}
+            {/* A coluna é o que dá lugar à reação embaixo da bolha, ver o Inbox. */}
             <div className={`flex flex-col gap-0 ${nossa ? 'items-end' : 'items-start'}`}>
-            {/* Mesma fonte e mesmo corpo do Inbox — ver o comentário de lá. */}
+            {/* Mesma fonte e mesmo corpo do Inbox, ver o comentário de lá. */}
             <p className={`max-w-[78%] px-3 py-2 font-texto text-[14.5px] leading-[1.45] whitespace-pre-wrap ${nossa ? 'rounded-[13px_13px_4px_13px] border border-primary/[0.22] bg-primary/[0.13]' : 'rounded-[13px_13px_13px_4px] border border-line bg-surface'}`}>
               {mensagem.cita && <CitacaoNaBolha cita={mensagem.cita} nome={nomeDoLead} />}
               {mensagem.anexo && <AnexoNaConversa anexo={mensagem.anexo} />}
@@ -465,7 +478,7 @@ async function Historico({
               {mensagem.cartoes && <CartoesNaBolha cartoes={mensagem.cartoes} />}
               {/*
                 Lugar e cartão **substituem** o "(áudio, imagem ou documento)".
-                Eles são a mensagem inteira, e quase nunca vêm com legenda —
+                Eles são a mensagem inteira, e quase nunca vêm com legenda,
                 deixar a frase genérica embaixo diria que falta algo que não
                 falta.
               */}
@@ -480,7 +493,7 @@ async function Historico({
               {/*
                 Mesma regra do Inbox: a hora sempre, o autor só na saída e só
                 quando ele é sabido. "bot" estava fixo aqui e mentia toda vez
-                que quem respondeu foi gente — ver `core/autor-da-mensagem.ts`.
+                que quem respondeu foi gente, ver `core/autor-da-mensagem.ts`.
               */}
               <span className="ml-2 text-[9.5px] text-muted" title={horaExata(mensagem.ts)}>
                 {nossa && mensagem.autor ? `${mensagem.autor} · ` : ''}
@@ -490,8 +503,10 @@ async function Historico({
                 <span className="ml-2 text-[9.5px] text-aviso">envio não confirmado</span>
               )}
             </p>
-            {(mensagem.waMessageId || mensagem.reacoes) && (
-              /* A `key` devolve a palavra final ao servidor — ver o Inbox. */
+            {/* Em toda bolha, e não só nas com id da Meta: a estrela guarda pelo
+                id interno, que a saída ainda não confirmada também tem. */}
+            {(
+              /* A `key` devolve a palavra final ao servidor, ver o Inbox. */
               <RodapeDaMensagem
                 key={assinaturaDasReacoes(mensagem.reacoes)}
                 clienteId={clienteId}
@@ -503,6 +518,8 @@ async function Historico({
                 texto={mensagem.texto}
                 deQuem={nossa ? 'ao atendimento' : `a ${nomeDoLead ?? 'cliente'}`}
                 nossa={nossa}
+                mensagemId={mensagem.id}
+                favorita={favoritas.has(mensagem.id)}
               />
             )}
             </div>
@@ -513,7 +530,7 @@ async function Historico({
   )
 }
 
-/** A etiqueta de dia. Gêmea da do Inbox — a bolha vive duplicada nas duas telas. */
+/** A etiqueta de dia. Gêmea da do Inbox, a bolha vive duplicada nas duas telas. */
 function EtiquetaDoDia({ rotulo }: { rotulo: string }) {
   return (
     <p className="my-1 self-center rounded-full border border-line bg-surface px-3 py-1 text-center text-[10px] font-medium text-dim">

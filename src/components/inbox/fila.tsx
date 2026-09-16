@@ -41,17 +41,17 @@ export type Contagem = {
  * Por que ela mora fora do `page.tsx`, e por que é `'use client'`
  * ---------------------------------------------------------------------------
  *
- * Os rails filtram campos que **já vêm em cada `Lead`** — `estadoEfetivo` e
+ * Os rails filtram campos que **já vêm em cada `Lead`**, `estadoEfetivo` e
  * `atribuidoA`. Enquanto cada ficha era um `<Link>` para a mesma rota com outro
- * `?estado=`, clicar refazia a página no servidor — sete consultas — e a tela
+ * `?estado=`, clicar refazia a página no servidor, sete consultas, e a tela
  * ficava parada até a resposta: dois segundos para mostrar um subconjunto do
  * que já estava na tela.
  *
  * Filtrar no navegador exige estado, e estado exige componente de cliente. A
  * `Fila` inteira veio junto porque os rails vivem dentro do `<header>` e a
  * lista fora dele: sem um pai cliente envolvendo os dois, o recorte escolhido
- * lá em cima não tem como chegar aqui embaixo. Duas tentativas de atalho —
- * manter a `Fila` no servidor e enfiar só os rails num cliente — falharam
+ * lá em cima não tem como chegar aqui embaixo. Duas tentativas de atalho,
+ * manter a `Fila` no servidor e enfiar só os rails num cliente, falharam
  * exatamente aí.
  *
  * Ela é elegível: não usa `await`, nem `async`, nem Server Action. O último
@@ -90,7 +90,7 @@ export function Fila({
   /** A página que o servidor filtrou. É o que a lista mostra no modo paginado. */
   leads: Lead[];
   /**
-   * A fila inteira, sem filtro de estado nem de dono — ou `null` quando a conta
+   * A fila inteira, sem filtro de estado nem de dono, ou `null` quando a conta
    * passou de `TETO_DA_FILA_LOCAL` e a tela precisa continuar paginando.
    */
   local: Lead[] | null;
@@ -111,7 +111,7 @@ export function Fila({
    * chega como `Map` de contato para `fixada_em`: a tela precisa das duas
    * coisas, quem está fixado e em que ordem. Ordenar por última mensagem
    * dentro do bloco fixado faria o topo se reembaralhar a cada mensagem que
-   * chega — o oposto do que o alfinete promete.
+   * chega, o oposto do que o alfinete promete.
    */
   fixadas: Map<string, string>;
   pagina: number;
@@ -136,7 +136,7 @@ export function Fila({
   /*
    * `useCallback` porque `RailsLocais` tem o callback entre as dependências do
    * efeito que publica o recorte. Uma função nova a cada render faria o efeito
-   * rodar a cada render, e cada rodada chama `setRecorte` — laço infinito.
+   * rodar a cada render, e cada rodada chama `setRecorte`, laço infinito.
    */
   const aoRecortar = useCallback((novo: Lead[]) => setRecorte(novo), []);
 
@@ -149,7 +149,7 @@ export function Fila({
    * outras trinta estão na página 4 é um número que mente sem avisar.
    *
    * A mesma regra que decide se os rails filtram no navegador decide se estas
-   * pílulas aparecem — ver `TETO_DA_FILA_LOCAL`.
+   * pílulas aparecem, ver `TETO_DA_FILA_LOCAL`.
    */
   const [soNaoLidas, setSoNaoLidas] = useState(false);
   const [ordem, setOrdem] = useState<Ordem>("recentes");
@@ -176,13 +176,13 @@ export function Fila({
    *
    * O caminho errado seria espelhar `naoLidas` e `fixadas` em estado. Estado
    * inicial só vale na montagem, e esta lista **é atualizada pelo servidor o
-   * tempo todo** — o pulso do Inbox refaz a página a cada mensagem que chega.
+   * tempo todo**, o pulso do Inbox refaz a página a cada mensagem que chega.
    * Um espelho congelaria a insígnia no valor da primeira pintura, e a fila
    * pararia de contar mensagem nova.
    *
    * Por isso o que mora aqui é só o **remendo**: o que esta aba mexeu e o
-   * servidor ainda não confirmou. Quando props novas chegam — e elas chegam a
-   * cada revalidação — o remendo é jogado fora, porque a partir dali quem sabe
+   * servidor ainda não confirmou. Quando props novas chegam, e elas chegam a
+   * cada revalidação, o remendo é jogado fora, porque a partir dali quem sabe
    * a verdade é o servidor, inclusive quando a verdade é que a escrita falhou.
    */
   const [remendoDeNaoLidas, setRemendoDeNaoLidas] = useState<Map<string, number>>(new Map());
@@ -280,7 +280,7 @@ export function Fila({
   }, [local, recorte, leads, soNaoLidas, semLerDe, ordem, digitado, fixadaEm]);
 
   /**
-   * As conversas à vista que ainda têm insígnia — o que o "marcar todas" apaga.
+   * As conversas à vista que ainda têm insígnia, o que o "marcar todas" apaga.
    *
    * Sai desta lista, e não da conta inteira, porque é isso que o botão promete.
    * Ver `acaoMarcarTodasComoLidas`.
@@ -322,7 +322,7 @@ export function Fila({
    *
    * A lista usava `max-h-[calc(100vh-264px)]`: um número mágico amarrado à
    * altura exata do cabeçalho da página. O rail e a paginação mudaram essa
-   * altura, e um `calc` desses erra em silêncio — a lista some por baixo ou
+   * altura, e um `calc` desses erra em silêncio, a lista some por baixo ou
    * sobra espaço em branco, sem nada quebrar para avisar. Com `flex-1` e
    * `min-h-0`, quem decide é o próprio layout.
    */
@@ -380,7 +380,7 @@ export function Fila({
   return (
     <>
       {/*
-        A barra atravessa a moldura inteira — ver `MolduraDoInbox`. Ela e a
+        A barra atravessa a moldura inteira, ver `MolduraDoInbox`. Ela e a
         lista são **irmãs** num fragmento, e não pai e filho: envolvê-las num
         `<div>` tiraria as duas da grade e a barra deixaria de atravessar.
       */}
@@ -397,21 +397,41 @@ export function Fila({
           </span>
 
           {/*
-            A engrenagem leva para os ajustes de atendimento — etiquetas,
+            A engrenagem leva para os ajustes de atendimento, etiquetas,
             respostas rápidas, horário, equipe. Ela fica aqui e não num menu
             porque é o caminho que se percorre no meio do trabalho: alguém
             precisa de uma etiqueta nova enquanto atende, não numa sessão
             separada de configuração.
           */}
-          <Dica texto="Ajustes do atendimento" lado="baixo">
-            <Link
-              href={`/clientes/${clienteId}/ajustes`}
-              aria-label="Ajustes do atendimento"
-              className="ml-auto flex size-8 shrink-0 items-center justify-center rounded-lg text-dim transition hover:bg-surface hover:text-ink"
-            >
-              <Engrenagem />
-            </Link>
-          </Dica>
+          <span className="ml-auto flex shrink-0 items-center gap-0.5">
+            {/*
+              A porta das guardadas fica aqui, e não na barra lateral.
+
+              Guardar mensagem é um bolso do Inbox, não uma seção do produto:
+              quem vai ver o que guardou veio desta tela e volta para ela. Um
+              item próprio na lateral daria à lista o mesmo peso de Funis e
+              Automações, que é peso que ela não tem.
+            */}
+            <Dica texto="Mensagens que você guardou" lado="baixo">
+              <Link
+                href={`/clientes/${clienteId}/favoritas`}
+                aria-label="Mensagens que você guardou"
+                className="flex size-8 shrink-0 items-center justify-center rounded-lg text-dim transition hover:bg-surface hover:text-ink"
+              >
+                <Estrela />
+              </Link>
+            </Dica>
+
+            <Dica texto="Ajustes do atendimento" lado="baixo">
+              <Link
+                href={`/clientes/${clienteId}/ajustes`}
+                aria-label="Ajustes do atendimento"
+                className="flex size-8 shrink-0 items-center justify-center rounded-lg text-dim transition hover:bg-surface hover:text-ink"
+              >
+                <Engrenagem />
+              </Link>
+            </Dica>
+          </span>
         </div>
 
         {/*
@@ -518,7 +538,7 @@ export function Fila({
           Lá ela ficava longe do que filtra: a pessoa digitava num campo à
           direita do título e o resultado acontecia numa coluna de 320px lá
           embaixo à esquerda, com a conversa aberta no meio do caminho entre os
-          dois. Controle e efeito precisam estar encostados — o campo sobre a
+          dois. Controle e efeito precisam estar encostados, o campo sobre a
           lista diz, sem legenda, que é a lista que ele encolhe.
 
           O que ela filtra não mudou, e é o que os comentários abaixo defendem:
@@ -533,7 +553,7 @@ export function Fila({
           forma que faz sentido aqui.
 
           Escrever primeiro para alguém só é possível **dentro da janela de 24
-          horas** — fora dela a Meta exige modelo aprovado, que este produto
+          horas**, fora dela a Meta exige modelo aprovado, que este produto
           ainda não tem. E quem está dentro da janela já está nesta lista: o
           que falta não é um botão de começar, é achar a pessoa quando a
           conversa dela já rolou para baixo.
@@ -542,21 +562,21 @@ export function Fila({
           guardar e recarregar. **Continua indo ao servidor mesmo no modo
           local**, e de propósito: a busca casa telefone por formas
           normalizadas (`chavesDoTelefone`), e repetir essa regra aqui seria
-          duplicar justamente a parte que erra sozinha — quem procura
+          duplicar justamente a parte que erra sozinha, quem procura
           "(11) 98765-4321" não acha `551187654321` com comparação de texto.
         */}
         {/*
           **Filtra enquanto se digita, e ainda assim é um formulário `GET`.**
 
           No modo local a fila inteira está no navegador: filtrar é um
-          `filter()` e não há razão para esperar o Enter — quem procura alguém
+          `filter()` e não há razão para esperar o Enter, quem procura alguém
           numa lista de trezentas quer ver a lista encolher na terceira letra.
 
           O formulário continua existindo, e o Enter continua indo ao
           servidor, por dois motivos. No modo paginado ele é a única busca que
           existe, porque filtrar uma página de cinquenta de cinco mil acharia
           só quem por acaso estava carregado. E mesmo no local, a busca do
-          servidor casa telefone por formas normalizadas do banco — o Enter é
+          servidor casa telefone por formas normalizadas do banco, o Enter é
           como se pede a resposta autoritativa, e o endereço resultante dá
           para guardar e mandar para alguém.
         */}
@@ -610,7 +630,7 @@ export function Fila({
             número no rótulo é o contrato: é sobre isto que o clique age.
 
             Só aparece quando há insígnia à vista. Botão que não faz nada é pior
-            que botão ausente — ele ensina que clicar ali não adianta.
+            que botão ausente, ele ensina que clicar ali não adianta.
           */}
           {porLerNaTela.length > 0 && (
             <button
@@ -644,7 +664,7 @@ export function Fila({
                 A linha virou `div` com o `Link` dentro, e não é reorganização
                 à toa: os dois botões de marcação **não podem** ser filhos do
                 `Link`. Botão dentro de link é HTML inválido, e o efeito prático
-                é o pior possível — clicar no alfinete navegaria para a conversa
+                é o pior possível, clicar no alfinete navegaria para a conversa
                 antes de o `onClick` decidir qualquer coisa.
 
                 O `group` sobe junto com o `relative`, porque é o hover da linha
@@ -693,8 +713,8 @@ export function Fila({
                   <span className="mt-0.5 flex items-center gap-1.5">
                     {/*
                     O `title` existe porque o motivo do handoff **é a
-                    informação que resolve o problema** — "a chamada respondeu
-                    500", "o modelo demorou demais" — e ele chega a 75
+                    informação que resolve o problema**, "a chamada respondeu
+                    500", "o modelo demorou demais", e ele chega a 75
                     caracteres numa coluna de 292px. Truncado e sem `title`, a
                     linha vermelha só dizia que havia algo errado e escondia o
                     quê: nem o mouse, nem outra tela contavam.
@@ -768,7 +788,7 @@ export function Fila({
                         : "Fixar no topo"
                   }
                   /*
-                    Desabilitado no teto, e o `title` diz por quê — campo que
+                    Desabilitado no teto, e o `title` diz por quê, campo que
                     some sem explicar é pior que campo desabilitado. Soltar
                     nunca é bloqueado, senão quem chega ao teto fica preso nele.
                   */
@@ -863,12 +883,12 @@ export function Fila({
  * ---------------------------------------------------------------------------
  *
  * O `pointermove` escreve direto na variável de CSS do `<html>`. Um `setState`
- * por quadro renderizaria a lista inteira — que pode ter quinhentas conversas —
+ * por quadro renderizaria a lista inteira, que pode ter quinhentas conversas,
  * sessenta vezes por segundo, para mudar uma medida que o CSS resolve sozinho.
  * O React só volta a participar no `pointerup`, para gravar.
  *
  * `setPointerCapture` é o que faz o arrasto sobreviver ao ponteiro sair de cima
- * da faixa de 5px — sem ele, mover rápido solta o puxador no meio do gesto.
+ * da faixa de 5px, sem ele, mover rápido solta o puxador no meio do gesto.
  */
 function PuxadorDaFila() {
   const arrasto = useRef<{ x: number; largura: number } | null>(null);
@@ -894,7 +914,7 @@ function PuxadorDaFila() {
 
   return (
     /*
-      Faixa de 5px sobre a borda, meio para cada lado — é a área de acerto, e a
+      Faixa de 5px sobre a borda, meio para cada lado, é a área de acerto, e a
       borda continua sendo o que se vê. `touch-none` impede o navegador de
       entender o arrasto como rolagem no celular.
 
@@ -968,13 +988,13 @@ function PassoDaPagina({
  *
  * **Só aparece em quem espera uma pessoa**, e isso é decisão de desenho: a
  * fila já carrega nome, horário e prévia, e um quarto dado em toda linha vira
- * ruído. Onde o relógio decide alguma coisa é exatamente aqui — quem escolhe o
+ * ruído. Onde o relógio decide alguma coisa é exatamente aqui, quem escolhe o
  * que atender primeiro precisa saber de quem a janela está fechando, não de
  * quem está conversando com o bot.
  *
  * §3.10.1: *"a fila precisa mostrar quanto tempo resta, não só que alguém
- * espera"*. Passada a janela, a Meta só aceita modelo aprovado — que este
- * produto ainda não tem —, então "fechada" quer dizer que não dá para
+ * espera"*. Passada a janela, a Meta só aceita modelo aprovado, que este
+ * produto ainda não tem , então "fechada" quer dizer que não dá para
  * responder por texto, e é a informação mais importante da linha.
  */
 function RelogioDaJanela({
@@ -988,7 +1008,7 @@ function RelogioDaJanela({
   if (restante === 0) {
     return (
       <span className="mt-0.5 block text-[10px] font-semibold text-perigo">
-        janela fechada — só modelo aprovado
+        janela fechada, só modelo aprovado
       </span>
     );
   }
@@ -1109,7 +1129,7 @@ type Ordem = "recentes" | "antigas" | "espera";
  *
  * `espera` é a que justifica o menu existir: as outras duas são a mesma
  * pergunta invertida, e "quem está esperando há mais tempo" é uma pergunta
- * diferente — é a fila pela ordem em que ela deveria ser atendida, e não pela
+ * diferente, é a fila pela ordem em que ela deveria ser atendida, e não pela
  * ordem em que as mensagens chegaram.
  */
 const ORDENS = [
@@ -1135,7 +1155,7 @@ const ORDENS = [
 
 /**
  * Copia antes de ordenar. A lista vem do recorte dos rails, e `sort` no lugar
- * mutaria um array que o React considera imutável — o sintoma é a lista
+ * mutaria um array que o React considera imutável, o sintoma é a lista
  * trocando de ordem sozinha ao voltar de outra aba. (`toSorted` faria isso
  * numa linha, mas o `lib` deste projeto ainda é anterior ao ES2023.)
  */
@@ -1210,7 +1230,7 @@ function comFixadasNoTopo(
  *
  * `stopPropagation` e `preventDefault` porque o botão está **sobre** o `Link`
  * que ocupa a linha inteira. Sem os dois, o clique escapava para a navegação e
- * fixar a conversa abria a conversa junto — o que é o contrário de fixar, que
+ * fixar a conversa abria a conversa junto, o que é o contrário de fixar, que
  * existe justamente para não precisar abrir agora.
  */
 function BotaoDaLinha({
@@ -1258,7 +1278,7 @@ function BotaoDaLinha({
 
 /**
  * O alfinete. Deitado quando a conversa está presa, em pé quando é o convite
- * para prender — a mesma gramática do WhatsApp, e a inclinação é a única pista
+ * para prender, a mesma gramática do WhatsApp, e a inclinação é a única pista
  * de estado que se lê sem parar para ler.
  */
 function Alfinete({ preso = false }: { preso?: boolean }) {
@@ -1320,6 +1340,25 @@ function Lupa() {
       <path d="m20 20-3.2-3.2" />
     </svg>
   );
+}
+
+/** A estrela vazada da barra do topo: leva às guardadas, não guarda nada. */
+function Estrela() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      width="15"
+      height="15"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="m12 3.6 2.6 5.3 5.9.85-4.25 4.15 1 5.85L12 17l-5.25 2.75 1-5.85L3.5 9.75l5.9-.85L12 3.6Z" />
+    </svg>
+  )
 }
 
 function Engrenagem() {

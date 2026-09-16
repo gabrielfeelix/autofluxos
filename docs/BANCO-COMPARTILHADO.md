@@ -278,6 +278,23 @@ extração explícito para os objetos de `public`.
   é a inversa do aviso da `0058`: a migration foi primeiro, e o bloco `nps` só
   chega à produção no próximo deploy. Enquanto isso a tabela fica vazia — o que
   é seguro, porque nada no caminho de mensagem que já está no ar a procura;
+- **a `0063` foi aplicada em 16/set/2026**, com autorização explícita do dono.
+  Ela cria duas tabelas novas, `public.af_fixadas` e `public.af_favoritas` — o
+  alfinete e a estrela do Inbox, por atendente. Não toca em tabela existente,
+  não move dado e não altera coluna nenhuma.
+
+  Conferida pelo **ensaio em transação** (`begin; ...; rollback;` pela
+  Management API) antes de aplicar, e por conferência objeto a objeto depois: as
+  duas existem com três colunas cada, `relrowsecurity` verdadeiro, **zero
+  políticas** (de propósito — todo acesso é pelo servidor com a chave secreta) e
+  os grants trazem só `postgres` e `service_role`. `app_verandi` segue com 42
+  tabelas, medidas antes e depois.
+
+  **O que o ensaio provou e vale lembrar:** RLS ligada com zero políticas é o
+  estado seguro deste projeto desde a 0001, e não um esquecimento. Quem olhar
+  `pg_policies` procurando a política destas tabelas não vai achar, e está
+  certo assim.
+
 - **a `0062` foi aplicada em 16/set/2026**, com autorização explícita do dono.
   Ela recria `public.leads` para expor duas colunas novas ao fim da lista,
   `ultimo_autor_tipo` e `ultimo_autor_nome`, lidas do `payload` da última

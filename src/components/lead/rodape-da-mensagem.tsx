@@ -4,9 +4,10 @@ import { useState } from 'react'
 import { useAcaoOtimista } from '@/components/design/acao-otimista'
 import { useCitacao } from '@/components/lead/citacao'
 import { acaoReagir } from '@/server/acoes-reacao'
+import { acaoFavoritarMensagem } from '@/server/acoes-marcadores'
 
 /**
- * O que fica pendurado embaixo da bolha: as reações e os dois botões.
+ * O que fica pendurado embaixo da bolha: as reações e os três botões.
  *
  * ---------------------------------------------------------------------------
  * Por que as duas coisas moram no mesmo componente
@@ -64,6 +65,8 @@ export function RodapeDaMensagem({
   texto,
   deQuem,
   nossa,
+  mensagemId,
+  favorita,
 }: {
   clienteId: string
   contatoId: string
@@ -78,9 +81,18 @@ export function RodapeDaMensagem({
   /** Como nomear o autor na prévia da citação: "ao atendimento" ou o nome dela. */
   deQuem: string
   nossa: boolean
+  /**
+   * O id **interno** da mensagem (`messages.id`), que é o que a estrela guarda.
+   *
+   * Não é o `waMessageId`: o da Meta é texto, some na saída ainda não
+   * confirmada e não tem chave estrangeira para nada. Ver a 0063.
+   */
+  mensagemId: string
+  /** Se **eu** já guardei esta mensagem. */
+  favorita: boolean
 }) {
   const [aberto, setAberto] = useState(false)
-  /** `null` fora do provedor — a tela que não monta citação ainda reage. */
+  /** `null` fora do provedor, a tela que não monta citação ainda reage. */
   const citacao = useCitacao()
 
   /*
@@ -92,12 +104,29 @@ export function RodapeDaMensagem({
   const nossaDoServidor = reacoes.find((r) => r.de === 'saida')?.emoji ?? null
   const { valor: minhaReacao, erro, agir, limparErro } = useAcaoOtimista<string | null>(nossaDoServidor)
 
+  /*
+   * A estrela tem otimismo próprio, e não divide o de `agir`.
+   *
+   * Um estado só para as duas faria o erro de uma aparecer do lado da outra, e
+   * desfazer a reação ao falhar o favorito. São gestos independentes: dá para
+   * reagir e guardar a mesma mensagem, na ordem que for.
+   *
+   * Guardar é otimista pela razão oposta à de enviar mensagem: nada sai do
+   * sistema. Se o servidor recusar, a estrela volta e ninguém do outro lado
+   * chegou a ver nada.
+   */
+  const {
+    valor: guardada,
+    erro: erroDaEstrela,
+    agir: agirNaEstrela,
+  } = useAcaoOtimista<boolean>(favorita)
+
   function reagir(emoji: string) {
     if (!waMessageId) return
     setAberto(false)
 
     /*
-     * Clicar no emoji que já está lá **remove** — string vazia é como a Meta
+     * Clicar no emoji que já está lá **remove**, string vazia é como a Meta
      * desfaz uma reação. Sem isto, reagir de novo com o mesmo emoji seria uma
      * ação sem efeito visível, e não haveria caminho nenhum para tirar.
      */
@@ -118,7 +147,7 @@ export function RodapeDaMensagem({
       {/*
         As reações ficam **fora** da bolha, encostadas na borda de baixo, como
         no WhatsApp: a reação comenta a mensagem, não faz parte dela. Dentro,
-        viraria parte do texto — e a diferença importa quando a mensagem é
+        viraria parte do texto, e a diferença importa quando a mensagem é
         longa.
       */}
       {chips.map((chip) => (
@@ -136,7 +165,7 @@ export function RodapeDaMensagem({
          * A barra fica **sempre visível**, e não no hover.
          *
          * Havia aqui um comentário descrevendo uma barra que aparecia ao
-         * passar o mouse, com `opacity` e `focus-within` — e esse CSS nunca
+         * passar o mouse, com `opacity` e `focus-within`, e esse CSS nunca
          * existiu. Ficar visível é o certo de qualquer jeito: quem usa no
          * celular não tem hover, e quem navega por teclado descobriria o botão
          * só depois de chegar nele.
@@ -192,9 +221,31 @@ export function RodapeDaMensagem({
         </span>
       )}
 
-      {erro && (
+      {/*
+        A estrela mora **fora** do bloco guardado por `waMessageId`.
+
+        Citar e reagir precisam do id da Meta; guardar não. Deixá-la lá dentro
+        esconderia o botão exatamente na saída recém-escrita, que é uma das
+        mensagens que mais se quer guardar.
+      */}
+      <button
+        type="button"
+        onClick={() =>
+          agirNaEstrela(!guardada, () =>
+            acaoFavoritarMensagem(clienteId, mensagemId, !guardada),
+          )
+        }
+        title={guardada ? 'Tirar das guardadas' : 'Guardar esta mensagem'}
+        aria-label={guardada ? 'Tirar esta mensagem das guardadas' : 'Guardar esta mensagem'}
+        aria-pressed={guardada}
+        className={`${BOTAO} ${guardada ? 'border-primary/40 text-primary' : ''}`}
+      >
+        {guardada ? '★' : '☆'}
+      </button>
+
+      {(erro || erroDaEstrela) && (
         <span className="max-w-[220px] text-[10px] leading-4 text-perigo" role="alert">
-          {erro}
+          {erro ?? erroDaEstrela}
         </span>
       )}
     </span>

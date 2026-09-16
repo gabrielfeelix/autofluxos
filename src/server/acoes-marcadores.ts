@@ -22,7 +22,7 @@ import { exigirAcessoAoCliente } from './sessao'
  * ---------------------------------------------------------------------------
  *
  * Nenhuma delas fala com a Meta, nenhuma muda a conversa, e nenhuma o colega ao
- * lado vê acontecer. São estado de **quem está olhando a tela** — e é por isso
+ * lado vê acontecer. São estado de **quem está olhando a tela**, e é por isso
  * que todas começam pegando o usuário da sessão em vez de receberem um id de
  * quem marcar: quem marca é sempre quem clicou, e aceitar isso por parâmetro
  * seria abrir um jeito de marcar coisa na tela dos outros.
@@ -145,8 +145,8 @@ export async function acaoFavoritarMensagem(
 /**
  * As duas telas que mostram marcação.
  *
- * O Inbox porque é onde se marca, e a lista de favoritas porque ela é o acervo
- * — tirar a estrela de dentro da conversa e a lista continuar mostrando aquela
+ * O Inbox porque é onde se marca, e a lista de favoritas porque ela é o acervo,
+ * tirar a estrela de dentro da conversa e a lista continuar mostrando aquela
  * mensagem é o tipo de divergência que faz a pessoa clicar duas vezes.
  */
 function revalidarInbox(clienteId: string) {

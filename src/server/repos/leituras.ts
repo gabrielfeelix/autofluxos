@@ -8,7 +8,7 @@ export { TETO_DA_INSIGNIA } from '@/core/insignia'
  * O que cada pessoa já leu (`af_leituras`, 0023 + a função da 0025).
  *
  * **"Não lida" é por pessoa, não por conversa.** Uma coluna no contato diria
- * que a conversa foi lida porque *alguém* abriu — e "alguém leu" é exatamente
+ * que a conversa foi lida porque *alguém* abriu, e "alguém leu" é exatamente
  * a informação que não ajuda ninguém a decidir o que abrir agora.
  *
  * Nada aqui existe sem usuário na sessão: sem usuário
@@ -74,7 +74,7 @@ export async function marcarComoLida(usuarioId: string | null, contatoId: string
  * de `marcarComoLida` escrever `now()`: é a comparação entre este relógio e o
  * da última mensagem recebida que responde "chegou algo desde a última vez que
  * alguém daqui olhou?". Sem essa pergunta, cada atualização da tela mandaria
- * mais um recibo de leitura para a Meta — a tela do Inbox fica aberta o dia
+ * mais um recibo de leitura para a Meta, a tela do Inbox fica aberta o dia
  * inteiro e se refaz sozinha.
  *
  * Falha em silêncio, como o resto do arquivo: sem a resposta, o recibo deixa de
@@ -111,13 +111,13 @@ export async function quandoLeu(
  *
  * O caminho óbvio seria apagar a linha de `af_leituras`: sem leitura gravada, a
  * conversa nunca foi lida. O efeito é o oposto do pedido. O piso de contagem,
- * quando não há linha, é a criação do usuário (ver a 0025) — apagar devolveria
+ * quando não há linha, é a criação do usuário (ver a 0025), apagar devolveria
  * **todas** as entradas desde que a pessoa entrou na conta, e uma conversa de
  * três meses voltaria com a insígnia em 87.
  *
  * O que se quer é o que o WhatsApp faz: a insígnia volta, com o tamanho de uma
  * mensagem, para o olho achar a conversa depois. Por isso o relógio recua para
- * **um milissegundo antes da última entrada** — a conta passa a devolver
+ * **um milissegundo antes da última entrada**, a conta passa a devolver
  * exatamente as mensagens daquele último instante, quase sempre uma.
  *
  * Sem entrada nenhuma não há o que marcar, e a função não faz nada: insígnia em

@@ -22,7 +22,7 @@ import { contatosComEtiqueta as contatosComEtiquetaManual, etiquetasDeContatos, 
  * alguém precisa assumir a conversa, e quando ele falou pela última vez.
  *
  * Nada aqui é tabela. É a view `leads` (0004), que junta `contacts`,
- * `messages` e `handoffs` — as duas últimas são agregações e o banco faz isso
+ * `messages` e `handoffs`, as duas últimas são agregações e o banco faz isso
  * melhor do que nós.
  */
 export type Lead = {
@@ -30,7 +30,7 @@ export type Lead = {
   waId: string
   /**
    * O que a tela mostra: o nome corrigido quando existe, o do perfil quando
-   * não. A precedência é resolvida aqui e não no banco de propósito — num
+   * não. A precedência é resolvida aqui e não no banco de propósito, num
    * gatilho, a próxima mensagem do WhatsApp desfaria a correção de uma pessoa,
    * que é exatamente o defeito que a correção existe para consertar.
    */
@@ -49,14 +49,14 @@ export type Lead = {
    *
    * Diferente de `ultimaEm`, que é a última de qualquer lado: com o bot
    * respondendo depois, `ultimaEm` é a hora da resposta dele, e a conta da
-   * janela sairia errada **para mais** — a tela diria que dá tempo quando já
+   * janela sairia errada **para mais**, a tela diria que dá tempo quando já
    * não dá, que é o pior lado do erro.
    */
   ultimaEntradaEm: string | null
   ultimaDirecao: Direcao | null
   ultimoTexto: string | null
   /**
-   * O `type` que a Meta mandou na última mensagem — `audio`, `image`,
+   * O `type` que a Meta mandou na última mensagem, `audio`, `image`,
    * `sticker`, `document`... Nulo quando a última foi nossa (saída não tem
    * `type` da Meta) ou quando o payload não trouxe.
    *
@@ -111,8 +111,8 @@ export type AnexoDaMensagem = {
   nomeArquivo?: string
 }
 
-// Os dois moram em `core/` porque são regra sobre dados, sem banco e sem rede
-// — o mesmo motivo de `core/reacoes.ts`. Reexportados para as telas, que já
+// Os dois moram em `core/` porque são regra sobre dados, sem banco e sem rede,
+// o mesmo motivo de `core/reacoes.ts`. Reexportados para as telas, que já
 // pegam o resto dos tipos da conversa daqui.
 export type { CartaoDeContato, LocalDaMensagem }
 
@@ -142,7 +142,7 @@ export type MensagemDoLead = {
   /**
    * Ausente na esmagadora maioria das linhas.
    *
-   * Sem isto, a conversa mostraria só a legenda — e um arquivo entregue viraria
+   * Sem isto, a conversa mostraria só a legenda, e um arquivo entregue viraria
    * linha em branco no histórico, que é pior do que não ter mandado nada: quem
    * atende não descobre que a foto do plano já foi.
    */
@@ -150,7 +150,7 @@ export type MensagemDoLead = {
   /**
    * O lugar que ela mandou. Ausente em quase toda linha.
    *
-   * Sem isto, "📍 localização" aparecia na fila e a bolha ficava **vazia** —
+   * Sem isto, "📍 localização" aparecia na fila e a bolha ficava **vazia**,
    * quem abria a conversa via que algo tinha chegado e não via o quê. O dado
    * sempre esteve no `payload`; faltava desenhar.
    */
@@ -159,7 +159,7 @@ export type MensagemDoLead = {
    *
    * Reusa `AnexoDaMensagem` de propósito: a bolha já sabe desenhar imagem,
    * vídeo, áudio e documento, e um tipo novo obrigaria a desenhar duas vezes a
-   * mesma coisa. A diferença mora em quem produz a `url` — na saída ela é
+   * mesma coisa. A diferença mora em quem produz a `url`, na saída ela é
    * pública e permanente; aqui é assinada e morre em cinco minutos.
    */
   recebido?: AnexoDaMensagem
@@ -168,8 +168,8 @@ export type MensagemDoLead = {
    * download falhou, ou a mensagem é anterior à `0055`.
    *
    * Existe para a bolha dizer isso em vez de ficar vazia. "Sumiu minha foto" é
-   * a reclamação mais comum do mercado neste recurso — ver
-   * `docs/PLANO-MIDIA-RECEBIDA.md` —, e a diferença entre um produto honesto e
+   * a reclamação mais comum do mercado neste recurso, ver
+   * `docs/PLANO-MIDIA-RECEBIDA.md` , e a diferença entre um produto honesto e
    * um quebrado é uma frase.
    */
   semCopia?: true
@@ -177,7 +177,7 @@ export type MensagemDoLead = {
    * A Meta disse `unsupported`: existe uma mensagem ali e ela **não vem** para
    * a API.
    *
-   * É o caso de "ver uma vez", enquete, pagamento, evento e alguns cartões —
+   * É o caso de "ver uma vez", enquete, pagamento, evento e alguns cartões,
    * coisas que o WhatsApp entrega ao celular e não ao número de negócio. Não é
    * mídia sem cópia e não é mensagem vazia: os dois já tinham desenho próprio e
    * nenhum dos dois descreve isto.
@@ -188,7 +188,7 @@ export type MensagemDoLead = {
    * "automação". Ausente = não sabemos, e aí a bolha mostra só a hora.
    *
    * Só faz sentido em saída. Na entrada, quem escreveu é a pessoa cujo nome
-   * está no cabeçalho da conversa — repeti-lo embaixo de cada bolha era ruído
+   * está no cabeçalho da conversa, repeti-lo embaixo de cada bolha era ruído
    * numa tela que só tem duas vozes.
    */
   autor?: string
@@ -205,7 +205,7 @@ export type MensagemDoLead = {
   /**
    * O id da mensagem na Meta.
    *
-   * Sobe até a tela porque **reagir exige o id da Meta, não o nosso** — e
+   * Sobe até a tela porque **reagir exige o id da Meta, não o nosso**, e
    * porque é por ele que reação e citação se ligam. Ausente em saída ainda não
    * confirmada: a Meta só devolve o id depois de aceitar.
    */
@@ -214,7 +214,7 @@ export type MensagemDoLead = {
    * As reações nesta mensagem, se houver.
    *
    * Lista e não uma só: a conversa tem dois lados, e os dois podem reagir à
-   * mesma frase. Cada lado tem no máximo uma — reagir de novo troca — e quem
+   * mesma frase. Cada lado tem no máximo uma, reagir de novo troca, e quem
    * garante isso é `casarReacoes`, que fica com a mais recente.
    */
   reacoes?: ReacaoNaMensagem[]
@@ -270,19 +270,19 @@ type Linha = {
 }
 
 // Numa linha só, e não concatenado: o supabase-js lê esta string no nível de
-// tipo para saber o formato do retorno, e concatenação vira `string` genérica —
+// tipo para saber o formato do retorno, e concatenação vira `string` genérica,
 // aí o tipo do `data` desanda e o `tsc` acusa.
 const COLUNAS =
   'contact_id, client_id, wa_id, nome, nome_real, notas, campos, criado_em, ultima_em, ultima_entrada_em, ultima_direcao, ultimo_texto, ultimo_tipo, ultimo_autor_tipo, ultimo_autor_nome, handoff_motivo, handoff_em, ultima_entregue, automacao_ativa, atribuido_a, estado, estado_efetivo, adiada_ate, adiada_nota'
 
 /**
  * `campos` é `jsonb`: o banco aceita qualquer coisa ali. Hoje só o motor
- * escreve, e sempre string — mas a tela de leads é justamente onde um dado
+ * escreve, e sempre string, mas a tela de leads é justamente onde um dado
  * torto apareceria, e ela não pode ser a parte que quebra.
  *
  * Por isso a leitura é tolerante de propósito, ao contrário do grafo em
  * `fluxos.ts`: lá um rascunho inválido tem que estourar, porque o motor ia
- * executar aquilo. Aqui ninguém executa nada — é texto numa célula. Valor que
+ * executar aquilo. Aqui ninguém executa nada, é texto numa célula. Valor que
  * não é string vira JSON legível em vez de sumir; sumir seria perder o lead.
  */
 const camposSchema = z.record(z.string(), z.unknown())
@@ -540,14 +540,14 @@ const LIMITE_DA_BUSCA = 60
 /**
  * Por quem a conversa está atribuída.
  *
- * `todos` não filtra; `sem-dono` traz o que ninguém assumiu — que é a fila de
+ * `todos` não filtra; `sem-dono` traz o que ninguém assumiu, que é a fila de
  * verdade, a que precisa de gente; qualquer outro valor é o id de um usuário e
  * vira "os chats dele". É o rail `Atribuído` do Inbox.
  */
 export type FiltroDeAtribuicao = 'todos' | 'sem-dono' | (string & {})
 
 /**
- * Em que pé está a conversa — o eixo que o rail de atribuição não responde.
+ * Em que pé está a conversa, o eixo que o rail de atribuição não responde.
  *
  * `aberta` é o que a fila mostra por padrão: o que precisa de alguém hoje.
  * `adiada` é "volto nisso dia tal" e `resolvida` é "acabou". Ver a 0049.
@@ -566,7 +566,7 @@ export type FiltroDeEstado = 'aberta' | 'adiada' | 'resolvida' | 'todas'
  * ---------------------------------------------------------------------------
  *
  * Os dois rails do Inbox (estado e atribuição) filtram campos que **já vêm em
- * cada `Lead`** — `estadoEfetivo` e `atribuidoA`. Quando a fila inteira está
+ * cada `Lead`**, `estadoEfetivo` e `atribuidoA`. Quando a fila inteira está
  * na mão do navegador, trocar de aba é trocar um `filter()`: instantâneo, sem
  * ida ao servidor.
  *
@@ -580,7 +580,7 @@ export type FiltroDeEstado = 'aberta' | 'adiada' | 'resolvida' | 'todas'
  * comportamento antigo continua inteiro do outro lado.
  *
  * **200 sai de medida, não de palpite**: um lead pesa ~490 bytes no banco
- * (média real em 13/set/2026), então 200 são ~100KB de JSON — menos que uma
+ * (média real em 13/set/2026), então 200 são ~100KB de JSON, menos que uma
  * foto de perfil. O gargalo não é o tamanho; é a honestidade do filtro.
  */
 export const TETO_DA_FILA_LOCAL = 200
@@ -589,7 +589,7 @@ export type FiltroDeLeads = {
   /** Nome ou telefone, parcial. Vazio = sem busca. */
   busca?: string
   etiqueta?: EtiquetaDeLead | null
-  /** Etiqueta manual (0025). Combina com `etiqueta` — as duas restringem. */
+  /** Etiqueta manual (0025). Combina com `etiqueta`, as duas restringem. */
   etiquetaId?: string | null
   atribuicao?: FiltroDeAtribuicao
   /** Em que pé está. Ausente = `aberta`, que é o que a fila deve mostrar. */
@@ -615,8 +615,8 @@ export type PaginaDeLeads = {
  * **O `or` do PostgREST é uma string com vírgula, parêntese e `*` com
  * significado.** Um termo com esses caracteres não "quebra a consulta": ele
  * *vira* consulta, e passa a escolher linha por conta própria. Por isso a
- * limpeza é uma lista do que **entra** — letra, número, espaço e a pontuação
- * que aparece em nome e telefone — e não uma lista do que sai; lista do que sai
+ * limpeza é uma lista do que **entra**, letra, número, espaço e a pontuação
+ * que aparece em nome e telefone, e não uma lista do que sai; lista do que sai
  * sempre esquece um caractere.
  *
  * `%` some junto: é curinga do `like` e transformaria uma busca em "traga
@@ -637,7 +637,7 @@ export function limparBusca(bruto: string): string {
  * **Por que a etiqueta é resolvida antes e não depois.** Ela não é coluna: sai
  * do histórico de mensagens e handoffs. Filtrar a página já carregada daria
  * contagem errada ("3 de 50") e página faltando. Então, com etiqueta escolhida,
- * o caminho é achar os contatos que a têm e paginar dentro deles — é a leitura
+ * o caminho é achar os contatos que a têm e paginar dentro deles, é a leitura
  * mais cara daqui, e é por isso que ela só acontece quando alguém pede o filtro.
  */
 export async function paginarLeads(
@@ -651,7 +651,7 @@ export async function paginarLeads(
    * Os dois filtros por etiqueta restringem, e por isso a interseção.
    *
    * `null` significa "sem restrição por etiqueta"; lista vazia significa
-   * "nenhum contato passa", e as duas precisam ser distinguíveis — tratá-las
+   * "nenhum contato passa", e as duas precisam ser distinguíveis, tratá-las
    * igual mostraria a lista inteira justo quando o filtro não achou ninguém.
    */
   let permitidos: string[] | null = null
@@ -743,7 +743,7 @@ export async function paginarLeads(
 /**
  * Quantas mensagens do fim da conversa entram no pulso.
  *
- * Uma só não bastava — ver o defeito do arquivo que chega atrasado, logo
+ * Uma só não bastava, ver o defeito do arquivo que chega atrasado, logo
  * abaixo. Cinco cobre a rajada: figurinha atrás de figurinha, foto e legenda,
  * o áudio seguido do "escuta isso". Acima disso a consulta começa a pagar por
  * um caso que não acontece.
@@ -751,19 +751,19 @@ export async function paginarLeads(
 const MENSAGENS_NO_PULSO = 5
 
 /**
- * O carimbo do fim da conversa da conta — o "tem coisa nova?" do Inbox.
+ * O carimbo do fim da conversa da conta, o "tem coisa nova?" do Inbox.
  *
  * Existe para a tela se atualizar sozinha sem recarregar a página inteira a
  * cada poucos segundos. É de propósito uma das consultas mais baratas do
  * arquivo: cinco linhas, duas colunas, ordenadas por um índice que já existe.
- * Quem chama compara com o que tinha e só então pede o `refresh` — que aí sim
+ * Quem chama compara com o que tinha e só então pede o `refresh`, que aí sim
  * custa.
  *
  * Vem por `contacts!inner` porque `messages` não guarda o cliente: o vínculo é
  * o contato. Sem o `inner`, mensagem de outra conta entraria na conta errada e
  * um Inbox piscaria por causa do movimento de outro.
  *
- * `null` quando a conta ainda não tem mensagem nenhuma — que é diferente de
+ * `null` quando a conta ainda não tem mensagem nenhuma, que é diferente de
  * erro, e quem chama trata como "nada novo".
  *
  * ---------------------------------------------------------------------------
@@ -771,19 +771,19 @@ const MENSAGENS_NO_PULSO = 5
  * ---------------------------------------------------------------------------
  *
  * **Este é o conserto de um defeito visto em produção**: o dono mandou duas
- * figurinhas seguidas e a primeira — a animada, de 438 KB — ficou para sempre
+ * figurinhas seguidas e a primeira, a animada, de 438 KB, ficou para sempre
  * dizendo "arquivo recebido, sem cópia guardada", enquanto a segunda, estática
  * e menor, apareceu inteira. O arquivo das duas estava no bucket.
  *
  * A causa é uma corrida. A mensagem é gravada primeiro e a mídia baixa depois
  * (`guardarMidiaRecebida`, que é assim de propósito: gravar a conversa não pode
  * esperar um download). O pulso era `max(ts)`, e `ts` não muda quando o arquivo
- * chega — então a tela que se atualizou no instante entre as duas coisas
+ * chega, então a tela que se atualizou no instante entre as duas coisas
  * desenhava a bolha sem arquivo **e nunca mais tinha motivo para redesenhar**.
  * Quanto maior o arquivo, mais certo o defeito: GIF animado, vídeo e áudio
  * longo perdem essa corrida sempre.
  *
- * Somar ao carimbo um dígito por mensagem — tem arquivo? — faz o pulso mudar no
+ * Somar ao carimbo um dígito por mensagem, tem arquivo? faz o pulso mudar no
  * instante em que a mídia desce, sem coluna nova e sem migration. O formato é
  * opaco de propósito: quem compara só pergunta se é igual (`precisaAtualizar`),
  * e ninguém deve tentar ler data daqui.
@@ -811,7 +811,7 @@ export async function pulsoDaConta(clienteId: string): Promise<string | null> {
  * Os contatos deste cliente que têm uma etiqueta.
  *
  * Lê os ids do cliente e depois o histórico deles. É a consulta mais pesada do
- * arquivo — e é a mesma que a tela fazia em toda visita antes da paginação,
+ * arquivo, e é a mesma que a tela fazia em toda visita antes da paginação,
  * agora só quando alguém escolhe o filtro.
  */
 async function contatosComEtiqueta(
@@ -854,7 +854,7 @@ export async function acharLead(clienteId: string, contatoId: string): Promise<L
  *
  * Lê do fim para o começo e devolve invertido: numa conversa longa o que
  * interessa é o que acabou de acontecer, não o "oi" de três meses atrás. Se
- * bater no teto, `cortada` avisa — teto silencioso mente dizendo que aquilo é
+ * bater no teto, `cortada` avisa, teto silencioso mente dizendo que aquilo é
  * a conversa toda.
  */
 /**
@@ -868,7 +868,7 @@ export async function acharLead(clienteId: string, contatoId: string): Promise<L
  * repo: id vindo da tela não prova de quem ele é, e uma reação disparada para o
  * número errado é uma mensagem nossa aparecendo na conversa de outra pessoa.
  *
- * `null` quando não é desta conversa — ou não existe, que para quem chama dá no
+ * `null` quando não é desta conversa, ou não existe, que para quem chama dá no
  * mesmo.
  */
 export async function acharMensagemParaReagir(
@@ -939,7 +939,7 @@ export async function lerConversa(
    * Duas passadas, e não uma.
    *
    * A reação pode chegar **antes** na ordem de leitura da mensagem que ela
-   * comenta? Não — mas a citação pode citar uma mensagem que veio muito antes,
+   * comenta? Não, mas a citação pode citar uma mensagem que veio muito antes,
    * e os dois casamentos precisam do conjunto inteiro já em mãos. Montar os
    * índices primeiro é o que evita um `find` por linha, que numa conversa no
    * teto de 500 seria quadrático.
@@ -950,7 +950,7 @@ export async function lerConversa(
   /*
    * A direção é validada aqui, e não confiada como veio do banco.
    *
-   * A coluna é `text` com `check`, então o Postgres já garante — mas o tipo
+   * A coluna é `text` com `check`, então o Postgres já garante, mas o tipo
    * que o supabase-js devolve é `string` cru, e `casarReacoes` agrupa **por
    * lado**. Fazer o `parse` na entrada do casamento é o que mantém "uma reação
    * por lado" sendo uma garantia do tipo, e não uma esperança.
@@ -970,7 +970,7 @@ export async function lerConversa(
    * Uma conversa com trinta fotos faria trinta chamadas ao Storage se cada
    * bolha assinasse a sua. E assinar aqui, e não gravar no banco, é a regra que
    * não se dobra: URL assinada guardada em coluna é link público com um passo a
-   * mais — ela viaja em log e em backup e continua valendo até expirar.
+   * mais, ela viaja em log e em backup e continua valendo até expirar.
    */
   const caminhos = visiveis
     .map((m) => (ehArquivoGuardado(m.arquivo) ? m.arquivo.caminho : null))
@@ -997,7 +997,7 @@ export async function lerConversa(
         /*
          * Três estados, e a bolha precisa distinguir os três: temos o arquivo e
          * a assinatura saiu; temos o registro mas a assinatura falhou; e chegou
-         * arquivo do qual nunca houve cópia — grande demais, download falhado,
+         * arquivo do qual nunca houve cópia, grande demais, download falhado,
          * ou mensagem anterior à `0055`.
          *
          * Os dois últimos viram o mesmo aviso na tela, porque para quem lê dão
@@ -1019,7 +1019,7 @@ export async function lerConversa(
         /*
          * `unsupported` é uma resposta da Meta, não uma falha nossa, e a bolha
          * precisa dizer isso com essa palavra. Antes ela caía no genérico
-         * "(áudio, imagem ou documento)" — que é um chute sobre o que havia
+         * "(áudio, imagem ou documento)", que é um chute sobre o que havia
          * ali, e parecia defeito do painel.
          */
         const naoSuportada = tipoDaMeta === 'unsupported'
@@ -1052,7 +1052,7 @@ export async function lerConversa(
  *
  * **O caso de não estar é normal, não é erro.** A conversa é cortada no teto de
  * 500, a Meta deixa citar mensagem antiga, e `context` também chega quando
- * alguém responde a um anúncio ou encaminha algo — nesses dois a citada nunca
+ * alguém responde a um anúncio ou encaminha algo, nesses dois a citada nunca
  * esteve aqui. Devolver a citação sem texto, em vez de `null`, é o que faz a
  * bolha mostrar "mensagem original" em cinza em vez de esconder que houve
  * citação: quem lê precisa saber que aquela resposta comenta outra coisa.
@@ -1069,7 +1069,7 @@ function citadaDoHistorico(
 /**
  * O anexo guardado em `messages.payload`, quando há um.
  *
- * `payload` é `jsonb` e carrega coisas diferentes conforme a mensagem — opções
+ * `payload` é `jsonb` e carrega coisas diferentes conforme a mensagem, opções
  * de uma pergunta, o `type` do que chegou do WhatsApp, e agora a mídia que
  * saiu. Ler defensivamente é o que impede uma linha antiga, de antes deste
  * campo existir, de derrubar a tela do lead.
@@ -1139,7 +1139,7 @@ export async function salvarNotas(
 }
 
 /**
- * Acrescenta uma linha à anotação do contato — o bloco de Anotação (0044).
+ * Acrescenta uma linha à anotação do contato, o bloco de Anotação (0044).
  *
  * **Acrescenta, e nunca substitui.** A anotação é onde a equipe escreve o que
  * sabe da pessoa; um bot que sobrescrevesse aquilo apagaria trabalho humano em
@@ -1148,13 +1148,13 @@ export async function salvarNotas(
  * direto.
  *
  * **O cabeçalho com data e origem não é enfeite.** Quem abre a ficha e lê uma
- * frase precisa saber se foi um colega ou o bot que escreveu — sem isso, uma
+ * frase precisa saber se foi um colega ou o bot que escreveu, sem isso, uma
  * anotação automática vira uma afirmação humana sobre o cliente. Ler "o texto
  * apareceu sozinho e ninguém confirmou" é a diferença entre um registro e um
  * boato.
  *
  * O teto é o mesmo do campo, e ele corta **pelo começo**: numa anotação que
- * encheu, o que interessa é o fim — o que aconteceu por último. Cortar pelo fim
+ * encheu, o que interessa é o fim, o que aconteceu por último. Cortar pelo fim
  * apagaria justamente a linha que acabou de ser escrita.
  */
 export async function acrescentarNota(
@@ -1257,7 +1257,7 @@ export async function aplicarImportacao(
     }
 
     // Contato novo: nasce só com o telefone e o nome de verdade. `nome` fica
-    // vazio até a pessoa escrever pela primeira vez — é a Meta que preenche o
+    // vazio até a pessoa escrever pela primeira vez, é a Meta que preenche o
     // perfil, e inventar um aqui seria dizer que ela escolheu esse nome.
     const { error } = await db()
       .from('contacts')
@@ -1281,7 +1281,7 @@ export async function aplicarImportacao(
  * Com o número do lado, o rail vira o resumo da mesa antes de qualquer clique.
  *
  * Uma consulta só, contando na aplicação. São no máximo algumas centenas de
- * linhas por cliente e a alternativa seria um `group by` por PostgREST — que
+ * linhas por cliente e a alternativa seria um `group by` por PostgREST, que
  * não existe sem view nova, e view por causa de contagem é migration a mais
  * para manter.
  */
@@ -1314,7 +1314,7 @@ export async function contarPorAtribuicao(
  * **É o único caminho em que um `wa_id` entra no sistema digitado por gente**,
  * e por isso ele passa por `chavesDoTelefone`: o `wa_id` é a identidade da
  * pessoa no WhatsApp, e gravar `(11) 98765-4321` ali criaria um contato que
- * nunca casa com a conversa que chegar depois — dois cadastros da mesma pessoa,
+ * nunca casa com a conversa que chegar depois, dois cadastros da mesma pessoa,
  * um deles morto, e ninguém entendendo por quê.
  *
  * Número que não dá para normalizar com segurança é recusado em vez de
@@ -1331,7 +1331,7 @@ export async function criarContato(
   if (chaves.length === 0) {
     return {
       ok: false,
-      motivo: 'escreva o telefone com DDD — sem ele não dá para saber de qual estado é',
+      motivo: 'escreva o telefone com DDD, sem ele não dá para saber de qual estado é',
     }
   }
 
@@ -1372,7 +1372,7 @@ export async function criarContato(
 /**
  * Adia a conversa: ela sai da fila e volta na data.
  *
- * **A volta não é agendada, é comparada.** Não há processo que devolva nada —
+ * **A volta não é agendada, é comparada.** Não há processo que devolva nada,
  * `estado_efetivo` na view já trata prazo vencido como aberta. É o que faz o
  * adiamento sobreviver a um servidor que ficou fora do ar no fim de semana.
  *
@@ -1402,7 +1402,7 @@ export async function adiarConversa(
 /**
  * Marca como resolvida, ou devolve para a fila.
  *
- * O mesmo caminho para os dois sentidos porque é o mesmo gesto — e porque
+ * O mesmo caminho para os dois sentidos porque é o mesmo gesto, e porque
  * reabrir precisa limpar o adiamento junto: uma conversa que estava adiada e
  * foi reaberta à mão não pode voltar a sumir na data antiga.
  */
@@ -1428,7 +1428,7 @@ export async function definirEstadoDaConversa(
 /**
  * Quantas conversas em cada estado, para o rail dizer o tamanho de cada aba.
  *
- * **Sem a contagem, escolher uma aba é apostar** — a pessoa clica em "Adiadas"
+ * **Sem a contagem, escolher uma aba é apostar**, a pessoa clica em "Adiadas"
  * para descobrir se tem algo lá. É a mesma razão pela qual `contarPorAtribuicao`
  * existe.
  *
@@ -1475,7 +1475,7 @@ export async function contarPorEstado(
  *
  * A **busca por texto continua no servidor** e por isso entra aqui como
  * filtro: ela casa telefone por formas normalizadas (`chavesDoTelefone`), e
- * repetir essa regra no navegador seria duplicar a parte que já erra sozinha —
+ * repetir essa regra no navegador seria duplicar a parte que já erra sozinha,
  * quem procura "(11) 98765-4321" não acha `551187654321` com comparação de
  * texto crua.
  */
@@ -1499,7 +1499,7 @@ export async function filaInteira(
    * Reusa `paginarLeads` com `estado: 'todas'` em vez de repetir a montagem da
    * consulta: é ela que sabe juntar etiquetas, aplicar a busca por telefone e
    * ordenar por última mensagem. Uma segunda versão daquilo seria uma segunda
-   * versão para manter — e a que erra é sempre a que ninguém lembra que existe.
+   * versão para manter, e a que erra é sempre a que ninguém lembra que existe.
    */
   const pagina = await paginarLeads(clienteId, {
     estado: 'todas',
@@ -1516,7 +1516,7 @@ export async function filaInteira(
  * Destes ids, quais são mesmo contatos desta conta.
  *
  * Existe porque id vindo da tela não prova de quem ele é, e as marcações do
- * atendente (fixar, marcar como não lida) recebem id solto — sem esta peneira,
+ * atendente (fixar, marcar como não lida) recebem id solto, sem esta peneira,
  * um id de outra conta entraria numa tabela que não tem `cliente_id` para
  * corrigir depois.
  *
@@ -1543,7 +1543,7 @@ export async function contatosDaConta(clienteId: string, ids: string[]): Promise
  *
  * **Sem isto o alfinete mentiria no modo paginado.** Acima de
  * `TETO_DA_FILA_LOCAL` a lista é uma página de cinquenta, e uma conversa fixada
- * que caiu na página 4 não apareceria no topo da página 1 — o que é o oposto do
+ * que caiu na página 4 não apareceria no topo da página 1, o que é o oposto do
  * que o gesto promete. Como são no máximo `TETO_DE_FIXADAS` ids, buscá-los
  * inteiros a cada página é barato.
  */
