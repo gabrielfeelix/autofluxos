@@ -9,30 +9,78 @@ Leia antes: `docs/PLANO-15-SET-ENRIQUECER.md` (as 7 fases e as decisões) e
 
 ## Onde parei
 
-**Feito e commitado (`111df78`):**
+**A fase 1 está fechada em código.** Os nove itens da lista original foram
+feitos, com teste, typecheck e build limpos. Nada foi aplicado em produção.
 
-- `supabase/migrations/0059_templates_e_transmissoes.sql` — quatro tabelas:
-  `templates`, `transmissoes`, `transmissao_destinatarios`, `consentimentos`.
-  **Não aplicada em produção** (ver "Antes de aplicar", abaixo).
-- `src/core/templates.ts` — validação, variáveis, leitura do status de envio,
-  política de retry por código de erro. Sem rede, sem banco.
-- `src/core/templates.test.ts` — 37 testes, todos passando.
-- `docs/PLANO-15-SET-ENRIQUECER.md`, `docs/CONCORRENTES-15-SET.md`,
-  `docs/ROTEIRO-VIDEOS-APP-REVIEW.md`.
+| # | Item | Onde ficou |
+|---|---|---|
+| 1 | `enviarTemplate` no canal | `channels/types.ts`, `channels/cloud-api.ts` |
+| 2 | Criar/sincronizar na Meta | `channels/templates-api.ts`, `core/templates.ts` |
+| 3 | Webhook de status do modelo | `server/receber-status-de-template.ts` |
+| 4 | Reconciliação periódica | `server/reconciliar-templates.ts` |
+| 5 | Repositórios | `server/repos/templates.ts`, `server/repos/transmissoes.ts` |
+| 6 | Motor de disparo | `core/disparo.ts`, `server/disparar-transmissao.ts` |
+| 7 | Webhook de status da mensagem | `server/receber-status-de-template.ts` |
+| 8 | Telas | `app/clientes/[clienteId]/transmissoes/`, `components/transmissoes/` |
+| 9 | Teto de `atraso_minutos` | `0061_passo_com_modelo.sql` + `core/sequencias.ts` |
 
-**Falta, na ordem:**
+**O que falta, e é o que importa agora: nada disso tocou um WhatsApp de
+verdade.** Ver "O que ninguém provou ainda", abaixo.
 
-1. `enviarTemplate` na interface `Canal` (`src/channels/types.ts`) e no
-   adaptador (`src/channels/cloud-api.ts`)
-2. Criar/sincronizar template na Meta — `POST /{waba-id}/message_templates`
-3. Webhook `message_template_status_update` → atualizar `templates.status`
-4. Reconciliação periódica (webhook perdido é questão de quando, não de se)
-5. Repositórios em `src/server/repos/` — `templates.ts`, `transmissoes.ts`
-6. O motor de disparo — fila, ritmo, retry por classe de erro
-7. Webhook de status das mensagens → `transmissao_destinatarios`
-8. Telas: lista de templates, criar template, nova transmissão, progresso
-9. Subir o teto de `atraso_minutos` em `sequencias` (hoje 1440, limitado pela
-   falta de template — ver `0031_sequencias.sql`)
+### Duas coisas que o handoff anterior errava
+
+- **Campos deprecados (item 4 das armadilhas) já estavam limpos.**
+  `messaging_limit_tier` e `max_daily_conversation_per_phone` não aparecem em
+  lugar nenhum do código. Não havia o que consertar.
+- **A `0059` tinha um bug, e não foi pego por teste nenhum.** Ela redefinia
+  `public.tocar_atualizado_em()` com `create or replace` **sem** `security
+  invoker` nem `set search_path = ''`, que a 0001 tinha posto. Não daria erro:
+  apagaria a proteção em silêncio, para todas as tabelas que usam esse gatilho,
+  num banco de produção compartilhado com a Verandi. Consertado — a migration
+  agora só **usa** a função que já existe.
+
+### Decisões que valem saber antes de mexer
+
+- **`retida` nunca soma com "entregue"**, em lugar nenhum: nem no banco, nem no
+  motor, nem na tela. É a armadilha central da fase inteira.
+- **Duas classes de erro param a transmissão toda** em vez de insistir: template
+  morto (132015/132007) e payload errado (132000/132012). Ver `decidir()`.
+- **O ritmo começa em 20/s** — o teto da coexistência, não o do número comum. E
+  20 não é meta a perseguir: o throughput conta entrada e saída na mesma cota,
+  então disparar no máximo derruba o atendimento que está acontecendo.
+- **A tela nova é `/transmissoes`**, e não uma aba de Automações: aquela já tem
+  uma aba "Templates" que é outra coisa (desenhos de fluxo). O link para a nova
+  mora no cabeçalho de Campanhas.
+- **O passo de sequência acima de 24h exige modelo**, e o `check` da 0061 faz
+  valer. Sem isso, o teto de 30 dias seria uma promessa que o executor não
+  cumpre — ele bateria na janela fechada e encerraria como `bloqueada`.
+
+---
+
+## O que ninguém provou ainda
+
+**Nenhuma linha deste código falou com a Meta.** Tudo passou por teste, tipo e
+build; nada passou por um número real. É a mesma pendência de
+`HANDOFF-15-SET-MIDIA-RECEBIDA.md`, e vale a mesma regra: console dizer
+"publicado" não é evidência.
+
+Na ordem em que dá para provar, do mais barato ao mais caro:
+
+1. **Aplicar `0059` e `0061`** — precisa de autorização explícita do usuário e
+   de ler `docs/BANCO-COMPARTILHADO.md` antes. Nada abaixo roda sem isso.
+2. **Criar um template de verdade** e ver a Meta responder. É o que prova
+   `componentesParaMeta()` inteiro: `example` no formato certo, componente vazio
+   ausente, categoria que ela devolve.
+3. **Ver o webhook chegar.** Aprovado costuma levar minutos. Se não chegar,
+   a reconciliação diária é o cinto — e ela também nunca rodou.
+4. **Mandar para UM número** antes de qualquer lista. É o que separa "o payload
+   está certo" de "o payload passa no teste".
+5. **Só então uma lista pequena**, com o `statuses` chegando e a tela mostrando
+   os números mexendo.
+
+Um teste de mesa que vale a pena: forçar `held_for_quality_assessment`. Template
+novo em portfólio novo é o caso mais provável de produzi-lo naturalmente — e é o
+único jeito de ver se a tela realmente diz "a Meta está avaliando".
 
 ---
 
@@ -84,13 +132,15 @@ própria:
 - Checar o teto de 24h **antes** de enfileirar. Campanha de 5.000 com tier 2.000
   fatia em 3 dias
 
-### 4. Campos deprecados — verificar no código
+### 4. Campos deprecados — já conferido, nada a fazer
 
 - `messaging_limit_tier` → virou `whatsapp_business_manager_messaging_limit`
 - `max_daily_conversation_per_phone` → virou
   `max_daily_conversations_per_business` (v24.0; o prazo de fev/2026 já passou)
 
-Conferir se `src/channels/` ou `src/server/` leem os antigos.
+**Nenhum dos dois aparece no código.** Conferido em 15/set/2026 com `grep` em
+`src/` inteiro. Fica escrito porque a próxima pessoa que ler a doc da Meta vai
+ter a mesma dúvida.
 
 ### 5. Um template por WABA
 
@@ -134,9 +184,10 @@ cobra prova, e booleano não prova o que a pessoa leu.
 - A próxima migration se descobre por `ls supabase/migrations/ | tail -1`, não
   por documento
 
-**Atenção:** dois outros chats estão trabalhando em paralelo. Um fez a `0060`
-(NPS/avaliações), outro o Telegram. Confirme a numeração antes de criar
-migration nova.
+**Atenção:** os dois chats paralelos já entregaram — a `0060` (NPS/avaliações) e
+o Telegram estão commitados. Esta fase usou a `0061`. Continue descobrindo a
+próxima por `ls supabase/migrations/ | tail -1`, e não por este documento: foi
+exatamente assim que a numeração se perdeu antes.
 
 ---
 
