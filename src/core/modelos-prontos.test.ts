@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   CAMPOS,
   MODELOS_PRONTOS,
+  camposDoCorpoDaMeta,
   camposUsados,
   exemplosPara,
   nomeAutomatico,
@@ -52,7 +53,7 @@ describe('a tradução para o jargão da Meta', () => {
     expect(exemplosPara(['data', 'nome'])).toEqual(['15/10', 'Maria'])
   })
 
-  it('não deixa campo desconhecido sem exemplo — a Meta recusa vazio', () => {
+  it('não deixa campo desconhecido sem exemplo, a Meta recusa vazio', () => {
     expect(exemplosPara(['inventado'])).toEqual(['exemplo'])
   })
 })
@@ -89,7 +90,7 @@ describe('o nome automático', () => {
 /*
  * O teste que mais importa: cada modelo da galeria tem que passar pelo
  * validador que fala com a Meta. Um modelo pronto que é recusado é pior que
- * nenhum — a pessoa escolheu justamente para não ter esse trabalho.
+ * nenhum, a pessoa escolheu justamente para não ter esse trabalho.
  */
 describe('todo modelo pronto é aceito pelo nosso validador', () => {
   for (const modelo of MODELOS_PRONTOS) {
@@ -130,5 +131,50 @@ describe('todo modelo pronto é aceito pelo nosso validador', () => {
   it('os ids não se repetem', () => {
     const ids = MODELOS_PRONTOS.map((m) => m.id)
     expect(new Set(ids).size).toBe(ids.length)
+  })
+})
+
+describe('camposDoCorpoDaMeta, de volta do jargão da Meta', () => {
+  it('reconhece o nome no primeiro buraco depois de um cumprimento', () => {
+    const campos = camposDoCorpoDaMeta('Oi {{1}}, tudo bem?')
+    expect(campos[0]?.id).toBe('nome')
+    // O nome é automático, e é isso que faz a tela NÃO perguntá-lo.
+    expect(campos[0]?.automatico).toBe(true)
+  })
+
+  it('acha data e horário pelas palavras coladas no buraco', () => {
+    const campos = camposDoCorpoDaMeta('Oi {{1}}, sua consulta é dia {{2}} às {{3}}.')
+    expect(campos.map((c) => c?.id)).toEqual(['nome', 'data', 'hora'])
+  })
+
+  it('acha o valor', () => {
+    const campos = camposDoCorpoDaMeta('Olá {{1}}, o total ficou em {{2}}.')
+    expect(campos[1]?.id).toBe('valor')
+  })
+
+  it('devolve null quando não dá para saber, em vez de inventar', () => {
+    /*
+     * O ponto do teste: sem pista, a tela pergunta de um jeito genérico em
+     * português. Adivinhar errado aqui poria a data no lugar do código.
+     */
+    const campos = camposDoCorpoDaMeta('Aviso importante: {{1}}.')
+    expect(campos).toEqual([null])
+  })
+
+  it('corpo sem variável nenhuma devolve lista vazia', () => {
+    expect(camposDoCorpoDaMeta('Estamos fechados amanhã.')).toEqual([])
+  })
+
+  it('a ida e a volta batem nos modelos prontos', () => {
+    /*
+     * A prova que interessa: todo modelo da galeria tem que voltar do formato
+     * da Meta com os mesmos campos que entraram. Se a heurística errar num
+     * modelo nosso, a tela de transmissão pergunta a coisa errada.
+     */
+    for (const modelo of MODELOS_PRONTOS) {
+      const { corpo, campos } = paraFormatoDaMeta(modelo.corpo)
+      const devolta = camposDoCorpoDaMeta(corpo)
+      expect(devolta.map((c) => c?.id)).toEqual(campos)
+    }
   })
 })

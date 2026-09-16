@@ -8,7 +8,7 @@ import {
 } from '@/core/templates'
 
 /**
- * O nó `message_templates` da WABA — criar, listar e apagar modelo.
+ * O nó `message_templates` da WABA, criar, listar e apagar modelo.
  *
  * ---------------------------------------------------------------------------
  * Um template por WABA. Não existe biblioteca compartilhada
@@ -28,7 +28,7 @@ import {
  *
  * Todo caminho de falha vira `{ ok: false }` com o código da Meta. O código é o
  * que permite distinguir "o nome já existe" de "o token venceu" de "estourou o
- * limite de 100 criações por hora" — três erros que pedem respostas opostas, e
+ * limite de 100 criações por hora", três erros que pedem respostas opostas, e
  * que uma exceção genérica embaralharia.
  */
 
@@ -39,7 +39,7 @@ const VERSAO_PADRAO = 'v25.0'
  *
  * Mais que os dez da leitura de nome de anúncio e mais que os quinze do envio:
  * criar template é escrita, e repetir uma escrita que talvez tenha funcionado
- * cria template duplicado — que a Meta recusa com "nome já existe" e deixa a
+ * cria template duplicado, que a Meta recusa com "nome já existe" e deixa a
  * tela mostrando erro para uma criação que deu certo.
  */
 const TIMEOUT_MS = 20_000
@@ -47,7 +47,7 @@ const TIMEOUT_MS = 20_000
 /**
  * O teto da Meta: **100 criações por WABA por hora**.
  *
- * Não é conferido aqui — é fato para quem desenha o provisionamento. Cliente
+ * Não é conferido aqui, é fato para quem desenha o provisionamento. Cliente
  * novo que chega com 120 templates prontos não pode ser criado de forma
  * síncrona numa tela; tem que ser fila. Está escrito neste arquivo porque é
  * aqui que alguém vem procurar quando a Meta começar a responder 80007.
@@ -107,7 +107,7 @@ function erroDoCorpo(corpo: CorpoDaMeta | null, status: number): ErroDaMeta {
  * Cria o template na Meta e devolve o id dela.
  *
  * **A categoria que volta pode não ser a que foi pedida.** A Meta reclassifica
- * sozinha quando acha o conteúdo promocional — e como a categoria muda o
+ * sozinha quando acha o conteúdo promocional, e como a categoria muda o
  * **preço** da mensagem, quem chama tem que gravar o que ela respondeu, não o
  * que pediu. É por isso que `categoria` sai no retorno.
  *
@@ -152,7 +152,7 @@ export async function criarTemplateNaMeta(entrada: {
     if (!id) {
       /*
        * 200 sem id não deveria acontecer. Se acontecer, tratar como sucesso
-       * gravaria um template sem a chave que liga tudo — o webhook de status
+       * gravaria um template sem a chave que liga tudo, o webhook de status
        * nunca o encontraria e ele ficaria "pendente" para sempre.
        */
       return { ok: false, erro: { codigo: null, mensagem: 'a Meta não devolveu o id do template' } }
@@ -193,7 +193,7 @@ export type RespostaDaLista =
   | { ok: false; erro: ErroDaMeta }
 
 /**
- * Lista os templates da WABA — a reconciliação.
+ * Lista os templates da WABA, a reconciliação.
  *
  * **Existe porque webhook perdido é questão de quando, não de se.** A Meta
  * entrega `message_template_status_update` uma vez; se a nossa função estiver
@@ -201,7 +201,7 @@ export type RespostaDaLista =
  * sempre, e a pessoa vê "em análise" num modelo que já está aprovado há dias.
  *
  * `fields` explícito, como em toda Graph: sem ele vem o conjunto default, que
- * não traz `quality_score` nem `rejected_reason` — e aí alguém conclui que a
+ * não traz `quality_score` nem `rejected_reason`, e aí alguém conclui que a
  * Meta não informa o motivo da recusa.
  */
 export async function listarTemplatesDaMeta(entrada: {
@@ -318,7 +318,7 @@ export async function apagarTemplateNaMeta(entrada: {
  *
  * Um template criado do zero entra na fila de revisão: de alguns minutos a 24
  * horas, e pode voltar recusado em inglês. Um criado a partir da biblioteca,
- * **sem alterar o texto**, é aprovado quase na hora — a Meta já revisou aquele
+ * **sem alterar o texto**, é aprovado quase na hora, a Meta já revisou aquele
  * conteúdo.
  *
  * O que encurta é a espera, não o trabalho: o template ainda é criado por WABA,
@@ -340,9 +340,36 @@ export type ModeloDaBiblioteca = {
   corpo: string
   cabecalho: string | null
   rodape: string | null
-  /** Os botões que o modelo já traz, como rótulos — a tela só os mostra. */
-  botoes: string[]
+  /**
+   * Os botões que o modelo já traz.
+   *
+   * **O tipo importa, não só o rótulo.** Um modelo da biblioteca com botão de
+   * URL ou de telefone exige `library_template_button_inputs` na criação, com
+   * um item por botão. Sem isso a Meta recusa com "give the same number of
+   * button inputs to match the library buttons". E o valor (o link, o número)
+   * é do cliente, então a tela precisa perguntá-lo antes de criar.
+   */
+  botoes: BotaoDaBiblioteca[]
 }
+
+/** Um botão do catálogo, com o que a criação vai precisar dele. */
+export type BotaoDaBiblioteca = {
+  /** `URL`, `PHONE_NUMBER`, `QUICK_REPLY`. */
+  tipo: string
+  rotulo: string
+}
+
+/**
+ * O que a Meta quer saber de cada botão na hora de criar.
+ *
+ * O formato é o da doc do Template Library: `URL` leva `base_url` e um exemplo
+ * do sufixo, `PHONE_NUMBER` leva o número. `QUICK_REPLY` não pede nada, o
+ * rótulo já é da Meta.
+ */
+export type EntradaDeBotao =
+  | { type: 'URL'; url: { base_url: string; url_suffix_example: string } }
+  | { type: 'PHONE_NUMBER'; phone_number: string }
+  | { type: 'QUICK_REPLY' }
 
 export type RespostaDaBiblioteca =
   | { ok: true; modelos: ModeloDaBiblioteca[] }
@@ -362,7 +389,7 @@ function componenteDaBiblioteca(
 }
 
 /**
- * Lista a biblioteca. **Não depende da WABA do cliente** — é catálogo da Meta.
+ * Lista a biblioteca. **Não depende da WABA do cliente**, é catálogo da Meta.
  *
  * Por isso recebe só o token: qualquer token válido lê a mesma lista, e
  * amarrá-la a um cliente faria a tela pedir conexão para mostrar um catálogo
@@ -414,8 +441,11 @@ export async function listarBibliotecaDaMeta(entrada: {
 
         const botoes = Array.isArray(linha.buttons)
           ? linha.buttons.flatMap((b) => {
-              const rotulo = texto((b as Record<string, unknown>).text)
-              return rotulo ? [rotulo] : []
+              const bruto = b as Record<string, unknown>
+              const tipo = texto(bruto.type).toUpperCase()
+              // Sem tipo não dá para montar a entrada que a criação exige, e um
+              // botão a menos na lista faria a contagem não bater com a da Meta.
+              return tipo ? [{ tipo, rotulo: texto(bruto.text) }] : []
             })
           : []
 
@@ -439,7 +469,7 @@ export async function listarBibliotecaDaMeta(entrada: {
 }
 
 /**
- * Cria um template **a partir da biblioteca** — o caminho da aprovação rápida.
+ * Cria um template **a partir da biblioteca**, o caminho da aprovação rápida.
  *
  * O corpo não vai no pedido: quem manda o texto é a Meta, pelo
  * `library_template_name`. Mandar `components` junto é o que transforma isto
@@ -453,6 +483,14 @@ export async function criarDaBibliotecaNaMeta(entrada: {
   nomeNaBiblioteca: string
   idioma: string
   categoria: Categoria
+  /**
+   * Um item por botão do modelo, na mesma ordem em que a biblioteca os traz.
+   *
+   * **Obrigatório quando o modelo tem botão**, e o erro de não mandar é
+   * literalmente "give the same number of button inputs to match the library
+   * buttons", foi o que quebrou a criação de "Account creation confirmation".
+   */
+  botoes?: EntradaDeBotao[]
   versaoGraph?: string
 }): Promise<RespostaDaCriacao> {
   const url = `https://graph.facebook.com/${versaoGraph(entrada.versaoGraph)}/${entrada.wabaId}/message_templates`
@@ -469,6 +507,13 @@ export async function criarDaBibliotecaNaMeta(entrada: {
         language: entrada.idioma,
         category: entrada.categoria,
         library_template_name: entrada.nomeNaBiblioteca,
+        /*
+         * Vai como **string JSON**, e não como array: é o que a doc do Template
+         * Library mostra, e mandar o array cru faz a Meta recusar por formato.
+         */
+        ...(entrada.botoes && entrada.botoes.length > 0
+          ? { library_template_button_inputs: JSON.stringify(entrada.botoes) }
+          : {}),
       }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     })

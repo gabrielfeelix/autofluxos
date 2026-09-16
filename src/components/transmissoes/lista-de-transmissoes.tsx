@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { NovaTransmissao } from '@/components/transmissoes/nova-transmissao'
 import { acaoCancelarTransmissao } from '@/server/acoes-transmissoes'
 import type { Template } from '@/server/repos/templates'
 import type {
@@ -20,7 +21,7 @@ import type {
  * A Meta responde 200 ao envio e pode ter **segurado** a mensagem para avaliar
  * a qualidade. Se o veredito for ruim, o modelo é pausado e cada mensagem
  * retida é descartada. Um painel que soma retida com entregue mostra "campanha
- * enviada" para o cliente quando nada saiu — e ele só descobre quando ninguém
+ * enviada" para o cliente quando nada saiu, e ele só descobre quando ninguém
  * responde.
  *
  * Por isso o número de retidas tem linha própria, com a palavra certa: não é
@@ -51,11 +52,14 @@ export function ListaDeTransmissoes({
 
   return (
     <section className="app-card overflow-hidden">
-      <header className="border-b border-line px-5 py-4">
-        <h2 className="text-[14.5px] font-bold">Transmissões</h2>
-        <p className="mt-0.5 text-[12px] leading-5 text-dim">
-          Um modelo aprovado, um público e um horário.
-        </p>
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
+        <div className="min-w-0">
+          <h2 className="text-[14.5px] font-bold">Transmissões</h2>
+          <p className="mt-0.5 text-[12px] leading-5 text-dim">
+            Um modelo aprovado, um público e um horário.
+          </p>
+        </div>
+        <NovaTransmissao clienteId={clienteId} templates={templates} />
       </header>
 
       {aprovados.length === 0 && (
@@ -108,7 +112,7 @@ function Linha({
   function cancelar() {
     // O que já saiu não volta. Dizer antes do clique, e não depois.
     const certeza = window.confirm(
-      'Cancelar esta transmissão?\n\nAs mensagens que já saíram não voltam — o cancelamento só impede as que ainda estão na fila.',
+      'Cancelar esta transmissão?\n\nAs mensagens que já saíram não voltam, o cancelamento só impede as que ainda estão na fila.',
     )
     if (!certeza) return
 
@@ -142,7 +146,7 @@ function Linha({
 
           {/*
             O motivo de a transmissão ter parado, inteiro. Tipicamente "o modelo
-            foi pausado pela Meta" — a informação que explica por que 4.800
+            foi pausado pela Meta", a informação que explica por que 4.800
             pessoas não receberam nada.
           */}
           {transmissao.erro && (
@@ -202,7 +206,7 @@ function Numeros({ progresso }: { progresso: Progresso }) {
           "enviado": se o veredito for ruim, estas mensagens são DESCARTADAS.
         */
         <span className="text-amber-600">
-          <strong>{progresso.retida}</strong> a Meta está avaliando — ainda podem não sair
+          <strong>{progresso.retida}</strong> a Meta está avaliando, ainda podem não sair
         </span>
       )}
       {progresso.falhou > 0 && (

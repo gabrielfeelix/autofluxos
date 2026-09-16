@@ -3,7 +3,7 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 
 /**
- * O modal **controlado** — o irmão de `ModalFormulario`.
+ * O modal **controlado**, o irmão de `ModalFormulario`.
  *
  * `ModalFormulario` embrulha um `<form>` com Server Action e cuida do botão que
  * o abre; serve para "criar coisa com dois campos". Este aqui recebe `aberto` de
@@ -43,7 +43,7 @@ export function Modal({
     if (!elemento) return
 
     // `showModal()` estoura se já estiver aberto, e `close()` se já estiver
-    // fechado — daí as duas guardas em vez de chamar direto.
+    // fechado, daí as duas guardas em vez de chamar direto.
     if (aberto && !elemento.open) elemento.showModal()
     if (!aberto && elemento.open) elemento.close()
   }, [aberto])
@@ -59,10 +59,34 @@ export function Modal({
         if (evento.target === dialogo.current) aoFechar()
       }}
       style={{ width: `min(${largura}px, 92vw)` }}
-      className="app-dialog m-auto rounded-[18px] border border-line bg-panel p-[26px] text-ink shadow-[0_40px_100px_rgba(19,25,34,0.132)]"
+      className="app-dialog relative m-auto rounded-[18px] border border-line bg-panel p-[26px] text-ink shadow-[0_40px_100px_rgba(19,25,34,0.132)]"
     >
-      <h2 className="text-[17px] font-bold">{titulo}</h2>
-      {descricao && <p className="mt-1 text-[12.5px] leading-6 text-muted">{descricao}</p>}
+      {/*
+        O X existe mesmo com `Esc` e com o clique no fundo funcionando.
+        Os dois são invisíveis: quem não sabe que existem fica procurando uma
+        saída, e no celular não há `Esc` nenhum.
+
+        Fica fora do fluxo do título para não empurrar o texto, e o título ganha
+        margem à direita para não passar por baixo dele.
+      */}
+      <button
+        type="button"
+        onClick={aoFechar}
+        aria-label="Fechar"
+        className="absolute right-[18px] top-[18px] grid h-7 w-7 place-items-center rounded-full text-muted transition hover:bg-line hover:text-ink"
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+          <path
+            d="M3 3l8 8M11 3l-8 8"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
+        </svg>
+      </button>
+
+      <h2 className="pr-8 text-[17px] font-bold">{titulo}</h2>
+      {descricao && <p className="mt-1 pr-2 text-[12.5px] leading-6 text-muted">{descricao}</p>}
       <div className="mt-5">{children}</div>
     </dialog>
   )

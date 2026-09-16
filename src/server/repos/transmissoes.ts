@@ -13,7 +13,7 @@ import { db, ehIdInvalido } from '../db'
  * ---------------------------------------------------------------------------
  *
  * A Meta responde 200 ao envio e manda `message_status` junto. Se ele disser
- * `held_for_quality_assessment`, ela **segurou** a mensagem para avaliar — e se
+ * `held_for_quality_assessment`, ela **segurou** a mensagem para avaliar, e se
  * o veredito for ruim, o template é pausado e cada mensagem retida é
  * descartada, chegando depois como `failed` com código 132015.
  *
@@ -158,7 +158,7 @@ export async function criarTransmissao(nova: NovaTransmissao): Promise<Transmiss
  * Põe o público na fila.
  *
  * `upsert` com `ignoreDuplicates` por causa do `unique (transmissao_id,
- * contato_id)`: montar o público duas vezes — clicar duas vezes, ou um retry —
+ * contato_id)`: montar o público duas vezes, clicar duas vezes, ou um retry,
  * não pode fazer ninguém receber a mesma transmissão duplicada.
  *
  * Em lotes porque o público é grande: 5.000 contatos num único insert estoura o
@@ -222,7 +222,7 @@ type LinhaDoDestinatario = {
  * 5.000 leituras só para descobrir números que o mesmo `select` traz de uma vez.
  *
  * Contato apagado no meio da transmissão sai da lista em vez de virar envio
- * para `undefined` — `on delete cascade` costuma limpar a linha, mas a leitura
+ * para `undefined`, `on delete cascade` costuma limpar a linha, mas a leitura
  * não pode depender de uma corrida com o delete.
  */
 export async function proximosDaFila(
@@ -263,7 +263,7 @@ export async function proximosDaFila(
 /**
  * Grava o que aconteceu com um destinatário.
  *
- * `enviada_em` só entra quando saiu de fato — `retida` conta como saída (o
+ * `enviada_em` só entra quando saiu de fato, `retida` conta como saída (o
  * pedido foi feito), `falhou` não.
  */
 export async function marcarDestinatario(
@@ -300,8 +300,8 @@ export async function marcarDestinatario(
  * voltar para "entregue" na tela, diante do usuário.
  *
  * `falhou` é maior que tudo de propósito: uma falha que chega depois de um
- * "entregue" é a Meta corrigindo a si mesma — tipicamente a mensagem retida que
- * foi descartada (132015) — e essa correção tem que vencer.
+ * "entregue" é a Meta corrigindo a si mesma, tipicamente a mensagem retida que
+ * foi descartada (132015), e essa correção tem que vencer.
  */
 const AVANCO: Record<EstadoDoDestinatario, number> = {
   na_fila: 0,
@@ -317,7 +317,7 @@ export function avanca(atual: EstadoDoDestinatario, novo: EstadoDoDestinatario):
 }
 
 /**
- * Aplica o webhook de status pelo `wamid` — que é tudo o que ele traz.
+ * Aplica o webhook de status pelo `wamid`, que é tudo o que ele traz.
  *
  * Devolve `false` quando não achou, e **isso é o caso comum**: o webhook de
  * status chega para toda mensagem que o número manda, inclusive as respostas de
@@ -355,7 +355,7 @@ export async function aplicarStatusPorWamid(
 export type Progresso = Record<EstadoDoDestinatario, number> & { total: number }
 
 /**
- * Quantos estão em cada estado — o que a tela de progresso mostra.
+ * Quantos estão em cada estado, o que a tela de progresso mostra.
  *
  * Conta no banco e não em memória: carregar 5.000 linhas para fazer `length`
  * seria trazer a tabela inteira para dizer um número.
@@ -412,13 +412,37 @@ export async function mudarEstadoDaTransmissao(
   if (error) throw error
 }
 
-/** As agendadas cuja hora chegou. A fila do motor de disparo. */
+/**
+ * As transmissões que o motor deve pegar agora.
+ *
+ * **São duas coisas, e a segunda é a que não pode faltar:** as `agendada` cuja
+ * hora chegou, e as que ficaram em `enviando`.
+ *
+ * Uma transmissão em `enviando` é uma que já começou e **não terminou**, o
+ * motor devolve a cada `POR_PASSADA` de propósito, porque a função da Vercel
+ * morre no `maxDuration`. Entre uma passada e a seguinte cabe um deploy, e
+ * quem só olhasse `agendada` deixaria uma campanha de 5.000 parada na mensagem
+ * 200 para sempre, com a tela dizendo "Enviando" e nada saindo.
+ *
+ * As `enviando` vêm primeiro: terminar o que já começou vale mais que começar
+ * o próximo, porque o público da que está no meio já recebeu parte.
+ */
 export async function transmissoesVencidas(agora = new Date()): Promise<Transmissao[]> {
   const { data, error } = await db()
     .from('transmissoes')
     .select(COLUNAS)
-    .eq('estado', 'agendada')
-    .lte('quando', agora.toISOString())
+    /*
+     * **`quando` nulo quer dizer "manda agora"**, e é o caso mais comum: quem
+     * cria a transmissão sem escolher horário não quer que ela espere. Como
+     * `quando.lte.<agora>` é **falso** sobre nulo no Postgres, nulo não é
+     * menor nem maior que nada, sem o `quando.is.null` ao lado essa
+     * transmissão ficaria `agendada` para sempre, que é exatamente o sintoma
+     * que este gancho existe para não ter.
+     */
+    .or(
+      `estado.eq.enviando,and(estado.eq.agendada,or(quando.is.null,quando.lte.${agora.toISOString()}))`,
+    )
+    .order('estado', { ascending: false })
     .order('quando', { ascending: true })
 
   if (error) throw error

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { enviarAgendadas } from '@/server/enviar-agendadas'
+import { passadaDeTransmissoes, POR_CARONA } from '@/server/passada-de-transmissoes'
 import { pulsoDaConta } from '@/server/repos/leads'
 import { conferirAcessoAoCliente } from '@/server/sessao'
 
@@ -7,7 +8,7 @@ export const dynamic = 'force-dynamic'
 
 /**
  * A conexão fica aberta quase até o teto da função. O cliente reconecta
- * sozinho — é o comportamento nativo do `EventSource`, não código nosso.
+ * sozinho, é o comportamento nativo do `EventSource`, não código nosso.
  */
 export const maxDuration = 60
 
@@ -59,11 +60,11 @@ const PASSADA_DAS_AGENDADAS_MS = 60_000
  *    servidor deles aceite, e nós não temos como emitir um. O produto autentica
  *    com Better Auth, não com Supabase Auth, então não existe sessão do
  *    Supabase no navegador para aproveitar. Fazer funcionar exigiria rotacionar
- *    a chave de assinatura do projeto para HS256 — mudança **global**, num
+ *    a chave de assinatura do projeto para HS256, mudança **global**, num
  *    projeto de produção compartilhado com a Verandi e sem backup. Ver
  *    docs/BANCO-COMPARTILHADO.md §4.
  * 2. **Canal público resolveria a autenticação e criaria um vazamento.** Quem
- *    soubesse o uuid de um cliente — que anda na URL do painel — passaria a
+ *    soubesse o uuid de um cliente, que anda na URL do painel, passaria a
  *    saber *quando* aquele negócio recebe mensagem. É pouco, e é de graça para
  *    quem quiser.
  * 3. **`.env.example` diz, em letras, que nada neste produto fala com o
@@ -136,7 +137,7 @@ export async function GET(
        * O primeiro evento sai antes de qualquer espera.
        *
        * Entre o servidor desenhar a página e o navegador abrir esta conexão já
-       * passou tempo — e é justamente aí que chega a mensagem que a pessoa está
+       * passou tempo, e é justamente aí que chega a mensagem que a pessoa está
        * esperando. Sem isto, o primeiro sinal só viria depois do intervalo.
        */
       async function conferir() {
@@ -150,7 +151,7 @@ export async function GET(
           /*
            * Uma oscilação no banco não pode derrubar a conexão: derrubar
            * obrigaria o navegador a reconectar, refazer a autorização e
-           * recomeçar — muito barulho para um `select` que falhou uma vez. Na
+           * recomeçar, muito barulho para um `select` que falhou uma vez. Na
            * próxima volta ele tenta de novo.
            */
         }
@@ -160,7 +161,7 @@ export async function GET(
        * A carona das mensagens agendadas, uma vez por minuto.
        *
        * Este laço já olha o banco de segundo em segundo enquanto alguém está
-       * com o Inbox aberto — é a coisa mais frequente que acontece no servidor
+       * com o Inbox aberto, é a coisa mais frequente que acontece no servidor
        * deste produto. Aproveitá-lo é o que dá resolução de minuto ao
        * agendamento numa plataforma cujo cron dispara uma vez por dia (ver
        * `server/enviar-agendadas.ts`).
@@ -177,6 +178,15 @@ export async function GET(
         void enviarAgendadas(5).catch((erro) => {
           console.error('[stream] a carona das agendadas falhou', erro)
         })
+        /*
+         * A carona das transmissões anda no mesmo relógio, e é a mais
+         * importante das três para uma campanha: quem dispara costuma ficar
+         * olhando a tela, e uma conta que está transmitindo quase nunca está
+         * recebendo mensagem de volta, a carona do webhook não acontece.
+         */
+        void passadaDeTransmissoes({ porPassada: POR_CARONA }).catch((erro) => {
+          console.error('[stream] a carona das transmissões falhou', erro)
+        })
       }, PASSADA_DAS_AGENDADAS_MS)
 
       const relogio = setInterval(() => void conferir(), INTERVALO_MS)
@@ -189,7 +199,7 @@ export async function GET(
 
       // `retry` diz ao navegador quanto esperar antes de reconectar. O padrão
       // dele é 3s, e depois do encerramento programado a reconexão precisa ser
-      // rápida — senão a cada 50 segundos existiria uma janela cega.
+      // rápida, senão a cada 50 segundos existiria uma janela cega.
       mandar('retry: 1000\n\n')
       await conferir()
     },
@@ -198,7 +208,7 @@ export async function GET(
   return new Response(fluxo, {
     headers: {
       'content-type': 'text/event-stream; charset=utf-8',
-      // Um stream em cache é um Inbox que não atualiza — o mesmo defeito que a
+      // Um stream em cache é um Inbox que não atualiza, o mesmo defeito que a
       // rota `/pulso` já precisava afastar.
       'cache-control': 'private, no-store, no-transform',
       connection: 'keep-alive',

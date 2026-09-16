@@ -6,6 +6,7 @@ import {
   criarDaBibliotecaNaMeta,
   criarTemplateNaMeta,
   listarBibliotecaDaMeta,
+  type EntradaDeBotao,
   type ModeloDaBiblioteca,
 } from '@/channels/templates-api'
 import { podeTransmitir } from '@/core/disparo'
@@ -25,6 +26,7 @@ import {
   type Componentes,
 } from '@/core/templates'
 import { coexistenciaDoCliente } from './repos/coexistencia'
+import { contatosComEtiqueta, listarEtiquetasComContagem } from './repos/etiquetas'
 import { lerTokenDoCanal, listarCanais } from './repos/conversas'
 import {
   apagarTemplate,
@@ -55,7 +57,7 @@ function telas(clienteId: string) {
 }
 
 /**
- * A WABA e o token deste cliente — o par que toda chamada à Meta precisa.
+ * A WABA e o token deste cliente, o par que toda chamada à Meta precisa.
  *
  * Os dois vêm juntos porque separá-los daria dois jeitos de errar: mandar o
  * token de um cliente para a WABA de outro é exatamente o tipo de mistura que
@@ -83,7 +85,7 @@ async function contaNaMeta(
 export type ResultadoDoTemplate = {
   ok: boolean
   erro?: string
-  /** Os reparos que não impedem submeter — a pessoa merece vê-los mesmo assim. */
+  /** Os reparos que não impedem submeter, a pessoa merece vê-los mesmo assim. */
   avisos?: string[]
   templateId?: string
 }
@@ -103,7 +105,7 @@ export async function acaoCriarTemplate(
     idioma?: string
     categoria: Categoria
     componentes: Componentes
-    /** Os valores de exemplo de cada variável — a Meta os exige. */
+    /** Os valores de exemplo de cada variável, a Meta os exige. */
     exemplos?: string[]
   },
 ): Promise<ResultadoDoTemplate> {
@@ -130,7 +132,7 @@ export async function acaoCriarTemplate(
   if (quantasVariaveis > 0 && exemplos.length < quantasVariaveis) {
     return {
       ok: false,
-      erro: `Preencha um exemplo para cada variável (${quantasVariaveis}). Sem exemplo, a Meta recusa por formato — e a recusa demora horas.`,
+      erro: `Preencha um exemplo para cada variável (${quantasVariaveis}). Sem exemplo, a Meta recusa por formato, e a recusa demora horas.`,
     }
   }
 
@@ -181,7 +183,7 @@ export async function acaoCriarTemplate(
   await marcarSubmetido(rascunho.id, {
     wabaTemplateId: resposta.template.wabaTemplateId,
     status: resposta.template.status === 'desconhecido' ? 'pendente' : resposta.template.status,
-    // A categoria que a META decidiu — ela reclassifica o que julga
+    // A categoria que a META decidiu, ela reclassifica o que julga
     // promocional, e isso muda o preço da mensagem.
     categoria: resposta.template.categoria,
   })
@@ -198,7 +200,7 @@ export async function acaoCriarTemplate(
  * catálogo de campos, e o nome do template é gerado a partir do título.
  *
  * `acaoCriarTemplate` continua existindo para quem precisa do controle fino
- * (nome próprio, cabeçalho, botões) — mas nenhuma tela a usa hoje.
+ * (nome próprio, cabeçalho, botões), mas nenhuma tela a usa hoje.
  */
 export async function acaoCriarModelo(
   clienteId: string,
@@ -241,7 +243,7 @@ export async function acaoCriarModelo(
  * tela inteira falhar porque o catálogo da Meta não respondeu seria trocar um
  * recurso a mais por um recurso a menos.
  *
- * O `erro` volta junto para a tela poder dizer por quê, quando quiser — sem
+ * O `erro` volta junto para a tela poder dizer por quê, quando quiser, sem
  * transformar isso num bloqueio.
  */
 export async function acaoListarBiblioteca(
@@ -260,20 +262,39 @@ export async function acaoListarBiblioteca(
   })
 
   if (!r.ok) return { modelos: [], erro: r.erro.mensagem }
-  return { modelos: r.modelos, erro: null }
+
+  /*
+   * O filtro é refeito aqui porque **a Meta ignora o `language` da busca**: ela
+   * respondeu a galeria inteira em inglês mesmo com `language=pt_BR` na query,
+   * e "Account creation confirmation" foi parar na tela de um cliente
+   * brasileiro.
+   *
+   * Não dá para traduzir o corpo: alterar o texto de um modelo da biblioteca
+   * devolve ele para a fila comum de 24h e mata a única vantagem dele. Então o
+   * que não está em português sai da lista. Quando não sobra nenhum, a seção
+   * some e ficam os nossos, que são escritos em português.
+   */
+  const emPortugues = r.modelos.filter((m) => m.idioma.toLowerCase().startsWith('pt'))
+  return { modelos: emPortugues, erro: null }
 }
 
 /**
- * Cria a partir da biblioteca — o caminho da aprovação quase imediata.
+ * Cria a partir da biblioteca, o caminho da aprovação quase imediata.
  *
  * **O texto não vai no pedido**, e é isso que dá a rapidez: quem manda o
  * conteúdo é a Meta, pelo `library_template_name`, porque ela já o revisou.
- * Alterar o texto devolveria o template para a fila comum de 24h — por isso a
+ * Alterar o texto devolveria o template para a fila comum de 24h, por isso a
  * tela não deixa editar o corpo de um modelo da biblioteca.
  */
 export async function acaoCriarDaBiblioteca(
   clienteId: string,
-  dados: { nomeNaBiblioteca: string; idioma: string; categoria: Categoria },
+  dados: {
+    nomeNaBiblioteca: string
+    idioma: string
+    categoria: Categoria
+    /** Um por botão do modelo, na ordem da biblioteca. A Meta os exige. */
+    botoes?: EntradaDeBotao[]
+  },
 ): Promise<ResultadoDoTemplate> {
   await exigirAcessoAoCliente(clienteId)
 
@@ -306,6 +327,7 @@ export async function acaoCriarDaBiblioteca(
     nomeNaBiblioteca: dados.nomeNaBiblioteca,
     idioma,
     categoria: dados.categoria,
+    ...(dados.botoes && dados.botoes.length > 0 ? { botoes: dados.botoes } : {}),
   })
 
   if (!resposta.ok) {
@@ -351,7 +373,7 @@ export async function acaoApagarTemplate(
       })
       /*
        * A Meta recusou: não apagamos aqui. Apagar só do nosso lado deixaria um
-       * template vivo lá que ninguém mais vê — e o nome preso por 30 dias sem
+       * template vivo lá que ninguém mais vê, e o nome preso por 30 dias sem
        * que ninguém saiba por quê.
        */
       if (!r.ok) return { ok: false, erro: `A Meta recusou apagar: ${r.erro.mensagem}` }
@@ -470,4 +492,51 @@ export async function acaoCancelarTransmissao(
 export async function acaoListarTemplates(clienteId: string) {
   await exigirAcessoAoCliente(clienteId)
   return listarTemplates(clienteId)
+}
+
+/**
+ * Os públicos possíveis, com o tamanho de cada um.
+ *
+ * **A contagem é metade da informação.** "Clientes" e "Clientes" com 4 e com
+ * 1.200 contatos são escolhas completamente diferentes, e quem está montando
+ * uma campanha precisa do número *antes* de escolher, é ele que diz se a
+ * transmissão cabe no teto do dia.
+ */
+export async function acaoPublicosPossiveis(clienteId: string) {
+  await exigirAcessoAoCliente(clienteId)
+  const etiquetas = await listarEtiquetasComContagem(clienteId)
+  // Etiqueta sem ninguém não é público: deixá-la na lista é oferecer uma
+  // escolha que só pode dar em "nenhum contato foi selecionado".
+  return etiquetas.filter((e) => (e.contatos ?? 0) > 0)
+}
+
+/**
+ * Cria a transmissão a partir de uma etiqueta.
+ *
+ * **O público é resolvido aqui, no servidor, e não na tela.** Mandar 1.200 ids
+ * de contato pela rede para o navegador devolvê-los seria pagar duas vezes por
+ * uma lista que o banco já tem, e abriria a porta para a tela mandar ids que
+ * não são do cliente. Aqui `contatosComEtiqueta` já cruza com `client_id`.
+ */
+export async function acaoCriarTransmissaoPorEtiqueta(
+  clienteId: string,
+  dados: {
+    nome: string
+    templateId: string
+    etiquetaId: string
+    parametros?: Record<string, string>
+    quando?: string | null
+    limiteDiario?: number
+    jaEnviadasHoje?: number
+  },
+): Promise<ResultadoDaTransmissao> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const contatoIds = await contatosComEtiqueta(clienteId, dados.etiquetaId)
+  if (contatoIds.length === 0) {
+    return { ok: false, erro: 'Nenhum contato tem esta etiqueta agora.' }
+  }
+
+  const { etiquetaId: _ignorado, ...resto } = dados
+  return acaoCriarTransmissao(clienteId, { ...resto, contatoIds })
 }

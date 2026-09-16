@@ -8,6 +8,7 @@ import {
   receberStatusDeTemplate,
 } from '@/server/receber-status-de-template'
 import { enviarAgendadas } from '@/server/enviar-agendadas'
+import { passadaDeTransmissoes, POR_CARONA } from '@/server/passada-de-transmissoes'
 import { rodarTarefas } from '@/server/tarefas'
 
 /**
@@ -16,7 +17,7 @@ import { rodarTarefas } from '@/server/tarefas'
  * Duas regras da Meta moldam este arquivo:
  *
  * 1. **Responder 200 em menos de 20 segundos** (a recomendação é abaixo de 5).
- *    Passou disso, ela reenvia — e reenvio vira conversa andando duas vezes.
+ *    Passou disso, ela reenvia, e reenvio vira conversa andando duas vezes.
  *    Por isso a resposta sai na hora e o processamento vai para o `after()`.
  * 2. **Validar a assinatura.** Sem isso, a URL é pública e qualquer um manda
  *    mensagem falsa em nome de qualquer cliente.
@@ -27,7 +28,7 @@ import { rodarTarefas } from '@/server/tarefas'
 
 /**
  * O `after()` continua rodando depois da resposta, mas dentro do orçamento de
- * tempo da função — que na Vercel é curto por padrão.
+ * tempo da função, que na Vercel é curto por padrão.
  *
  * Sem isto, um parceiro lento no nó de API estoura o orçamento antes do nosso
  * próprio timeout de 10s por chamada: a função é morta no meio, o handoff nunca
@@ -68,7 +69,7 @@ export async function POST(req: Request) {
    *
    * Nada chega no Inbox de um cliente coexistente, e sem registrar a entrada
    * não há como separar "a Meta não chamou" de "chegou e foi descartado no
-   * meio". Essa diferença já custou horas hoje — e uma vez o culpado era nosso
+   * meio". Essa diferença já custou horas hoje, e uma vez o culpado era nosso
    * (`tratarEcos` lia `messages` onde a Meta manda `message_echoes`), com 200
    * na resposta e zero alerta.
    *
@@ -100,7 +101,7 @@ export async function POST(req: Request) {
        * `messages` e `history` ao mesmo tempo, e a mensagem que acabou de
        * chegar de uma pessoa de verdade tem prioridade sobre a importação de
        * conversa antiga. Cada um lê a sua parte do mesmo payload e ignora a do
-       * outro — ver `receber-coexistencia.ts`.
+       * outro, ver `receber-coexistencia.ts`.
        */
       await receberCoexistencia(payload)
 
@@ -109,7 +110,7 @@ export async function POST(req: Request) {
        * `ACCOUNT_RECONNECTED`.
        *
        * `PARTNER_ADDED` é a Meta avisando que alguém **terminou o Embedded
-       * Signup** — e é o único aviso que chega quando o navegador do cliente
+       * Signup**, e é o único aviso que chega quando o navegador do cliente
        * não volta para a nossa rota de retorno. Os outros dois são a troca de
        * aparelho, que derruba o companion sozinho e faria os envios daquele
        * número falharem em silêncio.
@@ -126,7 +127,7 @@ export async function POST(req: Request) {
        *   recusado ou pausado. Sem ele, um template fica "em análise" para
        *   sempre quando o webhook chega e ninguém o lê.
        * - o `statuses` do campo `messages` diz se cada mensagem foi entregue,
-       *   lida ou **falhou** — e é ali que aparece a mensagem que a Meta tinha
+       *   lida ou **falhou**, e é ali que aparece a mensagem que a Meta tinha
        *   retido e acabou descartando (132015). Sem ler isso, uma transmissão
        *   com 5.000 falhas segue mostrando "enviada".
        *
@@ -151,7 +152,7 @@ export async function POST(req: Request) {
      *
      * **A Vercel no plano Hobby dispara cron uma vez por dia.** Um prazo de
      * pergunta de trinta minutos que só é conferido de madrugada não é um
-     * prazo — é um lembrete atrasado que chega depois de a janela de 24h ter
+     * prazo, é um lembrete atrasado que chega depois de a janela de 24h ter
      * fechado. O cron continua declarado no `vercel.json` porque ele é o piso
      * (a conta que passou o dia sem mensagem nenhuma ainda é varrida), mas quem
      * dá a resolução é isto aqui.
@@ -175,7 +176,7 @@ export async function POST(req: Request) {
 
     /*
      * As mensagens marcadas para depois pegam a mesma carona, e pelo mesmo
-     * motivo — cron uma vez por dia não manda mensagem às 15h.
+     * motivo, cron uma vez por dia não manda mensagem às 15h.
      *
      * Vale ainda mais aqui do que para as tarefas: a janela de 24h reabre
      * quando o cliente escreve, então o instante em que chega uma mensagem dele
@@ -189,6 +190,19 @@ export async function POST(req: Request) {
       await enviarAgendadas(5)
     } catch (erro) {
       console.error('[webhook] a carona das agendadas falhou', erro)
+    }
+
+    /*
+     * As transmissões pegam a mesma carona, com teto pequeno pelo mesmo
+     * motivo: isto roda depois do 200 para a Meta, mas ainda dentro do
+     * orçamento da função. `POR_CARONA` faz a campanha andar alguns
+     * destinatários por mensagem recebida; a fila é do banco, e a próxima
+     * carona continua de onde esta parou.
+     */
+    try {
+      await passadaDeTransmissoes({ porPassada: POR_CARONA })
+    } catch (erro) {
+      console.error('[webhook] a carona das transmissões falhou', erro)
     }
   })
 

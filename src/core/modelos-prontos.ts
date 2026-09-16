@@ -1,7 +1,7 @@
 import type { Categoria } from './templates'
 
 /**
- * Os modelos prontos de mensagem — a galeria que abre no lugar de um formulário
+ * Os modelos prontos de mensagem, a galeria que abre no lugar de um formulário
  * em branco.
  *
  * ---------------------------------------------------------------------------
@@ -9,7 +9,7 @@ import type { Categoria } from './templates'
  * ---------------------------------------------------------------------------
  *
  * A biblioteca dela aprova quase na hora, e por isso vem primeiro na tela. Mas
- * ela é global, em inglês na maior parte, e escrita para o mercado americano —
+ * ela é global, em inglês na maior parte, e escrita para o mercado americano:
  * "your appointment is confirmed" não é como um consultório brasileiro fala.
  *
  * Estes são nossos: em português, no tom que um cliente daqui usa, e cobrindo
@@ -21,12 +21,12 @@ import type { Categoria } from './templates'
  * `{{1}}` não aparece aqui, e essa é a decisão
  * ---------------------------------------------------------------------------
  *
- * O corpo é escrito com marcadores em português — `{nome}`, `{data}` — porque é
+ * O corpo é escrito com marcadores em português, `{nome}`, `{data}`, porque é
  * o que a pessoa lê na tela. A tradução para o `{{1}}` da Meta acontece na hora
  * de submeter, e o número nunca chega aos olhos de quem escreve.
  *
  * Quem desenhou a tela anterior expôs o `{{1}}` direto e pedia "exemplo da
- * variável 2" depois — jargão de API vazando para quem só quer mandar um
+ * variável 2" depois, jargão de API vazando para quem só quer mandar um
  * lembrete.
  */
 
@@ -73,7 +73,7 @@ export type ModeloPronto = {
  * Ela muda **quanto a Meta cobra** e o quanto ela implica na revisão: um
  * lembrete é `UTILITY`, barato e aprovado fácil; uma promoção é `MARKETING`,
  * mais caro e exige opt-in. Pedir isso a quem só quer avisar de uma consulta é
- * transferir uma decisão de cobrança para quem não tem como tomá-la — e errar
+ * transferir uma decisão de cobrança para quem não tem como tomá-la, e errar
  * aqui é caro, porque a Meta reclassifica e a conta vem diferente.
  */
 export const MODELOS_PRONTOS: readonly ModeloPronto[] = [
@@ -154,7 +154,7 @@ export function camposUsados(corpo: string): string[] {
 /**
  * Troca `{nome}` por `{{1}}`, na ordem de aparição.
  *
- * É aqui que o jargão da Meta entra, e é o único lugar onde ele existe — a
+ * É aqui que o jargão da Meta entra, e é o único lugar onde ele existe, a
  * pessoa nunca digita um número entre chaves duplas.
  *
  * A ordem é a de aparição no texto porque é assim que a Meta numera: o primeiro
@@ -180,7 +180,7 @@ export function exemplosPara(campos: string[]): string[] {
 }
 
 /**
- * O texto como o cliente vai ler — a prévia.
+ * O texto como o cliente vai ler, a prévia.
  *
  * Existe porque `Oi {nome}` não responde "o que a pessoa recebe?". Ver o nome
  * de alguém no lugar é o que faz a pessoa perceber que faltou vírgula, ou que o
@@ -192,6 +192,125 @@ export function previa(corpo: string): string {
     saida = saida.replaceAll(`{${campo.id}}`, campo.exemplo)
   }
   return saida
+}
+
+/**
+ * De volta do formato da Meta: que campo é cada `{{n}}`?
+ *
+ * ---------------------------------------------------------------------------
+ * Por que isto precisa existir
+ * ---------------------------------------------------------------------------
+ *
+ * `paraFormatoDaMeta` sabe que `{data}` virou `{{2}}`, mas o que fica gravado
+ * no banco é só `{{2}}`. Quando a tela de transmissão abre um modelo aprovado e
+ * precisa perguntar os valores, tudo o que ela tem é o corpo com números.
+ *
+ * Sem isto, a única pergunta possível seria **"valor da variável 2"**, que é
+ * exatamente o jargão de API que a tela de modelos foi refeita para não ter.
+ *
+ * ---------------------------------------------------------------------------
+ * Como adivinha, e o que faz quando não sabe
+ * ---------------------------------------------------------------------------
+ *
+ * Pelas palavras imediatamente antes do buraco, que é como o texto de verdade
+ * se comporta: "sua consulta é dia {{2}}" tem "dia" colado no buraco da data.
+ * É heurística, e por isso ela **nunca inventa**: sem pista clara devolve
+ * `null`, e quem chama pergunta de um jeito genérico em português ("O que entra
+ * aqui"), nunca com o número da Meta.
+ *
+ * `{{1}}` é o caso especial e o mais comum: quase todo modelo começa
+ * cumprimentando, e o primeiro buraco é o nome. Ele é `automatico`, então a
+ * tela não o pergunta: sai do contato, um diferente por pessoa.
+ */
+export function camposDoCorpoDaMeta(corpo: string): (CampoDoModelo | null)[] {
+  const quantos = (corpo.match(/\{\{(\d+)\}\}/g) ?? []).length
+  const achados: (CampoDoModelo | null)[] = []
+
+  for (let i = 1; i <= quantos; i += 1) {
+    const posicao = corpo.indexOf(`{{${i}}}`)
+    /*
+     * Só o pedaço **entre o buraco anterior e este**, e nunca o texto inteiro
+     * antes. A primeira versão olhava 40 caracteres para trás e lia o "dia" de
+     * "dia {{2}} às {{3}}" ao adivinhar o `{{3}}`: a hora virava data.
+     *
+     * A pista de um buraco é a palavra que o antecede, não a que antecede o
+     * vizinho.
+     */
+    const anterior = i > 1 ? corpo.indexOf(`{{${i - 1}}}`) : -1
+    const comeco = anterior >= 0 ? anterior + `{{${i - 1}}}`.length : 0
+    const antes = corpo.slice(comeco, posicao).toLowerCase()
+    achados.push(adivinhar(antes, i))
+  }
+
+  return achados
+}
+
+/** Onde a última ocorrência começa, ou -1. */
+function acharUltimo(texto: string, padrao: RegExp): number {
+  let onde = -1
+  for (const casamento of texto.matchAll(padrao)) onde = casamento.index
+  return onde
+}
+
+/**
+ * As pistas de cada campo: as palavras que aparecem **coladas** no buraco.
+ *
+ * Elas foram escolhidas contra os modelos prontos, e o teste de ida e volta é o
+ * que as mantém honestas. Duas lições dele:
+ *
+ * - **palavra ambígua sai.** `em` era pista de data e roubava o link de
+ *   "acompanhe em {{3}}"; `horário` era pista de hora e roubava a data de "seu
+ *   horário está confirmado para {{2}}", onde ele nomeia a consulta, não a hora;
+ * - **a preposição que antecede é a pista de verdade.** "de {{valor}}", "para
+ *   {{data}}", "abrir {{link}}": é o verbo ou a preposição colada que diz o que
+ *   vem, não o substantivo do começo da frase.
+ */
+const PISTAS: readonly { id: string; palavras: readonly string[] }[] = [
+  { id: 'data', palavras: ['dia', 'data', 'para', 'vence'] },
+  { id: 'hora', palavras: ['hora', 'horas', 'às', 'as'] },
+  { id: 'valor', palavras: ['valor', 'preço', 'preco', 'total', 'parcela', 'de', 'r$'] },
+  { id: 'codigo', palavras: ['código', 'codigo', 'número', 'numero', 'pedido', 'protocolo'] },
+  { id: 'link', palavras: ['link', 'acesse', 'acompanhe', 'abrir', 'clique', 'http'] },
+]
+
+function adivinhar(antes: string, posicao: number): CampoDoModelo | null {
+  // O primeiro buraco é o nome na esmagadora maioria dos modelos, e ele é o
+  // único automático: errar aqui custaria perguntar o nome de 400 pessoas.
+  if (posicao === 1 && /\b(oi|olá|ola|prezad|sr|sra|bom dia|boa tarde|boa noite)\b/.test(antes)) {
+    return CAMPOS.find((c) => c.id === 'nome') ?? null
+  }
+
+  /*
+   * A pista **mais próxima** do buraco ganha, e não a primeira da lista.
+   *
+   * "sua parcela de {{1}} vence dia {{2}}" tem "valor" e "dia" no mesmo pedaço;
+   * quem decide é qual está colado no buraco.
+   */
+  let melhor: { id: string; onde: number } | null = null
+
+  for (const pista of PISTAS) {
+    for (const palavra of pista.palavras) {
+      /*
+       * Palavra inteira, e não pedaço de palavra. Com `includes`, o `as` de
+       * "hora" casava dentro de **"sua"** e de "consulta", e a data virava
+       * horário em metade dos modelos prontos.
+       *
+       * O limite é escrito à mão em vez de `\b` porque **`\b` não enxerga
+       * acento**: para o JavaScript `à` não é caractere de palavra, então
+       * `\bàs\b` nunca casa com "às", e era justo a pista do horário que sumia.
+       */
+      const escapada = palavra.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const letra = '[a-zà-ú0-9]'
+      const limite = /^[a-zà-ú]/.test(palavra)
+        ? `(?<!${letra})${escapada}(?!${letra})`
+        : escapada
+      const onde = acharUltimo(antes, new RegExp(limite, 'g'))
+      if (onde === -1) continue
+      if (!melhor || onde > melhor.onde) melhor = { id: pista.id, onde }
+    }
+  }
+
+  return melhor ? (CAMPOS.find((c) => c.id === melhor.id) ?? null) : null
 }
 
 /**
