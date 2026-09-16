@@ -278,6 +278,59 @@ extração explícito para os objetos de `public`.
   é a inversa do aviso da `0058`: a migration foi primeiro, e o bloco `nps` só
   chega à produção no próximo deploy. Enquanto isso a tabela fica vazia — o que
   é seguro, porque nada no caminho de mensagem que já está no ar a procura;
+- **as `0059` e `0061` foram aplicadas em 15/set/2026**, com autorização
+  explícita do dono, e **nessa ordem** — a `0061` adiciona
+  `sequencia_passos.template_id` referenciando `public.templates`, que só existe
+  depois da `0059`. Com isso a produção tem `0001`–`0061` e o buraco da
+  numeração fechou.
+
+  **O replay em Docker pegou duas bombas que a produção não teria perdoado**, e
+  as duas justificam sozinhas o custo de rodar o teste:
+
+  1. `check (nome ~ '^[a-z0-9_]{1,512}$')` em `templates`. **O Postgres recusa
+     repetição acima de 255** (`invalid repetition count(s)`), mas o
+     `create table` passa e a tabela nasce com o check aparentemente correto. O
+     erro só aparece no primeiro `insert` — quer dizer: aplicar tudo, ver tudo
+     verde, e o primeiro cliente que criasse um modelo levaria um erro de regex
+     vindo do banco. Trocado por `length(nome) between 1 and 512`.
+  2. **As quatro tabelas nasciam sem RLS.** Eram as únicas quatro sem RLS no
+     schema inteiro. Corrigido para o padrão da `0058`/`0060`: RLS ligada, zero
+     políticas, `revoke` de `anon` e `authenticated`.
+
+  A `0059` também redefinia `public.tocar_atualizado_em()` com `create or
+  replace` **sem** `security invoker` nem `set search_path = ''`. Não daria erro:
+  apagaria em silêncio a proteção que a `0001` pôs, para todas as tabelas que
+  usam esse gatilho de uma vez. Consertado antes de aplicar — a migration agora
+  só **usa** a função existente. Conferido depois na produção: `prosecdef = f` e
+  `proconfig = {search_path=""}`, intactos.
+
+  Conferidas pelos **dois** testes. Replay do zero em Docker (`0001`–`0061` em
+  ordem, sem erro), onde também foram provados os quatro casos do `check` da
+  `0061`: 4320min sem modelo **recusa**, 4320min com modelo **aceita**, 60min sem
+  modelo **aceita**, e 43201min (acima de 30 dias) **recusa mesmo com modelo**.
+  Depois, ensaio em transação contra a produção (`begin; <as duas migrations sem
+  o notify>; rollback;`), que voltou limpo — nem as tabelas nem a coluna
+  sobraram.
+
+  Estado conferido na produção depois de aplicar: as 4 tabelas com **RLS ligada
+  e zero policies**, `grant` só para `postgres` e `service_role` (`anon` e
+  `authenticated` **não aparecem**), o check `sequencia_passos_atraso_valido` com
+  a regra composta, e **um `insert` real em `templates` funcionando** — que é
+  onde a bomba do regex teria explodido. Dado existente intacto: 31 contatos.
+  Do outro lado: `app_verandi.migrations_aplicadas` com as mesmas **32** linhas e
+  as **16** policies de `storage.objects` intactas.
+
+  **As duas têm `notify pgrst`, e o reload foi conferido nos dois produtos.**
+  `templates` e `transmissoes` pela Data API respondem **200** para
+  `service_role` e **401** para `anon` (sem 404, então não há restart pendente),
+  `sequencia_passos?select=template_id` responde 200, e `app_verandi` continua
+  respondendo **200** pelo mesmo PostgREST.
+
+  **O código já estava publicado quando estas foram aplicadas** — o inverso do
+  aviso da `0058`, e sem o mesmo risco: nada no caminho de mensagem que já
+  estava no ar procura estas tabelas. O que ficou quebrado no intervalo foi só a
+  tela `/transmissoes` e a reconciliação diária, que conta a falha e não derruba
+  o resto da manutenção;
 - nunca deve executar o aplicador da Verandi nem registrar versão em
   `app_verandi.migrations_aplicadas`.
 
