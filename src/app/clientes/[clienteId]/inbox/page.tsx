@@ -45,6 +45,7 @@ import {
   contarPorAtribuicao,
   contarPorEstado,
   filaInteira,
+  leadsPorContatos,
   limparBusca,
   lerConversa,
   paginarLeads,
@@ -74,6 +75,7 @@ import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { listarQuadros, quadrosDoContato } from '@/server/repos/quadros'
 import { FunilDaConversa, type FunilDoContato } from '@/components/inbox/funil-da-conversa'
 import { marcarComoLida, naoLidasPorContato, quandoLeu } from '@/server/repos/leituras'
+import { fixadasDoUsuario } from '@/server/repos/marcadores'
 import { avisarQueLeu } from '@/server/recibo-de-leitura'
 import { TextoDoWhatsApp } from '@/components/texto-do-whatsapp'
 import { FaixaDeCanalCaido } from '@/components/inbox/faixa-canal-caido'
@@ -330,9 +332,49 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
    * `local` é no máximo `TETO_DA_FILA_LOCAL` contatos, e a consulta é um
    * `in (...)` de ids. Quando ele é `null` a lista é a página, como antes.
    */
+  /*
+   * ---------------------------------------------------------------------------
+   * As fixadas desta pessoa, e por que o modo paginado precisa buscá-las
+   * ---------------------------------------------------------------------------
+   *
+   * No modo local a fila inteira já está aqui, e fixar é só uma ordenação
+   * diferente do que já veio. No modo paginado a lista é uma página de
+   * cinquenta, e a conversa fixada pode estar na página quatro — o alfinete
+   * prometeria o topo e entregaria nada. Por isso os fixados são buscados por
+   * id e entram na frente.
+   *
+   * **Mas só os que caberiam no recorte atual.** Fixar organiza a fila; não
+   * revoga o filtro. Trazer uma conversa resolvida para o topo de quem está
+   * olhando "Abertas" seria o mesmo tipo de mentira que a fila local evita ao
+   * não filtrar página parcial — e quem está buscando por texto quer o
+   * resultado da busca, não o que marcou semana passada.
+   */
+  const fixadasDaPessoa = await fixadasDoUsuario(usuarioId)
+
+  const naPagina = new Set(leads.map((lead) => lead.contatoId))
+  const fixadosDeFora =
+    local === null && fixadasDaPessoa.size > 0 && termo === ''
+      ? (await leadsPorContatos(clienteId, [...fixadasDaPessoa.keys()])).filter(
+          (lead) => !naPagina.has(lead.contatoId) && cabeNoRecorte(lead, estado, atribuicao),
+        )
+      : []
+
+  const naFila = fixadosDeFora.length > 0 ? [...fixadosDeFora, ...leads] : leads
+
+  /*
+   * O mapa entregue à tela é **só o desta conta**. `af_fixadas` não guarda
+   * cliente (ver a 0063), e quem atende dois clientes tem alfinetes nos dois:
+   * sem este corte, o teto de fixadas de um cliente seria gasto pelas conversas
+   * do outro, e a recusa não estaria explicada em lugar nenhum da tela.
+   */
+  const daConta = new Set((local ?? naFila).map((lead) => lead.contatoId))
+  const fixadas = new Map(
+    [...fixadasDaPessoa].filter(([contatoId]) => daConta.has(contatoId)),
+  )
+
   const naoLidas = await naoLidasPorContato(
     usuarioId,
-    (local ?? leads).map((lead) => lead.contatoId),
+    (local ?? naFila).map((lead) => lead.contatoId),
   )
 
   return (
@@ -377,13 +419,14 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
         ) : (
           <Conteudo
             clienteId={cliente.id}
-            leads={leads}
+            leads={naFila}
             local={local}
             selecionado={selecionado}
             respostasRapidas={respostasRapidas}
             equipe={equipe}
             usuarioId={usuarioId}
             naoLidas={naoLidas}
+            fixadas={fixadas}
             etiquetas={etiquetas}
             contagem={contagem}
             porEstado={porEstado}
@@ -460,6 +503,22 @@ function EstadoVazio({
   )
 }
 
+/**
+ * O lead passaria pelos filtros que estão ligados agora?
+ *
+ * Existe só para os fixados de fora da página: eles não passaram pela consulta
+ * que aplicou o recorte, e entrar no topo sem essa pergunta faria o rail dizer
+ * "Abertas 12" com uma resolvida na lista. Os dois campos são os mesmos que a
+ * fila local usa para filtrar no navegador (ver `RailsLocais`), e é de propósito
+ * — duas definições do mesmo recorte divergiriam no primeiro estado novo.
+ */
+function cabeNoRecorte(lead: Lead, estado: FiltroDeEstado, atribuicao: string): boolean {
+  if (estado !== 'todas' && lead.estadoEfetivo !== estado) return false
+  if (atribuicao === 'todos') return true
+  if (atribuicao === 'sem-dono') return lead.atribuidoA === null
+  return lead.atribuidoA === atribuicao
+}
+
 async function Conteudo({
   clienteId,
   leads,
@@ -469,6 +528,7 @@ async function Conteudo({
   equipe,
   usuarioId,
   naoLidas,
+  fixadas,
   etiquetas,
   contagem,
   porEstado,
@@ -497,6 +557,8 @@ async function Conteudo({
   usuarioId: string | null
   /** Quantas entradas cada conversa tem depois da última vez que **eu** abri. */
   naoLidas: Map<string, number>
+  /** As conversas que **eu** grudei no topo, e quando. Ver a 0063. */
+  fixadas: Map<string, string>
   contagem: Contagem
   /** Quantas em cada estado, para o rail dizer o tamanho de cada aba. */
   porEstado: { aberta: number; adiada: number; resolvida: number }
@@ -557,6 +619,7 @@ async function Conteudo({
           termo={termo}
           usuarioId={usuarioId}
           naoLidas={naoLidas}
+          fixadas={fixadas}
           pagina={pagina}
           paginas={paginas}
           agendadas={agendadasDaConta}

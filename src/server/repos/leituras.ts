@@ -101,3 +101,102 @@ export async function quandoLeu(
 
   return (data as { lida_em: string } | null)?.lida_em ?? null
 }
+
+/**
+ * "Deixa esta conversa marcada, eu volto nela."
+ *
+ * ---------------------------------------------------------------------------
+ * Por que o relógio anda para trás, e não a linha some
+ * ---------------------------------------------------------------------------
+ *
+ * O caminho óbvio seria apagar a linha de `af_leituras`: sem leitura gravada, a
+ * conversa nunca foi lida. O efeito é o oposto do pedido. O piso de contagem,
+ * quando não há linha, é a criação do usuário (ver a 0025) — apagar devolveria
+ * **todas** as entradas desde que a pessoa entrou na conta, e uma conversa de
+ * três meses voltaria com a insígnia em 87.
+ *
+ * O que se quer é o que o WhatsApp faz: a insígnia volta, com o tamanho de uma
+ * mensagem, para o olho achar a conversa depois. Por isso o relógio recua para
+ * **um milissegundo antes da última entrada** — a conta passa a devolver
+ * exatamente as mensagens daquele último instante, quase sempre uma.
+ *
+ * Sem entrada nenhuma não há o que marcar, e a função não faz nada: insígnia em
+ * conversa onde ninguém falou seria um número sobre o vazio.
+ */
+export async function marcarComoNaoLida(
+  usuarioId: string | null,
+  contatoId: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  if (!usuarioId) return { ok: false, erro: 'entre na conta para marcar conversas' }
+
+  const { data, error } = await db()
+    .from('messages')
+    .select('ts')
+    .eq('contact_id', contatoId)
+    .eq('direcao', 'entrada')
+    .order('ts', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return { ok: false, erro: 'esta conversa não existe' }
+  if (error) return { ok: false, erro: 'não deu para ler a conversa' }
+
+  const ultima = (data as { ts: string } | null)?.ts
+  if (!ultima) return { ok: false, erro: 'ninguém falou nesta conversa ainda' }
+
+  const antes = new Date(Date.parse(ultima) - 1).toISOString()
+
+  const { error: erroDaEscrita } = await db()
+    .from('af_leituras')
+    .upsert(
+      { usuario_id: usuarioId, contato_id: contatoId, lida_em: antes },
+      { onConflict: 'usuario_id,contato_id' },
+    )
+
+  if (erroDaEscrita) {
+    console.error('[leituras] não deu para marcar como não lida', erroDaEscrita.message)
+    return { ok: false, erro: 'não deu para marcar como não lida' }
+  }
+
+  return { ok: true }
+}
+
+/**
+ * "Já vi tudo isto."
+ *
+ * **Recebe a lista, e não o cliente, de propósito.** "Todas" precisa dizer
+ * todas de quê: zerar a fila inteira da conta apagaria a insígnia de conversas
+ * que a pessoa nem tem à vista, porque o rail ou a busca as deixou de fora. Quem
+ * chama manda os contatos do recorte, e o botão da tela diz no rótulo qual
+ * recorte é esse.
+ *
+ * Um `upsert` só com todas as linhas: cinquenta conversas são cinquenta linhas
+ * numa ida ao banco, e não cinquenta idas.
+ */
+export async function marcarTodasComoLidas(
+  usuarioId: string | null,
+  contatos: string[],
+): Promise<{ ok: boolean; erro?: string }> {
+  if (!usuarioId) return { ok: false, erro: 'entre na conta para marcar conversas' }
+  if (contatos.length === 0) return { ok: true }
+
+  const agora = new Date().toISOString()
+
+  const { error } = await db()
+    .from('af_leituras')
+    .upsert(
+      contatos.map((contatoId) => ({
+        usuario_id: usuarioId,
+        contato_id: contatoId,
+        lida_em: agora,
+      })),
+      { onConflict: 'usuario_id,contato_id' },
+    )
+
+  if (error) {
+    console.error('[leituras] não deu para marcar todas como lidas', error.message)
+    return { ok: false, erro: 'não deu para marcar as conversas como lidas' }
+  }
+
+  return { ok: true }
+}

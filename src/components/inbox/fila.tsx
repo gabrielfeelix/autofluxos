@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { comoFalta, restaDaJanela } from "@/channels/janela";
 import { Dica } from "@/components/design/dica";
 import { LARGURA_DA_FILA } from "@/components/design/tema";
@@ -15,6 +15,12 @@ import {
   type OpcaoDaPilula,
 } from "@/components/inbox/pilulas";
 import { TETO_DA_INSIGNIA } from "@/core/insignia";
+import { TETO_DE_FIXADAS } from "@/core/marcadores";
+import {
+  acaoFixarConversa,
+  acaoMarcarNaoLida,
+  acaoMarcarTodasComoLidas,
+} from "@/server/acoes-marcadores";
 import { nomeDoTipo } from "@/core/tipo-da-mensagem";
 import { quando } from "@/lib/quando";
 import type { FiltroDeEstado, Lead } from "@/server/repos/leads";
@@ -75,6 +81,7 @@ export function Fila({
   termo,
   usuarioId,
   naoLidas,
+  fixadas,
   pagina,
   paginas,
   agendadas,
@@ -97,6 +104,16 @@ export function Fila({
   termo: string;
   usuarioId: string | null;
   naoLidas: Map<string, number>;
+  /**
+   * As conversas que **esta pessoa** grudou no topo, e quando grudou.
+   *
+   * Vem do servidor em vez de nascer aqui porque é dado de banco (a 0063), e
+   * chega como `Map` de contato para `fixada_em`: a tela precisa das duas
+   * coisas, quem está fixado e em que ordem. Ordenar por última mensagem
+   * dentro do bloco fixado faria o topo se reembaralhar a cada mensagem que
+   * chega — o oposto do que o alfinete promete.
+   */
+  fixadas: Map<string, string>;
   pagina: number;
   paginas: number;
   /**
@@ -147,14 +164,152 @@ export function Fila({
    */
   const [digitado, setDigitado] = useState(termo);
 
+  /*
+   * ---------------------------------------------------------------------------
+   * As marcações desta pessoa, e por que elas são **correções** do que o
+   * servidor mandou, e não uma cópia dele
+   * ---------------------------------------------------------------------------
+   *
+   * Fixar e marcar como não lida precisam acontecer no clique: são gestos de
+   * organizar a própria fila, e esperar o servidor faria cada um parecer que não
+   * funcionou (ver `acao-otimista.ts`).
+   *
+   * O caminho errado seria espelhar `naoLidas` e `fixadas` em estado. Estado
+   * inicial só vale na montagem, e esta lista **é atualizada pelo servidor o
+   * tempo todo** — o pulso do Inbox refaz a página a cada mensagem que chega.
+   * Um espelho congelaria a insígnia no valor da primeira pintura, e a fila
+   * pararia de contar mensagem nova.
+   *
+   * Por isso o que mora aqui é só o **remendo**: o que esta aba mexeu e o
+   * servidor ainda não confirmou. Quando props novas chegam — e elas chegam a
+   * cada revalidação — o remendo é jogado fora, porque a partir dali quem sabe
+   * a verdade é o servidor, inclusive quando a verdade é que a escrita falhou.
+   */
+  const [remendoDeNaoLidas, setRemendoDeNaoLidas] = useState<Map<string, number>>(new Map());
+  const [remendoDeFixadas, setRemendoDeFixadas] = useState<Map<string, string | null>>(new Map());
+  const [erroDaMarcacao, setErroDaMarcacao] = useState<string | null>(null);
+  const [marcando, marcar] = useTransition();
+
+  useEffect(() => {
+    setRemendoDeNaoLidas(new Map());
+    setRemendoDeFixadas(new Map());
+  }, [naoLidas, fixadas]);
+
+  const semLerDe = useCallback(
+    (contatoId: string) =>
+      remendoDeNaoLidas.get(contatoId) ?? naoLidas.get(contatoId) ?? 0,
+    [remendoDeNaoLidas, naoLidas],
+  );
+
+  /** Quando esta pessoa fixou a conversa, ou `null` se ela não está fixada. */
+  const fixadaEm = useCallback(
+    (contatoId: string) => {
+      const remendada = remendoDeFixadas.get(contatoId);
+      if (remendada !== undefined) return remendada;
+      return fixadas.get(contatoId) ?? null;
+    },
+    [remendoDeFixadas, fixadas],
+  );
+
+  /** Quantas estão fixadas agora, contando o que esta aba acabou de mexer. */
+  const quantasFixadas = useMemo(() => {
+    const ids = new Set(fixadas.keys());
+    for (const [id, quando] of remendoDeFixadas) {
+      if (quando === null) ids.delete(id);
+      else ids.add(id);
+    }
+    return ids.size;
+  }, [fixadas, remendoDeFixadas]);
+
+  /** Aplica o remendo, chama o servidor, e desfaz o remendo se ele recusar. */
+  const comRemendo = useCallback(
+    (aplicar: () => void, desfazer: () => void, acao: () => Promise<{ ok: boolean; erro?: string }>) => {
+      setErroDaMarcacao(null);
+      aplicar();
+      marcar(async () => {
+        try {
+          const r = await acao();
+          if (!r.ok) {
+            desfazer();
+            setErroDaMarcacao(r.erro ?? "não deu para marcar");
+          }
+        } catch {
+          desfazer();
+          setErroDaMarcacao("sem conexão com o servidor");
+        }
+      });
+    },
+    [],
+  );
+
+  const alternarFixada = useCallback(
+    (contatoId: string) => {
+      const estava = fixadaEm(contatoId);
+      const grudar = estava === null;
+      comRemendo(
+        () =>
+          setRemendoDeFixadas((antes) =>
+            new Map(antes).set(contatoId, grudar ? new Date().toISOString() : null),
+          ),
+        () => setRemendoDeFixadas((antes) => new Map(antes).set(contatoId, estava)),
+        () => acaoFixarConversa(clienteId, contatoId, grudar),
+      );
+    },
+    [clienteId, comRemendo, fixadaEm],
+  );
+
+  const marcarNaoLida = useCallback(
+    (contatoId: string) => {
+      const antes = semLerDe(contatoId);
+      comRemendo(
+        () => setRemendoDeNaoLidas((mapa) => new Map(mapa).set(contatoId, Math.max(antes, 1))),
+        () => setRemendoDeNaoLidas((mapa) => new Map(mapa).set(contatoId, antes)),
+        () => acaoMarcarNaoLida(clienteId, contatoId),
+      );
+    },
+    [clienteId, comRemendo, semLerDe],
+  );
+
   const naTela = useMemo(() => {
     const base = local ? recorte : leads;
-    if (!local) return base;
+    if (!local) return comFixadasNoTopo(base, fixadaEm);
     const recortada = soNaoLidas
-      ? base.filter((lead) => (naoLidas.get(lead.contatoId) ?? 0) > 0)
+      ? base.filter((lead) => semLerDe(lead.contatoId) > 0)
       : base;
-    return ordenar(procurar(recortada, digitado), ordem);
-  }, [local, recorte, leads, soNaoLidas, naoLidas, ordem, digitado]);
+    return comFixadasNoTopo(ordenar(procurar(recortada, digitado), ordem), fixadaEm);
+  }, [local, recorte, leads, soNaoLidas, semLerDe, ordem, digitado, fixadaEm]);
+
+  /**
+   * As conversas à vista que ainda têm insígnia — o que o "marcar todas" apaga.
+   *
+   * Sai desta lista, e não da conta inteira, porque é isso que o botão promete.
+   * Ver `acaoMarcarTodasComoLidas`.
+   */
+  const porLerNaTela = useMemo(
+    () => naTela.filter((lead) => semLerDe(lead.contatoId) > 0).map((lead) => lead.contatoId),
+    [naTela, semLerDe],
+  );
+
+  const marcarTudoComoLido = useCallback(() => {
+    const alvos = porLerNaTela;
+    if (alvos.length === 0) return;
+    const antes = new Map(alvos.map((id) => [id, semLerDe(id)] as const));
+    comRemendo(
+      () =>
+        setRemendoDeNaoLidas((mapa) => {
+          const novo = new Map(mapa);
+          for (const id of alvos) novo.set(id, 0);
+          return novo;
+        }),
+      () =>
+        setRemendoDeNaoLidas((mapa) => {
+          const novo = new Map(mapa);
+          for (const [id, valor] of antes) novo.set(id, valor);
+          return novo;
+        }),
+      () => acaoMarcarTodasComoLidas(clienteId, alvos),
+    );
+  }, [clienteId, comRemendo, porLerNaTela, semLerDe]);
 
   const nomeDe = (id: string | null) =>
     id
@@ -444,6 +599,35 @@ export function Fila({
               Buscar
             </button>
           </form>
+
+          {/*
+            "Marcar todas como lidas", e o rótulo diz **quantas** e **quais**.
+
+            Um botão escrito só "marcar todas" não diz todas de quê, e a resposta
+            muda conforme o rail e a busca: quem está em "Adiadas" procurando por
+            "boleto" vê onze conversas, e zerar as quatrocentas da conta apagaria
+            o rastro de trezentas e oitenta e nove que essa pessoa nunca viu. O
+            número no rótulo é o contrato: é sobre isto que o clique age.
+
+            Só aparece quando há insígnia à vista. Botão que não faz nada é pior
+            que botão ausente — ele ensina que clicar ali não adianta.
+          */}
+          {porLerNaTela.length > 0 && (
+            <button
+              type="button"
+              onClick={marcarTudoComoLido}
+              disabled={marcando}
+              className="mt-2 w-full rounded-lg px-2 py-1 text-left text-[11px] text-dim transition hover:bg-surface hover:text-soft disabled:opacity-40"
+            >
+              Marcar as {porLerNaTela.length} conversas à vista como lidas
+            </button>
+          )}
+
+          {erroDaMarcacao && (
+            <p role="alert" className="mt-1.5 text-[10.5px] leading-4 text-perigo">
+              {erroDaMarcacao}
+            </p>
+          )}
         </div>
 
         <nav
@@ -453,16 +637,30 @@ export function Fila({
           {naTela.map((lead) => {
             const ativa = lead.contatoId === selecionado?.contatoId;
             const nome = lead.nome ?? "sem nome";
-            const semLer = naoLidas.get(lead.contatoId) ?? 0;
+            const semLer = semLerDe(lead.contatoId);
+            const presa = fixadaEm(lead.contatoId) !== null;
             return (
-              <Link
+              /*
+                A linha virou `div` com o `Link` dentro, e não é reorganização
+                à toa: os dois botões de marcação **não podem** ser filhos do
+                `Link`. Botão dentro de link é HTML inválido, e o efeito prático
+                é o pior possível — clicar no alfinete navegaria para a conversa
+                antes de o `onClick` decidir qualquer coisa.
+
+                O `group` sobe junto com o `relative`, porque é o hover da linha
+                inteira que revela os botões.
+              */
+              <div
                 key={lead.contatoId}
+                className={`group relative mx-1.5 mb-0.5 rounded-[10px] transition ${
+                  ativa ? "bg-primary/[0.12]" : "hover:bg-surface"
+                }`}
+              >
+              <Link
                 href={`/clientes/${clienteId}/inbox?conversa=${encodeURIComponent(lead.contatoId)}`}
                 aria-current={ativa ? "page" : undefined}
                 scroll={false}
-                className={`group mx-1.5 mb-0.5 flex gap-2.5 rounded-[10px] px-2.5 py-3 transition ${
-                  ativa ? "bg-primary/[0.12]" : "hover:bg-surface"
-                }`}
+                className="flex gap-2.5 rounded-[10px] px-2.5 py-3"
               >
                 <Avatar nome={lead.nome} alerta={Boolean(lead.aguardando)} />
                 <span className="min-w-0 flex-1">
@@ -472,7 +670,23 @@ export function Fila({
                     >
                       {nome}
                     </strong>
-                    <small className="shrink-0 text-[9.5px] text-muted">
+                    {/*
+                      O alfinete deitado fica **sempre** visível na fixada, e os
+                      botões de ação só no hover. São papéis diferentes: este diz
+                      um estado (por que esta conversa está no topo), aqueles
+                      oferecem uma ação. Sem ele, o bloco do topo seria um grupo
+                      de conversas fora de ordem sem explicação nenhuma.
+                    */}
+                    {presa && (
+                      <span
+                        aria-label="Conversa fixada"
+                        title="Você fixou esta conversa"
+                        className="shrink-0 text-dim group-hover:opacity-0"
+                      >
+                        <Alfinete preso />
+                      </span>
+                    )}
+                    <small className="shrink-0 text-[9.5px] text-muted group-hover:opacity-0">
                       {lead.ultimaEm ? quando(lead.ultimaEm) : ""}
                     </small>
                   </span>
@@ -529,6 +743,61 @@ export function Fila({
                   )}
                 </span>
               </Link>
+
+              {/*
+                Os dois gestos da linha, no canto onde o horário estava.
+
+                Eles **substituem** o horário no hover em vez de empurrá-lo: a
+                largura da coluna é ajustável e chega a caber pouco mais que o
+                nome, e dois botões somados ao horário espremeriam o nome no
+                exato momento em que a pessoa está correndo o olho pela lista.
+                É o que o WhatsApp faz com o `v` que aparece ao passar o mouse.
+
+                `opacity-0` com `group-hover` e `focus-within`, e não
+                `hidden`: quem chega por teclado precisa achar o botão no Tab, e
+                um elemento que não existe no DOM não recebe foco.
+              */}
+              <span className="pointer-events-none absolute top-2.5 right-2.5 flex items-center gap-0.5 opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+                <BotaoDaLinha
+                  rotulo={presa ? `Soltar ${nome} do topo` : `Fixar ${nome} no topo`}
+                  dica={
+                    presa
+                      ? "Soltar do topo"
+                      : quantasFixadas >= TETO_DE_FIXADAS
+                        ? `Você já fixou ${TETO_DE_FIXADAS} conversas. Solte uma para fixar outra.`
+                        : "Fixar no topo"
+                  }
+                  /*
+                    Desabilitado no teto, e o `title` diz por quê — campo que
+                    some sem explicar é pior que campo desabilitado. Soltar
+                    nunca é bloqueado, senão quem chega ao teto fica preso nele.
+                  */
+                  desabilitado={marcando || (!presa && quantasFixadas >= TETO_DE_FIXADAS)}
+                  aceso={presa}
+                  aoClicar={() => alternarFixada(lead.contatoId)}
+                >
+                  <Alfinete preso={presa} />
+                </BotaoDaLinha>
+
+                {/*
+                  Marcar como não lida **não aparece na conversa aberta**, e
+                  isso não é economia de espaço: abrir a conversa marca como
+                  lida ao desenhar (ver `marcarComoLida` no `page.tsx`), então
+                  o gesto seria desfeito no quadro seguinte. Um botão que se
+                  desfaz sozinho ensina que a tela está quebrada.
+                */}
+                {!ativa && semLer === 0 && (
+                  <BotaoDaLinha
+                    rotulo={`Marcar a conversa de ${nome} como não lida`}
+                    dica="Marcar como não lida"
+                    desabilitado={marcando}
+                    aoClicar={() => marcarNaoLida(lead.contatoId)}
+                  >
+                    <Envelope />
+                  </BotaoDaLinha>
+                )}
+              </span>
+              </div>
             );
           })}
 
@@ -893,8 +1162,144 @@ function ordenar(leads: Lead[], ordem: Ordem): Lead[] {
 }
 
 /* -------------------------------------------------------------------------- */
+/* O bloco fixado                                                             */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * As fixadas no topo, na ordem em que foram fixadas; o resto como estava.
+ *
+ * **Roda depois de todo o resto**, e é por isso que ela recebe a lista já
+ * ordenada em vez de virar mais um caso dentro de `ordenar`. O alfinete não é
+ * uma quarta ordem: ele vale junto com qualquer uma delas. Quem escolheu
+ * "esperando há mais tempo" continua vendo essa ordem embaixo do bloco fixado,
+ * que é o que fixar quer dizer.
+ *
+ * A mais recente fixada vem primeiro, como no WhatsApp. É a única ordem que não
+ * se mexe sozinha: por última mensagem, o bloco do topo se reembaralharia a
+ * cada resposta, e a conversa que a pessoa grudou ali para não perder de vista
+ * mudaria de lugar exatamente quando algo acontece nela.
+ */
+function comFixadasNoTopo(
+  leads: Lead[],
+  fixadaEm: (contatoId: string) => string | null,
+): Lead[] {
+  const fixadas: Lead[] = [];
+  const resto: Lead[] = [];
+
+  for (const lead of leads) {
+    if (fixadaEm(lead.contatoId) !== null) fixadas.push(lead);
+    else resto.push(lead);
+  }
+
+  if (fixadas.length === 0) return leads;
+
+  fixadas.sort(
+    (a, b) =>
+      Date.parse(fixadaEm(b.contatoId) ?? "") - Date.parse(fixadaEm(a.contatoId) ?? ""),
+  );
+
+  return [...fixadas, ...resto];
+}
+
+/* -------------------------------------------------------------------------- */
+/* Os botões que aparecem na linha                                            */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Um dos gestos do canto da linha: alfinete ou envelope.
+ *
+ * `stopPropagation` e `preventDefault` porque o botão está **sobre** o `Link`
+ * que ocupa a linha inteira. Sem os dois, o clique escapava para a navegação e
+ * fixar a conversa abria a conversa junto — o que é o contrário de fixar, que
+ * existe justamente para não precisar abrir agora.
+ */
+function BotaoDaLinha({
+  rotulo,
+  dica,
+  desabilitado,
+  aceso = false,
+  aoClicar,
+  children,
+}: {
+  /** O que o leitor de tela anuncia: verbo e nome, porque a linha não tem contexto. */
+  rotulo: string;
+  /** O que o mouse mostra. Curto, e é onde a recusa do teto é explicada. */
+  dica: string;
+  desabilitado: boolean;
+  aceso?: boolean;
+  aoClicar: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={rotulo}
+      title={dica}
+      disabled={desabilitado}
+      onClick={(evento) => {
+        evento.preventDefault();
+        evento.stopPropagation();
+        aoClicar();
+      }}
+      className={`flex size-6 items-center justify-center rounded-md transition disabled:opacity-30 ${
+        aceso
+          ? "text-primary hover:bg-primary/15"
+          : "text-dim hover:bg-surface-strong hover:text-soft"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /* Ícones                                                                     */
 /* -------------------------------------------------------------------------- */
+
+/**
+ * O alfinete. Deitado quando a conversa está presa, em pé quando é o convite
+ * para prender — a mesma gramática do WhatsApp, e a inclinação é a única pista
+ * de estado que se lê sem parar para ler.
+ */
+function Alfinete({ preso = false }: { preso?: boolean }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      width="13"
+      height="13"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={preso ? "rotate-45" : ""}
+    >
+      <path d="M12 17v5" />
+      <path d="M9 10.5V4h6v6.5l2.5 3.5h-11L9 10.5Z" />
+    </svg>
+  );
+}
+
+/** O envelope fechado: "volta a ser algo por abrir". */
+function Envelope() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      width="13"
+      height="13"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3.5 7 8.5 6 8.5-6" />
+    </svg>
+  );
+}
 
 /** Dentro do campo de busca, e por isso `pointer-events-none`: clicar na lupa
     tem que focar o campo, não parar no ícone. */

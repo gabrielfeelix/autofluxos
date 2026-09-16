@@ -1511,3 +1511,53 @@ export async function filaInteira(
 
   return pagina.leads
 }
+
+/**
+ * Destes ids, quais são mesmo contatos desta conta.
+ *
+ * Existe porque id vindo da tela não prova de quem ele é, e as marcações do
+ * atendente (fixar, marcar como não lida) recebem id solto — sem esta peneira,
+ * um id de outra conta entraria numa tabela que não tem `cliente_id` para
+ * corrigir depois.
+ *
+ * **Falha fechado**: o que não voltar da consulta simplesmente não está na
+ * resposta, e quem chama age só sobre o que sobrou.
+ */
+export async function contatosDaConta(clienteId: string, ids: string[]): Promise<string[]> {
+  if (ids.length === 0) return []
+
+  const { data, error } = await db()
+    .from('contacts')
+    .select('id')
+    .eq('client_id', clienteId)
+    .in('id', ids)
+
+  if (ehIdInvalido(error)) return []
+  if (error) throw new Error(`não deu para conferir os contatos: ${error.message}`)
+
+  return ((data ?? []) as { id: string }[]).map((linha) => linha.id)
+}
+
+/**
+ * Os leads destes contatos, para a fila paginada poder mostrar os fixados.
+ *
+ * **Sem isto o alfinete mentiria no modo paginado.** Acima de
+ * `TETO_DA_FILA_LOCAL` a lista é uma página de cinquenta, e uma conversa fixada
+ * que caiu na página 4 não apareceria no topo da página 1 — o que é o oposto do
+ * que o gesto promete. Como são no máximo `TETO_DE_FIXADAS` ids, buscá-los
+ * inteiros a cada página é barato.
+ */
+export async function leadsPorContatos(clienteId: string, ids: string[]): Promise<Lead[]> {
+  if (ids.length === 0) return []
+
+  const { data, error } = await db()
+    .from('leads')
+    .select(COLUNAS)
+    .eq('client_id', clienteId)
+    .in('contact_id', ids)
+
+  if (ehIdInvalido(error)) return []
+  if (error) throw new Error(`não deu para buscar os leads fixados: ${error.message}`)
+
+  return classificar((data as Linha[]).map(paraLead))
+}
