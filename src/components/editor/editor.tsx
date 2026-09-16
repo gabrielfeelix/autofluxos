@@ -26,6 +26,7 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from 'react'
 import { Conversa } from '@/components/conversa'
+import { usePreferencia } from '@/components/design/tema'
 import { VARIAVEIS_NATIVAS } from '@/core/contatos/vars-iniciais'
 import { PreviaDoBloco } from './previa-do-bloco'
 import type { CanalId } from '@/core/canais'
@@ -369,6 +370,12 @@ export function Editor({
   const [voltouDe, setVoltouDe] = useState<{ antiga: number; nova: number } | null>(null)
   const [comIa, setComIa] = useState(iaHabilitada)
   const [tela, setTela] = useState<ReactFlowInstance | null>(null)
+  /*
+   * O tema, lido do atributo no `<html>`. `usePreferencia` usa
+   * `useSyncExternalStore`, então trocar de tema repinta o canvas na hora, sem
+   * recarregar a página.
+   */
+  const temaEscuro = usePreferencia('tema')
 
   /*
    * A prévia do bloco no passar do mouse.
@@ -1480,7 +1487,16 @@ export function Editor({
             multiSelectionKeyCode={TECLAS_DE_MULTISSELECAO}
             selectionKeyCode="Shift"
             fitView
-            colorMode="dark"
+            /*
+             * O tema vem do painel, e não fica preso no escuro.
+             *
+             * Era `colorMode="dark"` fixo, e isso fazia duas coisas ruins: no
+             * tema claro o editor continuava escuro, e no escuro o React Flow
+             * aplicava `--xy-background-color-default: #141414`, um preto do
+             * pacote que não é nenhuma cor nossa. O resultado era o canvas ser
+             * a única tela do produto fora da paleta.
+             */
+            colorMode={temaEscuro ? 'dark' : 'light'}
             proOptions={{ hideAttribution: false }}
           >
             {selecionados.length > 1 && (
@@ -1496,7 +1512,20 @@ export function Editor({
               </Panel>
             )}
 
-            <Background gap={24} size={1} color="rgba(255,255,255,.08)" />
+            {/*
+              O fundo do canvas, no mesmo véu azul do histórico da conversa.
+
+              **É aqui que a cor mora, e não em `.react-flow`.** O
+              `<Background>` desenha um `<svg>` que cobre o canvas inteiro, com
+              `background-color` próprio vindo de `--xy-background-color-*`;
+              pintar o `.react-flow` debaixo dele não aparece, porque ele está
+              coberto.
+
+              A cor sai do CSS (`.react-flow__background`) e não de uma prop
+              daqui, para seguir o tema: prop é valor fixo, e o claro e o escuro
+              precisam de doses diferentes do mesmo véu.
+            */}
+            <Background gap={24} size={1} color="var(--cor-da-grade)" />
             <Controls position="bottom-right" />
             <MiniMap
               pannable

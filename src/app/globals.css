@@ -896,12 +896,38 @@ textarea::placeholder {
  * marca se ela mudar. A dose é maior no escuro porque 3% sobre `#111722` não se
  * vê, e igualar o número igualaria só o número.
  */
-.react-flow {
+.react-flow,
+/*
+ * **O `<Background>` é quem pinta, e por isso ele está aqui junto.**
+ *
+ * A primeira tentativa estilizou só `.react-flow`, e o canvas continuou preto:
+ * o `<Background>` desenha um `<svg>` que cobre o canvas inteiro e tem
+ * `background-color` próprio, vindo de `--xy-background-color-default`. Com
+ * `colorMode="dark"`, o pacote punha `#141414` ali, um preto que não é cor
+ * nossa. Pintar o elemento debaixo não adianta quando ele está coberto.
+ */
+.react-flow__background {
   background: color-mix(in oklab, var(--primary) 3%, var(--panel));
 }
 
-:root[data-tema='escuro'] .react-flow {
+:root[data-tema='escuro'] .react-flow,
+:root[data-tema='escuro'] .react-flow__background {
   background: color-mix(in oklab, var(--primary) 7%, var(--panel));
+}
+
+/*
+ * Os pontinhos da grade, numa cor que serve aos dois temas.
+ *
+ * Era `rgba(255,255,255,.08)` escrito na prop do `<Background>`: branco fixo,
+ * que no tema claro desaparece contra o fundo claro. Como variável, o valor
+ * troca com o tema e a grade continua visível nos dois.
+ */
+:root {
+  --cor-da-grade: color-mix(in oklab, var(--dim) 45%, transparent);
+}
+
+:root[data-tema='escuro'] {
+  --cor-da-grade: rgba(255, 255, 255, 0.08);
 }
 
 .react-flow__background pattern circle {
