@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 /**
- * A segunda barra — a das Configurações.
+ * A segunda barra, a das Configurações.
  *
  * ---------------------------------------------------------------------------
  * Por que existem duas barras
@@ -10,7 +10,7 @@ import Link from 'next/link'
  * Com uma só, trocar de tela dentro de Configurações exigia voltar ao índice e
  * escolher de novo: a lista de destinos morava numa página, e página não
  * acompanha quem já entrou. A segunda barra transforma Configurações de uma
- * *página com uma lista* num **lugar por onde se circula** — que é o desenho do
+ * *página com uma lista* num **lugar por onde se circula**: que é o desenho do
  * Intercom, do HubSpot e da Brevo, e o motivo é o mesmo nos três.
  *
  * Os grupos são os mesmos quatro decididos em `docs/PLANO-CONFIGURACOES.md`, e
@@ -23,7 +23,7 @@ import Link from 'next/link'
  *
  * Ela encolhia, e o argumento era que duas colunas de texto lado a lado
  * competem. O custo era maior: a barra saltava de 226px para 68px no clique de
- * Configurações, desfazendo a largura que a pessoa tinha escolhido — e o salto
+ * Configurações, desfazendo a largura que a pessoa tinha escolhido, e o salto
  * acontecia justamente na seção onde ela foi mexer nas próprias preferências.
  * Largura de barra é de quem trabalha, e nenhuma tela a sobrescreve.
  */

@@ -36,7 +36,7 @@ export const MAX_PASSOS = 100
 
 /**
  * Escape global (§9 da arquitetura): funciona de qualquer nó, sem precisar
- * estar desenhado no fluxo. A lista é curta de propósito — cada termo aqui é
+ * estar desenhado no fluxo. A lista é curta de propósito, cada termo aqui é
  * uma frase que só quem quer falar com gente escreve.
  */
 export const PALAVRAS_ESCAPE = [
@@ -59,7 +59,7 @@ const MENSAGEM_NAO_ENTENDI = 'Desculpa, não entendi. Pode escolher uma das opç
  * que dependesse de dar meia-noite não seria teste. Quem lê a hora é o
  * servidor, com o fuso da conta (ver `core/horario.ts`).
  *
- * O padrão — aberto, sem previsão — é o comportamento que o produto sempre
+ * O padrão, aberto, sem previsão, é o comportamento que o produto sempre
  * teve, então nenhum chamador antigo muda.
  */
 export type ContextoDoAtendimento = {
@@ -71,7 +71,7 @@ export type ContextoDoAtendimento = {
    * Que dia é hoje **na conta**, em `AAAA-MM-DD`. Quem usa é `data_futura`.
    *
    * Pelo mesmo motivo do resto deste tipo: o motor não lê relógio. E é o dia da
-   * conta, não do servidor — em UTC, a partir das 21h em São Paulo "hoje" já é
+   * conta, não do servidor, em UTC, a partir das 21h em São Paulo "hoje" já é
    * amanhã, que é justamente o horário em que se remarca aula.
    */
   hoje?: string
@@ -94,7 +94,7 @@ export function avisoDeForaDoHorario(contexto: ContextoDoAtendimento): string | 
   if (contexto.atendimentoAberto) return null
 
   return contexto.proximaAbertura
-    ? `Nosso atendimento está fechado agora — voltamos ${contexto.proximaAbertura}. Deixe sua mensagem que a gente responde por aqui assim que abrir. 🙌`
+    ? `Nosso atendimento está fechado agora, voltamos ${contexto.proximaAbertura}. Deixe sua mensagem que a gente responde por aqui assim que abrir. 🙌`
     : 'Nosso atendimento está fechado agora. Deixe sua mensagem que a gente responde por aqui assim que abrir. 🙌'
 }
 
@@ -128,13 +128,13 @@ export function executar(
   }
 
   /*
-   * Regra B: áudio, imagem e documento vão para uma pessoa — **a não ser que o
+   * Regra B: áudio, imagem e documento vão para uma pessoa, **a não ser que o
    * desenho diga o que fazer com eles**.
    *
    * O padrão continua o mesmo, e por isso todo fluxo já publicado se comporta
    * igual: sem a saída `midia` ligada na pergunta em que a conversa parou, a
    * transferência acontece como sempre aconteceu. O que mudou é que agora
-   * existe como dizer "aqui a foto É a resposta" — a receita da farmácia, a
+   * existe como dizer "aqui a foto É a resposta", a receita da farmácia, a
    * planta do imóvel, a foto do pet.
    */
   if (entrada.tipo === 'midia') {
@@ -179,7 +179,7 @@ export function executar(
   const atual = s.noAtual === null ? undefined : porId.get(s.noAtual)
 
   // A sessão aponta para um nó que não existe mais. Acontece quando alguém
-  // republica um fluxo mexendo numa versão já em uso — recomeça em vez de travar.
+  // republica um fluxo mexendo numa versão já em uso, recomeça em vez de travar.
   if (!atual) {
     // Timeout de uma conversa cujo nó sumiu não recomeça o fluxo: acordar
     // alguém com a saudação do zero, sozinho, é pior do que não acordar.
@@ -209,7 +209,7 @@ export function executar(
      * É a única inversão da Regra B em todo o motor, e ela é deliberada: quem
      * não respondeu "de 0 a 10" não é um lead para resgatar, é alguém que não
      * quis responder uma pesquisa. Transferi-lo poria na fila de atendimento
-     * gente que não pediu nada — e a fila é onde o time olha para saber de quem
+     * gente que não pediu nada, e a fila é onde o time olha para saber de quem
      * está devendo resposta. Uma pesquisa ignorada não é uma dívida.
      */
     if (atual.type === 'nps') {
@@ -315,7 +315,7 @@ function responderPergunta(
      *
      * **Antes disto, "me manda a data" aceitava "amanhã".** O valor ia para a
      * variável, o fluxo seguia, e o bloco de API mandava aquilo para o sistema
-     * do cliente — que responde erro, ou pior, aceita. Recusar aqui é conversa,
+     * do cliente, que responde erro, ou pior, aceita. Recusar aqui é conversa,
      * não falha: o bot diz o que espera e continua parado na mesma pergunta.
      *
      * A régua de desistir é a mesma do menu que ninguém acerta: três tentativas
@@ -333,7 +333,7 @@ function responderPergunta(
           contexto,
         )
       }
-      // A frase do cliente vence a nossa, e interpola como qualquer mensagem —
+      // A frase do cliente vence a nossa, e interpola como qualquer mensagem ,
       // "{{nome}}, pode escrever a data assim: 21/08/2026?" é o uso real.
       acoes.push({
         tipo: 'enviar_texto',
@@ -403,13 +403,13 @@ function responderPergunta(
 /**
  * A resposta da pesquisa de satisfação (0060).
  *
- * São **duas paradas no mesmo bloco** — a nota e o "por quê?" — e é por isso que
+ * São **duas paradas no mesmo bloco**: a nota e o "por quê?", e é por isso que
  * a sessão carrega `npsPendente`: sem ele, a segunda mensagem da pessoa voltaria
  * aqui como se fosse uma nota, e o comentário viraria erro de leitura.
  *
  * A ordem de gravar importa e é o ponto inteiro deste bloco: **a nota é gravada
  * assim que chega**, antes de o comentário ser pedido. Quem responde 3 e some
- * antes de explicar continua contando como detrator — que é o desfecho certo,
+ * antes de explicar continua contando como detrator, que é o desfecho certo,
  * porque o número é a nota e o comentário é o extra. Guardar as duas coisas
  * juntas no fim perderia a metade que importa toda vez que alguém desistisse do
  * segundo passo, e quem dá nota baixa é justamente quem mais desiste.
@@ -428,7 +428,7 @@ function responderNps(
   /*
    * Segunda parada: o que chegou é o comentário, não a nota.
    *
-   * **Nada aqui recusa o texto.** Uma justificativa é resposta livre — não há
+   * **Nada aqui recusa o texto.** Uma justificativa é resposta livre, não há
    * formato para conferir, e insistir com quem já deu a nota seria cobrar
    * explicação de quem já fez o favor de responder. Comentário vazio também
    * passa: a nota já está guardada, e é ela que o relatório conta.
@@ -453,7 +453,7 @@ function responderNps(
   /*
    * Primeira parada: a nota.
    *
-   * Aceita "8", "8/10", "nota 8" e "10" — porque é assim que as pessoas
+   * Aceita "8", "8/10", "nota 8" e "10", porque é assim que as pessoas
    * respondem de verdade, e recusar "8/10" seria recusar uma resposta certa por
    * causa da pontuação. O que não passa é texto sem número nenhum e número fora
    * de 0 a 10, e aí vale a mesma régua do resto do motor: três tentativas e a
@@ -483,7 +483,7 @@ function responderNps(
     const valor = String(nota)
     s.vars[no.data.salvarEm] = valor
     // Emitir `salvar_campo` junto faz a nota aparecer na ficha do contato, como
-    // qualquer outro dado colhido — `avaliacoes` é o histórico, a ficha é o
+    // qualquer outro dado colhido, `avaliacoes` é o histórico, a ficha é o
     // "quanto essa pessoa deu da última vez".
     acoes.push({ tipo: 'salvar_campo', campo: no.data.salvarEm, valor })
   }
@@ -493,7 +493,7 @@ function responderNps(
   /*
    * Tem pergunta aberta? Então o bloco para de novo, no mesmo nó.
    *
-   * Sem ela, a conversa segue direto pela faixa da nota — que é a pesquisa de
+   * Sem ela, a conversa segue direto pela faixa da nota, que é a pesquisa de
    * uma pergunta só, e é a que mais gente responde até o fim.
    */
   const aberta = no.data.perguntaAberta.trim()
@@ -520,7 +520,7 @@ function responderNps(
  * O número de 0 a 10 que a pessoa quis dizer, ou `null`.
  *
  * Pega o **primeiro** número do texto de propósito: "8/10" e "nota 8 de 10"
- * querem dizer oito, e ler o último daria dez nos dois casos — um erro que
+ * querem dizer oito, e ler o último daria dez nos dois casos, um erro que
  * inflaria o NPS em silêncio e ninguém conferiria.
  */
 function lerNota(texto: string): number | null {
@@ -548,7 +548,7 @@ function avancar(
    * O caso que mais dói é justamente o que o chamador conhece e o andarilho
    * não: a pessoa clicou num botão, aquela opção não estava ligada em nada, e
    * a conversa acabou em silêncio. Sem esta origem, o motor só saberia dizer
-   * "acabou" — que é exatamente o que não ajuda quem desenhou.
+   * "acabou", que é exatamente o que não ajuda quem desenhou.
    */
   origem?: Passo,
 ): Resultado {
@@ -587,7 +587,7 @@ function avancar(
 
     const no = porId.get(atual)
     // Aresta apontando para um bloco que não existe mais. É um beco de outra
-    // causa — a ligação existe, o destino é que sumiu — e dizer "não está
+    // causa, a ligação existe, o destino é que sumiu, e dizer "não está
     // ligada em nada" mandaria quem lê procurar a coisa errada.
     if (!no) {
       alvoSumido = true
@@ -599,7 +599,7 @@ function avancar(
         /**
          * O bloco virou uma pilha, e cada pedaço vira uma ação.
          *
-         * `partesDaMensagem` lê os **dois** formatos — o grafo antigo, com
+         * `partesDaMensagem` lê os **dois** formatos, o grafo antigo, com
          * `{ texto }`, e o novo, com `partes`. Nada aqui sabe qual dos dois
          * chegou, e é essa ignorância que mantém viva a conversa presa a uma
          * versão publicada antes desta mudança.
@@ -610,8 +610,8 @@ function avancar(
               /**
                * O atraso não é uma ação: ele **atrasa a próxima**.
                *
-               * Podia ser uma ação `esperar`, e aí toda camada de entrega —
-               * WhatsApp, mock, simulador — precisaria aprender a dormir. Como
+               * Podia ser uma ação `esperar`, e aí toda camada de entrega ,
+               * WhatsApp, mock, simulador, precisaria aprender a dormir. Como
                * `atrasoMs` do envio seguinte, o contrato que já existe continua
                * valendo e o formato antigo (`data.atraso`, que sempre foi o
                * atraso *do* envio) produz exatamente as mesmas ações de antes.
@@ -638,7 +638,7 @@ function avancar(
                 tipo: 'enviar_midia',
                 midia: parte.midia,
                 url: interpolar(parte.url, s.vars),
-                // `audio` não aceita legenda — regra do formato, não do canal.
+                // `audio` não aceita legenda, regra do formato, não do canal.
                 ...(legenda !== '' && parte.midia !== 'audio' ? { legenda } : {}),
                 ...(parte.nomeArquivo && parte.midia === 'documento'
                   ? { nomeArquivo: interpolar(parte.nomeArquivo, s.vars) }
@@ -698,7 +698,7 @@ function avancar(
       case 'etapa': {
         // Sem quadro ou sem etapa escolhidos o bloco não faz nada e a conversa
         // segue. O `validar()` recusa publicar assim; aqui a defesa é para o
-        // grafo que já estava no ar quando a etapa foi apagada — e nesse caso
+        // grafo que já estava no ar quando a etapa foi apagada, e nesse caso
         // seguir é o único desfecho aceitável, porque a alternativa é a
         // conversa de alguém morrer por causa de uma arrumação no quadro.
         if (no.data.quadroId && no.data.colunaId) {
@@ -713,7 +713,7 @@ function avancar(
       }
 
       case 'etiqueta': {
-        // Sem etiqueta escolhida o bloco não faz nada e a conversa segue — a
+        // Sem etiqueta escolhida o bloco não faz nada e a conversa segue, a
         // mesma regra do bloco de etapa, e pelo mesmo motivo: a defesa aqui é
         // para o grafo que já estava no ar quando a etiqueta foi apagada.
         if (no.data.etiquetaId) {
@@ -725,7 +725,7 @@ function avancar(
 
       case 'nota': {
         // Interpolado aqui, como em `salvar-campo`: é o que faz a nota
-        // registrar a conversa — "pediu {{servico}} para {{dia}}" — em vez de
+        // registrar a conversa, "pediu {{servico}} para {{dia}}", em vez de
         // repetir a mesma frase em todo contato.
         //
         // Nota vazia não vira ação. Acrescentar uma linha em branco à anotação
@@ -740,14 +740,14 @@ function avancar(
       /*
        * Voltar para um ponto anterior da mesma conversa.
        *
-       * **Não é uma ação, é um desvio** — o motor simplesmente continua a
+       * **Não é uma ação, é um desvio**: o motor simplesmente continua a
        * partir de outro nó, do mesmo jeito que continuaria por uma seta. Por
        * isso não há nada para o servidor resolver depois, e nada que possa
        * falhar: o destino ou existe no grafo, ou o bloco não faz nada.
        *
        * `MAX_PASSOS` é a rede embaixo disto. Um "voltar" que aponta para
        * depois de si mesmo é um ciclo sem nenhuma pergunta no meio, e ele
-       * gira até o teto e vira handoff — que é o desfecho certo para um
+       * gira até o teto e vira handoff, que é o desfecho certo para um
        * desenho que prende alguém.
        */
       case 'voltar': {
@@ -776,7 +776,7 @@ function avancar(
       }
 
       case 'ir-fluxo': {
-        // Sem destino escolhido o bloco não faz nada e a conversa segue — a
+        // Sem destino escolhido o bloco não faz nada e a conversa segue, a
         // mesma defesa do bloco de etapa, e pelo mesmo motivo: `validar()`
         // recusa publicar assim, então isto só alcança grafo que já estava no
         // ar quando o destino sumiu. Seguir é melhor do que travar alguém.
@@ -802,7 +802,7 @@ function avancar(
 
       case 'pergunta': {
         // Lista dinâmica vazia: não há o que perguntar. Parar aqui deixaria a
-        // pessoa olhando uma pergunta sem nenhuma resposta possível — é o
+        // pessoa olhando uma pergunta sem nenhuma resposta possível, é o
         // "esse dia não tem horário livre" saindo pela saída própria.
         if (perguntaEhDinamica(no) && resolverOpcoes(no, s.vars).length === 0) {
           atual = seguir(no, SAIDA_VAZIO)
@@ -822,7 +822,7 @@ function avancar(
        *
        * Para aqui como a pergunta para, e pelo mesmo motivo: o bloco existe
        * para esperar uma resposta. O que ele faz de diferente vem depois, em
-       * `responderNps` — graduar a nota e mandá-la para `avaliacoes`.
+       * `responderNps`, graduar a nota e mandá-la para `avaliacoes`.
        */
       case 'nps': {
         acoes.push({
@@ -883,7 +883,7 @@ function avancar(
         // Todas as mensagens do bloco, em ordem, antes de a conversa mudar de
         // mão: é onde cabe a despedida do bot (o obrigado, o pedido de nota)
         // sem competir com o aviso de que um humano assume. Vazia não vira
-        // mensagem — o WhatsApp recusa texto vazio, e o validador já barra
+        // mensagem, o WhatsApp recusa texto vazio, e o validador já barra
         // publicar assim.
         for (const mensagem of mensagensDoHandoff(no)) {
           if (mensagem.trim() === '') continue
@@ -929,7 +929,7 @@ type Passo = { no: No; saida?: string }
  * A frase que o beco sem saída diz sobre si mesmo.
  *
  * O produto respondia só "A conversa terminou." a qualquer desenho que acabava
- * — e quem desenhou o botão "Voltar ao Menu", ligou ele e viu a conversa morrer
+ *, e quem desenhou o botão "Voltar ao Menu", ligou ele e viu a conversa morrer
  * não tinha por onde começar a procurar. O motor sabe exatamente qual bloco e
  * qual saída não levavam a lugar nenhum; era só ele contar.
  *
@@ -955,7 +955,7 @@ function minuscula(descricao: string): string {
 /**
  * As opções que esta pergunta mostra agora.
  *
- * Desenhadas, é a lista do nó. Dinâmicas, saem de uma variável — texto com os
+ * Desenhadas, é a lista do nó. Dinâmicas, saem de uma variável, texto com os
  * itens separados por `;` ou quebra de linha, que é o formato que sobrevive a
  * `vars` ser `Record<string, string>`. Guardar JSON numa string ali mentiria
  * sobre o tipo; separador não mente, só combina.
@@ -973,11 +973,11 @@ export function resolverOpcoes(no: NoPergunta, vars: Record<string, string>): Op
 }
 
 /**
- * O texto da escolha para o resto da conversa — inteiro, e não o que coube.
+ * O texto da escolha para o resto da conversa, inteiro, e não o que coube.
  *
  * O corte de `resolverOpcoes` é do **menu**: a Meta recusa a mensagem acima de
  * 20 caracteres de rótulo. Mas a confirmação e o comprovante saem como texto
- * comum, onde cabem 4096 — e estavam herdando o corte porque era o rótulo
+ * comum, onde cabem 4096, e estavam herdando o corte porque era o rótulo
  * truncado que ficava guardado. Numa conversa real isso virou:
  *
  *     "Sua aula está marcada para 14/09/2026 às 09:00 · Pilates apar."
@@ -987,7 +987,7 @@ export function resolverOpcoes(no: NoPergunta, vars: Record<string, string>): Op
  *
  * Relê a lista original **por posição**, pelo mesmo motivo e do mesmo jeito que
  * `valorDaOpcao`: o id `d{n}` é a posição, e a lista em `vars` nunca foi
- * cortada. Pergunta desenhada não passa por aqui — ali o rótulo é o que quem
+ * cortada. Pergunta desenhada não passa por aqui, ali o rótulo é o que quem
  * montou o fluxo escreveu, e já é o texto final.
  */
 function rotuloInteiro(no: NoPergunta, vars: Record<string, string>, opcao: Opcao): string {
@@ -1009,7 +1009,7 @@ function rotuloInteiro(no: NoPergunta, vars: Record<string, string>, opcao: Opca
  *
  * A correspondência é **por posição**, e por isso as duas listas têm que sair do
  * mesmo `[]` da mesma resposta. Quando a de valores é mais curta, o que falta
- * vira vazio — inventar um id seria pior do que não ter um, porque o pedido
+ * vira vazio, inventar um id seria pior do que não ter um, porque o pedido
  * seguinte iria para o registro errado de alguém.
  *
  * Não vale para pergunta desenhada: ali a opção já tem id próprio e uma aresta
@@ -1022,7 +1022,7 @@ export function valorDaOpcao(
 ): string | null {
   /*
    * Opção desenhada à mão: o valor está nela mesma. Sem `valor` preenchido,
-   * devolve `null` e quem chamou guarda o rótulo — que é o que sempre houve.
+   * devolve `null` e quem chamou guarda o rótulo, que é o que sempre houve.
    */
   if (!perguntaEhDinamica(no)) {
     const escrito = (opcao.valor ?? '').trim()
@@ -1032,7 +1032,7 @@ export function valorDaOpcao(
   const de = (no.data.valoresDe ?? '').trim()
   if (de === '') return null
 
-  // Os ids das opções dinâmicas são `d1`, `d2`, … — a posição é o próprio id.
+  // Os ids das opções dinâmicas são `d1`, `d2`, …, a posição é o próprio id.
   const posicao = Number(opcao.id.slice(1))
   if (!Number.isInteger(posicao) || posicao < 1) return null
 
@@ -1043,7 +1043,7 @@ export function valorDaOpcao(
  * A frase de quando o bot não entende a resposta livre.
  *
  * A do cliente vence a nossa. As nossas dizem o que falta **e dão um exemplo**,
- * porque "formato inválido" não ensina ninguém a responder certo — e quem não
+ * porque "formato inválido" não ensina ninguém a responder certo, e quem não
  * sabe o que fazer com o erro manda a mesma coisa de novo até o bot desistir.
  */
 export function mensagemDeRecusa(no: NoPergunta): string {
@@ -1101,8 +1101,8 @@ function avaliar(
    * O valor comparado **interpola**.
    *
    * Sem isto, a condição só sabia comparar uma variável contra texto fixo, e
-   * comparar duas coisas da conversa — o orçamento da pessoa contra o preço que
-   * a API devolveu — era impossível. O texto fixo continua funcionando igual:
+   * comparar duas coisas da conversa, o orçamento da pessoa contra o preço que
+   * a API devolveu, era impossível. O texto fixo continua funcionando igual:
    * frase sem `{{ }}` atravessa `interpolar` sem mudar.
    */
   const esperado = normalizar(interpolar(valorEsperado, vars))
@@ -1123,7 +1123,7 @@ function avaliar(
       const a = comoNumero(atual)
       const b = comoNumero(esperado)
       // Um dos lados não é número: falso, e não uma ordem inventada. Comparar
-      // "amanhã" com 3 não tem resposta certa — tem resposta que engana.
+      // "amanhã" com 3 não tem resposta certa, tem resposta que engana.
       if (a === null || b === null) return false
       return operador === 'maior' ? a > b : a < b
     }
@@ -1147,7 +1147,7 @@ function comoNumero(texto: string): number | null {
 }
 
 /**
- * Passa a conversa para uma pessoa — dizendo a verdade sobre a hora.
+ * Passa a conversa para uma pessoa, dizendo a verdade sobre a hora.
  *
  * **Fora do expediente o aviso substitui a frase padrão, não se soma a ela.**
  * "Vou te passar para um atendente. Só um instante!" seguido de "estamos
@@ -1177,7 +1177,7 @@ function transferir(
  *
  * **A saída sem nome nunca é a de timeout.** Sem esta exclusão, uma pergunta de
  * resposta livre com prazo desenhado mandaria quem *respondeu* para o caminho
- * de quem *não respondeu* — porque a aresta de timeout seria a primeira da
+ * de quem *não respondeu*, porque a aresta de timeout seria a primeira da
  * lista. É o tipo de erro que não estoura em lugar nenhum: a conversa segue,
  * segue pelo lado errado, e o desenho na tela parece certo.
  */
@@ -1197,8 +1197,8 @@ function proximo(fluxo: Fluxo, noId: string, saida?: string): string | null {
  *
  * Exportada porque o escape **tem que ganhar dos gatilhos do cliente** (A6). A
  * decisão de qual fluxo abrir acontece no servidor, antes do motor rodar; se
- * ela não conhecesse esta lista, um gatilho com a palavra "atendente" — ou
- * qualquer frase que apareça dentro de "quero falar com uma pessoa" — engoliria
+ * ela não conhecesse esta lista, um gatilho com a palavra "atendente", ou
+ * qualquer frase que apareça dentro de "quero falar com uma pessoa", engoliria
  * o pedido e mandaria a pessoa para um fluxo em vez de para alguém.
  */
 export function pediuAtendente(texto: string): boolean {

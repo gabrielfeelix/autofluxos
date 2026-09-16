@@ -58,7 +58,7 @@ import {
  * um bloco para ir procurá-la. Ajuda que mora longe do campo é ajuda que não
  * existe.
  *
- * Abre em aba nova de propósito — o rascunho fica onde estava, e voltar é
+ * Abre em aba nova de propósito, o rascunho fica onde estava, e voltar é
  * fechar a aba.
  */
 function Ajuda({ secao, oQue }: { secao: string; oQue: string }) {
@@ -91,7 +91,7 @@ export type EtapaDoCliente = { quadroId: string; colunaId: string; rotulo: strin
 /**
  * As etiquetas do cliente, para o bloco de etiqueta (0044).
  *
- * A cor vem junto porque é assim que a etiqueta é reconhecida em toda a casa —
+ * A cor vem junto porque é assim que a etiqueta é reconhecida em toda a casa ,
  * no Inbox, na ficha, no filtro. Um seletor que mostrasse só o nome faria a
  * pessoa escolher às cegas o que ela identifica pela cor no resto do produto.
  */
@@ -118,21 +118,21 @@ export type FluxoDaConta = { id: string; nome: string; publicado: boolean; ativo
 
 /**
  * O formulário do bloco selecionado. Tudo que é específico de um cliente é
- * digitado aqui e vai parar no JSON do fluxo — nunca no código.
+ * digitado aqui e vai parar no JSON do fluxo, nunca no código.
  */
 /**
  * Os prazos que a tela oferece.
  *
  * Lista fechada e não campo livre: prazo é decisão de conversa, não de número.
  * Quem digita "7" numa caixa não sabe se são minutos ou horas, e as opções
- * respondem isso sem uma linha de ajuda. O teto de 24h é a janela do WhatsApp —
+ * respondem isso sem uma linha de ajuda. O teto de 24h é a janela do WhatsApp ,
  * passado dela não há como mandar texto livre, e um prazo que dispara para não
  * conseguir falar só gera handoff.
  */
 /**
  * O operador escrito como quem fala.
  *
- * O dropdown mostrava a palavra crua do código — "contem", sem acento, e
+ * O dropdown mostrava a palavra crua do código, "contem", sem acento, e
  * "maior" sem dizer maior o quê. Quem desenha lê a condição inteira como frase:
  * "orcamento é maior que {{preco}}".
  */
@@ -157,8 +157,8 @@ const NOME_DO_FORMATO_DE_SAIDA: Record<FormatoDeSaida, string> = {
 
 /** O que cada método faz, na língua de quem monta o fluxo. */
 const METODO_EM_PORTUGUES: Record<string, string> = {
-  GET: 'consultar — trazer informação de lá para a conversa',
-  POST: 'mandar — entregar ao sistema o que a conversa coletou',
+  GET: 'consultar, trazer informação de lá para a conversa',
+  POST: 'mandar, entregar ao sistema o que a conversa coletou',
 }
 
 const PRAZOS = [
@@ -185,6 +185,7 @@ export function Painel({
   etapas = [],
   etiquetas = [],
   equipe = [],
+  horarioConfigurado = false,
   fluxos = [],
   aoMudarDados,
   aoDefinirInicio,
@@ -197,7 +198,7 @@ export function Painel({
   variaveis: string[]
   /**
    * Que blocos guardam cada variável. É o que separa "reaproveitei a de lá" de
-   * "criei outra igual" — sem isso o campo do próprio bloco se acusaria de
+   * "criei outra igual", sem isso o campo do próprio bloco se acusaria de
    * repetir a si mesmo.
    */
   origensDeVariaveis?: Record<string, string[]>
@@ -205,7 +206,7 @@ export function Painel({
    * Todos os blocos do desenho. É o que o bloco de Voltar oferece como destino.
    *
    * Vem inteiro e não só os ids porque a lista precisa mostrar o texto de cada
-   * um — escolher entre onze uuids não é escolher.
+   * um, escolher entre onze uuids não é escolher.
    */
   blocos?: No[]
   /**
@@ -221,6 +222,21 @@ export function Painel({
   etiquetas?: EtiquetaDoCliente[]
   /** Quem atende, para escolher a quem endereçar o aviso do handoff. */
   equipe?: MembroDoCliente[]
+  /**
+   * Esta conta tem horário de atendimento preenchido?
+   *
+   * Serve para o bloco de handoff contar a verdade sobre si mesmo. Ele **já**
+   * manda um aviso quando a transferência cai fora do expediente, com a hora
+   * de voltar, e faz isso desde a rodada do `avisoDeForaDoHorario`. Só que nada
+   * na tela dizia, e em 16/set/2026 um cliente pediu de novo o recurso que já
+   * tinha, propondo montar uma condição na mão para reproduzi-lo.
+   *
+   * Pior: as seis contas de produção estavam com o horário em branco, então o
+   * recurso nunca tinha rodado uma vez. Conta sem horário é conta sempre
+   * aberta, e conta sempre aberta nunca manda o aviso. Sem este campo, o bloco
+   * prometeria na tela uma coisa que não aconteceria na conversa.
+   */
+  horarioConfigurado?: boolean
   fluxos?: FluxoDaConta[]
   aoMudarDados: (dados: Record<string, unknown>) => void
   aoDefinirInicio: () => void
@@ -242,13 +258,13 @@ export function Painel({
 
   /*
    * As variáveis que **outros** blocos guardam. A do próprio bloco sai da lista
-   * porque escolher o nome que já está no campo não é escolha nenhuma — e
+   * porque escolher o nome que já está no campo não é escolha nenhuma, e
    * porque é ela que faria o campo dizer "reaproveita" para si mesmo.
    *
    * Variável sem nenhuma origem neste desenho **fica**: ela vem de outra
    * automação da conta, e é exatamente a que mais precisa ser oferecida. O que
    * um fluxo guarda fica no contato e continua lá na conversa seguinte, então
-   * ler `{{plano}}` gravado pelo fluxo de matrícula é uso certo — e antes disto
+   * ler `{{plano}}` gravado pelo fluxo de matrícula é uso certo, e antes disto
    * a única forma era digitar de cabeça, onde errar uma letra não estoura:
    * a variável vira vazia e a mensagem sai com um buraco.
    */
@@ -296,7 +312,7 @@ export function Painel({
         <>
           {/*
             Arrastar, escolher do computador, ou reusar o que já está no acervo
-            — e o tipo sai do arquivo. O campo pedindo `https://` era o nosso
+           , e o tipo sai do arquivo. O campo pedindo `https://` era o nosso
             problema empurrado para quem usa: a foto da sala está no computador
             da pessoa, não num servidor.
           */}
@@ -314,7 +330,7 @@ export function Painel({
                   url: escolha.url,
                   midia: escolha.midia,
                   // Áudio não aceita legenda: a Meta recusa a mensagem inteira.
-                  // Limpar em vez de deixar guardada e invisível — o campo some
+                  // Limpar em vez de deixar guardada e invisível, o campo some
                   // da tela, e um texto que ninguém vê barraria a publicação sem
                   // dizer onde está.
                   ...(escolha.midia === 'audio' ? { legenda: '' } : {}),
@@ -339,7 +355,7 @@ export function Painel({
 
           {no.data.midia === 'audio' ? (
             <p className="rounded-lg border border-line bg-surface px-3 py-2.5 text-[11.5px] leading-5 text-muted">
-              Áudio não aceita legenda no WhatsApp — a Meta recusa a mensagem
+              Áudio não aceita legenda no WhatsApp, a Meta recusa a mensagem
               inteira, não ignora o campo. Para dizer algo junto, use um bloco de
               Mensagem antes ou depois deste.
             </p>
@@ -377,13 +393,13 @@ export function Painel({
             valor={no.data.salvarEm ?? ''}
             variaveis={deOutrosBlocos}
             modo="guarda"
-            dica="nome sem espaço nem acento, ex: nome, prazo — ou escolha uma que o fluxo já tem em {x}"
+            dica="nome sem espaço nem acento, ex: nome, prazo, ou escolha uma que o fluxo já tem em {x}"
             aoMudar={(v) => aoMudarDados({ salvarEm: v.trim() === '' ? undefined : v.trim() })}
             nota={
               no.data.opcoes.length > 0 ? (
                 <>
                   É <strong className="text-muted">uma variável só</strong>, e ela guarda o rótulo do
-                  botão clicado — {no.data.opcoes.map((o) => `“${o.rotulo}”`).join(', ')}. Ou seja: é
+                  botão clicado, {no.data.opcoes.map((o) => `“${o.rotulo}”`).join(', ')}. Ou seja: é
                   o caminho que o lead levou, e cada ramo depois daqui guarda o que for dele em
                   variáveis próprias.
                 </>
@@ -413,7 +429,7 @@ export function Painel({
                 O mesmo campo do ramo dinâmico, e pelo mesmo motivo: o que a
                 pessoa lê e o que a API entende são coisas diferentes. Ele mora
                 aqui embaixo porque é ele que faz a coluna de valor aparecer
-                acima — preencher o destino é o que revela os campos de origem,
+                acima, preencher o destino é o que revela os campos de origem,
                 e não o contrário.
               */}
               <CampoDeVariavel
@@ -496,7 +512,7 @@ export function Painel({
                         <span className="text-muted">
                           “{PEDIDO_PADRAO[no.data.formato]}”
                         </span>{' '}
-                        Diga o que falta <strong className="text-muted">e dê um exemplo</strong> —
+                        Diga o que falta <strong className="text-muted">e dê um exemplo</strong> ,
                         “formato inválido” não ensina ninguém a responder certo.
                       </p>
 
@@ -505,13 +521,13 @@ export function Painel({
                         valor={no.data.salvarPadraoEm ?? ''}
                         variaveis={deOutrosBlocos}
                         modo="guarda"
-                        dica={`ex: ${no.data.formato}_padrao — vira ${EXEMPLO_PADRONIZADO[no.data.formato]}`}
+                        dica={`ex: ${no.data.formato}_padrao, vira ${EXEMPLO_PADRONIZADO[no.data.formato]}`}
                         aoMudar={(v) =>
                           aoMudarDados({ salvarPadraoEm: v.trim() === '' ? undefined : v.trim() })
                         }
                         nota={
                           <>
-                            “Guardar resposta em” fica com o que a pessoa escreveu — é o que ela quer
+                            “Guardar resposta em” fica com o que a pessoa escreveu, é o que ela quer
                             ler de volta. Esta guarda a forma que uma API aceita. Use quando o bloco
                             seguinte for chamar um sistema.
                           </>
@@ -527,7 +543,7 @@ export function Painel({
               <p className="text-[11px] leading-4 text-dim">
                 As opções saem de{' '}
                 <code className="font-mono text-primary">{no.data.opcoesDe}</code>, separadas por{' '}
-                <code className="font-mono">;</code> ou quebra de linha — normalmente preenchida por
+                <code className="font-mono">;</code> ou quebra de linha, normalmente preenchida por
                 um bloco de API antes deste. Como elas só existem durante a conversa, o bloco deixa
                 de ramificar por opção: ligue as saídas{' '}
                 <strong className="text-soft">escolheu</strong> e{' '}
@@ -539,7 +555,7 @@ export function Painel({
                 O rótulo é o que a pessoa lê; o valor é o que o sistema entende.
 
                 Os dois campos abaixo existem porque o menu de horários guardava
-                "07:00" e o `POST` seguinte precisava do id da sessão — que não
+                "07:00" e o `POST` seguinte precisava do id da sessão, que não
                 estava em lugar nenhum da conversa. Duas mapeadas do mesmo `[]`
                 resolvem, e é isso que a dica explica.
               */}
@@ -552,7 +568,7 @@ export function Painel({
                 aoMudar={(v) => aoMudarDados({ valoresDe: v.trim() === '' ? undefined : v.trim() })}
                 nota={
                   <>
-                    Use quando o que a pessoa lê e o que o sistema entende são coisas diferentes —
+                    Use quando o que a pessoa lê e o que o sistema entende são coisas diferentes ,
                     ela escolhe <strong className="text-muted">“07:00”</strong> e a API precisa do
                     id daquele horário. No bloco de Serviços externos, mapeie duas vezes a mesma
                     lista: <code className="font-mono text-primary">livres[].hora</code> para as
@@ -568,7 +584,7 @@ export function Painel({
                   valor={no.data.salvarValorEm ?? ''}
                   variaveis={deOutrosBlocos}
                   modo="guarda"
-                  dica="ex: sessao_id — é o que o bloco seguinte manda para a API"
+                  dica="ex: sessao_id, é o que o bloco seguinte manda para a API"
                   aoMudar={(v) =>
                     aoMudarDados({ salvarValorEm: v.trim() === '' ? undefined : v.trim() })
                   }
@@ -581,7 +597,7 @@ export function Painel({
             A foto como resposta.
 
             Sem isto, foto, áudio e documento sempre iam para uma pessoa com o
-            motivo "o bot só lê texto" — e a farmácia que pede a receita, o
+            motivo "o bot só lê texto", e a farmácia que pede a receita, o
             petshop que quer ver o pet e a imobiliária que recebe a planta não
             tinham como dizer que ali o arquivo **é** a resposta certa.
           */}
@@ -612,11 +628,11 @@ export function Painel({
               valor={no.data.salvarMidiaEm ?? ''}
               variaveis={deOutrosBlocos}
               modo="guarda"
-              dica="ex: receita — dá um nome ao arquivo para usar depois na conversa"
+              dica="ex: receita, dá um nome ao arquivo para usar depois na conversa"
               nota={
                 <>
                   Guarda uma etiqueta do arquivo que a pessoa mandou, não o arquivo em si. Serve
-                  para mandar a foto ao seu sistema, se você tiver um — e, se não tiver, pode
+                  para mandar a foto ao seu sistema, se você tiver um, e, se não tiver, pode
                   deixar em branco: a foto continua aparecendo na conversa de quem atende.
                 </>
               }
@@ -640,7 +656,7 @@ export function Painel({
             />
             <span className="mt-1.5 block text-[11px] leading-4 text-dim">
               {no.data.timeoutMinutos
-                ? 'Passado o prazo sem resposta, a conversa sai pela saída “não respondeu”. Sem nada ligado nela, ela vai para uma pessoa — quem parou no meio da triagem é o lead que mais vale resgatar.'
+                ? 'Passado o prazo sem resposta, a conversa sai pela saída “não respondeu”. Sem nada ligado nela, ela vai para uma pessoa, quem parou no meio da triagem é o lead que mais vale resgatar.'
                 : 'Sem prazo, a conversa espera para sempre. É como o produto sempre funcionou.'}
             </span>
             {!!no.data.timeoutMinutos && (
@@ -653,14 +669,14 @@ export function Painel({
               **O aviso que só existia depois do estrago.**
 
               A janela do WhatsApp fecha 24h depois da última mensagem *dela*, e
-              o prazo aqui conta a partir da pergunta — que é sempre depois. Num
+              o prazo aqui conta a partir da pergunta, que é sempre depois. Num
               prazo de 12h ou mais, o disparo por fila (que acontece "a partir
               do prazo", nunca antes) tem chance real de cair já fora da janela:
               a Meta recusa com `(#131047)`, a retomada não chega e a conversa
               vira handoff.
 
               Nada disso aparecia no editor. Quem desenhava só descobria em
-              produção, e o sintoma — "a mensagem não chegou" — não aponta para
+              produção, e o sintoma, "a mensagem não chegou", não aponta para
               o campo que a causou.
             */}
             {(no.data.timeoutMinutos ?? 0) >= 720 && (
@@ -726,7 +742,7 @@ export function Painel({
             valor={no.data.campo}
             variaveis={deOutrosBlocos}
             modo="guarda"
-            dica="nome sem espaço nem acento — ou escolha uma que o fluxo já tem em {x}"
+            dica="nome sem espaço nem acento, ou escolha uma que o fluxo já tem em {x}"
             aoMudar={(campo) => aoMudarDados({ campo })}
           />
           <Linha
@@ -747,13 +763,13 @@ export function Painel({
             <Ajuda secao="blocos" oQue="o que é o quadro" />
           </span>
           <p className="mb-1.5 text-[10.5px] leading-4 text-dim">
-            O quadro é o painel de acompanhamento do atendimento — colunas como “chegou”,
+            O quadro é o painel de acompanhamento do atendimento, colunas como “chegou”,
             “orçamento enviado”, “fechou”. Este bloco move a pessoa de coluna sozinho, conforme a
             conversa anda.
           </p>
           {etapas.length === 0 ? (
             <span className="block rounded-lg border border-dashed border-strong px-3 py-3 text-[11.5px] leading-5 text-dim">
-              Este cliente ainda não tem quadro nenhum. Crie um em Quadros, na tela do cliente — sem
+              Este cliente ainda não tem quadro nenhum. Crie um em Quadros, na tela do cliente, sem
               etapa para escolher, este bloco não tem o que fazer.
             </span>
           ) : (
@@ -773,12 +789,12 @@ export function Painel({
                 }}
                 rotuloAcessivel="Etapa do quadro"
                 opcoes={[
-                  { valor: '', rotulo: 'Nenhuma — o bloco não faz nada' },
+                  { valor: '', rotulo: 'Nenhuma, o bloco não faz nada' },
                   ...etapas.map((etapa) => ({ valor: etapa.colunaId, rotulo: etapa.rotulo })),
                 ]}
               />
               <span className="mt-1 block text-[10.5px] leading-4 text-dim">
-                Quem passar por aqui entra no quadro nesta etapa — e quem já estava nele é movido
+                Quem passar por aqui entra no quadro nesta etapa, e quem já estava nele é movido
                 para cá. O relógio de &quot;parado há quanto tempo&quot; recomeça.
               </span>
             </>
@@ -792,12 +808,12 @@ export function Painel({
             Etiqueta no contato
           </span>
           <p className="mb-1.5 text-[10.5px] leading-4 text-dim">
-            Etiqueta é o que a pessoa é — “quer pilates”, “já é aluno”. Ela pode ter várias ao
+            Etiqueta é o que a pessoa é, “quer pilates”, “já é aluno”. Ela pode ter várias ao
             mesmo tempo, e é por elas que se filtra a lista de contatos depois.
           </p>
           {etiquetas.length === 0 ? (
             <span className="block rounded-lg border border-dashed border-strong px-3 py-3 text-[11.5px] leading-5 text-dim">
-              Este cliente ainda não tem etiqueta nenhuma. Crie uma em Ajustes → Etiquetas — sem
+              Este cliente ainda não tem etiqueta nenhuma. Crie uma em Ajustes → Etiquetas, sem
               etiqueta para escolher, este bloco não tem o que fazer.
             </span>
           ) : (
@@ -807,12 +823,12 @@ export function Painel({
                 aoMudar={(etiquetaId) => aoMudarDados({ etiquetaId })}
                 rotuloAcessivel="Etiqueta"
                 opcoes={[
-                  { valor: '', rotulo: 'Nenhuma — o bloco não faz nada' },
+                  { valor: '', rotulo: 'Nenhuma, o bloco não faz nada' },
                   ...etiquetas.map((e) => ({ valor: e.id, rotulo: e.nome })),
                 ]}
               />
               <span className="mt-1 block text-[10.5px] leading-4 text-dim">
-                Vale o mesmo que pôr a etiqueta à mão no Inbox — inclusive começar a sequência que
+                Vale o mesmo que pôr a etiqueta à mão no Inbox, inclusive começar a sequência que
                 ela dispara. Quem já tem a etiqueta não a recebe duas vezes.
               </span>
             </>
@@ -826,7 +842,7 @@ export function Painel({
             `formatavel` fica de fora, e é decisão e não esquecimento: a
             anotação **não** vira mensagem no WhatsApp. Oferecer a barra de
             negrito aqui ensinaria a escrever `*isto*` num campo que ninguém
-            renderiza — o asterisco apareceria literal para quem lê a ficha.
+            renderiza, o asterisco apareceria literal para quem lê a ficha.
           */}
           <Area
             rotulo="Anotação"
@@ -837,7 +853,7 @@ export function Painel({
             exemplo="pediu {{servico}} para {{dia}}"
             dica={
               <>
-                Vai para a anotação da ficha, onde a equipe escreve — e{' '}
+                Vai para a anotação da ficha, onde a equipe escreve, e{' '}
                 <strong className="text-muted">acrescenta</strong>, nunca apaga o que já estava lá.
                 Ninguém do outro lado da conversa lê isto.
               </>
@@ -859,7 +875,7 @@ export function Painel({
               <>
                 A resposta esperada é um número de{' '}
                 <strong className="text-muted">0 a 10</strong>. O bloco entende “8”, “8/10” e
-                “nota 8” — e pede de novo quando não vier número nenhum.
+                “nota 8”, e pede de novo quando não vier número nenhum.
               </>
             }
           />
@@ -869,7 +885,7 @@ export function Painel({
 
             As três saídas saem iguais do bloco; sem esta linha, descobrir onde
             a nota 7 cai exigiria testar. E é justamente o 7 que surpreende
-            quem nunca leu sobre NPS — "quase dez" parece bom e conta como
+            quem nunca leu sobre NPS, "quase dez" parece bom e conta como
             neutro.
           */}
           <div className="rounded-[8px] border border-subtle bg-subtle/[0.04] px-2.5 py-2 text-[11px] leading-4 text-dim">
@@ -878,7 +894,7 @@ export function Painel({
             <strong className="text-muted">7 e 8 neutro</strong>,{' '}
             <strong className="text-muted">0 a 6 detrator</strong>. Cada faixa tem a sua saída.
             <span className="mt-1.5 block">
-              A nota é guardada com a data, sempre — a de hoje não apaga a do mês passado.
+              A nota é guardada com a data, sempre, a de hoje não apaga a do mês passado.
             </span>
           </div>
 
@@ -887,7 +903,7 @@ export function Painel({
             valor={no.data.salvarEm ?? ''}
             variaveis={deOutrosBlocos}
             modo="guarda"
-            dica="ex: nota — para escrever “obrigado pelo {{nota}}” no bloco seguinte"
+            dica="ex: nota, para escrever “obrigado pelo {{nota}}” no bloco seguinte"
             nota={
               <>
                 Opcional. A nota vai para o relatório de qualquer jeito; isto serve só para os
@@ -907,7 +923,7 @@ export function Painel({
             exemplo="O que faltou para ser uma boa experiência?"
             dica={
               <>
-                Vazio, a pesquisa acaba na nota — e é a que mais gente responde até o fim. Com
+                Vazio, a pesquisa acaba na nota, e é a que mais gente responde até o fim. Com
                 texto, o bloco faz esta segunda pergunta{' '}
                 <strong className="text-muted">antes</strong> de seguir pela faixa da nota.
                 <span className="mt-1 block">
@@ -924,7 +940,7 @@ export function Painel({
               valor={no.data.comentarioEm ?? ''}
               variaveis={deOutrosBlocos}
               modo="guarda"
-              dica="ex: motivo — para repetir o que a pessoa escreveu"
+              dica="ex: motivo, para repetir o que a pessoa escreveu"
               aoMudar={(v) =>
                 aoMudarDados({ comentarioEm: v.trim() === '' ? undefined : v.trim() })
               }
@@ -947,12 +963,12 @@ export function Painel({
               O texto diz o desfecho **oposto** ao da pergunta, e de propósito:
               pesquisa sem resposta encerra em vez de chamar uma pessoa. Quem
               leu a explicação da pergunta vai supor a fila se a gente não
-              disser — e pôr na fila quem só ignorou uma pesquisa enche de
+              disser, e pôr na fila quem só ignorou uma pesquisa enche de
               dívida falsa a tela onde o time vê o que deve.
             */}
             <span className="mt-1.5 block text-[11px] leading-4 text-dim">
               {no.data.timeoutMinutos
-                ? 'Passado o prazo, a conversa sai pela saída “não respondeu”. Sem nada ligado nela, a conversa encerra — quem ignorou uma pesquisa não vira fila de atendimento.'
+                ? 'Passado o prazo, a conversa sai pela saída “não respondeu”. Sem nada ligado nela, a conversa encerra, quem ignorou uma pesquisa não vira fila de atendimento.'
                 : 'Sem prazo, a conversa espera para sempre pela nota.'}
             </span>
           </label>
@@ -966,7 +982,7 @@ export function Painel({
           </span>
           {fluxos.length === 0 ? (
             <span className="block rounded-lg border border-dashed border-strong px-3 py-3 text-[11.5px] leading-5 text-dim">
-              Esta conta ainda não tem automação para escolher. Crie outra em Automações — sem um
+              Esta conta ainda não tem automação para escolher. Crie outra em Automações, sem um
               destino, este bloco não tem para onde mandar a conversa.
             </span>
           ) : (
@@ -977,12 +993,12 @@ export function Painel({
                   const escolhido = fluxos.find((f) => f.id === fluxoId)
                   // `rotulo` viaja junto pelo mesmo motivo do bloco de etapa: o
                   // desenho precisa dizer alguma coisa, e um uuid não diz. Quem
-                  // manda é `fluxoId` — o motor e o `validar()` ignoram o rótulo.
+                  // manda é `fluxoId`, o motor e o `validar()` ignoram o rótulo.
                   aoMudarDados({ fluxoId, rotulo: escolhido?.nome ?? '' })
                 }}
                 rotuloAcessivel="Automação de destino"
                 opcoes={[
-                  { valor: '', rotulo: 'Nenhuma — a conversa pararia aqui' },
+                  { valor: '', rotulo: 'Nenhuma, a conversa pararia aqui' },
                   ...fluxos.map((f) => ({
                     valor: f.id,
                     rotulo: f.nome,
@@ -990,9 +1006,9 @@ export function Painel({
                     // descobrir na lista de impedimentos que o destino não
                     // publica é o caminho longo para a mesma informação.
                     detalhe: !f.publicado
-                      ? 'nunca publicada — não há o que executar lá'
+                      ? 'nunca publicada, não há o que executar lá'
                       : !f.ativo
-                        ? 'desligada — quem chegar aqui vai para uma pessoa'
+                        ? 'desligada, quem chegar aqui vai para uma pessoa'
                         : undefined,
                   })),
                 ]}
@@ -1038,7 +1054,7 @@ export function Painel({
           />
           <span className="mt-1 block text-[10.5px] leading-4 text-dim">
             A conversa continua a partir do bloco escolhido, neste mesmo fluxo. O que já foi
-            guardado <strong className="text-muted">não é apagado</strong> — quem voltou ao menu
+            guardado <strong className="text-muted">não é apagado</strong>, quem voltou ao menu
             depois de dizer o nome não quer dizer o nome de novo.
           </span>
         </label>
@@ -1050,7 +1066,7 @@ export function Painel({
             O aviso do plano vem **primeiro e só quando é verdade**.
             
             Antes ele era o último parágrafo do card e aparecia sempre, inclusive
-            para quem tinha contratado — um aviso que mente metade das vezes é um
+            para quem tinha contratado, um aviso que mente metade das vezes é um
             aviso que ninguém lê na vez em que importa. E ele vem no topo porque
             muda se o que está abaixo vale alguma coisa.
           */}
@@ -1069,7 +1085,7 @@ export function Painel({
             pode consultar coisa.
           */}
           <p className="text-[11.5px] leading-5 text-dim">
-            A IA responde com o que estiver escrito no contexto do negócio — e, se você marcar
+            A IA responde com o que estiver escrito no contexto do negócio, e, se você marcar
             abaixo, com o que ela consultar no sistema do cliente. Quando não souber, passa para
             uma pessoa.
           </p>
@@ -1103,7 +1119,7 @@ export function Painel({
             valor={no.data.salvarEm ?? ''}
             variaveis={deOutrosBlocos}
             modo="guarda"
-            dica="opcional — só se outro bloco precisar usar o que a IA respondeu"
+            dica="opcional, só se outro bloco precisar usar o que a IA respondeu"
             aoMudar={(v) => aoMudarDados({ salvarEm: v.trim() === '' ? undefined : v.trim() })}
           />
         </>
@@ -1111,6 +1127,53 @@ export function Painel({
 
       {no.type === 'handoff' && (
         <>
+          {/*
+            **O bloco conta o que ele já faz sozinho.**
+
+            Transferir para uma pessoa às 3h da manhã é prometer uma coisa que
+            ninguém cumpre até de manhã, e o motor já resolve isso: fora do
+            expediente ele acrescenta um aviso com a hora de voltar, depois das
+            mensagens escritas aqui. Ver `avisoDeForaDoHorario`.
+
+            Isso não aparecia em lugar nenhum, e o resultado foi um cliente
+            pedindo o recurso que já existia e se oferecendo para montar uma
+            condição na mão. Ele mesmo escreveu que parecia "um passo extra".
+            Estava certo: era um passo extra para refazer o que o produto já
+            fazia de graça.
+
+            Quando a conta está sem horário, o aviso muda de tom e vira o
+            caminho: sem horário preenchido a conta é sempre aberta, e nada
+            disto acontece.
+          */}
+          <div
+            className={`rounded-[10px] border px-3 py-2.5 text-[11.5px] leading-[1.6] ${
+              horarioConfigurado
+                ? 'border-line bg-white/[0.02] text-dim'
+                : 'border-amber-400/25 bg-amber-400/[0.06] text-muted'
+            }`}
+          >
+            {horarioConfigurado ? (
+              <>
+                Fora do horário de atendimento, este bloco manda sozinho um aviso
+                com a hora de voltar, depois das mensagens acima. Não precisa de
+                condição.
+              </>
+            ) : (
+              <>
+                <strong className="text-aviso">Esta conta está como sempre aberta.</strong>{' '}
+                Com um horário preenchido, este bloco passa a avisar sozinho quem
+                escrever fora do expediente, dizendo quando vocês voltam.{' '}
+                {clienteId && (
+                  <a
+                    href={`/clientes/${clienteId}/ajustes/horario`}
+                    className="font-semibold text-primary underline-offset-2 hover:underline"
+                  >
+                    Preencher o horário
+                  </a>
+                )}
+              </>
+            )}
+          </div>
           <MensagensDoHandoff
             mensagens={mensagensDoHandoff(no)}
             conhecidas={variaveis}
@@ -1127,7 +1190,7 @@ export function Painel({
           {/*
             **Avisar a equipe toda é o padrão, e continua sendo o certo na
             maioria dos handoffs**: quem estiver disponível pega. Escolher uma
-            pessoa é para quando o bloco já sabe de quem é o assunto —
+            pessoa é para quando o bloco já sabe de quem é o assunto ,
             "cancelamento é com o dono", "orçamento acima de X é com a Marina".
 
             Só aparece com mais de uma pessoa na conta: num time de um, o campo
@@ -1151,7 +1214,7 @@ export function Painel({
               />
               <span className="mt-1.5 block text-[11px] leading-4 text-dim">
                 {no.data.avisarUsuarioId
-                  ? 'Se essa pessoa sair da conta ou estiver ausente, o aviso volta a ser da equipe — aviso endereçado a quem não está é aviso que ninguém recebe.'
+                  ? 'Se essa pessoa sair da conta ou estiver ausente, o aviso volta a ser da equipe, aviso endereçado a quem não está é aviso que ninguém recebe.'
                   : 'Todo mundo que estiver disponível recebe, respeitando o horário de atendimento.'}
               </span>
             </label>
@@ -1167,7 +1230,7 @@ export function Painel({
             Ele preenche os campos abaixo **uma vez** e some do caminho: o que
             fica gravado no fluxo é o bloco resolvido, não uma referência viva.
             Se fosse referência, mudar o endereço da RD amanhã mudaria por baixo
-            o que uma conversa em andamento vai chamar — e versão publicada é
+            o que uma conversa em andamento vai chamar, e versão publicada é
             imutável aqui também.
           */}
           <PresetsDeIntegracao
@@ -1190,7 +1253,7 @@ export function Painel({
             A resposta é sim nas duas, e ela não estava escrita em lugar nenhum
             da tela. `varsIniciais()` semeia `{{telefone}}` e `{{nome}}` ao criar
             a sessão, então este bloco pode ser o primeiro do desenho e procurar
-            a pessoa antes de o bot dizer qualquer coisa — que é exatamente o
+            a pessoa antes de o bot dizer qualquer coisa, que é exatamente o
             que separa "Olá, qual é o seu nome?" de "Oi, Ana!".
           */}
           <p className="rounded-[10px] border border-line bg-panel px-3 py-2.5 text-[11.5px] leading-5 text-dim">
@@ -1218,14 +1281,14 @@ export function Painel({
             <span className="mt-1.5 block text-[11px] leading-4 text-dim">
               {no.data.metodo === 'GET'
                 ? 'Consultar: pergunta alguma coisa ao sistema e traz a resposta para a conversa.'
-                : 'Mandar: entrega ao sistema o que a conversa coletou — um pedido, um agendamento, um cadastro.'}
+                : 'Mandar: entrega ao sistema o que a conversa coletou, um pedido, um agendamento, um cadastro.'}
             </span>
           </label>
 
           <Linha
             rotulo="Endereço"
             valor={no.data.url}
-            dica="o link que quem fez o sistema te passou — começa com https://"
+            dica="o link que quem fez o sistema te passou, começa com https://"
             ajuda={<Ajuda secao="outros-sistemas" oQue="onde conseguir este endereço" />}
             aoMudar={(url) => aoMudarDados({ url })}
             aceitaVariavel
@@ -1241,7 +1304,7 @@ export function Painel({
               exemplo={'{\n  "nome": "{{nome}}",\n  "telefone": "{{telefone}}"\n}'}
               dica={
                 <>
-                  Os dados que a conversa já tem, no formato que o seu sistema espera — quem faz o
+                  Os dados que a conversa já tem, no formato que o seu sistema espera, quem faz o
                   sistema diz quais campos ele quer. Cada valor entre aspas, e as variáveis também.
                 </>
               }
@@ -1263,22 +1326,22 @@ export function Painel({
             </span>
 
             {/*
-              Sem nenhuma cadastrada, o campo virava um beco — e foi assim que
+              Sem nenhuma cadastrada, o campo virava um beco, e foi assim que
               ele foi encontrado, montando o primeiro fluxo de agendamento.
 
-              O que havia aqui era um dropdown de uma opção só, "Nenhuma — o
+              O que havia aqui era um dropdown de uma opção só, "Nenhuma, o
               endereço não pede chave", com a integração pronta logo acima
               mandando escolher a credencial abaixo. Quem lê a única opção lê
               uma afirmação, não uma escolha: *"nenhum endereço pede chave; mas
               se nenhum pede, por que ele pede pra escolher credencial?"*. O
-              bloco de IA já tinha ganhado este mesmo aviso com o link — este
+              bloco de IA já tinha ganhado este mesmo aviso com o link, este
               aqui não, e é o bloco por onde todo fluxo de agenda começa.
             */}
             {/*
               A caixa substitui o campo, **menos** quando o bloco já aponta para
               uma credencial: aí a lista está vazia porque a credencial escolhida
               foi apagada, e esconder o campo tiraria o único jeito de desfazer a
-              escolha — o `validar()` recusaria publicar e a tela não ofereceria
+              escolha, o `validar()` recusaria publicar e a tela não ofereceria
               saída nenhuma.
             */}
             {conexoes.length === 0 && !no.data.conexaoId ? (
@@ -1291,7 +1354,7 @@ export function Painel({
                 >
                   Credenciais
                 </a>{' '}
-                e volte aqui para escolher. Se ele não pedir nada, o bloco já está pronto — não há
+                e volte aqui para escolher. Se ele não pedir nada, o bloco já está pronto, não há
                 o que preencher.
               </p>
             ) : (
@@ -1303,7 +1366,7 @@ export function Painel({
                   }
                   rotuloAcessivel="Credencial"
                   opcoes={[
-                    { valor: '', rotulo: 'Nenhuma — o endereço não pede chave' },
+                    { valor: '', rotulo: 'Nenhuma, o endereço não pede chave' },
                     ...conexoes.map((conexao) => ({ valor: conexao.id, rotulo: conexao.nome })),
                   ]}
                 />
@@ -1340,12 +1403,12 @@ export function Painel({
 }
 
 /**
- * Os valores que a variável desta condição pode ter — clicáveis.
+ * Os valores que a variável desta condição pode ter, clicáveis.
  *
  * Quando ela vem de uma pergunta com botões, a lista de valores possíveis é
  * fechada e conhecida: são os rótulos dos botões. Cobrar que alguém digite
  * "Agendar aula" de memória é criar um erro que **não estoura em lugar
- * nenhum** — a comparação falha calada, todo mundo desce pelo ramo errado, e o
+ * nenhum**: a comparação falha calada, todo mundo desce pelo ramo errado, e o
  * desenho na tela continua parecendo certo.
  *
  * Some sozinho quando não há o que oferecer (variável de resposta livre, ou
@@ -1391,7 +1454,7 @@ function ValoresConhecidos({
  * As mensagens que o bloco de "falar com humano" manda antes de transferir.
  *
  * O bloco sempre foi a última fala do bot, e por muito tempo essa fala foi uma
- * frase só — "vou te passar para um atendente". Quem monta fluxo pediu o que
+ * frase só, "vou te passar para um atendente". Quem monta fluxo pediu o que
  * faltava: agradecer e pedir uma avaliação do atendimento **do bot**, que é
  * outra frase e não cabe grudada no aviso. Bloco de mensagem depois deste não
  * resolve, porque a transferência acontece aqui: o que vier depois já chega com
@@ -1520,7 +1583,7 @@ function Linha({
 }
 
 /**
- * `limite` não corta o que a pessoa digita — mostra. Cortar no meio de uma frase
+ * `limite` não corta o que a pessoa digita, mostra. Cortar no meio de uma frase
  * enquanto alguém escreve é pior do que deixar passar: o validador barra a
  * publicação, e é lá que a recusa vale.
  */
@@ -1548,7 +1611,7 @@ function Area({
    * Este texto vira mensagem no WhatsApp?
    *
    * Só quem responde sim ganha a barra de formatação. `*negrito*` num campo que
-   * a Meta não renderiza — a instrução da IA, o motivo interno do handoff — não
+   * a Meta não renderiza, a instrução da IA, o motivo interno do handoff, não
    * fica em negrito: fica com asterisco, literal, na frente de quem lê. Oferecer
    * o botão ali seria ensinar a estragar o dado.
    */
@@ -1556,7 +1619,7 @@ function Area({
 }) {
   const area = useRef<HTMLTextAreaElement>(null)
   // `useId` e não o rótulo: "Mensagem antes de passar" tem espaço, e espaço em
-  // `id` é HTML inválido — o `htmlFor` simplesmente não acha o campo.
+  // `id` é HTML inválido, o `htmlFor` simplesmente não acha o campo.
   const id = useId()
   const estourou = limite !== undefined && valor.length > limite
 
@@ -1587,7 +1650,7 @@ function Area({
       {/*
         A barra completa quando o texto vira mensagem; só o botão de variável
         quando não vira. Todo campo que interpola tem por onde inserir uma
-        variável — era esse o ponto da lista que saiu do rodapé, e agora ele
+        variável, era esse o ponto da lista que saiu do rodapé, e agora ele
         vale por campo, ao lado do que se está escrevendo.
       */}
       {formatavel ? (
@@ -1613,7 +1676,7 @@ function Area({
       />
       {estourou ? (
         <span className="mt-1 block text-[10.5px] text-perigo">
-          O WhatsApp recusa acima de {limite} caracteres — publicar fica barrado até encurtar.
+          O WhatsApp recusa acima de {limite} caracteres, publicar fica barrado até encurtar.
         </span>
       ) : (
         <LegendaDeVariaveis valor={valor} conhecidas={conhecidas}>
@@ -1678,12 +1741,12 @@ function Opcoes({
         {opcoes.length === 0
           ? 'Sem opções, a pessoa responde escrevendo.'
           : opcoes.length <= LIMITE_BOTOES
-            ? `${opcoes.length} de até ${LIMITE_BOTOES} — o WhatsApp mostra como botões.`
-            : `${opcoes.length} opções — vira lista suspensa. Fluxo bom cabe em ${LIMITE_BOTOES} botões.`}
+            ? `${opcoes.length} de até ${LIMITE_BOTOES}, o WhatsApp mostra como botões.`
+            : `${opcoes.length} opções, vira lista suspensa. Fluxo bom cabe em ${LIMITE_BOTOES} botões.`}
         {cheio && ` Limite do WhatsApp é ${LIMITE_LISTA}.`}
       </p>
       <p className="text-[10.5px] leading-4 text-dim">
-        Cada opção tem a própria saída no bloco. Ligue todas — o validador cobra.
+        Cada opção tem a própria saída no bloco. Ligue todas, o validador cobra.
       </p>
     </div>
   )
@@ -1693,7 +1756,7 @@ function Opcoes({
  * Uma opção: o rótulo, o emoji e o contador.
  *
  * **Aqui morava o `maxLength={20}` que produziu três defeitos de uma vez.**
- * `maxLength` conta unidades UTF-16, e emoji fora do plano básico ocupa duas —
+ * `maxLength` conta unidades UTF-16, e emoji fora do plano básico ocupa duas ,
  * então um rótulo de 19 letras recusava qualquer emoji sem dizer por quê, e
  * colar texto longo cortava no meio do par substituto. O pedaço solto que
  * sobrava atravessava o `JSON.stringify` e **derrubava o salvamento no
@@ -1702,12 +1765,12 @@ function Opcoes({
  *
  * A troca é a mesma que o bloco de Mensagem já fazia: **contar não é cortar.**
  * O campo aceita o que a pessoa escrever, o contador mostra quanto passou, e
- * quem recusa é o validador na hora de publicar — onde a recusa vale e tem
+ * quem recusa é o validador na hora de publicar, onde a recusa vale e tem
  * explicação junto.
  *
  * O seletor de emoji entra junto porque era a outra metade do relato: sem ele,
  * a única forma de pôr um 📅 numa opção era colar do teclado do sistema.
- * Formatação não entra — rótulo de botão a Meta manda como texto puro, e o
+ * Formatação não entra, rótulo de botão a Meta manda como texto puro, e o
  * asterisco apareceria literal para quem lê.
  */
 function LinhaDeOpcao({
@@ -1782,7 +1845,7 @@ function LinhaDeOpcao({
       )}
       {estourou && (
         <p className="mt-1 text-[10.5px] leading-4 text-perigo">
-          O WhatsApp corta em {LIMITE_ROTULO} caracteres — publicar fica barrado até encurtar.
+          O WhatsApp corta em {LIMITE_ROTULO} caracteres, publicar fica barrado até encurtar.
         </p>
       )}
     </div>
@@ -1805,7 +1868,7 @@ function Cabecalhos({
       </span>
       <p className="mb-1.5 text-[10.5px] leading-4 text-dim">
         Quase sempre vazio. É onde vão informações extras que alguns sistemas exigem junto do
-        pedido — quem fez o sistema diz se precisa e o que escrever. Se ninguém te pediu, deixe em
+        pedido, quem fez o sistema diz se precisa e o que escrever. Se ninguém te pediu, deixe em
         branco.
       </p>
 
@@ -1822,7 +1885,7 @@ function Cabecalhos({
               }}
               className="app-field min-w-0 flex-1 px-3 py-2 text-[12.5px]"
             />
-            {/* O valor do cabeçalho interpola — é onde entra `{{token}}` —,
+            {/* O valor do cabeçalho interpola, é onde entra `{{token}}` ,
                 então ele é campo com realce e com botão de variável, como todo
                 campo que aceita uma. O nome do cabeçalho não interpola. */}
             <span className="min-w-0 flex-1">
@@ -1859,7 +1922,7 @@ function Cabecalhos({
       <p className="mt-2 text-[10.5px] leading-4 text-dim">
         Não coloque token aqui: publicar tira uma foto do fluxo que o banco se recusa a alterar, e o
         valor ficaria guardado nela. Chave vai no campo <strong className="text-soft">Credencial</strong>,
-        logo abaixo — o valor mora no cofre e o fluxo guarda só a referência.
+        logo abaixo, o valor mora no cofre e o fluxo guarda só a referência.
       </p>
     </div>
   )
@@ -1871,7 +1934,7 @@ function Cabecalhos({
  * É o **texto que se lê no desenho**, e não o tipo nem o id: quem escolhe para
  * onde voltar está procurando "Podemos ajudar em algo mais?", que é o que está
  * escrito na tela. Uma lista de onze uuids, ou de onze "Pergunta", não é uma
- * escolha — é um sorteio.
+ * escolha, é um sorteio.
  *
  * Deliberadamente separada da `descrever()` do validador e da `textoDoBloco()`
  * do compartilhamento: aquelas respondem "qual bloco tem o problema" e "o que
@@ -1935,7 +1998,7 @@ function Mapeamentos({
       {/*
         Uma linha dizendo o que a seção faz, antes dos campos.
 
-        Quem monta fluxo chegou aqui e disse "essa parte aqui eu não entendi" —
+        Quem monta fluxo chegou aqui e disse "essa parte aqui eu não entendi" ,
         e tinha razão: o título "Guardar da resposta" nomeia a seção mas não
         explica que o sistema respondeu um monte de campos e que aqui se escolhe
         **quais** entram na conversa. Sem isso, os dois campos parecem pedir a
@@ -1943,7 +2006,7 @@ function Mapeamentos({
       */}
       <p className="mb-2 text-[10.5px] leading-4 text-dim">
         O sistema respondeu vários campos. Escolha quais a conversa guarda, e com
-        que nome — é assim que <code className="font-mono">{'{{cidade}}'}</code>{' '}
+        que nome, é assim que <code className="font-mono">{'{{cidade}}'}</code>{' '}
         passa a existir nas mensagens seguintes.
       </p>
 
@@ -1969,7 +2032,7 @@ function Mapeamentos({
                 apontar para eles e dizer "essa parte aqui eu não entendi".
 
                 Duas caixas do mesmo tamanho, lado a lado, com `cidade` numa e
-                `localidade` na outra, não dizem qual é qual — e a diferença é
+                `localidade` na outra, não dizem qual é qual, e a diferença é
                 justamente a que importa: a da esquerda é o **nome que você
                 escolhe** e vai usar em `{{cidade}}` na conversa; a da direita é
                 o **campo que a API devolveu**, e o nome dele é de quem fez a
@@ -2027,7 +2090,7 @@ function Mapeamentos({
 
                     Com um campo depois dele (`livres[].hora`) o valor de cada
                     item já está escolhido, e um modelo ali não teria de onde
-                    tirar `{servico}` — oferecer o campo seria oferecer uma
+                    tirar `{servico}`, oferecer o campo seria oferecer uma
                     montagem que não roda.
                   */}
                   {m.caminho.trim().endsWith(MARCA_DE_LISTA) && (
@@ -2039,7 +2102,7 @@ function Mapeamentos({
                         className="app-field w-full px-3 py-1.5 font-mono text-[11.5px]"
                       />
                       <p className="mt-1 pl-1 text-[10.5px] leading-4 text-dim">
-                        Como cada item vira uma linha do menu. Campo entre chaves vem da resposta —{' '}
+                        Como cada item vira uma linha do menu. Campo entre chaves vem da resposta ,{' '}
                         <code className="font-mono">{'{hora} · {servico}'}</code> produz{' '}
                         <code className="font-mono">07:00 · Pilates solo</code>. Sem modelo, o menu
                         só mostra um campo por item.
@@ -2052,7 +2115,7 @@ function Mapeamentos({
                       marcada={m.unicos ?? false}
                       aoMudar={(marcada) => trocar({ unicos: marcada || undefined })}
                     />
-                    sem repetir — use para menu de dias; não use quando esta lista for o par de outra
+                    sem repetir, use para menu de dias; não use quando esta lista for o par de outra
                   </label>
 
                   {/*
@@ -2098,7 +2161,7 @@ function Mapeamentos({
                       marcada={m.quantos ?? false}
                       aoMudar={(marcada) => trocar({ quantos: marcada || undefined })}
                     />
-                    contar quantos — guarda o número de itens (
+                    contar quantos, guarda o número de itens (
                     <code className="font-mono">3</code>), e não a lista
                   </label>
                 </>
@@ -2137,11 +2200,11 @@ function Mapeamentos({
  * horários" é deixar a IA saber; marcar "marcar em um horário" é deixar a IA
  * agir na agenda de alguém, sozinha, a partir do que um estranho escreveu no
  * WhatsApp. As duas caberiam na mesma lista corrida, e é justamente por caberem
- * que elas não podem — quem marca dez caixinhas seguidas não pesa a décima.
+ * que elas não podem, quem marca dez caixinhas seguidas não pesa a décima.
  *
  * Nada vem marcado. Bloco de IA sem consulta é o que sempre existiu, e continua
  * sendo a escolha certa para tirar dúvida sobre preço e horário de
- * funcionamento — o que já está escrito no contexto do negócio não precisa de
+ * funcionamento, o que já está escrito no contexto do negócio não precisa de
  * chamada nenhuma.
  */
 function ConsultasDaIa({
@@ -2158,12 +2221,12 @@ function ConsultasDaIa({
   aoMudar: (dados: { ferramentas?: string[]; conexaoId?: string | undefined }) => void
 }) {
   /*
-   * Tolera `undefined`, e isso não é paranoia — é o que já quebrou.
+   * Tolera `undefined`, e isso não é paranoia, é o que já quebrou.
    *
    * Bloco arrastado agora existe só na memória do navegador, com o `data` que a
    * fábrica do editor escreveu; o `default([])` do Zod só age quando o rascunho
    * volta para o banco. Faltando o campo, `escolhidas.some()` estoura no meio
-   * do render e o editor inteiro vira tela de erro — o pior desfecho possível
+   * do render e o editor inteiro vira tela de erro, o pior desfecho possível
    * para quem estava desenhando.
    */
   const lista = escolhidas ?? []

@@ -53,7 +53,7 @@ const RESULTADOS: Record<string, { tom: 'bom' | 'neutro' | 'ruim'; texto: string
   conectado: {
     tom: 'bom',
     texto:
-      'Número conectado. Se você escolheu trazer as conversas antigas, elas aparecem aos poucos — pode levar de alguns minutos a algumas horas.',
+      'Número conectado. Se você escolheu trazer as conversas antigas, elas aparecem aos poucos, pode levar de alguns minutos a algumas horas.',
   },
   cancelado: {
     tom: 'neutro',
@@ -75,7 +75,7 @@ const RESULTADOS: Record<string, { tom: 'bom' | 'neutro' | 'ruim'; texto: string
   whatsapp_estado: {
     tom: 'ruim',
     texto:
-      'O link de conexão venceu ou não era deste cliente. Comece de novo por esta tela — o link vale por 10 minutos.',
+      'O link de conexão venceu ou não era deste cliente. Comece de novo por esta tela, o link vale por 10 minutos.',
   },
   whatsapp_acesso: {
     tom: 'ruim',
@@ -111,7 +111,7 @@ export default async function Pagina({
   const aviso = RESULTADOS[resultado ?? erro ?? '']
   /*
    * Vão para o navegador, e podem: `app_id` e `config_id` são **públicos** por
-   * construção — aparecem na URL de qualquer Embedded Signup. O que nunca sai
+   * construção, aparecem na URL de qualquer Embedded Signup. O que nunca sai
    * do servidor é o `META_APP_SECRET`, que é quem troca o `code` por token.
    */
   /*
@@ -120,7 +120,7 @@ export default async function Pagina({
    *
    * A variável foi gravada na Vercel com `echo`, que acrescenta quebra de
    * linha. Ela viajou até o `FB.login` e apareceu na URL como
-   * `config_id=1616632909867069%0A` — a Meta não achou configuração com esse
+   * `config_id=1616632909867069%0A`, a Meta não achou configuração com esse
    * id e respondeu "Falha ao iniciar sessão", sem dizer o motivo.
    *
    * Custou uma tarde porque o valor *parece* certo em toda tela que o mostra:
@@ -134,7 +134,7 @@ export default async function Pagina({
    *
    * Não é só arrumação de tela: clicar de novo manda o cliente refazer o
    * Embedded Signup de um número que já está ligado, e a Meta trata isso como
-   * reconexão — que desvincula os aparelhos dele outra vez, sem necessidade.
+   * reconexão, que desvincula os aparelhos dele outra vez, sem necessidade.
    */
   const temCoexistente = canais.some((canal) => coexistencia[canal.id]?.isOnBizApp === true)
 
@@ -185,7 +185,7 @@ export default async function Pagina({
          * **O texto é o produto aqui.** Quem vai clicar é o dono de um negócio
          * que atende pelo celular todo dia, e o medo dele é perder isso. Um
          * botão sozinho, sem responder "vou perder meu WhatsApp?", faz a pessoa
-         * não clicar — ou clicar sem saber no que está entrando, que é pior.
+         * não clicar, ou clicar sem saber no que está entrando, que é pior.
          */}
         {!temCoexistente && (
         <section className="app-card mb-[18px] px-5 py-5">
@@ -200,7 +200,7 @@ export default async function Pagina({
           </h2>
           <p className="mt-1.5 max-w-[62ch] text-[12.5px] leading-6 text-dim">
             <strong className="text-muted">Você não perde o seu WhatsApp.</strong> Continua
-            respondendo pelo celular como sempre — o painel só passa a enxergar as mesmas
+            respondendo pelo celular como sempre, o painel só passa a enxergar as mesmas
             conversas.
           </p>
 
@@ -208,7 +208,7 @@ export default async function Pagina({
            * **O passo a passo desceu para um `details`, e o motivo é o clique.**
            *
            * A versão anterior abria com quatro passos numerados, o aviso de QR
-           * code e os requisitos — tudo antes do botão. Quem chega aqui já
+           * code e os requisitos, tudo antes do botão. Quem chega aqui já
            * decidiu conectar; fazê-lo ler a tela inteira para achar o botão
            * atrasa a única ação que a tela tem.
            *
@@ -236,12 +236,12 @@ export default async function Pagina({
                   <strong className="text-muted">Confirm</strong>, e cola o código.
                 </li>
                 <li>
-                  4. Você escolhe se quer trazer as conversas antigas —{' '}
+                  4. Você escolhe se quer trazer as conversas antigas ,{' '}
                   <strong className="text-muted">é escolha sua</strong>, não obrigação.
                 </li>
               </ol>
               <p className="mt-2.5 text-[11.5px] text-aviso/90">
-                Não é QR code — a confirmação é por código, dentro do seu WhatsApp Business.
+                Não é QR code, a confirmação é por código, dentro do seu WhatsApp Business.
               </p>
               <p className="mt-2 text-[11.5px] leading-5 text-dim">
                 Precisa do <strong className="text-muted">WhatsApp Business 2.24.17 ou mais
@@ -253,7 +253,7 @@ export default async function Pagina({
           {/*
            * **O SDK, e não mais o link hospedado.**
            *
-           * O hospedado é um link e não precisaria de componente nenhum — mas a
+           * O hospedado é um link e não precisaria de componente nenhum, mas a
            * doc da Meta diz que ele *"can only be used to onboard business
            * customers to Cloud API, and the flow cannot be customized"*, e sem
            * customização não há coexistência: o cliente perderia o WhatsApp do
@@ -273,7 +273,7 @@ export default async function Pagina({
               </p>
               {/*
                * Sem as variáveis o botão acima não funciona, e o cadastro
-               * manual está escondido enquanto não há número — o que deixaria
+               * manual está escondido enquanto não há número, o que deixaria
                * esta tela sem saída nenhuma. O modal é o mesmo da seção de
                * baixo; aqui ele aparece como escape, e só neste caso.
                */}
@@ -306,8 +306,8 @@ export default async function Pagina({
         {/*
          * **Tudo daqui para baixo só existe depois que há um número.**
          *
-         * Antes, a tela abria com dois botões que pareciam a mesma coisa —
-         * "Conectar meu WhatsApp" e "+ Conectar número" — e nada dizia qual
+         * Antes, a tela abria com dois botões que pareciam a mesma coisa ,
+         * "Conectar meu WhatsApp" e "+ Conectar número", e nada dizia qual
          * usar. São caminhos diferentes: o de cima é o Embedded Signup (o
          * número que a pessoa já usa no celular, em coexistência); este é o
          * cadastro manual, que pede `phone_number_id` copiado do painel da
@@ -318,7 +318,7 @@ export default async function Pagina({
          * num formulário pedindo um id que ele não tem, e não há como voltar
          * disso sem entender a diferença entre as duas APIs.
          *
-         * Com um número conectado a pergunta muda e passa a fazer sentido —
+         * Com um número conectado a pergunta muda e passa a fazer sentido ,
          * "conectar **outro** número" é operação de quem já entendeu o que é
          * um. O webhook segue a mesma regra: é endereço para configurar um
          * número que ainda não existe.
@@ -371,7 +371,7 @@ export default async function Pagina({
 
           {canais.length === 0 ? (
             <p className="border-b border-line px-5 py-8 text-center text-xs leading-5 text-dim">
-              Nenhum número conectado ainda — sem isto o WhatsApp não chega até
+              Nenhum número conectado ainda, sem isto o WhatsApp não chega até
               aqui.
             </p>
           ) : (
@@ -379,7 +379,7 @@ export default async function Pagina({
               {canais.map((canal) => {
                 const fluxo = fluxos.find((item) => item.id === canal.flowId)
                 const aviso = !fluxo
-                  ? 'Sem fluxo principal — o bot não responde.'
+                  ? 'Sem fluxo principal, o bot não responde.'
                   : !fluxo.versaoPublicadaId
                     ? 'O fluxo principal ainda não foi publicado.'
                     : null
@@ -392,7 +392,7 @@ export default async function Pagina({
                 const estado = coexistencia[canal.id]
                 const situacao = situacaoDoNumero(estado)
                 const progresso = progressoGeral(estado)
-                const identidade = identidadeNaTela(estado, canal.phoneNumberId)
+                const identidade = identidadeNaTela(estado, canal.phoneNumberId, canal.displayPhoneNumber)
 
                 return (
                   <li
@@ -410,7 +410,7 @@ export default async function Pagina({
                        * não achava o seu número, via "Conectar número" ao lado
                        * e concluía que não tinha conectado.
                        *
-                       * O selo verde é o mesmo do card de antes de conectar —
+                       * O selo verde é o mesmo do card de antes de conectar ,
                        * é o que dá continuidade: a tela que convidou e a tela
                        * que confirma falam a mesma língua.
                        *
@@ -439,7 +439,7 @@ export default async function Pagina({
                       </span>
                       <BotaoPerigo
                         rotulo="Desconectar"
-                        titulo="Tira este número deste cliente. As conversas já registradas impedem — elas são o histórico dos leads."
+                        titulo="Tira este número deste cliente. As conversas já registradas impedem, elas são o histórico dos leads."
                         pergunta={`Desconectar o número ${identidade.titulo}? O bot para de responder nele.`}
                         acao={acaoDesconectarNumero.bind(
                           null,
@@ -460,7 +460,7 @@ export default async function Pagina({
                           <div className="rounded-lg border border-sky-400/25 bg-sky-400/[0.07] px-3 py-2.5">
                             <p className="text-[11.5px] font-semibold text-info">
                               Trazendo as conversas antigas
-                              {progresso !== null ? ` — ${progresso}%` : ''}
+                              {progresso !== null ? `, ${progresso}%` : ''}
                             </p>
                             {/*
                              * A barra existe para o caso que a spec nomeia:
@@ -484,7 +484,7 @@ export default async function Pagina({
                               </div>
                             )}
                             <p className="mt-2 text-[11px] leading-5 text-info/80">
-                              Leva de alguns minutos a algumas horas. Pode fechar esta tela — as
+                              Leva de alguns minutos a algumas horas. Pode fechar esta tela, as
                               conversas vão aparecendo sozinhas no Inbox.
                             </p>
                           </div>
@@ -502,7 +502,7 @@ export default async function Pagina({
 
                         {situacao === 'desembarcado' && (
                           <p className="rounded-lg border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2.5 text-[11.5px] leading-5 text-perigo">
-                            A conexão caiu — costuma acontecer quando o celular é trocado ou o
+                            A conexão caiu, costuma acontecer quando o celular é trocado ou o
                             WhatsApp Business é reinstalado. Normalmente volta sozinha em alguns
                             minutos; enquanto isso, o envio por aqui fica parado.
                           </p>
@@ -522,7 +522,7 @@ export default async function Pagina({
                               <li>
                                 · Abra o WhatsApp Business no celular{' '}
                                 <strong className="text-muted">ao menos uma vez a cada 14
-                                dias</strong> — sem isso a Meta derruba a conexão e as mensagens
+                                dias</strong>, sem isso a Meta derruba a conexão e as mensagens
                                 param de chegar.
                               </li>
                               <li>
@@ -543,12 +543,12 @@ export default async function Pagina({
                           palavra nossa: ela existe no `core/papeis-do-numero.ts`
                           porque o servidor precisa de um nome para a coisa, e
                           vazou para a tela. Quem chega aqui não sabe que tem
-                          quatro de nada, nem o que é um papel — sabe que quer
+                          quatro de nada, nem o que é um papel, sabe que quer
                           escolher o que o bot responde.
                         */
                         botao="Escolher os fluxos deste número"
                         titulo={`Fluxos de ${identidade.titulo}`}
-                        descricao="Cada situação abaixo pode rodar um fluxo diferente. Em branco, o bot não responde naquela situação — a conversa vai para uma pessoa."
+                        descricao="Cada situação abaixo pode rodar um fluxo diferente. Em branco, o bot não responde naquela situação, a conversa vai para uma pessoa."
                         rotuloEnviar="Salvar fluxos"
                         variante="secundario"
                         action={salvarFluxos}
@@ -585,7 +585,7 @@ export default async function Pagina({
                                 />
                                 {naoPublicado && (
                                   <p className="mt-1 text-[11px] text-aviso">
-                                    Este fluxo ainda não foi publicado — enquanto
+                                    Este fluxo ainda não foi publicado, enquanto
                                     estiver assim, este papel não fala.
                                   </p>
                                 )}

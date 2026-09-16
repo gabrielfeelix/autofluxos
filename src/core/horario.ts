@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 /**
- * O horário de atendimento — e por que ele é a peça que faltava.
+ * O horário de atendimento, e por que ele é a peça que faltava.
  *
  * O bot faz handoff às 3h da manhã e a pessoa fica no vácuo até alguém abrir o
  * painel, sem ninguém dizer nada. *"Nosso horário é das 8h às 18h, te
@@ -26,7 +26,7 @@ export const DIAS_DA_SEMANA = [
   'sábado',
 ] as const
 
-/** `"08:00"` — a mesma grafia que a pessoa digita e que o banco guarda. */
+/** `"08:00"`, a mesma grafia que a pessoa digita e que o banco guarda. */
 export type Relogio = string
 
 export type Faixa = { de: Relogio; ate: Relogio }
@@ -46,7 +46,7 @@ export type HorarioDeAtendimento = {
   dias: Faixa[][]
 }
 
-/** Sem nada configurado, atende sempre — é como o produto se comportou até aqui. */
+/** Sem nada configurado, atende sempre, é como o produto se comportou até aqui. */
 export const SEMPRE_ABERTO: HorarioDeAtendimento = {
   fuso: 'America/Sao_Paulo',
   dias: [[], [], [], [], [], [], []],
@@ -64,7 +64,7 @@ export function emMinutos(relogio: Relogio): number | null {
 /**
  * Que horas são **na conta**, não no servidor.
  *
- * `Intl` faz a conversão de fuso sem rede e sem tabela nossa — inclusive o
+ * `Intl` faz a conversão de fuso sem rede e sem tabela nossa, inclusive o
  * horário de verão, que é onde uma conta de horas na mão erra.
  */
 export function agoraNaConta(
@@ -98,7 +98,7 @@ export function agoraNaConta(
  *
  * **Existe para a IA, e o erro que ela evita é caro.** Um modelo sem relógio
  * não avisa que não sabe a data: ele chuta. E `new Date().toISOString()` em
- * servidor UTC vira o dia seguinte a partir das 21h em São Paulo — a hora em
+ * servidor UTC vira o dia seguinte a partir das 21h em São Paulo, a hora em
  * que gente manda mensagem para marcar aula. O bot ofereceria a agenda de
  * amanhã dizendo "hoje", e ninguém suspeitaria da resposta.
  *
@@ -121,7 +121,7 @@ export function hojeNaConta(fuso: string, agora: Date = new Date()): string {
  *
  * **Nenhuma faixa em nenhum dia significa aberto**, e não fechado. É a
  * diferença entre "ninguém configurou ainda" e "configuraram para não atender
- * nunca" — e tratar as duas igual faria o produto emudecer sozinho no dia em
+ * nunca", e tratar as duas igual faria o produto emudecer sozinho no dia em
  * que a coluna nascesse vazia para todo cliente que já existe.
  */
 export function atendimentoAberto(
@@ -191,7 +191,7 @@ export function proximaAbertura(
  * O que o banco devolve, conferido antes de virar decisão.
  *
  * `horario_atendimento` é `jsonb`: o banco aceita qualquer coisa ali. Hoje só
- * a nossa tela escreve, mas isto é o que decide se o bot promete atendimento —
+ * a nossa tela escreve, mas isto é o que decide se o bot promete atendimento ,
  * e um objeto torto não pode virar "aberto" por acidente. Leitura que falha
  * devolve `null`, que é "atende sempre": o lado que mantém o produto se
  * comportando como sempre se comportou.
@@ -213,7 +213,7 @@ export function lerHorario(bruto: unknown): HorarioDeAtendimento | null {
 
   const analise = horarioSchema.safeParse(bruto)
   if (!analise.success) {
-    console.error('[horario] configuração ilegível no banco — tratando como sempre aberto')
+    console.error('[horario] configuração ilegível no banco, tratando como sempre aberto')
     return null
   }
   return analise.data

@@ -38,7 +38,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         />
         <h1 className="text-[25px] font-bold tracking-[-0.02em]">Etiquetas</h1>
         <p className="mt-1.5 mb-6 max-w-[650px] text-[13px] leading-6 text-dim">
-          As etiquetas que uma pessoa cria e aplica — “cliente antigo”, “orçamento
+          As etiquetas que uma pessoa cria e aplica, “cliente antigo”, “orçamento
           enviado”, “não insistir”. Elas viram filtro na lista de contatos.
           <br />
           As outras que você vê por lá (<em>abriu com mídia</em>, <em>foi para
@@ -107,7 +107,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
                     <ModalFormulario
                       botao="Editar"
                       titulo={`Editar “${etiqueta.nome}”`}
-                      descricao="Renomear mantém a etiqueta em quem já a tinha — renomear não é recriar."
+                      descricao="Renomear mantém a etiqueta em quem já a tinha, renomear não é recriar."
                       rotuloEnviar="Salvar"
                       variante="secundario"
                       action={acaoEditarEtiqueta.bind(null, cliente.id, etiqueta.id, {})}
@@ -139,7 +139,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
                     Editar é modal, como criar. O formulário aberto em cada
                     linha empilhava um campo e um seletor por etiqueta: com dez
                     etiquetas a lista virava dez formulários, e ler quais
-                    existem — que é para o que a tela serve — ficava impossível.
+                    existem, que é para o que a tela serve, ficava impossível.
                   */}
                 </li>
               ))}

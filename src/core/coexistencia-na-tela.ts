@@ -48,7 +48,7 @@ export type SituacaoDoNumero =
  * silêncio longo é o sintoma real de falha.
  *
  * Errar para o lado generoso é de propósito: dizer "travou" para algo que está
- * andando faz alguém mexer no que não devia — e mexer, aqui, pode significar
+ * andando faz alguém mexer no que não devia, e mexer, aqui, pode significar
  * desembarcar um cliente que estava bem.
  */
 export const PARADO_MS = 30 * 60 * 1_000
@@ -58,13 +58,13 @@ export const PARADO_MS = 30 * 60 * 1_000
  *
  * **Vinte e quatro horas, e este número existe por causa de um aviso que ficou
  * na tela para sempre.** A Meta manda o andamento da importação por webhook, e
- * quando ela simplesmente para de mandar — o que acontece, e não é raro — o
+ * quando ela simplesmente para de mandar, o que acontece, e não é raro, o
  * número congelava em 0% e a tela dizia "a importação parou de dar sinal" todos
  * os dias, para um cliente cujos contatos tinham chegado inteiros.
  *
  * O aviso era duplamente ruim: não descrevia a realidade (o Inbox estava
  * cheio), e não havia o que fazer com ele. **Alerta permanente que ninguém pode
- * resolver deixa de ser alerta e vira moldura** — e, pior, ensina a pessoa a
+ * resolver deixa de ser alerta e vira moldura**: e, pior, ensina a pessoa a
  * ignorar a faixa amarela no dia em que ela disser algo urgente.
  *
  * Passado um dia, a importação é história: o que chegou está no Inbox, e o que
@@ -105,7 +105,7 @@ export function situacaoDoNumero(
     if (sync.progresso !== null && sync.progresso !== undefined && sync.progresso >= 100) continue
 
     /*
-     * O relógio corre desde o último sinal — e, quando nenhum lote chegou
+     * O relógio corre desde o último sinal, e, quando nenhum lote chegou
      * ainda, desde o disparo. Sem o segundo caso, um sync que nunca respondeu
      * ficaria "sincronizando" para sempre, que é exatamente a confusão entre
      * "andando" e "travou" que esta função existe para desfazer.
@@ -124,7 +124,7 @@ export function situacaoDoNumero(
 }
 
 /**
- * O progresso somado dos dois syncs, de 0 a 100 — ou `null` quando nenhum
+ * O progresso somado dos dois syncs, de 0 a 100, ou `null` quando nenhum
  * começou.
  *
  * A média simples é honesta aqui: são dois trabalhos de peso parecido para
@@ -152,7 +152,7 @@ export function progressoGeral(estado: EstadoNaTela | undefined): number | null 
  * Como este número se apresenta na lista: o telefone primeiro, o id embaixo.
  *
  * **O `phone_number_id` não é o telefone de ninguém.** A tela mostrava
- * `110549275215531` como título — um número que o cliente nunca viu. Quem
+ * `110549275215531` como título, um número que o cliente nunca viu. Quem
  * acabou de conectar o próprio celular olhava a lista, não achava o seu, via
  * "Conectar número" ao lado e concluía que não tinha conectado. Foi relatado
  * como UX ruim em 13/set/2026, e com razão.
@@ -160,16 +160,33 @@ export function progressoGeral(estado: EstadoNaTela | undefined): number | null 
  * O id não some: ele é a identidade do canal e o que se procura no painel da
  * Meta. Só deixa de ser o título.
  *
- * Canal antigo não tem `displayPhoneNumber` — conectou antes de guardarmos
+ * Canal antigo não tem `displayPhoneNumber`, conectou antes de guardarmos
  * isto. Aí o id volta a ser o título, porque mostrar nada seria pior.
  */
 export function identidadeNaTela(
   estado: EstadoNaTela | undefined,
   phoneNumberId: string | null,
+  /**
+   * O telefone salvo no próprio canal.
+   *
+   * **São duas fontes porque são dois caminhos de conexão.** Quem conecta pelo
+   * embedded signup recebe o número pela coexistência, e é o `estado` que
+   * sabe. Quem cadastra à mão colando o `phone_number_id` do painel da Meta
+   * não tem coexistência nenhuma, e para esse o número vem do webhook, gravado
+   * em `channels.display_phone_number` na primeira mensagem que chega.
+   *
+   * Antes desta rodada só a primeira fonte existia, e o segundo caminho
+   * mostrava quinze dígitos como se fossem o telefone do cliente. Foi a queixa
+   * literal de um cliente em 16/set/2026: "não mostra o número".
+   *
+   * A coexistência ganha quando as duas existem: ela traz o nome verificado
+   * junto, e é o dado que a Meta manteve.
+   */
+  telefoneDoCanal?: string | null,
 ): { titulo: string; abaixo: string | null } {
   // Canal sem número ainda (criado à mão, ou conexão pela metade).
   const id = phoneNumberId ?? 'sem número'
-  const telefone = estado?.displayPhoneNumber?.trim()
+  const telefone = estado?.displayPhoneNumber?.trim() || telefoneDoCanal?.trim()
   if (!telefone) return { titulo: id, abaixo: null }
 
   const nome = estado?.verifiedName?.trim()
@@ -190,7 +207,7 @@ export const RECEM_CONECTADO_H = 6
 /**
  * Este número acabou de conectar e ainda pode estar sincronizando?
  *
- * Serve para a tela explicar um Inbox vazio sem acusar ninguém — foi a dúvida
+ * Serve para a tela explicar um Inbox vazio sem acusar ninguém, foi a dúvida
  * real do primeiro cliente coexistente, que conectou e ficou uma tarde achando
  * que havia defeito.
  *

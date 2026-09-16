@@ -7,7 +7,7 @@ import { Dropdown } from '@/components/design/dropdown'
 /**
  * O botão que faz alguém **virar** atendente.
  *
- * Até aqui a conversa ia para `humano` e ficava esperando "uma pessoa" — que,
+ * Até aqui a conversa ia para `humano` e ficava esperando "uma pessoa", que,
  * com mais de uma no time, é o mesmo que esperar ninguém. Assumir põe um nome
  * ali, e o nome é o que faz alguém voltar depois.
  *
@@ -17,10 +17,11 @@ import { Dropdown } from '@/components/design/dropdown'
  *
  * **O bot cala junto.** Até aqui assumir marcava o responsável e mais nada: o
  * robô continuava conduzindo, e se a pessoa respondesse rápido ele falava por
- * cima de quem tinha acabado de pegar a conversa. Só responder calava — ou
- * seja, era preciso digitar alguma coisa para o bot parar. O botão diz isso na
- * dica, porque ação que muda o comportamento sem avisar é pior do que ação que
- * não faz nada.
+ * cima de quem tinha acabado de pegar a conversa. Só responder calava, ou seja,
+ * era preciso digitar alguma coisa para o bot parar.
+ *
+ * **E o silêncio dele agora aparece na tela, não só na dica do botão.** Dica é
+ * texto que só existe para quem já desconfia que existe.
  */
 type Estado = { erro?: string }
 
@@ -40,7 +41,7 @@ export function Assumir({
    * **Quem assume vê o próprio nome na hora.**
    *
    * Era um `useActionState` num `<form>`: o rótulo virava "…" e só mudava
-   * depois do servidor. Assumir é o gesto de abrir uma conversa — esperar por
+   * depois do servidor. Assumir é o gesto de abrir uma conversa, esperar por
    * ele é esperar para começar a trabalhar.
    *
    * A aposta é o próprio `souEu`: clicar em "Assumir" já mostra "você está
@@ -52,17 +53,38 @@ export function Assumir({
 
   return (
     <div className="flex shrink-0 items-center gap-2">
+      {/*
+        **"Robô pausado" vem primeiro, e é a informação que faltava.**
+
+        A tela dizia só quem está atendendo, e deixava o resto na dica do botão,
+        que é texto que ninguém lê porque ninguém sabe que existe. Em
+        16/set/2026 um cliente mandou mensagem de um contato que já estava em
+        atendimento, o bot não respondeu, e ele concluiu que o produto estava
+        quebrado: *"não começa o fluxo pq ele puxa como existente"*.
+
+        O bot estava calado de propósito, para não falar por cima de quem
+        assumiu. Só que "de propósito" que não aparece na tela é
+        indistinguível de defeito. Agora o estado que causa o silêncio é a
+        primeira coisa escrita, e o nome de quem atende vem depois.
+      */}
       {(responsavel || meu) && (
-        <span className="max-w-[140px] truncate text-[10.5px] text-dim">
-          {meu ? 'você está atendendo' : `com ${responsavel}`}
+        <span className="max-w-[190px] truncate text-[10.5px] text-dim">
+          <span className="font-semibold text-aviso">robô pausado</span>
+          {meu ? ' · você atende' : ` · com ${responsavel}`}
         </span>
       )}
 
       {/*
-        Quem já assumiu vê "Liberar"; quem não assumiu vê "Assumir" — inclusive
-        quando outra pessoa já está com a conversa. Bloquear a tomada seria pior:
-        gente sai de férias no meio de um atendimento, e o caminho de destravar
-        não pode ser pedir para alguém voltar do almoço.
+        Quem já assumiu vê "Devolver à fila"; quem não assumiu vê "Assumir",
+        inclusive quando outra pessoa já está com a conversa. Bloquear a tomada
+        seria pior: gente sai de férias no meio de um atendimento, e o caminho
+        de destravar não pode ser pedir para alguém voltar do almoço.
+
+        **O rótulo era "Liberar", e era ambíguo do jeito caro.** Liberar o quê:
+        a conversa, a pessoa, o robô? Quem está tentando fazer o bot voltar a
+        responder lê "Liberar" como "libera o robô", clica, e o robô continua
+        calado, porque o que solta o robô é "Já atendi". "Devolver à fila" diz
+        para onde a conversa vai, que é a única coisa que o botão faz.
       */}
       <button
         type="button"
@@ -75,7 +97,7 @@ export function Assumir({
         }
         className="rounded-[8px] border border-line px-2.5 py-1.5 text-[10.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary disabled:opacity-50"
       >
-        {meu ? 'Liberar' : responsavel ? 'Assumir mesmo assim' : 'Assumir'}
+        {meu ? 'Devolver à fila' : responsavel ? 'Assumir mesmo assim' : 'Assumir'}
       </button>
 
       {erro && (

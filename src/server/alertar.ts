@@ -5,7 +5,7 @@ import { ambienteAtual, gravarAlerta } from './repos/alertas'
  * Avisa uma pessoa que alguma coisa quebrou.
  *
  * **Grava sempre; o webhook é o extra.** A primeira versão disto era só o POST
- * num webhook de Discord vindo do ambiente — e `ALERTA_WEBHOOK_URL` nunca foi
+ * num webhook de Discord vindo do ambiente, e `ALERTA_WEBHOOK_URL` nunca foi
  * preenchida em lugar nenhum. Durante meses existiu um mecanismo de aviso
  * completo, chamado nos seis lugares certos, que não avisava ninguém: tudo
  * caía num `console.error` que vive algumas horas no log da Vercel e some.
@@ -17,7 +17,7 @@ import { ambienteAtual, gravarAlerta } from './repos/alertas'
  * falha.
  *
  * **Por que não Sentry.** O plano grátis existe, mas é mais um cadastro, mais
- * um SDK no bundle e mais um lugar para manter — e continuaria sendo uma
+ * um SDK no bundle e mais um lugar para manter, e continuaria sendo uma
  * credencial a preencher. Uma tabela de seis colunas funciona no primeiro
  * deploy. Se o volume justificar, Sentry entra por cima disto sem reescrever
  * nada.
@@ -32,12 +32,12 @@ import { ambienteAtual, gravarAlerta } from './repos/alertas'
  * por causa do aviso, não por causa do problema. Por isso todo erro morre aqui
  * dentro e o tempo é limitado.
  *
- * A URL vem do ambiente e é nossa — não passa pela conferência de endereço do
+ * A URL vem do ambiente e é nossa, não passa pela conferência de endereço do
  * nó de API, que existe para URL que alguém digita no editor.
  */
 
 /**
- * O webhook opcional. Sem isto no ambiente, nada é postado — mas o alerta
+ * O webhook opcional. Sem isto no ambiente, nada é postado, mas o alerta
  * continua sendo gravado. Antes, a ausência desta variável era o suficiente
  * para o aviso inteiro virar no-op.
  */
@@ -46,7 +46,7 @@ const VARIAVEL = 'ALERTA_WEBHOOK_URL'
 /** Curto de propósito: o orçamento da função é para atender, não para avisar. */
 const TEMPO_LIMITE_MS = 3_000
 
-/** O Discord recusa acima de 2000 caracteres — cortar aqui evita perder o aviso inteiro. */
+/** O Discord recusa acima de 2000 caracteres, cortar aqui evita perder o aviso inteiro. */
 const LIMITE_DO_TEXTO = 1_800
 
 export type ContextoDoAlerta = Record<string, string | number | null | undefined>
@@ -59,7 +59,7 @@ export async function alertar(
   const descrito = descrever(detalhe)
 
   // Sempre no log, e primeiro. Se o banco for justamente o que está fora, é o
-  // único lugar que sobra — e este é o caminho em que isso é mais provável.
+  // único lugar que sobra, e este é o caminho em que isso é mais provável.
   console.error(`[alerta] ${titulo}`, descrito, contexto)
 
   await gravarAlerta({ titulo, detalhe: descrito, contexto })
@@ -75,7 +75,7 @@ export async function alertar(
       signal: AbortSignal.timeout(TEMPO_LIMITE_MS),
     })
   } catch (erro) {
-    // O webhook falhou, e o alerta já está gravado — que é justamente o ponto
+    // O webhook falhou, e o alerta já está gravado, que é justamente o ponto
     // de gravar antes. Insistir aqui só transformaria uma falha em duas.
     console.error('[alerta] não deu para avisar pelo webhook', erro)
   }
@@ -83,7 +83,7 @@ export async function alertar(
 
 function montarTexto(titulo: string, detalhe: string, contexto: ContextoDoAlerta): string {
   const onde = ambienteAtual()
-  const linhas = [`🔴 **AutoFluxos (${onde}) — ${titulo}**`, detalhe]
+  const linhas = [`🔴 **AutoFluxos (${onde}), ${titulo}**`, detalhe]
 
   for (const [chave, valor] of Object.entries(contexto)) {
     if (valor === null || valor === undefined || valor === '') continue
@@ -95,7 +95,7 @@ function montarTexto(titulo: string, detalhe: string, contexto: ContextoDoAlerta
 
 /**
  * O que chega aqui é o que o `catch` pegou, e `catch` pega qualquer coisa.
- * `String(erro)` num objeto daria `[object Object]` — justamente no campo que
+ * `String(erro)` num objeto daria `[object Object]`, justamente no campo que
  * era para explicar o que houve.
  */
 function descrever(detalhe: unknown): string {

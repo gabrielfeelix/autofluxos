@@ -10,7 +10,7 @@ import type { Cliente } from '@/server/repos/clientes'
  * segunda está em `menu-de-ajustes.tsx` e em `docs/PLANO-UI-CONFIGURACOES.md`.
  *
  * **A global não encolhe mais ao entrar aqui.** Ela encolhia por decisão de
- * tela, para que duas colunas de texto não competissem — e o efeito era a barra
+ * tela, para que duas colunas de texto não competissem, e o efeito era a barra
  * inteira saltar de 226px para 68px no clique de Configurações, desfazendo na
  * cara da pessoa a largura que ela mesma tinha escolhido. Largura de barra é
  * preferência de quem trabalha, guardada em `data-barra`; nenhuma tela a
@@ -18,7 +18,7 @@ import type { Cliente } from '@/server/repos/clientes'
  * fica recolhida em toda parte.
  *
  * **Não desenha `<main>`.** Cada tela já traz o seu, com a largura que ela
- * precisa — a do índice é larga, a de um formulário é estreita —, e dois
+ * precisa, a do índice é larga, a de um formulário é estreita, e dois
  * `<main>` na mesma página é erro de marcação que leitor de tela cobra.
  */
 export function AjustesShell({

@@ -7,7 +7,7 @@ import { FORMATOS_DE_RESPOSTA } from './resposta'
  * `type`, `position`, `data`, `sourceHandle`). Isso é decisão de arquitetura,
  * não descuido: o editor salva o objeto dele direto, sem camada de tradução.
  * Por isso essas chaves ficam em inglês enquanto o resto do domínio é
- * português — a fronteira é o React Flow.
+ * português, a fronteira é o React Flow.
  */
 
 /** Limites da Cloud API. Acima disso a Meta recusa a mensagem. */
@@ -23,13 +23,13 @@ export const LIMITE_ROTULO = 20
  *
  * - texto puro (`enviar_texto`) aceita 4096
  * - mensagem interativa, a que carrega botões ou lista (`enviar_opcoes`),
- *   aceita **1024** — um quarto disso
+ *   aceita **1024**: um quarto disso
  *
  * Qual vale depende de ter opção ou não, que é a mesma decisão do
  * `executar.ts`: pergunta sem opção sai como texto puro.
  *
  * Sem isto, dava para escrever 3.000 caracteres numa pergunta com botões,
- * publicar, e só descobrir com cliente de verdade conversando — a Meta recusa a
+ * publicar, e só descobrir com cliente de verdade conversando, a Meta recusa a
  * mensagem inteira e a pessoa não recebe nada.
  */
 export const LIMITE_TEXTO = 4096
@@ -42,7 +42,7 @@ export const opcaoSchema = z.object({
    * O que o sistema do cliente entende, quando ele não entende o rótulo.
    *
    * A lista vinda de API já separava as duas coisas (`opcoesDe` para o menu,
-   * `valoresDe` para o id), mas a opção desenhada à mão só tinha o rótulo — e
+   * `valoresDe` para o id), mas a opção desenhada à mão só tinha o rótulo, e
    * aí quem desenha um menu fixo de quatro serviços não tinha como mandar
    * `institucional` para a API enquanto a pessoa lê "Vídeo institucional".
    *
@@ -51,7 +51,7 @@ export const opcaoSchema = z.object({
    * de vídeo custou sete blocos que não deviam existir.
    *
    * **Opcional para sempre.** Sem ele, `salvarValorEm` guarda o rótulo, que é o
-   * comportamento que todo grafo já publicado tem — e `flow_versions` é
+   * comportamento que todo grafo já publicado tem, e `flow_versions` é
    * imutável.
    */
   valor: z.string().optional(),
@@ -87,7 +87,7 @@ export const LIMITE_ATRASO_SEGUNDOS = 3
 
 /**
  * Os quatro tipos de mídia que a Cloud API envia, e eles não são
- * intercambiáveis — cada um tem regra própria e a Meta recusa a mensagem
+ * intercambiáveis, cada um tem regra própria e a Meta recusa a mensagem
  * inteira quando a regra é quebrada:
  *
  * - `imagem` e `video` aceitam legenda;
@@ -130,14 +130,14 @@ export const LIMITE_MENSAGENS_HANDOFF = 3
  * bloco exigia cinco dos nossos: um para o texto, outro para a foto, outro para
  * a pausa, outro para gravar o campo.
  *
- * Os tipos não são invenção nossa — são os que a Cloud API sabe entregar, mais
+ * Os tipos não são invenção nossa, são os que a Cloud API sabe entregar, mais
  * os dois que só mexem no nosso lado (`salvar`, `auto-off`).
  */
 export const parteTextoSchema = z.object({
   tipo: z.literal('texto'),
   /**
    * Aceita a formatação do WhatsApp: `*negrito*`, `_itálico_`, `~riscado~` e
-   * três crases para monoespaçado. É texto puro de propósito — quem renderiza é
+   * três crases para monoespaçado. É texto puro de propósito, quem renderiza é
    * o WhatsApp, e guardar HTML ou Markdown aqui obrigaria a converter na saída
    * e a adivinhar na volta.
    */
@@ -174,7 +174,7 @@ export const parteSalvarSchema = z.object({
  * errar.
  *
  * Não é o mesmo que `handoff`: aqui ninguém entra na fila de atendimento. É o
- * "AutoOff" do produto de referência — a automação para e a conversa fica como
+ * "AutoOff" do produto de referência, a automação para e a conversa fica como
  * está.
  */
 export const parteAutoOffSchema = z.object({ tipo: z.literal('auto-off') })
@@ -190,21 +190,21 @@ export const parteSchema = z.discriminatedUnion('tipo', [
 /**
  * O bloco de mensagem, nos **dois** formatos.
  *
- * `texto` e `atraso` são o formato antigo e continuam aqui para sempre — não
+ * `texto` e `atraso` são o formato antigo e continuam aqui para sempre, não
  * por preguiça, mas porque `flow_versions` é imutável e a sessão fica presa à
  * versão em que começou. Uma conversa que começou às 14h continua rodando o
  * grafo de 14h; se este schema deixasse de dar parse no que foi publicado
  * antes, **toda conversa em andamento morreria no meio**.
  *
  * A regra, escrita para não se perder: **ler os dois formatos, escrever só um.**
- * O motor e o validador nunca tocam `data.texto` direto — passam por
+ * O motor e o validador nunca tocam `data.texto` direto, passam por
  * `partesDaMensagem()`, em `core/flow/mensagem.ts`. O editor só escreve
  * `partes`. E nenhuma migration reescreve `flow_versions.grafo`, inclusive as
  * nossas.
  *
  * Os dois campos serem opcionais é de propósito: um bloco sem nenhum dos dois é
  * estruturalmente válido e **semanticamente** vazio, e quem recusa isso é o
- * `validar()`. É a mesma divisão que já vale para nome de variável — Zod
+ * `validar()`. É a mesma divisão que já vale para nome de variável, Zod
  * garante a estrutura, `validar()` garante o sentido, e rascunho pode estar
  * pela metade.
  */
@@ -212,7 +212,7 @@ export const noMensagemSchema = z.object({
   ...base,
   type: z.literal('mensagem'),
   data: z.object({
-    /** Formato antigo. Só leitura — nada escreve aqui desde a A3. */
+    /** Formato antigo. Só leitura, nada escreve aqui desde a A3. */
     texto: z.string().optional(),
     /** Formato antigo: espera antes de mandar. Vira uma parte `atraso`. */
     atraso: z.number().min(0).max(LIMITE_ATRASO_SEGUNDOS).optional(),
@@ -227,7 +227,7 @@ export const noMensagemSchema = z.object({
  * descreve `enviar_midia` e quem entrega decide se busca, faz upload ou reusa
  * um id. Isso mantém `core/` sem rede, como as outras seis ações.
  *
- * A legenda interpola variável igual ao texto — "Segue a planta do {{plano}}"
+ * A legenda interpola variável igual ao texto, "Segue a planta do {{plano}}"
  * é o caso comum, não a exceção.
  */
 export const noMidiaSchema = z.object({
@@ -276,13 +276,13 @@ export const noPerguntaSchema = z.object({
      * `a41f-…-9c2b`, que não estava em lugar nenhum.
      *
      * Sem isto, marcar horário era impossível sem uma segunda chamada
-     * traduzindo rótulo em id — e nem sempre existe uma. Com isto, duas
+     * traduzindo rótulo em id, e nem sempre existe uma. Com isto, duas
      * mapeadas do mesmo `[]` resolvem: `livres[].hora` vira o menu e
      * `livres[].sessaoId` vira o valor.
      *
      * **A correspondência é por posição**, então as duas listas precisam vir do
      * mesmo `[]`. Item a mais de um lado não tem par, e o motor guarda vazio em
-     * vez de inventar — o validador avisa no editor.
+     * vez de inventar, o validador avisa no editor.
      */
     valoresDe: nomeVariavel.optional(),
     /**
@@ -302,7 +302,7 @@ export const noPerguntaSchema = z.object({
      * campo obrigatório aqui faria todas elas pararem de dar parse.
      *
      * Só vale para resposta livre. Com opções, quem confere é o casamento com o
-     * botão clicado — pedir formato ali seria conferir duas vezes a mesma coisa.
+     * botão clicado, pedir formato ali seria conferir duas vezes a mesma coisa.
      */
     formato: z.enum(FORMATOS_DE_RESPOSTA).optional(),
     /**
@@ -314,7 +314,7 @@ export const noPerguntaSchema = z.object({
      */
     mensagemDeErro: z.string().optional(),
     /**
-     * Onde guardar a resposta **padronizada** — `2026-08-21` para uma data que a
+     * Onde guardar a resposta **padronizada**: `2026-08-21` para uma data que a
      * pessoa escreveu `21/08/2026`.
      *
      * Separado de `salvarEm` pelo mesmo motivo de `salvarValorEm`: o que a
@@ -328,7 +328,7 @@ export const noPerguntaSchema = z.object({
      * É o interruptor que faz nascer a saída "mandou arquivo" no desenho.
      * Existe como campo, e não só como "ligou a aresta", porque ninguém procura
      * uma saída que não está desenhada: sem uma caixa para marcar no painel, a
-     * capacidade existiria e não seria encontrada — que é o mesmo que não
+     * capacidade existiria e não seria encontrada, que é o mesmo que não
      * existir.
      *
      * **Desligado é o padrão**, e é o comportamento que todo fluxo publicado
@@ -342,13 +342,13 @@ export const noPerguntaSchema = z.object({
      * baixa nada. Serve para o bloco seguinte mandar a referência ao sistema do
      * cliente, ou para quem atende achar a foto na conversa.
      *
-     * Só vale com a saída `midia` ligada — sem ela a conversa nem chega aqui.
+     * Só vale com a saída `midia` ligada, sem ela a conversa nem chega aqui.
      */
     salvarMidiaEm: nomeVariavel.optional(),
     /**
      * Quantos minutos esperar antes de desistir da resposta (B1).
      *
-     * **Opcional, e ausente significa esperar para sempre** — que é o
+     * **Opcional, e ausente significa esperar para sempre**: que é o
      * comportamento que o produto sempre teve. Isso não é preferência: existe
      * conversa em produção rodando um grafo publicado antes deste campo
      * existir, e `flow_versions` é imutável. Um campo obrigatório aqui faria
@@ -365,11 +365,11 @@ export const noPerguntaSchema = z.object({
 /**
  * O que a condição sabe comparar.
  *
- * Os cinco primeiros comparam **texto**, e por muito tempo foram os únicos —
+ * Os cinco primeiros comparam **texto**, e por muito tempo foram os únicos ,
  * o que deixava de fora a pergunta mais comum de um negócio: "quantas aulas ela
  * tem para repor?", "esse imóvel cabe na faixa dele?", "sumiu há mais de 60
  * dias?". Sem `maior`/`menor`, isso só existia se o sistema do cliente já
- * devolvesse a conta pronta — ou seja, só para quem já tinha um sistema que
+ * devolvesse a conta pronta, ou seja, só para quem já tinha um sistema que
  * fizesse o trabalho que o produto promete fazer.
  *
  * `maior` e `menor` comparam **número**; quando qualquer um dos dois lados não
@@ -425,7 +425,7 @@ export const noIaSchema = z.object({
      * **Nunca "todas".** Lista explícita porque catálogo grande degrada a
      * escolha do modelo, e porque uma ferramenta a mais é uma ação a mais que
      * um estranho no WhatsApp pode tentar disparar. É a whitelist de
-     * `LLM06 — Excessive Agency`, e ela mora no grafo, que é congelado ao
+     * `LLM06, Excessive Agency`, e ela mora no grafo, que é congelado ao
      * publicar: mudar o catálogo depois não amplia o poder de uma conversa em
      * andamento.
      */
@@ -434,7 +434,7 @@ export const noIaSchema = z.object({
      * Qual credencial as ferramentas usam. Só o **id**, pela mesma regra do nó
      * de API: o valor nunca entra no fluxo nem na versão publicada.
      *
-     * Obrigatório na prática quando há ferramenta — quem cobra é o `validar()`,
+     * Obrigatório na prática quando há ferramenta, quem cobra é o `validar()`,
      * como em toda a casa. Zod garante a estrutura, `validar()` garante o
      * sentido.
      */
@@ -443,7 +443,7 @@ export const noIaSchema = z.object({
 })
 
 /**
- * O bloco que passa a conversa para uma pessoa — e a despedida do bot.
+ * O bloco que passa a conversa para uma pessoa, e a despedida do bot.
  *
  * **Ele fala mais de uma vez de propósito.** O fim do atendimento automático é
  * onde cabem duas coisas que não são a mesma frase: avisar que um humano
@@ -458,7 +458,7 @@ export const noIaSchema = z.object({
  * `mensagem` e `mensagens` são os **dois formatos**, pela mesma regra do bloco
  * de mensagem: `flow_versions` é imutável e a conversa fica presa à versão em
  * que começou. Ler os dois, escrever um. Nada fora de `mensagensDoHandoff()`
- * — em `core/flow/mensagem.ts` — toca `data.mensagem` direto; o editor só
+ *, em `core/flow/mensagem.ts`, toca `data.mensagem` direto; o editor só
  * escreve `mensagens`.
  */
 export const noHandoffSchema = z.object({
@@ -466,7 +466,7 @@ export const noHandoffSchema = z.object({
   type: z.literal('handoff'),
   data: z.object({
     motivo: z.string().default('solicitado pelo fluxo'),
-    /** Formato antigo. Só leitura — o editor não escreve aqui desde a pilha. */
+    /** Formato antigo. Só leitura, o editor não escreve aqui desde a pilha. */
     mensagem: z.string().default('Vou te passar para um atendente. Só um instante!'),
     /** Formato novo: as mensagens em ordem, todas antes da transferência. */
     mensagens: z.array(z.string()).optional(),
@@ -476,14 +476,14 @@ export const noHandoffSchema = z.object({
      * **Ausente = a equipe toda**, que é como o aviso nasceu (rodada 5) e
      * continua sendo o certo para a maioria dos handoffs: quem estiver
      * disponível pega. Escolher uma pessoa é para o caso em que o bloco já
-     * sabe de quem é o assunto — "orçamento acima de X é com a Marina",
+     * sabe de quem é o assunto, "orçamento acima de X é com a Marina",
      * "cancelamento é com o dono".
      *
      * Opcional pelo mesmo motivo de `timeoutMinutos`: `flow_versions` é
      * imutável e há conversa em produção rodando grafo publicado antes deste
      * campo. Campo obrigatório faria todas pararem de dar parse.
      *
-     * **Se a pessoa saiu da conta, o aviso volta a ser da equipe** — ver
+     * **Se a pessoa saiu da conta, o aviso volta a ser da equipe**: ver
      * `avisarHandoff`. Um aviso endereçado a quem não existe mais é um aviso
      * que ninguém recebe, e o handoff continuaria esperando calado.
      */
@@ -496,7 +496,7 @@ export const noHandoffSchema = z.object({
  *
  * **`DELETE` entrou porque sem ele não existe reagendamento.** Remarcar é
  * desmarcar e marcar de novo, e desmarcar é `DELETE` em toda agenda que tem
- * API — a nossa inclusive. Faltando o verbo, o fluxo de reagendamento não tinha
+ * API, a nossa inclusive. Faltando o verbo, o fluxo de reagendamento não tinha
  * como ser desenhado, e a saída seria mandar o cliente usar outra ferramenta
  * para uma chamada.
  *
@@ -510,7 +510,7 @@ export type Metodo = (typeof METODOS)[number]
  * O que fazer quando a chamada falha.
  *
  * O padrão é `humano` por decisão de produto (§9): quem garante a saída é o
- * sistema. `seguir` existe para enriquecimento opcional — o CEP não respondeu e
+ * sistema. `seguir` existe para enriquecimento opcional, o CEP não respondeu e
  * a conversa não deveria morrer por isso.
  */
 export const AO_FALHAR = ['humano', 'seguir'] as const
@@ -528,13 +528,13 @@ export const SEPARADOR_DE_LISTA = ';'
  * A marca de "percorra esta lista" dentro de um caminho.
  *
  * `livres[].hora` quer dizer: entre em `livres`, que é uma lista, e pegue `hora`
- * de cada item. O resultado é `"07:00;10:00;15:00"` — exatamente o formato que a
+ * de cada item. O resultado é `"07:00;10:00;15:00"`, exatamente o formato que a
  * pergunta dinâmica já consome.
  *
  * **Esta era a peça que faltava para o bot marcar horário.** Toda agenda, todo
  * CRM e toda planilha devolvem lista; o mapeamento só sabia campo raso, então
  * um `GET /disponibilidade` chegava com dez horários e não havia como virar
- * menu. O contorno seria mandar o cliente achatar do lado dele — ou seja,
+ * menu. O contorno seria mandar o cliente achatar do lado dele, ou seja,
  * mandar ele usar n8n, que é a resposta que este produto não dá.
  *
  * **Um nível só.** Lista de lista não aparece em API de negócio e viraria uma
@@ -562,7 +562,7 @@ export const mapeamentoSchema = z.object({
    * devolve a mesma data repetida uma vez por horário daquele dia, e um menu com
    * "18/08" quatro vezes não é menu.
    *
-   * **Não use quando a lista for pareada com outra** — tirar repetidos de um
+   * **Não use quando a lista for pareada com outra**: tirar repetidos de um
    * lado desalinha os dois, e o valor guardado passa a ser o do vizinho.
    */
   unicos: z.boolean().optional(),
@@ -571,12 +571,12 @@ export const mapeamentoSchema = z.object({
    *
    * `{hora} · {servico}` numa lista de horários produz
    * `07:00 · Pilates solo;10:00 · Yoga`. Sem isto, o menu só sabe mostrar **um**
-   * campo por item — e aí "minhas próximas aulas" vira duas linhas idênticas
+   * campo por item, e aí "minhas próximas aulas" vira duas linhas idênticas
    * quando há duas aulas no mesmo dia, e não há como dizer qual é qual.
    *
    * Só vale quando o caminho termina em `[]`: é o item inteiro que serve de
    * fonte para os campos entre chaves. Campo que não existe no item vira vazio,
-   * pela mesma razão que `{{variavel}}` desconhecida vira vazio numa mensagem —
+   * pela mesma razão que `{{variavel}}` desconhecida vira vazio numa mensagem ,
    * um menu com `{servico}` literal é pior do que um menu com um espaço a mais.
    *
    * Chave simples e não `{{...}}` de propósito: o que está aqui não é variável
@@ -585,7 +585,7 @@ export const mapeamentoSchema = z.object({
    *
    * **`{campo|texto se vazio}`** dá um padrão para quando a API não mandar
    * nada. Nasceu de um menu que mostrou `14:00 ·`: a agenda devolveu quatro
-   * horários sem profissional, o campo sumiu e o separador ficou — e quem lia
+   * horários sem profissional, o campo sumiu e o separador ficou, e quem lia
    * não tinha como saber quem daria a aula. `{hora} · {profissional|a
    * confirmar}` diz a verdade sem esconder a vaga.
    */
@@ -597,13 +597,13 @@ export const mapeamentoSchema = z.object({
    * quantas aulas tem para repor, mas sim que, ao identificar o aluno, ele já
    * salve essa informação para podermos informar ao aluno"*. Para dizer "você
    * tem 3 aulas para repor" a conversa precisa do número, e o mapeamento só
-   * sabia devolver a lista inteira — que numa mensagem sai como
+   * sabia devolver a lista inteira, que numa mensagem sai como
    * `18/08 07:00 · Pilates;25/08 07:00 · Pilates`, e não como "3".
    *
    * Só vale com `[]` no caminho: contar um campo raso é contar até um, e
    * oferecer isso seria oferecer uma montagem que não responde nada.
    *
-   * Convive com `unicos` — `dias[].data` com os dois conta **dias distintos**,
+   * Convive com `unicos`, `dias[].data` com os dois conta **dias distintos**,
    * que é a pergunta certa quando um dia tem quatro horários. Não convive com
    * `rotulo`, que só monta linha de menu, e menu não é o que se pede aqui.
    */
@@ -612,7 +612,7 @@ export const mapeamentoSchema = z.object({
    * Como o valor aparece para quem conversa: data, hora, data e hora, dinheiro.
    *
    * Vazio entrega o que a API mandou, que é o que sempre houve. Ver
-   * `core/flow/formatos.ts` — a conversão mora lá porque é regra pura, e o
+   * `core/flow/formatos.ts`, a conversão mora lá porque é regra pura, e o
    * servidor só a aplica na hora de extrair.
    */
   formato: z.enum(FORMATOS_DE_SAIDA).optional(),
@@ -636,7 +636,7 @@ export const noHttpSchema = z.object({
      * Nasceu de uma conversa que deu certo e terminou em handoff: a aula foi
      * marcada, a Verandi respondeu **409** ("já existe essa participação") e o
      * bot disse *"vou te passar para um atendente"*. Do ponto de vista de quem
-     * conversa, o pedido tinha sido atendido — e o produto entregou o oposto
+     * conversa, o pedido tinha sido atendido, e o produto entregou o oposto
      * da autonomia que ele promete.
      *
      * Nem todo 4xx é erro de conversa. `409` costuma dizer "já estava feito",
@@ -649,11 +649,11 @@ export const noHttpSchema = z.object({
      * significar um conflito de verdade. Chutar por nós seria decidir sobre um
      * sistema que não é nosso.
      *
-     * Vazio mantém o comportamento de sempre — 2xx passa, o resto é falha.
+     * Vazio mantém o comportamento de sempre, 2xx passa, o resto é falha.
      */
     aceitarStatus: z.array(z.number().int().min(100).max(599)).optional(),
     /**
-     * Qual credencial do cliente usar. É só o **id** — o valor nunca entra no
+     * Qual credencial do cliente usar. É só o **id**: o valor nunca entra no
      * fluxo, e portanto nunca entra na versão publicada, que é imutável por
      * gatilho. Quem resolve é o servidor, depois do motor.
      *
@@ -668,7 +668,7 @@ export const noHttpSchema = z.object({
  * Move o contato para uma etapa de um quadro (C1b, 0032).
  *
  * **É o bloco que faz o quadro valer.** Sem ele, a posição de cada pessoa no
- * funil só muda por gesto humano — e quadro que depende de digitação manual é
+ * funil só muda por gesto humano, e quadro que depende de digitação manual é
  * quadro que ninguém mantém, o que é pior que quadro nenhum: ele mente com cara
  * de dado.
  *
@@ -677,7 +677,7 @@ export const noHttpSchema = z.object({
  * estado vivo, e um cartão precisa cair na etapa que existe **hoje**. O preço
  * dessa escolha é a etapa poder sumir depois de publicada, e ele é pago em dois
  * lugares: o `validar()` recusa publicar apontando para etapa que não existe, e
- * o servidor trata etapa sumida como nada-a-fazer em vez de estourar — a mesma
+ * o servidor trata etapa sumida como nada-a-fazer em vez de estourar, a mesma
  * regra do papel de número que aponta para fluxo sem versão publicada.
  *
  * Os dois campos são texto livre no schema porque o editor passa por estados
@@ -697,14 +697,14 @@ export const noEtapaSchema = z.object({
  * Põe uma etiqueta no contato (0044).
  *
  * **É o outro metade do "funcionário mexendo".** O quadro diz *onde* a pessoa
- * está; a etiqueta diz *o que ela é* — e ela pode ter várias ao mesmo tempo,
+ * está; a etiqueta diz *o que ela é*, e ela pode ter várias ao mesmo tempo,
  * que é a diferença entre as duas coisas. Até aqui etiqueta só existia como
  * clique humano no Inbox, o que significa que ela não acompanhava a automação:
  * o bot descobria que a pessoa queria pilates e ninguém marcava isso.
  *
  * **Referência, e não cópia**, pela mesma razão da etapa: etiqueta é estado
- * vivo, e o contato precisa receber a que existe hoje. O preço — etiqueta
- * apagada depois de publicada — é pago nos mesmos dois lugares: `validar()`
+ * vivo, e o contato precisa receber a que existe hoje. O preço, etiqueta
+ * apagada depois de publicada, é pago nos mesmos dois lugares: `validar()`
  * recusa publicar apontando para etiqueta que não existe, e o servidor trata
  * etiqueta sumida como nada-a-fazer em vez de estourar.
  *
@@ -722,7 +722,7 @@ export const noEtiquetaSchema = z.object({
 /**
  * Escreve na anotação do contato (0044).
  *
- * **Acrescenta, nunca substitui** — e isso é decisão de produto, não detalhe de
+ * **Acrescenta, nunca substitui**: e isso é decisão de produto, não detalhe de
  * implementação. A anotação é onde a equipe escreve o que sabe da pessoa; um
  * bot que sobrescrevesse aquilo apagaria trabalho humano em silêncio, e a
  * primeira vez que alguém percebesse seria a vez em que a informação fez falta.
@@ -741,23 +741,23 @@ export const noNotaSchema = z.object({
 })
 
 /**
- * **Ir para outro fluxo** — a interligação entre automações.
+ * **Ir para outro fluxo**: a interligação entre automações.
  *
  * O caso que pediu isto é literal: o estúdio tem um fluxo de pilates e um de
  * fisioterapia, e a pessoa que cita fisioterapia no meio da triagem precisa
  * cair nas perguntas específicas daquele fluxo. Antes, a única saída era
- * duplicar o segundo fluxo inteiro dentro do primeiro — e a partir daí manter
+ * duplicar o segundo fluxo inteiro dentro do primeiro, e a partir daí manter
  * dois desenhos iguais à mão, que é a forma conhecida de os dois divergirem.
  *
  * Guarda **referência ao fluxo, não à versão**. É a mesma exceção consciente da
  * etapa de quadro: quem salta quer o fluxo de fisioterapia **de hoje**, e não a
- * foto dele do dia em que o salto foi desenhado. O preço — o destino pode
- * sumir, ser despublicado ou ser desligado depois — é pago em dois lugares: o
+ * foto dele do dia em que o salto foi desenhado. O preço, o destino pode
+ * sumir, ser despublicado ou ser desligado depois, é pago em dois lugares: o
  * `validar()` recusa publicar apontando para destino que não serve, e o
  * servidor manda a conversa para uma pessoa em vez de deixá-la travada.
  *
  * Este bloco **não tem saída**: quem salta não volta. Uma saída depois dele
- * seria uma promessa que o motor não tem como cumprir — o outro fluxo termina
+ * seria uma promessa que o motor não tem como cumprir, o outro fluxo termina
  * onde ele terminar, e não existe pilha de chamada numa conversa de WhatsApp.
  *
  * `rotulo` é só desenho: o nome do fluxo no instante da escolha, para o bloco
@@ -782,7 +782,7 @@ export const noIrFluxoSchema = z.object({
  * fluxo"*.
  *
  * **A seta continua funcionando, e este bloco não a substitui.** Ela é melhor
- * quando o destino está perto e visível — a volta do "quer tentar outro dia?"
+ * quando o destino está perto e visível, a volta do "quer tentar outro dia?"
  * para a pergunta da data é uma seta curta, e vê-la ajuda a entender o desenho.
  * Este bloco é para o outro caso: o menu está a doze blocos de distância, a
  * seta cruzaria a tela inteira por cima de tudo, e o desenho fica ilegível
@@ -808,17 +808,17 @@ export const noVoltarSchema = z.object({
 })
 
 /**
- * **Pesquisa de satisfação** — pergunta a nota e a guarda como histórico (0060).
+ * **Pesquisa de satisfação**: pergunta a nota e a guarda como histórico (0060).
  *
  * Isto já dava para montar à mão, e é justamente por isso que o bloco existe:
- * o fluxo de exemplo gasta cinco blocos — pergunta, duas condições, o Guardar e
- * o caminho de cada faixa — para fazer o que toda pesquisa faz igual. E o
+ * o fluxo de exemplo gasta cinco blocos, pergunta, duas condições, o Guardar e
+ * o caminho de cada faixa, para fazer o que toda pesquisa faz igual. E o
  * resultado caía em `contacts.campos`, que **sobrescreve na segunda resposta**:
  * dava para perguntar, não dava para ter o número.
  *
  * O que ele faz que o desenho à mão não fazia:
  *
- * - grava em `avaliacoes`, com data própria — a nota de março continua lá
+ * - grava em `avaliacoes`, com data própria, a nota de março continua lá
  *   depois da de setembro, e é isso que permite responder "melhoramos?";
  * - classifica pela régua oficial do NPS (9–10, 7–8, 0–6) em vez de deixar cada
  *   fluxo inventar a sua. Duas contas diferentes com cortes diferentes não se
@@ -828,13 +828,13 @@ export const noVoltarSchema = z.object({
  *   que alguém precisa lembrar de montar.
  *
  * **As três saídas são fixas e não configuráveis.** Um corte por fluxo faria o
- * relatório somar notas medidas com réguas diferentes — e o erro só apareceria
+ * relatório somar notas medidas com réguas diferentes, e o erro só apareceria
  * no dia em que alguém comparasse dois meses e não entendesse a diferença.
  *
  * `comentarioEm` é opcional: quem só quer o número não pede o comentário, e
  * perguntar "por quê?" a quem deu 10 é uma mensagem a mais sem resposta útil.
  * Quando preenchido, é o nome da variável onde a justificativa fica disponível
- * para os blocos seguintes — o texto vai para `avaliacoes.comentario` de todo
+ * para os blocos seguintes, o texto vai para `avaliacoes.comentario` de todo
  * jeito.
  */
 export const noNpsSchema = z.object({
@@ -853,14 +853,14 @@ export const noNpsSchema = z.object({
     /**
      * A pergunta aberta que vem **depois** da nota, e só quando preenchida.
      *
-     * Vazio quer dizer "não pergunte nada" — e é o padrão, porque a pesquisa de
+     * Vazio quer dizer "não pergunte nada", e é o padrão, porque a pesquisa de
      * uma pergunta só é a que as pessoas respondem.
      */
     perguntaAberta: z.string().default(''),
     /** Onde guardar o comentário. Só vale com `perguntaAberta` preenchida. */
     comentarioEm: nomeVariavel.optional(),
     /**
-     * O mesmo prazo da pergunta, pelo mesmo motivo — e aqui ele importa mais:
+     * O mesmo prazo da pergunta, pelo mesmo motivo, e aqui ele importa mais:
      * pesquisa é a mensagem que mais fica sem resposta, e uma conversa presa
      * para sempre numa pesquisa é uma conversa que nunca encerra e conta como
      * viva nas métricas.
@@ -932,7 +932,7 @@ export const SAIDA_FALSO = 'falso'
 /**
  * Saídas da pergunta com opções dinâmicas.
  *
- * `vazio` não é detalhe: lista que vem de fora vem vazia com frequência — não
+ * `vazio` não é detalhe: lista que vem de fora vem vazia com frequência, não
  * há horário livre, a API não respondeu nada. Sem essa saída, a conversa
  * pararia numa pergunta sem resposta possível. Por isso o validador cobra as
  * duas.
@@ -954,14 +954,14 @@ export const SAIDA_TIMEOUT = 'timeout'
  * A saída de quando a pessoa manda **foto, áudio ou documento** em vez de
  * responder.
  *
- * Sem esta saída ligada, a conversa vai para uma pessoa — é a Regra B, e ela
+ * Sem esta saída ligada, a conversa vai para uma pessoa, é a Regra B, e ela
  * continua sendo o padrão certo: quem manda áudio está engajado, e "não
  * entendi" mata a conversa.
  *
  * O que ela conserta é o caso em que a foto **é** a resposta: a farmácia que
  * pede a receita, o petshop que quer ver o pet, a imobiliária que recebe a
  * planta. Nesses, o desenho sabia exatamente o que fazer com a imagem e não
- * tinha como dizer — a conversa era transferida com o motivo "o bot só lê
+ * tinha como dizer, a conversa era transferida com o motivo "o bot só lê
  * texto", e quem atendia nem sabia que aquilo era uma receita.
  */
 export const SAIDA_MIDIA = 'midia'
@@ -971,7 +971,7 @@ export const SAIDA_MIDIA = 'midia'
  * **9–10 promotor, 7–8 neutro, 0–6 detrator**.
  *
  * Elas são fixas, e isso é a razão de o bloco existir. Montada à mão, cada
- * pesquisa escolhia o próprio corte — e duas contas com cortes diferentes
+ * pesquisa escolhia o próprio corte, e duas contas com cortes diferentes
  * produzem dois números chamados "NPS" que não se comparam. Ninguém descobre
  * esse tipo de divergência olhando a tela; descobre no dia em que o relatório
  * de um mês não bate com o do outro.

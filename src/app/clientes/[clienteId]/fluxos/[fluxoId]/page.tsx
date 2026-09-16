@@ -50,7 +50,7 @@ export default async function Pagina({
    * A equipe, para o bloco de handoff poder endereçar o aviso a uma pessoa.
    *
    * Em `try` porque `membrosDaConta` fala Postgres direto (as tabelas do login
-   * ficam fora da Data API) e estoura num ambiente sem `DATABASE_URL` — o mesmo
+   * ficam fora da Data API) e estoura num ambiente sem `DATABASE_URL`, o mesmo
    * cuidado que o Inbox já toma. Sem equipe, o campo simplesmente não aparece e
    * o aviso continua sendo da conta inteira: o editor não pode parar de abrir
    * porque o login não está configurado.
@@ -66,7 +66,7 @@ export default async function Pagina({
   }
 
   /**
-   * O editor não usa a moldura do cliente — é tela cheia por natureza —, então
+   * O editor não usa a moldura do cliente, é tela cheia por natureza, então
    * ele faz por conta própria as duas coisas que ela faria: conferir quem pode
    * ver esta conta e mostrar a faixa de impersonação.
    *
@@ -101,7 +101,7 @@ export default async function Pagina({
         canal={fluxo.canal}
         iaHabilitada={fluxo.iaHabilitada}
         /* Contratar a Etapa 2 é decisão comercial da 4YU. Para a conta, o
-           contrato é estado — ver o cabeçalho do editor. */
+           contrato é estado, ver o cabeçalho do editor. */
         podeContratarIa={ehAdminDaPlataforma(acesso.sessao)}
         contextoNegocio={cliente.contextoNegocio}
         temContextoDeNegocio={cliente.contextoNegocio.trim() !== ''}
@@ -121,7 +121,7 @@ export default async function Pagina({
            O que um fluxo grava fica no contato e continua lá na conversa
            seguinte, então um pode ler o que o outro escreveu. Sem esta lista, o
            editor fingia que só existe o que este desenho cria, e quem quisesse
-           usar `{{plano}}` — gravado no fluxo de matrícula — digitava de cabeça.
+           usar `{{plano}}`, gravado no fluxo de matrícula, digitava de cabeça.
            Errar uma letra ali não estoura: a variável vira vazia e a mensagem
            sai com um buraco.
 
@@ -148,6 +148,7 @@ export default async function Pagina({
         )}
         etiquetas={etiquetas.map((e) => ({ id: e.id, nome: e.nome, cor: e.cor }))}
         equipe={equipe}
+        horarioConfigurado={cliente.horarioAtendimento !== null}
         publicadaInicial={
           publicada
             ? {

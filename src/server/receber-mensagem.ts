@@ -41,6 +41,7 @@ import {
 import {
   acharCanal,
   acharCanalPorNumero,
+  salvarTelefoneDoCanal,
   acharContato,
   acharSessao,
   acharOuCriarContato,
@@ -177,7 +178,26 @@ export const webhookSchema = z.object({
                */
               field: z.string().optional(),
               value: z.object({
-                metadata: z.object({ phone_number_id: z.string() }).optional(),
+                metadata: z
+                  .object({
+                    phone_number_id: z.string(),
+                    /*
+                     * **O telefone de verdade, que a Meta manda em toda
+                     * mensagem e a gente jogava fora.**
+                     *
+                     * Sem ele, a tela de Configurações mostrava
+                     * `1301107846409860` como se fosse o número do cliente. Um
+                     * cliente olhou a própria lista em 16/set/2026 e disse
+                     * "não mostra o número", com razão: aquilo é a
+                     * identificação interna da Meta, não um telefone.
+                     *
+                     * Opcional porque a coexistência e os payloads de teste
+                     * nem sempre trazem, e porque um canal que já tem o número
+                     * salvo não depende disto.
+                     */
+                    display_phone_number: z.string().optional(),
+                  })
+                  .optional(),
                 contacts: z
                   .array(
                     z.object({
@@ -240,11 +260,44 @@ export async function receberMensagem(
       const canalSalvo = await acharCanalPorNumero(numero)
       if (!canalSalvo || canalSalvo.status !== 'ativo') continue
 
+      /*
+       * **O canal aprende o próprio telefone na primeira mensagem que chega.**
+       *
+       * Quem conecta pelo embedded signup ganha o número pela coexistência;
+       * quem cadastra à mão colando o `phone_number_id` do painel da Meta não
+       * ganhava nada, e ficava para sempre identificado por um número de
+       * quinze dígitos que não é telefone de ninguém.
+       *
+       * Não existe tela nova para isto, e é de propósito: pedir para a pessoa
+       * digitar um dado que a Meta já nos manda a cada mensagem seria inventar
+       * trabalho. Grava uma vez, quando falta, e nunca mais.
+       */
+      await guardarTelefoneDoCanal(canalSalvo, valor.metadata?.display_phone_number)
+
       for (const mensagem of valor.messages) {
         const perfil = valor.contacts?.find((c) => c.wa_id === mensagem.from)
         await tratarUma(canalSalvo, mensagem, perfil?.profile?.name ?? null, fabricaDeCanal)
       }
     }
+  }
+}
+
+/**
+ * O canal aprende o próprio telefone, e nunca ao custo da conversa.
+ *
+ * Fica fora do caminho de erro de propósito: o telefone é enfeite de tela, e
+ * uma falha de escrita aqui não pode virar webhook com erro. A Meta reentrega
+ * o que não recebe 200 a tempo, e reentrega vira mensagem duplicada para o
+ * lead. Cara demais por um rótulo.
+ */
+async function guardarTelefoneDoCanal(canal: CanalSalvo, telefone: string | undefined) {
+  if (!telefone || canal.displayPhoneNumber) return
+
+  try {
+    await salvarTelefoneDoCanal(canal.id, telefone)
+  } catch (erro) {
+    const detalhe = erro instanceof Error ? erro.message : String(erro)
+    await alertar('não deu para gravar o telefone do canal', detalhe, { canal: canal.id })
   }
 }
 

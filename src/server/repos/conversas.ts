@@ -132,6 +132,29 @@ export type SessaoSalva = {
   sessao: Sessao
 }
 
+/**
+ * Grava o telefone de um canal que ainda não sabia o próprio.
+ *
+ * A Meta manda `metadata.display_phone_number` em toda mensagem recebida, e
+ * até 16/set/2026 o webhook descartava. Quem conectou pelo embedded signup
+ * ganhava o número pela coexistência; quem cadastrou à mão colando o
+ * `phone_number_id` ficava identificado no painel por quinze dígitos que não
+ * são telefone de ninguém.
+ *
+ * Só escreve quando está faltando. Sobrescrever a cada mensagem seria uma
+ * escrita por conversa para não mudar nada, e ainda passaria por cima de um
+ * valor que a coexistência já tinha resolvido melhor.
+ */
+export async function salvarTelefoneDoCanal(canalId: string, telefone: string): Promise<void> {
+  const { error } = await db()
+    .from('channels')
+    .update({ display_phone_number: telefone })
+    .eq('id', canalId)
+    .is('display_phone_number', null)
+
+  if (error) throw new Error(`não deu para gravar o telefone do canal: ${error.message}`)
+}
+
 export async function acharCanalPorNumero(phoneNumberId: string): Promise<CanalSalvo | null> {
   const { data, error } = await db()
     .from('channels')

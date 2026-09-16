@@ -77,7 +77,7 @@ type Instantaneo = { nodes: Node[]; edges: Edge[]; inicio: string }
 /**
  * Quanto tempo de edição contínua cabe num passo só do desfazer.
  *
- * Meio segundo é a pausa de quem terminou uma palavra e pensou na próxima —
+ * Meio segundo é a pausa de quem terminou uma palavra e pensou na próxima ,
  * curto o bastante para o `Ctrl+Z` não engolir um parágrafo inteiro, longo o
  * bastante para não voltar letra por letra.
  */
@@ -87,7 +87,7 @@ const JANELA_DE_DIGITACAO = 500
 const LIMITE_DO_HISTORICO = 60
 
 /**
- * Quanto tempo o "bloco apagado — desfazer" fica na tela.
+ * Quanto tempo o "bloco apagado, desfazer" fica na tela.
  *
  * Cinco segundos: tempo de ler a frase, perceber o engano e alcançar o botão,
  * sem virar moldura permanente. Abaixo de três, quem desviou o olhar perde a
@@ -100,7 +100,7 @@ const SEGUNDOS_DO_DESFAZER = 5
  *
  * O React Flow guarda cada uma destas props na store dele por identidade, e
  * repõe a store toda vez que a identidade muda. Escritos direto no JSX, eles
- * nasciam de novo a cada render do editor e enchiam a store de escrita inútil —
+ * nasciam de novo a cada render do editor e enchiam a store de escrita inútil ,
  * que reacende todos os blocos e todas as linhas do desenho a cada tecla
  * digitada no painel. Era metade do "canvas travado".
  *
@@ -122,7 +122,7 @@ const TIPOS: TipoNo[] = [
   'condicao',
   'salvar-campo',
   'etapa',
-  // Ao lado da etapa: os três registram o que se sabe da pessoa — onde ela
+  // Ao lado da etapa: os três registram o que se sabe da pessoa, onde ela
   // está no funil, o que ela é, e o que a conversa apurou.
   'etiqueta',
   'nota',
@@ -151,7 +151,7 @@ const TIPO_ARRASTADO = 'application/autofluxos-bloco'
  * Exportado para o teste, e o teste existe por um motivo concreto.
  *
  * Bloco recém-arrastado vive só na memória do navegador com o `data` que esta
- * função escreveu — o `default([])` do Zod só age quando o rascunho volta para
+ * função escreveu, o `default([])` do Zod só age quando o rascunho volta para
  * o banco. Um campo esquecido aqui é uma tela de erro para quem arrastar o
  * bloco, e nada no build, no typecheck ou nos testes de motor acusa.
  */
@@ -173,7 +173,7 @@ export function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
     case 'etapa':
       // Nasce sem etapa escolhida, e o validador recusa publicar assim. Chutar
       // a primeira etapa do primeiro quadro poria gente num funil que quem
-      // desenhou não escolheu — e ninguém revisa o que já veio preenchido.
+      // desenhou não escolheu, e ninguém revisa o que já veio preenchido.
       return { quadroId: '', colunaId: '' }
     case 'etiqueta':
       // Nasce sem etiqueta, pelo mesmo motivo da etapa: uma etiqueta chutada
@@ -182,7 +182,7 @@ export function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
     case 'nota':
       // Nasce vazia e o validador recusa publicar assim. Um texto de exemplo
       // que fosse publicado por engano escreveria a frase de exemplo na ficha
-      // de gente de verdade — e a anotação é lida por quem vai atender.
+      // de gente de verdade, e a anotação é lida por quem vai atender.
       return { texto: '' }
     case 'ir-fluxo':
       // Nasce sem destino, pelo mesmo motivo da etapa: chutar a primeira
@@ -192,8 +192,8 @@ export function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
     case 'nps':
       // Nasce **pronta para publicar**, e é o único bloco assim. Os outros
       // nascem vazios porque um valor chutado viraria dado errado no contato de
-      // alguém; aqui a pergunta do NPS é a mesma no mundo inteiro — é a régua,
-      // não uma escolha — e quem quiser mudar a palavra muda. Nascer vazio
+      // alguém; aqui a pergunta do NPS é a mesma no mundo inteiro, é a régua,
+      // não uma escolha, e quem quiser mudar a palavra muda. Nascer vazio
       // faria todo mundo digitar a mesma frase.
       //
       // Sem pergunta aberta: a pesquisa de uma pergunta só é a que as pessoas
@@ -206,7 +206,7 @@ export function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
       // `ferramentas` explícito, e não confiando no `.default([])` do Zod: o
       // bloco nasce **aqui**, no navegador, e só passa pelo schema quando o
       // rascunho é salvo. Entre o arrastar e o salvar, quem lê `data` lê o que
-      // esta linha escreveu — e `undefined.some()` derruba o editor inteiro.
+      // esta linha escreveu, e `undefined.some()` derruba o editor inteiro.
       return {
         instrucao: 'Responda a dúvida do cliente usando o contexto do negócio.',
         ferramentas: [],
@@ -237,7 +237,7 @@ export function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
        * para um funil ou um desenho que ninguém escolheu. Aqui não há chute: o
        * destino vazio **é** o início do fluxo, que é o "voltar ao menu" que
        * quem arrasta este bloco está procurando em nove de cada dez vezes.
-       * Nascer já funcionando é o ponto — o bloco existe justamente porque a
+       * Nascer já funcionando é o ponto, o bloco existe justamente porque a
        * alternativa era arrastar uma seta pela tela inteira.
        */
       return { destino: '', rotulo: '' }
@@ -248,7 +248,7 @@ export function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
  * Tira do React Flow só o que o motor entende.
  *
  * O React Flow carrega estado de interface junto do nó (`selected`, `dragging`,
- * `measured`). Nada disso pode ir para o banco nem para o motor — o que sai
+ * `measured`). Nada disso pode ir para o banco nem para o motor, o que sai
  * daqui é o mesmo objeto que o webhook do WhatsApp vai executar.
  */
 function paraFluxo(inicio: string, nodes: Node[], edges: Edge[]): Fluxo {
@@ -271,6 +271,7 @@ export function Editor({
   etapas,
   etiquetas,
   equipe,
+  horarioConfigurado,
   fluxos,
   variaveisDaConta = [],
   canal,
@@ -294,6 +295,8 @@ export function Editor({
   etiquetas: EtiquetaDoCliente[]
   /** Quem atende, para o handoff poder endereçar o aviso a uma pessoa. */
   equipe: MembroDoCliente[]
+  /** A conta tem horário de atendimento? O bloco de handoff usa. */
+  horarioConfigurado: boolean
   /** As automações desta conta, para o bloco "Ir para outra automação". */
   fluxos: FluxoDaConta[]
   /**
@@ -314,7 +317,7 @@ export function Editor({
   /**
    * Quem está olhando pode **contratar** a IA desta automação?
    *
-   * Só a 4YU. Para a conta o contrato é estado, não interruptor — ver o
+   * Só a 4YU. Para a conta o contrato é estado, não interruptor, ver o
    * comentário no cabeçalho.
    */
   podeContratarIa: boolean
@@ -322,7 +325,7 @@ export function Editor({
   contextoNegocio: string
   /** Sem contexto escrito, bloco de IA não publica. Ver `contexto/page.tsx`. */
   temContextoDeNegocio: boolean
-  /** `quando` já vem formatado do servidor — formatar data no cliente daria
+  /** `quando` já vem formatado do servidor, formatar data no cliente daria
    *  divergência de hidratação entre o fuso do servidor e o do navegador. */
   publicadaInicial: { id: string; versao: number; quando: string; grafo: Fluxo } | null
   /** Histórico completo, da mais nova para a mais antiga. */
@@ -337,12 +340,12 @@ export function Editor({
   /**
    * Todos os blocos da seleção, não só o primeiro.
    *
-   * O painel da direita continua sendo de um bloco — editar cinco perguntas
+   * O painel da direita continua sendo de um bloco, editar cinco perguntas
    * diferentes num formulário só não quer dizer nada. O que a seleção múltipla
    * serve é para a **ação em lote**, que é sempre a mesma decisão repetida.
    */
   const [selecionados, setSelecionados] = useState<string[]>([])
-  /** Qual bloco a última seleção apontava — ver `onSelectionChange`. */
+  /** Qual bloco a última seleção apontava, ver `onSelectionChange`. */
   const ultimoSelecionado = useRef<string | null>(null)
   const [aba, setAba] = useState<'bloco' | 'testar'>('bloco')
   const [painelAberto, setPainelAberto] = useState(true)
@@ -364,7 +367,7 @@ export function Editor({
   const [confirmandoDescarte, setConfirmandoDescarte] = useState(false)
   const [descartando, setDescartando] = useState(false)
   const [errosDePublicacao, setErrosDePublicacao] = useState<Problema[] | null>(null)
-  /** Versão que acabou de ir ao ar. Some sozinha — aviso fixo para de ser lido. */
+  /** Versão que acabou de ir ao ar. Some sozinha, aviso fixo para de ser lido. */
   const [publicadoAgora, setPublicadoAgora] = useState<number | null>(null)
   /** Rollback recém-feito. O aviso precisa dizer de onde veio, não só o número. */
   const [voltouDe, setVoltouDe] = useState<{ antiga: number; nova: number } | null>(null)
@@ -382,7 +385,7 @@ export function Editor({
    *
    * O atraso não é enfeite: sem ele, atravessar o desenho com o mouse abre e
    * fecha meia dúzia de painéis, e o que era leitura vira pisca-pisca. Some no
-   * primeiro sinal de que a pessoa parou de ler e voltou a desenhar — arrastar
+   * primeiro sinal de que a pessoa parou de ler e voltou a desenhar, arrastar
    * o bloco, mexer na tela, ou tirar o mouse de cima.
    */
   const [previa, setPrevia] = useState<{ no: No; x: number; y: number } | null>(null)
@@ -405,13 +408,13 @@ export function Editor({
    * de novo a cada render, então o efeito dispara a cada render. Enquanto ela só
    * gravava um `id` (string), isso passava despercebido: o React compara, vê o
    * mesmo valor e para. Quando entrou a seleção múltipla, ela passou a gravar
-   * uma **lista nova** — array novo é sempre "valor diferente", então o render
+   * uma **lista nova**: array novo é sempre "valor diferente", então o render
    * chamava o efeito, o efeito trocava o estado, a troca causava outro render, e
    * assim até o React desistir com "Maximum update depth exceeded" (erro 185) e
    * derrubar o editor inteiro.
    *
    * `useCallback` sem dependências corta o gatilho; o `atuais.every` corta o
-   * combustível. Um dos dois já resolveria hoje — os dois juntos resolvem também
+   * combustível. Um dos dois já resolveria hoje, os dois juntos resolvem também
    * o dia em que alguém precisar pôr uma dependência aqui.
    */
   const aoMudarSelecao = useCallback(({ nodes: sel }: { nodes: Node[] }) => {
@@ -426,7 +429,7 @@ export function Editor({
     //
     // **Só quando o bloco muda de verdade.** O React Flow redispara este evento
     // com a mesma seleção, inclusive no render causado por clicar na aba
-    // "Testar" — e aí o `setAba` daqui roda no mesmo lote e vence o do clique. O
+    // "Testar", e aí o `setAba` daqui roda no mesmo lote e vence o do clique. O
     // efeito para quem usa: com um bloco selecionado (que é o estado normal de
     // quem está desenhando) a aba "Testar" simplesmente não abria, sem nem
     // piscar. Parecia botão quebrado.
@@ -458,8 +461,8 @@ export function Editor({
    * qual é o início).
    *
    * Guardar o desenho inteiro, e não o "que mudou", é escolha deliberada: um
-   * fluxo grande dá uns 50 KB em memória, e a alternativa — um passo por tipo
-   * de ação — é a estrutura que erra justamente nas combinações raras
+   * fluxo grande dá uns 50 KB em memória, e a alternativa, um passo por tipo
+   * de ação, é a estrutura que erra justamente nas combinações raras
    * (duplicar, mudar o início e apagar na mesma sequência). Aqui todo passo
    * volta pelo mesmo caminho, então não existe ação "que o desfazer não cobre".
    *
@@ -470,7 +473,7 @@ export function Editor({
   const historico = useRef<Instantaneo[]>([])
   const futuro = useRef<Instantaneo[]>([])
   const agoraNoEditor = useRef<Instantaneo>({ nodes, edges, inicio })
-  /** Marca que a mudança veio do próprio desfazer — ela não vira passo novo. */
+  /** Marca que a mudança veio do próprio desfazer, ela não vira passo novo. */
   const vindoDoHistorico = useRef(false)
   /** Quando o último passo foi registrado, para juntar a digitação num só. */
   const ultimoPasso = useRef(0)
@@ -499,7 +502,7 @@ export function Editor({
   /**
    * Registra um passo sempre que o desenho muda.
    *
-   * Pendura em `assinatura` — a mesma string que decide salvar e publicar —
+   * Pendura em `assinatura`, a mesma string que decide salvar e publicar ,
    * porque ela já ignora o que é só interface: selecionar um bloco ou arrastar
    * a tela não vira passo de desfazer, e arrastar um bloco vira.
    *
@@ -544,7 +547,7 @@ export function Editor({
   )
   const haNovidade = assinatura !== assinaturaPublicada
 
-  // Salva sozinho depois de uma pausa. Rascunho incompleto pode ser salvo —
+  // Salva sozinho depois de uma pausa. Rascunho incompleto pode ser salvo ,
   // quem barra a publicação é o validador, não o salvamento.
   useEffect(() => {
     if (assinatura === assinaturaSalva.current) return
@@ -582,7 +585,7 @@ export function Editor({
       setEdges((atuais) => {
         // Uma saída leva a um lugar só. O motor pega a primeira aresta que
         // encontra, então duas saindo da mesma alça seriam ambiguidade
-        // silenciosa — some com a antiga em vez de deixar as duas.
+        // silenciosa, some com a antiga em vez de deixar as duas.
         const limpas = atuais.filter(
           (e) => !(e.source === conexao.source && e.sourceHandle === conexao.sourceHandle),
         )
@@ -631,7 +634,7 @@ export function Editor({
 
   function adicionar(tipo: TipoNo) {
     // Nasce no meio de onde a pessoa está olhando. Posição fixa colocava o
-    // bloco fora da tela assim que alguém arrastasse o desenho para o lado —
+    // bloco fora da tela assim que alguém arrastasse o desenho para o lado ,
     // aparecia a mensagem "adicionado" e nada na tela.
     const area = areaRef.current?.getBoundingClientRect()
     const centro =
@@ -662,7 +665,7 @@ export function Editor({
    * A mesma decisão de ritmo aplicada em todos os blocos selecionados.
    *
    * Passa pela regra pura (`aplicarAtrasoEmLote`) porque quem decide o que é
-   * bloco que fala é o `core/`, não a tela — e o salvamento e o desfazer já
+   * bloco que fala é o `core/`, não a tela, e o salvamento e o desfazer já
    * pegam a mudança sozinhos, pelo efeito que observa `nodes`.
    */
   function aplicarAtrasoNoLote(segundos: number) {
@@ -684,7 +687,7 @@ export function Editor({
 
   /**
    * Apagar um bloco leva as ligações dele junto, e o rascunho é salvo sozinho
-   * 800ms depois — sem desfazer, um clique errado custava o trabalho de religar
+   * 800ms depois, sem desfazer, um clique errado custava o trabalho de religar
    * tudo à mão. Guarda o que sumiu para poder devolver.
    *
    * Um passo só, de propósito: pilha de desfazer é outra coisa (mexe em mover,
@@ -707,7 +710,7 @@ export function Editor({
    * Copia um bloco ao lado, com o conteúdo inteiro e **sem as ligações**.
    *
    * Sem ligação de propósito: uma saída leva a um lugar só (ver `aoConectar`),
-   * então herdar as arestas do original faria a cópia roubar o destino dele —
+   * então herdar as arestas do original faria a cópia roubar o destino dele ,
    * duplicar quebraria o fluxo que já estava desenhado. Quem duplicou liga a
    * cópia onde quiser.
    *
@@ -740,7 +743,7 @@ export function Editor({
   }
 
   /**
-   * Volta um passo — o `Ctrl+Z`.
+   * Volta um passo, o `Ctrl+Z`.
    *
    * Devolve o desenho inteiro, então serve igual para apagar uma linha, mover
    * um bloco, duplicar, trocar o início ou editar um texto. O aviso de "bloco
@@ -754,7 +757,7 @@ export function Editor({
     aplicarInstantaneo(anterior)
   }
 
-  /** Refaz o que o `Ctrl+Z` desfez — `Ctrl+Shift+Z` ou `Ctrl+Y`. */
+  /** Refaz o que o `Ctrl+Z` desfez, `Ctrl+Shift+Z` ou `Ctrl+Y`. */
   function refazerUmPasso() {
     const proximo = futuro.current.pop()
     if (!proximo) return
@@ -776,8 +779,8 @@ export function Editor({
   /**
    * O clique em "apagar" pergunta antes; a tecla `Delete` não.
    *
-   * O botão é alcançável por engano — ele fica a poucos pixels do cabeçalho que
-   * a pessoa usa para arrastar o bloco — e apagar leva as ligações junto. A
+   * O botão é alcançável por engano, ele fica a poucos pixels do cabeçalho que
+   * a pessoa usa para arrastar o bloco, e apagar leva as ligações junto. A
    * tecla é deliberada e continua instantânea: para ela o desfazer de cinco
    * segundos já é a rede.
    */
@@ -823,7 +826,7 @@ export function Editor({
   }
 
   /**
-   * Apaga uma ligação — e só ela.
+   * Apaga uma ligação, e só ela.
    *
    * Sem confirmação, ao contrário do bloco: uma linha some e se refaz
    * arrastando de novo em dois segundos, enquanto um bloco leva o conteúdo
@@ -837,11 +840,11 @@ export function Editor({
    * O aviso de "bloco apagado" some sozinho depois de alguns segundos.
    *
    * Ele ficava pendurado até alguém apagar outro bloco ou clicar em Desfazer, e
-   * aviso que fica é aviso que para de ser lido — some do campo de atenção e
+   * aviso que fica é aviso que para de ser lido, some do campo de atenção e
    * vira parte do layout. O prazo é o do desfazer: passou, a decisão está
    * tomada.
    *
-   * O relógio reinicia a cada bloco apagado porque `desfazer` muda de objeto —
+   * O relógio reinicia a cada bloco apagado porque `desfazer` muda de objeto ,
    * quem apaga três seguidos ganha os segundos contados do último, que é o
    * único que ainda dá para devolver.
    */
@@ -859,7 +862,7 @@ export function Editor({
    *
    * **Só quando o foco não está num campo.** Sem essa guarda, apagar uma letra
    * no texto da mensagem apagaria o bloco inteiro assim que o campo ficasse
-   * vazio — e `Backspace` num campo vazio é exatamente o que acontece o tempo
+   * vazio, e `Backspace` num campo vazio é exatamente o que acontece o tempo
    * todo enquanto alguém escreve.
    */
   useEffect(() => {
@@ -878,7 +881,7 @@ export function Editor({
        * estava num campo, supondo que ele desfaria a digitação. Ele não desfaz:
        * todo campo aqui é controlado pelo React, e a pilha nativa de desfazer
        * não sobrevive ao valor ser reescrito a cada tecla. O efeito real era
-       * `Ctrl+Z` não fazer **nada** enquanto se escreve — que foi exatamente a
+       * `Ctrl+Z` não fazer **nada** enquanto se escreve, que foi exatamente a
        * reclamação.
        *
        * O histórico daqui cobre o caso: ele guarda o desenho inteiro, e o texto
@@ -917,7 +920,7 @@ export function Editor({
       }
 
       // Sem bloco escolhido não há o que apagar, e `Backspace` fora de campo é
-      // "voltar" em alguns navegadores — deixar passar seria sair do editor.
+      // "voltar" em alguns navegadores, deixar passar seria sair do editor.
       if (!selecionado) return
 
       evento.preventDefault()
@@ -973,7 +976,7 @@ export function Editor({
    * tecla. Um descarte que não dá para desfazer é exatamente o tipo de botão
    * que ninguém clica com confiança.
    *
-   * Não republica nada. O que está no ar continua como está — o que muda é só
+   * Não republica nada. O que está no ar continua como está, o que muda é só
    * o desenho de trabalho.
    */
   async function descartar() {
@@ -1100,22 +1103,24 @@ export function Editor({
    * guarda fica no contato e continua lá na próxima conversa, mas o editor de
    * outra automação não sabia disso. Quem quisesse usar `{{plano}}`, gravado
    * pelo fluxo de matrícula, tinha que digitar de cabeça e torcer para não
-   * errar uma letra — e errar uma letra não estoura em lugar nenhum: a variável
+   * errar uma letra, e errar uma letra não estoura em lugar nenhum: a variável
    * vira vazia e a mensagem sai com um buraco.
    *
    * **Sai do desenho das outras automações, e não de um cadastro à parte.** Um
    * cadastro de variáveis seria uma segunda verdade para manter em dia; esta
    * lista não tem como divergir, porque ela *é* o que os fluxos fazem. O preço é
-   * ela só conhecer o que alguém já desenhou — e é o preço certo, porque
+   * ela só conhecer o que alguém já desenhou, e é o preço certo, porque
    * variável que nenhum bloco preenche não existe mesmo.
    */
   /*
    * As nativas entram sempre: quem escreve "Olá, {{nome}}" não deveria precisar
-   * saber que ela existe — o botão de variável tem que oferecê-la, como oferece
+   * saber que ela existe, o botão de variável tem que oferecê-la, como oferece
    * as que o desenho cria.
    */
   const variaveis = [
-    ...new Set([...VARIAVEIS_NATIVAS, ...doDesenho, ...variaveisDaConta]),
+    ...new Set([...VARIAVEIS_NATIVAS,
+    ...doDesenho,
+    ...variaveisDaConta]),
   ].sort()
 
   return (
@@ -1131,7 +1136,7 @@ export function Editor({
         {/*
           O nome do fluxo não corta mais.
           Ele tinha `max-w-56 truncate`, e um nome como "PRINCIPAL - ATENDIMENTO"
-          virava "PRINCIPAL - ATEN…" — o mesmo defeito que reclamamos do
+          virava "PRINCIPAL - ATEN…", o mesmo defeito que reclamamos do
           concorrente. Nome de automação é como quem desenhou se localiza entre
           as suas; cortar no meio economiza 60px e cobra a leitura.
 
@@ -1150,7 +1155,7 @@ export function Editor({
         <span className="mx-0.5 h-6 w-px bg-surface-strong" />
 
         {/*
-          O contrato da Etapa 2 desta automação — e **quem** pode mexer nele.
+          O contrato da Etapa 2 desta automação, e **quem** pode mexer nele.
 
           A pergunta que isto responde não é "o desenho usa IA?": para isso
           basta olhar se existe bloco de IA no quadro. É "esta automação tem o
@@ -1158,7 +1163,7 @@ export function Editor({
           `validar()` cobra na hora de publicar.
 
           Era uma caixinha que qualquer pessoa da conta marcava sozinha, e um
-          portão que o próprio cliente abre não é portão — era só um passo a
+          portão que o próprio cliente abre não é portão, era só um passo a
           mais antes de publicar exatamente o mesmo fluxo. Agora quem marca é a
           4YU; para a conta é estado, e aparece do lado dos outros estados.
         */}
@@ -1195,7 +1200,7 @@ export function Editor({
         {/*
           Estado à esquerda, ação à direita.
           Os dois selos moravam colados no "Publicar", entre o "Compartilhar" e
-          ele — e ali eles pareciam botão. São informação: dizem em que pé o
+          ele, e ali eles pareciam botão. São informação: dizem em que pé o
           desenho está, que é a mesma matéria do "salvo" e do "com IA" logo ao
           lado. A direita ficou só com o que se clica.
         */}
@@ -1237,7 +1242,7 @@ export function Editor({
 
           Nas molduras do painel o `?` navega normalmente; deste cabeçalho, não.
           Quem consulta a Ajuda no meio de um desenho quer voltar para o desenho
-          — com o mesmo bloco selecionado, o mesmo zoom e a mesma posição do
+         , com o mesmo bloco selecionado, o mesmo zoom e a mesma posição do
           quadro, que são estado de tela e não sobrevivem a uma navegação.
         */}
         <a
@@ -1269,7 +1274,7 @@ export function Editor({
         {/*
           Só aparece quando **há o que descartar e para onde voltar**: desenho
           diferente do publicado, e um publicado existindo. Botão que fica
-          sempre na tela e quase nunca pode agir vira ruído — e este, podendo
+          sempre na tela e quase nunca pode agir vira ruído, e este, podendo
           jogar trabalho fora, seria ruído perigoso.
         */}
         {publicada && haNovidade && (
@@ -1327,7 +1332,7 @@ export function Editor({
           <span className="size-1.5 rounded-full bg-emerald-400" />
           <span className="flex-1">
             <strong>No ar.</strong> A versão {publicadoAgora} passa a atender as conversas novas
-            deste número — quem já estava conversando termina na versão em que começou.
+            deste número, quem já estava conversando termina na versão em que começou.
           </span>
           <button
             onClick={() => setPublicadoAgora(null)}
@@ -1362,7 +1367,7 @@ export function Editor({
         {/*
           A barra de blocos tem largura fixa desde sempre, e ela é grande demais
           para quem já decorou os dez blocos e pequena demais para quem está
-          aprendendo — duas pessoas diferentes, um número só. Agora ela se puxa.
+          aprendendo, duas pessoas diferentes, um número só. Agora ela se puxa.
 
           `relative` porque o puxador se posiciona contra ela; `overflow-y-auto`
           continua, então a lista rola quando a largura aperta.
@@ -1393,7 +1398,7 @@ export function Editor({
               }}
               // A dica do bloco entra no `title` quando ela sai da tela: quem
               // apertou a barra não deveria perder a explicação junto.
-              title={apertada ? `${NOMES[tipo]} — ${DESCRICOES[tipo]}` : undefined}
+              title={apertada ? `${NOMES[tipo]}, ${DESCRICOES[tipo]}` : undefined}
               className={`mb-1 flex w-full cursor-grab items-start gap-3 rounded-[11px] border border-transparent text-left transition select-none hover:border-line hover:bg-surface active:cursor-grabbing ${
                 apertada ? 'p-1.5' : 'p-2.5'
               }`}
@@ -1416,7 +1421,7 @@ export function Editor({
                   A descrição é a primeira coisa a sair quando a barra aperta.
 
                   Ela é o que ensina quem está aprendendo, e é exatamente o que
-                  sobra quando alguém já decorou os dez blocos — que é o motivo
+                  sobra quando alguém já decorou os dez blocos, que é o motivo
                   de a barra poder encolher. Some da tela e continua no `title`.
                 */}
                 {!apertada && (
@@ -1532,7 +1537,7 @@ export function Editor({
               zoomable
               position="bottom-left"
               nodeColor="#334155"
-              maskColor="rgba(7,10,14,.72)"
+              maskColor="rgba(7,10,14.72)"
               className="!h-24 !w-[150px]"
             />
           </ReactFlow>
@@ -1552,8 +1557,8 @@ export function Editor({
         {/*
           O painel recolhe.
 
-          São 356px fixos ao lado do desenho, e num fluxo grande — o caso em que
-          o desenho é justamente o que se precisa ver — eles custam caro. O
+          São 356px fixos ao lado do desenho, e num fluxo grande, o caso em que
+          o desenho é justamente o que se precisa ver, eles custam caro. O
           pedido veio como "um x pra fechar, ou um - pra minimizar", e minimizar
           é o certo: fechado de vez, não haveria como voltar sem adivinhar.
 
@@ -1618,7 +1623,7 @@ export function Editor({
                 <div className="flex items-center gap-2 border-b border-amber-300/20 bg-amber-300/[0.07] px-3.5 py-2.5 text-[11.5px] text-aviso">
                   <span className="min-w-0 flex-1">
                     Bloco apagado
-                    {desfazer.edges.length > 0 && ` — e ${desfazer.edges.length} ligação(ões) com ele`}.
+                    {desfazer.edges.length > 0 && `, e ${desfazer.edges.length} ligação(ões) com ele`}.
                   </span>
                   <button
                     onClick={desfazerApagar}
@@ -1643,6 +1648,7 @@ export function Editor({
                 etapas={etapas}
                 etiquetas={etiquetas}
                 equipe={equipe}
+                horarioConfigurado={horarioConfigurado}
                 fluxos={fluxos}
                 aoMudarDados={mudarDados}
                 aoDefinirInicio={definirInicio}
@@ -1656,7 +1662,7 @@ export function Editor({
                 Antes elas vinham embaixo do formulário de todo bloco clicado, e
                 o efeito era o contrário do pretendido: quem está editando uma
                 mensagem lê seis problemas de outros seis blocos, rola para
-                achar o campo, e passa a ignorar a lista — aviso que aparece
+                achar o campo, e passa a ignorar a lista, aviso que aparece
                 sempre para de ser lido. Sem bloco escolhido, o painel não tem
                 mais nada a dizer, e aí a lista é exatamente o que se quer ver.
                 Durante a edição, quem chama por elas é o selo de impedimentos
@@ -1723,10 +1729,10 @@ export function Editor({
         aberto={confirmandoDescarte}
         aoFechar={() => setConfirmandoDescarte(false)}
         titulo="Descartar as alterações?"
-        descricao={`O desenho volta a ser a versão ${publicada?.versao ?? ''} — a que está no ar agora. O que está publicado não muda: quem está conversando no WhatsApp não sente nada.`}
+        descricao={`O desenho volta a ser a versão ${publicada?.versao ?? ''}, a que está no ar agora. O que está publicado não muda: quem está conversando no WhatsApp não sente nada.`}
       >
         <p className="mb-4 rounded-[10px] border border-line bg-surface px-3 py-2 text-[12px] leading-5 text-muted">
-          Dá para voltar atrás com <strong className="text-soft">Ctrl+Z</strong> logo depois — o
+          Dá para voltar atrás com <strong className="text-soft">Ctrl+Z</strong> logo depois, o
           descarte entra no histórico de desfazer como qualquer outra mudança.
         </p>
         <div className="flex justify-end gap-2">
@@ -1790,7 +1796,7 @@ const ALTURA_MENU = 130
  *
  * **Por que ela existe.** O "digitando…" é decisão de ritmo da conversa
  * inteira: quem quer que o bot pareça gente quer a pausa em toda fala, e num
- * fluxo de vinte blocos isso custava vinte idas ao painel — com o risco de
+ * fluxo de vinte blocos isso custava vinte idas ao painel, com o risco de
  * sobrar um bloco instantâneo no meio, que é justo o que denuncia o robô.
  *
  * Selecionar é o gesto que já existia (Ctrl clicando, `Shift` arrastando uma
@@ -2016,7 +2022,7 @@ const ALTURA_NO = 140
  * **A comparação é entre retângulos, não entre pontos.** A primeira versão
  * disto media 40px nos dois eixos, o que é menos de um sexto da largura do
  * bloco: dois blocos a 46px de distância passavam no teste e se sobrepunham em
- * 200px. E bloco coberto não é só feio — ele fica inclicável, então o de baixo
+ * 200px. E bloco coberto não é só feio, ele fica inclicável, então o de baixo
  * some do editor sem nenhum aviso.
  */
 function livre(inicial: { x: number; y: number }, existentes: Node[]): { x: number; y: number } {
@@ -2030,7 +2036,7 @@ function livre(inicial: { x: number; y: number }, existentes: Node[]): { x: numb
   // O degrau desce um bloco inteiro, e é de propósito. Descer de pouquinho
   // parece mais delicado e não é: o bloco novo caminha pela mesma diagonal que
   // os anteriores já ocuparam, gasta cinco degraus para vencer cada um, e no
-  // quinto bloco o teto estoura — voltando a empilhar exatamente no caso em que
+  // quinto bloco o teto estoura, voltando a empilhar exatamente no caso em que
   // esta função existe para ajudar. Descendo uma altura por vez, cada degrau
   // vence um bloco, e o teto vira o que ele deveria ser: inalcançável na
   // prática.
