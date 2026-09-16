@@ -22,11 +22,13 @@ type LinhaDaSequencia = {
   etiqueta_de_saida_id: string | null
   coluna_id: string | null
   ativa: boolean
-  sequencia_passos: { id: string; atraso_minutos: number; flow_id: string }[] | null
+  sequencia_passos:
+    | { id: string; atraso_minutos: number; flow_id: string; template_id: string | null }[]
+    | null
 }
 
 const COLUNAS =
-  'id, nome, evento, etiqueta_id, etiqueta_de_saida_id, coluna_id, ativa, sequencia_passos (id, atraso_minutos, flow_id)'
+  'id, nome, evento, etiqueta_id, etiqueta_de_saida_id, coluna_id, ativa, sequencia_passos (id, atraso_minutos, flow_id, template_id)'
 
 function paraSequencia(linha: LinhaDaSequencia): Sequencia | null {
   // Evento que esta versão do código não conhece: a sequência some da lista em
@@ -47,6 +49,7 @@ function paraSequencia(linha: LinhaDaSequencia): Sequencia | null {
         id: passo.id,
         atrasoMinutos: passo.atraso_minutos,
         fluxoId: passo.flow_id,
+        templateId: passo.template_id,
       })),
     ),
   }
@@ -239,7 +242,7 @@ export async function apagarSequencia(clienteId: string, sequenciaId: string): P
 export async function criarPasso(
   clienteId: string,
   sequenciaId: string,
-  passo: { atrasoMinutos: number; fluxoId: string },
+  passo: { atrasoMinutos: number; fluxoId: string; templateId?: string | null },
 ): Promise<{ ok: true } | { ok: false; motivo: string }> {
   const sequencia = await acharSequencia(clienteId, sequenciaId)
   if (!sequencia) return { ok: false, motivo: 'esta sequência não existe mais' }
@@ -261,9 +264,21 @@ export async function criarPasso(
       sequencia_id: sequenciaId,
       atraso_minutos: passo.atrasoMinutos,
       flow_id: passo.fluxoId,
+      template_id: passo.templateId ?? null,
     })
 
   if (error?.code === '23505') return { ok: false, motivo: 'já existe um passo neste mesmo tempo' }
+  /*
+   * 23514 é o `check` da 0061: passo além de 24h sem modelo. `conferirAtraso`
+   * já barra antes, e este é o cinto — um caminho que não passe pela régua não
+   * pode gravar um passo que nunca entregaria.
+   */
+  if (error?.code === '23514') {
+    return {
+      ok: false,
+      motivo: 'passo com mais de 24h precisa de um modelo aprovado pela Meta',
+    }
+  }
   if (error) throw new Error(`não deu para criar o passo: ${error.message}`)
   return { ok: true }
 }

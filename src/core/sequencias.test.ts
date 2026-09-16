@@ -10,6 +10,10 @@ import {
   passosEmOrdem,
   quandoRodaOPasso,
   type PassoDaSequencia,
+  JANELA_EM_MINUTOS,
+  passoEntregavel,
+  porQueNaoEntrega,
+  TETO_DO_PASSO_MINUTOS,
 } from './sequencias'
 
 /**
@@ -74,6 +78,22 @@ describe('o teto de 24h é a janela da Meta', () => {
     expect(conferirAtraso(ATRASO_MAXIMO_MINUTOS, []).ok).toBe(true)
   })
 
+  /*
+   * O que a 0061 destravou: com modelo aprovado, o passo atravessa a janela
+   * fechada — e é só por isso que o teto subiu de 24h para 30 dias.
+   */
+  it('aceita passo além da janela quando ele carrega modelo', () => {
+    expect(conferirAtraso(4_320, [], 'tpl-1').ok).toBe(true)
+    expect(conferirAtraso(TETO_DO_PASSO_MINUTOS, [], 'tpl-1').ok).toBe(true)
+  })
+
+  it('recusa além de 30 dias mesmo com modelo', () => {
+    // Sequência de seis meses é quase sempre engano de digitação.
+    const r = conferirAtraso(TETO_DO_PASSO_MINUTOS + 1, [], 'tpl-1')
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.motivo).toContain('30 dias')
+  })
+
   it('cabeNaJanela olha o que restava quando a pessoa entrou', () => {
     // Meia janela consumida: um passo de 20h já não entrega.
     const metade = JANELA_MS / 2
@@ -107,5 +127,54 @@ describe('como o tempo é escrito na tela', () => {
     expect(comoAtraso(120)).toBe('2h')
     expect(comoAtraso(150)).toBe('2h30')
     expect(comoAtraso(1440)).toBe('24h')
+  })
+})
+
+describe('o passo que atravessa a janela fechada (0061)', () => {
+  const passo = (atrasoMinutos: number, templateId?: string | null) => ({
+    id: 'p1',
+    atrasoMinutos,
+    fluxoId: 'f1',
+    ...(templateId !== undefined ? { templateId } : {}),
+  })
+
+  it('deixa passar o que cabe nas 24h, sem exigir modelo', () => {
+    // Exigir modelo aqui seria cobrar aprovação da Meta para mandar a segunda
+    // mensagem de uma conversa que está acontecendo agora.
+    expect(passoEntregavel(passo(30))).toBe(true)
+    expect(passoEntregavel(passo(JANELA_EM_MINUTOS))).toBe(true)
+  })
+
+  /*
+   * O buraco que a 0061 fecha: sem modelo, um passo de 3 dias não é "um passo
+   * longo" — é um passo que o executor encontra com a janela fechada e encerra
+   * sem entregar nada. O desenho parecia certo e zero mensagem saía.
+   */
+  it('recusa passo além de 24h sem modelo', () => {
+    expect(passoEntregavel(passo(JANELA_EM_MINUTOS + 1))).toBe(false)
+    expect(passoEntregavel(passo(4_320, null))).toBe(false)
+  })
+
+  it('aceita passo além de 24h quando ele carrega modelo', () => {
+    expect(passoEntregavel(passo(4_320, 'tpl-1'))).toBe(true)
+    expect(passoEntregavel(passo(TETO_DO_PASSO_MINUTOS, 'tpl-1'))).toBe(true)
+  })
+
+  it('explica em português, dizendo o caminho de saída', () => {
+    const recado = porQueNaoEntrega(passo(4_320))
+    expect(recado).toMatch(/modelo aprovado/)
+    // Esconder que o recurso existe seria pior que o aviso.
+    expect(recado).toMatch(/Escolha um modelo/)
+  })
+
+  it('não reclama do que está certo', () => {
+    expect(porQueNaoEntrega(passo(60))).toBeNull()
+    expect(porQueNaoEntrega(passo(4_320, 'tpl-1'))).toBeNull()
+  })
+
+  it('o teto é de 30 dias', () => {
+    // Nem "sem teto": agendamento de seis meses é seis meses de chance de o
+    // número, o fluxo ou o cliente não existirem mais.
+    expect(TETO_DO_PASSO_MINUTOS).toBe(30 * 24 * 60)
   })
 })

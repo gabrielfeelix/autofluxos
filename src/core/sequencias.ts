@@ -66,10 +66,39 @@ export const ATRASO_MAXIMO_MINUTOS = JANELA_MS / 60_000
  */
 export const LIMITE_DE_PASSOS = 5
 
+/**
+ * O teto de um passo: 30 dias.
+ *
+ * Era 1440 (24h) porque fora da janela o WhatsApp recusa texto livre, e a 0031
+ * escreveu que o teto subiria quando os modelos aprovados existissem. Eles
+ * existem (0059), e o teto subiu na 0061.
+ *
+ * 30 dias e não "sem teto": sequência de seis meses é quase sempre engano de
+ * digitação, e um agendamento que fica seis meses na fila é seis meses de
+ * chance de o número, o fluxo ou o cliente não existirem mais.
+ */
+export const TETO_DO_PASSO_MINUTOS = 43_200
+
+/** Acima disto, o passo **precisa** de modelo aprovado. É a janela da Meta. */
+export const JANELA_EM_MINUTOS = 1_440
+
 export type PassoDaSequencia = {
   id: string
   atrasoMinutos: number
   fluxoId: string
+  /**
+   * O modelo aprovado que este passo manda, quando ele cai fora da janela.
+   *
+   * Nulo é o caso comum: passo dentro das 24h não precisa de modelo, e exigir
+   * um seria cobrar aprovação da Meta para mandar a segunda mensagem de uma
+   * conversa que está acontecendo agora.
+   *
+   * Acima de `JANELA_EM_MINUTOS` ele deixa de ser opcional — ver
+   * `passoEntregavel`. Sem modelo, um passo de 3 dias não é "um passo longo":
+   * é um passo que o executor vai encontrar com a janela fechada e encerrar
+   * sem entregar nada.
+   */
+  templateId?: string | null
 }
 
 export type Sequencia = {
@@ -165,15 +194,29 @@ export function comoAtraso(minutos: number): string {
 export function conferirAtraso(
   minutos: number,
   jaExistentes: number[],
+  /**
+   * O modelo aprovado deste passo, quando há um (0061).
+   *
+   * Sem ele, o teto continua sendo 24h — e não por escolha nossa: fora da
+   * janela o WhatsApp recusa texto livre, e o passo seria desenhado e nunca
+   * entregue. Com ele, o teto é 30 dias.
+   */
+  templateId?: string | null,
 ): { ok: true } | { ok: false; motivo: string } {
   if (!Number.isInteger(minutos) || minutos < 1) {
     return { ok: false, motivo: 'diga em quanto tempo este passo acontece' }
   }
-  if (minutos > ATRASO_MAXIMO_MINUTOS) {
+  if (minutos > TETO_DO_PASSO_MINUTOS) {
+    return {
+      ok: false,
+      motivo: 'o limite é 30 dias',
+    }
+  }
+  if (minutos > ATRASO_MAXIMO_MINUTOS && !templateId) {
     return {
       ok: false,
       motivo:
-        'o limite é 24h. Passado disso o WhatsApp só aceita modelo aprovado pela Meta, que ainda não temos — o passo seria desenhado e nunca entregue',
+        'passado de 24h o WhatsApp só entrega modelo aprovado pela Meta. Escolha um modelo para este passo, ou encurte o tempo',
     }
   }
   if (jaExistentes.includes(minutos)) {
@@ -183,4 +226,35 @@ export function conferirAtraso(
     return { ok: false, motivo: `uma sequência tem no máximo ${LIMITE_DE_PASSOS} passos` }
   }
   return { ok: true }
+}
+
+/**
+ * Este passo tem como entregar alguma coisa?
+ *
+ * Substitui `cabeNaJanela` como pergunta de desenho, e a diferença é o modelo:
+ * antes, passo fora das 24h era simplesmente impossível; agora ele é possível
+ * **se** carregar um modelo aprovado.
+ *
+ * `cabeNaJanela` continua existindo e continua certa para o que ela responde —
+ * "isto cabe em texto livre?". Esta responde a pergunta que a tela precisa
+ * fazer: "isto vai chegar em alguém?".
+ */
+export function passoEntregavel(passo: PassoDaSequencia): boolean {
+  if (passo.atrasoMinutos <= JANELA_EM_MINUTOS) return true
+  return Boolean(passo.templateId)
+}
+
+/**
+ * O que dizer a quem desenhou um passo que não entregaria.
+ *
+ * `null` quando está tudo certo. O recado é em português e diz o caminho de
+ * saída, porque a alternativa — desabilitar o campo acima de 24h — esconderia
+ * que o recurso existe.
+ */
+export function porQueNaoEntrega(passo: PassoDaSequencia): string | null {
+  if (passoEntregavel(passo)) return null
+  return (
+    'Passos com mais de 24 horas só chegam por um modelo aprovado pela Meta — ' +
+    'fora desse prazo o WhatsApp não entrega texto livre. Escolha um modelo para este passo.'
+  )
 }

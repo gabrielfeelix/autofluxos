@@ -53,6 +53,7 @@ import { listarGatilhosDeEvento, listarWebhooks } from '@/server/repos/webhooks-
 import { listarPastas } from '@/server/repos/pastas'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { contarInscricoes, listarSequencias } from '@/server/repos/sequencias'
+import { listarTemplatesAprovados } from '@/server/repos/templates'
 import { listarQuadros } from '@/server/repos/quadros'
 import { SeloDoCanal } from '@/components/design/selo-do-canal'
 import { InterruptorDeFluxo } from '@/components/fluxos/interruptor'
@@ -176,6 +177,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
     inscricoes,
     etiquetas,
     quadros,
+    templatesAprovados,
   ] = await Promise.all([
     listarFluxos(cliente.id),
     listarCanais(cliente.id),
@@ -189,6 +191,12 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
     contarInscricoes(cliente.id),
     listarEtiquetas(cliente.id),
     listarQuadros(cliente.id),
+    /*
+     * Só os aprovados (0059/0061): é o que um passo além de 24h pode usar.
+     * Oferecer um pendente faria a pessoa desenhar uma sequência que só
+     * entregaria se a Meta aprovasse a tempo.
+     */
+    listarTemplatesAprovados(cliente.id),
   ])
   const pastas = await listarPastas(cliente.id)
   const criarPastaComCliente = acaoCriarPasta.bind(null, cliente.id, {})
@@ -1065,15 +1073,34 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                                   <strong className="font-semibold text-soft">
                                     {comoAtraso(passo.atrasoMinutos)}
                                   </strong>{' '}
-                                  depois do evento · abre{' '}
-                                  <strong className="font-semibold text-muted">
-                                    {destino?.nome ?? 'um fluxo que sumiu'}
-                                  </strong>
-                                  {destino && !destino.versaoPublicadaId && (
-                                    <span className="text-aviso">
-                                      {' '}
-                                      · não publicado, então este passo não entrega nada
-                                    </span>
+                                  depois do evento ·{' '}
+                                  {passo.templateId ? (
+                                    /*
+                                      O passo que passa de 24h manda modelo, e
+                                      não abre fluxo. Mostrar "abre X" aqui
+                                      diria a coisa errada sobre o que a pessoa
+                                      vai receber.
+                                    */
+                                    <>
+                                      manda o modelo{' '}
+                                      <strong className="font-semibold text-muted">
+                                        {templatesAprovados.find((t) => t.id === passo.templateId)
+                                          ?.nome ?? 'que sumiu'}
+                                      </strong>
+                                    </>
+                                  ) : (
+                                    <>
+                                      abre{' '}
+                                      <strong className="font-semibold text-muted">
+                                        {destino?.nome ?? 'um fluxo que sumiu'}
+                                      </strong>
+                                      {destino && !destino.versaoPublicadaId && (
+                                        <span className="text-aviso">
+                                          {' '}
+                                          · não publicado, então este passo não entrega nada
+                                        </span>
+                                      )}
+                                    </>
                                   )}
                                 </span>
                                 <BotaoPerigo
@@ -1107,7 +1134,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                           <ModalFormulario
                             botao="+ Adicionar passo"
                             titulo="Novo passo"
-                            descricao="O tempo conta do evento que inscreveu a pessoa, não do passo anterior. O teto é 24h porque é a janela do WhatsApp: passado disso a Meta recusa texto livre, e o passo não atrasaria — simplesmente não seria entregue."
+                            descricao="O tempo conta do evento que inscreveu a pessoa, não do passo anterior. Até 24h o passo abre um fluxo. Passado disso, o WhatsApp só entrega modelo aprovado pela Meta — escolha um abaixo."
                             rotuloEnviar="Adicionar passo"
                             variante="secundario"
                             action={criarPassoComCliente}
@@ -1119,7 +1146,8 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                                   name="horas"
                                   type="number"
                                   min={0}
-                                  max={24}
+                                  /* 30 dias em horas. O teto de 24 caiu com a 0061. */
+                                  max={720}
                                   defaultValue={2}
                                   autoFocus
                                   className="app-field px-[13px] py-[11px] text-[13.5px]"
@@ -1148,6 +1176,41 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                                   ...(item.versaoPublicadaId ? {} : { detalhe: 'rascunho' }),
                                 }))}
                               />
+                            </label>
+                            {/*
+                              O modelo aprovado, para o passo que passa de 24h.
+
+                              Opcional, e o rótulo diz quando ele deixa de ser:
+                              dentro da janela o fluxo entrega sozinho, e exigir
+                              modelo ali seria cobrar aprovação da Meta para
+                              mandar a segunda mensagem de uma conversa que está
+                              acontecendo agora.
+
+                              Só modelos APROVADOS entram na lista. Oferecer um
+                              pendente faria a pessoa desenhar uma sequência que
+                              só entregaria se a Meta aprovasse a tempo.
+                            */}
+                            <label>
+                              <RotuloCampo>Modelo aprovado (só para passos acima de 24h)</RotuloCampo>
+                              {templatesAprovados.length === 0 ? (
+                                <p className="text-[11.5px] leading-5 text-muted">
+                                  Nenhum modelo aprovado ainda, então o teto deste passo é 24h.
+                                  Crie um em Transmissões e espere a revisão da Meta.
+                                </p>
+                              ) : (
+                                <Dropdown
+                                  nome="templateId"
+                                  rotuloAcessivel="Modelo aprovado deste passo"
+                                  opcoes={[
+                                    { valor: '', rotulo: 'Nenhum — o passo fica até 24h' },
+                                    ...templatesAprovados.map((item) => ({
+                                      valor: item.id,
+                                      rotulo: item.nome,
+                                      detalhe: item.idioma,
+                                    })),
+                                  ]}
+                                />
+                              )}
                             </label>
                           </ModalFormulario>
                         )}

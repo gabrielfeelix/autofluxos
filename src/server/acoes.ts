@@ -1183,8 +1183,9 @@ export async function acaoApagarSequencia(
  * O tempo é digitado em **horas e minutos** e convertido aqui: pedir "1440" a
  * alguém que quer "um dia" é fazer a pessoa fazer a conta que o computador faz.
  * A régua (`conferirAtraso`) mora em `core/` e é a mesma que a tela usa para
- * avisar antes — inclusive sobre o teto de 24h, que é a janela da Meta e não
- * uma escolha nossa.
+ * avisar antes. O teto é 24h **sem modelo** e 30 dias com um (0061): fora da
+ * janela o WhatsApp só entrega modelo aprovado, e isso é regra da Meta, não
+ * escolha nossa.
  */
 export async function acaoCriarPassoDaSequencia(
   clienteId: string,
@@ -1201,15 +1202,20 @@ export async function acaoCriarPassoDaSequencia(
   const sequencia = await acharSequencia(clienteId, sequenciaId)
   if (!sequencia) return { erro: 'esta sequência não existe mais' }
 
+  // Vazio é o caso comum: passo dentro das 24h não precisa de modelo.
+  const templateId = String(formData.get('templateId') ?? '').trim() || null
+
   const regua = conferirAtraso(
     total,
     sequencia.passos.map((passo) => passo.atrasoMinutos),
+    templateId,
   )
   if (!regua.ok) return { erro: regua.motivo }
 
   const r = await criarPasso(clienteId, sequenciaId, {
     atrasoMinutos: total,
     fluxoId: String(formData.get('fluxoId') ?? ''),
+    templateId,
   })
   if (!r.ok) return { erro: r.motivo }
 

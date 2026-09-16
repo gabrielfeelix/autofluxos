@@ -3,6 +3,10 @@ import { MOTIVOS_DE_SAIDA, passoDoIndice, quandoRodaOPasso } from '@/core/sequen
 import { chaveDoPasso, dadosDoPassoSchema } from '@/core/tarefas'
 import { abrirFluxoParaContato, type FabricaDeCanal } from './receber-mensagem'
 import { agendar } from './repos/tarefas'
+import { adaptadorDoCanal } from './adaptador-do-canal'
+import { podeEnviar, variaveisDe } from '@/core/templates'
+import { lerTemplate } from './repos/templates'
+import { acharContato, contextoDeResposta } from './repos/conversas'
 import {
   acharInscricao,
   acharSequencia,
@@ -63,36 +67,65 @@ export async function rodarPassoDeSequencia(
     return 'ignorada'
   }
 
-  const resultado = await abrirFluxoParaContato(
-    inscricao.clienteId,
-    contatoId,
-    passo.fluxoId,
-    fabricaDeCanal,
-  )
+  /*
+   * O passo que carrega modelo aprovado vai por outro caminho (0061).
+   *
+   * `abrirFluxoParaContato` manda texto livre, e texto livre fora das 24h é
+   * recusado pela Meta — foi por isso que o teto do passo era 1440. Com um
+   * modelo, o passo atravessa a janela fechada, que é a única razão de o teto
+   * ter subido para 30 dias.
+   *
+   * A ordem importa: **o modelo é tentado antes da janela ser conferida**. O
+   * contrário encerraria a inscrição como `bloqueada` justamente no caso que
+   * esta mudança existe para atender.
+   */
+  if (passo.templateId) {
+    const saiu = await mandarModeloDoPasso(inscricao.clienteId, contatoId, passo.templateId)
 
-  if (resultado === 'ocupado') {
-    // Uma mensagem está sendo processada agora, e a mensagem ganha do prazo,
-    // sempre. Devolver o erro faz a tarefa voltar para a fila e tentar de novo
-    // — é o único desfecho aqui que merece nova tentativa.
-    throw new Error('o contato está ocupado; o passo tenta de novo')
-  }
+    if (saiu === 'sem_contexto' || saiu === 'sem_modelo') {
+      // Número fora do ar, ou modelo apagado/reprovado. Nada disso passa
+      // sozinho: insistir três vezes só enche a fila de erro.
+      await encerrarInscricao(inscricaoId, 'saiu', 'sem_fluxo')
+      return 'ignorada'
+    }
 
-  if (resultado === 'janela_fechada') {
-    await encerrarInscricao(inscricaoId, 'bloqueada', MOTIVOS_DE_SAIDA.janela_fechada)
-    return 'ignorada'
-  }
+    if (saiu === 'erro') {
+      // Rede ou recusa transitória da Meta: vale nova tentativa, e é isso que
+      // estourar aqui faz.
+      throw new Error('o modelo não saiu; o passo tenta de novo')
+    }
+  } else {
+    const resultado = await abrirFluxoParaContato(
+      inscricao.clienteId,
+      contatoId,
+      passo.fluxoId,
+      fabricaDeCanal,
+    )
 
-  if (resultado === 'automacao_pausada') {
-    await encerrarInscricao(inscricaoId, 'saiu', 'automacao_pausada')
-    return 'ignorada'
-  }
+    if (resultado === 'ocupado') {
+      // Uma mensagem está sendo processada agora, e a mensagem ganha do prazo,
+      // sempre. Devolver o erro faz a tarefa voltar para a fila e tentar de novo
+      // — é o único desfecho aqui que merece nova tentativa.
+      throw new Error('o contato está ocupado; o passo tenta de novo')
+    }
 
-  if (resultado === 'sem_fluxo' || resultado === 'sem_contexto') {
-    // O fluxo do passo foi despublicado, apagado, ou o número saiu do ar. Não
-    // adianta tentar de novo: nada disso passa sozinho, e insistir três vezes
-    // só enche a fila de erro. A inscrição morre dizendo por quê.
-    await encerrarInscricao(inscricaoId, 'saiu', 'sem_fluxo')
-    return 'ignorada'
+    if (resultado === 'janela_fechada') {
+      await encerrarInscricao(inscricaoId, 'bloqueada', MOTIVOS_DE_SAIDA.janela_fechada)
+      return 'ignorada'
+    }
+
+    if (resultado === 'automacao_pausada') {
+      await encerrarInscricao(inscricaoId, 'saiu', 'automacao_pausada')
+      return 'ignorada'
+    }
+
+    if (resultado === 'sem_fluxo' || resultado === 'sem_contexto') {
+      // O fluxo do passo foi despublicado, apagado, ou o número saiu do ar. Não
+      // adianta tentar de novo: nada disso passa sozinho, e insistir três vezes
+      // só enche a fila de erro. A inscrição morre dizendo por quê.
+      await encerrarInscricao(inscricaoId, 'saiu', 'sem_fluxo')
+      return 'ignorada'
+    }
   }
 
   const proximo = passoDoIndice(sequencia.passos, passoIndice + 1)
@@ -120,4 +153,63 @@ export async function rodarPassoDeSequencia(
   })
 
   return 'feita'
+}
+
+/**
+ * Manda o modelo aprovado de um passo (0061).
+ *
+ * **É o que permite um passo além das 24h existir.** Fora da janela o WhatsApp
+ * recusa texto livre, então um passo de 3 dias sem modelo nunca entregaria — e
+ * era por isso que o teto da 0031 era 1440.
+ *
+ * Não confere a janela de propósito: modelo aprovado atravessa janela fechada,
+ * que é o ponto inteiro dele. Conferir aqui recriaria o bloqueio que esta
+ * mudança remove.
+ *
+ * As variáveis do modelo são preenchidas com o nome do contato, e só. Um passo
+ * de sequência não tem de onde tirar mais nada — quem precisa de valor por
+ * pessoa usa transmissão, onde a tela pergunta.
+ */
+async function mandarModeloDoPasso(
+  clienteId: string,
+  contatoId: string,
+  templateId: string,
+): Promise<'ok' | 'sem_contexto' | 'sem_modelo' | 'erro'> {
+  const template = await lerTemplate(templateId)
+  // Modelo apagado, de outro cliente, ou que a Meta pausou depois de aprovado.
+  // Nenhum dos três passa sozinho.
+  if (!template || template.clienteId !== clienteId) return 'sem_modelo'
+  if (!podeEnviar(template.status)) return 'sem_modelo'
+
+  const contexto = await contextoDeResposta(clienteId, contatoId)
+  if (!contexto) return 'sem_contexto'
+
+  // O nome vem do contato, que é quem o tem. `contextoDeResposta` responde
+  // "por onde falar", não "com quem".
+  const contato = await acharContato(contatoId)
+
+  try {
+    const canal = await adaptadorDoCanal(contexto.canal)
+    if (!canal.enviarTemplate) return 'sem_modelo'
+
+    const quantas = variaveisDe(template.componentes.corpo).length
+    await canal.enviarTemplate(contexto.waId, {
+      nome: template.nome,
+      idioma: template.idioma,
+      ...(quantas > 0
+        ? {
+            valores: {
+              // Vazio a Meta recusa com 132000; "tudo bem" é o que sobra quando
+              // o contato não tem nome gravado.
+              corpo: Array.from({ length: quantas }, () => contato?.nome || 'tudo bem'),
+            },
+          }
+        : {}),
+    })
+
+    return 'ok'
+  } catch (erro) {
+    console.error('[sequencia] o modelo do passo não saiu', erro)
+    return 'erro'
+  }
 }
