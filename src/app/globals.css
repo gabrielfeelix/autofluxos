@@ -879,8 +879,29 @@ textarea::placeholder {
   pointer-events: none;
 }
 
+/*
+ * O fundo do editor de fluxo: o mesmo véu azul do histórico da conversa.
+ *
+ * Ele era `--canvas-deep`, que no tema escuro é `#080b10`, quase preto. Com os
+ * cartões em `--panel` por cima, o canvas virava um buraco: o editor ficava
+ * mais escuro que qualquer outra tela do painel, e o preto não é um degrau
+ * abaixo do painel, é a ausência dele.
+ *
+ * Pedido do dono, e é a mesma fórmula de `.app-conversa`, de propósito: as duas
+ * são a área de trabalho no meio da tela, com a lista de um lado. Usar o mesmo
+ * véu faz o editor e o Inbox parecerem o mesmo produto em vez de duas telas que
+ * herdaram fundos diferentes.
+ *
+ * Sai do `--primary`, e não de um hex na mão, pelo mesmo motivo de lá: segue a
+ * marca se ela mudar. A dose é maior no escuro porque 3% sobre `#111722` não se
+ * vê, e igualar o número igualaria só o número.
+ */
 .react-flow {
-  background: var(--canvas-deep);
+  background: color-mix(in oklab, var(--primary) 3%, var(--panel));
+}
+
+:root[data-tema='escuro'] .react-flow {
+  background: color-mix(in oklab, var(--primary) 7%, var(--panel));
 }
 
 .react-flow__background pattern circle {
