@@ -278,6 +278,26 @@ extração explícito para os objetos de `public`.
   é a inversa do aviso da `0058`: a migration foi primeiro, e o bloco `nps` só
   chega à produção no próximo deploy. Enquanto isso a tabela fica vazia — o que
   é seguro, porque nada no caminho de mensagem que já está no ar a procura;
+- **a `0062` foi aplicada em 16/set/2026**, com autorização explícita do dono.
+  Ela recria `public.leads` para expor duas colunas novas ao fim da lista,
+  `ultimo_autor_tipo` e `ultimo_autor_nome`, lidas do `payload` da última
+  mensagem no lateral join que a view já fazia. Não toca em tabela, não move
+  dado e não altera coluna existente.
+
+  Conferida pelo **ensaio em transação** (`begin; ...; rollback;` pela
+  Management API), que é o teste adequado a uma migration aditiva segundo a
+  seção de Docker abaixo, e por conferência objeto a objeto na produção depois:
+  as duas colunas existem, os grants trazem só `postgres` e `service_role`
+  (`anon` e `authenticated` não aparecem, como a `0041` garante para objeto
+  novo), e `app_verandi` segue com 42 tabelas.
+
+  **O que só a produção mostrou:** das 568 saídas gravadas, apenas 72 têm autor
+  no `payload`. As outras 496 são o eco da coexistência, quando alguém responde
+  pelo celular em vez do painel: elas chegam pelo webhook sem passar por
+  `registrarSaida` e não têm autor nenhum. Quem for mexer na tela da fila
+  precisa saber disso antes de tratar "sem autor" como caso raro, porque hoje
+  ele é a maioria.
+
 - **as `0059` e `0061` foram aplicadas em 15/set/2026**, com autorização
   explícita do dono, e **nessa ordem** — a `0061` adiciona
   `sequencia_passos.template_id` referenciando `public.templates`, que só existe
