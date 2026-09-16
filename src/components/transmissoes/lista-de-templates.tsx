@@ -2,11 +2,10 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import type { Categoria, StatusDoTemplate } from '@/core/templates'
-import { acaoApagarTemplate, acaoCriarTemplate } from '@/server/acoes-transmissoes'
+import type { StatusDoTemplate } from '@/core/templates'
+import { acaoApagarTemplate } from '@/server/acoes-transmissoes'
 import type { Template } from '@/server/repos/templates'
-import { Dropdown } from '@/components/design/dropdown'
-import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
+import { NovoModelo } from './novo-modelo'
 
 /**
  * A lista de modelos aprovados, e o formulário de criar um.
@@ -60,7 +59,7 @@ export function ListaDeTemplates({
             A Meta revisa cada modelo antes de liberar o uso.
           </p>
         </div>
-        <FormularioDeTemplate clienteId={clienteId} />
+        <NovoModelo clienteId={clienteId} />
       </header>
 
       {templates.length === 0 ? (
@@ -149,125 +148,5 @@ function Linha({ clienteId, template }: { clienteId: string; template: Template 
         </button>
       </div>
     </li>
-  )
-}
-
-/**
- * O formulário de criar modelo.
- *
- * **Os exemplos são obrigatórios, e é aqui que isso fica claro.** A Meta recusa
- * por `INVALID_FORMAT` quando falta valor de exemplo numa variável — e essa
- * recusa chega horas depois. Pedir na tela custa trinta segundos; descobrir
- * pela recusa custa um dia.
- *
- * O campo de exemplos aparece conforme a pessoa escreve: são tantos quantas
- * forem as variáveis do texto. Uma lista fixa de cinco campos vazios pediria
- * que ela descobrisse sozinha quantos preencher.
- */
-function FormularioDeTemplate({ clienteId }: { clienteId: string }) {
-  const router = useRouter()
-  const [corpo, setCorpo] = useState('')
-
-  // As variáveis do corpo, em tempo real: é o que diz quantos exemplos pedir.
-  const quantasVariaveis = new Set([...corpo.matchAll(/\{\{(\d+)\}\}/g)].map((m) => m[1])).size
-
-  async function criar(dados: FormData) {
-    const r = await acaoCriarTemplate(clienteId, {
-      nome: String(dados.get('nome') ?? ''),
-      categoria: String(dados.get('categoria') ?? 'UTILITY') as Categoria,
-      componentes: { corpo: String(dados.get('corpo') ?? '') },
-      exemplos: Array.from({ length: quantasVariaveis }, (_, i) =>
-        String(dados.get(`exemplo-${i}`) ?? ''),
-      ),
-    })
-
-    if (!r.ok) return { ok: false, erro: r.erro }
-
-    router.refresh()
-    return { ok: true }
-  }
-
-  return (
-    <ModalFormulario
-      botao="Novo modelo"
-      titulo="Novo modelo"
-      descricao="A Meta revisa antes de liberar. Costuma levar de alguns minutos a 24 horas."
-      action={criar}
-      rotuloEnviar="Enviar para a Meta"
-    >
-      <div>
-        <RotuloCampo>Nome</RotuloCampo>
-        <input
-          name="nome"
-          placeholder="Lembrete de consulta"
-          className="app-field px-[13px] py-[11px] text-[13.5px]"
-        />
-        <p className="mt-1 text-[11.5px] leading-5 text-muted">
-          Pode escrever normal — a gente ajusta o formato.
-        </p>
-      </div>
-
-      <div>
-        <RotuloCampo>Categoria</RotuloCampo>
-        {/*
-          O `Dropdown` da casa, e não um `<select>`: o nativo abre com o desenho
-          do sistema operacional — fundo branco em cima de um modal — e é
-          exatamente o que esse componente existe para evitar.
-        */}
-        <Dropdown
-          nome="categoria"
-          rotuloAcessivel="Categoria do modelo"
-          valorInicial="UTILITY"
-          opcoes={[
-            { valor: 'UTILITY', rotulo: 'Utilidade', detalhe: 'confirmação, lembrete' },
-            { valor: 'MARKETING', rotulo: 'Marketing', detalhe: 'promoção, novidade' },
-            { valor: 'AUTHENTICATION', rotulo: 'Autenticação', detalhe: 'código de verificação' },
-          ]}
-        />
-        {/*
-          A categoria muda o PREÇO da mensagem, e a Meta reclassifica sozinha o
-          que julga promocional. Dizer isso antes evita a conversa de "por que a
-          conta veio mais cara".
-        */}
-        <p className="mt-1 text-[11.5px] leading-5 text-muted">
-          Ela muda quanto a Meta cobra por mensagem.
-        </p>
-      </div>
-
-      <div>
-        <RotuloCampo>Mensagem</RotuloCampo>
-        <textarea
-          name="corpo"
-          value={corpo}
-          onChange={(e) => setCorpo(e.target.value)}
-          className="app-field min-h-[96px] px-[13px] py-[11px] text-[13.5px]"
-          placeholder="Oi {{1}}, sua consulta é dia {{2}}. Confirma?"
-        />
-        <p className="mt-1 text-[11.5px] leading-5 text-muted">
-          Use {'{{1}}'}, {'{{2}}'}… para o que muda por pessoa.
-        </p>
-      </div>
-
-      {quantasVariaveis > 0 && (
-        <div>
-          <RotuloCampo>Exemplos das variáveis</RotuloCampo>
-          {/*
-            Obrigatório, e a tela diz por quê: sem exemplo a Meta recusa por
-            formato, e a recusa demora horas para chegar.
-          */}
-          <p className="mb-2 text-[11.5px] leading-5 text-muted">
-            A Meta exige um exemplo de cada variável para revisar.
-          </p>
-          {Array.from({ length: quantasVariaveis }, (_, i) => (
-            <input
-              key={i}
-              name={`exemplo-${i}`}
-              className="app-field mb-2 px-[13px] py-[11px] text-[13.5px]"
-              placeholder={`Exemplo para {{${i + 1}}}`}
-            />
-          ))}
-        </div>
-      )}
-    </ModalFormulario>
   )
 }

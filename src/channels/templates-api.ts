@@ -304,3 +304,196 @@ export async function apagarTemplateNaMeta(entrada: {
     return { ok: false, erro: { codigo: null, mensagem: detalhe } }
   }
 }
+
+// ---------------------------------------------------------------------------
+// A biblioteca da Meta
+// ---------------------------------------------------------------------------
+
+/**
+ * Os modelos **pré-aprovados** que a Meta publica.
+ *
+ * ---------------------------------------------------------------------------
+ * Por que vale a pena, e o que exatamente encurta
+ * ---------------------------------------------------------------------------
+ *
+ * Um template criado do zero entra na fila de revisão: de alguns minutos a 24
+ * horas, e pode voltar recusado em inglês. Um criado a partir da biblioteca,
+ * **sem alterar o texto**, é aprovado quase na hora — a Meta já revisou aquele
+ * conteúdo.
+ *
+ * O que encurta é a espera, não o trabalho: o template ainda é criado por WABA,
+ * ainda tem id próprio, e ainda precisa dos valores de exemplo. O que muda é
+ * que `library_template_name` diz "é este da sua lista", e ela não precisa ler
+ * de novo.
+ *
+ * **Mexer no texto perde o benefício**, e é por isso que a tela não deixa
+ * editar o corpo de um modelo da biblioteca: alterado, ele volta para a fila
+ * comum, e a pessoa que escolheu "aprovação imediata" esperaria 24h sem
+ * entender por quê.
+ */
+export type ModeloDaBiblioteca = {
+  /** O nome dela, que vai em `library_template_name` na criação. */
+  nome: string
+  idioma: string
+  categoria: string
+  /** O texto do corpo, com as lacunas já no lugar. */
+  corpo: string
+  cabecalho: string | null
+  rodape: string | null
+  /** Os botões que o modelo já traz, como rótulos — a tela só os mostra. */
+  botoes: string[]
+}
+
+export type RespostaDaBiblioteca =
+  | { ok: true; modelos: ModeloDaBiblioteca[] }
+  | { ok: false; erro: ErroDaMeta }
+
+/** Acha o texto de um componente da biblioteca, que vem em formato próprio. */
+function componenteDaBiblioteca(
+  componentes: unknown,
+  tipo: string,
+): Record<string, unknown> | null {
+  if (!Array.isArray(componentes)) return null
+  for (const bruto of componentes) {
+    const c = bruto as Record<string, unknown>
+    if (texto(c.type).toUpperCase() === tipo) return c
+  }
+  return null
+}
+
+/**
+ * Lista a biblioteca. **Não depende da WABA do cliente** — é catálogo da Meta.
+ *
+ * Por isso recebe só o token: qualquer token válido lê a mesma lista, e
+ * amarrá-la a um cliente faria a tela pedir conexão para mostrar um catálogo
+ * que é igual para todo mundo.
+ */
+export async function listarBibliotecaDaMeta(entrada: {
+  token: string
+  /** Filtra por assunto, quando a pessoa busca. */
+  busca?: string
+  idioma?: string
+  limite?: number
+  versaoGraph?: string
+}): Promise<RespostaDaBiblioteca> {
+  const url = new URL(
+    `https://graph.facebook.com/${versaoGraph(entrada.versaoGraph)}/message_template_library`,
+  )
+  url.searchParams.set('fields', 'id,name,language,category,body,header,footer,buttons,topic,usecase,industry')
+  url.searchParams.set('limit', String(entrada.limite ?? 100))
+  if (entrada.busca) url.searchParams.set('search', entrada.busca)
+  if (entrada.idioma) url.searchParams.set('language', entrada.idioma)
+
+  try {
+    const resposta = await fetch(url, {
+      headers: { Authorization: `Bearer ${entrada.token}` },
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    })
+
+    const corpo = (await resposta.json().catch(() => null)) as
+      | ({ data?: unknown[] } & CorpoDaMeta)
+      | null
+
+    if (!resposta.ok || corpo?.error) {
+      return { ok: false, erro: erroDoCorpo(corpo, resposta.status) }
+    }
+
+    const linhas = Array.isArray(corpo?.data) ? corpo.data : []
+
+    return {
+      ok: true,
+      modelos: linhas.flatMap((bruta) => {
+        const linha = bruta as Record<string, unknown>
+        const nome = texto(linha.name)
+        // `body` vem como string nuns casos e como componente noutros: a Meta
+        // não é consistente aqui, e sem corpo o modelo não serve para nada.
+        const corpoDoModelo =
+          texto(linha.body) ||
+          texto(componenteDaBiblioteca(linha.components, 'BODY')?.text)
+        if (!nome || !corpoDoModelo) return []
+
+        const botoes = Array.isArray(linha.buttons)
+          ? linha.buttons.flatMap((b) => {
+              const rotulo = texto((b as Record<string, unknown>).text)
+              return rotulo ? [rotulo] : []
+            })
+          : []
+
+        return [
+          {
+            nome,
+            idioma: texto(linha.language) || 'pt_BR',
+            categoria: texto(linha.category) || 'UTILITY',
+            corpo: corpoDoModelo,
+            cabecalho: texto(linha.header) || null,
+            rodape: texto(linha.footer) || null,
+            botoes,
+          },
+        ]
+      }),
+    }
+  } catch (erro) {
+    const detalhe = erro instanceof Error ? erro.message : String(erro)
+    return { ok: false, erro: { codigo: null, mensagem: detalhe } }
+  }
+}
+
+/**
+ * Cria um template **a partir da biblioteca** — o caminho da aprovação rápida.
+ *
+ * O corpo não vai no pedido: quem manda o texto é a Meta, pelo
+ * `library_template_name`. Mandar `components` junto é o que transforma isto
+ * numa criação comum e devolve o template para a fila de 24h.
+ */
+export async function criarDaBibliotecaNaMeta(entrada: {
+  wabaId: string
+  token: string
+  /** O nome que ele terá na SUA conta. Pode diferir do nome na biblioteca. */
+  nome: string
+  nomeNaBiblioteca: string
+  idioma: string
+  categoria: Categoria
+  versaoGraph?: string
+}): Promise<RespostaDaCriacao> {
+  const url = `https://graph.facebook.com/${versaoGraph(entrada.versaoGraph)}/${entrada.wabaId}/message_templates`
+
+  try {
+    const resposta = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${entrada.token}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: entrada.nome,
+        language: entrada.idioma,
+        category: entrada.categoria,
+        library_template_name: entrada.nomeNaBiblioteca,
+      }),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    })
+
+    const corpo = (await resposta.json().catch(() => null)) as CorpoDaMeta | null
+
+    if (!resposta.ok || corpo?.error) {
+      return { ok: false, erro: erroDoCorpo(corpo, resposta.status) }
+    }
+
+    const id = texto(corpo?.id)
+    if (!id) {
+      return { ok: false, erro: { codigo: null, mensagem: 'a Meta não devolveu o id do template' } }
+    }
+
+    return {
+      ok: true,
+      template: {
+        wabaTemplateId: id,
+        status: statusDaMeta(texto(corpo?.status)),
+        categoria: texto(corpo?.category) || null,
+      },
+    }
+  } catch (erro) {
+    const detalhe = erro instanceof Error ? erro.message : String(erro)
+    return { ok: false, erro: { codigo: null, mensagem: detalhe } }
+  }
+}

@@ -4,6 +4,13 @@ import { revalidatePath } from 'next/cache'
 import { criarTemplateNaMeta, apagarTemplateNaMeta } from '@/channels/templates-api'
 import { podeTransmitir } from '@/core/disparo'
 import {
+  CAMPOS,
+  camposUsados,
+  exemplosPara,
+  nomeAutomatico,
+  paraFormatoDaMeta,
+} from '@/core/modelos-prontos'
+import {
   normalizarNome,
   temErro,
   validarTemplate,
@@ -175,6 +182,49 @@ export async function acaoCriarTemplate(
 
   telas(clienteId)
   return { ok: true, templateId: rascunho.id, ...(avisos.length > 0 ? { avisos } : {}) }
+}
+
+/**
+ * Cria um modelo a partir do que a pessoa escreveu **em português**.
+ *
+ * É a ação que a tela nova usa, e ela existe para que o jargão da Meta não
+ * chegue a quem escreve: aqui o `{nome}` vira `{{1}}`, os exemplos saem do
+ * catálogo de campos, e o nome do template é gerado a partir do título.
+ *
+ * `acaoCriarTemplate` continua existindo para quem precisa do controle fino
+ * (nome próprio, cabeçalho, botões) — mas nenhuma tela a usa hoje.
+ */
+export async function acaoCriarModelo(
+  clienteId: string,
+  dados: { titulo: string; corpo: string; categoria: Categoria },
+): Promise<ResultadoDoTemplate> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const escrito = dados.corpo.trim()
+  if (!escrito) return { ok: false, erro: 'Escreva a mensagem.' }
+
+  /*
+   * Campo que não existe no catálogo viraria `{{n}}` sem exemplo, e a Meta
+   * recusaria por formato horas depois. Melhor recusar agora, dizendo qual.
+   */
+  const desconhecido = camposUsados(escrito).find(
+    (id) => !CAMPOS.some((campo) => campo.id === id),
+  )
+  if (desconhecido) {
+    return {
+      ok: false,
+      erro: `Não conheço o campo {${desconhecido}}. Use os botões para inserir os campos.`,
+    }
+  }
+
+  const { corpo, campos } = paraFormatoDaMeta(escrito)
+
+  return acaoCriarTemplate(clienteId, {
+    nome: nomeAutomatico(dados.titulo),
+    categoria: dados.categoria,
+    componentes: { corpo },
+    exemplos: exemplosPara(campos),
+  })
 }
 
 /**
