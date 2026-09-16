@@ -802,6 +802,25 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
               quem apagou parte e escreveu outra coisa não está mais respondendo
               ao anúncio. Pode terminar com ponto ou não: a gente normaliza.
             </p>
+            {/*
+              O caminho para o outro tipo de campanha, que é o que muita gente
+              vem procurar aqui: falar com uma lista.
+
+              Campanha, nesta tela, é o anúncio que traz gente PARA a conversa.
+              Quem quer o contrário — mandar para quem já é contato — precisa de
+              modelo aprovado pela Meta, que é outra tela. Sem este link, o
+              caminho não existe em lugar nenhum do painel.
+            */}
+            <p className="mt-2 text-[12px] leading-5 text-dim">
+              Quer mandar mensagem para uma lista de contatos?{' '}
+              <Link
+                href={`/clientes/${cliente.id}/transmissoes`}
+                className="font-semibold text-ink underline underline-offset-2"
+              >
+                Isso é uma transmissão
+              </Link>{' '}
+              — precisa de um modelo aprovado pela Meta.
+            </p>
             </div>
             {fluxos.length > 0 && (
               <ModalFormulario
