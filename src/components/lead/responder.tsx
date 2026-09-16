@@ -38,7 +38,7 @@ const TETO_DA_ALTURA = 132
  * A linha de baixo: quatro controles viraram três, e o da direita troca
  * ---------------------------------------------------------------------------
  *
- * Antes havia "📎 Anexar", "😊", "🎤 Gravar" e "Enviar" — quatro botões com
+ * Antes havia "📎 Anexar", "😊", "🎤 Gravar" e "Enviar", quatro botões com
  * borda disputando a linha, e um "Enviar" sempre aceso que perguntava "enviar o
  * quê?" com o campo vazio.
  *
@@ -61,7 +61,7 @@ export function CaixaDeResposta({
   nome: string
   respostasRapidas?: { atalho: string; texto: string }[]
   /**
-   * Existe automação nesta conta? **Sem ela o rodapé não fala de bot** — dizer
+   * Existe automação nesta conta? **Sem ela o rodapé não fala de bot**, porque dizer
    * "o bot para de falar" numa conta sem fluxo nenhum descreve um robô que não
    * existe, e faz procurar onde desligá-lo. A janela de 24h não mora mais aqui:
    * ela é estado da conversa e subiu para o cabeçalho.
@@ -69,7 +69,7 @@ export function CaixaDeResposta({
   temAutomacao?: boolean
   /**
    * De onde sai o clipe de anexar. Opcional porque a tela da Ficha usa a mesma
-   * caixa e não precisa dele — passar os dois ids só onde faz sentido evita
+   * caixa e não precisa dele, e passar os dois ids só onde faz sentido evita
    * inventar um botão que não teria para onde enviar.
    */
   anexo?: { clienteId: string; contatoId: string }
@@ -81,23 +81,23 @@ export function CaixaDeResposta({
    *
    * A tentação é tornar o `<textarea>` controlado para saber se há texto. Isso
    * quebraria `inserirResposta`, que usa `setRangeText` direto no DOM para
-   * escrever no cursor — é o que faz `/atalho` e emoji entrarem no meio da
+   * escrever no cursor, que é o que faz `/atalho` e emoji entrarem no meio da
    * frase em vez de no fim dela, e o que respeita o teto de 4.096 caracteres
    * sem contar duas vezes.
    *
    * Então o React guarda só a resposta da única pergunta que a tela faz ao
-   * texto: tem alguma coisa aí? Quem escreve no campo — a digitação, a inserção
-   * e o envio — é quem atualiza.
+   * texto: tem alguma coisa aí? Quem escreve no campo, seja a digitação, a inserção
+   * ou o envio, é quem atualiza.
    */
   const [temTexto, setTemTexto] = useState(false)
   /*
    * Gravar áudio toma a barra inteira. O estado mora aqui, e não dentro do
-   * botão de microfone, porque quem precisa sair de cena é o resto da linha —
+   * botão de microfone, porque quem precisa sair de cena é o resto da linha:
    * o campo de texto, o clipe e o emoji.
    */
   const [gravando, setGravando] = useState(false)
   const [enviando, comecar] = useTransition()
-  /** `null` fora do provedor — a tela da Ficha não monta citação. */
+  /** `null` fora do provedor, porque a tela da Ficha não monta citação. */
   const citacao = useCitacao()
 
   if (restaDaJanela === null) {
@@ -116,15 +116,15 @@ export function CaixaDeResposta({
       <div className="border-t border-line px-[18px] py-3.5">
         <p className="text-[11.5px] leading-5 text-dim">
           <strong className="text-muted">Não dá para responder por aqui agora.</strong> O WhatsApp
-          só aceita texto livre até 24h depois da última mensagem de {nome}. Passado isso, retomar
-          exige um modelo aprovado pela Meta.
+          só aceita texto livre por 24h depois da última mensagem de {nome}, ou por 72h quando a
+          conversa nasceu de um anúncio. Passado isso, retomar exige um modelo aprovado pela Meta.
         </p>
       </div>
     )
   }
 
   /**
-   * O campo cresce com o que se escreve, até o teto — e **só aí** ganha rolagem.
+   * O campo cresce com o que se escreve, até o teto, e **só aí** ganha rolagem.
    *
    * Zerar a altura antes de medir não é gambiarra: `scrollHeight` devolve o
    * maior entre o conteúdo e a altura atual, então sem o zero o campo cresce e
@@ -133,7 +133,7 @@ export function CaixaDeResposta({
    * A barra de rolagem é ligada e desligada na mão porque o padrão do
    * `<textarea>` é `overflow: auto`, e "auto" aqui mente: enquanto a altura
    * está sendo reescrita a cada tecla, o navegador desenha a barra por um
-   * quadro no meio do crescimento — uma linha cinza que pisca do lado do texto
+   * quadro no meio do crescimento, uma linha cinza que pisca do lado do texto
    * enquanto ainda há espaço de sobra. Escondida abaixo do teto e só então
    * `auto`, o campo se comporta como o do WhatsApp: cresce em silêncio, e a
    * barra aparece no exato momento em que ele para de crescer.
@@ -199,7 +199,7 @@ export function CaixaDeResposta({
   /*
    * Quem ocupa a direita.
    *
-   * O microfone é o padrão com o campo vazio — mas só existe onde há para onde
+   * O microfone é o padrão com o campo vazio, mas só existe onde há para onde
    * mandar (`anexo`). Na Ficha, que não passa os ids, a direita fica sendo o
    * avião sempre: um canto vazio faria procurar o botão de enviar.
    */
@@ -212,7 +212,7 @@ export function CaixaDeResposta({
         A citação escolhida, acima do campo.
 
         Com o X para desfazer: escolher a mensagem errada é o erro mais comum
-        aqui, e sem saída a pessoa manda a resposta citando a frase errada — que
+        aqui, e sem saída a pessoa manda a resposta citando a frase errada, que
         é pior do que não citar.
       */}
       {citacao?.citando && (
@@ -266,7 +266,7 @@ export function CaixaDeResposta({
 
       {/*
         A linha de escrever. `items-end` para que, quando o campo cresce, os
-        ícones fiquem alinhados com a última linha do texto — e não flutuando no
+        ícones fiquem alinhados com a última linha do texto, e não flutuando no
         meio de um retângulo alto.
       */}
       <div className="flex items-end gap-1">
@@ -292,7 +292,7 @@ export function CaixaDeResposta({
           maxLength={4096}
           /*
             Nasce sem barra. O `ajustarAltura` liga e desliga daí em diante, mas
-            o primeiro render acontece antes de qualquer digitação — e sem isto
+            o primeiro render acontece antes de qualquer digitação, e sem isto
             o campo vazio já mostrava a barra em navegador que desenha a de
             reserva.
           */
@@ -321,7 +321,7 @@ export function CaixaDeResposta({
           */
           onBlur={conferirTexto}
           onKeyDown={(evento) => {
-            // Enter manda, Shift+Enter quebra linha — o hábito de todo mundo que
+            // Enter manda, Shift+Enter quebra linha, o hábito de todo mundo que
             // usa WhatsApp. `requestSubmit` para o `action` do form valer.
             if (evento.key === 'Enter' && !evento.shiftKey) {
               evento.preventDefault()
@@ -331,13 +331,13 @@ export function CaixaDeResposta({
         />
 
         {/*
-          Gravando, a linha é só da gravação — o microfone se encarrega disso
+          Gravando, a linha é só da gravação, e o microfone se encarrega disso
           sozinho e ocupa tudo.
           -------------------------------------------------------------------
           Antes o "⏹ Enviar" do áudio convivia com o "Enviar" do formulário na
           mesma linha: dois botões com o mesmo nome, e o da direita respondia
           "escreva a mensagem antes de enviar" porque é o do texto. Não há como
-          adivinhar qual é qual — então enquanto grava, o resto sai de cena.
+          adivinhar qual é qual, então enquanto grava, o resto sai de cena.
         */}
         {mostrarMicrofone && anexo && (
           <BotaoDeMicrofone

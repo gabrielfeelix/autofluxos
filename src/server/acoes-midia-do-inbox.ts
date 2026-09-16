@@ -88,7 +88,7 @@ export async function acaoEnviarMidiaDoInbox(
    * fora dela. Conferir aqui evita gastar upload e dá o motivo certo em vez do
    * erro cru da Meta.
    */
-  if (!dentroDaJanela(contexto.ultimaEntradaEm)) {
+  if (!dentroDaJanela(contexto)) {
     return {
       ok: false,
       erro: contexto.ultimaEntradaEm

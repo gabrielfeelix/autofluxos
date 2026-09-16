@@ -956,7 +956,7 @@ export async function abrirFluxoParaContato(
   const contexto = await contextoDeResposta(clienteId, contatoId)
   if (!contexto) return 'sem_contexto'
 
-  if (!dentroDaJanela(contexto.ultimaEntradaEm)) return 'janela_fechada'
+  if (!dentroDaJanela(contexto)) return 'janela_fechada'
 
   const contato = await acharContato(contatoId)
   if (!contato) return 'sem_contexto'

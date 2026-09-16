@@ -28,7 +28,7 @@ import { acharLead, lerConversa } from './repos/leads'
 
 /**
  * O caminho inteiro, do webhook até a resposta, contra o Supabase de verdade.
- * O canal é o mock — o que importa aqui é a orquestração, não a rede da Meta.
+ * O canal é o mock, porque o que importa aqui é a orquestração, não a rede da Meta.
  */
 const temCredencial = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SECRET_KEY)
 const marca = `zz-wh-${Math.random().toString(36).slice(2, 8)}`
@@ -147,7 +147,7 @@ beforeAll(async () => {
    * `flow_versions` é imutável e a sessão fica presa à versão em que começou:
    * existe conversa em produção rodando um grafo publicado antes de o bloco de
    * mensagem virar uma pilha. Este é o único teste que prova, do webhook até o
-   * canal, que aquele grafo continua respondendo igual — inclusive o `atraso`,
+   * canal, que aquele grafo continua respondendo igual, inclusive o `atraso`,
    * que hoje é um pedaço e naquela época era um campo do bloco.
    */
   const fluxoComAtraso = structuredClone(triagem)
@@ -217,7 +217,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
   })
 
   /*
-   * Anúncio de WhatsApp Status chega **sem** `ctwa_clid` — a doc da Meta diz
+   * Anúncio de WhatsApp Status chega **sem** `ctwa_clid`, e a doc da Meta diz
    * que a propriedade é omitida por completo nessa colocação. Continua sendo
    * anúncio, e o que veio tem que ser guardado.
    */
@@ -240,8 +240,8 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
 
   /*
    * O caso que o modelo antigo perdia: remarketing pegando quem já é da base.
-   * A origem (primeiro toque) não pode mudar — senão a campanha de setembro
-   * leva o crédito de quem agosto trouxe — mas a segunda chegada É um fato e
+   * A origem (primeiro toque) não pode mudar, senão a campanha de setembro
+   * leva o crédito de quem agosto trouxe, mas a segunda chegada É um fato e
    * tem de aparecer no histórico.
    */
   it('quem volta por outra campanha ganha passagem nova, sem trocar a origem', async () => {
@@ -303,7 +303,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
     expect(data?.campos).toEqual({ origem: 'Direto' })
   })
 
-  it('ignora reenvio da mesma mensagem — senão a conversa anda duas vezes', async () => {
+  it('ignora reenvio da mesma mensagem, senão a conversa anda duas vezes', async () => {
     const de = telefone(1)
     const idRepetido = `wamid-${marca}-dup`
 
@@ -332,7 +332,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
    *
    * A sessão nascia com `vars` vazio, e `{{telefone}}` aparece escrito em quase
    * todo preset de integração. A chamada saía, respondia 200, e gravava um lead
-   * sem telefone no CRM do cliente — ou, na agenda, procurava por número nenhum
+   * sem telefone no CRM do cliente, ou, na agenda, procurava por número nenhum
    * e tratava uma aluna de dois anos como pessoa nova.
    */
   it('a conversa nova já sabe o telefone e o nome de quem escreveu', async () => {
@@ -348,7 +348,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
   /*
    * Assumir marcava o responsável e mais nada: o bot continuava conduzindo, e
    * se a pessoa respondesse rápido ele falava por cima de quem tinha acabado de
-   * pegar a conversa. Só responder calava — ou seja, era preciso digitar alguma
+   * pegar a conversa. Só responder calava, ou seja, era preciso digitar alguma
    * coisa para o bot parar.
    */
   it('assumir cala o bot na conversa que está andando', async () => {
@@ -414,8 +414,8 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
         horario_atendimento: {
           fuso: 'America/Sao_Paulo',
           dias: [[], [], [], [], [], [], []].map((_, dia) =>
-            // Um dia com faixa — para não cair no "nada configurado, atende
-            // sempre" — mas uma faixa que nunca contém o agora não existe. Em
+            // Um dia com faixa, para não cair no "nada configurado, atende
+            // sempre", mas uma faixa que nunca contém o agora não existe. Em
             // vez disso, uma faixa de um minuto num dia só: fora dela, fechado.
             dia === 0 ? [{ de: '03:00', ate: '03:01' }] : [],
           ),
@@ -545,7 +545,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
    * O caso que estava aberto: a Cloud API recusa o envio (token expirado,
    * janela de 24h fechada, limite de taxa) e a exceção subia até o `after()`
    * do webhook. Como a mensagem que chegou já foi deduplicada, a Meta não
-   * reenvia — a pessoa ficava sem resposta e o fluxo tinha avançado como se
+   * reenvia, e a pessoa ficava sem resposta e o fluxo tinha avançado como se
    * tivesse falado. Agora vira handoff, que é o que a tela consegue mostrar.
    */
   it('falha de entrega vira handoff, e não exceção sem dono', async () => {
@@ -570,7 +570,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
 
   /**
    * Uma saudação seguida de opções são dois envios. Falhando o segundo, o
-   * primeiro já saiu — seguir para um terceiro entregaria a conversa fora de
+   * primeiro já saiu, e seguir para um terceiro entregaria a conversa fora de
    * ordem, que é pior do que uma pessoa assumindo.
    */
   it('entrega que falha no meio para o resto em vez de mandar fora de ordem', async () => {
@@ -598,7 +598,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
 
   /**
    * O botão "Já atendi" da tela de leads. Sem ele o lead ficava vermelho para
-   * sempre — e, pior, a sessão continuava em `humano`, então o bot nunca mais
+   * sempre, e, pior, a sessão continuava em `humano`, então o bot nunca mais
    * falava com aquele número.
    */
   it('encerrar o atendimento resolve o handoff e devolve o contato ao bot', async () => {
@@ -625,7 +625,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
    *
    * É o comportamento normal de quem manda "oi" e "tudo bem?" em seguida: a
    * Meta entrega os dois webhooks, e nada garante que o segundo espere o
-   * primeiro. Sem trava, os dois leem a sessão no mesmo estado — e como o
+   * primeiro. Sem trava, os dois leem a sessão no mesmo estado, e como o
    * primeiro ainda não gravou nada, o segundo também acha que a conversa é
    * nova e **cria uma segunda sessão**. A conversa reinicia sozinha, e quem
    * está do outro lado vê a saudação duas vezes.
@@ -651,7 +651,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
     expect(sessoes).toHaveLength(1)
 
     // E o que a pessoa veria: a saudação uma vez, não duas. É o sintoma que a
-    // trava existe para evitar — a sessão duplicada é a causa, esta é a cara.
+    // trava existe para evitar: a sessão duplicada é a causa, esta é a cara.
     const saudacao = mock.enviadas.find((e) => e.tipo === 'texto')
     expect(saudacao).toBeDefined()
     const repetidas = mock.enviadas.filter(
@@ -675,7 +675,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
     expect(contexto?.canal.phoneNumberId).toBe(numeroDoBot)
     expect(contexto?.sessaoId).toBeTruthy()
     // Ela acabou de escrever, então a janela tem que estar aberta.
-    expect(dentroDaJanela(contexto?.ultimaEntradaEm ?? null)).toBe(true)
+    expect(dentroDaJanela(contexto ?? { ultimaEntradaEm: null })).toBe(true)
   })
 
   it('não monta contexto de resposta para o contato de outro cliente', async () => {
@@ -711,7 +711,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
 
   /**
    * O caminho inteiro da mídia: o fluxo descreve, o canal entrega, e a conversa
-   * guarda o arquivo — não só a legenda. Uma linha em branco no histórico
+   * guarda o arquivo, não só a legenda. Uma linha em branco no histórico
    * esconderia de quem atende que a foto do plano já foi mandada.
    */
   it('entrega o arquivo pelo canal e guarda o anexo na conversa', async () => {
@@ -806,7 +806,7 @@ function canalQueRecusa(motivo: string, aPartirDe = 0) {
 /**
  * O contato novo entra sozinho no quadro padrão (0043).
  *
- * A queixa que originou isto foi literal — *"o lead não vai automático, tem que
+ * A queixa que originou isto foi literal: *"o lead não vai automático, tem que
  * clicar e puxar"*. O que precisa ser provado aqui não é só que ele entra: é
  * que **quem já estava no quadro não é jogado de volta para a primeira etapa**.
  * Esse é o modo de falhar que apagaria o funil de todo mundo a cada mensagem, e
@@ -825,7 +825,7 @@ describe.skipIf(!temCredencial)('o contato novo entra no quadro padrão', () => 
   /*
    * **Este teste era o contrário, e o contrário estava errado.**
    *
-   * Ele afirmava "sem quadro marcado, nada entra" — e era verdade: em produção,
+   * Ele afirmava "sem quadro marcado, nada entra", e era verdade: em produção,
    * nenhum dos cinco quadros estava marcado e lead nenhum entrava em lugar
    * nenhum. A queixa que gerou a rodada 1 (*"o lead não vai automático, tem que
    * clicar e puxar"*) continuava valendo inteira, com a suíte verde.
@@ -884,7 +884,7 @@ describe.skipIf(!temCredencial)('o contato novo entra no quadro padrão', () => 
     if (!vazio.ok) throw new Error('o quadro deveria ser criado')
 
     // Um quadro nasce com três etapas; tirar todas é o estado quebrado que
-    // `porNoQuadro` recusa — e essa recusa não pode custar o atendimento.
+    // `porNoQuadro` recusa, e essa recusa não pode custar o atendimento.
     const doVazio = (await acharQuadro(clienteId, vazio.id))!
     for (const etapa of doVazio.etapas) {
       await db().from('quadro_colunas').delete().eq('id', etapa.id)
@@ -914,7 +914,7 @@ describe.skipIf(!temCredencial)('o contato novo entra no quadro padrão', () => 
 /**
  * O fluxo etiqueta e anota sozinho (0044).
  *
- * O que precisa ser provado aqui não é que a etiqueta gruda — isso o repo já
+ * O que precisa ser provado aqui não é que a etiqueta gruda, porque isso o repo já
  * prova. É que **etiquetar pelo fluxo faz o mesmo que etiquetar pela mão**,
  * inclusive começar a sequência que a etiqueta dispara. Dois caminhos com o
  * mesmo nome e efeitos diferentes é o tipo de divergência que ninguém descobre
@@ -983,7 +983,7 @@ describe.skipIf(!temCredencial)('o fluxo etiqueta e anota', () => {
     await db().from('channels').update({ flow_id: fluxoId }).eq('id', canalId)
   })
 
-  /** O contato pelo telefone — `acharLead` quer o id, e o webhook só deu o número. */
+  /** O contato pelo telefone. `acharLead` quer o id, e o webhook só deu o número. */
   const leadDoTelefone = async (de: string) => {
     const { data } = await db()
       .from('contacts')
@@ -1041,7 +1041,7 @@ describe.skipIf(!temCredencial)('o fluxo etiqueta e anota', () => {
   })
 
   it('a anotação do fluxo diz que foi automação, e não uma pessoa', async () => {
-    // Quem abre a ficha precisa saber se foi um colega ou o bot que escreveu —
+    // Quem abre a ficha precisa saber se foi um colega ou o bot que escreveu,
     // sem isso, uma frase automática vira afirmação humana sobre o cliente.
     const de = telefone(52)
     await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-et-3`), comMock)
@@ -1079,7 +1079,7 @@ describe.skipIf(!temCredencial)('o fluxo etiqueta e anota', () => {
     const pub = await publicar(fluxoEfemero.id, clienteId, grafo)
     expect(pub.ok).toBe(true)
 
-    // Apagada **depois** de publicada — que é o caso real.
+    // Apagada **depois** de publicada, que é o caso real.
     await db().from('etiquetas').delete().eq('id', efemera.id)
     await db().from('channels').update({ flow_id: fluxoEfemero.id }).eq('id', canalId)
 

@@ -23,12 +23,12 @@ import { confirmarEntrega, contextoDeResposta, registrarSaida } from './repos/co
  * as 15h conferido só de madrugada não é agendamento. Então são três gatilhos,
  * pelo mesmo desenho que `rodarTarefas` já usa:
  *
- * 1. **carona no webhook** — a conta que tem mensagem marcada é, quase sempre,
+ * 1. **carona no webhook**: a conta que tem mensagem marcada é, quase sempre,
  *    a conta que está conversando; é daqui que vem a resolução de minuto;
- * 2. **carona no pulso do Inbox** — enquanto alguém está com a tela aberta, o
+ * 2. **carona no pulso do Inbox**: enquanto alguém está com a tela aberta, o
  *    servidor já olha o banco de segundo em segundo. Uma passada por minuto
  *    ali cobre o caso de a mensagem marcada ser para uma conversa parada;
- * 3. **cron diário** — o piso, para a conta que passou o dia sem nada.
+ * 3. **cron diário**: o piso, para a conta que passou o dia sem nada.
  *
  * O que isso **não** entrega está escrito na tela de marcar: com o painel
  * fechado e nenhuma mensagem chegando, a mensagem sai no primeiro dos três que
@@ -41,7 +41,7 @@ import { confirmarEntrega, contextoDeResposta, registrarSaida } from './repos/co
  *
  * São de clientes diferentes: um número desconectado numa conta não pode
  * impedir a mensagem de outra. Por isso o `try` é por linha, e não em volta do
- * laço — o mesmo desenho de `rodarTarefas`.
+ * laço, o mesmo desenho de `rodarTarefas`.
  */
 
 export type ResumoDasAgendadas = {
@@ -78,13 +78,13 @@ async function enviarUma(agendada: MensagemAgendada): Promise<void> {
   /*
    * A janela de 24h é conferida **agora**, e não na hora de marcar.
    *
-   * Quem marcou viu um aviso quando o horário já se sabia fora — mas a janela
+   * Quem marcou viu um aviso quando o horário já se sabia fora, mas a janela
    * reabre a cada mensagem do cliente, e fecha se ele parar de escrever. O que
    * vale é o estado no instante do envio, e a recusa precisa chegar à tela com
    * a palavra certa: não é erro nosso, é regra da Meta, e o caminho de saída é
    * a pessoa escrever de novo quando o cliente voltar a falar.
    */
-  if (!dentroDaJanela(contexto.ultimaEntradaEm)) {
+  if (!dentroDaJanela(contexto)) {
     throw new Error(
       'a janela de 24h fechou antes da hora marcada: o WhatsApp só deixa retomar por um modelo aprovado',
     )
@@ -97,7 +97,7 @@ async function enviarUma(agendada: MensagemAgendada): Promise<void> {
    * entre o envio e o registro não pode apagar do histórico algo que o cliente
    * já recebeu. A tela mostra "envio não confirmado" até a confirmação chegar.
    *
-   * O autor é quem **marcou**, não quem estava online quando saiu — a mensagem
+   * O autor é quem **marcou**, não quem estava online quando saiu: a mensagem
    * é dela, escrita por ela, e a assinatura que o cliente recebe diz o mesmo
    * nome.
    */

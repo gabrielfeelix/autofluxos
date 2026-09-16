@@ -53,6 +53,12 @@ export type Lead = {
    * não dá, que é o pior lado do erro.
    */
   ultimaEntradaEm: string | null
+  /**
+   * Quando este contato chegou por anúncio, se chegou. Abre a janela de 72h
+   * gratuita da Meta, e anda junto de `ultimaEntradaEm` em toda conta de prazo.
+   * Ver `channels/janela.ts`. `null` quer dizer 24h e pago.
+   */
+  portaDeEntradaEm: string | null
   ultimaDirecao: Direcao | null
   ultimoTexto: string | null
   /**
@@ -251,6 +257,7 @@ type Linha = {
   criado_em: string
   ultima_em: string | null
   ultima_entrada_em: string | null
+  porta_de_entrada_em: string | null
   ultima_direcao: string | null
   atribuido_a: string | null
   estado?: string | null
@@ -273,7 +280,7 @@ type Linha = {
 // tipo para saber o formato do retorno, e concatenação vira `string` genérica,
 // aí o tipo do `data` desanda e o `tsc` acusa.
 const COLUNAS =
-  'contact_id, client_id, wa_id, nome, nome_real, notas, campos, criado_em, ultima_em, ultima_entrada_em, ultima_direcao, ultimo_texto, ultimo_tipo, ultimo_autor_tipo, ultimo_autor_nome, handoff_motivo, handoff_em, ultima_entregue, automacao_ativa, atribuido_a, estado, estado_efetivo, adiada_ate, adiada_nota'
+  'contact_id, client_id, wa_id, nome, nome_real, notas, campos, criado_em, ultima_em, ultima_entrada_em, ultima_direcao, ultimo_texto, ultimo_tipo, ultimo_autor_tipo, ultimo_autor_nome, handoff_motivo, handoff_em, ultima_entregue, automacao_ativa, atribuido_a, estado, estado_efetivo, adiada_ate, adiada_nota, porta_de_entrada_em'
 
 /**
  * `campos` é `jsonb`: o banco aceita qualquer coisa ali. Hoje só o motor
@@ -318,6 +325,7 @@ function paraLead(linha: Linha): Lead {
     campos: paraCampos(linha.campos, linha.wa_id),
     ultimaEm: linha.ultima_em,
     ultimaEntradaEm: linha.ultima_entrada_em,
+    portaDeEntradaEm: linha.porta_de_entrada_em,
     ultimaDirecao: direcao.success ? direcao.data : null,
     ultimoTexto: linha.ultimo_texto,
     ultimoTipo: linha.ultimo_tipo,

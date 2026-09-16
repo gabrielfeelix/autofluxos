@@ -7,7 +7,7 @@ import { db, ehIdInvalido } from '../db'
 /**
  * Um número do WhatsApp e os fluxos que ele executa.
  *
- * `flowId` é o **principal** — a resposta padrão do número, o que roda quando
+ * `flowId` é o **principal**: a resposta padrão do número, o que roda quando
  * nada mais casa. Os outros três são papéis que a 0024 acrescentou, todos
  * opcionais: nulo em qualquer um deles significa exatamente o comportamento que
  * o produto tinha antes de eles existirem.
@@ -18,7 +18,7 @@ export type CanalSalvo = {
   /**
    * `cloud-api` (WhatsApp) ou `instagram`. Ele é o que decide qual adaptador
    * monta as mensagens de saída, e quais dos dois ids abaixo estão preenchidos
-   * — o `check` da 0040 garante que sempre é exatamente um.
+   * e o `check` da 0040 garante que sempre é exatamente um.
    */
   provider: string
   /** Nulo quando o canal é de Instagram. */
@@ -28,7 +28,7 @@ export type CanalSalvo = {
    *
    * **Não confundir com `phoneNumberId`**, e a diferença já custou caro: o
    * histórico de coexistência traz `from` com o *número*, e comparar com o *id*
-   * nunca dá verdadeiro — foi assim que a conversa inteira do primeiro cliente
+   * nunca dá verdadeiro, e foi assim que a conversa inteira do primeiro cliente
    * apareceu como se só ele tivesse falado. Ver `direcaoDaMensagem`.
    */
   displayPhoneNumber: string | null
@@ -53,7 +53,7 @@ export type CanalSalvo = {
   /**
    * `ACCOUNT_OFFBOARDED` chegou: o cliente trocou de celular ou reinstalou o
    * WhatsApp Business, e o companion da Cloud API foi desembarcado sozinho.
-   * Enquanto estiver preenchido, **o envio falha na Meta** — então quem envia
+   * Enquanto estiver preenchido, **o envio falha na Meta**, então quem envia
    * pergunta isto antes. `ACCOUNT_RECONNECTED` limpa, e normalmente em minutos.
    */
   desembarcadoEm: string | null
@@ -116,7 +116,7 @@ export type Contato = {
   /** A pausa é do contato, não de uma sessão: sobrevive à próxima conversa. */
   automacaoAtiva: boolean
   /**
-   * Esta chamada foi quem criou o contato — é a **primeira** mensagem dele.
+   * Esta chamada foi quem criou o contato, é a **primeira** mensagem dele.
    *
    * Existe para o quadro padrão (0043): contato novo entra sozinho no funil, e
    * contato que já existia e voltou a escrever não pode ser jogado de volta
@@ -168,7 +168,7 @@ export async function acharCanalPorContaDoInstagram(igUserId: string): Promise<C
 }
 
 /**
- * O token de um canal, lido do Vault — a única porta para o valor.
+ * O token de um canal, lido do Vault, a única porta para o valor.
  *
  * Segue a mesma regra de `conexoes.ts`: `CanalSalvo` não tem campo de token, e
  * isso não é disciplina de quem escreve a tela, é o tipo não permitindo. O
@@ -207,7 +207,7 @@ function paraContato(linha: Record<string, unknown>): Omit<Contato, 'criadoAgora
  * só as colunas que vão no corpo, então omitir `nome` quando ele é nulo é a
  * diferença entre "não sei como a pessoa se chama agora" e "esqueça como ela se
  * chamava". No WhatsApp o nome vem em toda mensagem e isso nunca apareceu; no
- * Instagram ele exige uma consulta à parte, que pode falhar — e falhar não pode
+ * Instagram ele exige uma consulta à parte, que pode falhar, e falhar não pode
  * custar o nome que já estava no Inbox.
  */
 export async function acharOuCriarContato(
@@ -219,14 +219,14 @@ export async function acharOuCriarContato(
    * **Duas escritas para responder "este contato nasceu agora?".**
    *
    * O `upsert` sozinho devolve a linha e não diz se ela foi inserida ou
-   * atualizada — PostgREST não expõe nada equivalente ao `xmax` do Postgres. E
+   * atualizada, e o PostgREST não expõe nada equivalente ao `xmax` do Postgres. E
    * `criado_em == atualizado_em` não serve: é acidente de não haver gatilho
    * nesta tabela hoje, e viraria um bug silencioso no dia em que houver.
    *
    * O `ignoreDuplicates` faz a pergunta direto ao índice único
    * `(client_id, wa_id)`: linha devolvida = fomos nós que criamos; nada
    * devolvido = já existia. É atômico, então duas mensagens simultâneas da
-   * mesma pessoa não podem **ambas** dizer que criaram — que é exatamente o
+   * mesma pessoa não podem **ambas** dizer que criaram, que é exatamente o
    * caso em que dois cartões apareceriam no quadro.
    */
   const { data: inserido, error: erroAoInserir } = await db()
@@ -279,7 +279,7 @@ export async function acharContato(contatoId: string): Promise<Contato | null> {
  * Uma sessão pelo id dela, com o contato e o número em que ela roda.
  *
  * Existe para o agendador (B1): a tarefa guarda o id da sessão, e quem executa
- * precisa de tudo o mais — o grafo em que ela está presa, o contato para quem
+ * precisa de tudo o mais: o grafo em que ela está presa, o contato para quem
  * falar, e o canal de onde falar. Buscar em três lugares depois seria três
  * viagens para reconstruir uma linha que já tinha tudo.
  */
@@ -396,7 +396,7 @@ export async function criarSessao(
  * incoerência: era preciso digitar alguma coisa para o bot parar.
  *
  * **Só cala o que está falando.** Sessão já em `humano` não tem o que calar, e
- * sessão `encerrada` fica como está — promovê-la a `humano` reescreveria o
+ * sessão `encerrada` fica como está, porque promovê-la a `humano` reescreveria o
  * histórico e faria a taxa de "resolvidas pelo bot" cair por uma conversa que
  * ele resolveu. Devolve se calou, para a tela saber o que dizer.
  */
@@ -418,7 +418,7 @@ export async function calarBotNaConversa(contatoId: string): Promise<boolean> {
  *
  * Existe separado de `guardarSessao` de propósito: quem quer calar o bot não
  * tem uma `Sessao` na mão, e montar uma para passar ali apagaria `vars` e
- * `no_atual` — o que a conversa já coletou sumiria por causa de uma mudança de
+ * `no_atual`, e o que a conversa já coletou sumiria por causa de uma mudança de
  * estado que não tinha nada a ver com isso.
  */
 export async function definirStatusDaSessao(
@@ -448,7 +448,7 @@ export async function guardarSessao(id: string, sessao: Sessao): Promise<void> {
 }
 
 /**
- * Troca a versão que esta sessão executa — é o que o salto entre automações faz.
+ * Troca a versão que esta sessão executa, que é o que o salto entre automações faz.
  *
  * Sem isto o salto duraria uma mensagem só: a conversa continuaria no outro
  * fluxo agora, e na mensagem seguinte a sessão voltaria a carregar a versão
@@ -521,7 +521,7 @@ export async function registrarEntrada(dados: {
 /**
  * Registra uma saída **antes** de ela sair, como não confirmada.
  *
- * A ordem é essa de propósito. Gravar depois do envio deixa uma janela — curta,
+ * A ordem é essa de propósito. Gravar depois do envio deixa uma janela, curta,
  * mas real num `after()` que pode bater no `maxDuration` no meio de um fluxo
  * lento: a função morre entre uma coisa e outra, a pessoa recebeu a mensagem, e
  * o histórico não tem. Quem abre a tela do lead vê um buraco na conversa,
@@ -539,7 +539,7 @@ export async function registrarSaida(dados: {
   texto: string
   payload?: unknown
   /**
-   * Quem produziu esta mensagem — a pessoa que atende ou o bot.
+   * Quem produziu esta mensagem, a pessoa que atende ou o bot.
    *
    * Entra **dentro do `payload`** e não numa coluna; o porquê está em
    * `core/autor-da-mensagem.ts`. Quem não passa nada deixa a bolha sem rótulo,
@@ -610,7 +610,7 @@ export async function registrarHandoff(sessaoId: string, motivo: string): Promis
  * Existe como função única porque as três coisas têm que vir do **mesmo**
  * contato: o número para onde mandar, o canal de onde sai (que é o número em
  * que a pessoa escreveu, não "algum" da conta), e quando ela falou pela última
- * vez — que é o que abre ou fecha a janela de 24h.
+ * vez, que é o que abre ou fecha a janela de 24h.
  *
  * `null` quando o contato não é deste cliente. Como em toda leitura por aqui,
  * o par (contato, cliente) vem junto: a URL é adivinhável.
@@ -631,11 +631,21 @@ export type ContextoDeResposta = {
    * O id, na Meta, da última mensagem que ela mandou.
    *
    * Só o pós-atendimento (A6) precisa disto: ele roda um fluxo sem nenhuma
-   * mensagem tendo chegado, e `aguardarResposta` — o "digitando" e o atraso
-   * entre blocos — exige o id de uma entrada. Sem ele o atraso desenhado no
+   * mensagem tendo chegado, e `aguardarResposta`, o "digitando" e o atraso
+   * entre blocos, exige o id de uma entrada. Sem ele o atraso desenhado no
    * fluxo simplesmente não aconteceria, calado.
    */
   ultimaEntradaWaId: string | null
+  /**
+   * Quando esta pessoa chegou por anúncio, se chegou.
+   *
+   * É o que abre a janela de 72h gratuita da Meta, e por isso vem junto do
+   * `ultimaEntradaEm`: os dois formam a resposta para "dá para mandar?". Ver
+   * `channels/janela.ts`.
+   *
+   * `null` na maioria das conversas, e `null` quer dizer 24h e pago.
+   */
+  portaDeEntradaEm: string | null
 }
 
 export async function contextoDeResposta(
@@ -653,8 +663,11 @@ export async function contextoDeResposta(
   if (erroDoContato) throw new Error(`não deu para achar o contato: ${erroDoContato.message}`)
   if (!contato) return null
 
-  const [{ data: sessao, error: erroDaSessao }, { data: entrada, error: erroDaEntrada }] =
-    await Promise.all([
+  const [
+    { data: sessao, error: erroDaSessao },
+    { data: entrada, error: erroDaEntrada },
+    { data: porta, error: erroDaPorta },
+  ] = await Promise.all([
       db()
         .from('sessions')
         .select('id, channel_id')
@@ -666,7 +679,7 @@ export async function contextoDeResposta(
        * **`historico = false` não é filtro de arrumação: é a janela de 24h.**
        *
        * O sync de coexistência importa conversas de até 180 dias atrás, e elas
-       * entram como `direcao: 'entrada'` — são mensagens que a pessoa mandou
+       * entram como `direcao: 'entrada'`, são mensagens que a pessoa mandou
        * mesmo, só que no passado. Sem este filtro, uma conversa importada vira
        * "a última vez que ela falou", `dentroDaJanela` responde que dá para
        * mandar texto livre, e a Meta recusa a entrega.
@@ -674,7 +687,7 @@ export async function contextoDeResposta(
        * A doc da Meta é explícita no ponto vizinho, e ele reforça a regra:
        * mensagem que o dono manda **pelo app do celular** não cria nem estende
        * janela nenhuma da Cloud API. Só o que chega pelo webhook `messages`
-       * abre janela — e é exatamente o que sobra aqui.
+       * abre janela, e é exatamente o que sobra aqui.
        */
       db()
         .from('messages')
@@ -685,10 +698,27 @@ export async function contextoDeResposta(
         .order('ts', { ascending: false })
         .limit(1)
         .maybeSingle(),
+      /*
+       * A última chegada por anúncio, que é o que abre as 72h gratuitas.
+       *
+       * Sem filtro de data aqui de propósito: a conta de prazo é de
+       * `restaDaJanela`, e uma passagem de março simplesmente devolve zero por
+       * lá. Filtrar no SQL faria a regra de tempo morar em dois lugares, e o
+       * dia em que a Meta mudar as 72h só um deles seria corrigido.
+       */
+      db()
+        .from('passagens')
+        .select('criado_em')
+        .eq('contact_id', contatoId)
+        .eq('client_id', clienteId)
+        .order('criado_em', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ])
 
   if (erroDaSessao) throw new Error(`não deu para achar a sessão: ${erroDaSessao.message}`)
   if (erroDaEntrada) throw new Error(`não deu para achar a última mensagem: ${erroDaEntrada.message}`)
+  if (erroDaPorta) throw new Error(`não deu para achar a passagem: ${erroDaPorta.message}`)
 
   const canal = await canalDaResposta(clienteId, (sessao as { channel_id: string } | null)?.channel_id)
   if (!canal) return null
@@ -699,6 +729,7 @@ export async function contextoDeResposta(
     sessaoId: (sessao as { id: string } | null)?.id ?? null,
     ultimaEntradaEm: (entrada as { ts: string } | null)?.ts ?? null,
     ultimaEntradaWaId: (entrada as { wa_message_id: string | null } | null)?.wa_message_id ?? null,
+    portaDeEntradaEm: (porta as { criado_em: string } | null)?.criado_em ?? null,
   }
 }
 
@@ -736,7 +767,7 @@ async function canalDaResposta(
  * Faz **duas** coisas, e as duas são necessárias:
  *
  * 1. Resolve os handoffs abertos, que é o que tira o lead do vermelho. Sem
- *    isso a coluna `resolvido_em` nunca era escrita por código de aplicação —
+ *    isso a coluna `resolvido_em` nunca era escrita por código de aplicação,
  *    a tela mostrava "aguardando humano" para sempre e o contador só subia.
  * 2. Encerra a sessão. Uma sessão em `humano` faz o bot ficar calado com aquele
  *    contato **para sempre** (ver `tratarUma`), então resolver o handoff sem
@@ -892,12 +923,12 @@ export async function criarCanal(dados: {
 }
 
 /**
- * Troca os fluxos que um número executa — os quatro papéis de uma vez (0024).
+ * Troca os fluxos que um número executa: os quatro papéis de uma vez (0024).
  *
  * De uma vez, e não um por chamada, porque eles se leem juntos: a tela mostra
  * os quatro lado a lado e quem mexe num costuma mexer no vizinho. Salvar em
  * quatro idas deixaria estados intermediários visíveis no WhatsApp de gente de
- * verdade — o número rodando o fluxo de mídia novo com o principal ainda velho.
+ * verdade: o número rodando o fluxo de mídia novo com o principal ainda velho.
  *
  * **Todo fluxo é conferido contra este cliente antes de entrar.** Os ids vêm de
  * um formulário; a chave estrangeira só sabe que o fluxo existe, não de quem
@@ -952,7 +983,7 @@ export async function definirFluxosDoNumero(
  *
  * As conversas ficam: `sessions` referencia o canal, e apagar junto seria
  * apagar o histórico de leads reais por causa de um erro de digitação. Por isso
- * o `delete` só passa quando não há sessão nenhuma pendurada — e quando há, a
+ * o `delete` só passa quando não há sessão nenhuma pendurada, e quando há a
  * resposta diz isso em vez de estourar com erro de chave estrangeira.
  */
 export async function desconectarNumero(
@@ -970,7 +1001,7 @@ export async function desconectarNumero(
   if ((count ?? 0) > 0) {
     return {
       ok: false,
-      motivo: `este número já tem ${count} conversa(s) registrada(s) — desconectar apagaria o histórico delas`,
+      motivo: `este número já tem ${count} conversa(s) registrada(s), desconectar apagaria o histórico delas`,
     }
   }
 
@@ -999,7 +1030,7 @@ export async function listarCanais(clienteId: string): Promise<CanalSalvo[]> {
 /**
  * Quem é responsável por atender este contato.
  *
- * **A responsabilidade mora no contato, e não no handoff nem na sessão** — as
+ * **A responsabilidade mora no contato, e não no handoff nem na sessão**, porque as
  * duas acabam, e quem atendeu ontem é quem a pessoa espera reencontrar amanhã.
  * É também o que faz "meus chats" ser uma lista de gente em vez de uma lista de
  * eventos.

@@ -1903,7 +1903,7 @@ export async function acaoResponderLead(
   const contexto = await contextoDeResposta(clienteId, contatoId)
   if (!contexto) return { ok: false, erro: 'este lead não tem um número conectado para responder' }
 
-  if (!dentroDaJanela(contexto.ultimaEntradaEm)) {
+  if (!dentroDaJanela(contexto)) {
     return {
       ok: false,
       erro: contexto.ultimaEntradaEm
@@ -2646,7 +2646,7 @@ async function avisarQueEntrou(
 
   try {
     const contexto = await contextoDeResposta(clienteId, contatoId)
-    if (!contexto || !dentroDaJanela(contexto.ultimaEntradaEm)) return
+    if (!contexto || !dentroDaJanela(contexto)) return
 
     const canal = await adaptadorDoCanal(contexto.canal)
     const registro = await registrarSaida({

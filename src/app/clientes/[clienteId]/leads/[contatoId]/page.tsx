@@ -134,7 +134,7 @@ export default async function Pagina({
   const jornada = await jornadaDoContato(clienteId, contatoId)
 
   const contexto = await contextoDeResposta(clienteId, contatoId)
-  const restante = restaDaJanela(contexto?.ultimaEntradaEm ?? null)
+  const restante = restaDaJanela(contexto ?? { ultimaEntradaEm: null })
   const janela = restante && restante > 0 ? comoFalta(restante) : null
   /** Menos de duas horas, a contagem muda de cor. Mesma régua do Inbox. */
   const apertado = restante !== null && restante > 0 && restante < 2 * 60 * 60 * 1000

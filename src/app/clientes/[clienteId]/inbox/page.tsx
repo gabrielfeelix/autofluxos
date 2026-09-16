@@ -2,7 +2,7 @@ import { Fragment, Suspense, type ReactNode } from 'react'
 import { after } from 'next/server'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { comoFalta, JANELA_MS, podeReagir, restaDaJanela } from '@/channels/janela'
+import { comoFalta, podeReagir, restaDaJanela } from '@/channels/janela'
 import { Assumir, PassarPara } from '@/components/inbox/assumir'
 import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 import { sessaoAtual } from '@/server/sessao'
@@ -806,7 +806,13 @@ async function ColunaDaConversa({
     return [{ ...posicao, etapas: quadro.etapas.map((e) => ({ id: e.id, nome: e.nome })) }]
   })
 
-  const restante = restaDaJanela(contexto?.ultimaEntradaEm ?? null)
+  /*
+   * Uma leitura do relógio para as duas contas abaixo. Chamar `Date.now()` duas
+   * vezes daria dois instantes diferentes, e o fim da janela ficaria alguns
+   * milissegundos fora do que a pílula diz que falta.
+   */
+  const agora = Date.now()
+  const restante = restaDaJanela(contexto ?? { ultimaEntradaEm: null }, agora)
   const janela = restante && restante > 0 ? comoFalta(restante) : null
   /*
    * Abaixo de duas horas a contagem muda de cor.
@@ -824,11 +830,14 @@ async function ColunaDaConversa({
    * A pílula do cabeçalho quer a frase pronta ("22h18"); o agendamento quer o
    * instante, para comparar com o horário que a pessoa escolheu. Derivar um do
    * outro seria refazer a subtração com menos informação.
+   *
+   * Sai de `restante`, e não de `ultimaEntradaEm + JANELA_MS`: quem chegou por
+   * anúncio tem 72h contadas do clique, e refazer a soma aqui com o outro prazo
+   * diria que a janela fecha amanhã quando ela fecha depois de amanhã. A conta
+   * de qual prazo vale é de `restaDaJanela`, e ela é feita uma vez só.
    */
   const fimDaJanela =
-    contexto?.ultimaEntradaEm && restante !== null && restante > 0
-      ? new Date(Date.parse(contexto.ultimaEntradaEm) + JANELA_MS).toISOString()
-      : null
+    restante !== null && restante > 0 ? new Date(agora + restante).toISOString() : null
 
   if (!conversa) {
     return (

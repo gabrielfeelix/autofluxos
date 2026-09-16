@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { comoFalta, restaDaJanela } from "@/channels/janela";
+import { comoFalta, dentroDaPortaDeEntrada, restaDaJanela } from "@/channels/janela";
 import { Dica } from "@/components/design/dica";
 import { LARGURA_DA_FILA } from "@/components/design/tema";
 import { chavesDoTelefone } from "@/core/contatos/telefone";
@@ -749,7 +749,10 @@ export function Fila({
                     )}
                   </span>
                   {lead.aguardando && (
-                    <RelogioDaJanela ultimaEntradaEm={lead.ultimaEntradaEm} />
+                    <RelogioDaJanela
+                      ultimaEntradaEm={lead.ultimaEntradaEm}
+                      portaDeEntradaEm={lead.portaDeEntradaEm}
+                    />
                   )}
                   {/*
                   Quem assumiu aparece na fila, e não só na conversa aberta: a
@@ -999,11 +1002,21 @@ function PassoDaPagina({
  */
 function RelogioDaJanela({
   ultimaEntradaEm,
+  portaDeEntradaEm,
 }: {
   ultimaEntradaEm: string | null;
+  portaDeEntradaEm: string | null;
 }) {
-  const restante = restaDaJanela(ultimaEntradaEm);
+  const janela = { ultimaEntradaEm, portaDeEntradaEm };
+  const restante = restaDaJanela(janela);
   if (restante === null) return null;
+
+  /*
+   * Quem chegou por anúncio tem 72h, e elas não custam nada. Dizer isso na fila
+   * muda a decisão de quem escolhe o que pegar: é a conversa que dá para
+   * resolver inteira sem gastar modelo.
+   */
+  const gratis = dentroDaPortaDeEntrada(janela);
 
   if (restante === 0) {
     return (
@@ -1022,6 +1035,7 @@ function RelogioDaJanela({
       className={`mt-0.5 block text-[10px] ${apertado ? "font-semibold text-aviso" : "text-dim"}`}
     >
       responder em {comoFalta(restante)}
+      {gratis && <span className="text-dim"> · grátis, veio de anúncio</span>}
     </span>
   );
 }
