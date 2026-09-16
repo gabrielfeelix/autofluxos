@@ -1,0 +1,161 @@
+import type { ReactNode } from 'react'
+
+/**
+ * As seções do cliente — a lista, os ícones, e mais nada.
+ *
+ * ---------------------------------------------------------------------------
+ * Por que isto saiu de `cliente-shell.tsx`
+ * ---------------------------------------------------------------------------
+ *
+ * A moldura faz três consultas ao banco antes de desenhar qualquer coisa
+ * (acesso, contas, presença). Enquanto a navegação morava lá dentro, **quem
+ * quisesse desenhar a barra lateral tinha de pagar as três** — e o `loading.tsx`
+ * é exatamente quem não pode: ele existe para aparecer *antes* de qualquer
+ * consulta terminar.
+ *
+ * Aqui não há `await`, não há banco, não há sessão. É o que permite o esqueleto
+ * mostrar a barra lateral **de verdade**, com os nomes escritos e o item aceso,
+ * em vez de sete blocos cinzas.
+ *
+ * ---------------------------------------------------------------------------
+ * A regra que isso preserva
+ * ---------------------------------------------------------------------------
+ *
+ * O `EsqueletoDeAbas` já dizia, sobre a barra de abas: *os rótulos são os de
+ * verdade, não blocos cinzas — trocá-los por cinza faria a barra piscar a cada
+ * clique, apagando justamente a única parte da tela que a pessoa acabou de
+ * usar*. O raciocínio vale igual para a barra lateral, e só vale porque esta
+ * lista não depende de I/O nenhum.
+ */
+
+export type AbaDoCliente =
+  | 'inicio'
+  | 'fluxos'
+  | 'transmissoes'
+  | 'leads'
+  | 'quadros'
+  | 'inbox'
+  | 'ajustes'
+
+/**
+ * As chaves são as antigas de propósito.
+ *
+ * `fluxos` acende "Automações" e `leads` acende "Contatos" — o rótulo mudou, a
+ * chave não. Renomear as duas obrigaria a tocar as doze telas que passam
+ * `ativa`, para arrumar uma palavra que só aparece aqui. É a mesma decisão que
+ * manteve a rota `/leads` quando a aba virou "Contatos".
+ */
+export const ITENS: {
+  chave: AbaDoCliente
+  rotulo: string
+  href: string
+  icone: ReactNode
+}[] = [
+  { chave: 'inicio', rotulo: 'Painel', href: '', icone: <IconePainel /> },
+  { chave: 'inbox', rotulo: 'Inbox', href: '/inbox', icone: <IconeInbox /> },
+  { chave: 'leads', rotulo: 'Contatos', href: '/leads', icone: <IconeContatos /> },
+  // Quadros entra ao lado de Contatos, e não no fim, porque é a mesma gente
+  // olhada de outro jeito: a lista responde "quem existe", o quadro responde
+  // "em que ponto cada um está".
+  /*
+   * **"Funis", e não "Quadros" — a rota continua `/quadros`.**
+   *
+   * O nome foi escolhido quando a tela era só a posição da pessoa no funil.
+   * Agora que ela tem negociação, valor, ganho e perda, o nome que o mercado
+   * brasileiro usa é funil: o RD chama a tela de "Funil" e a lista de
+   * "Negociações", Pipedrive e HubSpot chamam de "Negócios", Kommo de
+   * "Pipeline". "Quadros" descreve o desenho (colunas), não o trabalho.
+   *
+   * Plural porque são vários — captação, comercial, pós-venda —, e cada coluna
+   * continua sendo uma **etapa**. A URL não muda: link salvo quebrado em troca
+   * de um rótulo não se paga.
+   */
+  { chave: 'quadros', rotulo: 'Funis', href: '/quadros', icone: <IconeQuadros /> },
+  { chave: 'fluxos', rotulo: 'Automações', href: '/fluxos', icone: <IconeAutomacoes /> },
+  /*
+   * Transmissões entra ao lado de Automações, e não dentro delas.
+   *
+   * Ela nasceu como um link dentro do texto da aba Campanhas, e isso foi um
+   * erro que custou o tempo de alguém procurando: tela que existe e não se
+   * acha é tela que não existe. O trabalho aqui também é de outra natureza —
+   * automação responde a um gatilho, transmissão é alguém decidindo falar com
+   * uma lista hoje.
+   */
+  {
+    chave: 'transmissoes',
+    rotulo: 'Transmissões',
+    href: '/transmissoes',
+    icone: <IconeTransmissoes />,
+  },
+  { chave: 'ajustes', rotulo: 'Configurações', href: '/ajustes', icone: <IconeConfiguracoes /> },
+]
+
+function IconePainel() {
+  return (
+    <svg aria-hidden width="15" height="15" viewBox="0 0 15 15" fill="currentColor">
+      <rect x="1" y="1" width="5.5" height="5.5" rx="1.6" />
+      <rect x="8.5" y="1" width="5.5" height="5.5" rx="1.6" opacity=".45" />
+      <rect x="1" y="8.5" width="5.5" height="5.5" rx="1.6" opacity=".45" />
+      <rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1.6" opacity=".45" />
+    </svg>
+  )
+}
+
+function IconeInbox() {
+  return (
+    <svg aria-hidden width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.4">
+      <rect x="1.2" y="2.4" width="12.6" height="10.2" rx="2" />
+      <path d="M1.6 4.2 7.5 8.4l5.9-4.2" />
+    </svg>
+  )
+}
+
+function IconeContatos() {
+  return (
+    <svg aria-hidden width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.4">
+      <circle cx="6" cy="5" r="2.6" />
+      <path d="M1.4 13c0-2.4 2.1-4 4.6-4s4.6 1.6 4.6 4" />
+      <path d="M10.6 3.1a2.4 2.4 0 0 1 0 4.4M11.6 9.3c1.3.5 2.1 1.6 2.1 3.1" opacity=".5" />
+    </svg>
+  )
+}
+
+function IconeQuadros() {
+  return (
+    <svg aria-hidden width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.4">
+      <rect x="1.4" y="2" width="3.4" height="11" rx="1" />
+      <rect x="5.8" y="2" width="3.4" height="7.4" rx="1" />
+      <rect x="10.2" y="2" width="3.4" height="9.2" rx="1" opacity=".6" />
+    </svg>
+  )
+}
+
+function IconeAutomacoes() {
+  return (
+    <svg aria-hidden width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.4">
+      <circle cx="3.4" cy="3.4" r="2" />
+      <circle cx="11.6" cy="3.4" r="2" />
+      <circle cx="7.5" cy="11.8" r="2" />
+      <path d="M3.4 5.4v1.4a1.6 1.6 0 0 0 1.6 1.6h5a1.6 1.6 0 0 0 1.6-1.6V5.4M7.5 8.4v1.4" />
+    </svg>
+  )
+}
+
+function IconeTransmissoes() {
+  return (
+    <svg aria-hidden width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.4">
+      {/* Um megafone: falar com muita gente de uma vez. */}
+      <path d="M2.2 6v3a1 1 0 0 0 1 1h1.4l4.6 2.6V3.4L5.6 6H3.2a1 1 0 0 0-1 1Z" strokeLinejoin="round" />
+      <path d="M11.2 5.6a2.8 2.8 0 0 1 0 4.4" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function IconeConfiguracoes() {
+  return (
+    <svg aria-hidden width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.4">
+      <circle cx="7.5" cy="7.5" r="2.3" />
+      <path d="M7.5 1.2v1.6M7.5 12.2v1.6M1.2 7.5h1.6M12.2 7.5h1.6M3 3l1.2 1.2M10.8 10.8 12 12M12 3l-1.2 1.2M4.2 10.8 3 12" />
+    </svg>
+  )
+}
