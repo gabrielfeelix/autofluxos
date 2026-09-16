@@ -65,6 +65,15 @@ export type Lead = {
    * diferentes, e quem decide o que abrir primeiro decidia no escuro.
    */
   ultimoTipo: string | null
+  /**
+   * Quem mandou a última mensagem, quando ela saiu daqui.
+   *
+   * `null` nos dois quando não dá para saber, e isso **não é raro**: o eco da
+   * coexistência (a pessoa respondeu pelo celular) chega pelo webhook sem
+   * passar por `registrarSaida`, então não tem autor nenhum.
+   */
+  ultimoAutorTipo: string | null
+  ultimoAutorNome: string | null
   /** `false` quando a última saída não teve confirmação do canal. */
   ultimaEntregue: boolean | null
   /** Pausa persistente do bot para este contato. */
@@ -249,6 +258,8 @@ type Linha = {
   adiada_ate?: string | null
   adiada_nota?: string | null
   ultimo_texto: string | null
+  ultimo_autor_tipo: string | null
+  ultimo_autor_nome: string | null
   ultima_entregue: boolean | null
   automacao_ativa: boolean
   handoff_motivo: string | null
@@ -262,7 +273,7 @@ type Linha = {
 // tipo para saber o formato do retorno, e concatenação vira `string` genérica —
 // aí o tipo do `data` desanda e o `tsc` acusa.
 const COLUNAS =
-  'contact_id, client_id, wa_id, nome, nome_real, notas, campos, criado_em, ultima_em, ultima_entrada_em, ultima_direcao, ultimo_texto, ultimo_tipo, handoff_motivo, handoff_em, ultima_entregue, automacao_ativa, atribuido_a, estado, estado_efetivo, adiada_ate, adiada_nota'
+  'contact_id, client_id, wa_id, nome, nome_real, notas, campos, criado_em, ultima_em, ultima_entrada_em, ultima_direcao, ultimo_texto, ultimo_tipo, ultimo_autor_tipo, ultimo_autor_nome, handoff_motivo, handoff_em, ultima_entregue, automacao_ativa, atribuido_a, estado, estado_efetivo, adiada_ate, adiada_nota'
 
 /**
  * `campos` é `jsonb`: o banco aceita qualquer coisa ali. Hoje só o motor
@@ -310,6 +321,8 @@ function paraLead(linha: Linha): Lead {
     ultimaDirecao: direcao.success ? direcao.data : null,
     ultimoTexto: linha.ultimo_texto,
     ultimoTipo: linha.ultimo_tipo,
+    ultimoAutorTipo: linha.ultimo_autor_tipo,
+    ultimoAutorNome: linha.ultimo_autor_nome,
     ultimaEntregue: linha.ultima_entregue,
     automacaoAtiva: linha.automacao_ativa,
     aguardando:

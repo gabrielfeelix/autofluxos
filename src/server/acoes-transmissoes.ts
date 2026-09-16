@@ -42,6 +42,15 @@ import {
   mudarEstadoDaTransmissao,
   progressoDa,
 } from './repos/transmissoes'
+import { autorDaPessoa } from '@/core/autor-da-mensagem'
+import { podeEnviar, variaveisDe as variaveisDoCorpo } from '@/core/templates'
+import { adaptadorDoCanal } from './adaptador-do-canal'
+import {
+  acharContato,
+  confirmarEntrega,
+  contextoDeResposta,
+  registrarSaida,
+} from './repos/conversas'
 import { exigirAcessoAoCliente, sessaoAtual } from './sessao'
 
 /**
@@ -539,4 +548,107 @@ export async function acaoCriarTransmissaoPorEtiqueta(
 
   const { etiquetaId: _ignorado, ...resto } = dados
   return acaoCriarTransmissao(clienteId, { ...resto, contatoIds })
+}
+
+
+/**
+ * Retomar uma conversa fora da janela de 24h, com um modelo aprovado.
+ *
+ * ---------------------------------------------------------------------------
+ * Por que esta ação existe
+ * ---------------------------------------------------------------------------
+ *
+ * Passadas 24h da última mensagem do cliente, o WhatsApp recusa texto livre, e
+ * o único caminho de volta é um modelo aprovado. A tela dizia isso e parava
+ * ali, com a frase "que este produto ainda não manda". Ele manda desde que a
+ * transmissão foi fechada, e a frase virava um beco justamente no momento em
+ * que a pessoa mais precisava de uma saída.
+ *
+ * ---------------------------------------------------------------------------
+ * A diferença para o passo de sequência, que faz algo parecido
+ * ---------------------------------------------------------------------------
+ *
+ * `mandarModeloDoPasso` manda e não registra: ele é automação rodando sozinha.
+ * Aqui é **uma pessoa clicando**, e a mensagem tem que aparecer no histórico
+ * com o nome dela, como qualquer outra resposta. Sem isso, o colega que abrir a
+ * conversa depois vê o cliente falando sozinho e não sabe que já foi retomado.
+ *
+ * Grava **antes** de mandar, como toda saída deste produto: uma função que
+ * morre entre o envio e o registro não pode apagar do histórico algo que o
+ * cliente já recebeu.
+ */
+export async function acaoRetomarComModelo(
+  clienteId: string,
+  contatoId: string,
+  templateId: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const template = await lerTemplate(templateId)
+  if (!template || template.clienteId !== clienteId) {
+    return { ok: false, erro: 'Este modelo não existe.' }
+  }
+
+  /*
+   * O status é conferido **agora**, e não quando a lista foi montada na tela: a
+   * Meta pausa modelo por qualidade sem avisar, e a tela pode estar aberta há
+   * meia hora.
+   */
+  if (!podeEnviar(template.status)) {
+    return {
+      ok: false,
+      erro: `Este modelo está ${template.status} na Meta, e só modelo aprovado entrega.`,
+    }
+  }
+
+  const contexto = await contextoDeResposta(clienteId, contatoId)
+  if (!contexto) return { ok: false, erro: 'Este contato não tem um número conectado.' }
+
+  const canal = await adaptadorDoCanal(contexto.canal)
+  if (!canal.enviarTemplate) {
+    return { ok: false, erro: 'O canal conectado não sabe enviar modelo aprovado.' }
+  }
+
+  const contato = await acharContato(contatoId)
+  const quem = await sessaoAtual()
+  const quantas = variaveisDoCorpo(template.componentes.corpo).length
+
+  /*
+   * O texto que vai para o histórico é o corpo do modelo com o nome no lugar
+   * dos buracos: é o que o cliente recebe, e é o que o colega precisa ler na
+   * bolha. Guardar "{{1}}" ali deixaria o histórico em jargão de API.
+   */
+  let textoGravado = template.componentes.corpo
+  for (let i = 1; i <= quantas; i += 1) {
+    textoGravado = textoGravado.replaceAll(`{{${i}}}`, contato?.nome || 'tudo bem')
+  }
+
+  const registro = await registrarSaida({
+    contatoId,
+    sessaoId: contexto.sessaoId,
+    texto: textoGravado,
+    autor: quem ? autorDaPessoa({ nome: quem.usuario.nome }) : null,
+  })
+
+  try {
+    await canal.enviarTemplate(contexto.waId, {
+      nome: template.nome,
+      idioma: template.idioma,
+      ...(quantas > 0
+        ? {
+            // Vazio a Meta recusa com 132000; "tudo bem" é o que sobra quando o
+            // contato não tem nome gravado.
+            valores: {
+              corpo: Array.from({ length: quantas }, () => contato?.nome || 'tudo bem'),
+            },
+          }
+        : {}),
+    })
+  } catch (erro) {
+    const detalhe = erro instanceof Error ? erro.message : String(erro)
+    return { ok: false, erro: `A Meta recusou o envio: ${detalhe}` }
+  }
+
+  await confirmarEntrega(registro)
+  return { ok: true }
 }

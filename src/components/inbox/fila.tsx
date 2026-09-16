@@ -495,7 +495,7 @@ export function Fila({
                     >
                       {lead.aguardando
                         ? `Pessoa: ${lead.aguardando.motivo}`
-                        : resumoDaConversa(lead)}
+                        : <ResumoDaConversa lead={lead} />}
                     </span>
                     {/*
                     A insígnia é **minha**, não da conversa: ela conta o que
@@ -737,15 +737,57 @@ function RelogioDaJanela({
   );
 }
 
-function resumoDaConversa(lead: Lead): string {
-  const prefixo = lead.ultimaDirecao === "saida" ? "atendimento: " : "";
-  if (lead.ultimoTexto) return `${prefixo}${lead.ultimoTexto}`;
+/**
+ * Quem falou, para o prefixo da linha.
+ *
+ * Antes toda saída virava **"atendimento:"**, e "atendimento" não é ninguém:
+ * numa conta com quatro pessoas respondendo, a linha não dizia qual delas
+ * falou, que é o que se quer saber ao correr o olho pela fila.
+ *
+ * São três casos, e o terceiro é comum o bastante para não ser exceção:
+ *
+ * - **pessoa**: o primeiro nome, que é o que o colega reconhece;
+ * - **automação**: a palavra, em minúscula, porque é estado e não nome próprio;
+ * - **saiu daqui e não sabemos por quem**: volta a ser "atendimento". É o eco
+ *   da coexistência, quando alguém respondeu pelo **celular** em vez do painel:
+ *   a mensagem chega pelo webhook sem passar por `registrarSaida`, e não tem
+ *   autor nenhum. Em 16/set eram 496 das 568 saídas da produção, então tratar
+ *   isso como raro deixaria a maioria das linhas sem rótulo.
+ */
+function quemFalou(lead: Lead): string | null {
+  if (lead.ultimaDirecao !== "saida") return null;
+  if (lead.ultimoAutorTipo === "automacao") return "automação";
+  const nome = (lead.ultimoAutorNome ?? "").trim();
+  if (nome) return nome.split(/\s+/)[0]!;
+  return "atendimento";
+}
+
+/**
+ * A prévia da conversa: quem falou, numa cor, e o que disse, noutra.
+ *
+ * A cor separada existe para o olho pular o nome quando ele não interessa. Com
+ * tudo na mesma cor, "Gabriel: Beleza" lê-se como uma frase só, e o nome
+ * compete com o texto pela atenção em toda linha da fila.
+ */
+function ResumoDaConversa({ lead }: { lead: Lead }) {
+  const quem = quemFalou(lead);
+  return (
+    <>
+      {quem && <span className="font-semibold text-primary/80">{quem}: </span>}
+      {textoDaConversa(lead)}
+    </>
+  );
+}
+
+/** O texto da última mensagem, sem quem falou. */
+function textoDaConversa(lead: Lead): string {
+  if (lead.ultimoTexto) return lead.ultimoTexto;
   if (!lead.ultimaEm) return "sem mensagem";
 
   // O tipo quando ele existe, a frase genérica quando não. Ver
   // `core/tipo-da-mensagem.ts` sobre por que "mídia ou mensagem sem texto"
   // sozinho era pior do que nada.
-  return `${prefixo}${nomeDoTipo(lead.ultimoTipo) ?? "mensagem sem texto"}`;
+  return nomeDoTipo(lead.ultimoTipo) ?? "mensagem sem texto";
 }
 
 /* -------------------------------------------------------------------------- */

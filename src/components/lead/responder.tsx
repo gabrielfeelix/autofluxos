@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from 'react'
 import { BotaoDeAnexo } from '@/components/lead/botao-de-anexo'
 import { BotaoDeMicrofone } from '@/components/lead/botao-de-microfone'
 import { useCitacao } from '@/components/lead/citacao'
+import { RetomarComModelo } from '@/components/lead/retomar-com-modelo'
 import { SeletorDeEmoji } from '@/components/lead/seletor-de-emoji'
 
 /**
@@ -100,12 +101,23 @@ export function CaixaDeResposta({
   const citacao = useCitacao()
 
   if (restaDaJanela === null) {
+    /*
+     * Fora da janela, a saída é o modelo aprovado, e ela só existe onde há os
+     * ids para mandá-lo. A Ficha não os passa (mesmo motivo do clipe de
+     * anexar), e lá a explicação continua sendo só texto.
+     */
+    if (anexo) {
+      return (
+        <RetomarComModelo clienteId={anexo.clienteId} contatoId={anexo.contatoId} nome={nome} />
+      )
+    }
+
     return (
       <div className="border-t border-line px-[18px] py-3.5">
         <p className="text-[11.5px] leading-5 text-dim">
           <strong className="text-muted">Não dá para responder por aqui agora.</strong> O WhatsApp
           só aceita texto livre até 24h depois da última mensagem de {nome}. Passado isso, retomar
-          exige um modelo aprovado pela Meta — que este produto ainda não manda.
+          exige um modelo aprovado pela Meta.
         </p>
       </div>
     )
@@ -298,6 +310,16 @@ export function CaixaDeResposta({
             setTemTexto(evento.currentTarget.value.trim() !== '')
             ajustarAltura(evento.currentTarget)
           }}
+          /*
+            Ao sair do campo, reconfere.
+
+            `onChange` cobre digitar e apagar, mas não cobre o que escreve no
+            `<textarea>` por fora dele: `setRangeText` do emoji e dos atalhos, o
+            autopreenchimento do navegador, um `undo` com Ctrl+Z. Qualquer um
+            deixa o estado dizendo "tem texto" com o campo vazio, e o microfone
+            não volta.
+          */
+          onBlur={conferirTexto}
           onKeyDown={(evento) => {
             // Enter manda, Shift+Enter quebra linha — o hábito de todo mundo que
             // usa WhatsApp. `requestSubmit` para o `action` do form valer.

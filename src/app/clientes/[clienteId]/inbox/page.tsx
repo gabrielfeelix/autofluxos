@@ -823,6 +823,14 @@ async function ColunaDaConversa({
               />
             </div>
             <CaixaDeResposta
+              /*
+                A `key` é a conversa, e sem ela o rascunho de uma vazava para a
+                outra: o `<textarea>` não é controlado, então trocar de conversa
+                remontava o campo vazio enquanto o estado do React continuava
+                dizendo "tem texto aqui". O efeito visível era o microfone
+                sumido com o campo vazio, e o botão de enviar no lugar dele.
+              */
+              key={selecionado.contatoId}
               acao={acaoResponderLead.bind(null, clienteId, selecionado.contatoId)}
               restaDaJanela={janela}
               nome={primeiroNome}
