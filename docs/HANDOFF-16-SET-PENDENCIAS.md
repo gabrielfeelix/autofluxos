@@ -106,3 +106,109 @@ custou uma volta inteira:
 - antes de `git add`, confira o que está no índice: o outro chat deixou
   `contas-admin.tsx`, `barra-lateral.tsx` e outros staged, e um `git commit -a`
   teria levado junto o trabalho pela metade de outra pessoa.
+
+---
+
+## 6. Inbox: as ações que o WhatsApp tem e nós não
+
+Pedido do dono em 16/set, olhando o WhatsApp Web lado a lado com o nosso Inbox.
+Nada disto foi começado. A ordem abaixo é a de valor por esforço, do melhor
+para o pior, e não a ordem em que o dono citou.
+
+### 6.1 Fixar conversa, **por atendente**
+
+O gesto do alfinete, como no WhatsApp. Três ou quatro conversas grudadas no topo
+da fila, acima de qualquer ordenação.
+
+**É por pessoa, e não por conta.** O dono foi explícito: cada atendente fixa as
+dele, e o colega não vê. Isso muda o modelo de dados: a coluna não vai em
+`af_contatos` (que é da conta), e sim numa tabela de ligação
+`usuario_id + contato_id`, como `af_leituras` já faz para "não lidas". Reusar o
+desenho de leituras é o caminho curto: mesma cardinalidade, mesma pergunta
+("o que esta pessoa marcou neste contato?").
+
+**O que a Meta NÃO dá, e por isso não tente:** fixar conversa é estado local do
+aparelho. A Cloud API não expõe isso em campo nenhum, nem no webhook nem em
+endpoint de leitura. Os três fixados que o dono tem no celular dele não podem
+ser espelhados; o que existir aqui é nosso, do zero.
+
+### 6.2 Marcar como não lida
+
+Inverso do que `marcarComoLida` já faz em `server/repos/leituras.ts`. É a mesma
+tabela e o mesmo par `usuario_id + contato_id`, e por isso sai quase de graça
+junto do 6.1: apagar a linha de leitura (ou empurrar o relógio para trás) devolve
+a insígnia.
+
+Vale como gesto de trabalho real: quem abre uma conversa sem poder responder
+agora quer deixá-la marcada para voltar.
+
+### 6.3 Marcar todas como lidas
+
+Um botão no topo da fila. Zera a insígnia de tudo que está no recorte atual.
+
+**Cuidado que o dono não citou e importa:** "todas" precisa dizer *todas de
+quê*. Se for a fila inteira da conta, some a insígnia de conversas que a pessoa
+nem viu no filtro. O certo é agir sobre o recorte à vista (o rail e a busca
+atuais) e dizer isso no próprio botão.
+
+### 6.4 Favoritar mensagem
+
+Duas telas, e por isso é o maior dos quatro: o gesto na bolha (estrela) e a
+lista de favoritas. Tabela nova, também por pessoa.
+
+Diferente dos três acima, esta não tem nada pronto para reusar.
+
+### 6.5 O que ficou de fora, com o motivo
+
+- **Silenciar notificações**: o dono disse que não precisa.
+- **Arquivar conversa**: "talvez, precisamos pensar". Não decidido. Repare que
+  nós já temos `estado` (`aberta` / `adiada` / `resolvida`, ver a 0049), e
+  "arquivada" pode ser um quarto estado ou pode ser redundante com "resolvida".
+  Decidir isso **antes** de escrever qualquer coisa: dois conceitos para a mesma
+  ideia é o tipo de coisa que não se separa depois.
+
+### 6.6 O banco é compartilhado
+
+Tudo em 6.1 a 6.4 cria tabela ou coluna, e este projeto divide o Supabase de
+produção com a Verandi. Vale `docs/BANCO-COMPARTILHADO.md` por inteiro, e a
+migration seguinte sai de `ls supabase/migrations/ | tail -1`, nunca da
+numeração citada num plano.
+
+---
+
+## 7. O que entrou em 16/set pela tarde, e o que ficou sem prova
+
+`2438d4e` mexeu em três coisas da mesma família ("a tela não reage ao clique"),
+com três causas diferentes:
+
+- **Trocar de conversa no Inbox** não tinha fronteira de espera. A `key` do
+  `<Suspense>` era só o filtro, de propósito, para a fila não piscar; o efeito
+  colateral era a conversa ficar sem fallback nenhum, segurando a anterior até
+  as consultas voltarem. Agora a coluna do meio é `ColunaDaConversa`, com
+  `key` no contato.
+- **O menu de "Deletar"** em `/admin/contas` abria longe do cursor. A causa não
+  era a coordenada: `.app-page-enter` roda `fade-up` com `animation-fill-mode:
+  both`, o último quadro fica aplicado, e `transform: none` computa como
+  `matrix(1,0,0,1,0,0)`. Identidade, e ainda assim transform, o que basta para
+  virar bloco contentor de `position: fixed`. Portal para o `body` resolve.
+
+  **Isto vale para o painel inteiro.** `.app-page-enter` envolve toda tela do
+  cliente, então qualquer `position: fixed` renderizado dentro de uma página do
+  painel está sujeito ao mesmo deslocamento. Se aparecer outro elemento flutuante
+  fora do lugar, a causa provável é esta, e não a conta de coordenadas.
+- **A barra lateral** deixou de encolher ao entrar em Configurações
+  (`forcarRecolhida` saiu inteiro).
+
+Antes disso, `a7edf1a` criou os sete `loading.tsx` do painel, que não existiam:
+sem eles o clique numa aba deixava a tela parada até o servidor responder, e o
+esqueleto chegava depois da espera em vez de durante.
+
+**O que ninguém conferiu no navegador:** nenhuma das quatro mudanças foi clicada
+no app. Build, lint e typecheck passam, e a estrutura está certa, mas "o
+esqueleto aparece no clique" e "o menu nasce sob o cursor" são afirmações sobre
+o que a pessoa vê, e isso não foi visto. Confira antes de marcar como fechado.
+
+**Os testes não rodaram no fim.** `src/server/repos/*` estoura por timeout contra
+o Supabase quando duas sessões trabalham ao mesmo tempo; o `repos.test.ts` passou
+25 de 25 sozinho, o que indica concorrência e não regressão, mas a suíte inteira
+ficou sem rodar depois da última mudança.
