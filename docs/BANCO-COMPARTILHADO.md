@@ -1,4 +1,4 @@
-# Banco de produção compartilhado — leitura obrigatória
+# Banco de produção compartilhado: leitura obrigatória
 
 > **Pare antes de mexer no banco.** Desde 14/ago/2026, AutoFluxos e Verandi
 > usam o mesmo projeto Supabase de produção. São produtos diferentes e não
@@ -37,18 +37,18 @@ extração explícito para os objetos de `public`.
 2. **Toda migration do AutoFluxos qualifica seus objetos com `public.`.** Não
    dependa do `search_path` do projeto e nunca cite `app_verandi` numa migration
    deste repositório.
-3. **O nome da próxima migration vem do disco, não de plano antigo** — e nem
+3. **O nome da próxima migration vem do disco, não de plano antigo**, e nem
    deste parágrafo. Rode `ls supabase/migrations/ | tail -1`.
 
    **Este parágrafo não diz mais qual é o número, de propósito.** Ele já esteve
    errado três vezes: dizia `0029` quando o disco tinha `0038`, `0044` quando o
    disco tinha `0046`, e `0047` quando o disco já tinha `0055`. Um documento que
    afirma o número compete com o diretório e perde toda vez, porque ninguém
-   lembra de atualizar os dois — e, pior, ele é convincente o bastante para
+   lembra de atualizar os dois, e, pior, ele é convincente o bastante para
    alguém confiar nele em vez de olhar. A regra é olhar o diretório, inclusive
    quando um documento afirma um número. Os nomes `0008_limites` e
    `0009_retencao` escritos no plano de endurecimento são exemplos antigos e
-   colidem com migrations que já existem — e a tabela do §4 do PLANO-SISTEMA
+   colidem com migrations que já existem, e a tabela do §4 do PLANO-SISTEMA
    divergiu inteira do disco a partir da `0024`, porque a ordem de execução foi
    A6 → A7 → B2 → B1 → B4 → B3 → B5. O disco ganha, sempre.
 4. **Mudança global exige avaliar os dois produtos antes.** Isso inclui
@@ -60,8 +60,8 @@ extração explícito para os objetos de `public`.
    acidentes, mas uma aplicação comprometida com essa chave ainda pode alcançar
    o outro schema. Nunca aceite schema, tabela ou SQL vindos de usuário.
 6. **RLS e `GRANT` são camadas diferentes, e desde a `0041` o `GRANT` é a que
-   fecha.** `public` está exposto na Data API — o `db_schema` do PostgREST é
-   `public,graphql_public,app_verandi` —, então "exposto" aqui nunca foi
+   fecha.** `public` está exposto na Data API, e o `db_schema` do PostgREST é
+   `public,graphql_public,app_verandi`, então "exposto" aqui nunca foi
    teórico.
 
    Este parágrafo já teve duas versões erradas, e as duas custam caro se forem
@@ -70,7 +70,7 @@ extração explícito para os objetos de `public`.
    - a primeira afirmava que não havia `grant` para `anon`/`authenticated`.
      Era falso: 13 dos 42 objetos de `public` tinham os 7 privilégios
      concedidos aos dois papéis, herdados do default do projeto Supabase;
-   - a segunda registrou o fato certo e parou na decisão errada — disse que
+   - a segunda registrou o fato certo e parou na decisão errada: disse que
      revogar em massa "é mudança global e não foi feita", e que bastava
      **nunca criar política sem tratar como exposição pública**. Isso vale
      para tabela e **não vale para função**: função não é protegida por RLS, e
@@ -81,7 +81,7 @@ extração explícito para os objetos de `public`.
    - `anon` e `authenticated` não alcançam mais nenhuma tabela, view, sequence
      ou função de `public`;
    - o default do papel `postgres` no schema foi alterado, então **objeto novo
-     nasce fechado** — não depende mais de alguém lembrar de revogar;
+     nasce fechado**, e não depende mais de alguém lembrar de revogar;
    - `service_role` recebeu de volta, explicitamente, tudo o que o revoke
      tirou. Parte do que ele tinha vinha herdada de `PUBLIC`.
 
@@ -96,7 +96,7 @@ extração explícito para os objetos de `public`.
 
    O default do papel `supabase_admin` continua concedendo tudo em `public`, e
    `postgres` não é membro dele. Objeto criado por nós nasce como `postgres`,
-   então isso não nos alcança — mas objeto criado pela infraestrutura do
+   então isso não nos alcança, mas objeto criado pela infraestrutura do
    Supabase dentro de `public` pode nascer aberto. Confira depois de qualquer
    coisa que o painel crie sozinho.
 7. **Função `security definer` precisa de `search_path` fixo e permissões
@@ -119,11 +119,11 @@ extração explícito para os objetos de `public`.
   `0046` em 12/set/2026 e as `0047`/`0048` em 13/set/2026, todas com autorização
   explícita do dono). A `0048` é aditiva (duas colunas anuláveis em
   `public.channels`, sem toque em dado existente) e foi conferida só pelo ensaio
-  em transação contra a produção — o suficiente para o que ela faz, segundo a
+  em transação contra a produção, o suficiente para o que ela faz, segundo a
   regra da seção de Docker abaixo. A `0047` é a primeira conferida pelos **dois** testes: o
   replay do zero em Docker (que prova a ordem) e o ensaio em transação contra a
   produção (que prova o estado herdado). O Docker voltou a funcionar quando a
-  integração WSL foi ligada para o Ubuntu — sem ela, o CLI do Supabase sobe os
+  integração WSL foi ligada para o Ubuntu. Sem ela, o CLI do Supabase sobe os
   containers e falha no health check com "The command 'docker' could not be
   found in this WSL 2 distro". A `0042`
   foi replayada em Docker antes, e conferida depois na produção:
@@ -132,7 +132,7 @@ extração explícito para os objetos de `public`.
   tables in schema public to service_role` do passo 2 alcançou
   `public.af_auditoria` e devolveu `update`, `delete` e `truncate` à chave da
   aplicação, desfazendo o append-only que a `0021` tinha garantido. Quem
-  escrever outro grant amplo em `public` reabre de novo — o comentário da
+  escrever outro grant amplo em `public` reabre de novo, e o comentário da
   tabela avisa, e o revoke da `0042` precisa ser reexecutado depois;
 - aplicação em produção pela Management API do Supabase;
 - **a `0055` foi aplicada em 15/set/2026**, com autorização explícita do dono e
@@ -145,7 +145,7 @@ extração explícito para os objetos de `public`.
   linhas; e `autofluxos-acervo` seguindo público, como deve.
 
   **O que só a produção mostrou, e o Docker não podia:** lá existem **16
-  policies** em `storage.objects` — todas da Verandi — enquanto o stack local
+  policies** em `storage.objects`, todas da Verandi, enquanto o stack local
   tem zero. Foram conferidas uma a uma: as quatro de `INSERT` guardam a regra em
   `with_check` e não em `qual` (por isso aparecem como "sem qual" numa consulta
   ingênua), e **todas as 16 filtram por `bucket_id`**. Nenhuma alcança
@@ -153,11 +153,11 @@ extração explícito para os objetos de `public`.
   `authenticated` não leem nem escrevem nada nele. Provado no Docker com
   `set local role`: `service_role` enxerga o objeto, `anon` e `authenticated`
   enxergam zero. **Quem criar policy nova em `storage.objects` sem filtrar
-  bucket abre este bucket junto** — é o mesmo tipo de armadilha que a `0042`
+  bucket abre este bucket junto**, e é o mesmo tipo de armadilha que a `0042`
   documentou para os `grant` amplos em `public`;
 - **a `0056` foi aplicada em 15/set/2026**, com autorização explícita do dono.
   Ela só amplia a lista de `allowed_mime_types` do `autofluxos-acervo` para
-  incluir `audio/mp4` e `audio/aac` — o formato que o navegador grava quando
+  incluir `audio/mp4` e `audio/aac`, o formato que o navegador grava quando
   quem atende manda um áudio pela caixa de resposta. Conferida pelos dois
   testes: replay em Docker (as `0043`–`0056` aplicadas em sequência sobre o
   stack local) e verificação na produção depois. Estado final lá: acervo com
@@ -170,20 +170,20 @@ extração explícito para os objetos de `public`.
 
   **Ela não tem `notify pgrst`, e isso é a decisão.** O cache do PostgREST é o
   mesmo dos dois produtos, e a `0056` não muda schema nenhum que a Data API
-  exponha — recarregar o cache seria arriscar a API da Verandi para nada.
+  exponha, e recarregar o cache seria arriscar a API da Verandi para nada.
 
   **Ela não mexe no `public` do bucket**, que segue sendo o risco em aberto
   registrado no handoff de 15/set: a mídia que sai vai para URL pública e
   permanente, e a regra da `0017` ("documento pessoal não entra") continua sem
   ninguém que a faça cumprir. Fechar isso é outra migration, e depende de o
-  envio por `id` estar provado em campo — ver
+  envio por `id` estar provado em campo, ver
   `docs/HANDOFF-15-SET-VOZ-E-ENVIO-POR-ID.md`;
 - **a `0057` foi aplicada em 15/set/2026**, com autorização explícita do dono.
   Ela cria `public.mensagens_agendadas` (a fila de mensagens marcadas para
   depois) e adiciona `public.messages.transcricao`. É aditiva: tabela nova e
   coluna anulável, sem tocar em dado existente.
 
-  Conferida pelos **dois** testes. Replay do zero em Docker — `npx supabase db
+  Conferida pelos **dois** testes. Replay do zero em Docker, com `npx supabase db
   reset` aplicou `0001`–`0057` em ordem, sem erro. Ensaio em transação contra a
   produção (`begin; <a migration sem o notify>; rollback;`), que voltou limpo:
   nem a tabela nem a coluna sobraram depois do rollback.
@@ -191,7 +191,7 @@ extração explícito para os objetos de `public`.
   Estado conferido na produção depois de aplicar: a tabela com as 12 colunas
   desenhadas, **RLS ligada e zero policies**, 3 índices (a chave primária mais
   os dois do plano), `messages.transcricao` presente, e os `grant` só para
-  `postgres` e `service_role` — `anon` e `authenticated` **não aparecem**, o que
+  `postgres` e `service_role`, e `anon` e `authenticated` **não aparecem**, o que
   confirma que o default fechado da `0041` continua valendo para objeto novo.
   Do outro lado: `app_verandi.migrations_aplicadas` com as mesmas **32** linhas
   e as **16** policies de `storage.objects` intactas.
@@ -200,14 +200,14 @@ extração explícito para os objetos de `public`.
   `0057` cria tabela em `public`, que é schema exposto na Data API, e o servidor
   fala com ela pelo PostgREST: sem recarregar o cache,
   `from('mensagens_agendadas')` responde 404 até a próxima reinicialização. O
-  cache é o mesmo dos dois produtos e o reload é breve — é o mesmo movimento que
+  cache é o mesmo dos dois produtos e o reload é breve, que é o mesmo movimento que
   a `0052` fez.
 
   **O que ela deixa em aberto, escrito para ninguém descobrir depois:** a coluna
   `transcricao` guarda o que um modelo de fala devolveu, e hoje esse modelo é o
   Gemini com a **chave da 4YU no free tier**, que treina com o que passa por
   ela. A regra de `server/ia/modelo.ts` vale aqui com mais força, porque voz
-  identifica pessoa: por isso a transcrição **nunca é automática** — só acontece
+  identifica pessoa: por isso a transcrição **nunca é automática**, e só acontece
   quando alguém do atendimento clica. Quando `clients.ia_chave_ref` sair do
   papel, `server/transcrever-audio.ts` passa a usar a chave paga do cliente;
 - **a `0058` foi aplicada em 15/set/2026**, com autorização explícita do dono.
@@ -216,13 +216,13 @@ extração explícito para os objetos de `public`.
   duas colunas em `public.quadro_colunas`, seis em `public.quadro_cartoes`, e as
   tabelas novas `public.motivos_de_perda` e `public.eventos_do_contato`.
 
-  **É aditiva, mas mexe em tabela que já tem dado** — e por isso o replay em
+  **É aditiva, mas mexe em tabela que já tem dado**, e por isso o replay em
   Docker não era opcional aqui, ao contrário da `0048`. Feitos os dois: replay
   do zero (`0001`–`0058` em ordem, sem erro) e ensaio em transação contra a
   produção, que voltou limpo.
 
   O que a produção mostrou depois de aplicar: as 3 + 2 + 6 colunas presentes, as
-  2 tabelas criadas, e **o dado existente intacto** — 27 contatos, todos caindo
+  2 tabelas criadas, e **o dado existente intacto**: 27 contatos, todos caindo
   em `estagio = 'novo'` pelo default, e os 5 cartões seguindo `situacao =
   'aberta'`. Grants das tabelas novas só para `postgres` e `service_role`. Do
   outro lado: `app_verandi.migrations_aplicadas` com as mesmas **32** linhas e as
@@ -232,17 +232,17 @@ extração explícito para os objetos de `public`.
   migration foram escritos antes de ela existir em produção, e
   `receber-mensagem.ts` passou a chamar `anotar` e `aplicarFato` no caminho de
   **toda mensagem que chega**. Publicar o código antes de aplicar o SQL faria o
-  webhook estourar em cada mensagem — o bot mudo, sem erro visível na tela de
+  webhook estourar em cada mensagem: o bot mudo, sem erro visível na tela de
   ninguém. Migration primeiro, deploy depois, sempre que o código novo escrever
   em objeto novo;
 - **a `0060` foi aplicada em 15/set/2026**, com autorização explícita do dono.
   Ela é a pesquisa de satisfação: cria `public.avaliacoes` e a view
   `public.metricas_de_satisfacao`. A `0059` (templates) **não** estava aplicada
-  quando esta foi — as duas nasceram em chats paralelos, e o disco já tinha a
+  quando esta foi, porque as duas nasceram em chats paralelos, e o disco já tinha a
   `0059` quando esta foi numerada. Aditiva: tabela e view novas, nenhuma coluna
   existente alterada, nenhuma linha reescrita.
 
-  **A produção ficou com um buraco na numeração, e isso é deliberado — mas
+  **A produção ficou com um buraco na numeração, e isso é deliberado, mas
   precisa ser sabido.** Aplicadas: `0001`–`0058` e `0060`. A `0059` segue
   **pendente**, e foi conferido na produção que `templates` e `transmissoes` não
   existem lá. Aplicar fora de ordem só é seguro porque a `0060` é
@@ -250,11 +250,11 @@ extração explícito para os objetos de `public`.
   Quem for aplicar a `0059` **não precisa de nada desta**, e o replay em Docker
   continua provando a ordem do zero porque no disco as duas estão na sequência
   certa. O que não vale é supor que "a última aplicada" é o maior número do
-  diretório — na produção, hoje, não é.
+  diretório. Na produção, hoje, não é.
 
   Conferida pelos **dois** testes. Replay do zero em Docker (`npx supabase db
   reset` aplicou `0001`–`0060` em ordem, sem erro), onde também foram provados
-  os dois `check` — nota 11 e `origem` inventada recusadas — e a régua do NPS
+  os dois `check`, com nota 11 e `origem` inventada recusadas, e a régua do NPS
   nas bordas: 10 e 9 caem em promotor, 8 e 7 em neutro, 6 e 0 em detrator. É a
   borda do 7 que engana, e é por isso que ela é testada. Depois, ensaio em
   transação contra a produção (`begin; <a migration sem o notify>; rollback;`),
@@ -263,11 +263,11 @@ extração explícito para os objetos de `public`.
   Estado conferido na produção depois de aplicar: tabela com as 9 colunas,
   **RLS ligada e zero policies**, 3 índices (a chave primária mais os dois do
   plano), a view presente com `security_invoker = true`, e os `grant` só para
-  `postgres` e `service_role` — `anon` e `authenticated` **não aparecem**. Do
+  `postgres` e `service_role`, e `anon` e `authenticated` **não aparecem**. Do
   outro lado: `app_verandi.migrations_aplicadas` com as mesmas **32** linhas e
   as **16** policies de `storage.objects` intactas.
 
-  **Ela tem `notify pgrst`, e o reload foi conferido nos dois produtos** — que é
+  **Ela tem `notify pgrst`, e o reload foi conferido nos dois produtos**, que é
   o teste que faltava nos registros anteriores. `avaliacoes` pela Data API
   responde **200** para `service_role` e **401** para `anon` (sem 404, então não
   há restart pendente), e o schema `app_verandi` continua respondendo **200**
@@ -276,8 +276,50 @@ extração explícito para os objetos de `public`.
 
   **O código que escreve nesta tabela ainda não está publicado**, e aqui a ordem
   é a inversa do aviso da `0058`: a migration foi primeiro, e o bloco `nps` só
-  chega à produção no próximo deploy. Enquanto isso a tabela fica vazia — o que
+  chega à produção no próximo deploy. Enquanto isso a tabela fica vazia, o que
   é seguro, porque nada no caminho de mensagem que já está no ar a procura;
+- **a `0065` foi aplicada em 16/set/2026**, com autorização explícita do dono.
+  Ela só faz `create or replace view public.leads` acrescentando **uma** coluna
+  ao fim: `porta_de_entrada_em`, a última chegada por anúncio daquele contato,
+  vinda de um lateral join em `public.passagens`. É o que o produto precisa para
+  saber que quem chega por Click to WhatsApp tem janela de 72h, e gratuita, em
+  vez das 24h pagas que ele assumia para todo mundo.
+
+  **Nenhuma tabela, nenhuma coluna, nenhuma escrita nova.** O dado já era
+  gravado pela `0050`, em `passagens`, no momento exato em que a Meta manda o
+  `referral` no webhook. Uma coluna `porta_de_entrada_em` em `contacts` seria
+  cópia do `criado_em` de lá, com todo o risco de divergir. O lateral join usa
+  `passagens_do_contato_idx (contact_id, criado_em desc)`, que a `0050` já
+  criou.
+
+  Conferida só pelo ensaio em transação contra a produção, e não pelo replay em
+  Docker: **o Docker segue indisponível nesta máquina** (integração do WSL
+  desligada), e pela regra da seção de Docker abaixo o ensaio basta para uma
+  view recriada sem toque em dado. Foram dois ensaios. O primeiro provou que a
+  view passa a ter 26 colunas dentro da transação e volta a 25 depois do
+  `rollback`, sem `porta_de_entrada_em` sobrando. O segundo provou que ela
+  devolve o dado: 53 leads, 4 com chegada por anúncio, sobre as 5 linhas de
+  `passagens` (uma pessoa passou duas vezes, e o join pega só a última, como
+  desenhado).
+
+  Estado conferido na produção depois de aplicar: 26 colunas,
+  `porta_de_entrada_em` em `timestamp with time zone`, 53 leads com 4
+  preenchidos. Os grants da view só para `postgres` e `service_role`; **`anon` e
+  `authenticated` não aparecem**, que é o que importa aqui, porque
+  `create or replace view` não redefine grants como um `drop`/`create` faria, e
+  o revoke da migration é o cinto e suspensório. Do outro lado:
+  `app_verandi.migrations_aplicadas` com as mesmas **32** linhas e as **16**
+  policies de `storage.objects` intactas.
+
+  **Ela tem `notify pgrst`, e isso é a decisão.** A view vive em `public`, que é
+  schema exposto na Data API, e sem recarregar o cache o PostgREST recusaria a
+  leitura da coluna nova. O cache é o mesmo dos dois produtos, mas um
+  `reload schema` é o movimento barato: o que o runbook proíbe é mexer em
+  *Exposed schemas* pela UI, não recarregar.
+
+  **O código que lê esta coluna ainda não está publicado**, mesma ordem da
+  `0058-nps` acima: migration primeiro, deploy depois. Enquanto isso a coluna
+  fica lá sem ninguém ler, e o que está no ar não a procura;
 - **a `0064` foi aplicada em 16/set/2026**, com autorização explícita do dono.
   Ela cria `public.af_atendentes` e acrescenta duas colunas a `public.clients`:
   `distribuicao` (`manual` por padrão) e `exige_assumir` (`false` por padrão).
@@ -305,14 +347,14 @@ extração explícito para os objetos de `public`.
   distribuição só passa a agir quando alguém a escolher na tela da equipe.
 
 - **a `0063` foi aplicada em 16/set/2026**, com autorização explícita do dono.
-  Ela cria duas tabelas novas, `public.af_fixadas` e `public.af_favoritas` — o
+  Ela cria duas tabelas novas, `public.af_fixadas` e `public.af_favoritas`, e o
   alfinete e a estrela do Inbox, por atendente. Não toca em tabela existente,
   não move dado e não altera coluna nenhuma.
 
   Conferida pelo **ensaio em transação** (`begin; ...; rollback;` pela
   Management API) antes de aplicar, e por conferência objeto a objeto depois: as
   duas existem com três colunas cada, `relrowsecurity` verdadeiro, **zero
-  políticas** (de propósito — todo acesso é pelo servidor com a chave secreta) e
+  políticas** (de propósito: todo acesso é pelo servidor com a chave secreta) e
   os grants trazem só `postgres` e `service_role`. `app_verandi` segue com 42
   tabelas, medidas antes e depois.
 
@@ -342,7 +384,7 @@ extração explícito para os objetos de `public`.
   ele é a maioria.
 
 - **as `0059` e `0061` foram aplicadas em 15/set/2026**, com autorização
-  explícita do dono, e **nessa ordem** — a `0061` adiciona
+  explícita do dono, e **nessa ordem**, porque a `0061` adiciona
   `sequencia_passos.template_id` referenciando `public.templates`, que só existe
   depois da `0059`. Com isso a produção tem `0001`–`0061` e o buraco da
   numeração fechou.
@@ -353,7 +395,7 @@ extração explícito para os objetos de `public`.
   1. `check (nome ~ '^[a-z0-9_]{1,512}$')` em `templates`. **O Postgres recusa
      repetição acima de 255** (`invalid repetition count(s)`), mas o
      `create table` passa e a tabela nasce com o check aparentemente correto. O
-     erro só aparece no primeiro `insert` — quer dizer: aplicar tudo, ver tudo
+     erro só aparece no primeiro `insert`, quer dizer: aplicar tudo, ver tudo
      verde, e o primeiro cliente que criasse um modelo levaria um erro de regex
      vindo do banco. Trocado por `length(nome) between 1 and 512`.
   2. **As quatro tabelas nasciam sem RLS.** Eram as únicas quatro sem RLS no
@@ -363,7 +405,7 @@ extração explícito para os objetos de `public`.
   A `0059` também redefinia `public.tocar_atualizado_em()` com `create or
   replace` **sem** `security invoker` nem `set search_path = ''`. Não daria erro:
   apagaria em silêncio a proteção que a `0001` pôs, para todas as tabelas que
-  usam esse gatilho de uma vez. Consertado antes de aplicar — a migration agora
+  usam esse gatilho de uma vez. Consertado antes de aplicar, e a migration agora
   só **usa** a função existente. Conferido depois na produção: `prosecdef = f` e
   `proconfig = {search_path=""}`, intactos.
 
@@ -372,13 +414,13 @@ extração explícito para os objetos de `public`.
   `0061`: 4320min sem modelo **recusa**, 4320min com modelo **aceita**, 60min sem
   modelo **aceita**, e 43201min (acima de 30 dias) **recusa mesmo com modelo**.
   Depois, ensaio em transação contra a produção (`begin; <as duas migrations sem
-  o notify>; rollback;`), que voltou limpo — nem as tabelas nem a coluna
+  o notify>; rollback;`), que voltou limpo: nem as tabelas nem a coluna
   sobraram.
 
   Estado conferido na produção depois de aplicar: as 4 tabelas com **RLS ligada
   e zero policies**, `grant` só para `postgres` e `service_role` (`anon` e
   `authenticated` **não aparecem**), o check `sequencia_passos_atraso_valido` com
-  a regra composta, e **um `insert` real em `templates` funcionando** — que é
+  a regra composta, e **um `insert` real em `templates` funcionando**, que é
   onde a bomba do regex teria explodido. Dado existente intacto: 31 contatos.
   Do outro lado: `app_verandi.migrations_aplicadas` com as mesmas **32** linhas e
   as **16** policies de `storage.objects` intactas.
@@ -389,7 +431,7 @@ extração explícito para os objetos de `public`.
   `sequencia_passos?select=template_id` responde 200, e `app_verandi` continua
   respondendo **200** pelo mesmo PostgREST.
 
-  **O código já estava publicado quando estas foram aplicadas** — o inverso do
+  **O código já estava publicado quando estas foram aplicadas**, o inverso do
   aviso da `0058`, e sem o mesmo risco: nada no caminho de mensagem que já
   estava no ar procura estas tabelas. O que ficou quebrado no intervalo foi só a
   tela `/transmissoes` e a reconciliação diária, que conta a falha e não derruba
@@ -412,8 +454,8 @@ O `supabase/config.toml` deste repositório existe **só** para isso, com portas
 `5643x` para não colidir com o stack local da Verandi (`5642x`). Ele não está
 ligado a projeto remoto nenhum, e `link`/`db push` continuam proibidos.
 
-**Quando não há Docker** — foi o caso em 12/set/2026, numa WSL2 sem
-integração ligada —, o substituto é o ensaio em transação: mandar
+**Quando não há Docker**, e foi o caso em 12/set/2026, numa WSL2 sem
+integração ligada, o substituto é o ensaio em transação: mandar
 `begin; <a migration>; rollback;` pela Management API. Ele prova mais que o
 Docker numa coisa e menos em outra. Mais: roda contra o estado real da
 produção, com os anos de `grant` acumulados que um banco novo não tem. Menos:
@@ -422,7 +464,7 @@ para migration aditiva conferida objeto a objeto depois; não serve para trocar
 o replay quando a migration mexe em dado que já existe.
 
 O que o local prova: que a migration roda, na ordem, e que o estado final de
-`grant` é o pretendido — foi assim que a `0042` foi conferida, com `set role
+`grant` é o pretendido. Foi assim que a `0042` foi conferida, com `set role
 service_role` tentando `update`, `delete` e `truncate` em `af_auditoria` e
 levando `permission denied` nos três. O que ele **não** prova: o estado herdado
 da produção, que tem anos de `grant` acumulado que um banco novo não tem. Para
@@ -443,7 +485,7 @@ Verandi começa em `0030_vr_` e o AutoFluxos chegou na `0029`. Os números vão 
 cruzar no próximo. O prefixo `vr_` continua distinguindo, e o que sempre valeu
 segue valendo: nenhum repositório aplica as migrations do outro, e o arquivo de
 um nunca é lido a partir do outro. Se a confusão aparecer na prática, o caminho
-é o AutoFluxos ganhar prefixo próprio — nunca renumerar o que já foi aplicado.
+é o AutoFluxos ganhar prefixo próprio, e nunca renumerar o que já foi aplicado.
 
 ## O que o schema não separa
 
