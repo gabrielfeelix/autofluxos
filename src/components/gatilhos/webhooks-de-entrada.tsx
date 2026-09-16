@@ -51,11 +51,6 @@ export function WebhooksDeEntrada({
 
   return (
     <div className="px-5 py-4">
-      <p className="mb-3 text-[11.5px] leading-5 text-dim">
-        Um sistema de fora — a agenda, o financeiro — avisa que algo aconteceu, e o evento abre um
-        fluxo. É o que faz “te aviso quando abrir vaga” virar uma mensagem de verdade.
-      </p>
-
       {novo && (
         <div className="mb-4 rounded-lg border border-amber-400/30 bg-amber-400/[0.07] px-4 py-3">
           <p className="text-[12px] font-semibold text-aviso">
@@ -109,8 +104,7 @@ export function WebhooksDeEntrada({
 
       {webhooks.length === 0 ? (
         <p className="rounded-lg border border-dashed border-strong px-4 py-6 text-center text-[11.5px] leading-5 text-dim">
-          Nenhum sistema pode avisar esta conta ainda. Sem um segredo, o endereço recusa toda
-          chamada — que é o certo para um endereço público.
+          Gere um segredo para liberar o endereço.
         </p>
       ) : (
         <ul className="mb-4">

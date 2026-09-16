@@ -55,9 +55,8 @@ export function ListaDeTemplates({
       <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
         <div>
           <h2 className="text-[14.5px] font-bold">Modelos aprovados</h2>
-          <p className="mt-0.5 max-w-[78ch] text-[12px] leading-5 text-dim">
-            Cada modelo passa por revisão da Meta antes de poder ser usado. O mesmo modelo precisa
-            ser criado uma vez para cada cliente — a Meta não compartilha modelo entre contas.
+          <p className="mt-0.5 text-[12px] leading-5 text-dim">
+            A Meta revisa cada modelo antes de liberar o uso.
           </p>
         </div>
         <FormularioDeTemplate clienteId={clienteId} />
@@ -65,8 +64,7 @@ export function ListaDeTemplates({
 
       {templates.length === 0 ? (
         <p className="px-5 py-8 text-center text-[13px] text-dim">
-          Nenhum modelo ainda. Sem um modelo aprovado não dá para falar com quem não escreveu nas
-          últimas 24 horas.
+          Nenhum modelo ainda.
         </p>
       ) : (
         <ul className="divide-y divide-line">
@@ -200,8 +198,7 @@ function FormularioDeTemplate({ clienteId }: { clienteId: string }) {
         <RotuloCampo>Nome</RotuloCampo>
         <input name="nome" className="app-field w-full" placeholder="Lembrete de consulta" />
         <p className="mt-1 text-[11.5px] leading-5 text-muted">
-          Pode escrever normal — a gente ajusta para o formato que a Meta aceita (minúsculas e
-          underscore).
+          Pode escrever normal — a gente ajusta o formato.
         </p>
       </div>
 
@@ -218,8 +215,7 @@ function FormularioDeTemplate({ clienteId }: { clienteId: string }) {
           conta veio mais cara".
         */}
         <p className="mt-1 text-[11.5px] leading-5 text-muted">
-          A categoria muda quanto a Meta cobra por mensagem. Se ela achar o conteúdo promocional,
-          reclassifica como Marketing por conta própria.
+          Ela muda quanto a Meta cobra por mensagem.
         </p>
       </div>
 
@@ -233,7 +229,7 @@ function FormularioDeTemplate({ clienteId }: { clienteId: string }) {
           placeholder="Oi {{1}}, sua consulta é dia {{2}}. Confirma?"
         />
         <p className="mt-1 text-[11.5px] leading-5 text-muted">
-          Use {'{{1}}'}, {'{{2}}'}… para o que muda por pessoa. Sem pular número.
+          Use {'{{1}}'}, {'{{2}}'}… para o que muda por pessoa.
         </p>
       </div>
 
@@ -245,8 +241,7 @@ function FormularioDeTemplate({ clienteId }: { clienteId: string }) {
             formato, e a recusa demora horas para chegar.
           */}
           <p className="mb-2 text-[11.5px] leading-5 text-muted">
-            A Meta exige um exemplo de cada variável para conseguir revisar. Sem eles, ela recusa —
-            e a recusa demora horas.
+            A Meta exige um exemplo de cada variável para revisar.
           </p>
           {Array.from({ length: quantasVariaveis }, (_, i) => (
             <input

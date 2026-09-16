@@ -53,9 +53,8 @@ export function ListaDeTransmissoes({
     <section className="app-card overflow-hidden">
       <header className="border-b border-line px-5 py-4">
         <h2 className="text-[14.5px] font-bold">Transmissões</h2>
-        <p className="mt-0.5 max-w-[78ch] text-[12px] leading-5 text-dim">
-          Uma transmissão é um modelo aprovado, um público e um horário. A Meta limita quantas
-          conversas novas o número abre por dia — campanha maior que o limite sai em mais de um dia.
+        <p className="mt-0.5 text-[12px] leading-5 text-dim">
+          Um modelo aprovado, um público e um horário.
         </p>
       </header>
 
@@ -65,8 +64,7 @@ export function ListaDeTransmissoes({
           evita que a pessoa procure um botão que não faria nada.
         */
         <p className="border-b border-line bg-amber-500/[0.06] px-5 py-3 text-[12.5px] leading-5 text-dim">
-          Nenhum modelo aprovado ainda. Crie um na aba <strong>Modelos aprovados</strong> e espere a
-          revisão da Meta — sem isso não dá para transmitir.
+          Crie um modelo na aba <strong>Modelos aprovados</strong> para poder transmitir.
         </p>
       )}
 

@@ -38,7 +38,14 @@ import { Marca } from './marca'
  * custo que permite `ajustes/contexto`, `ajustes/whatsapp` e `ajustes/chaves`
  * acenderem "Configurações".
  */
-export type AbaDoCliente = 'inicio' | 'fluxos' | 'leads' | 'quadros' | 'inbox' | 'ajustes'
+export type AbaDoCliente =
+  | 'inicio'
+  | 'fluxos'
+  | 'transmissoes'
+  | 'leads'
+  | 'quadros'
+  | 'inbox'
+  | 'ajustes'
 
 /**
  * As chaves são as antigas de propósito.
@@ -75,6 +82,21 @@ const ITENS: {
    */
   { chave: 'quadros', rotulo: 'Funis', href: '/quadros', icone: <IconeQuadros /> },
   { chave: 'fluxos', rotulo: 'Automações', href: '/fluxos', icone: <IconeAutomacoes /> },
+  /*
+   * Transmissões entra ao lado de Automações, e não dentro delas.
+   *
+   * Ela nasceu como um link dentro do texto da aba Campanhas, e isso foi um
+   * erro que custou o tempo de alguém procurando: tela que existe e não se
+   * acha é tela que não existe. O trabalho aqui também é de outra natureza —
+   * automação responde a um gatilho, transmissão é alguém decidindo falar com
+   * uma lista hoje.
+   */
+  {
+    chave: 'transmissoes',
+    rotulo: 'Transmissões',
+    href: '/transmissoes',
+    icone: <IconeTransmissoes />,
+  },
   { chave: 'ajustes', rotulo: 'Configurações', href: '/ajustes', icone: <IconeConfiguracoes /> },
 ]
 
@@ -325,6 +347,16 @@ function IconeAutomacoes() {
       <circle cx="11.6" cy="3.4" r="2" />
       <circle cx="7.5" cy="11.8" r="2" />
       <path d="M3.4 5.4v1.4a1.6 1.6 0 0 0 1.6 1.6h5a1.6 1.6 0 0 0 1.6-1.6V5.4M7.5 8.4v1.4" />
+    </svg>
+  )
+}
+
+function IconeTransmissoes() {
+  return (
+    <svg aria-hidden width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.4">
+      {/* Um megafone: falar com muita gente de uma vez. */}
+      <path d="M2.2 6v3a1 1 0 0 0 1 1h1.4l4.6 2.6V3.4L5.6 6H3.2a1 1 0 0 0-1 1Z" strokeLinejoin="round" />
+      <path d="M11.2 5.6a2.8 2.8 0 0 1 0 4.4" strokeLinecap="round" />
     </svg>
   )
 }

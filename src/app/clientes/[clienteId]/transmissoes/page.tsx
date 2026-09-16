@@ -52,15 +52,13 @@ export default async function Pagina({
   if (!cliente) notFound()
 
   return (
-    <ClienteShell cliente={cliente} ativa="fluxos">
+    <ClienteShell cliente={cliente} ativa="transmissoes">
       <main className="w-full max-w-[1440px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <h1 className="mb-1 text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">
           Transmissões
         </h1>
-        <p className="mb-5 max-w-[78ch] text-[12.5px] leading-5 text-dim">
-          Fora da janela de 24 horas o WhatsApp só entrega <strong>modelo aprovado</strong> pela
-          Meta. É isso que permite mandar lembrete de véspera, retomar conversa parada e falar com
-          uma lista.
+        <p className="mb-5 text-[12.5px] leading-5 text-dim">
+          Mandar mensagem para uma lista de contatos, com modelo aprovado pela Meta.
         </p>
 
         {/*

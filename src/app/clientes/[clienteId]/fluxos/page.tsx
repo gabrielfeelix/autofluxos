@@ -22,7 +22,6 @@ import { InterruptorDeCampanha } from '@/components/gatilhos/interruptor-de-camp
 import { InterruptorDeSequencia } from '@/components/sequencias/interruptor'
 import { CamposDaSequencia } from '@/components/sequencias/campos'
 import {
-  ATRASO_MAXIMO_MINUTOS,
   LIMITE_DE_PASSOS,
   ROTULO_DO_EVENTO,
   comoAtraso,
@@ -555,10 +554,8 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
         <section className="app-card overflow-hidden">
           <header className="border-b border-line px-5 py-4">
             <h2 className="text-[14.5px] font-bold">Templates</h2>
-            <p className="mt-0.5 max-w-[78ch] text-[12px] leading-5 text-dim">
-              Desenhos prontos e conferidos: todos publicam sem erro e todos têm saída para uma
-              pessoa. Escolher cria uma automação nova como rascunho — o template não fica ligado a
-              ela, então mexer aqui depois não mexe no que você criou.
+            <p className="mt-0.5 text-[12px] leading-5 text-dim">
+              Automações prontas para usar. Escolher cria uma cópia sua, como rascunho.
             </p>
           </header>
           <div className="px-5 py-4">
@@ -572,11 +569,8 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
           <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
             <div className="min-w-0">
             <h2 className="text-[14.5px] font-bold">Palavras-chave</h2>
-            <p className="mt-0.5 max-w-[78ch] text-[12px] leading-5 text-dim">
-              Uma frase que leva direto a um fluxo, de qualquer ponto da conversa
-              — o mesmo que “atendente” já faz para chamar uma pessoa, só que
-              escrito por você. Ela interrompe o que estava em andamento, e nunca
-              atropela quem pediu para falar com alguém.
+            <p className="mt-0.5 text-[12px] leading-5 text-dim">
+              Uma frase que o cliente escreve e leva direto a uma automação.
             </p>
             </div>
             {fluxos.length > 0 && (
@@ -692,9 +686,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
             <span>
               <h2 className="text-[14px] font-bold tracking-[-0.01em]">Eventos de outro sistema</h2>
               <p className="mt-0.5 text-[11.5px] leading-5 text-dim">
-                Palavra-chave é o que a <strong className="text-muted">pessoa</strong> escreve.
-                Evento é o que <strong className="text-muted">outro sistema</strong> avisa — a vaga
-                que abriu, o pagamento que caiu.
+                Outro sistema avisa que algo aconteceu, e uma automação começa.
               </p>
             </span>
 
@@ -738,8 +730,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
             <div className="border-b border-line px-5 py-10 text-center">
               <p className="text-[13px] font-semibold text-soft">Nenhum evento ainda</p>
               <p className="mx-auto mt-1 max-w-[460px] text-xs leading-5 text-dim">
-                Sem eles, o “te aviso quando abrir” do fluxo de espera é uma promessa que ninguém
-                cumpre: o outro sistema avisa e não há o que fazer com o aviso.
+                Crie um para a agenda ou o financeiro avisarem esta conta.
               </p>
             </div>
           ) : (
@@ -801,36 +792,34 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
           <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
             <div className="min-w-0">
             <h2 className="text-[14.5px] font-bold">Campanhas</h2>
-            <p className="mt-0.5 max-w-[78ch] text-[12px] leading-5 text-dim">
-              A frase que o anúncio do Click-to-WhatsApp já deixa digitada. Quem
-              chega por ela cai num fluxo específico em vez do padrão do número —
-              e o contato fica marcado com a campanha que o trouxe.
-              <br />
-              Ela casa com a <strong className="text-muted">mensagem inteira</strong>;
-              quem apagou parte e escreveu outra coisa não está mais respondendo
-              ao anúncio. Pode terminar com ponto ou não: a gente normaliza.
-            </p>
-            {/*
-              O caminho para o outro tipo de campanha, que é o que muita gente
-              vem procurar aqui: falar com uma lista.
-
-              Campanha, nesta tela, é o anúncio que traz gente PARA a conversa.
-              Quem quer o contrário — mandar para quem já é contato — precisa de
-              modelo aprovado pela Meta, que é outra tela. Sem este link, o
-              caminho não existe em lugar nenhum do painel.
-            */}
-            <p className="mt-2 text-[12px] leading-5 text-dim">
-              Quer mandar mensagem para uma lista de contatos?{' '}
-              <Link
-                href={`/clientes/${cliente.id}/transmissoes`}
-                className="font-semibold text-ink underline underline-offset-2"
-              >
-                Isso é uma transmissão
-              </Link>{' '}
-              — precisa de um modelo aprovado pela Meta.
+            <p className="mt-0.5 text-[12px] leading-5 text-dim">
+              A frase que o anúncio já deixa digitada no WhatsApp do cliente.
             </p>
             </div>
-            {fluxos.length > 0 && (
+            {/*
+              Sem fluxo, o botão dava lugar a NADA — e a tela ficava sem saída:
+              o cabeçalho explicando o que é campanha, a lista vazia dizendo que
+              não há nenhuma, e nenhum caminho para criar a primeira. Quem não
+              escreveu este código não tem como adivinhar que o que falta é um
+              fluxo, porque a palavra "fluxo" não aparece em lugar nenhum da
+              tela.
+
+              Campanha precisa de um fluxo porque ela É "quem chegar por esta
+              frase entra por aqui". Sem destino, não há o que gravar. Então em
+              vez de esconder, a tela diz o que falta e leva até lá.
+            */}
+            {fluxos.length === 0 ? (
+              <p className="max-w-[24ch] shrink-0 text-right text-[11.5px] leading-5 text-dim">
+                Crie um{' '}
+                <Link
+                  href={`/clientes/${cliente.id}/fluxos`}
+                  className="font-semibold text-ink underline underline-offset-2"
+                >
+                  fluxo
+                </Link>{' '}
+                primeiro — a campanha precisa de um lugar para levar quem chegar.
+              </p>
+            ) : (
               <ModalFormulario
                 botao="+ Campanha"
                 titulo="Nova campanha"
@@ -941,20 +930,10 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
             <div className="min-w-0 max-w-[86ch]">
             <h2 className="text-[14.5px] font-bold">Sequências</h2>
             <p className="mt-0.5 text-[12px] leading-5 text-dim">
-              O acompanhamento que acontece sozinho depois de um atendimento ou
-              de uma etiqueta. Cada passo abre um fluxo no tempo que você marcar.
-              <br />
-              <strong className="text-muted">Sai quem responde</strong> — e também
-              quem for assumido por alguém, quem tiver o bot pausado, ou quem
-              ganhar a etiqueta de saída. É essa regra que separa acompanhar de
-              importunar.
+              Acompanhamento automático depois de um atendimento. Quem responde, sai.
             </p>
-            <p className="mt-2 rounded-lg border border-amber-300/20 bg-amber-300/[0.05] px-3 py-2 text-[11.5px] leading-[1.6] text-aviso/90">
-              O limite de cada passo é {comoAtraso(ATRASO_MAXIMO_MINUTOS)}, e ele não é
-              nosso: o WhatsApp só aceita texto livre dentro da janela de 24h
-              contada da última mensagem da pessoa. Passado disso só vai mensagem
-              por modelo aprovado pela Meta — que ainda não temos. Um passo mais
-              longo seria desenhado e nunca entregue.
+            <p className="mt-2 text-[11.5px] leading-5 text-dim">
+              Acima de 24h, o passo precisa de um modelo aprovado.
             </p>
             </div>
             <ModalFormulario
