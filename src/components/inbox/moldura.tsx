@@ -53,15 +53,33 @@ export function MolduraDoInbox({
   fila,
   conversa,
   ficha,
+  temFicha,
 }: {
   /** A barra de filtros e a lista, nesta ordem, como irmãs. */
   fila: ReactNode
+  /**
+   * A coluna do meio — e, quando `temFicha`, a da ficha junto, como irmãs de
+   * grade.
+   *
+   * As duas vêm pelo mesmo nó porque nascem da mesma espera: elas lêem o mesmo
+   * contato, e separá-las faria a ficha ser a peça que segura a tela enquanto
+   * a conversa já chegou. Ver `ColunaDaConversa` no `page.tsx`.
+   */
   conversa: ReactNode
-  /** `null` quando não há conversa aberta: aí não há ficha para mostrar. */
-  ficha: ReactNode | null
+  /** Só para quem ainda passa a ficha por fora. Prefira `conversa` + `temFicha`. */
+  ficha?: ReactNode | null
+  /**
+   * Reservar a terceira coluna da grade.
+   *
+   * É booleano, e não `Boolean(ficha)`, porque a ficha pode estar dentro de um
+   * `<Suspense>` que ainda não resolveu: perguntar "o nó existe?" responderia
+   * não enquanto ela carrega, a coluna nasceria sem largura e a grade saltaria
+   * de duas para três colunas na frente da pessoa quando a conversa chegasse.
+   */
+  temFicha?: boolean
 }) {
   const [aberta, setAberta] = useState(true)
-  const mostrandoFicha = Boolean(ficha) && aberta
+  const mostrandoFicha = (temFicha ?? Boolean(ficha)) && aberta
 
   return (
     <Contexto.Provider value={{ aberta, alternar: () => setAberta((x) => !x) }}>

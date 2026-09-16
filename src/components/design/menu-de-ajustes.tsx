@@ -18,12 +18,14 @@ import Link from 'next/link'
  * divergem no primeiro item novo.
  *
  * ---------------------------------------------------------------------------
- * A barra global encolhe, e isso é parte do desenho
+ * A barra global **não** encolhe ao entrar aqui
  * ---------------------------------------------------------------------------
  *
- * Duas colunas de texto lado a lado competem: a pessoa lê as duas antes de
- * saber em qual clicar. Com a global em ícones, sobra um só lugar com nomes —
- * e é o desta seção. Ver `forcarRecolhida` em `ClienteShell`.
+ * Ela encolhia, e o argumento era que duas colunas de texto lado a lado
+ * competem. O custo era maior: a barra saltava de 226px para 68px no clique de
+ * Configurações, desfazendo a largura que a pessoa tinha escolhido — e o salto
+ * acontecia justamente na seção onde ela foi mexer nas próprias preferências.
+ * Largura de barra é de quem trabalha, e nenhuma tela a sobrescreve.
  */
 
 export type TelaDeAjustes =

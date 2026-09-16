@@ -22,7 +22,7 @@ export default async function Carregando({
   const { clienteId } = await params
 
   return (
-    <EsqueletoDoCliente ativa="ajustes" recolhida>
+    <EsqueletoDoCliente ativa="ajustes">
       <div className="flex min-h-full flex-col md:flex-row">
         <MenuDeAjustes clienteId={clienteId} ativa="inicio" />
         <div className="min-w-0 flex-1 px-4 pt-[26px] pb-[42px] md:px-[42px]">

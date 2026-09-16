@@ -46,21 +46,10 @@ export async function ClienteShell({
   cliente,
   ativa,
   children,
-  forcarRecolhida = false,
 }: {
   cliente: Cliente
   ativa: AbaDoCliente
   children: ReactNode
-  /**
-   * Recolhe a barra global sem tocar na preferência de quem está usando.
-   *
-   * Existe para as Configurações, que trazem a própria barra: duas colunas de
-   * texto lado a lado competem, e a pessoa lê as duas antes de saber em qual
-   * clicar. Fora de lá ninguém passa isto — a largura da barra é escolha de
-   * quem trabalha, guardada em `data-barra`, e sobrescrevê-la por capricho de
-   * tela seria tirar da pessoa uma preferência que ela gravou.
-   */
-  forcarRecolhida?: boolean
 }) {
   /**
    * **A conferência de quem pode ver esta conta acontece aqui.**
@@ -81,7 +70,6 @@ export async function ClienteShell({
   return (
     <div className="flex min-h-screen flex-col md:h-screen md:min-h-[700px] md:flex-row md:overflow-hidden">
       <BarraLateral
-        forcarRecolhida={forcarRecolhida}
         marca={<Marca />}
         identidadeNoCelular={
           <>

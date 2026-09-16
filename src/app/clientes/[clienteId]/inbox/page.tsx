@@ -78,7 +78,7 @@ import { avisarQueLeu } from '@/server/recibo-de-leitura'
 import { TextoDoWhatsApp } from '@/components/texto-do-whatsapp'
 import { FaixaDeCanalCaido } from '@/components/inbox/faixa-canal-caido'
 import { PulsoDoInbox } from '@/components/inbox/pulso-do-inbox'
-import { EsqueletoDeInbox } from '@/components/design/esqueleto'
+import { Esqueleto, EsqueletoDeInbox } from '@/components/design/esqueleto'
 
 export const dynamic = 'force-dynamic'
 
@@ -521,78 +521,8 @@ async function Conteudo({
    */
   const agendadasDaContaPromessa = listarAgendadasDaConta(clienteId)
 
-  // `selecionado` veio de `paginarLeads(clienteId, ...)`. Só depois desse vínculo
-  // cliente–contato confirmado é seguro ler as mensagens pelo id do contato.
-  const [conversa, contexto, posicoes, quadros, agendadasDaConversa] = selecionado
-    ? await Promise.all([
-        lerConversa(selecionado.contatoId),
-        contextoDeResposta(clienteId, selecionado.contatoId),
-        /*
-         * Onde este contato está no funil, e as etapas de cada quadro para o
-         * menu de mover. As duas juntas porque uma sem a outra não desenha
-         * nada: a posição diz "está em Contactado", e só a lista de etapas diz
-         * para onde dá para ir.
-         */
-        quadrosDoContato(clienteId, selecionado.contatoId),
-        listarQuadros(clienteId),
-        // O que já está marcado para esta conversa: a barra de ações mostra o
-        // ícone aceso, e o painel lista com o botão de cancelar.
-        agendadasDoContato(clienteId, selecionado.contatoId),
-      ])
-    : [null, null, [], [], []]
-
   const agendadasDaConta = await agendadasDaContaPromessa
 
-  /*
-   * O nome da campanha, só do contato aberto.
-   *
-   * **Um id, e não a fila inteira**, de propósito. Resolver as 200 conversas
-   * encheria o cache de nomes que ninguém vai ler — a origem aparece na coluna
-   * do contato, que mostra uma pessoa por vez. Quando o rail "veio de anúncio"
-   * existir e precisar dos nomes na lista, `resolverAnuncios` já recebe lista;
-   * é só passar outra.
-   *
-   * Sai do `Promise.all` acima porque depende do `selecionado` que ele resolve,
-   * e porque o caso comum — conta sem Ads conectado — devolve sem ir à rede.
-   */
-  const { passagens, nomesDosAnuncios } = await historicoDoContatoAberto(
-    clienteId,
-    selecionado?.contatoId ?? null,
-  )
-
-  /*
-   * Junta a posição do contato com as etapas do quadro dela. Quadro que sumiu
-   * entre uma consulta e outra é descartado em vez de virar um menu vazio —
-   * `flatMap` com `[]` é o jeito de dizer isso sem um `filter` a mais.
-   */
-  const funis: FunilDoContato[] = posicoes.flatMap((posicao) => {
-    const quadro = quadros.find((q) => q.id === posicao.quadroId)
-    if (!quadro) return []
-    return [{ ...posicao, etapas: quadro.etapas.map((e) => ({ id: e.id, nome: e.nome })) }]
-  })
-  const restante = restaDaJanela(contexto?.ultimaEntradaEm ?? null)
-  const janela = restante && restante > 0 ? comoFalta(restante) : null
-  /*
-   * Abaixo de duas horas a contagem muda de cor.
-   *
-   * Não é enfeite: "22h18" e "1h04" são a mesma frase e significam coisas
-   * opostas — uma diz que dá tempo de pensar, a outra que a conversa está
-   * prestes a exigir modelo aprovado. Quem olha de relance lê a cor, não o
-   * número.
-   */
-  const apertado = restante !== null && restante > 0 && restante < 2 * 60 * 60 * 1000
-  const primeiroNome = selecionado?.nome?.split(' ')[0] ?? 'esta pessoa'
-  /*
-   * O instante em que a janela fecha, e não quanto falta.
-   *
-   * A pílula do cabeçalho quer a frase pronta ("22h18"); o agendamento quer o
-   * instante, para comparar com o horário que a pessoa escolheu. Derivar um do
-   * outro seria refazer a subtração com menos informação.
-   */
-  const fimDaJanela =
-    contexto?.ultimaEntradaEm && restante !== null && restante > 0
-      ? new Date(Date.parse(contexto.ultimaEntradaEm) + JANELA_MS).toISOString()
-      : null
   /*
    * Conta a fila inteira quando ela veio, e não a página: a linha diz "N
    * esperando uma pessoa" **sobre a conta**, e no modo local ela fica fixa
@@ -633,96 +563,40 @@ async function Conteudo({
         />
       }
       conversa={
-        selecionado && conversa ? (
+        selecionado ? (
           /*
-            `min-h-0` não é enfeite: item de flex/grid tem `min-height: auto`,
-            que o impede de encolher abaixo do próprio conteúdo. Sem ele esta
-            coluna estourava o teto da moldura, e o `overflow-auto` do
-            histórico — que já estava certo — nunca chegava a ter o que rolar.
+            **A fronteira que faz trocar de conversa responder na hora.**
+
+            Clicar noutra pessoa muda `?conversa=` e renavega — e a `key` do
+            `<Suspense>` lá de cima é só o filtro, de propósito, para a fila não
+            piscar. O efeito colateral é que a conversa não tinha fronteira
+            nenhuma: as consultas dela (histórico, contexto, funis, agendadas)
+            rodavam sem nada no lugar, e a tela ficava parada segurando a
+            conversa **anterior** até tudo voltar.
+
+            Aqui a `key` é o contato. Ela isola só esta coluna: o esqueleto
+            aparece no clique, a fila do lado continua firme, e o `key` ainda
+            garante que nada da conversa antiga vaze para a nova.
           */
-          <section className="flex min-h-0 min-w-0 flex-col border-r border-line">
-            <CabecalhoDaConversa
+          <Suspense
+            key={selecionado.contatoId}
+            fallback={
+              <>
+                <EsperaDaConversa />
+                <EsperaDaFicha />
+              </>
+            }
+          >
+            <ColunaDaConversa
               clienteId={clienteId}
               lead={selecionado}
               equipe={equipe}
               usuarioId={usuarioId}
               etiquetas={etiquetas}
               temAutomacao={temAutomacao}
-              janela={janela}
-              janelaApertada={apertado}
-              fimDaJanela={fimDaJanela}
-              agendadas={agendadasDaConversa}
+              respostasRapidas={respostasRapidas}
             />
-            {/*
-              `flex-col-reverse` é o que faz a conversa abrir na mensagem mais
-              recente, e não lá em cima nas antigas.
-
-              É CSS e não JavaScript de propósito. Um `scrollTo` num efeito
-              precisaria tornar isto um Client Component, e ainda assim
-              apareceria no topo por um quadro antes de pular — o flash que todo
-              chat feito assim tem. Com a coluna invertida o navegador ancora o
-              scroll no fim desde o primeiro render, sem piscar e sem JS.
-
-              O `Historico` fica em ordem NORMAL. Como ele é filho único deste
-              container, a inversão daqui não mexe na ordem das mensagens — ela
-              só decide de que ponta o scroll nasce. Inverter os dois (o que
-              esta tela já fez) inverte a conversa de verdade: a mensagem de
-              duas horas atrás aparecia acima da de três.
-            */}
-            {/*
-              O provedor envolve a conversa **e** a caixa porque a citação
-              nasce numa e é usada na outra.
-
-              A `key` é o que faz trocar de conversa esquecer a citação. Sem
-              ela, citar aqui, clicar noutra pessoa e responder mandaria a
-              resposta citando a mensagem de alguém que não é essa.
-            */}
-            <ProvedorDeCitacao key={selecionado.contatoId}>
-              {/*
-                Arrastar um arquivo para dentro da conversa cai aqui, e o painel
-                de revisão abre **dentro desta coluna** — sem escurecer a fila
-                da esquerda nem o cabeçalho de quem está do outro lado.
-
-                A `key` do provedor de cima também protege este: trocar de
-                conversa não pode levar junto um anexo escolhido para outra
-                pessoa.
-              */}
-              <ProvedorDeEntrega clienteId={clienteId} contatoId={selecionado.contatoId}>
-                {/*
-                  `overflow-x-hidden`, e não `overflow-auto` nos dois eixos.
-
-                  Uma URL de anúncio com 180 caracteres e nenhum espaço não tem
-                  onde quebrar: ela esticava a bolha para além da coluna, o
-                  contêiner ganhava rolagem horizontal, e arrastar de lado
-                  deslocava a conversa inteira para fora da moldura. O `max-w` da
-                  bolha não segurava porque `overflow-wrap` nasce em `normal` —
-                  palavra sem espaço simplesmente transborda.
-
-                  A quebra é resolvida na bolha (`[overflow-wrap:anywhere]`); isto
-                  aqui é a garantia de que nenhum outro conteúdo largo — uma
-                  tabela colada, um anexo fora de medida — reintroduza o mesmo
-                  defeito.
-                */}
-                <div className="app-conversa flex min-h-0 flex-1 flex-col-reverse overflow-x-hidden overflow-y-auto p-5">
-                  <Historico
-                    mensagens={conversa.mensagens}
-                    cortada={conversa.cortada}
-                    nome={selecionado.nome}
-                    clienteId={clienteId}
-                    contatoId={selecionado.contatoId}
-                  />
-                </div>
-                <CaixaDeResposta
-                  acao={acaoResponderLead.bind(null, clienteId, selecionado.contatoId)}
-                  restaDaJanela={janela}
-                  nome={primeiroNome}
-                  respostasRapidas={respostasRapidas}
-                  temAutomacao={temAutomacao}
-                  anexo={{ clienteId, contatoId: selecionado.contatoId }}
-                />
-              </ProvedorDeEntrega>
-            </ProvedorDeCitacao>
-          </section>
+          </Suspense>
         ) : (
           <section className="flex min-w-0 items-center justify-center p-10 text-center">
             <p className="max-w-[280px] text-[12.5px] leading-6 text-dim">
@@ -733,18 +607,12 @@ async function Conteudo({
           </section>
         )
       }
-      ficha={
-        selecionado ? (
-          <DadosDoLead
-            clienteId={clienteId}
-            lead={selecionado}
-            funis={funis}
-            temAutomacao={temAutomacao}
-            passagens={passagens}
-            nomesDosAnuncios={nomesDosAnuncios}
-          />
-        ) : null
-      }
+      /*
+        A ficha não vem mais por aqui: ela é irmã da conversa, dentro da mesma
+        fronteira, porque lê o mesmo contato. `temFicha` só reserva a coluna da
+        grade — ver `MolduraDoInbox`.
+      */
+      temFicha={Boolean(selecionado)}
     />
   )
 }
@@ -758,6 +626,279 @@ async function Conteudo({
  * conversa está acontecendo" é a primeira coisa que muda o que se pode
  * responder — janela de 24h, botões, mídia. Estava dito em lugar nenhum.
  */
+/**
+ * A coluna da conversa e a ficha do contato — tudo que muda ao clicar noutra
+ * pessoa, e nada além disso.
+ *
+ * ---------------------------------------------------------------------------
+ * Por que ela existe como componente
+ * ---------------------------------------------------------------------------
+ *
+ * Isto morava dentro de `Conteudo`, e por isso as consultas da conversa
+ * (histórico, contexto da janela, funis, agendadas, anúncios) eram feitas no
+ * mesmo `await` que monta a fila. Clicar noutra conversa renavega — muda
+ * `?conversa=` — e refazia **a tela inteira** sem fronteira nenhuma no meio: a
+ * pessoa clicava e ficava olhando a conversa anterior, parada, até tudo voltar.
+ *
+ * Separada, ela tem `<Suspense key={contatoId}>` só para si. O esqueleto
+ * aparece no clique, e a fila ao lado nem sabe que houve troca — que é
+ * exatamente a preocupação registrada na `key` do Suspense de cima: *apagar a
+ * fila para um cinza a cada clique seria piscar a coluna que a pessoa está
+ * usando justamente enquanto ela a usa*.
+ *
+ * ---------------------------------------------------------------------------
+ * A ficha vem junto, e não separada
+ * ---------------------------------------------------------------------------
+ *
+ * `DadosDoLead` lê os mesmos funis e o mesmo histórico de anúncios deste
+ * contato. Deixá-la fora da fronteira só mudaria quem segura a tela — ela
+ * passaria a ser a peça lenta. As duas dependem do mesmo clique, então vivem
+ * sob a mesma espera.
+ */
+async function ColunaDaConversa({
+  clienteId,
+  lead,
+  equipe,
+  usuarioId,
+  etiquetas,
+  temAutomacao,
+  respostasRapidas,
+}: {
+  clienteId: string
+  /** A conversa aberta. Nunca `null` aqui: quem decide isso é quem renderiza. */
+  lead: Lead
+  equipe: MembroDaConta[]
+  usuarioId: string | null
+  etiquetas: EtiquetaEscolhivel[]
+  temAutomacao: boolean
+  respostasRapidas: RespostaRapida[]
+}) {
+  // `lead` veio de `paginarLeads(clienteId, ...)` ou de `acharLead(clienteId, ...)`.
+  // Só depois desse vínculo cliente–contato confirmado é seguro ler as mensagens
+  // pelo id do contato.
+  const [conversa, contexto, posicoes, quadros, agendadasDaConversa] = await Promise.all([
+    lerConversa(lead.contatoId),
+    contextoDeResposta(clienteId, lead.contatoId),
+    /*
+     * Onde este contato está no funil, e as etapas de cada quadro para o menu
+     * de mover. As duas juntas porque uma sem a outra não desenha nada: a
+     * posição diz "está em Contactado", e só a lista de etapas diz para onde
+     * dá para ir.
+     */
+    quadrosDoContato(clienteId, lead.contatoId),
+    listarQuadros(clienteId),
+    // O que já está marcado para esta conversa: a barra de ações mostra o
+    // ícone aceso, e o painel lista com o botão de cancelar.
+    agendadasDoContato(clienteId, lead.contatoId),
+  ])
+
+  /*
+   * O nome da campanha, só do contato aberto.
+   *
+   * **Um id, e não a fila inteira**, de propósito. Resolver as 200 conversas
+   * encheria o cache de nomes que ninguém vai ler — a origem aparece na coluna
+   * do contato, que mostra uma pessoa por vez.
+   */
+  const { passagens, nomesDosAnuncios } = await historicoDoContatoAberto(clienteId, lead.contatoId)
+
+  /*
+   * Junta a posição do contato com as etapas do quadro dela. Quadro que sumiu
+   * entre uma consulta e outra é descartado em vez de virar um menu vazio —
+   * `flatMap` com `[]` é o jeito de dizer isso sem um `filter` a mais.
+   */
+  const funis: FunilDoContato[] = posicoes.flatMap((posicao) => {
+    const quadro = quadros.find((q) => q.id === posicao.quadroId)
+    if (!quadro) return []
+    return [{ ...posicao, etapas: quadro.etapas.map((e) => ({ id: e.id, nome: e.nome })) }]
+  })
+
+  const restante = restaDaJanela(contexto?.ultimaEntradaEm ?? null)
+  const janela = restante && restante > 0 ? comoFalta(restante) : null
+  /*
+   * Abaixo de duas horas a contagem muda de cor.
+   *
+   * Não é enfeite: "22h18" e "1h04" são a mesma frase e significam coisas
+   * opostas — uma diz que dá tempo de pensar, a outra que a conversa está
+   * prestes a exigir modelo aprovado. Quem olha de relance lê a cor, não o
+   * número.
+   */
+  const apertado = restante !== null && restante > 0 && restante < 2 * 60 * 60 * 1000
+  const primeiroNome = lead.nome?.split(' ')[0] ?? 'esta pessoa'
+  /*
+   * O instante em que a janela fecha, e não quanto falta.
+   *
+   * A pílula do cabeçalho quer a frase pronta ("22h18"); o agendamento quer o
+   * instante, para comparar com o horário que a pessoa escolheu. Derivar um do
+   * outro seria refazer a subtração com menos informação.
+   */
+  const fimDaJanela =
+    contexto?.ultimaEntradaEm && restante !== null && restante > 0
+      ? new Date(Date.parse(contexto.ultimaEntradaEm) + JANELA_MS).toISOString()
+      : null
+
+  if (!conversa) {
+    return (
+      <section className="flex min-w-0 items-center justify-center p-10 text-center">
+        <p className="max-w-[280px] text-[12.5px] leading-6 text-dim">
+          Não deu para abrir esta conversa.
+        </p>
+      </section>
+    )
+  }
+
+  const selecionado = lead
+
+  return (
+    <>
+      <section className="flex min-h-0 min-w-0 flex-col border-r border-line">
+        <CabecalhoDaConversa
+          clienteId={clienteId}
+          lead={selecionado}
+          equipe={equipe}
+          usuarioId={usuarioId}
+          etiquetas={etiquetas}
+          temAutomacao={temAutomacao}
+          janela={janela}
+          janelaApertada={apertado}
+          fimDaJanela={fimDaJanela}
+          agendadas={agendadasDaConversa}
+        />
+        {/*
+          `flex-col-reverse` é o que faz a conversa abrir na mensagem mais
+          recente, e não lá em cima nas antigas.
+
+          É CSS e não JavaScript de propósito. Um `scrollTo` num efeito
+          precisaria tornar isto um Client Component, e ainda assim
+          apareceria no topo por um quadro antes de pular — o flash que todo
+          chat feito assim tem. Com a coluna invertida o navegador ancora o
+          scroll no fim desde o primeiro render, sem piscar e sem JS.
+
+          O `Historico` fica em ordem NORMAL. Como ele é filho único deste
+          container, a inversão daqui não mexe na ordem das mensagens — ela
+          só decide de que ponta o scroll nasce. Inverter os dois (o que
+          esta tela já fez) inverte a conversa de verdade: a mensagem de
+          duas horas atrás aparecia acima da de três.
+        */}
+        {/*
+          O provedor envolve a conversa **e** a caixa porque a citação
+          nasce numa e é usada na outra.
+
+          A `key` é o que faz trocar de conversa esquecer a citação. Sem
+          ela, citar aqui, clicar noutra pessoa e responder mandaria a
+          resposta citando a mensagem de alguém que não é essa.
+        */}
+        <ProvedorDeCitacao key={selecionado.contatoId}>
+          {/*
+            Arrastar um arquivo para dentro da conversa cai aqui, e o painel
+            de revisão abre **dentro desta coluna** — sem escurecer a fila
+            da esquerda nem o cabeçalho de quem está do outro lado.
+
+            A `key` do provedor de cima também protege este: trocar de
+            conversa não pode levar junto um anexo escolhido para outra
+            pessoa.
+          */}
+          <ProvedorDeEntrega clienteId={clienteId} contatoId={selecionado.contatoId}>
+            {/*
+              `overflow-x-hidden`, e não `overflow-auto` nos dois eixos.
+
+              Uma URL de anúncio com 180 caracteres e nenhum espaço não tem
+              onde quebrar: ela esticava a bolha para além da coluna, o
+              contêiner ganhava rolagem horizontal, e arrastar de lado
+              deslocava a conversa inteira para fora da moldura. O `max-w` da
+              bolha não segurava porque `overflow-wrap` nasce em `normal` —
+              palavra sem espaço simplesmente transborda.
+
+              A quebra é resolvida na bolha (`[overflow-wrap:anywhere]`); isto
+              aqui é a garantia de que nenhum outro conteúdo largo — uma
+              tabela colada, um anexo fora de medida — reintroduza o mesmo
+              defeito.
+            */}
+            <div className="app-conversa flex min-h-0 flex-1 flex-col-reverse overflow-x-hidden overflow-y-auto p-5">
+              <Historico
+                mensagens={conversa.mensagens}
+                cortada={conversa.cortada}
+                nome={selecionado.nome}
+                clienteId={clienteId}
+                contatoId={selecionado.contatoId}
+              />
+            </div>
+            <CaixaDeResposta
+              acao={acaoResponderLead.bind(null, clienteId, selecionado.contatoId)}
+              restaDaJanela={janela}
+              nome={primeiroNome}
+              respostasRapidas={respostasRapidas}
+              temAutomacao={temAutomacao}
+              anexo={{ clienteId, contatoId: selecionado.contatoId }}
+            />
+          </ProvedorDeEntrega>
+        </ProvedorDeCitacao>
+      </section>
+      <DadosDoLead
+        clienteId={clienteId}
+        lead={selecionado}
+        funis={funis}
+        temAutomacao={temAutomacao}
+        passagens={passagens}
+        nomesDosAnuncios={nomesDosAnuncios}
+      />
+    </>
+  )
+}
+
+/**
+ * A conversa em cinza, enquanto as consultas dela voltam.
+ *
+ * Só a coluna do meio: a fila à esquerda não entra aqui, porque ela não mudou.
+ * O desenho imita o que vem — cabeçalho, bolhas alternadas, caixa de resposta —
+ * para o olho já saber onde olhar quando o conteúdo chega.
+ */
+function EsperaDaConversa() {
+  return (
+    <section className="flex min-h-0 min-w-0 flex-col border-r border-line">
+      <div className="flex items-center gap-3 border-b border-line px-4 py-3">
+        <Esqueleto className="size-9 rounded-full" />
+        <span className="flex flex-col gap-2">
+          <Esqueleto className="h-3 w-40" />
+          <Esqueleto className="h-2.5 w-24" />
+        </span>
+      </div>
+      <div className="flex flex-1 flex-col gap-3 p-5">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <Esqueleto
+            key={i}
+            className={`h-12 rounded-[14px] ${i % 2 === 0 ? 'w-[48%]' : 'w-[56%] self-end'}`}
+          />
+        ))}
+      </div>
+      <div className="border-t border-line p-3">
+        <Esqueleto className="h-10 w-full rounded-xl" />
+      </div>
+      <span role="status" className="sr-only">
+        Carregando a conversa…
+      </span>
+    </section>
+  )
+}
+
+/**
+ * A ficha do contato em cinza.
+ *
+ * Existe para a grade não saltar: `temFicha` já reservou 296px, e uma coluna
+ * reservada e vazia é uma faixa branca do lado da conversa. Ela vem junto do
+ * esqueleto da conversa, como as duas verdadeiras vêm juntas.
+ */
+function EsperaDaFicha() {
+  return (
+    <aside className="hidden min-h-0 flex-col gap-3 overflow-hidden p-4 xl:flex">
+      <Esqueleto className="size-14 self-center rounded-full" />
+      <Esqueleto className="h-3 w-32 self-center" />
+      <Esqueleto className="mt-3 h-2.5 w-full" />
+      <Esqueleto className="h-2.5 w-4/5" />
+      <Esqueleto className="mt-3 h-16 w-full rounded-xl" />
+    </aside>
+  )
+}
+
 function CabecalhoDaConversa({
   clienteId,
   lead,

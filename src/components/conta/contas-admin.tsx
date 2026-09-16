@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from 'react'
+import { createPortal } from 'react-dom'
 import { Dropdown } from '@/components/design/dropdown'
 import { LogoDoCliente } from '@/components/design/logo-cliente'
 import { Modal } from '@/components/design/modal'
@@ -232,6 +233,32 @@ type Estrago = { leads: number; fluxos: number; conexoes: number; numeros: numbe
  * Fica preso à janela por `position: fixed` com as coordenadas do clique, e é
  * empurrado para dentro da borda quando o clique acontece perto da direita ou
  * do rodapé — menu que nasce metade fora da tela é menu que não abre.
+ *
+ * ---------------------------------------------------------------------------
+ * Vai por portal para o `body`, e sem isso ele abre longe do cursor
+ * ---------------------------------------------------------------------------
+ *
+ * Renderizado no lugar, o menu nascia a centenas de pixels de onde a pessoa
+ * clicou — sobre o cartão vizinho, às vezes fora da vista. A coordenada estava
+ * certa o tempo todo; o que estava errado era de onde o navegador a media.
+ *
+ * `ClienteShell` envolve **toda tela do painel** num `.app-page-enter`, que roda
+ * `animation: fade-up 350ms ease both`. O `both` deixa o último quadro aplicado
+ * para sempre, e o último quadro é `transform: none` — que computa como
+ * `matrix(1, 0, 0, 1, 0, 0)`. Identidade, e ainda assim um transform: basta
+ * para o elemento virar **bloco contentor de `position: fixed`** em todos os
+ * descendentes. O `top: 400px` que este menu pede deixa de ser "400px do topo
+ * da janela" e vira "400px do topo da div" — somando o deslocamento dela.
+ *
+ * É o mesmo mecanismo que `globals.css` já tinha medido com Playwright a
+ * propósito do `<dialog>` e que levou a lista do `Dropdown` para a top layer.
+ * O que faltava notar é que `.app-page-enter` faz igual, e ela cobre o painel
+ * inteiro — qualquer `fixed` dentro de uma tela do cliente está sujeito a isto.
+ *
+ * O portal para o `body` sai de baixo da div e devolve `fixed` à janela, que é
+ * o que as coordenadas do clique sempre supuseram. Aqui ele basta, e não
+ * precisa da top layer como o `Dropdown`: este menu nunca abre dentro de um
+ * `<dialog>`, e portanto ninguém o torna inerte.
  */
 function MenuDeContexto({
   x,
@@ -245,6 +272,7 @@ function MenuDeContexto({
   aoApagar: () => void
 }) {
   const raiz = useRef<HTMLDivElement>(null)
+  const montado = useMontado()
 
   useEffect(() => {
     /*
@@ -286,7 +314,7 @@ function MenuDeContexto({
   const esquerda = Math.min(x, (typeof window === 'undefined' ? x : window.innerWidth) - largura - 8)
   const topo = Math.min(y, (typeof window === 'undefined' ? y : window.innerHeight) - altura - 8)
 
-  return (
+  const menu = (
     <div
       ref={raiz}
       role="menu"
@@ -306,6 +334,27 @@ function MenuDeContexto({
         <span aria-hidden>✕</span> Deletar
       </button>
     </div>
+  )
+
+  // No servidor não há `document`, e o menu também não tem o que fazer lá: ele
+  // só existe depois de um clique. Desenhá-lo no lugar enquanto o portal não
+  // pode abrir traria de volta o deslocamento — melhor não desenhar nada.
+  return montado ? createPortal(menu, document.body) : null
+}
+
+/**
+ * Já hidratou?
+ *
+ * `useSyncExternalStore` com um `subscribe` que nunca dispara é o jeito que o
+ * React recomenda de perguntar isto: o servidor responde `false`, o cliente
+ * responde `true` a partir do primeiro render, e não há `useEffect` cuja falta
+ * de execução deixe o menu invisível.
+ */
+function useMontado(): boolean {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
   )
 }
 
