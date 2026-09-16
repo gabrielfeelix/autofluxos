@@ -1236,3 +1236,59 @@ describe('o bloco de etiqueta e o de anotação (0044)', () => {
     expect(r.avisos.map((a) => a.codigo)).toContain('VARIAVEL_DESCONHECIDA')
   })
 })
+
+describe('a pesquisa de satisfação', () => {
+  /** Pesquisa com as três faixas ligadas — o mínimo que publica. */
+  function comPesquisa(dadosExtras: Record<string, unknown> = {}, arestas = true): Fluxo {
+    return fluxoSchema.parse({
+      inicio: 'nota',
+      nodes: [
+        {
+          id: 'nota',
+          type: 'nps',
+          position: p,
+          data: { texto: 'De 0 a 10?', ...dadosExtras },
+        },
+        { id: 'fim', type: 'mensagem', position: p, data: { texto: 'Obrigado!' } },
+      ],
+      edges: arestas
+        ? [
+            { id: 'e1', source: 'nota', sourceHandle: 'promotor', target: 'fim' },
+            { id: 'e2', source: 'nota', sourceHandle: 'neutro', target: 'fim' },
+            { id: 'e3', source: 'nota', sourceHandle: 'detrator', target: 'fim' },
+          ]
+        : [],
+    })
+  }
+
+  it('aprova a pesquisa com as três faixas ligadas', () => {
+    const r = validar(comPesquisa())
+    expect(r.erros).toEqual([])
+  })
+
+  it('recusa publicar sem a pergunta da nota', () => {
+    const r = validar(comPesquisa({ texto: '  ' }))
+    expect(codigos(r.erros)).toContain('NPS_SEM_PERGUNTA')
+  })
+
+  it('recusa publicar com uma faixa sem saída', () => {
+    // O caso que mais dói é o detrator: a pesquisa pergunta, a pessoa reclama,
+    // e a conversa morre em silêncio na cara de um cliente irritado.
+    const r = validar(comPesquisa({}, false))
+    const problemas = r.erros.filter((e) => e.codigo === 'NPS_FAIXA_SEM_SAIDA')
+    expect(problemas).toHaveLength(3)
+    expect(problemas.some((e) => e.mensagem.includes('detrator'))).toBe(true)
+  })
+
+  it('avisa quando guarda o motivo sem perguntar o motivo', () => {
+    const r = validar(comPesquisa({ comentarioEm: 'motivo' }))
+    expect(codigos(r.avisos)).toContain('NPS_MOTIVO_SEM_PERGUNTA')
+    // É aviso e não impedimento: o fluxo roda, a variável é que nasce vazia.
+    expect(r.ok).toBe(true)
+  })
+
+  it('não avisa quando a pergunta do motivo existe', () => {
+    const r = validar(comPesquisa({ comentarioEm: 'motivo', perguntaAberta: 'Por quê?' }))
+    expect(codigos(r.avisos)).not.toContain('NPS_MOTIVO_SEM_PERGUNTA')
+  })
+})

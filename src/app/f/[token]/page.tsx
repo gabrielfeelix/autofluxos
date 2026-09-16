@@ -42,6 +42,7 @@ const ROTULO_DO_BLOCO: Record<LinhaDoRoteiro['tipo'], string> = {
   nota: 'Anotação',
   'ir-fluxo': 'Vai para outra automação',
   voltar: 'Volta ao menu',
+  nps: 'Pesquisa de satisfação',
 }
 
 export default async function Pagina({ params }: { params: Promise<{ token: string }> }) {

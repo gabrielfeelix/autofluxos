@@ -807,6 +807,68 @@ export const noVoltarSchema = z.object({
   }),
 })
 
+/**
+ * **Pesquisa de satisfação** — pergunta a nota e a guarda como histórico (0060).
+ *
+ * Isto já dava para montar à mão, e é justamente por isso que o bloco existe:
+ * o fluxo de exemplo gasta cinco blocos — pergunta, duas condições, o Guardar e
+ * o caminho de cada faixa — para fazer o que toda pesquisa faz igual. E o
+ * resultado caía em `contacts.campos`, que **sobrescreve na segunda resposta**:
+ * dava para perguntar, não dava para ter o número.
+ *
+ * O que ele faz que o desenho à mão não fazia:
+ *
+ * - grava em `avaliacoes`, com data própria — a nota de março continua lá
+ *   depois da de setembro, e é isso que permite responder "melhoramos?";
+ * - classifica pela régua oficial do NPS (9–10, 7–8, 0–6) em vez de deixar cada
+ *   fluxo inventar a sua. Duas contas diferentes com cortes diferentes não se
+ *   comparam, e ninguém percebe que não se comparam;
+ * - nasce com as três saídas já desenhadas, que é o que faz *"nota baixa não
+ *   recebe agradecimento, recebe gente"* ser o caminho fácil em vez do caminho
+ *   que alguém precisa lembrar de montar.
+ *
+ * **As três saídas são fixas e não configuráveis.** Um corte por fluxo faria o
+ * relatório somar notas medidas com réguas diferentes — e o erro só apareceria
+ * no dia em que alguém comparasse dois meses e não entendesse a diferença.
+ *
+ * `comentarioEm` é opcional: quem só quer o número não pede o comentário, e
+ * perguntar "por quê?" a quem deu 10 é uma mensagem a mais sem resposta útil.
+ * Quando preenchido, é o nome da variável onde a justificativa fica disponível
+ * para os blocos seguintes — o texto vai para `avaliacoes.comentario` de todo
+ * jeito.
+ */
+export const noNpsSchema = z.object({
+  ...base,
+  type: z.literal('nps'),
+  data: z.object({
+    texto: z.string().default('De 0 a 10, o quanto você recomendaria a gente para um amigo?'),
+    /**
+     * Onde a nota fica disponível para os blocos seguintes.
+     *
+     * Opcional porque o registro em `avaliacoes` não depende dela: a nota é
+     * gravada mesmo que ninguém a cite. Serve para a mensagem de agradecimento
+     * poder dizer o número de volta.
+     */
+    salvarEm: nomeVariavel.optional(),
+    /**
+     * A pergunta aberta que vem **depois** da nota, e só quando preenchida.
+     *
+     * Vazio quer dizer "não pergunte nada" — e é o padrão, porque a pesquisa de
+     * uma pergunta só é a que as pessoas respondem.
+     */
+    perguntaAberta: z.string().default(''),
+    /** Onde guardar o comentário. Só vale com `perguntaAberta` preenchida. */
+    comentarioEm: nomeVariavel.optional(),
+    /**
+     * O mesmo prazo da pergunta, pelo mesmo motivo — e aqui ele importa mais:
+     * pesquisa é a mensagem que mais fica sem resposta, e uma conversa presa
+     * para sempre numa pesquisa é uma conversa que nunca encerra e conta como
+     * viva nas métricas.
+     */
+    timeoutMinutos: z.number().int().min(1).max(1_440).optional(),
+  }),
+})
+
 export const noSchema = z.discriminatedUnion('type', [
   noMensagemSchema,
   noMidiaSchema,
@@ -821,6 +883,7 @@ export const noSchema = z.discriminatedUnion('type', [
   noNotaSchema,
   noIrFluxoSchema,
   noVoltarSchema,
+  noNpsSchema,
 ])
 
 export const arestaSchema = z.object({
@@ -852,6 +915,7 @@ export type NoHandoff = z.infer<typeof noHandoffSchema>
 export type Opcao = z.infer<typeof opcaoSchema>
 export type No = z.infer<typeof noSchema>
 export type NoPergunta = z.infer<typeof noPerguntaSchema>
+export type NoNps = z.infer<typeof noNpsSchema>
 export type NoMidia = z.infer<typeof noMidiaSchema>
 export type Cabecalho = z.infer<typeof cabecalhoSchema>
 export type Mapeamento = z.infer<typeof mapeamentoSchema>
@@ -901,6 +965,31 @@ export const SAIDA_TIMEOUT = 'timeout'
  * texto", e quem atendia nem sabia que aquilo era uma receita.
  */
 export const SAIDA_MIDIA = 'midia'
+
+/**
+ * As três saídas da pesquisa de satisfação (0060), na régua oficial do NPS:
+ * **9–10 promotor, 7–8 neutro, 0–6 detrator**.
+ *
+ * Elas são fixas, e isso é a razão de o bloco existir. Montada à mão, cada
+ * pesquisa escolhia o próprio corte — e duas contas com cortes diferentes
+ * produzem dois números chamados "NPS" que não se comparam. Ninguém descobre
+ * esse tipo de divergência olhando a tela; descobre no dia em que o relatório
+ * de um mês não bate com o do outro.
+ *
+ * Os cortes não são simétricos de propósito: quem dá 7 não está satisfeito,
+ * está apenas não reclamando. É a definição do NPS, e mexer nela para "ficar
+ * mais justo" é deixar de medir NPS.
+ */
+export const SAIDA_PROMOTOR = 'promotor'
+export const SAIDA_NEUTRO = 'neutro'
+export const SAIDA_DETRATOR = 'detrator'
+
+/** Em que faixa do NPS cai uma nota. Um lugar só, para o motor e para a tela. */
+export function faixaDaNota(nota: number): typeof SAIDA_PROMOTOR | typeof SAIDA_NEUTRO | typeof SAIDA_DETRATOR {
+  if (nota >= 9) return SAIDA_PROMOTOR
+  if (nota >= 7) return SAIDA_NEUTRO
+  return SAIDA_DETRATOR
+}
 
 /** O prazo desta pergunta em minutos, ou `null` quando ela espera para sempre. */
 export function timeoutDaPergunta(no: NoPergunta): number | null {

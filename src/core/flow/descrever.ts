@@ -1,8 +1,11 @@
 import { textoDaMensagem } from './mensagem'
 import {
+  SAIDA_DETRATOR,
   SAIDA_ESCOLHEU,
   SAIDA_FALSO,
   SAIDA_MIDIA,
+  SAIDA_NEUTRO,
+  SAIDA_PROMOTOR,
   SAIDA_TIMEOUT,
   SAIDA_VAZIO,
   SAIDA_VERDADEIRO,
@@ -63,6 +66,8 @@ export function descrever(no: No): string {
       // `rotulo` é o nome do bloco de destino no instante da escolha. Vazio
       // quer dizer o início do fluxo, que é o padrão do bloco.
       return rotular('Voltar', curto(no.data.rotulo || 'ao início'))
+    case 'nps':
+      return rotular('Pesquisa', curto(no.data.texto))
   }
 }
 
@@ -88,6 +93,20 @@ export function nomeDaSaida(no: No, saida: string | undefined): string | null {
   if (no.type === 'condicao') {
     if (saida === SAIDA_VERDADEIRO) return 'a saída de "sim"'
     if (saida === SAIDA_FALSO) return 'a saída de "não"'
+  }
+
+  /*
+   * As faixas da pesquisa, com a régua dita junto.
+   *
+   * "a saída de promotor" não ajuda quem nunca leu sobre NPS — e é justamente
+   * essa pessoa que está montando a pesquisa. Dizer o corte no nome transforma
+   * a lista de problemas em explicação de como o bloco divide.
+   */
+  if (no.type === 'nps') {
+    if (saida === SAIDA_TIMEOUT) return 'a saída de "ninguém respondeu no prazo"'
+    if (saida === SAIDA_PROMOTOR) return 'a saída de "promotor" (nota 9 ou 10)'
+    if (saida === SAIDA_NEUTRO) return 'a saída de "neutro" (nota 7 ou 8)'
+    if (saida === SAIDA_DETRATOR) return 'a saída de "detrator" (nota 0 a 6)'
   }
 
   return null

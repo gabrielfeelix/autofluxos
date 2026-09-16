@@ -264,3 +264,99 @@ function diaDeSaoPaulo(data: Date): string {
     day: '2-digit',
   }).format(data)
 }
+
+// ---------------------------------------------------------------------------
+// Satisfação — NPS e CSAT (0060)
+// ---------------------------------------------------------------------------
+
+/**
+ * A satisfação do mês.
+ *
+ * **O NPS mora aqui, e não na view, de propósito.** Promotor e detrator são
+ * definição de produto: mudar o corte é uma decisão de negócio, e num arquivo
+ * TypeScript isso é um deploy — numa view seria uma migration contra o banco que
+ * a Verandi divide (ver docs/BANCO-COMPARTILHADO.md). A view entrega contagem
+ * crua; a conta é nossa.
+ *
+ * `nps` é `null` quando ninguém respondeu, e isso **não** é zero. Zero é o
+ * resultado real de uma conta empatada — tantos promotores quanto detratores —
+ * e mostrá-lo no lugar de "ninguém respondeu ainda" faria uma tela vazia
+ * parecer um mês medíocre.
+ */
+export type Satisfacao = {
+  respostas: number
+  promotores: number
+  neutros: number
+  detratores: number
+  /** −100 a 100. `null` quando não houve resposta nenhuma. */
+  nps: number | null
+  /** A média das notas, que é o CSAT quando a escala usada é a de satisfação. */
+  media: number | null
+  comentarios: number
+}
+
+const semSatisfacao = (): Satisfacao => ({
+  respostas: 0,
+  promotores: 0,
+  neutros: 0,
+  detratores: 0,
+  nps: null,
+  media: null,
+  comentarios: 0,
+})
+
+export async function medirSatisfacao(
+  clienteId: string,
+  agora = new Date(),
+): Promise<{ atual: Satisfacao; anterior: Satisfacao }> {
+  const mesAtual = chaveDoMes(agora)
+  const mesAnterior = chaveDoMesAnterior(mesAtual)
+
+  const { data, error } = await db()
+    .from('metricas_de_satisfacao')
+    .select('mes, respostas, promotores, neutros, detratores, media, comentarios')
+    .eq('client_id', clienteId)
+    .in('mes', [mesAtual, mesAnterior])
+
+  const vazio = { atual: semSatisfacao(), anterior: semSatisfacao() }
+  if (ehIdInvalido(error)) return vazio
+  if (error) throw new Error(`não deu para medir a satisfação: ${error.message}`)
+
+  /*
+   * Soma antes de calcular, porque a view quebra por origem.
+   *
+   * A pesquisa do fluxo e a do fim do atendimento são linhas separadas, e o NPS
+   * do mês é o das duas juntas. Calcular por linha e tirar a média das médias
+   * daria peso igual a uma origem com três respostas e a outra com trezentas.
+   */
+  const somas = { atual: semSatisfacao(), anterior: semSatisfacao() }
+  const pontos = { atual: 0, anterior: 0 }
+
+  for (const linha of data as Record<string, string | number | null>[]) {
+    const chave = linha.mes === mesAtual ? 'atual' : 'anterior'
+    const alvo = somas[chave]
+    const respostas = Number(linha.respostas ?? 0)
+
+    alvo.respostas += respostas
+    alvo.promotores += Number(linha.promotores ?? 0)
+    alvo.neutros += Number(linha.neutros ?? 0)
+    alvo.detratores += Number(linha.detratores ?? 0)
+    alvo.comentarios += Number(linha.comentarios ?? 0)
+    // A média volta a ser soma para poder ser somada; vira média de novo no fim.
+    pontos[chave] += Number(linha.media ?? 0) * respostas
+  }
+
+  for (const chave of ['atual', 'anterior'] as const) {
+    const alvo = somas[chave]
+    if (alvo.respostas === 0) continue
+
+    // O NPS é **percentual de promotores menos percentual de detratores**. Os
+    // neutros não entram na conta — e é por isso que ele vai de −100 a 100.
+    alvo.nps = Math.round(
+      (alvo.promotores / alvo.respostas) * 100 - (alvo.detratores / alvo.respostas) * 100,
+    )
+    alvo.media = pontos[chave] / alvo.respostas
+  }
+
+  return somas
+}

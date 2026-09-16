@@ -28,5 +28,6 @@ export const EXPLICACAO_DO_PAPEL: Record<PapelDoNumero, string> = {
   principal: 'A resposta padrão. Roda quando nenhum dos outros casos acontece.',
   boasVindas: 'Só na primeira conversa de cada pessoa neste número.',
   midia: 'Quando chega áudio, foto, figurinha ou PDF. Vazio: a conversa vai para uma pessoa.',
-  posAtendimento: 'Quando alguém da equipe clica em “Já atendi”.',
+  posAtendimento:
+    'Quando alguém da equipe clica em “Já atendi”. É aqui que entra a pesquisa de satisfação. Vazio: não acontece nada.',
 }

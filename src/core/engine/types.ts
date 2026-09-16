@@ -71,6 +71,32 @@ export const sessaoSchema = z.object({
       resumo: z.string(),
     })
     .nullish(),
+  /**
+   * A nota que a pesquisa já colheu e cujo comentário ainda está sendo
+   * esperado (0060).
+   *
+   * Existe pelo mesmo motivo de `iaPendente`, e é a mesma forma: o bloco de
+   * pesquisa tem **duas paradas** — a nota e o "por quê?" — e `noAtual` só sabe
+   * guardar uma. Sem isto, a segunda mensagem da pessoa voltaria ao bloco como
+   * se fosse a nota, e um comentário viraria tentativa inválida de resposta.
+   *
+   * **A nota já está gravada quando isto existe.** Quem responde a nota e some
+   * antes de explicar continua contando no NPS — é o desfecho certo: a nota é o
+   * número, o comentário é o extra. Guardar a nota só no fim perderia a metade
+   * que importa toda vez que alguém desistisse do segundo passo.
+   *
+   * Some junto com a conversa, como `iaPendente`, e pelo mesmo motivo.
+   */
+  npsPendente: z
+    .object({
+      /** A nota já gravada. É ela que o comentário vem completar. */
+      nota: z.number().int().min(0).max(10),
+      /** O bloco que fez a pergunta, para o comentário voltar ao lugar certo. */
+      noId: z.string(),
+      /** Onde guardar o comentário nas variáveis, quando o bloco pediu. */
+      salvarEm: z.string().optional(),
+    })
+    .nullish(),
 })
 
 /** O que chegou. O motor não sabe se veio do WhatsApp ou do simulador. */
@@ -266,6 +292,33 @@ export type Acao =
    * botão desenhado e não ligado virava uma conversa que morria em silêncio, e
    * "A conversa terminou." não dizia por onde começar a procurar.
    */
+  /**
+   * Guardar a nota da pesquisa de satisfação (0060).
+   *
+   * Como `aplicar_etiqueta` e `mover_etapa`, o motor **descreve e não executa**:
+   * ele não sabe que existe a tabela `avaliacoes`, não sabe quem atendeu, e não
+   * lê o relógio. Ele sabe a nota, que é a única coisa que a conversa produziu.
+   *
+   * `origem` sai do motor porque é o motor que sabe de onde a pesquisa veio: um
+   * bloco num desenho é sempre `fluxo`. A pesquisa que sai do botão "resolver"
+   * no Inbox não passa por aqui — ela roda o fluxo de pós-atendimento, e é o
+   * servidor que sabe que houve um atendente.
+   *
+   * Quem liga o comentário a esta nota é o servidor, completando **a última
+   * avaliação deste contato** — e não um id que o motor teria de carregar de
+   * volta. O motor não gera id, e inventar uma ida e volta só para transportar
+   * um uuid faria a pesquisa precisar de um estado `aguardando_*` que nada mais
+   * aqui precisa.
+   */
+  | { tipo: 'guardar_nota'; nota: number }
+  /**
+   * Acrescentar o comentário à nota já gravada (0060).
+   *
+   * Separado de `guardar_nota` porque as duas coisas chegam em mensagens
+   * diferentes, e juntá-las obrigaria a segurar a nota até a pessoa explicar —
+   * perdendo a nota de quem não explica, que é a maioria.
+   */
+  | { tipo: 'guardar_comentario'; comentario: string }
   | { tipo: 'encerrar'; motivo?: string }
 
 export type Resultado = {

@@ -5,17 +5,22 @@ import {
   LIMITE_BOTOES,
   LIMITE_LISTA,
   LIMITE_ROTULO,
+  SAIDA_DETRATOR,
   SAIDA_ESCOLHEU,
   SAIDA_FALSO,
   SAIDA_MIDIA,
+  SAIDA_NEUTRO,
+  SAIDA_PROMOTOR,
   SAIDA_TIMEOUT,
   SAIDA_VAZIO,
   SAIDA_VERDADEIRO,
+  faixaDaNota,
   itensDaLista,
   perguntaEhDinamica,
   timeoutDaPergunta,
   type Fluxo,
   type No,
+  type NoNps,
   type NoPergunta,
   type Opcao,
 } from '../flow/schema'
@@ -196,6 +201,34 @@ export function executar(
    * pode empurrar ninguém.
    */
   if (entrada.tipo === 'timeout') {
+    /*
+     * A pesquisa tem prazo pelo mesmo motivo da pergunta, e o desfecho dela é
+     * **o oposto**: sem saída desenhada, o timeout da pesquisa **encerra** em
+     * vez de chamar uma pessoa.
+     *
+     * É a única inversão da Regra B em todo o motor, e ela é deliberada: quem
+     * não respondeu "de 0 a 10" não é um lead para resgatar, é alguém que não
+     * quis responder uma pesquisa. Transferi-lo poria na fila de atendimento
+     * gente que não pediu nada — e a fila é onde o time olha para saber de quem
+     * está devendo resposta. Uma pesquisa ignorada não é uma dívida.
+     */
+    if (atual.type === 'nps') {
+      if (atual.data.timeoutMinutos === undefined) return { acoes, sessao: s }
+
+      const saida = proximo(fluxo, atual.id, SAIDA_TIMEOUT)
+      if (saida === null) {
+        s.status = 'encerrada'
+        s.npsPendente = null
+        return { acoes, sessao: s }
+      }
+
+      s.tentativas = 0
+      return avancar(contexto, fluxo, porId, s, acoes, saida, {
+        no: atual,
+        saida: SAIDA_TIMEOUT,
+      })
+    }
+
     if (atual.type !== 'pergunta' || timeoutDaPergunta(atual) === null) {
       return { acoes, sessao: s }
     }
@@ -239,6 +272,10 @@ export function executar(
 
   if (atual.type === 'pergunta') {
     return responderPergunta(contexto, fluxo, porId, s, acoes, atual, entrada)
+  }
+
+  if (atual.type === 'nps') {
+    return responderNps(contexto, fluxo, porId, s, acoes, atual, entrada)
   }
 
   // O motor nunca deveria ter parado num nó destes. Segue em frente.
@@ -361,6 +398,137 @@ function responderPergunta(
     no,
     saida: porta,
   })
+}
+
+/**
+ * A resposta da pesquisa de satisfação (0060).
+ *
+ * São **duas paradas no mesmo bloco** — a nota e o "por quê?" — e é por isso que
+ * a sessão carrega `npsPendente`: sem ele, a segunda mensagem da pessoa voltaria
+ * aqui como se fosse uma nota, e o comentário viraria erro de leitura.
+ *
+ * A ordem de gravar importa e é o ponto inteiro deste bloco: **a nota é gravada
+ * assim que chega**, antes de o comentário ser pedido. Quem responde 3 e some
+ * antes de explicar continua contando como detrator — que é o desfecho certo,
+ * porque o número é a nota e o comentário é o extra. Guardar as duas coisas
+ * juntas no fim perderia a metade que importa toda vez que alguém desistisse do
+ * segundo passo, e quem dá nota baixa é justamente quem mais desiste.
+ */
+function responderNps(
+  contexto: ContextoDoAtendimento,
+  fluxo: Fluxo,
+  porId: Map<string, No>,
+  s: Sessao,
+  acoes: Acao[],
+  no: NoNps,
+  entrada: Entrada,
+): Resultado {
+  if (entrada.tipo !== 'texto') return { acoes, sessao: s }
+
+  /*
+   * Segunda parada: o que chegou é o comentário, não a nota.
+   *
+   * **Nada aqui recusa o texto.** Uma justificativa é resposta livre — não há
+   * formato para conferir, e insistir com quem já deu a nota seria cobrar
+   * explicação de quem já fez o favor de responder. Comentário vazio também
+   * passa: a nota já está guardada, e é ela que o relatório conta.
+   */
+  const pendente = s.npsPendente
+  if (pendente && pendente.noId === no.id) {
+    const comentario = entrada.texto.trim()
+    if (comentario !== '') {
+      acoes.push({ tipo: 'guardar_comentario', comentario })
+      if (pendente.salvarEm) s.vars[pendente.salvarEm] = comentario
+    }
+
+    s.npsPendente = null
+    s.tentativas = 0
+    const saida = faixaDaNota(pendente.nota)
+    return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, no.id, saida), {
+      no,
+      saida,
+    })
+  }
+
+  /*
+   * Primeira parada: a nota.
+   *
+   * Aceita "8", "8/10", "nota 8" e "10" — porque é assim que as pessoas
+   * respondem de verdade, e recusar "8/10" seria recusar uma resposta certa por
+   * causa da pontuação. O que não passa é texto sem número nenhum e número fora
+   * de 0 a 10, e aí vale a mesma régua do resto do motor: três tentativas e a
+   * conversa vai para uma pessoa.
+   */
+  const nota = lerNota(entrada.texto)
+  if (nota === null) {
+    s.tentativas += 1
+    if (s.tentativas >= MAX_TENTATIVAS) {
+      return transferir(
+        s,
+        acoes,
+        `o bot não entendeu a nota ${MAX_TENTATIVAS} vezes seguidas`,
+        contexto,
+      )
+    }
+    acoes.push({
+      tipo: 'enviar_texto',
+      texto: 'Pode responder com um número de 0 a 10?',
+    })
+    return { acoes, sessao: s }
+  }
+
+  // A nota vai para o banco antes de qualquer outra coisa. Ver o cabeçalho.
+  acoes.push({ tipo: 'guardar_nota', nota })
+  if (no.data.salvarEm) {
+    const valor = String(nota)
+    s.vars[no.data.salvarEm] = valor
+    // Emitir `salvar_campo` junto faz a nota aparecer na ficha do contato, como
+    // qualquer outro dado colhido — `avaliacoes` é o histórico, a ficha é o
+    // "quanto essa pessoa deu da última vez".
+    acoes.push({ tipo: 'salvar_campo', campo: no.data.salvarEm, valor })
+  }
+
+  s.tentativas = 0
+
+  /*
+   * Tem pergunta aberta? Então o bloco para de novo, no mesmo nó.
+   *
+   * Sem ela, a conversa segue direto pela faixa da nota — que é a pesquisa de
+   * uma pergunta só, e é a que mais gente responde até o fim.
+   */
+  const aberta = no.data.perguntaAberta.trim()
+  if (aberta !== '') {
+    acoes.push({ tipo: 'enviar_texto', texto: interpolar(aberta, s.vars) })
+    s.npsPendente = {
+      nota,
+      noId: no.id,
+      ...(no.data.comentarioEm ? { salvarEm: no.data.comentarioEm } : {}),
+    }
+    s.noAtual = no.id
+    s.status = 'ativa'
+    return { acoes, sessao: s }
+  }
+
+  const saida = faixaDaNota(nota)
+  return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, no.id, saida), {
+    no,
+    saida,
+  })
+}
+
+/**
+ * O número de 0 a 10 que a pessoa quis dizer, ou `null`.
+ *
+ * Pega o **primeiro** número do texto de propósito: "8/10" e "nota 8 de 10"
+ * querem dizer oito, e ler o último daria dez nos dois casos — um erro que
+ * inflaria o NPS em silêncio e ninguém conferiria.
+ */
+function lerNota(texto: string): number | null {
+  const achado = /\d{1,2}/.exec(texto)
+  if (!achado) return null
+
+  const nota = Number(achado[0])
+  return nota >= 0 && nota <= 10 ? nota : null
 }
 
 /**
@@ -646,6 +814,30 @@ function avancar(
         s.noAtual = no.id
         s.status = 'ativa'
         s.tentativas = 0
+        return { acoes, sessao: s }
+      }
+
+      /*
+       * A pesquisa de satisfação (0060).
+       *
+       * Para aqui como a pergunta para, e pelo mesmo motivo: o bloco existe
+       * para esperar uma resposta. O que ele faz de diferente vem depois, em
+       * `responderNps` — graduar a nota e mandá-la para `avaliacoes`.
+       */
+      case 'nps': {
+        acoes.push({
+          tipo: 'enviar_texto',
+          texto: interpolar(no.data.texto, s.vars),
+          ...(esperaMs > 0 ? { atrasoMs: esperaMs } : {}),
+        })
+        esperaMs = 0
+        s.noAtual = no.id
+        s.status = 'ativa'
+        s.tentativas = 0
+        // Entrar num bloco de pesquisa zera uma pesquisa anterior pela metade:
+        // a conversa que chegou aqui de novo está começando outra, e completar
+        // a nota velha com o comentário da nova misturaria as duas.
+        s.npsPendente = null
         return { acoes, sessao: s }
       }
 

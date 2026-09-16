@@ -48,6 +48,7 @@ const ORDEM_DOS_BLOCOS: TipoNo[] = [
   'ia',
   'handoff',
   'http',
+  'nps',
 ]
 
 /** Quando usar cada bloco, em uma frase — o que a barra do editor não cabe. */
@@ -70,6 +71,7 @@ const QUANDO_USAR: Record<TipoNo, string> = {
   voltar:
     'O "voltar ao menu" que todo bot tem. Manda a conversa para um passo anterior deste mesmo fluxo, sem uma seta cruzando o desenho inteiro.',
   http: 'Consultar ou gravar no sistema do cliente: a agenda, o CRM, a planilha.',
+  nps: 'Perguntar de 0 a 10 no fim do atendimento. Ele já separa os três caminhos — quem gostou, quem tanto faz e quem não gostou — e guarda a nota com data, para o relatório poder comparar um mês com o outro.',
 }
 
 export function SecaoComoFunciona() {

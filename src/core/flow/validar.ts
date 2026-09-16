@@ -7,9 +7,12 @@ import {
   LIMITE_TEXTO,
   LIMITE_TEXTO_INTERATIVO,
   MARCA_DE_LISTA,
+  SAIDA_DETRATOR,
   SAIDA_ESCOLHEU,
   SAIDA_FALSO,
   SAIDA_MIDIA,
+  SAIDA_NEUTRO,
+  SAIDA_PROMOTOR,
   SAIDA_TIMEOUT,
   SAIDA_VAZIO,
   SAIDA_VERDADEIRO,
@@ -318,6 +321,36 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
           mensagem: `"${no.data.texto}" espera uma resposta mas não continua para lugar nenhum.`,
           noId: no.id,
         })
+      }
+    }
+
+    /*
+     * As três faixas da pesquisa precisam levar a algum lugar (0060).
+     *
+     * **É erro, e não aviso, e a faixa que importa é a do detrator.** Uma
+     * pesquisa que pergunta a nota e não sabe o que fazer com quem deu 3
+     * termina a conversa em silêncio na cara de um cliente irritado — que é
+     * exatamente o desfecho que a pesquisa existe para evitar. O fluxo de
+     * exemplo já ensina isso: nota baixa não recebe agradecimento, recebe
+     * gente.
+     *
+     * A nota continua guardada mesmo assim: o relatório não perde nada. O que
+     * se perde é a conversa, e essa não volta.
+     */
+    if (no.type === 'nps') {
+      const faixas = [
+        { saida: SAIDA_PROMOTOR, nome: 'promotor (nota 9 ou 10)' },
+        { saida: SAIDA_NEUTRO, nome: 'neutro (nota 7 ou 8)' },
+        { saida: SAIDA_DETRATOR, nome: 'detrator (nota 0 a 6)' },
+      ]
+      for (const faixa of faixas) {
+        if (!minhasSaidas.some((a) => a.sourceHandle === faixa.saida)) {
+          erros.push({
+            codigo: 'NPS_FAIXA_SEM_SAIDA',
+            mensagem: `${descrever(no)} não diz o que fazer com quem responde ${faixa.nome}. Ligue essa saída — a nota fica guardada, mas a conversa termina em silêncio.`,
+            noId: no.id,
+          })
+        }
       }
     }
 
@@ -935,6 +968,34 @@ function conferirConteudo(
       }
       break
 
+    case 'nps':
+      if (vazio(no.data.texto)) {
+        erros.push({
+          codigo: 'NPS_SEM_PERGUNTA',
+          mensagem: `${descrever(no)} está sem a pergunta da nota. Sem ela a pessoa recebe uma mensagem em branco e não tem o que responder.`,
+          noId: no.id,
+        })
+      }
+      conferirVariavel(no.data.salvarEm, 'variável')
+      conferirVariavel(no.data.comentarioEm, 'variável')
+
+      /*
+       * Variável do motivo sem a pergunta do motivo.
+       *
+       * É aviso e não impedimento: o fluxo roda, e o que acontece é que a
+       * variável nunca é preenchida. Quem escreveu `{{motivo}}` na mensagem
+       * seguinte veria um buraco — e o buraco só aparece em produção, com
+       * cliente de verdade lendo.
+       */
+      if (no.data.comentarioEm && vazio(no.data.perguntaAberta)) {
+        avisos.push({
+          codigo: 'NPS_MOTIVO_SEM_PERGUNTA',
+          mensagem: `${descrever(no)} guarda o motivo numa variável, mas não pergunta o motivo. Do jeito que está, essa variável nasce sempre vazia.`,
+          noId: no.id,
+        })
+      }
+      break
+
     case 'ia':
       if (vazio(no.data.instrucao)) {
         erros.push({ codigo: 'IA_SEM_INSTRUCAO', mensagem: 'A IA está sem instrução.', noId: no.id })
@@ -1293,6 +1354,12 @@ function variaveisDoNo(no: No): string[] {
       ]
     case 'salvar-campo':
       return variaveisCitadas(no.data.valor)
+    case 'nps':
+      // As duas perguntas interpolam, como qualquer texto que a pessoa lê.
+      return [
+        ...variaveisCitadas(no.data.texto),
+        ...variaveisCitadas(no.data.perguntaAberta),
+      ]
     case 'midia':
       return [
         ...variaveisCitadas(no.data.url),
@@ -1376,6 +1443,8 @@ function textosDoNo(no: No): string[] {
       return [no.data.url, no.data.corpo, ...no.data.cabecalhos.map((c) => c.valor)]
     case 'nota':
       return [no.data.texto]
+    case 'nps':
+      return [no.data.texto, no.data.perguntaAberta]
     case 'condicao':
     case 'etapa':
     case 'etiqueta':

@@ -10,6 +10,7 @@ import { avisarHandoff } from './avisar-handoff'
 import { executarComEfeitos, type OpcoesDeEfeitos } from './efeitos/resolver'
 import { guardarMidiaRecebida } from './guardar-midia-recebida'
 import { escolherModelo } from './ia/modelo'
+import { guardarComentario, guardarNota } from './repos/avaliacoes'
 import { acharCliente, horarioDoCliente } from './repos/clientes'
 import { acharFluxo, acharVersao, type VersaoPublicada } from './repos/fluxos'
 import { acrescentarNota, lerConversa } from './repos/leads'
@@ -1355,6 +1356,28 @@ async function aplicar(
             contato: contato.id,
           })
         }
+        break
+
+      /*
+       * A nota da pesquisa de satisfação (0060).
+       *
+       * **Nada aqui pode derrubar a conversa**, como a etiqueta e a nota: o
+       * repo engole o próprio erro e devolve `null`. Uma nota perdida custa um
+       * número no relatório; uma exceção custaria a próxima mensagem de alguém
+       * que acabou de ser atendido — e é justamente a mensagem de agradecimento
+       * que viria logo depois.
+       *
+       * `origem: 'fluxo'` sempre: esta ação só nasce de um bloco num desenho. A
+       * pesquisa que sai do botão "resolver" no Inbox também passa por aqui,
+       * mas ela **roda um fluxo** (o de pós-atendimento) — do ponto de vista do
+       * registro, é o bloco que está perguntando.
+       */
+      case 'guardar_nota':
+        await guardarNota(contato.clienteId, contato.id, acao.nota, 'fluxo', { sessaoId })
+        break
+
+      case 'guardar_comentario':
+        await guardarComentario(contato.clienteId, contato.id, acao.comentario)
         break
 
       case 'transferir_humano':

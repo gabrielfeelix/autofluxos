@@ -846,6 +846,119 @@ export function Painel({
         </>
       )}
 
+      {no.type === 'nps' && (
+        <>
+          <Area
+            rotulo="A pergunta da nota"
+            valor={no.data.texto}
+            limite={LIMITE_TEXTO}
+            aoMudar={(texto) => aoMudarDados({ texto })}
+            conhecidas={variaveis}
+            formatavel
+            dica={
+              <>
+                A resposta esperada é um número de{' '}
+                <strong className="text-muted">0 a 10</strong>. O bloco entende “8”, “8/10” e
+                “nota 8” — e pede de novo quando não vier número nenhum.
+              </>
+            }
+          />
+
+          {/*
+            A régua escrita, porque ela é fixa e ninguém a vê no desenho.
+
+            As três saídas saem iguais do bloco; sem esta linha, descobrir onde
+            a nota 7 cai exigiria testar. E é justamente o 7 que surpreende
+            quem nunca leu sobre NPS — "quase dez" parece bom e conta como
+            neutro.
+          */}
+          <div className="rounded-[8px] border border-subtle bg-subtle/[0.04] px-2.5 py-2 text-[11px] leading-4 text-dim">
+            O bloco separa sozinho, na régua do NPS:{' '}
+            <strong className="text-muted">9 e 10 promotor</strong>,{' '}
+            <strong className="text-muted">7 e 8 neutro</strong>,{' '}
+            <strong className="text-muted">0 a 6 detrator</strong>. Cada faixa tem a sua saída.
+            <span className="mt-1.5 block">
+              A nota é guardada com a data, sempre — a de hoje não apaga a do mês passado.
+            </span>
+          </div>
+
+          <CampoDeVariavel
+            rotulo="Guardar a nota em"
+            valor={no.data.salvarEm ?? ''}
+            variaveis={deOutrosBlocos}
+            modo="guarda"
+            dica="ex: nota — para escrever “obrigado pelo {{nota}}” no bloco seguinte"
+            nota={
+              <>
+                Opcional. A nota vai para o relatório de qualquer jeito; isto serve só para os
+                blocos seguintes poderem citá-la.
+              </>
+            }
+            aoMudar={(v) => aoMudarDados({ salvarEm: v.trim() === '' ? undefined : v.trim() })}
+          />
+
+          <Area
+            rotulo="Perguntar o motivo depois (opcional)"
+            valor={no.data.perguntaAberta}
+            limite={LIMITE_TEXTO}
+            aoMudar={(perguntaAberta) => aoMudarDados({ perguntaAberta })}
+            conhecidas={variaveis}
+            formatavel
+            exemplo="O que faltou para ser uma boa experiência?"
+            dica={
+              <>
+                Vazio, a pesquisa acaba na nota — e é a que mais gente responde até o fim. Com
+                texto, o bloco faz esta segunda pergunta{' '}
+                <strong className="text-muted">antes</strong> de seguir pela faixa da nota.
+                <span className="mt-1 block">
+                  A nota já está guardada quando esta pergunta sai: quem responder o número e
+                  sumir continua contando no relatório.
+                </span>
+              </>
+            }
+          />
+
+          {no.data.perguntaAberta.trim() !== '' && (
+            <CampoDeVariavel
+              rotulo="Guardar o motivo em"
+              valor={no.data.comentarioEm ?? ''}
+              variaveis={deOutrosBlocos}
+              modo="guarda"
+              dica="ex: motivo — para repetir o que a pessoa escreveu"
+              aoMudar={(v) =>
+                aoMudarDados({ comentarioEm: v.trim() === '' ? undefined : v.trim() })
+              }
+            />
+          )}
+
+          <label className="block">
+            <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+              Prazo para responder
+            </span>
+            <Dropdown
+              valor={String(no.data.timeoutMinutos ?? 0)}
+              aoMudar={(v) =>
+                aoMudarDados({ timeoutMinutos: Number(v) === 0 ? undefined : Number(v) })
+              }
+              rotuloAcessivel="Prazo para responder"
+              opcoes={PRAZOS}
+            />
+            {/*
+              O texto diz o desfecho **oposto** ao da pergunta, e de propósito:
+              pesquisa sem resposta encerra em vez de chamar uma pessoa. Quem
+              leu a explicação da pergunta vai supor a fila se a gente não
+              disser — e pôr na fila quem só ignorou uma pesquisa enche de
+              dívida falsa a tela onde o time vê o que deve.
+            */}
+            <span className="mt-1.5 block text-[11px] leading-4 text-dim">
+              {no.data.timeoutMinutos
+                ? 'Passado o prazo, a conversa sai pela saída “não respondeu”. Sem nada ligado nela, a conversa encerra — quem ignorou uma pesquisa não vira fila de atendimento.'
+                : 'Sem prazo, a conversa espera para sempre pela nota.'}
+            </span>
+          </label>
+        </>
+      )}
+
       {no.type === 'ir-fluxo' && (
         <label className="block">
           <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
@@ -1784,6 +1897,8 @@ function resumoDoBloco(no: No): string {
       return curto(`Se ${no.data.variavel} ${no.data.operador} ${no.data.valor}`)
     case 'salvar-campo':
       return curto(`Guarda ${no.data.campo}`)
+    case 'nps':
+      return curto(no.data.texto) || 'Pesquisa de satisfação'
     case 'ia':
       return curto(no.data.instrucao) || 'IA sem instrução'
     case 'handoff':

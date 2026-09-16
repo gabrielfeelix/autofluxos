@@ -2,10 +2,23 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { sessaoNova, type Acao, type Entrada, type Resultado, type Sessao } from '@/core/engine/types'
-import { timeoutDaPergunta } from '@/core/flow/schema'
+import {
+  SAIDA_DETRATOR,
+  SAIDA_NEUTRO,
+  SAIDA_PROMOTOR,
+  faixaDaNota,
+  timeoutDaPergunta,
+} from '@/core/flow/schema'
 import type { Fluxo, Opcao, TipoDeMidia } from '@/core/flow/schema'
 import { varsIniciais } from '@/core/contatos/vars-iniciais'
 import { TextoDoWhatsApp } from './texto-do-whatsapp'
+
+/** Como a faixa do NPS se lê na aba Testar. */
+const FAIXA_EM_PALAVRAS = {
+  [SAIDA_PROMOTOR]: 'promotor',
+  [SAIDA_NEUTRO]: 'neutro',
+  [SAIDA_DETRATOR]: 'detrator',
+}
 
 export type ModoDaConversa = 'conversa' | 'bastidores'
 
@@ -291,6 +304,18 @@ export function Conversa({
           break
         case 'salvar_campo':
           adicionar({ chave, de: 'sistema', texto: `guardou ${acao.campo} = "${acao.valor}"` })
+          break
+        case 'guardar_nota':
+          // Diz a faixa junto da nota: é o que o bloco decide, e é o que quem
+          // testa quer conferir sem ir contar de cabeça onde o 7 cai.
+          adicionar({
+            chave,
+            de: 'sistema',
+            texto: `guardou a nota ${acao.nota} na pesquisa — ${FAIXA_EM_PALAVRAS[faixaDaNota(acao.nota)]}`,
+          })
+          break
+        case 'guardar_comentario':
+          adicionar({ chave, de: 'sistema', texto: `guardou o motivo — "${acao.comentario}"` })
           break
         case 'chamar_ia':
           adicionar({ chave, de: 'sistema', texto: `chamaria a IA — "${acao.instrucao}"` })

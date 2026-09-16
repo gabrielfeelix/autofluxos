@@ -131,6 +131,9 @@ const TIPOS: TipoNo[] = [
   'ia',
   'handoff',
   'http',
+  // No fim, junto do handoff: os dois são o que acontece **depois** que a
+  // conversa resolveu o que tinha para resolver.
+  'nps',
 ]
 
 
@@ -185,6 +188,19 @@ export function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
       // automação da lista mandaria conversa para um desenho que ninguém
       // escolheu, e o que já vem preenchido é o que ninguém revisa.
       return { fluxoId: '', rotulo: '' }
+    case 'nps':
+      // Nasce **pronta para publicar**, e é o único bloco assim. Os outros
+      // nascem vazios porque um valor chutado viraria dado errado no contato de
+      // alguém; aqui a pergunta do NPS é a mesma no mundo inteiro — é a régua,
+      // não uma escolha — e quem quiser mudar a palavra muda. Nascer vazio
+      // faria todo mundo digitar a mesma frase.
+      //
+      // Sem pergunta aberta: a pesquisa de uma pergunta só é a que as pessoas
+      // terminam, e quem quiser o "por quê?" liga no painel.
+      return {
+        texto: 'De 0 a 10, o quanto você recomendaria a gente para um amigo?',
+        perguntaAberta: '',
+      }
     case 'ia':
       // `ferramentas` explícito, e não confiando no `.default([])` do Zod: o
       // bloco nasce **aqui**, no navegador, e só passa pelo schema quando o

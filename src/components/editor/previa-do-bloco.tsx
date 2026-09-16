@@ -218,6 +218,18 @@ export function detalhesDoBloco(no: No): Detalhe[] {
     case 'nota':
       return [{ rotulo: 'Escreve', valor: texto(no.data.texto, '(nada — o texto está vazio)') }]
 
+    case 'nps':
+      return [
+        { rotulo: 'Pergunta', valor: texto(no.data.texto, '(sem pergunta)') },
+        // A régua aparece na prévia porque é o que o bloco faz e não se vê:
+        // três saídas iguais no desenho não dizem onde cada nota cai.
+        { rotulo: 'Separa em', valor: 'promotor 9–10  ·  neutro 7–8  ·  detrator 0–6' },
+        ...(no.data.perguntaAberta.trim() !== ''
+          ? [{ rotulo: 'Depois pergunta', valor: no.data.perguntaAberta }]
+          : []),
+        ...(no.data.salvarEm ? [{ rotulo: 'Guarda a nota em', valor: `{{${no.data.salvarEm}}}` }] : []),
+      ]
+
     case 'ir-fluxo':
       return [
         {

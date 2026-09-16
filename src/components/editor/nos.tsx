@@ -11,6 +11,9 @@ import {
   LIMITE_BOTOES,
   SAIDA_ESCOLHEU,
   SAIDA_MIDIA,
+  SAIDA_DETRATOR,
+  SAIDA_NEUTRO,
+  SAIDA_PROMOTOR,
   SAIDA_TIMEOUT,
   SAIDA_FALSO,
   SAIDA_VAZIO,
@@ -376,6 +379,57 @@ function NoCondicao({ data, selected }: NodeProps) {
   )
 }
 
+/**
+ * A pesquisa de satisfação (0060).
+ *
+ * Desenha as **três faixas com o corte escrito** — "promotor 9–10" e não
+ * "promotor". A régua é fixa e não aparece em lugar nenhum do desenho; sem o
+ * número ao lado, descobrir onde a nota 7 cai exigiria abrir o painel ou
+ * testar. E o 7 é justamente o que engana: parece bom e conta como neutro.
+ *
+ * A saída de prazo aparece só quando há prazo, como na pergunta — saída que
+ * ninguém usa é fio a mais para desviar com o mouse.
+ */
+function NoNps({ data, selected }: NodeProps) {
+  const d = data as {
+    texto: string
+    perguntaAberta?: string
+    timeoutMinutos?: number
+  }
+  const prazo = d.timeoutMinutos ?? null
+
+  return (
+    <Caixa tipo="nps" selecionado={!!selected} saidaUnica={false}>
+      <p className="text-[12.5px] leading-5 text-soft">
+        <RealceDeVariaveis texto={vazio(d.texto, '(sem pergunta)')} />
+      </p>
+
+      {(d.perguntaAberta ?? '').trim() !== '' && (
+        <p className="mt-1 text-[10px] text-dim">depois pergunta o motivo</p>
+      )}
+
+      <Saida id={SAIDA_PROMOTOR}>
+        <span className="text-[11px] text-ok">promotor · 9–10</span>
+      </Saida>
+      <Saida id={SAIDA_NEUTRO}>
+        <span className="text-[11px] text-muted">neutro · 7–8</span>
+      </Saida>
+      <Saida id={SAIDA_DETRATOR}>
+        <span className="text-[11px] text-aviso">detrator · 0–6</span>
+      </Saida>
+
+      {prazo !== null && (
+        <>
+          <p className="mt-1.5 text-[10px] text-dim">espera {comoPrazo(prazo)}</p>
+          <Saida id={SAIDA_TIMEOUT}>
+            <span className="text-[11px] text-dim">não respondeu</span>
+          </Saida>
+        </>
+      )}
+    </Caixa>
+  )
+}
+
 function NoSalvarCampo({ data, selected }: NodeProps) {
   const d = data as { campo: string; valor: string }
   return (
@@ -561,4 +615,5 @@ export const tiposDeNo: NodeTypes = {
   etapa: NoEtapa,
   'ir-fluxo': NoIrFluxo,
   voltar: NoVoltar,
+  nps: NoNps,
 }

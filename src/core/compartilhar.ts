@@ -287,6 +287,8 @@ function textoDoBloco(no: No): string {
       return `se ${no.data.variavel} ${no.data.operador} ${no.data.valor}`.trim()
     case 'salvar-campo':
       return `guarda ${no.data.campo}`
+    case 'nps':
+      return no.data.texto
     case 'ia':
       return no.data.instrucao
     case 'handoff': {

@@ -235,6 +235,49 @@ extração explícito para os objetos de `public`.
   webhook estourar em cada mensagem — o bot mudo, sem erro visível na tela de
   ninguém. Migration primeiro, deploy depois, sempre que o código novo escrever
   em objeto novo;
+- **a `0060` foi aplicada em 15/set/2026**, com autorização explícita do dono.
+  Ela é a pesquisa de satisfação: cria `public.avaliacoes` e a view
+  `public.metricas_de_satisfacao`. A `0059` (templates) **não** estava aplicada
+  quando esta foi — as duas nasceram em chats paralelos, e o disco já tinha a
+  `0059` quando esta foi numerada. Aditiva: tabela e view novas, nenhuma coluna
+  existente alterada, nenhuma linha reescrita.
+
+  **A produção ficou com um buraco na numeração, e isso é deliberado — mas
+  precisa ser sabido.** Aplicadas: `0001`–`0058` e `0060`. A `0059` segue
+  **pendente**, e foi conferido na produção que `templates` e `transmissoes` não
+  existem lá. Aplicar fora de ordem só é seguro porque a `0060` é
+  autocontida: ela não lê, não altera e não referencia nada que a `0059` cria.
+  Quem for aplicar a `0059` **não precisa de nada desta**, e o replay em Docker
+  continua provando a ordem do zero porque no disco as duas estão na sequência
+  certa. O que não vale é supor que "a última aplicada" é o maior número do
+  diretório — na produção, hoje, não é.
+
+  Conferida pelos **dois** testes. Replay do zero em Docker (`npx supabase db
+  reset` aplicou `0001`–`0060` em ordem, sem erro), onde também foram provados
+  os dois `check` — nota 11 e `origem` inventada recusadas — e a régua do NPS
+  nas bordas: 10 e 9 caem em promotor, 8 e 7 em neutro, 6 e 0 em detrator. É a
+  borda do 7 que engana, e é por isso que ela é testada. Depois, ensaio em
+  transação contra a produção (`begin; <a migration sem o notify>; rollback;`),
+  que voltou limpo: nem a tabela nem a view sobraram.
+
+  Estado conferido na produção depois de aplicar: tabela com as 9 colunas,
+  **RLS ligada e zero policies**, 3 índices (a chave primária mais os dois do
+  plano), a view presente com `security_invoker = true`, e os `grant` só para
+  `postgres` e `service_role` — `anon` e `authenticated` **não aparecem**. Do
+  outro lado: `app_verandi.migrations_aplicadas` com as mesmas **32** linhas e
+  as **16** policies de `storage.objects` intactas.
+
+  **Ela tem `notify pgrst`, e o reload foi conferido nos dois produtos** — que é
+  o teste que faltava nos registros anteriores. `avaliacoes` pela Data API
+  responde **200** para `service_role` e **401** para `anon` (sem 404, então não
+  há restart pendente), e o schema `app_verandi` continua respondendo **200**
+  pelo mesmo PostgREST. O cache é compartilhado: recarregá-lo sem conferir o
+  outro lado é apostar a API da Verandi num movimento nosso.
+
+  **O código que escreve nesta tabela ainda não está publicado**, e aqui a ordem
+  é a inversa do aviso da `0058`: a migration foi primeiro, e o bloco `nps` só
+  chega à produção no próximo deploy. Enquanto isso a tabela fica vazia — o que
+  é seguro, porque nada no caminho de mensagem que já está no ar a procura;
 - nunca deve executar o aplicador da Verandi nem registrar versão em
   `app_verandi.migrations_aplicadas`.
 

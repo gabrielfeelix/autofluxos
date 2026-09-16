@@ -27,6 +27,7 @@ describe('dadosPadrao produz bloco que o schema aceita como está', () => {
     'etapa',
     'ir-fluxo',
     'voltar',
+    'nps',
   ] as const
 
   it.each(TIPOS)('%s', (tipo) => {

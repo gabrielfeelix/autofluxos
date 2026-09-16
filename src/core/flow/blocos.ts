@@ -75,6 +75,15 @@ export const NOMES: Record<TipoNo, string> = {
    * WhatsApp.
    */
   voltar: 'Voltar',
+  /**
+   * "Pesquisa de satisfação", e não "NPS".
+   *
+   * NPS é o nome da métrica, não o do trabalho — é a mesma correção que fez
+   * `http` deixar de se chamar "API". Quem desenha o fluxo da clínica quer
+   * "perguntar se a pessoa gostou"; quem lê o relatório é que quer o NPS. O
+   * bloco é o gesto, e o número aparece na tela que mede.
+   */
+  nps: 'Pesquisa de satisfação',
 }
 
 export const ICONES: Record<TipoNo, string> = {
@@ -91,6 +100,7 @@ export const ICONES: Record<TipoNo, string> = {
   nota: '✎',
   'ir-fluxo': '⇥',
   voltar: '↺',
+  nps: '★',
 }
 
 /** A linha de baixo na barra de blocos: o que ele faz, em três palavras. */
@@ -108,6 +118,7 @@ export const DESCRICOES: Record<TipoNo, string> = {
   handoff: 'Passa para uma pessoa',
   http: 'Chama um sistema',
   voltar: 'Volta ao menu',
+  nps: 'Pergunta a nota',
 }
 
 /**
@@ -131,4 +142,5 @@ export const CORES: Record<TipoNo, string> = {
   nota: 'border-stone-300/30',
   'ir-fluxo': 'border-indigo-400/30',
   voltar: 'border-slate-300/30',
+  nps: 'border-yellow-400/30',
 }
