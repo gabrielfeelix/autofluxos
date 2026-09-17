@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   PLANOS,
+  comoTamanho,
   PLANO_DE_ENTRADA,
   PLANO_EM_DESTAQUE,
   acharPlano,
@@ -79,5 +80,30 @@ describe('fracaoUsada', () => {
 
   it('passa de 1 quando a conta estourou, porque quem estourou precisa ver', () => {
     expect(fracaoUsada(1500, acharPlano('essencial'))).toBe(1.5)
+  })
+})
+
+describe('comoTamanho', () => {
+  it('fala em MB, com vírgula, como o resto do painel', () => {
+    expect(comoTamanho(3.4 * 1024 * 1024)).toBe('3,4 MB')
+    expect(comoTamanho(23816450)).toBe('23 MB')
+  })
+
+  /*
+   * Zero para um arquivo que existe parece defeito, e foi o motivo de a régua
+   * ter casa decimal embaixo.
+   */
+  it('não some com arquivo pequeno', () => {
+    expect(comoTamanho(120 * 1024)).toBe('0,1 MB')
+  })
+
+  it('sobe para GB quando passa de mil MB', () => {
+    expect(comoTamanho(2.5 * 1024 * 1024 * 1024)).toBe('2,5 GB')
+  })
+
+  it('trata vazio e lixo sem quebrar a tela', () => {
+    expect(comoTamanho(0)).toBe('0 MB')
+    expect(comoTamanho(-5)).toBe('0 MB')
+    expect(comoTamanho(Number.NaN)).toBe('0 MB')
   })
 })

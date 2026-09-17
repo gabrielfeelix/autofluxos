@@ -170,3 +170,32 @@ export function fracaoUsada(usadas: number, plano: Plano): number {
   if (plano.conversas <= 0) return 0
   return usadas / plano.conversas
 }
+
+/**
+ * Bytes como gente lê.
+ *
+ * Mora aqui, e não na tela, porque é a mesma conta em três lugares (o consumo da
+ * conta, a lista de quem opera a 4YU, e o que vier depois), e porque conta de
+ * arredondamento sem teste é onde "0 MB" aparece para um arquivo que existe.
+ *
+ * Base 1024 e não 1000: é a que o resto do repositório usa para falar de teto de
+ * arquivo (`repos/acervo.ts`, `transcrever-audio.ts`), e duas bases para a mesma
+ * grandeza fariam a tela discordar do limite que ela mesma anuncia.
+ */
+export function comoTamanho(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 MB'
+
+  const emMega = bytes / (1024 * 1024)
+  if (emMega < 1024) {
+    /*
+     * Uma casa decimal abaixo de 10 MB e nenhuma acima: "3,4 MB" informa, e
+     * "731,2 MB" só faz o olho tropeçar num dígito que não muda decisão nenhuma.
+     * Arquivo pequeno vira "0,1 MB" em vez de "0 MB", porque zero para um
+     * arquivo que existe parece defeito.
+     */
+    const casas = emMega < 10 ? 1 : 0
+    return `${emMega.toFixed(casas).replace('.', ',')} MB`
+  }
+
+  return `${(emMega / 1024).toFixed(1).replace('.', ',')} GB`
+}
