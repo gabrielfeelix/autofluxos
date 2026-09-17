@@ -90,11 +90,26 @@ function enderecoDe(clienteId: string, chave: TelaDeAjustes) {
   return chave === 'inicio' ? base : `${base}/${chave}`
 }
 
+/**
+ * `clienteId` é opcional, e é o que conserta o `loading.tsx`.
+ *
+ * **`loading.tsx` não recebe `params`.** A documentação do Next é literal:
+ * *"Loading UI components do not accept any parameters"*. A versão anterior
+ * declarava `params` ali e fazia `await params`, o que em produção virava
+ * `await undefined` e estourava na desestruturação: a tela inteira de
+ * Configurações caía com "Alguma coisa quebrou aqui", e o React só mostrava o
+ * erro #441 porque a mensagem real fica escondida em build de produção.
+ *
+ * Sem id, o menu desenha os mesmos itens sem `<Link>`. É de propósito: o
+ * objetivo do menu no esqueleto sempre foi ocupar a mesma largura para a barra
+ * não piscar, e para isso ele não precisa navegar. Um menu clicável durante o
+ * carregamento seria pior, porque clicar nele não levaria a lugar nenhum.
+ */
 export function MenuDeAjustes({
   clienteId,
   ativa,
 }: {
-  clienteId: string
+  clienteId?: string
   ativa: TelaDeAjustes
 }) {
   return (
@@ -123,20 +138,32 @@ export function MenuDeAjustes({
                 {grupo.titulo}
               </p>
             )}
-            {grupo.itens.map((item) => (
-              <Link
-                key={item.chave}
-                href={enderecoDe(clienteId, item.chave)}
-                aria-current={item.chave === ativa ? 'page' : undefined}
-                className={`flex shrink-0 items-center rounded-[9px] px-2.5 py-[7px] text-[12.5px] transition ${
-                  item.chave === ativa
-                    ? 'bg-primary-weak font-bold text-primary'
-                    : 'font-medium text-muted hover:bg-surface hover:text-ink'
-                }`}
-              >
-                {item.rotulo}
-              </Link>
-            ))}
+            {grupo.itens.map((item) => {
+              const classe = `flex shrink-0 items-center rounded-[9px] px-2.5 py-[7px] text-[12.5px] transition ${
+                item.chave === ativa
+                  ? 'bg-primary-weak font-bold text-primary'
+                  : 'font-medium text-muted hover:bg-surface hover:text-ink'
+              }`
+
+              if (!clienteId) {
+                return (
+                  <span key={item.chave} className={classe} aria-hidden>
+                    {item.rotulo}
+                  </span>
+                )
+              }
+
+              return (
+                <Link
+                  key={item.chave}
+                  href={enderecoDe(clienteId, item.chave)}
+                  aria-current={item.chave === ativa ? 'page' : undefined}
+                  className={classe}
+                >
+                  {item.rotulo}
+                </Link>
+              )
+            })}
           </div>
         ))}
       </div>

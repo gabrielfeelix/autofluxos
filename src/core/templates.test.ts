@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   BOTOES_SEGUROS_NO_DESKTOP,
+  botoesIncompletos,
   componentesParaMeta,
   condutaPara,
   explicarErro,
@@ -10,6 +11,8 @@ import {
   LIMITE_FOOTER,
   normalizarNome,
   nomeValido,
+  pedidosDeBotao,
+  telefoneParaAMeta,
   numeracaoContinua,
   podeEnviar,
   temErro,
@@ -434,5 +437,71 @@ describe('o status que a Meta manda', () => {
   it('não chuta: status desconhecido nunca vira aprovado', () => {
     expect(statusDaMeta('ALGO_NOVO_DA_META')).toBe('desconhecido')
     expect(statusDaMeta(undefined)).toBe('desconhecido')
+  })
+})
+
+describe('os botões de um modelo da biblioteca', () => {
+  /*
+   * O caso que quebrou de verdade: um modelo da biblioteca com botão, criado
+   * sem `library_template_button_inputs`, e a Meta recusando com "give the same
+   * number of button inputs to match the library buttons". A aprovação imediata
+   * virava recusa imediata.
+   */
+  it('pede endereço para botão de URL e telefone para o de ligar', () => {
+    const pedidos = pedidosDeBotao([
+      { tipo: 'URL', rotulo: 'Ver agenda' },
+      { tipo: 'PHONE_NUMBER', rotulo: 'Ligar' },
+    ])
+
+    expect(pedidos[0]?.precisaDeValor).toBe(true)
+    expect(pedidos[0]?.pergunta).toContain('endereço')
+    expect(pedidos[1]?.precisaDeValor).toBe(true)
+    expect(pedidos[1]?.pergunta).toContain('telefone')
+  })
+
+  it('não pede nada para resposta rápida, que já vem pronta da Meta', () => {
+    const pedidos = pedidosDeBotao([{ tipo: 'QUICK_REPLY', rotulo: 'Confirmar' }])
+    expect(pedidos[0]?.precisaDeValor).toBe(false)
+  })
+
+  /*
+   * Tipo desconhecido não pode virar pergunta inventada: seria pedir um dado
+   * que a criação não sabe enviar.
+   */
+  it('ignora tipo que a Meta inventar depois', () => {
+    const pedidos = pedidosDeBotao([{ tipo: 'CATALOG', rotulo: 'Catálogo' }])
+    expect(pedidos[0]?.precisaDeValor).toBe(false)
+  })
+
+  it('mantém a ordem da biblioteca, que é a ordem que a Meta cobra', () => {
+    const pedidos = pedidosDeBotao([
+      { tipo: 'QUICK_REPLY', rotulo: 'Não' },
+      { tipo: 'URL', rotulo: 'Sim' },
+    ])
+    expect(pedidos.map((p) => p.rotulo)).toEqual(['Não', 'Sim'])
+  })
+
+  it('aponta o que falta preencher, e ignora o que não pede valor', () => {
+    const pedidos = pedidosDeBotao([
+      { tipo: 'URL', rotulo: 'Ver' },
+      { tipo: 'QUICK_REPLY', rotulo: 'Ok' },
+      { tipo: 'PHONE_NUMBER', rotulo: 'Ligar' },
+    ])
+
+    expect(botoesIncompletos(pedidos, ['', '', ''])).toEqual([0, 2])
+    expect(botoesIncompletos(pedidos, ['https://x.com', '', '   '])).toEqual([2])
+    expect(botoesIncompletos(pedidos, ['https://x.com', '', '+5511999990000'])).toEqual([])
+  })
+})
+
+describe('telefoneParaAMeta', () => {
+  it('tira a máscara que todo brasileiro digita', () => {
+    expect(telefoneParaAMeta('(11) 99999-0000')).toBe('+11999990000')
+    expect(telefoneParaAMeta('+55 11 99999-0000')).toBe('+5511999990000')
+  })
+
+  it('vazio continua vazio, em vez de virar um "+" sozinho', () => {
+    expect(telefoneParaAMeta('')).toBe('')
+    expect(telefoneParaAMeta('abc')).toBe('')
   })
 })

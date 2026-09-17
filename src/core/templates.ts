@@ -545,3 +545,103 @@ export function statusDaMeta(status: string | undefined): StatusDoTemplate | 'de
       return 'desconhecido'
   }
 }
+
+// ---------------------------------------------------------------------------
+// Os botões de um modelo da biblioteca da Meta
+// ---------------------------------------------------------------------------
+
+/**
+ * O que a tela precisa perguntar por botão de um modelo da biblioteca.
+ *
+ * **A Meta exige um item por botão, na ordem da biblioteca**, senão recusa a
+ * criação com "give the same number of button inputs to match the library
+ * buttons". Era o que acontecia com todo modelo da biblioteca que tivesse
+ * botão: a tela não perguntava nada e mandava a criação sem a lista, e a
+ * aprovação imediata virava recusa imediata.
+ *
+ * Puro e aqui, e não dentro do componente, porque "qual botão pede o quê" é
+ * regra da Meta e regra da Meta se testa sem navegador.
+ */
+export type PedidoDeBotao = {
+  /** `URL`, `PHONE_NUMBER` ou `QUICK_REPLY`, como a biblioteca devolve. */
+  tipo: string
+  rotulo: string
+  /** `false` para `QUICK_REPLY`, que já vem pronto da Meta. */
+  precisaDeValor: boolean
+  /** O que perguntar, quando precisa. */
+  pergunta: string
+  exemplo: string
+}
+
+export function pedidosDeBotao(
+  botoes: { tipo: string; rotulo: string }[],
+): PedidoDeBotao[] {
+  return botoes.map((botao) => {
+    const tipo = botao.tipo.toUpperCase()
+
+    if (tipo === 'URL') {
+      return {
+        tipo,
+        rotulo: botao.rotulo,
+        precisaDeValor: true,
+        pergunta: 'Para qual endereço este botão leva?',
+        exemplo: 'https://seusite.com.br/agenda',
+      }
+    }
+
+    if (tipo === 'PHONE_NUMBER') {
+      return {
+        tipo,
+        rotulo: botao.rotulo,
+        precisaDeValor: true,
+        pergunta: 'Qual telefone este botão liga?',
+        exemplo: '+55 11 99999-0000',
+      }
+    }
+
+    /*
+     * `QUICK_REPLY` e qualquer tipo que a Meta invente depois caem aqui sem
+     * pedir nada. Inventar uma pergunta para um tipo desconhecido seria pedir
+     * ao cliente um dado que a criação não sabe enviar.
+     */
+    return {
+      tipo,
+      rotulo: botao.rotulo,
+      precisaDeValor: false,
+      pergunta: '',
+      exemplo: '',
+    }
+  })
+}
+
+/**
+ * O que falta preencher antes de deixar criar.
+ *
+ * Devolve o índice de cada botão que precisa de valor e está vazio. A tela usa
+ * para desabilitar o botão de criar: deixar mandar e esperar a Meta recusar é
+ * gastar o tempo da pessoa para descobrir o que já dava para saber aqui.
+ */
+export function botoesIncompletos(
+  pedidos: PedidoDeBotao[],
+  valores: string[],
+): number[] {
+  const faltando: number[] = []
+  pedidos.forEach((pedido, indice) => {
+    if (pedido.precisaDeValor && (valores[indice] ?? '').trim() === '') {
+      faltando.push(indice)
+    }
+  })
+  return faltando
+}
+
+/**
+ * O telefone como a Meta quer: só dígitos, com o `+` na frente.
+ *
+ * A pessoa digita "(11) 99999-0000" porque é assim que telefone se escreve no
+ * Brasil, e a Meta recusa qualquer coisa que não seja E.164.
+ */
+export function telefoneParaAMeta(bruto: string): string {
+  const digitos = bruto.replace(/\D/g, '')
+  if (digitos === '') return ''
+  return `+${digitos}`
+}

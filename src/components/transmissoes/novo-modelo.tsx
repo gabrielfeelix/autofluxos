@@ -15,8 +15,13 @@ import {
   acaoCriarModelo,
   acaoListarBiblioteca,
 } from '@/server/acoes-transmissoes'
-import type { ModeloDaBiblioteca } from '@/channels/templates-api'
-import type { Categoria } from '@/core/templates'
+import type { EntradaDeBotao, ModeloDaBiblioteca } from '@/channels/templates-api'
+import {
+  botoesIncompletos,
+  pedidosDeBotao,
+  telefoneParaAMeta,
+  type Categoria,
+} from '@/core/templates'
 
 /**
  * Criar um modelo: escolher, ajustar, mandar.
@@ -329,6 +334,15 @@ function ConfirmarDaMeta({
   const [erro, setErro] = useState<string | null>(null)
   const [salvando, comecar] = useTransition()
 
+  /*
+    Um valor por botão, na ordem da biblioteca, que é a ordem que a Meta cobra.
+    Guardar por índice e não por rótulo porque dois botões podem ter o mesmo
+    texto, e aí um sobrescreveria o outro em silêncio.
+  */
+  const pedidos = pedidosDeBotao(modelo.botoes)
+  const [valores, setValores] = useState<string[]>(() => pedidos.map(() => ''))
+  const faltando = botoesIncompletos(pedidos, valores)
+
   function criar() {
     setErro(null)
     comecar(async () => {
@@ -336,6 +350,32 @@ function ConfirmarDaMeta({
         nomeNaBiblioteca: modelo.nome,
         idioma: modelo.idioma,
         categoria: (modelo.categoria as Categoria) ?? 'UTILITY',
+        /*
+          **Sem isto a Meta recusa todo modelo da biblioteca que tenha botão**,
+          com "give the same number of button inputs to match the library
+          buttons". A lista vai inteira, inclusive os `QUICK_REPLY`, porque o
+          que a Meta conta é um item por botão.
+        */
+        ...(pedidos.length > 0
+          ? {
+              botoes: pedidos.map((pedido, indice): EntradaDeBotao => {
+                const valor = (valores[indice] ?? '').trim()
+
+                if (pedido.tipo === 'URL') {
+                  return {
+                    type: 'URL',
+                    url: { base_url: valor, url_suffix_example: valor },
+                  }
+                }
+
+                if (pedido.tipo === 'PHONE_NUMBER') {
+                  return { type: 'PHONE_NUMBER', phone_number: telefoneParaAMeta(valor) }
+                }
+
+                return { type: 'QUICK_REPLY' }
+              }),
+            }
+          : {}),
       })
       if (!r.ok) {
         setErro(r.erro ?? 'Não deu para criar.')
@@ -357,11 +397,38 @@ function ConfirmarDaMeta({
         </p>
       </div>
 
-      {modelo.botoes.length > 0 && (
-        <p className="text-[11.5px] leading-5 text-muted">
-          Com {modelo.botoes.length === 1 ? 'o botão' : 'os botões'}:{' '}
-          {modelo.botoes.join(', ')}.
-        </p>
+      {/*
+        `modelo.botoes` é objeto, não texto. O `.join()` que estava aqui
+        imprimia "[object Object]" na tela para o cliente ler.
+      */}
+      {pedidos.length > 0 && (
+        <div className="space-y-2.5">
+          <p className="text-[11.5px] leading-5 text-muted">
+            Com {pedidos.length === 1 ? 'o botão' : 'os botões'}:{' '}
+            {pedidos.map((p) => p.rotulo).join(', ')}.
+          </p>
+
+          {pedidos.map((pedido, indice) =>
+            pedido.precisaDeValor ? (
+              <label key={`${pedido.rotulo}-${indice}`} className="block">
+                <span className="mb-1 block text-[12px] text-soft">
+                  {pedido.rotulo}: {pedido.pergunta}
+                </span>
+                <input
+                  type={pedido.tipo === 'URL' ? 'url' : 'tel'}
+                  value={valores[indice] ?? ''}
+                  placeholder={pedido.exemplo}
+                  onChange={(e) => {
+                    const proximos = [...valores]
+                    proximos[indice] = e.target.value
+                    setValores(proximos)
+                  }}
+                  className="app-field w-full text-[13px]"
+                />
+              </label>
+            ) : null,
+          )}
+        </div>
       )}
 
       {erro && <p className="text-[12.5px] leading-5 text-perigo">{erro}</p>}
@@ -374,11 +441,21 @@ function ConfirmarDaMeta({
         >
           Voltar
         </button>
+        {/*
+          Trancado enquanto falta valor de botão: mandar assim leva recusa certa
+          da Meta, e gastar a viagem para descobrir o que já dava para saber aqui
+          é o que fazia "aprovação imediata" virar erro em vermelho.
+        */}
         <button
           type="button"
           onClick={criar}
-          disabled={salvando}
-          className="app-primary-button flex-[1.35] px-4 py-2.5 text-[13px] disabled:opacity-50"
+          disabled={salvando || faltando.length > 0}
+          title={
+            faltando.length > 0
+              ? 'Preencha o que cada botão precisa antes de criar.'
+              : undefined
+          }
+          className="app-primary-button flex-[1.35] px-4 py-2.5 text-[13px] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {salvando ? 'Criando…' : 'Usar este modelo'}
         </button>
