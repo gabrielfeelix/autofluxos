@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { LinhaClicavel } from '@/components/lead/linha-clicavel'
 import { rotuloDoCampo } from '@/core/contatos/rotulo-do-campo'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import { notFound } from 'next/navigation'
@@ -347,8 +348,17 @@ async function Tabela({
               </thead>
               <tbody>
                 {leads.map((lead) => (
-                <tr key={lead.contatoId} className="border-b border-line transition last:border-0 hover:bg-surface">
-                  <td className="px-3.5 py-3 align-top">
+                <LinhaClicavel
+                  key={lead.contatoId}
+                  href={`/clientes/${clienteId}/leads/${lead.contatoId}`}
+                  className="cursor-pointer border-b border-line transition last:border-0 hover:bg-surface"
+                >
+                  {/*
+                    `align-middle` e não `align-top`: a caixa estava colada no
+                    topo de uma linha de três alturas (nome, telefone,
+                    etiquetas), desalinhada de tudo que ela seleciona.
+                  */}
+                  <td className="px-3.5 py-3 align-middle">
                     <CaixaDeSelecao id={lead.contatoId} rotulo={lead.nome ?? lead.waId} />
                   </td>
                   <td className="px-3.5 py-3">
@@ -399,7 +409,7 @@ async function Tabela({
                       </>
                     ) : 'sem mensagem'}
                   </td>
-                  <td className="px-2 py-3 align-top">
+                  <td className="px-2 py-3 align-middle">
                     <MenuDoContato
                       clienteId={clienteId}
                       contatoId={lead.contatoId}
@@ -408,7 +418,7 @@ async function Tabela({
                       aguardandoPessoa={lead.aguardando !== null}
                     />
                   </td>
-                </tr>
+                </LinhaClicavel>
                 ))}
               </tbody>
             </table>

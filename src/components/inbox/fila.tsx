@@ -19,7 +19,6 @@ import { TETO_DE_FIXADAS } from "@/core/marcadores";
 import {
   acaoFixarConversa,
   acaoMarcarNaoLida,
-  acaoMarcarTodasComoLidas,
 } from "@/server/acoes-marcadores";
 import { nomeDoTipo } from "@/core/tipo-da-mensagem";
 import { quando } from "@/lib/quando";
@@ -278,38 +277,6 @@ export function Fila({
       : base;
     return comFixadasNoTopo(ordenar(procurar(recortada, digitado), ordem), fixadaEm);
   }, [local, recorte, leads, soNaoLidas, semLerDe, ordem, digitado, fixadaEm]);
-
-  /**
-   * As conversas à vista que ainda têm insígnia, o que o "marcar todas" apaga.
-   *
-   * Sai desta lista, e não da conta inteira, porque é isso que o botão promete.
-   * Ver `acaoMarcarTodasComoLidas`.
-   */
-  const porLerNaTela = useMemo(
-    () => naTela.filter((lead) => semLerDe(lead.contatoId) > 0).map((lead) => lead.contatoId),
-    [naTela, semLerDe],
-  );
-
-  const marcarTudoComoLido = useCallback(() => {
-    const alvos = porLerNaTela;
-    if (alvos.length === 0) return;
-    const antes = new Map(alvos.map((id) => [id, semLerDe(id)] as const));
-    comRemendo(
-      () =>
-        setRemendoDeNaoLidas((mapa) => {
-          const novo = new Map(mapa);
-          for (const id of alvos) novo.set(id, 0);
-          return novo;
-        }),
-      () =>
-        setRemendoDeNaoLidas((mapa) => {
-          const novo = new Map(mapa);
-          for (const [id, valor] of antes) novo.set(id, valor);
-          return novo;
-        }),
-      () => acaoMarcarTodasComoLidas(clienteId, alvos),
-    );
-  }, [clienteId, comRemendo, porLerNaTela, semLerDe]);
 
   const nomeDe = (id: string | null) =>
     id
@@ -621,27 +588,23 @@ export function Fila({
           </form>
 
           {/*
-            "Marcar todas como lidas", e o rótulo diz **quantas** e **quais**.
+            **O "marcar as N conversas à vista como lidas" saiu daqui**, e o
+            motivo é o do dono: *"nem dá para entender. Por que a vista?"*.
 
-            Um botão escrito só "marcar todas" não diz todas de quê, e a resposta
-            muda conforme o rail e a busca: quem está em "Adiadas" procurando por
-            "boleto" vê onze conversas, e zerar as quatrocentas da conta apagaria
-            o rastro de trezentas e oitenta e nove que essa pessoa nunca viu. O
-            número no rótulo é o contrato: é sobre isto que o clique age.
+            O rótulo tentava ser honesto sobre o recorte (rail mais busca) e o
+            preço disso era uma frase que ninguém lê como ação. Pior: era a única
+            ação em lote do Inbox, e ela agia numa seleção invisível, que a
+            pessoa não montou e não vê.
 
-            Só aparece quando há insígnia à vista. Botão que não faz nada é pior
-            que botão ausente, ele ensina que clicar ali não adianta.
+            O caminho combinado é o do WhatsApp: selecionar conversas e então
+            agir sobre elas, com arquivar e marcar como lida na mesma barra. Até
+            isso existir, marcar como lida continua acontecendo pelo caminho de
+            sempre, que é abrir a conversa.
+
+            `acaoMarcarTodasComoLidas` continua existindo e recebe uma lista de
+            ids, então a seleção em lote encaixa nela sem servidor novo. Ver
+            `server/acoes-marcadores.ts`.
           */}
-          {porLerNaTela.length > 0 && (
-            <button
-              type="button"
-              onClick={marcarTudoComoLido}
-              disabled={marcando}
-              className="mt-2 w-full rounded-lg px-2 py-1 text-left text-[11px] text-dim transition hover:bg-surface hover:text-soft disabled:opacity-40"
-            >
-              Marcar as {porLerNaTela.length} conversas à vista como lidas
-            </button>
-          )}
 
           {erroDaMarcacao && (
             <p role="alert" className="mt-1.5 text-[10.5px] leading-4 text-perigo">

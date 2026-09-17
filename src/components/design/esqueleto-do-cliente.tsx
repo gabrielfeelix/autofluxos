@@ -41,10 +41,26 @@ import { type AbaDoCliente, ITENS } from './secoes-do-cliente'
  *
  * Cinza: o miolo, que é o que de fato está sendo buscado.
  *
- * Some: o rodapé da barra (conta, presença, sair) e o botão "Todos os
- * clientes". Os três dependem de consulta, e o rodapé inteiro é `md:` — desenhar
- * um retângulo cinza no lugar deles chamaria atenção para a única parte da tela
- * que ninguém está esperando.
+ * Some: o rodapé da barra (conta, presença, sair). Ele depende de consulta e é
+ * inteiro `md:`, e desenhar um retângulo cinza no lugar dele chamaria atenção
+ * para a única parte da tela que ninguém está esperando.
+ *
+ * ---------------------------------------------------------------------------
+ * O "Todos os clientes" não some mais, ele fica invisível
+ * ---------------------------------------------------------------------------
+ *
+ * Sumir era a decisão antiga, e o dono descreveu o efeito dela melhor do que o
+ * comentário que a defendia: *"a sidebar fica sambando"*. Quem tem acesso a mais
+ * de uma conta via a linha desaparecer e voltar a cada clique de aba, e os itens
+ * de navegação subirem e descerem junto, por um piscar.
+ *
+ * O texto é fixo; o que dependia de consulta era só **se** a pessoa vê a linha.
+ * Então o esqueleto reserva o espaço dela com `invisible`, que ocupa o lugar sem
+ * desenhar nada: a barra para de saltar, e ninguém vê um link falso.
+ *
+ * Quem tem uma conta só perde a altura de uma linha durante o carregamento, e
+ * essa é a troca escolhida: um espaço em branco que ninguém nota é mais barato
+ * que a barra inteira pulando para todo mundo que tem mais de uma conta.
  */
 export function EsqueletoDoCliente({
   ativa,
@@ -60,6 +76,17 @@ export function EsqueletoDoCliente({
         <div className="flex items-center gap-3 border-b border-line px-4 py-3 md:mb-5 md:border-0 md:px-2 md:py-0">
           <Marca />
         </div>
+
+        {/*
+          O lugar do "‹ Todos os clientes", reservado e invisível. Ver o bloco
+          sobre a barra sambando, acima.
+        */}
+        <span
+          aria-hidden
+          className="invisible hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11.5px] md:mb-1.5 md:flex"
+        >
+          <span>‹</span> Todos os clientes
+        </span>
 
         {/*
           Sem `<Link>`: durante o carregamento estes itens não são clicáveis de

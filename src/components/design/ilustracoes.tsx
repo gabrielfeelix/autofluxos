@@ -154,3 +154,37 @@ export function IlustracaoInbox() {
     </Tela>
   )
 }
+
+/**
+ * Mensagens guardadas: duas mensagens, e a estrela acesa na de cima.
+ *
+ * A estrela é o assunto do desenho porque é o gesto que a tela ensina. Quem
+ * chega em "Mensagens guardadas" sem nada guardado quase sempre não sabe onde
+ * fica a estrela, e o texto ao lado diz "embaixo de cada mensagem": a
+ * ilustração mostra exatamente isso, encostada na bolha.
+ */
+export function IlustracaoGuardadas() {
+  return (
+    <Tela titulo="Mensagens com uma delas marcada com estrela">
+      {/* A mensagem guardada, com a estrela embaixo */}
+      <path d="M16 14h74a6 6 0 0 1 6 6v20a6 6 0 0 1-6 6H32l-11 8V20a6 6 0 0 1 6-6Z" {...TRACO} />
+      <rect x={28} y={24} width={48} height={4.5} rx={2.2} fill="currentColor" opacity={0.5} />
+      <rect x={28} y={34} width={32} height={4.5} rx={2.2} fill="currentColor" opacity={0.3} />
+
+      {/*
+        A estrela cheia, e a única peça com opacidade alta: é o que a pessoa
+        precisa procurar depois, no Inbox.
+      */}
+      <path
+        d="M31 56l2.1 4.3 4.7.7-3.4 3.3.8 4.7-4.2-2.2-4.2 2.2.8-4.7-3.4-3.3 4.7-.7Z"
+        fill="currentColor"
+        opacity={0.9}
+      />
+
+      {/* Outra mensagem, sem estrela, para a de cima ter com o que contrastar */}
+      <path d="M110 76h74a6 6 0 0 1 6 6v20a6 6 0 0 1-6 6h-58l-11 8V82a6 6 0 0 1 6-6Z" {...TRACO} opacity={0.45} />
+      <rect x={122} y={86} width={44} height={4.5} rx={2.2} fill="currentColor" opacity={0.25} />
+      <rect x={122} y={96} width={30} height={4.5} rx={2.2} fill="currentColor" opacity={0.18} />
+    </Tela>
+  )
+}

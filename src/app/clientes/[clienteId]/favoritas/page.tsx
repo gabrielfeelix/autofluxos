@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { IlustracaoGuardadas } from '@/components/design/ilustracoes'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { acharCliente } from '@/server/repos/clientes'
@@ -72,7 +73,8 @@ export default async function Pagina({
             está, que é a única coisa que destrava a tela.
           */
           <div className="rounded-[14px] border border-dashed border-strong px-5 py-10 text-center">
-            <p className="text-[13px] font-semibold text-soft">Nada guardado ainda</p>
+            <IlustracaoGuardadas />
+            <p className="mt-4 text-[13px] font-semibold text-soft">Nada guardado ainda</p>
             <p className="mx-auto mt-1.5 max-w-[420px] text-[12px] leading-5 text-dim">
               A estrela fica embaixo de cada mensagem, no Inbox. Serve para o endereço
               que o cliente mandou, o número do pedido, o combinado que você vai

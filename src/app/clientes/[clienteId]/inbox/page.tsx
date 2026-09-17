@@ -81,7 +81,7 @@ import { avisarQueLeu } from '@/server/recibo-de-leitura'
 import { TextoDoWhatsApp } from '@/components/texto-do-whatsapp'
 import { FaixaDeCanalCaido } from '@/components/inbox/faixa-canal-caido'
 import { PulsoDoInbox } from '@/components/inbox/pulso-do-inbox'
-import { Esqueleto, EsqueletoDeInbox } from '@/components/design/esqueleto'
+import { Esqueleto } from '@/components/design/esqueleto'
 
 export const dynamic = 'force-dynamic'
 
@@ -153,23 +153,32 @@ export default async function Pagina({
   return (
     <ClienteShell cliente={cliente} ativa="inbox">
       {/*
-        O Inbox são sete consultas antes da primeira letra aparecer. Sem esta
-        fronteira, sair de qualquer outra tela e cair aqui era meio segundo de
-        tela idêntica, e a impressão não é "está carregando", é "não clicou".
+        **Esta fronteira não tem mais `fallback` de esqueleto, e isso conserta o
+        esqueleto em dois tempos.**
+
+        O que o dono via, e descreveu certo: *"tem um skeleton inicial quando eu
+        clico no inbox, super esquisito, e aí do nada aparece o header e continua
+        um skeleton rodando embaixo"*. Eram dois mesmo, em sequência:
+
+        1. o `loading.tsx` da rota, que aparece no quadro do clique, mas desenha
+           a moldura do cliente **sem** o cabeçalho da conta, porque a
+           `ClienteShell` ainda não resolveu as consultas dela;
+        2. este `fallback`, que entrava **depois** da moldura chegar, repetindo o
+           mesmo `EsqueletoDeInbox` já embaixo de um cabeçalho de verdade.
+
+        O primeiro sozinho já cobre a espera inteira, e é o que o Next
+        pré-carrega junto do prefetch. Repetir o esqueleto depois da moldura só
+        fazia a tela parecer que recomeçava do zero.
+
+        A fronteira continua aqui, com `key={chaveDoFiltro}`, porque ela ainda
+        isola a troca de filtro, e sem `fallback` o React segura a tela anterior
+        enquanto o filtro novo vem, que é o comportamento certo para quem trocou
+        de aba do rail: a fila some e volta era justamente o que incomodava.
       */}
-      <Suspense key={chaveDoFiltro} fallback={<Espera />}>
+      <Suspense key={chaveDoFiltro}>
         <Tela cliente={cliente} busca={busca} />
       </Suspense>
     </ClienteShell>
-  )
-}
-
-/** A fila e a conversa em cinza, enquanto as consultas voltam. */
-function Espera() {
-  return (
-    <main className="flex min-h-0 flex-1 flex-col p-3">
-      <EsqueletoDeInbox />
-    </main>
   )
 }
 
