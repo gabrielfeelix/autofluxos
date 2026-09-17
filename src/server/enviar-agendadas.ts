@@ -10,7 +10,14 @@ import {
   AGENDADAS_POR_PASSADA,
   type MensagemAgendada,
 } from './repos/mensagens-agendadas'
-import { confirmarEntrega, contextoDeResposta, registrarSaida } from './repos/conversas'
+import {
+  acharContato,
+  confirmarEntrega,
+  contextoDeResposta,
+  registrarSaida,
+} from './repos/conversas'
+import { lerTemplate } from './repos/templates'
+import { podeEnviar, variaveisDe as variaveisDoCorpo } from '@/core/templates'
 
 /**
  * A passada que manda o que venceu.
@@ -84,13 +91,31 @@ async function enviarUma(agendada: MensagemAgendada): Promise<void> {
    * a palavra certa: não é erro nosso, é regra da Meta, e o caminho de saída é
    * a pessoa escrever de novo quando o cliente voltar a falar.
    */
-  if (!dentroDaJanela(contexto)) {
-    throw new Error(
-      'a janela de 24h fechou antes da hora marcada: o WhatsApp só deixa retomar por um modelo aprovado',
-    )
-  }
-
   const canal = await adaptadorDoCanal(contexto.canal)
+
+  /*
+   * Fora da janela, manda pelo modelo, quando quem agendou escolheu um (`0067`).
+   *
+   * Antes isto era só uma recusa, e o dono apontou o buraco que ela deixava:
+   * *"qual o sentido de agendar uma mensagem para daqui uma semana, se eu
+   * preciso de um modelo para conseguir enviar?"*. Marcar algo para daqui uma
+   * semana era quase sempre marcar uma falha para daqui uma semana, e avisar
+   * que não ia funcionar não é o mesmo que fazer funcionar.
+   *
+   * A escolha continua sendo de quem agenda, e não automática: modelo custa
+   * dinheiro por envio e o texto livre não, então promover texto a modelo por
+   * conta própria seria gastar o dinheiro do cliente sem ele pedir.
+   */
+  if (!dentroDaJanela(contexto)) {
+    if (!agendada.templateId) {
+      throw new Error(
+        'a janela de 24h fechou antes da hora marcada: o WhatsApp só deixa retomar por um modelo aprovado',
+      )
+    }
+
+    await enviarPeloModelo(agendada, contexto, canal)
+    return
+  }
 
   /*
    * Grava antes de mandar, como toda saída deste produto: uma função que morre
@@ -109,6 +134,75 @@ async function enviarUma(agendada: MensagemAgendada): Promise<void> {
   })
 
   await canal.enviarTexto(contexto.waId, assinar(agendada.texto, agendada.criadaPorNome))
+  await confirmarEntrega(registro)
+  await marcarEnviada(agendada.id)
+}
+
+/**
+ * O envio fora da janela, pelo modelo que quem agendou escolheu.
+ *
+ * Espelha `acaoRetomarComModelo` de propósito, inclusive na ordem: confere o
+ * modelo **agora** porque a Meta pausa modelo por qualidade sem avisar e a
+ * escolha pode ter sido feita semana passada; grava antes de mandar, como toda
+ * saída deste produto; e preenche os buracos com o nome do contato lido no
+ * instante do envio, que é o que evita congelar um nome que mudou.
+ */
+async function enviarPeloModelo(
+  agendada: MensagemAgendada,
+  contexto: Awaited<ReturnType<typeof contextoDeResposta>> & object,
+  canal: Awaited<ReturnType<typeof adaptadorDoCanal>>,
+): Promise<void> {
+  if (!canal.enviarTemplate) {
+    throw new Error('o canal conectado não sabe enviar modelo aprovado')
+  }
+
+  const template = await lerTemplate(agendada.templateId as string)
+  if (!template || template.clienteId !== agendada.clienteId) {
+    throw new Error('o modelo escolhido não existe mais')
+  }
+
+  if (!podeEnviar(template.status)) {
+    throw new Error(
+      `o modelo escolhido está ${template.status} na Meta, e só modelo aprovado entrega`,
+    )
+  }
+
+  const contato = await acharContato(agendada.contatoId)
+  const quantas = variaveisDoCorpo(template.componentes.corpo).length
+  const nome = contato?.nome || 'tudo bem'
+
+  /*
+   * O histórico recebe o corpo com os buracos preenchidos, e não "{{1}}": é o
+   * que o cliente recebeu, e é o que o colega precisa ler na bolha.
+   */
+  let textoGravado = template.componentes.corpo
+  for (let i = 1; i <= quantas; i += 1) {
+    textoGravado = textoGravado.replaceAll(`{{${i}}}`, nome)
+  }
+
+  const registro = await registrarSaida({
+    contatoId: agendada.contatoId,
+    sessaoId: contexto.sessaoId,
+    texto: textoGravado,
+    autor: autorDaPessoa({ nome: agendada.criadaPorNome }),
+  })
+
+  await canal.enviarTemplate(contexto.waId, {
+    nome: template.nome,
+    idioma: template.idioma,
+    ...(quantas > 0
+      ? {
+          // Vazio a Meta recusa com 132000, e "tudo bem" é o que sobra quando o
+          // contato não tem nome gravado.
+          valores: {
+            corpo:
+              agendada.templateValores?.corpo ??
+              Array.from({ length: quantas }, () => nome),
+          },
+        }
+      : {}),
+  })
+
   await confirmarEntrega(registro)
   await marcarEnviada(agendada.id)
 }

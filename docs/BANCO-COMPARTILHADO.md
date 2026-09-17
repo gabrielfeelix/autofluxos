@@ -320,6 +320,42 @@ extração explícito para os objetos de `public`.
   **O código que lê esta coluna ainda não está publicado**, mesma ordem da
   `0058-nps` acima: migration primeiro, deploy depois. Enquanto isso a coluna
   fica lá sem ninguém ler, e o que está no ar não a procura;
+- **a `0067` foi aplicada em 16/set/2026**, com autorização explícita do dono.
+  Ela acrescenta duas colunas anuláveis a `public.mensagens_agendadas`:
+  `template_id` (uuid) e `template_valores` (jsonb). É o que permite a uma
+  mensagem agendada sair por modelo aprovado quando a janela de 24h estiver
+  fechada na hora do envio, em vez de falhar.
+
+  **Nulo é o comportamento anterior**, e nenhuma linha muda de sentido: agendada
+  sem modelo continua sendo texto livre que depende da janela.
+
+  **`template_id` não tem chave estrangeira para `public.templates`, e é
+  decisão.** Um modelo apagado não pode apagar a mensagem que alguém marcou nem
+  impedir o envio de ser tentado e falhar com motivo legível. O envio confere o
+  modelo no instante de usar, como `acaoRetomarComModelo` já faz, porque a Meta
+  pausa modelo por qualidade sem avisar e um `references` não protegeria disso.
+
+  `template_valores` é `jsonb` e não `text[]` porque o modelo pode ganhar
+  variável de cabeçalho e de botão depois, e um array de texto obrigaria outra
+  migration para caber.
+
+  Conferida pelo ensaio em transação contra a produção (o Docker segue
+  indisponível nesta máquina), que voltou limpo, e objeto a objeto depois: as
+  duas colunas presentes e anuláveis, `grant` só para `postgres` e
+  `service_role`. A tabela tinha **zero linhas** na produção quando foi aplicada,
+  então não havia dado para migrar. Do outro lado: `app_verandi` com as mesmas
+  **32** migrations, **42** tabelas e as **16** policies de `storage.objects`.
+
+  **Tem `notify pgrst`, e o reload foi conferido nos dois produtos.**
+  `mensagens_agendadas?select=template_id,template_valores` responde **200** para
+  `service_role` e **401** para `anon` (sem 400, então o cache pegou as colunas
+  novas), e `app_verandi.conta` continua respondendo **200** pelo mesmo
+  PostgREST.
+
+  **Migration primeiro, deploy depois**, pela razão da `0058`: o código novo
+  escreve `template_id` no `insert` de agendar, e publicar antes do SQL faria
+  toda tentativa de agendar estourar.
+
 - **a `0066` foi aplicada em 16/set/2026**, com autorização explícita do dono.
   Ela é o plano da conta e a medição do consumo: `clients.plano` (default
   `essencial`), três colunas anuláveis para o gateway que ainda não existe

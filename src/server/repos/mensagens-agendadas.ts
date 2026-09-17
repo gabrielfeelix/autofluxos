@@ -27,6 +27,13 @@ export type MensagemAgendada = {
   estado: EstadoDaAgendada
   enviadaEm: string | null
   erro: string | null
+  /**
+   * O modelo aprovado a usar quando a janela de 24h estiver fechada na hora do
+   * envio (`0067`). Nulo = só texto livre, e aí o envio depende da janela.
+   */
+  templateId: string | null
+  /** Valores das variáveis. Nulo = resolver na hora, com o nome do contato. */
+  templateValores: Record<string, string[]> | null
 }
 
 /**
@@ -49,7 +56,7 @@ export const AGENDADAS_POR_PASSADA = 20
 const LIMITE_DO_ENVIANDO_MS = 5 * 60 * 1000
 
 const COLUNAS =
-  'id, cliente_id, contato_id, texto, quando, criada_por_nome, estado, enviada_em, erro'
+  'id, cliente_id, contato_id, texto, quando, criada_por_nome, estado, enviada_em, erro, template_id, template_valores'
 
 function daLinha(linha: Record<string, unknown>): MensagemAgendada {
   return {
@@ -62,6 +69,9 @@ function daLinha(linha: Record<string, unknown>): MensagemAgendada {
     estado: linha.estado as EstadoDaAgendada,
     enviadaEm: (linha.enviada_em as string | null) ?? null,
     erro: (linha.erro as string | null) ?? null,
+    templateId: (linha.template_id as string | null) ?? null,
+    templateValores:
+      (linha.template_valores as Record<string, string[]> | null) ?? null,
   }
 }
 
@@ -72,6 +82,8 @@ export async function agendar(dados: {
   quando: string
   criadaPor: string | null
   criadaPorNome: string | null
+  /** O modelo a usar se a janela estiver fechada na hora. Ver `0067`. */
+  templateId?: string | null
 }): Promise<MensagemAgendada> {
   const { data, error } = await db()
     .from('mensagens_agendadas')
@@ -82,6 +94,7 @@ export async function agendar(dados: {
       quando: dados.quando,
       criada_por: dados.criadaPor,
       criada_por_nome: dados.criadaPorNome,
+      template_id: dados.templateId ?? null,
     })
     .select(COLUNAS)
     .single()

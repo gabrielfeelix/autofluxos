@@ -51,10 +51,24 @@ export async function acaoAgendarMensagem(
 
   const quem = await sessaoAtual()
 
+  /*
+   * O modelo é opcional, e só vale fora da janela.
+   *
+   * Vem vazio quando quem agendou marcou um horário que ainda cabe nas 24h: o
+   * texto livre é mais barato e não gasta cota da Meta, então promover a modelo
+   * sem pedido seria gastar o dinheiro do cliente por conta própria.
+   *
+   * Não é conferido aqui de propósito. O envio confere o modelo no instante em
+   * que for usar, porque a Meta pausa modelo por qualidade sem avisar e entre
+   * marcar e enviar pode ter passado uma semana. Ver `enviar-agendadas.ts`.
+   */
+  const templateId = String(formData.get('templateId') ?? '').trim() || null
+
   await agendar({
     clienteId,
     contatoId,
     texto: texto.trim(),
+    templateId,
     // `quando` já é um instante absoluto — o navegador resolveu o fuso de quem
     // marcou antes de mandar. Daqui para a frente não há fuso para errar.
     quando: (quando as Date).toISOString(),

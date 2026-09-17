@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import {
   conferirAgendamento,
   foraDaJanela,
@@ -11,7 +11,9 @@ import {
   type Predefinicao,
 } from '@/core/agendamento'
 import { acaoAgendarMensagem, acaoCancelarAgendada } from '@/server/acoes-agendamento'
+import { acaoListarTemplates } from '@/server/acoes-transmissoes'
 import type { MensagemAgendada } from '@/server/repos/mensagens-agendadas'
+import type { Template } from '@/server/repos/templates'
 
 /**
  * Marcar uma mensagem para depois, de dentro da conversa.
@@ -50,12 +52,34 @@ export function AgendarMensagem({
 }) {
   const [texto, setTexto] = useState('')
   const [quandoBruto, setQuandoBruto] = useState('')
+  const [modelo, setModelo] = useState('')
+  const [aprovados, setAprovados] = useState<Template[] | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const [enviando, comecar] = useTransition()
 
   const quando = quandoBruto === '' ? null : new Date(quandoBruto)
   const recusa = conferirAgendamento({ texto, quando })
   const avisar = foraDaJanela(quando, fimDaJanela)
+
+  /*
+   * A lista de modelos só é buscada quando o horário escolhido cai fora da
+   * janela. Quem marca "daqui duas horas" nunca precisa dela, e buscar sempre
+   * gastaria uma chamada em toda abertura da caixa de agendar.
+   */
+  useEffect(() => {
+    if (!avisar || aprovados !== null) return
+    let vivo = true
+    void acaoListarTemplates(clienteId)
+      .then((lista) => {
+        if (vivo) setAprovados(lista.filter((t) => t.status === 'aprovado'))
+      })
+      .catch(() => {
+        if (vivo) setAprovados([])
+      })
+    return () => {
+      vivo = false
+    }
+  }, [avisar, aprovados, clienteId])
 
   function escolher(chave: Predefinicao) {
     setQuandoBruto(paraCampoLocal(quandoDaPredefinicao(chave)))
@@ -74,6 +98,13 @@ export function AgendarMensagem({
      */
     dados.set('quando', quando ? quando.toISOString() : '')
 
+    /*
+      Só vai quando o horário cai fora da janela: um modelo escolhido, e depois
+      a pessoa mudando a hora para daqui duas horas, não deve mandar por modelo
+      e cobrar da conta um envio que o texto livre entregaria de graça.
+    */
+    dados.set('templateId', avisar ? modelo : '')
+
     comecar(async () => {
       const r = await acaoAgendarMensagem(clienteId, contatoId, dados)
       if (!r.ok) {
@@ -82,6 +113,7 @@ export function AgendarMensagem({
       }
       setTexto('')
       setQuandoBruto('')
+      setModelo('')
       aoFechar()
     })
   }
@@ -128,11 +160,55 @@ export function AgendarMensagem({
         className="app-field mb-2 px-2.5 py-1.5 text-[12px]"
       />
 
+      {/*
+        Fora da janela, a caixa passa a **oferecer a saída** em vez de só avisar
+        do problema.
+
+        O aviso sozinho era a queixa do dono: *"qual o sentido de agendar uma
+        mensagem para daqui uma semana, se eu preciso de um modelo para
+        conseguir enviar?"*. Ele estava certo, e a resposta não era tirar o
+        agendar, era deixar escolher o modelo aqui.
+
+        Escolher continua sendo opcional, e sem escolher o comportamento é o de
+        antes: o aviso vale, e a mensagem falha com motivo se a janela não
+        reabrir. É de propósito, porque a janela reabre a cada mensagem do
+        cliente e modelo custa dinheiro por envio: mandar pelo modelo quem só
+        precisava esperar o cliente responder seria gastar sem necessidade.
+      */}
       {avisar && (
-        <p className="mb-2 rounded-[8px] border border-amber-400/30 bg-amber-400/[0.09] px-2 py-1.5 text-[10.5px] leading-4 text-aviso">
-          <strong>Isso cai fora da janela de 24h.</strong> Se {nome} não escrever de novo antes da
-          hora marcada, o WhatsApp recusa — e a mensagem aparece aqui como falhou, com o motivo.
-        </p>
+        <div className="mb-2 rounded-[8px] border border-amber-400/30 bg-amber-400/[0.09] px-2 py-1.5">
+          <p className="text-[10.5px] leading-4 text-aviso">
+            <strong>Isso cai fora da janela de 24h.</strong> Sem modelo, se {nome} não
+            escrever de novo antes da hora marcada, o WhatsApp recusa.
+          </p>
+
+          {aprovados === null ? (
+            <p className="mt-1.5 text-[10px] text-dim">Vendo os modelos aprovados…</p>
+          ) : aprovados.length === 0 ? (
+            <p className="mt-1.5 text-[10px] leading-4 text-dim">
+              Esta conta ainda não tem modelo aprovado. Crie um em Transmissões para poder
+              agendar fora da janela.
+            </p>
+          ) : (
+            <label className="mt-1.5 block">
+              <span className="mb-1 block text-[10px] text-muted">
+                Mandar por um modelo, se a janela estiver fechada na hora:
+              </span>
+              <select
+                value={modelo}
+                onChange={(e) => setModelo(e.target.value)}
+                className="app-field w-full px-2 py-1 text-[11.5px]"
+              >
+                <option value="">Sem modelo, e aceito o risco de falhar</option>
+                {aprovados.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.nome}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+        </div>
       )}
 
       {erro && (
