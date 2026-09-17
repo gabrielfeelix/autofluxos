@@ -1,6 +1,7 @@
 import 'server-only'
 import { faixaDaNota } from '@/core/flow/schema'
 import { db, ehIdInvalido } from '../db'
+import type { NotaLida } from '@/core/nps'
 
 /**
  * As notas de satisfação (0060).
@@ -139,3 +140,82 @@ export async function avaliacoesDoContato(
 
 /** Em que faixa a nota cai — reexportado para a tela não importar de `core/`. */
 export { faixaDaNota }
+
+/**
+ * As notas da conta inteira num período, para o relatório.
+ *
+ * Traz nota e data, e não o resumo pronto: quem resume é `core/nps.ts`, que é
+ * puro e testável. Repo faz ida ao banco, e só.
+ *
+ * O teto existe porque esta consulta cresce com o uso e ninguém lê dez mil
+ * linhas: o resumo de uma amostra grande já responde a pergunta, e a lista de
+ * comentários tem teto próprio.
+ */
+export async function notasDaConta(
+  clienteId: string,
+  desde: string,
+  limite = 2000,
+): Promise<NotaLida[]> {
+  const { data, error } = await db()
+    .from('avaliacoes')
+    .select('nota, criada_em')
+    .eq('cliente_id', clienteId)
+    .gte('criada_em', desde)
+    .order('criada_em', { ascending: false })
+    .limit(limite)
+
+  if (ehIdInvalido(error)) return []
+  if (error) throw new Error(`não deu para ler as notas: ${error.message}`)
+
+  return (data as { nota: number; criada_em: string }[]).map((linha) => ({
+    nota: Number(linha.nota),
+    criadaEm: String(linha.criada_em),
+  }))
+}
+
+/**
+ * Os comentários escritos, do mais novo para o mais velho.
+ *
+ * Só quem escreveu alguma coisa: a nota sem comentário já está no resumo, e
+ * uma lista cheia de linhas vazias esconderia as poucas que têm texto — que são
+ * justamente as que alguém quer ler.
+ */
+export async function comentariosDaConta(
+  clienteId: string,
+  desde: string,
+  limite = 50,
+): Promise<ComentarioLido[]> {
+  const { data, error } = await db()
+    .from('avaliacoes')
+    .select('id, nota, comentario, criada_em, contato_id, contacts!inner(nome, nome_real)')
+    .eq('cliente_id', clienteId)
+    .gte('criada_em', desde)
+    .not('comentario', 'is', null)
+    .order('criada_em', { ascending: false })
+    .limit(limite)
+
+  if (ehIdInvalido(error)) return []
+  if (error) throw new Error(`não deu para ler os comentários: ${error.message}`)
+
+  return (data as Record<string, unknown>[]).map((linha) => {
+    const contato = linha.contacts as { nome: string | null; nome_real: string | null } | null
+    return {
+      id: String(linha.id),
+      contatoId: String(linha.contato_id),
+      /* O nome corrigido à mão vence o do perfil, a mesma regra da ficha. */
+      nome: contato?.nome_real ?? contato?.nome ?? null,
+      nota: Number(linha.nota),
+      comentario: String(linha.comentario ?? ''),
+      criadaEm: String(linha.criada_em),
+    }
+  })
+}
+
+export type ComentarioLido = {
+  id: string
+  contatoId: string
+  nome: string | null
+  nota: number
+  comentario: string
+  criadaEm: string
+}

@@ -14,6 +14,8 @@ import { listarCanais } from '@/server/repos/conversas'
 import { listarFluxos } from '@/server/repos/fluxos'
 import { contarLeads } from '@/server/repos/leads'
 import { medirFunil, medirPessoas, medirTempos } from '@/server/repos/metricas'
+import { comentariosDaConta, notasDaConta } from '@/server/repos/avaliacoes'
+import { comoVai, resumirNps } from '@/core/nps'
 import { fechamentos, filaDoPainel, type ItemDaFila } from '@/server/repos/painel'
 import { listarQuadros } from '@/server/repos/quadros'
 import { sessaoAtual } from '@/server/sessao'
@@ -126,6 +128,10 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
             <Suspense fallback={null}>
               <Fechamentos clienteId={cliente.id} />
+            </Suspense>
+
+            <Suspense fallback={null}>
+              <Satisfacao clienteId={cliente.id} />
             </Suspense>
 
             <Suspense fallback={null}>
@@ -533,6 +539,72 @@ async function Numeros({ clienteId }: { clienteId: string }) {
  * Some inteiro quando não há quadro ou quando nada fechou: um bloco de vendas
  * zerado numa conta que ainda não usa funil cobra por algo que ninguém prometeu.
  */
+/**
+ * O que a pesquisa de satisfação colheu (0060).
+ *
+ * A pesquisa gravava desde a 0060 e **nenhuma tela lia**: a nota entrava no
+ * banco e morria lá. Esta seção é o outro lado do bloco — sem ela, quem desenha
+ * uma pesquisa no fluxo nunca descobre o resultado.
+ *
+ * **Some quando não há nota**, como Fechamentos: painel cheio de caixa zerada
+ * ensina a pessoa a ignorar o painel. Quem nunca publicou uma pesquisa não
+ * precisa saber que ela existe por um card vazio.
+ *
+ * Noventa dias porque NPS de uma semana é ruído: três respostas mudam o número
+ * em dezenas de pontos, e o cliente conclui que o relatório é inútil.
+ */
+async function Satisfacao({ clienteId }: { clienteId: string }) {
+  const desde = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
+  const [notas, comentarios] = await Promise.all([
+    notasDaConta(clienteId, desde),
+    comentariosDaConta(clienteId, desde, 5),
+  ])
+  if (notas.length === 0) return null
+
+  const nps = resumirNps(notas)
+
+  return (
+    <section className="app-card px-5 py-4" aria-labelledby="titulo-satisfacao">
+      <h2 id="titulo-satisfacao" className="text-[12.5px] font-bold text-muted">
+        Satisfação · últimos 90 dias
+      </h2>
+
+      <p className="mt-2 text-[13px] leading-[1.7] text-soft">
+        <strong className="text-[17px] font-bold tracking-[-0.02em] text-ink">{nps.pontos}</strong>{' '}
+        de NPS, {comoVai(nps.pontos)} · média{' '}
+        <strong className="font-bold text-ink">{nps.media.toLocaleString('pt-BR')}</strong> em{' '}
+        {nps.total} {nps.total === 1 ? 'resposta' : 'respostas'}.
+      </p>
+
+      <p className="mt-1 text-[12px] text-dim">
+        {nps.promotores} {nps.promotores === 1 ? 'promotor' : 'promotores'} · {nps.neutros}{' '}
+        {nps.neutros === 1 ? 'neutro' : 'neutros'} · {nps.detratores}{' '}
+        {nps.detratores === 1 ? 'detrator' : 'detratores'}
+      </p>
+
+      {comentarios.length > 0 && (
+        <ul className="mt-3 flex flex-col gap-2.5 border-t border-line pt-3">
+          {comentarios.map((c) => (
+            <li key={c.id} className="min-w-0">
+              <p className="text-[12.5px] leading-5 text-soft">
+                <strong className="tabular-nums text-ink">{c.nota}</strong> · {c.comentario}
+              </p>
+              <p className="text-[11px] text-dim">
+                {c.nome ?? 'sem nome'} ·{' '}
+                {new Date(c.criadaEm).toLocaleDateString('pt-BR', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: '2-digit',
+                })}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
 async function Fechamentos({ clienteId }: { clienteId: string }) {
   const fechou = await fechamentos(clienteId)
   if (fechou.ganhos === 0 && fechou.perdidos === 0) return null
