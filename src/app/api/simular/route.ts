@@ -137,7 +137,7 @@ export async function POST(req: Request) {
     return Response.json({ erro: 'não achei essa automação' }, { status: 404 })
   }
 
-  const { modelo } = escolherModelo({ iaHabilitada })
+  const { modelo } = await escolherModelo({ iaHabilitada, clienteId })
 
   return Response.json(
     await executarComEfeitos(fluxo, sessao, entrada, {

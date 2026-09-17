@@ -1109,7 +1109,10 @@ async function prepararIa(
   // O plano é lido do fluxo **agora**, e não da versão publicada: contrato não
   // congela junto com o desenho. Desligar a IA tem que valer na próxima
   // mensagem, não na próxima publicação.
-  const { modelo } = escolherModelo({ iaHabilitada: fluxo?.iaHabilitada ?? false })
+  const { modelo } = await escolherModelo({
+    iaHabilitada: fluxo?.iaHabilitada ?? false,
+    clienteId: canalSalvo.clienteId,
+  })
 
   return {
     modelo,

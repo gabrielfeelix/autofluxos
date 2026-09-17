@@ -1,5 +1,6 @@
 import 'server-only'
 import { db, ehIdInvalido } from '../db'
+import { apagarDoCofre, guardarNoCofre, lerDoCofre } from '../cofre'
 
 /**
  * Conexões: a credencial de um cliente, guardada no cofre.
@@ -172,23 +173,8 @@ export async function lerCredencial(id: string, clienteId: string): Promise<Cred
   if (!data) return null
 
   const linha = data as { tipo: TipoDeConexao; campo: string | null; secret_id: string }
-  const { data: valor, error: erroDoCofre } = await db().rpc('ler_segredo', {
-    alvo: linha.secret_id,
-  })
-
-  if (erroDoCofre) throw new Error(`não deu para ler a credencial: ${erroDoCofre.message}`)
-  if (typeof valor !== 'string' || valor === '') return null
+  const valor = await lerDoCofre(linha.secret_id)
+  if (valor === null) return null
 
   return { tipo: linha.tipo, campo: linha.campo, valor }
-}
-
-async function guardarNoCofre(valor: string, apelido: string): Promise<string> {
-  const { data, error } = await db().rpc('criar_segredo', { valor, apelido })
-  if (error) throw new Error(`não deu para guardar no cofre: ${error.message}`)
-  if (typeof data !== 'string') throw new Error('o cofre não devolveu uma referência')
-  return data
-}
-
-async function apagarDoCofre(id: string): Promise<void> {
-  await db().rpc('apagar_segredo', { alvo: id })
 }

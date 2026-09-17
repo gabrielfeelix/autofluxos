@@ -4,6 +4,9 @@ import { Trilha } from '@/components/design/trilha'
 import { FormularioSalvar } from '@/components/design/formulario-salvar'
 import { acaoSalvarContexto } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
+import { comoEsta } from '@/server/repos/chave-de-ia'
+import { acaoApagarChaveDeIa, acaoGuardarChaveDeIa } from '@/server/acoes-chave-de-ia'
+import { ChaveDeIa } from '@/components/conta/chave-de-ia'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,6 +42,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
+  const chave = await comoEsta(clienteId)
   const vazio = cliente.contextoNegocio.trim() === ''
 
   return (
@@ -78,6 +82,18 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             className="app-field resize-y px-4 py-3.5 text-[13px] leading-6"
           />
         </FormularioSalvar>
+
+        {/* Depois do contexto, e não antes: o que a IA **pode dizer** é a
+            pergunta que traz a pessoa aqui; com a chave de quem ela fala é a
+            segunda. Em cima, a chave viraria um campo técnico barrando a tela
+            que interessa. */}
+        <div className="mt-8 max-w-[620px]">
+          <ChaveDeIa
+            estado={chave}
+            guardar={acaoGuardarChaveDeIa.bind(null, clienteId)}
+            apagar={acaoApagarChaveDeIa.bind(null, clienteId)}
+          />
+        </div>
       </main>
     </AjustesShell>
   )

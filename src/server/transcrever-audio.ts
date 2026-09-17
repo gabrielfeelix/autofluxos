@@ -1,6 +1,7 @@
 import 'server-only'
 import { ehArquivoGuardado } from '@/core/midia-recebida'
 import { db } from './db'
+import { lerChave } from './repos/chave-de-ia'
 import { baixarArquivo } from './repos/midia-recebida'
 
 /**
@@ -31,9 +32,9 @@ import { baixarArquivo } from './repos/midia-recebida'
  *   consentimento de quem atende, que sabe o que está mandando para fora;
  * - o resultado é **guardado**, para uma conversa aberta dez vezes não virar
  *   dez chamadas e dez envios do mesmo áudio;
- * - quando `clients.ia_chave_ref` sair do papel, esta função passa a usar a
- *   chave paga do cliente junto com o resto — e aí o áudio para de ir para
- *   treino.
+ * - **usa a chave do cliente quando a conta tem uma** (`repos/chave-de-ia.ts`),
+ *   e aí o áudio para de ir para treino. Sem chave própria, cai na nossa, que é
+ *   o caminho da demonstração.
  *
  * Isto está dito na tela, ao lado do botão, e não só aqui.
  */
@@ -144,7 +145,18 @@ export async function transcreverAudio(
     return { ok: false, erro: 'este áudio é grande demais para transcrever' }
   }
 
-  const chave = process.env.GEMINI_API_KEY
+  /*
+   * A do cliente primeiro, a nossa como rede. Mesma precedência de
+   * `ia/modelo.ts`, e pelo mesmo motivo: quem tem chave paga não manda a voz de
+   * ninguém para treino. Falha ao ler o cofre cai na nossa, com log.
+   */
+  let chave: string | null = null
+  try {
+    chave = await lerChave(clienteId)
+  } catch (erro) {
+    console.error('[transcricao] não deu para ler a chave do cliente:', erro)
+  }
+  chave ??= process.env.GEMINI_API_KEY ?? null
   if (!chave) return { ok: false, erro: 'falta GEMINI_API_KEY no ambiente' }
 
   const arquivo = await baixarArquivo(linha.arquivo.caminho)
