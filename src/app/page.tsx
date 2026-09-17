@@ -1,6 +1,12 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
+import {
+  O_QUE_E_CONVERSA,
+  PLANOS,
+  PLANO_EM_DESTAQUE,
+  TARIFA_DA_META,
+} from '@/core/planos'
 import { Cursor } from './(site)/cursor'
 import { DerivaDeParticulas } from './(site)/deriva-de-particulas'
 import { NumeroQueSobe } from './(site)/numero-que-sobe'
@@ -401,58 +407,28 @@ Um preço que cabe antes de dar resultado
               <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
               <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
                 Sem fidelidade e sem cobrar por atendente. O que muda entre os planos é
-                quantos fluxos e quantas conversas cabem no seu mês.
+                quantas conversas cabem no seu mês.
               </p>
             </div>
 
             <div className={s.planos}>
-              <Plano
-                nome="Essencial"
-                preco="197"
-                resumo="Para quem atende sozinho e quer parar de repetir horário e preço."
-                itens={[
-                  '1 número de WhatsApp',
-                  '3 fluxos publicados',
-                  'Até 1.000 conversas por mês',
-                  'Atendentes ilimitados',
-                  'Suporte por WhatsApp',
-                ]}
-                atraso={0}
-              />
-              <Plano
-                destaque
-                nome="Operação"
-                preco="397"
-                resumo="Para quem já tem três pessoas atendendo e perde conversa no meio."
-                itens={[
-                  '1 número de WhatsApp',
-                  'Fluxos ilimitados',
-                  'Até 5.000 conversas por mês',
-                  'Atendentes ilimitados',
-                  'Respostas com IA',
-                  'Conexão com seus sistemas',
-                ]}
-                atraso={80}
-              />
-              <Plano
-                nome="Sob medida"
-                preco={null}
-                resumo="Mais de um número, volume alto, ou integração que precisa ser desenhada."
-                itens={[
-                  'Múltiplos números e unidades',
-                  'Volume combinado',
-                  'Atendentes ilimitados',
-                  'Integração desenvolvida com você',
-                  'Acompanhamento dedicado',
-                ]}
-                atraso={160}
-              />
+              {PLANOS.map((plano, indice) => (
+                <Plano
+                  key={plano.id}
+                  nome={plano.nome}
+                  preco={String(plano.preco)}
+                  resumo={plano.resumo}
+                  itens={plano.itens}
+                  destaque={plano.id === PLANO_EM_DESTAQUE}
+                  atraso={indice * 80}
+                />
+              ))}
             </div>
 
             <p className={s.notaPreco}>
-              Os valores são mensais e não incluem o que a Meta cobra por conversa iniciada
-              pela empresa. Essa cobrança é da sua conta do WhatsApp e muda conforme o tipo
-              de mensagem. Fazemos essa conta com o seu volume antes de você assinar.
+              {O_QUE_E_CONVERSA} Os valores são mensais, sem fidelidade e sem taxa de
+              instalação. Fazemos a conta da tarifa da Meta com o seu volume antes de você
+              assinar.
             </p>
           </div>
         </section>
@@ -962,6 +938,14 @@ function Plano({
       </p>
 
       <p className={s.planoResumo}>{resumo}</p>
+
+      {/*
+        A tarifa da Meta aparece aqui, dentro do card, e não numa nota de rodapé.
+        É decisão de venda: num mercado em que a concorrência esconde markup
+        dentro de "créditos", repassar a custo é diferenciação real, e escondê-la
+        no rodapé desperdiça o argumento.
+      */}
+      <p className={s.planoTarifa}>{TARIFA_DA_META}</p>
 
       <ul className={s.planoLista}>
         {itens.map((item) => (
