@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AjustesShell } from '@/components/design/ajustes-shell'
 import { ICONE_DA_TELA } from '@/components/design/icones-de-ajustes'
+import { acharPlano } from '@/core/planos'
 import { saudeDoInstagram, saudeDoWhatsApp } from '@/core/saude-da-conexao'
 import type { ReactNode } from 'react'
 import { ApagarCliente } from '@/components/cliente/apagar'
@@ -14,6 +15,7 @@ import { paginasDaConta } from '@/server/repos/paginas-de-lead'
 import { listarCanais } from '@/server/repos/conversas'
 import { listarRespostasRapidas } from '@/server/repos/respostas-rapidas'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
+import { planoDaConta } from '@/server/repos/plano'
 import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 
 export const dynamic = 'force-dynamic'
@@ -43,7 +45,7 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [conexoes, canais, respostasRapidas, acervo, estrago, etiquetas, contaDoInstagram, paginasDeLead] =
+  const [conexoes, canais, respostasRapidas, acervo, estrago, etiquetas, contaDoInstagram, paginasDeLead, plano] =
     await Promise.all([
       listarConexoes(cliente.id),
       listarCanais(cliente.id),
@@ -53,6 +55,7 @@ export default async function Pagina({
       listarEtiquetas(cliente.id),
       canalDoInstagram(cliente.id),
       paginasDaConta(cliente.id),
+      planoDaConta(cliente.id),
     ])
   const semContexto = cliente.contextoNegocio.trim() === ''
 
@@ -320,6 +323,18 @@ export default async function Pagina({
                   : `${equipe.length} ${equipe.length === 1 ? 'pessoa' : 'pessoas'}`}
               </Selo>
             }
+          />
+          {/*
+            O selo mostra o plano e não o consumo, embora a tela mostre os dois.
+            Consumo é número que muda todo dia, e um selo que muda todo dia no
+            índice treina a pessoa a ignorar os selos que ela precisa ver.
+          */}
+          <Cartao
+            href={`/clientes/${cliente.id}/ajustes/plano`}
+            icone={ICONE_DA_TELA['plano']}
+            titulo="Plano e consumo"
+            descricao="Em que plano esta conta está, quanto já foi usado neste mês, e como pedir para mudar de faixa."
+            estado={<Selo tom="neutro">{acharPlano(plano).nome}</Selo>}
           />
         </Grupo>
 

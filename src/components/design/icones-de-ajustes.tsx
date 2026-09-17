@@ -8,8 +8,8 @@ import type { TelaDeAjustes } from './menu-de-ajustes'
  * procura a forma, e achar por forma é mais rápido do que ler. É o que faz uma
  * grade de cards ser navegável e uma lista de doze linhas ser varrida.
  *
- * Todos no mesmo desenho: traço de 1,6, 20×20, `currentColor`, sem preenchimento
- * — misturar linha com sólido faz um deles parecer selecionado sem estar.
+ * Todos no mesmo desenho: traço de 1,6, 20×20, `currentColor`, sem preenchimento:
+ * misturar linha com sólido faz um deles parecer selecionado sem estar.
  *
  * `currentColor` é o que permite o ícone mudar junto com o cartão sem que
  * nenhuma cor seja escrita aqui: quem pinta é a classe do cartão, e a regra de
@@ -126,6 +126,15 @@ export const ICONE_DA_TELA: Record<TelaDeAjustes, React.ReactNode> = {
       <path d="M3.5 19.5a6 6 0 0 1 12 0" />
       <path d="M16.5 6.2a3.2 3.2 0 0 1 0 6.1" />
       <path d="M18 14.6a6 6 0 0 1 3 4.9" />
+    </Svg>
+  ),
+  // Três barras subindo: é consumo contra faixa, que é o que a tela mostra.
+  plano: (
+    <Svg>
+      <path d="M4 20h16" />
+      <path d="M7 20v-5.5" />
+      <path d="M12 20V8.5" />
+      <path d="M17 20v-9" />
     </Svg>
   ),
 }

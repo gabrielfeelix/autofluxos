@@ -42,6 +42,7 @@ export type TelaDeAjustes =
   | 'chaves'
   | 'negocio'
   | 'equipe'
+  | 'plano'
 
 const GRUPOS: { titulo: string | null; itens: { chave: TelaDeAjustes; rotulo: string }[] }[] = [
   // O índice fica solto no topo, sem rótulo de grupo: ele não é um assunto, é
@@ -78,6 +79,7 @@ const GRUPOS: { titulo: string | null; itens: { chave: TelaDeAjustes; rotulo: st
     itens: [
       { chave: 'negocio', rotulo: 'Dados do negócio' },
       { chave: 'equipe', rotulo: 'Equipe' },
+      { chave: 'plano', rotulo: 'Plano e consumo' },
     ],
   },
 ]
