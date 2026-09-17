@@ -258,3 +258,27 @@ export async function marcarQuemSumiu(limitePorConta = 200): Promise<number> {
 
   return marcados
 }
+
+/**
+ * Este contato é mesmo desta conta?
+ *
+ * Existe porque nem toda escrita devolve o que escreveu. `anotar` engole o
+ * próprio erro de propósito (histórico não pode derrubar a ação que o gerou), e
+ * sem esta conferência antes uma anotação endereçada ao contato de outra conta
+ * falharia calada, com a tela dizendo que salvou.
+ *
+ * Id malformado responde `false` e não estoura: o id vem da URL, e URL editada à
+ * mão é entrada de usuário como qualquer outra.
+ */
+export async function contatoEhDoCliente(clienteId: string, contatoId: string): Promise<boolean> {
+  const { data, error } = await db()
+    .from('contacts')
+    .select('id')
+    .eq('id', contatoId)
+    .eq('client_id', clienteId)
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return false
+  if (error) throw new Error(`não deu para conferir o contato: ${error.message}`)
+  return data !== null
+}

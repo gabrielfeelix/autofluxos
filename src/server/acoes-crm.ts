@@ -2,9 +2,11 @@
 
 import { revalidatePath } from 'next/cache'
 import { lerValor, type Estagio, type Situacao, type TipoDeEtapa } from '@/core/crm'
+import { LIMITE_DA_NOTA } from '@/core/flow/limites'
+import type { EstadoSalvar } from '@/components/design/formulario-salvar'
 import { anotar, linhaDoTempo } from './repos/eventos'
 import { listarMotivos, criarMotivo, apagarMotivo } from './repos/motivos-de-perda'
-import { definirEstagio, resumoDoContato } from './repos/crm'
+import { contatoEhDoCliente, definirEstagio, resumoDoContato } from './repos/crm'
 import { atribuirContato } from './repos/conversas'
 import { membrosDaConta } from './repos/usuarios'
 import {
@@ -309,5 +311,58 @@ export async function acaoAtribuirContato(
 
   revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
   revalidatePath(`/clientes/${clienteId}/inbox`)
+  return { ok: true }
+}
+
+/**
+ * Uma anotação no diário do contato.
+ *
+ * ---------------------------------------------------------------------------
+ * Por que evento, e não uma segunda tabela
+ * ---------------------------------------------------------------------------
+ *
+ * `eventos_do_contato` já é "o que aconteceu em volta da conversa, em ordem, com
+ * autor e hora". Uma nota escrita à mão é exatamente isso, e `'nota'` já estava
+ * no enum de tipos desde a 0058 com `comoFrase` sabendo lê-la: faltava só quem
+ * escrevesse. Tabela nova guardaria os mesmos cinco campos e obrigaria a ficha a
+ * juntar duas listas ordenadas para mostrar uma linha do tempo só.
+ *
+ * ---------------------------------------------------------------------------
+ * O diário não substitui `contacts.notas`
+ * ---------------------------------------------------------------------------
+ *
+ * São perguntas diferentes, e é por isso que os dois continuam existindo. A
+ * anotação do contato responde *"o que eu preciso saber sobre esta pessoa antes
+ * de falar com ela"* e por isso é sobrescrita: preferência de horário muda, e o
+ * valor velho não interessa. O diário responde *"o que aconteceu, e quando"*, e
+ * por isso nunca é reescrito. Misturar os dois faria a primeira virar uma
+ * rolagem que ninguém lê antes de atender.
+ *
+ * `anotar` engole o próprio erro (ver `repos/eventos.ts`), então a conferência de
+ * dono acontece **antes**: sem ela, anotar num contato de outra conta falharia
+ * calado e a tela diria que salvou.
+ */
+export async function acaoAnotarNoDiario(
+  clienteId: string,
+  contatoId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const texto = String(formData.get('texto') ?? '')
+    .trim()
+    .slice(0, LIMITE_DA_NOTA)
+  if (texto === '') return { erro: 'escreva alguma coisa antes de salvar' }
+
+  if (!(await contatoEhDoCliente(clienteId, contatoId))) {
+    return { erro: 'este contato não é deste cliente' }
+  }
+
+  const quemFez = await sessaoAtual()
+  await anotar(clienteId, contatoId, 'nota', { texto }, quemFez?.usuario.nome ?? null)
+
+  revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
+  revalidatePath(`/clientes/${clienteId}/quadros`)
   return { ok: true }
 }

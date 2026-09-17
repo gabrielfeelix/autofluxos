@@ -21,6 +21,7 @@ import {
   acaoResponderLead,
   acaoSalvarNotas,
 } from '@/server/acoes'
+import { acaoAnotarNoDiario } from '@/server/acoes-crm'
 import { acharCliente } from '@/server/repos/clientes'
 import { contextoDeResposta } from '@/server/repos/conversas'
 import { acharLead, lerConversa, LIMITE_DA_NOTA } from '@/server/repos/leads'
@@ -47,6 +48,7 @@ import { ResponsavelDoContato } from '@/components/lead-crm/responsavel-do-conta
 import { ResumoDoContato } from '@/components/lead-crm/resumo-do-contato'
 import { AcoesDaFicha } from '@/components/lead-crm/acoes-da-ficha'
 import { Agendadas } from '@/components/lead-crm/agendadas'
+import { Diario } from '@/components/lead-crm/diario'
 import { Informacoes } from '@/components/lead-crm/informacoes'
 import { Jornada } from '@/components/lead-crm/jornada'
 import { SeletorDeEtiquetas } from '@/components/etiquetas/seletor'
@@ -304,6 +306,13 @@ export default async function Pagina({
               />
             </div>
           </section>
+          <div id="diario">
+            <Diario
+              eventos={eventos}
+              limite={LIMITE_DA_NOTA}
+              anotar={acaoAnotarNoDiario.bind(null, clienteId, contatoId)}
+            />
+          </div>
           <div id="anotacao">
             <NotasDoContato
             notas={lead.notas}
