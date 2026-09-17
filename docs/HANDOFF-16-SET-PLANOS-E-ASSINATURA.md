@@ -3,10 +3,52 @@
 Continua de `045842b`. Escrito para quem vai executar, depois de uma rodada que
 fechou três itens e deixou o resto desenhado.
 
-**A próxima migration é a `0066`.** Confira com `ls supabase/migrations/ | tail -1`
-antes de escrever a sua, e não confie neste número: este parágrafo já esteve
-errado em três arquivos deste repositório, sempre porque alguém confiou no que
-estava escrito.
+**A próxima migration sai do disco.** Rode `ls supabase/migrations/ | tail -1`
+antes de escrever a sua, e não confie em número escrito em documento: este
+parágrafo já esteve errado em três arquivos deste repositório, sempre porque
+alguém confiou no que estava escrito. A `0066` já foi aplicada em produção, e o
+que ela fez está em `BANCO-COMPARTILHADO.md`.
+
+---
+
+## O que mudou depois que este handoff foi escrito (16/set, mesma data)
+
+**Os itens 1, 2 e 3 abaixo estão feitos.** Ficam escritos como estavam, porque a
+razão de cada decisão continua valendo e é o que explica o código. O que mudou:
+
+| Commit | O quê |
+|---|---|
+| `2b846ac` | item 1: os três planos, e `core/planos.ts` como único lugar onde preço existe |
+| `daf73e1` | a `0066` aplicada em produção: `clients.plano`, as colunas do gateway, e as duas views de consumo |
+| `e694d50` | item 2: `repos/plano.ts` e a tela `/admin/consumo` |
+| `e658bf3` | item 3: `Configurações → Plano e consumo`, com o botão que pede a troca |
+
+**Nada disso foi ao ar.** O preço não sobe ao site sem o rate card da Meta, que
+continua sendo o portão descrito abaixo, e o deploy não foi feito.
+
+**Três coisas que quem continuar precisa saber, e que só apareceram fazendo:**
+
+1. **A medição de IA por dono da chave não foi feita, e não é esquecimento: não
+   existe fonte de dado.** `ia_chamadas` (0038) não tem coluna de dono e registra
+   **chamada de ferramenta**, não inferência: uma conversa com IA que não use
+   ferramenta nenhuma não gera linha lá. E `escolherModelo` calcula
+   `dono: '4yu' | 'cliente'` e o descarta em `receber-mensagem.ts:1112`, que faz
+   `const { modelo } = ...`. Medir isso é migration nova (coluna `dono` em
+   `ia_chamadas`, ou tabela de inferências) mais gravação no ponto de uso. Foi
+   deixado de fora de propósito em vez de improvisado.
+
+2. **O storage medido é só o dos recebidos.** O acervo mora em `storage.objects`
+   sem tabela espelho, e a pasta é o `clienteId` (`repos/acervo.ts`, com
+   `limit: 200` no `list`). A tela `/admin/consumo` diz isso em texto, para
+   ninguém somar os dois números e achar que o disco encolheu.
+
+3. **A regra do disparo já exclui gente no dado de hoje.** Na produção, 33
+   contatos têm mensagem, **23 são bidirecionais e 1 é só saída**. Quem trocar a
+   definição de conversa por "contato com mensagem" passa a cobrar esse um.
+
+**O que continua valendo da lista abaixo:** o item 4 (o gateway) e o item 5 (o
+bot que não volta do atendimento humano), inteiros, e o portão dos dois números
+da Meta antes de qualquer preço ir ao ar.
 
 ---
 
@@ -17,7 +59,7 @@ estava escrito.
    push` e `db reset` são proibidos contra ele.
 2. **`docs/BANCO-COMPARTILHADO.md`**, inteiro, antes de qualquer coisa que toque
    banco, migration, Auth, RLS, Storage ou Data API.
-3. **`docs/PLANO-16-SET-PRODUTO-E-PRECO.md`** — a decisão de preço, por que ela é
+3. **`docs/PLANO-16-SET-PRODUTO-E-PRECO.md`**: a decisão de preço, por que ela é
    essa, e o que ficou em aberto. **É o documento que explica o porquê de tudo
    aqui.**
 4. Este arquivo, para saber o que fazer.
@@ -54,10 +96,10 @@ nenhum deles é sobre o que a pessoa vê.
 
 Duas peças existentes que o trabalho abaixo depende:
 
-- **`server/cofre.ts`** — guardar, ler e apagar segredo no Supabase Vault. Saiu
+- **`server/cofre.ts`**: guardar, ler e apagar segredo no Supabase Vault. Saiu
   de dentro de `repos/conexoes.ts` no `d1bc123`. É onde a credencial do gateway
   vai morar.
-- **`repos/chave-de-ia.ts`** — o padrão de "referência no banco, valor no cofre,
+- **`repos/chave-de-ia.ts`**: o padrão de "referência no banco, valor no cofre,
   e nenhuma função devolve o valor para a tela". **Copie esse desenho** para o
   que for segredo do gateway.
 
@@ -80,7 +122,7 @@ divisão item a item.
    As fontes de terceiros divergem **6 vezes** em utilidade. Sem ele não dá para
    saber a margem de faixa nenhuma.
 2. **Se atendimento passa a ser pago em 1/out/2026.** Se passar, entra franquia
-   de **1.000 mensagens de serviço por número, sem acúmulo** — e a faixa de
+   de **1.000 mensagens de serviço por número, sem acúmulo**, e a faixa de
    entrada precisa nascer alinhada a ela.
 
 **Os dois são do dono.** Não invente número para destravar o trabalho: construa
@@ -147,7 +189,7 @@ prática: se o disparo contar, a conta do cliente explode no mês de campanha, q
 preços, não no contrato.
 
 A chamada de IA só é custo nosso quando roda na **nossa** chave. Depois do
-`d1bc123`, `escolherModelo` devolve `dono: '4yu' | 'cliente'` — meça os dois
+`d1bc123`, `escolherModelo` devolve `dono: '4yu' | 'cliente'`, e meça os dois
 separados, senão o cliente que paga a própria chave aparece como o mais caro.
 
 **Pronto quando:** existe uma tela (pode ser em `/admin`) que mostra, por conta e
@@ -160,7 +202,7 @@ Agora sim a conta sabe em que plano está.
 
 **Banco (migration `0066`):** `clients.plano` com default no plano de entrada, e
 o que o gateway precisar guardar depois (id do cliente lá, id da assinatura,
-estado). **Aditiva, com default válido em toda linha** — é o que torna seguro
+estado). **Aditiva, com default válido em toda linha**, que é o que torna seguro
 mexer numa tabela com dado de produção. Veja a `0064` como modelo: ela fez
 exatamente isso e está documentada em `BANCO-COMPARTILHADO.md`.
 
@@ -170,7 +212,7 @@ exatamente isso e está documentada em `BANCO-COMPARTILHADO.md`.
 
 A tela mostra:
 - **em que plano a conta está**, em palavras;
-- **quanto já foi usado no mês**, contra o que o plano comporta — vindo do item
+- **quanto já foi usado no mês**, contra o que o plano comporta, vindo do item
   2. Sem isso, "mudar de plano" é uma pergunta sem informação para responder;
 - os três planos lado a lado, com o atual marcado;
 - o botão de mudar de plano.
@@ -188,7 +230,7 @@ consegue pedir para mudar de plano.
 
 ### 4. O gateway, quando o dono contratar
 
-**Não comece por aqui, e não escolha o gateway sozinho** — é decisão comercial, e
+**Não comece por aqui, e não escolha o gateway sozinho**: é decisão comercial, e
 o dono disse que vai contratar.
 
 Quando vier, o que já está preparado:
@@ -196,7 +238,7 @@ Quando vier, o que já está preparado:
   texto. Copie `repos/chave-de-ia.ts`;
 - o webhook de retorno entra como rota nova em `src/app/api/`. **Atenção ao
   proxy:** rota que não estiver em `PREFIXOS_ABERTOS` (`src/proxy.ts`) responde
-  401 **em silêncio** — já custou tempo neste repositório, está registrado em
+  401 **em silêncio**, já custou tempo neste repositório, e está registrado em
   memória. Um `curl` no POST prova antes de você suspeitar do código;
 - a mudança de plano passa a ser efeito do webhook, não do clique.
 
@@ -221,7 +263,7 @@ existe (`src/core/tarefas.ts`), então é regra nova, não mecanismo novo.
 **Um detalhe operacional que vai te morder:** o cron da Vercel roda **uma vez por
 dia** (`vercel.json`). O que faz as tarefas rodarem de verdade é a carona no
 webhook (`rodarTarefas(5)` em `api/webhook/whatsapp/route.ts`). **Conta sem
-tráfego só processa tarefa de madrugada** — e uma conta sem tráfego é exatamente
+tráfego só processa tarefa de madrugada**, e uma conta sem tráfego é exatamente
 a que tem conversa parada esquecida. Considere isso no desenho, ou a regra vai
 funcionar bem justamente onde não é necessária.
 

@@ -320,6 +320,65 @@ extração explícito para os objetos de `public`.
   **O código que lê esta coluna ainda não está publicado**, mesma ordem da
   `0058-nps` acima: migration primeiro, deploy depois. Enquanto isso a coluna
   fica lá sem ninguém ler, e o que está no ar não a procura;
+- **a `0066` foi aplicada em 16/set/2026**, com autorização explícita do dono.
+  Ela é o plano da conta e a medição do consumo: `clients.plano` (default
+  `essencial`), três colunas anuláveis para o gateway que ainda não existe
+  (`assinatura_cliente_ref`, `assinatura_ref`, `assinatura_estado`), e as views
+  `public.consumo_de_conversas` e `public.consumo_de_arquivos`.
+
+  **A definição de conversa é a decisão desta migration**, e não uma escolha de
+  SQL: contato único com entrada **e** saída no mesmo mês. Disparo enviado e não
+  respondido não conta, que é o que impede o mês de campanha de explodir a conta
+  do cliente justamente quando ele mais precisa da ferramenta. `historico = false`
+  fica de fora pelo motivo da `0047`: conversa importada da coexistência é
+  conversa antiga chegando de uma vez, e cobrá-la seria cobrar por meses
+  anteriores à conexão do número.
+
+  **Nada trava nada, e é deliberado.** Medir vem antes de cobrar, e medir sem
+  travar vem antes de travar: se a trava nascesse junto da primeira medição, o
+  primeiro erro de contagem viraria cliente sem atender. Nenhum código lê `plano`
+  para negar atendimento.
+
+  As colunas do gateway nascem aqui, anuláveis e vazias, em vez de numa migration
+  futura: a alternativa é mexer duas vezes em `clients` de produção, e isso é dois
+  riscos onde cabia um. Segredo nenhum mora nelas, a credencial vai para o Vault
+  por `server/cofre.ts`. `assinatura_estado` fica **sem `check`** de propósito:
+  nenhum gateway foi escolhido, e o vocabulário de estado é dele.
+
+  Conferida só pelo ensaio em transação (`begin; <a migration sem o notify>;
+  rollback;`), e não pelo replay em Docker, que **segue indisponível nesta
+  máquina** (integração do WSL desligada). Pela regra da seção de Docker abaixo o
+  ensaio basta aqui: `add column ... default` não reescreve a tabela desde o
+  Postgres 11 e o resto são views novas, então o risco é o dado existente, e o
+  ensaio rodou contra ele. O rollback voltou limpo: nem colunas, nem views, nem o
+  check, nem o índice sobraram.
+
+  **O que só a produção mostrou, e vale para quem for mexer na medição:** das 33
+  contatos com mensagem, **23 são bidirecionais e 1 é só saída**. Ou seja, a
+  regra do disparo não é hipótese de documento, ela já exclui gente no dado de
+  hoje. Quem trocar a definição por "contato com mensagem" passa a cobrar esse um.
+
+  Estado conferido na produção depois de aplicar: as 4 colunas com a nulidade e o
+  default desenhados, as **6 contas** em `essencial` (zero com valor inesperado),
+  `clients_plano_check` presente, `messages_consumo_idx` criado, as duas views com
+  `security_invoker = true` e `grant` só para `postgres` e `service_role`
+  (`anon` e `authenticated` **não aparecem**). As views devolvem dado real: 23
+  conversas em 2 contas e 121 arquivos somando 23 MB no mês. Do outro lado:
+  `app_verandi.migrations_aplicadas` com as mesmas **32** linhas, 42 tabelas e as
+  **16** policies de `storage.objects` intactas.
+
+  **Ela tem `notify pgrst`, e o reload foi conferido nos dois produtos.**
+  `consumo_de_conversas`, `consumo_de_arquivos` e `clients?select=plano` respondem
+  **200** para `service_role` e **401** para `anon` (sem 404, então não há restart
+  pendente), e `app_verandi.conta` continua respondendo **200** pelo mesmo
+  PostgREST. O cache é compartilhado: recarregá-lo sem conferir o outro lado é
+  apostar a API da Verandi num movimento nosso.
+
+  **O código que lê estes objetos ainda não está publicado**, mesma ordem da
+  `0060` e da `0065`: migration primeiro, deploy depois. Enquanto isso as colunas
+  ficam com o default e as views ficam sem ninguém lendo, e o que está no ar não
+  as procura.
+
 - **a `0064` foi aplicada em 16/set/2026**, com autorização explícita do dono.
   Ela cria `public.af_atendentes` e acrescenta duas colunas a `public.clients`:
   `distribuicao` (`manual` por padrão) e `exige_assumir` (`false` por padrão).
