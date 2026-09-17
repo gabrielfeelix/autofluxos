@@ -414,7 +414,7 @@ Um preço que cabe antes de dar resultado
                   '1 número de WhatsApp',
                   '3 fluxos publicados',
                   'Até 1.000 conversas por mês',
-                  'Caixa de entrada com 3 usuários',
+                  'Atendentes ilimitados',
                   'Suporte por WhatsApp',
                 ]}
                 atraso={0}
@@ -428,7 +428,7 @@ Um preço que cabe antes de dar resultado
                   '1 número de WhatsApp',
                   'Fluxos ilimitados',
                   'Até 5.000 conversas por mês',
-                  'Caixa de entrada com 10 usuários',
+                  'Atendentes ilimitados',
                   'Respostas com IA',
                   'Conexão com seus sistemas',
                 ]}
@@ -441,7 +441,7 @@ Um preço que cabe antes de dar resultado
                 itens={[
                   'Múltiplos números e unidades',
                   'Volume combinado',
-                  'Usuários ilimitados',
+                  'Atendentes ilimitados',
                   'Integração desenvolvida com você',
                   'Acompanhamento dedicado',
                 ]}
