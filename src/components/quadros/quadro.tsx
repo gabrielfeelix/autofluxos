@@ -687,7 +687,7 @@ function AdicionarContato({
         className={
           aparencia === 'botao'
             ? 'app-secondary-button px-4 py-2 text-[12.5px]'
-            : 'shrink-0 rounded-b-xl border-t border-line px-3 py-2 text-left text-[11.5px] text-dim transition hover:bg-surface hover:text-soft'
+            : 'shrink-0 rounded-b-xl border-t border-line px-3 py-2 text-center text-[11.5px] text-dim transition hover:bg-surface hover:text-soft'
         }
       >
         {aparencia === 'botao' ? 'Adicionar contato' : '+ Adicionar contato'}
