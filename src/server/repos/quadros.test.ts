@@ -3,6 +3,7 @@ import { ETAPAS_INICIAIS } from '@/core/quadros'
 import { db } from '../db'
 import { criarCliente } from './clientes'
 import { acharOuCriarContato } from './conversas'
+import { linhaDoTempo } from './eventos'
 import {
   acharQuadro,
   acharQuadroPadrao,
@@ -165,6 +166,41 @@ describe.skipIf(!temCredencial)('cartões', () => {
 
     const depois = (await listarCartoes(clienteId, quadroId)).find((c) => c.contatoId === ana)!
     expect(depois.colunaId).toBe(destino.id)
+  })
+
+  /*
+   * O evento existia na 0058, `comoFrase` sabia escrevê-lo, e **ninguém o
+   * emitia** — a aba de histórico dizia "Nada registrado ainda" depois de o time
+   * arrastar cartão o dia inteiro. Este teste é o que impede isso de voltar.
+   */
+  it('mover grava a mudança de etapa na linha do tempo, com os dois nomes', async () => {
+    const quadro = (await acharQuadro(clienteId, quadroId))!
+    const origem = quadro.etapas[0]!
+    const destino = quadro.etapas[1]!
+    const cartao = (await listarCartoes(clienteId, quadroId)).find((c) => c.contatoId === bruno)!
+
+    expect(cartao.colunaId).toBe(origem.id)
+    expect(await moverCartao(clienteId, cartao.id, destino.id, 'Ana')).toEqual({ ok: true })
+
+    const evento = (await linhaDoTempo(clienteId, bruno)).find((e) => e.tipo === 'mudou-de-etapa')
+    expect(evento).toBeDefined()
+    // Os **nomes**, e não os ids: a linha do tempo é para ler, não para casar.
+    expect(evento!.dados).toMatchObject({ de: origem.nome, para: destino.nome })
+    expect(evento!.autor).toBe('Ana')
+  })
+
+  it('voltar para a mesma etapa não vira evento', async () => {
+    const destino = (await acharQuadro(clienteId, quadroId))!.etapas[1]!
+    const cartao = (await listarCartoes(clienteId, quadroId)).find((c) => c.contatoId === bruno)!
+    expect(cartao.colunaId).toBe(destino.id)
+
+    const antes = (await linhaDoTempo(clienteId, bruno)).filter((e) => e.tipo === 'mudou-de-etapa')
+    expect((await moverCartao(clienteId, cartao.id, destino.id)).ok).toBe(true)
+    const depois = (await linhaDoTempo(clienteId, bruno)).filter((e) => e.tipo === 'mudou-de-etapa')
+
+    // Arrastar de volta para onde já estava é engano de mão — o mesmo motivo
+    // pelo qual a função do banco não reinicia o relógio da etapa.
+    expect(depois).toHaveLength(antes.length)
   })
 
   it('não move para a etapa de outro quadro', async () => {

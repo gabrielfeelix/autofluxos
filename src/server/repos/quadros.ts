@@ -673,7 +673,28 @@ export async function moverCartao(
   clienteId: string,
   cartaoId: string,
   colunaId: string,
+  autor: string | null = null,
 ): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  /**
+   * De onde ele saiu, lido **antes** do update.
+   *
+   * A função do banco devolve o cartão já movido, então a etapa de origem não
+   * existe mais depois dela — e "saiu de X para Y" sem o X é metade da frase.
+   * É uma consulta a mais numa ação que já era duas escritas; mover cartão é
+   * gesto humano, não laço, e o histórico é a razão de a tela existir.
+   *
+   * Falhar aqui não pode impedir o movimento: sem a origem o evento ainda se lê
+   * ("entrou em Proposta"), e é o que `comoFrase` já faz quando `de` vem vazio.
+   */
+  const { data: antes } = await db()
+    .from('quadro_cartoes')
+    .select('coluna_id, quadro_colunas (nome)')
+    .eq('client_id', clienteId)
+    .eq('id', cartaoId)
+    .maybeSingle()
+
+  const origem = antes as { coluna_id: string; quadro_colunas: { nome: string } | null } | null
+
   const { data, error } = await db().rpc('mover_cartao', {
     p_cartao_id: cartaoId,
     p_coluna_id: colunaId,
@@ -690,10 +711,55 @@ export async function moverCartao(
    * este `return` respondia "movi" para as duas tentativas que a função existe
    * para recusar: cartão de outra conta e etapa de outro quadro.
    */
-  const movidos = (data ?? []) as { id: string }[]
-  return movidos.length > 0
-    ? { ok: true }
-    : { ok: false, motivo: 'este cartão ou esta etapa não existem mais' }
+  const movidos = (data ?? []) as { id: string; contact_id: string; coluna_id: string }[]
+  const movido = movidos[0]
+  if (!movido) return { ok: false, motivo: 'este cartão ou esta etapa não existem mais' }
+
+  /**
+   * O evento que faltava.
+   *
+   * A tabela existia desde a 0058, `'mudou-de-etapa'` estava na lista de tipos e
+   * `comoFrase` já sabia escrevê-lo — mas **ninguém o emitia**, e arrastar o
+   * cartão é o gesto principal da tela. O histórico dizia "Nada registrado
+   * ainda" depois de o time trabalhar o dia inteiro, que é pior do que não ter
+   * histórico: a aba promete por escrito que a mudança de etapa aparece ali.
+   *
+   * **Voltar para a mesma etapa não é evento.** É engano de mão, e a função do
+   * banco já trata assim quando decide não reiniciar o relógio. Registrar aqui
+   * encheria a linha do tempo de "saiu de Proposta para Proposta" e enterraria
+   * o que importa — o mesmo motivo pelo qual a conversa não entra nesta lista.
+   */
+  if (origem?.coluna_id !== movido.coluna_id) {
+    const destino = await nomeDaEtapa(clienteId, movido.coluna_id)
+    await anotar(
+      clienteId,
+      movido.contact_id,
+      'mudou-de-etapa',
+      { de: origem?.quadro_colunas?.nome ?? '', para: destino ?? '' },
+      autor,
+    )
+  }
+
+  return { ok: true }
+}
+
+/**
+ * O nome de uma etapa, para a frase do histórico.
+ *
+ * Devolve `null` em vez de lançar: o histórico é dado de apoio, e derrubar a
+ * movimentação do cartão porque o nome da coluna não veio inverteria a
+ * importância das duas coisas — a mesma decisão que `anotar` toma ao engolir o
+ * próprio erro.
+ */
+async function nomeDaEtapa(clienteId: string, colunaId: string): Promise<string | null> {
+  const { data } = await db()
+    .from('quadro_colunas')
+    .select('nome, quadros!inner (client_id)')
+    .eq('id', colunaId)
+    .eq('quadros.client_id', clienteId)
+    .maybeSingle()
+
+  return (data as { nome: string } | null)?.nome ?? null
 }
 
 /**

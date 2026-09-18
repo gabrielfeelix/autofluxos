@@ -1480,7 +1480,10 @@ export async function acaoMoverCartao(
 ): Promise<{ ok: boolean; erro?: string }> {
   await exigirAcessoAoCliente(clienteId)
 
-  const r = await moverCartao(clienteId, cartaoId, colunaId)
+  // Quem moveu vai para o histórico: "Ana moveu para Proposta" só informa com o
+  // nome, e é ele que continua legível depois que o usuário é apagado.
+  const quemFez = await sessaoAtual()
+  const r = await moverCartao(clienteId, cartaoId, colunaId, quemFez?.usuario.nome ?? null)
   if (!r.ok) return { ok: false, erro: r.motivo }
 
   revalidatePath(`/clientes/${clienteId}/quadros`)
