@@ -5,6 +5,8 @@ import {
   proximaOrdem,
   trocaDeLugar,
   type Cartao,
+  ehCorDaEtapa,
+  type CorDaEtapa,
   type Etapa,
   type Situacao,
   type TipoDeEtapa,
@@ -46,6 +48,7 @@ type LinhaDoQuadro = {
         criado_em: string
         tipo: TipoDeEtapa | null
         limite_de_dias: number | null
+        cor: string | null
       }[]
     | null
 }
@@ -64,7 +67,7 @@ type LinhaDoQuadro = {
  * resto do repositório. `membrosDaConta` já fazia o mesmo apelido, em SQL.
  */
 const COLUNAS =
-  'id, nome, padrao, seguinte_id, quadro_colunas (id, nome, ordem, criado_em, tipo, limite_de_dias)'
+  'id, nome, padrao, seguinte_id, quadro_colunas (id, nome, ordem, criado_em, tipo, limite_de_dias, cor)'
 
 function paraQuadro(linha: LinhaDoQuadro): Quadro {
   return {
@@ -80,6 +83,9 @@ function paraQuadro(linha: LinhaDoQuadro): Quadro {
         criadoEm: coluna.criado_em,
         tipo: coluna.tipo ?? 'normal',
         limiteDeDias: coluna.limite_de_dias ?? null,
+        // Cor desconhecida vira "sem cor": melhor a coluna cinza de sempre do
+        // que uma classe CSS que não existe. Ver `ehCorDaEtapa`.
+        cor: ehCorDaEtapa(coluna.cor) ? coluna.cor : null,
       })),
     ),
   }
@@ -1220,6 +1226,35 @@ export async function definirTipoDaEtapa(
     .eq('quadro_id', quadroId)
 
   if (error) throw new Error(`não deu para mudar a etapa: ${error.message}`)
+  return { ok: true }
+}
+
+/**
+ * A cor do cabeçalho da etapa (0069).
+ *
+ * `null` apaga a cor, e isso é uma ação legítima: quem pintou o funil inteiro e
+ * se arrependeu precisa poder voltar ao cinza sem apagar a etapa.
+ */
+export async function definirCorDaEtapa(
+  clienteId: string,
+  quadroId: string,
+  etapaId: string,
+  cor: CorDaEtapa | null,
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  // A conferência é a mesma de `definirTipoDaEtapa`, e pelo mesmo motivo: o id
+  // da etapa chega da tela, e sem ela pintar a etapa de outra conta passaria.
+  const quadro = await acharQuadro(clienteId, quadroId)
+  if (!quadro || !quadro.etapas.some((e) => e.id === etapaId)) {
+    return { ok: false, motivo: 'esta etapa não existe mais' }
+  }
+
+  const { error } = await db()
+    .from('quadro_colunas')
+    .update({ cor })
+    .eq('id', etapaId)
+    .eq('quadro_id', quadroId)
+
+  if (error) throw new Error(`não deu para mudar a cor: ${error.message}`)
   return { ok: true }
 }
 

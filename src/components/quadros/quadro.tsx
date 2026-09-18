@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, useTransition } from 'react'
 import {
+  CLASSE_DA_COR,
+  CORES_DA_ETAPA,
   DIAS_PARA_MARCAR_PARADO,
   LIMITE_DE_ETAPAS,
   LIMITE_DO_NOME,
@@ -11,6 +13,7 @@ import {
   filtrarCartoes,
   estaParado,
   type Cartao,
+  type CorDaEtapa,
   type Etapa,
   type FiltroDoQuadro,
   type OrdemDoQuadro,
@@ -19,6 +22,7 @@ import {
 import { comoDinheiro } from '@/core/crm'
 import {
   acaoAtribuirCartao,
+  acaoDefinirCorDaEtapa,
   acaoDefinirTipoDaEtapa,
   acaoReabrirCartao,
   acaoTrazerTodosParaOQuadro,
@@ -271,6 +275,23 @@ export function Quadro({
               }`}
             >
               <header className="flex shrink-0 items-center gap-2 px-3 py-2.5">
+                {/*
+                  A cor antes do nome, e não em vez dele.
+
+                  O funil é lido de relance, várias vezes por dia: com sete
+                  cabeçalhos cinzas idênticos, achar "Proposta" custa ler os
+                  sete nomes. A bolinha é reconhecida antes da leitura — e por
+                  isso vem primeiro, na borda por onde o olho entra na coluna.
+
+                  Quem não pintou nada continua sem nada: `cor` nula não
+                  desenha marca nenhuma, e o cabeçalho fica o de sempre.
+                */}
+                {etapa.cor && (
+                  <span
+                    aria-hidden
+                    className={`size-2.5 shrink-0 rounded-full ${CLASSE_DA_COR[etapa.cor]}`}
+                  />
+                )}
                 <h3 className="min-w-0 flex-1 truncate text-[12.5px] font-bold text-soft">
                   {etapa.nome}
                 </h3>
@@ -902,6 +923,7 @@ function MenuDaEtapa({
   const [configurando, setConfigurando] = useState(false)
   const [tipo, setTipo] = useState<TipoDeEtapa>(etapa.tipo ?? 'normal')
   const [limite, setLimite] = useState(etapa.limiteDeDias ? String(etapa.limiteDeDias) : '')
+  const [cor, setCor] = useState<CorDaEtapa | null>(etapa.cor ?? null)
   const [nome, setNome] = useState(etapa.nome)
   const [erro, setErro] = useState<string | null>(null)
   const [, comecar] = useTransition()
@@ -1040,6 +1062,42 @@ function MenuDaEtapa({
           </span>
         </label>
 
+        <div className="mt-3 block">
+          <span className="mb-1 block text-[11.5px] font-semibold text-soft">
+            Cor <span className="font-normal text-dim">(para achar a coluna de relance)</span>
+          </span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {/*
+              "Sem cor" é a primeira opção e não o fim da lista: é o estado de
+              todo funil que já existe, e quem se arrependeu de pintar precisa
+              achar a saída antes de procurar outro tom.
+            */}
+            <button
+              type="button"
+              onClick={() => setCor(null)}
+              aria-pressed={cor === null}
+              title="Sem cor"
+              className={`size-[26px] rounded-full border text-[10px] text-dim transition ${
+                cor === null ? 'border-primary ring-2 ring-primary/30' : 'border-line hover:border-strong'
+              }`}
+            >
+              —
+            </button>
+            {CORES_DA_ETAPA.map((opcao) => (
+              <button
+                key={opcao}
+                type="button"
+                onClick={() => setCor(opcao)}
+                aria-pressed={cor === opcao}
+                title={opcao}
+                className={`size-[26px] rounded-full border transition ${CLASSE_DA_COR[opcao]} ${
+                  cor === opcao ? 'border-primary ring-2 ring-primary/30' : 'border-transparent'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+
         <div className="mt-4 flex gap-2.5">
           <button
             type="button"
@@ -1052,15 +1110,19 @@ function MenuDaEtapa({
             type="button"
             onClick={() => {
               setConfigurando(false)
-              agir(() =>
-                acaoDefinirTipoDaEtapa(
+              agir(async () => {
+                const r = await acaoDefinirTipoDaEtapa(
                   clienteId,
                   quadroId,
                   etapa.id,
                   tipo,
                   limite === '' ? null : Number(limite),
-                ),
-              )
+                )
+                // A cor só vai ao banco se mudou: é o mesmo modal, e reescrever
+                // o que não mudou é escrita paga por nada.
+                if (!r.ok || cor === (etapa.cor ?? null)) return r
+                return acaoDefinirCorDaEtapa(clienteId, quadroId, etapa.id, cor)
+              })
             }}
             className="app-primary-button flex-[1.35] px-4 py-2.5 text-[13px]"
           >

@@ -58,9 +58,76 @@ export type Etapa = {
    * usa o padrão do produto.
    */
   limiteDeDias?: number | null
+
+  /**
+   * A cor do cabeçalho da coluna (0069).
+   *
+   * `null` é "sem cor", e é o estado de todo funil que já existia. Ninguém
+   * precisa pintar nada para o quadro continuar funcionando.
+   */
+  cor?: CorDaEtapa | null
 }
 
 export type TipoDeEtapa = 'normal' | 'ganho' | 'perdido'
+
+/**
+ * As cores que uma etapa pode ter.
+ *
+ * **Nome, e não hex.** O produto tem tema claro e escuro, e um `#fde047`
+ * escolhido no escuro vira texto ilegível no claro — quem escolheu não vai
+ * testar os dois. Guardando o nome, quem decide o tom exato é o CSS, que já sabe
+ * em que tema está.
+ *
+ * Oito, e não uma paleta aberta: o funil tem no máximo oito etapas
+ * (`LIMITE_DE_ETAPAS`), e cor demais é a mesma coisa que cor nenhuma — se toda
+ * coluna é colorida, nenhuma se destaca.
+ */
+export const CORES_DA_ETAPA = [
+  'cinza',
+  'azul',
+  'verde',
+  'amarelo',
+  'laranja',
+  'vermelho',
+  'roxo',
+  'rosa',
+] as const
+
+export type CorDaEtapa = (typeof CORES_DA_ETAPA)[number]
+
+/**
+ * O que veio do banco é cor conhecida?
+ *
+ * O `check` da 0069 já barra o resto, mas o tipo do lado de cá vem de uma
+ * consulta, e consulta devolve `string`. Sem esta porta, uma cor escrita por
+ * versão futura viraria classe CSS inexistente e a coluna apareceria sem estilo
+ * nenhum — melhor cair no cinza e continuar legível.
+ */
+export function ehCorDaEtapa(valor: unknown): valor is CorDaEtapa {
+  return typeof valor === 'string' && (CORES_DA_ETAPA as readonly string[]).includes(valor)
+}
+
+/**
+ * A bolinha da cor, no seletor e ao lado do nome da etapa.
+ *
+ * **As classes são escritas inteiras**, como em `core/etiquetas.ts`: o Tailwind
+ * lê o texto do arquivo para decidir o que gerar, e `bg-${cor}-400` montado em
+ * tempo de execução não existiria na folha de estilo — a bolinha ficaria
+ * invisível, sem erro nenhum.
+ *
+ * Tom 400/500 e não 200: aqui a cor é o próprio objeto, não fundo de texto como
+ * na etiqueta, e precisa aguentar aparecer sozinha nos dois temas.
+ */
+export const CLASSE_DA_COR: Record<CorDaEtapa, string> = {
+  cinza: 'bg-slate-400',
+  azul: 'bg-sky-500',
+  verde: 'bg-emerald-500',
+  amarelo: 'bg-amber-400',
+  laranja: 'bg-orange-500',
+  vermelho: 'bg-rose-500',
+  roxo: 'bg-violet-500',
+  rosa: 'bg-pink-500',
+}
 
 export type Cartao = {
   id: string

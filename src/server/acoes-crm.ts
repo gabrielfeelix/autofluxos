@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { ehTemperatura, lerValor, type Estagio, type Situacao, type TipoDeEtapa } from '@/core/crm'
+import { ehCorDaEtapa } from '@/core/quadros'
 import type { CorDeEtiqueta } from '@/core/etiquetas'
 import { LIMITE_DA_NOTA } from '@/core/flow/limites'
 import type { EstadoSalvar } from '@/components/design/formulario-salvar'
@@ -21,6 +22,7 @@ import { membrosDaConta } from './repos/usuarios'
 import {
   atribuirCartao,
   criarQuadro,
+  definirCorDaEtapa,
   definirTipoDaEtapa,
   descreverCartao,
   encadearQuadro,
@@ -160,6 +162,30 @@ export async function acaoDefinirTipoDaEtapa(
   }
 
   const r = await definirTipoDaEtapa(clienteId, quadroId, etapaId, tipo, limiteDeDias)
+  if (!r.ok) return { ok: false, erro: r.motivo }
+
+  quadros(clienteId)
+  return { ok: true }
+}
+
+/**
+ * A cor do cabeçalho da etapa. `null` volta ao cinza.
+ *
+ * A cor chega da tela como texto, e `ehCorDaEtapa` é a porta: sem ela, um valor
+ * inventado passaria pelo TypeScript (que não roda no cliente) e só seria
+ * barrado pelo `check` do banco, como erro 500 em vez de recusa limpa.
+ */
+export async function acaoDefinirCorDaEtapa(
+  clienteId: string,
+  quadroId: string,
+  etapaId: string,
+  cor: string | null,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  if (cor !== null && !ehCorDaEtapa(cor)) return { ok: false, erro: 'esta cor não existe' }
+
+  const r = await definirCorDaEtapa(clienteId, quadroId, etapaId, cor)
   if (!r.ok) return { ok: false, erro: r.motivo }
 
   quadros(clienteId)

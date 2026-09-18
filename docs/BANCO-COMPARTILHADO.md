@@ -320,6 +320,22 @@ extração explícito para os objetos de `public`.
   **O código que lê esta coluna ainda não está publicado**, mesma ordem da
   `0058-nps` acima: migration primeiro, deploy depois. Enquanto isso a coluna
   fica lá sem ninguém ler, e o que está no ar não a procura;
+- **a `0069` foi aplicada em 18/set/2026**, com autorização explícita do dono.
+  Ela acrescenta uma coluna anulável a `public.quadro_colunas`: `cor` (`text`,
+  com `check` fechando a paleta em oito nomes). Nenhuma tabela nova, nenhuma
+  coluna alterada, nenhuma escrita em dado existente — toda etapa que já existia
+  continua com `cor is null`, que é "sem cor", e nada muda de aparência até
+  alguém escolher um tom.
+
+  **Nome de cor e não `#rrggbb`, de propósito:** o produto tem tema claro e
+  escuro, e um hex escolhido no escuro vira texto ilegível no claro — quem
+  escolheu não vai testar os dois. Guardando o nome, quem decide o tom é o CSS,
+  que já sabe em que tema está.
+
+  Conferida pelo ensaio em transação contra a produção antes de aplicar (aceita
+  `azul`, recusa `#ff0000`, aceita `null`) e depois na produção: coluna `text`
+  anulável, `quadro_colunas_cor_check` presente, e `app_verandi` intacta com as
+  mesmas 389 colunas antes e depois;
 - **a `0068` foi aplicada em 17/set/2026**, com autorização explícita do dono.
   Ela acrescenta uma coluna a `public.contacts`: `temperatura` (`text not null
   default 'morno'`, com `check` de `frio`/`morno`/`quente`), mais o índice
