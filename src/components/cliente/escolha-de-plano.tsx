@@ -178,11 +178,29 @@ function Cartao({
       </p>
 
       <ul className="mt-3 mb-4 flex flex-1 flex-col gap-1.5">
-        {plano.itens.map((item) => (
-          <li key={item} className="text-[12px] leading-5 text-muted">
-            {item}
-          </li>
-        ))}
+        {plano.itens.map((item) => {
+          /*
+            A linha de herança em negrito, e não como mais um item.
+
+            "Tudo do Essencial" não é um recurso ao lado dos outros: é o que diz
+            que este plano contém o de baixo inteiro. Escrita com o mesmo peso
+            de "Transcrição de áudio", ela se perde na lista — e era justamente
+            por isso que ninguém a lia na terceira posição.
+          */
+          const herda = item.startsWith('Tudo d')
+          return (
+            <li
+              key={item}
+              className={
+                herda
+                  ? 'text-[12px] leading-5 font-semibold text-soft'
+                  : 'text-[12px] leading-5 text-muted'
+              }
+            >
+              {item}
+            </li>
+          )
+        })}
       </ul>
 
       {ehOAtual ? (

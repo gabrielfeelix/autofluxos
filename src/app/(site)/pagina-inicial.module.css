@@ -976,6 +976,17 @@
   color: var(--soft);
 }
 
+/*
+  A linha de herança — "Tudo do Essencial" — não é um recurso ao lado dos
+  outros: é o que diz que este plano contém o de baixo inteiro. Com o mesmo peso
+  dos demais ela se perde, e é o argumento que faz três colunas parecidas virarem
+  uma escada.
+*/
+.planoItemHerda {
+  font-weight: 600;
+  color: var(--strong, #fff);
+}
+
 .planoCheque {
   flex: none;
   margin-top: 2px;

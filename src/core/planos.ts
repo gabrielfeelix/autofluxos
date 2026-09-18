@@ -49,7 +49,19 @@ export type Plano = {
   conversas: number
   /** Para quem é, em uma frase, na landing. */
   resumo: string
-  /** O que o card mostra. A primeira linha é sempre a franquia de conversa. */
+  /**
+   * O que o card mostra.
+   *
+   * **Nos planos de cima, a primeira linha é a herança** — "Tudo do Essencial",
+   * "Tudo da Operação" —, e só depois vem a franquia de conversa e o que é novo.
+   * Ela estava na terceira posição, abaixo de duas linhas repetidas de um card
+   * para o outro, e assim ninguém a lia: quem compara três colunas parecidas
+   * desiste na primeira diferença que não acha. Dizer primeiro que este plano
+   * contém o anterior é o que transforma três listas soltas numa escada.
+   *
+   * O Essencial não tem essa linha porque não herda de ninguém, e ali a
+   * franquia continua sendo a primeira.
+   */
   itens: string[]
 }
 
@@ -80,9 +92,9 @@ export const PLANOS: Plano[] = [
     conversas: 3000,
     resumo: 'Para quem já tem gente atendendo junto e perde conversa no meio.',
     itens: [
+      'Tudo do Essencial',
       'Até 3.000 conversas por mês',
       'Atendentes ilimitados',
-      'Tudo do Essencial',
       'Respostas com IA',
       'Transcrição de áudio',
       'Transmissões e modelos da Meta',
@@ -96,9 +108,9 @@ export const PLANOS: Plano[] = [
     conversas: 8000,
     resumo: 'Para operação com mais de um número, volume alto e dado sensível.',
     itens: [
+      'Tudo da Operação',
       'Até 8.000 conversas por mês',
       'Atendentes ilimitados',
-      'Tudo da Operação',
       'Múltiplos números e unidades',
       'Sua própria chave de IA, e a conversa não vai para treino',
       'Webhook de entrada e auditoria',

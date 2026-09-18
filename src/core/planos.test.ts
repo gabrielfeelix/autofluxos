@@ -37,15 +37,36 @@ describe('a tabela de planos', () => {
   })
 
   /*
-   * O card diz a franquia na primeira linha porque a unidade da cobrança é
-   * conversa, e o cliente precisa saber o que está comprando antes de ler o
-   * resto da lista. Se o número da lista divergir do campo, a tela mente.
+   * A garantia que importa não é a posição, é a coerência: se o número escrito
+   * no card divergir do campo `conversas`, a tela anuncia uma franquia que o
+   * sistema não cobra — e ninguém descobre isso por revisão de código, descobre
+   * por cliente reclamando.
+   *
+   * A linha existe em todos os planos; o que mudou foi onde ela entra.
    */
-  it('abre a lista com a franquia, e ela bate com o campo', () => {
+  it('diz a franquia, e ela bate com o campo', () => {
     for (const plano of PLANOS) {
-      expect(plano.itens[0]).toBe(
+      expect(plano.itens).toContain(
         `Até ${plano.conversas.toLocaleString('pt-BR')} conversas por mês`,
       )
+    }
+  })
+
+  /*
+   * Quem herda diz isso primeiro.
+   *
+   * "Tudo do Essencial" estava na terceira linha, abaixo de duas que se repetem
+   * de um card para o outro, e ali ninguém a lia. É o argumento que transforma
+   * três listas parecidas numa escada, e por isso a posição virou regra e não
+   * gosto de quem editar o arquivo depois.
+   */
+  it('nos planos de cima, a herança abre a lista; no Essencial, a franquia', () => {
+    const [essencial, ...herdeiros] = PLANOS
+    expect(essencial!.itens[0]).toBe(
+      `Até ${essencial!.conversas.toLocaleString('pt-BR')} conversas por mês`,
+    )
+    for (const plano of herdeiros) {
+      expect(plano.itens[0]).toMatch(/^Tudo d/)
     }
   })
 

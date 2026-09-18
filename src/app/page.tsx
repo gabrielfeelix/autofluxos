@@ -949,7 +949,10 @@ function Plano({
 
       <ul className={s.planoLista}>
         {itens.map((item) => (
-          <li key={item} className={s.planoItem}>
+          <li
+            key={item}
+            className={`${s.planoItem} ${item.startsWith('Tudo d') ? s.planoItemHerda : ''}`}
+          >
             <span className={s.planoCheque} aria-hidden>
               <IconeCheque />
             </span>
