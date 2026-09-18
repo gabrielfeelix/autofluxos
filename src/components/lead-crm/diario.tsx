@@ -57,7 +57,7 @@ export function Diario({
             onClick={() => setAberta(true)}
             className="rounded-lg border border-line px-2 py-0.5 text-[10.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
           >
-            anotar
+            Anotar
           </button>
         )}
       </header>
@@ -88,7 +88,7 @@ export function Diario({
               onClick={() => setAberta(false)}
               className="mt-1.5 text-[11.5px] text-muted transition hover:text-primary"
             >
-              cancelar
+              Cancelar
             </button>
           </div>
         )}

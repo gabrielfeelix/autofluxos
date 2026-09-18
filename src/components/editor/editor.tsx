@@ -1844,7 +1844,7 @@ function AcoesEmLote({
         title="Tira o atraso das falas selecionadas"
         className="rounded-full border border-line px-2 py-0.5 font-semibold text-muted transition hover:border-strong hover:text-soft disabled:opacity-40"
       >
-        tirar
+        Tirar
       </button>
 
       <span className="text-dim">

@@ -684,7 +684,7 @@ export function Conversa({
               ? 'O bot saiu de cena — daqui em diante quem responde é uma pessoa.'
               : (motivoDoFim ?? 'A conversa terminou.')}{' '}
             <button onClick={recomecar} className="font-bold text-primary underline underline-offset-2">
-              recomeçar
+              Recomeçar
             </button>
           </p>
         )}

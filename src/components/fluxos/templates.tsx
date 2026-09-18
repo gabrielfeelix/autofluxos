@@ -258,7 +258,7 @@ function CamposDoFluxo({
               onClick={aoTrocarTemplate}
               className="shrink-0 text-[11px] font-semibold text-primary hover:underline"
             >
-              trocar
+              Trocar
             </button>
           )}
         </div>

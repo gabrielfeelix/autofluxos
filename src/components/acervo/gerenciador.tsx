@@ -113,7 +113,7 @@ export function GerenciadorDoAcervo({
             onClick={() => entrada.current?.click()}
             className="app-secondary-button mt-2.5 px-3.5 py-1.5 text-[12px] disabled:opacity-50"
           >
-            escolher do computador
+            Escolher do computador
           </button>
           <p className="mt-2 text-[11px] text-dim">
             O arquivo fica disponível para todos os fluxos deste cliente.

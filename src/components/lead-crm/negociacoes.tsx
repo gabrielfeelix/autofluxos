@@ -134,7 +134,7 @@ export function Negociacoes({
                     onClick={() => reabrir(negociacao.cartaoId)}
                     className="text-[11.5px] text-muted underline decoration-dotted underline-offset-2 transition hover:text-primary disabled:opacity-50"
                   >
-                    reabrir
+                    Reabrir
                   </button>
                 </span>
               )}

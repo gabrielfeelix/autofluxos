@@ -86,7 +86,7 @@ export function ChaveDeIa({
                 onClick={() => setTrocando(false)}
                 className="mt-1.5 text-[11.5px] text-muted transition hover:text-primary"
               >
-                cancelar
+                Cancelar
               </button>
             )}
           </div>
@@ -97,7 +97,7 @@ export function ChaveDeIa({
               onClick={() => setTrocando(true)}
               className="rounded-lg border border-line px-2.5 py-1 text-[11.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
             >
-              trocar
+              Trocar
             </button>
             <button
               type="button"

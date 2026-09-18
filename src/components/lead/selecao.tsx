@@ -138,7 +138,7 @@ export function SelecaoDeContatos({
                 onClick={() => setMarcados([])}
                 className="text-[11.5px] font-semibold text-primary hover:underline"
               >
-                limpar
+                Limpar
               </button>
 
               <span className="mx-1 h-4 w-px bg-line" aria-hidden />

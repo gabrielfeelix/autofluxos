@@ -243,7 +243,7 @@ export function Compartilhar({
                             title="Fecha o link. A contagem do que ele já fez fica."
                             className="shrink-0 rounded-lg border border-rose-400/25 px-2.5 py-1.5 text-[11px] text-perigo transition hover:bg-rose-400/10"
                           >
-                            revogar
+                            Revogar
                           </button>
                         )}
                       </div>

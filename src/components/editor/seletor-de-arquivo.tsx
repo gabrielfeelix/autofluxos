@@ -248,7 +248,7 @@ export function SeletorDeArquivo({
             onClick={() => entrada.current?.click()}
             className="app-secondary-button mt-2 px-3 py-1.5 text-[11.5px] disabled:opacity-50"
           >
-            escolher do computador
+            Escolher do computador
           </button>
           <p className="mt-2 text-[10.5px] leading-4 text-dim">
             PNG, JPG, WebP, MP4, MP3, OGG ou PDF · até {LIMITE_MB} MB

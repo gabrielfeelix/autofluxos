@@ -224,7 +224,7 @@ export function NotasDoContato({
             onClick={() => setEditando(false)}
             className="mt-1.5 text-[11.5px] text-muted transition hover:text-primary"
           >
-            cancelar
+            Cancelar
           </button>
         </>
       ) : notas === '' ? (

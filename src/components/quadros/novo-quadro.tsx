@@ -162,7 +162,7 @@ export function NovoQuadro({ clienteId, primeiro }: { clienteId: string; primeir
                   onClick={() => setPasso('modelos')}
                   className="shrink-0 text-[11px] font-semibold text-primary hover:underline"
                 >
-                  trocar
+                  Trocar
                 </button>
               </div>
             )}

@@ -1490,7 +1490,7 @@ function MensagensDoHandoff({
                 title="remover esta mensagem"
                 className="rounded-lg px-2 py-0.5 text-[10px] font-semibold text-dim transition hover:bg-rose-400/[0.08] hover:text-perigo"
               >
-                remover
+                Remover
               </button>
             )}
           </div>
@@ -1838,7 +1838,7 @@ function LinhaDeOpcao({
           <input
             value={opcao.valor ?? ''}
             onChange={(e) => aoMudarValor(e.target.value)}
-            placeholder="ex: institucional"
+            placeholder="ex.: institucional"
             className="app-field min-w-0 flex-1 px-2.5 py-1.5 font-mono text-[11.5px]"
           />
         </div>
