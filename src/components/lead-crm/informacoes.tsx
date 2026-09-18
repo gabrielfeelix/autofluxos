@@ -1,4 +1,5 @@
 import { origemDoContato } from '@/core/contatos/origem'
+import { AcoesDoTelefone } from './acoes-do-telefone'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import { horaExata, quando } from '@/lib/quando'
 
@@ -50,11 +51,9 @@ export function Informacoes({
       <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">Informações</h2>
       <dl>
         <Linha rotulo="Telefone">
-          {/* `tel:` e não texto solto: num celular o toque liga, e no desktop o
-              número continua selecionável, que é o que se faz com ele. */}
-          <a href={`tel:+${waId}`} className="font-semibold transition hover:text-primary">
-            {telefoneLegivel(waId)}
-          </a>
+          {/* `tel:` sozinho resolvia o celular e abandonava o desktop, que é
+              onde o time passa o dia. Ver `acoes-do-telefone.tsx`. */}
+          <AcoesDoTelefone waId={waId} legivel={telefoneLegivel(waId)} />
         </Linha>
 
         <Linha rotulo="Canal">WhatsApp</Linha>
