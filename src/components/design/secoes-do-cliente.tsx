@@ -58,19 +58,20 @@ export const ITENS: {
   // olhada de outro jeito: a lista responde "quem existe", o quadro responde
   // "em que ponto cada um está".
   /*
-   * **"Funis", e não "Quadros" — a rota continua `/quadros`.**
+   * **"Funil de vendas" — a rota continua `/quadros`.**
    *
-   * O nome foi escolhido quando a tela era só a posição da pessoa no funil.
-   * Agora que ela tem negociação, valor, ganho e perda, o nome que o mercado
-   * brasileiro usa é funil: o RD chama a tela de "Funil" e a lista de
-   * "Negociações", Pipedrive e HubSpot chamam de "Negócios", Kommo de
-   * "Pipeline". "Quadros" descreve o desenho (colunas), não o trabalho.
+   * O nome foi "Quadros" enquanto a tela era só a posição da pessoa no funil, e
+   * "Quadros" descreve o desenho (colunas), não o trabalho. Virou "Funis" quando
+   * ela ganhou negociação, valor, ganho e perda, e agora "Funil de vendas"
+   * porque sozinha a palavra é ambígua: este produto também tem funil de
+   * automação, e quem chega não sabe qual dos dois o menu está oferecendo.
    *
-   * Plural porque são vários — captação, comercial, pós-venda —, e cada coluna
-   * continua sendo uma **etapa**. A URL não muda: link salvo quebrado em troca
+   * O singular não esconde que são vários — captação, comercial, pós-venda: o
+   * seletor dentro da tela continua mostrando todos. É o nome da seção, e é
+   * assim que o mercado a chama. A URL não muda: link salvo quebrado em troca
    * de um rótulo não se paga.
    */
-  { chave: 'quadros', rotulo: 'Funis', href: '/quadros', icone: <IconeQuadros /> },
+  { chave: 'quadros', rotulo: 'Funil de vendas', href: '/quadros', icone: <IconeQuadros /> },
   { chave: 'fluxos', rotulo: 'Automações', href: '/fluxos', icone: <IconeAutomacoes /> },
   /*
    * Transmissões entra ao lado de Automações, e não dentro delas.

@@ -301,7 +301,7 @@ export function SecaoDepoisDoFluxo() {
           </Cel>
         </Linha>
         <Linha>
-          <Cel forte>Funis</Cel>
+          <Cel forte>Funil de vendas</Cel>
           <Cel>Em que ponto cada pessoa está: novo, agendado, compareceu, virou aluno.</Cel>
           <Cel>
             O bloco {NOMES.etapa} move o cartão sozinho. Funil que depende de digitação manual é

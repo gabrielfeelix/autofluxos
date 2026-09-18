@@ -89,7 +89,7 @@ function Espera() {
   return (
     <>
       <header className="mb-4 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2">
-        <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Funis</h1>
+        <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Funil de vendas</h1>
         <Esqueleto className="h-[26px] w-28 rounded-full" />
         <span className="ml-auto flex flex-wrap items-center justify-end gap-2">
           <Esqueleto className="h-8 w-32 rounded-lg" />
@@ -131,7 +131,7 @@ async function Conteudo({ cliente, q }: { cliente: Cliente; q?: string }) {
   return (
     <>
         <header className="mb-4 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2">
-          <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Funis</h1>
+          <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Funil de vendas</h1>
 
           {quadros.length > 1 && (
             <nav className="flex flex-wrap gap-1.5">

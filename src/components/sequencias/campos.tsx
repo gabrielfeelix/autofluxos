@@ -89,7 +89,7 @@ export function CamposDaSequencia({
             />
             <span className="mt-1 block text-[10.5px] leading-4 text-dim">
               Vale para quem chega pelo bloco de fluxo <strong>Etapa do quadro</strong>. Mover o
-              cartão à mão na tela de Funis não inscreve ninguém — inscrever alguém por um
+              cartão à mão na tela de Funil de vendas não inscreve ninguém — inscrever alguém por um
               arrasto de arrumação seria mandar mensagem por engano.
             </span>
           </label>
