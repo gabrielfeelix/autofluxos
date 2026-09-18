@@ -488,7 +488,7 @@ export function Quadro({
         {etapas.length < LIMITE_DE_ETAPAS ? (
           <NovaEtapa clienteId={clienteId} quadroId={quadroId} />
         ) : (
-          <p className="w-[220px] shrink-0 rounded-xl border border-dashed border-line p-3 text-[11px] leading-[1.6] text-dim">
+          <p className="flex w-[220px] shrink-0 items-center rounded-xl border border-dashed border-line p-3 text-[11px] leading-[1.6] text-dim">
             {LIMITE_DE_ETAPAS} etapas é o teto — acima disso elas não cabem lado a lado, e funil
             maior que isso costuma ser dois funis.
           </p>
@@ -801,7 +801,18 @@ function NovaEtapa({ clienteId, quadroId }: { clienteId: string; quadroId: strin
       <button
         type="button"
         onClick={() => setAberto(true)}
-        className="w-[220px] shrink-0 rounded-xl border border-dashed border-strong px-3 py-3 text-left text-[12px] text-dim transition hover:border-strong hover:bg-surface hover:text-soft"
+        /*
+          Centrado, e não `text-left` com `py-3`.
+
+          Enquanto as colunas eram do tamanho do conteúdo, um texto no alto à
+          esquerda era só um rótulo. Depois que elas passaram a esticar até a
+          altura da tela, esta virou uma moldura tracejada de tela inteira com o
+          texto perdido num canto — parecia coluna quebrada, não convite.
+
+          `self-start` mantém o convite do tamanho do conteúdo quando o funil
+          está vazio, que é o caso em que ele não deve esticar.
+        */
+        className="flex w-[220px] shrink-0 items-center justify-center rounded-xl border border-dashed border-strong px-3 py-3 text-center text-[12px] text-dim transition hover:border-strong hover:bg-surface hover:text-soft"
       >
         + Nova etapa
       </button>
