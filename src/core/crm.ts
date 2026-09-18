@@ -36,6 +36,38 @@ export function ehEstagio(valor: string): valor is Estagio {
   return (ESTAGIOS as readonly string[]).includes(valor)
 }
 
+// ---------------------------------------------------------------------------
+// Temperatura do contato
+// ---------------------------------------------------------------------------
+
+/**
+ * Quanto quem atendeu acredita nesta venda (0068).
+ *
+ * **A contrapartida do estágio, e de propósito.** O estágio é consequência: ele
+ * anda sozinho pelos fatos, e mexer nele na mão é exceção. Temperatura é o
+ * oposto — nada aqui a move sozinha, porque não há fato que a meça. Duas pessoas
+ * na mesma etapa, com a mesma última mensagem, podem ser uma quase fechada e uma
+ * que só pediu preço por educação, e quem sabe a diferença é quem conversou.
+ *
+ * Deduzi-la de tempo parado ou de estágio seria inventar um número e apresentá-lo
+ * como opinião de alguém. Quem não opinou fica em `morno`, que é o que "ninguém
+ * disse" honestamente significa.
+ */
+export const TEMPERATURAS = ['frio', 'morno', 'quente'] as const
+
+export type Temperatura = (typeof TEMPERATURAS)[number]
+
+/** Como cada temperatura se chama na tela. Minúsculo: é rótulo, não título. */
+export const NOME_DA_TEMPERATURA: Record<Temperatura, string> = {
+  frio: 'frio',
+  morno: 'morno',
+  quente: 'quente',
+}
+
+export function ehTemperatura(valor: string): valor is Temperatura {
+  return (TEMPERATURAS as readonly string[]).includes(valor)
+}
+
 /**
  * Os fatos que mexem no estágio.
  *
@@ -327,6 +359,7 @@ export const TIPOS_DE_EVENTO = [
   'mensagem-enviada',
   'mudou-de-etapa',
   'mudou-de-estagio',
+  'mudou-de-temperatura',
   'assumiu',
   'ganhou',
   'perdeu',
@@ -369,6 +402,8 @@ export function comoFrase(evento: Evento): string {
       return d.de ? `saiu de ${d.de} para ${d.para}` : `entrou em ${d.para}`
     case 'mudou-de-estagio':
       return `agora é ${d.para}`
+    case 'mudou-de-temperatura':
+      return `marcado como ${d.para}`
     case 'assumiu':
       return d.quem ? `${d.quem} assumiu` : 'ficou sem responsável'
     case 'ganhou':

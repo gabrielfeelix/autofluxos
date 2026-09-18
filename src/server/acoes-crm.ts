@@ -1,12 +1,20 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { lerValor, type Estagio, type Situacao, type TipoDeEtapa } from '@/core/crm'
+import { ehTemperatura, lerValor, type Estagio, type Situacao, type TipoDeEtapa } from '@/core/crm'
+import type { CorDeEtiqueta } from '@/core/etiquetas'
 import { LIMITE_DA_NOTA } from '@/core/flow/limites'
 import type { EstadoSalvar } from '@/components/design/formulario-salvar'
 import { anotar, linhaDoTempo } from './repos/eventos'
 import { listarMotivos, criarMotivo, apagarMotivo } from './repos/motivos-de-perda'
-import { contatoEhDoCliente, definirEstagio, resumoDoContato } from './repos/crm'
+import {
+  contatoEhDoCliente,
+  definirEstagio,
+  definirTemperatura,
+  fichaDoContato,
+  resumoDoContato,
+} from './repos/crm'
+import { etiquetasDeContatos, listarEtiquetas } from './repos/etiquetas'
 import { atribuirContato } from './repos/conversas'
 import { membrosDaConta } from './repos/usuarios'
 import {
@@ -200,17 +208,61 @@ export async function acaoAbrirPainelDoContato(
   clienteId: string,
   contatoId: string,
 ): Promise<{
+  ficha: Awaited<ReturnType<typeof fichaDoContato>>
   eventos: Awaited<ReturnType<typeof linhaDoTempo>>
   resumo: { total: number; compras: number; ultimaEm: string | null }
+  etiquetas: { id: string; nome: string; cor: CorDeEtiqueta }[]
+  aplicadas: string[]
+  equipe: { id: string; nome: string }[]
 }> {
   await exigirAcessoAoCliente(clienteId)
 
-  const [eventos, resumo] = await Promise.all([
+  const [ficha, eventos, resumo, etiquetas, porContato, equipe] = await Promise.all([
+    fichaDoContato(clienteId, contatoId),
     linhaDoTempo(clienteId, contatoId),
     resumoDoContato(clienteId, contatoId),
+    listarEtiquetas(clienteId),
+    etiquetasDeContatos([contatoId]),
+    membrosDaConta(clienteId),
   ])
 
-  return { eventos, resumo }
+  return {
+    ficha,
+    eventos,
+    resumo,
+    etiquetas: etiquetas.map(({ id, nome, cor }) => ({ id, nome, cor })),
+    aplicadas: (porContato.get(contatoId) ?? []).map((etiqueta) => etiqueta.id),
+    equipe: equipe.map(({ id, nome }) => ({ id, nome })),
+  }
+}
+
+/**
+ * A temperatura na mão (0068).
+ *
+ * Recusa valor que a régua não conhece: ele chega da tela, e `check` no banco
+ * devolveria erro de Postgres em vez de frase. Ver `core/crm.ts`.
+ */
+export async function acaoDefinirTemperatura(
+  clienteId: string,
+  contatoId: string,
+  temperatura: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  if (!ehTemperatura(temperatura)) return { ok: false, erro: 'essa temperatura não existe' }
+
+  const quem = await sessaoAtual()
+  const mudou = await definirTemperatura(
+    clienteId,
+    contatoId,
+    temperatura,
+    quem?.usuario.nome ?? null,
+  )
+  if (!mudou) return { ok: false, erro: 'este contato não existe mais' }
+
+  quadros(clienteId)
+  revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
+  return { ok: true }
 }
 
 /** O ajuste na mão do estágio. Existe, e é exceção. */

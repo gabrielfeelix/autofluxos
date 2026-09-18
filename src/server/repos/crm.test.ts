@@ -2,7 +2,13 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { db } from '../db'
 import { criarCliente } from './clientes'
 import { acharOuCriarContato } from './conversas'
-import { aplicarFato, marcarUltimaMensagem, resumoDoContato } from './crm'
+import {
+  aplicarFato,
+  definirTemperatura,
+  fichaDoContato,
+  marcarUltimaMensagem,
+  resumoDoContato,
+} from './crm'
 import { linhaDoTempo } from './eventos'
 import { listarMotivos } from './motivos-de-perda'
 import {
@@ -167,5 +173,44 @@ describe.skipIf(!temCredencial)('ganhar, perder e a cadeia de funis', () => {
     // vendas → captação fecharia captação → vendas → captação.
     const r = await encadearQuadro(clienteId, vendasId, sdrId)
     expect(r.ok).toBe(false)
+  })
+})
+
+/**
+ * A temperatura (0068), e o que a distingue do estágio.
+ *
+ * O teste que importa aqui é o do id: o painel do funil pedia a ficha com o id
+ * do **cartão**, que não existe em `contacts`, e o sintoma era um painel vazio
+ * em todo contato, sem erro nenhum. `fichaDoContato` devolvendo `null` para id
+ * que não é contato deste cliente é o que torna esse engano visível.
+ */
+describe.skipIf(!temCredencial)('a temperatura é opinião, não medida', () => {
+  it('quem nunca opinou nasce morno', async () => {
+    expect((await fichaDoContato(clienteId, ana))?.temperatura).toBe('morno')
+  })
+
+  it('marcar grava e vira linha do tempo', async () => {
+    expect(await definirTemperatura(clienteId, ana, 'quente', 'Gabriel')).toBe(true)
+    expect((await fichaDoContato(clienteId, ana))?.temperatura).toBe('quente')
+
+    const eventos = await linhaDoTempo(clienteId, ana)
+    expect(eventos.some((e) => e.tipo === 'mudou-de-temperatura')).toBe(true)
+  })
+
+  it('nenhum fato do funil mexe na temperatura', async () => {
+    await aplicarFato(clienteId, ana, 'ganhou')
+    // O estágio andou; a opinião de quem atendeu continua onde a puseram.
+    expect((await fichaDoContato(clienteId, ana))?.temperatura).toBe('quente')
+  })
+
+  it('a ficha traz o que o painel do funil mostra', async () => {
+    const ficha = (await fichaDoContato(clienteId, ana))!
+    expect(ficha.nome).toBe('Ana')
+    expect(ficha.waId).toBe(`5511${seed}01`)
+  })
+
+  it('id de cartão não é id de contato, e a ficha diz isso', async () => {
+    const cartao = (await cartaoDe(vendasId, ana))!
+    expect(await fichaDoContato(clienteId, cartao.id)).toBeNull()
   })
 })

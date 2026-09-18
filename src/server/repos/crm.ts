@@ -5,6 +5,7 @@ import {
   resumoDoCliente,
   type Estagio,
   type FatoDoContato,
+  type Temperatura,
 } from '@/core/crm'
 import { db, ehIdInvalido } from '../db'
 import { anotar } from './eventos'
@@ -116,6 +117,141 @@ export async function definirEstagio(
 
   await anotar(clienteId, contatoId, 'mudou-de-estagio', { para: estagio, manual: 'true' }, autor)
   return true
+}
+
+/**
+ * A temperatura na mão (0068).
+ *
+ * Sem `aplicarFato` no meio, e é a diferença inteira entre ela e o estágio: não
+ * existe fato que mova temperatura, então não existe régua para consultar. Quem
+ * escreve é sempre um humano dizendo o que acha.
+ *
+ * Vira evento na linha do tempo como qualquer opinião gravada — daqui a um mês,
+ * "quem disse que estava quente, e quando" é a pergunta que se faz olhando uma
+ * venda perdida.
+ */
+export async function definirTemperatura(
+  clienteId: string,
+  contatoId: string,
+  temperatura: Temperatura,
+  autor: string | null = null,
+): Promise<boolean> {
+  const { data, error } = await db()
+    .from('contacts')
+    .update({ temperatura })
+    .eq('client_id', clienteId)
+    .eq('id', contatoId)
+    .select('id')
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return false
+  if (error) throw new Error(`não deu para mudar a temperatura: ${error.message}`)
+  if (!data) return false
+
+  await anotar(clienteId, contatoId, 'mudou-de-temperatura', { para: temperatura }, autor)
+  return true
+}
+
+/**
+ * Tudo que o painel do funil mostra sobre uma pessoa, numa consulta.
+ *
+ * **O painel abre inteiro ou não abre.** Ele cobre o quadro, e montá-lo em três
+ * tempos — primeiro o nome, depois o telefone, depois a etiqueta — seria a tela
+ * pulando debaixo do cursor de quem já está lendo. Uma leitura só, e ela é curta:
+ * uma linha de `contacts` e as etiquetas dela.
+ *
+ * Devolve `null` quando o contato não é deste cliente. O id vem da tela, e a
+ * chave estrangeira só sabe que ele existe, não de quem é.
+ */
+export async function fichaDoContato(
+  clienteId: string,
+  contatoId: string,
+): Promise<{
+  nome: string
+  waId: string
+  estagio: Estagio
+  estagioDesde: string | null
+  temperatura: Temperatura
+  criadoEm: string
+  ultimaEntradaEm: string | null
+  atribuidoA: string | null
+  notas: string
+  campos: Record<string, string>
+} | null> {
+  const { data, error } = await db()
+    .from('contacts')
+    // Numa linha só, e não concatenado: o supabase-js lê esta string no nível de
+    // tipo para saber o formato do retorno, e concatenação vira `string`
+    // genérica — aí o tipo do `data` desanda e o `tsc` acusa. Mesma nota de
+    // `repos/leads.ts`.
+    .select(
+      'id, nome, nome_real, wa_id, estagio, estagio_mudou_em, temperatura, criado_em, ultima_mensagem_em, atribuido_a, notas, campos',
+    )
+    .eq('client_id', clienteId)
+    .eq('id', contatoId)
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return null
+  if (error) throw new Error(`não deu para ler a ficha do contato: ${error.message}`)
+  if (!data) return null
+
+  const linha = data as unknown as {
+    nome: string | null
+    nome_real: string | null
+    wa_id: string
+    estagio: string
+    estagio_mudou_em: string | null
+    temperatura: string | null
+    criado_em: string
+    ultima_mensagem_em: string | null
+    atribuido_a: string | null
+    notas: string | null
+    campos: unknown
+  }
+
+  return {
+    // `nome_real` (o que a equipe corrigiu) ganha de `nome` (o do perfil do
+    // WhatsApp, que a própria pessoa muda quando quer), como no cartão.
+    nome: (linha.nome_real ?? '').trim() || linha.nome || linha.wa_id,
+    waId: linha.wa_id,
+    estagio: linha.estagio as Estagio,
+    estagioDesde: linha.estagio_mudou_em,
+    /*
+     * `?? 'morno'` protege a tela do intervalo entre subir o código e aplicar a
+     * 0068 em produção: sem a coluna, o PostgREST devolve `undefined` e o
+     * seletor abriria sem valor nenhum escolhido.
+     */
+    temperatura: (linha.temperatura as Temperatura) ?? 'morno',
+    criadoEm: linha.criado_em,
+    /*
+     * `ultima_mensagem_em` na tabela, `ultimaEntradaEm` aqui, e não é
+     * desleixo: quem tem `ultima_entrada_em` é a **view** `leads`, e ela não
+     * existe em `contacts`. Pedir o nome da view nesta consulta devolve
+     * `column contacts.ultima_entrada_em does not exist` em tempo de execução,
+     * porque o PostgREST não é conferido pelo TypeScript. As duas guardam a
+     * mesma coisa: quando a pessoa falou pela última vez.
+     */
+    ultimaEntradaEm: linha.ultima_mensagem_em,
+    atribuidoA: linha.atribuido_a,
+    notas: linha.notas ?? '',
+    campos: paraCampos(linha.campos),
+  }
+}
+
+/**
+ * `campos` é `jsonb`, e a tela não pode ser a parte que quebra por causa de um
+ * dado torto. Mesma tolerância de `repos/leads.ts`, pelo mesmo motivo: ninguém
+ * executa isto, é texto numa célula, e sumir com o campo seria perder o lead.
+ */
+function paraCampos(bruto: unknown): Record<string, string> {
+  if (!bruto || typeof bruto !== 'object' || Array.isArray(bruto)) return {}
+
+  return Object.fromEntries(
+    Object.entries(bruto as Record<string, unknown>).map(([chave, valor]) => [
+      chave,
+      typeof valor === 'string' ? valor : JSON.stringify(valor),
+    ]),
+  )
 }
 
 /**

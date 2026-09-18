@@ -215,7 +215,7 @@ describe.skipIf(!temCredencial)('criar contato à mão e apagar em lote', () => 
   it('recusa telefone sem DDD em vez de chutar o estado', async () => {
     expect(await criarContato(clienteId, { nome: 'Sem DDD', telefone: '98765-4321' })).toEqual({
       ok: false,
-      motivo: 'escreva o telefone com DDD — sem ele não dá para saber de qual estado é',
+      motivo: 'escreva o telefone com DDD, sem ele não dá para saber de qual estado é',
     })
   })
 

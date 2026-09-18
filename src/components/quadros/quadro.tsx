@@ -531,7 +531,8 @@ export function Quadro({
       <PainelDoContato
         key={noPainel?.id ?? 'vazio'}
         clienteId={clienteId}
-        contato={noPainel}
+        contatoId={noPainel?.contatoId ?? null}
+        cartao={noPainel}
         aoFechar={() => setNoPainel(null)}
       />
     </div>

@@ -320,6 +320,31 @@ extração explícito para os objetos de `public`.
   **O código que lê esta coluna ainda não está publicado**, mesma ordem da
   `0058-nps` acima: migration primeiro, deploy depois. Enquanto isso a coluna
   fica lá sem ninguém ler, e o que está no ar não a procura;
+- **a `0068` foi aplicada em 17/set/2026**, com autorização explícita do dono.
+  Ela acrescenta uma coluna a `public.contacts`: `temperatura` (`text not null
+  default 'morno'`, com `check` de `frio`/`morno`/`quente`), mais o índice
+  `contacts_temperatura_idx (client_id, temperatura)`. Nenhuma tabela nova,
+  nenhuma coluna alterada, nenhuma escrita em dado existente.
+
+  **Por que uma coluna e não o `estagio` que já existe:** o estágio é
+  consequência, anda sozinho pelos fatos, e mexer nele na mão é exceção.
+  Temperatura é o oposto, e não tem como ser medida: é o quanto quem atendeu
+  acredita naquela venda. Duas pessoas na mesma etapa, com a mesma última
+  mensagem, podem ser uma quase fechada e uma que só pediu preço por educação.
+  Derivá-la de tempo parado seria inventar um número e apresentá-lo como opinião
+  de alguém. Quem não opinou fica em `morno`.
+
+  Conferida pelo **ensaio em transação** (`begin; ...; rollback;`) antes de
+  aplicar, e por conferência objeto a objeto na produção depois: a coluna existe
+  com o default e o `check` pretendidos, o índice existe, os grants trazem só
+  `postgres` e `service_role` (`anon` e `authenticated` não aparecem, como a
+  `0041` garante para objeto novo), as 35 linhas existentes leem `morno`, e
+  `app_verandi` segue com 42 tabelas, medidas antes e depois.
+
+  **Não precisou recarregar o PostgREST**: o cache pegou a coluna sozinho, e o
+  teste que prova isso é o `crm.test.ts`, que lê `temperatura` pela Data API e
+  passou logo depois de aplicar. `?? 'morno'` na leitura protegia o intervalo
+  entre deploy e migration, e continua lá pelo mesmo motivo;
 - **a `0067` foi aplicada em 16/set/2026**, com autorização explícita do dono.
   Ela acrescenta duas colunas anuláveis a `public.mensagens_agendadas`:
   `template_id` (uuid) e `template_valores` (jsonb). É o que permite a uma
