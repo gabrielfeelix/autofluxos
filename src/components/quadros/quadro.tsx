@@ -224,8 +224,21 @@ export function Quadro({
           com um vão de tela vazia no meio. Sem cartão elas ficam do tamanho que
           têm, e o convite encosta nelas. */}
       <div
-        className={`flex min-h-0 items-start gap-3 overflow-x-auto pb-2 ${
-          cartoes.length === 0 ? 'shrink-0' : 'flex-1'
+        className={`flex min-h-0 gap-3 overflow-x-auto pb-2 ${
+          /*
+            `items-start` **só no funil vazio**, e é o que faltava consertar.
+
+            Com ele, cada coluna é do tamanho do conteúdo dela, e `max-h-full`
+            não tem altura nenhuma para limitar: a lista nunca ganha rolagem e o
+            flex espreme os cartões para caber todos, que era a coluna virando
+            baralho. Com cartão, as colunas esticam (`items-stretch`, o padrão) e
+            a lista de dentro passa a rolar.
+
+            Vazio segue `items-start` pela razão do comentário acima: coluna de
+            um palmo esticada até o rodapé empurra o convite para longe do
+            kanban que ele explica.
+          */
+          cartoes.length === 0 ? 'shrink-0 items-start' : 'flex-1'
         }`}
       >
         {etapas.map((etapa, indice) => {
@@ -249,7 +262,9 @@ export function Quadro({
                 if (cartaoId) mover(cartaoId, etapa.id)
                 setArrastando(null)
               }}
-              className={`flex max-h-full w-[272px] shrink-0 flex-col rounded-xl border transition ${
+              // `min-h-0` no `flex-col`: sem ele o filho que rola não pode
+              // encolher abaixo do conteúdo, e a rolagem vaza para a página.
+              className={`flex h-full min-h-0 w-[272px] shrink-0 flex-col rounded-xl border transition ${
                 alvoDoArrasto
                   ? 'border-primary/50 bg-primary/[0.07]'
                   : 'border-line bg-panel'
@@ -327,16 +342,29 @@ export function Quadro({
                         setSobre(null)
                       }}
                       /*
-                        `shrink-0` é o que impede a coluna de virar um baralho.
+                        Altura fixa, e `shrink-0` junto.
 
                         A lista é uma coluna flex com `overflow-y-auto`, e o
                         padrão do flex é **encolher o item para caber**. Com 3 ou
                         4 cartões não dá para ver; com os 21 de uma etapa "Novo"
-                        de verdade, cada cartão é espremido até virar uma fatia
-                        de poucos pixels, com o nome cortado ao meio. Rolagem só
-                        aparece quando o conteúdo se recusa a encolher.
+                        de verdade, cada cartão era espremido até virar uma fatia
+                        de poucos pixels, com o nome cortado ao meio.
+
+                        `shrink-0` sozinho não bastou porque a coluna ainda era
+                        do tamanho do conteúdo (ver `items-start`, acima): sem
+                        teto de altura não há o que rolar. Com a coluna esticada
+                        e o cartão com altura própria, o que sobra rola dentro
+                        da coluna, que é o comportamento de kanban.
+
+                        72px é a conta do cartão cheio, e não um chute: 16 de
+                        `py-2`, 16,25 do nome (12,5px com `leading-[1.3]`), 19
+                        do título da negociação (`mt-[3px]` + `leading-4`) e 19
+                        da linha de espera. Dá 70,25, e 72 deixa a folga do
+                        arredondamento. Cartão sem título sobra espaço, e é de
+                        propósito: altura que muda de linha para linha é o que
+                        faz a coluna parecer remendada.
                       */
-                      className={`group shrink-0 cursor-grab overflow-hidden rounded-lg border bg-panel py-2 pr-2 pl-2.5 shadow-[0_1px_2px_rgba(19,25,34,0.06)] transition active:cursor-grabbing ${
+                      className={`group h-[72px] shrink-0 cursor-grab overflow-hidden rounded-lg border bg-panel py-2 pr-2 pl-2.5 shadow-[0_1px_2px_rgba(19,25,34,0.06)] transition active:cursor-grabbing ${
                         arrastando === cartao.id
                           ? 'border-primary/40 opacity-40'
                           : cartao.situacao && cartao.situacao !== 'aberta'
