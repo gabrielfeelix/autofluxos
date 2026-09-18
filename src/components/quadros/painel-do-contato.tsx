@@ -9,6 +9,8 @@ import { ResponsavelDoContato } from '@/components/lead-crm/responsavel-do-conta
 import { SeletorDeEtiquetas } from '@/components/etiquetas/seletor'
 import { QuemE } from '@/components/lead/quem-e'
 import { comoDinheiro, comoFrase, type Evento } from '@/core/crm'
+import { comoParado } from '@/core/quadros'
+import { horaExata } from '@/lib/quando'
 import { acaoAbrirPainelDoContato } from '@/server/acoes-crm'
 
 /**
@@ -58,19 +60,31 @@ export function PainelDoContato({
   contatoId,
   cartao,
   aoFechar,
+  aoGanharOuPerder,
 }: {
   clienteId: string
   /** O id em `contacts`. **Não** é o id do cartão — ver o cabeçalho. */
   contatoId: string | null
   /** O que o cartão já sabe, para o painel abrir escrito enquanto o resto chega. */
   cartao: {
+    id: string
     nome: string
     telefone: string
+    entrouNaColunaEm: string
     titulo?: string | null
     valor?: number | null
     situacao?: string
   } | null
   aoFechar: () => void
+  /**
+   * Ganhar ou perder sem sair do quadro.
+   *
+   * O painel **não** abre o modal de fechar por conta própria: quem o tem é o
+   * quadro, com a lista de motivos e o aviso de passagem para o funil seguinte.
+   * Dois modais de fechar venda viram, em um mês, duas regras de fechar venda —
+   * é a mesma nota que já está em `lead-crm/negociacoes.tsx`.
+   */
+  aoGanharOuPerder: (situacao: 'ganha' | 'perdida') => void
 }) {
   const [dados, setDados] = useState<Awaited<
     ReturnType<typeof acaoAbrirPainelDoContato>
@@ -199,15 +213,125 @@ export function PainelDoContato({
           )}
 
           {/*
-            A negociação do cartão, e não do contato: a mesma pessoa pode ter um
-            cartão em cada funil, e o que está escrito aqui é o deste.
+            A próxima ação, e ela vem **antes** de tudo que é descrição.
+
+            É o campo mais citado da pesquisa de CRMs: a RD põe "próximo contato
+            agendado" no próprio cartão, a Close põe as tarefas no topo da
+            coluna do lead. A pergunta de quem abre um cartão no meio do funil é
+            "o que acontece com essa pessoa agora", e o que já está marcado para
+            sair responde antes de qualquer outra coisa.
+
+            Tem um segundo uso, prático: sem isto, quem abre o painel não sabe
+            que há mensagem esperando para sair e escreve de novo por cima.
           */}
-          {(cartao.titulo || cartao.valor != null) && (
-            <p className="mt-3 rounded-lg border border-line bg-surface px-3 py-2 text-[12px] leading-5">
-              <span className="text-dim">Negociação: </span>
-              {cartao.titulo || 'sem título'}
-              {cartao.valor != null && ` — ${comoDinheiro(cartao.valor)}`}
+          {dados && dados.agendadas.length > 0 && (
+            <section className="mt-4 rounded-lg border border-primary/25 bg-primary/[0.05] px-3 py-2.5">
+              <h4 className="text-[10px] font-bold tracking-[0.05em] text-primary uppercase">
+                Já está marcado para sair
+              </h4>
+              <ul className="mt-1.5 flex flex-col gap-1.5">
+                {dados.agendadas.map((agendada) => (
+                  <li key={agendada.id} className="text-[11.5px] leading-4">
+                    <strong
+                      className={`font-bold ${agendada.estado === 'falhou' ? 'text-perigo' : 'text-soft'}`}
+                    >
+                      {agendada.estado === 'falhou' ? 'não saiu' : horaExata(agendada.quando)}
+                    </strong>
+                    <span className="mt-0.5 block truncate text-dim">{agendada.texto}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {/*
+            A negociação deste cartão, editável.
+
+            Era texto morto: para mudar o valor de uma venda que acabou de ser
+            acertada no WhatsApp era preciso sair do quadro. A RD deixa marcar
+            venda e perda de dentro do painel do WhatsApp dela, e é o gesto que
+            mais se faz com um cartão aberto.
+          */}
+          <section className="mt-4 rounded-lg border border-line bg-surface px-3 py-2.5">
+            <h4 className="text-[10px] font-bold tracking-[0.05em] text-dim uppercase">
+              Negociação
+            </h4>
+            <p className="mt-1 text-[12px] leading-5">
+              {cartao.titulo || <span className="text-dim">sem título</span>}
+              {cartao.valor != null && (
+                <span className="font-semibold"> — {comoDinheiro(cartao.valor)}</span>
+              )}
             </p>
+
+            {/* Tempo parado: a Pipedrive produtizou exatamente isto (o
+                "rotting", com cor no cartão). Aqui ele já era calculado para a
+                barra do cartão e não era dito em lugar nenhum por extenso. */}
+            <p className="mt-1 text-[11px] text-dim">
+              {comoParado(cartao.entrouNaColunaEm)} nesta etapa
+            </p>
+
+            {cartao.situacao === 'aberta' ? (
+              <span className="mt-2.5 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => aoGanharOuPerder('ganha')}
+                  className="flex-1 rounded-[8px] border border-emerald-500/35 bg-emerald-50 px-2 py-1.5 text-[11.5px] font-bold text-emerald-700 transition hover:bg-emerald-100"
+                >
+                  Ganhou
+                </button>
+                <button
+                  type="button"
+                  onClick={() => aoGanharOuPerder('perdida')}
+                  className="flex-1 rounded-[8px] border border-rose-400/35 bg-rose-50 px-2 py-1.5 text-[11.5px] font-bold text-rose-700 transition hover:bg-rose-100"
+                >
+                  Perdeu
+                </button>
+              </span>
+            ) : (
+              <p className="mt-2 text-[11.5px] font-bold">
+                {cartao.situacao === 'ganha' ? (
+                  <span className="text-ok">ganho</span>
+                ) : (
+                  <span className="text-perigo">perdido</span>
+                )}
+              </p>
+            )}
+          </section>
+
+          {/*
+            Em que outros funis essa pessoa está.
+
+            O painel mostrava só o cartão clicado, como se fosse o único — e no
+            produto o SDR entrega ao vendedor, que entrega ao pós-venda, então a
+            mesma pessoa tem cartão em três lugares. Só aparece quando há mais de
+            um: repetir o funil que já está aberto seria ruído.
+          */}
+          {dados && dados.funis.length > 1 && (
+            <section className="mt-4">
+              <Titulo>Nos outros funis</Titulo>
+              <ul className="flex flex-col gap-1.5">
+                {dados.funis
+                  .filter((funil) => funil.cartaoId !== cartao.id)
+                  .map((funil) => (
+                    <li
+                      key={funil.cartaoId}
+                      className="flex items-center gap-2 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-[11.5px]"
+                    >
+                      <span className="min-w-0 flex-1 truncate">
+                        <strong className="font-semibold">{funil.quadro}</strong>
+                        <span className="text-dim"> · {funil.etapa}</span>
+                      </span>
+                      {funil.situacao !== 'aberta' && (
+                        <span
+                          className={`shrink-0 text-[10.5px] font-bold ${funil.situacao === 'ganha' ? 'text-ok' : 'text-perigo'}`}
+                        >
+                          {funil.situacao === 'ganha' ? 'ganho' : 'perdido'}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+              </ul>
+            </section>
           )}
 
           {/*
@@ -301,7 +425,7 @@ export function PainelDoContato({
             href={`/clientes/${clienteId}/leads/${contatoId}`}
             className="app-secondary-button block w-full px-4 py-2.5 text-center text-[12.5px]"
           >
-            Abrir a conversa
+            Ver ficha completa
           </Link>
         </footer>
       </aside>

@@ -1513,7 +1513,7 @@ function DadosDoLead({
           href={`/clientes/${clienteId}/leads/${lead.contatoId}`}
           className="app-secondary-button mt-3 w-full px-3 py-1.5 text-center text-[11.5px]"
         >
-          Abrir ficha completa
+          Ver ficha completa
         </Link>
       </div>
 

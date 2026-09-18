@@ -16,6 +16,7 @@ import {
 } from './repos/crm'
 import { etiquetasDeContatos, listarEtiquetas } from './repos/etiquetas'
 import { atribuirContato } from './repos/conversas'
+import { agendadasDoContato } from './repos/mensagens-agendadas'
 import { membrosDaConta } from './repos/usuarios'
 import {
   atribuirCartao,
@@ -25,6 +26,7 @@ import {
   encadearQuadro,
   fecharCartao,
   reabrirCartao,
+  quadrosDoContato,
   trazerTodosParaOQuadro,
 } from './repos/quadros'
 import { exigirAcessoAoCliente, sessaoAtual } from './sessao'
@@ -199,10 +201,28 @@ export async function acaoApagarMotivo(
 }
 
 /**
- * O que abre no painel lateral: a linha do tempo e o que essa pessoa já rendeu.
+ * Tudo que o painel lateral mostra, numa chamada.
  *
- * As duas numa chamada só porque o painel abre com as duas — dois cliques de
- * espera seria a tela piscando em dois tempos.
+ * Numa só porque o painel abre inteiro — buscar bloco a bloco seria a tela
+ * montando em sete tempos debaixo do cursor de quem já está lendo.
+ *
+ * **O que entra aqui saiu de como os CRMs de verdade montam esse painel**
+ * (HubSpot, Pipedrive, RD Station, Close, Copper). A ordem que todos repetem é
+ * identidade → valor e etapa → responsável → **próxima ação** → atividade
+ * recente, e o campo mais citado da pesquisa inteira é o par "último contato /
+ * próximo contato agendado": a RD o põe no próprio cartão, a Close põe tarefas
+ * no topo da coluna. `agendadas` é a nossa versão disso, e o dado já existia
+ * sem tela nenhuma no funil.
+ *
+ * `funis` responde a pergunta que o painel não sabia responder: a mesma pessoa
+ * pode ter cartão no funil do SDR e no de pós-venda, e o painel mostrava só o
+ * cartão clicado, como se fosse o único.
+ *
+ * **O que deliberadamente não entra**: a jornada de anúncios (dezenas de
+ * linhas) e os campos coletados pelo fluxo (despejo do bot). Os dois ficam na
+ * ficha completa. É a lição unânime da pesquisa — HubSpot limita o painel por
+ * arquitetura, Salesforce corta em sete campos, Copper recomenda 4 a 5: painel
+ * que mostra tudo vira a ficha completa e perde a razão de existir.
  */
 export async function acaoAbrirPainelDoContato(
   clienteId: string,
@@ -214,17 +234,27 @@ export async function acaoAbrirPainelDoContato(
   etiquetas: { id: string; nome: string; cor: CorDeEtiqueta }[]
   aplicadas: string[]
   equipe: { id: string; nome: string }[]
+  /** O que já está marcado para sair. Vazio é o caso comum. */
+  agendadas: { id: string; texto: string; quando: string; estado: string }[]
+  /** Um por funil em que a pessoa está — inclusive o que não foi clicado. */
+  funis: Awaited<ReturnType<typeof quadrosDoContato>>
+  /** Os motivos da conta, para fechar como perdida sem sair do painel. */
+  motivos: { id: string; nome: string }[]
 }> {
   await exigirAcessoAoCliente(clienteId)
 
-  const [ficha, eventos, resumo, etiquetas, porContato, equipe] = await Promise.all([
-    fichaDoContato(clienteId, contatoId),
-    linhaDoTempo(clienteId, contatoId),
-    resumoDoContato(clienteId, contatoId),
-    listarEtiquetas(clienteId),
-    etiquetasDeContatos([contatoId]),
-    membrosDaConta(clienteId),
-  ])
+  const [ficha, eventos, resumo, etiquetas, porContato, equipe, agendadas, funis, motivos] =
+    await Promise.all([
+      fichaDoContato(clienteId, contatoId),
+      linhaDoTempo(clienteId, contatoId),
+      resumoDoContato(clienteId, contatoId),
+      listarEtiquetas(clienteId),
+      etiquetasDeContatos([contatoId]),
+      membrosDaConta(clienteId),
+      agendadasDoContato(clienteId, contatoId),
+      quadrosDoContato(clienteId, contatoId),
+      listarMotivos(clienteId),
+    ])
 
   return {
     ficha,
@@ -233,6 +263,16 @@ export async function acaoAbrirPainelDoContato(
     etiquetas: etiquetas.map(({ id, nome, cor }) => ({ id, nome, cor })),
     aplicadas: (porContato.get(contatoId) ?? []).map((etiqueta) => etiqueta.id),
     equipe: equipe.map(({ id, nome }) => ({ id, nome })),
+    // Só o que o painel desenha: o texto inteiro de uma agendada pode ter mil
+    // caracteres, e mandar tudo para mostrar duas linhas é peso por nada.
+    agendadas: agendadas.map(({ id, texto, quando, estado }) => ({
+      id,
+      texto: texto.slice(0, 160),
+      quando,
+      estado,
+    })),
+    funis,
+    motivos: motivos.map(({ id, nome }) => ({ id, nome })),
   }
 }
 

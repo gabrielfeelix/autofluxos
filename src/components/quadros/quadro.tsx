@@ -572,6 +572,14 @@ export function Quadro({
         contatoId={noPainel?.contatoId ?? null}
         cartao={noPainel}
         aoFechar={() => setNoPainel(null)}
+        aoGanharOuPerder={(situacao) => {
+          // Fecha o painel e abre o modal do quadro: a lista de motivos e o
+          // aviso de passagem para o funil seguinte moram lá, e são a razão de
+          // não existir um segundo modal de fechar venda.
+          if (!noPainel) return
+          setFechando({ cartao: noPainel, situacao })
+          setNoPainel(null)
+        }}
       />
     </div>
   )
@@ -1234,7 +1242,7 @@ function MenuDoCartao({
                     aoAbrirPainel()
                   }}
                 >
-                  Abrir perfil
+                  Ver resumo
                 </Item>
 
                 <span className="my-1 border-t border-line" />
