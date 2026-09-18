@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
 export type OpcaoDropdown = {
@@ -8,6 +8,19 @@ export type OpcaoDropdown = {
   rotulo: string
   detalhe?: string
   desabilitada?: boolean
+  /**
+   * O que desenhar à esquerda do rótulo, no gatilho **e** na lista.
+   *
+   * Existe porque um avatar ao lado do dropdown é uma coisa solta na tela: ele
+   * mostra quem está escolhido agora e some da lista na hora de escolher outro,
+   * que é justamente quando a cara de cada pessoa ajuda a achar o nome. Dentro,
+   * ele acompanha a opção nos dois lugares.
+   *
+   * `ReactNode` e não uma url de imagem de propósito: quem chama já tem o
+   * componente certo (o `Avatar` de iniciais, um ponto de cor, um logo), e
+   * transformar isto num carregador de imagem obrigaria todo chamador a ter uma.
+   */
+  icone?: ReactNode
 }
 
 /**
@@ -273,6 +286,7 @@ export function Dropdown({
         }}
         className="app-dropdown-trigger"
       >
+        {opcaoEscolhida?.icone && <span className="flex shrink-0 items-center">{opcaoEscolhida.icone}</span>}
         <span className="min-w-0 flex-1 truncate text-left">{opcaoEscolhida?.rotulo ?? 'Selecione uma opção'}</span>
         <svg aria-hidden="true" viewBox="0 0 16 16" className={`size-4 shrink-0 transition-transform duration-150 ${aberto ? 'rotate-180' : ''}`}>
           <path d="m3.5 6 4.5 4.5L12.5 6" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
@@ -304,6 +318,7 @@ export function Dropdown({
                 onClick={() => escolher(opcao.valor)}
                 className={`app-dropdown-option ${selecionada ? 'app-dropdown-option-active' : ''}`}
               >
+                {opcao.icone && <span className="flex shrink-0 items-center">{opcao.icone}</span>}
                 <span className="min-w-0 flex-1">
                   <span className="block truncate">{opcao.rotulo}</span>
                   {opcao.detalhe && <span className="mt-0.5 block truncate text-[10.5px] text-dim">{opcao.detalhe}</span>}
