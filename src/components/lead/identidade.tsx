@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { FormularioSalvar, type EstadoSalvar } from '@/components/design/formulario-salvar'
+import { Avatar } from '@/components/inbox/avatar'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 
 type Acao = (estado: EstadoSalvar, formData: FormData) => Promise<EstadoSalvar>
@@ -28,50 +29,49 @@ export function NomeDoContato({
   waId: string
   salvar: Acao
 }) {
-  const [editando, setEditando] = useState(false)
+  const dialogo = useRef<HTMLDialogElement>(null)
+  const [erro, setErro] = useState<string | null>(null)
 
-  if (editando) {
-    return (
-      <div className="min-w-0 flex-1">
-        <FormularioSalvar
-          action={async (estado, formData) => {
-            const r = await salvar(estado, formData)
-            if (r.ok) setEditando(false)
-            return r
-          }}
-          rotulo="Salvar nome"
-          dica="Vazio volta a mostrar o nome do perfil do WhatsApp."
-        >
-          <input
-            name="nome"
-            autoFocus
-            defaultValue={nomeReal}
-            maxLength={120}
-            placeholder={nomeDoPerfil ?? 'Nome de verdade'}
-            className="app-field px-3 py-2 text-[15px] font-semibold"
-          />
-        </FormularioSalvar>
-        <button
-          type="button"
-          onClick={() => setEditando(false)}
-          className="mt-1.5 text-[11.5px] text-muted transition hover:text-primary"
-        >
-          cancelar
-        </button>
-      </div>
-    )
+  async function enviar(dados: FormData) {
+    setErro(null)
+    const r = await salvar({}, dados)
+    if (r && r.erro) {
+      setErro(r.erro)
+      return
+    }
+    dialogo.current?.close()
   }
 
   return (
     <div className="min-w-0">
       <h1 className="flex flex-wrap items-center gap-2 text-[21px] font-bold tracking-[-0.02em]">
         <span className="min-w-0 break-words">{nome ?? telefoneLegivel(waId)}</span>
+        {/*
+          Um lápis, e não a caixa escrita "corrigir nome".
+
+          A caixa dizia o que fazer e ocupava o lugar de um título: ao lado de um
+          nome de duas palavras ela competia com o próprio nome, e em nome longo
+          ela caía para a linha de baixo sozinha. O lápis ao lado de um texto é
+          convenção que ninguém precisa ler, e o `title` diz o resto para quem
+          passar o mouse.
+        */}
         <button
           type="button"
-          onClick={() => setEditando(true)}
-          className="rounded-lg border border-line px-2 py-0.5 text-[10.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
+          onClick={() => dialogo.current?.showModal()}
+          title={nomeReal === '' ? 'Corrigir o nome' : 'Editar o nome'}
+          aria-label={nomeReal === '' ? 'Corrigir o nome' : 'Editar o nome'}
+          className="grid size-7 shrink-0 place-items-center rounded-lg border border-line text-muted transition hover:border-primary/40 hover:text-primary"
         >
-          {nomeReal === '' ? 'corrigir nome' : 'editar'}
+          <svg aria-hidden="true" viewBox="0 0 16 16" className="size-3.5">
+            <path
+              d="M11.2 2.3a1.4 1.4 0 0 1 2 2l-6.6 6.6-2.7.7.7-2.7 6.6-6.6ZM10 3.6l2.4 2.4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </button>
       </h1>
       <p className="mt-0.5 font-mono text-[11px] text-dim">
@@ -87,6 +87,80 @@ export function NomeDoContato({
           </span>
         )}
       </p>
+
+      {/*
+        O editor é modal, e não a troca do cabeçalho por um formulário no lugar.
+
+        Trocando no lugar, **o nome sumia justamente enquanto era editado**: a
+        tela perdia a única referência do que se está corrigindo, e o campo
+        aparecia colado no telefone, sem título nem fronteira. O modal mostra a
+        pessoa inteira enquanto se digita — avatar, nome atual, e o do perfil do
+        WhatsApp embaixo, que é a informação que explica por que corrigir.
+      */}
+      <dialog
+        ref={dialogo}
+        onClick={(evento) => {
+          if (evento.target === dialogo.current) {
+            setErro(null)
+            dialogo.current.close()
+          }
+        }}
+        className="app-dialog m-auto w-[380px] rounded-[18px] border border-line bg-panel p-[26px] text-ink shadow-[0_40px_100px_rgba(19,25,34,0.132)]"
+      >
+        <div className="flex items-center gap-3">
+          <Avatar nome={nome} tamanho={44} />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[15px] font-bold">
+              {nome ?? telefoneLegivel(waId)}
+            </span>
+            <span className="block font-mono text-[11px] text-dim">{telefoneLegivel(waId)}</span>
+          </span>
+        </div>
+
+        <form action={enviar} className="mt-5 space-y-3.5">
+          <label className="block">
+            <span className="mb-1.5 block text-[11px] font-semibold tracking-[0.05em] text-muted uppercase">
+              Nome de verdade
+            </span>
+            <input
+              name="nome"
+              autoFocus
+              defaultValue={nomeReal}
+              maxLength={120}
+              placeholder={nomeDoPerfil ?? 'Nome de verdade'}
+              className="app-field w-full px-3 py-2 text-[14px] font-semibold"
+            />
+          </label>
+
+          <p className="text-[11.5px] leading-5 text-muted">
+            {nomeDoPerfil
+              ? `No WhatsApp ela se chama “${nomeDoPerfil}”. Vazio volta a mostrar esse nome.`
+              : 'Vazio volta a mostrar o nome do perfil do WhatsApp.'}
+          </p>
+
+          {erro && (
+            <p className="rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2.5 text-[12px] leading-5 text-perigo">
+              {erro}
+            </p>
+          )}
+
+          <div className="flex gap-2.5 pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                setErro(null)
+                dialogo.current?.close()
+              }}
+              className="app-secondary-button flex-1 px-4 py-2.5 text-[13px]"
+            >
+              Cancelar
+            </button>
+            <button type="submit" className="app-primary-button flex-[1.35] px-4 py-2.5 text-[13px]">
+              Salvar
+            </button>
+          </div>
+        </form>
+      </dialog>
     </div>
   )
 }

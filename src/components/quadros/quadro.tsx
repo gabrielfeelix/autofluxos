@@ -307,7 +307,7 @@ export function Quadro({
 
               <ul className="flex min-h-[52px] flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2">
                 {daEtapa.length === 0 ? (
-                  <li className="rounded-lg border border-dashed border-line px-2 py-4 text-center text-[11px] leading-4 text-dim">
+                  <li className="shrink-0 rounded-lg border border-dashed border-line px-2 py-4 text-center text-[11px] leading-4 text-dim">
                     {/* Estado vazio que responde a pergunta certa: não é "não há
                         ninguém", é "o que eu faço aqui". */}
                     Arraste um cartão, ou use + abaixo
@@ -326,7 +326,17 @@ export function Quadro({
                         setArrastando(null)
                         setSobre(null)
                       }}
-                      className={`group cursor-grab overflow-hidden rounded-lg border bg-panel py-2 pr-2 pl-2.5 shadow-[0_1px_2px_rgba(19,25,34,0.06)] transition active:cursor-grabbing ${
+                      /*
+                        `shrink-0` é o que impede a coluna de virar um baralho.
+
+                        A lista é uma coluna flex com `overflow-y-auto`, e o
+                        padrão do flex é **encolher o item para caber**. Com 3 ou
+                        4 cartões não dá para ver; com os 21 de uma etapa "Novo"
+                        de verdade, cada cartão é espremido até virar uma fatia
+                        de poucos pixels, com o nome cortado ao meio. Rolagem só
+                        aparece quando o conteúdo se recusa a encolher.
+                      */
+                      className={`group shrink-0 cursor-grab overflow-hidden rounded-lg border bg-panel py-2 pr-2 pl-2.5 shadow-[0_1px_2px_rgba(19,25,34,0.06)] transition active:cursor-grabbing ${
                         arrastando === cartao.id
                           ? 'border-primary/40 opacity-40'
                           : cartao.situacao && cartao.situacao !== 'aberta'
