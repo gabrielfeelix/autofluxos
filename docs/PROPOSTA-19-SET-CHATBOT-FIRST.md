@@ -169,10 +169,26 @@ Depois do nome da empresa, em `/primeiro-acesso`:
 >
 > *Dá para mudar depois, e dá para ter mais de um.*
 
-**Uma pergunta, e ela paga o próprio custo.** A régua da literatura de onboarding
-é dura e clara: *"se a resposta não muda a experiência do usuário, corte a
-pergunta"*, com 3 a 5 no máximo. Esta muda três coisas de uma vez, todas visíveis
-no minuto seguinte:
+**Uma pergunta obrigatória, e no máximo três.** A régua da literatura de
+onboarding é dura e clara: *"se a resposta não muda a experiência do usuário,
+corte a pergunta"*, com 3 a 5 no máximo e 3 como alvo. A NN/g acrescenta um
+limite estrutural: progressive disclosure admite **no máximo dois níveis**, e um
+wizard de seis telas já viola o padrão antes de começar.
+
+As outras duas candidatas, ambas defensáveis:
+
+- **"Quem vai atender: só você ou um time?"** Binária, não "quantas pessoas".
+  Com "só você", atribuição, rodízio e responsável **somem da tela inteira**;
+  com "um time", aparecem. É a forma de perguntar sobre equipe sem cobrar
+  vocabulário nem envelhecer: o segundo usuário entrando é o gatilho natural
+  para revisitar.
+- **"Como você chama o que vende?"** Uma palavra: consulta, orçamento, plano,
+  pedido. É a lição do Bigin (vocabulário do domínio vale mais que quadro
+  extra), é barata de errar, e o conserto é um rename, que é seguro por
+  construção.
+
+**A primeira pergunta é a que paga sozinha o próprio custo**, porque muda três
+coisas de uma vez, todas visíveis no minuto seguinte:
 
 1. o **quadro** nasce com as etapas certas (`etapasDoModelo`, que já existe);
 2. o **fluxo de robô** sugerido vem do catálogo casado (`qualificar-sdr` para
@@ -221,13 +237,39 @@ Quatro coisas, três de desenho e uma de banco:
    "agendar" e depois quer pós-venda **não muda de modelo**: cria o segundo e
    encadeia. Não existe migração porque não existe escolha excludente. É o
    desenho do Bigin, onde o modelo se aplica a um funil e não à conta.
-4. **A blindagem no banco** (migration `0071`), que é o item que o mercado erra:
-   - **etapa com cartão dentro se arquiva, não se apaga** (`ativa = false`): some
-     do quadro, continua existindo para o histórico;
-   - **o evento histórico carrega o nome da etapa**, não só o id. `dados jsonb`
-     de `eventos_do_contato` já existe: gravar ali o nome no momento do movimento
-     faz o relatório sobreviver à renomeação. Sem isso, renomear "Proposta" para
-     "Orçamento" reescreve o passado.
+4. **A blindagem no banco** (migration `0071`), que é o item que o mercado erra.
+   Cinco regras, todas tiradas de dano documentado em concorrente:
+
+   1. **Etapa com cartão dentro se arquiva, não se apaga** (`ativa = false`):
+      some do quadro e continua resolvendo nome no relatório antigo. É o soft
+      delete que a própria API da Pipedrive usa ("marks a stage as deleted"),
+      apesar de a tela apagar negócio junto.
+   2. **Bloquear o arquivamento enquanto houver referência, e mostrar quais.**
+      É a melhor ideia do levantamento inteiro: o HubSpot tem uma coluna
+      **"Used in"** que lista o que trava a exclusão antes de a pessoa decidir.
+      O oposto de apagar e rezar.
+   3. **Nunca mover cartão para um destino escolhido pelo sistema.** Este é o
+      antipadrão mais caro que a pesquisa achou, e é do Kommo: se o usuário
+      apaga uma etapa sem esvaziar antes, os leads são *"automatically
+      transferred to the Initial contact stage"*. Um negócio que estava em
+      "Negociação" volta para "Primeiro contato". Não é perder posição: é uma
+      **mentira sobre o estado do negócio, gravada em massa e em silêncio**,
+      como efeito colateral de uma faxina de configuração. Todo relatório
+      depois disso mostra uma regressão que nunca aconteceu. Se precisa mover,
+      quem escolhe o destino é o usuário.
+   4. **Estados terminais são estrutura:** ganho e perdido se renomeiam, não se
+      removem. O Kommo trava assim e o HubSpot depende disso para processar
+      receita.
+   5. **Renomear é seguro por construção**, porque o cartão guarda `etapa_id` e
+      o evento guarda o nome. **Isto já está certo no repo:** `moverCartao`
+      grava `{ de, para }` com os nomes das etapas, não os ids
+      (`server/repos/quadros.ts:743`). O histórico já sobrevive à renomeação, e
+      essa metade da blindagem não precisa ser construída.
+
+   E o corolário que sustenta a promessa: **grave a transição, não só o
+   estado.** Com uma linha por movimento, tempo em etapa e conversão por etapa
+   são recalculáveis depois de qualquer remodelagem, e "dá para mudar depois"
+   deixa de ser microcopy e vira propriedade do banco.
 
 ### 4.4 A métrica que vira o painel
 
