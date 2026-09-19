@@ -35,3 +35,7 @@ npm-debug.log*
 # Lixo do WSL: o Windows marca todo arquivo baixado com um par ":Zone.Identifier"
 # que o git vê como arquivo novo a cada download.
 *:Zone.Identifier
+
+# Ambiente de teste local (nunca versionado)
+.env.teste-local
+!.env.teste-local.example
