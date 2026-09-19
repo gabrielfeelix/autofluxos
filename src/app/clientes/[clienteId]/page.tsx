@@ -17,6 +17,15 @@ import { medirFunil, medirPessoas, medirTempos } from '@/server/repos/metricas'
 import { comentariosDaConta, notasDaConta } from '@/server/repos/avaliacoes'
 import { comoVai, resumirNps } from '@/core/nps'
 import { fechamentos, filaDoPainel, type ItemDaFila } from '@/server/repos/painel'
+import { clientesSumidos, faixasDaConta } from '@/server/repos/relacionamento'
+import {
+  CLASSE_DO_NIVEL,
+  CORTES_DE_RECENCIA,
+  diasDesde,
+  FAIXAS_PADRAO,
+  nivelPor,
+  ROTULO_DO_NIVEL,
+} from '@/core/relacionamento'
 import { listarQuadros } from '@/server/repos/quadros'
 import { sessaoAtual } from '@/server/sessao'
 import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
@@ -128,6 +137,12 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
             <Suspense fallback={null}>
               <Fechamentos clienteId={cliente.id} />
+            </Suspense>
+
+            {/* Logo abaixo dos fechamentos, e não no fim: "entrou tanto" e
+                "está saindo tanto" são a mesma conta lida dos dois lados. */}
+            <Suspense fallback={null}>
+              <ClientesSumindo clienteId={cliente.id} />
             </Suspense>
 
             <Suspense fallback={null}>
@@ -601,6 +616,74 @@ async function Satisfacao({ clienteId }: { clienteId: string }) {
           ))}
         </ul>
       )}
+    </section>
+  )
+}
+
+/**
+ * Quem já comprou e parou de falar.
+ *
+ * O painel respondia "quanto entrou" e "quem está esperando", e não respondia a
+ * pergunta que custa mais caro: **quem já era cliente e está saindo em
+ * silêncio**. Ninguém abre uma tela para descobrir isso — não há evento, não há
+ * notificação, e o sintoma só aparece na renovação que não veio.
+ *
+ * Some quando não há ninguém, como todo bloco desta tela: painel que mostra
+ * "0 clientes sumindo" todo dia ensina a pular o bloco, e aí ele deixa de ser
+ * lido no dia em que tem três nomes.
+ */
+async function ClientesSumindo({ clienteId }: { clienteId: string }) {
+  const [faixas, sumidos] = await Promise.all([
+    faixasDaConta(clienteId),
+    clientesSumidos(clienteId, CORTES_DE_RECENCIA.sumido, 5),
+  ])
+  if (sumidos.length === 0) return null
+
+  return (
+    <section className="app-card px-5 py-4" aria-labelledby="titulo-sumindo">
+      <h2 id="titulo-sumindo" className="text-[12.5px] font-bold text-muted">
+        Clientes sumindo
+      </h2>
+
+      <p className="mt-2 text-[13px] leading-[1.7] text-soft">
+        <strong className="text-[17px] font-bold tracking-[-0.02em] text-aviso">
+          {sumidos.length}
+        </strong>{' '}
+        {sumidos.length === 1 ? 'pessoa que já comprou' : 'pessoas que já compraram'} e não
+        {sumidos.length === 1 ? ' fala' : ' falam'} há mais de {CORTES_DE_RECENCIA.sumido} dias.
+      </p>
+
+      <ul className="mt-3 flex flex-col gap-1.5">
+        {sumidos.map((sumido) => {
+          const nivel = nivelPor(sumido.total, faixas ?? FAIXAS_PADRAO)
+          return (
+            <li key={sumido.contatoId}>
+              <Link
+                href={`/clientes/${clienteId}/leads/${sumido.contatoId}`}
+                className="flex items-center gap-2 text-[12px] text-soft transition hover:text-primary"
+              >
+                <span aria-hidden className={`size-2 shrink-0 rounded-full ${CLASSE_DO_NIVEL[nivel]}`} />
+                <span className="font-semibold">{ROTULO_DO_NIVEL[nivel]}</span>
+                <span className="text-dim">·</span>
+                <span className="text-dim">{comoDinheiro(sumido.total)}</span>
+                <span className="ml-auto shrink-0 text-[11px] text-dim">
+                  {diasDesde(sumido.ultimaConversaEm) ?? 0}d calado
+                </span>
+              </Link>
+            </li>
+          )
+        })}
+      </ul>
+
+      {/* O caminho de sair da tela fazendo alguma coisa. Sem ele o bloco é uma
+          má notícia sem saída, que é o tipo de aviso que as pessoas aprendem a
+          ignorar. */}
+      <Link
+        href={`/clientes/${clienteId}/fluxos?aba=sequencias`}
+        className="mt-3 inline-block text-[11.5px] font-semibold text-primary hover:underline"
+      >
+        Montar uma régua de retomada →
+      </Link>
     </section>
   )
 }
