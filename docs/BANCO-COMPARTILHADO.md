@@ -320,6 +320,28 @@ extração explícito para os objetos de `public`.
   **O código que lê esta coluna ainda não está publicado**, mesma ordem da
   `0058-nps` acima: migration primeiro, deploy depois. Enquanto isso a coluna
   fica lá sem ninguém ler, e o que está no ar não a procura;
+- **a `0070` foi aplicada em 18/set/2026**, com autorização explícita do dono.
+  Cinco colunas anuláveis ou com default, em três tabelas: `clients.nivel_ouro` e
+  `clients.nivel_prata` (`numeric`, default 5000/1000, com o check
+  `clients_niveis_coerentes` garantindo ouro > prata);
+  `sequencias.dias_sem_conversa` e `sequencias.nivel_alvo`; e
+  `sequencia_inscricoes.por_sumico_em`. Mais a troca do
+  `sequencias_evento_check` para aceitar `cliente_sumido` — `check` não tem
+  `alter`, então é drop e recria, como já foi na 0034.
+
+  **Por que faixa em reais e não quintil:** o RFM clássico corta a base em cinco
+  partes iguais, e isso quebra em base pequena — num estúdio com trinta alunas o
+  quintil de cima é topo de trinta, e pode ser quem gastou trezentos reais no
+  ano. Quintil também move o chão sozinho: entra um cliente grande e todo mundo
+  cai de faixa sem ter feito nada.
+
+  **`por_sumico_em` é a coluna que impede o pior erro possível:** quem está
+  sumido hoje continua sumido amanhã, e sem ela a passada diária reinscreveria a
+  mesma pessoa todo dia — uma mensagem por dia no WhatsApp de um cliente antigo.
+
+  Conferida pelo ensaio em transação antes (recusa ouro < prata, recusa evento de
+  sumiço sem dias, aceita o evento novo) e na produção depois: as cinco colunas,
+  os três checks, e `app_verandi` intacta com as mesmas 389 colunas;
 - **a `0069` foi aplicada em 18/set/2026**, com autorização explícita do dono.
   Ela acrescenta uma coluna anulável a `public.quadro_colunas`: `cor` (`text`,
   com `check` fechando a paleta em oito nomes). Nenhuma tabela nova, nenhuma
