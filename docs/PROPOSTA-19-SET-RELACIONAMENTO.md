@@ -1,5 +1,17 @@
 # Proposta: a camada de relacionamento
 
+> **SUBSTITUÍDA em 19/set/2026 por `PROPOSTA-19-SET-CHATBOT-FIRST.md`.**
+>
+> Esta proposta respondeu a pergunta errada. Ela tratou relacionamento como uma
+> camada a acrescentar, e otimizou por enxugar escopo. O pedido do dono era
+> outro: que a plataforma seja **extremamente eficiente** naquilo que os grandes
+> CRMs fazem bem, e que o produto seja **chatbot-first**, com o propósito do robô
+> moldando o formato do CRM.
+>
+> O que continua válido daqui: o diagnóstico do cano seco (seção 0), o
+> dimensionamento de e-mail (1.5) e as decisões técnicas da seção 4. O que mudou:
+> o enquadramento inteiro, e a ordem do trabalho.
+
 > Escrita em 19/set/2026, respondendo ao pedido de pesquisa da seção 4 do
 > `HANDOFF-18-SET-CRM-RELACIONAMENTO.md`. É uma proposta: escopo, telas, e o que
 > fica de fora com o motivo. Nada aqui foi construído ainda.
