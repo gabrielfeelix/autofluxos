@@ -24,6 +24,9 @@ import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formular
 import { acaoCriarContato } from '@/server/acoes'
 import { listarEtiquetasComContagem, type Etiqueta } from '@/server/repos/etiquetas'
 import { listarQuadros } from '@/server/repos/quadros'
+import { faixasDaConta, relacionamentoDeMuitos } from '@/server/repos/relacionamento'
+import { FAIXAS_PADRAO, NIVEIS, ROTULO_DO_NIVEL, type Nivel } from '@/core/relacionamento'
+import { SeloDoCliente } from '@/components/lead-crm/selo-do-cliente'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,6 +36,8 @@ type Busca = {
   marca?: string | string[]
   busca?: string | string[]
   pagina?: string | string[]
+  /** O nível do cliente (0070): ouro, prata, bronze, sem_compra. */
+  nivel?: string | string[]
 }
 
 const filtros: { etiqueta: EtiquetaDeLead; rotulo: string }[] = [
@@ -43,6 +48,12 @@ const filtros: { etiqueta: EtiquetaDeLead; rotulo: string }[] = [
 
 function primeiro(valor: string | string[] | undefined): string {
   return (Array.isArray(valor) ? valor[0] : valor) ?? ''
+}
+
+/** O nível pedido pela URL, se ele existir. Lixo na querystring vira "sem filtro". */
+function nivelValido(valor: Busca['nivel']): Nivel | null {
+  const unico = primeiro(valor)
+  return (NIVEIS as readonly string[]).includes(unico) ? (unico as Nivel) : null
 }
 
 function etiquetaValida(valor: Busca['etiqueta']): EtiquetaDeLead | null {
@@ -58,12 +69,14 @@ function endereco(
     marca?: string | null
     busca?: string
     pagina?: number
+    nivel?: Nivel | null
   },
 ): string {
   const parametros = new URLSearchParams()
   if (filtro.etiqueta) parametros.set('etiqueta', filtro.etiqueta)
   if (filtro.marca) parametros.set('marca', filtro.marca)
   if (filtro.busca) parametros.set('busca', filtro.busca)
+  if (filtro.nivel) parametros.set('nivel', filtro.nivel)
   if (filtro.pagina && filtro.pagina > 1) parametros.set('pagina', String(filtro.pagina))
 
   const consulta = parametros.toString()
@@ -101,19 +114,21 @@ export default async function Pagina({
   const marca = primeiro(busca.marca) || null
   const termo = limparBusca(primeiro(busca.busca))
   const pagina = Math.max(1, Number(primeiro(busca.pagina)) || 1)
+  const nivel = nivelValido(busca.nivel)
 
   return (
     <ClienteShell cliente={cliente} ativa="leads">
       <main className="flex min-h-full flex-col px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <h1 className="mb-5 text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Contatos</h1>
 
-        <Suspense key={`${etiqueta}-${marca}-${termo}-${pagina}`} fallback={<Esqueleto />}>
+        <Suspense key={`${etiqueta}-${marca}-${termo}-${pagina}-${nivel}`} fallback={<Esqueleto />}>
           <Tabela
             clienteId={cliente.id}
             etiqueta={etiqueta}
             marca={marca}
             termo={termo}
             pagina={pagina}
+            nivel={nivel}
           />
         </Suspense>
       </main>
@@ -152,19 +167,23 @@ async function Tabela({
   marca,
   termo,
   pagina: pedida,
+  nivel,
 }: {
   clienteId: string
   etiqueta: EtiquetaDeLead | null
   marca: string | null
   termo: string
   pagina: number
+  nivel: Nivel | null
 }) {
   const filtrando = etiqueta !== null || marca !== null || termo !== ''
-  const [{ leads, total, pagina, paginas }, etiquetasDaConta, quadrosDaConta] = await Promise.all([
-    paginarLeads(clienteId, { etiqueta, etiquetaId: marca, busca: termo, pagina: pedida }),
-    listarEtiquetasComContagem(clienteId),
-    listarQuadros(clienteId),
-  ])
+  const [{ leads, total, pagina, paginas }, etiquetasDaConta, quadrosDaConta, faixas] =
+    await Promise.all([
+      paginarLeads(clienteId, { etiqueta, etiquetaId: marca, busca: termo, pagina: pedida }),
+      listarEtiquetasComContagem(clienteId),
+      listarQuadros(clienteId),
+      faixasDaConta(clienteId),
+    ])
 
   // Sem filtro e sem nenhum lead, a tela ainda é de primeira vez: o que ajuda
   // é dizer o que falta ligar, não uma tabela vazia com um cabeçalho bonito.
@@ -172,6 +191,25 @@ async function Tabela({
     const canais = await listarCanais(clienteId)
     return <PrimeiraVez clienteId={clienteId} temCanal={canais.length > 0} />
   }
+
+  /*
+    O relacionamento é lido **da página**, não da conta inteira.
+
+    Paginar por nível exigiria o cálculo no Postgres — uma view com `group by`
+    sobre os cartões ganhos, recalculada a cada abertura da tela. O filtro aqui
+    é honesto sobre o que faz: ele afina a página que está na frente da pessoa,
+    e a contagem ao lado diz quantos sobraram dela. É a diferença entre uma
+    ferramenta de leitura e um relatório, e esta tela é a primeira.
+  */
+  const relacionamentos = await relacionamentoDeMuitos(
+    clienteId,
+    leads.map((lead) => lead.contatoId),
+    faixas ?? FAIXAS_PADRAO,
+  )
+
+  const visiveis = nivel
+    ? leads.filter((lead) => relacionamentos.get(lead.contatoId)?.nivel === nivel)
+    : leads
 
   const colunas = colunasDosCampos(leads)
   const esperando = leads.filter((lead) => lead.aguardando).length
@@ -249,7 +287,7 @@ async function Tabela({
         </button>
         {termo !== '' && (
           <Link
-            href={endereco(clienteId, { etiqueta, marca })}
+            href={endereco(clienteId, { etiqueta, marca, nivel })}
             className="self-center text-[11.5px] font-semibold text-primary hover:underline"
           >
             Limpar busca
@@ -260,9 +298,53 @@ async function Tabela({
       {/* Sem contagem por etiqueta de propósito: cada número desses obrigava a
           ler o histórico do cliente inteiro a cada visita — exatamente o que a
           paginação veio evitar. O número que importa continua acima. */}
+      {/*
+        O nível fica numa fileira própria, e não junto das etiquetas.
+
+        São duas perguntas diferentes: etiqueta é "o que marcaram nesta pessoa",
+        nível é "quanto ela já me deu". Misturar as duas numa fileira só faria
+        parecer que clicar em "Ouro" desmarca "Não respondeu", e elas somam.
+      */}
+      <nav aria-label="Filtrar por valor do cliente" className="mb-2 flex flex-wrap items-center gap-2">
+        <span className="text-[10.5px] font-semibold tracking-[0.04em] text-dim uppercase">
+          Cliente
+        </span>
+        <Link
+          href={endereco(clienteId, { etiqueta, marca, busca: termo })}
+          aria-current={nivel === null ? 'page' : undefined}
+          className={classeDoFiltro(nivel === null)}
+          scroll={false}
+        >
+          Qualquer
+        </Link>
+        {NIVEIS.map((opcao) => (
+          <Link
+            key={opcao}
+            href={endereco(clienteId, {
+              etiqueta,
+              marca,
+              busca: termo,
+              nivel: nivel === opcao ? null : opcao,
+            })}
+            aria-current={nivel === opcao ? 'page' : undefined}
+            className={classeDoFiltro(nivel === opcao)}
+            scroll={false}
+          >
+            {ROTULO_DO_NIVEL[opcao]}
+          </Link>
+        ))}
+        {nivel && (
+          /* Dizer que o filtro é da página evita a conclusão errada — "só tenho
+             dois clientes ouro" — quando na verdade são dois **nesta** página. */
+          <span className="text-[10.5px] text-dim">
+            {visiveis.length} de {leads.length} nesta página
+          </span>
+        )}
+      </nav>
+
       <nav aria-label="Filtrar contatos por etiqueta" className="mb-3 flex flex-wrap gap-2">
         <Link
-          href={endereco(clienteId, { busca: termo })}
+          href={endereco(clienteId, { busca: termo, nivel })}
           aria-current={etiqueta === null && marca === null ? 'page' : undefined}
           className={classeDoFiltro(etiqueta === null && marca === null)}
           scroll={false}
@@ -272,7 +354,7 @@ async function Tabela({
         {filtros.map((filtro) => (
           <Link
             key={filtro.etiqueta}
-            href={endereco(clienteId, { etiqueta: filtro.etiqueta, marca, busca: termo })}
+            href={endereco(clienteId, { etiqueta: filtro.etiqueta, marca, busca: termo, nivel })}
             aria-current={etiqueta === filtro.etiqueta ? 'page' : undefined}
             className={classeDoFiltro(etiqueta === filtro.etiqueta)}
             scroll={false}
@@ -296,6 +378,7 @@ async function Tabela({
               etiqueta,
               marca: marca === manual.id ? null : manual.id,
               busca: termo,
+              nivel,
             })}
             aria-current={marca === manual.id ? 'page' : undefined}
             className={classeDoFiltro(marca === manual.id)}
@@ -339,6 +422,7 @@ async function Tabela({
                   {colunas.map((coluna) => (
                     <Cabecalho key={coluna}>{rotuloDoCampo(coluna) || coluna}</Cabecalho>
                   ))}
+                  <Cabecalho>Cliente</Cabecalho>
                   <Cabecalho>Situação</Cabecalho>
                   <Cabecalho>Última mensagem</Cabecalho>
                   <th scope="col" className="w-10 px-2 py-2.5">
@@ -347,7 +431,7 @@ async function Tabela({
                 </tr>
               </thead>
               <tbody>
-                {leads.map((lead) => (
+                {visiveis.map((lead) => (
                 <LinhaClicavel
                   key={lead.contatoId}
                   href={`/clientes/${clienteId}/leads/${lead.contatoId}`}
@@ -381,6 +465,11 @@ async function Tabela({
                       {lead.campos[coluna] || <span className="text-dim">—</span>}
                     </td>
                   ))}
+                  <td className="px-3.5 py-3">
+                    {relacionamentos.get(lead.contatoId) && (
+                      <SeloDoCliente r={relacionamentos.get(lead.contatoId)!} />
+                    )}
+                  </td>
                   <td className="px-3.5 py-3">
                     {lead.aguardando ? (
                       <>
@@ -434,7 +523,7 @@ async function Tabela({
               </p>
               <div className="flex items-center gap-2">
                 <Passo
-                  href={endereco(clienteId, { etiqueta, marca, busca: termo, pagina: pagina - 1 })}
+                  href={endereco(clienteId, { etiqueta, marca, busca: termo, nivel, pagina: pagina - 1 })}
                   ativo={pagina > 1}
                 >
                   ‹ Anterior
@@ -443,7 +532,7 @@ async function Tabela({
                   Página {pagina} de {paginas}
                 </span>
                 <Passo
-                  href={endereco(clienteId, { etiqueta, marca, busca: termo, pagina: pagina + 1 })}
+                  href={endereco(clienteId, { etiqueta, marca, busca: termo, nivel, pagina: pagina + 1 })}
                   ativo={pagina < paginas}
                 >
                   Próxima ›
