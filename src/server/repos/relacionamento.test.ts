@@ -46,7 +46,7 @@ async function falouHaDias(contatoId: string, dias: number) {
  * outro cartão no mesmo funil, é um cartão no funil seguinte — que é exatamente
  * o desenho dos funis encadeados da 0058.
  */
-async function vender(contatoId: string, valor: string, emQuadro = quadroId) {
+async function vender(contatoId: string, valor: number, emQuadro = quadroId) {
   await porNoQuadro(clienteId, emQuadro, [contatoId])
   const cartao = (await listarCartoes(clienteId, emQuadro)).find((c) => c.contatoId === contatoId)!
   await fecharCartao(clienteId, cartao.id, 'ganha', { valor, motivo: null, titulo: 'Plano' })
@@ -69,9 +69,9 @@ beforeAll(async () => {
   importado = (await acharOuCriarContato(clienteId, `5511${seed}04`, 'Importado')).id
 
   // Duas compras, para provar que a soma soma em vez de concatenar.
-  await vender(ouro, '4000')
-  await vender(bronze, '200')
-  await vender(importado, '3000')
+  await vender(ouro, 4000)
+  await vender(bronze, 200)
+  await vender(importado, 3000)
 })
 
 afterAll(async () => {
@@ -97,7 +97,7 @@ describe.skipIf(!temCredencial)('as faixas da conta', () => {
 
 describe.skipIf(!temCredencial)('o relacionamento em lote', () => {
   it('classifica pelo que cada um gastou, e soma numeric sem concatenar', async () => {
-    await vender(ouro, '2500', posVendaId) // total 6500, e não "40002500"
+    await vender(ouro, 2500, posVendaId) // total 6500, e não "40002500"
 
     const mapa = await relacionamentoDeMuitos(
       clienteId,

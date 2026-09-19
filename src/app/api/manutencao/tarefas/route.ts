@@ -1,6 +1,7 @@
 import { alertar } from '@/server/alertar'
 import { iguais } from '@/lib/segredo'
 import { enviarAgendadas } from '@/server/enviar-agendadas'
+import { passadaDeRetomada } from '@/server/passada-de-retomada'
 import { passadaDeTransmissoes } from '@/server/passada-de-transmissoes'
 import { rodarTarefas } from '@/server/tarefas'
 
@@ -80,7 +81,22 @@ export async function GET(req: Request) {
       return null
     })
 
-    return Response.json({ ...(await rodarTarefas()), agendadas, transmissoes })
+    /*
+     * A régua de retomada (0070).
+     *
+     * Só aqui, e não nas caronas: a unidade dela é o dia, e "sumido há 60 dias"
+     * não vira urgente às 14h32. Rodar atrás do webhook gastaria a resposta que
+     * a Meta espera em 200 para descobrir, todas as vezes, que ninguém
+     * completou mais um dia de silêncio.
+     *
+     * E pelo mesmo motivo das outras: uma fila não derruba a outra.
+     */
+    const retomada = await passadaDeRetomada().catch((erro) => {
+      console.error('[tarefas] a passada de retomada falhou', erro)
+      return null
+    })
+
+    return Response.json({ ...(await rodarTarefas()), agendadas, transmissoes, retomada })
   } catch (erro) {
     // Ninguém está olhando quando isto roda. Um agendador que para de acontecer
     // em silêncio é uma fila crescendo com conversas esperando algo que nunca

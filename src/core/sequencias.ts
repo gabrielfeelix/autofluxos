@@ -29,6 +29,15 @@ export const EVENTOS_DE_SEQUENCIA = [
   'atendimento_encerrado',
   'etiqueta_aplicada',
   'etapa_alcancada',
+  /**
+   * O único que **ninguém dispara** (0070).
+   *
+   * Os três de cima são atos deliberados: alguém encerrou, alguém etiquetou,
+   * alguém moveu o cartão. Este é o tempo passando, e é justamente por isso que
+   * ele existe — o cliente que some não gera evento nenhum, e é assim que o
+   * pós-venda se perde: ninguém percebe até a hora da renovação.
+   */
+  'cliente_sumido',
 ] as const
 
 export type EventoDeSequencia = (typeof EVENTOS_DE_SEQUENCIA)[number]
@@ -41,7 +50,17 @@ export const ROTULO_DO_EVENTO: Record<EventoDeSequencia, string> = {
   atendimento_encerrado: 'Quando alguém clicar em “Já atendi”',
   etiqueta_aplicada: 'Quando esta etiqueta for aplicada',
   etapa_alcancada: 'Quando o contato chegar nesta etapa do quadro',
+  cliente_sumido: 'Quando um cliente parar de falar com você',
 }
+
+/**
+ * Quantos dias calado para a régua de retomada entrar.
+ *
+ * Mínimo de uma semana porque abaixo disso não é sumiço, é fim de semana. Teto
+ * de um ano porque quem não fala há mais que isso não volta com uma mensagem —
+ * volta com uma oferta nova, que é outro trabalho.
+ */
+export const DIAS_SEM_CONVERSA = { minimo: 7, maximo: 365, padrao: 60 } as const
 
 /**
  * O teto de cada passo, em minutos: **24 horas**.
