@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
+import { TESTES_DE_INTEGRACAO } from './test/suites'
 
 /**
  * A configuração unitária: sem `.env`, sem rede, sem banco.
@@ -22,7 +23,7 @@ export default defineConfig({
   },
   test: {
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'test/**/*.test.ts'],
-    exclude: ['**/node_modules/**', 'test/e2e/**'],
+    exclude: ['**/node_modules/**', 'test/e2e/**', 'test/integracao/**', ...TESTES_DE_INTEGRACAO],
     setupFiles: ['./test/rede-bloqueada.ts'],
     /**
      * Sem `.env`. Só o mínimo que o código puro espera encontrar definido.

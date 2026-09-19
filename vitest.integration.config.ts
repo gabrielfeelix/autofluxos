@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
+import { TESTES_DE_INTEGRACAO } from './test/suites'
 
 /**
  * A configuração de integração: só contra banco local, e só com consentimento.
@@ -36,7 +37,7 @@ export default defineConfig({
     },
   },
   test: {
-    include: ['src/**/*.integracao.test.ts', 'test/integracao/**/*.test.ts'],
+    include: [...TESTES_DE_INTEGRACAO, 'test/integracao/**/*.test.ts'],
     exclude: ['**/node_modules/**', 'test/e2e/**'],
     setupFiles: ['./test/guarda-de-integracao.ts'],
     env: { NODE_ENV: 'test', ...lerEnvDeTeste() },
