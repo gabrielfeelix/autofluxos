@@ -1,5 +1,12 @@
 # Handoff — 19/ago/2026, atualizado em 04/set
 
+> **Se você está começando agora, em 18/set/2026 ou depois, leia primeiro
+> [HANDOFF-18-SET-CRM-RELACIONAMENTO.md](HANDOFF-18-SET-CRM-RELACIONAMENTO.md).**
+> Ele tem o trabalho em aberto (a virada de aquisição para relacionamento), o
+> estado do banco de produção e a pesquisa que o dono pediu. Este documento aqui
+> continua valendo para a Meta, o Instagram e a infraestrutura, que é o que ele
+> cobre — mas o que está em movimento hoje está no outro.
+
 Para quem pegar este projeto agora, humano ou agente. Leia isto inteiro, depois
 [PLANO-SISTEMA.md](PLANO-SISTEMA.md), e só então código. As decisões de produto
 que não estão aqui estão lá; as que estão aqui não se renegociam sem o dono.
