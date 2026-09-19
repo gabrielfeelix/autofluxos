@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { ehTemperatura, lerValor, type Estagio, type Situacao, type TipoDeEtapa } from '@/core/crm'
 import { ehCorDaEtapa } from '@/core/quadros'
+import { conferirFaixas } from '@/core/relacionamento'
+import { definirFaixas } from './repos/relacionamento'
 import type { CorDeEtiqueta } from '@/core/etiquetas'
 import { LIMITE_DA_NOTA } from '@/core/flow/limites'
 import type { EstadoSalvar } from '@/components/design/formulario-salvar'
@@ -189,6 +191,42 @@ export async function acaoDefinirCorDaEtapa(
   if (!r.ok) return { ok: false, erro: r.motivo }
 
   quadros(clienteId)
+  return { ok: true }
+}
+
+/**
+ * O que é ouro e o que é prata nesta conta.
+ *
+ * Os valores chegam como texto porque é o que a mão digita — "5.000", "R$
+ * 5000", "5000,00" — e quem os entende é `lerValor`, o mesmo do valor do
+ * cartão. Recusar por formato seria transformar a caixa num teste de
+ * datilografia.
+ *
+ * Vazio é recusado aqui, e não tratado como zero: apagar o campo e salvar é
+ * quase sempre engano, e "ouro a partir de R$ 0" faria toda a base virar ouro
+ * de uma vez.
+ */
+export async function acaoDefinirFaixas(
+  clienteId: string,
+  ouroBruto: string,
+  prataBruto: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAcessoAoCliente(clienteId)
+
+  const ouro = lerValor(ouroBruto)
+  const prata = lerValor(prataBruto)
+  if (!ouro.ok) return { ok: false, erro: `ouro: ${ouro.motivo}` }
+  if (!prata.ok) return { ok: false, erro: `prata: ${prata.motivo}` }
+  if (ouro.valor === null || prata.valor === null) {
+    return { ok: false, erro: 'preencha os dois valores' }
+  }
+
+  const conferido = conferirFaixas({ ouro: ouro.valor, prata: prata.valor })
+  if (!conferido.ok) return { ok: false, erro: conferido.motivo }
+
+  await definirFaixas(clienteId, { ouro: ouro.valor, prata: prata.valor })
+  revalidatePath(`/clientes/${clienteId}/leads`)
+  revalidatePath(`/clientes/${clienteId}/ajustes/negocio`)
   return { ok: true }
 }
 

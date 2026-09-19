@@ -29,6 +29,8 @@ import { listarRespostasRapidas } from '@/server/repos/respostas-rapidas'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { quadrosDoContato } from '@/server/repos/quadros'
 import { estagioDoContato, resumoDoContato } from '@/server/repos/crm'
+import { faixasDaConta } from '@/server/repos/relacionamento'
+import { FAIXAS_PADRAO, relacionamentoDe } from '@/core/relacionamento'
 import { linhaDoTempo } from '@/server/repos/eventos'
 import { membrosDaConta } from '@/server/repos/usuarios'
 import { listarMotivos } from '@/server/repos/motivos-de-perda'
@@ -93,6 +95,7 @@ export default async function Pagina({
     equipe,
     motivos,
     agendadas,
+    faixas,
     temAutomacao,
   ] = await Promise.all([
     acharCliente(clienteId),
@@ -106,6 +109,7 @@ export default async function Pagina({
     membrosDaConta(clienteId),
     listarMotivos(clienteId),
     agendadasDoContato(clienteId, contatoId),
+    faixasDaConta(clienteId),
     /*
      * Sem fluxo ligado a papel nem gatilho ativo, **não existe bot**, e o
      * cartão abaixo dizia "Bot respondendo este contato" assim mesmo, com um
@@ -267,7 +271,24 @@ export default async function Pagina({
               etiqueta e anotação.** A coluna abria em "Etiquetas", e a primeira
               informação sobre a pessoa era o que o bot perguntou, o mesmo
               defeito que a coluna do Inbox já tinha corrigido. */}
-          <ResumoDoContato resumo={resumo} />
+          {/*
+            Montado aqui, e não com uma consulta a mais: `resumo` já trouxe
+            total, compras e última compra, e `lead.ultimaEntradaEm` já trouxe a
+            última vez que a pessoa falou. Os quatro fatos que o relacionamento
+            pede já estavam na tela — faltava alguém lê-los juntos.
+          */}
+          <ResumoDoContato
+            resumo={resumo}
+            relacionamento={relacionamentoDe(
+              {
+                total: resumo.total,
+                compras: resumo.compras,
+                ultimaCompraEm: resumo.ultimaEm,
+                ultimaConversaEm: lead.ultimaEntradaEm,
+              },
+              faixas ?? FAIXAS_PADRAO,
+            )}
+          />
           <Informacoes
             waId={lead.waId}
             campos={lead.campos}

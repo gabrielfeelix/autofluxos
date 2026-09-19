@@ -4,6 +4,9 @@ import { AjustesShell } from '@/components/design/ajustes-shell'
 import { Trilha } from '@/components/design/trilha'
 import { acaoRemoverLogo, acaoSalvarCadastro, acaoSalvarLogo } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
+import { FaixasDeNivelDaConta } from '@/components/cliente/faixas-de-nivel'
+import { faixasDaConta } from '@/server/repos/relacionamento'
+import { FAIXAS_PADRAO } from '@/core/relacionamento'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,7 +23,7 @@ export const dynamic = 'force-dynamic'
  */
 export default async function Pagina({ params }: { params: Promise<{ clienteId: string }> }) {
   const { clienteId } = await params
-  const cliente = await acharCliente(clienteId)
+  const [cliente, faixas] = await Promise.all([acharCliente(clienteId), faixasDaConta(clienteId)])
   if (!cliente) notFound()
 
   return (
@@ -44,6 +47,13 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           salvarLogo={acaoSalvarLogo.bind(null, cliente.id)}
           removerLogo={acaoRemoverLogo.bind(null, cliente.id)}
         />
+
+        {/* O nível do cliente mora aqui, e não numa tela própria: é ajuste de
+            uma vez por ano, e item de menu para isso gastaria a posição fixa
+            que este produto reserva para trabalho diário. */}
+        <div className="mt-5">
+          <FaixasDeNivelDaConta clienteId={cliente.id} faixas={faixas ?? FAIXAS_PADRAO} />
+        </div>
       </main>
     </AjustesShell>
   )
