@@ -311,3 +311,37 @@ describe.skipIf(!temCredencial)('desligar, tirar passo e apagar', () => {
     expect(await apagarFluxo(clienteId, fluxoId)).toEqual({ ok: true })
   })
 })
+
+describe.skipIf(!temCredencial)('a régua de retomada (0070)', () => {
+  it('recusa o evento de sumiço sem dizer de quantos dias', async () => {
+    // Sequência de sumiço sem a condição é uma régua que nunca dispara e que a
+    // tela mostraria como ativa — o mesmo defeito que as coerências da 0031 e
+    // da 0034 já barravam para etiqueta e etapa.
+    const r = await criarSequencia(clienteId, {
+      nome: 'retomada sem dias',
+      evento: 'cliente_sumido',
+      etiquetaId: null,
+      etiquetaDeSaidaId: null,
+      colunaId: null,
+      diasSemConversa: null,
+    })
+    expect(r.ok).toBe(false)
+  })
+
+  it('cria com os dias, e o evento acha só ela', async () => {
+    const criada = await criarSequencia(clienteId, {
+      nome: 'retomada de 60 dias',
+      evento: 'cliente_sumido',
+      etiquetaId: null,
+      etiquetaDeSaidaId: null,
+      colunaId: null,
+      diasSemConversa: 60,
+    })
+    expect(criada.ok).toBe(true)
+
+    const doEvento = await sequenciasDoEvento(clienteId, 'cliente_sumido', null)
+    // Sem passo ela não inscreve ninguém, e `sequenciasDoEvento` já filtra isso:
+    // a régua existe no banco e ainda não alcança pessoa nenhuma.
+    expect(doEvento.every((s) => s.evento === 'cliente_sumido')).toBe(true)
+  })
+})

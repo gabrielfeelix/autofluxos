@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Dropdown } from '@/components/design/dropdown'
-import { EVENTOS_DE_SEQUENCIA, ROTULO_DO_EVENTO } from '@/core/sequencias'
+import { DIAS_SEM_CONVERSA, EVENTOS_DE_SEQUENCIA, ROTULO_DO_EVENTO } from '@/core/sequencias'
 
 export type EtiquetaNaLista = { id: string; nome: string }
 export type EtapaNaLista = { id: string; rotulo: string }
@@ -29,6 +29,7 @@ export function CamposDaSequencia({
   const [evento, setEvento] = useState<string>(EVENTOS_DE_SEQUENCIA[0])
   const porEtiqueta = evento === 'etiqueta_aplicada'
   const porEtapa = evento === 'etapa_alcancada'
+  const porSumico = evento === 'cliente_sumido'
 
   return (
     <div className="grid gap-2.5 md:grid-cols-2">
@@ -94,6 +95,35 @@ export function CamposDaSequencia({
             </span>
           </label>
         ))}
+
+      {porSumico && (
+        <label className="md:col-span-2">
+          <span className="mb-1 block text-[11px] font-semibold text-muted">
+            Depois de quantos dias sem falar
+          </span>
+          <input
+            name="diasSemConversa"
+            type="number"
+            min={DIAS_SEM_CONVERSA.minimo}
+            max={DIAS_SEM_CONVERSA.maximo}
+            defaultValue={DIAS_SEM_CONVERSA.padrao}
+            aria-label="Dias sem conversa para entrar na régua"
+            className="app-field w-full px-3 py-2.5 text-[12.5px]"
+          />
+          {/*
+            As duas coisas que quem monta a régua precisa saber antes, e que só
+            se descobre tarde demais: ela só alcança quem já comprou, e o
+            primeiro passo vai precisar de modelo aprovado — quem está calado há
+            sessenta dias está, por definição, fora da janela de 24h da Meta.
+          */}
+          <span className="mt-1 block text-[10.5px] leading-4 text-dim">
+            Só alcança <strong>quem já comprou</strong>: correr atrás de quem nunca fechou é
+            trabalho que ninguém faz. Cada pessoa entra uma vez a cada 4 meses, e o passo vai
+            precisar de um modelo aprovado — quem está calado há tanto tempo está fora da janela de
+            24 horas.
+          </span>
+        </label>
+      )}
 
       <label className="md:col-span-2">
         <span className="mb-1 block text-[11px] font-semibold text-muted">

@@ -121,6 +121,7 @@ import {
 } from './repos/sequencias'
 import {
   conferirAtraso,
+  DIAS_SEM_CONVERSA,
   ehEventoDeSequencia,
   type EventoDeSequencia,
 } from '@/core/sequencias'
@@ -1133,12 +1134,33 @@ export async function acaoCriarSequencia(
   const etiquetaDeSaidaId = String(formData.get('etiquetaDeSaidaId') ?? '').trim()
   const colunaId = String(formData.get('colunaId') ?? '').trim()
 
+  /*
+    O "quantos dias calado" só existe para a régua de retomada (0070), e o banco
+    recusa a combinação incoerente — evento de sumiço sem dias, ou dias sem o
+    evento. Conferir aqui é o que transforma esse 500 numa frase.
+  */
+  let diasSemConversa: number | null = null
+  if (evento === 'cliente_sumido') {
+    const dias = Number(String(formData.get('diasSemConversa') ?? ''))
+    if (
+      !Number.isInteger(dias) ||
+      dias < DIAS_SEM_CONVERSA.minimo ||
+      dias > DIAS_SEM_CONVERSA.maximo
+    ) {
+      return {
+        erro: `diga de quantos dias sem falar, entre ${DIAS_SEM_CONVERSA.minimo} e ${DIAS_SEM_CONVERSA.maximo}`,
+      }
+    }
+    diasSemConversa = dias
+  }
+
   const r = await criarSequencia(clienteId, {
     nome: String(formData.get('nome') ?? ''),
     evento: evento as EventoDeSequencia,
     etiquetaId: etiquetaId === '' ? null : etiquetaId,
     etiquetaDeSaidaId: etiquetaDeSaidaId === '' ? null : etiquetaDeSaidaId,
     colunaId: colunaId === '' ? null : colunaId,
+    diasSemConversa,
   })
   if (!r.ok) return { erro: r.motivo }
 

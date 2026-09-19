@@ -132,6 +132,8 @@ export async function criarSequencia(
     etiquetaId: string | null
     etiquetaDeSaidaId: string | null
     colunaId: string | null
+    /** Só para `cliente_sumido` (0070). Nulo nos demais eventos. */
+    diasSemConversa?: number | null
   },
 ): Promise<{ ok: true; id: string } | { ok: false; motivo: string }> {
   const nome = dados.nome.trim()
@@ -142,6 +144,9 @@ export async function criarSequencia(
   }
   if (dados.evento === 'etapa_alcancada' && !dados.colunaId) {
     return { ok: false, motivo: 'escolha a etapa do quadro que dispara a sequência' }
+  }
+  if (dados.evento === 'cliente_sumido' && !dados.diasSemConversa) {
+    return { ok: false, motivo: 'diga depois de quantos dias sem falar a régua entra' }
   }
   if (dados.colunaId && !(await etapaEhDoCliente(clienteId, dados.colunaId))) {
     return { ok: false, motivo: 'esta etapa não é deste cliente' }
@@ -165,6 +170,10 @@ export async function criarSequencia(
       etiqueta_id: dados.evento === 'etiqueta_aplicada' ? dados.etiquetaId : null,
       etiqueta_de_saida_id: dados.etiquetaDeSaidaId,
       coluna_id: dados.evento === 'etapa_alcancada' ? dados.colunaId : null,
+      // Cada campo só é gravado no evento que o usa: o `check` da 0070 recusa a
+      // combinação incoerente, e mandar "dias" num evento de etiqueta seria
+      // gravar uma condição que ninguém nunca vai ler.
+      dias_sem_conversa: dados.evento === 'cliente_sumido' ? dados.diasSemConversa : null,
     })
     .select('id')
     .single()
