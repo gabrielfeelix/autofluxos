@@ -11,6 +11,20 @@ import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
  *
  * `resumo` existe para quem assume a conversa ler **uma linha** em vez de rolar
  * o histórico: nome, o que precisa, para quando e quanto pretende investir.
+ *
+ * ---------------------------------------------------------------------------
+ * O que este modelo não decide pela empresa
+ * ---------------------------------------------------------------------------
+ *
+ * **O valor mínimo de orçamento.** O bloco `tem-verba` compara com `0`, que não
+ * filtra ninguém, porque um modelo não tem como saber quanto vale um cliente
+ * para quem vai usá-lo. Aqui havia `499`, um número que ninguém escolheu, e que
+ * virava política real de toda conta que copiasse o modelo. É a RB-22.
+ *
+ * **Quem é qualificado.** Há dois nós de handoff, e não um: quem passou pelos
+ * critérios sai por `humano`, e quem apenas pediu para falar com alguém sai por
+ * `humano-a-pedido`. Eram o mesmo nó, rotulado `lead qualificado`, e por isso
+ * pedir ajuda emitia qualificação positiva por consequência. É a RB-21.
  */
 export const qualificarSdr: Fluxo = fluxoSchema.parse({
   inicio: 'abertura',
@@ -78,7 +92,26 @@ export const qualificarSdr: Fluxo = fluxoSchema.parse({
       id: 'tem-verba',
       type: 'condicao',
       position: { x: -220, y: 740 },
-      data: { variavel: 'orcamento', operador: 'maior', valor: '499' },
+      /*
+       * **O valor é `0`, e isso é deliberado.**
+       *
+       * Aqui havia `499`, um número que ninguém escolheu: não saiu de pesquisa,
+       * de preço de tabela nem de conversa com cliente. Como este fluxo é
+       * **modelo**, ele era copiado inteiro para dentro da conta de quem
+       * clicasse em "usar este modelo", e o 499 virava a política de qualificação
+       * de uma empresa que nunca decidiu esse número. Um estúdio de pilates
+       * passava a descartar toda aluna de mensalidade abaixo de 499 reais.
+       *
+       * É a RB-22: "Campos, valores mínimos e restrições precisam estar
+       * preenchidos antes de publicar a regra; valores de demonstração não podem
+       * virar política real."
+       *
+       * `0` não é um limiar melhor: é um limiar que **não filtra ninguém**, e
+       * que por isso obriga quem for usar o modelo a escolher o dele. Errar
+       * deixando todo mundo passar custa uma conversa a mais; errar descartando
+       * custa o cliente, e ninguém descobre qual foi.
+       */
+      data: { variavel: 'orcamento', operador: 'maior', valor: '0' },
     },
 
     {
@@ -150,6 +183,30 @@ export const qualificarSdr: Fluxo = fluxoSchema.parse({
         mensagens: ['Prontinho! Alguém do time assume a conversa a partir daqui. 😊'],
       },
     },
+    /*
+     * **O segundo handoff existe porque o primeiro mentia.**
+     *
+     * Quem respondia "quero falar com alguém" na tela de material caía neste
+     * mesmo nó `humano`, rotulado `lead qualificado`. Quer dizer: pedir ajuda
+     * emitia uma qualificação positiva por consequência, sem nenhum critério ter
+     * sido conferido. Quem abrisse o Inbox lia "lead qualificado" numa conversa
+     * de alguém que tinha acabado de dizer que estava só pesquisando.
+     *
+     * É a RB-21: "Pedir humano não transforma a avaliação em positiva. O modelo
+     * SDR atual deve perder essa associação implícita."
+     *
+     * A passagem ao humano continua acontecendo, e acontece em qualquer
+     * resultado — é o mesmo atendimento. O que muda é o que ela **declara**.
+     */
+    {
+      id: 'humano-a-pedido',
+      type: 'handoff',
+      position: { x: 20, y: 1320 },
+      data: {
+        motivo: 'pediu para falar com alguém · ainda não qualificado',
+        mensagens: ['Claro! Alguém do time assume a conversa a partir daqui. 😊'],
+      },
+    },
   ],
   edges: [
     { id: 'e1', source: 'abertura', target: 'nome' },
@@ -168,7 +225,8 @@ export const qualificarSdr: Fluxo = fluxoSchema.parse({
     { id: 'e12', source: 'resumo', target: 'aviso' },
     { id: 'e13', source: 'aviso', target: 'humano' },
     { id: 'e14', source: 'material', target: 'quer-falar' },
-    { id: 'e15', source: 'quer-falar', sourceHandle: 'sim', target: 'humano' },
+    // Vai para o handoff que **não** afirma qualificação: ver o nó acima.
+    { id: 'e15', source: 'quer-falar', sourceHandle: 'sim', target: 'humano-a-pedido' },
     { id: 'e16', source: 'quer-falar', sourceHandle: 'depois', target: 'despedida' },
   ],
 })

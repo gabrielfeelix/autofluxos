@@ -43,6 +43,7 @@ export const TESTES_DE_INTEGRACAO = [
   'src/server/repos/painel.test.ts',
   'src/server/repos/porta-de-entrada.test.ts',
   'src/server/repos/pulso.test.ts',
+  'src/server/repos/qualificacoes.test.ts',
   'src/server/repos/quadros.test.ts',
   'src/server/repos/relacionamento.test.ts',
   'src/server/repos/venda-nao-e-atendimento.test.ts',
