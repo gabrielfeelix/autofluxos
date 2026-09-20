@@ -230,6 +230,27 @@ extração explícito para os objetos de `public`.
   **A migration entrou antes do push**, e não depois: o código da T8.2 lê os dois
   objetos novos, então o intervalo seria a tela de início caindo, como caiu com a
   `0071`. A produção está, hoje, com `0001`–`0086` inteiras;
+- **a `0088` foi aplicada em 20/set/2026**, com autorização explícita do dono
+  pedida nesta sessão. Conferida pelos **dois** testes: replay do zero em Docker
+  (`0001`–`0088` em ordem, sem erro) e ensaio em transação contra a produção,
+  os dois limpos.
+
+  Ela é aditiva: duas colunas anuláveis em `public.atividades`, `onde` (texto,
+  com check de 500 caracteres) e `hora_marcada` (booleano, default `false`).
+  Nenhuma linha existente muda, nenhuma função é criada ou recriada.
+
+  **Por que `hora_marcada` existe**, e não se deduz do `prazo`: `prazo` é
+  `timestamptz` e sempre carrega uma hora, porque a `0081` grava meio-dia UTC
+  quando só há data. Sem o booleano não há como distinguir "reunião às 14h" de
+  "proposta para o dia 22", e a tela mostraria 12:00 para toda atividade sem
+  hora combinada.
+
+  Releitura objeto a objeto depois de aplicar: as duas colunas com tipo e
+  default corretos, `atividades_onde_check` ativa, `anon` e `authenticated`
+  **sem privilégio nenhum** na tabela (só `postgres` e `service_role`, como o
+  default fechado da `0041` garante), `count(*)` da tabela em zero, e nenhuma
+  coluna de mesmo nome em `app_verandi`.
+
 - **a `0087` foi aplicada em 22/set/2026**, na execução da T9.1 (F9), com
   autorização explícita do dono pedida naquela sessão: a autorização da `0086`
   valeu só para ela. Conferida pelos **dois** testes: replay do zero em Docker
