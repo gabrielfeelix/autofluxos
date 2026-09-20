@@ -215,6 +215,7 @@ async function Conteudo({ cliente, q }: { cliente: Cliente; q?: string }) {
               agora={agora}
               equipe={equipe.map(({ id, nome }) => ({ id, nome }))}
               motivos={motivos.map(({ id, nome }) => ({ id, nome }))}
+              finalidade={aberto.finalidade}
             />
           </>
         )}

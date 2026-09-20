@@ -12,6 +12,7 @@ import {
   FILTRO_VAZIO,
   filtrarCartoes,
   estaParado,
+  aoArrastarPara,
   type Cartao,
   type CorDaEtapa,
   type Etapa,
@@ -32,6 +33,7 @@ import { Avatar } from '@/components/inbox/avatar'
 import { Dropdown } from '@/components/design/dropdown'
 import { IlustracaoQuadros } from '@/components/design/ilustracoes'
 import { FecharCartao } from './fechar-cartao'
+import { RegistrarVenda } from './registrar-venda'
 import { PainelDoContato } from './painel-do-contato'
 import {
   acaoApagarEtapa,
@@ -75,6 +77,7 @@ export function Quadro({
   agora,
   equipe,
   motivos,
+  finalidade = 'operacional',
 }: {
   clienteId: string
   quadroId: string
@@ -85,6 +88,15 @@ export function Quadro({
   equipe: { id: string; nome: string }[]
   /** A lista fechada de por que se perde nesta conta. */
   motivos: { id: string; nome: string }[]
+  /**
+   * Comercial pede **registro de venda** ao ganhar; operacional só fecha.
+   *
+   * É a separação da 0071: marcar "Resolvido" no Atendimento, "Qualificado" na
+   * Captação ou "Compareceu" na Agenda não é compra, e tratar as três como
+   * venda foi o defeito que fazia a clínica aparecer com dez compras que
+   * ninguém faturou.
+   */
+  finalidade?: 'operacional' | 'comercial'
 }) {
   const [cartoes, setCartoes] = useState(cartoesIniciais)
   const [ultimoDoServidor, setUltimoDoServidor] = useState(cartoesIniciais)
@@ -92,7 +104,17 @@ export function Quadro({
   const [sobre, setSobre] = useState<string | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
-  const [fechando, setFechando] = useState<{ cartao: Cartao; situacao: 'ganha' | 'perdida' } | null>(
+  const [fechando, setFechando] = useState<{
+    cartao: Cartao
+    situacao: 'ganha' | 'perdida'
+    /**
+     * De onde o cartão saiu, quando ele chegou aqui **arrastado** (RB-23).
+     *
+     * `undefined` quer dizer que o fechamento foi aberto por botão, e aí não
+     * há movimento otimista a desfazer. Ver `cancelarFechamento`.
+     */
+    voltarPara?: string
+  } | null>(
     null,
   )
   const [noPainel, setNoPainel] = useState<Cartao | null>(null)
@@ -131,6 +153,9 @@ export function Quadro({
   const comCartao = new Set(cartoes.map((cartao) => cartao.responsavelId).filter(Boolean))
   const equipeDoQuadro = equipe.filter((pessoa) => comCartao.has(pessoa.id))
 
+  /** Ganho em funil comercial: é venda, e não só fechamento (RB-30). */
+  const ehVenda = fechando?.situacao === 'ganha' && finalidade === 'comercial'
+
   function mover(cartaoId: string, colunaId: string) {
     const antes = cartoes
     const alvo = cartoes.find((c) => c.id === cartaoId)
@@ -147,10 +172,12 @@ export function Quadro({
      * que é a informação que ninguém volta para preencher depois.
      */
     const destino = etapas.find((e) => e.id === colunaId)
-    if (destino?.tipo === 'ganho' || destino?.tipo === 'perdido') {
+    const gesto = destino ? aoArrastarPara(alvo, destino) : { tipo: 'mover' as const }
+    if (gesto.tipo === 'concluir') {
       setFechando({
         cartao: { ...alvo, colunaId },
-        situacao: destino.tipo === 'ganho' ? 'ganha' : 'perdida',
+        situacao: gesto.situacao,
+        voltarPara: gesto.voltarPara,
       })
     }
 
@@ -176,6 +203,26 @@ export function Quadro({
         setErro('não deu para mover agora — tente de novo')
       }
     })
+  }
+
+  /**
+   * Cancelar o fechamento **desfaz o arrasto** (RB-23).
+   *
+   * O defeito era este: arrastar movia o cartão otimista e abria o modal, e
+   * cancelar só fechava o modal. O cartão ficava parado na etapa de ganho,
+   * visualmente concluído, sem conclusão nenhuma no servidor — que é o
+   * "sucesso visual persistente antes da confirmação" que a regra proíbe.
+   *
+   * O servidor já recebeu o `acaoMoverCartao`, e isso está certo: mover de
+   * etapa é uma coisa, concluir é outra. O que se desfaz aqui é a etapa, com
+   * um movimento de volta, e não um `setCartoes` local — senão a tela e o
+   * banco discordariam no próximo recarregamento.
+   */
+  function cancelarFechamento() {
+    const cancelado = fechando
+    setFechando(null)
+    if (!cancelado?.voltarPara) return
+    mover(cancelado.cartao.id, cancelado.voltarPara)
   }
 
   function tirar(cartaoId: string) {
@@ -566,13 +613,31 @@ export function Quadro({
         </p>
       )}
 
+      {/*
+        Ganhar num funil **comercial** abre o registro de venda; ganhar num
+        operacional, e perder em qualquer um, continuam no fechamento de
+        sempre. Dois modais, e não um com `if` dentro: o que se preenche é
+        diferente (data da compra, itens) e o que a operação grava é diferente
+        (venda + conclusão numa transação, contra só conclusão).
+      */}
+      <RegistrarVenda
+        key={`venda:${fechando?.cartao.id ?? 'vazio'}`}
+        clienteId={clienteId}
+        cartao={ehVenda ? (fechando?.cartao ?? null) : null}
+        aoFechar={cancelarFechamento}
+        aoConcluir={() => {
+          setFechando(null)
+          setAviso('Venda registrada. A oportunidade foi marcada como ganha.')
+        }}
+      />
+
       <FecharCartao
         key={fechando?.cartao.id ?? 'vazio'}
         clienteId={clienteId}
-        cartao={fechando?.cartao ?? null}
+        cartao={ehVenda ? null : (fechando?.cartao ?? null)}
         situacao={fechando?.situacao ?? 'ganha'}
         motivos={motivos}
-        aoFechar={() => setFechando(null)}
+        aoFechar={cancelarFechamento}
         aoConcluir={({ abriuEm }) => {
           setFechando(null)
           // A passagem para o funil seguinte precisa ser dita: o cartão some do
@@ -598,6 +663,8 @@ export function Quadro({
           // aviso de passagem para o funil seguinte moram lá, e são a razão de
           // não existir um segundo modal de fechar venda.
           if (!noPainel) return
+          // Sem `voltarPara`: veio de botão, não de arrastar, então não há
+          // movimento otimista a desfazer se a pessoa cancelar.
           setFechando({ cartao: noPainel, situacao })
           setNoPainel(null)
         }}

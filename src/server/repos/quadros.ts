@@ -42,6 +42,14 @@ export type Quadro = {
   padrao: boolean
   /** Ganhar aqui abre cartão lá. Null = fim da cadeia (0058). */
   seguinteId: string | null
+  /**
+   * Comercial ou operacional (0071).
+   *
+   * É o que decide se ganhar pede **registro de venda** ou só fecha o cartão:
+   * marcar "Resolvido" no Atendimento não é compra, e foi exatamente essa
+   * confusão que a 0071 separou.
+   */
+  finalidade: 'operacional' | 'comercial'
   etapas: Etapa[]
 }
 
@@ -50,6 +58,7 @@ type LinhaDoQuadro = {
   nome: string
   padrao: boolean
   seguinte_id: string | null
+  finalidade: string | null
   quadro_colunas:
     | {
         id: string
@@ -77,7 +86,8 @@ type LinhaDoQuadro = {
  * resto do repositório. `membrosDaConta` já fazia o mesmo apelido, em SQL.
  */
 const COLUNAS =
-  'id, nome, padrao, seguinte_id, quadro_colunas (id, nome, ordem, criado_em, tipo, limite_de_dias, cor)'
+  'id, nome, padrao, seguinte_id, finalidade, ' +
+  'quadro_colunas (id, nome, ordem, criado_em, tipo, limite_de_dias, cor)'
 
 function paraQuadro(linha: LinhaDoQuadro): Quadro {
   return {
@@ -85,6 +95,10 @@ function paraQuadro(linha: LinhaDoQuadro): Quadro {
     nome: linha.nome,
     padrao: linha.padrao ?? false,
     seguinteId: linha.seguinte_id ?? null,
+    // Desconhecido vira operacional, que é o default do banco: errar para o
+    // lado de "não é venda" é o lado seguro — pedir registro de venda num
+    // funil de atendimento é pior que não pedir num comercial.
+    finalidade: linha.finalidade === 'comercial' ? 'comercial' : 'operacional',
     etapas: etapasEmOrdem(
       (linha.quadro_colunas ?? []).map((coluna) => ({
         id: coluna.id,

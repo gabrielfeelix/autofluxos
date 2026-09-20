@@ -13,6 +13,7 @@ import {
   trocaDeLugar,
   type Cartao,
   type Etapa,
+  aoArrastarPara,
 } from './quadros'
 
 /**
@@ -200,5 +201,34 @@ describe('a paciência é por etapa', () => {
 
   it('respeita o limite menor de uma etapa impaciente', () => {
     expect(estaParado('2026-09-14T12:00:00Z', agora, 1)).toBe(true)
+  })
+})
+
+describe('aoArrastarPara: arrastar para conclusão guarda a volta (RB-23)', () => {
+  const comum = { id: 'etapa-comum', tipo: 'normal' as const }
+  const ganho = { id: 'etapa-ganho', tipo: 'ganho' as const }
+  const perdido = { id: 'etapa-perdido', tipo: 'perdido' as const }
+
+  it('etapa comum é só mover', () => {
+    expect(aoArrastarPara({ colunaId: 'antes' }, comum)).toEqual({ tipo: 'mover' })
+  })
+
+  it('etapa de ganho abre a conclusão e guarda de onde o cartão saiu', () => {
+    // `voltarPara` é o ponto: sem ele, cancelar o modal não teria como
+    // desfazer o movimento otimista, e o cartão ficaria parado na etapa de
+    // ganho parecendo concluído.
+    expect(aoArrastarPara({ colunaId: 'em-conversa' }, ganho)).toEqual({
+      tipo: 'concluir',
+      situacao: 'ganha',
+      voltarPara: 'em-conversa',
+    })
+  })
+
+  it('etapa de perda também, com a situação certa', () => {
+    expect(aoArrastarPara({ colunaId: 'em-conversa' }, perdido)).toEqual({
+      tipo: 'concluir',
+      situacao: 'perdida',
+      voltarPara: 'em-conversa',
+    })
   })
 })

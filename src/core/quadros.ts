@@ -190,6 +190,47 @@ export function ehTemperaturaDoCartao(valor: unknown): valor is Temperatura {
 }
 
 /**
+ * O que acontece ao arrastar um cartão para uma etapa (RB-23).
+ *
+ * ---------------------------------------------------------------------------
+ * O defeito que esta função existe para corrigir
+ * ---------------------------------------------------------------------------
+ *
+ * `quadro.tsx` movia o cartão **otimista** e abria o modal de conclusão no
+ * mesmo gesto. Cancelar o modal só fechava o modal: o cartão ficava na etapa
+ * de ganho, visualmente concluído, com o servidor sabendo que ele foi movido e
+ * ninguém sabendo que a conclusão não aconteceu.
+ *
+ * A RB-23 é explícita: "cancelar o modal restaura a posição" e "não mostrar
+ * sucesso visual persistente antes da confirmação do servidor". Um cartão
+ * parado em "Fechado" sem conclusão é precisamente esse sucesso visual.
+ *
+ * A regra fica aqui, e não dentro do componente, porque é regra e porque é
+ * testável: mover para etapa comum é uma coisa, mover para conclusão é outra,
+ * e a diferença decide se há posição a restaurar depois.
+ */
+export type GestoDeMover =
+  | { tipo: 'mover' }
+  | { tipo: 'concluir'; situacao: Exclude<Situacao, 'aberta'>; voltarPara: string }
+
+export function aoArrastarPara(
+  cartao: Pick<Cartao, 'colunaId'>,
+  destino: Pick<Etapa, 'id' | 'tipo'>,
+): GestoDeMover {
+  if (destino.tipo === 'ganho' || destino.tipo === 'perdido') {
+    return {
+      tipo: 'concluir',
+      situacao: destino.tipo === 'ganho' ? 'ganha' : 'perdida',
+      // De onde ele saiu. É o que o cancelamento precisa para desfazer, e por
+      // isso viaja junto com o gesto em vez de ser relido depois: quando o
+      // modal fecha, o estado da tela já foi alterado pelo movimento otimista.
+      voltarPara: cartao.colunaId,
+    }
+  }
+  return { tipo: 'mover' }
+}
+
+/**
  * A ordem das etapas na tela.
  *
  * `ordem` não é única no banco de propósito — trocar duas de lugar com um índice
