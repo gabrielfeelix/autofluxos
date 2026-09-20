@@ -9,6 +9,7 @@ import { Esqueleto, EsqueletoDeLista } from '@/components/design/esqueleto'
 import { Avatar } from '@/components/inbox/avatar'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import { comoDinheiro } from '@/core/crm'
+import { cobra, type Objetivo } from '@/core/objetivo-da-conta'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarCanais } from '@/server/repos/conversas'
 import { listarFluxos } from '@/server/repos/fluxos'
@@ -27,6 +28,7 @@ import {
   ROTULO_DO_NIVEL,
 } from '@/core/relacionamento'
 import { listarQuadros } from '@/server/repos/quadros'
+import { recursosDaConta } from '@/server/repos/recursos'
 import { sessaoAtual } from '@/server/sessao'
 import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 
@@ -61,12 +63,13 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [sessao, fluxos, canais, contatos, quadros] = await Promise.all([
+  const [sessao, fluxos, canais, contatos, quadros, recursos] = await Promise.all([
     sessaoAtual(),
     listarFluxos(cliente.id),
     listarCanais(cliente.id),
     contarLeads(cliente.id),
     listarQuadros(cliente.id),
+    recursosDaConta(cliente.id),
   ])
 
   const noAr = fluxos.filter((fluxo) => fluxo.versaoPublicadaId)
@@ -76,6 +79,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
   const passos = passosDaConta({
     clienteId: cliente.id,
+    objetivo: recursos.objetivo,
     temFluxo: fluxos.length > 0,
     temPublicado: noAr.length > 0,
     temCanal: canais.length > 0,
@@ -164,7 +168,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 // ---------------------------------------------------------------------------
 
 /**
- * Os cinco passos, e por que são estes.
+ * Os passos, e por que não são sempre os mesmos.
  *
  * **Canal, e não "WhatsApp".** A versão anterior dizia "faltam três coisas para
  * o WhatsApp responder sozinho" e presumia o canal errado metade das vezes:
@@ -175,12 +179,31 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
  * O primeiro já vem feito: a conta existe porque quem lê a criou. Barra em zero
  * parece castigo, e o primeiro progresso é o que faz alguém querer o segundo.
  *
- * "O número aponta para uma automação publicada" **não** é passo daqui — é
+ * "O número aponta para uma automação publicada" **não** é passo daqui: é
  * consequência dos outros dois e vive na faixa de estado, que é o lugar de
  * dizer o que está quebrado agora.
+ *
+ * ---------------------------------------------------------------------------
+ * O defeito que a T7.1 corrigiu aqui
+ * ---------------------------------------------------------------------------
+ *
+ * Eram **cinco passos fixos**, e os dois últimos eram "Publicar uma automação" e
+ * "Organizar no funil". Quem abriu a conta para atender no WhatsApp com a
+ * própria equipe fazia as três primeiras, terminava o que queria, e a tela
+ * seguia dizendo que faltavam duas coisas, para sempre.
+ *
+ * Isso não é ruído: barra que nunca fecha ensina a ignorar a barra, e a partir
+ * daí também se ignora o aviso de canal desligado, que é o que realmente
+ * derruba o atendimento.
+ *
+ * Agora quem decide é o objetivo da conta (`core/objetivo-da-conta.ts`), e
+ * `cobra()` é a única fonte: repetir a regra aqui em `if` faria as duas
+ * divergirem no primeiro ajuste. Conta que escolheu **atender** vê três passos,
+ * e os três fecham.
  */
 function passosDaConta({
   clienteId,
+  objetivo,
   temFluxo,
   temPublicado,
   temCanal,
@@ -188,6 +211,7 @@ function passosDaConta({
   temQuadro,
 }: {
   clienteId: string
+  objetivo: Objetivo
   temFluxo: boolean
   temPublicado: boolean
   temCanal: boolean
@@ -196,7 +220,7 @@ function passosDaConta({
 }): PassoDaConta[] {
   const em = (caminho: string) => `/clientes/${clienteId}${caminho}`
 
-  return [
+  const passos: PassoDaConta[] = [
     {
       chave: 'conta',
       titulo: 'Criar a conta',
@@ -237,11 +261,30 @@ function passosDaConta({
       chave: 'funil',
       titulo: 'Organizar no funil',
       explica:
-        'O quadro com as etapas da sua venda. Cada contato vira um cartão que anda até fechar, com valor e motivo de perda — é daqui que sai quanto o mês rendeu.',
+        'O quadro com as etapas da sua venda. Cada contato vira um cartão que anda até fechar, com valor e motivo de perda: é daqui que sai quanto o mês rendeu.',
       feito: temQuadro,
       acoes: [{ rotulo: 'Criar um funil', href: em('/quadros') }],
     },
   ]
+
+  /*
+   * O filtro, e por que ele é por passo e não por índice.
+   *
+   * `conta`, `canal` e `conversa` ficam sempre: a conta existe, sem canal nada
+   * chega, e a primeira conversa é o teste de ponta a ponta de qualquer
+   * objetivo. Os dois que saem são exatamente os que `PASSOS_OPCIONAIS` nomeia,
+   * e quem responde é `cobra()`.
+   *
+   * Passo já **feito** nunca é escondido, e essa linha é o que impede o pior
+   * efeito colateral: quem montou um funil e depois trocou o objetivo para
+   * "atender" veria o passo concluído desaparecer, e concluiria que o funil foi
+   * apagado junto.
+   */
+  return passos.filter((passo) => {
+    if (passo.chave === 'automacao') return passo.feito || cobra(objetivo, 'automacao')
+    if (passo.chave === 'funil') return passo.feito || cobra(objetivo, 'funil')
+    return true
+  })
 }
 
 // ---------------------------------------------------------------------------

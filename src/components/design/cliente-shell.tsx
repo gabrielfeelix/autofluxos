@@ -4,10 +4,11 @@ import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
 import { NotificacoesDaFila } from '@/components/inbox/notificacoes-da-fila'
 import { acaoDefinirPresenca, acaoSair } from '@/server/acoes-conta'
 import type { Cliente } from '@/server/repos/clientes'
+import { crmVisivel } from '@/server/repos/recursos'
 import { presencaDoUsuario } from '@/server/repos/usuarios'
 import { contasDoUsuario, ehAdminDaPlataforma, exigirAcessoAoCliente } from '@/server/sessao'
 import { BarraLateral } from './barra-lateral'
-import { type AbaDoCliente, ITENS } from './secoes-do-cliente'
+import { type AbaDoCliente, secoesVisiveis } from './secoes-do-cliente'
 import { LogoDoCliente } from './logo-cliente'
 import { Marca } from './marca'
 
@@ -66,6 +67,12 @@ export async function ClienteShell({
   // caminho de volta. O dono do negócio, não: para ele não existe "todos os
   // clientes", existe a conta dele.
   const podeVerTodosOsClientes = ehAdminDaPlataforma(acesso.sessao)
+  /*
+   * O CRM é opcional (§4.2), e quem responde é `crmVisivel`: ele considera o
+   * interruptor da conta **e** a existência de funil, para não esconder da noite
+   * para o dia a tela de quem já usa quadros.
+   */
+  const mostraCrm = await crmVisivel(cliente.id)
 
   return (
     <div className="flex min-h-screen flex-col md:h-screen md:min-h-[700px] md:flex-row md:overflow-hidden">
@@ -87,7 +94,7 @@ export async function ClienteShell({
             </Link>
           ) : null
         }
-        itens={ITENS.map((item) => ({
+        itens={secoesVisiveis({ crmVisivel: mostraCrm }).map((item) => ({
           chave: item.chave,
           rotulo: item.rotulo,
           href: `/clientes/${cliente.id}${item.href}`,

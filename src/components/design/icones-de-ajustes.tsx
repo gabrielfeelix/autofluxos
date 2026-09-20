@@ -136,6 +136,13 @@ export const ICONE_DA_TELA: Record<TelaDeAjustes, React.ReactNode> = {
       <path d="M18 14.6a6 6 0 0 1 3 4.9" />
     </Svg>
   ),
+  // Um interruptor: o que a tela faz é ligar e desligar parte do produto.
+  recursos: (
+    <Svg>
+      <rect x="2.5" y="7" width="19" height="10" rx="5" />
+      <circle cx="16.5" cy="12" r="2.6" />
+    </Svg>
+  ),
   // Três barras subindo: é consumo contra faixa, que é o que a tela mostra.
   plano: (
     <Svg>

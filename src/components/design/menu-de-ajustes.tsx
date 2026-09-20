@@ -44,6 +44,7 @@ export type TelaDeAjustes =
   | 'negocio'
   | 'equipe'
   | 'plano'
+  | 'recursos'
 
 const GRUPOS: { titulo: string | null; itens: { chave: TelaDeAjustes; rotulo: string }[] }[] = [
   // O índice fica solto no topo, sem rótulo de grupo: ele não é um assunto, é
@@ -81,6 +82,14 @@ const GRUPOS: { titulo: string | null; itens: { chave: TelaDeAjustes; rotulo: st
     itens: [
       { chave: 'negocio', rotulo: 'Dados do negócio' },
       { chave: 'equipe', rotulo: 'Equipe' },
+      /*
+       * Recursos entra em "Conta", e não em "Atendimento".
+       *
+       * O que se decide ali é **que partes do produto esta empresa usa**, e não
+       * como ela atende. É a tradução do §4.2: "CRM fica disponível em
+       * Configurações → Recursos, com explicação e botão Ativar CRM".
+       */
+      { chave: 'recursos', rotulo: 'Recursos' },
       { chave: 'plano', rotulo: 'Plano e consumo' },
     ],
   },

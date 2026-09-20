@@ -91,6 +91,33 @@ export const ITENS: {
   { chave: 'ajustes', rotulo: 'Configurações', href: '/ajustes', icone: <IconeConfiguracoes /> },
 ]
 
+/**
+ * As seções que **esta** conta vê (T7.1).
+ *
+ * ---------------------------------------------------------------------------
+ * Por que a filtragem mora aqui, e não em `cliente-shell.tsx`
+ * ---------------------------------------------------------------------------
+ *
+ * Pelo mesmo motivo de `ITENS` morar neste arquivo: aqui não há `await`, não há
+ * banco e não há sessão, e é isso que permite o `loading.tsx` desenhar a barra
+ * de verdade. Quem vai ao banco é a moldura; ela pergunta lá e passa a resposta
+ * para cá.
+ *
+ * **O padrão é mostrar.** `crmVisivel` ausente quer dizer "não perguntei" (é o
+ * esqueleto, que não pergunta nada), e esconder por falta de resposta faria a
+ * barra piscar um item a menos em todo carregamento: exatamente o defeito que
+ * este arquivo existe para não ter.
+ *
+ * O item escondido continua tendo rota: `/quadros` responde para quem tiver o
+ * link salvo, porque ocultar é preferência de menu e não revogação de acesso
+ * (§4.2). Quem esconde o item e quer trancar a tela está pedindo outra coisa, e
+ * isso se chama permissão.
+ */
+export function secoesVisiveis({ crmVisivel }: { crmVisivel?: boolean } = {}): typeof ITENS {
+  if (crmVisivel === false) return ITENS.filter((item) => item.chave !== 'quadros')
+  return ITENS
+}
+
 function IconePainel() {
   return (
     <svg aria-hidden width="15" height="15" viewBox="0 0 15 15" fill="currentColor">

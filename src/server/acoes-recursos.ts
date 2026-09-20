@@ -1,0 +1,73 @@
+'use server'
+
+import { revalidatePath } from 'next/cache'
+import { ehObjetivo } from '@/core/objetivo-da-conta'
+import { definirCrmAtivo, definirObjetivo } from './repos/recursos'
+import { exigirCapacidade, recusou } from './permissoes'
+
+/**
+ * As ações de objetivo e recursos (T7.1).
+ *
+ * A capacidade é `configurar_operacao` nas duas, e é a leitura direta da lista
+ * de `core/permissoes.ts`: "bot, regras, campos e processos: muda como a
+ * operação funciona". Ligar o CRM muda o menu de **todo mundo** na conta, então
+ * não é decisão de quem atende. O §4.2 diz o mesmo em palavras: "botão Ativar
+ * CRM para gestores".
+ *
+ * O escopo é `todos` porque o alvo é a conta, e não um registro: `proprios`
+ * aqui não quereria dizer nada, e deixaria passar quem só pode mexer no que é
+ * seu.
+ */
+
+export type RespostaDeRecursos = { ok: boolean; erro?: string }
+
+export async function acaoDefinirObjetivo(
+  clienteId: string,
+  objetivo: string,
+): Promise<RespostaDeRecursos> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
+
+  // A lista fechada é conferida aqui e no check da 0084. Sem esta linha, o
+  // banco recusaria com 23514 e a tela mostraria um erro de Postgres a quem
+  // escolheu numa lista de três itens.
+  if (!ehObjetivo(objetivo)) return { ok: false, erro: 'esse objetivo não existe' }
+
+  const r = await definirObjetivo(clienteId, objetivo)
+  if (!r.ok) return { ok: false, erro: r.motivo }
+
+  // A tela inicial muda de conteúdo: é ela que cobra os passos.
+  revalidatePath(`/clientes/${clienteId}`)
+  revalidatePath(`/clientes/${clienteId}/ajustes/recursos`)
+  return { ok: true }
+}
+
+/**
+ * Liga ou desliga o CRM no menu.
+ *
+ * **Desligar não apaga nada**, e a frase vai para a tela junto do botão: o §4.2
+ * é explícito, e `desligarApagaDado` existe em `core/` para essa promessa ter
+ * onde ser testada.
+ */
+export async function acaoDefinirCrm(
+  clienteId: string,
+  ativo: boolean,
+): Promise<RespostaDeRecursos> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
+
+  const r = await definirCrmAtivo(clienteId, ativo)
+  if (!r.ok) return { ok: false, erro: r.motivo }
+
+  /*
+   * A barra lateral inteira muda, então a revalidação é do layout e não de uma
+   * tela. `layout` alcança as filhas, que é o que faz o item aparecer ou sumir
+   * sem a pessoa precisar recarregar.
+   *
+   * **Nenhum cartão é criado nem apagado aqui** (RB-19 e §4.2): ligar o CRM não
+   * popula retroativamente, e desligar não remove. Quem quiser trazer o
+   * histórico usa a importação, que é outra ação e tem prévia de quantidade.
+   */
+  revalidatePath(`/clientes/${clienteId}`, 'layout')
+  return { ok: true }
+}

@@ -1,0 +1,90 @@
+import { notFound } from 'next/navigation'
+import { AjustesShell } from '@/components/design/ajustes-shell'
+import { Trilha } from '@/components/design/trilha'
+import { EscolherObjetivo } from '@/components/recursos/escolher-objetivo'
+import { InterruptorDoCrm } from '@/components/recursos/interruptor-do-crm'
+import { acharCliente } from '@/server/repos/clientes'
+import { listarQuadros } from '@/server/repos/quadros'
+import { recursosDaConta } from '@/server/repos/recursos'
+
+export const dynamic = 'force-dynamic'
+
+/**
+ * Recursos: o que esta empresa usa do produto (UI-19, T7.1).
+ *
+ * ---------------------------------------------------------------------------
+ * Por que esta tela existe
+ * ---------------------------------------------------------------------------
+ *
+ * O CRM era obrigatório de fato. Não por trava: por tela. Os "primeiros passos"
+ * cobravam "Organizar no funil" de toda conta, então quem abriu o produto para
+ * atender no WhatsApp com a própria equipe terminava o que queria e a tela
+ * continuava dizendo que faltava um passo, para sempre.
+ *
+ * O §4.2 da proposta pede o contrário: "empresa nova começa com
+ * chatbot/inbox/contatos; CRM fica disponível em Configurações → Recursos, com
+ * explicação e botão Ativar CRM para gestores".
+ *
+ * As duas escolhas moram juntas porque são a mesma pergunta vista de dois
+ * lados: o objetivo diz **o que o produto vai cobrar de você**, e o interruptor
+ * diz **o que ele vai mostrar**. Separá-las em duas telas faria a pessoa
+ * responder duas vezes sem saber que eram a mesma conversa.
+ */
+export default async function Pagina({ params }: { params: Promise<{ clienteId: string }> }) {
+  const { clienteId } = await params
+  const [cliente, recursos, quadros] = await Promise.all([
+    acharCliente(clienteId),
+    recursosDaConta(clienteId),
+    listarQuadros(clienteId),
+  ])
+  if (!cliente) notFound()
+
+  return (
+    <AjustesShell cliente={cliente} ativa="recursos">
+      <main className="w-full max-w-[1100px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
+        <Trilha
+          caminho={[
+            { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },
+            { rotulo: 'Recursos' },
+          ]}
+        />
+        <h1 className="text-[25px] font-bold tracking-[-0.02em]">Recursos</h1>
+        <p className="mt-1.5 mb-6 max-w-[650px] text-[13px] leading-6 text-dim">
+          O que esta conta usa do produto. Ninguém precisa de tudo: quem só quer
+          atender mais rápido não precisa montar funil nem desenhar chatbot, e o
+          produto não deveria ficar cobrando isso para sempre.
+        </p>
+
+        <section className="app-card mb-5 overflow-hidden">
+          <header className="border-b border-line px-5 py-4">
+            <h2 className="text-[14.5px] font-bold">Para que você usa o AutoFluxos</h2>
+            <p className="mt-1 text-[12.5px] leading-5 text-dim">
+              É o que decide quais passos a tela inicial cobra. Dá para trocar
+              quando quiser, e trocar não apaga nem cria nada.
+            </p>
+          </header>
+          <div className="px-5 py-4">
+            <EscolherObjetivo clienteId={cliente.id} atual={recursos.objetivo} />
+          </div>
+        </section>
+
+        <section className="app-card overflow-hidden">
+          <header className="border-b border-line px-5 py-4">
+            <h2 className="text-[14.5px] font-bold">CRM</h2>
+            <p className="mt-1 text-[12.5px] leading-5 text-dim">
+              Funis, negociações com valor, atividades e vendas. É opcional: o
+              atendimento, o Inbox e os contatos funcionam sem ele.
+            </p>
+          </header>
+          <div className="px-5 py-4">
+            <InterruptorDoCrm
+              clienteId={cliente.id}
+              ativo={recursos.crmAtivo}
+              temQuadro={quadros.length > 0}
+            />
+          </div>
+        </section>
+      </main>
+    </AjustesShell>
+  )
+}

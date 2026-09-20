@@ -9,6 +9,7 @@ import { ApagarCliente } from '@/components/cliente/apagar'
 import { acaoApagarCliente } from '@/server/acoes'
 import { listarAcervo } from '@/server/repos/acervo'
 import { acharCliente, contarOQueSomeCom } from '@/server/repos/clientes'
+import { recursosDaConta } from '@/server/repos/recursos'
 import { canalDoInstagram } from '@/server/repos/canais-instagram'
 import { listarConexoes } from '@/server/repos/conexoes'
 import { paginasDaConta } from '@/server/repos/paginas-de-lead'
@@ -45,7 +46,7 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [conexoes, canais, respostasRapidas, acervo, estrago, etiquetas, contaDoInstagram, paginasDeLead, plano] =
+  const [conexoes, canais, respostasRapidas, acervo, estrago, etiquetas, contaDoInstagram, paginasDeLead, plano, recursos] =
     await Promise.all([
       listarConexoes(cliente.id),
       listarCanais(cliente.id),
@@ -56,6 +57,7 @@ export default async function Pagina({
       canalDoInstagram(cliente.id),
       paginasDaConta(cliente.id),
       planoDaConta(cliente.id),
+      recursosDaConta(cliente.id),
     ])
   const semContexto = cliente.contextoNegocio.trim() === ''
 
@@ -323,6 +325,17 @@ export default async function Pagina({
                   : `${equipe.length} ${equipe.length === 1 ? 'pessoa' : 'pessoas'}`}
               </Selo>
             }
+          />
+          {/*
+            Recursos vem antes de Plano porque a pergunta é anterior: o que esta
+            conta usa do produto decide o que ela consome, e não o contrário.
+          */}
+          <Cartao
+            href={`/clientes/${cliente.id}/ajustes/recursos`}
+            icone={ICONE_DA_TELA['recursos']}
+            titulo="Recursos"
+            descricao="Para que esta conta usa o AutoFluxos, e se o CRM aparece no menu. Ninguém precisa de tudo."
+            estado={<Selo tom={recursos.crmAtivo ? 'ok' : 'neutro'}>{recursos.crmAtivo ? 'com CRM' : 'sem CRM'}</Selo>}
           />
           {/*
             O selo mostra o plano e não o consumo, embora a tela mostre os dois.

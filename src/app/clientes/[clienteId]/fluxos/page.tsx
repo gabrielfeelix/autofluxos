@@ -51,7 +51,11 @@ import { listarGatilhos } from '@/server/repos/gatilhos'
 import { listarGatilhosDeEvento, listarWebhooks } from '@/server/repos/webhooks-de-entrada'
 import { listarPastas } from '@/server/repos/pastas'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
-import { contarInscricoes, listarSequencias } from '@/server/repos/sequencias'
+import {
+  contarInscricoes,
+  listarSequencias,
+  type ContagemDaSequencia,
+} from '@/server/repos/sequencias'
 import { listarTemplatesAprovados } from '@/server/repos/templates'
 import { listarQuadros } from '@/server/repos/quadros'
 import { SeloDoCanal } from '@/components/design/selo-do-canal'
@@ -65,6 +69,7 @@ import { AbaDeTemplates, NovaAutomacao } from '@/components/fluxos/templates'
 import { contatosPorCampanha, listarCampanhas } from '@/server/repos/campanhas'
 import { listarFluxos } from '@/server/repos/fluxos'
 import { contarExecucoesPorFluxo } from '@/server/repos/metricas'
+import { contagensDeAutomacao } from '@/server/repos/contagens-de-automacao'
 
 export const dynamic = 'force-dynamic'
 
@@ -95,9 +100,28 @@ type Aba = (typeof ABAS_VALIDAS)[number]
  * a tela parecer travada no clique da aba. Assim o esqueleto desenha a barra de
  * verdade, com a aba certa acesa, e só a pastilha do número fica cinza.
  */
+/**
+ * Os rótulos, e a palavra que foi trocada de propósito.
+ *
+ * **"Templates" virou "Modelos de chatbot".** A aba oferecia desenhos de
+ * automação prontos, e o produto chama de "modelo" outra coisa: o modelo de
+ * mensagem aprovado pela Meta, que vive em Transmissões e é o que atravessa a
+ * janela de 24h. Duas coisas com o mesmo nome, em dois menus, e nenhuma pista de
+ * qual é qual: quem precisava aprovar um texto na Meta vinha procurar aqui.
+ *
+ * O §4.3 da proposta é literal: "não criar uma aba 'Templates' que misture
+ * modelos de chatbot e mensagens do WhatsApp. Estas últimas aparecem como
+ * Modelos de mensagem do WhatsApp, no contexto de envio e na administração do
+ * canal".
+ *
+ * **A chave `templates` não muda**, e é a mesma decisão que manteve a rota
+ * `/leads` quando a aba virou "Contatos": `?aba=templates` está em link salvo e
+ * em endereço colado em conversa, e trocar a chave por causa de um rótulo
+ * quebraria os dois para não ganhar nada.
+ */
 const ABAS_ROTULOS = [
   { chave: 'fluxos', rotulo: 'Fluxos' },
-  { chave: 'templates', rotulo: 'Templates' },
+  { chave: 'templates', rotulo: 'Modelos de chatbot' },
   { chave: 'palavras', rotulo: 'Palavras-chave' },
   { chave: 'eventos', rotulo: 'Eventos' },
   { chave: 'campanhas', rotulo: 'Campanhas' },
@@ -154,7 +178,7 @@ function Espera({ aba }: { aba: Aba }) {
     <>
       <EsqueletoDeAbas abas={ABAS_ROTULOS} ativa={aba} />
       {aba === 'templates' ? (
-        <EsqueletoDeCartoes quantidade={6} rotulo="Carregando os templates…" />
+        <EsqueletoDeCartoes quantidade={6} rotulo="Carregando os modelos…" />
       ) : (
         <EsqueletoDeLista linhas={4} rotulo="Carregando as automações…" />
       )}
@@ -163,7 +187,28 @@ function Espera({ aba }: { aba: Aba }) {
 }
 
 async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
+  /*
+   * O carregamento é **por aba**, e a barra é por contagem (T7.1, item 5).
+   *
+   * Antes eram 14 idas ao banco em toda visita, qualquer que fosse a aba: a
+   * galeria de modelos, que é constante em `exemplos/`, pagava as 14 para
+   * desenhar zero dado de banco.
+   *
+   * **A armadilha que essa correção esconde**: as pastilhas da barra mostram a
+   * contagem de *todas* as abas, sempre. Carregar só o que a aba aberta usa e
+   * derivar a contagem de `listarX().length` faria os números sumirem das outras
+   * cinco, e aba marcada com "0" é aba que ninguém abre. Por isso a barra tem a
+   * própria consulta, barata (`head: true`, nenhuma linha na rede), e a lista
+   * inteira vem só da aba que está aberta.
+   *
+   * `precisa()` é a única fonte do que cada aba usa, e foi montada lendo os
+   * blocos `{aba === ...}` deste arquivo, não por palpite.
+   */
+  const precisa = (...abas: Aba[]) => abas.includes(aba)
+  const vazio = <T,>(valor: T) => Promise.resolve(valor)
+
   const [
+    contagens,
     fluxos,
     canais,
     execucoes,
@@ -177,27 +222,43 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
     etiquetas,
     quadros,
     templatesAprovados,
+    pastas,
   ] = await Promise.all([
-    listarFluxos(cliente.id),
-    listarCanais(cliente.id),
-    contarExecucoesPorFluxo(cliente.id),
-    listarGatilhos(cliente.id),
-    listarGatilhosDeEvento(cliente.id),
-    listarWebhooks(cliente.id),
-    listarCampanhas(cliente.id),
-    contatosPorCampanha(cliente.id),
-    listarSequencias(cliente.id),
-    contarInscricoes(cliente.id),
-    listarEtiquetas(cliente.id),
-    listarQuadros(cliente.id),
+    contagensDeAutomacao(cliente.id),
+    precisa('fluxos', 'palavras', 'eventos', 'campanhas', 'sequencias')
+      ? listarFluxos(cliente.id)
+      : vazio([] as Awaited<ReturnType<typeof listarFluxos>>),
+    precisa('fluxos') ? listarCanais(cliente.id) : vazio([] as Awaited<ReturnType<typeof listarCanais>>),
+    precisa('fluxos', 'palavras', 'eventos', 'campanhas')
+      ? contarExecucoesPorFluxo(cliente.id)
+      : vazio(new Map<string, number>()),
+    precisa('palavras') ? listarGatilhos(cliente.id) : vazio([] as Awaited<ReturnType<typeof listarGatilhos>>),
+    precisa('eventos')
+      ? listarGatilhosDeEvento(cliente.id)
+      : vazio([] as Awaited<ReturnType<typeof listarGatilhosDeEvento>>),
+    precisa('eventos') ? listarWebhooks(cliente.id) : vazio([] as Awaited<ReturnType<typeof listarWebhooks>>),
+    precisa('campanhas') ? listarCampanhas(cliente.id) : vazio([] as Awaited<ReturnType<typeof listarCampanhas>>),
+    precisa('campanhas')
+      ? contatosPorCampanha(cliente.id)
+      : vazio(new Map<string, number>()),
+    precisa('sequencias') ? listarSequencias(cliente.id) : vazio([] as Awaited<ReturnType<typeof listarSequencias>>),
+    precisa('sequencias') ? contarInscricoes(cliente.id) : vazio(new Map<string, ContagemDaSequencia>()),
+    // Duas abas usam as etiquetas: a lista de fluxos (no gatilho) e as
+    // sequências (no evento de entrada e no de saída).
+    precisa('fluxos', 'sequencias')
+      ? listarEtiquetas(cliente.id)
+      : vazio([] as Awaited<ReturnType<typeof listarEtiquetas>>),
+    precisa('sequencias') ? listarQuadros(cliente.id) : vazio([] as Awaited<ReturnType<typeof listarQuadros>>),
     /*
      * Só os aprovados (0059/0061): é o que um passo além de 24h pode usar.
      * Oferecer um pendente faria a pessoa desenhar uma sequência que só
      * entregaria se a Meta aprovasse a tempo.
      */
-    listarTemplatesAprovados(cliente.id),
+    precisa('sequencias')
+      ? listarTemplatesAprovados(cliente.id)
+      : vazio([] as Awaited<ReturnType<typeof listarTemplatesAprovados>>),
+    precisa('fluxos') ? listarPastas(cliente.id) : vazio([] as Awaited<ReturnType<typeof listarPastas>>),
   ])
-  const pastas = await listarPastas(cliente.id)
   const criarPastaComCliente = acaoCriarPasta.bind(null, cliente.id, {})
 
   /**
@@ -225,13 +286,23 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
   const criarCampanhaComCliente = acaoCriarCampanha.bind(null, cliente.id, {})
   const criarSequenciaComCliente = acaoCriarSequencia.bind(null, cliente.id, {})
 
+  /*
+   * A contagem vem de `contagens`, e **não** de `listarX().length`.
+   *
+   * É a linha que faz a barra continuar certa depois do carregamento por aba:
+   * `gatilhos` está vazio quando a aba aberta é outra, então `gatilhos.length`
+   * diria zero palavras-chave para quem tem vinte.
+   *
+   * `templates` é a exceção honesta: a galeria é constante em `exemplos/`, e
+   * contá-la no banco não faria sentido.
+   */
   const CONTAGEM: Record<Aba, number> = {
-    fluxos: fluxos.length,
+    fluxos: contagens.fluxos,
     templates: TEMPLATES.length,
-    palavras: gatilhos.length,
-    eventos: gatilhosDeEvento.length,
-    campanhas: campanhas.length,
-    sequencias: sequencias.length,
+    palavras: contagens.palavras,
+    eventos: contagens.eventos,
+    campanhas: contagens.campanhas,
+    sequencias: contagens.sequencias,
   }
   // Derivado dos rótulos, e não reescrito: a barra do esqueleto e a barra de
   // verdade precisam ter os mesmos itens na mesma ordem, senão a tela pula
@@ -553,9 +624,14 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
         {aba === 'templates' && (
         <section className="app-card overflow-hidden">
           <header className="border-b border-line px-5 py-4">
-            <h2 className="text-[14.5px] font-bold">Templates</h2>
+            <h2 className="text-[14.5px] font-bold">Modelos de chatbot</h2>
             <p className="mt-0.5 text-[12px] leading-5 text-dim">
-              Automações prontas para usar. Escolher cria uma cópia sua, como rascunho.
+              Desenhos prontos de automação. Escolher cria uma <strong>cópia sua</strong>,
+              como rascunho: editar a cópia não mexe no modelo, e o modelo mudar
+              depois não mexe na sua (RB-43).
+              <br />
+              Não confunda com os <em>modelos de mensagem do WhatsApp</em>, que
+              são textos aprovados pela Meta e ficam em Transmissões.
             </p>
           </header>
           <div className="px-5 py-4">
