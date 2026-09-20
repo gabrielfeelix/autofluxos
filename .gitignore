@@ -42,3 +42,10 @@ npm-debug.log*
 
 # Config local do Claude Code, nao pertence ao repo
 .claude/
+
+# Artefato do Playwright: relatorio, trace e screenshot de falha. O trace
+# carrega o HTML da tela, e a tela de teste tem contato e telefone de fixture.
+test-results/
+playwright-report/
+blob-report/
+.playwright/

@@ -32,5 +32,8 @@ export default defineConfig([
     'next-env.d.ts',
     // Nosso: artefato de build do tsc.
     'tsconfig.tsbuildinfo',
+    // Nosso: relatorio e trace do Playwright, que sao gerados e nao escritos.
+    'test-results/**',
+    'playwright-report/**',
   ]),
 ])
