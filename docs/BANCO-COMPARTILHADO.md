@@ -135,6 +135,58 @@ extração explícito para os objetos de `public`.
   escrever outro grant amplo em `public` reabre de novo, e o comentário da
   tabela avisa, e o revoke da `0042` precisa ser reexecutado depois;
 - aplicação em produção pela Management API do Supabase;
+- **a `0084` e a `0085` foram aplicadas em 20/set/2026**, na execução da F7, com
+  autorização explícita do dono (pedida para a `0084` e estendida por ele às
+  seguintes da F7/F8). As duas conferidas pelos **dois** testes: replay do zero em
+  Docker (`0001`–`0085` em ordem, sem erro) e ensaio em transação contra a
+  produção, os dois limpos.
+
+  A **`0084`** acrescenta `clients.objetivo` (default `atender`, com check de
+  três valores) e `clients.crm_ativo` (default **`true`**). O default `true` é a
+  decisão: o natural para recurso opcional seria `false`, e aqui esconderia no
+  deploy a tela de funil das 6 contas que usam quadros hoje. Conta nova não
+  herda, porque quem cria passa o objetivo e `nasceComCrm` grava `false` para
+  quem não escolheu "vender". O ensaio provou isso antes de aplicar: dentro da
+  transação as 6 contas caíram em `atender`/`true`, que é como elas já se
+  comportam.
+
+  A **`0085`** acrescenta `sequencia_inscricoes.cartao_id` (anulável, `on delete
+  set null`), o índice parcial `sequencia_inscricoes_cartao_idx`, e uma
+  assinatura nova de `sair_das_sequencias` com três argumentos. **A de dois
+  argumentos continua existindo e delega para a de três**, e isso não é sobra: o
+  código publicado chama a de dois, e entre a migration e o deploy as duas
+  precisam funcionar.
+
+  **O índice único não foi tocado**, e o cabeçalho da migration registra por quê:
+  trocar `(sequencia, contato)` por `(sequencia, contato, cartao)` deixaria de
+  barrar a duplicata do caso comum, porque em Postgres `unique` não considera dois
+  nulos iguais, e o efeito visível seria duas mensagens da mesma sequência no
+  mesmo dia para o mesmo número.
+
+  Releitura objeto a objeto depois de aplicar: as duas colunas de `clients` com o
+  default pretendido e as 6 contas nelas; `cartao_id` anulável com a FK; **as
+  duas assinaturas** da função com `proconfig = {search_path=""}`; o índice novo e
+  os 5 antigos intactos. Grants e `EXECUTE` só para `postgres` e `service_role`,
+  e **`anon`/`authenticated` conferidos por `has_function_privilege`** e não por
+  `information_schema`: é a lição da `0026`, em que o revoke dos dois papéis não
+  fechou a função porque o `EXECUTE` vinha de `PUBLIC`.
+
+  **As duas têm `notify pgrst`, e o reload foi conferido nos dois produtos.**
+  `clients?select=objetivo,crm_ativo` e `sequencia_inscricoes?select=cartao_id`
+  respondem **200** para `service_role` e **401** para `anon` (sem 400, então o
+  cache pegou as colunas), o `rpc/sair_das_sequencias` de 3 argumentos responde
+  **200**, e `app_verandi.conta` continua respondendo **200** pelo mesmo
+  PostgREST.
+
+  Medidos antes e depois das duas: `app_verandi.migrations_aplicadas` com as
+  mesmas **32** linhas, **42** tabelas e as **16** policies de `storage.objects`;
+  e o dado nosso intacto, **37 contatos** e **29 cartões**. A produção tinha
+  **zero inscrições** de sequência, então a `0085` não tinha dado para migrar.
+
+  **A migration entrou antes do push nas duas**, e não depois: o código da T7.1 lê
+  `objetivo`/`crm_ativo` e o da T7.3 lê `cartao_id`, então o intervalo entre `git
+  push` e o SQL seria a tela caindo, como caiu com a `0071`. A produção está,
+  hoje, com `0001`–`0085` inteiras;
 - **as `0071` a `0083` foram aplicadas em 20/set/2026**, uma por vez, pela
   Management API, com autorização explícita do dono para a execução da F5/F6.
   São treze: `0071` (finalidade e vendas), `0072` (conclusão de processo),
