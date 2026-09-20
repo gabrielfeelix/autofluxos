@@ -32,6 +32,8 @@ import { estagioDoContato, resumoDoContato } from '@/server/repos/crm'
 import { faixasDaConta } from '@/server/repos/relacionamento'
 import { FAIXAS_PADRAO, relacionamentoDe } from '@/core/relacionamento'
 import { linhaDoTempo } from '@/server/repos/eventos'
+import { atividadesDoContato } from '@/server/repos/atividades'
+import { Atividades } from '@/components/lead-crm/atividades'
 import { membrosDaConta } from '@/server/repos/usuarios'
 import { listarMotivos } from '@/server/repos/motivos-de-perda'
 import { agendadasDoContato } from '@/server/repos/mensagens-agendadas'
@@ -97,6 +99,7 @@ export default async function Pagina({
     agendadas,
     faixas,
     temAutomacao,
+    atividades,
   ] = await Promise.all([
     acharCliente(clienteId),
     acharLead(clienteId, contatoId),
@@ -116,8 +119,13 @@ export default async function Pagina({
      * botão para pausar o que não existe. Ver `clienteTemAutomacao`.
      */
     clienteTemAutomacao(clienteId),
+    // A agenda humana (0081). Entra na mesma leva pelo motivo das outras: a
+    // tela só existe inteira, e uma consulta curta não vale uma espera própria.
+    atividadesDoContato(clienteId, contatoId),
   ])
   if (!cliente || !lead) notFound()
+
+  const agoraDaFicha = agoraDoServidor()
 
   const campos = Object.entries(lead.campos)
   const nome = lead.nome ?? 'sem nome'
@@ -428,12 +436,38 @@ export default async function Pagina({
                   />
                 ),
               },
+              {
+                chave: 'atividades',
+                rotulo: 'Atividades',
+                contagem: atividades.filter((a) => a.situacao === 'aberta').length,
+                conteudo: (
+                  <Atividades
+                    clienteId={clienteId}
+                    contatoId={contatoId}
+                    atividadesIniciais={atividades}
+                    agora={agoraDaFicha}
+                  />
+                ),
+              },
             ]}
           />
         </div>
       </main>
     </ClienteShell>
   )
+}
+
+/**
+ * O relógio, lido **uma vez por render do servidor**.
+ *
+ * Fica fora do componente porque o compilador do React trata `Date.now()` em
+ * render como impureza, e tem razão. O valor é passado adiante como número,
+ * exatamente para o cliente **não** ler o relógio dele: "vencida" calculada no
+ * navegador divergiria do HTML que o servidor mandou. Mesma decisão de
+ * `quadros/page.tsx`.
+ */
+function agoraDoServidor(): number {
+  return Date.now()
 }
 
 function HistoricoEsqueleto() {

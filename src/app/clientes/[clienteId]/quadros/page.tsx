@@ -155,6 +155,17 @@ async function Conteudo({ cliente, q }: { cliente: Cliente; q?: string }) {
               diferentes, e num cabeçalho estreito espremer significa um passar
               por cima do outro. */}
           <span className="ml-auto flex flex-wrap items-center justify-end gap-2">
+            {/*
+              A agenda é da conta, e não do quadro aberto: atividade ligada só
+              ao contato existe sem CRM nenhum, e escondê-la atrás de um quadro
+              a tornaria invisível para quem usa só o Inbox.
+            */}
+            <Link
+              href={`/clientes/${cliente.id}/quadros/atividades`}
+              className="rounded-full border border-line bg-surface px-3 py-1 text-[12px] text-muted transition hover:border-strong"
+            >
+              Atividades
+            </Link>
             {aberto && (
               <EntregaDoQuadro
                 clienteId={cliente.id}
