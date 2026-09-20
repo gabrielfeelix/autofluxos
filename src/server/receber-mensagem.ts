@@ -579,7 +579,12 @@ async function desistirDaVez(canalSalvo: CanalSalvo, contato: Contato): Promise<
   const salva = await ultimaSessao(contato.id, canalSalvo.id)
   if (!salva) return
 
-  await registrarHandoff(salva.id, 'a conversa ficou presa e a mensagem não foi processada')
+  // Falha: ninguém desenhou isto. A conversa travou e a mensagem se perdeu.
+  await registrarHandoff(
+    salva.id,
+    'a conversa ficou presa e a mensagem não foi processada',
+    'falha',
+  )
   await definirStatusDaSessao(salva.id, 'humano')
   await distribuirSeSemDono(contato.clienteId, contato.id)
 }
@@ -1302,10 +1307,18 @@ async function aplicar(
     mexeuNosCampos = false
   }
 
-  /** Tira a conversa do bot e deixa registrado por quê. */
+  /**
+   * Tira a conversa do bot e deixa registrado por quê.
+   *
+   * **Sempre `falha`**, e os cinco pontos que chamam isto confirmam: entrega da
+   * mensagem que não saiu, fluxo que pediu IA sem modelo disponível, integração
+   * que não chegou a executar. Nenhum deles é o produto funcionando, e cada um
+   * é um conserto possível. A transferência que alguém desenhou é a do bloco
+   * `transferir_humano`, mais abaixo.
+   */
   const pararNoHumano = async (motivo: string) => {
     await salvarCampos()
-    await registrarHandoff(sessaoId, motivo)
+    await registrarHandoff(sessaoId, motivo, 'falha')
     await guardarSessao(sessaoId, {
       noAtual: null,
       vars: campos,
@@ -1560,7 +1573,10 @@ async function aplicar(
         break
 
       case 'transferir_humano':
-        await registrarHandoff(sessaoId, acao.motivo)
+        // Prevista: o bloco está no fluxo porque alguém o pôs ali. Um fluxo que
+        // termina em "falar com a recepção" é o produto funcionando, e contá-lo
+        // como falha faria a operação saudável parecer quebrada.
+        await registrarHandoff(sessaoId, acao.motivo, 'prevista')
         await distribuirSeSemDono(contato.clienteId, contato.id)
         // O bloco pode ter endereçado o aviso a alguém; sem isso, a equipe.
         await avisarDoHandoff(acao.motivo, acao.avisarUsuarioId)

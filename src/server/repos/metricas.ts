@@ -1,10 +1,78 @@
 import 'server-only'
+import {
+  SEM_CONVERSAS,
+  type ContagemPorDesfecho,
+  type Desfecho,
+} from '@/core/desfecho-da-conversa'
 import { db, ehIdInvalido } from '../db'
 
 export type MedidasDoMes = {
   conversas: number
   resolvidasPeloBot: number
   esperandoPessoa: number
+}
+
+/**
+ * As conversas do mês, repartidas nos quatro desfechos (T8.2).
+ *
+ * Substitui `MedidasDoMes` na tela de início. O antigo continua existindo
+ * porque a lista de automações ainda o usa, e trocar as duas coisas na mesma
+ * tarefa misturaria dois consertos.
+ *
+ * A diferença que importa: aqui as fatias **somam o total**, e `resolvidasPeloBot`
+ * deixou de significar "tudo que está encerrado" para significar "o bot resolveu
+ * sozinho, sem nunca passar por gente".
+ */
+export type DesfechosDoMes = ContagemPorDesfecho
+
+export type DesfechoMensal = {
+  atual: DesfechosDoMes
+  anterior: DesfechosDoMes
+}
+
+type LinhaDeDesfecho = {
+  mes: string
+  desfecho: string
+  total: number | string
+}
+
+/**
+ * Quantas conversas terminaram de cada jeito, neste mês e no passado.
+ *
+ * Lê `metricas_de_desfecho` (0086), que já faz a classificação no Postgres. A
+ * regra está escrita nos dois lugares de propósito: no core para a tela poder
+ * decidir sem ir ao banco, e na view para quem consultar o banco direto ver a
+ * mesma coisa. `core/desfecho-da-conversa.ts` é a explicação de ambas.
+ */
+export async function medirDesfechos(
+  clienteId: string,
+  agora = new Date(),
+): Promise<DesfechoMensal> {
+  const mesAtual = chaveDoMes(agora)
+  const mesAnterior = chaveDoMesAnterior(mesAtual)
+
+  const { data, error } = await db()
+    .from('metricas_de_desfecho')
+    .select('mes, desfecho, total')
+    .eq('client_id', clienteId)
+    .in('mes', [mesAtual, mesAnterior])
+
+  const vazio = (): DesfechoMensal => ({ atual: { ...SEM_CONVERSAS }, anterior: { ...SEM_CONVERSAS } })
+  if (ehIdInvalido(error)) return vazio()
+  if (error) throw new Error(`não deu para medir os desfechos: ${error.message}`)
+
+  const resultado = vazio()
+  for (const linha of (data ?? []) as LinhaDeDesfecho[]) {
+    const alvo = linha.mes === mesAtual ? resultado.atual : resultado.anterior
+    // A view só devolve os quatro do `case`, mas um desfecho novo que apareça
+    // ali não pode derrubar a tela nem ser somado na fatia errada em silêncio.
+    if (ehDesfecho(linha.desfecho)) alvo[linha.desfecho] += Number(linha.total)
+  }
+  return resultado
+}
+
+function ehDesfecho(valor: string): valor is Desfecho {
+  return valor === 'bot' || valor === 'prevista' || valor === 'falha' || valor === 'aberta'
 }
 
 export type FunilMensal = {

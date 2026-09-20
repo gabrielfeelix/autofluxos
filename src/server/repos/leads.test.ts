@@ -81,7 +81,7 @@ describe.skipIf(!temCredencial)('leads contra o Supabase', () => {
     })
     const saida = await registrarSaida({ contatoId: contato.id, sessaoId: sessao.id, texto: 'Oi! Como ajudo?' })
     await confirmarEntrega(saida)
-    await registrarHandoff(sessao.id, 'a pessoa pediu para falar com alguém')
+    await registrarHandoff(sessao.id, 'a pessoa pediu para falar com alguém', 'prevista')
 
     const [lead] = await listarLeads(cliente.id)
     if (!lead) throw new Error('deveria ter um lead')
@@ -104,7 +104,7 @@ describe.skipIf(!temCredencial)('leads contra o Supabase', () => {
 
     const contato = await acharOuCriarContato(cliente.id, `${marca}-5544000002`, null)
     const sessao = await criarSessao(contato.id, canal.id, versaoId, sessaoNova())
-    await registrarHandoff(sessao.id, 'atendida')
+    await registrarHandoff(sessao.id, 'atendida', 'prevista')
 
     const antes = await acharLead(cliente.id, contato.id)
     expect(antes?.aguardando).not.toBeNull()
@@ -149,7 +149,7 @@ describe.skipIf(!temCredencial)('leads contra o Supabase', () => {
         payload: { type: 'text' },
       })
     }
-    await registrarHandoff(sessaoDoHumano.id, 'quis falar com alguém')
+    await registrarHandoff(sessaoDoHumano.id, 'quis falar com alguém', 'prevista')
     await db()
       .from('handoffs')
       .update({ resolvido_em: new Date().toISOString() })
@@ -345,7 +345,7 @@ describe.skipIf(!temCredencial)('leads contra o Supabase', () => {
     const contato = await acharOuCriarContato(cliente.id, `${marca}-5544666001`, 'Esperando')
     await acharOuCriarContato(cliente.id, `${marca}-5544666002`, 'Tranquilo')
     const sessao = await criarSessao(contato.id, canal.id, versaoId, sessaoNova())
-    await registrarHandoff(sessao.id, 'quer falar com alguém')
+    await registrarHandoff(sessao.id, 'quer falar com alguém', 'prevista')
 
     expect(await contarLeads(cliente.id)).toBe(2)
     expect(await contarEsperandoPessoa(cliente.id)).toBe(1)

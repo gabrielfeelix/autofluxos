@@ -14,7 +14,13 @@ import { acharCliente } from '@/server/repos/clientes'
 import { listarCanais } from '@/server/repos/conversas'
 import { listarFluxos } from '@/server/repos/fluxos'
 import { contarLeads } from '@/server/repos/leads'
-import { medirFunil, medirPessoas, medirTempos } from '@/server/repos/metricas'
+import {
+  taxaDeAutomacao,
+  taxaDeFalha,
+  terminadas,
+  total,
+} from '@/core/desfecho-da-conversa'
+import { medirDesfechos, medirPessoas, medirTempos } from '@/server/repos/metricas'
 import { comentariosDaConta, notasDaConta } from '@/server/repos/avaliacoes'
 import { comoVai, resumirNps } from '@/core/nps'
 import { fechamentos, filaDoPainel, type ItemDaFila } from '@/server/repos/painel'
@@ -536,21 +542,42 @@ function LinhaDaFila({ item, clienteId }: { item: ItemDaFila; clienteId: string 
  * O mês em frases, e não em cartões de número.
  *
  * Quatro números do mesmo tamanho dizem que nenhum importa mais que os outros, o
- * que é sempre mentira — e é o formato que o dono reconheceu como "cara de IA".
+ * que é sempre mentira, e é o formato que o dono reconheceu como "cara de IA".
  * Aqui cada número mora dentro da frase que o explica, e nenhum percentual
  * aparece sem a base e sem o mês passado ao lado: "26%" sozinho pode ser ótimo
  * ou péssimo.
+ *
+ * ---------------------------------------------------------------------------
+ * O que a T8.2 consertou, e são três coisas na mesma frase
+ * ---------------------------------------------------------------------------
+ *
+ * A frase era "N conversas, e o bot resolveu X% delas", com X saindo de
+ * `encerrada / conversas`. Os três defeitos, e o que cada um fazia:
+ *
+ * 1. **toda transferência contava igual.** O fluxo que termina em "falar com a
+ *    recepção" porque foi desenhado assim entrava no mesmo balde da conversa que
+ *    caiu em alguém porque a integração estava fora. A clínica com 50% de
+ *    transferências previstas lia "o bot só resolve 40%" e concluía que a
+ *    automação era ruim, quando ela estava fazendo exatamente o combinado, e as
+ *    5 falhas de verdade ficavam escondidas no meio;
+ * 2. **`atendida_por_pessoa` não entrava em fatia nenhuma**, só no total. As
+ *    partes não fechavam com o todo;
+ * 3. **o denominador incluía conversa em andamento.** A taxa caía todo começo de
+ *    mês sozinha, sem ninguém mexer em nada.
+ *
+ * Agora são duas frases, porque são duas perguntas diferentes: uma sobre a
+ * automação, que o dono lê, e uma sobre o que quebrou, que gera conserto.
  */
 async function Numeros({ clienteId }: { clienteId: string }) {
-  const [funil, tempos] = await Promise.all([medirFunil(clienteId), medirTempos(clienteId)])
-  if (funil.atual.conversas === 0 && funil.anterior.conversas === 0) return null
+  const [desfechos, tempos] = await Promise.all([medirDesfechos(clienteId), medirTempos(clienteId)])
+  const atual = desfechos.atual
+  const anterior = desfechos.anterior
+  if (total(atual) === 0 && total(anterior) === 0) return null
 
-  const contencao = funil.atual.conversas
-    ? Math.round((funil.atual.resolvidasPeloBot / funil.atual.conversas) * 100)
-    : 0
-  const contencaoAnterior = funil.anterior.conversas
-    ? Math.round((funil.anterior.resolvidasPeloBot / funil.anterior.conversas) * 100)
-    : null
+  const automacao = taxaDeAutomacao(atual)
+  const automacaoAnterior = taxaDeAutomacao(anterior)
+  const falha = taxaDeFalha(atual)
+  const fechadas = terminadas(atual)
 
   return (
     <section className="app-card px-5 py-4" aria-labelledby="titulo-mes">
@@ -558,33 +585,99 @@ async function Numeros({ clienteId }: { clienteId: string }) {
         Este mês
       </h2>
 
-      <p className="mt-2 text-[13px] leading-[1.7] text-soft">
-        <strong className="text-[17px] font-bold tracking-[-0.02em] text-ink">
-          {funil.atual.conversas}
-        </strong>{' '}
-        {funil.atual.conversas === 1 ? 'conversa' : 'conversas'}, e o bot resolveu{' '}
-        <strong className="font-bold text-ink">{contencao}%</strong> delas
-        {contencaoAnterior === null
-          ? ' (não há mês anterior para comparar)'
-          : ` — no mês passado foram ${contencaoAnterior}% de ${funil.anterior.conversas}`}
-        .
+      {/*
+        A origem e o período ficam escritos, e não subentendidos (item 2 do
+        plano). "Este mês" sozinho não diz se o mês é o corrente ou os últimos
+        trinta dias, e a diferença muda o número.
+      */}
+      <p className="mt-1 text-[11px] text-dim">
+        Conversas iniciadas no mês corrente, pelo fuso de São Paulo.
       </p>
+
+      <p className="mt-2 text-[13px] leading-[1.7] text-soft">
+        <strong className="text-[17px] font-bold tracking-[-0.02em] text-ink">{total(atual)}</strong>{' '}
+        {total(atual) === 1 ? 'conversa' : 'conversas'}
+        {automacao === null ? (
+          // Nenhuma terminou ainda. Escrever "0%" aqui seria dizer que o bot
+          // falhou em todas, quando o que houve foi o mês ter acabado de
+          // começar (RB-06).
+          <>, e nenhuma terminou ainda para medir a automação.</>
+        ) : (
+          <>
+            , e a automação resolveu sozinha{' '}
+            <strong className="font-bold text-ink">{automacao}%</strong> das{' '}
+            {fechadas} que terminaram
+            {automacaoAnterior === null
+              ? ' (não há mês anterior para comparar)'
+              : `: no mês passado foram ${automacaoAnterior}% de ${terminadas(anterior)}`}
+            .
+          </>
+        )}
+      </p>
+
+      {/*
+        As quatro fatias, escritas. Elas somam o número grande de propósito:
+        painel cujas partes não fecham com o todo é painel que ninguém consegue
+        conferir, e a primeira vez que alguém tenta somar e não bate, a tela
+        inteira perde a credibilidade.
+      */}
+      {total(atual) > 0 && (
+        <ul className="mt-2.5 flex flex-col gap-1 text-[12px] text-soft">
+          <FatiaDoMes rotulo="Resolvidas pela automação" quantas={atual.bot} de={total(atual)} />
+          <FatiaDoMes
+            rotulo="Transferidas como o fluxo previa"
+            quantas={atual.prevista}
+            de={total(atual)}
+            dica="O bloco de transferir estava no fluxo: é o desenho funcionando, e não uma falha."
+          />
+          <FatiaDoMes
+            rotulo="Transferidas por falha"
+            quantas={atual.falha}
+            de={total(atual)}
+            atencao={atual.falha > 0}
+            dica="O bot não conseguiu seguir: entrega que não saiu, IA sem modelo, integração fora do ar. Cada uma é um conserto possível."
+          />
+          {atual.aberta > 0 && (
+            <FatiaDoMes
+              rotulo="Ainda acontecendo"
+              quantas={atual.aberta}
+              de={total(atual)}
+              dica="Fora da conta da automação: elas ainda podem terminar de qualquer jeito."
+            />
+          )}
+        </ul>
+      )}
+
+      {falha !== null && falha > 0 && (
+        <p className="mt-2 text-[12px] leading-[1.7] text-aviso">
+          {atual.falha} {atual.falha === 1 ? 'conversa caiu' : 'conversas caíram'} no colo de alguém
+          por falha ({falha}% das que terminaram). Isso é defeito, e não desenho.
+        </p>
+      )}
 
       {tempos.atual.entraramNaFila > 0 && (
         <p className="mt-2 text-[13px] leading-[1.7] text-soft">
-          Quem precisou de uma pessoa esperou{' '}
+          {/*
+            **A espera é medida do pedido humano em diante**, e não do começo da
+            conversa. `metricas_de_tempo` marca o relógio no handoff, que é quando
+            alguém passou a dever resposta: contar a conversa inteira com o bot
+            como espera do funcionário produz um número que nenhuma equipe
+            reconhece, e que piora quanto melhor o bot for.
+          */}
+          Quem pediu uma pessoa esperou{' '}
           <strong className="font-bold text-ink">
             {comoDuracao(tempos.atual.medianaAteResponder)}
           </strong>{' '}
-          pela primeira resposta na mediana, {comoDuracao(tempos.atual.mediaAteResponder)} na média —{' '}
-          {tempos.atual.responderam} de {tempos.atual.entraramNaFila} respondidas.
+          pela primeira resposta na mediana, {comoDuracao(tempos.atual.mediaAteResponder)} na média,
+          contando a partir do pedido: {tempos.atual.responderam} de {tempos.atual.entraramNaFila}{' '}
+          respondidas.
         </p>
       )}
 
       {tempos.atual.responderam < tempos.atual.entraramNaFila && (
         <p className="mt-2 text-[12px] text-aviso">
           {tempos.atual.entraramNaFila - tempos.atual.responderam} conversa(s) entraram na fila e
-          ninguém respondeu ainda — elas não entram na conta acima.
+          ninguém respondeu ainda: elas não entram na conta acima.
         </p>
       )}
     </section>
@@ -592,11 +685,39 @@ async function Numeros({ clienteId }: { clienteId: string }) {
 }
 
 /**
- * O que fechou nos últimos trinta dias.
+ * Uma linha do quebra-cabeça do mês.
  *
- * Some inteiro quando não há quadro ou quando nada fechou: um bloco de vendas
- * zerado numa conta que ainda não usa funil cobra por algo que ninguém prometeu.
+ * O percentual e a contagem juntos, sempre: "5%" sozinho não diz se são 5 de 100
+ * ou 1 de 20, e as duas situações pedem reações diferentes.
  */
+function FatiaDoMes({
+  rotulo,
+  quantas,
+  de,
+  dica,
+  atencao = false,
+}: {
+  rotulo: string
+  quantas: number
+  de: number
+  dica?: string
+  atencao?: boolean
+}) {
+  return (
+    <li className="flex items-baseline gap-2">
+      <strong className={`font-bold tabular-nums ${atencao && quantas > 0 ? 'text-aviso' : 'text-ink'}`}>
+        {quantas}
+      </strong>
+      <span className={atencao && quantas > 0 ? 'text-aviso' : 'text-soft'} title={dica}>
+        {rotulo}
+      </span>
+      <span className="ml-auto shrink-0 text-[11px] text-dim tabular-nums">
+        {de === 0 ? '—' : `${Math.round((quantas / de) * 100)}%`}
+      </span>
+    </li>
+  )
+}
+
 /**
  * O que a pesquisa de satisfação colheu (0060).
  *

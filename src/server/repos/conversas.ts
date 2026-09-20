@@ -1,4 +1,5 @@
 import 'server-only'
+import type { OrigemDoHandoff } from '@/core/desfecho-da-conversa'
 import type { AutorDaSaida } from '@/core/autor-da-mensagem'
 import { sessaoSchema, type Sessao } from '@/core/engine/types'
 import type { PapelDoNumero } from '@/core/papeis-do-numero'
@@ -622,8 +623,27 @@ export async function guardarCampo(
   if (error) throw new Error(`não deu para guardar o campo: ${error.message}`)
 }
 
-export async function registrarHandoff(sessaoId: string, motivo: string): Promise<void> {
-  const { error } = await db().from('handoffs').insert({ session_id: sessaoId, motivo })
+/**
+ * O bot parou e chamou gente. Fica registrado **por quê e de quem foi a
+ * decisão**.
+ *
+ * `origem` é obrigatória de propósito (T8.2, 0086). Um default aqui seria
+ * confortável e escondia o problema: quem acrescentasse um quarto ponto de
+ * handoff herdaria a classificação de outro caso sem nunca ter pensado nela, e
+ * o painel passaria a contar errado sem ninguém tocar no painel.
+ *
+ * A diferença entre as duas está em `core/desfecho-da-conversa.ts`, e em uma
+ * linha: `prevista` é o bloco do fluxo mandando transferir, e `falha` é o bot
+ * não tendo conseguido seguir.
+ */
+export async function registrarHandoff(
+  sessaoId: string,
+  motivo: string,
+  origem: OrigemDoHandoff,
+): Promise<void> {
+  const { error } = await db()
+    .from('handoffs')
+    .insert({ session_id: sessaoId, motivo, origem })
   if (error) throw new Error(`não deu para registrar o handoff: ${error.message}`)
 }
 

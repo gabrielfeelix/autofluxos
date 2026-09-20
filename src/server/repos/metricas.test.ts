@@ -4,7 +4,7 @@ import { db } from '../db'
 import { criarCliente } from './clientes'
 import { acharOuCriarContato, criarCanal } from './conversas'
 import { criarFluxo, publicar } from './fluxos'
-import { contarExecucoesPorFluxo, medirFunil } from './metricas'
+import { contarExecucoesPorFluxo, medirDesfechos, medirFunil } from './metricas'
 
 const temCredencial = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SECRET_KEY)
 const marca = `zz-metricas-${Math.random().toString(36).slice(2, 8)}`
@@ -74,11 +74,32 @@ beforeAll(async () => {
   const encerradaPorHumano = data.find((linha) => linha.criado_em.startsWith('2026-08-07'))
   if (!encerradaPorHumano) throw new Error('faltou a sessão atendida por uma pessoa')
 
-  const { error: erroDoHandoff } = await db().from('handoffs').insert({
-    session_id: encerradaPorHumano.id,
-    motivo: 'uma pessoa assumiu e já encerrou o atendimento',
-    resolvido_em: '2026-08-07T13:00:00Z',
-  })
+  // A que ainda espera uma pessoa, em agosto: ela é a transferência POR FALHA
+  // do fixture, e é o par que prova a separação da T8.2.
+  const esperandoPessoa = data.find((linha) => linha.criado_em.startsWith('2026-08-04'))
+  if (!esperandoPessoa) throw new Error('faltou a sessão que espera uma pessoa')
+
+  // A de julho fica **sem origem**, de propósito: é o handoff anterior à 0086, e
+  // quem lê tem que tratá-lo como falha em vez de estourar ou sumir.
+  const antigaSemOrigem = data.find((linha) => linha.criado_em.startsWith('2026-07-03'))
+  if (!antigaSemOrigem) throw new Error('faltou a sessão antiga em humano')
+
+  const { error: erroDoHandoff } = await db()
+    .from('handoffs')
+    .insert([
+      {
+        session_id: encerradaPorHumano.id,
+        motivo: 'uma pessoa assumiu e já encerrou o atendimento',
+        origem: 'prevista',
+        resolvido_em: '2026-08-07T13:00:00Z',
+      },
+      {
+        session_id: esperandoPessoa.id,
+        motivo: 'a integração não chegou a ser executada',
+        origem: 'falha',
+      },
+      { session_id: antigaSemOrigem.id, motivo: 'gravado antes da 0086' },
+    ])
   if (erroDoHandoff) throw new Error(`não deu para montar o handoff: ${erroDoHandoff.message}`)
 })
 
@@ -93,6 +114,42 @@ describe.skipIf(!temCredencial)('métricas contra o Supabase', () => {
       atual: { conversas: 6, resolvidasPeloBot: 2, esperandoPessoa: 1 },
       anterior: { conversas: 2, resolvidasPeloBot: 1, esperandoPessoa: 1 },
     })
+  })
+
+  /**
+   * A T8.2 contra o banco: as quatro fatias, e que elas fecham com o total.
+   *
+   * O fixture de agosto tem 6 conversas, e cada uma existe por um motivo:
+   * 2 encerradas sem handoff (o bot sozinho), 1 encerrada depois que alguém
+   * assumiu com handoff **previsto**, 1 esperando pessoa por **falha**, e 2
+   * ainda acontecendo. Uma das duas em andamento é a de `2026-09-01T01:00:00Z`,
+   * que em São Paulo é 31/ago às 22h: o fuso decide o mês, e é por isso que o
+   * fixture original a pôs ali.
+   *
+   * A conta antiga lia isso como "o bot resolveu 2 de 6", 33%. Agora são 2 de 4
+   * terminadas, 50%, e as duas transferências aparecem separadas: uma é o
+   * desenho funcionando e a outra é conserto.
+   */
+  it('separa transferência prevista de transferência por falha', async () => {
+    const desfechos = await medirDesfechos(clienteId, new Date('2026-08-31T23:30:00-03:00'))
+
+    expect(desfechos.atual).toEqual({ bot: 2, prevista: 1, falha: 1, aberta: 2 })
+    // As fatias somam o total: é a propriedade que faz o painel ser conferível.
+    const a = desfechos.atual
+    expect(a.bot + a.prevista + a.falha + a.aberta).toBe(6)
+  })
+
+  it('handoff sem origem, anterior à 0086, conta como falha', async () => {
+    // Julho tem 1 encerrada e 1 em humano com handoff sem `origem`. Chamá-la de
+    // prevista inflaria "está tudo funcionando" com o que pode ter sido defeito.
+    const desfechos = await medirDesfechos(clienteId, new Date('2026-08-31T23:30:00-03:00'))
+    expect(desfechos.anterior).toEqual({ bot: 1, prevista: 0, falha: 1, aberta: 0 })
+  })
+
+  it('não mistura clientes', async () => {
+    const desfechos = await medirDesfechos(outroClienteId, new Date('2026-08-31T23:30:00-03:00'))
+    // O cliente alheio tem uma encerrada em agosto, e só ela.
+    expect(desfechos.atual).toEqual({ bot: 1, prevista: 0, falha: 0, aberta: 0 })
   })
 
   it('conta todas as execuções de cada fluxo sem misturar clientes', async () => {
