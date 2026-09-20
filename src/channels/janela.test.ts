@@ -157,3 +157,89 @@ describe('o prazo de reagir, que é outro', () => {
     expect(podeReagir('nao-e-data', agora)).toBe(false)
   })
 })
+
+// ---------------------------------------------------------------------------
+// O que a regra da Meta diz, e o que este arquivo ainda não faz
+// ---------------------------------------------------------------------------
+
+/**
+ * A divergência das fontes, resolvida na documentação oficial (19/set/2026).
+ *
+ * A análise de 19/set registrou que Salesforce e 360dialog não convergiam sobre
+ * texto livre dentro das 72h, e que a documentação técnica da Meta havia
+ * respondido 429. Ela foi consultada por outro caminho e responde sem margem,
+ * na página de preços vigente:
+ *
+ *   "the customer service window is **independent of the FEP window**, so if
+ *    the customer service window closes, you will only be able to send
+ *    template messages."
+ *
+ * E, na página de preços por conversa, com exemplo numérico:
+ *
+ *   "You can send template messages at no charge in those 72 hours. You can
+ *    send non-template messages until 10am the next day, at which point the
+ *    customer service window closes, as it is independent of the free entry
+ *    point conversation."
+ *
+ * Quer dizer: **as 72h são sobre dinheiro, não sobre permissão de texto livre.**
+ * Quem manda no texto livre é sempre a janela de 24h, contada da última
+ * mensagem da pessoa. A Salesforce estava certa.
+ *
+ * Duas consequências para este módulo, ambas da F3 (T3.3):
+ *
+ * 1. `restaDaJanela` devolve hoje o **maior** dos dois prazos, então um contato
+ *    que chegou por anúncio e nunca escreveu aparece com janela aberta por 72h.
+ *    Ele abre o compositor de texto livre para uma mensagem que a Meta recusa
+ *    com `(#131047) Re-engagement message`.
+ * 2. A própria janela gratuita só existe se a empresa **responder em até 24h**
+ *    do clique. Sem resposta, ela nunca abre — e o código de hoje não sabe
+ *    disso, porque não guarda se houve resposta.
+ *
+ * Os testes abaixo registram o comportamento atual, errado, com o resultado
+ * correto anotado ao lado. Quando a T3.3 separar permissão de cobrança, eles
+ * viram a prova da correção.
+ */
+describe('as 72h do anúncio não autorizam texto livre', () => {
+  const chegouPorAnuncio = (ms: number) => ({
+    ultimaEntradaEm: null,
+    portaDeEntradaEm: atras(ms),
+  })
+
+  /**
+   * O caso central. A pessoa clicou no anúncio e **nunca escreveu**: não existe
+   * janela de atendimento, logo não cabe texto livre. Hoje o código diz que sim.
+   */
+  it('hoje abre a janela para quem só clicou no anúncio (e não deveria)', () => {
+    const doisDias = 2 * 24 * 60 * 60 * 1000
+
+    // O que acontece hoje:
+    expect(dentroDaJanela(chegouPorAnuncio(doisDias), AGORA)).toBe(true)
+
+    // O que a Meta autoriza: só modelo aprovado, porque a janela de 24h nunca
+    // chegou a existir. Vira `toBe(false)` quando a T3.3 separar as regras.
+  })
+
+  /**
+   * A parte que já está certa e precisa continuar: a pergunta do dinheiro é
+   * separada, e `dentroDaPortaDeEntrada` a responde sozinha.
+   */
+  it('a janela gratuita é uma pergunta sobre cobrança, e essa parte já separa', () => {
+    const umDia = 24 * 60 * 60 * 1000
+    expect(dentroDaPortaDeEntrada(chegouPorAnuncio(umDia), AGORA)).toBe(true)
+    expect(dentroDaPortaDeEntrada(chegouPorAnuncio(JANELA_DA_PORTA_MS + 1), AGORA)).toBe(false)
+  })
+
+  /**
+   * O que a correção precisa preservar: quem clicou no anúncio **e escreveu**
+   * tem a janela de 24h por direito próprio, contada da mensagem dela.
+   */
+  it('quem clicou e escreveu tem a janela de 24h pela mensagem, não pelo anúncio', () => {
+    const janela = {
+      ultimaEntradaEm: atras(60_000),
+      portaDeEntradaEm: atras(2 * 24 * 60 * 60 * 1000),
+    }
+    expect(dentroDaJanela(janela, AGORA)).toBe(true)
+    // E continua gratuita, porque as 72h ainda correm.
+    expect(dentroDaPortaDeEntrada(janela, AGORA)).toBe(true)
+  })
+})

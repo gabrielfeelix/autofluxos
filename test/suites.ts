@@ -37,6 +37,7 @@ export const TESTES_DE_INTEGRACAO = [
   'src/server/repos/metricas.test.ts',
   'src/server/repos/paginas-de-lead.test.ts',
   'src/server/repos/painel.test.ts',
+  'src/server/repos/porta-de-entrada.test.ts',
   'src/server/repos/pulso.test.ts',
   'src/server/repos/quadros.test.ts',
   'src/server/repos/relacionamento.test.ts',
