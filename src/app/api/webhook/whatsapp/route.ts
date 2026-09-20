@@ -65,22 +65,28 @@ export async function POST(req: Request) {
   }
 
   /*
-   * **Diário de bordo (13/set/2026). Temporário, mas volta enquanto doer.**
+   * **O diário de bordo saiu em 22/set/2026, e o caso dele está fechado.**
    *
-   * Nada chega no Inbox de um cliente coexistente, e sem registrar a entrada
-   * não há como separar "a Meta não chamou" de "chegou e foi descartado no
-   * meio". Essa diferença já custou horas hoje, e uma vez o culpado era nosso
-   * (`tratarEcos` lia `messages` onde a Meta manda `message_echoes`), com 200
-   * na resposta e zero alerta.
+   * Entre 13 e 22/set esta linha gravava um alerta em **toda** chamada do
+   * webhook, para separar "a Meta não chamou" de "chegou e foi descartado no
+   * meio" quando nada aparecia no Inbox de um cliente coexistente. Ele achou o
+   * culpado, que era nosso: `tratarEcos` lia `valor.messages` onde a Meta manda
+   * `message_echoes`, com 200 na resposta e zero alerta. Corrigido no `0f18eca`,
+   * e `receber-coexistencia.ts` hoje lê o campo certo.
    *
-   * Sai quando o caso fechar: alerta por chamada é barulho, e barulho em
-   * alerta faz parar de ler alerta.
+   * **O custo de deixá-lo ligado, medido antes de tirar:** 2.401 dos 3.087
+   * alertas da tabela, 78% do volume, e 2.973 dos últimos 7 dias. A tela
+   * `/admin/alertas` existe para mostrar o que quebrou, e as 177 recusas da
+   * Cloud API e os 88 contatos que não entraram no quadro padrão estavam
+   * enterrados no meio de bilhete de "passou por aqui". O aviso estava escrito
+   * no próprio comentário que saiu daqui: alerta por chamada é barulho, e
+   * barulho em alerta faz parar de ler alerta.
+   *
+   * **O que continua avisando**, e por isso remover é seguro: o `catch` do
+   * `after()` logo abaixo alerta quando o processamento falha de verdade, que é
+   * a pergunta que importa. Quem precisar do diário de novo: é esta linha de
+   * volta, por pouco tempo, e com a data de saída combinada antes de ligar.
    */
-  await alertar(
-    'webhook do WhatsApp recebido (diagnóstico)',
-    new Error(corpo.slice(0, 900)),
-    {},
-  ).catch(() => {})
 
   let payload: unknown
   try {

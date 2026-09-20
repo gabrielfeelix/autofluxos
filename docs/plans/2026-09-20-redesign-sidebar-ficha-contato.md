@@ -13,7 +13,7 @@ Pedido do usuário: primeiro escrever este plano, depois implementar a sidebar, 
 - [x] Inspecionar componentes, ações e estado dos dois repositórios.
 - [x] Registrar plano durável antes de escrever código.
 - [x] Etapa 1: sidebar implementada e validada.
-- [ ] Etapa 1: commit e push concluídos; registrar hash abaixo.
+- [x] Etapa 1: commit e push concluídos: `1e7504e`, publicado em `origin/main`.
 - [ ] Etapa 2: ficha completa implementada e validada.
 - [ ] Etapa 2: commit/push e registro final.
 
@@ -256,3 +256,6 @@ Página central com largura máxima aproximada de **1280px**, margem horizontal 
 ### Evidências a registrar antes de cada marco
 
 Capturas desktop claro, mobile e escuro; testes de abrir/fechar, salvar/cancelar/erro, navegação por teclado e menus dentro do diálogo. Registrar diferenças justificadas entre este contrato e o resultado se a inspeção do código exigir adaptar algum item. Não tratar o desenho ASCII como uma autorização para inventar dados ou capacidades inexistentes.
+
+
+Marco 1 publicado: `1e7504e`, push confirmado (`a5329ba..1e7504e main -> main`). Início da etapa 2 após essa confirmação.
