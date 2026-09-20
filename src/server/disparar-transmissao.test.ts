@@ -20,6 +20,25 @@ vi.mock('./repos/conversas', () => ({ listarCanais: vi.fn().mockResolvedValue([]
 vi.mock('./adaptador-do-canal', () => ({ adaptadorDoCanal: vi.fn() }))
 vi.mock('./alertar', () => ({ alertar: vi.fn().mockResolvedValue(undefined) }))
 
+/*
+ * A revalidação do envio (RB-39) fala com o banco, e esta suíte é unitária de
+ * propósito. O padrão é o das outras: o comportamento dela tem teste próprio,
+ * contra o Postgres, em `repos/segmentos.test.ts`.
+ *
+ * `null` = "pode enviar", que é o caminho que estes testes exercitam. O caso
+ * da recusa está no teste de integração, onde a janela é de verdade.
+ */
+const revalidarNoEnvio = vi.fn().mockResolvedValue(null)
+vi.mock('./servicos/elegibilidade', () => ({
+  revalidarNoEnvio: (...a: unknown[]) => revalidarNoEnvio(...a),
+}))
+
+// O `update` do motivo da exclusão só roda quando há recusa. Encadeado para o
+// caminho feliz não precisar de banco.
+vi.mock('./db', () => ({
+  db: () => ({ from: () => ({ update: () => ({ eq: async () => ({ error: null }) }) }) }),
+}))
+
 const { dispararTransmissao, valoresPara } = await import('./disparar-transmissao')
 
 const TRANSMISSAO = {
@@ -84,6 +103,9 @@ const semEspera = { esperar: async () => {} }
 
 beforeEach(() => {
   vi.clearAllMocks()
+  // `clearAllMocks` zera o retorno padrão; sem isto a revalidação devolveria
+  // `undefined` e nada sairia.
+  revalidarNoEnvio.mockResolvedValue(null)
   lerTransmissao.mockResolvedValue(TRANSMISSAO)
   lerTemplate.mockResolvedValue(TEMPLATE)
   proximosDaFila.mockResolvedValue(destinatarios(2))
@@ -210,6 +232,28 @@ describe('o disparo', () => {
       codigoErro: 131026,
       erro: 'Este número não recebe: ou não tem WhatsApp, ou bloqueou a empresa.',
     })
+  })
+
+  it('a revalidação do envio recusa, e a mensagem não sai (RB-39)', async () => {
+    // Estar na lista não é autorização: entre confirmar o lote e a mensagem
+    // sair cabem horas, e o contato pode ter deixado de ser elegível.
+    revalidarNoEnvio.mockResolvedValueOnce('sem número de WhatsApp')
+    const canal = aceita()
+
+    const r = await dispararTransmissao('t1', { canal, ...semEspera })
+
+    // O primeiro não recebeu nada, e o motivo ficou escrito.
+    expect(marcarDestinatario).toHaveBeenCalledWith('d0', {
+      estado: 'falhou',
+      erro: 'sem número de WhatsApp',
+    })
+    expect(r.falhas).toBeGreaterThan(0)
+
+    // E o canal foi chamado só para os outros: a recusa acontece ANTES do
+    // envio, não depois.
+    const enviar = canal.enviarTemplate as unknown as ReturnType<typeof vi.fn>
+    const numeros = enviar.mock.calls.map((c: unknown[]) => c[0])
+    expect(numeros).not.toContain('554490')
   })
 
   it('conclui quando a fila esvazia', async () => {

@@ -251,6 +251,13 @@ async function Tabela({
           </span>
         )}
         <Link
+          href={`/clientes/${clienteId}/leads/segmentos`}
+          className="app-secondary-button px-3 py-1.5 text-[11.5px]"
+          title="Regras salvas de quem entra num grupo, com prévia de quem pode receber"
+        >
+          Segmentos
+        </Link>
+        <Link
           href={`/clientes/${clienteId}/leads/importar`}
           className="app-secondary-button px-3 py-1.5 text-[11.5px]"
           title="Casar a planilha do cliente com quem já conversou, e corrigir os nomes"

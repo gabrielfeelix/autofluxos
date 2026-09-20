@@ -401,3 +401,31 @@ export function condicoesDoNivel(
       return [{ campo: 'valor_conhecido', operador: 'nao_informado' }]
   }
 }
+
+// ---------------------------------------------------------------------------
+// Os motivos de exclusão do envio (RB-39)
+// ---------------------------------------------------------------------------
+
+/**
+ * Por que alguém que **está** no segmento não vai receber.
+ *
+ * Mora em `core/` porque as duas pontas precisam dele: o serviço que decide
+ * (`server/servicos/elegibilidade.ts`) e a prévia que explica, que é
+ * componente de cliente. Deixá-lo no serviço obrigaria a tela a importar de um
+ * módulo `server-only` — hoje o build aceita, porque só o tipo e a constante
+ * atravessam, e é exatamente o tipo de dependência que quebra sem aviso na
+ * primeira vez que alguém acrescentar uma linha com banco ali dentro.
+ */
+export const MOTIVOS_DA_EXCLUSAO = [
+  'sem_telefone',
+  'janela_fechada_sem_modelo',
+  'nunca_escreveu',
+] as const
+
+export type MotivoDaExclusao = (typeof MOTIVOS_DA_EXCLUSAO)[number]
+
+export const FRASE_DO_MOTIVO: Record<MotivoDaExclusao, string> = {
+  sem_telefone: 'sem número de WhatsApp',
+  janela_fechada_sem_modelo: 'fora da janela de 24h, e o envio é de texto livre',
+  nunca_escreveu: 'nunca escreveu para este número',
+}

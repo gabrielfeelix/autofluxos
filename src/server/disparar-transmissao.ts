@@ -9,6 +9,8 @@ import {
 import { condutaPara, explicarErro, podeEnviar, variaveisDe } from '@/core/templates'
 import { adaptadorDoCanal } from './adaptador-do-canal'
 import { alertar } from './alertar'
+import { db } from './db'
+import { revalidarNoEnvio } from './servicos/elegibilidade'
 import { listarCanais } from './repos/conversas'
 import { lerTemplate, type Template as TemplateLido } from './repos/templates'
 import {
@@ -231,6 +233,38 @@ async function tentarUm(
   template: TemplateLido,
   destinatario: Destinatario,
 ): Promise<ResultadoDeUm> {
+  /*
+   * **A revalidação do instante do envio** (RB-39, T6.2).
+   *
+   * Entre confirmar o lote e a mensagem sair cabem horas, e a elegibilidade
+   * não é estável nesse intervalo: um contato pode ter sido apagado, ou ficar
+   * sem número. Estar na lista **não** é autorização; a lista diz para quem
+   * alguém quis mandar, e isto diz para quem ainda dá.
+   *
+   * O que esta conferência **não** faz é acrescentar ninguém: a lista foi
+   * congelada na confirmação, e a RB-38 é explícita que editar o segmento
+   * depois não aumenta o lote. Ela só recusa.
+   *
+   * A transmissão sempre usa modelo aprovado — é o que `podeEnviar` já
+   * garantiu acima — então `comModelo: true`, e a janela de 24h não exclui
+   * ninguém aqui. Passar `false` faria toda campanha para quem não escreveu
+   * nas últimas 24h ser recusada, que é o oposto da razão de existir do
+   * modelo.
+   */
+  const recusa = await revalidarNoEnvio(transmissao.clienteId, destinatario.contatoId, {
+    comModelo: true,
+  })
+  if (recusa) {
+    await marcarDestinatario(destinatario.id, { estado: 'falhou', erro: recusa })
+    // O motivo fica escrito: sem ele, a transmissão termina com 40 enviados e
+    // 12 sumidos, e ninguém sabe se foi bloqueio, janela ou defeito.
+    await db()
+      .from('transmissao_destinatarios')
+      .update({ motivo_da_exclusao: recusa })
+      .eq('id', destinatario.id)
+    return { tipo: 'falhou' }
+  }
+
   try {
     const envio = await canal.enviarTemplate!(destinatario.waId, {
       nome: template.nome,
