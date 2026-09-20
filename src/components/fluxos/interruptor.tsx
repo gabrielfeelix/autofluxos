@@ -24,17 +24,41 @@ export function InterruptorDeFluxo({
   fluxoId,
   ativo,
   nome,
+  emAndamento = 0,
 }: {
   clienteId: string
   fluxoId: string
   ativo: boolean
   nome: string
+  /**
+   * Quantas conversas estão rodando este fluxo agora (RB-44).
+   *
+   * O padrão é zero, que quer dizer "não perguntei" **e** "nenhuma", e aqui as
+   * duas levam ao mesmo texto: sem número, a frase não menciona conversa. É
+   * melhor ficar calado do que dizer "0 conversas serão afetadas" quando a
+   * leitura não aconteceu.
+   */
+  emAndamento?: number
 }) {
   const [erro, setErro] = useState<string | null>(null)
   const [rodando, comecar] = useTransition()
 
+  /*
+   * A frase diz o que acontece com quem **já está** conversando, e é a RB-44:
+   * "pausar impede novas sessões e, por padrão, permite concluir as ativas".
+   *
+   * Dizer o número muda a decisão de quem lê. "Para de abrir conversa nova" é
+   * abstrato; "as 3 conversas em andamento terminam o roteiro" responde a
+   * pergunta que a pessoa tem na mão, que é se ela vai deixar alguém falando
+   * sozinho no WhatsApp.
+   */
+  const conversas =
+    emAndamento === 1 ? '1 conversa em andamento termina' : `as ${emAndamento} conversas em andamento terminam`
+
   const explicacao = ativo
-    ? `Desligar “${nome}”: para de abrir conversa nova. Quem já está conversando termina, e a versão no ar continua publicada.`
+    ? `Desligar “${nome}”: para de abrir conversa nova. ${
+        emAndamento > 0 ? `${conversas} o roteiro normalmente` : 'Quem já está conversando termina'
+      }, e a versão no ar continua publicada.`
     : `Ligar “${nome}”: volta a abrir conversa na próxima mensagem. Não precisa publicar de novo.`
 
   return (

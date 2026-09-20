@@ -3,6 +3,7 @@ import { CANAL_PADRAO, type CanalId } from '@/core/canais'
 import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
 import { LIMITE_NOME_DO_FLUXO } from '@/core/flow/limites'
 import { validar, type Problema } from '@/core/flow/validar'
+import { validarPublicacao } from '@/core/validar-publicacao'
 import { db, ehIdInvalido, pareceUuid } from '../db'
 import { listarConexoes } from './conexoes'
 import { sequenciasQueUsamOFluxo } from './sequencias'
@@ -320,6 +321,25 @@ export async function publicar(
     canal: fluxo.canal,
   })
   if (!conferido.ok) return { ok: false, erros: conferido.erros }
+
+  /*
+   * A segunda conferência: o desenho funciona, mas está **pronto para receber
+   * gente de verdade**? (RB-45, T7.2)
+   *
+   * Ela vem depois de `validar()` de propósito: desenho quebrado é a notícia
+   * mais urgente, e quem tem fluxo sem saída humana não precisa ouvir antes
+   * sobre o endereço de exemplo.
+   *
+   * O que ela pega e `validar()` não: o texto de demonstração que veio do
+   * modelo. Os modelos de `exemplos/` trazem "Rua Exemplo, 123", "a partir de
+   * R$ 000" e "cole aqui o link", e a RB-43 manda copiá-los para um rascunho
+   * editável: publicar sem trocar manda isso para o cliente de verdade de
+   * alguém.
+   */
+  const daPublicacao = validarPublicacao(analise.data, {
+    temEntrada: await temEntradaLigada(fluxo.clienteId, fluxoId),
+  })
+  if (!daPublicacao.ok) return { ok: false, erros: daPublicacao.erros }
 
   await salvarRascunho(fluxoId, clienteId, analise.data)
 
@@ -738,4 +758,193 @@ export async function clienteTemAutomacao(clienteId: string): Promise<boolean> {
   if (gatilhos.error && !ehIdInvalido(gatilhos.error)) return false
 
   return (canais.data?.length ?? 0) > 0 || (gatilhos.data?.length ?? 0) > 0
+}
+
+/**
+ * Este fluxo está ligado a alguma entrada? (RB-45, T7.2)
+ *
+ * ---------------------------------------------------------------------------
+ * As quatro portas, e por que todas contam
+ * ---------------------------------------------------------------------------
+ *
+ * O §12.1, passo 7, manda oferecer "Configurar entrada" quando o chatbot não
+ * tem por onde receber conversa, e a RB-45 manda avisar sobre "bot publicado
+ * sem entrada". Para isso, "entrada" tem que ser a lista inteira:
+ *
+ *   1. **papel de número** — os quatro de `PAPEIS_DO_NUMERO`, e não só o
+ *      principal: um fluxo que é o "padrão para mídia" de um número está tão no
+ *      ar quanto o principal, e avisar "sem entrada" sobre ele seria mentira;
+ *   2. **palavra-chave** (`gatilhos`);
+ *   3. **evento** (`gatilhos_de_evento`);
+ *   4. **campanha de entrada** (`campanhas`).
+ *
+ * Esquecer qualquer uma das quatro produziria o pior tipo de aviso: o que
+ * aparece em cima de trabalho correto. Quem já ligou a palavra-chave e lê "este
+ * chatbot não atende ninguém" aprende, na primeira vez, a ignorar os avisos
+ * desta tela.
+ *
+ * **É uma consulta por porta, e isso é aceitável aqui** porque roda só no clique
+ * de publicar, e não no caminho de mensagem. As quatro vão juntas.
+ */
+export async function temEntradaLigada(clienteId: string, fluxoId: string): Promise<boolean> {
+  const [canais, palavras, eventos, campanhas] = await Promise.all([
+    db()
+      .from('channels')
+      .select('id', { count: 'exact', head: true })
+      .eq('client_id', clienteId)
+      .or(
+        [
+          `flow_id.eq.${fluxoId}`,
+          `flow_boas_vindas_id.eq.${fluxoId}`,
+          `flow_midia_id.eq.${fluxoId}`,
+          `flow_pos_atendimento_id.eq.${fluxoId}`,
+        ].join(','),
+      ),
+    db()
+      .from('gatilhos')
+      .select('id', { count: 'exact', head: true })
+      .eq('client_id', clienteId)
+      .eq('flow_id', fluxoId),
+    db()
+      .from('gatilhos_de_evento')
+      .select('id', { count: 'exact', head: true })
+      .eq('client_id', clienteId)
+      .eq('flow_id', fluxoId),
+    db()
+      .from('campanhas')
+      .select('id', { count: 'exact', head: true })
+      .eq('client_id', clienteId)
+      .eq('flow_id', fluxoId),
+  ])
+
+  /*
+   * Erro vira "tem entrada", e não "não tem".
+   *
+   * É o lado certo de errar: o desfecho deste booleano é um **aviso**, e aviso
+   * falso-positivo é pior do que aviso ausente. Dizer "este bot não atende
+   * ninguém" a quem acabou de ligar o número, porque uma contagem falhou, é
+   * exatamente o que ensina alguém a ignorar a tela.
+   */
+  const contar = (r: { count: number | null; error: unknown }) =>
+    r.error ? 1 : (r.count ?? 0)
+
+  return (
+    contar(canais) + contar(palavras) + contar(eventos) + contar(campanhas) > 0
+  )
+}
+
+/**
+ * Quantas conversas estão rodando este fluxo agora (RB-44, T7.2).
+ *
+ * ---------------------------------------------------------------------------
+ * Por que a pergunta é por versão, e não por fluxo
+ * ---------------------------------------------------------------------------
+ *
+ * `sessions.flow_version_id` aponta para a **versão**, e não para o fluxo: é
+ * assim que uma conversa aberta às 14h continua rodando o grafo de 14h depois de
+ * alguém publicar às 15h (RB-44: "publicar nova versão não altera sessões em
+ * andamento, que concluem na versão iniciada"). O preço é que contar as conversas
+ * de um fluxo exige passar pelas versões dele.
+ *
+ * Duas consultas, e é o mínimo: a Data API não faz `join` numa contagem, e uma
+ * view nova para isto seria migration em produção compartilhada para responder
+ * uma pergunta de modal.
+ *
+ * ---------------------------------------------------------------------------
+ * O que conta como "em andamento"
+ * ---------------------------------------------------------------------------
+ *
+ * `ativa`, `aguardando_ia`, `aguardando_http` e `aguardando_confirmacao`. As
+ * quatro são conversas que o bot ainda vai responder.
+ *
+ * `humano` e `encerrada` **não contam**, e a escolha é o que faz o número ser
+ * útil: `encerrada` é conversa que terminou, e `humano` é conversa que uma pessoa
+ * assumiu, em que o bot já está calado. Contá-las diria "120 conversas serão
+ * interrompidas" para quem tem três, e um aviso que exagera é um aviso que se
+ * aprende a ignorar: exatamente quando ele diz "três" e são três de verdade.
+ */
+export async function conversasEmAndamento(
+  clienteId: string,
+  fluxoId: string,
+): Promise<number> {
+  if (!pareceUuid(fluxoId)) return 0
+
+  const { data: versoes, error: erroDasVersoes } = await db()
+    .from('flow_versions')
+    .select('id')
+    .eq('flow_id', fluxoId)
+
+  if (ehIdInvalido(erroDasVersoes) || erroDasVersoes) return 0
+  const ids = (versoes ?? []).map((v) => (v as { id: string }).id)
+  if (ids.length === 0) return 0
+
+  const { count, error } = await db()
+    .from('sessions')
+    .select('id', { count: 'exact', head: true })
+    .in('flow_version_id', ids)
+    .in('status', ['ativa', 'aguardando_ia', 'aguardando_http', 'aguardando_confirmacao'])
+
+  /*
+   * Erro vira zero, e aqui o lado certo de errar é o oposto do de
+   * `temEntradaLigada`: este número aparece num modal de confirmação, e inventar
+   * "há conversas em andamento" quando a leitura falhou faria alguém desistir de
+   * pausar um bot que precisa ser pausado. Zero deixa o modal mudo sobre
+   * conversas, que é honesto: não sabemos.
+   */
+  if (error) return 0
+  return count ?? 0
+}
+
+/**
+ * Conversas em andamento de **vários** fluxos, num par de consultas.
+ *
+ * É a versão em lote de `conversasEmAndamento`, e ela existe pela mesma razão de
+ * `relacionamentoDeMuitos`: a lista de automações desenha uma linha por fluxo, e
+ * chamar a versão de um por um seria duas idas ao banco **por fluxo** — o N+1
+ * clássico, numa tela que já faz cinco consultas.
+ *
+ * Aqui são duas, independentes do tamanho da lista. A agregação é em JavaScript
+ * pelo mesmo motivo registrado em `repos/relacionamento.ts`: `group by` pela Data
+ * API exigiria uma view nova, e o volume que passa aqui é o de uma conta.
+ *
+ * Fluxo sem conversa **aparece no mapa com zero**: quem chama precisa poder
+ * desenhar a linha sem conferir se a chave existe, e um `undefined` na tela vira
+ * `cannot read property`.
+ */
+export async function conversasEmAndamentoDeMuitos(
+  fluxoIds: string[],
+): Promise<Map<string, number>> {
+  const mapa = new Map<string, number>()
+  for (const id of fluxoIds) mapa.set(id, 0)
+
+  const ids = fluxoIds.filter(pareceUuid)
+  if (ids.length === 0) return mapa
+
+  const { data: versoes, error: erroDasVersoes } = await db()
+    .from('flow_versions')
+    .select('id, flow_id')
+    .in('flow_id', ids)
+
+  if (ehIdInvalido(erroDasVersoes) || erroDasVersoes) return mapa
+
+  const fluxoDaVersao = new Map<string, string>()
+  for (const linha of (versoes ?? []) as { id: string; flow_id: string }[]) {
+    fluxoDaVersao.set(linha.id, linha.flow_id)
+  }
+  if (fluxoDaVersao.size === 0) return mapa
+
+  const { data: sessoes, error } = await db()
+    .from('sessions')
+    .select('flow_version_id')
+    .in('flow_version_id', [...fluxoDaVersao.keys()])
+    .in('status', ['ativa', 'aguardando_ia', 'aguardando_http', 'aguardando_confirmacao'])
+
+  if (error) return mapa
+
+  for (const linha of (sessoes ?? []) as { flow_version_id: string }[]) {
+    const fluxoId = fluxoDaVersao.get(linha.flow_version_id)
+    if (fluxoId) mapa.set(fluxoId, (mapa.get(fluxoId) ?? 0) + 1)
+  }
+
+  return mapa
 }

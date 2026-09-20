@@ -14,6 +14,7 @@ import {
   RotuloCampo,
 } from '@/components/design/modal-formulario'
 import { validar } from '@/core/flow/validar'
+import { validarPublicacao } from '@/core/validar-publicacao'
 import { Dropdown } from '@/components/design/dropdown'
 import { InterruptorDeGatilho } from '@/components/gatilhos/interruptor'
 import { InterruptorDeEvento } from '@/components/gatilhos/interruptor-de-evento'
@@ -67,7 +68,7 @@ import { NomeDoFluxo } from '@/components/editor/nome-do-fluxo'
 import { ETIQUETAS, MODELOS } from '@/exemplos/modelos'
 import { AbaDeTemplates, NovaAutomacao } from '@/components/fluxos/templates'
 import { contatosPorCampanha, listarCampanhas } from '@/server/repos/campanhas'
-import { listarFluxos } from '@/server/repos/fluxos'
+import { conversasEmAndamentoDeMuitos, listarFluxos } from '@/server/repos/fluxos'
 import { contarExecucoesPorFluxo } from '@/server/repos/metricas'
 import { contagensDeAutomacao } from '@/server/repos/contagens-de-automacao'
 
@@ -281,6 +282,16 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
       fluxos: fluxos.filter((fluxo) => !fluxo.pastaId),
     },
   ]
+  /*
+   * Quantas conversas rodam cada fluxo agora (RB-44).
+   *
+   * Em lote, e depois da lista: são duas consultas para a tela inteira em vez de
+   * duas por linha. Só a aba de fluxos mostra o interruptor, então só ela paga.
+   */
+  const emAndamento = precisa('fluxos')
+    ? await conversasEmAndamentoDeMuitos(fluxos.map((f) => f.id))
+    : new Map<string, number>()
+
   const criarComCliente = acaoCriarFluxo.bind(null, cliente.id)
   const criarGatilhoComCliente = acaoCriarGatilho.bind(null, cliente.id, {})
   const criarCampanhaComCliente = acaoCriarCampanha.bind(null, cliente.id, {})
@@ -464,10 +475,24 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                         </li>
                       )}
                       {grupo.fluxos.map((fluxo) => {
-                const validacao = validar(fluxo.rascunho, {
+                /*
+                 * As duas conferências, como no editor (T7.2).
+                 *
+                 * A lista mostra "N impedimento(s)", e esse número tem que ser o
+                 * mesmo que o botão Publicar vai cobrar. Contar só os do desenho
+                 * diria "pronto" sobre o rascunho que acabou de sair do modelo e
+                 * ainda diz "Rua Exemplo, 123": a pessoa abriria o editor
+                 * esperando publicar e encontraria dois impedimentos.
+                 */
+                const doDesenho = validar(fluxo.rascunho, {
                   iaHabilitada: fluxo.iaHabilitada,
                   canal: fluxo.canal,
                 })
+                const daPublicacao = validarPublicacao(fluxo.rascunho)
+                const validacao = {
+                  ok: doDesenho.ok && daPublicacao.ok,
+                  erros: [...doDesenho.erros, ...daPublicacao.erros],
+                }
                 // Fluxo ligado a um número é o que está atendendo agora. Dizer
                 // isso aqui evita a viagem até a tela do número só para conferir.
                 const papeis = papeisDoFluxo(fluxo.id)
@@ -580,6 +605,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                         fluxoId={fluxo.id}
                         ativo={fluxo.ativo}
                         nome={fluxo.nome}
+                        emAndamento={emAndamento.get(fluxo.id) ?? 0}
                       />
                     </span>
                     {pastas.length > 0 && (

@@ -42,6 +42,7 @@ import { aceitaAtraso, aplicarAtrasoEmLote } from '@/core/flow/atraso-em-lote'
 import type { Problema } from '@/core/flow/validar'
 import { variaveisDoFluxo } from '@/core/flow/variaveis'
 import { validar } from '@/core/flow/validar'
+import { validarPublicacao } from '@/core/validar-publicacao'
 import {
   acaoAlternarIa,
   acaoDescartarRascunho,
@@ -481,8 +482,8 @@ export function Editor({
   const fluxo = useMemo(() => paraFluxo(inicio, nodes, edges), [inicio, nodes, edges])
   const idsDeConexao = useMemo(() => conexoes.map((c) => c.id), [conexoes])
   const validacao = useMemo(
-    () =>
-      validar(fluxo, {
+    () => {
+      const doDesenho = validar(fluxo, {
         iaHabilitada: comIa,
         conexoes: idsDeConexao,
         temContextoDeNegocio,
@@ -492,7 +493,29 @@ export function Editor({
         // O aviso tem que chegar enquanto a pessoa desenha, e não na publicação:
         // descobrir na hora de publicar que a lista não cabe é refazer o menu.
         canal,
-      }),
+      })
+
+      /*
+       * As duas conferências juntas, e o motivo de juntá-las **aqui** (T7.2).
+       *
+       * `validarPublicacao` é o portão do servidor (RB-45), e o servidor é quem
+       * decide. Mas quem desabilita o botão Publicar é esta variável: gatear só
+       * no servidor deixaria o botão aceso, e o clique falharia com uma lista de
+       * erros que a pessoa não tinha como prever. Botão que parece pronto e
+       * recusa é pior do que botão desabilitado com o motivo à vista.
+       *
+       * **`temEntrada` não entra aqui**, e é deliberado: quem sabe disso é o
+       * banco, e o editor não vai perguntar a cada tecla. O aviso de "bot sem
+       * entrada" aparece na publicação, que é o momento em que ele importa.
+       */
+      const daPublicacao = validarPublicacao(fluxo)
+
+      return {
+        ok: doDesenho.ok && daPublicacao.ok,
+        erros: [...doDesenho.erros, ...daPublicacao.erros],
+        avisos: [...doDesenho.avisos, ...daPublicacao.avisos],
+      }
+    },
     [fluxo, comIa, idsDeConexao, temContextoDeNegocio, fluxos, fluxoId, variaveisDaConta, canal],
   )
 

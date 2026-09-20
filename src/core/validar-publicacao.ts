@@ -127,13 +127,32 @@ export const MARCADORES: { padrao: RegExp; motivo: string }[] = [
     padrao: /\b(SEU_|SUA_|COLOQUE_|TROQUE_|INSIRA_)[A-Z_]{2,}/,
     motivo: 'substitua o marcador pelo valor de verdade',
   },
-  {
-    // `exemplo.com`, `example.com`, `seusite.com.br`: endereço que não é de
-    // ninguém, num bloco que vai chamar de verdade.
-    padrao: /\b(exemplo|example|seusite|seu-site)\.(com|com\.br|org|net)\b/i,
-    motivo: 'troque pelo endereço de verdade do seu sistema',
-  },
 ]
+
+/*
+ * ---------------------------------------------------------------------------
+ * O marcador que foi escrito e removido, e por que o registro fica
+ * ---------------------------------------------------------------------------
+ *
+ * Havia um sétimo padrão aqui, para `exemplo.com` / `example.com` / `seusite.com`,
+ * na ideia de pegar endereço de mentira num bloco que vai chamar de verdade.
+ * **Ele saiu**, e a razão é medida:
+ *
+ *  1. **nenhum modelo de `src/exemplos/` usa esses domínios.** Conferido por
+ *     varredura: os nove marcadores reais são de texto ("cole aqui", "Troque
+ *     este", "Rua Exemplo, 123", "R$ 000"), e domínio nenhum. O padrão protegia
+ *     contra um caso que não existe;
+ *  2. **`exemplo.com` é a convenção de fixture deste repositório**, usada em
+ *     `rede.test.ts`, `http.test.ts`, `previa-do-bloco.test.ts` e no próprio
+ *     `receber-mensagem.test.ts`, que publica um fluxo com
+ *     `https://cdn.exemplo.com/sala.jpg`. O padrão quebrou esse teste, e a
+ *     quebra foi a informação: ele recusa desenho válido.
+ *
+ * A regra que isto deixa: **marcador entra aqui com uma ocorrência medida
+ * atrás.** Padrão escrito por precaução recusa trabalho correto, e validação que
+ * recusa trabalho correto é validação que alguém aprende a contornar, inclusive
+ * quando ela estiver certa.
+ */
 
 /** O primeiro marcador que casa com este texto, ou `null`. */
 export function marcadorEm(texto: string): { padrao: RegExp; motivo: string } | null {
