@@ -230,6 +230,66 @@ extração explícito para os objetos de `public`.
   **A migration entrou antes do push**, e não depois: o código da T8.2 lê os dois
   objetos novos, então o intervalo seria a tela de início caindo, como caiu com a
   `0071`. A produção está, hoje, com `0001`–`0086` inteiras;
+- **a `0087` foi aplicada em 22/set/2026**, na execução da T9.1 (F9), com
+  autorização explícita do dono pedida naquela sessão: a autorização da `0086`
+  valeu só para ela. Conferida pelos **dois** testes: replay do zero em Docker
+  (`0001`–`0087` em ordem, sem erro) e ensaio em transação contra a produção,
+  os dois limpos.
+
+  Ela só **revoga** privilégio: `revoke execute ... from public, anon,
+  authenticated` em `concluir_processo`, `resolver_continuidade` (0072) e
+  `reabrir_ao_receber` (0049). Nenhuma função é recriada, nenhuma tabela é
+  tocada, nenhum dado se move.
+
+  **O defeito que ela conserta é a armadilha da `0026` se repetindo**, e é a
+  terceira vez que ela morde neste projeto. A auditoria de isolamento da T9.1
+  mediu na produção: três das 31 funções de `public` respondiam verdadeiro para
+  `has_function_privilege('anon', ..., 'EXECUTE')`. A causa está no §6 deste
+  documento: `revoke ... from anon, authenticated` **não fecha função**, porque
+  o Postgres concede `EXECUTE` a `PUBLIC` na criação e os dois papéis herdam de
+  lá. A ACL provava, com o `=X/postgres` inicial. A `0072` escreveu o revoke sem
+  `public` na lista; a `0049` não escreveu revoke nenhum.
+
+  **Nenhum dado vazou, e o alcance foi medido e não suposto**, para ninguém ler
+  isto depois e concluir que houve incidente: `resolver_continuidade` chamada
+  por `anon` pela Data API respondia **401** `permission denied for table
+  conclusoes_de_processo`, ou seja, a função entrava e o `grant` de tabela da
+  `0041` barrava na linha seguinte. `concluir_processo` é `security invoker` e
+  cairia no mesmo lugar. `reabrir_ao_receber` é a única `security definer` das
+  três, e seria a grave porque ignoraria aquele grant, mas ela retorna
+  `trigger`, e o Postgres recusa chamada direta de função de gatilho. O risco
+  era **profundidade perdida, não porta aberta**.
+
+  Releitura objeto a objeto depois de aplicar: **zero** funções de `public`
+  executáveis por `anon`/`authenticated`; a ACL das três reduzida a
+  `postgres=X/postgres | service_role=X/postgres`, sem o `=X/postgres` de
+  `PUBLIC`; `service_role` ainda executando as duas chamadas pelo código; e
+  **zero** tabelas ou views de `public` alcançáveis pelos dois papéis. Dado
+  nosso intacto: **37 contatos, 29 cartões, 8 handoffs, 15 sessões, 6 contas**.
+
+  **O gatilho foi provado na produção, e não só em Docker.** A pergunta que
+  precisava de resposta antes era se revogar o `EXECUTE` de `reabrir_ao_receber`
+  quebraria o gatilho. Não quebra, porque o Postgres executa função de gatilho
+  com os privilégios do dono da tabela e não com os de quem fez o `insert`. Num
+  `begin/rollback` contra a produção, um contato `resolvida` que recebe mensagem
+  volta a `aberta`, e a transação desfeita não deixou sobra (6 contas antes e
+  depois). A guarda contra regressão é
+  `src/server/isolamento-do-schema.test.ts`, que conta no catálogo em vez de
+  listar nomes: uma lista só pegaria a função que alguém lembrasse de
+  acrescentar nela, e o problema é exatamente a que ninguém lembra.
+
+  **Ela não tem `notify pgrst`, e isso é a decisão**, pelo motivo da `0056`: o
+  cache do PostgREST é o mesmo dos dois produtos, e nenhum objeto exposto na
+  Data API mudou. Recarregar seria arriscar a API da Verandi para nada.
+
+  `app_verandi.migrations_aplicadas` com as mesmas **32** linhas, **42** tabelas
+  e **16** policies de `storage.objects`, antes e depois. **A Verandi não foi
+  tocada.**
+
+  **Aqui o código foi empurrado antes da migration, e é a exceção que confirma a
+  regra da `0071`:** um revoke não muda contrato e nenhum código lê objeto novo,
+  então não existe o intervalo em que a tela cai. A produção está, hoje, com
+  `0001`–`0087` inteiras;
 - **as `0071` a `0083` foram aplicadas em 20/set/2026**, uma por vez, pela
   Management API, com autorização explícita do dono para a execução da F5/F6.
   São treze: `0071` (finalidade e vendas), `0072` (conclusão de processo),
