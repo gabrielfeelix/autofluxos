@@ -76,7 +76,7 @@ export function QuadroPadrao({
       faz as duas telas parecerem um produto só.
     */
     <PilulaInterruptor
-      rotulo={erro ?? 'Novo contato entra aqui'}
+      rotulo={erro ?? 'Receber novos contatos automaticamente'}
       titulo={
         recebePorSerOPrimeiro && !padrao
           ? 'Contato novo entra aqui por ser o quadro mais antigo da conta. Marque outro quadro para mudar o destino.'

@@ -1,11 +1,11 @@
-import Link from 'next/link'
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { BotaoPerigo } from '@/components/design/botao-perigo'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { Esqueleto, EsqueletoDeQuadro } from '@/components/design/esqueleto'
 import { IlustracaoQuadros } from '@/components/design/ilustracoes'
-import { Quadro } from '@/components/quadros/quadro'
+import { CabecalhoDoQuadro } from '@/components/quadros/cabecalho-do-quadro'
+import { Quadro, AdicionarContato } from '@/components/quadros/quadro'
 import { QuadroPadrao } from '@/components/quadros/quadro-padrao'
 import { NovoQuadro } from '@/components/quadros/novo-quadro'
 import { EntregaDoQuadro } from '@/components/quadros/entrega-do-quadro'
@@ -65,7 +65,7 @@ export default async function Pagina({
       {/* A tela inteira, e não um `max-w` no meio dela: um quadro que não usa a
           largura disponível mostra menos colunas do que caberia, que é o oposto
           do que ele existe para fazer. */}
-      <main className="flex h-full min-h-0 flex-col px-4 pt-[26px] pb-5 md:px-[42px]">
+      <main className="flex h-full min-h-0 flex-col px-4 pt-[26px] pb-5 md:px-7">
         {/*
           O funil desce depois da moldura.
 
@@ -88,12 +88,16 @@ export default async function Pagina({
 function Espera() {
   return (
     <>
-      <header className="mb-4 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2">
-        <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Funil de vendas</h1>
-        <Esqueleto className="h-[26px] w-28 rounded-full" />
-        <span className="ml-auto flex flex-wrap items-center justify-end gap-2">
-          <Esqueleto className="h-8 w-32 rounded-lg" />
-          <Esqueleto className="h-8 w-28 rounded-lg" />
+      <header className="mb-5 flex shrink-0 items-center justify-between gap-4">
+        <div>
+          <h1 className="mb-1 text-[11px] font-semibold tracking-[0.06em] text-dim uppercase">
+            Funil de vendas
+          </h1>
+          <Esqueleto className="h-7 w-36 rounded-lg" />
+        </div>
+        <span className="flex gap-2">
+          <Esqueleto className="h-9 w-24 rounded-lg" />
+          <Esqueleto className="h-9 w-9 rounded-lg" />
         </span>
       </header>
       <EsqueletoDeQuadro />
@@ -124,49 +128,44 @@ async function Conteudo({ cliente, q }: { cliente: Cliente; q?: string }) {
       ])
     : [[], [], 0]
 
-  const novoQuadro = (
-    <NovoQuadro clienteId={cliente.id} primeiro={quadros.length === 0} />
-  )
+  const novoQuadro = <NovoQuadro clienteId={cliente.id} primeiro={quadros.length === 0} />
 
   return (
     <>
-        <header className="mb-4 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2">
-          <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Funil de vendas</h1>
-
-          {quadros.length > 1 && (
-            <nav className="flex flex-wrap gap-1.5">
-              {quadros.map((quadro) => (
-                <Link
-                  key={quadro.id}
-                  href={`/clientes/${cliente.id}/quadros?q=${quadro.id}`}
-                  className={`rounded-full border px-3 py-1 text-[12px] transition ${
-                    quadro.id === aberto?.id
-                      ? 'border-primary/40 bg-primary/[0.1] text-primary'
-                      : 'border-line bg-surface text-muted hover:border-strong'
-                  }`}
-                >
-                  {quadro.nome}
-                </Link>
-              ))}
-            </nav>
-          )}
-
-          {/* Quebra linha em vez de espremer: são quatro controles de larguras
-              diferentes, e num cabeçalho estreito espremer significa um passar
-              por cima do outro. */}
-          <span className="ml-auto flex flex-wrap items-center justify-end gap-2">
-            {/*
-              A agenda é da conta, e não do quadro aberto: atividade ligada só
-              ao contato existe sem CRM nenhum, e escondê-la atrás de um quadro
-              a tornaria invisível para quem usa só o Inbox.
-            */}
-            <Link
-              href={`/clientes/${cliente.id}/quadros/atividades`}
-              className="rounded-full border border-line bg-surface px-3 py-1 text-[12px] text-muted transition hover:border-strong"
-            >
-              Atividades
-            </Link>
-            {aberto && (
+      <CabecalhoDoQuadro
+        key={aberto?.id ?? 'vazio'}
+        clienteId={cliente.id}
+        quadros={quadros.map(({ id, nome }) => ({ id, nome }))}
+        abertoId={aberto?.id}
+        fora={fora}
+        adicionar={
+          aberto?.etapas[0] && (
+            <AdicionarContato
+              clienteId={cliente.id}
+              quadroId={aberto.id}
+              colunaId={aberto.etapas[0].id}
+              etapaNome={aberto.etapas[0].nome}
+              aparencia="principal"
+            />
+          )
+        }
+        configuracoes={
+          aberto && (
+            <>
+              <section>
+                <h3 className="mb-2 text-sm font-semibold">Entrada automática</h3>
+                <p className="mb-3 text-xs leading-5 text-muted">
+                  Escolha se novos contatos devem entrar automaticamente neste funil.
+                </p>
+                <QuadroPadrao
+                  clienteId={cliente.id}
+                  quadroId={aberto.id}
+                  padraoInicial={aberto.padrao}
+                  recebePorSerOPrimeiro={
+                    !quadros.some((quadro) => quadro.padrao) && quadros[0]?.id === aberto.id
+                  }
+                />
+              </section>
               <EntregaDoQuadro
                 clienteId={cliente.id}
                 quadroId={aberto.id}
@@ -175,61 +174,47 @@ async function Conteudo({ cliente, q }: { cliente: Cliente; q?: string }) {
                   .filter((quadro) => quadro.id !== aberto.id)
                   .map(({ id, nome }) => ({ id, nome }))}
               />
-            )}
-            {aberto && (
-              <QuadroPadrao
-                clienteId={cliente.id}
-                quadroId={aberto.id}
-                padraoInicial={aberto.padrao}
-                /*
-                 * Sem ninguém marcar, quem recebe é o mais antigo — a mesma
-                 * regra de `acharQuadroPadrao`. A tela precisa dizer isso:
-                 * caixa desmarcada num quadro que recebe do mesmo jeito é a
-                 * tela mentindo sobre o que o produto faz.
-                 */
-                recebePorSerOPrimeiro={
-                  !quadros.some((quadro) => quadro.padrao) && quadros[0]?.id === aberto.id
-                }
-              />
-            )}
-            {novoQuadro}
-            {aberto && (
-              <BotaoPerigo
-                rotulo="Apagar funil"
-                titulo="Apaga o funil e as etapas. Nenhum contato é apagado."
-                pergunta={`Apagar o funil “${aberto.nome}”? Some a posição das ${cartoes.length} pessoa(s) nele — os contatos, as conversas e as etiquetas ficam.`}
-                acao={acaoApagarQuadro.bind(null, cliente.id, aberto.id)}
-              />
-            )}
-          </span>
-        </header>
-
-        {!aberto ? (
-          <section className="app-card px-5 py-16 text-center">
-            <IlustracaoQuadros />
-            <p className="mt-6 text-[13.5px] font-semibold text-soft">Nenhum funil ainda</p>
-            <p className="mx-auto mt-1.5 max-w-[440px] text-xs leading-5 text-dim">
-              Um funil é o seu processo desenhado: as etapas por onde um contato passa, do
-              primeiro contato até o desfecho. Etiqueta é um fato sobre a pessoa e ela pode ter
-              várias; etapa é onde ela está, e é uma só.
-            </p>
-            <span className="mt-6 inline-block">{novoQuadro}</span>
-          </section>
-        ) : (
-          <>
-            <TrazerTodos clienteId={cliente.id} quadroId={aberto.id} fora={fora} />
-            <Quadro
-              clienteId={cliente.id}
-              quadroId={aberto.id}
-              etapas={aberto.etapas}
-              cartoesIniciais={cartoes}
-              agora={agora}
-              equipe={equipe.map(({ id, nome }) => ({ id, nome }))}
-              motivos={motivos.map(({ id, nome }) => ({ id, nome }))}
-              finalidade={aberto.finalidade}
+            </>
+          )
+        }
+        importar={aberto && <TrazerTodos clienteId={cliente.id} quadroId={aberto.id} fora={fora} />}
+        apagar={
+          aberto && (
+            <BotaoPerigo
+              rotulo="Apagar funil"
+              titulo="Apaga o funil e as etapas. Nenhum contato é apagado."
+              pergunta={`Apagar o funil “${aberto.nome}”? Some a posição das ${cartoes.length} pessoa(s) nele — os contatos, as conversas e as etiquetas ficam.`}
+              acao={acaoApagarQuadro.bind(null, cliente.id, aberto.id)}
             />
-          </>
-        )}
+          )
+        }
+      />
+
+      {!aberto ? (
+        <section className="app-card px-5 py-16 text-center">
+          <IlustracaoQuadros />
+          <p className="mt-6 text-[13.5px] font-semibold text-soft">Nenhum funil ainda</p>
+          <p className="mx-auto mt-1.5 max-w-[440px] text-xs leading-5 text-dim">
+            Um funil é o seu processo desenhado: as etapas por onde um contato passa, do primeiro
+            contato até o desfecho. Etiqueta é um fato sobre a pessoa e ela pode ter várias; etapa é
+            onde ela está, e é uma só.
+          </p>
+          <span className="mt-6 inline-block">{novoQuadro}</span>
+        </section>
+      ) : (
+        <>
+          <Quadro
+            clienteId={cliente.id}
+            quadroId={aberto.id}
+            etapas={aberto.etapas}
+            cartoesIniciais={cartoes}
+            agora={agora}
+            equipe={equipe.map(({ id, nome }) => ({ id, nome }))}
+            motivos={motivos.map(({ id, nome }) => ({ id, nome }))}
+            finalidade={aberto.finalidade}
+          />
+        </>
+      )}
     </>
   )
 }

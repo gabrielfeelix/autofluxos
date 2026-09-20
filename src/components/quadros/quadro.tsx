@@ -28,6 +28,7 @@ import {
   acaoReabrirCartao,
   acaoTrazerTodosParaOQuadro,
 } from '@/server/acoes-crm'
+import { IconeDoQuadro, PopoverDoQuadro } from './popover-do-quadro'
 import { BarraDoQuadro } from './barra-do-quadro'
 import { Avatar } from '@/components/inbox/avatar'
 import { Dropdown } from '@/components/design/dropdown'
@@ -114,9 +115,7 @@ export function Quadro({
      * há movimento otimista a desfazer. Ver `cancelarFechamento`.
      */
     voltarPara?: string
-  } | null>(
-    null,
-  )
+  } | null>(null)
   const [noPainel, setNoPainel] = useState<Cartao | null>(null)
   /*
    * A barra de ações é **estado de cliente**, e some numa navegação — de
@@ -315,13 +314,11 @@ export function Quadro({
               }}
               // `min-h-0` no `flex-col`: sem ele o filho que rola não pode
               // encolher abaixo do conteúdo, e a rolagem vaza para a página.
-              className={`flex h-full min-h-0 w-[272px] shrink-0 flex-col rounded-xl border transition ${
-                alvoDoArrasto
-                  ? 'border-primary/50 bg-primary/[0.07]'
-                  : 'border-line bg-panel'
+              className={`flex h-full min-h-0 w-[290px] shrink-0 flex-col rounded-xl border transition sm:w-[300px] ${
+                alvoDoArrasto ? 'border-primary/50 bg-primary/[0.07]' : 'border-line/60 bg-surface'
               }`}
             >
-              <header className="flex shrink-0 items-center gap-2 px-3 py-2.5">
+              <header className="flex shrink-0 items-center gap-2 px-3 py-3">
                 {/*
                   A cor antes do nome, e não em vez dele.
 
@@ -330,15 +327,12 @@ export function Quadro({
                   sete nomes. A bolinha é reconhecida antes da leitura — e por
                   isso vem primeiro, na borda por onde o olho entra na coluna.
 
-                  Quem não pintou nada continua sem nada: `cor` nula não
-                  desenha marca nenhuma, e o cabeçalho fica o de sempre.
+                  Etapas sem cor usam um ponto neutro para manter o alinhamento.
                 */}
-                {etapa.cor && (
-                  <span
-                    aria-hidden
-                    className={`size-2.5 shrink-0 rounded-full ${CLASSE_DA_COR[etapa.cor]}`}
-                  />
-                )}
+                <span
+                  aria-hidden
+                  className={`size-2 shrink-0 rounded-full ${etapa.cor ? CLASSE_DA_COR[etapa.cor] : 'bg-slate-400/70'}`}
+                />
                 <h3 className="min-w-0 flex-1 truncate text-[12.5px] font-bold text-soft">
                   {etapa.nome}
                 </h3>
@@ -377,6 +371,13 @@ export function Quadro({
                     {comoDinheiro(somaDosAbertos(daEtapa))}
                   </span>
                 )}
+                <AdicionarContato
+                  clienteId={clienteId}
+                  quadroId={quadroId}
+                  colunaId={etapa.id}
+                  etapaNome={etapa.nome}
+                  aparencia="icone"
+                />
                 <MenuDaEtapa
                   clienteId={clienteId}
                   quadroId={quadroId}
@@ -393,7 +394,7 @@ export function Quadro({
                   <li className="shrink-0 rounded-lg border border-dashed border-line px-2 py-4 text-center text-[11px] leading-4 text-dim">
                     {/* Estado vazio que responde a pergunta certa: não é "não há
                         ninguém", é "o que eu faço aqui". */}
-                    Arraste um cartão, ou use + abaixo
+                    Arraste um contato para cá
                   </li>
                 ) : (
                   daEtapa.map((cartao) => (
@@ -409,30 +410,7 @@ export function Quadro({
                         setArrastando(null)
                         setSobre(null)
                       }}
-                      /*
-                        Altura fixa, e `shrink-0` junto.
-
-                        A lista é uma coluna flex com `overflow-y-auto`, e o
-                        padrão do flex é **encolher o item para caber**. Com 3 ou
-                        4 cartões não dá para ver; com os 21 de uma etapa "Novo"
-                        de verdade, cada cartão era espremido até virar uma fatia
-                        de poucos pixels, com o nome cortado ao meio.
-
-                        `shrink-0` sozinho não bastou porque a coluna ainda era
-                        do tamanho do conteúdo (ver `items-start`, acima): sem
-                        teto de altura não há o que rolar. Com a coluna esticada
-                        e o cartão com altura própria, o que sobra rola dentro
-                        da coluna, que é o comportamento de kanban.
-
-                        72px é a conta do cartão cheio, e não um chute: 16 de
-                        `py-2`, 16,25 do nome (12,5px com `leading-[1.3]`), 19
-                        do título da negociação (`mt-[3px]` + `leading-4`) e 19
-                        da linha de espera. Dá 70,25, e 72 deixa a folga do
-                        arredondamento. Cartão sem título sobra espaço, e é de
-                        propósito: altura que muda de linha para linha é o que
-                        faz a coluna parecer remendada.
-                      */
-                      className={`group h-[72px] shrink-0 cursor-grab overflow-hidden rounded-lg border bg-panel py-2 pr-2 pl-2.5 shadow-[0_1px_2px_rgba(19,25,34,0.06)] transition active:cursor-grabbing ${
+                      className={`group min-h-[68px] shrink-0 cursor-grab overflow-hidden rounded-lg border bg-panel py-2 pr-2 pl-2.5 shadow-[0_1px_2px_rgba(19,25,34,0.06)] transition active:cursor-grabbing ${
                         arrastando === cartao.id
                           ? 'border-primary/40 opacity-40'
                           : cartao.situacao && cartao.situacao !== 'aberta'
@@ -463,7 +441,7 @@ export function Quadro({
                         <button
                           type="button"
                           onClick={() => setNoPainel(cartao)}
-                          className="flex min-w-0 flex-1 items-start gap-2 text-left"
+                          className="flex min-h-12 min-w-0 flex-1 items-start gap-2 rounded text-left focus-visible:outline-2 focus-visible:outline-primary"
                         >
                           {/*
                             O mesmo avatar da fila do Inbox, e não um parecido:
@@ -540,13 +518,6 @@ export function Quadro({
                   ))
                 )}
               </ul>
-
-              <AdicionarContato
-                clienteId={clienteId}
-                quadroId={quadroId}
-                colunaId={etapa.id}
-                etapaNome={etapa.nome}
-              />
             </section>
           )
         })}
@@ -592,16 +563,6 @@ export function Quadro({
             )}
           </span>
         </div>
-      )}
-
-      {/* A legenda some no funil vazio: ela explica uma marca que não tem como
-          aparecer sem cartão, e explicação sobre o que não está na tela é ruído
-          justamente embaixo do convite que pede uma ação. */}
-      {cartoes.length > 0 && (
-        <p className="mt-2 shrink-0 text-[11px] text-dim">
-          O ponto âmbar marca quem está parado há {DIAS_PARA_MARCAR_PARADO} dias ou mais na mesma
-          etapa — ou além do limite da etapa, quando ela tem um.
-        </p>
       )}
 
       {aviso && (
@@ -717,7 +678,7 @@ function iniciais(nome: string): string {
  * O cartão entra na etapa em que a pessoa clicou, e não na primeira: ela clicou
  * dentro de uma coluna, e cair noutra seria ignorar o gesto.
  */
-function AdicionarContato({
+export function AdicionarContato({
   clienteId,
   quadroId,
   colunaId,
@@ -729,7 +690,7 @@ function AdicionarContato({
   colunaId: string
   etapaNome: string
   /** `coluna` é o rodapé da etapa; `botao` é o estado vazio do funil. */
-  aparencia?: 'coluna' | 'botao'
+  aparencia?: 'coluna' | 'botao' | 'principal' | 'icone'
 }) {
   const [aberto, setAberto] = useState(false)
   const [termo, setTermo] = useState('')
@@ -772,13 +733,25 @@ function AdicionarContato({
       <button
         type="button"
         onClick={() => setAberto(true)}
+        aria-label={aparencia === 'icone' ? `Adicionar contato em ${etapaNome}` : undefined}
+        title={aparencia === 'icone' ? `Adicionar contato em ${etapaNome}` : undefined}
         className={
-          aparencia === 'botao'
-            ? 'app-secondary-button px-4 py-2 text-[12.5px]'
-            : 'shrink-0 rounded-b-xl border-t border-line px-3 py-2 text-center text-[11.5px] text-dim transition hover:bg-surface hover:text-soft'
+          aparencia === 'principal'
+            ? 'app-primary-button h-9 px-4 text-xs'
+            : aparencia === 'icone'
+              ? 'grid size-7 shrink-0 place-items-center rounded-md text-lg text-dim transition hover:bg-surface-strong hover:text-ink'
+              : aparencia === 'botao'
+                ? 'app-secondary-button px-4 py-2 text-[12.5px]'
+                : 'shrink-0 rounded-b-xl border-t border-line px-3 py-2 text-center text-[11.5px] text-dim transition hover:bg-surface hover:text-soft'
         }
       >
-        {aparencia === 'botao' ? 'Adicionar contato' : '+ Adicionar contato'}
+        {aparencia === 'icone'
+          ? '+'
+          : aparencia === 'principal'
+            ? '+ Contato'
+            : aparencia === 'botao'
+              ? 'Adicionar contato'
+              : '+ Adicionar contato'}
       </button>
 
       <Modal
@@ -840,7 +813,11 @@ function AdicionarContato({
         )}
 
         <div className="mt-4 flex gap-2.5">
-          <button type="button" onClick={fechar} className="app-secondary-button flex-1 px-4 py-2.5 text-[13px]">
+          <button
+            type="button"
+            onClick={fechar}
+            className="app-secondary-button flex-1 px-4 py-2.5 text-[13px]"
+          >
             Cancelar
           </button>
           <button
@@ -863,7 +840,9 @@ function AdicionarContato({
             }}
             className="app-primary-button flex-[1.35] px-4 py-2.5 text-[13px] disabled:opacity-50"
           >
-            {rodando ? 'adicionando…' : `Adicionar${marcados.length > 0 ? ` (${marcados.length})` : ''}`}
+            {rodando
+              ? 'adicionando…'
+              : `Adicionar${marcados.length > 0 ? ` (${marcados.length})` : ''}`}
           </button>
         </div>
       </Modal>
@@ -889,18 +868,7 @@ function NovaEtapa({ clienteId, quadroId }: { clienteId: string; quadroId: strin
       <button
         type="button"
         onClick={() => setAberto(true)}
-        /*
-          Centrado, e não `text-left` com `py-3`.
-
-          Enquanto as colunas eram do tamanho do conteúdo, um texto no alto à
-          esquerda era só um rótulo. Depois que elas passaram a esticar até a
-          altura da tela, esta virou uma moldura tracejada de tela inteira com o
-          texto perdido num canto — parecia coluna quebrada, não convite.
-
-          `self-start` mantém o convite do tamanho do conteúdo quando o funil
-          está vazio, que é o caso em que ele não deve esticar.
-        */
-        className="flex w-[220px] shrink-0 items-center justify-center rounded-xl border border-dashed border-strong px-3 py-3 text-center text-[12px] text-dim transition hover:border-strong hover:bg-surface hover:text-soft"
+        className="flex h-11 w-[160px] shrink-0 items-center justify-center self-start rounded-lg border border-dashed border-strong px-3 py-3 text-center text-[12px] text-dim transition hover:border-strong hover:bg-surface hover:text-soft"
       >
         + Nova etapa
       </button>
@@ -927,7 +895,11 @@ function NovaEtapa({ clienteId, quadroId }: { clienteId: string; quadroId: strin
           </p>
         )}
         <div className="mt-4 flex gap-2.5">
-          <button type="button" onClick={fechar} className="app-secondary-button flex-1 px-4 py-2.5 text-[13px]">
+          <button
+            type="button"
+            onClick={fechar}
+            className="app-secondary-button flex-1 px-4 py-2.5 text-[13px]"
+          >
             Cancelar
           </button>
           <button
@@ -985,7 +957,6 @@ function MenuDaEtapa({
   ehUltima: boolean
   ehUnica: boolean
 }) {
-  const [aberto, setAberto] = useState(false)
   const [renomeando, setRenomeando] = useState(false)
   const [configurando, setConfigurando] = useState(false)
   const [tipo, setTipo] = useState<TipoDeEtapa>(etapa.tipo ?? 'normal')
@@ -997,7 +968,6 @@ function MenuDaEtapa({
 
   function agir(acao: () => Promise<{ ok: boolean; erro?: string }>) {
     setErro(null)
-    setAberto(false)
     comecar(async () => {
       try {
         const r = await acao()
@@ -1010,76 +980,66 @@ function MenuDaEtapa({
 
   return (
     <span className="relative shrink-0">
-      <button
-        type="button"
-        aria-label={`Ações da etapa ${etapa.nome}`}
-        aria-expanded={aberto}
-        onClick={() => setAberto((a) => !a)}
-        className="rounded px-1 text-[13px] leading-none text-dim transition hover:text-soft"
+      <PopoverDoQuadro
+        rotulo={`Ações da etapa ${etapa.nome}`}
+        gatilho={<IconeDoQuadro tipo="menu" />}
+        className="quadro-stage-menu"
+        largura={240}
       >
-        ⋯
-      </button>
-
-      {aberto && (
-        <>
-          <span className="fixed inset-0 z-10" onClick={() => setAberto(false)} />
-          <span className="absolute top-5 right-0 z-20 flex w-[178px] flex-col rounded-lg border border-line bg-panel p-1 shadow-[0_18px_40px_rgba(19,25,34,0.11)]">
-            <button
-              type="button"
-              onClick={() => {
-                setAberto(false)
-                setNome(etapa.nome)
-                setRenomeando(true)
-              }}
-              className="rounded px-2 py-1.5 text-left text-[12px] transition hover:bg-surface-strong"
-            >
-              Renomear
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setAberto(false)
-                setConfigurando(true)
-              }}
-              className="rounded px-2 py-1.5 text-left text-[12px] transition hover:bg-surface-strong"
-            >
-              O que esta etapa significa
-            </button>
-            <button
-              type="button"
-              disabled={ehPrimeira}
-              onClick={() => agir(() => acaoMoverEtapa(clienteId, quadroId, etapa.id, 'esquerda'))}
-              className="rounded px-2 py-1.5 text-left text-[12px] transition hover:bg-surface-strong disabled:opacity-30 disabled:hover:bg-transparent"
-            >
-              ← Mover para a esquerda
-            </button>
-            <button
-              type="button"
-              disabled={ehUltima}
-              onClick={() => agir(() => acaoMoverEtapa(clienteId, quadroId, etapa.id, 'direita'))}
-              className="rounded px-2 py-1.5 text-left text-[12px] transition hover:bg-surface-strong disabled:opacity-30 disabled:hover:bg-transparent"
-            >
-              → Mover para a direita
-            </button>
-            <span className="my-1 border-t border-line" />
-            <button
-              type="button"
-              disabled={ehUnica}
-              title={
-                ehUnica
-                  ? 'Um quadro precisa de pelo menos uma etapa'
-                  : ocupada > 0
-                    ? `${ocupada} contato(s) estão aqui. Mova-os antes de apagar.`
-                    : 'Apagar esta etapa'
-              }
-              onClick={() => agir(() => acaoApagarEtapa(clienteId, quadroId, etapa.id))}
-              className="rounded px-2 py-1.5 text-left text-[12px] text-perigo transition hover:bg-rose-400/10 disabled:opacity-30 disabled:hover:bg-transparent"
-            >
-              Apagar etapa
-            </button>
-          </span>
-        </>
-      )}
+        <div className="flex flex-col" data-fechar-popover>
+          <button
+            type="button"
+            onClick={() => {
+              setNome(etapa.nome)
+              setRenomeando(true)
+            }}
+            className="rounded px-2 py-1.5 text-left text-[12px] transition hover:bg-surface-strong"
+          >
+            Renomear
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setConfigurando(true)
+            }}
+            className="rounded px-2 py-1.5 text-left text-[12px] transition hover:bg-surface-strong"
+          >
+            O que esta etapa significa
+          </button>
+          <button
+            type="button"
+            disabled={ehPrimeira}
+            onClick={() => agir(() => acaoMoverEtapa(clienteId, quadroId, etapa.id, 'esquerda'))}
+            className="rounded px-2 py-1.5 text-left text-[12px] transition hover:bg-surface-strong disabled:opacity-30 disabled:hover:bg-transparent"
+          >
+            ← Mover para a esquerda
+          </button>
+          <button
+            type="button"
+            disabled={ehUltima}
+            onClick={() => agir(() => acaoMoverEtapa(clienteId, quadroId, etapa.id, 'direita'))}
+            className="rounded px-2 py-1.5 text-left text-[12px] transition hover:bg-surface-strong disabled:opacity-30 disabled:hover:bg-transparent"
+          >
+            → Mover para a direita
+          </button>
+          <span className="my-1 border-t border-line" />
+          <button
+            type="button"
+            disabled={ehUnica}
+            title={
+              ehUnica
+                ? 'Um quadro precisa de pelo menos uma etapa'
+                : ocupada > 0
+                  ? `${ocupada} contato(s) estão aqui. Mova-os antes de apagar.`
+                  : 'Apagar esta etapa'
+            }
+            onClick={() => agir(() => acaoApagarEtapa(clienteId, quadroId, etapa.id))}
+            className="rounded px-2 py-1.5 text-left text-[12px] text-perigo transition hover:bg-rose-400/10 disabled:opacity-30 disabled:hover:bg-transparent"
+          >
+            Apagar etapa
+          </button>
+        </div>
+      </PopoverDoQuadro>
 
       {erro && (
         <span
@@ -1145,7 +1105,9 @@ function MenuDaEtapa({
               aria-pressed={cor === null}
               title="Sem cor"
               className={`size-[26px] rounded-full border text-[10px] text-dim transition ${
-                cor === null ? 'border-primary ring-2 ring-primary/30' : 'border-line hover:border-strong'
+                cor === null
+                  ? 'border-primary ring-2 ring-primary/30'
+                  : 'border-line hover:border-strong'
               }`}
             >
               —
@@ -1299,6 +1261,17 @@ function MenuDoCartao({
     setAberto(true)
   }
 
+  useEffect(() => {
+    if (!aberto) return
+    const aoTeclar = (evento: KeyboardEvent) => {
+      if (evento.key !== 'Escape') return
+      setAberto(false)
+      botao.current?.focus()
+    }
+    document.addEventListener('keydown', aoTeclar)
+    return () => document.removeEventListener('keydown', aoTeclar)
+  }, [aberto])
+
   const fechado = Boolean(cartao.situacao && cartao.situacao !== 'aberta')
 
   function agir(acao: () => Promise<{ ok: boolean; erro?: string }>, feito?: string) {
@@ -1322,9 +1295,9 @@ function MenuDoCartao({
         aria-label="Ações do cartão"
         aria-expanded={aberto}
         onClick={() => (aberto ? setAberto(false) : abrir())}
-        className="rounded px-1 text-[13px] leading-none text-dim opacity-0 transition group-hover:opacity-100 hover:text-soft focus:opacity-100"
+        className="grid size-6 place-items-center rounded text-dim transition hover:bg-surface hover:text-soft focus:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 [@media(pointer:coarse)]:opacity-100"
       >
-        ⋯
+        <IconeDoQuadro tipo="menu" />
       </button>
 
       {aberto && (

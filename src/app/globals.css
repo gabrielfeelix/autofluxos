@@ -997,3 +997,112 @@ textarea::placeholder {
 .temCursorProprio select {
   cursor: auto;
 }
+
+/* Funil: controles compactos e ações na top layer, inclusive dentro das colunas. */
+.quadro-tool {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 11px;
+  background: var(--panel);
+  color: var(--soft);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
+}
+.quadro-tool:hover {
+  background: var(--surface);
+  border-color: var(--line-strong);
+}
+.quadro-tool:focus-visible,
+.quadro-menu-item:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.quadro-tool[aria-expanded='true'] {
+  background: var(--surface);
+}
+.quadro-icon-button {
+  width: 36px;
+  padding: 7px;
+}
+.quadro-seletor {
+  border: 0;
+  padding: 0 4px 0 0;
+  background: transparent;
+  min-height: 28px;
+  color: var(--ink);
+}
+.quadro-popover {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: 6px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow:
+    0 12px 40px rgb(19 25 34 / 14%),
+    0 2px 6px rgb(19 25 34 / 4%);
+}
+.quadro-menu-label {
+  padding: 7px 9px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.quadro-menu-item {
+  display: flex;
+  width: 100%;
+  min-height: 38px;
+  align-items: center;
+  gap: 9px;
+  border-radius: 7px;
+  padding: 8px 9px;
+  text-align: left;
+  font-size: 12px;
+  cursor: pointer;
+}
+.quadro-menu-item:hover {
+  background: var(--surface);
+}
+.quadro-danger > span {
+  width: 100%;
+  align-items: stretch;
+}
+.quadro-danger > span > button {
+  border: 0;
+  padding: 10px 9px;
+  color: var(--perigo);
+  text-align: left;
+  font-size: 12px;
+  font-weight: 500;
+}
+.quadro-toolbar .app-dropdown-trigger {
+  min-height: 36px;
+  height: 36px;
+  padding: 7px 10px;
+  border-radius: 8px;
+}
+.quadro-toolbar .app-field {
+  border-radius: 8px;
+}
+.quadro-stage-menu {
+  min-height: 28px;
+  width: 28px;
+  padding: 5px;
+  border: 0;
+  background: transparent;
+  color: var(--dim);
+}

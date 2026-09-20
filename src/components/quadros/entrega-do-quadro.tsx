@@ -35,13 +35,13 @@ export function EntregaDoQuadro({
   if (outros.length === 0) return null
 
   return (
-    <span className="flex shrink-0 items-center gap-1.5 text-[11.5px] text-dim">
+    <span className="flex flex-col items-start gap-2 text-[12px] text-muted">
       <span className="whitespace-nowrap">Ao ganhar, mandar para</span>
       <Dropdown
         rotuloAcessivel="Para qual funil este quadro entrega ao ganhar"
         valor={seguinteId ?? ''}
         desabilitado={rodando}
-        className="w-[200px] shrink-0"
+        className="w-full"
         opcoes={[
           { valor: '', rotulo: 'Nenhum funil' },
           ...outros.map((quadro) => ({ valor: quadro.id, rotulo: quadro.nome })),

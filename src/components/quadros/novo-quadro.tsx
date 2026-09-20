@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState, useTransition } from 'react'
+import { useState, useTransition, type ReactNode } from 'react'
 import { LIMITE_DO_NOME } from '@/core/quadros'
 import { MODELOS_DE_QUADRO, type ModeloDeQuadro } from '@/core/quadros-modelos'
 import { Modal } from '@/components/design/modal'
@@ -23,7 +23,15 @@ import { acaoCriarQuadroComModelo } from '@/server/acoes-crm'
  * perda em rosa. É o que responde "esse funil é o meu?" antes de qualquer
  * palavra — e o que impede o template de ser um nome bonito que ninguém entende.
  */
-export function NovoQuadro({ clienteId, primeiro }: { clienteId: string; primeiro: boolean }) {
+export function NovoQuadro({
+  clienteId,
+  primeiro,
+  acionador,
+}: {
+  clienteId: string
+  primeiro: boolean
+  acionador?: (abrir: () => void) => ReactNode
+}) {
   const [aberto, setAberto] = useState(false)
   const [passo, setPasso] = useState<'como' | 'modelos' | 'nome'>('como')
   const [modelo, setModelo] = useState<ModeloDeQuadro | null>(null)
@@ -77,17 +85,21 @@ export function NovoQuadro({ clienteId, primeiro }: { clienteId: string; primeir
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setAberto(true)}
-        className={
-          primeiro
-            ? 'app-primary-button px-4 py-2.5 text-[13px]'
-            : 'app-secondary-button px-3.5 py-2 text-[12.5px]'
-        }
-      >
-        + Novo funil
-      </button>
+      {acionador ? (
+        acionador(() => setAberto(true))
+      ) : (
+        <button
+          type="button"
+          onClick={() => setAberto(true)}
+          className={
+            primeiro
+              ? 'app-primary-button px-4 py-2.5 text-[13px]'
+              : 'app-secondary-button px-3.5 py-2 text-[12.5px]'
+          }
+        >
+          + Novo funil
+        </button>
+      )}
 
       <Modal
         aberto={aberto}
@@ -213,7 +225,6 @@ export function NovoQuadro({ clienteId, primeiro }: { clienteId: string; primeir
             </div>
           </div>
         )}
-
       </Modal>
     </>
   )
