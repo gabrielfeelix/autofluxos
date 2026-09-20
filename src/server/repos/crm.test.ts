@@ -59,9 +59,11 @@ beforeAll(async () => {
   const contato = await acharOuCriarContato(clienteId, `5511${seed}01`, 'Ana')
   ana = contato.id
 
-  const sdr = await criarQuadro(clienteId, `${marca} captação`)
+  // A captação é **operacional**: qualificar não é vender (0071, A11).
+  const sdr = await criarQuadro(clienteId, `${marca} captação`, 'captacao')
   if (sdr.ok) sdrId = sdr.id
-  const vendas = await criarQuadro(clienteId, `${marca} vendas`)
+  // O de vendas é comercial, e é o único cujo ganho pode virar compra.
+  const vendas = await criarQuadro(clienteId, `${marca} vendas`, 'comercial')
   if (vendas.ok) vendasId = vendas.id
 })
 
@@ -127,10 +129,27 @@ describe.skipIf(!temCredencial)('ganhar, perder e a cadeia de funis', () => {
     expect(await estagioDe(ana)).toBe('cliente')
   })
 
-  it('o resumo soma o que o cliente rendeu', async () => {
+  /**
+   * O resumo conta o que é **compra**, e não todo cartão ganho.
+   *
+   * Até a 0071 este teste somava R$ 1500 de um ganho no funil de **captação**,
+   * porque qualquer `situacao = 'ganha'` virava compra. Qualificar alguém não é
+   * vender (A11), então a captação — que é operacional — não entra mais na
+   * conta. O que entra é o ganho do funil comercial, quando houver.
+   */
+  it('o resumo conta compra, e qualificação não é compra', async () => {
+    const resumo = await resumoDoContato(clienteId, ana)
+    expect(resumo.compras).toBe(0)
+    expect(resumo.total).toBe(0)
+  })
+
+  it('ganhar no funil comercial passa a contar como compra', async () => {
+    const cartao = (await cartaoDe(vendasId, ana))!
+    expect((await fecharCartao(clienteId, cartao.id, 'ganha', { valor: 900 })).ok).toBe(true)
+
     const resumo = await resumoDoContato(clienteId, ana)
     expect(resumo.compras).toBe(1)
-    expect(resumo.total).toBe(1500)
+    expect(resumo.total).toBe(900)
   })
 
   it('perder exige um motivo da lista da conta', async () => {

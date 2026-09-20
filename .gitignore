@@ -39,3 +39,6 @@ npm-debug.log*
 # Ambiente de teste local (nunca versionado)
 .env.teste-local
 !.env.teste-local.example
+
+# Config local do Claude Code, nao pertence ao repo
+.claude/

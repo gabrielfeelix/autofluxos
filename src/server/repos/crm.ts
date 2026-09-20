@@ -290,16 +290,41 @@ async function temCartaoAberto(clienteId: string, contatoId: string): Promise<bo
   return (count ?? 0) > 0
 }
 
+/**
+ * Esta pessoa comprou?
+ *
+ * **Venda registrada é a única prova** (0071, RB-05). Antes, qualquer cartão
+ * `ganha` respondia sim — inclusive "Resolvido" no Atendimento e "Compareceu"
+ * na Agenda, que não são compra nenhuma.
+ *
+ * O ganho antigo em quadro **comercial** continua respondendo sim, porque há
+ * empresas que fecharam venda de verdade assim antes de existir a tabela
+ * `vendas`, e retirar isso apagaria clientes reais da base de um dia para o
+ * outro. Ganho em quadro operacional não conta mais, e é o defeito que esta
+ * fase veio corrigir (A11). A classificação do legado comercial é ação de
+ * gestor, na F5 (RB-32).
+ */
 async function jaComprou(clienteId: string, contatoId: string): Promise<boolean> {
-  const { count, error } = await db()
-    .from('quadro_cartoes')
+  const { count: comVenda } = await db()
+    .from('vendas')
     .select('id', { count: 'exact', head: true })
     .eq('client_id', clienteId)
     .eq('contact_id', contatoId)
+    .eq('situacao', 'valida')
+
+  if ((comVenda ?? 0) > 0) return true
+
+  const { data, error } = await db()
+    .from('quadro_cartoes')
+    .select('id, quadros!inner(finalidade)')
+    .eq('client_id', clienteId)
+    .eq('contact_id', contatoId)
     .eq('situacao', 'ganha')
+    .eq('quadros.finalidade', 'comercial')
+    .limit(1)
 
   if (error) return false
-  return (count ?? 0) > 0
+  return (data ?? []).length > 0
 }
 
 /**
@@ -312,24 +337,73 @@ export async function resumoDoContato(
   clienteId: string,
   contatoId: string,
 ): Promise<{ total: number; compras: number; ultimaEm: string | null }> {
-  const { data, error } = await db()
-    .from('quadro_cartoes')
-    .select('valor, fechado_em')
-    .eq('client_id', clienteId)
-    .eq('contact_id', contatoId)
-    .eq('situacao', 'ganha')
+  /*
+   * Duas fontes, e a ordem importa.
+   *
+   * As **vendas** (0071) são a fonte oficial. O cartão ganho de quadro
+   * **comercial** entra como legado, pelos mesmos clientes que fecharam venda
+   * antes de a tabela existir — e só quando aquele cartão ainda não tem venda
+   * registrada, senão a mesma compra contaria duas vezes.
+   *
+   * Cartão ganho de quadro **operacional** não entra: é a correção do A11.
+   */
+  const [{ data: vendas }, { data: legado, error }] = await Promise.all([
+    db()
+      .from('vendas')
+      .select('valor_total, data_da_venda')
+      .eq('client_id', clienteId)
+      .eq('contact_id', contatoId)
+      .eq('situacao', 'valida'),
+    db()
+      .from('quadro_cartoes')
+      .select('id, valor, fechado_em, quadros!inner(finalidade)')
+      .eq('client_id', clienteId)
+      .eq('contact_id', contatoId)
+      .eq('situacao', 'ganha')
+      .eq('quadros.finalidade', 'comercial'),
+  ])
 
   if (ehIdInvalido(error)) return { total: 0, compras: 0, ultimaEm: null }
   if (error) throw new Error(`não deu para ler o resumo: ${error.message}`)
 
-  return resumoDoCliente(
-    (data as { valor: string | number | null; fechado_em: string | null }[]).map((linha) => ({
-      // `numeric` chega como string no supabase-js — somar sem converter
-      // concatenaria "200" com "350.50".
-      valor: linha.valor === null ? null : Number(linha.valor),
-      fechadoEm: linha.fechado_em,
-    })),
-  )
+  const cartoesLegado = (legado ?? []) as {
+    id: string
+    valor: string | number | null
+    fechado_em: string | null
+  }[]
+
+  // Quais desses cartões já viraram venda registrada. Sem isto, a oportunidade
+  // ganha **e** com venda apareceria como duas compras.
+  const comVenda = new Set<string>()
+  if (cartoesLegado.length > 0) {
+    const { data: jaRegistradas } = await db()
+      .from('vendas')
+      .select('cartao_id')
+      .eq('client_id', clienteId)
+      .eq('situacao', 'valida')
+      .in('cartao_id', cartoesLegado.map((c) => c.id))
+
+    for (const linha of (jaRegistradas ?? []) as { cartao_id: string }[]) {
+      comVenda.add(linha.cartao_id)
+    }
+  }
+
+  return resumoDoCliente([
+    // `numeric` chega como string no supabase-js — somar sem converter
+    // concatenaria "200" com "350.50".
+    ...((vendas ?? []) as { valor_total: string | number | null; data_da_venda: string }[]).map(
+      (linha) => ({
+        valor: linha.valor_total === null ? null : Number(linha.valor_total),
+        fechadoEm: linha.data_da_venda,
+      }),
+    ),
+    ...cartoesLegado
+      .filter((linha) => !comVenda.has(linha.id))
+      .map((linha) => ({
+        valor: linha.valor === null ? null : Number(linha.valor),
+        fechadoEm: linha.fechado_em,
+      })),
+  ])
 }
 
 /**

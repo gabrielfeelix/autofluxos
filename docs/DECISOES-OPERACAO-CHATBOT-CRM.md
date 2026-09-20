@@ -220,21 +220,98 @@ Eles guardam o estado **errado** de propósito, onde ele existe hoje (`Resolvido
 como `ganho`, por exemplo): é o que a migração da F1 vai encontrar no banco dos
 clientes, e um teste que só conhecesse o mundo corrigido não provaria a migração.
 
-## 6. Numeração de migration
+## 6. A separação entre sucesso e venda (T1.1 — implementada)
 
-Nenhuma migration foi criada nem aplicada até aqui. A próxima virá de
+### O que mudou
+
+Migration **0071** (número lido do diretório no momento de escrever, como manda
+o `BANCO-COMPARTILHADO.md`), toda aditiva:
+
+| Mudança | Por quê |
+|---|---|
+| `quadros.finalidade` | distinguir processo comercial de operacional (RB-03) |
+| `quadro_cartoes_aberto_unico_idx` | unicidade só entre **abertos**: recompra passa a existir (RB-02, A12) |
+| `quadro_cartoes.chave_de_criacao` | idempotência da criação de ocorrência (RB-10) |
+| tabelas `vendas` e `venda_itens` | a compra com registro próprio (RB-05, RB-29) |
+
+**Todo quadro existente nasce `operacional`.** É deliberado: marcar os antigos
+como comerciais transformaria, de uma vez, todo "Resolvido" acumulado em compra
+— o defeito que esta fase veio corrigir. Quem vende marca o funil como comercial
+numa ação explícita, que a F5 entrega na tela.
+
+Nenhuma coluna foi apagada. `quadro_cartoes` mantém `valor`, `fechado_em` e
+`situacao` porque há leitores vivos, e porque converter ganho antigo em venda
+seria decidir por suposição o que a RB-32 manda mandar para revisão humana.
+
+### A regra, agora em um lugar só
+
+`core/oportunidades.ts` responde **o que conta como compra**:
+
+```
+contaComoCompra(situacao, finalidade) === situacao === 'ganha' && finalidade === 'comercial'
+```
+
+`core/vendas.ts` responde **quanto**, e a regra dele é que desconhecido não é
+zero: `totalDosItens` devolve `null` se faltar qualquer parte, e `resumirVendas`
+devolve `semValor` para a tela poder dizer "3 compras, R$ 500 conhecidos" em vez
+de apresentar R$ 500 como se fosse tudo.
+
+### Compatibilidade de leitura do legado
+
+`jaComprou` e `resumoDoContato` passaram a contar, nesta ordem:
+
+1. **vendas válidas** — a fonte oficial;
+2. ganho em quadro **comercial** que ainda não tem venda registrada — porque há
+   empresas que fecharam venda de verdade antes da tabela existir, e retirá-las
+   apagaria clientes reais da base de um dia para o outro.
+
+Ganho em quadro **operacional** não conta mais. É a correção do A11.
+
+### Consequência encontrada na execução
+
+O `upsert ... onConflict: 'quadro_id,contact_id'` de `repos/quadros.ts` (três
+chamadores) parou de funcionar: o PostgREST não aceita `onConflict` apontando
+para índice **parcial**, e responde "there is no unique or exclusion constraint
+matching the ON CONFLICT specification". A filtragem passou a ser explícita
+(`jaAbertosNoQuadro`), com o `23505` ainda tratado como sucesso para cobrir a
+corrida entre duas requisições.
+
+Isso não estava previsto no plano e só apareceu ao rodar os testes — é o tipo de
+coisa que justifica a ordem "escrever o cenário que falha antes de implementar".
+
+### Evidência
+
+| Aceite | Antes | Depois |
+|---|---|---|
+| A11 · atendimento resolvido | 1 compra, receita fictícia | **0 compras** |
+| A11 · atendimento + venda comercial | 2 compras, R$ 500 | **1 compra**, R$ 500 |
+| A12 · recompra no mesmo funil | recusada, 1 cartão | **2 ocorrências, 2 vendas** |
+| A13 · duplo clique e corrida | — | **mesma venda**, 1 compra |
+| A14 · compra sem valor | — | conta 1, total 0, `semValor: 1` |
+| A15 · cancelar venda | — | sai dos indicadores, registro preservado |
+
+Suítes: **1755 unitários** e **311 de integração local**, zero falhas.
+Migration aplicada duas vezes no banco local sem erro (idempotência, A23).
+`src/server/repos/venda-nao-e-atendimento.test.ts` nasceu medindo o defeito e
+hoje exige o comportamento correto; a diferença está no histórico do git.
+
+## 7. Numeração de migration
+
+A `0071` foi criada e aplicada **somente no Docker local**. A próxima virá de
 `ls supabase/migrations/ | tail -1` **no momento de escrevê-la**, nunca deste
 documento — a regra do `BANCO-COMPARTILHADO.md`, que já errou três vezes por
-documento afirmar número. Em 19/set/2026 o disco terminava em `0070`, e esta
-linha é registro histórico, não fonte.
+documento afirmar número. Em 19/set/2026 o disco terminava em `0070` e a `0071`
+foi escrita a partir disso; esta linha é registro histórico, não fonte.
 
-## 7. Estado por fase
+## 8. Estado por fase
 
 | Fase | Situação |
 |---|---|
 | F0 · T0.1 | **implementado e testado localmente** |
 | F0 · T0.2 | **implementado**: inventário, fixtures, pendência de canal resolvida |
-| F1 a F9 | não iniciadas |
+| F1 · T1.1 | **implementado e testado localmente**: finalidade, ocorrência recorrente, venda |
+| F1 · T1.2 | não iniciada (transações, histórico e continuidade) |
+| F2 a F9 | não iniciadas |
 
 Nada foi liberado em produção. Nenhuma migration aplicada fora do Docker local.
 Nenhuma mensagem real enviada.

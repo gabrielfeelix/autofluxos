@@ -41,6 +41,8 @@ export const TESTES_DE_INTEGRACAO = [
   'src/server/repos/pulso.test.ts',
   'src/server/repos/quadros.test.ts',
   'src/server/repos/relacionamento.test.ts',
+  'src/server/repos/venda-nao-e-atendimento.test.ts',
+  'src/server/repos/vendas.test.ts',
   'src/server/repos/repos.test.ts',
   'src/server/repos/retencao.test.ts',
   'src/server/repos/sequencias.test.ts',

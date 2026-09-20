@@ -1,3 +1,4 @@
+import type { Finalidade } from './oportunidades'
 import type { TipoDeEtapa } from './quadros'
 
 /**
@@ -35,6 +36,16 @@ export type ModeloDeQuadro = {
   nome: string
   resumo: string
   etiquetas: readonly string[]
+  /**
+   * Comercial ou operacional (0071).
+   *
+   * É o que decide se concluir a etapa final **pede uma venda** ou só conclui
+   * o trabalho. Dos cinco modelos, só o Comercial vende: Atendimento,
+   * Captação, Agenda e Pós-venda terminam em sucesso operacional, e é por isso
+   * que "Resolvido", "Qualificado" e "Compareceu" nunca deveriam ter contado
+   * como compra (RB-03, A11).
+   */
+  finalidade: Finalidade
   etapas: readonly EtapaDoModelo[]
 }
 
@@ -44,6 +55,7 @@ export const MODELOS_DE_QUADRO: readonly ModeloDeQuadro[] = [
     nome: 'Atendimento',
     resumo: 'Quem chegou, quem está sendo atendido, quem já foi resolvido. Sem venda no meio.',
     etiquetas: ['simples', 'suporte'],
+    finalidade: 'operacional',
     etapas: [
       { nome: 'Novo', dias: 1 },
       { nome: 'Em conversa', dias: 3 },
@@ -56,6 +68,7 @@ export const MODELOS_DE_QUADRO: readonly ModeloDeQuadro[] = [
     resumo:
       'O funil de venda inteiro, do primeiro contato ao fechamento, com etapa de ganho e de perda.',
     etiquetas: ['vendas', 'proposta'],
+    finalidade: 'comercial',
     etapas: [
       { nome: 'Novo', dias: 1 },
       { nome: 'Contato feito', dias: 2 },
@@ -71,6 +84,7 @@ export const MODELOS_DE_QUADRO: readonly ModeloDeQuadro[] = [
     resumo:
       'Só até descobrir se a pessoa serve. Quem passa vai para o funil de vendas; quem não, sai com motivo.',
     etiquetas: ['sdr', 'qualificação'],
+    finalidade: 'operacional',
     etapas: [
       { nome: 'Novo', dias: 1 },
       { nome: 'Tentando contato', dias: 2 },
@@ -85,6 +99,7 @@ export const MODELOS_DE_QUADRO: readonly ModeloDeQuadro[] = [
     resumo:
       'Para quem vende hora marcada: clínica, estúdio, barbearia. O desfecho é a pessoa aparecer.',
     etiquetas: ['serviço', 'agenda'],
+    finalidade: 'operacional',
     etapas: [
       { nome: 'Novo', dias: 1 },
       { nome: 'Avaliação', dias: 2 },
@@ -99,6 +114,7 @@ export const MODELOS_DE_QUADRO: readonly ModeloDeQuadro[] = [
     resumo:
       'O que vem depois da venda: acompanhar, oferecer de novo, e saber quem voltou a comprar.',
     etiquetas: ['retenção', 'recompra'],
+    finalidade: 'operacional',
     etapas: [
       { nome: 'Entregue', dias: 7 },
       { nome: 'Acompanhamento', dias: 30 },
@@ -111,6 +127,18 @@ export const MODELOS_DE_QUADRO: readonly ModeloDeQuadro[] = [
 
 /** O modelo em branco: uma etapa só, para quem quer desenhar do zero. */
 export const QUADRO_EM_BRANCO: readonly EtapaDoModelo[] = [{ nome: 'Novo' }]
+
+/**
+ * A finalidade com que o quadro nasce.
+ *
+ * Modelo desconhecido e quadro em branco nascem **operacionais**, pelo mesmo
+ * motivo do default da 0071: o desconhecido não pode virar receita. Marcar como
+ * comercial é uma escolha explícita de quem vende.
+ */
+export function finalidadeDoModelo(modeloId: string | null | undefined): Finalidade {
+  if (!modeloId || modeloId === 'branco') return 'operacional'
+  return MODELOS_DE_QUADRO.find((modelo) => modelo.id === modeloId)?.finalidade ?? 'operacional'
+}
 
 /**
  * As etapas com que o quadro vai nascer.

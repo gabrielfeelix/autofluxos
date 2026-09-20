@@ -615,7 +615,7 @@ Preencher durante a implementação, sem marcar tarefas antecipadamente.
 | Fase | Implementação | Testes locais / evidência | Liberação / observações |
 |---|---|---|---|
 | F0 | **T0.1 e T0.2 implementadas** | unitários 1724 ok · integração local 294 ok · typecheck limpo | não liberada; nada aplicado em produção |
-| F1 | pendente | pendente | não iniciada |
+| F1 | **T1.1 implementada** (0071: finalidade, ocorrência recorrente, venda). T1.2 pendente | unitários 1755 ok · integração local 311 ok · A11/A12/A13/A14/A15 aprovados | migration só no Docker local; **não aplicada em produção** |
 | F2 | pendente | pendente | não iniciada |
 | F3 | pendente | pendente | não iniciada |
 | F4 | pendente | pendente | não iniciada |

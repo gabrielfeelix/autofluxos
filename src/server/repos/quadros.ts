@@ -12,7 +12,7 @@ import {
   type TipoDeEtapa,
 } from '@/core/quadros'
 import { comoDinheiro, conferirFechamento, podeEncadear, LIMITE_DO_TITULO } from '@/core/crm'
-import { etapasDoModelo, type EtapaDoModelo } from '@/core/quadros-modelos'
+import { etapasDoModelo, finalidadeDoModelo, type EtapaDoModelo } from '@/core/quadros-modelos'
 import { db, ehIdInvalido } from '../db'
 import { aplicarFato } from './crm'
 import { anotar } from './eventos'
@@ -138,7 +138,13 @@ export async function criarQuadro(
 
   const { data, error } = await db()
     .from('quadros')
-    .insert({ client_id: clienteId, nome: limpo })
+    .insert({
+      client_id: clienteId,
+      nome: limpo,
+      // A finalidade vem do modelo (0071). Sem modelo, nasce operacional: um
+      // quadro que ninguém classificou não pode começar produzindo receita.
+      finalidade: finalidadeDoModelo(modeloId),
+    })
     .select('id')
     .single()
 
@@ -515,6 +521,38 @@ export async function listarCartoes(clienteId: string, quadroId: string): Promis
  * que já estavam de volta para a primeira etapa desfaria o trabalho de quem os
  * arrastou até o fim do funil.
  */
+/**
+ * Quais destes contatos **já têm cartão aberto** neste quadro.
+ *
+ * Existe por causa da 0071. Antes, a unicidade era permanente
+ * (`quadro_cartoes_unico_idx`) e o `upsert ... onConflict` do PostgREST a
+ * usava para ignorar repetição. A 0071 trocou essa unicidade por uma parcial,
+ * só entre os cartões abertos, para que recompra e retorno tenham onde existir
+ * (RB-02, A12) — e o PostgREST não aceita `onConflict` apontando para índice
+ * parcial: responde "there is no unique or exclusion constraint matching the
+ * ON CONFLICT specification".
+ *
+ * Então a filtragem passa a ser explícita: lê quem já está aberto e insere só
+ * o resto. O índice parcial continua sendo a garantia final contra a corrida
+ * entre duas requisições; isto aqui evita o erro no caminho comum.
+ */
+async function jaAbertosNoQuadro(
+  quadroId: string,
+  contatos: string[],
+): Promise<Set<string>> {
+  if (contatos.length === 0) return new Set()
+
+  const { data, error } = await db()
+    .from('quadro_cartoes')
+    .select('contact_id')
+    .eq('quadro_id', quadroId)
+    .eq('situacao', 'aberta')
+    .in('contact_id', contatos)
+
+  if (error) throw new Error(`não deu para conferir quem já está no quadro: ${error.message}`)
+  return new Set((data as { contact_id: string }[]).map((linha) => linha.contact_id))
+}
+
 export async function porNoQuadro(
   clienteId: string,
   quadroId: string,
@@ -542,20 +580,28 @@ export async function porNoQuadro(
   const validos = (doCliente as { id: string }[]).map((c) => c.id)
   if (validos.length === 0) return { ok: false, motivo: 'nenhum contato deste cliente na seleção' }
 
+  const jaEstao = await jaAbertosNoQuadro(quadroId, validos)
+  const aInserir = validos.filter((contatoId) => !jaEstao.has(contatoId))
+  if (aInserir.length === 0) return { ok: true, postos: 0 }
+
   const { data, error } = await db()
     .from('quadro_cartoes')
-    .upsert(
-      validos.map((contatoId) => ({
+    .insert(
+      aInserir.map((contatoId) => ({
         client_id: clienteId,
         quadro_id: quadroId,
         coluna_id: primeira.id,
         contact_id: contatoId,
       })),
-      { onConflict: 'quadro_id,contact_id', ignoreDuplicates: true },
     )
     .select('id')
 
-  if (error) throw new Error(`não deu para pôr no quadro: ${error.message}`)
+  // 23505 é a corrida: outra requisição abriu o cartão entre a leitura e o
+  // insert. O índice parcial fez o seu trabalho, e o resultado é o mesmo que
+  // o `ignoreDuplicates` dava antes — a pessoa está no quadro.
+  if (error && error.code !== '23505') {
+    throw new Error(`não deu para pôr no quadro: ${error.message}`)
+  }
   return { ok: true, postos: (data as { id: string }[] | null)?.length ?? 0 }
 }
 
@@ -652,20 +698,25 @@ export async function porNaEtapa(
   const validos = (doCliente as { id: string }[]).map((c) => c.id)
   if (validos.length === 0) return { ok: false, motivo: 'nenhum contato deste cliente na seleção' }
 
+  const jaEstao = await jaAbertosNoQuadro(quadroId, validos)
+  const aInserir = validos.filter((contatoId) => !jaEstao.has(contatoId))
+  if (aInserir.length === 0) return { ok: true, postos: 0 }
+
   const { data, error } = await db()
     .from('quadro_cartoes')
-    .upsert(
-      validos.map((contatoId) => ({
+    .insert(
+      aInserir.map((contatoId) => ({
         client_id: clienteId,
         quadro_id: quadroId,
         coluna_id: colunaId,
         contact_id: contatoId,
       })),
-      { onConflict: 'quadro_id,contact_id', ignoreDuplicates: true },
     )
     .select('id')
 
-  if (error) throw new Error(`não deu para pôr na etapa: ${error.message}`)
+  if (error && error.code !== '23505') {
+    throw new Error(`não deu para pôr na etapa: ${error.message}`)
+  }
   return { ok: true, postos: (data as { id: string }[] | null)?.length ?? 0 }
 }
 
@@ -1050,24 +1101,25 @@ async function passarParaOSeguinte(
   const primeira = seguinte?.etapas[0]
   if (!seguinte || !primeira) return null
 
+  // Já estar **aberto** no funil seguinte não é erro: é alguém que comprou de
+  // novo, e o cartão que já existe lá é o que vale. Mover de volta para a
+  // primeira etapa desfaria o trabalho de quem o arrastou até o fim. Cartão
+  // fechado, porém, não impede mais a nova passagem — ver `jaAbertosNoQuadro`.
+  const jaAberto = await jaAbertosNoQuadro(seguinte.id, [contatoId])
+  if (jaAberto.has(contatoId)) return seguinte.nome
+
   const { error: erroDoInsert } = await db()
     .from('quadro_cartoes')
-    .upsert(
-      {
-        client_id: clienteId,
-        quadro_id: seguinte.id,
-        coluna_id: primeira.id,
-        contact_id: contatoId,
-        responsavel: extras.responsavel,
-        titulo: extras.titulo,
-      },
-      // Já estar no funil seguinte não é erro: é alguém que comprou de novo, e o
-      // cartão que já existe lá é o que vale. Mover de volta para a primeira
-      // etapa desfaria o trabalho de quem o arrastou até o fim.
-      { onConflict: 'quadro_id,contact_id', ignoreDuplicates: true },
-    )
+    .insert({
+      client_id: clienteId,
+      quadro_id: seguinte.id,
+      coluna_id: primeira.id,
+      contact_id: contatoId,
+      responsavel: extras.responsavel,
+      titulo: extras.titulo,
+    })
 
-  if (erroDoInsert) {
+  if (erroDoInsert && erroDoInsert.code !== '23505') {
     console.error('[quadros] não deu para passar ao quadro seguinte:', erroDoInsert.message)
     return null
   }
