@@ -639,10 +639,20 @@ export function Fila({
                   ativa ? "bg-primary/[0.12]" : "hover:bg-surface"
                 }`}
               >
+              {/*
+                `prefetch` ligado: sem ele o Next só pré-carrega o `loading` da
+                rota, e a conversa inteira começa do zero no clique. Com ele, a
+                navegação já encontra parte do trabalho feito.
+
+                A fila tem no máximo `CONVERSAS_POR_PAGINA` itens visíveis e o
+                prefetch acontece quando o link entra em viewport, então o custo
+                é limitado à página que a pessoa está vendo.
+              */}
               <Link
                 href={`/clientes/${clienteId}/inbox?conversa=${encodeURIComponent(lead.contatoId)}`}
                 aria-current={ativa ? "page" : undefined}
                 scroll={false}
+                prefetch
                 className="flex gap-2.5 rounded-[10px] px-2.5 py-3"
               >
                 <Avatar nome={lead.nome} alerta={Boolean(lead.aguardando)} />

@@ -264,6 +264,20 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
   const selecionado =
     naLista?.contatoId === pedido || !pedido ? naLista : ((await acharLead(clienteId, pedido)) ?? naLista)
 
+  /*
+   * **`sessaoAtual` e `pulsoDaConta` vão juntas.** Eram duas idas de rede em
+   * série, e uma não depende da outra: o pulso é sobre a conta, a sessão é
+   * sobre quem está olhando. Em série elas somavam ao tempo até o primeiro
+   * pixel de **toda** navegação do Inbox, inclusive a de só trocar de conversa,
+   * que é a mais frequente da tela mais usada do produto.
+   *
+   * O pulso continua sendo lido aqui, antes do desenho, porque ele é a linha de
+   * base contra a qual o poll compara para saber se o que está à vista
+   * envelheceu: lê-lo depois seria comparar a tela com um relógio posterior a
+   * ela.
+   */
+  const [sessao, pulso] = await Promise.all([sessaoAtual(), pulsoDaConta(clienteId)])
+
   /**
    * Quem atende nesta conta, para a tela dizer **nomes** em vez de uuid.
    *
@@ -274,8 +288,6 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
    * membros, a atribuição simplesmente não aparece, que é a verdade enquanto
    * não existe usuário nenhum.
    */
-  const sessao = await sessaoAtual()
-
   let equipe: MembroDaConta[] = []
   // Só busca quando há o que mostrar: alguém logado para assumir, ou alguma
   // conversa já com dono. Enquanto não existir
@@ -304,10 +316,6 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
    * vezes na mesma navegação escreve o mesmo relógio duas vezes. Sem usuário,
    * quem ainda não tem usuário na conta, as duas funções não fazem nada.
    */
-  // O pulso de agora vira a linha de base da tela: é contra ele que o poll
-  // compara para saber se o que está à vista envelheceu.
-  const pulso = await pulsoDaConta(clienteId)
-
   const usuarioId = sessao?.usuario.id ?? null
   if (selecionado) {
     /*
@@ -318,7 +326,21 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
      * olhada?" sempre daria não, e o tique azul nunca sairia.
      */
     const leuAntesEm = await quandoLeu(usuarioId, selecionado.contatoId)
-    await marcarComoLida(usuarioId, selecionado.contatoId)
+
+    /*
+     * **A marca de lida sai do caminho do desenho.**
+     *
+     * Ela era `await` aqui: uma **escrita** no banco entre o clique e o
+     * primeiro pixel da conversa, em toda troca de conversa. Quem lê não
+     * precisa esperar o registro de que leu — o que importa nesta renderização
+     * é `leuAntesEm`, que já foi lido acima, e a contagem logo abaixo, que
+     * desconta a conversa aberta por conta própria.
+     *
+     * Continua idempotente (`lida_em = now()`) e continua antes da contagem na
+     * ordem que importa: a leitura de `quandoLeu` permanece em série, porque
+     * empurrar o relógio antes de lê-lo faria o tique azul nunca sair.
+     */
+    after(() => marcarComoLida(usuarioId, selecionado.contatoId))
 
     /*
      * O tique azul sai **depois** da resposta, pelo `after`: é uma chamada de
@@ -386,6 +408,21 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
     usuarioId,
     (local ?? naFila).map((lead) => lead.contatoId),
   )
+
+  /*
+   * **A conversa aberta nunca aparece como não lida.**
+   *
+   * Antes isso acontecia por efeito colateral: `marcarComoLida` era um `await`
+   * logo acima, então a contagem já vinha do banco sem ela. Agora a marca sai
+   * pelo `after()`, depois da resposta, e a contagem aqui ainda enxergaria as
+   * mensagens da conversa que está visível na tela.
+   *
+   * O desconto é explícito, e é a mesma verdade de antes dita no lugar certo:
+   * o que a pessoa está lendo agora não está por ler. Vale mesmo sem usuário na
+   * sessão, caso em que não há o que marcar no banco mas a tela continua
+   * mostrando a conversa aberta.
+   */
+  if (selecionado) naoLidas.delete(selecionado.contatoId)
 
   return (
     <>
