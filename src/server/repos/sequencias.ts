@@ -566,6 +566,32 @@ export async function sequenciasQueUsamAEtiqueta(
 }
 
 /**
+ * As sequências que uma etapa dispara, pelo nome.
+ *
+ * Gêmea de `sequenciasQueUsamAEtiqueta`, e existe pela mesma razão: apagar a
+ * etapa deixaria a sequência ativa apontando para um `coluna_id` que não existe
+ * mais, e ninguém descobriria até o dia em que alguém esperasse a automação
+ * rodar. É o aceite **A20**.
+ *
+ * Devolve o **nome** e não o id porque quem lê é uma pessoa na tela: "está em
+ * uso" manda ela procurar onde, e a lista de sequências pode ter dezenas.
+ */
+export async function sequenciasQueUsamAEtapa(
+  clienteId: string,
+  etapaId: string,
+): Promise<string[]> {
+  const { data, error } = await db()
+    .from('sequencias')
+    .select('nome')
+    .eq('client_id', clienteId)
+    .eq('coluna_id', etapaId)
+
+  if (ehIdInvalido(error)) return []
+  if (error) throw new Error(`não deu para conferir as sequências: ${error.message}`)
+  return (data as { nome: string }[]).map((linha) => linha.nome)
+}
+
+/**
  * Tira do acompanhamento quem acabou de ganhar a etiqueta de saída.
  *
  * Precisa ser específica — e não a `sair_das_sequencias` genérica — porque a

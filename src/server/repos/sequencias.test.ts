@@ -20,7 +20,7 @@ import {
   sairPorEtiquetaDeSaida,
   sequenciasDoEvento,
 } from './sequencias'
-import { acharQuadro, criarQuadro } from './quadros'
+import { acharQuadro, apagarEtapa, criarEtapa, criarQuadro } from './quadros'
 
 /**
  * As sequências contra o banco de verdade (0031).
@@ -157,6 +157,57 @@ describe.skipIf(!temCredencial)('o que uma sequência viva impede de apagar', ()
 
   it('apaga a etiqueta de saída sem drama — ela é opcional por desenho', async () => {
     expect(await apagarEtiqueta(clienteId, saidaId)).toEqual({ ok: true })
+  })
+
+  /*
+   * O aceite **A20**: "etapa/campo tem automação dependente e alguém arquiva ->
+   * dependência é resolvida ou operação bloqueada com explicação".
+   *
+   * A validação da T9.1 achou este descoberto. O bloqueio existia para os dois
+   * casos vizinhos — o fluxo que é passo e a etiqueta que dispara, logo acima —
+   * e **não existia para a etapa**, embora `sequencias.coluna_id` aponte para
+   * uma. A ausência é mais fácil de não notar justamente porque os vizinhos
+   * estão cobertos.
+   *
+   * O modo de falha é silencioso, e é isso que o torna caro: a etapa some, a
+   * sequência continua ativa apontando para um `coluna_id` que não existe mais,
+   * e ninguém descobre até o dia em que alguém esperava a automação rodar.
+   */
+  it('não apaga a etapa que dispara uma sequência, e diz qual é (A20)', async () => {
+    const quadro = await criarQuadro(clienteId, `${marca} funil do A20`)
+    if (!quadro.ok) throw new Error(`não deu para criar o quadro: ${quadro.motivo}`)
+
+    const criada = await criarEtapa(clienteId, quadro.id, 'Proposta enviada')
+    if (!criada.ok) throw new Error(`não deu para criar a etapa: ${criada.motivo}`)
+
+    // `criarEtapa` devolve só `{ ok }`, sem o id: a etapa se acha relendo o
+    // quadro, como o teste do gatilho por etapa mais abaixo já faz.
+    const etapa = (await acharQuadro(clienteId, quadro.id))!.etapas.find(
+      (e) => e.nome === 'Proposta enviada',
+    )!
+    expect(etapa).toBeTruthy()
+
+    const sequencia = await criarSequencia(clienteId, {
+      nome: `${marca} cobranca da proposta`,
+      evento: 'etapa_alcancada',
+      etiquetaId: null,
+      etiquetaDeSaidaId: null,
+      colunaId: etapa.id,
+    })
+    expect(sequencia.ok).toBe(true)
+
+    const r = await apagarEtapa(clienteId, quadro.id, etapa.id)
+    expect(r.ok).toBe(false)
+    if (!r.ok) {
+      // Nomear a sequência é metade do valor: "está em uso" manda a pessoa
+      // procurar onde, e a tela de sequências pode ter dezenas.
+      expect(r.motivo).toContain('cobranca da proposta')
+    }
+
+    // E a etapa continua lá: recusar e apagar mesmo assim seria pior que não
+    // recusar, porque a mensagem diria que nada aconteceu.
+    const depois = await acharQuadro(clienteId, quadro.id)
+    expect(depois?.etapas.some((e) => e.id === etapa.id)).toBe(true)
   })
 })
 

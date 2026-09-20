@@ -26,6 +26,7 @@ import { etapasDoModelo, finalidadeDoModelo, type EtapaDoModelo } from '@/core/q
 import type { FiltroDeEscopo } from '@/core/permissoes'
 import { db, ehIdInvalido } from '../db'
 import { anotar } from './eventos'
+import { sequenciasQueUsamAEtapa } from './sequencias'
 import { concluirProcesso } from '../servicos/concluir-processo'
 
 /**
@@ -514,6 +515,31 @@ export async function apagarEtapa(
     return {
       ok: false,
       motivo: `${count} contato(s) estão nesta etapa. Mova-os para outra antes de apagá-la — apagar agora perderia a posição deles no funil.`,
+    }
+  }
+
+  /*
+   * **A automação que depende desta etapa** (aceite A20).
+   *
+   * Etapa vazia ainda pode ser gatilho: `sequencias.coluna_id` aponta para ela,
+   * e apagá-la deixaria a sequência ativa esperando um evento que nunca mais
+   * chega. A falha é silenciosa, que é o que a torna cara — some da tela e
+   * ninguém descobre até o dia em que alguém esperava a mensagem sair.
+   *
+   * A conferência vem **depois** da contagem de cartões de propósito: quando os
+   * dois problemas existem, "mova os 3 contatos" é o passo que a pessoa faz
+   * primeiro de qualquer jeito, e dar um motivo por vez é o que torna a
+   * mensagem acionável.
+   *
+   * Não desligamos a sequência por conta própria, pelo mesmo princípio que já
+   * governa os cartões aqui: desligar a automação de alguém para poder apagar
+   * uma etapa é decidir por essa pessoa, e o estrago é pior que a recusa.
+   */
+  const sequencias = await sequenciasQueUsamAEtapa(clienteId, etapaId)
+  if (sequencias.length > 0) {
+    return {
+      ok: false,
+      motivo: `esta etapa dispara a sequência ${sequencias.join(', ')}. Apague ou troque o gatilho da sequência primeiro.`,
     }
   }
 

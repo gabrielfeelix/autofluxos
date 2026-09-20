@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { db } from '../db'
-import { gravarCampos } from './campos'
+import { arquivarCampo, definirCampo, gravarCampos } from './campos'
 import { criarCliente } from './clientes'
 import { acharOuCriarContato } from './conversas'
 import {
@@ -97,6 +97,55 @@ describe.skipIf(!temCredencial)('os critérios publicados', () => {
       condicoes: [{ campo: 'cidade', operador: 'preenchido' }],
     })
     expect(await criteriosDoObjetivo(outroClienteId, 'Só meu')).toBeNull()
+  })
+})
+
+describe.skipIf(!temCredencial)('a segunda metade do A20: arquivar campo com critério em cima', () => {
+  /*
+   * O aceite **A20** fala de "etapa/campo com automação dependente". A metade
+   * da etapa virou bloqueio em `apagarEtapa`, porque lá apagar de verdade
+   * deixaria a sequência apontando para o nada.
+   *
+   * **A metade do campo não precisa de bloqueio, e este teste é a evidência
+   * disso** — que é diferente de não ter sido verificada. `arquivarCampo` não
+   * apaga: marca `arquivado: true`, e a definição continua existindo justamente
+   * para explicar o histórico. O critério não lê a definição, lê o valor
+   * gravado em `contacts.campos` (`core/qualificacao.ts`), e esse valor não é
+   * tocado.
+   *
+   * Ou seja: o que arquivar faz é tirar o campo das telas de preenchimento, e a
+   * regra que já dependia dele continua respondendo a mesma coisa. Bloquear
+   * aqui seria impedir a pessoa de arrumar a tela dela por causa de um risco
+   * que não existe, e é o tipo de validação por precaução que a T7.2 já mostrou
+   * custar caro.
+   */
+  it('o critério continua valendo depois de o campo ser arquivado', async () => {
+    const contato = await contatoNovo('20')
+    await definirCampo(clienteId, {
+      chave: 'orcamento_a20',
+      rotulo: 'Orçamento',
+      tipo: 'texto_curto',
+    })
+    await gravarCampos(clienteId, contato, { orcamento_a20: campo('900') })
+
+    await publicarCriterios(clienteId, {
+      objetivo: 'A20',
+      modo: 'todas',
+      condicoes: [{ campo: 'orcamento_a20', operador: 'maior', valor: '500' }],
+    })
+
+    const antes = await avaliarContato(clienteId, contato, 'A20', null)
+    expect(antes.ok).toBe(true)
+    if (!antes.ok) return
+    expect(antes.avaliacao.resultado).toBe('atende')
+
+    // Arquivar não é apagar, e a tela de preenchimento é a única que muda.
+    expect(await arquivarCampo(clienteId, 'orcamento_a20')).toEqual({ ok: true })
+
+    const depois = await avaliarContato(clienteId, contato, 'A20', null)
+    expect(depois.ok).toBe(true)
+    if (!depois.ok) return
+    expect(depois.avaliacao.resultado).toBe('atende')
   })
 })
 
