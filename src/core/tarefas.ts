@@ -10,7 +10,12 @@ import { z } from 'zod'
  * um deploy pela metade, não uma falha.
  */
 
-export const TIPOS_DE_TAREFA = ['timeout_de_pergunta', 'passo_de_sequencia'] as const
+export const TIPOS_DE_TAREFA = [
+  'timeout_de_pergunta',
+  'passo_de_sequencia',
+  /** Abrir a ocorrência no processo seguinte depois de uma conclusão (RB-25). */
+  'continuidade_de_processo',
+] as const
 
 export type TipoDeTarefa = (typeof TIPOS_DE_TAREFA)[number]
 

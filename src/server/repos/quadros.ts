@@ -11,12 +11,11 @@ import {
   type Situacao,
   type TipoDeEtapa,
 } from '@/core/quadros'
-import { comoDinheiro, conferirFechamento, podeEncadear, LIMITE_DO_TITULO } from '@/core/crm'
+import { podeEncadear, LIMITE_DO_TITULO } from '@/core/crm'
 import { etapasDoModelo, finalidadeDoModelo, type EtapaDoModelo } from '@/core/quadros-modelos'
 import { db, ehIdInvalido } from '../db'
-import { aplicarFato } from './crm'
 import { anotar } from './eventos'
-import { listarMotivos } from './motivos-de-perda'
+import { concluirProcesso } from '../servicos/concluir-processo'
 
 /**
  * Os quadros de uma conta (0032).
@@ -986,7 +985,7 @@ export async function quadrosDoContato(
 /**
  * Fecha o cartão como ganho ou perdido.
  *
- * As três coisas que acontecem juntas, e por quê:
+ * As três coisas que acontecem, e por quê:
  *
  * 1. **o cartão fecha e fica onde está.** Cartão fechado não some do quadro: é
  *    assim que o time enxerga o próprio resultado no fim do mês. Quem desce ele
@@ -997,9 +996,18 @@ export async function quadrosDoContato(
  *    passagem do SDR para o vendedor, e do vendedor para o pós-venda, sem botão
  *    novo: o gesto continua sendo ganhar.
  *
- * Não é transação. Se o passo 3 falhar, o cartão continua ganho e a passagem não
- * aconteceu — e é a ordem certa de falhar: perder a venda registrada seria pior
- * que precisar arrastar alguém à mão para o funil seguinte.
+ * **Agora é transação, e esta função é só a porta.** Até a T1.2 os quatro
+ * passos aconteciam em quatro idas ao banco em fila, e o comentário daqui
+ * admitia "não é transação": uma queda no meio deixava o cartão ganho com o
+ * histórico em branco. Quem coordena isso passou a ser
+ * `servicos/concluir-processo.ts`, sobre a `concluir_processo` da 0072, onde
+ * estado final e evento valem juntos ou não valem.
+ *
+ * A assinatura ficou de pé porque há chamadores vivos. O que ela **não** tem é
+ * a chave da operação, e por isso quem a usa continua protegido só pelo
+ * `situacao = 'aberta'` do update: bom contra duplo clique, insuficiente
+ * contra retry de resposta perdida. Quem precisa dos dois chama o serviço
+ * direto — é o que `acoes-crm.ts` faz.
  */
 export async function fecharCartao(
   clienteId: string,
@@ -1008,124 +1016,31 @@ export async function fecharCartao(
   dados: { valor?: number | null; motivo?: string | null; titulo?: string | null },
   autor: string | null = null,
 ): Promise<{ ok: true; abriuEm?: string } | { ok: false; motivo: string }> {
-  const { data: cartao, error } = await db()
-    .from('quadro_cartoes')
-    .select('id, quadro_id, contact_id, responsavel, titulo')
-    .eq('client_id', clienteId)
-    .eq('id', cartaoId)
-    .maybeSingle()
-
-  if (ehIdInvalido(error)) return { ok: false, motivo: 'este cartão não existe mais' }
-  if (error) throw new Error(`não deu para ler o cartão: ${error.message}`)
-  if (!cartao) return { ok: false, motivo: 'este cartão não existe mais' }
-
-  const linha = cartao as {
-    id: string
-    quadro_id: string
-    contact_id: string
-    responsavel: string | null
-    titulo: string | null
-  }
-
-  const motivos = situacao === 'perdida' ? (await listarMotivos(clienteId)).map((m) => m.nome) : []
-  const conferido = conferirFechamento(situacao, dados, motivos)
-  if (!conferido.ok) return { ok: false, motivo: conferido.motivo }
-
-  const agora = new Date().toISOString()
-  const { error: erroDaEscrita } = await db()
-    .from('quadro_cartoes')
-    .update({
-      situacao,
-      valor: dados.valor ?? null,
-      motivo: situacao === 'perdida' ? (dados.motivo ?? null) : null,
-      titulo: dados.titulo?.trim() || linha.titulo,
-      fechado_em: agora,
-    })
-    .eq('client_id', clienteId)
-    .eq('id', cartaoId)
-
-  if (erroDaEscrita) throw new Error(`não deu para fechar o cartão: ${erroDaEscrita.message}`)
-
-  await anotar(
+  const r = await concluirProcesso({
     clienteId,
-    linha.contact_id,
-    situacao === 'ganha' ? 'ganhou' : 'perdeu',
-    situacao === 'ganha'
-      ? { valor: comoDinheiro(dados.valor ?? null), titulo: dados.titulo ?? linha.titulo ?? '' }
-      : { motivo: dados.motivo ?? '' },
+    cartaoId,
+    situacao,
+    valor: dados.valor ?? null,
+    motivo: dados.motivo ?? null,
+    titulo: dados.titulo ?? null,
     autor,
-  )
+  })
 
-  await aplicarFato(clienteId, linha.contact_id, situacao === 'ganha' ? 'ganhou' : 'perdeu', autor)
+  if (!r.ok) return { ok: false, motivo: r.motivo }
 
-  if (situacao === 'ganha') {
-    const abriuEm = await passarParaOSeguinte(clienteId, linha.quadro_id, linha.contact_id, {
-      responsavel: linha.responsavel,
-      titulo: dados.titulo ?? linha.titulo,
-      autor,
-    })
-    return abriuEm ? { ok: true, abriuEm } : { ok: true }
+  // `abriuEm` é o nome do quadro de destino, e a tela o usa para dizer "foi
+  // para Pós-venda" — passagem silenciosa faria o cartão sumir do funil do SDR
+  // sem explicação nenhuma.
+  //
+  // Ele só sai quando a continuidade **de fato** aconteceu. Enquanto ela está
+  // pendente ou falhou, a resposta não promete o que não entregou: é
+  // literalmente o que o A26 recusa chamar de entrega completa.
+  if (r.conclusao.continuidade !== 'feita' || !r.conclusao.destinoQuadroId) {
+    return { ok: true }
   }
 
-  return { ok: true }
-}
-
-/**
- * Abre o cartão no quadro seguinte da cadeia.
- *
- * Devolve o nome do quadro de destino para a tela poder dizer "foi para
- * Pós-venda" — passagem silenciosa faria o cartão sumir do funil do SDR sem
- * explicação nenhuma.
- *
- * O relógio de parado começa do zero lá, e é o correto: a espera de quem acabou
- * de chegar na mão do vendedor não é a espera de quem estava com o SDR.
- */
-async function passarParaOSeguinte(
-  clienteId: string,
-  quadroId: string,
-  contatoId: string,
-  extras: { responsavel: string | null; titulo: string | null; autor: string | null },
-): Promise<string | null> {
-  const { data, error } = await db()
-    .from('quadros')
-    .select('seguinte_id')
-    .eq('client_id', clienteId)
-    .eq('id', quadroId)
-    .maybeSingle()
-
-  if (error || !data) return null
-  const seguinteId = (data as { seguinte_id: string | null }).seguinte_id
-  if (!seguinteId) return null
-
-  const seguinte = await acharQuadro(clienteId, seguinteId)
-  const primeira = seguinte?.etapas[0]
-  if (!seguinte || !primeira) return null
-
-  // Já estar **aberto** no funil seguinte não é erro: é alguém que comprou de
-  // novo, e o cartão que já existe lá é o que vale. Mover de volta para a
-  // primeira etapa desfaria o trabalho de quem o arrastou até o fim. Cartão
-  // fechado, porém, não impede mais a nova passagem — ver `jaAbertosNoQuadro`.
-  const jaAberto = await jaAbertosNoQuadro(seguinte.id, [contatoId])
-  if (jaAberto.has(contatoId)) return seguinte.nome
-
-  const { error: erroDoInsert } = await db()
-    .from('quadro_cartoes')
-    .insert({
-      client_id: clienteId,
-      quadro_id: seguinte.id,
-      coluna_id: primeira.id,
-      contact_id: contatoId,
-      responsavel: extras.responsavel,
-      titulo: extras.titulo,
-    })
-
-  if (erroDoInsert && erroDoInsert.code !== '23505') {
-    console.error('[quadros] não deu para passar ao quadro seguinte:', erroDoInsert.message)
-    return null
-  }
-
-  await anotar(clienteId, contatoId, 'entrou-no-quadro', { quadro: seguinte.nome }, extras.autor)
-  return seguinte.nome
+  const destino = await acharQuadro(clienteId, r.conclusao.destinoQuadroId)
+  return destino ? { ok: true, abriuEm: destino.nome } : { ok: true }
 }
 
 /**
@@ -1150,7 +1065,40 @@ export async function reabrirCartao(
 
   if (ehIdInvalido(error)) return { ok: false, motivo: 'este cartão não existe mais' }
   if (error) throw new Error(`não deu para reabrir o cartão: ${error.message}`)
-  return data ? { ok: true } : { ok: false, motivo: 'este cartão não existe mais' }
+  if (!data) return { ok: false, motivo: 'este cartão não existe mais' }
+
+  /*
+   * A conclusão sai junto (0072).
+   *
+   * `conclusoes_uma_por_cartao_idx` é único por cartão, então deixá-la para
+   * trás impediria a **próxima** conclusão desta mesma ocorrência — reabrir
+   * por engano de clique deixaria o cartão impossível de fechar de novo.
+   *
+   * Apagar é o certo aqui, e não marcar como desfeita: reabrir é a correção do
+   * clique errado, e o fato que ela corrige nunca deveria ter existido. O que
+   * **não** é apagado é a venda — aquela tem cancelamento auditado próprio
+   * (RB-31), e `vendas.cartao_id` é `restrict` justamente para que sumir em
+   * silêncio seja impossível.
+   *
+   * A continuidade que já tiver acontecido fica: o cartão aberto no processo
+   * seguinte é trabalho de alguém, e reabrir a origem não é motivo para
+   * apagá-lo. O `on delete set null` de `destino_cartao_id` existe para essa
+   * assimetria ser explícita.
+   */
+  const { error: erroDaConclusao } = await db()
+    .from('conclusoes_de_processo')
+    .delete()
+    .eq('client_id', clienteId)
+    .eq('cartao_id', cartaoId)
+
+  // Falhar aqui não desfaz a reabertura, que já está gravada. O efeito
+  // visível é a próxima conclusão deste cartão ser recusada pelo índice — e
+  // isso vira frase na tela, não estado inconsistente.
+  if (erroDaConclusao) {
+    console.error('[quadros] não deu para limpar a conclusão:', erroDaConclusao.message)
+  }
+
+  return { ok: true }
 }
 
 /**

@@ -90,13 +90,91 @@ de vendas:
 
 Com isso, sem nenhuma tela nova de produto:
 
-- **Quanto esse cliente já rendeu** = soma dos cartões ganhos dele.
-- **Recorrência** = quantos ganhos e quando foi o último.
+- **Quanto esse cliente já rendeu** = soma das **vendas** válidas dele.
+- **Recorrência** = quantas vendas e quando foi a última.
 - **Previsão** = soma dos abertos por etapa, que é o número no topo da coluna.
 - **Por que perdemos** = agrupar `motivo`.
 
 Um contato pode ter vários cartões, em quadros diferentes, ao mesmo tempo. É
 assim que quem compra de novo não precisa de cadastro novo.
+
+> **As duas primeiras linhas mudaram na 0071.** Elas diziam "soma dos cartões
+> ganhos". Por que deixaram de dizer, e o que vale em cada caso, está na
+> fronteira logo abaixo.
+
+## A fronteira: o que este documento descrevia, e o que vale agora
+
+Este arquivo descreve o modelo desenhado antes da execução do
+[plano por fases](plans/2026-09-19-operacao-chatbot-crm.md). Duas peças dele
+foram substituídas na F1, e a diferença importa porque há dado gravado dos dois
+lados.
+
+### 1. Ganho não é compra (0071, T1.1)
+
+**A regra antiga:** `quadro_cartoes.situacao = 'ganha'` respondia ao mesmo tempo
+"este trabalho terminou bem" e "esta pessoa comprou".
+
+**Por que quebrou:** os modelos de funil marcam como ganho a etapa final do
+Atendimento ("Resolvido"), da Captação ("Qualificado") e da Agenda
+("Compareceu"). Nenhuma delas é compra. A clínica que respondeu dez dúvidas
+aparecia com dez compras e uma receita que ninguém faturou (RB-03, A11).
+
+**O que vale:** `quadros.finalidade` separa `comercial` de `operacional`, e a
+compra tem registro próprio em `vendas`. Concluir um processo operacional não
+move receita nenhuma.
+
+**O legado não foi convertido.** Todo quadro que já existia nasceu
+`operacional`, porque marcar os antigos como comerciais transformaria, de uma
+vez, todo "Resolvido" acumulado em compra — o defeito de novo, ao contrário.
+Ganho antigo em quadro comercial continua contando como compra por
+compatibilidade; a classificação assistida do legado é da F5 (RB-32). Nenhum
+"Resolvido" virou venda.
+
+### 2. Concluir é uma transação, e continuar é uma intenção (0072, T1.2)
+
+**A regra antiga:** `fecharCartao` fazia quatro escritas em fila, e o comentário
+dela admitia "não é transação". A passagem ao quadro seguinte, quando falhava,
+escrevia `console.error` e devolvia `null`.
+
+**Por que quebrou, nas duas pontas:**
+
+- uma queda entre a segunda e a terceira escrita deixava o cartão ganho **sem**
+  o evento no histórico: o contato virava cliente e a linha do tempo não
+  explicava desde quando;
+- a continuidade que falhava não deixava rastro nenhum no banco. O log da
+  Vercel expira, e a pendência expirava junto — o ganho ficava registrado e
+  ninguém nunca sabia que o pós-venda não abriu (RB-25, A26).
+
+**O que vale:** `concluir_processo` grava estado final, evento e conclusão numa
+transação só; `conclusoes_de_processo` guarda a conclusão com os ids e os nomes
+**da época** (RB-24) e o estado da continuidade.
+
+O quadro que responde "o que aconteceu com esta conclusão":
+
+| `continuidade` | quer dizer |
+|---|---|
+| `nao_se_aplica` | este processo não encadeia, ou a conclusão não abre destino (perder, por exemplo) |
+| `pendente` | há destino a abrir e ele ainda não abriu |
+| `feita` | o cartão de destino existe, e `destino_cartao_id` diz qual |
+| `falhou` | as tentativas acabaram; a pendência fica **visível** |
+
+**A passagem continua acontecendo no mesmo clique.** A tentativa é inline e a
+fila é a rede embaixo dela: adiar o caso comum para o cron transformaria o "o
+contato entrou no funil Pós-venda" da tela em promessa. O que a T1.2 mudou não é
+*quando* a passagem acontece, é o que sobra quando ela **não** acontece.
+
+**A conclusão de origem nunca é desfeita por falha do destino.** São duas
+transações separadas de propósito. Juntá-las devolveria o defeito invertido —
+perder a venda registrada porque o pós-venda não abriu.
+
+**Reabrir apaga a conclusão, e não a venda.** Reabrir é a correção do clique
+errado, e o fato que ela corrige nunca deveria ter existido; venda tem
+cancelamento auditado próprio (RB-31). O cartão já aberto no processo seguinte
+também fica: ele é trabalho de alguém.
+
+**O que ainda não existe:** a tela da pendência. A consulta
+(`continuidadesPendentes`) existe desde a T1.2, porque sem ela "pendência
+visível" é promessa; a tela é da F5.
 
 ## Funis encadeados: o SDR passa para o vendedor, que passa para o pós-venda
 

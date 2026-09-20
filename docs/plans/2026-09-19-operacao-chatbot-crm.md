@@ -14,8 +14,8 @@ consulta; não criar microsserviços nem outro sistema de autenticação.
 Better Auth, Supabase/PostgreSQL e Vitest. Confirmar versões instaladas na execução;
 ler os guias locais em `node_modules/next/dist/docs/` antes de escrever código Next.
 
-**Estado:** em execução desde 19/set/2026. A F0 está implementada e verificada
-localmente; ver `docs/DECISOES-OPERACAO-CHATBOT-CRM.md` para as decisões e
+**Estado:** em execução desde 19/set/2026. A F0 e a F1 estão implementadas e
+verificadas localmente; ver `docs/DECISOES-OPERACAO-CHATBOT-CRM.md` para as decisões e
 evidências. As demais fases seguem pendentes. Arquivos assinalados **novos** são destinos propostos, não arquivos
 que já existem. A proposta principal é a autoridade sobre regras RB e interface UI;
 este documento define ordem, pontos de alteração e critérios de verificação.
@@ -615,7 +615,7 @@ Preencher durante a implementação, sem marcar tarefas antecipadamente.
 | Fase | Implementação | Testes locais / evidência | Liberação / observações |
 |---|---|---|---|
 | F0 | **T0.1 e T0.2 implementadas** | unitários 1724 ok · integração local 294 ok · typecheck limpo | não liberada; nada aplicado em produção |
-| F1 | **T1.1 implementada** (0071: finalidade, ocorrência recorrente, venda). T1.2 pendente | unitários 1755 ok · integração local 311 ok · A11/A12/A13/A14/A15 aprovados | migration só no Docker local; **não aplicada em produção** |
+| F1 | **T1.1 e T1.2 implementadas** (0071: finalidade, ocorrência recorrente, venda. 0072: conclusão transacional e continuidade com pendência) | unitários 1755 ok · integração local 324 ok · A11–A15 e A13/A26 aprovados · typecheck e build limpos | migrations só no Docker local; **não aplicadas em produção** |
 | F2 | pendente | pendente | não iniciada |
 | F3 | pendente | pendente | não iniciada |
 | F4 | pendente | pendente | não iniciada |

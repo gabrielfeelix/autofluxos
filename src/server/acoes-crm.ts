@@ -21,14 +21,15 @@ import { etiquetasDeContatos, listarEtiquetas } from './repos/etiquetas'
 import { atribuirContato } from './repos/conversas'
 import { agendadasDoContato } from './repos/mensagens-agendadas'
 import { membrosDaConta } from './repos/usuarios'
+import { concluirProcesso } from './servicos/concluir-processo'
 import {
+  acharQuadro,
   atribuirCartao,
   criarQuadro,
   definirCorDaEtapa,
   definirTipoDaEtapa,
   descreverCartao,
   encadearQuadro,
-  fecharCartao,
   reabrirCartao,
   quadrosDoContato,
   trazerTodosParaOQuadro,
@@ -58,7 +59,7 @@ export async function acaoFecharCartao(
   clienteId: string,
   cartaoId: string,
   situacao: Exclude<Situacao, 'aberta'>,
-  dados: { valor?: string; motivo?: string; titulo?: string },
+  dados: { valor?: string; motivo?: string; titulo?: string; chaveDaOperacao?: string },
 ): Promise<{ ok: boolean; erro?: string; abriuEm?: string }> {
   await exigirAcessoAoCliente(clienteId)
 
@@ -66,18 +67,47 @@ export async function acaoFecharCartao(
   if (!lido.ok) return { ok: false, erro: lido.motivo }
 
   const quem = await sessaoAtual()
-  const r = await fecharCartao(
+
+  /*
+   * Aqui a ação chama o **serviço**, e não `repos/quadros.ts`, por um motivo
+   * só: a chave da operação.
+   *
+   * `fecharCartao` protege contra o duplo clique pelo `situacao = 'aberta'` da
+   * transação, e isso basta enquanto as duas requisições chegam. O que ele não
+   * cobre é a **resposta perdida**: a requisição chegou, o cartão foi
+   * concluído, a resposta morreu na volta, e o botão "tente de novo" da tela
+   * manda a mesma coisa de novo. Sem chave, essa segunda tentativa descobre um
+   * cartão "já concluído" e não tem como saber que quem o concluiu foi ela
+   * mesma.
+   *
+   * A chave nasce na tela, uma por abertura do formulário — ver
+   * `fechar-cartao.tsx`. Gerá-la aqui não adiantaria nada: cada tentativa seria
+   * uma chave nova, que é o mesmo que não ter nenhuma.
+   */
+  const r = await concluirProcesso({
     clienteId,
     cartaoId,
     situacao,
-    { valor: lido.valor, motivo: dados.motivo ?? null, titulo: dados.titulo ?? null },
-    quem?.usuario.nome ?? null,
-  )
+    valor: lido.valor,
+    motivo: dados.motivo ?? null,
+    titulo: dados.titulo ?? null,
+    autor: quem?.usuario.nome ?? null,
+    chaveDaOperacao: dados.chaveDaOperacao ?? null,
+  })
 
   if (!r.ok) return { ok: false, erro: r.motivo }
 
   quadros(clienteId)
-  return { ok: true, abriuEm: r.abriuEm }
+
+  // O nome do destino só sai quando a passagem **aconteceu**. Pendente ou
+  // falhou não vira "o contato entrou no funil X" — é o que o A26 recusa
+  // chamar de entrega completa.
+  if (r.conclusao.continuidade !== 'feita' || !r.conclusao.destinoQuadroId) {
+    return { ok: true }
+  }
+
+  const destino = await acharQuadro(clienteId, r.conclusao.destinoQuadroId)
+  return { ok: true, abriuEm: destino?.nome }
 }
 
 /** Fechar é um clique, e errar o clique é rotina. */

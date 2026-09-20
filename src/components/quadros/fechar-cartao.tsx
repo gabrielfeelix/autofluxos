@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useRef, useState, useTransition } from 'react'
 import { LIMITE_DO_TITULO } from '@/core/crm'
 import { Dropdown } from '@/components/design/dropdown'
 import { Modal } from '@/components/design/modal'
@@ -43,6 +43,9 @@ export function FecharCartao({
   const [motivo, setMotivo] = useState(motivos[0]?.nome ?? '')
   const [erro, setErro] = useState<string | null>(null)
   const [rodando, comecar] = useTransition()
+
+  // Vive e morre com o formulário, pela mesma `key` que reseta os campos.
+  const chave = useRef<string | null>(null)
 
   const ganhou = situacao === 'ganha'
 
@@ -129,12 +132,26 @@ export function FecharCartao({
     if (!cartao) return
     setErro(null)
 
+    /*
+     * A chave da operação: **uma por formulário aberto**, não uma por clique.
+     *
+     * É ela que faz o botão "tente de novo" do `catch` abaixo ser retry, e não
+     * uma segunda conclusão. O caso é a resposta perdida: a requisição chegou,
+     * o cartão foi concluído, e a resposta morreu na volta — daqui isso é
+     * indistinguível de nunca ter chegado.
+     *
+     * Gerá-la a cada clique seria o mesmo que não ter nenhuma. Ela vive no
+     * `ref` para sobreviver aos re-renders do formulário e morrer com ele.
+     */
+    if (!chave.current) chave.current = `fechar:${cartao.id}:${crypto.randomUUID()}`
+
     comecar(async () => {
       try {
         const r = await acaoFecharCartao(clienteId, cartao.id, situacao, {
           titulo,
           valor,
           motivo,
+          chaveDaOperacao: chave.current ?? undefined,
         })
         if (!r.ok) {
           setErro(r.erro ?? 'não deu para fechar')

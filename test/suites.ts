@@ -46,4 +46,5 @@ export const TESTES_DE_INTEGRACAO = [
   'src/server/repos/repos.test.ts',
   'src/server/repos/retencao.test.ts',
   'src/server/repos/sequencias.test.ts',
+  'src/server/servicos/concluir-processo.test.ts',
 ] as const
