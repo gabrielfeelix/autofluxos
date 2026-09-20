@@ -35,6 +35,9 @@ import {
   trazerTodosParaOQuadro,
 } from './repos/quadros'
 import { exigirAcessoAoCliente, sessaoAtual } from './sessao'
+import { exigirCapacidade, recusou } from './permissoes'
+import { pode } from '@/core/permissoes'
+import { notFound } from 'next/navigation'
 
 /**
  * As ações do funil (0058), em arquivo próprio.
@@ -61,7 +64,10 @@ export async function acaoFecharCartao(
   situacao: Exclude<Situacao, 'aberta'>,
   dados: { valor?: string; motivo?: string; titulo?: string; chaveDaOperacao?: string },
 ): Promise<{ ok: boolean; erro?: string; abriuEm?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  // Concluir comercialmente é registrar venda ou perda — a capacidade mais
+  // cara deste arquivo, e a que a RB-40 diz que operador não tem por padrão.
+  const acesso = await exigirCapacidade(clienteId, 'registrar_venda', 'proprios')
+  if (recusou(acesso)) return acesso
 
   const lido = lerValor(dados.valor ?? '')
   if (!lido.ok) return { ok: false, erro: lido.motivo }
@@ -115,7 +121,8 @@ export async function acaoReabrirCartao(
   clienteId: string,
   cartaoId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'registrar_venda', 'proprios')
+  if (recusou(acesso)) return acesso
 
   const r = await reabrirCartao(clienteId, cartaoId)
   if (!r.ok) return { ok: false, erro: r.motivo }
@@ -130,7 +137,8 @@ export async function acaoAtribuirCartao(
   cartaoId: string,
   usuarioId: string | null,
 ): Promise<{ ok: boolean; erro?: string; quem?: string | null }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'criar_oportunidade', 'proprios')
+  if (recusou(acesso)) return acesso
 
   const quemFez = await sessaoAtual()
   const r = await atribuirCartao(clienteId, cartaoId, usuarioId, quemFez?.usuario.nome ?? null)
@@ -146,7 +154,8 @@ export async function acaoDescreverCartao(
   cartaoId: string,
   dados: { titulo?: string; valor?: string },
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'criar_oportunidade', 'proprios')
+  if (recusou(acesso)) return acesso
 
   const lido = lerValor(dados.valor ?? '')
   if (!lido.ok) return { ok: false, erro: lido.motivo }
@@ -170,7 +179,8 @@ export async function acaoEncadearQuadro(
   quadroId: string,
   seguinteId: string | null,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const r = await encadearQuadro(clienteId, quadroId, seguinteId)
   if (!r.ok) return { ok: false, erro: r.motivo }
@@ -187,7 +197,8 @@ export async function acaoDefinirTipoDaEtapa(
   tipo: TipoDeEtapa,
   limiteDeDias: number | null,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   if (limiteDeDias !== null && (!Number.isInteger(limiteDeDias) || limiteDeDias < 1 || limiteDeDias > 365)) {
     return { ok: false, erro: 'o limite vai de 1 a 365 dias' }
@@ -213,7 +224,8 @@ export async function acaoDefinirCorDaEtapa(
   etapaId: string,
   cor: string | null,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   if (cor !== null && !ehCorDaEtapa(cor)) return { ok: false, erro: 'esta cor não existe' }
 
@@ -241,7 +253,8 @@ export async function acaoDefinirFaixas(
   ouroBruto: string,
   prataBruto: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const ouro = lerValor(ouroBruto)
   const prata = lerValor(prataBruto)
@@ -273,7 +286,8 @@ export async function acaoCriarMotivo(
   clienteId: string,
   nome: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const r = await criarMotivo(clienteId, nome)
   if (!r.ok) return { ok: false, erro: r.motivo }
@@ -287,7 +301,8 @@ export async function acaoApagarMotivo(
   clienteId: string,
   motivoId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const apagou = await apagarMotivo(clienteId, motivoId)
   quadros(clienteId)
@@ -324,7 +339,8 @@ export async function acaoAbrirPainelDoContato(
 ): Promise<{
   ficha: Awaited<ReturnType<typeof fichaDoContato>>
   eventos: Awaited<ReturnType<typeof linhaDoTempo>>
-  resumo: { total: number; compras: number; ultimaEm: string | null }
+  /** `null` em `total`/`compras` = sem autorização para ver valores (A27). */
+  resumo: { total: number | null; compras: number | null; ultimaEm: string | null }
   etiquetas: { id: string; nome: string; cor: CorDeEtiqueta }[]
   aplicadas: string[]
   equipe: { id: string; nome: string }[]
@@ -335,7 +351,23 @@ export async function acaoAbrirPainelDoContato(
   /** Os motivos da conta, para fechar como perdida sem sair do painel. */
   motivos: { id: string; nome: string }[]
 }> {
-  await exigirAcessoAoCliente(clienteId)
+  /*
+   * **Atender e ver dinheiro são capacidades diferentes** (A27, RB-41).
+   *
+   * Este painel abre no meio do atendimento, então exigir `ler_valores` para
+   * abri-lo tiraria a conversa de quem trabalha nela. O que ele faz é o
+   * contrário: abre para quem atende, e **apaga os números** de quem não tem
+   * autorização para a base comercial.
+   *
+   * Apagar na saída, e não esconder na tela: o componente que não desenha o
+   * valor continua tendo recebido o valor, e ele viaja no payload do Server
+   * Component até o navegador. Esconder botão não é controle de acesso
+   * (RB-42).
+   */
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) notFound()
+
+  const veValores = pode(acesso.regras, 'ler_valores')
 
   const [ficha, eventos, resumo, etiquetas, porContato, equipe, agendadas, funis, motivos] =
     await Promise.all([
@@ -353,7 +385,16 @@ export async function acaoAbrirPainelDoContato(
   return {
     ficha,
     eventos,
-    resumo,
+    /*
+     * Zerar não serve: "R$ 0,00 · 0 compras" é uma afirmação falsa sobre o
+     * cliente, e quem a lê decide em cima dela. `null` diz "não sei", que é a
+     * verdade do ponto de vista de quem não pode saber (RB-06).
+     *
+     * E a contagem sai junto do total: saber que houve doze compras já é
+     * inferir faixa de valor, que é o que a proposta proíbe em letra —
+     * "não devem ser inferíveis por contagens, faixas ou exportações".
+     */
+    resumo: veValores ? resumo : { total: null, compras: null, ultimaEm: resumo.ultimaEm },
     etiquetas: etiquetas.map(({ id, nome, cor }) => ({ id, nome, cor })),
     aplicadas: (porContato.get(contatoId) ?? []).map((etiqueta) => etiqueta.id),
     equipe: equipe.map(({ id, nome }) => ({ id, nome })),
@@ -365,7 +406,8 @@ export async function acaoAbrirPainelDoContato(
       quando,
       estado,
     })),
-    funis,
+    // O título fica (é o que a pessoa atende: "Plano anual"); o valor sai.
+    funis: veValores ? funis : funis.map((f) => ({ ...f, valor: null })),
     motivos: motivos.map(({ id, nome }) => ({ id, nome })),
   }
 }
@@ -381,7 +423,8 @@ export async function acaoDefinirTemperatura(
   contatoId: string,
   temperatura: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
 
   if (!ehTemperatura(temperatura)) return { ok: false, erro: 'essa temperatura não existe' }
 
@@ -405,7 +448,8 @@ export async function acaoDefinirEstagio(
   contatoId: string,
   estagio: Estagio,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
 
   const quem = await sessaoAtual()
   const mudou = await definirEstagio(clienteId, contatoId, estagio, quem?.usuario.nome ?? null)
@@ -428,7 +472,8 @@ export async function acaoTrazerTodosParaOQuadro(
   clienteId: string,
   quadroId: string,
 ): Promise<{ ok: boolean; erro?: string; postos?: number; faltaram?: number }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'criar_oportunidade', 'proprios')
+  if (recusou(acesso)) return acesso
 
   const r = await trazerTodosParaOQuadro(clienteId, quadroId)
   if (!r.ok) return { ok: false, erro: r.motivo }
@@ -450,7 +495,8 @@ export async function acaoCriarQuadroComModelo(
   nome: string,
   modeloId: string | null,
 ): Promise<{ ok: boolean; erro?: string; id?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const r = await criarQuadro(clienteId, String(nome ?? ''), modeloId)
   if (!r.ok) return { ok: false, erro: r.motivo }
@@ -475,7 +521,8 @@ export async function acaoAtribuirContato(
   contatoId: string,
   usuarioId: string | null,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
 
   const equipe = await membrosDaConta(clienteId)
   const escolhido = usuarioId === null ? null : equipe.find((membro) => membro.id === usuarioId)
@@ -534,7 +581,8 @@ export async function acaoAnotarNoDiario(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
 
   const texto = String(formData.get('texto') ?? '')
     .trim()

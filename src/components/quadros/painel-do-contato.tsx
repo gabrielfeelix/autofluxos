@@ -338,8 +338,13 @@ export function PainelDoContato({
             Três zeros não informam nada e empurram para baixo o que informa, é
             a mesma regra do `ResumoDoContato` na ficha: quem nunca comprou não
             ganha o bloco.
+
+            `null` some pelo mesmo `if`, e é o certo: quem não tem autorização
+            para ver valores não vê o bloco em vez de ver zeros (A27). O
+            servidor já apagou os números antes de mandá-los — esconder aqui é
+            acabamento, não controle de acesso.
           */}
-          {resumo && resumo.compras > 0 && (
+          {resumo && resumo.compras !== null && resumo.compras > 0 && (
             <section className="mt-4 grid grid-cols-3 gap-2">
               <Numero titulo="Já rendeu" valor={comoDinheiro(resumo.total) || 'R$ 0,00'} />
               <Numero titulo="Compras" valor={String(resumo.compras)} />

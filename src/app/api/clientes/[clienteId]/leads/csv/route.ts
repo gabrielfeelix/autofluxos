@@ -7,7 +7,7 @@ import {
   type EtiquetaDeLead,
   type Lead,
 } from '@/server/repos/leads'
-import { conferirAcessoAoCliente } from '@/server/sessao'
+import { exigirCapacidade, recusou } from '@/server/permissoes'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,7 +45,20 @@ export async function GET(
   const params = paramsSchema.safeParse(await contexto.params)
   if (!params.success) return Response.json({ erro: 'cliente inválido' }, { status: 400 })
 
-  if (!(await conferirAcessoAoCliente(params.data.clienteId))) {
+  /*
+   * **Exportar é capacidade própria** (RB-40, A19).
+   *
+   * Alcançar a empresa não basta: o CSV leva a base inteira para fora, e a
+   * RB-40 diz que operador não exporta por padrão. Até a T2.1 esta rota
+   * conferia só a empresa, então qualquer membro baixava tudo — e chamar a
+   * URL direto funcionava mesmo com o botão escondido, que é o caso literal
+   * do A19.
+   *
+   * A recusa é 404 e não 403, como em `conferirAcessoAoCliente`: confirmar que
+   * o endpoint existe para quem não o alcança já é informação.
+   */
+  const acesso = await exigirCapacidade(params.data.clienteId, 'exportar', 'todos')
+  if (recusou(acesso)) {
     return Response.json({ erro: 'cliente não encontrado' }, { status: 404 })
   }
 

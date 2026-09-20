@@ -24,6 +24,7 @@ export const TESTES_DE_INTEGRACAO = [
   'src/server/receber-evento.test.ts',
   'src/server/receber-lead-do-formulario.test.ts',
   'src/server/receber-mensagem.test.ts',
+  'src/server/permissoes.test.ts',
   'src/server/repos/acervo-envio.test.ts',
   'src/server/repos/acervo.test.ts',
   'src/server/repos/alertas.test.ts',
