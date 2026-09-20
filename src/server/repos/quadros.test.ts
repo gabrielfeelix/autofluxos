@@ -11,11 +11,13 @@ import {
   apagarQuadro,
   criarEtapa,
   criarQuadro,
+  definirEntradaNoFunil,
   definirQuadroPadrao,
   listarCartoes,
   listarQuadros,
   moverCartao,
   moverEtapa,
+  politicaDeEntrada,
   porNoQuadro,
   quadrosDoContato,
   renomearEtapa,
@@ -293,16 +295,47 @@ describe.skipIf(!temCredencial)('apagar', () => {
 })
 
 /**
- * O quadro padrão (0043).
+ * O quadro padrão (0043), sob a política de entrada da conta (0075).
  *
  * O que só o Postgres prova aqui é o índice parcial: várias linhas `false`
  * convivendo e só a marcada colidindo. Um teste de unidade com repo falso
  * acharia que `unique (client_id, padrao)` serviria — e ele proibiria dois
  * quadros comuns na mesma conta, que é o caso normal.
+ *
+ * **Os blocos abaixo declaram a política, e isso é a mudança da F3.** Antes da
+ * 0075 `acharQuadroPadrao` decidia sozinha e caía no quadro mais antigo, contra
+ * a RB-12. Agora quem decide é a conta, e conta nova nasce em `nao_criar`: sem a
+ * declaração explícita, a resposta certa passa a ser `null`.
  */
 describe.skipIf(!temCredencial)('quadro padrão', () => {
   let umId = ''
   let outroDaMesmaContaId = ''
+
+  /**
+   * A regra nova, e a razão de a 0075 existir: conta nova não põe ninguém em
+   * quadro nenhum, nem mesmo tendo quadros. É a RB-12 ("Configuração inicial de
+   * empresa nova é não criar"), e é o teste que falharia se alguém trouxesse o
+   * fallback de volta como default.
+   */
+  it('conta nova não cria cartão sozinha, mesmo com quadros (RB-12)', async () => {
+    expect(await politicaDeEntrada(clienteId)).toBe('nao_criar')
+    expect(await acharQuadroPadrao(clienteId)).toBeNull()
+  })
+
+  /**
+   * E com `quadro_marcado` sem marcação, também não: a conta disse "só onde eu
+   * escolher", e não escolheu. `null` aqui é obediência, não falha.
+   */
+  it('quadro_marcado sem marcação não cai no mais antigo', async () => {
+    expect(await definirEntradaNoFunil(clienteId, 'quadro_marcado')).toEqual({ ok: true })
+    await definirQuadroPadrao(clienteId, null)
+    expect(await acharQuadroPadrao(clienteId)).toBeNull()
+  })
+
+  it('política inexistente é recusada com motivo', async () => {
+    const r = await definirEntradaNoFunil(clienteId, 'qualquer_coisa' as never)
+    expect(r.ok).toBe(false)
+  })
 
   beforeAll(async () => {
     if (!temCredencial) return
@@ -328,13 +361,21 @@ describe.skipIf(!temCredencial)('quadro padrão', () => {
    * ordena por `criado_em`, e não do quadro que este bloco criou. Fixar o id
    * daqui seria fixar uma coincidência de ordem de execução.
    */
-  it('sem marcação nenhuma, quem recebe é o quadro mais antigo — não é ninguém', async () => {
+  /*
+   * O legado, preservado nominalmente. A conta precisa **pedir** `mais_antigo`
+   * agora; a 0075 escreveu esse valor em quem já existia justamente para que
+   * ninguém perdesse automação por causa de uma migration.
+   */
+  it('em mais_antigo, sem marcação nenhuma, quem recebe é o mais antigo', async () => {
+    expect(await definirEntradaNoFunil(clienteId, 'mais_antigo')).toEqual({ ok: true })
+    await definirQuadroPadrao(clienteId, null)
     const [maisAntigo] = await listarQuadros(clienteId)
     expect(maisAntigo).toBeDefined()
     expect(await acharQuadroPadrao(clienteId)).toBe(maisAntigo!.id)
   })
 
   it('marcar um quadro faz `acharQuadroPadrao` devolver ele', async () => {
+    expect(await definirEntradaNoFunil(clienteId, 'quadro_marcado')).toEqual({ ok: true })
     expect(await definirQuadroPadrao(clienteId, umId)).toEqual({ ok: true })
     expect(await acharQuadroPadrao(clienteId)).toBe(umId)
   })
@@ -352,14 +393,16 @@ describe.skipIf(!temCredencial)('quadro padrão', () => {
     expect(data).toHaveLength(1)
   })
 
-  it('desmarcar não desliga a automação: volta a valer o mais antigo', async () => {
+  it('em mais_antigo, desmarcar não desliga a automação', async () => {
+    expect(await definirEntradaNoFunil(clienteId, 'mais_antigo')).toEqual({ ok: true })
     expect(await definirQuadroPadrao(clienteId, null)).toEqual({ ok: true })
     const [maisAntigo] = await listarQuadros(clienteId)
     expect(await acharQuadroPadrao(clienteId)).toBe(maisAntigo!.id)
   })
 
   // A marcação escolhe o destino, e por isso ela tem que vencer a idade.
-  it('o quadro marcado vence o mais antigo', async () => {
+  it('mesmo em mais_antigo, o quadro marcado vence a idade', async () => {
+    expect(await definirEntradaNoFunil(clienteId, 'mais_antigo')).toEqual({ ok: true })
     expect(await definirQuadroPadrao(clienteId, outroDaMesmaContaId)).toEqual({ ok: true })
     expect(await acharQuadroPadrao(clienteId)).toBe(outroDaMesmaContaId)
   })
@@ -368,6 +411,8 @@ describe.skipIf(!temCredencial)('quadro padrão', () => {
   it('conta sem quadro nenhum devolve null, e isso não é erro', async () => {
     const vazio = await criarCliente(`${marca} sem quadro`)
     try {
+      // Mesmo pedindo o legado: não há quadro para ser o mais antigo.
+      await definirEntradaNoFunil(vazio.id, 'mais_antigo')
       expect(await acharQuadroPadrao(vazio.id)).toBeNull()
     } finally {
       /*
@@ -385,12 +430,22 @@ describe.skipIf(!temCredencial)('quadro padrão', () => {
     expect(alheio.ok).toBe(true)
     if (!alheio.ok) return
 
+    expect(await definirEntradaNoFunil(outroId, 'quadro_marcado')).toEqual({ ok: true })
+    expect(await definirEntradaNoFunil(clienteId, 'quadro_marcado')).toEqual({ ok: true })
     expect(await definirQuadroPadrao(outroId, alheio.id)).toEqual({ ok: true })
     expect(await definirQuadroPadrao(clienteId, umId)).toEqual({ ok: true })
 
     // Os dois convivem porque o índice é por `client_id`.
     expect(await acharQuadroPadrao(outroId)).toBe(alheio.id)
     expect(await acharQuadroPadrao(clienteId)).toBe(umId)
+
+    /*
+     * E a política também é por conta. `service_role` ignora RLS: quem isola é
+     * o `client_id` de cada consulta, e é isso que este par prova.
+     */
+    expect(await definirEntradaNoFunil(outroId, 'nao_criar')).toEqual({ ok: true })
+    expect(await politicaDeEntrada(outroId)).toBe('nao_criar')
+    expect(await politicaDeEntrada(clienteId)).toBe('quadro_marcado')
   })
 
   it('não marca quadro de outra conta pelo id', async () => {

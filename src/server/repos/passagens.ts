@@ -1,5 +1,6 @@
 import 'server-only'
 import type { Passagem } from '@/core/anuncios'
+import { chaveDaEntrada, type TipoDeEntrada } from '@/core/regras-de-entrada'
 import { db, ehIdInvalido } from '../db'
 
 /**
@@ -9,7 +10,7 @@ import { db, ehIdInvalido } from '../db'
  * `core/anuncios.ts`; quem busca o nome na Meta é `resolver-anuncios.ts`.
  */
 
-type Linha = { ad_id: string; titulo: string | null; criado_em: string }
+type Linha = { ad_id: string; titulo: string | null; criado_em: string; tipo: string | null }
 
 /**
  * Registra uma chegada.
@@ -20,13 +21,24 @@ type Linha = { ad_id: string; titulo: string | null; criado_em: string }
  * resultado seria a mensagem duplicada por causa de um registro de histórico.
  *
  * A repetição é esperada e silenciosa: o índice `passagens_sem_repeticao_idx`
- * recusa o retry do webhook dentro do mesmo minuto, e `23505` aqui quer dizer
- * "já estava registrado", que é sucesso e não erro.
+ * recusa o retry do webhook dentro do mesmo minuto, o
+ * `passagens_chave_externa_idx` recusa a reentrega do mesmo evento em qualquer
+ * momento, e `23505` aqui quer dizer "já estava registrado", que é sucesso e
+ * não erro.
+ *
+ * **`tipo` é obrigatório desde a 0074, e não tem default aqui de propósito.**
+ * No banco a coluna tem default, o que era necessário para as linhas antigas;
+ * repetir o default nesta assinatura deixaria um chamador novo esquecer o tipo e
+ * virar chegada por anúncio calada, abrindo 72h de texto livre que a Meta não
+ * concedeu. Ver `core/regras-de-entrada.ts`.
  */
 export async function registrarPassagem(entrada: {
   clienteId: string
   contatoId: string
   adId: string
+  tipo: TipoDeEntrada
+  /** O ID do evento na origem: `leadgen_id`, `wamid`. Torna a reentrega idempotente. */
+  idExterno?: string | null
   titulo?: string
   texto?: string
   url?: string
@@ -41,6 +53,8 @@ export async function registrarPassagem(entrada: {
       client_id: entrada.clienteId,
       contact_id: entrada.contatoId,
       ad_id: adId,
+      tipo: entrada.tipo,
+      chave_externa: chaveDaEntrada(entrada),
       titulo: entrada.titulo ?? '',
       texto: entrada.texto ?? '',
       url: entrada.url ?? '',
@@ -61,7 +75,7 @@ export async function registrarPassagem(entrada: {
 export async function passagensDoContato(contatoId: string): Promise<Passagem[]> {
   const { data, error } = await db()
     .from('passagens')
-    .select('ad_id, titulo, criado_em')
+    .select('ad_id, titulo, criado_em, tipo')
     .eq('contact_id', contatoId)
     .order('criado_em', { ascending: false })
 
@@ -78,5 +92,6 @@ export async function passagensDoContato(contatoId: string): Promise<Passagem[]>
     adId: linha.ad_id,
     titulo: linha.titulo ?? '',
     criadoEm: linha.criado_em,
+    tipo: linha.tipo ?? undefined,
   }))
 }

@@ -19,13 +19,18 @@ import { registrarPassagem } from './passagens'
  * Facebook, sem que a pessoa tenha escrito para o número nem aberto conversa
  * nenhuma.
  *
- * Só que os dois caminhos gravam a mesma linha em `passagens`, e a view da
- * 0065 lê **qualquer** linha de lá como `porta_de_entrada_em`. Quer dizer: um
- * formulário concede 72h de texto livre que a Meta não concedeu. Quem responder
- * confiando nisso escreve, envia e recebe `(#131047) Re-engagement message`.
+ * Até a 0074 os dois caminhos gravavam a mesma linha em `passagens`, e a view
+ * da 0065 lia **qualquer** linha de lá como `porta_de_entrada_em`. Quer dizer:
+ * um formulário concedia 72h de texto livre que a Meta não concedeu, e quem
+ * respondesse confiando nisso escrevia, enviava e recebia
+ * `(#131047) Re-engagement message`.
  *
  * É a RB-09 da proposta de 19/set: "formulário não é conversa... não abre
  * janela de conversa do WhatsApp por si só".
+ *
+ * A **0074** deu tipo à entrada e pôs o filtro na view. Este arquivo passou a
+ * exigir o comportamento certo: a troca dos `expect` abaixo, de
+ * `not.toBeNull()` para `toBeNull()`, é a prova de que o defeito fechou.
  *
  * O teste está no nível do banco, e não em `channels/janela.test.ts`, porque a
  * conta em TypeScript está certa: ela recebe `portaDeEntradaEm` e confia. O
@@ -67,14 +72,17 @@ beforeAll(async () => {
     clienteId,
     contatoId: doAnuncio,
     adId: '1200000000001',
+    tipo: 'anuncio_whatsapp',
     titulo: 'Anúncio — Plano XYZ',
   })
 
-  // A chegada por formulário, como `receber-lead-do-formulario.ts` grava hoje.
+  // A chegada por formulário, como `receber-lead-do-formulario.ts` grava.
   await registrarPassagem({
     clienteId,
     contatoId: doFormulario,
     adId: '1200000000002',
+    tipo: 'formulario',
+    idExterno: `lead-${seed}`,
     titulo: 'Formulário — Bruno',
   })
 })
@@ -92,21 +100,91 @@ describe.skipIf(!temCredencial)('a porta de entrada das 72h', () => {
   })
 
   /**
-   * O defeito. Enquanto `passagens` não distinguir o tipo da entrada, a view
-   * entrega ao formulário a mesma porta do anúncio, e a janela de 72h abre para
-   * quem nunca escreveu.
-   *
-   * Quando a F3 separar os tipos, este teste passa a exigir `toBeNull()` — a
-   * mudança do `expect` é justamente a prova de que o comportamento mudou.
+   * O defeito fechado. A linha de formulário continua em `passagens` — o lead
+   * precisa saber de qual anúncio veio — e a view **não** a conta como porta.
    */
-  it('hoje o formulário também abre, e não deveria (RB-09)', async () => {
-    const porta = await portaDaView(doFormulario)
+  it('o formulário não abre a janela (RB-09)', async () => {
+    expect(await portaDaView(doFormulario)).toBeNull()
 
-    // O que acontece hoje, registrado para que a correção fique visível:
+    // E a consequência que isso evita: nada de texto livre para quem nunca
+    // mandou mensagem. Sem janela de 24h e sem porta, o compositor fica fechado
+    // e a tela oferece modelo aprovado, que é o que a Meta aceita.
+    expect(dentroDaJanela({ ultimaEntradaEm: null, portaDeEntradaEm: null })).toBe(false)
+  })
+
+  /**
+   * E a linha continua lá, o que é a outra metade da RB-09: o formulário
+   * **pode** criar contato e cartão, e a origem dele precisa aparecer na ficha.
+   * Fechar a janela não é apagar a chegada.
+   */
+  it('a chegada por formulário continua registrada no histórico', async () => {
+    const { data, error } = await db()
+      .from('passagens')
+      .select('tipo, chave_externa')
+      .eq('contact_id', doFormulario)
+
+    if (error) throw new Error(error.message)
+    const linhas = (data ?? []) as { tipo: string; chave_externa: string | null }[]
+    expect(linhas).toHaveLength(1)
+    expect(linhas[0]?.tipo).toBe('formulario')
+    expect(linhas[0]?.chave_externa).toBe(`formulario:lead-${seed}`)
+  })
+
+  /**
+   * O botão da Página abre a porta igual ao anúncio. São dois tipos separados
+   * porque a Meta os reporta diferente, e um dia o preço pode divergir.
+   */
+  it('o botão da Página abre a janela gratuita', async () => {
+    const carla = await acharOuCriarContato(clienteId, `55419${seed}`, 'Carla do botão')
+    await registrarPassagem({
+      clienteId,
+      contatoId: carla.id,
+      adId: '1200000000003',
+      tipo: 'botao_pagina',
+      titulo: 'Botão da Página',
+    })
+
+    const porta = await portaDaView(carla.id)
     expect(porta).not.toBeNull()
+    expect(dentroDaPortaDeEntrada({ ultimaEntradaEm: null, portaDeEntradaEm: porta })).toBe(true)
+  })
 
-    // E a consequência: janela de texto livre para quem nunca mandou mensagem.
-    expect(dentroDaJanela({ ultimaEntradaEm: null, portaDeEntradaEm: porta })).toBe(true)
+  /**
+   * A importação de histórico não abre nada. É a segunda metade da RB-09:
+   * "importar contato também não simula mensagem recebida".
+   */
+  it('a importação não abre janela nenhuma', async () => {
+    const davi = await acharOuCriarContato(clienteId, `55519${seed}`, 'Davi importado')
+    await registrarPassagem({
+      clienteId,
+      contatoId: davi.id,
+      adId: '1200000000004',
+      tipo: 'importacao',
+      titulo: 'Planilha de março',
+    })
+
+    expect(await portaDaView(davi.id)).toBeNull()
+  })
+
+  /**
+   * A regra que o índice de minuto da 0050 não sabia aplicar: duas submissões
+   * reais do mesmo formulário, no mesmo minuto, são **duas** entradas, e a
+   * reentrega do mesmo evento é **uma**. Quem decide é a chave externa.
+   */
+  it('a chave externa separa submissão nova de reentrega (RB-10)', async () => {
+    const elis = await acharOuCriarContato(clienteId, `55619${seed}`, 'Elis')
+    const mesmoAnuncio = '1200000000005'
+
+    // Duas submissões legítimas, no mesmo minuto, ids diferentes.
+    await registrarPassagem({ clienteId, contatoId: elis.id, adId: mesmoAnuncio, tipo: 'formulario', idExterno: `a-${seed}` })
+    await registrarPassagem({ clienteId, contatoId: elis.id, adId: mesmoAnuncio, tipo: 'formulario', idExterno: `b-${seed}` })
+
+    // E a reentrega da primeira, que não pode virar uma terceira linha.
+    await registrarPassagem({ clienteId, contatoId: elis.id, adId: mesmoAnuncio, tipo: 'formulario', idExterno: `a-${seed}` })
+
+    const { data, error } = await db().from('passagens').select('chave_externa').eq('contact_id', elis.id)
+    if (error) throw new Error(error.message)
+    expect(data ?? []).toHaveLength(2)
   })
 
   /**

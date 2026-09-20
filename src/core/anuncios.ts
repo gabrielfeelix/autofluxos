@@ -69,6 +69,12 @@ export type Passagem = {
   adId: string
   titulo: string
   criadoEm: string
+  /**
+   * De onde esta chegada veio (0074). `undefined` em linha antiga, e por isso
+   * opcional: `poderesDaEntrada` trata desconhecido como "não autoriza nada",
+   * que é o lado seguro. Ver `core/regras-de-entrada.ts`.
+   */
+  tipo?: string
 }
 
 /**

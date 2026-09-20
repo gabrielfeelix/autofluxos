@@ -20,6 +20,7 @@ import {
   pediuAtendente,
   type ContextoDoAtendimento,
 } from '@/core/engine/executar'
+import { tipoDoReferral } from '@/core/regras-de-entrada'
 import { casarGatilho } from '@/core/gatilhos'
 import { casarCampanha } from '@/core/campanhas'
 import { atribuirCampanha, campanhasAtivas, contarDisparoDaCampanha } from './repos/campanhas'
@@ -492,12 +493,26 @@ async function atribuirOrigem(contato: Contato, referral?: Referral): Promise<Co
    * chegada por anúncio, inclusive a de quem já tem origem gravada há meses.
    * Era aqui que a informação se perdia.
    */
-  if (referral?.source_id) {
+  const tipoDaChegada = tipoDoReferral(referral)
+  if (referral?.source_id && tipoDaChegada) {
     try {
       await registrarPassagem({
         clienteId: contato.clienteId,
         contatoId: contato.id,
         adId: referral.source_id,
+        /*
+         * O tipo vem do `source_type` que a Meta manda, e **esta** é a chegada
+         * que abre a janela gratuita de 72h: a pessoa clicou e caiu na conversa.
+         * O formulário grava outro tipo, e é o que a 0074 corrigiu.
+         */
+        tipo: tipoDaChegada,
+        /*
+         * O `ctwa_clid` é o id do clique, e chega uma vez só. Como chave
+         * externa ele torna a reentrega do webhook idempotente sem depender do
+         * índice de minuto da 0050 — que é o melhor disponível, e não o certo.
+         * Anúncio de Status vem sem ele, e aí cai no de minuto mesmo.
+         */
+        idExterno: referral.ctwa_clid ?? null,
         titulo: referral.headline ?? '',
         texto: referral.body ?? '',
         url: referral.source_url ?? '',

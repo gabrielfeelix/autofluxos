@@ -189,6 +189,25 @@ async function registrarAnuncio(
       clienteId,
       contatoId: alvo,
       adId: aviso.adId,
+      /*
+       * **`formulario`, e é a correção da RB-09.** Até a 0074 esta linha era
+       * indistinguível da chegada por clique, e a view da 0065 lia as duas como
+       * porta de entrada: o formulário abria 72h de texto livre para quem nunca
+       * escreveu para o número, e quem respondesse recebia
+       * `(#131047) Re-engagement message`.
+       *
+       * O lead continua sendo criado, continua entrando no funil e continua
+       * mostrando de qual anúncio veio. O que ele não faz é abrir janela de
+       * conversa, porque conversa não houve.
+       */
+      tipo: 'formulario',
+      /*
+       * O `leadgen_id` é o id da submissão na Meta, e é ele que torna a
+       * reentrega idempotente **sem** confundir duas submissões reais no mesmo
+       * minuto: o índice de minuto da 0050 jogaria a segunda fora, e duas
+       * submissões são duas entradas (RB-10).
+       */
+      idExterno: aviso.leadgenId,
       titulo: lead.nome !== '' ? `Formulário — ${lead.nome}` : 'Formulário',
     })
   } catch (erro) {

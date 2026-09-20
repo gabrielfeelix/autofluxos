@@ -20,6 +20,7 @@ import { criarPasso, criarSequencia } from './repos/sequencias'
 import {
   acharQuadro,
   criarQuadro,
+  definirEntradaNoFunil,
   definirQuadroPadrao,
   listarCartoes,
   moverCartao,
@@ -804,13 +805,18 @@ function canalQueRecusa(motivo: string, aPartirDe = 0) {
 }
 
 /**
- * O contato novo entra sozinho no quadro padrão (0043).
+ * O contato novo entra sozinho no quadro padrão (0043), conforme a política da
+ * conta (0075).
  *
  * A queixa que originou isto foi literal: *"o lead não vai automático, tem que
  * clicar e puxar"*. O que precisa ser provado aqui não é só que ele entra: é
  * que **quem já estava no quadro não é jogado de volta para a primeira etapa**.
  * Esse é o modo de falhar que apagaria o funil de todo mundo a cada mensagem, e
  * só aparece no caminho inteiro, do webhook até o banco.
+ *
+ * **A política é declarada no `beforeAll`, e isso é a mudança da F3.** Conta
+ * nova nasce em `nao_criar` (RB-12), então sem a declaração o cartão não
+ * apareceria — e o primeiro teste do bloco prova exatamente esse caso.
  */
 describe.skipIf(!temCredencial)('o contato novo entra no quadro padrão', () => {
   let quadroId = ''
@@ -822,6 +828,25 @@ describe.skipIf(!temCredencial)('o contato novo entra no quadro padrão', () => 
     quadroId = quadro.id
   })
 
+  /**
+   * O default da RB-12, no caminho inteiro: conta nova tem quadro, recebe
+   * mensagem, e **não** cria cartão. A conversa anda do mesmo jeito.
+   *
+   * Este é o teste que a F3 acrescentou, e é o que falharia se alguém
+   * devolvesse o fallback ao lugar de default.
+   */
+  it('em nao_criar o lead não vira cartão, e a conversa anda', async () => {
+    await definirEntradaNoFunil(clienteId, 'nao_criar')
+    mock.enviadas.length = 0
+    const de = telefone(46)
+
+    await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-qp-0`), comMock)
+
+    expect((await listarCartoes(clienteId, quadroId)).some((c) => c.telefone === de)).toBe(false)
+    // O CRM desligado não pode custar o atendimento: é a RB-07.
+    expect(mock.enviadas.some((e) => e.tipo === 'texto')).toBe(true)
+  })
+
   /*
    * **Este teste era o contrário, e o contrário estava errado.**
    *
@@ -830,9 +855,11 @@ describe.skipIf(!temCredencial)('o contato novo entra no quadro padrão', () => 
    * nenhum. A queixa que gerou a rodada 1 (*"o lead não vai automático, tem que
    * clicar e puxar"*) continuava valendo inteira, com a suíte verde.
    *
-   * Agora entra sempre: sem marcação, no quadro mais antigo da conta.
+   * Agora entra sempre: sem marcação, no quadro mais antigo da conta — desde
+   * que a conta **peça** isso, que é o que a 0075 passou a exigir.
    */
-  it('sem marcação nenhuma o lead entra do mesmo jeito, no quadro mais antigo', async () => {
+  it('em mais_antigo, sem marcação, o lead entra no quadro mais antigo', async () => {
+    await definirEntradaNoFunil(clienteId, 'mais_antigo')
     mock.enviadas.length = 0
     const de = telefone(40)
 
@@ -849,6 +876,7 @@ describe.skipIf(!temCredencial)('o contato novo entra no quadro padrão', () => 
   })
 
   it('com quadro padrão, o contato vira cartão na primeira etapa sozinho', async () => {
+    await definirEntradaNoFunil(clienteId, 'quadro_marcado')
     await definirQuadroPadrao(clienteId, quadroId)
     const de = telefone(41)
 

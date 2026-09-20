@@ -12,6 +12,14 @@ import {
   type TipoDeEtapa,
 } from '@/core/quadros'
 import { podeEncadear, LIMITE_DO_TITULO } from '@/core/crm'
+import {
+  aceitaQuadroMaisAntigo,
+  criaCartaoSozinho,
+  entradaNoFunil,
+  ENTRADA_NO_FUNIL_PADRAO,
+  ENTRADAS_NO_FUNIL,
+  type EntradaNoFunil,
+} from '@/core/regras-de-entrada'
 import { etapasDoModelo, finalidadeDoModelo, type EtapaDoModelo } from '@/core/quadros-modelos'
 import { db, ehIdInvalido } from '../db'
 import { anotar } from './eventos'
@@ -240,6 +248,21 @@ export async function apagarQuadro(clienteId: string, quadroId: string): Promise
  *   por `criado_em`). Coincide com o quadro que quem tem um só está olhando;
  * - conta sem quadro nenhum → `null`, e aí não há mesmo o que fazer.
  *
+ * ---------------------------------------------------------------------------
+ * E por que ela mudou nesta fase
+ * ---------------------------------------------------------------------------
+ *
+ * Porque o segundo item adivinha. "O primeiro quadro que a pessoa criou" não é
+ * o mesmo que "onde os leads devem cair", e as duas coisas divergem no dia em
+ * que alguém cria um quadro de teste antes do de verdade. A RB-12 é explícita:
+ * "Nenhum fallback pode selecionar o quadro mais antigo".
+ *
+ * A regra agora vem da conta, em `clients.entrada_no_funil` (0075), e esta
+ * função deixou de decidir: ela **aplica** a política que recebe. Quem já
+ * existia foi convertido para `mais_antigo` pela migration, então nada mudou de
+ * comportamento para ninguém; o que mudou é que a escolha está escrita, aparece
+ * na tela e dá para revisar.
+ *
  * `null` continua sendo resposta legítima, e quem chama isto no caminho da
  * mensagem segue em frente sem reclamar.
  *
@@ -248,27 +271,80 @@ export async function apagarQuadro(clienteId: string, quadroId: string): Promise
  * para descartá-la.
  */
 export async function acharQuadroPadrao(clienteId: string): Promise<string | null> {
-  const { data, error } = await db()
-    .from('quadros')
-    .select('id')
-    .eq('client_id', clienteId)
+  const politica = await politicaDeEntrada(clienteId)
+  if (!criaCartaoSozinho(politica)) return null
+
+  const consulta = db().from('quadros').select('id').eq('client_id', clienteId)
+
+  if (aceitaQuadroMaisAntigo(politica)) {
     /*
-     * `padrao` primeiro, `criado_em` como desempate — numa consulta só.
-     *
-     * Duas idas ao banco (procurar o marcado, depois o mais antigo) custariam
-     * uma viagem a mais em toda mensagem de contato novo para responder o que
-     * um `order` responde de graça. `padrao` desc põe `true` na frente; sem
-     * nenhum `true`, a lista inteira desempata por idade e o primeiro é o mais
-     * antigo.
+     * O legado. `padrao` primeiro, `criado_em` como desempate — numa consulta
+     * só: `padrao` desc põe `true` na frente, e sem nenhum `true` a lista
+     * inteira desempata por idade e o primeiro é o mais antigo.
      */
-    .order('padrao', { ascending: false })
-    .order('criado_em', { ascending: true })
-    .limit(1)
-    .maybeSingle()
+    const { data, error } = await consulta
+      .order('padrao', { ascending: false })
+      .order('criado_em', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+
+    if (ehIdInvalido(error)) return null
+    if (error) throw new Error(`não deu para achar o quadro padrão: ${error.message}`)
+    return data ? (data as { id: string }).id : null
+  }
+
+  /*
+   * `quadro_marcado`: só o marcado serve. Sem marcação a resposta é `null`, e
+   * **isso não é falha** — é a conta dizendo "não quero que entre sozinho onde
+   * eu não escolhi". A tela de quadros é quem avisa que não há marcação.
+   */
+  const { data, error } = await consulta.eq('padrao', true).limit(1).maybeSingle()
 
   if (ehIdInvalido(error)) return null
   if (error) throw new Error(`não deu para achar o quadro padrão: ${error.message}`)
   return data ? (data as { id: string }).id : null
+}
+
+/**
+ * A política de entrada da conta (0075).
+ *
+ * Falha de leitura vira o default seguro em vez de exceção: este caminho roda em
+ * **toda mensagem de contato novo**, e um erro aqui não pode derrubar o
+ * atendimento nem fazer o webhook responder erro à Meta. `nao_criar` é o lado
+ * certo de errar — ninguém entra num funil que a conta não escolheu.
+ */
+export async function politicaDeEntrada(clienteId: string): Promise<EntradaNoFunil> {
+  const { data, error } = await db()
+    .from('clients')
+    .select('entrada_no_funil')
+    .eq('id', clienteId)
+    .maybeSingle()
+
+  if (error) return ENTRADA_NO_FUNIL_PADRAO
+  return entradaNoFunil((data as { entrada_no_funil: string | null } | null)?.entrada_no_funil)
+}
+
+/**
+ * Troca a política de entrada da conta.
+ *
+ * Devolve objeto, e não booleano, porque a tela precisa dizer **por que** não
+ * deu. Ver a armadilha do handoff da F2: `if (!objeto)` é sempre falso.
+ */
+export async function definirEntradaNoFunil(
+  clienteId: string,
+  politica: EntradaNoFunil,
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  if (!ENTRADAS_NO_FUNIL.includes(politica)) {
+    return { ok: false, motivo: 'essa política de entrada não existe' }
+  }
+
+  const { error } = await db()
+    .from('clients')
+    .update({ entrada_no_funil: politica })
+    .eq('id', clienteId)
+
+  if (error) return { ok: false, motivo: `não deu para gravar: ${error.message}` }
+  return { ok: true }
 }
 
 /**

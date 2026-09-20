@@ -2,7 +2,12 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import { db } from './db'
 import { receberLeadsDoFormulario } from './receber-lead-do-formulario'
 import { criarCliente } from './repos/clientes'
-import { criarQuadro, definirQuadroPadrao, listarCartoes } from './repos/quadros'
+import {
+  criarQuadro,
+  definirEntradaNoFunil,
+  definirQuadroPadrao,
+  listarCartoes,
+} from './repos/quadros'
 
 /**
  * O caminho do Lead Ads, de ponta a ponta, contra o banco de verdade.
@@ -70,6 +75,12 @@ beforeAll(async () => {
   const q = await criarQuadro(clienteId, `${marca} funil`)
   if (q.ok) {
     quadroId = q.id
+    /*
+     * A política é declarada desde a 0075: conta nova nasce em `nao_criar`
+     * (RB-12), e este bloco está provando o caminho em que o cartão **deve**
+     * aparecer.
+     */
+    await definirEntradaNoFunil(clienteId, 'quadro_marcado')
     await definirQuadroPadrao(clienteId, quadroId)
   }
 })
