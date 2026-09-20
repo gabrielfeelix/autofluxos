@@ -268,6 +268,69 @@ e o que ficou de fora.
 **No fim das duas fases**, escreva `docs/HANDOFF-19-SET-F5-E-F6.md` no mesmo
 formato deste e do anterior, e relate ao dono o que ficou de fora e por quê.
 
+## 8.1 O encerramento pedido pelo dono
+
+Ao terminar as cinco tarefas, faça o seguinte, **nesta ordem**:
+
+1. **Commit e push de tudo.** Já deve ter acontecido por tarefa; confira que não
+   sobrou nada com `git status --short` e que `git log origin/main..HEAD` está
+   vazio.
+2. **Deploy.** Este repositório **não tem script de deploy**: ele vai para a
+   Vercel pelo push em `main`. Quer dizer que o passo 1 já disparou o deploy.
+   Confirme que o build da Vercel passou antes de seguir, e **não invente** um
+   `deploy.py` aqui: o que existe em `website/scripts/deploy.py` é do site
+   institucional, outro projeto.
+3. **Aplicar as migrations em produção.** As da F5/F6 que você escrever, mais as
+   **0074 a 0078**, que estão no disco e no Docker local e **nunca foram
+   aplicadas**.
+
+### O `db push` pedido não é o comando a usar, e isto não é preciosismo
+
+O dono pediu "dar db push em todas as migrations". A intenção está clara: pôr as
+migrations pendentes na produção. Mas `supabase db push` é **proibido contra a
+produção** por este repositório, e é a regra **número 1** de
+`docs/BANCO-COMPARTILHADO.md`:
+
+> "Nunca rode `supabase db push`, `supabase db reset` ou outro comando de
+> reconciliação contra produção. O histórico global do projeto não representa
+> sozinho os dois repositórios."
+
+O motivo é concreto: AutoFluxos e Verandi dividem o mesmo projeto Supabase. O
+`db push` reconcilia o histórico **do projeto inteiro** contra o diretório
+**deste** repositório, que não conhece as migrations `0030_vr_` da Verandi. E a
+produção está **fora de ordem** desde 15/set: a 0060 foi aplicada e a **0059
+segue pendente**, de propósito. Um `db push` em cima disso é o comando errado
+apontado para um estado que ele não sabe ler.
+
+**O caminho sancionado** é o mesmo das 0047 a 0070, registrado no
+`BANCO-COMPARTILHADO.md`: aplicar pela **Management API do Supabase**, uma
+migration por vez, com os dois testes antes:
+
+- **replay do zero em Docker** (`npx supabase db reset`), que prova a ordem;
+- **ensaio em transação contra a produção** (`begin; <a migration sem o notify>;
+  rollback;`), que prova o estado herdado.
+
+Depois de aplicar, **releia os objetos na produção**, um a um: "o console disse
+que aplicou" não é evidência. E se a migration tiver `notify pgrst`, **confira a
+Verandi também** — o cache do PostgREST é dos dois produtos.
+
+### E o passo que você não pode pular
+
+**Aplicar em produção exige autorização explícita do dono, por migration.** Está
+em `AGENTS.md` ("Não aplique nada em produção sem autorização explícita do
+usuário") e se repete no `BANCO-COMPARTILHADO.md`. O pedido acima autoriza a
+**intenção**, e ele foi feito antes de as migrations da F5/F6 existirem.
+
+Então: quando chegar aqui, **pare e apresente ao dono a lista do que vai
+aplicar** (0074 a 0078 mais as suas), o que cada uma faz, e o resultado do ensaio
+em transação. Peça o "pode aplicar". É uma mensagem, e ela é a diferença entre
+uma migration revisada e um `alter table` num banco de produção compartilhado por
+dois produtos.
+
+Se a autorização não vier na hora, **entregue o resto** (código, testes, deploy,
+handoff) e deixe as migrations explicitamente pendentes no handoff, como esta
+sessão e as anteriores fizeram.
+
 ## 9. Estado por fase
 
 | Fase | Situação |
