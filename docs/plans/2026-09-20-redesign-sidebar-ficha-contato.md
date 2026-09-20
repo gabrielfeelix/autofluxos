@@ -14,8 +14,8 @@ Pedido do usuário: primeiro escrever este plano, depois implementar a sidebar, 
 - [x] Registrar plano durável antes de escrever código.
 - [x] Etapa 1: sidebar implementada e validada.
 - [x] Etapa 1: commit e push concluídos: `1e7504e`, publicado em `origin/main`.
-- [ ] Etapa 2: ficha completa implementada e validada.
-- [ ] Etapa 2: commit/push e registro final.
+- [x] Etapa 2: ficha completa implementada e validada.
+- [x] Etapa 2: commit/push e registro final.
 
 ## Direção de UX/UI
 
@@ -259,3 +259,44 @@ Capturas desktop claro, mobile e escuro; testes de abrir/fechar, salvar/cancelar
 
 
 Marco 1 publicado: `1e7504e`, push confirmado (`a5329ba..1e7504e main -> main`). Início da etapa 2 após essa confirmação.
+
+## Registro de execução da etapa 2
+
+A ficha deixou de ser o grid `280px + conversa`. O cabeçalho ficou com
+identidade, ações e exclusão; estágio, responsável e atendimento desceram para
+uma faixa rotulada, porque os três estavam soltos na mesma linha do nome, sem
+dizer o que eram. A navegação é por abas, com **Visão geral** aberta por padrão
+e **Conversa** por último: a ficha responde em que pé está a pessoa, e o Inbox é
+a tela feita para conduzir a conversa.
+
+Abas: Visão geral (negociações e informações à esquerda; próximos passos,
+relacionamento, anotação e etiquetas à direita), Atividades (tarefas, agendadas
+e acompanhamentos), Histórico (diário e linha do tempo lado a lado), Dados e
+origem (o que o fluxo coletou e a jornada de anúncios) e Conversa.
+
+Componentes novos em `src/components/lead-crm/`: `dados-coletados.tsx` (era
+código solto na página, onde todo valor longo virava reticências dentro dos
+280px) e `proximos-passos.tsx` (tarefa aberta e mensagem agendada respondem a
+mesma pergunta e nenhuma das duas aparecia sem ir procurar). `abas.tsx` ganhou
+ARIA completo (`aria-controls`/`aria-labelledby`, setas, Home e End), aba
+inicial configurável e altura fixa só no painel da conversa: antes o cartão
+inteiro tinha `max-h-620px` e a visão geral rolava dentro de si mesma sem
+precisar. `informacoes.tsx` virou grade de duas colunas, com a última célula
+ocupando a linha inteira quando sobra ímpar.
+
+**Dois defeitos encontrados na validação visual, não no código anterior.** O
+atalho "Anotar" chamava `getElementById` num painel escondido, achava o
+elemento e rolava para uma altura fora da vista: agora pede a aba pelo evento
+`ficha:aba` e só então mede a posição. E `ProximosPassos` usava `quando()` num
+prazo futuro; `quando()` só sabe falar do passado e respondia "agora" para tudo
+que ainda não venceu, então ganhou `prazoEmPalavras`.
+
+Validação: `tsc --noEmit` limpo, ESLint sem erro nem aviso nos arquivos
+alterados, suíte inteira verde (2.596 testes, 14 pulados, 173 arquivos) e
+`npm run build` com saída 0. Playwright sobre preview isolado comprovou as
+cinco abas na ordem, ARIA ligado painel a painel, seta/Home/End, rascunho da
+conversa preservado na troca de aba, o atalho "Anotar" voltando à visão geral e
+focando o campo, zero estouro horizontal em 390px e o tema escuro por
+`data-tema='escuro'`. Capturas em `/tmp/autofluxos-ui-preview/ficha-*.png`.
+Nenhum acesso a produção nos testes; nenhuma migration, alteração de Auth,
+Storage ou schema.

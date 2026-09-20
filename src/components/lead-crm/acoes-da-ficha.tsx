@@ -95,13 +95,22 @@ export function AcoesDaFicha({
  *
  * Só rolar deixa a pessoa olhando para o lugar certo sem poder digitar, o que
  * cobra um clique a mais logo depois do clique que ela acabou de dar.
+ *
+ * **Pede a aba antes de procurar o bloco.** Anotação e etiquetas agora vivem
+ * dentro da visão geral, e um `getElementById` num painel escondido acha o
+ * elemento, rola para uma altura que não está à vista e foca um campo que
+ * ninguém vê: o clique parecia não fazer nada. O `requestAnimationFrame` espera
+ * o React mostrar o painel antes de medir a posição.
  */
 function focar(id: string) {
-  const alvo = document.getElementById(id)
-  if (!alvo) return
-  alvo.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  const campo = alvo.querySelector<HTMLElement>('textarea, input, button')
-  campo?.focus({ preventScroll: true })
+  window.dispatchEvent(new CustomEvent('ficha:aba', { detail: 'visao' }))
+  requestAnimationFrame(() => {
+    const alvo = document.getElementById(id)
+    if (!alvo) return
+    alvo.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    const campo = alvo.querySelector<HTMLElement>('textarea, input, button')
+    campo?.focus({ preventScroll: true })
+  })
 }
 
 function Acao({

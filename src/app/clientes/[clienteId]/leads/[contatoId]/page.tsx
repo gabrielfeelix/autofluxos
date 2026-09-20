@@ -43,7 +43,6 @@ import { passagensDoContato } from '@/server/repos/passagens'
 import { resolverAnuncios } from '@/server/resolver-anuncios'
 import { tokenDeAnuncios } from '@/server/token-de-anuncios'
 import type { AnuncioEmCache, Passagem } from '@/core/anuncios'
-import { rotuloDoCampo } from '@/core/contatos/rotulo-do-campo'
 import { origemDoContato } from '@/core/contatos/origem'
 import { Avatar } from '@/components/inbox/avatar'
 import { Abas } from '@/components/lead-crm/abas'
@@ -57,6 +56,8 @@ import { Agendadas } from '@/components/lead-crm/agendadas'
 import { Diario } from '@/components/lead-crm/diario'
 import { Informacoes } from '@/components/lead-crm/informacoes'
 import { Jornada } from '@/components/lead-crm/jornada'
+import { DadosColetados } from '@/components/lead-crm/dados-coletados'
+import { ProximosPassos } from '@/components/lead-crm/proximos-passos'
 import { SeletorDeEtiquetas } from '@/components/etiquetas/seletor'
 import {
   AnexoNaConversa,
@@ -169,8 +170,8 @@ export default async function Pagina({
         ← Leads
         </Link>
 
-        <header className="mb-4 flex flex-wrap items-center gap-3.5">
-          <Avatar nome={lead.nome} tamanho={44} />
+        <header className="mb-[18px] flex flex-wrap items-center gap-3.5">
+          <Avatar nome={lead.nome} tamanho={52} />
           <div className="min-w-0">
             <NomeDoContato
               nome={lead.nome}
@@ -193,19 +194,6 @@ export default async function Pagina({
             </p>
           </div>
           <span className="flex-1" />
-          {/* O estágio e o responsável, lado a lado: em que pé está, e com
-              quem. Ver `components/lead-crm/estagio-do-contato.tsx`. */}
-          <EstagioDoContato
-            clienteId={clienteId}
-            contatoId={contatoId}
-            estagio={estagio?.estagio ?? 'novo'}
-          />
-          <ResponsavelDoContato
-            clienteId={clienteId}
-            contatoId={contatoId}
-            equipe={equipe.map(({ id, nome: comoSeChama }) => ({ id, nome: comoSeChama }))}
-            responsavelId={lead.atribuidoA}
-          />
           {/* As ações sobre o contato, no alto e à direita, o lugar em que a
               ficha do Brevo e a do RD as põem, e pelo mesmo motivo: é onde o
               olho chega depois de ler quem é a pessoa. */}
@@ -216,9 +204,6 @@ export default async function Pagina({
             fimDaJanela={contexto?.ultimaEntradaEm ?? null}
             agendadas={agendadas}
           />
-          <span className={`rounded-full border px-3 py-1 text-[10.5px] font-bold ${lead.aguardando ? 'border-rose-400/25 bg-rose-400/[0.09] text-perigo' : !lead.automacaoAtiva ? 'border-amber-300/25 bg-amber-300/[0.08] text-aviso' : 'border-emerald-400/20 bg-emerald-400/[0.07] text-ok'}`}>
-            {lead.aguardando ? 'AGUARDANDO HUMANO' : !lead.automacaoAtiva ? 'BOT EM PAUSA' : 'COM O BOT'}
-          </span>
           {/* O pedido de exclusão da LGPD vira este botão. A pergunta diz o que
               some junto porque não existe desfazer: a conversa não está copiada
               em lugar nenhum. */}
@@ -229,6 +214,51 @@ export default async function Pagina({
             pergunta={`Apagar ${nome} e tudo desta pessoa?\n\nSomem a conversa inteira, o que o fluxo coletou e o histórico de atendimento. Não dá para desfazer.`}
           />
         </header>
+
+        {/*
+          **A faixa de contexto: em que pé está, com quem, e quem responde.**
+          Os três controles estavam soltos no cabeçalho, sem rótulo, disputando
+          a linha com o nome e com os botões: dois dropdowns cinzas e um selo em
+          caps lock que ninguém sabia dizer se era estado do bot ou do negócio.
+          Rotulados e agrupados, cada um diz o que é antes de dizer o valor.
+        */}
+        <section className="mb-[18px] grid grid-cols-1 gap-x-5 gap-y-3.5 rounded-[13px] border border-line bg-panel px-[18px] py-4 sm:grid-cols-3">
+          <div className="crm-field">
+            <span>Estágio do contato</span>
+            <EstagioDoContato
+              expandido
+              clienteId={clienteId}
+              contatoId={contatoId}
+              estagio={estagio?.estagio ?? 'novo'}
+            />
+          </div>
+          <div className="crm-field">
+            <span>Responsável</span>
+            <ResponsavelDoContato
+              expandido
+              clienteId={clienteId}
+              contatoId={contatoId}
+              equipe={equipe.map(({ id, nome: comoSeChama }) => ({ id, nome: comoSeChama }))}
+              responsavelId={lead.atribuidoA}
+            />
+          </div>
+          <div className="crm-field">
+            <span>Atendimento</span>
+            {/*
+              Altura igual à dos dois dropdowns ao lado para as três colunas
+              assentarem na mesma linha de base. O selo diz quem está com a
+              conversa agora; o que fazer a respeito continua nas faixas
+              abaixo, que é onde mora o botão.
+            */}
+            <span className="flex h-[38px] items-center">
+              <span
+                className={`rounded-full border px-3 py-1 text-[10.5px] font-bold ${lead.aguardando ? 'border-rose-400/25 bg-rose-400/[0.09] text-perigo' : !lead.automacaoAtiva ? 'border-amber-300/25 bg-amber-300/[0.08] text-aviso' : 'border-emerald-400/20 bg-emerald-400/[0.07] text-ok'}`}
+              >
+                {lead.aguardando ? 'AGUARDANDO HUMANO' : !lead.automacaoAtiva ? 'BOT EM PAUSA' : 'COM O BOT'}
+              </span>
+            </span>
+          </div>
+        </section>
 
         {lead.aguardando && (
           <div className="mb-[18px] flex items-center gap-3 rounded-[13px] border border-rose-400/25 bg-rose-400/[0.06] px-[17px] py-[13px]">
@@ -279,202 +309,228 @@ export default async function Pagina({
           </div>
         )}
 
-        <div className="grid grid-cols-1 items-start gap-[18px] md:grid-cols-[280px_minmax(0,1fr)]">
-          <div className="flex flex-col gap-[18px]">
-          {/* **O que a pessoa já rendeu e o que está em jogo vêm antes de
-              etiqueta e anotação.** A coluna abria em "Etiquetas", e a primeira
-              informação sobre a pessoa era o que o bot perguntou, o mesmo
-              defeito que a coluna do Inbox já tinha corrigido. */}
-          {/*
-            Montado aqui, e não com uma consulta a mais: `resumo` já trouxe
-            total, compras e última compra, e `lead.ultimaEntradaEm` já trouxe a
-            última vez que a pessoa falou. Os quatro fatos que o relacionamento
-            pede já estavam na tela — faltava alguém lê-los juntos.
-          */}
-          <ResumoDoContato
-            resumo={resumo}
-            relacionamento={relacionamentoDe(
-              {
-                total: resumo.total,
-                compras: resumo.compras,
-                ultimaCompraEm: resumo.ultimaEm,
-                ultimaConversaEm: lead.ultimaEntradaEm,
-              },
-              faixas ?? FAIXAS_PADRAO,
-            )}
-          />
-          <Informacoes
-            waId={lead.waId}
-            campos={lead.campos}
-            criadoEm={lead.criadoEm}
-            ultimaEntradaEm={lead.ultimaEntradaEm}
-            estagioDesde={estagio?.desde ?? null}
-            estado={lead.estadoEfetivo}
-            adiadaAte={lead.adiadaAte}
-            adiadaNota={lead.adiadaNota}
-          />
-          <Negociacoes
-            clienteId={clienteId}
-            nome={nome}
-            negociacoes={noQuadro.map((posicao) => ({
-              cartaoId: posicao.cartaoId,
-              quadro: posicao.quadro,
-              etapa: posicao.etapa,
-              entrouEm: posicao.entrouEm,
-              titulo: posicao.titulo,
-              valor: posicao.valor,
-              situacao: posicao.situacao,
-            }))}
-            motivos={motivos.map(({ id, nome: comoSeChama }) => ({ id, nome: comoSeChama }))}
-          />
-          <Agendadas agendadas={agendadas} />
-          <section id="etiquetas" className="app-card overflow-hidden">
-            <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
-              Etiquetas
-            </h2>
-            <div className="px-[18px] py-4">
-              <SeletorDeEtiquetas
-                clienteId={clienteId}
-                contatoId={contatoId}
-                disponiveis={etiquetas}
-                aplicadas={lead.etiquetasManuais.map((etiqueta) => etiqueta.id)}
-              />
-            </div>
-          </section>
-          <div id="diario">
-            <Diario
-              eventos={eventos}
-              limite={LIMITE_DA_NOTA}
-              anotar={acaoAnotarNoDiario.bind(null, clienteId, contatoId)}
-            />
-          </div>
-          <div id="anotacao">
-            <NotasDoContato
-            notas={lead.notas}
-            limite={LIMITE_DA_NOTA}
-            salvar={acaoSalvarNotas.bind(null, clienteId, contatoId)}
-            />
-          </div>
-          <section className="app-card overflow-hidden">
-            <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">O que o fluxo coletou</h2>
-            {campos.length === 0 ? (
-              <p className="px-[18px] py-[22px] text-xs leading-5 text-dim">
-                Nada coletado, a conversa não chegou a preencher nenhuma variável.
-              </p>
-            ) : (
-              <dl>
-                {campos.map(([chave, valor]) => (
-                  <div key={chave} className="border-b border-line px-[18px] py-[11px] last:border-0">
-                    <dt className="text-[10.5px] font-semibold text-dim">{rotuloDoCampo(chave) || chave}</dt>
-                    <dd className="mt-1 truncate text-[13px] font-semibold">{valor}</dd>
-                  </div>
-                ))}
-              </dl>
-            )}
-          </section>
-          </div>
-
-          {/* A conversa e o histórico no mesmo cartão, e a conversa primeiro:
-              quem abre a ficha quase sempre vai responder. Ver
-              `components/lead-crm/abas.tsx`. */}
-          <Abas
-            extra={
-              /*
-                A contagem da janela de 24h fica aqui, e não no rodapé da caixa
-                de resposta. Mesma decisão do Inbox, pelo mesmo motivo: ela é
-                estado da conversa e não consequência de responder, e as duas
-                telas precisam dizer a mesma coisa no mesmo lugar, senão quem
-                usa as duas aprende dois produtos.
-              */
-              janela ? (
-                <Dica texto="Depois disso o WhatsApp só aceita modelo aprovado pela Meta">
-                  <span
-                    className={`flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
-                      apertado ? 'bg-amber-400/15 text-aviso' : 'bg-surface text-muted'
-                    }`}
-                  >
-                    <span aria-hidden>🕐</span>
-                    {janela}
-                  </span>
-                </Dica>
-              ) : null
-            }
-            abas={[
-              {
-                chave: 'conversa',
-                rotulo: 'Conversa',
-                solta: true,
-                conteudo: (
-              <ProvedorDeCitacao>
-                <div className="min-h-0 flex-1 overflow-auto p-[18px]">
-                  <Suspense fallback={<HistoricoEsqueleto />}>
-                    <Historico
-                      contatoId={contatoId}
-                      nomeDoLead={lead.nome}
+        {/*
+          **A ficha é um documento, não um chat com notas na margem.** Ela era um
+          grid de `280px` + conversa: os fatos da pessoa espremidos numa coluna
+          onde todo valor virava reticências, e o chat ocupando o resto de uma
+          tela cujo trabalho é responder "quem é esta pessoa e em que pé está".
+          Para conduzir a conversa existe o Inbox, que é a tela feita para isso.
+          Aqui as abas dividem o assunto e a conversa é a última, disponível sem
+          ser imposta.
+        */}
+        <Abas
+          inicial="visao"
+          extra={
+            /*
+              A contagem da janela de 24h fica aqui, e não no rodapé da caixa
+              de resposta. Mesma decisão do Inbox, pelo mesmo motivo: ela é
+              estado da conversa e não consequência de responder, e as duas
+              telas precisam dizer a mesma coisa no mesmo lugar, senão quem
+              usa as duas aprende dois produtos.
+            */
+            janela ? (
+              <Dica texto="Depois disso o WhatsApp só aceita modelo aprovado pela Meta">
+                <span
+                  className={`mb-1.5 flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
+                    apertado ? 'bg-amber-400/15 text-aviso' : 'bg-surface text-muted'
+                  }`}
+                >
+                  <span aria-hidden>🕐</span>
+                  {janela}
+                </span>
+              </Dica>
+            ) : null
+          }
+          abas={[
+            {
+              chave: 'visao',
+              rotulo: 'Visão geral',
+              conteudo: (
+                /*
+                  Duas colunas: o que está em jogo à esquerda, o que apoia a
+                  decisão à direita. `items-start` impede que um cartão curto de
+                  apoio estique até a altura da coluna principal, que foi o que
+                  deixou a coluna de 280px cheia de caixas ocas.
+                */
+                <div className="grid grid-cols-1 items-start gap-[18px] lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+                  <div className="flex flex-col gap-[18px]">
+                    <Negociacoes
                       clienteId={clienteId}
+                      nome={nome}
+                      negociacoes={noQuadro.map((posicao) => ({
+                        cartaoId: posicao.cartaoId,
+                        quadro: posicao.quadro,
+                        etapa: posicao.etapa,
+                        entrouEm: posicao.entrouEm,
+                        titulo: posicao.titulo,
+                        valor: posicao.valor,
+                        situacao: posicao.situacao,
+                      }))}
+                      motivos={motivos.map(({ id, nome: comoSeChama }) => ({ id, nome: comoSeChama }))}
                     />
-                  </Suspense>
+                    <Informacoes
+                      waId={lead.waId}
+                      campos={lead.campos}
+                      criadoEm={lead.criadoEm}
+                      ultimaEntradaEm={lead.ultimaEntradaEm}
+                      estagioDesde={estagio?.desde ?? null}
+                      estado={lead.estadoEfetivo}
+                      adiadaAte={lead.adiadaAte}
+                      adiadaNota={lead.adiadaNota}
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-[18px]">
+                    <ProximosPassos
+                      atividades={atividades}
+                      agendadas={agendadas}
+                      agora={agoraDaFicha}
+                    />
+                    {/*
+                      Montado aqui, e não com uma consulta a mais: `resumo` já
+                      trouxe total, compras e última compra, e
+                      `lead.ultimaEntradaEm` já trouxe a última vez que a pessoa
+                      falou. Os quatro fatos que o relacionamento pede já
+                      estavam na tela: faltava alguém lê-los juntos.
+                    */}
+                    <ResumoDoContato
+                      resumo={resumo}
+                      relacionamento={relacionamentoDe(
+                        {
+                          total: resumo.total,
+                          compras: resumo.compras,
+                          ultimaCompraEm: resumo.ultimaEm,
+                          ultimaConversaEm: lead.ultimaEntradaEm,
+                        },
+                        faixas ?? FAIXAS_PADRAO,
+                      )}
+                    />
+                    <div id="anotacao">
+                      <NotasDoContato
+                        notas={lead.notas}
+                        limite={LIMITE_DA_NOTA}
+                        salvar={acaoSalvarNotas.bind(null, clienteId, contatoId)}
+                      />
+                    </div>
+                    <section id="etiquetas" className="app-card overflow-hidden">
+                      <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
+                        Etiquetas
+                      </h2>
+                      <div className="px-[18px] py-4">
+                        <SeletorDeEtiquetas
+                          clienteId={clienteId}
+                          contatoId={contatoId}
+                          disponiveis={etiquetas}
+                          aplicadas={lead.etiquetasManuais.map((etiqueta) => etiqueta.id)}
+                        />
+                      </div>
+                    </section>
+                  </div>
                 </div>
-                <CaixaDeResposta
-                  acao={acaoResponderLead.bind(null, clienteId, contatoId)}
-                  restaDaJanela={janela}
-                  nome={primeiroNome}
-                  respostasRapidas={respostasRapidas}
-                  temAutomacao={temAutomacao}
-                />
-              </ProvedorDeCitacao>
-                ),
-              },
-              {
-                chave: 'historico',
-                rotulo: 'Histórico',
-                contagem: eventos.length,
-                conteudo: <HistoricoDoContato eventos={eventos} />,
-              },
-              {
-                chave: 'jornada',
-                rotulo: 'Jornada',
-                contagem: jornada.passagens.length,
-                conteudo: (
-                  <Jornada
-                    passagens={jornada.passagens}
-                    nomesDosAnuncios={jornada.nomesDosAnuncios}
-                  />
-                ),
-              },
-              {
-                chave: 'atividades',
-                rotulo: 'Atividades',
-                contagem: atividades.filter((a) => a.situacao === 'aberta').length,
-                conteudo: (
+              ),
+            },
+            {
+              chave: 'atividades',
+              rotulo: 'Atividades',
+              contagem: atividades.filter((a) => a.situacao === 'aberta').length,
+              conteudo: (
+                /*
+                 * Tarefa humana, mensagem agendada e acompanhamento automático
+                 * moram juntos porque respondem a mesma pergunta — o que ainda
+                 * vai acontecer com esta pessoa — mas ficam em seções separadas
+                 * porque "agendar mensagem" e "criar atividade" são atos
+                 * diferentes e misturá-los faria alguém marcar um querendo o
+                 * outro. A contagem da aba é só das atividades abertas.
+                 */
+                <div className="flex flex-col gap-[18px]">
                   <Atividades
                     clienteId={clienteId}
                     contatoId={contatoId}
                     atividadesIniciais={atividades}
                     agora={agoraDaFicha}
                   />
-                ),
-              },
-              /*
-               * Acompanhamentos (UI-23/UI-24, T7.3).
-               *
-               * A contagem é só das **ativas**, e não do total: é o número que
-               * responde "esta pessoa ainda vai receber mensagem automática?". O
-               * total incluiria as encerradas e daria a impressão de fila cheia
-               * numa ficha em que nada mais vai sair.
-               *
-               * A aba fica depois de Atividades porque a ordem é de quem trabalha:
-               * o que **eu** tenho para fazer vem antes do que o sistema fez.
-               */
-              {
-                chave: 'acompanhamentos',
-                rotulo: 'Acompanhamentos',
-                contagem: acompanhamentos.filter((a) => a.estado === 'ativa').length,
-                conteudo: <Acompanhamentos acompanhamentos={acompanhamentos} />,
-              },
-            ]}
-          />
-        </div>
+                  <Agendadas agendadas={agendadas} />
+                  <Acompanhamentos acompanhamentos={acompanhamentos} />
+                </div>
+              ),
+            },
+            {
+              chave: 'historico',
+              rotulo: 'Histórico',
+              contagem: eventos.length,
+              conteudo: (
+                /*
+                  A linha do tempo é registro e o diário é escrita da equipe.
+                  Ficam lado a lado no desktop e empilhados no mobile, com o
+                  diário primeiro na ordem do DOM para que quem vem do atalho
+                  "Anotar" caia no campo, e não no fim de uma lista longa.
+                */
+                <div className="grid grid-cols-1 items-start gap-[18px] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                  <div id="diario">
+                    <Diario
+                      eventos={eventos}
+                      limite={LIMITE_DA_NOTA}
+                      anotar={acaoAnotarNoDiario.bind(null, clienteId, contatoId)}
+                    />
+                  </div>
+                  <section className="app-card overflow-hidden">
+                    <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
+                      Linha do tempo
+                    </h2>
+                    <div className="p-[18px]">
+                      <HistoricoDoContato eventos={eventos} />
+                    </div>
+                  </section>
+                </div>
+              ),
+            },
+            {
+              chave: 'dados',
+              rotulo: 'Dados e origem',
+              conteudo: (
+                <div className="flex flex-col gap-[18px]">
+                  <DadosColetados campos={campos} />
+                  <section className="app-card overflow-hidden">
+                    <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
+                      Jornada de anúncios
+                    </h2>
+                    <div className="p-[18px]">
+                      <Jornada
+                        passagens={jornada.passagens}
+                        nomesDosAnuncios={jornada.nomesDosAnuncios}
+                      />
+                    </div>
+                  </section>
+                </div>
+              ),
+            },
+            {
+              chave: 'conversa',
+              rotulo: 'Conversa',
+              solta: true,
+              conteudo: (
+                <ProvedorDeCitacao>
+                  <div className="min-h-0 flex-1 overflow-auto p-[18px]">
+                    <Suspense fallback={<HistoricoEsqueleto />}>
+                      <Historico
+                        contatoId={contatoId}
+                        nomeDoLead={lead.nome}
+                        clienteId={clienteId}
+                      />
+                    </Suspense>
+                  </div>
+                  <CaixaDeResposta
+                    acao={acaoResponderLead.bind(null, clienteId, contatoId)}
+                    restaDaJanela={janela}
+                    nome={primeiroNome}
+                    respostasRapidas={respostasRapidas}
+                    temAutomacao={temAutomacao}
+                  />
+                </ProvedorDeCitacao>
+              ),
+            },
+          ]}
+        />
       </main>
     </ClienteShell>
   )

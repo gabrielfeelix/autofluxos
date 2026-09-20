@@ -49,7 +49,16 @@ export function Informacoes({
   return (
     <section className="app-card overflow-hidden">
       <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">Informações</h2>
-      <dl>
+      {/*
+        **Grade, não torre.** Sete linhas de uma coluna só era o desenho da
+        antiga faixa de 280px: na largura da ficha, cada fato ganhava uma linha
+        inteira e a lista descia mais que a negociação ao lado, que é o que
+        importa. O `gap-px` sobre o fundo `--line` desenha as divisórias entre
+        as células sem borda em cada uma, e a última ocupa a linha inteira
+        quando sobra sozinha: sem isso o fundo das divisórias aparecia como um
+        retângulo cinza vazio ao lado dela, que parece dado faltando.
+      */}
+      <dl className="grid grid-cols-1 gap-px bg-line sm:grid-cols-2">
         <Linha rotulo="Telefone">
           {/* `tel:` sozinho resolvia o celular e abandonava o desktop, que é
               onde o time passa o dia. Ver `acoes-do-telefone.tsx`. */}
@@ -114,7 +123,7 @@ export function Informacoes({
 
 function Linha({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
   return (
-    <div className="border-b border-line px-[18px] py-[11px] last:border-0">
+    <div className="bg-panel px-[18px] py-[11px] sm:last:odd:col-span-2">
       <dt className="text-[10.5px] font-semibold text-dim">{rotulo}</dt>
       <dd className="mt-1 text-[12.5px] font-semibold">{children}</dd>
     </div>
