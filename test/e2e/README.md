@@ -31,3 +31,19 @@ ambiente pelo mesmo `conferirAmbienteLocal` dos testes de integração: endereç
 remoto é recusado mesmo com o consentimento preenchido. AutoFluxos e Verandi
 dividem o projeto de produção, e um e2e que criasse conta lá mexeria no banco
 que atende cliente de verdade.
+
+## O limite de tentativas, e por que a conta é criada uma vez só
+
+`acaoCriarPrimeiroAdministrador` passa por `consumirLimite`, com teto de **5
+tentativas em 5 minutos por IP** (`src/server/limite.ts`). Todos os testes saem
+do mesmo IP, então cadastrar uma conta por teste faz o terceiro ou quarto
+receber "Muitas tentativas" e falhar por uma proteção que está funcionando.
+
+Por isso o `beforeAll` cadastra **uma** conta e os testes reusam a sessão por
+`storageState`. Isso também é mais fiel ao uso real: a pessoa cadastra uma vez e
+depois trabalha na conta dela.
+
+**Se você rodar a suíte várias vezes seguidas** enquanto desenvolve, vai bater no
+limite mesmo assim: cada rodada gasta uma tentativa. Espere os 5 minutos. O
+sintoma engana, porque o teste falha adiante com 404 ou com um seletor que não
+aparece, e a mensagem do limite fica na tela anterior.
