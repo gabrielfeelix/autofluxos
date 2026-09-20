@@ -972,12 +972,25 @@ function RelogioDaJanela({
 }) {
   const janela = { ultimaEntradaEm, portaDeEntradaEm };
   const restante = restaDaJanela(janela);
-  if (restante === null) return null;
 
   /*
-   * Quem chegou por anúncio tem 72h, e elas não custam nada. Dizer isso na fila
-   * muda a decisão de quem escolhe o que pegar: é a conversa que dá para
-   * resolver inteira sem gastar modelo.
+   * Quem chegou por anúncio e ainda não escreveu não tem janela de texto livre,
+   * e **tem** a gratuidade: a linha certa é "só modelo aprovado, e sai de
+   * graça". Antes da T3.3 isto aparecia como três dias de janela aberta, e
+   * quem confiasse na fila escrevia um parágrafo para receber um erro.
+   */
+  if (restante === null) {
+    return dentroDaPortaDeEntrada(janela) ? (
+      <span className="mt-0.5 block text-[10px] text-dim">
+        só modelo aprovado<span className="text-dim"> · grátis, veio de anúncio</span>
+      </span>
+    ) : null;
+  }
+
+  /*
+   * Quem chegou por anúncio tem 72h de envio gratuito, e elas não custam nada.
+   * Dizer isso na fila muda a decisão de quem escolhe o que pegar: é a conversa
+   * que dá para resolver sem gastar modelo.
    */
   const gratis = dentroDaPortaDeEntrada(janela);
 

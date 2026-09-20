@@ -15,11 +15,26 @@
  * gratuita: a Meta não cobra nada do que for enviado dentro dela. É o que a
  * documentação chama de *free entry point conversation*.
  *
- * Os dois relógios convivem. A pessoa que chegou por anúncio na segunda e
- * escreveu de novo na quarta tem a janela do anúncio já vencida e a de 24h
- * aberta: dá para responder, e passa a custar. Por isso `restaDaJanela` devolve
- * o maior dos dois, e `dentroDaPortaDeEntrada` responde a pergunta do dinheiro
- * separadamente. Juntar as duas faria a tela dizer "grátis" no terceiro dia.
+ * ---------------------------------------------------------------------------
+ * As 72h são de **cobrança**, não de autorização. Isto já esteve errado aqui.
+ * ---------------------------------------------------------------------------
+ *
+ * `restaDaJanela` devolvia o **maior dos dois** prazos, e a consequência era
+ * concreta: quem clicou no anúncio e nunca escreveu aparecia com janela aberta
+ * por três dias. A tela abria o compositor, a pessoa escrevia um parágrafo,
+ * clicava em enviar, e a Meta respondia `(#131047) Re-engagement message`.
+ *
+ * A dúvida que a proposta de 19/set registrou na RB-13 ("Existe divergência nas
+ * fontes consultadas sobre mensagem livre dentro da janela gratuita de entrada")
+ * está resolvida, com fonte primária: **as 72h valem para cobrança, não para
+ * texto livre.** Quem autoriza texto livre é a janela de 24h da última mensagem
+ * **da pessoa**. Uma entrada gratuita sem resposta dela não abre conversa: abre
+ * o direito de responder de graça *quando* ela responder.
+ *
+ * Por isso os dois relógios deixaram de ser comparados. `restaDaJanela` conta só
+ * as 24h, e `dentroDaPortaDeEntrada` responde a pergunta do dinheiro,
+ * separadamente. É a RB-13: "Separar o cálculo de cobrança do cálculo de envio;
+ * fora da permissão confirmada, oferecer modelo aprovado quando elegível".
  *
  * ---------------------------------------------------------------------------
  * Como se sabe que a pessoa veio de anúncio
@@ -89,20 +104,86 @@ function restaDe(quando: string | null | undefined, duracao: number, agora: numb
 /**
  * Quanto tempo ainda dá para responder em texto livre.
  *
- * O maior dos dois prazos, porque qualquer um deles aberto já autoriza o envio.
+ * **Só as 24h da última mensagem da pessoa.** Ver o cabeçalho: a janela de 72h
+ * do anúncio é gratuidade, não autorização, e misturar as duas fazia a tela
+ * abrir o compositor para quem clicou num anúncio e nunca escreveu.
  *
- * `null` quando nenhum dos dois existe: sem mensagem dela e sem chegada por
- * anúncio, não existe janela nenhuma aberta, nem uma que já fechou.
+ * `null` quando ela nunca escreveu: não existe janela aberta, nem uma que já
+ * fechou. Quem chegou por anúncio e ainda não falou cai aqui, e é o certo — o
+ * caminho dele é modelo aprovado, e o envio sai de graça por causa da porta.
  */
 export function restaDaJanela(janela: Janela, agora: number = Date.now()): number | null {
-  const daConversa = restaDe(janela.ultimaEntradaEm, JANELA_MS, agora)
-  const daPorta = restaDe(janela.portaDeEntradaEm, JANELA_DA_PORTA_MS, agora)
-
-  if (daConversa === null) return daPorta
-  if (daPorta === null) return daConversa
-  return Math.max(daConversa, daPorta)
+  return restaDe(janela.ultimaEntradaEm, JANELA_MS, agora)
 }
 
+/**
+ * O que a tela precisa saber antes de a pessoa digitar, em uma resposta só.
+ *
+ * ---------------------------------------------------------------------------
+ * Por que objeto, e não três chamadas soltas
+ * ---------------------------------------------------------------------------
+ *
+ * Porque as três perguntas são diferentes e a tela erra quando trata uma como
+ * resposta da outra — foi exatamente assim que as 72h viraram autorização de
+ * texto livre. A proposta pede as três separadas, em 5.3: origem, permissão de
+ * envio, e benefício de cobrança.
+ *
+ * `desconhecido` é valor de verdade, e não um `false` disfarçado. Não saber se a
+ * conversa é gratuita não é o mesmo que saber que ela é paga, e a tela deve
+ * dizer "Não confirmado" em vez de inventar um dos dois: a RB-08 manda mostrar
+ * campo indisponível como "Não identificado", e a 5.3 traz "Não confirmado" para
+ * a linha da cobrança.
+ */
+export type PermissaoDeEnvio = {
+  /** Texto livre é aceito agora? Só a janela de 24h responde isto. */
+  textoLivre: boolean
+  /** Quanto falta das 24h, ou `null` se ela nunca escreveu. */
+  restanteMs: number | null
+  /**
+   * Por que o texto livre não é aceito. `null` quando ele é.
+   *
+   * Existe para a tela explicar em vez de só desabilitar um botão: "ela nunca
+   * escreveu" e "faz mais de 24h" levam a ações diferentes de quem atende.
+   */
+  causa: 'nunca_escreveu' | 'janela_fechada' | null
+  /** O envio sai de graça? `desconhecido` quando não dá para afirmar. */
+  cobranca: 'gratuita' | 'paga' | 'desconhecido'
+}
+
+export function permissaoDeEnvio(janela: Janela, agora: number = Date.now()): PermissaoDeEnvio {
+  const restanteMs = restaDaJanela(janela, agora)
+  const textoLivre = restanteMs !== null && restanteMs > 0
+
+  const causa = textoLivre
+    ? null
+    : janela.ultimaEntradaEm
+      ? ('janela_fechada' as const)
+      : ('nunca_escreveu' as const)
+
+  /*
+   * A cobrança é outra conta, e por isso outro campo.
+   *
+   * Dentro das 72h da porta, a Meta não cobra. Fora delas o preço passa a
+   * depender da categoria do modelo enviado, e isso não é conta sobre tempo:
+   * daí `desconhecido` para quem nunca veio por anúncio, em vez de `paga`.
+   * Afirmar "paga" aqui seria a tela prometendo um custo que ela não calculou.
+   */
+  const cobranca = dentroDaPortaDeEntrada(janela, agora)
+    ? ('gratuita' as const)
+    : janela.portaDeEntradaEm
+      ? ('paga' as const)
+      : ('desconhecido' as const)
+
+  return { textoLivre, restanteMs, causa, cobranca }
+}
+
+/**
+ * Dá para mandar texto livre agora?
+ *
+ * Atalho de `permissaoDeEnvio().textoLivre`, mantido porque é a pergunta de
+ * dez chamadores e um booleano lê melhor num `if`. Quem precisa explicar **por
+ * que** não dá, ou dizer se sai de graça, usa `permissaoDeEnvio`.
+ */
 export function dentroDaJanela(janela: Janela, agora: number = Date.now()): boolean {
   const resta = restaDaJanela(janela, agora)
   return resta !== null && resta > 0

@@ -722,18 +722,31 @@ export async function contextoDeResposta(
         .limit(1)
         .maybeSingle(),
       /*
-       * A última chegada por anúncio, que é o que abre as 72h gratuitas.
+       * A última chegada **que abre a porta**, que é o que concede as 72h
+       * gratuitas.
        *
-       * Sem filtro de data aqui de propósito: a conta de prazo é de
-       * `restaDaJanela`, e uma passagem de março simplesmente devolve zero por
-       * lá. Filtrar no SQL faria a regra de tempo morar em dois lugares, e o
-       * dia em que a Meta mudar as 72h só um deles seria corrigido.
+       * **O filtro de tipo é obrigatório, e a falta dele era um defeito.** Esta
+       * consulta lia qualquer linha de `passagens`, igual à view da 0065, então
+       * um lead de formulário entregava a porta de entrada de um clique em
+       * anúncio. Corrigir a view e esquecer isto aqui deixaria metade do
+       * produto com a regra antiga — e esta é a metade que decide o envio.
+       *
+       * A lista repete a da view e a de `core/regras-de-entrada.ts`, de
+       * propósito: quem acrescentar um tipo que abre porta precisa passar pelos
+       * três, e é melhor procurar três lugares do que descobrir por uma
+       * mensagem recusada.
+       *
+       * Sem filtro de data: a conta de prazo é de `restaDaJanela`, e uma
+       * passagem de março simplesmente devolve zero por lá. Filtrar no SQL faria
+       * a regra de tempo morar em dois lugares, e o dia em que a Meta mudar as
+       * 72h só um deles seria corrigido.
        */
       db()
         .from('passagens')
         .select('criado_em')
         .eq('contact_id', contatoId)
         .eq('client_id', clienteId)
+        .in('tipo', ['anuncio_whatsapp', 'botao_pagina'])
         .order('criado_em', { ascending: false })
         .limit(1)
         .maybeSingle(),

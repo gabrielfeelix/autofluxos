@@ -5,6 +5,7 @@ import {
   dentroDaPortaDeEntrada,
   JANELA_DA_PORTA_MS,
   JANELA_MS,
+  permissaoDeEnvio,
   podeReagir,
   restaDaJanela,
 } from './janela'
@@ -72,11 +73,29 @@ describe('a janela de 24h', () => {
 describe('a porta de entrada gratuita', () => {
   const clicou = (ms: number) => ({ ultimaEntradaEm: atras(ms), portaDeEntradaEm: atras(ms) })
 
-  it('deixa responder no terceiro dia, quando as 24h já venceram há muito', () => {
+  /**
+   * **Este teste afirmava o contrário, e o contrário estava errado.**
+   *
+   * Ele dizia "deixa responder no terceiro dia", e era verdade no código: a
+   * porta de 72h estendia a janela de texto livre. A documentação da Meta,
+   * consultada em 19/set e citada no bloco lá embaixo, diz sem margem que a
+   * janela de atendimento é **independente** da porta gratuita: fechada ela,
+   * só sai modelo aprovado.
+   *
+   * O que continua verdade é a metade do dinheiro: no terceiro dia o envio
+   * ainda é gratuito. Só que gratuito por modelo, e não texto livre.
+   */
+  it('no terceiro dia NÃO deixa texto livre, e ainda é gratuito', () => {
     const doisDias = clicou(48 * 60 * 60 * 1000)
-    expect(dentroDaJanela({ ultimaEntradaEm: doisDias.ultimaEntradaEm }, AGORA)).toBe(false)
-    expect(dentroDaJanela(doisDias, AGORA)).toBe(true)
-    expect(restaDaJanela(doisDias, AGORA)).toBe(24 * 60 * 60 * 1000)
+
+    // A janela de 24h venceu, e a porta não a estende mais.
+    expect(dentroDaJanela(doisDias, AGORA)).toBe(false)
+    // O dinheiro é outra conta, e ela segue aberta.
+    expect(dentroDaPortaDeEntrada(doisDias, AGORA)).toBe(true)
+
+    const permissao = permissaoDeEnvio(doisDias, AGORA)
+    expect(permissao.textoLivre).toBe(false)
+    expect(permissao.cobranca).toBe('gratuita')
   })
 
   it('fecha às 72h, e não antes nem depois', () => {
@@ -118,10 +137,20 @@ describe('a porta de entrada gratuita', () => {
     expect(restaDaJanela(ilegivel, AGORA)).toBe(JANELA_MS - 60_000)
   })
 
-  /** Anúncio clicado sem a pessoa ter escrito nada não acontece, mas não pode quebrar. */
-  it('sobrevive a só ter a porta de entrada', () => {
+  /**
+   * Anúncio clicado sem a pessoa ter escrito nada: o caso mais comum do lead de
+   * anúncio, e o que o defeito abria indevidamente.
+   *
+   * `restaDaJanela` devolve `null` e não um prazo: não existe janela de 24h
+   * aberta, nem uma que já fechou. A tela mostra "responda por modelo" em vez de
+   * um contador de três dias que a Meta não honra.
+   */
+  it('só a porta de entrada não dá prazo de texto livre nenhum', () => {
     const so = { ultimaEntradaEm: null, portaDeEntradaEm: atras(60_000) }
-    expect(restaDaJanela(so, AGORA)).toBe(JANELA_DA_PORTA_MS - 60_000)
+    expect(restaDaJanela(so, AGORA)).toBeNull()
+    expect(dentroDaJanela(so, AGORA)).toBe(false)
+    // E o envio por modelo sai de graça, que é o que a porta de fato concede.
+    expect(dentroDaPortaDeEntrada(so, AGORA)).toBe(true)
   })
 })
 
@@ -185,19 +214,19 @@ describe('o prazo de reagir, que é outro', () => {
  * Quem manda no texto livre é sempre a janela de 24h, contada da última
  * mensagem da pessoa. A Salesforce estava certa.
  *
- * Duas consequências para este módulo, ambas da F3 (T3.3):
+ * Duas consequências para este módulo. **A primeira foi corrigida pela T3.3**, e
+ * os testes abaixo são a prova dela:
  *
- * 1. `restaDaJanela` devolve hoje o **maior** dos dois prazos, então um contato
- *    que chegou por anúncio e nunca escreveu aparece com janela aberta por 72h.
- *    Ele abre o compositor de texto livre para uma mensagem que a Meta recusa
- *    com `(#131047) Re-engagement message`.
+ * 1. `restaDaJanela` devolvia o **maior** dos dois prazos, então um contato que
+ *    chegou por anúncio e nunca escreveu aparecia com janela aberta por 72h. Ela
+ *    abria o compositor de texto livre para uma mensagem que a Meta recusa com
+ *    `(#131047) Re-engagement message`. Agora ela conta só as 24h.
  * 2. A própria janela gratuita só existe se a empresa **responder em até 24h**
- *    do clique. Sem resposta, ela nunca abre — e o código de hoje não sabe
- *    disso, porque não guarda se houve resposta.
- *
- * Os testes abaixo registram o comportamento atual, errado, com o resultado
- * correto anotado ao lado. Quando a T3.3 separar permissão de cobrança, eles
- * viram a prova da correção.
+ *    do clique. Sem resposta, ela nunca abre, e o código ainda não sabe disso,
+ *    porque não guarda se houve resposta. **Continua pendente**, e está
+ *    registrado no handoff: é conservador na direção certa (mostrar "gratuita"
+ *    para uma conversa que ainda pode virar paga informa a mais, não autoriza a
+ *    mais), mas segue sendo uma promessa de custo que não foi verificada.
  */
 describe('as 72h do anúncio não autorizam texto livre', () => {
   const chegouPorAnuncio = (ms: number) => ({
@@ -206,17 +235,34 @@ describe('as 72h do anúncio não autorizam texto livre', () => {
   })
 
   /**
-   * O caso central. A pessoa clicou no anúncio e **nunca escreveu**: não existe
-   * janela de atendimento, logo não cabe texto livre. Hoje o código diz que sim.
+   * O caso central, corrigido. A pessoa clicou no anúncio e **nunca escreveu**:
+   * não existe janela de atendimento, logo não cabe texto livre. O caminho dela
+   * é modelo aprovado, e o envio sai de graça por causa da porta.
    */
-  it('hoje abre a janela para quem só clicou no anúncio (e não deveria)', () => {
+  it('quem só clicou no anúncio não ganha texto livre (RB-13)', () => {
     const doisDias = 2 * 24 * 60 * 60 * 1000
+    const janela = chegouPorAnuncio(doisDias)
 
-    // O que acontece hoje:
-    expect(dentroDaJanela(chegouPorAnuncio(doisDias), AGORA)).toBe(true)
+    expect(dentroDaJanela(janela, AGORA)).toBe(false)
+    // E não há prazo a mostrar, porque a janela de 24h nunca chegou a existir.
+    expect(restaDaJanela(janela, AGORA)).toBeNull()
 
-    // O que a Meta autoriza: só modelo aprovado, porque a janela de 24h nunca
-    // chegou a existir. Vira `toBe(false)` quando a T3.3 separar as regras.
+    /*
+     * As duas respostas, lado a lado, que é o ponto da separação: não pode
+     * mandar texto livre, **e** o que ela mandar por modelo sai de graça.
+     */
+    const permissao = permissaoDeEnvio(janela, AGORA)
+    expect(permissao.textoLivre).toBe(false)
+    expect(permissao.causa).toBe('nunca_escreveu')
+    expect(permissao.cobranca).toBe('gratuita')
+  })
+
+  /**
+   * Mesmo no primeiro minuto depois do clique. O erro anterior era sobre o
+   * relógio errado, não sobre o prazo ser curto ou longo.
+   */
+  it('nem no minuto seguinte ao clique', () => {
+    expect(dentroDaJanela(chegouPorAnuncio(60_000), AGORA)).toBe(false)
   })
 
   /**
@@ -241,5 +287,70 @@ describe('as 72h do anúncio não autorizam texto livre', () => {
     expect(dentroDaJanela(janela, AGORA)).toBe(true)
     // E continua gratuita, porque as 72h ainda correm.
     expect(dentroDaPortaDeEntrada(janela, AGORA)).toBe(true)
+
+    const permissao = permissaoDeEnvio(janela, AGORA)
+    expect(permissao.textoLivre).toBe(true)
+    expect(permissao.cobranca).toBe('gratuita')
+  })
+})
+
+/**
+ * As três informações da 5.3, separadas: permissão, causa e cobrança.
+ *
+ * Elas existem juntas num objeto porque a tela erra quando trata uma como
+ * resposta da outra, e foi exatamente assim que as 72h viraram autorização de
+ * texto livre.
+ */
+describe('permissaoDeEnvio', () => {
+  it('quem escreveu agora pode texto livre, e o custo é desconhecido', () => {
+    const permissao = permissaoDeEnvio({ ultimaEntradaEm: atras(60_000) }, AGORA)
+    expect(permissao.textoLivre).toBe(true)
+    expect(permissao.causa).toBeNull()
+    /*
+     * `desconhecido` e não `paga`: fora das 72h o preço depende da categoria do
+     * modelo, e isso não é conta sobre tempo. A tela diz "Não confirmado" em vez
+     * de prometer um custo que ninguém calculou.
+     */
+    expect(permissao.cobranca).toBe('desconhecido')
+  })
+
+  it('quem escreveu há mais de 24h tem a janela fechada, e a causa diz qual', () => {
+    const permissao = permissaoDeEnvio({ ultimaEntradaEm: atras(JANELA_MS + 1000) }, AGORA)
+    expect(permissao.textoLivre).toBe(false)
+    // 'janela_fechada' e não 'nunca_escreveu': são ações diferentes de quem atende.
+    expect(permissao.causa).toBe('janela_fechada')
+  })
+
+  it('quem nunca escreveu tem causa própria', () => {
+    expect(permissaoDeEnvio({ ultimaEntradaEm: null }, AGORA).causa).toBe('nunca_escreveu')
+  })
+
+  /**
+   * Passou das 72h e a pessoa respondeu: dá para escrever, e agora custa. É o
+   * caso que a separação existe para representar, e o que a tela precisava
+   * dizer e não dizia.
+   */
+  it('porta vencida com mensagem recente: texto livre sim, e pago', () => {
+    const permissao = permissaoDeEnvio(
+      {
+        ultimaEntradaEm: atras(60_000),
+        portaDeEntradaEm: atras(JANELA_DA_PORTA_MS + 1000),
+      },
+      AGORA,
+    )
+    expect(permissao.textoLivre).toBe(true)
+    expect(permissao.cobranca).toBe('paga')
+  })
+
+  /** A borda exata do prazo: no milissegundo do vencimento já não vale. */
+  it('no instante exato das 24h a janela já fechou', () => {
+    expect(permissaoDeEnvio({ ultimaEntradaEm: atras(JANELA_MS) }, AGORA).textoLivre).toBe(false)
+    expect(permissaoDeEnvio({ ultimaEntradaEm: atras(JANELA_MS - 1000) }, AGORA).textoLivre).toBe(true)
+  })
+
+  /** Data ilegível falha fechado, como `restaDe`. */
+  it('data ilegível não vira janela aberta', () => {
+    const permissao = permissaoDeEnvio({ ultimaEntradaEm: 'nao-e-data' }, AGORA)
+    expect(permissao.textoLivre).toBe(false)
   })
 })

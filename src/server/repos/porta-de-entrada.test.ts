@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { dentroDaJanela, dentroDaPortaDeEntrada } from '@/channels/janela'
+import { dentroDaJanela, dentroDaPortaDeEntrada, permissaoDeEnvio } from '@/channels/janela'
 import { db } from '../db'
 import { criarCliente } from './clientes'
 import { acharOuCriarContato } from './conversas'
@@ -195,5 +195,62 @@ describe.skipIf(!temCredencial)('a porta de entrada das 72h', () => {
     const semPassagem = await acharOuCriarContato(clienteId, `55319${seed}`, 'Sem origem')
     expect(await portaDaView(semPassagem.id)).toBeNull()
     expect(dentroDaJanela({ ultimaEntradaEm: null, portaDeEntradaEm: null })).toBe(false)
+  })
+})
+
+/**
+ * A outra metade do caminho: a consulta que decide o envio.
+ *
+ * `contextoDeResposta` tem a **própria** consulta a `passagens`, separada da
+ * view da 0065. Ela lia qualquer linha de lá, e corrigir só a view deixaria
+ * metade do produto com a regra antiga: justamente a metade que o servidor
+ * consulta no instante de enviar.
+ *
+ * O teste vai ao banco pela mesma consulta em vez de chamar
+ * `contextoDeResposta`, porque aquela função devolve `null` sem canal ativo e
+ * montar um canal aqui provaria a existência do canal, não o filtro de tipo. O
+ * que precisa ser provado é o `in('tipo', ...)`, e é ele que está abaixo.
+ */
+describe.skipIf(!temCredencial)('a consulta de porta do envio', () => {
+  /** A mesma consulta de `contextoDeResposta`, com o mesmo filtro. */
+  async function portaDoEnvio(contatoId: string): Promise<string | null> {
+    const { data, error } = await db()
+      .from('passagens')
+      .select('criado_em')
+      .eq('contact_id', contatoId)
+      .eq('client_id', clienteId)
+      .in('tipo', ['anuncio_whatsapp', 'botao_pagina'])
+      .order('criado_em', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (error) throw new Error(error.message)
+    return (data as { criado_em: string } | null)?.criado_em ?? null
+  }
+
+  it('o formulário não entrega porta de entrada ao envio (RB-09)', async () => {
+    const porta = await portaDoEnvio(doFormulario)
+    expect(porta).toBeNull()
+
+    /*
+     * E a consequência no envio: sem janela de 24h (ela nunca escreveu) e sem
+     * porta, o caminho é modelo aprovado, e o custo não é afirmado.
+     */
+    const permissao = permissaoDeEnvio({ ultimaEntradaEm: null, portaDeEntradaEm: porta })
+    expect(permissao.textoLivre).toBe(false)
+    expect(permissao.cobranca).toBe('desconhecido')
+  })
+
+  it('o clique em anúncio entrega a porta, e ela é gratuita', async () => {
+    const porta = await portaDoEnvio(doAnuncio)
+    expect(porta).not.toBeNull()
+
+    /*
+     * Ela clicou e não escreveu: texto livre não, gratuidade sim. É exatamente
+     * o par que o defeito misturava, e que a T3.3 separou.
+     */
+    const permissao = permissaoDeEnvio({ ultimaEntradaEm: null, portaDeEntradaEm: porta })
+    expect(permissao.textoLivre).toBe(false)
+    expect(permissao.cobranca).toBe('gratuita')
   })
 })

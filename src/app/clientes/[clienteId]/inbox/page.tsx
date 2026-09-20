@@ -840,10 +840,10 @@ async function ColunaDaConversa({
    * instante, para comparar com o horário que a pessoa escolheu. Derivar um do
    * outro seria refazer a subtração com menos informação.
    *
-   * Sai de `restante`, e não de `ultimaEntradaEm + JANELA_MS`: quem chegou por
-   * anúncio tem 72h contadas do clique, e refazer a soma aqui com o outro prazo
-   * diria que a janela fecha amanhã quando ela fecha depois de amanhã. A conta
-   * de qual prazo vale é de `restaDaJanela`, e ela é feita uma vez só.
+   * Sai de `restante`, e não de `ultimaEntradaEm + JANELA_MS`, para a conta do
+   * prazo morar num lugar só. As 72h do anúncio **não** entram aqui: elas são
+   * gratuidade, não autorização de texto livre, e foi somá-las que abria o
+   * compositor para quem nunca escreveu. Ver o cabeçalho de `channels/janela`.
    */
   const fimDaJanela =
     restante !== null && restante > 0 ? new Date(agora + restante).toISOString() : null
