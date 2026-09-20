@@ -36,6 +36,7 @@ export type TelaDeAjustes =
   | 'horario'
   | 'respostas-rapidas'
   | 'etiquetas'
+  | 'produtos'
   | 'acervo'
   | 'integracoes'
   | 'anuncios'
@@ -62,6 +63,7 @@ const GRUPOS: { titulo: string | null; itens: { chave: TelaDeAjustes; rotulo: st
       { chave: 'horario', rotulo: 'Horário de atendimento' },
       { chave: 'respostas-rapidas', rotulo: 'Respostas rápidas' },
       { chave: 'etiquetas', rotulo: 'Etiquetas' },
+      { chave: 'produtos', rotulo: 'Catálogo' },
       { chave: 'acervo', rotulo: 'Acervo' },
     ],
   },

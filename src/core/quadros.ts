@@ -158,10 +158,36 @@ export type Cartao = {
    * "de quem estou devendo resposta", não "em que fase está o processo".
    */
   ultimaMensagemEm?: string | null
+
+  /**
+   * A avaliação humana **desta negociação** (0079).
+   *
+   * `null` é "ninguém avaliou", e é diferente de `morno`. A 0068 pôs
+   * `contacts.temperatura` com default `'morno'`, que sempre significou
+   * "ninguém opinou"; copiar aquele default para cá o transformaria em
+   * opinião de alguém. Quem quiser a temperatura antiga lê o contato, e sabe
+   * que está lendo legado.
+   */
+  temperatura?: Temperatura | null
+
+  /** O interesse desta oportunidade (0079). `null` é "não informado". */
+  produtoId?: string | null
+  /** O nome do produto **hoje**. A venda guarda o nome da época em `venda_itens`. */
+  produtoNome?: string | null
 }
 
 /** Ver `core/crm.ts`. Repetido aqui como tipo para o cartão não importar o CRM. */
 export type Situacao = 'aberta' | 'ganha' | 'perdida'
+
+/**
+ * Ver `core/crm.ts`. Repetido aqui pelo mesmo motivo de `Situacao`: o cartão
+ * não importa o CRM, para que o quadro continue funcionando sem ele.
+ */
+export type Temperatura = 'frio' | 'morno' | 'quente'
+
+export function ehTemperaturaDoCartao(valor: unknown): valor is Temperatura {
+  return valor === 'frio' || valor === 'morno' || valor === 'quente'
+}
 
 /**
  * A ordem das etapas na tela.

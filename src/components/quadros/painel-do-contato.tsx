@@ -4,12 +4,13 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { Avatar } from '@/components/inbox/avatar'
 import { EstagioDoContato } from '@/components/lead-crm/estagio-do-contato'
-import { TemperaturaDoContato } from '@/components/lead-crm/temperatura-do-contato'
+import { TemperaturaDaOportunidade } from '@/components/quadros/temperatura-da-oportunidade'
+import { InteresseDaOportunidade } from '@/components/quadros/interesse-da-oportunidade'
 import { ResponsavelDoContato } from '@/components/lead-crm/responsavel-do-contato'
 import { SeletorDeEtiquetas } from '@/components/etiquetas/seletor'
 import { QuemE } from '@/components/lead/quem-e'
 import { comoDinheiro, comoFrase, type Evento } from '@/core/crm'
-import { comoParado } from '@/core/quadros'
+import { comoParado, type Temperatura } from '@/core/quadros'
 import { horaExata } from '@/lib/quando'
 import { acaoAbrirPainelDoContato } from '@/server/acoes-crm'
 
@@ -74,6 +75,9 @@ export function PainelDoContato({
     titulo?: string | null
     valor?: number | null
     situacao?: string
+    temperatura?: Temperatura | null
+    produtoId?: string | null
+    produtoNome?: string | null
   } | null
   aoFechar: () => void
   /**
@@ -185,13 +189,33 @@ export function PainelDoContato({
           */}
           {ficha && (
             <section className="flex flex-col gap-3">
-              <Campo rotulo="Temperatura">
-                <TemperaturaDoContato
-                  clienteId={clienteId}
-                  contatoId={contatoId}
-                  temperatura={ficha.temperatura}
-                />
-              </Campo>
+              {/*
+                A temperatura é **da negociação** desde a 0079, e não mais do
+                contato. A do contato virou legado: ela nasce 'morno' por
+                default, e morno-por-default parece avaliação sem ser uma.
+                Duas temperaturas na mesma tela dariam duas respostas para a
+                mesma pergunta sem dizer qual manda.
+              */}
+              {cartao && (
+                <Campo rotulo="Temperatura desta negociação">
+                  <TemperaturaDaOportunidade
+                    clienteId={clienteId}
+                    cartaoId={cartao.id}
+                    temperatura={cartao.temperatura ?? null}
+                  />
+                </Campo>
+              )}
+
+              {cartao && (
+                <Campo rotulo="Interesse">
+                  <InteresseDaOportunidade
+                    clienteId={clienteId}
+                    cartaoId={cartao.id}
+                    produtoId={cartao.produtoId ?? null}
+                    produtoNome={cartao.produtoNome ?? null}
+                  />
+                </Campo>
+              )}
 
               <Campo rotulo="Estágio">
                 <EstagioDoContato

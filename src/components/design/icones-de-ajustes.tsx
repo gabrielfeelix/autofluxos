@@ -81,6 +81,14 @@ export const ICONE_DA_TELA: Record<TelaDeAjustes, React.ReactNode> = {
       <circle cx="7.8" cy="7.8" r="1.4" />
     </Svg>
   ),
+  produtos: (
+    <Svg>
+      {/* Uma caixa: o catálogo é o que a empresa vende, produto ou serviço. */}
+      <path d="M3.5 7.5 12 3.5l8.5 4v9L12 20.5l-8.5-4v-9Z" />
+      <path d="M3.5 7.5 12 11.5l8.5-4" />
+      <path d="M12 11.5v9" />
+    </Svg>
+  ),
   acervo: (
     <Svg>
       <rect x="3" y="4.5" width="18" height="15" rx="2.5" />

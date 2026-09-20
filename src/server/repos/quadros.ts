@@ -6,9 +6,11 @@ import {
   trocaDeLugar,
   type Cartao,
   ehCorDaEtapa,
+  ehTemperaturaDoCartao,
   type CorDaEtapa,
   type Etapa,
   type Situacao,
+  type Temperatura,
   type TipoDeEtapa,
 } from '@/core/quadros'
 import { podeEncadear, LIMITE_DO_TITULO } from '@/core/crm'
@@ -21,6 +23,7 @@ import {
   type EntradaNoFunil,
 } from '@/core/regras-de-entrada'
 import { etapasDoModelo, finalidadeDoModelo, type EtapaDoModelo } from '@/core/quadros-modelos'
+import type { FiltroDeEscopo } from '@/core/permissoes'
 import { db, ehIdInvalido } from '../db'
 import { anotar } from './eventos'
 import { concluirProcesso } from '../servicos/concluir-processo'
@@ -523,6 +526,9 @@ type LinhaDoCartao = {
   valor: string | number | null
   situacao: Situacao
   responsavel: string | null
+  temperatura: string | null
+  produto_id: string | null
+  produtos: { nome: string | null } | null
   contacts: {
     nome_real: string | null
     nome: string | null
@@ -544,6 +550,7 @@ export async function listarCartoes(clienteId: string, quadroId: string): Promis
     .from('quadro_cartoes')
     .select(
       'id, contact_id, coluna_id, entrou_na_coluna_em, titulo, valor, situacao, responsavel, ' +
+        'temperatura, produto_id, produtos (nome), ' +
         /*
          * `nome:name` é apelido, e não capricho: a coluna de `af_usuarios`
          * chama `name`, em inglês, porque a tabela nasceu do Better Auth e não
@@ -581,6 +588,11 @@ export async function listarCartoes(clienteId: string, quadroId: string): Promis
     responsavelId: linha.responsavel,
     responsavelNome: linha.af_usuarios?.nome ?? null,
     ultimaMensagemEm: linha.contacts?.ultima_mensagem_em ?? null,
+    // `null` aqui é "não avaliada", e a tela precisa dizer isso em vez de
+    // desenhar "morno" (0079). Ver o comentário do tipo em core/quadros.ts.
+    temperatura: ehTemperaturaDoCartao(linha.temperatura) ? linha.temperatura : null,
+    produtoId: linha.produto_id,
+    produtoNome: linha.produtos?.nome ?? null,
   }))
 }
 
@@ -1239,6 +1251,189 @@ export async function descreverCartao(
   if (ehIdInvalido(error)) return { ok: false, motivo: 'este cartão não existe mais' }
   if (error) throw new Error(`não deu para descrever o cartão: ${error.message}`)
   return data ? { ok: true } : { ok: false, motivo: 'este cartão não existe mais' }
+}
+
+export type OportunidadeAberta = {
+  cartaoId: string
+  quadroId: string
+  quadro: string
+  etapa: string
+  titulo: string | null
+  valor: number | null
+  responsavelId: string | null
+  responsavelNome: string | null
+  entrouEm: string
+}
+
+/**
+ * As oportunidades **abertas** deste contato que quem está olhando pode ver.
+ *
+ * É o que alimenta o aviso da RB-26: antes de criar a segunda negociação para
+ * a mesma pessoa, a tela mostra as que já existem e oferece "usar a existente"
+ * ou "criar outra mesmo assim". A escolha é explícita, e negócio paralelo
+ * **não** é bloqueado: a mesma pessoa pode estar comprando duas coisas.
+ *
+ * **O escopo é o ponto, e é por isso que o filtro entra aqui e não na tela.**
+ * Oportunidade de outra equipe não pode aparecer como sugestão de duplicata:
+ * sugerir "já existe uma negociação" sem poder dizer qual, de quem, nem
+ * deixar abrir, vaza a existência do negócio do vizinho e ainda confunde quem
+ * está tentando trabalhar. Filtrar depois de ler seria entregar o dado ao
+ * processo que não devia tê-lo.
+ *
+ * `impossivel` devolve lista vazia, e isso é correto: quem não enxerga
+ * oportunidade nenhuma não recebe sugestão nenhuma, e segue criando a dele.
+ */
+export async function oportunidadesAbertasDoContato(
+  clienteId: string,
+  contatoId: string,
+  filtro: FiltroDeEscopo,
+): Promise<OportunidadeAberta[]> {
+  if (filtro.tipo === 'impossivel') return []
+
+  let consulta = db()
+    .from('quadro_cartoes')
+    .select(
+      'id, entrou_na_coluna_em, titulo, valor, responsavel, ' +
+        'quadros!inner (id, nome, finalidade), quadro_colunas!inner (nome), ' +
+        'af_usuarios (nome:name)',
+    )
+    .eq('client_id', clienteId)
+    .eq('contact_id', contatoId)
+    .eq('situacao', 'aberta')
+
+  if (filtro.tipo === 'proprios') {
+    consulta = consulta.eq('responsavel', filtro.usuarioId)
+  } else if (filtro.tipo === 'equipes') {
+    // Equipe é do usuário, e o cartão aponta para o responsável: o caminho é
+    // responsável -> membro da minha equipe. Cartão **sem responsável** não
+    // pertence a equipe nenhuma, e por isso não entra aqui: sugerir um cartão
+    // órfão a quem só enxerga a própria equipe é o mesmo vazamento.
+    const { data: membros, error: erroDosMembros } = await db()
+      .from('equipe_membros')
+      .select('usuario_id')
+      .eq('client_id', clienteId)
+      .in('equipe_id', [...filtro.equipes])
+
+    if (erroDosMembros) {
+      throw new Error(`não deu para ler as equipes: ${erroDosMembros.message}`)
+    }
+    const usuarios = [...new Set((membros as { usuario_id: string }[]).map((m) => m.usuario_id))]
+    if (usuarios.length === 0) return []
+    consulta = consulta.in('responsavel', usuarios)
+  }
+
+  const { data, error } = await consulta
+
+  if (ehIdInvalido(error)) return []
+  if (error) throw new Error(`não deu para ler as oportunidades abertas: ${error.message}`)
+
+  return (
+    data as unknown as {
+      id: string
+      entrou_na_coluna_em: string
+      titulo: string | null
+      valor: string | number | null
+      responsavel: string | null
+      quadros: { id: string; nome: string; finalidade: string }
+      quadro_colunas: { nome: string }
+      af_usuarios: { nome: string | null } | null
+    }[]
+  ).map((linha) => ({
+    cartaoId: linha.id,
+    quadroId: linha.quadros.id,
+    quadro: linha.quadros.nome,
+    etapa: linha.quadro_colunas.nome,
+    titulo: linha.titulo,
+    valor: linha.valor === null || linha.valor === undefined ? null : Number(linha.valor),
+    responsavelId: linha.responsavel,
+    responsavelNome: linha.af_usuarios?.nome ?? null,
+    entrouEm: linha.entrou_na_coluna_em,
+  }))
+}
+
+/**
+ * A temperatura **desta oportunidade** (0079).
+ *
+ * `null` apaga a avaliação e volta para "não avaliada", que é estado legítimo
+ * e não ausência de dado: quem avaliou errado precisa poder desfazer sem
+ * escolher `morno` por falta de opção.
+ *
+ * A temperatura do contato (0068) não é tocada aqui. Ela virou legado, e
+ * escrever nos dois lugares faria a tela ter duas respostas para a mesma
+ * pergunta, sem dizer qual manda.
+ */
+export async function avaliarCartao(
+  clienteId: string,
+  cartaoId: string,
+  temperatura: Temperatura | null,
+  autor: string | null = null,
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  const { data, error } = await db()
+    .from('quadro_cartoes')
+    .update({ temperatura })
+    .eq('client_id', clienteId)
+    .eq('id', cartaoId)
+    .select('id, contact_id')
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return { ok: false, motivo: 'esta oportunidade não existe mais' }
+  if (error) throw new Error(`não deu para avaliar a oportunidade: ${error.message}`)
+  if (!data) return { ok: false, motivo: 'esta oportunidade não existe mais' }
+
+  const linha = data as { id: string; contact_id: string }
+  await anotar(
+    clienteId,
+    linha.contact_id,
+    'mudou-de-temperatura',
+    { para: temperatura, cartaoId: linha.id },
+    autor,
+  )
+  return { ok: true }
+}
+
+/**
+ * O interesse desta oportunidade (0079).
+ *
+ * Confere que o produto é **da mesma conta** antes de gravar. A FK sozinha não
+ * faz isso: ela garante que o id existe em `produtos`, não que ele pertence a
+ * quem está escrevendo, e `service_role` ignora RLS. Sem esta consulta, um id
+ * de outra conta entraria e o nome do produto do vizinho apareceria na tela.
+ *
+ * Produto **arquivado** é recusado como escolha nova, e é de propósito: o que a
+ * RB-24 preserva é a leitura do que já estava vinculado, não a entrada nova.
+ */
+export async function definirInteresse(
+  clienteId: string,
+  cartaoId: string,
+  produtoId: string | null,
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  if (produtoId) {
+    const { data, error } = await db()
+      .from('produtos')
+      .select('id, arquivado_em')
+      .eq('client_id', clienteId)
+      .eq('id', produtoId)
+      .maybeSingle()
+
+    if (ehIdInvalido(error)) return { ok: false, motivo: 'esse item do catálogo não existe' }
+    if (error) throw new Error(`não deu para conferir o catálogo: ${error.message}`)
+    if (!data) return { ok: false, motivo: 'esse item do catálogo não existe' }
+    if ((data as { arquivado_em: string | null }).arquivado_em !== null) {
+      return { ok: false, motivo: 'esse item está arquivado. Desarquive antes de usá-lo.' }
+    }
+  }
+
+  const { data, error } = await db()
+    .from('quadro_cartoes')
+    .update({ produto_id: produtoId })
+    .eq('client_id', clienteId)
+    .eq('id', cartaoId)
+    .select('id')
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return { ok: false, motivo: 'esta oportunidade não existe mais' }
+  if (error) throw new Error(`não deu para definir o interesse: ${error.message}`)
+  return data ? { ok: true } : { ok: false, motivo: 'esta oportunidade não existe mais' }
 }
 
 /**
