@@ -187,6 +187,49 @@ extração explícito para os objetos de `public`.
   `objetivo`/`crm_ativo` e o da T7.3 lê `cartao_id`, então o intervalo entre `git
   push` e o SQL seria a tela caindo, como caiu com a `0071`. A produção está,
   hoje, com `0001`–`0085` inteiras;
+- **a `0086` foi aplicada em 21/set/2026**, na execução da T8.2, com autorização
+  explícita do dono pedida naquela sessão: a autorização anterior cobria as
+  migrations da F7 que já tinham entrado, e não se estendia a esta. Conferida
+  pelos **dois** testes: replay do zero em Docker (`0001`–`0086` em ordem, sem
+  erro) e ensaio em transação contra a produção, os dois limpos.
+
+  Ela acrescenta `public.handoffs.origem` (`text`, **anulável, sem default e sem
+  backfill**, com `check` de `null or in ('prevista','falha')`) e a view
+  `public.metricas_de_desfecho`.
+
+  **O nulo é a decisão.** Um default escreveria classificação inventada em cima
+  de registro histórico, e nulo quer dizer "gravado antes de o produto saber
+  distinguir". Quem lê trata como `falha`, e o porquê está em
+  `src/core/desfecho-da-conversa.ts`: chamar de `prevista` inflaria "está tudo
+  funcionando" com o que pode ter sido defeito, e esconder defeito de produção é
+  o erro caro; contar como falha, no pior caso, gasta o tempo de quem investiga.
+
+  **O ensaio acertou o resultado exato**: dentro da transação a view respondeu
+  `bot 5 · falha 9 · aberta 1`, e depois de aplicar de verdade respondeu o mesmo.
+  Somam as 15 sessões da produção, e `handoffs where origem is not null` continua
+  em **0**: nenhum registro antigo foi reclassificado.
+
+  Releitura objeto a objeto depois: a coluna anulável sem default, o check
+  presente, a view com `security_invoker=true`, e **`anon`/`authenticated` fora
+  dos grants dela**. Dado nosso intacto: 37 contatos, 29 cartões, 8 handoffs, 15
+  sessões.
+
+  **Uma observação que não é falha:** `service_role` recebeu os 7 privilégios na
+  view, e não só o `SELECT` que a migration escreve. É o `grant all on all tables
+  in schema public to service_role` da `0041` alcançando objeto novo, o mesmo
+  efeito que a `0042` documenta para a `af_auditoria`. Quem auditar grants vai
+  ver o descompasso entre o que a migration pede e o que o banco mostra.
+
+  **Tem `notify pgrst`, e o reload foi conferido nos dois produtos:**
+  `metricas_de_desfecho?select=desfecho` e `handoffs?select=origem` respondem
+  **200** para `service_role` e **401** para `anon` (sem 400, então o cache pegou
+  os objetos novos), e `app_verandi.conta` continua respondendo **200** pelo
+  mesmo PostgREST. `app_verandi.migrations_aplicadas` com as mesmas **32**
+  linhas, **42** tabelas e **16** policies de `storage.objects`, antes e depois.
+
+  **A migration entrou antes do push**, e não depois: o código da T8.2 lê os dois
+  objetos novos, então o intervalo seria a tela de início caindo, como caiu com a
+  `0071`. A produção está, hoje, com `0001`–`0086` inteiras;
 - **as `0071` a `0083` foram aplicadas em 20/set/2026**, uma por vez, pela
   Management API, com autorização explícita do dono para a execução da F5/F6.
   São treze: `0071` (finalidade e vendas), `0072` (conclusão de processo),
