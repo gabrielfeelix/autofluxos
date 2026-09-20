@@ -4,7 +4,6 @@ import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { Suspense } from 'react'
 import { comoFalta, podeReagir, restaDaJanela } from '@/channels/janela'
-import { BotaoPerigo } from '@/components/design/botao-perigo'
 import { Dica } from '@/components/design/dica'
 import { ControleDeAutomacao } from '@/components/lead/controle-automacao'
 import { clienteTemAutomacao } from '@/server/repos/fluxos'
@@ -58,6 +57,15 @@ import { Informacoes } from '@/components/lead-crm/informacoes'
 import { Jornada } from '@/components/lead-crm/jornada'
 import { DadosColetados } from '@/components/lead-crm/dados-coletados'
 import { ProximosPassos } from '@/components/lead-crm/proximos-passos'
+import { ApagarContato } from '@/components/lead-crm/apagar-contato'
+import { AjudaDoCampo } from '@/components/design/ajuda-do-campo'
+import {
+  IconeDaSecao,
+  IconeWhatsApp,
+  iconeAlvo,
+  iconeEtiqueta,
+  iconeLinhaDoTempo,
+} from '@/components/lead-crm/icones'
 import { SeletorDeEtiquetas } from '@/components/etiquetas/seletor'
 import {
   AnexoNaConversa,
@@ -183,7 +191,10 @@ export default async function Pagina({
             {/* Canal e origem embaixo do nome. **O telefone não entra aqui**:
                 `NomeDoContato` já o imprime, e o mesmo número duas vezes em
                 duas linhas seguidas é ruído que parece defeito. */}
-            <p className="mt-0.5 text-[11.5px] text-dim">
+            <p className="mt-0.5 flex items-center gap-1 text-[11.5px] text-dim">
+              {/* O logo do canal, não só a palavra: é o que identifica de onde
+                  a conversa vem antes de ler. Verde, porque é a marca. */}
+              <IconeWhatsApp className="size-[13px] text-[#25D366]" />
               WhatsApp
               {origem &&
                 (origem.deAnuncio && origem.titulo
@@ -206,10 +217,10 @@ export default async function Pagina({
           />
           {/* O pedido de exclusão da LGPD vira este botão. A pergunta diz o que
               some junto porque não existe desfazer: a conversa não está copiada
-              em lugar nenhum. */}
-          <BotaoPerigo
+              em lugar nenhum. Mesma forma dos três vizinhos: ícone em cima,
+              palavra embaixo — o vermelho aparece no hover. */}
+          <ApagarContato
             acao={acaoApagarContato.bind(null, clienteId, contatoId)}
-            rotulo="Apagar contato"
             titulo="Apaga a pessoa, a conversa inteira e o que o fluxo coletou. Não dá para desfazer."
             pergunta={`Apagar ${nome} e tudo desta pessoa?\n\nSomem a conversa inteira, o que o fluxo coletou e o histórico de atendimento. Não dá para desfazer.`}
           />
@@ -413,8 +424,10 @@ export default async function Pagina({
                       />
                     </div>
                     <section id="etiquetas" className="app-card overflow-hidden">
-                      <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
+                      <h2 className="flex items-center gap-2 border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
+                        <IconeDaSecao tom="aviso">{iconeEtiqueta}</IconeDaSecao>
                         Etiquetas
+                        <AjudaDoCampo texto="Marcas que a equipe põe à mão para agrupar pessoas. O fluxo também etiqueta sozinho, e essas aparecem junto." />
                       </h2>
                       <div className="px-[18px] py-4">
                         <SeletorDeEtiquetas
@@ -474,8 +487,10 @@ export default async function Pagina({
                     />
                   </div>
                   <section className="app-card overflow-hidden">
-                    <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
+                    <h2 className="flex items-center gap-2 border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
+                      <IconeDaSecao>{iconeLinhaDoTempo}</IconeDaSecao>
                       Linha do tempo
+                      <AjudaDoCampo texto="Tudo o que aconteceu com esta pessoa, em ordem: mudanças de estágio, de responsável, de etiqueta e as anotações. É registro, não campo editável." />
                     </h2>
                     <div className="p-[18px]">
                       <HistoricoDoContato eventos={eventos} />
@@ -491,8 +506,10 @@ export default async function Pagina({
                 <div className="flex flex-col gap-[18px]">
                   <DadosColetados campos={campos} />
                   <section className="app-card overflow-hidden">
-                    <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
+                    <h2 className="flex items-center gap-2 border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
+                      <IconeDaSecao>{iconeAlvo}</IconeDaSecao>
                       Jornada de anúncios
+                      <AjudaDoCampo texto="Por quais anúncios esta pessoa passou antes de falar com a gente. Vazio significa que ela chegou direto, sem anúncio." />
                     </h2>
                     <div className="p-[18px]">
                       <Jornada

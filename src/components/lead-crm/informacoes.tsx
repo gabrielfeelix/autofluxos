@@ -2,6 +2,7 @@ import { origemDoContato } from '@/core/contatos/origem'
 import { AcoesDoTelefone } from './acoes-do-telefone'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import { horaExata, quando } from '@/lib/quando'
+import { IconeDaSecao, iconeFicha } from './icones'
 
 /**
  * Quem é a pessoa, em fatos datados.
@@ -48,7 +49,10 @@ export function Informacoes({
 
   return (
     <section className="app-card overflow-hidden">
-      <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">Informações</h2>
+      <h2 className="flex items-center gap-2 border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
+        <IconeDaSecao>{iconeFicha}</IconeDaSecao>
+        Informações
+      </h2>
       {/*
         **Grade, não torre.** Sete linhas de uma coluna só era o desenho da
         antiga faixa de 280px: na largura da ficha, cada fato ganhava uma linha

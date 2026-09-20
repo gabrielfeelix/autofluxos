@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { FormularioSalvar, type EstadoSalvar } from '@/components/design/formulario-salvar'
+import { AjudaDoCampo } from '@/components/design/ajuda-do-campo'
 import type { Evento } from '@/core/crm'
 
 type Acao = (estado: EstadoSalvar, formData: FormData) => Promise<EstadoSalvar>
@@ -43,8 +44,15 @@ export function Diario({
   return (
     <section className="app-card overflow-hidden">
       <header className="flex items-center justify-between gap-3 border-b border-line px-[18px] py-3.5">
-        <h2 className="text-[13px] font-bold">
-          Diário
+        <h2 className="flex items-center gap-1.5 text-[13px] font-bold">
+          {/*
+            Era "Diário", que no CRM sugere um registro do sistema — e este bloco
+            é o contrário disso: é o que **a equipe** escreve à mão sobre a
+            pessoa. O nome agora diz de quem é o texto, e a regra de que ele não
+            vira mensagem saiu do corpo e virou o "?" ao lado.
+          */}
+          Anotações da equipe
+          <AjudaDoCampo texto="O que a equipe escreve sobre esta pessoa, com data e autor. Fica só aqui: não vai para o WhatsApp nem para nenhuma automação." />
           {notas.length > 0 && (
             <span className="ml-1.5 text-[11px] font-semibold text-dim tabular-nums">
               {notas.length}
@@ -71,8 +79,22 @@ export function Diario({
                 if (r.ok) setAberta(false)
                 return r
               }}
-              rotulo="Salvar no diário"
-              dica="Fica só aqui. Não vai para o WhatsApp nem para nenhuma automação."
+              rotulo="Salvar anotação"
+              /*
+                O "Cancelar" entra como `dica` para ficar na **mesma linha** do
+                Salvar. Ele era um botão solto embaixo do formulário, e a frase
+                que ocupava este lugar empurrava os dois para linhas diferentes:
+                sobrava um "Cancelar" sozinho, cortado na linha de baixo.
+              */
+              dica={
+                <button
+                  type="button"
+                  onClick={() => setAberta(false)}
+                  className="text-[11.5px] text-muted transition hover:text-primary"
+                >
+                  Cancelar
+                </button>
+              }
             >
               <textarea
                 name="texto"
@@ -83,13 +105,6 @@ export function Diario({
                 className="app-field resize-y px-3 py-2.5 text-[12.5px] leading-5"
               />
             </FormularioSalvar>
-            <button
-              type="button"
-              onClick={() => setAberta(false)}
-              className="mt-1.5 text-[11.5px] text-muted transition hover:text-primary"
-            >
-              Cancelar
-            </button>
           </div>
         )}
 

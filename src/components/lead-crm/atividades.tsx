@@ -1,5 +1,7 @@
 'use client'
 
+import { Dropdown } from '@/components/design/dropdown'
+
 import { useState, useTransition } from 'react'
 import {
   NOME_DO_TIPO,
@@ -86,18 +88,26 @@ export function Atividades({
           className="app-field w-full px-3 py-2.5 text-[12.5px]"
         />
         <div className="flex gap-2">
-          <select
-            value={tipo}
-            onChange={(e) => setTipo(e.target.value as TipoDeAtividade)}
-            aria-label="Tipo da atividade"
-            className="app-field flex-1 px-2 py-2 text-[12px]"
-          >
-            {TIPOS_DE_ATIVIDADE.map((t) => (
-              <option key={t} value={t}>
-                {NOME_DO_TIPO[t]}
-              </option>
-            ))}
-          </select>
+          {/*
+            O `Dropdown` do produto, não o `<select>` do sistema: a lista nativa
+            abre com a tipografia e o azul do sistema operacional, que não são
+            os nossos, e no print ficava uma faixa azul-royal no meio de uma tela
+            que não tem essa cor em lugar nenhum.
+
+            O prazo continua `<input type="date">`, e isso é deliberado: o
+            calendário nativo traz teclado, formato local e acessibilidade que um
+            calendário próprio teria de reconstruir inteiro. A aparência do campo
+            fechado é nossa; só a folhinha que abre é do navegador.
+          */}
+          <span className="flex-1">
+            <Dropdown
+              valor={tipo}
+              aoMudar={(novo) => setTipo(novo as TipoDeAtividade)}
+              rotuloAcessivel="Tipo da atividade"
+              className="w-full text-[12px]"
+              opcoes={TIPOS_DE_ATIVIDADE.map((t) => ({ valor: t, rotulo: NOME_DO_TIPO[t] }))}
+            />
+          </span>
           <input
             type="date"
             value={prazo}

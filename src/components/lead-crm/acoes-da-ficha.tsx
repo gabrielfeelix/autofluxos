@@ -38,7 +38,7 @@ export function AcoesDaFicha({
   return (
     <>
       <span className="flex items-center gap-1">
-        <Acao
+        <AcaoDaFicha
           rotulo="Agendar"
           marcada={temAgendada}
           aoClicar={() => setAgendando(true)}
@@ -49,7 +49,7 @@ export function AcoesDaFicha({
             </>
           }
         />
-        <Acao
+        <AcaoDaFicha
           rotulo="Anotar"
           aoClicar={() => focar('anotacao')}
           icone={
@@ -59,7 +59,7 @@ export function AcoesDaFicha({
             </>
           }
         />
-        <Acao
+        <AcaoDaFicha
           rotulo="Etiquetar"
           aoClicar={() => focar('etiquetas')}
           icone={
@@ -91,46 +91,45 @@ export function AcoesDaFicha({
 }
 
 /**
- * Rola até o bloco e põe o foco no primeiro campo dele.
+ * Pede a aba que contém o bloco, e o foco nele.
  *
- * Só rolar deixa a pessoa olhando para o lugar certo sem poder digitar, o que
- * cobra um clique a mais logo depois do clique que ela acabou de dar.
- *
- * **Pede a aba antes de procurar o bloco.** Anotação e etiquetas agora vivem
- * dentro da visão geral, e um `getElementById` num painel escondido acha o
- * elemento, rola para uma altura que não está à vista e foca um campo que
- * ninguém vê: o clique parecia não fazer nada. O `requestAnimationFrame` espera
- * o React mostrar o painel antes de medir a posição.
+ * **Quem troca a aba é quem foca**, em `abas.tsx`: aqui só sai o pedido. A
+ * versão anterior disparava o evento e procurava o bloco no quadro seguinte,
+ * que ainda é cedo demais — o painel continuava `hidden`, e "Anotar" não fazia
+ * nada em produção.
  */
 function focar(id: string) {
-  window.dispatchEvent(new CustomEvent('ficha:aba', { detail: 'visao' }))
-  requestAnimationFrame(() => {
-    const alvo = document.getElementById(id)
-    if (!alvo) return
-    alvo.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    const campo = alvo.querySelector<HTMLElement>('textarea, input, button')
-    campo?.focus({ preventScroll: true })
-  })
+  window.dispatchEvent(new CustomEvent('ficha:aba', { detail: { aba: 'visao', focar: id } }))
 }
 
-function Acao({
+export function AcaoDaFicha({
   rotulo,
   icone,
   aoClicar,
   marcada = false,
+  tom = 'normal',
+  titulo,
 }: {
   rotulo: string
   icone: ReactNode
   aoClicar: () => void
   /** O ponto que diz "já tem coisa aqui" — mesma régua da barra do Inbox. */
   marcada?: boolean
+  /** `perigo` pinta o hover de vermelho: usado por "Apagar contato". */
+  tom?: 'normal' | 'perigo'
+  /** O `title` do botão, quando o rótulo curto não basta para explicar. */
+  titulo?: string
 }) {
   return (
     <button
       type="button"
       onClick={aoClicar}
-      title={rotulo}
-      className="group relative flex w-[62px] flex-col items-center gap-1 rounded-lg px-1 py-1.5 text-[10.5px] text-muted transition hover:bg-surface hover:text-primary"
+      title={titulo ?? rotulo}
+      className={`group relative flex w-[62px] flex-col items-center gap-1 rounded-lg px-1 py-1.5 text-[10.5px] text-muted transition ${
+        tom === 'perigo'
+          ? 'hover:bg-rose-400/[0.09] hover:text-perigo'
+          : 'hover:bg-surface hover:text-primary'
+      }`}
     >
       <svg
         aria-hidden

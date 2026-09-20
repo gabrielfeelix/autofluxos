@@ -3,6 +3,8 @@
 import type { Atividade } from '@/core/atividades'
 import type { MensagemAgendada } from '@/server/repos/mensagens-agendadas'
 import { horaExata, quando } from '@/lib/quando'
+import { AjudaDoCampo } from '@/components/design/ajuda-do-campo'
+import { IconeDaSecao, iconeRelogio } from './icones'
 
 /**
  * O prazo em palavras.
@@ -60,8 +62,10 @@ export function ProximosPassos({
 
   return (
     <section className="app-card overflow-hidden">
-      <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
+      <h2 className="flex items-center gap-2 border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
+        <IconeDaSecao tom='primary'>{iconeRelogio}</IconeDaSecao>
         Próximos passos
+        <AjudaDoCampo texto="Tarefas da equipe e mensagens já agendadas para esta pessoa, em ordem de vencimento. A lista completa fica na aba Atividades." />
       </h2>
 
       {vazio ? (

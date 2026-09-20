@@ -178,6 +178,7 @@ export function SeletorDeEtiquetas({
       ) : (
         <button
           type="button"
+          data-foco
           onClick={() => setCriando(true)}
           className="mt-2 w-full rounded-[8px] border border-dashed border-strong px-2.5 py-2 text-[11px] text-dim transition hover:border-primary/40 hover:text-primary"
         >

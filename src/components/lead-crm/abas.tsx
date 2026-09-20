@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 
 export type AbaDaFicha = {
   chave: string
@@ -47,25 +47,55 @@ export function Abas({
   const tablist = useRef<HTMLDivElement>(null)
 
   /*
-   * Atalhos de outros lugares da ficha (o menu de ações, por exemplo) pedem uma
-   * aba pelo hash. Sem isto, "Anotar" rolava até um bloco escondido atrás de
-   * outra aba e a pessoa via a página piscar e não acontecer nada.
+   * Atalhos de outros lugares da ficha ("Anotar" e "Etiquetar", no alto) pedem
+   * uma aba, e às vezes um bloco dentro dela.
+   *
+   * **Quem troca a aba é quem foca o bloco.** Antes o atalho disparava o evento
+   * e, no `requestAnimationFrame` seguinte, procurava o bloco por
+   * `getElementById`: esse quadro roda antes de o React ter trocado o painel,
+   * então achava o bloco ainda dentro de um painel `hidden`, onde
+   * `scrollIntoView` e `focus` não fazem nada. No preview passava por acaso de
+   * tempo; em produção, mais lenta, "Anotar" não fazia nada. Dois componentes
+   * adivinhando o tempo um do outro é o defeito: o alvo viaja no evento e o
+   * foco acontece no efeito, depois da pintura, quando o painel existe de fato.
    */
-  const irPara = useCallback(
-    (chave: string) => {
-      if (abas.some((aba) => aba.chave === chave)) setAtual(chave)
-    },
-    [abas],
-  )
+  const aFocar = useRef<string | null>(null)
 
   useEffect(() => {
     const ouvir = (evento: Event) => {
-      const detalhe = (evento as CustomEvent<string>).detail
-      if (typeof detalhe === 'string') irPara(detalhe)
+      const detalhe = (evento as CustomEvent<string | { aba: string; focar?: string }>).detail
+      const pedido = typeof detalhe === 'string' ? { aba: detalhe } : detalhe
+      if (!pedido || !abas.some((aba) => aba.chave === pedido.aba)) return
+      aFocar.current = pedido.focar ?? null
+      setAtual(pedido.aba)
     }
     window.addEventListener('ficha:aba', ouvir)
     return () => window.removeEventListener('ficha:aba', ouvir)
-  }, [irPara])
+  }, [abas])
+
+  /*
+   * O pedido de foco viaja num `ref`, e não em estado: ele não muda o que é
+   * desenhado, só o que acontece **depois** de desenhar, e guardá-lo em estado
+   * obrigaria a limpá-lo de dentro do efeito, que é uma renderização em cascata.
+   */
+  useEffect(() => {
+    const id = aFocar.current
+    if (!id) return
+    aFocar.current = null
+    const alvo = document.getElementById(id)
+    if (!alvo) return
+    alvo.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    /*
+      O `?` da ajuda é um `button` e costuma vir antes, no título: procurar
+      "o primeiro botão" punha o foco nele, e o atalho "Anotar" abria a aba
+      certa para deixar a pessoa em cima de um ponto de interrogação. O que se
+      quer focar é o controle que começa a edição, marcado com `data-foco`.
+    */
+    const campo =
+      alvo.querySelector<HTMLElement>('[data-foco]') ??
+      alvo.querySelector<HTMLElement>('textarea, input')
+    campo?.focus({ preventScroll: true })
+  }, [atual])
 
   /*
    * Setas, Home e End dentro da tablist. É o que o padrão ARIA de abas manda, e
@@ -170,7 +200,13 @@ export function Abas({
             id={`${base}-${aba.chave}-painel`}
             aria-labelledby={`${base}-${aba.chave}-aba`}
             hidden={!escolhida}
-            tabIndex={0}
+            /*
+              **Sem `tabIndex` aqui.** Um painel focável vira um contêiner
+              rolável para o navegador, e dava para rolar *dentro* da aba, em
+              alguns pixels, sobre uma página que já rola: duas rolagens
+              disputando o mesmo gesto. O padrão ARIA só pede painel focável
+              quando ele não tem nada focável dentro, e todos estes têm.
+            */
             className={
               aba.solta
                 ? `app-card min-h-0 flex-col overflow-hidden ${escolhida ? 'flex h-[min(72vh,700px)]' : 'hidden'}`

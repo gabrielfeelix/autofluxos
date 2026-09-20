@@ -6,6 +6,7 @@ import {
   ROTULO_DO_NIVEL,
   type Relacionamento,
 } from '@/core/relacionamento'
+import { IconeDaSecao, iconeDinheiro } from './icones'
 
 /**
  * Quanto essa pessoa já rendeu, quantas vezes comprou e quando foi a última.
@@ -37,6 +38,7 @@ export function ResumoDoContato({
   return (
     <section className="app-card overflow-hidden">
       <h2 className="flex items-center gap-2 border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
+        <IconeDaSecao tom="ok">{iconeDinheiro}</IconeDaSecao>
         Já rendeu
         {relacionamento && (
           <span className="ml-auto flex items-center gap-1.5 text-[11px] font-semibold">

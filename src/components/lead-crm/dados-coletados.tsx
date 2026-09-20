@@ -1,4 +1,6 @@
 import { rotuloDoCampo } from '@/core/contatos/rotulo-do-campo'
+import { AjudaDoCampo } from '@/components/design/ajuda-do-campo'
+import { IconeDaSecao, iconeFormulario } from './icones'
 
 /**
  * O que o fluxo coletou.
@@ -14,8 +16,10 @@ import { rotuloDoCampo } from '@/core/contatos/rotulo-do-campo'
 export function DadosColetados({ campos }: { campos: [string, string][] }) {
   return (
     <section className="app-card overflow-hidden">
-      <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
+      <h2 className="flex items-center gap-2 border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
+        <IconeDaSecao>{iconeFormulario}</IconeDaSecao>
         O que o fluxo coletou
+        <AjudaDoCampo texto="As respostas que a pessoa deu ao bot durante a conversa. São dados dela, não campos que a equipe edita." />
       </h2>
       {campos.length === 0 ? (
         <p className="px-[18px] py-[22px] text-xs leading-5 text-dim">

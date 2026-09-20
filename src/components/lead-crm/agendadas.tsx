@@ -1,5 +1,6 @@
 import type { MensagemAgendada } from '@/server/repos/mensagens-agendadas'
 import { horaExata } from '@/lib/quando'
+import { IconeDaSecao, iconeRelogio } from './icones'
 
 /**
  * O que já está marcado para sair.
@@ -18,7 +19,8 @@ export function Agendadas({ agendadas }: { agendadas: MensagemAgendada[] }) {
 
   return (
     <section className="app-card overflow-hidden">
-      <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
+      <h2 className="flex items-center gap-2 border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
+        <IconeDaSecao>{iconeRelogio}</IconeDaSecao>
         Para enviar depois
       </h2>
       <ul>

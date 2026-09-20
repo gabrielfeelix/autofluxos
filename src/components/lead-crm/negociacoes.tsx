@@ -6,6 +6,7 @@ import { comoDinheiro, type Situacao } from '@/core/crm'
 import { comoParado, estaParado } from '@/core/quadros'
 import { FecharCartao } from '@/components/quadros/fechar-cartao'
 import { acaoReabrirCartao } from '@/server/acoes-crm'
+import { IconeDaSecao, iconeFunil } from './icones'
 
 /** Um cartão desta pessoa, como `quadrosDoContato` devolve. */
 export type NegociacaoDoContato = {
@@ -58,7 +59,10 @@ export function Negociacoes({
   if (negociacoes.length === 0) {
     return (
       <section className="app-card overflow-hidden">
-        <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">Negociações</h2>
+        <h2 className="flex items-center gap-2 border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
+        <IconeDaSecao>{iconeFunil}</IconeDaSecao>
+        Negociações
+      </h2>
         {/* Fora de todo funil a frase diz onde se resolve isso, e não só que
             está vazio: pôr alguém num funil é decisão de quem vende. */}
         <p className="px-[18px] py-[22px] text-xs leading-5 text-dim">
@@ -71,7 +75,10 @@ export function Negociacoes({
 
   return (
     <section className="app-card overflow-hidden">
-      <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">Negociações</h2>
+      <h2 className="flex items-center gap-2 border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
+        <IconeDaSecao>{iconeFunil}</IconeDaSecao>
+        Negociações
+      </h2>
 
       <ul>
         {negociacoes.map((negociacao) => {

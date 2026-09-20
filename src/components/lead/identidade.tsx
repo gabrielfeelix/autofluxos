@@ -4,6 +4,8 @@ import { useRef, useState } from 'react'
 import { FormularioSalvar, type EstadoSalvar } from '@/components/design/formulario-salvar'
 import { Avatar } from '@/components/inbox/avatar'
 import { telefoneLegivel } from '@/core/contatos/telefone'
+import { AjudaDoCampo } from '@/components/design/ajuda-do-campo'
+import { IconeDaSecao, iconeLapis } from '@/components/lead-crm/icones'
 
 type Acao = (estado: EstadoSalvar, formData: FormData) => Promise<EstadoSalvar>
 
@@ -186,10 +188,15 @@ export function NotasDoContato({
   return (
     <section className="app-card p-4">
       <header className="mb-2 flex items-center justify-between gap-3">
-        <h2 className="text-[12.5px] font-bold">Anotação</h2>
+        <h2 className="flex items-center gap-2 text-[12.5px] font-bold">
+          <IconeDaSecao>{iconeLapis}</IconeDaSecao>
+          Anotação
+          <AjudaDoCampo texto="Um lembrete curto da equipe sobre esta pessoa, sempre visível na ficha. Fica só aqui: não vai para o WhatsApp nem para nenhuma automação." />
+        </h2>
         {!editando && (
           <button
             type="button"
+            data-foco
             onClick={() => setEditando(true)}
             className="rounded-lg border border-line px-2 py-0.5 text-[10.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
           >
