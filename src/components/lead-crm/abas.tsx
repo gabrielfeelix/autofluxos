@@ -96,17 +96,25 @@ export function Abas({
   return (
     <section className="flex flex-col gap-[18px]">
       {/*
-        A barra rola na horizontal no mobile em vez de quebrar em duas linhas:
-        abas que descem de linha mudam a altura do cabeçalho conforme a aba
-        escolhida e a página inteira pula.
+        **Só a lista de abas rola, e só quando ela mesma não couber.** A barra
+        inteira tinha `overflow-x-auto` com a tablist em `flex-1` ao lado do
+        relógio: a lista esticava para ocupar a sobra, somava com o relógio e
+        estourava o contêiner. Dava barra de rolagem no desktop com cinco abas
+        que ocupam 548px de 1196px disponíveis, e sobrava arrastar para o lado
+        sem ter nada para onde arrastar.
+
+        A rolagem fica na tablist, que só transborda se as abas de fato não
+        couberem (mobile estreito). Rolar em vez de quebrar em duas linhas é de
+        propósito: abas que descem de linha mudam a altura do cabeçalho conforme
+        a aba escolhida e a página inteira pula.
       */}
-      <div className="flex items-center gap-2 overflow-x-auto border-b border-line pb-0">
+      <div className="flex items-center justify-between gap-2 border-b border-line pb-0">
         <div
           ref={tablist}
           role="tablist"
           aria-label="Seções da ficha"
           onKeyDown={aoTeclar}
-          className="flex flex-1 items-center gap-1"
+          className="flex min-w-0 items-center gap-1 overflow-x-auto"
         >
           {abas.map((aba) => {
             const escolhida = aba.chave === atual
@@ -141,7 +149,16 @@ export function Abas({
             )
           })}
         </div>
-        {extra}
+        {/*
+          O `extra` é o relógio da janela de 24h, e ele carrega um balão de dica
+          `absolute` de 342px centrado nele. Encostado na direita da barra, esse
+          balão passava da borda da página e esticava o `scrollWidth` do pai em
+          135px: aparecia uma barra de rolagem horizontal na ficha inteira por
+          causa de um texto que só existe quando o mouse está em cima. `relative`
+          aqui dá ao balão um contexto de posicionamento que não empurra o
+          tamanho da barra.
+        */}
+        <span className="relative shrink-0">{extra}</span>
       </div>
 
       {abas.map((aba) => {

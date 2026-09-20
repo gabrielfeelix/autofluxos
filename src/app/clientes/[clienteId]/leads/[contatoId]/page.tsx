@@ -329,7 +329,7 @@ export default async function Pagina({
               usa as duas aprende dois produtos.
             */
             janela ? (
-              <Dica texto="Depois disso o WhatsApp só aceita modelo aprovado pela Meta">
+              <Dica alinhar="direita" texto="Depois disso o WhatsApp só aceita modelo aprovado pela Meta">
                 <span
                   className={`mb-1.5 flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
                     apertado ? 'bg-amber-400/15 text-aviso' : 'bg-surface text-muted'
@@ -510,7 +510,18 @@ export default async function Pagina({
               solta: true,
               conteudo: (
                 <ProvedorDeCitacao>
-                  <div className="min-h-0 flex-1 overflow-auto p-[18px]">
+                  {/*
+                    `overflow-x-hidden`, e não `overflow-auto` nos dois eixos:
+                    a mesma lição que o Inbox já tinha aprendido e escrito (ver
+                    o comentário equivalente em `inbox/page.tsx`). Uma URL de
+                    anúncio com 180 caracteres e nenhum espaço não tem onde
+                    quebrar, estica a bolha além da coluna e o contêiner ganha
+                    rolagem horizontal: arrastar de lado desloca a conversa
+                    inteira para fora da moldura. A quebra é resolvida na bolha;
+                    isto aqui garante que nenhum outro conteúdo largo traga o
+                    defeito de volta.
+                  */}
+                  <div className="app-conversa min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-[18px]">
                     <Suspense fallback={<HistoricoEsqueleto />}>
                       <Historico
                         contatoId={contatoId}
