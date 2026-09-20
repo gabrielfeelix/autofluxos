@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from 'react'
 import { AgendarMensagem } from '@/components/inbox/agendar'
+import { MarcarAtividade } from '@/components/inbox/marcar-atividade'
 import { Modal } from '@/components/design/modal'
 import type { MensagemAgendada } from '@/server/repos/mensagens-agendadas'
 
@@ -13,10 +14,16 @@ import type { MensagemAgendada } from '@/server/repos/mensagens-agendadas'
  * de relance por quem abre trinta fichas por dia. Menu esconde o que existe, e
  * o que se esconde não é usado.
  *
- * As três ações aqui **existem de verdade**, e é por isso que são três:
- * agendar abre o mesmo painel do Inbox, anotar e etiquetar levam ao bloco da
- * coluna e põem o foco nele. Botão que abre um "em breve" é pior que botão
- * nenhum.
+ * As ações aqui **existem de verdade**: agendar e marcar atividade abrem os
+ * mesmos painéis do Inbox, anotar e etiquetar levam ao bloco da coluna e põem o
+ * foco nele. Botão que abre um "em breve" é pior que botão nenhum.
+ *
+ * **"Atividade" mora aqui, e não só dentro da aba.** Marcar um retorno é uma
+ * ação sobre a pessoa, da mesma família de agendar e anotar, e quem está lendo
+ * a visão geral precisava trocar de aba só para registrar o combinado. A aba
+ * continua sendo onde as atividades **moram**: o que nasce aqui aparece lá, é a
+ * mesma `acaoCriarAtividade`, e o painel é o mesmo do Inbox para as duas telas
+ * não virarem dois produtos.
  */
 export function AcoesDaFicha({
   clienteId,
@@ -33,6 +40,7 @@ export function AcoesDaFicha({
   agendadas: MensagemAgendada[]
 }) {
   const [agendando, setAgendando] = useState(false)
+  const [marcando, setMarcando] = useState(false)
   const temAgendada = agendadas.some((a) => a.estado === 'agendada' || a.estado === 'enviando')
 
   return (
@@ -46,6 +54,21 @@ export function AcoesDaFicha({
             <>
               <circle cx="12" cy="12" r="8.5" />
               <path d="M12 7.5V12l3 1.8" />
+            </>
+          }
+        />
+        {/*
+          O ícone é o mesmo de "Marcar atividade" no Inbox, de propósito: é o
+          mesmo painel e o mesmo resultado, e ícone diferente para a mesma coisa
+          ensina que são duas coisas.
+        */}
+        <AcaoDaFicha
+          rotulo="Atividade"
+          aoClicar={() => setMarcando(true)}
+          icone={
+            <>
+              <circle cx="12" cy="12" r="8.5" />
+              <path d="m8.5 12.2 2.4 2.4 4.6-4.9" />
             </>
           }
         />
@@ -84,6 +107,24 @@ export function AcoesDaFicha({
           fimDaJanela={fimDaJanela}
           agendadas={agendadas}
           aoFechar={() => setAgendando(false)}
+        />
+      </Modal>
+
+      {/*
+        `MarcarAtividade` dá `router.refresh()` ao criar, então a aba Atividades
+        já vem com a nova na próxima pintura: não existe uma segunda lista aqui
+        para manter em dia.
+      */}
+      <Modal
+        aberto={marcando}
+        aoFechar={() => setMarcando(false)}
+        titulo={`Marcar atividade para ${nome}`}
+        descricao="É um lembrete para a equipe, e aparece na aba Atividades desta pessoa. Nada é enviado ao cliente."
+      >
+        <MarcarAtividade
+          clienteId={clienteId}
+          contatoId={contatoId}
+          aoFechar={() => setMarcando(false)}
         />
       </Modal>
     </>

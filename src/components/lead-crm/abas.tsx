@@ -137,6 +137,13 @@ export function Abas({
         couberem (mobile estreito). Rolar em vez de quebrar em duas linhas é de
         propósito: abas que descem de linha mudam a altura do cabeçalho conforme
         a aba escolhida e a página inteira pula.
+
+        **Sem barra desenhada, e sem rolagem vertical.** `overflow-x-auto`
+        sozinho deixa o eixo Y em `auto` também, e a barra global de 10px
+        aparecia como um traço cinza colado na última aba: um controle de
+        rolagem numa fileira de abas, que não rola para lugar nenhum.
+        `sem-barra` esconde o desenho e `overflow-y-hidden` fecha o eixo que
+        nunca deveria estar aberto; o gesto lateral do celular continua.
       */}
       <div className="flex items-center justify-between gap-2 border-b border-line pb-0">
         <div
@@ -144,7 +151,7 @@ export function Abas({
           role="tablist"
           aria-label="Seções da ficha"
           onKeyDown={aoTeclar}
-          className="flex min-w-0 items-center gap-1 overflow-x-auto"
+          className="sem-barra flex min-w-0 items-center gap-1 overflow-x-auto overflow-y-hidden"
         >
           {abas.map((aba) => {
             const escolhida = aba.chave === atual

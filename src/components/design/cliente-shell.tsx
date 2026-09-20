@@ -89,6 +89,7 @@ export async function ClienteShell({
           </>
         }
         presenca={presenca ?? undefined}
+        conta={cliente.nome}
         voltar={
           podeVerTodosOsClientes ? (
             <Link
