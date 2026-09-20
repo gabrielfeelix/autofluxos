@@ -1079,3 +1079,109 @@ export async function atribuirContato(
   if (error) throw new Error(`não deu para atribuir o contato: ${error.message}`)
   return data !== null
 }
+
+/**
+ * A tomada do atendimento, decidida pelo Postgres (0076).
+ *
+ * ---------------------------------------------------------------------------
+ * Por que não dá para fazer isso aqui em cima
+ * ---------------------------------------------------------------------------
+ *
+ * `atribuirContato`, logo acima, é um `update` sem condição: ele grava e
+ * responde `true`. Dois atendentes clicando em "Assumir" ao mesmo tempo
+ * recebiam **os dois** sucesso, e quem gravou por último ficava com a conversa.
+ *
+ * Ler antes de gravar não conserta: entre o `select` que diz "está livre" e o
+ * `update` que grava cabe o clique do colega. A condição tem que estar no
+ * `where` do próprio `update`, e é por isso que isto é um RPC.
+ *
+ * `atribuirContato` **continua existindo** e não foi trocada: ela é usada pela
+ * distribuição automática e pela atribuição do CRM, que não são corridas entre
+ * pessoas. Trocar a implementação dela por baixo mudaria o comportamento de sete
+ * chamadores para resolver o problema de um.
+ */
+export type TomadaDoAtendimento =
+  | { ok: true; revisao: number }
+  | { ok: false; motivo: 'ja_assumida' | 'ja_e_sua' | 'nao_encontrado'; responsavelId: string | null }
+
+type LinhaDaTomada = {
+  o_ok: boolean
+  o_motivo: string
+  o_responsavel: string | null
+  o_revisao: number
+}
+
+export async function assumirAtendimento(
+  clienteId: string,
+  contatoId: string,
+  usuarioId: string,
+): Promise<TomadaDoAtendimento> {
+  const { data, error } = await db().rpc('assumir_atendimento', {
+    p_client_id: clienteId,
+    p_contact_id: contatoId,
+    p_usuario_id: usuarioId,
+  })
+
+  if (ehIdInvalido(error)) {
+    return { ok: false, motivo: 'nao_encontrado', responsavelId: null }
+  }
+  if (error) throw new Error(`não deu para assumir o atendimento: ${error.message}`)
+
+  const linha = ((data ?? []) as LinhaDaTomada[])[0]
+  if (!linha) return { ok: false, motivo: 'nao_encontrado', responsavelId: null }
+
+  if (linha.o_ok) return { ok: true, revisao: linha.o_revisao }
+
+  const motivo =
+    linha.o_motivo === 'ja_e_sua' || linha.o_motivo === 'ja_assumida'
+      ? linha.o_motivo
+      : 'nao_encontrado'
+
+  return { ok: false, motivo, responsavelId: linha.o_responsavel }
+}
+
+/**
+ * Troca de controle que não é corrida: transferir, devolver à fila, encerrar.
+ *
+ * Sobe a revisão, e é isso que invalida a execução de IA que estava no ar
+ * (RB-15). Devolve a revisão nova, ou `null` quando o contato não é desta conta.
+ */
+export async function trocarControle(
+  clienteId: string,
+  contatoId: string,
+  responsavelId: string | null,
+): Promise<number | null> {
+  const { data, error } = await db().rpc('trocar_controle', {
+    p_client_id: clienteId,
+    p_contact_id: contatoId,
+    p_responsavel: responsavelId,
+  })
+
+  if (ehIdInvalido(error)) return null
+  if (error) throw new Error(`não deu para trocar o controle: ${error.message}`)
+  return typeof data === 'number' ? data : null
+}
+
+/**
+ * A revisão do controle agora, para conferir antes de enviar (RB-15).
+ *
+ * Falha de leitura devolve `null`, e `aindaAutorizada` trata `null` como "não
+ * autorizada": o lado seguro de errar é a mensagem não sair. Uma resposta
+ * perdida alguém reenvia; uma resposta do bot por cima de um atendente humano é
+ * a empresa falando duas coisas ao mesmo tempo com o cliente.
+ */
+export async function revisaoDoControle(
+  clienteId: string,
+  contatoId: string,
+): Promise<number | null> {
+  const { data, error } = await db()
+    .from('contacts')
+    .select('controle_revisao')
+    .eq('id', contatoId)
+    .eq('client_id', clienteId)
+    .maybeSingle()
+
+  if (error) return null
+  const linha = data as { controle_revisao: number | null } | null
+  return linha?.controle_revisao ?? null
+}

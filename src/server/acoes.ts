@@ -49,7 +49,8 @@ import { adaptadorDoCanal } from './adaptador-do-canal'
 import { dentroDaJanela } from '@/channels/janela'
 import type { EstadoSalvar } from '@/components/design/formulario-salvar'
 import {
-  atribuirContato,
+  assumirAtendimento,
+  trocarControle,
   calarBotNaConversa,
   contextoDeResposta,
   criarCanal,
@@ -2730,8 +2731,38 @@ export async function acaoAssumirAtendimento(
     return { ok: false, erro: 'entre com a sua conta para assumir uma conversa' }
   }
 
-  const ok = await atribuirContato(clienteId, contatoId, sessao.usuario.id)
-  if (!ok) return { ok: false, erro: 'este contato não é deste cliente' }
+  /*
+   * A tomada é decidida pelo Postgres, e não por um `update` solto (0076).
+   *
+   * `atribuirContato` gravava sem condição: dois atendentes clicando ao mesmo
+   * tempo recebiam **os dois** sucesso, e quem gravou por último ficava com a
+   * conversa. O outro via a tela dizer que assumiu e começava a responder numa
+   * conversa que era de outra pessoa. É a RB-14.
+   */
+  const tomada = await assumirAtendimento(clienteId, contatoId, sessao.usuario.id)
+  if (!tomada.ok) {
+    if (tomada.motivo === 'ja_e_sua') {
+      // Clicar de novo no que já é seu não é erro, e não mexe na revisão.
+      return { ok: true }
+    }
+    if (tomada.motivo === 'ja_assumida') {
+      /*
+       * Dizer **quem** assumiu, e não um "não deu" mudo: é o que permite à
+       * pessoa decidir se pede transferência. A busca do nome é melhor-esforço,
+       * porque a recusa já é a informação principal.
+       */
+      const nome = tomada.responsavelId
+        ? (await membrosDaConta(clienteId)).find((m) => m.id === tomada.responsavelId)?.nome
+        : null
+      return {
+        ok: false,
+        erro: nome
+          ? `${nome} já assumiu esta conversa. Peça uma transferência para atender.`
+          : 'outra pessoa já assumiu esta conversa',
+      }
+    }
+    return { ok: false, erro: 'este contato não é deste cliente' }
+  }
 
   /*
    * Assumir cala o bot, e isso é o conserto de uma incoerência antiga.
@@ -2807,8 +2838,17 @@ export async function acaoLiberarAtendimento(
   const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
   if (recusou(acesso)) return acesso
 
-  const ok = await atribuirContato(clienteId, contatoId, null)
-  if (!ok) return { ok: false, erro: 'este contato não é deste cliente' }
+  /*
+   * `trocarControle` e não `atribuirContato`: devolver à fila **sobe a
+   * revisão**, e é isso que invalida a resposta de IA que estava no ar quando
+   * a conversa mudou de mãos (RB-15).
+   *
+   * E ela não reinicia o bot: a conversa perde o dono e continua esperando
+   * gente. Quem quiser o bot de volta usa "Retomar chatbot", que é outra ação.
+   * É a RB-16 literal.
+   */
+  const revisao = await trocarControle(clienteId, contatoId, null)
+  if (revisao === null) return { ok: false, erro: 'este contato não é deste cliente' }
 
   revalidatePath(`/clientes/${clienteId}/inbox`)
   revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
@@ -2842,8 +2882,13 @@ export async function acaoAtribuirPara(
     return { ok: false, erro: 'essa pessoa não atende nesta conta' }
   }
 
-  const ok = await atribuirContato(clienteId, contatoId, usuarioId)
-  if (!ok) return { ok: false, erro: 'este contato não é deste cliente' }
+  /*
+   * Transferir **vence** um responsável existente, ao contrário de assumir: é
+   * ação deliberada de quem tem permissão, não uma corrida. E sobe a revisão,
+   * pelo mesmo motivo de devolver à fila (RB-15).
+   */
+  const revisao = await trocarControle(clienteId, contatoId, usuarioId)
+  if (revisao === null) return { ok: false, erro: 'este contato não é deste cliente' }
 
   revalidatePath(`/clientes/${clienteId}/inbox`)
   return { ok: true }

@@ -21,6 +21,7 @@ import {
   type ContextoDoAtendimento,
 } from '@/core/engine/executar'
 import { tipoDoReferral } from '@/core/regras-de-entrada'
+import { aindaAutorizada } from '@/core/controle-da-conversa'
 import { casarGatilho } from '@/core/gatilhos'
 import { casarCampanha } from '@/core/campanhas'
 import { atribuirCampanha, campanhasAtivas, contarDisparoDaCampanha } from './repos/campanhas'
@@ -62,6 +63,7 @@ import {
   type CanalSalvo,
   type Contato,
   type SessaoSalva,
+  revisaoDoControle,
 } from './repos/conversas'
 import { travarContato } from './repos/travas'
 import { inscreverNoEvento, sairPelaEtiqueta, sairPorEvento } from './sequencias'
@@ -779,6 +781,15 @@ async function avancarConversa(
     horarioDoCliente(canalSalvo.clienteId),
   ])
 
+  /*
+   * A revisão do controle **antes** de o motor rodar (RB-15).
+   *
+   * Tem que ser lida aqui, e não depois: ela é a prova de que esta rodada foi
+   * autorizada pelo estado que existia quando ela começou. Lida depois, já teria
+   * a troca de controle embutida, e a conferência sempre passaria.
+   */
+  const revisaoAutorizada = await revisaoDoControle(canalSalvo.clienteId, contato.id)
+
   // Conversa nova começa pelo início do fluxo. A primeira mensagem da pessoa
   // é o gatilho, não uma resposta, ela ainda não foi perguntada nada. Vale
   // também para gatilho e para mídia: a frase que abriu o fluxo não é para ser
@@ -815,7 +826,14 @@ async function avancarConversa(
     resultado.destino?.grafo ?? versao.grafo,
     resultado.sessao,
   )
-  await aplicar(fabricaDeCanal(canalSalvo), contato, salva.id, mensagem.id, resultado.acoes)
+  await aplicar(
+    fabricaDeCanal(canalSalvo),
+    contato,
+    salva.id,
+    mensagem.id,
+    resultado.acoes,
+    revisaoAutorizada,
+  )
 }
 
 /**
@@ -911,6 +929,10 @@ export async function rodarTimeoutDePergunta(
       horarioDoCliente(canal.clienteId),
     ])
 
+    // Mesma razão de `avancarConversa`: a revisão vem de antes do motor. O
+    // timeout roda sozinho, e alguém pode ter assumido a conversa nesse meio.
+    const revisaoAutorizada = await revisaoDoControle(canal.clienteId, contatoId)
+
     const resultado = await executarComEfeitos(versao.grafo, agora.sessao, { tipo: 'timeout' }, {
       ...opcoesDeIa,
       atendimento: contextoDeAtendimento(horario),
@@ -934,7 +956,7 @@ export async function rodarTimeoutDePergunta(
       resultado.destino?.grafo ?? versao.grafo,
       resultado.sessao,
     )
-    await aplicar(fabricaDeCanal(canal), contato, sessaoId, null, resultado.acoes)
+    await aplicar(fabricaDeCanal(canal), contato, sessaoId, null, resultado.acoes, revisaoAutorizada)
     return 'feita'
   } finally {
     await destravar()
@@ -1083,6 +1105,13 @@ export async function abrirFluxoParaContato(
       salva.id,
       contexto.ultimaEntradaWaId,
       resultado.acoes,
+      /*
+       * `null` de propósito: o pós-atendimento é disparado por alguém do
+       * atendimento clicando "Já atendi", **depois** de a conversa ter sido
+       * encerrada. Não há execução de bot a invalidar, e conferir a revisão aqui
+       * recusaria justamente a ação que a pessoa acabou de pedir.
+       */
+      null,
     )
     return 'aberto'
   } finally {
@@ -1193,7 +1222,43 @@ async function aplicar(
   sessaoId: string,
   mensagemId: string | null,
   acoes: Acao[],
+  /**
+   * A revisão do controle no instante em que esta rodada foi autorizada (RB-15).
+   *
+   * Conferida **aqui**, e não no início da rodada, porque o intervalo que
+   * importa é entre decidir e enviar: uma resposta de IA leva segundos, e é
+   * nesses segundos que o clique de "Assumir" cabe. Conferir no começo provaria
+   * que ninguém tinha assumido antes de o modelo ser chamado, que é a pergunta
+   * errada.
+   *
+   * `null` = o chamador não tem revisão a conferir (o pós-atendimento, que roda
+   * sem ninguém ter assumido nada). Ele passa `null` explicitamente para a
+   * decisão ficar visível em vez de depender de um parâmetro esquecido.
+   */
+  revisaoAutorizada: number | null,
 ): Promise<void> {
+  /*
+   * A execução que ficou para trás para aqui, antes de qualquer envio.
+   *
+   * O cenário: o bot chama o modelo, leva quatro segundos, e no segundo dois a
+   * Ana assume. A resposta que volta foi autorizada por um estado que não
+   * existe mais, e mandá-la é o bot falando por cima de quem acabou de pegar a
+   * conversa — a empresa dizendo duas coisas ao mesmo tempo para o cliente.
+   *
+   * Recusar é o lado seguro: uma resposta perdida alguém reenvia.
+   */
+  if (revisaoAutorizada !== null) {
+    const agora = await revisaoDoControle(contato.clienteId, contato.id)
+    if (!aindaAutorizada({ conducao: 'bot', responsavelId: null, revisao: agora ?? -1 }, revisaoAutorizada)) {
+      await alertar(
+        'a resposta do bot foi descartada: alguém assumiu a conversa no meio',
+        `revisão autorizada ${revisaoAutorizada}, atual ${agora ?? 'desconhecida'}`,
+        { contato: contato.id, sessao: sessaoId },
+      )
+      return
+    }
+  }
+
   const campos = { ...contato.campos }
   let mexeuNosCampos = false
 
