@@ -16,6 +16,7 @@ import {
   exigirOperadorDa4YU,
   podeAdministrarConta,
 } from './sessao'
+import { exigirCapacidade, recusou } from './permissoes'
 import { fluxoNovo } from '@/core/flow/novo'
 import { DIAS_DA_SEMANA, emMinutos, horarioSchema } from '@/core/horario'
 import { triagem } from '@/exemplos/triagem'
@@ -199,7 +200,8 @@ export async function acaoCriarExemplo() {
  * O `fluxoSchema.parse` aqui é a garantia de que a *estrutura* está sã.
  */
 export async function acaoSalvarRascunho(fluxoId: string, clienteId: string, grafo: unknown) {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const analise = fluxoSchema.safeParse(grafo)
   if (!analise.success) {
@@ -215,7 +217,11 @@ export async function acaoSalvarRascunho(fluxoId: string, clienteId: string, gra
  * cadastro do cliente: é a automação que se vende com ou sem IA.
  */
 export async function acaoCriarFluxo(clienteId: string, formData: FormData) {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  // Ligada direto a `<form action>`, que exige retorno vazio: a recusa para a
+  // ação e não vira valor. A tela não mostra a permissão que falta — e não
+  // deve: quem não pode não precisa saber que a capacidade existe (RB-42).
+  if (recusou(acesso)) return
 
   const nome = String(formData.get('nome') ?? '').trim()
   if (nome === '') return
@@ -262,7 +268,8 @@ export async function acaoDescartarRascunho(
   fluxoId: string,
   clienteId: string,
 ): Promise<{ ok: true; grafo: Fluxo } | { ok: false; erro: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const fluxo = await acharFluxo(fluxoId)
   if (!fluxo || fluxo.clienteId !== clienteId) {
@@ -291,7 +298,12 @@ export async function acaoDescartarRascunho(
  * mesmo que a chamada venha de outro lugar.
  */
 export async function acaoPublicar(fluxoId: string, clienteId: string, grafo: unknown) {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  // A recusa entra na lista de problemas que o editor já desenha, em vez de
+  // virar um segundo formato de falha que todo chamador teria de aprender.
+  if (recusou(acesso)) {
+    return { ok: false as const, erros: [{ codigo: 'SEM_PERMISSAO', mensagem: acesso.erro }] }
+  }
 
   const resultado = await publicar(fluxoId, clienteId, grafo)
 
@@ -322,7 +334,12 @@ export async function acaoPublicar(fluxoId: string, clienteId: string, grafo: un
  * ar um fluxo que o editor recusaria hoje.
  */
 export async function acaoVoltarParaVersao(fluxoId: string, clienteId: string, versaoId: string) {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  // A recusa entra na lista de problemas que o editor já desenha, em vez de
+  // virar um segundo formato de falha que todo chamador teria de aprender.
+  if (recusou(acesso)) {
+    return { ok: false as const, erros: [{ codigo: 'SEM_PERMISSAO', mensagem: acesso.erro }] }
+  }
 
   const antiga = await acharVersaoDoFluxo(versaoId, fluxoId)
   if (!antiga) {
@@ -354,7 +371,8 @@ export async function acaoConectarNumero(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const phoneNumberId = String(formData.get('phoneNumberId') ?? '').trim()
   const flowId = String(formData.get('flowId') ?? '').trim()
@@ -382,7 +400,8 @@ export async function acaoDesconectarNumero(
   clienteId: string,
   canalId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const r = await desconectarNumero(clienteId, canalId)
   revalidatePath(`/clientes/${clienteId}`)
@@ -394,7 +413,8 @@ export async function acaoApagarFluxo(
   clienteId: string,
   fluxoId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const r = await apagarFluxo(clienteId, fluxoId)
   revalidatePath(`/clientes/${clienteId}`)
@@ -413,7 +433,8 @@ export async function acaoRenomearFluxo(
   fluxoId: string,
   nome: string,
 ): Promise<{ ok: boolean; nome?: string; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const r = await renomearFluxo(clienteId, fluxoId, nome)
   if (!r.ok) return { ok: false, erro: r.motivo }
@@ -433,7 +454,8 @@ export async function acaoDuplicarFluxo(
   clienteId: string,
   fluxoId: string,
 ): Promise<{ ok: boolean; id?: string; nome?: string; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const r = await duplicarFluxo(clienteId, fluxoId)
   if (!r.ok) return { ok: false, erro: r.motivo }
@@ -453,7 +475,8 @@ export async function acaoReordenarFluxos(
   clienteId: string,
   idsNaOrdem: string[],
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   await reordenarFluxos(clienteId, idsNaOrdem)
   revalidatePath(`/clientes/${clienteId}/fluxos`)
@@ -479,7 +502,8 @@ export async function acaoReordenarFluxos(
  * vale é esta: Server Action é endereço, e endereço se chama de fora da tela.
  */
 export async function acaoAlternarIa(fluxoId: string, clienteId: string, habilitada: boolean) {
-  const acesso = await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   if (!ehAdminDaPlataforma(acesso.sessao)) {
     return {
@@ -507,7 +531,8 @@ export async function acaoAlternarFluxoAtivo(
   fluxoId: string,
   ativo: boolean,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const mudou = await definirAtivo(clienteId, fluxoId, ativo)
   revalidatePath(`/clientes/${clienteId}/fluxos`)
@@ -528,7 +553,8 @@ export async function acaoDefinirFluxosDoNumero(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const fluxos: Partial<Record<PapelDoNumero, string | null>> = {}
   for (const papel of PAPEIS_DO_NUMERO) {
@@ -557,7 +583,8 @@ export async function acaoCriarGatilhoDeEvento(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const evento = String(formData.get('evento') ?? '').trim()
   const fluxoId = String(formData.get('fluxoId') ?? '').trim()
@@ -577,7 +604,8 @@ export async function acaoAlternarGatilhoDeEvento(
   gatilhoId: string,
   ativo: boolean,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const mudou = await alternarGatilhoDeEvento(clienteId, gatilhoId, ativo)
   revalidatePath(`/clientes/${clienteId}/fluxos`)
@@ -588,7 +616,8 @@ export async function acaoApagarGatilhoDeEvento(
   clienteId: string,
   gatilhoId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const apagou = await apagarGatilhoDeEvento(clienteId, gatilhoId)
   revalidatePath(`/clientes/${clienteId}/fluxos`)
@@ -606,7 +635,8 @@ export async function acaoCriarWebhookDeEntrada(
   clienteId: string,
   nome: string,
 ): Promise<{ ok: true; segredo: string } | { ok: false; erro: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const r = await criarWebhook(clienteId, nome)
   if (!r.ok) return { ok: false, erro: r.motivo }
@@ -620,7 +650,8 @@ export async function acaoAlternarWebhookDeEntrada(
   webhookId: string,
   ativo: boolean,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const mudou = await alternarWebhook(clienteId, webhookId, ativo)
   revalidatePath(`/clientes/${clienteId}/fluxos`)
@@ -632,7 +663,8 @@ export async function acaoApagarWebhookDeEntrada(
   clienteId: string,
   webhookId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const apagou = await apagarWebhook(clienteId, webhookId)
   revalidatePath(`/clientes/${clienteId}/fluxos`)
@@ -645,7 +677,8 @@ export async function acaoCriarGatilho(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const frase = String(formData.get('frase') ?? '').trim()
   const operadorPedido = String(formData.get('operador') ?? 'contem')
@@ -677,7 +710,8 @@ export async function acaoAlternarGatilho(
   gatilhoId: string,
   ativo: boolean,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const mudou = await alternarGatilho(clienteId, gatilhoId, ativo)
   revalidatePath(`/clientes/${clienteId}/fluxos`)
@@ -688,7 +722,8 @@ export async function acaoApagarGatilho(
   clienteId: string,
   gatilhoId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const apagou = await apagarGatilho(clienteId, gatilhoId)
   revalidatePath(`/clientes/${clienteId}/fluxos`)
@@ -715,7 +750,8 @@ export async function acaoCriarEtiqueta(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar & { etiqueta?: { id: string; nome: string; cor: CorDeEtiqueta } }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const nome = String(formData.get('nome') ?? '')
   const cor = String(formData.get('cor') ?? 'cinza')
@@ -747,7 +783,8 @@ export async function acaoEditarEtiqueta(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const nome = String(formData.get('nome') ?? '')
   const cor = String(formData.get('cor') ?? 'cinza')
@@ -765,7 +802,8 @@ export async function acaoApagarEtiqueta(
   clienteId: string,
   etiquetaId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const apagou = await apagarEtiqueta(clienteId, etiquetaId)
   revalidatePath(`/clientes/${clienteId}/ajustes/etiquetas`)
@@ -787,7 +825,8 @@ export async function acaoMarcarEtiqueta(
   contatos: string[],
   aplicar: boolean,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
 
   if (!Array.isArray(contatos) || contatos.some((id) => typeof id !== 'string')) {
     return { ok: false, erro: 'seleção inválida' }
@@ -837,7 +876,8 @@ export async function acaoCriarContato(
   clienteId: string,
   formData: FormData,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
 
   const nome = String(formData.get('nome') ?? '')
   const telefone = String(formData.get('telefone') ?? '')
@@ -862,7 +902,8 @@ export async function acaoApagarContatos(
   clienteId: string,
   contatos: string[],
 ): Promise<{ ok: boolean; apagados?: number; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_empresa', 'todos')
+  if (recusou(acesso)) return acesso
 
   if (!Array.isArray(contatos) || contatos.some((id) => !z.string().uuid().safeParse(id).success)) {
     return { ok: false, erro: 'seleção inválida' }
@@ -891,7 +932,8 @@ export async function acaoCriarCampanha(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const nome = String(formData.get('nome') ?? '')
   const frase = String(formData.get('frase') ?? '')
@@ -911,7 +953,8 @@ export async function acaoAlternarCampanha(
   campanhaId: string,
   ativa: boolean,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const mudou = await alternarCampanha(clienteId, campanhaId, ativa)
   revalidatePath(`/clientes/${clienteId}/fluxos`)
@@ -922,7 +965,8 @@ export async function acaoApagarCampanha(
   clienteId: string,
   campanhaId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const apagou = await apagarCampanha(clienteId, campanhaId)
   revalidatePath(`/clientes/${clienteId}/fluxos`)
@@ -942,7 +986,8 @@ export async function acaoCriarPasta(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const r = await criarPasta(clienteId, String(formData.get('nome') ?? ''))
   if (!r.ok) return { erro: r.motivo }
@@ -956,7 +1001,8 @@ export async function acaoApagarPasta(
   clienteId: string,
   pastaId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const apagou = await apagarPasta(clienteId, pastaId)
   revalidatePath(`/clientes/${clienteId}/fluxos`)
@@ -969,7 +1015,8 @@ export async function acaoMoverFluxo(
   fluxoId: string,
   pastaId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const r = await moverFluxo(clienteId, fluxoId, pastaId === '' ? null : pastaId)
   if (!r.ok) return { ok: false, erro: r.motivo }
@@ -995,7 +1042,8 @@ export async function acaoCriarLinkDoFluxo(
   fluxoId: string,
   prazo: string,
 ): Promise<{ ok: boolean; link?: LinkDoFluxo; erro?: string }> {
-  const acesso = await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const r = await criarLink(clienteId, fluxoId, {
     dias: diasDoPrazo(prazo),
@@ -1025,7 +1073,8 @@ export async function acaoRevogarLinkDoFluxo(
   fluxoId: string,
   linkId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  const acesso = await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const revogou = await revogarLink(clienteId, linkId)
   if (!revogou) return { ok: false, erro: 'este link já estava fechado' }
@@ -1050,7 +1099,8 @@ export async function acaoListarLinksDoFluxo(
   clienteId: string,
   fluxoId: string,
 ): Promise<{ ok: boolean; links?: LinkDoFluxo[] }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
   return { ok: true, links: await listarLinks(clienteId, fluxoId) }
 }
 
@@ -1075,7 +1125,8 @@ export async function acaoImportarFluxoCompartilhado(
   clienteId: string,
   token: string,
 ): Promise<{ ok: boolean; fluxoId?: string; erro?: string }> {
-  const acesso = await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const link = await acharPorToken(String(token ?? ''))
   if (!link) return { ok: false, erro: 'este link não existe' }
@@ -1125,7 +1176,8 @@ export async function acaoCriarSequencia(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const evento = String(formData.get('evento') ?? '')
   if (!ehEventoDeSequencia(evento)) return { erro: 'escolha o que dispara a sequência' }
@@ -1182,7 +1234,8 @@ export async function acaoAlternarSequencia(
   sequenciaId: string,
   ativa: boolean,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const mudou = await alternarSequencia(clienteId, sequenciaId, ativa)
   revalidatePath(`/clientes/${clienteId}/fluxos`)
@@ -1193,7 +1246,8 @@ export async function acaoApagarSequencia(
   clienteId: string,
   sequenciaId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const apagou = await apagarSequencia(clienteId, sequenciaId)
   revalidatePath(`/clientes/${clienteId}/fluxos`)
@@ -1216,7 +1270,8 @@ export async function acaoCriarPassoDaSequencia(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const horas = Number(formData.get('horas') ?? 0)
   const minutos = Number(formData.get('minutos') ?? 0)
@@ -1251,7 +1306,8 @@ export async function acaoApagarPassoDaSequencia(
   sequenciaId: string,
   passoId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const apagou = await apagarPasso(clienteId, sequenciaId, passoId)
   revalidatePath(`/clientes/${clienteId}/fluxos`)
@@ -1274,7 +1330,8 @@ export async function acaoCriarQuadro(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const r = await criarQuadro(
     clienteId,
@@ -1292,7 +1349,8 @@ export async function acaoRenomearQuadro(
   quadroId: string,
   nome: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const r = await renomearQuadro(clienteId, quadroId, String(nome ?? ''))
   revalidatePath(`/clientes/${clienteId}/quadros`)
@@ -1304,7 +1362,8 @@ export async function acaoApagarQuadro(
   clienteId: string,
   quadroId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const apagou = await apagarQuadro(clienteId, quadroId)
   revalidatePath(`/clientes/${clienteId}/quadros`)
@@ -1323,7 +1382,8 @@ export async function acaoDefinirQuadroPadrao(
   quadroId: string,
   padrao: boolean,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const r = await definirQuadroPadrao(clienteId, padrao ? quadroId : null)
   revalidatePath(`/clientes/${clienteId}/quadros`)
@@ -1336,7 +1396,8 @@ export async function acaoCriarEtapa(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const quadro = await acharQuadro(clienteId, quadroId)
   if (!quadro) return { erro: 'este quadro não existe mais' }
@@ -1369,7 +1430,8 @@ export async function acaoCriarEtapaDireto(
   quadroId: string,
   nome: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const quadro = await acharQuadro(clienteId, quadroId)
   if (!quadro) return { ok: false, erro: 'este quadro não existe mais' }
@@ -1390,7 +1452,8 @@ export async function acaoRenomearEtapa(
   etapaId: string,
   nome: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const r = await renomearEtapa(clienteId, quadroId, etapaId, String(nome ?? ''))
   revalidatePath(`/clientes/${clienteId}/quadros`)
@@ -1403,7 +1466,8 @@ export async function acaoMoverEtapa(
   etapaId: string,
   direcao: 'esquerda' | 'direita',
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   if (direcao !== 'esquerda' && direcao !== 'direita') return { ok: false, erro: 'direção inválida' }
 
@@ -1418,7 +1482,8 @@ export async function acaoApagarEtapa(
   quadroId: string,
   etapaId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const r = await apagarEtapa(clienteId, quadroId, etapaId)
   revalidatePath(`/clientes/${clienteId}/quadros`)
@@ -1437,7 +1502,8 @@ export async function acaoPorNoQuadro(
   quadroId: string,
   contatos: string[],
 ): Promise<{ ok: boolean; postos?: number; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'criar_oportunidade', 'proprios')
+  if (recusou(acesso)) return acesso
 
   if (!Array.isArray(contatos) || contatos.some((id) => !z.string().uuid().safeParse(id).success)) {
     return { ok: false, erro: 'seleção inválida' }
@@ -1463,7 +1529,8 @@ export async function acaoBuscarContatosDoQuadro(
   quadroId: string,
   termo: string,
 ): Promise<{ ok: boolean; contatos?: ContatoParaOQuadro[] }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'criar_oportunidade', 'proprios')
+  if (recusou(acesso)) return acesso
   return { ok: true, contatos: await contatosForaDoQuadro(clienteId, quadroId, String(termo ?? '')) }
 }
 
@@ -1474,7 +1541,8 @@ export async function acaoPorNaEtapa(
   colunaId: string,
   contatos: string[],
 ): Promise<{ ok: boolean; postos?: number; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'criar_oportunidade', 'proprios')
+  if (recusou(acesso)) return acesso
 
   if (!Array.isArray(contatos) || contatos.some((id) => !z.string().uuid().safeParse(id).success)) {
     return { ok: false, erro: 'seleção inválida' }
@@ -1500,7 +1568,8 @@ export async function acaoMoverCartao(
   cartaoId: string,
   colunaId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'criar_oportunidade', 'proprios')
+  if (recusou(acesso)) return acesso
 
   // Quem moveu vai para o histórico: "Ana moveu para Proposta" só informa com o
   // nome, e é ele que continua legível depois que o usuário é apagado.
@@ -1517,7 +1586,8 @@ export async function acaoTirarDoQuadro(
   clienteId: string,
   cartaoId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'criar_oportunidade', 'proprios')
+  if (recusou(acesso)) return acesso
 
   const tirou = await tirarDoQuadro(clienteId, cartaoId)
   revalidatePath(`/clientes/${clienteId}/quadros`)
@@ -1689,7 +1759,8 @@ export async function acaoLigarAgenda(
   clienteId: string,
   formData: FormData,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const chave = String(formData.get('chave') ?? '')
   const estado = await conferirChaveDaAgenda(chave)
@@ -1732,7 +1803,8 @@ export async function acaoConferirAgenda(
   clienteId: string,
   conexaoId: string,
 ): Promise<RespostaDaAgenda> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const credencial = await lerCredencial(conexaoId, clienteId)
   if (!credencial) return { ok: false, erro: 'esta credencial não é deste cliente' }
@@ -1769,7 +1841,8 @@ export async function acaoCriarConexao(
   clienteId: string,
   formData: FormData,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const tipo = String(formData.get('tipo') ?? 'bearer')
   if (tipo !== 'bearer' && tipo !== 'cabecalho' && tipo !== 'query') {
@@ -1800,7 +1873,8 @@ export async function acaoTrocarValorDaConexao(
   conexaoId: string,
   formData: FormData,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   try {
     await trocarValor(conexaoId, clienteId, String(formData.get('valor') ?? ''))
@@ -1812,7 +1886,11 @@ export async function acaoTrocarValorDaConexao(
 }
 
 export async function acaoApagarConexao(clienteId: string, conexaoId: string) {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  // Ligada direto a `<form action>`, que exige retorno vazio: a recusa para a
+  // ação e não vira valor. A tela não mostra a permissão que falta — e não
+  // deve: quem não pode não precisa saber que a capacidade existe (RB-42).
+  if (recusou(acesso)) return
 
   await apagarConexao(conexaoId, clienteId)
   revalidatePath(`/clientes/${clienteId}/ajustes/chaves`)
@@ -1836,7 +1914,8 @@ export async function acaoCriarRespostaRapida(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const resultado = respostaRapidaSchema.safeParse({
     atalho: String(formData.get('atalho') ?? ''),
@@ -1860,7 +1939,8 @@ export async function acaoApagarRespostaRapida(
   clienteId: string,
   respostaId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   try {
     const apagou = await apagarRespostaRapida(respostaId, clienteId)
@@ -1897,7 +1977,8 @@ export async function acaoResponderLead(
   contatoId: string,
   formData: FormData,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
 
   const texto = String(formData.get('texto') ?? '').trim()
   if (texto === '') return { ok: false, erro: 'escreva a mensagem antes de enviar' }
@@ -2008,7 +2089,11 @@ export async function acaoResponderLead(
  * ficava vermelho para sempre e a tela perdia o sentido no segundo dia.
  */
 export async function acaoEncerrarAtendimento(clienteId: string, contatoId: string) {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  // Ligada direto a `<form action>`, que exige retorno vazio: a recusa para a
+  // ação e não vira valor. A tela não mostra a permissão que falta — e não
+  // deve: quem não pode não precisa saber que a capacidade existe (RB-42).
+  if (recusou(acesso)) return
 
   await encerrarAtendimento(clienteId, contatoId)
 
@@ -2036,7 +2121,8 @@ export async function acaoAlternarAutomacaoDoLead(
   contatoId: string,
   ativa: boolean,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
 
   if (!z.string().uuid().safeParse(clienteId).success || !z.string().uuid().safeParse(contatoId).success) {
     return { ok: false, erro: 'contato inválido' }
@@ -2083,7 +2169,8 @@ export async function acaoAlternarAutomacaoDoLead(
  * protege contra engano, não contra intruso.
  */
 export async function acaoApagarCliente(clienteId: string): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_empresa', 'todos')
+  if (recusou(acesso)) return acesso
 
   if (!z.string().uuid().safeParse(clienteId).success) {
     return { ok: false, erro: 'cliente inválido' }
@@ -2108,7 +2195,8 @@ export async function acaoApagarContato(
   clienteId: string,
   contatoId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_empresa', 'todos')
+  if (recusou(acesso)) return acesso
 
   if (
     !z.string().uuid().safeParse(clienteId).success ||
@@ -2137,7 +2225,8 @@ export async function acaoSalvarContexto(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   try {
     await atualizarContexto(clienteId, String(formData.get('contexto') ?? ''))
@@ -2162,7 +2251,8 @@ export async function acaoSalvarCadastro(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_empresa', 'todos')
+  if (recusou(acesso)) return acesso
 
   const nome = String(formData.get('nome') ?? '').trim()
   if (nome === '') return { erro: 'O cliente precisa de um nome.' }
@@ -2212,7 +2302,8 @@ export async function acaoSalvarLogo(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_empresa', 'todos')
+  if (recusou(acesso)) return acesso
 
   const arquivo = formData.get('logo')
   if (!(arquivo instanceof File) || arquivo.size === 0) {
@@ -2246,7 +2337,11 @@ export async function acaoSalvarLogo(
 
 /** Tira a logo e volta para as iniciais. O arquivo fica, trocar depois sobrescreve. */
 export async function acaoRemoverLogo(clienteId: string) {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_empresa', 'todos')
+  // Ligada direto a `<form action>`, que exige retorno vazio: a recusa para a
+  // ação e não vira valor. A tela não mostra a permissão que falta — e não
+  // deve: quem não pode não precisa saber que a capacidade existe (RB-42).
+  if (recusou(acesso)) return
 
   await atualizarLogo(clienteId, '')
   revalidatePath('/')
@@ -2271,7 +2366,8 @@ export async function acaoPrepararEnvioDeArquivo(
   clienteId: string,
   arquivo: { nome: string; tipo: string; bytes: number },
 ): Promise<{ ok: boolean; erro?: string; envio?: EnvioAssinado }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
 
   if (
     typeof arquivo?.nome !== 'string' ||
@@ -2295,7 +2391,8 @@ export async function acaoPrepararEnvioDeArquivo(
  * recarregar, e o arquivo pareceria não ter subido.
  */
 export async function acaoConfirmarEnvio(clienteId: string): Promise<{ ok: boolean }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
 
   revalidatePath(`/clientes/${clienteId}/ajustes/acervo`)
   return { ok: true }
@@ -2318,7 +2415,8 @@ export type ArquivoDoEditor = {
 export async function acaoListarAcervo(
   clienteId: string,
 ): Promise<{ ok: boolean; arquivos: ArquivoDoEditor[] }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return { ok: false, arquivos: [] }
 
   const arquivos = await listarAcervo(clienteId)
   return {
@@ -2344,7 +2442,8 @@ export async function acaoApagarDoAcervo(
   clienteId: string,
   caminho: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_empresa', 'todos')
+  if (recusou(acesso)) return acesso
 
   try {
     await apagarDoAcervo(clienteId, caminho)
@@ -2368,7 +2467,8 @@ export async function acaoCorrigirNome(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
 
   const nome = String(formData.get('nome') ?? '')
   const ok = await corrigirNome(clienteId, contatoId, nome)
@@ -2386,7 +2486,8 @@ export async function acaoSalvarNotas(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
 
   const notas = String(formData.get('notas') ?? '')
   const ok = await salvarNotas(clienteId, contatoId, notas)
@@ -2410,7 +2511,8 @@ export async function acaoImportarContatos(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar & { resumo?: string; pendentes?: string[] }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'exportar', 'todos')
+  if (recusou(acesso)) return acesso
 
   const arquivo = formData.get('planilha')
   if (!(arquivo instanceof File) || arquivo.size === 0) return { erro: 'Escolha um arquivo CSV.' }
@@ -2475,7 +2577,8 @@ export async function acaoSalvarHorario(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const bruto = String(formData.get('horario') ?? '').trim()
 
@@ -2563,7 +2666,8 @@ export async function acaoAdiarConversa(
   prazo: PrazoDeAdiamento,
   nota?: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
 
   const escolha = PRAZOS_DE_ADIAMENTO[prazo]
   if (!escolha) return { ok: false, erro: 'prazo inválido' }
@@ -2592,7 +2696,8 @@ export async function acaoDefinirEstadoDaConversa(
   contatoId: string,
   estado: 'aberta' | 'resolvida',
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
 
   if (estado !== 'aberta' && estado !== 'resolvida') {
     return { ok: false, erro: 'estado inválido' }
@@ -2612,7 +2717,8 @@ export async function acaoAssumirAtendimento(
   clienteId: string,
   contatoId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
 
   const sessao = await sessaoAtual()
   if (!sessao) {
@@ -2695,7 +2801,8 @@ export async function acaoLiberarAtendimento(
   clienteId: string,
   contatoId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
 
   const ok = await atribuirContato(clienteId, contatoId, null)
   if (!ok) return { ok: false, erro: 'este contato não é deste cliente' }
@@ -2721,7 +2828,8 @@ export async function acaoAtribuirPara(
   contatoId: string,
   formData: FormData,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
 
   const usuarioId = String(formData.get('usuarioId') ?? '')
   if (usuarioId === '') return { ok: false, erro: 'escolha para quem passar' }

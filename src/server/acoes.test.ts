@@ -16,6 +16,13 @@ import { describe, expect, it } from 'vitest'
  * prova que a conferência está certa (isso é `sessao.ts` e os testes de
  * `proxy.ts`), prova que ela **existe** em toda ação que recebe um cliente. As
  * duas coisas juntas é que fecham.
+ *
+ * **A T2.1 passou a exigir a segunda pergunta.** Antes bastava
+ * `exigirAcessoAoCliente`, que responde "esta pessoa alcança esta empresa?".
+ * Agora a ação precisa dizer também **o que** ela exige, por
+ * `exigirCapacidade` — que faz a primeira conferência por dentro, então
+ * chamá-la cobre as duas. Aceitar as duas formas é o que permite a varredura
+ * acontecer em partes sem deixar o arquivo destravado no meio do caminho.
  */
 const CAMINHO = fileURLToPath(new URL('./acoes.ts', import.meta.url))
 const CODIGO = readFileSync(CAMINHO, 'utf8')
@@ -73,9 +80,41 @@ describe('toda ação pergunta quem é antes de agir', () => {
     '%s confere o acesso ao cliente',
     (nome) => {
       const acao = ACOES.find((a) => a.nome === nome)!
-      expect(acao.corpo).toContain('await exigirAcessoAoCliente(clienteId)')
+      // `exigirCapacidade` chama `exigirAcessoAoCliente` por dentro: quem usa
+      // a primeira tem as duas fronteiras cobertas.
+      const confere =
+        acao.corpo.includes('await exigirAcessoAoCliente(clienteId)') ||
+        acao.corpo.includes('await exigirCapacidade(clienteId')
+      expect(confere, `${nome}: não pergunta quem é`).toBe(true)
     },
   )
+
+  /**
+   * **A que diz o que exige, e a que só diz quem é.**
+   *
+   * Passar `exigirAcessoAoCliente` prova que a empresa foi conferida, e não
+   * que a capacidade foi. Esta lista é o que ainda falta varrer: ela encolhe
+   * conforme a T2.1 avança, e o teste imprime os nomes para que "falta
+   * varrer" seja uma lista concreta em vez de uma intenção.
+   *
+   * O número é um **teto que só desce**. Ele existe para que uma ação nova
+   * escrita com a fronteira antiga apareça aqui, em vez de entrar quieta na
+   * conta dos pendentes.
+   */
+  it('as que ainda não declaram capacidade são uma lista que só encolhe', () => {
+    const semCapacidade = ACOES.filter(
+      (acao) =>
+        acao.parametros.includes('clienteId') &&
+        !acao.corpo.includes('await exigirCapacidade(clienteId'),
+    ).map((a) => a.nome)
+
+    // As três restantes são as da equipe (`acaoCadastrarPessoaNaConta`,
+    // `acaoDefinirPapelNaConta`, `acaoRemoverDaConta`), e elas já conferem
+    // `podeAdministrarConta` — a capacidade `configurar_empresa` é a mesma
+    // pergunta com outro nome, e trocá-la é da T2.2, junto da tela de acesso.
+    expect(semCapacidade.length, `ainda sem capacidade: ${semCapacidade.join(', ')}`)
+      .toBeLessThanOrEqual(3)
+  })
 
   it('as que não recebem cliente exigem ser operador da 4YU', () => {
     // Criar cliente não tem id para conferir — o cliente ainda não existe. A
@@ -92,7 +131,7 @@ describe('toda ação pergunta quem é antes de agir', () => {
     // Conferir depois de gravar é não conferir: o dado já mudou quando o
     // `redirect` acontece.
     for (const acao of ACOES) {
-      const guarda = acao.corpo.search(/await exigir(AcessoAoCliente|OperadorDa4YU)\(/)
+      const guarda = acao.corpo.search(/await exigir(AcessoAoCliente|OperadorDa4YU|Capacidade)\(/)
       const escrita = acao.corpo.search(/\bawait (criar|salvar|publicar|apagar|atualizar|guardar|trocar|definir|encerrar|alterar|desconectar|aplicar|corrigir)/)
       if (escrita === -1) continue
       expect(guarda, `${acao.nome}: confere depois de escrever`).toBeLessThan(escrita)

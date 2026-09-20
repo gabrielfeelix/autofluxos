@@ -51,6 +51,7 @@ import {
   contextoDeResposta,
   registrarSaida,
 } from './repos/conversas'
+import { exigirCapacidade, recusou } from './permissoes'
 import { exigirAcessoAoCliente, sessaoAtual } from './sessao'
 
 /**
@@ -118,7 +119,8 @@ export async function acaoCriarTemplate(
     exemplos?: string[]
   },
 ): Promise<ResultadoDoTemplate> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   // Normalizar em vez de recusar: a pessoa escreve o nome pensando em título
   // ("Lembrete de consulta"), e a Meta só aceita minúscula e underscore.
@@ -215,7 +217,8 @@ export async function acaoCriarModelo(
   clienteId: string,
   dados: { titulo: string; corpo: string; categoria: Categoria },
 ): Promise<ResultadoDoTemplate> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const escrito = dados.corpo.trim()
   if (!escrito) return { ok: false, erro: 'Escreva a mensagem.' }
@@ -305,7 +308,8 @@ export async function acaoCriarDaBiblioteca(
     botoes?: EntradaDeBotao[]
   },
 ): Promise<ResultadoDoTemplate> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const conta = await contaNaMeta(clienteId)
   if ('erro' in conta) return { ok: false, erro: conta.erro }
@@ -365,7 +369,8 @@ export async function acaoApagarTemplate(
   clienteId: string,
   templateId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const template = await lerTemplate(templateId)
   if (!template || template.clienteId !== clienteId) {
@@ -422,7 +427,8 @@ export async function acaoCriarTransmissao(
     jaEnviadasHoje?: number
   },
 ): Promise<ResultadoDaTransmissao> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'exportar', 'todos')
+  if (recusou(acesso)) return acesso
 
   const nome = dados.nome.trim()
   if (!nome) return { ok: false, erro: 'Dê um nome para esta transmissão.' }
@@ -475,7 +481,8 @@ export async function acaoCancelarTransmissao(
   clienteId: string,
   transmissaoId: string,
 ): Promise<{ ok: boolean; erro?: string; jaSairam?: number }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'exportar', 'todos')
+  if (recusou(acesso)) return acesso
 
   const transmissao = await lerTransmissao(transmissaoId)
   if (!transmissao || transmissao.clienteId !== clienteId) {
@@ -539,7 +546,8 @@ export async function acaoCriarTransmissaoPorEtiqueta(
     jaEnviadasHoje?: number
   },
 ): Promise<ResultadoDaTransmissao> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'exportar', 'todos')
+  if (recusou(acesso)) return acesso
 
   const contatoIds = await contatosComEtiqueta(clienteId, dados.etiquetaId)
   if (contatoIds.length === 0) {
@@ -582,7 +590,8 @@ export async function acaoRetomarComModelo(
   contatoId: string,
   templateId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'exportar', 'todos')
+  if (recusou(acesso)) return acesso
 
   const template = await lerTemplate(templateId)
   if (!template || template.clienteId !== clienteId) {
