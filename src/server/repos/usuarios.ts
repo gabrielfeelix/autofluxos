@@ -237,12 +237,43 @@ export async function definirPapelNaConta(
   contaId: string,
   usuarioId: string,
   papel: 'owner' | 'admin' | 'member',
-): Promise<boolean> {
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  /*
+   * **Rebaixar o último dono é recusado** (UI-18).
+   *
+   * `removerDaConta` já protegia a saída do último `owner` desde sempre, mas a
+   * troca de papel não: `owner` -> `member` num clique deixava a conta sem
+   * dono nenhum, pela porta ao lado. O caminho de volta é um `insert` na mão,
+   * e é o tipo de estado que ninguém percebe ter criado até precisar.
+   *
+   * A conferência e a escrita são duas idas ao banco, e a corrida entre dois
+   * administradores rebaixando o mesmo dono ao mesmo tempo é teórica: são duas
+   * pessoas clicando no mesmo segundo na mesma conta. Fechá-la exigiria trava
+   * de linha aqui, e o custo não paga — o estado resultante é recuperável por
+   * quem administra a plataforma, e a proteção cobre o caso real, que é o
+   * clique único.
+   */
+  if (papel !== 'owner') {
+    const { rows } = await bancoDoLogin().query(
+      `select "userId" from public.af_membros where "organizationId" = $1 and "role" = 'owner'`,
+      [contaId],
+    )
+    const donos = rows.map((linha) => String(linha.userId))
+    if (donos.length === 1 && donos[0] === usuarioId) {
+      return {
+        ok: false,
+        motivo: 'esta é a única pessoa dona da conta — dê a posse a outra antes de rebaixá-la',
+      }
+    }
+  }
+
   const { rowCount } = await bancoDoLogin().query(
     'update public.af_membros set "role" = $1 where "organizationId" = $2 and "userId" = $3',
     [papel, contaId, usuarioId],
   )
   return (rowCount ?? 0) === 1
+    ? { ok: true }
+    : { ok: false, motivo: 'esta pessoa não está nesta conta' }
 }
 
 /**

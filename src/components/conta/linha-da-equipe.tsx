@@ -2,10 +2,22 @@
 
 import { useState, useTransition } from 'react'
 import { acaoDefinirPapelNaConta, acaoRemoverDaConta } from '@/server/acoes'
+import { acaoPendenciasDoMembro } from '@/server/acoes-acesso'
 import type { OpcaoDropdown } from '@/components/design/dropdown'
 import { Dropdown } from '@/components/design/dropdown'
+import { EditorDeAcesso, type MembroParaAcesso } from './editor-de-acesso'
+import type { Politica } from '@/core/permissoes'
 
-type Membro = { id: string; nome: string; email: string; papel: string; presenca: string }
+type Membro = {
+  id: string
+  nome: string
+  email: string
+  papel: string
+  presenca: string
+  /** O acesso desta pessoa, para o editor abrir já preenchido (UI-18). */
+  equipes?: string[]
+  sobrescritas?: Partial<Politica>
+}
 
 /**
  * Uma pessoa da equipe, com o papel dela.
@@ -20,14 +32,17 @@ export function LinhaDaEquipe({
   membro,
   papeis,
   podeMexer,
+  equipesDaConta = [],
 }: {
   clienteId: string
   membro: Membro
   papeis: OpcaoDropdown[]
   podeMexer: boolean
+  equipesDaConta?: { id: string; nome: string }[]
 }) {
   const [erro, setErro] = useState<string | null>(null)
   const [papel, setPapel] = useState(membro.papel)
+  const [editando, setEditando] = useState<MembroParaAcesso | null>(null)
   const [rodando, comecar] = useTransition()
 
   const trocarPapel = (novo: string) => {
@@ -43,10 +58,34 @@ export function LinhaDaEquipe({
     })
   }
 
+  /**
+   * Remover **conta o que fica pendurado antes de perguntar** (RB-40).
+   *
+   * "Remover alguém da equipe exige decidir destino das atribuições e
+   * atividades abertas; nunca deixar referências sem tratamento." Contar e
+   * dizer o número é o mínimo: sem ele, a pessoa confirma sem saber que oito
+   * conversas vão ficar sem dono, e descobre pela fila parada.
+   */
   const remover = () => {
     setErro(null)
-    if (!confirm(`Tirar ${membro.nome} desta conta? A pessoa continua existindo no sistema.`)) return
     comecar(async () => {
+      const pendencias = await acaoPendenciasDoMembro(clienteId, membro.id)
+
+      const resumo =
+        pendencias.ok && (pendencias.conversas || pendencias.cartoes)
+          ? `\n\nFicam sem dono: ${pendencias.conversas ?? 0} conversa(s) e ` +
+            `${pendencias.cartoes ?? 0} cartão(ões) aberto(s). ` +
+            'Reatribua antes, ou eles voltam para a fila de ninguém.'
+          : ''
+
+      if (
+        !confirm(
+          `Tirar ${membro.nome} desta conta? A pessoa continua existindo no sistema.${resumo}`,
+        )
+      ) {
+        return
+      }
+
       const r = await acaoRemoverDaConta(clienteId, membro.id)
       if (!r.ok) setErro(r.erro ?? 'não deu para remover')
     })
@@ -79,6 +118,22 @@ export function LinhaDaEquipe({
             <button
               type="button"
               disabled={rodando}
+              onClick={() =>
+                setEditando({
+                  id: membro.id,
+                  nome: membro.nome,
+                  papel,
+                  equipes: membro.equipes ?? [],
+                  sobrescritas: membro.sobrescritas ?? {},
+                })
+              }
+              className="rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:text-claro disabled:opacity-50"
+            >
+              Acesso
+            </button>
+            <button
+              type="button"
+              disabled={rodando}
               onClick={remover}
               className="rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:border-rose-400/40 hover:bg-rose-400/[0.09] hover:text-perigo disabled:opacity-50"
             >
@@ -97,6 +152,13 @@ export function LinhaDaEquipe({
           {erro}
         </p>
       )}
+
+      <EditorDeAcesso
+        clienteId={clienteId}
+        membro={editando}
+        equipesDaConta={equipesDaConta}
+        aoFechar={() => setEditando(null)}
+      />
     </li>
   )
 }

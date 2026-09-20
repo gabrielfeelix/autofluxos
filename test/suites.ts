@@ -31,6 +31,7 @@ export const TESTES_DE_INTEGRACAO = [
   'src/server/repos/auditoria.test.ts',
   'src/server/repos/compartilhar.test.ts',
   'src/server/repos/crm.test.ts',
+  'src/server/repos/equipes.test.ts',
   'src/server/repos/etiquetas.test.ts',
   'src/server/repos/leads.test.ts',
   'src/server/repos/leituras.test.ts',

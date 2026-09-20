@@ -616,7 +616,7 @@ Preencher durante a implementação, sem marcar tarefas antecipadamente.
 |---|---|---|---|
 | F0 | **T0.1 e T0.2 implementadas** | unitários 1724 ok · integração local 294 ok · typecheck limpo | não liberada; nada aplicado em produção |
 | F1 | **T1.1 e T1.2 implementadas** (0071: finalidade, ocorrência recorrente, venda. 0072: conclusão transacional e continuidade com pendência) | unitários 1755 ok · integração local 324 ok · A11–A15 e A13/A26 aprovados · typecheck e build limpos | migrations só no Docker local; **não aplicadas em produção** |
-| F2 | **T2.1 implementada**: capacidades, escopos e equipes (0073), aplicadas em `acoes.ts` (88), `acoes-crm.ts` (18) e `acoes-transmissoes.ts` (8), mais a rota do CSV. Restam 3 ações de equipe, já guardadas por `podeAdministrarConta`; a troca é da T2.2 | unitários 1779 ok · integração local 333 ok · A19/A27 cobertos · typecheck e build limpos | migration só no Docker local; **nenhum acesso retirado**: `member` preserva o de hoje |
+| F2 | **T2.1 e T2.2 implementadas**: capacidades, escopos e equipes (0073) aplicadas em 114 ações e nas 4 rotas de API; UI-18 com prévia, modelos e equipes; último dono protegido também no rebaixamento | unitários 1792 ok · integração local 343 ok · A19/A27 cobertos · travas de varredura em ações e rotas · typecheck e build limpos | migration só no Docker local; **nenhum acesso retirado**: `member` preserva o de hoje |
 | F3 | pendente | pendente | não iniciada |
 | F4 | pendente | pendente | não iniciada |
 | F5 | pendente | pendente | não iniciada |

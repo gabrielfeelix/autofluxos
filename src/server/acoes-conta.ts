@@ -446,7 +446,11 @@ export async function acaoVincularMembro(formData: FormData) {
   }
 
   if (papelAtual) {
-    await definirPapelNaConta(contaId, usuarioId, papel)
+    // A recusa aqui é a do último dono, e ela vale também para o administrador
+    // da plataforma: conta sem dono é conta que só a 4YU mexe. Estourar é o
+    // certo neste caminho, que é de formulário e não devolve estado.
+    const r = await definirPapelNaConta(contaId, usuarioId, papel)
+    if (!r.ok) throw new Error(r.motivo)
   } else {
     try {
       await autenticacao().api.addMember({
@@ -461,7 +465,8 @@ export async function acaoVincularMembro(formData: FormData) {
        * atendido; se não está, o erro é de verdade e precisa subir.
        */
       if ((await papelNaConta(contaId, usuarioId)) === null) throw erro
-      await definirPapelNaConta(contaId, usuarioId, papel)
+      const r = await definirPapelNaConta(contaId, usuarioId, papel)
+      if (!r.ok) throw new Error(r.motivo)
     }
   }
 

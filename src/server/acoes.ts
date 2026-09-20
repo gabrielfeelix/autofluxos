@@ -1700,8 +1700,11 @@ export async function acaoDefinirPapelNaConta(
   if (!podeAdministrarConta(acesso)) return { ok: false, erro: SO_QUEM_ADMINISTRA }
   if (!ehPapelDaConta(papel)) return { ok: false, erro: 'papel inválido' }
 
-  const mudou = await definirPapelNaConta(clienteId, usuarioId, papel)
-  if (!mudou) return { ok: false, erro: 'esta pessoa não está nesta conta' }
+  // O objeto de recusa é `{ ok: false, motivo }`. Testar `if (!r)` aqui seria
+  // sempre falso — objeto é verdadeiro —, e a recusa passaria batida com a
+  // auditoria registrando uma troca que não aconteceu.
+  const r = await definirPapelNaConta(clienteId, usuarioId, papel)
+  if (!r.ok) return { ok: false, erro: r.motivo }
 
   await registrar({
     acao: 'trocou_papel',

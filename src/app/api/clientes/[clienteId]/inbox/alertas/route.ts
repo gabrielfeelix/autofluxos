@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { listarAlertasDeHandoff } from '@/server/repos/leads'
-import { conferirAcessoAoCliente } from '@/server/sessao'
+import { exigirCapacidade, recusou } from '@/server/permissoes'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,7 +21,16 @@ export async function GET(_req: Request, contexto: RouteContext<'/api/clientes/[
 
   // 404 e não 403: confirmar que a conta existe já é contar de um cliente para
   // quem não é dele.
-  if (!(await conferirAcessoAoCliente(params.data.clienteId))) {
+  /*
+   * **Atender é capacidade, não só associação** (RB-41, RB-42).
+   *
+   * Até a T2.2 esta rota conferia só a empresa. Quem perdeu `atender` pela
+   * tela de acesso continuava recebendo por aqui — e stream, contador e
+   * notificação são caminhos de dado como qualquer outro. "Esconder o botão
+   * não é controle de acesso" vale para o que o navegador busca sozinho.
+   */
+  const acesso = await exigirCapacidade(params.data.clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) {
     return Response.json({ erro: 'não encontrado' }, { status: 404 })
   }
 
