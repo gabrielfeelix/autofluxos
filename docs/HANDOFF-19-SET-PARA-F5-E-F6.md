@@ -314,22 +314,32 @@ Depois de aplicar, **releia os objetos na produção**, um a um: "o console diss
 que aplicou" não é evidência. E se a migration tiver `notify pgrst`, **confira a
 Verandi também** — o cache do PostgREST é dos dois produtos.
 
-### E o passo que você não pode pular
+### A autorização, e o que ela não dispensa
 
-**Aplicar em produção exige autorização explícita do dono, por migration.** Está
-em `AGENTS.md` ("Não aplique nada em produção sem autorização explícita do
-usuário") e se repete no `BANCO-COMPARTILHADO.md`. O pedido acima autoriza a
-**intenção**, e ele foi feito antes de as migrations da F5/F6 existirem.
+**O dono autorizou aplicar em produção sem parar para perguntar**, em 19/set/2026,
+para as migrations da F5/F6 e para as **0074 a 0078** pendentes. Isso substitui,
+para esta execução, a exigência de autorização por migration que está em
+`AGENTS.md` e no `BANCO-COMPARTILHADO.md`. Não a estenda para outra coisa: ela
+vale para migrations deste plano, não para apagar dado, mexer em Auth/Storage nem
+tocar em objeto da Verandi.
 
-Então: quando chegar aqui, **pare e apresente ao dono a lista do que vai
-aplicar** (0074 a 0078 mais as suas), o que cada uma faz, e o resultado do ensaio
-em transação. Peça o "pode aplicar". É uma mensagem, e ela é a diferença entre
-uma migration revisada e um `alter table` num banco de produção compartilhado por
-dois produtos.
+O que a autorização **não** dispensa, porque não é burocracia e sim o que impede
+estrago:
 
-Se a autorização não vier na hora, **entregue o resto** (código, testes, deploy,
-handoff) e deixe as migrations explicitamente pendentes no handoff, como esta
-sessão e as anteriores fizeram.
+- **os dois testes antes de cada migration** (replay em Docker e ensaio em
+  transação contra a produção);
+- **a releitura objeto a objeto depois**;
+- **conferir a Verandi** depois de qualquer `notify pgrst`;
+- **uma por vez**, na ordem. Não junte as cinco num arquivo só para "ir mais
+  rápido": se a terceira falhar, você precisa saber que as duas primeiras
+  entraram.
+
+**Se um ensaio em transação voltar sujo, pare naquela migration** e relate. Seguir
+em frente com um ensaio que falhou não é ir mais rápido, é aplicar às cegas.
+
+Registre no handoff final **o que foi aplicado, quando, e o que a releitura
+mostrou** — é o formato que o `BANCO-COMPARTILHADO.md` usa para cada migration
+desde a 0039, e é o que permite alguém entender a produção seis meses depois.
 
 ## 9. Estado por fase
 
