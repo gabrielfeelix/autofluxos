@@ -698,7 +698,7 @@ async function ClientesSumindo({ clienteId }: { clienteId: string }) {
 
       <ul className="mt-3 flex flex-col gap-1.5">
         {sumidos.map((sumido) => {
-          const nivel = nivelPor(sumido.total, faixas ?? FAIXAS_PADRAO)
+          const nivel = nivelPor(sumido.total, faixas ?? FAIXAS_PADRAO, 1)
           return (
             <li key={sumido.contatoId}>
               <Link
@@ -708,7 +708,11 @@ async function ClientesSumindo({ clienteId }: { clienteId: string }) {
                 <span aria-hidden className={`size-2 shrink-0 rounded-full ${CLASSE_DO_NIVEL[nivel]}`} />
                 <span className="font-semibold">{ROTULO_DO_NIVEL[nivel]}</span>
                 <span className="text-dim">·</span>
-                <span className="text-dim">{comoDinheiro(sumido.total)}</span>
+                {/* "R$ 0,00" aqui seria a tela dizendo que o cliente não gastou
+                    nada, quando o que falta é o valor da compra (RB-06). */}
+                <span className="text-dim">
+                  {sumido.total > 0 ? comoDinheiro(sumido.total) : 'valor não informado'}
+                </span>
                 <span className="ml-auto shrink-0 text-[11px] text-dim">
                   {diasDesde(sumido.ultimaConversaEm) ?? 0}d calado
                 </span>

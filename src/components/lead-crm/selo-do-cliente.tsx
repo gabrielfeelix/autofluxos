@@ -37,11 +37,23 @@ export function SeloDoCliente({ r }: { r: Relacionamento }) {
       </span>
 
       {/* O valor só aparece para quem tem valor. "R$ 0,00" embaixo de "Ainda
-          não comprou" é a mesma informação escrita duas vezes. */}
+          não comprou" é a mesma informação escrita duas vezes.
+
+          E quando **nenhuma** compra tem valor informado, o certo é dizer isso
+          em vez de escrever "R$ 0,00": a pessoa comprou, o que falta é o número
+          (RB-06). Escrever zero ali é a tela afirmando que a compra não valeu
+          nada, e é o defeito que a T8.1 veio consertar. */}
       {!semCompra && (
         <span className="text-[10.5px] whitespace-nowrap text-dim">
-          {comoDinheiro(r.total)}
+          {r.total > 0 ? comoDinheiro(r.total) : 'valor não informado'}
           {r.compras > 1 && ` · ${r.compras}×`}
+          {/* Total parcial: há valor, e há compra sem ele. Sem este asterisco a
+              soma parece completa. */}
+          {r.total > 0 && r.semValor > 0 && (
+            <span title={`${r.semValor} ${r.semValor === 1 ? 'compra sem valor informado' : 'compras sem valor informado'}`}>
+              {' '}+
+            </span>
+          )}
         </span>
       )}
 

@@ -141,3 +141,72 @@ describe('o retrato do relacionamento', () => {
     expect(oQueFazer(r)).toContain('Falta uma oferta')
   })
 })
+
+/**
+ * A RB-06 no nível: "gastou zero" e "não se sabe quanto gastou" são estados
+ * diferentes, e a versão antiga chamava os dois de `sem_compra`.
+ *
+ * O cenário que falha sem isto: a academia registra a matrícula da aluna sem
+ * preencher o valor (o plano é o de sempre, e quem digitou tinha pressa). A
+ * tela diz "Ainda não comprou" para uma cliente que está pagando, e a régua de
+ * retomada trata a matrícula do mês passado como um contato que nunca fechou.
+ */
+describe('o nível quando o valor é desconhecido', () => {
+  it('quem comprou sem valor informado não é "ainda não comprou"', () => {
+    expect(nivelPor(0, FAIXAS_PADRAO, 1)).toBe('bronze')
+    expect(nivelPor(0, FAIXAS_PADRAO, 3)).toBe('bronze')
+  })
+
+  it('quem não comprou nada continua sendo sem_compra', () => {
+    expect(nivelPor(0, FAIXAS_PADRAO, 0)).toBe('sem_compra')
+    // Sem o argumento, o comportamento antigo: é o que os chamadores que só
+    // têm o total esperam.
+    expect(nivelPor(0)).toBe('sem_compra')
+  })
+
+  it('valor conhecido manda mais que a contagem', () => {
+    // Ter compras não rebaixa ninguém: quem gastou 6000 é ouro com uma compra
+    // sem valor no meio.
+    expect(nivelPor(6000, FAIXAS_PADRAO, 2)).toBe('ouro')
+  })
+})
+
+describe('o relacionamento carrega o semValor', () => {
+  it('diz quantas compras estão sem valor, em vez de somar zero', () => {
+    const r = relacionamentoDe({
+      total: 500,
+      compras: 3,
+      semValor: 2,
+      ultimaCompraEm: null,
+      ultimaConversaEm: null,
+    })
+    // R$ 500 é o que se **sabe**, de três compras. A tela precisa das duas
+    // coisas para não apresentar 500 como se fosse a receita da pessoa.
+    expect(r.total).toBe(500)
+    expect(r.compras).toBe(3)
+    expect(r.semValor).toBe(2)
+  })
+
+  it('sem o campo, zero: quem não informa nada não tem compra sem valor', () => {
+    const r = relacionamentoDe({
+      total: 0,
+      compras: 0,
+      ultimaCompraEm: null,
+      ultimaConversaEm: null,
+    })
+    expect(r.semValor).toBe(0)
+    expect(r.nivel).toBe('sem_compra')
+  })
+
+  it('comprou, e não se sabe quanto: bronze e não sem_compra', () => {
+    const r = relacionamentoDe({
+      total: 0,
+      compras: 2,
+      semValor: 2,
+      ultimaCompraEm: '2026-08-01',
+      ultimaConversaEm: '2026-09-19',
+    })
+    expect(r.nivel).toBe('bronze')
+    expect(r.semValor).toBe(2)
+  })
+})

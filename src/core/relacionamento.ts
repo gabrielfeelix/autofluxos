@@ -88,12 +88,31 @@ export const FAIXAS_PADRAO: FaixasDeNivel = { ouro: 5000, prata: 1000 }
 /**
  * Em que nível esta pessoa está, pelo que ela já gastou.
  *
- * Quem nunca comprou **não é bronze**: é `sem_compra`. Parece detalhe e não é —
+ * Quem nunca comprou **não é bronze**: é `sem_compra`. Parece detalhe e não é:
  * chamar de bronze quem nunca deu um real mistura, na mesma faixa, o cliente
  * pequeno e o desconhecido, e são duas conversas completamente diferentes.
+ *
+ * **"Gastou zero" e "não se sabe quanto gastou" são coisas diferentes**, e é por
+ * isso que `compras` entra na conta. Ver o parâmetro.
  */
-export function nivelPor(totalGasto: number, faixas: FaixasDeNivel = FAIXAS_PADRAO): Nivel {
-  if (totalGasto <= 0) return 'sem_compra'
+export function nivelPor(
+  totalGasto: number,
+  faixas: FaixasDeNivel = FAIXAS_PADRAO,
+  /**
+   * Quantas compras válidas a pessoa tem, independentemente do valor.
+   *
+   * Existe por causa da RB-06: quem comprou duas vezes sem valor informado tem
+   * `totalGasto = 0` e **não** é `sem_compra`. Chamá-la assim é afirmar que ela
+   * nunca comprou, que é justamente o que o produto não pode dizer quando o que
+   * falta é o valor e não a compra. Ela cai em `bronze`, a faixa de quem comprou
+   * pouco, e a tela mostra o "sem valor informado" ao lado.
+   *
+   * Opcional porque `nivelPor(total)` é chamado em lugares que só têm o total, e
+   * ali o comportamento antigo é o certo.
+   */
+  compras = 0,
+): Nivel {
+  if (totalGasto <= 0) return compras > 0 ? 'bronze' : 'sem_compra'
   if (totalGasto >= faixas.ouro) return 'ouro'
   if (totalGasto >= faixas.prata) return 'prata'
   return 'bronze'
@@ -178,18 +197,30 @@ export function diasDesde(quando: string | null, agora: Date = new Date()): numb
 export type Relacionamento = {
   nivel: Nivel
   recencia: Recencia
-  /** Desde a última compra. `null` = nunca comprou. */
+  /** Desde a última compra **com data conhecida**. `null` = nenhuma (RB-35). */
   diasDaUltimaCompra: number | null
   /** Desde a última mensagem dela. `null` = nunca escreveu. */
   diasDaUltimaConversa: number | null
+  /** A soma **do que se sabe**. Não é "a receita": ver `semValor`. */
   total: number
+  /** Quantas compras válidas. Cancelada não conta. */
   compras: number
+  /**
+   * Quantas compras válidas **não têm valor informado** (RB-06).
+   *
+   * Existe para a tela poder dizer "2 compras, R$ 500 conhecidos, 1 sem valor
+   * informado" em vez de apresentar R$ 500 como se fosse tudo. Sem este campo,
+   * a única saída honesta seria não mostrar total nenhum.
+   */
+  semValor: number
 }
 
 export type FatosDoContato = {
   total: number
   compras: number
-  /** A última compra. */
+  /** Quantas válidas sem valor informado. */
+  semValor?: number
+  /** A última compra **com data conhecida**. */
   ultimaCompraEm: string | null
   /** A última vez que **a pessoa** falou. */
   ultimaConversaEm: string | null
@@ -210,12 +241,13 @@ export function relacionamentoDe(
   agora: Date = new Date(),
 ): Relacionamento {
   return {
-    nivel: nivelPor(fatos.total, faixas),
+    nivel: nivelPor(fatos.total, faixas, fatos.compras),
     recencia: recenciaPor(fatos.ultimaConversaEm, agora),
     diasDaUltimaCompra: diasDesde(fatos.ultimaCompraEm, agora),
     diasDaUltimaConversa: diasDesde(fatos.ultimaConversaEm, agora),
     total: fatos.total,
     compras: fatos.compras,
+    semValor: fatos.semValor ?? 0,
   }
 }
 

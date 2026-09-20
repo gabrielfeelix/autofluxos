@@ -39,13 +39,44 @@ o par — "Ouro · sumido há 4 meses" —, nunca um número só.
 
 | Nível | Quem está aqui |
 |---|---|
-| `ouro` | total ≥ faixa de ouro da conta |
-| `prata` | total ≥ faixa de prata |
+| `ouro` | total conhecido ≥ faixa de ouro da conta |
+| `prata` | total conhecido ≥ faixa de prata |
 | `bronze` | comprou alguma coisa, abaixo da prata |
-| `sem_compra` | **nunca comprou** — e não é bronze |
+| `bronze` | comprou, e **não se sabe quanto** (todo valor em branco) |
+| `sem_compra` | **nenhuma venda válida**, e não é bronze |
 
 `sem_compra` é separado de propósito: juntar o cliente pequeno e o desconhecido
 na mesma faixa mistura duas conversas completamente diferentes.
+
+## De onde sai "comprou" (T8.1)
+
+**Compra é venda registrada, e nada mais.** Até a T8.1 as duas consultas deste
+módulo liam `quadro_cartoes` com `situacao = 'ganha'`, em qualquer quadro, e isso
+está errado pela RB-32: "Resolvido" no Atendimento, "Qualificado" na Captação e
+"Compareceu" na Agenda são processos que terminaram bem, e não dinheiro que
+entrou. A clínica que respondeu dez dúvidas aparecia com dez compras e uma
+receita que ninguém faturou.
+
+A fonte agora é a view `contatos_comerciais` (0082), e ela já traz as três coisas
+que a regra pede:
+
+| Coluna | O que quer dizer |
+|---|---|
+| `compras` | quantas vendas **válidas**. Cancelada não conta (RB-31) |
+| `valor_conhecido` | a soma **do que se sabe**. Nulo = nenhuma tem valor |
+| `vendas_sem_valor` | quantas válidas estão sem valor informado (RB-06) |
+| `ultima_compra_em` | nulo = **sem compra com data conhecida**, e não "faz muito tempo" (RB-35) |
+
+### Valor desconhecido não é zero
+
+Era a linha mais errada das duas: `Number(linha.valor ?? 0)` transformava valor
+em branco em R$ 0,00. O efeito na tela era pior do que um número torto: com total
+zero, a pessoa caía em `sem_compra`, e o produto **afirmava que ela nunca comprou**
+por causa de um campo que ninguém preencheu.
+
+Hoje quem comprou sem valor informado é `bronze`, e `Relacionamento.semValor` diz
+quantas compras estão nessa situação. O selo do contato escreve "valor não
+informado" em vez de "R$ 0,00", e marca com `+` o total que está incompleto.
 
 | Recência | Dias sem **a pessoa** falar |
 |---|---|
@@ -68,8 +99,10 @@ ninguém faz: o tempo passando.
 
 Três regras que o desenho carrega, e o porquê de cada uma:
 
-1. **Só alcança quem já comprou.** Correr atrás de desconhecido que sumiu enche a
-   fila de trabalho que ninguém faz.
+1. **Só alcança quem já comprou**, e "comprou" é venda válida com data conhecida
+   (RB-35). Correr atrás de desconhecido que sumiu enche a fila de trabalho que
+   ninguém faz, e mandar régua para quem só teve um atendimento resolvido é
+   dizer "faz tempo que a gente não se fala" a quem nunca foi cliente.
 2. **Ignora quem comprou e nunca trocou mensagem.** É contato importado ou
    lançado à mão; a régua seria a primeira mensagem que ele recebe da conta, e
    chegaria dizendo "faz tempo que a gente não se fala".
@@ -99,10 +132,10 @@ o item de medir isso está aberto (ver "O que ficou de fora").
   bounce e descadastro: é um produto, não um campo. E o canal deste produto é o
   WhatsApp, onde a mensagem é lida em minutos. Entra quando houver cliente
   pedindo, e aí entra inteiro.
-- **Segmento salvo.** O filtro por nível existe na lista de contatos e afina a
-  página carregada. Salvar um segmento ("ouro sumido") exigiria o cálculo no
-  Postgres — uma view com `group by` sobre os cartões ganhos, refeita a cada
-  leitura. Vale quando alguém quiser **agir** sobre o segmento em lote.
+- **Segmento salvo: isto saiu da lista.** O cálculo no Postgres que faltava é a
+  view `contatos_comerciais` (0082), e os segmentos salvos entraram na 0083. O
+  que continua fora é a **seleção em lote** sobre o segmento inteiro (RB-37):
+  "selecionar todos os 340 do filtro" ainda não existe como gesto.
 - **Medir a franquia de 1.000 mensagens de serviço da Meta.** Ver acima. É a
   mesma conta que `consumo_de_conversas` (0066) já faz para a franquia do plano.
 - **Frequência como eixo próprio.** `compras` é lido e mostrado, mas não vira
@@ -114,10 +147,15 @@ o item de medir isso está aberto (ver "O que ficou de fora").
 ```
 core/relacionamento.ts        níveis, recências, `oQueFazer` — puro, testável
 core/sequencias.ts            o evento `cliente_sumido` e a faixa de dias
-server/repos/relacionamento.ts  leitura em lote (sem N+1) e `clientesSumidos`
+server/repos/relacionamento.ts  leitura em lote (sem N+1) e `clientesSumidos`,
+                                  os dois lendo `contatos_comerciais`
+server/repos/vendas.ts          `resumoDeVendas`, a mesma regra para uma pessoa
 server/passada-de-retomada.ts   o cron diário, e a trava anti-repetição
 components/lead-crm/selo-do-cliente.tsx   o par nível+recência na tabela
 components/cliente/faixas-de-nivel.tsx    o ajuste do dono
 ```
 
-Migration: `0070_relacionamento.sql`, aplicada em 18/set/2026.
+Migrations: `0070_relacionamento.sql` (18/set/2026) e, para a fonte comercial,
+`0080_venda_atomica.sql`, `0082_contatos_comerciais.sql` e `0083_segmentos.sql`
+(20/set/2026). A T8.1 **não precisou de migration**: a view que ela passou a ler
+já existia.
