@@ -132,8 +132,9 @@ vazou, porque o `grant` de tabela da 0041 barrou a camada seguinte. O registro
 completo está no cabeçalho de `supabase/migrations/0087_execute_de_public.sql` e
 a guarda contra regressão em `src/server/isolamento-do-schema.test.ts`.
 
-**A `0087` não foi aplicada em produção**: a autorização da `0086` valeu só para
-ela.
+**A `0087` foi aplicada em produção em 22/set/2026**, com autorização explícita
+do dono. Releitura objeto a objeto limpa, e o gatilho `reabrir_ao_receber`
+provado lá num `begin/rollback`.
 
 ## O isolamento AutoFluxos/Verandi (item 5)
 
@@ -142,7 +143,7 @@ Conferido por consulta direta à produção em 22/set/2026:
 | Conferência | Resultado |
 |---|---|
 | tabelas e views de `public` alcançáveis por `anon`/`authenticated` | **0** |
-| funções de `public` executáveis por `anon`/`authenticated` | **3**, corrigidas pela `0087` (pendente de aplicação) |
+| funções de `public` executáveis por `anon`/`authenticated` | **3**, corrigidas pela `0087`, **aplicada em 22/set/2026** |
 | tabelas de `public` sem RLS | **0** |
 | policies de `storage.objects` sem filtro de `bucket_id` | **0** |
 | objetos nossos dentro de `app_verandi` | **0** |

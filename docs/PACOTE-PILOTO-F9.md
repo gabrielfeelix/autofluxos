@@ -18,11 +18,12 @@ O banco de produção está com as migrations `0001` a `0086`.
 
 | Pendente | O que é | Precisa de você |
 |---|---|---|
-| **`0087`** | fecha o `EXECUTE` de três funções de `public` para `anon`/`authenticated` | **sim: autorização para aplicar** |
+| ~~`0087`~~ | fecha o `EXECUTE` de três funções de `public` | **aplicada em 22/set/2026**, com autorização |
 
-A `0087` é a única migration pendente. Ela nasceu da auditoria de isolamento da
-T9.1 e está descrita em `docs/VALIDACAO-OPERACAO-CHATBOT-CRM.md`. Dois pontos
-que mudam a urgência dela:
+**Não há migration pendente.** A `0087` foi aplicada em 22/set/2026, e o
+registro objeto a objeto está no `BANCO-COMPARTILHADO.md`. Ela nasceu da
+auditoria de isolamento da T9.1. Dois pontos que valiam para a decisão de
+aplicar, mantidos aqui porque explicam por que ela não era urgente:
 
 - **não há pressa de incidente.** O alcance foi medido: `anon` entra na função e
   é barrado pelo `grant` de tabela da 0041 uma camada depois. Nenhum dado
@@ -161,24 +162,21 @@ roteiro daquele trabalho fica vazio.
 
 Estes são os itens 1, 2, 4 e 5 da T9.2, e eles não são coisa que um agente faz.
 
-1. **Autorizar (ou não) a `0087`.** É a única decisão técnica pendente, e ela não
-   é urgente pelo motivo do §1.
-2. **Decidir sobre o alerta de diagnóstico do webhook** (§4). Ele é 78% do
+1. **Decidir sobre o alerta de diagnóstico do webhook** (§4). Ele é 78% do
    volume de `/admin/alertas`, e sem essa limpeza o item 4 da T9.2 fica difícil
    de cumprir na prática.
-3. **Escolher as empresas piloto.** O plano pede três trabalhos: atendimento,
+2. **Escolher as empresas piloto.** O plano pede três trabalhos: atendimento,
    SDR/vendas e pós-venda. Vale lembrar do §5: o piloto de vendas precisa de
    dado que ninguém cadastrou ainda.
-4. **Observar as pessoas usando.** O plano é específico e a distinção importa:
+3. **Observar as pessoas usando.** O plano é específico e a distinção importa:
    "observar tarefas, não apenas perguntar se a tela agradou". O item 2 lista o
    que precisa ser verificado na cabeça de quem usa: se a pessoa distingue
    modelo de chatbot de modelo de mensagem, concluir de vender,
    temperatura de qualificação, e segmento de destinatários. Se ela não
    distinguir, o conserto é de texto e de passo, e aí volta para mim.
-5. **Liberar gradualmente**, acompanhando o §4.
-6. **Declarar a fase liberada**, com evidência de ambiente e implantação.
+4. **Liberar gradualmente**, acompanhando o §4.
+5. **Declarar a fase liberada**, com evidência de ambiente e implantação.
 
 **O que eu posso fazer quando você voltar com resultado:** ajustar textos e
 passos que confundirem (item 2), cobrir as falhas abertas do checklist
-(`VALIDACAO-OPERACAO-CHATBOT-CRM.md`, em especial o **A20**), e aplicar a `0087`
-se autorizada.
+(`VALIDACAO-OPERACAO-CHATBOT-CRM.md`, em especial o **A20**).

@@ -3,11 +3,13 @@
 > Escrito em 22/set/2026, ao fim da sessão que executou a **T9.1** inteira e
 > preparou o **item 3 da T9.2**.
 >
-> **Estado:** F0 a F8 completas, **T9.1 completa**. Tudo em `origin/main`
-> (último commit `6cd32c7`). Banco local na **0087**, **produção na 0086**.
+> **Estado:** F0 a F8 completas, **T9.1 completa**. Tudo em `origin/main`.
+> Banco local **e produção** na **0087**.
 >
-> **A `0087` existe e NÃO foi aplicada em produção**: ela precisa de autorização
-> explícita, e a da `0086` valeu só para aquela. Ver o §4.
+> **A `0087` foi aplicada em produção em 22/set/2026**, com autorização
+> explícita do dono, depois de este handoff ser escrito. O registro completo
+> está no `BANCO-COMPARTILHADO.md`: releitura objeto a objeto limpa, gatilho
+> provado na produção num `begin/rollback`, dado nosso e Verandi intactos.
 >
 > A próxima migration é a **0088**: confira com `ls supabase/migrations/ | tail -1`
 > e **não copie numeração de documento nenhum, inclusive deste**.
@@ -153,8 +155,8 @@ auditoria por ID.
 
 **Nada da T9.2 foi marcado como feito, e nada de piloto foi simulado.**
 
-1. **A `0087`**, que é a única migration pendente. Não é urgente pelo motivo do
-   §3, e o procedimento está no `BANCO-COMPARTILHADO.md`.
+1. ~~**A `0087`**~~ **feita**: autorizada e aplicada em 22/set/2026. Não há
+   migration pendente.
 2. **O alerta de diagnóstico do webhook.** A tabela tem **3.087 alertas, 2.973
    nos últimos 7 dias**, e **2.401 deles** são o alerta que grava em toda chamada
    do webhook: 78% do volume. O comentário dele em

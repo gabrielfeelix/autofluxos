@@ -623,4 +623,4 @@ Preencher durante a implementação, sem marcar tarefas antecipadamente.
 | F6 | pendente | pendente | não iniciada |
 | F7 | pendente | pendente | não iniciada |
 | F8 | pendente | pendente | não iniciada |
-| F9 | **T9.1 completa**; T9.2 item 3 (o pacote) completo | unitários 2117 ok · integração 492 ok · navegador 3 ok · typecheck e build limpos · checklist A01–A32 em `docs/VALIDACAO-OPERACAO-CHATBOT-CRM.md` (24 provados, 7 parciais, 1 descoberto) | **não liberada**. A `0087` (isolamento) está escrita e **não aplicada**: aguarda autorização. T9.2 itens 1, 2, 4 e 5 são do dono, ver `docs/PACOTE-PILOTO-F9.md` §6 |
+| F9 | **T9.1 completa**; T9.2 item 3 (o pacote) completo | unitários 2117 ok · integração 492 ok · navegador 3 ok · typecheck e build limpos · checklist A01–A32 em `docs/VALIDACAO-OPERACAO-CHATBOT-CRM.md` (24 provados, 7 parciais, 1 descoberto) | **não liberada**. A `0087` (isolamento) **aplicada em 22/set/2026** com autorização; sem migration pendente. T9.2 itens 1, 2, 4 e 5 são do dono, ver `docs/PACOTE-PILOTO-F9.md` §6 |
