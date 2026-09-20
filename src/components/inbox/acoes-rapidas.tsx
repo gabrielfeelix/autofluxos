@@ -9,6 +9,7 @@ import { useFicha } from '@/components/inbox/moldura'
 import { PRAZOS_DE_ADIAMENTO, type PrazoDeAdiamento } from '@/core/adiamento'
 import type { EstadoSalvar } from '@/components/design/formulario-salvar'
 import { AgendarMensagem, IconeAgendar } from '@/components/inbox/agendar'
+import { MarcarAtividade, IconeAtividade } from '@/components/inbox/marcar-atividade'
 import type { MensagemAgendada } from '@/server/repos/mensagens-agendadas'
 import {
   acaoAdiarConversa,
@@ -166,6 +167,25 @@ export function AcoesRapidas({
             agendadas={agendadas}
             aoFechar={fechar}
           />
+        )}
+      </AcaoComPainel>
+
+      {/*
+        **Marcar atividade fica ao lado de agendar, e por isso avisa.**
+
+        Os dois respondem "e depois?", e é por isso que são vizinhos: quem
+        acabou de combinar alguma coisa na conversa resolve ali mesmo se aquilo
+        vira um lembrete para a equipe ou uma mensagem para o cliente. Mas o
+        resultado é oposto, e o painel diz isso escrito: atividade não envia
+        nada (RB-33, ver `core/atividades.ts`).
+      */}
+      <AcaoComPainel
+        rotulo="Marcar atividade"
+        icone={<IconeAtividade />}
+        largura={300}
+      >
+        {(fechar) => (
+          <MarcarAtividade clienteId={clienteId} contatoId={contatoId} aoFechar={fechar} />
         )}
       </AcaoComPainel>
 

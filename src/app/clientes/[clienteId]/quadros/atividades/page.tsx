@@ -74,10 +74,24 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         </p>
 
         {atividades.length === 0 ? (
-          <p className="app-card px-5 py-10 text-center text-xs leading-5 text-dim">
-            Nenhuma atividade aberta. Elas nascem na ficha de um contato ou no
-            painel de uma oportunidade.
-          </p>
+          /*
+            O texto dizia que a atividade nasce "na ficha de um contato ou no
+            painel de uma oportunidade". A segunda metade era falsa: o painel do
+            cartão não cria atividade. E mandar procurar noutra tela sem dizer
+            qual contato deixa quem chegou aqui sem o próximo passo.
+          */
+          <div className="app-card px-5 py-10 text-center">
+            <p className="text-xs leading-5 text-dim">
+              Nenhuma atividade aberta. Toda atividade é sobre alguém: ela nasce
+              na conversa, pela barra do Inbox, ou na ficha do contato.
+            </p>
+            <Link
+              href={`/clientes/${cliente.id}/inbox`}
+              className="app-secondary-button mt-4 inline-block px-4 py-2 text-[12px]"
+            >
+              Ir para o Inbox
+            </Link>
+          </div>
         ) : (
           <div className="flex flex-col gap-6">
             {[
