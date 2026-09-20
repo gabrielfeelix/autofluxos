@@ -315,7 +315,22 @@ function AcaoComPainel({
       if (e.key === 'Escape') setAberto(false)
     }
     const aoClicar = (e: MouseEvent) => {
-      if (!caixa.current?.contains(e.target as Node)) setAberto(false)
+      const alvo = e.target as Node
+      if (caixa.current?.contains(alvo)) return
+      /*
+       * **A lista de um `Dropdown` conta como dentro.**
+       *
+       * Ela é renderizada num portal, na top layer, para não ser cortada nem
+       * mal posicionada por ancestrais com `transform` (ver `dropdown.tsx`).
+       * O efeito colateral é que ela não está dentro de `caixa`, então escolher
+       * "ligação" no tipo da atividade era lido como clique fora e fechava o
+       * painel inteiro: não havia como escolher um tipo e continuar preenchendo.
+       *
+       * O `closest` pela classe do menu é o que liga as duas metades do mesmo
+       * controle, já que a relação entre elas não existe na árvore do DOM.
+       */
+      if (alvo instanceof Element && alvo.closest('.app-dropdown-menu')) return
+      setAberto(false)
     }
     document.addEventListener('keydown', aoTeclar)
     document.addEventListener('mousedown', aoClicar)
