@@ -146,6 +146,16 @@ export const MOTIVOS_DE_SAIDA = {
   etiqueta_de_saida: 'ganhou a etiqueta de saída',
   janela_fechada: 'a janela de 24h fechou antes do próximo passo',
   sem_fluxo: 'o fluxo do passo não está publicado',
+  /*
+   * Os três da RB-47 (T7.3), e eles são de **negociação** e não de contato.
+   *
+   * A diferença decide o alcance: quem vende numa oportunidade sai do
+   * acompanhamento dela e dos que são do contato, e **não** dos de outras
+   * negociações. Quem responde sai de tudo. Ver
+   * `core/politica-de-acompanhamento.ts`, que é onde essa regra mora.
+   */
+  vendeu: 'a venda foi registrada',
+  perdeu: 'a negociação foi marcada como perdida',
 } as const
 
 export type MotivoDeSaida = keyof typeof MOTIVOS_DE_SAIDA

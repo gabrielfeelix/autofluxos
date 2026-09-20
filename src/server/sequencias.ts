@@ -95,9 +95,27 @@ export async function inscreverNoEvento(
  * uma inscrição já morta e seriam ignoradas — correto, mas ao custo de uma
  * passada do agendador por inscrição, todo dia, para nada.
  */
-export async function sairPorEvento(contatoId: string, motivo: MotivoDeSaida): Promise<void> {
+export async function sairPorEvento(
+  contatoId: string,
+  motivo: MotivoDeSaida,
+  /**
+   * Em qual negociação o evento aconteceu (0085, RB-47).
+   *
+   * Omitir é o caso de **evento do contato** (respondeu, sumiu, foi atendido), e
+   * alcança tudo: quem voltou a falar não precisa ser lembrado de falar,
+   * qualquer que seja o acompanhamento. É o que todos os chamadores de hoje
+   * querem, e por isso é o padrão.
+   *
+   * Preenchido é **evento de negociação** (vendeu, perdeu, mudou de etapa), e aí
+   * o alcance é preciso: a inscrição daquela negociação e as do contato saem, e
+   * as de outras negociações ficam. Sem isto, fechar a mensalidade encerraria o
+   * acompanhamento de pós-venda da avaliação física da mesma pessoa, e ninguém
+   * perceberia: a sequência não falha, ela "sai com motivo".
+   */
+  cartaoId: string | null = null,
+): Promise<void> {
   try {
-    const inscricoes = await sairDasSequencias(contatoId, motivo)
+    const inscricoes = await sairDasSequencias(contatoId, motivo, cartaoId)
     for (const id of inscricoes) await cancelarPorChave(chaveDoPasso(id))
   } catch (erro) {
     console.error('[sequencias] não deu para sair', erro instanceof Error ? erro.message : erro)

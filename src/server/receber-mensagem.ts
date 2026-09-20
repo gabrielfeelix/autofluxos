@@ -1018,6 +1018,15 @@ export type AberturaPorNossaConta =
   | 'automacao_pausada'
   | 'sem_fluxo'
   | 'ocupado'
+  /**
+   * Alguém da equipe está atendendo esta conversa agora (RB-48, T7.3).
+   *
+   * Estado próprio, e não `automacao_pausada`: os dois param o envio, e param por
+   * razões diferentes que pedem telas diferentes. "A automação está desligada
+   * neste contato" é escolha de configuração; "alguém está atendendo" é
+   * temporário e some quando o atendimento terminar.
+   */
+  | 'atendimento_humano'
 
 /**
  * Abre um fluxo para um contato **sem ninguém ter escrito agora**.
@@ -1051,6 +1060,29 @@ export async function abrirFluxoParaContato(
   const contato = await acharContato(contatoId)
   if (!contato) return 'sem_contexto'
   if (!contato.automacaoAtiva) return 'automacao_pausada'
+
+  /*
+   * **Atendimento humano em curso ganha do prazo** (RB-48, T7.3).
+   *
+   * O defeito que isto corrige: logo abaixo, esta função encerra a sessão
+   * anterior **qualquer que fosse o status dela**, inclusive `humano`. Então um
+   * passo de sequência que vencesse durante um atendimento derrubava o handoff e
+   * punha o bot de volta na conversa, no meio do assunto que uma pessoa estava
+   * resolvendo. Não aparecia em log nenhum: a sessão "encerrou" e outra "abriu".
+   *
+   * A RB-48 é explícita: "durante atendimento humano ou pausa persistente,
+   * suspender envios automáticos conflitantes", e "antes de enviar, conferir
+   * controle da conversa [...] **inclusive em jobs já enfileirados**". Este é o
+   * lugar: a conferência é no instante da abertura, e não no agendamento, porque
+   * o atendimento pode ter começado depois de o passo ser agendado.
+   *
+   * **O pós-atendimento (A6) não é afetado**, e foi conferido: ele roda *depois*
+   * de `encerrarAtendimento`, que já levou a sessão de `humano` para `encerrada`.
+   * Quem chega aqui com sessão `humano` é quem está atropelando um atendimento
+   * vivo.
+   */
+  const emCurso = await ultimaSessao(contatoId, contexto.canal.id)
+  if (emCurso && emCurso.sessao.status === 'humano') return 'atendimento_humano'
 
   const fluxo = await acharFluxo(fluxoId)
   if (!fluxo || fluxo.clienteId !== clienteId || !fluxo.versaoPublicadaId) return 'sem_fluxo'

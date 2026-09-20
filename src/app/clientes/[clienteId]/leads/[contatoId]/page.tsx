@@ -29,10 +29,12 @@ import { listarRespostasRapidas } from '@/server/repos/respostas-rapidas'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { quadrosDoContato } from '@/server/repos/quadros'
 import { estagioDoContato, resumoDoContato } from '@/server/repos/crm'
+import { acompanhamentosDoContato } from '@/server/repos/sequencias'
 import { faixasDaConta } from '@/server/repos/relacionamento'
 import { FAIXAS_PADRAO, relacionamentoDe } from '@/core/relacionamento'
 import { linhaDoTempo } from '@/server/repos/eventos'
 import { atividadesDoContato } from '@/server/repos/atividades'
+import { Acompanhamentos } from '@/components/lead-crm/acompanhamentos'
 import { Atividades } from '@/components/lead-crm/atividades'
 import { membrosDaConta } from '@/server/repos/usuarios'
 import { listarMotivos } from '@/server/repos/motivos-de-perda'
@@ -100,6 +102,7 @@ export default async function Pagina({
     faixas,
     temAutomacao,
     atividades,
+    acompanhamentos,
   ] = await Promise.all([
     acharCliente(clienteId),
     acharLead(clienteId, contatoId),
@@ -122,6 +125,9 @@ export default async function Pagina({
     // A agenda humana (0081). Entra na mesma leva pelo motivo das outras: a
     // tela só existe inteira, e uma consulta curta não vale uma espera própria.
     atividadesDoContato(clienteId, contatoId),
+    // Os acompanhamentos automáticos (UI-23/UI-24). Na mesma leva pelo mesmo
+    // motivo: a ficha só existe inteira.
+    acompanhamentosDoContato(clienteId, contatoId),
   ])
   if (!cliente || !lead) notFound()
 
@@ -448,6 +454,23 @@ export default async function Pagina({
                     agora={agoraDaFicha}
                   />
                 ),
+              },
+              /*
+               * Acompanhamentos (UI-23/UI-24, T7.3).
+               *
+               * A contagem é só das **ativas**, e não do total: é o número que
+               * responde "esta pessoa ainda vai receber mensagem automática?". O
+               * total incluiria as encerradas e daria a impressão de fila cheia
+               * numa ficha em que nada mais vai sair.
+               *
+               * A aba fica depois de Atividades porque a ordem é de quem trabalha:
+               * o que **eu** tenho para fazer vem antes do que o sistema fez.
+               */
+              {
+                chave: 'acompanhamentos',
+                rotulo: 'Acompanhamentos',
+                contagem: acompanhamentos.filter((a) => a.estado === 'ativa').length,
+                conteudo: <Acompanhamentos acompanhamentos={acompanhamentos} />,
               },
             ]}
           />

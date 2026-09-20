@@ -119,6 +119,24 @@ export async function rodarPassoDeSequencia(
       return 'ignorada'
     }
 
+    /*
+     * Alguém da equipe está atendendo agora (RB-48, T7.3).
+     *
+     * **Estourar, e não encerrar**, e a diferença é a decisão: encerrar mataria o
+     * acompanhamento por causa de um atendimento que vai acabar em vinte minutos,
+     * e a RB-47 exige ação explícita para reinscrever. Estourar devolve a tarefa
+     * à fila, e ela tenta de novo mais tarde, quando o atendimento tiver
+     * terminado. É o mesmo tratamento de `ocupado`, e pelo mesmo motivo: a pessoa
+     * ganha do prazo, sempre.
+     *
+     * A pausa por atendimento **não** entra como estado da inscrição, e é
+     * deliberado: a inscrição segue `ativa`, que é a verdade (ela não saiu de
+     * nada), e a pausa é uma condição do momento do envio, não do acompanhamento.
+     */
+    if (resultado === 'atendimento_humano') {
+      throw new Error('alguém da equipe está atendendo; o passo tenta de novo')
+    }
+
     if (resultado === 'sem_fluxo' || resultado === 'sem_contexto') {
       // O fluxo do passo foi despublicado, apagado, ou o número saiu do ar. Não
       // adianta tentar de novo: nada disso passa sozinho, e insistir três vezes

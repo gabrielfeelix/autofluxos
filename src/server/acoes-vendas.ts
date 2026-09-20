@@ -11,6 +11,7 @@ import {
   type DestinoDaOportunidade,
 } from './servicos/registrar-venda'
 import { exigirCapacidade, recusou } from './permissoes'
+import { sairPorEvento } from './sequencias'
 import { sessaoAtual } from './sessao'
 
 /**
@@ -105,6 +106,24 @@ export async function acaoRegistrarVenda(
   })
 
   if (!r.ok) return { ok: false, erro: r.motivo }
+
+  /*
+   * Quem comprou sai do acompanhamento **daquela** negociação (RB-47, T7.3).
+   *
+   * Isto não existia, e a ausência era o defeito: uma sequência de prospecção
+   * seguia mandando "ainda pensando no orçamento?" para quem já tinha fechado.
+   *
+   * **O `cartaoId` é o ponto inteiro.** Sem ele, `sairPorEvento` tira a pessoa de
+   * todas as sequências ativas, e fechar a mensalidade encerraria junto o
+   * acompanhamento de pós-venda da avaliação física da mesma cliente. Ninguém
+   * perceberia: a sequência não falha, ela "sai com motivo". A 0085 deu à
+   * inscrição a coluna que faz esta linha ser precisa.
+   *
+   * Vem **depois** de `r.ok` e não pode derrubar o retorno: a venda já está
+   * gravada, e a transação que importava terminou. `sairPorEvento` engole o
+   * próprio erro pelo mesmo motivo.
+   */
+  await sairPorEvento(r.venda.contatoId, 'vendeu', r.venda.cartaoId)
 
   recarregar(clienteId)
   return { ok: true, repetida: r.repetida }

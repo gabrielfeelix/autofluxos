@@ -337,6 +337,14 @@ export type Inscricao = {
   estado: 'ativa' | 'concluida' | 'saiu' | 'bloqueada'
   passoAtual: number
   entrouEm: string
+  /**
+   * De qual negociação esta inscrição nasceu (0085).
+   *
+   * `null` = a inscrição é **do contato**, e não falta de preenchimento: a régua
+   * por sumiço, a sequência por etiqueta e a de pós-atendimento são do contato.
+   * A diferença decide a saída, ver `core/politica-de-acompanhamento.ts`.
+   */
+  cartaoId: string | null
 }
 
 type LinhaDaInscricao = {
@@ -347,6 +355,7 @@ type LinhaDaInscricao = {
   estado: string
   passo_atual: number
   entrou_em: string
+  cartao_id: string | null
 }
 
 function paraInscricao(linha: LinhaDaInscricao): Inscricao {
@@ -358,10 +367,12 @@ function paraInscricao(linha: LinhaDaInscricao): Inscricao {
     estado: linha.estado as Inscricao['estado'],
     passoAtual: linha.passo_atual,
     entrouEm: linha.entrou_em,
+    cartaoId: linha.cartao_id ?? null,
   }
 }
 
-const COLUNAS_DA_INSCRICAO = 'id, sequencia_id, contact_id, client_id, estado, passo_atual, entrou_em'
+const COLUNAS_DA_INSCRICAO =
+  'id, sequencia_id, contact_id, client_id, estado, passo_atual, entrou_em, cartao_id'
 
 /**
  * Inscreve, ou devolve `null` quando já havia uma ativa.
@@ -375,10 +386,20 @@ export async function inscrever(
   clienteId: string,
   sequenciaId: string,
   contatoId: string,
+  /**
+   * De qual negociação esta inscrição nasce (0085). Omitir é o caso comum: a
+   * inscrição é do contato.
+   */
+  cartaoId: string | null = null,
 ): Promise<Inscricao | null> {
   const { data, error } = await db()
     .from('sequencia_inscricoes')
-    .insert({ client_id: clienteId, sequencia_id: sequenciaId, contact_id: contatoId })
+    .insert({
+      client_id: clienteId,
+      sequencia_id: sequenciaId,
+      contact_id: contatoId,
+      cartao_id: cartaoId,
+    })
     .select(COLUNAS_DA_INSCRICAO)
     .maybeSingle()
 
@@ -428,10 +449,25 @@ export async function encerrarInscricao(
  * Os ids voltam para quem chama cancelar as tarefas agendadas — sem isso, cada
  * inscrição morta acordaria o agendador uma vez para ser ignorada.
  */
-export async function sairDasSequencias(contatoId: string, motivo: string): Promise<string[]> {
+export async function sairDasSequencias(
+  contatoId: string,
+  motivo: string,
+  /**
+   * Em qual negociação o evento aconteceu (0085).
+   *
+   * `null` = evento do contato (respondeu, sumiu, foi atendido): alcança tudo,
+   * como sempre alcançou. Preenchido = evento daquela negociação: alcança a dela
+   * e as do contato, e **deixa em paz as de outras negociações** (RB-47).
+   *
+   * O padrão é `null` de propósito: é o que faz os chamadores antigos, todos de
+   * evento de contato, continuarem certos sem tocar nenhum deles.
+   */
+  cartaoId: string | null = null,
+): Promise<string[]> {
   const { data, error } = await db().rpc('sair_das_sequencias', {
     p_contato_id: contatoId,
     p_motivo: motivo,
+    p_cartao_id: cartaoId,
   })
 
   if (ehIdInvalido(error)) return []
@@ -574,4 +610,111 @@ export async function sairPorEtiquetaDeSaida(
   }
 
   return (data as { id: string }[]).map((linha) => linha.id)
+}
+
+/**
+ * Os acompanhamentos deste contato, para a ficha (UI-23/UI-24, T7.3).
+ *
+ * ---------------------------------------------------------------------------
+ * O que a ficha precisa dizer, e por que nada disso aparecia
+ * ---------------------------------------------------------------------------
+ *
+ * A ficha do contato não mostrava sequência nenhuma. Então "por que essa pessoa
+ * recebeu essa mensagem?" era pergunta sem resposta na tela, e "cancelamento,
+ * conclusão e falha visíveis na ficha" (item 4 da T7.3) não existia.
+ *
+ * O que vem, e cada campo tem um motivo:
+ *
+ *   - `estado` e `motivo` — o "por quê" da RB-47: saiu porque respondeu, porque
+ *     vendeu, ou **bloqueada** porque a janela fechou, que é a única que quer
+ *     dizer "não entregou";
+ *   - `cartaoId` — de qual negociação. Nulo é "do contato", e não falta de dado;
+ *   - `passoAtual` e o total de passos — onde ela parou, em "2 de 4";
+ *   - `entrouEm` — desde quando.
+ *
+ * Traz as encerradas também, e não só as ativas: a pergunta mais comum na ficha é
+ * sobre a mensagem que **já** chegou, e uma lista só de ativas não a responderia.
+ * O teto de 20 existe porque isto desenha um cartão lateral, não um relatório.
+ */
+export type AcompanhamentoDoContato = {
+  id: string
+  sequenciaId: string
+  nome: string
+  estado: Inscricao['estado']
+  motivo: string | null
+  cartaoId: string | null
+  passoAtual: number
+  totalDePassos: number
+  entrouEm: string
+  atualizadoEm: string
+}
+
+export async function acompanhamentosDoContato(
+  clienteId: string,
+  contatoId: string,
+  limite = 20,
+): Promise<AcompanhamentoDoContato[]> {
+  const { data, error } = await db()
+    .from('sequencia_inscricoes')
+    .select('id, sequencia_id, estado, motivo, cartao_id, passo_atual, entrou_em, atualizado_em')
+    .eq('client_id', clienteId)
+    .eq('contact_id', contatoId)
+    .order('atualizado_em', { ascending: false })
+    .limit(limite)
+
+  if (ehIdInvalido(error)) return []
+  if (error) throw new Error(`não deu para ler os acompanhamentos: ${error.message}`)
+
+  const linhas = (data ?? []) as {
+    id: string
+    sequencia_id: string
+    estado: string
+    motivo: string | null
+    cartao_id: string | null
+    passo_atual: number
+    entrou_em: string
+    atualizado_em: string
+  }[]
+  if (linhas.length === 0) return []
+
+  /*
+   * O nome e o total de passos vêm numa consulta só, e não numa por inscrição.
+   *
+   * O total de passos é o que transforma `passo_atual` em informação: "passo 2"
+   * não diz nada, "2 de 4" diz que falta metade. Sem ele a tela mostraria um
+   * número solto, que é pior do que não mostrar.
+   */
+  const ids = [...new Set(linhas.map((l) => l.sequencia_id))]
+  const { data: sequencias } = await db()
+    .from('sequencias')
+    .select('id, nome, sequencia_passos(id)')
+    .eq('client_id', clienteId)
+    .in('id', ids)
+
+  const porId = new Map<string, { nome: string; passos: number }>()
+  for (const linha of (sequencias ?? []) as {
+    id: string
+    nome: string
+    sequencia_passos: { id: string }[] | null
+  }[]) {
+    porId.set(linha.id, { nome: linha.nome, passos: (linha.sequencia_passos ?? []).length })
+  }
+
+  return linhas.map((linha) => {
+    const sequencia = porId.get(linha.sequencia_id)
+    return {
+      id: linha.id,
+      sequenciaId: linha.sequencia_id,
+      // Sequência apagada deixa a inscrição órfã (a FK é `cascade`, mas a leitura
+      // pode correr com a exclusão): a ficha diz isso em vez de mostrar vazio.
+      nome: sequencia?.nome ?? 'acompanhamento apagado',
+      estado: linha.estado as Inscricao['estado'],
+      motivo: linha.motivo,
+      cartaoId: linha.cartao_id ?? null,
+      passoAtual: linha.passo_atual,
+      totalDePassos: sequencia?.passos ?? 0,
+      entrouEm: linha.entrou_em,
+      atualizadoEm: linha.atualizado_em,
+    }
+  })
 }

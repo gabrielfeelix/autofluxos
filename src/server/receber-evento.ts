@@ -116,6 +116,32 @@ export async function tratarEvento(
     return 'janela_fechada'
   }
 
+  /*
+   * Alguém da equipe está atendendo agora (RB-48). **Não é alerta**, e a
+   * distinção importa: o evento não saiu porque uma pessoa está no comando da
+   * conversa, que é o desfecho certo, não uma falha. Alertar aqui encheria a
+   * caixa de avisos exatamente nas conversas mais bem atendidas, e é assim que
+   * se aprende a ignorar alertas.
+   *
+   * A nota fica na ficha, pelo mesmo motivo da janela fechada: quem está
+   * atendendo precisa saber que o evento chegou, para decidir se fala dele.
+   */
+  if (aberto === 'atendimento_humano') {
+    try {
+      await acrescentarNota(
+        entrada.clienteId,
+        contatoId,
+        `evento “${entrada.evento}” chegou durante o atendimento e não foi enviado pelo bot.${resumo(entrada.dados)}`,
+      )
+    } catch (erro) {
+      await alertar('não deu para registrar o evento durante o atendimento', erro, {
+        cliente: entrada.clienteId,
+        contato: contatoId,
+      })
+    }
+    return 'nao_abriu'
+  }
+
   // Bot pausado, fluxo despublicado ou desligado, conversa ocupada. Nenhum é
   // exceção — mas todos significam um aviso que não saiu, e isso precisa
   // aparecer para alguém.
