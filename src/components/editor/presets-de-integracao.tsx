@@ -9,6 +9,7 @@ import {
   presetDoBloco,
   type Preset,
 } from '@/core/presets'
+import { useConfirmar } from '@/components/design/confirmar'
 
 /**
  * O menu de integrações que os concorrentes têm — feito por cima do bloco que
@@ -54,6 +55,7 @@ export function PresetsDeIntegracao({
   }
 }) {
   const [aberto, setAberto] = useState(false)
+  const { confirmar, dialogo } = useConfirmar()
 
   /*
    * O que a gaveta fechada mostra.
@@ -88,10 +90,16 @@ export function PresetsDeIntegracao({
       (bloco?.url ?? '').trim() !== '' && presetDoBloco(bloco ?? { metodo: '', url: '' })?.id !== preset.id
 
     if (temTrabalho) {
-      const ok = confirm(
-        `Aplicar “${preset.nome}”? Isso substitui o endereço, o corpo, os cabeçalhos e o que este bloco guarda.`,
-      )
-      if (!ok) return
+      confirmar({
+        titulo: `Aplicar “${preset.nome}”?`,
+        descricao: 'Isso substitui o endereço, o corpo, os cabeçalhos e o que este bloco guarda.',
+        rotulo: 'Aplicar',
+        tom: 'normal',
+        aoConfirmar: async () => {
+          aoAplicar({ ...preset.dados })
+        },
+      })
+      return
     }
 
     aoAplicar({ ...preset.dados })
@@ -99,6 +107,7 @@ export function PresetsDeIntegracao({
 
   return (
     <div className="rounded-[10px] border border-line bg-panel p-3">
+      {dialogo}
       <button
         type="button"
         onClick={() => setAberto((estava) => !estava)}

@@ -1,13 +1,16 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useConfirmar } from './confirmar'
 
 /**
  * Um botão que apaga alguma coisa.
  *
  * Três coisas que ele faz e um `<form action={...}>` cru não fazia:
  *
- * 1. **Pede confirmação**, com o nome do que vai sumir escrito na pergunta.
+ * 1. **Pede confirmação**, com o nome do que vai sumir escrito na pergunta. A
+ *    pergunta abre no modal do produto: era um `confirm()`, a janela do sistema
+ *    operacional, que aparece ancorada no alto do navegador com o nome do
+ *    domínio em cima e não se parece com nada do resto da tela.
  * 2. **Mostra o motivo da recusa.** Apagar aqui pode ser negado por regra de
  *    negócio — automação no ar, número com conversa — e sem lugar para o motivo
  *    aparecer o clique parecia não ter funcionado.
@@ -25,8 +28,7 @@ export function BotaoPerigo({
   pergunta: string
   titulo?: string
 }) {
-  const [erro, setErro] = useState<string | null>(null)
-  const [rodando, comecar] = useTransition()
+  const { confirmar, dialogo, rodando } = useConfirmar()
 
   return (
     <span className="inline-flex flex-col items-end gap-1">
@@ -34,24 +36,20 @@ export function BotaoPerigo({
         type="button"
         disabled={rodando}
         title={titulo}
-        onClick={() => {
-          setErro(null)
-          if (!confirm(pergunta)) return
-          comecar(async () => {
-            const r = await acao()
-            if (!r.ok) setErro(r.erro ?? 'não deu para apagar')
+        onClick={() =>
+          confirmar({
+            titulo: rotulo.endsWith('?') ? rotulo : `${rotulo}?`,
+            descricao: pergunta,
+            rotulo,
+            aoConfirmar: acao,
           })
-        }}
+        }
         className="rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:border-rose-400/40 hover:bg-rose-400/[0.09] hover:text-perigo disabled:opacity-50"
       >
         {rodando ? '…' : rotulo}
       </button>
 
-      {erro && (
-        <span role="alert" className="max-w-[280px] text-right text-[10.5px] leading-4 text-perigo">
-          {erro}
-        </span>
-      )}
+      {dialogo}
     </span>
   )
 }

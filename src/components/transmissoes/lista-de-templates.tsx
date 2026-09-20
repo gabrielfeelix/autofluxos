@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import type { StatusDoTemplate } from '@/core/templates'
 import { acaoApagarTemplate } from '@/server/acoes-transmissoes'
 import type { Template } from '@/server/repos/templates'
 import { NovoModelo } from './novo-modelo'
+import { useConfirmar } from '@/components/design/confirmar'
 
 /**
  * A lista de modelos aprovados, e o formulário de criar um.
@@ -79,28 +79,35 @@ export function ListaDeTemplates({
 
 function Linha({ clienteId, template }: { clienteId: string; template: Template }) {
   const router = useRouter()
-  const [apagando, comecarApagar] = useTransition()
-  const [erro, setErro] = useState<string | null>(null)
+  /*
+    O pendente e o erro agora são do modal de confirmação: ele desabilita os
+    próprios botões enquanto a ação roda e mostra a recusa sem fechar. Um
+    `useTransition` e um `erro` aqui ficariam presos em `false`/`null` para
+    sempre, dizendo "Apagar" durante um apagamento em curso.
+  */
+  const { confirmar, dialogo, rodando: apagando } = useConfirmar()
   const status = ROTULO_DO_STATUS[template.status]
   const explicacao = EXPLICACAO[template.status]
 
   function apagar() {
     // Trinta dias é o prazo real da Meta para liberar o nome, e ele é longo o
     // bastante para a pessoa merecer saber antes e não depois.
-    const certeza = window.confirm(
-      `Apagar "${template.nome}"?\n\nA Meta segura o nome por 30 dias antes de liberá-lo — você não vai conseguir criar outro com o mesmo nome nesse período.`,
-    )
-    if (!certeza) return
-
-    comecarApagar(async () => {
-      const r = await acaoApagarTemplate(clienteId, template.id)
-      if (!r.ok) setErro(r.erro ?? 'Não deu para apagar.')
-      else router.refresh()
+    confirmar({
+      titulo: `Apagar "${template.nome}"?`,
+      descricao:
+        'A Meta segura o nome por 30 dias antes de liberá-lo: você não vai conseguir criar outro com o mesmo nome nesse período.',
+      rotulo: 'Apagar modelo',
+      aoConfirmar: async () => {
+        const r = await acaoApagarTemplate(clienteId, template.id)
+        if (r.ok) router.refresh()
+        return r
+      },
     })
   }
 
   return (
     <li className="px-5 py-4">
+      {dialogo}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -135,7 +142,6 @@ function Linha({ clienteId, template }: { clienteId: string; template: Template 
             </p>
           )}
 
-          {erro && <p className="mt-2 text-[12px] text-red-600">{erro}</p>}
         </div>
 
         <button

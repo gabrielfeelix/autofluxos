@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { acaoArquivarEquipe, acaoCriarEquipe } from '@/server/acoes-acesso'
+import { useConfirmar } from '@/components/design/confirmar'
 
 /**
  * As equipes da conta (RB-40).
@@ -24,6 +25,7 @@ export function GerenciarEquipes({
 }) {
   const [nome, setNome] = useState('')
   const [erro, setErro] = useState<string | null>(null)
+  const { confirmar, dialogo } = useConfirmar()
   const [rodando, comecar] = useTransition()
 
   const criar = () => {
@@ -44,18 +46,19 @@ export function GerenciarEquipes({
     setErro(null)
     const aviso =
       equipe.pessoas > 0
-        ? `\n\n${equipe.pessoas} pessoa(s) perdem o escopo desta equipe. Quem estiver em "da equipe dela" e não tiver outra passa a não alcançar nada.`
+        ? ` ${equipe.pessoas} pessoa(s) perdem o escopo desta equipe. Quem estiver em "da equipe dela" e não tiver outra passa a não alcançar nada.`
         : ''
-    if (!confirm(`Arquivar a equipe ${equipe.nome}? O histórico continua legível.${aviso}`)) return
-
-    comecar(async () => {
-      const r = await acaoArquivarEquipe(clienteId, equipe.id)
-      if (!r.ok) setErro(r.erro ?? 'não deu para arquivar')
+    confirmar({
+      titulo: `Arquivar a equipe ${equipe.nome}?`,
+      descricao: `O histórico continua legível.${aviso}`,
+      rotulo: 'Arquivar equipe',
+      aoConfirmar: () => acaoArquivarEquipe(clienteId, equipe.id),
     })
   }
 
   return (
     <section className="app-card mt-6 overflow-hidden">
+      {dialogo}
       <header className="border-b border-line px-5 py-4">
         <h2 className="text-[14.5px] font-bold">Equipes</h2>
         <p className="mt-1 max-w-[620px] text-[12px] leading-5 text-dim">

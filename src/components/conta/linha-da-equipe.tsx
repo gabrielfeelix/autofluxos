@@ -7,6 +7,7 @@ import type { OpcaoDropdown } from '@/components/design/dropdown'
 import { Dropdown } from '@/components/design/dropdown'
 import { EditorDeAcesso, type MembroParaAcesso } from './editor-de-acesso'
 import type { Politica } from '@/core/permissoes'
+import { useConfirmar } from '@/components/design/confirmar'
 
 type Membro = {
   id: string
@@ -41,6 +42,7 @@ export function LinhaDaEquipe({
   equipesDaConta?: { id: string; nome: string }[]
 }) {
   const [erro, setErro] = useState<string | null>(null)
+  const { confirmar, dialogo } = useConfirmar()
   const [papel, setPapel] = useState(membro.papel)
   const [editando, setEditando] = useState<MembroParaAcesso | null>(null)
   const [rodando, comecar] = useTransition()
@@ -73,26 +75,23 @@ export function LinhaDaEquipe({
 
       const resumo =
         pendencias.ok && (pendencias.conversas || pendencias.cartoes)
-          ? `\n\nFicam sem dono: ${pendencias.conversas ?? 0} conversa(s) e ` +
+          ? ` Ficam sem dono: ${pendencias.conversas ?? 0} conversa(s) e ` +
             `${pendencias.cartoes ?? 0} cartão(ões) aberto(s). ` +
             'Reatribua antes, ou eles voltam para a fila de ninguém.'
           : ''
 
-      if (
-        !confirm(
-          `Tirar ${membro.nome} desta conta? A pessoa continua existindo no sistema.${resumo}`,
-        )
-      ) {
-        return
-      }
-
-      const r = await acaoRemoverDaConta(clienteId, membro.id)
-      if (!r.ok) setErro(r.erro ?? 'não deu para remover')
+      confirmar({
+        titulo: `Tirar ${membro.nome} desta conta?`,
+        descricao: `A pessoa continua existindo no sistema.${resumo}`,
+        rotulo: 'Tirar da conta',
+        aoConfirmar: () => acaoRemoverDaConta(clienteId, membro.id),
+      })
     })
   }
 
   return (
     <li className="border-b border-line px-5 py-4 last:border-0">
+      {dialogo}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <span className="min-w-0 flex-1">
           <strong className="flex items-center gap-2 text-[13.5px] font-semibold">

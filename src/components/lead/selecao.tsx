@@ -3,6 +3,7 @@
 import { createContext, useContext, useMemo, useState, useTransition, type ReactNode } from 'react'
 import { CLASSE_DA_COR, type CorDeEtiqueta } from '@/core/etiquetas'
 import { acaoApagarContatos, acaoMarcarEtiqueta, acaoPorNoQuadro } from '@/server/acoes'
+import { useConfirmar } from '@/components/design/confirmar'
 
 export type EtiquetaDaBarra = { id: string; nome: string; cor: CorDeEtiqueta }
 export type QuadroDaBarra = { id: string; nome: string }
@@ -42,6 +43,7 @@ export function SelecaoDeContatos({
 }) {
   const [marcados, setMarcados] = useState<string[]>([])
   const [erro, setErro] = useState<string | null>(null)
+  const { confirmar, dialogo } = useConfirmar()
   const [aviso, setAviso] = useState<string | null>(null)
   const [ocupado, comecar] = useTransition()
 
@@ -107,25 +109,24 @@ export function SelecaoDeContatos({
   const apagar = () => {
     setErro(null)
     setAviso(null)
-    if (
-      !confirm(
-        `Apagar ${marcados.length} contato(s)? Some a conversa inteira de cada um, e não dá para desfazer.`,
-      )
-    ) {
-      return
-    }
-    comecar(async () => {
-      const r = await acaoApagarContatos(clienteId, marcados)
-      if (!r.ok) setErro(r.erro ?? 'não deu para apagar')
-      else {
-        setAviso(`Apaguei ${r.apagados ?? 0} contato(s).`)
-        setMarcados([])
-      }
+    confirmar({
+      titulo: `Apagar ${marcados.length} contato(s)?`,
+      descricao: 'Some a conversa inteira de cada um, e não dá para desfazer.',
+      rotulo: 'Apagar contatos',
+      aoConfirmar: async () => {
+        const r = await acaoApagarContatos(clienteId, marcados)
+        if (r.ok) {
+          setAviso(`Apaguei ${r.apagados ?? 0} contato(s).`)
+          setMarcados([])
+        }
+        return r
+      },
     })
   }
 
   return (
     <SelecaoContexto.Provider value={valor}>
+      {dialogo}
       {(marcados.length > 0 || aviso || erro) && (
         <div className="mb-3 rounded-[12px] border border-line bg-surface px-4 py-3">
           {marcados.length > 0 && (

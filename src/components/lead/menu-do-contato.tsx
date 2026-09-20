@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { acaoAlternarAutomacaoDoLead, acaoApagarContatos } from '@/server/acoes'
+import { useConfirmar } from '@/components/design/confirmar'
 
 /**
  * O menu por linha da lista de contatos (o `⋮` do print 8).
@@ -31,6 +32,7 @@ export function MenuDoContato({
 }) {
   const [aberto, setAberto] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
+  const { confirmar, dialogo } = useConfirmar()
   const [rodando, comecar] = useTransition()
   const raiz = useRef<HTMLDivElement>(null)
 
@@ -61,18 +63,21 @@ export function MenuDoContato({
     })
   }
 
-  const apagar = () => {
-    setErro(null)
-    if (!confirm(`Apagar ${nome}? Some a conversa inteira, e não dá para desfazer.`)) return
-    comecar(async () => {
-      const r = await acaoApagarContatos(clienteId, [contatoId])
-      if (!r.ok) setErro(r.erro ?? 'não deu para apagar')
-      else setAberto(false)
+  const apagar = () =>
+    confirmar({
+      titulo: `Apagar ${nome}?`,
+      descricao: 'Some a conversa inteira, e não dá para desfazer.',
+      rotulo: 'Apagar contato',
+      aoConfirmar: async () => {
+        const r = await acaoApagarContatos(clienteId, [contatoId])
+        if (r.ok) setAberto(false)
+        return r
+      },
     })
-  }
 
   return (
     <div ref={raiz} className="relative">
+      {dialogo}
       <button
         type="button"
         aria-haspopup="menu"

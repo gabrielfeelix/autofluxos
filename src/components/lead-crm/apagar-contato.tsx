@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useTransition } from 'react'
 import { AcaoDaFicha } from './acoes-da-ficha'
+import { useConfirmar } from '@/components/design/confirmar'
 
 /**
  * Apagar o contato, no mesmo formato dos vizinhos.
@@ -24,23 +24,22 @@ export function ApagarContato({
   pergunta: string
   titulo?: string
 }) {
-  const [erro, setErro] = useState<string | null>(null)
-  const [rodando, comecar] = useTransition()
+  const { confirmar, dialogo, rodando } = useConfirmar()
 
   return (
-    <span className="relative inline-flex flex-col items-center">
+    <>
       <AcaoDaFicha
         rotulo={rodando ? 'Apagando…' : 'Apagar'}
         tom="perigo"
         titulo={titulo}
-        aoClicar={() => {
-          setErro(null)
-          if (!confirm(pergunta)) return
-          comecar(async () => {
-            const r = await acao()
-            if (!r.ok) setErro(r.erro ?? 'não deu para apagar')
+        aoClicar={() =>
+          confirmar({
+            titulo: 'Apagar este contato?',
+            descricao: pergunta,
+            rotulo: 'Apagar contato',
+            aoConfirmar: acao,
           })
-        }}
+        }
         icone={
           <>
             <path d="M5 7h14" />
@@ -49,11 +48,7 @@ export function ApagarContato({
           </>
         }
       />
-      {erro && (
-        <span role="alert" className="absolute top-full mt-0.5 text-[10.5px] whitespace-nowrap text-perigo">
-          {erro}
-        </span>
-      )}
-    </span>
+      {dialogo}
+    </>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { NovaTransmissao } from '@/components/transmissoes/nova-transmissao'
 import { acaoCancelarTransmissao } from '@/server/acoes-transmissoes'
@@ -10,6 +10,7 @@ import type {
   Progresso,
   Transmissao,
 } from '@/server/repos/transmissoes'
+import { useConfirmar } from '@/components/design/confirmar'
 
 /**
  * A lista de transmissões, com o progresso real de cada uma.
@@ -100,8 +101,12 @@ function Linha({
   progresso: Progresso | undefined
 }) {
   const router = useRouter()
-  const [cancelando, comecar] = useTransition()
   const [recado, setRecado] = useState<string | null>(null)
+  /*
+    O pendente vem do modal: é ele que roda a ação e desabilita os próprios
+    botões enquanto ela não volta.
+  */
+  const { confirmar, dialogo, rodando: cancelando } = useConfirmar()
   const estado = ROTULO_DO_ESTADO[transmissao.estado]
 
   const podeCancelar =
@@ -111,28 +116,28 @@ function Linha({
 
   function cancelar() {
     // O que já saiu não volta. Dizer antes do clique, e não depois.
-    const certeza = window.confirm(
-      'Cancelar esta transmissão?\n\nAs mensagens que já saíram não voltam, o cancelamento só impede as que ainda estão na fila.',
-    )
-    if (!certeza) return
-
-    comecar(async () => {
-      const r = await acaoCancelarTransmissao(clienteId, transmissao.id)
-      if (!r.ok) {
-        setRecado(r.erro ?? 'Não deu para cancelar.')
-        return
-      }
-      setRecado(
-        r.jaSairam && r.jaSairam > 0
-          ? `Cancelada. ${r.jaSairam} mensagens já tinham saído e não voltam.`
-          : 'Cancelada antes de qualquer mensagem sair.',
-      )
-      router.refresh()
+    confirmar({
+      titulo: 'Cancelar esta transmissão?',
+      descricao:
+        'As mensagens que já saíram não voltam: o cancelamento só impede as que ainda estão na fila.',
+      rotulo: 'Cancelar transmissão',
+      aoConfirmar: async () => {
+        const r = await acaoCancelarTransmissao(clienteId, transmissao.id)
+        if (!r.ok) return r
+        setRecado(
+          r.jaSairam && r.jaSairam > 0
+            ? `Cancelada. ${r.jaSairam} mensagens já tinham saído e não voltam.`
+            : 'Cancelada antes de qualquer mensagem sair.',
+        )
+        router.refresh()
+        return r
+      },
     })
   }
 
   return (
     <li className="px-5 py-4">
+      {dialogo}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">

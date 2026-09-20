@@ -222,7 +222,7 @@ export default async function Pagina({
           <ApagarContato
             acao={acaoApagarContato.bind(null, clienteId, contatoId)}
             titulo="Apaga a pessoa, a conversa inteira e o que o fluxo coletou. Não dá para desfazer."
-            pergunta={`Apagar ${nome} e tudo desta pessoa?\n\nSomem a conversa inteira, o que o fluxo coletou e o histórico de atendimento. Não dá para desfazer.`}
+            pergunta={`Somem ${nome}, a conversa inteira, o que o fluxo coletou e o histórico de atendimento. Não dá para desfazer.`}
           />
         </header>
 
