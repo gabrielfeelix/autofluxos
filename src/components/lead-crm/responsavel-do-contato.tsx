@@ -24,11 +24,13 @@ import { acaoAtribuirContato } from '@/server/acoes-crm'
  * cuidar", e a resposta costuma ser outra pessoa.
  */
 export function ResponsavelDoContato({
+  expandido = false,
   clienteId,
   contatoId,
   equipe,
   responsavelId,
 }: {
+  expandido?: boolean
   clienteId: string
   contatoId: string
   equipe: { id: string; nome: string }[]
@@ -41,10 +43,11 @@ export function ResponsavelDoContato({
   return (
     <span className="flex flex-col">
       {/* Largura no invólucro, pelo mesmo motivo do estágio. */}
-      <span className="w-[214px] shrink-0">
+      <span className={expandido ? 'w-full min-w-0' : 'w-[214px] shrink-0'}>
         <Dropdown
           rotuloAcessivel="Quem cuida deste contato"
           valor={otimista.valor}
+          desabilitado={otimista.pendente}
           aoMudar={(novo) =>
             otimista.agir(novo, () => acaoAtribuirContato(clienteId, contatoId, novo || null))
           }

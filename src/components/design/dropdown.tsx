@@ -260,6 +260,7 @@ export function Dropdown({
         onClick={() => setAberto((estado) => !estado)}
         onKeyDown={(evento) => {
           if (evento.key === 'Escape') {
+            if (aberto) { evento.preventDefault(); evento.stopPropagation() }
             setAberto(false)
             return
           }
@@ -300,6 +301,13 @@ export function Dropdown({
             ref={menu}
             id={listaId}
             role="listbox"
+            onKeyDown={(evento) => {
+              if (evento.key !== 'Escape') return
+              evento.preventDefault()
+              evento.stopPropagation()
+              setAberto(false)
+              gatilho.current?.focus()
+            }}
             aria-label={rotuloAcessivel}
             // `manual`: quem fecha é o nosso `pointerdown`, que sabe a
             // diferença entre clicar fora e clicar numa opção.

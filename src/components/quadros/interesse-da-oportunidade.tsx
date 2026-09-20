@@ -1,5 +1,6 @@
 'use client'
 
+import { Dropdown } from '@/components/design/dropdown'
 import { useEffect, useState, useTransition } from 'react'
 import type { Produto } from '@/core/produtos'
 import { selecionaveis } from '@/core/produtos'
@@ -33,6 +34,7 @@ export function InteresseDaOportunidade({
   const [catalogo, setCatalogo] = useState<Produto[] | null>(null)
   const [escolhido, setEscolhido] = useState(produtoId ?? '')
   const [nome, setNome] = useState(produtoNome)
+  const [salvo, setSalvo] = useState(produtoId ?? '')
   const [erro, setErro] = useState<string | null>(null)
   const [rodando, comecar] = useTransition()
 
@@ -59,13 +61,9 @@ export function InteresseDaOportunidade({
     return (
       <span className="flex items-center gap-2">
         <span className={`flex-1 text-[12.5px] ${nome ? '' : 'text-dim'}`}>
-          {nome ?? 'não informado'}
+          {nome ?? 'Não informado'}
         </span>
-        <button
-          type="button"
-          onClick={() => setEditando(true)}
-          className="rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:bg-white/[0.04]"
-        >
+        <button type="button" onClick={() => setEditando(true)} className="crm-button">
           {nome ? 'Trocar' : 'Escolher'}
         </button>
       </span>
@@ -84,21 +82,20 @@ export function InteresseDaOportunidade({
 
   return (
     <span className="flex flex-col gap-1.5">
-      <select
-        value={escolhido}
-        disabled={catalogo === null || rodando}
-        onChange={(e) => setEscolhido(e.target.value)}
-        aria-label="Interesse desta negociação"
-        className="app-field px-2.5 py-1.5 text-[12.5px]"
-      >
-        <option value="">não informado</option>
-        {opcoes.map((produto) => (
-          <option key={produto.id} value={produto.id}>
-            {produto.nome}
-            {produto.arquivadoEm ? ' (arquivado)' : ''}
-          </option>
-        ))}
-      </select>
+      <Dropdown
+        valor={escolhido}
+        desabilitado={catalogo === null || rodando}
+        aoMudar={setEscolhido}
+        rotuloAcessivel="Interesse desta negociação"
+        className="text-xs"
+        opcoes={[
+          { valor: '', rotulo: 'Não informado' },
+          ...opcoes.map((produto) => ({
+            valor: produto.id,
+            rotulo: produto.nome + (produto.arquivadoEm ? ' (arquivado)' : ''),
+          })),
+        ]}
+      />
 
       {catalogo !== null && opcoes.length === 0 && (
         <span className="text-[10.5px] leading-4 text-dim">
@@ -113,16 +110,21 @@ export function InteresseDaOportunidade({
           onClick={() => {
             setErro(null)
             comecar(async () => {
-              const r = await acaoDefinirInteresse(clienteId, cartaoId, escolhido)
-              if (!r.ok) {
-                setErro(r.erro ?? 'não deu')
-                return
+              try {
+                const r = await acaoDefinirInteresse(clienteId, cartaoId, escolhido)
+                if (!r.ok) {
+                  setErro(r.erro ?? 'não deu')
+                  return
+                }
+                setSalvo(escolhido)
+                setNome(opcoes.find((p) => p.id === escolhido)?.nome ?? null)
+                setEditando(false)
+              } catch {
+                setErro('Não foi possível salvar. Tente novamente.')
               }
-              setNome(opcoes.find((p) => p.id === escolhido)?.nome ?? null)
-              setEditando(false)
             })
           }}
-          className="rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:bg-white/[0.04] disabled:opacity-50"
+          className="crm-button disabled:opacity-50"
         >
           Salvar
         </button>
@@ -130,11 +132,11 @@ export function InteresseDaOportunidade({
           type="button"
           disabled={rodando}
           onClick={() => {
-            setEscolhido(produtoId ?? '')
+            setEscolhido(salvo)
             setErro(null)
             setEditando(false)
           }}
-          className="rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:bg-white/[0.04] disabled:opacity-50"
+          className="crm-button disabled:opacity-50"
         >
           Cancelar
         </button>

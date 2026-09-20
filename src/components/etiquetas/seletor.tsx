@@ -157,6 +157,8 @@ export function SeletorDeEtiquetas({
             onKeyDown={(e) => {
               if (e.key === 'Enter') criar()
               if (e.key === 'Escape') {
+                e.preventDefault()
+                e.stopPropagation()
                 setNova('')
                 setCriando(false)
               }

@@ -20,10 +20,12 @@ import { acaoDefinirEstagio } from '@/server/acoes-crm'
  * é assim que se sabe depois qual estágio foi medido e qual foi opinião.
  */
 export function EstagioDoContato({
+  expandido = false,
   clienteId,
   contatoId,
   estagio,
 }: {
+  expandido?: boolean
   clienteId: string
   contatoId: string
   estagio: Estagio
@@ -34,10 +36,11 @@ export function EstagioDoContato({
     <span className="flex flex-col">
       {/* A largura vive no invólucro: `.app-dropdown` fixa 100% e o `Dropdown`
           mede a lista pelo gatilho — 168px é o que "qualificado" precisa. */}
-      <span className="w-[168px] shrink-0">
+      <span className={expandido ? 'w-full min-w-0' : 'w-[168px] shrink-0'}>
         <Dropdown
           rotuloAcessivel="Estágio deste contato"
           valor={otimista.valor}
+          desabilitado={otimista.pendente}
           aoMudar={(novo) =>
             otimista.agir(novo as Estagio, () =>
               acaoDefinirEstagio(clienteId, contatoId, novo as Estagio),

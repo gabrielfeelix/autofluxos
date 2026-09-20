@@ -125,7 +125,7 @@ export function Quadro({
    */
   const [filtro, setFiltro] = useState<FiltroDoQuadro>(FILTRO_VAZIO)
   const [ordem, setOrdem] = useState<OrdemDoQuadro>('espera')
-  const [, comecar] = useTransition()
+  const [movendo, comecar] = useTransition()
 
   /**
    * O servidor é a verdade: quando a rota revalida — alguém criou etapa, o
@@ -173,6 +173,7 @@ export function Quadro({
     const destino = etapas.find((e) => e.id === colunaId)
     const gesto = destino ? aoArrastarPara(alvo, destino) : { tipo: 'mover' as const }
     if (gesto.tipo === 'concluir') {
+      setNoPainel(null)
       setFechando({
         cartao: { ...alvo, colunaId },
         situacao: gesto.situacao,
@@ -190,15 +191,22 @@ export function Quadro({
       ),
     )
 
+    setNoPainel((atual) =>
+      atual?.id === cartaoId
+        ? { ...atual, colunaId, entrouNaColunaEm: new Date(agora).toISOString() }
+        : atual,
+    )
     comecar(async () => {
       try {
         const r = await acaoMoverCartao(clienteId, cartaoId, colunaId)
         if (!r.ok) {
           setCartoes(antes)
+          setNoPainel((atual) => (atual?.id === cartaoId ? alvo : atual))
           setErro(r.erro ?? 'não deu para mover')
         }
       } catch {
         setCartoes(antes)
+        setNoPainel((atual) => (atual?.id === cartaoId ? alvo : atual))
         setErro('não deu para mover agora — tente de novo')
       }
     })
@@ -618,6 +626,20 @@ export function Quadro({
         clienteId={clienteId}
         contatoId={noPainel?.contatoId ?? null}
         cartao={noPainel}
+        etapas={etapas}
+        movendo={movendo}
+        erroDeMovimento={erro}
+        aoMover={(colunaId) => {
+          if (noPainel) mover(noPainel.id, colunaId)
+        }}
+        etapaNome={etapas.find((etapa) => etapa.id === noPainel?.colunaId)?.nome}
+        aoAtualizarCartao={(dados) => {
+          if (!noPainel) return
+          setCartoes((atuais) =>
+            atuais.map((cartao) => (cartao.id === noPainel.id ? { ...cartao, ...dados } : cartao)),
+          )
+          setNoPainel((atual) => (atual ? { ...atual, ...dados } : atual))
+        }}
         aoFechar={() => setNoPainel(null)}
         aoGanharOuPerder={(situacao) => {
           // Fecha o painel e abre o modal do quadro: a lista de motivos e o

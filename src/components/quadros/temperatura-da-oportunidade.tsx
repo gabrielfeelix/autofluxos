@@ -25,16 +25,16 @@ import { acaoAvaliarOportunidade } from '@/server/acoes-produtos'
  */
 const TOM: Record<Temperatura, { aceso: string; apagado: string }> = {
   frio: {
-    aceso: 'border-sky-400/50 bg-sky-50 text-sky-700',
-    apagado: 'border-line bg-panel text-dim hover:bg-sky-50/60 hover:text-sky-700',
+    aceso: 'border-sky-500/35 bg-sky-500/10 text-primary',
+    apagado: 'border-transparent bg-transparent text-muted hover:bg-panel hover:text-ink',
   },
   morno: {
-    aceso: 'border-amber-400/50 bg-amber-50 text-amber-700',
-    apagado: 'border-line bg-panel text-dim hover:bg-amber-50/60 hover:text-amber-700',
+    aceso: 'border-amber-500/35 bg-amber-500/10 text-aviso',
+    apagado: 'border-transparent bg-transparent text-muted hover:bg-panel hover:text-ink',
   },
   quente: {
-    aceso: 'border-rose-400/50 bg-rose-50 text-rose-700',
-    apagado: 'border-line bg-panel text-dim hover:bg-rose-50/60 hover:text-rose-700',
+    aceso: 'border-rose-500/35 bg-rose-500/10 text-perigo',
+    apagado: 'border-transparent bg-transparent text-muted hover:bg-panel hover:text-ink',
   },
 }
 
@@ -54,15 +54,19 @@ export function TemperaturaDaOportunidade({
 
   return (
     <span className="flex flex-col">
-      <span role="radiogroup" aria-label="Quanto esta negociação está quente" className="flex gap-1.5">
+      <span
+        role="group"
+        aria-label="Quanto esta negociação está quente"
+        className="flex gap-1 rounded-lg border border-line bg-surface p-1"
+      >
         {VALORES.map((valor) => {
           const aceso = otimista.valor === valor
           return (
             <button
               key={valor}
               type="button"
-              role="radio"
-              aria-checked={aceso}
+              aria-pressed={aceso}
+              disabled={otimista.pendente}
               title={aceso ? 'Clique de novo para voltar a não avaliada' : undefined}
               onClick={() => {
                 // Clicar no aceso desmarca: é o caminho de volta para "ainda
@@ -82,7 +86,7 @@ export function TemperaturaDaOportunidade({
 
       {otimista.valor === null && (
         <span className="mt-1 text-[10.5px] leading-4 text-dim">
-          Ainda não avaliada. Não é o mesmo que morno.
+          Não avaliada · selecione uma opção.
         </span>
       )}
 
