@@ -135,6 +135,67 @@ extração explícito para os objetos de `public`.
   escrever outro grant amplo em `public` reabre de novo, e o comentário da
   tabela avisa, e o revoke da `0042` precisa ser reexecutado depois;
 - aplicação em produção pela Management API do Supabase;
+- **as `0071` a `0083` foram aplicadas em 20/set/2026**, uma por vez, pela
+  Management API, com autorização explícita do dono para a execução da F5/F6.
+  São treze: `0071` (finalidade e vendas), `0072` (conclusão de processo),
+  `0073` (equipes), `0074`/`0075` (tipo e política de entrada), `0076`
+  (controle da conversa), `0077` (campos tipados), `0078` (qualificação),
+  `0079` (catálogo e temperatura da oportunidade), `0080` (venda atômica),
+  `0081` (atividades), `0082` (`contatos_comerciais`) e `0083` (segmentos).
+
+  **O handoff dizia que só faltavam a `0074`–`0078`, e ele estava errado.**
+  Conferido objeto a objeto antes de aplicar: `vendas`, `venda_itens`,
+  `conclusoes_de_processo` e `equipes` **não existiam** na produção, e
+  `quadros.finalidade` também não. Ou seja, a `0071`, a `0072` e a `0073`
+  estavam pendentes desde o dia em que foram escritas. É a terceira vez que um
+  documento afirma um número de migration e perde para o banco, e vale a mesma
+  regra do §3: **o estado da produção se descobre consultando a produção**, e
+  nunca lendo um handoff, inclusive este parágrafo.
+
+  **O que a omissão custou, e é o registro mais importante daqui.** O código da
+  T5.2 (`listarQuadros` lendo `quadros.finalidade`) foi para a Vercel pelo push
+  em `main` antes de a `0071` existir lá. Resultado: a tela `/clientes/[id]`
+  estourou em produção com React #441, e o log mostrou
+  `column quadros.finalidade does not exist`. É exatamente a inversão que a
+  `0058` já tinha documentado: **migration primeiro, deploy depois**, sempre que
+  o código novo lê ou escreve objeto novo. Neste repositório o push É o deploy,
+  então o intervalo entre as duas coisas não é opcional: ele é o tempo entre
+  `git push` e a migration entrar.
+
+  Cada uma foi conferida pelos **dois** testes: replay do zero em Docker
+  (`0001`–`0083` em ordem, sem erro) e ensaio em transação contra a produção
+  (`begin; <a migration sem o notify>; rollback;`), os treze limpos. Depois,
+  releitura objeto a objeto.
+
+  Estado conferido na produção depois de aplicar: as 10 tabelas novas
+  (`vendas`, `venda_itens`, `conclusoes_de_processo`, `equipes`,
+  `equipe_membros`, `campos_definidos`, `criterios_de_qualificacao`,
+  `produtos`, `revisoes_de_venda`, `atividades`, `segmentos`), a view
+  `contatos_comerciais` com `security_invoker = true`, as 3 funções novas
+  (`concluir_processo`, `registrar_venda_e_concluir`,
+  `cancelar_venda_e_resolver`) e as colunas de `passagens`, `clients`,
+  `contacts`, `quadro_cartoes` e `transmissoes`. Grants só para `postgres` e
+  `service_role`; `anon` e `authenticated` não aparecem em nenhuma.
+
+  **O dado existente ficou intacto, e a `0079` é a prova de que valeu conferir:**
+  37 contatos e 29 cartões antes e depois; os 29 cartões com
+  `temperatura is null` ("não avaliada") e os 37 contatos seguindo com o
+  `'morno'` legado da `0068`. Copiar aquele default para as negociações teria
+  transformado um "ninguém opinou" em avaliação humana de 29 negociações, e é o
+  erro que a migration foi escrita para não cometer.
+
+  **Três delas têm `notify pgrst`** (`0081`, `0082`, `0083`), e o reload foi
+  conferido **nos dois produtos**: `atividades`, `segmentos`, `produtos` e
+  `contatos_comerciais` respondem **200** para `service_role` e **401** para
+  `anon` (sem 404, então não há restart pendente), e `app_verandi.conta`
+  continua respondendo **200** pelo mesmo PostgREST. Do outro lado, medido
+  antes e depois: `app_verandi.migrations_aplicadas` com as mesmas **32**
+  linhas, **42** tabelas e as **16** policies de `storage.objects`.
+
+  **A `0059` deixou de estar pendente**, e o buraco da numeração fechou: a
+  produção tem `templates` com 3 linhas e `transmissoes`, então o que o registro
+  da `0060` descrevia como pendente foi aplicado em algum momento entre 15/set e
+  20/set. A produção está, hoje, com `0001`–`0083` inteiras;
 - **a `0055` foi aplicada em 15/set/2026**, com autorização explícita do dono e
   conferida pelos dois testes: replay ordenado em Docker (as `0043`–`0055`
   aplicadas em sequência sobre o stack local, que já tinha até a `0042`) e
@@ -326,18 +387,18 @@ extração explícito para os objetos de `public`.
   `clients_niveis_coerentes` garantindo ouro > prata);
   `sequencias.dias_sem_conversa` e `sequencias.nivel_alvo`; e
   `sequencia_inscricoes.por_sumico_em`. Mais a troca do
-  `sequencias_evento_check` para aceitar `cliente_sumido` — `check` não tem
+  `sequencias_evento_check` para aceitar `cliente_sumido`: `check` não tem
   `alter`, então é drop e recria, como já foi na 0034.
 
   **Por que faixa em reais e não quintil:** o RFM clássico corta a base em cinco
-  partes iguais, e isso quebra em base pequena — num estúdio com trinta alunas o
+  partes iguais, e isso quebra em base pequena: num estúdio com trinta alunas o
   quintil de cima é topo de trinta, e pode ser quem gastou trezentos reais no
   ano. Quintil também move o chão sozinho: entra um cliente grande e todo mundo
   cai de faixa sem ter feito nada.
 
   **`por_sumico_em` é a coluna que impede o pior erro possível:** quem está
   sumido hoje continua sumido amanhã, e sem ela a passada diária reinscreveria a
-  mesma pessoa todo dia — uma mensagem por dia no WhatsApp de um cliente antigo.
+  mesma pessoa todo dia: uma mensagem por dia no WhatsApp de um cliente antigo.
 
   Conferida pelo ensaio em transação antes (recusa ouro < prata, recusa evento de
   sumiço sem dias, aceita o evento novo) e na produção depois: as cinco colunas,
@@ -345,12 +406,12 @@ extração explícito para os objetos de `public`.
 - **a `0069` foi aplicada em 18/set/2026**, com autorização explícita do dono.
   Ela acrescenta uma coluna anulável a `public.quadro_colunas`: `cor` (`text`,
   com `check` fechando a paleta em oito nomes). Nenhuma tabela nova, nenhuma
-  coluna alterada, nenhuma escrita em dado existente — toda etapa que já existia
+  coluna alterada, nenhuma escrita em dado existente: toda etapa que já existia
   continua com `cor is null`, que é "sem cor", e nada muda de aparência até
   alguém escolher um tom.
 
   **Nome de cor e não `#rrggbb`, de propósito:** o produto tem tema claro e
-  escuro, e um hex escolhido no escuro vira texto ilegível no claro — quem
+  escuro, e um hex escolhido no escuro vira texto ilegível no claro: quem
   escolheu não vai testar os dois. Guardando o nome, quem decide o tom é o CSS,
   que já sabe em que tema está.
 
