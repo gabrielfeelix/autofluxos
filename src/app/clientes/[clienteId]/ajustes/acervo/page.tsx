@@ -19,10 +19,10 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         <Trilha
           caminho={[
             { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },
-            { rotulo: 'Acervo' },
+            { rotulo: 'Arquivos e mídias' },
           ]}
         />
-        <h1 className="text-[25px] font-bold tracking-[-0.02em]">Acervo</h1>
+        <h1 className="text-[25px] font-bold tracking-[-0.02em]">Arquivos e mídias</h1>
         <p className="mt-1.5 mb-6 max-w-[680px] text-[13px] leading-6 text-dim">
           Os arquivos que o bloco de Mídia pode enviar: foto da sala, vídeo do trabalho, PDF do
           plano. Copie o endereço de um arquivo e cole no bloco.{' '}

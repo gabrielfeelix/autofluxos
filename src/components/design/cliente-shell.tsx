@@ -1,4 +1,8 @@
 import Link from 'next/link'
+import { Suspense } from 'react'
+import { acessoCompleto, filtroDoAcesso } from '@/server/permissoes'
+import { agenda } from '@/server/repos/atividades'
+import { urgenciaDe } from '@/core/atividades'
 import type { ReactNode } from 'react'
 import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
 import { NotificacoesDaFila } from '@/components/inbox/notificacoes-da-fila'
@@ -84,6 +88,7 @@ export async function ClienteShell({
             <span className="max-w-[110px] truncate text-[12px] font-semibold">{cliente.nome}</span>
           </>
         }
+        presenca={presenca ?? undefined}
         voltar={
           podeVerTodosOsClientes ? (
             <Link
@@ -100,6 +105,7 @@ export async function ClienteShell({
           href: `/clientes/${cliente.id}${item.href}`,
           icone: item.icone,
           acesa: item.chave === ativa,
+          contador: item.chave === 'atividades' ? <Suspense fallback={null}><Pendencias clienteId={cliente.id} /></Suspense> : undefined,
         }))}
         rodape={
           <>
@@ -237,3 +243,20 @@ const PAPEIS: Record<string, string> = {
   member: 'equipe',
 }
 
+
+async function contarPendencias(clienteId: string) {
+  try {
+    const acesso = await acessoCompleto(clienteId)
+    const itens = await agenda(clienteId, filtroDoAcesso(acesso, 'atender'))
+    const agora = Date.now()
+    return itens.filter((item) => ['hoje', 'vencida'].includes(urgenciaDe(item, agora))).length
+  } catch {
+    return 0
+  }
+}
+
+async function Pendencias({ clienteId }: { clienteId: string }) {
+  const quantidade = await contarPendencias(clienteId)
+  if (!quantidade) return null
+  return <span title="Atividades vencidas e de hoje" className="rounded-md bg-primary-weak px-1.5 py-0.5 text-[10px] font-bold text-primary">{quantidade >= 200 ? '200+' : quantidade}</span>
+}

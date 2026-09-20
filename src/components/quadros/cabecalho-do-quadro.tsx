@@ -91,7 +91,7 @@ export function CabecalhoDoQuadro({
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <Link href={`/clientes/${clienteId}/quadros/atividades`} className="quadro-tool">
+        <Link href={`/clientes/${clienteId}/atividades`} className="quadro-tool">
           Atividades
         </Link>
         {adicionar}

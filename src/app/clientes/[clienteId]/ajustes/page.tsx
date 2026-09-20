@@ -132,7 +132,7 @@ export default async function Pagina({
             href={`/clientes/${cliente.id}/ajustes/whatsapp`}
             icone={ICONE_DA_TELA['whatsapp']}
             titulo="WhatsApp"
-            descricao="Qual número atende, que fluxo ele executa em cada papel, e o endereço para o painel da Meta."
+            descricao="Conecte seu número e escolha como receber e responder às mensagens."
             estado={
               saudeDoWhats === 'reconectar' ? (
                 <Selo tom="perigo">reconectar</Selo>
@@ -173,8 +173,8 @@ export default async function Pagina({
           <Cartao
             href={`/clientes/${cliente.id}/ajustes/contexto`}
             icone={ICONE_DA_TELA['contexto']}
-            titulo="Contexto do negócio"
-            descricao="A única coisa que o bloco de IA pode dizer. Sem isto, ele responde “não sei” a tudo."
+            titulo="Conhecimento da IA"
+            descricao="Informações da empresa que a IA usa para responder com precisão."
             estado={
               semContexto ? (
                 <Selo tom="alerta">vazio</Selo>
@@ -223,10 +223,17 @@ export default async function Pagina({
             }
           />
           <Cartao
+            href={`/clientes/${cliente.id}/ajustes/produtos`}
+            icone={ICONE_DA_TELA['produtos']}
+            titulo="Catálogo"
+            descricao="Organize produtos e serviços para registrar interesses e vendas."
+            estado={<Selo tom="neutro">produtos e serviços</Selo>}
+          />
+          <Cartao
             href={`/clientes/${cliente.id}/ajustes/acervo`}
             icone={ICONE_DA_TELA['acervo']}
-            titulo="Acervo"
-            descricao="Foto, vídeo, áudio e PDF que o bloco de Mídia pode enviar na conversa."
+            titulo="Arquivos e mídias"
+            descricao="Organize fotos, vídeos, áudios e documentos para usar nas conversas e automações."
             estado={
               <Selo tom={acervo.length === 0 ? 'neutro' : 'ok'}>
                 {acervo.length === 0
@@ -265,7 +272,7 @@ export default async function Pagina({
           <Cartao
             href={`/clientes/${cliente.id}/ajustes/anuncios`}
             icone={ICONE_DA_TELA['anuncios']}
-            titulo="Anúncios"
+            titulo="Captação por anúncios"
             descricao="Receber como lead quem preenche o formulário de um anúncio no Facebook ou no Instagram."
             estado={
               <Selo tom={paginasDeLead.length === 0 ? 'neutro' : 'ok'}>
@@ -279,7 +286,7 @@ export default async function Pagina({
             href={`/clientes/${cliente.id}/ajustes/chaves`}
             icone={ICONE_DA_TELA['chaves']}
             titulo="Chaves de API"
-            descricao="As chaves que os blocos de Serviços externos usam para falar com os sistemas deste cliente."
+            descricao="Gerencie credenciais para conectar suas automações a outros sistemas."
             estado={
               <Selo tom={conexoes.length === 0 ? 'neutro' : 'ok'}>
                 {conexoes.length === 0
@@ -292,7 +299,7 @@ export default async function Pagina({
 
         <Grupo
           titulo="Conta"
-          descricao="Quem é este cliente para a 4YU, quem entra na conta e o que cada um pode fazer."
+          descricao="Informações e preferências da sua empresa, quem entra na conta e o que cada um pode fazer."
         >
           {/*
             Dados do negócio morava no Painel, acima de tudo, e saiu de lá pelo
@@ -305,8 +312,8 @@ export default async function Pagina({
           <Cartao
             href={`/clientes/${cliente.id}/ajustes/negocio`}
             icone={ICONE_DA_TELA['negocio']}
-            titulo="Dados do negócio"
-            descricao="O cadastro e o logo desta conta. Nada daqui vai para o WhatsApp — é o que a 4YU usa para saber com quem fala."
+            titulo="Dados da empresa"
+            descricao="Edite nome, logo, dados de contato e informações administrativas da empresa."
             estado={
               <Selo tom={cliente.logoUrl ? 'ok' : 'neutro'}>
                 {cliente.logoUrl ? 'com logo' : 'sem logo'}
@@ -317,7 +324,7 @@ export default async function Pagina({
             href={`/clientes/${cliente.id}/ajustes/equipe`}
             icone={ICONE_DA_TELA['equipe']}
             titulo="Equipe"
-            descricao="Quem entra nesta conta e o que cada um pode fazer. É de onde sai o rail de atribuição do Inbox."
+            descricao="Quem entra nesta conta e o que cada um pode fazer. Defina quem pode atender e o que cada pessoa pode acessar."
             estado={
               <Selo tom={equipe.length === 0 ? 'alerta' : 'ok'}>
                 {equipe.length === 0
@@ -333,7 +340,7 @@ export default async function Pagina({
           <Cartao
             href={`/clientes/${cliente.id}/ajustes/recursos`}
             icone={ICONE_DA_TELA['recursos']}
-            titulo="Recursos"
+            titulo="Personalizar sistema"
             descricao="Para que esta conta usa o AutoFluxos, e se o CRM aparece no menu. Ninguém precisa de tudo."
             estado={<Selo tom={recursos.crmAtivo ? 'ok' : 'neutro'}>{recursos.crmAtivo ? 'com CRM' : 'sem CRM'}</Selo>}
           />

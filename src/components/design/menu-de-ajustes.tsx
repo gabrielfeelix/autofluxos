@@ -1,183 +1,33 @@
+'use client'
+
 import Link from 'next/link'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { GRUPOS, type TelaDeAjustes } from './itens-de-ajustes'
+export type { TelaDeAjustes } from './itens-de-ajustes'
 
-/**
- * A segunda barra, a das Configurações.
- *
- * ---------------------------------------------------------------------------
- * Por que existem duas barras
- * ---------------------------------------------------------------------------
- *
- * Com uma só, trocar de tela dentro de Configurações exigia voltar ao índice e
- * escolher de novo: a lista de destinos morava numa página, e página não
- * acompanha quem já entrou. A segunda barra transforma Configurações de uma
- * *página com uma lista* num **lugar por onde se circula**: que é o desenho do
- * Intercom, do HubSpot e da Brevo, e o motivo é o mesmo nos três.
- *
- * Os grupos são os mesmos quatro decididos em `docs/PLANO-CONFIGURACOES.md`, e
- * não uma segunda organização inventada aqui. Duas verdades sobre a mesma coisa
- * divergem no primeiro item novo.
- *
- * ---------------------------------------------------------------------------
- * A barra global **não** encolhe ao entrar aqui
- * ---------------------------------------------------------------------------
- *
- * Ela encolhia, e o argumento era que duas colunas de texto lado a lado
- * competem. O custo era maior: a barra saltava de 226px para 68px no clique de
- * Configurações, desfazendo a largura que a pessoa tinha escolhido, e o salto
- * acontecia justamente na seção onde ela foi mexer nas próprias preferências.
- * Largura de barra é de quem trabalha, e nenhuma tela a sobrescreve.
- */
+const normalizar = (texto: string) => texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+const sinonimos: Partial<Record<TelaDeAjustes, string>> = { contexto: 'contexto negocio inteligencia artificial bot', acervo: 'acervo fotos videos pdf documentos', recursos: 'recursos onboarding crm objetivo assistente', negocio: 'cadastro cnpj empresa', anuncios: 'leads meta facebook anuncios' }
 
-export type TelaDeAjustes =
-  | 'inicio'
-  | 'whatsapp'
-  | 'instagram'
-  | 'contexto'
-  | 'horario'
-  | 'respostas-rapidas'
-  | 'etiquetas'
-  | 'produtos'
-  | 'acervo'
-  | 'integracoes'
-  | 'anuncios'
-  | 'chaves'
-  | 'negocio'
-  | 'equipe'
-  | 'plano'
-  | 'recursos'
-
-const GRUPOS: { titulo: string | null; itens: { chave: TelaDeAjustes; rotulo: string }[] }[] = [
-  // O índice fica solto no topo, sem rótulo de grupo: ele não é um assunto, é
-  // o caminho de volta para a visão geral.
-  { titulo: null, itens: [{ chave: 'inicio', rotulo: 'Visão geral' }] },
-  {
-    titulo: 'Canais',
-    itens: [
-      { chave: 'whatsapp', rotulo: 'WhatsApp' },
-      { chave: 'instagram', rotulo: 'Instagram' },
-    ],
-  },
-  {
-    titulo: 'Atendimento',
-    itens: [
-      { chave: 'contexto', rotulo: 'Contexto do negócio' },
-      { chave: 'horario', rotulo: 'Horário de atendimento' },
-      { chave: 'respostas-rapidas', rotulo: 'Respostas rápidas' },
-      { chave: 'etiquetas', rotulo: 'Etiquetas' },
-      { chave: 'produtos', rotulo: 'Catálogo' },
-      { chave: 'acervo', rotulo: 'Acervo' },
-    ],
-  },
-  {
-    titulo: 'Integrações',
-    itens: [
-      // "Todas" primeiro porque é a visão, e as outras duas são o detalhe dela.
-      { chave: 'integracoes', rotulo: 'Todas as integrações' },
-      { chave: 'anuncios', rotulo: 'Anúncios' },
-      { chave: 'chaves', rotulo: 'Chaves de API' },
-    ],
-  },
-  {
-    titulo: 'Conta',
-    itens: [
-      { chave: 'negocio', rotulo: 'Dados do negócio' },
-      { chave: 'equipe', rotulo: 'Equipe' },
-      /*
-       * Recursos entra em "Conta", e não em "Atendimento".
-       *
-       * O que se decide ali é **que partes do produto esta empresa usa**, e não
-       * como ela atende. É a tradução do §4.2: "CRM fica disponível em
-       * Configurações → Recursos, com explicação e botão Ativar CRM".
-       */
-      { chave: 'recursos', rotulo: 'Recursos' },
-      { chave: 'plano', rotulo: 'Plano e consumo' },
-    ],
-  },
-]
-
-/** A rota de cada tela. `inicio` é o próprio índice. */
-function enderecoDe(clienteId: string, chave: TelaDeAjustes) {
-  const base = `/clientes/${clienteId}/ajustes`
-  return chave === 'inicio' ? base : `${base}/${chave}`
-}
-
-/**
- * `clienteId` é opcional, e é o que conserta o `loading.tsx`.
- *
- * **`loading.tsx` não recebe `params`.** A documentação do Next é literal:
- * *"Loading UI components do not accept any parameters"*. A versão anterior
- * declarava `params` ali e fazia `await params`, o que em produção virava
- * `await undefined` e estourava na desestruturação: a tela inteira de
- * Configurações caía com "Alguma coisa quebrou aqui", e o React só mostrava o
- * erro #441 porque a mensagem real fica escondida em build de produção.
- *
- * Sem id, o menu desenha os mesmos itens sem `<Link>`. É de propósito: o
- * objetivo do menu no esqueleto sempre foi ocupar a mesma largura para a barra
- * não piscar, e para isso ele não precisa navegar. Um menu clicável durante o
- * carregamento seria pior, porque clicar nele não levaria a lugar nenhum.
- */
-export function MenuDeAjustes({
-  clienteId,
-  ativa,
-}: {
-  clienteId?: string
-  ativa: TelaDeAjustes
-}) {
-  return (
-    <nav
-      aria-label="Configurações"
-      /*
-        No celular vira uma tira que rola na horizontal, igual à navegação
-        global: coluna de doze itens empurraria o conteúdo da tela para baixo da
-        dobra, e ninguém abre Configurações para ler o menu.
-      */
-      className="shrink-0 border-line md:w-[228px] md:border-r md:py-[26px] md:pr-4 md:pl-[26px]"
-    >
-      <p className="hidden pl-2.5 text-[11px] font-bold tracking-[0.06em] text-dim uppercase md:mb-3 md:block">
-        Configurações
-      </p>
-
-      <div className="flex gap-1 overflow-x-auto border-b border-line px-4 py-2 md:flex-col md:gap-0 md:overflow-visible md:border-0 md:p-0">
-        {GRUPOS.map((grupo, indice) => (
-          <div key={grupo.titulo ?? 'topo'} className="contents md:block">
-            {grupo.titulo && (
-              <p
-                className={`hidden px-2.5 text-[10.5px] font-bold tracking-[0.05em] text-dim uppercase md:block ${
-                  indice === 0 ? 'md:mb-1.5' : 'md:mt-5 md:mb-1.5'
-                }`}
-              >
-                {grupo.titulo}
-              </p>
-            )}
-            {grupo.itens.map((item) => {
-              const classe = `flex shrink-0 items-center rounded-[9px] px-2.5 py-[7px] text-[12.5px] transition ${
-                item.chave === ativa
-                  ? 'bg-primary-weak font-bold text-primary'
-                  : 'font-medium text-muted hover:bg-surface hover:text-ink'
-              }`
-
-              if (!clienteId) {
-                return (
-                  <span key={item.chave} className={classe} aria-hidden>
-                    {item.rotulo}
-                  </span>
-                )
-              }
-
-              return (
-                <Link
-                  key={item.chave}
-                  href={enderecoDe(clienteId, item.chave)}
-                  aria-current={item.chave === ativa ? 'page' : undefined}
-                  className={classe}
-                >
-                  {item.rotulo}
-                </Link>
-              )
-            })}
-          </div>
-        ))}
-      </div>
-    </nav>
-  )
+export function MenuDeAjustes({ clienteId, ativa }: { clienteId?: string; ativa: TelaDeAjustes }) {
+  const [busca, setBusca] = useState('')
+  const router = useRouter()
+  const endereco = (chave: TelaDeAjustes) => `/clientes/${clienteId}/ajustes${chave === 'inicio' ? '' : `/${chave}`}`
+  const grupos = GRUPOS.map((grupo) => ({ ...grupo, itens: grupo.itens.filter((item) => normalizar(`${grupo.titulo ?? ''} ${item.rotulo} ${sinonimos[item.chave] ?? ''}`).includes(normalizar(busca.trim()))) })).filter((grupo) => grupo.itens.length)
+  return <nav aria-label="Configurações" className="shrink-0 border-b border-line p-4 md:w-[228px] md:border-b-0 md:border-r md:px-4 md:py-6">
+    <label htmlFor="buscar-configuracao" className="mb-2 block text-xs font-semibold text-muted">Buscar configuração</label>
+    <input id="buscar-configuracao" type="search" value={busca} onChange={(event) => setBusca(event.target.value)} placeholder="Nome ou assunto…" className="mb-3 w-full rounded-lg border border-line bg-panel px-3 py-2 text-xs outline-none focus:border-primary" />
+    <label className="block md:hidden"><span className="sr-only">Seção de configurações</span><select disabled={!clienteId} value={ativa} onChange={(event) => router.push(endereco(event.target.value as TelaDeAjustes))} className="w-full rounded-lg border border-line bg-panel p-2.5 text-sm">
+      <option value={ativa}>{GRUPOS.flatMap((grupo) => grupo.itens).find((item) => item.chave === ativa)?.rotulo}</option>
+      {grupos.map((grupo) => <optgroup key={grupo.titulo ?? 'geral'} label={grupo.titulo ?? 'Geral'}>{grupo.itens.filter((item) => item.chave !== ativa).map((item) => <option key={item.chave} value={item.chave}>{item.rotulo}</option>)}</optgroup>)}
+    </select></label>
+    {grupos.length === 0 && <p role="status" className="py-3 text-xs text-dim">Nenhuma configuração encontrada.</p>}
+    <div className="hidden md:block">{grupos.map((grupo) => <div key={grupo.titulo ?? 'geral'}>
+      {grupo.titulo && <p className="mt-5 mb-1.5 px-2 text-[10px] font-bold uppercase tracking-wider text-dim">{grupo.titulo}</p>}
+      {grupo.itens.map((item) => {
+        const classe = `block rounded-lg px-2.5 py-2 text-[12.5px] ${item.chave === ativa ? 'bg-primary-weak font-semibold text-primary' : 'text-muted hover:bg-surface hover:text-ink'}`
+        return clienteId ? <Link key={item.chave} href={endereco(item.chave)} aria-current={item.chave === ativa ? 'page' : undefined} className={classe}>{item.rotulo}</Link> : <span key={item.chave} className={classe}>{item.rotulo}</span>
+      })}
+    </div>)}</div>
+  </nav>
 }

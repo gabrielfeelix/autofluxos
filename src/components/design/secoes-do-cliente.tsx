@@ -30,6 +30,7 @@ import type { ReactNode } from 'react'
 
 export type AbaDoCliente =
   | 'inicio'
+  | 'atividades'
   | 'fluxos'
   | 'transmissoes'
   | 'leads'
@@ -53,6 +54,7 @@ export const ITENS: {
 }[] = [
   { chave: 'inicio', rotulo: 'Painel', href: '', icone: <IconePainel /> },
   { chave: 'inbox', rotulo: 'Inbox', href: '/inbox', icone: <IconeInbox /> },
+  { chave: 'atividades', rotulo: 'Atividades', href: '/atividades', icone: <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4m8-4v4M4 11h16m-12 5 2 2 5-4"/></svg> },
   { chave: 'leads', rotulo: 'Contatos', href: '/leads', icone: <IconeContatos /> },
   // Quadros entra ao lado de Contatos, e não no fim, porque é a mesma gente
   // olhada de outro jeito: a lista responde "quem existe", o quadro responde

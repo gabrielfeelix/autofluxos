@@ -93,18 +93,11 @@ export const PASSOS_OPCIONAIS = ['automacao', 'funil'] as const
 
 export type PassoOpcional = (typeof PASSOS_OPCIONAIS)[number]
 
-/**
- * Este objetivo cobra este passo?
- *
- * Repare que `vender` cobra **os dois**, e não só o funil: quem quer acompanhar
- * negociação sem nenhuma automação vai digitar tudo à mão, e é justo avisar
- * antes e não depois. Já `atender` não cobra nenhum, que é o ponto inteiro
- * desta tarefa.
- */
+/** Vendas e automação são escolhas independentes. */
 export function cobra(objetivo: Objetivo, passo: PassoOpcional): boolean {
   if (objetivo === 'atender') return false
   if (objetivo === 'automatizar') return passo === 'automacao'
-  return true
+  return passo === 'funil'
 }
 
 /**

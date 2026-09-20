@@ -848,11 +848,6 @@ export async function acaoPrimeiroAcesso(
   }
 
   revalidatePath('/', 'layout')
-  /*
-   * Direto para a aba **Número**, e não para a visão geral.
-   *
-   * Quem acabou de criar a empresa não tem nada para ver num painel vazio; o
-   * que ele quer é ligar o WhatsApp dele, que é a razão de ter se cadastrado.
-   */
-  redirect(`/clientes/${id}/ajustes/whatsapp`)
+  // O responsável escolhe objetivo e canal antes de conectar o atendimento.
+  redirect(`/clientes/${id}/configurar`)
 }

@@ -1,6 +1,6 @@
 import { createHmac } from 'node:crypto'
 import { afterEach, describe, expect, it } from 'vitest'
-import { assinaturaConfere } from './route'
+import { assinaturaConfere } from '@/server/instagram/assinatura'
 
 /**
  * O caso que motivou o teste: o Direct do Instagram é assinado com a chave do

@@ -46,8 +46,7 @@ export default async function PrimeiroAcesso({
       descricao="Falta só dizer de quem é a conta."
       rodape={
         <p>
-          Depois disto você vai direto para a tela de conectar o seu WhatsApp — o número que você
-          já usa, sem trocar de aparelho.
+          Depois, vamos ajudar você a escolher seu objetivo, preparar o sistema e conectar seu canal de atendimento.
         </p>
       }
     >

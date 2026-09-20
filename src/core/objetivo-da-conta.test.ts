@@ -30,8 +30,8 @@ describe('o que o objetivo cobra', () => {
     expect(cobra('automatizar', 'funil')).toBe(false)
   })
 
-  it('quem quer vender é cobrado pelos dois', () => {
-    expect(cobra('vender', 'automacao')).toBe(true)
+  it('quem quer vender com atendimento humano não precisa publicar bot', () => {
+    expect(cobra('vender', 'automacao')).toBe(false)
     expect(cobra('vender', 'funil')).toBe(true)
   })
 

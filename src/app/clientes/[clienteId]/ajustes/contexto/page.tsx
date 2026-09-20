@@ -52,10 +52,10 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         <Trilha
           caminho={[
             { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },
-            { rotulo: 'Contexto do negócio' },
+            { rotulo: 'Conhecimento da IA' },
           ]}
         />
-        <h1 className="text-[25px] font-bold tracking-[-0.02em]">Contexto do negócio</h1>
+        <h1 className="text-[25px] font-bold tracking-[-0.02em]">Conhecimento da IA</h1>
         <p className="mt-1.5 mb-6 max-w-[620px] text-[13px] leading-6 text-dim">
           É a <strong className="text-soft">única fonte de verdade</strong> do bloco de IA. Ela
           responde só com o que estiver escrito aqui; para qualquer outra coisa, passa a conversa

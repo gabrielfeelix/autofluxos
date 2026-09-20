@@ -230,6 +230,33 @@ extração explícito para os objetos de `public`.
   **A migration entrou antes do push**, e não depois: o código da T8.2 lê os dois
   objetos novos, então o intervalo seria a tela de início caindo, como caiu com a
   `0071`. A produção está, hoje, com `0001`–`0086` inteiras;
+- **a `0089` foi aplicada em 20/set/2026**, com autorização explícita do dono
+  pedida nesta sessão: a autorização da `0088` valeu só para ela. Conferida
+  pelos **dois** testes: replay do zero em Docker (`0001`–`0089` em ordem, sem
+  erro) e ensaio em transação contra a produção, os dois limpos.
+
+  Ela acrescenta `clients.onboarding` (`jsonb` anulável) e a função
+  `public.preparar_onboarding(uuid, jsonb, text, text, jsonb, jsonb)`, que
+  prepara a conta a partir das respostas do assistente.
+
+  **`null` em `onboarding` é o que preserva quem já usa o produto**: as 10
+  contas existentes continuam nulas e nenhuma é empurrada para o assistente.
+
+  A função é `security invoker` com `search_path = ''`, toma `for update` na
+  linha da empresa (repetir a conclusão não duplica funil nem fluxo) e valida
+  todas as entradas contra listas fechadas. O `revoke` inclui `public` na lista,
+  como o §6 deste documento exige: sem isso `anon` e `authenticated` herdariam
+  `EXECUTE` de `PUBLIC` e o revoke deles não adiantaria nada.
+
+  Releitura objeto a objeto depois de aplicar: coluna `jsonb` anulável com as 10
+  contas em `null`, função com `search_path=""`, `has_function_privilege`
+  respondendo `false` para `anon` e `authenticated` e `true` para
+  `service_role`, e `crm_ativo` intacto nas 10 contas.
+
+  **Data API dos dois produtos depois do `notify pgrst`**: `public.clients` e
+  `public.atividades` em 200 com a coluna nova já visível, e `app_verandi.conta`,
+  `.contrato`, `.avaliacao` e `.cobranca` em 200.
+
 - **a `0088` foi aplicada em 20/set/2026**, com autorização explícita do dono
   pedida nesta sessão. Conferida pelos **dois** testes: replay do zero em Docker
   (`0001`–`0088` em ordem, sem erro) e ensaio em transação contra a produção,

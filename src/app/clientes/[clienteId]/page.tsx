@@ -1,4 +1,8 @@
 import Link from 'next/link'
+import { acessoCompleto } from '@/server/permissoes'
+import { pode } from '@/core/permissoes'
+import { onboardingDaConta } from '@/server/repos/onboarding'
+import { passosDoOnboarding } from '@/core/onboarding'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { ComoFunciona } from '@/components/cliente/como-funciona'
@@ -69,6 +73,9 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
+  const acesso = await acessoCompleto(clienteId)
+  const configura = pode(acesso.regras, 'configurar_operacao', 'todos')
+  const onboarding = configura ? await onboardingDaConta(clienteId) : null
   const [sessao, fluxos, canais, contatos, quadros, recursos] = await Promise.all([
     sessaoAtual(),
     listarFluxos(cliente.id),
@@ -86,6 +93,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const passos = passosDaConta({
     clienteId: cliente.id,
     objetivo: recursos.objetivo,
+    opcionais: passosDoOnboarding(recursos.objetivo, onboarding),
     temFluxo: fluxos.length > 0,
     temPublicado: noAr.length > 0,
     temCanal: canais.length > 0,
@@ -105,10 +113,16 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           </h1>
           <p className="mt-1 text-[13px] text-muted">
             {faltaPasso
-              ? `Vamos deixar o atendimento de ${cliente.nome} rodando sozinho.`
+              ? `Vamos organizar o atendimento de ${cliente.nome}.`
               : `O atendimento de ${cliente.nome}, hoje.`}
           </p>
         </header>
+
+        {configura && onboarding?.status !== 'concluido' && <section className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-primary/20 bg-primary-weak p-5">
+          <div><h2 className="text-sm font-bold">{onboarding ? 'Continue preparando sua empresa' : 'Deixe o sistema com a sua cara'}</h2><p className="mt-1 text-xs leading-5 text-muted">Escolha como atender e quais modelos ajudam sua rotina. O que você já configurou será preservado.</p></div>
+          <Link href={`/clientes/${cliente.id}/configurar`} className="app-primary-button px-4 py-2.5 text-xs">{onboarding ? 'Continuar preparação' : 'Personalizar sistema'} →</Link>
+        </section>}
+        {!configura && <section className="app-card mb-5 p-5"><h2 className="text-sm font-bold">Sua rotina começa aqui</h2><p className="mt-2 text-sm leading-6 text-muted">Responda conversas no Inbox, acompanhe seus lembretes em Atividades e consulte os dados em Contatos.</p><div className="mt-3 flex flex-wrap gap-4 text-sm text-primary"><Link href={`/clientes/${cliente.id}/inbox`}>Abrir Inbox →</Link><Link href={`/clientes/${cliente.id}/atividades`}>Ver atividades →</Link><Link href={`/clientes/${cliente.id}/leads`}>Ver contatos →</Link></div></section>}
 
         <Estado
           clienteId={cliente.id}
@@ -131,7 +145,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           </div>
 
           <aside className="flex min-w-0 flex-col gap-5">
-            {faltaPasso && <PrimeirosPassos passos={passos} />}
+            {configura && faltaPasso && <PrimeirosPassos passos={passos} />}
 
             <Suspense
               fallback={
@@ -210,6 +224,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 function passosDaConta({
   clienteId,
   objetivo,
+  opcionais,
   temFluxo,
   temPublicado,
   temCanal,
@@ -218,6 +233,7 @@ function passosDaConta({
 }: {
   clienteId: string
   objetivo: Objetivo
+  opcionais?: { automacao: boolean; funil: boolean }
   temFluxo: boolean
   temPublicado: boolean
   temCanal: boolean
@@ -287,8 +303,8 @@ function passosDaConta({
    * apagado junto.
    */
   return passos.filter((passo) => {
-    if (passo.chave === 'automacao') return passo.feito || cobra(objetivo, 'automacao')
-    if (passo.chave === 'funil') return passo.feito || cobra(objetivo, 'funil')
+    if (passo.chave === 'automacao') return passo.feito || (opcionais?.automacao ?? cobra(objetivo, 'automacao'))
+    if (passo.chave === 'funil') return passo.feito || (opcionais?.funil ?? cobra(objetivo, 'funil'))
     return true
   })
 }
@@ -732,8 +748,12 @@ function FatiaDoMes({
  * Noventa dias porque NPS de uma semana é ruído: três respostas mudam o número
  * em dezenas de pontos, e o cliente conclui que o relatório é inútil.
  */
+function inicioDoPeriodoDeSatisfacao() {
+  return new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
+}
+
 async function Satisfacao({ clienteId }: { clienteId: string }) {
-  const desde = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
+  const desde = inicioDoPeriodoDeSatisfacao()
   const [notas, comentarios] = await Promise.all([
     notasDaConta(clienteId, desde),
     comentariosDaConta(clienteId, desde, 5),
