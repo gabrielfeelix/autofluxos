@@ -30,6 +30,7 @@ export const TESTES_DE_INTEGRACAO = [
   'src/server/repos/acervo.test.ts',
   'src/server/repos/alertas.test.ts',
   'src/server/repos/auditoria.test.ts',
+  'src/server/repos/campos.test.ts',
   'src/server/repos/compartilhar.test.ts',
   'src/server/repos/crm.test.ts',
   'src/server/repos/equipes.test.ts',

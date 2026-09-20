@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
+import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
@@ -24,8 +25,22 @@ import { describe, expect, it } from 'vitest'
  * chamá-la cobre as duas. Aceitar as duas formas é o que permite a varredura
  * acontecer em partes sem deixar o arquivo destravado no meio do caminho.
  */
-const CAMINHO = fileURLToPath(new URL('./acoes.ts', import.meta.url))
-const CODIGO = readFileSync(CAMINHO, 'utf8')
+/**
+ * **A varredura cobre todos os `acoes-*.ts`, e não só `acoes.ts`.**
+ *
+ * Ela lia um arquivo só, e isso era um buraco do tamanho de dezessete arquivos:
+ * uma ação escrita em `acoes-crm.ts` ou num arquivo novo não passava por trava
+ * nenhuma. A lista sai do diretório, e não de um `const`, porque um arquivo
+ * novo tem que entrar sozinho: uma lista escrita à mão é exatamente o lugar
+ * onde alguém esquece de acrescentar o arquivo que acabou de criar.
+ */
+const PASTA = dirname(fileURLToPath(import.meta.url))
+const ARQUIVOS = readdirSync(PASTA)
+  .filter((nome) => (nome === 'acoes.ts' || nome.startsWith('acoes-')) && nome.endsWith('.ts'))
+  .filter((nome) => !nome.endsWith('.test.ts'))
+  .sort()
+
+const CODIGO = ARQUIVOS.map((nome) => readFileSync(`${PASTA}/${nome}`, 'utf8')).join('\n')
 
 type Acao = { nome: string; parametros: string; corpo: string }
 
@@ -70,21 +85,37 @@ function lerAcoes(codigo: string): Acao[] {
 const ACOES = lerAcoes(CODIGO)
 
 describe('toda ação pergunta quem é antes de agir', () => {
-  it('encontra as ações do arquivo — se isto zerar, o resto não prova nada', () => {
+  it('encontra as ações dos arquivos — se isto zerar, o resto não prova nada', () => {
     // Uma mudança de formatação que quebrasse o recorte faria todos os testes
     // abaixo passarem por vacuidade. Este é o teste do teste.
     expect(ACOES.length).toBeGreaterThan(25)
+    // E o varredor precisa estar achando os arquivos: um `filter` errado
+    // deixaria a lista com um arquivo só e a trava voltaria a ser a de antes.
+    expect(ARQUIVOS.length).toBeGreaterThan(10)
+    expect(ARQUIVOS).toContain('acoes.ts')
   })
 
   it.each(ACOES.filter((acao) => acao.parametros.includes('clienteId')).map((a) => a.nome))(
     '%s confere o acesso ao cliente',
     (nome) => {
       const acao = ACOES.find((a) => a.nome === nome)!
-      // `exigirCapacidade` chama `exigirAcessoAoCliente` por dentro: quem usa
-      // a primeira tem as duas fronteiras cobertas.
+      /*
+       * `exigirCapacidade` chama `exigirAcessoAoCliente` por dentro: quem usa
+       * a primeira tem as duas fronteiras cobertas.
+       *
+       * As duas últimas formas apareceram quando a varredura passou a ler
+       * todos os `acoes-*.ts`. Elas **são** conferência de acesso, por outro
+       * caminho: `exigirAdministracao` pergunta o papel na conta, e
+       * `papelNaConta` devolve `null` para quem não é da conta, o que a ação
+       * trata como recusa. Aceitá-las aqui é reconhecer o que o código faz;
+       * não aceitá-las faria a trava pedir uma reescrita que não muda
+       * comportamento nenhum.
+       */
       const confere =
         acao.corpo.includes('await exigirAcessoAoCliente(clienteId)') ||
-        acao.corpo.includes('await exigirCapacidade(clienteId')
+        acao.corpo.includes('await exigirCapacidade(clienteId') ||
+        acao.corpo.includes('await exigirAdministracao(clienteId)') ||
+        acao.corpo.includes('await papelNaConta(clienteId')
       expect(confere, `${nome}: não pergunta quem é`).toBe(true)
     },
   )
@@ -108,18 +139,36 @@ describe('toda ação pergunta quem é antes de agir', () => {
         !acao.corpo.includes('await exigirCapacidade(clienteId'),
     ).map((a) => a.nome)
 
-    // As três restantes são as da equipe (`acaoCadastrarPessoaNaConta`,
-    // `acaoDefinirPapelNaConta`, `acaoRemoverDaConta`), e elas já conferem
-    // `podeAdministrarConta` — a capacidade `configurar_empresa` é a mesma
-    // pergunta com outro nome, e trocá-la é da T2.2, junto da tela de acesso.
+    /*
+     * **O número subiu de 3 para 27, e não é regressão: é a medida certa
+     * aparecendo pela primeira vez.**
+     *
+     * Até a T4.1 a varredura lia só `acoes.ts`, e as ações dos outros
+     * dezessete arquivos não passavam por trava nenhuma. O 3 media um arquivo;
+     * o 27 mede os dezoito. Nenhuma ação perdeu conferência de acesso — o
+     * teste acima prova isso para todas —, o que elas não declaram é **qual**
+     * capacidade exigem.
+     *
+     * Continua sendo um teto que só desce. Uma ação nova escrita com a
+     * fronteira antiga aparece aqui, em vez de entrar quieta na conta.
+     */
     expect(semCapacidade.length, `ainda sem capacidade: ${semCapacidade.join(', ')}`)
-      .toBeLessThanOrEqual(3)
+      .toBeLessThanOrEqual(27)
   })
 
-  it('as que não recebem cliente exigem ser operador da 4YU', () => {
-    // Criar cliente não tem id para conferir — o cliente ainda não existe. A
-    // pergunta certa é quem pode criar.
-    const semCliente = ACOES.filter((acao) => !acao.parametros.includes('clienteId'))
+  /**
+   * As de `acoes.ts` que não recebem cliente: criar cliente não tem id para
+   * conferir, então a pergunta certa é quem pode criar.
+   *
+   * Limitado a `acoes.ts` de propósito. Os outros arquivos têm ações sem
+   * `clienteId` que não são criação de conta — elas recebem o id do contato, da
+   * mensagem ou do alerta, e resolvem a conta a partir dele. Exigir
+   * `exigirOperadorDa4YU` nelas trancaria o produto inteiro para os clientes.
+   * Cobri-las é outra varredura, com outra pergunta, e está anotada no handoff.
+   */
+  it('as de acoes.ts que não recebem cliente exigem ser operador da 4YU', () => {
+    const daAcoes = lerAcoes(readFileSync(`${PASTA}/acoes.ts`, 'utf8'))
+    const semCliente = daAcoes.filter((acao) => !acao.parametros.includes('clienteId'))
     expect(semCliente.map((a) => a.nome)).toEqual(['acaoCriarCliente', 'acaoCriarExemplo'])
 
     for (const acao of semCliente) {
