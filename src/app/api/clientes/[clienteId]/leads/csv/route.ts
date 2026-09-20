@@ -8,6 +8,9 @@ import {
   type Lead,
 } from '@/server/repos/leads'
 import { exigirCapacidade, recusou } from '@/server/permissoes'
+import { contatosDoNivel } from '@/server/consultas/nivel'
+import { faixasDaConta } from '@/server/repos/relacionamento'
+import { FAIXAS_PADRAO, NIVEIS, type Nivel } from '@/core/relacionamento'
 
 export const dynamic = 'force-dynamic'
 
@@ -73,7 +76,24 @@ export async function GET(
   // clicou em exportar espera o arquivo do que está vendo.
   const marca = parametros.get('marca') || null
 
-  const leads = await lerTudo(cliente.id, busca, etiqueta, marca)
+  /*
+   * **O filtro de faixa vem junto, e antes da T6.1 ele não vinha.**
+   *
+   * Esta rota nem conhecia o parâmetro `nivel`: quem filtrava por Ouro na tela
+   * e clicava em exportar recebia a base inteira, sem aviso. Duas superfícies,
+   * duas definições — é o defeito que a RB-37 nomeia, e ele saía daqui como
+   * anexo de e-mail.
+   *
+   * Agora a faixa é resolvida pela mesma `contatosDoNivel` que a tela usa.
+   */
+  const nivel = (NIVEIS as readonly string[]).includes(parametros.get('nivel') ?? '')
+    ? (parametros.get('nivel') as Nivel)
+    : null
+
+  const faixas = (await faixasDaConta(cliente.id)) ?? FAIXAS_PADRAO
+  const daFaixa = nivel ? await contatosDoNivel(cliente.id, nivel, faixas) : null
+
+  const leads = await lerTudo(cliente.id, busca, etiqueta, marca, daFaixa)
   const colunas = colunasDosCampos(leads)
 
   const arquivo = montarCsv(
@@ -112,6 +132,7 @@ async function lerTudo(
   busca: string,
   etiqueta: EtiquetaDeLead | null,
   etiquetaId: string | null,
+  contatos: string[] | null,
 ): Promise<Lead[]> {
   const tudo: Lead[] = []
 
@@ -120,6 +141,7 @@ async function lerTudo(
       busca,
       etiqueta,
       etiquetaId,
+      contatos,
       pagina,
       porPagina: LOTE,
     })

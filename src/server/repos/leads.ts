@@ -607,6 +607,16 @@ export type FiltroDeLeads = {
   /** Começa em 1. Fora da faixa, cai na primeira. */
   pagina?: number
   porPagina?: number
+  /**
+   * Restringe a estes contatos, e **antes de paginar** (T6.1, RB-37).
+   *
+   * É por onde o filtro de faixa de valor entra: quem decide quem está em
+   * "Ouro" é `consultas/contatos.ts`, olhando a conta inteira, e o resultado
+   * chega aqui como lista de ids. `null` é "sem restrição"; lista vazia é
+   * "ninguém passa", e as duas precisam ser distinguíveis — tratá-las igual
+   * mostraria a base inteira justo quando o filtro não achou ninguém.
+   */
+  contatos?: string[] | null
 }
 
 export type PaginaDeLeads = {
@@ -671,6 +681,15 @@ export async function paginarLeads(
     const manuais = await contatosComEtiquetaManual(clienteId, filtro.etiquetaId)
     permitidos = permitidos === null ? manuais : permitidos.filter((id) => manuais.includes(id))
   }
+  // O filtro de contatos (faixa de valor) restringe junto com as etiquetas: as
+  // três são exigências, e quem passa nelas é a interseção.
+  if (filtro.contatos !== null && filtro.contatos !== undefined) {
+    permitidos =
+      permitidos === null
+        ? filtro.contatos
+        : permitidos.filter((id) => filtro.contatos!.includes(id))
+  }
+
   if (permitidos !== null && permitidos.length === 0) {
     return { leads: [], total: 0, pagina: 1, paginas: 1 }
   }

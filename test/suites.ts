@@ -16,6 +16,7 @@
  * o Postgres direto, por `pg`, em vez de passarem pelo cliente do Supabase.
  */
 export const TESTES_DE_INTEGRACAO = [
+  'src/server/consultas/contatos.test.ts',
   'src/server/acoes-conta.test.ts',
   'src/server/agendador.test.ts',
   'src/server/auth.test.ts',

@@ -25,6 +25,7 @@ import { acaoCriarContato } from '@/server/acoes'
 import { listarEtiquetasComContagem, type Etiqueta } from '@/server/repos/etiquetas'
 import { listarQuadros } from '@/server/repos/quadros'
 import { faixasDaConta, relacionamentoDeMuitos } from '@/server/repos/relacionamento'
+import { contatosDoNivel } from '@/server/consultas/nivel'
 import { FAIXAS_PADRAO, NIVEIS, ROTULO_DO_NIVEL, type Nivel } from '@/core/relacionamento'
 import { SeloDoCliente } from '@/components/lead-crm/selo-do-cliente'
 
@@ -89,11 +90,15 @@ function enderecoDoCsv(
   etiqueta: EtiquetaDeLead | null,
   marca: string | null,
   busca: string,
+  nivel: Nivel | null,
 ): string {
   const parametros = new URLSearchParams()
   if (etiqueta) parametros.set('etiqueta', etiqueta)
   if (marca) parametros.set('marca', marca)
   if (busca) parametros.set('busca', busca)
+  // Sem isto, o CSV não vê a faixa e exporta a base inteira: é metade do
+  // defeito da RB-37, e é a metade que sai por e-mail.
+  if (nivel) parametros.set('nivel', nivel)
 
   const consulta = parametros.toString()
   return `/api/clientes/${clienteId}/leads/csv${consulta ? `?${consulta}` : ''}`
@@ -176,13 +181,36 @@ async function Tabela({
   pagina: number
   nivel: Nivel | null
 }) {
-  const filtrando = etiqueta !== null || marca !== null || termo !== ''
-  const [{ leads, total, pagina, paginas }, etiquetasDaConta, quadrosDaConta, faixas] =
+  const filtrando = etiqueta !== null || marca !== null || termo !== '' || nivel !== null
+
+  const faixas = (await faixasDaConta(clienteId)) ?? FAIXAS_PADRAO
+
+  /*
+    O filtro de nível é resolvido **no servidor**, antes de paginar (RB-37).
+
+    Até a T6.1 ele era um `leads.filter(...)` sobre a página já carregada: a
+    contagem dizia "3 de 50" (3 daquela página, não da base), a paginação
+    ignorava o filtro, e o CSV nem o conhecia — quem filtrava por Ouro e
+    exportava recebia todo mundo. Duas superfícies, duas definições.
+
+    Agora `consultarContatos` responde quem está na faixa, olhando a conta
+    inteira, e a lista de leads é restringida a esses contatos antes do
+    `range`. A faixa vira condição por `condicoesDoNivel`, que é o mesmo
+    caminho que a exportação usa.
+  */
+  const daFaixa = nivel ? await contatosDoNivel(clienteId, nivel, faixas) : null
+
+  const [{ leads, total, pagina, paginas }, etiquetasDaConta, quadrosDaConta] =
     await Promise.all([
-      paginarLeads(clienteId, { etiqueta, etiquetaId: marca, busca: termo, pagina: pedida }),
+      paginarLeads(clienteId, {
+        etiqueta,
+        etiquetaId: marca,
+        busca: termo,
+        pagina: pedida,
+        contatos: daFaixa,
+      }),
       listarEtiquetasComContagem(clienteId),
       listarQuadros(clienteId),
-      faixasDaConta(clienteId),
     ])
 
   // Sem filtro e sem nenhum lead, a tela ainda é de primeira vez: o que ajuda
@@ -193,23 +221,17 @@ async function Tabela({
   }
 
   /*
-    O relacionamento é lido **da página**, não da conta inteira.
-
-    Paginar por nível exigiria o cálculo no Postgres — uma view com `group by`
-    sobre os cartões ganhos, recalculada a cada abertura da tela. O filtro aqui
-    é honesto sobre o que faz: ele afina a página que está na frente da pessoa,
-    e a contagem ao lado diz quantos sobraram dela. É a diferença entre uma
-    ferramenta de leitura e um relatório, e esta tela é a primeira.
+    O relacionamento ainda é lido da página, e agora isso é só para **desenhar
+    o selo** de cada linha. Quem decide quem entra na lista é o servidor, acima.
   */
   const relacionamentos = await relacionamentoDeMuitos(
     clienteId,
     leads.map((lead) => lead.contatoId),
-    faixas ?? FAIXAS_PADRAO,
+    faixas,
   )
 
-  const visiveis = nivel
-    ? leads.filter((lead) => relacionamentos.get(lead.contatoId)?.nivel === nivel)
-    : leads
+  // Sem `filter()`: a página que chegou já é a página certa.
+  const visiveis = leads
 
   const colunas = colunasDosCampos(leads)
   const esperando = leads.filter((lead) => lead.aguardando).length
@@ -261,7 +283,7 @@ async function Tabela({
           </label>
         </ModalFormulario>
         <a
-          href={enderecoDoCsv(clienteId, etiqueta, marca, termo)}
+          href={enderecoDoCsv(clienteId, etiqueta, marca, termo, nivel)}
           className="app-secondary-button px-3 py-1.5 text-[11.5px]"
           title="Baixar como planilha exatamente o que este filtro mostra"
         >
