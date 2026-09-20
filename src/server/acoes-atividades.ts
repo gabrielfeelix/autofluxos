@@ -42,8 +42,12 @@ export async function acaoCriarAtividade(
     tipo: string
     titulo: string
     nota?: string
+    /** Link da reunião, endereço da visita, telefone da ligação. */
+    onde?: string
     /** `YYYY-MM-DD` ou vazio. Vazio é "algum dia", e é escolha legítima. */
     prazo?: string
+    /** `HH:MM`, quando o tipo pede hora. Vazio = só o dia. */
+    hora?: string
     responsavelId?: string | null
   },
 ): Promise<RespostaDaAtividade> {
@@ -67,7 +71,9 @@ export async function acaoCriarAtividade(
     tipo: dados.tipo,
     titulo: dados.titulo,
     nota: dados.nota ?? null,
-    prazo: prazoDoDia(dados.prazo),
+    onde: dados.onde ?? null,
+    horaMarcada: (dados.hora ?? '').trim() !== '',
+    prazo: prazoDoDia(dados.prazo, dados.hora),
     responsavelId: dados.responsavelId ?? quem?.usuario.id ?? null,
     criadaPor: quem?.usuario.nome ?? null,
   })
@@ -86,9 +92,28 @@ export async function acaoCriarAtividade(
  * crua mantém os dois lados falando a mesma língua; montar um instante local
  * aqui faria "hoje" virar "ontem" para quem está a oeste de Greenwich.
  */
-function prazoDoDia(dia: string | undefined): string | null {
+function prazoDoDia(dia: string | undefined, hora?: string): string | null {
   const limpo = (dia ?? '').trim()
   if (limpo === '') return null
+
+  /*
+   * **Com hora marcada o instante é local; sem ela, meio-dia UTC.**
+   *
+   * Sem hora o valor só precisa cair no dia certo para `urgenciaDe`, que
+   * compara por dia UTC: meio-dia sobrevive a qualquer fuso sem virar o dia, e
+   * é por isso que ele estava aqui sozinho.
+   *
+   * Com hora o número passa a ser mostrado à pessoa, e tem de ser a hora que
+   * ela escolheu no relógio dela: "14:00" digitado aqui precisa voltar 14:00.
+   * Sem sufixo, o runtime resolve pelo fuso local, que é o certo neste caso e
+   * seria errado no de cima.
+   */
+  const horaLimpa = (hora ?? '').trim()
+  if (horaLimpa !== '') {
+    const comHora = Date.parse(`${limpo}T${horaLimpa}`)
+    if (!Number.isNaN(comHora)) return new Date(comHora).toISOString()
+  }
+
   const data = Date.parse(`${limpo}T12:00:00Z`)
   return Number.isNaN(data) ? null : new Date(data).toISOString()
 }
@@ -164,6 +189,7 @@ export async function acaoLerAtividades(
 
 function recarregar(clienteId: string, contatoId: string | null): void {
   revalidatePath(`/clientes/${clienteId}/quadros`)
-  revalidatePath(`/clientes/${clienteId}/quadros/atividades`)
+  revalidatePath(`/clientes/${clienteId}/atividades`)
+  revalidatePath(`/clientes/${clienteId}`, 'layout')
   if (contatoId) revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
 }

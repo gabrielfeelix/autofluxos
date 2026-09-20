@@ -16,6 +16,8 @@ function atividade(parcial: Partial<Atividade> = {}): Atividade {
     tipo: 'tarefa',
     titulo: 'Ligar para a Ana',
     nota: null,
+    onde: null,
+    horaMarcada: false,
     prazo: null,
     responsavelId: null,
     responsavelNome: null,

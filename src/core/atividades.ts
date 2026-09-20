@@ -38,6 +38,54 @@ export const NOME_DO_TIPO: Record<TipoDeAtividade, string> = {
   proposta: 'proposta',
 }
 
+/**
+ * O que cada tipo pede de diferente na tela.
+ *
+ * O seletor de tipo era decorativo: os cinco davam o mesmo formulário, e o link
+ * de uma reunião acabava espremido no título. Aqui cada tipo diz o que precisa,
+ * e a tela monta os campos a partir disto em vez de espalhar `if` por JSX.
+ *
+ * `onde` é um campo só para link, endereço e telefone porque nenhuma atividade
+ * tem dois desses. `null` em `onde` é o caso da tarefa, que não acontece em
+ * lugar nenhum: ela é só uma coisa a fazer.
+ */
+export type FormatoDoTipo = {
+  /** O que pedir no campo do título. */
+  placeholder: string
+  /** Rótulo e dica do campo `onde`. `null` quando o tipo não usa. */
+  onde: { rotulo: string; placeholder: string } | null
+  /** `true` quando a hora importa: ligação e reunião acontecem numa hora. */
+  pedeHora: boolean
+}
+
+export const FORMATO_DO_TIPO: Record<TipoDeAtividade, FormatoDoTipo> = {
+  tarefa: {
+    placeholder: 'o que precisa ser feito',
+    onde: null,
+    pedeHora: false,
+  },
+  ligacao: {
+    placeholder: 'sobre o que é a ligação',
+    onde: { rotulo: 'Telefone', placeholder: 'se for diferente do WhatsApp' },
+    pedeHora: true,
+  },
+  reuniao: {
+    placeholder: 'assunto da reunião',
+    onde: { rotulo: 'Link ou lugar', placeholder: 'meet.google.com/… ou o endereço' },
+    pedeHora: true,
+  },
+  visita: {
+    placeholder: 'objetivo da visita',
+    onde: { rotulo: 'Endereço', placeholder: 'onde ir' },
+    pedeHora: true,
+  },
+  proposta: {
+    placeholder: 'o que propor',
+    onde: null,
+    pedeHora: false,
+  },
+}
+
 export const SITUACOES = ['aberta', 'concluida', 'cancelada'] as const
 
 export type SituacaoDaAtividade = (typeof SITUACOES)[number]
@@ -50,6 +98,20 @@ export type Atividade = {
   tipo: TipoDeAtividade
   titulo: string
   nota: string | null
+  /**
+   * Onde a atividade acontece: o link da reunião, o endereço da visita, o
+   * telefone da ligação. Um campo só porque nenhuma atividade tem dois desses,
+   * e `null` na tarefa, que não acontece em lugar nenhum.
+   */
+  onde: string | null
+  /**
+   * `true` quando o prazo tem hora combinada.
+   *
+   * `prazo` é um instante e **sempre** carrega uma hora, mesmo quando ninguém
+   * escolheu nenhuma, então só este campo distingue "ligar às 14h" de
+   * "proposta para o dia 22". Sem ele a tela mostraria 12:00 para todo mundo.
+   */
+  horaMarcada: boolean
   /** `null` é "algum dia", e é resposta legítima. */
   prazo: string | null
   responsavelId: string | null

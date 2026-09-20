@@ -3,6 +3,7 @@
 import { Dropdown } from '@/components/design/dropdown'
 
 import { useState, useTransition } from 'react'
+import { horaDoRelogio } from '@/lib/quando'
 import {
   NOME_DO_TIPO,
   TIPOS_DE_ATIVIDADE,
@@ -152,8 +153,34 @@ export function Atividades({
                   <span className="block text-[10.5px] leading-4">
                     {NOME_DO_TIPO[atividade.tipo]}
                     {ROTULO[urgencia] && ` · ${ROTULO[urgencia]}`}
+                    {/*
+                      A hora só aparece quando foi combinada. `prazo` é um
+                      instante e sempre tem uma, então imprimi-la sempre faria
+                      "14 de out, 12:00" para uma proposta que só tem dia.
+                    */}
+                    {atividade.horaMarcada && atividade.prazo && ` · ${horaDoRelogio(atividade.prazo)}`}
                     {atividade.responsavelNome && ` · ${atividade.responsavelNome}`}
                   </span>
+                  {/*
+                    O link da reunião e o endereço da visita ficam à vista: o
+                    motivo de terem campo próprio é justamente não precisar
+                    abrir nada para achá-los na hora de sair.
+                  */}
+                  {atividade.onde &&
+                    (/^https?:\/\//.test(atividade.onde) ? (
+                      <a
+                        href={atividade.onde}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="mt-0.5 block truncate text-[11px] text-primary underline"
+                      >
+                        {atividade.onde}
+                      </a>
+                    ) : (
+                      <span className="mt-0.5 block truncate text-[11px] text-muted">
+                        {atividade.onde}
+                      </span>
+                    ))}
                 </span>
                 <button
                   type="button"
@@ -230,6 +257,8 @@ export function Atividades({
         tipo,
         titulo: titulo.trim(),
         nota: null,
+        onde: null,
+        horaMarcada: false,
         prazo: prazo ? `${prazo}T12:00:00.000Z` : null,
         responsavelId: null,
         responsavelNome: null,

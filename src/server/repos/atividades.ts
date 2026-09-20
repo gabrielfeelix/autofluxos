@@ -27,6 +27,8 @@ type LinhaDaAtividade = {
   tipo: string
   titulo: string
   nota: string | null
+  onde: string | null
+  hora_marcada: boolean | null
   prazo: string | null
   responsavel: string | null
   situacao: string
@@ -37,7 +39,7 @@ type LinhaDaAtividade = {
 }
 
 const COLUNAS =
-  'id, contact_id, cartao_id, tipo, titulo, nota, prazo, responsavel, situacao, ' +
+  'id, contact_id, cartao_id, tipo, titulo, nota, onde, hora_marcada, prazo, responsavel, situacao, ' +
   'concluida_em, motivo_do_cancelamento, criado_em, af_usuarios (nome:name)'
 
 function paraAtividade(linha: LinhaDaAtividade): Atividade {
@@ -48,6 +50,8 @@ function paraAtividade(linha: LinhaDaAtividade): Atividade {
     tipo: (linha.tipo as TipoDeAtividade) ?? 'tarefa',
     titulo: linha.titulo,
     nota: linha.nota,
+    onde: linha.onde ?? null,
+    horaMarcada: Boolean(linha.hora_marcada),
     prazo: linha.prazo,
     responsavelId: linha.responsavel,
     responsavelNome: linha.af_usuarios?.nome ?? null,
@@ -69,6 +73,8 @@ export type PedidoDeAtividade = {
   tipo: TipoDeAtividade
   titulo: string
   nota?: string | null
+  onde?: string | null
+  horaMarcada?: boolean
   prazo?: string | null
   responsavelId?: string | null
   criadaPor?: string | null
@@ -94,6 +100,8 @@ export async function criarAtividade(pedido: PedidoDeAtividade): Promise<Resulta
       tipo: pedido.tipo,
       titulo: conferido.titulo,
       nota: pedido.nota?.trim() || null,
+      onde: pedido.onde?.trim() || null,
+      hora_marcada: pedido.horaMarcada ?? false,
       prazo: pedido.prazo ?? null,
       responsavel: pedido.responsavelId ?? null,
       criada_por: pedido.criadaPor ?? null,
