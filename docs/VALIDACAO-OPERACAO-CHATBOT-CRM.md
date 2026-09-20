@@ -10,8 +10,7 @@
 > **O que ele não é:** uma lista de vistos. O plano pede "checklist com
 > evidência e falhas abertas", e um checklist todo verde sem evidência não vale
 > nada, enquanto um com falha nomeada vale muito. Sete aceites aqui estão
-> marcados como **parciais** e três como **descobertos**, e essa é a parte mais
-> útil do arquivo.
+> marcados como **parciais**, e essa é a parte mais útil do arquivo.
 
 ## Como ler
 
@@ -71,7 +70,7 @@ Verandi: 32 migrations · 42 tabelas · 16 policies de storage.objects
 | A17 | filtro cruzado de temperatura e etapa | **provado** | `src/server/consultas/contatos.test.ts:176` (fria E aberta têm que ser a mesma negociação) |
 | A18 | segmento com mais de uma página | **parcial** | congelamento e contagem em `src/server/repos/segmentos.test.ts:159`. **Falta:** "selecionar todos os 340 do filtro" não existe como gesto (RB-37) |
 | A19 | operador acessa link/API/CSV de outra equipe | **provado** | `src/server/permissoes.test.ts`, `src/core/permissoes.test.ts`, `src/server/repos/equipes.test.ts` |
-| A20 | arquivar item com automação dependente | **descoberto** | bloqueio existe para casos vizinhos (`src/server/repos/sequencias.test.ts:146`, `:152`; `src/server/repos/quadros.test.ts:272`). **Para etapa/campo com automação dependente, nada** |
+| A20 | arquivar item com automação dependente | **provado** | etapa: `src/server/repos/sequencias.test.ts` ("não apaga a etapa que dispara uma sequência"); campo: `src/server/repos/qualificacoes.test.ts` (arquivar não derruba o critério, e por quê) |
 | A21 | bot publicado com edição não publicada | **parcial** | `src/server/repos/repos.test.ts:223`, `:258`; sessão em andamento `src/server/receber-mensagem.test.ts:478`. **Falta:** asserção de que sessão **nova** pega a publicada |
 | A22 | fechar modal alterado sem perder o digitado | **provado** | `test/e2e/jornada-chatbot-crm.spec.ts` (Esc com campo preenchido pergunta e preserva; intocado fecha direto); regra pura em `src/components/design/rascunho-do-modal.ts` |
 | A23 | migração roda novamente | **provado** | `src/server/importar-duas-vezes.test.ts` (não duplica contato nem cartão, **e não envia mensagem**; e não reabre conversa já resolvida) |
@@ -87,16 +86,20 @@ Verandi: 32 migrations · 42 tabelas · 16 policies de storage.objects
 
 ## As falhas abertas, em ordem de quanto custam
 
-### 1. A20: arquivar com automação dependente (descoberto)
+### 1. ~~A20~~ **corrigido em 22/set/2026**
 
-O aceite pede que arquivar uma etapa ou campo com automação apontando para ele
-**resolva a dependência ou bloqueie com explicação**. Existe bloqueio para os
-casos vizinhos: `apagarFluxo` recusa quando ele é passo de sequência, e
-`apagarEtiqueta` recusa quando ela dispara uma. Para **etapa de quadro** e
-**campo definido**, não há nada.
+Era o mais caro da lista, e as duas metades foram fechadas de formas
+diferentes, o que é o registro que importa aqui:
 
-É o mais caro da lista porque o modo de falha é silencioso: a automação continua
-existindo apontando para um alvo arquivado, e só se descobre quando ela roda.
+- **a etapa era defeito de verdade.** `sequencias.coluna_id` aponta para uma
+  etapa, e `apagarEtapa` conferia cartões dentro dela e mais nada. Apagar
+  deixava a sequência ativa esperando um evento que nunca mais chega. Agora
+  recusa e nomeia a sequência, como `apagarEtiqueta` já fazia. Visto falhar
+  antes: com o código antigo o teste acusava `expected true to be false`;
+- **o campo não era defeito, e agora tem prova.** `arquivarCampo` não apaga,
+  marca `arquivado: true`, e o critério lê o valor gravado em `contacts.campos`,
+  não a definição. Bloquear ali seria validação por precaução, que a T7.2 já
+  mostrou custar caro.
 
 ### 2. A31: a retomada em rajada (parcial)
 

@@ -137,15 +137,15 @@ recusa chamada direta de função de gatilho.
 O risco era **profundidade perdida, não porta aberta**, e é por isso que se
 conserta agora e barato.
 
-### O checklist: 24 provados, 7 parciais, 1 descoberto
+### O checklist: 25 provados e 7 parciais (o descoberto foi corrigido)
 
 Em `docs/VALIDACAO-OPERACAO-CHATBOT-CRM.md`, com `arquivo:linha` por aceite.
 
-**O achado mais caro é o A20, e ele é de produto e não de teste:**
-`arquivarCampo` marca `arquivado: true` sem consultar dependência nenhuma. Não
-há bloqueio para arquivar etapa ou campo com automação apontando para ele,
-embora exista para os casos vizinhos (apagar fluxo que é passo de sequência,
-apagar etiqueta que a dispara). O modo de falha é silencioso.
+**O achado mais caro foi o A20, e ele já está corrigido** (22/set): `apagarEtapa`
+apagava a etapa que dispara uma sequência, deixando a automação apontando para
+um id que não existe. Agora recusa e nomeia a sequência. A metade do campo foi
+verificada e **não** precisava de bloqueio: arquivar não apaga, e o critério lê
+o valor gravado e não a definição.
 
 **Os 7 parciais têm todos o mesmo formato:** o teste cobre cada metade do aceite
 em separado e nunca as duas juntas. É a cobertura que passa por completa numa
@@ -213,10 +213,6 @@ durante a sessão.
   metas com baseline e infraestrutura reais antes do piloto", e a produção tem 37
   contatos: cronometrar isso mediria a rede do Docker. O que está registrado é a
   contagem de consultas e o teto conhecido (`contatosDoNivel`, 5.000 ids).
-- **A correção do A20.** Encontrado e documentado, não consertado: acrescentar
-  bloqueio de dependência em `arquivarCampo` e no arquivamento de etapa é
-  mudança de comportamento que merece tarefa própria, e a T9.1 é verificação.
-  **É o primeiro candidato para a próxima sessão.**
 - **Os 7 aceites parciais**, cada um com o ângulo faltante nomeado no checklist.
 - **A limpeza do alerta de diagnóstico** (§4, item 2). É mudança de
   comportamento em produção, fora do escopo da T9.1, e a hora certa é junto da
