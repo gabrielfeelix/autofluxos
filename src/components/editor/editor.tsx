@@ -298,8 +298,27 @@ function paraFluxo(inicio: string, nodes: Node[], edges: Edge[]): Fluxo {
       source: e.source,
       target: e.target,
       sourceHandle: e.sourceHandle,
+      // O desvio é a única coisa que a linha guarda em `data`, e ele precisa
+      // sobreviver ao salvamento: sem isso, quem organizou as linhas perdia o
+      // trabalho no próximo carregamento da página.
+      desvio: (e.data as { desvio?: { x: number; y: number } } | undefined)?.desvio ?? null,
     })),
   })
+}
+
+/**
+ * O caminho de volta: o desvio sai do fluxo e vira `data` da aresta.
+ *
+ * `data` é onde o React Flow deixa o que é do componente, e é de lá que
+ * `ArestaRemovivel` lê. Aresta antiga não tem desvio nenhum, e continua no
+ * caminho automático.
+ */
+function paraArestas(arestas: Fluxo['edges']): Edge[] {
+  return arestas.map((e) => ({
+    ...e,
+    sourceHandle: e.sourceHandle ?? undefined,
+    data: e.desvio ? { desvio: e.desvio } : undefined,
+  })) as Edge[]
 }
 
 export function Editor({
@@ -372,7 +391,7 @@ export function Editor({
   const [nodes, setNodes, aoMudarNos] = useNodesState<Node>(
     inicial.nodes.map((n) => ({ ...n, className: n.id === inicial.inicio ? 'no-inicio' : '' })),
   )
-  const [edges, setEdges, aoMudarArestas] = useEdgesState<Edge>(inicial.edges as Edge[])
+  const [edges, setEdges, aoMudarArestas] = useEdgesState<Edge>(paraArestas(inicial.edges))
   const [inicio, setInicio] = useState(inicial.inicio)
   const [selecionado, setSelecionado] = useState<string | null>(null)
   /**
@@ -689,10 +708,14 @@ export function Editor({
       const posicoes = organizar(atuais, edges, inicio)
       return atuais.map((n) => ({ ...n, position: posicoes.get(n.id) ?? n.position }))
     })
+    // Desvio é desvio de um caminho que não existe mais: os blocos acabaram de
+    // mudar de lugar, e uma linha presa à altura antiga passaria por cima deles
+    // justamente depois do gesto que serve para desembaraçar o desenho.
+    setEdges((atuais) => atuais.map((e) => (e.data?.desvio ? { ...e, data: undefined } : e)))
     // Depois do próximo desenho: o enquadramento só faz sentido com as posições
     // novas já aplicadas.
     setTimeout(() => tela?.fitView({ duration: 500, padding: 0.15 }), 0)
-  }, [edges, inicio, setNodes, tela])
+  }, [edges, inicio, setEdges, setNodes, tela])
 
   /**
    * Põe um bloco novo no desenho, já selecionado.
@@ -920,6 +943,36 @@ export function Editor({
   }
 
   /**
+   * Guarda (ou tira) o desvio de uma ligação puxada à mão.
+   *
+   * `null` devolve a linha ao caminho automático, o que os dois cliques em cima
+   * dela fazem. O desvio entra no mesmo estado das outras edições, então o
+   * salvamento automático grava e o `Ctrl+Z` desfaz como qualquer outra.
+   */
+  const desviarAresta = useCallback(
+    (arestaId: string, desvio: { x: number; y: number } | null) => {
+      setEdges((atuais) =>
+        atuais.map((e) =>
+          e.id === arestaId ? { ...e, data: desvio ? { ...e.data, desvio } : undefined } : e,
+        ),
+      )
+    },
+    [setEdges],
+  )
+
+  /**
+   * O provider recebe um objeto, e ele precisa ser o mesmo entre desenhos: um
+   * objeto novo a cada render redesenharia todas as linhas a cada tecla
+   * digitada no painel.
+   */
+  const acoesDaAresta = useMemo(
+    () => ({ apagar: apagarAresta, desviar: desviarAresta }),
+    // `apagarAresta` só fecha sobre `setEdges`, que é estável.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [desviarAresta],
+  )
+
+  /**
    * O aviso de "bloco apagado" some sozinho depois de alguns segundos.
    *
    * Ele ficava pendurado até alguém apagar outro bloco ou clicar em Desfazer, e
@@ -1076,7 +1129,7 @@ export function Editor({
       setNodes(
         r.grafo.nodes.map((n) => ({ ...n, className: n.id === r.grafo.inicio ? 'no-inicio' : '' })),
       )
-      setEdges(r.grafo.edges as Edge[])
+      setEdges(paraArestas(r.grafo.edges))
       setInicio(r.grafo.inicio)
       setSelecionado(null)
       setSalvamento('salvo')
@@ -1139,7 +1192,7 @@ export function Editor({
       setNodes(
         r.grafo.nodes.map((n) => ({ ...n, className: n.id === r.grafo.inicio ? 'no-inicio' : '' })),
       )
-      setEdges(r.grafo.edges as Edge[])
+      setEdges(paraArestas(r.grafo.edges))
       setInicio(r.grafo.inicio)
       setSelecionado(null)
       setSalvamento('salvo')
@@ -1549,7 +1602,7 @@ export function Editor({
             evento.dataTransfer.dropEffect = 'copy'
           }}
         >
-          <AcaoDaArestaProvider value={apagarAresta}>
+          <AcaoDaArestaProvider value={acoesDaAresta}>
           <ReactFlow
             onInit={setTela}
             nodes={nodes}

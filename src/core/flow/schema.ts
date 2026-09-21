@@ -896,6 +896,12 @@ export const arestaSchema = z.object({
    * - demais nós → ausente (saída única)
    */
   sourceHandle: z.string().nullish(),
+  /**
+   * Quanto a linha foi puxada para fora do caminho automático, em coordenadas
+   * do desenho. Só existe quando alguém arrastou a ligação para desviar de um
+   * bloco; é enfeite de editor, e o motor não lê.
+   */
+  desvio: z.object({ x: z.number(), y: z.number() }).nullish(),
 })
 
 export const fluxoSchema = z.object({
