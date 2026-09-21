@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { validar } from '@/core/flow/validar'
 import { lembrete } from './lembrete'
+import { naoComparecimento } from './nao-comparecimento'
 import { MODELOS } from './modelos'
 import { reagendamento } from './reagendamento'
 
@@ -151,6 +152,76 @@ describe('o lembrete não faz mais do que lembrar', () => {
 
   it('quem não tem aula marcada ouve isso, em vez de um menu vazio', () => {
     const alvo = lembrete.edges.find(
+      (e) => e.source === 'qual-aula' && e.sourceHandle === 'vazio',
+    )?.target
+    expect(alvo).toBe('nada-marcado')
+  })
+})
+
+/*
+ * O fluxo que o áudio de quem opera descreveu, ponto a ponto.
+ *
+ * A regra do prazo é da conta, e mora na Verandi. O que estes testes protegem é
+ * que ela continue morando lá: o dia em que alguém escrever "2h" neste grafo, a
+ * frase passa a mentir para todo estúdio que configurar outra coisa.
+ */
+describe('avisar que não vai à aula', () => {
+  const nos = new Map(naoComparecimento.nodes.map((no) => [no.id, no]))
+
+  it('o prazo não está escrito no fluxo, em lugar nenhum', () => {
+    const texto = JSON.stringify(naoComparecimento)
+    // nem o número do MGM, nem "horas de antecedência" redigido à mão
+    expect(texto).not.toMatch(/\b2\s?h\b/i)
+    expect(texto).not.toMatch(/duas horas/i)
+  })
+
+  it('a frase de fora do prazo vem da agenda, e não do grafo', () => {
+    const no = nos.get('confirma-fora-do-prazo')
+    if (no?.type !== 'pergunta') throw new Error('o aviso tinha que ser uma pergunta')
+    // o texto inteiro é a variável: quem escreve a frase é a Verandi
+    expect(no.data.texto).toBe('{{aviso_do_prazo}}')
+  })
+
+  it('quem avisa em cima da hora cancela do mesmo jeito', () => {
+    // a vaga abre para quem está na fila; o que se perde é a reposição, e
+    // recusar o cancelamento faria a pessoa só não aparecer
+    const alvo = naoComparecimento.edges.find(
+      (e) => e.source === 'confirma-fora-do-prazo' && e.sourceHandle === 'sim',
+    )?.target
+    const no = nos.get(alvo ?? '')
+    if (no?.type !== 'http') throw new Error('confirmar fora do prazo tinha que desmarcar')
+    expect(no.data.metodo).toBe('DELETE')
+  })
+
+  it('o veredito de cada aula vem com o id dela no pedido', () => {
+    const no = nos.get('confere-prazo')
+    if (no?.type !== 'http') throw new Error('o fluxo tinha que perguntar pela aula escolhida')
+    expect(no.data.url).toContain('{{participacao_id}}')
+  })
+
+  /*
+   * O desfecho lê o que a agenda gravou, e não o ramo que trouxe até aqui: a
+   * pessoa pode ter passado do prazo enquanto decidia, e "sua reposição fica
+   * guardada" seria uma promessa que a agenda não vai cumprir.
+   */
+  it('a mensagem final vem do que a agenda gravou', () => {
+    const no = nos.get('teve-credito')
+    if (no?.type !== 'condicao') throw new Error('faltou conferir o que foi gravado')
+    expect(no.data.variavel).toBe('situacao')
+    expect(no.data.valor).toBe('falta_avisada')
+  })
+
+  it('silêncio não cancela, em nenhuma das duas confirmações', () => {
+    for (const origem of ['confirma-no-prazo', 'confirma-fora-do-prazo']) {
+      const alvo = naoComparecimento.edges.find(
+        (e) => e.source === origem && e.sourceHandle === 'timeout',
+      )?.target
+      expect(nos.get(alvo ?? '')?.type, origem).toBe('handoff')
+    }
+  })
+
+  it('quem não tem aula marcada ouve isso, em vez de um menu vazio', () => {
+    const alvo = naoComparecimento.edges.find(
       (e) => e.source === 'qual-aula' && e.sourceHandle === 'vazio',
     )?.target
     expect(alvo).toBe('nada-marcado')

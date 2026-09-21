@@ -238,6 +238,46 @@ export function SecaoVerandiDados() {
         </Linha>
         <Linha>
           <Cel forte>
+            <Var>pode_repor</Var>
+          </Cel>
+          <Cel>
+            <Cod>true</Cod> ou <Cod>false</Cod>: cancelar esta aula agora ainda preserva a
+            reposição? Vem do bloco que pergunta por <strong className="text-soft">uma</strong>{' '}
+            marcação.
+          </Cel>
+          <Cel>
+            Condição <Cod>pode_repor é igual a true</Cod>, para escolher entre confirmar direto e
+            avisar que a aula será perdida.
+          </Cel>
+        </Linha>
+        <Linha>
+          <Cel forte>
+            <Var>aviso_do_prazo</Var>
+          </Cel>
+          <Cel>
+            A frase de “fora do prazo” pronta, já com o prazo daquela conta dentro. Vem vazia quando
+            ainda dá tempo.
+          </Cel>
+          <Cel>
+            O texto do bloco de confirmação, quando está fora do prazo. Use a variável sozinha, sem
+            reescrever a frase.
+          </Cel>
+        </Linha>
+        <Linha>
+          <Cel forte>
+            <Var>prazo_cancelamento</Var>
+          </Cel>
+          <Cel>
+            O aviso mínimo da conta por extenso: <Cod>2h</Cod>, <Cod>30 minutos</Cod>,{' '}
+            <Cod>1h30</Cod>. Configurado na Verandi, em Padrões.
+          </Cel>
+          <Cel>
+            Frases gerais — “avise com {'{{prazo_cancelamento}}'} de antecedência” — sem cravar o
+            número no fluxo.
+          </Cel>
+        </Linha>
+        <Linha>
+          <Cel forte>
             <Var>participacao_id</Var>
           </Cel>
           <Cel>O identificador da marcação que acabou de ser criada.</Cel>
@@ -287,7 +327,7 @@ export function SecaoReceitas() {
     <Secao
       id="receitas"
       etiqueta="Receitas"
-      titulo="Cinco conversas montadas, bloco a bloco"
+      titulo="Seis conversas montadas, bloco a bloco"
       chamada="Cada uma é uma sequência curta. Monte na ordem — em todas, o primeiro bloco é reconhecer quem está falando."
     >
       <Sub>1. Marcar uma aula</Sub>
@@ -397,6 +437,89 @@ export function SecaoReceitas() {
         <p>
           “Te aviso se abrir” é honesto. “Sua vaga está garantida” não é, e produz a pior conversa
           possível: alguém aparecendo para uma aula em que não está marcada.
+        </p>
+      </Nota>
+
+      <Sub>6. “Não vou poder ir” — avisar da falta</Sub>
+      <p>
+        A pessoa avisa, o bot desmarca e a vaga abre. O que muda de estúdio para estúdio é se ela{' '}
+        <strong className="text-soft">ganha a aula de volta</strong>: cada conta define um aviso
+        mínimo, e quem avisa depois disso libera a vaga mas perde a reposição. Esse prazo{' '}
+        <strong className="text-soft">não se escreve no fluxo</strong> — ele é configurado na
+        Verandi, em <em>Padrões → Aviso mínimo para ganhar reposição</em>, e o bloco{' '}
+        <em>dá tempo de cancelar esta aula?</em> pergunta a ela.
+      </p>
+      <Espelho
+        conversa={
+          <Conversa titulo="Marina · 44 99555-3300">
+            <Zap de="pessoa">não vou poder ir hoje</Zap>
+            <Zap botoes={['hoje 07:00 · Pilates', 'qui 07:00 · Pilates']}>
+              {'Oi, *Marina*! 👋 Vamos avisar da falta então.\nQual aula você não vai poder fazer?'}
+            </Zap>
+            <Zap de="pessoa">hoje 07:00 · Pilates</Zap>
+            <Zap botoes={['✅ Sim, cancelar', '↩️ Não, vou tentar']}>
+              Você está tentando cancelar a aula de hoje às 07:00 fora do prazo de 2h. Se confirmar,
+              essa aula não poderá ser reposta. Deseja prosseguir?
+            </Zap>
+            <Zap de="pessoa">✅ Sim, cancelar</Zap>
+            <Zap>Tudo bem, cancelado. ✅ Sua vaga em *hoje 07:00 · Pilates* já foi liberada.</Zap>
+          </Conversa>
+        }
+        desenho={
+          <>
+            <Bloco tipo="http" titulo="1 · reconhecer quem está falando" />
+            <Bloco tipo="http" titulo="2 · a agenda de uma pessoa">
+              <Campo rotulo="cria">
+                <Var>proximas</Var> <Var>proximas_id</Var> <Var>prazo_cancelamento</Var>
+              </Campo>
+            </Bloco>
+            <Bloco tipo="pergunta" titulo="3 · qual aula" saidas={['escolheu', 'veio vazia']}>
+              <Campo rotulo="valores de">proximas_id → guarda participacao_id</Campo>
+            </Bloco>
+            <Bloco tipo="http" titulo="4 · dá tempo de cancelar esta aula?">
+              <Campo rotulo="cria">
+                <Var>pode_repor</Var> <Var>aviso_do_prazo</Var>
+              </Campo>
+            </Bloco>
+            <Bloco tipo="condicao" titulo="5 · dentro do prazo?" saidas={['sim', 'não']}>
+              <Campo rotulo="condição">pode_repor é igual a true</Campo>
+            </Bloco>
+            <Bloco tipo="pergunta" titulo="6 · confirmar" saidas={['sim', 'não', 'timeout']}>
+              <Campo rotulo="texto (ramo não)">{'{{aviso_do_prazo}}'}</Campo>
+            </Bloco>
+            <Bloco tipo="http" titulo="7 · desmarcar">
+              <Campo rotulo="cria">
+                <Var>situacao</Var>
+              </Campo>
+            </Bloco>
+            <Bloco tipo="condicao" titulo="8 · teve crédito?" saidas={['sim', 'não']}>
+              <Campo rotulo="condição">situacao é igual a falta_avisada</Campo>
+            </Bloco>
+          </>
+        }
+        nota={
+          <>
+            O modelo pronto <strong className="text-soft">Avisar que não vai à aula</strong> já vem
+            com tudo isto montado. Repare que o passo 4 pergunta pela aula escolhida, com o{' '}
+            <Var>participacao_id</Var> no endereço: a agenda da pessoa também responde isso, mas para
+            a lista inteira, e casar a resposta com a aula certa dependeria da posição no menu.
+          </>
+        }
+      />
+      <Nota tom="erro" titulo="Não escreva o prazo na mensagem">
+        <p>
+          Escrever “avise com 2h de antecedência” no texto do bloco cria uma segunda regra, que
+          ninguém lembra de atualizar. No dia em que o estúdio mudar para 30 minutos na tela de
+          Padrões, a conta passa a valer 30 e a mensagem continua dizendo 2h — e versão de fluxo é
+          imutável, então ela diz isso para sempre. Use <Var>aviso_do_prazo</Var>, que chega pronta,
+          ou <Var>prazo_cancelamento</Var>, que traz só o prazo por extenso.
+        </p>
+      </Nota>
+      <Nota tom="atencao" titulo="Quem avisa em cima da hora cancela do mesmo jeito">
+        <p>
+          O ramo de fora do prazo também termina em <em>desmarcar</em>. O que a pessoa perde é a
+          reposição, não o direito de avisar: recusar o cancelamento faria ela simplesmente não
+          aparecer, e aí a vaga se perde para ela e para quem estava na fila.
         </p>
       </Nota>
     </Secao>

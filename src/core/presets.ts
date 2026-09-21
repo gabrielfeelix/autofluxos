@@ -523,11 +523,54 @@ export const PRESETS: Preset[] = [
     },
   },
   {
+    id: 'verandi-ver-marcacao',
+    grupo: 'agenda',
+    nome: 'Verandi · dá tempo de cancelar esta aula?',
+    resumo:
+      'Diz se desmarcar agora ainda preserva a reposição, e traz a frase pronta de aviso quando já passou do prazo. Vai entre "qual aula?" e o bloco de desmarcar.',
+    exige:
+      'A mesma credencial “bearer”. O `participacao_id` sai do menu de "a agenda de uma pessoa".',
+    credencial: 'bearer',
+    dados: {
+      metodo: 'GET',
+      url: `${ENDERECO_DA_AGENDA}/participacoes/{{participacao_id}}`,
+      cabecalhos: [],
+      corpo: '',
+      /*
+       * **Uma aula por vez, e é esse o ponto.** A ficha da pessoa já responde a
+       * mesma pergunta para a lista inteira, e usar de lá obrigaria a casar
+       * `proximas_id` com `pode_repor` por posição. Posição é um acordo que
+       * ninguém vê quebrar: basta a agenda passar a filtrar um item e a resposta
+       * vira a da aula do vizinho, sem erro nenhum aparecer.
+       *
+       * Aqui o id é o pedido. O que volta é daquela aula, e de mais nenhuma.
+       */
+      mapear: [
+        { variavel: 'pode_repor', caminho: 'podeReporSeCancelarAgora' },
+        { variavel: 'pode_cancelar', caminho: 'podeCancelar' },
+        /*
+         * A frase de aviso vem **pronta da agenda**, e não montada aqui.
+         *
+         * Ela cita o prazo da conta ("fora do prazo de 2h"), e o prazo é
+         * configurável lá: escrever a frase no fluxo faria o texto continuar
+         * dizendo 2h no dia em que o estúdio mudar para 30 minutos. Quando está
+         * dentro do prazo ela vem vazia, e o fluxo nem passa por esse ramo.
+         */
+        { variavel: 'aviso_do_prazo', caminho: 'avisoParaConfirmar' },
+        { variavel: 'prazo_cancelamento', caminho: 'regraDeCancelamento.porExtenso' },
+        { variavel: 'aula_data', caminho: 'data', formato: 'data' },
+        { variavel: 'aula_hora', caminho: 'hora' },
+        { variavel: 'aula_servico', caminho: 'servico' },
+      ],
+      aoFalhar: 'humano',
+    },
+  },
+  {
     id: 'verandi-minha-agenda',
     grupo: 'agenda',
     nome: 'Verandi · a agenda de uma pessoa',
     resumo:
-      'Horários fixos, o que vem pela frente e quantas reposições estão em aberto. Responde "quais são meus horários?" e "quantas aulas tenho para repor?".',
+      'Horários fixos, o que vem pela frente, quantas reposições estão em aberto e se ainda dá tempo de cancelar sem perder a aula. Responde "quais são meus horários?", "quantas aulas tenho para repor?" e "se eu cancelar agora, perco a aula?".',
     exige: 'A mesma credencial “bearer”. O `pessoa_id` sai do bloco de reconhecer.',
     credencial: 'bearer',
     dados: {
@@ -574,6 +617,19 @@ export const PRESETS: Preset[] = [
         },
         { variavel: 'horario_fixo', caminho: 'horariosFixos[]', rotulo: '{hora} · {servico}' },
         { variavel: 'situacao_na_agenda', caminho: 'situacao' },
+        /*
+         * A regra da conta, escrita como o estúdio a diz: `120` chega aqui como
+         * "2h", e `30` como "30 minutos". Serve para a frase geral ("avise com
+         * {{prazo_cancelamento}} de antecedência"); o veredito de **uma** aula
+         * vem do preset `verandi-ver-marcacao`, com o id no pedido.
+         *
+         * **O veredito por aula não entra aqui de propósito.** A resposta traz
+         * `podeReporSeCancelarAgora` em cada item de `proximas`, e mapear isso
+         * como lista daria uma variável paralela a `proximas_id`, casada por
+         * posição. Posição é um acordo que ninguém vê quebrar: basta a agenda
+         * filtrar um item e a resposta passa a ser a da aula do vizinho, calada.
+         */
+        { variavel: 'prazo_cancelamento', caminho: 'regraDeCancelamento.porExtenso' },
       ],
       aoFalhar: 'humano',
     },

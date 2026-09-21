@@ -5,6 +5,7 @@ import { carrinhoAbandonado } from './carrinho-abandonado'
 import { cobrancaAmigavel } from './cobranca-amigavel'
 import { lembrete } from './lembrete'
 import { menuAtendimento } from './menu-atendimento'
+import { naoComparecimento } from './nao-comparecimento'
 import { pesquisaNps } from './pesquisa-nps'
 import { qualificarSdr } from './qualificar-sdr'
 import { reagendamento } from './reagendamento'
@@ -223,6 +224,18 @@ export const MODELOS: Modelo[] = [
     etiquetas: ['WhatsApp', 'Agenda', 'Precisa de integração'],
     sinonimos: ['remarcar', 'reposição', 'trocar horário', 'aula', 'agenda'],
     grafo: reagendamento,
+  },
+  {
+    id: 'nao-comparecimento',
+    nome: 'Avisar que não vai à aula',
+    resumo:
+      'A pessoa avisa que não vem, escolhe a aula e o bot desmarca na agenda. Quem avisa em cima da hora é avisado de que perde a reposição, e decide sabendo disso. Precisa da credencial da Verandi.',
+    etiquetas: ['WhatsApp', 'Agenda', 'Precisa de integração'],
+    sinonimos: [
+      'cancelar', 'cancelamento', 'não vou', 'nao vou', 'faltar', 'falta',
+      'não comparecimento', 'nao comparecimento', 'desmarcar', 'aula',
+    ],
+    grafo: naoComparecimento,
   },
   {
     id: 'lembrete',

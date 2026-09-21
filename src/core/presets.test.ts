@@ -213,6 +213,42 @@ describe('a agenda responde o que a conversa precisa dizer', () => {
     expect(ficha.dados.mapear.some((m) => m.variavel === 'nome_na_agenda')).toBe(true)
   })
 
+  /*
+   * O aviso de fora do prazo só existe se o bot souber **antes** de cancelar.
+   * Quem respondia isso era o `DELETE`, ou seja, depois do fato.
+   */
+  it('o veredito de cancelar vem por aula, com o id no pedido', () => {
+    const uma = acharPreset('verandi-ver-marcacao')!
+
+    expect(uma.dados.url).toContain('/participacoes/{{participacao_id}}')
+    expect(uma.dados.metodo).toBe('GET')
+    expect(uma.dados.mapear.find((m) => m.variavel === 'pode_repor')?.caminho)
+      .toBe('podeReporSeCancelarAgora')
+  })
+
+  /*
+   * A tentação é mapear `proximas[].podeReporSeCancelarAgora` na ficha e casar
+   * com `proximas_id` por posição. Não: basta a agenda filtrar um item e a
+   * resposta passa a ser a da aula do vizinho, sem erro nenhum aparecer.
+   */
+  it('a ficha não traz veredito por aula em lista paralela', () => {
+    const ficha = acharPreset('verandi-minha-agenda')!
+
+    expect(ficha.dados.mapear.some((m) => m.caminho.includes('podeReporSeCancelarAgora')))
+      .toBe(false)
+    // a regra geral da conta, essa sim, é campo raso e serve para a frase
+    expect(ficha.dados.mapear.find((m) => m.variavel === 'prazo_cancelamento')?.caminho)
+      .toBe('regraDeCancelamento.porExtenso')
+  })
+
+  it('a frase do aviso vem pronta da agenda, e não montada no fluxo', () => {
+    const uma = acharPreset('verandi-ver-marcacao')!
+    // o texto cita o prazo da conta, que muda na tela de Padroes da Verandi:
+    // escrever a frase aqui faria ela dizer 2h para sempre
+    expect(uma.dados.mapear.find((m) => m.variavel === 'aviso_do_prazo')?.caminho)
+      .toBe('avisoParaConfirmar')
+  })
+
   it('a busca por modalidade filtra na origem, e não peneira aqui', () => {
     const filtrado = acharPreset('verandi-horarios-da-modalidade')!
     // Peneirar do nosso lado esbarraria no teto de 10 itens do menu, que
