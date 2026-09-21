@@ -12,7 +12,7 @@ import {
 import { useConfirmar } from '@/components/design/confirmar'
 
 /**
- * O menu de integrações que os concorrentes têm — feito por cima do bloco que
+ * O menu de integrações que os concorrentes têm, feito por cima do bloco que
  * já existe.
  *
  * O nosso bloco de Serviços externos fala com qualquer API, e é por isso que
@@ -20,7 +20,7 @@ import { useConfirmar } from '@/components/design/confirmar'
  * mão, com endereço, cabeçalho e JSON certos, e os três erram em silêncio.
  *
  * O preset preenche os quatro campos e **sai do caminho**. A partir dali é um
- * bloco `http` comum, editável — e o que vai para o fluxo é o bloco resolvido.
+ * bloco `http` comum, editável, e o que vai para o fluxo é o bloco resolvido.
  * Um preset que continuasse sendo referência mudaria por baixo o que uma
  * conversa em andamento chama no dia em que a RD trocasse de endereço.
  *
@@ -38,13 +38,13 @@ export function PresetsDeIntegracao({
    *
    * Muda o que o crachá diz, e só isso: sem esta informação ele mandava
    * "escolher a credencial abaixo" numa lista onde não havia nada para
-   * escolher — que é como se descobre que o aviso não sabe do que fala.
+   * escolher, que é como se descobre que o aviso não sabe do que fala.
    */
   semCredenciais?: boolean
   /**
    * O que o bloco já tem, só para a gaveta fechada saber o que dizer.
    *
-   * Não é usado para aplicar nada — o preset continua sendo resolvido e
+   * Não é usado para aplicar nada, o preset continua sendo resolvido e
    * esquecido. É informação de tela, e por isso opcional.
    */
   bloco?: {
@@ -61,7 +61,7 @@ export function PresetsDeIntegracao({
    * O que a gaveta fechada mostra.
    *
    * Quem monta fluxo relatou que **com a tela minimizada não dá para saber se
-   * a integração está funcional** — a gaveta fechada dizia a mesma coisa num
+   * a integração está funcional**, a gaveta fechada dizia a mesma coisa num
    * bloco vazio e num bloco já ligado à agenda, e as duas pedem gestos opostos:
    * num, escolher um preset; no outro, não mexer.
    *
@@ -79,7 +79,7 @@ export function PresetsDeIntegracao({
    * A confirmação existe porque aplicar sobrescreve endereço, corpo,
    * cabeçalhos e mapeamento, e quem montou a chamada à mão perderia o
    * trabalho. Mas num bloco recém-criado não há trabalho nenhum para perder, e
-   * ali ela só ensina a clicar em "ok" sem ler — que é o que faz a confirmação
+   * ali ela só ensina a clicar em "ok" sem ler, que é o que faz a confirmação
    * seguinte, a que importa, também passar batida.
    *
    * Reaplicar o preset que já está em uso não pergunta nada: é o gesto de quem
@@ -120,7 +120,7 @@ export function PresetsDeIntegracao({
 
             Ele trocava de texto conforme o estado ("em uso" / "começar de"), e
             um cabeçalho que se reescreve sozinho faz a pessoa reler a seção
-            inteira para achar o que mudou — quando o que mudou é uma linha só,
+            inteira para achar o que mudou, quando o que mudou é uma linha só,
             logo abaixo.
           */}
           <span className="block text-[10.5px] font-semibold tracking-[0.05em] text-dim/80 uppercase">
@@ -152,8 +152,8 @@ export function PresetsDeIntegracao({
 
             Uma lista corrida de quatorze itens é uma lista que ninguém lê até o
             fim, e o de baixo some. A gaveta também conta uma história: os nove
-            da Verandi estão na ordem da conversa — reconhecer, oferecer, marcar,
-            desmarcar, fila — e não são nove integrações soltas.
+            da Verandi estão na ordem da conversa, reconhecer, oferecer, marcar,
+            desmarcar, fila, e não são nove integrações soltas.
           */}
           {GRUPOS_DE_PRESET.map((grupo) => {
             const doGrupo = PRESETS.filter((item) => item.grupo === grupo)
@@ -168,7 +168,7 @@ export function PresetsDeIntegracao({
                   `radiogroup` por gaveta, e não um para a lista inteira.
 
                   Um `role="radio"` solto não é anunciado como escolha por
-                  leitor de tela nenhum — ele precisa do grupo em volta. Por
+                  leitor de tela nenhum, ele precisa do grupo em volta. Por
                   gaveta porque é assim que a lista se lê: "Agenda (Verandi),
                   1 de 9".
                 */}
@@ -181,7 +181,7 @@ export function PresetsDeIntegracao({
              * está funcionando ou funciona, porque se eu vou para o próximo
              * quadro ele não mostra que essa opção foi realmente
              * selecionada"*. Clicar num preset o pintava de selecionado
-             * **antes** de aplicar — e o bloco continuava apontando para outro
+             * **antes** de aplicar, e o bloco continuava apontando para outro
              * endereço, com a tela afirmando o contrário.
              *
              * Agora é consequência do bloco: some ao trocar de bloco porque o
@@ -197,7 +197,7 @@ export function PresetsDeIntegracao({
                 /*
                  * `radio`, e não `pressed`.
                  *
-                 * Um bloco de Serviços externos é **uma** chamada — um método,
+                 * Um bloco de Serviços externos é **uma** chamada, um método,
                  * um endereço, um corpo. Escolher o segundo preset troca o
                  * primeiro, e é exatamente o que um rádio significa. O leitor
                  * de tela passa a anunciar "1 de 14, marcado" em vez de catorze
@@ -214,7 +214,7 @@ export function PresetsDeIntegracao({
                   A marca do rádio.
 
                   Pedido de quem monta fluxo: *"queria tipo um radio button que
-                  vai marcando selecionado"* — o estado morava só no fundo do
+                  vai marcando selecionado"*, o estado morava só no fundo do
                   item, e fundo é a coisa mais fácil de não notar numa lista de
                   catorze. Aqui ele tem lugar fixo, na mesma coluna em todas as
                   linhas, e some do caminho quando não está marcado.
@@ -264,8 +264,8 @@ export function PresetsDeIntegracao({
 
                             Este é o beco que quem montou o primeiro fluxo
                             encontrou: o crachá mandava escolher a credencial
-                            abaixo, e abaixo — num cliente sem nenhuma
-                            cadastrada — só havia "Nenhuma, o endereço não pede
+                            abaixo, e abaixo, num cliente sem nenhuma
+                            cadastrada, só havia "Nenhuma, o endereço não pede
                             chave". Ele leu a única opção como resposta e
                             perguntou por que a tela cobrava uma credencial que
                             ela mesma dizia não existir.
@@ -273,7 +273,7 @@ export function PresetsDeIntegracao({
                           {bloco?.temCredencial
                             ? 'credencial escolhida'
                             : semCredenciais
-                              ? 'falta a credencial — nenhuma cadastrada neste cliente ainda'
+                              ? 'falta a credencial, nenhuma cadastrada neste cliente ainda'
                               : 'falta escolher a credencial abaixo'}
                         </span>
                       )}

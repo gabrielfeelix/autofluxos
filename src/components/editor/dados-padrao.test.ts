@@ -8,7 +8,7 @@ import { noSchema } from '@/core/flow/schema'
  * **Esta suíte existe por um bug que chegou em produção.** O bloco de IA ganhou
  * `ferramentas` no schema, o Zod preenche com `[]` ao salvar, e a fábrica do
  * editor continuou devolvendo `{ instrucao }`. Entre arrastar o bloco e salvar
- * o rascunho, `no.data.ferramentas` era `undefined` — e `undefined.some()` no
+ * o rascunho, `no.data.ferramentas` era `undefined`, e `undefined.some()` no
  * meio do render derrubava o editor inteiro para uma tela de erro.
  *
  * Nada acusava: typecheck passa (`data` é `Record<string, unknown>`), build

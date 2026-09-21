@@ -10,13 +10,12 @@ import type { No, NoMensagem, TipoNo } from '@/core/flow/schema'
  * O que o bloco tem dentro, sem precisar abri-lo.
  *
  * O card do desenho **corta**: `line-clamp-3` no texto e `truncate` em quase
- * tudo mais. Isso é certo — card que cresce vira parede —, mas o preço aparece
+ * tudo mais. Isso é certo, card que cresce vira parede , mas o preço aparece
  * na automação grande: para conferir a segunda opção de uma pergunta, o que a
  * chamada guarda ou o que a IA foi instruída a fazer, é preciso clicar bloco a
  * bloco, e cada clique troca o painel da direita e faz perder o lugar.
  *
- * Veio de quem monta fluxo com cliente na frente, conferindo um desenho pronto
- * — que é leitura, não edição. Passar o olho tem que ser passar o mouse.
+ * Veio de quem monta fluxo com cliente na frente, conferindo um desenho pronto, que é leitura, não edição. Passar o olho tem que ser passar o mouse.
  *
  * **Só lê.** Nada aqui edita, nada aqui seleciona, e o painel não recebe clique
  * (`pointer-events-none`): ele não pode roubar o gesto de quem está desenhando.
@@ -46,7 +45,7 @@ const AO_FALHAR: Record<string, string> = {
   encerrar: 'se falhar, encerra a conversa',
 }
 
-function texto(valor: string | undefined, vazio = '—'): string {
+function texto(valor: string | undefined, vazio = '-'): string {
   const limpo = (valor ?? '').trim()
   return limpo === '' ? vazio : limpo
 }
@@ -55,7 +54,7 @@ function texto(valor: string | undefined, vazio = '—'): string {
  * O conteúdo do bloco em linhas legíveis.
  *
  * Puro e exaustivo por tipo: o `switch` sem `default` é o que faz o compilador
- * apontar aqui quando um bloco novo nascer — o mesmo contrato que o resto do
+ * apontar aqui quando um bloco novo nascer, o mesmo contrato que o resto do
  * editor já tem.
  */
 export function detalhesDoBloco(no: No): Detalhe[] {
@@ -128,7 +127,7 @@ export function detalhesDoBloco(no: No): Detalhe[] {
         linhas.push({
           rotulo: 'Aceita arquivo',
           valor: no.data.salvarMidiaEm
-            ? `sim — guarda em {{${no.data.salvarMidiaEm}}}`
+            ? `sim, guarda em {{${no.data.salvarMidiaEm}}}`
             : 'sim, e sai pela saída “mandou arquivo”',
         })
       }
@@ -180,7 +179,7 @@ export function detalhesDoBloco(no: No): Detalhe[] {
       return [
         ...(preset ? [{ rotulo: 'Integração', valor: preset.nome }] : []),
         ...(faltaCredencial
-          ? [{ rotulo: 'Credencial', valor: 'falta escolher — o bloco não roda assim', tom: 'aviso' as const }]
+          ? [{ rotulo: 'Credencial', valor: 'falta escolher, o bloco não roda assim', tom: 'aviso' as const }]
           : []),
         { rotulo: 'Chama', valor: `${no.data.metodo} ${texto(no.data.url, '(sem endereço)')}` },
         ...(no.data.cabecalhos.length > 0
@@ -201,7 +200,7 @@ export function detalhesDoBloco(no: No): Detalhe[] {
                   .join('\n'),
               },
             ]
-          : [{ rotulo: 'Guarda', valor: 'nada — a resposta é descartada', tom: 'aviso' as const }]),
+          : [{ rotulo: 'Guarda', valor: 'nada, a resposta é descartada', tom: 'aviso' as const }]),
         { rotulo: 'Se der erro', valor: AO_FALHAR[no.data.aoFalhar] ?? no.data.aoFalhar },
       ]
     }
@@ -216,7 +215,7 @@ export function detalhesDoBloco(no: No): Detalhe[] {
       return [{ rotulo: 'Etiqueta', valor: texto(no.data.etiquetaId, '(não escolhida)') }]
 
     case 'nota':
-      return [{ rotulo: 'Escreve', valor: texto(no.data.texto, '(nada — o texto está vazio)') }]
+      return [{ rotulo: 'Escreve', valor: texto(no.data.texto, '(nada, o texto está vazio)') }]
 
     case 'nps':
       return [
@@ -251,7 +250,7 @@ export function detalhesDoBloco(no: No): Detalhe[] {
  *
  * Posicionado a partir do canto do card e **preso à janela**: perto da borda de
  * baixo ele sobe, perto da direita ele vai para a esquerda do bloco. Prévia que
- * abre metade fora da tela obriga a arrastar o canvas para ler — e aí clicar no
+ * abre metade fora da tela obriga a arrastar o canvas para ler, e aí clicar no
  * bloco teria sido mais rápido, que é justamente o que ela veio evitar.
  */
 export function PreviaDoBloco({
@@ -293,7 +292,7 @@ export function PreviaDoBloco({
           <div key={i}>
             <p className="text-[9.5px] tracking-wide text-dim uppercase">{detalhe.rotulo}</p>
             {/* O mesmo realce do campo e do card: a prévia é leitura, e é onde
-                se confere o texto inteiro sem corte — se a chave simples não
+                se confere o texto inteiro sem corte, se a chave simples não
                 estivesse vermelha aqui, o único lugar que mostra a frase toda
                 seria o único que esconde o erro. Aqui sobra espaço. */}
             <p

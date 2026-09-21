@@ -4,7 +4,7 @@
  * **Por que marcador e não editor rico.** O WhatsApp não recebe HTML: ele
  * recebe `*negrito*`, `_itálico_`, `~riscado~` e três crases para monoespaçado,
  * e renderiza sozinho. Guardar HTML no fluxo obrigaria a converter na saída e a
- * adivinhar na volta — e a conversão de volta é onde se perde texto. O que fica
+ * adivinhar na volta, e a conversão de volta é onde se perde texto. O que fica
  * gravado é exatamente o que sai.
  *
  * O que a barra resolve, então, não é o formato: é **lembrar a sintaxe**. Quem
@@ -26,7 +26,7 @@ export type Marca = keyof typeof MARCAS
  *
  * **É alternância, e isso importa mais do que parece.** Sem ela, clicar duas
  * vezes em negrito produz `**texto**`, que o WhatsApp mostra literalmente com
- * os asteriscos — o resultado é a pessoa achando que a barra está quebrada.
+ * os asteriscos, o resultado é a pessoa achando que a barra está quebrada.
  * Reconhecer o que já está marcado e tirar é o que faz o botão se comportar
  * como botão.
  *

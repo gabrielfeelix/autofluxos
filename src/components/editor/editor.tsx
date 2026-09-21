@@ -13,6 +13,7 @@ import {
   type Edge,
   type Node,
   type ReactFlowInstance,
+  ConnectionLineType,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import Link from 'next/link'
@@ -1591,6 +1592,10 @@ export function Editor({
             // Todo grafo já salvo tem aresta sem `type`; o padrão faz as antigas
             // ganharem o ✕ sem precisar migrar nada no banco.
             defaultEdgeOptions={OPCOES_PADRAO_DA_ARESTA}
+            // A linha que se arrasta para ligar precisa ter a forma da linha
+            // que vai nascer: com a prévia em diagonal e o resultado em ângulo
+            // reto, o traço salta de lugar na hora de soltar.
+            connectionLineType={ConnectionLineType.SmoothStep}
             onSelectionChange={aoMudarSelecao}
             // `Shift` arrastando laça uma área; ver `TECLAS_DE_MULTISSELECAO`.
             multiSelectionKeyCode={TECLAS_DE_MULTISSELECAO}

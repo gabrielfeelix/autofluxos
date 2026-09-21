@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { classificarNomeDeVariavel } from './campo-de-variavel'
 
 describe('classificarNomeDeVariavel', () => {
-  it('campo vazio não diz nada — a dica do campo continua valendo', () => {
+  it('campo vazio não diz nada, a dica do campo continua valendo', () => {
     expect(
       classificarNomeDeVariavel({ valor: '  ', modo: 'guarda', existeEmOutroBloco: false }),
     ).toBeNull()

@@ -9,7 +9,7 @@ import { LIMITE_NOME_DO_FLUXO } from '@/core/flow/limites'
  *
  * **Renomear não existia**, e o pedido chegou nessas palavras: "não consigo
  * editar o nome dos fluxos". O nome era escolhido uma vez, no modal de criação,
- * e depois virava permanente — quem batizou de "Fluxo - teste" às pressas
+ * e depois virava permanente, quem batizou de "Fluxo - teste" às pressas
  * ficava com isso no cabeçalho para sempre.
  *
  * **Edita no lugar, e não numa tela à parte.** É a mesma decisão das etiquetas:
@@ -18,7 +18,7 @@ import { LIMITE_NOME_DO_FLUXO } from '@/core/flow/limites'
  * com o nome torto.
  *
  * O que ele **não** toca: rascunho e versões publicadas. Nome é rótulo de
- * gaveta, não parte do desenho — conversa em andamento não sente nada.
+ * gaveta, não parte do desenho, conversa em andamento não sente nada.
  */
 export function NomeDoFluxo({
   clienteId,
@@ -40,7 +40,7 @@ export function NomeDoFluxo({
   const campo = useRef<HTMLInputElement>(null)
 
   /*
-   * O nome pode chegar novo do servidor — outra aba renomeou, ou o
+   * O nome pode chegar novo do servidor, outra aba renomeou, ou o
    * `revalidatePath` da própria ação voltou. Ajustar durante o render, e não
    * num efeito: efeito que chama `setState` no corpo pinta a tela uma vez com
    * o valor velho antes de corrigir, e é a receita de render em cascata que o
@@ -110,7 +110,7 @@ export function NomeDoFluxo({
         /*
           `pointer-events-auto` porque a linha da lista desliga o clique do
           conteúdo para ele atravessar até o link que cobre a linha. Quem é
-          interativo devolve o clique para si mesmo — senão o lápis abriria a
+          interativo devolve o clique para si mesmo, senão o lápis abriria a
           automação em vez de renomear.
         */
         className="pointer-events-auto flex size-6 shrink-0 items-center justify-center rounded-md text-[11px] text-dim opacity-0 transition group-hover/linha:opacity-100 hover:bg-surface-strong hover:text-primary focus-visible:opacity-100"

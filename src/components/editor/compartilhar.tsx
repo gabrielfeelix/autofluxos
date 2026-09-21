@@ -25,7 +25,7 @@ export type LinkNaLista = {
  *
  * Mora ao lado de "Histórico", e não numa tela própria, porque é a mesma
  * matéria: as duas falam de **versões publicadas**. O link aponta para a versão
- * no ar — nunca para o rascunho —, e é por isso que o botão fica desabilitado
+ * no ar, nunca para o rascunho , e é por isso que o botão fica desabilitado
  * enquanto nada foi publicado, dizendo o motivo em vez de sumir.
  *
  * **Os avisos aparecem antes de o link existir, e não depois.** Compartilhar
@@ -114,7 +114,7 @@ export function Compartilhar({
     } catch {
       // Área de transferência bloqueada (http, permissão negada). O endereço
       // continua visível no campo ao lado, então isto não é um beco sem saída.
-      setErro('não deu para copiar automaticamente — selecione o endereço e copie')
+      setErro('não deu para copiar automaticamente, selecione o endereço e copie')
     }
   }
 
@@ -127,7 +127,7 @@ export function Compartilhar({
         title={
           publicada
             ? 'Gerar um link de leitura desta automação'
-            : 'Publique primeiro — o link aponta para uma versão publicada, não para o rascunho'
+            : 'Publique primeiro, o link aponta para uma versão publicada, não para o rascunho'
         }
         className="app-secondary-button px-3 py-1.5 text-[11.5px] disabled:opacity-40"
       >
@@ -165,7 +165,7 @@ export function Compartilhar({
             O prazo ocupava a linha quase inteira e espremia o botão até ele
             quebrar em três linhas ("Gerar / link e / copiar"). A causa é a
             largura: `.app-field` fixa `width: 100%`, então a classe utilitária
-            de 150px não valia e o `<select>` continuava pedindo a linha toda —
+            de 150px não valia e o `<select>` continuava pedindo a linha toda ,
             sobrando ao botão a largura de uma palavra.
 
             Agora o prazo é o `Dropdown` do próprio sistema (o mesmo do resto do

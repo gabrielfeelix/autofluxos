@@ -19,8 +19,8 @@ import { SeletorDeArquivo } from './seletor-de-arquivo'
  * O bloco de mensagem, desenhado como o que ele virou: **uma pilha**.
  *
  * Antes era um campo de texto e um número de atraso. A mesma conversa que o
- * produto de referência resolve num bloco exigia cinco dos nossos — um para o
- * texto, outro para a foto, outro para a pausa, outro para gravar o campo — e
+ * produto de referência resolve num bloco exigia cinco dos nossos, um para o
+ * texto, outro para a foto, outro para a pausa, outro para gravar o campo, e
  * o desenho ficava ilegível por causa de uma limitação do formulário, não do
  * atendimento.
  *
@@ -145,7 +145,7 @@ export function PilhaDeMensagem({
       {/*
         Cinco cartões numa grade de três, ocupando a largura toda.
         Eram cinco pílulas "+ Texto" de tamanhos diferentes, embrulhando em duas
-        linhas irregulares — do tamanho da palavra, não da importância. Como
+        linhas irregulares, do tamanho da palavra, não da importância. Como
         grade, cada pedaço vira alvo grande e igual, o ícone diz o que é antes
         da leitura, e a coluna do painel deixa de ter uma faixa de sobras.
       */}
@@ -175,7 +175,7 @@ export function PilhaDeMensagem({
       {partes.length >= LIMITE_PARTES && (
         <p className="text-[10.5px] leading-4 text-dim">
           {LIMITE_PARTES} pedaços é o teto. Acima disso são {LIMITE_PARTES} mensagens seguidas no
-          WhatsApp de alguém — o que falta continua num bloco seguinte.
+          WhatsApp de alguém, o que falta continua num bloco seguinte.
         </p>
       )}
     </div>
@@ -233,7 +233,7 @@ function Corpo({
           {/*
             O tipo saiu do seletor e virou consequência do arquivo. Escolher
             "Documento" e subir um PNG é um erro que só aparece quando a Meta
-            recusa a entrega, na conversa de alguém — e não fazia sentido
+            recusa a entrega, na conversa de alguém, e não fazia sentido
             deixar cometê-lo.
           */}
           <SeletorDeArquivo
@@ -256,7 +256,7 @@ function Corpo({
           />
           {/*
             Áudio não mostra legenda porque a Meta **recusa a mensagem inteira**
-            quando ela vem — não é campo ignorado. Esconder é mais honesto que
+            quando ela vem, não é campo ignorado. Esconder é mais honesto que
             deixar digitar e reprovar na publicação.
           */}
           {parte.midia !== 'audio' && (
@@ -304,7 +304,7 @@ function Corpo({
             <span className="text-[11.5px] text-muted">segundos</span>
           </div>
           <p className="mt-1 text-[10.5px] leading-4 text-dim">
-            Mostra “digitando…” antes do pedaço seguinte. Até {LIMITE_ATRASO_SEGUNDOS}s — pausa
+            Mostra “digitando…” antes do pedaço seguinte. Até {LIMITE_ATRASO_SEGUNDOS}s, pausa
             maior precisa ser agendada.
           </p>
         </div>
@@ -321,7 +321,7 @@ function Corpo({
           />
           <LinhaComVariaveis
             valor={parte.valor}
-            placeholder="valor — aceita {{variavel}}"
+            placeholder="valor, aceita {{variavel}}"
             conhecidas={variaveis}
             variaveis={variaveis}
             aoMudar={(valor) => aoMudar({ ...parte, valor })}

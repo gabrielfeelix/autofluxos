@@ -3,7 +3,7 @@ import { alternarMarca } from './formatar'
 
 /**
  * A barra de formatação guarda a sintaxe do WhatsApp na cabeça de quem
- * escreve. O que ela não pode fazer é produzir marcador quebrado — `**texto**`
+ * escreve. O que ela não pode fazer é produzir marcador quebrado, `**texto**`
  * aparece com os asteriscos na conversa, e quem vê acha que o painel está
  * errado.
  */

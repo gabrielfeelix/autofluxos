@@ -16,7 +16,7 @@ import {
  * **Antes era um campo pedindo `https://…`**, e isso é o nosso problema
  * empurrado para quem usa: a pessoa que desenha o fluxo do estúdio tem a foto
  * da sala no computador, não um servidor onde hospedá-la. O Acervo existia
- * desde a 0017 e resolvia só metade — obrigava a sair do editor, subir lá,
+ * desde a 0017 e resolvia só metade, obrigava a sair do editor, subir lá,
  * copiar o endereço e voltar. Quatro passos para "manda essa foto".
  *
  * Agora são três caminhos, nesta ordem de destaque:
@@ -24,7 +24,7 @@ import {
  * 1. **arrastar ou escolher** o arquivo aqui mesmo (o caso comum);
  * 2. **reusar** um que já está no acervo (a foto da sala é a mesma em cinco
  *    fluxos);
- * 3. **colar um endereço**, que continua existindo — é o caminho de quem
+ * 3. **colar um endereço**, que continua existindo, é o caminho de quem
  *    hospeda fora e o único jeito de usar `{{variavel}}` no lugar da URL, que é
  *    o catálogo por variável que o bloco de API alimenta.
  *
@@ -55,7 +55,7 @@ export function SeletorDeArquivo({
   clienteId: string
   url: string
   midia: TipoDeMidia
-  /** As do fluxo — o campo de endereço aceita `{{variavel}}` e as oferece. */
+  /** As do fluxo, o campo de endereço aceita `{{variavel}}` e as oferece. */
   variaveis?: string[]
   /** O tipo vem junto porque ele sai do arquivo, e não de um seletor à parte. */
   aoEscolher: (escolha: { url: string; midia: TipoDeMidia; nomeArquivo?: string }) => void
@@ -95,7 +95,7 @@ export function SeletorDeArquivo({
    *    um caminho só dentro da pasta deste cliente;
    * 2. o navegador manda os bytes direto para o Storage.
    *
-   * Fazia em um tempo só, com o arquivo dentro de uma Server Action — e Server
+   * Fazia em um tempo só, com o arquivo dentro de uma Server Action, e Server
    * Action tem teto de 1 MB no Next. Um PDF de 3 MB virava 413 antes de
    * qualquer código nosso rodar, e a tela mostrava a página de erro genérica em
    * vez de dizer o que houve.
@@ -114,7 +114,7 @@ export function SeletorDeArquivo({
     comecar(async () => {
       /**
        * **Tudo dentro de um `try`.** Uma promessa rejeitada aqui dentro sobe
-       * para a fronteira de erro do React e derruba a tela inteira — que foi
+       * para a fronteira de erro do React e derruba a tela inteira, que foi
        * exatamente o que aconteceu com o 413. Falha de upload é um recado numa
        * linha, nunca uma página em branco.
        */
@@ -174,7 +174,7 @@ export function SeletorDeArquivo({
     aoEscolher({
       url: arquivo.url,
       midia: arquivo.midia,
-      // O nome só vira campo em documento — é o que a pessoa lê antes de
+      // O nome só vira campo em documento, é o que a pessoa lê antes de
       // baixar. Nos outros a Meta não mostra nada, e mandar o nome seria dado
       // guardado à toa no grafo.
       ...(arquivo.midia === 'documento' ? { nomeArquivo: arquivo.nome } : {}),
@@ -190,7 +190,7 @@ export function SeletorDeArquivo({
         <div className="flex items-center gap-2.5 rounded-[10px] border border-line bg-surface p-2">
           {midia === 'imagem' && !url.includes('{{') ? (
             /* O otimizador do Next exige domínio declarado, e aqui o endereço
-               é o Storage do cliente **ou** qualquer host de fora — não há
+               é o Storage do cliente **ou** qualquer host de fora, não há
                lista para declarar. É uma miniatura de 40px num painel de
                edição; otimizar não é o ponto. */
             // eslint-disable-next-line @next/next/no-img-element
@@ -337,7 +337,7 @@ export function SeletorDeArquivo({
 
       {colando && (
         <div>
-          {/* A URL interpola — catálogo por variável é o caso real, com o
+          {/* A URL interpola, catálogo por variável é o caso real, com o
               bloco de API devolvendo o link e a mídia mandando aquele. Campo que
               interpola tem realce e botão de variável, como todos os outros. */}
           <LinhaComVariaveis
@@ -349,7 +349,7 @@ export function SeletorDeArquivo({
             aoMudar={(novo) => aoEscolher({ url: novo, midia })}
           />
           <p className="mt-1 text-[10.5px] leading-4 text-dim">
-            Colando um endereço, o tipo continua sendo escolhido por você — não
+            Colando um endereço, o tipo continua sendo escolhido por você, não
             temos como saber o que há do outro lado sem baixar.
           </p>
           <div className="mt-1.5 flex flex-wrap gap-1">
@@ -386,7 +386,7 @@ function emMegabytes(bytes: number): string {
   return mb < 0.1 ? `${Math.round(bytes / 1024)} kB` : `${mb.toFixed(1)} MB`
 }
 
-/** O último pedaço da URL, sem query — é o que dá para chamar de nome. */
+/** O último pedaço da URL, sem query, é o que dá para chamar de nome. */
 function nomeDaUrl(url: string): string {
   const limpo = url.trim()
   if (limpo.includes('{{')) return limpo

@@ -5,12 +5,12 @@ import { inserirNoCursor } from './inserir-variavel'
 import { Popover } from './popover'
 
 /**
- * O botão que insere uma variável no campo — com busca.
+ * O botão que insere uma variável no campo, com busca.
  *
  * **Substituiu a lista "Variáveis deste fluxo" no rodapé do painel.** Aquela
  * lista era um teclado longe do campo: ficava no fim da coluna, precisava
  * lembrar de deixar o cursor no lugar certo, e crescia sem fim conforme o fluxo
- * coletava mais coisa — num fluxo com quinze variáveis ela sozinha ocupava mais
+ * coletava mais coisa, num fluxo com quinze variáveis ela sozinha ocupava mais
  * altura que o bloco sendo editado.
  *
  * Aqui o gesto é o que sempre foi em editor de texto: o botão está **no campo
@@ -80,7 +80,7 @@ export function SeletorDeVariavel({
         disabled={variaveis.length === 0}
         // `onMouseDown` com `preventDefault`, como na barra de formato: o clique
         // tiraria o foco do campo antes de o botão agir, e com o foco iria a
-        // seleção — que é onde a variável precisa cair.
+        // seleção, que é onde a variável precisa cair.
         onMouseDown={(evento) => {
           evento.preventDefault()
           if (variaveis.length === 0) return

@@ -5,7 +5,7 @@ import { larguraValida } from './largura-guardada'
  * As três respostas erradas aqui são silenciosas, e é por isso que elas têm
  * teste: `null` de quem nunca escolheu, `NaN` de um valor corrompido à mão, e um
  * número absurdo sobrando de uma versão anterior com outros limites. Nenhuma
- * estoura — todas viram uma largura de painel, certa ou impossível.
+ * estoura, todas viram uma largura de painel, certa ou impossível.
  */
 const limites = { padrao: 232, minima: 132, maxima: 380 }
 

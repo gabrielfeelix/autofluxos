@@ -7,14 +7,14 @@ import { useCallback, useEffect, useRef } from 'react'
  *
  * **O pedido foi "puxar um pouco para a esquerda", e não "minimizar".** A barra
  * de blocos tem largura fixa desde sempre, e ela é grande demais para quem já
- * decorou os dez blocos e pequena demais para quem está aprendendo — duas
+ * decorou os dez blocos e pequena demais para quem está aprendendo, duas
  * pessoas diferentes, um número só. Recolher inteiro não serve: quem pediu
  * disse, com todas as letras, que não reduziria a zero.
  *
  * Três decisões que o gesto exige e que não são óbvias:
  *
  * **`setPointerCapture`.** Sem ele, arrastar rápido tira o ponteiro de cima da
- * borda e o navegador para de mandar os eventos — a barra "solta" no meio do
+ * borda e o navegador para de mandar os eventos, a barra "solta" no meio do
  * caminho e volta a se mexer sozinha quando o mouse passa por perto de novo.
  * Com a captura, o elemento continua recebendo tudo até soltar o botão.
  *
@@ -52,7 +52,7 @@ export function PuxadorDeLargura({
    * Enquanto arrasta, o cursor e a seleção valem para a **janela inteira**.
    *
    * Sem isso, passar por cima de um texto durante o arraste começa a selecioná-lo
-   * e o cursor fica piscando entre a seta e a barra — o gesto parece que
+   * e o cursor fica piscando entre a seta e a barra, o gesto parece que
    * quebrou, e o texto selecionado por acidente some no clique seguinte.
    */
   useEffect(() => {
@@ -117,7 +117,7 @@ export function PuxadorDeLargura({
        * A área de agarrar é maior do que a linha que se vê.
        *
        * A borda tem 1px; um alvo de 1px não se acerta. O elemento tem 9px e fica
-       * meio dentro, meio fora, com a marca visível só no hover e no foco —
+       * meio dentro, meio fora, com a marca visível só no hover e no foco ,
        * mostrar sempre poria uma faixa clara no meio de uma tela escura para
        * anunciar algo que quase ninguém vai usar.
        */

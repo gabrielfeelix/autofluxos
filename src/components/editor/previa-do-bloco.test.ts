@@ -5,7 +5,7 @@ import { detalhesDoBloco } from './previa-do-bloco'
 const p = { x: 0, y: 0 }
 const bloco = (cru: unknown) => noSchema.parse(cru)
 
-describe('detalhesDoBloco — o que o card não cabe mostrar', () => {
+describe('detalhesDoBloco, o que o card não cabe mostrar', () => {
   it('lista todas as opções da pergunta, e não só as três primeiras', () => {
     const no = bloco({
       id: 'q',

@@ -28,7 +28,7 @@ import {
  * O detalhe que faz o editor funcionar está nas alças (`Handle`): o `id` de cada
  * alça de saída é exatamente o `sourceHandle` que o motor lê. Numa pergunta, a
  * alça de uma opção tem o id da opção. Ou seja, **a setinha que você arrasta já
- * é a ramificação** — não existe tela de configurar branch em lugar nenhum.
+ * é a ramificação**, não existe tela de configurar branch em lugar nenhum.
  */
 
 /**
@@ -59,16 +59,27 @@ function Caixa({
         selecionado ? '!border-primary ring-1 ring-primary/30' : ''
       }`}
     >
-      <Handle type="target" position={Position.Left} className="!left-[-7px] !size-[15px] !border-2 !border-strong !bg-panel transition hover:!border-primary" />
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="!left-[-7px] !size-[15px] !border-2 !border-strong !bg-panel transition hover:!border-primary"
+      />
       <p className="flex h-[38px] items-center gap-2 border-b border-line px-3 text-[10px] font-bold tracking-[0.06em] text-muted uppercase">
-        <span aria-hidden className="flex size-6 items-center justify-center rounded-[7px] bg-surface text-[13px] text-soft">
+        <span
+          aria-hidden
+          className="flex size-6 items-center justify-center rounded-[7px] bg-surface text-[13px] text-soft"
+        >
           {ICONES[tipo]}
         </span>
         {NOMES[tipo]}
       </p>
       <div className="px-3 py-2.5">{children}</div>
       {saidaUnica && (
-        <Handle type="source" position={Position.Right} className="!right-[-7px] !size-[13px] !border-2 !border-[#0b1018] !bg-primary transition hover:!ring-2 hover:!ring-primary/40" />
+        <Handle
+          type="source"
+          position={Position.Right}
+          className="!right-[-7px] !size-[13px] !border-2 !border-[#0b1018] !bg-primary transition hover:!ring-2 hover:!ring-primary/40"
+        />
       )}
     </div>
   )
@@ -107,7 +118,7 @@ const ROTULO_DA_MIDIA = {
  * O bloco no desenho mostra o texto **e o resumo da pilha**.
  *
  * Sem a segunda linha, um bloco que manda três fotos e grava dois campos fica
- * idêntico a um que manda só "Oi" — e o desenho é justamente onde alguém
+ * idêntico a um que manda só "Oi", e o desenho é justamente onde alguém
  * procura o bloco que precisa mexer. `partesDaMensagem` lê os dois formatos,
  * então o grafo antigo continua desenhando igual.
  */
@@ -115,7 +126,7 @@ const ROTULO_DA_MIDIA = {
  * O texto do card passa por `RealceDeVariaveis`: no desenho é onde se confere o
  * fluxo inteiro, e sem marca ali `{{nome}}` (azul no painel) e `{nome}` (erro)
  * ficavam iguais a texto comum. Ver `realce-de-variaveis.tsx` para o cuidado com
- * o espaço — a marca não pode crescer a linha do `line-clamp`.
+ * o espaço, a marca não pode crescer a linha do `line-clamp`.
  */
 function NoMensagem({ id, data, selected }: NodeProps) {
   const partes = partesDaMensagem({
@@ -157,7 +168,6 @@ function NoMensagem({ id, data, selected }: NodeProps) {
   )
 }
 
-
 function NoMidia({ data, selected }: NodeProps) {
   const d = data as {
     midia: keyof typeof ROTULO_DA_MIDIA
@@ -185,7 +195,7 @@ function NoMidia({ data, selected }: NodeProps) {
         relance, que é como se lê um fluxograma.
         
         **Só imagem.** Vídeo exigiria carregar o arquivo inteiro para mostrar um
-        quadro, e PDF não tem miniatura sem renderizar — os dois pagariam a rede
+        quadro, e PDF não tem miniatura sem renderizar, os dois pagariam a rede
         de um canvas com vinte blocos para devolver pouca informação.
       */}
       {d.midia === 'imagem' && d.url.trim() !== '' && (
@@ -209,7 +219,7 @@ function NoMidia({ data, selected }: NodeProps) {
  * A miniatura de uma imagem do bloco de mídia.
  *
  * **Endereço quebrado não pode deixar buraco no card.** URL colada errada,
- * arquivo apagado do Storage, host fora do ar — em qualquer um deles o
+ * arquivo apagado do Storage, host fora do ar, em qualquer um deles o
  * navegador mostraria o ícone de imagem partida, que num fluxograma parece
  * defeito do editor. Um erro no `img` derruba a miniatura e o card volta a ser
  * o que era: rótulo e nome do arquivo.
@@ -234,7 +244,7 @@ function PreviaDaImagem({ url, descricao }: { url: string; descricao: string }) 
          * Altura fixa e `object-cover`: o card do desenho tem largura própria e
          * uma imagem em pé empurraria tudo abaixo dela para fora da tela. O
          * recorte perde parte da foto e mantém o fluxograma legível, que é para
-         * o que a miniatura serve — reconhecer, não conferir.
+         * o que a miniatura serve, reconhecer, não conferir.
          */
         className="h-[84px] w-full object-cover"
       />
@@ -382,12 +392,12 @@ function NoCondicao({ data, selected }: NodeProps) {
 /**
  * A pesquisa de satisfação (0060).
  *
- * Desenha as **três faixas com o corte escrito** — "promotor 9–10" e não
+ * Desenha as **três faixas com o corte escrito**, "promotor 9–10" e não
  * "promotor". A régua é fixa e não aparece em lugar nenhum do desenho; sem o
  * número ao lado, descobrir onde a nota 7 cai exigiria abrir o painel ou
  * testar. E o 7 é justamente o que engana: parece bom e conta como neutro.
  *
- * A saída de prazo aparece só quando há prazo, como na pergunta — saída que
+ * A saída de prazo aparece só quando há prazo, como na pergunta, saída que
  * ninguém usa é fio a mais para desviar com o mouse.
  */
 function NoNps({ data, selected }: NodeProps) {
@@ -435,7 +445,8 @@ function NoSalvarCampo({ data, selected }: NodeProps) {
   return (
     <Caixa tipo="salvar-campo" selecionado={!!selected}>
       <p className="text-soft">
-        <code className="font-mono text-[11px] text-primary">{d.campo}</code>{' = '}
+        <code className="font-mono text-[11px] text-primary">{d.campo}</code>
+        {' = '}
         <RealceDeVariaveis texto={vazio(d.valor, '(vazio)')} />
       </p>
     </Caixa>
@@ -447,7 +458,7 @@ function NoEtapa({ data, selected }: NodeProps) {
   return (
     <Caixa tipo="etapa" selecionado={!!selected}>
       {/* `rotulo` é preenchido pelo painel quando alguém escolhe, e serve só ao
-          desenho: o id não diz nada a quem olha o fluxo. O motor ignora — o que
+          desenho: o id não diz nada a quem olha o fluxo. O motor ignora, o que
           vale para ele são `quadroId` e `colunaId`. */}
       <p className="truncate text-[12.5px] leading-5 text-soft">
         {d.colunaId ? (d.rotulo ?? 'etapa escolhida') : '(nenhuma etapa escolhida)'}
@@ -491,7 +502,7 @@ function NoHandoff({ data, selected }: NodeProps) {
  *
  * **Ele diz qual integração está ligada, e não só o endereço.** Quem monta
  * fluxo pediu exatamente isto: *"preciso que a opção selecionada apareça
- * pequeno no card de alguma forma, pra pessoa ter o feedback"* — antes o card
+ * pequeno no card de alguma forma, pra pessoa ter o feedback"*, antes o card
  * mostrava `GET https://viacep.com.br/ws/0131010…` e `guarda cidade`, e para
  * saber se aquele bloco era a agenda ou uma chamada solta era preciso clicar
  * nele e abrir a gaveta.
@@ -508,41 +519,53 @@ function NoHttp({ data, selected }: NodeProps) {
   }
 
   const preset = presetDoBloco(d)
-  // Preset que pede chave e ainda não tem nenhuma está preenchido e não roda —
+  // Preset que pede chave e ainda não tem nenhuma está preenchido e não roda ,
   // e no desenho isso precisa aparecer sem clicar, que é onde ele será visto.
   const faltaCredencial =
     preset !== undefined && exigeCredencial(preset) && (d.conexaoId ?? '') === ''
 
   return (
     <Caixa tipo="http" selecionado={!!selected}>
+      {/*
+        **O card diz o que o bloco faz, e nunca como.**
+
+        Aqui moravam três linhas de jargão: `GET verandi.4yu.com.br/api/v1/…`,
+        e embaixo `guarda encontrado, pessoa_id, nome_n…`. O desenho é a tela
+        que o dono do negócio abre para conferir o atendimento dele, e verbo de
+        protocolo com caminho de API cortado no meio não diz nada a quem não
+        programa, ocupando duas linhas do card para isso.
+
+        O endereço, o método, o que é guardado e os cabeçalhos continuam
+        inteiros em dois lugares melhores: a prévia que abre ao passar o mouse
+        (`previa-do-bloco.tsx`) e o painel da direita. Quem precisa do detalhe
+        técnico está olhando um bloco; quem está lendo o desenho está olhando
+        vinte.
+      */}
       {preset ? (
         <>
           {/*
-            Sem ponto verde quando está tudo certo.
-            
-            O normal não precisa de aviso: o card já diz o nome da integração, e
-            um ponto em cada bloco de um fluxo com cinco chamadas vira ruído que
-            some por repetição — e aí o âmbar do que **está** faltando some
-            junto. Só o problema se marca.
+            Sem ponto verde quando está tudo certo. O normal não precisa de
+            aviso: o card já diz o nome da integração, e um ponto em cada bloco
+            de um fluxo com cinco chamadas vira ruído que some por repetição, e
+            aí o âmbar do que **está** faltando some junto.
           */}
-          <p className="truncate text-[12.5px] leading-5 font-medium text-soft">{preset.nome}</p>
+          <p className="text-[12.5px] leading-5 font-medium text-soft">{preset.nome}</p>
           {faltaCredencial && (
             <p className="mt-0.5 truncate text-[10.5px] text-aviso/75">falta a credencial</p>
           )}
-          <p className="mt-1 truncate font-mono text-[10px] text-dim">
-            {d.metodo} {semEsquema(d.url)}
-          </p>
         </>
       ) : (
-        <p className="truncate text-[12.5px] leading-5 text-soft">
-          <span className="font-mono text-[10px] text-primary">{d.metodo}</span>{' '}
-          {vazio(d.url, '(sem endereço)')}
-        </p>
-      )}
-
-      {d.mapear.length > 0 && (
-        <p className="mt-1 truncate font-mono text-[10px] text-dim">
-          guarda {d.mapear.map((m) => m.variavel || '?').join(', ')}
+        /*
+          Sem preset não há nome pronto, e o card precisa dizer alguma coisa.
+          Diz o verbo em português e o site, que é o que se reconhece:
+          "Consulta verandi.4yu.com.br". O caminho fica de fora porque é ele que
+          estoura a caixa e é o pedaço que menos identifica.
+        */
+        <p className="text-[12.5px] leading-5 text-soft">
+          {d.metodo === 'GET' ? 'Consulta ' : 'Envia para '}
+          <span className="text-dim">
+            {vazio(siteDaUrl(d.url), 'um endereço ainda não escolhido')}
+          </span>
         </p>
       )}
     </Caixa>
@@ -556,8 +579,19 @@ function NoHttp({ data, selected }: NodeProps) {
  * informa: o que diferencia dois blocos da mesma agenda é a rota, e ela é a
  * primeira coisa a sumir quando a linha estoura.
  */
-function semEsquema(url: string): string {
-  return url.replace(/^https?:\/\//, '') || '(sem endereço)'
+/**
+ * Só o site do endereço, sem `https://` e sem caminho.
+ *
+ * O card mostra `verandi.4yu.com.br` no lugar de
+ * `https://verandi.4yu.com.br/api/v1/pessoas?telefone={{telefone}}`. O site é o
+ * que alguém reconhece de relance; o caminho é o que estoura a caixa, some no
+ * `truncate` e não identifica nada quando some. O endereço inteiro continua na
+ * prévia do bloco e no painel.
+ */
+function siteDaUrl(url: string): string {
+  const limpo = url.trim().replace(/^https?:\/\//, '')
+  if (limpo === '') return ''
+  return limpo.split(/[/?#]/)[0] ?? limpo
 }
 
 /**
@@ -572,7 +606,7 @@ function NoIrFluxo({ data, selected }: NodeProps) {
   return (
     <Caixa tipo="ir-fluxo" selecionado={!!selected} saidaUnica={false}>
       <p className="truncate text-[12.5px] leading-5 text-soft">
-        {d.fluxoId ? (d.rotulo?.trim() || 'automação escolhida') : '(nenhuma automação escolhida)'}
+        {d.fluxoId ? d.rotulo?.trim() || 'automação escolhida' : '(nenhuma automação escolhida)'}
       </p>
       <p className="mt-1 text-[10px] text-dim">a conversa continua lá e não volta</p>
     </Caixa>
@@ -584,7 +618,7 @@ function NoIrFluxo({ data, selected }: NodeProps) {
  *
  * **Sem alça de saída** (`saidaUnica={false}`), pelo mesmo motivo do bloco de
  * ir-fluxo: daqui não sai linha, porque a conversa continua no destino. Uma
- * alça seria uma promessa que o motor não cumpre — e o destino não é uma seta,
+ * alça seria uma promessa que o motor não cumpre, e o destino não é uma seta,
  * é um campo.
  */
 function NoVoltar({ data, selected }: NodeProps) {

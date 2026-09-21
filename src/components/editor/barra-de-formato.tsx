@@ -12,7 +12,7 @@ import { alternarMarca, type Marca } from './formatar'
  * **Ela nasceu dentro do bloco de Mensagem e ficou presa lá.** Enquanto só
  * aquele bloco mandava texto isso passou despercebido; hoje a Pergunta, o
  * Handoff e a legenda da Mídia também mandam, e quem escreve a saudação com
- * negrito e a pergunta seguinte sem entende — corretamente — que a segunda tela
+ * negrito e a pergunta seguinte sem entende, corretamente, que a segunda tela
  * está quebrada. Um componente só é o que impede as duas de divergirem de novo.
  *
  * O que ela **não** faz continua valendo: não muda o formato do que é gravado.
@@ -22,7 +22,7 @@ import { alternarMarca, type Marca } from './formatar'
  *
  * Onde ela **não** entra, e de propósito: campo que não vira mensagem. O valor
  * do bloco Guardar, o motivo interno do Handoff, a instrução da IA e a URL do
- * arquivo não passam por render nenhum — asterisco ali é asterisco literal, e
+ * arquivo não passam por render nenhum, asterisco ali é asterisco literal, e
  * oferecer o botão seria ensinar a estragar o dado.
  */
 
@@ -37,11 +37,11 @@ export function BarraDeFormato({
   aoMudar: (valor: string) => void
   /**
    * As variáveis do fluxo. Quando vêm, a barra ganha o botão que insere uma
-   * delas no cursor — é o lugar certo dele: ao lado do negrito e do emoji, no
+   * delas no cursor, é o lugar certo dele: ao lado do negrito e do emoji, no
    * campo em que se escreve, e não numa lista no rodapé do painel.
    */
   variaveis?: string[]
-  /** O que vai à direita — hoje, o contador de caracteres. */
+  /** O que vai à direita, hoje, o contador de caracteres. */
   children?: ReactNode
 }) {
   const [emojisAbertos, setEmojisAbertos] = useState(false)
@@ -125,7 +125,7 @@ function BotaoDeMarca({
       title={rotulo}
       // `onMouseDown` com `preventDefault` em vez de `onClick`: clicar num
       // botão tira o foco do textarea antes do clique acontecer, e com o foco
-      // vai a seleção — que é justamente o que a barra precisa saber.
+      // vai a seleção, que é justamente o que a barra precisa saber.
       onMouseDown={(evento) => {
         evento.preventDefault()
         aoClicar(marca)
@@ -143,7 +143,7 @@ function BotaoDeMarca({
  *
  * Os três defeitos que ele corrige eram um só sintoma cada:
  *
- * 1. **Ele aparecia fora do lugar** — primeiro no canto da tela, depois
+ * 1. **Ele aparecia fora do lugar**, primeiro no canto da tela, depois
  *    empurrando a coluna do editor para o lado. Os dois eram o mesmo erro de
  *    camada: `position: fixed` com coordenada de outro elemento, e depois
  *    `absolute` dentro de um contêiner com rolagem, onde o que passa da largura

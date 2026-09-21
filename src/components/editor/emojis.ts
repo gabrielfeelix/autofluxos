@@ -3,14 +3,14 @@
  *
  * **Continua sendo uma lista à mão, e agora com motivo mais forte.** Um pacote
  * completo é o conjunto Unicode inteiro (mais de 3.700 caracteres) com os dados
- * de busca em inglês — dezenas de KB no bundle de uma tela que já carrega o
+ * de busca em inglês, dezenas de KB no bundle de uma tela que já carrega o
  * React Flow, para oferecer bandeiras e símbolos matemáticos a quem está
  * escrevendo "Oi, tudo bem?" no WhatsApp.
  *
  * O que mudou é o tamanho e a busca: eram 30 sem procura nenhuma, o que obrigava
  * a varrer a grade com o olho e não tinha o emoji que a pessoa queria. Agora são
  * os usados em conversa de atendimento, agrupados como no WhatsApp, e cada um
- * com as palavras em **português** — buscar "coração" tem que achar ❤️, e não
+ * com as palavras em **português**, buscar "coração" tem que achar ❤️, e não
  * exigir "heart".
  *
  * Quem precisar de um que não está aqui continua colando do teclado do sistema,
@@ -328,5 +328,5 @@ export const GRUPOS_DE_EMOJI: GrupoDeEmoji[] = [
   },
 ]
 
-/** Todos os emojis numa lista só — é o que a busca varre. */
+/** Todos os emojis numa lista só, é o que a busca varre. */
 export const TODOS_OS_EMOJIS: [string, string][] = GRUPOS_DE_EMOJI.flatMap((g) => g.itens)

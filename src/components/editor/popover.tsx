@@ -4,17 +4,17 @@ import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } fro
 import { createPortal } from 'react-dom'
 
 /**
- * Um painel flutuante ancorado num botão — **por portal, e medido**.
+ * Um painel flutuante ancorado num botão, **por portal, e medido**.
  *
  * A primeira versão dos seletores de emoji e de variável era `position:
  * absolute` dentro do próprio painel do editor, e o efeito foi o mesmo que o
  * `Dropdown` já tinha sofrido: a coluna da direita tem rolagem própria, e um
- * filho mais largo que ela não fica por cima — ele **alarga o conteúdo**, cria
+ * filho mais largo que ela não fica por cima, ele **alarga o conteúdo**, cria
  * rolagem horizontal e empurra a tela inteira para o lado.
  *
  * Absoluto não resolve isso com truque de CSS nenhum: enquanto o painel for o
  * contêiner de rolagem, o que passar da largura dele conta como conteúdo. A
- * saída é sair do fluxo de vez — portal no `<body>` e `position: fixed`, com a
+ * saída é sair do fluxo de vez, portal no `<body>` e `position: fixed`, com a
  * posição medida a partir do botão.
  *
  * O que ele faz por conta própria, e cada item veio de um defeito visto:
@@ -24,11 +24,11 @@ import { createPortal } from 'react-dom'
  *   perto do rodapé, e abrir para baixo ali desenha fora da área visível);
  * - **acompanha a rolagem** com `capture`, porque quem rola quase nunca é a
  *   janela: é a coluna do editor;
- * - **fecha ao clicar fora ou no `Esc`**, ignorando o próprio botão — senão o
+ * - **fecha ao clicar fora ou no `Esc`**, ignorando o próprio botão, senão o
  *   clique que fecha e o que reabre acontecem no mesmo gesto.
  *
  * Desenha sempre no `<body>`. Dentro de um `<dialog>` isso ficaria atrás dele
- * (o modal vive na camada de topo do navegador) — e não fica porque nenhum
+ * (o modal vive na camada de topo do navegador), e não fica porque nenhum
  * campo com variável ou emoji mora dentro de modal hoje. Se um dia morar, o
  * caminho é o do `Dropdown`: procurar o `dialog` mais próximo e portar para lá.
  */
@@ -55,8 +55,7 @@ export function Popover({
   /**
    * Medir e escutar num efeito só, com a função declarada **dentro** dele.
    *
-   * Um `useCallback` aqui lendo `gatilho.current` — um `ref` que chega por prop
-   * — é justamente o caso que o compilador do React recusa memorizar, e a
+   * Um `useCallback` aqui lendo `gatilho.current`, um `ref` que chega por prop, é justamente o caso que o compilador do React recusa memorizar, e a
    * alternativa (função solta no corpo) refaria os `addEventListener` a cada
    * render. Dentro do efeito, as duas coisas ficam certas.
    *

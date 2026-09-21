@@ -11,7 +11,7 @@ import { useCallback, useSyncExternalStore } from 'react'
  *
  * `useSyncExternalStore` e não `useState` + efeito, e a diferença não é estilo.
  * O `localStorage` é uma fonte de verdade **fora** do React, e ler dele num
- * efeito significa desenhar o padrão, depois corrigir — a barra pisca de 232
+ * efeito significa desenhar o padrão, depois corrigir, a barra pisca de 232
  * para 160 na frente de quem abriu. Com `getServerSnapshot` separado, o
  * servidor desenha o padrão e o navegador desenha o guardado já no primeiro
  * quadro, sem erro de hidratação e sem piscada.
@@ -19,7 +19,7 @@ import { useCallback, useSyncExternalStore } from 'react'
  * O nome começa com `use` num arquivo escrito em português pela mesma razão que
  * o schema do fluxo tem chaves em inglês: **é palavra de protocolo, não de
  * idioma.** O React reconhece hook pelo prefixo, e as regras do lint recusam o
- * resto — a fronteira é dele, como lá era do React Flow.
+ * resto, a fronteira é dele, como lá era do React Flow.
  */
 
 /**
@@ -46,7 +46,7 @@ export function larguraValida(
  * Janela anônima, armazenamento bloqueado por política e cookies de terceiros
  * desligados fazem `localStorage` **lançar** em vez de devolver vazio. Sem este
  * `try`, a barra de blocos derrubaria o editor inteiro por causa de um número
- * lembrado — e o sintoma seria tela branca para quem só queria desenhar.
+ * lembrado, e o sintoma seria tela branca para quem só queria desenhar.
  */
 function lerDoArmazenamento(chave: string): string | null {
   try {

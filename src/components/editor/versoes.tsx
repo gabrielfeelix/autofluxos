@@ -5,7 +5,7 @@ import { useRef, useState } from 'react'
 export type VersaoNaLista = {
   id: string
   versao: number
-  /** Já formatado no servidor — data calculada aqui divergiria na hidratação. */
+  /** Já formatado no servidor, data calculada aqui divergiria na hidratação. */
   quando: string
 }
 
@@ -31,7 +31,7 @@ export function Versoes({
   publicadaId: string | null
   /** Id da versão sendo republicada agora, ou `null`. */
   voltando: string | null
-  /** Devolve `true` quando a volta deu certo — aí o diálogo fecha sozinho. */
+  /** Devolve `true` quando a volta deu certo, aí o diálogo fecha sozinho. */
   aoVoltar: (versaoId: string) => Promise<boolean>
 }) {
   const dialogo = useRef<HTMLDialogElement>(null)
@@ -71,7 +71,7 @@ export function Versoes({
         <h2 className="text-[17px] font-bold">Histórico de publicações</h2>
         <p className="mt-1 mb-5 text-[12.5px] leading-6 text-muted">
           Cada publicação vira uma versão que não muda mais. Voltar para uma antiga publica o
-          desenho dela como uma versão nova — o histórico só cresce.
+          desenho dela como uma versão nova, o histórico só cresce.
         </p>
 
         {versoes.length === 0 ? (

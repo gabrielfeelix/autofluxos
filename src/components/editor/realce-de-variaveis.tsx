@@ -3,12 +3,12 @@
 import { fatiarVariaveis } from '@/core/engine/interpolar'
 
 /**
- * O realce de variável **fora do campo de texto** — no card do desenho e na
+ * O realce de variável **fora do campo de texto**, no card do desenho e na
  * prévia do hover.
  *
  * Por que existe: a mesma citação aparecia azul dentro do painel e como texto
  * cru no card, e é no desenho que se confere o fluxo inteiro. Pior, `{nome}` de
- * uma chave só — que sai literal na conversa — não tinha marca em lugar nenhum
+ * uma chave só, que sai literal na conversa, não tinha marca em lugar nenhum
  * fora do campo. Quem passa o olho no desenho não via o erro.
  *
  * **O tamanho não pode crescer.** O card tem largura fixa e `line-clamp-3`:
@@ -18,7 +18,7 @@ import { fatiarVariaveis } from '@/core/engine/interpolar'
  */
 
 export const DICA_CHAVE_SIMPLES =
-  'Variável precisa de duas chaves — {{nome}}. Com uma só, sai escrito assim mesmo na conversa.'
+  'Variável precisa de duas chaves, {{nome}}. Com uma só, sai escrito assim mesmo na conversa.'
 
 /** O texto com a citação certa em azul e a chave simples em vermelho. */
 export function RealceDeVariaveis({ texto }: { texto: string }) {

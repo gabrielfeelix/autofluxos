@@ -9,7 +9,7 @@ import { acaoMoverFluxo } from '@/server/acoes'
  *
  * Um seletor por linha, e não arrastar: arrastar dentro de uma lista que
  * pagina, tem seção por pasta e vive num acordeão é um alvo pequeno num
- * problema resolvido — e no celular não existe.
+ * problema resolvido, e no celular não existe.
  */
 export function MoverFluxo({
   clienteId,
