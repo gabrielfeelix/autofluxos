@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { AjudaDoCampo } from '@/components/design/ajuda-do-campo'
 import { CLASSE_DO_NIVEL, type FaixasDeNivel } from '@/core/relacionamento'
 import { comoDinheiro } from '@/core/crm'
 import { acaoDefinirFaixas } from '@/server/acoes-crm'
@@ -33,15 +34,24 @@ export function FaixasDeNivelDaConta({
 
   return (
     <section className="app-card overflow-hidden">
-      <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
+      <h2 className="flex items-center border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
         Quando um cliente é ouro
+        <AjudaDoCampo
+          titulo="Quando um cliente é ouro"
+          secao="duvidas"
+          texto="Pelo total que a pessoa já comprou. Define a coluna “Cliente” na lista de contatos."
+          detalhes={
+            <p>
+              O nível sai do <strong>total que a pessoa já comprou</strong>, somado. Vale para a
+              coluna “Cliente” na lista de contatos e para as réguas que falam só com um nível —
+              uma mensagem de agradecimento que só faz sentido para quem já gastou bastante, por
+              exemplo.
+            </p>
+          }
+        />
       </h2>
 
       <div className="px-[18px] py-4">
-        <p className="mb-4 text-[11.5px] leading-5 text-dim">
-          Pelo total que a pessoa já comprou. Vale para a coluna “Cliente” na lista de contatos e
-          para as réguas que falam só com um nível.
-        </p>
 
         <div className="flex flex-wrap gap-3">
           <Campo

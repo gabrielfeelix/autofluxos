@@ -393,10 +393,21 @@ export function LegendaDeVariaveis({
   valor,
   conhecidas,
   children,
+  semPadrao = false,
 }: {
   valor: string
   conhecidas?: string[]
   children?: ReactNode
+  /**
+   * Cala a linha quando não há aviso nenhum.
+   *
+   * O “aceita {{variavel}}” do rodapé é **ajuda**, e ajuda agora mora atrás do
+   * “?” ao lado do título. O que não pode sair daqui é o aviso: `{{preco}}`
+   * que nenhum bloco preenche, ou a chave simples que sai escrita na conversa.
+   * Esses dois falam do que está digitado agora, e esconder um deles atrás de
+   * um clique é escondê-lo de quem precisa exatamente neste segundo.
+   */
+  semPadrao?: boolean
 }) {
   const citadas = fatiarVariaveis(valor).filter((p) => p.tipo === 'variavel')
   const desconhecidas = conhecidas
@@ -432,6 +443,8 @@ export function LegendaDeVariaveis({
       </span>
     )
   }
+
+  if (semPadrao) return null
 
   return (
     <span className="mt-1 block text-[10.5px] text-dim">{children ?? 'aceita {{variavel}}'}</span>

@@ -191,7 +191,23 @@ export function NotasDoContato({
         <h2 className="flex items-center gap-2 text-[12.5px] font-bold">
           <IconeDaSecao>{iconeLapis}</IconeDaSecao>
           Anotação
-          <AjudaDoCampo texto="Um lembrete curto da equipe sobre esta pessoa, sempre visível na ficha. Fica só aqui: não vai para o WhatsApp nem para nenhuma automação." />
+          <AjudaDoCampo
+            titulo="Lembrete"
+            secao="duvidas"
+            texto="Um lembrete curto da equipe sobre esta pessoa, sempre visível na ficha."
+            detalhes={
+              <>
+                <p>
+                  Uma linha que fica sempre à vista, para quem abrir a ficha não precisar ler o
+                  histórico inteiro: “prefere ligação”, “alérgica a amendoim”, “é irmã da Ana”.
+                </p>
+                <p>
+                  <strong>Fica só aqui.</strong> Não vai para o WhatsApp nem para nenhuma
+                  automação.
+                </p>
+              </>
+            }
+          />
         </h2>
         {!editando && (
           <button

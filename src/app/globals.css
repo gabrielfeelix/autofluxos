@@ -346,11 +346,26 @@ body {
   background: transparent;
 }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
+/*
+ * `font: inherit` em campo e botão, **dentro de `@layer base`**.
+ *
+ * Solta, como estava, esta regra vencia todo utilitário do Tailwind: CSS sem
+ * camada bate CSS em camada, independente de especificidade. O efeito era um
+ * botão ignorar o próprio `text-[12px]` e herdar o tamanho do que estivesse em
+ * volta, enquanto o link ao lado, com a mesma classe, obedecia. Era isso que
+ * fazia o menu `⋮` ter "Abrir no Inbox" (link) menor que "Pausar o bot"
+ * (botão), no mesmo menu, com a mesma classe escrita nos dois.
+ *
+ * Na camada base ela continua fazendo o que devia: tirar a fonte do sistema de
+ * campo e botão. Quem escrever um tamanho no elemento passa a mandar.
+ */
+@layer base {
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
 }
 
 button,

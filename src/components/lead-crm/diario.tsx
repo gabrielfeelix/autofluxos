@@ -52,7 +52,23 @@ export function Diario({
             vira mensagem saiu do corpo e virou o "?" ao lado.
           */}
           Anotações da equipe
-          <AjudaDoCampo texto="O que a equipe escreve sobre esta pessoa, com data e autor. Fica só aqui: não vai para o WhatsApp nem para nenhuma automação." />
+          <AjudaDoCampo
+            titulo="Diário"
+            secao="duvidas"
+            texto="O que a equipe escreve sobre esta pessoa, com data e autor."
+            detalhes={
+              <>
+                <p>
+                  Cada anotação fica com a data e o nome de quem escreveu, e o que já foi escrito
+                  não é apagado por uma anotação nova — é um registro, não um campo.
+                </p>
+                <p>
+                  <strong>Fica só aqui.</strong> Não vai para o WhatsApp nem para nenhuma
+                  automação: quem escreve está falando com o time, não com a pessoa.
+                </p>
+              </>
+            }
+          />
           {notas.length > 0 && (
             <span className="ml-1.5 text-[11px] font-semibold text-dim tabular-nums">
               {notas.length}

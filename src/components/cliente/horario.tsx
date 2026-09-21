@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Caixa } from '@/components/design/caixa'
 import { FormularioSalvar, type EstadoSalvar } from '@/components/design/formulario-salvar'
 import { Dropdown } from '@/components/design/dropdown'
+import { AjudaDoCampo } from '@/components/design/ajuda-do-campo'
 import {
   DIAS_DA_SEMANA,
   atendimentoAberto,
@@ -170,20 +171,55 @@ export function HorarioDeAtendimentoForm({
 
       <label className="mb-4 flex items-center gap-2.5">
         <Caixa marcada={ligado} aoMudar={setLigado} />
-        <span className="text-[13px] font-semibold">Definir horário de atendimento</span>
+        <span className="inline-flex items-center text-[13px] font-semibold">
+          Definir horário de atendimento
+          <AjudaDoCampo
+            titulo="Definir horário de atendimento"
+            secao="duvidas"
+            texto="Sem horário, o bot promete atendente a qualquer hora, inclusive às 3h da manhã."
+            detalhes={
+              <>
+                <p>
+                  Com um horário preenchido, o bloco de “falar com humano” avisa sozinho quem
+                  escrever fora do expediente, dizendo quando vocês voltam. Sem ele, a conta é
+                  sempre aberta e esse aviso nunca acontece.
+                </p>
+                <p>
+                  Mais de uma faixa no mesmo dia serve para almoço fechado. Faixa que termina antes
+                  de começar é ignorada: melhor dizer que está fechado do que prometer alguém que
+                  não vai responder.
+                </p>
+              </>
+            }
+          />
+        </span>
       </label>
 
       {ligado && conexoes.length > 0 && (
         <section className="app-card mb-4 px-5 py-4">
           <label className="flex items-center gap-2.5">
             <Caixa marcada={doCrm} aoMudar={setDoCrm} />
-            <span className="text-[13px] font-semibold">Puxar o horário da agenda (Verandi)</span>
+            <span className="inline-flex items-center text-[13px] font-semibold">
+              Puxar o horário da agenda (Verandi)
+              <AjudaDoCampo
+                titulo="Puxar o horário da agenda (Verandi)"
+                secao="verandi"
+                texto="O expediente e os feriados passam a vir da agenda, atualizados sozinhos algumas vezes por dia."
+                detalhes={
+                  <>
+                    <p>
+                      Marcando, o expediente e os feriados passam a vir da Verandi, atualizados
+                      sozinhos algumas vezes por dia. A grade abaixo vira só leitura.
+                    </p>
+                    <p>
+                      Sem isto, o mesmo horário fica cadastrado em dois lugares, e os dois
+                      discordam no primeiro feriado que alguém cadastra só de um lado.
+                    </p>
+                  </>
+                }
+              />
+            </span>
           </label>
-          <p className="mt-1.5 text-[11.5px] leading-5 text-dim">
-            O expediente e os feriados passam a vir de lá, atualizados sozinhos algumas vezes por
-            dia. Sem isto, o mesmo horário fica cadastrado em dois lugares, e os dois discordam no
-            primeiro feriado que alguém cadastra só de um lado.
-          </p>
 
           {doCrm && (
             <div className="mt-3 max-w-[280px]">
@@ -211,6 +247,18 @@ export function HorarioDeAtendimentoForm({
           <div className="mb-4 max-w-[280px]">
             <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
               Fuso horário
+              <AjudaDoCampo
+                titulo="Fuso horário"
+                secao="duvidas"
+                texto="Em que fuso as horas abaixo devem ser lidas. O servidor roda em UTC."
+                detalhes={
+                  <p>
+                    O servidor roda em <strong>UTC</strong>, e as horas da grade abaixo são lidas
+                    neste fuso. Sem escolher o certo, um estúdio de São Paulo abriria às 5h da
+                    manhã para quem escreve.
+                  </p>
+                }
+              />
             </span>
             <Dropdown
               rotuloAcessivel="Fuso horário do atendimento"
@@ -218,9 +266,6 @@ export function HorarioDeAtendimentoForm({
               valor={fuso}
               aoMudar={setFuso}
             />
-            <span className="mt-1 block text-[10.5px] leading-4 text-dim">
-              O servidor roda em UTC. Sem isto, um estúdio de São Paulo abriria às 5h.
-            </span>
           </div>
 
           <ul className="app-card divide-y divide-line overflow-hidden">
@@ -288,12 +333,6 @@ export function HorarioDeAtendimentoForm({
             Repetir o primeiro horário de segunda a sexta
           </button>
 
-          <p className="mt-3 text-[11.5px] leading-5 text-dim">
-            Mais de uma faixa no mesmo dia serve para almoço fechado. Faixa que termina antes de
-            começar é ignorada: melhor dizer que está fechado do que prometer alguém que não vai
-            responder.
-          </p>
-
           {/*
             Feriado é o dia em que a semana mente.
 
@@ -302,12 +341,33 @@ export function HorarioDeAtendimentoForm({
             Natal, ninguém responde, e a pessoa fica esperando. É a promessa
             mais cara que o produto sabe fazer.
           */}
-          <h2 className="mt-7 mb-1 text-[13px] font-bold">Feriados e dias fechados</h2>
-          <p className="mb-3 text-[11.5px] leading-5 text-dim">
-            {doCrm
-              ? 'Vêm da agenda e são atualizados sozinhos. Para mudar, mexa na Verandi.'
-              : 'Fecham o dia inteiro, mesmo que a semana acima diga que abre. O motivo aparece na conversa: “hoje é Natal e o atendimento está fechado”.'}
-          </p>
+          <h2 className="mt-7 mb-3 flex items-center text-[13px] font-bold">
+            Feriados e dias fechados
+            <AjudaDoCampo
+              titulo="Feriados e dias fechados"
+              secao="duvidas"
+              texto="Fecham o dia inteiro, mesmo que a semana acima diga que abre."
+              detalhes={
+                <>
+                  <p>
+                    A grade acima diz “toda quinta das 8h às 18h”, e no dia 25 de dezembro isso é
+                    falso. Um dia nesta lista fecha o dia inteiro, mesmo que a semana diga que
+                    abre.
+                  </p>
+                  <p>
+                    O motivo aparece na conversa: <em>“hoje é Natal e o atendimento está
+                    fechado”</em>. Sem esta lista, o bot promete atendimento no Natal, ninguém
+                    responde, e a pessoa fica esperando.
+                  </p>
+                </>
+              }
+            />
+          </h2>
+          {doCrm && (
+            <p className="mb-3 text-[11.5px] leading-5 text-dim">
+              Vêm da agenda e são atualizados sozinhos. Para mudar, mexa na Verandi.
+            </p>
+          )}
 
           <ul className="app-card divide-y divide-line overflow-hidden">
             {excecoes.length === 0 && (

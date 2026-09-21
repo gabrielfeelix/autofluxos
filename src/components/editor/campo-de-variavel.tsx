@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState, type ReactNode } from 'react'
 import { FORMATO_VARIAVEL } from '@/core/flow/schema'
+import { AjudaDoCampo } from '@/components/design/ajuda-do-campo'
 import { Popover } from './popover'
 
 /**
@@ -77,7 +78,7 @@ export function CampoDeVariavel({
   modo,
   dica,
   nota,
-  ajuda,
+  secao,
 }: {
   rotulo: string
   valor: string
@@ -85,24 +86,26 @@ export function CampoDeVariavel({
   /** As variáveis que **outros** blocos guardam. A do próprio bloco fica fora. */
   variaveis: string[]
   modo: ModoDeVariavel
+  /**
+   * A frase curta do balão do “?”. Era o parágrafo cinza embaixo do campo.
+   *
+   * Continua sendo o mesmo texto, escrito com o mesmo cuidado; o que mudou é
+   * que agora ele só aparece para quem foi atrás dele.
+   */
   dica?: string
   /**
-   * O que este campo significa, dito sempre — e não só enquanto ele está vazio.
+   * O que este campo significa, com exemplo — o corpo do modal do “?”.
    *
-   * A legenda de cima fala do **nome** (é novo? é o de outro bloco?); esta fala
-   * do **conteúdo**. Foi o que faltava na pergunta com botões: sem dizer que a
-   * variável guarda o rótulo clicado, quem monta o fluxo conclui que precisa de
-   * uma variável por opção — e desenha três onde uma responde.
+   * A legenda que sobrou embaixo do campo fala do **nome** (é novo? é o de
+   * outro bloco?), e ela fica porque muda conforme o que se digita. Esta fala
+   * do **conteúdo** e não muda nunca: era o lugar certo para sair da tela. Foi
+   * o que faltava na pergunta com botões — sem dizer que a variável guarda o
+   * rótulo clicado, quem monta o fluxo conclui que precisa de uma variável por
+   * opção, e desenha três onde uma responde.
    */
   nota?: ReactNode
-  /**
-   * O “?” ao lado do rótulo, quando este campo tem explicação em algum lugar.
-   *
-   * Fica aqui e não só no painel porque este componente é o rótulo destes
-   * campos: pôr o ícone fora dele deixaria o alinhamento na mão de cada
-   * chamada, e uma delas erraria.
-   */
-  ajuda?: ReactNode
+  /** A seção de `/ajuda` que o rodapé do modal aponta. */
+  secao?: string
 }) {
   const [aberto, setAberto] = useState(false)
   const [busca, setBusca] = useState('')
@@ -128,7 +131,7 @@ export function CampoDeVariavel({
     <div className="block">
       <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
         {rotulo}
-        {ajuda}
+        {dica && <AjudaDoCampo texto={dica} detalhes={nota} secao={secao} titulo={rotulo} />}
       </span>
 
       <span className="relative block">
@@ -198,7 +201,13 @@ export function CampoDeVariavel({
         </div>
       </Popover>
 
-      {legenda ? (
+      {/*
+        A única linha que sobra embaixo do campo, e ela sobra porque **muda
+        conforme o que se digita**: nome fora do formato, nome que outro bloco
+        já guarda, variável que ninguém preenche. Isso não é ajuda, é o campo
+        respondendo — e resposta atrás de um “?” é resposta que ninguém vê.
+      */}
+      {legenda && (
         <span
           className={`mt-1 block text-[10.5px] leading-4 ${
             legenda.tom === 'aviso'
@@ -210,11 +219,7 @@ export function CampoDeVariavel({
         >
           {legenda.texto}
         </span>
-      ) : (
-        dica && <span className="mt-1 block text-[10.5px] leading-4 text-dim">{dica}</span>
       )}
-
-      {nota && <span className="mt-1 block text-[10.5px] leading-4 text-dim">{nota}</span>}
     </div>
   )
 }

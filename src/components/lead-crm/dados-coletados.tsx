@@ -30,7 +30,23 @@ export function DadosColetados({ campos }: { campos: [string, string][] }) {
       <h2 className="flex items-center gap-2 border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
         <IconeDaSecao>{iconeFormulario}</IconeDaSecao>
         O que o fluxo coletou
-        <AjudaDoCampo texto="As respostas que a pessoa deu ao bot durante a conversa. São dados dela, não campos que a equipe edita." />
+        <AjudaDoCampo
+          titulo="Dados coletados"
+          secao="variaveis"
+          texto="As respostas que a pessoa deu ao bot durante a conversa."
+          detalhes={
+            <>
+              <p>
+                É o que os blocos de Pergunta guardaram: cada linha é uma variável do fluxo com o
+                que a pessoa respondeu.
+              </p>
+              <p>
+                São <strong>dados dela</strong>, não campos que a equipe edita. Ficam no contato e
+                continuam disponíveis na conversa seguinte, inclusive para outras automações.
+              </p>
+            </>
+          }
+        />
       </h2>
 
       {campos.length === 0 ? (

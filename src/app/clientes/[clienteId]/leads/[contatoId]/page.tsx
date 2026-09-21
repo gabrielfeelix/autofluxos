@@ -427,7 +427,18 @@ export default async function Pagina({
                       <h2 className="flex items-center gap-2 border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
                         <IconeDaSecao tom="aviso">{iconeEtiqueta}</IconeDaSecao>
                         Etiquetas
-                        <AjudaDoCampo texto="Marcas que a equipe põe à mão para agrupar pessoas. O fluxo também etiqueta sozinho, e essas aparecem junto." />
+                        <AjudaDoCampo
+                          titulo="Etiquetas"
+                          secao="blocos"
+                          texto="Marcas que a equipe põe à mão para agrupar pessoas."
+                          detalhes={
+                            <p>
+                              Etiqueta é o que a pessoa <strong>é</strong>: “quer pilates”, “já é
+                              aluno”. A equipe põe à mão, e o fluxo também etiqueta sozinho pelo
+                              bloco de Etiqueta — as duas aparecem juntas aqui, sem distinção.
+                            </p>
+                          }
+                        />
                       </h2>
                       <div className="px-[18px] py-4">
                         <SeletorDeEtiquetas
@@ -490,7 +501,19 @@ export default async function Pagina({
                     <h2 className="flex items-center gap-2 border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
                       <IconeDaSecao>{iconeLinhaDoTempo}</IconeDaSecao>
                       Linha do tempo
-                      <AjudaDoCampo texto="Tudo o que aconteceu com esta pessoa, em ordem: mudanças de estágio, de responsável, de etiqueta e as anotações. É registro, não campo editável." />
+                      <AjudaDoCampo
+                        titulo="Histórico"
+                        secao="duvidas"
+                        texto="Tudo o que aconteceu com esta pessoa, em ordem."
+                        detalhes={
+                          <p>
+                            Mudanças de estágio, de responsável, de etiqueta e as anotações, na
+                            ordem em que aconteceram. É <strong>registro</strong>, não campo
+                            editável: serve para responder “por que esta pessoa está aqui?” sem
+                            depender da memória de quem atendeu.
+                          </p>
+                        }
+                      />
                     </h2>
                     <div className="p-[18px]">
                       <HistoricoDoContato eventos={eventos} />
@@ -509,7 +532,18 @@ export default async function Pagina({
                     <h2 className="flex items-center gap-2 border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
                       <IconeDaSecao>{iconeAlvo}</IconeDaSecao>
                       Jornada de anúncios
-                      <AjudaDoCampo texto="Por quais anúncios esta pessoa passou antes de falar com a gente. Vazio significa que ela chegou direto, sem anúncio." />
+                      <AjudaDoCampo
+                        titulo="Jornada"
+                        secao="duvidas"
+                        texto="Por quais anúncios esta pessoa passou antes de falar com a gente."
+                        detalhes={
+                          <p>
+                            Vazio significa que ela chegou <strong>direto</strong>, sem anúncio —
+                            e não que a informação se perdeu. É o que separa o lead que custou
+                            dinheiro do que veio de graça.
+                          </p>
+                        }
+                      />
                     </h2>
                     <div className="p-[18px]">
                       <Jornada

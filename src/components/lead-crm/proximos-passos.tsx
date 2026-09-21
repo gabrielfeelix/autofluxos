@@ -65,7 +65,23 @@ export function ProximosPassos({
       <h2 className="flex items-center gap-2 border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
         <IconeDaSecao tom='primary'>{iconeRelogio}</IconeDaSecao>
         Próximos passos
-        <AjudaDoCampo texto="Tarefas da equipe e mensagens já agendadas para esta pessoa, em ordem de vencimento. A lista completa fica na aba Atividades." />
+        <AjudaDoCampo
+          titulo="Próximos passos"
+          secao="duvidas"
+          texto="Tarefas da equipe e mensagens já agendadas para esta pessoa, em ordem de vencimento."
+          detalhes={
+            <>
+              <p>
+                Junta duas coisas que vencem: as <strong>tarefas</strong> que alguém do time
+                marcou, e as <strong>mensagens agendadas</strong> que vão sair sozinhas.
+              </p>
+              <p>
+                Aqui aparece só o que está por vir, em ordem de vencimento. A lista completa, com
+                o que já passou, fica na aba <em>Atividades</em>.
+              </p>
+            </>
+          }
+        />
       </h2>
 
       {vazio ? (
