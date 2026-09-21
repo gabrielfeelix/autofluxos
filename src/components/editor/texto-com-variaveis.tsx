@@ -85,14 +85,24 @@ const FUNDO: CSSProperties = {
   color: 'var(--ink)',
 }
 
+/*
+ * A cor vem de token, nunca de `rgba(255,255,255,...)`.
+ *
+ * Estes dois valores nasceram quando o painel so existia escuro: branco a 4,5%
+ * de fundo e a 10% de borda desenhavam um campo discreto sobre preto. No tema
+ * claro os dois somem, branco sobre branco, e o campo de mensagem ficava sem
+ * borda nenhuma, parecendo texto solto no painel. `--panel` e `--line-strong`
+ * sao os mesmos do `.app-field`, entao o campo espelhado passa a ser igual a
+ * qualquer outro campo do sistema, nos dois temas.
+ */
 const CAMPO: CSSProperties = {
   ...MEDIDAS,
   position: 'relative',
   width: '100%',
   display: 'block',
   outline: 'none',
-  background: 'rgba(255,255,255,0.045)',
-  borderColor: 'rgba(255,255,255,0.1)',
+  background: 'var(--panel)',
+  borderColor: 'var(--line-strong)',
   // As duas linhas que fazem o espelho aparecer: o texto some, o cursor fica.
   color: 'transparent',
   caretColor: 'var(--ink)',
@@ -292,6 +302,7 @@ export function TextoComVariaveis({
           if (fundo.current) fundo.current.scrollTop = e.currentTarget.scrollTop
           if (dicas.current) dicas.current.scrollTop = e.currentTarget.scrollTop
         }}
+        className="campo-espelhado"
         style={{
           ...CAMPO,
           resize: 'vertical',
@@ -364,6 +375,7 @@ export function LinhaComVariaveis({
           if (fundo.current) fundo.current.scrollLeft = e.currentTarget.scrollLeft
           if (dicas.current) dicas.current.scrollLeft = e.currentTarget.scrollLeft
         }}
+        className="campo-espelhado"
         style={{ ...CAMPO, ...espaco, ...fonte, whiteSpace: 'pre' }}
       />
 

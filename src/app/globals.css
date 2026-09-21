@@ -424,6 +424,17 @@ textarea::placeholder {
 }
 
 /*
+ * O campo espelhado (`texto-com-variaveis.tsx`) desenha as cores por `style`
+ * inline, porque as duas camadas precisam casar ao pixel, e inline vence
+ * classe. Sobra o foco: `outline: none` la dentro tirava o anel do navegador
+ * sem devolver nada. O `box-shadow` nao e definido inline, entao esta regra
+ * pega, e o foco fica igual ao do `.app-field`.
+ */
+.campo-espelhado:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 16%, transparent);
+}
+
+/*
  * **Vai dentro de `@layer components`, e essa linha é o conserto de um bug.**
  *
  * Solta, esta regra vence qualquer utilitário do Tailwind: CSS sem camada ganha
@@ -948,13 +959,10 @@ textarea::placeholder {
  */
 :root {
   --cor-da-grade: color-mix(in oklab, var(--dim) 45%, transparent);
-  /* A linha mestra é estrutura, não régua: mais fraca que o pontinho. */
-  --cor-da-grade-mestra: color-mix(in oklab, var(--primary) 16%, transparent);
 }
 
 :root[data-tema='escuro'] {
   --cor-da-grade: rgba(255, 255, 255, 0.08);
-  --cor-da-grade-mestra: rgba(255, 255, 255, 0.045);
 }
 
 /*

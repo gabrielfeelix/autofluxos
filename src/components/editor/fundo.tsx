@@ -1,6 +1,6 @@
 'use client'
 
-import { Background, BackgroundVariant, useStore } from '@xyflow/react'
+import { Background, useStore } from '@xyflow/react'
 
 /**
  * O fundo do canvas do editor, que responde ao que está acontecendo nele.
@@ -9,12 +9,14 @@ import { Background, BackgroundVariant, useStore } from '@xyflow/react'
  * resultado era correto e mudo. Este fundo faz duas coisas que o anterior não
  * fazia, e nenhuma delas é enfeite:
  *
- * - **A grade troca de densidade conforme o zoom.** Afastado, pontinho de 24px
- *   vira textura suja e some; quem está longe precisa é da linha mestra, que
- *   dá noção de distância entre os blocos. Colado, a grade de 24px fica larga
- *   demais para servir de referência ao alinhar, e a de 8px aparece. É a mesma
- *   ideia de um mapa que troca de escala, e o motivo é o mesmo: a régua útil
- *   depende de quão perto se está.
+ * - **A grade mantém o mesmo espaçamento na tela, em qualquer zoom.** O
+ *   `<Background>` mede o `gap` em coordenadas do fluxo, então ele encolhe
+ *   junto: afastando, os pontos se amontoam até virar textura suja, e o
+ *   antídoto de "some quando afasta" deixa o canvas vazio justo quando a
+ *   pessoa mais precisa de referência. Aqui o passo é escolhido a cada quadro
+ *   para o espaço entre pontos ficar sempre perto de 44px **de tela**, e o
+ *   raio do ponto é dividido pelo zoom pelo mesmo motivo. É a lógica de um
+ *   mapa que troca de escala: a régua muda, a leitura continua igual.
  * - **Um halo acompanha o que está selecionado.** Num fluxo grande, depois de
  *   dar zoom ou arrastar a tela, achar de novo o bloco selecionado custa uma
  *   varredura visual. A borda azul do cartão resolve isso quando ele está na
@@ -30,12 +32,27 @@ import { Background, BackgroundVariant, useStore } from '@xyflow/react'
  * laço de seleção.
  */
 
-/** Sobe de 0 a 1 entre `de` e `ate`, e trava nas pontas. */
-function rampa(valor: number, de: number, ate: number) {
-  if (valor <= de) return 0
-  if (valor >= ate) return 1
-  return (valor - de) / (ate - de)
-}
+/**
+ * O espaço que se quer ver entre dois pontos, em pixels de tela.
+ *
+ * 44px é grade de referência, não papel milimetrado: dá para mirar o
+ * alinhamento de um bloco sem que o canvas vire textura. Abaixo de uns 30px os
+ * pontos deixam de ser pontos e viram cinza.
+ */
+const ALVO_NA_TELA = 44
+
+/** O raio do ponto na tela, também fixo. */
+const RAIO_NA_TELA = 1.4
+
+/**
+ * Os passos possíveis, em coordenadas do fluxo, dobrando a cada degrau.
+ *
+ * Dobrar importa: quando o zoom troca de degrau, a grade nova cai exatamente
+ * em cima de uma a cada dois pontos da anterior, e a troca passa despercebida.
+ * Com degraus quaisquer (30, 50, 70) todos os pontos mudariam de lugar de uma
+ * vez, e o fundo pareceria escorregar.
+ */
+const DEGRAUS = [10, 20, 40, 80, 160, 320, 640]
 
 /**
  * O transform do canvas, como texto.
@@ -88,12 +105,10 @@ export function FundoDoCanvas() {
   const { x, y, zoom } = useTransform()
   const caixa = useCaixaSelecionada()
 
-  // Longe: a grade de 24px vira sujeira e sai; a linha mestra assume.
-  const opacidadeDaGrade = rampa(zoom, 0.35, 0.65)
-  // Perto: entra a grade fina, que é a régua de quem está alinhando bloco.
-  const opacidadeDoDetalhe = rampa(zoom, 1.3, 2) * 0.6
-  // A mestra existe sempre, e pesa mais quanto mais longe se está.
-  const opacidadeDaMestra = 0.45 + 0.55 * (1 - rampa(zoom, 0.7, 1.5))
+  // O passo em coordenadas do fluxo que deixa os pontos perto de ALVO px na
+  // tela. Os degraus dobram para a troca cair sempre no mesmo lugar da grade
+  // anterior: com passos quaisquer, os pontos saltariam de posição no zoom.
+  const passo = DEGRAUS.find((degrau) => degrau * zoom >= ALVO_NA_TELA) ?? 640
 
   // O halo é uma mancha, não um contorno: sobra generosa em volta da caixa,
   // porque o que precisa ser visto de longe é a luz, não o formato dela.
@@ -107,22 +122,12 @@ export function FundoDoCanvas() {
 
   return (
     <>
-      <Background
-        id="mestra"
-        variant={BackgroundVariant.Lines}
-        gap={192}
-        lineWidth={1}
-        color="var(--cor-da-grade-mestra)"
-        style={{ opacity: opacidadeDaMestra }}
-      />
-      <Background id="grade" gap={24} size={1} color="var(--cor-da-grade)" style={{ opacity: opacidadeDaGrade }} />
-      <Background
-        id="detalhe"
-        gap={8}
-        size={1}
-        color="var(--cor-da-grade)"
-        style={{ opacity: opacidadeDoDetalhe }}
-      />
+      {/*
+        Uma camada só. O ponto tem raio fixo **na tela**: `size` também é medido
+        em coordenadas do fluxo, então sem dividir pelo zoom ele vira grão de
+        poeira ao afastar e bolota ao aproximar.
+      */}
+      <Background gap={passo} size={RAIO_NA_TELA / zoom} color="var(--cor-da-grade)" />
 
       {/*
         A luz e a vinheta do tema escuro. O elemento existe nos dois temas
