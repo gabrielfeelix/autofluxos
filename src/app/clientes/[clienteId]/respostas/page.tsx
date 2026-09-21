@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { ClienteShell } from '@/components/design/cliente-shell'
+import { Dropdown } from '@/components/design/dropdown'
 import { LinhaClicavel } from '@/components/lead/linha-clicavel'
 import { rotuloDoCampo } from '@/core/contatos/rotulo-do-campo'
 import { telefoneLegivel } from '@/core/contatos/telefone'
@@ -113,11 +114,27 @@ export default async function Pagina({
   return (
     <ClienteShell cliente={cliente} ativa="fluxos">
       <main className="flex min-h-full flex-col px-4 md:px-[42px] pt-[26px] pb-[42px]">
-        <h1 className="mb-1 text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Respostas</h1>
-        <p className="mb-5 max-w-[640px] text-[12px] text-muted">
-          Uma linha por conversa, com o que a pessoa respondeu naquela passagem. A tela de Contatos
-          guarda o valor mais recente de cada pessoa; aqui fica o histórico, resposta por resposta.
-        </p>
+        {/*
+          O título e os botões dividem a **mesma linha**, em vez de os botões
+          subirem por `-mt`.
+
+          A margem negativa é o truque que a tela de Contatos usa para encaixar
+          a barra de ações ao lado de um título sem descrição. Aqui há
+          descrição, e o truque escondeu a segunda linha dela atrás do seletor:
+          texto coberto por controle, exatamente o defeito que o print mostrou.
+          Com `flex` de verdade, a descrição ocupa o que precisa e as ações
+          ficam à direita, descendo para baixo dela no celular.
+        */}
+        <div className="mb-5 flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+          <div className="min-w-0">
+            <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Respostas</h1>
+            <p className="mt-1 max-w-[640px] text-[12px] text-muted">
+              Uma linha por conversa, com o que a pessoa respondeu naquela passagem. A tela de
+              Contatos guarda o valor mais recente de cada pessoa; aqui fica o histórico, resposta
+              por resposta.
+            </p>
+          </div>
+        </div>
 
         <Suspense
           key={`${fluxo}-${termo}-${desfecho}-${pagina}`}
@@ -197,40 +214,41 @@ async function Tabela({
 
   return (
     <>
-      <div className="mb-3 flex flex-wrap items-center justify-end gap-2 md:-mt-[70px]">
-        <span className="rounded-full border border-line bg-surface px-3 py-1 text-[11px] font-semibold text-muted">
-          {total} {total === 1 ? 'resposta' : 'respostas'}
-          {filtrando && ' no filtro'}
-        </span>
-        <a
-          href={enderecoDoCsv(clienteId, { fluxo, busca: termo, desfecho })}
-          className="app-secondary-button px-3 py-1.5 text-[11.5px]"
-          title="Baixar como planilha exatamente o que este filtro mostra"
-        >
-          Baixar CSV
-        </a>
-      </div>
-
       {/*
-        O seletor de automação é um `select` que envia sozinho? Não: sem
-        JavaScript de cliente aqui, ele é um `form` com botão, e trocar de
-        automação zera a página, porque a página 3 de um fluxo raramente existe
-        no outro.
+        Uma linha só: filtro à esquerda, contagem e CSV à direita.
+
+        A contagem sai da mesma consulta que desenha a tabela, e é por isso que
+        ela mora aqui dentro e não no cabeçalho da página: subi-la obrigaria a
+        repetir `paginarRespostas` só para escrever um número.
+
+        **O seletor é o `Dropdown` do produto, não o `<select>` do sistema.** O
+        nativo abre com o desenho do sistema operacional, ignora o tema escuro
+        e não combina com o resto do painel, que é a razão registrada no próprio
+        componente e a mesma que a tela de Funil já seguia. Ele mantém a
+        semântica de formulário por um `input` oculto, então o `form` continua
+        sendo um GET comum.
       */}
-      <form action={`/clientes/${clienteId}/respostas`} className="mb-3 flex flex-wrap gap-2">
+      <form
+        action={`/clientes/${clienteId}/respostas`}
+        className="mb-3 flex flex-wrap items-center gap-2"
+      >
         {desfecho && <input type="hidden" name="desfecho" value={desfecho} />}
-        <label className="basis-[260px]">
-          <span className="sr-only">Automação</span>
-          <select name="fluxo" defaultValue={fluxo ?? ''} className="app-field px-3 py-2 text-[12.5px]">
-            <option value="">Todas as automações</option>
-            {automacoes.map((automacao) => (
-              <option key={automacao.id} value={automacao.id}>
-                {automacao.nome}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex-1 basis-[240px]">
+        <span className="w-[260px] shrink-0">
+          <Dropdown
+            nome="fluxo"
+            valorInicial={fluxo ?? ''}
+            rotuloAcessivel="Automação"
+            className="w-full text-[12.5px]"
+            opcoes={[
+              { valor: '', rotulo: 'Todas as automações' },
+              ...automacoes.map((automacao) => ({
+                valor: automacao.id,
+                rotulo: automacao.nome,
+              })),
+            ]}
+          />
+        </span>
+        <label className="min-w-[200px] flex-1">
           <span className="sr-only">Buscar por nome ou telefone</span>
           <input
             type="search"
@@ -246,12 +264,26 @@ async function Tabela({
         {filtrando && (
           <Link
             href={`/clientes/${clienteId}/respostas`}
-            className="self-center text-[11.5px] font-semibold text-primary hover:underline"
+            className="text-[11.5px] font-semibold text-primary hover:underline"
             scroll={false}
           >
             Limpar
           </Link>
         )}
+
+        <span className="ml-auto flex items-center gap-2">
+          <span className="whitespace-nowrap rounded-full border border-line bg-surface px-3 py-1 text-[11px] font-semibold text-muted">
+            {total} {total === 1 ? 'resposta' : 'respostas'}
+            {filtrando && ' no filtro'}
+          </span>
+          <a
+            href={enderecoDoCsv(clienteId, { fluxo, busca: termo, desfecho })}
+            className="app-secondary-button whitespace-nowrap px-3 py-1.5 text-[11.5px]"
+            title="Baixar como planilha exatamente o que este filtro mostra"
+          >
+            Baixar CSV
+          </a>
+        </span>
       </form>
 
       <nav aria-label="Desfecho" className="mb-[18px] flex flex-wrap gap-1.5">
