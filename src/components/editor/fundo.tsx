@@ -83,6 +83,7 @@ function useTransform() {
  */
 function useCaixaSelecionada() {
   const bruto = useStore((s) => {
+    const ids: string[] = []
     let x0 = Infinity
     let y0 = Infinity
     let x1 = -Infinity
@@ -90,6 +91,7 @@ function useCaixaSelecionada() {
 
     for (const no of s.nodeLookup.values()) {
       if (!no.selected) continue
+      ids.push(no.id)
       const { x, y } = no.internals.positionAbsolute
       const largura = no.measured.width ?? 0
       const altura = no.measured.height ?? 0
@@ -100,12 +102,16 @@ function useCaixaSelecionada() {
     }
 
     if (x0 === Infinity) return ''
-    return `${x0}|${y0}|${x1}|${y1}`
+    // Os ids vêm junto porque o halo precisa saber **quando a seleção trocou**,
+    // e não só onde ela está: a caixa muda de valor a todo quadro de arrasto, e
+    // usá-la como identidade remontaria o elemento sessenta vezes por segundo.
+    return `${x0}|${y0}|${x1}|${y1}|${ids.sort().join(',')}`
   })
 
   if (!bruto) return null
-  const [x0 = 0, y0 = 0, x1 = 0, y1 = 0] = bruto.split('|').map(Number)
-  return { x: x0, y: y0, largura: x1 - x0, altura: y1 - y0 }
+  const [bx0, by0, bx1, by1, ids = ''] = bruto.split('|')
+  const [x0 = 0, y0 = 0, x1 = 0, y1 = 0] = [bx0, by0, bx1, by1].map(Number)
+  return { x: x0, y: y0, largura: x1 - x0, altura: y1 - y0, ids }
 }
 
 export function FundoDoCanvas() {
@@ -144,7 +150,15 @@ export function FundoDoCanvas() {
       */}
       <div className="canvas-luz" aria-hidden />
 
-      {halo && <div className="canvas-halo" style={halo} aria-hidden />}
+      {/*
+        A `key` é a seleção, não a posição.
+
+        Trocar de bloco **remonta** o halo, e é isso que o faz nascer já no
+        lugar certo em vez de viajar até lá. Arrastar e dar pan mudam só o
+        `style`, então o elemento continua o mesmo e acompanha o bloco sem
+        atraso nenhum.
+      */}
+      {halo && caixa && <div key={caixa.ids} className="canvas-halo" style={halo} aria-hidden />}
     </>
   )
 }

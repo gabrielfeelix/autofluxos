@@ -1007,14 +1007,29 @@ textarea::placeholder {
  * arrastar a tela num fluxo grande, é a única coisa que muda no fundo, e o
  * olho vai nela antes de ler qualquer cartão.
  *
- * A transição é de posição e tamanho, e é curta: seguir o bloco enquanto ele é
- * arrastado com atraso longo parece defeito, não suavidade.
+ * **Ele não transita de posição, e a primeira versão transitava.** Com
+ * `transition: left/top`, trocar de bloco fazia a luz *voar* de um cartão até
+ * o outro atravessando o desenho, e arrastar um bloco deixava o halo para trás
+ * como um vulto perseguindo o cartão. Foi o relato literal de quem usa.
+ *
+ * A causa é que a posição muda por dois motivos diferentes — a seleção trocou,
+ * ou o bloco/canvas se moveu — e a transição não sabe distinguir os dois.
+ * Animar o segundo é sempre atraso.
+ *
+ * Então: nenhuma transição de posição (o halo gruda no bloco, inclusive no
+ * arrasto e no pan) e uma entrada curta de opacidade quando a seleção troca,
+ * que o React dispara remontando o elemento (ver a `key` em `fundo.tsx`).
  */
 .canvas-halo {
   border-radius: 50%;
   background: radial-gradient(closest-side, color-mix(in oklab, var(--primary) 26%, transparent) 0%, transparent 78%);
   filter: blur(18px);
-  transition: left 0.12s ease-out, top 0.12s ease-out, width 0.12s ease-out, height 0.12s ease-out;
+  animation: canvas-halo-entra 0.16s ease-out both;
+}
+
+@keyframes canvas-halo-entra {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 :root[data-tema='escuro'] .canvas-halo {
@@ -1022,7 +1037,7 @@ textarea::placeholder {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .canvas-halo { transition: none; }
+  .canvas-halo { animation: none; }
 }
 
 /*
