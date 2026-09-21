@@ -46,10 +46,65 @@ export function pareceUuid(valor: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(valor)
 }
 
+/** Hosts que contam como banco local. Espelha `test/ambiente-local.ts`. */
+const HOSTS_LOCAIS = new Set(['localhost', '127.0.0.1', '::1', '0.0.0.0', 'host.docker.internal'])
+
+/**
+ * Este endereço é de um banco local?
+ *
+ * Por host exato, e não por `includes('localhost')`, que erra para os dois
+ * lados: `https://localhost.evil.com` passaria e um endereço legítimo com porta
+ * não bate com a string crua.
+ */
+function ehEnderecoLocal(url: string): boolean {
+  try {
+    return HOSTS_LOCAIS.has(new URL(url).hostname)
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Sob teste, endereço remoto é recusado aqui, na abertura da conexão.
+ *
+ * A guarda de `test/ambiente-local.ts` vive no `setupFiles` do config de
+ * integração, então ela protege **um** caminho de execução. Quem rodasse
+ * `npx vitest` pegava o config padrão, que carregava o `.env` de produção, e a
+ * suíte de banco escrevia lá — foi o que pôs três `publicou_fluxo` de teste no
+ * `af_auditoria` de uma conta de cliente em 21/set/2026.
+ *
+ * Aqui a recusa não depende de qual config foi escolhido: o que decide é o
+ * endereço. AutoFluxos e Verandi dividem o projeto de produção, e um teste que
+ * cria e apaga registro lá mexe no banco de dois produtos ao mesmo tempo.
+ */
+export function conferirDestinoDeTeste(
+  env: Record<string, string | undefined> = process.env,
+): void {
+  if (!env.VITEST) return
+
+  const url = env.SUPABASE_URL
+  if (!url || ehEnderecoLocal(url)) return
+
+  let host = 'endereço inválido'
+  try {
+    host = new URL(url).hostname
+  } catch {
+    // Fica com o texto padrão. A URL inteira nunca é impressa.
+  }
+
+  throw new Error(
+    `[db] SUPABASE_URL aponta para um host remoto (${host}) durante os testes. ` +
+      'Testes só falam com banco local: rode `npm run test:integration:local` ' +
+      'com o .env.teste-local, e nunca com o .env de produção.',
+  )
+}
+
 let cache: SupabaseClient | null = null
 
 export function db(): SupabaseClient {
   if (cache) return cache
+
+  conferirDestinoDeTeste()
 
   const url = process.env.SUPABASE_URL
   const chave = process.env.SUPABASE_SECRET_KEY
