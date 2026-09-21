@@ -31,14 +31,23 @@ export const AcaoDaArestaProvider = AcaoDaAresta.Provider
 /**
  * O caminho de uma linha que foi puxada para fora do lugar.
  *
- * São duas curvas cúbicas emendadas no ponto que a pessoa arrastou, com as
- * alças **horizontais** nas duas pontas. Horizontal porque as bolinhas de saída
- * e de entrada dos blocos são esquerda/direita: uma alça vertical faria a linha
- * sair do bloco para cima e voltar, um S que ninguém pediu.
+ * É **uma quadrática só**, e o ponto de controle é calculado para a curva
+ * passar exatamente onde o ponteiro está: `Q = 2M − (S+T)/2` é a inversa do
+ * ponto médio de uma Bézier de grau 2, onde `t = 0,5` cai em
+ * `(S + 2Q + T)/4`. Uma quadrática não tem como formar laço nem bico: com um
+ * controle só, não há duas alças para se cruzarem.
  *
- * A força da alça acompanha a distância percorrida, com piso de 30px. Sem o
- * piso, desvio curto vira bico em vez de curva; sem o acompanhar, desvio longo
- * vira uma reta com dois cotovelos.
+ * **A primeira versão era outra, e estava errada.** Eram duas cúbicas emendadas
+ * no ponto arrastado, com as alças horizontais nas duas pontas, para a linha
+ * sair do bloco na direção da bolinha. O problema é que alça horizontal fixa
+ * ignora para onde a pessoa puxou: arrastando para cima, a saída insistia em ir
+ * para a direita, voltava para alcançar o ponto e a linha dava a volta em si
+ * mesma. Com `Math.abs` na força da alça, puxar para a esquerda do bloco de
+ * origem virava um laço fechado , o "círculo" que aparecia no desenho.
+ *
+ * O preço é que a linha não sai mais perfeitamente horizontal da bolinha: ela
+ * sai inclinada na direção do desvio. Vale: inclinação de alguns graus se lê
+ * como "essa linha vai para lá", e laço não se lê como nada.
  */
 function caminhoDesviado(
   sx: number,
@@ -48,13 +57,9 @@ function caminhoDesviado(
   mx: number,
   my: number,
 ): string {
-  const alcaDaSaida = Math.max(30, Math.abs(mx - sx) * 0.5)
-  const alcaDaChegada = Math.max(30, Math.abs(tx - mx) * 0.5)
-  return [
-    `M ${sx},${sy}`,
-    `C ${sx + alcaDaSaida},${sy} ${mx - alcaDaSaida},${my} ${mx},${my}`,
-    `C ${mx + alcaDaChegada},${my} ${tx - alcaDaChegada},${ty} ${tx},${ty}`,
-  ].join(' ')
+  const controleX = 2 * mx - (sx + tx) / 2
+  const controleY = 2 * my - (sy + ty) / 2
+  return `M ${sx},${sy} Q ${controleX},${controleY} ${tx},${ty}`
 }
 
 /**
