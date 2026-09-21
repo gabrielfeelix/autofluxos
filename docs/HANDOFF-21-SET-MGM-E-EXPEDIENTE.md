@@ -52,5 +52,5 @@ modal. São ~51 textos só em `components/editor/painel.tsx`, mais
 **2. Ligar o toggle da MGM** (é do dono, não de código). Configurações →
 Horário de atendimento → "Puxar o horário da agenda (Verandi)" → credencial
 `VERANDI-OFICIAL` → Salvar. Enquanto não for marcado, o expediente da MGM
-segue o que está digitado à mão (seg a sex, 07:00–20:00) e feriado nenhum é
+segue o que está digitado à mão (seg a sex, 07:00 às 20:00) e feriado nenhum é
 considerado.
