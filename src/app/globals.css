@@ -1025,8 +1025,21 @@ textarea::placeholder {
   .canvas-halo { transition: none; }
 }
 
+/*
+ * O ponto da grade, e é **esta** regra que manda na cor dele.
+ *
+ * A prop `color` do `<Background>` pinta o `pattern`, mas o círculo tem `fill`
+ * próprio, e o CSS ganha. Quem for mexer na cor da grade mexe aqui, não lá.
+ *
+ * 72% e não 55%: com 55% sobre o canvas claro o ponto some assim que se dá um
+ * zoom out, e o que sobra é uma tela branca sem referência nenhuma.
+ */
 .react-flow__background pattern circle {
-  fill: color-mix(in oklab, var(--dim) 55%, transparent);
+  fill: color-mix(in oklab, var(--dim) 72%, transparent);
+}
+
+:root[data-tema='escuro'] .react-flow__background pattern circle {
+  fill: rgba(255, 255, 255, 0.14);
 }
 
 .react-flow__edge-path {

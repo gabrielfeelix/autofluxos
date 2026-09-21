@@ -14,7 +14,7 @@ import { Background, useStore } from '@xyflow/react'
  *   junto: afastando, os pontos se amontoam até virar textura suja, e o
  *   antídoto de "some quando afasta" deixa o canvas vazio justo quando a
  *   pessoa mais precisa de referência. Aqui o passo é escolhido a cada quadro
- *   para o espaço entre pontos ficar sempre perto de 44px **de tela**, e o
+ *   para o espaço entre pontos ficar sempre perto de 40px **de tela**, e o
  *   raio do ponto é dividido pelo zoom pelo mesmo motivo. É a lógica de um
  *   mapa que troca de escala: a régua muda, a leitura continua igual.
  * - **Um halo acompanha o que está selecionado.** Num fluxo grande, depois de
@@ -35,14 +35,21 @@ import { Background, useStore } from '@xyflow/react'
 /**
  * O espaço que se quer ver entre dois pontos, em pixels de tela.
  *
- * 44px é grade de referência, não papel milimetrado: dá para mirar o
+ * 40px é grade de referência, não papel milimetrado: dá para mirar o
  * alinhamento de um bloco sem que o canvas vire textura. Abaixo de uns 30px os
  * pontos deixam de ser pontos e viram cinza.
  */
-const ALVO_NA_TELA = 44
+const ALVO_NA_TELA = 40
 
-/** O raio do ponto na tela, também fixo. */
-const RAIO_NA_TELA = 1.4
+/**
+ * O diâmetro do ponto na tela, também fixo.
+ *
+ * **É diâmetro, e não raio**: o React Flow desenha o círculo com
+ * `radius = size * zoom / 2`. Com 1.4 aqui o ponto saía com 0,7px de raio, que
+ * é literalmente invisível contra o canvas claro. 2.6 dá 1,3px de raio, que é
+ * o tamanho em que um ponto ainda é ponto.
+ */
+const DIAMETRO_NA_TELA = 2.6
 
 /**
  * Os passos possíveis, em coordenadas do fluxo, dobrando a cada degrau.
@@ -125,9 +132,10 @@ export function FundoDoCanvas() {
       {/*
         Uma camada só. O ponto tem raio fixo **na tela**: `size` também é medido
         em coordenadas do fluxo, então sem dividir pelo zoom ele vira grão de
-        poeira ao afastar e bolota ao aproximar.
+        poeira ao afastar e bolota ao aproximar. A cor sai do CSS
+        (`.react-flow__background pattern circle`), que vence esta prop.
       */}
-      <Background gap={passo} size={RAIO_NA_TELA / zoom} color="var(--cor-da-grade)" />
+      <Background gap={passo} size={DIAMETRO_NA_TELA / zoom} color="var(--cor-da-grade)" />
 
       {/*
         A luz e a vinheta do tema escuro. O elemento existe nos dois temas
