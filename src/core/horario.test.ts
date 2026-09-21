@@ -2,10 +2,15 @@ import { describe, expect, it } from 'vitest'
 import {
   atendimentoAberto,
   emMinutos,
+  lerHorario,
+  motivoDeHojeFechado,
   proximaAbertura,
   SEMPRE_ABERTO,
   type HorarioDeAtendimento,
 } from './horario'
+
+/** Uma faixa comum de manhã e tarde, para os testes de exceção. */
+const FAIXA = { de: '08:00', ate: '18:00' }
 
 /**
  * O expediente decide o que a pessoa ouve quando o bot desiste às 3h da manhã.
@@ -125,5 +130,64 @@ describe('quando abre de novo', () => {
     }
     expect(atendimentoAberto(torto, quarta('23:00:00'))).toBe(false)
     expect(proximaAbertura(torto, quarta('06:00:00'))).toBeNull()
+  })
+})
+
+describe('exceções: feriado e véspera', () => {
+  const base: HorarioDeAtendimento = {
+    fuso: 'America/Sao_Paulo',
+    dias: [[], [FAIXA], [FAIXA], [FAIXA], [FAIXA], [FAIXA], []],
+  }
+  // 25/dez/2025 é uma quinta-feira, dia de expediente na semana acima.
+  const natalDeManha = new Date('2025-12-25T13:00:00Z') // 10h em São Paulo
+
+  it('feriado fecha um dia que a semana abriria', () => {
+    expect(atendimentoAberto(base, natalDeManha)).toBe(true)
+    const comFeriado = { ...base, excecoes: [{ data: '2025-12-25', motivo: 'Natal' }] }
+    expect(atendimentoAberto(comFeriado, natalDeManha)).toBe(false)
+  })
+
+  it('a próxima abertura pula o feriado em vez de prometer hoje', () => {
+    const comFeriado = { ...base, excecoes: [{ data: '2025-12-25', motivo: 'Natal' }] }
+    expect(proximaAbertura(comFeriado, natalDeManha)).toBe('amanhã a partir das 08:00')
+  })
+
+  it('véspera com hora reduzida substitui a faixa do dia, não soma', () => {
+    const vespera = {
+      ...base,
+      excecoes: [{ data: '2025-12-25', faixas: [{ de: '08:00', ate: '12:00' }] }],
+    }
+    expect(atendimentoAberto(vespera, natalDeManha)).toBe(true)
+    // 14h em São Paulo: a semana abriria, a exceção já fechou.
+    expect(atendimentoAberto(vespera, new Date('2025-12-25T17:00:00Z'))).toBe(false)
+  })
+
+  it('o motivo sai em palavras, e só quando o dia está fechado', () => {
+    const comFeriado = { ...base, excecoes: [{ data: '2025-12-25', motivo: 'Natal' }] }
+    expect(motivoDeHojeFechado(comFeriado, natalDeManha)).toBe('Natal')
+    expect(motivoDeHojeFechado(base, natalDeManha)).toBeNull()
+    const reduzida = {
+      ...base,
+      excecoes: [{ data: '2025-12-25', motivo: 'véspera', faixas: [{ de: '08:00', ate: '12:00' }] }],
+    }
+    expect(motivoDeHojeFechado(reduzida, natalDeManha)).toBeNull()
+  })
+
+  it('só exceção, sem semana desenhada, já conta como configurado', () => {
+    const so = { fuso: 'America/Sao_Paulo', dias: [[], [], [], [], [], [], []], excecoes: [{ data: '2025-12-25' }] }
+    expect(atendimentoAberto(so, natalDeManha)).toBe(false)
+    expect(atendimentoAberto(so, new Date('2025-12-26T13:00:00Z'))).toBe(true)
+  })
+
+  it('o banco aceita exceção e origem, e recusa data torta', () => {
+    const lido = lerHorario({
+      fuso: 'America/Sao_Paulo',
+      dias: [[], [], [], [], [], [], []],
+      excecoes: [{ data: '2025-12-25', motivo: 'Natal' }],
+      origem: { tipo: 'crm', conexaoId: 'abc', sincronizadoEm: '2025-12-01T00:00:00Z' },
+    })
+    expect(lido?.excecoes?.[0]?.motivo).toBe('Natal')
+    expect(lido?.origem?.tipo).toBe('crm')
+    expect(lerHorario({ fuso: 'America/Sao_Paulo', dias: [[], [], [], [], [], [], []], excecoes: [{ data: '25/12' }] })).toBeNull()
   })
 })

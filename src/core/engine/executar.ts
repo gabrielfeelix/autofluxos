@@ -75,6 +75,15 @@ export type ContextoDoAtendimento = {
    * amanhã, que é justamente o horário em que se remarca aula.
    */
   hoje?: string
+  /**
+   * Por que está fechado hoje, quando tem nome: "Natal", "recesso".
+   *
+   * Só acompanha `atendimentoAberto: false`. Existe porque "estamos fechados"
+   * numa quinta de manhã parece defeito do bot, e "hoje é feriado (Natal)"
+   * não: quem lê para de insistir e volta no dia seguinte. Ver
+   * `motivoDeHojeFechado` em `core/horario.ts`.
+   */
+  motivoDeFechado?: string | null
 }
 
 export const ATENDIMENTO_SEMPRE_ABERTO: ContextoDoAtendimento = {
@@ -93,9 +102,14 @@ export const ATENDIMENTO_SEMPRE_ABERTO: ContextoDoAtendimento = {
 export function avisoDeForaDoHorario(contexto: ContextoDoAtendimento): string | null {
   if (contexto.atendimentoAberto) return null
 
+  const motivo = (contexto.motivoDeFechado ?? '').trim()
+  const fechado = motivo
+    ? `Hoje é ${motivo} e o atendimento está fechado`
+    : 'Nosso atendimento está fechado agora'
+
   return contexto.proximaAbertura
-    ? `Nosso atendimento está fechado agora, voltamos ${contexto.proximaAbertura}. Deixe sua mensagem que a gente responde por aqui assim que abrir. 🙌`
-    : 'Nosso atendimento está fechado agora. Deixe sua mensagem que a gente responde por aqui assim que abrir. 🙌'
+    ? `${fechado}, voltamos ${contexto.proximaAbertura}. Deixe sua mensagem que a gente responde por aqui assim que abrir. 🙌`
+    : `${fechado}. Deixe sua mensagem que a gente responde por aqui assim que abrir. 🙌`
 }
 
 /**

@@ -7,7 +7,9 @@ import { Dropdown } from '@/components/design/dropdown'
 import {
   DIAS_DA_SEMANA,
   atendimentoAberto,
+  motivoDeHojeFechado,
   proximaAbertura,
+  type Excecao,
   type Faixa,
   type HorarioDeAtendimento,
 } from '@/core/horario'
@@ -40,11 +42,26 @@ const FUSOS = [
 
 const COMERCIAL: Faixa[] = [{ de: '08:00', ate: '18:00' }]
 
+/**
+ * De onde o expediente da Verandi sai.
+ *
+ * Fixo porque hoje o CRM que fala este contrato é um só. Quando houver outro,
+ * isto vira escolha na tela; oferecer um campo de URL livre agora seria pedir
+ * que alguém digite um endereço que só nós conhecemos.
+ */
+const URL_DO_CRM = 'https://verandi.4yu.com.br/api/v1/funcionamento'
+
+/** Uma data solta, no formato que o `<input type="date">` já fala. */
+const HOJE = () => new Date().toISOString().slice(0, 10)
+
 export function HorarioDeAtendimentoForm({
   inicial,
+  conexoes,
   salvar,
 }: {
   inicial: HorarioDeAtendimento | null
+  /** Credenciais do cliente, para escolher qual abre a agenda do CRM. */
+  conexoes: { id: string; nome: string }[]
   salvar: (estado: EstadoSalvar, formData: FormData) => Promise<EstadoSalvar>
 }) {
   /**
@@ -58,9 +75,34 @@ export function HorarioDeAtendimentoForm({
     inicial?.dias ?? [[], COMERCIAL, COMERCIAL, COMERCIAL, COMERCIAL, COMERCIAL, []],
   )
 
-  const horario: HorarioDeAtendimento = { fuso, dias }
+  const [excecoes, setExcecoes] = useState<Excecao[]>(inicial?.excecoes ?? [])
+  /**
+   * Puxar do CRM em vez de digitar.
+   *
+   * Quem usa a Verandi já cadastrou lá o expediente e os feriados. Digitar de
+   * novo aqui cria uma segunda verdade, e as duas divergem no primeiro feriado
+   * cadastrado de um lado só. Ligado, a semana e os feriados passam a ser
+   * leitura: quem manda é a agenda.
+   */
+  const [doCrm, setDoCrm] = useState(inicial?.origem?.tipo === 'crm')
+  const [conexaoId, setConexaoId] = useState(inicial?.origem?.conexaoId ?? conexoes[0]?.id ?? '')
+
+  const horario: HorarioDeAtendimento = {
+    fuso,
+    dias,
+    excecoes,
+    origem: doCrm
+      ? {
+          tipo: 'crm',
+          url: URL_DO_CRM,
+          ...(conexaoId ? { conexaoId } : {}),
+          ...(inicial?.origem?.sincronizadoEm ? { sincronizadoEm: inicial.origem.sincronizadoEm } : {}),
+        }
+      : { tipo: 'manual' },
+  }
   const aberto = atendimentoAberto(horario)
   const volta = proximaAbertura(horario)
+  const feriadoDeHoje = motivoDeHojeFechado(horario)
 
   const mudarFaixa = (dia: number, indice: number, campo: 'de' | 'ate', valor: string) =>
     setDias((atual) =>
@@ -102,7 +144,7 @@ export function HorarioDeAtendimentoForm({
           <p className="text-[13px] leading-6 text-muted">
             <strong className="text-soft">O atendimento não tem horário.</strong> Quando o bot
             passa uma conversa para uma pessoa, ele diz “vou te passar para um atendente” a
-            qualquer hora — inclusive às 3h da manhã.
+            qualquer hora, inclusive às 3h da manhã.
           </p>
         ) : (
           <p className="text-[13px] leading-6 text-muted">
@@ -112,9 +154,12 @@ export function HorarioDeAtendimentoForm({
             </strong>
             {!aberto && (
               <>
-                {' '}— quem for transferido agora ouve{' '}
+                {'. '}Quem for transferido agora ouve{' '}
                 <em className="text-soft">
-                  “nosso atendimento está fechado{volta ? `, voltamos ${volta}` : ''}”
+                  “{feriadoDeHoje
+                    ? `hoje é ${feriadoDeHoje} e o atendimento está fechado`
+                    : 'nosso atendimento está fechado agora'}
+                  {volta ? `, voltamos ${volta}` : ''}”
                 </em>
                 .
               </>
@@ -127,6 +172,39 @@ export function HorarioDeAtendimentoForm({
         <Caixa marcada={ligado} aoMudar={setLigado} />
         <span className="text-[13px] font-semibold">Definir horário de atendimento</span>
       </label>
+
+      {ligado && conexoes.length > 0 && (
+        <section className="app-card mb-4 px-5 py-4">
+          <label className="flex items-center gap-2.5">
+            <Caixa marcada={doCrm} aoMudar={setDoCrm} />
+            <span className="text-[13px] font-semibold">Puxar o horário da agenda (Verandi)</span>
+          </label>
+          <p className="mt-1.5 text-[11.5px] leading-5 text-dim">
+            O expediente e os feriados passam a vir de lá, atualizados sozinhos algumas vezes por
+            dia. Sem isto, o mesmo horário fica cadastrado em dois lugares, e os dois discordam no
+            primeiro feriado que alguém cadastra só de um lado.
+          </p>
+
+          {doCrm && (
+            <div className="mt-3 max-w-[280px]">
+              <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+                Credencial da agenda
+              </span>
+              <Dropdown
+                rotuloAcessivel="Credencial que abre a agenda"
+                opcoes={conexoes.map((c) => ({ valor: c.id, rotulo: c.nome }))}
+                valor={conexaoId}
+                aoMudar={setConexaoId}
+              />
+              <span className="mt-1 block text-[10.5px] leading-4 text-dim">
+                {inicial?.origem?.sincronizadoEm
+                  ? `Última leitura: ${new Date(inicial.origem.sincronizadoEm).toLocaleString('pt-BR')}`
+                  : 'Ainda não foi lido. A primeira leitura acontece na próxima mensagem que chegar.'}
+              </span>
+            </div>
+          )}
+        </section>
+      )}
 
       {ligado && (
         <>
@@ -163,6 +241,7 @@ export function HorarioDeAtendimentoForm({
                         type="time"
                         value={faixa.de}
                         aria-label={`${nome}, abre às`}
+                        disabled={doCrm}
                         onChange={(e) => mudarFaixa(dia, indice, 'de', e.currentTarget.value)}
                         className="app-field w-[104px] px-2.5 py-1.5 font-mono text-[12.5px]"
                       />
@@ -171,12 +250,14 @@ export function HorarioDeAtendimentoForm({
                         type="time"
                         value={faixa.ate}
                         aria-label={`${nome}, fecha às`}
+                        disabled={doCrm}
                         onChange={(e) => mudarFaixa(dia, indice, 'ate', e.currentTarget.value)}
                         className="app-field w-[104px] px-2.5 py-1.5 font-mono text-[12.5px]"
                       />
                       <button
                         type="button"
                         aria-label={`Remover faixa de ${nome}`}
+                        disabled={doCrm}
                         onClick={() => remover(dia, indice)}
                         className="rounded-md px-1.5 py-0.5 text-[12px] text-dim transition hover:bg-rose-400/10 hover:text-perigo"
                       >
@@ -188,6 +269,7 @@ export function HorarioDeAtendimentoForm({
 
                 <button
                   type="button"
+                  disabled={doCrm}
                   onClick={() => acrescentar(dia)}
                   className="shrink-0 rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
                 >
@@ -199,6 +281,7 @@ export function HorarioDeAtendimentoForm({
 
           <button
             type="button"
+            disabled={doCrm}
             onClick={repetirNaSemana}
             className="mt-3 text-[11.5px] text-muted underline underline-offset-2 transition hover:text-primary"
           >
@@ -207,9 +290,81 @@ export function HorarioDeAtendimentoForm({
 
           <p className="mt-3 text-[11.5px] leading-5 text-dim">
             Mais de uma faixa no mesmo dia serve para almoço fechado. Faixa que termina antes de
-            começar é ignorada — melhor dizer que está fechado do que prometer alguém que não vai
+            começar é ignorada: melhor dizer que está fechado do que prometer alguém que não vai
             responder.
           </p>
+
+          {/*
+            Feriado é o dia em que a semana mente.
+
+            A grade acima diz "toda quinta das 8h às 18h", e no dia 25 de
+            dezembro isso é falso. Sem esta lista, o bot promete atendimento no
+            Natal, ninguém responde, e a pessoa fica esperando. É a promessa
+            mais cara que o produto sabe fazer.
+          */}
+          <h2 className="mt-7 mb-1 text-[13px] font-bold">Feriados e dias fechados</h2>
+          <p className="mb-3 text-[11.5px] leading-5 text-dim">
+            {doCrm
+              ? 'Vêm da agenda e são atualizados sozinhos. Para mudar, mexa na Verandi.'
+              : 'Fecham o dia inteiro, mesmo que a semana acima diga que abre. O motivo aparece na conversa: “hoje é Natal e o atendimento está fechado”.'}
+          </p>
+
+          <ul className="app-card divide-y divide-line overflow-hidden">
+            {excecoes.length === 0 && (
+              <li className="px-4 py-3 text-[12px] text-dim">
+                Nenhum dia cadastrado. Nos feriados o bot promete atendimento normalmente.
+              </li>
+            )}
+            {excecoes.map((excecao, indice) => (
+              <li key={indice} className="flex flex-wrap items-center gap-2 px-4 py-3">
+                <input
+                  type="date"
+                  value={excecao.data}
+                  disabled={doCrm}
+                  aria-label="Data fechada"
+                  onChange={(e) =>
+                    setExcecoes((atual) =>
+                      atual.map((x, i) => (i === indice ? { ...x, data: e.currentTarget.value } : x)),
+                    )
+                  }
+                  className="app-field w-[150px] px-2.5 py-1.5 font-mono text-[12.5px] disabled:opacity-60"
+                />
+                <input
+                  type="text"
+                  value={excecao.motivo ?? ''}
+                  disabled={doCrm}
+                  placeholder="Natal, recesso, reforma…"
+                  aria-label="Motivo"
+                  onChange={(e) =>
+                    setExcecoes((atual) =>
+                      atual.map((x, i) => (i === indice ? { ...x, motivo: e.currentTarget.value } : x)),
+                    )
+                  }
+                  className="app-field min-w-0 flex-1 px-2.5 py-1.5 text-[12.5px] disabled:opacity-60"
+                />
+                {!doCrm && (
+                  <button
+                    type="button"
+                    aria-label={`Remover ${excecao.data}`}
+                    onClick={() => setExcecoes((atual) => atual.filter((_, i) => i !== indice))}
+                    className="rounded-md px-1.5 py-0.5 text-[12px] text-dim transition hover:bg-rose-400/10 hover:text-perigo"
+                  >
+                    ✕
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+
+          {!doCrm && (
+            <button
+              type="button"
+              onClick={() => setExcecoes((atual) => [...atual, { data: HOJE(), motivo: '' }])}
+              className="mt-3 rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
+            >
+              + dia fechado
+            </button>
+          )}
         </>
       )}
     </FormularioSalvar>

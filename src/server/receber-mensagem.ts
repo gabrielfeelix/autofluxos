@@ -32,11 +32,13 @@ import type { Fluxo } from '@/core/flow/schema'
 import type { Sessao } from '@/core/engine/types'
 import { dentroDaJanela } from '@/channels/janela'
 import { contarDisparo, gatilhosAtivos } from './repos/gatilhos'
+import { manterCopiaDoCrm } from './horario-do-crm'
 import { varsDeData } from '@/core/datas'
 import {
   SEMPRE_ABERTO,
   atendimentoAberto,
   hojeNaConta,
+  motivoDeHojeFechado,
   proximaAbertura,
   type HorarioDeAtendimento,
 } from '@/core/horario'
@@ -781,10 +783,19 @@ async function avancarConversa(
    * viagem a mais no relógio de toda mensagem; em paralelo com o preparo da IA,
    * não custa nada.
    */
-  const [opcoesDeIa, horario] = await Promise.all([
+  const [opcoesDeIa, horarioGuardado] = await Promise.all([
     prepararIa(canalSalvo, contato.id, versao, texto),
     horarioDoCliente(canalSalvo.clienteId),
   ])
+
+  /*
+   * Conta que puxa o expediente do CRM refaz a cópia quando ela envelhece.
+   *
+   * Quase toda mensagem passa reto por aqui: só a primeira depois de seis
+   * horas paga a busca, e mesmo ela desiste em 2,5s e segue com a cópia
+   * anterior. Ver `horario-do-crm.ts`.
+   */
+  const horario = await manterCopiaDoCrm(canalSalvo.clienteId, horarioGuardado)
 
   /*
    * A revisão do controle **antes** de o motor rodar (RB-15).
@@ -1717,6 +1728,7 @@ function contextoDeAtendimento(horario: HorarioDeAtendimento | null): ContextoDo
   return {
     atendimentoAberto: atendimentoAberto(horario),
     proximaAbertura: proximaAbertura(horario),
+    motivoDeFechado: motivoDeHojeFechado(horario),
     hoje,
   }
 }

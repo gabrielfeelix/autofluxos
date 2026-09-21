@@ -2619,6 +2619,32 @@ export async function acaoSalvarHorario(
     }
   }
 
+  /*
+   * Feriado repetido é recusado aqui.
+   *
+   * Duas linhas para o mesmo dia não quebram nada (quem lê pega a primeira),
+   * mas deixam uma tela em que alguém corrige a segunda e nada muda. Erro que
+   * não aparece é o caro.
+   */
+  const vistas = new Set<string>()
+  for (const excecao of analise.data.excecoes ?? []) {
+    if (Number.isNaN(Date.parse(excecao.data))) {
+      return { erro: `"${excecao.data}" não é uma data válida.` }
+    }
+    if (vistas.has(excecao.data)) {
+      return { erro: `${excecao.data} está cadastrado duas vezes como dia fechado.` }
+    }
+    vistas.add(excecao.data)
+
+    for (const faixa of excecao.faixas ?? []) {
+      const de = emMinutos(faixa.de)
+      const ate = emMinutos(faixa.ate)
+      if (de === null || ate === null || ate <= de) {
+        return { erro: `${excecao.data}: "${faixa.de} até ${faixa.ate}" não é um horário válido.` }
+      }
+    }
+  }
+
   await atualizarHorario(clienteId, analise.data)
   revalidatePath(`/clientes/${clienteId}`)
   return { ok: true }

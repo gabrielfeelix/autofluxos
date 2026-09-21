@@ -31,7 +31,11 @@ import type { ContextoDoAtendimento } from './engine/executar'
  * campo. `sim` é o que ela vai digitar; `true` é o que um programador
  * digitaria, e quem desenha fluxo aqui não é programador.
  */
-export const VARIAVEIS_DO_ATENDIMENTO = ['atendimento_aberto', 'proxima_abertura'] as const
+export const VARIAVEIS_DO_ATENDIMENTO = [
+  'atendimento_aberto',
+  'proxima_abertura',
+  'motivo_fechado',
+] as const
 
 export type VariavelDoAtendimento = (typeof VARIAVEIS_DO_ATENDIMENTO)[number]
 
@@ -48,5 +52,11 @@ export function varsDoAtendimento(contexto: ContextoDoAtendimento): Record<strin
      * vazio deixa o desenhista perceber na hora de testar.
      */
     proxima_abertura: contexto.proximaAbertura ?? '',
+    /*
+     * "Natal", "recesso": o nome do feriado, para quem quiser escrever a
+     * própria frase em vez de usar a nossa. Vazio nos dias normais, pelo mesmo
+     * motivo de `proxima_abertura`: o uso é interpolar dentro de uma frase.
+     */
+    motivo_fechado: contexto.motivoDeFechado ?? '',
   }
 }

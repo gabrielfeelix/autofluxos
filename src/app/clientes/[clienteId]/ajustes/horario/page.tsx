@@ -5,6 +5,7 @@ import { Trilha } from '@/components/design/trilha'
 import { HorarioDeAtendimentoForm } from '@/components/cliente/horario'
 import { acaoSalvarHorario } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
+import { listarConexoes } from '@/server/repos/conexoes'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +24,10 @@ export default async function Pagina({
   const { clienteId } = await params
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
+
+  // As credenciais servem para escolher qual delas abre a agenda do CRM, quando
+  // o cliente prefere puxar o expediente de lá em vez de digitar aqui.
+  const conexoes = (await listarConexoes(clienteId)).map((c) => ({ id: c.id, nome: c.nome }))
 
   return (
     <AjustesShell cliente={cliente} ativa="horario">
@@ -49,12 +54,13 @@ export default async function Pagina({
         </h1>
         <p className="mt-1 mb-6 max-w-[560px] text-[13px] leading-6 text-muted">
           Vale para <strong className="text-soft">quando o bot passa a conversa para uma
-          pessoa</strong>. O bot continua respondendo a qualquer hora — o que muda é o que ele diz
+          pessoa</strong>. O bot continua respondendo a qualquer hora; o que muda é o que ele diz
           fora do expediente, em vez de prometer um atendente que só chega de manhã.
         </p>
 
         <HorarioDeAtendimentoForm
           inicial={cliente.horarioAtendimento}
+          conexoes={conexoes}
           salvar={acaoSalvarHorario.bind(null, cliente.id)}
         />
       </main>
