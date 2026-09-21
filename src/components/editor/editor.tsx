@@ -2,7 +2,6 @@
 
 import {
   addEdge,
-  Background,
   Controls,
   MiniMap,
   Panel,
@@ -28,6 +27,7 @@ import {
 import { Conversa } from '@/components/conversa'
 import { usePreferencia } from '@/components/design/tema'
 import { VARIAVEIS_NATIVAS } from '@/core/contatos/vars-iniciais'
+import { FundoDoCanvas } from './fundo'
 import { PreviaDoBloco } from './previa-do-bloco'
 import type { CanalId } from '@/core/canais'
 import {
@@ -1634,7 +1634,7 @@ export function Editor({
               daqui, para seguir o tema: prop é valor fixo, e o claro e o escuro
               precisam de doses diferentes do mesmo véu.
             */}
-            <Background gap={24} size={1} color="var(--cor-da-grade)" />
+            <FundoDoCanvas />
             <Controls position="bottom-right" />
             <MiniMap
               pannable

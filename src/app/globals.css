@@ -939,10 +939,73 @@ textarea::placeholder {
  */
 :root {
   --cor-da-grade: color-mix(in oklab, var(--dim) 45%, transparent);
+  /* A linha mestra é estrutura, não régua: mais fraca que o pontinho. */
+  --cor-da-grade-mestra: color-mix(in oklab, var(--primary) 16%, transparent);
 }
 
 :root[data-tema='escuro'] {
   --cor-da-grade: rgba(255, 255, 255, 0.08);
+  --cor-da-grade-mestra: rgba(255, 255, 255, 0.045);
+}
+
+/*
+ * A luz de topo e a vinheta, só no tema escuro.
+ *
+ * No escuro o canvas é uma chapa quase preta de ponta a ponta, e nela o cartão
+ * branco não flutua: ele boia, porque não há gradiente nenhum contra o qual a
+ * sombra dele possa existir. A luz no alto e o escurecimento nas bordas dão ao
+ * canvas um volume que a sombra do cartão então encontra, e é isso que faz o
+ * halo da seleção ter onde aparecer.
+ *
+ * No claro isto não existe de propósito: clarear o que já é quase branco não
+ * produz volume nenhum, só lava a grade.
+ *
+ * `z-index: 0` é o lugar certo, e não um detalhe: o `.react-flow__background`
+ * está em -1 e o `.react-flow__pane` (que recebe clique, arrasto e laço) em 1.
+ * Qualquer valor daqui para cima cobriria o pane e o editor pararia de
+ * responder ao mouse, sem erro nenhum no console.
+ */
+.canvas-luz,
+.canvas-halo {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.canvas-luz {
+  inset: 0;
+}
+
+:root[data-tema='escuro'] .canvas-luz {
+  background:
+    radial-gradient(72% 56% at 50% -10%, color-mix(in oklab, var(--primary) 20%, transparent) 0%, transparent 70%),
+    radial-gradient(120% 104% at 50% 48%, transparent 38%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+/*
+ * O halo do que está selecionado.
+ *
+ * A borda azul do cartão já diz o que está selecionado quando ele está à
+ * vista. Este halo serve ao caso em que ele não está: depois de um zoom ou de
+ * arrastar a tela num fluxo grande, é a única coisa que muda no fundo, e o
+ * olho vai nela antes de ler qualquer cartão.
+ *
+ * A transição é de posição e tamanho, e é curta: seguir o bloco enquanto ele é
+ * arrastado com atraso longo parece defeito, não suavidade.
+ */
+.canvas-halo {
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--primary) 26%, transparent) 0%, transparent 78%);
+  filter: blur(18px);
+  transition: left 0.12s ease-out, top 0.12s ease-out, width 0.12s ease-out, height 0.12s ease-out;
+}
+
+:root[data-tema='escuro'] .canvas-halo {
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--primary) 42%, transparent) 0%, transparent 78%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas-halo { transition: none; }
 }
 
 .react-flow__background pattern circle {
