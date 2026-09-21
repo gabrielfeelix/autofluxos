@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { rotuloDoCampo } from '@/core/contatos/rotulo-do-campo'
+import { ValorDoCampo } from '@/components/lead-crm/valor-do-campo'
+import { ehCampoTecnico } from '@/core/contatos/valor-do-campo'
 
 /**
  * O que o fluxo coletou, no painel direito do Inbox.
@@ -53,6 +55,19 @@ export function recorteDosCampos(campos: [string, string][], aberto: boolean) {
 export function CamposColetados({ campos }: { campos: [string, string][] }) {
   const [aberto, setAberto] = useState(false)
 
+  /*
+    Os de apoio do fluxo vão para o fim da fila, não para fora.
+
+    O teto é de quatro campos, e numa conta de agendamento os quatro primeiros
+    eram UUID de horário, de sessão e de pessoa: a coluna gastava a dobra
+    inteira com código e escondia a resposta da pessoa atrás de "Ver mais".
+    Reordenar resolve sem apagar nada. Ver `ehCampoTecnico`.
+  */
+  const ordenados = [
+    ...campos.filter(([chave, valor]) => !ehCampoTecnico(chave, valor)),
+    ...campos.filter(([chave, valor]) => ehCampoTecnico(chave, valor)),
+  ]
+
   if (campos.length === 0) {
     return (
       <p className="mt-2 text-[11px] leading-5 text-dim">
@@ -61,7 +76,7 @@ export function CamposColetados({ campos }: { campos: [string, string][] }) {
     )
   }
 
-  const { visiveis, escondidos, rotuloDoBotao } = recorteDosCampos(campos, aberto)
+  const { visiveis, escondidos, rotuloDoBotao } = recorteDosCampos(ordenados, aberto)
 
   return (
     <>
@@ -75,7 +90,13 @@ export function CamposColetados({ campos }: { campos: [string, string][] }) {
             <dt className="text-[10px] font-semibold tracking-[0.01em] text-dim">
               {rotuloDoCampo(chave) || chave}
             </dt>
-            <dd className="mt-0.5 break-words text-[11.5px] font-semibold text-soft">{valor}</dd>
+            {/*
+              O valor passa pelo mesmo desenho da ficha: lista vira ficha por
+              item, `hora · pessoa` vira hora com o nome ao lado, UUID vira
+              código curto. Antes era a linha crua com ponto e vírgula, que é
+              exatamente o "número esquisito" da queixa.
+            */}
+            <dd className="mt-0.5 text-[11.5px] text-soft"><ValorDoCampo valor={valor} /></dd>
           </div>
         ))}
       </dl>

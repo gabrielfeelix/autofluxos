@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useRef, useState, useTransition } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useTransition } from 'react'
+import { createPortal } from 'react-dom'
 import { acaoAlternarAutomacaoDoLead, acaoApagarContatos } from '@/server/acoes'
 import { useConfirmar } from '@/components/design/confirmar'
 
@@ -16,7 +17,18 @@ import { useConfirmar } from '@/components/design/confirmar'
  * Fecha com clique fora e com `Escape`: menu que só fecha clicando no mesmo
  * ponto é o que fica aberto por cima da linha seguinte enquanto a pessoa tenta
  * ler a tabela.
+ *
+ * **Abre num portal, e não dentro da célula.** Era `absolute` dentro da tabela,
+ * e a tabela vive num cartão com `overflow` para rolar de lado: o menu das
+ * últimas linhas nascia cortado pela borda do cartão, com metade dos itens
+ * fora e uma barra de rolagem aparecendo por causa dele. `position: fixed` num
+ * portal no `<body>` tira o menu do contexto de recorte; a posição é medida do
+ * botão e vira para cima quando não cabe embaixo.
  */
+
+/** A altura aproximada do menu aberto, para decidir se ele cabe embaixo. */
+const ALTURA_DO_MENU = 186
+
 export function MenuDoContato({
   clienteId,
   contatoId,
@@ -35,22 +47,57 @@ export function MenuDoContato({
   const { confirmar, dialogo } = useConfirmar()
   const [rodando, comecar] = useTransition()
   const raiz = useRef<HTMLDivElement>(null)
+  const menu = useRef<HTMLDivElement>(null)
+  const [caixa, setCaixa] = useState<{ top: number; left: number } | null>(null)
+
+  /*
+    A largura do menu é fixa (196px) e ele encosta à direita do botão, que é
+    onde ele já ficava. `Math.max(8, …)` impede que ele saia pela esquerda numa
+    janela estreita.
+  */
+  const medir = useCallback(() => {
+    const alvo = raiz.current
+    if (!alvo) return
+    const r = alvo.getBoundingClientRect()
+    const cabeAbaixo = window.innerHeight - r.bottom > ALTURA_DO_MENU + 12
+    setCaixa({
+      top: cabeAbaixo ? r.bottom + 4 : Math.max(8, r.top - ALTURA_DO_MENU - 4),
+      left: Math.max(8, r.right - 196),
+    })
+  }, [])
+
+  useLayoutEffect(() => {
+    if (aberto) medir()
+  }, [aberto, medir])
 
   useEffect(() => {
     if (!aberto) return
 
     const foraDaqui = (evento: MouseEvent) => {
-      if (!raiz.current?.contains(evento.target as Node)) setAberto(false)
+      const alvo = evento.target as Node
+      if (!raiz.current?.contains(alvo) && !menu.current?.contains(alvo)) setAberto(false)
     }
     const escapou = (evento: KeyboardEvent) => {
       if (evento.key === 'Escape') setAberto(false)
     }
+    /*
+      Rolou a página ou a tabela, o menu fecha.
+
+      Menu fixo que fica parado enquanto o conteúdo rola é pior que menu
+      cortado: ele passa a apontar para a linha errada. `capture` porque quem
+      rola aqui costuma ser o cartão da tabela, não a janela.
+    */
+    const rolou = () => setAberto(false)
 
     document.addEventListener('mousedown', foraDaqui)
     document.addEventListener('keydown', escapou)
+    window.addEventListener('scroll', rolou, true)
+    window.addEventListener('resize', rolou)
     return () => {
       document.removeEventListener('mousedown', foraDaqui)
       document.removeEventListener('keydown', escapou)
+      window.removeEventListener('scroll', rolou, true)
+      window.removeEventListener('resize', rolou)
     }
   }, [aberto])
 
@@ -89,10 +136,12 @@ export function MenuDoContato({
         ⋮
       </button>
 
-      {aberto && (
+      {aberto && caixa && typeof document !== 'undefined' && createPortal(
         <div
+          ref={menu}
           role="menu"
-          className="absolute right-0 z-20 mt-1 w-[196px] overflow-hidden rounded-[10px] border border-line bg-panel py-1 shadow-xl"
+          style={{ top: caixa.top, left: caixa.left }}
+          className="fixed z-50 w-[196px] overflow-hidden rounded-[10px] border border-line bg-panel py-1 shadow-xl"
         >
           <Link
             role="menuitem"
@@ -145,7 +194,8 @@ export function MenuDoContato({
               {erro}
             </p>
           )}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )

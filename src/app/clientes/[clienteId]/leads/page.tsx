@@ -20,6 +20,7 @@ import { horaExata, quando } from '@/lib/quando'
 import { FichaDeEtiqueta } from '@/components/etiquetas/ficha'
 import { CaixaDeSelecao, CaixaDeTodos, SelecaoDeContatos } from '@/components/lead/selecao'
 import { MenuDoContato } from '@/components/lead/menu-do-contato'
+import { ColunasDaTabela } from '@/components/lead/colunas-da-tabela'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { acaoCriarContato } from '@/server/acoes'
 import { listarEtiquetasComContagem, type Etiqueta } from '@/server/repos/etiquetas'
@@ -126,6 +127,11 @@ export default async function Pagina({
       <main className="flex min-h-full flex-col px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <h1 className="mb-5 text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Contatos</h1>
 
+        {/*
+          `min-h-0` e `flex-1` descem daqui até o cartão da tabela, que é quem
+          precisa esticar. Sem o `min-h-0`, um filho de flex se recusa a encolher
+          abaixo do próprio conteúdo e a rolagem escapa para a página inteira.
+        */}
         <Suspense key={`${etiqueta}-${marca}-${termo}-${pagina}-${nivel}`} fallback={<Esqueleto />}>
           <Tabela
             clienteId={cliente.id}
@@ -143,7 +149,7 @@ export default async function Pagina({
 
 function Esqueleto() {
   return (
-    <div className="app-card overflow-hidden">
+    <div className="app-card flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="h-11 border-b border-line bg-panel" />
       {[0, 1, 2, 3].map((i) => (
         <div key={i} className="flex h-14 animate-pulse items-center gap-3 border-b border-line px-3.5">
@@ -234,6 +240,18 @@ async function Tabela({
   const visiveis = leads
 
   const colunas = colunasDosCampos(leads)
+
+  /*
+    O que o botão "Colunas" oferece: as fixas primeiro, depois uma por variável
+    coletada. "Contato" fica de fora de propósito — tabela de contatos sem a
+    coluna de contato é uma tela que não responde mais nada.
+  */
+  const colunasDisponiveis = [
+    ...colunas.map((coluna) => ({ chave: coluna, rotulo: rotuloDoCampo(coluna) || coluna })),
+    { chave: 'cliente', rotulo: 'Cliente' },
+    { chave: 'situacao', rotulo: 'Situação' },
+    { chave: 'ultima', rotulo: 'Última mensagem' },
+  ]
   const esperando = leads.filter((lead) => lead.aguardando).length
   const primeiroDaPagina = (pagina - 1) * LEADS_POR_PAGINA + 1
   const ultimoDaPagina = primeiroDaPagina + leads.length - 1
@@ -250,6 +268,11 @@ async function Tabela({
             {esperando} esperando humano nesta página
           </span>
         )}
+        {/*
+          As colunas que cada pessoa quer ver. Ver `ColunasDaTabela`: a escolha
+          é deste navegador, e some a coluna por CSS em vez de mudar a consulta.
+        */}
+        <ColunasDaTabela clienteId={clienteId} colunas={colunasDisponiveis} />
         <Link
           href={`/clientes/${clienteId}/leads/segmentos`}
           className="app-secondary-button px-3 py-1.5 text-[11.5px]"
@@ -438,8 +461,19 @@ async function Tabela({
           etiquetas={etiquetasDaConta.map(({ id, nome, cor }) => ({ id, nome, cor }))}
           quadros={quadrosDaConta.map(({ id, nome }) => ({ id, nome }))}
         >
-          <div className="app-card overflow-x-auto overflow-y-hidden">
-            <table className="w-full min-w-[820px] border-collapse text-left">
+          {/*
+            O cartão cresce até o fim da página, e a rolagem é de dentro dele.
+
+            Antes a altura era a soma das linhas: com quatro contatos a tabela
+            terminava no meio da tela e o resto era fundo vazio, e com cinco ela
+            terminava noutro lugar. Cada filtro mudava o tamanho do cartão, que
+            é o que fazia a tela parecer outra a cada clique. Agora o cartão
+            ocupa o que sobra (`flex-1`), a tabela começa no topo dele, e o que
+            passar do fim rola aqui dentro em vez de rolar a página.
+          */}
+          <div className="app-card flex min-h-0 flex-1 flex-col overflow-hidden">
+            <div className="min-h-0 flex-1 overflow-auto">
+            <table id="tabela-de-contatos" className="w-full min-w-[820px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-line">
                   <th scope="col" className="w-9 px-3.5 py-2.5">
@@ -449,11 +483,13 @@ async function Tabela({
                   {/* O rótulo, não a chave: `objetivo_aluno` em fonte de código
                       era o mesmo problema do painel do Inbox, numa tabela. */}
                   {colunas.map((coluna) => (
-                    <Cabecalho key={coluna}>{rotuloDoCampo(coluna) || coluna}</Cabecalho>
+                    <Cabecalho key={coluna} coluna={coluna}>
+                      {rotuloDoCampo(coluna) || coluna}
+                    </Cabecalho>
                   ))}
-                  <Cabecalho>Cliente</Cabecalho>
-                  <Cabecalho>Situação</Cabecalho>
-                  <Cabecalho>Última mensagem</Cabecalho>
+                  <Cabecalho coluna="cliente">Cliente</Cabecalho>
+                  <Cabecalho coluna="situacao">Situação</Cabecalho>
+                  <Cabecalho coluna="ultima">Última mensagem</Cabecalho>
                   <th scope="col" className="w-10 px-2 py-2.5">
                     <span className="sr-only">Ações</span>
                   </th>
@@ -490,16 +526,16 @@ async function Tabela({
                     </div>
                   </td>
                   {colunas.map((coluna) => (
-                    <td key={coluna} className="max-w-48 truncate px-3.5 py-3 text-[11.5px] text-muted">
+                    <td key={coluna} data-coluna={coluna} className="max-w-48 truncate px-3.5 py-3 text-[11.5px] text-muted">
                       {lead.campos[coluna] || <span className="text-dim">—</span>}
                     </td>
                   ))}
-                  <td className="px-3.5 py-3">
+                  <td data-coluna="cliente" className="px-3.5 py-3">
                     {relacionamentos.get(lead.contatoId) && (
                       <SeloDoCliente r={relacionamentos.get(lead.contatoId)!} />
                     )}
                   </td>
-                  <td className="px-3.5 py-3">
+                  <td data-coluna="situacao" className="px-3.5 py-3">
                     {lead.aguardando ? (
                       <>
                         <span className="inline-flex rounded-full border border-rose-400/25 bg-rose-400/[0.09] px-2.5 py-1 text-[10.5px] font-bold text-perigo">
@@ -515,7 +551,7 @@ async function Tabela({
                       </span>
                     )}
                   </td>
-                  <td className="px-3.5 py-3 text-[11.5px] whitespace-nowrap text-muted">
+                  <td data-coluna="ultima" className="px-3.5 py-3 text-[11.5px] whitespace-nowrap text-muted">
                     {lead.ultimaEm ? (
                       <>
                         <span title={horaExata(lead.ultimaEm)}>{quando(lead.ultimaEm)}</span>
@@ -540,6 +576,7 @@ async function Tabela({
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
 
           {paginas > 1 && (
@@ -635,9 +672,19 @@ function classeDoFiltro(ativo: boolean): string {
   }`
 }
 
-function Cabecalho({ children }: { children: React.ReactNode }) {
+/**
+ * Uma coluna da tabela.
+ *
+ * `data-coluna` é o que o botão "Colunas" usa para esconder a coluna inteira
+ * com uma regra de CSS. Sem ele, a escolha não teria como alcançar uma tabela
+ * montada no servidor.
+ */
+function Cabecalho({ children, coluna }: { children: React.ReactNode; coluna?: string }) {
   return (
-    <th className="px-3.5 py-3.5 text-[10.5px] font-bold tracking-[0.06em] text-dim uppercase">
+    <th
+      data-coluna={coluna}
+      className="px-3.5 py-3.5 text-[10.5px] font-bold tracking-[0.06em] text-dim uppercase"
+    >
       {children}
     </th>
   )
