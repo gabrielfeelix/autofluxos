@@ -378,9 +378,18 @@ textarea::placeholder {
   color: var(--placeholder);
 }
 
+/*
+ * A borda do campo e `--line-strong`, nao `--line`.
+ *
+ * `--line` foi desenhado para separar bloco de bloco, e some quando o campo tem
+ * o mesmo branco da superficie atras dele. No painel do editor (`bg-panel`) o
+ * campo e branco sobre branco: sem borda visivel, o input deixava de parecer
+ * input. Divisor continua com `--line`; controle que aceita digitacao usa o
+ * degrau mais forte, e e o mesmo do `.app-dropdown-trigger`.
+ */
 .app-field {
   width: 100%;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-strong);
   border-radius: 10px;
   outline: none;
   background: var(--panel);
@@ -389,7 +398,7 @@ textarea::placeholder {
 }
 
 .app-field:hover:not(:disabled) {
-  border-color: var(--line-strong);
+  border-color: color-mix(in oklab, var(--ink) 22%, var(--line-strong));
 }
 
 .app-field:focus {
@@ -439,7 +448,7 @@ textarea::placeholder {
   align-items: center;
   gap: 10px;
   min-height: 42px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-strong);
   border-radius: 10px;
   outline: none;
   background: var(--panel);
@@ -451,7 +460,7 @@ textarea::placeholder {
 }
 
 .app-dropdown-trigger:hover:not(:disabled) {
-  border-color: var(--line-strong);
+  border-color: color-mix(in oklab, var(--ink) 22%, var(--line-strong));
   background: var(--surface);
 }
 
