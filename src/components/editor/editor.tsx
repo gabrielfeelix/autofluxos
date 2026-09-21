@@ -1392,6 +1392,25 @@ export function Editor({
           Organizar
         </button>
 
+        {/*
+          Respostas leva ao histórico da **conta inteira**, sem filtro.
+
+          Quem está aqui acabou de publicar e quer ver o que está chegando,
+          inclusive das outras automações; o recorte de uma só já tem porta
+          própria, o número no cartão da lista. É link de verdade (`<a>`,
+          navegação completa) e não `router.push`: o editor guarda desenho não
+          salvo, e o aviso de "sair sem salvar" só dispara numa navegação de
+          página de verdade.
+        */}
+        <a
+          href={`/clientes/${clienteId}/respostas`}
+          title="Ver o que as pessoas responderam nas automações desta conta"
+          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-strong px-2.5 py-1 text-xs text-muted transition hover:border-primary/50 hover:bg-primary/[0.08] hover:text-primary"
+        >
+          <span aria-hidden>☰</span>
+          Respostas
+        </a>
+
         <a
           href="/ajuda"
           target="_blank"

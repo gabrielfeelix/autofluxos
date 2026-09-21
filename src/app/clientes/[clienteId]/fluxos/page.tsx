@@ -558,10 +558,25 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                           {validacao.erros.length} impedimento(s)
                         </span>
                       )}
-                      <span className="whitespace-nowrap text-[11px] text-dim">
+                      {/*
+                        A contagem virou link, e essa é a segunda porta do
+                        histórico de respostas: aqui a pergunta é "o que **esta**
+                        colheu", então ela abre a tela já filtrada nesta
+                        automação. A do topo do editor abre sem filtro.
+
+                        `pointer-events-auto` e `relative` porque o pai é
+                        `pointer-events-none` sobre um link de cobertura: sem os
+                        dois, o clique atravessa e abre o editor, que é o
+                        contrário do que a pessoa pediu.
+                      */}
+                      <Link
+                        href={`/clientes/${cliente.id}/respostas?fluxo=${fluxo.id}`}
+                        title={`Ver o que as pessoas responderam em “${fluxo.nome}”`}
+                        className="pointer-events-auto relative whitespace-nowrap rounded-lg px-2 py-1 text-[11px] text-dim transition hover:bg-primary/[0.08] hover:text-primary"
+                      >
                         <strong className="font-semibold text-soft">{totalDeExecucoes}</strong>{' '}
-                        {totalDeExecucoes === 1 ? 'execução' : 'execuções'}
-                      </span>
+                        {totalDeExecucoes === 1 ? 'resposta' : 'respostas'}
+                      </Link>
                       {/*
                         Três estados, e não dois. "Publicado" e "atendendo" são
                         perguntas diferentes desde a 0036: um fluxo desligado
