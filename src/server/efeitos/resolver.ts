@@ -138,7 +138,26 @@ export type OpcoesDeEfeitos = {
   carregarFluxo?: (
     fluxoId: string,
   ) => Promise<{ versaoId: string; grafo: Fluxo; iaHabilitada: boolean } | null>
+  /**
+   * O bloco de API **não** chama a internet: responde dado de exemplo.
+   *
+   * Existe para a vitrine do link compartilhado, que roda sem sessão nenhuma.
+   * Lá, executar o bloco de verdade seria dar a quem tem o link um jeito de
+   * fazer o nosso servidor bater numa URL escolhida por outra pessoa, quantas
+   * vezes quisesse, e de disparar o sistema de um cliente que não está na
+   * conversa. Quem recebe um link quer ver o desenho conversar, não gravar
+   * pedido no CRM de ninguém.
+   *
+   * O desvio é o menor possível: o motor continua o mesmo, a resposta entra
+   * pela porta normal (`http_respondeu`), e as variáveis mapeadas chegam
+   * preenchidas com `exemplo`. Um bloco de API mal ligado continua aparecendo
+   * errado, porque o erro mora no desenho, não no valor que volta.
+   */
+  semRede?: boolean
 }
+
+/** O que uma chamada de API devolve quando a rede está fechada (`semRede`). */
+const VALOR_DE_EXEMPLO = 'exemplo'
 
 /**
  * O que o resolvedor devolve a mais que o motor: onde a conversa **terminou**.
@@ -237,9 +256,41 @@ async function rodar(
     (entrada.tipo === 'texto' ? entrada.texto : (ultimaDaPessoa(opcoes.historico) ?? ''))
 
   for (let volta = 0; volta < MAX_EFEITOS; volta++) {
-    const chamadaHttp = resultado.acoes.find((a) => a.tipo === 'chamar_http')
+    const chamadaHttp = resultado.acoes.find((a) => a.tipo === 'chamar_http' && !a.simulada)
 
     if (chamadaHttp?.tipo === 'chamar_http') {
+      /*
+       * Rede fechada: a chamada não sai, e o motor segue como se tivesse saído.
+       *
+       * Vem antes de tudo, inclusive da busca de credencial, porque na vitrine
+       * não há cliente nenhum e ler o cofre por um `conexaoId` vindo do grafo
+       * seria exatamente o que não pode. A ação fica na lista, marcada, para a
+       * tela dizer "chamaria" em vez de calar um passo do desenho.
+       */
+      if (opcoes.semRede) {
+        const seguinte = executar(
+          fluxoAtual,
+          resultado.sessao,
+          {
+            tipo: 'http_respondeu',
+            valores: Object.fromEntries(
+              chamadaHttp.mapear.map((m) => [m.variavel, VALOR_DE_EXEMPLO]),
+            ),
+          },
+          atendimento,
+        )
+
+        resultado = {
+          acoes: [
+            ...semEfeito(resultado.acoes, 'chamar_http'),
+            { ...chamadaHttp, simulada: true },
+            ...seguinte.acoes,
+          ],
+          sessao: seguinte.sessao,
+        }
+        continue
+      }
+
       // A credencial é buscada aqui, fora do motor, e vive só o tempo desta
       // chamada. Ela não entra na sessão, não é serializada, e portanto não
       // tem como chegar ao navegador pelo simulador.
@@ -452,11 +503,17 @@ async function rodar(
    * Falhar com o motivo certo é o que faz a diferença entre trinta segundos e
    * uma tarde.
    */
-  const pendente = resultado.acoes.find((a) => a.tipo === 'chamar_ia' || a.tipo === 'chamar_http')
+  const pendente = resultado.acoes.find(
+    (a) => a.tipo === 'chamar_ia' || (a.tipo === 'chamar_http' && !a.simulada),
+  )
   if (pendente) {
     return {
       acoes: [
-        ...resultado.acoes.filter((a) => a.tipo !== 'chamar_ia' && a.tipo !== 'chamar_http'),
+        // A chamada marcada como `simulada` fica: ela já foi atendida, e é o
+        // único registro na tela de que o bloco de API rodou.
+        ...resultado.acoes.filter(
+          (a) => a.tipo !== 'chamar_ia' && (a.tipo !== 'chamar_http' || a.simulada),
+        ),
         { tipo: 'enviar_texto', texto: AVISO_DE_HANDOFF },
         {
           tipo: 'transferir_humano',
@@ -497,8 +554,16 @@ async function carregar(opcoes: OpcoesDeEfeitos, fluxoId: string) {
  * Se ficasse, quem aplica as ações veria um pedido já respondido e mandaria a
  * conversa para um humano em cima de algo que deu certo.
  */
+/**
+ * Tira da lista o pedido que acabou de ser atendido.
+ *
+ * A exceção é a chamada **já simulada** (`semRede`): ela não é pedido nenhum, é
+ * o registro de um bloco de API que rodou. Sem esta linha, um fluxo com duas
+ * chamadas apagaria o registro da primeira ao atender a segunda, e a vitrine
+ * mostraria metade do que aconteceu.
+ */
 function semEfeito(acoes: Acao[], tipo: 'chamar_ia' | 'chamar_http' | 'ir_para_fluxo'): Acao[] {
-  return acoes.filter((a) => a.tipo !== tipo)
+  return acoes.filter((a) => a.tipo !== tipo || (a.tipo === 'chamar_http' && a.simulada))
 }
 
 function ultimaDaPessoa(historico: Turno[] | undefined): string | undefined {

@@ -252,6 +252,53 @@ describe('resolvendo o nó de API', () => {
     )
   })
 
+  it('com a rede fechada, não chama nada e responde dado de exemplo', async () => {
+    /*
+     * A vitrine do link compartilhado (`semRede`). O que precisa ficar provado
+     * são as três coisas juntas: a chamada **não sai**, a conversa **continua**
+     * (senão a demonstração morre no primeiro bloco de API) e o evento
+     * **aparece**, marcado, para quem está vendo saber que ali havia uma
+     * integração e que ela não disparou.
+     */
+    const r = await executarComEfeitos(comApi, sessaoNova(), { tipo: 'inicio' }, {
+      ...semIa,
+      semRede: true,
+    })
+
+    expect(chamarHttp).not.toHaveBeenCalled()
+    expect(textosDe(r)).toContain('está exemplo')
+
+    const chamada = r.acoes.find((a) => a.tipo === 'chamar_http')
+    expect(chamada).toMatchObject({ url: 'https://e.com', simulada: true })
+  })
+
+  it('com a rede fechada, o ciclo continua travando', async () => {
+    // Sem esta garantia, a ação marcada seria encontrada de novo a cada volta e
+    // o laço só pararia no `MAX_EFEITOS`, com um handoff que ninguém desenhou.
+    const duas = fluxoSchema.parse({
+      inicio: 'a',
+      nodes: [
+        { id: 'a', type: 'http', position: { x: 0, y: 0 }, data: { url: 'https://um.com' } },
+        { id: 'b', type: 'http', position: { x: 0, y: 0 }, data: { url: 'https://dois.com' } },
+        { id: 'humano', type: 'handoff', position: { x: 0, y: 0 }, data: {} },
+      ],
+      edges: [
+        { id: 'a1', source: 'a', target: 'b' },
+        { id: 'a2', source: 'b', target: 'humano' },
+      ],
+    })
+
+    const r = await executarComEfeitos(duas, sessaoNova(), { tipo: 'inicio' }, {
+      ...semIa,
+      semRede: true,
+    })
+
+    // As duas chamadas ficam registradas: perder a primeira ao atender a
+    // segunda mostraria metade do que o desenho faz.
+    const urls = r.acoes.flatMap((a) => (a.tipo === 'chamar_http' ? [a.url] : []))
+    expect(urls).toEqual(['https://um.com', 'https://dois.com'])
+  })
+
   it('a trava para o encadeamento sem fim, e conta IA e API juntas', async () => {
     // Um bloco de API ligado em si mesmo: sem trava, o laço nunca sai daqui.
     const ciclo = fluxoSchema.parse({

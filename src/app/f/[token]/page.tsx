@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { Marca } from '@/components/design/marca'
 import { ImportarFluxo, type DestinoDaImportacao } from '@/components/compartilhar/importar'
+import { Vitrine } from '@/components/compartilhar/vitrine'
 import { resumirFluxo, roteiroDoFluxo, type LinhaDoRoteiro } from '@/core/compartilhar'
 import { acharPorToken, contarAbertura } from '@/server/repos/compartilhar'
 import { listarClientes } from '@/server/repos/clientes'
@@ -18,8 +19,12 @@ export const dynamic = 'force-dynamic'
  * origem além do nome dela.
  *
  * O que ela deliberadamente **não** faz: desenhar o grafo. Quem chega aqui está
- * decidindo se importa, e para isso precisa ler o atendimento em ordem. Montar
- * o canvas custaria o bundle do editor numa rota pública para entregar menos.
+ * decidindo se aquele atendimento presta, e para isso conversa com ele
+ * (`components/compartilhar/vitrine.tsx`) ou lê o roteiro em ordem. Montar o
+ * canvas custaria o bundle do editor numa rota pública para entregar menos.
+ *
+ * A conversa roda no motor de verdade, com a rede fechada e sem cliente nenhum:
+ * ver `api/simular/compartilhado/route.ts`.
  */
 export const metadata: Metadata = {
   // Link compartilhado não é conteúdo para busca, e o `robots.ts` já proíbe o
@@ -123,63 +128,71 @@ export default async function Pagina({ params }: { params: Promise<{ token: stri
               >
                 entre no AutoFluxos
               </Link>{' '}
-              e abra este link de novo. Sem conta, dá para ler o desenho inteiro aqui embaixo.
+              e abra este link de novo. Sem conta, dá para conversar com o fluxo e ler o
+              desenho inteiro aqui embaixo.
             </p>
           )}
         </div>
       </header>
 
-      <section className="app-card mt-[18px] overflow-hidden">
-        <header className="border-b border-line px-5 py-4 md:px-6">
-          <h2 className="text-[14.5px] font-bold">O atendimento, na ordem</h2>
-          <p className="mt-0.5 text-[12px] leading-5 text-dim">
-            Como a conversa acontece, do primeiro bloco em diante.
-          </p>
-        </header>
+      <Vitrine
+        token={token}
+        fluxo={link.grafo}
+        nomeDoFluxo={link.nome}
+        roteiro={
+          <section className="app-card overflow-hidden">
+            <header className="border-b border-line px-5 py-4 md:px-6">
+              <h2 className="text-[14.5px] font-bold">O atendimento, na ordem</h2>
+              <p className="mt-0.5 text-[12px] leading-5 text-dim">
+                Como a conversa acontece, do primeiro bloco em diante.
+              </p>
+            </header>
 
-        <ol>
-          {roteiro.map((linha, indice) => (
-            <li
-              key={linha.id}
-              className="flex gap-3.5 border-b border-line px-5 py-4 last:border-0 md:px-6"
-            >
-              <span className="mt-0.5 w-5 shrink-0 text-right font-mono text-[11px] text-dim">
-                {indice + 1}
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="flex flex-wrap items-center gap-2">
-                  <strong className="text-[11px] font-bold tracking-[0.04em] text-muted uppercase">
-                    {ROTULO_DO_BLOCO[linha.tipo]}
-                  </strong>
-                  {!linha.alcancavel && (
-                    <span
-                      title="Nenhuma seta chega até aqui. Quem importar precisa ligá-lo ou apagá-lo."
-                      className="rounded-full border border-amber-300/25 bg-amber-300/[0.08] px-2 py-0.5 text-[10px] font-bold text-aviso"
-                    >
-                      solto
-                    </span>
-                  )}
-                </span>
-                <span className="mt-1 block text-[13px] leading-[1.65] whitespace-pre-wrap text-soft">
-                  {linha.texto}
-                </span>
-                {linha.saidas.length > 0 && (
-                  <span className="mt-2 flex flex-wrap gap-1.5">
-                    {linha.saidas.map((saida, i) => (
-                      <span
-                        key={`${linha.id}-${i}`}
-                        className="rounded-md border border-line bg-surface px-2 py-0.5 text-[10.5px] text-dim"
-                      >
-                        {saida}
-                      </span>
-                    ))}
+            <ol>
+              {roteiro.map((linha, indice) => (
+                <li
+                  key={linha.id}
+                  className="flex gap-3.5 border-b border-line px-5 py-4 last:border-0 md:px-6"
+                >
+                  <span className="mt-0.5 w-5 shrink-0 text-right font-mono text-[11px] text-dim">
+                    {indice + 1}
                   </span>
-                )}
-              </span>
-            </li>
-          ))}
-        </ol>
-      </section>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <strong className="text-[11px] font-bold tracking-[0.04em] text-muted uppercase">
+                        {ROTULO_DO_BLOCO[linha.tipo]}
+                      </strong>
+                      {!linha.alcancavel && (
+                        <span
+                          title="Nenhuma seta chega até aqui. Quem importar precisa ligá-lo ou apagá-lo."
+                          className="rounded-full border border-amber-300/25 bg-amber-300/[0.08] px-2 py-0.5 text-[10px] font-bold text-aviso"
+                        >
+                          solto
+                        </span>
+                      )}
+                    </span>
+                    <span className="mt-1 block text-[13px] leading-[1.65] whitespace-pre-wrap text-soft">
+                      {linha.texto}
+                    </span>
+                    {linha.saidas.length > 0 && (
+                      <span className="mt-2 flex flex-wrap gap-1.5">
+                        {linha.saidas.map((saida, i) => (
+                          <span
+                            key={`${linha.id}-${i}`}
+                            className="rounded-md border border-line bg-surface px-2 py-0.5 text-[10.5px] text-dim"
+                          >
+                            {saida}
+                          </span>
+                        ))}
+                      </span>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </section>
+        }
+      />
 
       <p className="mt-6 text-center text-[11px] leading-[1.7] text-dim">
         Feito no <strong className="font-semibold text-muted">AutoFluxos</strong>, da 4YU ,

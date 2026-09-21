@@ -228,6 +228,18 @@ export type Acao =
        * entrar na sessão, que viaja para o navegador no simulador.
        */
       conexaoId?: string
+      /**
+       * Esta chamada **não saiu**: quem executou estava sem rede por decisão
+       * (`semRede`, a vitrine do link compartilhado), e devolveu dado de
+       * exemplo ao motor.
+       *
+       * O motor nunca escreve este campo, ele não sabe o que é rede. Quem
+       * escreve é o resolvedor, e quem lê é a tela, para dizer "chamaria" em
+       * vez de deixar o evento sumir. Marcada assim, a ação também deixa de
+       * ser encontrada como pendente pelo laço de efeitos, senão a mesma
+       * chamada seria "executada" dez vezes.
+       */
+      simulada?: boolean
     }
   /**
    * Pôr o contato numa etapa de um quadro (C1b).

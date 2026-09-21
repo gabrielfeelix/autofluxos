@@ -59,6 +59,10 @@ const ROTA_DO_SIMULADOR = readFileSync(
   join(AQUI, '..', '..', 'app', 'api', 'simular', 'route.ts'),
   'utf8',
 )
+const ROTA_DA_VITRINE = readFileSync(
+  join(AQUI, '..', '..', 'app', 'api', 'simular', 'compartilhado', 'route.ts'),
+  'utf8',
+)
 
 describe('o catálogo de efeitos do motor', () => {
   /**
@@ -182,5 +186,50 @@ describe('a rota do simulador', () => {
      */
     expect(ROTA_DO_SIMULADOR).not.toMatch(/from '@\/server\/receber-mensagem'/)
     expect(ROTA_DO_SIMULADOR).not.toMatch(/aplicarAcoes|registrarSaida|aplicarFato/)
+  })
+})
+
+/**
+ * A vitrine é a única porta do motor que abre **sem sessão nenhuma**, e por isso
+ * ela é lida aqui pelo mesmo método grosseiro do resto do arquivo: o que precisa
+ * ficar garantido é uma ausência, e ausência não se prova executando um caso.
+ */
+describe('a rota da vitrine, que roda para quem não tem conta', () => {
+  it('fecha a rede: o bloco de API não sai daqui', () => {
+    expect(ROTA_DA_VITRINE).toMatch(/semRede: true/)
+  })
+
+  it('não passa cliente nenhum, então não há credencial nem salto', () => {
+    /*
+     * Sem `clienteId` o resolvedor não lê o cofre, não deixa a IA consultar
+     * nada da conta e não carrega outra automação por id. Passar o cliente aqui
+     * daria a quem tem um link o poder que a aba Testar só dá a quem entrou na
+     * conta, e o link é público por definição.
+     */
+    // Sem os comentários: a rota **explica** por que não passa cliente, e
+    // procurar a palavra no texto inteiro faria a explicação derrubar o teste.
+    const codigo = ROTA_DA_VITRINE.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*/g, '')
+    expect(codigo).not.toMatch(/clienteId/)
+    expect(codigo).not.toMatch(/carregarFluxo/)
+  })
+
+  it('o desenho vem do banco, nunca do corpo da requisição', () => {
+    /*
+     * Aceitar fluxo do corpo transformaria a rota num motor de uso geral, sem
+     * conta, com a nossa chave de IA. Se alguém importar o `fluxoSchema` aqui
+     * para "deixar testar o rascunho", este teste cai, e é a hora de parar.
+     */
+    expect(ROTA_DA_VITRINE).not.toMatch(/fluxoSchema/)
+    expect(ROTA_DA_VITRINE).toMatch(/acharPorToken/)
+  })
+
+  it('tem teto de uso e confere o link antes de rodar', () => {
+    expect(ROTA_DA_VITRINE).toMatch(/consumirLimite/)
+    expect(ROTA_DA_VITRINE).toMatch(/estado !== 'valido'/)
+  })
+
+  it('não aplica efeito nenhum: não chama receber-mensagem', () => {
+    expect(ROTA_DA_VITRINE).not.toMatch(/from '@\/server\/receber-mensagem'/)
+    expect(ROTA_DA_VITRINE).not.toMatch(/aplicarAcoes|registrarSaida|aplicarFato/)
   })
 })

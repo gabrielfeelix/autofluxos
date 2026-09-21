@@ -23,12 +23,26 @@ export const TETO_DO_SIMULADOR = 60
 export const JANELA_DO_SIMULADOR_SEGUNDOS = 60
 
 /**
+ * A vitrine do link compartilhado: o teto é **por link**, não por endereço.
+ *
+ * Quem abre um link não tem sessão, não tem conta e não paga a conta da IA, que
+ * é nossa. Limitar por IP seria limitar a coisa errada: um escritório inteiro
+ * vendo a mesma demonstração divide o mesmo endereço, e um script que queira
+ * gastar a nossa chave troca de endereço de graça. O link é o que não se troca.
+ *
+ * 40 mensagens é uma demonstração inteira, com recomeço. Quem precisar de mais
+ * pede outro link, que é justamente o gesto que a conta de origem controla.
+ */
+export const TETO_DA_VITRINE = 40
+export const JANELA_DA_VITRINE_SEGUNDOS = 10 * 60
+
+/**
  * O primeiro proxy é quem viu a conexão de fora. Não confiamos no corpo da
  * requisição para formar a chave; sem cabeçalho, todas as chamadas desconhecidas
  * ficam juntas e o comportamento continua seguro.
  */
 export function chaveDeLimite(
-  finalidade: 'login' | 'cadastro' | 'simular',
+  finalidade: 'login' | 'cadastro' | 'simular' | 'vitrine',
   cabecalhos: Headers,
 ): string {
   const encaminhado = cabecalhos.get('x-forwarded-for')?.split(',')[0]?.trim()

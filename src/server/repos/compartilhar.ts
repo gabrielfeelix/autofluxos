@@ -165,6 +165,23 @@ export type LinkAberto = {
   grafo: Fluxo | null
   /** Nome da conta que compartilhou. É a procedência de quem recebe. */
   origem: string
+  /**
+   * A automação de origem tem IA contratada.
+   *
+   * Sai daqui porque a vitrine precisa dela para decidir se chama modelo, e
+   * porque é a única coisa da automação que a página pública precisa saber
+   * além do desenho. Continua não saindo id nenhum da conta de origem.
+   */
+  iaHabilitada: boolean
+  /**
+   * O que a conta de origem escreveu sobre o próprio negócio.
+   *
+   * Vai junto porque é ele que fecha o escopo da IA: sem isso, o bloco de IA na
+   * vitrine responde como assistente genérico e o fluxo parece pior do que é.
+   * Sai sem susto porque quem tem o link já recebeu o desenho inteiro, com
+   * mensagens, preços e endereços de API, e o contexto é menos do que isso.
+   */
+  contextoNegocio: string
   versao: number
   publicadoEm: string
 }
@@ -187,7 +204,7 @@ export async function acharPorToken(token: string): Promise<LinkAberto | null> {
   const { data, error } = await db()
     .from('fluxo_links')
     .select(
-      'id, nome, expira_em, revogado_em, flow_version_id, clients!inner (nome), flow_versions!inner (versao, publicado_em, grafo)',
+      'id, nome, expira_em, revogado_em, flow_version_id, clients!inner (nome, contexto_negocio), flows!inner (ia_habilitada), flow_versions!inner (versao, publicado_em, grafo)',
     )
     .eq('token', token)
     .maybeSingle()
@@ -201,7 +218,8 @@ export async function acharPorToken(token: string): Promise<LinkAberto | null> {
     nome: string
     expira_em: string | null
     revogado_em: string | null
-    clients: { nome: string }
+    clients: { nome: string; contexto_negocio: string | null }
+    flows: { ia_habilitada: boolean }
     flow_versions: { versao: number; publicado_em: string; grafo: unknown }
   }
 
@@ -213,6 +231,8 @@ export async function acharPorToken(token: string): Promise<LinkAberto | null> {
     estado,
     grafo: estado === 'valido' ? fluxoSchema.parse(linha.flow_versions.grafo) : null,
     origem: linha.clients.nome,
+    iaHabilitada: linha.flows.ia_habilitada,
+    contextoNegocio: linha.clients.contexto_negocio ?? '',
     versao: linha.flow_versions.versao,
     publicadoEm: linha.flow_versions.publicado_em,
   }

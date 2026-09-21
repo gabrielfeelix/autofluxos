@@ -121,6 +121,8 @@ export function Conversa({
   nomeContato,
   contextoNegocio = '',
   iaHabilitada = false,
+  token,
+  legendaDoContato = 'contato de teste',
 }: {
   fluxo: Fluxo
   /**
@@ -134,7 +136,21 @@ export function Conversa({
   contextoNegocio?: string
   /** Espelha o plano da automação. Sem isto, o bloco de IA não chama modelo. */
   iaHabilitada?: boolean
+  /**
+   * O token de um link compartilhado. Com ele, a conversa é a **vitrine**: fala
+   * com `/api/simular/compartilhado`, que lê o desenho do banco em vez de
+   * aceitá-lo do corpo, e roda com a rede fechada.
+   *
+   * O fluxo continua chegando por `fluxo` porque a tela precisa dele para o
+   * aviso de API e para o prazo da pergunta, mas ele **não** é enviado: quem
+   * diz qual desenho roda, ali, é o token.
+   */
+  token?: string
+  /** O que aparece sob o nome no cabeçalho do chat. */
+  legendaDoContato?: string
 }) {
+  /** A vitrine não chama API de verdade, e a tela precisa dizer isso. */
+  const naVitrine = token !== undefined
   const [itens, setItens] = useState<ItemDaConversa[]>([])
   const [pendentes, setPendentes] = useState<Pendentes | null>(null)
   const [rascunho, setRascunho] = useState('')
@@ -197,21 +213,27 @@ export function Conversa({
     }
 
     try {
-      const resposta = await fetch('/api/simular', {
+      // O que já foi dito, para a IA não repetir pergunta respondida.
+      const historico = itensRef.current
+        .filter((i) => i.de !== 'sistema')
+        .map((i) => ({ de: i.de === 'pessoa' ? 'pessoa' : 'bot', texto: i.texto }))
+
+      const resposta = await fetch(naVitrine ? '/api/simular/compartilhado' : '/api/simular', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          fluxo: fluxoDaVez.current,
-          sessao: sessaoRef.current,
-          entrada,
-          fluxoId,
-          contextoNegocio,
-          iaHabilitada,
-          // O que já foi dito, para a IA não repetir pergunta respondida.
-          historico: itensRef.current
-            .filter((i) => i.de !== 'sistema')
-            .map((i) => ({ de: i.de === 'pessoa' ? 'pessoa' : 'bot', texto: i.texto })),
-        }),
+        body: JSON.stringify(
+          naVitrine
+            ? { token, sessao: sessaoRef.current, entrada, historico }
+            : {
+                fluxo: fluxoDaVez.current,
+                sessao: sessaoRef.current,
+                entrada,
+                fluxoId,
+                contextoNegocio,
+                iaHabilitada,
+                historico,
+              },
+        ),
       })
 
       if (!resposta.ok) {
@@ -321,6 +343,18 @@ export function Conversa({
           adicionar({ chave, de: 'sistema', texto: `chamaria a IA, "${acao.instrucao}"` })
           break
         case 'chamar_http':
+          // Marcada como `simulada`: a rede estava fechada de propósito (a
+          // vitrine do link). Não é alerta, é o registro de que o bloco rodou,
+          // e dizer qual endereço ele chamaria é o que permite conferir o
+          // desenho sem disparar nada no sistema de ninguém.
+          if (acao.simulada) {
+            adicionar({
+              chave,
+              de: 'sistema',
+              texto: `chamaria ${acao.metodo} ${acao.url}, aqui respondeu dado de exemplo`,
+            })
+            break
+          }
           // O caminho normal é o resolvedor já ter trocado isto pelos
           // `salvar_campo` que vieram da resposta. Chegar aqui significa que
           // ninguém executou, mostrar é melhor do que sumir com o evento.
@@ -493,8 +527,17 @@ export function Conversa({
         (avisoDaApiAberto ? (
           <div className="mx-3.5 mt-3.5 flex items-start gap-2 rounded-[11px] border border-cyan-400/20 bg-cyan-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-cyan-300">
             <p className="min-w-0 flex-1">
-              Este fluxo chama uma API. O teste dispara <strong>de verdade</strong>, testar cinco
-              vezes grava cinco vezes no sistema do cliente.
+              {naVitrine ? (
+                <>
+                  Este fluxo chama uma API. Aqui a chamada <strong>não sai</strong>: ela responde
+                  dado de exemplo, para a demonstração não gravar nada em sistema nenhum.
+                </>
+              ) : (
+                <>
+                  Este fluxo chama uma API. O teste dispara <strong>de verdade</strong>, testar
+                  cinco vezes grava cinco vezes no sistema do cliente.
+                </>
+              )}
             </p>
             <button
               type="button"
@@ -512,7 +555,8 @@ export function Conversa({
             onClick={() => setAvisoDaApiAberto(true)}
             className="mx-3.5 mt-3.5 flex items-center gap-1.5 rounded-full border border-cyan-400/20 bg-cyan-400/[0.07] px-2.5 py-1 text-[10px] font-semibold text-cyan-300 transition hover:bg-cyan-400/[0.14]"
           >
-            <span aria-hidden>⚠</span> o teste chama a API de verdade
+            <span aria-hidden>⚠</span>{' '}
+            {naVitrine ? 'a API responde dado de exemplo' : 'o teste chama a API de verdade'}
           </button>
         ))}
 
@@ -523,7 +567,7 @@ export function Conversa({
           </span>
           <span className="min-w-0">
             <strong className="block truncate text-[12px] leading-4">{nomeContato}</strong>
-            <span className="block text-[9.5px] text-[#667781]">contato de teste</span>
+            <span className="block text-[9.5px] text-[#667781]">{legendaDoContato}</span>
           </span>
         </div>
       )}
