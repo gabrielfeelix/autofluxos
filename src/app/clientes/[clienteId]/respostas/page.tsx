@@ -374,7 +374,7 @@ async function Tabela({
               <table className="w-full min-w-[820px] border-collapse text-left">
                 <thead>
                   <tr className="border-b border-line">
-                    <Cabecalho>Pessoa</Cabecalho>
+                    <Cabecalho fixa>Pessoa</Cabecalho>
                     {/* A automação some quando a tela já está filtrada por uma:
                         repetir o mesmo nome em vinte linhas gasta a largura que
                         as respostas precisam. */}
@@ -394,9 +394,11 @@ async function Tabela({
                     <LinhaClicavel
                       key={resposta.sessaoId}
                       href={`/clientes/${clienteId}/leads/${resposta.contatoId}`}
-                      className="cursor-pointer border-b border-line transition last:border-0 hover:bg-surface"
+                      className="group cursor-pointer border-b border-line transition last:border-0 hover:bg-surface"
                     >
-                      <td className="px-3.5 py-3">
+                      <td
+                        className={`${COLUNA_FIXA} z-10 bg-panel px-3.5 py-3 transition group-hover:bg-surface`}
+                      >
                         <Link
                           href={`/clientes/${clienteId}/leads/${resposta.contatoId}`}
                           className="block max-w-56 truncate text-[13px] font-bold transition hover:text-primary"
@@ -479,11 +481,33 @@ async function Tabela({
   )
 }
 
-function Cabecalho({ children }: { children: React.ReactNode }) {
+/**
+ * A coluna de quem respondeu não sai da tela ao rolar para o lado.
+ *
+ * São dez e tantas colunas de variável, então rolar horizontalmente é o uso
+ * normal da tela, não a exceção. Sem isto, na terceira coluna já não se sabe de
+ * quem é a linha: o "Agora não" da direita fica órfão, e conferir contra quem
+ * respondeu vira rolar de ida e de volta contando linha com o dedo.
+ *
+ * **O fundo opaco é obrigatório**, e é o que quase sempre falta: célula grudada
+ * sem fundo próprio deixa o conteúdo que passa por baixo aparecer através dela,
+ * e o nome sai escrito por cima de um telefone de outra coluna. Ele acompanha o
+ * `hover` da linha pelo `group`, senão a primeira coluna seria a única a não
+ * acender quando o mouse passa, denunciando o truque.
+ *
+ * A sombra de 1px faz as vezes de borda: `border-collapse` já resolveu as
+ * bordas da tabela, e uma borda a mais aqui brigaria com ela. Sombra não ocupa
+ * espaço no fluxo e marca onde a tela foi cortada.
+ */
+const COLUNA_FIXA = 'sticky left-0 shadow-[1px_0_0_0_var(--line)]'
+
+function Cabecalho({ children, fixa = false }: { children: React.ReactNode; fixa?: boolean }) {
   return (
     <th
       scope="col"
-      className="whitespace-nowrap px-3.5 py-2.5 font-mono text-[10px] font-semibold tracking-[0.12em] text-dim uppercase"
+      className={`whitespace-nowrap px-3.5 py-2.5 font-mono text-[10px] font-semibold tracking-[0.12em] text-dim uppercase ${
+        fixa ? COLUNA_FIXA + ' z-20 bg-panel' : ''
+      }`}
     >
       {children}
     </th>
