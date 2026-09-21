@@ -56,6 +56,7 @@ import { AcaoDaArestaProvider, tiposDeAresta } from './arestas'
 import { DESCRICOES } from '@/core/flow/blocos'
 import { ICONES, NOMES, tiposDeNo } from './nos'
 import { NomeDoFluxo } from './nome-do-fluxo'
+import { organizar } from './organizar'
 import { PuxadorDeLargura } from './puxador'
 import { useLarguraGuardada } from './largura-guardada'
 import { Painel } from './painel'
@@ -633,6 +634,29 @@ export function Editor({
     },
     [setNodes, tela],
   )
+
+  /**
+   * Arruma o desenho: blocos em colunas, da entrada para a saída.
+   *
+   * Fluxo grande desenhado à mão vira teia, e teia não se lê: ninguém acha
+   * para onde cai a terceira opção de uma pergunta. A conta mora em
+   * `organizar.ts`; daqui sai só a troca de posição, que o salvamento
+   * automático grava e o `Ctrl+Z` desfaz como qualquer outra edição.
+   *
+   * A altura usada é a **medida** pelo React Flow (`measured`), não uma
+   * constante: bloco de mensagem com três linhas e bloco de pergunta com seis
+   * opções têm alturas muito diferentes, e empilhar pela constante deixaria os
+   * grandes se cobrindo.
+   */
+  const arrumar = useCallback(() => {
+    setNodes((atuais) => {
+      const posicoes = organizar(atuais, edges, inicio)
+      return atuais.map((n) => ({ ...n, position: posicoes.get(n.id) ?? n.position }))
+    })
+    // Depois do próximo desenho: o enquadramento só faz sentido com as posições
+    // novas já aplicadas.
+    setTimeout(() => tela?.fitView({ duration: 500, padding: 0.15 }), 0)
+  }, [edges, inicio, setNodes, tela])
 
   /**
    * Põe um bloco novo no desenho, já selecionado.
@@ -1268,6 +1292,17 @@ export function Editor({
          , com o mesmo bloco selecionado, o mesmo zoom e a mesma posição do
           quadro, que são estado de tela e não sobrevivem a uma navegação.
         */}
+        <button
+          type="button"
+          onClick={arrumar}
+          disabled={nodes.length < 2}
+          title="Arrumar o desenho: blocos em colunas, da entrada para a saída"
+          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-strong px-2.5 py-1 text-xs text-muted transition hover:border-primary/50 hover:bg-primary/[0.08] hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <span aria-hidden>⌗</span>
+          Organizar
+        </button>
+
         <a
           href="/ajuda"
           target="_blank"
