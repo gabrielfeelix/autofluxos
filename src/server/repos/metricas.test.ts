@@ -139,11 +139,12 @@ describe.skipIf(!temCredencial)('métricas contra o Supabase', () => {
     expect(a.bot + a.prevista + a.falha + a.aberta).toBe(6)
   })
 
-  it('handoff sem origem, anterior à 0086, conta como falha', async () => {
-    // Julho tem 1 encerrada e 1 em humano com handoff sem `origem`. Chamá-la de
-    // prevista inflaria "está tudo funcionando" com o que pode ter sido defeito.
+  it('handoff sem origem, anterior à 0086, conta como atendimento da equipe', async () => {
+    // Julho tem 1 encerrada e 1 em humano com handoff sem `origem`. Contá-la
+    // como falha era acusar o produto de um defeito que ninguém verificou: na
+    // produção metade desses registros diz "a pessoa pediu atendente".
     const desfechos = await medirDesfechos(clienteId, new Date('2026-08-31T23:30:00-03:00'))
-    expect(desfechos.anterior).toEqual({ bot: 1, prevista: 0, falha: 1, aberta: 0 })
+    expect(desfechos.anterior).toEqual({ bot: 1, prevista: 1, falha: 0, aberta: 0 })
   })
 
   it('não mistura clientes', async () => {

@@ -52,9 +52,18 @@ export const ORIGENS_DE_HANDOFF = ['prevista', 'falha'] as const
 
 export type OrigemDoHandoff = (typeof ORIGENS_DE_HANDOFF)[number]
 
+/**
+ * Como a transferência é **escrita para quem paga pelo produto**.
+ *
+ * O nome interno continua `falha`, porque é o que o banco grava e o que o time
+ * precisa procurar. O rótulo, não: "transferência por falha" na tela do cliente
+ * é o produto se acusando em público, sem dizer falha de quê nem o que fazer a
+ * respeito. O que aconteceu, de fato, é que a conversa parou por um erro
+ * técnico e alguém da equipe assumiu.
+ */
 export const ROTULO_DA_ORIGEM: Record<OrigemDoHandoff, string> = {
-  prevista: 'Transferência prevista',
-  falha: 'Transferência por falha',
+  prevista: 'Passada para a equipe',
+  falha: 'Interrompida por um erro',
 }
 
 // ---------------------------------------------------------------------------
@@ -74,8 +83,8 @@ export type Desfecho = (typeof DESFECHOS)[number]
 
 export const ROTULO_DO_DESFECHO: Record<Desfecho, string> = {
   bot: 'Resolvida pela automação',
-  prevista: 'Transferida como o fluxo previa',
-  falha: 'Transferida por falha',
+  prevista: 'Atendida pela equipe',
+  falha: 'Interrompida por um erro',
   aberta: 'Ainda em aberto',
 }
 
@@ -105,27 +114,33 @@ export type FatosDaConversa = {
 /**
  * Em que fatia esta conversa cai.
  *
- * **Handoff sem origem conhecida conta como `falha`**, e a escolha é
- * deliberada. Os registros anteriores à 0086 não têm a coluna, e as duas saídas
- * possíveis erram para lados diferentes:
+ * **Só entra em `falha` o que o motor marcou como falha.** Era o contrário: a
+ * fatia começava com tudo que não fosse `prevista`, e engolia dois casos que
+ * não são erro nenhum:
  *
- * - chamar de `prevista` inflaria "o produto está funcionando" com conversas
- *   que podem ter sido defeito, e é a mentira que o painel não pode contar;
- * - chamar de `falha` pinta pior do que talvez seja, e faz alguém ir procurar
- *   um conserto que não existe.
+ * - **a conversa que uma pessoa assumiu pelo Inbox.** Não há handoff, a origem
+ *   é `null`, e a equipe decidiu atender. Chamar isso de falha é acusar o
+ *   produto de um defeito que não houve;
+ * - **o handoff anterior à 0086**, que não tem a coluna. Em produção eles são
+ *   oito, e metade diz "a pessoa pediu atendente" e "pedido pelo fluxo", que é
+ *   o desenho funcionando.
  *
- * O segundo erro é o barato: ele gasta o tempo de quem investiga. O primeiro
- * esconde defeito de produção, que é o que este painel existe para achar.
+ * Foi assim que a conta de um cliente real mostrou 64% de "transferidas por
+ * falha" num mês em que o produto não tinha 64% de defeito nenhum. Número
+ * errado, e escrito da pior forma possível: a tela acusava o próprio produto na
+ * frente de quem paga por ele.
  *
- * E isso é temporário por construção: a partir da 0086 toda transferência nova
- * grava a origem, então a fatia só encolhe.
+ * O erro que sobra é o barato e o temporário: um handoff legado que era defeito
+ * de verdade aparece como atendimento da equipe. A partir da 0086 toda
+ * transferência grava a origem, então isso só encolhe, e o defeito continua
+ * legível no motivo de cada conversa.
  */
 export function desfechoDe(conversa: FatosDaConversa): Desfecho {
   if (conversa.status === 'encerrada') return 'bot'
 
   // Passou por gente: é transferência, e o que decide a fatia é a origem.
   if (conversa.status === 'humano' || conversa.status === 'atendida_por_pessoa') {
-    return conversa.origem === 'prevista' ? 'prevista' : 'falha'
+    return conversa.origem === 'falha' ? 'falha' : 'prevista'
   }
 
   // `ativa`, e qualquer status que venha a existir: a conversa não terminou, e
@@ -156,7 +171,7 @@ export function taxaDeAutomacao(c: ContagemPorDesfecho): number | null {
 }
 
 /**
- * Quanto do que terminou caiu em alguém **por defeito**.
+ * Quanto do que terminou parou por um erro técnico.
  *
  * É o número que gera trabalho de engenharia, e por isso ele é separado do
  * anterior em vez de ser o complemento dele: `100 - taxaDeAutomacao` juntaria

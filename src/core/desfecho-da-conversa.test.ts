@@ -49,11 +49,14 @@ describe('o desfecho de uma conversa', () => {
     expect(desfechoDe({ status: 'atendida_por_pessoa', origem: 'prevista' })).not.toBe('aberta')
   })
 
-  it('handoff antigo, sem origem gravada, conta como falha', () => {
-    // A escolha é deliberada, e o comentário do módulo diz por quê: chamar de
-    // prevista inflaria "está tudo bem" com o que pode ter sido defeito.
-    expect(desfechoDe({ status: 'humano' })).toBe('falha')
-    expect(desfechoDe({ status: 'humano', origem: null })).toBe('falha')
+  it('sem origem de falha gravada, a conversa é atendimento da equipe', () => {
+    // Era o contrário, e acusava o produto de um defeito que não houve: sem
+    // handoff (`null`) quem assumiu a conversa foi alguém pelo Inbox, e o
+    // handoff anterior à 0086 (`undefined`) na produção é metade "a pessoa
+    // pediu atendente". Só entra em `falha` o que o motor marcou como falha.
+    expect(desfechoDe({ status: 'humano' })).toBe('prevista')
+    expect(desfechoDe({ status: 'humano', origem: null })).toBe('prevista')
+    expect(desfechoDe({ status: 'atendida_por_pessoa', origem: null })).toBe('prevista')
   })
 
   it('conversa em andamento fica em aberto, e não vira resolvida de ninguém', () => {

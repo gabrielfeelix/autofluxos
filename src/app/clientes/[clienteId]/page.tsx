@@ -641,17 +641,17 @@ async function Numeros({ clienteId }: { clienteId: string }) {
         <ul className="mt-2.5 flex flex-col gap-1 text-[12px] text-soft">
           <FatiaDoMes rotulo="Resolvidas pela automação" quantas={atual.bot} de={total(atual)} />
           <FatiaDoMes
-            rotulo="Transferidas como o fluxo previa"
+            rotulo="Atendidas pela equipe"
             quantas={atual.prevista}
             de={total(atual)}
-            dica="O bloco de transferir estava no fluxo: é o desenho funcionando, e não uma falha."
+            dica="A conversa foi para uma pessoa: ou o fluxo previa isso, ou alguém assumiu a conversa pelo Inbox. É o atendimento acontecendo."
           />
           <FatiaDoMes
-            rotulo="Transferidas por falha"
+            rotulo="Interrompidas por um erro"
             quantas={atual.falha}
             de={total(atual)}
             atencao={atual.falha > 0}
-            dica="O bot não conseguiu seguir: entrega que não saiu, IA sem modelo, integração fora do ar. Cada uma é um conserto possível."
+            dica="A conversa parou antes do fim por um problema técnico (mensagem que não saiu, IA fora do ar, integração sem resposta) e passou para a equipe. O motivo fica escrito na conversa."
           />
           {atual.aberta > 0 && (
             <FatiaDoMes
@@ -664,10 +664,22 @@ async function Numeros({ clienteId }: { clienteId: string }) {
         </ul>
       )}
 
+      {/*
+        O aviso é o que fazer, não uma confissão.
+
+        Ele dizia "N conversas caíram no colo de alguém por falha. Isso é
+        defeito, e não desenho" — o produto se acusando na tela de quem paga por
+        ele, sem dizer falha de quê nem o que fazer a respeito. O dono não tem o
+        que fazer com essa frase além de desconfiar do produto.
+
+        O número continua inteiro, e a frase passa a apontar onde está escrito o
+        motivo de cada uma.
+      */}
       {falha !== null && falha > 0 && (
         <p className="mt-2 text-[12px] leading-[1.7] text-aviso">
-          {atual.falha} {atual.falha === 1 ? 'conversa caiu' : 'conversas caíram'} no colo de alguém
-          por falha ({falha}% das que terminaram). Isso é defeito, e não desenho.
+          {atual.falha} {atual.falha === 1 ? 'conversa parou' : 'conversas pararam'} antes do fim
+          por um problema técnico ({falha}% das que terminaram) e a equipe assumiu. O motivo de cada
+          uma está escrito na própria conversa, no Inbox.
         </p>
       )}
 
