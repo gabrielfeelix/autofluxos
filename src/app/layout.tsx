@@ -20,10 +20,10 @@ const outfit = Outfit({
  *
  * A Inter foi desenhada exatamente para isso: altura de x grande, aberturas
  * abertas, `1`/`l`/`I` distinguíveis. É o que metade dos produtos de chat já usa
- * pela pilha do sistema — carregá-la explicitamente só torna previsível o que
+ * pela pilha do sistema, carregá-la explicitamente só torna previsível o que
  * hoje depende do sistema operacional de quem olha.
  *
- * **A casca continua Outfit** — barra lateral, títulos, botões, pílulas. É ela
+ * **A casca continua Outfit**, barra lateral, títulos, botões, pílulas. É ela
  * que dá cara ao produto, e trocar a fonte global faria o produto perder a cara
  * para resolver um problema que é só da bolha.
  */
@@ -40,10 +40,10 @@ const jetBrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'AutoFluxos — atendimento desenhado bloco a bloco',
+  title: 'AutoFluxos, atendimento desenhado bloco a bloco',
   description: 'Automação visual de atendimento no WhatsApp.',
   // O padrão é não indexar: o painel inteiro é privado e não tem nada a fazer
-  // num buscador. A landing em `/` sobrescreve isso — ela existe justamente
+  // num buscador. A landing em `/` sobrescreve isso, ela existe justamente
   // para ser encontrada.
   robots: { index: false, follow: false },
   metadataBase: new URL('https://autofluxos.4yu.com.br'),
@@ -55,7 +55,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       `suppressHydrationWarning` porque o `data-theme` é posto pelo script
       abaixo, antes do React existir: o HTML que o servidor mandou e o que o
       navegador tem na hora da hidratação diferem nesse atributo, de propósito.
-      Ele silencia só este elemento — nenhum filho herda a permissão.
+      Ele silencia só este elemento, nenhum filho herda a permissão.
     */
     <html
       lang="pt-BR"

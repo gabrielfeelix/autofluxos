@@ -7,7 +7,7 @@ import { useEffect } from 'react'
  *
  * **Revelação no scroll.** Todo elemento com `data-revela` entra deslocado e
  * ganha `data-revelado` quando cruza a tela. O CSS faz o resto. Um observer
- * único para a página inteira — um por elemento seria dezenas de observers
+ * único para a página inteira, um por elemento seria dezenas de observers
  * fazendo o mesmo trabalho.
  *
  * **Borda do cabeçalho.** Ela só aparece depois que a página rola; parada no
@@ -24,7 +24,7 @@ export function Revelar({
   seletorCabecalho,
   classeRolado,
 }: {
-  // Vêm de um CSS Module, e o tipo gerado admite `undefined` — um nome de
+  // Vêm de um CSS Module, e o tipo gerado admite `undefined`, um nome de
   // classe que não existe no arquivo devolve isso em vez de quebrar o build.
   seletorCabecalho: string | undefined
   classeRolado: string | undefined

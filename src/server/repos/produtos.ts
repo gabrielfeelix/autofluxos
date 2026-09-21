@@ -10,10 +10,10 @@ import { db, ehIdInvalido } from '../db'
  *
  * O que este arquivo garante, e que a tela não garante sozinha:
  *
- *  - **arquivar não apaga** — o vínculo de `venda_itens.produto_id` e de
+ *  - **arquivar não apaga**, o vínculo de `venda_itens.produto_id` e de
  *    `quadro_cartoes.produto_id` continua apontando para a linha, e a
  *    segmentação por produto continua achando o histórico;
- *  - **nome único entre os ativos** — o índice parcial recusa o duplicado, e a
+ *  - **nome único entre os ativos**, o índice parcial recusa o duplicado, e a
  *    recusa vira frase em vez de 500.
  */
 

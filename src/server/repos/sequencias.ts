@@ -32,7 +32,7 @@ const COLUNAS =
 
 function paraSequencia(linha: LinhaDaSequencia): Sequencia | null {
   // Evento que esta versão do código não conhece: a sequência some da lista em
-  // vez de estourar. É o mesmo tratamento de `tarefas.tipo` — um deploy pela
+  // vez de estourar. É o mesmo tratamento de `tarefas.tipo`, um deploy pela
   // metade não pode derrubar a tela de Automações inteira.
   if (!ehEventoDeSequencia(linha.evento)) return null
 
@@ -72,8 +72,7 @@ export async function listarSequencias(clienteId: string): Promise<Sequencia[]> 
 /**
  * As que podem inscrever alguém agora.
  *
- * Filtra por evento no banco e não na aplicação: quem chama é o caminho quente
- * — toda etiqueta aplicada e todo "Já atendi" passam por aqui —, e trazer a
+ * Filtra por evento no banco e não na aplicação: quem chama é o caminho quente, toda etiqueta aplicada e todo "Já atendi" passam por aqui , e trazer a
  * lista inteira para descartar a maioria custaria a viagem toda vez.
  */
 export async function sequenciasDoEvento(
@@ -279,7 +278,7 @@ export async function criarPasso(
   if (error?.code === '23505') return { ok: false, motivo: 'já existe um passo neste mesmo tempo' }
   /*
    * 23514 é o `check` da 0061: passo além de 24h sem modelo. `conferirAtraso`
-   * já barra antes, e este é o cinto — um caminho que não passe pela régua não
+   * já barra antes, e este é o cinto, um caminho que não passe pela régua não
    * pode gravar um passo que nunca entregaria.
    */
   if (error?.code === '23514') {
@@ -298,7 +297,7 @@ export async function criarPasso(
  * **As inscrições ativas não são reindexadas**, e isso é deliberado: elas
  * guardam o índice do próximo passo, e apagar um passo do meio desloca a lista.
  * Quem já estava no índice 2 pode acabar recebendo o que era o passo 3, ou
- * terminando cedo. A alternativa — reindexar todo mundo — significaria decidir,
+ * terminando cedo. A alternativa, reindexar todo mundo, significaria decidir,
  * por outra pessoa, se ela "já recebeu" um passo que nunca existiu para ela.
  *
  * O comportamento escolhido é o que erra para menos: no pior caso a inscrição
@@ -377,7 +376,7 @@ const COLUNAS_DA_INSCRICAO =
 /**
  * Inscreve, ou devolve `null` quando já havia uma ativa.
  *
- * O índice único parcial da 0031 é quem garante isso de verdade — duas
+ * O índice único parcial da 0031 é quem garante isso de verdade, duas
  * aplicações da mesma etiqueta chegando juntas passariam por qualquer
  * conferência feita antes. Aqui o conflito é lido como "já estava dentro", que
  * é o que ele significa, e não como falha.
@@ -446,7 +445,7 @@ export async function encerrarInscricao(
 /**
  * Tira o contato de todas as sequências em que ele está, e devolve os ids.
  *
- * Os ids voltam para quem chama cancelar as tarefas agendadas — sem isso, cada
+ * Os ids voltam para quem chama cancelar as tarefas agendadas, sem isso, cada
  * inscrição morta acordaria o agendador uma vez para ser ignorada.
  */
 export async function sairDasSequencias(
@@ -549,7 +548,7 @@ export async function sequenciasQueUsamOFluxo(fluxoId: string): Promise<string[]
   ]
 }
 
-/** As sequências que usam esta etiqueta — para a tela de etiquetas recusar apagar. */
+/** As sequências que usam esta etiqueta, para a tela de etiquetas recusar apagar. */
 export async function sequenciasQueUsamAEtiqueta(
   clienteId: string,
   etiquetaId: string,
@@ -594,7 +593,7 @@ export async function sequenciasQueUsamAEtapa(
 /**
  * Tira do acompanhamento quem acabou de ganhar a etiqueta de saída.
  *
- * Precisa ser específica — e não a `sair_das_sequencias` genérica — porque a
+ * Precisa ser específica, e não a `sair_das_sequencias` genérica, porque a
  * etiqueta de saída é de **uma** sequência. Aplicar "virou aluno" não pode
  * tirar a pessoa de um acompanhamento de outra coisa que ela continua devendo.
  */
@@ -651,12 +650,12 @@ export async function sairPorEtiquetaDeSaida(
  *
  * O que vem, e cada campo tem um motivo:
  *
- *   - `estado` e `motivo` — o "por quê" da RB-47: saiu porque respondeu, porque
+ *   - `estado` e `motivo`, o "por quê" da RB-47: saiu porque respondeu, porque
  *     vendeu, ou **bloqueada** porque a janela fechou, que é a única que quer
  *     dizer "não entregou";
- *   - `cartaoId` — de qual negociação. Nulo é "do contato", e não falta de dado;
- *   - `passoAtual` e o total de passos — onde ela parou, em "2 de 4";
- *   - `entrouEm` — desde quando.
+ *   - `cartaoId`, de qual negociação. Nulo é "do contato", e não falta de dado;
+ *   - `passoAtual` e o total de passos, onde ela parou, em "2 de 4";
+ *   - `entrouEm`, desde quando.
  *
  * Traz as encerradas também, e não só as ativas: a pergunta mais comum na ficha é
  * sobre a mensagem que **já** chegou, e uma lista só de ativas não a responderia.

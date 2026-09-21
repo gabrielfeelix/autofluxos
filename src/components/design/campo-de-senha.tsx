@@ -7,14 +7,14 @@ import { useId, useState } from 'react'
  *
  * Existe porque senha digitada às cegas é onde a tela de entrar mais mente: o
  * erro que volta é "credenciais não conferem", que é a mesma frase para senha
- * errada e para dedo errado — e quem tem uma senha com ponto no fim, acento ou
+ * errada e para dedo errado, e quem tem uma senha com ponto no fim, acento ou
  * maiúscula no meio não tem como saber em qual dos dois caiu. Ver o que se
  * digitou não é conveniência, é o único jeito de distinguir os dois casos sem
  * tentativa e erro.
  *
  * **Está aqui, e não copiado nas telas**, porque são duas: entrar e criar
  * conta (`/entrar`, `/criar-conta`). Duas
- * cópias divergem, e a que fica para trás é sempre a que menos se usa — que é
+ * cópias divergem, e a que fica para trás é sempre a que menos se usa, que é
  * justamente a que a pessoa acessa sem prática nenhuma.
  *
  * O botão fica **fora** do `<label>` e o rótulo aponta por `htmlFor`. Botão
@@ -40,7 +40,7 @@ export function CampoDeSenha({
   placeholder?: string
   minimo?: number
   autoFocus?: boolean
-  /** O que mais mora na linha do rótulo — hoje, o "Esqueci a senha". */
+  /** O que mais mora na linha do rótulo, hoje, o "Esqueci a senha". */
   aoLado?: React.ReactNode
   /** Linha abaixo do campo, como o aviso do mínimo de caracteres. */
   ajuda?: React.ReactNode
@@ -66,7 +66,7 @@ export function CampoDeSenha({
           id={campoId}
           // Trocar só o `type` mantém o mesmo nó no DOM, e com ele o que já foi
           // digitado. Renderizar dois campos alternados esvaziaria o valor a
-          // cada clique — o oposto do que o botão promete.
+          // cada clique, o oposto do que o botão promete.
           type={visivel ? 'text' : 'password'}
           name={nome}
           required
@@ -85,7 +85,7 @@ export function CampoDeSenha({
           // saber o estado atual, não só o que o clique vai fazer.
           aria-pressed={visivel}
           aria-controls={campoId}
-          // O rótulo diz da senha, e não "mostrar" solto — numa tela com dois
+          // O rótulo diz da senha, e não "mostrar" solto, numa tela com dois
           // campos de senha (a de cadastro, um dia) "Mostrar" sozinho não
           // distingue qual.
           aria-label={visivel ? 'Ocultar a senha' : 'Mostrar a senha'}

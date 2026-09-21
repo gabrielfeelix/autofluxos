@@ -6,7 +6,7 @@ import { useState } from 'react'
  * O telefone da ficha, e as três coisas que se faz com ele.
  *
  * **A queixa é o desktop.** O número era um `tel:`, e `tel:` no computador abre
- * um diálogo de aplicativo que ninguém tem configurado — ou seja, na tela onde
+ * um diálogo de aplicativo que ninguém tem configurado, ou seja, na tela onde
  * o time passa o dia, clicar no telefone não fazia nada. Quem queria falar com
  * a pessoa selecionava o número com o mouse, copiava, e procurava o contato no
  * WhatsApp à mão.
@@ -18,7 +18,7 @@ import { useState } from 'react'
  * aplicativo e o navegador, conforme o aparelho de quem clicou. Escolher por ele
  * erra na metade dos casos.
  *
- * A confirmação some sozinha — um "copiado" permanente vira parte do layout e
+ * A confirmação some sozinha, um "copiado" permanente vira parte do layout e
  * para de significar que alguma coisa acabou de acontecer.
  */
 export function AcoesDoTelefone({ waId, legivel }: { waId: string; legivel: string }) {
@@ -31,7 +31,7 @@ export function AcoesDoTelefone({ waId, legivel }: { waId: string; legivel: stri
       window.setTimeout(() => setCopiado(false), 1600)
     } catch {
       // Área de transferência bloqueada (http, permissão negada). O número
-      // continua visível ao lado para ser selecionado à mão — que é o motivo de
+      // continua visível ao lado para ser selecionado à mão, que é o motivo de
       // ele não viver dentro do botão.
     }
   }

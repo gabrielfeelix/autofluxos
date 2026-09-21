@@ -80,6 +80,6 @@ describe('a pergunta', () => {
     // O texto é a parte útil da confirmação: quem lê "Tem certeza?" clica em OK
     // sem saber que estava prestes a perder o que escreveu.
     expect(PERGUNTA_DESCARTAR).toContain('descarta')
-    expect(PERGUNTA_DESCARTAR).not.toContain('—')
+    expect(PERGUNTA_DESCARTAR).not.toContain('-')
   })
 })

@@ -5,7 +5,7 @@ import { Marca } from './marca'
  * A moldura das telas de porta: entrar e criar conta.
  *
  * Existe porque são **duas**, e antes era uma. Duplicar o painel da esquerda em
- * cada uma é o caminho conhecido para as duas divergirem — a contagem de blocos
+ * cada uma é o caminho conhecido para as duas divergirem, a contagem de blocos
  * que a tela anuncia já esteve errada uma vez, e ter duas cópias dela é ter duas
  * chances de errar de novo.
  *
@@ -40,12 +40,12 @@ export function Portico({
             O atendimento dos seus clientes, desenhado bloco a bloco.
           </h1>
           <p className="mt-4 max-w-[430px] text-[14.5px] leading-[1.6] text-muted">
-            Fluxos de conversa no WhatsApp — o bot conduz, coleta o que importa e passa para uma
+            Fluxos de conversa no WhatsApp, o bot conduz, coleta o que importa e passa para uma
             pessoa na hora certa.
           </p>
           <div className="mt-7 flex gap-[22px] font-mono text-[11px] text-dim">
             {/* Oito desde que o bloco de mídia entrou. Contagem errada na porta
-                de entrada é a primeira coisa que alguém confere — já anunciou
+                de entrada é a primeira coisa que alguém confere, já anunciou
                 seis quando eram sete. */}
             <span>
               <strong className="font-normal text-primary">8</strong> tipos de bloco

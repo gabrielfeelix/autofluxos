@@ -11,13 +11,13 @@ export const dynamic = 'force-dynamic'
  * Onde a Meta devolve quem autorizou o acesso aos anúncios.
  *
  * Mesmas duas conferências das outras rotas de retorno, e nenhuma substitui a
- * outra: o `state` assinado prova **qual cliente** começou — sem ele, um link
+ * outra: o `state` assinado prova **qual cliente** começou, sem ele, um link
  * forjado ligaria a conta de anúncios de alguém ao cliente errado. A sessão
  * prova **quem está pedindo**, e é conferida quando existe.
  *
  * **A sessão pode não vir, e isso é normal.** Quem chega é o navegador voltando
  * do `facebook.com`, e o cookie `SameSite=Lax` não acompanha redirect de outro
- * site. Exigir sessão recusaria toda conexão real — foi exatamente assim que a
+ * site. Exigir sessão recusaria toda conexão real, foi exatamente assim que a
  * primeira conexão do WhatsApp falhou, em 13/set.
  */
 export async function GET(req: Request) {
@@ -35,7 +35,7 @@ export async function GET(req: Request) {
   }
 
   /*
-   * Clicou em "Cancelar" na tela da Meta. Não é falha, é resposta — e mandar
+   * Clicou em "Cancelar" na tela da Meta. Não é falha, é resposta, e mandar
    * investigar uma decisão de alguém seria transformar escolha em defeito.
    */
   if (parametros.get('error')) {

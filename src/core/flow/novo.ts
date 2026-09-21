@@ -7,7 +7,7 @@ import { fluxoSchema, type Fluxo } from './schema'
  * leva a algum lugar. Começar de uma tela em branco garantiria que a primeira
  * coisa que a pessoa vê ao clicar em "Publicar" é uma lista de erros.
  *
- * Nada aqui é de cliente nenhum — é o esqueleto genérico. O que for específico
+ * Nada aqui é de cliente nenhum, é o esqueleto genérico. O que for específico
  * de um negócio entra editando, nunca em código.
  */
 export function fluxoNovo(): Fluxo {

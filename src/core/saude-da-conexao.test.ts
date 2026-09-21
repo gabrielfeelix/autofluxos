@@ -41,7 +41,7 @@ describe('saudePorValidade', () => {
 })
 
 describe('saudeDoWhatsApp', () => {
-  it('sem número nenhum, não está ligado — e isso não é defeito', () => {
+  it('sem número nenhum, não está ligado, e isso não é defeito', () => {
     expect(saudeDoWhatsApp([])).toBe('nao-ligada')
   })
 

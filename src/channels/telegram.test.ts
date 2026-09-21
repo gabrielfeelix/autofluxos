@@ -46,7 +46,7 @@ describe('o adaptador do Telegram', () => {
   })
 
   /**
-   * O campo obrigatório da Cloud API não existe aqui — e este adaptador nasceu
+   * O campo obrigatório da Cloud API não existe aqui, e este adaptador nasceu
    * ao lado do dela. Copiar e esquecer de tirar é o erro mais provável.
    */
   it('não manda o `messaging_product` da Cloud API', async () => {
@@ -157,7 +157,7 @@ describe('o adaptador do Telegram', () => {
 
   /**
    * O teto de `callback_data` é contado em bytes pelo Telegram, e estourá-lo
-   * faz a **mensagem inteira** ser recusada — não só o botão.
+   * faz a **mensagem inteira** ser recusada, não só o botão.
    */
   it('corta o callback_data por byte, sem partir caractere ao meio', async () => {
     const espiao = fingirFetch()
@@ -184,7 +184,7 @@ describe('o adaptador do Telegram', () => {
       legenda: 'olha',
     })
 
-    // Uma chamada só — o Instagram precisa de duas, o Telegram não.
+    // Uma chamada só, o Instagram precisa de duas, o Telegram não.
     expect(chamadas(espiao)).toHaveLength(1)
     expect(chamadas(espiao)[0]![0]).toContain('/sendPhoto')
     expect(corpos(espiao)[0]).toEqual({

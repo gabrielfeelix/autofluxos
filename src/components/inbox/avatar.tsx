@@ -3,7 +3,7 @@
  *
  * **Mora em arquivo próprio porque é usado dos dois lados da fronteira**: a
  * linha da fila (`components/inbox/fila.tsx`, cliente) e o cabeçalho da
- * conversa (`inbox/page.tsx`, servidor). Sem `'use client'` de propósito —
+ * conversa (`inbox/page.tsx`, servidor). Sem `'use client'` de propósito ,
  * não tem estado nem efeito, então serve aos dois sem obrigar ninguém a virar
  * componente de cliente.
  *
@@ -13,7 +13,7 @@
  *
  * **A Cloud API não expõe foto de perfil de contato.** O webhook entrega
  * `contacts[].profile` com só o nome; o único `profile_picture_url` que existe
- * é o do próprio negócio — o nosso lado, não o dela. Quem mostra foto de
+ * é o do próprio negócio, o nosso lado, não o dela. Quem mostra foto de
  * contato no mercado está rodando provedor não oficial por cima do WhatsApp
  * Web, que é o caminho que arrisca banir o número do cliente.
  *
@@ -29,7 +29,7 @@
  * decidir o que gerar, e classe montada em tempo de execução simplesmente não
  * sai no CSS. O sintoma seria um avatar transparente, sem erro nenhum.
  *
- * **Os tons são de tema claro** — fundo `50`, texto `700`. Eles eram `400/[0.14]`
+ * **Os tons são de tema claro**, fundo `50`, texto `700`. Eles eram `400/[0.14]`
  * com texto `200`, medida de fundo preto: sobre branco o texto claro sobre o
  * fundo claro dava menos de 2:1, e as iniciais sumiam. No escuro o par continua
  * legível porque a superfície do card escuro é cinza-azulada, não preta.
@@ -52,7 +52,7 @@ const SEM_NOME = 'border-strong bg-surface text-soft'
  * A mesma pessoa cai sempre na mesma cor.
  *
  * Soma dos códigos das letras, e nada mais esperto: a exigência é ser estável
- * entre a fila e o cabeçalho, e entre hoje e amanhã — não ser bem distribuída.
+ * entre a fila e o cabeçalho, e entre hoje e amanhã, não ser bem distribuída.
  * Duas pessoas dividindo cor não atrapalha ninguém; a mesma pessoa trocando de
  * cor a cada tela, sim.
  */

@@ -24,7 +24,7 @@ import { apagarDoCofre, guardarNoCofre, lerDoCofre } from '../cofre'
  * ---------------------------------------------------------------------------
  *
  * `ia_chave_ref` existe desde a `0001` e está vazia em toda conta. Ela aponta
- * para o Supabase Vault, como `connections.secret_id` — mesma mecânica, mesmas
+ * para o Supabase Vault, como `connections.secret_id`, mesma mecânica, mesmas
  * três RPC, agora em `server/cofre.ts`. Uma coluna de texto com a chave dentro
  * apareceria em todo `select *`, em todo backup e em todo log de erro.
  *
@@ -67,7 +67,7 @@ export async function comoEsta(clienteId: string): Promise<EstadoDaChave> {
  *
  * Guarda a nova **antes** de apagar a velha, e apaga a velha só depois de a
  * coluna já apontar para a nova. Na ordem inversa, uma falha no meio deixaria a
- * conta sem chave nenhuma — com a IA muda em produção e nada para restaurar.
+ * conta sem chave nenhuma, com a IA muda em produção e nada para restaurar.
  */
 export async function guardarChave(clienteId: string, chave: string): Promise<void> {
   const limpa = chave.trim()

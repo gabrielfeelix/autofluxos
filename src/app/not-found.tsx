@@ -4,7 +4,7 @@ import Link from 'next/link'
  * Endereço que não existe.
  *
  * Vale mais do que parece: os endereços do painel carregam id de cliente e de
- * fluxo, então "não encontrado" quase nunca é erro de digitação — é link velho
+ * fluxo, então "não encontrado" quase nunca é erro de digitação, é link velho
  * de algo que foi apagado. Dizer isso poupa a pessoa de procurar o que não
  * existe mais.
  */

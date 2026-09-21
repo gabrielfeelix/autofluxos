@@ -1,7 +1,7 @@
 /**
  * A decisão do pulso: a tela à vista está velha?
  *
- * Vive fora do componente para poder ser testada sem navegador — e ela merece
+ * Vive fora do componente para poder ser testada sem navegador, e ela merece
  * teste, porque já errou duas vezes.
  *
  * **Erro 1.** O componente guardava a última leitura num `useRef`. Como
@@ -9,7 +9,7 @@
  * "primeira leitura" e nada acontecia.
  *
  * **Erro 2.** A correção guardava "já pedi refresh para este carimbo" para não
- * repetir trabalho — e isso virou uma trava permanente: bastava UM refresh não
+ * repetir trabalho, e isso virou uma trava permanente: bastava UM refresh não
  * chegar até a tela para a comparação passar a devolver `false` para sempre. O
  * Inbox congelava de vez, que é pior do que o defeito original.
  *

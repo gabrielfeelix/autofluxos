@@ -51,7 +51,7 @@ export type EstadoDeConta = { erro?: string; email?: string; nome?: string; tele
  * existe.
  *
  * Diferenciar as duas transforma a tela de login numa lista de quem tem conta
- * aqui — e essa lista, num produto de agência, é a lista de clientes.
+ * aqui, e essa lista, num produto de agência, é a lista de clientes.
  */
 const CREDENCIAL_NAO_CONFERE = 'Credenciais não conferem. Verifique e tente de novo.'
 
@@ -70,7 +70,7 @@ function motivo(erro: unknown): string {
  * Esta ação já respondeu "credenciais não conferem" a uma senha correta, com o
  * `Set-Cookie` do login bem-sucedido na mesma resposta. O motivo: ela chamava
  * `sessaoAtual()` logo depois de `signInEmail`, e `sessaoAtual()` pergunta ao
- * Better Auth passando `headers()` — que no Next são os cabeçalhos **da
+ * Better Auth passando `headers()`, que no Next são os cabeçalhos **da
  * requisição que chegou**. O cookie novo é gravado por `cookies()`, e os dois
  * não são a mesma coisa: `headers()` continua contando a história de antes do
  * login. A sessão existia no banco e no navegador; só não existia no lugar onde
@@ -107,7 +107,7 @@ export async function acaoEntrar(
   } catch (erro) {
     // Quem está banido nem chega a autenticar: o plugin `admin` recusa dentro
     // do `signInEmail`. A conferência que existia aqui depois do login era
-    // código morto — e, sem distinguir o motivo, um acesso suspenso ficava
+    // código morto, e, sem distinguir o motivo, um acesso suspenso ficava
     // indistinguível de senha errada para quem o teve suspenso.
     if (ehBanimento(erro)) {
       return { erro: 'Este acesso está suspenso. Fale com quem administra o painel.', email }
@@ -146,12 +146,12 @@ export async function acaoSair() {
  *
  * **Por que existe uma porta de primeira execução:** o convite por e-mail
  * depende de SMTP, e SMTP é global ao projeto compartilhado com a Verandi (ver
- * BANCO-COMPARTILHADO.md) — ligar isso é decisão dos dois produtos, não desta
+ * BANCO-COMPARTILHADO.md), ligar isso é decisão dos dois produtos, não desta
  * frente. Sem convite, alguém precisa nascer administrador, e não existe
  * administrador para autorizar o primeiro.
  *
  * **Por que isso não é um buraco:** a porta fecha sozinha no instante em que o
- * primeiro usuário existe, e nunca mais abre — a pergunta que a destranca é
+ * primeiro usuário existe, e nunca mais abre, a pergunta que a destranca é
  * "não há ninguém cadastrado?", e ela só tem uma resposta afirmativa na vida do
  * sistema. Depois disso, só administrador cria gente, pela área de
  * administração. Enquanto a senha única existir, ela também protege o caminho
@@ -186,13 +186,12 @@ export async function acaoCriarPrimeiroAdministrador(
    * A porta de primeira execução não tem mais um segundo cadeado.
    *
    * Ela era protegida pela senha única do time, que saiu junto com a rota
-   * `/login`. O que a fecha agora é o próprio tempo: a pergunta que a destranca
-   * — "não há ninguém?" — só tem resposta afirmativa **uma vez na vida do
+   * `/login`. O que a fecha agora é o próprio tempo: a pergunta que a destranca, "não há ninguém?", só tem resposta afirmativa **uma vez na vida do
    * sistema**, e em produção ela já foi respondida.
    *
    * A janela existe entre subir um ambiente novo e cadastrar o primeiro
    * administrador. Quem sobe o ambiente é quem cadastra, e o intervalo é de
-   * minutos — mas está escrito aqui para ninguém descobrir sozinho depois, e
+   * minutos, mas está escrito aqui para ninguém descobrir sozinho depois, e
    * para quem for subir um ambiente novo saber que esse é o primeiro passo.
    */
 
@@ -205,7 +204,7 @@ export async function acaoCriarPrimeiroAdministrador(
      * O papel de plataforma entra por SQL, e é o único lugar do código que faz
      * isso.
      *
-     * `setRole` do plugin `admin` exige uma sessão de administrador — que é
+     * `setRole` do plugin `admin` exige uma sessão de administrador, que é
      * exatamente o que ainda não existe quando o primeiro está nascendo. Fora
      * desta função, o papel sempre passa pelo plugin.
      */
@@ -271,7 +270,7 @@ export async function acaoTrocarDeCompanhia(contaId: string) {
 }
 
 /**
- * Cria uma companhia nova para quem está logado — o `+ Adicionar nova
+ * Cria uma companhia nova para quem está logado, o `+ Adicionar nova
  * companhia` do print 24.
  *
  * A forma do retorno é a que o `ModalFormulario` entende: devolver
@@ -341,12 +340,12 @@ function sugerirSlug(nome: string): string {
 // ---------------------------------------------------------------------------
 
 /**
- * "Entrar como" — o administrador abre a conta do cliente.
+ * "Entrar como", o administrador abre a conta do cliente.
  *
  * O plugin cria uma **sessão nova**, marcada com `impersonatedBy`, e a do
  * administrador continua guardada para voltar. Prazo de uma hora, definido em
  * `auth.ts`. Nada disso pede a senha de ninguém, e nada disso acontece sem
- * deixar linha na auditoria — que é append-only por construção (0021).
+ * deixar linha na auditoria, que é append-only por construção (0021).
  */
 export async function acaoEntrarComo(usuarioId: string) {
   const sessao = await exigirAdminDaPlataforma()
@@ -408,7 +407,7 @@ function ehPapelDeConta(valor: string): valor is PapelDeConta {
   return valor === 'owner' || valor === 'admin' || valor === 'member'
 }
 
-/** Liga um usuário a uma conta — é como cliente antigo ganha dono. */
+/** Liga um usuário a uma conta, é como cliente antigo ganha dono. */
 export async function acaoVincularMembro(formData: FormData) {
   const sessao = await exigirAdminDaPlataforma()
 
@@ -430,7 +429,7 @@ export async function acaoVincularMembro(formData: FormData) {
    *
    * O plugin de organização recusa membro repetido, e o erro dele sobe como
    * erro de Server Component: tela genérica, React #441, sem dizer nada a quem
-   * clicou. Só que o vínculo **já foi gravado na primeira tentativa** — o
+   * clicou. Só que o vínculo **já foi gravado na primeira tentativa**, o
    * segundo clique é que quebrava, e quebrava depois de a coisa ter dado certo.
    *
    * O papel diferente vira troca de papel, porque é o que a pessoa pediu ao
@@ -460,7 +459,7 @@ export async function acaoVincularMembro(formData: FormData) {
       /*
        * A leitura acima não fecha a janela sozinha: dois cliques rápidos leem
        * "não é membro" antes de qualquer um dos dois escrever. O que decide não
-       * é o texto do erro do plugin — que muda de versão para versão — e sim o
+       * é o texto do erro do plugin, que muda de versão para versão, e sim o
        * banco depois dele. Se o vínculo está lá, alguém o criou e o pedido foi
        * atendido; se não está, o erro é de verdade e precisa subir.
        */
@@ -495,7 +494,7 @@ export async function acaoDefinirPapelDePlataforma(formData: FormData) {
   if (usuarioId === '' || (papel !== 'admin' && papel !== 'user')) return
 
   // Tirar o próprio papel deixaria a plataforma sem ninguém que administre se
-  // ele for o único — e o caminho de volta exigiria SQL na mão.
+  // ele for o único, e o caminho de volta exigiria SQL na mão.
   if (usuarioId === sessao.usuario.id) return
 
   const alvo = await acharUsuario(usuarioId)
@@ -581,14 +580,14 @@ export async function acaoSuspenderAcesso(formData: FormData) {
 }
 
 /**
- * Disponível ou ausente — a presença de quem atende.
+ * Disponível ou ausente, a presença de quem atende.
  *
  * **Não é enfeite.** É o que o Inbox usa para saber a quem oferecer uma
  * conversa: atribuir para quem está de férias é o mesmo que não atribuir, e
  * pior, porque agora há um nome ao lado dando a impressão de que alguém está
  * cuidando.
  *
- * Cada um muda só a própria — nunca a de outro. Marcar alguém como disponível
+ * Cada um muda só a própria, nunca a de outro. Marcar alguém como disponível
  * para ele receber conversa é o tipo de gentileza que acaba com lead sem
  * resposta.
  */
@@ -629,13 +628,12 @@ export async function acaoEstragoDaConta(contaId: string): Promise<EstragoDaExcl
  * destino.** Aquela é do próprio cliente nos ajustes dele, guardada por
  * `exigirAcessoAoCliente`, e termina redirecionando para `/painel`. Esta é de
  * quem administra a plataforma, guardada por `exigirAdminDaPlataforma`, e
- * precisa devolver o controle para a lista sem sair da tela — quem apaga daqui
+ * precisa devolver o controle para a lista sem sair da tela, quem apaga daqui
  * costuma apagar três de uma vez (as contas de teste), e um redirect por
  * exclusão transformaria isso em três viagens de volta.
  *
  * O cascade da 0001 em diante leva leads, conversas, fluxos, credenciais e
- * membros; a auditoria fica, com `conta_id` nulo e o nome guardado no registro
- * — log que some junto com o que ele registra não prova nada.
+ * membros; a auditoria fica, com `conta_id` nulo e o nome guardado no registro, log que some junto com o que ele registra não prova nada.
  */
 export async function acaoApagarConta(contaId: string): Promise<{ ok: boolean; erro?: string }> {
   const sessao = await exigirAdminDaPlataforma()
@@ -688,7 +686,7 @@ function ehUuid(valor: string): boolean {
  * **Isto abre uma porta que estava fechada de propósito**, e vale dizer por quê
  * ela estava. Até aqui a conta de um cliente nascia junto com a venda: um
  * administrador criava, ligava o número de WhatsApp e entregava pronta. O
- * cadastro aberto troca esse modelo pelo de produto — a pessoa chega pelo site,
+ * cadastro aberto troca esse modelo pelo de produto, a pessoa chega pelo site,
  * cria a empresa dela e conecta o próprio número.
  *
  * A diferença com `acaoCriarPrimeiroAdministrador` é o que **não** acontece
@@ -699,7 +697,7 @@ function ehUuid(valor: string): boolean {
  *
  * **Não há confirmação por e-mail**, e isso é decisão registrada, não descuido.
  * Verificar exige SMTP, que é global ao projeto compartilhado com a Verandi (ver
- * BANCO-COMPARTILHADO.md) — uma dependência de infraestrutura inteira para um
+ * BANCO-COMPARTILHADO.md), uma dependência de infraestrutura inteira para um
  * produto que ainda está sendo testado. O campo existe e a verificação entra
  * depois; enquanto isso `emailVerified` fica falso e ninguém depende dele.
  *
@@ -742,8 +740,8 @@ export async function acaoCadastrarSe(
    * Entrar logo depois, na mesma ação.
    *
    * Mandar para a tela de login quem acabou de digitar e-mail e senha é pedir
-   * as mesmas duas coisas duas vezes seguidas. E o passo seguinte — criar a
-   * empresa — exige sessão: sem ela o primeiro acesso começaria deslogado.
+   * as mesmas duas coisas duas vezes seguidas. E o passo seguinte, criar a
+   * empresa, exige sessão: sem ela o primeiro acesso começaria deslogado.
    */
   await autenticacao().api.signInEmail({ body: { email, password: senha }, headers: cabecalhos })
 
@@ -764,14 +762,14 @@ export async function acaoCadastrarSe(
  * O primeiro acesso: a empresa nasce aqui.
  *
  * Quem se cadastra sozinho chega sem companhia nenhuma, e uma conta sem empresa
- * não mostra nada — é a tela vazia de `/contas`, que hoje diz "fale com quem
+ * não mostra nada, é a tela vazia de `/contas`, que hoje diz "fale com quem
  * administra". Para quem veio pelo cadastro aberto essa frase é uma porta
  * fechada na cara, então esta ação existe para que o caminho não tenha buraco:
  * cadastrou, criou a empresa, entrou.
  *
  * **Reusa `createOrganization` do plugin em vez de inserir em `clients`.** É ele
  * que grava a linha em `af_membros` com `creatorRole: 'owner'` (ver `auth.ts`),
- * e é essa linha — não a da `clients` — que faz `papelNaConta` responder e a
+ * e é essa linha, não a da `clients`, que faz `papelNaConta` responder e a
  * pessoa enxergar a própria empresa. Um insert direto criaria a empresa **sem
  * dono**, visível para ninguém.
  *
@@ -817,7 +815,7 @@ export async function acaoPrimeiroAcesso(
      * derruba o primeiro acesso.
      *
      * Quem responde pela empresa é quem acabou de criá-la, então `responsavel`
-     * e `email` saem da sessão em vez de serem perguntados de novo — a pessoa
+     * e `email` saem da sessão em vez de serem perguntados de novo, a pessoa
      * digitou os dois na tela anterior.
      */
     await atualizarCadastro(id, {

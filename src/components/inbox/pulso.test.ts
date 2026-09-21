@@ -15,8 +15,8 @@ describe('quando o Inbox precisa se atualizar', () => {
 
   /*
    * A trava que congelou o Inbox: a versão anterior lembrava "já pedi refresh
-   * para T2" e parava de pedir. Se esse refresh não chegasse à tela — e basta
-   * uma vez —, a comparação devolvia `false` para sempre.
+   * para T2" e parava de pedir. Se esse refresh não chegasse à tela, e basta
+   * uma vez , a comparação devolvia `false` para sempre.
    *
    * Insistir é o comportamento certo: enquanto a tela estiver velha, ela
    * precisa ser atualizada, não importa quantas vezes já tentamos.

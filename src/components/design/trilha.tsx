@@ -1,12 +1,12 @@
 import Link from 'next/link'
 
 /**
- * Onde você está — a trilha acima do título.
+ * Onde você está, a trilha acima do título.
  *
  * A barra lateral acende "Configurações" para **nove** telas diferentes
  * (WhatsApp, Instagram, chaves de API, contexto, acervo, equipe, etiquetas,
  * horário, respostas rápidas). Isso responde "em que seção estou", e nenhuma
- * delas respondia "em qual das nove" — o título dizia "Número do WhatsApp" sem
+ * delas respondia "em qual das nove", o título dizia "Número do WhatsApp" sem
  * nada ligando aquilo a Configurações, e o caminho de volta era o item já aceso
  * na lateral, que não parece um botão de voltar porque não é.
  *
@@ -14,7 +14,7 @@ import Link from 'next/link'
  * link para o lugar onde já se está é um clique que não faz nada.
  *
  * Existe como componente e não como texto solto em cada tela porque nove cópias
- * de uma trilha divergem — em separador, em tamanho, e sobretudo em quem
+ * de uma trilha divergem, em separador, em tamanho, e sobretudo em quem
  * lembrou de atualizar quando uma seção mudou de nome. `Configurações` já foi
  * `Ajustes` uma vez.
  */
@@ -45,7 +45,7 @@ export function Trilha({
             ) : (
               <span
                 // `aria-current` diz ao leitor de tela que este é o lugar
-                // atual — sem ele a trilha vira uma lista de palavras soltas.
+                // atual, sem ele a trilha vira uma lista de palavras soltas.
                 aria-current={ultimo ? 'page' : undefined}
                 className={ultimo ? 'text-[11.5px] font-semibold text-muted' : 'text-[11.5px] text-dim'}
               >

@@ -1,7 +1,7 @@
 import { telefoneCanonico } from './contatos/telefone'
 
 /**
- * O formulário nativo da Meta — o lead que nunca abriu conversa.
+ * O formulário nativo da Meta, o lead que nunca abriu conversa.
  *
  * ---------------------------------------------------------------------------
  * O que muda em relação ao CTWA
@@ -9,7 +9,7 @@ import { telefoneCanonico } from './contatos/telefone'
  *
  * No clique-pra-WhatsApp a pessoa **escreve**: chega mensagem, e todo o resto
  * do produto já sabe o que fazer com ela. No Lead Ads ela preenche um
- * formulário dentro do Facebook e **nunca fala com ninguém** — o que chega é um
+ * formulário dentro do Facebook e **nunca fala com ninguém**, o que chega é um
  * registro, não uma conversa.
  *
  * Isso inverte quem começa. Aqui o lead existe antes de qualquer mensagem, e o
@@ -25,7 +25,7 @@ import { telefoneCanonico } from './contatos/telefone'
  * identidade deste sistema inteiro.
  *
  * Logo: formulário sem telefone não tem onde entrar. Não é limitação a
- * contornar em código — é o modelo dizendo que um lead sem como falar com ele
+ * contornar em código, é o modelo dizendo que um lead sem como falar com ele
  * não é lead aqui, é linha de planilha. O caminho certo é o formulário do
  * cliente pedir telefone, e este módulo recusa o resto com motivo legível em
  * vez de inventar identidade.
@@ -50,7 +50,7 @@ export type LeadRecusado = { leadId: string; motivo: string }
 /**
  * As chaves que a Meta usa nos campos pré-definidos.
  *
- * Campo customizado tem a chave que o anunciante escolheu — `qual_seu_whatsapp`,
+ * Campo customizado tem a chave que o anunciante escolheu, `qual_seu_whatsapp`,
  * `telefone_de_contato`, o que ele digitou na hora. Por isso a busca abaixo é
  * por *conter*, e não por igualdade: cobrir só as chaves oficiais deixaria de
  * fora justamente os formulários feitos à mão, que são a maioria no Brasil.
@@ -117,7 +117,7 @@ export function lerLeadDoFormulario(entrada: {
   if (telefone === null) {
     /*
      * A recusa é informativa de propósito: o dono precisa saber que o
-     * formulário do cliente não pede telefone, porque a correção é lá — e sem
+     * formulário do cliente não pede telefone, porque a correção é lá, e sem
      * esse motivo a queixa chega como "o lead não entrou" e ninguém sabe por quê.
      */
     return {
@@ -145,7 +145,7 @@ export function lerLeadDoFormulario(entrada: {
  * Os avisos de `leadgen` que vieram num POST do webhook.
  *
  * **`changes` é lista, e o exemplo oficial da Meta traz dois leads no mesmo
- * POST.** Handler que lê `changes[0]` perde lead em rajada — que é exatamente
+ * POST.** Handler que lê `changes[0]` perde lead em rajada, que é exatamente
  * quando o anúncio está performando.
  */
 export type AvisoDeLead = { leadgenId: string; formId: string; adId: string; pageId: string }

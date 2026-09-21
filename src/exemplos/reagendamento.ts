@@ -2,18 +2,18 @@ import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
 import { acharPreset } from '@/core/presets'
 
 /**
- * Reagendar uma reposição — o fluxo que quem opera descreveu falando.
+ * Reagendar uma reposição, o fluxo que quem opera descreveu falando.
  *
  * Ele existe porque a descrição veio pronta, e em ordem: *"no início do fluxo
  * ele identifica o número da pessoa para poder citar que essa pessoa é aluno, e
  * logo em seguida tem que citar dentro da mensagem o nome desse aluno. Então se
  * dentro da mensagem tivesse como integrar o serviço externo, que ele vai pegar
  * da Verandi as informações, retornar como variável, e depois citar 'irei
- * auxiliar reagendar sua aula' — ou seja, ele já identificou o nome do aluno, o
+ * auxiliar reagendar sua aula', ou seja, ele já identificou o nome do aluno, o
  * número"*.
  *
  * **A diferença para o modelo de agendar é o que ele já sabe antes de
- * perguntar.** Agendar começa numa pergunta; reagendar começa numa afirmação —
+ * perguntar.** Agendar começa numa pergunta; reagendar começa numa afirmação ,
  * quem é a pessoa, e quantas aulas ela tem para repor. Perguntar "quantas aulas
  * você tem para repor?" seria pedir à aluna um número que a agenda já tem, e
  * foi exatamente isso que quem opera recusou: *"não acho que deveria existir
@@ -26,7 +26,7 @@ import { acharPreset } from '@/core/presets'
  * 1. **Duas chamadas antes da primeira palavra.** `verandi-quem-e` traz o id, e
  *    `verandi-minha-agenda` traz o nome, as próximas e o número de reposições.
  *    A saudação só sai depois das duas, porque uma saudação que chega antes do
- *    dado vira "Olá {{nome}}" com o nome vazio — que foi o defeito relatado.
+ *    dado vira "Olá {{nome}}" com o nome vazio, que foi o defeito relatado.
  * 2. **Zero reposições é conversa, não erro.** Quem não tem nada para repor
  *    ouve isso e recebe a oferta de marcar uma aula avulsa, em vez de cair num
  *    menu vazio.
@@ -41,15 +41,15 @@ import { acharPreset } from '@/core/presets'
  *    os dados na tela não volta em uma hora perguntando se deu certo.
  *
  * O que ele **não** faz, e por decisão registrada em `docs/PLANO-AGENDA.md`:
- * não desmarca a aula antiga sozinho. A reposição já está em aberto na agenda —
- * é ela que está sendo remarcada —, e apagar participação por conta própria é o
+ * não desmarca a aula antiga sozinho. A reposição já está em aberto na agenda ,
+ * é ela que está sendo remarcada , e apagar participação por conta própria é o
  * tipo de escrita que não se desfaz pelo WhatsApp.
  */
 
 /** O bloco de API já preenchido por um preset, para o modelo não repetir a URL. */
 function comPreset(id: string, no: { id: string; position: { x: number; y: number } }) {
   const preset = acharPreset(id)
-  if (!preset) throw new Error(`preset ${id} sumiu — o modelo de reagendamento depende dele`)
+  if (!preset) throw new Error(`preset ${id} sumiu, o modelo de reagendamento depende dele`)
   return { ...no, type: 'http', data: { ...preset.dados } }
 }
 
@@ -58,7 +58,7 @@ const em = (x: number, y: number) => ({ x: x * 320, y: y * 190 })
 export const reagendamento: Fluxo = fluxoSchema.parse({
   inicio: 'reconhecer',
   nodes: [
-    // 1 — quem é, e o que a agenda sabe dela. Antes de qualquer palavra.
+    // 1, quem é, e o que a agenda sabe dela. Antes de qualquer palavra.
     comPreset('verandi-quem-e', { id: 'reconhecer', position: em(0, 0) }),
     {
       id: 'ja-e-aluno',
@@ -67,7 +67,7 @@ export const reagendamento: Fluxo = fluxoSchema.parse({
       data: { variavel: 'encontrado', operador: 'igual', valor: '1' },
     },
 
-    // A ficha: nome, próximas e — o que motivou este fluxo — quantas reposições.
+    // A ficha: nome, próximas e, o que motivou este fluxo, quantas reposições.
     comPreset('verandi-minha-agenda', { id: 'ficha', position: em(2, 0) }),
 
     /*
@@ -99,7 +99,7 @@ export const reagendamento: Fluxo = fluxoSchema.parse({
       },
     },
 
-    // 2 — nenhuma reposição? A conversa muda de assunto, e não morre.
+    // 2, nenhuma reposição? A conversa muda de assunto, e não morre.
     {
       id: 'tem-reposicao',
       type: 'condicao',
@@ -122,16 +122,16 @@ export const reagendamento: Fluxo = fluxoSchema.parse({
     },
 
     /*
-     * 3 — mais de uma reposição sai da automação.
+     * 3, mais de uma reposição sai da automação.
      *
      * O bot marca uma. Com duas ou mais, escolher qual remarcar primeiro é uma
-     * conversa com gente — e prometer resolver as duas e resolver só uma é o
+     * conversa com gente, e prometer resolver as duas e resolver só uma é o
      * pior desfecho possível.
      */
     /*
      * "Mais de uma" escrito como "não é exatamente uma".
      *
-     * A condição compara texto, e não número — não existe `maior` aqui, e
+     * A condição compara texto, e não número, não existe `maior` aqui, e
      * inventar um operador numérico para este caso seria criar uma linguagem de
      * comparação inteira para manter e explicar. O ramo do zero já saiu acima,
      * então neste ponto `diferente de 1` só pode ser dois ou mais, e a leitura
@@ -144,14 +144,14 @@ export const reagendamento: Fluxo = fluxoSchema.parse({
       data: { variavel: 'quantas_reposicoes', operador: 'diferente', valor: '1' },
     },
 
-    // 4 — uma só: o bot resolve inteiro. Para quando?
+    // 4, uma só: o bot resolve inteiro. Para quando?
     {
       id: 'qual-dia',
       type: 'pergunta',
       position: em(6, 0),
       data: {
         texto:
-          'Vamos remarcar então. Para quando você quer?\nMe manda a data — por exemplo: *21/08/2026*',
+          'Vamos remarcar então. Para quando você quer?\nMe manda a data, por exemplo: *21/08/2026*',
         salvarEm: 'dia_escrito',
         salvarPadraoEm: 'dia',
         formato: 'data',
@@ -218,7 +218,7 @@ export const reagendamento: Fluxo = fluxoSchema.parse({
     },
 
     /*
-     * 5 — a confirmação antes de gravar.
+     * 5, a confirmação antes de gravar.
      *
      * *"Pergunta sim ou não com variável de reposição."* Ela existe porque o
      * passo seguinte **escreve na agenda de verdade**, e escrita que a pessoa
@@ -241,7 +241,7 @@ export const reagendamento: Fluxo = fluxoSchema.parse({
 
     comPreset('verandi-marcar', { id: 'marcar', position: em(11, 0) }),
 
-    // 6 — "data, horário, nome, e pronto, acabou."
+    // 6, "data, horário, nome, e pronto, acabou."
     {
       id: 'confirmado',
       type: 'mensagem',
@@ -265,7 +265,7 @@ export const reagendamento: Fluxo = fluxoSchema.parse({
      * A saída para gente, e o motivo entra nela.
      *
      * `{{quantas_reposicoes}}` no motivo é o que faz a fila do Inbox dizer
-     * "3 reposições" antes de alguém abrir a conversa — quem pega já sabe se é
+     * "3 reposições" antes de alguém abrir a conversa, quem pega já sabe se é
      * caso de dois minutos ou de dez.
      */
     {
@@ -273,7 +273,7 @@ export const reagendamento: Fluxo = fluxoSchema.parse({
       type: 'handoff',
       position: em(12, 1.4),
       data: {
-        motivo: 'reagendar {{quantas_reposicoes}} reposição(ões) — {{nome_na_agenda}}',
+        motivo: 'reagendar {{quantas_reposicoes}} reposição(ões), {{nome_na_agenda}}',
         mensagem:
           'Vou chamar alguém da recepção para acertar isso com você. Só um instante! 🙌',
       },
@@ -285,7 +285,7 @@ export const reagendamento: Fluxo = fluxoSchema.parse({
       type: 'handoff',
       position: em(2, 1.6),
       data: {
-        motivo: 'reagendar — telefone não encontrado na agenda',
+        motivo: 'reagendar, telefone não encontrado na agenda',
         mensagem:
           'Oi! 👋 Não te encontrei aqui na agenda pelo seu número. Vou chamar a recepção para te ajudar. 🙌',
       },

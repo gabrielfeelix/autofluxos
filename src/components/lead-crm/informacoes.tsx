@@ -8,7 +8,7 @@ import { IconeDaSecao, iconeFicha } from './icones'
  * Quem é a pessoa, em fatos datados.
  *
  * **Tudo aqui já estava no banco e não aparecia em lugar nenhum da ficha.** A
- * tela tinha "o que o fluxo coletou" — que é o que o bot perguntou — e mais
+ * tela tinha "o que o fluxo coletou", que é o que o bot perguntou, e mais
  * nada sobre a pessoa: nem desde quando ela é nossa, nem quando falou pela
  * última vez, nem em que pé está a conversa dela. Para ver o telefone era
  * preciso ler o cabeçalho; para saber se a conversa estava adiada, abrir o
@@ -21,7 +21,7 @@ import { IconeDaSecao, iconeFicha } from './icones'
  *
  * O que **não** está aqui, e por quê: consentimento de marketing, aberturas e
  * cliques de campanha são de quem manda e-mail em massa, e este produto não
- * manda. Empresa e cargo exigiriam tabela nova — inventar campo vazio na tela é
+ * manda. Empresa e cargo exigiriam tabela nova, inventar campo vazio na tela é
  * como um CRM começa a mentir.
  */
 export function Informacoes({

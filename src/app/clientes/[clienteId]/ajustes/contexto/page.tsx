@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic'
 /**
  * O que a IA pode dizer sobre este negócio.
  *
- * Esta tela não é acessório do bloco de IA — ela **é** o bloco de IA. O prompt
+ * Esta tela não é acessório do bloco de IA, ela **é** o bloco de IA. O prompt
  * manda responder `não sei` para tudo que não estiver escrito aqui, então com
  * ela vazia a IA responde "não sei" a toda pergunta e a conversa vai para uma
  * pessoa sempre. Falha fechado, que é o certo, mas o efeito é um bot que parece
@@ -34,7 +34,7 @@ equipe e entregáveis. Casamento é orçamento à parte.
 
 Horário de atendimento: de segunda a sexta, das 9h às 18h.
 
-O que NÃO responder: prazo fechado, desconto, e disponibilidade de data — isso
+O que NÃO responder: prazo fechado, desconto, e disponibilidade de data, isso
 depende de agenda e quem confirma é uma pessoa.`
 
 export default async function Pagina({ params }: { params: Promise<{ clienteId: string }> }) {
@@ -60,12 +60,12 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           É a <strong className="text-soft">única fonte de verdade</strong> do bloco de IA. Ela
           responde só com o que estiver escrito aqui; para qualquer outra coisa, passa a conversa
           para uma pessoa. Escreva como você explicaria o negócio para alguém no primeiro dia de
-          trabalho — incluindo o que ela <em>não</em> deve responder.
+          trabalho, incluindo o que ela <em>não</em> deve responder.
         </p>
 
         {vazio && (
           <p className="mb-5 rounded-[11px] border border-amber-300/25 bg-amber-300/[0.08] px-4 py-3 text-[12.5px] leading-5 text-aviso">
-            Está vazio. Enquanto ficar assim, um fluxo com bloco de IA não publica — ele responderia
+            Está vazio. Enquanto ficar assim, um fluxo com bloco de IA não publica, ele responderia
             &quot;não sei&quot; a tudo.
           </p>
         )}

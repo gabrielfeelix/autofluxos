@@ -21,13 +21,13 @@ import {
 import { SecaoDepoisDoFluxo, SecaoDuvidas } from '@/components/ajuda/conteudo-duvidas'
 
 /**
- * A Ajuda — uma página só, para varrer com o olho.
+ * A Ajuda, uma página só, para varrer com o olho.
  *
  * **Não é um site de documentação com uma página por assunto.** Quem abre isto
  * está travado no meio de um desenho, com a aba do editor aberta ao lado: o que
  * resolve é `Ctrl+F` numa página inteira, não navegar por três níveis de menu
  * atrás do parágrafo certo. O índice à esquerda são âncoras, e o endereço de
- * cada seção é estável — dá para mandar `/ajuda#datas` para alguém.
+ * cada seção é estável, dá para mandar `/ajuda#datas` para alguém.
  *
  * **Servidor, e sem JavaScript nenhum.** Sanfona é `<details>`, navegação é
  * `<a href="#…">`. Uma página de socorro que depende de um bundle carregar é
@@ -37,7 +37,7 @@ import { SecaoDepoisDoFluxo, SecaoDuvidas } from '@/components/ajuda/conteudo-du
  * fala de contas, credenciais e do sistema do cliente pelo nome.
  */
 export const metadata: Metadata = {
-  title: 'Ajuda — AutoFluxos',
+  title: 'Ajuda, AutoFluxos',
   description:
     'Como desenhar automações de WhatsApp, fazer o bot entender datas e ligar a agenda da Verandi.',
 }
@@ -112,7 +112,7 @@ export default function Pagina() {
 
           <footer className="border-t border-line pt-8 text-[12.5px] leading-[1.7] text-dim">
             <p>
-              Faltou alguma coisa aqui? Fale com a 4YU — esta página cresce com a pergunta que você
+              Faltou alguma coisa aqui? Fale com a 4YU, esta página cresce com a pergunta que você
               não achou.
             </p>
             <p className="mt-2 font-mono text-[10.5px] text-dim">
@@ -130,7 +130,7 @@ export default function Pagina() {
  *
  * **É a tese do produto inteiro numa tela**, e por isso ela é o cabeçalho em vez
  * de um número grande com um rótulo pequeno. Quem abre a Ajuda travado precisa
- * primeiro reconhecer o próprio problema no desenho — e o problema quase sempre
+ * primeiro reconhecer o próprio problema no desenho, e o problema quase sempre
  * é este: uma conversa que marca horário sozinha.
  */
 function Capa() {
@@ -150,7 +150,7 @@ function Capa() {
           </h1>
           <p className="mt-4 max-w-[46ch] text-[15px] leading-[1.65] text-soft">
             É isto que você está montando. Nesta página: como o bot decide o que responder, como
-            fazê-lo entender uma data, e como ligar a automação na agenda da Verandi — com as
+            fazê-lo entender uma data, e como ligar a automação na agenda da Verandi, com as
             armadilhas que só se descobre errando.
           </p>
           <div className="mt-7 flex flex-wrap gap-2">
@@ -201,7 +201,7 @@ function Capa() {
  * O índice fica **grudado na tela** no desktop e some no celular.
  *
  * Some porque um índice de quatorze itens antes do primeiro parágrafo é uma tela
- * inteira de links num aparelho de 390px — quem chegou pelo `?` do cabeçalho
+ * inteira de links num aparelho de 390px, quem chegou pelo `?` do cabeçalho
  * quer ler, não escolher. Os três atalhos da capa cobrem o que se procura com
  * pressa, e o resto se acha rolando.
  */

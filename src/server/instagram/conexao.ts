@@ -2,18 +2,18 @@ import 'server-only'
 import { z } from 'zod'
 
 /**
- * Ligar uma conta do Instagram ao AutoFluxos — o Business Login da Meta.
+ * Ligar uma conta do Instagram ao AutoFluxos, o Business Login da Meta.
  *
  * ---------------------------------------------------------------------------
  * Três hosts diferentes, e trocar um pelo outro dá erro que não explica nada
  * ---------------------------------------------------------------------------
  *
- * - `www.instagram.com/oauth/authorize` — a tela que o dono do perfil vê.
- * - `api.instagram.com/oauth/access_token` — troca o código pelo token curto.
+ * - `www.instagram.com/oauth/authorize`, a tela que o dono do perfil vê.
+ * - `api.instagram.com/oauth/access_token`, troca o código pelo token curto.
  *   **POST, com corpo de formulário.** É o único ponto de todo o produto que
  *   não fala JSON com a Meta, e mandar JSON aqui devolve um erro de parâmetro
  *   ausente que parece problema de permissão.
- * - `graph.instagram.com` — o resto: token longo, renovação, e as mensagens.
+ * - `graph.instagram.com`, o resto: token longo, renovação, e as mensagens.
  *
  * ---------------------------------------------------------------------------
  * A escada de tokens, e por que ela não pode ser pulada
@@ -24,7 +24,7 @@ import { z } from 'zod'
  * Guardar o curto e seguir a vida é o erro que só aparece uma hora depois, com
  * a conta parando de responder sem ninguém ter mexido em nada.
  *
- * O longo se renova enquanto está vivo; vencido, só refazendo o OAuth — o que
+ * O longo se renova enquanto está vivo; vencido, só refazendo o OAuth, o que
  * exige o dono do perfil na frente da tela. Por isso `channels.token_expira_em`
  * existe: para o aviso chegar antes, e não pelo cliente reclamando.
  */
@@ -35,7 +35,7 @@ const VERSAO_PADRAO = 'v25.0'
 /**
  * O que pedimos ao dono do perfil.
  *
- * `instagram_business_basic` é obrigatório junto do resto — a Meta recusa o
+ * `instagram_business_basic` é obrigatório junto do resto, a Meta recusa o
  * pedido sem ele. `..._manage_messages` é o que permite ler e responder
  * direct, e é o que depende do app review.
  *
@@ -79,7 +79,7 @@ export function instagramConfigurado(): boolean {
  * autorizar.
  *
  * **Tem que bater byte a byte com o que está cadastrado no painel da Meta e com
- * o que foi mandado no `authorize`** — as três cópias, ou a troca do código
+ * o que foi mandado no `authorize`**, as três cópias, ou a troca do código
  * falha com "redirect_uri mismatch". Por isso ele é montado num lugar só.
  */
 export function enderecoDeRetorno(origem: string): string {
@@ -155,7 +155,7 @@ async function pedir(url: string, init?: RequestInit): Promise<unknown> {
 /**
  * O caminho inteiro: código → token curto → token longo → quem é a conta.
  *
- * Uma função só porque os quatro passos não fazem sentido separados — parar no
+ * Uma função só porque os quatro passos não fazem sentido separados, parar no
  * meio deixa a conta ligada pela metade, e o código do redirect já foi gasto.
  */
 export async function trocarCodigoPorConta(opcoes: {
@@ -197,7 +197,7 @@ export async function trocarCodigoPorConta(opcoes: {
    *
    * **O `user_id` daqui é o identificador que vale, e não o `user_id` da troca
    * do código.** Os dois existem, são parecidos e não são iguais: o da troca é
-   * um número com escopo do app, e o de `/me` é o ID da conta profissional — o
+   * um número com escopo do app, e o de `/me` é o ID da conta profissional, o
    * mesmo que o painel da Meta mostra embaixo do @ e o mesmo que chega em
    * `recipient.id` no webhook do Direct. Guardar o errado faz a conta aparecer
    * conectada, o webhook chegar, e a mensagem não achar canal nenhum.
@@ -231,7 +231,7 @@ export async function trocarCodigoPorConta(opcoes: {
  * Renova o token longo antes de ele vencer.
  *
  * Só funciona com token **vivo** e com pelo menos 24h de idade. Vencido, não há
- * renovação: é refazer o OAuth, com o dono do perfil na frente da tela — que é
+ * renovação: é refazer o OAuth, com o dono do perfil na frente da tela, que é
  * o motivo de a validade ser guardada e vigiada.
  */
 export async function renovarToken(token: string): Promise<{ token: string; expiraEm: Date }> {
@@ -248,7 +248,7 @@ export async function renovarToken(token: string): Promise<{ token: string; expi
 const assinaturaSchema = z.object({ success: z.boolean().optional() })
 
 /**
- * Inscreve a conta no campo `messages` do webhook — o Step 3 da doc da Meta.
+ * Inscreve a conta no campo `messages` do webhook, o Step 3 da doc da Meta.
  *
  * **Sem isto a conta conecta e nunca recebe nada.** Autorizar no OAuth dá o
  * token; ele não diz à Meta que queremos os eventos daquela conta. São duas
@@ -256,7 +256,7 @@ const assinaturaSchema = z.object({ success: z.boolean().optional() })
  * tela, o direct sai do celular, e o Inbox fica vazio para sempre.
  *
  * A inscrição da nossa conta de teste tinha sido feita **na mão**, pelo toggle
- * do painel da Meta — que só alcança conta adicionada lá. Toda conta de cliente
+ * do painel da Meta, que só alcança conta adicionada lá. Toda conta de cliente
  * que entrasse pelo OAuth cairia no mesmo buraco, e o buraco só apareceria
  * depois da aprovação, com cliente de verdade do outro lado.
  *
@@ -284,8 +284,8 @@ export async function assinarMensagens(opcoes: {
 
   /*
    * A Meta responde 200 com `{"success": false}` quando recusa por permissão.
-   * Sem esta linha, o caso mais provável de falha — a permissão de mensagens
-   * ainda não liberada para aquela conta — passaria por sucesso.
+   * Sem esta linha, o caso mais provável de falha, a permissão de mensagens
+   * ainda não liberada para aquela conta, passaria por sucesso.
    */
   if (resposta.success === false) {
     throw new Error('o Instagram recusou a inscrição no webhook de mensagens')
@@ -302,7 +302,7 @@ const perfilDoContatoSchema = z.object({
  *
  * **O webhook do Instagram não traz o nome junto da mensagem**, ao contrário do
  * WhatsApp, que manda `contacts[].profile.name` de graça. Aqui é uma consulta a
- * mais, com a mesma permissão de mensagens — e sem ela o Inbox mostra uma
+ * mais, com a mesma permissão de mensagens, e sem ela o Inbox mostra uma
  * fileira de números de 17 dígitos, que é a mesma coisa que não mostrar
  * ninguém.
  *
@@ -310,7 +310,7 @@ const perfilDoContatoSchema = z.object({
  * sempre existe. Cair no @ é melhor do que cair no id: quem atende reconhece um
  * arroba.
  *
- * Devolve `null` em vez de estourar. Nome é enfeite do Inbox — perder o nome
+ * Devolve `null` em vez de estourar. Nome é enfeite do Inbox, perder o nome
  * não pode fazer a mensagem se perder junto.
  */
 export async function nomeDoPerfil(opcoes: {

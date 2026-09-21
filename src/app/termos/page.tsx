@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { Item, Lista, PaginaLegal, type SecaoLegal } from '../(site)/pagina-legal'
 
 /**
- * Os Termos de Serviço — **públicos, e por exigência da Meta**.
+ * Os Termos de Serviço, **públicos, e por exigência da Meta**.
  *
  * O campo `terms_of_service_url` das Configurações Básicas do app é
  * obrigatório, e o app review não abre com ele vazio. Como a política de
@@ -10,8 +10,7 @@ import { Item, Lista, PaginaLegal, type SecaoLegal } from '../(site)/pagina-lega
  * `PORTAS_ABERTAS` em `proxy.ts`): quem revisa não tem conta aqui.
  *
  * **Cada promessa daqui tem correspondente no código, e é essa a regra que
- * governa o texto.** A parte de dados aponta para a política em vez de repetir
- * — dois documentos dizendo a mesma coisa com palavras diferentes divergem no
+ * governa o texto.** A parte de dados aponta para a política em vez de repetir, dois documentos dizendo a mesma coisa com palavras diferentes divergem no
  * primeiro ajuste. O que este documento acrescenta é o que a política não
  * cobre: quem pode usar, o que não se pode fazer com o serviço, o que acontece
  * quando alguém faz, e o que a 4YU **não** promete.
@@ -37,7 +36,7 @@ const SECOES: readonly SecaoLegal[] = [
       <>
         <p>
           O AutoFluxos é operado por <strong>68.770.493 GABRIEL FELIX BARBOSA (4YU)</strong>, CNPJ
-          68.770.493/0001-82, com endereço na Rua Osvaldo Cruz, 297 — Zona 07 — Maringá/PR — CEP
+          68.770.493/0001-82, com endereço na Rua Osvaldo Cruz, 297, Zona 07, Maringá/PR, CEP
           87020-200. Neste documento, “nós” é essa empresa e “você” é quem usa o serviço.
         </p>
         <p>
@@ -55,8 +54,8 @@ const SECOES: readonly SecaoLegal[] = [
       <>
         <p>
           O AutoFluxos é uma ferramenta de automação de atendimento. Você desenha um fluxo de
-          conversa, liga esse fluxo a um canal — um número do WhatsApp Business Platform (Cloud
-          API, da Meta) ou uma conta profissional do Instagram — e o sistema responde às pessoas
+          conversa, liga esse fluxo a um canal, um número do WhatsApp Business Platform (Cloud
+          API, da Meta) ou uma conta profissional do Instagram, e o sistema responde às pessoas
           que escrevem para você, guarda o que elas respondem e chama uma pessoa da sua equipe
           quando o fluxo mandar.
         </p>
@@ -84,8 +83,8 @@ const SECOES: readonly SecaoLegal[] = [
             pessoas fazem ali dentro.
           </Item>
           <Item>
-            Você é responsável por manter as credenciais que cadastra — token da Meta, chaves de
-            integração — válidas e sob seu controle. Nós as guardamos cifradas e nunca as
+            Você é responsável por manter as credenciais que cadastra, token da Meta, chaves de
+            integração, válidas e sob seu controle. Nós as guardamos cifradas e nunca as
             mostramos de volta na tela.
           </Item>
         </Lista>
@@ -105,8 +104,8 @@ const SECOES: readonly SecaoLegal[] = [
           publicidade de terceiros e não treinamos modelos de IA com eles.
         </p>
         <p>
-          Como isso funciona em detalhe — que dados são tratados, com quem são compartilhados e
-          por quanto tempo ficam — está na{' '}
+          Como isso funciona em detalhe, que dados são tratados, com quem são compartilhados e
+          por quanto tempo ficam, está na{' '}
           <a href="/privacidade">política de privacidade</a>, que faz parte destes termos. O
           caminho para apagar está em <a href="/exclusao-de-dados">exclusão de dados</a>.
         </p>
@@ -131,7 +130,7 @@ const SECOES: readonly SecaoLegal[] = [
             chamaria de spam.
           </Item>
           <Item>
-            <strong>Enganar sobre quem está falando</strong> — se passar por outra empresa, por
+            <strong>Enganar sobre quem está falando</strong>, se passar por outra empresa, por
             órgão público, por banco, ou esconder que do outro lado há uma automação quando
             perguntarem.
           </Item>
@@ -145,7 +144,7 @@ const SECOES: readonly SecaoLegal[] = [
           </Item>
           <Item>
             <strong>Quebrar as regras da Meta.</strong> A Política de Mensagens do WhatsApp
-            Business e os termos das plataformas valem junto com estes — e é a Meta quem bloqueia
+            Business e os termos das plataformas valem junto com estes, e é a Meta quem bloqueia
             o número, não nós.
           </Item>
           <Item>
@@ -170,7 +169,7 @@ const SECOES: readonly SecaoLegal[] = [
         <p>
           Você pode parar de usar quando quiser. Ao encerrar, os dados da sua empresa são apagados
           conforme a <a href="/exclusao-de-dados">página de exclusão de dados</a>; se quiser levar
-          o que coletou, peça a exportação <strong>antes</strong> de pedir o encerramento —
+          o que coletou, peça a exportação <strong>antes</strong> de pedir o encerramento ,
           apagado aqui é apagado de verdade, e não há cópia guardada em outro lugar.
         </p>
       </>
@@ -224,7 +223,7 @@ const SECOES: readonly SecaoLegal[] = [
     conteudo: (
       <p>
         O software, a marca e o design do AutoFluxos são nossos. Os fluxos que você desenha, os
-        textos que escreve e os dados que coleta são seus — você nos dá apenas a licença
+        textos que escreve e os dados que coleta são seus, você nos dá apenas a licença
         necessária para hospedar, processar e transmitir esse conteúdo para o serviço funcionar.
         Presets e modelos que o produto oferece você pode usar, copiar e alterar à vontade dentro
         do serviço.
@@ -248,7 +247,7 @@ const SECOES: readonly SecaoLegal[] = [
     conteudo: (
       <p>
         Estes termos são regidos pela lei brasileira. Fica eleito o foro da comarca de{' '}
-        <strong>Maringá, Paraná</strong> para resolver o que não se resolver por conversa — com
+        <strong>Maringá, Paraná</strong> para resolver o que não se resolver por conversa, com
         ressalva do foro que a lei garanta ao consumidor.
       </p>
     ),
@@ -266,7 +265,7 @@ const SECOES: readonly SecaoLegal[] = [
         </p>
         <p>
           68.770.493 GABRIEL FELIX BARBOSA (4YU) · CNPJ 68.770.493/0001-82 · Rua Osvaldo Cruz,
-          297 — Zona 07 — Maringá/PR — CEP 87020-200.
+          297, Zona 07, Maringá/PR, CEP 87020-200.
         </p>
       </>
     ),

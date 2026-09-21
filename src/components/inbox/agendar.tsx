@@ -27,8 +27,8 @@ import type { Template } from '@/server/repos/templates'
  * tela existir em vez de um `prompt()`.
  *
  * Sem ela, marcar "amanhã de manhã" numa conversa que morreu hoje à tarde é uma
- * promessa que o produto não pode cumprir — a Meta recusa texto livre fora da
- * janela — e quem marcou só descobre no dia seguinte, quando o cliente não
+ * promessa que o produto não pode cumprir, a Meta recusa texto livre fora da
+ * janela, e quem marcou só descobre no dia seguinte, quando o cliente não
  * respondeu porque nunca recebeu.
  *
  * **É aviso e não trava**, de propósito: a janela reabre a cada mensagem do
@@ -92,8 +92,8 @@ export function AgendarMensagem({
     dados.set('texto', texto)
     /*
      * O campo `datetime-local` devolve "2026-09-16T09:00", sem fuso. O `new
-     * Date` do navegador resolve isso no relógio de quem está olhando — que é
-     * exatamente o relógio que a pessoa quis dizer — e o `toISOString` congela
+     * Date` do navegador resolve isso no relógio de quem está olhando, que é
+     * exatamente o relógio que a pessoa quis dizer, e o `toISOString` congela
      * o instante absoluto. O servidor nunca precisa saber de fuso nenhum.
      */
     dados.set('quando', quando ? quando.toISOString() : '')
@@ -230,7 +230,7 @@ export function AgendarMensagem({
         A promessa honesta de quando ela sai.
         -----------------------------------------------------------------------
         A Vercel no plano Hobby dispara tarefa agendada uma vez por dia. O que dá
-        resolução de minuto é a carona no webhook e no pulso do Inbox — ver
+        resolução de minuto é a carona no webhook e no pulso do Inbox, ver
         `server/enviar-agendadas.ts`. Escrever "sai às 9h em ponto" seria uma
         precisão que a plataforma não entrega, e a diferença aparece exatamente
         no caso que mais importa: ninguém na tela, nenhuma mensagem chegando.
@@ -260,7 +260,7 @@ export function AgendarMensagem({
  * Uma marcada, com o gesto de desfazer ao lado.
  *
  * O texto é cortado em duas linhas e não em uma: uma linha só transformaria
- * toda mensagem em "opa, tudo bem? Passando aqui…" — e a pergunta de quem abre
+ * toda mensagem em "opa, tudo bem? Passando aqui…", e a pergunta de quem abre
  * esta lista é "qual delas é esta?", que uma linha não responde.
  */
 function LinhaAgendada({
@@ -323,7 +323,7 @@ function LinhaAgendada({
   )
 }
 
-/** "16/set às 09:00" — dia e hora, sem ano, que é o que cabe e o que se pergunta. */
+/** "16/set às 09:00", dia e hora, sem ano, que é o que cabe e o que se pergunta. */
 function quandoLegivel(iso: string): string {
   const data = new Date(iso)
   const dia = data.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
@@ -345,7 +345,7 @@ export function IconeAgendar() {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      {/* O círculo é aberto embaixo à direita para o `+` não encostar nele —
+      {/* O círculo é aberto embaixo à direita para o `+` não encostar nele ,
           dois traços colados em 15px viram uma mancha. */}
       <path d="M21 12a9 9 0 1 1-9-9" />
       <path d="M12 7.5V12l2.5 1.5" />

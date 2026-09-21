@@ -6,8 +6,7 @@ import { amostrasDoPacote, crcDoOgg, webmOpusParaOgg } from './ogg-opus'
  *
  * O `MediaRecorder` grava em streaming, e em MP4 isso obriga o formato
  * fragmentado: o arquivo que não chegou em 15/set/2026 tinha `stts`, `stsz` e
- * `stco` vazios, `mvex` presente e `mvhd duration = 0`. Quem lê MP4 progressivo
- * — e é o que o WhatsApp faz — vê zero amostras. OGG não tem esse problema por
+ * `stco` vazios, `mvex` presente e `mvhd duration = 0`. Quem lê MP4 progressivo, e é o que o WhatsApp faz, vê zero amostras. OGG não tem esse problema por
  * desenho: é um contêiner de streaming, sem índice e sem duração no cabeçalho.
  */
 
@@ -29,7 +28,7 @@ function elemento(id: number[], corpo: number[]): number[] {
 const OPUS_HEAD = [
   ...[...'OpusHead'].map((c) => c.charCodeAt(0)),
   1, // versão
-  1, // canais — mono, que é o que a Meta exige
+  1, // canais, mono, que é o que a Meta exige
   0x38, 0x01, // pre-skip 312
   0x80, 0xbb, 0x00, 0x00, // 48000 LE
   0, 0, // ganho
@@ -78,7 +77,7 @@ describe('crcDoOgg', () => {
   /*
    * O CRC do Ogg NÃO é o CRC32 do zip: mesmo polinômio, mas sem reflexão de
    * entrada, sem valor inicial e sem XOR final. Usar o comum produz um arquivo
-   * que nenhum player abre, e o sintoma é "o áudio não toca" — sem pista.
+   * que nenhum player abre, e o sintoma é "o áudio não toca", sem pista.
    */
   it('confere com uma implementação bit a bit independente', () => {
     const bitAbit = (dados: Uint8Array) => {
@@ -112,7 +111,7 @@ describe('crcDoOgg', () => {
 describe('amostrasDoPacote', () => {
   /*
    * A duração não está no contêiner: está no primeiro byte do pacote, o TOC.
-   * Errar isto não corrompe nada — produz um áudio que toca certo e mostra a
+   * Errar isto não corrompe nada, produz um áudio que toca certo e mostra a
    * duração errada, que é bem pior de descobrir.
    */
   it('lê 20 ms de CELT fullband como 960 amostras a 48 kHz', () => {
@@ -239,7 +238,7 @@ describe('webmOpusParaOgg', () => {
   /*
    * Pacote de exatamente 255 bytes precisa de um segmento zero no fim. Sem ele,
    * o leitor acha que o pacote continua na página seguinte e o áudio sai
-   * truncado — e só no fim do arquivo.
+   * truncado, e só no fim do arquivo.
    */
   it('fecha pacote de 255 bytes com o segmento zero', () => {
     const ogg = webmOpusParaOgg(webmDeTeste([pacoteOpus(255)]))!

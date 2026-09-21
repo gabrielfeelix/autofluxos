@@ -2,17 +2,17 @@ import type { Metadata } from 'next'
 import { Item, Lista, PaginaLegal, type SecaoLegal } from '../(site)/pagina-legal'
 
 /**
- * Instruções de exclusão de dados — **públicas, e por exigência da Meta**.
+ * Instruções de exclusão de dados, **públicas, e por exigência da Meta**.
  *
  * O campo “Instruções de exclusão de dados” das Configurações Básicas do app é
  * obrigatório, e o app review não abre com ele vazio. A Meta aceita uma página
- * com instruções — não precisa de callback —, e é o que esta é. Como as outras
+ * com instruções, não precisa de callback , e é o que esta é. Como as outras
  * páginas legais, abre sem sessão (ver `PORTAS_ABERTAS` em `proxy.ts`).
  *
  * **Esta página existe para não prometer o que o código não faz, e por isso
  * cada afirmação dela aponta para um lugar do sistema:**
  *
- * - o que some junto com o contato é o `on delete cascade` de `contacts` —
+ * - o que some junto com o contato é o `on delete cascade` de `contacts` ,
  *   sessões (0003), mensagens (0003), pedidos de atendimento (0022), trava da
  *   conversa (0007), leituras (0023), etiquetas (0025), cartões de quadro
  *   (0032) e inscrições em sequência (0031);
@@ -53,7 +53,7 @@ const SECOES: readonly SecaoLegal[] = [
             guardamos por ela e apagamos quando você ou ela pedir.
           </Item>
           <Item>
-            <strong>Você usa o painel</strong> — é dono ou faz parte do time de uma empresa
+            <strong>Você usa o painel</strong>, é dono ou faz parte do time de uma empresa
             cliente. Vá para a seção 3: dá para apagar sozinho, na hora, e também dá para pedir
             que a conta inteira suma.
           </Item>
@@ -81,7 +81,7 @@ const SECOES: readonly SecaoLegal[] = [
           <Item>
             Diga <strong>o número de WhatsApp (ou o @ do Instagram) que você usou na conversa</strong>{' '}
             e, se souber, o nome da empresa com quem falou. Sem isso não há como achar o seu
-            registro — a busca é por esse identificador, e não por nome.
+            registro, a busca é por esse identificador, e não por nome.
           </Item>
           <Item>
             Confirmamos que o pedido é seu mesmo antes de apagar. Normalmente é uma mensagem de
@@ -91,7 +91,7 @@ const SECOES: readonly SecaoLegal[] = [
         </Lista>
         <p>
           Você não precisa dizer o motivo. Se quiser apenas <strong>parar de receber mensagens</strong>{' '}
-          sem apagar o histórico, peça isso na própria conversa — o atendimento automático é
+          sem apagar o histórico, peça isso na própria conversa, o atendimento automático é
           interrompido para o seu número.
         </p>
       </>
@@ -114,7 +114,7 @@ const SECOES: readonly SecaoLegal[] = [
           <Item>
             <strong>Antes de apagar, exporte se precisar:</strong> o botão{' '}
             <strong>Baixar CSV</strong> na mesma tela leva o que você coletou. Depois do apagar
-            não há como recuperar — não existe lixeira nem cópia guardada em outro lugar.
+            não há como recuperar, não existe lixeira nem cópia guardada em outro lugar.
           </Item>
           <Item>
             <strong>Desligar um canal:</strong> ao desconectar a conta do WhatsApp ou do
@@ -123,7 +123,7 @@ const SECOES: readonly SecaoLegal[] = [
           <Item>
             <strong>A conta inteira:</strong> peça por{' '}
             <a href="mailto:contato@4yu.com.br?subject=Exclus%C3%A3o%20da%20conta">contato@4yu.com.br</a>{' '}
-            usando o e-mail de administrador da conta. Apagamos a empresa e tudo que pende dela —
+            usando o e-mail de administrador da conta. Apagamos a empresa e tudo que pende dela ,
             contatos, conversas, fluxos, quadros e sequências.
           </Item>
         </Lista>
@@ -142,7 +142,7 @@ const SECOES: readonly SecaoLegal[] = [
           </Item>
           <Item>
             <strong>Pedido enviado para nós:</strong> confirmamos o recebimento em até{' '}
-            <strong>2 dias úteis</strong> e concluímos em até <strong>15 dias</strong> — o prazo
+            <strong>2 dias úteis</strong> e concluímos em até <strong>15 dias</strong>, o prazo
             que a LGPD dá para responder ao titular. Se o pedido depender da empresa controladora,
             encaminhamos a ela e avisamos você.
           </Item>
@@ -159,9 +159,9 @@ const SECOES: readonly SecaoLegal[] = [
           Apagar um contato apaga, no mesmo movimento e sem cópia guardada em outro lugar:
         </p>
         <Lista>
-          <Item>o cadastro dele — número ou conta do Instagram, nome e os campos que o fluxo preencheu;</Item>
+          <Item>o cadastro dele, número ou conta do Instagram, nome e os campos que o fluxo preencheu;</Item>
           <Item>todas as mensagens trocadas, nos dois sentidos, e os arquivos referenciados nelas;</Item>
-          <Item>as sessões de fluxo — onde a conversa estava, e o que já tinha sido respondido;</Item>
+          <Item>as sessões de fluxo, onde a conversa estava, e o que já tinha sido respondido;</Item>
           <Item>os pedidos de atendimento humano e a trava que segurava o robô;</Item>
           <Item>as etiquetas, o que estava marcado como não lido, e os cartões dele nos quadros;</Item>
           <Item>as inscrições em sequências, com as mensagens futuras que estavam agendadas.</Item>
@@ -181,13 +181,13 @@ const SECOES: readonly SecaoLegal[] = [
         <Lista>
           <Item>
             <strong>O registro de que a exclusão aconteceu.</strong> Ficam a data, quem pediu e
-            quantos registros sumiram — sem o conteúdo de nada. Quem apaga não pode apagar também
+            quantos registros sumiram, sem o conteúdo de nada. Quem apaga não pode apagar também
             a prova de que apagou; é isso que permite demonstrar que o pedido foi cumprido.
           </Item>
           <Item>
             <strong>O registro de uso da inteligência artificial</strong>, quando a empresa usa o
             recurso: guardamos qual consulta a IA fez, quem decidiu e se deu certo, referenciando
-            o contato por identificador. É a exigência do art. 20 da LGPD — explicar uma decisão
+            o contato por identificador. É a exigência do art. 20 da LGPD, explicar uma decisão
             automatizada depois dela exige ter registrado quais foram os critérios. O conteúdo da
             conversa não fica aqui.
           </Item>
@@ -198,7 +198,7 @@ const SECOES: readonly SecaoLegal[] = [
           <Item>
             <strong>Cópias que não são nossas.</strong> A mensagem que já chegou continua no
             aparelho de quem a recebeu, e a Meta guarda o que guarda do lado dela pelo WhatsApp e
-            pelo Instagram — apagar aqui não alcança nem uma coisa nem outra. Para os dados que
+            pelo Instagram, apagar aqui não alcança nem uma coisa nem outra. Para os dados que
             estão com a Meta, o caminho são as configurações do próprio WhatsApp ou Instagram.
           </Item>
           <Item>
@@ -216,7 +216,7 @@ const SECOES: readonly SecaoLegal[] = [
       <p>
         Contato sem nenhum sinal de vida por <strong>12 meses</strong> é apagado automaticamente,
         com tudo que a seção 5 lista. O prazo conta da <strong>última mensagem</strong>, e não da
-        data em que o contato entrou — conversa ativa que começou há treze meses não é apagada. A
+        data em que o contato entrou, conversa ativa que começou há treze meses não é apagada. A
         limpeza roda todo dia.
       </p>
     ),
@@ -234,7 +234,7 @@ const SECOES: readonly SecaoLegal[] = [
         </p>
         <p>
           68.770.493 GABRIEL FELIX BARBOSA (4YU) · CNPJ 68.770.493/0001-82 · Rua Osvaldo Cruz,
-          297 — Zona 07 — Maringá/PR — CEP 87020-200.
+          297, Zona 07, Maringá/PR, CEP 87020-200.
         </p>
         <p>
           O que fazemos com os dados enquanto eles existem está na{' '}
@@ -251,7 +251,7 @@ export default function Pagina() {
     <PaginaLegal
       titulo="Exclusão de dados"
       rotuloDoIndice="Índice da exclusão de dados"
-      resumo="O resumo em uma frase: peça pelo painel ou escreva para a gente, respondemos em até 15 dias, e o que é apagado some de verdade — sem lixeira e sem cópia guardada em outro lugar."
+      resumo="O resumo em uma frase: peça pelo painel ou escreva para a gente, respondemos em até 15 dias, e o que é apagado some de verdade, sem lixeira e sem cópia guardada em outro lugar."
       selos={[
         { icone: 'lixeira', texto: 'Apagado é apagado' },
         { icone: 'relogio', texto: 'Em até 15 dias' },

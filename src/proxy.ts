@@ -5,7 +5,7 @@ import { getSessionCookie } from 'better-auth/cookies'
  * Quem entra no painel.
  *
  * **Uma porta só: `/entrar`, com login por usuário (Better Auth).** A senha
- * única do time — `/login`, `PAINEL_SENHA` e um cookie assinado — foi a porta do
+ * única do time, `/login`, `PAINEL_SENHA` e um cookie assinado, foi a porta do
  * MVP e saiu de cena. Ela existia enquanto nenhuma tela sabia de qual conta a
  * pessoa era; hoje toda tela sabe, e manter as duas significava manter um
  * caminho que alcança qualquer conta **sem passar por membro** e, portanto, sem
@@ -26,14 +26,14 @@ import { getSessionCookie } from 'better-auth/cookies'
  * As telas que existem para quem ainda não entrou.
  *
  * **`/criar-conta` não está aqui, e a primeira escrita a tinha posto.** Ela abre
- * a porta de primeira execução — se não há usuário nenhum, quem chega nasce
- * administrador da plataforma —, e a própria tela é quem fecha isso: a pergunta
+ * a porta de primeira execução, se não há usuário nenhum, quem chega nasce
+ * administrador da plataforma , e a própria tela é quem fecha isso: a pergunta
  * que a destranca ("não há ninguém?") só tem resposta afirmativa uma vez na vida
  * do sistema. Ver `acoes-conta.ts`.
  */
 const PORTAS_ABERTAS = [
   /**
-   * A raiz é a **landing pública**, não o painel — o painel mudou para
+   * A raiz é a **landing pública**, não o painel, o painel mudou para
    * `/painel` justamente por isto.
    *
    * Ela precisa abrir sem sessão pela mesma razão que a política de
@@ -47,7 +47,7 @@ const PORTAS_ABERTAS = [
   '/',
   '/entrar',
   /**
-   * O cadastro aberto ao público — a porta de quem chega pelo site.
+   * O cadastro aberto ao público, a porta de quem chega pelo site.
    *
    * **`/primeiro-acesso` não entra nesta lista, e é de propósito.** Ele é o
    * segundo passo do mesmo cadastro, mas só se alcança já logado: a ação de
@@ -65,7 +65,7 @@ const PORTAS_ABERTAS = [
    *
    * É a URL que o app review da Meta exige, e quem revisa não tem conta aqui:
    * uma página que redireciona para o login é, para efeito de análise, uma
-   * página que não existe. Ela não lê dado nenhum — é texto.
+   * página que não existe. Ela não lê dado nenhum, é texto.
    */
   '/privacidade',
   /**
@@ -81,7 +81,7 @@ const PORTAS_ABERTAS = [
    *
    * **Um service worker redirecionado não registra**, e falha calado: o
    * navegador recusa qualquer resposta que não seja o script em si, e o push
-   * simplesmente nunca chega — sem erro em tela, sem erro em log. Foi assim que
+   * simplesmente nunca chega, sem erro em tela, sem erro em log. Foi assim que
    * ele saiu no primeiro deploy desta rodada: `GET /sw-push.js` respondia 307
    * para `/entrar`.
    *
@@ -97,7 +97,7 @@ const PORTAS_ABERTAS = [
  * A página de um fluxo compartilhado (0030).
  *
  * É prefixo e não caminho exato porque o token vem no endereço. E ela é a
- * **única** rota de tela que abre sem sessão nenhuma — a autorização dela não
+ * **única** rota de tela que abre sem sessão nenhuma, a autorização dela não
  * mora aqui: quem decide o que mostrar é `repos/compartilhar.ts`, olhando token,
  * revogação e prazo, e quem decide para onde importar é
  * `acaoImportarFluxoCompartilhado`, que confere o acesso à conta de destino.
@@ -110,11 +110,11 @@ const PREFIXOS_ABERTOS = [
   /**
    * **As rotas de retorno do OAuth. Sem isto elas nunca rodam.**
    *
-   * Quem chega aqui é o navegador do cliente **voltando do facebook.com** — uma
+   * Quem chega aqui é o navegador do cliente **voltando do facebook.com**, uma
    * navegação cross-site. O cookie de sessão do Better Auth é `SameSite=Lax`, e
    * `Lax` manda o navegador **não enviar o cookie** num redirect vindo de outro
    * site. Então o `getSessionCookie` abaixo não acha nada, a requisição cai no
-   * 401 de `/api/`, e a rota de retorno — que já sabe se defender sozinha —
+   * 401 de `/api/`, e a rota de retorno, que já sabe se defender sozinha ,
    * jamais executa.
    *
    * O sintoma é cruel de diagnosticar porque **tudo parece certo dos dois
@@ -135,12 +135,12 @@ const PREFIXOS_ABERTOS = [
   /**
    * **Os webhooks da Meta. Mesmo bug das rotas de retorno, e custou o Inbox.**
    *
-   * Quem chama aqui é o **servidor da Meta**, que não tem cookie nenhum — nunca
+   * Quem chama aqui é o **servidor da Meta**, que não tem cookie nenhum, nunca
    * teve e nunca vai ter. Sem esta linha o `getSessionCookie` não acha nada, a
    * requisição cai no 401 de `/api/`, e a rota jamais executa.
    *
    * O sintoma foi o de 13/set: o número do cliente conectado e ativo, a WABA
-   * inscrita no app, `messages` assinado no painel — e **nada chegando no
+   * inscrita no app, `messages` assinado no painel, e **nada chegando no
    * Inbox**. Tudo certo dos dois lados, e o proxy comendo a mensagem no meio.
    *
    * Um `curl -X POST` contra a URL do webhook devolvia `401` em produção: é o
@@ -158,7 +158,7 @@ const PREFIXOS_ABERTOS = [
    *
    * Precisam abrir sem sessão porque quem busca é o servidor do Google, que não
    * tem cookie nenhum. Sem esta linha o arquivo estático cai no matcher e volta
-   * um redirecionamento para `/entrar` — a planilha mostra imagem quebrada e o
+   * um redirecionamento para `/entrar`, a planilha mostra imagem quebrada e o
    * motivo não aparece em lugar nenhum.
    *
    * A primeira tentativa serviu de `/clientes/`, que é justamente o prefixo da
@@ -169,7 +169,7 @@ const PREFIXOS_ABERTOS = [
    * O ícone da aba do navegador.
    *
    * O App Router serve `src/app/icon.png` em `/icon.png` (e o da Apple em
-   * `/apple-icon.png`) — são rotas, não arquivos de `public/`, então o matcher
+   * `/apple-icon.png`), são rotas, não arquivos de `public/`, então o matcher
    * as pega e quem não tem sessão recebe um redirecionamento para `/entrar` no
    * lugar da imagem. O resultado é a **tela de login sem ícone**, que é
    * justamente a primeira tela que qualquer pessoa vê.
@@ -205,7 +205,7 @@ export async function proxy(req: NextRequest) {
 export const config = {
   // Três exceções, e as três por quem chama:
   //
-  // `robots.txt` **precisa** ser lido por quem não tem sessão — é essa a função
+  // `robots.txt` **precisa** ser lido por quem não tem sessão, é essa a função
   // dele. Dentro do matcher, o crawler recebia o redirecionamento e nunca via a
   // regra que proíbe indexar.
   //

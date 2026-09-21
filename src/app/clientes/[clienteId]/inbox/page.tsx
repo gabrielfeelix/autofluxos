@@ -332,7 +332,7 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
      *
      * Ela era `await` aqui: uma **escrita** no banco entre o clique e o
      * primeiro pixel da conversa, em toda troca de conversa. Quem lê não
-     * precisa esperar o registro de que leu — o que importa nesta renderização
+     * precisa esperar o registro de que leu, o que importa nesta renderização
      * é `leuAntesEm`, que já foi lido acima, e a contagem logo abaixo, que
      * desconta a conversa aberta por conta própria.
      *

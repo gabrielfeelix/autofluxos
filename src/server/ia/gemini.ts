@@ -8,7 +8,7 @@ import type { Modelo, PedidoDeIa, Resposta } from './types'
  *
  * Só transporte: o que fecha o escopo está em `prompt.ts`, que é puro e tem
  * teste. Aqui a única regra é **nunca estourar**. Chave errada, cota estourada,
- * modelo fora do ar, resposta esquisita — tudo vira `nao_sei`, que vira uma
+ * modelo fora do ar, resposta esquisita, tudo vira `nao_sei`, que vira uma
  * pessoa assumindo a conversa. Uma exceção subindo daqui deixaria alguém
  * esperando no WhatsApp uma resposta que não vem.
  */
@@ -16,7 +16,7 @@ import type { Modelo, PedidoDeIa, Resposta } from './types'
 const ENDERECO = 'https://generativelanguage.googleapis.com/v1beta/models'
 
 /**
- * Versão presa, e não `-latest` — a decisão virou ao contrário em 28/ago/2026.
+ * Versão presa, e não `-latest`, a decisão virou ao contrário em 28/ago/2026.
  *
  * O argumento antigo era bom: versão presa é dívida com data marcada, o Google
  * aposenta e o bot para de responder no meio de um atendimento. O que ele não
@@ -26,7 +26,7 @@ const ENDERECO = 'https://generativelanguage.googleapis.com/v1beta/models'
  * menos de dois segundos. Um apelido que aponta para o modelo mais popular
  * aponta, por construção, para o mais disputado.
  *
- * A dívida do apelido continua real — ela só passou a ser paga pela reserva e
+ * A dívida do apelido continua real, ela só passou a ser paga pela reserva e
  * pela suíte contra o modelo de verdade, que acusa no dia em que este nome sair
  * do ar ou regredir.
  *
@@ -45,13 +45,13 @@ const ENDERECO = 'https://generativelanguage.googleapis.com/v1beta/models'
  * conversa que a IA daria conta.
  *
  * **O que isso estabelece, e o que não estabelece.** Estabelece que o 3.5-lite
- * não passa nesta suíte com este prompt — reproduzido duas vezes. Não
+ * não passa nesta suíte com este prompt, reproduzido duas vezes. Não
  * estabelece que ele é pior: um cenário repetido é n=2 num prompt só, e a causa
  * pode muito bem ser a regra de escopo estar fraca em vez de o modelo estar.
  * Antes de descartá-lo de vez, vale reescrever a regra 1 e rodar de novo. O que
  * decidiu aqui foi o critério de sempre: entra o que passa.
  *
- * A suíte inteira contra o modelo de verdade passa 11/11 neste nome — obediência
+ * A suíte inteira contra o modelo de verdade passa 11/11 neste nome, obediência
  * de escopo, recusa de propósito geral (política da Meta) e escolha entre
  * consultas parecidas. Trocar de modelo sem rodar ela é trocar no escuro.
  */
@@ -63,20 +63,20 @@ const MODELO_PADRAO = 'gemini-3.1-flash-lite'
  * **É de outra faixa de propósito, e isso é metade do valor.** A cota diária do
  * free tier é *por modelo* (`GenerateRequestsPerDayPerProjectPerModel`), então
  * a reserva não divide o teto com o padrão: ela o soma. E congestionamento
- * costuma bater numa faixa de cada vez — cair de `flash-lite` para `flash` sai
+ * costuma bater numa faixa de cada vez, cair de `flash-lite` para `flash` sai
  * do lugar cheio, o que trocar de nome dentro da mesma faixa não faria.
  *
  * **Os baldes não têm o mesmo tamanho, e isso foi medido, não deduzido.** Em
  * 28/ago/2026, com ~15 chamadas gastas no dia, `gemini-3.1-flash-lite` seguia
  * respondendo 200 enquanto `gemini-3.5-flash` já devolvia 429 com
  * `quotaValue = 20`. Ou seja: a reserva é a faixa **estreita**, e é ela que
- * acaba primeiro. Serve mesmo assim — reserva não precisa aguentar o dia
+ * acaba primeiro. Serve mesmo assim, reserva não precisa aguentar o dia
  * inteiro, precisa aguentar o pico.
  *
  * Sem reserva, uma tarde ruim do lado do Google manda **toda** conversa do
  * produto para atendimento humano, e a tela não diz por quê.
  *
- * Também passa a suíte contra o modelo de verdade — reserva que ninguém testou
+ * Também passa a suíte contra o modelo de verdade, reserva que ninguém testou
  * é reserva que só falha no dia em que é usada.
  */
 const MODELO_RESERVA = 'gemini-3.6-flash'
@@ -84,7 +84,7 @@ const MODELO_RESERVA = 'gemini-3.6-flash'
 /**
  * O que merece uma segunda tentativa.
  *
- * 503 e 429 são o Google dizendo "agora não, tente de novo" — a mensagem
+ * 503 e 429 são o Google dizendo "agora não, tente de novo", a mensagem
  * literal do 503 pede isso. Sem retentar, cada pico do lado deles vira uma
  * pessoa assumindo uma conversa que a IA responderia bem. 4xx de verdade
  * (chave errada, pedido malformado) não melhora repetindo, e repetir só
@@ -96,13 +96,13 @@ const VALE_RETENTAR = new Set([429, 500, 502, 503, 504])
  * Modelos que já estouraram a cota diária, e até quando ficam de fora.
  *
  * **Sem isto, o padrão que acabou às 10h é tentado em toda conversa até a
- * meia-noite.** Não gasta cota — requisição rejeitada não conta —, mas paga o
+ * meia-noite.** Não gasta cota, requisição rejeitada não conta , mas paga o
  * ida-e-volta antes de cair na reserva, em cada mensagem de cada pessoa. É
  * latência cobrada de todo mundo por uma resposta que já se sabe qual é.
  *
  * Só `429` entra aqui, e a distinção é o ponto: `503` é pico e passa em
  * segundos, então marcar o modelo como fora por causa dele desligaria o padrão
- * bom por um soluço. Cota estourada, não — ela só volta na virada do dia.
+ * bom por um soluço. Cota estourada, não, ela só volta na virada do dia.
  *
  * Guardado em memória do processo, e não no banco. É uma otimização de
  * latência: perder o registro num deploy custa uma requisição a mais, e o
@@ -129,7 +129,7 @@ function estaSemCota(nome: string): boolean {
  * teste seguinte provaria outra coisa sem avisar. Estado de processo que
  * atravessa teste é a forma mais silenciosa de suíte verde mentindo.
  *
- * Não é chamado em produção — lá o esquecimento é a virada do dia.
+ * Não é chamado em produção, lá o esquecimento é a virada do dia.
  */
 export function esquecerCotas(): void {
   semCota.clear()
@@ -144,7 +144,7 @@ function marcarSemCota(nome: string): void {
  * Quanto se espera pelo modelo.
  *
  * O webhook já respondeu 200 à Meta antes de chegar aqui (o processamento roda
- * no `after()`), então o teto não é o prazo dela — é a paciência de quem está
+ * no `after()`), então o teto não é o prazo dela, é a paciência de quem está
  * com o celular na mão.
  *
  * Começou em 8 s e estourava. Medido: numa pergunta de uma linha o modelo
@@ -154,12 +154,12 @@ function marcarSemCota(nome: string): void {
  *
  * **São dois tetos desde 28/ago/2026, e a assimetria é medida.** Contra o
  * modelo de verdade, num modelo saudável nada passou de 12 s (11,3 · 8,0 · 5,6
- * · 4,9 · 3,9 · 2,4 · 1,5). Tudo que estourou 15 s foi o modelo congestionado —
+ * · 4,9 · 3,9 · 2,4 · 1,5). Tudo que estourou 15 s foi o modelo congestionado ,
  * lentidão ali é sintoma, não raciocínio.
  *
  * Então a primeira tentativa corta cedo **de propósito**: passou de 15 s, é
  * congestionamento, e o certo é ir para a reserva em vez de esperar mais. A
- * reserva ganha o teto folgado porque é a última chance — cortar ali manda para
+ * reserva ganha o teto folgado porque é a última chance, cortar ali manda para
  * uma pessoa uma resposta que estava quase pronta.
  *
  * O pior caso somado é 40 s, com "digitando…" na tela o tempo todo. É muito, e
@@ -182,7 +182,7 @@ export function gemini({ chave, modelo }: { chave: string; modelo?: string }): M
    * Modelo escolhido à mão não ganha reserva.
    *
    * Quem passou `GEMINI_MODELO` ou o parâmetro está prendendo uma versão de
-   * propósito — para reproduzir um comportamento, ou porque a reserva é
+   * propósito, para reproduzir um comportamento, ou porque a reserva é
    * justamente o que ele quer testar. Trocar por baixo transformaria uma
    * escolha explícita numa surpresa, e o teste que prende versão deixaria de
    * provar o que diz provar.
@@ -222,7 +222,7 @@ export function gemini({ chave, modelo }: { chave: string; modelo?: string }): M
        * Uma segunda tentativa, e uma só.
        *
        * Duas seriam três esperas somadas na frente de quem está com o celular
-       * na mão. Se o segundo modelo também está fora, o problema não é pico —
+       * na mão. Se o segundo modelo também está fora, o problema não é pico ,
        * e insistir só atrasa a pessoa que vai assumir a conversa.
        */
       console.warn(`[ia] ${nome} devolveu ${primeira.status}; tentando ${reserva}`)
@@ -249,7 +249,7 @@ function montarCorpo(pedido: PedidoDeIa): string {
       temperature: 0.2,
       // Folgado de propósito: os modelos novos gastam parte deste teto
       // "pensando" antes de escrever. Com 400 a resposta chegou cortada no
-      // meio da frase — e resposta cortada vai para o WhatsApp de alguém. Quem
+      // meio da frase, e resposta cortada vai para o WhatsApp de alguém. Quem
       // encurta é o `prompt.ts`, por caractere, no fim.
       maxOutputTokens: 1200,
     },
@@ -300,7 +300,7 @@ async function tentar(
     const json = (await resposta.json()) as RespostaGemini
 
     // Filtro de segurança do Google. Não é erro nosso, e a saída é a mesma:
-    // uma pessoa assume. Não retenta — o outro modelo bloquearia igual.
+    // uma pessoa assume. Não retenta, o outro modelo bloquearia igual.
     const bloqueio = json.promptFeedback?.blockReason
     if (bloqueio) {
       return { tipo: 'pronta', resposta: { tipo: 'nao_sei', motivo: `o modelo bloqueou (${bloqueio})` } }
@@ -313,7 +313,7 @@ async function tentar(
      *
      * O modelo às vezes manda os dois: uma frase de espera ("deixa eu ver
      * aqui") e a chamada junto. Mandar a frase e ignorar a chamada seria o
-     * pior desfecho — o bot promete olhar e nunca olha. Quem decide o que
+     * pior desfecho, o bot promete olhar e nunca olha. Quem decide o que
      * fazer com o pedido é o resolvedor.
      */
     const chamada = partes.find((p) => p.functionCall)?.functionCall
@@ -325,7 +325,7 @@ async function tentar(
           nome: chamada.name,
           // O Gemini devolve os argumentos já como JSON, e com o tipo que ele
           // achou que era. Tudo vira texto aqui porque é assim que o resolvedor
-          // interpola — e porque número virando `1e3` numa data é o tipo de
+          // interpola, e porque número virando `1e3` numa data é o tipo de
           // surpresa que só aparece em produção.
           argumentos: comoTexto(chamada.args),
         },
@@ -376,7 +376,7 @@ type RespostaGemini = {
  * diferente; com o catálogo neutro, o próximo adaptador é um arquivo novo em
  * vez de uma reescrita.
  *
- * Sem ferramenta nenhuma o corpo sai igual ao de antes — nem `tools` nem
+ * Sem ferramenta nenhuma o corpo sai igual ao de antes, nem `tools` nem
  * `toolConfig` aparecem, e o comportamento de hoje não muda em nada.
  */
 function declararFerramentas(ferramentas: readonly Ferramenta[]) {
@@ -400,7 +400,7 @@ function declararFerramentas(ferramentas: readonly Ferramenta[]) {
     ],
     // `AUTO`: o modelo decide entre responder e consultar. `ANY` o obrigaria a
     // sempre chamar alguma coisa, e a maior parte das mensagens de um
-    // atendimento — "oi", "obrigado" — não tem consulta que sirva.
+    // atendimento, "oi", "obrigado", não tem consulta que sirva.
     toolConfig: { functionCallingConfig: { mode: 'AUTO' } },
   }
 }

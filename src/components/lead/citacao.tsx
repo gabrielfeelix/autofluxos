@@ -12,7 +12,7 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from 're
  * Quem escolhe citar é um botão **dentro de uma mensagem**, lá no meio da
  * conversa; quem usa a escolha é a caixa de resposta, no rodapé. Os dois são
  * irmãos distantes de um Server Component, e a página que os monta não pode
- * segurar esse estado sem virar cliente inteira — o que custaria o render no
+ * segurar esse estado sem virar cliente inteira, o que custaria o render no
  * servidor de uma conversa de 500 mensagens.
  *
  * O provedor é um Client Component fino que envolve os dois e **recebe o
@@ -26,12 +26,12 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from 're
  *
  * Quem garante é a `key` no provedor, na página. Sem ela, citar uma mensagem,
  * mudar de conversa e responder mandaria a resposta citando uma mensagem de
- * **outra** pessoa — id que a Meta recusa na melhor das hipóteses, e a pior é
+ * **outra** pessoa, id que a Meta recusa na melhor das hipóteses, e a pior é
  * ela aceitar.
  */
 
 export type CitacaoEscolhida = {
-  /** O `wa_message_id` — o id da Meta, que é o que ela entende. */
+  /** O `wa_message_id`, o id da Meta, que é o que ela entende. */
   waMessageId: string
   /** Só para desenhar a prévia acima do campo. */
   texto: string | null

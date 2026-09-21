@@ -749,7 +749,7 @@ export async function contextoDeResposta(
        * consulta lia qualquer linha de `passagens`, igual à view da 0065, então
        * um lead de formulário entregava a porta de entrada de um clique em
        * anúncio. Corrigir a view e esquecer isto aqui deixaria metade do
-       * produto com a regra antiga — e esta é a metade que decide o envio.
+       * produto com a regra antiga, e esta é a metade que decide o envio.
        *
        * A lista repete a da view e a de `core/regras-de-entrada.ts`, de
        * propósito: quem acrescentar um tipo que abre porta precisa passar pelos

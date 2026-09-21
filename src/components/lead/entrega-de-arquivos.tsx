@@ -17,7 +17,7 @@ import { acaoPrepararEnvioDeArquivo } from '@/server/acoes'
 import { acaoEnviarMidiaDoInbox } from '@/server/acoes-midia-do-inbox'
 
 /**
- * Anexar arrastando para dentro da conversa — e revisar antes de mandar.
+ * Anexar arrastando para dentro da conversa, e revisar antes de mandar.
  *
  * ---------------------------------------------------------------------------
  * O escuro é da conversa, não da tela
@@ -25,7 +25,7 @@ import { acaoEnviarMidiaDoInbox } from '@/server/acoes-midia-do-inbox'
  *
  * A revisão de anexo nasceu como um `fixed inset-0`: um diálogo por cima do
  * painel inteiro, com a página escurecida atrás. Funciona num formulário
- * qualquer, e é errado num Inbox — quem atende trabalha olhando a fila da
+ * qualquer, e é errado num Inbox, quem atende trabalha olhando a fila da
  * esquerda e o cabeçalho de quem está do outro lado. Escurecer os dois para
  * mandar uma foto tira de vista justamente o que diz **para quem** a foto vai.
  *
@@ -33,7 +33,7 @@ import { acaoEnviarMidiaDoInbox } from '@/server/acoes-midia-do-inbox'
  * legível, o nome e a janela de 24h continuam no alto, e só o miolo da conversa
  * dá lugar à revisão. É o que o WhatsApp Web faz, e o motivo é esse.
  *
- * Como o pai é este provedor — e não a página — a coluna não precisa virar
+ * Como o pai é este provedor, e não a página, a coluna não precisa virar
  * cliente: o histórico e a caixa chegam prontos do servidor como `children`,
  * igual ao `ProvedorDeCitacao`.
  *
@@ -57,7 +57,7 @@ import { acaoEnviarMidiaDoInbox } from '@/server/acoes-midia-do-inbox'
  * Não há apagar para todos na Cloud API, e nunca vai haver por API oficial.
  * Mandar a foto errada aqui é mandar o documento de um cliente para outro. O
  * passo de revisão é o que transforma um erro irreversível num clique em
- * "Cancelar" — por isso soltar o arquivo **nunca** envia sozinho.
+ * "Cancelar", por isso soltar o arquivo **nunca** envia sozinho.
  */
 
 /** O que o WhatsApp aceita. O servidor confere de novo; isto é só o filtro do seletor. */
@@ -75,7 +75,7 @@ const TETO_DE_ANEXOS = 10
 type Anexo = {
   id: string
   arquivo: File
-  /** `blob:` local — **nada sobe para ver**. Só o que for confirmado vai ao Storage. */
+  /** `blob:` local, **nada sobe para ver**. Só o que for confirmado vai ao Storage. */
   previa: string | null
   legenda: string
 }
@@ -125,7 +125,7 @@ export function ProvedorDeEntrega({
   /*
    * `dragenter`/`dragleave` disparam também ao atravessar cada filho: o
    * histórico, cada bolha, cada botão. Contando entradas e saídas, a moldura só
-   * some quando o ponteiro sai de verdade da coluna — sem isso ela pisca a cada
+   * some quando o ponteiro sai de verdade da coluna, sem isso ela pisca a cada
    * mensagem por que o arrasto passa.
    */
   const profundidade = useRef(0)
@@ -150,7 +150,7 @@ export function ProvedorDeEntrega({
 
   /*
    * Estado atual em vez de atualizador funcional, de propósito: somar arquivos
-   * só acontece dentro de um evento — soltar, ou escolher no seletor — e aqui
+   * só acontece dentro de um evento, soltar, ou escolher no seletor, e aqui
    * dentro há mais do que uma lista para atualizar (o recado do teto, e qual
    * anexo abre). Atualizador funcional com `setState` de outro estado dentro é
    * efeito colateral dentro de render, e o React roda esse trecho duas vezes em
@@ -208,7 +208,7 @@ export function ProvedorDeEntrega({
     setAnexos((atuais) => atuais.map((a) => (a.id === id ? { ...a, legenda: texto } : a)))
   }
 
-  /* `Esc` desiste, como em qualquer diálogo — menos no meio de um envio. */
+  /* `Esc` desiste, como em qualquer diálogo, menos no meio de um envio. */
   useEffect(() => {
     if (anexos.length === 0) return
     const noTeclado = (e: KeyboardEvent) => {
@@ -242,7 +242,7 @@ export function ProvedorDeEntrega({
           /*
            * O servidor decide se o tipo e o tamanho passam, e devolve a URL
            * assinada. Conferir no navegador antes seria adivinhar a regra em
-           * dois lugares — e a regra é do Acervo, não desta tela.
+           * dois lugares, e a regra é do Acervo, não desta tela.
            */
           const preparo = await acaoPrepararEnvioDeArquivo(clienteId, {
             nome: arquivo.name,
@@ -282,7 +282,7 @@ export function ProvedorDeEntrega({
             setErro(`${arquivo.name}: ${r.erro ?? 'não deu para enviar'}`)
             /*
              * O que já saiu não volta. Tirar da lista os que foram deixa a
-             * segunda tentativa mandar só o que falta — repetir a leva inteira
+             * segunda tentativa mandar só o que falta, repetir a leva inteira
              * mandaria a mesma foto duas vezes.
              */
             setAnexos((atuais) => atuais.slice(i))
@@ -346,7 +346,7 @@ export function ProvedorDeEntrega({
               <span className="text-3xl leading-none">📎</span>
               <p className="text-[13px] font-semibold text-ink">Solte para anexar</p>
               <p className="text-[11px] text-dim">
-                Foto, vídeo, áudio ou PDF — você revisa antes de enviar
+                Foto, vídeo, áudio ou PDF, você revisa antes de enviar
               </p>
             </div>
           </div>
@@ -374,7 +374,7 @@ export function ProvedorDeEntrega({
   )
 }
 
-/** Ícone de quem não tem prévia — e do que tem, na miniatura. */
+/** Ícone de quem não tem prévia, e do que tem, na miniatura. */
 function Simbolo({ arquivo }: { arquivo: File }) {
   if (arquivo.type.startsWith('video/')) return <span aria-hidden>🎬</span>
   if (arquivo.type.startsWith('audio/')) return <span aria-hidden>🎤</span>
@@ -421,7 +421,7 @@ function PainelDeRevisao({
   return (
     /*
       `absolute inset-0` e fundo sólido: ele cobre a conversa, e só ela. A fila
-      da esquerda e o cabeçalho de quem está do outro lado continuam à vista —
+      da esquerda e o cabeçalho de quem está do outro lado continuam à vista ,
       que é o ponto todo desta tela.
     */
     <div
@@ -538,7 +538,7 @@ function PainelDeRevisao({
 
         {/*
           A fila de miniaturas, como no WhatsApp: é por onde se troca de arquivo,
-          se tira um do meio e se soma mais um — sem fechar e recomeçar.
+          se tira um do meio e se soma mais um, sem fechar e recomeçar.
         */}
         <div className="mt-2.5 flex items-center gap-2 overflow-x-auto pb-1">
           {anexos.map((anexo, i) => (

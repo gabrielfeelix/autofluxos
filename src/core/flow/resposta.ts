@@ -13,13 +13,13 @@
  *
  * **Recusar é conversa, não erro.** Não entender uma data não interrompe nada:
  * o bot diz o que espera, com exemplo, e continua parado na mesma pergunta. Só
- * depois de três tentativas a conversa vai para uma pessoa — a mesma régua que
+ * depois de três tentativas a conversa vai para uma pessoa, a mesma régua que
  * já vale para menu que ninguém acerta.
  *
  * **O valor padronizado é opcional e explícito.** `21/08/2026` é o que a pessoa
  * escreve e o que ela quer ler de volta; `2026-08-21` é o que uma API aceita. Os
  * dois são úteis e não são o mesmo, então cada um vai para a variável que quem
- * desenhou escolher — em vez de o motor decidir e surpreender metade dos casos.
+ * desenhou escolher, em vez de o motor decidir e surpreender metade dos casos.
  *
  * Puro e sem relógio, como todo `core/`: ano de dois dígitos não vira "este
  * século" por adivinhação, e "amanhã" não é data. Quem lê a hora é o servidor.
@@ -62,7 +62,7 @@ export const EXEMPLO_PADRONIZADO: Record<FormatoDeResposta, string> = {
 /**
  * O que o bot diz quando não entende.
  *
- * São frases nossas e por isso podem ser trocadas por quem desenha o fluxo — o
+ * São frases nossas e por isso podem ser trocadas por quem desenha o fluxo, o
  * campo "mensagem quando não entender" vence esta lista. O que **não** muda é a
  * forma: dizer o que falta e dar um exemplo. "Formato inválido" não ensina
  * ninguém a responder certo.
@@ -87,7 +87,7 @@ export type Conferida =
 /**
  * A resposta cabe no formato pedido?
  *
- * Sem formato, tudo cabe — é o comportamento que a pergunta livre sempre teve, e
+ * Sem formato, tudo cabe, é o comportamento que a pergunta livre sempre teve, e
  * há conversa em produção rodando um grafo publicado antes deste campo existir.
  */
 export function conferirResposta(
@@ -100,7 +100,7 @@ export function conferirResposta(
    * rodam o mesmo código, e um teste que dependesse de esperar a meia-noite não
    * seria teste. Quem lê a hora é o servidor, com o fuso da conta.
    *
-   * Ausente, `data_futura` se comporta como `data` — sem saber que dia é hoje,
+   * Ausente, `data_futura` se comporta como `data`, sem saber que dia é hoje,
    * recusar seria chutar, e chutar contra a pessoa é pior do que aceitar.
    */
   hoje?: string,
@@ -113,7 +113,7 @@ export function conferirResposta(
   if (padrao === null) return { ok: false }
 
   /*
-   * A data existe no calendário — mas já passou.
+   * A data existe no calendário, mas já passou.
    *
    * Sem isto o bot aceitava `01/09/2026` numa conversa de setembro, ia
    * consultar a agenda de um dia que não volta, e ainda oferecia horários.
@@ -129,7 +129,7 @@ function padronizar(formato: FormatoDeResposta, valor: string): string | null {
   switch (formato) {
     case 'data':
     // Mesma leitura de calendário; o que muda é a conferência contra hoje, em
-    // `conferirResposta` — aqui não há relógio para comparar.
+    // `conferirResposta`, aqui não há relógio para comparar.
     // falls through
     case 'data_futura':
       return comoData(valor)
@@ -150,7 +150,7 @@ function padronizar(formato: FormatoDeResposta, valor: string): string | null {
  * `21/08/2026`, `21-08-2026`, `21.08.2026` e `2026-08-21` viram `2026-08-21`.
  *
  * **Ano de quatro dígitos, obrigatório.** Aceitar `21/08` obrigaria a adivinhar
- * o ano a partir do relógio, e `core/` não tem relógio — mas o motivo de fundo é
+ * o ano a partir do relógio, e `core/` não tem relógio, mas o motivo de fundo é
  * outro: quem está remarcando aula em dezembro e escreve "05/01" quer janeiro do
  * ano que vem, e o palpite acerta metade das vezes. Pedir o ano é uma frase a
  * mais na conversa e zero agendamento no mês errado.
@@ -222,7 +222,7 @@ function comoNumero(valor: string): string | null {
 /**
  * E-mail, na régua que vale numa conversa de WhatsApp.
  *
- * Não é a RFC — validar e-mail pela RFC aceita coisas que nenhum provedor
+ * Não é a RFC, validar e-mail pela RFC aceita coisas que nenhum provedor
  * entrega e recusa nada que a pessoa vai digitar errado. O que pega o erro real
  * é exigir arroba, um domínio com ponto, e nenhum espaço.
  */
@@ -236,7 +236,7 @@ function comoEmail(valor: string): string | null {
  *
  * Dez ou onze dígitos viram `55` + o número. Doze ou treze já vêm com o país.
  * Não inventa DDD: número sem ele não disca, e um telefone que não disca é um
- * contato que ninguém alcança — melhor pedir de novo do que guardar inútil.
+ * contato que ninguém alcança, melhor pedir de novo do que guardar inútil.
  */
 function comoTelefone(valor: string): string | null {
   const digitos = valor.replace(/\D/g, '')

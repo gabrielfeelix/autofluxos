@@ -1,7 +1,7 @@
 /**
  * Os quadros: em que etapa cada contato está (0032).
  *
- * Puro e sem rede, como todo `core/`. O que mora aqui é a régua — quantas
+ * Puro e sem rede, como todo `core/`. O que mora aqui é a régua, quantas
  * etapas cabem, como se ordena, e o cálculo de "parado há quanto tempo", que é
  * a única informação do quadro que faz alguém agir.
  */
@@ -16,7 +16,7 @@
  *
  * Estas três descrevem **atendimento**, não um ramo: servem à barbearia, à
  * clínica e ao estúdio igualmente, e a primeira coisa que se espera é que a
- * pessoa as renomeie. Zero etapas seria a outra forma de errar — um quadro que
+ * pessoa as renomeie. Zero etapas seria a outra forma de errar, um quadro que
  * abre morto e exige três cliques antes de mostrar qualquer coisa.
  */
 export const ETAPAS_INICIAIS = ['Novo', 'Em conversa', 'Fechado'] as const
@@ -46,7 +46,7 @@ export type Etapa = {
    *
    * `normal` é coluna comum. Cair em `ganho` fecha a negociação e faz o contato
    * virar cliente; cair em `perdido` pede o motivo. Sem isso, "Fechado" é um
-   * nome que só o humano entende — o sistema não pode agir a partir dele.
+   * nome que só o humano entende, o sistema não pode agir a partir dele.
    */
   tipo?: TipoDeEtapa
 
@@ -74,12 +74,12 @@ export type TipoDeEtapa = 'normal' | 'ganho' | 'perdido'
  * As cores que uma etapa pode ter.
  *
  * **Nome, e não hex.** O produto tem tema claro e escuro, e um `#fde047`
- * escolhido no escuro vira texto ilegível no claro — quem escolheu não vai
+ * escolhido no escuro vira texto ilegível no claro, quem escolheu não vai
  * testar os dois. Guardando o nome, quem decide o tom exato é o CSS, que já sabe
  * em que tema está.
  *
  * Oito, e não uma paleta aberta: o funil tem no máximo oito etapas
- * (`LIMITE_DE_ETAPAS`), e cor demais é a mesma coisa que cor nenhuma — se toda
+ * (`LIMITE_DE_ETAPAS`), e cor demais é a mesma coisa que cor nenhuma, se toda
  * coluna é colorida, nenhuma se destaca.
  */
 export const CORES_DA_ETAPA = [
@@ -101,7 +101,7 @@ export type CorDaEtapa = (typeof CORES_DA_ETAPA)[number]
  * O `check` da 0069 já barra o resto, mas o tipo do lado de cá vem de uma
  * consulta, e consulta devolve `string`. Sem esta porta, uma cor escrita por
  * versão futura viraria classe CSS inexistente e a coluna apareceria sem estilo
- * nenhum — melhor cair no cinza e continuar legível.
+ * nenhum, melhor cair no cinza e continuar legível.
  */
 export function ehCorDaEtapa(valor: unknown): valor is CorDaEtapa {
   return typeof valor === 'string' && (CORES_DA_ETAPA as readonly string[]).includes(valor)
@@ -112,7 +112,7 @@ export function ehCorDaEtapa(valor: unknown): valor is CorDaEtapa {
  *
  * **As classes são escritas inteiras**, como em `core/etiquetas.ts`: o Tailwind
  * lê o texto do arquivo para decidir o que gerar, e `bg-${cor}-400` montado em
- * tempo de execução não existiria na folha de estilo — a bolinha ficaria
+ * tempo de execução não existiria na folha de estilo, a bolinha ficaria
  * invisível, sem erro nenhum.
  *
  * Tom 400/500 e não 200: aqui a cor é o próprio objeto, não fundo de texto como
@@ -143,7 +143,7 @@ export type Cartao = {
    * Opcionais porque cartão antigo não tem nada disso, e porque a maioria dos
    * cartões vivos também não vai ter: quem atende no WhatsApp anota valor quando
    * fecha, não quando a pessoa manda "oi". Campo obrigatório aqui viraria zero
-   * na tela — e "R$ 0,00" em cada cartão é pior que nada escrito.
+   * na tela, e "R$ 0,00" em cada cartão é pior que nada escrito.
    */
   titulo?: string | null
   valor?: number | null
@@ -233,7 +233,7 @@ export function aoArrastarPara(
 /**
  * A ordem das etapas na tela.
  *
- * `ordem` não é única no banco de propósito — trocar duas de lugar com um índice
+ * `ordem` não é única no banco de propósito, trocar duas de lugar com um índice
  * único exige valor temporário e coreografia. O empate é desempatado por
  * `criadoEm`, que é determinístico: duas leituras seguidas nunca devolvem
  * ordens diferentes, que é o que faria a coluna "pular" ao recarregar.
@@ -256,7 +256,7 @@ export function proximaOrdem(etapas: Etapa[]): number {
 /**
  * As duas etapas que trocam de lugar quando alguém move uma para o lado.
  *
- * Devolve `null` quando não há para onde ir — é a ponta da lista, e o botão
+ * Devolve `null` quando não há para onde ir, é a ponta da lista, e o botão
  * fica desabilitado em vez de sumir. Só as **duas** trocam: renumerar a lista
  * inteira a cada clique reescreveria oito linhas para mover uma.
  */
@@ -279,7 +279,7 @@ export function trocaDeLugar(
  * Há quantos dias este cartão está parado nesta etapa.
  *
  * Recebe o agora por parâmetro porque data calculada no navegador diverge do que
- * o servidor renderizou — é a divergência de hidratação que já mordeu este
+ * o servidor renderizou, é a divergência de hidratação que já mordeu este
  * projeto na lista de contatos.
  */
 export function diasParado(entrouNaColunaEm: string, agora: number = Date.now()): number {
@@ -308,7 +308,7 @@ export function estaParado(
   return diasParado(entrouNaColunaEm, agora) >= (limiteDaEtapa ?? DIAS_PARA_MARCAR_PARADO)
 }
 
-/** "hoje", "há 1 dia", "há 6 dias" — já formatado no servidor. */
+/** "hoje", "há 1 dia", "há 6 dias", já formatado no servidor. */
 export function comoParado(entrouNaColunaEm: string, agora: number = Date.now()): string {
   const dias = diasParado(entrouNaColunaEm, agora)
   if (dias === 0) return 'hoje'
@@ -336,7 +336,7 @@ export function conferirEtapa(
   if (jaExistentes.length >= LIMITE_DE_ETAPAS) {
     return {
       ok: false,
-      motivo: `um quadro tem no máximo ${LIMITE_DE_ETAPAS} etapas — acima disso elas não cabem lado a lado, e funil maior que isso costuma ser dois funis`,
+      motivo: `um quadro tem no máximo ${LIMITE_DE_ETAPAS} etapas, acima disso elas não cabem lado a lado, e funil maior que isso costuma ser dois funis`,
     }
   }
   return { ok: true, nome: limpo }
@@ -346,7 +346,7 @@ export function conferirEtapa(
 export function cartoesPorEtapa(
   cartoes: Cartao[],
   /**
-   * A ordem escolhida na barra. O padrão é o do produto — ver abaixo.
+   * A ordem escolhida na barra. O padrão é o do produto, ver abaixo.
    *
    * As outras duas existem para perguntas diferentes da fila de trabalho:
    * "maior valor" é a do fim do mês, "mais recente" é a de quem quer ver o que
@@ -364,12 +364,12 @@ export function cartoesPorEtapa(
 
   /**
    * **Quem está parado há mais tempo fica em cima.** A coluna é uma fila de
-   * trabalho, e ordenar por chegada esconderia o esquecido no fim dela — que é
+   * trabalho, e ordenar por chegada esconderia o esquecido no fim dela, que é
    * exatamente a pessoa que o quadro precisa mostrar.
    *
    * Antes disso, porém, **cartão fechado desce**. Ganho e perdido continuam no
    * quadro de propósito (é assim que o time vê o próprio resultado no fim do
-   * mês), mas eles não são trabalho pendente — deixá-los disputando o topo da
+   * mês), mas eles não são trabalho pendente, deixá-los disputando o topo da
    * coluna com quem espera resposta inverteria o sentido da tela.
    */
   for (const lista of mapa.values()) {
@@ -422,7 +422,7 @@ export const FILTRO_VAZIO: FiltroDoQuadro = {
  * Acento e maiúscula não podem separar ninguém da própria busca.
  *
  * Quem procura "jose" tem que achar "José", e quem digita com pressa não vai
- * voltar para pôr o acento — vai concluir que a pessoa não está no quadro.
+ * voltar para pôr o acento, vai concluir que a pessoa não está no quadro.
  */
 function comparavel(texto: string): string {
   return texto
@@ -434,7 +434,7 @@ function comparavel(texto: string): string {
 /**
  * O cartão passa pelo filtro?
  *
- * A busca varre **nome, telefone e título da negociação** — as três coisas que
+ * A busca varre **nome, telefone e título da negociação**, as três coisas que
  * alguém tem na cabeça ao procurar ("a Ana", "o 98851", "o plano trimestral").
  * Só dígitos no telefone dos dois lados, senão procurar por "11 98851" não acha
  * o que está guardado como "5511988519314".

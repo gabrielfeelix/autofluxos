@@ -17,7 +17,7 @@ import {
  * Equipes e capacidades no banco (0073, T2.2).
  *
  * O que só o banco prova: o nome único entre as ativas, o arquivamento que
- * tira do escopo sem apagar, e — o mais importante — que **escopo igual ao do
+ * tira do escopo sem apagar, e, o mais importante, que **escopo igual ao do
  * papel não vira linha**. Gravar o que já é regra congelaria a pessoa na
  * política de hoje, e trocar o papel dela depois não teria efeito nenhum.
  */
@@ -96,7 +96,7 @@ describe.skipIf(!temCredencial)('as equipes', () => {
    * **Equipe de outra conta não entra** (RB-42, A19).
    *
    * Os ids chegam de formulário, e a chave estrangeira só sabe que eles
-   * existem — não de quem são. A chave secreta ignora RLS, então quem confere
+   * existem, não de quem são. A chave secreta ignora RLS, então quem confere
    * é este código.
    */
   it('recusa equipe que não é da conta', async () => {

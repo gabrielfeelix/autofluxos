@@ -96,12 +96,12 @@ const PODERES: Record<TipoDeEntrada, PoderesDaEntrada> = {
   /*
    * Lead Ads. Cria contato e cartão, e não abre janela nenhuma: é a RB-09.
    * `podeAcionarAutomacao` é `true` porque um lead de formulário **pode** ser
-   * trabalhado — só que qualquer envio vai depender de modelo aprovado, e é
+   * trabalhado, só que qualquer envio vai depender de modelo aprovado, e é
    * `abrePortaDeEntrada: false` que garante isso.
    */
   formulario: { abrePortaDeEntrada: false, valeComoMensagem: false, podeAcionarAutomacao: true },
   /*
-   * Mensagem real. Não abre a porta de 72h por si só — quem abre é o clique,
+   * Mensagem real. Não abre a porta de 72h por si só, quem abre é o clique,
    * e ele vem numa linha `anuncio_whatsapp` própria.
    */
   mensagem: { abrePortaDeEntrada: false, valeComoMensagem: true, podeAcionarAutomacao: true },
@@ -117,7 +117,7 @@ const PODERES: Record<TipoDeEntrada, PoderesDaEntrada> = {
 /**
  * O que este tipo autoriza.
  *
- * Tipo desconhecido — linha antiga, valor que alguém escreveu na mão no banco —
+ * Tipo desconhecido, linha antiga, valor que alguém escreveu na mão no banco ,
  * **não autoriza nada**. Falhar fechado aqui é a tela oferecer modelo aprovado
  * quando poderia ter oferecido texto livre; falhar aberto é a Meta recusar o
  * envio depois de a pessoa escrever o parágrafo.
@@ -134,8 +134,8 @@ export function ehTipoDeEntrada(valor: unknown): valor is TipoDeEntrada {
 /**
  * O tipo de uma chegada por `referral` do webhook da Meta.
  *
- * A Meta manda `source_type` com `ad` ou `post`. Qualquer outra coisa — e o
- * campo ausente — cai em `botao_pagina` **não**: cai em `anuncio_whatsapp`
+ * A Meta manda `source_type` com `ad` ou `post`. Qualquer outra coisa, e o
+ * campo ausente, cai em `botao_pagina` **não**: cai em `anuncio_whatsapp`
  * apenas quando há `source_id`, porque é o `source_id` que prova que houve um
  * criativo clicado. Sem ele não há porta a abrir.
  */

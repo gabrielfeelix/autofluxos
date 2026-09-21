@@ -27,7 +27,7 @@ describe('normalizar a frase', () => {
     expect(fraseComparavel('Promoção de Março')).toBe('promocao de marco')
   })
 
-  it('não tira pontuação do meio — ela faz parte da frase', () => {
+  it('não tira pontuação do meio, ela faz parte da frase', () => {
     expect(fraseComparavel('Plano 2x1, por favor')).toBe('plano 2x1, por favor')
   })
 })
@@ -47,7 +47,7 @@ describe('casar a campanha', () => {
     )
   })
 
-  it('não casa com pedaço — quem apagou parte não está mais respondendo ao anúncio', () => {
+  it('não casa com pedaço, quem apagou parte não está mais respondendo ao anúncio', () => {
     // É a diferença entre campanha e gatilho. Aqui, meia frase é outra conversa.
     expect(casarCampanha(campanhas, 'Quero saber mais')).toBeNull()
     expect(casarCampanha(campanhas, 'Oi! Quero saber mais sobre o plano trimestral')).toBeNull()

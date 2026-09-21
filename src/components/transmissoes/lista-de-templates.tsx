@@ -35,12 +35,12 @@ const EXPLICACAO: Record<StatusDoTemplate, string | null> = {
   pendente: 'A Meta está revisando. Costuma levar de alguns minutos a 24 horas.',
   aprovado: null,
   recusado: null,
-  // Pausado engana por parecer temporário — e é. Mas enquanto durar, não
+  // Pausado engana por parecer temporário, e é. Mas enquanto durar, não
   // entrega, e dizer "quase aprovado" faria a pessoa agendar uma campanha que
   // vai falhar inteira.
   pausado:
     'A Meta pausou por baixa qualidade. Ela despausa sozinha em algumas horas, mas enquanto isso o envio falha.',
-  desativado: 'A Meta desativou de vez. Não volta — crie outro modelo.',
+  desativado: 'A Meta desativou de vez. Não volta, crie outro modelo.',
 }
 
 export function ListaDeTemplates({
@@ -131,7 +131,7 @@ function Linha({ clienteId, template }: { clienteId: string; template: Template 
             importante desta tela.
 
             Quando a Meta recusa por formato, ela manda a explicação E a
-            recomendação do que consertar — a melhor informação que ela dá em
+            recomendação do que consertar, a melhor informação que ela dá em
             qualquer lugar da plataforma. Resumir aqui, ou trocar por um
             "recusado" genérico, jogaria fora exatamente o que faz a pessoa
             conseguir consertar sem abrir a documentação em inglês.

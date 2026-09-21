@@ -12,21 +12,21 @@ import { renovarToken } from './conexao'
  *
  * **O problema que ela resolve, e por que ele é silencioso.** O token longo do
  * Instagram vale 60 dias. Ele se renova enquanto está **vivo**; depois de
- * vencido não há renovação nenhuma — é refazer o OAuth, com o dono do perfil
+ * vencido não há renovação nenhuma, é refazer o OAuth, com o dono do perfil
  * na frente da tela. Sem esta rotina, `renovarToken()` existia e ninguém a
  * chamava: a conta respondia normalmente por dois meses e parava no dia 61,
  * sem nenhuma mudança tendo sido feita e sem nada na tela explicando.
  *
  * **Renovar cedo não custa nada e chegar tarde custa tudo**, e é isso que
  * define a folga: a partir de `DIAS_DE_FOLGA` antes do vencimento, toda passada
- * diária tenta de novo. São dez tentativas antes da morte do token — a Meta
+ * diária tenta de novo. São dez tentativas antes da morte do token, a Meta
  * pode estar fora do ar em um dia, e um dia não pode ser o último.
  *
  * **Uma conta que falha não pode derrubar as outras**, pela mesma razão do
  * executor da fila: são clientes diferentes, e um perfil com problema não pode
  * impedir a renovação do vizinho. Por isso o `try` é por canal.
  *
- * O que sobra para o humano — token já vencido — vira alerta, e alerta hoje é
+ * O que sobra para o humano, token já vencido, vira alerta, e alerta hoje é
  * linha em `public.alertas` e cartão em `/admin/alertas`, não webhook opcional.
  */
 
@@ -39,14 +39,14 @@ export type ResumoDaRenovacao = {
   renovados: number
   /**
    * Já venceram: não há o que renovar, e só o dono do perfil resolve. Contados
-   * à parte das falhas de propósito — não é erro nosso, é trabalho de humano.
+   * à parte das falhas de propósito, não é erro nosso, é trabalho de humano.
    */
   vencidos: number
   falhas: number
 }
 
 /**
- * As idas ao mundo, injetáveis — a rotina é testada sem banco e sem a Meta.
+ * As idas ao mundo, injetáveis, a rotina é testada sem banco e sem a Meta.
  *
  * Mesma escolha do `fabricaDeCanal` do executor de tarefas: o que precisa de
  * teste aqui é a decisão (quem renovar, quem pular, o que fazer quando falha),
@@ -106,7 +106,7 @@ export async function renovarTokensDoInstagram(
       resumo.renovados += 1
     } catch (erro) {
       resumo.falhas += 1
-      // Falhar hoje é normal — sobram dias de folga e a próxima passada tenta
+      // Falhar hoje é normal, sobram dias de folga e a próxima passada tenta
       // de novo. O alerta existe para o caso de sobrar falha até o fim: sem
       // ele, a conta simplesmente para de responder um dia desses.
       await mundo.avisar(

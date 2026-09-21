@@ -35,14 +35,14 @@ export const TAREFAS_POR_PASSADA = 50
  * Depois de quantas tentativas a tarefa desiste.
  *
  * Três, e não infinitas: tarefa que falha três vezes seguidas falha por um
- * motivo que não vai passar sozinho — fluxo apagado, número desconectado,
+ * motivo que não vai passar sozinho, fluxo apagado, número desconectado,
  * credencial revogada. Continuar tentando transforma um defeito num consumo
  * permanente de cota, e esconde o erro numa fila que nunca esvazia.
  */
 export const MAX_TENTATIVAS_DA_TAREFA = 3
 
 /**
- * Agenda — ou reagenda, quando já existe uma com a mesma chave.
+ * Agenda, ou reagenda, quando já existe uma com a mesma chave.
  *
  * **Reagendar substitui.** A intenção mais nova é a que vale: um fluxo que
  * repergunta acabou de recomeçar a espera, e manter o prazo antigo faria a
@@ -60,13 +60,13 @@ export async function agendar(tarefa: {
    *
    * O índice único de `chave` é **parcial** (`where chave is not null and
    * estado = 'pendente'`, ver a 0026), e `ON CONFLICT` não usa índice parcial
-   * sem repetir o predicado — coisa que o PostgREST não tem como expressar. E o
+   * sem repetir o predicado, coisa que o PostgREST não tem como expressar. E o
    * índice precisa ser parcial: sem isso, uma tarefa já `feita` bloquearia para
    * sempre o reagendamento da mesma conversa.
    *
    * A corrida entre as duas escritas é fechada em outro lugar: quem agenda está
    * dentro da trava do contato, e a chave é por sessão. Se ainda assim duas
-   * chegarem juntas, a segunda bate no índice e vira log — uma cobrança a
+   * chegarem juntas, a segunda bate no índice e vira log, uma cobrança a
    * menos, nunca duas.
    */
   if (tarefa.chave) await cancelarPorChave(tarefa.chave)
@@ -162,7 +162,7 @@ export async function marcarFalha(
  * Tipo que esta versão do código não conhece: volta para a fila **sem** contar
  * como tentativa perdida para sempre.
  *
- * É o caso de um deploy pela metade — a tarefa foi criada por uma versão nova e
+ * É o caso de um deploy pela metade, a tarefa foi criada por uma versão nova e
  * pega por uma antiga. Marcar como falha jogaria fora trabalho legítimo.
  */
 export async function devolverDesconhecidas(): Promise<void> {

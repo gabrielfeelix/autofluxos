@@ -9,7 +9,7 @@ import { pulsoDaConta } from './leads'
  *
  * O que não pode falhar aqui é o **isolamento**: `messages` não guarda o
  * cliente, e o vínculo passa por `contacts`. Um erro nesse join faria o Inbox
- * de uma conta piscar por causa do movimento de outra — e, pior, revelaria que
+ * de uma conta piscar por causa do movimento de outra, e, pior, revelaria que
  * a outra conta tem movimento.
  */
 const temTudo = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SECRET_KEY)
@@ -53,14 +53,14 @@ describe.skipIf(!temTudo)('pulso da conta', () => {
      * O pulso é **opaco**: carimbo, uma barra, e um dígito por mensagem do fim
      * da conversa dizendo se ela já tem arquivo guardado. Quem compara só
      * pergunta se mudou. O teste confere o formato justamente para ninguém
-     * voltar a tratá-lo como data — ele já foi uma, e voltar a ser quebraria o
+     * voltar a tratá-lo como data, ele já foi uma, e voltar a ser quebraria o
      * conserto do arquivo que chega atrasado.
      */
     expect(pulso).toMatch(/^.+\|[01]+$/)
     expect(Number.isNaN(Date.parse((pulso as string).split('|')[0] as string))).toBe(false)
   })
 
-  it('mensagem nova muda o pulso — é isso que dispara o refresh', async () => {
+  it('mensagem nova muda o pulso, é isso que dispara o refresh', async () => {
     const antes = await pulsoDaConta(clienteA)
 
     await registrarEntrada({
@@ -78,7 +78,7 @@ describe.skipIf(!temTudo)('pulso da conta', () => {
    * O defeito que este teste tranca: o GIF animado que nunca aparecia.
    *
    * A mensagem é gravada primeiro e a mídia baixa depois. Enquanto o pulso era
-   * só `max(ts)`, a chegada do arquivo não mudava nada — e a tela que se
+   * só `max(ts)`, a chegada do arquivo não mudava nada, e a tela que se
    * atualizou no meio do caminho ficava para sempre dizendo "sem cópia
    * guardada" para um arquivo que estava no bucket.
    */

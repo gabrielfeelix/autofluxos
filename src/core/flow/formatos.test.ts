@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { formatarValor } from './formatos'
 
-describe('formatarValor — o dado do sistema virando texto de conversa', () => {
+describe('formatarValor, o dado do sistema virando texto de conversa', () => {
   it('data ISO vira data brasileira', () => {
     expect(formatarValor('2026-09-01', 'data')).toBe('01/09/2026')
   })
@@ -32,7 +32,7 @@ describe('formatarValor — o dado do sistema virando texto de conversa', () => 
     expect(formatarValor('2026-09-01; 2026-09-02', 'data')).toBe('01/09/2026; 02/09/2026')
   })
 
-  it('o que não casa com o formato passa cru — some com o dado é pior', () => {
+  it('o que não casa com o formato passa cru, some com o dado é pior', () => {
     expect(formatarValor('quando der', 'data')).toBe('quando der')
   })
 
@@ -41,7 +41,7 @@ describe('formatarValor — o dado do sistema virando texto de conversa', () => 
   })
 })
 
-describe('nomes — a lista de quem atende vira frase', () => {
+describe('nomes, a lista de quem atende vira frase', () => {
   it('cada nome uma vez só, na ordem em que apareceu', () => {
     expect(formatarValor('Carol;Carol;Carol;Márcia;Thalya;Thalya;Márcia', 'nomes')).toBe(
       'Carol, Márcia e Thalya',
@@ -56,7 +56,7 @@ describe('nomes — a lista de quem atende vira frase', () => {
     expect(formatarValor('Carol;Márcia', 'nomes')).toBe('Carol e Márcia')
   })
 
-  it('só quem colide ganha sobrenome — a Márcia sozinha continua Márcia', () => {
+  it('só quem colide ganha sobrenome, a Márcia sozinha continua Márcia', () => {
     expect(formatarValor('Carol Silva;Carol Souza;Márcia Lima', 'nomes')).toBe(
       'Carol Silva, Carol Souza e Márcia',
     )
@@ -66,7 +66,7 @@ describe('nomes — a lista de quem atende vira frase', () => {
     expect(formatarValor('Carol Silva;Carol Silva;Márcia Lima', 'nomes')).toBe('Carol e Márcia')
   })
 
-  it('sem colisão, o sobrenome não aparece — "Carol" basta', () => {
+  it('sem colisão, o sobrenome não aparece, "Carol" basta', () => {
     expect(formatarValor('Carol Silva;Márcia Lima', 'nomes')).toBe('Carol e Márcia')
   })
 

@@ -17,7 +17,7 @@ type Linha = { ad_id: string; titulo: string | null; criado_em: string; tipo: st
  *
  * **Nunca lança, e por isso devolve `void`.** Quem chama é o webhook da Meta,
  * no caminho de receber mensagem: falhar aqui não pode impedir a pessoa de ser
- * atendida nem fazer o webhook responder erro — a Meta reentregaria, e o
+ * atendida nem fazer o webhook responder erro, a Meta reentregaria, e o
  * resultado seria a mensagem duplicada por causa de um registro de histórico.
  *
  * A repetição é esperada e silenciosa: o índice `passagens_sem_repeticao_idx`
@@ -69,7 +69,7 @@ export async function registrarPassagem(entrada: {
  * O histórico de um contato, da chegada mais recente para a mais antiga.
  *
  * A ordem é a da leitura: "veio por esta, e antes por aquela". Quem quiser a
- * primeira passagem — a atribuição original, que é o que a Meta credita — lê a
+ * primeira passagem, a atribuição original, que é o que a Meta credita, lê a
  * última da lista.
  */
 export async function passagensDoContato(contatoId: string): Promise<Passagem[]> {

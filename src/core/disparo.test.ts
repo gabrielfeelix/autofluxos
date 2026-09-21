@@ -66,7 +66,7 @@ describe('a espera entre tentativas', () => {
 
   /*
    * Sem jitter, mil mensagens que tomaram 130429 no mesmo segundo voltam
-   * juntas no mesmo segundo — o mesmo pico que causou o erro. É o thundering
+   * juntas no mesmo segundo, o mesmo pico que causou o erro. É o thundering
    * herd, e ele transforma um soluço num apagão.
    */
   it('espalha com jitter de ±25%', () => {
@@ -95,7 +95,7 @@ describe('a decisão depois de um erro', () => {
 
   /*
    * A armadilha que mais custa: repetir antes das 24h SUSPENDE o destinatário
-   * por MAIS 24h. A tentativa extra não é neutra — ela piora o caso.
+   * por MAIS 24h. A tentativa extra não é neutra, ela piora o caso.
    */
   it('espera 24h inteiras no limite por usuário, e não um backoff curto', () => {
     const d = decidir('esperar_24h', primeira)
@@ -164,7 +164,7 @@ describe('dá para transmitir agora?', () => {
   })
 
   /*
-   * Campanha maior que o teto não é erro — é campanha que leva mais de um dia.
+   * Campanha maior que o teto não é erro, é campanha que leva mais de um dia.
    * Barrar seria errado; deixar sem avisar seria pior.
    */
   it('deixa passar a campanha grande, avisando em quantos dias ela cabe', () => {

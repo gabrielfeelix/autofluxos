@@ -24,8 +24,8 @@ import {
  * Por que ícone, e por que aqui
  * ---------------------------------------------------------------------------
  *
- * O cabeçalho tinha cinco botões de texto — "Passar para", "Adiar", "Resolver",
- * "Assumir", "Abrir ficha" — mais um seletor de atendente, tudo disputando a
+ * O cabeçalho tinha cinco botões de texto, "Passar para", "Adiar", "Resolver",
+ * "Assumir", "Abrir ficha", mais um seletor de atendente, tudo disputando a
  * mesma linha com o nome da pessoa. Numa janela de 1280px o nome truncava em
  * doze caracteres para caber botão.
  *
@@ -36,7 +36,7 @@ import {
  * **Todo ícone tem dica e `aria-label`.** Ícone sozinho é adivinhação: a
  * etiqueta e o relógio são reconhecíveis, o quadrado que abre a ficha não é de
  * jeito nenhum, e quem usa leitor de tela não vê nenhum deles. A dica é a do
- * produto (ver `Dica`), e não o `title` do navegador — numa fileira em que ela
+ * produto (ver `Dica`), e não o `title` do navegador, numa fileira em que ela
  * é a única legenda, o segundo de atraso do sistema operacional é a diferença
  * entre ler a barra e adivinhar.
  *
@@ -45,7 +45,7 @@ import {
  * ---------------------------------------------------------------------------
  *
  * Assumir e passar para continuam sendo botão de texto, ao lado. Eles mudam
- * **de quem é** a conversa — é a decisão mais cara desta tela, a única que
+ * **de quem é** a conversa, é a decisão mais cara desta tela, a única que
  * afeta o trabalho de outra pessoa, e a que mais precisa dizer em palavras o
  * que vai fazer.
  */
@@ -73,7 +73,7 @@ export function AcoesRapidas({
   automacaoAtiva: boolean
   /** Sem fluxo ligado não há bot: o botão de pausar não aparece. */
   temAutomacao: boolean
-  /** Quando a janela de 24h fecha, em ISO — o agendamento avisa a partir dela. */
+  /** Quando a janela de 24h fecha, em ISO, o agendamento avisa a partir dela. */
   fimDaJanela: string | null
   /** O que já está marcado nesta conversa, para listar e cancelar sem sair daqui. */
   agendadas: MensagemAgendada[]
@@ -84,7 +84,7 @@ export function AcoesRapidas({
 
   /*
    * As duas apostas otimistas do cabeçalho. Resolver e pausar o bot são gestos
-   * que se fazem **antes** de continuar trabalhando — esperar o servidor para
+   * que se fazem **antes** de continuar trabalhando, esperar o servidor para
    * saber se pegou é esperar para começar a escrever a resposta.
    */
   const conversa = useAcaoOtimista(estado)
@@ -149,7 +149,7 @@ export function AcoesRapidas({
       {/*
         Agendar fica entre adiar e resolver porque os três são a mesma família:
         decidem **quando** algo acontece. Marcada quando já há mensagem
-        esperando, do mesmo jeito que etiqueta e anotação — o ponto é a barra
+        esperando, do mesmo jeito que etiqueta e anotação, o ponto é a barra
         dizer o que esta conversa já tem sem ninguém abrir nada.
       */}
       <AcaoComPainel
@@ -361,7 +361,7 @@ function AcaoComPainel({
 }
 
 /* -------------------------------------------------------------------------- */
-/* Ícones — traço de 1,7px, o mesmo do resto do painel                        */
+/* Ícones, traço de 1,7px, o mesmo do resto do painel                        */
 /* -------------------------------------------------------------------------- */
 
 const traco = {

@@ -29,7 +29,7 @@ const RESULTADOS: Record<string, { tom: 'bom' | 'ruim'; texto: string }> = {
   sem_webhook: {
     tom: 'ruim',
     texto:
-      'Conta ligada, mas a Meta recusou a inscrição no webhook — os direct não vão chegar. Desligue e conecte de novo; se repetir, o detalhe está em Alertas.',
+      'Conta ligada, mas a Meta recusou a inscrição no webhook, os direct não vão chegar. Desligue e conecte de novo; se repetir, o detalhe está em Alertas.',
   },
   cancelado: {
     tom: 'ruim',
@@ -119,7 +119,7 @@ export default async function Pagina({
 
             {/*
              * O prazo do token não é detalhe técnico escondido num log: ele
-             * vence em 60 dias e, vencido, só o dono do perfil resolve — na
+             * vence em 60 dias e, vencido, só o dono do perfil resolve, na
              * frente da tela, autorizando de novo. Quem opera precisa ver isso
              * chegando, e não descobrir pelo cliente reclamando que o
              * Instagram parou.
@@ -141,7 +141,7 @@ export default async function Pagina({
             <p className="text-[14px] font-semibold text-soft">Nenhuma conta ligada</p>
             <p className="mt-1.5 max-w-lg text-[12.5px] leading-6 text-dim">
               Conectar abre a tela do Instagram, onde o dono do perfil autoriza. A conta precisa
-              ser <strong className="text-muted">profissional</strong> (comercial ou de criador) —
+              ser <strong className="text-muted">profissional</strong> (comercial ou de criador) ,
               perfil pessoal não recebe mensagem por API.
             </p>
 
@@ -188,7 +188,7 @@ export default async function Pagina({
           <p className="text-[12.5px] font-semibold text-muted">Enquanto o app review não sai</p>
           <p className="mt-1.5 text-[12px] leading-6 text-dim">
             As permissões de mensagem estão em <strong>Standard Access</strong>. Nesse estágio o
-            Instagram só embarca contas ligadas à própria conta da Meta da 4YU — dá para atender no
+            Instagram só embarca contas ligadas à própria conta da Meta da 4YU, dá para atender no
             nosso perfil, não no do cliente. Quando o <strong>Advanced Access</strong> for aprovado,
             esta mesma tela passa a aceitar a conta de qualquer cliente, sem mudar nada aqui.
           </p>

@@ -71,7 +71,7 @@ describe('o status do modelo', () => {
 
     expect(atualizarStatusPorWabaId).toHaveBeenCalledWith('123', {
       status: 'recusado',
-      motivoRecusa: 'Falta valor de exemplo na variável 2. — Adicione um exemplo para {{2}}.',
+      motivoRecusa: 'Falta valor de exemplo na variável 2., Adicione um exemplo para {{2}}.',
     })
   })
 

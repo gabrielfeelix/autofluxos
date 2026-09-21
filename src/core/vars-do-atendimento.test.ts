@@ -38,7 +38,7 @@ describe('varsDoAtendimento', () => {
 
   /*
    * Sem isto, o validador acusaria "variável não existe" num nome que o próprio
-   * produto injeta, e o editor não a ofereceria no seletor — ela funcionaria
+   * produto injeta, e o editor não a ofereceria no seletor, ela funcionaria
    * escondida, que é o mesmo que não existir para quem desenha.
    */
   it('as duas são nativas: o validador e o editor as conhecem', () => {

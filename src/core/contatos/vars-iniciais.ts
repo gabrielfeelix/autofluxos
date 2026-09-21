@@ -5,7 +5,7 @@ import { VARIAVEIS_DO_ATENDIMENTO } from '../vars-do-atendimento'
  *
  * **A sessão nascia com `vars` vazio, e isso quebrava em silêncio tudo que
  * depende de saber com quem se está falando.** `{{telefone}}` e `{{nome}}`
- * apareciam escritos nos presets de integração — a RD, a planilha, o webhook —
+ * apareciam escritos nos presets de integração, a RD, a planilha, o webhook ,
  * e chegavam vazios no primeiro bloco de toda conversa. O sintoma é o pior
  * possível: a chamada sai, responde 200, e grava um lead sem telefone. Nada
  * estoura, nada aparece no log, e só se descobre olhando o CRM do cliente.
@@ -14,8 +14,7 @@ import { VARIAVEIS_DO_ATENDIMENTO } from '../vars-do-atendimento'
  * ignorar: `GET /pessoas?telefone={{telefone}}` sem telefone procura por nada,
  * responde "não achei", e o fluxo trata uma aluna de dois anos como pessoa nova.
  *
- * **Isto não é dado de negócio.** A fronteira do ARQUITETURA.md continua valendo
- * — turma, matrícula e presença moram no sistema do cliente. Número e nome de
+ * **Isto não é dado de negócio.** A fronteira do ARQUITETURA.md continua valendo, turma, matrícula e presença moram no sistema do cliente. Número e nome de
  * quem está conversando são estado da própria conversa, e nós já os temos na
  * mão: o número é a identidade do canal, e o nome veio no perfil.
  *
@@ -38,7 +37,7 @@ export type RetratoDoContato = {
  * As que **sempre existem**, antes de qualquer bloco rodar.
  *
  * Exportadas daqui, e não repetidas no validador e no editor, porque as três
- * verdades divergiriam no dia em que uma quarta variável nativa nascesse — e a
+ * verdades divergiriam no dia em que uma quarta variável nativa nascesse, e a
  * divergência apareceria como aviso falso, que é o pior tipo: ele treina quem
  * desenha a ignorar o painel de avisos inteiro.
  */

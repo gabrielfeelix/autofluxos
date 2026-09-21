@@ -15,7 +15,7 @@ describe('partir o texto por endereço', () => {
     expect(partirPorEndereco('oi, tudo bem?')).toEqual([{ tipo: 'texto', valor: 'oi, tudo bem?' }])
   })
 
-  it('o endereço com sublinhado sai INTEIRO — é o defeito de produção', () => {
+  it('o endereço com sublinhado sai INTEIRO, é o defeito de produção', () => {
     const link =
       'https://www.dlcash.com.br/emprestimo?gadsource=1&gadcampaignid=232&gclid=CjwKCAj_BwE'
     const pedacos = partirPorEndereco(`olha ${link} aqui`)
@@ -37,13 +37,13 @@ describe('partir o texto por endereço', () => {
     expect(pedacos[2]).toEqual({ tipo: 'texto', valor: '.' })
   })
 
-  it('`www.` sem esquema ganha https — senão o clique iria para dentro do painel', () => {
+  it('`www.` sem esquema ganha https, senão o clique iria para dentro do painel', () => {
     expect(partirPorEndereco('www.4yu.com.br')).toEqual([
       { tipo: 'endereco', valor: 'www.4yu.com.br', href: 'https://www.4yu.com.br' },
     ])
   })
 
-  it('acha todos, e não só o primeiro — a expressão global não guarda estado entre chamadas', () => {
+  it('acha todos, e não só o primeiro, a expressão global não guarda estado entre chamadas', () => {
     const pedacos = partirPorEndereco('a http://um.com b http://dois.com c')
     expect(pedacos.filter((p) => p.tipo === 'endereco').map((p) => p.valor)).toEqual([
       'http://um.com',

@@ -13,7 +13,7 @@ import { Modal } from './modal'
  * O `confirm()` é uma janela do **sistema operacional**: fonte do sistema,
  * botões do sistema, ancorada no alto do navegador, com o nome do domínio em
  * cima. No meio de uma tela com a nossa tipografia e o nosso azul, ela parece o
- * aviso de um site invadido, não uma pergunta do produto — a mesma razão pela
+ * aviso de um site invadido, não uma pergunta do produto, a mesma razão pela
  * qual o `<select>` nativo saiu da ficha e o `title` virou `Dica`.
  *
  * Pior: ela **trava a aba inteira** enquanto está aberta, e não dá para

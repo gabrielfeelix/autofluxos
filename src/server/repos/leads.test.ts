@@ -26,7 +26,7 @@ import {
 
 /**
  * Fala com o Supabase de verdade, igual aos outros. O que precisa ser provado
- * aqui é a view `leads` (0004) — e view é objeto do banco: mock nenhum diz se
+ * aqui é a view `leads` (0004), e view é objeto do banco: mock nenhum diz se
  * o `left join lateral` traz a linha certa.
  *
  * Cria tudo com um nome carimbado e apaga no fim. Sem `.env`, pula.
@@ -46,7 +46,7 @@ afterAll(async () => {
 let sequencia = 0
 const idDeMensagem = () => `${marca}-msg-${++sequencia}`
 
-/** Um cliente com número conectado e fluxo publicado — o mínimo para haver lead. */
+/** Um cliente com número conectado e fluxo publicado, o mínimo para haver lead. */
 async function montarCliente(nome: string) {
   const cliente = await criarCliente(`${marca} ${nome}`)
   criados.push(cliente.id)
@@ -228,7 +228,7 @@ describe.skipIf(!temCredencial)('leads contra o Supabase', () => {
     ])
   })
 
-  it('avisa quando a conversa não coube — em vez de cortar calado', async () => {
+  it('avisa quando a conversa não coube, em vez de cortar calado', async () => {
     const { cliente, canal, versaoId } = await montarCliente('teto')
 
     const contato = await acharOuCriarContato(cliente.id, `${marca}-5544000006`, null)

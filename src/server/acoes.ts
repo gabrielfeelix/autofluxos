@@ -220,7 +220,7 @@ export async function acaoSalvarRascunho(fluxoId: string, clienteId: string, gra
 export async function acaoCriarFluxo(clienteId: string, formData: FormData) {
   const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
   // Ligada direto a `<form action>`, que exige retorno vazio: a recusa para a
-  // ação e não vira valor. A tela não mostra a permissão que falta — e não
+  // ação e não vira valor. A tela não mostra a permissão que falta, e não
   // deve: quem não pode não precisa saber que a capacidade existe (RB-42).
   if (recusou(acesso)) return
 
@@ -1189,7 +1189,7 @@ export async function acaoCriarSequencia(
 
   /*
     O "quantos dias calado" só existe para a régua de retomada (0070), e o banco
-    recusa a combinação incoerente — evento de sumiço sem dias, ou dias sem o
+    recusa a combinação incoerente, evento de sumiço sem dias, ou dias sem o
     evento. Conferir aqui é o que transforma esse 500 numa frase.
   */
   let diasSemConversa: number | null = null
@@ -1702,7 +1702,7 @@ export async function acaoDefinirPapelNaConta(
   if (!ehPapelDaConta(papel)) return { ok: false, erro: 'papel inválido' }
 
   // O objeto de recusa é `{ ok: false, motivo }`. Testar `if (!r)` aqui seria
-  // sempre falso — objeto é verdadeiro —, e a recusa passaria batida com a
+  // sempre falso, objeto é verdadeiro , e a recusa passaria batida com a
   // auditoria registrando uma troca que não aconteceu.
   const r = await definirPapelNaConta(clienteId, usuarioId, papel)
   if (!r.ok) return { ok: false, erro: r.motivo }
@@ -1892,7 +1892,7 @@ export async function acaoTrocarValorDaConexao(
 export async function acaoApagarConexao(clienteId: string, conexaoId: string) {
   const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
   // Ligada direto a `<form action>`, que exige retorno vazio: a recusa para a
-  // ação e não vira valor. A tela não mostra a permissão que falta — e não
+  // ação e não vira valor. A tela não mostra a permissão que falta, e não
   // deve: quem não pode não precisa saber que a capacidade existe (RB-42).
   if (recusou(acesso)) return
 
@@ -2095,7 +2095,7 @@ export async function acaoResponderLead(
 export async function acaoEncerrarAtendimento(clienteId: string, contatoId: string) {
   const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
   // Ligada direto a `<form action>`, que exige retorno vazio: a recusa para a
-  // ação e não vira valor. A tela não mostra a permissão que falta — e não
+  // ação e não vira valor. A tela não mostra a permissão que falta, e não
   // deve: quem não pode não precisa saber que a capacidade existe (RB-42).
   if (recusou(acesso)) return
 
@@ -2343,7 +2343,7 @@ export async function acaoSalvarLogo(
 export async function acaoRemoverLogo(clienteId: string) {
   const acesso = await exigirCapacidade(clienteId, 'configurar_empresa', 'todos')
   // Ligada direto a `<form action>`, que exige retorno vazio: a recusa para a
-  // ação e não vira valor. A tela não mostra a permissão que falta — e não
+  // ação e não vira valor. A tela não mostra a permissão que falta, e não
   // deve: quem não pode não precisa saber que a capacidade existe (RB-42).
   if (recusou(acesso)) return
 

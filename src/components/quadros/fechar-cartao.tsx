@@ -12,7 +12,7 @@ import { acaoFecharCartao } from '@/server/acoes-crm'
  * O que muda entre os dois é uma assimetria de propósito: **ganhar aceita
  * seguir sem valor, perder não segue sem motivo**. O valor às vezes só se sabe
  * depois, e exigir um número faria alguém digitar 1 para poder fechar; o motivo
- * é a única razão de registrar a perda — opcional, ele produziria um relatório
+ * é a única razão de registrar a perda, opcional, ele produziria um relatório
  * com 80% de "não informado", que é o mesmo que não ter registrado nada.
  */
 export function FecharCartao({
@@ -32,7 +32,7 @@ export function FecharCartao({
 }) {
   /*
    * Os campos nascem do cartão, e quem os reseta é a `key` de quem renderiza
-   * este modal — não um efeito. Copiar prop para estado dentro de `useEffect`
+   * este modal, não um efeito. Copiar prop para estado dentro de `useEffect`
    * pinta uma vez com o valor do cartão anterior antes de corrigir, que aqui
    * seria o valor da venda passada aparecendo na venda nova.
    */
@@ -53,11 +53,11 @@ export function FecharCartao({
     <Modal
       aberto={cartao !== null}
       aoFechar={aoFechar}
-      titulo={ganhou ? `Ganhar — ${cartao?.nome ?? ''}` : `Perder — ${cartao?.nome ?? ''}`}
+      titulo={ganhou ? `Ganhar, ${cartao?.nome ?? ''}` : `Perder, ${cartao?.nome ?? ''}`}
       descricao={
         ganhou
           ? 'O cartão fica no quadro, marcado como ganho, e o contato passa a ser cliente. Se este funil entrega a outro, o cartão de lá abre sozinho.'
-          : 'O cartão fica no quadro, marcado como perdido. O contato continua na lista e na conversa — perder não apaga ninguém.'
+          : 'O cartão fica no quadro, marcado como perdido. O contato continua na lista e na conversa, perder não apaga ninguém.'
       }
     >
       {ganhou ? (
@@ -137,7 +137,7 @@ export function FecharCartao({
      *
      * É ela que faz o botão "tente de novo" do `catch` abaixo ser retry, e não
      * uma segunda conclusão. O caso é a resposta perdida: a requisição chegou,
-     * o cartão foi concluído, e a resposta morreu na volta — daqui isso é
+     * o cartão foi concluído, e a resposta morreu na volta, daqui isso é
      * indistinguível de nunca ter chegado.
      *
      * Gerá-la a cada clique seria o mesmo que não ter nenhuma. Ela vive no
@@ -159,7 +159,7 @@ export function FecharCartao({
         }
         aoConcluir({ abriuEm: r.abriuEm })
       } catch {
-        setErro('não deu para fechar agora — tente de novo')
+        setErro('não deu para fechar agora, tente de novo')
       }
     })
   }

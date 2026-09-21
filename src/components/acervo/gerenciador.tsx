@@ -13,7 +13,7 @@ const ACEITOS =
 /**
  * O acervo de arquivos do cliente.
  *
- * A ação que importa aqui é **copiar o endereço** — é ele que vai no bloco de
+ * A ação que importa aqui é **copiar o endereço**, é ele que vai no bloco de
  * Mídia. Por isso o botão de copiar é o principal de cada cartão, e não um
  * ícone escondido: sem ele, a tela seria um álbum bonito e inútil.
  */
@@ -34,7 +34,7 @@ export function GerenciadorDoAcervo({
   /**
    * Enviar é em dois tempos, e o arquivo **não passa pelo nosso servidor**.
    *
-   * Passava, como corpo de uma Server Action — e Server Action tem teto de 1 MB
+   * Passava, como corpo de uma Server Action, e Server Action tem teto de 1 MB
    * no Next. Esta tela anunciava 16 MB desde a 0017 e falhava calada em
    * qualquer coisa acima de um mega: o formulário devolvia a página de erro do
    * framework, não um recado. Agora o servidor só assina o caminho e o
@@ -92,7 +92,7 @@ export function GerenciadorDoAcervo({
       <section className="app-card p-6">
         <h2 className="text-[14.5px] font-bold">Enviar arquivo</h2>
         <p className="mt-1 text-[12px] leading-5 text-dim">
-          Imagem (PNG, JPG, WebP), vídeo MP4, áudio MP3 ou OGG, e PDF. Até {LIMITE_MB} MB — é o
+          Imagem (PNG, JPG, WebP), vídeo MP4, áudio MP3 ou OGG, e PDF. Até {LIMITE_MB} MB, é o
           teto do próprio WhatsApp, não nosso.
         </p>
 
@@ -156,7 +156,7 @@ export function GerenciadorDoAcervo({
 
         {arquivos.length === 0 ? (
           <p className="px-6 py-10 text-center text-[12.5px] text-dim">
-            Envie a foto da sala, o vídeo do trabalho ou o PDF do plano — o que o bot precisa
+            Envie a foto da sala, o vídeo do trabalho ou o PDF do plano, o que o bot precisa
             mostrar antes de alguém perguntar o preço.
           </p>
         ) : (

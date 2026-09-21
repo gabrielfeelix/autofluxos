@@ -44,7 +44,7 @@ async function montarCliente(nome: string) {
 }
 
 /**
- * A fronteira é o que precisa de prova, e ela é aritmética de calendário —
+ * A fronteira é o que precisa de prova, e ela é aritmética de calendário ,
  * nada de banco. Fevereiro e ano bissexto entram porque "doze meses atrás" não
  * é "menos 365 dias".
  */
@@ -158,7 +158,7 @@ describe.skipIf(!temCredencial)('retenção contra o Supabase', () => {
 
   /**
    * A exclusão de cliente é a única que leva lead, conversa e credencial de uma
-   * vez. O que precisa ser provado é que ela leva **tudo** — credencial órfã num
+   * vez. O que precisa ser provado é que ela leva **tudo**, credencial órfã num
    * cofre é pior do que credencial ativa.
    */
   it('apagar o cliente leva leads, automações e credenciais junto', async () => {

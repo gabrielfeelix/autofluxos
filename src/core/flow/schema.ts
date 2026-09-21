@@ -457,8 +457,7 @@ export const noIaSchema = z.object({
  *
  * `mensagem` e `mensagens` são os **dois formatos**, pela mesma regra do bloco
  * de mensagem: `flow_versions` é imutável e a conversa fica presa à versão em
- * que começou. Ler os dois, escrever um. Nada fora de `mensagensDoHandoff()`
- *, em `core/flow/mensagem.ts`, toca `data.mensagem` direto; o editor só
+ * que começou. Ler os dois, escrever um. Nada fora de `mensagensDoHandoff()`, em `core/flow/mensagem.ts`, toca `data.mensagem` direto; o editor só
  * escreve `mensagens`.
  */
 export const noHandoffSchema = z.object({

@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
  *
  * Por que uma trava separada, e não confiar na revisão: rota é o caminho que
  * não tem botão. Esconder o link não esconde a URL, e o `fetch` que a tela faz
- * sozinha — stream, contador, notificação — é exatamente o que ninguém pensa
+ * sozinha, stream, contador, notificação, é exatamente o que ninguém pensa
  * em conferir. Até a T2.2 as quatro rotas conferiam só a empresa, então quem
  * perdesse `atender` pela tela de acesso continuava recebendo por elas.
  *
@@ -36,7 +36,7 @@ const ROTAS = rotas(RAIZ).map((caminho) => ({
 }))
 
 describe('toda rota de cliente confere a capacidade', () => {
-  it('encontra as rotas — se isto zerar, o resto não prova nada', () => {
+  it('encontra as rotas, se isto zerar, o resto não prova nada', () => {
     // Uma mudança de estrutura que quebrasse a varredura faria os testes
     // abaixo passarem por vacuidade. Este é o teste do teste.
     expect(ROTAS.length).toBeGreaterThan(0)
@@ -53,7 +53,7 @@ describe('toda rota de cliente confere a capacidade', () => {
    * **Conferir depois de ler é não conferir.**
    *
    * Uma rota que busca e só então pergunta já pagou a consulta e já tem o dado
-   * em memória — e um erro no meio pode devolvê-lo na mensagem.
+   * em memória, e um erro no meio pode devolvê-lo na mensagem.
    */
   it.each(ROTAS.map((r) => r.nome))('%s confere antes de buscar', (nome) => {
     const rota = ROTAS.find((r) => r.nome === nome)!

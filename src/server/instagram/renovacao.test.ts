@@ -11,7 +11,7 @@ import {
  * O token do Instagram vale 60 dias e não avisa quando morre: a conta responde
  * normalmente até o dia 60 e fica muda no 61, sem ninguém ter mexido em nada.
  * Estes testes são sobre a fronteira do prazo e sobre o que acontece quando a
- * Meta recusa — não sobre o formato de nada.
+ * Meta recusa, não sobre o formato de nada.
  */
 
 const AGORA = new Date('2026-09-03T12:00:00.000Z')
@@ -94,7 +94,7 @@ describe('a renovação', () => {
 
   /**
    * O caso que a rotina existe para não deixar acontecer em silêncio: token
-   * vencido não se renova — a Meta recusa —, e insistir todo dia trocaria um
+   * vencido não se renova, a Meta recusa , e insistir todo dia trocaria um
    * aviso claro por uma falha diária que ninguém sabe interpretar.
    */
   it('não tenta renovar token vencido, e avisa', async () => {

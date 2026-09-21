@@ -17,11 +17,11 @@ import { criarCampanha, listarCampanhas } from './repos/campanhas'
 import { acharLead } from './repos/leads'
 
 /**
- * A6 — os quatro papéis do número e as palavras-chave, do webhook até o canal.
+ * A6, os quatro papéis do número e as palavras-chave, do webhook até o canal.
  *
  * O que está sendo provado aqui é **qual fluxo abre**, que é a única coisa que
  * a A6 mudou. Nada disso aparece como erro quando erra: a conversa responde,
- * responde bonito, e responde a coisa errada — quem escreveu "cancelar" ouve a
+ * responde bonito, e responde a coisa errada, quem escreveu "cancelar" ouve a
  * saudação da triagem e vai embora achando que o bot não entendeu.
  */
 const temCredencial = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SECRET_KEY)
@@ -185,7 +185,7 @@ describe.skipIf(!temCredencial)('os quatro papéis do número', () => {
     expect(textosEnviados()[0]).toBe(FRASE.boasVindas)
 
     // Fecha a conversa pela opção que despede, para a próxima mensagem abrir
-    // uma nova — é o que faz "primeira vez" deixar de ser verdade.
+    // uma nova, é o que faz "primeira vez" deixar de ser verdade.
     await receberMensagem(webhookBotao(de, 'depois', `wamid-${marca}-bv-2`), comMock)
 
     mock.enviadas.length = 0
@@ -279,7 +279,7 @@ describe.skipIf(!temCredencial)('as palavras-chave', () => {
 
     mock.enviadas.length = 0
     // O rótulo do botão não é o que chega: chega o id da opção. Mesmo assim, a
-    // regra é explícita — clique nunca é sequestrado por palavra-chave.
+    // regra é explícita, clique nunca é sequestrado por palavra-chave.
     await receberMensagem(webhookBotao(de, 'falar', `wamid-${marca}-btn-2`), comMock)
 
     expect(textosEnviados()[0]).not.toBe(FRASE.gatilho)
@@ -401,7 +401,7 @@ describe.skipIf(!temCredencial)('as campanhas', () => {
     expect(contato?.campanha_id).toBe(criada.id)
   })
 
-  it('meia frase não é campanha — quem apagou parte não veio pelo anúncio', async () => {
+  it('meia frase não é campanha, quem apagou parte não veio pelo anúncio', async () => {
     const de = telefone(11)
 
     mock.enviadas.length = 0

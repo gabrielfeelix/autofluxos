@@ -94,7 +94,7 @@ export async function arquivarEquipe(
  * Recebe a lista inteira do que a pessoa deve pertencer, e não "adicione X":
  * a tela edita um conjunto, e mandar o conjunto evita o estado em que metade
  * das trocas passou. As equipes são conferidas contra a **mesma conta** antes
- * de qualquer escrita — os ids chegam de formulário.
+ * de qualquer escrita, os ids chegam de formulário.
  */
 export async function definirEquipesDoMembro(
   clienteId: string,
@@ -169,7 +169,7 @@ export async function equipesPorMembro(clienteId: string): Promise<Map<string, s
  *
  * **Escopo igual ao do papel vira ausência de linha**, e isso é deliberado: a
  * sobrescrita existe para registrar a exceção, e gravar o que já é regra faria
- * a tabela crescer com linhas que não dizem nada — e congelaria a pessoa na
+ * a tabela crescer com linhas que não dizem nada, e congelaria a pessoa na
  * política de hoje, para sempre, sem ninguém pedir isso. Mudar o papel dela
  * depois não teria efeito.
  */

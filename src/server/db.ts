@@ -4,7 +4,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 /**
  * Cliente do Supabase com a chave **secreta**.
  *
- * Ela ignora RLS — é a única coisa que consegue ler e escrever, porque as
+ * Ela ignora RLS, é a única coisa que consegue ler e escrever, porque as
  * tabelas estão com RLS ligada e sem política nenhuma (ver 0001_init.sql).
  *
  * O `import 'server-only'` no topo não é enfeite: se algum dia alguém importar
@@ -17,7 +17,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
  *
  * O Postgres recusa `where id = 'nao-existe'` com **22P02** antes de olhar a
  * tabela, e o supabase-js entrega isso como erro comum. Sem tratar, ele sobe
- * como exceção e a pessoa recebe 500 e "Alguma coisa quebrou aqui" — quando a
+ * como exceção e a pessoa recebe 500 e "Alguma coisa quebrou aqui", quando a
  * resposta certa é a mesma de um id que simplesmente não existe: não achei.
  *
  * E isso não é caso raro: os endereços do painel carregam uuid de cliente, de
@@ -25,7 +25,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
  * id de outro ambiente caem todos aqui.
  *
  * Vale só para leitura por id. Em escrita, id torto continua sendo erro de
- * verdade — quem manda apagar algo com id inválido merece saber que não apagou.
+ * verdade, quem manda apagar algo com id inválido merece saber que não apagou.
  */
 export function ehIdInvalido(error: { code?: string } | null | undefined): boolean {
   return error?.code === '22P02'
@@ -36,7 +36,7 @@ export function ehIdInvalido(error: { code?: string } | null | undefined): boole
  *
  * Existe para um caso só: o filtro `or(...)` do PostgREST é uma string, e
  * montar string de consulta com id vindo de fora é a mesma classe de problema
- * que injeção de SQL — uma vírgula no lugar errado vira outro filtro. Onde o
+ * que injeção de SQL, uma vírgula no lugar errado vira outro filtro. Onde o
  * id entra como parâmetro (`eq`, `in`) o driver escapa e isto não faz falta.
  *
  * Não substitui `ehIdInvalido`: aquele trata o id torto que **chegou** ao

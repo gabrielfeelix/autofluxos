@@ -8,15 +8,15 @@ import { NOME_DA_AGENDA } from '@/core/agenda'
  * O cartão que responde "está ligado?".
  *
  * Essa pergunta não tinha resposta em tela nenhuma. A lista de credenciais
- * mostrava nomes, e nome não diz se a chave vale nem se algum bloco a usa — dá
+ * mostrava nomes, e nome não diz se a chave vale nem se algum bloco a usa, dá
  * para ter uma credencial cadastrada, correta, e **zero** automação chamando a
  * agenda. Era exatamente o estado real quando alguém perguntou.
  *
  * Por isso o cartão separa três coisas que pareciam uma:
  *
- * 1. **a chave existe** — a credencial está cadastrada;
- * 2. **a chave vale** — a agenda respondeu agora, e o botão prova na hora;
- * 3. **alguma automação usa** — quantos blocos apontam para ela.
+ * 1. **a chave existe**, a credencial está cadastrada;
+ * 2. **a chave vale**, a agenda respondeu agora, e o botão prova na hora;
+ * 3. **alguma automação usa**, quantos blocos apontam para ela.
  *
  * As três podem estar diferentes, e a mais enganosa é a terceira: é a que faz
  * alguém achar que ligou porque colou a chave.
@@ -44,7 +44,7 @@ export function CartaoDaAgenda({
           📅
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[13.5px] font-bold">Agenda — {NOME_DA_AGENDA}</p>
+          <p className="text-[13.5px] font-bold">Agenda, {NOME_DA_AGENDA}</p>
           <p className="mt-0.5 text-[11.5px] leading-4 text-dim">
             {usada ? (
               <>
@@ -61,7 +61,7 @@ export function CartaoDaAgenda({
               */
               <>
                 A chave está guardada, mas{' '}
-                <strong className="text-aviso">nenhuma automação usa ela ainda</strong> — o bot
+                <strong className="text-aviso">nenhuma automação usa ela ainda</strong>, o bot
                 não consulta a agenda até um bloco apontar para cá.
               </>
             )}
@@ -98,7 +98,7 @@ export function CartaoDaAgenda({
 
         "3 profissionais" prova que a chave vale e não responde a pergunta que
         veio junto: *"qual informação o bot vai puxar?"*. Ver "Marina, Carol,
-        Júlia" responde as duas de uma vez — e pega o erro mais silencioso de
+        Júlia" responde as duas de uma vez, e pega o erro mais silencioso de
         todos, que é a chave certa da conta errada.
       */}
       {resultado?.ok && (
@@ -118,7 +118,7 @@ export function CartaoDaAgenda({
             <Lista rotulo="Locais" itens={resultado.locais} />
           </dl>
           <p className="mt-2 text-[10.5px] leading-4 text-dim">
-            Horários livres, quem já é cliente e as marcações vêm por automação, e não aqui — esta
+            Horários livres, quem já é cliente e as marcações vêm por automação, e não aqui, esta
             conferência só pergunta o catálogo, que é a resposta mais barata que prova que a chave
             vale e de qual conta ela é.
           </p>

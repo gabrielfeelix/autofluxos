@@ -7,8 +7,8 @@ import { acaoAlternarFluxoAtivo } from '@/server/acoes'
  * Liga e desliga uma automação inteira.
  *
  * **É o gesto que faltava entre publicar e apagar.** Quem queria parar um fluxo
- * por uns dias — a campanha acabou, o desenho vai ser trocado, o cliente pediu
- * para segurar — só tinha dois caminhos, e os dois erravam: apagar leva o
+ * por uns dias, a campanha acabou, o desenho vai ser trocado, o cliente pediu
+ * para segurar, só tinha dois caminhos, e os dois erravam: apagar leva o
  * histórico junto, e desligar o número cala também o que devia continuar
  * falando.
  *
@@ -17,7 +17,7 @@ import { acaoAlternarFluxoAtivo } from '@/server/acoes'
  * sozinha no WhatsApp, e quem desligou queria parar de captar, não abandonar.
  *
  * Componente de cliente porque a ação devolve motivo de recusa, e um `<form>`
- * cru jogaria isso fora — o clique pareceria não ter funcionado.
+ * cru jogaria isso fora, o clique pareceria não ter funcionado.
  */
 export function InterruptorDeFluxo({
   clienteId,

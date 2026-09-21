@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 const paramsSchema = z.object({ clienteId: z.string().uuid() })
 
 /**
- * "Chegou alguma coisa?" — a fonte mais barata do Inbox.
+ * "Chegou alguma coisa?", a fonte mais barata do Inbox.
  *
  * Devolve **só** o carimbo da mensagem mais recente da conta. Quem chama
  * compara com o que já tinha e, se mudou, pede um `router.refresh()`. Essa
@@ -15,7 +15,7 @@ const paramsSchema = z.object({ clienteId: z.string().uuid() })
  * recarregar a tela custa e só acontece quando há motivo.
  *
  * Um `refresh` cego no mesmo intervalo faria o servidor remontar a lista de
- * conversas, o histórico e a barra lateral toda vez — para, quase sempre,
+ * conversas, o histórico e a barra lateral toda vez, para, quase sempre,
  * desenhar exatamente a mesma coisa.
  *
  * Não vai telefone, texto, nome nem id: uma data não conta nada sobre ninguém,
@@ -35,7 +35,7 @@ export async function GET(
    * **Atender é capacidade, não só associação** (RB-41, RB-42).
    *
    * Até a T2.2 esta rota conferia só a empresa. Quem perdeu `atender` pela
-   * tela de acesso continuava recebendo por aqui — e stream, contador e
+   * tela de acesso continuava recebendo por aqui, e stream, contador e
    * notificação são caminhos de dado como qualquer outro. "Esconder o botão
    * não é controle de acesso" vale para o que o navegador busca sozinho.
    */
@@ -49,7 +49,7 @@ export async function GET(
     { pulso },
     {
       headers: {
-        // Um pulso guardado em cache é um Inbox que não atualiza — que é
+        // Um pulso guardado em cache é um Inbox que não atualiza, que é
         // exatamente o defeito que esta rota existe para consertar.
         'Cache-Control': 'private, no-store, max-age=0',
       },

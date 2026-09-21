@@ -27,7 +27,7 @@ import type { Problema, ResultadoValidacao } from './flow/validar'
  * Os modelos de `src/exemplos/` vêm com marcador de demonstração escrito no
  * texto que o cliente recebe. Medidos, nove:
  *
- *   menu-atendimento    "Rua Exemplo, 123 — bairro, cidade."
+ *   menu-atendimento    "Rua Exemplo, 123, bairro, cidade."
  *                       "_Troque este texto pelo horário real._"
  *                       "_Troque este texto pelo endereço real._"
  *                       "*Valores*\nA partir de R$ 000..." + "_Troque..._"

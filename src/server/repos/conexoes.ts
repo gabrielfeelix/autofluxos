@@ -7,7 +7,7 @@ import { apagarDoCofre, guardarNoCofre, lerDoCofre } from '../cofre'
  *
  * **A regra que este arquivo existe para cumprir: o valor sai daqui uma única
  * vez, e só para quem vai fazer a requisição.** Tudo que é lido para a tela
- * passa por `Conexao`, que não tem campo de valor — não por disciplina de quem
+ * passa por `Conexao`, que não tem campo de valor, não por disciplina de quem
  * escreve a tela, mas porque o tipo não permite.
  *
  * O valor mora no Supabase Vault, e o banco guarda só a referência. Ver
@@ -101,7 +101,7 @@ export async function criarConexao(entrada: {
 
   if (error) {
     // O segredo já está no cofre e a linha não nasceu. Sem isto ele ficaria
-    // órfão para sempre — e credencial órfã é credencial que ninguém percebe
+    // órfão para sempre, e credencial órfã é credencial que ninguém percebe
     // sendo usada.
     await apagarDoCofre(segredoId)
     if (error.code === '23505') throw new Error(`já existe uma conexão chamada "${nome}"`)

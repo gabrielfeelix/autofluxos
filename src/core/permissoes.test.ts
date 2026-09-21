@@ -44,7 +44,7 @@ describe('o padrão é negar', () => {
   /**
    * **O teste que importa no futuro.**
    *
-   * Toda capacidade precisa aparecer na política de todo papel — nem que seja
+   * Toda capacidade precisa aparecer na política de todo papel, nem que seja
    * como `nenhum`. Se `politica()` deixasse de preencher o resto, uma
    * capacidade nova viria `undefined`, e `undefined` em comparação de escopo
    * não é negação: é erro silencioso.
@@ -65,8 +65,8 @@ describe('o padrão é negar', () => {
 
 describe('o papel de compatibilidade', () => {
   /**
-   * `member` preserva o acesso de hoje. É a exigência literal da proposta —
-   * "não retirar acesso de operadores em massa sem prévia" — e o teste existe
+   * `member` preserva o acesso de hoje. É a exigência literal da proposta ,
+   * "não retirar acesso de operadores em massa sem prévia", e o teste existe
    * para que endurecer a regra sem passar pela tela quebre aqui, e não na
    * conta de alguém.
    */
@@ -80,7 +80,7 @@ describe('o papel de compatibilidade', () => {
   /**
    * As duas exceções, e elas não são "acesso atual": `configurar_empresa` já
    * era negada por `podeAdministrarConta`, e `corrigir_venda` mexe em número
-   * fechado — ela nasce fechada porque a dúvida tem um lado seguro.
+   * fechado, ela nasce fechada porque a dúvida tem um lado seguro.
    */
   it('member não configura a empresa nem corrige venda', () => {
     expect(pode(membro, 'configurar_empresa')).toBe(false)
@@ -130,7 +130,7 @@ describe('os modelos da RB-40', () => {
 describe('a sobrescrita vale por cima do papel', () => {
   /**
    * É o que deixa "operador que também registra venda" existir sem criar papel
-   * novo — e sem que a exceção de uma conta vire regra para as outras.
+   * novo, e sem que a exceção de uma conta vire regra para as outras.
    */
   it('abre uma capacidade que o papel negava', () => {
     const comExcecao: Acesso = {
@@ -182,7 +182,7 @@ describe('alcançar este registro', () => {
    * **A fila sem responsável não é de todos por acidente** (RB-40).
    *
    * Registro sem dono é o caso mais fácil de errar: o `if (dono === eu)`
-   * ingênuo responde `undefined === 'u-op'`, que é falso — mas um
+   * ingênuo responde `undefined === 'u-op'`, que é falso, mas um
    * `if (!dono || dono === eu)` escrito por reflexo abriria a fila inteira.
    */
   it('registro sem dono não é de ninguém', () => {
@@ -199,7 +199,7 @@ describe('alcançar este registro', () => {
     }
     expect(alcanca(gestor, 'atender', { equipe: 'eq-a' })).toBe(true)
     expect(alcanca(gestor, 'atender', { equipe: 'eq-b' })).toBe(false)
-    // Sem equipe no registro, escopo de equipe não alcança — mesma razão do
+    // Sem equipe no registro, escopo de equipe não alcança, mesma razão do
     // teste acima.
     expect(alcanca(gestor, 'atender', { equipe: null })).toBe(false)
   })

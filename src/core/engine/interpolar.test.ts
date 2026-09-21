@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { chavesSimplesCitadas, fatiarVariaveis, variaveisCitadas } from './interpolar'
 
-describe('fatiarVariaveis — o realce do editor', () => {
+describe('fatiarVariaveis, o realce do editor', () => {
   it('separa literal de citação', () => {
     expect(fatiarVariaveis('Legal, {{nome}}. Para quando?')).toEqual([
       { tipo: 'texto', texto: 'Legal, ' },
@@ -15,7 +15,7 @@ describe('fatiarVariaveis — o realce do editor', () => {
     expect(fatiarVariaveis('')).toEqual([])
   })
 
-  it('remonta exatamente o original — o realce não pode comer caractere', () => {
+  it('remonta exatamente o original, o realce não pode comer caractere', () => {
     // É a garantia que impede o espelho de descolar do campo: se a soma dos
     // pedaços não for o texto, o cursor cai numa coluna e a cor em outra.
     for (const texto of [
@@ -81,7 +81,7 @@ describe('fatiarVariaveis — o realce do editor', () => {
   })
 })
 
-describe('chavesSimplesCitadas — o engano de uma chave só', () => {
+describe('chavesSimplesCitadas, o engano de uma chave só', () => {
   it('acha a chave simples', () => {
     expect(chavesSimplesCitadas('dia {dias_reposicao} às {horario}')).toEqual([
       'dias_reposicao',

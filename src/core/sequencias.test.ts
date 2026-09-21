@@ -19,7 +19,7 @@ import {
 /**
  * A régua das sequências.
  *
- * O que estes testes prendem não é aritmética — é o desenho de produto que a
+ * O que estes testes prendem não é aritmética, é o desenho de produto que a
  * aritmética carrega: a ordem sai do tempo e não da criação, o horário conta do
  * evento e não do agora, e o teto de 24h é a janela da Meta e não uma
  * preferência que dê para afrouxar.
@@ -80,7 +80,7 @@ describe('o teto de 24h é a janela da Meta', () => {
 
   /*
    * O que a 0061 destravou: com modelo aprovado, o passo atravessa a janela
-   * fechada — e é só por isso que o teto subiu de 24h para 30 dias.
+   * fechada, e é só por isso que o teto subiu de 24h para 30 dias.
    */
   it('aceita passo além da janela quando ele carrega modelo', () => {
     expect(conferirAtraso(4_320, [], 'tpl-1').ok).toBe(true)
@@ -147,7 +147,7 @@ describe('o passo que atravessa a janela fechada (0061)', () => {
 
   /*
    * O buraco que a 0061 fecha: sem modelo, um passo de 3 dias não é "um passo
-   * longo" — é um passo que o executor encontra com a janela fechada e encerra
+   * longo", é um passo que o executor encontra com a janela fechada e encerra
    * sem entregar nada. O desenho parecia certo e zero mensagem saía.
    */
   it('recusa passo além de 24h sem modelo', () => {

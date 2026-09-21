@@ -6,12 +6,12 @@ export const TETO_DE_TENTATIVAS = 5
 export const JANELA_DE_TENTATIVAS_SEGUNDOS = 5 * 60
 
 /**
- * O simulador tem janela própria — e é **muito** mais larga.
+ * O simulador tem janela própria, e é **muito** mais larga.
  *
  * Ele estava no teto de login: 5 chamadas por 5 minutos. Faz todo sentido para
  * quem tenta adivinhar senha e nenhum para a aba Testar, onde **cada mensagem
  * da conversa é uma chamada**: na sexta mensagem o editor travava por cinco
- * minutos, e o sintoma na tela era o pior possível — o bot simplesmente parava
+ * minutos, e o sintoma na tela era o pior possível, o bot simplesmente parava
  * de responder, sem erro visível, exatamente como um fluxo quebrado. Clicar em
  * "recomeçar" gastava mais uma chamada e afundava mais.
  *

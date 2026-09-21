@@ -15,7 +15,7 @@ import { criarQuadro, fecharCartao, porNoQuadro } from './quadros'
  * view faz, que é o erro que este arquivo existe para pegar.
  *
  * O outro motivo é `numeric`: o supabase-js entrega `quadro_cartoes.valor` como
- * string, e somar sem converter concatena — "1500" + "800" vira "1500800". O
+ * string, e somar sem converter concatena, "1500" + "800" vira "1500800". O
  * teste soma dois valores diferentes de propósito.
  */
 const temCredencial = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SECRET_KEY)
@@ -128,7 +128,7 @@ describe.skipIf(!temCredencial)('os fechamentos', () => {
     expect((await fecharCartao(clienteId, cartaoDe(ana), 'ganha', { valor: 1500 })).ok).toBe(true)
     expect((await fecharCartao(clienteId, cartaoDe(bruno), 'ganha', { valor: 800 })).ok).toBe(true)
 
-    // Perder exige motivo da lista da conta — `conferirFechamento` recusa texto
+    // Perder exige motivo da lista da conta, `conferirFechamento` recusa texto
     // livre, e a lista é semeada na primeira leitura.
     const motivos = await listarMotivos(clienteId)
     expect(

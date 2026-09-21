@@ -21,7 +21,7 @@ import {
  *
  * O que só o banco prova aqui: o segredo indo e voltando do Vault, o índice
  * único do gatilho por evento, e o isolamento entre contas. O mock é só o
- * canal — o que importa é a orquestração, não a rede da Meta.
+ * canal, o que importa é a orquestração, não a rede da Meta.
  */
 const temCredencial = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SECRET_KEY)
 const marca = `zz-ev-${Math.random().toString(36).slice(2, 8)}`
@@ -161,7 +161,7 @@ describe.skipIf(!temCredencial)('o evento vira conversa', () => {
   it('contato que nunca escreveu tem a janela fechada: registra e não envia', async () => {
     /**
      * **O caso mais importante desta rodada.** Sem modelo aprovado (travado
-     * pela Meta), avisar fora da janela de 24h é impossível — e prometer o
+     * pela Meta), avisar fora da janela de 24h é impossível, e prometer o
      * aviso mesmo assim seria trocar o defeito de lugar. O honesto é gravar na
      * ficha e deixar visível para quem abre o Inbox.
      */
@@ -203,7 +203,7 @@ describe.skipIf(!temCredencial)('o evento vira conversa', () => {
 
     const r = await tratarEvento({ clienteId, evento: 'vaga.aberta', telefone: semNove })
 
-    // Achou o contato — o que prova é não ter sido `sem_contato`.
+    // Achou o contato, o que prova é não ter sido `sem_contato`.
     expect(r).not.toBe('sem_contato')
   })
 
@@ -239,7 +239,7 @@ describe.skipIf(!temCredencial)('o evento vira conversa', () => {
     const r = await tratarEvento({ clienteId, evento: 'vaga.aberta', telefone }, () => mock)
 
     expect(r).toBe('aberto')
-    // E a pessoa foi avisada de verdade — é o que a promessa do preset dizia.
+    // E a pessoa foi avisada de verdade, é o que a promessa do preset dizia.
     expect(mock.enviadas.length).toBeGreaterThan(0)
   })
 

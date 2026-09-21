@@ -15,7 +15,7 @@ import { registrarPassagem } from './passagens'
  * A Meta abre a janela gratuita de 72h para quem **clica num anúncio Click to
  * WhatsApp** ou no botão da Página: o clique manda a pessoa para a conversa, e
  * é a conversa que a janela autoriza. Um lead de **formulário** (Lead Ads) não
- * faz nada disso — ele entrega um telefone preenchido num formulário dentro do
+ * faz nada disso, ele entrega um telefone preenchido num formulário dentro do
  * Facebook, sem que a pessoa tenha escrito para o número nem aberto conversa
  * nenhuma.
  *
@@ -73,7 +73,7 @@ beforeAll(async () => {
     contatoId: doAnuncio,
     adId: '1200000000001',
     tipo: 'anuncio_whatsapp',
-    titulo: 'Anúncio — Plano XYZ',
+    titulo: 'Anúncio, Plano XYZ',
   })
 
   // A chegada por formulário, como `receber-lead-do-formulario.ts` grava.
@@ -83,7 +83,7 @@ beforeAll(async () => {
     adId: '1200000000002',
     tipo: 'formulario',
     idExterno: `lead-${seed}`,
-    titulo: 'Formulário — Bruno',
+    titulo: 'Formulário, Bruno',
   })
 })
 
@@ -100,8 +100,8 @@ describe.skipIf(!temCredencial)('a porta de entrada das 72h', () => {
   })
 
   /**
-   * O defeito fechado. A linha de formulário continua em `passagens` — o lead
-   * precisa saber de qual anúncio veio — e a view **não** a conta como porta.
+   * O defeito fechado. A linha de formulário continua em `passagens`, o lead
+   * precisa saber de qual anúncio veio, e a view **não** a conta como porta.
    */
   it('o formulário não abre a janela (RB-09)', async () => {
     expect(await portaDaView(doFormulario)).toBeNull()

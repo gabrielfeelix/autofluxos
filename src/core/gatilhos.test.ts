@@ -3,7 +3,7 @@ import { casarGatilho, type Gatilho } from './gatilhos'
 
 /**
  * O gatilho decide para onde a conversa vai antes de o fluxo padrão ter voz.
- * Errar para mais — casar quando não devia — sequestra o atendimento de quem
+ * Errar para mais, casar quando não devia, sequestra o atendimento de quem
  * escreveu outra coisa, e sequestra calado: a pessoa cai num fluxo que não
  * pediu e ninguém no painel vê nada de anormal.
  */
@@ -41,7 +41,7 @@ describe('casar a frase', () => {
   it('`contem` é palavra, não pedaço de palavra', () => {
     // O engano que este teste existe para impedir: `sim` disparando em
     // "assim", "simples" e "simpatia". Quem cadastrou `sim` nunca ligaria a
-    // causa ao efeito — a tela dele diz `sim` e a conversa foi para outro lugar.
+    // causa ao efeito, a tela dele diz `sim` e a conversa foi para outro lugar.
     const gatilhos = [gatilho({ frase: 'sim' })]
 
     expect(casarGatilho(gatilhos, 'sim')).not.toBeNull()
@@ -59,7 +59,7 @@ describe('casar a frase', () => {
 
   it('frase com caractere de expressão regular é texto, não sintaxe', () => {
     // Sem varredura manual, `.` viraria "qualquer caractere" e `(` estouraria
-    // no meio do webhook. O caso ruim não é não casar — é a exceção.
+    // no meio do webhook. O caso ruim não é não casar, é a exceção.
     const gatilhos = [gatilho({ frase: 'promo (2x1)' })]
 
     expect(casarGatilho(gatilhos, 'quero a promo (2x1) de hoje')).not.toBeNull()

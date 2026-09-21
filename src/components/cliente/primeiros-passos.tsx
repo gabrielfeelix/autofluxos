@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 /**
- * Os primeiros passos da conta — o onboarding que mora na tela de boas-vindas.
+ * Os primeiros passos da conta, o onboarding que mora na tela de boas-vindas.
  *
  * **Não é a tela inteira, é uma coluna.** Um checklist em largura cheia diz que
  * a conta é um formulário a preencher; encostado na lateral, ele acompanha
@@ -15,7 +15,7 @@ import { useState } from 'react'
  * juntos viram uma parede de texto onde nenhum é a próxima coisa a fazer; e
  * abrir nada obrigaria a clicar para descobrir o que o passo quer.
  *
- * O primeiro passo já nasce feito — a conta existe, quem está lendo a criou. É
+ * O primeiro passo já nasce feito, a conta existe, quem está lendo a criou. É
  * um truque velho e honesto: barra em zero parece castigo, e o primeiro
  * progresso é o que faz alguém querer o segundo.
  */
@@ -26,7 +26,7 @@ export type PassoDaConta = {
   /** O que este passo é, em uma frase. Só aparece quando ele está aberto. */
   explica: string
   feito: boolean
-  /** Um ou mais caminhos. Mais de um quando a escolha é do dono — ver `canal`. */
+  /** Um ou mais caminhos. Mais de um quando a escolha é do dono, ver `canal`. */
   acoes: { rotulo: string; href: string }[]
 }
 
@@ -44,7 +44,7 @@ export function PrimeirosPassos({ passos }: { passos: PassoDaConta[] }) {
         <p className="mt-1 text-[12.5px] text-white/85">
           {proximo
             ? `${passos.length - prontos} de ${passos.length} passos para preparar seu atendimento.`
-            : 'Tudo pronto — a conta está completa.'}
+            : 'Tudo pronto, a conta está completa.'}
         </p>
 
         <div className="mt-3.5 flex items-center gap-3">

@@ -16,7 +16,7 @@ import { tokenDeAnuncios } from '@/server/token-de-anuncios'
  * Porque é **outro objeto**. O webhook do WhatsApp assina
  * `whatsapp_business_account`; este assina `page`, campo `leadgen`. São
  * inscrições diferentes no painel da Meta, e misturá-las numa rota só
- * significaria um `if` no topo decidindo qual produto está falando — com o
+ * significaria um `if` no topo decidindo qual produto está falando, com o
  * risco de um payload novo de um cair no tratador do outro.
  *
  * Mora sob `/api/webhook/`, que o proxy já deixa passar (`src/proxy.ts`). Rota
@@ -31,7 +31,7 @@ import { tokenDeAnuncios } from '@/server/token-de-anuncios'
  * **A Meta não reentrega depois de um `200`, e reentrega tudo depois de um
  * erro.** Então: responder `200` primeiro, processar no `after()`. Buscar cada
  * lead na Graph dentro do handler somaria segundos, e uma Graph lenta viraria
- * timeout — que a Meta lê como falha e responde reentregando o lote, criando
+ * timeout, que a Meta lê como falha e responde reentregando o lote, criando
  * lead duplicado por causa de lentidão dela mesma.
  */
 
@@ -96,7 +96,7 @@ export async function POST(req: Request) {
 
   /*
    * O trabalho vai para depois da resposta. Se `after()` falhar, o lead fica
-   * para a reconciliação — que existe justamente porque a Meta não reentrega.
+   * para a reconciliação, que existe justamente porque a Meta não reentrega.
    */
   if (avisos.length > 0) {
     after(async () => {
@@ -117,7 +117,7 @@ export async function POST(req: Request) {
  *
  * **O cliente vem da Página, nunca do corpo.** Aceitar um `clienteId` que o
  * payload informasse deixaria qualquer um que descubra a URL escrever na conta
- * alheia — e a assinatura só prova que a Meta mandou, não de quem é o lead.
+ * alheia, e a assinatura só prova que a Meta mandou, não de quem é o lead.
  */
 async function tratar(avisos: ReturnType<typeof avisosDoWebhook>): Promise<void> {
   const porPagina = new Map<string, typeof avisos>()
@@ -132,7 +132,7 @@ async function tratar(avisos: ReturnType<typeof avisosDoWebhook>): Promise<void>
     if (!clienteId) {
       /*
        * Página que ninguém ligou a uma conta. Acontece quando o cliente inscreve
-       * o app numa Página a mais sem avisar — e o alerta é o que transforma
+       * o app numa Página a mais sem avisar, e o alerta é o que transforma
        * "os leads não chegam" numa resposta em vez de uma caça.
        */
       await alertar(

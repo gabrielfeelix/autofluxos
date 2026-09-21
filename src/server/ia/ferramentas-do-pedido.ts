@@ -2,7 +2,7 @@ import type { Argumento, Ferramenta } from '@/core/ferramentas'
 import { limparQueryVazia } from '@/core/ferramentas'
 
 /**
- * O que fazer com o que o modelo pediu — antes de qualquer coisa sair para a
+ * O que fazer com o que o modelo pediu, antes de qualquer coisa sair para a
  * rede.
  *
  * **Está separado do resolvedor de propósito, e não por organização.** Este é
@@ -40,7 +40,7 @@ export type Conferencia =
  * Vive uma mensagem, e não a conversa inteira: os ids de horário mudam a cada
  * consulta, e aceitar um id que apareceu há três mensagens seria aceitar
  * marcar numa vaga que já foi. Quem precisa atravessar mensagens é o fluxo, com
- * variável — que é o mecanismo que já existe para isso.
+ * variável, que é o mecanismo que já existe para isso.
  */
 export type MemoriaDaRodada = {
   /** Ids que apareceram em resultado de ferramenta nesta rodada. */
@@ -65,7 +65,7 @@ export function assinatura(nome: string, argumentos: Record<string, string>): st
 /**
  * Confere o pedido do modelo e monta a chamada, ou recusa.
  *
- * A ordem das conferências não é arbitrária — vai da mais barata e mais
+ * A ordem das conferências não é arbitrária, vai da mais barata e mais
  * decisiva para a mais específica, para que a recusa cite a primeira coisa
  * errada e não a última.
  */
@@ -100,7 +100,7 @@ export function conferirPedido({
      *
      * Acontece: o resultado volta como texto na conversa, e não pelo protocolo
      * nativo de resposta de função. É uma escolha consciente (ver
-     * `gemini.ts`), e este é o preço dela — pago aqui, uma vez, em vez de virar
+     * `gemini.ts`), e este é o preço dela, pago aqui, uma vez, em vez de virar
      * um laço que consome a rodada inteira e termina em silêncio.
      */
     return { ok: false, motivo: `repetiu a consulta "${nome}" sem usar o que já recebeu` }
@@ -133,7 +133,7 @@ export function conferirPedido({
    * `pessoa_id` não é necessariamente ataque, é frequentemente ele sendo
    * prestativo com um id que viu passar. Recusar a conversa por isso seria
    * mandar gente para atendimento humano à toa. O que não pode acontecer é o
-   * valor dele valer — e não vale.
+   * valor dele valer, e não vale.
    */
   for (const campo of ferramenta.injetados) {
     const valor = injetados[campo]
@@ -183,7 +183,7 @@ function conferirValor(
      * A trava que fecha o buraco que `injetados` sozinho não fecha.
      *
      * `pessoa_id` injetado garante que toda leitura é escopada em quem
-     * conversa — logo, todo id que o modelo legitimamente conhece é de quem
+     * conversa, logo, todo id que o modelo legitimamente conhece é de quem
      * conversa. Um id que a rodada não viu só pode ter três origens: o modelo
      * alucinou, alguém escreveu no WhatsApp, ou veio de um resultado velho. As
      * três terminam na mesma frase: não se grava por cima disso.
@@ -197,7 +197,7 @@ function conferirValor(
 /**
  * Preenche `{{campo}}` com escape.
  *
- * O que chega aqui foi escrito por um modelo em cima de texto de um estranho —
+ * O que chega aqui foi escrito por um modelo em cima de texto de um estranho ,
  * é entrada de fora, e vale a mesma regra do motor: cada campo escapa do jeito
  * da estrutura em que ele cai. Sem isso, um argumento com `&` reescreve a
  * consulta e um com `"` quebra o JSON do corpo.

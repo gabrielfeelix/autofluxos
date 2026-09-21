@@ -48,7 +48,7 @@ import {
  * ---------------------------------------------------------------------------
  *
  * `changes[].field` sempre esteve no payload da Meta e o `webhookSchema` nunca
- * o leu — não precisava, porque só `messages` era assinado. Com três campos
+ * o leu, não precisava, porque só `messages` era assinado. Com três campos
  * novos no mesmo envelope, ler o `field` deixa de ser detalhe e vira a única
  * forma de saber o que se está olhando: os quatro `value` têm formatos
  * diferentes e nenhum jeito confiável de se distinguir pelo conteúdo.
@@ -58,20 +58,20 @@ import {
  * ---------------------------------------------------------------------------
  *
  * 1. **`smb_message_echoes` é o humano falando.** Não é a nossa mensagem
- *    voltando (isso é `is_echo` do Instagram) — é o dono do negócio digitando
+ *    voltando (isso é `is_echo` do Instagram), é o dono do negócio digitando
  *    no celular dele. Tratar como entrada faria o bot responder ao próprio
  *    cliente; ignorar faria o bot atropelar uma conversa que já estava
  *    acontecendo. As duas estão erradas: o certo é **calar o bot**, que é o
  *    que um handoff já significa neste produto.
  * 2. **Mídia velha no histórico nunca chega.** Mensagem com anexo vem como
  *    `type: "media_placeholder"`, sem conteúdo. O conteúdo vem num `history`
- *    posterior — **só se for das últimas duas semanas**. Mais velho que isso, o
+ *    posterior, **só se for das últimas duas semanas**. Mais velho que isso, o
  *    placeholder é tudo que vai existir, para sempre.
  * 3. **`remove` vem sem nome.** No `smb_app_state_sync`, a ação `add` traz
  *    `full_name` e `first_name`; a `remove` traz só o telefone. Ler o nome sem
  *    checar a ação grava `undefined` por cima de um contato bom.
  * 4. **Recusar histórico não é falha.** Se o cliente não quis compartilhar,
- *    chega um `history` com erro **2593109**. É resposta normal — tratar como
+ *    chega um `history` com erro **2593109**. É resposta normal, tratar como
  *    erro encheria a tela de alerta de uma escolha legítima dele.
  */
 
@@ -84,7 +84,7 @@ import {
  *
  * Deliberadamente frouxo: é o payload do WhatsApp de sempre, e o que interessa
  * aqui é identificar, datar e saber a direção. O resto vai cru para
- * `messages.payload`, que é onde ele tem valor — campo novo da Meta não pode
+ * `messages.payload`, que é onde ele tem valor, campo novo da Meta não pode
  * derrubar o parse de um lote inteiro de histórico.
  */
 const mensagemDoHistoricoSchema = z
@@ -110,7 +110,7 @@ const contatoDaAgendaSchema = z.object({
 /**
  * O erro que a Meta manda dentro de um `history`.
  *
- * O código 2593109 é o cliente ter recusado compartilhar — ver armadilha 4.
+ * O código 2593109 é o cliente ter recusado compartilhar, ver armadilha 4.
  */
 const erroSchema = z
   .object({
@@ -134,7 +134,7 @@ const valorSchema = z
     messages: z.array(mensagemDoHistoricoSchema).optional(),
     errors: z.array(erroSchema).optional(),
 
-    /* `history` — os lotes vêm fatiados e a ordem importa. */
+    /* `history`, os lotes vêm fatiados e a ordem importa. */
     history: z
       .array(
         z.object({
@@ -169,13 +169,13 @@ const valorSchema = z
      * iterar e a função terminava com sucesso sem gravar nada.
      *
      * O pior tipo de defeito: 200 na resposta, zero alerta, zero log. Do lado
-     * de fora é idêntico a "a Meta não mandou" — e foi exatamente essa a
+     * de fora é idêntico a "a Meta não mandou", e foi exatamente essa a
      * conclusão errada a que chegamos por horas, até simular o payload real da
      * doc e ver que ele sumia.
      */
     message_echoes: z.array(mensagemDoHistoricoSchema).optional(),
 
-    /* `smb_app_state_sync` — a agenda do celular. */
+    /* `smb_app_state_sync`, a agenda do celular. */
     state_sync: z
       .array(
         z.object({
@@ -246,14 +246,14 @@ export const HISTORICO_RECUSADO = 2593109
  * Esta função recebia o **`phone_number_id`** como "número do negócio", e a
  * Meta manda no `from` o **número de telefone**. São coisas diferentes:
  * `110549275215531` contra `5511911001414`. A comparação nunca dava verdadeira,
- * então **toda** mensagem virava entrada — e o histórico importado do primeiro
+ * então **toda** mensagem virava entrada, e o histórico importado do primeiro
  * cliente apareceu na tela como se ele nunca tivesse respondido nada.
  *
  * Passou porque os dois são strings de dígitos com tamanho parecido: o tipo não
  * reclama, o teste com dado inventado passa (basta usar o mesmo valor dos dois
  * lados), e o defeito só aparece com payload real de um número real. A doc é
- * explícita — *"se o valor é o número do negócio, a mensagem foi enviada pelo
- * negócio"* —, e o campo certo vem em `metadata.display_phone_number`.
+ * explícita, *"se o valor é o número do negócio, a mensagem foi enviada pelo
+ * negócio"* , e o campo certo vem em `metadata.display_phone_number`.
  *
  * ---------------------------------------------------------------------------
  * A comparação é por dígitos
@@ -261,7 +261,7 @@ export const HISTORICO_RECUSADO = 2593109
  *
  * `display_phone_number` vem formatado (`+55 11 91100-1414`) e o `from` vem cru
  * (`5511911001414`). Comparar as duas formas como texto erraria sempre, pelo
- * mesmo motivo de antes — só que de um jeito mais difícil de ver.
+ * mesmo motivo de antes, só que de um jeito mais difícil de ver.
  *
  * Errar aqui inverte a conversa inteira na tela, e como o histórico chega uma
  * vez só, não há segunda chance sem reimportar.
@@ -310,12 +310,12 @@ export function contatoDaMensagem(
  * **Nada aqui estoura.** Quem chama já respondeu 200 para a Meta (a rota
  * responde antes do `after()`), então uma exceção daqui seria um erro sem dono.
  * Cada campo é tratado isolado: um `history` malformado não pode fazer o
- * `smb_message_echoes` do mesmo corpo — que é o que cala o bot — ser perdido.
+ * `smb_message_echoes` do mesmo corpo, que é o que cala o bot, ser perdido.
  *
  * **Não recebe `FabricaDeCanal`, diferente de `receberMensagem`.** Nada aqui
  * responde nada: os três campos ou gravam dado (agenda, histórico) ou calam o
  * bot (echo). Aceitar uma fábrica sugeriria que um destes caminhos pode mandar
- * mensagem — e mandar mensagem ao importar histórico seria disparar seis meses
+ * mensagem, e mandar mensagem ao importar histórico seria disparar seis meses
  * de conversa de novo, na cara do cliente.
  */
 export async function receberCoexistencia(payload: unknown): Promise<void> {
@@ -387,7 +387,7 @@ async function tratarCampo(
 /**
  * `smb_app_state_sync`: os contatos da agenda dele.
  *
- * **Vão para `contatos_da_agenda`, não para `contacts`** — ver o cabeçalho da
+ * **Vão para `contatos_da_agenda`, não para `contacts`**, ver o cabeçalho da
  * 0047. É a agenda do aparelho (o dentista dele, a mãe dele), não gente que
  * escreveu para o negócio. Misturar encheria a tela de leads de gente que nunca
  * falou com ninguém, e cada uma contaria como lead na métrica.
@@ -431,7 +431,7 @@ async function tratarAgenda(
 /**
  * O último progresso informado no lote, se algum veio.
  *
- * `undefined` quando nenhum item trouxe o campo — que é diferente de `0`, o
+ * `undefined` quando nenhum item trouxe o campo, que é diferente de `0`, o
  * progresso legítimo de uma sincronização que acabou de começar.
  */
 function ultimoProgresso(valores: (number | undefined)[]): number | undefined {
@@ -447,7 +447,7 @@ function ultimoProgresso(valores: (number | undefined)[]): number | undefined {
  *
  * **Melhor-esforço de propósito.** O lote que chegou junto já foi gravado; uma
  * falha ao anotar o andamento não pode desfazer isso nem impedir o próximo
- * lote. O progresso serve para a tela saber que a coisa anda — perder um ponto
+ * lote. O progresso serve para a tela saber que a coisa anda, perder um ponto
  * dele é bem menos grave que perder um pedaço do histórico, que não volta.
  */
 async function anotar(
@@ -486,7 +486,7 @@ async function anotar(
  *    importação. O `timestamp` da Meta vem em **segundos**, não milissegundos.
  * 4. **O `wa_message_id` unique é quem deduplica.** Inclusive entre o histórico
  *    e um echo da mesma mensagem, que é o caso que acontece de verdade: uma
- *    mensagem recente aparece nos dois. Não há checagem prévia — quem garante é
+ *    mensagem recente aparece nos dois. Não há checagem prévia, quem garante é
  *    o banco, como em `registrarEntrada`.
  */
 async function tratarHistorico(
@@ -511,7 +511,7 @@ async function tratarHistorico(
 
   /*
    * O progresso vem do último lote **na ordem de `chunk_order`**, não na de
-   * chegada — os lotes chegam fora de ordem, e o progresso do que chegou por
+   * chegada, os lotes chegam fora de ordem, e o progresso do que chegou por
    * último não é necessariamente o mais adiantado.
    */
   await anotar(canal, 'historico', ultimoProgresso(lotes.map((l) => l.metadata?.progress)))
@@ -564,7 +564,7 @@ async function gravarMensagemImportada(
    * desde a 0055 (ver `receber-mensagem.ts`); o eco só gravava o payload cru, e
    * o payload cru tem o `id` da mídia, que expira em 7 dias e não volta.
    *
-   * `mensagemId` nulo é repetição — a Meta reenvia, e baixar duas vezes o mesmo
+   * `mensagemId` nulo é repetição, a Meta reenvia, e baixar duas vezes o mesmo
    * arquivo é pagar duas vezes pelo que já está guardado.
    *
    * O erro é engolido com aviso, como no caminho de entrada: mídia que não
@@ -592,7 +592,7 @@ async function gravarMensagemImportada(
 /**
  * O `id` da mídia dentro de uma mensagem da Meta.
  *
- * O payload põe o arquivo numa chave com o **nome do tipo** — `audio.id`,
+ * O payload põe o arquivo numa chave com o **nome do tipo**, `audio.id`,
  * `image.id`, `sticker.id`, `document.id`. Ler por `mensagem[mensagem.type]` é
  * o que faz tipo novo funcionar sem uma lista aqui para manter; quem decide se
  * o tipo interessa é `midiaDoTipo`, dentro de `guardarMidiaRecebida`.
@@ -610,7 +610,7 @@ function midiaIdDaMensagem(mensagem: z.infer<typeof mensagemDoHistoricoSchema>):
  * O `timestamp` da Meta em ISO, ou `null` para "use o `now()` do banco".
  *
  * Ela manda **segundos** desde a época, como string. Tratar como milissegundos
- * põe a conversa em 1970 — e como o histórico é importado uma vez só, não há
+ * põe a conversa em 1970, e como o histórico é importado uma vez só, não há
  * segunda chance de corrigir sem reimportar.
  */
 export function carimboDaMeta(timestamp: string | undefined): string | null {
@@ -621,7 +621,7 @@ export function carimboDaMeta(timestamp: string | undefined): string | null {
 }
 
 /* -------------------------------------------------------------------------- */
-/* 3. Os ecos — o humano falando pelo celular                                  */
+/* 3. Os ecos, o humano falando pelo celular                                  */
 /* -------------------------------------------------------------------------- */
 
 /**
@@ -631,12 +631,12 @@ export function carimboDaMeta(timestamp: string | undefined): string | null {
  * comportamento do bot em vez de só gravar dado.
  *
  * Uma mensagem daqui é **um humano atendendo**. Se o bot continuar respondendo,
- * ele atropela uma conversa que já está acontecendo — a pessoa recebe duas
+ * ele atropela uma conversa que já está acontecendo, a pessoa recebe duas
  * respostas, uma delas automática, por cima de alguém que já estava falando com
  * ela. É exatamente o defeito que a coexistência existe para evitar.
  *
  * A resposta é a que o produto já tem: **calar o bot naquela conversa**, o mesmo
- * que um handoff. `calarBotNaConversa` é reusada de propósito — ela já sabe não
+ * que um handoff. `calarBotNaConversa` é reusada de propósito, ela já sabe não
  * promover sessão `encerrada` a `humano`, que reescreveria o histórico e faria a
  * taxa de "resolvidas pelo bot" cair por uma conversa que ele resolveu.
  */
@@ -647,7 +647,7 @@ async function tratarEcos(
   /*
    * `message_echoes` é onde a Meta põe o echo (doc de `smb_message_echoes`).
    * `messages` fica de reserva porque payloads antigos chegavam assim, e ler os
-   * dois não custa nada — deixar de ler um custou o Inbox de um cliente.
+   * dois não custa nada, deixar de ler um custou o Inbox de um cliente.
    */
   for (const mensagem of valor.message_echoes ?? valor.messages ?? []) {
     const waId = contatoDaMensagem(mensagem, numeroDoNegocio(canal))
@@ -658,7 +658,7 @@ async function tratarEcos(
     /*
      * Só o que o **negócio** mandou cala o bot.
      *
-     * Um echo de entrada é a mensagem da pessoa chegando por outro caminho — o
+     * Um echo de entrada é a mensagem da pessoa chegando por outro caminho, o
      * `messages` de sempre já a trata, e calar o bot por causa dela desligaria a
      * automação a cada mensagem recebida, que é o oposto do produto.
      */
@@ -677,12 +677,12 @@ async function tratarEcos(
  * `ACCOUNT_OFFBOARDED` / `ACCOUNT_RECONNECTED`, do campo `account_update`.
  *
  * O cliente trocou de celular ou reinstalou o WhatsApp Business, e o companion
- * da Cloud API foi desembarcado **sozinho** — sem ação nossa e sem ação dele.
+ * da Cloud API foi desembarcado **sozinho**, sem ação nossa e sem ação dele.
  * Normalmente reconecta em minutos.
  *
  * Enquanto não reconecta, **todo envio daquele número falha**. Sem tratar os
  * dois eventos, a troca de aparelho de um cliente vira uma fila de envios
- * falhando em silêncio — o tipo de defeito que ninguém percebe até alguém
+ * falhando em silêncio, o tipo de defeito que ninguém percebe até alguém
  * ligar reclamando.
  *
  * `account_update` **já está assinado** hoje, então isto começa a valer no
@@ -709,12 +709,12 @@ export async function tratarAtualizacaoDaConta(payload: unknown): Promise<void> 
        * Isso importa porque o retorno pelo navegador é frágil de um jeito que
        * não depende do nosso código: se o `redirect_uri` não estiver na lista
        * de *Valid OAuth redirect URIs* do painel, a Meta conclui a conexão e
-       * **para na tela dela** — o cliente vê "pronto", e nós não ficamos
+       * **para na tela dela**, o cliente vê "pronto", e nós não ficamos
        * sabendo de nada. Aconteceu duas vezes em 13/set/2026 antes de alguém
        * entender o que estava havendo.
        *
        * O que este evento traz é `waba_info.waba_id`. O que ele **não** traz é
-       * o `phone_number_id` nem um token — o token só sai da troca do `code`,
+       * o `phone_number_id` nem um token, o token só sai da troca do `code`,
        * e o `code` só existe no retorno pelo navegador. Então aqui não dá para
        * completar o onboarding sozinho; dá para **registrar que ele aconteceu**
        * e dizer isso a alguém, que é muito melhor que silêncio.
@@ -754,7 +754,7 @@ export async function tratarAtualizacaoDaConta(payload: unknown): Promise<void> 
  *
  * O que dá para fazer, e é o que importa, é **não perder o evento**. Se a WABA
  * já é de um canal nosso, a conexão se completou pelos dois caminhos e não há o
- * que fazer. Se não é, alguém conectou e o retorno não chegou — e aí o alerta
+ * que fazer. Se não é, alguém conectou e o retorno não chegou, e aí o alerta
  * carrega o `waba_id`, que é exatamente o que falta para terminar à mão.
  *
  * O alerta é deliberadamente específico sobre a causa provável, porque quem for
@@ -766,13 +766,13 @@ async function registrarOnboardingPelaMeta(valor: Record<string, unknown>): Prom
   if (!wabaId) return
 
   // Já conhecemos esta WABA? Então o retorno pelo navegador funcionou e o
-  // canal existe. Nada a fazer — o evento é só confirmação.
+  // canal existe. Nada a fazer, o evento é só confirmação.
   if (await existeCanalComWaba(wabaId)) return
 
   await alertar(
     'um cliente terminou o Embedded Signup e o retorno não chegou até nós',
     new Error(
-      `A Meta avisou por webhook (PARTNER_ADDED) que a WABA ${wabaId} foi conectada, mas nenhum canal nosso tem essa WABA — ou seja, o navegador do cliente não voltou para /api/whatsapp/retorno e o onboarding não foi concluído deste lado. Causa mais provável: o redirect_uri https://autofluxos.4yu.com.br/api/whatsapp/retorno não está em "Valid OAuth redirect URIs" no painel da Meta (Facebook Login for Business → Settings). Sem ele a Meta conclui a conexão e para na tela dela. A janela de 24h para sincronizar contatos e histórico **já está correndo**.`,
+      `A Meta avisou por webhook (PARTNER_ADDED) que a WABA ${wabaId} foi conectada, mas nenhum canal nosso tem essa WABA, ou seja, o navegador do cliente não voltou para /api/whatsapp/retorno e o onboarding não foi concluído deste lado. Causa mais provável: o redirect_uri https://autofluxos.4yu.com.br/api/whatsapp/retorno não está em "Valid OAuth redirect URIs" no painel da Meta (Facebook Login for Business → Settings). Sem ele a Meta conclui a conexão e para na tela dela. A janela de 24h para sincronizar contatos e histórico **já está correndo**.`,
     ),
     { waba: wabaId },
   )
@@ -784,7 +784,7 @@ async function registrarOnboardingPelaMeta(valor: Record<string, unknown>): Prom
  * **Não é o `phone_number_id`.** Esse é o identificador interno da Cloud API;
  * o histórico e os echos trazem o número de telefone. Trocar um pelo outro é o
  * bug de 14/set, que fez a conversa inteira do primeiro cliente aparecer como
- * se ele nunca tivesse respondido — ver `direcaoDaMensagem`.
+ * se ele nunca tivesse respondido, ver `direcaoDaMensagem`.
  *
  * `null` quando o canal não tem o número gravado: aí `direcaoDaMensagem` trata
  * tudo como entrada, que é o comportamento conservador. Errar para "entrada"

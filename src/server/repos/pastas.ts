@@ -5,7 +5,7 @@ import { db, ehIdInvalido } from '../db'
  * Gavetas para organizar fluxos (0029).
  *
  * Elas não têm permissão, não herdam nada e não mudam comportamento nenhum:
- * são um rótulo com nome. Foi de propósito — pasta que decide quem vê o quê
+ * são um rótulo com nome. Foi de propósito, pasta que decide quem vê o quê
  * vira um segundo sistema de autorização paralelo ao de contas, e dois sistemas
  * de autorização é como um deles fica para trás.
  */
@@ -39,7 +39,7 @@ export async function criarPasta(
 }
 
 /**
- * Apagar a pasta devolve os fluxos para a raiz — é o `on delete set null` da
+ * Apagar a pasta devolve os fluxos para a raiz, é o `on delete set null` da
  * 0029. `cascade` aqui seria um clique de arrumação levando junto o desenho
  * publicado que está atendendo gente.
  */
@@ -57,7 +57,7 @@ export async function apagarPasta(clienteId: string, pastaId: string): Promise<b
 }
 
 /**
- * Move um fluxo para uma pasta — ou para a raiz, com `null`.
+ * Move um fluxo para uma pasta, ou para a raiz, com `null`.
  *
  * A pasta é conferida contra o **mesmo cliente**: o id chega de um formulário, e
  * a chave estrangeira só sabe que ela existe, não de quem é. Sem isso, um fluxo

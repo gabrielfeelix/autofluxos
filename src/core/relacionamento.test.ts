@@ -29,7 +29,7 @@ describe('o nível pelo que já gastou', () => {
    * O caso que separa este desenho do RFM de varejo: numa base de trinta
    * pessoas, o quintil de cima seria "ouro" mesmo gastando trinta reais. Aqui
    * quem gastou pouco é bronze, e continua bronze quando entrar um cliente
-   * grande — o chão não se move sozinho.
+   * grande, o chão não se move sozinho.
    */
   it('não promove ninguém só por ser o melhor de uma base pequena', () => {
     const baseInteira = [30, 45, 60].map((v) => nivelPor(v))
@@ -87,7 +87,7 @@ describe('o retrato do relacionamento', () => {
   /*
    * A decisão que este teste protege: a recência é da **conversa**, não da
    * compra. Quem comprou há um mês e sumiu depois está indo embora, e medir pela
-   * compra faria esse caso parecer saudável até a renovação — que é quando já
+   * compra faria esse caso parecer saudável até a renovação, que é quando já
    * não dá para fazer nada.
    */
   it('mede presença pela conversa, não pela compra', () => {

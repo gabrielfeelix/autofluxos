@@ -14,7 +14,7 @@ const { executarComEfeitos, MAX_EFEITOS } = await import('./resolver')
 /**
  * Sem rede e sem chave: o modelo é de mentira de propósito.
  *
- * O que precisa ser provado aqui não é se o Gemini responde bem — isso é o
+ * O que precisa ser provado aqui não é se o Gemini responde bem, isso é o
  * `gemini.test.ts`. É o que o sistema faz com a resposta: quando a IA sabe,
  * quando não sabe, e quando não existe IA nenhuma.
  */
@@ -117,7 +117,7 @@ describe('quando existe IA', () => {
 describe('quando não existe IA', () => {
   /**
    * Sem plano contratado ou sem chave, `chamar_ia` fica na lista e quem chamou
-   * decide — hoje, mandar para uma pessoa. O que não pode é fingir que
+   * decide, hoje, mandar para uma pessoa. O que não pode é fingir que
    * respondeu.
    */
   it('devolve o pedido de IA intacto, sem inventar resposta', async () => {
@@ -215,7 +215,7 @@ describe('resolvendo o nó de API', () => {
     // A conversa seguiu com a variável vazia, em vez de morrer na falha.
     expect(textosDe(r)).toContain('está ')
 
-    // Ela termina em `humano` porque o FLUXO acaba num handoff — não porque a
+    // Ela termina em `humano` porque o FLUXO acaba num handoff, não porque a
     // integração caiu. É a diferença que este teste existe para provar.
     const transferencia = r.acoes.find((a) => a.tipo === 'transferir_humano')
     if (transferencia?.tipo !== 'transferir_humano') throw new Error('faltou a transferência')
@@ -270,7 +270,7 @@ describe('resolvendo o nó de API', () => {
 
     // Estourar a trava não pode terminar em silêncio nem com o motivo errado.
     // A conversa vai para uma pessoa, e o motivo aponta para o ciclo no
-    // desenho — não para a integração, que respondeu certo todas as vezes.
+    // desenho, não para a integração, que respondeu certo todas as vezes.
     expect(r.sessao.status).toBe('humano')
     expect(r.acoes.some((a) => a.tipo === 'chamar_http')).toBe(false)
 
@@ -438,7 +438,7 @@ describe('credencial da conexão', () => {
     )
   })
 
-  it('conexão apagada não vira chamada sem credencial — vai para uma pessoa', async () => {
+  it('conexão apagada não vira chamada sem credencial, vai para uma pessoa', async () => {
     lerCredencial.mockResolvedValue(null)
 
     const r = await executarComEfeitos(comConexao('cx-sumida'), sessaoNova(), { tipo: 'inicio' }, {
@@ -459,7 +459,7 @@ describe('credencial da conexão', () => {
 /**
  * O salto entre automações (0036).
  *
- * O que precisa ser provado aqui não é o desenho do bloco — isso é o
+ * O que precisa ser provado aqui não é o desenho do bloco, isso é o
  * `executar.test.ts`. É o que o servidor faz com o pedido: carrega a versão
  * publicada do destino, continua a conversa dentro dela **com as variáveis
  * intactas**, e diz a quem chamou qual versão passou a valer. E, quando o
@@ -530,7 +530,7 @@ describe('ir para outra automação', () => {
       modelo: null,
       contextoNegocio: '',
       // Desligado, despublicado, apagado ou de outro cliente chegam todos aqui
-      // como `null` — quem decide isso é o carregador de quem chamou.
+      // como `null`, quem decide isso é o carregador de quem chamou.
       carregarFluxo: async () => null,
     })
 
@@ -622,7 +622,7 @@ describe('ir para outra automação', () => {
  * **É a regra que, quebrada, produz o defeito mais silencioso do produto.**
  * Elas são derivadas do relógio, não coletadas da conversa: uma conversa que
  * atravessa a meia-noite precisa de `{{hoje}}` novo. Gravada, a data de ontem
- * sobrevive e a próxima mensagem sai bonita e com o dia errado — e ninguém
+ * sobrevive e a próxima mensagem sai bonita e com o dia errado, e ninguém
  * repara, porque não há erro nenhum na tela.
  */
 describe('as datas prontas do fluxo', () => {
@@ -698,7 +698,7 @@ describe('as datas prontas do fluxo', () => {
  * Desviar o fluxo pelo horário de atendimento.
  *
  * O produto sabia se estava aberto desde a `0022`, mas só usava isso numa frase
- * pronta no handoff. Quem desenha não conseguia ramificar — "de madrugada,
+ * pronta no handoff. Quem desenha não conseguia ramificar, "de madrugada,
  * ofereça o formulário em vez de prometer atendente" era impossível.
  */
 describe('o fluxo desvia pelo horário de atendimento', () => {
@@ -760,7 +760,7 @@ describe('o fluxo desvia pelo horário de atendimento', () => {
 
   /*
    * O motivo de elas serem efêmeras: gravado, `atendimento_aberto: 'sim'`
-   * continuaria dizendo às 3h da manhã que tem gente atendendo — e ainda
+   * continuaria dizendo às 3h da manhã que tem gente atendendo, e ainda
    * apareceria como campo na ficha do lead, preenchido por ninguém.
    */
   it('as duas somem antes de a sessão ir para o banco', async () => {

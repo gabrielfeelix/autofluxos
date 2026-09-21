@@ -30,7 +30,7 @@ import { acaoEnviarMidiaDoInbox } from '@/server/acoes-midia-do-inbox'
  *
  * A primeira versão punha o "⏹ Enviar" da gravação ao lado do "Enviar" do
  * formulário de texto. Dois botões com o mesmo nome na mesma linha, e o da
- * direita respondia "escreva a mensagem antes de enviar" — porque ele é o do
+ * direita respondia "escreva a mensagem antes de enviar", porque ele é o do
  * texto e o campo estava vazio. Quem atende não tem como adivinhar qual é qual.
  *
  * O WhatsApp resolve isso não deixando os dois coexistirem: gravar **toma a
@@ -42,12 +42,12 @@ import { acaoEnviarMidiaDoInbox } from '@/server/acoes-midia-do-inbox'
  * ---------------------------------------------------------------------------
  *
  * Em 15/set/2026 um áudio subiu, a Cloud API respondeu 200, a mensagem ficou
- * marcada como entregue — e nada chegou. O arquivo foi aberto byte a byte:
+ * marcada como entregue, e nada chegou. O arquivo foi aberto byte a byte:
  * Opus dentro de contêiner MP4, porque o pedido tinha sido `audio/mp4` sem
  * codec e o Chrome escolheu por conta própria. A Meta só entrega AAC em MP4.
  *
  * Pedir com `;codecs=` resolve o caso conhecido. Conferir `gravador.mimeType`
- * depois do `start()` — que é o tipo **efetivo** — é o que fecha a classe
+ * depois do `start()`, que é o tipo **efetivo**, é o que fecha a classe
  * inteira: qualquer troca do navegador vira uma frase na tela em vez de uma
  * mensagem que some no caminho.
  */
@@ -77,7 +77,7 @@ export function BotaoDeMicrofone({
   const animacaoRef = useRef<number | null>(null)
   /*
    * Quem decide o destino do áudio é quem clicou, e a decisão precisa chegar ao
-   * `onstop` — que dispara depois, e sem argumento. Um `ref` e não um estado:
+   * `onstop`, que dispara depois, e sem argumento. Um `ref` e não um estado:
    * `stop()` é síncrono, e um `setState` aqui só chegaria no render seguinte.
    */
   const descartarRef = useRef(false)
@@ -136,7 +136,7 @@ export function BotaoDeMicrofone({
           let soma = 0
           for (let j = 0; j < porBarra; j++) soma += amostras[i * porBarra + j] ?? 0
           const media = soma / porBarra / 255
-          // Mínimo de 15% para a barra não sumir no silêncio — sumir pareceria
+          // Mínimo de 15% para a barra não sumir no silêncio, sumir pareceria
           // "travou", e o que queremos comunicar é "está ouvindo, e está baixo".
           ;(barras[i] as HTMLElement).style.height = `${15 + media * 85}%`
         }
@@ -191,13 +191,13 @@ export function BotaoDeMicrofone({
    * Deixa o arquivo no formato que a Meta entrega e manda.
    *
    * O Firefox já grava OGG/Opus e nada precisa acontecer. Chrome, Edge e Opera
-   * gravam Opus dentro de WebM, que não tem linha na tabela da Meta — e aí o
+   * gravam Opus dentro de WebM, que não tem linha na tabela da Meta, e aí o
    * contêiner é trocado aqui, no navegador, sem decodificar nada: os pacotes
    * Opus de um WebM são byte a byte os mesmos de um OGG.
    *
    * O remux devolve `null` quando a entrada não é o que ele sabe ler (lacing,
    * faixa que não é Opus). Isso vira frase na tela, e não um arquivo que a
-   * Cloud API aceita com 200 e nunca entrega — que foi o modo de falha das duas
+   * Cloud API aceita com 200 e nunca entrega, que foi o modo de falha das duas
    * tentativas anteriores.
    */
   const prepararEEnviar = useCallback(
@@ -215,7 +215,7 @@ export function BotaoDeMicrofone({
       }
       await enviar(audio, formato.mime, formato.extensao)
     },
-    // `enviar` é estável — depende só de clienteId e contatoId.
+    // `enviar` é estável, depende só de clienteId e contatoId.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [clienteId, contatoId],
   )
@@ -230,7 +230,7 @@ export function BotaoDeMicrofone({
     }
 
     /*
-     * `navigator.mediaDevices` **não existe** fora de contexto seguro — http
+     * `navigator.mediaDevices` **não existe** fora de contexto seguro, http
      * puro, ou o painel aberto por IP na rede local. Sem esta conferência o
      * `getUserMedia` estoura `TypeError` e cai na frase genérica, que manda
      * procurar um cadeado que não vai resolver nada.
@@ -350,7 +350,7 @@ export function BotaoDeMicrofone({
         </span>
 
         {/*
-          O medidor vem do som real do microfone — é o que prova que ele está
+          O medidor vem do som real do microfone, é o que prova que ele está
           captando. Microfone mudo grava um arquivo válido e silencioso, e sem
           isto só se descobre depois de mandar.
         */}

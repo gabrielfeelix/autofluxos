@@ -76,7 +76,7 @@ type LinhaDoQuadro = {
 /**
  * Por que o responsável é lido como `nome:name`.
  *
- * `af_usuarios` é a tabela do **better-auth** — só o nome dela foi traduzido,
+ * `af_usuarios` é a tabela do **better-auth**, só o nome dela foi traduzido,
  * pelo `modelName` em `server/auth.ts`; as colunas continuam as da biblioteca
  * (`name`, `emailVerified`, `createdAt`, `banned`). Renomear a coluna no banco
  * obrigaria a mapear campo por campo na configuração e quebraria os `update`
@@ -97,7 +97,7 @@ function paraQuadro(linha: LinhaDoQuadro): Quadro {
     padrao: linha.padrao ?? false,
     seguinteId: linha.seguinte_id ?? null,
     // Desconhecido vira operacional, que é o default do banco: errar para o
-    // lado de "não é venda" é o lado seguro — pedir registro de venda num
+    // lado de "não é venda" é o lado seguro, pedir registro de venda num
     // funil de atendimento é pior que não pedir num comercial.
     finalidade: linha.finalidade === 'comercial' ? 'comercial' : 'operacional',
     etapas: etapasEmOrdem(
@@ -145,7 +145,7 @@ export async function acharQuadro(clienteId: string, quadroId: string): Promise<
  * Cria o quadro **já com etapas**.
  *
  * Um quadro vazio abre morto: a pessoa vê um retângulo e três cliques a separam
- * de qualquer coisa. As três etapas iniciais são neutras de propósito — ver
+ * de qualquer coisa. As três etapas iniciais são neutras de propósito, ver
  * `ETAPAS_INICIAIS` sobre por que elas não podem descrever um ramo.
  *
  * Se as etapas falharem, o quadro fica de pé mesmo assim. É melhor um quadro
@@ -179,7 +179,7 @@ export async function criarQuadro(
   const quadroId = (data as { id: string }).id
 
   /*
-   * Sem modelo escolhido, as três etapas neutras de sempre — é o que a criação
+   * Sem modelo escolhido, as três etapas neutras de sempre, é o que a criação
    * antiga fazia, e quem chama de outro lugar (teste, importação) não precisa
    * saber que modelos existem.
    */
@@ -229,7 +229,7 @@ export async function renomearQuadro(
  * Apaga o quadro inteiro.
  *
  * Etapas e cartões vão junto por `cascade`, e aqui isso é o certo: o que some é
- * a **posição** das pessoas no funil, não as pessoas. Nenhum contato é tocado —
+ * a **posição** das pessoas no funil, não as pessoas. Nenhum contato é tocado ,
  * é a diferença entre apagar um quadro e apagar uma lista de gente, e é ela que
  * torna esta operação reversível na prática.
  */
@@ -251,7 +251,7 @@ export async function apagarQuadro(clienteId: string, quadroId: string): Promise
  * O quadro que recebe contato novo sozinho.
  *
  * **Lead novo cai no funil sempre, sem ninguém marcar nada.** A `0043` nasceu
- * opt-in — só entrava quem tivesse marcado a caixa — e a consequência apareceu
+ * opt-in, só entrava quem tivesse marcado a caixa, e a consequência apareceu
  * na primeira vez que alguém foi olhar: nenhum dos cinco quadros em produção
  * estava marcado, então lead nenhum entrava em quadro nenhum. Do lado de fora
  * isso é indistinguível de recurso quebrado, e a queixa que gerou a rodada 1
@@ -296,7 +296,7 @@ export async function acharQuadroPadrao(clienteId: string): Promise<string | nul
 
   if (aceitaQuadroMaisAntigo(politica)) {
     /*
-     * O legado. `padrao` primeiro, `criado_em` como desempate — numa consulta
+     * O legado. `padrao` primeiro, `criado_em` como desempate, numa consulta
      * só: `padrao` desc põe `true` na frente, e sem nenhum `true` a lista
      * inteira desempata por idade e o primeiro é o mais antigo.
      */
@@ -313,7 +313,7 @@ export async function acharQuadroPadrao(clienteId: string): Promise<string | nul
 
   /*
    * `quadro_marcado`: só o marcado serve. Sem marcação a resposta é `null`, e
-   * **isso não é falha** — é a conta dizendo "não quero que entre sozinho onde
+   * **isso não é falha**, é a conta dizendo "não quero que entre sozinho onde
    * eu não escolhi". A tela de quadros é quem avisa que não há marcação.
    */
   const { data, error } = await consulta.eq('padrao', true).limit(1).maybeSingle()
@@ -329,7 +329,7 @@ export async function acharQuadroPadrao(clienteId: string): Promise<string | nul
  * Falha de leitura vira o default seguro em vez de exceção: este caminho roda em
  * **toda mensagem de contato novo**, e um erro aqui não pode derrubar o
  * atendimento nem fazer o webhook responder erro à Meta. `nao_criar` é o lado
- * certo de errar — ninguém entra num funil que a conta não escolheu.
+ * certo de errar, ninguém entra num funil que a conta não escolheu.
  */
 export async function politicaDeEntrada(clienteId: string): Promise<EntradaNoFunil> {
   const { data, error } = await db()
@@ -370,13 +370,13 @@ export async function definirEntradaNoFunil(
  *
  * **Desmarcar vem antes de marcar, e não é ordem à toa.** O índice parcial
  * `quadros_padrao_unico_idx` recusa a segunda linha marcada da mesma conta, e
- * marcar primeiro estouraria com `23505` justamente no caso normal — trocar o
+ * marcar primeiro estouraria com `23505` justamente no caso normal, trocar o
  * padrão de um quadro para outro. Limpar a conta inteira primeiro deixa a
  * marcação sempre livre.
  *
  * O intervalo entre as duas escritas é o preço: por um instante a conta fica
  * sem padrão, e uma mensagem que chegue exatamente ali não põe ninguém no
- * quadro. É aceitável de propósito — a alternativa seria uma transação, que o
+ * quadro. É aceitável de propósito, a alternativa seria uma transação, que o
  * PostgREST não dá, e o custo do azar é um cartão que a tela cria com um
  * clique, contra o risco de deixar a conta com dois padrões.
  */
@@ -482,7 +482,7 @@ export async function moverEtapa(
 }
 
 /**
- * Apaga a etapa — e **recusa quando há gente nela**.
+ * Apaga a etapa, e **recusa quando há gente nela**.
  *
  * A chave estrangeira do cartão é `restrict`, então o banco recusaria de
  * qualquer forma. O que este código acrescenta é o número: "3 contatos estão
@@ -501,7 +501,7 @@ export async function apagarEtapa(
   if (quadro.etapas.length === 1) {
     return {
       ok: false,
-      motivo: 'um quadro precisa de pelo menos uma etapa — sem nenhuma, não há para onde os contatos irem',
+      motivo: 'um quadro precisa de pelo menos uma etapa, sem nenhuma, não há para onde os contatos irem',
     }
   }
 
@@ -514,7 +514,7 @@ export async function apagarEtapa(
   if ((count ?? 0) > 0) {
     return {
       ok: false,
-      motivo: `${count} contato(s) estão nesta etapa. Mova-os para outra antes de apagá-la — apagar agora perderia a posição deles no funil.`,
+      motivo: `${count} contato(s) estão nesta etapa. Mova-os para outra antes de apagá-la, apagar agora perderia a posição deles no funil.`,
     }
   }
 
@@ -523,7 +523,7 @@ export async function apagarEtapa(
    *
    * Etapa vazia ainda pode ser gatilho: `sequencias.coluna_id` aponta para ela,
    * e apagá-la deixaria a sequência ativa esperando um evento que nunca mais
-   * chega. A falha é silenciosa, que é o que a torna cara — some da tela e
+   * chega. A falha é silenciosa, que é o que a torna cara, some da tela e
    * ninguém descobre até o dia em que alguém esperava a mensagem sair.
    *
    * A conferência vem **depois** da contagem de cartões de propósito: quando os
@@ -595,7 +595,7 @@ export async function listarCartoes(clienteId: string, quadroId: string): Promis
          * `nome:name` é apelido, e não capricho: a coluna de `af_usuarios`
          * chama `name`, em inglês, porque a tabela nasceu do Better Auth e não
          * do nosso vocabulário. Pedir `nome` direto devolve
-         * `column af_usuarios_1.nome does not exist` — e o erro só aparece em
+         * `column af_usuarios_1.nome does not exist`, e o erro só aparece em
          * tempo de execução, porque o PostgREST não é conferido pelo TypeScript.
          *
          * O apelido mantém o resto do arquivo em português, que é onde ele deve
@@ -616,7 +616,7 @@ export async function listarCartoes(clienteId: string, quadroId: string): Promis
     colunaId: linha.coluna_id,
     // `nome_real` (o que a equipe corrigiu) ganha de `nome` (o do perfil do
     // WhatsApp, que a própria pessoa muda quando quer). Sem nenhum dos dois, o
-    // telefone — cartão sem identificação nenhuma não dá para usar.
+    // telefone, cartão sem identificação nenhuma não dá para usar.
     nome: linha.contacts?.nome_real || linha.contacts?.nome || linha.contacts?.wa_id || '',
     telefone: linha.contacts?.wa_id ?? '',
     entrouNaColunaEm: linha.entrou_na_coluna_em,
@@ -639,7 +639,7 @@ export async function listarCartoes(clienteId: string, quadroId: string): Promis
 /**
  * Põe contatos num quadro, na primeira etapa.
  *
- * Aceita lista porque o caminho real é a seleção em lote da tela de Contatos —
+ * Aceita lista porque o caminho real é a seleção em lote da tela de Contatos ,
  * pôr trinta leads no funil de uma vez é o que se faz depois de uma importação,
  * e um laço de trinta `insert` seria trinta viagens.
  *
@@ -655,7 +655,7 @@ export async function listarCartoes(clienteId: string, quadroId: string): Promis
  * (`quadro_cartoes_unico_idx`) e o `upsert ... onConflict` do PostgREST a
  * usava para ignorar repetição. A 0071 trocou essa unicidade por uma parcial,
  * só entre os cartões abertos, para que recompra e retorno tenham onde existir
- * (RB-02, A12) — e o PostgREST não aceita `onConflict` apontando para índice
+ * (RB-02, A12), e o PostgREST não aceita `onConflict` apontando para índice
  * parcial: responde "there is no unique or exclusion constraint matching the
  * ON CONFLICT specification".
  *
@@ -725,7 +725,7 @@ export async function porNoQuadro(
 
   // 23505 é a corrida: outra requisição abriu o cartão entre a leitura e o
   // insert. O índice parcial fez o seu trabalho, e o resultado é o mesmo que
-  // o `ignoreDuplicates` dava antes — a pessoa está no quadro.
+  // o `ignoreDuplicates` dava antes, a pessoa está no quadro.
   if (error && error.code !== '23505') {
     throw new Error(`não deu para pôr no quadro: ${error.message}`)
   }
@@ -739,7 +739,7 @@ export type ContatoParaOQuadro = { id: string; nome: string; telefone: string }
  *
  * Excluir quem já está é metade da utilidade: uma lista que oferece gente que
  * já tem cartão faz a pessoa clicar para descobrir que não acontece nada. O
- * índice único recusaria de qualquer forma — o que muda aqui é ela não ser
+ * índice único recusaria de qualquer forma, o que muda aqui é ela não ser
  * oferecida.
  *
  * O teto de resultados existe porque a caixa é um seletor, não uma lista: conta
@@ -762,7 +762,7 @@ export async function contatosForaDoQuadro(
     .limit(limite + 200)
 
   if (busca !== '') {
-    // `,` e `)` têm significado no filtro do PostgREST — a mesma classe de
+    // `,` e `)` têm significado no filtro do PostgREST, a mesma classe de
     // problema que injeção. Some tudo que não é letra, número ou espaço.
     const limpo = busca.replace(/[^\p{L}\p{N}\s@.+-]/gu, ' ').trim()
     if (limpo === '') return []
@@ -851,7 +851,7 @@ export async function porNaEtapa(
  * Move o cartão de etapa.
  *
  * Passa pela função do banco porque mover é **duas escritas que não podem se
- * separar** — a coluna e o relógio da etapa. Ver a 0032.
+ * separar**, a coluna e o relógio da etapa. Ver a 0032.
  */
 export async function moverCartao(
   clienteId: string,
@@ -863,7 +863,7 @@ export async function moverCartao(
    * De onde ele saiu, lido **antes** do update.
    *
    * A função do banco devolve o cartão já movido, então a etapa de origem não
-   * existe mais depois dela — e "saiu de X para Y" sem o X é metade da frase.
+   * existe mais depois dela, e "saiu de X para Y" sem o X é metade da frase.
    * É uma consulta a mais numa ação que já era duas escritas; mover cartão é
    * gesto humano, não laço, e o histórico é a razão de a tela existir.
    *
@@ -891,7 +891,7 @@ export async function moverCartao(
   /**
    * **Lista vazia é a recusa**, e a função devolve `setof` justamente para
    * poder ser vazia (0033). Enquanto ela devolvia um composto, "nada casou"
-   * chegava aqui como um objeto de campos nulos — verdadeiro em JavaScript — e
+   * chegava aqui como um objeto de campos nulos, verdadeiro em JavaScript, e
    * este `return` respondia "movi" para as duas tentativas que a função existe
    * para recusar: cartão de outra conta e etapa de outro quadro.
    */
@@ -903,7 +903,7 @@ export async function moverCartao(
    * O evento que faltava.
    *
    * A tabela existia desde a 0058, `'mudou-de-etapa'` estava na lista de tipos e
-   * `comoFrase` já sabia escrevê-lo — mas **ninguém o emitia**, e arrastar o
+   * `comoFrase` já sabia escrevê-lo, mas **ninguém o emitia**, e arrastar o
    * cartão é o gesto principal da tela. O histórico dizia "Nada registrado
    * ainda" depois de o time trabalhar o dia inteiro, que é pior do que não ter
    * histórico: a aba promete por escrito que a mudança de etapa aparece ali.
@@ -911,7 +911,7 @@ export async function moverCartao(
    * **Voltar para a mesma etapa não é evento.** É engano de mão, e a função do
    * banco já trata assim quando decide não reiniciar o relógio. Registrar aqui
    * encheria a linha do tempo de "saiu de Proposta para Proposta" e enterraria
-   * o que importa — o mesmo motivo pelo qual a conversa não entra nesta lista.
+   * o que importa, o mesmo motivo pelo qual a conversa não entra nesta lista.
    */
   if (origem?.coluna_id !== movido.coluna_id) {
     const destino = await nomeDaEtapa(clienteId, movido.coluna_id)
@@ -932,7 +932,7 @@ export async function moverCartao(
  *
  * Devolve `null` em vez de lançar: o histórico é dado de apoio, e derrubar a
  * movimentação do cartão porque o nome da coluna não veio inverteria a
- * importância das duas coisas — a mesma decisão que `anotar` toma ao engolir o
+ * importância das duas coisas, a mesma decisão que `anotar` toma ao engolir o
  * próprio erro.
  */
 async function nomeDaEtapa(clienteId: string, colunaId: string): Promise<string | null> {
@@ -970,7 +970,7 @@ export async function tirarDoQuadro(clienteId: string, cartaoId: string): Promis
 /**
  * Põe o contato numa etapa **a partir de um fluxo** (C1b).
  *
- * Cria o cartão se ele não existe e move se já existe — as duas coisas, porque
+ * Cria o cartão se ele não existe e move se já existe, as duas coisas, porque
  * do lado do fluxo elas são o mesmo pedido: "esta pessoa está agora nesta
  * etapa". Obrigar o desenho a saber se ela já estava no quadro seria empurrar
  * um detalhe de banco para quem está desenhando uma conversa.
@@ -1038,7 +1038,7 @@ export async function porContatoNaEtapa(
 
 /** Onde um contato está num quadro, com o que é preciso para movê-lo de lá. */
 export type PosicaoNoFunil = {
-  /** O cartão. É por ele que `moverCartao` anda — não pelo contato. */
+  /** O cartão. É por ele que `moverCartao` anda, não pelo contato. */
   cartaoId: string
   quadroId: string
   quadro: string
@@ -1059,7 +1059,7 @@ export type PosicaoNoFunil = {
  * sem trocar de tela.
  *
  * **Devolve os ids junto dos nomes**, e não só os nomes. Ver a conversa e não
- * poder mover o cartão dali é a metade inútil do recurso — quem descobre que a
+ * poder mover o cartão dali é a metade inútil do recurso, quem descobre que a
  * pessoa fechou negócio no meio do atendimento tem que sair para o quadro,
  * achar o cartão e arrastar. Com `cartaoId` e `quadroId` na mão, a própria
  * conversa move.
@@ -1118,7 +1118,7 @@ export async function quadrosDoContato(
  * 1. **o cartão fecha e fica onde está.** Cartão fechado não some do quadro: é
  *    assim que o time enxerga o próprio resultado no fim do mês. Quem desce ele
  *    para o fim da coluna é `cartoesPorEtapa`, na tela;
- * 2. **o contato muda de estágio**, mas só se a régua deixar — quem já é cliente
+ * 2. **o contato muda de estágio**, mas só se a régua deixar, quem já é cliente
  *    não vira `perdido` por causa de uma negociação nova que não deu certo;
  * 3. **ganhar abre o cartão seguinte**, quando o quadro aponta para outro. É a
  *    passagem do SDR para o vendedor, e do vendedor para o pós-venda, sem botão
@@ -1135,7 +1135,7 @@ export async function quadrosDoContato(
  * a chave da operação, e por isso quem a usa continua protegido só pelo
  * `situacao = 'aberta'` do update: bom contra duplo clique, insuficiente
  * contra retry de resposta perdida. Quem precisa dos dois chama o serviço
- * direto — é o que `acoes-crm.ts` faz.
+ * direto, é o que `acoes-crm.ts` faz.
  */
 export async function fecharCartao(
   clienteId: string,
@@ -1157,7 +1157,7 @@ export async function fecharCartao(
   if (!r.ok) return { ok: false, motivo: r.motivo }
 
   // `abriuEm` é o nome do quadro de destino, e a tela o usa para dizer "foi
-  // para Pós-venda" — passagem silenciosa faria o cartão sumir do funil do SDR
+  // para Pós-venda", passagem silenciosa faria o cartão sumir do funil do SDR
   // sem explicação nenhuma.
   //
   // Ele só sai quando a continuidade **de fato** aconteceu. Enquanto ela está
@@ -1199,12 +1199,12 @@ export async function reabrirCartao(
    * A conclusão sai junto (0072).
    *
    * `conclusoes_uma_por_cartao_idx` é único por cartão, então deixá-la para
-   * trás impediria a **próxima** conclusão desta mesma ocorrência — reabrir
+   * trás impediria a **próxima** conclusão desta mesma ocorrência, reabrir
    * por engano de clique deixaria o cartão impossível de fechar de novo.
    *
    * Apagar é o certo aqui, e não marcar como desfeita: reabrir é a correção do
    * clique errado, e o fato que ela corrige nunca deveria ter existido. O que
-   * **não** é apagado é a venda — aquela tem cancelamento auditado próprio
+   * **não** é apagado é a venda, aquela tem cancelamento auditado próprio
    * (RB-31), e `vendas.cartao_id` é `restrict` justamente para que sumir em
    * silêncio seja impossível.
    *
@@ -1220,7 +1220,7 @@ export async function reabrirCartao(
     .eq('cartao_id', cartaoId)
 
   // Falhar aqui não desfaz a reabertura, que já está gravada. O efeito
-  // visível é a próxima conclusão deste cartão ser recusada pelo índice — e
+  // visível é a próxima conclusão deste cartão ser recusada pelo índice, e
   // isso vira frase na tela, não estado inconsistente.
   if (erroDaConclusao) {
     console.error('[quadros] não deu para limpar a conclusão:', erroDaConclusao.message)
@@ -1232,7 +1232,7 @@ export async function reabrirCartao(
 /**
  * Quem assumiu o cartão.
  *
- * `null` devolve à fila de ninguém — e isso é uma ação legítima, não um engano:
+ * `null` devolve à fila de ninguém, e isso é uma ação legítima, não um engano:
  * quem sai de férias precisa poder largar o que pegou.
  */
 export async function atribuirCartao(
@@ -1246,7 +1246,7 @@ export async function atribuirCartao(
     .update({ responsavel: usuarioId })
     .eq('client_id', clienteId)
     .eq('id', cartaoId)
-    // `nome:name` pelo mesmo motivo de `listarCartoes` — ver o comentário lá.
+    // `nome:name` pelo mesmo motivo de `listarCartoes`, ver o comentário lá.
     .select('id, contact_id, af_usuarios (nome:name)')
     .maybeSingle()
 
@@ -1477,7 +1477,7 @@ export async function definirInteresse(
 }
 
 /**
- * Liga este quadro ao seguinte da cadeia — ou desliga, com `null`.
+ * Liga este quadro ao seguinte da cadeia, ou desliga, com `null`.
  *
  * A checagem de ciclo mora em `core/crm.ts` e acontece **antes** da escrita: o
  * banco barra só `A → A`, e A → B → C → A passaria por ele sem reclamar,
@@ -1576,7 +1576,7 @@ export async function definirCorDaEtapa(
 // A entrada automática (0043) só alcança contato **criado agora**, e está certo:
 // quem já existia e voltou a escrever não pode ser jogado de volta para a
 // primeira etapa a cada mensagem. O efeito colateral é que quadro novo em conta
-// antiga abre vazio com o inbox cheio — que é a tela dizendo que não há nada a
+// antiga abre vazio com o inbox cheio, que é a tela dizendo que não há nada a
 // fazer quando há dezenas de pessoas esperando.
 //
 // Estas duas funções existem para esse momento, e só para ele: contar quem está
@@ -1605,7 +1605,7 @@ export async function contarForaDoQuadro(clienteId: string, quadroId: string): P
  *
  * Teto de 500 por chamada, e não porque o banco sofreria: quinhentos cartões já
  * são mais do que qualquer pessoa consegue olhar, e uma conta com milhares de
- * contatos antigos quer escolher quem entra — não despejar o histórico inteiro
+ * contatos antigos quer escolher quem entra, não despejar o histórico inteiro
  * num funil de trabalho. Acima do teto a tela avisa e a pessoa repete.
  */
 export async function trazerTodosParaOQuadro(

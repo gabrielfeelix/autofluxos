@@ -12,8 +12,8 @@ import { acaoCancelarVenda } from '@/server/acoes-vendas'
  * ---------------------------------------------------------------------------
  *
  * Cancelar a venda **e** decidir o que acontece com a oportunidade são a mesma
- * operação. Se fossem dois passos, existiria um instante — e, na prática, um
- * estado permanente quando alguém fecha a aba no meio — em que a oportunidade
+ * operação. Se fossem dois passos, existiria um instante, e, na prática, um
+ * estado permanente quando alguém fecha a aba no meio, em que a oportunidade
  * está ganha e não há venda válida nenhuma. É exatamente o que a RB-31 proíbe.
  *
  * Por isso não há opção pré-selecionada nem caminho de "decidir depois": as
@@ -173,7 +173,7 @@ export function CorrigirVenda({
         }
         aoConcluir()
       } catch {
-        setErro('não deu para cancelar agora — tente de novo')
+        setErro('não deu para cancelar agora, tente de novo')
       }
     })
   }

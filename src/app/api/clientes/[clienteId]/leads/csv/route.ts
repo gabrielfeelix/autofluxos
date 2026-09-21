@@ -53,7 +53,7 @@ export async function GET(
    *
    * Alcançar a empresa não basta: o CSV leva a base inteira para fora, e a
    * RB-40 diz que operador não exporta por padrão. Até a T2.1 esta rota
-   * conferia só a empresa, então qualquer membro baixava tudo — e chamar a
+   * conferia só a empresa, então qualquer membro baixava tudo, e chamar a
    * URL direto funcionava mesmo com o botão escondido, que é o caso literal
    * do A19.
    *
@@ -81,7 +81,7 @@ export async function GET(
    *
    * Esta rota nem conhecia o parâmetro `nivel`: quem filtrava por Ouro na tela
    * e clicava em exportar recebia a base inteira, sem aviso. Duas superfícies,
-   * duas definições — é o defeito que a RB-37 nomeia, e ele saía daqui como
+   * duas definições, é o defeito que a RB-37 nomeia, e ele saía daqui como
    * anexo de e-mail.
    *
    * Agora a faixa é resolvida pela mesma `contatosDoNivel` que a tela usa.
@@ -109,7 +109,7 @@ export async function GET(
     leads.map((lead) => [
       lead.nome ?? '',
       lead.waId,
-      lead.aguardando ? `aguardando pessoa — ${lead.aguardando.motivo}` : 'com o bot',
+      lead.aguardando ? `aguardando pessoa, ${lead.aguardando.motivo}` : 'com o bot',
       lead.etiquetasManuais.map((etiqueta) => etiqueta.nome).join('; '),
       lead.ultimaEm ?? '',
       lead.criadoEm,

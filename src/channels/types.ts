@@ -11,7 +11,7 @@ export type Midia = {
 /**
  * A mensagem que esta está citando, quando há uma.
  *
- * É o `wa_message_id` da outra — o identificador da Meta, não o nosso. Vai
+ * É o `wa_message_id` da outra, o identificador da Meta, não o nosso. Vai
  * como opcional em todo envio porque citar é escolha de quem responde, e não
  * um tipo de mensagem à parte: o WhatsApp cita texto, foto e PDF igualmente.
  *
@@ -26,13 +26,13 @@ export type Citacao = string
  *
  * **Os dois campos existem porque os canais pedem coisas diferentes**, e essa
  * diferença só apareceu quando o segundo canal chegou. O WhatsApp liga o
- * indicador respondendo a uma mensagem específica — o mesmo pedido marca como
+ * indicador respondendo a uma mensagem específica, o mesmo pedido marca como
  * lida e mostra "digitando", e sem o `message_id` a Meta recusa. O Instagram
  * usa `sender_action`, que não sabe nada de mensagem: ele quer saber com quem
  * a conversa é.
  *
  * Passar só o id da mensagem, como era antes, obrigaria o adaptador do
- * Instagram a adivinhar o destinatário a partir dele — informação que ele não
+ * Instagram a adivinhar o destinatário a partir dele, informação que ele não
  * tem. Passar os dois deixa cada canal usar o que precisa e nenhum inventar
  * nada.
  */
@@ -48,7 +48,7 @@ export type AlvoDoIndicador = {
  *
  * A Meta liga valor e lacuna **pela posição**, não pelo nome: o primeiro item
  * da lista vai para `{{1}}`, o segundo para `{{2}}`. Por isso é um array e não
- * um objeto — um `Record<string, string>` daria a impressão de que a ordem não
+ * um objeto, um `Record<string, string>` daria a impressão de que a ordem não
  * importa, e ela é a única coisa que importa.
  *
  * `cabecalho` é separado do `corpo` porque a Meta os numera **de forma
@@ -57,7 +57,7 @@ export type AlvoDoIndicador = {
  * array só faria o valor do cabeçalho aparecer no meio do texto.
  */
 export type ValoresDoTemplate = {
-  /** O header aceita **uma** variável no máximo — ver `LIMITE_VARIAVEIS_NO_HEADER`. */
+  /** O header aceita **uma** variável no máximo, ver `LIMITE_VARIAVEIS_NO_HEADER`. */
   cabecalho?: string[]
   corpo?: string[]
 }
@@ -82,14 +82,14 @@ export type Template = {
  * **`retida` não é `aceita`, e é por isso que este tipo existe.** Os outros
  * envios do `Canal` devolvem `void` porque para eles 200 é sucesso. Para
  * template não é: a Meta responde 200 e manda `message_status`, que pode dizer
- * `held_for_quality_assessment` — ela **segurou** a mensagem para avaliar, e se
+ * `held_for_quality_assessment`, ela **segurou** a mensagem para avaliar, e se
  * o veredito for ruim a mensagem é descartada e chega depois como `failed` com
  * código 132015.
  *
  * Quem trata o 200 como entrega mostra "campanha enviada" e nada saiu. Ver
  * `lerStatusDeEnvio()` em `core/templates.ts`.
  *
- * `wamid` é o id da Meta para esta mensagem — a única chave que liga o webhook
+ * `wamid` é o id da Meta para esta mensagem, a única chave que liga o webhook
  * de status de volta a esta linha, porque o webhook não sabe nada de
  * transmissão.
  */
@@ -102,7 +102,7 @@ export type EnvioDeTemplate = {
  * Por onde as mensagens saem.
  *
  * O motor nunca conhece este arquivo: ele descreve ações, e quem executa é um
- * canal. Trocar o WhatsApp por outra coisa é escrever outra implementação —
+ * canal. Trocar o WhatsApp por outra coisa é escrever outra implementação ,
  * nada em `core/` muda.
  */
 export type Canal = {
@@ -117,11 +117,11 @@ export type Canal = {
   ): Promise<void>
   enviarMidia(para: string, midia: Midia, citando?: Citacao): Promise<void>
   /**
-   * Manda um modelo aprovado — a única coisa que atravessa a janela fechada.
+   * Manda um modelo aprovado, a única coisa que atravessa a janela fechada.
    *
    * Opcional pelo mesmo motivo de `reagir`: é recurso de WhatsApp. O Telegram
    * e o Instagram não têm janela de 24h nem aprovação prévia, então para eles o
-   * conceito não existe — e fingir que existe faria o motor de disparo achar
+   * conceito não existe, e fingir que existe faria o motor de disparo achar
    * que pode transmitir por qualquer canal.
    *
    * **Devolve o resultado em vez de `void`**, ao contrário de todos os outros
@@ -133,17 +133,17 @@ export type Canal = {
    * Reage a uma mensagem com um emoji. String vazia **remove** a reação.
    *
    * Opcional na interface, e não em todos os canais: só o WhatsApp tem o
-   * recurso. Quem chama pergunta se existe antes — o mesmo que já se faz com
+   * recurso. Quem chama pergunta se existe antes, o mesmo que já se faz com
    * qualquer coisa que um canal tenha e o outro não.
    *
    * O teto de 30 dias da Meta não é conferido aqui: o adaptador é o último
    * ponto antes da rede, e recusar em silêncio seria pior que a recusa dela,
    * que ao menos vem com motivo. Quem desenha a tela é que precisa esconder o
-   * botão — ver `PODE_REAGIR_ATE_DIAS`.
+   * botão, ver `PODE_REAGIR_ATE_DIAS`.
    */
   reagir?(para: string, mensagemId: string, emoji: string): Promise<void>
   /**
-   * Marca a última mensagem que chegou como **lida** — o segundo tique azul.
+   * Marca a última mensagem que chegou como **lida**, o segundo tique azul.
    *
    * Existe separado de `aguardarResposta`, que também marca lida, porque as
    * duas respondem a perguntas diferentes: lá o bot vai responder e o "lido"
@@ -158,7 +158,7 @@ export type Canal = {
    * Baixa o arquivo que a pessoa mandou. `null` quando não deu.
    *
    * São **dois** pedidos à Meta, e não um: o primeiro troca o id por uma URL, o
-   * segundo baixa dela — e a URL só vale 5 minutos e exige o token no header.
+   * segundo baixa dela, e a URL só vale 5 minutos e exige o token no header.
    * Quem chama não precisa saber disso, e é por isso que os dois moram dentro
    * do adaptador.
    *

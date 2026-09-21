@@ -7,7 +7,7 @@ import { contarDonos, contarEstados, contarOrigens, recortarFila } from './fila-
  *
  * O que elas erram, erram em silêncio: uma conversa resolvida aparecendo na aba
  * de abertas, ou um número no rail que não bate com a lista logo abaixo dele.
- * Nada quebra — só fica errado.
+ * Nada quebra, só fica errado.
  */
 
 type Falso = {
@@ -37,7 +37,7 @@ describe('recortarFila', () => {
     expect(recortarFila(FILA, 'resolvida', 'todos').map((l) => l.contatoId)).toEqual(['d'])
   })
 
-  it('filtra por dono, e "sem-dono" é nulo — não string vazia', () => {
+  it('filtra por dono, e "sem-dono" é nulo, não string vazia', () => {
     expect(recortarFila(FILA, 'todas', 'ana').map((l) => l.contatoId)).toEqual(['b', 'c'])
     expect(recortarFila(FILA, 'todas', 'sem-dono').map((l) => l.contatoId)).toEqual(['a', 'd'])
   })
@@ -52,7 +52,7 @@ describe('recortarFila', () => {
   })
 
   it('lê estadoEfetivo, que é onde o adiamento vencido já conta como aberta', () => {
-    // A view resolve o prazo; aqui só se prova que é esse campo que se lê — ler
+    // A view resolve o prazo; aqui só se prova que é esse campo que se lê, ler
     // o `estado` cru esconderia a conversa no dia em que ela deve reaparecer.
     const vencida = [{ contatoId: 'x', estadoEfetivo: 'aberta' as const, atribuidoA: null }]
     expect(recortarFila(vencida, 'aberta', 'todos')).toHaveLength(1)
@@ -68,7 +68,7 @@ describe('contarEstados', () => {
 })
 
 describe('contarDonos', () => {
-  it('conta DENTRO do estado escolhido — senão o número não bate com a lista', () => {
+  it('conta DENTRO do estado escolhido, senão o número não bate com a lista', () => {
     const abertas = contarDonos(FILA, 'aberta')
     expect(abertas.total).toBe(3)
     expect(abertas.semDono).toBe(1)
@@ -95,7 +95,7 @@ describe('contarDonos', () => {
  *
  * A `Fila` pinta o primeiro quadro com a **página que o servidor filtrou** e só
  * depois troca pelo recorte que `RailsLocais` publica. Se os dois discordassem
- * para os mesmos filtros, a lista saltaria na hidratação — apareceria uma
+ * para os mesmos filtros, a lista saltaria na hidratação, apareceria uma
  * conversa e sumiria outra, sem nada quebrar para avisar.
  *
  * Aqui o servidor é simulado pelo mesmo recorte, que é justamente o contrato:
@@ -169,7 +169,7 @@ describe('recortarFila por origem', () => {
     ])
   })
 
-  it('"todas" não filtra nada — é o padrão de quem não escolheu', () => {
+  it('"todas" não filtra nada, é o padrão de quem não escolheu', () => {
     expect(recortarFila(POR_ORIGEM, 'todas', 'todos')).toHaveLength(4)
     expect(recortarFila(POR_ORIGEM, 'todas', 'todos', 'todas')).toHaveLength(4)
   })

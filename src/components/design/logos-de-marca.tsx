@@ -17,7 +17,7 @@
  * Nada é baixado de CDN de terceiro: uma tela de configurações que depende do
  * servidor de outra empresa para desenhar quatro ícones é uma tela que quebra
  * quando aquele servidor cai, e que conta para fora quem abriu a página. São
- * formas simplificadas, reconhecíveis pela silhueta, e o uso é nominativo —
+ * formas simplificadas, reconhecíveis pela silhueta, e o uso é nominativo ,
  * identificar a integração, que é exatamente para o que a marca serve aqui.
  *
  * A cor vem de `globals.css` (`--marca-*`), nunca escrita neste arquivo.
@@ -69,7 +69,7 @@ export function LogoInstagram() {
   )
 }
 
-/** A Meta — usada para Anúncios (Lead Ads), que é conta de anúncios e páginas. */
+/** A Meta, usada para Anúncios (Lead Ads), que é conta de anúncios e páginas. */
 export function LogoMeta() {
   return (
     <Moldura classe="text-marca-meta">
@@ -102,7 +102,7 @@ export function LogoTelegram() {
   )
 }
 
-/** A chave — não é marca de ninguém: é o que o cliente traz do sistema dele. */
+/** A chave, não é marca de ninguém: é o que o cliente traz do sistema dele. */
 export function LogoChave() {
   return (
     <Moldura classe="text-soft">

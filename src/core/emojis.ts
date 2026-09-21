@@ -6,7 +6,7 @@
  * ---------------------------------------------------------------------------
  *
  * Unicode tem mais de três mil emojis, e as bibliotecas que os trazem todos
- * custam centenas de kB no navegador — mais do que esta tela inteira. Quem
+ * custam centenas de kB no navegador, mais do que esta tela inteira. Quem
  * atende cliente não precisa da bandeira de Tuvalu: precisa achar 👍, 😂, ❤️ e
  * 📸 sem procurar. A lista curta é o recurso, como os seis da reação.
  *
@@ -16,7 +16,7 @@
  *
  * Os nomes oficiais do Unicode são em inglês ("grinning face"), e quem digita
  * "rindo" não acharia nada. Cada emoji aqui carrega as palavras que alguém
- * daqui digitaria — inclusive as erradas de propósito, como "risada" e "rs".
+ * daqui digitaria, inclusive as erradas de propósito, como "risada" e "rs".
  *
  * Acrescentar emoji é acrescentar uma linha. Se a lista crescer muito, o
  * caminho é um pacote sob demanda, não abrir mão da busca em português.
@@ -301,7 +301,7 @@ export function emojiDoItem(item: string): string {
  * e "cartão", e não acha "mascara". Trecho solto devolveria resultados que
  * ninguém consegue explicar, e numa lista de emoji isso parece defeito.
  *
- * Sem acento nem maiúscula dos dois lados — quem digita rápido não acentua, e
+ * Sem acento nem maiúscula dos dois lados, quem digita rápido não acentua, e
  * exigir isso faria a busca falhar justamente para quem tem pressa.
  */
 export function buscarEmojis(termo: string, teto = 60): string[] {

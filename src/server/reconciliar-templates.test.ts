@@ -48,7 +48,7 @@ describe('a reconciliação', () => {
   /*
    * O caso que ela existe para consertar: o webhook com o id se perdeu, então
    * casar por id não acharia nada. `(cliente, nome, idioma)` é a única chave
-   * que sobrevive a essa perda — e de quebra grava o id que faltava.
+   * que sobrevive a essa perda, e de quebra grava o id que faltava.
    */
   it('casa por nome e idioma, e grava o id que faltava', async () => {
     const r = await reconciliarTemplates()

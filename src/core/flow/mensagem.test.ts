@@ -9,7 +9,7 @@ import { noMensagemSchema, type NoMensagem } from './schema'
  * `flow_versions` é imutável e a sessão fica presa à versão em que começou: uma
  * conversa aberta às 14h continua rodando o grafo de 14h. No dia em que este
  * arquivo deixar de ler o formato antigo, toda conversa em andamento sobre uma
- * versão publicada antes da A3 morre no meio — e não há como saber quantas são.
+ * versão publicada antes da A3 morre no meio, e não há como saber quantas são.
  */
 function bloco(data: unknown): NoMensagem {
   return noMensagemSchema.parse({ id: 'b1', type: 'mensagem', position: { x: 0, y: 0 }, data })
@@ -22,7 +22,7 @@ describe('ler os dois formatos', () => {
 
   it('o atraso antigo vem **antes** do texto', () => {
     // Ele sempre significou "espere, depois mande". Invertido, a espera
-    // aconteceria com a mensagem já entregue — outro comportamento.
+    // aconteceria com a mensagem já entregue, outro comportamento.
     expect(partesDaMensagem(bloco({ texto: 'Oi!', atraso: 2 }))).toEqual([
       { tipo: 'atraso', segundos: 2 },
       { tipo: 'texto', texto: 'Oi!' },
@@ -77,7 +77,7 @@ describe('o texto que identifica o bloco', () => {
 })
 
 describe('pedaço novo', () => {
-  it('nasce válido para o schema — senão o editor grava lixo', () => {
+  it('nasce válido para o schema, senão o editor grava lixo', () => {
     for (const tipo of ['texto', 'midia', 'atraso', 'salvar', 'auto-off'] as const) {
       expect(() => bloco({ partes: [parteNova(tipo)] })).not.toThrow()
     }

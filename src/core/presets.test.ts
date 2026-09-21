@@ -9,7 +9,7 @@ import { PRESETS, acharPreset, exigeCredencial, presetDoBloco } from './presets'
  * **O que precisa ser provado é que o que eles preenchem publica.** Um preset
  * que produz um bloco inválido é pior do que não existir: a pessoa clica em
  * "aplicar", acha que resolveu, e descobre na hora de publicar que o desenho
- * não passa — com uma lista de erros sobre um bloco que ela não escreveu.
+ * não passa, com uma lista de erros sobre um bloco que ela não escreveu.
  */
 describe('cada preset produz um bloco de API válido', () => {
   it.each(PRESETS.map((preset) => preset.id))('%s tem forma de bloco `http`', (id) => {
@@ -60,16 +60,16 @@ describe('o que os presets escolhem, e por quê', () => {
      *
      * Enquanto os presets eram CRM e planilha, `GET` e `POST` separavam certo
      * por acidente: as leituras eram todas assunto da conversa e as escritas
-     * eram todas avisos. A agenda quebrou a coincidência — `POST /participacoes`
+     * eram todas avisos. A agenda quebrou a coincidência, `POST /participacoes`
      * é escrita, e falhar nela significa prometer um horário que ninguém marcou.
      *
      * A pergunta que decide é outra: **a conversa depende do resultado?**
      *
-     * - **Não depende** — o lead já está no nosso banco, e o bloco só avisa a
+     * - **Não depende**, o lead já está no nosso banco, e o bloco só avisa a
      *   RD, a planilha ou um webhook. Não ter chegado lá é problema de
      *   sincronia, não de atendimento; handoff encheria a fila com conversas que
      *   não precisam de ninguém.
-     * - **Depende** — consultar horário livre, reconhecer quem chegou, marcar,
+     * - **Depende**, consultar horário livre, reconhecer quem chegou, marcar,
      *   desmarcar, entrar na fila. Seguir em frente aqui entrega uma pergunta
      *   sem resposta possível, um cadastro duplicado, ou uma promessa que
      *   ninguém cumpre. Uma pessoa assume.
@@ -84,8 +84,7 @@ describe('o que os presets escolhem, e por quê', () => {
 
   it('nenhum deles carrega credencial no corpo, no endereço ou no cabeçalho', () => {
     // A credencial entra por `conexaoId`, resolvida no servidor. Um preset com
-    // a chave escrita viraria segredo dentro de `flow_versions`, que é imutável
-    // — não haveria como tirar depois.
+    // a chave escrita viraria segredo dentro de `flow_versions`, que é imutável, não haveria como tirar depois.
     for (const preset of PRESETS) {
       const tudo = [
         preset.dados.url,
@@ -98,7 +97,7 @@ describe('o que os presets escolhem, e por quê', () => {
     }
   })
 
-  it('a RD guarda o id do evento — é o que prova que a integração rodou', () => {
+  it('a RD guarda o id do evento, é o que prova que a integração rodou', () => {
     const rd = acharPreset('rd-station-conversao')!
     expect(rd.dados.mapear).toEqual([{ variavel: 'rd_evento', caminho: 'event_uuid' }])
   })
@@ -107,7 +106,7 @@ describe('o que os presets escolhem, e por quê', () => {
 /**
  * Reconhecer o preset que um bloco já usa.
  *
- * Existe para a gaveta fechada poder dizer o que o bloco é — quem monta fluxo
+ * Existe para a gaveta fechada poder dizer o que o bloco é, quem monta fluxo
  * relatou que *"se essa tela é minimizada não conseguimos identificar se está
  * funcional"*. A conferência aqui é de que ela acerta e, mais importante, de
  * que ela **não** afirma preset onde não há.
@@ -144,7 +143,7 @@ describe('qual preset um bloco já está usando', () => {
    * Sem o mapeamento não dá para desempatar, e aí o certo é calar.
    *
    * Anunciar "quais dias têm vaga" num bloco que busca horário seria a tela
-   * afirmando com confiança algo que ela não sabe — e quem lê a gaveta fechada
+   * afirmando com confiança algo que ela não sabe, e quem lê a gaveta fechada
    * lê justamente para não precisar abrir.
    */
   it('empate sem mapeamento não anuncia preset nenhum', () => {
@@ -156,7 +155,7 @@ describe('qual preset um bloco já está usando', () => {
     ).toBeUndefined()
   })
 
-  it('o método faz parte da identidade — mesma rota com verbo diferente é outro bloco', () => {
+  it('o método faz parte da identidade, mesma rota com verbo diferente é outro bloco', () => {
     // `/participacoes` é POST no preset de marcar e DELETE no de desmarcar.
     expect(
       presetDoBloco({ metodo: 'POST', url: 'https://verandi.4yu.com.br/api/v1/participacoes' })?.id,
@@ -176,7 +175,7 @@ describe('qual preset um bloco já está usando', () => {
    * Cada preset se reconhece a partir dos próprios dados.
    *
    * Sem isto, um preset novo com rota parecida com a de outro passaria a ser
-   * anunciado com o nome errado na gaveta fechada — e a tela estaria mentindo
+   * anunciado com o nome errado na gaveta fechada, e a tela estaria mentindo
    * com toda a confiança.
    */
   it.each(PRESETS.map((preset) => preset.id))('%s se reconhece', (id) => {
@@ -252,7 +251,7 @@ describe('a agenda responde o que a conversa precisa dizer', () => {
   it('a busca por modalidade filtra na origem, e não peneira aqui', () => {
     const filtrado = acharPreset('verandi-horarios-da-modalidade')!
     // Peneirar do nosso lado esbarraria no teto de 10 itens do menu, que
-    // cortaria antes da peneira — escondendo os horários da modalidade pedida.
+    // cortaria antes da peneira, escondendo os horários da modalidade pedida.
     expect(filtrado.dados.url).toContain('servico={{servico_id}}')
   })
 
@@ -282,10 +281,10 @@ describe('a agenda responde o que a conversa precisa dizer', () => {
  * Quem montou o primeiro fluxo de agendamento encontrou os dois lados no mesmo
  * dia: um preset que exige chave e uma tela que não dizia onde cadastrar, e um
  * preset que não exige nenhuma sendo acusado de estar sem ela. O segundo é o
- * pior — um aviso que mente treina a ignorar o aviso que acerta.
+ * pior, um aviso que mente treina a ignorar o aviso que acerta.
  */
 describe('quem exige credencial e quem não exige', () => {
-  it('o sistema próprio do cliente não exige — o endereço dele pode ser aberto', () => {
+  it('o sistema próprio do cliente não exige, o endereço dele pode ser aberto', () => {
     const meu = PRESETS.find((p) => p.nome === 'O meu próprio sistema')
     expect(meu).toBeDefined()
     expect(exigeCredencial(meu!)).toBe(false)

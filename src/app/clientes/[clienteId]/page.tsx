@@ -45,7 +45,7 @@ import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 export const dynamic = 'force-dynamic'
 
 /**
- * A tela de boas-vindas — a primeira coisa que alguém vê ao abrir a conta.
+ * A tela de boas-vindas, a primeira coisa que alguém vê ao abrir a conta.
  *
  * Ela responde três perguntas, nesta ordem: **o atendimento está de pé?**,
  * **quem está esperando por mim agora?** e, para quem acabou de chegar, **o que
@@ -54,7 +54,7 @@ export const dynamic = 'force-dynamic'
  * Duas colunas de propósito. O checklist de primeiros passos é importante e não
  * é o produto: em largura cheia ele transforma a conta num formulário a
  * preencher, e some da tela no dia em que termina, deixando um buraco. Encostado
- * na lateral, ele acompanha enquanto o meio mostra o produto — e quando acaba,
+ * na lateral, ele acompanha enquanto o meio mostra o produto, e quando acaba,
  * a mesma coluna passa a carregar o resumo do mês.
  *
  * O que sobreviveu inteiro da versão anterior é o princípio da faixa de estado:
@@ -65,7 +65,7 @@ export const dynamic = 'force-dynamic'
  * As consultas do topo são baratas de propósito (contagens e listas curtas) e
  * por isso são esperadas aqui, antes da primeira pintura: elas decidem o
  * **formato** da tela, e um `Suspense` em volta faria a página trocar de layout
- * na frente de quem está lendo. As caras — fila, mês, fechamentos — ficam cada
+ * na frente de quem está lendo. As caras, fila, mês, fechamentos, ficam cada
  * uma no seu `Suspense`.
  */
 export default async function Pagina({ params }: { params: Promise<{ clienteId: string }> }) {
@@ -246,7 +246,7 @@ function passosDaConta({
     {
       chave: 'conta',
       titulo: 'Criar a conta',
-      explica: 'Feito — esta conta é sua.',
+      explica: 'Feito, esta conta é sua.',
       feito: true,
       acoes: [],
     },
@@ -266,7 +266,7 @@ function passosDaConta({
       chave: 'automacao',
       titulo: 'Publicar uma automação',
       explica: temFluxo
-        ? 'O desenho existe, mas só atende depois de publicado — é a publicação que põe o roteiro no ar.'
+        ? 'O desenho existe, mas só atende depois de publicado, é a publicação que põe o roteiro no ar.'
         : 'O roteiro do que o bot responde sozinho: dúvida repetida, horário, preço, e quando chamar uma pessoa.',
       feito: temPublicado,
       acoes: [{ rotulo: temFluxo ? 'Abrir as automações' : 'Criar a primeira', href: em('/fluxos') }],
@@ -275,7 +275,7 @@ function passosDaConta({
       chave: 'conversa',
       titulo: 'Receber a primeira conversa',
       explica:
-        'Mande uma mensagem para o canal que você ligou, do seu próprio celular. Ela aparece no Inbox em segundos — é o teste que mostra tudo funcionando de ponta a ponta.',
+        'Mande uma mensagem para o canal que você ligou, do seu próprio celular. Ela aparece no Inbox em segundos, é o teste que mostra tudo funcionando de ponta a ponta.',
       feito: temContato,
       acoes: [{ rotulo: 'Abrir o Inbox', href: em('/inbox') }],
     },
@@ -333,7 +333,7 @@ function Estado({
   // há um, e os seguintes às vezes somem sozinhos quando o primeiro sai.
   const pendencia =
     canais === 0
-      ? { texto: 'Nenhum canal ligado — nada chega até aqui ainda.', href: '/ajustes' }
+      ? { texto: 'Nenhum canal ligado, nada chega até aqui ainda.', href: '/ajustes' }
       : fluxos === 0
         ? { texto: 'Nenhuma automação desenhada ainda.', href: '/fluxos' }
         : publicados === 0
@@ -526,7 +526,7 @@ function LinhaDaFila({ item, clienteId }: { item: ItemDaFila; clienteId: string 
       >
         {/*
           As iniciais, e não uma foto: a Cloud API não entrega foto de perfil de
-          contato — o único `profile_picture_url` que existe é o do próprio
+          contato, o único `profile_picture_url` que existe é o do próprio
           negócio. O avatar é o mesmo do Inbox de propósito, com a mesma cor por
           nome, para a pessoa que você viu aqui ser reconhecida lá.
         */}
@@ -668,7 +668,7 @@ async function Numeros({ clienteId }: { clienteId: string }) {
         O aviso é o que fazer, não uma confissão.
 
         Ele dizia "N conversas caíram no colo de alguém por falha. Isso é
-        defeito, e não desenho" — o produto se acusando na tela de quem paga por
+        defeito, e não desenho", o produto se acusando na tela de quem paga por
         ele, sem dizer falha de quê nem o que fazer a respeito. O dono não tem o
         que fazer com essa frase além de desconfiar do produto.
 
@@ -740,7 +740,7 @@ function FatiaDoMes({
         {rotulo}
       </span>
       <span className="ml-auto shrink-0 text-[11px] text-dim tabular-nums">
-        {de === 0 ? '—' : `${Math.round((quantas / de) * 100)}%`}
+        {de === 0 ? '-' : `${Math.round((quantas / de) * 100)}%`}
       </span>
     </li>
   )
@@ -750,7 +750,7 @@ function FatiaDoMes({
  * O que a pesquisa de satisfação colheu (0060).
  *
  * A pesquisa gravava desde a 0060 e **nenhuma tela lia**: a nota entrava no
- * banco e morria lá. Esta seção é o outro lado do bloco — sem ela, quem desenha
+ * banco e morria lá. Esta seção é o outro lado do bloco, sem ela, quem desenha
  * uma pesquisa no fluxo nunca descobre o resultado.
  *
  * **Some quando não há nota**, como Fechamentos: painel cheio de caixa zerada
@@ -821,7 +821,7 @@ async function Satisfacao({ clienteId }: { clienteId: string }) {
  *
  * O painel respondia "quanto entrou" e "quem está esperando", e não respondia a
  * pergunta que custa mais caro: **quem já era cliente e está saindo em
- * silêncio**. Ninguém abre uma tela para descobrir isso — não há evento, não há
+ * silêncio**. Ninguém abre uma tela para descobrir isso, não há evento, não há
  * notificação, e o sintoma só aparece na renovação que não veio.
  *
  * Some quando não há ninguém, como todo bloco desta tela: painel que mostra
@@ -913,7 +913,7 @@ async function Fechamentos({ clienteId }: { clienteId: string }) {
 
       {fechou.valor === null && fechou.ganhos > 0 && (
         <p className="mt-1 text-[12px] text-dim">
-          Nenhum dos ganhos tinha valor anotado — por isso não há soma aqui.
+          Nenhum dos ganhos tinha valor anotado, por isso não há soma aqui.
         </p>
       )}
     </section>
@@ -924,7 +924,7 @@ async function Fechamentos({ clienteId }: { clienteId: string }) {
  * Quanto cada pessoa atendeu.
  *
  * **Só com duas pessoas ou mais.** Com uma, é a própria pessoa lendo o próprio
- * volume numa tabela chamada "desempenho" — cobrança sem destinatário, a mesma
+ * volume numa tabela chamada "desempenho", cobrança sem destinatário, a mesma
  * razão pela qual a versão anterior já escondia a tabela vazia.
  *
  * Volume, e não tempo: a responsabilidade por um contato pode trocar de mãos no
@@ -981,7 +981,7 @@ async function Pessoas({ clienteId }: { clienteId: string }) {
 
 /** "3 min", "1h20", "2 dias". `null` vira travessão: não há o que dizer. */
 function comoDuracao(segundos: number | null): string {
-  if (segundos === null) return '—'
+  if (segundos === null) return '-'
   if (segundos < 60) return `${Math.round(segundos)}s`
 
   const minutos = Math.round(segundos / 60)
@@ -998,7 +998,7 @@ function comoDuracao(segundos: number | null): string {
 }
 
 /**
- * "há 12 min", "há 1h20", "há 3 dias" — calculado no servidor.
+ * "há 12 min", "há 1h20", "há 3 dias", calculado no servidor.
  *
  * A mesma régua de `comoDuracao`, de propósito: a espera na fila e o tempo de
  * resposta do mês são a mesma grandeza, e duas escalas diferentes na mesma tela

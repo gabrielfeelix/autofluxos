@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { ehAdminDaPlataforma, type SessaoAtual } from './sessao'
 
 /**
- * O papel de plataforma vem como **lista separada por vírgula** — é o formato
+ * O papel de plataforma vem como **lista separada por vírgula**, é o formato
  * do plugin `admin` do Better Auth (`role: 'admin,suporte'`).
  *
  * Comparar a string inteira com `'admin'` funciona hoje e dá falso no dia em
@@ -48,7 +48,7 @@ describe('quem administra a plataforma', () => {
     expect(ehAdminDaPlataforma(null)).toBe(false)
   })
 
-  it('suspenso perde o papel — banir não pode deixar a chave na porta', () => {
+  it('suspenso perde o papel, banir não pode deixar a chave na porta', () => {
     expect(ehAdminDaPlataforma(sessaoCom('admin', true))).toBe(false)
   })
 })

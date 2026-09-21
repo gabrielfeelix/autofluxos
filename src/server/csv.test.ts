@@ -15,7 +15,7 @@ describe('csv', () => {
 
   /**
    * O conteúdo vem do WhatsApp de estranhos. Célula começando com `=` é
-   * fórmula executada ao abrir a planilha — a aspa simples na frente é o que a
+   * fórmula executada ao abrir a planilha, a aspa simples na frente é o que a
    * planilha entende como "isto é texto".
    */
   it('não deixa a planilha executar o que o lead escreveu', () => {

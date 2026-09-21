@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
  * de perguntar quem é.**
  *
  * O arquivo `acoes.ts` tem trinta e sete ações, e trinta e cinco delas começam
- * com a mesma linha. Repetição desse tamanho não se mantém por disciplina — a
+ * com a mesma linha. Repetição desse tamanho não se mantém por disciplina, a
  * trigésima oitava vai ser escrita com pressa, e o esquecimento não aparece em
  * nenhum teste funcional, porque a ação continua funcionando: ela só passa a
  * funcionar para quem não devia.
@@ -21,7 +21,7 @@ import { describe, expect, it } from 'vitest'
  * **A T2.1 passou a exigir a segunda pergunta.** Antes bastava
  * `exigirAcessoAoCliente`, que responde "esta pessoa alcança esta empresa?".
  * Agora a ação precisa dizer também **o que** ela exige, por
- * `exigirCapacidade` — que faz a primeira conferência por dentro, então
+ * `exigirCapacidade`, que faz a primeira conferência por dentro, então
  * chamá-la cobre as duas. Aceitar as duas formas é o que permite a varredura
  * acontecer em partes sem deixar o arquivo destravado no meio do caminho.
  */
@@ -48,7 +48,7 @@ type Acao = { nome: string; parametros: string; corpo: string }
  * Recorta as ações exportadas.
  *
  * A contagem de parênteses acha o fim dos parâmetros, e a de `<>` pula o tipo
- * de retorno — `Promise<{ ok: boolean }>` traz uma chave antes do corpo, e
+ * de retorno, `Promise<{ ok: boolean }>` traz uma chave antes do corpo, e
  * procurar a primeira `{` acharia essa.
  */
 function lerAcoes(codigo: string): Acao[] {
@@ -85,7 +85,7 @@ function lerAcoes(codigo: string): Acao[] {
 const ACOES = lerAcoes(CODIGO)
 
 describe('toda ação pergunta quem é antes de agir', () => {
-  it('encontra as ações dos arquivos — se isto zerar, o resto não prova nada', () => {
+  it('encontra as ações dos arquivos, se isto zerar, o resto não prova nada', () => {
     // Uma mudança de formatação que quebrasse o recorte faria todos os testes
     // abaixo passarem por vacuidade. Este é o teste do teste.
     expect(ACOES.length).toBeGreaterThan(25)
@@ -145,8 +145,8 @@ describe('toda ação pergunta quem é antes de agir', () => {
      *
      * Até a T4.1 a varredura lia só `acoes.ts`, e as ações dos outros
      * dezessete arquivos não passavam por trava nenhuma. O 3 media um arquivo;
-     * o 27 mede os dezoito. Nenhuma ação perdeu conferência de acesso — o
-     * teste acima prova isso para todas —, o que elas não declaram é **qual**
+     * o 27 mede os dezoito. Nenhuma ação perdeu conferência de acesso, o
+     * teste acima prova isso para todas , o que elas não declaram é **qual**
      * capacidade exigem.
      *
      * Continua sendo um teto que só desce. Uma ação nova escrita com a
@@ -161,7 +161,7 @@ describe('toda ação pergunta quem é antes de agir', () => {
    * conferir, então a pergunta certa é quem pode criar.
    *
    * Limitado a `acoes.ts` de propósito. Os outros arquivos têm ações sem
-   * `clienteId` que não são criação de conta — elas recebem o id do contato, da
+   * `clienteId` que não são criação de conta, elas recebem o id do contato, da
    * mensagem ou do alerta, e resolvem a conta a partir dele. Exigir
    * `exigirOperadorDa4YU` nelas trancaria o produto inteiro para os clientes.
    * Cobri-las é outra varredura, com outra pergunta, e está anotada no handoff.

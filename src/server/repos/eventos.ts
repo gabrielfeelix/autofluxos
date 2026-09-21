@@ -11,7 +11,7 @@ import { db, ehIdInvalido } from '../db'
  * **Escrever aqui nunca pode derrubar a ação que gerou o evento.** Registrar que
  * alguém assumiu o cartão é dado de apoio; falhar a atribuição porque o
  * histórico não gravou seria inverter a importância das duas coisas. Por isso
- * `anotar` engole o erro e segue — é a mesma decisão que a auditoria já toma.
+ * `anotar` engole o erro e segue, é a mesma decisão que a auditoria já toma.
  */
 
 export async function anotar(
@@ -67,7 +67,7 @@ export async function anotarEmLote(
  *
  * Com teto, e o teto é baixo de propósito: o painel mostra o que aconteceu
  * ultimamente, e "tudo desde sempre" de um contato de dois anos é uma rolagem
- * que ninguém termina — e uma consulta que cresce sem limite.
+ * que ninguém termina, e uma consulta que cresce sem limite.
  */
 export async function linhaDoTempo(
   clienteId: string,

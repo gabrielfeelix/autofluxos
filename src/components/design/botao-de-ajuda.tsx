@@ -1,11 +1,11 @@
 import Link from 'next/link'
 
 /**
- * O ponto de interrogação no topo da barra — a porta da Ajuda.
+ * O ponto de interrogação no topo da barra, a porta da Ajuda.
  *
  * **Fica ao lado da marca, e não como item da navegação.** Os itens da barra são
  * lugares onde se trabalha: Inbox, Contatos, Quadros, Automações. Ajuda não é um
- * desses — é o que se procura quando o trabalho travou, e o gesto conhecido para
+ * desses, é o que se procura quando o trabalho travou, e o gesto conhecido para
  * isso é o `?` no cabeçalho, não uma linha a mais na lista que já tem seis.
  *
  * Aparece nas **duas** molduras (a lista de clientes e as telas do cliente)

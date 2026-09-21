@@ -6,7 +6,7 @@ import { db, ehIdInvalido } from '../db'
  * Por que se perde nesta conta (0058).
  *
  * Lista fechada em vez de texto livre porque agrupar é a única razão de
- * registrar o motivo — e texto livre produz "preço", "Preço", "caro" e "achou
+ * registrar o motivo, e texto livre produz "preço", "Preço", "caro" e "achou
  * caro" como quatro motivos diferentes.
  */
 
@@ -17,7 +17,7 @@ export type Motivo = { id: string; nome: string; ordem: number }
  *
  * Semear na primeira leitura, e não no cadastro da conta: conta criada antes da
  * 0058 nunca passou por aquele código, e a alternativa seria uma migration que
- * escreve linha por cliente — dado semeado em banco compartilhado, que é o que
+ * escreve linha por cliente, dado semeado em banco compartilhado, que é o que
  * se quer fazer menos vezes.
  *
  * Lista vazia seria pior que uma lista genérica: obrigaria a cadastrar motivo
@@ -45,14 +45,14 @@ async function semear(clienteId: string): Promise<Motivo[]> {
   /*
    * `insert` simples, e não `upsert`.
    *
-   * O único índice da tabela é sobre `lower(trim(nome))` — expressão, e não
-   * coluna —, e `on conflict (client_id, nome)` não casa com índice de
+   * O único índice da tabela é sobre `lower(trim(nome))`, expressão, e não
+   * coluna , e `on conflict (client_id, nome)` não casa com índice de
    * expressão: o Postgres responde "no unique or exclusion constraint matching"
    * e a semeadura falha inteira, em silêncio, deixando a lista vazia. Foi
    * exatamente o que aconteceu na primeira versão disto.
    *
    * Duas abas semeando ao mesmo tempo dão erro de duplicata na segunda, que é o
-   * caso em que reler resolve — e é o que o `select` do fim faz.
+   * caso em que reler resolve, e é o que o `select` do fim faz.
    */
   const { error } = await db()
     .from('motivos_de_perda')

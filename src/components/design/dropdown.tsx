@@ -26,7 +26,7 @@ export type OpcaoDropdown = {
 /**
  * Lista de escolha do painel.
  *
- * O `<select>` nativo entrega o desenho do sistema operacional quando abre —
+ * O `<select>` nativo entrega o desenho do sistema operacional quando abre ,
  * inclusive fundo branco em cima de um modal escuro. Esta versão mantém a
  * mesma semântica no formulário (via input oculto), mas a lista é nossa e
  * funciona por mouse, toque e teclado.
@@ -36,7 +36,7 @@ export type OpcaoDropdown = {
  * ---------------------------------------------------------------------------
  *
  * Ela era `position: absolute` dentro do próprio componente, e **todo card do
- * painel tem `overflow-hidden`** — a borda arredondada da lista depende disso.
+ * painel tem `overflow-hidden`**, a borda arredondada da lista depende disso.
  * O resultado é a lista sendo cortada na altura do card: no dropdown de papel
  * da tela de Equipe dava para ler metade de uma opção e mais nada.
  *
@@ -53,31 +53,31 @@ export type OpcaoDropdown = {
  *
  * Modal aqui é `<dialog>` nativo, que vive na *top layer*: coisa pendurada no
  * `body` é pintada **atrás** dele. A tentativa anterior foi pendurar o portal
- * dentro do próprio `<dialog>` — e foi ela que produziu o modal travado que
+ * dentro do próprio `<dialog>`, e foi ela que produziu o modal travado que
  * três agentes não consertaram.
  *
  * **O que estava errado, medido e não deduzido** (Playwright, Chromium 141, no
  * modal de "Novo fluxo"): `.app-dialog[open]` roda `animation: pop … both`, e
  * `animation-fill-mode: both` deixa o último quadro aplicado para sempre. O
  * último quadro é `transform: none`, mas o **computado** que fica é
- * `matrix(1, 0, 0, 1, 0, 0)` — identidade, e mesmo assim um transform. Com
+ * `matrix(1, 0, 0, 1, 0, 0)`, identidade, e mesmo assim um transform. Com
  * transform, o `<dialog>` vira **bloco contentor de `position: fixed`**.
  *
  * O efeito em números: `style.top` do menu era `400.75px` (coordenada de
  * janela, certa) e o retângulo real saía em `y = 589`, exatamente `400.75` mais
  * o topo do modal. A lista caía fora do modal, o `overflow: auto` do `<dialog>`
  * ganhava barra, a barra disparava o `scroll` que este componente escuta, a
- * remedição movia a lista de novo — e o ciclo se alimentava. O comentário no
+ * remedição movia a lista de novo, e o ciclo se alimentava. O comentário no
  * `globals.css` dizia que `transform: none` matava a causa; não mata.
  *
  * **A saída é a top layer de verdade: a lista é um `popover`.** Elemento na
- * top layer é posicionado a partir da janela — nenhum ancestral com transform o
- * alcança — e não acrescenta área de rolagem a ancestral nenhum, que era o
+ * top layer é posicionado a partir da janela, nenhum ancestral com transform o
+ * alcança, e não acrescenta área de rolagem a ancestral nenhum, que era o
  * começo do laço.
  *
  * O portal **continua indo para dentro do `<dialog>`**, e isso é obrigatório:
  * modal nativo torna inerte tudo que está fora dele. Pendurado no `body` o
- * `popover` até aparece, mas não recebe clique — o teste mostrou o `<dialog>`
+ * `popover` até aparece, mas não recebe clique, o teste mostrou o `<dialog>`
  * interceptando o ponteiro em cima da opção. Quem conserta a posição é o
  * `popover`, não o destino.
  *
@@ -122,7 +122,7 @@ export function Dropdown({
    *
    * Guardado em estado, e não lido do `ref` na hora de renderizar: ler `ref`
    * durante o render é leitura de uma coisa que ainda pode não existir, e o
-   * compilador do React recusa — com razão, porque no primeiro render ela não
+   * compilador do React recusa, com razão, porque no primeiro render ela não
    * existe mesmo.
    */
   const [destino, setDestino] = useState<Element | null>(null)
@@ -137,7 +137,7 @@ export function Dropdown({
   /**
    * Onde a lista cabe.
    *
-   * Abre para baixo; vira para cima quando não há espaço — perto do rodapé da
+   * Abre para baixo; vira para cima quando não há espaço, perto do rodapé da
    * tela, abrir para baixo desenha a lista fora da área visível e o efeito é
    * idêntico ao bug que este portal veio consertar.
    */
@@ -175,7 +175,7 @@ export function Dropdown({
      * O destino continua sendo o `<dialog>` mais próximo, e agora por um motivo
      * diferente do antigo: **modal nativo torna inerte tudo que está fora
      * dele**. Uma lista pendurada no `body` até é pintada, mas não recebe
-     * clique — foi o que o teste mostrou, com o `<dialog>` interceptando o
+     * clique, foi o que o teste mostrou, com o `<dialog>` interceptando o
      * ponteiro em cima da opção.
      *
      * O que conserta a posição não é o destino, é o `popover`: elemento na top
@@ -200,7 +200,7 @@ export function Dropdown({
       lista.showPopover()
     } catch {
       // Já estava na top layer, ou o navegador recusou. A lista continua
-      // desenhada; no pior caso, atrás do modal — que é o comportamento antigo.
+      // desenhada; no pior caso, atrás do modal, que é o comportamento antigo.
     }
   }, [aberto, caixa, destino])
 
@@ -222,7 +222,7 @@ export function Dropdown({
   useEffect(() => {
     const fecharAoClicarFora = (evento: PointerEvent) => {
       const alvo = evento.target as Node
-      // A lista não está mais dentro da raiz — ela vive no portal. Conferir só
+      // A lista não está mais dentro da raiz, ela vive no portal. Conferir só
       // a raiz fecharia o dropdown no clique da própria opção.
       if (raiz.current?.contains(alvo)) return
       if (menu.current?.contains(alvo)) return

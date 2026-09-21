@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic'
  * Tela própria e não um botão na barra de Leads.
  *
  * A importação precisa explicar o formato antes e mostrar o que não entrou
- * depois — as duas coisas não cabem numa barra, e enfiá-las lá empurraria a
+ * depois, as duas coisas não cabem numa barra, e enfiá-las lá empurraria a
  * tabela para baixo em toda visita para servir a uma ação que acontece uma vez.
  * Mora **sob** Leads de propósito: item novo na navegação é o erro que o
  * concorrente comete, com 11 itens contra os nossos 5.

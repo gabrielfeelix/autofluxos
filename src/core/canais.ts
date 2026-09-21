@@ -1,21 +1,21 @@
 /**
- * Por onde uma automação conversa — e o que cada canal permite.
+ * Por onde uma automação conversa, e o que cada canal permite.
  *
  * ---------------------------------------------------------------------------
  * A decisão: **o canal é da automação, escolhido ao criar.**
  * ---------------------------------------------------------------------------
  *
  * Não é por bloco, não é por template, não é uma automação que atende três
- * redes ao mesmo tempo. É a mesma escolha que o ManyChat e o Chatfuel fazem —
+ * redes ao mesmo tempo. É a mesma escolha que o ManyChat e o Chatfuel fazem ,
  * lá o fluxo também é de um canal só, e quem quer Instagram e WhatsApp desenha
- * dois —, e ela não é preguiça de produto: é consequência de os canais não
+ * dois , e ela não é preguiça de produto: é consequência de os canais não
  * serem intercambiáveis.
  *
  * O WhatsApp aceita **3 botões**; o Instagram aceita 13 quick replies; o
  * Telegram aceita teclado inline de dezenas. O WhatsApp fecha a janela em 24h
  * fora de template aprovado; o Telegram não tem janela nenhuma. Um fluxo que
- * servisse aos três seria obrigado ao **menor denominador** — três botões, tudo
- * dentro de 24h, sem teclado inline — e entregaria em toda parte a pior versão
+ * servisse aos três seria obrigado ao **menor denominador**, três botões, tudo
+ * dentro de 24h, sem teclado inline, e entregaria em toda parte a pior versão
  * de cada canal. Pior: o `validar()` não teria o que cobrar, porque a mesma
  * pergunta com 8 opções está certa no Telegram e errada no WhatsApp.
  *
@@ -28,7 +28,7 @@
  *
  * `disponivel: false` não é enfeite: é canal cujo adaptador (`channels/`) não
  * existe. Ele aparece na tela porque esconder a possibilidade é como se
- * descobre tarde demais que ela nunca foi pensada — mas não dá para escolher,
+ * descobre tarde demais que ela nunca foi pensada, mas não dá para escolher,
  * porque automação que não entrega mensagem é pior do que automação que não
  * existe.
  *
@@ -39,7 +39,7 @@
  *
  * Os limites daqui **já alimentam o `validar()`**: ele recebe o canal do fluxo
  * em `Capacidades.canal` e cobra por estas medidas, com o nome do canal na
- * mensagem. Preencher a tabela abaixo é o que basta — não há segunda cópia
+ * mensagem. Preencher a tabela abaixo é o que basta, não há segunda cópia
  * destes números dentro do validador.
  */
 export const CANAIS = ['whatsapp', 'instagram', 'telegram'] as const
@@ -51,7 +51,7 @@ export type DefinicaoDeCanal = {
   nome: string
   /** Uma linha sobre o que a automação faz ali. */
   resumo: string
-  /** A cor da marca. É o que pinta o selo — e só ele. */
+  /** A cor da marca. É o que pinta o selo, e só ele. */
   cor: string
   /** Tem adaptador de entrega? `false` = desenhado, não implementado. */
   disponivel: boolean
@@ -81,7 +81,7 @@ export const DEFINICAO_DO_CANAL: Record<CanalId, DefinicaoDeCanal> = {
   instagram: {
     id: 'instagram',
     nome: 'Instagram',
-    resumo: 'Responde no direct — comentário que vira conversa, resposta a story.',
+    resumo: 'Responde no direct, comentário que vira conversa, resposta a story.',
     cor: '#E1306C',
     /*
      * O adaptador existe (`channels/instagram.ts`), o webhook existe, e a tela
@@ -93,7 +93,7 @@ export const DEFINICAO_DO_CANAL: Record<CanalId, DefinicaoDeCanal> = {
      * Manter `false` é a regra deste arquivo sendo cumprida, não contornada:
      * oferecer o canal na criação de automação faria alguém desenhar um fluxo
      * inteiro para descobrir na hora de publicar que não há conta de cliente
-     * para ligar. A tela `/clientes/<id>/ajustes/instagram` já conecta e já recebe —
+     * para ligar. A tela `/clientes/<id>/ajustes/instagram` já conecta e já recebe ,
      * com o nosso perfil, que é exatamente o que o Standard permite.
      */
     disponivel: false,
@@ -111,7 +111,7 @@ export const DEFINICAO_DO_CANAL: Record<CanalId, DefinicaoDeCanal> = {
      * **O adaptador existe** (`channels/telegram.ts`, com teste). O que falta
      * é onde guardar o bot: a tabela `channels` só aceita `provider` em
      * ('cloud-api', 'instagram'), e o `check` da 0040 exige que toda linha
-     * tenha exatamente um entre `phone_number_id` e `ig_user_id` — um bot do
+     * tenha exatamente um entre `phone_number_id` e `ig_user_id`, um bot do
      * Telegram não tem nenhum dos dois. Enquanto isso não mudar, não há linha
      * de canal para o `adaptadorDoCanal` encontrar, e nenhum webhook de
      * entrada.
@@ -137,7 +137,7 @@ export const CANAL_PADRAO: CanalId = 'whatsapp'
  *
  * Devolve o padrão em vez de estourar: o valor vem de `<form>`, e uma aba velha
  * com um canal que saiu da lista não pode virar erro na cara de quem clicou.
- * Escolher canal indisponível cai no mesmo lugar — a tela já não oferece, então
+ * Escolher canal indisponível cai no mesmo lugar, a tela já não oferece, então
  * quem chega aqui está fora do caminho normal.
  */
 export function canalValido(valor: unknown): CanalId {

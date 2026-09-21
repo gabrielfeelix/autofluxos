@@ -6,10 +6,10 @@ import { iguais } from '@/lib/segredo'
  * O `state` do OAuth: o bilhete que amarra o retorno da Meta a quem começou.
  *
  * **Sem ele existe um ataque real, e não teórico.** A rota de retorno é pública
- * por obrigação — a Meta chama o navegador de quem autorizou, sem cookie
+ * por obrigação, a Meta chama o navegador de quem autorizou, sem cookie
  * nosso garantido. Se ela aceitasse `?cliente=<uuid>` na lata, bastaria induzir
  * um administrador logado a abrir um link para ligar uma conta de Instagram
- * qualquer ao cliente errado — ou ligar a conta do atacante a um cliente de
+ * qualquer ao cliente errado, ou ligar a conta do atacante a um cliente de
  * verdade, e passar a receber os direct dele.
  *
  * O bilhete é assinado com segredo do servidor e vence rápido: um OAuth
@@ -29,7 +29,7 @@ import { iguais } from '@/lib/segredo'
  * o número, **espera chegar uma mensagem** da Conta Oficial do Facebook Business
  * no WhatsApp dele, sai do navegador para tocar em *Connect* e *Confirm* no
  * celular, volta, e cola o código. Na primeira vez, sem saber o que vem, isso
- * passa de dez minutos com facilidade — e o bilhete vencido derruba a conexão
+ * passa de dez minutos com facilidade, e o bilhete vencido derruba a conexão
  * bem no fim, depois de a Meta já ter dito "conectado".
  *
  * Alongar não enfraquece o que o bilhete faz: ele continua assinado, e o que
@@ -59,7 +59,7 @@ export function criarEstado(clienteId: string, agora: Date = new Date()): string
 /**
  * Devolve o cliente que começou a conexão, ou `null`.
  *
- * `null` para tudo que não presta — assinatura errada, prazo vencido, formato
+ * `null` para tudo que não presta, assinatura errada, prazo vencido, formato
  * estranho. Distinguir os casos na resposta contaria a quem está testando qual
  * parte ele acertou.
  */

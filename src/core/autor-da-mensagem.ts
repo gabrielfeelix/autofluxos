@@ -9,7 +9,7 @@ import { nomeCurto } from './atendente'
  *
  * Coluna seria mais limpa, e um dia será. Hoje ela custa uma migration no banco
  * de **produção compartilhado com a Verandi** (ver `docs/BANCO-COMPARTILHADO.md`)
- * para resolver um rótulo de dez pixels — e migration lá não se aplica sem
+ * para resolver um rótulo de dez pixels, e migration lá não se aplica sem
  * autorização explícita do dono, o que transformaria uma melhoria de tela numa
  * espera.
  *
@@ -17,14 +17,14 @@ import { nomeCurto } from './atendente'
  * (`midia`, `url`, `local`, `cartoes`). O autor é a mesma categoria de coisa:
  * informação de como desenhar aquela linha. Quando o agendamento pedir a
  * `0057` de qualquer jeito, isto aqui vira coluna e a leitura continua sendo
- * por esta função — que é o motivo de a leitura morar num lugar só.
+ * por esta função, que é o motivo de a leitura morar num lugar só.
  *
  * ---------------------------------------------------------------------------
  * O que "ausente" significa, e por que ele não vira "atendimento"
  * ---------------------------------------------------------------------------
  *
  * Mensagem sem autor é de antes disto existir, ou é o eco do que o dono mandou
- * pelo celular — e nesses dois casos **ninguém sabe** quem escreveu. A bolha
+ * pelo celular, e nesses dois casos **ninguém sabe** quem escreveu. A bolha
  * então não diz nada e mostra só a hora.
  *
  * O rótulo que estava lá era "atendimento", em toda mensagem que saía, do bot
@@ -48,7 +48,7 @@ export function autorDaPessoa(
   return { tipo: 'pessoa', id: usuario?.id ?? null, nome }
 }
 
-/** O que está gravado, de volta ao formato — ou `null` se não há nada confiável ali. */
+/** O que está gravado, de volta ao formato, ou `null` se não há nada confiável ali. */
 export function autorDoPayload(payload: unknown): AutorDaSaida | null {
   if (!payload || typeof payload !== 'object') return null
   const bruto = (payload as { autor?: unknown }).autor

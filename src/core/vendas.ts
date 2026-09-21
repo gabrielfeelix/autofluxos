@@ -212,8 +212,8 @@ export type ResumoDeVendas = {
  * Duas coisas que a versão antiga (`resumoDoCliente`, em `core/crm.ts`) não
  * fazia e que a proposta exige:
  *
- * 1. **cancelada não conta** — nem no total, nem na contagem, nem na recência;
- * 2. **`semValor` é devolvido** — para a tela poder dizer "3 compras, R$ 500
+ * 1. **cancelada não conta**, nem no total, nem na contagem, nem na recência;
+ * 2. **`semValor` é devolvido**, para a tela poder dizer "3 compras, R$ 500
  *    conhecidos, há vendas sem valor informado" em vez de apresentar R$ 500
  *    como se fosse tudo (RB-06).
  */

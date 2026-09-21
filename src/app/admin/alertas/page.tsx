@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
  * O que quebrou.
  *
  * **Por que esta tela existe.** `alertar()` era um POST num webhook de Discord
- * e a variável desse webhook nunca foi preenchida — então durante meses o
+ * e a variável desse webhook nunca foi preenchida, então durante meses o
  * produto teve um mecanismo de aviso completo que não avisava ninguém. Falha no
  * processamento do webhook do WhatsApp, recusa da Cloud API e cofre que não
  * devolve credencial caíam num `console.error` que some do log da Vercel em
@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic'
  * Agora o alerta vira linha em `public.alertas` (0039) e esta é a tela dela. O
  * webhook continua existindo e toca por cima quando a variável existir.
  *
- * **"Visto" e não "resolvido".** A tela não sabe se o problema acabou — sabe se
+ * **"Visto" e não "resolvido".** A tela não sabe se o problema acabou, sabe se
  * alguém leu. Prometer "resolvido" num botão que só muda uma data seria a
  * interface afirmando uma coisa que ela não tem como verificar.
  */

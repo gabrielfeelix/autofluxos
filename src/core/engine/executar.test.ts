@@ -395,7 +395,7 @@ describe('nó de API', () => {
     expect(acao.url).toContain('/pedido/AB12')
   })
 
-  it('NÃO toca em {{segredo.x}} — quem resolve segredo é o servidor', () => {
+  it('NÃO toca em {{segredo.x}}, quem resolve segredo é o servidor', () => {
     const r = executar(comApi, sessaoCom({ codigo: 'AB12' }), { tipo: 'inicio' })
     const acao = r.acoes[0]
 
@@ -522,8 +522,7 @@ describe('o que a pessoa digita não pode escrever a requisição', () => {
 /**
  * Perguntas cujas opções não existem na hora do desenho.
  *
- * O caso que motivou: "quais horários livres na quarta?". Ninguém desenha isso
- * — a lista vem de uma consulta e muda a cada dia. Por isso a ramificação por
+ * O caso que motivou: "quais horários livres na quarta?". Ninguém desenha isso, a lista vem de uma consulta e muda a cada dia. Por isso a ramificação por
  * opção some e sobram duas saídas, `escolheu` e `vazio`.
  */
 /**
@@ -555,7 +554,7 @@ describe('pergunta livre que confere o formato', () => {
       ],
     })
 
-  it('sem formato, aceita qualquer coisa — nada muda para os fluxos que já existem', () => {
+  it('sem formato, aceita qualquer coisa, nada muda para os fluxos que já existem', () => {
     const fluxo = agendar({})
     const primeira = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
     const r = executar(fluxo, primeira.sessao, { tipo: 'texto', texto: 'amanhã' })
@@ -688,7 +687,7 @@ describe('pergunta com opções dinâmicas', () => {
    * O corte é do MENU, e o menu é a única coisa que a Meta mede.
    *
    * A confirmação e o comprovante saem como texto comum, onde cabem 4096
-   * caracteres — e estavam recebendo o rótulo truncado porque era ele que
+   * caracteres, e estavam recebendo o rótulo truncado porque era ele que
    * ficava guardado. A conversa real dizia:
    *
    *     "Sua aula está marcada para 14/09/2026 às 09:00 · Pilates apar."
@@ -809,7 +808,7 @@ describe('pergunta com opções dinâmicas', () => {
   it('variável que nem existe é tratada como vazia, não como pergunta aberta', () => {
     const r = executar(agenda, sessaoNova(), { tipo: 'inicio' })
 
-    // Sem a saída `vazio`, isto viraria uma pergunta de resposta livre — a
+    // Sem a saída `vazio`, isto viraria uma pergunta de resposta livre, a
     // pessoa digitaria um horário que não existe e ninguém saberia.
     expect(textos(r.acoes)).toContain('Esse dia não tem horário livre 😕')
   })
@@ -957,8 +956,8 @@ describe('o bloco de mensagem em pilha', () => {
   })
 
   it('o atraso não é uma ação: ele atrasa a **próxima**', () => {
-    // Se fosse ação própria, toda camada de entrega — WhatsApp, mock,
-    // simulador — precisaria aprender a dormir. Como `atrasoMs` do envio
+    // Se fosse ação própria, toda camada de entrega, WhatsApp, mock,
+    // simulador, precisaria aprender a dormir. Como `atrasoMs` do envio
     // seguinte, o contrato que já existia continua valendo.
     const acoes = comPartes([
       { tipo: 'texto', texto: 'Primeira' },
@@ -981,7 +980,7 @@ describe('o bloco de mensagem em pilha', () => {
     expect(acoes).toEqual([{ tipo: 'enviar_texto', texto: 'Enfim', atrasoMs: 3000 }])
   })
 
-  it('atraso no fim não vira nada — não há próxima entrega para adiar', () => {
+  it('atraso no fim não vira nada, não há próxima entrega para adiar', () => {
     const acoes = comPartes([
       { tipo: 'texto', texto: 'Tchau' },
       { tipo: 'atraso', segundos: 2 },
@@ -1013,7 +1012,7 @@ describe('o bloco de mensagem em pilha', () => {
     expect(r.acoes).toEqual([
       { tipo: 'salvar_campo', campo: 'etapa', valor: 'orcamento' },
       { tipo: 'enviar_texto', texto: 'Você está em orcamento' },
-      // O `motivo` do encerramento nomeia o beco sem saída — aqui, o bloco que
+      // O `motivo` do encerramento nomeia o beco sem saída, aqui, o bloco que
       // não continua para lugar nenhum. Ver "o beco sem saída se identifica".
       { tipo: 'encerrar', motivo: expect.any(String) },
     ])
@@ -1101,7 +1100,7 @@ describe('o handoff sabe que horas são', () => {
 
   it('o aviso **substitui** a frase padrão, não se soma a ela', () => {
     // "Vou te passar para um atendente. Só um instante!" seguido de "estamos
-    // fechados" são duas mensagens que se contradizem — e a primeira é uma
+    // fechados" são duas mensagens que se contradizem, e a primeira é uma
     // promessa que ninguém cumpre até de manhã.
     const textos = transferindo(FECHADO).filter((a) => a.tipo === 'enviar_texto')
     expect(textos.some((acao) => acao.texto.includes('Só um instante'))).toBe(false)
@@ -1170,7 +1169,7 @@ describe('o bloco de etapa do quadro (C1b)', () => {
 
   it('etapa não escolhida não move ninguém, e a conversa não morre', () => {
     // É o grafo publicado antes de a etapa ser apagada. O `validar()` recusa
-    // publicar assim; aqui a defesa é para o que já está no ar — e seguir é o
+    // publicar assim; aqui a defesa é para o que já está no ar, e seguir é o
     // único desfecho aceitável, porque a alternativa é a conversa de alguém
     // morrer por causa de uma arrumação no quadro.
     const fluxo = fluxoSchema.parse({
@@ -1203,13 +1202,13 @@ describe('o handoff se despede antes de transferir', () => {
       motivo: 'fim do bot',
       mensagens: [
         'Vou te passar para um atendente. Só um instante!',
-        'Obrigado por falar comigo — de 0 a 10, que nota você dá para este atendimento?',
+        'Obrigado por falar comigo, de 0 a 10, que nota você dá para este atendimento?',
       ],
     })
 
     expect(textos(acoes)).toEqual([
       'Vou te passar para um atendente. Só um instante!',
-      'Obrigado por falar comigo — de 0 a 10, que nota você dá para este atendimento?',
+      'Obrigado por falar comigo, de 0 a 10, que nota você dá para este atendimento?',
     ])
     // A transferência é a última ação: o que fosse depois dela chegaria com a
     // conversa já nas mãos do time.
@@ -1248,8 +1247,8 @@ describe('o handoff se despede antes de transferir', () => {
  * bloco que fizesse isso e não achou: *"quando tiver essa opção tem que ter
  * algum bloco que consegue jogar diretamente para reiniciar o fluxo"*.
  *
- * O que precisa ser provado aqui é que ele **desvia** — não manda ação nenhuma
- * para o servidor resolver — e que os três jeitos de desenhá-lo errado não
+ * O que precisa ser provado aqui é que ele **desvia**, não manda ação nenhuma
+ * para o servidor resolver, e que os três jeitos de desenhá-lo errado não
  * prendem ninguém.
  */
 describe('o bloco de voltar', () => {
@@ -1319,7 +1318,7 @@ describe('o bloco de voltar', () => {
    * **Não manda ação nenhuma.** É o que separa este bloco do de ir-fluxo: lá o
    * servidor precisa resolver o salto, aqui o motor só continua de outro nó.
    */
-  it('não pede nada ao servidor — é desvio, não ação', () => {
+  it('não pede nada ao servidor, é desvio, não ação', () => {
     const fluxo = comVoltar('')
 
     let r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
@@ -1332,7 +1331,7 @@ describe('o bloco de voltar', () => {
    * Destino apagado segue em frente em vez de travar.
    *
    * `validar()` recusa publicar assim, então isto só alcança grafo que já
-   * estava no ar quando o bloco de destino foi apagado — e conversa viva não
+   * estava no ar quando o bloco de destino foi apagado, e conversa viva não
    * pode morrer por causa de uma edição no editor.
    */
   it('destino que não existe mais não trava a conversa', () => {
@@ -1353,7 +1352,7 @@ describe('o bloco de voltar', () => {
    * As variáveis sobrevivem ao voltar, e é decisão.
    *
    * Um "voltar" que esquece tudo é indistinguível de desligar e ligar a
-   * conversa — e quem voltou ao menu depois de dizer o nome não quer dizer o
+   * conversa, e quem voltou ao menu depois de dizer o nome não quer dizer o
    * nome de novo.
    */
   it('o que já foi guardado continua guardado', () => {
@@ -1385,7 +1384,7 @@ describe('valor técnico da opção desenhada à mão', () => {
       ],
     })
 
-  it('guarda o valor da opção, e o rótulo separado — sem lista de fora', () => {
+  it('guarda o valor da opção, e o rótulo separado, sem lista de fora', () => {
     const fluxo = fluxoCom([
       { id: 'a', rotulo: 'Vídeo institucional', valor: 'institucional' },
       { id: 'b', rotulo: 'Social media', valor: 'social' },
@@ -1398,7 +1397,7 @@ describe('valor técnico da opção desenhada à mão', () => {
     expect(r.sessao.vars.tipo_id).toBe('institucional')
   })
 
-  it('sem valor escrito, guarda o rótulo — é o que todo grafo já publicado faz', () => {
+  it('sem valor escrito, guarda o rótulo, é o que todo grafo já publicado faz', () => {
     const fluxo = fluxoCom([
       { id: 'a', rotulo: 'Vídeo institucional' },
       { id: 'b', rotulo: 'Social media' },
@@ -1433,7 +1432,7 @@ describe('a foto como resposta', () => {
       ],
     })
 
-  it('sem saída ligada, foto continua indo para uma pessoa — como sempre foi', () => {
+  it('sem saída ligada, foto continua indo para uma pessoa, como sempre foi', () => {
     const fluxo = fluxoCom({ salvarEm: 'resposta' }, false)
     let r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
     r = executar(fluxo, r.sessao, { tipo: 'midia', formato: 'image', midiaId: 'wamid.1' })
@@ -1590,7 +1589,7 @@ describe('o atraso e o "digitando"', () => {
  *
  * Nasceu de um relato de uso, e a frase é a do relato: *"ao clicar no 'voltar
  * ao menu' e possui conexão de retomar o início do fluxo, não retoma"*. O
- * motor estava certo — o desenho é que acabava ali —, mas o produto respondia
+ * motor estava certo, o desenho é que acabava ali , mas o produto respondia
  * só "A conversa terminou.", e quem desenhou não tinha por onde começar a
  * procurar. Ele sabia qual bloco e qual saída morreram; era só contar.
  */
@@ -1650,7 +1649,7 @@ describe('o encerramento diz onde o desenho acabou', () => {
 
   /*
    * O caso que o relato descreve palavra por palavra: o botão está ligado, o
-   * bloco de Voltar existe, e mesmo assim a conversa acaba — porque o passo de
+   * bloco de Voltar existe, e mesmo assim a conversa acaba, porque o passo de
    * destino foi apagado depois. O motor segue em frente para não travar
    * conversa viva (ver o `case 'voltar'`), e o que ele não podia era seguir em
    * silêncio.
@@ -1692,7 +1691,7 @@ describe('os blocos de etiqueta e anotação (0044)', () => {
 
   it('a etiqueta vira ação e a conversa segue', () => {
     // Como o bloco de etapa: o motor **descreve** e não executa. Ele não sabe
-    // que aplicar etiqueta pode começar uma sequência — quem sabe é o servidor.
+    // que aplicar etiqueta pode começar uma sequência, quem sabe é o servidor.
     const fluxo = fluxoSchema.parse({
       inicio: 'marca',
       nodes: [
@@ -1743,7 +1742,7 @@ describe('os blocos de etiqueta e anotação (0044)', () => {
 
   it('anotação vazia não vira ação', () => {
     // Acrescentar linha em branco à ficha de alguém é ruído com cara de
-    // registro — e ninguém apaga o que não sabe de onde veio.
+    // registro, e ninguém apaga o que não sabe de onde veio.
     const fluxo = fluxoSchema.parse({
       inicio: 'anota',
       nodes: [

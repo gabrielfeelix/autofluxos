@@ -11,7 +11,7 @@ import {
 /**
  * Como os outros testes de repositório: só rodam com credencial, e limpam o
  * que criaram. A marca no título é o que permite achar as linhas deste teste
- * sem depender de contar quantas existem — a tabela é global e a suíte roda em
+ * sem depender de contar quantas existem, a tabela é global e a suíte roda em
  * paralelo com o produto vivo.
  */
 const temCredencial = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SECRET_KEY)
@@ -48,7 +48,7 @@ describe.runIf(temCredencial)('alertas', () => {
   /**
    * O contexto vem de seis pontos de chamada diferentes, e vários passam campo
    * que às vezes existe e às vezes não. Sem a limpeza, a tela mostraria
-   * `cliente: null` — pior que não mostrar nada, porque parece informação.
+   * `cliente: null`, pior que não mostrar nada, porque parece informação.
    */
   it('não grava campo vazio, nulo nem ausente no contexto', async () => {
     const alerta = await gravarComMarca('falha com contexto pela metade', {
@@ -88,7 +88,7 @@ describe.runIf(temCredencial)('alertas', () => {
 })
 
 /**
- * A fronteira do prazo, testada sem banco — e isso é uma decisão, não um
+ * A fronteira do prazo, testada sem banco, e isso é uma decisão, não um
  * atalho.
  *
  * A versão óbvia deste teste seria gravar um alerta, chamar

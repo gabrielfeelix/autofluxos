@@ -5,7 +5,7 @@ import { db } from '../db'
  * Para onde mandar o aviso de handoff (0045).
  *
  * **Uma linha por navegador, não por pessoa.** Quem abre o painel no celular e
- * no computador tem duas assinaturas, e as duas devem tocar — o aviso existe
+ * no computador tem duas assinaturas, e as duas devem tocar, o aviso existe
  * justamente para alcançar o aparelho que está à mão. Por isso a chave única é
  * o `endpoint`, que é o que o navegador devolve e o que o servidor de push do
  * fabricante entende.
@@ -35,7 +35,7 @@ export async function guardarAssinatura(
    *
    * O navegador devolve o **mesmo** endpoint a cada visita ao painel; sem isto,
    * cada abertura acrescentaria uma linha e a pessoa receberia o mesmo aviso N
-   * vezes — o caminho mais curto para alguém desligar a permissão e o produto
+   * vezes, o caminho mais curto para alguém desligar a permissão e o produto
    * voltar a ser mudo.
    *
    * O `client_id`/`usuario_id` sendo reescritos é de propósito: o mesmo
@@ -68,7 +68,7 @@ export async function apagarAssinatura(endpoint: string): Promise<void> {
 /**
  * Os aparelhos de quem vai ser avisado.
  *
- * Recebe a lista de usuários já decidida por `core/aviso-de-handoff.ts` — a
+ * Recebe a lista de usuários já decidida por `core/aviso-de-handoff.ts`, a
  * decisão de **quem** avisar não mora aqui, e sim num módulo puro que dá para
  * testar sem banco.
  */

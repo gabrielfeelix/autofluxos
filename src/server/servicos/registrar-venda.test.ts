@@ -11,7 +11,7 @@ import { cancelarVendaEResolver, registrarVendaEConcluir } from './registrar-ven
  *
  * O que só o Postgres prova, e é a razão desta migration existir:
  *
- *  1. **venda e fechamento valem juntos** — não há instante em que o cartão
+ *  1. **venda e fechamento valem juntos**, não há instante em que o cartão
  *     está ganho sem venda válida, nem venda apontando para cartão aberto;
  *  2. **duplo clique devolve a mesma venda**, pela chave da operação, e não
  *     uma segunda compra (RB-30, A13);

@@ -6,7 +6,7 @@ import { db, ehIdInvalido } from '../db'
  *
  * A tabela é **append-only no banco** (migration 0021): `service_role` só tem
  * `insert` e `select`. Não existe função de apagar aqui porque não existe
- * permissão para apagar lá — um log que a aplicação consegue editar não prova
+ * permissão para apagar lá, um log que a aplicação consegue editar não prova
  * nada.
  */
 
@@ -39,7 +39,7 @@ export type LinhaDeAuditoria = AtoAuditado & { id: string; quando: string }
  * log de erro, e o ato acontece. É a mesma escolha de `alertar()`.
  *
  * O outro lado dessa moeda: um `insert` que falha em silêncio é um buraco na
- * prova. Por isso o `console.error` é barulhento e nomeia a ação — quem for
+ * prova. Por isso o `console.error` é barulhento e nomeia a ação, quem for
  * investigar uma linha faltando encontra o motivo no log da função.
  */
 export async function registrar(ato: AtoAuditado): Promise<void> {
@@ -115,7 +115,7 @@ export const ATOS_POR_PAGINA = 100
 /**
  * O que aconteceu numa conta, do mais novo para o mais velho.
  *
- * `contaId` ausente traz a plataforma inteira — é a tela do administrador.
+ * `contaId` ausente traz a plataforma inteira, é a tela do administrador.
  */
 export async function listarAtos(
   opcoes: { contaId?: string; limite?: number } = {},

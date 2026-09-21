@@ -55,7 +55,7 @@ type Pendentes = { chave: number; opcoes: Opcao[]; formato: 'botoes' | 'lista' }
 /**
  * O anexo dentro da bolha.
  *
- * Imagem e vídeo aparecem de verdade — o ponto do modo `conversa` é ver o que a
+ * Imagem e vídeo aparecem de verdade, o ponto do modo `conversa` é ver o que a
  * pessoa vai ver, e um retângulo escrito "imagem" não prova que o arquivo
  * carrega. Documento e áudio viram cartão, que é o que o WhatsApp mostra.
  *
@@ -109,7 +109,7 @@ const horaAtual = () =>
   new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(new Date())
 
 /**
- * O chat de teste. Não imita o motor — chama o motor, pela mesma rota que o
+ * O chat de teste. Não imita o motor, chama o motor, pela mesma rota que o
  * webhook do WhatsApp vai chamar.
  *
  * Recebe o fluxo em memória, então dá para testar mudança que ainda nem foi
@@ -125,7 +125,7 @@ export function Conversa({
   fluxo: Fluxo
   /**
    * Qual automação é esta. O servidor usa para descobrir de quem é o fluxo e
-   * quais credenciais ele pode usar — a identidade não viaja pelo corpo.
+   * quais credenciais ele pode usar, a identidade não viaja pelo corpo.
    */
   fluxoId?: string
   /** Nome que aparece no cabeçalho da simulação, como apareceria no WhatsApp. */
@@ -147,7 +147,7 @@ export function Conversa({
    * Por que a conversa acabou, quando ela acabou por engano.
    *
    * Fica fora da lista de itens de propósito: o modo Conversa esconde tudo que
-   * é `sistema` (é o ponto dele — parecer o WhatsApp), e era justamente ali que
+   * é `sistema` (é o ponto dele, parecer o WhatsApp), e era justamente ali que
    * o beco sem saída precisava aparecer. Quem clicou num botão que ninguém
    * ligou lia só "A conversa terminou." e ia procurar defeito no motor.
    */
@@ -158,7 +158,7 @@ export function Conversa({
    * O webhook semeia `{{telefone}}` e `{{nome}}` ao criar a sessão (ver
    * `core/contatos/vars-iniciais.ts`). Se o simulador não fizesse o mesmo, o
    * bloco que procura o contato na agenda do cliente funcionaria no WhatsApp e
-   * não funcionaria no teste — e o teste existe justamente para responder se
+   * não funcionaria no teste, e o teste existe justamente para responder se
    * vai funcionar.
    */
   const primeiraSessao = () => ({
@@ -175,7 +175,7 @@ export function Conversa({
    * Quase sempre é o do editor. Muda quando a conversa passa por um bloco "Ir
    * para outra automação": dali em diante quem manda é a versão publicada do
    * destino, e continuar mandando o rascunho de cá faria o servidor procurar o
-   * bloco atual num grafo onde ele não existe — o motor trataria como nó sumido
+   * bloco atual num grafo onde ele não existe, o motor trataria como nó sumido
    * e recomeçaria a saudação, no meio do teste.
    */
   const fluxoDaVez = useRef<Fluxo>(fluxo)
@@ -221,7 +221,7 @@ export function Conversa({
          * Dizer "o motor recusou este fluxo" em toda falha é mentir na metade
          * dos casos: o 429 do limite de testes e o 404 de automação inexistente
          * não têm nada a ver com o desenho, e quem lia isso ia procurar defeito
-         * onde não havia. `catch` porque resposta de erro nem sempre é JSON —
+         * onde não havia. `catch` porque resposta de erro nem sempre é JSON ,
          * um 502 do provedor devolve HTML.
          */
         const motivo = await resposta
@@ -311,19 +311,19 @@ export function Conversa({
           adicionar({
             chave,
             de: 'sistema',
-            texto: `guardou a nota ${acao.nota} na pesquisa — ${FAIXA_EM_PALAVRAS[faixaDaNota(acao.nota)]}`,
+            texto: `guardou a nota ${acao.nota} na pesquisa, ${FAIXA_EM_PALAVRAS[faixaDaNota(acao.nota)]}`,
           })
           break
         case 'guardar_comentario':
-          adicionar({ chave, de: 'sistema', texto: `guardou o motivo — "${acao.comentario}"` })
+          adicionar({ chave, de: 'sistema', texto: `guardou o motivo, "${acao.comentario}"` })
           break
         case 'chamar_ia':
-          adicionar({ chave, de: 'sistema', texto: `chamaria a IA — "${acao.instrucao}"` })
+          adicionar({ chave, de: 'sistema', texto: `chamaria a IA, "${acao.instrucao}"` })
           break
         case 'chamar_http':
           // O caminho normal é o resolvedor já ter trocado isto pelos
           // `salvar_campo` que vieram da resposta. Chegar aqui significa que
-          // ninguém executou — mostrar é melhor do que sumir com o evento.
+          // ninguém executou, mostrar é melhor do que sumir com o evento.
           adicionar({
             chave,
             de: 'sistema',
@@ -338,12 +338,12 @@ export function Conversa({
           adicionar({
             chave,
             de: 'sistema',
-            texto: 'desligou o bot para este contato — as próximas mensagens ficam sem resposta',
+            texto: 'desligou o bot para este contato, as próximas mensagens ficam sem resposta',
             alerta: true,
           })
           break
         case 'transferir_humano':
-          adicionar({ chave, de: 'sistema', texto: `passou para um humano — ${acao.motivo}`, alerta: true })
+          adicionar({ chave, de: 'sistema', texto: `passou para um humano, ${acao.motivo}`, alerta: true })
           break
         case 'encerrar':
           /*
@@ -351,7 +351,7 @@ export function Conversa({
 
             Sem isto, clicar num botão que ninguém ligou dava uma conversa que
             morria em silêncio e um "A conversa terminou." que não respondia
-            nada — foi exatamente o relato que trouxe o `motivo` para o motor.
+            nada, foi exatamente o relato que trouxe o `motivo` para o motor.
             Vira alerta, e não linha comum: acabar por engano é defeito de
             desenho, e acabar de propósito não é.
           */
@@ -405,8 +405,8 @@ export function Conversa({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // O fluxo mudou desde que esta conversa começou. Não reinicia sozinho — seria
-  // irritante no meio de um teste —, só avisa que o que está na tela é velho.
+  // O fluxo mudou desde que esta conversa começou. Não reinicia sozinho, seria
+  // irritante no meio de um teste , só avisa que o que está na tela é velho.
   useEffect(() => {
     if (jaComecou.current && assinatura !== assinaturaDoInicio.current) setDesatualizada(true)
   }, [assinatura])
@@ -481,7 +481,7 @@ export function Conversa({
         O aviso encolhe, mas não some.
 
         Ele ocupa três linhas no alto do painel, e quem testa o mesmo fluxo vinte
-        vezes lê a mesma frase vinte vezes — foi por isso que pediram um "x para
+        vezes lê a mesma frase vinte vezes, foi por isso que pediram um "x para
         fechar, ou um - para minimizar". Fechar de vez, porém, tira da tela a
         única frase que impede alguém de gravar cinco pedidos de verdade no
         sistema do cliente testando cinco vezes.
@@ -493,7 +493,7 @@ export function Conversa({
         (avisoDaApiAberto ? (
           <div className="mx-3.5 mt-3.5 flex items-start gap-2 rounded-[11px] border border-cyan-400/20 bg-cyan-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-cyan-300">
             <p className="min-w-0 flex-1">
-              Este fluxo chama uma API. O teste dispara <strong>de verdade</strong> — testar cinco
+              Este fluxo chama uma API. O teste dispara <strong>de verdade</strong>, testar cinco
               vezes grava cinco vezes no sistema do cliente.
             </p>
             <button
@@ -602,8 +602,8 @@ export function Conversa({
               🎤
             </button>
             {/*
-              A foto é a resposta em muito fluxo real — receita, comprovante,
-              foto do pet —, e sem um jeito de mandar uma aqui o caminho novo só
+              A foto é a resposta em muito fluxo real, receita, comprovante,
+              foto do pet , e sem um jeito de mandar uma aqui o caminho novo só
               seria testado com cliente de verdade conversando. O id é fixo e
               falso de propósito: o simulador não sobe arquivo nenhum, ele prova
               **para onde a conversa vai**.
@@ -630,7 +630,7 @@ export function Conversa({
               Testar o prazo sem esperar meia hora.
               
               Só aparece quando a conversa está **parada numa pergunta com
-              prazo** — um botão que estivesse sempre lá mandaria um timeout
+              prazo**, um botão que estivesse sempre lá mandaria um timeout
               para um bloco que não tem prazo nenhum, e o motor ignoraria em
               silêncio. Botão que não faz nada ensina a não confiar na tela.
             */}
@@ -681,7 +681,7 @@ export function Conversa({
             }
           >
             {status === 'humano'
-              ? 'O bot saiu de cena — daqui em diante quem responde é uma pessoa.'
+              ? 'O bot saiu de cena, daqui em diante quem responde é uma pessoa.'
               : (motivoDoFim ?? 'A conversa terminou.')}{' '}
             <button onClick={recomecar} className="font-bold text-primary underline underline-offset-2">
               Recomeçar
@@ -693,7 +693,7 @@ export function Conversa({
       {modo === 'bastidores' && (
         <div className="shrink-0 border-t border-line p-3 text-[11px]">
           <p className="text-dim">
-            bloco atual: <code>{sessaoExibida.noAtual ?? '—'}</code> · {sessaoExibida.status}
+            bloco atual: <code>{sessaoExibida.noAtual ?? '-'}</code> · {sessaoExibida.status}
           </p>
           {Object.keys(sessaoExibida.vars).length > 0 && (
             <p className="mt-1 flex flex-wrap gap-1">

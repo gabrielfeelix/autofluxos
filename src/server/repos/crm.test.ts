@@ -28,7 +28,7 @@ import {
  *
  * O que só aparece aqui, e não no teste puro de `core/crm.ts`: a passagem para o
  * quadro seguinte, o estágio mudando a partir do cartão, e o resumo do cliente
- * somando `numeric` — que o supabase-js entrega como string, e que somado sem
+ * somando `numeric`, que o supabase-js entrega como string, e que somado sem
  * converter concatena em vez de somar.
  */
 const temCredencial = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SECRET_KEY)
@@ -134,7 +134,7 @@ describe.skipIf(!temCredencial)('ganhar, perder e a cadeia de funis', () => {
    *
    * Até a 0071 este teste somava R$ 1500 de um ganho no funil de **captação**,
    * porque qualquer `situacao = 'ganha'` virava compra. Qualificar alguém não é
-   * vender (A11), então a captação — que é operacional — não entra mais na
+   * vender (A11), então a captação, que é operacional, não entra mais na
    * conta. O que entra é o ganho do funil comercial, quando houver.
    */
   it('o resumo conta compra, e qualificação não é compra', async () => {

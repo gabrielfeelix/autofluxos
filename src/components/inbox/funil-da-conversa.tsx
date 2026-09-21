@@ -18,7 +18,7 @@ export type FunilDoContato = {
 }
 
 /**
- * Em que ponto do funil a pessoa está — e o gesto de movê-la, sem sair da
+ * Em que ponto do funil a pessoa está, e o gesto de movê-la, sem sair da
  * conversa.
  *
  * ---------------------------------------------------------------------------
@@ -27,7 +27,7 @@ export type FunilDoContato = {
  *
  * Quem descobre que a pessoa fechou negócio descobre **conversando** com ela.
  * Com o funil só na tela de quadros, registrar isso é sair do atendimento,
- * achar o cartão no meio de dezenas e arrastar — três gestos e uma troca de
+ * achar o cartão no meio de dezenas e arrastar, três gestos e uma troca de
  * contexto para uma informação que se teve há cinco segundos. O que não é
  * registrado no momento em que se sabe costuma não ser registrado.
  *
@@ -43,7 +43,7 @@ export type FunilDoContato = {
  *
  * **`acaoMoverCartao` revalida `/quadros` e não o Inbox**, e isso é de
  * propósito aqui: a tela onde o cartão mudou de lugar é o quadro, e ele estará
- * certo na próxima visita. O Inbox não se refaz — então a aposta otimista fica
+ * certo na próxima visita. O Inbox não se refaz, então a aposta otimista fica
  * de pé sem uma ida ao servidor que só existiria para repintar o que a tela já
  * mostra. Revalidar esta página devolveria os dois segundos que este arquivo
  * existe para evitar.
@@ -82,7 +82,7 @@ function UmFunil({ clienteId, funil }: { clienteId: string; funil: FunilDoContat
 
   /*
    * O nome sai da lista pelo id escolhido, e não de um segundo estado otimista.
-   * Guardar nome e id separados é criar duas fontes para a mesma verdade — e a
+   * Guardar nome e id separados é criar duas fontes para a mesma verdade, e a
    * que erra é sempre a que ninguém lembra que existe.
    */
   const etapaAtual = funil.etapas.find((e) => e.id === etapaId)?.nome ?? funil.etapa
@@ -119,7 +119,7 @@ function UmFunil({ clienteId, funil }: { clienteId: string; funil: FunilDoContat
           <>
             {/*
               A camada que fecha ao clicar fora. Sem ela o menu só fecha
-              escolhendo alguma coisa — e quem abriu para ver as etapas fica
+              escolhendo alguma coisa, e quem abriu para ver as etapas fica
               obrigado a mover o cartão para sair.
             */}
             <button

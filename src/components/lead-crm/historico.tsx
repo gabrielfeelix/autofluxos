@@ -5,7 +5,7 @@ import { comoFrase, type Evento } from '@/core/crm'
  *
  * É a mesma lista do painel lateral do quadro, e de propósito: quem aprende a
  * ler o histórico num lugar não pode ter que reaprender no outro. A diferença é
- * só o espaço — aqui cabe a data por extenso.
+ * só o espaço, aqui cabe a data por extenso.
  *
  * A conversa **não entra aqui**. Ela já é a outra aba, e repetir cada mensagem
  * como evento transformaria o histórico numa segunda cópia do WhatsApp, onde o

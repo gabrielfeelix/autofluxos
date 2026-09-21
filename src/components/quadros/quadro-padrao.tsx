@@ -11,19 +11,19 @@ import { acaoDefinirQuadroPadrao } from '@/server/acoes'
  * como se chama.** "Quadro padrão" não significa nada para quem abre a tela;
  * "novo contato entra aqui" responde a pergunta que a pessoa tem.
  *
- * **A caixa não liga mais a automação — ela escolhe o destino.** Lead novo cai
+ * **A caixa não liga mais a automação, ela escolhe o destino.** Lead novo cai
  * no funil sempre: sem ninguém marcar nada, vai para o quadro mais antigo da
  * conta. Marcar serve para dizer "prefiro aquele outro". A versão anterior era
  * opt-in e o resultado foi que, com cinco quadros em produção, nenhum estava
- * marcado — e lead nenhum entrava em lugar nenhum.
+ * marcado, e lead nenhum entrava em lugar nenhum.
  *
  * Daí `recebePorSerOPrimeiro`: um quadro que recebe sem estar marcado precisa
  * dizer isso na tela. Caixa desmarcada num quadro que recebe do mesmo jeito é
- * a tela mentindo sobre o produto — e é justamente o tipo de mentira que faz
+ * a tela mentindo sobre o produto, e é justamente o tipo de mentira que faz
  * alguém concluir que o recurso está quebrado.
  *
  * O estado é otimista porque a marcação é um clique cujo efeito só aparece na
- * próxima mensagem que chegar — sem resposta imediata, a caixa parece não ter
+ * próxima mensagem que chegar, sem resposta imediata, a caixa parece não ter
  * funcionado e a pessoa clica de novo. Erro volta ao valor anterior e diz o
  * motivo, em vez de deixar a tela mentindo.
  */
@@ -70,7 +70,7 @@ export function QuadroPadrao({
     /*
       **É um interruptor, e não uma caixa de formulário.** Ele nasceu como
       `<input type="checkbox">` dentro de um chip e ficava ao lado de um
-      dropdown no mesmo cabeçalho — dois controles com a mesma função de
+      dropdown no mesmo cabeçalho, dois controles com a mesma função de
       "escolher" e dois desenhos diferentes. O interruptor do Inbox é o
       controle da casa para ligar e desligar coisa, e usar o mesmo aqui é o que
       faz as duas telas parecerem um produto só.

@@ -15,7 +15,7 @@
  *
  * A causa é que `_` é itálico na marcação do WhatsApp, e a marcação era
  * interpretada primeiro. Ela via `_source=1&gad_` como um par e partia a URL em
- * três trechos — e o linkificador, que rodava depois, só enxergava pedaços. Não
+ * três trechos, e o linkificador, que rodava depois, só enxergava pedaços. Não
  * é caso de borda: `gclid`, `utm_*` e `_ga` fazem de quase todo link de campanha
  * um texto cheio de sublinhados.
  *
@@ -27,7 +27,7 @@
  * fecha depois dele deixa de valer, porque o par `*…*` cai em dois pedaços
  * diferentes. Isso é raro; link com `_` é o dia a dia.
  *
- * Mora em `core/` porque é regra sobre texto, sem React e sem rede — e regra
+ * Mora em `core/` porque é regra sobre texto, sem React e sem rede, e regra
  * assim tem que dar para testar sem montar tela.
  */
 
@@ -54,7 +54,7 @@ export type PedacoDeTexto =
 /**
  * Parte o texto em pedaços comuns e endereços, na ordem em que aparecem.
  *
- * Texto sem nenhum endereço devolve um pedaço só — quem chama não precisa de
+ * Texto sem nenhum endereço devolve um pedaço só, quem chama não precisa de
  * caso especial.
  */
 export function partirPorEndereco(texto: string): PedacoDeTexto[] {
@@ -70,7 +70,7 @@ export function partirPorEndereco(texto: string): PedacoDeTexto[] {
       tipo: 'endereco',
       valor: bruto,
       // `www.` sem esquema vira `https`. Um `href` sem esquema é tratado pelo
-      // navegador como caminho relativo — o clique iria para dentro do painel.
+      // navegador como caminho relativo, o clique iria para dentro do painel.
       href: /^www\./i.test(bruto) ? `https://${bruto}` : bruto,
     })
     ultimo = inicio + bruto.length

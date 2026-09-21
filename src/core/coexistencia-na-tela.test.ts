@@ -14,7 +14,7 @@ import {
  *
  * É o pedido da spec, e é a regra inteira deste módulo: um cliente que vê
  * "conectado" e não vê a conversa antiga aparecer vai achar que quebrou. Testado
- * aqui, e não pela página, porque é decisão de produto — a tela só desenha.
+ * aqui, e não pela página, porque é decisão de produto, a tela só desenha.
  */
 
 const AGORA = new Date('2026-09-13T12:00:00Z')
@@ -99,7 +99,7 @@ describe('a situação de um número', () => {
   /**
    * O defeito que o dono viu em produção: contatos chegaram, a Meta nunca mandou
    * andamento nenhum, e a tela repetia "parou de dar sinal em 0%" todos os dias.
-   * Passado um dia, o aviso sai — ver `ABANDONADO_MS`.
+   * Passado um dia, o aviso sai, ver `ABANDONADO_MS`.
    */
   it('um dia inteiro sem sinal deixa de ser travado', () => {
     expect(
@@ -134,7 +134,7 @@ describe('a situação de um número', () => {
   /**
    * O caso que a referência dupla resolve: disparou e **nenhum lote chegou**.
    * Sem contar o tempo desde o disparo, isto ficaria "sincronizando" para
-   * sempre — que é exatamente a confusão que o módulo existe para desfazer.
+   * sempre, que é exatamente a confusão que o módulo existe para desfazer.
    */
   it('disparado e sem nenhum lote há muito tempo é travado', () => {
     expect(
@@ -205,7 +205,7 @@ describe('o progresso somado', () => {
   })
 
   /**
-   * O sync que nem começou conta como zero, não como ausente — senão a barra
+   * O sync que nem começou conta como zero, não como ausente, senão a barra
    * mostraria 100% com metade do trabalho por fazer.
    */
   it('um sync a 100 e o outro nem começado é 50, não 100', () => {
@@ -300,7 +300,7 @@ describe('recemConectado', () => {
 
   /*
    * O caso real: conectou às 21:04, e uma hora depois nenhuma mensagem entrava.
-   * Não era defeito — a Meta ainda não tinha terminado de sincronizar. Sem a
+   * Não era defeito, a Meta ainda não tinha terminado de sincronizar. Sem a
    * tela dizer isso, a conclusão foi "quebrou", e horas foram gastas nisso.
    */
   it('uma hora depois de conectar ainda é recente', () => {
@@ -311,7 +311,7 @@ describe('recemConectado', () => {
     expect(recemConectado({ coexistenciaEm: hAtras(RECEM_CONECTADO_H + 1) }, agora)).toBe(false)
   })
 
-  it('sync terminado tira o recém — aí o silêncio não tem essa desculpa', () => {
+  it('sync terminado tira o recém, aí o silêncio não tem essa desculpa', () => {
     expect(
       recemConectado({ coexistenciaEm: hAtras(1), historicoProgresso: 100 }, agora),
     ).toBe(false)

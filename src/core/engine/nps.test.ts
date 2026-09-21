@@ -7,7 +7,7 @@ const p = { x: 0, y: 0 }
 
 /**
  * A pesquisa completa: nota, motivo só para quem reclamou, e um desfecho
- * diferente por faixa. É o desenho que o bloco existe para tornar barato — o
+ * diferente por faixa. É o desenho que o bloco existe para tornar barato, o
  * mesmo que hoje custa cinco blocos no `exemplos/pesquisa-nps.ts`.
  */
 const pesquisa: Fluxo = fluxoSchema.parse({
@@ -35,7 +35,7 @@ const pesquisa: Fluxo = fluxoSchema.parse({
   ],
 })
 
-/** Pesquisa de uma pergunta só — sem o "por quê?". */
+/** Pesquisa de uma pergunta só, sem o "por quê?". */
 const soANota: Fluxo = fluxoSchema.parse({
   inicio: 'nota',
   nodes: [

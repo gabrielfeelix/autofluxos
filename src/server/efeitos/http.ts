@@ -9,7 +9,7 @@ import { conferirEndereco } from './rede'
  * O disparo da chamada do nó de API.
  *
  * O que este arquivo **não** faz: decidir o que a conversa vira depois. Ele
- * devolve "deu certo, com estes valores" ou "falhou, por isto" — quem
+ * devolve "deu certo, com estes valores" ou "falhou, por isto", quem
  * transforma isso em handoff ou em continuação é o resolvedor, porque isso é
  * decisão de fluxo, não de rede.
  */
@@ -38,7 +38,7 @@ export type RespostaHttp =
        *
        * Existe para a IA, e não para o motor. `valores` achata lista em texto
        * separado por `;` porque é o que um menu de WhatsApp come; para um
-       * modelo, achatar é perder — `07:00;10:00` do lado de `abc;def` obriga a
+       * modelo, achatar é perder, `07:00;10:00` do lado de `abc;def` obriga a
        * reparear hora com id por posição, que é onde ele erra e marca a aula
        * de outra pessoa. Quem recorta o que o modelo pode ver é a projeção da
        * ferramenta, e não este campo.
@@ -116,7 +116,7 @@ export async function chamarHttp(
     try {
       // Nome ou valor inválido lança aqui dentro. Fora do `try` isso escaparia
       // até o `after()` do webhook, a sessão nunca seria salva, a mensagem já
-      // foi deduplicada e a pessoa ficaria sem resposta nenhuma — sem nem a
+      // foi deduplicada e a pessoa ficaria sem resposta nenhuma, sem nem a
       // Meta reenviar. Falhar aqui vira handoff, que é o certo.
       cabecalhos = montarCabecalhos(pedido, deTeste, mesmaOrigem, credencialValida)
     } catch {
@@ -131,7 +131,7 @@ export async function chamarHttp(
         body: metodo === 'POST' ? corpo : undefined,
         // `request` do undici **não segue redirecionamento** por padrão, e é
         // isso que a gente quer: seguir sozinho pularia a conferência de
-        // endereço no destino, que é exatamente por onde o ataque entraria —
+        // endereço no destino, que é exatamente por onde o ataque entraria ,
         // um host público que responde 302 apontando para a rede interna.
         headersTimeout: TIMEOUT_MS,
         bodyTimeout: TIMEOUT_MS,
@@ -181,7 +181,7 @@ export async function chamarHttp(
       return { ok: false, motivo: 'a chamada redirecionou para um endereço ilegível' }
     }
 
-    // 301, 302 e 303 viram GET sem corpo — é o que a norma manda e o que todo
+    // 301, 302 e 303 viram GET sem corpo, é o que a norma manda e o que todo
     // navegador faz. 307 e 308 preservam o método, e aí o corpo só continua se
     // o destino for a mesma origem: ele carrega o lead inteiro, e entregá-lo a
     // quem respondeu o redirecionamento é o mesmo vazamento que os cabeçalhos.
@@ -211,7 +211,7 @@ export async function chamarHttp(
    * aqui quer dizer "já estava feito" pode, noutro sistema, ser conflito de
    * verdade. Ver `noHttpSchema.aceitarStatus`.
    *
-   * O corpo continua sendo lido no caminho aceito — é ele que traz o id da
+   * O corpo continua sendo lido no caminho aceito, é ele que traz o id da
    * participação que a conversa vai citar.
    */
   const aceito =
@@ -228,9 +228,9 @@ export async function chamarHttp(
 
   // Sem mapeamento, o que voltou não interessa: é o webhook disparado e
   // esquecido, que é metade do valor deste nó. O corpo ainda precisa ser
-  // consumido — deixar pendurado segura a conexão até o timeout.
+  // consumido, deixar pendurado segura a conexão até o timeout.
   // Com `comJson` o corpo interessa mesmo sem mapeamento: é o caminho da IA,
-  // que não mapeia nada — quem recorta é a projeção da ferramenta.
+  // que não mapeia nada, quem recorta é a projeção da ferramenta.
   if (pedido.mapear.length === 0 && !comJson) {
     await descartar(resposta)
     await fechar()
@@ -261,7 +261,7 @@ export async function chamarHttp(
  * Um `dispatcher` que não resolve nome nenhum: conecta direto no endereço que
  * já passou pela conferência.
  *
- * O `Host` e o `servername` do TLS continuam sendo o hostname original — sem
+ * O `Host` e o `servername` do TLS continuam sendo o hostname original, sem
  * isso o certificado não bateria e todo https quebraria. O undici cuida disso
  * sozinho porque a URL continua com o hostname; só o `lookup` é que mente.
  */
@@ -340,7 +340,7 @@ function montarCabecalhos(
   const cabecalhos = new Headers()
 
   // Só na origem que o operador escreveu. Depois de um redirecionamento para
-  // outro host, os cabeçalhos configurados ficam para trás — quem responde um
+  // outro host, os cabeçalhos configurados ficam para trás, quem responde um
   // 302 não pode ganhar a credencial destinada a outro serviço.
   if (mesmaOrigem) {
     for (const { chave, valor } of pedido.cabecalhos) {
@@ -376,7 +376,7 @@ function montarCabecalhos(
  * não for o cliente achata do lado dele. JSONPath seria uma linguagem inteira
  * para manter, testar e explicar.
  *
- * Tudo sai como texto porque é só isso que as variáveis da sessão guardam — e
+ * Tudo sai como texto porque é só isso que as variáveis da sessão guardam, e
  * caminho que não existe vira string vazia, igual `interpolar()` faz com
  * variável ausente. O validador é quem cobra o caminho certo, no editor.
  */
@@ -397,7 +397,7 @@ export function extrair(
    * **Era a peça que faltava para o bot marcar horário.** Toda agenda e todo CRM
    * devolvem lista, e o mapeamento só sabia campo raso: dez horários chegavam na
    * resposta e não havia como virar menu. O contorno seria mandar o cliente
-   * achatar do lado dele — ou seja, mandar ele usar n8n, que é a resposta que
+   * achatar do lado dele, ou seja, mandar ele usar n8n, que é a resposta que
    * este produto não dá.
    */
   const lista = descer(json, antes)
@@ -428,7 +428,7 @@ export function extrair(
     /*
      * O separador não pode aparecer dentro de um item.
      *
-     * Um nome com ponto e vírgula viraria dois itens no menu — e o menu é
+     * Um nome com ponto e vírgula viraria dois itens no menu, e o menu é
      * pareado por posição com a lista de valores, então um item a mais desloca
      * todos os valores seguintes. Trocar por vírgula perde menos do que
      * desalinhar tudo.
@@ -462,13 +462,13 @@ export function extrair(
  * do que um menu com um espaço a mais. Espaço sobrando nas pontas sai fora.
  *
  * ---------------------------------------------------------------------------
- * `{campo|texto se vazio}` — e por que ele precisou existir
+ * `{campo|texto se vazio}`, e por que ele precisou existir
  * ---------------------------------------------------------------------------
  *
  * A agenda devolveu quatro horários sem profissional definido, e o menu do
  * WhatsApp mostrou `14:00 ·`: o campo sumiu, o separador ficou, e quem lia não
  * tinha como saber quem daria a aula. Pior, a mensagem acima dizia "com Márcia,
- * Thalya e Carol" — nomes que não valiam para aquele horário.
+ * Thalya e Carol", nomes que não valiam para aquele horário.
  *
  * `{hora} · {profissional|a confirmar}` resolve sem esconder o horário: a vaga
  * existe e some-la tiraria opção de quem quer marcar.
@@ -526,8 +526,8 @@ function comoTexto(valor: unknown): string {
 /**
  * Teto para um valor mapeado.
  *
- * Um caminho que cai num objeto grande — ou uma API que devolve muito mais do
- * que se esperava — viraria uma variável enorme, e ela acaba dentro de uma
+ * Um caminho que cai num objeto grande, ou uma API que devolve muito mais do
+ * que se esperava, viraria uma variável enorme, e ela acaba dentro de uma
  * mensagem de WhatsApp. A Cloud API corta em 4096 caracteres e recusa acima
  * disso, e a recusa aconteceria em `aplicar()`, depois da sessão já ter
  * avançado. 1000 é folgado para um campo e seguro para o limite.

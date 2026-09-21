@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Caixa } from '@/components/design/caixa'
+import { LinhaLigaDesliga } from '@/components/design/interruptor'
 import { FormularioSalvar, type EstadoSalvar } from '@/components/design/formulario-salvar'
 import { Dropdown } from '@/components/design/dropdown'
 import { AjudaDoCampo } from '@/components/design/ajuda-do-campo'
@@ -97,7 +97,9 @@ export function HorarioDeAtendimentoForm({
           tipo: 'crm',
           url: URL_DO_CRM,
           ...(conexaoId ? { conexaoId } : {}),
-          ...(inicial?.origem?.sincronizadoEm ? { sincronizadoEm: inicial.origem.sincronizadoEm } : {}),
+          ...(inicial?.origem?.sincronizadoEm
+            ? { sincronizadoEm: inicial.origem.sincronizadoEm }
+            : {}),
         }
       : { tipo: 'manual' },
   }
@@ -143,9 +145,9 @@ export function HorarioDeAtendimentoForm({
       >
         {!ligado ? (
           <p className="text-[13px] leading-6 text-muted">
-            <strong className="text-soft">O atendimento não tem horário.</strong> Quando o bot
-            passa uma conversa para uma pessoa, ele diz “vou te passar para um atendente” a
-            qualquer hora, inclusive às 3h da manhã.
+            <strong className="text-soft">O atendimento não tem horário.</strong> Quando o bot passa
+            uma conversa para uma pessoa, ele diz “vou te passar para um atendente” a qualquer hora,
+            inclusive às 3h da manhã.
           </p>
         ) : (
           <p className="text-[13px] leading-6 text-muted">
@@ -157,7 +159,8 @@ export function HorarioDeAtendimentoForm({
               <>
                 {'. '}Quem for transferido agora ouve{' '}
                 <em className="text-soft">
-                  “{feriadoDeHoje
+                  “
+                  {feriadoDeHoje
                     ? `hoje é ${feriadoDeHoje} e o atendimento está fechado`
                     : 'nosso atendimento está fechado agora'}
                   {volta ? `, voltamos ${volta}` : ''}”
@@ -169,38 +172,44 @@ export function HorarioDeAtendimentoForm({
         )}
       </section>
 
-      <label className="mb-4 flex items-center gap-2.5">
-        <Caixa marcada={ligado} aoMudar={setLigado} />
-        <span className="inline-flex items-center text-[13px] font-semibold">
-          Definir horário de atendimento
-          <AjudaDoCampo
-            titulo="Definir horário de atendimento"
-            secao="duvidas"
-            texto="Sem horário, o bot promete atendente a qualquer hora, inclusive às 3h da manhã."
-            detalhes={
-              <>
-                <p>
-                  Com um horário preenchido, o bloco de “falar com humano” avisa sozinho quem
-                  escrever fora do expediente, dizendo quando vocês voltam. Sem ele, a conta é
-                  sempre aberta e esse aviso nunca acontece.
-                </p>
-                <p>
-                  Mais de uma faixa no mesmo dia serve para almoço fechado. Faixa que termina antes
-                  de começar é ignorada: melhor dizer que está fechado do que prometer alguém que
-                  não vai responder.
-                </p>
-              </>
-            }
-          />
-        </span>
-      </label>
+      <div className="mb-4">
+        <LinhaLigaDesliga
+          titulo="Definir horário de atendimento"
+          descricao="Sem isto, a conta é sempre aberta e o bot promete atendente a qualquer hora."
+          marcada={ligado}
+          aoMudar={setLigado}
+          ajuda={
+            <AjudaDoCampo
+              titulo="Definir horário de atendimento"
+              secao="duvidas"
+              texto="Sem horário, o bot promete atendente a qualquer hora, inclusive às 3h da manhã."
+              detalhes={
+                <>
+                  <p>
+                    Com um horário preenchido, o bloco de “falar com humano” avisa sozinho quem
+                    escrever fora do expediente, dizendo quando vocês voltam. Sem ele, a conta é
+                    sempre aberta e esse aviso nunca acontece.
+                  </p>
+                  <p>
+                    Mais de uma faixa no mesmo dia serve para almoço fechado. Faixa que termina
+                    antes de começar é ignorada: melhor dizer que está fechado do que prometer
+                    alguém que não vai responder.
+                  </p>
+                </>
+              }
+            />
+          }
+        />
+      </div>
 
       {ligado && conexoes.length > 0 && (
         <section className="app-card mb-4 px-5 py-4">
-          <label className="flex items-center gap-2.5">
-            <Caixa marcada={doCrm} aoMudar={setDoCrm} />
-            <span className="inline-flex items-center text-[13px] font-semibold">
-              Puxar o horário da agenda (Verandi)
+          <LinhaLigaDesliga
+            titulo="Puxar o horário da agenda (Verandi)"
+            descricao="O expediente e os feriados passam a vir de lá, atualizados sozinhos."
+            marcada={doCrm}
+            aoMudar={setDoCrm}
+            ajuda={
               <AjudaDoCampo
                 titulo="Puxar o horário da agenda (Verandi)"
                 secao="verandi"
@@ -212,14 +221,14 @@ export function HorarioDeAtendimentoForm({
                       sozinhos algumas vezes por dia. A grade abaixo vira só leitura.
                     </p>
                     <p>
-                      Sem isto, o mesmo horário fica cadastrado em dois lugares, e os dois
-                      discordam no primeiro feriado que alguém cadastra só de um lado.
+                      Sem isto, o mesmo horário fica cadastrado em dois lugares, e os dois discordam
+                      no primeiro feriado que alguém cadastra só de um lado.
                     </p>
                   </>
                 }
               />
-            </span>
-          </label>
+            }
+          />
 
           {doCrm && (
             <div className="mt-3 max-w-[280px]">
@@ -254,8 +263,8 @@ export function HorarioDeAtendimentoForm({
                 detalhes={
                   <p>
                     O servidor roda em <strong>UTC</strong>, e as horas da grade abaixo são lidas
-                    neste fuso. Sem escolher o certo, um estúdio de São Paulo abriria às 5h da
-                    manhã para quem escreve.
+                    neste fuso. Sem escolher o certo, um estúdio de São Paulo abriria às 5h da manhã
+                    para quem escreve.
                   </p>
                 }
               />
@@ -351,13 +360,12 @@ export function HorarioDeAtendimentoForm({
                 <>
                   <p>
                     A grade acima diz “toda quinta das 8h às 18h”, e no dia 25 de dezembro isso é
-                    falso. Um dia nesta lista fecha o dia inteiro, mesmo que a semana diga que
-                    abre.
+                    falso. Um dia nesta lista fecha o dia inteiro, mesmo que a semana diga que abre.
                   </p>
                   <p>
-                    O motivo aparece na conversa: <em>“hoje é Natal e o atendimento está
-                    fechado”</em>. Sem esta lista, o bot promete atendimento no Natal, ninguém
-                    responde, e a pessoa fica esperando.
+                    O motivo aparece na conversa:{' '}
+                    <em>“hoje é Natal e o atendimento está fechado”</em>. Sem esta lista, o bot
+                    promete atendimento no Natal, ninguém responde, e a pessoa fica esperando.
                   </p>
                 </>
               }
@@ -384,7 +392,9 @@ export function HorarioDeAtendimentoForm({
                   aria-label="Data fechada"
                   onChange={(e) =>
                     setExcecoes((atual) =>
-                      atual.map((x, i) => (i === indice ? { ...x, data: e.currentTarget.value } : x)),
+                      atual.map((x, i) =>
+                        i === indice ? { ...x, data: e.currentTarget.value } : x,
+                      ),
                     )
                   }
                   className="app-field w-[150px] px-2.5 py-1.5 font-mono text-[12.5px] disabled:opacity-60"
@@ -397,7 +407,9 @@ export function HorarioDeAtendimentoForm({
                   aria-label="Motivo"
                   onChange={(e) =>
                     setExcecoes((atual) =>
-                      atual.map((x, i) => (i === indice ? { ...x, motivo: e.currentTarget.value } : x)),
+                      atual.map((x, i) =>
+                        i === indice ? { ...x, motivo: e.currentTarget.value } : x,
+                      ),
                     )
                   }
                   className="app-field min-w-0 flex-1 px-2.5 py-1.5 text-[12.5px] disabled:opacity-60"

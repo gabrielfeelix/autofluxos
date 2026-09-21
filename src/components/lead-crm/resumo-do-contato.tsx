@@ -21,7 +21,7 @@ import { IconeDaSecao, iconeDinheiro } from './icones'
  *
  * O nível e a recência entram aqui (0070) porque é a mesma pergunta em outra
  * escala: os três números dizem o que já aconteceu, e o par nível+recência diz o
- * que isso significa hoje. A frase embaixo é o que fecha — a tela só vira
+ * que isso significa hoje. A frase embaixo é o que fecha, a tela só vira
  * ferramenta quando responde "e agora?".
  */
 export function ResumoDoContato({
@@ -64,7 +64,7 @@ export function ResumoDoContato({
         <Numero titulo="Compras" valor={String(resumo.compras)} />
         <Numero
           titulo="Última"
-          valor={resumo.ultimaEm ? new Date(resumo.ultimaEm).toLocaleDateString('pt-BR') : '—'}
+          valor={resumo.ultimaEm ? new Date(resumo.ultimaEm).toLocaleDateString('pt-BR') : '-'}
         />
       </div>
 

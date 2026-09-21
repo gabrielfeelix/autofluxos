@@ -8,8 +8,7 @@
  * O método clássico de RFM ordena a base e corta em cinco partes iguais: os 20%
  * que mais gastam viram nota 5. Ele é o padrão do varejo e **não serve aqui**,
  * por uma razão que aparece já no primeiro cliente do AutoFluxos: a nota é
- * relativa à base, então num estúdio com trinta alunas o "topo" é topo de trinta
- * — pode ser gente que gastou trezentos reais no ano. O dono olha "Ouro" e vê um
+ * relativa à base, então num estúdio com trinta alunas o "topo" é topo de trinta, pode ser gente que gastou trezentos reais no ano. O dono olha "Ouro" e vê um
  * cliente que ele não considera ouro nenhum, e a partir daí não confia em mais
  * nada da tela.
  *
@@ -27,7 +26,7 @@
  *
  * O nível responde "quanto vale", a recência responde "ainda está aqui", e as
  * duas juntas respondem a única pergunta que gera trabalho: **quem era bom e
- * está sumindo**. Um score único (555, 321) esconde exatamente isso — 5 em valor
+ * está sumindo**. Um score único (555, 321) esconde exatamente isso, 5 em valor
  * e 1 em recência vira "médio" e some no meio da lista.
  *
  * Puro, sem banco e sem React, como `core/planos.ts`: é dado e aritmética, e
@@ -58,7 +57,7 @@ export const ROTULO_DO_NIVEL: Record<Nivel, string> = {
  *
  * Como em `core/etiquetas.ts`: o Tailwind lê o texto do arquivo, e
  * `bg-${nivel}-400` montado em tempo de execução não existiria na folha de
- * estilo — a marca ficaria invisível, sem erro nenhum.
+ * estilo, a marca ficaria invisível, sem erro nenhum.
  */
 export const CLASSE_DO_NIVEL: Record<Nivel, string> = {
   ouro: 'bg-amber-400',
@@ -232,7 +231,7 @@ export type FatosDoContato = {
  * **A recência é da conversa, não da compra**, e essa escolha é o coração da
  * tela. Quem comprou há seis meses e trocou mensagem ontem está vivo; quem
  * comprou há um mês e sumiu depois está indo embora. Medir pela compra faria o
- * segundo caso parecer saudável até a hora da renovação — que é exatamente
+ * segundo caso parecer saudável até a hora da renovação, que é exatamente
  * quando não dá mais para fazer nada.
  */
 export function relacionamentoDe(
@@ -255,7 +254,7 @@ export function relacionamentoDe(
  * A frase que diz o que fazer com essa pessoa hoje.
  *
  * A tela só vira ferramenta quando responde "e agora?". Um rótulo "Ouro ·
- * Sumido" informa e não move ninguém; "Cliente ouro sumido há 4 meses — vale uma
+ * Sumido" informa e não move ninguém; "Cliente ouro sumido há 4 meses, vale uma
  * ligação" move.
  *
  * **A ordem dos casos é a ordem da urgência**, e o primeiro que casa ganha:

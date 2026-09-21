@@ -1,11 +1,11 @@
 /**
  * A formatação do WhatsApp, lida.
  *
- * O produto sempre soube **escrever** `*negrito*` — a barra de formatação do
+ * O produto sempre soube **escrever** `*negrito*`, a barra de formatação do
  * editor põe as marcas, e o WhatsApp as renderiza no celular de quem recebe.
  * O que faltava era **ler**: a aba Testar mostrava o texto cru, com os
- * asteriscos à mostra, e quem estava usando concluiu — corretamente, pelo que
- * via — que "negrito não funciona, ele só coloca * na escrita *".
+ * asteriscos à mostra, e quem estava usando concluiu, corretamente, pelo que
+ * via, que "negrito não funciona, ele só coloca * na escrita *".
  *
  * O teste é onde se decide se a mensagem está boa. Se ele mostra uma coisa e o
  * WhatsApp mostra outra, o teste não serve para a única pergunta que ele
@@ -13,7 +13,7 @@
  *
  * **Nada aqui muda o que é gravado.** O fluxo continua guardando `*negrito*`,
  * que é exatamente o que sai para a Meta; isto é a leitura, e mora em `core/`
- * porque é regra pura e testável — sem React, sem DOM, sem rede.
+ * porque é regra pura e testável, sem React, sem DOM, sem rede.
  *
  * As regras são as que a Meta documenta:
  *
@@ -49,7 +49,7 @@ const MONO = '```'
 /**
  * Quebra o texto em trechos formatados.
  *
- * Texto sem marca nenhuma devolve um único trecho — o caminho de longe mais
+ * Texto sem marca nenhuma devolve um único trecho, o caminho de longe mais
  * comum, e o que não deve pagar nada.
  */
 export function interpretarMarcacao(texto: string): Trecho[] {

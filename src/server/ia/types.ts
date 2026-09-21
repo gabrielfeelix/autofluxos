@@ -3,7 +3,7 @@
  *
  * Mesma forma do `channels/`: uma interface pequena, um adaptador de verdade e
  * um de mentira. O resto do sistema fala com a interface, então trocar Gemini
- * por outro provedor — ou rodar teste sem rede — é escolher outra implementação,
+ * por outro provedor, ou rodar teste sem rede, é escolher outra implementação,
  * não mexer no motor.
  */
 
@@ -15,7 +15,7 @@ export type PedidoDeIa = {
    * o que vende, preço, horário, o que responder e o que não responder.
    *
    * É isto que fecha o escopo. Sem contexto, o nó de IA vira assistente de
-   * propósito geral — que é justamente o que a política da Meta proíbe na
+   * propósito geral, que é justamente o que a política da Meta proíbe na
    * Business API desde 15/jan/2026 (§6 da arquitetura).
    */
   contextoNegocio: string
@@ -35,7 +35,7 @@ export type PedidoDeIa = {
    *
    * **Sem isto o modelo não tem relógio, e "amanhã" não vira data.** `core/`
    * não tem relógio de propósito e o modelo herda a cegueira; a diferença é
-   * que ele não avisa — ele chuta um ano e marca a aula onze meses fora.
+   * que ele não avisa, ele chuta um ano e marca a aula onze meses fora.
    * Quem informa é o resolvedor, que é onde o mundo entra.
    */
   hoje?: string
@@ -60,7 +60,7 @@ export type Turno =
  *
  * `nao_sei` não é erro: é a saída de emergência do §6 e o caminho normal para
  * qualquer coisa fora do escopo do negócio. Quem recebe transforma isso em
- * handoff — a pessoa fala com gente em vez de ouvir o bot inventar.
+ * handoff, a pessoa fala com gente em vez de ouvir o bot inventar.
  */
 export type Resposta =
   | { tipo: 'texto'; texto: string }

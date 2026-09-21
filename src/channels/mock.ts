@@ -9,7 +9,7 @@ export type Enviada =
   | ({ tipo: 'template'; para: string } & Template)
 
 /**
- * O canal que não envia nada — guarda o que enviaria.
+ * O canal que não envia nada, guarda o que enviaria.
  *
  * É o driver número um, não um brinquedo: com ele o produto inteiro foi
  * construído antes de existir qualquer credencial da Meta. Hoje ele serve aos

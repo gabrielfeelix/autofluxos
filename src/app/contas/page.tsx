@@ -18,7 +18,7 @@ const PAPEIS: Record<string, string> = {
 /**
  * As companhias desta pessoa.
  *
- * **Um usuário pode ter mais de uma**, e isso é estrutural desde a 0020 — o dono
+ * **Um usuário pode ter mais de uma**, e isso é estrutural desde a 0020, o dono
  * que tem dois negócios, ou a agência que administra os dois. Quem tem só uma
  * nunca vê esta tela: o login manda direto para a conta dela, porque um seletor
  * de um item é clique para confirmar o óbvio.
@@ -66,11 +66,11 @@ export default async function Contas() {
               O estado vazio conta **o que fazer**, e o que fazer mudou quando o
               cadastro abriu ao público: antes a conta nascia junto com a venda e
               este texto mandava falar com quem administra. Hoje a pessoa cria a
-              dela, e mandá-la pedir a alguém seria ensinar o caminho errado —
+              dela, e mandá-la pedir a alguém seria ensinar o caminho errado ,
               que é pior que estado vazio mudo.
             */}
             <p className="mx-auto mt-1.5 max-w-md text-[12.5px] leading-6 text-dim">
-              Crie a companhia do seu negócio para começar — leva menos de um minuto. Se você
+              Crie a companhia do seu negócio para começar, leva menos de um minuto. Se você
               deveria fazer parte de uma que já existe, peça a quem cuida dela para adicionar o
               seu e-mail.
             </p>
@@ -124,7 +124,7 @@ export default async function Contas() {
               </span>
             }
             titulo="Nova companhia"
-            descricao="Ela nasce vazia — o primeiro fluxo e o número de WhatsApp vêm depois, na tela dela."
+            descricao="Ela nasce vazia, o primeiro fluxo e o número de WhatsApp vêm depois, na tela dela."
             action={acaoCriarCompanhia}
           >
             <label>

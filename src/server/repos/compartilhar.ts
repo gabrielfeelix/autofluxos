@@ -60,7 +60,7 @@ function paraLink(linha: Linha): LinkDoFluxo {
  * 24 bytes de aleatoriedade criptográfica, em `base64url`.
  *
  * Não é `uuid`: uuid v4 tem 122 bits e aparece em log, em URL de outra coisa e
- * na cabeça de quem já viu um id nosso — parece adivinhável mesmo não sendo, e
+ * na cabeça de quem já viu um id nosso, parece adivinhável mesmo não sendo, e
  * a diferença entre parecer e ser custa uma conversa a cada auditoria. 192 bits
  * fecham o assunto, e `base64url` cabe numa URL sem escapar nada.
  */
@@ -74,7 +74,7 @@ function novoToken(): string {
  * Recusa fluxo sem publicação, e a recusa é de produto, não de implementação:
  * rascunho muda a cada tecla, e um link para ele significaria uma coisa hoje e
  * outra amanhã sem ninguém ter reenviado nada. Publicar é o ato que congela o
- * desenho — é dele que o link nasce.
+ * desenho, é dele que o link nasce.
  */
 export async function criarLink(
   clienteId: string,
@@ -96,7 +96,7 @@ export async function criarLink(
   if (!versaoId) {
     return {
       ok: false,
-      motivo: 'publique o fluxo antes de compartilhar — o link aponta para uma versão publicada, não para o rascunho',
+      motivo: 'publique o fluxo antes de compartilhar, o link aponta para uma versão publicada, não para o rascunho',
     }
   }
 
@@ -161,7 +161,7 @@ export type LinkAberto = {
   id: string
   nome: string
   estado: EstadoDoLink
-  /** Só vem quando o estado é `valido` — ver abaixo. */
+  /** Só vem quando o estado é `valido`, ver abaixo. */
   grafo: Fluxo | null
   /** Nome da conta que compartilhou. É a procedência de quem recebe. */
   origem: string
@@ -178,8 +178,8 @@ export type LinkAberto = {
  *
  * A busca é por token e nada mais: não há `clienteId` aqui porque não há sessão
  * aqui. É a única leitura do sistema que funciona sem ninguém autenticado, e é
- * por isso que ela devolve exatamente três coisas — nome, procedência e
- * desenho — e nenhum id interno da conta de origem.
+ * por isso que ela devolve exatamente três coisas, nome, procedência e
+ * desenho, e nenhum id interno da conta de origem.
  */
 export async function acharPorToken(token: string): Promise<LinkAberto | null> {
   if (token.trim() === '') return null

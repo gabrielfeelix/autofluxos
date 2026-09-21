@@ -39,7 +39,7 @@ describe('a tabela de planos', () => {
   /*
    * A garantia que importa não é a posição, é a coerência: se o número escrito
    * no card divergir do campo `conversas`, a tela anuncia uma franquia que o
-   * sistema não cobra — e ninguém descobre isso por revisão de código, descobre
+   * sistema não cobra, e ninguém descobre isso por revisão de código, descobre
    * por cliente reclamando.
    *
    * A linha existe em todos os planos; o que mudou foi onde ela entra.

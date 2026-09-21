@@ -26,13 +26,13 @@ import {
 /**
  * Um passo venceu.
  *
- * A conferência dupla — inscrição ainda ativa **e** ainda no mesmo índice — é o
+ * A conferência dupla, inscrição ainda ativa **e** ainda no mesmo índice, é o
  * que impede o pior erro daqui: uma tarefa velha chegando depois de a pessoa já
  * ter avançado mandaria de novo algo que ela recebeu.
  *
  * **A janela de 24h é conferida na entrega, não no desenho.** O relógio corre
  * entre agendar e mandar, e a tela só conseguiu prever com a janela cheia. Se
- * ela fechou, a inscrição vira `bloqueada` — estado próprio, e não `saiu`,
+ * ela fechou, a inscrição vira `bloqueada`, estado próprio, e não `saiu`,
  * porque é a única saída que significa "a sequência não entregou" em vez de "a
  * sequência funcionou". É o número que diz ao cliente que os prazos dele estão
  * longos demais.
@@ -49,7 +49,7 @@ export async function rodarPassoDeSequencia(
   const inscricao = await acharInscricao(inscricaoId)
   if (!inscricao) return 'ignorada'
   if (inscricao.estado !== 'ativa') return 'ignorada'
-  // A inscrição andou entre o agendamento e agora — outro passo já saiu.
+  // A inscrição andou entre o agendamento e agora, outro passo já saiu.
   if (inscricao.passoAtual !== passoIndice) return 'ignorada'
 
   const sequencia = await acharSequencia(inscricao.clienteId, sequenciaId)
@@ -71,7 +71,7 @@ export async function rodarPassoDeSequencia(
    * O passo que carrega modelo aprovado vai por outro caminho (0061).
    *
    * `abrirFluxoParaContato` manda texto livre, e texto livre fora das 24h é
-   * recusado pela Meta — foi por isso que o teto do passo era 1440. Com um
+   * recusado pela Meta, foi por isso que o teto do passo era 1440. Com um
    * modelo, o passo atravessa a janela fechada, que é a única razão de o teto
    * ter subido para 30 dias.
    *
@@ -104,8 +104,7 @@ export async function rodarPassoDeSequencia(
 
     if (resultado === 'ocupado') {
       // Uma mensagem está sendo processada agora, e a mensagem ganha do prazo,
-      // sempre. Devolver o erro faz a tarefa voltar para a fila e tentar de novo
-      // — é o único desfecho aqui que merece nova tentativa.
+      // sempre. Devolver o erro faz a tarefa voltar para a fila e tentar de novo, é o único desfecho aqui que merece nova tentativa.
       throw new Error('o contato está ocupado; o passo tenta de novo')
     }
 
@@ -177,7 +176,7 @@ export async function rodarPassoDeSequencia(
  * Manda o modelo aprovado de um passo (0061).
  *
  * **É o que permite um passo além das 24h existir.** Fora da janela o WhatsApp
- * recusa texto livre, então um passo de 3 dias sem modelo nunca entregaria — e
+ * recusa texto livre, então um passo de 3 dias sem modelo nunca entregaria, e
  * era por isso que o teto da 0031 era 1440.
  *
  * Não confere a janela de propósito: modelo aprovado atravessa janela fechada,
@@ -185,7 +184,7 @@ export async function rodarPassoDeSequencia(
  * mudança remove.
  *
  * As variáveis do modelo são preenchidas com o nome do contato, e só. Um passo
- * de sequência não tem de onde tirar mais nada — quem precisa de valor por
+ * de sequência não tem de onde tirar mais nada, quem precisa de valor por
  * pessoa usa transmissão, onde a tela pergunta.
  */
 async function mandarModeloDoPasso(

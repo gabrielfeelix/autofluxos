@@ -38,7 +38,7 @@ export function AnexoNaConversa({ anexo }: { anexo: AnexoDaMensagem }) {
   if (anexo.midia === 'audio') {
     /*
      * **Largura fixa, e não `w-full`.** A bolha é um item de flex com
-     * `items-end`, ou seja, largura de conteúdo — e `w-full` dentro de um pai
+     * `items-end`, ou seja, largura de conteúdo, e `w-full` dentro de um pai
      * que se mede pelo filho é circular: o navegador resolve para quase nada.
      *
      * Dava para não perceber enquanto só o áudio recebido aparecia, porque
@@ -47,7 +47,7 @@ export function AnexoNaConversa({ anexo }: { anexo: AnexoDaMensagem }) {
      * encolhia até o player virar uma pílula com um traço e três pontinhos,
      * abaixo dos ~200px em que o Chrome desiste de desenhar os controles.
      *
-     * 260px é a medida em que os controles nativos aparecem inteiros —
+     * 260px é a medida em que os controles nativos aparecem inteiros ,
      * play, tempo, barra e volume. `max-w-full` é o que impede que ela estoure
      * a coluna numa janela estreita.
      */
@@ -72,7 +72,7 @@ export function AnexoNaConversa({ anexo }: { anexo: AnexoDaMensagem }) {
 /**
  * O que escrever quando a mensagem não tem texto.
  *
- * Mídia **recebida** continua sem anexo — o webhook guarda o `type` e não baixa
+ * Mídia **recebida** continua sem anexo, o webhook guarda o `type` e não baixa
  * o arquivo da Meta, então não há o que mostrar. Aí a frase antiga continua
  * sendo a verdade.
  */
@@ -83,14 +83,14 @@ export function SemTexto() {
 /**
  * A mensagem citada, dentro da bolha que a cita.
  *
- * Fica **acima** do texto e com uma barra na lateral — o desenho que o WhatsApp
+ * Fica **acima** do texto e com uma barra na lateral, o desenho que o WhatsApp
  * usa e que todo mundo já lê sem pensar. Copiar o padrão aqui não é falta de
  * imaginação: é o que faz a citação ser entendida sem legenda.
  *
  * O caso de a citada não estar no histórico é normal e tem desenho próprio.
  * Acontece quando a conversa foi cortada no teto, quando alguém responde a um
  * anúncio, e quando a mensagem é encaminhada. Sumir com a citação nesses casos
- * esconderia que aquela frase comenta outra — que é justamente o que ela tem de
+ * esconderia que aquela frase comenta outra, que é justamente o que ela tem de
  * dizer.
  */
 export function CitacaoNaBolha({ cita, nome }: { cita: Citada; nome: string | null }) {
@@ -129,7 +129,7 @@ export function CitacaoNaBolha({ cita, nome }: { cita: Citada; nome: string | nu
  * ---------------------------------------------------------------------------
  *
  * Um mapa embutido custa uma chave de API, um domínio a mais no `next.config` e
- * um iframe de terceiro em cima da conversa — por um recurso que aparece em uma
+ * um iframe de terceiro em cima da conversa, por um recurso que aparece em uma
  * conversa em cem. O link abre o mapa que a pessoa já usa, com o caminho de
  * casa dela já configurado, e é o que quem atende vai querer de qualquer jeito:
  * **traçar a rota**, não olhar a figura.
@@ -165,7 +165,7 @@ export function LocalNaBolha({ local }: { local: LocalDaMensagem }) {
 /**
  * Os cartões de contato encaminhados.
  *
- * Cada telefone é um link `tel:` — no celular disca, no computador abre o que a
+ * Cada telefone é um link `tel:`, no celular disca, no computador abre o que a
  * pessoa usa para ligar. Antes disto a bolha vinha vazia e o número ficava
  * preso no `payload`, onde ninguém olha.
  *
@@ -213,12 +213,12 @@ export function CartoesNaBolha({ cartoes }: { cartoes: CartaoDeContato[] }) {
  *
  * Caía no genérico antes, e o genérico mentia duas vezes: chuta que era mídia
  * (pode ser enquete, pagamento, evento, um "ver uma vez") e não diz que **o
- * conteúdo não existe deste lado** — o que faz quem lê procurar o botão de
+ * conteúdo não existe deste lado**, o que faz quem lê procurar o botão de
  * baixar que nunca vai aparecer, e concluir que o painel está quebrado.
  *
  * O que a Cloud API não entrega, ela não entrega para ninguém: é limite dela, e
  * o caminho é abrir a conversa no celular. Dizer isso é a única coisa útil que
- * esta bolha pode fazer — e não prometer recuperação, porque não há.
+ * esta bolha pode fazer, e não prometer recuperação, porque não há.
  */
 export function MensagemNaoSuportada() {
   return (
@@ -227,7 +227,7 @@ export function MensagemNaoSuportada() {
         🚫
       </span>
       <span className="text-[11px] leading-4 text-dim italic">
-        mensagem que o WhatsApp não entrega para o painel — veja no celular
+        mensagem que o WhatsApp não entrega para o painel, veja no celular
       </span>
     </span>
   )
@@ -241,12 +241,12 @@ export function MensagemNaoSuportada() {
  * ---------------------------------------------------------------------------
  *
  * Três caminhos levam aqui: o arquivo passou do teto de 16 MB, o download da
- * Meta falhou, ou a mensagem é anterior à `0055` — e nesse caso o `id` dela já
+ * Meta falhou, ou a mensagem é anterior à `0055`, e nesse caso o `id` dela já
  * expirou nos 7 dias e o arquivo não existe mais em lugar nenhum do mundo.
  *
  * Para quem lê, os três dão no mesmo, e o que **não** pode acontecer é a bolha
  * ficar vazia. "Sumiu minha foto" é a reclamação mais comum do mercado neste
- * recurso — Digisac, Huggy e Chatwoot todos a colecionam (ver
+ * recurso, Digisac, Huggy e Chatwoot todos a colecionam (ver
  * `docs/PLANO-MIDIA-RECEBIDA.md`). A diferença entre um produto que perdeu algo
  * e um produto quebrado é uma frase que assume o que aconteceu.
  *
@@ -257,14 +257,14 @@ export function ArquivoSemCopia({ nossa = false }: { nossa?: boolean }) {
   return (
     /*
       `inline-flex` e `max-w-full`: era `flex`, que é bloco e esticava até os
-      78% da bolha — um retângulo grande e vazio para dizer uma frase curta.
+      78% da bolha, um retângulo grande e vazio para dizer uma frase curta.
     */
     <span className="mb-1.5 inline-flex max-w-full items-center gap-2 rounded-lg border border-dashed border-strong px-2.5 py-1.5">
       <span className="text-[13px] leading-none">📎</span>
       <span className="text-[11px] leading-4 text-dim italic">
         {nossa
           ? 'arquivo enviado pelo celular, sem cópia por aqui'
-          : 'arquivo recebido, sem cópia guardada — peça para enviar de novo'}
+          : 'arquivo recebido, sem cópia guardada, peça para enviar de novo'}
       </span>
     </span>
   )

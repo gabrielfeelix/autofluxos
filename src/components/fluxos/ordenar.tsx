@@ -6,7 +6,7 @@ import { acaoReordenarFluxos } from '@/server/acoes'
 /**
  * Subir e descer uma automação na lista.
  *
- * **Dois botões, e não arrastar** — a mesma decisão que `MoverFluxo` já tinha
+ * **Dois botões, e não arrastar**, a mesma decisão que `MoverFluxo` já tinha
  * tomado, pelo mesmo motivo: a lista pagina, tem seção por pasta e vive dentro
  * de um acordeão. Arrastar aí é um alvo pequeno, e no celular não existe. Dois
  * botões funcionam com teclado, com leitor de tela e com o polegar.

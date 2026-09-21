@@ -18,7 +18,7 @@ import {
  *
  * `core/controle-da-conversa.test.ts` cobre a decisão, e a decisão está certa
  * desde sempre. O defeito nunca esteve lá: `atribuirContato` era um `update`
- * sem condição, e **ler antes de gravar não conserta** — entre o `select` que
+ * sem condição, e **ler antes de gravar não conserta**, entre o `select` que
  * diz "está livre" e o `update` que grava cabe o clique do colega.
  *
  * Só o Postgres prova que a condição no `where` fecha a corrida. Um repo falso

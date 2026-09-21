@@ -17,7 +17,7 @@ import { RotuloCampo } from '@/components/design/modal-formulario'
 import { acaoSalvarAcesso } from '@/server/acoes-acesso'
 
 /**
- * UI-18 — o que esta pessoa pode fazer nesta conta.
+ * UI-18, o que esta pessoa pode fazer nesta conta.
  *
  * ---------------------------------------------------------------------------
  * A prévia é o ponto, não enfeite
@@ -26,7 +26,7 @@ import { acaoSalvarAcesso } from '@/server/acoes-acesso'
  * Permissão é a configuração que mais se erra em silêncio: quem edita não é
  * quem sofre o efeito, e o efeito só aparece quando a outra pessoa tenta
  * trabalhar. Por isso a coluna da direita mostra, em português, **o que esta
- * pessoa vai conseguir fazer depois de salvar** — e não a lista de chaves que
+ * pessoa vai conseguir fazer depois de salvar**, e não a lista de chaves que
  * acabou de marcar.
  *
  * ---------------------------------------------------------------------------
@@ -34,7 +34,7 @@ import { acaoSalvarAcesso } from '@/server/acoes-acesso'
  * ---------------------------------------------------------------------------
  *
  * Cada capacidade tem uma linha a mais que os escopos: **Igual ao papel**. Ela
- * apaga a sobrescrita em vez de gravar o valor atual, e a diferença importa —
+ * apaga a sobrescrita em vez de gravar o valor atual, e a diferença importa ,
  * gravar o valor congelaria a pessoa na política de hoje, e trocar o papel
  * dela depois não teria efeito nenhum. Ver `definirCapacidades`.
  */
@@ -136,7 +136,7 @@ export function EditorDeAcesso({
     setErro(null)
     setSobrescritas((atual) => {
       const copia = { ...atual }
-      // "Igual ao papel" apaga a sobrescrita — ver o cabeçalho.
+      // "Igual ao papel" apaga a sobrescrita, ver o cabeçalho.
       if (valor === 'papel') delete copia[capacidade]
       else copia[capacidade] = valor as Escopo
       return copia
@@ -270,7 +270,7 @@ export function EditorDeAcesso({
               {podeDeVerdade.map(({ capacidade, escopo }) => (
                 <li key={capacidade} className="text-muted">
                   {ROTULO_DA_CAPACIDADE[capacidade].titulo}
-                  <span className="text-dim"> — {ROTULO_DO_ESCOPO[escopo].toLowerCase()}</span>
+                  <span className="text-dim">, {ROTULO_DO_ESCOPO[escopo].toLowerCase()}</span>
                 </li>
               ))}
             </ul>
@@ -291,7 +291,7 @@ export function EditorDeAcesso({
           {efetivo.some((l) => l.capacidade === 'atender' && l.escopo === 'proprios') && (
             <p className="mt-3 text-dim">
               Com <strong className="text-muted">só o que é dela</strong> em Atender,
-              ela não vê a fila de quem ninguém assumiu — só as conversas atribuídas
+              ela não vê a fila de quem ninguém assumiu, só as conversas atribuídas
               a ela.
             </p>
           )}

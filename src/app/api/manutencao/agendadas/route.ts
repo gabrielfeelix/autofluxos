@@ -12,7 +12,7 @@ export const maxDuration = 60
  *
  * **Fica fora do `proxy` e exige `CRON_SECRET`**, como a retenção e o
  * agendador: quem chama é a plataforma, não uma pessoa com cookie de painel. E
- * **falha fechada sem ele** — esta rota manda mensagem no WhatsApp de gente de
+ * **falha fechada sem ele**, esta rota manda mensagem no WhatsApp de gente de
  * verdade, e uma rota dessas não pode ficar aberta porque uma variável não foi
  * preenchida.
  *
@@ -39,7 +39,7 @@ export async function GET(req: Request) {
     return Response.json(await enviarAgendadas())
   } catch (erro) {
     // Ninguém está olhando quando isto roda. Uma passada que para de acontecer
-    // em silêncio é uma fila de mensagens marcadas que nunca saem — e o
+    // em silêncio é uma fila de mensagens marcadas que nunca saem, e o
     // sintoma, do lado de quem marcou, é "o sistema não mandou".
     await alertar('a passada das mensagens agendadas falhou', erro)
     return Response.json({ erro: 'a passada falhou' }, { status: 500 })

@@ -22,7 +22,7 @@ export type Campanha = {
  *
  * **A pontuação do fim some, e é isso que resolve o problema real.** O produto
  * de onde o desenho veio pede ao anunciante que não termine a frase com ponto,
- * exclamação ou interrogação — porque o WhatsApp às vezes os remove no caminho.
+ * exclamação ou interrogação, porque o WhatsApp às vezes os remove no caminho.
  * Pedir isso é empurrar um detalhe da plataforma para quem está anunciando, e
  * ele vai esquecer: o anúncio já está no ar, o dinheiro já está sendo gasto, e
  * a conversa cai no fluxo errado sem ninguém entender por quê.
@@ -38,7 +38,7 @@ export function fraseComparavel(bruto: string): string {
 }
 
 /**
- * Qual campanha esta mensagem abre — ou nenhuma.
+ * Qual campanha esta mensagem abre, ou nenhuma.
  *
  * **Casa com a mensagem inteira, nunca com um pedaço.** A frase de campanha é
  * longa e específica ("Quero saber mais sobre o plano trimestral"), e ela chega

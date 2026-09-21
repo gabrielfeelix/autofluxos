@@ -5,7 +5,7 @@ import { db, ehIdInvalido } from '../db'
  * Qual conta é dona de cada Página do Facebook (0051).
  *
  * Existe porque o webhook `leadgen` chega numa URL só, para todos os clientes,
- * e o corpo não diz de quem é o lead — só em qual Página o formulário está.
+ * e o corpo não diz de quem é o lead, só em qual Página o formulário está.
  */
 
 export type PaginaDeLead = { pageId: string; nome: string; criadoEm: string }
@@ -14,7 +14,7 @@ export type PaginaDeLead = { pageId: string; nome: string; criadoEm: string }
  * A conta dona desta Página, ou `null` quando ninguém a cadastrou.
  *
  * `null` é resposta esperada: o cliente pode inscrever o app numa Página a mais
- * sem avisar. Quem chama transforma isso em alerta — o lead é descartado, e é
+ * sem avisar. Quem chama transforma isso em alerta, o lead é descartado, e é
  * melhor descartar com aviso do que adivinhar a conta.
  */
 export async function clientePelaPagina(pageId: string): Promise<string | null> {
@@ -100,7 +100,7 @@ export async function desligarPagina(clienteId: string, pageId: string): Promise
  * Os formulários que a reconciliação precisa varrer.
  *
  * Sai de `passagens`? Não: sai dos leads já recebidos. Um formulário só é
- * conhecido depois que o primeiro lead dele chegou — o que é suficiente, porque
+ * conhecido depois que o primeiro lead dele chegou, o que é suficiente, porque
  * a reconciliação existe para pegar o que **falhou**, e falha de formulário que
  * nunca entregou nada é problema de configuração, não de entrega perdida.
  */
@@ -110,7 +110,7 @@ export async function formulariosAtivos(): Promise<
   /*
    * Em ordem de quem foi varrido há mais tempo.
    *
-   * A reconciliação pega só os primeiros N por execução — o limite da Meta é
+   * A reconciliação pega só os primeiros N por execução, o limite da Meta é
    * por Página e proporcional ao volume de leads, então varrer tudo todo dia
    * estoura o teto de quem está começando. Ordenar por `varrido_em` faz a fila
    * girar: quem esperou mais vai primeiro, e ninguém fica para trás para
@@ -138,7 +138,7 @@ export async function formulariosAtivos(): Promise<
  * Anota o formulário na primeira vez que um lead dele chega.
  *
  * Silencioso por decisão: é registro de apoio à reconciliação, e falhar aqui
- * não pode impedir o lead de entrar — que é o trabalho de verdade.
+ * não pode impedir o lead de entrar, que é o trabalho de verdade.
  */
 export async function anotarFormulario(entrada: {
   clienteId: string

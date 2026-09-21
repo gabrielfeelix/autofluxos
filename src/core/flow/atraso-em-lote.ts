@@ -6,12 +6,12 @@ import { partesDaMensagem } from './mensagem'
  *
  * **Por que em lote.** O atraso antes de falar é uma decisão de ritmo da
  * conversa inteira, não de um bloco: quem quer que o bot pareça gente quer isso
- * em toda fala, e um fluxo de vinte blocos custava vinte idas ao painel — com o
+ * em toda fala, e um fluxo de vinte blocos custava vinte idas ao painel, com o
  * risco de sobrar um bloco instantâneo no meio, que é justamente o que denuncia
  * o robô.
  *
  * **Só dois tipos de bloco falam.** Mensagem e mídia. Pergunta, condição,
- * guardar e o resto não mandam texto, então não têm o que atrasar — e dizer que
+ * guardar e o resto não mandam texto, então não têm o que atrasar, e dizer que
  * "aplicou em 9 blocos" quando 5 ignoraram seria mentira na tela. Por isso a
  * conta de quantos mudaram sai daqui, e não da tela.
  */
@@ -23,14 +23,14 @@ export function aceitaAtraso(tipo: string): boolean {
   return (TIPOS_COM_ATRASO as readonly string[]).includes(tipo)
 }
 
-/** Segundos dentro do que o schema aceita — a tela pode mandar qualquer coisa. */
+/** Segundos dentro do que o schema aceita, a tela pode mandar qualquer coisa. */
 function segundosValidos(segundos: number): number {
   if (!Number.isFinite(segundos)) return 0
   return Math.min(Math.max(Math.round(segundos), 0), LIMITE_ATRASO_SEGUNDOS)
 }
 
 /**
- * Os dados do bloco com o atraso trocado. `null` quando nada muda — bloco que
+ * Os dados do bloco com o atraso trocado. `null` quando nada muda, bloco que
  * não fala, ou que já estava exatamente assim.
  *
  * Zero **tira** o atraso, em vez de esperar zero segundo. É o que faz o mesmo
@@ -39,7 +39,7 @@ function segundosValidos(segundos: number): number {
  * No bloco de mensagem o atraso é um pedaço da pilha e precisa vir **na
  * frente**: no meio dela, a espera aconteceria depois de a fala já ter saído,
  * que é outro comportamento. Escreve `partes` porque é o único formato que o
- * editor escreve — `partesDaMensagem` lê o formato antigo e devolve a pilha
+ * editor escreve, `partesDaMensagem` lê o formato antigo e devolve a pilha
  * equivalente, então grafo velho entra no lote sem migration nenhuma.
  */
 export function dadosComAtraso(
@@ -91,7 +91,7 @@ export function dadosComAtraso(
 }
 
 /**
- * O lote inteiro. Devolve os blocos já trocados e quantos de fato mudaram — a
+ * O lote inteiro. Devolve os blocos já trocados e quantos de fato mudaram, a
  * tela precisa do número para não prometer o que não fez.
  */
 export function aplicarAtrasoEmLote<T extends { id: string; type?: string; data: Record<string, unknown> }>(

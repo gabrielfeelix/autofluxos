@@ -17,7 +17,7 @@ import {
  *
  * Existe porque as listas de impedimento e de aviso são do **fluxo inteiro**,
  * não do bloco selecionado. Sem isto, dois blocos soltos viravam duas linhas
- * idênticas dizendo "Este bloco está solto" — e "este" não respondia qual, que
+ * idênticas dizendo "Este bloco está solto", e "este" não respondia qual, que
  * é exatamente o que a pessoa precisa saber para consertar.
  *
  * O texto do bloco é o que identifica melhor, porque é o que se lê no desenho.
@@ -49,7 +49,7 @@ export function descrever(no: No): string {
     case 'midia':
       return rotular('Mídia', curto(no.data.legenda ?? no.data.url))
     case 'etapa':
-      // O bloco de etapa não tem texto nenhum para citar — os dois campos são
+      // O bloco de etapa não tem texto nenhum para citar, os dois campos são
       // ids. Sobra o tipo, que é o que já acontece com qualquer bloco vazio.
       return 'O bloco de etapa do quadro'
     case 'etiqueta':
@@ -98,7 +98,7 @@ export function nomeDaSaida(no: No, saida: string | undefined): string | null {
   /*
    * As faixas da pesquisa, com a régua dita junto.
    *
-   * "a saída de promotor" não ajuda quem nunca leu sobre NPS — e é justamente
+   * "a saída de promotor" não ajuda quem nunca leu sobre NPS, e é justamente
    * essa pessoa que está montando a pesquisa. Dizer o corte no nome transforma
    * a lista de problemas em explicação de como o bloco divide.
    */

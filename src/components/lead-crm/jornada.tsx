@@ -2,13 +2,13 @@ import { passagensComNome, type AnuncioEmCache, type Passagem } from '@/core/anu
 import { horaExata, quando } from '@/lib/quando'
 
 /**
- * Por onde a pessoa chegou — todas as vezes.
+ * Por onde a pessoa chegou, todas as vezes.
  *
  * **Origem não é um fato único, é um histórico.** O contato guarda a primeira
  * origem dele e a ficha mostrava só ela; quem clicou em três anúncios diferentes
  * em dois meses aparecia como se tivesse vindo uma vez. Cada passagem pelo CTWA
  * é uma linha em `passagens` desde a 0044, com o `ad_id` e o título que a
- * pessoa leu no dia — o dado estava gravado e não tinha tela.
+ * pessoa leu no dia, o dado estava gravado e não tinha tela.
  *
  * É a coisa que mais se pergunta antes de responder alguém que voltou: "esse
  * aqui é o do anúncio de setembro ou o daquela campanha antiga?".
@@ -26,7 +26,7 @@ export function Jornada({
   if (passagens.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-line px-4 py-8 text-center text-[12px] leading-5 text-dim">
-        Esta pessoa não chegou por anúncio — ou chegou antes de o sistema passar a registrar isso.
+        Esta pessoa não chegou por anúncio, ou chegou antes de o sistema passar a registrar isso.
       </p>
     )
   }
@@ -48,7 +48,7 @@ export function Jornada({
             )}
             <span className="text-[11px] text-dim" title={horaExata(linha.criadoEm)}>
               {quando(linha.criadoEm)}
-              {/* A primeira da lista é a mais recente — dizer qual foi a que
+              {/* A primeira da lista é a mais recente, dizer qual foi a que
                   trouxe a pessoa evita ler a ordem ao contrário. */}
               {indice === linhas.length - 1 && ' · foi por aqui que ela chegou'}
             </span>

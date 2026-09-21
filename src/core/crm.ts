@@ -2,7 +2,7 @@
  * O CRM: estágio da pessoa, negociação no cartão, funis encadeados (0058).
  *
  * Puro e sem rede, como todo `core/`. A decisão inteira está em
- * `docs/MODELO-CRM.md`; o que mora aqui é a régua dela — quais estágios existem,
+ * `docs/MODELO-CRM.md`; o que mora aqui é a régua dela, quais estágios existem,
  * o que cada fato produz, o que é um valor válido, e por onde a cadeia de funis
  * pode passar sem virar um laço.
  */
@@ -45,7 +45,7 @@ export function ehEstagio(valor: string): valor is Estagio {
  *
  * **A contrapartida do estágio, e de propósito.** O estágio é consequência: ele
  * anda sozinho pelos fatos, e mexer nele na mão é exceção. Temperatura é o
- * oposto — nada aqui a move sozinha, porque não há fato que a meça. Duas pessoas
+ * oposto, nada aqui a move sozinha, porque não há fato que a meça. Duas pessoas
  * na mesma etapa, com a mesma última mensagem, podem ser uma quase fechada e uma
  * que só pediu preço por educação, e quem sabe a diferença é quem conversou.
  *
@@ -87,14 +87,14 @@ export type FatoDoContato =
  * Quanto tempo sem conversa até um contato ser dado por inativo.
  *
  * Noventa dias porque é o ciclo de recompra mais curto que faz sentido para os
- * negócios que usam isto — barbearia, clínica, estúdio. Menos que isso marcaria
+ * negócios que usam isto, barbearia, clínica, estúdio. Menos que isso marcaria
  * como inativo quem só volta de três em três meses, que é justamente o cliente
  * fiel.
  */
 export const DIAS_PARA_INATIVAR = 90
 
 /**
- * O estágio depois do fato — ou `null` quando nada muda.
+ * O estágio depois do fato, ou `null` quando nada muda.
  *
  * As duas regras que este `switch` existe para garantir, e que a tela não
  * deveria precisar lembrar:
@@ -140,7 +140,7 @@ export function estagioDepoisDe(
 
     case 'voltou-a-falar':
       // Quem estava dado como perdido e escreveu de novo **não é um lead novo
-      // qualquer** — mas tratá-lo como perdido é pior: ele sumiria de toda lista
+      // qualquer**, mas tratá-lo como perdido é pior: ele sumiria de toda lista
       // de quem merece resposta. Volta para `novo`, que é a fila de quem precisa
       // de atenção.
       if (atual === 'perdido') return 'novo'
@@ -165,7 +165,7 @@ export const LIMITE_DO_TITULO = 60
 /**
  * Os motivos com que uma conta nasce.
  *
- * Curtos e genéricos de propósito — servem à barbearia e à clínica igualmente, e
+ * Curtos e genéricos de propósito, servem à barbearia e à clínica igualmente, e
  * a primeira coisa que se espera é que alguém edite. Lista vazia seria pior:
  * obrigaria a cadastrar motivo antes de poder perder a primeira venda, que é o
  * momento em que ninguém tem paciência para cadastro.
@@ -199,7 +199,7 @@ export function lerValor(
    * "1.234,56" (brasileiro), "1234.56" (teclado numérico) e "1.500" (milhar sem
    * centavo). A vírgula resolve a primeira. A terceira é a ambígua, e a regra é
    * a mesma que qualquer pessoa usa ao ler: **ponto seguido de exatamente três
-   * dígitos, em grupos, é separador de milhar** — "1.500" é mil e quinhentos, e
+   * dígitos, em grupos, é separador de milhar**, "1.500" é mil e quinhentos, e
    * "1.50" é um e cinquenta.
    */
   const temVirgula = semMoeda.includes(',')
@@ -229,7 +229,7 @@ export function lerValor(
  * ICU, e elas discordam do separador entre o símbolo e o número: uma escreve
  * espaço estreito (U+202F), a outra espaço não separável (U+00A0). O React
  * compara o texto que veio do servidor com o que o cliente produz, vê dois
- * caracteres diferentes, e derruba a hidratação inteira com o erro #418 — que
+ * caracteres diferentes, e derruba a hidratação inteira com o erro #418, que
  * no console aparece minificado e sem dizer onde.
  *
  * Um número de dinheiro não precisa de biblioteca: duas casas, ponto no milhar,
@@ -252,7 +252,7 @@ export function comoDinheiro(valor: number | null): string {
  * Ganhar sem valor é permitido; **perder sem motivo não é**. A assimetria é o
  * ponto do produto: o valor é opcional porque o número às vezes só se sabe
  * depois, e o motivo é obrigatório porque agrupar motivo é a única razão de
- * registrar a perda — e um campo opcional aqui produziria um relatório com 80%
+ * registrar a perda, e um campo opcional aqui produziria um relatório com 80%
  * de "não informado".
  */
 export function conferirFechamento(
@@ -287,7 +287,7 @@ export type CartaoFechado = { valor: number | null; fechadoEm: string | null }
  * Quanto essa pessoa já rendeu, quantas vezes comprou e quando foi a última.
  *
  * É o que substitui um módulo de e-commerce inteiro: com o título e o valor dos
- * cartões ganhos dá para responder quanto, quando e o quê — as três perguntas
+ * cartões ganhos dá para responder quanto, quando e o quê, as três perguntas
  * que alguém realmente faz sobre um cliente antigo. Catálogo, estoque e
  * recorrência cobrada são outro produto.
  */
@@ -339,7 +339,7 @@ export function podeEncadear(
     if (vistos.has(atual)) {
       return {
         ok: false,
-        motivo: 'esses quadros formariam um ciclo — o contato voltaria para o começo sem parar',
+        motivo: 'esses quadros formariam um ciclo, o contato voltaria para o começo sem parar',
       }
     }
     vistos.add(atual)
@@ -383,7 +383,7 @@ export type Evento = {
 /**
  * O evento virando frase.
  *
- * A linha do tempo só informa se cada linha se lê sozinha — "mudou-de-etapa
+ * A linha do tempo só informa se cada linha se lê sozinha, "mudou-de-etapa
  * {de:…, para:…}" é log, não histórico. O `default` devolve o tipo cru de
  * propósito: evento novo escrito por código futuro aparece feio, mas aparece, em
  * vez de sumir da tela sem ninguém notar.
@@ -407,9 +407,9 @@ export function comoFrase(evento: Evento): string {
     case 'assumiu':
       return d.quem ? `${d.quem} assumiu` : 'ficou sem responsável'
     case 'ganhou':
-      return d.valor ? `ganhou — ${d.valor}` : 'ganhou'
+      return d.valor ? `ganhou, ${d.valor}` : 'ganhou'
     case 'perdeu':
-      return d.motivo ? `perdeu — ${d.motivo}` : 'perdeu'
+      return d.motivo ? `perdeu, ${d.motivo}` : 'perdeu'
     case 'entrou-no-quadro':
       return `entrou no funil ${d.quadro ?? ''}`.trim()
     case 'saiu-do-quadro':

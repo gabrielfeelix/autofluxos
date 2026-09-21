@@ -21,7 +21,7 @@ import {
 } from './pecas'
 
 /**
- * As seções sobre automação — o miolo da Ajuda.
+ * As seções sobre automação, o miolo da Ajuda.
  *
  * **Quase nada aqui é escrito à mão duas vezes.** Os nomes dos blocos, as
  * palavras de escape, os quatro papéis do número, os formatos de resposta e as
@@ -38,7 +38,7 @@ const ORDEM_DOS_BLOCOS: TipoNo[] = [
   'condicao',
   'salvar-campo',
   'etapa',
-  // Ao lado da etapa: os três são "o que o fluxo registra sobre a pessoa" —
+  // Ao lado da etapa: os três são "o que o fluxo registra sobre a pessoa" ,
   // onde ela está, o que ela é, e o que se sabe dela.
   'etiqueta',
   'nota',
@@ -51,7 +51,7 @@ const ORDEM_DOS_BLOCOS: TipoNo[] = [
   'nps',
 ]
 
-/** Quando usar cada bloco, em uma frase — o que a barra do editor não cabe. */
+/** Quando usar cada bloco, em uma frase, o que a barra do editor não cabe. */
 const QUANDO_USAR: Record<TipoNo, string> = {
   mensagem:
     'Falar sem esperar resposta. Um bloco só manda várias mensagens em sequência, com pausa, foto e "guardar" no meio.',
@@ -59,10 +59,10 @@ const QUANDO_USAR: Record<TipoNo, string> = {
   pergunta:
     'Sempre que a conversa precisa de algo da pessoa: um texto livre, uma data, ou uma escolha entre botões.',
   condicao: 'Separar o caminho de quem já é cliente do caminho de quem chegou agora.',
-  'salvar-campo': 'Marcar algo no contato sem perguntar nada — a origem, o plano, o interesse.',
+  'salvar-campo': 'Marcar algo no contato sem perguntar nada, a origem, o plano, o interesse.',
   etapa: 'Empurrar o cartão da pessoa no quadro quando ela agenda, desmarca ou fecha.',
   etiqueta:
-    'Marcar o que a pessoa é — "quer pilates", "já é aluno" — para filtrar depois e para começar uma sequência.',
+    'Marcar o que a pessoa é, "quer pilates", "já é aluno", para filtrar depois e para começar uma sequência.',
   nota: 'Deixar escrito na ficha o que a conversa apurou, para quem for atender ler antes de falar.',
   'ir-fluxo':
     'Mandar quem falou de fisioterapia para o fluxo de fisioterapia, sem duplicar o desenho.',
@@ -71,7 +71,7 @@ const QUANDO_USAR: Record<TipoNo, string> = {
   voltar:
     'O "voltar ao menu" que todo bot tem. Manda a conversa para um passo anterior deste mesmo fluxo, sem uma seta cruzando o desenho inteiro.',
   http: 'Consultar ou gravar no sistema do cliente: a agenda, o CRM, a planilha.',
-  nps: 'Perguntar de 0 a 10 no fim do atendimento. Ele já separa os três caminhos — quem gostou, quem tanto faz e quem não gostou — e guarda a nota com data, para o relatório poder comparar um mês com o outro.',
+  nps: 'Perguntar de 0 a 10 no fim do atendimento. Ele já separa os três caminhos, quem gostou, quem tanto faz e quem não gostou, e guarda a nota com data, para o relatório poder comparar um mês com o outro.',
 }
 
 export function SecaoComoFunciona() {
@@ -83,7 +83,7 @@ export function SecaoComoFunciona() {
       chamada={
         <>
           Alguém escreve no WhatsApp do seu cliente. O AutoFluxos decide qual automação atende,
-          executa os blocos um a um, e — quando o desenho manda — entrega a conversa para uma
+          executa os blocos um a um, e, quando o desenho manda, entrega a conversa para uma
           pessoa. Tudo o que você vai ler aqui é um pedaço desse caminho.
         </>
       }
@@ -152,7 +152,7 @@ export function SecaoBlocos() {
         <>
           Você arrasta um bloco da barra da esquerda para o desenho e liga a bolinha de saída de um
           na entrada do outro. <strong className="text-soft">A setinha que você arrasta já é a
-          ramificação</strong> — não existe tela escondida para configurar caminho.
+          ramificação</strong>, não existe tela escondida para configurar caminho.
         </>
       }
     >
@@ -178,7 +178,7 @@ export function SecaoBlocos() {
         <p>
           Use o bloco de <strong className="text-soft">IA</strong> para entender o que a pessoa
           quis dizer, nunca para informar o que existe. Perguntada sobre vaga, ela inventa uma que
-          não existe — e o erro só aparece com a aluna já no estúdio. Quem responde “que horas tem
+          não existe, e o erro só aparece com a aluna já no estúdio. Quem responde “que horas tem
           livre” é o bloco de {NOMES.http} lendo a agenda.
         </p>
       </Nota>
@@ -194,7 +194,7 @@ export function SecaoEntrada() {
       titulo="Como o sistema decide qual automação atende"
       chamada={
         <>
-          Um número pode ter várias automações ligadas. Quando chega mensagem, esta ordem decide — e
+          Um número pode ter várias automações ligadas. Quando chega mensagem, esta ordem decide, e
           ela é fixa, não depende de qual você cadastrou primeiro.
         </>
       }
@@ -250,7 +250,7 @@ export function SecaoEntrada() {
         <p>
           Desenhar não põe nada no ar. Enquanto você não clicar em{' '}
           <strong className="text-soft">Publicar</strong>, o número continua respondendo pela versão
-          anterior — ou não respondendo, se nunca houve uma. E o interruptor de cada automação
+          anterior, ou não respondendo, se nunca houve uma. E o interruptor de cada automação
           desliga o desenho sem apagá-lo.
         </p>
         <p>
@@ -273,7 +273,7 @@ export function SecaoVariaveis() {
       chamada={
         <>
           Uma variável é um valor que a conversa guardou e que você reusa escrevendo{' '}
-          <Var>nome</Var> em qualquer campo de texto — mensagem, endereço de API, corpo do pedido.
+          <Var>nome</Var> em qualquer campo de texto, mensagem, endereço de API, corpo do pedido.
           Use o botão de variável ao lado do campo em vez de digitar: ele lista o que existe
           <em> naquele ponto</em> do desenho.
         </>
@@ -286,7 +286,7 @@ export function SecaoVariaveis() {
             <Var>telefone</Var>
           </Cel>
           <Cel>
-            O número de quem está escrevendo, com país e DDD e sem máscara —{' '}
+            O número de quem está escrevendo, com país e DDD e sem máscara ,{' '}
             <Cod>5544998887766</Cod>.
           </Cel>
           <Cel>É o formato que a Verandi e a Cloud API esperam. Não formate antes de mandar.</Cel>
@@ -316,8 +316,8 @@ export function SecaoVariaveis() {
 
       <Nota tom="dica" titulo="O que você guarda continua valendo na conversa de semana que vem">
         <p>
-          Toda variável guardada — pela pergunta, pelo bloco <strong className="text-soft">Guardar</strong> ou
-          por uma chamada — fica registrada <em>naquele contato</em>. Na conversa seguinte, dias ou
+          Toda variável guardada, pela pergunta, pelo bloco <strong className="text-soft">Guardar</strong> ou
+          por uma chamada, fica registrada <em>naquele contato</em>. Na conversa seguinte, dias ou
           meses depois, ela já está lá antes do primeiro bloco rodar, em qualquer automação da
           conta. É assim que o petshop lembra o nome do cachorro e a academia lembra o plano, sem
           precisar de sistema nenhum do outro lado.
@@ -345,7 +345,7 @@ export function SecaoPerguntas() {
         <>
           Uma pergunta pode guardar <strong className="text-soft">três variáveis diferentes</strong>{' '}
           da mesma resposta. Parece exagero até a primeira vez que você manda “07:00” para uma API
-          que queria um identificador — e o pedido falha com tudo parecendo certo na tela.
+          que queria um identificador, e o pedido falha com tudo parecendo certo na tela.
         </>
       }
     >
@@ -411,7 +411,7 @@ export function SecaoPerguntas() {
 
       <Sub>As saídas de uma pergunta</Sub>
       <p>
-        Com opções desenhadas por você, cada opção vira uma saída — arraste dali para onde aquele
+        Com opções desenhadas por você, cada opção vira uma saída, arraste dali para onde aquele
         botão leva. Com opções que vêm de uma variável, as saídas são fixas:{' '}
         <Cod>escolheu</Cod> e <Cod>veio vazia</Cod>. E toda pergunta com prazo ganha a saída{' '}
         <Cod>timeout</Cod>.
@@ -421,7 +421,7 @@ export function SecaoPerguntas() {
           Marque <strong className="text-soft">aceitar foto, áudio ou documento aqui</strong> e a
           pergunta ganha a saída <strong className="text-soft">“mandou arquivo”</strong>: a receita
           da farmácia, o comprovante, a foto do pet deixam de virar transferência e seguem o
-          desenho. Sem marcar, quem manda foto continua indo para uma pessoa — que é o certo quando
+          desenho. Sem marcar, quem manda foto continua indo para uma pessoa, que é o certo quando
           o fluxo não sabe o que fazer com ela.
         </p>
         <p>
@@ -436,7 +436,7 @@ export function SecaoPerguntas() {
           Preencha <strong className="text-soft">guardar o valor escolhido em</strong> e cada opção
           desenhada ganha um campo de valor: a pessoa lê <strong className="text-soft">“Vídeo
           institucional”</strong> e a sua API recebe <Cod>institucional</Cod>. Sem isso, o caminho
-          era uma condição por opção — e o desenho crescia junto com o catálogo.
+          era uma condição por opção, e o desenho crescia junto com o catálogo.
         </p>
       </Nota>
 
@@ -467,7 +467,7 @@ export function SecaoDatas() {
       <Espelho
         conversa={
           <Conversa titulo="Ana · 44 99888-7766">
-            <Zap>{'Para quando você quer agendar?\nMe manda a data — por exemplo: *21/08/2026*'}</Zap>
+            <Zap>{'Para quando você quer agendar?\nMe manda a data, por exemplo: *21/08/2026*'}</Zap>
             <Zap de="pessoa">semana que vem</Zap>
             <Zap>
               Desculpe, pode escrever novamente citando dia / mês / ano? Exemplo: *21/08/2026*
@@ -550,7 +550,7 @@ export function SecaoDatas() {
       <Nota tom="atencao" titulo="O ano de quatro dígitos é obrigatório, de propósito">
         <p>
           <Cod>21/08</Cod> é recusado. Quem remarca aula em dezembro e escreve <Cod>05/01</Cod> quer
-          janeiro do ano que vem, e adivinhar acerta metade das vezes — a outra metade é um
+          janeiro do ano que vem, e adivinhar acerta metade das vezes, a outra metade é um
           agendamento no mês errado que ninguém vê até a pessoa aparecer. Pedir o ano custa uma
           frase na conversa.
         </p>
@@ -564,14 +564,14 @@ export function SecaoDatas() {
       <Nota tom="dica" titulo="Escreva o exemplo na própria pergunta">
         <p>
           A frase padrão do sistema já traz um: “{PEDIDO_PADRAO.data}”. Você pode trocá-la no campo{' '}
-          <strong className="text-soft">quando não entender</strong> — mas mantenha a forma: diga o
+          <strong className="text-soft">quando não entender</strong>, mas mantenha a forma: diga o
           que falta e mostre um exemplo. “Formato inválido” não ensina ninguém a responder certo.
         </p>
       </Nota>
 
       <Sub>E o 31 de fevereiro?</Sub>
       <p>
-        Recusado. O dia é conferido contra o mês, e ano bissexto é levado em conta — <Cod>29/02/2028</Cod>{' '}
+        Recusado. O dia é conferido contra o mês, e ano bissexto é levado em conta, <Cod>29/02/2028</Cod>{' '}
         passa, <Cod>29/02/2027</Cod> não.
       </p>
     </Secao>
@@ -656,7 +656,7 @@ export function SecaoListas() {
         </p>
         <p>
           Nunca a marque numa lista pareada com outra. Tirar um item de um lado empurra os valores
-          do outro, e o agendamento vai para o horário de outra pessoa — sem erro nenhum aparecer.
+          do outro, e o agendamento vai para o horário de outra pessoa, sem erro nenhum aparecer.
         </p>
       </Nota>
 
@@ -688,7 +688,7 @@ export function SecaoListas() {
       <Nota tom="atencao" titulo="Limites do WhatsApp que o desenho precisa respeitar">
         <p>
           Até 3 opções, a Meta entrega como botões; de 4 a 10, como lista suspensa. Acima de 10 a
-          mensagem é recusada inteira. E o rótulo tem 20 caracteres — “Terça-feira às 07:00 com a
+          mensagem é recusada inteira. E o rótulo tem 20 caracteres, “Terça-feira às 07:00 com a
           Carol” não cabe.
         </p>
       </Nota>
@@ -745,14 +745,14 @@ export function SecaoQuandoDaErrado() {
       <p>
         Toda pergunta aceita um <strong className="text-soft">prazo</strong> em minutos, até 24
         horas. Estourado o prazo, a conversa sai pela saída <Cod>timeout</Cod>. Se você não ligar
-        nada nessa saída, a conversa vai para uma pessoa em vez de encerrar calada — quem parou de
+        nada nessa saída, a conversa vai para uma pessoa em vez de encerrar calada, quem parou de
         responder no meio de uma triagem é justamente o lead que vale resgatar.
       </p>
 
       <Nota tom="atencao" titulo="Por que o teto é 24 horas">
         <p>
           É a janela do WhatsApp: a Meta só deixa mandar texto livre até 24h depois da{' '}
-          <em>última mensagem que a pessoa mandou</em>. Um prazo maior não seria atrasado — seria
+          <em>última mensagem que a pessoa mandou</em>. Um prazo maior não seria atrasado, seria
           nunca entregue. Vale igual para os passos de uma sequência de acompanhamento.
         </p>
       </Nota>
@@ -760,7 +760,7 @@ export function SecaoQuandoDaErrado() {
       <Sub>Como testar sem gastar conversa de verdade</Sub>
       <p>
         Use a aba <strong className="text-soft">Testar</strong> do editor. Ela roda exatamente
-        o mesmo motor da produção — mesmas regras de escape, de tentativa e de formato — mas sem
+        o mesmo motor da produção, mesmas regras de escape, de tentativa e de formato, mas sem
         mandar nada para o WhatsApp de ninguém.
       </p>
     </Secao>

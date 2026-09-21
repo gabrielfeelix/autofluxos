@@ -6,7 +6,7 @@ import { lookup } from 'node:dns/promises'
  *
  * Uma URL que alguém digita e o nosso servidor executa é SSRF por construção:
  * quem edita o fluxo passa a poder fazer o servidor emitir requisição para
- * qualquer endereço alcançável a partir dele — incluindo o serviço de metadados
+ * qualquer endereço alcançável a partir dele, incluindo o serviço de metadados
  * da nuvem, que entrega credencial a quem perguntar.
  *
  * Hoje só o operador edita fluxo, mas o BRIEF-UI §6 já prevê o cliente com
@@ -24,14 +24,14 @@ import { lookup } from 'node:dns/promises'
 /**
  * **DNS rebinding está fechado, e é por isso que esta função devolve o IP.**
  *
- * O padrão ingênuo — resolver, conferir, e deixar o cliente HTTP resolver de
- * novo na hora de conectar — tem uma janela: quem controla o domínio devolve um
+ * O padrão ingênuo, resolver, conferir, e deixar o cliente HTTP resolver de
+ * novo na hora de conectar, tem uma janela: quem controla o domínio devolve um
  * IP público na conferência e o endereço de metadados da nuvem na conexão. O
  * `undici` (que é o que está por baixo do `fetch` no Node) **ignora o `agent` do
  * Node e re-resolve o DNS ao conectar**, então a janela existe de verdade.
  *
  * Não é teoria: é a mesma classe da CVE do Budibase (GHSA-v42f-v8xc-j435), que
- * é um low-code com nó de REST — o mesmo produto que este aqui.
+ * é um low-code com nó de REST, o mesmo produto que este aqui.
  *
  * Por isso o veredito positivo carrega o endereço aprovado. Quem chama fixa a
  * conexão nele (ver `http.ts`), e não sobra segunda resolução para trocar.

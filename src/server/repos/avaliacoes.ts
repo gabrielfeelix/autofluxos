@@ -8,12 +8,12 @@ import type { NotaLida } from '@/core/nps'
  *
  * A tabela existe porque `contacts.campos` **sobrescreve**: a nota de setembro
  * apagava a de março, e com ela a única pergunta que a pesquisa serve para
- * responder — "estamos melhorando?". Aqui cada resposta é uma linha com data
+ * responder, "estamos melhorando?". Aqui cada resposta é uma linha com data
  * própria.
  *
  * **Nada aqui pode derrubar a conversa.** É a mesma postura do bloco de etapa e
  * do de etiqueta: a pesquisa é registro, e registro que falha custa um número
- * no relatório. Estourar custaria a conversa de alguém — e logo na conversa de
+ * no relatório. Estourar custaria a conversa de alguém, e logo na conversa de
  * quem acabou de ser atendido.
  */
 
@@ -32,7 +32,7 @@ export type OrigemDaAvaliacao = 'fluxo' | 'atendimento'
 /**
  * Guarda a nota e devolve o id da linha.
  *
- * Devolve `null` quando não deu — e quem chama **segue mesmo assim**. Ver o
+ * Devolve `null` quando não deu, e quem chama **segue mesmo assim**. Ver o
  * cabeçalho: perder o registro é melhor que perder a conversa.
  */
 export async function guardarNota(
@@ -76,8 +76,8 @@ export async function guardarNota(
  * gera id, e uma ida e volta só para transportar um uuid exigiria um estado
  * `aguardando_*` que nada mais no produto precisa.
  *
- * O risco teórico — duas pesquisas do mesmo contato na mesma conversa, com o
- * comentário caindo na errada — não existe na prática: o bloco zera a pesquisa
+ * O risco teórico, duas pesquisas do mesmo contato na mesma conversa, com o
+ * comentário caindo na errada, não existe na prática: o bloco zera a pesquisa
  * pendente ao ser reentrado, então só há uma nota esperando comentário por vez.
  * E a janela é a de uma resposta de WhatsApp.
  */
@@ -138,7 +138,7 @@ export async function avaliacoesDoContato(
   }))
 }
 
-/** Em que faixa a nota cai — reexportado para a tela não importar de `core/`. */
+/** Em que faixa a nota cai, reexportado para a tela não importar de `core/`. */
 export { faixaDaNota }
 
 /**
@@ -177,7 +177,7 @@ export async function notasDaConta(
  * Os comentários escritos, do mais novo para o mais velho.
  *
  * Só quem escreveu alguma coisa: a nota sem comentário já está no resumo, e
- * uma lista cheia de linhas vazias esconderia as poucas que têm texto — que são
+ * uma lista cheia de linhas vazias esconderia as poucas que têm texto, que são
  * justamente as que alguém quer ler.
  */
 export async function comentariosDaConta(

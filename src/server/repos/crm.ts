@@ -17,7 +17,7 @@ import { anotar } from './eventos'
  * entra por `aplicarFato`, que lê o estágio atual, pergunta à régua de
  * `core/crm.ts` o que aquele fato produz, e só escreve se houver mudança. Sem
  * esse funil, "cliente não regride" viraria uma regra que cada chamador precisa
- * lembrar — e um esquecimento rebaixaria para `perdido` alguém que já pagou.
+ * lembrar, e um esquecimento rebaixaria para `perdido` alguém que já pagou.
  */
 
 type LinhaDoContato = { estagio: string; id: string }
@@ -74,7 +74,7 @@ export async function aplicarFato(
  * abril é uma venda que ninguém teve coragem de marcar como perdida. A coluna
  * `estagio_mudou_em` existe desde a 0058 e não estava sendo lida por ninguém.
  *
- * `desde` é nulo para quem nunca mudou de estágio — o contato nasce `novo`, e
+ * `desde` é nulo para quem nunca mudou de estágio, o contato nasce `novo`, e
  * nascer não é mudar.
  */
 export async function estagioDoContato(
@@ -96,7 +96,7 @@ export async function estagioDoContato(
   return { estagio: linha.estagio as Estagio, desde: linha.estagio_mudou_em }
 }
 
-/** O ajuste na mão. Existe, e é exceção — ver `docs/MODELO-CRM.md`. */
+/** O ajuste na mão. Existe, e é exceção, ver `docs/MODELO-CRM.md`. */
 export async function definirEstagio(
   clienteId: string,
   contatoId: string,
@@ -126,7 +126,7 @@ export async function definirEstagio(
  * existe fato que mova temperatura, então não existe régua para consultar. Quem
  * escreve é sempre um humano dizendo o que acha.
  *
- * Vira evento na linha do tempo como qualquer opinião gravada — daqui a um mês,
+ * Vira evento na linha do tempo como qualquer opinião gravada, daqui a um mês,
  * "quem disse que estava quente, e quando" é a pergunta que se faz olhando uma
  * venda perdida.
  */
@@ -156,7 +156,7 @@ export async function definirTemperatura(
  * Tudo que o painel do funil mostra sobre uma pessoa, numa consulta.
  *
  * **O painel abre inteiro ou não abre.** Ele cobre o quadro, e montá-lo em três
- * tempos — primeiro o nome, depois o telefone, depois a etiqueta — seria a tela
+ * tempos, primeiro o nome, depois o telefone, depois a etiqueta, seria a tela
  * pulando debaixo do cursor de quem já está lendo. Uma leitura só, e ela é curta:
  * uma linha de `contacts` e as etiquetas dela.
  *
@@ -182,7 +182,7 @@ export async function fichaDoContato(
     .from('contacts')
     // Numa linha só, e não concatenado: o supabase-js lê esta string no nível de
     // tipo para saber o formato do retorno, e concatenação vira `string`
-    // genérica — aí o tipo do `data` desanda e o `tsc` acusa. Mesma nota de
+    // genérica, aí o tipo do `data` desanda e o `tsc` acusa. Mesma nota de
     // `repos/leads.ts`.
     .select(
       'id, nome, nome_real, wa_id, estagio, estagio_mudou_em, temperatura, criado_em, ultima_mensagem_em, atribuido_a, notas, campos',
@@ -258,7 +258,7 @@ function paraCampos(bruto: unknown): Record<string, string> {
  * Marca que essa pessoa acabou de falar.
  *
  * Chamado no caminho quente de toda mensagem recebida, então é um `update` seco
- * e nada mais: sem leitura antes, sem evento — a mensagem já é o evento, e
+ * e nada mais: sem leitura antes, sem evento, a mensagem já é o evento, e
  * anotar cada uma na linha do tempo a transformaria numa segunda cópia da
  * conversa.
  */
@@ -294,7 +294,7 @@ async function temCartaoAberto(clienteId: string, contatoId: string): Promise<bo
  * Esta pessoa comprou?
  *
  * **Venda registrada é a única prova** (0071, RB-05). Antes, qualquer cartão
- * `ganha` respondia sim — inclusive "Resolvido" no Atendimento e "Compareceu"
+ * `ganha` respondia sim, inclusive "Resolvido" no Atendimento e "Compareceu"
  * na Agenda, que não são compra nenhuma.
  *
  * O ganho antigo em quadro **comercial** continua respondendo sim, porque há
@@ -330,7 +330,7 @@ async function jaComprou(clienteId: string, contatoId: string): Promise<boolean>
 /**
  * Quanto essa pessoa já rendeu, quantas vezes comprou e quando foi a última.
  *
- * As três perguntas do pós-venda, respondidas pelos cartões ganhos — sem
+ * As três perguntas do pós-venda, respondidas pelos cartões ganhos, sem
  * catálogo, sem pedido, sem estoque.
  */
 export async function resumoDoContato(
@@ -342,7 +342,7 @@ export async function resumoDoContato(
    *
    * As **vendas** (0071) são a fonte oficial. O cartão ganho de quadro
    * **comercial** entra como legado, pelos mesmos clientes que fecharam venda
-   * antes de a tabela existir — e só quando aquele cartão ainda não tem venda
+   * antes de a tabela existir, e só quando aquele cartão ainda não tem venda
    * registrada, senão a mesma compra contaria duas vezes.
    *
    * Cartão ganho de quadro **operacional** não entra: é a correção do A11.
@@ -389,7 +389,7 @@ export async function resumoDoContato(
   }
 
   return resumoDoCliente([
-    // `numeric` chega como string no supabase-js — somar sem converter
+    // `numeric` chega como string no supabase-js, somar sem converter
     // concatenaria "200" com "350.50".
     ...((vendas ?? []) as { valor_total: string | number | null; data_da_venda: string }[]).map(
       (linha) => ({
@@ -409,7 +409,7 @@ export async function resumoDoContato(
 /**
  * Os clientes que sumiram, para o cron marcar como inativos.
  *
- * Devolve ids em vez de escrever direto porque quem escreve é `aplicarFato` — é
+ * Devolve ids em vez de escrever direto porque quem escreve é `aplicarFato`, é
  * lá que mora a regra de que cliente vira `inativo` e nunca `perdido`, e
  * duplicá-la num `update ... where` seria criar um segundo lugar onde ela pode
  * divergir.
@@ -437,7 +437,7 @@ export async function contatosQueSumiram(clienteId: string, limite = 200): Promi
  * Pega carona na manutenção diária que já existe, pelo mesmo motivo que a
  * renovação do Instagram pegou: o plano Hobby da Vercel dá poucas tarefas
  * agendadas, e as que existem já estão em uso. A natureza do trabalho é a mesma
- * das outras — cuidar de prazo que corre sozinho.
+ * das outras, cuidar de prazo que corre sozinho.
  *
  * Passa por `aplicarFato` contato a contato em vez de um `update ... where`
  * porque é lá que mora a regra de que **cliente vira `inativo` e nunca

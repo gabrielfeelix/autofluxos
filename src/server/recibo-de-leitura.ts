@@ -12,7 +12,7 @@ import { contextoDeResposta } from './repos/conversas'
  * O número roda na Cloud API: ninguém "abre o WhatsApp" do lado do cliente. Se
  * o painel não avisar a Meta, a pessoa que escreveu vê **um tique cinza para
  * sempre**, mesmo depois de alguém ler e responder. No WhatsApp, um tique
- * parado quer dizer "não chegou" — e é o que faz ela mandar a mesma pergunta
+ * parado quer dizer "não chegou", e é o que faz ela mandar a mesma pergunta
  * de novo, ou desistir.
  *
  * O bot já marcava lida quando ia responder (`aguardarResposta` manda `read`
@@ -33,7 +33,7 @@ export async function avisarQueLeu(
   clienteId: string,
   contatoId: string,
   /**
-   * Quando esta pessoa tinha aberto a conversa antes desta vez — lido **antes**
+   * Quando esta pessoa tinha aberto a conversa antes desta vez, lido **antes**
    * de `marcarComoLida` empurrar o relógio.
    *
    * É o que evita um recibo por atualização de tela: só vale a pena avisar se
@@ -55,7 +55,7 @@ export async function avisarQueLeu(
 
     const canal = await adaptadorDoCanal(contexto.canal)
     /*
-     * Nem todo canal tem recibo — o Instagram, por exemplo, não passa por aqui.
+     * Nem todo canal tem recibo, o Instagram, por exemplo, não passa por aqui.
      * Perguntar antes é o que faz a ausência ser silêncio em vez de
      * `canal.marcarLida is not a function` no log de produção.
      */

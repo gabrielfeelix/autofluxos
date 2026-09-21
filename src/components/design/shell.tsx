@@ -8,10 +8,10 @@ import { Marca } from './marca'
 import { BotaoDeTema } from '@/components/design/tema'
 
 /**
- * A moldura da lista de clientes — a visão de quem opera a 4YU.
+ * A moldura da lista de clientes, a visão de quem opera a 4YU.
  *
  * **Duas formas, e a diferença não é só largura.** No desktop a barra é uma
- * coluna fixa e só o conteúdo rola — é o que mantém a navegação sempre à vista
+ * coluna fixa e só o conteúdo rola, é o que mantém a navegação sempre à vista
  * numa tela de trabalho. No celular a mesma coluna comeria 226px dos 390px
  * disponíveis, então ela vira uma faixa no topo e a página inteira volta a
  * rolar como página. `h-screen` some junto: prender a altura na viewport de um
@@ -57,7 +57,7 @@ export async function PainelShell({ children }: { children: ReactNode }) {
         <div className="flex-1" />
 
         {/* O tema fica no rodapé, junto da conta: é preferência de quem usa o
-            painel, e o topo é da marca. Esta casca não recolhe — ela veste as
+            painel, e o topo é da marca. Esta casca não recolhe, ela veste as
             telas fora de um cliente, que são curtas e não disputam largura. */}
         <div className="hidden border-line md:block md:border-t md:pt-2.5">
           <BotaoDeTema />

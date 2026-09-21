@@ -17,7 +17,7 @@ import type { FiltroDeEstado } from '@/server/repos/leads'
  * ---------------------------------------------------------------------------
  *
  * Cada ficha do rail era um `<Link>` para a mesma rota com outro `?estado=` ou
- * `?de=`. Clicar refazia a página no servidor — sete consultas — e a tela
+ * `?de=`. Clicar refazia a página no servidor, sete consultas, e a tela
  * ficava parada até a resposta. Dois segundos para trocar de aba, num gesto
  * que é só mostrar um subconjunto do que já estava na tela.
  *
@@ -28,8 +28,8 @@ import type { FiltroDeEstado } from '@/server/repos/leads'
  * ---------------------------------------------------------------------------
  *
  * `history.replaceState` em vez de `router.push`: o endereço acompanha a
- * escolha — dá para recarregar a página na aba certa, e o link continua
- * compartilhável — **sem** disparar a navegação do Next, que é justamente o
+ * escolha, dá para recarregar a página na aba certa, e o link continua
+ * compartilhável, **sem** disparar a navegação do Next, que é justamente o
  * que se está evitando.
  *
  * `replace` e não `push` porque trocar de aba não é lugar novo: é a mesma
@@ -68,7 +68,7 @@ export function useFilaLocal(entrada: {
  * O recorte da fila para os dois rails escolhidos.
  *
  * **Pura de propósito.** É a regra que decide o que a pessoa vê, e é o tipo de
- * coisa que erra em silêncio — mostrar conversa resolvida na aba de abertas, ou
+ * coisa que erra em silêncio, mostrar conversa resolvida na aba de abertas, ou
  * esconder a de alguém ao filtrar por dono. Função sem React é o que torna isso
  * provável por `npm test`.
  *
@@ -96,12 +96,12 @@ export function recortarFila<
  * O terceiro eixo da fila: de onde a pessoa veio.
  *
  * **Por que ele vale a pena.** Os dois eixos antigos respondem "em que pé está"
- * e "de quem é". Nenhum responde *"quem chegou por anúncio"* — que é a pergunta
+ * e "de quem é". Nenhum responde *"quem chegou por anúncio"*, que é a pergunta
  * de quem paga mídia e quer saber se o dinheiro virou conversa. Com o funil
  * cheio, achar essas pessoas na lista exigia abrir uma por uma.
  *
  * `desconhecida` existe porque contato anterior a `atribuirOrigem` não tem o
- * campo, e some-los em "direto" seria afirmar o que ninguém mediu — o mesmo
+ * campo, e some-los em "direto" seria afirmar o que ninguém mediu, o mesmo
  * cuidado que `origemDoContato` já tem ao devolver `null`.
  */
 export type FiltroDeOrigem = 'todas' | 'anuncio' | 'direto' | 'desconhecida'
@@ -149,7 +149,7 @@ export function contarEstados<T extends { estadoEfetivo: 'aberta' | 'adiada' | '
  *
  * O recorte importa: com a aba "Abertas" ligada, "Sem dono 8" tem que contar
  * as oito abertas sem dono, não todas as sem dono do histórico. Contar fora do
- * estado faria o número do rail não bater com a lista logo abaixo dele — e um
+ * estado faria o número do rail não bater com a lista logo abaixo dele, e um
  * número que não bate com o que se vê é pior que número nenhum.
  */
 export function contarDonos<
@@ -187,11 +187,11 @@ export type LeadDoRail = {
  * conversa é grande e mora na `Fila` do `page.tsx`, junto de meia dúzia de
  * ajudantes que só ela usa (o relógio da janela, o resumo, a insígnia de não
  * lidas). Trazer tudo para cá seria mover trezentas linhas para ganhar um
- * filtro — e mover trezentas linhas no fim de uma sessão é como se quebra
+ * filtro, e mover trezentas linhas no fim de uma sessão é como se quebra
  * coisa que estava funcionando.
  *
- * Então este componente cuida do que é dele — o estado dos rails, o recorte, as
- * contagens — e devolve a lista já filtrada para quem sabe desenhá-la.
+ * Então este componente cuida do que é dele, o estado dos rails, o recorte, as
+ * contagens, e devolve a lista já filtrada para quem sabe desenhá-la.
  */
 export function RailsLocais<T extends LeadDoRail>({
   clienteId,
@@ -218,7 +218,7 @@ export function RailsLocais<T extends LeadDoRail>({
    * **Callback e não render prop.** A lista de conversas mora fora do
    * `<header>` onde os rails vivem, e envolvê-la neste componente exigiria
    * reorganizar o JSX da `Fila` inteira. Publicando o recorte para cima, quem
-   * desenha continua onde está — e este componente cuida só do que é dele.
+   * desenha continua onde está, e este componente cuida só do que é dele.
    */
   aoRecortar: (recorte: T[]) => void
 }) {
@@ -233,7 +233,7 @@ export function RailsLocais<T extends LeadDoRail>({
   /*
    * A origem é estado local e **não vai para a URL**, diferente dos outros dois.
    *
-   * Os rails de estado e dono respondem "onde eu parei" — dá para recarregar a
+   * Os rails de estado e dono respondem "onde eu parei", dá para recarregar a
    * página na aba certa, e o link serve para mandar para alguém. A origem é
    * recorte de análise: alguém pergunta "quem veio de anúncio?", olha, e volta.
    * Carregá-la na URL faria o link compartilhado levar o filtro de quem
@@ -330,7 +330,7 @@ export function RailsLocais<T extends LeadDoRail>({
 
       {/*
         A origem só aparece quando há o que separar. Numa conta em que ninguém
-        veio de anúncio, ela seria um menu que filtra nada — e filtro que não
+        veio de anúncio, ela seria um menu que filtra nada, e filtro que não
         recorta é ruído na tela mais usada do produto.
       */}
       {origens.anuncio > 0 && (

@@ -52,8 +52,8 @@ export type Plano = {
   /**
    * O que o card mostra.
    *
-   * **Nos planos de cima, a primeira linha é a herança** — "Tudo do Essencial",
-   * "Tudo da Operação" —, e só depois vem a franquia de conversa e o que é novo.
+   * **Nos planos de cima, a primeira linha é a herança**, "Tudo do Essencial",
+   * "Tudo da Operação" , e só depois vem a franquia de conversa e o que é novo.
    * Ela estava na terceira posição, abaixo de duas linhas repetidas de um card
    * para o outro, e assim ninguém a lia: quem compara três colunas parecidas
    * desiste na primeira diferença que não acha. Dizer primeiro que este plano

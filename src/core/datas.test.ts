@@ -5,7 +5,7 @@ import { VARIAVEIS_DE_DATA, varsDeData } from './datas'
  * As datas prontas do fluxo.
  *
  * O que precisa ser provado é o que ninguém confere olhando: virada de mês, de
- * ano, e o fuso. Um erro aqui não estoura — ele oferece um dia que já passou,
+ * ano, e o fuso. Um erro aqui não estoura, ele oferece um dia que já passou,
  * ou marca aula para a semana errada, e a mensagem sai bonita nos dois casos.
  */
 
@@ -55,7 +55,7 @@ describe('a semana', () => {
 describe('o fuso da conta, e não o do servidor', () => {
   it('às 21h em São Paulo ainda é hoje, mesmo já sendo amanhã em UTC', () => {
     // O erro que isto existe para impedir: `new Date().toISOString()` num
-    // servidor UTC vira o dia seguinte a partir das 21h em SP — que é
+    // servidor UTC vira o dia seguinte a partir das 21h em SP, que é
     // exatamente o horário em que se manda mensagem para marcar aula.
     const noiteEmSp = new Date('2026-09-02T00:30:00Z') // 21:30 do dia 1 em SP
 

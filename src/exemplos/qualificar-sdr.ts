@@ -132,7 +132,7 @@ export const qualificarSdr: Fluxo = fluxoSchema.parse({
           {
             tipo: 'texto',
             texto:
-              'Perfeito, {{nome}}. Já estou chamando alguém do time — a pessoa entra na conversa sabendo do seu caso. 🙌',
+              'Perfeito, {{nome}}. Já estou chamando alguém do time, a pessoa entra na conversa sabendo do seu caso. 🙌',
           },
         ],
       },
@@ -196,7 +196,7 @@ export const qualificarSdr: Fluxo = fluxoSchema.parse({
      * SDR atual deve perder essa associação implícita."
      *
      * A passagem ao humano continua acontecendo, e acontece em qualquer
-     * resultado — é o mesmo atendimento. O que muda é o que ela **declara**.
+     * resultado, é o mesmo atendimento. O que muda é o que ela **declara**.
      */
     {
       id: 'humano-a-pedido',

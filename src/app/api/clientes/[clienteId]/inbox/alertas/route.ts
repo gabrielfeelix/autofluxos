@@ -13,7 +13,7 @@ const paramsSchema = z.object({ clienteId: z.string().uuid() })
  * tem sessão ainda precisa ser **desta conta**, e é isso que a conferência
  * abaixo faz: com o login por usuário, "tem cookie" deixou de significar "pode
  * ver tudo". O payload não inclui telefone, campos coletados, histórico ou
- * segredo — só o necessário para anunciar que alguém espera atendimento.
+ * segredo, só o necessário para anunciar que alguém espera atendimento.
  */
 export async function GET(_req: Request, contexto: RouteContext<'/api/clientes/[clienteId]/inbox/alertas'>) {
   const params = paramsSchema.safeParse(await contexto.params)
@@ -25,7 +25,7 @@ export async function GET(_req: Request, contexto: RouteContext<'/api/clientes/[
    * **Atender é capacidade, não só associação** (RB-41, RB-42).
    *
    * Até a T2.2 esta rota conferia só a empresa. Quem perdeu `atender` pela
-   * tela de acesso continuava recebendo por aqui — e stream, contador e
+   * tela de acesso continuava recebendo por aqui, e stream, contador e
    * notificação são caminhos de dado como qualquer outro. "Esconder o botão
    * não é controle de acesso" vale para o que o navegador busca sozinho.
    */

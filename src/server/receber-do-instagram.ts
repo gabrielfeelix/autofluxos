@@ -22,7 +22,7 @@ import { alertar } from './alertar'
  * Instagram manda `entry[].messaging[]` com `sender`/`recipient` e um
  * `message` de forma completamente outra.
  *
- * O que acontece depois é idêntico — deduplicar, achar o contato, pegar a
+ * O que acontece depois é idêntico, deduplicar, achar o contato, pegar a
  * trava da conversa, rodar o motor, gravar, entregar. É por isso que a
  * tradução mora aqui e `tratarUma` mora lá, exportada: um `if (canal ===
  * 'instagram')` dentro daquele arquivo espalharia a diferença por todo o
@@ -43,7 +43,7 @@ import { alertar } from './alertar'
  *    numa resposta escrita, e o motor perderia a saída certa.
  * 3. **`recipient.id` é a conta do cliente, `sender.id` é quem escreveu.** No
  *    WhatsApp o par é `metadata.phone_number_id` e `from`. Trocar os dois faz o
- *    produto procurar um canal com o id do contato — e não achar nada, em
+ *    produto procurar um canal com o id do contato, e não achar nada, em
  *    silêncio, para sempre.
  */
 
@@ -67,7 +67,7 @@ const mensagemDoInstagramSchema = z.object({
  * Um evento de mensagem: quem mandou, para quem, e o quê.
  *
  * Vale só para os eventos que **têm** remetente e destinatário. O mesmo array
- * `messaging` carrega outros — ver abaixo por que isso importa.
+ * `messaging` carrega outros, ver abaixo por que isso importa.
  */
 const eventoDeMensagemSchema = z.object({
   sender: z.object({ id: z.string() }),
@@ -88,7 +88,7 @@ export const webhookDoInstagramSchema = z.object({
          * O array `messaging` mistura coisas: a mensagem em si, e também
          * `read`, `seen`, `reaction` e outros avisos que não trazem `sender`
          * nem `recipient`. Com um `z.array(objeto)` comum, o zod reprova o
-         * **payload inteiro** quando qualquer item não encaixa — então um aviso
+         * **payload inteiro** quando qualquer item não encaixa, então um aviso
          * de leitura chegando no mesmo lote fazia a mensagem de verdade ser
          * descartada junto, sem erro visível em lugar nenhum.
          *
@@ -106,7 +106,7 @@ export const webhookDoInstagramSchema = z.object({
  *
  * A Meta usa `image`, `video`, `audio`, `file`, `share`, `story_mention`,
  * `ig_reel`. `paraEntrada` do lado do WhatsApp guarda o `type` cru em
- * `formato`, e é isso que o desenho vê na saída "mandou arquivo" — então
+ * `formato`, e é isso que o desenho vê na saída "mandou arquivo", então
  * traduzir para o vocabulário do WhatsApp é o que faz o mesmo fluxo se
  * comportar igual nos dois canais.
  */
@@ -118,7 +118,7 @@ const TIPO_DO_ANEXO: Record<string, string> = {
   // Figurinha, reel compartilhado, menção em story: não são arquivo que o
   // fluxo saiba tratar, mas também não podem virar texto vazio. Caem no mesmo
   // caminho de mídia, que leva a conversa para uma pessoa quando o desenho
-  // não trata — o comportamento certo para "chegou algo que não sei ler".
+  // não trata, o comportamento certo para "chegou algo que não sei ler".
   share: 'sticker',
   story_mention: 'sticker',
   ig_reel: 'video',
@@ -150,7 +150,7 @@ export function paraMensagemInterna(
         button_reply: {
           id: mensagem.quick_reply.payload,
           // O rótulo que a pessoa viu é o texto que veio junto. É o que fica no
-          // histórico — "Agendar aula" em vez de `agendar`.
+          // histórico, "Agendar aula" em vez de `agendar`.
           ...(mensagem.text ? { title: mensagem.text } : {}),
         },
       },
@@ -179,7 +179,7 @@ export function paraMensagemInterna(
     return { ...base, type: 'text', text: { body: mensagem.text } }
   }
 
-  // Reação, entrega, leitura — eventos que não são mensagem. Ignorar é a
+  // Reação, entrega, leitura, eventos que não são mensagem. Ignorar é a
   // resposta certa, e ignorar em silêncio também: eles chegam o tempo todo.
   return null
 }
@@ -187,7 +187,7 @@ export function paraMensagemInterna(
 /**
  * Monta o adaptador de saída de um canal, lendo o token do cofre.
  *
- * **É `async`, e `FabricaDeCanal` não é** — de propósito nos dois lados. A
+ * **É `async`, e `FabricaDeCanal` não é**, de propósito nos dois lados. A
  * fábrica é chamada de dentro do laço de ações, onde um `await` a mais por
  * mensagem entraria no orçamento do webhook; ler o Vault é uma ida ao banco.
  * Resolver aqui, uma vez por conversa, e devolver a função já pronta concilia
@@ -221,7 +221,7 @@ const TETO_DE_NOMES = 500
 /**
  * Como se chama quem mandou, quando dá para saber.
  *
- * O webhook do Instagram não traz o nome junto da mensagem — ao contrário do
+ * O webhook do Instagram não traz o nome junto da mensagem, ao contrário do
  * WhatsApp, que manda de graça. Sem esta consulta o Inbox mostra uma fileira de
  * números de 17 dígitos, e quem atende não reconhece ninguém.
  *
@@ -273,7 +273,7 @@ export async function receberDoInstagram(
   /*
    * Quantas mensagens este corpo produziu.
    *
-   * Zero é normal e frequente — leitura, reação e entrega chegam no mesmo
+   * Zero é normal e frequente, leitura, reação e entrega chegam no mesmo
    * endereço e não viram nada. O que não é normal é a conta receber direct e
    * nunca produzir mensagem, e nesse caso o corpo cru no log é a única forma de
    * descobrir que evento a Meta está mandando no lugar de `messages`.
@@ -282,7 +282,7 @@ export async function receberDoInstagram(
 
   for (const entrada of analise.data.entry) {
     for (const evento of entrada.messaging) {
-      // `null` é o aviso que não é mensagem — leitura, reação, entrega.
+      // `null` é o aviso que não é mensagem, leitura, reação, entrega.
       if (!evento?.message) continue
 
       // Armadilha 3: `recipient` é a conta do cliente; `sender` é quem
@@ -294,7 +294,7 @@ export async function receberDoInstagram(
        * Não achar canal era um `continue` mudo, e isso custou uma tarde.
        *
        * A conta aparecia conectada, o webhook chegava, e a mensagem sumia aqui
-       * sem deixar rastro em lugar nenhum — nem log, nem alerta, nem linha no
+       * sem deixar rastro em lugar nenhum, nem log, nem alerta, nem linha no
        * banco. O identificador que a Meta manda em `recipient.id` precisa ser o
        * mesmo que foi gravado em `channels.ig_user_id` na conexão, e quando não
        * é, a única forma de descobrir qual ele é de verdade é esta: dizer.
@@ -317,7 +317,7 @@ export async function receberDoInstagram(
       // WhatsApp. Fora do teste, o token vem do Vault.
       const fabrica = fabricaDeCanal ?? (await fabricaDoInstagram(canalSalvo))
 
-      // O nome não vem no webhook, vem de uma consulta — e ela é feita uma vez
+      // O nome não vem no webhook, vem de uma consulta, e ela é feita uma vez
       // por pessoa, não uma por mensagem. Ver `nomeDeQuemMandou`.
       const nome = await nomeDeQuemMandou(canalSalvo, evento.sender.id)
 

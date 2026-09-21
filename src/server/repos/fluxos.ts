@@ -12,7 +12,7 @@ import { listarQuadros } from './quadros'
 import { acharCliente } from './clientes'
 
 /**
- * Um fluxo salvo no banco. `rascunho` é o grafo mutável — o que o editor
+ * Um fluxo salvo no banco. `rascunho` é o grafo mutável, o que o editor
  * escreve. O publicado vira linha imutável em `flow_versions` no passo 5.
  */
 export type FluxoSalvo = {
@@ -35,7 +35,7 @@ export type FluxoSalvo = {
   /**
    * Ligado? (0036)
    *
-   * Desligado **não abre conversa nova** — nenhum papel do número, nenhum
+   * Desligado **não abre conversa nova**, nenhum papel do número, nenhum
    * gatilho, nenhuma campanha e nenhum salto de outro fluxo entram aqui. O que
    * já estava andando termina: cortar no meio de uma pergunta deixaria a pessoa
    * falando sozinha, e quem desligou queria parar de captar.
@@ -50,7 +50,7 @@ export type FluxoSalvo = {
    *
    * É escolhido ao criar e não muda depois: os limites que o `validar()` cobra
    * são os do canal, então trocar o canal de um desenho pronto transformaria um
-   * fluxo válido em inválido — ou, pior, num fluxo aceito por medidas que não
+   * fluxo válido em inválido, ou, pior, num fluxo aceito por medidas que não
    * são as de quem vai executá-lo. Quem quer o mesmo atendimento em dois canais
    * duplica a automação, que é o que ManyChat e Chatfuel também fazem.
    */
@@ -65,7 +65,7 @@ export type VersaoPublicada = {
    *
    * A sessão guarda a **versão**, não o fluxo, e até a A6 dava para deduzir o
    * fluxo pelo número que a conversa entrou (era um só). Com quatro papéis por
-   * número e gatilhos que abrem qualquer fluxo, deduzir passou a errar — e
+   * número e gatilhos que abrem qualquer fluxo, deduzir passou a errar, e
    * quem lê isso é o portão comercial da IA, que não pode olhar para o contrato
    * do fluxo errado.
    */
@@ -94,7 +94,7 @@ const COLUNAS =
 
 /**
  * `rascunho` é `jsonb`: o banco aceita qualquer coisa ali. Uma migração
- * malfeita, um `update` na mão pelo painel, uma versão antiga do schema — e o
+ * malfeita, um `update` na mão pelo painel, uma versão antiga do schema, e o
  * motor receberia lixo. Validar na leitura é a mesma disciplina da fronteira
  * de rede, e o erro aponta o fluxo culpado em vez de estourar lá dentro.
  */
@@ -130,7 +130,7 @@ export async function listarFluxos(clienteId: string): Promise<FluxoSalvo[]> {
     .eq('client_id', clienteId)
     /*
      * A posição escolhida primeiro; quem nunca foi arrastado vai para o fim,
-     * na ordem em que nasceu — que é como a lista sempre saiu (migration 0046).
+     * na ordem em que nasceu, que é como a lista sempre saiu (migration 0046).
      */
     .order('ordem', { ascending: true, nullsFirst: false })
     .order('criado_em', { ascending: true })
@@ -171,7 +171,7 @@ export async function criarFluxo(
   return paraFluxo(data as Linha)
 }
 
-/** Salva o desenho. Valida antes de gravar — o banco nunca recebe grafo torto. */
+/** Salva o desenho. Valida antes de gravar, o banco nunca recebe grafo torto. */
 export async function salvarRascunho(
   fluxoId: string,
   clienteId: string,
@@ -214,7 +214,7 @@ export async function acharVersao(id: string): Promise<VersaoPublicada | null> {
  *
  * O par (versão, fluxo) vem junto porque o id da versão chega da tela, e a tela
  * é adivinhável. Sem o `flow_id` no filtro, mandar o id de uma versão de outro
- * cliente publicaria o desenho dele aqui dentro — o mesmo buraco que a fase 1
+ * cliente publicaria o desenho dele aqui dentro, o mesmo buraco que a fase 1
  * fechou nas outras escritas.
  */
 export async function acharVersaoDoFluxo(
@@ -272,7 +272,7 @@ export async function listarVersoes(
  * estava no banco.
  *
  * O contrato de IA é lido **aqui**, do banco, e não recebido por parâmetro. Um
- * booleano que chega de fora é um booleano que a chamada errada manda `true` —
+ * booleano que chega de fora é um booleano que a chamada errada manda `true` ,
  * e este é o portão que separa quem paga pela Etapa 2 de quem não paga.
  */
 export async function publicar(
@@ -303,7 +303,7 @@ export async function publicar(
   const cliente = await acharCliente(fluxo.clienteId)
   // As etapas entram pelo mesmo motivo das conexões: uma aba aberta há uma hora
   // publicaria fluxo apontando para etapa já apagada, e o bloco não moveria
-  // ninguém — em silêncio, que é o pior jeito de um fluxo deixar de funcionar.
+  // ninguém, em silêncio, que é o pior jeito de um fluxo deixar de funcionar.
   const etapas = (await listarQuadros(fluxo.clienteId)).flatMap((quadro) =>
     quadro.etapas.map((etapa) => etapa.id),
   )
@@ -316,7 +316,7 @@ export async function publicar(
     etapas,
     etiquetas,
     temContextoDeNegocio: (cliente?.contextoNegocio ?? '').trim() !== '',
-    // Sem isto, um fluxo de Instagram publicava com as medidas do WhatsApp — e
+    // Sem isto, um fluxo de Instagram publicava com as medidas do WhatsApp, e
     // era o adaptador quem cortava depois, calado, na conversa de alguém.
     canal: fluxo.canal,
   })
@@ -374,7 +374,7 @@ export async function publicar(
  *
  * Recusa quando ela está no ar em algum número: apagar um fluxo publicado que
  * um número executa deixa o bot mudo no WhatsApp de gente de verdade, e o
- * caminho honesto é desligar o número do fluxo primeiro — um ato deliberado, em
+ * caminho honesto é desligar o número do fluxo primeiro, um ato deliberado, em
  * vez de um efeito colateral de "apagar aquele teste ali".
  *
  * O par (fluxo, cliente) vem junto porque a URL é adivinhável, como em toda
@@ -392,7 +392,7 @@ export async function apagarFluxo(
   // **Os quatro papéis, não só o principal** (0024). Um fluxo que só é o
   // "padrão para mídia" de um número não aparecia nesta conferência quando ela
   // olhava apenas `flow_id`, e apagá-lo devolveria a mídia ao handoff sem
-  // ninguém ter pedido — em silêncio, que é o pior jeito de um produto mudar.
+  // ninguém ter pedido, em silêncio, que é o pior jeito de um produto mudar.
   const { data: canais, error: erroDosCanais } = await db()
     .from('channels')
     .select('phone_number_id')
@@ -413,20 +413,20 @@ export async function apagarFluxo(
     const numeros = [...new Set(ligados.map((c) => c.phone_number_id))]
     return {
       ok: false,
-      motivo: `esta automação está ligada ao número ${numeros.join(', ')}. Desligue lá primeiro — apagar agora deixaria o bot mudo no WhatsApp.`,
+      motivo: `esta automação está ligada ao número ${numeros.join(', ')}. Desligue lá primeiro, apagar agora deixaria o bot mudo no WhatsApp.`,
     }
   }
 
   // **E as sequências (0031)**, pela mesma razão dos quatro papéis: um fluxo
   // que é o passo 2 de um acompanhamento está tão em uso quanto o principal, e
   // apagá-lo pararia a sequência em silêncio. A chave estrangeira do passo é
-  // `on delete restrict`, então o banco recusaria de qualquer forma — o que
+  // `on delete restrict`, então o banco recusaria de qualquer forma, o que
   // esta conferência acrescenta é a frase que diz onde ir desligar.
   const sequencias = await sequenciasQueUsamOFluxo(fluxoId)
   if (sequencias.length > 0) {
     return {
       ok: false,
-      motivo: `esta automação é um passo da sequência ${sequencias.join(', ')}. Tire o passo de lá primeiro — apagar agora pararia o acompanhamento no meio.`,
+      motivo: `esta automação é um passo da sequência ${sequencias.join(', ')}. Tire o passo de lá primeiro, apagar agora pararia o acompanhamento no meio.`,
     }
   }
 
@@ -434,7 +434,7 @@ export async function apagarFluxo(
    * **E os outros fluxos que saltam para este.**
    *
    * O bloco `ir-fluxo` vive dentro do grafo, não numa tabela, então não existe
-   * chave estrangeira para o banco recusar — diferente do número e da
+   * chave estrangeira para o banco recusar, diferente do número e da
    * sequência acima. Sem esta conferência, apagar um fluxo de destino deixava
    * o salto apontando para o vazio: quem chegasse ali ia para uma pessoa, e o
    * único lugar onde isso aparecia era o validador **do outro fluxo**, na
@@ -444,7 +444,7 @@ export async function apagarFluxo(
   if (apontam.length > 0) {
     return {
       ok: false,
-      motivo: `${apontam.length === 1 ? 'a automação' : 'as automações'} ${apontam.join(', ')} ${apontam.length === 1 ? 'salta' : 'saltam'} para esta. Tire o bloco "ir para outra automação" de lá primeiro — apagar agora deixaria o salto sem destino.`,
+      motivo: `${apontam.length === 1 ? 'a automação' : 'as automações'} ${apontam.join(', ')} ${apontam.length === 1 ? 'salta' : 'saltam'} para esta. Tire o bloco "ir para outra automação" de lá primeiro, apagar agora deixaria o salto sem destino.`,
     }
   }
 
@@ -454,14 +454,14 @@ export async function apagarFluxo(
 }
 
 /**
- * Quem salta para este fluxo — a consulta reversa do bloco `ir-fluxo`.
+ * Quem salta para este fluxo, a consulta reversa do bloco `ir-fluxo`.
  *
  * **Existe porque o salto não tem chave estrangeira.** O destino mora dentro do
  * `rascunho`, que é `jsonb`, então o banco não sabe que uma automação depende
  * da outra: apagar a de destino é aceito sem reclamar e quebra a de origem em
  * silêncio.
  *
- * Filtra por `client_id` como toda leitura daqui — e aqui isso importa duas
+ * Filtra por `client_id` como toda leitura daqui, e aqui isso importa duas
  * vezes: sem o filtro, a frase de recusa citaria o **nome de uma automação de
  * outro cliente**, que é vazamento de dado por mensagem de erro.
  *
@@ -491,8 +491,8 @@ export async function fluxosQueSaltamPara(
       /*
        * Lê o grafo cru, sem passar pelo schema.
        *
-       * Um rascunho que não dá parse — grafo de uma versão antiga, meio
-       * salvo — não pode fazer a conferência estourar e impedir que alguém
+       * Um rascunho que não dá parse, grafo de uma versão antiga, meio
+       * salvo, não pode fazer a conferência estourar e impedir que alguém
        * apague qualquer coisa. Aqui só interessa uma pergunta: existe um nó
        * `ir-fluxo` apontando para este id?
        */
@@ -510,7 +510,7 @@ export async function fluxosQueSaltamPara(
 /**
  * Liga ou desliga a automação inteira (0036).
  *
- * Devolve `false` quando o fluxo não é deste cliente — o par (fluxo, cliente)
+ * Devolve `false` quando o fluxo não é deste cliente, o par (fluxo, cliente)
  * anda junto em toda escrita daqui, porque a URL é adivinhável.
  */
 export async function definirAtivo(
@@ -538,7 +538,7 @@ export async function definirAtivo(
  *
  * **Isto não existia**, e a falta apareceu do jeito mais direto possível: quem
  * estava usando escreveu "não consigo editar o nome dos fluxos". O nome era
- * decidido no modal de criação e nunca mais — então um "Fluxo - teste" nascido
+ * decidido no modal de criação e nunca mais, então um "Fluxo - teste" nascido
  * às pressas ficava assim para sempre, ou virava um fluxo novo e um desenho
  * copiado à mão.
  *
@@ -573,8 +573,8 @@ export async function renomearFluxo(
  * Duplicar uma automação.
  *
  * O pedido foi literal: *"tem que ser possível duplicar algum fluxo existente
- * também"*. Quem opera monta uma variação do fluxo que já funciona — o mesmo
- * atendimento com outro texto, outro canal — e até aqui a única saída era
+ * também"*. Quem opera monta uma variação do fluxo que já funciona, o mesmo
+ * atendimento com outro texto, outro canal, e até aqui a única saída era
  * redesenhar tudo à mão e errar um nó no meio.
  *
  * **A cópia nasce desligada e sem versão publicada, e isso não é detalhe.**
@@ -584,7 +584,7 @@ export async function renomearFluxo(
  * cópia é rascunho até alguém publicar, que é o mesmo caminho de qualquer
  * automação nova.
  *
- * O que vem junto: o desenho, o canal, a pasta e o ajuste de IA — tudo que
+ * O que vem junto: o desenho, o canal, a pasta e o ajuste de IA, tudo que
  * descreve **como** ela funciona. O que fica para trás: o estado de publicação,
  * as métricas e o histórico de versões, que descrevem o que a original fez e
  * não pertencem à cópia.
@@ -603,7 +603,7 @@ export async function duplicarFluxo(
   /*
    * O nome precisa caber no limite depois do sufixo, e não antes: "(cópia)"
    * são sete caracteres, e um nome no teto viraria um `check` recusado pelo
-   * banco — erro de banco numa tela que devia só copiar.
+   * banco, erro de banco numa tela que devia só copiar.
    */
   const SUFIXO = ' (cópia)'
   const base = original.nome.slice(0, LIMITE_NOME_DO_FLUXO - SUFIXO.length).trimEnd()
@@ -630,13 +630,13 @@ export async function duplicarFluxo(
  * A nova ordem da lista, inteira.
  *
  * Recebe os ids na ordem desejada e grava a posição de cada um. Reescrever
- * todos numa passada — em vez de "troque o 3 com o 4" — é o que mantém a lista
+ * todos numa passada, em vez de "troque o 3 com o 4", é o que mantém a lista
  * consistente quando duas abas arrastam ao mesmo tempo: a última a gravar
  * ganha por inteiro, em vez de as duas aplicarem trocas parciais e sobrar uma
  * ordem que ninguém pediu.
  *
  * Ids que não são do cliente são ignorados pelo `eq('client_id')` de cada
- * escrita — a URL é adivinhável, e reordenar não pode virar uma forma de
+ * escrita, a URL é adivinhável, e reordenar não pode virar uma forma de
  * descobrir se um id existe em outra conta.
  */
 export async function reordenarFluxos(
@@ -648,8 +648,8 @@ export async function reordenarFluxos(
 
   /*
    * Uma escrita por linha. São dezenas, não milhares, e a alternativa
-   * (`upsert` em lote) exigiria mandar a linha inteira de volta — inclusive o
-   * `rascunho`, que é o campo grande — só para mudar um inteiro.
+   * (`upsert` em lote) exigiria mandar a linha inteira de volta, inclusive o
+   * `rascunho`, que é o campo grande, só para mudar um inteiro.
    */
   for (const [posicao, id] of ids.entries()) {
     const { error } = await db()
@@ -717,7 +717,7 @@ export async function resumirAutomacoes(): Promise<Map<string, ResumoDeAutomacoe
  * linha de baixo dizia que as mensagens "não receberão resposta automática".
  *
  * A causa era ler só `leads.automacao_ativa`, que é um **interruptor por
- * conversa** — ele nasce ligado e significa "esta conversa não foi silenciada",
+ * conversa**, ele nasce ligado e significa "esta conversa não foi silenciada",
  * não "existe robô". Sem fluxo, ele fica ligado para sempre e a tela afirma um
  * estado impossível.
  *
@@ -735,7 +735,7 @@ export async function resumirAutomacoes(): Promise<Map<string, ResumoDeAutomacoe
  * é rascunho, e rascunho não responde ninguém. É por isso que a pergunta não é
  * "tem linha em `flows`?".
  *
- * Devolve `false` na dúvida — **nunca estoura**. Esta resposta decide um texto
+ * Devolve `false` na dúvida, **nunca estoura**. Esta resposta decide um texto
  * de tela, e derrubar o Inbox inteiro porque uma contagem falhou seria trocar
  * um rótulo errado por uma página quebrada.
  */
@@ -771,7 +771,7 @@ export async function clienteTemAutomacao(clienteId: string): Promise<boolean> {
  * tem por onde receber conversa, e a RB-45 manda avisar sobre "bot publicado
  * sem entrada". Para isso, "entrada" tem que ser a lista inteira:
  *
- *   1. **papel de número** — os quatro de `PAPEIS_DO_NUMERO`, e não só o
+ *   1. **papel de número**, os quatro de `PAPEIS_DO_NUMERO`, e não só o
  *      principal: um fluxo que é o "padrão para mídia" de um número está tão no
  *      ar quanto o principal, e avisar "sem entrada" sobre ele seria mentira;
  *   2. **palavra-chave** (`gatilhos`);
@@ -900,7 +900,7 @@ export async function conversasEmAndamento(
  *
  * É a versão em lote de `conversasEmAndamento`, e ela existe pela mesma razão de
  * `relacionamentoDeMuitos`: a lista de automações desenha uma linha por fluxo, e
- * chamar a versão de um por um seria duas idas ao banco **por fluxo** — o N+1
+ * chamar a versão de um por um seria duas idas ao banco **por fluxo**, o N+1
  * clássico, numa tela que já faz cinco consultas.
  *
  * Aqui são duas, independentes do tamanho da lista. A agregação é em JavaScript

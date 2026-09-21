@@ -20,7 +20,7 @@ describe('os modelos de fluxo', () => {
     expect(conferido.ok, JSON.stringify(conferido.ok ? [] : conferido.erros)).toBe(true)
   })
 
-  it('nenhum usa IA — ela é plano à parte e o validador recusaria', () => {
+  it('nenhum usa IA, ela é plano à parte e o validador recusaria', () => {
     for (const modelo of MODELOS) {
       expect(modelo.grafo.nodes.some((no) => no.type === 'ia')).toBe(false)
     }
@@ -39,7 +39,7 @@ describe('os modelos de fluxo', () => {
  * Os dois fluxos que quem opera descreveu falando.
  *
  * O teste de validade acima já prova que eles publicam. O que falta provar é
- * que fazem **o que foi pedido** — e cada caso abaixo é uma frase do pedido
+ * que fazem **o que foi pedido**, e cada caso abaixo é uma frase do pedido
  * virada em conferência, porque é o tipo de coisa que se perde na primeira
  * refatoração que "arruma" o desenho.
  */

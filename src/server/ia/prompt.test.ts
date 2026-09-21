@@ -27,7 +27,7 @@ describe('o prompt fecha o escopo', () => {
 
   /**
    * A política da Meta proíbe IA de propósito geral na Business API. Se estas
-   * instruções sumirem, o número do cliente é que paga — por isso viram teste.
+   * instruções sumirem, o número do cliente é que paga, por isso viram teste.
    */
   it('proíbe responder fora do contexto e manda sinalizar quando não souber', () => {
     const { sistema } = montarPrompt(pedido)
@@ -53,7 +53,7 @@ describe('o prompt fecha o escopo', () => {
     expect(usuario).toContain('vocês pintam apartamento?')
   })
 
-  it('corta histórico antigo — conversa de triagem não precisa de memória longa', () => {
+  it('corta histórico antigo, conversa de triagem não precisa de memória longa', () => {
     const historico = Array.from({ length: 20 }, (_, i) => ({
       de: 'pessoa' as const,
       texto: `mensagem ${i}`,

@@ -13,13 +13,13 @@ import type { WebhookDeEntrada } from '@/server/repos/webhooks-de-entrada'
  *
  * **A tela existe para resolver um problema de confiança, não de cadastro.** O
  * segredo aparece **uma vez**, no instante em que nasce, e some da tela para
- * sempre — porque não existe em lugar nenhum fora do cofre. Quem fechar sem
+ * sempre, porque não existe em lugar nenhum fora do cofre. Quem fechar sem
  * copiar gera outro, que é um clique. Guardar um jeito de reexibir seria
  * guardar um jeito de vazar.
  *
  * E a tela mostra **como assinar**, com o comando pronto. Sem isso, a
  * integração do outro lado é adivinhação: HMAC-SHA256 do corpo cru, hex, no
- * cabeçalho — cada um desses detalhes errado dá o mesmo 401 sem pista nenhuma.
+ * cabeçalho, cada um desses detalhes errado dá o mesmo 401 sem pista nenhuma.
  */
 export function WebhooksDeEntrada({
   clienteId,
@@ -54,7 +54,7 @@ export function WebhooksDeEntrada({
       {novo && (
         <div className="mb-4 rounded-lg border border-amber-400/30 bg-amber-400/[0.07] px-4 py-3">
           <p className="text-[12px] font-semibold text-aviso">
-            Copie o segredo agora — ele não aparece de novo.
+            Copie o segredo agora, ele não aparece de novo.
           </p>
           <code className="mt-2 block overflow-x-auto rounded bg-black/30 px-2.5 py-2 font-mono text-[11px] break-all text-soft">
             {novo}
@@ -161,7 +161,7 @@ curl -X POST ${endereco} \\
         <p className="mt-2 text-[10.5px] leading-4 text-dim">
           O <code className="font-mono">evento</code> precisa ser o mesmo nome cadastrado na lista
           acima, e o <code className="font-mono">telefone</code> tem que ser de alguém que já
-          conversou com você — fora da janela de 24h do WhatsApp o aviso fica registrado na ficha,
+          conversou com você, fora da janela de 24h do WhatsApp o aviso fica registrado na ficha,
           mas não é enviado.
         </p>
       </details>

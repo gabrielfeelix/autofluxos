@@ -87,7 +87,7 @@ describe('a régua de uma venda nova', () => {
    * O A14: "comprou, não sei quanto" é registro legítimo. Exigir valor faria
    * a pessoa inventar um número para conseguir salvar.
    */
-  it('não exige valor — comprar sem saber quanto é caso real', () => {
+  it('não exige valor, comprar sem saber quanto é caso real', () => {
     expect(conferirVenda({ dataDaVenda: '2026-09-18T10:00:00Z' }, AGORA).ok).toBe(true)
     expect(
       conferirVenda({ dataDaVenda: '2026-09-18T10:00:00Z', valorTotal: null }, AGORA).ok,

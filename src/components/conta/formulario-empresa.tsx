@@ -11,10 +11,10 @@ import { CampoDeTelefone } from '@/components/design/campo-de-telefone'
  * que os dois compartilham de verdade é o `Portico` em volta.
  *
  * **Três campos, e só um obrigatório.** A tentação num primeiro acesso é
- * aproveitar que a pessoa está engajada e perguntar tudo — segmento, tamanho de
+ * aproveitar que a pessoa está engajada e perguntar tudo, segmento, tamanho de
  * equipe, objetivo. O concorrente direto não pergunta nada disso, e o motivo é
  * bom: dado que ninguém lê depois é atrito cobrado adiantado. O que fica é o que
- * o produto usa — o nome vira a conta, o telefone é como falamos com ela, e o
+ * o produto usa, o nome vira a conta, o telefone é como falamos com ela, e o
  * contexto alimenta a IA do chatbot de verdade.
  */
 export function FormularioDeEmpresa({
@@ -22,7 +22,7 @@ export function FormularioDeEmpresa({
   telefoneInicial = '',
 }: {
   action: (formData: FormData) => Promise<{ ok?: boolean; erro?: string } | void>
-  /** Veio da tela de cadastro pela URL — a pessoa já digitou, não pergunte de novo. */
+  /** Veio da tela de cadastro pela URL, a pessoa já digitou, não pergunte de novo. */
   telefoneInicial?: string
 }) {
   const [erro, setErro] = useState<string | null>(null)

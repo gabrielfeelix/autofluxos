@@ -4,7 +4,7 @@
  * A caixa de seleção do painel.
  *
  * O sistema não tinha uma: todo lugar usava `<input type="checkbox">` cru com
- * `accent-color`, e o navegador desenhava o quadrado dele — canto reto, sem o
+ * `accent-color`, e o navegador desenhava o quadrado dele, canto reto, sem o
  * raio de 10px que o resto da tela usa, e em três telas com uma cor de destaque
  * (`#56d0f5`) que não é mais a cor da marca. É a diferença entre um painel e um
  * formulário: nada ali estava errado sozinho, e junto dizia "isto foi montado
@@ -16,7 +16,7 @@
  * continua clicando nela, e um `<form>` continua enviando o valor. Desenhar uma
  * caixa falsa com `<div>` custaria todas essas quatro coisas.
  *
- * O raio e o anel de foco são os do `.app-field` de propósito — foco precisa
+ * O raio e o anel de foco são os do `.app-field` de propósito, foco precisa
  * parecer foco em todo lugar.
  */
 export function Caixa({
@@ -34,7 +34,7 @@ export function Caixa({
   rotuloAcessivel?: string
   /** Nome no formulário, quando ela for enviada por um. */
   nome?: string
-  /** Para o alinhamento de quem a usa — `mt-0.5` ao lado de texto de duas linhas. */
+  /** Para o alinhamento de quem a usa, `mt-0.5` ao lado de texto de duas linhas. */
   className?: string
 }) {
   return (

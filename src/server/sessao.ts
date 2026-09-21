@@ -17,7 +17,7 @@ import { autenticacao, bancoDoLogin } from './auth'
  * o servidor que renderiza ou executa, e é este módulo.
  */
 
-/** O papel de **plataforma** — administrador da 4YU. Mora em `af_usuarios.role`. */
+/** O papel de **plataforma**, administrador da 4YU. Mora em `af_usuarios.role`. */
 const PAPEL_ADMIN = 'admin'
 
 export type UsuarioDaSessao = {
@@ -44,7 +44,7 @@ export type SessaoAtual = {
  * A sessão de agora, ou `null`.
  *
  * **Falha fechada, e de propósito.** Sem `DATABASE_URL`, ou com o banco fora,
- * `getSession` estoura — e uma exceção aqui derrubaria também as telas que hoje
+ * `getSession` estoura, e uma exceção aqui derrubaria também as telas que hoje
  * funcionam pela senha única, que não têm nada a ver com este sistema. Devolver
  * `null` degrada para "ninguém está logado", que é o lado seguro: quem depende
  * de sessão não entra, e quem não depende continua de pé.
@@ -72,7 +72,7 @@ export async function sessaoAtual(): Promise<SessaoAtual | null> {
     }
   } catch (erro) {
     console.error(
-      '[sessao] não deu para ler a sessão — tratando como deslogado',
+      '[sessao] não deu para ler a sessão, tratando como deslogado',
       erro instanceof Error ? erro.message : erro,
     )
     return null
@@ -90,7 +90,7 @@ export async function exigirUsuario(): Promise<SessaoAtual> {
  * O papel de plataforma vem como lista separada por vírgula.
  *
  * É o formato do plugin `admin` (`role: 'admin,suporte'`), e comparar a string
- * inteira com `'admin'` daria falso justamente para quem tem mais de um papel —
+ * inteira com `'admin'` daria falso justamente para quem tem mais de um papel ,
  * o erro apareceria no dia em que alguém ganhasse o segundo.
  */
 export function ehAdminDaPlataforma(sessao: SessaoAtual | null): boolean {
@@ -119,7 +119,7 @@ export type ContaDoUsuario = {
   nome: string
   slug: string
   logoUrl: string
-  /** `owner`, `admin` ou `member` — o papel **dentro desta conta**. */
+  /** `owner`, `admin` ou `member`, o papel **dentro desta conta**. */
   papel: string
 }
 
@@ -157,7 +157,7 @@ export async function contasDoUsuario(usuarioId: string): Promise<ContaDoUsuario
  * **É esta função que fecha o furo que o handoff descreve**: hoje todo
  * repositório assume "quem está logado pode tudo em qualquer cliente". Ela é a
  * pergunta que falta. A varredura que a espalha por todas as rotas é frente
- * própria — aqui ela nasce, e as telas novas já a usam.
+ * própria, aqui ela nasce, e as telas novas já a usam.
  *
  * Administrador da 4YU **não** é tratado como membro por atalho: para agir
  * dentro de uma conta ele usa o "entrar como", que deixa rastro. Um atalho aqui
@@ -175,7 +175,7 @@ export async function papelNaConta(usuarioId: string, contaId: string): Promise<
  * Já existe alguém cadastrado?
  *
  * O cadastro do primeiro administrador precisa saber disso **antes** de existir
- * qualquer sessão — é a pergunta que não dá para fazer autenticado. Depois do
+ * qualquer sessão, é a pergunta que não dá para fazer autenticado. Depois do
  * primeiro usuário a resposta nunca mais muda, e é ela que fecha a porta.
  */
 export async function existeAlgumUsuario(): Promise<boolean> {
@@ -204,7 +204,7 @@ export async function acharUsuario(id: string): Promise<UsuarioDaSessao | null> 
 }
 
 /**
- * Para onde a pessoa vai quando entra — e para onde a tela de entrar a manda se
+ * Para onde a pessoa vai quando entra, e para onde a tela de entrar a manda se
  * ela já estava logada.
  *
  * Mora aqui, e não junto das ações, porque **duas** telas precisam da mesma
@@ -224,7 +224,7 @@ export async function destinoAposEntrar(sessao: SessaoAtual): Promise<string> {
 
 export type AcessoAoCliente = {
   sessao: SessaoAtual
-  /** `owner`, `admin`, `member` — ou nulo para o administrador da plataforma. */
+  /** `owner`, `admin`, `member`, ou nulo para o administrador da plataforma. */
   papel: string | null
 }
 
@@ -234,7 +234,7 @@ export type AcessoAoCliente = {
  * Quem entrou como pessoa vê o que aquela pessoa vê.
  *
  * O administrador da plataforma passa mesmo sem ser membro, e essa é a linha que
- * ainda sobra do desenho antigo — a saída dela é "só impersonando", que deixa
+ * ainda sobra do desenho antigo, a saída dela é "só impersonando", que deixa
  * rastro na auditoria. Fica aqui, escrito, porque agora é a **única** forma de
  * alcançar uma conta sem ser membro: com a senha única fora, é a última porta
  * larga do sistema, e a decisão de fechá-la é do dono (ver
@@ -253,7 +253,7 @@ export async function exigirAcessoAoCliente(contaId: string): Promise<AcessoAoCl
 }
 
 /**
- * A mesma pergunta, sem redirecionar — é a forma que serve a rota de API.
+ * A mesma pergunta, sem redirecionar, é a forma que serve a rota de API.
  *
  * Rota de API não redireciona nem renderiza 404: ela responde status. Ter as
  * duas formas em cima da mesma função é o que impede a regra de divergir entre
@@ -271,14 +271,14 @@ export async function conferirAcessoAoCliente(contaId: string): Promise<AcessoAo
 }
 
 /**
- * Pode **administrar** esta conta — mexer em quem entra nela?
+ * Pode **administrar** esta conta, mexer em quem entra nela?
  *
  * `exigirAcessoAoCliente` responde "pode ver"; isto responde "pode mexer na
  * equipe". São perguntas diferentes e a distância entre elas é escalada de
  * privilégio: um `member` que pudesse cadastrar gente criaria a própria conta
  * de administrador e sairia do papel em que foi posto.
  *
- * `owner` e `admin` da conta passam. O administrador da plataforma também —
+ * `owner` e `admin` da conta passam. O administrador da plataforma também ,
  * papel nulo aqui só acontece para ele, porque `conferirAcessoAoCliente` já
  * recusou todo mundo que não é membro nem administrador.
  */
@@ -290,7 +290,7 @@ export function podeAdministrarConta(acesso: AcessoAoCliente): boolean {
 /**
  * A visão de quem opera a 4YU: a lista de todos os clientes e o que nasce dela.
  *
- * Criar cliente não tem `clienteId` para conferir — o cliente ainda não existe.
+ * Criar cliente não tem `clienteId` para conferir, o cliente ainda não existe.
  * A pergunta certa é outra: **quem pode criar?** O administrador da plataforma.
  * Um dono de conta cria companhia por `/contas`, que é caminho dele e passa
  * pelo plugin.

@@ -8,12 +8,12 @@ import { cabecalhos } from '../../next.config'
  * Por que este arquivo existe
  * ---------------------------------------------------------------------------
  *
- * Em 15/set/2026 o `Permissions-Policy` estava com `microphone=()` — lista
+ * Em 15/set/2026 o `Permissions-Policy` estava com `microphone=()`, lista
  * **vazia**, que proíbe todas as origens, inclusive a nossa. No mesmo dia a
  * caixa de resposta ganhou o botão de gravar áudio, e `getUserMedia` passou a
  * ser recusado pelo navegador **sem pedir permissão nenhuma**: sem prompt, sem
  * cadeado, sem nada que a pessoa pudesse liberar. Typecheck, lint, 1.540 testes
- * e o build passaram inteiros — nada olhava para este arquivo.
+ * e o build passaram inteiros, nada olhava para este arquivo.
  *
  * O modo de falha é o pior que existe: um cabeçalho de endurecimento
  * silenciando um recurso novo, com todos os sinais verdes. Este teste é a
@@ -43,7 +43,7 @@ describe('Permissions-Policy', () => {
 
   /*
    * O painel não usa nem uma nem outra. Se um dia usar, liga aqui **na mesma
-   * mudança** — foi não fazer isso que quebrou o microfone.
+   * mudança**, foi não fazer isso que quebrou o microfone.
    */
   it('mantém câmera e localização desligadas, que o painel não usa', () => {
     expect(valor('Permissions-Policy')).toContain('camera=()')

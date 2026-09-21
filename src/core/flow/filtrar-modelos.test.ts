@@ -22,7 +22,7 @@ const MODELOS = [
   },
 ] as const
 
-describe('filtrarModelos — a busca da galeria', () => {
+describe('filtrarModelos, a busca da galeria', () => {
   it('sem termo e sem etiqueta, devolve tudo', () => {
     expect(filtrarModelos(MODELOS, '').map((m) => m.id)).toEqual(['nps', 'sdr', 'agenda'])
   })
@@ -41,7 +41,7 @@ describe('filtrarModelos — a busca da galeria', () => {
   it('toda palavra precisa casar, e podem casar em campos diferentes', () => {
     // "agenda" é etiqueta e "lembrete" é nome: as duas juntas ainda acham.
     expect(filtrarModelos(MODELOS, 'agenda lembrete').map((m) => m.id)).toEqual(['agenda'])
-    // Com "ou", digitar mais palavras traria mais resultado — o contrário do
+    // Com "ou", digitar mais palavras traria mais resultado, o contrário do
     // que quem digita espera.
     expect(filtrarModelos(MODELOS, 'lembrete vendedor')).toEqual([])
   })
@@ -62,7 +62,7 @@ describe('filtrarModelos — a busca da galeria', () => {
   })
 })
 
-describe('contarEtiquetas — o número no chip', () => {
+describe('contarEtiquetas, o número no chip', () => {
   it('conta e esconde etiqueta que não tem nenhum modelo', () => {
     expect(contarEtiquetas(MODELOS, ['WhatsApp', 'SDR', 'Instagram'])).toEqual([
       { etiqueta: 'WhatsApp', quantos: 3 },
@@ -71,7 +71,7 @@ describe('contarEtiquetas — o número no chip', () => {
   })
 })
 
-describe('sinônimos — o que a pessoa digita e o cartão não diz', () => {
+describe('sinônimos, o que a pessoa digita e o cartão não diz', () => {
   const cobranca = [
     {
       id: 'cobranca',
@@ -83,7 +83,7 @@ describe('sinônimos — o que a pessoa digita e o cartão não diz', () => {
   ] as const
 
   it('acha por palavra que não está no nome nem no resumo', () => {
-    // Sem isto, procurar "cobrança" devolvia vazio — e busca que falha no termo
+    // Sem isto, procurar "cobrança" devolvia vazio, e busca que falha no termo
     // mais óbvio ensina a não usar busca.
     expect(filtrarModelos(cobranca, 'cobranca').map((m) => m.id)).toEqual(['cobranca'])
     expect(filtrarModelos(cobranca, 'boleto').map((m) => m.id)).toEqual(['cobranca'])

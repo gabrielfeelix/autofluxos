@@ -6,7 +6,7 @@ import { apagarArquivosDoContato } from './midia-recebida'
  * Apagar contato e política de retenção.
  *
  * **Por que isto não é uma migration com `pg_cron`.** O plano original pedia
- * uma tarefa agendada no Postgres, e `pg_cron` é extensão — extensão é global
+ * uma tarefa agendada no Postgres, e `pg_cron` é extensão, extensão é global
  * ao projeto, e o projeto é compartilhado com a Verandi. Ligar uma extensão
  * para uma limpeza de doze em doze meses obrigaria a avaliar o outro produto e
  * a pedir autorização de produção por causa de algo que a aplicação faz
@@ -43,7 +43,7 @@ export function limiteDaRetencao(meses: number, agora: Date): Date {
  * URL é adivinhável, e apagar pelo id sozinho apagaria o contato de outro
  * cliente para quem digitasse o id certo.
  *
- * Devolve `false` quando não havia o que apagar — quem chamou precisa saber a
+ * Devolve `false` quando não havia o que apagar, quem chamou precisa saber a
  * diferença entre "apaguei" e "não era seu".
  */
 export async function apagarContato(clienteId: string, contatoId: string): Promise<boolean> {
@@ -52,12 +52,12 @@ export async function apagarContato(clienteId: string, contatoId: string): Promi
    *
    * `contacts` cascateia as mensagens (0003 e 0007), mas cascade de banco não
    * alcança o Storage. Apagando a linha primeiro, a lista de caminhos vai junto
-   * e o arquivo fica no bucket para sempre — dado pessoal órfão, que é o pior
+   * e o arquivo fica no bucket para sempre, dado pessoal órfão, que é o pior
    * resultado possível: some da tela e continua existindo.
    *
    * `apagarArquivosDoContato` não estoura, então uma falha ali não impede o
    * contato de ser apagado. Um arquivo que resistiu é um problema; um contato
-   * que não se apaga porque o Storage piscou é outro, maior — e é o pedido do
+   * que não se apaga porque o Storage piscou é outro, maior, e é o pedido do
    * titular que fica sem resposta.
    */
   await apagarArquivosDoContato(contatoId)
@@ -79,7 +79,7 @@ export async function apagarContato(clienteId: string, contatoId: string): Promi
  * Apaga vários contatos deste cliente de uma vez.
  *
  * O `client_id` no `delete` é o que faz um id de outra conta na lista não
- * apagar nada em vez de apagar o contato de outro cliente — e é por isso que a
+ * apagar nada em vez de apagar o contato de outro cliente, e é por isso que a
  * resposta é "quantos foram", e não "ok": a diferença entre pedido e feito é
  * exatamente a informação de que alguém mandou id que não era dele.
  */
@@ -90,7 +90,7 @@ export async function apagarContatos(
   if (contatos.length === 0) return 0
 
   // Os arquivos primeiro, e um contato por vez: ver `apagarContato`. Em série
-  // de propósito — o expurgo roda num cron sem ninguém esperando, e o teto por
+  // de propósito, o expurgo roda num cron sem ninguém esperando, e o teto por
   // passada (`TETO_POR_LIMPEZA`) já limita o tamanho da fila.
   for (const contatoId of contatos) await apagarArquivosDoContato(contatoId)
 
@@ -108,7 +108,7 @@ export async function apagarContatos(
 
 export type ResultadoDaLimpeza = {
   apagados: number
-  /** `true` quando bateu no teto e ainda havia fila — a próxima passada segue. */
+  /** `true` quando bateu no teto e ainda havia fila, a próxima passada segue. */
   temMais: boolean
 }
 
@@ -119,7 +119,7 @@ export type ResultadoDaLimpeza = {
  * contato quando ele nunca falou. Contar só pela criação apagaria conversa
  * ativa que começou há treze meses, e isso é perder cliente, não cumprir LGPD.
  *
- * Sem `clienteId`, varre todos — é assim que a tarefa agendada chama.
+ * Sem `clienteId`, varre todos, é assim que a tarefa agendada chama.
  */
 export async function apagarContatosVencidos(opcoes: {
   agora: Date

@@ -12,7 +12,7 @@ import { guardarNomes, nomesGuardados } from './repos/anuncios'
  * ---------------------------------------------------------------------------
  *
  * 1. **O que já temos** sai do banco, numa consulta, para todos os ids da fila.
- * 2. **O que está velho ou falta** vira pergunta à Meta — sem repetição, que é
+ * 2. **O que está velho ou falta** vira pergunta à Meta, sem repetição, que é
  *    o serviço de `idsParaResolver`.
  * 3. **O que a Meta responder** é gravado e devolvido junto do resto.
  *
@@ -24,7 +24,7 @@ import { guardarNomes, nomesGuardados } from './repos/anuncios'
  * Por que nada aqui pode falhar para fora
  * ---------------------------------------------------------------------------
  *
- * Quem chama isto está montando o Inbox — a tela que a equipe usa para
+ * Quem chama isto está montando o Inbox, a tela que a equipe usa para
  * trabalhar. Token vencido, permissão revogada no Business Manager, limite da
  * Meta estourado, Graph fora do ar: nenhuma dessas coisas pode fazer a fila
  * deixar de abrir. Todas viram "sem nome", e a linha da conversa volta a
@@ -32,7 +32,7 @@ import { guardarNomes, nomesGuardados } from './repos/anuncios'
  *
  * Isso é o oposto da escolha que quebra em produção no mercado: a queixa
  * documentada em vários concorrentes é o sync que morre **em silêncio** quando
- * o token vence. Aqui a degradação é visível de propósito — o nome desaparece
+ * o token vence. Aqui a degradação é visível de propósito, o nome desaparece
  * da tela e o alerta vai para a auditoria, em vez de tudo continuar parecendo
  * certo enquanto o dado apodrece.
  */
@@ -41,7 +41,7 @@ import { guardarNomes, nomesGuardados } from './repos/anuncios'
  * Um alerta por cliente e por motivo, não um por conversa.
  *
  * Sem isto, uma fila de 200 conversas com token vencido geraria 200 alertas
- * iguais — e um canal de alerta que grita 200 vezes é um canal que ninguém lê
+ * iguais, e um canal de alerta que grita 200 vezes é um canal que ninguém lê
  * na próxima vez. O `Set` vive no módulo, então dura o que durar a instância
  * serverless: é amortecimento, não memória de verdade, e é o suficiente para o
  * caso que importa (uma tela sendo aberta várias vezes seguidas).
@@ -74,7 +74,7 @@ export async function resolverAnuncios(entrada: {
   } catch (erro) {
     /*
      * Nem o cache respondeu. Ainda assim a tela abre: devolver vazio faz cada
-     * linha cair para o `headline`, que é o degrau de ontem — pior que o ideal,
+     * linha cair para o `headline`, que é o degrau de ontem, pior que o ideal,
      * melhor que uma fila que não carrega.
      */
     const detalhe = erro instanceof Error ? erro.message : String(erro)
@@ -100,7 +100,7 @@ export async function resolverAnuncios(entrada: {
        * opostas e erram parecido na tela:
        *
        * - 190: o token venceu ou foi revogado. Alguém precisa reconectar.
-       * - 4 / 17 / 80004: limite de chamadas. Ninguém precisa fazer nada — o
+       * - 4 / 17 / 80004: limite de chamadas. Ninguém precisa fazer nada, o
        *   cache vai cobrir e amanhã resolve.
        *
        * Sem essa distinção, "o nome não aparece" manda o dono investigar
@@ -139,7 +139,7 @@ export async function resolverAnuncios(entrada: {
     } catch (erro) {
       /*
        * A Meta respondeu e o banco não aceitou. O nome ainda serve **nesta**
-       * tela — só não sobrevive ao recarregamento. Melhor mostrar agora e
+       * tela, só não sobrevive ao recarregamento. Melhor mostrar agora e
        * perguntar de novo depois do que descartar o que já foi pago em chamada.
        */
       const detalhe = erro instanceof Error ? erro.message : String(erro)

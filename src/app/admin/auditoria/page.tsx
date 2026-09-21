@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
  *
  * A tabela é **append-only no banco** (migration 0021): `service_role` só tem
  * `insert` e `select`. Não existe botão de apagar aqui porque não existe
- * permissão para apagar lá — um log que a aplicação consegue editar não prova
+ * permissão para apagar lá, um log que a aplicação consegue editar não prova
  * nada.
  *
  * A linha de impersonação é destacada de propósito. É a que separa "o cliente
@@ -24,7 +24,7 @@ export default async function Auditoria() {
         <h1 className="text-[25px] font-bold tracking-[-0.02em]">Auditoria</h1>
         <p className="mt-1 text-[13px] text-muted">
           O que aconteceu na plataforma, do mais novo para o mais velho. Não dá para editar nem
-          apagar — nem por aqui, nem pelo código.
+          apagar, nem por aqui, nem pelo código.
         </p>
       </header>
 
@@ -51,7 +51,7 @@ export default async function Auditoria() {
 
 /**
  * A ação vem como verbo em `snake_case` (`entrou_como`, `trocou_papel`), e é
- * texto livre no banco de propósito — enum obrigaria migration a cada ação
+ * texto livre no banco de propósito, enum obrigaria migration a cada ação
  * nova, e o custo de uma ação não registrada é maior que o de um nome torto.
  *
  * Aqui a gente traduz o que conhece e mostra cru o que não conhece. Cair no

@@ -109,7 +109,7 @@ function restaDe(quando: string | null | undefined, duracao: number, agora: numb
  * abrir o compositor para quem clicou num anúncio e nunca escreveu.
  *
  * `null` quando ela nunca escreveu: não existe janela aberta, nem uma que já
- * fechou. Quem chegou por anúncio e ainda não falou cai aqui, e é o certo — o
+ * fechou. Quem chegou por anúncio e ainda não falou cai aqui, e é o certo, o
  * caminho dele é modelo aprovado, e o envio sai de graça por causa da porta.
  */
 export function restaDaJanela(janela: Janela, agora: number = Date.now()): number | null {
@@ -124,7 +124,7 @@ export function restaDaJanela(janela: Janela, agora: number = Date.now()): numbe
  * ---------------------------------------------------------------------------
  *
  * Porque as três perguntas são diferentes e a tela erra quando trata uma como
- * resposta da outra — foi exatamente assim que as 72h viraram autorização de
+ * resposta da outra, foi exatamente assim que as 72h viraram autorização de
  * texto livre. A proposta pede as três separadas, em 5.3: origem, permissão de
  * envio, e benefício de cobrança.
  *

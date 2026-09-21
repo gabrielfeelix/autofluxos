@@ -9,7 +9,7 @@ import { apagarDoAcervo, listarAcervo, pedirEnvioAssinado } from './acervo'
  * **O caso que precisa passar é o de mais de 1 MB.** Era exatamente ele que
  * quebrava: o arquivo ia dentro de uma Server Action, o Next devolvia 413 antes
  * de qualquer código nosso rodar, e a tela mostrava a página de erro genérica.
- * Um teste com arquivo pequeno passaria mesmo com o defeito no lugar — por isso
+ * Um teste com arquivo pequeno passaria mesmo com o defeito no lugar, por isso
  * o daqui tem 2 MB.
  */
 const temCredencial = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SECRET_KEY)
@@ -36,7 +36,7 @@ afterAll(async () => {
 })
 
 describe.skipIf(!temCredencial)('envio assinado', () => {
-  it('sobe um PDF de 2 MB — o tamanho que a Server Action recusava', async () => {
+  it('sobe um PDF de 2 MB, o tamanho que a Server Action recusava', async () => {
     const preparo = await pedirEnvioAssinado(clienteId, {
       nome: 'Plano Trimestral.pdf',
       tipo: 'application/pdf',
@@ -72,7 +72,7 @@ describe.skipIf(!temCredencial)('envio assinado', () => {
   it('a URL pública que o fluxo guarda é a que a Meta consegue baixar', async () => {
     // O bloco de mídia grava esta URL no grafo, e quem busca o arquivo depois é
     // a Cloud API, sem credencial nossa. Se ela não for pública de verdade, a
-    // foto simplesmente não chega — e o erro aparece na conversa de um cliente.
+    // foto simplesmente não chega, e o erro aparece na conversa de um cliente.
     const acervo = await listarAcervo(clienteId)
     expect(acervo.length).toBeGreaterThan(0)
 
@@ -89,7 +89,7 @@ describe.skipIf(!temCredencial)('envio assinado', () => {
     })
   })
 
-  it('recusa acima de 16 MB antes de assinar — não adianta subir o que a Meta recusa', async () => {
+  it('recusa acima de 16 MB antes de assinar, não adianta subir o que a Meta recusa', async () => {
     const r = await pedirEnvioAssinado(clienteId, {
       nome: 'video.mp4',
       tipo: 'video/mp4',
@@ -109,7 +109,7 @@ describe.skipIf(!temCredencial)('envio assinado', () => {
     if (!preparo.ok) return
 
     // O caminho é escolhido no servidor, depois de conferir o dono. O navegador
-    // recebe uma URL que só escreve ali — ele não escolhe onde gravar.
+    // recebe uma URL que só escreve ali, ele não escolhe onde gravar.
     expect(preparo.envio.url).toContain(encodeURIComponent(clienteId).replace(/%2F/g, '/'))
     expect(preparo.envio.url).toContain('token=')
   })

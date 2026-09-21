@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { varsIniciais } from './vars-iniciais'
 
 describe('varsIniciais', () => {
-  it('o telefone é o do WhatsApp — sem ele, integração nenhuma reconhece ninguém', () => {
+  it('o telefone é o do WhatsApp, sem ele, integração nenhuma reconhece ninguém', () => {
     expect(varsIniciais({ waId: '5544998887766' })).toEqual({ telefone: '5544998887766' })
   })
 

@@ -7,7 +7,7 @@ import { db } from '../db'
  * Existe por um defeito reproduzido em teste: duas mensagens da mesma pessoa
  * chegando quase juntas viram dois `after()` concorrentes, os dois leem a
  * sessão no mesmo estado, e como o primeiro ainda não gravou, o segundo
- * também conclui que a conversa é nova — nascem **duas sessões** e a pessoa vê
+ * também conclui que a conversa é nova, nascem **duas sessões** e a pessoa vê
  * a saudação duas vezes.
  *
  * O desenho está em `supabase/migrations/0007_travas.sql`; aqui mora só a
@@ -17,7 +17,7 @@ import { db } from '../db'
 /**
  * Quanto tempo a trava vale.
  *
- * Tem que caber o pior caso do processamento — que é o `maxDuration` de 60s do
+ * Tem que caber o pior caso do processamento, que é o `maxDuration` de 60s do
  * webhook, gasto por um fluxo com nó de API lento. Um pouco mais, para a trava
  * não vencer com o trabalho ainda em pé; nunca muito mais, porque este é o
  * tempo que um contato fica mudo se a função morrer segurando a trava.
@@ -27,7 +27,7 @@ const VALIDADE_SEGUNDOS = 75
 /** Quanto tempo alguém espera pela vez antes de desistir. */
 const ESPERA_MAXIMA_MS = 20_000
 
-/** Entre uma tentativa e outra. Sobe até um teto — ver `esperar`. */
+/** Entre uma tentativa e outra. Sobe até um teto, ver `esperar`. */
 const PAUSA_INICIAL_MS = 120
 const PAUSA_MAXIMA_MS = 1_500
 
@@ -40,7 +40,7 @@ export type Destravar = () => Promise<void>
  * mensagem já foi gravada e deduplicada em `registrarEntrada`, então desistir
  * significa a pessoa nunca receber resposta e a Meta nunca reenviar. Vinte
  * segundos cabem no orçamento de 60s do webhook e cobrem qualquer conversa
- * normal — o que não couber é sinal de coisa travada, não de fila.
+ * normal, o que não couber é sinal de coisa travada, não de fila.
  *
  * Quem chama **precisa** soltar num `finally`. Não soltar não é catastrófico
  * (a trava vence sozinha), mas deixa o contato mudo pelo resto da validade.
@@ -57,7 +57,7 @@ export async function travarContato(contatoId: string): Promise<Destravar | null
 
     // Banco fora do ar não pode virar exceção aqui: isto roda dentro do
     // `after()` do webhook, e exceção lá deixa a pessoa sem resposta nenhuma.
-    // Sem trava, quem chamou decide — e hoje decide passar para uma pessoa.
+    // Sem trava, quem chamou decide, e hoje decide passar para uma pessoa.
     if (error) return null
 
     if (data === true) {

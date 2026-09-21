@@ -12,7 +12,7 @@ import { exigirAdminDaPlataforma } from './sessao'
  * um POST que um refactor de rota tira do alcance do matcher sem avisar
  * ninguém. Quem autoriza é o servidor que executa.
  *
- * Marcar como visto não é operação sensível — não apaga nada e não conta nada
+ * Marcar como visto não é operação sensível, não apaga nada e não conta nada
  * de ninguém. Mas o alerta carrega id de contato no contexto, e listar isso já
  * é contar de cliente para quem talvez não seja dele.
  */

@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic'
  *
  * Automações já tem uma aba chamada "Templates", e ela é **outra coisa**:
  * desenhos prontos de fluxo. Pôr o modelo da Meta ali faria duas coisas
- * diferentes com o mesmo nome na mesma tela — e a que importa aqui é a que tem
+ * diferentes com o mesmo nome na mesma tela, e a que importa aqui é a que tem
  * aprovação externa, prazo de revisão e recusa em inglês.
  *
  * A ordem das abas não é alfabética: **modelos vêm antes** porque sem um
@@ -64,7 +64,7 @@ export default async function Pagina({
         {/*
           Mesma fronteira da tela de Automações: título e abas aparecem no ato,
           o miolo chega depois. A `key` é a aba porque é ela que muda sem trocar
-          de rota — sem a chave, o React segura o conteúdo velho na tela.
+          de rota, sem a chave, o React segura o conteúdo velho na tela.
         */}
         <Suspense key={aba} fallback={<Espera aba={aba} />}>
           <Conteudo cliente={cliente} aba={aba} />
@@ -97,7 +97,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
    *
    * Parece caro e não é: a lista mostra "3 de 400 entregues", e sem o número a
    * linha não diz nada que importe. O que seria caro é a tela carregar os 400
-   * destinatários para contar em memória — por isso `progressoDa` conta no
+   * destinatários para contar em memória, por isso `progressoDa` conta no
    * banco.
    */
   const progressos = Object.fromEntries(

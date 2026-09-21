@@ -7,7 +7,7 @@
  *
  * O WhatsApp só aceita texto livre até 24h depois da última mensagem do
  * cliente. Uma mensagem marcada para amanhã de manhã quase sempre cai **fora**
- * dessa janela, e a Meta recusa — exige modelo aprovado, que este produto ainda
+ * dessa janela, e a Meta recusa, exige modelo aprovado, que este produto ainda
  * não tem.
  *
  * Um agendador que aceita calado e falha de madrugada é pior do que não ter
@@ -22,7 +22,7 @@
  * "Amanhã de manhã" é uma frase sobre o relógio de quem está olhando a tela,
  * não sobre o fuso do servidor nem sobre o horário de atendimento da conta.
  * Estas funções rodam no navegador, com a data local, e o que viaja para o
- * servidor é um instante absoluto — a partir dali não há fuso nenhum para
+ * servidor é um instante absoluto, a partir dali não há fuso nenhum para
  * errar.
  */
 
@@ -42,7 +42,7 @@ export const TETO_DO_AGENDAMENTO_MS = 365 * 24 * 60 * 60 * 1000
  * O mínimo à frente.
  *
  * Um minuto. Marcar para "agora" é mandar agora, e para isso existe o botão de
- * enviar — aceitar aqui criaria um caminho mais lento para o mesmo gesto, com
+ * enviar, aceitar aqui criaria um caminho mais lento para o mesmo gesto, com
  * uma passada de fila no meio.
  */
 export const MINIMO_A_FRENTE_MS = 60 * 1000
@@ -104,7 +104,7 @@ export function quandoDaPredefinicao(chave: Predefinicao, agora: Date = new Date
 /**
  * O valor para um `<input type="datetime-local">`, que não aceita fuso.
  *
- * `toISOString()` devolveria UTC e o campo mostraria três horas a menos —
+ * `toISOString()` devolveria UTC e o campo mostraria três horas a menos ,
  * errado de um jeito que parece certo, que é o pior tipo de erro de data.
  */
 export function paraCampoLocal(data: Date): string {
@@ -142,7 +142,7 @@ export const MOTIVO_DA_RECUSA: Record<RecusaDoAgendamento, string> = {
   sem_texto: 'escreva a mensagem antes de marcar',
   texto_longo: `o WhatsApp aceita até ${LIMITE_DO_TEXTO.toLocaleString('pt-BR')} caracteres`,
   sem_data: 'escolha quando mandar',
-  passado: 'escolha um horário à frente — para mandar agora, use o botão de enviar',
+  passado: 'escolha um horário à frente, para mandar agora, use o botão de enviar',
   longe_demais: 'isso está a mais de um ano daqui; confira o ano que você digitou',
 }
 
@@ -152,7 +152,7 @@ export const MOTIVO_DA_RECUSA: Record<RecusaDoAgendamento, string> = {
  * `fimDaJanela` é o instante em que ela fecha, ou `null` quando ela já está
  * fechada (e aí nem existe caixa de resposta). "Já se sabe" é a palavra que
  * importa: a janela **reabre** a cada mensagem que o cliente manda, então isto
- * é um aviso e não uma recusa. Bloquear seria errado — a pessoa pode estar
+ * é um aviso e não uma recusa. Bloquear seria errado, a pessoa pode estar
  * marcando justamente uma resposta para depois de uma conversa que vai
  * continuar.
  */

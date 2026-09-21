@@ -8,7 +8,7 @@ import { acaoDuplicarFluxo } from '@/server/acoes'
  *
  * **Sem confirmação.** Duplicar não destrói nada e a cópia nasce desligada:
  * perguntar "tem certeza?" para um ato reversível é o tipo de diálogo que
- * ensina a clicar em "sim" sem ler, e aí ele não protege mais o que importa —
+ * ensina a clicar em "sim" sem ler, e aí ele não protege mais o que importa ,
  * que é o botão de apagar, logo ao lado.
  *
  * O aviso depois do clique existe porque a cópia **não** entra no ar: quem

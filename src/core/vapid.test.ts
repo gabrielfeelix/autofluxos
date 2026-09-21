@@ -6,7 +6,7 @@ const decodificar = (texto: string) => Buffer.from(texto, 'base64').toString('bi
 
 describe('base64urlParaBytes', () => {
   /*
-   * A chave VAPID real tem 65 bytes e começa com 0x04 — o prefixo de ponto não
+   * A chave VAPID real tem 65 bytes e começa com 0x04, o prefixo de ponto não
    * comprimido de uma curva P-256. É o que o `PushManager` confere; errar o
    * tamanho ou o primeiro byte faz a assinatura não bater e nenhum push chegar,
    * sem erro em lugar nenhum.

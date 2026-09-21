@@ -83,7 +83,7 @@ export type ResultadoDaTomada =
 export function tentarAssumir(controle: Controle, usuarioId: string): ResultadoDaTomada {
   /*
    * Já é dela: não é erro e não é sucesso silencioso. Dizer "já é sua" é o que
-   * impede a tela de piscar um sucesso que não mudou nada — e impede a revisão
+   * impede a tela de piscar um sucesso que não mudou nada, e impede a revisão
    * de subir por um clique repetido, que invalidaria a execução em andamento
    * da própria pessoa sem motivo.
    */

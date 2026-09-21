@@ -2,7 +2,7 @@
  * As cores que uma etiqueta pode ter.
  *
  * Lista fechada, e nomes em vez de hexadecimal: a paleta é do produto. Deixar
- * o cliente digitar `#ffffff` é deixá-lo criar uma etiqueta invisível — e uma
+ * o cliente digitar `#ffffff` é deixá-lo criar uma etiqueta invisível, e uma
  * etiqueta invisível não dá erro, ela só some da tela.
  *
  * Mora em `core/` porque a tela precisa dela e o servidor também, e porque a
@@ -22,7 +22,7 @@ export function ehCorDeEtiqueta(valor: string): valor is CorDeEtiqueta {
  *
  * As classes são escritas inteiras de propósito: o Tailwind lê o texto do
  * arquivo para decidir o que gerar, e `bg-${cor}-400/10` montado em tempo de
- * execução simplesmente não existiria na folha de estilo — a etiqueta ficaria
+ * execução simplesmente não existiria na folha de estilo, a etiqueta ficaria
  * sem cor nenhuma, sem erro nenhum.
  */
 export const CLASSE_DA_COR: Record<CorDeEtiqueta, string> = {
@@ -44,5 +44,5 @@ export const ROTULO_DA_COR: Record<CorDeEtiqueta, string> = {
   roxo: 'Roxo',
 }
 
-/** Teto do nome. Etiqueta é rótulo, não frase — acima disso ela quebra a linha. */
+/** Teto do nome. Etiqueta é rótulo, não frase, acima disso ela quebra a linha. */
 export const LIMITE_DO_NOME = 32

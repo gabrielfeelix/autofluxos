@@ -11,13 +11,13 @@ export const dynamic = 'force-dynamic'
  * Onde a Meta devolve o dono do perfil depois de ele autorizar.
  *
  * **Duas conferências, e nenhuma substitui a outra.** O `state` prova *qual
- * cliente* começou a conexão — é ele que impede um link forjado ligar uma conta
+ * cliente* começou a conexão, é ele que impede um link forjado ligar uma conta
  * de Instagram ao cliente errado. A sessão prova *quem está pedindo*, e é
  * conferida de novo aqui: esta rota é pública por obrigação, porque quem a
  * chama é o navegador vindo do instagram.com.
  *
  * **A resposta é sempre um redirect para a tela**, com o resultado na URL. O
- * navegador de quem autorizou está aqui, e ele espera voltar para o painel —
+ * navegador de quem autorizou está aqui, e ele espera voltar para o painel ,
  * um JSON na cara de quem clicou em "Conectar" seria a tela do produto virando
  * um endpoint.
  */
@@ -40,7 +40,7 @@ export async function GET(req: Request) {
    * vindo de outro site. Exigir sessão recusava toda conexão real.
    *
    * Com sessão, ela vale: sem direito àquele cliente, recusa. Sem sessão, quem
-   * responde é o `state` assinado — ele diz qual cliente, que é o que esta rota
+   * responde é o `state` assinado, ele diz qual cliente, que é o que esta rota
    * precisa saber para gravar a conexão no lugar certo.
    */
   const acesso = await conferirAcessoAoCliente(clienteId)
@@ -65,7 +65,7 @@ export async function GET(req: Request) {
   /*
    * Ligou a conta, mas o webhook não quis: a conexão vale e o aviso muda.
    *
-   * A inscrição é um passo separado do OAuth e pode falhar sozinha — e quando
+   * A inscrição é um passo separado do OAuth e pode falhar sozinha, e quando
    * falha, a conta fica conectada sem receber mensagem nenhuma. Descartar a
    * conexão por causa disso jogaria fora um token que custou o dono do perfil
    * na frente da tela; dizer "conectado" e pronto esconderia justamente o
@@ -90,7 +90,7 @@ export async function GET(req: Request) {
     /*
      * **Depois de guardar, e não antes.** Se a inscrição vier primeiro e o
      * `salvar` falhar, a Meta passa a mandar direct de uma conta que não existe
-     * do nosso lado — mensagem de gente de verdade caindo em canal nenhum.
+     * do nosso lado, mensagem de gente de verdade caindo em canal nenhum.
      */
     try {
       await assinarMensagens({ igUserId: conta.igUserId, token: conta.token })
@@ -104,7 +104,7 @@ export async function GET(req: Request) {
   } catch (erro) {
     /*
      * `redirect()` funciona lançando uma exceção, então ele **não pode** ficar
-     * dentro deste `try` — seria capturado aqui e virado em "falhou". É a
+     * dentro deste `try`, seria capturado aqui e virado em "falhou". É a
      * pegadinha clássica do App Router, e ela transforma um sucesso em erro.
      */
     await alertar('a conexão do Instagram falhou', erro, { cliente: clienteId })

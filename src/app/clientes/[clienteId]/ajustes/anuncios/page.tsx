@@ -12,7 +12,7 @@ import { NOME_DA_CONEXAO_DE_ADS } from '@/server/token-de-anuncios'
 export const dynamic = 'force-dynamic'
 
 /**
- * Anúncios — onde o cliente liga a conta da Meta.
+ * Anúncios, onde o cliente liga a conta da Meta.
  *
  * ---------------------------------------------------------------------------
  * Por que esta tela existe, e por que separada de Credenciais
@@ -20,13 +20,13 @@ export const dynamic = 'force-dynamic'
  *
  * A credencial do Ads **é** uma Conexão comum, guardada no mesmo cofre. Mas
  * pedir que o cliente vá em "Credenciais → Nova" e digite o nome exato
- * `meta-ads`, tipo `bearer`, é instrução de quem conhece o código — erra uma
+ * `meta-ads`, tipo `bearer`, é instrução de quem conhece o código, erra uma
  * letra e nada funciona, sem nenhum aviso. Aqui ele aperta um botão que já sabe
  * o nome.
  *
  * A outra razão é que **conectar o Ads não é uma coisa, são duas**: o token diz
  * *quem pode ler*, e a Página diz *de onde vêm os leads*. As duas podem estar
- * certas, erradas, ou uma sem a outra — e nesse último caso nada chega, com
+ * certas, erradas, ou uma sem a outra, e nesse último caso nada chega, com
  * tudo parecendo configurado. Uma tela que mostra as duas lado a lado é o que
  * transforma "não está chegando lead" numa resposta em vez de uma caça.
  */
@@ -76,7 +76,7 @@ export default async function Pagina({
           <h1 className="text-[25px] font-bold tracking-[-0.02em]">Captação por anúncios</h1>
           <p className="mt-1.5 max-w-[620px] text-[13px] leading-6 text-dim">
             Quem preenche o formulário de um anúncio no Facebook ou no Instagram entra aqui
-            como lead, com o telefone e a campanha de onde veio — sem planilha e sem
+            como lead, com o telefone e a campanha de onde veio, sem planilha e sem
             intermediário no meio.
           </p>
         </div>
@@ -105,7 +105,7 @@ export default async function Pagina({
                     <strong className="text-soft">de qual campanha</strong> a pessoa veio.
                   </>
                 ) : (
-                  'Sem ele, nenhum lead de formulário entra — a Meta avisa, e não há com o que buscar.'
+                  'Sem ele, nenhum lead de formulário entra, a Meta avisa, e não há com o que buscar.'
                 )}
               </p>
             </div>
@@ -113,7 +113,7 @@ export default async function Pagina({
             {/*
               O botão da Meta vem primeiro, e o de colar token vira segunda via.
 
-              É o caminho que o cliente consegue seguir sozinho — e o único que
+              É o caminho que o cliente consegue seguir sozinho, e o único que
               mostra o diálogo de autorização, que é o que a Meta exige ver no
               vídeo do App Review. Colar token continua existindo para quem quer
               um acesso que nunca vence (usuário do sistema).
@@ -131,7 +131,7 @@ export default async function Pagina({
               botao={temToken ? 'Trocar o token' : 'Colar um token'}
               variante="secundario"
               titulo="Ligar a conta de anúncios da Meta"
-              descricao="O token fica guardado num cofre e não volta para esta tela. Antes de guardar, a gente pergunta à Meta se ele vale — token recusado não vira nada."
+              descricao="O token fica guardado num cofre e não volta para esta tela. Antes de guardar, a gente pergunta à Meta se ele vale, token recusado não vira nada."
               rotuloEnviar="Conferir e guardar"
               action={acaoLigarAds.bind(null, clienteId)}
             >
@@ -140,7 +140,7 @@ export default async function Pagina({
 
                 Quem abre este modal está com o Business Manager aberto na outra
                 aba, no meio da tarefa. Mandar ler documentação em outro lugar é
-                onde a pessoa desiste — e o caminho tem cinco cliques em telas
+                onde a pessoa desiste, e o caminho tem cinco cliques em telas
                 que ela não visita nunca.
               */}
               <div className="rounded-[10px] border border-line bg-panel px-3.5 py-3">
@@ -159,7 +159,7 @@ export default async function Pagina({
                     Clique em <strong className="text-soft">Gerar token</strong>, escolha o app
                     AutoFluxos e marque as permissões de leads e de anúncios.
                   </li>
-                  <li>Copie e cole abaixo — ele aparece uma vez só.</li>
+                  <li>Copie e cole abaixo, ele aparece uma vez só.</li>
                 </ol>
                 <p className="mt-2 text-[10.5px] leading-4 text-dim">
                   Use <strong className="text-soft">usuário do sistema</strong>, não seu login
@@ -186,7 +186,7 @@ export default async function Pagina({
             <h2 className="text-[15px] font-bold">Páginas ligadas</h2>
             <p className="mt-1 max-w-[560px] text-[12px] leading-5 text-dim">
               A Meta manda o lead dizendo de qual Página ele veio. Ligar aqui é o que diz que
-              aquela Página é deste cliente — sem isso o lead chega e é descartado.
+              aquela Página é deste cliente, sem isso o lead chega e é descartado.
             </p>
           </div>
 

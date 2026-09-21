@@ -18,7 +18,7 @@ const VERSAO_PADRAO = 'v25.0'
  * Quinze segundos, e não "o que a Graph API decidir".
  *
  * Sem teto, uma Graph pendurada segura o `after()` do webhook até o
- * `maxDuration` de 60s e a função morre no meio — a sessão já foi gravada, a
+ * `maxDuration` de 60s e a função morre no meio, a sessão já foi gravada, a
  * mensagem já foi deduplicada, e a pessoa fica esperando uma resposta que nunca
  * sai. O nó de API e o Gemini já tinham prazo; este caminho era o que faltava.
  *
@@ -41,14 +41,14 @@ const TIMEOUT_DOWNLOAD_MS = 30_000
  * O orçamento **inteiro** de subir um arquivo para a Meta antes de enviar.
  *
  * Um prazo só para as duas pernas (ler do Storage e subir para a Meta), e não
- * um prazo para cada uma. Com um prazo por perna, o pior caso soma — e o envio
+ * um prazo para cada uma. Com um prazo por perna, o pior caso soma, e o envio
  * de mídia roda dentro do `after()` do webhook, que morre no `maxDuration` de
  * 60s da Vercel. Dois prazos de 30s mais os 15s do envio passariam desse teto,
  * e a função morreria no meio: a mensagem gravada, nada entregue, e nenhum
  * erro que explique.
  *
  * Vinte segundos deixa 40s de folga para o envio em si. Estourar aqui não
- * perde a mensagem — devolve `null` e o envio sai pelo `link`, como antes.
+ * perde a mensagem, devolve `null` e o envio sai pelo `link`, como antes.
  */
 const TIMEOUT_SUBIDA_MS = 20_000
 
@@ -63,7 +63,7 @@ export type ConfigCloudApi = {
  *
  * São diferentes em dois dos quatro (`imagem`/`image`, `video`/`video` batem;
  * `documento`/`document` e `audio`/`audio` não). Manter a tradução aqui é o que
- * deixa `core/` falar português sem saber que a Cloud API existe — a mesma
+ * deixa `core/` falar português sem saber que a Cloud API existe, a mesma
  * fronteira que já vale para o resto do domínio.
  */
 const TIPO_NA_META = {
@@ -76,8 +76,8 @@ const TIPO_NA_META = {
 /**
  * O trecho `context` que transforma um envio em resposta citada.
  *
- * Fica numa função só porque entra em mais de um tipo de mensagem — texto e
- * mídia hoje — e porque o formato é a parte fácil de errar: a Meta quer
+ * Fica numa função só porque entra em mais de um tipo de mensagem, texto e
+ * mídia hoje, e porque o formato é a parte fácil de errar: a Meta quer
  * `context.message_id` no **nível de cima** do corpo, irmão do `type`, e não
  * dentro do objeto do tipo. Escrever nos dois lugares e ver qual pega é como
  * isso costuma ser descoberto.
@@ -93,13 +93,13 @@ function citacao(mensagemId: string | undefined): Record<string, unknown> {
 /**
  * O nome de arquivo que está no fim de uma URL.
  *
- * Serve só como rótulo do `multipart` no upload — o nome que o cliente vê num
+ * Serve só como rótulo do `multipart` no upload, o nome que o cliente vê num
  * documento é o `filename` da mensagem, que vem de quem chamou. Mas rótulo
  * vazio faz a Meta recusar o `multipart` inteiro, então nunca devolve vazio.
  *
  * `decodeURIComponent` estoura em `%` solto, que aparece em nome vindo de fora.
  * Aqui isso viraria "o upload falhou" e o envio cairia para o `link` por causa
- * de um acento — cara caro demais para um rótulo.
+ * de um acento, cara caro demais para um rótulo.
  */
 function nomeNaUrl(endereco: string): string {
   const semConsulta = endereco.split('?')[0] ?? endereco
@@ -131,8 +131,8 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
    *
    * **Devolvia `void` e agora devolve a resposta** por causa do template: para
    * todos os outros envios o 200 basta, e o corpo só repete o que já se sabe.
-   * Para template não: é ali que vêm o `wamid` — a chave que liga o webhook de
-   * status de volta à linha do destinatário — e o `message_status`, que pode
+   * Para template não: é ali que vêm o `wamid`, a chave que liga o webhook de
+   * status de volta à linha do destinatário, e o `message_status`, que pode
    * dizer que a Meta **segurou** a mensagem. Ver `enviarTemplate`.
    *
    * Quem não quer a resposta simplesmente ignora o retorno, como antes.
@@ -187,7 +187,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
    * ---------------------------------------------------------------------------
    *
    * Nunca estoura. Quem chama trata `null` mandando o `link`, que é o que este
-   * código fazia antes — então toda falha aqui degrada para o comportamento
+   * código fazia antes, então toda falha aqui degrada para o comportamento
    * antigo em vez de virar mensagem não entregue. É o que permite trocar o
    * caminho de envio sem ter podido testar num WhatsApp de verdade.
    *
@@ -196,7 +196,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
    * ---------------------------------------------------------------------------
    *
    * A Meta decide o que aceita pelo tipo declarado no `multipart`. O Storage
-   * devolve o tipo com que o arquivo subiu — que é o mesmo que o acervo já
+   * devolve o tipo com que o arquivo subiu, que é o mesmo que o acervo já
    * validou contra a tabela dela. Adivinhar pela extensão aqui criaria uma
    * terceira opinião sobre o tipo do mesmo arquivo.
    */
@@ -204,7 +204,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
     /*
      * Um prazo só para as duas pernas. `AbortSignal.timeout` começa a contar
      * quando é criado, então criá-lo aqui fora e passá-lo aos dois `fetch` é
-     * literalmente "vinte segundos para tudo isto" — e não vinte para cada,
+     * literalmente "vinte segundos para tudo isto", e não vinte para cada,
      * que somaria além do teto da função. Ver `TIMEOUT_SUBIDA_MS`.
      */
     const prazo = AbortSignal.timeout(TIMEOUT_SUBIDA_MS)
@@ -220,7 +220,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
       const mime = arquivo.headers.get('content-type') ?? 'application/octet-stream'
 
       /*
-       * O nome vem do fim da URL. A Meta o usa só como rótulo do `multipart` —
+       * O nome vem do fim da URL. A Meta o usa só como rótulo do `multipart` ,
        * o nome que o cliente vê num documento é o `filename` da mensagem, que
        * segue vindo de quem chamou. Um nome vazio faria a Meta recusar o
        * `multipart` inteiro, então há um padrão.
@@ -234,7 +234,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
       const resposta = await fetch(`${raiz}/${config.phoneNumberId}/media`, {
         method: 'POST',
         // Sem `content-type` à mão: o `fetch` monta o `boundary` do multipart
-        // sozinho, e escrever o cabeçalho aqui apaga esse boundary — o pedido
+        // sozinho, e escrever o cabeçalho aqui apaga esse boundary, o pedido
         // sai malformado e a Meta responde 400 sem dizer por quê.
         headers: { Authorization: `Bearer ${config.token}` },
         body: formulario,
@@ -318,7 +318,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
      *
      * A Meta marca a conversa inteira como lida a partir de **uma** mensagem:
      * mandar o id da última que chegou cobre as anteriores. Por isso aqui não
-     * há laço nem lista — um pedido por conversa aberta, e não um por mensagem.
+     * há laço nem lista, um pedido por conversa aberta, e não um por mensagem.
      */
     async marcarLida(mensagemId) {
       await mandar({ status: 'read', message_id: mensagemId }, TIMEOUT_INDICADOR_MS)
@@ -334,7 +334,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
      * O `id` que chega no webhook **vive 7 dias**. A URL que o `GET /{id}`
      * devolve vive **5 minutos**. Depois disso o arquivo não existe em lugar
      * nenhum: os termos da Cloud API (4.5) dizem que a Meta não guarda cópia e
-     * que o backup é nosso. Não baixar não é adiar — é perder.
+     * que o backup é nosso. Não baixar não é adiar, é perder.
      *
      * -----------------------------------------------------------------------
      * Por que o token vai no segundo pedido também
@@ -388,7 +388,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
          * `TIMEOUT_DOWNLOAD_MS` é maior que o dos outros pedidos porque aqui
          * trafega arquivo, não JSON: um vídeo de 16 MB numa conexão ruim leva
          * mais que os segundos que bastam para uma resposta de texto. Ainda
-         * assim tem teto — sem ele, um download travado seguraria a função até
+         * assim tem teto, sem ele, um download travado seguraria a função até
          * o limite da Vercel e levaria a conversa junto.
          */
         const arquivo = await fetch(endereco, {
@@ -423,7 +423,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
        * Este código mandava `link`, e o comentário que estava aqui defendia a
        * escolha dizendo que o `id` expira em 30 dias e viraria "um cache com
        * invalidação para economizar um GET da Meta". O argumento estava certo
-       * sobre o cache e errado sobre o que estava em jogo — e o handoff de
+       * sobre o cache e errado sobre o que estava em jogo, e o handoff de
        * 15/set nomeou o que faltava: **mandar `link` obriga o arquivo a estar
        * num endereço que a Meta alcança sem credencial nossa**, e é por isso
        * que o `autofluxos-acervo` é público e permanente. A `0017` escreveu a
@@ -435,7 +435,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
        * **E não é gambiarra nossa**: a doc da Meta lista o upload como caminho
        * de primeira classe, e é o que ela recomenda para arquivo próprio.
        *
-       * O preço é honesto e está medido: os bytes passam por nós duas vezes —
+       * O preço é honesto e está medido: os bytes passam por nós duas vezes ,
        * uma para baixar do Storage, outra para subir. Em troca, o endereço de
        * origem só precisa ser alcançável por **nós**, o que é o que permite
        * fechar o bucket depois (item 2 do handoff de 15/set).
@@ -465,7 +465,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
     },
 
     /**
-     * O modelo aprovado — o único caminho para fora da janela de 24h.
+     * O modelo aprovado, o único caminho para fora da janela de 24h.
      *
      * -------------------------------------------------------------------
      * Por que este envio lê a resposta e os outros não
@@ -473,7 +473,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
      *
      * A Meta responde **200** e manda `message_status` junto, com três valores
      * possíveis: `accepted`, `held_for_quality_assessment` e `paused`. O do
-     * meio significa que ela **segurou** a mensagem para avaliar a qualidade —
+     * meio significa que ela **segurou** a mensagem para avaliar a qualidade ,
      * acontece com template novo, com template sem nota verde e, desde 2026,
      * com portfólio novo de pouco histórico.
      *
@@ -483,7 +483,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
      *
      * Quem lê só o status HTTP mostra "campanha enviada" para o cliente e nada
      * saiu. É por isso que aqui se devolve `EnvioDeTemplate` e não `void`, e
-     * por que a tradução mora em `lerStatusDeEnvio()` — a mesma função que o
+     * por que a tradução mora em `lerStatusDeEnvio()`, a mesma função que o
      * banco e a tela usam, para que os três não discordem sobre o que é
      * "enviado".
      *
@@ -530,7 +530,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
 
       return {
         /*
-         * Sem `wamid` o webhook de status nunca acha esta linha — a entrega
+         * Sem `wamid` o webhook de status nunca acha esta linha, a entrega
          * fica parada em "aceita" para sempre. É perda de informação, não de
          * mensagem: a mensagem saiu. String vazia deixa isso explícito para
          * quem grava, em vez de um `undefined` que se confunde com "ainda não
@@ -547,7 +547,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
       // truncado do que a Meta recusar a mensagem inteira.
       //
       // `cortarCaracteres` e não `.slice`: os rótulos têm emoji ("📅 Escolher
-      // outro dia"), e cortar por unidade UTF-16 devolve meio par substituto —
+      // outro dia"), e cortar por unidade UTF-16 devolve meio par substituto ,
       // que o Postgres recusa dentro de `jsonb` na hora de gravar a mensagem.
       const curto = (o: Opcao) => cortarCaracteres(o.rotulo, LIMITE_ROTULO)
 

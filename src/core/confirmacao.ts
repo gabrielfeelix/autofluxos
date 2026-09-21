@@ -1,5 +1,5 @@
 /**
- * "Posso marcar?" — e o que a pessoa respondeu.
+ * "Posso marcar?", e o que a pessoa respondeu.
  *
  * Existe porque a IA passou a **gravar** no sistema do cliente. Ler é
  * reversível; marcar e desmarcar não são, e a diferença entre as duas foi o que
@@ -8,7 +8,7 @@
  * **Por que a confirmação é do motor e não do modelo.** O prompt já pede que ele
  * confirme em palavras (regra 10), e pedir não é garantir: um modelo convencido
  * pula a etapa, e a primeira vez que isso acontecer alguém perde uma aula. Aqui
- * a confirmação é uma parada de verdade — a chamada não sai enquanto a pessoa
+ * a confirmação é uma parada de verdade, a chamada não sai enquanto a pessoa
  * não responder.
  *
  * Também é o que tira a decisão de ser "unicamente automatizada", que é
@@ -21,8 +21,8 @@
 /**
  * O que conta como sim.
  *
- * Curto e literal, e isso é escolha. A tentação é aceitar de tudo — "aham",
- * "bora", "manda ver" — e ela é errada nos dois sentidos: um falso sim marca
+ * Curto e literal, e isso é escolha. A tentação é aceitar de tudo, "aham",
+ * "bora", "manda ver", e ela é errada nos dois sentidos: um falso sim marca
  * aula que ninguém pediu, e um falso não só custa uma repetição da pergunta.
  * **Na dúvida, não é sim.**
  *
@@ -105,7 +105,7 @@ export function lerConfirmacao(texto: string): Confirmacao {
   const limpo = normalizar(texto)
   if (limpo === '') return 'nao_entendi'
 
-  // Emoji de joinha vale sim, e é comum no WhatsApp — mais comum que "sim".
+  // Emoji de joinha vale sim, e é comum no WhatsApp, mais comum que "sim".
   if (limpo === '👍' || limpo === '👍🏻' || limpo === '✅') return 'sim'
 
   // Pontuação final não muda a resposta: "sim!" e "não." são o que parecem.
@@ -119,7 +119,7 @@ export function lerConfirmacao(texto: string): Confirmacao {
 /**
  * Tira acento, caixa e espaço repetido.
  *
- * Sem isso, "Não" e "nao" seriam respostas diferentes — e quem digita no
+ * Sem isso, "Não" e "nao" seriam respostas diferentes, e quem digita no
  * celular escreve as duas.
  */
 function normalizar(texto: string): string {
@@ -139,7 +139,7 @@ function normalizar(texto: string): string {
  * quem vai fazer. Um modelo pedindo "posso confirmar?" sem dizer o quê recebe
  * um "pode" que não confirma nada.
  *
- * `resumo` é o que a conversa já viu — "10/09 07:00 · Pilates solo", montado a
+ * `resumo` é o que a conversa já viu, "10/09 07:00 · Pilates solo", montado a
  * partir do que a própria consulta devolveu. Vazio quando não há como saber, e
  * aí a pergunta fica genérica em vez de mentir sobre o que vai acontecer.
  */

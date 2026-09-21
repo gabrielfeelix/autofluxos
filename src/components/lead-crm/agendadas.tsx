@@ -6,7 +6,7 @@ import { IconeDaSecao, iconeRelogio } from './icones'
  * O que já está marcado para sair.
  *
  * O agendamento (0057) existia só no Inbox: quem abria a ficha não tinha como
- * saber que havia uma mensagem esperando para ser enviada naquela conversa — e
+ * saber que havia uma mensagem esperando para ser enviada naquela conversa, e
  * escrevia de novo por cima. É o tipo de informação que só serve se estiver
  * onde a pessoa já está olhando.
  *

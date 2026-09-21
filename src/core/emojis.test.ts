@@ -41,7 +41,7 @@ describe('o catálogo', () => {
   })
 
   /*
-   * Emoji repetido vira `key` duplicada no React — e a grade some sem erro,
+   * Emoji repetido vira `key` duplicada no React, e a grade some sem erro,
    * que é o jeito mais caro de descobrir um copiar e colar.
    */
   it('não repete emoji dentro do mesmo grupo', () => {

@@ -3,7 +3,7 @@ import { criarEstado, lerEstado } from './estado'
 
 /**
  * O `state` do OAuth é a peça de segurança da conexão do Instagram: sem ele,
- * um link forjado liga uma conta de Instagram ao cliente errado — ou liga a
+ * um link forjado liga uma conta de Instagram ao cliente errado, ou liga a
  * conta de quem atacou a um cliente de verdade, e passa a receber os direct
  * dele. Estes testes são sobre isso, e não sobre o formato do texto.
  */
@@ -49,7 +49,7 @@ describe('o bilhete do OAuth', () => {
 
     /*
      * Vinte ainda vale, e é o número que importa: o Embedded Signup do WhatsApp
-     * em coexistência passa de dez minutos com facilidade — o cliente espera
+     * em coexistência passa de dez minutos com facilidade, o cliente espera
      * uma mensagem chegar no celular, sai do navegador e volta. Com o prazo
      * antigo, o bilhete vencia bem no fim, depois de a Meta já ter dito
      * "conectado".
@@ -82,7 +82,7 @@ describe('o bilhete do OAuth', () => {
 
   it('carimbo que não é número não vale', () => {
     // Assinado de verdade, para provar que a recusa é do carimbo e não da
-    // assinatura — o caminho que passaria despercebido.
+    // assinatura, o caminho que passaria despercebido.
     const cru = `${CLIENTE}.ontem`
     const estado = criarEstado(CLIENTE, AGORA)
     const assinatura = estado.split('.')[2]
@@ -92,7 +92,7 @@ describe('o bilhete do OAuth', () => {
 
   /**
    * Segredo diferente, bilhete diferente. É o que faz um bilhete de um
-   * ambiente não valer no outro — e o que faz trocar o segredo invalidar todos
+   * ambiente não valer no outro, e o que faz trocar o segredo invalidar todos
    * os bilhetes em voo.
    */
   it('bilhete de outro segredo não é aceito', () => {

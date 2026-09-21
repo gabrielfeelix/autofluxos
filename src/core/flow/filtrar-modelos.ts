@@ -4,7 +4,7 @@ import { normalizar } from '@/core/engine/interpolar'
  * A busca da galeria de templates.
  *
  * Mora em `core/` porque é regra, não desenho: o que casa e o que não casa
- * precisa ser igual na aba Templates e no modal de criar automação — são duas
+ * precisa ser igual na aba Templates e no modal de criar automação, são duas
  * telas mostrando a mesma lista, e duas buscas parecidas divergiriam no dia em
  * que alguém mexesse numa delas.
  *
@@ -12,7 +12,7 @@ import { normalizar } from '@/core/engine/interpolar'
  * "pos venda" tem que achar "Pós-venda", senão a busca ensina a não usar busca.
  *
  * **Toda palavra do termo precisa casar**, e não qualquer uma. Com "ou", digitar
- * mais palavras traria *mais* resultado — o contrário do que quem digita
+ * mais palavras traria *mais* resultado, o contrário do que quem digita
  * espera. As palavras podem casar em campos diferentes: "agenda lembrete" acha
  * o modelo cujo nome é lembrete e cuja etiqueta é Agenda.
  */
@@ -27,7 +27,7 @@ export type ModeloBuscavel = {
    *
    * Veio de um teste bobo e certeiro: procurar "cobrança" não achava o
    * "Lembrete de pagamento", porque a palavra não aparece nem no nome nem no
-   * resumo. Sinônimo não é enfeite de SEO — é o que impede a busca de ensinar
+   * resumo. Sinônimo não é enfeite de SEO, é o que impede a busca de ensinar
    * que não vale a pena buscar. Não aparece na tela.
    */
   sinonimos?: readonly string[]

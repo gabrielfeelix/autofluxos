@@ -54,7 +54,7 @@ function quadros(clienteId: string) {
 /**
  * Ganhar ou perder.
  *
- * O valor chega como texto porque é o que a mão digita — "1.500", "R$ 89,90" —
+ * O valor chega como texto porque é o que a mão digita, "1.500", "R$ 89,90" ,
  * e quem o entende é `core/crm.ts`. Recusar por formato seria transformar a
  * caixa de valor num teste de datilografia.
  */
@@ -64,7 +64,7 @@ export async function acaoFecharCartao(
   situacao: Exclude<Situacao, 'aberta'>,
   dados: { valor?: string; motivo?: string; titulo?: string; chaveDaOperacao?: string },
 ): Promise<{ ok: boolean; erro?: string; abriuEm?: string }> {
-  // Concluir comercialmente é registrar venda ou perda — a capacidade mais
+  // Concluir comercialmente é registrar venda ou perda, a capacidade mais
   // cara deste arquivo, e a que a RB-40 diz que operador não tem por padrão.
   const acesso = await exigirCapacidade(clienteId, 'registrar_venda', 'proprios')
   if (recusou(acesso)) return acesso
@@ -86,7 +86,7 @@ export async function acaoFecharCartao(
    * cartão "já concluído" e não tem como saber que quem o concluiu foi ela
    * mesma.
    *
-   * A chave nasce na tela, uma por abertura do formulário — ver
+   * A chave nasce na tela, uma por abertura do formulário, ver
    * `fechar-cartao.tsx`. Gerá-la aqui não adiantaria nada: cada tentativa seria
    * uma chave nova, que é o mesmo que não ter nenhuma.
    */
@@ -106,7 +106,7 @@ export async function acaoFecharCartao(
   quadros(clienteId)
 
   // O nome do destino só sai quando a passagem **aconteceu**. Pendente ou
-  // falhou não vira "o contato entrou no funil X" — é o que o A26 recusa
+  // falhou não vira "o contato entrou no funil X", é o que o A26 recusa
   // chamar de entrega completa.
   if (r.conclusao.continuidade !== 'feita' || !r.conclusao.destinoQuadroId) {
     return { ok: true }
@@ -131,7 +131,7 @@ export async function acaoReabrirCartao(
   return { ok: true }
 }
 
-/** `null` devolve o cartão à fila de ninguém — e isso é uma ação legítima. */
+/** `null` devolve o cartão à fila de ninguém, e isso é uma ação legítima. */
 export async function acaoAtribuirCartao(
   clienteId: string,
   cartaoId: string,
@@ -239,8 +239,8 @@ export async function acaoDefinirCorDaEtapa(
 /**
  * O que é ouro e o que é prata nesta conta.
  *
- * Os valores chegam como texto porque é o que a mão digita — "5.000", "R$
- * 5000", "5000,00" — e quem os entende é `lerValor`, o mesmo do valor do
+ * Os valores chegam como texto porque é o que a mão digita, "5.000", "R$
+ * 5000", "5000,00", e quem os entende é `lerValor`, o mesmo do valor do
  * cartão. Recusar por formato seria transformar a caixa num teste de
  * datilografia.
  *
@@ -296,7 +296,7 @@ export async function acaoCriarMotivo(
   return { ok: true }
 }
 
-/** Apagar o motivo **não reescreve as perdas antigas** — elas guardam o texto. */
+/** Apagar o motivo **não reescreve as perdas antigas**, elas guardam o texto. */
 export async function acaoApagarMotivo(
   clienteId: string,
   motivoId: string,
@@ -312,7 +312,7 @@ export async function acaoApagarMotivo(
 /**
  * Tudo que o painel lateral mostra, numa chamada.
  *
- * Numa só porque o painel abre inteiro — buscar bloco a bloco seria a tela
+ * Numa só porque o painel abre inteiro, buscar bloco a bloco seria a tela
  * montando em sete tempos debaixo do cursor de quem já está lendo.
  *
  * **O que entra aqui saiu de como os CRMs de verdade montam esse painel**
@@ -329,7 +329,7 @@ export async function acaoApagarMotivo(
  *
  * **O que deliberadamente não entra**: a jornada de anúncios (dezenas de
  * linhas) e os campos coletados pelo fluxo (despejo do bot). Os dois ficam na
- * ficha completa. É a lição unânime da pesquisa — HubSpot limita o painel por
+ * ficha completa. É a lição unânime da pesquisa, HubSpot limita o painel por
  * arquitetura, Salesforce corta em sete campos, Copper recomenda 4 a 5: painel
  * que mostra tudo vira a ficha completa e perde a razão de existir.
  */
@@ -346,7 +346,7 @@ export async function acaoAbrirPainelDoContato(
   equipe: { id: string; nome: string }[]
   /** O que já está marcado para sair. Vazio é o caso comum. */
   agendadas: { id: string; texto: string; quando: string; estado: string }[]
-  /** Um por funil em que a pessoa está — inclusive o que não foi clicado. */
+  /** Um por funil em que a pessoa está, inclusive o que não foi clicado. */
   funis: Awaited<ReturnType<typeof quadrosDoContato>>
   /** Os motivos da conta, para fechar como perdida sem sair do painel. */
   motivos: { id: string; nome: string }[]
@@ -391,7 +391,7 @@ export async function acaoAbrirPainelDoContato(
      * verdade do ponto de vista de quem não pode saber (RB-06).
      *
      * E a contagem sai junto do total: saber que houve doze compras já é
-     * inferir faixa de valor, que é o que a proposta proíbe em letra —
+     * inferir faixa de valor, que é o que a proposta proíbe em letra ,
      * "não devem ser inferíveis por contagens, faixas ou exportações".
      */
     resumo: veValores ? resumo : { total: null, compras: null, ultimaEm: resumo.ultimaEm },
@@ -463,7 +463,7 @@ export async function acaoDefinirEstagio(
 /**
  * Traz para o funil todo mundo que ainda está de fora.
  *
- * Existe porque a entrada automática só alcança contato **criado agora** — e
+ * Existe porque a entrada automática só alcança contato **criado agora**, e
  * está certo assim: quem já existia e voltou a escrever não pode ser jogado de
  * volta para a primeira etapa a cada mensagem. O preço disso é quadro novo em
  * conta antiga abrindo vazio com o inbox cheio, e este botão é o conserto.
@@ -487,7 +487,7 @@ export async function acaoTrazerTodosParaOQuadro(
  *
  * Existe separada de `acaoCriarQuadro` porque o modal de criação **não é mais um
  * formulário**: ele precisa fechar sozinho no sucesso e mostrar a recusa sem
- * recarregar — "já existe um quadro com este nome" chegava como nada, e a tela
+ * recarregar, "já existe um quadro com este nome" chegava como nada, e a tela
  * ficava parada com o botão clicado, parecendo travada.
  */
 export async function acaoCriarQuadroComModelo(
@@ -509,7 +509,7 @@ export async function acaoCriarQuadroComModelo(
  * Quem cuida desta pessoa, mudado da ficha dela.
  *
  * O Inbox já tinha o gesto ("Assumir"), e ele era sobre si mesmo: eu pego, eu
- * largo. Na ficha a pergunta é outra — quem *deveria* cuidar —, e a resposta
+ * largo. Na ficha a pergunta é outra, quem *deveria* cuidar , e a resposta
  * costuma ser outra pessoa. Por isso aqui a lista é a equipe inteira, e
  * `null` devolve o contato à fila de ninguém, que é estado legítimo.
  *

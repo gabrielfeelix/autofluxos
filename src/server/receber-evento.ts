@@ -27,7 +27,7 @@ export type ResultadoDoEvento =
   | 'sem_contato'
   /**
    * Passou de 24h desde a última mensagem da pessoa. **Registrado, não
-   * enviado** — ver o comentário em `tratarEvento`.
+   * enviado**, ver o comentário em `tratarEvento`.
    */
   | 'janela_fechada'
   /** O contato pausou o bot, ou o fluxo do gatilho não está publicado/ativo. */
@@ -51,7 +51,7 @@ export async function tratarEvento(
   fabricaDeCanal?: FabricaDeCanal,
 ): Promise<ResultadoDoEvento> {
   const gatilho = await acharGatilhoDeEvento(entrada.clienteId, entrada.evento)
-  // Conta sem gatilho para este evento não é erro — é conta que não pediu esta
+  // Conta sem gatilho para este evento não é erro, é conta que não pediu esta
   // automação. Alertar aqui encheria a tela de aviso a cada evento que o outro
   // lado manda e que ninguém assinou.
   if (!gatilho) return 'sem_gatilho'
@@ -62,7 +62,7 @@ export async function tratarEvento(
    *
    * Seria a coisa fácil de fazer e a errada: um sistema externo com um número
    * digitado errado encheria a base de contatos-fantasma que nunca falaram com
-   * ninguém — e que contam como lead na tela. Quem nunca escreveu para o
+   * ninguém, e que contam como lead na tela. Quem nunca escreveu para o
    * cliente não tem conversa, e sem conversa não há janela de 24h nem canal por
    * onde falar. Vira alerta, que é o que faz alguém olhar.
    */
@@ -91,11 +91,11 @@ export async function tratarEvento(
    * aprovado só existe depois do app review. Então há três saídas, e duas são
    * piores que não fazer nada:
    *
-   * - *mandar mesmo assim* — a Cloud API recusa, e a conversa fica com um
+   * - *mandar mesmo assim*, a Cloud API recusa, e a conversa fica com um
    *   registro de entrega falhada que ninguém pediu;
-   * - *fingir que avisou* — é exatamente o defeito que esta rodada existe para
+   * - *fingir que avisou*, é exatamente o defeito que esta rodada existe para
    *   consertar, trocado de lugar;
-   * - *gravar na ficha e deixar visível* — quem abrir o Inbox vê que a vaga
+   * - *gravar na ficha e deixar visível*, quem abrir o Inbox vê que a vaga
    *   abriu e decide se liga, manda modelo, ou deixa passar.
    *
    * A terceira é a única honesta enquanto o modelo aprovado não existir.
@@ -105,7 +105,7 @@ export async function tratarEvento(
       await acrescentarNota(
         entrada.clienteId,
         contatoId,
-        `evento “${entrada.evento}” chegou, mas a janela de 24h estava fechada — nada foi enviado.${resumo(entrada.dados)}`,
+        `evento “${entrada.evento}” chegou, mas a janela de 24h estava fechada, nada foi enviado.${resumo(entrada.dados)}`,
       )
     } catch (erro) {
       await alertar('não deu para registrar o evento fora da janela', erro, {
@@ -143,7 +143,7 @@ export async function tratarEvento(
   }
 
   // Bot pausado, fluxo despublicado ou desligado, conversa ocupada. Nenhum é
-  // exceção — mas todos significam um aviso que não saiu, e isso precisa
+  // exceção, mas todos significam um aviso que não saiu, e isso precisa
   // aparecer para alguém.
   await alertar('o evento não abriu a conversa', aberto, {
     cliente: entrada.clienteId,
@@ -189,7 +189,7 @@ async function acharContatoPeloTelefone(
  *
  * **Só as chaves e valores simples**, e com teto: o corpo vem de outro sistema
  * e pode trazer um objeto aninhado inteiro. Despejar isso na ficha de alguém
- * transformaria a anotação — que é o que uma pessoa lê antes de atender — num
+ * transformaria a anotação, que é o que uma pessoa lê antes de atender, num
  * dump de JSON.
  */
 function resumo(dados: Record<string, unknown> | undefined): string {

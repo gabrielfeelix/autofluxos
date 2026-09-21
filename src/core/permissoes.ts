@@ -18,9 +18,9 @@
  * Três conceitos, e por que são três
  * ---------------------------------------------------------------------------
  *
- *  - **capacidade** — o verbo ("registrar venda"). Responde *o quê*;
- *  - **escopo** — sobre quem ("meus", "da equipe", "todos"). Responde *quais*;
- *  - **papel** — um conjunto nomeado das duas coisas, que é o que a tela edita.
+ *  - **capacidade**, o verbo ("registrar venda"). Responde *o quê*;
+ *  - **escopo**, sobre quem ("meus", "da equipe", "todos"). Responde *quais*;
+ *  - **papel**, um conjunto nomeado das duas coisas, que é o que a tela edita.
  *
  * Juntá-los daria uma lista de vinte papéis fixos que nunca cabe na empresa
  * seguinte. Separá-los é o que deixa "operador que pode registrar venda, mas
@@ -65,11 +65,11 @@ export const CAPACIDADES = [
   'atender',
   /** Criar oportunidade e atividade. */
   'criar_oportunidade',
-  /** Registrar venda ou perda — concluir comercialmente. */
+  /** Registrar venda ou perda, concluir comercialmente. */
   'registrar_venda',
   /** Corrigir ou cancelar venda já registrada. Mexe em número fechado. */
   'corrigir_venda',
-  /** Ver valor, total, receita — qualquer número de dinheiro. */
+  /** Ver valor, total, receita, qualquer número de dinheiro. */
   'ler_valores',
   /** Exportar, criar segmento compartilhado, transmitir. */
   'exportar',
@@ -163,7 +163,7 @@ export function ehPapelDaConta(valor: string): valor is PapelDaConta {
  *
  * A RB-40 diz que operador não registra venda por padrão e não exporta. Se
  * `member` nascesse assim, **todo membro de toda conta existente perderia
- * acesso no deploy** — e a própria proposta proíbe isso em letra:
+ * acesso no deploy**, e a própria proposta proíbe isso em letra:
  *
  *   > "Na migração, preservar acesso atual por um papel de compatibilidade
  *   > identificado (...). Não retirar acesso de operadores em massa sem prévia."
@@ -171,12 +171,12 @@ export function ehPapelDaConta(valor: string): valor is PapelDaConta {
  * Então `member` preserva o que ele faz hoje, com duas exceções que não são
  * "acesso atual" e sim buracos: **configurar a empresa** e **corrigir venda**.
  * A primeira já era negada (`podeAdministrarConta`), e a segunda mexe em número
- * fechado — dar isso a todo mundo por inércia seria escolher o lado errado da
+ * fechado, dar isso a todo mundo por inércia seria escolher o lado errado da
  * dúvida.
  *
  * O operador restrito da RB-40 existe como `operador` abaixo, e a conta migra
  * para ele com prévia, na tela da T2.2. Ele não é o padrão hoje **porque
- * ninguém foi avisado ainda** — não porque a regra mudou de ideia.
+ * ninguém foi avisado ainda**, não porque a regra mudou de ideia.
  */
 export const POLITICAS: Record<PapelDaConta, Politica> = {
   owner: politica({
@@ -211,7 +211,7 @@ export const POLITICAS: Record<PapelDaConta, Politica> = {
     registrar_venda: 'todos',
     ler_valores: 'todos',
     exportar: 'todos',
-    // `configurar_empresa` e `corrigir_venda` ficam de fora — ver acima.
+    // `configurar_empresa` e `corrigir_venda` ficam de fora, ver acima.
   }),
 }
 
@@ -220,7 +220,7 @@ export const POLITICAS: Record<PapelDaConta, Politica> = {
  *
  * `gestor` e `operador` são a RB-40 como ela quer ser: o gestor trabalha no
  * escopo da equipe, o operador só no que é dele e sem tocar dinheiro nem
- * exportação. Eles ainda não são atribuíveis — a tela é da T2.2 — mas nascem
+ * exportação. Eles ainda não são atribuíveis, a tela é da T2.2, mas nascem
  * aqui porque a política é regra pura e a regra não espera a tela.
  */
 export const MODELOS_EXTRA = {
@@ -254,7 +254,7 @@ export type Acesso = {
   /**
    * Administrador da 4YU agindo sem ser membro.
    *
-   * Passa por tudo, e isso é herdado de `sessao.ts`, não decidido aqui — a
+   * Passa por tudo, e isso é herdado de `sessao.ts`, não decidido aqui, a
    * saída dele é "só impersonando", que deixa rastro na auditoria. Repetir a
    * decisão neste arquivo criaria dois lugares para mudá-la.
    */
@@ -299,7 +299,7 @@ export function pode(
  * É a segunda metade da autorização, e a que falta com mais frequência: `pode`
  * responde "tem a capacidade", isto responde "sobre **este** registro". Uma
  * ação que só faz a primeira pergunta deixa o operador com escopo `proprios`
- * fechar a venda de outra equipe — que é o A19.
+ * fechar a venda de outra equipe, que é o A19.
  *
  * `dono` e `equipeDoRegistro` nulos são tratados como "de ninguém": a fila sem
  * responsável **não é de todos por acidente** (RB-40). Quem a alcança é quem
@@ -333,7 +333,7 @@ export function alcanca(
  * O filtro que a consulta aplica **antes** de paginar.
  *
  * Existe para que "quais registros" não vire `filter()` em memória depois de
- * ler tudo — que além de lento entrega os dados ao processo que não deveria
+ * ler tudo, que além de lento entrega os dados ao processo que não deveria
  * tê-los, e conta errado qualquer total. Devolve a intenção; quem a traduz em
  * SQL é o repositório.
  *

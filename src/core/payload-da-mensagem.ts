@@ -10,8 +10,8 @@
  * sem banco e sem rede, e regra assim tem que dar para testar sem subir nada.
  *
  * Tudo aqui lê defensivamente. O `payload` é a única coluna do produto que
- * guarda formato de terceiro, e uma linha antiga — de antes de um campo
- * existir — não pode derrubar a conversa inteira.
+ * guarda formato de terceiro, e uma linha antiga, de antes de um campo
+ * existir, não pode derrubar a conversa inteira.
  */
 
 /**
@@ -32,8 +32,8 @@ export type LocalDaMensagem = {
  * Um cartão de contato encaminhado. Uma mensagem pode trazer vários.
  *
  * Só nome e telefones: é o que resolve a pergunta de quem atende ("me manda o
- * contato do responsável"). O resto do vCard da Meta — aniversário, empresa,
- * endereço — entra se alguém pedir, e hoje ninguém pediu.
+ * contato do responsável"). O resto do vCard da Meta, aniversário, empresa,
+ * endereço, entra se alguém pedir, e hoje ninguém pediu.
  */
 export type CartaoDeContato = {
   nome: string
@@ -46,7 +46,7 @@ export type CartaoDeContato = {
  *
  * O `payload` de entrada é a mensagem **crua** da Meta, então isto lê o formato
  * dela: `location: { latitude, longitude, name?, address? }`. Ler defensivamente
- * não é zelo excessivo — o mesmo campo guarda coisas diferentes conforme a
+ * não é zelo excessivo, o mesmo campo guarda coisas diferentes conforme a
  * mensagem, e uma linha antiga não pode derrubar a conversa inteira.
  */
 export function localDoPayload(payload: unknown): LocalDaMensagem | null {
@@ -72,7 +72,7 @@ export function localDoPayload(payload: unknown): LocalDaMensagem | null {
 /**
  * Uma coordenada, ou `null` se não der para chamar aquilo de coordenada.
  *
- * **`Number('')` é zero**, e (0, 0) é um ponto de verdade — fica no Atlântico,
+ * **`Number('')` é zero**, e (0, 0) é um ponto de verdade, fica no Atlântico,
  * na altura do Golfo da Guiné. Um `Number.isFinite` sozinho aceitaria campo
  * vazio e plantaria um pino no meio do oceano, que é pior do que não mostrar
  * lugar nenhum: parece informação.

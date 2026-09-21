@@ -5,8 +5,8 @@ import { PADRAO_DE_ESCRITA, PADRAO_DE_LEITURA, politicaDe, type Politica } from 
 /**
  * Quem decide se a IA grava sozinha.
  *
- * O que precisa ser provado é o padrão: o cliente que nunca foi configurado —
- * inclusive o que já existia antes desta tabela — tem que nascer do lado
+ * O que precisa ser provado é o padrão: o cliente que nunca foi configurado ,
+ * inclusive o que já existia antes desta tabela, tem que nascer do lado
  * seguro, sem ninguém lembrar de configurá-lo.
  */
 
@@ -39,7 +39,7 @@ describe('a linha gravada vale, e só para gravação', () => {
   it('política de leitura gravada por engano é ignorada', () => {
     // O `check` do banco já recusa. Esta é a segunda porta, e ela existe porque
     // a consequência de uma linha errada seria a IA emudecer numa consulta
-    // inofensiva — e ninguém suspeitaria da tabela.
+    // inofensiva, e ninguém suspeitaria da tabela.
     const gravadas = new Map<string, Politica>([['agenda_horarios', 'humano']])
     expect(politicaDe(horarios, gravadas)).toBe('automatico')
   })

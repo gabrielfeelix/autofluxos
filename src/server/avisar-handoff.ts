@@ -11,12 +11,12 @@ import { membrosDaConta } from './repos/usuarios'
  * O aviso que alcança quem **não** está com o painel aberto.
  *
  * `NotificacoesDaFila` avisa quem está olhando a tela; este módulo é a outra
- * metade — o telefone no bolso, o painel fechado, que é onde o §3.10.1 diz
+ * metade, o telefone no bolso, o painel fechado, que é onde o §3.10.1 diz
  * estar o elo mais fraco do produto.
  *
  * **Melhor-esforço, sempre.** Falhar ao avisar não pode desfazer o handoff:
  * quem está esperando tem que aparecer na tela mesmo quando push nenhum saiu.
- * Toda falha daqui vira alerta e a conversa segue — a mesma regra do
+ * Toda falha daqui vira alerta e a conversa segue, a mesma regra do
  * `mover_etapa` e da etiqueta.
  *
  * **O e-mail ficou de fora, e não por esquecimento.** O plano da rodada dizia
@@ -24,8 +24,8 @@ import { membrosDaConta } from './repos/usuarios'
  * com estas palavras, que ligar verificação por e-mail *exige* SMTP, que é
  * global ao projeto compartilhado com a Verandi, e por isso está desligada. Não
  * há credencial de SMTP no `.secrets` nem na Vercel, e contratá-la é decisão
- * que atinge os dois produtos. Push não depende de terceiro nenhum — a chave é
- * nossa, gerada aqui — então ele entrou inteiro e o e-mail ficou registrado
+ * que atinge os dois produtos. Push não depende de terceiro nenhum, a chave é
+ * nossa, gerada aqui, então ele entrou inteiro e o e-mail ficou registrado
  * como pendência com dono. Ver docs/HANDOFF-06-SET-NOITE.md.
  */
 
@@ -93,19 +93,19 @@ export async function avisarHandoff({
         papel: m.papel,
         presenca: m.presenca,
       })),
-      // `null` é "atende sempre", e não "nunca atende" — a mesma leitura que o
+      // `null` é "atende sempre", e não "nunca atende", a mesma leitura que o
       // resto do produto faz da coluna vazia.
       horario ?? SEMPRE_ABERTO,
     )
     if (!decisao.avisar) return
 
     /*
-     * O bloco escolheu alguém: avisa só essa pessoa — **se ela ainda atende**.
+     * O bloco escolheu alguém: avisa só essa pessoa, **se ela ainda atende**.
      *
      * "Ainda atende" é o resultado de `quemAvisar`, ou seja, ela continua na
      * conta, com papel de atendimento e não marcada como ausente. Fora disso,
      * o aviso volta a ser da equipe inteira: um aviso endereçado a quem saiu
-     * da empresa, ou a quem está de férias, é um aviso que ninguém recebe — e
+     * da empresa, ou a quem está de férias, é um aviso que ninguém recebe, e
      * o handoff continuaria esperando calado, que é exatamente o buraco que
      * este módulo existe para fechar.
      *
@@ -137,8 +137,8 @@ export async function avisarHandoff({
     /*
      * Um aparelho que falha não pode calar os outros.
      *
-     * `allSettled`, e não `all`: com `all`, um endpoint morto — que é o caso
-     * mais comum de todos — abortaria o envio para quem ainda está lá.
+     * `allSettled`, e não `all`: com `all`, um endpoint morto, que é o caso
+     * mais comum de todos, abortaria o envio para quem ainda está lá.
      */
     const envios = await Promise.allSettled(
       assinaturas.map((assinatura) =>

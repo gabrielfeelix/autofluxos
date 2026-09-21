@@ -25,7 +25,7 @@ import { acharQuadro, apagarEtapa, criarEtapa, criarQuadro } from './quadros'
 /**
  * As sequências contra o banco de verdade (0031).
  *
- * O que precisa ser provado aqui não é que a linha entra — é o que **impede**
+ * O que precisa ser provado aqui não é que a linha entra, é o que **impede**
  * ela de entrar: a inscrição em dobro, o passo em fluxo de outra conta, e o
  * apagar em silêncio de um fluxo ou de uma etiqueta que uma sequência usa. As
  * três coisas só aparecem contra Postgres, porque as três são índice e chave
@@ -143,7 +143,7 @@ describe.skipIf(!temCredencial)('criar a sequência e os passos', () => {
 })
 
 describe.skipIf(!temCredencial)('o que uma sequência viva impede de apagar', () => {
-  it('não apaga o fluxo que é passo dela — e diz onde desligar', async () => {
+  it('não apaga o fluxo que é passo dela, e diz onde desligar', async () => {
     const r = await apagarFluxo(clienteId, fluxoId)
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.motivo).toContain('retomada')
@@ -155,7 +155,7 @@ describe.skipIf(!temCredencial)('o que uma sequência viva impede de apagar', ()
     if (!r.ok) expect(r.motivo).toContain('retomada')
   })
 
-  it('apaga a etiqueta de saída sem drama — ela é opcional por desenho', async () => {
+  it('apaga a etiqueta de saída sem drama, ela é opcional por desenho', async () => {
     expect(await apagarEtiqueta(clienteId, saidaId)).toEqual({ ok: true })
   })
 
@@ -164,7 +164,7 @@ describe.skipIf(!temCredencial)('o que uma sequência viva impede de apagar', ()
    * dependência é resolvida ou operação bloqueada com explicação".
    *
    * A validação da T9.1 achou este descoberto. O bloqueio existia para os dois
-   * casos vizinhos — o fluxo que é passo e a etiqueta que dispara, logo acima —
+   * casos vizinhos, o fluxo que é passo e a etiqueta que dispara, logo acima ,
    * e **não existia para a etapa**, embora `sequencias.coluna_id` aponte para
    * uma. A ausência é mais fácil de não notar justamente porque os vizinhos
    * estão cobertos.
@@ -221,7 +221,7 @@ describe.skipIf(!temCredencial)('inscrever, e não inscrever duas vezes', () => 
   })
 
   it('a segunda inscrição ativa da mesma pessoa é recusada pelo índice', async () => {
-    // Aplicar a mesma etiqueta duas vezes não pode inscrever duas vezes — senão
+    // Aplicar a mesma etiqueta duas vezes não pode inscrever duas vezes, senão
     // a pessoa recebe a sequência inteira em dobro.
     const sequencia = (await listarSequencias(clienteId)).find((s) =>
       s.nome.endsWith('retomada'),
@@ -246,7 +246,7 @@ describe.skipIf(!temCredencial)('inscrever, e não inscrever duas vezes', () => 
     expect(await sairDasSequencias(contatoId, 'respondeu')).toEqual([])
   })
 
-  it('depois de sair dá para entrar de novo — o índice único é parcial', async () => {
+  it('depois de sair dá para entrar de novo, o índice único é parcial', async () => {
     const sequencia = (await listarSequencias(clienteId)).find((s) =>
       s.nome.endsWith('retomada'),
     )!
@@ -266,7 +266,7 @@ describe.skipIf(!temCredencial)('inscrever, e não inscrever duas vezes', () => 
       s.nome.endsWith('retomada'),
     )!
     // A etiqueta de saída desta sequência foi apagada no teste acima, então
-    // nenhuma sequência a declara — e ninguém sai por ela.
+    // nenhuma sequência a declara, e ninguém sai por ela.
     await inscrever(clienteId, sequencia.id, contatoId)
     expect(await sairPorEtiquetaDeSaida(clienteId, etiquetaId, [contatoId])).toEqual([])
 
@@ -316,7 +316,7 @@ describe.skipIf(!temCredencial)('o gatilho por etapa do quadro (0034)', () => {
     if (nova.ok) await criarPasso(clienteId, nova.id, { atrasoMinutos: 120, fluxoId })
 
     // Filtrar sempre por `etiqueta_id` faria este evento não achar nada, em
-    // silêncio — que é o defeito que a consulta separada por evento evita.
+    // silêncio, que é o defeito que a consulta separada por evento evita.
     const achadas = await sequenciasDoEvento(clienteId, 'etapa_alcancada', etapa!.id)
     expect(achadas.map((s) => s.nome)).toEqual([expect.stringContaining('pos-agendamento')])
 
@@ -354,7 +354,7 @@ describe.skipIf(!temCredencial)('desligar, tirar passo e apagar', () => {
     expect(await apagarSequencia(clienteId, sequencia.id)).toBe(true)
 
     // **Todas**, e não só aquela: o fluxo é passo de mais de uma sequência
-    // (a de etiqueta e a de etapa), e a recusa olha todas — que é justamente o
+    // (a de etiqueta e a de etapa), e a recusa olha todas, que é justamente o
     // comportamento que se quer provar aqui.
     for (const outra of await listarSequencias(clienteId)) {
       expect(await apagarSequencia(clienteId, outra.id)).toBe(true)
@@ -366,7 +366,7 @@ describe.skipIf(!temCredencial)('desligar, tirar passo e apagar', () => {
 describe.skipIf(!temCredencial)('a régua de retomada (0070)', () => {
   it('recusa o evento de sumiço sem dizer de quantos dias', async () => {
     // Sequência de sumiço sem a condição é uma régua que nunca dispara e que a
-    // tela mostraria como ativa — o mesmo defeito que as coerências da 0031 e
+    // tela mostraria como ativa, o mesmo defeito que as coerências da 0031 e
     // da 0034 já barravam para etiqueta e etapa.
     const r = await criarSequencia(clienteId, {
       nome: 'retomada sem dias',

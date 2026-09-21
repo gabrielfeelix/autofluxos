@@ -3,7 +3,7 @@ import type { TipoDeMidia } from '@/core/flow/schema'
 import { db } from '../db'
 
 /**
- * O acervo de arquivos de um cliente — o que o bloco de mídia pode mandar.
+ * O acervo de arquivos de um cliente, o que o bloco de mídia pode mandar.
  *
  * Mora no Storage e não numa tabela: o arquivo já vive lá, e uma tabela espelho
  * criaria duas verdades que divergem no dia em que um upload falhar no meio.
@@ -34,7 +34,7 @@ export type ArquivoDoAcervo = {
  * bucket dá 400 do Storage no `PUT`, longe de qualquer código nosso; tipo que
  * está no bucket e não aqui é recusado por nós antes mesmo de tentar. Foi por
  * isso que `audio/mp4` precisou da `0056` no mesmo dia em que o botão de gravar
- * áudio entrou — ver docs/PESQUISA-VOZ-E-CHAMADA.md.
+ * áudio entrou, ver docs/PESQUISA-VOZ-E-CHAMADA.md.
  */
 export const TIPOS_ACEITOS: Record<string, { extensao: string; midia: TipoDeMidia }> = {
   'image/png': { extensao: 'png', midia: 'imagem' },
@@ -102,8 +102,7 @@ function nomeSeguro(nomeOriginal: string, extensao: string): string {
 
   // O sufixo aleatório em vez de sobrescrever pelo nome original: dois arquivos
   // chamados `plano.pdf` são o caso comum, e sobrescrever trocaria o PDF de um
-  // fluxo publicado sem ninguém pedir. Versão publicada é imutável aqui também
-  // — o grafo aponta para uma URL, e essa URL não pode mudar de conteúdo pelas
+  // fluxo publicado sem ninguém pedir. Versão publicada é imutável aqui também, o grafo aponta para uma URL, e essa URL não pode mudar de conteúdo pelas
   // costas.
   const sufixo = Math.random().toString(36).slice(2, 8)
   return `${base === '' ? 'arquivo' : base}-${sufixo}.${extensao}`
@@ -124,7 +123,7 @@ export type EnvioAssinado = {
  * arquivo direto**.
  *
  * **Por que o arquivo não passa mais pelo nosso servidor.** Ele passava, como
- * corpo de uma Server Action — e Server Action tem teto de **1 MB** no Next
+ * corpo de uma Server Action, e Server Action tem teto de **1 MB** no Next
  * (`serverActions.bodySizeLimit`, padrão). Acima disso o framework devolve 413
  * antes de a nossa função rodar: a tela mostrava "até 16 MB", a pessoa soltava
  * um PDF de 3 MB, e o que aparecia era a página de erro genérica. Nada nosso
@@ -132,7 +131,7 @@ export type EnvioAssinado = {
  *
  * Subir o teto não resolveria: a plataforma corta o corpo de uma função em
  * ~4,5 MB, e vídeo de WhatsApp passa disso com folga. Com URL assinada o
- * arquivo vai do navegador para o Storage e o teto volta a ser o do bucket —
+ * arquivo vai do navegador para o Storage e o teto volta a ser o do bucket ,
  * 16 MB, que é o da própria Cloud API (0017).
  *
  * **O caminho é decidido aqui, depois de conferir o dono**, e a assinatura vale
@@ -221,7 +220,7 @@ export async function guardarNoAcervo(
  * Tira um arquivo do acervo.
  *
  * Confere que o caminho começa pela pasta do cliente **antes** de apagar. Sem
- * isso, um caminho vindo do formulário apagaria arquivo de outro cliente — é o
+ * isso, um caminho vindo do formulário apagaria arquivo de outro cliente, é o
  * mesmo cuidado que as escritas de fluxo já tomam com o par `(fluxo, cliente)`.
  */
 export async function apagarDoAcervo(clienteId: string, caminho: string): Promise<void> {
@@ -236,7 +235,7 @@ export async function apagarDoAcervo(clienteId: string, caminho: string): Promis
 /**
  * Apaga o acervo inteiro de um cliente.
  *
- * Chamado ao apagar o cliente. Cascata de banco não alcança o Storage — foi
+ * Chamado ao apagar o cliente. Cascata de banco não alcança o Storage, foi
  * exatamente o que aconteceu com a logo, e o acervo é maior e mais pessoal.
  */
 export async function apagarAcervoDoCliente(clienteId: string): Promise<void> {

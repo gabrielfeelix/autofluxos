@@ -1,7 +1,7 @@
 import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
 
 /**
- * O atendente de IA em laço — a IA responde, e a conversa volta a ela.
+ * O atendente de IA em laço, a IA responde, e a conversa volta a ela.
  *
  * **O laço é o desenho, não um truque.** Um bloco de IA sozinho responde uma
  * vez e segue para o próximo nó; quem tem uma segunda dúvida encontra o fim do
@@ -13,12 +13,12 @@ import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
  * perguntas nem oferecendo "quer falar com alguém?" a cada rodada. Quem
  * interrompe é o próprio modelo: o prompt manda responder `NAO_SEI` quando a
  * pergunta foge do contexto do negócio, quando a pessoa pede uma pessoa e
- * quando ela parece irritada — e `nao_sei` transfere para o humano em
+ * quando ela parece irritada, e `nao_sei` transfere para o humano em
  * `efeitos/resolver.ts`, com aviso diferente fora do horário. Ou seja: o laço
  * tem porta de saída em toda volta, e ela é a mesma regra que impede a IA de
  * inventar preço.
  *
- * Por isso o `handoff` daqui **não é o destino comum** — ele é a saída de quem
+ * Por isso o `handoff` daqui **não é o destino comum**, ele é a saída de quem
  * escolhe falar com alguém logo na abertura, antes de a IA dizer uma palavra.
  * Pedir atendente e receber um robô perguntando "como posso ajudar?" é o atrito
  * que o documento do cliente chama de loop do bot. O caminho de quem entra na
@@ -29,7 +29,7 @@ import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
  *
  * **Fora da galeria de modelos, e não por esquecimento.** `MODELOS` só oferece
  * fluxo que *qualquer* cliente publica, e o `validar()` recusa um bloco de IA
- * quando o plano não a contratou (`IA_NAO_CONTRATADA`) — um modelo com IA na
+ * quando o plano não a contratou (`IA_NAO_CONTRATADA`), um modelo com IA na
  * galeria mostraria erro na cara de quem só escolheu da lista. Este grafo é
  * ponto de partida para quem tem IA no plano e contexto do negócio escrito.
  */
@@ -45,7 +45,7 @@ export const atendenteIa: Fluxo = fluxoSchema.parse({
           {
             tipo: 'texto',
             texto:
-              'Oi! 👋 Sou o assistente virtual e respondo por aqui mesmo. Pode perguntar o que quiser — se eu não souber, chamo alguém do time.',
+              'Oi! 👋 Sou o assistente virtual e respondo por aqui mesmo. Pode perguntar o que quiser, se eu não souber, chamo alguém do time.',
           },
         ],
       },
@@ -87,7 +87,7 @@ export const atendenteIa: Fluxo = fluxoSchema.parse({
         /*
          * A instrução é do momento, não do negócio. O que a empresa é, o que
          * ela cobra e o que ela não responde moram no contexto do negócio, que
-         * é por cliente — repetir aqui criaria um segundo lugar para a mesma
+         * é por cliente, repetir aqui criaria um segundo lugar para a mesma
          * verdade divergir de si mesma.
          */
         instrucao:

@@ -21,7 +21,7 @@ describe('a localização no payload', () => {
     })
   })
 
-  /* Arrastando o pino, a Meta manda só as coordenadas — e a bolha precisa aguentar. */
+  /* Arrastando o pino, a Meta manda só as coordenadas, e a bolha precisa aguentar. */
   it('aceita o lugar mudo, só com as coordenadas', () => {
     expect(localDoPayload({ location: { latitude: -23.5, longitude: -46.6 } })).toEqual({
       latitude: -23.5,

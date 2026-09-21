@@ -4,7 +4,7 @@ import { assinarMensagens, nomeDoPerfil } from './conexao'
 /**
  * O passo que faltava no OAuth: inscrever a conta no webhook.
  *
- * O que se testa aqui é o que não deixa rastro em produção — host, método,
+ * O que se testa aqui é o que não deixa rastro em produção, host, método,
  * campo, e a resposta `{"success": false}` que a Meta devolve com status 200
  * quando recusa. Nenhum dos quatro aparece em log quando está errado: a conta
  * fica verde na tela e o Inbox fica vazio.
@@ -86,7 +86,7 @@ describe('nomeDoPerfil', () => {
     expect(await nomeDoPerfil({ igsid: 'igsid', token: 't' })).toBe('ana.rib')
   })
 
-  it('devolve nulo em vez de estourar — nome é enfeite, mensagem não é', async () => {
+  it('devolve nulo em vez de estourar, nome é enfeite, mensagem não é', async () => {
     fingirFetch(async () => new Response('{"error":{"message":"nope"}}', { status: 400 }))
 
     expect(await nomeDoPerfil({ igsid: 'igsid', token: 't' })).toBeNull()

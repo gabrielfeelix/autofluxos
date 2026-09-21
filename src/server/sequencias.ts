@@ -32,7 +32,7 @@ import {
  * Põe o contato nas sequências que este evento dispara.
  *
  * **Nada aqui pode derrubar quem chamou.** Quem chama já encerrou um
- * atendimento ou já etiquetou alguém — o trabalho que importava está feito, e
+ * atendimento ou já etiquetou alguém, o trabalho que importava está feito, e
  * uma exceção aqui desfaria a impressão de que ele aconteceu. Por isso o
  * `try/catch` engole e loga: o custo do erro é um acompanhamento que não
  * começou, e ele é menor do que o custo de a tela dizer que falhou o que deu
@@ -57,7 +57,7 @@ export async function inscreverNoEvento(
       for (const contatoId of contatos) {
         const inscricao = await inscrever(clienteId, sequencia.id, contatoId)
         // `null` = já havia uma ativa. Aplicar a mesma etiqueta duas vezes não
-        // pode inscrever a pessoa duas vezes — quem garante isso de verdade é o
+        // pode inscrever a pessoa duas vezes, quem garante isso de verdade é o
         // índice único parcial da 0031, e aqui a resposta é só "já estava".
         if (!inscricao) continue
 
@@ -92,7 +92,7 @@ export async function inscreverNoEvento(
  * pessoa que voltou a falar não precisa ser lembrada de falar.
  *
  * As tarefas agendadas são canceladas junto. Sem isso elas acordariam, leriam
- * uma inscrição já morta e seriam ignoradas — correto, mas ao custo de uma
+ * uma inscrição já morta e seriam ignoradas, correto, mas ao custo de uma
  * passada do agendador por inscrição, todo dia, para nada.
  */
 export async function sairPorEvento(
@@ -122,7 +122,7 @@ export async function sairPorEvento(
   }
 }
 
-/** A saída específica da etiqueta de saída — só das sequências que a declaram. */
+/** A saída específica da etiqueta de saída, só das sequências que a declaram. */
 export async function sairPelaEtiqueta(
   clienteId: string,
   etiquetaId: string,

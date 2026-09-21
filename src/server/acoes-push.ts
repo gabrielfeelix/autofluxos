@@ -37,7 +37,7 @@ export async function acaoAssinarAvisos(
    * **Pertencer à conta, e não apenas estar logado.**
    *
    * Sem esta conferência, qualquer pessoa com sessão válida assinaria os avisos
-   * de qualquer cliente cujo id ela adivinhasse — e o handoff de um cliente
+   * de qualquer cliente cujo id ela adivinhasse, e o handoff de um cliente
    * chegaria, com nome do contato, no telefone de um estranho. O id vem da URL,
    * que é adivinhável; é a mesma regra que toda leitura por aqui já segue.
    */
@@ -54,8 +54,7 @@ export async function acaoAssinarAvisos(
 /**
  * Desligar não exige papel na conta.
  *
- * Quem já não pertence mais ao cliente ainda precisa conseguir parar de receber
- * — e o endpoint é do navegador de quem está chamando. Exigir papel aqui
+ * Quem já não pertence mais ao cliente ainda precisa conseguir parar de receber, e o endpoint é do navegador de quem está chamando. Exigir papel aqui
  * deixaria alguém removido da conta recebendo aviso para sempre.
  */
 export async function acaoCancelarAvisos(endpoint: unknown): Promise<{ ok: boolean }> {

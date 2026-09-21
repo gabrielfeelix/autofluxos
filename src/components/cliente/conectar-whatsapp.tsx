@@ -15,21 +15,21 @@ import { LogoDoCanal } from '@/components/design/selo-do-canal'
  * O hospedado é mais simples e **não serve**. A doc da Meta: *"Hosted Embedded
  * Signup can only be used to onboard business customers to Cloud API, and the
  * flow cannot be customized."* Sem customização não há como pedir coexistência,
- * e o cliente perderia o WhatsApp do celular — o oposto do que a tela promete.
+ * e o cliente perderia o WhatsApp do celular, o oposto do que a tela promete.
  *
  * O hospedado também não devolve ninguém: ele não tem redirect de volta, e foi
  * isso que fez duas conexões reais terminarem com o cliente vendo "pronto" na
  * tela da Meta e o nosso banco vazio, em 13/set/2026.
  *
  * Aqui o `code` chega **em JavaScript**, na própria página, e vai para
- * `/api/whatsapp/concluir` pela nossa origem — com o cookie de sessão junto,
+ * `/api/whatsapp/concluir` pela nossa origem, com o cookie de sessão junto,
  * que é o que dispensa o `state` assinado do outro fluxo.
  *
  * ---------------------------------------------------------------------------
  * Duas respostas, e as duas são necessárias
  * ---------------------------------------------------------------------------
  *
- * 1. **O callback do `FB.login`** traz o `code` — e só ele. Vive **30
+ * 1. **O callback do `FB.login`** traz o `code`, e só ele. Vive **30
  *    segundos**, então é trocado no servidor imediatamente.
  * 2. **O `message` do session logging** traz `phone_number_id` e `waba_id`. Sem
  *    o número não há o que gravar, e o callback não o carrega.
@@ -117,7 +117,7 @@ export function ConectarWhatsapp({
        *
        * A primeira escrita fazia `JSON.parse(evento.data)` direto dentro de um
        * `try` com `catch` vazio. Quando o Facebook manda o payload já como
-       * **objeto** — e ele manda —, o `parse` estoura, o `catch` engole, e o
+       * **objeto**, e ele manda , o `parse` estoura, o `catch` engole, e o
        * `phone_number_id` é descartado em silêncio. Sem o número,
        * `tentarConcluir` nunca dispara: o cliente vê "Concluir" na tela da
        * Meta, tudo parece ter dado certo, e o nosso banco não recebe nada.
@@ -153,7 +153,7 @@ export function ConectarWhatsapp({
         tentarConcluir()
       }
 
-      // A pessoa fechou a janela no meio. Não é erro — é desistência.
+      // A pessoa fechou a janela no meio. Não é erro, é desistência.
       if (dado.event === 'CANCEL' && !codigo.current) setEstado('parado')
     }
 
@@ -189,7 +189,7 @@ export function ConectarWhatsapp({
          * **Se o número não chegar, manda mesmo assim depois de um instante.**
          *
          * O `code` vive 30 segundos, e ficar esperando um `message` que pode
-         * não vir gasta essa janela calado — foi o que aconteceu na primeira
+         * não vir gasta essa janela calado, foi o que aconteceu na primeira
          * conexão real. Mandando, o servidor grava o que dá e **alerta** com o
          * que falta, que é infinitamente melhor que silêncio: alguém consegue
          * terminar à mão dentro das 24h.
@@ -206,7 +206,7 @@ export function ConectarWhatsapp({
          * **`featureType` continua sendo código, mesmo em v4.**
          *
          * A página de *Versions* da Meta diz que o `extras` de v4 é
-         * "purposely empty", e ler só ela leva a tirar o `featureType` daqui —
+         * "purposely empty", e ler só ela leva a tirar o `featureType` daqui ,
          * que foi o que aconteceu na primeira escrita deste arquivo. A doc de
          * Coexistence e os guias de quem implementou dizem o contrário, e é o
          * contrário que vale: **sem esta linha o cliente nunca vê a tela de
@@ -222,12 +222,12 @@ export function ConectarWhatsapp({
          * **São três campos, e faltava um.**
          *
          * O exemplo da doc de Coexistence traz `sessionInfoVersion: "3"` junto
-         * do `featureType` — e nós tínhamos só o `featureType`. A v4 funciona
+         * do `featureType`, e nós tínhamos só o `featureType`. A v4 funciona
          * sem ele em fluxo comum, mas é o session logging que entrega o
          * `phone_number_id` pelo `message`, e a própria lista de requisitos da
          * Meta exige *"using Embedded Signup with session logging"*.
          *
-         * Sem declarar a versão, o payload chega noutro formato — ou não chega.
+         * Sem declarar a versão, o payload chega noutro formato, ou não chega.
          * Foi exatamente o sintoma de 13/set: cliente terminando o fluxo e o
          * número nunca aparecendo no navegador.
          */

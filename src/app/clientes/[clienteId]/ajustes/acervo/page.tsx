@@ -29,7 +29,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           <strong className="font-semibold text-soft">
             Eles ficam num endereço público enquanto estiverem aqui
           </strong>{' '}
-          — é o que permite o WhatsApp baixá-los para entregar. Não guarde documento pessoal de
+         , é o que permite o WhatsApp baixá-los para entregar. Não guarde documento pessoal de
           ninguém.
         </p>
 

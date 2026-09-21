@@ -13,14 +13,14 @@ import { db, ehIdInvalido } from '../db'
  * Bucket privado, e o acesso nunca sai daqui
  * ---------------------------------------------------------------------------
  *
- * O `autofluxos-acervo` é público por decisão consciente da `0017` — a Meta
- * precisa baixar do `link` que mandamos —, e a mesma frase que decidiu isso
+ * O `autofluxos-acervo` é público por decisão consciente da `0017`, a Meta
+ * precisa baixar do `link` que mandamos , e a mesma frase que decidiu isso
  * escreveu a fronteira: *"documento pessoal não entra, e isso é regra de uso,
  * não de banco."*
  *
  * Mídia recebida é exatamente o documento pessoal que aquele parágrafo exclui:
  * RG, comprovante de pagamento, exame. Por isso ela tem bucket próprio, sem
- * policy nenhuma de RLS — `anon` e `authenticated` não leem nada — e a única
+ * policy nenhuma de RLS, `anon` e `authenticated` não leem nada, e a única
  * porta é uma URL assinada de validade curta, criada aqui depois de o servidor
  * conferir quem está pedindo.
  */
@@ -31,7 +31,7 @@ export const BUCKET_DOS_RECEBIDOS = 'autofluxos-recebidos'
  * Quanto tempo a URL assinada vale.
  *
  * Cinco minutos é o número da própria Meta para a URL de mídia dela, e a mesma
- * ordem de grandeza da Intercom (30 min) e da 360dialog (5 min) — ver
+ * ordem de grandeza da Intercom (30 min) e da 360dialog (5 min), ver
  * `docs/PLANO-MIDIA-RECEBIDA.md`. O que importa não é o número exato: é a
  * assinatura morrer antes de a URL virar link permanente em log, print ou
  * histórico de navegador.
@@ -44,7 +44,7 @@ export const VALIDADE_DA_ASSINATURA_S = 300
 /**
  * Sobe o arquivo e grava o registro dele na mensagem.
  *
- * Devolve `null` quando não deu — e **não estoura**. Quem chama roda depois de a
+ * Devolve `null` quando não deu, e **não estoura**. Quem chama roda depois de a
  * mensagem já estar gravada: uma foto que não subiu deixa a conversa sem a
  * foto, e qualquer coisa pior que isso seria a foto derrubando a conversa.
  *
@@ -84,7 +84,7 @@ export async function guardarArquivo(
   if (error) {
     /*
      * O arquivo subiu e a coluna não gravou: sobra um objeto que nenhuma tela
-     * alcança e que o expurgo — que varre pela coluna — não vai achar. Apagar
+     * alcança e que o expurgo, que varre pela coluna, não vai achar. Apagar
      * aqui é o que impede o bucket de acumular dado pessoal órfão, que é o
      * pior dos mundos: invisível e presente.
      */
@@ -116,11 +116,11 @@ export async function urlAssinada(caminho: string): Promise<string | null> {
 }
 
 /**
- * Assina vários caminhos de uma vez — é o que a conversa precisa.
+ * Assina vários caminhos de uma vez, é o que a conversa precisa.
  *
  * Uma conversa com trinta fotos faria trinta chamadas se cada bolha assinasse a
  * sua. `createSignedUrls` (no plural) é um pedido só, e a ordem da resposta não
- * é garantida — por isso o resultado volta como mapa e não como lista.
+ * é garantida, por isso o resultado volta como mapa e não como lista.
  */
 export async function urlsAssinadas(caminhos: string[]): Promise<Map<string, string>> {
   const porCaminho = new Map<string, string>()
@@ -147,7 +147,7 @@ export async function urlsAssinadas(caminhos: string[]): Promise<Map<string, str
  * Baixa o arquivo de volta, para o servidor mexer nele.
  *
  * É o caminho da transcrição: o áudio precisa chegar inteiro ao processo para
- * virar base64 no corpo do pedido ao Gemini. **Não passa por URL assinada** —
+ * virar base64 no corpo do pedido ao Gemini. **Não passa por URL assinada** ,
  * assinar para baixar em seguida no mesmo processo é criar um link público de
  * cinco minutos que ninguém precisava que existisse.
  *
@@ -177,7 +177,7 @@ export async function baixarArquivo(
  * **É o que fecha a política de retenção.** `contacts` cascateia as mensagens
  * (0003 e 0007), mas cascade de banco não alcança o Storage: sem esta função, o
  * expurgo de 12 meses apagaria a conversa e deixaria a foto do documento no
- * bucket para sempre — dado pessoal órfão, que é o pior resultado possível,
+ * bucket para sempre, dado pessoal órfão, que é o pior resultado possível,
  * porque some da tela e continua existindo.
  *
  * Roda **antes** de apagar as linhas: é delas que sai a lista de caminhos.

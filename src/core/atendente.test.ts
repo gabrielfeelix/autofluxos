@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import { assinar, avisoDeEntrada } from './atendente'
 
-describe('assinar — quem recebe precisa saber que virou gente', () => {
+describe('assinar, quem recebe precisa saber que virou gente', () => {
   it('põe o primeiro nome em negrito, numa linha só dele', () => {
     expect(assinar('não consigo', 'Leinara')).toBe('*Leinara:*\nnão consigo')
   })
 
-  it('sobrenome fica de fora — é como alguém se apresenta no balcão', () => {
+  it('sobrenome fica de fora, é como alguém se apresenta no balcão', () => {
     expect(assinar('oi', 'Leinara Souza Prado')).toBe('*Leinara:*\noi')
   })
 
-  it('sem nome, vai sem assinatura — "*:*" seria pior que nada', () => {
+  it('sem nome, vai sem assinatura, "*:*" seria pior que nada', () => {
     expect(assinar('oi', null)).toBe('oi')
     expect(assinar('oi', '')).toBe('oi')
     expect(assinar('oi', '   ')).toBe('oi')

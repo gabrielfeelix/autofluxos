@@ -7,11 +7,11 @@ import { acaoSair } from '@/server/acoes-conta'
 import { exigirAdminDaPlataforma } from '@/server/sessao'
 
 /**
- * A área de quem administra a plataforma — as contas, as pessoas e o registro.
+ * A área de quem administra a plataforma, as contas, as pessoas e o registro.
  *
  * **Aqui `layout.tsx` é a escolha certa**, ao contrário do que acontece nas
  * telas do cliente. Toda tela desta área usa a mesma moldura e nenhuma delas é
- * tela cheia, então não existe o filho que precisaria se desligar da moldura —
+ * tela cheia, então não existe o filho que precisaria se desligar da moldura ,
  * que foi o motivo de a moldura do cliente ser componente.
  *
  * O ganho é o que importa: `exigirAdminDaPlataforma()` roda uma vez, aqui, e

@@ -6,13 +6,13 @@
  * ---------------------------------------------------------------------------
  *
  * `acaoAssumirAtendimento` dizia o contrário: *"assumir não muda o que a pessoa
- * do outro lado vê"*, e não mandava nada — anunciar a nossa mesa para quem só
+ * do outro lado vê"*, e não mandava nada, anunciar a nossa mesa para quem só
  * quer ser respondido parecia exposição sem ganho.
  *
  * O que mudou não foi a regra, foi a pergunta. Sem assinatura, **quem recebe
  * não sabe que virou gente**: as mensagens continuam chegando do mesmo número,
  * com a mesma cara das do bot, e a pessoa segue falando com o robô que ela
- * acha que está lá. Dizer o nome não expõe a mesa — dá conta de quem responde,
+ * acha que está lá. Dizer o nome não expõe a mesa, dá conta de quem responde,
  * que é o contrário de esconder atrás de "atendimento".
  *
  * ---------------------------------------------------------------------------
@@ -23,7 +23,7 @@
  * cadastro inteiro numa conversa de WhatsApp soa como protocolo.
  */
 
-/** `*Leinara:*` — negrito do WhatsApp, que é `*` e não `**`. */
+/** `*Leinara:*`, negrito do WhatsApp, que é `*` e não `**`. */
 export function assinar(texto: string, nome: string | null | undefined): string {
   const primeiro = primeiroNome(nome)
   /*
@@ -62,7 +62,7 @@ function primeiroNome(nome: string | null | undefined): string {
  *
  * Aqui não vale a regra de `assinar`. Lá é o cliente lendo no WhatsApp, e só o
  * primeiro nome é o jeito de se apresentar no balcão. Aqui é a equipe olhando a
- * própria conversa, e primeiro nome sozinho não distingue duas Anas — que é
+ * própria conversa, e primeiro nome sozinho não distingue duas Anas, que é
  * exatamente a hora em que alguém precisa saber quem respondeu o quê.
  *
  * Do outro lado, "Maria Eduarda Gonçalves de Almeida Souza" embaixo de uma

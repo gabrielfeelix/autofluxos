@@ -12,7 +12,7 @@ import { useConfirmar } from './confirmar'
  *    operacional, que aparece ancorada no alto do navegador com o nome do
  *    domínio em cima e não se parece com nada do resto da tela.
  * 2. **Mostra o motivo da recusa.** Apagar aqui pode ser negado por regra de
- *    negócio — automação no ar, número com conversa — e sem lugar para o motivo
+ *    negócio, automação no ar, número com conversa, e sem lugar para o motivo
  *    aparecer o clique parecia não ter funcionado.
  * 3. **Desabilita enquanto roda**, para o clique nervoso não disparar duas vezes.
  */

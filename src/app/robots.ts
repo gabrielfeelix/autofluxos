@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 
 /**
- * O painel é autenticado e não deve aparecer em mecanismos de busca — mas a
+ * O painel é autenticado e não deve aparecer em mecanismos de busca, mas a
  * **landing pública em `/` deve**, e é a única.
  *
  * Por isso a regra não é mais um `disallow: '/'` seco: ele proibiria também a

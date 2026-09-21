@@ -613,7 +613,7 @@ export type FiltroDeLeads = {
    * É por onde o filtro de faixa de valor entra: quem decide quem está em
    * "Ouro" é `consultas/contatos.ts`, olhando a conta inteira, e o resultado
    * chega aqui como lista de ids. `null` é "sem restrição"; lista vazia é
-   * "ninguém passa", e as duas precisam ser distinguíveis — tratá-las igual
+   * "ninguém passa", e as duas precisam ser distinguíveis, tratá-las igual
    * mostraria a base inteira justo quando o filtro não achou ninguém.
    */
   contatos?: string[] | null

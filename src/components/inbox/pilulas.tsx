@@ -10,8 +10,8 @@ import { useEffect, useRef, useState } from 'react'
  * Por que trocaram as fichas por isto
  * ---------------------------------------------------------------------------
  *
- * O filtro do Inbox eram três linhas de fichas empilhadas — estado, dono,
- * origem — sempre abertas, ocupando cerca de 120px do topo da coluna numa tela
+ * O filtro do Inbox eram três linhas de fichas empilhadas, estado, dono,
+ * origem, sempre abertas, ocupando cerca de 120px do topo da coluna numa tela
  * onde o que importa é ver conversa. Três eixos abertos ao mesmo tempo também
  * fazem a pergunta errada: quem abre a fila quer saber o que está aberto, não
  * escolher entre onze abas.
@@ -26,7 +26,7 @@ import { useEffect, useRef, useState } from 'react'
  *
  * "Adiadas" e "Resolvidas" são palavras do produto, não do português: ninguém
  * chega sabendo que adiar tem prazo e que resolver é o fim do atendimento. A
- * linha embaixo do rótulo é onde isso cabe — e ela só existe no menu aberto,
+ * linha embaixo do rótulo é onde isso cabe, e ela só existe no menu aberto,
  * então não custa espaço na tela parada.
  */
 
@@ -47,7 +47,7 @@ export type OpcaoDaPilula = {
  *
  * Mora aqui porque as duas metades da fila precisam da mesma lista: a paginada,
  * onde cada opção é um endereço, e a local, onde é um `filter()`. Duas cópias
- * viram dois vocabulários — e "encerrada" numa tela com "resolvida" na outra é
+ * viram dois vocabulários, e "encerrada" numa tela com "resolvida" na outra é
  * a pessoa achando que são coisas diferentes.
  */
 export const ESTADOS_DA_FILA = [
@@ -68,7 +68,7 @@ export const ESTADOS_DA_FILA = [
   },
 ] as const
 
-/** O visual comum a toda pílula — a escolhida e as outras. */
+/** O visual comum a toda pílula, a escolhida e as outras. */
 const PILULA =
   'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11.5px] font-semibold transition'
 
@@ -93,7 +93,7 @@ export function PilulaMenu({
   rotulo: string
   opcoes: OpcaoDaPilula[]
   escolhida: string
-  /** Ausente quando as opções são `href` — aí quem navega é o `<Link>`. */
+  /** Ausente quando as opções são `href`, aí quem navega é o `<Link>`. */
   aoEscolher?: (chave: string) => void
   aria: string
 }) {

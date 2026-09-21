@@ -85,7 +85,7 @@ function endereco(
   return `/clientes/${clienteId}/leads${consulta ? `?${consulta}` : ''}`
 }
 
-/** A exportação leva o mesmo filtro da tela — ver o porquê na própria rota. */
+/** A exportação leva o mesmo filtro da tela, ver o porquê na própria rota. */
 function enderecoDoCsv(
   clienteId: string,
   etiqueta: EtiquetaDeLead | null,
@@ -196,7 +196,7 @@ async function Tabela({
 
     Até a T6.1 ele era um `leads.filter(...)` sobre a página já carregada: a
     contagem dizia "3 de 50" (3 daquela página, não da base), a paginação
-    ignorava o filtro, e o CSV nem o conhecia — quem filtrava por Ouro e
+    ignorava o filtro, e o CSV nem o conhecia, quem filtrava por Ouro e
     exportava recebia todo mundo. Duas superfícies, duas definições.
 
     Agora `consultarContatos` responde quem está na faixa, olhando a conta
@@ -243,7 +243,7 @@ async function Tabela({
 
   /*
     O que o botão "Colunas" oferece: as fixas primeiro, depois uma por variável
-    coletada. "Contato" fica de fora de propósito — tabela de contatos sem a
+    coletada. "Contato" fica de fora de propósito, tabela de contatos sem a
     coluna de contato é uma tela que não responde mais nada.
   */
   const colunasDisponiveis = [
@@ -290,7 +290,7 @@ async function Tabela({
         <ModalFormulario
           botao="+ Criar contato"
           titulo="Novo contato"
-          descricao="Para quem você já tem o telefone e ainda não escreveu por aqui. O bot só fala depois que a pessoa mandar a primeira mensagem — o WhatsApp não deixa começar conversa com texto livre."
+          descricao="Para quem você já tem o telefone e ainda não escreveu por aqui. O bot só fala depois que a pessoa mandar a primeira mensagem, o WhatsApp não deixa começar conversa com texto livre."
           action={acaoCriarContato.bind(null, clienteId)}
         >
           <label>
@@ -348,7 +348,7 @@ async function Tabela({
       </form>
 
       {/* Sem contagem por etiqueta de propósito: cada número desses obrigava a
-          ler o histórico do cliente inteiro a cada visita — exatamente o que a
+          ler o histórico do cliente inteiro a cada visita, exatamente o que a
           paginação veio evitar. O número que importa continua acima. */}
       {/*
         O nível fica numa fileira própria, e não junto das etiquetas.
@@ -386,8 +386,8 @@ async function Tabela({
           </Link>
         ))}
         {nivel && (
-          /* Dizer que o filtro é da página evita a conclusão errada — "só tenho
-             dois clientes ouro" — quando na verdade são dois **nesta** página. */
+          /* Dizer que o filtro é da página evita a conclusão errada, "só tenho
+             dois clientes ouro", quando na verdade são dois **nesta** página. */
           <span className="text-[10.5px] text-dim">
             {visiveis.length} de {leads.length} nesta página
           </span>
@@ -419,7 +419,7 @@ async function Tabela({
           As manuais **têm** contagem, e as derivadas não.
           
           Não é inconsistência: contar uma derivada obriga a ler o histórico do
-          cliente inteiro a cada visita — exatamente o que a paginação veio
+          cliente inteiro a cada visita, exatamente o que a paginação veio
           evitar. Contar uma manual é ler uma tabela de ligação com índice. O
           número aparece onde ele é barato, e some onde não é.
         */}
@@ -527,7 +527,7 @@ async function Tabela({
                   </td>
                   {colunas.map((coluna) => (
                     <td key={coluna} data-coluna={coluna} className="max-w-48 truncate px-3.5 py-3 text-[11.5px] text-muted">
-                      {lead.campos[coluna] || <span className="text-dim">—</span>}
+                      {lead.campos[coluna] || <span className="text-dim">,</span>}
                     </td>
                   ))}
                   <td data-coluna="cliente" className="px-3.5 py-3">
@@ -620,7 +620,7 @@ function PrimeiraVez({ clienteId, temCanal }: { clienteId: string; temCanal: boo
           <p className="mb-3 font-mono text-[10px] tracking-[0.16em] text-dim">SEM CANAL</p>
           <h2 className="text-[15.5px] font-bold">Nenhum número conectado</h2>
           <p className="mt-1.5 text-[12.5px] leading-6 text-muted">
-            Sem um número de WhatsApp ligado a um fluxo publicado, ninguém consegue conversar com o bot — e nenhum contato entra aqui.
+            Sem um número de WhatsApp ligado a um fluxo publicado, ninguém consegue conversar com o bot, e nenhum contato entra aqui.
           </p>
           {/* Vai para a tela do número, e não para o painel. Botão de estado
               vazio que leva ao lugar errado é pior que estado vazio sem botão:

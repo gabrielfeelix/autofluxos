@@ -43,7 +43,7 @@ describe('casar reações com as mensagens que elas comentam', () => {
   /*
    * O emoji vazio é como a Meta desfaz uma reação. Se ele fosse tratado como
    * "sem emoji" em vez de "removeu", a reação tirada ficaria na tela para
-   * sempre — e essa é exatamente a razão de a coluna guardar string vazia em
+   * sempre, e essa é exatamente a razão de a coluna guardar string vazia em
    * vez de `null`.
    */
   it('emoji vazio remove a reação que estava lá', () => {
@@ -67,7 +67,7 @@ describe('casar reações com as mensagens que elas comentam', () => {
 
   /*
    * Os dois lados reagem à mesma frase, e cada um tem a sua. Colapsar sem
-   * olhar o lado faria a reação do atendimento apagar a do cliente — e a
+   * olhar o lado faria a reação do atendimento apagar a do cliente, e a
    * conversa perderia a informação mais útil das duas.
    */
   it('cada lado tem a sua reação na mesma mensagem', () => {
@@ -105,7 +105,7 @@ describe('casar reações com as mensagens que elas comentam', () => {
   /*
    * Reagir a algo fora do histórico é caso normal: o teto é de 500 mensagens e
    * a Meta deixa reagir a mensagem de até 30 dias. O casamento não pode
-   * inventar alvo nem estourar — quem desenha é que decide o que fazer com uma
+   * inventar alvo nem estourar, quem desenha é que decide o que fazer com uma
    * reação sem alvo carregado.
    */
   it('reação a mensagem fora do histórico continua no mapa, sem alvo carregado', () => {

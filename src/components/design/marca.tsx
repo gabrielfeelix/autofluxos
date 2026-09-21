@@ -1,7 +1,7 @@
 import Image from 'next/image'
 
 /**
- * A marca do produto — símbolo e nome.
+ * A marca do produto, símbolo e nome.
  *
  * **O símbolo é a logo de verdade**, e não mais o quadrado azul com um losango
  * branco que existia como praça-guardada até a logo chegar.
@@ -15,7 +15,7 @@ import Image from 'next/image'
  * `priority` porque a barra lateral é a primeira coisa desenhada em qualquer
  * tela: carregada preguiçosamente, a logo pisca em cada navegação.
  *
- * Recolhida, a barra esconde o nome e deixa só o símbolo — quem faz isso é o
+ * Recolhida, a barra esconde o nome e deixa só o símbolo, quem faz isso é o
  * `span:last-child` em `barra-lateral.tsx`, e por isso o nome precisa continuar
  * sendo o último filho daqui.
  */

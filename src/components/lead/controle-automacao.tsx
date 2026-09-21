@@ -8,14 +8,14 @@ import { acaoAlternarAutomacaoDoLead } from '@/server/acoes'
  *
  * **Era um componente de servidor com um `<form action={async () => …}>`**, e
  * isso derrubava a tela inteira: closure escrito num componente de servidor não
- * é Server Action — precisa de `'use server'` no corpo — então o React recusava
+ * é Server Action, precisa de `'use server'` no corpo, então o React recusava
  * a árvore com "Functions cannot be passed directly to Client Components" e a
  * página do lead respondia 500 sempre que o contato **não** estava aguardando
  * pessoa, que é o caso comum.
  *
  * Virou componente de cliente em vez de ganhar um `'use server'` porque a ação
- * já devolve motivo de recusa — "a conversa está ocupada", "conclua o
- * atendimento antes de religar o bot" — e o formulário jogava tudo isso fora. O
+ * já devolve motivo de recusa, "a conversa está ocupada", "conclua o
+ * atendimento antes de religar o bot", e o formulário jogava tudo isso fora. O
  * botão pedia uma coisa, nada acontecia, e não havia onde ler por quê.
  */
 export function ControleDeAutomacao({
@@ -29,7 +29,7 @@ export function ControleDeAutomacao({
 }) {
   /*
    * O botão troca de rótulo no clique. Pausar o bot é o que se faz **antes**
-   * de digitar uma resposta — esperar o servidor para saber se pausou é
+   * de digitar uma resposta, esperar o servidor para saber se pausou é
    * esperar para começar a escrever.
    */
   const { valor: ativa, erro, pendente, agir } = useAcaoOtimista(automacaoAtiva)

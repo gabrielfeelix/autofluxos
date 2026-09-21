@@ -10,7 +10,7 @@ import { z } from 'zod'
  * Por que a chave é **por conclusão**, e não por (contato, quadro de destino):
  * quem comprou duas vezes tem duas conclusões e merece que a segunda também
  * seja tentada. Chave por par contato/destino trataria a recompra como
- * repetição da primeira compra e engoliria a intenção nova — exatamente o
+ * repetição da primeira compra e engoliria a intenção nova, exatamente o
  * defeito que a 0071 existe para desfazer (A12).
  */
 
@@ -21,8 +21,8 @@ export function chaveDaContinuidade(conclusaoId: string): string {
 /**
  * O que a tarefa carrega.
  *
- * Só o id da conclusão, de propósito. Tudo o mais — contato, destino,
- * responsável, título — é lido do banco na hora de executar, porque a tarefa
+ * Só o id da conclusão, de propósito. Tudo o mais, contato, destino,
+ * responsável, título, é lido do banco na hora de executar, porque a tarefa
  * pode rodar minutos depois e o estado da época já está gravado na própria
  * conclusão. Copiar os campos para dentro da fila criaria uma segunda verdade
  * que envelhece sozinha.

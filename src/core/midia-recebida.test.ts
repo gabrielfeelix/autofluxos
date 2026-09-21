@@ -94,7 +94,7 @@ describe('o registro do arquivo guardado', () => {
     expect(ehArquivoGuardado({})).toBe(false)
   })
 
-  it('recusa caminho vazio — ele viraria uma assinatura de nada', () => {
+  it('recusa caminho vazio, ele viraria uma assinatura de nada', () => {
     expect(ehArquivoGuardado({ ...bom, caminho: '' })).toBe(false)
   })
 
@@ -104,7 +104,7 @@ describe('o registro do arquivo guardado', () => {
 
   /*
    * A regra que não se dobra: a coluna guarda caminho, nunca URL. URL assinada
-   * em coluna é link público com um passo a mais — viaja em log e em backup, e
+   * em coluna é link público com um passo a mais, viaja em log e em backup, e
    * continua valendo até expirar.
    */
   it('não tem campo de url no registro', () => {

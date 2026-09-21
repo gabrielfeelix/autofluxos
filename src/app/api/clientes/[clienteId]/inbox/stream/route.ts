@@ -99,7 +99,7 @@ export async function GET(
    * **Atender é capacidade, não só associação** (RB-41, RB-42).
    *
    * Até a T2.2 esta rota conferia só a empresa. Quem perdeu `atender` pela
-   * tela de acesso continuava recebendo por aqui — e stream, contador e
+   * tela de acesso continuava recebendo por aqui, e stream, contador e
    * notificação são caminhos de dado como qualquer outro. "Esconder o botão
    * não é controle de acesso" vale para o que o navegador busca sozinho.
    */

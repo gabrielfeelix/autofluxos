@@ -32,7 +32,7 @@ describe('podeEnviar', () => {
    * O caso que engana: **pausado não é "quase aprovado".**
    *
    * A Meta despausa sozinha em 3h ou 6h, então parece temporário e inofensivo.
-   * Mas enquanto está pausado todo envio falha — e uma transmissão de 2.000
+   * Mas enquanto está pausado todo envio falha, e uma transmissão de 2.000
    * pessoas disparada nesse estado vira 2.000 erros.
    */
   it('pausado não entrega, por mais temporário que pareça', () => {
@@ -143,7 +143,7 @@ describe('validarTemplate', () => {
   })
 
   /**
-   * **Aviso, não erro** — e a distinção é a regra do arquivo inteiro.
+   * **Aviso, não erro**, e a distinção é a regra do arquivo inteiro.
    *
    * Quatro botões são aprovados pela Meta e funcionam no celular. Só somem no
    * WhatsApp Desktop. Recusar seria inventar regra que a Meta não tem, e passar
@@ -221,7 +221,7 @@ describe('lerStatusDeEnvio', () => {
    * **O teste que justifica o estado existir.**
    *
    * `held_for_quality_assessment` vem junto de um HTTP 200. Quem trata 200 como
-   * sucesso mostra "campanha enviada" para o cliente — e a mensagem pode ser
+   * sucesso mostra "campanha enviada" para o cliente, e a mensagem pode ser
    * descartada depois, chegando como `failed 132015`. `retida` nunca pode
    * colapsar em `aceita`.
    */
@@ -233,7 +233,7 @@ describe('lerStatusDeEnvio', () => {
     expect(lerStatusDeEnvio('paused')).toBe('falhou')
   })
 
-  it('ausente é aceita — a Meta nem sempre manda o campo', () => {
+  it('ausente é aceita, a Meta nem sempre manda o campo', () => {
     expect(lerStatusDeEnvio(undefined)).toBe('aceita')
   })
 })
@@ -314,7 +314,7 @@ describe('a tradução para o formato da Meta', () => {
     })
   })
 
-  it('põe o exemplo do cabeçalho como array raso — o formato é outro', () => {
+  it('põe o exemplo do cabeçalho como array raso, o formato é outro', () => {
     const saida = componentesParaMeta(
       { cabecalho: { tipo: 'texto', texto: 'Olá {{1}}' }, corpo: 'tudo bem?' },
       { cabecalho: ['Ana'] },
@@ -363,7 +363,7 @@ describe('a tradução para o formato da Meta', () => {
     expect(saida.some((c) => c.type === 'FOOTER')).toBe(false)
   })
 
-  it('omite `buttons` quando não há botão — array vazio é recusa', () => {
+  it('omite `buttons` quando não há botão, array vazio é recusa', () => {
     const saida = componentesParaMeta({ corpo: 'oi', botoes: [] })
 
     expect(saida.some((c) => c.type === 'BUTTONS')).toBe(false)
@@ -431,7 +431,7 @@ describe('o status que a Meta manda', () => {
 
   /*
    * O único erro aqui capaz de fazer mal de verdade é um status novo virar
-   * `aprovado` por engano — seria transmissão saindo com template que não
+   * `aprovado` por engano, seria transmissão saindo com template que não
    * passou.
    */
   it('não chuta: status desconhecido nunca vira aprovado', () => {

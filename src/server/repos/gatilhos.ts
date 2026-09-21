@@ -6,7 +6,7 @@ import { db, ehIdInvalido } from '../db'
  * Os gatilhos por palavra-chave da conta (0024).
  *
  * A decisão de qual deles casa é pura e mora em `core/gatilhos.ts`. Aqui só
- * entram as idas ao banco — inclusive a contagem de disparos, que é uma RPC
+ * entram as idas ao banco, inclusive a contagem de disparos, que é uma RPC
  * porque somar do lado da aplicação perde disparo exatamente no gatilho
  * popular, que é o único cuja contagem alguém vai olhar.
  */
@@ -26,7 +26,7 @@ const COLUNAS = 'id, frase, operador, flow_id, ativo, execucoes'
  * O banco tem `check (operador in ('igual','contem'))`, então uma linha torta
  * não deveria existir. "Não deveria" não é garantia: a coluna é texto e um
  * `update` na mão pela UI do Supabase passa por cima de qualquer intenção
- * nossa. Cair no padrão mais frouxo — `contem` — é o lado seguro do erro:
+ * nossa. Cair no padrão mais frouxo, `contem`, é o lado seguro do erro:
  * dispara demais em vez de sumir sem explicação.
  */
 function paraOperador(valor: string): OperadorDeGatilho {
@@ -61,7 +61,7 @@ export async function listarGatilhos(clienteId: string): Promise<Gatilho[]> {
 
 /**
  * Só os que podem disparar. É esta que o webhook chama, em toda mensagem de
- * texto — por isso ela não traz o que a tela precisa e a outra traz.
+ * texto, por isso ela não traz o que a tela precisa e a outra traz.
  */
 export async function gatilhosAtivos(clienteId: string): Promise<Gatilho[]> {
   const { data, error } = await db()
@@ -80,7 +80,7 @@ export async function gatilhosAtivos(clienteId: string): Promise<Gatilho[]> {
  *
  * O fluxo é conferido contra o **mesmo cliente** antes de entrar: o id chega de
  * um formulário e nada impede alguém de postar o id de um fluxo de outra conta.
- * A chave estrangeira aceitaria — ela só sabe que o fluxo existe.
+ * A chave estrangeira aceitaria, ela só sabe que o fluxo existe.
  */
 export async function criarGatilho(
   clienteId: string,
@@ -116,7 +116,7 @@ export async function criarGatilho(
   return { ok: true }
 }
 
-/** Liga/desliga sem apagar — a contagem de execuções é o histórico dele. */
+/** Liga/desliga sem apagar, a contagem de execuções é o histórico dele. */
 export async function alternarGatilho(
   clienteId: string,
   gatilhoId: string,
@@ -152,7 +152,7 @@ export async function apagarGatilho(clienteId: string, gatilhoId: string): Promi
  * Registra que este gatilho abriu uma conversa.
  *
  * **Falhar aqui não pode derrubar a conversa.** O contador é para a tela
- * responder "vale a pena manter esta regra?" — perder uma unidade dele é um
+ * responder "vale a pena manter esta regra?", perder uma unidade dele é um
  * incômodo; estourar no meio do webhook depois de o fluxo já ter sido escolhido
  * deixa a pessoa sem resposta e a Meta não reenvia.
  */

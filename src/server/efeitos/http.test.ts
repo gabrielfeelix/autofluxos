@@ -122,7 +122,7 @@ describe('extrair', () => {
     it('a lista de valores casa por posição com a de rótulos', () =>
       expect(extrair(agenda, 'livres[].sessaoId')).toBe('a41f;b52g;c63h'))
 
-    it('sem campo depois do [], pega o item inteiro — lista de texto puro', () =>
+    it('sem campo depois do [], pega o item inteiro, lista de texto puro', () =>
       expect(extrair(agenda, 'dias[]')).toBe('segunda;terça'))
 
     it('`unicos` tira o repetido, que é o que faz o menu de dias prestar', () =>
@@ -142,7 +142,7 @@ describe('extrair', () => {
   })
 
   /*
-   * Sem modelo, o menu só sabe mostrar um campo por item — e há pergunta que
+   * Sem modelo, o menu só sabe mostrar um campo por item, e há pergunta que
    * não fecha assim: duas aulas no mesmo dia viram duas linhas idênticas, e
    * "qual aula é essa?" não tem onde aparecer.
    */
@@ -172,7 +172,7 @@ describe('extrair', () => {
   /*
    * Contar em vez de listar.
    *
-   * Existe porque quem opera pediu a frase "você tem x aulas para repor" — e
+   * Existe porque quem opera pediu a frase "você tem x aulas para repor", e
    * para ela a variável precisa ser o número. Com a lista, a mensagem sai com
    * as datas todas no meio da frase.
    */
@@ -192,7 +192,7 @@ describe('extrair', () => {
      * Lista ausente conta zero, e não vazio.
      *
      * A rota omite o campo quando não há nada, e "você tem  aulas para repor"
-     * é pior do que "você tem 0" — que ainda por cima é o que uma condição
+     * é pior do que "você tem 0", que ainda por cima é o que uma condição
      * `igual 0` sabe ler.
      */
     it('campo que não existe conta zero', () =>
@@ -232,7 +232,7 @@ describe('a conexão é fixada no endereço aprovado', () => {
     expect(await lookupDo(0, { all: true })).toEqual([{ address: '93.184.216.34', family: 4 }])
   })
 
-  it('a URL entregue ao undici mantém o hostname — é o que faz o TLS bater', async () => {
+  it('a URL entregue ao undici mantém o hostname, é o que faz o TLS bater', async () => {
     conferirEndereco.mockResolvedValue(aprovado)
     responde({})
 
@@ -281,14 +281,14 @@ describe('chamarHttp', () => {
     expect(r).toEqual({ ok: true, valores: { situacao: 'a caminho' } })
   })
 
-  it('sem mapear, não liga para o que voltou — é o webhook disparado e esquecido', async () => {
+  it('sem mapear, não liga para o que voltou, é o webhook disparado e esquecido', async () => {
     conferirEndereco.mockResolvedValue(aprovado)
     responde('isto não é JSON')
 
     expect(await chamarHttp(pedido(), { deTeste: false })).toEqual({ ok: true, valores: {} })
   })
 
-  it('sem mapear, o corpo é descartado — deixar pendurado segura a conexão', async () => {
+  it('sem mapear, o corpo é descartado, deixar pendurado segura a conexão', async () => {
     conferirEndereco.mockResolvedValue(aprovado)
     const descartar = vi.fn(async () => undefined)
     pedirUndici.mockResolvedValue({
@@ -451,7 +451,7 @@ describe('redirecionamento', () => {
     expect(urlDaChamada(1)).toBe('https://exemplo.com/depois')
   })
 
-  it('segue no máximo 3 — 4 chamadas ao todo', async () => {
+  it('segue no máximo 3, 4 chamadas ao todo', async () => {
     conferirEndereco.mockResolvedValue(aprovado)
     responde(null, 302, { location: 'https://exemplo.com/volta' })
 
@@ -566,7 +566,7 @@ describe('cabeçalho inválido não derruba a conversa', () => {
   })
 })
 
-describe('aceitarStatus — nem todo status fora de 2xx é erro de conversa', () => {
+describe('aceitarStatus, nem todo status fora de 2xx é erro de conversa', () => {
   /*
    * O caso real: a aula foi marcada, a Verandi respondeu 409 ("já existe essa
    * participação") e o bot disse "vou te passar para um atendente". O pedido
@@ -589,7 +589,7 @@ describe('aceitarStatus — nem todo status fora de 2xx é erro de conversa', ()
     if (r.ok) expect(r.valores.participacao_id).toBe('p-1')
   })
 
-  it('sem declarar, 409 continua sendo falha — nada muda para quem já existe', async () => {
+  it('sem declarar, 409 continua sendo falha, nada muda para quem já existe', async () => {
     conferirEndereco.mockResolvedValue(aprovado)
     pedirUndici.mockResolvedValue(resposta({ participacaoId: 'p-1' }, 409))
 
@@ -602,7 +602,7 @@ describe('aceitarStatus — nem todo status fora de 2xx é erro de conversa', ()
     if (!r.ok) expect(r.motivo).toContain('409')
   })
 
-  it('declarar 409 não passa a aceitar 500 — a lista é exata', async () => {
+  it('declarar 409 não passa a aceitar 500, a lista é exata', async () => {
     conferirEndereco.mockResolvedValue(aprovado)
     pedirUndici.mockResolvedValue(resposta({ erro: 'explodiu' }, 500))
 
@@ -629,10 +629,10 @@ describe('aceitarStatus — nem todo status fora de 2xx é erro de conversa', ()
   })
 })
 
-describe('{campo|padrão} — o horário sem professor', () => {
+describe('{campo|padrão}, o horário sem professor', () => {
   /*
    * O caso real: a agenda devolveu 4 de 11 horários sem profissional, e o menu
-   * mostrou "14:00 ·" — o campo sumiu e o separador ficou. Quem lia não tinha
+   * mostrou "14:00 ·", o campo sumiu e o separador ficou. Quem lia não tinha
    * como saber quem daria a aula.
    */
   const comVazio = {
@@ -649,7 +649,7 @@ describe('{campo|padrão} — o horário sem professor', () => {
     )
   })
 
-  it('sem padrão declarado, nada muda — o comportamento antigo continua', () => {
+  it('sem padrão declarado, nada muda, o comportamento antigo continua', () => {
     expect(extrair(comVazio, 'livres[]', false, '{hora} · {profissional}')).toBe(
       '09:00 · Márcia;14:00 ·;19:00 ·',
     )
@@ -659,7 +659,7 @@ describe('{campo|padrão} — o horário sem professor', () => {
     expect(extrair({ l: [{ n: 'Ana' }] }, 'l[]', false, '{n|ninguém}')).toBe('Ana')
   })
 
-  it('espaço em branco conta como vazio — a API que manda " " diz o mesmo que nada', () => {
+  it('espaço em branco conta como vazio, a API que manda " " diz o mesmo que nada', () => {
     expect(extrair({ l: [{ n: '   ' }] }, 'l[]', false, '{n|a confirmar}')).toBe('a confirmar')
   })
 })

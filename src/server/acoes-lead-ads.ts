@@ -20,7 +20,7 @@ import { NOME_DA_CONEXAO_DE_ADS } from './token-de-anuncios'
  * Por que não é OAuth
  * ---------------------------------------------------------------------------
  *
- * Porque o token que este produto precisa é de **usuário do sistema** — o que
+ * Porque o token que este produto precisa é de **usuário do sistema**, o que
  * não expira. O de OAuth comum vence em 60 dias e quebra em silêncio: a
  * integração simplesmente para de trazer lead, sem erro na tela. É a falha que
  * o mercado inteiro documenta (a RD Station perdeu 18 dias de leads assim em
@@ -31,7 +31,7 @@ import { NOME_DA_CONEXAO_DE_ADS } from './token-de-anuncios'
  */
 
 /**
- * Guarda o token e confere se ele vale — nesta ordem, e a conferência primeiro.
+ * Guarda o token e confere se ele vale, nesta ordem, e a conferência primeiro.
  *
  * **Token recusado não vira credencial.** É a mesma regra da agenda: guardar
  * chave que não funciona cria o pior estado possível, o de parecer ligado. A
@@ -53,7 +53,7 @@ export async function acaoLigarAds(
    * Pedimos um anúncio que quase certamente não existe: o que interessa não é o
    * anúncio, é **qual erro volta**. Token inválido responde 190; token válido
    * sem esse anúncio responde 100 ou 803. Os dois dizem "a Meta entendeu quem
-   * você é" — e é só isso que precisamos saber antes de guardar.
+   * você é", e é só isso que precisamos saber antes de guardar.
    */
   const prova = await lerNomesDoAnuncio({ adId: '0', token })
   if (!prova.ok && prova.erro.codigo === 190) {
@@ -99,7 +99,7 @@ export async function acaoLigarPagina(
   const nome = String(formData.get('nome') ?? '').trim()
 
   if (!/^\d{5,}$/.test(pageId)) {
-    return { ok: false, erro: 'o id da página é só números — copie do Gerenciador de Anúncios' }
+    return { ok: false, erro: 'o id da página é só números, copie do Gerenciador de Anúncios' }
   }
 
   const r = await ligarPagina({ clienteId, pageId, nome })
@@ -113,7 +113,7 @@ export async function acaoLigarPagina(
  * Desliga a Página. Os leads dela param de entrar; os que já entraram ficam.
  *
  * Apagar contato junto seria destruir o trabalho da equipe por causa de uma
- * mudança de configuração — e a pessoa que desliga está pensando em "parar de
+ * mudança de configuração, e a pessoa que desliga está pensando em "parar de
  * receber", não em "apagar quem já chegou".
  */
 export async function acaoDesligarPagina(
@@ -134,7 +134,7 @@ export async function acaoDesligarPagina(
  *
  * **A origem vem do cabeçalho, e não de uma variável.** O `redirect_uri`
  * precisa bater byte a byte com o que a rota de retorno atende e com o que está
- * cadastrado no painel da Meta — ler da requisição faz produção e preview
+ * cadastrado no painel da Meta, ler da requisição faz produção e preview
  * funcionarem sem cada uma ter a sua variável. Mesmo padrão do WhatsApp.
  */
 export async function acaoConectarComFacebook(clienteId: string): Promise<void> {
@@ -151,7 +151,7 @@ export async function acaoConectarComFacebook(clienteId: string): Promise<void> 
 /**
  * Traz os leads que já existiam antes de a conta ser ligada.
  *
- * Noventa dias porque é tudo o que a Meta ainda guarda — passado isso o lead
+ * Noventa dias porque é tudo o que a Meta ainda guarda, passado isso o lead
  * não existe mais nem na API dela. Pedir menos deixaria dado recuperável para
  * trás; pedir mais não traria nada.
  */
@@ -177,7 +177,7 @@ export async function acaoImportarLeadsAntigos(
 
     /*
      * O resumo conta os três, e não só os criados. "Nenhum lead novo" sozinho
-     * parece falha; "40 já estavam aqui" explica — e quem importa duas vezes
+     * parece falha; "40 já estavam aqui" explica, e quem importa duas vezes
      * precisa entender que a segunda não fez nada porque não tinha o que fazer.
      */
     const partes = [`${r.criados} novo(s)`]

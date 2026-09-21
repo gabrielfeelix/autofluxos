@@ -172,7 +172,7 @@ describe.skipIf(!temCredencial)('cartões', () => {
 
   /*
    * O evento existia na 0058, `comoFrase` sabia escrevê-lo, e **ninguém o
-   * emitia** — a aba de histórico dizia "Nada registrado ainda" depois de o time
+   * emitia**, a aba de histórico dizia "Nada registrado ainda" depois de o time
    * arrastar cartão o dia inteiro. Este teste é o que impede isso de voltar.
    */
   it('mover grava a mudança de etapa na linha do tempo, com os dois nomes', async () => {
@@ -200,7 +200,7 @@ describe.skipIf(!temCredencial)('cartões', () => {
     expect((await moverCartao(clienteId, cartao.id, destino.id)).ok).toBe(true)
     const depois = (await linhaDoTempo(clienteId, bruno)).filter((e) => e.tipo === 'mudou-de-etapa')
 
-    // Arrastar de volta para onde já estava é engano de mão — o mesmo motivo
+    // Arrastar de volta para onde já estava é engano de mão, o mesmo motivo
     // pelo qual a função do banco não reinicia o relógio da etapa.
     expect(depois).toHaveLength(antes.length)
   })
@@ -245,7 +245,7 @@ describe.skipIf(!temCredencial)('cartões', () => {
     const destino = (await acharQuadro(clienteId, quadroId))!.etapas[1]!
     expect(posicao.etapaId).not.toBe(destino.id)
 
-    // O cartaoId que veio daqui move de verdade — a prova de que é o id certo.
+    // O cartaoId que veio daqui move de verdade, a prova de que é o id certo.
     expect((await moverCartao(clienteId, posicao.cartaoId, destino.id)).ok).toBe(true)
 
     const depois = (await quadrosDoContato(clienteId, ana)).find(
@@ -262,7 +262,7 @@ describe.skipIf(!temCredencial)('cartões', () => {
     expect(await tirarDoQuadro(clienteId, cartao.id)).toBe(true)
     expect(await listarCartoes(clienteId, outroQuadroId)).toHaveLength(0)
 
-    // A pessoa continua existindo — é a diferença entre tirar do funil e apagar.
+    // A pessoa continua existindo, é a diferença entre tirar do funil e apagar.
     const { data } = await db().from('contacts').select('id').eq('id', ana).maybeSingle()
     expect(data).not.toBeNull()
   })
@@ -299,7 +299,7 @@ describe.skipIf(!temCredencial)('apagar', () => {
  *
  * O que só o Postgres prova aqui é o índice parcial: várias linhas `false`
  * convivendo e só a marcada colidindo. Um teste de unidade com repo falso
- * acharia que `unique (client_id, padrao)` serviria — e ele proibiria dois
+ * acharia que `unique (client_id, padrao)` serviria, e ele proibiria dois
  * quadros comuns na mesma conta, que é o caso normal.
  *
  * **Os blocos abaixo declaram a política, e isso é a mudança da F3.** Antes da
@@ -342,7 +342,7 @@ describe.skipIf(!temCredencial)('quadro padrão', () => {
     /*
      * Em série, e não em `Promise.all`: agora que "o mais antigo recebe" é
      * regra, os dois quadros precisam ter `criado_em` distinto. Criados juntos,
-     * o relógio empata e o desempate vira sorteio — o teste passaria ou não
+     * o relógio empata e o desempate vira sorteio, o teste passaria ou não
      * conforme a ordem que o Postgres devolvesse.
      */
     const um = await criarQuadro(clienteId, `${marca} padrao a`)
@@ -357,7 +357,7 @@ describe.skipIf(!temCredencial)('quadro padrão', () => {
    * quadro nenhum. Do lado de fora isso é indistinguível de recurso quebrado.
    *
    * O alvo é o **primeiro da conta**, e esta conta já tinha quadros criados
-   * pelos blocos acima — por isso a expectativa sai de `listarQuadros`, que
+   * pelos blocos acima, por isso a expectativa sai de `listarQuadros`, que
    * ordena por `criado_em`, e não do quadro que este bloco criou. Fixar o id
    * daqui seria fixar uma coincidência de ordem de execução.
    */
@@ -380,7 +380,7 @@ describe.skipIf(!temCredencial)('quadro padrão', () => {
     expect(await acharQuadroPadrao(clienteId)).toBe(umId)
   })
 
-  it('marcar o segundo desmarca o primeiro — nunca dois padrões na mesma conta', async () => {
+  it('marcar o segundo desmarca o primeiro, nunca dois padrões na mesma conta', async () => {
     expect(await definirQuadroPadrao(clienteId, outroDaMesmaContaId)).toEqual({ ok: true })
     expect(await acharQuadroPadrao(clienteId)).toBe(outroDaMesmaContaId)
 
@@ -418,7 +418,7 @@ describe.skipIf(!temCredencial)('quadro padrão', () => {
       /*
        * Apaga aqui, e não num `afterAll`: este é o único cliente que o bloco
        * cria, e a produção já carrega doze contas `zz-` de suítes que
-       * esqueceram de limpar. Os testes rodam contra o banco de produção — o
+       * esqueceram de limpar. Os testes rodam contra o banco de produção, o
        * que não se apaga fica.
        */
       await db().from('clients').delete().eq('id', vazio.id)

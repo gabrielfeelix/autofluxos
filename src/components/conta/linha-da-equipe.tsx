@@ -23,8 +23,8 @@ type Membro = {
 /**
  * Uma pessoa da equipe, com o papel dela.
  *
- * Componente de cliente porque as duas ações **recusam com motivo** — "só quem
- * administra a conta mexe na equipe", "esta é a única pessoa dona da conta" — e
+ * Componente de cliente porque as duas ações **recusam com motivo**, "só quem
+ * administra a conta mexe na equipe", "esta é a única pessoa dona da conta", e
  * um `<form>` cru jogaria o motivo fora: o clique pareceria não ter funcionado
  * justamente na recusa que precisa ser lida.
  */

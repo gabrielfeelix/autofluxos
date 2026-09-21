@@ -17,10 +17,10 @@ import { triagem } from './triagem'
  *
  * **São dado, não banco.** Um modelo é um grafo de partida; guardá-lo em tabela
  * criaria uma segunda fonte de fluxos para manter, versionar e migrar junto do
- * schema — e o que se ganha é editar sem deploy, que ninguém pediu.
+ * schema, e o que se ganha é editar sem deploy, que ninguém pediu.
  *
  * O que o modelo entrega é o começo, e nada além dele: assim que o fluxo é
- * criado, ele é um rascunho normal. Não existe "atualizar o modelo depois" —
+ * criado, ele é um rascunho normal. Não existe "atualizar o modelo depois" ,
  * pelo mesmo motivo do preset de integração, e da versão publicada: o que ficou
  * gravado é o desenho, não uma referência viva.
  *
@@ -35,7 +35,7 @@ import { triagem } from './triagem'
  * São **uma lista fechada**, e não texto livre por modelo: etiqueta digitada à
  * mão vira "Pós venda", "pós-venda" e "Pos-Venda" no mesmo filtro, e aí o
  * filtro deixa de filtrar. A ordem daqui é a ordem em que elas aparecem na
- * tela — canal primeiro, porque é a primeira pergunta de quem procura.
+ * tela, canal primeiro, porque é a primeira pergunta de quem procura.
  */
 export const ETIQUETAS = [
   'WhatsApp',
@@ -59,7 +59,7 @@ export type Modelo = {
   /** Para a busca e os filtros da galeria. Ver `ETIQUETAS`. */
   etiquetas: readonly Etiqueta[]
   /**
-   * Palavras que a pessoa digita e que não estão no nome nem no resumo —
+   * Palavras que a pessoa digita e que não estão no nome nem no resumo ,
    * "cobrança" para o lembrete de pagamento, "faq" para o menu. Não aparecem na
    * tela; existem para a busca não devolver vazio no termo mais óbvio.
    */
@@ -71,7 +71,7 @@ export type Modelo = {
  * Recado + agendamento humano.
  *
  * O caso mais comum de quem começa: o bot não tenta resolver, ele qualifica em
- * uma pergunta e entrega. Vale mais do que parece — é o desenho que transforma
+ * uma pergunta e entrega. Vale mais do que parece, é o desenho que transforma
  * "alguém responde quando puder" em "alguém responde sabendo do que se trata".
  */
 const recado: Fluxo = fluxoSchema.parse({
@@ -166,7 +166,7 @@ const recadoCurto: Fluxo = fluxoSchema.parse({
           {
             tipo: 'texto',
             texto:
-              'Recebi sua mensagem! 🙌 Nosso time responde por aqui assim que possível — pode deixar tudo escrito que já fica registrado.',
+              'Recebi sua mensagem! 🙌 Nosso time responde por aqui assim que possível, pode deixar tudo escrito que já fica registrado.',
           },
         ],
       },
@@ -241,7 +241,7 @@ export const MODELOS: Modelo[] = [
     id: 'lembrete',
     nome: 'Lembrete de aula',
     resumo:
-      'Lembra da aula e oferece confirmar ou avisar que não vem — avisar desmarca e devolve a vaga na hora. Precisa da credencial da Verandi.',
+      'Lembra da aula e oferece confirmar ou avisar que não vem, avisar desmarca e devolve a vaga na hora. Precisa da credencial da Verandi.',
     etiquetas: ['WhatsApp', 'Agenda', 'Precisa de integração'],
     sinonimos: ['lembrete', 'confirmação', 'véspera', 'aula', 'no-show', 'falta'],
     grafo: lembrete,
@@ -268,7 +268,7 @@ export const MODELOS: Modelo[] = [
     id: 'qualificar-sdr',
     nome: 'Qualificar lead antes do time comercial',
     resumo:
-      'Três perguntas — o que precisa, para quando e quanto pretende investir — e só quem tem verba e prazo chega ao vendedor, com resumo pronto.',
+      'Três perguntas, o que precisa, para quando e quanto pretende investir, e só quem tem verba e prazo chega ao vendedor, com resumo pronto.',
     etiquetas: ['WhatsApp', 'Instagram', 'SDR', 'Vendas'],
     sinonimos: ['sdr', 'qualificação', 'lead', 'prospecção', 'comercial', 'orçamento', 'b2b'],
     grafo: qualificarSdr,
@@ -286,7 +286,7 @@ export const MODELOS: Modelo[] = [
     id: 'status-do-pedido',
     nome: 'Cadê meu pedido',
     resumo:
-      'Coleta o número do pedido (ou o telefone da compra) antes de chamar alguém — o atendimento começa com o dado na mão.',
+      'Coleta o número do pedido (ou o telefone da compra) antes de chamar alguém, o atendimento começa com o dado na mão.',
     etiquetas: ['WhatsApp', 'Atendimento', 'E-commerce'],
     sinonimos: ['pedido', 'rastreio', 'entrega', 'delivery', 'cadê', 'encomenda', 'nota'],
     grafo: statusDoPedido,

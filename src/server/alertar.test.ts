@@ -50,8 +50,7 @@ describe('alertar', () => {
 
   /**
    * O defeito que este arquivo passou meses sem pegar: sem
-   * `ALERTA_WEBHOOK_URL`, `alertar()` era no-op inteiro. O teste acima passava
-   * — e provava exatamente a coisa errada, porque "não chamou o webhook" era
+   * `ALERTA_WEBHOOK_URL`, `alertar()` era no-op inteiro. O teste acima passava, e provava exatamente a coisa errada, porque "não chamou o webhook" era
    * lido como "está tudo certo" quando na verdade nada acontecia.
    */
   it('sem URL configurada o alerta ainda é gravado', async () => {

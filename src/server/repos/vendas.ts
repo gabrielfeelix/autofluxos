@@ -16,11 +16,11 @@ import { db, ehIdInvalido } from '../db'
  *
  * O que este arquivo garante, e que a tela não consegue garantir sozinha:
  *
- *  - **idempotência** — duplo clique e retry de rede devolvem a MESMA venda,
+ *  - **idempotência**, duplo clique e retry de rede devolvem a MESMA venda,
  *    pela `chave_da_operacao` (A13);
- *  - **uma venda válida por oportunidade** — o índice parcial recusa a segunda,
+ *  - **uma venda válida por oportunidade**, o índice parcial recusa a segunda,
  *    e a recusa vira mensagem em vez de 500 (RB-05);
- *  - **cancelar não apaga** — o registro fica, com motivo e data (RB-31).
+ *  - **cancelar não apaga**, o registro fica, com motivo e data (RB-31).
  */
 
 type LinhaDaVenda = {
@@ -131,7 +131,7 @@ export async function registrarVenda(pedido: PedidoDeVenda): Promise<ResultadoDa
      * 23505 aqui tem duas causas, e elas pedem respostas diferentes:
      *
      *  - a chave da operação: duas requisições da mesma ação chegaram juntas e
-     *    a outra ganhou a corrida. Ler de novo devolve a venda dela — sucesso;
+     *    a outra ganhou a corrida. Ler de novo devolve a venda dela, sucesso;
      *  - o índice de uma válida por cartão: alguém está registrando a segunda
      *    compra da mesma oportunidade. É recusa de regra, e vira frase.
      */
@@ -218,7 +218,7 @@ export async function vendaDoCartao(
  * Cancela o registro, com motivo.
  *
  * Não apaga (RB-31): o registro continua legível e sai dos indicadores. A
- * situação da oportunidade é resolvida por quem chama — a atomicidade das duas
+ * situação da oportunidade é resolvida por quem chama, a atomicidade das duas
  * coisas é da T5.2, e fica explícita lá em vez de escondida aqui.
  */
 export async function cancelarVenda(

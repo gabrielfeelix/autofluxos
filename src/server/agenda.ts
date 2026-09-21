@@ -2,23 +2,23 @@ import 'server-only'
 import { ENDERECO_DA_AGENDA, NOME_DA_AGENDA, PREFIXO_DA_CHAVE } from '@/core/agenda'
 
 /**
- * Perguntar à agenda se a chave vale — e o que ela sabe.
+ * Perguntar à agenda se a chave vale, e o que ela sabe.
  *
  * **Existe porque "está ligado?" não tinha resposta em tela nenhuma.** A
  * credencial era colada num campo e guardada num cofre; se estivesse errada,
  * ninguém descobria ali. O erro aparecia depois, no meio de uma conversa de
- * verdade, como um handoff sem explicação — e quem estivesse olhando o painel
+ * verdade, como um handoff sem explicação, e quem estivesse olhando o painel
  * veria uma credencial cadastrada, com cara de pronta.
  *
  * A conferência é `GET /catalogo` porque ela é a rota mais barata que **prova
  * duas coisas de uma vez**: que a chave é aceita, e de qual conta ela é. O que
- * volta — quantos profissionais, quais serviços — é a resposta para a outra
+ * volta, quantos profissionais, quais serviços, é a resposta para a outra
  * pergunta que ninguém tinha onde responder: *"qual informação o bot vai
  * puxar?"*. Em vez de descrever, mostra.
  *
  * **O endereço é fixo e nosso.** Por isso aqui não há a conferência de
  * SSRF que `efeitos/rede.ts` faz: ela existe para endereço que veio de fora, e
- * este não veio de lugar nenhum — está no código.
+ * este não veio de lugar nenhum, está no código.
  */
 
 /** Quanto se espera pela agenda antes de desistir. */
@@ -42,14 +42,14 @@ export async function conferirChaveDaAgenda(chave: string): Promise<EstadoDaAgen
 
   /*
    * O prefixo é conferido antes da rede, e não é frescura: a chave é colada de
-   * outra tela, e o erro mais comum é colar a coisa errada — o id da conta, uma
+   * outra tela, e o erro mais comum é colar a coisa errada, o id da conta, uma
    * URL, o segredo do webhook. Dizer isso aqui custa zero e evita esperar oito
    * segundos para ouvir "recusada".
    */
   if (!limpa.startsWith(PREFIXO_DA_CHAVE)) {
     return {
       ok: false,
-      motivo: `isso não parece uma chave da ${NOME_DA_AGENDA} — elas começam com "${PREFIXO_DA_CHAVE}".`,
+      motivo: `isso não parece uma chave da ${NOME_DA_AGENDA}, elas começam com "${PREFIXO_DA_CHAVE}".`,
     }
   }
 

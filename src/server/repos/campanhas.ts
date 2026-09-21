@@ -5,8 +5,8 @@ import { db, ehIdInvalido } from '../db'
 /**
  * As campanhas da conta (0027).
  *
- * Espelha `repos/gatilhos.ts` de propósito: são a mesma forma — frase → fluxo,
- * com liga/desliga e contagem — e a diferença mora só em `core/`, na regra de
+ * Espelha `repos/gatilhos.ts` de propósito: são a mesma forma, frase → fluxo,
+ * com liga/desliga e contagem, e a diferença mora só em `core/`, na regra de
  * casamento. Duas formas diferentes para a mesma coisa seriam duas telas que a
  * pessoa precisa aprender separadamente.
  */
@@ -129,7 +129,7 @@ export async function contarDisparoDaCampanha(campanhaId: string): Promise<void>
 }
 
 /**
- * Liga o contato à campanha que o trouxe — **só na primeira vez**.
+ * Liga o contato à campanha que o trouxe, **só na primeira vez**.
  *
  * Atribuição de primeiro toque, a mesma regra de `campos.origem` desde a 0009.
  * Sobrescrever faria a pessoa que voltou por um segundo anúncio trocar de dono,

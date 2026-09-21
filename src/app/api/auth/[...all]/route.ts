@@ -3,7 +3,7 @@ import { autenticacao } from '@/server/auth'
 /**
  * A porta do Better Auth: `/api/auth/*`.
  *
- * Tudo que o login faz passa por aqui — entrar, sair, criar conta, trocar de
+ * Tudo que o login faz passa por aqui, entrar, sair, criar conta, trocar de
  * companhia, entrar como outra pessoa. A biblioteca resolve o caminho depois
  * do prefixo sozinha; o `[...all]` só entrega a requisição inteira para ela.
  *
@@ -13,7 +13,7 @@ import { autenticacao } from '@/server/auth'
  * `DATABASE_URL` (o repositório é público e não guarda segredo), e o import
  * deste arquivo derrubaria o build inteiro antes de qualquer requisição
  * existir. Chamar `autenticacao()` **dentro** de cada método adia isso para o
- * primeiro acesso de verdade — que é onde a falta da variável precisa aparecer.
+ * primeiro acesso de verdade, que é onde a falta da variável precisa aparecer.
  *
  * O que `toNextJsHandler` faz de resto é exatamente isto: repassar `request`
  * para `auth.handler`. Os cinco verbos existem porque plugin pode registrar

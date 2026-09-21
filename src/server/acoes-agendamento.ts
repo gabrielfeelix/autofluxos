@@ -69,7 +69,7 @@ export async function acaoAgendarMensagem(
     contatoId,
     texto: texto.trim(),
     templateId,
-    // `quando` já é um instante absoluto — o navegador resolveu o fuso de quem
+    // `quando` já é um instante absoluto, o navegador resolveu o fuso de quem
     // marcou antes de mandar. Daqui para a frente não há fuso para errar.
     quando: (quando as Date).toISOString(),
     criadaPor: quem?.usuario.id ?? null,
@@ -84,7 +84,7 @@ export async function acaoAgendarMensagem(
 /**
  * Cancelar antes de sair.
  *
- * Só alcança o que ainda está `agendada` — ver `cancelarAgendada`. Cancelar uma
+ * Só alcança o que ainda está `agendada`, ver `cancelarAgendada`. Cancelar uma
  * que já saiu não é possível e não deve parecer possível: a tela diz que ela já
  * foi, em vez de marcar como cancelada algo que o cliente leu.
  */

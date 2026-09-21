@@ -26,12 +26,12 @@ type Particula = {
  *
  * **Ele é uma rede que se liga, não poeira flutuando.** A diferença é o
  * produto: o AutoFluxos liga blocos numa conversa, e a metáfora certa é a
- * ligação — pontos que se encontram, acendem uma linha entre si e seguem.
+ * ligação, pontos que se encontram, acendem uma linha entre si e seguem.
  * Poeira genérica seria bonita e não diria nada.
  *
  * Escrito em canvas 2D e sem biblioteca, de propósito. `three` ou
  * `framer-motion` custariam centenas de KB no primeiro carregamento da página
- * que existe para converter — e nada aqui precisa de 3D.
+ * que existe para converter, e nada aqui precisa de 3D.
  *
  * **O cursor puxa a rede.** Cada partícula obedece com força própria, entre 15%
  * e 100%, o que faz o campo se abrir em dois planos em vez de se mover como uma
@@ -51,7 +51,7 @@ type Particula = {
  *   inteira rolada continuaria gastando bateria desenhando o que ninguém vê.
  *
  * Respeita `prefers-reduced-motion`: quem pediu para o sistema parar de animar
- * recebe o campo desenhado uma vez, parado, em vez de nada — o fundo continua
+ * recebe o campo desenhado uma vez, parado, em vez de nada, o fundo continua
  * existindo, só não se mexe.
  */
 export function DerivaDeParticulas({ className }: { className?: string }) {
@@ -290,7 +290,7 @@ export function DerivaDeParticulas({ className }: { className?: string }) {
      * O ponteiro é ouvido na **seção inteira**, não no canvas.
      *
      * O canvas está atrás do texto e dos botões, e um `mousemove` nele pararia
-     * de disparar assim que o cursor passasse por cima do título — que é
+     * de disparar assim que o cursor passasse por cima do título, que é
      * justamente o meio da tela, onde o efeito mais importa. Ouvindo no pai, o
      * campo responde em qualquer ponto da capa.
      */

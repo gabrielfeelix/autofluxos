@@ -7,7 +7,7 @@ import { agendamento } from './agendamento'
 /*
  * `extrair` mora ao lado do disparo HTTP, que é `server-only` e importa undici.
  * A conferência aqui é da regra pura, então o módulo entra com os dois vizinhos
- * dublados — igual faz `efeitos/http.test.ts`.
+ * dublados, igual faz `efeitos/http.test.ts`.
  */
 vi.mock('./rede', () => ({ conferirEndereco: vi.fn() }))
 vi.mock('undici', () => ({ request: vi.fn(), Agent: vi.fn() }))
@@ -22,7 +22,7 @@ const { extrair } = await import('@/server/efeitos/http')
  * descobre com cliente conversando.
  *
  * Por isso as respostas abaixo são **as da documentação da Verandi**, copiadas
- * do formato que a API promete, e os caminhos são os dos presets — nada é
+ * do formato que a API promete, e os caminhos são os dos presets, nada é
  * reescrito aqui. Se a agenda mudar a forma da resposta, é aqui que quebra.
  */
 
@@ -56,7 +56,7 @@ const DISPONIBILIDADE = {
 
 const SEM_VAGA = { de: '2026-08-22', ate: '2026-08-22', livres: [], cheios: [] }
 
-/** `GET /catalogo` — o que a conta oferece, e quem atende. */
+/** `GET /catalogo`, o que a conta oferece, e quem atende. */
 const CATALOGO = {
   profissionais: [
     { profissionalId: '2b7e', nome: 'Marina' },
@@ -81,7 +81,7 @@ function valoresDoPreset(presetId: string, json: unknown): Record<string, string
   if (!preset) throw new Error(`preset ${presetId} sumiu`)
 
   const valores: Record<string, string> = {}
-  // Os quatro argumentos, na mesma ordem que `resolverHttp` usa no servidor —
+  // Os quatro argumentos, na mesma ordem que `resolverHttp` usa no servidor ,
   // esquecer o `rotulo` aqui faria o teste passar com o menu errado.
   for (const { variavel, caminho, unicos, rotulo, quantos } of preset.dados.mapear) {
     valores[variavel] = extrair(json, caminho, unicos ?? false, rotulo, quantos ?? false)
@@ -120,7 +120,7 @@ describe('os caminhos do mapeamento batem com o que a API responde', () => {
     })
   })
 
-  it('não achar traz total 0 e o resto vazio — e isso é caminho normal', () => {
+  it('não achar traz total 0 e o resto vazio, e isso é caminho normal', () => {
     expect(valoresDoPreset('verandi-quem-e', NAO_ACHOU)).toEqual({
       encontrado: '0',
       pessoa_id: '',
@@ -130,7 +130,7 @@ describe('os caminhos do mapeamento batem com o que a API responde', () => {
 
   it('os horários e os ids saem na mesma ordem, que é o que amarra o menu', () => {
     expect(valoresDoPreset('verandi-horarios', DISPONIBILIDADE)).toEqual({
-      // O rótulo diz a hora **e qual aula é** — "07:00" sozinho não responde a
+      // O rótulo diz a hora **e qual aula é**, "07:00" sozinho não responde a
       // pergunta que sempre vem em seguida.
       horarios: '07:00 · Pilates solo;10:00 · Pilates solo',
       horarios_id: 'a41f;b52g',
@@ -163,8 +163,8 @@ describe('a conversa inteira, do "oi" ao horário marcado', () => {
   /**
    * Do "oi" até a pergunta da data, para quem a agenda já conhece.
    *
-   * O caminho ganhou dois passos que quem opera pediu — conferir o telefone e
-   * escolher a modalidade —, e repeti-los em cinco testes esconderia o que cada
+   * O caminho ganhou dois passos que quem opera pediu, conferir o telefone e
+   * escolher a modalidade , e repeti-los em cinco testes esconderia o que cada
    * um está de fato conferindo.
    */
   const ateAData = (): Resultado => {

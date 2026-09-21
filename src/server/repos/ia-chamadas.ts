@@ -8,7 +8,7 @@ import { db } from '../db'
  * titular o direito de pedir revisão de uma decisão automatizada que o afete, e
  * obriga o controlador a informar os critérios usados. "A IA marcou você na
  * terça" é uma decisão dessas. Sem registro de qual consulta foi chamada, com
- * quais argumentos e quem decidiu, não há como responder — e a hora de
+ * quais argumentos e quem decidiu, não há como responder, e a hora de
  * descobrir isso seria a hora do pedido.
  *
  * Barato agora, caro depois: é uma tabela e um insert enquanto o produto está
@@ -25,7 +25,7 @@ export type DecididoPor =
   | 'ia'
   /** A pessoa respondeu sim à pergunta de confirmação. */
   | 'pessoa_confirmou'
-  /** A pessoa respondeu não. Nada saiu — e é exatamente por isso que registra. */
+  /** A pessoa respondeu não. Nada saiu, e é exatamente por isso que registra. */
   | 'pessoa_recusou'
   /** A conferência barrou antes de sair: id inventado, ferramenta não autorizada. */
   | 'recusado_pela_trava'
@@ -48,7 +48,7 @@ export type ChamadaDeIa = {
  *
  * Log que derruba a conversa é pior que log nenhum: a exceção subiria até o
  * `after()` do webhook, a sessão não seria salva, a mensagem já foi
- * deduplicada, e a pessoa ficaria esperando uma resposta que não vem — tudo
+ * deduplicada, e a pessoa ficaria esperando uma resposta que não vem, tudo
  * isso para registrar uma linha. Falha aqui vai para o console e a conversa
  * segue.
  */

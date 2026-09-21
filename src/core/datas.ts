@@ -1,8 +1,8 @@
 /**
- * As datas que todo fluxo tem de graça — e a peça que faltava para "semana que
+ * As datas que todo fluxo tem de graça, e a peça que faltava para "semana que
  * vem" funcionar sem IA.
  *
- * **O problema, escrito por quem opera:** *"'esta semana', 'semana que vem' — o
+ * **O problema, escrito por quem opera:** *"'esta semana', 'semana que vem', o
  * sistema identificar quando é e sugerir as disponibilidades"*. Um bloco de
  * pergunta com formato `data` exige `21/08/2026`, com ano de quatro dígitos e
  * por um bom motivo (quem escreve "05/01" em dezembro quer janeiro do ano que
@@ -32,7 +32,7 @@
  *
  * Serve ao editor (autocompletar), ao validador (não acusar variável
  * desconhecida) e ao resolvedor (saber o que tirar da sessão antes de gravar).
- * Três leitores, uma fonte — a alternativa é o dia em que uma quarta variável
+ * Três leitores, uma fonte, a alternativa é o dia em que uma quarta variável
  * nasce e só dois dos três a conhecem.
  */
 export const VARIAVEIS_DE_DATA = [
@@ -52,7 +52,7 @@ export type VariavelDeData = (typeof VARIAVEIS_DE_DATA)[number]
  * Calcula as datas para uma conta, num instante.
  *
  * O fuso é o da conta e não o do servidor, pela mesma razão de `hojeNaConta`:
- * em UTC, a partir das 21h em São Paulo, "hoje" já é amanhã — e é justamente o
+ * em UTC, a partir das 21h em São Paulo, "hoje" já é amanhã, e é justamente o
  * horário em que se manda mensagem para marcar aula.
  */
 export function varsDeData(fuso: string, agora: Date = new Date()): Record<string, string> {
@@ -64,7 +64,7 @@ export function varsDeData(fuso: string, agora: Date = new Date()): Record<strin
    *
    * Parece errado e é o contrário: ninguém marca aula para anteontem. Uma
    * consulta de disponibilidade que começasse na segunda traria dias que já
-   * passaram, e o menu abriria com opções impossíveis — que é pior do que
+   * passaram, e o menu abriria com opções impossíveis, que é pior do que
    * abrir com menos opções.
    */
   const semanaAte = somarDias(hoje, 7 - diaDaSemana)

@@ -6,17 +6,16 @@ import { itensDaLista } from './schema'
  * A API devolve `2026-09-01` porque é assim que sistema fala com sistema. A
  * aluna do estúdio lê `01/09/2026`, e não havia como pedir isso: o mapeamento
  * sabia de onde tirar o dado e não sabia como mostrá-lo. Quem montava o fluxo
- * ou aceitava a data crua no WhatsApp, ou pedia para o cliente mudar a API dele
- * — as duas respostas erradas.
+ * ou aceitava a data crua no WhatsApp, ou pedia para o cliente mudar a API dele, as duas respostas erradas.
  *
  * Puro e sem relógio: converte texto em texto. Data sem fuso não vira `Date`
- * de propósito — `new Date('2026-09-01')` interpreta como UTC e, no Brasil,
+ * de propósito, `new Date('2026-09-01')` interpreta como UTC e, no Brasil,
  * devolve o dia anterior.
  */
 export const FORMATOS_DE_SAIDA = ['data', 'hora', 'data_hora', 'dinheiro', 'nomes'] as const
 export type FormatoDeSaida = (typeof FORMATOS_DE_SAIDA)[number]
 
-/** O nome de cada um no painel, com exemplo — que é o que ensina. */
+/** O nome de cada um no painel, com exemplo, que é o que ensina. */
 export const EXEMPLO_DO_FORMATO: Record<FormatoDeSaida, string> = {
   data: '2026-09-01 vira 01/09/2026',
   hora: '07:00:00 vira 07:00',
@@ -75,12 +74,11 @@ function formatarUm(valor: string, formato: FormatoDeSaida): string {
  *
  * Nasceu de uma conversa real: a rota de disponibilidade devolve **um professor
  * por horário**, então nove horários viravam
- * `"quem atende é: Carol;Carol;Carol;Carol;Márcia;Thalya;Thalya;Thalya;Márcia."`
- * — com o `;` do formato interno vazando para quem lê.
+ * `"quem atende é: Carol;Carol;Carol;Carol;Márcia;Thalya;Thalya;Thalya;Márcia."`, com o `;` do formato interno vazando para quem lê.
  *
  * Repetido não informa: a pessoa quer saber *quem* atende naquele dia, não
  * quantas aulas cada uma dá. E a lista de professores não é pareada por posição
- * com nenhuma outra, então tirar repetidos aqui é seguro — ao contrário de
+ * com nenhuma outra, então tirar repetidos aqui é seguro, ao contrário de
  * `horarios`/`horarios_id`, onde `unicos` desalinharia o agendamento.
  *
  * **O sobrenome só entra quando precisa.** Duas Carols diferentes viram
@@ -97,7 +95,7 @@ function comoNomes(valor: string): string {
   /*
    * Quantas pessoas distintas compartilham cada primeiro nome. Duas entradas
    * com o mesmo primeiro nome só são a mesma pessoa se forem o mesmo texto
-   * inteiro — e essas já foram removidas acima.
+   * inteiro, e essas já foram removidas acima.
    */
   const quantosPor = new Map<string, number>()
   for (const inteiro of inteiros) {

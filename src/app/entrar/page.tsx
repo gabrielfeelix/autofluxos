@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic'
  * membro e, portanto, sem deixar rastro na auditoria.
  *
  * Quem já tem sessão é mandado adiante **aqui**, e não no `proxy.ts`. Lá a
- * conferência é só de presença do cookie, e um cookie vencido viraria laço —
+ * conferência é só de presença do cookie, e um cookie vencido viraria laço ,
  * a raiz confere de verdade, não encontra sessão e devolve para cá.
  */
 export default async function Entrar() {
@@ -38,7 +38,7 @@ export default async function Entrar() {
             </Link>
           </p>
           <p className="mt-2">
-            Não existe recuperação por e-mail ainda — ela depende de SMTP, que é
+            Não existe recuperação por e-mail ainda, ela depende de SMTP, que é
             compartilhado com outro produto. Peça uma senha nova a quem administra o painel.
           </p>
         </>

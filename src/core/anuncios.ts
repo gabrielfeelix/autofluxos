@@ -5,14 +5,14 @@
  * O problema
  * ---------------------------------------------------------------------------
  *
- * O `referral` do CTWA traz `source_id` — o `ad_id` da Meta, dezesseis dígitos —
+ * O `referral` do CTWA traz `source_id`, o `ad_id` da Meta, dezesseis dígitos ,
  * e o `headline`, que é o título escrito no criativo. Nenhum dos dois é o
  * **nome da campanha** que o gestor de tráfego deu no Gerenciador de Anúncios.
  * Quem atende vê "Filme institucional para sua empresa"; quem paga a mídia
  * pensa em "Institucional | Retargeting | Set26".
  *
  * A Meta não manda esse nome em lugar nenhum do webhook. Ele só existe atrás de
- * uma segunda chamada, ao nó `Ad`, com um token de Ads — e é por isso que
+ * uma segunda chamada, ao nó `Ad`, com um token de Ads, e é por isso que
  * quase ninguém no mercado o mostra: Wati e Zenvia param no id, Ploomes diz por
  * escrito que não tem, RD manda usar Zapier. Este módulo é a metade pura desse
  * caminho: o que é nome, o que é cache, e quando um cache está velho.
@@ -21,8 +21,8 @@
  * Por que o id continua sendo a verdade
  * ---------------------------------------------------------------------------
  *
- * O nome é **cache**, nunca o registro. Campanha é renomeada — no meio do mês,
- * depois de um teste A/B, quando a agência muda de convenção — e o histórico
+ * O nome é **cache**, nunca o registro. Campanha é renomeada, no meio do mês,
+ * depois de um teste A/B, quando a agência muda de convenção, e o histórico
  * não pode se reescrever sozinho: a conversa de agosto veio do anúncio que se
  * chamava algo em agosto. Guardar o `ad_id` cru e resolver o nome à parte é o
  * que mantém as duas coisas verdadeiras ao mesmo tempo.
@@ -58,7 +58,7 @@ export type AnuncioEmCache = NomesDoAnuncio & {
  * Uma chegada pelo anúncio, como ela aconteceu.
  *
  * **É evento, não atributo.** Quem veio pela campanha de agosto, sumiu e voltou
- * pela de setembro tem duas — e as duas são verdade. O contato é a entidade; a
+ * pela de setembro tem duas, e as duas são verdade. O contato é a entidade; a
  * campanha é o meio por onde ele chegou, daquela vez.
  *
  * `titulo` é o que a pessoa **leu antes de clicar**, congelado. Difere de
@@ -81,7 +81,7 @@ export type Passagem = {
  * As passagens com o melhor nome que existir para cada uma.
  *
  * O cache entra por `ad_id`. Passagem cujo anúncio ainda não foi resolvido
- * mantém o título do dia — que é informação de verdade, não um vazio.
+ * mantém o título do dia, que é informação de verdade, não um vazio.
  */
 export function passagensComNome(
   passagens: Passagem[],
@@ -102,7 +102,7 @@ export function passagensComNome(
  * O cache venceu?
  *
  * **Vencido não é inútil.** Um nome de 30 horas continua sendo o melhor palpite
- * que existe — quase sempre o anúncio nem foi renomeado. Por isso `venceu` só
+ * que existe, quase sempre o anúncio nem foi renomeado. Por isso `venceu` só
  * decide *quando vale a pena perguntar de novo*, e quem usa continua mostrando
  * o que tem enquanto a resposta não chega. Tratar vencido como ausente faria a
  * tela piscar de volta para o `headline` toda vez que o relógio virasse.
@@ -122,7 +122,7 @@ export function venceu(resolvidoEm: string, agora: Date = new Date()): boolean {
  *    dinheiro investido, e é a razão de tudo isto existir.
  * 2. **O título do anúncio** (`headline`), que chega de graça no webhook e já
  *    é legível. É o degrau em que o produto estava ontem.
- * 3. **O rótulo** — "Anúncio", "Direto" — quando não há mais nada.
+ * 3. **O rótulo**, "Anúncio", "Direto", quando não há mais nada.
  *
  * Nunca o `ad_id`: dezesseis dígitos na coluna do contato são exatamente a
  * queixa que `rotuloDoCampo` existe para resolver. O id vive no `title`, para
@@ -138,7 +138,7 @@ export function comoMostrar(entrada: {
   if (nomes && nomes.campanha.trim() !== '') {
     /*
      * O conjunto entra no detalhe, e não no texto. Ele é o que distingue duas
-     * linhas iguais quando a mesma campanha roda com dois públicos — informação
+     * linhas iguais quando a mesma campanha roda com dois públicos, informação
      * que importa a quem analisa e é ruído a quem só vai responder "oi".
      */
     const partes = [nomes.anuncio, nomes.conjunto].map((p) => p.trim()).filter((p) => p !== '')
@@ -154,7 +154,7 @@ export function comoMostrar(entrada: {
  *
  * **Sem repetição, e sem os que já têm nome fresco.** Uma fila de 200 conversas
  * de uma mesma campanha tem 200 vezes o mesmo `ad_id`; perguntar 200 vezes
- * gastaria o limite da Página por nada — e o limite da Meta é proporcional ao
+ * gastaria o limite da Página por nada, e o limite da Meta é proporcional ao
  * volume de leads, isto é, apertado justamente para quem está começando.
  */
 export function idsParaResolver(

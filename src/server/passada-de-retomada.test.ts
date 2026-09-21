@@ -141,7 +141,7 @@ describe.skipIf(!temCredencial)('a passada de retomada', () => {
   /*
    * O teste que justifica a coluna `por_sumico_em`.
    *
-   * Sem ela, a segunda passada inscreveria a mesma pessoa de novo — e como o
+   * Sem ela, a segunda passada inscreveria a mesma pessoa de novo, e como o
    * cron roda todo dia, o cliente receberia a régua diariamente até responder
    * ou bloquear.
    */

@@ -20,7 +20,7 @@ describe('ler CSV', () => {
     expect(linhas).toEqual([['Ana', '11987654321']])
   })
 
-  it('respeita aspas — "Silva, Maria" é um nome, não duas colunas', () => {
+  it('respeita aspas, "Silva, Maria" é um nome, não duas colunas', () => {
     const { linhas } = lerCsv('Nome,Telefone\n"Silva, Maria",11987654321\n')
     expect(linhas).toEqual([['Silva, Maria', '11987654321']])
   })
@@ -105,7 +105,7 @@ describe('conciliar', () => {
 
   it('telefone sem DDD vira pendência com o motivo escrito', () => {
     const [r] = conciliar([linha(2, 'Ana', '98765-4321')], conhecidos)
-    expect(r).toMatchObject({ tipo: 'pendente', motivo: 'telefone incompleto — falta o DDD' })
+    expect(r).toMatchObject({ tipo: 'pendente', motivo: 'telefone incompleto, falta o DDD' })
   })
 
   it('a mesma pessoa repetida na planilha não vira dois contatos', () => {

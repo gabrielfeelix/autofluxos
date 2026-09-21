@@ -8,7 +8,7 @@ import { destinoAposEntrar, sessaoAtual } from '@/server/sessao'
 export const dynamic = 'force-dynamic'
 
 /**
- * O cadastro aberto — a porta de quem chega sozinho.
+ * O cadastro aberto, a porta de quem chega sozinho.
  *
  * **Não é a mesma tela que `/criar-conta`**, e a separação é o ponto. Aquela
  * nasceu para duas coisas internas: a primeira execução do sistema (quem entra
@@ -23,7 +23,7 @@ export const dynamic = 'force-dynamic'
  * administrador por esta porta.
  */
 export default async function Cadastrar() {
-  // Quem já está logado não se cadastra de novo — vai para onde já pertence.
+  // Quem já está logado não se cadastra de novo, vai para onde já pertence.
   const sessao = await sessaoAtual()
   if (sessao) redirect(await destinoAposEntrar(sessao))
 

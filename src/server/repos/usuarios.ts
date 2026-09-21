@@ -7,7 +7,7 @@ import { bancoDoLogin } from '../auth'
  * **Este repositório fala Postgres direto, e é a exceção da casa.** Todo o resto
  * de `repos/` usa `supabase-js` por cima do PostgREST; as tabelas do Better Auth
  * (`af_usuarios`, `af_sessoes`, `af_membros`) foram deliberadamente deixadas
- * fora da Data API na 0019 — `af_contas` guarda hash de senha e `af_sessoes`
+ * fora da Data API na 0019, `af_contas` guarda hash de senha e `af_sessoes`
  * guarda token, e expor isso pelo PostgREST seria o pior vazamento possível
  * deste projeto. Quem já tem conexão com elas é o pool do login, e é ele que
  * este arquivo reaproveita.
@@ -35,7 +35,7 @@ export type UsuarioListado = {
  *
  * A junção acontece no banco e não em três consultas no Next porque a resposta
  * é uma tela só. `json_agg` com `filter` é o que evita a linha de quem não tem
- * conta nenhuma virar `[{null}]` — e quem não tem conta nenhuma é exatamente o
+ * conta nenhuma virar `[{null}]`, e quem não tem conta nenhuma é exatamente o
  * usuário recém-criado, que é quem mais aparece nesta tela.
  */
 export async function listarUsuarios(): Promise<UsuarioListado[]> {
@@ -115,7 +115,7 @@ export async function listarContasComMembros(): Promise<ContaComMembros[]> {
             /*
              * As duas contagens que fazem a lista dizer alguma coisa.
              *
-             * Sem elas, quinze cartões idênticos só respondem "existe" — e a
+             * Sem elas, quinze cartões idênticos só respondem "existe", e a
              * pergunta de quem administra é outra: esta conta está atendendo
              * gente, ou é um teste esquecido? Subconsulta e não mais um join:
              * o group by já é do json_agg dos membros, e somar outro join
@@ -165,7 +165,7 @@ export type MembroDaConta = {
  * Quem atende nesta conta, e quem está por perto agora.
  *
  * A presença não é enfeite: atribuir uma conversa a quem está de férias é o
- * mesmo que não atribuir — a pessoa continua esperando, e agora com um nome ao
+ * mesmo que não atribuir, a pessoa continua esperando, e agora com um nome ao
  * lado dando a impressão de que alguém está cuidando.
  *
  * Ordem: disponível primeiro, depois por nome. A lista é usada para escolher, e
@@ -213,7 +213,7 @@ export async function presencaDoUsuario(usuarioId: string): Promise<string | nul
  *
  * Existe para "dar acesso" saber que não tem nada a fazer. O plugin de
  * organização recusa membro repetido com um erro que sobe como erro de Server
- * Component — tela genérica, sem dizer o que houve —, e o vínculo já foi
+ * Component, tela genérica, sem dizer o que houve , e o vínculo já foi
  * gravado na primeira tentativa: quem clica de novo está pedindo algo que já
  * está feito, e isso é sucesso, não falha.
  */
@@ -249,7 +249,7 @@ export async function definirPapelNaConta(
    * A conferência e a escrita são duas idas ao banco, e a corrida entre dois
    * administradores rebaixando o mesmo dono ao mesmo tempo é teórica: são duas
    * pessoas clicando no mesmo segundo na mesma conta. Fechá-la exigiria trava
-   * de linha aqui, e o custo não paga — o estado resultante é recuperável por
+   * de linha aqui, e o custo não paga, o estado resultante é recuperável por
    * quem administra a plataforma, e a proteção cobre o caso real, que é o
    * clique único.
    */
@@ -262,7 +262,7 @@ export async function definirPapelNaConta(
     if (donos.length === 1 && donos[0] === usuarioId) {
       return {
         ok: false,
-        motivo: 'esta é a única pessoa dona da conta — dê a posse a outra antes de rebaixá-la',
+        motivo: 'esta é a única pessoa dona da conta, dê a posse a outra antes de rebaixá-la',
       }
     }
   }
@@ -280,7 +280,7 @@ export async function definirPapelNaConta(
  * Tira alguém da conta.
  *
  * **Recusa quando é o último dono.** Uma conta sem dono é uma conta que só a
- * 4YU consegue mexer, e o caminho de volta é um `insert` na mão — exatamente o
+ * 4YU consegue mexer, e o caminho de volta é um `insert` na mão, exatamente o
  * tipo de estado que ninguém percebe ter criado até precisar.
  *
  * Não apaga o usuário: ele pode ser dono de outra companhia, e apagar gente por
@@ -300,7 +300,7 @@ export async function removerDaConta(
 
   const donos = rows.filter((linha) => String(linha.role) === 'owner')
   if (String(alvo.role) === 'owner' && donos.length === 1) {
-    return { ok: false, motivo: 'esta é a única pessoa dona da conta — dê a posse a outra antes' }
+    return { ok: false, motivo: 'esta é a única pessoa dona da conta, dê a posse a outra antes' }
   }
 
   await bancoDoLogin().query(

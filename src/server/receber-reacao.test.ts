@@ -5,7 +5,7 @@ import { webhookSchema } from './receber-mensagem'
  * O que o webhook entende de reação e de citação.
  *
  * Puro de propósito, como `receber-mensagem-field.test.ts`: os testes de
- * `receber-mensagem.test.ts` exigem banco e são pulados sem credencial — que é
+ * `receber-mensagem.test.ts` exigem banco e são pulados sem credencial, que é
  * exatamente como um bug de parse chega à produção sem ninguém ver.
  *
  * O que estes provam é o parse e a regra. Que a reação **não acorda o motor**
@@ -52,7 +52,7 @@ describe('a reação que chega', () => {
   })
 
   /*
-   * A remoção chega das duas formas — emoji vazio ou campo ausente — e as duas
+   * A remoção chega das duas formas, emoji vazio ou campo ausente, e as duas
    * significam a mesma coisa. Quem grava normaliza para string vazia; o schema
    * só não pode recusar nenhuma das duas.
    */
@@ -88,7 +88,7 @@ describe('a reação que chega', () => {
    *
    * Antes disto ela caía no ramo de mídia e chegava ao motor como
    * `formato: 'reaction'`. Numa conversa parada numa pergunta, um "❤️"
-   * respondia a pergunta — e ninguém entendia por quê.
+   * respondia a pergunta, e ninguém entendia por quê.
    */
   it('reação é reconhecível antes de o motor ser chamado', () => {
     const reagiu = primeira(
@@ -152,7 +152,7 @@ describe('a citação que chega', () => {
 
   /*
    * Mídia cita igual. Se `context` só fosse lido em texto, citar uma foto
-   * perderia a ligação em silêncio — o tipo de erro que só aparece em produção.
+   * perderia a ligação em silêncio, o tipo de erro que só aparece em produção.
    */
   it('a foto também carrega a citação', () => {
     const mensagem = primeira(

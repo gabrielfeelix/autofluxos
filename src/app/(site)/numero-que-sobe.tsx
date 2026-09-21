@@ -57,7 +57,7 @@ export function NumeroQueSobe({ texto, className }: { texto: string; className?:
          * render em cascata logo na montagem, que é o que o
          * `react-hooks/set-state-in-effect` aponta. A segunda é visível: o
          * número fica `0` desde o carregamento, mesmo estando longe da área
-         * visível — quem rola devagar até ele vê um zero parado e só então a
+         * visível, quem rola devagar até ele vê um zero parado e só então a
          * contagem, em vez do valor final dando lugar à animação.
          *
          * Dentro do observer, o zero e o primeiro quadro acontecem juntos, no

@@ -162,7 +162,7 @@ function acumular(medidas: MedidasDoMes, status: string, total: number): void {
 }
 
 // ---------------------------------------------------------------------------
-// B3 — tempo, série diária e desempenho por pessoa (0028)
+// B3, tempo, série diária e desempenho por pessoa (0028)
 // ---------------------------------------------------------------------------
 
 /**
@@ -175,7 +175,7 @@ function acumular(medidas: MedidasDoMes, status: string, total: number): void {
  * uma é escolher entre esconder o problema e inventá-lo.
  *
  * Segundos, porque a tela formata. `null` = ninguém entrou na fila naquele mês,
- * e é diferente de zero — zero seria "responderam instantaneamente".
+ * e é diferente de zero, zero seria "responderam instantaneamente".
  */
 export type TemposDoMes = {
   entraramNaFila: number
@@ -241,7 +241,7 @@ export type DiaDaSerie = {
  * A série do gráfico, com os dias vazios preenchidos.
  *
  * **Dia sem nada tem que virar zero, e não sumir.** Um gráfico que pula os dias
- * mortos comprime o eixo e transforma uma semana parada num degrau — a linha
+ * mortos comprime o eixo e transforma uma semana parada num degrau, a linha
  * sobe onde não houve crescimento nenhum. O banco só devolve os dias que
  * existiram; completar é trabalho de quem desenha.
  */
@@ -334,7 +334,7 @@ function diaDeSaoPaulo(data: Date): string {
 }
 
 // ---------------------------------------------------------------------------
-// Satisfação — NPS e CSAT (0060)
+// Satisfação, NPS e CSAT (0060)
 // ---------------------------------------------------------------------------
 
 /**
@@ -342,12 +342,12 @@ function diaDeSaoPaulo(data: Date): string {
  *
  * **O NPS mora aqui, e não na view, de propósito.** Promotor e detrator são
  * definição de produto: mudar o corte é uma decisão de negócio, e num arquivo
- * TypeScript isso é um deploy — numa view seria uma migration contra o banco que
+ * TypeScript isso é um deploy, numa view seria uma migration contra o banco que
  * a Verandi divide (ver docs/BANCO-COMPARTILHADO.md). A view entrega contagem
  * crua; a conta é nossa.
  *
  * `nps` é `null` quando ninguém respondeu, e isso **não** é zero. Zero é o
- * resultado real de uma conta empatada — tantos promotores quanto detratores —
+ * resultado real de uma conta empatada, tantos promotores quanto detratores ,
  * e mostrá-lo no lugar de "ninguém respondeu ainda" faria uma tela vazia
  * parecer um mês medíocre.
  */
@@ -419,7 +419,7 @@ export async function medirSatisfacao(
     if (alvo.respostas === 0) continue
 
     // O NPS é **percentual de promotores menos percentual de detratores**. Os
-    // neutros não entram na conta — e é por isso que ele vai de −100 a 100.
+    // neutros não entram na conta, e é por isso que ele vai de −100 a 100.
     alvo.nps = Math.round(
       (alvo.promotores / alvo.respostas) * 100 - (alvo.detratores / alvo.respostas) * 100,
     )

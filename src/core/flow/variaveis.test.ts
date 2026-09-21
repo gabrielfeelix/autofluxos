@@ -5,7 +5,7 @@ import { variaveisDoFluxo } from './variaveis'
 
 /*
  * Esta função morava em `components/editor/editor.tsx`, que é `'use client'`.
- * Quando a página do editor — componente de servidor — passou a chamá-la, o
+ * Quando a página do editor, componente de servidor, passou a chamá-la, o
  * Next transformou o import num *client reference* e a chamada estourou no
  * servidor: React #441, com a mensagem escondida em produção.
  *
@@ -14,7 +14,7 @@ import { variaveisDoFluxo } from './variaveis'
  * existe entre esse erro e alguém abrindo Automações.
  */
 describe('onde esta função pode morar', () => {
-  it('não está num módulo de cliente — servidor e editor chamam os dois', () => {
+  it('não está num módulo de cliente, servidor e editor chamam os dois', () => {
     const fonte = readFileSync(new URL('./variaveis.ts', import.meta.url), 'utf8')
     // A diretiva só vale na **primeira** linha de código do arquivo; procurar a
     // palavra solta acusaria este próprio comentário e o do módulo.
@@ -49,7 +49,7 @@ describe('variaveisDoFluxo', () => {
     expect(variaveisDoFluxo(fluxo).nomes).toEqual(['horario', 'horarios', 'plano', 'sessao_id'])
   })
 
-  it('o valor da opção escolhida conta como variável — é a que chama a API depois', () => {
+  it('o valor da opção escolhida conta como variável, é a que chama a API depois', () => {
     expect(variaveisDoFluxo(fluxo).origens.sessao_id).toEqual(['a'])
   })
 })

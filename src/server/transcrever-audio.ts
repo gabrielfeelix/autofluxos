@@ -26,7 +26,7 @@ import { baixarArquivo } from './repos/midia-recebida'
  * humana**. Isso era aceitável para demonstração, com dado nosso.
  *
  * Aqui é a voz do cliente do cliente. É dado pessoal de terceiro, e é mais
- * sensível do que texto — voz identifica pessoa. Por isso:
+ * sensível do que texto, voz identifica pessoa. Por isso:
  *
  * - **nunca automático.** Só transcreve quando alguém clica, e o clique é o
  *   consentimento de quem atende, que sabe o que está mandando para fora;
@@ -45,7 +45,7 @@ const ENDERECO = 'https://generativelanguage.googleapis.com/v1beta/models'
  * O modelo, e por que não é o mesmo objeto `Modelo` do resto.
  *
  * `ia/gemini.ts` monta um cliente de **conversa**: histórico, ferramentas,
- * reserva, cota, `system_instruction`. Transcrever não tem nada disso — é um
+ * reserva, cota, `system_instruction`. Transcrever não tem nada disso, é um
  * pedido só, sem estado, com um arquivo dentro. Passar por lá exigiria abrir o
  * contrato de `Modelo` para áudio e carregar toda a máquina de conversa numa
  * chamada que não conversa.
@@ -56,12 +56,12 @@ const MODELO = 'gemini-flash-latest'
  * A reserva, e por que ela não é zelo.
  *
  * **Medido**: a primeira tentativa de transcrever um áudio real de produção
- * voltou `503 UNAVAILABLE — "This model is currently experiencing high demand"`.
+ * voltou `503 UNAVAILABLE, "This model is currently experiencing high demand"`.
  * A segunda, no mesmo áudio, transcreveu inteiro. Congestionamento do free tier
  * é o modo normal de falhar aqui, não a exceção.
  *
  * Sem reserva, quem clicou lê "não deu para transcrever" num áudio que o modelo
- * transcreveria perfeitamente trinta segundos depois — e a conclusão de quem
+ * transcreveria perfeitamente trinta segundos depois, e a conclusão de quem
  * usa é que o recurso não funciona.
  *
  * É o mesmo desenho de `ia/gemini.ts`, que já mantém uma reserva pelo mesmo
@@ -73,7 +73,7 @@ const MODELO_RESERVA = 'gemini-3.6-flash'
  * Os códigos que valem uma segunda tentativa noutro modelo.
  *
  * `429` é cota, `503` é fila. Os dois dizem "este modelo agora não", e nenhum
- * diz "este áudio não presta" — que é a diferença entre trocar de modelo e
+ * diz "este áudio não presta", que é a diferença entre trocar de modelo e
  * insistir num pedido que vai falhar igual. `400` e `404` ficam de fora de
  * propósito: repetir não muda o resultado e só gasta a cota.
  */
@@ -93,7 +93,7 @@ const TIMEOUT_MS = 30_000
  *
  * O bucket já limita em 16 MB. Isto aqui é outro limite, e mais baixo: base64
  * infla o arquivo em um terço, e o corpo do pedido viaja inteiro. 8 MB de áudio
- * são uns vinte minutos de fala — muito além de qualquer recado de WhatsApp, e
+ * são uns vinte minutos de fala, muito além de qualquer recado de WhatsApp, e
  * o suficiente para o erro ser "esse áudio é grande demais" em vez de um
  * timeout sem explicação.
  */
@@ -172,7 +172,7 @@ export async function transcreverAudio(
      * A palavra muda quando os dois modelos estavam ocupados.
      *
      * "Não deu" faz procurar defeito no áudio ou no painel. "Está
-     * congestionado, tente de novo" diz a verdade e diz o que fazer — e o que
+     * congestionado, tente de novo" diz a verdade e diz o que fazer, e o que
      * fazer funciona, porque a fila do Google anda.
      */
     return {
@@ -244,7 +244,7 @@ async function pedirAoGemini(
      * Temperatura no chão.
      *
      * Transcrição não é criação: qualquer liberdade aqui vira palavra inventada
-     * onde o áudio estava sujo — e uma palavra inventada numa transcrição é
+     * onde o áudio estava sujo, e uma palavra inventada numa transcrição é
      * pior do que uma lacuna, porque parece o que a pessoa disse.
      */
     generationConfig: { temperature: 0 },
@@ -259,12 +259,12 @@ async function pedirAoGemini(
   })
 
   if (!resposta.ok) {
-    // O texto do Google é específico e é ele que resolve — chave sem cota, modelo
+    // O texto do Google é específico e é ele que resolve, chave sem cota, modelo
     // desativado, áudio recusado. Só o status não diz nada a quem for ler o log.
     const detalhe = `${resposta.status}: ${(await resposta.text()).slice(0, 300)}`
     // O prefixo é o que `comReserva` e a tela leem para separar "agora não" de
     // "nunca". Fica no começo da mensagem para não depender de procurar no meio.
-    throw new Error(CONGESTIONADO.has(resposta.status) ? `ocupado — ${detalhe}` : detalhe)
+    throw new Error(CONGESTIONADO.has(resposta.status) ? `ocupado, ${detalhe}` : detalhe)
   }
 
   const json = (await resposta.json()) as {

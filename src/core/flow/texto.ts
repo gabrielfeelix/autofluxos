@@ -3,20 +3,20 @@
  *
  * `"📅".length` é **2**: o JavaScript mede unidades UTF-16, e emoji fora do
  * plano básico ocupa um par substituto. A Cloud API conta **caracteres**, então
- * `📅` + 19 letras é um rótulo de 20 que ela aceita — e que `.length` reprovava
+ * `📅` + 19 letras é um rótulo de 20 que ela aceita, e que `.length` reprovava
  * com 21.
  *
  * O erro não era só de contagem. O campo de opção usava `maxLength={20}` do
  * HTML, que também conta UTF-16, e isso produziu três defeitos de uma vez, todos
  * relatados por quem estava usando:
  *
- * 1. **Rótulo com 19 letras recusava qualquer emoji** — o navegador simplesmente
+ * 1. **Rótulo com 19 letras recusava qualquer emoji**, o navegador simplesmente
  *    não deixava digitar, sem dizer por quê.
  * 2. **Colar texto longo cortava no meio do par substituto**, deixando um
  *    substituto solto (`"...\ud83d"`) na string.
  * 3. **Esse substituto solto derruba o salvamento**: `JSON.stringify` o emite
  *    como `\ud83d` e o Postgres recusa a sequência dentro de `jsonb`. O
- *    rascunho não gravava, e ao recarregar a opção e os emojis tinham sumido —
+ *    rascunho não gravava, e ao recarregar a opção e os emojis tinham sumido ,
  *    que foi exatamente o sintoma relatado.
  *
  * Por isso a regra deste arquivo: **conte por caractere, corte por caractere, e
@@ -42,7 +42,7 @@ export function cortarCaracteres(texto: string, limite: number): string {
  * Tem meio caractere aqui dentro?
  *
  * Um substituto sem par não é texto válido: ele sobrevive na memória do
- * navegador, atravessa o `JSON.stringify`, e só estoura lá no banco — longe de
+ * navegador, atravessa o `JSON.stringify`, e só estoura lá no banco, longe de
  * quem digitou. Esta função é o que permite recusar antes.
  */
 export function temMetadeDeCaractere(texto: string): boolean {

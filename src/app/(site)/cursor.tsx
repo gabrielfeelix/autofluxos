@@ -8,7 +8,7 @@ import { useEffect, useRef } from 'react'
  * **São dois elementos, e a distância entre eles é o efeito.** O ponto segue o
  * mouse na hora; o anel chega depois, interpolando 14% da distância a cada
  * quadro. Quando o ponteiro para, o anel alcança e os dois viram um só. Quando
- * corre, o anel fica para trás e se estica na direção do movimento — é o mesmo
+ * corre, o anel fica para trás e se estica na direção do movimento, é o mesmo
  * truque que os sites de referência usam, e o que faz o cursor parecer um
  * objeto com massa em vez de um sprite colado.
  *

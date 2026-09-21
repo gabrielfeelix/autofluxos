@@ -4,7 +4,7 @@ import { IndiceAtivo } from './indice-ativo'
 import s from './privacidade.module.css'
 
 /**
- * A moldura das páginas legais públicas — privacidade, termos e exclusão de
+ * A moldura das páginas legais públicas, privacidade, termos e exclusão de
  * dados.
  *
  * **Ela nasceu de uma cópia que estava prestes a virar três.** A política de
@@ -15,7 +15,7 @@ import s from './privacidade.module.css'
  * visualmente sem ninguém perceber.
  *
  * O que muda de uma página para outra é só conteúdo: título, resumo, selos da
- * capa e as seções. O resto é igual por decisão, não por acaso — são
+ * capa e as seções. O resto é igual por decisão, não por acaso, são
  * documentos do mesmo emissor e precisam parecer o mesmo documento.
  *
  * Elas abrem **sem sessão** (ver `PORTAS_ABERTAS` em `proxy.ts`): quem revisa
@@ -146,7 +146,7 @@ export function PaginaLegal({
  * A lista com marcador desenhado do documento.
  *
  * Existe aqui, e não como `<ul>` cru na página, porque o marcador é o
- * `::before` do CSS module — sem a classe certa a lista sai com o bullet
+ * `::before` do CSS module, sem a classe certa a lista sai com o bullet
  * padrão do navegador no meio de um documento que não tem nenhum.
  */
 export function Lista({ children }: { children: ReactNode }) {

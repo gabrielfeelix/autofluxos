@@ -84,7 +84,7 @@ describe('o adaptador do Instagram', () => {
 
   /**
    * O Instagram não tem lista. Pedir `formato: 'lista'` num fluxo de Instagram
-   * não deveria acontecer — o canal é escolhido antes de desenhar —, mas uma
+   * não deveria acontecer, o canal é escolhido antes de desenhar , mas uma
    * versão publicada antes dessa regra pode carregar o formato no grafo.
    */
   it('lista e botões saem iguais, porque só existe uma forma', async () => {
@@ -126,7 +126,7 @@ describe('o adaptador do Instagram', () => {
     const { message } = corpos(espiao)[0] as { message: { quick_replies: { title: string }[] } }
     const titulo = message.quick_replies[0]!.title
     expect([...titulo]).toHaveLength(20)
-    // Meio par substituto vira `�` na hora de virar JSON — e o Postgres
+    // Meio par substituto vira `�` na hora de virar JSON, e o Postgres
     // recusa isso dentro de `jsonb` quando a mensagem é gravada.
     expect(titulo).not.toContain('�')
   })
@@ -166,7 +166,7 @@ describe('o adaptador do Instagram', () => {
 
   /**
    * O indicador do Instagram é `sender_action`, que quer saber com quem a
-   * conversa é. Mandar o id da mensagem aqui — que é o que o WhatsApp exige —
+   * conversa é. Mandar o id da mensagem aqui, que é o que o WhatsApp exige ,
    * faria a Meta responder 400 no meio de toda conversa com atraso.
    */
   it('o "digitando" usa o contato, e não o id da mensagem', async () => {

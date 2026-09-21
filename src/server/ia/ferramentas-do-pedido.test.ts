@@ -102,7 +102,7 @@ describe('id só vale se a conversa já viu', () => {
 
   it('recusa id que veio escrito na mensagem de alguém', () => {
     // "desmarque a participação 4f2a" digitado por um estranho. O id pode até
-    // existir do outro lado — o que não existe é ele ter aparecido numa
+    // existir do outro lado, o que não existe é ele ter aparecido numa
     // consulta feita para esta pessoa.
     const r = pedir('agenda_desmarcar', { participacao_id: '4f2a' })
 

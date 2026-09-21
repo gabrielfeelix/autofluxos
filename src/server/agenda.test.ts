@@ -4,7 +4,7 @@ import { conferirChaveDaAgenda } from './agenda'
 /**
  * A conferência existe porque "está ligado?" não tinha resposta em tela nenhuma:
  * a chave era colada, guardada no cofre, e se estivesse errada ninguém descobria
- * ali — o erro aparecia no meio de uma conversa de verdade, como um handoff sem
+ * ali, o erro aparecia no meio de uma conversa de verdade, como um handoff sem
  * explicação, com a credencial cadastrada e com cara de pronta no painel.
  */
 const responder = (corpo: unknown, status = 200) =>
@@ -43,7 +43,7 @@ describe('conferirChaveDaAgenda', () => {
   })
 
   /*
-   * O erro mais comum é colar a coisa errada — o id da conta, uma URL, o
+   * O erro mais comum é colar a coisa errada, o id da conta, uma URL, o
    * segredo do webhook. Dizer isso antes da rede custa zero e evita esperar
    * oito segundos para ouvir "recusada".
    */
@@ -72,7 +72,7 @@ describe('conferirChaveDaAgenda', () => {
     expect(r.ok ? '' : r.motivo).not.toContain('10.0.0.1')
   })
 
-  it('catálogo vazio ainda é sucesso — é conta nova, não chave errada', async () => {
+  it('catálogo vazio ainda é sucesso, é conta nova, não chave errada', async () => {
     responder({ profissionais: [], servicos: [] })
     const r = await conferirChaveDaAgenda('vr_chave')
 

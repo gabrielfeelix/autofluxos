@@ -16,7 +16,7 @@ export type DestinoDaImportacao = { id: string; nome: string }
  *
  * **O `try/catch` não é opcional.** Promessa rejeitada dentro de
  * `useTransition` sobe para a fronteira de erro do React e derruba a tela
- * inteira — numa página pública, isso é a pessoa recebendo "Alguma coisa
+ * inteira, numa página pública, isso é a pessoa recebendo "Alguma coisa
  * quebrou aqui" no lugar do fluxo que alguém lhe mandou.
  */
 export function ImportarFluxo({
@@ -65,7 +65,7 @@ export function ImportarFluxo({
                 }
                 router.push(`/clientes/${destino}/fluxos/${r.fluxoId}`)
               } catch {
-                setErro('não deu para importar agora — tente de novo em instantes')
+                setErro('não deu para importar agora, tente de novo em instantes')
               }
             })
           }}

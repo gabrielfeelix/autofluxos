@@ -6,7 +6,7 @@ import { receberDoInstagram } from '@/server/receber-do-instagram'
 /**
  * Onde o Instagram bate.
  *
- * As duas regras que moldaram o webhook do WhatsApp valem iguais aqui —
+ * As duas regras que moldaram o webhook do WhatsApp valem iguais aqui ,
  * responder 200 rápido (senão a Meta reenvia e a conversa anda duas vezes) e
  * validar a assinatura (senão qualquer um manda mensagem falsa em nome de
  * qualquer cliente). O que muda é o formato do corpo, e isso mora inteiro em
@@ -16,15 +16,15 @@ import { receberDoInstagram } from '@/server/receber-do-instagram'
  * apontar produtos diferentes para URLs diferentes, e separar tem uma
  * consequência prática: um erro no formato do Instagram não pode derrubar o
  * caminho do WhatsApp, que é o que atende cliente pagante hoje. O `verify
- * token` também é próprio — repetir o do WhatsApp faria a validação de um
+ * token` também é próprio, repetir o do WhatsApp faria a validação de um
  * produto autorizar o outro.
  *
  * **O segredo NÃO é o mesmo do WhatsApp, e essa suposição já custou caro.** A
  * API do Instagram com login do Instagram cria um app próprio dentro do app da
- * Meta — ID e chave secreta separados, visíveis em "Configuração da API com
+ * Meta, ID e chave secreta separados, visíveis em "Configuração da API com
  * login do Instagram". É esse segredo que assina os eventos do Direct. Enquanto
  * conferimos só com `META_APP_SECRET`, todo evento levava 401 aqui e morria
- * antes de virar mensagem no Inbox — sem alerta nenhum, porque o 401 sai antes
+ * antes de virar mensagem no Inbox, sem alerta nenhum, porque o 401 sai antes
  * do processamento que alerta.
  *
  * Conferimos contra os dois porque a Meta assina de um jeito quando o produto é
@@ -45,7 +45,7 @@ export async function GET(req: Request) {
    * Cai no token do WhatsApp quando o próprio não estiver preenchido.
    *
    * Um ambiente que ainda não configurou o Instagram não deveria falhar a
-   * verificação por causa de uma variável que ninguém sabia que existia — e a
+   * verificação por causa de uma variável que ninguém sabia que existia, e a
    * alternativa (recusar) manda quem está registrando o webhook procurar um
    * erro de permissão que não existe.
    */

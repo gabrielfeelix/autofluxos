@@ -218,7 +218,7 @@ describe.skipIf(!temCredencial)('o nulo é informação (RB-35)', () => {
     })
 
     // Ninguém: as únicas compras são de hoje, e quem nunca comprou tem
-    // `ultima_compra_em` nulo — que é um grupo próprio, não "faz muito tempo".
+    // `ultima_compra_em` nulo, que é um grupo próprio, não "faz muito tempo".
     expect(semComprarHaMuito.contatos.every((c) => c.ultimaCompraEm !== null)).toBe(true)
     expect(semComprarHaMuito.total).toBe(0)
   })

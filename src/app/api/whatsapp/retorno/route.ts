@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic'
  * alguns segundos num dia ruim da Graph API.
  *
  * O que um timeout aqui custa é desproporcional ao que ele parece: a função
- * morre no meio, e o que já foi disparado **não volta atrás** — cada sync só
+ * morre no meio, e o que já foi disparado **não volta atrás**, cada sync só
  * pode ser disparado uma vez na vida daquele número. Terminar a sequência é
  * mais importante que responder rápido, porque quem espera é uma pessoa que
  * acabou de conectar e vai ver a tela de qualquer jeito.
@@ -41,7 +41,7 @@ export const maxDuration = 60
  *
  * - o `state` prova **qual cliente** começou. Sem ele, bastaria induzir um
  *   administrador logado a abrir um link para ligar um número de WhatsApp ao
- *   cliente errado — ou ligar o número do atacante a um cliente de verdade e
+ *   cliente errado, ou ligar o número do atacante a um cliente de verdade e
  *   passar a receber as mensagens dele.
  * - a sessão prova **quem está pedindo**. O bilhete diz qual cliente; só a
  *   sessão diz se esta pessoa pode mexer nele.
@@ -68,18 +68,18 @@ export async function GET(req: Request) {
   const destino = `/clientes/${clienteId}/ajustes/whatsapp`
 
   /*
-   * **A sessão pode não vir aqui, e isso é normal — não é invasão.**
+   * **A sessão pode não vir aqui, e isso é normal, não é invasão.**
    *
    * Quem chega é o navegador voltando do `facebook.com`: navegação cross-site.
    * O cookie do Better Auth é `SameSite=Lax`, e `Lax` manda o navegador **não
    * enviar o cookie** num redirect vindo de outro site. Exigir sessão aqui
-   * recusava toda conexão real com `?erro=whatsapp_acesso` — e pior, sem
+   * recusava toda conexão real com `?erro=whatsapp_acesso`, e pior, sem
    * alerta, porque a recusa acontece antes do código que alerta.
    *
    * Quando ela vem, vale: sessão presente e sem direito àquele cliente é
    * tentativa de ligar um número na conta de outro, e continua recusada.
    *
-   * Quando não vem, quem responde é o `state` — e ele basta, porque é o que
+   * Quando não vem, quem responde é o `state`, e ele basta, porque é o que
    * esta rota precisa saber. Ele é **assinado por nós** e vale dez minutos:
    * quem não tem o segredo não fabrica um, então o `clienteId` que chega aqui
    * só pode ter saído de uma tela onde alguém com acesso apertou "conectar".
@@ -111,7 +111,7 @@ export async function GET(req: Request) {
    *
    * Sem o número não há o que gravar: ele é a chave do canal e é por ele que o
    * webhook descobre de quem é a mensagem. A WABA pode faltar e o onboarding
-   * avisa por alerta — ela é necessária para inscrever o app e disparar os
+   * avisa por alerta, ela é necessária para inscrever o app e disparar os
    * syncs, mas não para o número existir.
    */
   const phoneNumberId = parametros.get('phone_number_id')
@@ -143,13 +143,13 @@ export async function GET(req: Request) {
      * **Depois de gravar, e dentro do mesmo pedido.**
      *
      * Depois porque um sync disparado antes de o canal existir manda a Meta
-     * responder para um webhook que não acha canal nenhum — e o histórico dela
+     * responder para um webhook que não acha canal nenhum, e o histórico dela
      * chega uma vez só.
      *
      * Dentro do mesmo pedido porque a janela é de 24 horas e **cada sync só
      * pode ser disparado uma vez**: um passo manual aqui significa que o
      * cliente que embarcou numa sexta à noite perde a janela inteira. Não
-     * estoura para cá — ver o cabeçalho de `onboarding.ts`.
+     * estoura para cá, ver o cabeçalho de `onboarding.ts`.
      */
     await terminarOnboarding({
       canalId,
@@ -161,7 +161,7 @@ export async function GET(req: Request) {
   } catch (erro) {
     /*
      * `redirect()` funciona lançando uma exceção, então ele **não pode** ficar
-     * dentro deste `try` — seria capturado aqui e virado em "falhou". É a
+     * dentro deste `try`, seria capturado aqui e virado em "falhou". É a
      * pegadinha clássica do App Router, e ela transforma um sucesso em erro.
      */
     await alertar('o onboarding do WhatsApp falhou', erro, { cliente: clienteId })

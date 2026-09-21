@@ -19,8 +19,7 @@ import s from './(site)/pagina-inicial.module.css'
  *
  * **Esta rota era o painel e virou a landing.** O painel foi para `/painel`.
  * A troca não é cosmética: a Meta exige, para a verificação de acesso do Tech
- * Provider, *"um site completo que mostre o serviço e os detalhes da empresa"*
- * — e o domínio do produto abrindo uma tela de login é rejeição na certa.
+ * Provider, *"um site completo que mostre o serviço e os detalhes da empresa"*, e o domínio do produto abrindo uma tela de login é rejeição na certa.
  *
  * O visual sai dos tokens do painel (`globals.css`), não de uma paleta
  * inventada aqui. Quem clica em "Entrar" tem que sentir que continuou no mesmo
@@ -611,7 +610,7 @@ O que perguntam antes de assinar
  *
  * **A versão anterior era uma conversa solta**, e ela prova que o bot responde
  * sem provar o que a pessoa compra: a tela onde o atendimento acontece. Aqui
- * aparecem as três colunas que fazem a diferença no dia — a fila com quem
+ * aparecem as três colunas que fazem a diferença no dia, a fila com quem
  * espera, a conversa com o handoff no meio dela, e a ficha do contato.
  *
  * Desenhada em HTML pelo mesmo motivo das outras ilustrações: print de um
@@ -725,12 +724,12 @@ function Desktop() {
 /**
  * A conversa que mostra o produto funcionando.
  *
- * **Ela saiu da capa quando o campo de partículas entrou** — as duas coisas
+ * **Ela saiu da capa quando o campo de partículas entrou**, as duas coisas
  * competiam pela mesma atenção, e a capa ficou com o texto. Aqui embaixo ela
  * tem a seção inteira, e é a primeira coisa que aparece depois da dobra.
  *
  * Substitui o print: mostra o produto sem prometer uma interface que continua
- * mudando. Os balões entram em cascata pelo `animation-delay` inline — CSS
+ * mudando. Os balões entram em cascata pelo `animation-delay` inline, CSS
  * puro, sem timer no cliente.
  */
 function Falas() {
@@ -989,12 +988,12 @@ function Pergunta({ pergunta, resposta }: { pergunta: string; resposta: string }
  * O título da capa, palavra por palavra.
  *
  * **A quebra em palavras é o efeito.** Cada uma vira um `<span>` com o próprio
- * atraso, e o CSS as materializa subindo e saindo do desfoque — o olho lê isso
+ * atraso, e o CSS as materializa subindo e saindo do desfoque, o olho lê isso
  * como profundidade, não como um fade.
  *
  * O texto continua legível para quem não executa JS e para leitor de tela: são
  * spans com o texto dentro, na ordem, dentro de um `<h1>` de verdade. O
- * `aria-hidden` ficaria errado aqui — é o título da página.
+ * `aria-hidden` ficaria errado aqui, é o título da página.
  */
 function TituloAnimado({ linhas }: { linhas: { texto: string; destaque?: boolean }[] }) {
   let indice = 0
@@ -1042,8 +1041,8 @@ function TituloAnimado({ linhas }: { linhas: { texto: string; destaque?: boolean
  *
  * **Elas existem porque a alternativa é print**, e print de um produto que
  * muda toda semana envelhece antes de a página ir ao ar. Desenhadas, mostram o
- * *mecanismo* — o fluxo acendendo bloco a bloco, a fila que esvazia, o pacote
- * atravessando a integração — que é o que continua verdadeiro mesmo quando a
+ * *mecanismo*, o fluxo acendendo bloco a bloco, a fila que esvazia, o pacote
+ * atravessando a integração, que é o que continua verdadeiro mesmo quando a
  * tela muda.
  *
  * Todas são `aria-hidden` no ponto de uso: são figura, e o texto ao lado já

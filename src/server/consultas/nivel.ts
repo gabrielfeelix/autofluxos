@@ -13,7 +13,7 @@ import { consultarContatos } from './contatos'
  * O filtro de nível tinha duas implementações e nenhuma delas era do servidor:
  *
  *   - a tela fazia `leads.filter(...)` sobre a página já carregada. A
- *     contagem ao lado dizia "3 de 50" — 3 daquela página, não da base — e ir
+ *     contagem ao lado dizia "3 de 50", 3 daquela página, não da base, e ir
  *     para a página 2 trazia outro conjunto de "Ouro";
  *   - o CSV **não tinha** o filtro. Quem filtrava por Ouro na tela e clicava
  *     em exportar recebia a base inteira, sem aviso nenhum.
@@ -29,7 +29,7 @@ import { consultarContatos } from './contatos'
  * limite, e o limite é declarado: acima de `TETO` a resposta seria uma lista
  * de ids grande demais para viajar num `in (...)`. O caminho definitivo é a
  * consulta de leads passar a ler direto de `contatos_comerciais`, e isso é
- * trabalho da T6.2 em diante — está no handoff.
+ * trabalho da T6.2 em diante, está no handoff.
  *
  * O teto foi escolhido acima do que a produção tem (27 contatos medidos em
  * setembro de 2026) com folga de duas ordens de grandeza.

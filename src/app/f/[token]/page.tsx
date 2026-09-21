@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic'
  *
  * **É a única tela do sistema que abre sem sessão nenhuma.** Tudo o que ela
  * mostra vem de um token que alguém gerou de propósito, sobre uma versão
- * publicada, com prazo e botão de revogar — e nada aqui consulta a conta de
+ * publicada, com prazo e botão de revogar, e nada aqui consulta a conta de
  * origem além do nome dela.
  *
  * O que ela deliberadamente **não** faz: desenhar o grafo. Quem chega aqui está
@@ -22,7 +22,7 @@ export const dynamic = 'force-dynamic'
  * o canvas custaria o bundle do editor numa rota pública para entregar menos.
  */
 export const metadata: Metadata = {
-  // Link compartilhado não é conteúdo para busca — e o `robots.ts` já proíbe o
+  // Link compartilhado não é conteúdo para busca, e o `robots.ts` já proíbe o
   // site inteiro. Isto é o cinto junto do suspensório, porque aqui o custo de
   // errar é o fluxo de um cliente indexado.
   robots: { index: false, follow: false },
@@ -48,7 +48,7 @@ const ROTULO_DO_BLOCO: Record<LinhaDoRoteiro['tipo'], string> = {
 export default async function Pagina({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
   // Sem `decodeURIComponent`: o token é `base64url`, que não tem nenhum
-  // caractere que precise de escape — e um `%` solto vindo de um link truncado
+  // caractere que precise de escape, e um `%` solto vindo de um link truncado
   // faria `decodeURIComponent` estourar com `URIError` numa rota pública, o que
   // é uma página de erro genérica no lugar de "este link não existe".
   const link = await acharPorToken(token)
@@ -97,7 +97,7 @@ export default async function Pagina({ params }: { params: Promise<{ token: stri
           {link.nome}
         </h1>
         <p className="mt-2 text-[12px] text-dim">
-          Versão {link.versao}, publicada — o desenho aqui não muda mais.
+          Versão {link.versao}, publicada, o desenho aqui não muda mais.
         </p>
 
         <ul className="mt-5 flex flex-wrap gap-2">
@@ -182,7 +182,7 @@ export default async function Pagina({ params }: { params: Promise<{ token: stri
       </section>
 
       <p className="mt-6 text-center text-[11px] leading-[1.7] text-dim">
-        Feito no <strong className="font-semibold text-muted">AutoFluxos</strong>, da 4YU —
+        Feito no <strong className="font-semibold text-muted">AutoFluxos</strong>, da 4YU ,
         atendimento no WhatsApp desenhado bloco a bloco.
       </p>
     </main>
@@ -222,7 +222,7 @@ function Aviso({ titulo, texto }: { titulo: string; texto: string }) {
  * conferência da ação seria um seletor cheio de opções que dão erro ao clicar;
  * uma mais restrita esconderia contas de quem tem direito a elas.
  *
- * A lista **não decide nada** — quem decide é `exigirAcessoAoCliente` dentro da
+ * A lista **não decide nada**, quem decide é `exigirAcessoAoCliente` dentro da
  * ação, com o id que o navegador mandou.
  */
 async function destinosPossiveis(): Promise<DestinoDaImportacao[]> {

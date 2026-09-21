@@ -29,7 +29,7 @@ export async function acaoConectarInstagram(dados: FormData): Promise<void> {
    *
    * O `redirect_uri` precisa bater byte a byte com o que foi cadastrado no
    * painel da Meta **e** com o que vai no retorno. Ler da requisição faz
-   * preview e produção funcionarem sem cada um ter a sua variável — o preço é
+   * preview e produção funcionarem sem cada um ter a sua variável, o preço é
    * lembrar de cadastrar cada origem no painel da Meta, que é obrigatório de
    * qualquer forma.
    */

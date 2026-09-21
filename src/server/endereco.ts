@@ -8,7 +8,7 @@ import 'server-only'
  * uma URL relativa não serve para colar na configuração de outro sistema.
  *
  * A ordem das fontes é deliberada. `BETTER_AUTH_URL` é o domínio de verdade,
- * configurado à mão — é ele que a pessoa digita. `VERCEL_URL` é o endereço do
+ * configurado à mão, é ele que a pessoa digita. `VERCEL_URL` é o endereço do
  * *deploy*, que muda a cada publicação e serve só de rede em prévia. O
  * `localhost` fecha a lista para o desenvolvimento não mostrar string vazia.
  *

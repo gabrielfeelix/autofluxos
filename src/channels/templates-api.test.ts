@@ -56,7 +56,7 @@ describe('criar template na Meta', () => {
   })
 
   /*
-   * A Meta reclassifica sozinha quando acha o conteúdo promocional — e a
+   * A Meta reclassifica sozinha quando acha o conteúdo promocional, e a
    * categoria muda o PREÇO da mensagem. Gravar o que pedimos em vez do que ela
    * respondeu faria a tabela de custo mentir.
    */
@@ -127,7 +127,7 @@ describe('criar template na Meta', () => {
 })
 
 describe('listar templates da Meta (a reconciliação)', () => {
-  it('pede os campos explicitamente — sem isso não vem qualidade nem recusa', async () => {
+  it('pede os campos explicitamente, sem isso não vem qualidade nem recusa', async () => {
     const fetchMock = responder({ data: [] })
 
     await listarTemplatesDaMeta({ wabaId: 'waba-1', token: 't', versaoGraph: 'v25.0' })

@@ -42,7 +42,7 @@ const COLUNAS = 'id, nome, descricao, regra, criado_por, criado_em'
  *
  * Regra que não valida mais vira segmento vazio e o nome fica: some o filtro,
  * não o objeto. A alternativa seria devolver a regra crua e deixar a consulta
- * ignorar as condições desconhecidas, que é o pior dos dois mundos — a tela
+ * ignorar as condições desconhecidas, que é o pior dos dois mundos, a tela
  * diria "sem comprar há 90 dias" e traria todo mundo.
  */
 function paraSegmento(linha: Linha): SegmentoSalvo {

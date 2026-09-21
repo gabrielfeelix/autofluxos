@@ -4,7 +4,7 @@
  * **São nossas, desenhadas aqui, e isso foi escolha e não falta de opção.**
  * O levantamento das bibliotecas públicas (unDraw, Storyset, Humaaans, Open
  * Peeps, ManyPixels e outras dez) terminou em três constatações: nenhuma tem
- * API — todas são download manual —, as bonitas de graça exigem link de
+ * API, todas são download manual , as bonitas de graça exigem link de
  * atribuição visível (Storyset, Icons8, Streamline), e as que não exigem têm o
  * estilo que todo SaaS usa, então o cliente já viu aquele mesmo desenho em três
  * ferramentas.
@@ -14,7 +14,7 @@
  * traço na medida do produto.
  *
  * **A regra de cor é `currentColor`, nunca hex.** Cada peça herda a cor de quem
- * a envolve, então a ilustração acompanha o tema sozinha — e um fundo branco
+ * a envolve, então a ilustração acompanha o tema sozinha, e um fundo branco
  * embutido, que é o defeito clássico de ilustração pronta em tema escuro,
  * simplesmente não existe aqui porque não há fundo nenhum.
  *
@@ -23,7 +23,7 @@
  * vira olhando, que é o que um parágrafo de texto não faz.
  */
 
-/** Traço fino comum a todas — o desenho é linha, não mancha. */
+/** Traço fino comum a todas, o desenho é linha, não mancha. */
 const TRACO = {
   fill: 'none',
   stroke: 'currentColor',
@@ -52,7 +52,7 @@ function Tela({ children, titulo }: { children: React.ReactNode; titulo: string 
   )
 }
 
-/** Quadros: três colunas com cartões — o funil desenhado. */
+/** Quadros: três colunas com cartões, o funil desenhado. */
 export function IlustracaoQuadros() {
   return (
     <Tela titulo="Um quadro com três etapas e cartões em cada uma">
@@ -88,7 +88,7 @@ export function IlustracaoContatos() {
         const y = 14 + linha * 32
         return (
           <g key={linha} opacity={1 - linha * 0.22}>
-            {/* Cabeça e ombros — a pessoa, reduzida ao essencial. */}
+            {/* Cabeça e ombros, a pessoa, reduzida ao essencial. */}
             <circle cx={32} cy={y + 11} r={7.5} {...TRACO} />
             <path d={`M20 ${y + 26}a12 12 0 0 1 24 0`} {...TRACO} />
             <rect x={56} y={y + 5} width={62} height={5} rx={2.5} fill="currentColor" opacity={0.55} />
@@ -111,7 +111,7 @@ export function IlustracaoAutomacoes() {
       {/* Decisão, o losango que bifurca */}
       <path d="M88 60 106 44 124 60 106 76Z" {...TRACO} />
 
-      {/* Duas saídas — é o "se isso, senão aquilo" */}
+      {/* Duas saídas, é o "se isso, senão aquilo" */}
       <rect x={152} y={20} width={36} height={22} rx={5} {...TRACO} opacity={0.75} />
       <rect x={152} y={78} width={36} height={22} rx={5} {...TRACO} opacity={0.75} />
 
@@ -129,7 +129,7 @@ export function IlustracaoAutomacoes() {
 }
 
 /**
- * O balão de quem responde, com a ponta virada para baixo-direita — o canto de
+ * O balão de quem responde, com a ponta virada para baixo-direita, o canto de
  * onde a fala sai. Escrito uma vez porque é desenhado duas: o preenchimento e o
  * contorno por cima, e dois caminhos iguais que divergem viram uma borda fora
  * do lugar.
@@ -137,7 +137,7 @@ export function IlustracaoAutomacoes() {
 const BALAO_DIREITA =
   'M110 64h68a6 6 0 0 1 6 6v20a6 6 0 0 1-6 6h-56l-11 8V70a6 6 0 0 1 6-6Z'
 
-/** Inbox: a conversa — balões dos dois lados. */
+/** Inbox: a conversa, balões dos dois lados. */
 export function IlustracaoInbox() {
   return (
     <Tela titulo="Uma conversa com mensagens dos dois lados">

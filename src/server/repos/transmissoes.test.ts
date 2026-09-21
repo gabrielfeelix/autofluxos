@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { avanca, type EstadoDoDestinatario } from './transmissoes'
 
 /**
- * Só a ordem dos estados. É lógica pura e não toca no banco — mas é a regra
+ * Só a ordem dos estados. É lógica pura e não toca no banco, mas é a regra
  * que, errada, faz a tela mentir para o usuário enquanto ele olha.
  */
 describe('os webhooks de status chegam fora de ordem', () => {
@@ -45,7 +45,7 @@ describe('os webhooks de status chegam fora de ordem', () => {
   /*
    * `retida` e `aceita` são o mesmo degrau: as duas significam "a Meta recebeu
    * o pedido". Nenhuma das duas substitui a outra, porque a diferença entre
-   * elas não vem de webhook — vem da resposta do envio.
+   * elas não vem de webhook, vem da resposta do envio.
    */
   it('trata retida e aceita como o mesmo degrau', () => {
     expect(avanca('aceita', 'retida')).toBe(false)

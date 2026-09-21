@@ -6,7 +6,7 @@ import { acaoAlternarCampanha } from '@/server/acoes'
 /**
  * Liga e desliga uma campanha.
  *
- * Gêmeo de `InterruptorDeGatilho`, e separado dele porque a ação é outra — não
+ * Gêmeo de `InterruptorDeGatilho`, e separado dele porque a ação é outra, não
  * porque o desenho é. Unificar os dois num componente que recebe a ação por
  * parâmetro atravessaria a fronteira de Server Action com uma função vinda do
  * cliente, que é justamente o que o React recusa.

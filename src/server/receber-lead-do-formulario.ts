@@ -18,7 +18,7 @@ import { registrarPassagem } from './repos/passagens'
  *
  * Hoje a agência paga um intermediário (LeadsBridge, Pluga, Zapier) para tirar
  * o lead do Facebook e jogar num formulário ou planilha. Isso custa mensalidade,
- * atrasa de 5 a 15 minutos e coloca dado pessoal — nome, telefone, e-mail — na
+ * atrasa de 5 a 15 minutos e coloca dado pessoal, nome, telefone, e-mail, na
  * mão de mais uma empresa. Este caminho é direto: a Meta avisa, buscamos, o
  * lead vira contato e entra no funil.
  *
@@ -27,12 +27,12 @@ import { registrarPassagem } from './repos/passagens'
  * ---------------------------------------------------------------------------
  *
  * 1. **Buscar o lead**, porque o webhook só manda IDs.
- * 2. **Traduzir**, recusando o que não tem telefone — ver `core/lead-ads.ts`.
+ * 2. **Traduzir**, recusando o que não tem telefone, ver `core/lead-ads.ts`.
  * 3. **Criar o contato**, reusando `criarContato`: ele já normaliza telefone,
  *    deduplica por grafia e trata corrida. Lead Ads não precisa de caminho
  *    próprio para isso, e ter um seria ter duas regras de identidade.
  * 4. **Guardar as respostas** em `campos`, do mesmo jeito que o fluxo guarda o
- *    que o bot perguntou — a tela de leads já sabe mostrar.
+ *    que o bot perguntou, a tela de leads já sabe mostrar.
  * 5. **Registrar a passagem**, para o lead saber de qual anúncio veio.
  * 6. **Pôr no quadro padrão**, que é a razão de `porNoQuadroPadrao` ter saído
  *    de `receber-mensagem.ts` mais cedo nesta mesma sessão.
@@ -56,7 +56,7 @@ export type ResultadoDoLote = {
 /**
  * Trata um lote de avisos. Sempre termina, mesmo com lead defeituoso no meio.
  *
- * `clienteId` vem de quem chamou — a rota resolve a Página para a conta antes,
+ * `clienteId` vem de quem chamou, a rota resolve a Página para a conta antes,
  * porque **aceitar cliente vindo do corpo do webhook** seria deixar qualquer um
  * que descubra a URL escrever na conta alheia.
  */
@@ -71,7 +71,7 @@ export async function receberLeadsDoFormulario(entrada: {
     try {
       /*
        * Anota o formulário antes de tratar: é o que a reconciliação diária vai
-       * varrer amanhã. Silencioso de propósito — se falhar, o lead de hoje
+       * varrer amanhã. Silencioso de propósito, se falhar, o lead de hoje
        * entra do mesmo jeito, e é ele que importa agora.
        */
       await anotarFormulario({
@@ -108,7 +108,7 @@ async function umLead(
   if (!busca.ok) {
     /*
      * 190 é token vencido: alguém precisa reconectar, e insistir não resolve.
-     * Os outros códigos podem ser o lead apagado ou um problema pontual — o
+     * Os outros códigos podem ser o lead apagado ou um problema pontual, o
      * alerta diz qual foi, e a reconciliação diária pega o que ficou para trás.
      */
     const precisaReconectar = busca.erro.codigo === 190
@@ -136,8 +136,8 @@ async function umLead(
   /*
    * Telefone que já existe **não é erro**: é a mesma pessoa preenchendo o
    * formulário de novo, ou alguém que já conversava e agora respondeu um
-   * anúncio. O contato fica como está — renomear com o nome do formulário
-   * apagaria a correção que a equipe fez à mão — e o que importa desta vez é a
+   * anúncio. O contato fica como está, renomear com o nome do formulário
+   * apagaria a correção que a equipe fez à mão, e o que importa desta vez é a
    * passagem, registrada abaixo.
    */
   if (!criado.ok) {
@@ -148,7 +148,7 @@ async function umLead(
   /*
    * As respostas do formulário entram em `campos`, junto do que o fluxo
    * coletaria. `origem` fica marcada como Formulário para distinguir de quem
-   * chegou escrevendo — as duas são "veio de anúncio", e a diferença importa
+   * chegou escrevendo, as duas são "veio de anúncio", e a diferença importa
    * para quem atende: um já disse o que quer, o outro ainda vai dizer.
    */
   await guardarCampo(criado.contatoId, {
@@ -168,7 +168,7 @@ async function umLead(
 /**
  * A passagem pelo anúncio, quando houve anúncio.
  *
- * Lead orgânico — formulário em post sem impulsionamento — chega sem `ad_id`, e
+ * Lead orgânico, formulário em post sem impulsionamento, chega sem `ad_id`, e
  * isso é legítimo: a pessoa entrou, só não veio de mídia paga. Sem anúncio não
  * há passagem a registrar.
  */
@@ -208,7 +208,7 @@ async function registrarAnuncio(
        * submissões são duas entradas (RB-10).
        */
       idExterno: aviso.leadgenId,
-      titulo: lead.nome !== '' ? `Formulário — ${lead.nome}` : 'Formulário',
+      titulo: lead.nome !== '' ? `Formulário, ${lead.nome}` : 'Formulário',
     })
   } catch (erro) {
     const detalhe = erro instanceof Error ? erro.message : String(erro)

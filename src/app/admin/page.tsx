@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 
 /**
- * **Sem isto o Next prerenderiza esta rota**, e a moldura roda no build — sem
+ * **Sem isto o Next prerenderiza esta rota**, e a moldura roda no build, sem
  * banco, sem cookie, sem sessão. O `exigirAdminDaPlataforma()` do layout falha
  * e o que fica gravado é um redirecionamento para a raiz, servido depois a
  * quem *é* administrador. Uma tela de autorização nunca pode ser estática.

@@ -513,7 +513,7 @@ async function atribuirOrigem(contato: Contato, referral?: Referral): Promise<Co
         /*
          * O `ctwa_clid` é o id do clique, e chega uma vez só. Como chave
          * externa ele torna a reentrega do webhook idempotente sem depender do
-         * índice de minuto da 0050 — que é o melhor disponível, e não o certo.
+         * índice de minuto da 0050, que é o melhor disponível, e não o certo.
          * Anúncio de Status vem sem ele, e aí cai no de minuto mesmo.
          */
         idExterno: referral.ctwa_clid ?? null,
@@ -1291,7 +1291,7 @@ async function aplicar(
    * O cenário: o bot chama o modelo, leva quatro segundos, e no segundo dois a
    * Ana assume. A resposta que volta foi autorizada por um estado que não
    * existe mais, e mandá-la é o bot falando por cima de quem acabou de pegar a
-   * conversa — a empresa dizendo duas coisas ao mesmo tempo para o cliente.
+   * conversa, a empresa dizendo duas coisas ao mesmo tempo para o cliente.
    *
    * Recusar é o lado seguro: uma resposta perdida alguém reenvia.
    */

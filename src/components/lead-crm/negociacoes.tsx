@@ -22,8 +22,8 @@ export type NegociacaoDoContato = {
 /**
  * As negociações da pessoa, na ficha dela.
  *
- * **Vêm antes de etiqueta e anotação** porque respondem a pergunta cara —
- * quanto essa pessoa vale e em que pé está cada conversa de venda —, enquanto
+ * **Vêm antes de etiqueta e anotação** porque respondem a pergunta cara ,
+ * quanto essa pessoa vale e em que pé está cada conversa de venda , enquanto
  * as outras duas são apoio. A ficha abria em "Etiquetas", que é o mesmo defeito
  * que o Inbox já tinha corrigido na coluna dele.
  *
@@ -33,7 +33,7 @@ export type NegociacaoDoContato = {
  * em um mês, duas regras de fechar venda.
  *
  * Depois de fechar, `router.refresh()`: `acaoFecharCartao` revalida `/quadros`,
- * não esta rota — e o que muda aqui é mais do que o cartão (o estágio anda, a
+ * não esta rota, e o que muda aqui é mais do que o cartão (o estágio anda, a
  * linha do tempo ganha uma linha, o "já rendeu" muda).
  */
 export function Negociacoes({
@@ -66,7 +66,7 @@ export function Negociacoes({
         {/* Fora de todo funil a frase diz onde se resolve isso, e não só que
             está vazio: pôr alguém num funil é decisão de quem vende. */}
         <p className="px-[18px] py-[22px] text-xs leading-5 text-dim">
-          Esta pessoa não está em nenhum funil. Ela entra pela tela de Funil de vendas — arrastando o
+          Esta pessoa não está em nenhum funil. Ela entra pela tela de Funil de vendas, arrastando o
           cartão, ou pelo botão de trazer os contatos que ainda estão de fora.
         </p>
       </section>
@@ -133,7 +133,7 @@ export function Negociacoes({
                   >
                     {negociacao.situacao === 'ganha' ? 'GANHA' : 'PERDIDA'}
                   </span>
-                  {/* Fechar é um clique, e errar o clique é rotina — mesma
+                  {/* Fechar é um clique, e errar o clique é rotina, mesma
                       frase e mesma ação do menu do cartão. */}
                   <button
                     type="button"
@@ -156,7 +156,7 @@ export function Negociacoes({
         </p>
       )}
 
-      {/* A `key` reseta os campos do modal entre uma venda e outra — ver o
+      {/* A `key` reseta os campos do modal entre uma venda e outra, ver o
           comentário em `fechar-cartao.tsx`. */}
       {fechando && (
         <FecharCartao

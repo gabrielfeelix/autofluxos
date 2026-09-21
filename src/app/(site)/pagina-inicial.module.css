@@ -2,7 +2,7 @@
  * A landing pública do AutoFluxos.
  *
  * **Ela usa os tokens do painel de propósito.** Quem clica em "Entrar" tem que
- * sentir que continuou no mesmo lugar — a landing verde que existiu antes
+ * sentir que continuou no mesmo lugar, a landing verde que existiu antes
  * dessa não era cor de produto nenhum, era a paleta da Verandi escurecida.
  * `--accent`, `--canvas` e `--panel` vêm de `globals.css` e mudam junto com o
  * app.
@@ -18,19 +18,19 @@
    * **A landing continua escura, e agora ela diz isso em vez de herdar.**
    *
    * Os tokens de `globals.css` viraram claros: o painel é branco, fundo sólido
-   * e azul de marca. Esta página não acompanhou de propósito — ela é peça de
+   * e azul de marca. Esta página não acompanhou de propósito, ela é peça de
    * venda, com partículas, brilho e cursor próprio, e nada disso existe sem
    * fundo escuro. Herdar o claro não a deixaria clara, deixaria ilegível.
    *
    * Os valores são exatamente os que o painel usava antes da virada. Ficam
    * aqui, no escopo da página, porque é aqui que alguém que mexer no visual
-   * dela vai procurar — e porque assim a landing deixa de quebrar toda vez que
+   * dela vai procurar, e porque assim a landing deixa de quebrar toda vez que
    * o produto decide sua própria cor.
    *
    * **O nome aparece três vezes no seletor** para a especificidade (0,3,0)
    * passar na frente do `:root[data-theme='escuro']` de `globals.css` (0,2,0).
    * Sem isso, quem ligasse o tema escuro no painel e viesse para cá receberia
-   * metade desta paleta e metade da do produto — os dois escuros, e nenhum
+   * metade desta paleta e metade da do produto, os dois escuros, e nenhum
    * dos dois inteiro.
    */
   color-scheme: dark;
@@ -117,7 +117,7 @@
   transition: border-color 0.3s var(--curva);
 }
 
-/* A borda só aparece depois que a página rola — antes disso ela seria uma
+/* A borda só aparece depois que a página rola, antes disso ela seria uma
    linha solta cortando a capa. O JS liga a classe. */
 .cabecalhoRolado {
   border-bottom-color: var(--line);
@@ -254,7 +254,7 @@
  * A vinheta sobre o campo.
  *
  * Sem ela o texto disputa contraste com as partículas justamente no meio, que
- * é onde ele está. O degradê escurece o centro e deixa as bordas vivas — o
+ * é onde ele está. O degradê escurece o centro e deixa as bordas vivas, o
  * efeito continua visível, e a leitura para de brigar.
  */
 .veu {
@@ -273,7 +273,7 @@
   text-align: center;
 }
 
-/* A pílula de anúncio no topo — todos os sete sites de referência têm uma. */
+/* A pílula de anúncio no topo, todos os sete sites de referência têm uma. */
 .selo {
   display: inline-flex;
   align-items: center;
@@ -521,8 +521,8 @@
  * O card do knotch, e a graça dele são **duas camadas de luz**, não uma cor.
  *
  * O fundo é quase preto; por cima vem um degradê diagonal que sobe para o
- * branco translúcido num canto só. Isso lê como textura — luz batendo de
- * viés — em vez de "caixa cinza". O `::after` acrescenta um foco no topo, que
+ * branco translúcido num canto só. Isso lê como textura, luz batendo de
+ * viés, em vez de "caixa cinza". O `::after` acrescenta um foco no topo, que
  * é o que dá a impressão de volume.
  *
  * Os valores vieram do bundle do knotch: `linear-gradient(114deg, rgba(255,
@@ -547,7 +547,7 @@
 /*
  * A ilustração vem **antes** do texto e cresce para preencher o card. É o
  * arranjo do knotch: a mini-UI é quem vende, a frase só confirma. Ela é
- * cortada pelo `overflow: hidden` do card de propósito — o corte sugere que
+ * cortada pelo `overflow: hidden` do card de propósito, o corte sugere que
  * há mais interface além da borda.
  */
 .caixaArte {
@@ -741,7 +741,7 @@
 /*
  * O passo é um card com a mesma luz do bento, e a ilustração entra **acima**
  * do texto. O número vira uma etiqueta no topo em vez de um marcador na
- * margem — assim ele cabe dentro da moldura e não briga com a ilustração.
+ * margem, assim ele cabe dentro da moldura e não briga com a ilustração.
  */
 .passo {
   counter-increment: passo;
@@ -977,7 +977,7 @@
 }
 
 /*
-  A linha de herança — "Tudo do Essencial" — não é um recurso ao lado dos
+  A linha de herança, "Tudo do Essencial", não é um recurso ao lado dos
   outros: é o que diz que este plano contém o de baixo inteiro. Com o mesmo peso
   dos demais ela se perde, e é o argumento que faz três colunas parecidas virarem
   uma escada.
@@ -1131,7 +1131,7 @@
 /*
  * Tudo que tem `data-revela` começa deslocado e opaco; o observer no cliente
  * acrescenta `data-revelado` quando o elemento entra na tela. Fica no CSS por
- * seletor de atributo — e não por classe adicionada — para que o estado
+ * seletor de atributo, e não por classe adicionada, para que o estado
  * inicial já valha no HTML do servidor, sem piscar.
  *
  * O `.pagina` na frente não é decoração: CSS Module recusa seletor sem classe
@@ -1207,8 +1207,8 @@
 
    Elas existem porque a alternativa é print, e print de um produto que ainda
    muda toda semana envelhece antes de a página ir ao ar. Desenhadas, elas
-   mostram o *mecanismo* — o fluxo ligando blocos, a fila que esvazia, a IA
-   entregando a conversa — que é o que não muda mesmo quando a tela muda.
+   mostram o *mecanismo*, o fluxo ligando blocos, a fila que esvazia, a IA
+   entregando a conversa, que é o que não muda mesmo quando a tela muda.
 
    Todas animam em laço e param sozinhas com `prefers-reduced-motion`.
    ═══════════════════════════════════════════════════════════ */
@@ -1438,7 +1438,7 @@
   }
 }
 
-/* Dois anéis que saem do núcleo, defasados — o "pensando". */
+/* Dois anéis que saem do núcleo, defasados, o "pensando". */
 .nucleoIA::before,
 .nucleoIA::after {
   content: '';
@@ -1725,7 +1725,7 @@
    O `filter: blur()` é o que diferencia de um fade comum: a palavra chega como
    se estivesse se materializando, e o olho lê isso como profundidade em vez de
    opacidade. Cada palavra é um `<span>` com o próprio `animation-delay`, e o
-   delay vem inline do componente — mantê-lo no CSS exigiria uma regra por
+   delay vem inline do componente, mantê-lo no CSS exigiria uma regra por
    índice.
    ═══════════════════════════════════════════════════════ */
 
@@ -1750,7 +1750,7 @@
 /*
  * O cursor que pisca no fim do título, como um terminal esperando.
  *
- * Ele entra depois da última palavra e fica — é o detalhe que faz a capa
+ * Ele entra depois da última palavra e fica, é o detalhe que faz a capa
  * parecer viva em vez de uma imagem parada.
  */
 .cursor {
@@ -1844,7 +1844,7 @@
 
    Aqui ela vira o app: barra lateral com as conversas e quem espera, thread no
    meio, ficha do contato à direita. Desenhada em HTML pelo mesmo motivo das
-   outras ilustrações — print de produto que muda toda semana envelhece antes
+   outras ilustrações, print de produto que muda toda semana envelhece antes
    da página ir ao ar.
    ═══════════════════════════════════════════════════════════════════ */
 
@@ -2671,7 +2671,7 @@
  * transição e faz o título parecer que *acontece* em vez de já estar ali.
  */
 /*
- * O risco é irmão do `<h2>`, e a margem dos dois colapsa se ele for `block` —
+ * O risco é irmão do `<h2>`, e a margem dos dois colapsa se ele for `block` ,
  * o resultado é o traço subindo até encostar na última linha do título. O
  * `flow-root` cria um contexto próprio e a margem para de colapsar.
  */

@@ -31,7 +31,7 @@ import { nomesDeFerramenta } from '../ferramentas'
 const CATALOGO = nomesDeFerramenta()
 
 /**
- * `{{segredo.nome}}` — o namespace reservado para o cofre da v2.
+ * `{{segredo.nome}}`, o namespace reservado para o cofre da v2.
  *
  * Ele atravessa o motor sem ser tocado (o regex de `interpolar()` não casa com
  * ponto), então hoje sairia literal na requisição. Por isso o aviso: é erro de
@@ -62,7 +62,7 @@ export type ResultadoValidacao = {
  */
 export type Capacidades = {
   /**
-   * IA é plano à parte (Etapa 2). O padrão é `false` — **falha fechado**: quem
+   * IA é plano à parte (Etapa 2). O padrão é `false`, **falha fechado**: quem
    * esquecer de dizer que o cliente contratou vê a publicação ser recusada, que
    * é o erro barulhento. O contrário seria vender IA por descuido.
    */
@@ -70,7 +70,7 @@ export type Capacidades = {
   /**
    * Ids das conexões que existem para este cliente.
    *
-   * `undefined` significa "não sei" e o validador não cobra — é o caso do
+   * `undefined` significa "não sei" e o validador não cobra, é o caso do
    * editor validando enquanto digita, sem ter ido ao banco. Quando a lista vem,
    * bloco apontando para conexão que não existe mais vira impedimento: publicar
    * assim entrega um fluxo que chama sem credencial, e a conversa morre em
@@ -93,7 +93,7 @@ export type Capacidades = {
    * O que um fluxo grava fica no contato e continua lá na conversa seguinte,
    * então um fluxo pode legitimamente ler o que o outro escreveu. Sem esta
    * lista, o aviso de "variável que ninguém preenche" acusava exatamente o uso
-   * certo — e aviso que grita no caso legítimo é aviso que se aprende a
+   * certo, e aviso que grita no caso legítimo é aviso que se aprende a
    * ignorar, inclusive quando ele estiver certo.
    *
    * `undefined` = não sei, e aí só o próprio desenho conta.
@@ -102,7 +102,7 @@ export type Capacidades = {
   /**
    * Ids das etapas de quadro que existem para este cliente (C1b).
    *
-   * `undefined` significa "não sei" e o validador não cobra — é o editor
+   * `undefined` significa "não sei" e o validador não cobra, é o editor
    * validando enquanto alguém desenha, sem ter ido ao banco. Quando a lista
    * vem, bloco apontando para etapa apagada vira impedimento.
    *
@@ -117,7 +117,7 @@ export type Capacidades = {
    *
    * Espelha `etapas`, e pelo mesmo motivo: o bloco guarda referência porque
    * etiqueta é estado vivo, e o preço é ela poder ser apagada depois de o fluxo
-   * ir ao ar. `undefined` = não sei, e aí não se cobra — é o editor validando
+   * ir ao ar. `undefined` = não sei, e aí não se cobra, é o editor validando
    * enquanto alguém desenha, sem ter ido ao banco.
    */
   etiquetas?: string[]
@@ -138,13 +138,13 @@ export type Capacidades = {
   /** Qual é este fluxo, para avisar sobre salto para ele mesmo. */
   fluxoAtualId?: string
   /**
-   * Por onde esta automação conversa — e, portanto, por quais medidas ela é
+   * Por onde esta automação conversa, e, portanto, por quais medidas ela é
    * cobrada.
    *
    * **Um desenho não é certo ou errado sozinho.** Uma pergunta com 13 opções
    * está certa no Instagram e errada no WhatsApp; um rótulo de 30 caracteres
    * cabe no Telegram e é cortado nos outros dois. Sem o canal aqui, o
-   * validador cobrava de todo mundo as medidas do WhatsApp — e o desenho de
+   * validador cobrava de todo mundo as medidas do WhatsApp, e o desenho de
    * Instagram que passava era justamente o que o adaptador ia cortar depois,
    * em silêncio, na conversa de alguém.
    *
@@ -217,7 +217,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
    * um que venha de pergunta é escolha de quem está conversando. Ver
    * `hostSoDeSistema`.
    *
-   * Nome preenchido em dois lugares — uma chamada e uma pergunta — **não**
+   * Nome preenchido em dois lugares, uma chamada e uma pergunta, **não**
    * entra: aí a origem em produção depende do caminho que a conversa tomou, e
    * segurança que depende do caminho não é segurança.
    */
@@ -254,7 +254,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
             codigo: 'PERGUNTA_DINAMICA_SEM_SAIDA',
             mensagem:
               saida === SAIDA_VAZIO
-                ? `"${no.data.texto}" não diz o que fazer quando {{${no.data.opcoesDe}}} vem vazia. Ligue a saída "vazio" — lista que vem de fora vem vazia.`
+                ? `"${no.data.texto}" não diz o que fazer quando {{${no.data.opcoesDe}}} vem vazia. Ligue a saída "vazio", lista que vem de fora vem vazia.`
                 : `"${no.data.texto}" não continua depois da escolha. Ligue a saída "escolheu".`,
             noId: no.id,
           })
@@ -298,7 +298,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
       /*
        * Guardar o anexo sem a saída de mídia ligada nunca acontece: a conversa
        * é transferida antes de chegar aqui. O campo preenchido promete uma
-       * variável que jamais existe — e o bloco seguinte sairia com um buraco.
+       * variável que jamais existe, e o bloco seguinte sairia com um buraco.
        */
       if (
         (no.data.aceitaMidia || (no.data.salvarMidiaEm ?? '').trim() !== '') &&
@@ -329,7 +329,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
      *
      * **É erro, e não aviso, e a faixa que importa é a do detrator.** Uma
      * pesquisa que pergunta a nota e não sabe o que fazer com quem deu 3
-     * termina a conversa em silêncio na cara de um cliente irritado — que é
+     * termina a conversa em silêncio na cara de um cliente irritado, que é
      * exatamente o desfecho que a pesquisa existe para evitar. O fluxo de
      * exemplo já ensina isso: nota baixa não recebe agradecimento, recebe
      * gente.
@@ -347,7 +347,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
         if (!minhasSaidas.some((a) => a.sourceHandle === faixa.saida)) {
           erros.push({
             codigo: 'NPS_FAIXA_SEM_SAIDA',
-            mensagem: `${descrever(no)} não diz o que fazer com quem responde ${faixa.nome}. Ligue essa saída — a nota fica guardada, mas a conversa termina em silêncio.`,
+            mensagem: `${descrever(no)} não diz o que fazer com quem responde ${faixa.nome}. Ligue essa saída, a nota fica guardada, mas a conversa termina em silêncio.`,
             noId: no.id,
           })
         }
@@ -355,8 +355,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
     }
 
     // O portão comercial da Etapa 2. Sem ele, um fluxo com nó de IA publica
-    // para quem não contratou e a conversa vira handoff silencioso em produção
-    // — o cliente vê o bot "desistindo" sem ninguém entender por quê.
+    // para quem não contratou e a conversa vira handoff silencioso em produção, o cliente vê o bot "desistindo" sem ninguém entender por quê.
     if (no.type === 'ia' && !iaHabilitada) {
       erros.push({
         codigo: 'IA_NAO_CONTRATADA',
@@ -387,7 +386,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
        * Ferramenta que o catálogo não conhece é recusada **aqui**, e não em
        * conversa.
        *
-       * O motor ignora nome desconhecido de propósito — versão publicada é
+       * O motor ignora nome desconhecido de propósito, versão publicada é
        * imutável e uma conversa em andamento não pode morrer porque o catálogo
        * mudou. Mas ignorar em silêncio na hora de publicar seria entregar um
        * bloco que a pessoa acha que consulta a agenda e que não consulta nada.
@@ -434,7 +433,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
           codigo: 'ETAPA_INEXISTENTE',
           // Com dois blocos de etapa no mesmo fluxo, a mensagem sem o nome
           // saía idêntica duas vezes e não dizia qual arrumar.
-          mensagem: `${descrever(no)} aponta para uma etapa que não existe mais neste cliente. Escolha outra — publicar assim entrega um fluxo que não move ninguém.`,
+          mensagem: `${descrever(no)} aponta para uma etapa que não existe mais neste cliente. Escolha outra, publicar assim entrega um fluxo que não move ninguém.`,
           noId: no.id,
         })
       }
@@ -451,7 +450,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
       } else if (etiquetas && !etiquetas.includes(no.data.etiquetaId)) {
         erros.push({
           codigo: 'ETIQUETA_INEXISTENTE',
-          mensagem: `${descrever(no)} aponta para uma etiqueta que não existe mais neste cliente. Escolha outra — publicar assim entrega um fluxo que não marca ninguém.`,
+          mensagem: `${descrever(no)} aponta para uma etiqueta que não existe mais neste cliente. Escolha outra, publicar assim entrega um fluxo que não marca ninguém.`,
           noId: no.id,
         })
       }
@@ -472,7 +471,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
       /*
        * Destino apagado não publica.
        *
-       * Vazio é válido — quer dizer o início do fluxo, que é o padrão do
+       * Vazio é válido, quer dizer o início do fluxo, que é o padrão do
        * bloco. O que não pode passar é apontar para um bloco que não existe
        * mais: o motor segue em frente nesse caso para não travar conversa
        * viva, e uma conversa que "volta ao menu" e simplesmente continua é
@@ -490,7 +489,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
       /*
        * Voltar para si mesmo é aviso, e não erro.
        *
-       * Ele gira até `MAX_PASSOS` e vira handoff, então ninguém fica preso — e
+       * Ele gira até `MAX_PASSOS` e vira handoff, então ninguém fica preso, e
        * a tela já nem oferece o próprio bloco na lista. Isto alcança só grafo
        * montado à mão ou herdado, e recusar publicar por causa disso seria
        * travar alguém por um desenho que o motor sabe sobreviver.
@@ -529,7 +528,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
         erros.push({
           codigo: 'DESTINO_SUMIU',
           mensagem:
-            'Este bloco aponta para uma automação que não existe mais neste cliente. Escolha outra — publicar assim deixaria a conversa sem para onde ir.',
+            'Este bloco aponta para uma automação que não existe mais neste cliente. Escolha outra, publicar assim deixaria a conversa sem para onde ir.',
           noId: no.id,
         })
       } else if (destino && !destino.publicado) {
@@ -578,7 +577,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
    * Saída para uma pessoa é **recomendação, não exigência**.
    *
    * Era um impedimento, e cobrava caro de quem estava certo: fluxo de aula
-   * experimental, confirmação de presença, pesquisa de uma pergunta — todos
+   * experimental, confirmação de presença, pesquisa de uma pergunta, todos
    * começam e terminam sozinhos, e obrigá-los a um handoff produzia um bloco
    * decorativo que ninguém alcança. Um bloco que existe só para calar o
    * validador ensina a ignorar o validador.
@@ -607,7 +606,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
 }
 
 /**
- * As regras de um arquivo que o bot manda — **as mesmas** para o bloco de mídia
+ * As regras de um arquivo que o bot manda, **as mesmas** para o bloco de mídia
  * e para o pedaço de mídia dentro de uma mensagem.
  *
  * Ela existe porque agora há dois lugares que descrevem o mesmo envio, e cada
@@ -643,14 +642,14 @@ function conferirMidia(
      * entregue em nome do cliente passaria a ser escolha de um estranho.
      *
      * **A exceção é o endereço que veio de uma chamada de API do próprio
-     * cliente** — a foto do imóvel, o PDF do contrato, o link assinado do S3.
+     * cliente**, a foto do imóvel, o PDF do contrato, o link assinado do S3.
      * Esses endereços chegam completos e não passam por ninguém de fora: quem
      * escolheu a API foi o dono do fluxo, no editor. Sem esta exceção, mostrar
      * a foto de um item buscado dinamicamente era impossível, que era o caso
      * número um de uma imobiliária.
      *
      * A conta continua conservadora: basta **uma** variável do host ter outra
-     * origem — pergunta, IA, valor livre — para o erro voltar.
+     * origem, pergunta, IA, valor livre, para o erro voltar.
      */
     erros.push({
       codigo: 'HOST_VARIAVEL',
@@ -663,7 +662,7 @@ function conferirMidia(
      * Endereço que é só `{{variavel}}` de uma chamada de API **não tem como**
      * começar com `https://` escrito: o endereço inteiro chega pronto do
      * sistema do cliente, e é ele quem sabe o esquema. Barrar aqui bloqueava o
-     * caso legítimo (a foto do imóvel, o PDF do contrato) sem proteger nada —
+     * caso legítimo (a foto do imóvel, o PDF do contrato) sem proteger nada ,
      * quem confere de verdade é a Meta, na hora de buscar.
      *
      * Vira aviso, e não silêncio: se a API devolver `http://`, a mensagem falha
@@ -673,14 +672,14 @@ function conferirMidia(
       avisos.push({
         codigo: 'MIDIA_HTTPS_NAO_CONFERIDO',
         mensagem:
-          'O endereço deste arquivo vem inteiro de uma chamada de API, então não dá para conferir aqui. Garanta que o seu sistema devolve um endereço https:// — a Meta recusa buscar de qualquer outro.',
+          'O endereço deste arquivo vem inteiro de uma chamada de API, então não dá para conferir aqui. Garanta que o seu sistema devolve um endereço https://, a Meta recusa buscar de qualquer outro.',
         noId,
       })
     } else {
       erros.push({
         codigo: 'MIDIA_INSEGURA',
         mensagem:
-          'O arquivo precisa vir de um endereço https:// — a Meta recusa buscar de qualquer outro.',
+          'O arquivo precisa vir de um endereço https://, a Meta recusa buscar de qualquer outro.',
         noId,
       })
     }
@@ -701,7 +700,7 @@ function conferirMidia(
   if (legenda > LIMITE_LEGENDA) {
     erros.push({
       codigo: 'TEXTO_LONGO',
-      mensagem: `São ${legenda} caracteres. A legenda de mídia aceita ${LIMITE_LEGENDA} — acima disso o WhatsApp recusa a mensagem inteira.`,
+      mensagem: `São ${legenda} caracteres. A legenda de mídia aceita ${LIMITE_LEGENDA}, acima disso o WhatsApp recusa a mensagem inteira.`,
       noId,
     })
   }
@@ -712,13 +711,13 @@ function conferirMidia(
  *
  * O schema garante que o objeto tem o formato certo; aqui a gente cobra que ele
  * faça sentido. A separação existe porque o rascunho passa por estados
- * incompletos enquanto alguém digita — o que não pode é isso ir ao ar.
+ * incompletos enquanto alguém digita, o que não pode é isso ir ao ar.
  */
 /**
  * As medidas de quem vai executar o desenho.
  *
  * Vêm por parâmetro, e não de uma constante importada, porque a mesma opção com
- * 25 caracteres é válida no Telegram e cortada no WhatsApp — o conteúdo só é
+ * 25 caracteres é válida no Telegram e cortada no WhatsApp, o conteúdo só é
  * conferível depois de se saber por onde ele sai. O padrão mantém o
  * comportamento de antes para quem chama sem dizer o canal.
  */
@@ -752,7 +751,7 @@ function conferirConteudo(
 
   /**
    * O corpo cabe no que a Meta aceita? Qual limite vale depende de a mensagem
-   * sair como texto puro ou como interativa — a mesma decisão que o
+   * sair como texto puro ou como interativa, a mesma decisão que o
    * `executar.ts` toma pela quantidade de opções.
    */
   const conferirTamanho = (texto: string, interativa: boolean) => {
@@ -764,7 +763,7 @@ function conferirConteudo(
       erros.push({
         codigo: 'TEXTO_LONGO',
         mensagem: interativa
-          ? `São ${usados} caracteres. Mensagem com botões ou lista aceita ${limite} — acima disso o ${nomeDoCanal} recusa a mensagem inteira, e a pessoa não recebe nada.`
+          ? `São ${usados} caracteres. Mensagem com botões ou lista aceita ${limite}, acima disso o ${nomeDoCanal} recusa a mensagem inteira, e a pessoa não recebe nada.`
           : `São ${usados} caracteres. O ${nomeDoCanal} aceita ${limite}.`,
         noId: no.id,
       })
@@ -778,7 +777,7 @@ function conferirConteudo(
        *
        * "Sem texto" deixou de ser a pergunta certa: um bloco que só manda uma
        * foto é legítimo. O que não pode ir ao ar é um bloco que **não faz
-       * nada** — nenhum pedaço, ou só pedaços que não entregam coisa alguma.
+       * nada**, nenhum pedaço, ou só pedaços que não entregam coisa alguma.
        */
       const partes = partesDaMensagem(no)
       const entrega = partes.some(
@@ -826,7 +825,7 @@ function conferirConteudo(
 
       /**
        * Atraso no fim da pilha não atrasa nada: ele adia a **próxima** entrega,
-       * e não existe próxima. É aviso e não impedimento — o fluxo funciona, só
+       * e não existe próxima. É aviso e não impedimento, o fluxo funciona, só
        * que aquele pedaço é decorativo, e quem desenhou merece saber.
        */
       if (partes.length > 0 && partes[partes.length - 1]!.tipo === 'atraso') {
@@ -860,7 +859,7 @@ function conferirConteudo(
       /*
        * Formato só existe para resposta livre.
        *
-       * Com opções, quem confere é o casamento com o botão clicado — conferir
+       * Com opções, quem confere é o casamento com o botão clicado, conferir
        * formato ali seria conferir duas vezes a mesma coisa, e recusar um rótulo
        * que a própria pergunta ofereceu. Publicar assim daria um campo escolhido
        * no editor e nada acontecendo na conversa.
@@ -900,14 +899,14 @@ function conferirConteudo(
         erros.push({
           codigo: 'VALORES_SEM_OPCOES',
           mensagem:
-            'Esta pergunta tem lista de valores, mas as opções não vêm de variável. A lista de valores casa por posição com a de opções — sem opções dinâmicas, não há com o que casar.',
+            'Esta pergunta tem lista de valores, mas as opções não vêm de variável. A lista de valores casa por posição com a de opções, sem opções dinâmicas, não há com o que casar.',
           noId: no.id,
         })
       }
 
       /*
        * Opção desenhada à mão carrega o valor nela mesma, então guardar o valor
-       * ali é legítimo — o que não pode é guardar o que não existe em lugar
+       * ali é legítimo, o que não pode é guardar o que não existe em lugar
        * nenhum. A mensagem diz os **dois** jeitos de preencher: dizer só um
        * deles mandava procurar um campo que aquele desenho não tem.
        */
@@ -935,7 +934,7 @@ function conferirConteudo(
           })
         }
         /*
-         * Meio caractere não é texto — e não é problema de estilo.
+         * Meio caractere não é texto, e não é problema de estilo.
          *
          * Um substituto sem par sobrevive na memória do navegador e no
          * `JSON.stringify`, mas o Postgres recusa `\ud83d` dentro de `jsonb`:
@@ -984,7 +983,7 @@ function conferirConteudo(
        *
        * É aviso e não impedimento: o fluxo roda, e o que acontece é que a
        * variável nunca é preenchida. Quem escreveu `{{motivo}}` na mensagem
-       * seguinte veria um buraco — e o buraco só aparece em produção, com
+       * seguinte veria um buraco, e o buraco só aparece em produção, com
        * cliente de verdade lendo.
        */
       if (no.data.comentarioEm && vazio(no.data.perguntaAberta)) {
@@ -1025,7 +1024,7 @@ function conferirConteudo(
       if (mensagens.length > LIMITE_MENSAGENS_HANDOFF) {
         erros.push({
           codigo: 'MENSAGENS_DEMAIS',
-          mensagem: `${descrever(no)} manda ${mensagens.length} mensagens antes de transferir. O limite é ${LIMITE_MENSAGENS_HANDOFF} — acima disso é fila chegando no celular de quem já quer falar com alguém.`,
+          mensagem: `${descrever(no)} manda ${mensagens.length} mensagens antes de transferir. O limite é ${LIMITE_MENSAGENS_HANDOFF}, acima disso é fila chegando no celular de quem já quer falar com alguém.`,
           noId: no.id,
         })
       }
@@ -1041,7 +1040,7 @@ function conferirConteudo(
         erros.push({
           codigo: 'HOST_VARIAVEL',
           mensagem:
-            'O endereço do servidor não pode vir de {{variavel}}. As variáveis são o que a pessoa digita no WhatsApp — quem conversa escolheria para onde a chamada vai. Use variável só depois da primeira barra.',
+            'O endereço do servidor não pode vir de {{variavel}}. As variáveis são o que a pessoa digita no WhatsApp, quem conversa escolheria para onde a chamada vai. Use variável só depois da primeira barra.',
           noId: no.id,
         })
       } else if (!no.data.url.trim().startsWith('https://')) {
@@ -1056,10 +1055,10 @@ function conferirConteudo(
         // qualquer host externo que quisesse.
         //
         // Se um dia fizer falta ter endereço-base por cliente, o caminho é uma
-        // lista de hosts permitidos — não afrouxar isto aqui.
+        // lista de hosts permitidos, não afrouxar isto aqui.
         erros.push({
           codigo: 'URL_INSEGURA',
-          mensagem: 'O endereço precisa começar com https:// — o servidor recusa qualquer outro.',
+          mensagem: 'O endereço precisa começar com https://, o servidor recusa qualquer outro.',
           noId: no.id,
         })
       }
@@ -1074,7 +1073,7 @@ function conferirConteudo(
           })
         }
         // Sem caminho, `extrair()` devolve string vazia para sempre e o fluxo
-        // publica parecendo certo — a variável só nunca é preenchida. É o tipo
+        // publica parecendo certo, a variável só nunca é preenchida. É o tipo
         // de defeito que só aparece com cliente conversando.
         if (vazio(item.caminho)) {
           erros.push({
@@ -1105,7 +1104,7 @@ function conferirConteudo(
          * Modelo de rótulo só monta sobre o item inteiro.
          *
          * Com um campo depois do `[]` o valor já está escolhido, e as chaves não
-         * teriam de onde tirar nada — o modelo publicaria e não faria efeito
+         * teriam de onde tirar nada, o modelo publicaria e não faria efeito
          * nenhum, que é o tipo de campo preenchido que faz alguém confiar numa
          * configuração que não roda.
          */
@@ -1115,7 +1114,7 @@ function conferirConteudo(
         ) {
           erros.push({
             codigo: 'ROTULO_SEM_LISTA',
-            mensagem: `O modelo de "${item.variavel || 'um mapeamento'}" só funciona quando o caminho termina em ${MARCA_DE_LISTA} — com um campo depois, o valor de cada item já está escolhido.`,
+            mensagem: `O modelo de "${item.variavel || 'um mapeamento'}" só funciona quando o caminho termina em ${MARCA_DE_LISTA}, com um campo depois, o valor de cada item já está escolhido.`,
             noId: no.id,
           })
         }
@@ -1129,7 +1128,7 @@ function conferirConteudo(
         /*
          * Contar sem lista conta até um, e é aviso e não erro pelo mesmo
          * motivo de `unicos`: o fluxo roda, só não faz o que quem montou
-         * imaginava. A variável viria `1` para todo mundo — e uma mensagem
+         * imaginava. A variável viria `1` para todo mundo, e uma mensagem
          * dizendo "você tem 1 aula para repor" para quem não tem nenhuma é
          * pior do que não dizer nada.
          */
@@ -1143,7 +1142,7 @@ function conferirConteudo(
         /*
          * Contar **e** montar rótulo é pedir duas coisas incompatíveis: o
          * rótulo desenha a linha de um menu e a contagem devolve um número. O
-         * número ganha, e o modelo escrito ali some sem aviso — que é
+         * número ganha, e o modelo escrito ali some sem aviso, que é
          * exatamente a configuração que não roda de que fala o caso acima.
          */
         if (item.quantos && !vazio(item.rotulo ?? '')) {
@@ -1196,7 +1195,7 @@ const VARIAVEL_NO_TEXTO = /\{\{\s*[a-zA-Z][a-zA-Z0-9_]*\s*\}\}/g
  *
  * 1. **Toda variável tem que estar entre aspas.** As variáveis da sessão são
  *    sempre texto (`Record<string, string>`), então `{"nome": {{nome}}}` vira
- *    `{"nome": João}` no envio — JSON quebrado. Variável fora de aspas num
+ *    `{"nome": João}` no envio, JSON quebrado. Variável fora de aspas num
  *    corpo JSON é sempre engano, nunca intenção.
  * 2. **Com as aspas garantidas, trocar por `1` e tentar `JSON.parse`.** Como
  *    toda variável está dentro de uma string, a troca não muda a estrutura, e o
@@ -1258,12 +1257,12 @@ function alcancaveisA_partirDe(fluxo: Fluxo): Set<string> {
   return vistos
 }
 
-/** Avisa sobre `{{variavel}}` que ninguém preenche — nem aqui, nem na conta. */
+/** Avisa sobre `{{variavel}}` que ninguém preenche, nem aqui, nem na conta. */
 function conferirVariaveis(fluxo: Fluxo, daConta: string[] = []): Problema[] {
   /*
    * `nome` e `telefone` entram antes de tudo: `varsIniciais()` as preenche em
    * toda conversa, inclusive na primeira mensagem. Sem elas aqui, o aviso
-   * disparava em cima do uso mais comum que existe — e os presets de integração
+   * disparava em cima do uso mais comum que existe, e os presets de integração
    * do próprio produto já vêm com `{{telefone}}` escrito, então usar o preset
    * gerava aviso do produto contra o produto.
    */
@@ -1297,15 +1296,15 @@ function conferirVariaveis(fluxo: Fluxo, daConta: string[] = []): Problema[] {
   }
 
   /*
-   * `{nome}` de uma chave só. Não é variável desconhecida — não é variável
-   * nenhuma —, então o laço acima nunca pegaria, e o texto sairia literal na
+   * `{nome}` de uma chave só. Não é variável desconhecida, não é variável
+   * nenhuma , então o laço acima nunca pegaria, e o texto sairia literal na
    * frente de quem conversa.
    */
   for (const no of fluxo.nodes) {
     for (const chave of textosDoNo(no).flatMap(chavesSimplesCitadas)) {
       problemas.push({
         codigo: 'CHAVE_SIMPLES',
-        mensagem: `${descrever(no)} escreve {${chave}} com uma chave só. O certo é {{${chave}}} — com uma, sai assim mesmo na conversa.`,
+        mensagem: `${descrever(no)} escreve {${chave}} com uma chave só. O certo é {{${chave}}}, com uma, sai assim mesmo na conversa.`,
         noId: no.id,
       })
     }
@@ -1388,7 +1387,7 @@ function variaveisDoNo(no: No): string[] {
       // contatos a quem está do outro lado.
       return []
     case 'nota':
-      // Esta **interpola** — é a diferença entre "pediu {{servico}}" e uma
+      // Esta **interpola**, é a diferença entre "pediu {{servico}}" e uma
       // frase fixa repetida em todo contato. Então a citação é conferida como
       // a de qualquer texto: variável que ninguém preenche vira nota com
       // buraco, e o aviso aparece antes de publicar.
@@ -1406,7 +1405,7 @@ function variaveisDoNo(no: No): string[] {
 }
 
 /**
- * Os textos do bloco que **passam por `interpolar()`** — e só eles.
+ * Os textos do bloco que **passam por `interpolar()`**, e só eles.
  *
  * Existe separado de `variaveisDoNo` porque as duas perguntas são diferentes:
  * aquela quer os nomes já extraídos, esta quer a string crua, para conferir o
@@ -1459,13 +1458,13 @@ function textosDoNo(no: No): string[] {
  * vai (esquema, usuário, host, porta)?
  *
  * Exigir `https://` literal já barrava `{{base}}/x`, mas deixava passar
- * `https://{{host}}/x` — que é o mesmo problema com outra roupa: o destino
+ * `https://{{host}}/x`, que é o mesmo problema com outra roupa: o destino
  * saindo do que a pessoa digitou no WhatsApp. A recusa de endereço interno do
  * servidor ainda barraria rede privada, mas quem conversa passaria a apontar a
  * nossa infraestrutura para qualquer host externo que quisesse.
  *
  * Depois da primeira barra é caminho e consulta, e ali variável é o uso normal
- * e desejado — `/pedido/{{codigo}}`.
+ * e desejado, `/pedido/{{codigo}}`.
  */
 /**
  * Todas as variáveis citadas no host vieram de uma chamada de API?
@@ -1489,7 +1488,7 @@ function temVariavelNoHost(url: string): boolean {
   const depoisDoEsquema = limpa.indexOf('://')
 
   // Sem `://`, a URL inteira ainda é candidata a host. `URL_INSEGURA` cobre o
-  // caso, mas variável aqui também é problema — e este erro explica melhor.
+  // caso, mas variável aqui também é problema, e este erro explica melhor.
   const inicio = depoisDoEsquema === -1 ? 0 : depoisDoEsquema + 3
   const fim = limpa.slice(inicio).search(/[/?#]/)
   const autoridade = fim === -1 ? limpa.slice(inicio) : limpa.slice(inicio, inicio + fim)

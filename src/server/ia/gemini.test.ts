@@ -6,14 +6,14 @@ import type { Resposta } from './types'
 /**
  * O que veio, quando não veio o texto esperado.
  *
- * Com ferramenta no contrato existem duas maneiras de não ser texto — recusar
- * e pedir consulta —, e a mensagem de falha precisa dizer qual delas foi.
+ * Com ferramenta no contrato existem duas maneiras de não ser texto, recusar
+ * e pedir consulta , e a mensagem de falha precisa dizer qual delas foi.
  */
 /**
  * O modelo estava fora do ar, e não decidindo?
  *
  * Sem esta distinção, os testes negativos passam pelo motivo errado: um 503
- * vira `nao_sei`, que satisfaz "não pediu consulta" — e a suíte fica verde
+ * vira `nao_sei`, que satisfaz "não pediu consulta", e a suíte fica verde
  * enquanto prova nada. Aconteceu, e é como o congestionamento do
  * `gemini-flash-latest` quase passou despercebido.
  */
@@ -33,12 +33,12 @@ function descrever(r: Resposta): string {
  * Mock aqui não responderia a única pergunta que importa: **o modelo obedece o
  * escopo fechado?** É disso que depende o número do cliente continuar vivo (a
  * Meta proíbe IA de propósito geral na Business API), e nenhuma simulação prova
- * isso — só o modelo respondendo.
+ * isso, só o modelo respondendo.
  *
  * **Não roda sozinho.** Precisa de `IA_TESTE_REAL=1` além da chave, e o motivo
  * é concreto: a cota do free tier é pequena e estourou (429) durante a própria
  * construção deste módulo. Essa cota é a mesma que sustenta a demonstração ao
- * vivo para cliente — gastá-la em `npm test` de rotina é trocar a apresentação
+ * vivo para cliente, gastá-la em `npm test` de rotina é trocar a apresentação
  * por uma checagem que ninguém pediu naquele momento.
  *
  * Rode de propósito, quando mexer no prompt ou no adaptador:
@@ -74,7 +74,7 @@ describe.skipIf(!chave)('o Gemini dentro do escopo do negócio', () => {
    * **preço**. O contexto não fala de valor, então a única resposta aceitável é
    * não responder. Número inventado aqui vira promessa que alguém vai cobrar.
    *
-   * A primeira versão perguntava sobre serviço elétrico — e falhou, com razão:
+   * A primeira versão perguntava sobre serviço elétrico, e falhou, com razão:
    * o contexto diz "NÃO fazemos elétrica", então responder "não fazemos" é usar
    * o contexto, não inventar. O teste é que estava errado, não o modelo.
    */
@@ -125,7 +125,7 @@ describe.skipIf(!chave)('o Gemini dentro do escopo do negócio', () => {
 
 describe.skipIf(!chave)('o adaptador nunca estoura', () => {
   /**
-   * Chave errada é o caso mais provável em produção — chave revogada, cota
+   * Chave errada é o caso mais provável em produção, chave revogada, cota
    * estourada, cliente que trocou. Se isso virasse exceção, a pessoa ficaria
    * esperando no WhatsApp uma resposta que nunca vem.
    */
@@ -141,7 +141,7 @@ describe.skipIf(!chave)('o adaptador nunca estoura', () => {
 })
 
 /**
- * A escolha entre ferramentas parecidas — o modo de falha que a pesquisa
+ * A escolha entre ferramentas parecidas, o modo de falha que a pesquisa
  * aponta e que mock nenhum reproduz.
  *
  * Descrições próximas degradam a seleção, e o erro é **silencioso**: o modelo
@@ -194,7 +194,7 @@ describe.skipIf(!chave)('o Gemini escolhendo consulta', () => {
   }, 45_000)
 
   it('não tenta preencher a identidade sozinho', async () => {
-    // Se ele mandar `pessoa_id`, a conferência descarta — mas o certo é ele
+    // Se ele mandar `pessoa_id`, a conferência descarta, mas o certo é ele
     // nem cogitar, porque o argumento não existe na declaração.
     const r = await modelo.responder({
       ...pedidoBase,
@@ -207,7 +207,7 @@ describe.skipIf(!chave)('o Gemini escolhendo consulta', () => {
 
   it('entende "semana que vem" e vira um período de datas', async () => {
     /*
-     * O pedido de quem opera, literal: *"'esta semana', 'semana que vem' — o
+     * O pedido de quem opera, literal: *"'esta semana', 'semana que vem', o
      * sistema identificar quando é e sugerir as disponibilidades"*.
      *
      * O fluxo desenhado à mão **não** consegue isto: a pergunta com formato
@@ -224,7 +224,7 @@ describe.skipIf(!chave)('o Gemini escolhendo consulta', () => {
     expect(r.nome).toBe('agenda_horarios')
 
     // 2026-09-01 é uma terça. "Semana que vem" tem que cair depois deste sábado
-    // e não pode virar o dia de hoje — o erro clássico é ignorar o "que vem".
+    // e não pode virar o dia de hoje, o erro clássico é ignorar o "que vem".
     expect(r.argumentos.de! > '2026-09-05').toBe(true)
     expect(r.argumentos.ate! > r.argumentos.de!).toBe(true)
   }, 45_000)
@@ -256,8 +256,8 @@ describe.skipIf(!chave)('o Gemini escolhendo consulta', () => {
  * O disjuntor de cota.
  *
  * Sem ele, o modelo que estourou a cota às 10h continua sendo tentado em toda
- * conversa até a virada do dia: não gasta cota — requisição rejeitada não
- * conta —, mas cobra o ida-e-volta de cada pessoa por uma resposta que já se
+ * conversa até a virada do dia: não gasta cota, requisição rejeitada não
+ * conta , mas cobra o ida-e-volta de cada pessoa por uma resposta que já se
  * sabe qual é.
  *
  * Não fala com o Gemini: um `fetch` de mentira responde o que o teste precisa.
@@ -317,7 +317,7 @@ describe('o disjuntor de cota', () => {
     }
   })
 
-  it('503 NÃO desliga o padrão — pico passa em segundos', async () => {
+  it('503 NÃO desliga o padrão, pico passa em segundos', async () => {
     // Marcar o modelo bom como fora por causa de um soluço seria desligar o
     // caminho normal do produto por um minuto ruim do Google.
     const { chamadas, restaurar } = fingirFetch([

@@ -15,8 +15,8 @@ export const dynamic = 'force-dynamic'
  *
  * Cadastro e logo são configuração: olhados uma vez por trimestre e ocupando o
  * pé da tela mais visitada do produto. As duas frentes chegaram à mesma
- * conclusão por caminhos diferentes — `docs/PLANO-HOMEPAGE.md` §7 e
- * `docs/PLANO-CONFIGURACOES.md` §4 —, e esta rota é o endereço combinado.
+ * conclusão por caminhos diferentes, `docs/PLANO-HOMEPAGE.md` §7 e
+ * `docs/PLANO-CONFIGURACOES.md` §4 , e esta rota é o endereço combinado.
  *
  * A página só monta `FichaDoCliente`, que não mudou: o componente já era
  * autônomo, e movê-lo de lugar não era motivo para reescrevê-lo.
@@ -37,7 +37,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         />
         <h1 className="text-[25px] font-bold tracking-[-0.02em]">Dados da empresa</h1>
         <p className="mt-1.5 mb-6 max-w-[650px] text-[13px] leading-6 text-dim">
-          O cadastro e o logo desta conta. Nada daqui vai para o WhatsApp — é o que a
+          O cadastro e o logo desta conta. Nada daqui vai para o WhatsApp, é o que a
           4YU usa para saber com quem fala.
         </p>
 

@@ -11,12 +11,12 @@ import { guardarArquivo } from './repos/midia-recebida'
  * ---------------------------------------------------------------------------
  *
  * A tentação é adiar: responder primeiro, guardar depois. Mas o `id` da mídia
- * vive **7 dias** e a função que adia pode morrer — e mídia perdida não volta
+ * vive **7 dias** e a função que adia pode morrer, e mídia perdida não volta
  * de lugar nenhum, porque a Meta não guarda cópia (Cloud API Terms 4.5).
  *
  * O custo do caminho escolhido é honesto: o download entra antes de o bot
  * responder, e uma foto grande atrasa a resposta em alguns segundos. Isso cabe
- * porque o produto **já** espera de propósito — `aguardarResposta` segura a
+ * porque o produto **já** espera de propósito, `aguardarResposta` segura a
  * resposta pelo atraso desenhado no fluxo, que pode chegar a 25 segundos. Um
  * download com teto de 30s dentro de uma função de 60s é menos espera do que o
  * fluxo já introduz sozinho.
@@ -50,7 +50,7 @@ export async function guardarMidiaRecebida(
      * O teto é conferido **depois** do download porque a Meta só diz o tamanho
      * junto com a URL, e o `file_size` que ela declara nem sempre bate com o
      * que desce. Conferir o que está na mão é o que impede o bucket de recusar
-     * a escrita — o limite dele é o mesmo — e transformar isso em erro no log
+     * a escrita, o limite dele é o mesmo, e transformar isso em erro no log
      * em vez de num aviso na tela.
      *
      * Documento vai até 100 MB na Meta; o nosso teto é 16 MB. O arquivo grande

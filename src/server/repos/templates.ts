@@ -14,7 +14,7 @@ import { db, ehIdInvalido } from '../db'
  * `core/templates.ts`, e quem fala com a Meta é `channels/templates-api.ts`.
  *
  * **A chave natural é `(cliente_id, nome, idioma)`, não o id da Meta.** O mesmo
- * modelo lógico para 40 clientes são 40 templates com 40 ids diferentes — a
+ * modelo lógico para 40 clientes são 40 templates com 40 ids diferentes, a
  * Meta não compartilha template entre contas. O `waba_template_id` é só o que
  * ela devolveu para aquele cliente, e é por ele que o webhook nos encontra.
  */
@@ -54,7 +54,7 @@ const COLUNAS =
   'id, cliente_id, nome, idioma, categoria, componentes, waba_template_id, status, qualidade, motivo_recusa, criado_em, atualizado_em'
 
 /**
- * O corpo é o único componente obrigatório — e o que o banco guarda é jsonb
+ * O corpo é o único componente obrigatório, e o que o banco guarda é jsonb
  * livre, que pode vir de uma versão anterior do código.
  *
  * Um template com jsonb estranho vira um template de corpo vazio em vez de
@@ -116,8 +116,8 @@ export async function lerTemplate(id: string): Promise<Template | null> {
 /**
  * Só os que podem enviar **agora**.
  *
- * O filtro é `aprovado` e nada mais. `pausado` engana por parecer temporário —
- * e é, a Meta despausa sozinha em 3h ou 6h — mas enquanto está pausado, envio
+ * O filtro é `aprovado` e nada mais. `pausado` engana por parecer temporário ,
+ * e é, a Meta despausa sozinha em 3h ou 6h, mas enquanto está pausado, envio
  * falha. Deixar pausado nesta lista faria a tela de nova transmissão oferecer
  * um modelo que erra em todos os 5.000 destinatários.
  */
@@ -203,7 +203,7 @@ export async function marcarSubmetido(
  * O que o webhook `message_template_status_update` sabe dizer.
  *
  * `motivoRecusa` é o campo mais valioso desta tabela: quando a Meta recusa por
- * `INVALID_FORMAT` ela manda explicação **e recomendação acionável** — a melhor
+ * `INVALID_FORMAT` ela manda explicação **e recomendação acionável**, a melhor
  * informação que ela dá em qualquer lugar da plataforma. É a diferença entre a
  * tela dizer "recusado" e dizer "recusado porque falta valor de exemplo na
  * variável 2".
@@ -216,7 +216,7 @@ export type AtualizacaoDeStatus = {
 }
 
 /**
- * Atualiza pelo id da Meta — que é tudo o que o webhook traz.
+ * Atualiza pelo id da Meta, que é tudo o que o webhook traz.
  *
  * Devolve `false` quando não achou. Não é erro: o webhook chega para **todos**
  * os templates da WABA, inclusive os que o cliente criou direto no WhatsApp
@@ -246,7 +246,7 @@ export async function atualizarStatusPorWabaId(
  * Só a categoria, sem tocar no status.
  *
  * Existe porque `template_category_update` é um webhook **à parte**: ele avisa
- * que a Meta reclassificou o modelo — o que muda o **preço** da mensagem — e
+ * que a Meta reclassificou o modelo, o que muda o **preço** da mensagem, e
  * não diz nada sobre a revisão. Reaproveitar `atualizarStatusPorWabaId` aqui
  * obrigaria a inventar um status, e um palpite faria um template aprovado
  * virar outra coisa por causa de uma mudança de preço.
@@ -328,7 +328,7 @@ export async function apagarTemplate(id: string): Promise<void> {
  * varrer cliente por cliente faria uma ida ao banco por conta, toda vez.
  *
  * Só quem tem template em estado que a Meta ainda pode mudar. Template
- * `rascunho` nunca foi submetido, e `desativado` não volta — nenhum dos dois
+ * `rascunho` nunca foi submetido, e `desativado` não volta, nenhum dos dois
  * ganha nada com uma consulta à Meta.
  */
 export async function clientesComTemplatesPendentes(): Promise<

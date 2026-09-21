@@ -41,7 +41,7 @@ const PECAS: Peca[] = [
     titulo: 'Canal',
     curto: 'WhatsApp, Instagram ou anúncio',
     longo:
-      'Por onde as pessoas falam com o negócio. Um número de WhatsApp, o direct do Instagram ou um anúncio que gera contato — tudo chega no mesmo lugar, e a origem fica registrada.',
+      'Por onde as pessoas falam com o negócio. Um número de WhatsApp, o direct do Instagram ou um anúncio que gera contato, tudo chega no mesmo lugar, e a origem fica registrada.',
     icone: <IconeCanal />,
   },
   {
@@ -49,7 +49,7 @@ const PECAS: Peca[] = [
     titulo: 'Automação',
     curto: 'o que o bot responde sozinho',
     longo:
-      'O roteiro que atende antes de você. Ela pergunta, responde dúvida repetida, agenda e só chama uma pessoa quando precisa — e é você quem desenha, sem escrever código.',
+      'O roteiro que atende antes de você. Ela pergunta, responde dúvida repetida, agenda e só chama uma pessoa quando precisa, e é você quem desenha, sem escrever código.',
     icone: <IconeAutomacao />,
   },
   {
@@ -57,7 +57,7 @@ const PECAS: Peca[] = [
     titulo: 'Conversa',
     curto: 'onde a sua equipe assume',
     longo:
-      'O Inbox. Quando o bot passa a bola, a conversa aparece aqui com o histórico inteiro, o áudio transcrito e o que já foi respondido — ninguém começa do zero perguntando "pode repetir?".',
+      'O Inbox. Quando o bot passa a bola, a conversa aparece aqui com o histórico inteiro, o áudio transcrito e o que já foi respondido, ninguém começa do zero perguntando "pode repetir?".',
     icone: <IconeConversa />,
   },
   {
@@ -65,7 +65,7 @@ const PECAS: Peca[] = [
     titulo: 'Funil',
     curto: 'em que ponto cada pessoa está',
     longo:
-      'O quadro de negociações. Cada contato vira um cartão que anda pelas etapas, com valor e motivo de perda — é daqui que saem "quanto fechou" e "quem está parado há uma semana".',
+      'O quadro de negociações. Cada contato vira um cartão que anda pelas etapas, com valor e motivo de perda, é daqui que saem "quanto fechou" e "quem está parado há uma semana".',
     icone: <IconeFunil />,
   },
 ]

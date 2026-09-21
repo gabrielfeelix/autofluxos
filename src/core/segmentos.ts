@@ -377,7 +377,7 @@ export function explicarSegmento(segmento: Segmento): string {
  * `sem_compra` é o caso que ensina o resto: ele **não** é "valor igual a
  * zero", é `valor_conhecido nao_informado`. Quem nunca comprou não tem linha
  * em `vendas`, então o total dele é nulo, e tratar nulo como zero misturaria o
- * desconhecido com o cliente que gastou R$ 0,00 — dois grupos que a RB-35 manda
+ * desconhecido com o cliente que gastou R$ 0,00, dois grupos que a RB-35 manda
  * manter separados.
  */
 export function condicoesDoNivel(
@@ -412,7 +412,7 @@ export function condicoesDoNivel(
  * Mora em `core/` porque as duas pontas precisam dele: o serviço que decide
  * (`server/servicos/elegibilidade.ts`) e a prévia que explica, que é
  * componente de cliente. Deixá-lo no serviço obrigaria a tela a importar de um
- * módulo `server-only` — hoje o build aceita, porque só o tipo e a constante
+ * módulo `server-only`, hoje o build aceita, porque só o tipo e a constante
  * atravessam, e é exatamente o tipo de dependência que quebra sem aviso na
  * primeira vez que alguém acrescentar uma linha com banco ali dentro.
  */

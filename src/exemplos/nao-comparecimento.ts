@@ -2,14 +2,14 @@ import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
 import { acharPreset } from '@/core/presets'
 
 /**
- * Avisar que não vai à aula — o fluxo que quem opera descreveu em áudio.
+ * Avisar que não vai à aula, o fluxo que quem opera descreveu em áudio.
  *
  * A descrição veio inteira e em ordem: *"o fluxo de não comparecimento começa
  * para você identificar com quem essa pessoa está falando, quem é o lead, o
  * aluno. Assim que ele identifica, ele pede para confirmar o não
  * comparecimento. Aí ele identifica a aula que essa pessoa vai querer cancelar.
  * Aí ele vai identificar que horas, quando que essa aula vai acontecer para
- * poder avisar — se a pessoa avisa antes de duas horas, beleza; se ela avisar
+ * poder avisar, se a pessoa avisa antes de duas horas, beleza; se ela avisar
  * de última hora, ela não pode ter uma reposição. Caso esteja fora do horário,
  * avisar e falar: por você estar fora do horário, você não vai conseguir ter
  * uma reposição dessa aula. Você gostaria de cancelar mesmo? Sim ou não."*
@@ -45,7 +45,7 @@ import { acharPreset } from '@/core/presets'
  *    inventar uma redação diferente para a mesma regra.
  *
  * 3. **Cancelar acontece dos dois lados da pergunta.** Quem avisa em cima da
- *    hora e confirma **cancela do mesmo jeito** — a vaga abre para quem estiver
+ *    hora e confirma **cancela do mesmo jeito**, a vaga abre para quem estiver
  *    na fila, e é isso que se quer. O que ela perde é a reposição, não o
  *    direito de avisar. Recusar o cancelamento faria a pessoa simplesmente não
  *    aparecer, e aí a vaga se perde para as duas.
@@ -59,7 +59,7 @@ import { acharPreset } from '@/core/presets'
 /** O bloco de API já preenchido por um preset, para o modelo não repetir a URL. */
 function comPreset(id: string, no: { id: string; position: { x: number; y: number } }) {
   const preset = acharPreset(id)
-  if (!preset) throw new Error(`preset ${id} sumiu — o modelo de não comparecimento depende dele`)
+  if (!preset) throw new Error(`preset ${id} sumiu, o modelo de não comparecimento depende dele`)
   return { ...no, type: 'http', data: { ...preset.dados } }
 }
 
@@ -68,7 +68,7 @@ const em = (x: number, y: number) => ({ x: x * 320, y: y * 190 })
 export const naoComparecimento: Fluxo = fluxoSchema.parse({
   inicio: 'reconhecer',
   nodes: [
-    // 1 — quem está falando. Sem isto o bot pergunta o nome de quem faz aula
+    // 1, quem está falando. Sem isto o bot pergunta o nome de quem faz aula
     // há dois anos, que foi a reclamação que originou o preset.
     comPreset('verandi-quem-e', { id: 'reconhecer', position: em(0, 0) }),
     {
@@ -78,11 +78,11 @@ export const naoComparecimento: Fluxo = fluxoSchema.parse({
       data: { variavel: 'encontrado', operador: 'igual', valor: '1' },
     },
 
-    // 2 — o que ela tem marcado, para o menu saber do que está falando.
+    // 2, o que ela tem marcado, para o menu saber do que está falando.
     comPreset('verandi-minha-agenda', { id: 'ficha', position: em(2, 0) }),
 
     /*
-     * 3 — qual aula.
+     * 3, qual aula.
      *
      * O menu sai de `proximas`, com o rótulo do preset (dia, hora e serviço):
      * quem tem duas aulas na semana precisa saber de qual delas se trata, e
@@ -122,7 +122,7 @@ export const naoComparecimento: Fluxo = fluxoSchema.parse({
     },
 
     /*
-     * 4 — ainda dá tempo?
+     * 4, ainda dá tempo?
      *
      * A pergunta é sobre **esta** aula, e é por isso que ela tem o id no
      * pedido. A ficha acima também sabe responder isso, mas para a lista
@@ -138,7 +138,7 @@ export const naoComparecimento: Fluxo = fluxoSchema.parse({
     },
 
     /*
-     * 5a — dentro do prazo: confirma sem drama.
+     * 5a, dentro do prazo: confirma sem drama.
      *
      * Ainda assim confirma, e não desmarca direto: o passo seguinte escreve na
      * agenda de verdade, e escrita que a pessoa não confirmou é escrita que
@@ -160,7 +160,7 @@ export const naoComparecimento: Fluxo = fluxoSchema.parse({
     },
 
     /*
-     * 5b — fora do prazo: a pessoa decide sabendo o que perde.
+     * 5b, fora do prazo: a pessoa decide sabendo o que perde.
      *
      * *"Caso esteja fora do horário, avisar e falar: por você estar fora do
      * horário, você não vai conseguir ter uma reposição dessa aula. Você
@@ -183,7 +183,7 @@ export const naoComparecimento: Fluxo = fluxoSchema.parse({
       },
     },
 
-    // 6 — a baixa na agenda. É o mesmo bloco nos dois caminhos: quem avisa
+    // 6, a baixa na agenda. É o mesmo bloco nos dois caminhos: quem avisa
     // tarde cancela igual, e o que muda é só o crédito, que a agenda decide.
     comPreset('verandi-desmarcar', { id: 'desmarcar', position: em(7, 0) }),
 
@@ -204,7 +204,7 @@ export const naoComparecimento: Fluxo = fluxoSchema.parse({
     },
 
     /*
-     * 7 — o desfecho, e ele é diferente nos dois lados.
+     * 7, o desfecho, e ele é diferente nos dois lados.
      *
      * Dizer "sua reposição fica guardada" para quem avisou tarde seria prometer
      * o que a agenda não vai dar, e a pessoa só descobriria na hora de remarcar.
@@ -277,7 +277,7 @@ export const naoComparecimento: Fluxo = fluxoSchema.parse({
       type: 'handoff',
       position: em(5, 2.6),
       data: {
-        motivo: 'não comparecimento — {{aula}} · {{nome_na_agenda}}',
+        motivo: 'não comparecimento, {{aula}} · {{nome_na_agenda}}',
         mensagem: 'Vou chamar alguém da recepção para te ajudar com isso. Só um instante! 🙌',
       },
     },
@@ -286,7 +286,7 @@ export const naoComparecimento: Fluxo = fluxoSchema.parse({
       type: 'handoff',
       position: em(2, 2),
       data: {
-        motivo: 'não comparecimento — telefone não encontrado na agenda',
+        motivo: 'não comparecimento, telefone não encontrado na agenda',
         mensagem:
           'Oi! 👋 Não te encontrei aqui na agenda pelo seu número. Vou chamar a recepção. 🙌',
       },

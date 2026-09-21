@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { aceitaAtraso, aplicarAtrasoEmLote, dadosComAtraso } from './atraso-em-lote'
 import { LIMITE_ATRASO_SEGUNDOS, LIMITE_PARTES } from './schema'
 
-describe('dadosComAtraso — o "digitando…" posto de fora', () => {
+describe('dadosComAtraso, o "digitando…" posto de fora', () => {
   it('põe o atraso na frente da pilha, nunca no meio', () => {
     // No meio, a espera aconteceria depois de a fala já ter saído.
     const dados = dadosComAtraso('mensagem', { partes: [{ tipo: 'texto', texto: 'Oi' }] }, 2)
@@ -28,7 +28,7 @@ describe('dadosComAtraso — o "digitando…" posto de fora', () => {
     })
   })
 
-  it('zero tira o atraso — é como se desfaz o lote', () => {
+  it('zero tira o atraso, é como se desfaz o lote', () => {
     const dados = dadosComAtraso(
       'mensagem',
       { partes: [{ tipo: 'atraso', segundos: 2 }, { tipo: 'texto', texto: 'Oi' }] },
@@ -67,7 +67,7 @@ describe('dadosComAtraso — o "digitando…" posto de fora', () => {
     expect(aceitaAtraso('pergunta')).toBe(false)
   })
 
-  it('quem já estava assim não muda — o lote não pode sujar o desfazer', () => {
+  it('quem já estava assim não muda, o lote não pode sujar o desfazer', () => {
     expect(
       dadosComAtraso('mensagem', { partes: [{ tipo: 'atraso', segundos: 2 }] }, 2),
     ).toBeNull()
@@ -80,13 +80,13 @@ describe('dadosComAtraso — o "digitando…" posto de fora', () => {
     expect(dadosComAtraso('midia', { midia: 'imagem', url: 'x' }, Number.NaN)).toBeNull()
   })
 
-  it('pilha cheia fica como está — passar do limite o schema recusa', () => {
+  it('pilha cheia fica como está, passar do limite o schema recusa', () => {
     const partes = Array.from({ length: LIMITE_PARTES }, () => ({ tipo: 'texto', texto: 'a' }))
     expect(dadosComAtraso('mensagem', { partes }, 1)).toBeNull()
   })
 })
 
-describe('aplicarAtrasoEmLote — a conta que a tela mostra', () => {
+describe('aplicarAtrasoEmLote, a conta que a tela mostra', () => {
   const blocos = [
     { id: 'a', type: 'mensagem', data: { partes: [{ tipo: 'texto', texto: 'Oi' }] } },
     { id: 'b', type: 'pergunta', data: { texto: 'Qual seu nome?', opcoes: [] } },
@@ -106,7 +106,7 @@ describe('aplicarAtrasoEmLote — a conta que a tela mostra', () => {
     expect(saida[3]).toBe(blocos[3])
   })
 
-  it('não muda o bloco original — o desfazer depende disso', () => {
+  it('não muda o bloco original, o desfazer depende disso', () => {
     aplicarAtrasoEmLote(blocos, ['a'], 3)
     expect(blocos[0]?.data.partes).toEqual([{ tipo: 'texto', texto: 'Oi' }])
   })

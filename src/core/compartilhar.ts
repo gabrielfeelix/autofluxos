@@ -6,7 +6,7 @@ import { mensagensDoHandoff, partesDaMensagem } from './flow/mensagem'
  *
  * Puro e sem rede, como todo `core/`: o servidor decide *se* pode compartilhar,
  * este arquivo decide *o quê* sai. A separação importa porque a limpeza abaixo
- * é a parte que, se errar, vaza credencial de um cliente para outro — e uma
+ * é a parte que, se errar, vaza credencial de um cliente para outro, e uma
  * regra dessas tem que dar para testar sem banco.
  */
 
@@ -15,7 +15,7 @@ import { mensagensDoHandoff, partesDaMensagem } from './flow/mensagem'
  *
  * Sem prazo é opção, e não o padrão: link eterno é o que sobra num grupo de
  * WhatsApp dois anos depois. Trinta dias é o padrão porque é o horizonte de
- * quem manda o link para um colega decidir — mais que isso já é material fixo,
+ * quem manda o link para um colega decidir, mais que isso já é material fixo,
  * e aí a pessoa escolhe conscientemente.
  */
 export const PRAZOS_DO_LINK = [
@@ -51,7 +51,7 @@ export type AvisoDoCompartilhamento = {
  * A versão do grafo que sai daqui.
  *
  * **A única coisa removida é `conexaoId`**, e ela é removida por dois motivos
- * independentes — bastaria um. O primeiro é que ela aponta para uma linha de
+ * independentes, bastaria um. O primeiro é que ela aponta para uma linha de
  * `connections` da conta de origem, e um id de credencial de outra conta não
  * significa nada aqui a não ser um convite a tentar. O segundo é que, mesmo se
  * significasse, o `publicar()` do destino recusaria: ele confere que a conexão
@@ -61,7 +61,7 @@ export type AvisoDoCompartilhamento = {
  * **Nada mais é reescrito.** Em particular, texto, URL de mídia e URL de API
  * saem inteiros: um fluxo com o miolo apagado não é um fluxo compartilhado, é
  * um esqueleto que ninguém consegue usar. Quem não quer que o texto viaje não
- * gera o link — e é por isso que o aviso existe.
+ * gera o link, e é por isso que o aviso existe.
  */
 export function limparParaCompartilhar(fluxo: Fluxo): Fluxo {
   return fluxoSchema.parse({
@@ -89,7 +89,7 @@ export function avisosDoCompartilhamento(fluxo: Fluxo): AvisoDoCompartilhamento[
     avisos.push({
       codigo: 'CREDENCIAL_NAO_VIAJA',
       mensagem:
-        'As credenciais de API não viajam — quem importar precisa escolher as dele em Conexões antes de publicar.',
+        'As credenciais de API não viajam, quem importar precisa escolher as dele em Conexões antes de publicar.',
     })
 
     const enderecos = hostsExternos(fluxo)
@@ -105,7 +105,7 @@ export function avisosDoCompartilhamento(fluxo: Fluxo): AvisoDoCompartilhamento[
     avisos.push({
       codigo: 'IA_NAO_VIAJA',
       mensagem:
-        'Este fluxo usa IA. Quem importar recebe o desenho, mas a IA nasce desligada — ela é plano à parte e não se transfere por link.',
+        'Este fluxo usa IA. Quem importar recebe o desenho, mas a IA nasce desligada, ela é plano à parte e não se transfere por link.',
     })
   }
 
@@ -113,7 +113,7 @@ export function avisosDoCompartilhamento(fluxo: Fluxo): AvisoDoCompartilhamento[
     avisos.push({
       codigo: 'ARQUIVOS_DO_ACERVO',
       mensagem:
-        'Os arquivos do Acervo continuam sendo servidos daqui. Quem importar passa a usar os seus arquivos — apagá-los quebra o fluxo dele também.',
+        'Os arquivos do Acervo continuam sendo servidos daqui. Quem importar passa a usar os seus arquivos, apagá-los quebra o fluxo dele também.',
     })
   }
 
@@ -150,7 +150,7 @@ function temArquivoDoAcervo(fluxo: Fluxo): boolean {
   return urlsDeMidia(fluxo).some((url) => url.includes(PREFIXO_DO_ACERVO))
 }
 
-/** Toda URL de arquivo do fluxo — no bloco de mídia e nas partes da mensagem. */
+/** Toda URL de arquivo do fluxo, no bloco de mídia e nas partes da mensagem. */
 export function urlsDeMidia(fluxo: Fluxo): string[] {
   const urls: string[] = []
 
@@ -171,7 +171,7 @@ export function urlsDeMidia(fluxo: Fluxo): string[] {
  *
  * Existe porque a decisão de importar é tomada por quem ainda não tem a conta
  * aberta ao lado: contar blocos e dizer o que o fluxo faz é o que separa
- * "aceito" de "abro e vejo depois" — e "vejo depois" significa um rascunho
+ * "aceito" de "abro e vejo depois", e "vejo depois" significa um rascunho
  * abandonado na conta de alguém.
  */
 export type ResumoCompartilhado = {
@@ -204,7 +204,7 @@ export function resumirFluxo(fluxo: Fluxo): ResumoCompartilhado {
  *
  * O sufixo não é enfeite: sem ele, quem importa duas vezes fica com dois
  * "Triagem de orçamento" idênticos na lista e nenhuma forma de saber qual é o
- * seu. Com ele, o importado se anuncia — e renomear é um clique.
+ * seu. Com ele, o importado se anuncia, e renomear é um clique.
  */
 export function nomeAoImportar(nome: string): string {
   const limpo = nome.trim() || 'Fluxo importado'
@@ -219,7 +219,7 @@ export function nomeAoImportar(nome: string): string {
  * Um React Flow ali custaria o bundle inteiro do editor numa rota que qualquer
  * um alcança sem sessão, para entregar menos.
  *
- * A ordem é de largura a partir do início — é a que segue a conversa. Blocos
+ * A ordem é de largura a partir do início, é a que segue a conversa. Blocos
  * que ninguém alcança vêm depois, e vêm marcados: fluxo compartilhado com nó
  * solto é coisa que quem recebe precisa ver antes de importar, não descobrir
  * publicando.
@@ -267,7 +267,7 @@ export function roteiroDoFluxo(fluxo: Fluxo): LinhaDoRoteiro[] {
 /**
  * O que este bloco diz, em uma linha.
  *
- * O bloco de API não mostra corpo nem cabeçalho de propósito — é onde chave
+ * O bloco de API não mostra corpo nem cabeçalho de propósito, é onde chave
  * escrita à mão aparece, e a página é pública. Método e host bastam para
  * entender que o fluxo chama algo de fora.
  */
@@ -303,7 +303,7 @@ function textoDoBloco(no: No): string {
       try {
         host = new URL(no.data.url).host
       } catch {
-        // URL montada com `{{variavel}}` — ver `hostsExternos`.
+        // URL montada com `{{variavel}}`, ver `hostsExternos`.
       }
       return `${no.data.metodo} em ${host}`
     }
@@ -321,8 +321,8 @@ function textoDoBloco(no: No): string {
       /*
        * **O texto da anotação não vai para o link público.**
        *
-       * É o único bloco cujo conteúdo é escrito para consumo interno — ninguém
-       * do outro lado da conversa lê a nota —, e quem escreve para dentro
+       * É o único bloco cujo conteúdo é escrito para consumo interno, ninguém
+       * do outro lado da conversa lê a nota , e quem escreve para dentro
        * escreve diferente. É o mesmo motivo de o corpo do bloco de API não
        * aparecer aqui: o campo atrai o que não deve sair da conta.
        */
@@ -330,13 +330,13 @@ function textoDoBloco(no: No): string {
     }
     case 'ir-fluxo':
       // Pelo mesmo motivo da etapa: o nome da outra automação é informação da
-      // conta de origem, e quem recebe o link não importa o destino junto — o
+      // conta de origem, e quem recebe o link não importa o destino junto, o
       // salto vira um bloco que ele vai ter que apontar para um fluxo dele.
       return 'continua em outra automação'
     case 'voltar':
       /*
        * O destino é um bloco **deste mesmo desenho**, então dizer para onde não
-       * vaza nada de fora — mas o `rotulo` guarda o texto do bloco de destino,
+       * vaza nada de fora, mas o `rotulo` guarda o texto do bloco de destino,
        * e esse texto é do cliente. "Volta para 'Qual seu CPF, dona Marina?'"
        * numa página pública entrega o roteiro e às vezes mais do que ele.
        */

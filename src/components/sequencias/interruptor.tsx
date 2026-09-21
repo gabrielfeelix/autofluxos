@@ -13,7 +13,7 @@ import { acaoAlternarSequencia } from '@/server/acoes'
  *
  * **Desligar não esvazia.** Quem já está dentro continua dentro, e é o executor
  * do passo que encerra a inscrição ao encontrar a sequência desligada. Esvaziar
- * aqui apagaria o histórico de quem já tinha recebido metade — e desligar quase
+ * aqui apagaria o histórico de quem já tinha recebido metade, e desligar quase
  * sempre significa "pausa", não "cancela".
  */
 export function InterruptorDeSequencia({

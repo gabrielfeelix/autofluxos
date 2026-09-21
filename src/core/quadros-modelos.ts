@@ -9,14 +9,14 @@ import type { TipoDeEtapa } from './quadros'
  * ---------------------------------------------------------------------------
  *
  * `Novo · Em conversa · Fechado` serve a qualquer negócio porque não descreve
- * nenhum — é neutro de propósito, e continua sendo o certo para quem só quer
+ * nenhum, é neutro de propósito, e continua sendo o certo para quem só quer
  * organizar o atendimento. O problema é que ele era a **única** saída: quem
  * vende com SDR, quem agenda avaliação e quem quer recompra montava tudo na
  * mão, etapa por etapa, sem saber quantas usar nem onde marcar o ganho.
  *
  * A régua que a prática comercial repete: **entre quatro e oito etapas**. Menos
  * que quatro não mostra onde o negócio trava; mais que oito costuma ser dois
- * funis — e é a mesma conta que `LIMITE_DE_ETAPAS` já fazia por motivo de tela.
+ * funis, e é a mesma conta que `LIMITE_DE_ETAPAS` já fazia por motivo de tela.
  *
  * Cada modelo traz o **prazo de cada etapa** junto, e não é enfeite: é o que
  * acende o aviso de parado no cartão. Prazo é a parte que ninguém configura

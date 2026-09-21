@@ -7,7 +7,7 @@ import type { Canal, Midia } from './types'
  * Um bot do Telegram, pela Bot API.
  *
  * ---------------------------------------------------------------------------
- * O que muda em relação à Meta — e é quase tudo
+ * O que muda em relação à Meta, e é quase tudo
  * ---------------------------------------------------------------------------
  *
  * - **Não há janela de 24h, não há template, não há aprovação.** O bot fala
@@ -15,7 +15,7 @@ import type { Canal, Midia } from './types'
  *   `canais.ts` dá `janelaHoras: null` ao Telegram, e é por isso que este
  *   arquivo não tem nada parecido com `janela.ts`.
  * - **O token é do bot, não da conta.** Ele sai do @BotFather inteiro e não
- *   vence sozinho — o oposto do token do Instagram, que morre em 60 dias. Quem
+ *   vence sozinho, o oposto do token do Instagram, que morre em 60 dias. Quem
  *   revoga é o dono, pelo próprio BotFather, e aí o token velho responde 401
  *   para sempre.
  * - **O token vai na URL, e não num header.** A Bot API não usa `Authorization`:
@@ -30,13 +30,13 @@ import type { Canal, Midia } from './types'
  * ---------------------------------------------------------------------------
  *
  * Pelo mesmo motivo do Instagram: o WhatsApp é que tem duas formas (botão e
- * lista). O Telegram tem uma — `inline_keyboard` —, e ela já é mais generosa
+ * lista). O Telegram tem uma, `inline_keyboard` , e ela já é mais generosa
  * que as duas. Traduzir "lista" para outra coisa inventaria comportamento que
  * a tela não prometeu.
  *
  * O `callback_data` leva o id da opção, exatamente como o `payload` do
  * Instagram e o `reply.id` do WhatsApp: é por ele que o motor sabe qual saída
- * seguir. **O teto dele é 64 bytes**, imposto pelo Telegram — ver
+ * seguir. **O teto dele é 64 bytes**, imposto pelo Telegram, ver
  * `LIMITE_CALLBACK_DATA`.
  */
 
@@ -53,7 +53,7 @@ const TIMEOUT_INDICADOR_MS = 2_000
  *
  * O número é lido de lá de propósito, como no Instagram: o validador do editor
  * usa a mesma fonte, então a tela e o adaptador não têm como discordar. E aqui
- * ele é **nosso**, não do Telegram — o teclado inline aguenta dezenas, e o 10
+ * ele é **nosso**, não do Telegram, o teclado inline aguenta dezenas, e o 10
  * existe para a lista continuar legível.
  */
 const LIMITE_OPCOES = DEFINICAO_DO_CANAL.telegram.limites.opcoes
@@ -65,7 +65,7 @@ const BOTOES_POR_LINHA = DEFINICAO_DO_CANAL.telegram.limites.botoes
 const LIMITE_ROTULO = DEFINICAO_DO_CANAL.telegram.limites.rotulo
 
 /**
- * O teto de `callback_data`, em **bytes** — e este é do Telegram, não nosso.
+ * O teto de `callback_data`, em **bytes**, e este é do Telegram, não nosso.
  *
  * Passar disso faz a API recusar a mensagem inteira, e não só o botão. Os ids
  * de opção do editor são curtos e não chegam perto, mas o corte existe porque
@@ -98,7 +98,7 @@ const ENTREGA_NO_TELEGRAM = {
   audio: { metodo: 'sendAudio', campo: 'audio' },
 } as const
 
-/** Quantos bytes este texto ocupa em UTF-8 — que é como o Telegram conta. */
+/** Quantos bytes este texto ocupa em UTF-8, que é como o Telegram conta. */
 function bytes(texto: string): number {
   return new TextEncoder().encode(texto).length
 }
@@ -126,7 +126,7 @@ export function canalTelegram(config: ConfigTelegram): Canal {
   const base = `${raiz}/bot${config.token}`
 
   /**
-   * O nome do método, para a mensagem de erro — **sem o token**.
+   * O nome do método, para a mensagem de erro, **sem o token**.
    *
    * A URL inteira carrega a credencial. Um `throw new Error(url)` inocente
    * colocaria o token do cliente no log de produção, de onde ele não sai. É a
@@ -164,7 +164,7 @@ export function canalTelegram(config: ConfigTelegram): Canal {
       /*
        * O corpo do Telegram traz `description` com o motivo em inglês claro
        * ("bot was blocked by the user", "chat not found"), e ele separa
-       * "a pessoa bloqueou o bot" de "o token foi revogado" — duas conclusões
+       * "a pessoa bloqueou o bot" de "o token foi revogado", duas conclusões
        * opostas para quem for ler o alerta. Mesma decisão dos adaptadores da
        * Meta.
        *
@@ -184,7 +184,7 @@ export function canalTelegram(config: ConfigTelegram): Canal {
          * lida**: não existe tique azul para bot, então aqui não há o segundo
          * pedido que o Instagram faz nem o `status: read` do WhatsApp.
          *
-         * O indicador some sozinho em 5 segundos, ou quando a mensagem chega —
+         * O indicador some sozinho em 5 segundos, ou quando a mensagem chega ,
          * o que sempre acontece antes, porque o atraso é de no máximo
          * `LIMITE_ATRASO_SEGUNDOS`.
          */
@@ -223,7 +223,7 @@ export function canalTelegram(config: ConfigTelegram): Canal {
        * Instagram: o Telegram tem `caption` em todos os métodos de mídia. Não
        * há a segunda mensagem que o Instagram precisa mandar antes.
        *
-       * A URL vai como está. O Telegram busca o arquivo ele mesmo — não há o
+       * A URL vai como está. O Telegram busca o arquivo ele mesmo, não há o
        * `subirParaAMeta` da Cloud API, porque não há id de mídia com validade
        * para economizar aqui.
        */
@@ -237,7 +237,7 @@ export function canalTelegram(config: ConfigTelegram): Canal {
 
     async enviarOpcoes(para, texto, opcoes) {
       /*
-       * O `formato` é ignorado — ver o cabeçalho. O Telegram tem uma forma só.
+       * O `formato` é ignorado, ver o cabeçalho. O Telegram tem uma forma só.
        *
        * O validador barra na publicação; este corte é para a versão publicada
        * antes da regra existir. Truncar a lista é ruim; ter a mensagem inteira
@@ -273,7 +273,7 @@ export function canalTelegram(config: ConfigTelegram): Canal {
  * O trecho que transforma um envio em resposta a outra mensagem.
  *
  * Vazio quando não há citação, para o corpo não carregar um campo nulo. O id
- * do Telegram é numérico (`message_id`), e o nosso `Citacao` é string — a
+ * do Telegram é numérico (`message_id`), e o nosso `Citacao` é string, a
  * conversão é aqui e não no chamador, porque é este canal que tem essa
  * exigência.
  *
@@ -288,7 +288,7 @@ function citacao(citando?: string): Record<string, unknown> {
 
   /*
    * `allow_sending_without_reply` é o que impede a mensagem de ser recusada
-   * quando a citada foi apagada — sem ele, apagar a mensagem original faria a
+   * quando a citada foi apagada, sem ele, apagar a mensagem original faria a
    * resposta do bot sumir junto.
    */
   return { reply_parameters: { message_id: id, allow_sending_without_reply: true } }

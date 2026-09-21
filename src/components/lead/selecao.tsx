@@ -78,8 +78,7 @@ export function SelecaoDeContatos({
    * Põe os selecionados na **primeira etapa** do quadro (C1).
    *
    * É o caminho real de encher um funil: depois de uma importação, trinta leads
-   * entram de uma vez. Quem já estava no quadro não volta para a primeira etapa
-   * — o aviso diz quantos entraram de verdade, e não quantos foram clicados,
+   * entram de uma vez. Quem já estava no quadro não volta para a primeira etapa, o aviso diz quantos entraram de verdade, e não quantos foram clicados,
    * porque a diferença entre os dois números é exatamente a informação útil.
    */
   const porNoQuadro = (quadroId: string) => {
@@ -97,7 +96,7 @@ export function SelecaoDeContatos({
         setAviso(
           postos === marcados.length
             ? `Pus ${postos} contato(s) em “${nome}”.`
-            : `Pus ${postos} em “${nome}” — ${marcados.length - postos} já estavam lá e não foram movidos.`,
+            : `Pus ${postos} em “${nome}”, ${marcados.length - postos} já estavam lá e não foram movidos.`,
         )
         setMarcados([])
       } catch {

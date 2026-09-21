@@ -6,17 +6,17 @@ import {
 } from './schema'
 
 /**
- * Ler os dois formatos do bloco de mensagem — e é aqui, num lugar só.
+ * Ler os dois formatos do bloco de mensagem, e é aqui, num lugar só.
  *
  * **Por que isto existe.** `flow_versions` é imutável e a sessão fica presa à
  * versão em que começou: uma conversa aberta às 14h continua rodando o grafo de
  * 14h. Quando o bloco deixou de ser `{ texto }` e virou uma pilha de pedaços,
- * havia dois caminhos — reescrever o que estava gravado, ou aprender a ler o
+ * havia dois caminhos, reescrever o que estava gravado, ou aprender a ler o
  * que estava gravado. O primeiro **mata toda conversa em andamento** e apaga o
  * histórico do que de fato foi ao ar. O segundo custa este arquivo.
  *
  * A regra, então: **ler os dois, escrever um.** Nada fora daqui toca
- * `data.texto` — nem o motor, nem o validador, nem a tela. O editor só escreve
+ * `data.texto`, nem o motor, nem o validador, nem a tela. O editor só escreve
  * `partes`. E nenhuma migration encosta em `flow_versions.grafo`.
  *
  * O teste que prende isso está em `mensagem.test.ts` e em
@@ -35,7 +35,7 @@ export function partesDaMensagem(no: NoMensagem): Parte[] {
   /**
    * O `atraso` antigo virava `atrasoMs` na ação de envio: esperar **antes** de
    * mandar. Como pedaço, ele precisa vir na frente do texto para significar a
-   * mesma coisa — invertido, a espera aconteceria depois da mensagem já ter
+   * mesma coisa, invertido, a espera aconteceria depois da mensagem já ter
    * saído, que é outro comportamento.
    */
   if (atraso !== undefined && atraso > 0) {
@@ -50,7 +50,7 @@ export function partesDaMensagem(no: NoMensagem): Parte[] {
  * O corpo do bloco em uma linha, para rótulo de tela e mensagem de erro.
  *
  * Junta só os pedaços de texto porque é isso que alguém reconhece ao procurar
- * um bloco no desenho. Pilha sem texto nenhum — só uma foto, só um atraso —
+ * um bloco no desenho. Pilha sem texto nenhum, só uma foto, só um atraso ,
  * devolve vazio, e quem chama decide o que dizer no lugar.
  */
 export function textoDaMensagem(no: NoMensagem): string {
@@ -81,12 +81,11 @@ export function parteNova(tipo: Parte['tipo']): Parte {
 
 
 /**
- * As mensagens que o handoff manda antes de transferir — nos dois formatos.
+ * As mensagens que o handoff manda antes de transferir, nos dois formatos.
  *
  * Mesma regra do bloco de mensagem, e pelo mesmo motivo: a conversa aberta
  * ontem continua rodando o grafo de ontem, onde o campo era um `mensagem` só.
- * Ler os dois, escrever um. `mensagens` vazio conta como formato novo sem nada
- * — quem apagou todas no editor não quer a frase antiga de volta —, e é o
+ * Ler os dois, escrever um. `mensagens` vazio conta como formato novo sem nada, quem apagou todas no editor não quer a frase antiga de volta , e é o
  * `validar()` que recusa publicar assim.
  */
 export function mensagensDoHandoff(no: NoHandoff): string[] {

@@ -8,7 +8,7 @@ import { base64urlParaBytes } from '@/core/vapid'
  *
  * O que ela faz, e que a notificação local não fazia: a `Notification` que o
  * `NotificacoesDaFila` já usava só existe enquanto a aba está aberta. Push é o
- * contrário — chega no service worker, com o painel fechado, que é o buraco
+ * contrário, chega no service worker, com o painel fechado, que é o buraco
  * que o §3.10.1 chama de elo mais fraco do produto.
  */
 
@@ -45,7 +45,7 @@ function paraOServidor(assinatura: PushSubscription): AssinaturaParaOServidor | 
  * Registra o worker e devolve a assinatura deste navegador.
  *
  * `null` quando o navegador não faz push, quando a permissão não foi dada, ou
- * quando algo falhou — e falhar aqui **não** é erro de tela: o aviso local
+ * quando algo falhou, e falhar aqui **não** é erro de tela: o aviso local
  * continua funcionando, e o produto segue como sempre foi.
  */
 export async function assinarPush(): Promise<AssinaturaParaOServidor | null> {

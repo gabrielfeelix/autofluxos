@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic'
  * **O "entrar como" é o recurso mais perigoso deste painel**, e o desenho da
  * tela reflete isso: ele não é o botão primário, ele diz na frente que fica
  * registrado, e a sessão que ele abre dura uma hora e carrega uma faixa âmbar
- * em toda tela. Nada disso pede a senha de ninguém — é sessão marcada, com
+ * em toda tela. Nada disso pede a senha de ninguém, é sessão marcada, com
  * prazo e rastro, que é a boa prática do recurso.
  */
 export default async function Usuarios() {
@@ -29,7 +29,7 @@ export default async function Usuarios() {
           <h1 className="text-[25px] font-bold tracking-[-0.02em]">Usuários</h1>
           <p className="mt-1 text-[13px] text-muted">
             {usuarios.length} {usuarios.length === 1 ? 'pessoa cadastrada' : 'pessoas cadastradas'}.
-            Convite por e-mail depende de SMTP, que é compartilhado com outro produto — até lá, a
+            Convite por e-mail depende de SMTP, que é compartilhado com outro produto, até lá, a
             senha é combinada fora daqui.
           </p>
         </div>
@@ -67,7 +67,7 @@ export default async function Usuarios() {
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 {usuario.contas.length === 0 ? (
                   <span className="text-[12px] text-aviso">
-                    sem conta nenhuma — entra e não vê nada
+                    sem conta nenhuma, entra e não vê nada
                   </span>
                 ) : (
                   usuario.contas.map((conta) => (

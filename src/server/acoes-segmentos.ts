@@ -22,7 +22,7 @@ import { sessaoAtual } from './sessao'
  * `core/permissoes.ts` a descreve como "exportar, criar segmento compartilhado,
  * transmitir". Um segmento compartilhado é o que alimenta uma transmissão, e
  * quem pode montar o público de um disparo está a um clique de alcançar a base
- * inteira — é o mesmo poder do CSV, por outra porta.
+ * inteira, é o mesmo poder do CSV, por outra porta.
  *
  * **`podeLerValores` é conferido no servidor**, e passado à validação. Esconder
  * o campo de valor no editor não impede ninguém de mandar a condição direto,

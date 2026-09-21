@@ -151,7 +151,7 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
     expect((await listarVersoes(fluxo.id)).map((v) => v.versao)).toEqual([3, 2, 1])
     expect((await acharVersao(v2.versao.id))?.grafo).toEqual(segundoDesenho)
 
-    // E o que está no ar é a nova, não a antiga — nada aponta para trás.
+    // E o que está no ar é a nova, não a antiga, nada aponta para trás.
     const relido = await acharFluxo(fluxo.id)
     expect(relido?.versaoPublicadaId).toBe(v3.ok ? v3.versao.id : null)
     expect(relido?.rascunho).toEqual(primeiroDesenho)
@@ -202,7 +202,7 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
     const cliente = await criarCliente(`${marca} sem humano`)
     criados.push(cliente.id)
 
-    // O handoff sai e a opção que ia até ele passa a terminar a conversa —
+    // O handoff sai e a opção que ia até ele passa a terminar a conversa ,
     // o desenho de quem não precisa de atendente, e não um grafo quebrado.
     const semSaida = structuredClone(fluxoNovo())
     const fim = semSaida.nodes.find((n) => n.type === 'mensagem' && n.id !== semSaida.inicio)!
@@ -273,7 +273,7 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
 
   /**
    * O portão comercial da Etapa 2, ponta a ponta: coluna no banco, leitura no
-   * repo, recusa no `publicar`. Vender IA tem que ser ligar um booleano — e não
+   * repo, recusa no `publicar`. Vender IA tem que ser ligar um booleano, e não
    * ligar tem que impedir de verdade, não só sumir com o botão da tela.
    */
   it('RECUSA publicar fluxo com IA enquanto a automação não tiver o plano', async () => {
@@ -323,7 +323,7 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
    *
    * O Postgres recusa `where id = 'nao-existe'` com 22P02 antes de olhar a
    * tabela. Sem tratar, a exceção subia e a pessoa via "Alguma coisa quebrou
-   * aqui" — para um link truncado no WhatsApp ou um id colado pela metade, que
+   * aqui", para um link truncado no WhatsApp ou um id colado pela metade, que
    * é o jeito mais comum de chegar num endereço errado aqui.
    */
   it('id sem forma de uuid é não-encontrado, e não erro', async () => {
@@ -387,7 +387,7 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
 
   /**
    * A lista sai na ordem escolhida, e quem nunca foi arrastado vai para o fim
-   * por `criado_em` — que é como ela sempre saiu.
+   * por `criado_em`, que é como ela sempre saiu.
    */
   it('reordena a lista, e quem não tem ordem fica no fim', async () => {
     const cliente = await criarCliente(`${marca} ordem`)
@@ -452,7 +452,7 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
     const fluxo = await criarFluxo(dono.id, `${marca} protegido`, fluxoNovo())
     expect(await apagarFluxo(intruso.id, fluxo.id)).toEqual({ ok: true })
     // O `delete` filtra por cliente, então "ok" não significa que apagou algo
-    // de outro dono — o fluxo continua lá.
+    // de outro dono, o fluxo continua lá.
     expect(await acharFluxo(fluxo.id)).not.toBeNull()
   })
 
@@ -482,7 +482,7 @@ describe.skipIf(!temCredencial)('repos contra o Supabase', () => {
 /**
  * O salto entre automações não tem chave estrangeira: o destino mora dentro do
  * `rascunho`, que é `jsonb`. Sem a conferência, apagar o fluxo de destino era
- * aceito sem reclamar e quebrava o outro em silêncio — quem chegasse ao salto
+ * aceito sem reclamar e quebrava o outro em silêncio, quem chegasse ao salto
  * ia para uma pessoa, e isso só aparecia no validador do outro fluxo, na
  * próxima vez que alguém fosse publicá-lo.
  */
@@ -523,7 +523,7 @@ describe.skipIf(!temCredencial)('quem salta para um fluxo', () => {
   })
 
   // Sem isto, a frase de recusa citaria o nome de uma automação de outro
-  // cliente — vazamento de dado por mensagem de erro.
+  // cliente, vazamento de dado por mensagem de erro.
   it('não enxerga salto de outro cliente', async () => {
     const { destinoId } = await comSalto(`${marca} destino 3`)
     const estranho = await criarCliente(`${marca} estranho`)

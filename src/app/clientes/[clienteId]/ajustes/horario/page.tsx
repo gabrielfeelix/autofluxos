@@ -10,7 +10,7 @@ import { listarConexoes } from '@/server/repos/conexoes'
 export const dynamic = 'force-dynamic'
 
 /**
- * O horário do **atendimento humano** — não o do bot.
+ * O horário do **atendimento humano**, não o do bot.
  *
  * O bot responde 24 horas por dia e continua respondendo; o que muda é o que
  * ele diz quando a conversa precisa de gente. Sem isto, ele promete um

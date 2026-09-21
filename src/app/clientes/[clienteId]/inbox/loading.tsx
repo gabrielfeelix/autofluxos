@@ -6,7 +6,7 @@ import { EsqueletoDeInbox } from '@/components/design/esqueleto'
  *
  * A página já tinha um `<Suspense>` com este mesmo esqueleto dentro, e o
  * comentário dela descrevia o sintoma certo: *sair de qualquer outra tela e
- * cair aqui era meio segundo de tela idêntica — e a impressão não é "está
+ * cair aqui era meio segundo de tela idêntica, e a impressão não é "está
  * carregando", é "não clicou"*.
  *
  * O que faltava é que aquela fronteira mora **dentro** da `ClienteShell`, que

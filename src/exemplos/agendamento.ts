@@ -2,7 +2,7 @@ import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
 import { acharPreset } from '@/core/presets'
 
 /**
- * Agendar e remarcar, na agenda do cliente — o desenho inteiro.
+ * Agendar e remarcar, na agenda do cliente, o desenho inteiro.
  *
  * **É o fluxo que quem opera estava montando bloco a bloco**, e o motivo de ele
  * existir como modelo é que a montagem tem seis armadilhas que só se descobre
@@ -13,7 +13,7 @@ import { acharPreset } from '@/core/presets'
  * 2. **`encontrado` é `0`, e não vazio.** A rota responde 200 com `total: 0`
  *    quando não acha; a condição olha o total, e não o nome.
  * 3. **A data precisa ir padronizada.** A pessoa escreve `21/08/2026` e a API
- *    quer `2026-08-21` — por isso a pergunta guarda as duas formas, uma para a
+ *    quer `2026-08-21`, por isso a pergunta guarda as duas formas, uma para a
  *    mensagem e outra para a chamada.
  * 4. **Rótulo e valor são coisas diferentes.** O menu mostra `07:00` e o
  *    `POST` precisa do id daquele horário. As duas listas saem do mesmo `[]`,
@@ -21,7 +21,7 @@ import { acharPreset } from '@/core/presets'
  * 5. **Lista vazia é conversa, não erro.** Dia sem vaga sai pela saída `veio
  *    vazia` e oferece outro dia, em vez de morrer numa pergunta sem resposta.
  * 6. **A vaga é conferida ao gravar.** Entre montar o menu e a pessoa clicar,
- *    alguém pode ter ocupado — e aí a chamada falha e uma pessoa assume, porque
+ *    alguém pode ter ocupado, e aí a chamada falha e uma pessoa assume, porque
  *    quem responde por uma vaga é quem está no balcão.
  *
  * O desenho é o de um estúdio, mas nada aqui é de estúdio: troque as palavras
@@ -32,7 +32,7 @@ import { acharPreset } from '@/core/presets'
 /** O bloco de API já preenchido por um preset, para o modelo não repetir a URL. */
 function comPreset(id: string, no: { id: string; position: { x: number; y: number } }) {
   const preset = acharPreset(id)
-  if (!preset) throw new Error(`preset ${id} sumiu — o modelo de agendamento depende dele`)
+  if (!preset) throw new Error(`preset ${id} sumiu, o modelo de agendamento depende dele`)
   return { ...no, type: 'http', data: { ...preset.dados } }
 }
 
@@ -42,7 +42,7 @@ const em = (x: number, y: number) => ({ x: x * 320, y: y * 190 })
 export const agendamento: Fluxo = fluxoSchema.parse({
   inicio: 'reconhecer',
   nodes: [
-    // 1 — quem é esta pessoa? Antes de qualquer pergunta.
+    // 1, quem é esta pessoa? Antes de qualquer pergunta.
     comPreset('verandi-quem-e', { id: 'reconhecer', position: coluna(0) }),
     {
       id: 'ja-e-aluno',
@@ -51,7 +51,7 @@ export const agendamento: Fluxo = fluxoSchema.parse({
       data: { variavel: 'encontrado', operador: 'igual', valor: '1' },
     },
 
-    // 2a — conhecido: chama pelo nome.
+    // 2a, conhecido: chama pelo nome.
     {
       id: 'ola-conhecido',
       type: 'mensagem',
@@ -67,14 +67,14 @@ export const agendamento: Fluxo = fluxoSchema.parse({
     },
 
     /*
-     * 2a′ — conferir o telefone antes de seguir.
+     * 2a′, conferir o telefone antes de seguir.
      *
      * Pedido de quem opera: *"assim que ele coleta em relação ao agendamento, a
      * gente pode citar, conferindo o telefone: ah, seu telefone é esse mesmo?
      * Então ele tem que confirmar o telefone da pessoa, com base na que foi
      * recebida pelo chatbot, e depois colocar a opção de verdadeiro ou não."*
      *
-     * Ela parece redundante — o número veio do próprio WhatsApp — e não é: o
+     * Ela parece redundante, o número veio do próprio WhatsApp, e não é: o
      * número de quem escreve nem sempre é o número que a agenda tem. Filho que
      * escreve pelo aparelho da mãe é o caso comum, e sem esta pergunta a aula
      * do filho ia para a ficha dela.
@@ -93,7 +93,7 @@ export const agendamento: Fluxo = fluxoSchema.parse({
       },
     },
 
-    // 2b — novo: pega nome e cadastra.
+    // 2b, novo: pega nome e cadastra.
     {
       id: 'pedir-nome',
       type: 'pergunta',
@@ -108,10 +108,10 @@ export const agendamento: Fluxo = fluxoSchema.parse({
     comPreset('verandi-cadastrar', { id: 'cadastrar', position: em(3, 1) }),
 
     /*
-     * 3 — qual modalidade, antes de qualquer horário.
+     * 3, qual modalidade, antes de qualquer horário.
      *
      * Quem opera descreveu a ordem: *"ele consulta primeiro a modalidade que a
-     * pessoa citou — pode ter clicado em personal, pode ter clicado em pilates,
+     * pessoa citou, pode ter clicado em personal, pode ter clicado em pilates,
      * pode ter clicado em fisioterapia. A partir disso ele identifica a
      * modalidade, depois cita os dias e horários com base naquela modalidade."*
      *
@@ -138,14 +138,14 @@ export const agendamento: Fluxo = fluxoSchema.parse({
       },
     },
 
-    // 4 — para quando?
+    // 4, para quando?
     {
       id: 'qual-dia',
       type: 'pergunta',
       position: coluna(6),
       data: {
         texto:
-          'Para quando você quer agendar?\nMe manda a data — por exemplo: *21/08/2026*',
+          'Para quando você quer agendar?\nMe manda a data, por exemplo: *21/08/2026*',
         salvarEm: 'dia_escrito',
         // O padronizado é o que a API aceita; o escrito é o que a pessoa lê de
         // volta na confirmação.
@@ -159,7 +159,7 @@ export const agendamento: Fluxo = fluxoSchema.parse({
     },
 
     /*
-     * 5 — o que tem livre nesse dia, **daquela modalidade**.
+     * 5, o que tem livre nesse dia, **daquela modalidade**.
      *
      * O preset filtrado é o que impede o pior desfecho deste fluxo: oferecer o
      * dia inteiro depois de a pessoa ter escolhido pilates, ela clicar num
@@ -186,7 +186,7 @@ export const agendamento: Fluxo = fluxoSchema.parse({
       },
     },
 
-    // 5b — o dia não tem vaga. Não é erro: é a outra metade da conversa.
+    // 5b, o dia não tem vaga. Não é erro: é a outra metade da conversa.
     {
       id: 'sem-vaga',
       type: 'pergunta',
@@ -203,7 +203,7 @@ export const agendamento: Fluxo = fluxoSchema.parse({
     },
 
     /*
-     * 6 — a confirmação antes de gravar.
+     * 6, a confirmação antes de gravar.
      *
      * O passo seguinte escreve na agenda de verdade, e escrita que a pessoa não
      * confirmou é escrita que alguém desfaz no balcão depois.
@@ -223,7 +223,7 @@ export const agendamento: Fluxo = fluxoSchema.parse({
       },
     },
 
-    // 7 — marca de verdade.
+    // 7, marca de verdade.
     comPreset('verandi-marcar', { id: 'marcar', position: coluna(10) }),
     {
       id: 'confirmado',
@@ -256,7 +256,7 @@ export const agendamento: Fluxo = fluxoSchema.parse({
       type: 'handoff',
       position: em(11, 1),
       data: {
-        motivo: 'agendamento — {{nome_na_agenda}}{{nome}}',
+        motivo: 'agendamento, {{nome_na_agenda}}{{nome}}',
         mensagem: 'Vou chamar alguém da recepção para te ajudar. Só um instante! 🙌',
       },
     },
@@ -298,7 +298,7 @@ export const agendamento: Fluxo = fluxoSchema.parse({
      * A confirmação é o fim, e não uma escala até uma pessoa.
      *
      * O desenho antigo ligava a confirmação ao handoff, e isso abria uma
-     * conversa no Inbox para **todo agendamento que deu certo** — a fila enchia
+     * conversa no Inbox para **todo agendamento que deu certo**, a fila enchia
      * de casos resolvidos, e quem opera tinha que fechar um por um. *"E pronto,
      * acabou."* O caminho até uma pessoa continua existindo por todos os outros
      * ramos, que é o que `SEM_SAIDA_HUMANA` cobra.

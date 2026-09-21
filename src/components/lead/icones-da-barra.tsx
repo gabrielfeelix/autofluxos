@@ -5,11 +5,10 @@
  * Por que traço e não emoji
  * ---------------------------------------------------------------------------
  *
- * Eram `📎`, `😊` e `🎤` — emoji do sistema. Três problemas de uma vez: o
+ * Eram `📎`, `😊` e `🎤`, emoji do sistema. Três problemas de uma vez: o
  * desenho muda de sistema para sistema (o microfone do Windows é um de palco,
  * com grade redonda e cabo, que quem olha lê como karaokê), vêm coloridos e
- * brigam com uma barra que é toda monocromática, e não obedecem `currentColor`
- * — o hover que escurece os outros não os alcança.
+ * brigam com uma barra que é toda monocromática, e não obedecem `currentColor`, o hover que escurece os outros não os alcança.
  *
  * Em traço, os três são a mesma família dos ícones das ações rápidas
  * (`acoes-rapidas.tsx`, traço de 1,7px) e herdam a cor do botão.

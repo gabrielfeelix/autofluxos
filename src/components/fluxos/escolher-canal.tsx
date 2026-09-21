@@ -5,7 +5,7 @@ import { LogoDoCanal } from '@/components/design/selo-do-canal'
 import { CANAIS, CANAL_PADRAO, DEFINICAO_DO_CANAL, type CanalId } from '@/core/canais'
 
 /**
- * Onde esta automação vai atender — a primeira escolha do fluxo.
+ * Onde esta automação vai atender, a primeira escolha do fluxo.
  *
  * **Aqui, e não depois.** Os limites que o editor cobra são os do canal, então
  * escolher no fim seria desenhar sem saber por que o validador recusa uma
@@ -15,7 +15,7 @@ import { CANAIS, CANAL_PADRAO, DEFINICAO_DO_CANAL, type CanalId } from '@/core/c
  * **Os canais sem adaptador aparecem, e não dá para escolher.** Esconder a
  * possibilidade é como se descobre tarde demais que ela nunca foi pensada; mas
  * deixar criar uma automação de Instagram hoje seria vender uma coisa que não
- * entrega mensagem nenhuma. O cartão desligado diz o que falta — em vez de
+ * entrega mensagem nenhuma. O cartão desligado diz o que falta, em vez de
  * "em breve", que não é informação.
  */
 export function EscolherCanal({ nome = 'canal' }: { nome?: string }) {

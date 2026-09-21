@@ -31,8 +31,8 @@ const TOTAL_DE_INTEGRACOES = 5
  * que separa um índice de um menu: conferir se o contexto está preenchido ou
  * quantas chaves existem deixa de exigir abrir as três telas e voltar.
  *
- * As linhas moram em **quatro grupos** — Canais, Atendimento, Integrações e
- * Conta —, e todas as telas de configuração moram sob `/ajustes/`. As duas
+ * As linhas moram em **quatro grupos**, Canais, Atendimento, Integrações e
+ * Conta , e todas as telas de configuração moram sob `/ajustes/`. As duas
  * coisas são da mesma decisão, e o porquê de cada uma está em
  * `docs/PLANO-CONFIGURACOES.md`. Rota que mudou de endereço continua
  * respondendo pelo redirecionamento escrito em `next.config.ts`.
@@ -65,7 +65,7 @@ export default async function Pagina({
    * A saúde dos canais é calculada aqui e desenhada nos selos abaixo.
    *
    * O índice é a tela em que alguém pergunta "está tudo ligado?", e até agora
-   * ele respondia só "quantos" — um número derrubado pela Meta aparecia como
+   * ele respondia só "quantos", um número derrubado pela Meta aparecia como
    * "1 número", em verde, exatamente igual a um número funcionando. Quem contava
    * a verdade era a tela de dentro, que ninguém abre sem motivo.
    */
@@ -74,7 +74,7 @@ export default async function Pagina({
 
   /*
    * Quantas das cinco do catálogo estão de pé. O número mora aqui e a lista
-   * mora na tela de Integrações — contar dos dois lados divergiria no dia em
+   * mora na tela de Integrações, contar dos dois lados divergiria no dia em
    * que uma entrasse.
    */
   const conectadas = [
@@ -114,7 +114,7 @@ export default async function Pagina({
 
           **Continua sendo uma página só.** Menu de duas colunas é o padrão de
           Intercom e HubSpot e só compensa acima de umas 25 telas, quando o
-          índice vira rolagem — com onze, a segunda coluna seria moldura
+          índice vira rolagem, com onze, a segunda coluna seria moldura
           ocupando espaço sem responder nada.
 
           A ordem dos grupos é a ordem em que uma conta nova precisa deles:
@@ -168,7 +168,7 @@ export default async function Pagina({
 
         <Grupo
           titulo="Atendimento"
-          descricao="Como o atendimento funciona — o que o bot sabe, quando há gente, e o que já está pronto para usar."
+          descricao="Como o atendimento funciona, o que o bot sabe, quando há gente, e o que já está pronto para usar."
         >
           <Cartao
             href={`/clientes/${cliente.id}/ajustes/contexto`}
@@ -256,7 +256,7 @@ export default async function Pagina({
         */}
         <Grupo
           titulo="Integrações"
-          descricao="Com quem o sistema fala além dos canais — o que entra de fora e o que sai para os sistemas deste cliente."
+          descricao="Com quem o sistema fala além dos canais, o que entra de fora e o que sai para os sistemas deste cliente."
         >
           <Cartao
             href={`/clientes/${cliente.id}/ajustes/integracoes`}
@@ -305,8 +305,8 @@ export default async function Pagina({
             Dados do negócio morava no Painel, acima de tudo, e saiu de lá pelo
             motivo que vale para qualquer cadastro: nome, CNPJ e logo não se
             olham todo dia, e ocupavam o espaço mais caro do produto. A tela
-            continua acessível pelo Painel — quem acabou de criar a conta chega
-            por lá —, e passa a ter também o caminho que uma pessoa procura
+            continua acessível pelo Painel, quem acabou de criar a conta chega
+            por lá , e passa a ter também o caminho que uma pessoa procura
             quando vai mexer nela de propósito.
           */}
           <Cartao
@@ -359,7 +359,7 @@ export default async function Pagina({
         </Grupo>
 
         {/* Longe do resto e por último, porque a tela de ajustes é onde se
-            entra para mexer numa coisa e sair — e este botão não é uma
+            entra para mexer numa coisa e sair, e este botão não é uma
             configuração, é o fim do cliente. */}
         <section className="mt-10 rounded-[14px] border border-rose-400/[0.18] bg-rose-400/[0.03] px-6 py-5">
           <h2 className="text-[13.5px] font-bold text-perigo">Apagar o cliente</h2>
@@ -380,7 +380,7 @@ export default async function Pagina({
 }
 
 /**
- * Um grupo do índice — cabeçalho, uma linha de motivo, e o cartão.
+ * Um grupo do índice, cabeçalho, uma linha de motivo, e o cartão.
  *
  * O cabeçalho fica **fora** do cartão de propósito: dentro, ele viraria mais
  * uma linha da lista e competiria com os itens em vez de organizá-los.
@@ -402,7 +402,7 @@ function Grupo({
         Três por linha no monitor, uma no celular.
 
         Quatro caberiam em largura, e o cartão ficaria estreito demais para a
-        frase de explicação — que é justamente a parte que faz o cartão valer
+        frase de explicação, que é justamente a parte que faz o cartão valer
         mais do que a linha de lista que havia aqui antes.
       */}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{children}</div>

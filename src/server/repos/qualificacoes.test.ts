@@ -107,7 +107,7 @@ describe.skipIf(!temCredencial)('a segunda metade do A20: arquivar campo com cri
    * deixaria a sequência apontando para o nada.
    *
    * **A metade do campo não precisa de bloqueio, e este teste é a evidência
-   * disso** — que é diferente de não ter sido verificada. `arquivarCampo` não
+   * disso**, que é diferente de não ter sido verificada. `arquivarCampo` não
    * apaga: marca `arquivado: true`, e a definição continua existindo justamente
    * para explicar o histórico. O critério não lê a definição, lê o valor
    * gravado em `contacts.campos` (`core/qualificacao.ts`), e esse valor não é

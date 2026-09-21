@@ -8,7 +8,7 @@ import { type CanalSalvo } from './conversas'
  * **O token nunca passa por aqui de volta.** Mesma regra de `conexoes.ts`: o
  * valor vai para o Vault na escrita e sai por `lerTokenDoCanal()` na hora de
  * fazer a requisição. `CanalSalvo` não tem campo de token, e isso não é
- * disciplina de quem escreve a tela — é o tipo não permitindo.
+ * disciplina de quem escreve a tela, é o tipo não permitindo.
  */
 
 const COLUNAS =
@@ -56,7 +56,7 @@ export async function canalDoInstagram(clienteId: string): Promise<CanalSalvo | 
  *
  * **Reconectar é o caminho normal, não a exceção**: o token vence em 60 dias e
  * o dono do perfil vai passar por aqui de novo. Por isso a conta existente é
- * atualizada em vez de recusada — e o token velho é trocado no mesmo segredo,
+ * atualizada em vez de recusada, e o token velho é trocado no mesmo segredo,
  * não em um novo, para os fluxos já configurados continuarem apontando para o
  * mesmo canal.
  */
@@ -139,7 +139,7 @@ export async function salvarContaDoInstagram(entrada: {
 
   if (error) {
     // O segredo já está no cofre e a linha não nasceu. Sem isto ele ficaria
-    // órfão para sempre — e token órfão é token que ninguém revoga.
+    // órfão para sempre, e token órfão é token que ninguém revoga.
     await db().rpc('apagar_segredo', { alvo: tokenRef })
     throw new Error(`não deu para ligar a conta: ${error.message}`)
   }
@@ -159,7 +159,7 @@ export async function desligarContaDoInstagram(clienteId: string): Promise<void>
 }
 
 /**
- * As contas cujo token vence até `limite` — a fila da renovação automática.
+ * As contas cujo token vence até `limite`, a fila da renovação automática.
  *
  * **Sem `client_id` no filtro, de propósito**: quem chama é a tarefa agendada,
  * que varre o sistema inteiro. Toda outra leitura deste arquivo é por cliente
@@ -187,7 +187,7 @@ export async function canaisDoInstagramQueVencemAte(limite: Date): Promise<Canal
  *
  * **No mesmo segredo, e não em um novo**, pela mesma razão de
  * `salvarContaDoInstagram`: `token_ref` é o que liga o canal ao cofre, e trocar
- * a referência a cada renovação deixaria um segredo órfão por mês — token órfão
+ * a referência a cada renovação deixaria um segredo órfão por mês, token órfão
  * é token que ninguém revoga.
  *
  * A validade só é gravada **depois** de o cofre aceitar o valor novo. Na ordem

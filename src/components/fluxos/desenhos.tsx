@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react'
 
 /**
- * Os desenhos dos templates — feitos com o material do próprio produto.
+ * Os desenhos dos templates, feitos com o material do próprio produto.
  *
  * ---------------------------------------------------------------------------
  * A regra que mantém isto um sistema, e não doze ícones soltos
@@ -11,8 +11,8 @@ import type { ReactNode } from 'react'
  *
  * Todo desenho é **um pedaço do canvas do editor**: a mesma malha de pontos, o
  * mesmo cartão de bloco com faixa colorida no topo, o mesmo fio curvo de
- * ligação. O que muda de um para o outro é (1) a **forma do fluxo** — leque,
- * funil, laço, duas pistas — e (2) **um objeto do assunto** desenhado com a
+ * ligação. O que muda de um para o outro é (1) a **forma do fluxo**, leque,
+ * funil, laço, duas pistas, e (2) **um objeto do assunto** desenhado com a
  * mesma geometria chapada: um calendário, um relógio, um código de barras.
  *
  * Isso é o oposto de sortear um ícone por tema. A forma do fluxo é informação:
@@ -144,7 +144,7 @@ export function MiniaturaEmBranco() {
 export function MiniaturaDeTemplate() {
   return (
     <Canvas id="template" altura={116}>
-      {/* Os fios primeiro, para os cartões cobrirem as pontas — é o que o
+      {/* Os fios primeiro, para os cartões cobrirem as pontas, é o que o
           editor faz, e é o que faz a ligação parecer entrar no bloco. */}
       <Fio d="M72 34C86 34 84 58 98 58" />
       <Fio d="M160 58C174 58 170 82 184 82" />
@@ -242,7 +242,7 @@ function DesenhoCarrinho() {
       <rect x="34" y="20" width="38" height="14" rx="3" fill={CHEIO} />
       <circle cx="40" cy="49" r="3.4" fill={TRACO} />
       <circle cx="60" cy="49" r="3.4" fill={TRACO} />
-      {/* O laço: a conversa volta ao carrinho, e por isso o fio é tracejado —
+      {/* O laço: a conversa volta ao carrinho, e por isso o fio é tracejado ,
           é a parte que depende de a pessoa responder. */}
       <Fio d="M92 30C110 30 112 12 134 12" />
       <Fio d="M134 56C108 56 96 52 84 44" tracejado />

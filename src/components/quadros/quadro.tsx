@@ -54,13 +54,13 @@ import { Caixa } from '@/components/design/caixa'
  *
  * A primeira versão tinha as colunas com altura de conteúdo e os formulários de
  * criação soltos embaixo, competindo com o próprio quadro pela tela. Três coisas
- * mudaram, e todas pelo mesmo motivo — **o quadro é a tela, não um bloco nela**:
+ * mudaram, e todas pelo mesmo motivo, **o quadro é a tela, não um bloco nela**:
  *
  * - as colunas ocupam a altura toda e rolam por dentro. Coluna que cresce
  *   empurrando a página faz o quadro de dez cartões perder a visão de conjunto,
  *   que é a única coisa que ele dá e uma lista não dá;
  * - **dá para adicionar contato de dentro da coluna.** Antes só pela tela de
- *   Contatos — ou seja, o quadro abria vazio e não havia nada a fazer nele. Um
+ *   Contatos, ou seja, o quadro abria vazio e não havia nada a fazer nele. Um
  *   quadro que só se enche de outro lugar é um quadro que ninguém enche;
  * - criar e renomear são **modais**, não blocos no fim da página.
  *
@@ -85,7 +85,7 @@ export function Quadro({
   etapas: Etapa[]
   cartoesIniciais: Cartao[]
   agora: number
-  /** Quem pode assumir um cartão. Disponíveis primeiro — ver `membrosDaConta`. */
+  /** Quem pode assumir um cartão. Disponíveis primeiro, ver `membrosDaConta`. */
   equipe: { id: string; nome: string }[]
   /** A lista fechada de por que se perde nesta conta. */
   motivos: { id: string; nome: string }[]
@@ -118,7 +118,7 @@ export function Quadro({
   } | null>(null)
   const [noPainel, setNoPainel] = useState<Cartao | null>(null)
   /*
-   * A barra de ações é **estado de cliente**, e some numa navegação — de
+   * A barra de ações é **estado de cliente**, e some numa navegação, de
    * propósito. Filtro que sobrevive à visita seguinte é a causa clássica do
    * "sumiram os cartões": alguém filtra por si mesmo numa terça, volta na
    * quinta e vê um funil vazio que ninguém quebrou.
@@ -128,13 +128,13 @@ export function Quadro({
   const [movendo, comecar] = useTransition()
 
   /**
-   * O servidor é a verdade: quando a rota revalida — alguém criou etapa, o
-   * fluxo moveu alguém —, o estado otimista tem que ceder o lugar.
+   * O servidor é a verdade: quando a rota revalida, alguém criou etapa, o
+   * fluxo moveu alguém , o estado otimista tem que ceder o lugar.
    *
    * Ajustado **durante o render**, e não num `useEffect`. É o padrão que o
    * próprio React documenta para "resetar estado quando uma prop muda", e a
    * versão com efeito faz o componente pintar uma vez com o dado velho antes de
-   * corrigir — que aqui é o cartão piscando na coluna errada.
+   * corrigir, que aqui é o cartão piscando na coluna errada.
    */
   if (ultimoDoServidor !== cartoesIniciais) {
     setUltimoDoServidor(cartoesIniciais)
@@ -147,7 +147,7 @@ export function Quadro({
   /*
    * Só quem tem cartão aqui aparece na barra. Uma conta com doze pessoas e um
    * funil tocado por duas encheria a barra de avatares que filtram para o
-   * vazio — e clicar num deles seria indistinguível de um defeito.
+   * vazio, e clicar num deles seria indistinguível de um defeito.
    */
   const comCartao = new Set(cartoes.map((cartao) => cartao.responsavelId).filter(Boolean))
   const equipeDoQuadro = equipe.filter((pessoa) => comCartao.has(pessoa.id))
@@ -167,7 +167,7 @@ export function Quadro({
      * Perder exige motivo, e fechar em silêncio no solte produziria exatamente o
      * relatório que o motivo existe para evitar. Ganhar poderia ser automático,
      * mas tratar os dois gestos igual é o que faz a etapa significar a mesma
-     * coisa nos dois lados do funil — e o modal ainda é onde se anota o valor,
+     * coisa nos dois lados do funil, e o modal ainda é onde se anota o valor,
      * que é a informação que ninguém volta para preencher depois.
      */
     const destino = etapas.find((e) => e.id === colunaId)
@@ -207,7 +207,7 @@ export function Quadro({
       } catch {
         setCartoes(antes)
         setNoPainel((atual) => (atual?.id === cartaoId ? alvo : atual))
-        setErro('não deu para mover agora — tente de novo')
+        setErro('não deu para mover agora, tente de novo')
       }
     })
   }
@@ -217,12 +217,12 @@ export function Quadro({
    *
    * O defeito era este: arrastar movia o cartão otimista e abria o modal, e
    * cancelar só fechava o modal. O cartão ficava parado na etapa de ganho,
-   * visualmente concluído, sem conclusão nenhuma no servidor — que é o
+   * visualmente concluído, sem conclusão nenhuma no servidor, que é o
    * "sucesso visual persistente antes da confirmação" que a regra proíbe.
    *
    * O servidor já recebeu o `acaoMoverCartao`, e isso está certo: mover de
    * etapa é uma coisa, concluir é outra. O que se desfaz aqui é a etapa, com
-   * um movimento de volta, e não um `setCartoes` local — senão a tela e o
+   * um movimento de volta, e não um `setCartoes` local, senão a tela e o
    * banco discordariam no próximo recarregamento.
    */
   function cancelarFechamento() {
@@ -278,7 +278,7 @@ export function Quadro({
 
           **`flex-1` só quando há cartão.** Com o funil vazio as colunas têm um
           palmo de altura, e mandá-las ocupar a tela toda empurrava o convite
-          logo abaixo para o rodapé da janela — longe do kanban que ele explica,
+          logo abaixo para o rodapé da janela, longe do kanban que ele explica,
           com um vão de tela vazia no meio. Sem cartão elas ficam do tamanho que
           têm, e o convite encosta nelas. */}
       <div
@@ -307,7 +307,7 @@ export function Quadro({
             <section
               key={etapa.id}
               onDragOver={(e) => {
-                // Sem `preventDefault` o navegador recusa o solte — é a linha
+                // Sem `preventDefault` o navegador recusa o solte, é a linha
                 // que todo mundo esquece e faz o arrasto "não funcionar".
                 e.preventDefault()
                 setSobre(etapa.id)
@@ -332,7 +332,7 @@ export function Quadro({
 
                   O funil é lido de relance, várias vezes por dia: com sete
                   cabeçalhos cinzas idênticos, achar "Proposta" custa ler os
-                  sete nomes. A bolinha é reconhecida antes da leitura — e por
+                  sete nomes. A bolinha é reconhecida antes da leitura, e por
                   isso vem primeiro, na borda por onde o olho entra na coluna.
 
                   Etapas sem cor usam um ponto neutro para manter o alinhamento.
@@ -430,7 +430,7 @@ export function Quadro({
                         {/*
                           A barra à esquerda substituiu o pontinho âmbar: com ela
                           a coluna inteira se lê de cima a baixo sem ler texto
-                          nenhum — quem está esperando demais, o que já fechou, e
+                          nenhum, quem está esperando demais, o que já fechou, e
                           o que está em dia.
                         */}
                         <span
@@ -536,7 +536,7 @@ export function Quadro({
           <NovaEtapa clienteId={clienteId} quadroId={quadroId} />
         ) : (
           <p className="flex w-[220px] shrink-0 items-center rounded-xl border border-dashed border-line p-3 text-[11px] leading-[1.6] text-dim">
-            {LIMITE_DE_ETAPAS} etapas é o teto — acima disso elas não cabem lado a lado, e funil
+            {LIMITE_DE_ETAPAS} etapas é o teto, acima disso elas não cabem lado a lado, e funil
             maior que isso costuma ser dois funis.
           </p>
         )}
@@ -547,7 +547,7 @@ export function Quadro({
           **O convite fica embaixo das colunas, não acima delas.**
           
           Ele nasceu no topo e empurrava o funil inteiro para fora da tela: quem
-          abre a tela de Funis quer ver o funil, mesmo vazio — são as etapas que
+          abre a tela de Funis quer ver o funil, mesmo vazio, são as etapas que
           dizem o que este quadro faz. O convite responde "e agora?", que é a
           pergunta seguinte, e pergunta seguinte fica no lugar seguinte.
         */
@@ -617,7 +617,7 @@ export function Quadro({
 
       {/*
         A `key` é o que reseta o painel ao trocar de cartão. Sem ela, o painel
-        abriria com a linha do tempo da pessoa anterior até a nova chegar — e
+        abriria com a linha do tempo da pessoa anterior até a nova chegar, e
         limpar isso à mão dentro de um efeito é o padrão que o React pede para
         não usar.
       */}
@@ -797,7 +797,7 @@ export function AdicionarContato({
           ) : achados.length === 0 ? (
             <li className="px-1 py-3 text-[11.5px] leading-5 text-dim">
               {termo.trim() === ''
-                ? 'Todo mundo deste cliente já está no quadro — ou ainda não há contato nenhum.'
+                ? 'Todo mundo deste cliente já está no quadro, ou ainda não há contato nenhum.'
                 : 'Ninguém com esse nome fora do quadro.'}
             </li>
           ) : (
@@ -957,7 +957,7 @@ function NovaEtapa({ clienteId, quadroId }: { clienteId: string; quadroId: strin
 /**
  * Um menu por coluna, e não três botões soltos no cabeçalho.
  *
- * Renomear, mover e apagar são ações de arrumação — raras, e que não competem
+ * Renomear, mover e apagar são ações de arrumação, raras, e que não competem
  * pelo espaço com o nome da etapa e a contagem, que são o que se lê o tempo
  * todo. Três ícones ali dentro deixavam o cabeçalho apertado e o nome truncado
  * antes da hora.
@@ -1132,7 +1132,7 @@ function MenuDaEtapa({
                   : 'border-line hover:border-strong'
               }`}
             >
-              —
+              -
             </button>
             {CORES_DA_ETAPA.map((opcao) => (
               <button
@@ -1226,7 +1226,7 @@ function MenuDaEtapa({
   )
 }
 
-/** O caminho que não é arrasto — para o celular e para o teclado. */
+/** O caminho que não é arrasto, para o celular e para o teclado. */
 function MenuDoCartao({
   etapas,
   etapaAtual,
@@ -1262,7 +1262,7 @@ function MenuDoCartao({
    * posicionado por mais alto que seja o `z-index`. O resultado era o menu
    * aparecendo dentro do próprio cartão, com metade das opções invisíveis.
    *
-   * `fixed` escapa do corte porque sai do fluxo da coluna — e como nenhum
+   * `fixed` escapa do corte porque sai do fluxo da coluna, e como nenhum
    * ancestral usa `transform`, ele fica preso à janela, que é o que se quer.
    */
   const botao = useRef<HTMLButtonElement>(null)
@@ -1304,7 +1304,7 @@ function MenuDoCartao({
         const r = await acao()
         aoAvisar(r.ok ? (feito ?? null) : (r.erro ?? 'não deu certo'))
       } catch {
-        aoAvisar('não deu certo agora — tente de novo')
+        aoAvisar('não deu certo agora, tente de novo')
       }
     })
   }
@@ -1502,7 +1502,7 @@ function Voltar({ children, aoVoltar }: { children: React.ReactNode; aoVoltar: (
  * "Trazer meus contatos", no estado vazio.
  *
  * A faixa `TrazerTodos` já faz isso no topo da página, e ela some quando não há
- * ninguém de fora. Aqui o botão aparece junto do que explica o vazio — e diz o
+ * ninguém de fora. Aqui o botão aparece junto do que explica o vazio, e diz o
  * resultado em número, porque "trazidos" sem quantidade deixa quem clicou sem
  * saber se aconteceu alguma coisa.
  */
@@ -1531,11 +1531,11 @@ function TrazerMeusContatos({
             }
             aoAvisar(
               r.faltaram
-                ? `${r.postos} trazidos. Faltaram ${r.faltaram} — clique de novo.`
+                ? `${r.postos} trazidos. Faltaram ${r.faltaram}, clique de novo.`
                 : `${r.postos} trazidos para a primeira etapa.`,
             )
           } catch {
-            aoAvisar('não deu para trazer agora — tente de novo')
+            aoAvisar('não deu para trazer agora, tente de novo')
           }
         })
       }

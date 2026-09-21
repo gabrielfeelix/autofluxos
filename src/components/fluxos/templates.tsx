@@ -17,15 +17,15 @@ import {
  * Por que templates viraram tela, e não uma linha num `<select>`
  * ---------------------------------------------------------------------------
  *
- * Os modelos já existiam — escondidos num campo "Começar de" no fim do modal,
+ * Os modelos já existiam, escondidos num campo "Começar de" no fim do modal,
  * onde só cabe o nome. Nome sozinho não diz se o desenho serve: "Qualificar e
  * passar para alguém" e "Triagem completa" são a mesma frase para quem nunca
  * viu nenhum dos dois. O resultado prático é todo mundo criar em branco e
  * desenhar do zero um fluxo que já existia pronto.
  *
  * A galeria mostra **resumo e etiquetas**, e tem busca. Etiqueta é o que
- * responde a pergunta que a pessoa realmente tem na cabeça — "tem alguma coisa
- * de cobrança?", "e de agenda?" — sem precisar ler treze cartões.
+ * responde a pergunta que a pessoa realmente tem na cabeça, "tem alguma coisa
+ * de cobrança?", "e de agenda?", sem precisar ler treze cartões.
  *
  * ---------------------------------------------------------------------------
  * As duas perguntas do modal
@@ -36,7 +36,7 @@ import {
  * prontos a preencher formulário para chegar na lista.
  *
  * O modelo escolhido vai no mesmo campo `modelo` que o `acaoCriarFluxo` já
- * lia. Nada mudou no servidor — a decisão continua sendo dado de formulário, e
+ * lia. Nada mudou no servidor, a decisão continua sendo dado de formulário, e
  * modelo desconhecido continua caindo no esqueleto em branco.
  */
 
@@ -51,7 +51,7 @@ export type ModeloDeGaleria = {
 
 /**
  * O `acaoCriarFluxo` já ligado ao cliente. Devolve `void` porque termina em
- * `redirect()` — o desfecho é abrir o editor da automação nova.
+ * `redirect()`, o desfecho é abrir o editor da automação nova.
  */
 type Acao = (formData: FormData) => void | Promise<void>
 
@@ -115,7 +115,7 @@ function Busca({
  * O cartão de um template.
  *
  * O desenho vem antes do nome porque é ele que responde primeiro: a forma do
- * fluxo — leque, funil, laço, duas pistas — diz o que o template faz antes de
+ * fluxo, leque, funil, laço, duas pistas, diz o que o template faz antes de
  * qualquer palavra. Ver `desenhos.tsx` para a regra que mantém os doze como um
  * sistema, e não como doze ícones sorteados.
  */
@@ -164,7 +164,7 @@ export function GaleriaDeTemplates({
   /** Altura da lista rolável, em pixels. Sem valor, cresce com o conteúdo. */
   altura?: number
   /**
-   * Quantas colunas na largura grande. Duas dentro do modal, três na aba —
+   * Quantas colunas na largura grande. Duas dentro do modal, três na aba ,
    * ponto de quebra do Tailwind é da janela, não do contentor, e três colunas
    * dentro de um modal de 820px deixariam o desenho ilegível.
    */
@@ -243,7 +243,7 @@ function CamposDoFluxo({
   return (
     <form action={acao} className="flex flex-col gap-4">
       {/* O campo que o `acaoCriarFluxo` já lia. Em branco manda string vazia,
-          que cai no esqueleto — o mesmo caminho de sempre. */}
+          que cai no esqueleto, o mesmo caminho de sempre. */}
       <input type="hidden" name="modelo" value={modelo?.id ?? ''} />
 
       {modelo && (
@@ -318,7 +318,7 @@ type Passo = 'como' | 'templates' | 'formulario'
 /**
  * Um dos dois caminhos da primeira pergunta.
  *
- * O cartão inteiro é o botão — alvo grande, e nada de "clique aqui" dentro de
+ * O cartão inteiro é o botão, alvo grande, e nada de "clique aqui" dentro de
  * uma caixa que já é clicável. A miniatura ocupa o topo porque é ela que
  * responde primeiro; o texto confirma o que a imagem já disse.
  */
@@ -481,7 +481,7 @@ export function NovaAutomacao({
 /**
  * A aba Templates: a mesma galeria, sem modal na frente.
  *
- * Escolher abre só o passo final — quem entrou nesta aba já respondeu "quero um
+ * Escolher abre só o passo final, quem entrou nesta aba já respondeu "quero um
  * template" ao clicar nela.
  */
 export function AbaDeTemplates({

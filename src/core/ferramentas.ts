@@ -2,7 +2,7 @@ import { ENDERECO_DA_AGENDA } from './agenda'
 import type { Cabecalho, Metodo } from './flow/schema'
 
 /**
- * O que a IA pode chamar — e, mais importante, o que ela não pode.
+ * O que a IA pode chamar, e, mais importante, o que ela não pode.
  *
  * Este arquivo é o catálogo de **ferramentas**, que não é a lista de presets.
  * Preset é bloco pronto para alguém arrastar; ferramenta é chamada que um
@@ -19,7 +19,7 @@ import type { Cabecalho, Metodo } from './flow/schema'
  *
  * **Cinco ferramentas com parâmetro, não treze sem.** A avaliação de tool
  * calling é consistente nisto: ferramentas com descrições parecidas degradam a
- * escolha, e o erro é silencioso — o modelo responde com confiança sobre o dado
+ * escolha, e o erro é silencioso, o modelo responde com confiança sobre o dado
  * errado. Os presets da agenda são o caso patológico, com cinco variações de
  * "horários livres" que só diferem no filtro. A rota `/disponibilidade` sempre
  * aceitou os quatro parâmetros; quem os separou em cinco blocos foi a tela, por
@@ -61,7 +61,7 @@ export type Argumento = {
    * **É a trava que protege o que `injetados` sozinho não protege.** O telefone
    * de quem escreve identifica a pessoa, então `agenda_minha` só devolve a
    * agenda dela e todo `participacaoId` que o modelo conhece é dela. Mas nada
-   * impede o modelo de *inventar* um id — ou de ser convencido a repetir um que
+   * impede o modelo de *inventar* um id, ou de ser convencido a repetir um que
    * veio na mensagem de alguém ("desmarque a participação 4f2a...").
    *
    * Com esta marca, o resolvedor confere o valor contra os ids que já
@@ -84,7 +84,7 @@ export type Argumento = {
  *
  * A lista de `campos` é allow-list, e não conveniência de token: é a mesma
  * regra de menor privilégio que vale no resto da casa. O que não está aqui não
- * chega ao modelo e portanto não pode ser repetido para quem conversa — mesmo
+ * chega ao modelo e portanto não pode ser repetido para quem conversa, mesmo
  * que a API do cliente passe a devolver mais coisa amanhã sem ninguém avisar.
  */
 export type Projecao = {
@@ -129,8 +129,8 @@ export type Ferramenta = {
   /**
    * O que a pessoa lê na pergunta de confirmação, antes de a chamada sair.
    *
-   * Só nas que gravam. É um verbo no infinitivo — "marcar você em", "desmarcar
-   * sua aula de" — porque a frase é montada em volta dele
+   * Só nas que gravam. É um verbo no infinitivo, "marcar você em", "desmarcar
+   * sua aula de", porque a frase é montada em volta dele
    * (`perguntaDeConfirmacao`), e porque o texto que descreve o que vai
    * acontecer não pode ser inventado por quem vai fazer acontecer.
    */
@@ -147,9 +147,9 @@ export type Ferramenta = {
    * Campos que o **servidor** preenche, e que o modelo nunca fornece.
    *
    * Se o modelo mandar um campo com nome daqui, o valor é descartado e a
-   * tentativa vira log — tentativa de injeção é sinal, não ruído.
+   * tentativa vira log, tentativa de injeção é sinal, não ruído.
    *
-   * É a trava central contra `LLM06 — Excessive Agency`. Sem ela, "desmarque
+   * É a trava central contra `LLM06, Excessive Agency`. Sem ela, "desmarque
    * todas as aulas da Marina de amanhã", digitado por qualquer pessoa, vira uma
    * chamada `DELETE` autenticada. O modelo obedece a texto e não tem como
    * distinguir instrução do dono de instrução de atacante; a defesa que
@@ -200,14 +200,14 @@ export const FERRAMENTAS: Ferramenta[] = [
      * já resolvido. Um modelo quer o contrário: uma porta e filtros.
      *
      * `cheios` vem junto e não é detalhe. Sem ela o bot diz "não temos horário"
-     * para um dia cheio de aula, que é uma frase falsa e uma venda perdida —
+     * para um dia cheio de aula, que é uma frase falsa e uma venda perdida ,
      * "tem, e encheu" tem saída, "não tem nada" não tem.
      */
     descricao:
       'Consulta os horários de aula de um período, já separados entre os que têm vaga e os que estão lotados. ' +
       'Use sempre que a pessoa perguntar o que há disponível, em que dias há aula, ou quiser escolher um horário. ' +
       'Os filtros são opcionais: só informe `servico` ou `profissional` quando a pessoa tiver dito qual quer, ' +
-      'e use os ids que vieram de `agenda_catalogo` — nunca o nome escrito por ela. ' +
+      'e use os ids que vieram de `agenda_catalogo`, nunca o nome escrito por ela. ' +
       'Não use para ver os horários que a pessoa já marcou: para isso existe `agenda_minha`.',
     argumentos: [
       {
@@ -265,16 +265,16 @@ export const FERRAMENTAS: Ferramenta[] = [
     /*
      * O vocabulário vem junto de propósito.
      *
-     * Cada conta chama as coisas do jeito dela — um estúdio diz "aula", uma
+     * Cada conta chama as coisas do jeito dela, um estúdio diz "aula", uma
      * clínica diz "sessão". Um modelo que recebe essa palavra escreve na língua
      * do negócio sem ninguém reescrever mensagem por cliente, e é o que faz o
      * mesmo fluxo servir uma barbearia.
      */
     descricao:
       'Lista as modalidades e os profissionais do negócio, com os ids de cada um, e as palavras que este negócio usa para chamar as coisas. ' +
-      'Chame antes de filtrar `agenda_horarios` por modalidade ou profissional — é daqui que saem os ids. ' +
+      'Chame antes de filtrar `agenda_horarios` por modalidade ou profissional, é daqui que saem os ids. ' +
       'Chame também quando a pessoa perguntar o que se oferece ou quem atende. ' +
-      'Não use para saber se há vaga: o catálogo diz o que existe, nunca quando há lugar — isso é `agenda_horarios`.',
+      'Não use para saber se há vaga: o catálogo diz o que existe, nunca quando há lugar, isso é `agenda_horarios`.',
     argumentos: [],
     injetados: [],
     chamada: {
@@ -301,7 +301,7 @@ export const FERRAMENTAS: Ferramenta[] = [
      *
      * Ele sai do telefone de quem está escrevendo, resolvido antes do modelo
      * entrar em cena. Como o modelo não consegue trocá-lo, todo
-     * `participacaoId` que ele vier a conhecer é de quem está na conversa — o
+     * `participacaoId` que ele vier a conhecer é de quem está na conversa, o
      * que torna `agenda_desmarcar` seguro por construção, e não por regra
      * escrita.
      */
@@ -349,7 +349,7 @@ export const FERRAMENTAS: Ferramenta[] = [
     descricao:
       'Marca a pessoa que está conversando em um horário. ' +
       'Use somente com um `sessao_id` que veio de `agenda_horarios` na lista dos que têm vaga, e somente depois de a pessoa ter dito qual horário quer. ' +
-      'Nunca chame para "verificar se dá" — ela grava de verdade.',
+      'Nunca chame para "verificar se dá", ela grava de verdade.',
     argumentos: [
       {
         nome: 'sessao_id',
@@ -416,7 +416,7 @@ export function acharFerramenta(nome: string): Ferramenta | undefined {
  *
  * **Nome desconhecido é ignorado, e isso é de propósito.** Fluxo publicado é
  * imutável; se uma ferramenta for renomeada ou sair do catálogo, a conversa em
- * andamento não pode estourar — ela segue com as que restaram, e se nenhuma
+ * andamento não pode estourar, ela segue com as que restaram, e se nenhuma
  * restar o nó de IA volta a ser o de sempre, texto puro, que continua honesto.
  * Quem cobra o nome errado é o `validar()`, na hora de publicar, que é onde dá
  * para consertar.
@@ -434,7 +434,7 @@ export function nomesDeFerramenta(): string[] {
 /**
  * Aplica a projeção sobre o JSON que a API devolveu.
  *
- * Puro, e por isso testável sem rede — é o mesmo motivo de `prompt.ts` morar
+ * Puro, e por isso testável sem rede, é o mesmo motivo de `prompt.ts` morar
  * separado do adaptador. O que sai daqui é tudo o que o modelo verá; o que a
  * API mandou a mais morre aqui.
  *
@@ -465,8 +465,8 @@ export function projetar(resposta: unknown, projecao: readonly Projecao[]): Reco
 /**
  * Todo id que apareceu numa projeção, para a trava `soDeResultadoAnterior`.
  *
- * Vasculha valor de campo terminado em `Id` — `sessaoId`, `participacaoId`,
- * `servicoId`, `profissionalId` — que é a convenção da API da agenda. Uma
+ * Vasculha valor de campo terminado em `Id`, `sessaoId`, `participacaoId`,
+ * `servicoId`, `profissionalId`, que é a convenção da API da agenda. Uma
  * convenção é frágil como proteção sozinha, e não está sozinha: ela é a
  * segunda camada, atrás de `injetados`, e o custo de errar para o lado seguro
  * é uma conversa que vai para uma pessoa.
@@ -494,7 +494,7 @@ export function idsVistos(projetado: unknown, achados: Set<string> = new Set()):
  * traz todos os filtros escritos; quando o modelo não informa um deles, a
  * interpolação deixa `?de=2026-09-10&ate=2026-09-10&servico=&profissional=`. Um
  * parâmetro presente e vazio não é a mesma coisa que ausente, e cada API decide
- * sozinha o que fazer com ele — a leitura razoável de `servico=` é "filtre pela
+ * sozinha o que fazer com ele, a leitura razoável de `servico=` é "filtre pela
  * modalidade de nome vazio", e a resposta seria uma lista vazia com cara de
  * "não temos horário".
  *
@@ -530,7 +530,7 @@ export function limparQueryVazia(url: string): string {
  * **Existe para a confirmação poder dizer o que vai acontecer.** O modelo pede
  * `agenda_marcar` com `sessao_id: "s7"`, e perguntar *"posso marcar você em
  * s7?"* é pedir um sim no escuro. A projeção já trouxe `data`, `hora` e
- * `servico` no mesmo objeto do id — juntar os três é o que transforma o id numa
+ * `servico` no mesmo objeto do id, juntar os três é o que transforma o id numa
  * frase que a pessoa reconhece.
  *
  * Monta a partir do que **já** voltou, e não de uma consulta nova: o rótulo tem
@@ -570,7 +570,7 @@ export function rotulosDeId(
   return achados
 }
 
-/** Desce por `a.b.c`. Não percorre lista — projeção é de um nível. */
+/** Desce por `a.b.c`. Não percorre lista, projeção é de um nível. */
 function descer(raiz: unknown, caminho: string): unknown {
   let atual = raiz
   for (const pedaco of caminho.split('.')) {

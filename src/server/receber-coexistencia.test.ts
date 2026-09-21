@@ -15,7 +15,7 @@ import {
  * Testados aqui, e não pelo webhook inteiro, pela mesma razão do Instagram: é
  * onde moram as armadilhas do formato, e passar pelo banco esconderia qual
  * delas quebrou. O handoff pede explicitamente estes testes **antes** de
- * assinar os campos na Meta — webhook chegando em código que não digere o
+ * assinar os campos na Meta, webhook chegando em código que não digere o
  * payload vira erro silencioso em produção.
  */
 
@@ -24,7 +24,7 @@ const NUMERO_DO_NEGOCIO = '5544740074380'
 describe('a direção de uma mensagem importada', () => {
   /**
    * A decisão que o handoff deixou em aberto. Errar aqui inverte a conversa
-   * inteira na tela — o que o cliente disse aparece como resposta nossa — e
+   * inteira na tela, o que o cliente disse aparece como resposta nossa, e
    * como o histórico é importado uma vez só, não há segunda chance.
    */
   it('`from` igual ao número do negócio é saída', () => {
@@ -40,7 +40,7 @@ describe('a direção de uma mensagem importada', () => {
    *
    * Passava-se o `phone_number_id` (110549275215531) onde a Meta manda o
    * número (5511911001414). Os dois são dígitos de tamanho parecido, então o
-   * tipo não reclamava e o teste acima passava — porque usava o mesmo valor dos
+   * tipo não reclamava e o teste acima passava, porque usava o mesmo valor dos
    * dois lados. Em produção, nenhuma comparação dava verdadeira e o histórico
    * inteiro do primeiro cliente virou "entrada": a tela mostrava só o que o
    * contato escreveu, como se o dono nunca tivesse respondido.
@@ -58,7 +58,7 @@ describe('a direção de uma mensagem importada', () => {
 
   /*
    * `display_phone_number` vem formatado da Meta e o `from` vem cru. Comparar
-   * como texto erraria sempre — de um jeito ainda mais difícil de ver.
+   * como texto erraria sempre, de um jeito ainda mais difícil de ver.
    */
   it('número formatado casa com o cru', () => {
     expect(direcaoDaMensagem({ from: '5511911001414' }, '+55 11 91100-1414')).toBe('saida')
@@ -107,7 +107,7 @@ describe('de quem é a ficha', () => {
 describe('o carimbo da Meta', () => {
   /**
    * Ela manda **segundos**, como string. Tratar como milissegundos põe a
-   * conversa em 1970 — e o histórico é importado uma vez só.
+   * conversa em 1970, e o histórico é importado uma vez só.
    */
   it('segundos viram a data certa', () => {
     expect(carimboDaMeta('1757808000')).toBe(new Date(1757808000 * 1000).toISOString())
@@ -128,7 +128,7 @@ describe('qual campo é de coexistência', () => {
 
   /**
    * `messages` continua no outro arquivo. Se ele passasse por aqui, a mensagem
-   * ao vivo seria processada duas vezes — uma pelo caminho de sempre e outra
+   * ao vivo seria processada duas vezes, uma pelo caminho de sempre e outra
    * como se fosse histórico.
    */
   it('não reconhece `messages` nem campo desconhecido', () => {
@@ -182,7 +182,7 @@ describe('o envelope', () => {
 
   /**
    * Armadilha: a recusa do cliente chega como **erro** e não é falha. Se o
-   * schema não a lesse, ela viraria alerta — pedindo para alguém investigar uma
+   * schema não a lesse, ela viraria alerta, pedindo para alguém investigar uma
    * escolha que o cliente tomou de propósito.
    */
   it('lê a recusa de compartilhar histórico como erro legível', () => {
@@ -208,7 +208,7 @@ describe('o envelope', () => {
   })
 
   /**
-   * Armadilha 3: `remove` vem **sem os nomes**. O schema precisa aceitar isso —
+   * Armadilha 3: `remove` vem **sem os nomes**. O schema precisa aceitar isso ,
    * exigir `full_name` faria toda remoção da agenda ser descartada.
    */
   it('lê a agenda, com `add` completo e `remove` só com telefone', () => {
@@ -249,7 +249,7 @@ describe('o envelope', () => {
   /**
    * Armadilha 2: mídia velha chega como `media_placeholder` **sem conteúdo**, e
    * o conteúdo nunca vem se for mais velha que duas semanas. O schema não pode
-   * exigir corpo — senão metade do histórico seria descartada.
+   * exigir corpo, senão metade do histórico seria descartada.
    */
   it('aceita o placeholder de mídia, que chega sem conteúdo', () => {
     const analise = webhookDeCoexistenciaSchema.safeParse({
@@ -333,7 +333,7 @@ describe('o envelope', () => {
   /**
    * A sincronização pode levar **até 6 horas** e pode falhar de vez (relato de
    * quem implementou, não da doc da Meta). O `progress` é o que separa "ainda
-   * rodando" de "morreu no meio" — se o schema não o lesse, as duas situações
+   * rodando" de "morreu no meio", se o schema não o lesse, as duas situações
    * ficariam idênticas vistas de fora: nenhum dado novo chegando.
    */
   it('lê o progresso dos dois syncs', () => {
@@ -378,10 +378,10 @@ describe('o envelope', () => {
   })
 })
 
-describe('PARTNER_ADDED — o onboarding que a Meta avisa por webhook', () => {
+describe('PARTNER_ADDED, o onboarding que a Meta avisa por webhook', () => {
   /**
    * O payload real, da doc da Meta (`account_update` reference). O que importa
-   * aqui é a forma: `waba_info.waba_id` existe, e **`phone_number_id` não** —
+   * aqui é a forma: `waba_info.waba_id` existe, e **`phone_number_id` não** ,
    * é por isso que este evento não consegue concluir o onboarding sozinho.
    */
   const partnerAdded = {
@@ -411,7 +411,7 @@ describe('PARTNER_ADDED — o onboarding que a Meta avisa por webhook', () => {
     expect(lido.success).toBe(true)
   })
 
-  it('traz a WABA e **não** traz o número — o motivo de não concluir sozinho', () => {
+  it('traz a WABA e **não** traz o número, o motivo de não concluir sozinho', () => {
     const lido = webhookDeCoexistenciaSchema.parse(partnerAdded)
     const valor = lido.entry[0]?.changes[0]?.value as Record<string, unknown>
 
@@ -437,7 +437,7 @@ describe('PARTNER_ADDED — o onboarding que a Meta avisa por webhook', () => {
    * Este teste existe porque o anterior passava verde com o bug presente: ele
    * montava o echo em `messages`, que é o formato que *nós* inventamos, não o
    * que a Meta manda. O campo real é `message_echoes`, e `tratarEcos` lia
-   * `messages` — o laço não achava nada, a função terminava com sucesso, e o
+   * `messages`, o laço não achava nada, a função terminava com sucesso, e o
    * echo sumia sem erro nem alerta.
    *
    * Custou o Inbox de um cliente e horas concluindo que "a Meta não manda".

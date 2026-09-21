@@ -13,22 +13,22 @@ import { segredosAtivos, marcarChamada } from '@/server/repos/webhooks-de-entrad
  * preset `verandi-espera` diz, com estas palavras, "transforma o 'está lotado'
  * em 'te aviso se abrir'. Quando alguém desmarca, a agenda dispara o aviso". A
  * Verandi dispara. Não havia rota para receber, e quem entrou na fila nunca foi
- * avisado — sem nenhum sinal de que isso estava acontecendo.
+ * avisado, sem nenhum sinal de que isso estava acontecendo.
  *
  * É **superfície pública**, então nasce com as quatro defesas do produto, nesta
- * ordem — da mais barata para a mais cara:
+ * ordem, da mais barata para a mais cara:
  *
  * 1. **teto de corpo** (413), antes de ler qualquer coisa;
  * 2. **limite por cliente**, no contador atômico da 0014;
  * 3. **assinatura HMAC por cliente**, conferida em tempo constante;
- * 4. **nada estoura dentro do `after()`** — regra 4 do ESTADO.md.
+ * 4. **nada estoura dentro do `after()`**, regra 4 do ESTADO.md.
  *
  * A ordem importa: conferir assinatura primeiro obrigaria a ir ao cofre antes
  * de saber se o corpo tem tamanho aceitável, o que transformaria uma inundação
  * de lixo em uma inundação de leituras do Vault.
  */
 
-/** 64 KB. Um evento é `{evento, telefone, dados}` — quem manda mais não é evento. */
+/** 64 KB. Um evento é `{evento, telefone, dados}`, quem manda mais não é evento. */
 const LIMITE_DO_CORPO_EM_BYTES = 64 * 1024
 
 /**
@@ -38,7 +38,7 @@ const LIMITE_DO_CORPO_EM_BYTES = 64 * 1024
  * e vários clientes podem ser servidos pelo mesmo (a Verandi é literalmente
  * isso). Chavear por IP faria o volume de um cliente calar o webhook de outro.
  *
- * 120/min cobre a rajada real — uma agenda que cancela vinte aulas de uma vez —
+ * 120/min cobre a rajada real, uma agenda que cancela vinte aulas de uma vez ,
  * e continua barrando script.
  */
 const TETO_POR_MINUTO = 120
@@ -57,7 +57,7 @@ const corpoSchema = z.object({
   /** Quem. É o telefone, porque é a identidade que o WhatsApp usa. */
   telefone: z.string().trim().min(1).max(40),
   /**
-   * O que mais o evento traz. Livre de propósito — quem define é o outro lado —
+   * O que mais o evento traz. Livre de propósito, quem define é o outro lado ,
    * e usado só para a anotação quando a janela de 24h está fechada.
    */
   dados: z.record(z.unknown()).optional(),
@@ -115,7 +115,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ cliente
   const analise = corpoSchema.safeParse(bruto)
   if (!analise.success) {
     // 400 e **não** 200: aqui a assinatura já conferiu, então quem manda é um
-    // parceiro legítimo com o corpo errado. Ele precisa saber disso — responder
+    // parceiro legítimo com o corpo errado. Ele precisa saber disso, responder
     // 200 faria o defeito virar silêncio dos dois lados.
     return Response.json({ erro: 'corpo inválido: espera { evento, telefone }' }, { status: 400 })
   }
@@ -133,7 +133,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ cliente
       })
     } catch (erro) {
       // Já respondemos 200. Deixar estourar aqui produziria um unhandled
-      // rejection sem ninguém para ver — e um aviso que não saiu, em silêncio,
+      // rejection sem ninguém para ver, e um aviso que não saiu, em silêncio,
       // que é exatamente o defeito que esta rota existe para consertar.
       console.error('[webhook-entrada] falhou ao processar', erro)
       await alertar('o processamento do evento falhou', erro, { cliente: clienteId })
@@ -152,14 +152,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ cliente
 }
 
 /**
- * Qual webhook desta conta assinou este corpo — ou `null`.
+ * Qual webhook desta conta assinou este corpo, ou `null`.
  *
  * **Confere contra todos os ativos da conta**, porque a chamada não diz qual
  * webhook ela é: ela traz uma assinatura e mais nada. Exigir um id no caminho
  * daria a quem chama uma forma de enumerar webhooks de outras contas.
  *
  * A comparação é em **tempo constante**. Comparar com `===` vazaria, pelo tempo
- * de resposta, quantos bytes iniciais o atacante já acertou — e com um endereço
+ * de resposta, quantos bytes iniciais o atacante já acertou, e com um endereço
  * público isso é um oráculo para descobrir a assinatura byte a byte.
  */
 async function qualWebhookAssinou(

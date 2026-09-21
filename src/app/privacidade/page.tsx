@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { Item, Lista, PaginaLegal, type SecaoLegal } from '../(site)/pagina-legal'
 
 /**
- * A política de privacidade — **pública, e por exigência da Meta**.
+ * A política de privacidade, **pública, e por exigência da Meta**.
  *
  * O app review do WhatsApp Business Platform pede uma URL de política de
  * privacidade acessível sem login. Sem ela o app nem chega a ser avaliado, e o
@@ -17,14 +17,14 @@ import { Item, Lista, PaginaLegal, type SecaoLegal } from '../(site)/pagina-lega
  * correspondente no código: os dados listados são as colunas de `contacts` e
  * `messages`, o prazo é `MESES_DE_RETENCAO_PADRAO`, e a parte de IA é o
  * `contextoNegocio` mais a conversa indo ao Gemini. Se o comportamento mudar,
- * esta página muda junto — política que descreve outro produto é pior do que
+ * esta página muda junto, política que descreve outro produto é pior do que
  * não ter política.
  *
  * **A roupa mudou em set/2026 e o texto não.** Ela era Tailwind cru numa coluna
  * de 760px e parecia um documento colado no navegador; agora usa os mesmos
  * tokens e a mesma luz da landing, com índice fixo, porque política é documento
  * de consulta e ninguém a lê da primeira à última linha. Nenhuma frase do
- * conteúdo jurídico foi alterada nessa passagem — nem quando a moldura saiu
+ * conteúdo jurídico foi alterada nessa passagem, nem quando a moldura saiu
  * daqui para `(site)/pagina-legal.tsx`, para os termos e a exclusão de dados
  * nascerem com a mesma cara em vez de com uma cópia dela.
  */
@@ -174,7 +174,7 @@ const SECOES: readonly SecaoLegal[] = [
           </Item>
           <Item>
             <strong>Entregamos o mínimo necessário.</strong> Respondemos com o recorte estrito do
-            que foi pedido e do que a lei obriga — nunca a conversa inteira quando bastam
+            que foi pedido e do que a lei obriga, nunca a conversa inteira quando bastam
             metadados, nunca a base inteira quando basta um contato.
           </Item>
           <Item>
@@ -226,7 +226,7 @@ const SECOES: readonly SecaoLegal[] = [
         </p>
         <p>
           68.770.493 GABRIEL FELIX BARBOSA (4YU) · CNPJ 68.770.493/0001-82 · Rua Osvaldo Cruz,
-          297 — Zona 07 — Maringá/PR — CEP 87020-200.
+          297, Zona 07, Maringá/PR, CEP 87020-200.
         </p>
       </>
     ),

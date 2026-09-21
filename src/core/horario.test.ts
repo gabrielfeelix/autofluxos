@@ -64,7 +64,7 @@ describe('tem gente para atender agora?', () => {
     expect(atendimentoAberto(COMERCIAL, quarta('15:30:00'))).toBe(false)
   })
 
-  it('às 3h da manhã, não — que é o caso que motivou tudo isto', () => {
+  it('às 3h da manhã, não, que é o caso que motivou tudo isto', () => {
     expect(atendimentoAberto(COMERCIAL, quarta('06:00:00'))).toBe(false)
   })
 
@@ -74,7 +74,7 @@ describe('tem gente para atender agora?', () => {
   })
 
   it('o fuso é o da conta, não o do servidor', () => {
-    // A Vercel roda em UTC. Às 23h UTC de quarta já são 20h em São Paulo —
+    // A Vercel roda em UTC. Às 23h UTC de quarta já são 20h em São Paulo ,
     // fechado. Lendo o relógio do processo, o servidor diria que está aberto.
     expect(atendimentoAberto(COMERCIAL, quarta('23:00:00'))).toBe(false)
 
@@ -121,7 +121,7 @@ describe('quando abre de novo', () => {
     expect(proximaAbertura(SEMPRE_ABERTO, quarta('06:00:00'))).toBeNull()
   })
 
-  it('faixa invertida não é anunciada — as duas funções concordam sobre o que vale', () => {
+  it('faixa invertida não é anunciada, as duas funções concordam sobre o que vale', () => {
     // `atendimentoAberto` já recusava esta faixa. Anunciá-la aqui prometeria um
     // horário em que ninguém vai responder, que é pior do que não prometer.
     const torto: HorarioDeAtendimento = {

@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
  *
  * Em 13/set/2026 o Embedded Signup devolveu um `waba_id` na query, nós
  * confiamos nele, e o app foi inscrito numa WABA que não continha o número.
- * Webhook de WABA sem app inscrito não é entregue — sem erro, sem log, sem
+ * Webhook de WABA sem app inscrito não é entregue, sem erro, sem log, sem
  * nada. Nada entrou no Inbox daquele cliente, e os dois syncs de uso único
  * queimaram apontados para o lugar errado.
  *
@@ -22,7 +22,7 @@ vi.stubGlobal('fetch', fetchFalso)
 
 const { wabaQueContemONumero } = await import('./conexao')
 
-/** A WABA que o retorno do Embedded Signup apontou — e que não tem o número. */
+/** A WABA que o retorno do Embedded Signup apontou, e que não tem o número. */
 const WABA_DO_RETORNO = '2042524849790437'
 /** A WABA onde o número realmente vive. */
 const WABA_CERTA = '101920619426215'
@@ -70,7 +70,7 @@ describe('wabaQueContemONumero', () => {
   it('acha o número na segunda WABA quando a primeira não o tem', async () => {
     fetchFalso
       .mockImplementationOnce(() => resposta(debugToken(WABA_DO_RETORNO, WABA_CERTA)))
-      // a WABA do retorno existe e responde — só não tem este número
+      // a WABA do retorno existe e responde, só não tem este número
       .mockImplementationOnce(() => resposta(numeros('999888777666555')))
       .mockImplementationOnce(() => resposta(numeros(NUMERO)))
 
@@ -112,7 +112,7 @@ describe('wabaQueContemONumero', () => {
     await expect(wabaQueContemONumero(NUMERO, 'token')).resolves.toBeNull()
   })
 
-  it('devolve null — e não estoura — quando o debug_token falha', async () => {
+  it('devolve null, e não estoura, quando o debug_token falha', async () => {
     fetchFalso.mockImplementationOnce(() => falha(500))
 
     await expect(wabaQueContemONumero(NUMERO, 'token')).resolves.toBeNull()

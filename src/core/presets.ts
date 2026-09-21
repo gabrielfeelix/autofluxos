@@ -2,13 +2,13 @@ import { ENDERECO_DA_AGENDA } from './agenda'
 import type { AoFalhar, Cabecalho, Mapeamento, Metodo } from './flow/schema'
 
 /**
- * Integrações prontas, como **preset de bloco `http`** — não como tipo de nó
+ * Integrações prontas, como **preset de bloco `http`**, não como tipo de nó
  * novo (B6, §3.11 do plano).
  *
  * O bloco de Serviços externos já fala com qualquer API. Ele é mais poderoso e
  * menos usável do que o menu de integrações que os concorrentes mostram:
  * poderoso porque alcança tudo, menos usável porque obriga a montar o POST na
- * mão, com o endereço certo, o cabeçalho certo e o JSON certo — três lugares
+ * mão, com o endereço certo, o cabeçalho certo e o JSON certo, três lugares
  * para errar em silêncio.
  *
  * **Preset resolve isso sem criar superfície nova.** Escolher "RD Station"
@@ -19,7 +19,7 @@ import type { AoFalhar, Cabecalho, Mapeamento, Metodo } from './flow/schema'
  * Isso importa por causa da regra que não se negocia aqui: versão publicada é
  * imutável. Se o preset fosse uma referência, mudar o endereço da RD amanhã
  * mudaria por baixo o que uma conversa em andamento vai chamar. Do jeito que
- * está, mudar o preset só afeta quem aplicar dali para frente — como deve ser.
+ * está, mudar o preset só afeta quem aplicar dali para frente, como deve ser.
  *
  * **Zapier não entra.** É o iPaaS que o print da leva anterior mostrou custando
  * 5.000 ações que ninguém usava, e mandar o cliente montar a automação lá fora
@@ -31,7 +31,7 @@ import type { AoFalhar, Cabecalho, Mapeamento, Metodo } from './flow/schema'
  *
  * Passou a existir quando a agenda entrou com nove blocos de uma vez: uma lista
  * corrida de quatorze itens é uma lista que ninguém lê até o fim, e o de baixo
- * some. A gaveta também **conta uma história** — os nove da Verandi são um fluxo
+ * some. A gaveta também **conta uma história**, os nove da Verandi são um fluxo
  * inteiro na ordem da conversa, e não nove integrações soltas.
  */
 export const GRUPOS_DE_PRESET = ['agenda', 'planilha', 'crm', 'outros'] as const
@@ -84,7 +84,7 @@ export const PRESETS: Preset[] = [
     credencial: 'query',
     dados: {
       metodo: 'POST',
-      // A chave entra pela credencial do tipo `query`, resolvida no servidor —
+      // A chave entra pela credencial do tipo `query`, resolvida no servidor ,
       // ela nunca aparece aqui nem na versão publicada.
       url: 'https://api.rd.services/platform/conversions',
       cabecalhos: [{ chave: 'Content-Type', valor: 'application/json' }],
@@ -103,7 +103,7 @@ export const PRESETS: Preset[] = [
       mapear: [{ variavel: 'rd_evento', caminho: 'event_uuid' }],
       // **Falha de CRM não pode acordar uma pessoa.** O lead já está no nosso
       // banco; não ter chegado na RD é problema de sincronia, não de
-      // atendimento — e handoff aqui encheria a fila com conversas que não
+      // atendimento, e handoff aqui encheria a fila com conversas que não
       // precisam de ninguém.
       aoFalhar: 'seguir',
     },
@@ -115,7 +115,7 @@ export const PRESETS: Preset[] = [
     resumo:
       'Acrescenta uma linha numa planilha por um Web App do Apps Script. É o caminho de quem quer ver os leads numa planilha.',
     exige:
-      'Um Web App publicado no Apps Script (Implantar → Novo, acesso “qualquer pessoa”). A chave já vem na URL que o Google gera — cole-a no endereço abaixo.',
+      'Um Web App publicado no Apps Script (Implantar → Novo, acesso “qualquer pessoa”). A chave já vem na URL que o Google gera, cole-a no endereço abaixo.',
     credencial: 'nenhuma',
     dados: {
       metodo: 'POST',
@@ -131,30 +131,30 @@ export const PRESETS: Preset[] = [
     },
   },
   /**
-   * Ler a planilha — o que faltava.
+   * Ler a planilha, o que faltava.
    *
    * O preset de Sheets que existia só **escrevia** (acrescentar linha). Mas o
    * caso que aparece toda semana é o contrário: o negócio inteiro do cliente
-   * mora numa planilha, e o bot precisa **consultar** — horário livre, professor
+   * mora numa planilha, e o bot precisa **consultar**, horário livre, professor
    * do dia, preço da tabela.
    *
    * A leitura é feita pelo bot, e não pela IA, e a diferença não é detalhe: a
    * IA responde por probabilidade, e horário é fato. Ela inventaria uma vaga que
    * não existe num dia ruim, e o erro só apareceria com a aluna já no estúdio.
    * Aqui o bloco lê a célula e a **pergunta dinâmica** transforma o conteúdo em
-   * botões — a pessoa escolhe entre o que existe de verdade. A IA continua
+   * botões, a pessoa escolhe entre o que existe de verdade. A IA continua
    * ótima na camada de cima: entender "queria de manhã, mais pro fim da semana"
    * e virar `dia=sexta` antes da consulta rodar.
    *
    * **Duas portas, porque os clientes são dois.** O Apps Script não pede chave
    * do Google nem planilha pública, e é o mesmo gesto que quem já usa o preset
    * de escrever aprendeu. A API v4 é uma chamada direta, sem nada publicado,
-   * mas exige a planilha aberta por link — o que é aceitável para uma grade de
+   * mas exige a planilha aberta por link, o que é aceitável para uma grade de
    * horários e inaceitável para uma lista de alunos.
    *
    * O formato do que se lê está fechado em `docs/PLANILHAS.md`: uma aba
    * `AutoFluxos`, um intervalo nomeado por dia, e a célula com os valores
-   * separados por ponto e vírgula — que é exatamente o que `opcoesDe` espera.
+   * separados por ponto e vírgula, que é exatamente o que `opcoesDe` espera.
    */
   {
     id: 'google-sheets-ler',
@@ -163,7 +163,7 @@ export const PRESETS: Preset[] = [
     resumo:
       'Lê um intervalo nomeado da planilha e devolve os valores para a conversa. É o caminho de quem gere horário, tabela ou estoque em planilha.',
     exige:
-      'Um Web App publicado no Apps Script devolvendo o intervalo em JSON (Implantar → Novo, acesso “qualquer pessoa”). A chave já vem na URL que o Google gera — cole-a no endereço. A planilha não precisa ser pública.',
+      'Um Web App publicado no Apps Script devolvendo o intervalo em JSON (Implantar → Novo, acesso “qualquer pessoa”). A chave já vem na URL que o Google gera, cole-a no endereço. A planilha não precisa ser pública.',
     credencial: 'nenhuma',
     dados: {
       metodo: 'GET',
@@ -194,7 +194,7 @@ export const PRESETS: Preset[] = [
       url: 'https://sheets.googleapis.com/v4/spreadsheets/COLE-O-ID-DA-PLANILHA/values/{{dia}}',
       cabecalhos: [],
       corpo: '',
-      // A API devolve `{ "values": [["7h00;10h00;15h00"]] }` — matriz de linhas
+      // A API devolve `{ "values": [["7h00;10h00;15h00"]] }`, matriz de linhas
       // por colunas. O caminho pega a primeira célula, que é onde o contrato de
       // leitura manda a planilha juntar os valores.
       mapear: [{ variavel: 'horarios', caminho: 'values.0.0' }],
@@ -209,7 +209,7 @@ export const PRESETS: Preset[] = [
    * fronteira do ARQUITETURA.md continua de pé: o AutoFluxos não guarda turma,
    * matrícula nem presença; ele lê e escreve pela API, e o dado mora lá. O que
    * estes presets fazem é tirar da frente as três coisas que se erra em
-   * silêncio ao montar a chamada na mão — o endereço, o caminho do campo, e o
+   * silêncio ao montar a chamada na mão, o endereço, o caminho do campo, e o
    * `[]` que transforma a lista em menu.
    *
    * **Todos usam a mesma credencial**, uma só por cliente: a chave `vr_` dele,
@@ -224,7 +224,7 @@ export const PRESETS: Preset[] = [
     grupo: 'agenda',
     nome: 'Verandi · reconhecer quem está falando',
     resumo:
-      'Procura o telefone de quem escreveu na agenda e traz nome e id. É o primeiro bloco de qualquer fluxo de agendamento — sem ele, o bot pergunta o nome de quem faz aula há dois anos.',
+      'Procura o telefone de quem escreveu na agenda e traz nome e id. É o primeiro bloco de qualquer fluxo de agendamento, sem ele, o bot pergunta o nome de quem faz aula há dois anos.',
     exige:
       'A chave da API da Verandi (Configurações → Integrações). Cadastre em Credenciais como “bearer”.',
     credencial: 'bearer',
@@ -245,7 +245,7 @@ export const PRESETS: Preset[] = [
       /*
        * Não reconhecer **não é falhar**: a rota responde 200 com `total: 0`, e
        * o fluxo segue para o ramo de quem é novo por uma condição sobre
-       * `encontrado`. `aoFalhar` só vale quando a chamada em si não completa —
+       * `encontrado`. `aoFalhar` só vale quando a chamada em si não completa ,
        * e aí seguir seria pior: o fluxo trataria uma aluna antiga como pessoa
        * nova e criaria o segundo cadastro dela.
        */
@@ -263,7 +263,7 @@ export const PRESETS: Preset[] = [
     dados: {
       metodo: 'GET',
       // As duas datas vêm de uma pergunta com formato `data` guardando o
-      // padronizado, que é `2026-08-21` — o formato que esta rota aceita.
+      // padronizado, que é `2026-08-21`, o formato que esta rota aceita.
       url: `${ENDERECO_DA_AGENDA}/disponibilidade?de={{data_de}}&ate={{data_ate}}`,
       cabecalhos: [],
       corpo: '',
@@ -292,23 +292,23 @@ export const PRESETS: Preset[] = [
       /*
        * Duas listas para o menu, e uma para o que não coube nele.
        *
-       * `horarios` é o que a pessoa lê — **hora, aula e professor na mesma
+       * `horarios` é o que a pessoa lê, **hora, aula e professor na mesma
        * linha**, porque "07:00" sozinho não responde "qual aula é essa?" nem
        * "com quem?", que são as duas perguntas que sempre vêm em seguida.
        * O rótulo para em dois campos porque o botão do WhatsApp aceita 20
        * caracteres: `07:00 · Pilates solo` já são os 20. O professor fica em
-       * `horarios_prof`, para a mensagem antes do menu dizer quem atende — com
+       * `horarios_prof`, para a mensagem antes do menu dizer quem atende, com
        * `formato: 'nomes'`, porque a rota devolve **um professor por horário** e
        * sem isso a frase saía "quem atende é: Carol;Carol;Carol;Márcia".
        *
        * `horarios_id` é o que a API entende. Na Pergunta: opções de `horarios`,
-       * valores de `horarios_id`. **Nenhuma das duas pode ter "sem repetir"** —
+       * valores de `horarios_id`. **Nenhuma das duas pode ter "sem repetir"** ,
        * tirar um item de uma desloca os valores da outra, e o agendamento vai
        * para o horário de alguém.
        *
        * `lotados` vem na mesma chamada e existe para separar duas conversas
        * diferentes que viravam a mesma: "não tem nada nesse dia" e "tem, e
-       * encheu". A segunda tem saída — é o gancho da fila de espera —, e sem
+       * encheu". A segunda tem saída, é o gancho da fila de espera , e sem
        * esta lista o bot dizia "não temos horário" para um dia cheio de aula.
        */
       mapear: [
@@ -336,7 +336,7 @@ export const PRESETS: Preset[] = [
        * O filtro é da própria rota, e não uma lista peneirada aqui.
        *
        * Peneirar do nosso lado significaria trazer o dia inteiro e jogar fora o
-       * que não serve — e o teto de 10 itens do menu cortaria antes da peneira,
+       * que não serve, e o teto de 10 itens do menu cortaria antes da peneira,
        * escondendo justamente os horários do professor pedido.
        */
       url: `${ENDERECO_DA_AGENDA}/disponibilidade?de={{dia}}&ate={{dia}}&profissional={{professor_id}}`,
@@ -352,16 +352,16 @@ export const PRESETS: Preset[] = [
     },
   },
   /*
-   * Filtrar por modalidade — o que faltava para o fluxo de agendamento.
+   * Filtrar por modalidade, o que faltava para o fluxo de agendamento.
    *
    * Veio de quem opera descrevendo a conversa real: *"ele consulta primeiro a
-   * modalidade que a pessoa citou — pode ter clicado em personal, pode ter
-   * clicado em pilates, pode ter clicado em fisioterapia — e a partir disso
+   * modalidade que a pessoa citou, pode ter clicado em personal, pode ter
+   * clicado em pilates, pode ter clicado em fisioterapia, e a partir disso
    * identifica a modalidade, depois cita os dias e horários com base naquela
    * modalidade"*.
    *
    * Sem isto o bot oferecia o dia inteiro e a pessoa escolhia um horário de
-   * outra modalidade — e o erro só aparecia com ela já no estúdio. O `servico`
+   * outra modalidade, e o erro só aparecia com ela já no estúdio. O `servico`
    * é o mesmo id que o catálogo devolve em `servicos_id`, guardado por uma
    * pergunta com lista de valores.
    *
@@ -398,7 +398,7 @@ export const PRESETS: Preset[] = [
    *
    * É o par do de cima na outra ponta da conversa: primeiro *quais dias*, e só
    * depois *quais horários daquele dia*. Quem opera descreveu exatamente essa
-   * ordem — "cita os dias e horários com base naquela modalidade".
+   * ordem, "cita os dias e horários com base naquela modalidade".
    *
    * `unicos` aqui é obrigatório e **não** desalinha par nenhum: esta lista vai
    * sozinha para o menu, sem uma lista de ids do lado. O que a pessoa escolhe é
@@ -584,7 +584,7 @@ export const PRESETS: Preset[] = [
        * Data **e hora** na mesma linha, e não só a data.
        *
        * Duas aulas no mesmo dia viravam duas opções idênticas no menu de
-       * desmarcar — e escolher entre duas linhas iguais é escolher no escuro.
+       * desmarcar, e escolher entre duas linhas iguais é escolher no escuro.
        * Com o modelo de rótulo, cada linha diz o dia, a hora e qual aula é.
        */
       mapear: [
@@ -602,7 +602,7 @@ export const PRESETS: Preset[] = [
          *
          * Pedido de quem opera, literal: *"assim que identificar o aluno, ele
          * conseguir salvar essa informação para que já possamos informar ao
-         * aluno — você tem x aulas para repor"*. A lista já existia acima, e
+         * aluno, você tem x aulas para repor"*. A lista já existia acima, e
          * ela não serve para essa frase: numa mensagem sai como
          * `18/08 07:00 · Pilates;25/08 07:00 · Pilates`.
          *
@@ -665,7 +665,7 @@ export const PRESETS: Preset[] = [
     /*
      * "O meu próprio sistema", e não "Webhook".
      *
-     * Todos os outros presets têm nome de produto — RD Station, Google Sheets —
+     * Todos os outros presets têm nome de produto, RD Station, Google Sheets ,
      * e quem tem um sistema feito sob medida procurava o nome do próprio
      * sistema nessa lista, não achava, e concluía que o produto não servia.
      * "Webhook" é a palavra de quem programa: o dono da pizzaria não sabe que
@@ -673,7 +673,7 @@ export const PRESETS: Preset[] = [
      */
     nome: 'O meu próprio sistema',
     resumo:
-      'Manda para um sistema seu o que a conversa coletou — o de pedidos, o de agendamento, o que alguém fez para você.',
+      'Manda para um sistema seu o que a conversa coletou, o de pedidos, o de agendamento, o que alguém fez para você.',
     exige:
       'O endereço que recebe (pergunte a quem fez o sistema). Se ele pedir senha, cadastre em Credenciais como “bearer”.',
     // `opcional`, e não `bearer`: o próprio `exige` acima diz "**se** ele pedir
@@ -698,14 +698,14 @@ export const PRESETS: Preset[] = [
  * Este preset **exige** credencial?
  *
  * Fonte única de propósito: a regra vivia copiada em três telas (o card do
- * desenho, a prévia do hover e a gaveta de integrações), e a quarta hipótese —
- * `opcional` — teria sido acrescentada só numa delas. Aviso que diverge entre
+ * desenho, a prévia do hover e a gaveta de integrações), e a quarta hipótese ,
+ * `opcional`, teria sido acrescentada só numa delas. Aviso que diverge entre
  * duas telas é pior do que aviso nenhum: uma delas passa a mentir, e não há
  * como saber qual sem ler o código.
  *
  * `opcional` não exige. "O meu próprio sistema" fala com o endereço que o
  * cliente já tem, e muito sistema feito sob medida aceita a chamada sem senha
- * nenhuma — cobrar ali é acusar de faltar o que não falta.
+ * nenhuma, cobrar ali é acusar de faltar o que não falta.
  */
 export function exigeCredencial(preset: Preset): boolean {
   return preset.credencial !== 'nenhuma' && preset.credencial !== 'opcional'
@@ -720,18 +720,18 @@ export function acharPreset(id: string): Preset | undefined {
  *
  * Existe para a gaveta fechada poder dizer o que o bloco é. Quem monta fluxo
  * relatou exatamente isto: *"se essa tela é minimizada não conseguimos
- * identificar se está funcional"* — a gaveta fechada mostrava "Começar de uma
+ * identificar se está funcional"*, a gaveta fechada mostrava "Começar de uma
  * integração pronta" tanto num bloco vazio quanto num bloco já preenchido pela
  * agenda, e as duas situações pedem gestos opostos.
  *
  * **Casa por endereço, e não por um id gravado no bloco**, porque preset
- * resolvido não deixa referência para trás — é a regra que faz versão publicada
+ * resolvido não deixa referência para trás, é a regra que faz versão publicada
  * ser imutável. O endereço é o que sobra dele, e basta: quem edita a URL depois
  * de aplicar deixou de estar no preset, e é honesto a tela parar de afirmar que
  * está.
  *
  * **O caminho sozinho não basta**, e isso custou um teste para descobrir: cinco
- * presets moram em `/disponibilidade` e só se distinguem pela consulta — os
+ * presets moram em `/disponibilidade` e só se distinguem pela consulta, os
  * dias, os horários de um dia, os de um professor, os de uma modalidade. Casar
  * só pelo caminho anunciava "quais dias têm vaga" num bloco que busca horário
  * de professor.
@@ -739,7 +739,7 @@ export function acharPreset(id: string): Preset | undefined {
  * Então a comparação é caminho **mais os nomes dos parâmetros**, e não os
  * valores: os presets carregam `{{variavel}}` na consulta, e trocar `{{dia}}`
  * por outra variável não faz ninguém sair da integração. Trocar o conjunto de
- * parâmetros, sim — aí é outra chamada.
+ * parâmetros, sim, aí é outra chamada.
  */
 export function presetDoBloco(dados: {
   metodo: string
@@ -760,7 +760,7 @@ export function presetDoBloco(dados: {
    * Empate: o endereço não distingue tudo.
    *
    * `/disponibilidade?de&ate` é a mesma chamada para "quais dias têm vaga" e
-   * "quais horários deste dia" — o que muda é o que se guarda dela: um traz
+   * "quais horários deste dia", o que muda é o que se guarda dela: um traz
    * `dias_livres` sem repetir, o outro traz o par `horarios` + `horarios_id`.
    * O desempate é por isso o conjunto de variáveis guardadas, que é o que de
    * fato diferencia as duas integrações.
@@ -780,7 +780,7 @@ export function presetDoBloco(dados: {
  * O que identifica uma chamada: o endereço e **quais** parâmetros ela usa.
  *
  * Feito na mão, sem `new URL`, porque as URLs dos presets têm `{{variavel}}` no
- * meio e nem toda interpolação sobrevive a um parser — e porque um endereço
+ * meio e nem toda interpolação sobrevive a um parser, e porque um endereço
  * pela metade, ainda sendo digitado, não pode lançar aqui.
  */
 function assinatura(url: string): string {

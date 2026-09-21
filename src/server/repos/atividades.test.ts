@@ -19,7 +19,7 @@ import { criarQuadro, listarCartoes, porNoQuadro } from './quadros'
  *
  * O teste que mais importa aqui é o primeiro, e ele é sobre o que **não**
  * acontece: criar atividade não pode escrever em `mensagens_agendadas` nem em
- * `contacts.adiada_ate`. É a RB-33, e é a que custaria caro errar — uma
+ * `contacts.adiada_ate`. É a RB-33, e é a que custaria caro errar, uma
  * atividade virando mensagem é um cliente recebendo um bilhete interno.
  */
 const temCredencial = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SECRET_KEY)

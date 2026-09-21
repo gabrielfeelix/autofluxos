@@ -33,13 +33,13 @@ import type { Acao } from '@/core/engine/types'
  * O preço é que toda escrita nova precisa ser conferida contra essa origem. A
  * pergunta da T7.2, respondida efeito por efeito da F5/F6:
  *
- *   - `registrar_venda_e_concluir` — **inalcançável**. Não existe ação de venda
+ *   - `registrar_venda_e_concluir`, **inalcançável**. Não existe ação de venda
  *     no `Acao` do motor, e é a RB-46 escrita no tipo: "registrar venda por
  *     automação fica bloqueado por padrão". Quem chama a RPC é
  *     `acoes-vendas.ts`, Server Action, com capacidade `registrar_venda`;
- *   - `criarAtividade` — **inalcançável**. Não existe ação de atividade no
+ *   - `criarAtividade`, **inalcançável**. Não existe ação de atividade no
  *     motor. Quem chama é `acoes-atividades.ts`;
- *   - `enfileirarDestinatarios` — **inalcançável**. Não existe ação de
+ *   - `enfileirarDestinatarios`, **inalcançável**. Não existe ação de
  *     transmissão no motor. Quem chama é `acoes-transmissoes.ts`.
  *
  * As escritas que o motor **sim** descreve (`salvar_campo`, `mover_etapa`,

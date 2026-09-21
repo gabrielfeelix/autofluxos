@@ -9,8 +9,8 @@ import type { Cliente } from '@/server/repos/clientes'
  * A ficha do cliente: lê fechada, edita quando pedem.
  *
  * Nasceu aberta, com os cinco campos preenchíveis o tempo todo, e estava
- * errado: a tela é visitada muitas vezes para **olhar** — quem é o responsável,
- * qual o telefone — e uma vez para mudar. Formulário aberto por padrão dá o
+ * errado: a tela é visitada muitas vezes para **olhar**, quem é o responsável,
+ * qual o telefone, e uma vez para mudar. Formulário aberto por padrão dá o
  * peso da edição a quem só queria conferir, e ainda convida a alterar sem
  * querer um campo enquanto se rola a página.
  *
@@ -36,7 +36,7 @@ export function FichaDoCliente({
         <div>
           <h2 className="text-[14.5px] font-bold">Cadastro</h2>
           <p className="mt-0.5 text-[12px] text-dim">
-            Quem é este cliente e como falar com ele. É a nossa ficha — nada daqui vai para o
+            Quem é este cliente e como falar com ele. É a nossa ficha, nada daqui vai para o
             WhatsApp.
           </p>
         </div>

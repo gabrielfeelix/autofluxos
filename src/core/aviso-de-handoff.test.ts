@@ -30,7 +30,7 @@ describe('quemAvisar', () => {
   })
 
   // Avisar às 3h da manhã é a forma mais rápida de fazer alguém desligar o
-  // aviso — e aí o produto volta a ter o buraco, agora sem ninguém saber.
+  // aviso, e aí o produto volta a ter o buraco, agora sem ninguém saber.
   it('fora do horário não avisa, mesmo com todo mundo marcado como disponível', () => {
     expect(quemAvisar([membro()], COMERCIAL, MADRUGADA)).toEqual({
       avisar: false,
@@ -47,7 +47,7 @@ describe('quemAvisar', () => {
 
   /*
    * A maioria das contas nunca abriu o seletor de presença. Tratar `null` como
-   * ausência entregaria a rodada inteira sem avisar ninguém — e o teste
+   * ausência entregaria a rodada inteira sem avisar ninguém, e o teste
    * passaria.
    */
   it('presença nunca marcada NÃO é ausência', () => {
@@ -73,7 +73,7 @@ describe('quemAvisar', () => {
    * membros que existem são `owner`: uma lista escrita em português calaria a
    * conta inteira, e o defeito só apareceria como lead sem resposta.
    */
-  it('os três papéis reais atendem — owner, admin e member', () => {
+  it('os três papéis reais atendem, owner, admin e member', () => {
     for (const papel of ['owner', 'admin', 'member']) {
       const decisao = quemAvisar([membro({ papel })], COMERCIAL, NO_EXPEDIENTE)
       expect(decisao.avisar, `papel ${papel} devia receber aviso`).toBe(true)
@@ -105,7 +105,7 @@ describe('quemAvisar', () => {
  * Endereçar o aviso a uma pessoa é decisão do bloco de handoff, mas **quem
  * ainda atende** continua sendo decisão daqui. Estes casos existem porque o
  * modo de falhar é silencioso: um aviso mandado para quem saiu da conta não dá
- * erro nenhum — só não chega, e o lead segue esperando.
+ * erro nenhum, só não chega, e o lead segue esperando.
  */
 describe('quemAvisar, com o handoff endereçado a alguém', () => {
   const marina = membro({ usuarioId: 'marina', nome: 'Marina' })
@@ -119,7 +119,7 @@ describe('quemAvisar, com o handoff endereçado a alguém', () => {
     }
   })
 
-  // O filtro por pessoa acontece no servidor, DEPOIS desta decisão — então
+  // O filtro por pessoa acontece no servidor, DEPOIS desta decisão, então
   // alguém ausente nunca chega lá, e o aviso volta a ser da equipe.
   it('quem está ausente não entra na lista, mesmo sendo a escolhida', () => {
     const decisao = quemAvisar(
@@ -144,7 +144,7 @@ describe('quemAvisar, com o handoff endereçado a alguém', () => {
 })
 
 describe('textoDoAviso', () => {
-  it('o nome de quem espera vem primeiro — é o que faz largar o que se está fazendo', () => {
+  it('o nome de quem espera vem primeiro, é o que faz largar o que se está fazendo', () => {
     expect(textoDoAviso('Marina', 'o bot não entendeu 3 vezes')).toEqual({
       titulo: 'Marina está esperando atendimento',
       corpo: 'o bot não entendeu 3 vezes',

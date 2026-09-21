@@ -1,7 +1,7 @@
 import type { TipoNo } from './schema'
 
 /**
- * Como cada bloco se chama, se desenha e se explica — **num lugar só**.
+ * Como cada bloco se chama, se desenha e se explica, **num lugar só**.
  *
  * Estava dentro de `components/editor/nos.tsx`, que é `'use client'` e importa o
  * React Flow inteiro. Enquanto o editor era o único lugar que dizia o nome de um
@@ -9,7 +9,7 @@ import type { TipoNo } from './schema'
  * mesmos dez blocos, e importar do editor arrastaria o React Flow para uma
  * página que não desenha grafo nenhum.
  *
- * A alternativa — repetir os dez nomes na Ajuda — é a forma conhecida de a
+ * A alternativa, repetir os dez nomes na Ajuda, é a forma conhecida de a
  * documentação passar a descrever um produto que não existe mais. Renomear
  * "API" para "Serviços externos" foi uma linha aqui; com duas cópias teria sido
  * uma linha e um esquecimento.
@@ -25,7 +25,7 @@ import type { TipoNo } from './schema'
  * Quem desenha o fluxo do estúdio de pilates não está procurando uma API: está
  * procurando "puxar a agenda", "mandar pro CRM", "consultar o sistema". Foi
  * exatamente o que o operador do concorrente apontou, e lá o bloco ainda se
- * chamava "Integração" — nós estávamos um degrau abaixo.
+ * chamava "Integração", nós estávamos um degrau abaixo.
  */
 export const NOMES: Record<TipoNo, string> = {
   mensagem: 'Mensagem',
@@ -40,14 +40,14 @@ export const NOMES: Record<TipoNo, string> = {
    * "Etapa do quadro", e não "Kanban" nem "mover cartão".
    *
    * Quem desenha o fluxo pensa em "marcar que essa pessoa agendou a aula", não
-   * em mover um cartão — o cartão é o desenho da coisa, não a coisa. É a mesma
+   * em mover um cartão, o cartão é o desenho da coisa, não a coisa. É a mesma
    * correção que fez `http` deixar de se chamar "API".
    */
   etapa: 'Etapa do quadro',
   /**
    * "Etiqueta", e não "marcar" nem "tag".
    *
-   * É o nome que a etiqueta já tem em toda a casa — no Inbox, na ficha e no
+   * É o nome que a etiqueta já tem em toda a casa, no Inbox, na ficha e no
    * filtro de Contatos. Um bloco chamado "Tag" obrigaria quem desenha a
    * descobrir que as duas palavras são a mesma coisa.
    */
@@ -78,7 +78,7 @@ export const NOMES: Record<TipoNo, string> = {
   /**
    * "Pesquisa de satisfação", e não "NPS".
    *
-   * NPS é o nome da métrica, não o do trabalho — é a mesma correção que fez
+   * NPS é o nome da métrica, não o do trabalho, é a mesma correção que fez
    * `http` deixar de se chamar "API". Quem desenha o fluxo da clínica quer
    * "perguntar se a pessoa gostou"; quem lê o relatório é que quer o NPS. O
    * bloco é o gesto, e o número aparece na tela que mede.

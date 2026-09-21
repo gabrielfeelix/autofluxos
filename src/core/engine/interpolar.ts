@@ -5,7 +5,7 @@
  * "Obrigado, !" do que "Obrigado, {{nome}}!". O primeiro é esquisito, o segundo
  * denuncia que tem um robô mal configurado do outro lado.
  *
- * O validador avisa sobre variável desconhecida na hora de publicar — o lugar
+ * O validador avisa sobre variável desconhecida na hora de publicar, o lugar
  * certo de pegar isso é no editor, não na frente do cliente.
  */
 export function interpolar(
@@ -22,8 +22,7 @@ export function interpolar(
  * Como o valor entra no texto.
  *
  * Numa mensagem de WhatsApp, o valor é só texto e não escapa nada. Mas o nó de
- * API interpola dentro de **estruturas** — uma URL, um corpo JSON, um cabeçalho
- * — e ali o conteúdo tem sintaxe. O que a pessoa digitou é entrada de fora: sem
+ * API interpola dentro de **estruturas**, uma URL, um corpo JSON, um cabeçalho, e ali o conteúdo tem sintaxe. O que a pessoa digitou é entrada de fora: sem
  * escapar, ela deixa de preencher um campo e passa a escrever a requisição.
  *
  * Isso não é hipótese. Alguém respondendo `x", "aprovado": true, "y": "z` num
@@ -42,14 +41,14 @@ export const comoUrl: Escape = (valor) => encodeURIComponent(valor)
 
 /**
  * Para dentro de uma string JSON. Usa o próprio `JSON.stringify` e tira as
- * aspas das pontas — as aspas quem põe é quem escreveu o corpo, e é justamente
+ * aspas das pontas, as aspas quem põe é quem escreveu o corpo, e é justamente
  * por isso que o validador exige que a variável esteja entre elas.
  */
 export const comoJson: Escape = (valor) => JSON.stringify(valor).slice(1, -1)
 
 /**
  * Para valor de cabeçalho HTTP. Tira quebra de linha e caractere de controle:
- * com eles, um valor vira cabeçalho novo — a injeção clássica de HTTP.
+ * com eles, um valor vira cabeçalho novo, a injeção clássica de HTTP.
  */
 // eslint-disable-next-line no-control-regex
 export const comoCabecalho: Escape = (valor) => valor.replace(/[\u0000-\u001F\u007F]/g, ' ')
@@ -62,7 +61,7 @@ export function variaveisCitadas(texto: string): string[] {
 
 /**
  * Normaliza para comparar o que a pessoa digitou com o rótulo de uma opção.
- * "Orçamento" e "orcamento" têm que casar — ninguém digita acento no WhatsApp.
+ * "Orçamento" e "orcamento" têm que casar, ninguém digita acento no WhatsApp.
  */
 export function normalizar(texto: string): string {
   return texto
@@ -90,12 +89,12 @@ export type PedacoDeTexto =
  * Existe para o editor **mostrar** que `{{nome}}` não é texto comum, e que
  * `{nome}` de uma chave só não é variável nenhuma. Escrito como fatia e não como
  * "troca por HTML" de propósito: quem monta o realce é o React, com elementos de
- * verdade — devolver marcação daqui viraria `dangerouslySetInnerHTML` sobre
+ * verdade, devolver marcação daqui viraria `dangerouslySetInnerHTML` sobre
  * texto que a pessoa digitou, que é XSS servido pela porta da frente.
  *
  * Usa **o mesmo padrão** de `interpolar` e `variaveisCitadas`. Não é
  * coincidência: se o realce reconhecesse mais coisa que o motor, o editor
- * pintaria de azul um `{{ nome }}` que a conversa mandaria literal — e a pessoa
+ * pintaria de azul um `{{ nome }}` que a conversa mandaria literal, e a pessoa
  * confiaria na cor. Pelo mesmo motivo `chavesSimplesCitadas` sai **daqui**:
  * realce que reconhece coisa diferente do validador é o defeito que os dois
  * vieram consertar.
@@ -107,7 +106,7 @@ export function fatiarVariaveis(texto: string): PedacoDeTexto[] {
    * ser lido como `{nome}` (senão todo fluxo correto ficaria vermelho), e os
    * índices continuam valendo no texto original, que é o que permite fatiar.
    *
-   * Máscara larga de propósito — qualquer `{{…}}`, inclusive o que `interpolar`
+   * Máscara larga de propósito, qualquer `{{…}}`, inclusive o que `interpolar`
    * recusa (`{{1abc}}`): ali o problema é outro, e marcar duas vezes confunde.
    */
   const mascara = texto.replace(/\{\{[^{}]*\}\}/g, (achado) => ' '.repeat(achado.length))
@@ -145,7 +144,7 @@ export function fatiarVariaveis(texto: string): PedacoDeTexto[] {
 }
 
 /**
- * Lista os `{nome}` de **uma chave só** — o engano de digitação que sai literal.
+ * Lista os `{nome}` de **uma chave só**, o engano de digitação que sai literal.
  *
  * O motor só troca `{{nome}}`. Com uma chave, `interpolar()` não reconhece, o
  * texto viaja como está, e o aluno lê *"reagendar sua aula para dia
@@ -153,7 +152,7 @@ export function fatiarVariaveis(texto: string): PedacoDeTexto[] {
  * nenhuma), então o aviso de `VARIAVEL_DESCONHECIDA` também não pega.
  *
  * Veio de quem monta fluxo com cliente na frente escrevendo exatamente assim, e
- * é o pior tipo de defeito que existe aqui — silencioso, e visível justo no
+ * é o pior tipo de defeito que existe aqui, silencioso, e visível justo no
  * bloco de confirmação, que é o mais lido da conversa.
  *
  * Sai de `fatiarVariaveis` para o validador e o realce nunca discordarem: é a

@@ -15,13 +15,13 @@ import { acaoCriarQuadroComModelo } from '@/server/acoes-crm'
  * na lista.
  *
  * Antes daqui, todo quadro nascia `Novo · Em conversa · Fechado`. Neutro serve a
- * qualquer negócio porque não descreve nenhum — e quem vende com SDR, quem
+ * qualquer negócio porque não descreve nenhum, e quem vende com SDR, quem
  * agenda avaliação e quem quer recompra montava tudo na mão, sem saber quantas
  * etapas usar nem onde marcar o ganho.
  *
  * A miniatura mostra **as etapas de verdade**, com a de ganho em verde e a de
  * perda em rosa. É o que responde "esse funil é o meu?" antes de qualquer
- * palavra — e o que impede o template de ser um nome bonito que ninguém entende.
+ * palavra, e o que impede o template de ser um nome bonito que ninguém entende.
  */
 export function NovoQuadro({
   clienteId,
@@ -53,7 +53,7 @@ export function NovoQuadro({
    *
    * Era, e travava: a ação devolve o estado que o modal antigo lia com
    * `useActionState`, então a recusa ("já existe um quadro com este nome")
-   * chegava e não ia para lugar nenhum — o modal ficava aberto, sem mensagem,
+   * chegava e não ia para lugar nenhum, o modal ficava aberto, sem mensagem,
    * com o botão clicado. Aqui a resposta decide: erro aparece, sucesso fecha e
    * abre o quadro novo.
    */
@@ -78,7 +78,7 @@ export function NovoQuadro({
         if (r.id) router.push(`?q=${r.id}`)
         router.refresh()
       } catch {
-        setErro('não deu para criar agora — tente de novo')
+        setErro('não deu para criar agora, tente de novo')
       }
     })
   }
@@ -257,7 +257,7 @@ function Caminho({
 /**
  * O funil em miniatura: uma coluna por etapa, na ordem.
  *
- * As alturas decrescem de propósito — é a forma de funil, e ela diz num relance
+ * As alturas decrescem de propósito, é a forma de funil, e ela diz num relance
  * que aquilo é um caminho com desfecho, não uma lista de pastas. Verde e rosa
  * marcam onde fica o ganho e a perda, que é a única coisa do modelo que tem
  * consequência no sistema.

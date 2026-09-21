@@ -8,7 +8,7 @@
  * Até aqui, `situacao = 'ganha'` num cartão queria dizer duas coisas ao mesmo
  * tempo: "este trabalho terminou bem" e "esta pessoa comprou". Os modelos de
  * `quadros-modelos.ts` marcam como `ganho` a etapa final do Atendimento
- * ("Resolvido"), da Captação ("Qualificado") e da Agenda ("Compareceu") — e
+ * ("Resolvido"), da Captação ("Qualificado") e da Agenda ("Compareceu"), e
  * nenhuma delas é compra. Como `repos/crm.ts` deriva compra de cartão ganho, a
  * clínica que respondeu dez dúvidas aparecia com dez compras.
  *
@@ -135,7 +135,7 @@ export function acaoAoFechar(
     return tipoDaEtapa === 'ganho' ? { tipo: 'registrar-venda' } : { tipo: 'marcar-perdida' }
   }
 
-  // Operacional: o desfecho positivo conclui, e o negativo cancela — sem
+  // Operacional: o desfecho positivo conclui, e o negativo cancela, sem
   // emprestar o vocabulário comercial a quem não vende.
   return tipoDaEtapa === 'ganho' ? { tipo: 'concluir' } : { tipo: 'cancelar' }
 }
@@ -145,7 +145,7 @@ export function acaoAoFechar(
  *
  * Compatibilidade de leitura (RB-32): o banco tem milhares de cartões `ganha`
  * escritos antes de existir finalidade. Em processo operacional, eles são
- * conclusões — não viram venda nem somem. Em comercial, ficam **pendentes de
+ * conclusões, não viram venda nem somem. Em comercial, ficam **pendentes de
  * classificação** até um gestor confirmar, porque "valor positivo isolado não é
  * prova".
  */

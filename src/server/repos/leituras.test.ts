@@ -57,7 +57,7 @@ afterAll(async () => {
 })
 
 describe.skipIf(!temTudo)('quantas não lidas', () => {
-  it('sem usuário não conta nada — não há de quem contar', async () => {
+  it('sem usuário não conta nada, não há de quem contar', async () => {
     expect(await naoLidasPorContato(null, [contatoId])).toEqual(new Map())
   })
 
@@ -97,7 +97,7 @@ describe.skipIf(!temTudo)('quantas não lidas', () => {
     expect((await naoLidasPorContato(usuarioId, [contatoId])).get(contatoId)).toBe(1)
   })
 
-  it('marcar duas vezes seguidas não estoura — a tela pode renderizar duas vezes', async () => {
+  it('marcar duas vezes seguidas não estoura, a tela pode renderizar duas vezes', async () => {
     await marcarComoLida(usuarioId, contatoId)
     await marcarComoLida(usuarioId, contatoId)
     expect((await naoLidasPorContato(usuarioId, [contatoId])).get(contatoId)).toBeUndefined()
@@ -115,7 +115,7 @@ describe.skipIf(!temTudo)('quantas não lidas', () => {
 
     // Envelhece a entrada para antes do cadastro de quem está olhando. Sem o
     // piso, a primeira pessoa da equipe abriria o Inbox com meses de histórico
-    // em vermelho — histórico que ela não deixou de ler, porque não estava lá.
+    // em vermelho, histórico que ela não deixou de ler, porque não estava lá.
     await db()
       .from('messages')
       .update({ ts: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString() })

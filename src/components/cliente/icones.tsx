@@ -2,11 +2,11 @@
  * Os ícones da tela de boas-vindas.
  *
  * Arquivo próprio porque são usados dos dois lados da fronteira: os atalhos são
- * servidor e o "Como funciona" é cliente. Sem `'use client'` de propósito — são
+ * servidor e o "Como funciona" é cliente. Sem `'use client'` de propósito, são
  * desenho puro, sem estado, então servem aos dois sem obrigar o servidor a
  * mandar JavaScript junto.
  *
- * **Traço e `currentColor`, nunca hex** — a mesma regra das ilustrações de
+ * **Traço e `currentColor`, nunca hex**, a mesma regra das ilustrações de
  * estado vazio. Herdar a cor é o que faz o tema escuro funcionar sem uma segunda
  * cópia de cada desenho, e é o que deixa o ícone acender junto com o cartão no
  * hover.

@@ -39,7 +39,7 @@ export type ContatoConhecido = {
  * Lê um CSV simples: cabeçalho na primeira linha, `,` ou `;` como separador.
  *
  * `;` é o padrão do Excel em português e é o que sai de uma planilha brasileira
- * salva como CSV — aceitar só `,` faria a importação mais comum falhar com "uma
+ * salva como CSV, aceitar só `,` faria a importação mais comum falhar com "uma
  * coluna só", que é um erro difícil de entender olhando o arquivo.
  *
  * Aspas são respeitadas porque nome com vírgula existe ("Silva, Maria").
@@ -162,7 +162,7 @@ export function conciliar(
       return {
         tipo: 'pendente' as const,
         linha,
-        motivo: 'telefone incompleto — falta o DDD',
+        motivo: 'telefone incompleto, falta o DDD',
       }
     }
 

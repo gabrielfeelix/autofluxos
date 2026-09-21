@@ -11,7 +11,7 @@ import { useState, useTransition } from 'react'
  *
  * Medido em 13/set/2026: o banco responde em ~200ms e a aplicação em ~130ms,
  * os dois em São Paulo. Mesmo assim criar uma etiqueta levava segundos. A
- * causa não era infraestrutura — era `revalidatePath`, que refaz a página
+ * causa não era infraestrutura, era `revalidatePath`, que refaz a página
  * inteira no servidor (no Inbox são sete consultas) **antes** de a tela mudar.
  * Uma escrita de vinte milissegundos virava dois segundos de espera.
  *
@@ -42,7 +42,7 @@ export type ResultadoDaAcao = { ok?: boolean; erro?: string }
  * Aplica `otimista`, chama a ação, e **desfaz se ela recusar**.
  *
  * O estado devolvido é o que a tela deve desenhar: `valor` já contém a aposta.
- * `pendente` existe para desabilitar o botão — não para trocar o rótulo por
+ * `pendente` existe para desabilitar o botão, não para trocar o rótulo por
  * "…", que reintroduziria na tela a espera que este hook existe para esconder.
  *
  * @param inicial o valor que veio do servidor.
@@ -72,7 +72,7 @@ export function useAcaoOtimista<T>(inicial: T) {
           setErro(r.erro ?? 'não deu para salvar')
         }
       } catch {
-        // Rede caiu no meio. A escrita pode ter acontecido — mas a tela não
+        // Rede caiu no meio. A escrita pode ter acontecido, mas a tela não
         // pode afirmar o que não sabe, e o servidor é quem tem a resposta na
         // próxima leitura.
         setValor(anterior)

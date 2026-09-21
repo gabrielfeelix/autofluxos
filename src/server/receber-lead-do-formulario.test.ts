@@ -13,7 +13,7 @@ import {
  * O caminho do Lead Ads, de ponta a ponta, contra o banco de verdade.
  *
  * **A Graph é falsa; o resto não.** O que precisa ser provado aqui não é que
- * sabemos chamar a Meta — isso `marketing-api.test.ts` cobre — é o que
+ * sabemos chamar a Meta, isso `marketing-api.test.ts` cobre, é o que
  * acontece **depois** da resposta: o contato nasce com o telefone normalizado,
  * as respostas do formulário viram `campos`, a passagem é registrada, o cartão
  * entra no quadro padrão, e o lead repetido não vira contato duplicado.
@@ -34,7 +34,7 @@ let quadroId = ''
  * O primeiro desenho deste teste substituía `fetch` inteiro, e quebrou tudo com
  * `res.text is not a function`: o `supabase-js` usa o mesmo `fetch` global e
  * precisa de um `Response` de verdade. Interceptar por host é o que mantém o
- * teste falando com o banco real — que é o ponto de existir.
+ * teste falando com o banco real, que é o ponto de existir.
  */
 function graphResponde(fabrica: (url: string) => unknown) {
   const original = globalThis.fetch
@@ -120,7 +120,7 @@ describe.skipIf(!temCredencial)('o lead do formulário vira contato no funil', (
       .eq('wa_id', `55${telefone}`)
       .single()
 
-    // O telefone entrou normalizado, com DDI — é a identidade do sistema.
+    // O telefone entrou normalizado, com DDI, é a identidade do sistema.
     expect(contato?.wa_id).toBe(`55${telefone}`)
     expect(contato?.nome_real).toBe('Joana Silva')
 
@@ -140,7 +140,7 @@ describe.skipIf(!temCredencial)('o lead do formulário vira contato no funil', (
       .eq('contact_id', contato?.id as string)
     expect((passagens ?? []).map((p) => (p as { ad_id: string }).ad_id)).toEqual(['ad_1'])
 
-    // E o cartão entrou no funil sozinho — a razão de `porNoQuadroPadrao`
+    // E o cartão entrou no funil sozinho, a razão de `porNoQuadroPadrao`
     // ter saído de `receber-mensagem.ts`.
     const cartoes = await listarCartoes(clienteId, quadroId)
     expect(cartoes.map((c) => c.contatoId)).toContain(contato?.id)
@@ -150,7 +150,7 @@ describe.skipIf(!temCredencial)('o lead do formulário vira contato no funil', (
    * A Meta reentrega, e a mesma pessoa preenche o formulário duas vezes. Nem
    * um nem outro pode virar contato duplicado.
    */
-  it('o mesmo telefone de novo não duplica contato — conta como repetido', async () => {
+  it('o mesmo telefone de novo não duplica contato, conta como repetido', async () => {
     const telefone = `11${seed}02`
     graphResponde(() =>
       leadDaMeta([
@@ -182,7 +182,7 @@ describe.skipIf(!temCredencial)('o lead do formulário vira contato no funil', (
 
     /*
      * Mas a segunda chegada É um fato: o contato repetido ganha a passagem do
-     * anúncio novo. É o mesmo princípio do CTWA — o lead é a entidade, a
+     * anúncio novo. É o mesmo princípio do CTWA, o lead é a entidade, a
      * campanha é o meio por onde ele veio daquela vez.
      */
     const { data: contato } = await db()

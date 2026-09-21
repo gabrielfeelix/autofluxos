@@ -7,20 +7,20 @@ import { ehAdminDaPlataforma, existeAlgumUsuario, sessaoAtual } from '@/server/s
 export const dynamic = 'force-dynamic'
 
 /**
- * O cadastro — e ele tem **duas** vidas.
+ * O cadastro, e ele tem **duas** vidas.
  *
  * Enquanto não existe ninguém, é a primeira execução: quem chegar aqui nasce
- * administrador da plataforma. O que segura essa porta é o próprio tempo — ela
+ * administrador da plataforma. O que segura essa porta é o próprio tempo, ela
  * fecha sozinha no instante em que o primeiro usuário existe, porque a pergunta
  * que a destranca ("não há ninguém?") só tem resposta afirmativa uma vez na vida
  * do sistema.
  *
  * Havia um segundo cadeado, a senha única do painel, e ele saiu junto com a rota
  * `/login`. A janela que sobra é entre subir um ambiente novo e cadastrar o
- * primeiro administrador — quem sobe é quem cadastra. Ver `acoes-conta.ts`.
+ * primeiro administrador, quem sobe é quem cadastra. Ver `acoes-conta.ts`.
  *
  * Depois disso, é a tela de cadastrar gente, e só administrador a usa. O
- * convite por e-mail — o caminho normal em qualquer produto — depende de SMTP,
+ * convite por e-mail, o caminho normal em qualquer produto, depende de SMTP,
  * que é global ao projeto compartilhado com a Verandi e não é decisão desta
  * frente (ver docs/BANCO-COMPARTILHADO.md).
  */
@@ -30,7 +30,7 @@ export default async function CriarConta() {
   /**
    * Sem banco, esta tela não pode estourar: ela é justamente a que alguém abre
    * quando o ambiente ainda está sendo montado. Tratar a falha como "já tem
-   * gente" é o lado seguro — fecha a porta de primeira execução em vez de
+   * gente" é o lado seguro, fecha a porta de primeira execução em vez de
    * abri-la por causa de um erro de conexão.
    */
   let jaTemGente = true
@@ -51,7 +51,7 @@ export default async function CriarConta() {
       >
         <p className="text-[12.5px] leading-[1.7] text-muted">
           O login por usuário fala Postgres direto e precisa de{' '}
-          <code className="font-mono text-[11.5px] text-soft">DATABASE_URL</code> — o pooler de
+          <code className="font-mono text-[11.5px] text-soft">DATABASE_URL</code>, o pooler de
           transação, porta 6543. Sem ela, esta tela não tem como saber se já existe alguém
           cadastrado.
         </p>
@@ -68,7 +68,7 @@ export default async function CriarConta() {
     return (
       <Portico titulo="Cadastro fechado" descricao="Quem cria conta aqui é quem administra a plataforma.">
         <p className="text-[12.5px] leading-[1.7] text-muted">
-          Não existe cadastro aberto neste painel — a conta de um cliente é criada pela 4YU, junto
+          Não existe cadastro aberto neste painel, a conta de um cliente é criada pela 4YU, junto
           com o número de WhatsApp dele. Se você deveria ter acesso, peça a quem administra.
         </p>
         <p className="mt-4 text-[12.5px] text-dim">
@@ -95,7 +95,7 @@ export default async function CriarConta() {
             <Link href="/admin/contas" className="text-muted underline underline-offset-2 transition hover:text-primary">
               Contas
             </Link>{' '}
-            — sem isso ele entra e não vê nada.
+           , sem isso ele entra e não vê nada.
           </p>
         ) : (
           <p>

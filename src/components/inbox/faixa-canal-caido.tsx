@@ -17,8 +17,8 @@ import { saudeDoInstagram, saudeDoWhatsApp } from '@/core/saude-da-conexao'
  * Configurações e nada mais: interromper o atendimento com um aviso que pode
  * esperar uma semana é como se ensina alguém a ignorar faixas. Ver `pedeAcao`.
  *
- * É componente de servidor com consulta própria porque a alternativa —
- * carregar canais junto do resto da página — colocaria mais duas consultas no
+ * É componente de servidor com consulta própria porque a alternativa ,
+ * carregar canais junto do resto da página, colocaria mais duas consultas no
  * caminho de desenhar a conversa, que é o caminho mais quente do produto.
  */
 export async function FaixaDeCanalCaido({ clienteId }: { clienteId: string }) {
@@ -39,7 +39,7 @@ export async function FaixaDeCanalCaido({ clienteId }: { clienteId: string }) {
       <p className="text-[12px] leading-5 text-perigo">
         <strong className="font-bold">O {canal} desta conta está fora do ar.</strong>{' '}
         {whatsCaiu
-          ? 'A Meta desconectou o número — costuma acontecer quando o celular é trocado ou o WhatsApp Business é reinstalado. Enquanto isso, nada entra nem sai por ele.'
+          ? 'A Meta desconectou o número, costuma acontecer quando o celular é trocado ou o WhatsApp Business é reinstalado. Enquanto isso, nada entra nem sai por ele.'
           : 'A autorização da conta venceu. Enquanto isso, o direct não chega aqui.'}{' '}
         <Link
           href={`/clientes/${clienteId}/ajustes/${destino}`}

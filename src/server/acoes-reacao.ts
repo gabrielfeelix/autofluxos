@@ -17,7 +17,7 @@ import { exigirAcessoAoCliente } from './sessao'
  * Reagir **não é responder**, e tratá-lo como uma resposta curta erraria em
  * três lugares de uma vez: a janela de 24h não se aplica (o prazo da reação é
  * outro, 30 dias), o bot não deve calar por causa de um "👍" (responder assume
- * a conversa; reagir não), e a linha gravada não é uma mensagem na conversa —
+ * a conversa; reagir não), e a linha gravada não é uma mensagem na conversa ,
  * é um comentário grudado em outra.
  *
  * ---------------------------------------------------------------------------
@@ -44,7 +44,7 @@ export async function acaoReagir(
 
   /*
    * String vazia é **remoção**, e é assim que a Meta faz: não existe endpoint
-   * de desreagir. Por isso o emoji não é validado como "não vazio" — o vazio é
+   * de desreagir. Por isso o emoji não é validado como "não vazio", o vazio é
    * metade do recurso.
    */
   const emoji = entrada.emoji ?? ''
@@ -86,7 +86,7 @@ export async function acaoReagir(
   /*
    * O canal pode não ter o recurso.
    *
-   * `reagir` é opcional na interface porque só o WhatsApp reage — o Instagram
+   * `reagir` é opcional na interface porque só o WhatsApp reage, o Instagram
    * não. Perguntar antes é o que faz a conversa de Instagram dar uma recusa em
    * português em vez de `canal.reagir is not a function`.
    */
@@ -98,8 +98,8 @@ export async function acaoReagir(
    * Grava antes de enviar, como todo o resto: uma função que morre no meio não
    * pode deixar na Meta uma reação que a conversa não conhece.
    *
-   * `texto` é o próprio emoji — o mesmo que o webhook grava quando a reação
-   * vem de lá —, e é o que faz o formato da reação que sai ser igual ao da que
+   * `texto` é o próprio emoji, o mesmo que o webhook grava quando a reação
+   * vem de lá , e é o que faz o formato da reação que sai ser igual ao da que
    * chega. Dois formatos fariam a reação do atendente sumir da conversa
    * enquanto a do contato aparece, que é a lição da camada 1.
    */
@@ -121,7 +121,7 @@ export async function acaoReagir(
 
   /*
    * **O bot não cala por uma reação**, e é por isso que não há
-   * `definirStatusDaSessao('humano')` aqui — ao contrário de responder e de
+   * `definirStatusDaSessao('humano')` aqui, ao contrário de responder e de
    * mandar mídia. Um "👍" não é alguém assumindo o atendimento, e derrubar a
    * automação por causa dele seria a pior surpresa possível: o fluxo para de
    * falar e ninguém sabe por quê.

@@ -28,13 +28,13 @@ import {
  * O que cada bloco prova
  * ---------------------------------------------------------------------------
  *
- *  - **transação** — estado final e evento existem juntos. Não dá para simular
+ *  - **transação**, estado final e evento existem juntos. Não dá para simular
  *    a queda no meio de dentro do teste (é uma transação do Postgres), então o
  *    que se afirma é o observável: uma conclusão, um evento, com os ids e os
  *    nomes da época (RB-24);
- *  - **A13** — duplo clique e retry depois de resposta perdida devolvem a
+ *  - **A13**, duplo clique e retry depois de resposta perdida devolvem a
  *    **mesma** conclusão, pelos dois caminhos: com chave e sem;
- *  - **A26** — o destino falhando deixa a origem concluída e uma pendência
+ *  - **A26**, o destino falhando deixa a origem concluída e uma pendência
  *    visível; repetir a ação não cria um segundo cartão lá.
  */
 const temCredencial = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SECRET_KEY)
@@ -124,7 +124,7 @@ describe.skipIf(!temCredencial)('concluir é uma transação', () => {
     expect(r.conclusao.colunaNome).not.toBe('')
     expect(r.conclusao.cartaoId).toBe(cartaoId)
 
-    // E o evento, com os mesmos ids — é o que a T1.2 pede no histórico.
+    // E o evento, com os mesmos ids, é o que a T1.2 pede no histórico.
     const eventos = await linhaDoTempo(clienteId, contatoId)
     const ganhou = eventos.find((e) => e.tipo === 'ganhou')
     expect(ganhou).toBeDefined()
@@ -216,7 +216,7 @@ describe.skipIf(!temCredencial)('duplo clique e resposta perdida (A13)', () => {
   /**
    * **A corrida de verdade**: as duas requisições saem juntas, sem chave.
    *
-   * É o duplo clique real — o segundo clique sai antes de a resposta do
+   * É o duplo clique real, o segundo clique sai antes de a resposta do
    * primeiro voltar, então não há como a tela saber que já está feito. Quem
    * fecha é o `and situacao = 'aberta'` do update, dentro da transação.
    */
@@ -268,7 +268,7 @@ describe.skipIf(!temCredencial)('continuidade entre processos (RB-25, A26)', () 
    * A tela diz "o contato entrou no funil Pós-venda" na resposta da ação, e um
    * cartão que só aparecesse na próxima passada do cron transformaria essa
    * frase em promessa. O que a T1.2 mudou não é quando a passagem acontece, é
-   * o que sobra quando ela não acontece — o caso do teste seguinte.
+   * o que sobra quando ela não acontece, o caso do teste seguinte.
    */
   it('concluir num processo encadeado abre o destino na hora', async () => {
     expect((await encadearQuadro(clienteId, sdrId, posVendaId)).ok).toBe(true)
@@ -306,7 +306,7 @@ describe.skipIf(!temCredencial)('continuidade entre processos (RB-25, A26)', () 
    * **O retry depois de uma resposta perdida não duplica o destino** (A26).
    *
    * Executar a mesma intenção duas, três vezes tem que dar sempre o mesmo
-   * cartão — é a `chave_de_criacao` da 0071 fazendo o trabalho dela.
+   * cartão, é a `chave_de_criacao` da 0071 fazendo o trabalho dela.
    */
   it('repetir a intenção não cria um segundo cartão no destino', async () => {
     expect((await encadearQuadro(clienteId, sdrId, posVendaId)).ok).toBe(true)
@@ -339,12 +339,12 @@ describe.skipIf(!temCredencial)('continuidade entre processos (RB-25, A26)', () 
   /**
    * **O destino falha, e a origem continua de pé** (A26).
    *
-   * O caso escolhido é o processo de destino **sem etapa nenhuma** — a última
+   * O caso escolhido é o processo de destino **sem etapa nenhuma**, a última
    * foi arquivada e ninguém notou. Não serve apagar o quadro de destino:
    * `quadros.seguinte_id` é `on delete set null`, então apagá-lo desfaz a
    * cadeia e a conclusão nasce sem destino nenhum, que é `nao_se_aplica` e
    * está certo. A pendência exige uma cadeia que existe e um destino que não
-   * recebe — foi o próprio teste que mostrou a diferença.
+   * recebe, foi o próprio teste que mostrou a diferença.
    *
    * Antes da T1.2 isso era um `console.error` e um `null`: o ganho ficava
    * registrado e ninguém nunca sabia que o pós-venda não abriu.
@@ -463,7 +463,7 @@ describe.skipIf(!temCredencial)('continuidade entre processos (RB-25, A26)', () 
   /**
    * A rede embaixo existe, e some quando não é mais necessária.
    *
-   * A tarefa é enfileirada **antes** da tentativa inline — morrer entre as
+   * A tarefa é enfileirada **antes** da tentativa inline, morrer entre as
    * duas tem que deixar a fila cobrindo. Quando a tentativa dá certo, ela é
    * cancelada: deixá-la viva não criaria um segundo cartão (a
    * `chave_de_criacao` da 0071 fecha isso), mas gastaria uma passada do cron
@@ -495,7 +495,7 @@ describe.skipIf(!temCredencial)('continuidade entre processos (RB-25, A26)', () 
   /**
    * **A fila é a rede, e ela precisa funcionar sozinha** (A26).
    *
-   * O cenário: a tentativa inline não aconteceu — a função morreu entre
+   * O cenário: a tentativa inline não aconteceu, a função morreu entre
    * enfileirar e tentar, o deploy caiu no meio. A intenção está gravada e a
    * tarefa está na fila; é só com isso que a passagem tem que acontecer.
    */

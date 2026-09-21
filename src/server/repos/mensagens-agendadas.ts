@@ -50,7 +50,7 @@ export const AGENDADAS_POR_PASSADA = 20
  * Quanto tempo uma linha pode ficar `enviando` antes de voltar para a fila.
  *
  * Cinco minutos. `enviando` só dura o tempo de uma chamada à Cloud API; passou
- * disso, a função que a pegou morreu no meio — teto de tempo, deploy, erro de
+ * disso, a função que a pegou morreu no meio, teto de tempo, deploy, erro de
  * rede. Devolver é o certo, e o risco assumido está escrito em `devolverPresas`.
  */
 const LIMITE_DO_ENVIANDO_MS = 5 * 60 * 1000
@@ -108,7 +108,7 @@ export async function agendar(dados: {
  *
  * **Só o que ainda não saiu.** O `eq('estado', 'agendada')` não é zelo: sem ele,
  * clicar em cancelar numa linha que a passada pegou meio segundo antes marcaria
- * como cancelada uma mensagem que o cliente já recebeu — e a tela passaria a
+ * como cancelada uma mensagem que o cliente já recebeu, e a tela passaria a
  * mentir sobre o que foi enviado.
  *
  * Devolve `false` quando não havia mais o que cancelar, e quem chama diz isso na
@@ -128,7 +128,7 @@ export async function cancelarAgendada(clienteId: string, id: string): Promise<b
   return (data ?? []).length > 0
 }
 
-/** As que ainda vão sair, de um contato — é o que a ficha da conversa mostra. */
+/** As que ainda vão sair, de um contato, é o que a ficha da conversa mostra. */
 export async function agendadasDoContato(
   clienteId: string,
   contatoId: string,
@@ -178,7 +178,7 @@ export async function agendadasDaConta(
  *
  * **O risco está aqui e é assumido de propósito.** Se a função morreu *depois*
  * de a Meta aceitar e *antes* de marcar `enviada`, devolver manda a mesma
- * mensagem duas vezes. O outro caminho — deixar presa — é uma mensagem que
+ * mensagem duas vezes. O outro caminho, deixar presa, é uma mensagem que
  * alguém marcou e que nunca sai, sem erro nenhum na tela. Entre repetir e
  * sumir, o mercado inteiro escolhe repetir, e é o mesmo trato que
  * `devolverDesconhecidas` faz com as tarefas.
@@ -198,7 +198,7 @@ async function devolverPresas(): Promise<void> {
  * Pega o que venceu, e garante que ninguém mais pegue as mesmas linhas.
  *
  * **Quem decide o dono é o próprio `update`, não uma leitura anterior.** Duas
- * passadas simultâneas — a carona do webhook e o cron, por exemplo — leriam a
+ * passadas simultâneas, a carona do webhook e o cron, por exemplo, leriam a
  * mesma lista e mandariam a mesma mensagem duas vezes. Com o `eq('estado',
  * 'agendada')` dentro da escrita, o Postgres serializa as duas e a segunda
  * simplesmente não casa com nada: ela recebe zero linhas e vai embora.
@@ -211,7 +211,7 @@ export async function pegarVencidas(limite = AGENDADAS_POR_PASSADA): Promise<Men
   /*
    * A escolha das candidatas vem antes porque o PostgREST não tem `limit` em
    * `update`. Sem teto, uma conta que ficou um dia fora do ar pegaria trezentas
-   * linhas de uma vez e estouraria o tempo da função — e as trezentas ficariam
+   * linhas de uma vez e estouraria o tempo da função, e as trezentas ficariam
    * `enviando`, esperando cinco minutos para voltar.
    *
    * Essa leitura pode sair desatualizada, e não tem problema: ela só escolhe
@@ -257,7 +257,7 @@ export async function marcarEnviada(id: string): Promise<void> {
  * Falhou, e o motivo fica guardado.
  *
  * **Não volta para a fila.** Quase toda falha aqui é a janela de 24h ter
- * fechado, e tentar de novo em cinco minutos vai falhar igual — três vezes, com
+ * fechado, e tentar de novo em cinco minutos vai falhar igual, três vezes, com
  * a mesma recusa. O que resolve é uma pessoa ler o motivo e decidir, e para isso
  * o erro precisa estar na tela, não numa fila que se repete sozinha.
  */
@@ -270,7 +270,7 @@ export async function marcarFalha(id: string, motivo: string): Promise<void> {
   if (error) console.error('[agendadas] não deu para marcar a falha', id, error.message)
 }
 
-/** Quantas ainda vão sair nesta conta — o número da barra de filtros. */
+/** Quantas ainda vão sair nesta conta, o número da barra de filtros. */
 export async function quantasAgendadas(clienteId: string): Promise<number> {
   const { count, error } = await db()
     .from('mensagens_agendadas')

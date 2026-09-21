@@ -22,7 +22,7 @@ import {
  * O que estes testes prendem é o desenho, não a aritmética: a ordem das etapas
  * é determinística mesmo com `ordem` repetida (o banco não tem índice único
  * ali, de propósito), e a coluna mostra em cima quem está parado há mais
- * tempo — que é a única informação do quadro que faz alguém agir.
+ * tempo, que é a única informação do quadro que faz alguém agir.
  */
 
 const etapa = (id: string, ordem: number, criadoEm = '2026-01-01T00:00:00Z'): Etapa => ({
@@ -39,7 +39,7 @@ describe('a ordem das etapas', () => {
   })
 
   it('empate é desempatado por criação, e não fica instável', () => {
-    // `ordem` não é única no banco — trocar duas de lugar com índice único
+    // `ordem` não é única no banco, trocar duas de lugar com índice único
     // exigiria valor temporário. O desempate precisa ser determinístico, senão
     // a coluna "pula" a cada recarga.
     const etapas = [
@@ -123,7 +123,7 @@ describe('a régua de uma etapa nova', () => {
 })
 
 describe('as etapas iniciais não descrevem um ramo', () => {
-  it('são neutras — empty state ensina o negócio de quem está olhando', () => {
+  it('são neutras, empty state ensina o negócio de quem está olhando', () => {
     // O erro do produto de referência foi um mockup de imobiliária ("Visita
     // agendada", "R$600 mil") numa conta de estúdio de pilates.
     expect(ETAPAS_INICIAIS).toEqual(['Novo', 'Em conversa', 'Fechado'])
@@ -150,7 +150,7 @@ describe('a coluna é uma fila de trabalho', () => {
   })
 
   it('cartão fechado desce, mesmo sendo o mais antigo da coluna', () => {
-    // Ganho e perdido continuam no quadro de propósito — é como o time vê o
+    // Ganho e perdido continuam no quadro de propósito, é como o time vê o
     // próprio resultado no fim do mês. Mas eles não são trabalho pendente, e
     // deixá-los no topo inverteria o sentido da coluna.
     const cartoes = [
@@ -164,7 +164,7 @@ describe('a coluna é uma fila de trabalho', () => {
   })
 
   it('quem está parado há mais tempo fica em cima', () => {
-    // Ordenar por chegada esconderia o esquecido no fim da coluna — que é
+    // Ordenar por chegada esconderia o esquecido no fim da coluna, que é
     // exatamente a pessoa que o quadro precisa mostrar.
     const cartoes = [
       cartao('recente', 'a', '2026-08-19T00:00:00Z'),

@@ -12,14 +12,14 @@ import { useEffect, useState } from 'react'
  * A bolha abria a imagem com `target="_blank"`, e isso custa mais do que
  * parece num atendimento: sai da conversa, perde o lugar da rolagem, e volta
  * significa achar a aba certa. Quem atende olha uma foto para **responder
- * sobre ela** — a conversa precisa continuar atrás.
+ * sobre ela**, a conversa precisa continuar atrás.
  *
  * Tem um segundo motivo, específico daqui: a mídia **recebida** vive num bucket
  * privado e a URL é assinada com cinco minutos de validade
  * (`repos/midia-recebida.ts`). Uma aba aberta com essa URL vira uma aba que
  * expira sozinha, e o que a pessoa vê é uma página de erro do Storage sem
  * explicação. Dentro da página a imagem já está carregada e o visor só a
- * amplia — nada é buscado de novo.
+ * amplia, nada é buscado de novo.
  *
  * ---------------------------------------------------------------------------
  * O que o visor precisa fazer para não irritar

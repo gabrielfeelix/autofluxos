@@ -12,7 +12,7 @@ import { equipesDoUsuario, sobrescritasDoUsuario, SEM_PERMISSAO } from './permis
  * outra empresa não vaza, e linha inválida é ignorada em vez de derrubar.
  *
  * É onde um erro seria silencioso e caro. Uma consulta sem `client_id` não é
- * recusada pelo Postgres — a chave secreta ignora RLS (RB-42). Ela devolve a
+ * recusada pelo Postgres, a chave secreta ignora RLS (RB-42). Ela devolve a
  * conta do vizinho, e a permissão do vizinho junto.
  */
 const temCredencial = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SECRET_KEY)
@@ -80,7 +80,7 @@ describe.skipIf(!temCredencial)('as equipes de uma pessoa', () => {
   /**
    * **Equipe arquivada não dá mais escopo.**
    *
-   * Ela continua legível — há oportunidade e histórico apontando para ela —
+   * Ela continua legível, há oportunidade e histórico apontando para ela ,
    * mas parar de arquivar o acesso junto seria manter a porta aberta depois de
    * fechar a sala.
    */
@@ -103,7 +103,7 @@ describe.skipIf(!temCredencial)('as equipes de uma pessoa', () => {
    * **A pergunta que a chave secreta não faz por nós** (RB-42, A19).
    *
    * A mesma pessoa, a outra empresa: zero. Se a consulta esquecesse o
-   * `client_id`, o Postgres não recusaria — a `service_role` ignora RLS.
+   * `client_id`, o Postgres não recusaria, a `service_role` ignora RLS.
    */
   it('não vaza equipe de uma empresa para a outra', async () => {
     expect(await equipesDoUsuario(empresaB, pessoa)).toEqual([])
@@ -145,7 +145,7 @@ describe.skipIf(!temCredencial)('as sobrescritas de capacidade', () => {
 
   it('não vaza capacidade de uma empresa para a outra', async () => {
     // As linhas acima são da empresa A. Na B, a pessoa volta ao padrão do
-    // papel — restringir numa conta não restringe na outra, e o contrário
+    // papel, restringir numa conta não restringe na outra, e o contrário
     // (vazar a permissão) seria pior.
     expect(await sobrescritasDoUsuario(empresaB, pessoa)).toEqual({})
   })

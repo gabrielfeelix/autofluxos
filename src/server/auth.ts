@@ -10,7 +10,7 @@ import { Pool } from 'pg'
  * **Este é o único lugar do código que fala Postgres direto.** Todo o resto usa
  * `supabase-js` por cima do PostgREST (ver `server/db.ts`); o Better Auth usa
  * Kysely e precisa de conexão de verdade. Dois caminhos para o mesmo banco é
- * dívida consciente — a alternativa era escrever hash de senha, recuperação,
+ * dívida consciente, a alternativa era escrever hash de senha, recuperação,
  * convite e impersonação à mão, que é onde erro custa caro.
  *
  * A escolha e o que foi descartado estão em `docs/PLANO-SISTEMA.md` §4.1. O
@@ -24,7 +24,7 @@ import { Pool } from 'pg'
  *
  * É o modo próprio para serverless: a Vercel abre e fecha função o tempo todo, e
  * conexão direta esgotaria o Postgres. O preço é que em modo transação o
- * Supavisor **não suporta prepared statements** — o `node-postgres` só os usa
+ * Supavisor **não suporta prepared statements**, o `node-postgres` só os usa
  * quando a consulta tem `name`, e nem o Better Auth nem nós fazemos isso, mas
  * fica registrado para quem for acrescentar consulta nova aqui.
  *
@@ -41,7 +41,7 @@ let poolCache: Pool | null = null
  * precisa saber, antes de existir sessão que o autorize a perguntar) e as
  * junções entre `af_membros` e `af_usuarios` que as telas do administrador
  * mostram. Abrir um segundo pool para isso multiplicaria conexões contra um
- * pooler que já é o gargalo — a `max: 1` acima existe justamente para isso não
+ * pooler que já é o gargalo, a `max: 1` acima existe justamente para isso não
  * acontecer.
  *
  * Quem usa daqui escreve SQL, então vale a regra da casa: identificador nunca
@@ -54,7 +54,7 @@ export function bancoDoLogin(): Pool {
   if (!url) {
     // Falha barulhenta e cedo. Sem isto o erro apareceria no primeiro login
     // como uma exceção do driver, que não diz o que está faltando.
-    throw new Error('DATABASE_URL não está configurada — o login não funciona sem ela')
+    throw new Error('DATABASE_URL não está configurada, o login não funciona sem ela')
   }
   poolCache = new Pool({ connectionString: url, max: 1 })
   return poolCache
@@ -63,7 +63,7 @@ export function bancoDoLogin(): Pool {
 /**
  * Os nomes das tabelas carregam o produto, e isso é correção de um erro nosso.
  *
- * O Better Auth criaria `user`, `session`, `account` e `verification` — nomes
+ * O Better Auth criaria `user`, `session`, `account` e `verification`, nomes
  * genéricos demais para um projeto que hospeda dois produtos. O bucket `logos`
  * nasceu sem prefixo e hoje não dá para renomear sem quebrar toda `logo_url`
  * gravada; aqui a gente não repete.
@@ -78,7 +78,7 @@ function montar() {
      *
      * Sem ele a biblioteca deriva a origem da requisição que chegou e avisa em
      * todo `next dev` que redirecionamento e callback podem sair errados. Para
-     * o que existe hoje — e-mail e senha, tudo na mesma origem — derivar
+     * o que existe hoje, e-mail e senha, tudo na mesma origem, derivar
      * funciona, e é por isso que a variável é **opcional**: um valor errado aqui
      * quebra o login inteiro, e vale mais não ter do que ter chutado.
      */
@@ -117,7 +117,7 @@ function montar() {
 
     plugins: [
       /**
-       * Impersonação — o "entrar como" do administrador.
+       * Impersonação, o "entrar como" do administrador.
        *
        * Uma hora de prazo, e o plugin grava `impersonatedBy` **na própria
        * sessão**. É a boa prática do recurso vindo por construção: sessão do
@@ -127,7 +127,7 @@ function montar() {
       admin({ impersonationSessionDuration: 60 * 60 }),
 
       /**
-       * A conta do cliente — e ela **é** a nossa `clients`, não uma tabela ao
+       * A conta do cliente, e ela **é** a nossa `clients`, não uma tabela ao
        * lado.
        *
        * Aceitar a `organization` própria do plugin deixaria duas tabelas para o
@@ -161,7 +161,7 @@ function montar() {
        * `nextCookies()` é um gancho `after` que pega o `Set-Cookie` que os
        * endpoints produzem e o repassa para o `cookies()` do Next. Sem ele,
        * `signInEmail` chamado de dentro de uma Server Action autentica e **não
-       * deixa sessão nenhuma no navegador** — a pessoa preenche a senha certa,
+       * deixa sessão nenhuma no navegador**, a pessoa preenche a senha certa,
        * a ação responde 200 e a tela seguinte a manda de volta para o login.
        *
        * Ele precisa rodar depois dos ganchos dos outros plugins porque o cookie
@@ -177,7 +177,7 @@ function montar() {
  * **É função, e não uma constante, porque `pool()` estoura sem `DATABASE_URL`.**
  *
  * Com `export const auth = betterAuth(...)`, o simples `import` deste arquivo
- * executa o construtor — e o `npm run build` do CI roda **sem** variável de
+ * executa o construtor, e o `npm run build` do CI roda **sem** variável de
  * banco nenhuma (ver `.github/workflows/ci.yml`, que não passa segredo de
  * propósito, porque este repositório é público). Enquanto nada importava este
  * módulo o build passava; a primeira rota que o importasse derrubaria o CI.

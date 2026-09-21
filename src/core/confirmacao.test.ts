@@ -29,7 +29,7 @@ describe('lerConfirmacao', () => {
     expect(lerConfirmacao('Não?')).toBe('nao')
   })
 
-  it('NÃO acha a palavra dentro da frase — é o erro que marcaria a aula errada', () => {
+  it('NÃO acha a palavra dentro da frase, é o erro que marcaria a aula errada', () => {
     // "não, pode deixar" contém "pode". Buscar dentro transformaria uma recusa
     // clara numa gravação.
     expect(lerConfirmacao('não, pode deixar')).toBe('nao_entendi')

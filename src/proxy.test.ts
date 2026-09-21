@@ -7,12 +7,12 @@ import { proxy } from './proxy'
  *
  * A senha única do time saiu com a rota `/login`, e estes testes existem pelo
  * motivo de sempre: a mudança tem um jeito conhecido de dar errado, que é abrir
- * alguma coisa que estava fechada — ou fechar o que precisa ficar aberto, como
+ * alguma coisa que estava fechada, ou fechar o que precisa ficar aberto, como
  * o link de fluxo compartilhado.
  *
  * O que se testa aqui é **a decisão**, não a autorização: o proxy só resolve se
  * a requisição segue. Quem confere de verdade é `server/sessao.ts`, e é por isso
- * que um cookie qualquer do Better Auth passa por aqui — ele morre no
+ * que um cookie qualquer do Better Auth passa por aqui, ele morre no
  * `getSession` da tela seguinte, e é lá que isso é testado.
  */
 const COOKIE_DO_USUARIO = 'better-auth.session_token=qualquer-coisa-assinada'
@@ -34,7 +34,7 @@ function destinoDe(resposta: Response): string | null {
 }
 
 describe('a porta do painel', () => {
-  it('deixa /entrar aberta — é a tela de quem ainda não entrou', async () => {
+  it('deixa /entrar aberta, é a tela de quem ainda não entrou', async () => {
     expect(seguiu(await proxy(pedir('/entrar')))).toBe(true)
   })
 
@@ -58,7 +58,7 @@ describe('a porta do painel', () => {
   })
 
   it('a raiz é a landing pública e abre sem sessão', async () => {
-    // Ela deixou de ser o painel — ele mudou para `/painel`. A Meta exige, para
+    // Ela deixou de ser o painel, ele mudou para `/painel`. A Meta exige, para
     // a verificação de acesso, um site que mostre o serviço; um domínio de
     // produto que responde com a tela de login é, para quem revisa, um site que
     // não existe. A página é estática e não lê sessão nem banco.
@@ -69,7 +69,7 @@ describe('a porta do painel', () => {
     // Privacidade, termos e exclusão de dados são campos obrigatórios das
     // Configurações Básicas do app, e quem revisa não tem conta aqui: uma
     // dessas URLs redirecionando para o login é, para efeito de análise, uma
-    // página que não existe — e o app review não abre.
+    // página que não existe, e o app review não abre.
     expect(seguiu(await proxy(pedir('/privacidade')))).toBe(true)
     expect(seguiu(await proxy(pedir('/termos')))).toBe(true)
     expect(seguiu(await proxy(pedir('/exclusao-de-dados')))).toBe(true)
@@ -79,7 +79,7 @@ describe('a porta do painel', () => {
     expect(seguiu(await proxy(pedir('/clientes/abc', COOKIE_DO_USUARIO)))).toBe(true)
   })
 
-  it('a senha única não abre mais nada — a rota /login não existe', async () => {
+  it('a senha única não abre mais nada, a rota /login não existe', async () => {
     // O teste que prova a remoção: enquanto ela existia, `/login` era a única
     // rota que respondia sem cookie. Hoje ela é uma rota como outra qualquer, e
     // como qualquer outra vai para `/entrar`.
@@ -93,7 +93,7 @@ describe('a porta do painel', () => {
     expect(resposta.status).toBe(401)
   })
 
-  it('deixa /f/<token> aberta — é o link de fluxo compartilhado', async () => {
+  it('deixa /f/<token> aberta, é o link de fluxo compartilhado', async () => {
     // A única tela do sistema que abre sem sessão nenhuma. Atrás do login ela
     // não teria função: o ponto do link é chegar a quem não tem conta aqui.
     expect(seguiu(await proxy(pedir('/f/abc123')))).toBe(true)
@@ -105,28 +105,28 @@ describe('a porta do painel', () => {
     expect(destinoDe(await proxy(pedir('/faturamento')))).toBe('/entrar')
   })
 
-  it('o service worker do push abre sem sessão — redirecionado, ele não registra', async () => {
+  it('o service worker do push abre sem sessão, redirecionado, ele não registra', async () => {
     /*
      * Este teste existe porque o defeito aconteceu: no primeiro deploy da
      * rodada 5, `GET /sw-push.js` respondia 307 para `/entrar`.
      *
      * E é o pior tipo de defeito. O navegador recusa registrar um service
-     * worker cuja resposta não seja o script — então o push simplesmente nunca
+     * worker cuja resposta não seja o script, então o push simplesmente nunca
      * chegava, sem erro em tela e sem erro em log. O aviso de handoff parecia
      * entregue e não era.
      */
     expect(seguiu(await proxy(pedir('/sw-push.js')))).toBe(true)
   })
 
-  it('os webhooks da Meta abrem sem sessão — o servidor dela não tem cookie', async () => {
+  it('os webhooks da Meta abrem sem sessão, o servidor dela não tem cookie', async () => {
     /*
      * Este teste existe porque o defeito aconteceu **três vezes**: em
      * `/api/whatsapp/retorno`, no equivalente do Instagram, e por fim aqui, no
-     * webhook — onde custou o Inbox inteiro de um cliente recém-conectado.
+     * webhook, onde custou o Inbox inteiro de um cliente recém-conectado.
      *
      * Quem chama é o servidor da Meta, que nunca terá cookie de sessão. Sem
      * estar aberta, a rota nem executa: o proxy devolve 401 e a Meta desiste.
-     * Nada em tela, nada em alerta — o código que alerta está depois do ponto
+     * Nada em tela, nada em alerta, o código que alerta está depois do ponto
      * que nunca é alcançado.
      *
      * Abrir não afrouxa: a rota confere `x-hub-signature-256` sozinha.
@@ -135,7 +135,7 @@ describe('a porta do painel', () => {
     expect(seguiu(await proxy(pedir('/api/webhook/instagram')))).toBe(true)
   })
 
-  it('o ícone da aba abre sem sessão — senão a tela de login fica sem ícone', async () => {
+  it('o ícone da aba abre sem sessão, senão a tela de login fica sem ícone', async () => {
     /*
      * `icon.png` e `apple-icon.png` são **rotas** do App Router, e não arquivos
      * de `public/`: sem estarem abertas, o navegador de quem ainda não entrou

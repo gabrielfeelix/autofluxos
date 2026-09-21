@@ -8,7 +8,7 @@
  *
  * A regra que este arquivo carrega inteira: **uma reação por lado, a mais
  * recente, e a remoção apaga em vez de acrescentar.** Ela parece detalhe e não
- * é — sem ela, quem troca de "👍" para "❤️" fica com os dois pendurados na
+ * é, sem ela, quem troca de "👍" para "❤️" fica com os dois pendurados na
  * mesma frase para sempre, porque a Meta manda troca como mensagem nova, não
  * como edição.
  */
@@ -16,7 +16,7 @@
 /**
  * Só o que o casamento precisa saber de uma linha de mensagem.
  *
- * `Lado` é genérico porque quem chama é que sabe o que é uma direção — no repo
+ * `Lado` é genérico porque quem chama é que sabe o que é uma direção, no repo
  * é `'entrada' | 'saida'`. `core/` não importa tipo de `server/`, e fixar
  * `string` aqui obrigaria quem chama a reafirmar o tipo depois, na mão, em
  * cima de um dado que ele já tinha certo.
@@ -40,7 +40,7 @@ export type ReacaoCasada<Lado extends string = string> = {
 /**
  * As reações vivas, agrupadas por `wa_message_id` da mensagem comentada.
  *
- * Recebe as linhas **em ordem cronológica** — a última de cada lado é a que
+ * Recebe as linhas **em ordem cronológica**, a última de cada lado é a que
  * vale. É como `lerConversa` já as tem depois de inverter, então não há
  * ordenação escondida aqui: passar fora de ordem devolve a reação errada, e é
  * por isso que este parágrafo existe.
@@ -60,7 +60,7 @@ export function casarReacoes<Lado extends string>(
     /*
      * Remoção apaga o que estava e não entra no lugar. `null` cai aqui junto
      * com a string vazia porque uma linha marcada como reação sem emoji não
-     * tem o que mostrar — e mostrar nada é exatamente o que "removeu" quer
+     * tem o que mostrar, e mostrar nada é exatamente o que "removeu" quer
      * dizer.
      */
     if (linha.reacao === null || linha.reacao === '') {
@@ -89,7 +89,7 @@ export function casarReacoes<Lado extends string>(
  * valer.
  *
  * Mora em `core/` e não no componente porque quem monta a `key` é a página, que
- * roda no servidor — e `'use client'` não exporta função para o servidor
+ * roda no servidor, e `'use client'` não exporta função para o servidor
  * chamar.
  */
 export function assinaturaDasReacoes(

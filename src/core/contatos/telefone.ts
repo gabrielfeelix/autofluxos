@@ -4,7 +4,7 @@
  * Isto parece função de formatação e é o núcleo da conciliação. O WhatsApp
  * identifica a pessoa por um número; a planilha do cliente tem o mesmo número
  * escrito de seis jeitos diferentes, às vezes sem DDI, às vezes com máscara,
- * e — no Brasil — **às vezes com o nono dígito e às vezes sem**.
+ * e, no Brasil, **às vezes com o nono dígito e às vezes sem**.
  *
  * O nono dígito é o caso que quebra tudo se for ignorado. Celulares brasileiros
  * ganharam um `9` na frente do número, mas o `wa_id` de contas antigas continua
@@ -48,7 +48,7 @@ export function chavesDoTelefone(bruto: string): string[] {
   // 10 = DDD + 8 dígitos (fixo, ou celular antigo). 11 = DDD + 9 (celular).
   // Fora disso não é telefone brasileiro completo.
   if (semDdi.length !== 10 && semDdi.length !== 11) {
-    // Pode ser número estrangeiro já com DDI — 12+ dígitos que não começam com
+    // Pode ser número estrangeiro já com DDI, 12+ dígitos que não começam com
     // 55. Aí não há nono dígito para resolver e a única chave é ele mesmo.
     if (!so.startsWith(DDI_BRASIL) && so.length >= 11) return [so]
     return []
@@ -63,7 +63,7 @@ export function chavesDoTelefone(bruto: string): string[] {
     variantes.add(`${DDI_BRASIL}${ddd}${numero.slice(1)}`)
   } else if (numero.length === 8 && /^[6-9]/.test(numero)) {
     // Sem o nono, e o primeiro dígito diz que é celular (6 a 9). Fixo começa
-    // com 2 a 5 e nunca ganhou nono dígito — inventar um para ele criaria uma
+    // com 2 a 5 e nunca ganhou nono dígito, inventar um para ele criaria uma
     // chave que não existe em lugar nenhum.
     variantes.add(`${DDI_BRASIL}${ddd}9${numero}`)
   }
@@ -74,7 +74,7 @@ export function chavesDoTelefone(bruto: string): string[] {
 /**
  * A forma preferida para mostrar e guardar: DDI + DDD + número, sem máscara.
  *
- * `null` quando não dá para normalizar — mesmo critério de `chavesDoTelefone`.
+ * `null` quando não dá para normalizar, mesmo critério de `chavesDoTelefone`.
  * Quando há duas variantes, a com nono dígito ganha: é a forma válida hoje, e
  * é a que um número novo terá.
  */
@@ -104,7 +104,7 @@ export function telefoneLegivel(bruto: string): string {
  *
  * É prima de `telefoneLegivel` e não a mesma função, e a diferença é o estado em
  * que o número chega. Aquela formata um telefone **pronto** e devolve o cru
- * quando não reconhece — comportamento certo para exibir o que já está gravado,
+ * quando não reconhece, comportamento certo para exibir o que já está gravado,
  * e péssimo para um campo em uso: quem digitou três dígitos ainda não tem um
  * telefone válido, e receber o texto de volta sem máscara faria os parênteses
  * aparecerem só no fim, pulando na frente de quem está escrevendo.
@@ -126,7 +126,7 @@ export function telefoneLegivel(bruto: string): string {
 export function mascaraDeTelefone(bruto: string): string {
   // Onze é o teto do celular brasileiro com DDD. Cortar aqui é o que impede o
   // campo de aceitar um décimo segundo dígito que não caberia em máscara
-  // nenhuma — e é mais honesto que aceitar e recusar depois.
+  // nenhuma, e é mais honesto que aceitar e recusar depois.
   const so = digitos(bruto).slice(0, 11)
   if (so === '') return ''
 
@@ -147,7 +147,7 @@ export function mascaraDeTelefone(bruto: string): string {
  * O telefone digitado está completo o bastante para ser aceito?
  *
  * Vazio **é válido**: o campo é opcional, e tratar "não quis informar" como erro
- * seria transformar a escolha num obstáculo. O que não vale é meio telefone —
+ * seria transformar a escolha num obstáculo. O que não vale é meio telefone ,
  * dez ou onze dígitos, nada entre.
  */
 export function telefoneCompleto(bruto: string): boolean {

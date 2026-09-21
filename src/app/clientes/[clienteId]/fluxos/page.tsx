@@ -81,7 +81,7 @@ const ABAS_VALIDAS = ['fluxos', 'templates', 'palavras', 'eventos', 'campanhas',
  *
  * O grafo fica no servidor: mandar treze fluxos inteiros para o navegador só
  * para desenhar treze cartões é pagar o desenho de todos os blocos de todos os
- * modelos em toda visita — e quem cria escolhe pelo id, que é o que o Server
+ * modelos em toda visita, e quem cria escolhe pelo id, que é o que o Server
  * Action lê.
  *
  * O "em branco" sai da lista: ele é o botão *Do zero* do modal, não um
@@ -97,7 +97,7 @@ type Aba = (typeof ABAS_VALIDAS)[number]
  * Os rótulos, separados das contagens de propósito.
  *
  * O rótulo não depende de consulta nenhuma; a contagem depende de seis. Manter
- * os dois juntos obrigava a barra inteira a esperar o banco — e era o que fazia
+ * os dois juntos obrigava a barra inteira a esperar o banco, e era o que fazia
  * a tela parecer travada no clique da aba. Assim o esqueleto desenha a barra de
  * verdade, com a aba certa acesa, e só a pastilha do número fica cinza.
  */
@@ -162,7 +162,7 @@ export default async function Pagina({
 
           A `key` é a aba porque é ela que muda sem trocar de rota. Sem a chave,
           o React entende que é a mesma fronteira de antes e segura o conteúdo
-          velho na tela até o novo ficar pronto — que é o congelamento de novo,
+          velho na tela até o novo ficar pronto, que é o congelamento de novo,
           agora por dentro.
         */}
         <Suspense key={aba} fallback={<Espera aba={aba} />}>
@@ -354,7 +354,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
           A tela tinha fluxos, palavras-chave, campanhas e sequências uma embaixo
           da outra, cada uma com o próprio texto de apoio: quem abria via um
           paredão de explicação e precisava rolar para descobrir que havia mais
-          coisa. São quatro assuntos que se usam **um de cada vez** — ninguém
+          coisa. São quatro assuntos que se usam **um de cada vez**, ninguém
           cadastra campanha e sequência no mesmo minuto.
 
           A aba vem por `?aba=`, e não por estado de cliente: assim o endereço
@@ -396,7 +396,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
             <ModalFormulario
               botao="+ Nova pasta"
               titulo="Nova pasta"
-              descricao="Uma gaveta para organizar os fluxos. Ela não decide quem vê o quê — apagar a pasta devolve os fluxos para a raiz, nenhum desenho some."
+              descricao="Uma gaveta para organizar os fluxos. Ela não decide quem vê o quê, apagar a pasta devolve os fluxos para a raiz, nenhum desenho some."
               rotuloEnviar="Criar pasta"
               variante="secundario"
               action={criarPastaComCliente}
@@ -415,7 +415,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
             </ModalFormulario>
 
             {/* O "Começar de" que ficava aqui virou a pergunta de abertura do
-                modal e a aba Templates — ver `components/fluxos/templates.tsx`.
+                modal e a aba Templates, ver `components/fluxos/templates.tsx`.
                 Escondido num campo no fim do formulário, o modelo era escolhido
                 por um nome de três palavras e quase ninguém usava. */}
             <NovaAutomacao acao={criarComCliente} modelos={TEMPLATES} etiquetas={ETIQUETAS} />
@@ -436,13 +436,13 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
             <ul>
               {/*
                 **Pasta vazia aparece.** Ela não aparecia, e o efeito era criar
-                uma pasta e a tela não mudar em nada — o que ensina que o botão
+                uma pasta e a tela não mudar em nada, o que ensina que o botão
                 está quebrado. A gaveta recém-criada é justamente a que ainda não
                 tem nada dentro; escondê-la é esconder o resultado do único
                 clique que a pessoa acabou de dar.
 
                 A raiz é a exceção: ela não é uma gaveta que alguém criou, e uma
-                linha "Sem pasta — vazia" seria ruído sobre uma coisa que não
+                linha "Sem pasta, vazia" seria ruído sobre uma coisa que não
                 existe.
               */}
               {grupos.map((grupo) =>
@@ -461,7 +461,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                             <BotaoPerigo
                               rotulo="Apagar pasta"
                               titulo="Apaga só a gaveta. Os fluxos dentro dela voltam para a raiz."
-                              pergunta={`Apagar a pasta “${grupo.nome}”? Os ${grupo.fluxos.length} fluxo(s) dentro dela voltam para a raiz — nenhum desenho some.`}
+                              pergunta={`Apagar a pasta “${grupo.nome}”? Os ${grupo.fluxos.length} fluxo(s) dentro dela voltam para a raiz, nenhum desenho some.`}
                               acao={acaoApagarPasta.bind(null, cliente.id, grupo.id)}
                             />
                           </span>
@@ -471,7 +471,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                     <ul>
                       {grupo.fluxos.length === 0 && (
                         <li className="border-b border-line px-5 py-4 text-[11.5px] text-dim">
-                          Pasta vazia — mova um fluxo para cá pelo botão de pasta na linha dele.
+                          Pasta vazia, mova um fluxo para cá pelo botão de pasta na linha dele.
                         </li>
                       )}
                       {grupo.fluxos.map((fluxo) => {
@@ -507,7 +507,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                       O link cobre a linha por baixo, em vez de envolvê-la.
 
                       **O lápis precisa ficar colado no nome**, e o nome estava
-                      dentro do link — botão dentro de link é clique ambíguo, que
+                      dentro do link, botão dentro de link é clique ambíguo, que
                       é a regra que o botão de apagar já respeitava ficando de
                       fora. Só que "de fora" o empurrava para a ponta direita,
                       longe do que ele renomeia.
@@ -565,7 +565,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                       {/*
                         Três estados, e não dois. "Publicado" e "atendendo" são
                         perguntas diferentes desde a 0036: um fluxo desligado
-                        continua com a versão dele no ar — ele só não abre
+                        continua com a versão dele no ar, ele só não abre
                         conversa nova. Mostrar "ATIVA" nele seria mentir
                         exatamente para quem acabou de desligar.
                       */}
@@ -584,7 +584,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                     {/*
                       `relative` aqui não é enfeite: o link de cobertura é
                       `absolute inset-0` e vem antes no DOM, então tudo o que
-                      é irmão dele e fica `static` é pintado por baixo — o
+                      é irmão dele e fica `static` é pintado por baixo, o
                       clique chega no link, e o botão parece não funcionar.
                       Foi exatamente o que acontecia com Apagar e Mover.
                     */}
@@ -796,7 +796,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
               <ModalFormulario
                 botao="+ Evento"
                 titulo="Novo evento"
-                descricao="O nome vem do sistema que avisa (vaga.aberta, pedido.pago). Ele precisa ser exatamente igual ao que o outro lado manda — aqui não há “contém”."
+                descricao="O nome vem do sistema que avisa (vaga.aberta, pedido.pago). Ele precisa ser exatamente igual ao que o outro lado manda, aqui não há “contém”."
                 rotuloEnviar="Criar evento"
                 variante="secundario"
                 action={acaoCriarGatilhoDeEvento.bind(null, cliente.id, {})}
@@ -899,7 +899,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
             </p>
             </div>
             {/*
-              Sem fluxo, o botão dava lugar a NADA — e a tela ficava sem saída:
+              Sem fluxo, o botão dava lugar a NADA, e a tela ficava sem saída:
               o cabeçalho explicando o que é campanha, a lista vazia dizendo que
               não há nenhuma, e nenhum caminho para criar a primeira. Quem não
               escreveu este código não tem como adivinhar que o que falta é um
@@ -919,7 +919,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                 >
                   fluxo
                 </Link>{' '}
-                primeiro — a campanha precisa de um lugar para levar quem chegar.
+                primeiro, a campanha precisa de um lugar para levar quem chegar.
               </p>
             ) : (
               <ModalFormulario
@@ -969,7 +969,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
             <div className="border-b border-line px-5 py-10 text-center">
               <p className="text-[13px] font-semibold text-soft">Nenhuma campanha ainda</p>
               <p className="mt-1 text-xs leading-5 text-dim">
-                Sem elas, todo mundo que vem de anúncio entra pela mesma porta —
+                Sem elas, todo mundo que vem de anúncio entra pela mesma porta ,
                 e o relatório não separa quem veio de onde.
               </p>
             </div>
@@ -1012,7 +1012,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                       </span>
                     </span>
                     <BotaoPerigo
-                      titulo="Apaga a campanha. Os contatos que ela trouxe ficam — eles são o resultado dela."
+                      titulo="Apaga a campanha. Os contatos que ela trouxe ficam, eles são o resultado dela."
                       pergunta={`Apagar a campanha “${campanha.nome}”? Os ${trouxe} contato(s) que ela trouxe ficam, mas deixam de aparecer ligados a ela.`}
                       acao={acaoApagarCampanha.bind(null, cliente.id, campanha.id)}
                     />
@@ -1041,7 +1041,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
             <ModalFormulario
               botao="+ Sequência"
               titulo="Nova sequência"
-              descricao="Ela nasce sem passo, e sem passo não inscreve ninguém — o passo você acrescenta na linha dela, depois de criada."
+              descricao="Ela nasce sem passo, e sem passo não inscreve ninguém, o passo você acrescenta na linha dela, depois de criada."
               rotuloEnviar="Criar sequência"
               variante="secundario"
               action={criarSequenciaComCliente}
@@ -1101,7 +1101,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                           {' · '}
                           {sequencia.passos.length === 0 ? (
                             <strong className="font-semibold text-aviso">
-                              sem passo — não inscreve ninguém
+                              sem passo, não inscreve ninguém
                             </strong>
                           ) : (
                             `${sequencia.passos.length} passo(s)`
@@ -1204,18 +1204,18 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                       <div className="mt-3">
                         {fluxos.length === 0 ? (
                           <p className="text-[11.5px] text-dim">
-                            Crie um fluxo primeiro — um passo precisa de um lugar para levar.
+                            Crie um fluxo primeiro, um passo precisa de um lugar para levar.
                           </p>
                         ) : sequencia.passos.length >= LIMITE_DE_PASSOS ? (
                           <p className="text-[11.5px] text-dim">
                             {LIMITE_DE_PASSOS} passos é o teto. Mais que isso dentro de 24h não
-                            traz lead nenhum — traz bloqueio.
+                            traz lead nenhum, traz bloqueio.
                           </p>
                         ) : (
                           <ModalFormulario
                             botao="+ Adicionar passo"
                             titulo="Novo passo"
-                            descricao="O tempo conta do evento que inscreveu a pessoa, não do passo anterior. Até 24h o passo abre um fluxo. Passado disso, o WhatsApp só entrega modelo aprovado pela Meta — escolha um abaixo."
+                            descricao="O tempo conta do evento que inscreveu a pessoa, não do passo anterior. Até 24h o passo abre um fluxo. Passado disso, o WhatsApp só entrega modelo aprovado pela Meta, escolha um abaixo."
                             rotuloEnviar="Adicionar passo"
                             variante="secundario"
                             action={criarPassoComCliente}
@@ -1283,7 +1283,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                                   nome="templateId"
                                   rotuloAcessivel="Modelo aprovado deste passo"
                                   opcoes={[
-                                    { valor: '', rotulo: 'Nenhum — o passo fica até 24h' },
+                                    { valor: '', rotulo: 'Nenhum, o passo fica até 24h' },
                                     ...templatesAprovados.map((item) => ({
                                       valor: item.id,
                                       rotulo: item.nome,

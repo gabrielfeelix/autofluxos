@@ -32,7 +32,7 @@ function permissaoAtual(): Permissao {
 /**
  * Alerta opt-in do navegador quando alguém entra na fila.
  *
- * **Ele mora na moldura do cliente, e não só no Inbox** — e essa mudança é a
+ * **Ele mora na moldura do cliente, e não só no Inbox**, e essa mudança é a
  * metade barata do buraco que o §3.10.1 descreve: o handoff acontecia e
  * ninguém percebia, *a não ser que a pessoa estivesse com o Inbox aberto*.
  * Quem está desenhando um fluxo ou conferindo contatos está no painel do mesmo
@@ -40,7 +40,7 @@ function permissaoAtual(): Permissao {
  *
  * O que continua faltando é avisar quem **não** está no painel: push de
  * verdade (com service worker e assinatura guardada) e e-mail. Os dois pedem
- * banco ou SMTP — ver docs/PENDENCIAS-DO-DONO.md.
+ * banco ou SMTP, ver docs/PENDENCIAS-DO-DONO.md.
  *
  * Não registra telefone nem conteúdo em storage. A permissão pertence ao
  * navegador e só é pedida em clique explícito, como eles exigem.
@@ -57,7 +57,7 @@ export function NotificacoesDaFila({
    *
    * Ausente, a **primeira consulta** vira a linha de base e não avisa nada.
    * Sem isso, abrir uma tela qualquer do painel dispararia, trinta segundos
-   * depois, uma notificação para cada conversa que já estava esperando —
+   * depois, uma notificação para cada conversa que já estava esperando ,
    * uma rajada que ensina a pessoa a desligar o aviso.
    */
   alertasIniciais?: AlertaDaFila[]
@@ -100,7 +100,7 @@ export function NotificacoesDaFila({
     }
 
     // Uma consulta na entrada, para a linha de base não depender de esperar
-    // trinta segundos — e para quem abriu o painel já ficar em dia.
+    // trinta segundos, e para quem abriu o painel já ficar em dia.
     void atualizar()
 
     const intervalo = window.setInterval(() => void atualizar(), INTERVALO_DE_CONSULTA)
@@ -120,7 +120,7 @@ export function NotificacoesDaFila({
    * Permissão dada = também assina o push.
    *
    * O aviso local (a `Notification` acima) só existe com a aba aberta. O push
-   * é o que alcança o telefone no bolso com o painel fechado — e as duas
+   * é o que alcança o telefone no bolso com o painel fechado, e as duas
    * coisas nascem da **mesma** permissão do navegador, então pedir duas vezes,
    * em dois botões, seria pedir duas vezes a mesma coisa.
    *
@@ -140,7 +140,7 @@ export function NotificacoesDaFila({
 
   /*
    * Quem já tinha dado a permissão antes desta rodada nunca passaria pelo
-   * clique — e ficaria com o aviso local de sempre, sem push nenhum, sem ter
+   * clique, e ficaria com o aviso local de sempre, sem push nenhum, sem ter
    * como descobrir por quê. Registrar na montagem cobre esse caso, e é barato:
    * `assinarPush` reaproveita a assinatura que já existe.
    */

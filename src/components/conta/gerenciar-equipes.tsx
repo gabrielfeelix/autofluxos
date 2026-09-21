@@ -9,7 +9,7 @@ import { useConfirmar } from '@/components/design/confirmar'
  *
  * Equipe é o que dá sentido ao escopo "da equipe": sem nenhuma, esse escopo
  * alcança zero registros e vira um jeito confuso de dizer "não pode". Por isso
- * a caixa fica **na mesma tela** do acesso, e não numa página própria — quem
+ * a caixa fica **na mesma tela** do acesso, e não numa página própria, quem
  * descobre que precisa de equipe é quem está editando permissão.
  *
  * Arquivar em vez de apagar: há oportunidade e histórico apontando para ela, e
@@ -63,7 +63,7 @@ export function GerenciarEquipes({
         <h2 className="text-[14.5px] font-bold">Equipes</h2>
         <p className="mt-1 max-w-[620px] text-[12px] leading-5 text-dim">
           Agrupam gente para o escopo <strong className="text-muted">da equipe dela</strong>{' '}
-          no acesso. Uma pessoa pode estar em mais de uma — quem cobre duas praças
+          no acesso. Uma pessoa pode estar em mais de uma, quem cobre duas praças
           não precisa de um papel novo.
         </p>
       </header>
@@ -91,7 +91,7 @@ export function GerenciarEquipes({
       {equipes.length === 0 ? (
         <p className="px-5 py-8 text-center text-xs leading-5 text-dim">
           Nenhuma equipe ainda. Sem equipe, o escopo &ldquo;da equipe dela&rdquo; não
-          alcança nada — crie uma antes de usá-lo no acesso.
+          alcança nada, crie uma antes de usá-lo no acesso.
         </p>
       ) : (
         <ul>

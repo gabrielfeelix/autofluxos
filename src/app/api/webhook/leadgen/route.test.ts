@@ -9,12 +9,12 @@ import { GET, POST } from './route'
  * As defesas da rota de `leadgen`, e a regra que a molda.
  *
  * O banco é mockado de propósito: a pergunta aqui é **quem entra e o que a Meta
- * recebe de volta**, não o que o lead vira depois — isso é provado contra o
+ * recebe de volta**, não o que o lead vira depois, isso é provado contra o
  * Supabase de verdade em `receber-lead-do-formulario.test.ts`.
  *
  * A regra que quase todo teste abaixo protege: **a Meta não reentrega depois de
  * um `200` e reentrega tudo depois de um erro.** Responder errado aqui não dá
- * erro visível — dá lead duplicado, ou lead perdido para sempre.
+ * erro visível, dá lead duplicado, ou lead perdido para sempre.
  */
 vi.mock('@/server/repos/paginas-de-lead', () => ({ clientePelaPagina: vi.fn() }))
 vi.mock('@/server/receber-lead-do-formulario', () => ({ receberLeadsDoFormulario: vi.fn() }))
@@ -25,8 +25,7 @@ vi.mock('@/server/alertar', () => ({ alertar: vi.fn() }))
 /*
  * O callback é `async`, então o mock precisa **esperá-lo**: devolver a promessa
  * é o que faz o `await posta(...)` do teste só voltar depois do processamento.
- * Sem isso o teste conferia o espião antes de a rota ter chamado qualquer coisa
- * — e passava a impressão de que o código não rodava.
+ * Sem isso o teste conferia o espião antes de a rota ter chamado qualquer coisa, e passava a impressão de que o código não rodava.
  */
 const pendentes: Promise<unknown>[] = []
 vi.mock('next/server', () => ({
@@ -211,7 +210,7 @@ describe('de quem é o lead', () => {
   })
 
   /*
-   * Um POST pode trazer leads de Páginas diferentes — contas diferentes. Cada
+   * Um POST pode trazer leads de Páginas diferentes, contas diferentes. Cada
    * grupo tem de ir para a sua, com o token dela.
    */
   it('separa por página quando o lote tem mais de uma', async () => {

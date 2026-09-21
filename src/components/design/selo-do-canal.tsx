@@ -1,12 +1,12 @@
 import { DEFINICAO_DO_CANAL, type CanalId } from '@/core/canais'
 
 /**
- * Por onde esta automação fala — dito na tela, com a cara do canal.
+ * Por onde esta automação fala, dito na tela, com a cara do canal.
  *
  * A pergunta apareceu na primeira vez que alguém de fora olhou o painel: "como
  * eu sei que este fluxo é do WhatsApp? e se eu quiser Instagram?". Ela não é
  * cosmética. Os limites que o editor cobra são do canal (3 botões, 10 itens de
- * lista, janela de 24h), então um desenho feito aqui **é** dessas medidas — e
+ * lista, janela de 24h), então um desenho feito aqui **é** dessas medidas, e
  * saber de quem elas são é parte de entender por que o validador recusa.
  *
  * A cor é a da marca do canal, e fica **só no selo**. Pintar a tela inteira de
@@ -26,7 +26,7 @@ export function SeloDoCanal({
 
   return (
     <span
-      title={`${definicao.nome} — ${definicao.resumo}`}
+      title={`${definicao.nome}, ${definicao.resumo}`}
       style={{
         // `color-mix` em vez de três classes por canal: a cor vem do catálogo,
         // então canal novo não pede CSS novo.
@@ -48,7 +48,7 @@ export function SeloDoCanal({
  * Os logos em SVG inline, e não `<img>`.
  *
  * Acompanham a cor do texto (`currentColor`), não pedem requisição a mais e não
- * somem quando alguém mexer na pasta de assets — para um glifo de 12px é tudo
+ * somem quando alguém mexer na pasta de assets, para um glifo de 12px é tudo
  * que importa.
  */
 export function LogoDoCanal({ canal, tamanho = 12 }: { canal: CanalId; tamanho?: number }) {

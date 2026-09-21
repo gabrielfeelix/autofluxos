@@ -20,13 +20,13 @@ import {
 } from './pecas'
 
 /**
- * Tudo sobre a Verandi — e a tabela que ninguém tinha onde ler.
+ * Tudo sobre a Verandi, e a tabela que ninguém tinha onde ler.
  *
  * **A lista de presets e o que cada um traz saem de `core/presets.ts`.** Era a
  * informação mais pedida e a que existia só dentro do código: para saber que
  * `verandi-catalogo` devolve `professores` e `servicos`, era preciso arrastar o
  * bloco, aplicar o preset e ler o campo de mapeamento. Aqui ela é uma tabela, e
- * ela não pode divergir — quem acrescentar um preset acrescenta uma linha aqui
+ * ela não pode divergir, quem acrescentar um preset acrescenta uma linha aqui
  * sem escrever nada.
  */
 
@@ -40,7 +40,7 @@ export function SecaoVerandiLigar() {
       titulo="Ligar a automação na Verandi"
       chamada={
         <>
-          A Verandi é a agenda da 4YU — e, do ponto de vista do AutoFluxos, é{' '}
+          A Verandi é a agenda da 4YU, e, do ponto de vista do AutoFluxos, é{' '}
           <strong className="text-soft">um sistema do cliente como qualquer outro</strong>. Nada de
           turma, matrícula ou presença mora aqui: o bot lê e escreve pela API, e o dado fica lá.
         </>
@@ -63,7 +63,7 @@ export function SecaoVerandiLigar() {
           </p>
           <p>
             <strong className="text-soft">Uma credencial por conta, não uma por bloco.</strong> Todos
-            os blocos da Verandi usam a mesma — cadastrar várias seria ter vários lugares para
+            os blocos da Verandi usam a mesma, cadastrar várias seria ter vários lugares para
             revogar no dia em que a chave vazar.
           </p>
         </Passo>
@@ -84,7 +84,7 @@ export function SecaoVerandiLigar() {
         <Passo n={4} titulo="Aponte o bloco para a credencial">
           <p>
             No campo <strong className="text-soft">credencial</strong> do bloco, escolha a que você
-            cadastrou. Não existe campo para digitar o token dentro do fluxo — de propósito: o valor
+            cadastrou. Não existe campo para digitar o token dentro do fluxo, de propósito: o valor
             nunca entra no desenho, e o desenho publicado é imutável.
           </p>
         </Passo>
@@ -92,7 +92,7 @@ export function SecaoVerandiLigar() {
         <Passo n={5} titulo="Teste na aba Testar antes de publicar">
           <p>
             A aba <strong className="text-soft">Testar</strong>, no editor, faz as chamadas de verdade. Se a credencial estiver errada, você descobre ali
-            — e não com uma aluna esperando resposta.
+           , e não com uma aluna esperando resposta.
           </p>
         </Passo>
       </Passos>
@@ -118,7 +118,7 @@ export function SecaoVerandiDados() {
       titulo="Quais informações da Verandi o bot usa"
       chamada={
         <>
-          Cada preset é uma chamada com um mapeamento pronto — ele já sabe onde estão os campos na
+          Cada preset é uma chamada com um mapeamento pronto, ele já sabe onde estão os campos na
           resposta e em quais variáveis colocá-los. Esta é a lista completa do que existe hoje.
         </>
       }
@@ -209,7 +209,7 @@ export function SecaoVerandiDados() {
           <Cel forte>
             <Var>servicos</Var> · <Var>servicos_id</Var>
           </Cel>
-          <Cel>O que se oferece — aula, avaliação, sessão — com os identificadores.</Cel>
+          <Cel>O que se oferece, aula, avaliação, sessão, com os identificadores.</Cel>
           <Cel>Menu “o que você quer marcar?”, quando o negócio tem mais de um serviço.</Cel>
         </Linha>
         <Linha>
@@ -226,7 +226,7 @@ export function SecaoVerandiDados() {
           <Cel forte>
             <Var>horario_fixo</Var>
           </Cel>
-          <Cel>Os horários recorrentes dela — o mesmo dia e hora toda semana.</Cel>
+          <Cel>Os horários recorrentes dela, o mesmo dia e hora toda semana.</Cel>
           <Cel>Responder “quais são os meus horários?”.</Cel>
         </Linha>
         <Linha>
@@ -272,7 +272,7 @@ export function SecaoVerandiDados() {
             <Cod>1h30</Cod>. Configurado na Verandi, em Padrões.
           </Cel>
           <Cel>
-            Frases gerais — “avise com {'{{prazo_cancelamento}}'} de antecedência” — sem cravar o
+            Frases gerais, “avise com {'{{prazo_cancelamento}}'} de antecedência”, sem cravar o
             número no fluxo.
           </Cel>
         </Linha>
@@ -287,7 +287,7 @@ export function SecaoVerandiDados() {
           <Cel forte>
             <Var>situacao</Var>
           </Cel>
-          <Cel>Como a marcação ficou depois de desmarcada — falta avisada, cancelada.</Cel>
+          <Cel>Como a marcação ficou depois de desmarcada, falta avisada, cancelada.</Cel>
           <Cel>
             Confirmar na mensagem o que foi registrado. Desmarcar não apaga nada: a marcação fica no
             histórico, e é isso que preserva a reposição.
@@ -306,7 +306,7 @@ export function SecaoVerandiDados() {
         <p>
           O bloco de <strong className="text-soft">catálogo</strong> traz também como aquele negócio
           chama as coisas: um estúdio diz “aula”, uma clínica diz “sessão”, um salão diz
-          “atendimento”. Escreva as mensagens com a palavra da conta — não com a nossa.
+          “atendimento”. Escreva as mensagens com a palavra da conta, não com a nossa.
         </p>
       </Nota>
 
@@ -328,14 +328,14 @@ export function SecaoReceitas() {
       id="receitas"
       etiqueta="Receitas"
       titulo="Seis conversas montadas, bloco a bloco"
-      chamada="Cada uma é uma sequência curta. Monte na ordem — em todas, o primeiro bloco é reconhecer quem está falando."
+      chamada="Cada uma é uma sequência curta. Monte na ordem, em todas, o primeiro bloco é reconhecer quem está falando."
     >
       <Sub>1. Marcar uma aula</Sub>
       <Espelho
         conversa={
           <Conversa titulo="Ana · 44 99888-7766">
             <Zap>Oi, *Ana*! 👋 Vamos marcar sua aula?</Zap>
-            <Zap>{'Para quando você quer agendar?\nMe manda a data — por exemplo: *21/08/2026*'}</Zap>
+            <Zap>{'Para quando você quer agendar?\nMe manda a data, por exemplo: *21/08/2026*'}</Zap>
             <Zap de="pessoa">21/08/2026</Zap>
             <Zap botoes={['07:00', '10:00', '15:00']}>
               Estes são os horários livres em 21/08/2026. Qual fica melhor?
@@ -372,7 +372,7 @@ export function SecaoReceitas() {
           <>
             O ramo <strong className="text-soft">não</strong> da condição pergunta o nome e usa o
             bloco <em>cadastrar quem ainda não existe</em>, que devolve o mesmo{' '}
-            <Var>pessoa_id</Var> — e daí os dois caminhos se juntam no passo 3.
+            <Var>pessoa_id</Var>, e daí os dois caminhos se juntam no passo 3.
           </>
         }
       />
@@ -422,30 +422,30 @@ export function SecaoReceitas() {
       <p>
         Um bloco só: <strong className="text-soft">a agenda de uma pessoa</strong>, depois de
         reconhecer. Ele traz <Var>horario_fixo</Var>, <Var>proximas</Var> e{' '}
-        <Var>reposicoes_abertas</Var> — e a mensagem seguinte escreve os três. Repare que as listas
+        <Var>reposicoes_abertas</Var>, e a mensagem seguinte escreve os três. Repare que as listas
         vêm separadas por ponto e vírgula; se quiser uma por linha na mensagem, monte a frase em volta
         delas em vez de esperar formatação.
       </p>
 
-      <Sub>5. Lotou — entrar na fila</Sub>
+      <Sub>5. Lotou, entrar na fila</Sub>
       <p>
         Ligue a saída <Cod>veio vazia</Cod> da pergunta de horário a uma mensagem que ofereça a fila,
         e use o bloco <strong className="text-soft">entrar na fila de um horário cheio</strong>. Ele
         devolve <Var>posicao_na_fila</Var>. Quando alguém desmarcar, é a Verandi que dispara o aviso.
       </p>
-      <Nota tom="erro" titulo="Fila não é reserva — e a mensagem tem que dizer isso">
+      <Nota tom="erro" titulo="Fila não é reserva, e a mensagem tem que dizer isso">
         <p>
           “Te aviso se abrir” é honesto. “Sua vaga está garantida” não é, e produz a pior conversa
           possível: alguém aparecendo para uma aula em que não está marcada.
         </p>
       </Nota>
 
-      <Sub>6. “Não vou poder ir” — avisar da falta</Sub>
+      <Sub>6. “Não vou poder ir”, avisar da falta</Sub>
       <p>
         A pessoa avisa, o bot desmarca e a vaga abre. O que muda de estúdio para estúdio é se ela{' '}
         <strong className="text-soft">ganha a aula de volta</strong>: cada conta define um aviso
         mínimo, e quem avisa depois disso libera a vaga mas perde a reposição. Esse prazo{' '}
-        <strong className="text-soft">não se escreve no fluxo</strong> — ele é configurado na
+        <strong className="text-soft">não se escreve no fluxo</strong>, ele é configurado na
         Verandi, em <em>Padrões → Aviso mínimo para ganhar reposição</em>, e o bloco{' '}
         <em>dá tempo de cancelar esta aula?</em> pergunta a ela.
       </p>
@@ -510,7 +510,7 @@ export function SecaoReceitas() {
         <p>
           Escrever “avise com 2h de antecedência” no texto do bloco cria uma segunda regra, que
           ninguém lembra de atualizar. No dia em que o estúdio mudar para 30 minutos na tela de
-          Padrões, a conta passa a valer 30 e a mensagem continua dizendo 2h — e versão de fluxo é
+          Padrões, a conta passa a valer 30 e a mensagem continua dizendo 2h, e versão de fluxo é
           imutável, então ela diz isso para sempre. Use <Var>aviso_do_prazo</Var>, que chega pronta,
           ou <Var>prazo_cancelamento</Var>, que traz só o prazo por extenso.
         </p>
@@ -565,8 +565,8 @@ export function SecaoOutrosSistemas() {
 
       <Sub>Se o sistema é seu, feito sob medida</Sub>
       <p>
-        Não precisa estar nesta lista. Se alguém fez um sistema para você — o de pedidos, o de
-        agendamento, a área do cliente —, ele serve, desde que quem fez consiga responder três
+        Não precisa estar nesta lista. Se alguém fez um sistema para você, o de pedidos, o de
+        agendamento, a área do cliente , ele serve, desde que quem fez consiga responder três
         perguntas. Copie e mande para essa pessoa:
       </p>
       <Codigo titulo="o que pedir para quem fez o seu sistema">{`1. Qual endereço eu chamo para consultar isso? (o link, começando com https://)
@@ -581,7 +581,7 @@ export function SecaoOutrosSistemas() {
 
       <Nota tom="dica" titulo="Credencial, em uma frase">
         <p>
-          É a senha que o seu sistema exige para deixar a gente consultar — como a senha do
+          É a senha que o seu sistema exige para deixar a gente consultar, como a senha do
           seu e-mail, só que para programa falar com programa. Quem fez o sistema te dá. Ela fica
           guardada num cofre, fora do desenho: quem receber um link do seu fluxo vê os blocos e
           nunca a chave.
@@ -591,7 +591,7 @@ export function SecaoOutrosSistemas() {
       <Nota tom="atencao" titulo="A chave nunca vai no desenho">
         <p>
           Vale para todos: cadastre em <strong className="text-soft">Configurações →
-          Credenciais</strong> e aponte o bloco para ela. O tipo depende do sistema —{' '}
+          Credenciais</strong> e aponte o bloco para ela. O tipo depende do sistema ,{' '}
           <Cod>bearer</Cod> para token de cabeçalho, <Cod>query</Cod> quando a chave vai no
           endereço, <Cod>cabecalho</Cod> para um cabeçalho com nome próprio.
         </p>

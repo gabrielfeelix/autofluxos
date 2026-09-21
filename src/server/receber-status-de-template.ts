@@ -14,7 +14,7 @@ import { atualizarCategoriaPorWabaId, atualizarStatusPorWabaId } from './repos/t
  * `message_template_status_update` fala do **modelo**: foi aprovado, recusado,
  * pausado. `messages` com `statuses` fala de cada **mensagem**: entregue, lida,
  * falhou. Os dois chegam no mesmo envelope `entry[].changes[]` e precisam um do
- * outro para a tela não mentir — um template aprovado cujas mensagens todas
+ * outro para a tela não mentir, um template aprovado cujas mensagens todas
  * falham com 132015 está pausado na prática, e quem olha só o primeiro webhook
  * mostra "aprovado" enquanto nada sai.
  *
@@ -25,13 +25,13 @@ import { atualizarCategoriaPorWabaId, atualizarStatusPorWabaId } from './repos/t
  * Quando a recusa é `INVALID_FORMAT`, ela manda explicação detalhada **e
  * recomendação acionável**. É a diferença entre a tela dizer "recusado" e dizer
  * "recusado porque falta valor de exemplo na variável 2". Por isso o texto é
- * guardado inteiro e mostrado literalmente — resumir aqui jogaria fora
+ * guardado inteiro e mostrado literalmente, resumir aqui jogaria fora
  * exatamente o que faz a pessoa conseguir consertar sem abrir a doc da Meta.
  */
 
 /*
  * Tudo opcional e `passthrough`: é payload de fora. Campo que a Meta renomear
- * vira `undefined` em vez de derrubar o webhook inteiro — e derrubar aqui
+ * vira `undefined` em vez de derrubar o webhook inteiro, e derrubar aqui
  * significaria a Meta reenviando o lote e, pior, um status de entrega perdido.
  */
 const statusDoTemplateSchema = z
@@ -92,7 +92,7 @@ const envelopeSchema = z.object({
  * O que a Meta chama de `event` no webhook do template.
  *
  * Ela manda `APPROVED`/`REJECTED`/... aqui, os mesmos valores do campo
- * `status` da Graph — e é por isso que `statusDaMeta()` serve para os dois.
+ * `status` da Graph, e é por isso que `statusDaMeta()` serve para os dois.
  */
 export type ResultadoDoTemplate = {
   /** Quantos templates nossos foram atualizados. */
@@ -111,11 +111,11 @@ function motivoLegivel(valor: z.infer<typeof statusDoTemplateSchema>): string | 
     valor.rejection_info?.description,
     valor.rejection_info?.recommendation,
     // `reason` costuma ser um código seco (`INVALID_FORMAT`). Só vale quando é
-    // a única coisa que veio — sozinho ainda é melhor que nada na tela.
+    // a única coisa que veio, sozinho ainda é melhor que nada na tela.
     !valor.rejection_info ? valor.reason : undefined,
   ].filter((p): p is string => Boolean(p && p.trim() && p !== 'NONE'))
 
-  return partes.length > 0 ? partes.join(' — ') : null
+  return partes.length > 0 ? partes.join(', ') : null
 }
 
 /**
@@ -144,7 +144,7 @@ export async function receberStatusDeTemplate(payload: unknown): Promise<Resulta
       if (wabaTemplateId === undefined) continue
 
       /*
-       * `template_category_update` não traz `event` — ele só diz que a
+       * `template_category_update` não traz `event`, ele só diz que a
        * categoria mudou. Nesse caso não se toca no status: sobrescrevê-lo com
        * um palpite faria um template aprovado virar "desconhecido" por causa
        * de uma mudança de preço.
@@ -158,7 +158,7 @@ export async function receberStatusDeTemplate(payload: unknown): Promise<Resulta
       }
 
       const status = statusDaMeta(valor.data.event)
-      // Status novo da Meta não pode virar `aprovado` por engano — seria
+      // Status novo da Meta não pode virar `aprovado` por engano, seria
       // transmissão saindo com modelo que não passou.
       if (status === 'desconhecido') continue
 
@@ -203,7 +203,7 @@ export type ResultadoDaEntrega = {
   /**
    * Os templates que morreram, pelo código de erro das mensagens.
    *
-   * 132015 e 132007 significam que **o template morreu** — não adianta tentar
+   * 132015 e 132007 significam que **o template morreu**, não adianta tentar
    * outro destinatário. Quem chama usa isto para parar a transmissão inteira em
    * vez de queimar 5.000 tentativas contra um modelo pausado.
    */
@@ -211,12 +211,12 @@ export type ResultadoDaEntrega = {
 }
 
 /**
- * Trata o `statuses` do campo `messages` — entrega, leitura e falha.
+ * Trata o `statuses` do campo `messages`, entrega, leitura e falha.
  *
  * **A maioria destes eventos não é transmissão nenhuma**: o webhook de status
  * chega para toda mensagem que o número manda, inclusive as respostas de
  * atendimento. `aplicarStatusPorWamid` devolver `false` é o caso comum, não
- * erro — e é por isso que nada aqui alerta.
+ * erro, e é por isso que nada aqui alerta.
  */
 export async function receberStatusDeEntrega(payload: unknown): Promise<ResultadoDaEntrega> {
   const analise = envelopeSchema.safeParse(payload)

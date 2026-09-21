@@ -3,20 +3,19 @@ import { CORES, ICONES, NOMES } from '@/core/flow/blocos'
 import type { TipoNo } from '@/core/flow/schema'
 
 /**
- * As peças da Ajuda — e a ideia que segura a página inteira.
+ * As peças da Ajuda, e a ideia que segura a página inteira.
  *
  * **Toda explicação daqui mostra os dois lados: a conversa e o desenho.** O
- * `Espelho` é isso literalmente — à esquerda o que a pessoa lê no WhatsApp, à
+ * `Espelho` é isso literalmente, à esquerda o que a pessoa lê no WhatsApp, à
  * direita o bloco que produziu aquilo. É a única forma de responder as duas
  * perguntas que quem opera faz junto: *"como isso fica?"* e *"onde eu clico?"*.
  *
- * Os blocos desenhados aqui usam o nome, o ícone e a cor de `core/flow/blocos.ts`
- * — os mesmos do editor. Não é economia: é o que impede a Ajuda de descrever um
+ * Os blocos desenhados aqui usam o nome, o ícone e a cor de `core/flow/blocos.ts`, os mesmos do editor. Não é economia: é o que impede a Ajuda de descrever um
  * produto que mudou de nome. Quando `http` deixou de se chamar "API", a página
  * acompanhou sem ninguém lembrar dela.
  *
  * Tudo é servidor e sem JavaScript. A sanfona de dúvidas é `<details>`, o índice
- * são âncoras — uma página de socorro não pode depender de um bundle carregar.
+ * são âncoras, uma página de socorro não pode depender de um bundle carregar.
  */
 
 /* ─────────────────────────── estrutura ─────────────────────────── */
@@ -79,7 +78,7 @@ export function Cod({ children }: { children: ReactNode }) {
   )
 }
 
-/** Um bloco de código de verdade — JSON de resposta, corpo de requisição. */
+/** Um bloco de código de verdade, JSON de resposta, corpo de requisição. */
 export function Codigo({ titulo, children }: { titulo?: string; children: string }) {
   return (
     <div className="overflow-hidden rounded-xl border border-line bg-surface">
@@ -149,7 +148,7 @@ export function Nota({
 /* ─────────────────────── o bloco, como no editor ─────────────────────── */
 
 /**
- * Um bloco desenhado igual ao do editor — inclusive as alças.
+ * Um bloco desenhado igual ao do editor, inclusive as alças.
  *
  * As alças pretas nas laterais não são enfeite: elas são a única coisa que
  * explica ramificação neste produto. *A setinha que você arrasta já é o
@@ -277,12 +276,12 @@ export function Conversa({ titulo, children }: { titulo?: string; children: Reac
  * **A peça assinatura da página: a conversa e o desenho, lado a lado.**
  *
  * Quem opera não tem dificuldade em imaginar a conversa nem em enxergar o
- * desenho — a dificuldade é ligar um no outro. Explicar só com prosa deixa essa
+ * desenho, a dificuldade é ligar um no outro. Explicar só com prosa deixa essa
  * ligação por conta do leitor, e é exatamente aí que se erra: escrever
  * `{{horario}}` no corpo do POST quando a API queria o id parece certo em texto
  * e é errado na tela.
  *
- * No celular as duas colunas viram uma, com a conversa em cima — é a metade que
+ * No celular as duas colunas viram uma, com a conversa em cima, é a metade que
  * dá sentido à outra.
  */
 export function Espelho({
@@ -322,7 +321,7 @@ export function Espelho({
 /* ───────────────────────── sequência e listas ───────────────────────── */
 
 /**
- * Passos numerados — **só onde a ordem é informação**.
+ * Passos numerados, **só onde a ordem é informação**.
  *
  * Ligar a Verandi tem ordem de verdade: sem a credencial cadastrada, o bloco não
  * chama nada. Já a lista de blocos não tem ordem nenhuma, e numerá-la seria

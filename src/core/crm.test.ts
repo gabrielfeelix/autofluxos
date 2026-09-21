@@ -14,7 +14,7 @@ import {
 /**
  * A régua do CRM.
  *
- * Os testes que importam aqui não são os de formato — são os três que protegem
+ * Os testes que importam aqui não são os de formato, são os três que protegem
  * decisões de produto que alguém pode achar que é bug e "consertar": cliente
  * não regride, perder exige motivo, e cadeia de funis não se morde.
  */
@@ -168,9 +168,9 @@ describe('linha do tempo', () => {
   it('cada linha se lê sozinha', () => {
     expect(comoFrase({ ...base, tipo: 'mudou-de-etapa', dados: { de: 'Novo', para: 'Proposta' } }))
       .toBe('saiu de Novo para Proposta')
-    expect(comoFrase({ ...base, tipo: 'perdeu', dados: { motivo: 'Preço' } })).toBe('perdeu — Preço')
+    expect(comoFrase({ ...base, tipo: 'perdeu', dados: { motivo: 'Preço' } })).toBe('perdeu, Preço')
     expect(comoFrase({ ...base, tipo: 'ganhou', dados: { valor: 'R$ 1.500,00' } })).toBe(
-      'ganhou — R$ 1.500,00',
+      'ganhou, R$ 1.500,00',
     )
   })
 

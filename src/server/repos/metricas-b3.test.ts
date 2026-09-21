@@ -92,13 +92,13 @@ describe.skipIf(!temCredencial)('métricas de tempo', () => {
     expect(tempos.atual.medianaAteResponder).toBeGreaterThanOrEqual(230)
     expect(tempos.atual.medianaAteResponder).toBeLessThanOrEqual(250)
 
-    // A média é arrastada pela de 600 — e é por isso que a tela mostra as duas.
+    // A média é arrastada pela de 600, e é por isso que a tela mostra as duas.
     expect(tempos.atual.mediaAteResponder).toBeGreaterThan(
       tempos.atual.medianaAteResponder! * 10,
     )
   })
 
-  it('nada fechado ainda não vira zero — vira ausência', async () => {
+  it('nada fechado ainda não vira zero, vira ausência', async () => {
     const tempos = await medirTempos(clienteId)
     expect(tempos.atual.fecharam).toBe(0)
     expect(tempos.atual.medianaAteFechar).toBeNull()

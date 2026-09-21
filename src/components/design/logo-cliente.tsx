@@ -16,7 +16,7 @@ export function iniciaisDe(nome: string): string {
  * A cara do cliente no painel: a logo dele, ou as iniciais.
  *
  * `object-contain` e não `cover`: logo cortada no meio deixa de ser a logo. O
- * quadrado sobra em volta e tudo bem — vale mais mostrar a marca inteira do que
+ * quadrado sobra em volta e tudo bem, vale mais mostrar a marca inteira do que
  * preencher o círculo.
  *
  * Sem `next/image` de propósito. O endereço vem do bucket do Supabase e mudaria

@@ -16,7 +16,7 @@ import {
  *
  * Estes testes existem por um motivo específico: `limparParaCompartilhar` é a
  * única barreira entre o desenho de um cliente e uma URL pública, e a forma de
- * ela falhar é silenciosa — o campo continua no objeto e ninguém percebe até
+ * ela falhar é silenciosa, o campo continua no objeto e ninguém percebe até
  * alguém ler o JSON do outro lado.
  */
 
@@ -85,7 +85,7 @@ describe('os avisos aparecem antes de o link existir', () => {
     expect(codigos).toContain('ENDERECOS_EXTERNOS')
   })
 
-  it('mostra o host e nunca o caminho — é lá que chave costuma estar', () => {
+  it('mostra o host e nunca o caminho, é lá que chave costuma estar', () => {
     const comApi = fluxo([
       {
         id: 'a',
@@ -213,7 +213,7 @@ describe('o estado do link', () => {
 
   it('data ilegível falha fechado', () => {
     // O pior lado do erro aqui é um link que devia estar morto continuar
-    // aberto — então data torta vira expirado, nunca válido.
+    // aberto, então data torta vira expirado, nunca válido.
     expect(estadoDoLink({ expiraEm: 'ontem', revogadoEm: null }, agora)).toBe('expirado')
   })
 })

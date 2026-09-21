@@ -7,7 +7,7 @@ import {
 import { comoDinheiro } from '@/core/crm'
 
 /**
- * Quanto essa pessoa vale, e se ela ainda está aqui — numa célula de tabela.
+ * Quanto essa pessoa vale, e se ela ainda está aqui, numa célula de tabela.
  *
  * **As duas coisas juntas, e nunca só o nível.** "Ouro" sozinho é um troféu que
  * não pede nada de ninguém; "Ouro · sumido há 4 meses" é uma tarefa. O par é o

@@ -5,12 +5,12 @@ import { acharUsuario, sessaoAtual } from '@/server/sessao'
  * A faixa que avisa de quem é a conta que você está vendo.
  *
  * **Ela é o freio do "entrar como".** Sem ela, é questão de tempo até alguém
- * publicar um fluxo achando que está na própria conta — e no AutoFluxos
+ * publicar um fluxo achando que está na própria conta, e no AutoFluxos
  * publicar um fluxo muda o que o WhatsApp de um cliente responde para gente de
  * verdade. Por isso ela é âmbar, fica no topo, não some ao rolar e carrega o
  * botão de voltar: as três coisas juntas é que fazem alguém notar.
  *
- * Aparece em toda tela que uma sessão impersonada alcança — a moldura do
+ * Aparece em toda tela que uma sessão impersonada alcança, a moldura do
  * cliente, o editor de fluxo, o seletor de companhia e a área do administrador.
  * O editor precisa dela **explicitamente** porque é tela cheia e não usa
  * moldura nenhuma; é também a tela onde o erro custa mais caro.

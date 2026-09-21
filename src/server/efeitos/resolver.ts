@@ -36,7 +36,7 @@ import { lerCredencial } from '../repos/conexoes'
  * O motor, com os efeitos externos resolvidos.
  *
  * O `executar()` é puro e continua puro: quando a conversa chega num bloco que
- * precisa do mundo lá fora — a IA ou uma API — ele **descreve** o que precisa
+ * precisa do mundo lá fora, a IA ou uma API, ele **descreve** o que precisa
  * (`chamar_ia`, `chamar_http`) e para. Alguém de fora tem que executar e
  * reentrar com o resultado.
  *
@@ -54,7 +54,7 @@ const AVISO_DE_HANDOFF = 'Vou te passar para um atendente. Só um instante!'
  * Era 3, calibrado para IA, onde encadear é sinal de fluxo errado. Com API é
  * diferente: consultar o CEP, gravar no CRM e avisar no Slack na mesma passada
  * são três chamadas de um fluxo perfeitamente sensato. A trava continua
- * existindo para matar ciclo, não para limitar desenho — por isso sobe, e não
+ * existindo para matar ciclo, não para limitar desenho, por isso sobe, e não
  * some.
  */
 export const MAX_EFEITOS = 10
@@ -64,7 +64,7 @@ export const MAX_EFEITOS = 10
  *
  * Existe pelo mesmo motivo de `MAX_EFEITOS`: matar ciclo, não limitar desenho.
  * Três saltos já é uma triagem que distribui para uma especialidade que
- * distribui para outra — acima disso é laço, e laço aqui é infinito de verdade,
+ * distribui para outra, acima disso é laço, e laço aqui é infinito de verdade,
  * porque cada salto recomeça o fluxo de destino do início.
  */
 export const MAX_SALTOS = 5
@@ -110,25 +110,25 @@ export type OpcoesDeEfeitos = {
    * De quem é a conversa. Só para o log de chamadas da IA.
    *
    * Opcional porque o simulador não tem contato: lá a conversa é de ninguém, e
-   * registrar sem contato continua sendo registro útil — diz o que foi testado.
+   * registrar sem contato continua sendo registro útil, diz o que foi testado.
    */
   contatoId?: string
   /**
    * Tem gente para atender agora, e quando volta.
    *
    * Vai para o motor, que decide o que dizer no handoff. O padrão é "sempre
-   * aberto" porque é como o produto se comportou até aqui — e porque conta sem
+   * aberto" porque é como o produto se comportou até aqui, e porque conta sem
    * horário configurado não pode emudecer sozinha.
    */
   atendimento?: ContextoDoAtendimento
   /**
-   * Como carregar a automação de destino de um salto — o bloco "Ir para outra
+   * Como carregar a automação de destino de um salto, o bloco "Ir para outra
    * automação".
    *
    * Entra por parâmetro, e não como import de repositório, pelo mesmo motivo do
    * `modelo`: quem chama decide o que o salto alcança. O webhook passa um
    * carregador amarrado ao cliente da conversa, e é isso que impede um fluxo de
-   * um cliente saltar para o de outro — o id do destino vem do grafo, e grafo é
+   * um cliente saltar para o de outro, o id do destino vem do grafo, e grafo é
    * coisa que gente edita.
    *
    * `null` significa "este destino não serve agora": não existe, não é deste
@@ -146,7 +146,7 @@ export type OpcoesDeEfeitos = {
  * `destino` só vem preenchido quando houve salto, e quem chamou precisa dele
  * para duas coisas que o motor não tem como fazer: gravar na sessão qual versão
  * ela executa agora, e agendar o timeout lendo o grafo certo. Sem isso o salto
- * duraria uma mensagem — a próxima carregaria a versão antiga de novo.
+ * duraria uma mensagem, a próxima carregaria a versão antiga de novo.
  */
 export type ResultadoComEfeitos = Resultado & {
   destino?: { versaoId: string; grafo: Fluxo }
@@ -182,7 +182,7 @@ async function rodar(
    *
    * Elas são derivadas do relógio, não coletadas da conversa: uma conversa que
    * atravessa a virada do dia precisa de `{{hoje}}` novo, e um valor guardado
-   * seria o de ontem — o erro mais silencioso possível, porque a mensagem sai
+   * seria o de ontem, o erro mais silencioso possível, porque a mensagem sai
    * bonita e com a data errada.
    *
    * Por isso são calculadas a cada mensagem, sobrescrevem o que houver, e a
@@ -205,7 +205,7 @@ async function rodar(
    *
    * O motor não conhece ferramenta, e não devia passar a conhecer só para
    * entender um "pode sim". Do ponto de vista dele, a conversa continua parada
-   * no nó de IA — o que muda é que, antes de reentrar, o resolvedor gastou a
+   * no nó de IA, o que muda é que, antes de reentrar, o resolvedor gastou a
    * resposta da pessoa decidindo se a gravação sai.
    */
   if (sessao.status === 'aguardando_confirmacao' && sessao.iaPendente) {
@@ -220,7 +220,7 @@ async function rodar(
    *
    * Tudo abaixo reentra no motor com `fluxoAtual`, nunca com o `fluxo` que
    * chegou por parâmetro: depois de um salto, reentrar no antigo executaria o
-   * nó errado — e o erro seria silencioso, porque os dois grafos são válidos.
+   * nó errado, e o erro seria silencioso, porque os dois grafos são válidos.
    */
   let fluxoAtual = fluxo
   let destino: { versaoId: string; grafo: Fluxo } | undefined
@@ -245,7 +245,7 @@ async function rodar(
       // tem como chegar ao navegador pelo simulador.
       // Banco fora do ar ou cofre recusando não pode estourar daqui: a exceção
       // subiria até o `after()` do webhook, a sessão nunca seria salva, e a
-      // mensagem já foi deduplicada — a pessoa ficaria sem resposta nenhuma.
+      // mensagem já foi deduplicada, a pessoa ficaria sem resposta nenhuma.
       // Sem credencial, o bloco cai no caminho de handoff logo abaixo.
       let credencial = null
       if (chamadaHttp.conexaoId && opcoes.clienteId) {
@@ -274,7 +274,7 @@ async function rodar(
             { tipo: 'enviar_texto', texto: AVISO_DE_HANDOFF },
             {
               tipo: 'transferir_humano',
-              motivo: 'a integração falhou — a credencial configurada não está mais disponível',
+              motivo: 'a integração falhou, a credencial configurada não está mais disponível',
             },
           ],
           sessao: { ...resultado.sessao, status: 'humano' },
@@ -292,7 +292,7 @@ async function rodar(
           acoes: [
             ...semEfeito(resultado.acoes, 'chamar_http'),
             { tipo: 'enviar_texto', texto: AVISO_DE_HANDOFF },
-            { tipo: 'transferir_humano', motivo: `a integração falhou — ${resposta.motivo}` },
+            { tipo: 'transferir_humano', motivo: `a integração falhou, ${resposta.motivo}` },
           ],
           sessao: { ...resultado.sessao, status: 'humano' },
           ...(destino ? { destino } : {}),
@@ -301,7 +301,7 @@ async function rodar(
 
       // `aoFalhar: 'seguir'`: a conversa continua e as variáveis mapeadas ficam
       // vazias, que é como o produto já trata variável ausente em qualquer
-      // texto. Zerar explicitamente importa — sem isso, uma segunda chamada que
+      // texto. Zerar explicitamente importa, sem isso, uma segunda chamada que
       // falha deixaria o valor da primeira em pé, e a mensagem para o cliente
       // mostraria dado velho como se fosse fresco.
       const seguinte = executar(
@@ -339,8 +339,8 @@ async function rodar(
               tipo: 'transferir_humano',
               motivo:
                 saltos > MAX_SALTOS
-                  ? `o fluxo saltou entre mais de ${MAX_SALTOS} automações seguidas — provavelmente há um ciclo no desenho`
-                  : 'a automação de destino não está disponível — ela foi apagada, desligada ou nunca publicada',
+                  ? `o fluxo saltou entre mais de ${MAX_SALTOS} automações seguidas, provavelmente há um ciclo no desenho`
+                  : 'a automação de destino não está disponível, ela foi apagada, desligada ou nunca publicada',
             },
           ],
           sessao: { ...resultado.sessao, status: 'humano' },
@@ -354,7 +354,7 @@ async function rodar(
 
       // Começa do início do fluxo novo e com as variáveis intactas: é a mesma
       // conversa, e o nome que a pessoa deu na triagem não pode sumir porque o
-      // desenho mudou de arquivo. `tentativas` zera — o que o bot não entendeu
+      // desenho mudou de arquivo. `tentativas` zera, o que o bot não entendeu
       // lá atrás não conta contra as perguntas de cá.
       const seguinte = executar(
         fluxoAtual,
@@ -374,7 +374,7 @@ async function rodar(
     if (chamadaIa?.tipo !== 'chamar_ia') return { ...resultado, ...(destino ? { destino } : {}) }
 
     // Sem modelo, `chamar_ia` continua na lista e quem chamou decide o que
-    // fazer — hoje, mandar para uma pessoa. Nunca fingir que respondeu.
+    // fazer, hoje, mandar para uma pessoa. Nunca fingir que respondeu.
     if (!modelo) return { ...resultado, ...(destino ? { destino } : {}) }
 
     const resposta = await responderComFerramentas({
@@ -391,7 +391,7 @@ async function rodar(
        *
        * `enviar_texto` com a pergunta, a gravação guardada na sessão, e
        * `aguardando_confirmacao`. A próxima mensagem cai em
-       * `resolverConfirmacao`, antes do motor — que continua achando que a
+       * `resolverConfirmacao`, antes do motor, que continua achando que a
        * conversa está parada no nó de IA, porque está.
        */
       return {
@@ -421,7 +421,7 @@ async function rodar(
             tipo: 'enviar_texto',
             texto: avisoDeForaDoHorario(atendimento) ?? AVISO_DE_HANDOFF,
           },
-          { tipo: 'transferir_humano', motivo: `a IA não soube responder — ${resposta.motivo}` },
+          { tipo: 'transferir_humano', motivo: `a IA não soube responder, ${resposta.motivo}` },
         ],
         sessao: { ...resultado.sessao, status: 'humano' },
         ...(destino ? { destino } : {}),
@@ -447,7 +447,7 @@ async function rodar(
    *
    * Antes daqui, o pedido não atendido sobrava na lista e ia parar em
    * `aplicar()`, que passava a conversa para uma pessoa dizendo "a integração
-   * não chegou a ser executada" — verdade pela metade, e que manda quem for
+   * não chegou a ser executada", verdade pela metade, e que manda quem for
    * investigar procurar defeito na integração em vez de ciclo no desenho.
    * Falhar com o motivo certo é o que faz a diferença entre trinta segundos e
    * uma tarde.
@@ -460,7 +460,7 @@ async function rodar(
         { tipo: 'enviar_texto', texto: AVISO_DE_HANDOFF },
         {
           tipo: 'transferir_humano',
-          motivo: `o fluxo encadeou mais de ${MAX_EFEITOS} chamadas externas seguidas — provavelmente há um ciclo no desenho`,
+          motivo: `o fluxo encadeou mais de ${MAX_EFEITOS} chamadas externas seguidas, provavelmente há um ciclo no desenho`,
         },
       ],
       sessao: { ...resultado.sessao, status: 'humano' },
@@ -485,7 +485,7 @@ async function carregar(opcoes: OpcoesDeEfeitos, fluxoId: string) {
   } catch (erro) {
     // Banco fora do ar no meio de um salto não pode estourar daqui: a exceção
     // subiria até o `after()` do webhook, a sessão nunca seria salva e a
-    // mensagem já foi deduplicada — a pessoa ficaria sem resposta nenhuma.
+    // mensagem já foi deduplicada, a pessoa ficaria sem resposta nenhuma.
     await alertar('não deu para carregar a automação de destino', erro, { fluxo: fluxoId })
     return null
   }
@@ -510,7 +510,7 @@ function ultimaDaPessoa(historico: Turno[] | undefined): string | undefined {
  *
  * **Dois, e o número tem origem.** A prática assentada em tool calling é uma a
  * duas voltas: cada volta melhora a cobertura e cobra em latência e token, e a
- * terceira quase nunca acrescenta. Do lado de cá o custo é concreto — três
+ * terceira quase nunca acrescenta. Do lado de cá o custo é concreto, três
  * chamadas ao modelo e duas à API do cliente já somam dezenas de segundos com
  * alguém olhando o WhatsApp.
  *
@@ -524,7 +524,7 @@ export const MAX_VOLTAS_DE_FERRAMENTA = 2
  * O que o resolvedor devolve: texto ou desistência, nunca um pedido pendente.
  *
  * Quem executa consulta é este arquivo, então um `usar_ferramenta` saindo daqui
- * seria um pedido que ninguém vai atender — e a conversa terminaria em
+ * seria um pedido que ninguém vai atender, e a conversa terminaria em
  * silêncio, que é o único desfecho que este produto não aceita.
  */
 type RespostaFinal =
@@ -533,7 +533,7 @@ type RespostaFinal =
    * A IA quer gravar e a política deste cliente manda perguntar antes.
    *
    * Não é `nao_sei` e não é `texto`: é uma terceira coisa, e espremê-la num dos
-   * dois esconderia justamente o que ela tem de diferente — a conversa não
+   * dois esconderia justamente o que ela tem de diferente, a conversa não
    * acabou, e existe uma gravação guardada esperando um sim.
    */
   | {
@@ -545,7 +545,7 @@ type RespostaFinal =
 /**
  * Pedido de consulta onde nenhuma foi oferecida vira desistência.
  *
- * O modelo não deveria conseguir — sem `tools` no corpo não há função para
+ * O modelo não deveria conseguir, sem `tools` no corpo não há função para
  * chamar. Mas "não deveria" não é uma garantia que se possa dar a partir do
  * comportamento de um modelo, e a alternativa é uma resposta vazia chegando ao
  * WhatsApp de alguém.
@@ -560,7 +560,7 @@ function semPedido(resposta: Resposta): RespostaFinal {
 /**
  * A IA respondendo, com as consultas que este nó autorizou.
  *
- * Sem ferramenta, é exatamente a chamada única de sempre — nenhum fluxo
+ * Sem ferramenta, é exatamente a chamada única de sempre, nenhum fluxo
  * publicado muda de comportamento.
  *
  * Com ferramenta, o laço é curto e todas as saídas terminam em resposta ou em
@@ -597,7 +597,7 @@ async function responderComFerramentas({
   /*
    * A credencial é lida uma vez, fora do laço, e vive só o tempo desta
    * resposta. Ela não entra na sessão, não é serializada e portanto não tem
-   * como chegar ao navegador pelo simulador — a mesma regra do nó de API.
+   * como chegar ao navegador pelo simulador, a mesma regra do nó de API.
    */
   let credencial = null
   if (chamada.conexaoId && opcoes.clienteId) {
@@ -659,7 +659,7 @@ async function responderComFerramentas({
        *
        * Devolver o erro para o modelo tentar de novo é o desenho tentador e é
        * o errado aqui: cada tentativa é uma volta a mais com alguém esperando,
-       * e as recusas que existem não são erro de digitação — são id inventado,
+       * e as recusas que existem não são erro de digitação, são id inventado,
        * ferramenta não autorizada e argumento faltando. Nenhuma delas melhora
        * na segunda tentativa, e a primeira é sinal de que alguém está testando
        * o limite.
@@ -704,7 +704,7 @@ async function responderComFerramentas({
      * O laço termina **sem gravar nada**: o que sai é uma pergunta, e a
      * gravação fica guardada na sessão até a pessoa responder. É o que torna a
      * decisão não-unicamente-automatizada, no sentido do art. 20 da LGPD, e é
-     * o que impede o modelo de pular a etapa — pedir no prompt que ele
+     * o que impede o modelo de pular a etapa, pedir no prompt que ele
      * confirme (regra 10) é pedir, não é garantir.
      */
     if (politicaDe(ferramenta, politicas) !== 'automatico') {
@@ -733,7 +733,7 @@ async function responderComFerramentas({
     if (!disparo.ok) {
       // Falha de consulta é handoff pelo mesmo motivo do nó de API com
       // `aoFalhar: humano`: responder sem o dado é responder chutando.
-      return { tipo: 'nao_sei', motivo: `a consulta ${ferramenta.nome} falhou — ${disparo.motivo}` }
+      return { tipo: 'nao_sei', motivo: `a consulta ${ferramenta.nome} falhou, ${disparo.motivo}` }
     }
 
     const recorte = projetar(disparo.json, ferramenta.projecao)
@@ -752,12 +752,12 @@ async function responderComFerramentas({
  *
  * Três saídas, e elas são três de propósito. **Sim** dispara a gravação e
  * devolve a conversa ao modelo com o resultado. **Não** cancela, não grava
- * nada, e devolve a conversa ao modelo dizendo isso — para ele seguir
+ * nada, e devolve a conversa ao modelo dizendo isso, para ele seguir
  * atendendo, e não encerrar. **Qualquer outra coisa** repete a pergunta: quem
  * escreveu "quanto custa?" não recusou nada, e tratar isso como recusa
  * encerraria um assunto que a pessoa nem abordou.
  *
- * Devolve `null` quando não há o que fazer aqui — aí o motor toca normalmente.
+ * Devolve `null` quando não há o que fazer aqui, aí o motor toca normalmente.
  */
 async function resolverConfirmacao(
   fluxo: Fluxo,
@@ -789,7 +789,7 @@ async function resolverConfirmacao(
      * Recusa também vira linha no log, e isso não é excesso.
      *
      * "A IA não fez nada porque a pessoa disse não" é exatamente o tipo de coisa
-     * que alguém vai querer provar depois — inclusive para responder a um
+     * que alguém vai querer provar depois, inclusive para responder a um
      * pedido de revisão do art. 20, onde a resposta certa é "não houve decisão
      * automatizada nenhuma".
      */
@@ -826,8 +826,8 @@ async function resolverConfirmacao(
     resumo: pendente.resumo,
     /*
      * Os ids guardados já passaram pela conferência na hora de suspender.
-     * Reconferir contra uma rodada nova seria impossível — a rodada que os viu
-     * terminou quando a pergunta foi feita — e recusaria toda confirmação.
+     * Reconferir contra uma rodada nova seria impossível, a rodada que os viu
+     * terminou quando a pergunta foi feita, e recusaria toda confirmação.
      */
     idsConhecidos: new Set(Object.values(pendente.argumentos)),
   })
@@ -836,7 +836,7 @@ async function resolverConfirmacao(
     return {
       acoes: [
         { tipo: 'enviar_texto', texto: avisoDeForaDoHorario(atendimento) ?? AVISO_DE_HANDOFF },
-        { tipo: 'transferir_humano', motivo: `a consulta ${ferramenta.nome} falhou — ${disparo.motivo}` },
+        { tipo: 'transferir_humano', motivo: `a consulta ${ferramenta.nome} falhou, ${disparo.motivo}` },
       ],
       sessao: { ...limpa, status: 'humano' },
     }
@@ -866,7 +866,7 @@ function comEfeitosDaIa(
  * Dispara uma ferramenta e registra o que aconteceu.
  *
  * **Um caminho só**, usado pelo laço da IA e pela retomada da confirmação. Dois
- * caminhos divergiriam — e o que divergiria primeiro é o log, que é justamente
+ * caminhos divergiriam, e o que divergiria primeiro é o log, que é justamente
  * a parte que ninguém percebe faltando até precisar dela.
  */
 async function dispararFerramenta({
@@ -1002,7 +1002,7 @@ function conexaoDoNoDeIa(fluxo: Fluxo, noId: string | null): string | undefined 
  *
  * Sobrescrevem o que houver com o mesmo nome, e isso é o certo: se alguém
  * desenhou um "Guardar em {{hoje}}", o valor do relógio vale mais que o valor
- * congelado — e o validador já avisa que o nome é nativo.
+ * congelado, e o validador já avisa que o nome é nativo.
  */
 function comDatas(sessao: Sessao, datas: Record<string, string> | undefined): Sessao {
   if (!datas) return sessao
@@ -1013,7 +1013,7 @@ function comDatas(sessao: Sessao, datas: Record<string, string> | undefined): Se
  * Tira as datas antes de a sessão ser gravada.
  *
  * Sem isto, `{{hoje}}` de ontem sobreviveria numa conversa que atravessou a
- * meia-noite e a próxima mensagem usaria a data velha — a mensagem sai bonita
+ * meia-noite e a próxima mensagem usaria a data velha, a mensagem sai bonita
  * e com o dia errado, que é o defeito mais difícil de alguém reparar. E oito
  * campos derivados iriam parar na ficha do lead sem ninguém ter preenchido.
  */

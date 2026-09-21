@@ -3,12 +3,12 @@
 import { useState } from 'react'
 
 /**
- * Um endereço que existe para ser copiado — e o botão que copia.
+ * Um endereço que existe para ser copiado, e o botão que copia.
  *
  * O caso que ele resolve é o webhook da Meta: uma URL longa, que ninguém digita
  * à mão, exibida num campo que a pessoa precisava selecionar com o mouse até o
  * fim. Selecionar texto truncado dentro de um bloco é justamente o que dá
- * errado — para no "..." e leva meia URL para o painel da Meta, que então
+ * errado, para no "..." e leva meia URL para o painel da Meta, que então
  * responde um erro que não diz que o endereço veio cortado.
  *
  * **O texto quebra em vez de truncar.** Endereço cortado por reticências é
@@ -18,7 +18,7 @@ import { useState } from 'react'
  * para de significar que alguma coisa acabou de acontecer.
  *
  * Nenhuma cor escrita aqui. O campo usa `surface`/`line`/`muted`, que são os
- * mesmos tokens do resto do painel — o bloco antigo usava `bg-black/30` com
+ * mesmos tokens do resto do painel, o bloco antigo usava `bg-black/30` com
  * texto `primary`, que no tema claro virava uma faixa cinza com texto azul em
  * cima, ilegível nos dois sentidos.
  */
@@ -63,7 +63,7 @@ export function CampoParaCopiar({
       </div>
       {erro && (
         <p className="mt-1.5 text-[11px] text-aviso">
-          O navegador bloqueou a cópia automática — selecione o endereço acima e copie.
+          O navegador bloqueou a cópia automática, selecione o endereço acima e copie.
         </p>
       )}
     </div>

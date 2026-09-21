@@ -5,12 +5,12 @@ import { diaDaMensagem, etiquetasDeDia, horaDoRelogio, rotuloDoDia } from './qua
  * O fuso é o miolo destes testes, não um detalhe.
  *
  * O painel é de um negócio brasileiro e o servidor é da Vercel. Uma mensagem
- * das 22h em São Paulo já é do dia seguinte em UTC — agrupar por UTC colocaria
+ * das 22h em São Paulo já é do dia seguinte em UTC, agrupar por UTC colocaria
  * a conversa da noite debaixo da etiqueta errada, e ninguém perceberia porque
  * o erro só aparece depois das 21h.
  */
 
-/** 15/set/2026, 22:30 em São Paulo — já é dia 16 em UTC. */
+/** 15/set/2026, 22:30 em São Paulo, já é dia 16 em UTC. */
 const NOITE_DE_SP = '2026-09-16T01:30:00.000Z'
 /** 15/set/2026, 09:14 em São Paulo. */
 const MANHA_DE_SP = '2026-09-15T12:14:00.000Z'

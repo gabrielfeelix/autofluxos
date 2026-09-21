@@ -26,7 +26,7 @@ export const dynamic = 'force-dynamic'
  * ---------------------------------------------------------------------------
  *
  * Porque responde **outra pergunta**. O índice responde "onde eu mexo nisto"; o
- * catálogo responde "o que existe para ligar" — inclusive o que ainda não
+ * catálogo responde "o que existe para ligar", inclusive o que ainda não
  * existe. Hoje nada no produto diz que o Telegram está desenhado e não
  * implementado: a informação mora num comentário de `core/canais.ts`, que
  * ninguém fora do código lê.
@@ -40,7 +40,7 @@ export const dynamic = 'force-dynamic'
  * ---------------------------------------------------------------------------
  *
  * Busca e filtro por categoria. São cinco integrações: quinze categorias para
- * cinco cartões é moldura ocupando espaço — e é exatamente o tipo de coisa que
+ * cinco cartões é moldura ocupando espaço, e é exatamente o tipo de coisa que
  * se coloca "porque a referência tem". Entram no dia em que houver catálogo de
  * verdade. Ver `docs/PLANO-UI-CONFIGURACOES.md` §1.6.
  */
@@ -56,7 +56,7 @@ type Integracao = {
   saude: SaudeDaConexao
   /** Para onde o cartão leva. `null` = não há tela: o canal ainda não existe. */
   href: string | null
-  /** Quando não dá para ligar, o que falta — escrito para quem não é da casa. */
+  /** Quando não dá para ligar, o que falta, escrito para quem não é da casa. */
   emBreve?: string
 }
 
@@ -155,7 +155,7 @@ export default async function Pagina({
       <main className="w-full max-w-[1100px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <h1 className="text-[22px] font-bold tracking-[-0.02em] md:text-[28px]">Integrações</h1>
         <p className="mt-1.5 max-w-[640px] text-[13px] leading-6 text-dim">
-          Tudo com que esta conta fala — os canais por onde a conversa passa e os sistemas que
+          Tudo com que esta conta fala, os canais por onde a conversa passa e os sistemas que
           entregam e recebem dado. Cada cartão leva para onde se liga e se confere.
         </p>
 
@@ -170,7 +170,7 @@ export default async function Pagina({
 
         {lista.length === 0 ? (
           <p className="app-card px-5 py-8 text-center text-[13px] text-muted">
-            Nada aqui — tudo que existe já está ligado nesta conta.
+            Nada aqui, tudo que existe já está ligado nesta conta.
           </p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -196,7 +196,7 @@ function Tab({
   return (
     /*
       Aba é link, e não botão com estado no navegador: assim ela tem endereço
-      próprio, volta no histórico e sobrevive a um F5 — e a tela inteira
+      próprio, volta no histórico e sobrevive a um F5, e a tela inteira
       continua sendo desenhada no servidor.
     */
     <Link
@@ -229,7 +229,7 @@ function Cartao({ item }: { item: Integracao }) {
 
   if (!item.href) {
     /*
-      Sem tela, o cartão **não** é link — nem link que não leva a lugar nenhum,
+      Sem tela, o cartão **não** é link, nem link que não leva a lugar nenhum,
       nem botão desabilitado. Um cartão apagado e parado já diz o que precisa
       dizer, e o texto embaixo explica o que falta.
     */

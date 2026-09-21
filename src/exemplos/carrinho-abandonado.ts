@@ -1,11 +1,11 @@
 import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
 
 /**
- * Recuperação de carrinho — a conversa que volta atrás de quem quase comprou.
+ * Recuperação de carrinho, a conversa que volta atrás de quem quase comprou.
  *
  * **Como este fluxo começa importa mais que o texto dele.** Ninguém abre uma
  * conversa dizendo "esqueci o carrinho": quem começa é a loja, por campanha.
- * Fora da janela de 24h do WhatsApp isso exige modelo aprovado da Meta — a
+ * Fora da janela de 24h do WhatsApp isso exige modelo aprovado da Meta, a
  * mesma lacuna do lembrete de aula. Dentro da janela (a pessoa acabou de
  * escrever), ele roda como qualquer outro.
  *

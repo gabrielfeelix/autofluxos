@@ -66,7 +66,7 @@ describe('indicador de digitação da Cloud API', () => {
 
 describe('o corte do rótulo conta caracteres, e não unidades UTF-16', () => {
   /*
-   * "📅 Escolher outro dia" tem 20 CARACTERES — cabe no limite da Meta — mas
+   * "📅 Escolher outro dia" tem 20 CARACTERES, cabe no limite da Meta, mas
    * 21 unidades UTF-16, porque o emoji ocupa um par substituto. Com `.slice`,
    * o corte comia o "a" e o botão chegava escrito "Escolher outro di".
    *
@@ -113,7 +113,7 @@ describe('o corte do rótulo conta caracteres, e não unidades UTF-16', () => {
     expect([...titulo]).toHaveLength(20)
     expect(titulo).toBe('vinte caracteres bem')
     /*
-     * Nenhum substituto SOLTO — o que `.slice` deixaria aqui, e o que derruba a
+     * Nenhum substituto SOLTO, o que `.slice` deixaria aqui, e o que derruba a
      * gravação no Postgres. Um emoji inteiro tem dois substitutos pareados e é
      * legítimo; o defeito é a metade órfã.
      */
@@ -156,7 +156,7 @@ describe('reagir e citar', () => {
   })
 
   /*
-   * O emoji vazio é como a Meta desfaz uma reação — não existe endpoint de
+   * O emoji vazio é como a Meta desfaz uma reação, não existe endpoint de
    * "desreagir". Se alguém "limpar" a string vazia por achá-la um bug, tirar a
    * reação para de funcionar e nada acusa.
    */
@@ -167,7 +167,7 @@ describe('reagir e citar', () => {
     expect(corpo(fetchMock).reaction).toEqual({ message_id: 'wamid-alvo', emoji: '' })
   })
 
-  it('cita no nível de cima do corpo, irmão do type — não dentro do text', async () => {
+  it('cita no nível de cima do corpo, irmão do type, não dentro do text', async () => {
     const fetchMock = espiar()
     await canal().enviarTexto('5544999', 'claro, pode ser terça', 'wamid-citada')
 
@@ -191,13 +191,13 @@ describe('reagir e citar', () => {
  * -----------------------------------------------------------------------------
  *
  * O envio mandava `link`, e `link` obriga o arquivo a estar num endereço que a
- * **Meta** alcança sem credencial nossa — que é a razão de o `autofluxos-acervo`
+ * **Meta** alcança sem credencial nossa, que é a razão de o `autofluxos-acervo`
  * ser público e permanente (item 2 do handoff de 15/set).
  *
  * Subindo antes, o endereço de origem só precisa ser alcançável por nós. Estes
  * testes travam as duas metades: que o `id` é usado quando o upload dá certo, e
  * que o `link` volta sozinho quando não dá. A segunda é a que permite esta
- * mudança ter ido ao ar sem um teste em WhatsApp de verdade — o pior caso dela
+ * mudança ter ido ao ar sem um teste em WhatsApp de verdade, o pior caso dela
  * é o comportamento de ontem.
  */
 describe('enviar mídia sobe o arquivo antes', () => {
@@ -258,7 +258,7 @@ describe('enviar mídia sobe o arquivo antes', () => {
 
     /*
      * Escrever `content-type` à mão apaga o `boundary` que o fetch monta
-     * sozinho, e o multipart sai malformado — a Meta responde 400 sem dizer
+     * sozinho, e o multipart sai malformado, a Meta responde 400 sem dizer
      * por quê. É um erro de trinta segundos que custa uma tarde.
      */
     expect(Object.keys(pedido.headers).map((k) => k.toLowerCase())).not.toContain('content-type')

@@ -10,8 +10,8 @@ import { ehCampoTecnico } from '@/core/contatos/valor-do-campo'
  *
  * **A queixa que gerou este componente:** *"muita informação técnica na
  * direita, código, número esquisito, e eu nunca vou usar aquilo"*. Eram duas
- * causas na mesma tela: a chave da variável renderizada crua em `font-mono` —
- * `objetivo_aluno`, que é identificador de desenho de fluxo — e a lista sem
+ * causas na mesma tela: a chave da variável renderizada crua em `font-mono` ,
+ * `objetivo_aluno`, que é identificador de desenho de fluxo, e a lista sem
  * teto, que num fluxo de 20 perguntas empurra a anotação da equipe para 20
  * blocos abaixo da dobra.
  *
@@ -26,8 +26,8 @@ import { ehCampoTecnico } from '@/core/contatos/valor-do-campo'
 /**
  * Quatro.
  *
- * É quanto cabe acima da dobra do painel sem empurrar a anotação da equipe —
- * que é o campo mais usado da coluna — para fora da tela num monitor de
+ * É quanto cabe acima da dobra do painel sem empurrar a anotação da equipe ,
+ * que é o campo mais usado da coluna, para fora da tela num monitor de
  * notebook. Número maior devolve o problema; menor faz o botão aparecer em
  * conversa que não tinha excesso nenhum.
  */
@@ -36,7 +36,7 @@ export const TETO_DE_CAMPOS_VISIVEIS = 4
 /**
  * O que a lista mostra e o que o botão diz, sem React no meio.
  *
- * Está separado do componente porque é a parte que erra em silêncio — cortar
+ * Está separado do componente porque é a parte que erra em silêncio, cortar
  * um campo a mais, dizer "1 campos", ou oferecer o botão numa conversa que
  * cabia inteira. Não há testing-library neste repositório; função pura é o que
  * torna essas três coisas prováveis por `npm test`.

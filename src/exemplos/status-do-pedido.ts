@@ -1,7 +1,7 @@
 import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
 
 /**
- * "Cadê meu pedido?" — a pergunta que mais chega em quem entrega alguma coisa.
+ * "Cadê meu pedido?", a pergunta que mais chega em quem entrega alguma coisa.
  *
  * O desenho não finge saber o que não sabe: ele **coleta o número do pedido
  * antes de chamar gente**, porque a diferença entre um atendimento de trinta
@@ -10,7 +10,7 @@ import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
  * de achar.
  *
  * Quando existir credencial da loja, o bloco de Serviços externos entra entre a
- * pergunta e o aviso, e aí a resposta vem sozinha — o resto do desenho continua
+ * pergunta e o aviso, e aí a resposta vem sozinha, o resto do desenho continua
  * igual.
  */
 export const statusDoPedido: Fluxo = fluxoSchema.parse({

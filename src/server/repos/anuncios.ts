@@ -32,7 +32,7 @@ function paraCache(linha: Linha): AnuncioEmCache {
 /**
  * Os nomes que já temos, dos ids pedidos.
  *
- * Devolve `Map` e não lista porque todo uso é "e este `ad_id` aqui?" — uma
+ * Devolve `Map` e não lista porque todo uso é "e este `ad_id` aqui?", uma
  * busca por conversa, dentro de um laço que pinta a fila. Lista obrigaria quem
  * chama a montar o índice, e alguém acabaria fazendo `find()` dentro do laço.
  */

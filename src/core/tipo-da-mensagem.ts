@@ -2,7 +2,7 @@
  * O que dizer na prévia quando a mensagem não tem texto.
  *
  * A fila dizia **"mídia ou mensagem sem texto"** para foto, áudio, figurinha e
- * PDF igualmente — a mesma frase para quatro coisas que pedem reações
+ * PDF igualmente, a mesma frase para quatro coisas que pedem reações
  * diferentes. Áudio de um minuto e figurinha de "obrigado" não têm a mesma
  * urgência, e quem decide o que abrir primeiro decidia no escuro.
  *
@@ -20,7 +20,7 @@ const NOME_DO_TIPO: Record<string, string> = {
   location: '📍 localização',
   contacts: '👤 contato',
   // Estes três chegam quando alguém reage, responde a um anúncio ou encaminha
-  // um pedido — não são "mídia", e chamá-los de mídia confundiria mais do que
+  // um pedido, não são "mídia", e chamá-los de mídia confundiria mais do que
   // a frase genérica que eles substituem.
   reaction: '❤️ reação',
   order: '🛒 pedido',

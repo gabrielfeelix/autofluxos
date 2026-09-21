@@ -3,7 +3,7 @@ import { MAX_TENTATIVAS } from '@/core/engine/executar'
 import { Cel, Cod, Duvida, Linha, Nota, Secao, Sub, Tabela, Var } from './pecas'
 
 /**
- * As dúvidas — escritas a partir do que já foi errado de verdade.
+ * As dúvidas, escritas a partir do que já foi errado de verdade.
  *
  * Cada pergunta daqui corresponde a um comentário de código que existe porque
  * alguém tropeçou: o `{{horario}}` no lugar do id, o "sem repetir" desalinhando
@@ -35,7 +35,7 @@ export function SecaoDuvidas() {
               O interruptor dela está <strong className="text-soft">ligado</strong>?
             </li>
             <li>
-              O número tem essa automação em algum <strong className="text-soft">papel</strong> — ou
+              O número tem essa automação em algum <strong className="text-soft">papel</strong>, ou
               uma palavra-chave apontando para ela?
             </li>
             <li>
@@ -80,7 +80,7 @@ export function SecaoDuvidas() {
           <p>
             Sim: no editor, <strong className="text-soft">Compartilhar</strong> gera um link com
             prazo, e quem abrir importa o desenho para a conta dele. As credenciais{' '}
-            <strong className="text-soft">não vão junto</strong> — cada conta aponta os blocos para
+            <strong className="text-soft">não vão junto</strong>, cada conta aponta os blocos para
             as suas.
           </p>
         </Duvida>
@@ -92,7 +92,7 @@ export function SecaoDuvidas() {
           <p>
             Quase sempre é <strong className="text-soft">“sem repetir” numa lista pareada</strong>.
             Se <Var>horarios</Var> tem “sem repetir” e <Var>horarios_id</Var> não, tirar um horário
-            repetido de uma lista empurra os identificadores da outra — o segundo rótulo passa a
+            repetido de uma lista empurra os identificadores da outra, o segundo rótulo passa a
             valer o terceiro identificador.
           </p>
           <p>
@@ -103,8 +103,8 @@ export function SecaoDuvidas() {
         <Duvida p="Mandei {{horario}} para a API e o pedido falhou. Por quê?">
           <p>
             Porque <Cod>07:00</Cod> é o que a pessoa lê, e a agenda quer o identificador daquele
-            horário. Use a variável de <strong className="text-soft">guardar o valor em</strong> —{' '}
-            <Var>sessao_id</Var> na receita de marcar — e não a de guardar em.
+            horário. Use a variável de <strong className="text-soft">guardar o valor em</strong> ,{' '}
+            <Var>sessao_id</Var> na receita de marcar, e não a de guardar em.
           </p>
         </Duvida>
 
@@ -114,7 +114,7 @@ export function SecaoDuvidas() {
             quatro dígitos. O bot repete o pedido com um exemplo e continua parado na mesma pergunta.
           </p>
           <p>
-            Se “amanhã” é comum no seu caso, ofereça botões — “Hoje”, “Amanhã”, “Escolher a data” — e
+            Se “amanhã” é comum no seu caso, ofereça botões, “Hoje”, “Amanhã”, “Escolher a data”, e
             resolva cada um por um caminho próprio.
           </p>
         </Duvida>
@@ -138,7 +138,7 @@ export function SecaoDuvidas() {
         <Duvida p="Meu menu tem 14 opções e a mensagem não chega.">
           <p>
             O WhatsApp aceita no máximo <strong className="text-soft">10 itens</strong> numa lista
-            (e 3 quando são botões). Acima disso a Meta recusa a mensagem inteira — a pessoa não
+            (e 3 quando são botões). Acima disso a Meta recusa a mensagem inteira, a pessoa não
             recebe nada.
           </p>
           <p>
@@ -167,12 +167,12 @@ export function SecaoDuvidas() {
         <Duvida p="O bot está perguntando o nome de quem faz aula há dois anos.">
           <p>
             Falta o bloco de <strong className="text-soft">reconhecer quem está falando</strong> como
-            primeiro passo — ou a condição está olhando a variável errada.
+            primeiro passo, ou a condição está olhando a variável errada.
           </p>
           <p>
             Ela precisa olhar <Var>encontrado</Var>, que é uma contagem: quando ninguém é encontrado,
             a agenda responde normalmente com <Cod>0</Cod>. Não reconhecer{' '}
-            <strong className="text-soft">não é falha</strong> — é o outro caminho da conversa.
+            <strong className="text-soft">não é falha</strong>, é o outro caminho da conversa.
           </p>
         </Duvida>
 
@@ -189,7 +189,7 @@ export function SecaoDuvidas() {
 
         <Duvida p="Preciso cadastrar uma credencial por bloco da Verandi?">
           <p>
-            Não — uma por conta. Todos os blocos apontam para a mesma. Ter várias significa vários
+            Não, uma por conta. Todos os blocos apontam para a mesma. Ter várias significa vários
             lugares para revogar no dia em que a chave vazar, e é justamente o dia em que ninguém
             lembra de todos.
           </p>
@@ -199,7 +199,7 @@ export function SecaoDuvidas() {
           <p>
             Comportamento correto: a vaga é conferida{' '}
             <strong className="text-soft">na hora de gravar</strong>, não na hora de montar o menu. O
-            bloco de marcar falha e passa a conversa para uma pessoa — quem responde por uma vaga é
+            bloco de marcar falha e passa a conversa para uma pessoa, quem responde por uma vaga é
             quem está no balcão.
           </p>
         </Duvida>
@@ -233,7 +233,7 @@ export function SecaoDuvidas() {
         <Duvida p="O bot continuou respondendo depois que assumi a conversa.">
           <p>
             Não deveria: assumir cala o bot naquele contato. Se ainda está falando, confira se o que
-            chegou não abriu uma conversa nova por uma palavra-chave — e se a pessoa que assumiu
+            chegou não abriu uma conversa nova por uma palavra-chave, e se a pessoa que assumiu
             ainda está marcada como responsável.
           </p>
         </Duvida>
@@ -266,7 +266,7 @@ export function SecaoDuvidas() {
           <p>
             O aviso de fila aparece na barra lateral em qualquer tela do painel, não só no Inbox. E
             confira se quem deveria receber está marcado como{' '}
-            <strong className="text-soft">Disponível</strong> — quem esqueceu de voltar de “ausente”
+            <strong className="text-soft">Disponível</strong>, quem esqueceu de voltar de “ausente”
             some da lista de quem pode receber conversa.
           </p>
         </Duvida>
@@ -296,7 +296,7 @@ export function SecaoDepoisDoFluxo() {
           <Cel forte>Contatos</Cel>
           <Cel>Quem existe, o que se sabe de cada um, o histórico da conversa.</Cel>
           <Cel>
-            Cada variável guardada vira campo do contato — pelo {NOMES.pergunta} ou pelo{' '}
+            Cada variável guardada vira campo do contato, pelo {NOMES.pergunta} ou pelo{' '}
             {NOMES['salvar-campo']}.
           </Cel>
         </Linha>
@@ -334,7 +334,7 @@ export function SecaoDepoisDoFluxo() {
       <Nota tom="dica" titulo="O caso que junta tudo">
         <p>
           O fluxo marca a aula e move o cartão para <em>Aula agendada</em>. Uma sequência escuta essa
-          etapa e, se a pessoa não comparecer, manda a mensagem de retomada sozinha — sem ninguém
+          etapa e, se a pessoa não comparecer, manda a mensagem de retomada sozinha, sem ninguém
           lembrar dela.
         </p>
       </Nota>

@@ -11,13 +11,13 @@ import { db } from '../db'
  * que não devolve credencial morriam num `console.error` que some do log da
  * Vercel em algumas horas.
  *
- * O conserto não é criar o webhook — é fazer o aviso não depender de uma
+ * O conserto não é criar o webhook, é fazer o aviso não depender de uma
  * credencial que só uma pessoa consegue criar. Grava-se aqui **sempre**; o
  * webhook, quando existir, toca por cima.
  *
  * **A escrita nunca estoura.** Este módulo é chamado de dentro de `alertar()`,
  * que por sua vez é chamado de caminhos que já estão falhando. Uma exceção aqui
- * viraria a segunda falha em cima da primeira — ver o comentário grande em
+ * viraria a segunda falha em cima da primeira, ver o comentário grande em
  * `alertar.ts`. Por isso `gravarAlerta` devolve `boolean` em vez de lançar.
  */
 
@@ -76,7 +76,7 @@ function paraAlerta(linha: Linha): Alerta {
  * Onde este alerta aconteceu.
  *
  * Sem isto, um alerta disparado num deploy de preview aparece na tela com a
- * mesma cara de um de produção — e a diferença entre "o cliente está sem
+ * mesma cara de um de produção, e a diferença entre "o cliente está sem
  * resposta agora" e "alguém testou uma branch" é a diferença entre largar o que
  * está fazendo e não largar.
  */
@@ -85,7 +85,7 @@ export function ambienteAtual(): string {
 }
 
 /**
- * Grava o alerta. Devolve `false` se não deu — nunca estoura.
+ * Grava o alerta. Devolve `false` se não deu, nunca estoura.
  *
  * O `console.error` do fim não é redundante com a tabela: se o banco for
  * justamente o que está fora, ele é o único lugar que sobra.
@@ -157,7 +157,7 @@ export async function contarAlertasAbertos(): Promise<number> {
 /**
  * Marca como visto.
  *
- * Sem `id`, marca todos os abertos — é o "limpar tudo" da tela, e ele existe
+ * Sem `id`, marca todos os abertos, é o "limpar tudo" da tela, e ele existe
  * porque a alternativa a marcar cinquenta alertas iguais um a um é não marcar
  * nenhum, e aí o contador deixa de querer dizer alguma coisa.
  */
@@ -174,7 +174,7 @@ export async function marcarAlertaVisto(id?: string): Promise<void> {
  *
  * Função separada e pura pelo mesmo motivo de `limiteDaRetencao`: a fronteira
  * do prazo é o que precisa de teste, e a única forma de testá-la pelo lado do
- * banco seria mandar `limparAlertasVencidos` apagar de verdade — numa tabela
+ * banco seria mandar `limparAlertasVencidos` apagar de verdade, numa tabela
  * que é global e compartilhada com o produto rodando. Um teste assim apagaria
  * o alerta que alguém precisava ler.
  */

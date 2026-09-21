@@ -9,7 +9,7 @@ import { acaoEncadearQuadro } from '@/server/acoes-crm'
  *
  * É a peça que deixa cada empresa partir o processo onde quiser: o SDR
  * qualifica no quadro dele e entrega ao vendedor, o vendedor fecha e entrega ao
- * pós-venda. Ganhar aqui abre o cartão lá — **a passagem é o gesto que já
+ * pós-venda. Ganhar aqui abre o cartão lá, **a passagem é o gesto que já
  * existe**, e não um botão novo.
  *
  * Fica ao lado do seletor de quadros, e não numa tela de ajustes, porque é aqui
@@ -30,7 +30,7 @@ export function EntregaDoQuadro({
   const [erro, setErro] = useState<string | null>(null)
   const [rodando, comecar] = useTransition()
 
-  // Sem outro quadro, não há cadeia possível — e um seletor de nenhum item é um
+  // Sem outro quadro, não há cadeia possível, e um seletor de nenhum item é um
   // controle que só ensina o que a conta ainda não pode fazer.
   if (outros.length === 0) return null
 

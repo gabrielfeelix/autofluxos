@@ -2,7 +2,7 @@ import 'server-only'
 import { db, ehIdInvalido } from '../db'
 
 /**
- * As consultas da primeira tela — e só dela.
+ * As consultas da primeira tela, e só dela.
  *
  * Moram aqui, e não em `metricas.ts`, porque respondem outra pergunta. Aquele
  * arquivo mede o mês: quantas conversas, quanto tempo, quem atendeu. Este
@@ -10,7 +10,7 @@ import { db, ehIdInvalido } from '../db'
  * tela precisa ter antes de qualquer número (ver `docs/PLANO-HOMEPAGE.md` §1).
  *
  * O custo é a regra que rege o arquivo: a primeira tela abre a cada visita ao
- * cliente. Nada aqui traz lista inteira — a fila vem com `limit` e o resto vem
+ * cliente. Nada aqui traz lista inteira, a fila vem com `limit` e o resto vem
  * como contagem `head: true`, que não transfere linha nenhuma.
  */
 
@@ -30,7 +30,7 @@ export type ItemDaFila = {
 
 export type FilaDoPainel = {
   itens: ItemDaFila[]
-  /** Quantos esperam ao todo — o da lista é um recorte dos mais antigos. */
+  /** Quantos esperam ao todo, o da lista é um recorte dos mais antigos. */
   total: number
   pedindoPessoa: number
 }
@@ -51,8 +51,8 @@ type LinhaDaFila = {
  * Quem precisa de uma pessoa, do mais antigo para o mais recente.
  *
  * **Duas leituras, e não uma com `or`.** As duas famílias têm critérios de
- * ordenação diferentes — quem pediu pessoa se ordena pelo instante do pedido,
- * quem espera resposta se ordena pela última mensagem — e uma consulta só
+ * ordenação diferentes, quem pediu pessoa se ordena pelo instante do pedido,
+ * quem espera resposta se ordena pela última mensagem, e uma consulta só
  * obrigaria a ordenar as duas pelo mesmo campo, o que enterraria um pedido de
  * ajuda de agora embaixo de uma conversa esquecida de março.
  *
@@ -149,7 +149,7 @@ export type Fechamentos = {
 }
 
 /**
- * O que fechou na janela — ganho, perdido e quanto (0058).
+ * O que fechou na janela, ganho, perdido e quanto (0058).
  *
  * **Só o que fechou.** A soma do funil aberto, o tal "pipeline", é o número mais
  * enganoso do CRM: ele cresce sozinho quando ninguém arquiva o que já morreu, e
@@ -185,7 +185,7 @@ export async function fechamentos(
   for (const linha of (data ?? []) as { situacao: string; valor: number | string | null }[]) {
     if (linha.situacao === 'ganha') {
       ganhos += 1
-      // `numeric` chega como texto no PostgREST — somar sem converter concatena.
+      // `numeric` chega como texto no PostgREST, somar sem converter concatena.
       const bruto = linha.valor === null ? null : Number(linha.valor)
       if (bruto !== null && Number.isFinite(bruto)) valor = (valor ?? 0) + bruto
     } else {

@@ -55,7 +55,7 @@ export function CartaoDaPagina({
 
       {/*
         Importar só aparece com o acesso ligado, porque sem token não há o que
-        buscar — e um botão que só sabe dizer "ligue antes" é um botão que
+        buscar, e um botão que só sabe dizer "ligue antes" é um botão que
         ensina a errar.
       */}
       {temToken && (
@@ -69,7 +69,7 @@ export function CartaoDaPagina({
             })
           }
           className="rounded-lg border border-line px-3 py-1.5 text-[11.5px] text-soft transition hover:border-strong disabled:opacity-50"
-          title="Traz os leads que já existiam antes de ligar — a Meta guarda 90 dias"
+          title="Traz os leads que já existiam antes de ligar, a Meta guarda 90 dias"
         >
           {importando ? 'Importando…' : 'Importar leads antigos'}
         </button>
@@ -86,7 +86,7 @@ export function CartaoDaPagina({
 
       {/*
         O resultado fica na própria linha da Página, e não some sozinho: quem
-        importou precisa poder ler com calma quantos entraram — e conferir
+        importou precisa poder ler com calma quantos entraram, e conferir
         depois, na lista de leads, se bate.
       */}
       {resultado !== null && (

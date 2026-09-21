@@ -13,7 +13,7 @@ export type EtapaNaLista = { id: string; rotulo: string }
  * É componente de cliente por um motivo só: **a etiqueta que dispara só existe
  * quando o gatilho é etiqueta.** Mostrar o campo sempre seria pedir algo que na
  * metade dos casos é ignorado, e um campo ignorado ensina a pessoa a não
- * confiar no formulário. Escondê-lo do servidor não dá — a escolha acontece
+ * confiar no formulário. Escondê-lo do servidor não dá, a escolha acontece
  * depois de a página ter sido desenhada.
  *
  * A etiqueta **de saída** aparece sempre, e é opcional: ela é o "virou cliente,
@@ -90,7 +90,7 @@ export function CamposDaSequencia({
             />
             <span className="mt-1 block text-[10.5px] leading-4 text-dim">
               Vale para quem chega pelo bloco de fluxo <strong>Etapa do quadro</strong>. Mover o
-              cartão à mão na tela de Funil de vendas não inscreve ninguém — inscrever alguém por um
+              cartão à mão na tela de Funil de vendas não inscreve ninguém, inscrever alguém por um
               arrasto de arrumação seria mandar mensagem por engano.
             </span>
           </label>
@@ -113,13 +113,13 @@ export function CamposDaSequencia({
           {/*
             As duas coisas que quem monta a régua precisa saber antes, e que só
             se descobre tarde demais: ela só alcança quem já comprou, e o
-            primeiro passo vai precisar de modelo aprovado — quem está calado há
+            primeiro passo vai precisar de modelo aprovado, quem está calado há
             sessenta dias está, por definição, fora da janela de 24h da Meta.
           */}
           <span className="mt-1 block text-[10.5px] leading-4 text-dim">
             Só alcança <strong>quem já comprou</strong>: correr atrás de quem nunca fechou é
             trabalho que ninguém faz. Cada pessoa entra uma vez a cada 4 meses, e o passo vai
-            precisar de um modelo aprovado — quem está calado há tanto tempo está fora da janela de
+            precisar de um modelo aprovado, quem está calado há tanto tempo está fora da janela de
             24 horas.
           </span>
         </label>

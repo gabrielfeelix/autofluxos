@@ -5,7 +5,7 @@ import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
  *
  * É o template mais pedido de todos, e o motivo é chato de admitir: a maior
  * parte das mensagens que chegam num WhatsApp de negócio não é venda nem
- * problema — é horário, endereço e preço, repetidos. Cada uma custa a atenção
+ * problema, é horário, endereço e preço, repetidos. Cada uma custa a atenção
  * de quem estava fazendo outra coisa.
  *
  * O desenho tem duas regras que valem mais que o texto:
@@ -74,7 +74,7 @@ export const menuAtendimento: Fluxo = fluxoSchema.parse({
           {
             tipo: 'texto',
             texto:
-              '*Onde estamos*\nRua Exemplo, 123 — bairro, cidade.\nTem estacionamento na porta.\n\n_Troque este texto pelo endereço real._',
+              '*Onde estamos*\nRua Exemplo, 123, bairro, cidade.\nTem estacionamento na porta.\n\n_Troque este texto pelo endereço real._',
           },
         ],
       },

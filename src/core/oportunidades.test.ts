@@ -92,7 +92,7 @@ describe('como ler o ganho antigo (RB-32)', () => {
   /**
    * A migração não pode decidir sozinha que um ganho velho foi venda. Em
    * processo operacional ele é conclusão e acabou; em comercial, espera revisão
-   * humana — "nome do quadro, etiqueta e valor positivo isolados não são prova".
+   * humana, "nome do quadro, etiqueta e valor positivo isolados não são prova".
    */
   it('ganho operacional antigo é conclusão, não venda', () => {
     expect(comoLerGanhoLegado('operacional')).toBe('conclusao')

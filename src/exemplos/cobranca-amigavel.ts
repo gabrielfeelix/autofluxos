@@ -5,7 +5,7 @@ import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
  *
  * O ponto do desenho é a ordem das opções: **"já paguei" vem primeiro.** Quem
  * pagou ontem e recebe uma cobrança hoje fica irritado com razão, e o único
- * jeito de não errar com essa pessoa é deixar o desmentido dela à mão — e
+ * jeito de não errar com essa pessoa é deixar o desmentido dela à mão, e
  * mandar a conversa direto para uma pessoa conferir, sem discutir com robô.
  *
  * "Quero negociar" também não passa por script: proposta de parcelamento é
@@ -24,7 +24,7 @@ export const cobrancaAmigavel: Fluxo = fluxoSchema.parse({
           {
             tipo: 'texto',
             texto:
-              'Oi, {{nome}}! Passando para lembrar de uma parcela em aberto por aqui. Nada de grave — só para você não perder o prazo. 🙂',
+              'Oi, {{nome}}! Passando para lembrar de uma parcela em aberto por aqui. Nada de grave, só para você não perder o prazo. 🙂',
           },
         ],
       },

@@ -15,7 +15,7 @@ import {
  * O executor da fila do agendador (B1).
  *
  * Uma passada pega o que venceu, executa cada tarefa, e marca o resultado. É
- * chamado pelo cron da Vercel — e, nos testes, direto.
+ * chamado pelo cron da Vercel, e, nos testes, direto.
  *
  * **Uma tarefa que falha não pode derrubar as outras.** Elas são de clientes
  * diferentes: um número desconectado numa conta não pode impedir a cobrança de
@@ -34,7 +34,7 @@ export async function rodarTarefas(
   /** Injetável só para os testes rodarem sem a rede da Meta, como no webhook. */
   fabricaDeCanal?: FabricaDeCanal,
 ): Promise<ResumoDaPassada> {
-  // Tarefa que ficou `rodando` e nunca voltou é execução que morreu no meio —
+  // Tarefa que ficou `rodando` e nunca voltou é execução que morreu no meio ,
   // função encerrada pelo teto de tempo, deploy no meio da passada. Devolver as
   // velhas para a fila antes de pegar novas é o que impede a fila de entupir
   // com linhas que ninguém mais vai olhar.
@@ -71,7 +71,7 @@ export async function rodarTarefas(
  * O mundo mudou entre agendar e executar na maioria das vezes: a pessoa
  * respondeu, alguém assumiu, a conversa acabou. Contar isso como falha faria a
  * tarefa voltar para a fila para ser ignorada de novo, três vezes, até
- * "falhar" — e encheria o painel de erro onde não houve nenhum.
+ * "falhar", e encheria o painel de erro onde não houve nenhum.
  */
 async function executar(
   tarefa: Tarefa,

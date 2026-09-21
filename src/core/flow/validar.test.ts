@@ -114,7 +114,7 @@ describe('validar', () => {
   it('cobra pelas medidas do canal do fluxo, e não pelas do WhatsApp sempre', () => {
     /*
      * As mesmas 12 opções: cabem no Instagram (13) e não cabem no WhatsApp
-     * (10). É o caso inteiro do canal ser da automação — cobrar de todo mundo
+     * (10). É o caso inteiro do canal ser da automação, cobrar de todo mundo
      * a medida mais apertada reprovava desenho válido, e cobrar a mais folgada
      * deixaria o adaptador cortar depois, calado, na conversa de alguém.
      */
@@ -186,7 +186,7 @@ describe('validar', () => {
   /*
    * O que uma automação guarda fica no contato e continua lá na conversa
    * seguinte, então ler `{{plano}}` gravado pelo fluxo de matrícula é uso certo.
-   * Avisar aqui acusaria justamente o caso legítimo — e aviso que grita no caso
+   * Avisar aqui acusaria justamente o caso legítimo, e aviso que grita no caso
    * certo é aviso que se aprende a ignorar, inclusive quando ele estiver certo.
    */
   it('não reclama de variável que outra automação da conta preenche', () => {
@@ -202,8 +202,8 @@ describe('validar', () => {
 
   /*
    * O caso real que motivou o aviso: quem monta fluxo escreveu
-   * `{dias_reposicao}` no bloco de confirmação. Não é variável desconhecida —
-   * não é variável nenhuma —, então nada avisava, e o aluno lia a chave.
+   * `{dias_reposicao}` no bloco de confirmação. Não é variável desconhecida ,
+   * não é variável nenhuma , então nada avisava, e o aluno lia a chave.
    */
   it('avisa sobre {variavel} escrita com uma chave só', () => {
     const fluxo = fluxoValido()
@@ -309,7 +309,7 @@ describe('validar', () => {
     expect(codigos(validar(fluxo).erros)).toContain('ROTULO_SEM_LISTA')
   })
 
-  it('deixa passar o rótulo de 20 caracteres que tem emoji — a Meta conta caractere, não UTF-16', () => {
+  it('deixa passar o rótulo de 20 caracteres que tem emoji, a Meta conta caractere, não UTF-16', () => {
     const fluxo = fluxoValido()
     const q = fluxo.nodes.find((n) => n.id === 'q')
     // 21 unidades UTF-16, 20 caracteres. O `.length` reprovava; a Meta aceita.
@@ -338,7 +338,7 @@ describe('validar', () => {
     expect(codigos(validar(fluxo).erros)).toContain('TEXTO_LONGO')
   })
 
-  it('barra pergunta com opções acima de 1024 — interativa aceita um quarto', () => {
+  it('barra pergunta com opções acima de 1024, interativa aceita um quarto', () => {
     const fluxo = fluxoValido()
     const q = fluxo.nodes.find((n) => n.id === 'q')
     if (q?.type !== 'pergunta') throw new Error('o fluxo de teste precisa da pergunta "q"')
@@ -436,7 +436,7 @@ describe('IA é plano à parte', () => {
 
   /**
    * O padrão é falhar fechado: quem esquecer de dizer que a automação tem IA vê
-   * a publicação ser recusada — o erro barulhento. O contrário seria entregar
+   * a publicação ser recusada, o erro barulhento. O contrário seria entregar
    * IA de graça por descuido de chamada.
    */
   it('sem dizer nada, o padrão é recusar', () => {
@@ -527,7 +527,7 @@ describe('validação do nó de API', () => {
     expect(codigos(fluxo)).not.toContain('VARIAVEL_FORA_DE_ASPAS')
   })
 
-  it('recusa variável fora de aspas — vira JSON quebrado no envio', () => {
+  it('recusa variável fora de aspas, vira JSON quebrado no envio', () => {
     // `{"idade": {{idade}}}` parece válido e não é: as variáveis da sessão são
     // sempre texto, então isso vira `{"idade": 34 anos}` na hora de enviar.
     const fluxo = comHttp({
@@ -658,7 +658,7 @@ describe('mapeamento precisa dizer o que ler', () => {
       }),
     ).erros.map((e) => e.codigo)
 
-  it('recusa caminho vazio — a variável nunca seria preenchida', () => {
+  it('recusa caminho vazio, a variável nunca seria preenchida', () => {
     expect(comMapa([{ variavel: 'situacao', caminho: '' }])).toContain('CAMINHO_VAZIO')
   })
 
@@ -679,7 +679,7 @@ describe('IA sem contexto de negócio não vai ao ar', () => {
 
   it('bloqueia quando o cliente não escreveu o contexto', () => {
     // O prompt manda responder só com o que está no contexto. Vazio, a IA
-    // responde "não sei" a tudo — um bot que parece pronto e nunca responde.
+    // responde "não sei" a tudo, um bot que parece pronto e nunca responde.
     const r = validar(comBlocoDeIa, { iaHabilitada: true, temContextoDeNegocio: false })
     expect(codigos(r.erros)).toContain('SEM_CONTEXTO_DE_NEGOCIO')
     expect(r.ok).toBe(false)
@@ -690,7 +690,7 @@ describe('IA sem contexto de negócio não vai ao ar', () => {
     expect(codigos(r.erros)).not.toContain('SEM_CONTEXTO_DE_NEGOCIO')
   })
 
-  it('não cobra quando ninguém disse — é o editor validando sem ir ao banco', () => {
+  it('não cobra quando ninguém disse, é o editor validando sem ir ao banco', () => {
     const r = validar(comBlocoDeIa, { iaHabilitada: true })
     expect(codigos(r.erros)).not.toContain('SEM_CONTEXTO_DE_NEGOCIO')
   })
@@ -740,7 +740,7 @@ describe('pergunta com opções dinâmicas', () => {
     expect(validar(fluxoDinamico()).ok).toBe(true)
   })
 
-  it('recusa sem a saída "vazio" — lista que vem de fora vem vazia', () => {
+  it('recusa sem a saída "vazio", lista que vem de fora vem vazia', () => {
     const fluxo = fluxoDinamico()
     fluxo.edges = fluxo.edges.filter((a) => a.sourceHandle !== 'vazio')
 
@@ -781,7 +781,7 @@ describe('as mensagens dizem de qual bloco estão falando', () => {
   /**
    * As listas de impedimento e aviso são do fluxo inteiro, não do bloco
    * selecionado. Mensagem que começa com "Este bloco" vira, com dois blocos no
-   * mesmo estado, duas linhas idênticas — e nenhuma responde qual é qual.
+   * mesmo estado, duas linhas idênticas, e nenhuma responde qual é qual.
    */
   it('dois blocos soltos viram dois avisos distinguíveis', () => {
     const fluxo = fluxoValido()
@@ -862,7 +862,7 @@ describe('bloco de mídia', () => {
     )
   })
 
-  it('recusa variável no host — quem conversa escolheria de onde o arquivo sai', () => {
+  it('recusa variável no host, quem conversa escolheria de onde o arquivo sai', () => {
     expect(codigos(comMidia({ midia: 'imagem', url: 'https://{{host}}/a.jpg' }))).toContain(
       'HOST_VARIAVEL',
     )
@@ -893,7 +893,7 @@ describe('bloco de mídia', () => {
 
   it('a variável da legenda entra na conta de quem preenche o quê', () => {
     // Citar variável que nenhum bloco preenche vira aviso, como no resto do
-    // fluxo — legenda não é um canto fora dessa regra.
+    // fluxo, legenda não é um canto fora dessa regra.
     const fluxo = comMidia({
       midia: 'imagem',
       url: 'https://cdn.ex.com/a.jpg',
@@ -944,7 +944,7 @@ describe('o bloco de etapa do quadro (C1b)', () => {
     expect(r.erros.map((e) => e.codigo)).toContain('ETAPA_INEXISTENTE')
   })
 
-  it('não cobra quando a lista de etapas não veio — é o editor sem ir ao banco', () => {
+  it('não cobra quando a lista de etapas não veio, é o editor sem ir ao banco', () => {
     const r = validar(comEtapa({ quadroId: 'q', colunaId: 'qualquer' }))
     expect(r.erros.map((e) => e.codigo)).not.toContain('ETAPA_INEXISTENTE')
   })
@@ -960,7 +960,7 @@ describe('o bloco de etapa do quadro (C1b)', () => {
  *
  * As regras aqui existem porque o bloco guarda **referência**, e não cópia: o
  * destino pode ser apagado, despublicado ou desligado depois que o salto foi
- * desenhado. Este é o lugar onde esse preço é cobrado — antes de a conversa de
+ * desenhado. Este é o lugar onde esse preço é cobrado, antes de a conversa de
  * alguém pagar por ele.
  */
 describe('ir para outra automação', () => {
@@ -978,7 +978,7 @@ describe('ir para outra automação', () => {
 
   it('o salto conta como saída para uma pessoa', () => {
     // Não é frouxidão: o destino só pode ser fluxo publicado, e nenhum fluxo
-    // publica sem caminho até uma pessoa. A escapatória continua garantida —
+    // publica sem caminho até uma pessoa. A escapatória continua garantida ,
     // ela só está do outro lado da porta. Sem isto, um fluxo de triagem que só
     // distribui precisaria de um handoff decorativo que ninguém alcança.
     const r = validar(comSalto('fisio'), { fluxos: fisioPronta })
@@ -1027,7 +1027,7 @@ describe('ir para outra automação', () => {
     expect(r.avisos.map((a) => a.codigo)).toContain('DESTINO_EH_ELE_MESMO')
   })
 
-  it('não cobra quando a lista de automações não veio — é o editor sem ir ao banco', () => {
+  it('não cobra quando a lista de automações não veio, é o editor sem ir ao banco', () => {
     const r = validar(comSalto('qualquer'))
     expect(r.erros.map((e) => e.codigo)).not.toContain('DESTINO_SUMIU')
   })
@@ -1051,7 +1051,7 @@ describe('as mensagens do bloco de falar com humano', () => {
     expect(codigos(r.erros)).toContain('TEXTO_VAZIO')
   })
 
-  it('uma em branco no meio de outras também barra — o campo parece que vai falar', () => {
+  it('uma em branco no meio de outras também barra, o campo parece que vai falar', () => {
     const r = validar(comHandoff({ mensagens: ['Já te passo.', ''] }))
     expect(codigos(r.erros)).toContain('TEXTO_VAZIO')
   })
@@ -1091,7 +1091,7 @@ describe('o bloco de voltar', () => {
       ],
     })
 
-  it('destino vazio publica — é o início do fluxo, que é o padrão', () => {
+  it('destino vazio publica, é o início do fluxo, que é o padrão', () => {
     const r = validar(comVoltar(''))
     expect(codigos(r.erros)).not.toContain('VOLTAR_SEM_DESTINO')
   })
@@ -1106,7 +1106,7 @@ describe('o bloco de voltar', () => {
     expect(codigos(r.erros)).toContain('VOLTAR_SEM_DESTINO')
   })
 
-  it('voltar para si mesmo avisa, mas não impede — o motor sobrevive', () => {
+  it('voltar para si mesmo avisa, mas não impede, o motor sobrevive', () => {
     const r = validar(comVoltar('volta'))
     expect(codigos(r.avisos)).toContain('VOLTAR_PARA_SI')
     expect(codigos(r.erros)).not.toContain('VOLTAR_PARA_SI')
@@ -1211,7 +1211,7 @@ describe('o bloco de etiqueta e o de anotação (0044)', () => {
     expect(r.erros.map((e) => e.codigo)).toContain('ETIQUETA_INEXISTENTE')
   })
 
-  it('não cobra quando a lista de etiquetas não veio — é o editor sem ir ao banco', () => {
+  it('não cobra quando a lista de etiquetas não veio, é o editor sem ir ao banco', () => {
     const r = validar(comBloco({ type: 'etiqueta', data: { etiquetaId: 'qualquer' } }))
     expect(r.erros.map((e) => e.codigo)).not.toContain('ETIQUETA_INEXISTENTE')
   })
@@ -1231,14 +1231,14 @@ describe('o bloco de etiqueta e o de anotação (0044)', () => {
 
   it('a variável citada na anotação é conferida como a de qualquer texto', () => {
     // A nota interpola, então `{{servico}}` que ninguém preenche é uma nota com
-    // buraco — e o aviso tem que aparecer antes de publicar, não na ficha.
+    // buraco, e o aviso tem que aparecer antes de publicar, não na ficha.
     const r = validar(comBloco({ type: 'nota', data: { texto: 'pediu {{ninguem_preenche}}' } }))
     expect(r.avisos.map((a) => a.codigo)).toContain('VARIAVEL_DESCONHECIDA')
   })
 })
 
 describe('a pesquisa de satisfação', () => {
-  /** Pesquisa com as três faixas ligadas — o mínimo que publica. */
+  /** Pesquisa com as três faixas ligadas, o mínimo que publica. */
   function comPesquisa(dadosExtras: Record<string, unknown> = {}, arestas = true): Fluxo {
     return fluxoSchema.parse({
       inicio: 'nota',

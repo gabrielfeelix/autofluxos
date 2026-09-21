@@ -5,7 +5,7 @@ import { Pool } from 'pg'
  * Entrar com a própria conta, contra o banco de verdade.
  *
  * **O que este teste guarda:** que uma senha correta *entra*. Parece óbvio
- * demais para merecer teste, e foi exatamente por isso que ficou quebrado — a
+ * demais para merecer teste, e foi exatamente por isso que ficou quebrado, a
  * ação autenticava, o cookie saía na resposta, e a tela respondia "credenciais
  * não conferem" mesmo assim.
  *
@@ -15,7 +15,7 @@ import { Pool } from 'pg'
  * sessão logo depois de criá-la, portanto, sempre encontrava ninguém.
  *
  * É por isso que o mock abaixo é *fixo* de propósito. Um mock em que escrever
- * cookie mudasse os cabeçalhos passaria com o código quebrado — ele estaria
+ * cookie mudasse os cabeçalhos passaria com o código quebrado, ele estaria
  * testando um Next que não existe.
  */
 const IP = `198.51.100.${Math.floor(Math.random() * 200) + 20}`

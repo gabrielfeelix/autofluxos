@@ -12,7 +12,7 @@ describe('chaves do telefone', () => {
   const casa = (a: string, b: string) =>
     chavesDoTelefone(a).some((chave) => chavesDoTelefone(b).includes(chave))
 
-  it('tira máscara, DDI e espaço — a planilha do cliente tem todos', () => {
+  it('tira máscara, DDI e espaço, a planilha do cliente tem todos', () => {
     const esperado = chavesDoTelefone('5511987654321')
     for (const escrito of [
       '+55 (11) 98765-4321',
@@ -54,7 +54,7 @@ describe('chaves do telefone', () => {
    * Chutar o DDD casaria a conversa de uma pessoa com o cadastro de outra, e
    * um palpite errado é indistinguível de acerto depois de gravado.
    */
-  it('número sem DDD não casa com nada — vira pendência, não palpite', () => {
+  it('número sem DDD não casa com nada, vira pendência, não palpite', () => {
     expect(chavesDoTelefone('987654321')).toEqual([])
     expect(chavesDoTelefone('98765432')).toEqual([])
   })
@@ -117,7 +117,7 @@ describe('mascaraDeTelefone', () => {
   })
 
   it('formata como fixo até dez dígitos e vira celular no décimo primeiro', () => {
-    // O mesmo prefixo muda de forma quando o nono dígito chega — é o caso que
+    // O mesmo prefixo muda de forma quando o nono dígito chega, é o caso que
     // um corte fixo em 4 ou em 5 erraria metade das vezes.
     expect(mascaraDeTelefone('4430001234')).toBe('(44) 3000-1234')
     expect(mascaraDeTelefone('44900012345')).toBe('(44) 90001-2345')

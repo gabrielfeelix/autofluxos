@@ -107,7 +107,7 @@ export function podeSobrescrever(
 
   /*
    * Mesma origem: o tempo desempata. É aqui, e **só** aqui, que "o mais novo
-   * vence" vale — duas correções humanas em sequência são a segunda corrigindo
+   * vence" vale, duas correções humanas em sequência são a segunda corrigindo
    * a primeira, que é o comportamento que quem digita espera.
    *
    * Data ilegível não vence: falha fechado, preservando o que já estava.

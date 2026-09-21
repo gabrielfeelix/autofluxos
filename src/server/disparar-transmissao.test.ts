@@ -133,7 +133,7 @@ describe('o disparo', () => {
   /*
    * A armadilha central: 200 com `held_for_quality_assessment` NÃO é entrega.
    * Gravar "aceita" ali é o que faz a tela dizer "campanha enviada" quando a
-   * Meta ainda está decidindo — e pode descartar tudo.
+   * Meta ainda está decidindo, e pode descartar tudo.
    */
   it('grava retida como retida, e nunca como aceita', async () => {
     const canal = canalQue(async () => ({ wamid: 'w1', situacao: 'retida' as const }))

@@ -12,7 +12,7 @@
  * **Conexão de canal cai calada.** O token do Instagram vence em 60 dias, e o
  * WhatsApp é desembarcado pela Meta quando o cliente troca de celular ou
  * reinstala o app. Nos dois casos nada explode: as mensagens simplesmente param
- * de chegar, e o primeiro a perceber é quem abre o Inbox e acha o dia vazio —
+ * de chegar, e o primeiro a perceber é quem abre o Inbox e acha o dia vazio ,
  * às vezes dias depois.
  *
  * Um único lugar decidindo isso é o que permite dizer a mesma coisa em dois
@@ -23,7 +23,7 @@
  */
 
 export type SaudeDaConexao =
-  /** Nunca foi conectada. Não é problema — é uma escolha que ninguém fez. */
+  /** Nunca foi conectada. Não é problema, é uma escolha que ninguém fez. */
   | 'nao-ligada'
   /** De pé. */
   | 'ligada'
@@ -41,7 +41,7 @@ export type SaudeDaConexao =
  * "dá para resolver na segunda" de "o canal caiu no fim de semana".
  *
  * Avisar cedo demais tem custo real: um selo de alerta que fica meses aceso
- * ensina a pessoa a não olhar mais para ele — o mesmo defeito do aviso de
+ * ensina a pessoa a não olhar mais para ele, o mesmo defeito do aviso de
  * importação que não saía nunca.
  */
 export const AVISO_DE_VENCIMENTO_DIAS = 7
@@ -50,7 +50,7 @@ export const AVISO_DE_VENCIMENTO_DIAS = 7
  * A saúde de uma conexão que só depende da validade do token.
  *
  * `null` em `expiraEm` significa "não sabemos quando vence", e a resposta é
- * `ligada` — não `reconectar`. Chutar defeito a partir de ausência de dado
+ * `ligada`, não `reconectar`. Chutar defeito a partir de ausência de dado
  * mandaria a pessoa reconectar um canal que está funcionando, que é o erro mais
  * caro possível aqui: reconectar o WhatsApp derruba o atendimento por minutos.
  */
@@ -68,7 +68,7 @@ export function saudePorValidade(
 }
 
 /**
- * A saúde do WhatsApp de um cliente — que pode ter mais de um número.
+ * A saúde do WhatsApp de um cliente, que pode ter mais de um número.
  *
  * **Um número caído derruba o selo, mesmo que os outros estejam bem.** O selo
  * responde "posso confiar no WhatsApp desta conta?", e a resposta com um número
@@ -82,7 +82,7 @@ export function saudeDoWhatsApp(
   return canais.some((canal) => canal.desembarcadoEm) ? 'reconectar' : 'ligada'
 }
 
-/** A saúde da conta de Instagram — no máximo uma por cliente, hoje. */
+/** A saúde da conta de Instagram, no máximo uma por cliente, hoje. */
 export function saudeDoInstagram(
   conta: { tokenExpiraEm?: string | null } | null | undefined,
   agora: Date = new Date(),

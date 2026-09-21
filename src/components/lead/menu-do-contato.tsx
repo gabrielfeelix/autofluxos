@@ -9,8 +9,8 @@ import { useConfirmar } from '@/components/design/confirmar'
 /**
  * O menu por linha da lista de contatos (o `⋮` do print 8).
  *
- * Existe porque as três coisas que se faz com um contato na lista — abrir,
- * pausar o bot, apagar — não cabem como três botões em cada linha sem a tabela
+ * Existe porque as três coisas que se faz com um contato na lista, abrir,
+ * pausar o bot, apagar, não cabem como três botões em cada linha sem a tabela
  * virar uma parede de controles. O menu esconde o que é raro sem escondê-lo
  * atrás de outra tela.
  *
@@ -161,7 +161,7 @@ export function MenuDoContato({
           {/*
             Religar o bot com alguém esperando atendimento é recusado no
             servidor (`alterarAutomacaoDoContato`). Desabilitar aqui evita
-            oferecer o que vai ser negado — e o `title` diz por quê, em vez de
+            oferecer o que vai ser negado, e o `title` diz por quê, em vez de
             deixar um item cinza sem explicação.
           */}
           <button

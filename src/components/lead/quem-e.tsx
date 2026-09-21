@@ -11,12 +11,12 @@ import { horaExata, quando } from '@/lib/quando'
  * ---------------------------------------------------------------------------
  *
  * A coluna abria em "Etiquetas" e a primeira informação sobre a **pessoa** era
- * "O que o fluxo coletou" — que é o que o bot perguntou, não quem ela é. O
+ * "O que o fluxo coletou", que é o que o bot perguntou, não quem ela é. O
  * telefone e a data de chegada não apareciam em lugar nenhum desta tela: para
  * ver o número era preciso sair do Inbox e abrir a Ficha.
  *
  * Isso apareceu como reclamação do rótulo ("O que o fluxo coletou"), mas o
- * rótulo estava certo — ele distingue o que a automação coletou do que a equipe
+ * rótulo estava certo, ele distingue o que a automação coletou do que a equipe
  * escreveu, e essa diferença importa na hora de confiar no dado. O que faltava
  * era o bloco acima dele.
  *
@@ -33,12 +33,12 @@ import { horaExata, quando } from '@/lib/quando'
  * entraria "quando houver origem de verdade". Havia: `atribuirOrigem` grava
  * `origem`, `origem_anuncio` e `origem_titulo` na primeira mensagem desde que o
  * `referral` do CTWA passou a ser lido, com teste. O dado estava na tela o
- * tempo todo — no despejo de "O que o fluxo coletou", indistinguível do que o
+ * tempo todo, no despejo de "O que o fluxo coletou", indistinguível do que o
  * bot perguntou. Não faltava medir; faltava mostrar.
  *
  * **Quem não tem origem não ganha linha.** Contato anterior a `atribuirOrigem`
  * devolve `null`, e a tela cala. Escrever "Direto" para ele seria afirmar o que
- * ninguém mediu — o mesmo erro que o comentário antigo evitava com razão.
+ * ninguém mediu, o mesmo erro que o comentário antigo evitava com razão.
  */
 export function QuemE({
   waId,
@@ -58,7 +58,7 @@ export function QuemE({
   /**
    * Por onde a pessoa já chegou, da mais recente para a mais antiga.
    *
-   * Vazio é o caso comum — a maioria escreve direto, sem anúncio no meio.
+   * Vazio é o caso comum, a maioria escreve direto, sem anúncio no meio.
    */
   passagens?: Passagem[]
   /**
@@ -66,7 +66,7 @@ export function QuemE({
    *
    * Mapa vazio é normal: conta sem Ads conectado, token vencido, Meta fora do
    * ar. Cada passagem cai para o título que a pessoa leu no dia, que já está
-   * guardado — a lista nunca fica vazia por causa disso.
+   * guardado, a lista nunca fica vazia por causa disso.
    */
   nomesDosAnuncios?: Map<string, AnuncioEmCache>
 }) {
@@ -77,7 +77,7 @@ export function QuemE({
       <Linha rotulo="Telefone">
         {/*
           `tel:` e não texto solto: num celular o toque liga, e no desktop o
-          número fica selecionável para copiar — que é o que se faz com ele.
+          número fica selecionável para copiar, que é o que se faz com ele.
           `telefoneLegivel` devolve o cru quando não reconhece o formato, então
           um número estranho aparece como está em vez de sumir.
         */}
@@ -94,7 +94,7 @@ export function QuemE({
         muda a primeira frase do atendimento. Quem sabe que a pessoa clicou em
         "Filme institucional" abre a conversa sabendo do que ela quer falar.
 
-        **O título ganha do número.** `origem_anuncio` é o `source_id` da Meta —
+        **O título ganha do número.** `origem_anuncio` é o `source_id` da Meta ,
         16 dígitos que não dizem nada a quem atende, e que só viram nome de
         campanha com um segundo token, de Ads, que o produto ainda não tem. O
         `headline` já é legível por gente e chega de graça no mesmo webhook,
@@ -107,7 +107,7 @@ export function QuemE({
 
       {/*
         O relativo é o que se lê; o exato fica no `title`. "há 3 meses" responde
-        a pergunta — é cliente antigo ou chegou agora — e a data cheia continua
+        a pergunta, é cliente antigo ou chegou agora, e a data cheia continua
         a um passe de mouse para quem precisa da prova.
       */}
       <Linha rotulo="Cliente desde">
@@ -139,7 +139,7 @@ export function QuemE({
 }
 
 /**
- * Por onde a pessoa chegou — todas as vezes.
+ * Por onde a pessoa chegou, todas as vezes.
  *
  * ---------------------------------------------------------------------------
  * Por que uma lista, e não um campo
@@ -150,7 +150,7 @@ export function QuemE({
  * setembro passou por duas, e as duas explicam alguma coisa: a primeira, como
  * essa pessoa virou nossa; a segunda, por que ela está escrevendo hoje.
  *
- * A mais recente vem em cima porque é a que responde o presente — é ela que diz
+ * A mais recente vem em cima porque é a que responde o presente, é ela que diz
  * o que a pessoa acabou de ver antes de abrir a conversa.
  *
  * **Contato sem passagem nenhuma ainda mostra a linha**, com o rótulo que está

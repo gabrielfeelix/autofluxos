@@ -6,7 +6,7 @@ import { interpretarMarcacao, type Trecho } from '@/core/flow/marcacao'
  * O texto de uma mensagem, desenhado como o WhatsApp desenha.
  *
  * Existe porque a aba Testar mostrava `*Pilates!*` com os asteriscos à mostra,
- * e quem estava usando concluiu que o negrito não funcionava. Funcionava — no
+ * e quem estava usando concluiu que o negrito não funcionava. Funcionava, no
  * celular de quem recebe. O teste é onde se decide se a mensagem está boa, e um
  * teste que mostra outra coisa não responde a única pergunta que ele existe
  * para responder.
@@ -49,7 +49,7 @@ export function TextoDoWhatsApp({ texto }: { texto: string }) {
             rel="noopener noreferrer"
             /*
               `text-primary` e não uma cor escrita à mão: dentro da bolha que
-              sai, `.bolha-nossa` redefine `--primary` para branco — a mesma
+              sai, `.bolha-nossa` redefine `--primary` para branco, a mesma
               armadilha que já apagou a conversa inteira uma vez, e que aqui
               joga a favor. Azul no que chega, branco no que sai, como o
               WhatsApp.

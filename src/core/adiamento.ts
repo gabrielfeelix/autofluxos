@@ -4,7 +4,7 @@
  * **Mora em `core/` e não em `acoes.ts` por imposição do Next**: um arquivo
  * `'use server'` só pode exportar função assíncrona, e exportar esta tabela de
  * lá quebra o build inteiro com "A 'use server' file can only export async
- * functions, found object" — um erro que aponta para páginas que não têm nada
+ * functions, found object", um erro que aponta para páginas que não têm nada
  * a ver com o problema.
  *
  * Quatro escolhas, nenhuma exigindo pensar em data. Data livre é o que se

@@ -3,7 +3,7 @@ import { z } from 'zod'
 /**
  * O que o agendador sabe fazer (0026).
  *
- * O tipo é texto no banco de propósito — `enum` do Postgres exigiria migration
+ * O tipo é texto no banco de propósito, `enum` do Postgres exigiria migration
  * para cada tipo novo, e tipo de tarefa é o que mais vai crescer. A lista
  * fechada mora aqui, e o executor **recusa o que não conhece** em vez de
  * estourar: uma tarefa de um tipo que a versão em produção ainda não entende é
@@ -45,7 +45,7 @@ export type DadosDoTimeout = z.infer<typeof dadosDoTimeoutSchema>
  * Uma por sessão, e não uma por (sessão, nó): a conversa está num nó de cada
  * vez, e a intenção mais nova é sempre a que vale. Sem isso, um fluxo que
  * repergunta deixaria dois timeouts vivos e a pessoa receberia a cobrança duas
- * vezes — defeito que só aparece com gente de verdade do outro lado.
+ * vezes, defeito que só aparece com gente de verdade do outro lado.
  */
 export function chaveDoTimeout(sessaoId: string): string {
   return `timeout:${sessaoId}`
@@ -60,7 +60,7 @@ export function chaveDoTimeout(sessaoId: string): string {
  * passo só sai se a inscrição ainda estiver exatamente onde estava.
  *
  * `entrouEm` viaja junto porque o horário dos passos seguintes é contado **do
- * evento**, não do agora — ver `quandoRodaOPasso`. Recontar a cada passo
+ * evento**, não do agora, ver `quandoRodaOPasso`. Recontar a cada passo
  * empurraria a sequência para a frente a cada atraso do agendador, e o passo de
  * 20h chegaria fora da janela de 24h por causa de uma passada que demorou.
  */

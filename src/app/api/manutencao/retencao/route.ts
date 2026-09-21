@@ -18,11 +18,11 @@ export const maxDuration = 60
  * vença. O nome da rota é `retencao` por história, e mudá-lo agora quebraria o
  * `vercel.json` em troca de nada.
  *
- * **Esta rota fica fora do `proxy`** — quem chama é a plataforma, não uma
+ * **Esta rota fica fora do `proxy`**, quem chama é a plataforma, não uma
  * pessoa com cookie de painel. Em troca, ela exige `CRON_SECRET` e **falha
  * fechada sem ele**: uma rota que apaga contato não pode ficar aberta porque
  * uma variável não foi preenchida. Enquanto o segredo não existir, a resposta é
- * 503 e nada é apagado — retenção que não roda é um problema de conformidade;
+ * 503 e nada é apagado, retenção que não roda é um problema de conformidade;
  * retenção que roda para qualquer um é um problema muito maior.
  *
  * A Vercel manda o segredo no `Authorization` sozinha quando `CRON_SECRET` está
@@ -49,7 +49,7 @@ export async function GET(req: Request) {
     /*
      * Os alertas entram na mesma passada, e não numa tarefa própria.
      *
-     * É a mesma natureza de trabalho — apagar o que passou do prazo — e o
+     * É a mesma natureza de trabalho, apagar o que passou do prazo, e o
      * `contexto` de um alerta pode carregar id de contato, então guardá-lo para
      * sempre seria guardar dado pessoal exatamente onde este arquivo existe
      * para impedir. Uma segunda tarefa agendada custaria outra entrada no
@@ -62,13 +62,13 @@ export async function GET(req: Request) {
      *
      * No Hobby a Vercel dá **duas** tarefas agendadas por projeto, e as duas já
      * estão em uso: esta e a do agendador. Uma terceira entrada no `vercel.json`
-     * simplesmente não roda — e a renovação não pode ser a coisa que ninguém
+     * simplesmente não roda, e a renovação não pode ser a coisa que ninguém
      * percebe que parou, porque o sintoma dela é uma conta que fica muda no dia
      * 61 sem ninguém ter mexido em nada.
      *
      * A natureza do trabalho também é a mesma das duas linhas acima: cuidar de
-     * prazo que corre sozinho. Ela nunca lança — falha de uma conta vira alerta
-     * lá dentro —, então não tem como derrubar a limpeza que veio antes.
+     * prazo que corre sozinho. Ela nunca lança, falha de uma conta vira alerta
+     * lá dentro , então não tem como derrubar a limpeza que veio antes.
      */
     const instagram = await renovarTokensDoInstagram({ agora })
 
@@ -90,7 +90,7 @@ export async function GET(req: Request) {
      * **Webhook perdido é questão de quando, não de se.** A Meta entrega
      * `message_template_status_update` uma vez; se a função estiver em deploy
      * naquele segundo, o template fica "em análise" para sempre no nosso banco
-     * enquanto já está aprovado há dias — e não há erro nenhum no log, porque do
+     * enquanto já está aprovado há dias, e não há erro nenhum no log, porque do
      * nosso lado nada falhou.
      *
      * Nunca lança: falha de uma conta é contada lá dentro e não derruba o que

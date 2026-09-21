@@ -3,8 +3,8 @@ import { JANELA_MS } from '@/channels/janela'
 /**
  * As sequências: acompanhar sozinho quem parou (0031).
  *
- * Puro e sem rede, como todo `core/`. O que mora aqui é a régua — quais eventos
- * inscrevem, quanto tempo cabe, o que é o próximo passo — e é justamente o que
+ * Puro e sem rede, como todo `core/`. O que mora aqui é a régua, quais eventos
+ * inscrevem, quanto tempo cabe, o que é o próximo passo, e é justamente o que
  * precisa dar para testar sem banco e sem WhatsApp.
  */
 
@@ -13,14 +13,14 @@ import { JANELA_MS } from '@/channels/janela'
  *
  * Os três são **atos deliberados sobre um contato**: alguém encerrou um
  * atendimento, alguém aplicou uma etiqueta, ou o fluxo pôs a pessoa numa etapa
- * do quadro. Isso não é acaso — é a diferença entre acompanhamento e disparo em
+ * do quadro. Isso não é acaso, é a diferença entre acompanhamento e disparo em
  * massa. Um evento genérico ("chegou contato novo") poria a sequência
  * disputando a conversa com o fluxo de entrada, e as duas falariam por cima uma
  * da outra.
  *
  * `etapa_alcancada` (0034) é o que junta quadro e sequência, e é o pedido do
  * cliente real: *"entrou em Aula agendada e não compareceu"*. Dava para exigir
- * que o fluxo aplicasse uma etiqueta junto e reusar o evento de etiqueta — mas
+ * que o fluxo aplicasse uma etiqueta junto e reusar o evento de etiqueta, mas
  * isso obrigaria a conta a manter duas coisas em sincronia à mão, e no dia em
  * que alguém movesse o cartão pela tela o acompanhamento não aconteceria, sem
  * erro nenhum para investigar.
@@ -34,7 +34,7 @@ export const EVENTOS_DE_SEQUENCIA = [
    *
    * Os três de cima são atos deliberados: alguém encerrou, alguém etiquetou,
    * alguém moveu o cartão. Este é o tempo passando, e é justamente por isso que
-   * ele existe — o cliente que some não gera evento nenhum, e é assim que o
+   * ele existe, o cliente que some não gera evento nenhum, e é assim que o
    * pós-venda se perde: ninguém percebe até a hora da renovação.
    */
   'cliente_sumido',
@@ -57,7 +57,7 @@ export const ROTULO_DO_EVENTO: Record<EventoDeSequencia, string> = {
  * Quantos dias calado para a régua de retomada entrar.
  *
  * Mínimo de uma semana porque abaixo disso não é sumiço, é fim de semana. Teto
- * de um ano porque quem não fala há mais que isso não volta com uma mensagem —
+ * de um ano porque quem não fala há mais que isso não volta com uma mensagem ,
  * volta com uma oferta nova, que é outro trabalho.
  */
 export const DIAS_SEM_CONVERSA = { minimo: 7, maximo: 365, padrao: 60 } as const
@@ -65,7 +65,7 @@ export const DIAS_SEM_CONVERSA = { minimo: 7, maximo: 365, padrao: 60 } as const
 /**
  * O teto de cada passo, em minutos: **24 horas**.
  *
- * Não é escolha de produto, é a janela da Meta — e a conta que a torna
+ * Não é escolha de produto, é a janela da Meta, e a conta que a torna
  * inescapável está no comentário da 0031: quem responde sai da sequência, então
  * a última mensagem da pessoa é sempre anterior ao evento que a inscreveu. O
  * relógio da janela já está correndo quando a sequência começa.
@@ -81,7 +81,7 @@ export const ATRASO_MAXIMO_MINUTOS = JANELA_MS / 60_000
  *
  * Cinco, e o limite é de produto: cinco mensagens dentro de 24 horas para quem
  * não respondeu nenhuma já é o teto do que alguém tolera. O sexto passo não
- * traz lead nenhum — traz bloqueio, que é o custo que não se desfaz.
+ * traz lead nenhum, traz bloqueio, que é o custo que não se desfaz.
  */
 export const LIMITE_DE_PASSOS = 5
 
@@ -112,7 +112,7 @@ export type PassoDaSequencia = {
    * um seria cobrar aprovação da Meta para mandar a segunda mensagem de uma
    * conversa que está acontecendo agora.
    *
-   * Acima de `JANELA_EM_MINUTOS` ele deixa de ser opcional — ver
+   * Acima de `JANELA_EM_MINUTOS` ele deixa de ser opcional, ver
    * `passoEntregavel`. Sem modelo, um passo de 3 dias não é "um passo longo":
    * é um passo que o executor vai encontrar com a janela fechada e encerrar
    * sem entregar nada.
@@ -183,7 +183,7 @@ export function passoDoIndice(
  * Quando este passo deve rodar, contando do evento.
  *
  * Recebe o instante do evento e não `Date.now()` porque um passo reagendado
- * depois de uma falha precisa cair no mesmo horário de sempre — recontar do
+ * depois de uma falha precisa cair no mesmo horário de sempre, recontar do
  * agora empurraria a sequência inteira para a frente a cada tentativa, e o
  * passo de 20h chegaria fora da janela por causa de um erro de rede.
  */
@@ -194,7 +194,7 @@ export function quandoRodaOPasso(entrouEm: Date, passo: PassoDaSequencia): Date 
 /**
  * O passo cabe na janela que restava quando a pessoa entrou?
  *
- * É a conferência de desenho — a tela usa para avisar antes de alguém publicar
+ * É a conferência de desenho, a tela usa para avisar antes de alguém publicar
  * um passo que nunca entregaria. O executor confere **de novo** na hora de
  * mandar, com a janela real do contato: o desenho responde "faz sentido?", e a
  * entrega responde "dá agora?".
@@ -206,7 +206,7 @@ export function cabeNaJanela(
   return passo.atrasoMinutos * 60_000 <= restanteMsNoEvento
 }
 
-/** "30min", "2h", "20h30" — o mesmo formato do relógio da fila. */
+/** "30min", "2h", "20h30", o mesmo formato do relógio da fila. */
 export function comoAtraso(minutos: number): string {
   if (minutos < 60) return `${minutos}min`
   const horas = Math.floor(minutos / 60)
@@ -218,7 +218,7 @@ export function comoAtraso(minutos: number): string {
  * A régua de um passo novo, antes de o banco ver qualquer coisa.
  *
  * O `check` da migration diz a mesma coisa; isto existe para a recusa chegar
- * como frase e não como violação de restrição — que é o que a pessoa lê.
+ * como frase e não como violação de restrição, que é o que a pessoa lê.
  */
 export function conferirAtraso(
   minutos: number,
@@ -226,7 +226,7 @@ export function conferirAtraso(
   /**
    * O modelo aprovado deste passo, quando há um (0061).
    *
-   * Sem ele, o teto continua sendo 24h — e não por escolha nossa: fora da
+   * Sem ele, o teto continua sendo 24h, e não por escolha nossa: fora da
    * janela o WhatsApp recusa texto livre, e o passo seria desenhado e nunca
    * entregue. Com ele, o teto é 30 dias.
    */
@@ -264,7 +264,7 @@ export function conferirAtraso(
  * antes, passo fora das 24h era simplesmente impossível; agora ele é possível
  * **se** carregar um modelo aprovado.
  *
- * `cabeNaJanela` continua existindo e continua certa para o que ela responde —
+ * `cabeNaJanela` continua existindo e continua certa para o que ela responde ,
  * "isto cabe em texto livre?". Esta responde a pergunta que a tela precisa
  * fazer: "isto vai chegar em alguém?".
  */
@@ -277,13 +277,13 @@ export function passoEntregavel(passo: PassoDaSequencia): boolean {
  * O que dizer a quem desenhou um passo que não entregaria.
  *
  * `null` quando está tudo certo. O recado é em português e diz o caminho de
- * saída, porque a alternativa — desabilitar o campo acima de 24h — esconderia
+ * saída, porque a alternativa, desabilitar o campo acima de 24h, esconderia
  * que o recurso existe.
  */
 export function porQueNaoEntrega(passo: PassoDaSequencia): string | null {
   if (passoEntregavel(passo)) return null
   return (
-    'Passos com mais de 24 horas só chegam por um modelo aprovado pela Meta — ' +
+    'Passos com mais de 24 horas só chegam por um modelo aprovado pela Meta, ' +
     'fora desse prazo o WhatsApp não entrega texto livre. Escolha um modelo para este passo.'
   )
 }

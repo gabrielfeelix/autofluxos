@@ -14,7 +14,7 @@ export type EstragoDaExclusao = {
  *
  * **Por que digitar o nome e não um `confirm()`.** Este é o único botão do
  * painel que apaga leads, conversas e credenciais de uma vez. Um `confirm()` é
- * um obstáculo de meio segundo — quem clicou sem querer clica em "OK" sem
+ * um obstáculo de meio segundo, quem clicou sem querer clica em "OK" sem
  * querer também. Digitar o nome obriga a ler qual cliente está prestes a sumir,
  * que é justamente o erro que a confirmação existe para pegar: apagar o cliente
  * certo pelo motivo errado é raro; apagar o cliente errado é o caso comum.

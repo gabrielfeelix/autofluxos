@@ -5,14 +5,14 @@ import { webhookSchema } from './receber-mensagem'
  * O filtro por `field`, e o bug que ele fecha.
  *
  * Em 13/set/2026 `receberMensagem` não olhava o `field` do webhook. O eco de
- * coexistência (`smb_message_echoes`) — o que o dono do negócio manda pelo
- * **celular dele** — tem exatamente a forma de uma mensagem recebida:
+ * coexistência (`smb_message_echoes`), o que o dono do negócio manda pelo
+ * **celular dele**, tem exatamente a forma de uma mensagem recebida:
  * `metadata.phone_number_id` e um `messages[]` com `id`, `from` e `type`.
  *
  * O resultado era o pior possível para este produto: o `from` do eco é o número
  * **do próprio negócio**, então virava um contato novo, a mensagem entrava como
  * `entrada`, e o motor respondia. O dono recebia resposta automática do próprio
- * bot — o atropelo que a coexistência existe para impedir.
+ * bot, o atropelo que a coexistência existe para impedir.
  *
  * Estes testes são puros (só o schema e a regra) de propósito: os de
  * `receber-mensagem.test.ts` exigem banco e são pulados sem credencial, que é
@@ -29,7 +29,7 @@ describe('o filtro por field', () => {
     expect(deveTratar('messages')).toBe(true)
   })
 
-  it('**recusa `smb_message_echoes`** — é o dono falando pelo celular', () => {
+  it('**recusa `smb_message_echoes`**, é o dono falando pelo celular', () => {
     expect(deveTratar('smb_message_echoes')).toBe(false)
   })
 
@@ -45,11 +45,11 @@ describe('o filtro por field', () => {
   })
 })
 
-describe('o eco passa pelo schema — por isso o filtro é necessário', () => {
+describe('o eco passa pelo schema, por isso o filtro é necessário', () => {
   /**
    * O payload que causava o estrago, reduzido ao que importa. Se um dia o
    * schema deixar de aceitá-lo, este teste falha e avisa que a proteção mudou
-   * de lugar — o que é exatamente o que se quer saber.
+   * de lugar, o que é exatamente o que se quer saber.
    */
   const eco = {
     entry: [

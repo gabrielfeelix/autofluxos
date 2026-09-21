@@ -10,8 +10,7 @@ type Estado = EstadoSalvar & { resumo?: string; pendentes?: string[] }
  *
  * **O resultado é a parte que importa, não o formulário.** O dono do negócio
  * manda um CSV exportado do Excel dele, e o que ele precisa saber depois é
- * quantas linhas casaram com quem já conversou, quantas viraram contato novo e
- * — principalmente — **quais não entraram e por quê**. Importação que engole 40
+ * quantas linhas casaram com quem já conversou, quantas viraram contato novo e, principalmente, **quais não entraram e por quê**. Importação que engole 40
  * de 300 linhas em silêncio é pior do que importação que recusa.
  */
 export function ImportarContatos({
@@ -25,7 +24,7 @@ export function ImportarContatos({
     <section className="app-card p-6">
       <h2 className="text-[14.5px] font-bold">Importar da planilha</h2>
       <p className="mt-1 max-w-[620px] text-[12px] leading-5 text-dim">
-        Um CSV com uma coluna de nome e uma de telefone — exportado do Excel ou do Google
+        Um CSV com uma coluna de nome e uma de telefone, exportado do Excel ou do Google
         Planilhas, do jeito que estiver. O telefone casa com quem já conversou mesmo se estiver
         escrito de outro jeito, <strong className="text-soft">inclusive sem o nono dígito</strong>.
         Nada é apagado: nome corrigido pode ser desfeito e contato criado pode ser removido.

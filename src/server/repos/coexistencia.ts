@@ -6,7 +6,7 @@ import { db, ehIdInvalido } from '../db'
  *
  * Separado de `conversas.ts` porque o que mora aqui tem um dono de tempo
  * próprio: a **janela de 24 horas**. Todo write deste arquivo existe para
- * responder uma pergunta só — "este disparo já foi gasto?" — e essa pergunta
+ * responder uma pergunta só, "este disparo já foi gasto?", e essa pergunta
  * não tem segunda chance de ser respondida errado.
  */
 
@@ -25,7 +25,7 @@ export type EstadoDeCoexistencia = {
   /**
    * O andamento dos dois syncs, para a tela.
    *
-   * Só `coexistenciaDoCliente` preenche — as leituras do caminho quente não
+   * Só `coexistenciaDoCliente` preenche, as leituras do caminho quente não
    * precisam disso e não pagam por ele. `null` em toda parte é o normal de um
    * número que nunca sincronizou.
    */
@@ -34,7 +34,7 @@ export type EstadoDeCoexistencia = {
   historicoProgresso?: number | null
   historicoVistoEm?: string | null
   /**
-   * O número e o nome como a Meta os exibe — para a tela dizer qual telefone
+   * O número e o nome como a Meta os exibe, para a tela dizer qual telefone
    * está ali, em vez do `phone_number_id` que ninguém reconhece.
    *
    * `null` em canal antigo, que conectou antes de guardarmos isto. A tela cai
@@ -87,7 +87,7 @@ export async function marcarCoexistente(canalId: string): Promise<void> {
  * Corrige a WABA do canal para a que de fato contém o número.
  *
  * O `waba_id` gravado no onboarding vem da query do Embedded Signup, e ela
- * pode apontar para outra WABA do mesmo cliente — aconteceu em 13/set/2026.
+ * pode apontar para outra WABA do mesmo cliente, aconteceu em 13/set/2026.
  * Quando `wabaQueContemONumero` descobre a certa, é ela que tem que ficar no
  * canal: é por este campo que qualquer depuração futura começa, e um valor
  * errado aqui manda a próxima pessoa investigar a conta errada.
@@ -110,15 +110,15 @@ export async function anotarWaba(canalId: string, wabaId: string): Promise<void>
  *
  * **Cada sync só pode ser disparado uma vez, e não há como perguntar à Meta se
  * já gastamos a nossa.** Ler antes e escrever depois deixa uma janela entre as
- * duas coisas: dois webhooks do mesmo onboarding chegando juntos — que é o
- * caso comum, não o raro — leem os dois "ainda não foi", e os dois disparam. O
+ * duas coisas: dois webhooks do mesmo onboarding chegando juntos, que é o
+ * caso comum, não o raro, leem os dois "ainda não foi", e os dois disparam. O
  * segundo disparo não dá erro; ele só desperdiça a única chance que existia.
  *
  * Com `.is(coluna, null)` no `update`, quem escreve é o banco: exatamente uma
  * das duas chamadas encontra a coluna vazia. A outra não afeta linha nenhuma e
  * descobre isso pela contagem, sem precisar confiar em ordem de chegada.
  *
- * O `request_id` entra depois, em `guardarRequestIdDoSync` — a reserva carimba
+ * O `request_id` entra depois, em `guardarRequestIdDoSync`, a reserva carimba
  * só a hora, porque o `request_id` só existe **depois** da resposta da Meta, e
  * esperar por ele para reservar traria de volta exatamente a janela que este
  * desenho fecha.
@@ -165,7 +165,7 @@ export async function guardarRequestIdDoSync(
  *
  * O cliente trocou de celular ou reinstalou o WhatsApp Business e o companion
  * da Cloud API foi desembarcado **sozinho**. Normalmente reconecta em minutos.
- * Enquanto não reconecta, os envios daquele número falham — e sem marcar isso,
+ * Enquanto não reconecta, os envios daquele número falham, e sem marcar isso,
  * a troca de aparelho de um cliente vira uma fila de envios falhando em
  * silêncio, que é o defeito que ninguém percebe até alguém reclamar.
  */
@@ -191,7 +191,7 @@ export type ContatoDaAgenda = {
 /**
  * Grava os contatos da agenda que chegaram num lote.
  *
- * **`upsert`, não `insert`:** `smb_app_state_sync` não chega só no onboarding —
+ * **`upsert`, não `insert`:** `smb_app_state_sync` não chega só no onboarding ,
  * toda mudança futura na agenda dele chega por aqui. O mesmo telefone volta com
  * o nome corrigido, e a segunda passagem tem que atualizar, não estourar.
  *
@@ -226,7 +226,7 @@ export async function guardarContatosDaAgenda(
 /**
  * Tira da agenda o que a ação `remove` mandou tirar.
  *
- * Separado do `guardar` porque a ação `remove` **vem sem os nomes** — só com o
+ * Separado do `guardar` porque a ação `remove` **vem sem os nomes**, só com o
  * telefone. Passá-la pelo mesmo caminho gravaria `null` por cima de um nome
  * bom, que é a armadilha 3 de `receber-coexistencia.ts`.
  */
@@ -290,7 +290,7 @@ export async function nomeNaAgenda(
  *    apareceria na tela como se tivesse acontecido toda hoje, fora de ordem.
  *
  * Devolve `false` quando a mensagem já existia. **Quem deduplica é o `unique`
- * de `wa_message_id`**, não uma consulta anterior — inclusive entre o histórico
+ * de `wa_message_id`**, não uma consulta anterior, inclusive entre o histórico
  * e um echo da mesma mensagem, que é o caso que acontece de verdade: uma
  * mensagem recente aparece nos dois.
  */
@@ -325,7 +325,7 @@ export async function registrarMensagemDeCoexistencia(dados: {
       /*
        * Entregue, e não "por confirmar".
        *
-       * O que veio do histórico ou de um echo **já aconteceu** — a pessoa já
+       * O que veio do histórico ou de um echo **já aconteceu**, a pessoa já
        * recebeu, pelo celular dele. `false` aqui faria a tela mostrar meio
        * histórico como envio pendente que nunca vai confirmar.
        */
@@ -355,7 +355,7 @@ export async function registrarMensagemDeCoexistencia(dados: {
  *   token, e isso não depende de disciplina de quem escreve a próxima consulta.
  * - **Reconectar o mesmo número atualiza, não duplica.** `phone_number_id` é
  *   `unique` no sistema inteiro; sem este caminho, o cliente que refaz o
- *   onboarding — que é o que a Meta manda fazer quando a janela de 24h vence —
+ *   onboarding, que é o que a Meta manda fazer quando a janela de 24h vence ,
  *   bateria numa violação de constraint em vez de reconectar.
  * - **O mesmo número de outro cliente é erro dito por extenso.** O `unique`
  *   barra no banco, com uma mensagem que não ajuda ninguém. O caso é real: uma
@@ -449,7 +449,7 @@ export async function salvarNumeroDoOnboarding(entrada: {
 
   if (error) {
     // O segredo já está no cofre e a linha não nasceu. Sem isto ele ficaria
-    // órfão para sempre — e token órfão é token que ninguém revoga.
+    // órfão para sempre, e token órfão é token que ninguém revoga.
     await db().rpc('apagar_segredo', { alvo: tokenRef })
     throw new Error(`não deu para conectar o número: ${error.message}`)
   }
@@ -460,7 +460,7 @@ export async function salvarNumeroDoOnboarding(entrada: {
 /**
  * O progresso de uma sincronização, como o último lote reportou.
  *
- * **A sincronização pode levar até 6 horas e pode falhar de vez** — não está na
+ * **A sincronização pode levar até 6 horas e pode falhar de vez**, não está na
  * doc da Meta, veio de quem implementou. Sem gravar isto, "ainda rodando" e
  * "morreu no meio" são a mesma coisa vista de fora: nenhum dado novo chegando.
  *
@@ -494,7 +494,7 @@ export async function anotarProgressoDoSync(
  * O estado de coexistência de todos os números de um cliente, de uma vez.
  *
  * Existe para a tela: `listarCanais` devolve `CanalSalvo`, que não tem nenhuma
- * coluna desta migration — e uma leitura por número transformaria a tela de um
+ * coluna desta migration, e uma leitura por número transformaria a tela de um
  * cliente com três números em quatro idas ao banco. Devolve um mapa por id de
  * canal, que é como a tela já tem os números na mão.
  */

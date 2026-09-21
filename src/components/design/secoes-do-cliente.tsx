@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 
 /**
- * As seções do cliente — a lista, os ícones, e mais nada.
+ * As seções do cliente, a lista, os ícones, e mais nada.
  *
  * ---------------------------------------------------------------------------
  * Por que isto saiu de `cliente-shell.tsx`
@@ -9,7 +9,7 @@ import type { ReactNode } from 'react'
  *
  * A moldura faz três consultas ao banco antes de desenhar qualquer coisa
  * (acesso, contas, presença). Enquanto a navegação morava lá dentro, **quem
- * quisesse desenhar a barra lateral tinha de pagar as três** — e o `loading.tsx`
+ * quisesse desenhar a barra lateral tinha de pagar as três**, e o `loading.tsx`
  * é exatamente quem não pode: ele existe para aparecer *antes* de qualquer
  * consulta terminar.
  *
@@ -22,7 +22,7 @@ import type { ReactNode } from 'react'
  * ---------------------------------------------------------------------------
  *
  * O `EsqueletoDeAbas` já dizia, sobre a barra de abas: *os rótulos são os de
- * verdade, não blocos cinzas — trocá-los por cinza faria a barra piscar a cada
+ * verdade, não blocos cinzas, trocá-los por cinza faria a barra piscar a cada
  * clique, apagando justamente a única parte da tela que a pessoa acabou de
  * usar*. O raciocínio vale igual para a barra lateral, e só vale porque esta
  * lista não depende de I/O nenhum.
@@ -41,7 +41,7 @@ export type AbaDoCliente =
 /**
  * As chaves são as antigas de propósito.
  *
- * `fluxos` acende "Automações" e `leads` acende "Contatos" — o rótulo mudou, a
+ * `fluxos` acende "Automações" e `leads` acende "Contatos", o rótulo mudou, a
  * chave não. Renomear as duas obrigaria a tocar as doze telas que passam
  * `ativa`, para arrumar uma palavra que só aparece aqui. É a mesma decisão que
  * manteve a rota `/leads` quando a aba virou "Contatos".
@@ -60,7 +60,7 @@ export const ITENS: {
   // olhada de outro jeito: a lista responde "quem existe", o quadro responde
   // "em que ponto cada um está".
   /*
-   * **"Funil de vendas" — a rota continua `/quadros`.**
+   * **"Funil de vendas", a rota continua `/quadros`.**
    *
    * O nome foi "Quadros" enquanto a tela era só a posição da pessoa no funil, e
    * "Quadros" descreve o desenho (colunas), não o trabalho. Virou "Funis" quando
@@ -68,7 +68,7 @@ export const ITENS: {
    * porque sozinha a palavra é ambígua: este produto também tem funil de
    * automação, e quem chega não sabe qual dos dois o menu está oferecendo.
    *
-   * O singular não esconde que são vários — captação, comercial, pós-venda: o
+   * O singular não esconde que são vários, captação, comercial, pós-venda: o
    * seletor dentro da tela continua mostrando todos. É o nome da seção, e é
    * assim que o mercado a chama. A URL não muda: link salvo quebrado em troca
    * de um rótulo não se paga.
@@ -80,7 +80,7 @@ export const ITENS: {
    *
    * Ela nasceu como um link dentro do texto da aba Campanhas, e isso foi um
    * erro que custou o tempo de alguém procurando: tela que existe e não se
-   * acha é tela que não existe. O trabalho aqui também é de outra natureza —
+   * acha é tela que não existe. O trabalho aqui também é de outra natureza ,
    * automação responde a um gatilho, transmissão é alguém decidindo falar com
    * uma lista hoje.
    */

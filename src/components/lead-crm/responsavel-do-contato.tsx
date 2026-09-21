@@ -9,14 +9,14 @@ import { acaoAtribuirContato } from '@/server/acoes-crm'
  * Quem cuida desta pessoa.
  *
  * Fica ao lado do estágio porque as duas perguntas vêm juntas: em que pé está,
- * e com quem. **Sem dono é estado visível** — o avatar cinza com "?" ocupa o
+ * e com quem. **Sem dono é estado visível**, o avatar cinza com "?" ocupa o
  * mesmo lugar do avatar de alguém, em vez de deixar um buraco que se lê como
  * "ainda não carregou".
  *
  * **O avatar vai dentro do dropdown, e não ao lado dele.** Ao lado, ele era uma
  * coisa solta na tela: mostrava quem está escolhido agora e sumia justamente na
  * hora de escolher outra pessoa, que é quando a cara de cada um ajuda a achar o
- * nome na lista. Dentro, ele acompanha a opção nos dois lugares — no gatilho e
+ * nome na lista. Dentro, ele acompanha a opção nos dois lugares, no gatilho e
  * em cada linha.
  *
  * Diferente do "Assumir" do Inbox, que é sobre si mesmo: aqui a lista é a

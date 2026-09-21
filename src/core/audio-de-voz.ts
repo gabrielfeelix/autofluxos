@@ -7,7 +7,7 @@
  *
  * Porque escolher errado é o modo de falha desta funcionalidade, e ele falha
  * **longe** de onde a escolha foi feita: o arquivo sobe, a Server Action grava
- * a mensagem, e só então a Meta recusa — com o erro aparecendo na conversa de
+ * a mensagem, e só então a Meta recusa, com o erro aparecendo na conversa de
  * um cliente. Uma regra de três linhas escondida dentro de um componente de
  * interface é uma regra que ninguém testa.
  *
@@ -18,16 +18,15 @@
  * O que a Meta aceita, e o que o navegador produz
  * ---------------------------------------------------------------------------
  *
- * A tabela da Cloud API aceita AAC, AMR, MP3, `audio/mp4` (.m4a) e `audio/ogg`
- * — este último com a letra miúda que decide tudo: *"OPUS codecs only; base
+ * A tabela da Cloud API aceita AAC, AMR, MP3, `audio/mp4` (.m4a) e `audio/ogg`, este último com a letra miúda que decide tudo: *"OPUS codecs only; base
  * audio/ogg not supported; mono input only"*.
  *
  * **`audio/webm` não está na lista**, e é o padrão histórico do Chrome. Isso é
- * resolvido pedindo MP4 ou OGG — mas **pedir o contêiner não basta**, e é o que
+ * resolvido pedindo MP4 ou OGG, mas **pedir o contêiner não basta**, e é o que
  * a primeira versão deste arquivo errou.
  *
  * Contêiner e codec são coisas separadas. `audio/mp4` pedido sem codec deixa a
- * escolha com o navegador, e o Chrome entrega **Opus dentro de MP4** — que a
+ * escolha com o navegador, e o Chrome entrega **Opus dentro de MP4**, que a
  * Meta não toca, porque para ela `audio/mp4` significa AAC e Opus só vale em
  * OGG. O arquivo gravado em 15/set foi aberto byte a byte e confirmou: `mp4a`
  * ausente, `dOps` presente.
@@ -36,7 +35,7 @@
  *
  * 1. **`escolherFormato`** pede sempre com `;codecs=` explícito.
  * 2. **`codecServeParaAMeta`** confere o que o gravador devolveu, porque pedir
- *    não garante receber — e o modo de falha é silencioso: o Storage aceita, a
+ *    não garante receber, e o modo de falha é silencioso: o Storage aceita, a
  *    Cloud API responde 200, e nada chega no celular.
  *
  * Levantamento com as URLs da Meta em `docs/PESQUISA-VOZ-E-CHAMADA.md`.
@@ -44,7 +43,7 @@
 
 export type FormatoDeGravacao = {
   /**
-   * O que se pede ao `MediaRecorder` — pode levar `;codecs=`, e no Firefox
+   * O que se pede ao `MediaRecorder`, pode levar `;codecs=`, e no Firefox
    * precisa levar: `audio/ogg` sozinho lá sai em Vorbis, que a Meta recusa.
    */
   mimeType: string
@@ -59,7 +58,7 @@ export type FormatoDeGravacao = {
    * Se o arquivo precisa trocar de contêiner antes de subir.
    *
    * O Chrome só grava Opus dentro de WebM, e WebM não tem linha na tabela da
-   * Meta. Os pacotes Opus lá dentro são os mesmos que entrariam num OGG — então
+   * Meta. Os pacotes Opus lá dentro são os mesmos que entrariam num OGG, então
    * a saída é reembalar, não converter. Ver `core/ogg-opus.ts`.
    */
   remux: boolean
@@ -75,15 +74,15 @@ export type FormatoDeGravacao = {
  * Duas falhas medidas em produção, no mesmo dia, pela mesma razão de fundo: o
  * `MediaRecorder` grava em streaming, e MP4 não foi feito para isso.
  *
- * A primeira foi o codec — `audio/mp4` pedido sem `;codecs=` deixou o Chrome
+ * A primeira foi o codec, `audio/mp4` pedido sem `;codecs=` deixou o Chrome
  * escolher, e ele escolheu **Opus dentro de MP4**, que a Meta não entrega.
  * Pedir `mp4a.40.2` corrigiu o codec, e aí apareceu a segunda: o MP4 que sai
- * do navegador é **fragmentado**. O arquivo foi aberto caixa a caixa —
+ * do navegador é **fragmentado**. O arquivo foi aberto caixa a caixa ,
  * `stts`, `stsz` e `stco` vazios, `mvex` presente, `mvhd duration = 0`. Quem
  * lê MP4 progressivo, e é o que o WhatsApp faz, vê zero amostras.
  *
  * Não é defeito do navegador: gravando, ele não sabe a duração para escrever
- * no cabeçalho. MP4 exige saber; **OGG não** — é um contêiner de streaming,
+ * no cabeçalho. MP4 exige saber; **OGG não**, é um contêiner de streaming,
  * feito de páginas autossuficientes, sem índice e sem duração declarada. É
  * também o que o WhatsApp usa nativamente para voz.
  *
@@ -91,7 +90,7 @@ export type FormatoDeGravacao = {
  *
  * - **Firefox** grava `audio/ogg;codecs=opus` e o arquivo já sai pronto.
  * - **Chrome, Edge e Opera** só dão Opus em WebM. Os pacotes são os mesmos, e
- *   `webmOpusParaOgg` troca o envelope — sem decodificar, sem reencode, sem
+ *   `webmOpusParaOgg` troca o envelope, sem decodificar, sem reencode, sem
  *   WASM, sem dependência nova.
  *
  * O codec vai escrito por extenso nos dois: `audio/ogg` sem codec sai em
@@ -134,7 +133,7 @@ export const CODEC_TROCADO =
 /**
  * O primeiro formato que este navegador grava **e** a Meta aceita.
  *
- * `null` quando não há nenhum — e `null` é uma resposta legítima, não um erro:
+ * `null` quando não há nenhum, e `null` é uma resposta legítima, não um erro:
  * quem chama transforma em frase na tela.
  *
  * O `suporta` entra por parâmetro em vez de a função chamar
@@ -157,7 +156,7 @@ export function escolherFormato(
 /**
  * Teto da gravação, em segundos.
  *
- * **Não é o teto da Meta** — 16 MB de AAC mono dariam mais de uma hora. É o
+ * **Não é o teto da Meta**, 16 MB de AAC mono dariam mais de uma hora. É o
  * teto do bom senso: o microfone esquecido ligado é o acidente comum aqui, e
  * cinco minutos já é mais longo do que qualquer áudio que alguém queira ouvir
  * num atendimento. Bater no teto **envia o que gravou**, não descarta: perder
@@ -213,7 +212,7 @@ export const RESTRICOES_DO_MICROFONE: MediaTrackConstraints = {
  *
  * O `name` do erro é o contrato estável da especificação; a `message` varia por
  * navegador e por idioma, e não serve para decidir nada. As três primeiras são
- * as que acontecem de verdade — pessoa que negou, máquina sem microfone, e
+ * as que acontecem de verdade, pessoa que negou, máquina sem microfone, e
  * outro programa segurando o dispositivo.
  */
 export function motivoDoMicrofone(erro: unknown): string {

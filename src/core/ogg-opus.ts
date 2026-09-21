@@ -7,7 +7,7 @@
  *
  * O `MediaRecorder` grava em **streaming**: ele começa a escrever antes de
  * saber quanto tempo a gravação vai durar. Em MP4 isso obriga o formato
- * **fragmentado** (`fMP4`), e o preço aparece no arquivo pronto — medido no
+ * **fragmentado** (`fMP4`), e o preço aparece no arquivo pronto, medido no
  * áudio que não chegou em 15/set/2026:
  *
  * ```
@@ -17,22 +17,22 @@
  * mvhd duration = 0
  * ```
  *
- * Não há índice de amostras nem duração no `moov`. Quem lê MP4 progressivo —
- * e é o que o WhatsApp faz — vê **zero amostras e duração zero**. O arquivo é
+ * Não há índice de amostras nem duração no `moov`. Quem lê MP4 progressivo ,
+ * e é o que o WhatsApp faz, vê **zero amostras e duração zero**. O arquivo é
  * válido para quem entende fragmento e vazio para quem não entende. Daí o
  * sintoma: sobe, a Cloud API responde 200, e nada chega.
  *
  * **OGG não tem esse problema, por desenho.** Ele é um contêiner de streaming:
  * o áudio é uma sequência de páginas autossuficientes, sem índice no começo e
  * sem duração declarada. É também o que o WhatsApp usa nativamente para voz, e
- * o que a Meta documenta — *"audio/ogg (OPUS codecs only)"*.
+ * o que a Meta documenta, *"audio/ogg (OPUS codecs only)"*.
  *
  * ---------------------------------------------------------------------------
  * Isto é remux, não conversão
  * ---------------------------------------------------------------------------
  *
  * O Chrome grava `audio/webm;codecs=opus`. Os pacotes Opus dentro desse WebM
- * são **byte a byte os mesmos** que entrariam num OGG — o que muda é o
+ * são **byte a byte os mesmos** que entrariam num OGG, o que muda é o
  * envelope. Não há decodificação, não há reencode, não há perda de qualidade,
  * não entra WASM e não entra dependência nova. Só se tira os pacotes de um
  * contêiner e se escreve o outro à volta deles.
@@ -88,7 +88,7 @@ export function crcDoOgg(dados: Uint8Array): number {
  *
  * Ela não está em lugar nenhum do contêiner: está no **primeiro byte do
  * próprio pacote**, o TOC (RFC 6716 §3.1). É o que alimenta a `granule
- * position` de cada página do Ogg — o relógio que o player usa para mostrar a
+ * position` de cada página do Ogg, o relógio que o player usa para mostrar a
  * duração e para procurar dentro do áudio.
  *
  * Errar isto não corrompe o arquivo: produz um áudio que toca certo e mostra a
@@ -104,9 +104,9 @@ export function amostrasDoPacote(pacote: Uint8Array): number {
 
   /*
    * Três famílias, e cada uma tem a sua grade de durações:
-   *   config  0–11  SILK    — 10, 20, 40, 60 ms
-   *   config 12–15  Híbrido — 10, 20 ms
-   *   config 16–31  CELT    — 2.5, 5, 10, 20 ms
+   *   config  0–11  SILK   , 10, 20, 40, 60 ms
+   *   config 12–15  Híbrido, 10, 20 ms
+   *   config 16–31  CELT   , 2.5, 5, 10, 20 ms
    */
   let ms: number
   if (config < 12) ms = [10, 20, 40, 60][config % 4]!
@@ -150,7 +150,7 @@ const MASTERS = new Set<number>([
 ])
 
 /**
- * Lê um identificador EBML. Ele **mantém** os bits marcadores — `0xA3` é o id
+ * Lê um identificador EBML. Ele **mantém** os bits marcadores, `0xA3` é o id
  * do `SimpleBlock`, não `0x23`. Tirar os marcadores aqui é um erro comum e faz
  * todos os ids colidirem.
  */
@@ -328,7 +328,7 @@ function montarPagina(
 /**
  * Troca o contêiner de WebM/Opus para OGG/Opus.
  *
- * `null` quando a entrada não é um WebM com faixa Opus — e `null` é resposta
+ * `null` quando a entrada não é um WebM com faixa Opus, e `null` é resposta
  * legítima, não erro: quem chama transforma numa frase na tela em vez de subir
  * um arquivo que a Meta recusaria em silêncio.
  */
@@ -349,7 +349,7 @@ export function webmOpusParaOgg(webm: Uint8Array): Uint8Array | null {
 
   /*
    * O serial identifica o fluxo dentro do arquivo. Qualquer número serve, desde
-   * que seja o mesmo em todas as páginas — aqui há um fluxo só.
+   * que seja o mesmo em todas as páginas, aqui há um fluxo só.
    */
   const serial = (Math.random() * 0xffffffff) >>> 0
   const paginas: Uint8Array[] = []
@@ -370,7 +370,7 @@ export function webmOpusParaOgg(webm: Uint8Array): Uint8Array | null {
    * As páginas de áudio.
    *
    * A `granule position` de uma página é a do **último** pacote que termina
-   * nela, contada em amostras de 48 kHz — é o relógio que o player usa para
+   * nela, contada em amostras de 48 kHz, é o relógio que o player usa para
    * mostrar a duração e para procurar dentro do áudio.
    */
   let granule = 0n
@@ -397,7 +397,7 @@ export function webmOpusParaOgg(webm: Uint8Array): Uint8Array | null {
 
     /*
      * Uma página comporta no máximo 255 segmentos. Quando o próximo pacote não
-     * cabe inteiro, a página atual fecha — assim nenhum pacote fica partido
+     * cabe inteiro, a página atual fecha, assim nenhum pacote fica partido
      * entre páginas, que é o que manteria o `granule` ambíguo.
      */
     if (segmentos.length + doPacote.length > MAX_SEGMENTOS) fechar(false)

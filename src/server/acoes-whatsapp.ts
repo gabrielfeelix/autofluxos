@@ -22,7 +22,7 @@ export async function acaoConectarWhatsapp(dados: FormData): Promise<void> {
   }
 
   /*
-   * A origem vem do cabeçalho, e não de uma variável — mesma razão do
+   * A origem vem do cabeçalho, e não de uma variável, mesma razão do
    * Instagram: o `redirect_uri` precisa bater byte a byte com o cadastrado no
    * painel da Meta e com o que a rota de retorno atende.
    */

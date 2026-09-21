@@ -7,7 +7,7 @@
  * custo para todo par de entradas.
  *
  * `===` em string sai no primeiro caractere diferente, e a diferença de tempo é
- * medível pela rede em requisição repetida — dá para descobrir o segredo letra
+ * medível pela rede em requisição repetida, dá para descobrir o segredo letra
  * a letra. `timingSafeEqual` percorre tudo sempre.
  *
  * O tamanho **vaza mesmo assim**, e é aceitável: `timingSafeEqual` estoura com

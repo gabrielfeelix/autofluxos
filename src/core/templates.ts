@@ -1,5 +1,5 @@
 /**
- * Os modelos aprovados da Meta — as regras, sem rede e sem banco.
+ * Os modelos aprovados da Meta, as regras, sem rede e sem banco.
  *
  * ---------------------------------------------------------------------------
  * O que um template é, e por que ele manda no produto
@@ -7,7 +7,7 @@
  *
  * Fora da janela de 24h (ver `channels/janela.ts`) o WhatsApp recusa texto
  * livre. A única coisa que atravessa é um modelo aprovado antes pela Meta. Sem
- * isso não existe lembrete de véspera, retomada de conversa nem transmissão —
+ * isso não existe lembrete de véspera, retomada de conversa nem transmissão ,
  * e é por isso que `0031_sequencias.sql` nasceu com passo limitado a 1440
  * minutos.
  *
@@ -33,7 +33,7 @@ export type StatusDoTemplate = (typeof STATUS_DO_TEMPLATE)[number]
 /**
  * Só template **aprovado** entrega mensagem.
  *
- * `pausado` engana: parece temporário e é — a Meta despausa sozinha em 3h, 6h
+ * `pausado` engana: parece temporário e é, a Meta despausa sozinha em 3h, 6h
  * ou nunca, conforme seja a primeira, a segunda ou a terceira vez. Mas enquanto
  * está pausado, envio falha. Tratar como "quase aprovado" é o caminho para uma
  * transmissão inteira virar erro.
@@ -65,7 +65,7 @@ export const LIMITE_POR_TIPO_DE_BOTAO = {
 /**
  * Acima disto o WhatsApp Desktop **esconde os botões**.
  *
- * Não é recusa da Meta — o template é aprovado e funciona no celular. Mas
+ * Não é recusa da Meta, o template é aprovado e funciona no celular. Mas
  * quatro botões viram "Ver todas as opções" no mobile e **somem** no Desktop,
  * junto com qualquer mistura de quick reply com outro tipo. O cliente monta,
  * testa no celular, funciona; o cliente dele abre no computador e não vê nada.
@@ -96,7 +96,7 @@ export type Componentes = {
 // ---------------------------------------------------------------------------
 
 /**
- * A Meta só aceita minúsculas, números e underscore — e recusa sem explicar.
+ * A Meta só aceita minúsculas, números e underscore, e recusa sem explicar.
  *
  * Como a pessoa escreve o nome pensando em título ("Lembrete de consulta"),
  * normalizar é mais gentil que recusar: vira `lembrete_de_consulta` e segue.
@@ -123,7 +123,7 @@ export function nomeValido(nome: string): boolean {
 /**
  * Acha as variáveis posicionais de um texto: `{{1}}`, `{{2}}`...
  *
- * Devolve ordenado e sem repetição — `{{1}} ... {{1}}` é uma variável usada
+ * Devolve ordenado e sem repetição, `{{1}} ... {{1}}` é uma variável usada
  * duas vezes, não duas variáveis.
  */
 export function variaveisDe(texto: string): number[] {
@@ -155,7 +155,7 @@ export type Reparo = {
 }
 
 /**
- * Confere o que dá para conferir aqui — e devolve recado em português.
+ * Confere o que dá para conferir aqui, e devolve recado em português.
  *
  * `erro` impede submeter; `aviso` deixa passar. A distinção importa: recusar o
  * que a Meta aceitaria seria inventar regra, e quem paga por isso é quem só
@@ -173,7 +173,7 @@ export function validarTemplate(
       gravidade: 'erro',
       campo: 'nome',
       recado:
-        'O nome só pode ter letras minúsculas, números e underscore — a Meta recusa acento, espaço e maiúscula.',
+        'O nome só pode ter letras minúsculas, números e underscore, a Meta recusa acento, espaço e maiúscula.',
     })
   }
 
@@ -182,7 +182,7 @@ export function validarTemplate(
     reparos.push({
       gravidade: 'erro',
       campo: 'corpo',
-      recado: 'O corpo da mensagem é obrigatório — é a única parte que a Meta exige.',
+      recado: 'O corpo da mensagem é obrigatório, é a única parte que a Meta exige.',
     })
   } else if (corpo.length > LIMITE_BODY) {
     reparos.push({
@@ -204,7 +204,7 @@ export function validarTemplate(
   }
 
   // Variável sozinha na borda: a Meta recusa porque não consegue avaliar o
-  // conteúdo final — o template inteiro poderia virar outra coisa.
+  // conteúdo final, o template inteiro poderia virar outra coisa.
   if (/^\s*\{\{\d+\}\}/.test(corpo) || /\{\{\d+\}\}\s*$/.test(corpo)) {
     reparos.push({
       gravidade: 'aviso',
@@ -299,11 +299,11 @@ export function temErro(reparos: Reparo[]): boolean {
 // ---------------------------------------------------------------------------
 
 /**
- * Os três estados de uma mensagem recém-enviada — e o do meio é uma armadilha.
+ * Os três estados de uma mensagem recém-enviada, e o do meio é uma armadilha.
  *
  * `retida` é `held_for_quality_assessment`: a Meta **segurou** a mensagem para
- * avaliar. Acontece com template novo, com template sem nota verde e — desde
- * 2026 — com portfólio novo de pouco histórico. Se o veredito for ruim, o
+ * avaliar. Acontece com template novo, com template sem nota verde e, desde
+ * 2026, com portfólio novo de pouco histórico. Se o veredito for ruim, o
  * template é pausado e **cada mensagem retida é descartada**, chegando depois
  * como `failed` com código 132015.
  *
@@ -349,7 +349,7 @@ export function condutaPara(codigo: number): Conduta {
     case 131026: // não entregável: não é usuário, bloqueou, ou app velho
       return 'desistir'
 
-    case 131049: // limite de marketing por usuário — decisão da Meta, não nossa
+    case 131049: // limite de marketing por usuário, decisão da Meta, não nossa
     case 131056: // mensagens demais para o mesmo contato em pouco tempo
       return 'esperar_24h'
 
@@ -415,7 +415,7 @@ export function explicarErro(codigo: number): string {
  * Três coisas que a Meta exige e que não são óbvias:
  *
  * 1. **`example` é obrigatório onde há variável.** Sem valor de exemplo, a
- *    recusa vem com `INVALID_FORMAT` — o revisor não consegue avaliar um texto
+ *    recusa vem com `INVALID_FORMAT`, o revisor não consegue avaliar um texto
  *    cheio de lacunas. É a recusa mais comum de template novo.
  * 2. **O formato do exemplo difere entre header e body**: o header quer um
  *    array raso (`header_text: [...]`), o body quer um array de arrays
@@ -462,7 +462,7 @@ export function componentesParaMeta(
         type: 'HEADER',
         format: 'TEXT',
         text: cabecalho.texto,
-        // Array raso aqui — o body usa array de arrays. Ver o comentário acima.
+        // Array raso aqui, o body usa array de arrays. Ver o comentário acima.
         ...(variaveis.length > 0 && doExemplo.length > 0
           ? { example: { header_text: doExemplo } }
           : {}),

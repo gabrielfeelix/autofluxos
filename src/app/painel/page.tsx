@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic'
  * A porta de entrada do painel.
  *
  * **Ela era uma grade de cartões e virou lista, e isso não é gosto.** O cartão
- * respondia "quanta coisa a gente montou aqui" — nome, `N automações`, `N com
+ * respondia "quanta coisa a gente montou aqui", nome, `N automações`, `N com
  * IA` (duas vezes, uma como selo e outra na linha de números) e um ponto verde
  * dizendo "estrutura configurada". Nada disso muda ao longo do dia, e nada
  * disso é motivo para abrir a tela.
@@ -29,7 +29,7 @@ export default async function Pagina() {
    * Esta tela é a visão de quem opera a 4YU: ela lista **todos** os clientes.
    *
    * Quem entrou como pessoa e não administra a plataforma não tem nada a fazer
-   * aqui — vai para as companhias dele. Sem esta linha, bastaria alguém
+   * aqui, vai para as companhias dele. Sem esta linha, bastaria alguém
    * cadastrado alcançar a raiz para ver a carteira inteira, que é exatamente o
    * furo que o login existe para fechar.
    */
@@ -84,7 +84,7 @@ export default async function Pagina() {
                 </>
               ) : (
                 <>
-                  Empresas atendidas pela 4YU — nenhuma conversa esperando uma pessoa agora.
+                  Empresas atendidas pela 4YU, nenhuma conversa esperando uma pessoa agora.
                 </>
               )}
             </p>
@@ -98,7 +98,7 @@ export default async function Pagina() {
               </span>
             }
             titulo="Novo cliente"
-            descricao="A empresa nasce vazia — o primeiro fluxo e o número de WhatsApp vêm depois, na tela dela."
+            descricao="A empresa nasce vazia, o primeiro fluxo e o número de WhatsApp vêm depois, na tela dela."
             action={acaoCriarCliente}
           >
             <label>

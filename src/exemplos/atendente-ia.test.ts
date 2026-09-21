@@ -7,7 +7,7 @@ import { atendenteIa } from './atendente-ia'
 /**
  * O modelo do atendente de IA, provado pelo motor.
  *
- * O que estes testes guardam não é o texto das mensagens — é o **laço**, que é
+ * O que estes testes guardam não é o texto das mensagens, é o **laço**, que é
  * a única coisa deste grafo que não se vê olhando para ele. Um desenho em que
  * a IA responde e o fluxo acaba passa no `validar()` igualzinho a este; a
  * diferença só aparece na segunda pergunta.
@@ -38,7 +38,7 @@ describe('atendente de IA', () => {
 
     passo({ tipo: 'ia_respondeu', texto: 'Não, só de segunda a sexta.' })
 
-    // A segunda dúvida cai no mesmo bloco de IA — é isto que o laço garante.
+    // A segunda dúvida cai no mesmo bloco de IA, é isto que o laço garante.
     expect(passo({ tipo: 'texto', texto: 'quem dá aula quarta?' }).map((a) => a.tipo)).toContain(
       'chamar_ia',
     )

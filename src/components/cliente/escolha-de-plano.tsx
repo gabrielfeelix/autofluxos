@@ -184,7 +184,7 @@ function Cartao({
 
             "Tudo do Essencial" não é um recurso ao lado dos outros: é o que diz
             que este plano contém o de baixo inteiro. Escrita com o mesmo peso
-            de "Transcrição de áudio", ela se perde na lista — e era justamente
+            de "Transcrição de áudio", ela se perde na lista, e era justamente
             por isso que ninguém a lia na terceira posição.
           */
           const herda = item.startsWith('Tudo d')

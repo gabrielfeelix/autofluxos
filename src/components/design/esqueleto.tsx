@@ -1,5 +1,5 @@
 /**
- * Os esqueletos — o desenho cinza que ocupa a tela enquanto o conteúdo vem.
+ * Os esqueletos, o desenho cinza que ocupa a tela enquanto o conteúdo vem.
  *
  * **Por que um arquivo só.** Cada tela tinha (ou não tinha) o seu, escrito na
  * mão dentro do `page.tsx`, e o resultado era esqueleto em duas telas e tela
@@ -40,7 +40,7 @@ function Aviso({ children }: { children: ReactNode }) {
   )
 }
 
-/** Linhas de texto de larguras diferentes — parágrafo, legenda, campo. */
+/** Linhas de texto de larguras diferentes, parágrafo, legenda, campo. */
 export function EsqueletoDeTexto({
   linhas = 3,
   className = '',
@@ -62,7 +62,7 @@ export function EsqueletoDeTexto({
 }
 
 /**
- * Um cartão com cabeçalho e linhas — o formato da maioria das telas daqui
+ * Um cartão com cabeçalho e linhas, o formato da maioria das telas daqui
  * (Fluxos, Palavras-chave, Campanhas, Sequências, Contatos).
  *
  * `comRosto` liga o círculo da esquerda, que só existe onde a linha é gente.
@@ -101,7 +101,7 @@ export function EsqueletoDeLista({
   )
 }
 
-/** A grade de cartões — Templates, Configurações, atalhos do Painel. */
+/** A grade de cartões, Templates, Configurações, atalhos do Painel. */
 export function EsqueletoDeCartoes({
   quantidade = 6,
   altura = 'h-[132px]',
@@ -161,7 +161,7 @@ export function EsqueletoDeQuadro({
  * O Inbox: a fila à esquerda e a conversa à direita.
  *
  * As bolhas alternam lado porque uma coluna de blocos alinhados à esquerda não
- * se parece com conversa nenhuma — e é o alternado que faz o olho reconhecer a
+ * se parece com conversa nenhuma, e é o alternado que faz o olho reconhecer a
  * tela antes de ler uma palavra.
  */
 export function EsqueletoDeInbox({ rotulo = 'Carregando as conversas…' }: { rotulo?: string }) {
@@ -205,7 +205,7 @@ export function EsqueletoDeInbox({ rotulo = 'Carregando as conversas…' }: { ro
  * A barra de abas enquanto o conteúdo vem.
  *
  * **Os rótulos são os de verdade, não blocos cinzas.** Eles não dependem de
- * consulta nenhuma, e trocá-los por cinza faria a barra piscar a cada clique —
+ * consulta nenhuma, e trocá-los por cinza faria a barra piscar a cada clique ,
  * apagando justamente a única parte da tela que a pessoa acabou de usar. Só a
  * contagem, que vem do banco, vira um pastilha cinza.
  */

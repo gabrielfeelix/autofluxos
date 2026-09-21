@@ -6,7 +6,7 @@ import { DetalheDoErro } from '@/components/design/detalhe-do-erro'
  * A rede embaixo da rede.
  *
  * O `error.tsx` roda dentro do layout raiz; se quem quebrar for o **próprio**
- * layout, não sobra nada para renderizar o erro. Este arquivo cobre esse caso — e
+ * layout, não sobra nada para renderizar o erro. Este arquivo cobre esse caso, e
  * por isso ele traz `html` e `body` próprios, ao contrário de todos os outros.
  *
  * Deve ser raro a ponto de nunca aparecer. Existir é o ponto.

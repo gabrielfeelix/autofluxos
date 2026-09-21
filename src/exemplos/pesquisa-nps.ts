@@ -6,13 +6,13 @@ import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
  * A regra que faz esta pesquisa valer alguma coisa: **nota baixa não recebe
  * agradecimento, recebe gente.** Pesquisa que responde "obrigado pelo seu
  * feedback!" a quem deu nota 3 é o jeito mais eficiente de transformar um
- * cliente irritado em um cliente perdido — e a reclamação some numa planilha.
+ * cliente irritado em um cliente perdido, e a reclamação some numa planilha.
  *
  * Nota alta vira pedido de avaliação pública, que é onde a pesquisa se paga; e
  * o pedido só aparece para quem já disse que gostou.
  *
- * **Isto já foi cinco blocos** — a pergunta, duas condições, o Guardar e o
- * caminho de cada faixa — e a nota terminava em `contacts.campos`, que
+ * **Isto já foi cinco blocos**, a pergunta, duas condições, o Guardar e o
+ * caminho de cada faixa, e a nota terminava em `contacts.campos`, que
  * sobrescreve: dava para perguntar, não dava para ter o número (0060). O bloco
  * de pesquisa faz a mesma conversa e guarda a nota com data, que é o que
  * permite comparar um mês com o outro.
@@ -43,7 +43,7 @@ export const pesquisaNps: Fluxo = fluxoSchema.parse({
         salvarEm: 'nota',
         /*
          * A pergunta aberta sai para **todo mundo**, e não só para quem
-         * reclamou — é o que o bloco faz, e é melhor assim: quem deu 10 tem
+         * reclamou, é o que o bloco faz, e é melhor assim: quem deu 10 tem
          * elogio para dar, e elogio é o que a equipe lê quando precisa.
          *
          * Quem não quiser responder simplesmente não responde; a nota já está
@@ -77,7 +77,7 @@ export const pesquisaNps: Fluxo = fluxoSchema.parse({
         partes: [
           {
             tipo: 'texto',
-            texto: 'Obrigado pela sinceridade, {{nome}}. Anotado aqui — a gente melhora com isso. 🙏',
+            texto: 'Obrigado pela sinceridade, {{nome}}. Anotado aqui, a gente melhora com isso. 🙏',
           },
         ],
       },
@@ -102,7 +102,7 @@ export const pesquisaNps: Fluxo = fluxoSchema.parse({
     { id: 'e4', source: 'nota', sourceHandle: 'detrator', target: 'humano' },
     // Sem resposta a pesquisa simplesmente acaba: insistir com quem não quis
     // responder é o começo do bloqueio. Sem esta aresta o desfecho seria o
-    // mesmo — o bloco encerra em silêncio —, mas desenhada ela diz isso a quem
+    // mesmo, o bloco encerra em silêncio , mas desenhada ela diz isso a quem
     // lê o fluxo, em vez de deixar a saída solta parecendo esquecimento.
     { id: 'e5', source: 'nota', sourceHandle: 'timeout', target: 'neutro' },
   ],

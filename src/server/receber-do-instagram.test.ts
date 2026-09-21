@@ -5,7 +5,7 @@ import { paraMensagemInterna, webhookDoInstagramSchema } from './receber-do-inst
  * A tradução do webhook do Instagram para a forma interna.
  *
  * Testada por aqui, e não pelo webhook inteiro, porque é onde moram as três
- * armadilhas do canal — eco, quick reply e a troca de `sender` com
+ * armadilhas do canal, eco, quick reply e a troca de `sender` com
  * `recipient`. Passar pelo webhook exigiria banco e esconderia qual delas
  * quebrou.
  */
@@ -24,7 +24,7 @@ describe('traduzir a mensagem do Instagram', () => {
   /**
    * A armadilha número um. A Meta devolve as **nossas próprias** mensagens no
    * mesmo webhook, com `is_echo`. Sem descartar, o bot lê o que ele mesmo
-   * escreveu e responde a si mesmo — laço infinito com o cliente assistindo.
+   * escreveu e responde a si mesmo, laço infinito com o cliente assistindo.
    */
   it('descarta o eco da nossa própria mensagem', () => {
     expect(
@@ -79,7 +79,7 @@ describe('traduzir a mensagem do Instagram', () => {
   /**
    * Menção em story e reel compartilhado não são arquivo que o fluxo saiba
    * tratar. Cair no caminho de mídia é o que leva a conversa para uma pessoa
-   * quando o desenho não trata — a resposta certa para "chegou algo que não sei
+   * quando o desenho não trata, a resposta certa para "chegou algo que não sei
    * ler". Virar texto vazio seria o bot respondendo ao nada.
    */
   it('menção em story cai no caminho de mídia, e não em texto vazio', () => {
@@ -109,7 +109,7 @@ describe('traduzir a mensagem do Instagram', () => {
 
 /**
  * A armadilha número três vive no schema: `recipient` é a conta do cliente e
- * `sender` é quem escreveu. Trocados, a busca por canal nunca acha nada — em
+ * `sender` é quem escreveu. Trocados, a busca por canal nunca acha nada, em
  * silêncio, para sempre.
  */
 describe('o formato do webhook', () => {
@@ -148,7 +148,7 @@ describe('o formato do webhook', () => {
     expect(() => webhookDoInstagramSchema.parse(comNovidade)).not.toThrow()
   })
 
-  it('evento que não é mensagem — leitura, reação — não estoura', () => {
+  it('evento que não é mensagem, leitura, reação, não estoura', () => {
     const soLeitura = {
       object: 'instagram',
       entry: [{ id: '178414', messaging: [{ sender: { id: 'x' }, recipient: { id: '178414' } }] }],

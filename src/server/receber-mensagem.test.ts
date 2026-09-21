@@ -816,7 +816,7 @@ function canalQueRecusa(motivo: string, aPartirDe = 0) {
  *
  * **A política é declarada no `beforeAll`, e isso é a mudança da F3.** Conta
  * nova nasce em `nao_criar` (RB-12), então sem a declaração o cartão não
- * apareceria — e o primeiro teste do bloco prova exatamente esse caso.
+ * apareceria, e o primeiro teste do bloco prova exatamente esse caso.
  */
 describe.skipIf(!temCredencial)('o contato novo entra no quadro padrão', () => {
   let quadroId = ''
@@ -855,7 +855,7 @@ describe.skipIf(!temCredencial)('o contato novo entra no quadro padrão', () => 
    * nenhum. A queixa que gerou a rodada 1 (*"o lead não vai automático, tem que
    * clicar e puxar"*) continuava valendo inteira, com a suíte verde.
    *
-   * Agora entra sempre: sem marcação, no quadro mais antigo da conta — desde
+   * Agora entra sempre: sem marcação, no quadro mais antigo da conta, desde
    * que a conta **peça** isso, que é o que a 0075 passou a exigir.
    */
   it('em mais_antigo, sem marcação, o lead entra no quadro mais antigo', async () => {

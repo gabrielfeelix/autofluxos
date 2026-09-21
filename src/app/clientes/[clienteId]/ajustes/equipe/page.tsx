@@ -55,7 +55,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
    *
    * As três primeiras degradam sozinhas (ver os repositórios) e as duas novas
    * também: esta tela não pode parar de abrir porque a leitura de equipe
-   * falhou. Sem elas, o editor abre vazio — que é o estado de quem ainda não
+   * falhou. Sem elas, o editor abre vazio, que é o estado de quem ainda não
    * configurou nada, e é honesto.
    */
   const [ajustes, configurados, abertas, equipesDaConta, porMembro, capacidades] =

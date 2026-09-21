@@ -51,7 +51,7 @@ beforeAll(async () => {
   contatoId = pessoa.id
 
   // Um processo de atendimento pelo modelo `atendimento`, que nasce com
-  // "Resolvido" marcado como `ganho` — a origem do defeito.
+  // "Resolvido" marcado como `ganho`, a origem do defeito.
   const atendimento = await criarQuadro(clienteId, `${marca} atendimento`, 'atendimento')
   if (!atendimento.ok) throw new Error(atendimento.motivo)
   atendimentoId = atendimento.id
@@ -128,7 +128,7 @@ describe.skipIf(!temCredencial)('atendimento resolvido não é compra', () => {
  * cartão por pessoa em cada quadro**. A segunda compra do mesmo cliente no
  * mesmo funil não tem onde existir: o insert é recusado com 23505.
  *
- * A unicidade resolve um problema real — dois cliques em "pôr no quadro" não
+ * A unicidade resolve um problema real, dois cliques em "pôr no quadro" não
  * podem criar a mesma pessoa em duas etapas. Mas ela resolve isso proibindo
  * recorrência para sempre, quando o que precisava ser único era o **evento de
  * criação**, não a existência do vínculo.

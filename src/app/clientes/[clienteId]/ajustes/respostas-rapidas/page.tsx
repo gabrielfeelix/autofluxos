@@ -28,7 +28,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         <h1 className="text-[25px] font-bold tracking-[-0.02em]">Respostas rápidas</h1>
         <p className="mt-1.5 mb-6 max-w-[650px] text-[13px] leading-6 text-dim">
           Frases prontas para quem atende. Elas pertencem a este cliente e aparecem na caixa de
-          resposta do Inbox — não vão para o fluxo nem alteram o que o bot diz sozinho.
+          resposta do Inbox, não vão para o fluxo nem alteram o que o bot diz sozinho.
         </p>
 
         <GerenciadorDeRespostasRapidas

@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next'
 
 /**
  * Quatro páginas, e são as que existem para o público: a landing e os três
- * documentos que a Meta exige em Configurações Básicas — política de
+ * documentos que a Meta exige em Configurações Básicas, política de
  * privacidade, termos de serviço e instruções de exclusão de dados. O resto do
  * produto é painel autenticado e está proibido no `robots.ts`.
  */

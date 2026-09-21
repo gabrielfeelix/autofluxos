@@ -5,7 +5,7 @@ import { VARIAVEIS_DE_DATA } from '../datas'
  *
  * **A queixa é literal:** *"muita informação técnica na direita, código, número
  * esquisito, e eu nunca vou usar aquilo"*. A causa é que o painel do Inbox, a
- * ficha do lead e as colunas da lista renderizam a **chave da variável** — em
+ * ficha do lead e as colunas da lista renderizam a **chave da variável**, em
  * `font-mono`, ainda por cima. `objetivo_aluno` é identificador de desenho de
  * fluxo; quem atende nunca o escolheu e não devia precisar decifrá-lo.
  *
@@ -13,7 +13,7 @@ import { VARIAVEIS_DE_DATA } from '../datas'
  * considerado, e ele não fecha: nem todo campo nasce de uma pergunta com texto.
  * `salvar_campo` é emitido também pela resposta de um `http` (a chave vem do
  * JSON de outro sistema), pela legenda de uma mídia, pelo `salvarPadraoEm` de
- * uma data e pelo `salvarValorEm` de uma escolha pareada — quatro origens sem
+ * uma data e pelo `salvarValorEm` de uma escolha pareada, quatro origens sem
  * pergunta nenhuma para copiar. Guardar rótulo mudaria a forma da ação no
  * motor, a coluna no banco e cinco pontos de escrita, para continuar sem
  * resposta em metade dos casos. Formatar a chave responde a todos.
@@ -26,7 +26,7 @@ import { VARIAVEIS_DE_DATA } from '../datas'
  * As que têm nome próprio, porque a formatação mecânica erraria.
  *
  * `waid` viraria "Waid" e `nome_real` viraria "Nome real", que é pior do que
- * "Nome corrigido" — o ponto do campo é ser a correção de quem atende.
+ * "Nome corrigido", o ponto do campo é ser a correção de quem atende.
  */
 const NOMES_PROPRIOS: Record<string, string> = {
   nome: 'Nome',
@@ -77,7 +77,7 @@ export function rotuloDoCampo(chave: string): string {
   /*
    * Caixa de frase, não de título.
    *
-   * "Objetivo Do Aluno" é o erro clássico de aplicar title case ao português —
+   * "Objetivo Do Aluno" é o erro clássico de aplicar title case ao português ,
    * e mesmo sem preposição, "Valor Total" lido numa coluna estreita parece
    * outro identificador técnico, que é justo o que esta função existe para
    * tirar da tela. Uma frase começa com maiúscula e segue minúscula.

@@ -9,8 +9,7 @@ export type EtiquetaEscolhivel = { id: string; nome: string; cor: CorDeEtiqueta 
 /**
  * Aplicar e tirar etiquetas de um contato, clicando.
  *
- * **Todas as etiquetas da conta aparecem, as aplicadas acesas.** A alternativa
- * — um botão "adicionar" que abre uma lista — esconde justamente a informação
+ * **Todas as etiquetas da conta aparecem, as aplicadas acesas.** A alternativa, um botão "adicionar" que abre uma lista, esconde justamente a informação
  * que a tela existe para dar: quais **não** estão aplicadas. Com poucas
  * etiquetas, que é o caso real, mostrar tudo custa menos que um clique a mais.
  *
@@ -37,7 +36,7 @@ export function SeletorDeEtiquetas({
   /*
    * A lista é estado local porque a etiqueta criada aqui precisa aparecer
    * **antes** de o servidor responder. Vinda de fora por prop, ela só
-   * chegaria depois de a página ser refeita — que é a espera que este arquivo
+   * chegaria depois de a página ser refeita, que é a espera que este arquivo
    * inteiro existe para evitar.
    */
   const [lista, setLista] = useState(disponiveis)
@@ -65,13 +64,13 @@ export function SeletorDeEtiquetas({
   /*
    * Criar aqui, e não em Configurações.
    *
-   * A etiqueta nasce **no momento em que alguém precisa dela** — olhando uma
+   * A etiqueta nasce **no momento em que alguém precisa dela**, olhando uma
    * conversa e pensando "isso é um orçamento". Mandar essa pessoa para outra
    * tela para criar e voltar é a mesma volta que fazia ninguém anotar nada
    * antes da `NotaRapida` existir: quem tem que ir e voltar, não vai.
    *
    * A cor não é perguntada. Seis cores e nenhuma delas muda o que a etiqueta
-   * faz — decidir entre elas no meio de um atendimento é escolha que só
+   * faz, decidir entre elas no meio de um atendimento é escolha que só
    * atrasa. Nasce `cinza` e quem quiser pintar tem a tela de Configurações,
    * que continua existindo para gerenciar.
    */
@@ -83,7 +82,7 @@ export function SeletorDeEtiquetas({
      * **A etiqueta entra na lista já acesa, e o servidor confirma atrás.**
      *
      * O id provisório existe porque o de verdade só volta do banco. Ele vive
-     * poucos milissegundos e é trocado pelo real na resposta — nunca chega a
+     * poucos milissegundos e é trocado pelo real na resposta, nunca chega a
      * ser enviado em nada, porque a única coisa que se faz com ele antes disso
      * é desenhar.
      */

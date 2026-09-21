@@ -1,7 +1,7 @@
 import { EsqueletoDoCliente } from '@/components/design/esqueleto-do-cliente'
 import { EsqueletoDeQuadro } from '@/components/design/esqueleto'
 
-/** O funil enquanto vem — as colunas cinzas, na largura toda, como a tela real. */
+/** O funil enquanto vem, as colunas cinzas, na largura toda, como a tela real. */
 export default function Carregando() {
   return (
     <EsqueletoDoCliente ativa="quadros">

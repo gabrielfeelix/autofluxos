@@ -17,11 +17,11 @@ import { useState } from 'react'
  * propósito (mensagem de banco vaza nome de tabela e coluna) e deixa só esse
  * número, que é o que liga a tela ao log da Vercel.
  *
- * Erro do **navegador** não tem `digest` nenhum — e era justamente o caso do
+ * Erro do **navegador** não tem `digest` nenhum, e era justamente o caso do
  * editor entrando em laço. A tela mostrava a caixa vazia, sem código e sem
  * mensagem, e a única forma de saber o que tinha acontecido era abrir o
  * console. Aqui a gente inventa o código a partir do próprio texto do erro:
- * não serve para procurar em log, mas serve para o que ele precisa servir —
+ * não serve para procurar em log, mas serve para o que ele precisa servir ,
  * duas telas com o mesmo código quebraram pelo mesmo motivo, e duas com código
  * diferente não.
  *
@@ -51,7 +51,7 @@ export function DetalheDoErro({
   /**
    * Copiar é o caminho principal, não um extra.
    *
-   * Sem ele, reportar um erro vira print de tela — que chega cortado, ilegível
+   * Sem ele, reportar um erro vira print de tela, que chega cortado, ilegível
    * na metade que importa, e ainda por cima caro de ler. O botão entrega o
    * texto exato, pronto para colar.
    */
@@ -62,13 +62,13 @@ export function DetalheDoErro({
       window.setTimeout(() => setCopiado(false), 2000)
     } catch {
       // Navegador sem permissão de área de transferência. O texto continua na
-      // tela para ser selecionado à mão — que é o motivo de ele estar visível
+      // tela para ser selecionado à mão, que é o motivo de ele estar visível
       // em vez de viver só dentro do botão.
     }
   }
 
   // O `global-error` substitui o layout raiz, então lá as cores do tema não
-  // existem — só as classes cruas do Tailwind. Daí os hex escritos à mão.
+  // existem, só as classes cruas do Tailwind. Daí os hex escritos à mão.
   const rotulo = escuro ? 'text-dim' : 'text-dim'
   const corpo = escuro ? 'text-muted' : 'text-muted'
 

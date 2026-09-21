@@ -13,14 +13,14 @@ import { TIPOS_ACEITOS, useEntrega } from '@/components/lead/entrega-de-arquivos
  * Ele só escolhe: quem revisa e envia é a área da conversa
  * ---------------------------------------------------------------------------
  *
- * O clipe já teve dentro de si o diálogo de revisão inteiro — prévia, legenda,
+ * O clipe já teve dentro de si o diálogo de revisão inteiro, prévia, legenda,
  * upload e envio. O problema não era o tamanho: era haver **dois caminhos** para
  * a mesma coisa assim que arrastar um arquivo para dentro da conversa passou a
  * funcionar. Dois caminhos viram duas regras de legenda, dois limites e dois
  * jeitos de errar.
  *
  * Agora o clipe entrega os arquivos ao `ProvedorDeEntrega` e sai de cena. Quem
- * desenha a revisão, cuida do `blob:`, soma mais um e envia em fila é ele —
+ * desenha a revisão, cuida do `blob:`, soma mais um e envia em fila é ele ,
  * exatamente o mesmo painel que abre ao soltar o arquivo na conversa.
  *
  * `multiple` porque a revisão aceita vários: escolher cinco fotos numa vez é o
@@ -31,7 +31,7 @@ export function BotaoDeAnexo({ desabilitado = false }: { desabilitado?: boolean 
   const entrega = useEntrega()
 
   /*
-   * Sem provedor não há onde revisar — e revisar é a única defesa contra mandar
+   * Sem provedor não há onde revisar, e revisar é a única defesa contra mandar
    * o arquivo errado, que a Cloud API não deixa desfazer. Melhor não oferecer o
    * clipe do que oferecer um que envia sem mostrar.
    */

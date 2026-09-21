@@ -25,10 +25,10 @@ export const dynamic = 'force-dynamic'
  * As credenciais de um cliente.
  *
  * A regra que molda esta tela inteira: **o valor entra e não sai**. Não existe
- * "ver o token atual", nem no HTML, nem numa chamada escondida — o tipo que o
+ * "ver o token atual", nem no HTML, nem numa chamada escondida, o tipo que o
  * servidor devolve (`Conexao`) não tem campo de valor. Trocar é gravar de novo.
  *
- * Isso é chato de propósito. A alternativa — mostrar o token para conferência —
+ * Isso é chato de propósito. A alternativa, mostrar o token para conferência ,
  * põe credencial de terceiro no HTML de uma página, no histórico do navegador e
  * em qualquer captura de tela.
  */
@@ -54,7 +54,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
    *
    * **É a diferença entre "cadastrada" e "ligada"**, e a tela não sabia dizer:
    * dá para ter a chave certa guardada e nenhuma automação chamando nada. Sai do
-   * rascunho de cada fluxo, que já está na mão — nenhuma consulta a mais.
+   * rascunho de cada fluxo, que já está na mão, nenhuma consulta a mais.
    */
   const usoPorConexao = new Map<string, { blocos: number; fluxos: number }>()
   for (const fluxo of fluxos) {
@@ -87,7 +87,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             <h1 className="text-[25px] font-bold tracking-[-0.02em]">Chaves de API</h1>
             <p className="mt-1.5 max-w-[560px] text-[13px] leading-6 text-dim">
               As chaves que os blocos de API usam para falar com os sistemas deste cliente. O valor
-              é guardado num cofre e <strong className="text-soft">nunca volta para esta tela</strong> —
+              é guardado num cofre e <strong className="text-soft">nunca volta para esta tela</strong> ,
               para trocar, grave de novo.
             </p>
           </div>
@@ -146,7 +146,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           A agenda ganha cartão próprio, e as outras credenciais não.
 
           Não é favoritismo: ela é a única cujo endereço nós conhecemos, e por
-          isso a única que dá para **conferir de verdade** — apertar um botão e
+          isso a única que dá para **conferir de verdade**, apertar um botão e
           ouvir a resposta. Uma credencial de CRM genérica não tem para onde a
           gente ligar sem inventar um endereço.
         */}
@@ -163,7 +163,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
               📅
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-[13.5px] font-bold">Agenda — {NOME_DA_AGENDA}</p>
+              <p className="text-[13.5px] font-bold">Agenda, {NOME_DA_AGENDA}</p>
               <p className="mt-0.5 text-[11.5px] leading-4 text-dim">
                 Não ligada. Sem ela, o bot não sabe horário livre, professor nem quem já é cliente.
               </p>
@@ -172,7 +172,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
               botao={`Ligar a ${NOME_DA_AGENDA}`}
               variante="secundario"
               titulo={`Ligar a agenda ${NOME_DA_AGENDA}`}
-              descricao={`A chave fica num cofre e não volta para esta tela. Antes de guardar, a gente pergunta à agenda se ela vale — chave recusada não vira chave guardada.`}
+              descricao={`A chave fica num cofre e não volta para esta tela. Antes de guardar, a gente pergunta à agenda se ela vale, chave recusada não vira chave guardada.`}
               rotuloEnviar="Conferir e ligar"
               action={acaoLigarAgenda.bind(null, clienteId)}
             >
@@ -199,7 +199,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           <div className="app-card px-6 py-10 text-center">
             <p className="text-[13.5px] text-soft">Nenhuma chave ainda.</p>
             <p className="mx-auto mt-2 max-w-[440px] text-[12.5px] leading-6 text-dim">
-              Enquanto não houver, os blocos de API só alcançam endereços que não pedem chave — como
+              Enquanto não houver, os blocos de API só alcançam endereços que não pedem chave, como
               webhook, ou uma planilha publicada pelo Apps Script.
             </p>
           </div>

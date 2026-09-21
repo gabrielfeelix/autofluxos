@@ -24,7 +24,7 @@ import { anotar } from './repos/eventos'
  * ---------------------------------------------------------------------------
  *
  * Quem está sumido hoje continua sumido amanhã. Sem `por_sumico_em`, esta função
- * reinscreveria a mesma pessoa **todo dia** — e o resultado seria uma mensagem
+ * reinscreveria a mesma pessoa **todo dia**, e o resultado seria uma mensagem
  * diária no WhatsApp de um cliente antigo, dizendo "faz tempo que não se falam".
  * É assim que se perde um número, não um lead.
  *

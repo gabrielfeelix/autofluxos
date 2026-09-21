@@ -12,7 +12,7 @@ const INICIAL: EstadoSalvar = {}
  * Existe porque a tela do contexto do negócio salvava em silêncio: o botão
  * piscava, a página recarregava igual, e não havia como saber se gravou. Num
  * campo que é a única fonte de verdade da IA, "será que foi?" é o pior estado
- * possível — a pessoa reescreve, ou pior, acha que escreveu e não escreveu.
+ * possível, a pessoa reescreve, ou pior, acha que escreveu e não escreveu.
  *
  * Confirmar é o mínimo; a confirmação some sozinha na próxima edição, porque
  * aviso que fica pendurado para de ser lido.

@@ -18,19 +18,19 @@ import { acaoApagarConta, acaoEstragoDaConta } from '@/server/acoes-conta'
  *
  * - **Clicar no nome não fazia nada.** O único alvo era um botão "Abrir painel"
  *   no canto; o nome, que é o que a mão procura, era texto morto. Agora o
- *   cartão inteiro é o link, e o botão sumiu — dois alvos para a mesma ação
+ *   cartão inteiro é o link, e o botão sumiu, dois alvos para a mesma ação
  *   ocupavam espaço e ensinavam que um deles não funciona.
  * - **"Dono" não quer dizer nada aqui.** Esta tela é de quem administra: a
  *   pergunta dela é "quem consegue entrar nesta conta?", não qual é o papel
  *   formal de cada um no plugin de organização. O cartão passou a mostrar
- *   **acesso**, e o papel só aparece onde ele é decidido — na hora de ligar
+ *   **acesso**, e o papel só aparece onde ele é decidido, na hora de ligar
  *   alguém, com a explicação do que cada um enxerga.
  * - **O aviso amarelo gritava e não ajudava.** "3 contas ainda não têm dono"
  *   ocupava o topo em cor de alerta e não dava o que fazer. Virou um filtro:
  *   um chip que mostra o número e, clicado, deixa só elas na tela.
  * - **A lista não dizia nada de cada conta.** Quinze cartões idênticos só
  *   respondem "existe". Agora cada um diz quantas automações tem e quantas
- *   estão no ar — que é como se distingue cliente atendendo de teste esquecido.
+ *   estão no ar, que é como se distingue cliente atendendo de teste esquecido.
  *
  * ---------------------------------------------------------------------------
  * O desenho
@@ -143,7 +143,7 @@ function Cartao({
   aoLigarPessoa: (() => void) | null
   /** Botão direito em qualquer ponto do cartão. */
   aoAbrirMenu: (x: number, y: number) => void
-  /** O cartão de que o menu aberto fala — sem isso o menu flutua sem dono. */
+  /** O cartão de que o menu aberto fala, sem isso o menu flutua sem dono. */
   marcado: boolean
 }) {
   return (
@@ -232,28 +232,28 @@ type Estrago = { leads: number; fluxos: number; conexoes: number; numeros: numbe
  *
  * Fica preso à janela por `position: fixed` com as coordenadas do clique, e é
  * empurrado para dentro da borda quando o clique acontece perto da direita ou
- * do rodapé — menu que nasce metade fora da tela é menu que não abre.
+ * do rodapé, menu que nasce metade fora da tela é menu que não abre.
  *
  * ---------------------------------------------------------------------------
  * Vai por portal para o `body`, e sem isso ele abre longe do cursor
  * ---------------------------------------------------------------------------
  *
  * Renderizado no lugar, o menu nascia a centenas de pixels de onde a pessoa
- * clicou — sobre o cartão vizinho, às vezes fora da vista. A coordenada estava
+ * clicou, sobre o cartão vizinho, às vezes fora da vista. A coordenada estava
  * certa o tempo todo; o que estava errado era de onde o navegador a media.
  *
  * `ClienteShell` envolve **toda tela do painel** num `.app-page-enter`, que roda
  * `animation: fade-up 350ms ease both`. O `both` deixa o último quadro aplicado
- * para sempre, e o último quadro é `transform: none` — que computa como
+ * para sempre, e o último quadro é `transform: none`, que computa como
  * `matrix(1, 0, 0, 1, 0, 0)`. Identidade, e ainda assim um transform: basta
  * para o elemento virar **bloco contentor de `position: fixed`** em todos os
  * descendentes. O `top: 400px` que este menu pede deixa de ser "400px do topo
- * da janela" e vira "400px do topo da div" — somando o deslocamento dela.
+ * da janela" e vira "400px do topo da div", somando o deslocamento dela.
  *
  * É o mesmo mecanismo que `globals.css` já tinha medido com Playwright a
  * propósito do `<dialog>` e que levou a lista do `Dropdown` para a top layer.
  * O que faltava notar é que `.app-page-enter` faz igual, e ela cobre o painel
- * inteiro — qualquer `fixed` dentro de uma tela do cliente está sujeito a isto.
+ * inteiro, qualquer `fixed` dentro de uma tela do cliente está sujeito a isto.
  *
  * O portal para o `body` sai de baixo da div e devolve `fixed` à janela, que é
  * o que as coordenadas do clique sempre supuseram. Aqui ele basta, e não
@@ -281,7 +281,7 @@ function MenuDeContexto({
      * O App Router hidrata o **documento inteiro**, então o listener de React
      * mora no mesmo `document` que este aqui. `stopPropagation` impede o evento
      * de subir para outro nó, e não impede o segundo listener do mesmo nó de
-     * rodar — era por isso que o menu fechava no `mousedown` do próprio
+     * rodar, era por isso que o menu fechava no `mousedown` do próprio
      * "Deletar", o botão sumia antes do `click` nascer, e o clique terminava no
      * `<Link>` do cartão que estava por baixo. Perguntar "o alvo está dentro do
      * menu?" não depende de ordem de registro nenhuma.
@@ -294,7 +294,7 @@ function MenuDeContexto({
     }
 
     // `mousedown`, e não `click`: o botão direito em outro cartão precisa fechar
-    // este menu **antes** do `contextmenu` que abre o próximo — e `mousedown`
+    // este menu **antes** do `contextmenu` que abre o próximo, e `mousedown`
     // vem primeiro na sequência do navegador. Ouvir `contextmenu` aqui faria o
     // contrário: fecharia o menu que o cartão acabou de mandar abrir.
     document.addEventListener('mousedown', foraDaqui)
@@ -338,7 +338,7 @@ function MenuDeContexto({
 
   // No servidor não há `document`, e o menu também não tem o que fazer lá: ele
   // só existe depois de um clique. Desenhá-lo no lugar enquanto o portal não
-  // pode abrir traria de volta o deslocamento — melhor não desenhar nada.
+  // pode abrir traria de volta o deslocamento, melhor não desenhar nada.
   return montado ? createPortal(menu, document.body) : null
 }
 
@@ -364,7 +364,7 @@ function useMontado(): boolean {
  * É a mesma trava de `components/cliente/apagar.tsx`, e pelo mesmo motivo:
  * apagar a conta certa pelo motivo errado é raro, apagar a conta errada é o
  * caso comum, e um `confirm()` não pega o segundo. Aqui a chance de errar é
- * maior ainda — na lista do administrador as contas estão lado a lado, e o
+ * maior ainda, na lista do administrador as contas estão lado a lado, e o
  * menu foi aberto com um clique que não mostra em qual cartão caiu.
  *
  * Os números chegam depois do modal abrir, porque contá-los para as quinze
@@ -587,7 +587,7 @@ export function ContasAdmin({
          * Quatro colunas na tela larga.
          *
          * A grade parava em três, e num monitor de 1600px isso dava cartões de
-         * meio palmo de largura com o nome sozinho no meio — espaço vazio que
+         * meio palmo de largura com o nome sozinho no meio, espaço vazio que
          * não vira informação. Quatro colunas devolvem o cartão ao tamanho em
          * que ele foi desenhado e ainda mostram uma linha a mais na dobra.
          */

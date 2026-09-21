@@ -13,7 +13,7 @@ describe('recorteDosCampos', () => {
     expect(escondidos).toBe(16)
   })
 
-  it('aberto mostra todos — esconder não apaga', () => {
+  it('aberto mostra todos, esconder não apaga', () => {
     const { visiveis, escondidos } = recorteDosCampos(campos(20), true)
     expect(visiveis).toHaveLength(20)
     expect(escondidos).toBe(16)

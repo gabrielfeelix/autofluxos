@@ -78,7 +78,7 @@ export function RegistrarVenda({
     <Modal
       aberto={cartao !== null}
       aoFechar={aoFechar}
-      titulo={`Registrar venda — ${cartao?.nome ?? ''}`}
+      titulo={`Registrar venda, ${cartao?.nome ?? ''}`}
       descricao="A oportunidade é marcada como ganha na mesma operação. Se este funil entrega a outro, o cartão de lá abre sozinho."
     >
       <div className="flex flex-col gap-3">
@@ -254,7 +254,7 @@ export function RegistrarVenda({
         }
         aoConcluir()
       } catch {
-        setErro('não deu para registrar agora — tente de novo')
+        setErro('não deu para registrar agora, tente de novo')
       }
     })
   }

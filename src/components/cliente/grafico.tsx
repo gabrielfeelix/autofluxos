@@ -23,11 +23,11 @@ const METRICAS: { chave: Metrica; rotulo: string; cor: string }[] = [
  * **SVG à mão, sem biblioteca de gráfico.** São três séries de trinta pontos
  * num painel que já carrega o editor inteiro; qualquer biblioteca custaria mais
  * bytes que o resto da página e traria um tema para brigar com o nosso. O que
- * um gráfico precisa ter — eixo com escala honesta, valor ao passar o mouse,
- * dia vazio valendo zero — cabe aqui.
+ * um gráfico precisa ter, eixo com escala honesta, valor ao passar o mouse,
+ * dia vazio valendo zero, cabe aqui.
  *
  * **O eixo começa em zero, sempre.** Escala que começa no menor valor é como se
- * transforma uma variação de três em cinco num salto vertical — a leitura fica
+ * transforma uma variação de três em cinco num salto vertical, a leitura fica
  * dramática e falsa, e num relatório que vai para o cliente isso não é opção.
  */
 export function GraficoDaSerie({ serie }: { serie: PontoDaSerie[] }) {
@@ -179,7 +179,7 @@ export function GraficoDaSerie({ serie }: { serie: PontoDaSerie[] }) {
  * `2026-08-18` → `18/ago`.
  *
  * Recortado da string, e não por `new Date`: a data vem do banco já no dia de
- * São Paulo, e passar por `Date` a reinterpretaria em UTC — o dia 1º viraria o
+ * São Paulo, e passar por `Date` a reinterpretaria em UTC, o dia 1º viraria o
  * último do mês anterior para metade do país.
  */
 function diaLegivel(dia: string): string {

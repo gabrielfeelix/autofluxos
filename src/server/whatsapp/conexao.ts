@@ -11,7 +11,7 @@ import { z } from 'zod'
  * Decidido em 13/09: o onboarding é o **Hosted Embedded Signup**. A Meta
  * hospeda a tela inteira e devolve o cliente na nossa rota de retorno com um
  * `code`. Não existe `FB.login`, nem SDK de JavaScript, nem lista de domínios
- * permitidos, nem `extras` montado por nós — o link do painel já vem com
+ * permitidos, nem `extras` montado por nós, o link do painel já vem com
  * Coexistence ligado (`featureType: whatsapp_business_app_onboarding`) e com
  * `version: v4`, que é o que evita o v2 que morre em 15/out/2026.
  *
@@ -23,7 +23,7 @@ import { z } from 'zod'
  * ---------------------------------------------------------------------------
  *
  * A troca exige o `client_secret` do app. Fazê-la no navegador significaria
- * mandar o segredo do app para a máquina do cliente — e o segredo do app é o
+ * mandar o segredo do app para a máquina do cliente, e o segredo do app é o
  * que assina o webhook de **todos** os clientes. Um vazamento aqui não é "um
  * cliente comprometido": é qualquer pessoa conseguindo forjar mensagem em nome
  * de qualquer um deles.
@@ -53,7 +53,7 @@ function versaoGraph(): string {
  *
  * O texto é o que separa "código já usado" de "app sem permissão". Engoli-lo
  * transforma uma conexão que falharia em cinco minutos de conversa numa tarde
- * de investigação — a lição está no equivalente do Instagram.
+ * de investigação, a lição está no equivalente do Instagram.
  */
 async function pedir(url: string, init?: RequestInit): Promise<unknown> {
   let resposta: Response
@@ -94,7 +94,7 @@ const tokenSchema = z.object({
  * O `code` do retorno vira o token do negócio.
  *
  * **Um passo só**, diferente do Instagram: não há troca de curto por longo. O
- * token que sai daqui é o do negócio do cliente e não tem prazo — por isso a
+ * token que sai daqui é o do negócio do cliente e não tem prazo, por isso a
  * rota de retorno não agenda renovação nenhuma.
  */
 export async function trocarCodigoPorToken(codigo: string): Promise<{
@@ -161,7 +161,7 @@ export function ehCoexistente(numero: NumeroDaMeta): boolean {
  * Inscreve o nosso app na WABA **do cliente**.
  *
  * **Antes de disparar qualquer sync, sempre.** Sem a inscrição, os webhooks que
- * respondem ao disparo se perdem — e como cada sync só pode ser disparado uma
+ * respondem ao disparo se perdem, e como cada sync só pode ser disparado uma
  * vez, a janela de 24h queima sem volta e o cliente precisa refazer o Embedded
  * Signup inteiro.
  */
@@ -182,7 +182,7 @@ const syncSchema = z.object({
  *
  * **Cada um só pode ser disparado uma vez**, e não há como perguntar à Meta se
  * já gastamos a nossa. Por isso quem chama tem que ter reservado antes, com
- * `reservarSync` — esta função só fala com a Meta, e chamá-la sem a reserva é o
+ * `reservarSync`, esta função só fala com a Meta, e chamá-la sem a reserva é o
  * jeito de desperdiçar a única chance que existia.
  *
  * Devolve o `request_id`, que é **o que o suporte da Meta pede** quando um sync
@@ -221,25 +221,25 @@ export function whatsappConfigurado(): boolean {
 /**
  * A URL que o cliente abre para conectar o WhatsApp dele.
  *
- * **A Meta hospeda a tela inteira**, então isto é só a montagem do endereço —
+ * **A Meta hospeda a tela inteira**, então isto é só a montagem do endereço ,
  * não há SDK, `FB.login`, nem `extras` montado em JavaScript no navegador.
  *
  * O `extras` carrega o que faz esta conexão ser **coexistência** e não
  * onboarding comum:
  *
- * - `featureType: whatsapp_business_app_onboarding` — é o que troca a seleção
+ * - `featureType: whatsapp_business_app_onboarding`, é o que troca a seleção
  *   de WABA por "conectar sua conta existente". Sem ele, a tela pede para o
  *   cliente escolher uma WABA e o número dele não entra em coexistência.
- * - `version: v4` — o v2 morre em 15/out/2026. Nascer em v4 é o que evita
+ * - `version: v4`, o v2 morre em 15/out/2026. Nascer em v4 é o que evita
  *   retrabalho contratado.
- * - `sessionInfoVersion: 3` — o session logging, que a Meta lista entre os
+ * - `sessionInfoVersion: 3`, o session logging, que a Meta lista entre os
  *   requisitos.
  *
  * **O `state` não é burocracia.** É ele que diz de qual cliente é a conexão que
  * está voltando: sem ele, a rota de retorno rejeita
  * (`/painel?erro=whatsapp_estado`), e dois clientes conectando no mesmo dia
  * viram dúvida sobre qual número é de quem. Vem de `criarEstado`, o mesmo do
- * Instagram — ele assina um `clienteId` e não sabe de que canal se trata, então
+ * Instagram, ele assina um `clienteId` e não sabe de que canal se trata, então
  * serve aos dois e não há por que inventar um segundo mecanismo.
  */
 export function urlDoOnboarding(opcoes: { origem: string; state: string }): string {
@@ -266,7 +266,7 @@ export function urlDoOnboarding(opcoes: { origem: string; state: string }): stri
    *
    * O `redirect_uri` precisa bater byte a byte com o cadastrado no painel da
    * Meta e com o que a rota de retorno atende. Ler da requisição faz preview e
-   * produção funcionarem sem cada um ter a sua variável — o preço é cadastrar
+   * produção funcionarem sem cada um ter a sua variável, o preço é cadastrar
    * cada origem no painel, que é obrigatório de qualquer forma.
    */
   url.searchParams.set('redirect_uri', `${opcoes.origem}/api/whatsapp/retorno`)
@@ -284,7 +284,7 @@ const numerosDaWabaSchema = z.object({
 /**
  * Os números de uma WABA.
  *
- * Existe porque **o `PARTNER_ADDED` não traz o `phone_number_id`** — ele traz
+ * Existe porque **o `PARTNER_ADDED` não traz o `phone_number_id`**, ele traz
  * só `waba_info.waba_id`. E é justamente por esse webhook que descobrimos um
  * onboarding quando o navegador do cliente não volta para a nossa rota de
  * retorno, que é o caso comum quando o `redirect_uri` não está cadastrado no
@@ -323,12 +323,12 @@ const debugTokenSchema = z.object({
  * ---------------------------------------------------------------------------
  *
  * O SDK entrega o `phone_number_id` pelo `message` de session logging, e esse
- * `message` **pode simplesmente não chegar** — aconteceu numa conexão real em
+ * `message` **pode simplesmente não chegar**, aconteceu numa conexão real em
  * 13/set, com o cliente indo até o fim e a tela dizendo *"a Meta não disse qual
  * número foi conectado"*.
  *
  * A primeira versão da rota desistia aí: alertava e devolvia 422 **sem trocar o
- * `code`**. Era jogar fora a peça que respondia a pergunta — o token que o
+ * `code`**. Era jogar fora a peça que respondia a pergunta, o token que o
  * `code` vira carrega, ele mesmo, quais WABAs foram compartilhadas. Bastava
  * perguntar.
  *
@@ -362,11 +362,11 @@ export async function wabasDoToken(token: string): Promise<string[]> {
  * **duas** WABAs: o `waba_id` que chegou apontava para uma, o número dele vivia
  * na outra, e o app foi inscrito na errada.
  *
- * O resultado é o pior tipo de falha — **silenciosa e cara**. Webhook de WABA
+ * O resultado é o pior tipo de falha, **silenciosa e cara**. Webhook de WABA
  * em que o app não está inscrito simplesmente não é entregue: sem erro, sem
  * log, sem diferença visível de "ninguém mandou mensagem". Nada entrou no
  * Inbox daquele cliente por horas, e os dois syncs de uso único queimaram
- * apontados para a WABA errada — a agenda e o histórico dele não voltam sem
+ * apontados para a WABA errada, a agenda e o histórico dele não voltam sem
  * refazer o Embedded Signup inteiro.
  *
  * O agravante é que o número aparecia em `phone_numbers` das **duas** WABAs, e
@@ -386,7 +386,7 @@ export async function wabasDoToken(token: string): Promise<string[]> {
  * leitura numa delas é normal quando o cliente tem contas antigas, e desistir
  * por causa disso devolveria `null` com a resposta certa na WABA seguinte.
  *
- * Devolve `null` quando nenhuma contém o número — e aí quem chama decide, que é
+ * Devolve `null` quando nenhuma contém o número, e aí quem chama decide, que é
  * melhor que gravar um palpite.
  */
 export async function wabaQueContemONumero(

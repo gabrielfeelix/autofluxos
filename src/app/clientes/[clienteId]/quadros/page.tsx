@@ -22,7 +22,7 @@ export const dynamic = 'force-dynamic'
  * O relógio, lido **uma vez por render do servidor**.
  *
  * Fica fora do componente porque o compilador do React trata `Date.now()` em
- * render como impureza — e ele tem razão em geral. Aqui a rota é
+ * render como impureza, e ele tem razão em geral. Aqui a rota é
  * `force-dynamic` e o valor é passado adiante como número, exatamente para o
  * cliente **não** ler o relógio dele: "parado há 6 dias" calculado no navegador
  * divergiria do HTML que o servidor mandou.
@@ -32,7 +32,7 @@ function agoraDoServidor(): number {
 }
 
 /**
- * Quadros — a etapa em que cada contato está (C1).
+ * Quadros, a etapa em que cada contato está (C1).
  *
  * **A tela é o quadro.** A primeira versão punha os formulários de criação como
  * blocos no fim da página, e eles ocupavam mais espaço que o próprio quadro:
@@ -69,8 +69,8 @@ export default async function Pagina({
         {/*
           O funil desce depois da moldura.
 
-          Abrir um funil são quatro consultas — os funis, os cartões, a equipe e
-          os motivos —, e trocar de funil pelo seletor refaz todas elas. Sem esta
+          Abrir um funil são quatro consultas, os funis, os cartões, a equipe e
+          os motivos , e trocar de funil pelo seletor refaz todas elas. Sem esta
           fronteira a tela ficava idêntica durante a troca; com ela, as colunas
           cinzas aparecem no ato e dizem que a troca foi registrada.
 
@@ -117,7 +117,7 @@ async function Conteudo({ cliente, q }: { cliente: Cliente; q?: string }) {
    * Equipe e motivos vêm com a página, e não sob demanda no menu.
    *
    * São duas listas curtas que mudam uma vez por mês, e buscá-las ao abrir cada
-   * menu de cartão seria uma ida ao banco por clique — num lugar onde a pessoa
+   * menu de cartão seria uma ida ao banco por clique, num lugar onde a pessoa
    * clica em dezenas de cartões seguidos.
    */
   const [equipe, motivos, fora] = aberto
@@ -183,7 +183,7 @@ async function Conteudo({ cliente, q }: { cliente: Cliente; q?: string }) {
             <BotaoPerigo
               rotulo="Apagar funil"
               titulo="Apaga o funil e as etapas. Nenhum contato é apagado."
-              pergunta={`Apagar o funil “${aberto.nome}”? Some a posição das ${cartoes.length} pessoa(s) nele — os contatos, as conversas e as etiquetas ficam.`}
+              pergunta={`Apagar o funil “${aberto.nome}”? Some a posição das ${cartoes.length} pessoa(s) nele, os contatos, as conversas e as etiquetas ficam.`}
               acao={acaoApagarQuadro.bind(null, cliente.id, aberto.id)}
             />
           )

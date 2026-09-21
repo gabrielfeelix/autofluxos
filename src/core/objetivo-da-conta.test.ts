@@ -89,8 +89,8 @@ describe('o vocabulário', () => {
   it('nenhum texto da escolha usa travessão', () => {
     // Regra da casa, e aqui ela pega: estes textos vão para a tela.
     for (const objetivo of OBJETIVOS) {
-      expect(ROTULO_DO_OBJETIVO[objetivo]).not.toContain('—')
-      expect(EXPLICA_O_OBJETIVO[objetivo]).not.toContain('—')
+      expect(ROTULO_DO_OBJETIVO[objetivo]).not.toContain('-')
+      expect(EXPLICA_O_OBJETIVO[objetivo]).not.toContain('-')
     }
   })
 

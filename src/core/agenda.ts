@@ -1,7 +1,7 @@
 /**
  * Onde mora a agenda, e o nome que ela tem na tela.
  *
- * O endereço estava escrito dez vezes — uma por preset — e cada cópia era um
+ * O endereço estava escrito dez vezes, uma por preset, e cada cópia era um
  * lugar para esquecer no dia em que ele mudasse. Aqui é um lugar só, e ele vale
  * tanto para os blocos prontos quanto para a conferência da chave.
  *
@@ -18,7 +18,7 @@ export const NOME_DA_AGENDA = 'Verandi'
  * O nome que a credencial da agenda recebe ao ser criada pela tela.
  *
  * Fixo porque a tela precisa **reconhecer** a credencial da agenda entre as
- * outras para dizer se ela está ligada — e reconhecer por nome é frágil, mas é
+ * outras para dizer se ela está ligada, e reconhecer por nome é frágil, mas é
  * o que existe sem uma coluna nova. Quem renomear à mão perde o cartão de
  * estado, não a integração: os blocos apontam pelo id.
  */

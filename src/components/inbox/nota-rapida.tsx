@@ -6,7 +6,7 @@ import { FormularioSalvar, type EstadoSalvar } from '@/components/design/formula
 /**
  * A anotação de quem atende, **sem sair da conversa**.
  *
- * Ela já existia na ficha do contato, a um clique e uma volta daqui — e um
+ * Ela já existia na ficha do contato, a um clique e uma volta daqui, e um
  * clique e uma volta é o suficiente para ninguém anotar nada. O que se perde
  * quando ninguém anota é justamente o que a próxima pessoa precisaria saber:
  * "já ligou duas vezes", "prefere de manhã".

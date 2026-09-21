@@ -65,7 +65,7 @@ describe.skipIf(!temCredencial)('a escrita campo a campo', () => {
    * A garantia que a 0077 acrescenta é que a escrita **mescla** em vez de
    * substituir: um lote que traz `interesse` não apaga o `cidade` que já
    * estava lá. Chamar `gravarCampos` duas vezes em `Promise.all` não prova
-   * isso de forma confiável — ele lê e mescla em TypeScript antes de chamar o
+   * isso de forma confiável, ele lê e mescla em TypeScript antes de chamar o
    * RPC, então o resultado depende de como as duas leituras se intercalam, e o
    * teste passa por sorte mesmo com a trava removida. Foi conferido.
    *

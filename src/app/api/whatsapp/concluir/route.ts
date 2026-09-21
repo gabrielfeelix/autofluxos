@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 
 /**
  * Um minuto: a sequência que isto dispara fala cinco vezes com a Meta.
- * Ver o cabeçalho de `onboarding.ts` — morrer no meio custa um sync, e cada um
+ * Ver o cabeçalho de `onboarding.ts`, morrer no meio custa um sync, e cada um
  * só pode ser disparado uma vez na vida do número.
  */
 export const maxDuration = 60
@@ -25,7 +25,7 @@ export const maxDuration = 60
  * precisa: a doc da Meta diz, com todas as letras, que ele *"can only be used
  * to onboard business customers to Cloud API, and the flow cannot be
  * customized"*. Sem customização não há `featureType`, e sem `featureType` não
- * há coexistência — o cliente perderia o WhatsApp do celular, que é justamente
+ * há coexistência, o cliente perderia o WhatsApp do celular, que é justamente
  * o que o produto promete não acontecer.
  *
  * Ele também **não redireciona de volta**. Foi o que fez duas conexões reais
@@ -34,7 +34,7 @@ export const maxDuration = 60
  *
  * No SDK o caminho é outro: `FB.login` devolve o `code` **em JavaScript**, na
  * própria página, e o navegador o manda para cá por `POST`. Não há redirect, e
- * por isso não há `state` — a sessão do cliente acompanha a chamada, porque
+ * por isso não há `state`, a sessão do cliente acompanha a chamada, porque
  * quem chama é a nossa própria página, na nossa própria origem.
  *
  * ---------------------------------------------------------------------------
@@ -45,7 +45,7 @@ export const maxDuration = 60
  * **vindo do facebook.com**, sem cookie garantido. Esta não: é `fetch` de uma
  * página nossa para a nossa API, mesma origem, cookie incluído. Então a
  * pergunta "quem está pedindo" tem resposta direta, e `conferirAcessoAoCliente`
- * responde as duas de uma vez — quem é, e se pode mexer neste cliente.
+ * responde as duas de uma vez, quem é, e se pode mexer neste cliente.
  *
  * **O `code` vive 30 segundos** (doc da Meta). Trocá-lo é a primeira coisa que
  * acontece aqui, e no servidor: a troca exige o `client_secret`, que assina o
@@ -68,7 +68,7 @@ export async function POST(req: Request) {
     return Response.json({ erro: 'faltou cliente ou código' }, { status: 400 })
   }
 
-  // Rota de API responde status, não redireciona — ver `sessao.ts`.
+  // Rota de API responde status, não redireciona, ver `sessao.ts`.
   if (!(await conferirAcessoAoCliente(clienteId))) {
     return Response.json({ erro: 'sem acesso a este cliente' }, { status: 403 })
   }
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
      *
      * O `code` vive 30 segundos, e a primeira versão desta rota o descartava
      * quando o `phoneNumberId` faltava: alertava e devolvia 422 sem nunca
-     * trocá-lo. Isso jogava fora exatamente a peça que respondia a pergunta —
+     * trocá-lo. Isso jogava fora exatamente a peça que respondia a pergunta ,
      * o token carrega quais WABAs foram compartilhadas agora.
      *
      * Aconteceu de verdade em 13/set: o cliente foi até o fim e viu *"a Meta
@@ -94,7 +94,7 @@ export async function POST(req: Request) {
        * à Meta: `debug_token` devolve as WABAs do token (mais recente
        * primeiro), e cada WABA lista seus números.
        *
-       * Uma WABA nascida de coexistência tem **um** número — o do celular do
+       * Uma WABA nascida de coexistência tem **um** número, o do celular do
        * cliente. Com mais de um, não dá para saber qual é o da conexão, e
        * chutar grava o número errado: aí sim é caso de alertar e parar.
        */
@@ -149,7 +149,7 @@ export async function POST(req: Request) {
     /*
      * **A resposta sai antes dos syncs, e eles correm no `after()`.**
      *
-     * O canal já está gravado — a conexão valeu. O que falta é a sequência
+     * O canal já está gravado, a conexão valeu. O que falta é a sequência
      * longa (ler o número, inscrever na WABA, dois disparos), e segurar a tela
      * do cliente durante ela só aumenta a chance de ele fechar a aba no meio.
      * `after()` roda depois da resposta e dentro do mesmo orçamento de 60s.

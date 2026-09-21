@@ -6,7 +6,7 @@ import { acaoTrazerTodosParaOQuadro } from '@/server/acoes-crm'
 /**
  * "Fulano e mais 18 ainda não estão neste funil."
  *
- * A faixa só existe quando há gente de fora, e some sozinha quando não há —
+ * A faixa só existe quando há gente de fora, e some sozinha quando não há ,
  * aviso permanente vira moldura e para de ser lido.
  *
  * Ela é a resposta para o caso que só aparece em conta viva: o quadro é novo, o
@@ -52,11 +52,11 @@ export function TrazerTodos({
                   }
                   setResultado(
                     r.faltaram
-                      ? `${r.postos} trazidos. Faltaram ${r.faltaram} — clique de novo.`
+                      ? `${r.postos} trazidos. Faltaram ${r.faltaram}, clique de novo.`
                       : `${r.postos} trazidos para a primeira etapa.`,
                   )
                 } catch {
-                  setResultado('não deu para trazer agora — tente de novo')
+                  setResultado('não deu para trazer agora, tente de novo')
                 }
               })
             }

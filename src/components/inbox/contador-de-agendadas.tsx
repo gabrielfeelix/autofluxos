@@ -11,7 +11,7 @@ import type { MensagemAgendada } from '@/server/repos/mensagens-agendadas'
  * Por que por conta e não por conversa
  * ---------------------------------------------------------------------------
  *
- * O painel de agendar, dentro da conversa, lista o que é daquele contato — e é
+ * O painel de agendar, dentro da conversa, lista o que é daquele contato, e é
  * o suficiente enquanto se está atendendo alguém. A pergunta que ele não
  * responde é a que o dono fez: **quantas temos no total?**
  *
@@ -141,7 +141,7 @@ function Linha({
   )
 }
 
-/** "16/set às 09:00" — dia e hora, sem ano, que é o que cabe e o que se pergunta. */
+/** "16/set às 09:00", dia e hora, sem ano, que é o que cabe e o que se pergunta. */
 function quandoLegivel(iso: string): string {
   const data = new Date(iso)
   const dia = data.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })

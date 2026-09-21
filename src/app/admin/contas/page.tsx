@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic'
  * A tela é de operação, não de leitura: quem abre aqui quer entrar numa conta,
  * ou descobrir em qual delas ninguém consegue entrar. Busca, filtro, ordem e
  * cartão vivem em `components/conta/contas-admin.tsx`, que é cliente porque
- * busca e filtro são estado de tela — a página continua servindo os dados.
+ * busca e filtro são estado de tela, a página continua servindo os dados.
  */
 export default async function Contas() {
   const [contas, usuarios] = await Promise.all([listarContasComMembros(), listarUsuarios()])
@@ -24,7 +24,7 @@ export default async function Contas() {
         {/*
           O resumo diz o tamanho da operação, e não o alarme.
           O que precisa de ação virou o chip "sem acesso", que além de contar
-          filtra — aviso que não dá o que fazer só ensina a ignorar aviso.
+          filtra, aviso que não dá o que fazer só ensina a ignorar aviso.
         */}
         <p className="mt-1 text-[13px] text-muted">
           {contas.length} {contas.length === 1 ? 'conta' : 'contas'}

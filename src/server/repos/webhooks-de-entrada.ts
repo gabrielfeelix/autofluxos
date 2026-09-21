@@ -57,12 +57,12 @@ export async function listarWebhooks(clienteId: string): Promise<WebhookDeEntrad
  * Cria o webhook e **devolve o segredo uma única vez**.
  *
  * É a única vez que ele existe fora do cofre, e a tela precisa mostrá-lo agora
- * porque não há segunda chance — quem fechar sem copiar gera outro. É a mesma
+ * porque não há segunda chance, quem fechar sem copiar gera outro. É a mesma
  * escolha de todo token de API: guardar um jeito de reexibir é guardar um jeito
  * de vazar.
  *
  * O segredo é gerado **aqui**, e não recebido de quem cadastra. Deixar a pessoa
- * escolher produziria `123456` na conta de alguém — e um segredo fraco num
+ * escolher produziria `123456` na conta de alguém, e um segredo fraco num
  * endereço público é o mesmo que endereço sem segredo.
  */
 export async function criarWebhook(
@@ -91,7 +91,7 @@ export async function criarWebhook(
 
   if (error) {
     // O segredo já está no cofre e a linha não nasceu. Sem isto ele ficaria
-    // órfão para sempre — a mesma correção de `criarConexao`.
+    // órfão para sempre, a mesma correção de `criarConexao`.
     await db().rpc('apagar_segredo', { alvo: segredoId })
     throw new Error(`não deu para criar o webhook: ${error.message}`)
   }
@@ -121,7 +121,7 @@ export async function alternarWebhook(
  * Apaga o webhook **e o segredo dele**.
  *
  * O cofre primeiro seria o erro: se a linha falhasse depois, sobraria um
- * webhook cadastrado cujo segredo não existe mais — e toda chamada dele
+ * webhook cadastrado cujo segredo não existe mais, e toda chamada dele
  * responderia 401 sem ninguém entender por quê. Assim, o pior caso é um
  * segredo órfão no cofre, que não abre porta nenhuma porque a linha sumiu.
  */
@@ -146,7 +146,7 @@ export async function apagarWebhook(clienteId: string, webhookId: string): Promi
  * Os segredos ativos desta conta, para conferir a assinatura.
  *
  * **Devolve uma lista, e isso é de propósito.** A chamada não diz qual webhook
- * ela é — ela traz uma assinatura e mais nada. Exigir um id no caminho daria a
+ * ela é, ela traz uma assinatura e mais nada. Exigir um id no caminho daria a
  * quem chama uma forma de enumerar webhooks de outras contas; conferir contra
  * todos os ativos da conta resolve sem expor nada.
  *
@@ -154,7 +154,7 @@ export async function apagarWebhook(clienteId: string, webhookId: string): Promi
  * cadastrar dez paga dez comparações de HMAC, que é barato perto de uma ida ao
  * banco.
  *
- * O valor sai do cofre aqui e morre no fim da requisição — nunca é serializado,
+ * O valor sai do cofre aqui e morre no fim da requisição, nunca é serializado,
  * nunca chega ao navegador. Mesma regra de `lerCredencial`.
  */
 export async function segredosAtivos(
@@ -243,7 +243,7 @@ export async function listarGatilhosDeEvento(clienteId: string): Promise<Gatilho
 /**
  * O gatilho **ativo** desta conta para este evento, ou `null`.
  *
- * A comparação é por nome exato, sem normalizar — quem escolhe o nome é o
+ * A comparação é por nome exato, sem normalizar, quem escolhe o nome é o
  * sistema do outro lado, e `vaga.aberta` e `Vaga.Aberta` podem ser dois eventos
  * diferentes lá. O índice único usa `lower(trim())` só para impedir cadastro
  * ambíguo na nossa tela; casar continua exato.

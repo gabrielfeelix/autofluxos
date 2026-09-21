@@ -7,8 +7,8 @@ import { sequenciasQueUsamAEtiqueta } from './sequencias'
  * As etiquetas que uma pessoa cria e aplica (0025).
  *
  * **Não confundir com as derivadas.** `EtiquetaDeLead` em `repos/leads.ts` sai
- * do histórico — quem abriu com áudio, quem foi para uma pessoa, quem nunca
- * respondeu — e nunca vira linha. Estas são as outras: "cliente antigo",
+ * do histórico, quem abriu com áudio, quem foi para uma pessoa, quem nunca
+ * respondeu, e nunca vira linha. Estas são as outras: "cliente antigo",
  * "orçamento enviado", "não insistir", que nenhum histórico sabe deduzir.
  */
 
@@ -50,7 +50,7 @@ export async function listarEtiquetas(clienteId: string): Promise<Etiqueta[]> {
  *
  * É o rail da tela de contatos (§3.2 do plano), e a contagem é metade da
  * informação: uma lista de vinte etiquetas sem número nenhum não diz qual vale
- * clicar. Duas consultas e a soma na aplicação — o PostgREST não faz `group by`
+ * clicar. Duas consultas e a soma na aplicação, o PostgREST não faz `group by`
  * e uma view só para isto envelheceria junto com a tabela.
  */
 export async function listarEtiquetasComContagem(clienteId: string): Promise<Etiqueta[]> {
@@ -81,7 +81,7 @@ export async function listarEtiquetasComContagem(clienteId: string): Promise<Eti
  * O `select().single()` no fim não é enfeite: quem cria a etiqueta de dentro
  * de uma conversa precisa pintá-la na lista imediatamente, sem esperar a
  * página ser refeita no servidor. Sem o id vindo daqui, a tela teria que
- * inventar um provisório e trocá-lo depois — ou recarregar tudo, que é
+ * inventar um provisório e trocá-lo depois, ou recarregar tudo, que é
  * exatamente a espera que se quer evitar.
  *
  * O `nome` volta do banco, e não do argumento, porque ele passou por `trim` e
@@ -139,18 +139,18 @@ export async function editarEtiqueta(
   return { ok: true }
 }
 
-/** Apagar tira a etiqueta de todos os contatos — é o `on delete cascade` da 0025. */
+/** Apagar tira a etiqueta de todos os contatos, é o `on delete cascade` da 0025. */
 /**
  * Apaga a etiqueta.
  *
  * **Recusa quando ela dispara uma sequência (0031).** A chave estrangeira é
- * `on delete restrict` e o banco recusaria de qualquer forma — o que esta
+ * `on delete restrict` e o banco recusaria de qualquer forma, o que esta
  * conferência acrescenta é o nome da sequência, que é a única informação que
  * transforma "não deu" em "vá desligar ali". Sequência sem etiqueta de gatilho
  * é sequência que nunca dispara e que a tela mostraria como ativa.
  *
  * A etiqueta **de saída** não recusa: ela é opcional por desenho, e a sequência
- * continua fazendo sentido sem ela — perde-se um jeito de sair, não a regra.
+ * continua fazendo sentido sem ela, perde-se um jeito de sair, não a regra.
  */
 export async function apagarEtiqueta(
   clienteId: string,
@@ -181,7 +181,7 @@ export async function apagarEtiqueta(
 /**
  * As etiquetas de um lote de contatos, para a lista não fazer N+1.
  *
- * Devolve mapa vazio para contato sem etiqueta nenhuma — quem chama itera pela
+ * Devolve mapa vazio para contato sem etiqueta nenhuma, quem chama itera pela
  * lista de contatos, não pelas chaves daqui.
  */
 export async function etiquetasDeContatos(

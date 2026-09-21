@@ -11,7 +11,7 @@ import { acaoAlternarGatilho } from '@/server/acoes'
  * número que responderia se vale a pena mantê-lo.
  *
  * Componente de cliente pelo mesmo motivo de `ControleDeAutomacao`: a ação
- * devolve motivo de recusa, e um `<form>` cru jogaria isso fora — o clique
+ * devolve motivo de recusa, e um `<form>` cru jogaria isso fora, o clique
  * pareceria não ter funcionado.
  */
 export function InterruptorDeGatilho({

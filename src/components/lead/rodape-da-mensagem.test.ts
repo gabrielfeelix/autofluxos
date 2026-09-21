@@ -8,13 +8,13 @@ import { RodapeDaMensagem } from './rodape-da-mensagem'
  * O rodapé da bolha precisa **aparecer**, e aparecer inteiro onde dá.
  *
  * Este teste existe por um susto real, de 15/set/2026: a suspeita era de que a
- * barra sumia de todas as mensagens em produção. A causa não era essa — mas o
+ * barra sumia de todas as mensagens em produção. A causa não era essa, mas o
  * componente antigo tinha mesmo uma guarda `if (!citacao) return null` que
  * apagava a barra inteira, calada, quando o provedor não alcançava a árvore. O
  * comentário dele dizia o contrário: que só o botão de citar sumiria.
  *
  * Agora é o que o comentário sempre prometeu, e este arquivo é o que mantém a
- * promessa. Sem `.tsx` no include do vitest, é `createElement` na mão — feio, e
+ * promessa. Sem `.tsx` no include do vitest, é `createElement` na mão, feio, e
  * ainda assim mais barato que descobrir de novo em produção.
  */
 

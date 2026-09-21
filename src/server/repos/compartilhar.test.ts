@@ -71,7 +71,7 @@ describe.skipIf(!temCredencial)('quem pode virar link', () => {
 })
 
 describe.skipIf(!temCredencial)('o que o link entrega', () => {
-  it('devolve o desenho, a procedência e a versão — e nada de id interno', async () => {
+  it('devolve o desenho, a procedência e a versão, e nada de id interno', async () => {
     const criado = await criarLink(clienteId, publicadoId, { dias: 30, criadoPor: null })
     expect(criado.ok).toBe(true)
     if (!criado.ok) return

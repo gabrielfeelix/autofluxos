@@ -128,7 +128,7 @@ describe('o veredito carrega o endereço para fixar a conexão', () => {
     expect(v.enderecos).toEqual([{ address: '93.184.216.34', family: 4 }])
   })
 
-  it('devolve TODOS os endereços — pilha dupla precisa do A quando o AAAA falha', async () => {
+  it('devolve TODOS os endereços, pilha dupla precisa do A quando o AAAA falha', async () => {
     dnsResponde('2606:4700::1111', '93.184.216.34')
     const v = await conferirEndereco('https://exemplo.com')
 

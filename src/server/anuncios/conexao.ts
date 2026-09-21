@@ -12,7 +12,7 @@ import 'server-only'
  * **A primeira é o cliente.** Pedir que ele abra o Gerenciador de Negócios,
  * ache "Usuários do sistema", crie um, atribua ativos e gere um token é o
  * caminho de quem já sabe onde tudo fica. Na prática é onde a venda morre: são
- * cinco telas que ele nunca visitou, e errar qualquer uma não dá erro — dá
+ * cinco telas que ele nunca visitou, e errar qualquer uma não dá erro, dá
  * silêncio.
  *
  * **A segunda é o App Review.** A Meta exige ver, no vídeo, *"o usuário
@@ -31,7 +31,7 @@ const VERSAO_PADRAO = 'v25.0'
  *
  * É a mesma lista da submissão do App Review, e tem de continuar sendo: escopo
  * pedido aqui e não justificado lá é recusado; justificado lá e não pedido aqui
- * é permissão que nunca é exercida — e a Meta exige ao menos uma chamada real
+ * é permissão que nunca é exercida, e a Meta exige ao menos uma chamada real
  * com cada uma nos 30 dias antes de submeter.
  */
 export const ESCOPOS_DE_ANUNCIOS = [
@@ -59,7 +59,7 @@ export function urlDeAutorizacao(opcoes: { origem: string; state: string }): str
    *
    * Sem ele a Meta **não mostra o diálogo de novo** para quem negou antes: ela
    * devolve na hora, sem as permissões, e a tela dá erro sem que a pessoa tenha
-   * tido a chance de dizer sim. Com ele, pergunta de novo — que é o que alguém
+   * tido a chance de dizer sim. Com ele, pergunta de novo, que é o que alguém
    * que acabou de clicar em "Conectar" espera.
    */
   url.searchParams.set('auth_type', 'rerequest')
@@ -72,7 +72,7 @@ export type TokenDeAnuncios = { token: string; expiraEm: Date | null }
  * Troca o código do retorno por um token, e o curto por um longo.
  *
  * São duas chamadas porque o token que o diálogo devolve vale **uma hora**. O
- * de longa duração vale sessenta dias — ainda não é para sempre, e é por isso
+ * de longa duração vale sessenta dias, ainda não é para sempre, e é por isso
  * que a tela mostra a data de vencimento e a reconciliação grita quando ele cai.
  */
 export async function trocarCodigoPorToken(entrada: {
@@ -114,7 +114,7 @@ export async function trocarCodigoPorToken(entrada: {
 
   /*
    * Falhar a troca não perde a conexão: o token de uma hora já está na mão e
-   * funciona. Guardamos ele — melhor uma hora de integração do que nenhuma.
+   * funciona. Guardamos ele, melhor uma hora de integração do que nenhuma.
    */
   if (!r2.ok || typeof c2?.access_token !== 'string') {
     return { token: c1.access_token, expiraEm: new Date(Date.now() + 3_600_000) }
@@ -160,7 +160,7 @@ export async function listarPaginasDoUsuario(
  * Os formulários de lead de uma Página, com quantos leads cada um tem.
  *
  * É a lista que a tela de importação mostra. `leads_count` vem de graça na
- * mesma chamada e é o que transforma "importar" numa decisão — ninguém aperta
+ * mesma chamada e é o que transforma "importar" numa decisão, ninguém aperta
  * um botão que não diz quanta coisa vem.
  */
 export async function listarFormulariosDaPagina(entrada: {

@@ -25,7 +25,7 @@
  *
  * É lógica de três valores, e a última frase é o ponto: com quatro condições em
  * "todas" e uma delas comprovadamente falsa, não importa que as outras três
- * estejam em branco — a resposta já é não. Pedir os três dados faltantes seria
+ * estejam em branco, a resposta já é não. Pedir os três dados faltantes seria
  * fazer a pessoa trabalhar para chegar à mesma conclusão.
  *
  * ---------------------------------------------------------------------------
@@ -244,7 +244,7 @@ export function prontoParaPublicar(criterios: Criterios): ProntidaoDosCriterios 
     }
     /*
      * `preenchido` não precisa de valor: ela pergunta sobre a existência. As
-     * outras precisam, e uma condição sem valor comparado não decide nada —
+     * outras precisam, e uma condição sem valor comparado não decide nada ,
      * ela responderia `desconhecido` para sempre.
      */
     if (condicao.operador !== 'preenchido' && (condicao.valor ?? '').trim() === '') {

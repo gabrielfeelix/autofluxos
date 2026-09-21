@@ -136,7 +136,7 @@ export function AcoesDaFicha({
  *
  * **Quem troca a aba é quem foca**, em `abas.tsx`: aqui só sai o pedido. A
  * versão anterior disparava o evento e procurava o bloco no quadro seguinte,
- * que ainda é cedo demais — o painel continuava `hidden`, e "Anotar" não fazia
+ * que ainda é cedo demais, o painel continuava `hidden`, e "Anotar" não fazia
  * nada em produção.
  */
 function focar(id: string) {
@@ -154,7 +154,7 @@ export function AcaoDaFicha({
   rotulo: string
   icone: ReactNode
   aoClicar: () => void
-  /** O ponto que diz "já tem coisa aqui" — mesma régua da barra do Inbox. */
+  /** O ponto que diz "já tem coisa aqui", mesma régua da barra do Inbox. */
   marcada?: boolean
   /** `perigo` pinta o hover de vermelho: usado por "Apagar contato". */
   tom?: 'normal' | 'perigo'

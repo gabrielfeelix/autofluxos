@@ -12,7 +12,7 @@ import { TIPOS_DE_MIDIA, type TipoDeMidia } from './flow/schema'
  * offer archiving service or backup features, and you will be the sole person
  * responsible for creating backups."*
  *
- * Passados os 7 dias o arquivo não existe em lugar nenhum — nem pagando, nem
+ * Passados os 7 dias o arquivo não existe em lugar nenhum, nem pagando, nem
  * pedindo. Antes disto, quem atendia via `(áudio, imagem ou documento)` no
  * lugar do comprovante. Ver `docs/PLANO-MIDIA-RECEBIDA.md`.
  *
@@ -23,13 +23,13 @@ import { TIPOS_DE_MIDIA, type TipoDeMidia } from './flow/schema'
 /**
  * O teto por arquivo, e por que ele é 16 MB e não 100 MB.
  *
- * A Meta aceita **documento de até 100 MB** na entrada — dez vezes o que ela
+ * A Meta aceita **documento de até 100 MB** na entrada, dez vezes o que ela
  * aceita de vídeo. Um único PDF desses ocuparia 10% do plano gratuito inteiro,
  * que é compartilhado com a Verandi (ver `docs/BANCO-COMPARTILHADO.md`).
  *
  * 16 MB é o teto que a própria Meta usa para vídeo e áudio, então o número não
  * é inventado aqui: é o maior arquivo que ela mesma deixa **sair**. O que
- * passar disso fica registrado como recebido e sem cópia — e a bolha diz isso,
+ * passar disso fica registrado como recebido e sem cópia, e a bolha diz isso,
  * em vez de mostrar um arquivo quebrado.
  */
 export const TETO_DO_ARQUIVO = 16 * 1024 * 1024
@@ -38,8 +38,7 @@ export const TETO_DO_ARQUIVO = 16 * 1024 * 1024
  * De `type` da Cloud API para o vocabulário que a bolha já sabe desenhar.
  *
  * **Figurinha vira imagem**, e não um tipo novo: ela é um WebP, o navegador
- * desenha igual, e inventar um quinto tipo obrigaria a mexer em `TIPOS_DE_MIDIA`
- * — que é o vocabulário do **motor de fluxo**, onde figurinha não significa
+ * desenha igual, e inventar um quinto tipo obrigaria a mexer em `TIPOS_DE_MIDIA`, que é o vocabulário do **motor de fluxo**, onde figurinha não significa
  * nada. O desenho diferente, se um dia fizer falta, é CSS.
  *
  * `location`, `contacts`, `reaction`, `text` e os outros não aparecem aqui de
@@ -64,7 +63,7 @@ export function midiaDoTipo(tipo: string | null | undefined): TipoDeMidia | null
  *
  * Serve para o nome no bucket, e **para o navegador saber o que fazer** quando
  * alguém abre a URL assinada. Sem extensão, um PDF baixa como arquivo sem tipo
- * e o sistema operacional pergunta com o que abrir — que é o tipo de atrito que
+ * e o sistema operacional pergunta com o que abrir, que é o tipo de atrito que
  * faz alguém achar que o anexo está quebrado.
  *
  * O mime vem com parâmetros às vezes (`audio/ogg; codecs=opus`), então o corte
@@ -97,7 +96,7 @@ export function extensaoDoMime(mime: string | null | undefined): string {
   return EXTENSAO[limpo] ?? 'bin'
 }
 
-/** O mime sem os parâmetros — é o que o bucket valida em `allowed_mime_types`. */
+/** O mime sem os parâmetros, é o que o bucket valida em `allowed_mime_types`. */
 export function mimeLimpo(mime: string | null | undefined): string {
   return mime?.split(';')[0]?.trim().toLowerCase() ?? 'application/octet-stream'
 }
@@ -125,7 +124,7 @@ export function caminhoDoArquivo(
 /** O que fica gravado na coluna `messages.arquivo`. */
 export type ArquivoGuardado = {
   midia: TipoDeMidia
-  /** Caminho no bucket privado. **Nunca uma URL** — ver o comentário abaixo. */
+  /** Caminho no bucket privado. **Nunca uma URL**, ver o comentário abaixo. */
   caminho: string
   mime: string
   bytes: number
@@ -137,7 +136,7 @@ export type ArquivoGuardado = {
  *
  * URL assinada guardada em coluna é link público com um passo a mais: ela viaja
  * em log, em backup e em qualquer tela que mostre o registro, e continua valendo
- * até expirar. O caminho não abre nada sozinho — a assinatura é feita na hora de
+ * até expirar. O caminho não abre nada sozinho, a assinatura é feita na hora de
  * desenhar a bolha, para quem já provou que pode ver aquela conversa.
  *
  * É o padrão de quem publica número: a Intercom assina por 30 minutos, a

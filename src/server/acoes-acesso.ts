@@ -22,8 +22,8 @@ import { sessaoAtual } from './sessao'
 /**
  * A tela de acesso (UI-18), em arquivo próprio.
  *
- * Separada de `acoes-conta.ts` porque aquele arquivo é de **autenticação** —
- * entrar, sair, cadastrar, impersonar — e isto é **autorização**. São camadas
+ * Separada de `acoes-conta.ts` porque aquele arquivo é de **autenticação** ,
+ * entrar, sair, cadastrar, impersonar, e isto é **autorização**. São camadas
  * diferentes com fronteiras diferentes, e juntá-las é como se perde a distinção
  * entre "quem é" e "o que pode".
  *
@@ -68,7 +68,7 @@ export async function acaoArquivarEquipe(
  * Salva o acesso de uma pessoa: equipes e capacidades, numa operação só.
  *
  * **As duas juntas porque a tela as edita juntas.** Salvar capacidade sem
- * equipe deixaria alguém com escopo `equipe` e nenhuma equipe — que é acesso a
+ * equipe deixaria alguém com escopo `equipe` e nenhuma equipe, que é acesso a
  * nada, e parece bug em vez de configuração.
  */
 export async function acaoSalvarAcesso(
@@ -120,7 +120,7 @@ export async function acaoSalvarAcesso(
  * Aplica um modelo (gestor, operador) por cima do papel.
  *
  * É a prévia da UI-18 virando ação: a tela mostra o que muda, e isto grava. O
- * modelo não vira papel no banco — ele é copiado como sobrescrita, porque é
+ * modelo não vira papel no banco, ele é copiado como sobrescrita, porque é
  * ponto de partida editável e não profissão (§11 da proposta).
  */
 export async function acaoAplicarModelo(

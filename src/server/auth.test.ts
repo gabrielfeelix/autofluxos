@@ -5,7 +5,7 @@ import { autenticacao } from './auth'
 /**
  * O login contra o banco de verdade.
  *
- * Não testa o Better Auth — testa **a nossa configuração dele**: que os nomes de
+ * Não testa o Better Auth, testa **a nossa configuração dele**: que os nomes de
  * tabela que escolhemos são os que ele usa, que a senha sai como hash, e que a
  * impersonação grava quem entrou na conta de quem. Errar qualquer um desses
  * três só apareceria no primeiro login de um cliente de verdade.
@@ -78,7 +78,7 @@ describe.skipIf(!temBanco)('login por usuário', () => {
     ).rejects.toThrow()
   })
 
-  it('recusa senha curta — o mínimo é 10', async () => {
+  it('recusa senha curta, o mínimo é 10', async () => {
     await expect(
       autenticacao().api.signUpEmail({
         body: { email: email('curta'), password: 'abc123', name: 'Curta' },
@@ -94,7 +94,7 @@ describe.skipIf(!temBanco)('login por usuário', () => {
     ).rejects.toThrow()
   })
 
-  it('a sessão nasce sem `impersonatedBy` — quem entra pela senha é ele mesmo', async () => {
+  it('a sessão nasce sem `impersonatedBy`, quem entra pela senha é ele mesmo', async () => {
     const { endereco } = await criar('sessao')
     const entrada = await autenticacao().api.signInEmail({ body: { email: endereco, password: SENHA } })
 
@@ -151,7 +151,7 @@ describe.skipIf(!temBanco)('contas e papéis', () => {
       await pool.end()
 
       expect(rows[0]?.nome).toBe('zz Estúdio Teste')
-      // Uuid de verdade, não o id curto do Better Auth — é o que `generateId:
+      // Uuid de verdade, não o id curto do Better Auth, é o que `generateId:
       // 'uuid'` garante e o que deixa a FK para `clients.id` funcionar.
       expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-/)
     } finally {
@@ -244,7 +244,7 @@ describe.skipIf(!temBanco)('entrar como', () => {
    * com quem a abriu, que ela **expira rápido**, e que quem não administra a
    * plataforma **não consegue** abri-la. Errar qualquer uma só apareceria no
    * dia em que alguém precisasse auditar o que a 4YU fez dentro da conta de um
-   * cliente — que é tarde demais.
+   * cliente, que é tarde demais.
    */
   async function entrarComCabecalhos(endereco: string) {
     const r = await autenticacao().api.signInEmail({

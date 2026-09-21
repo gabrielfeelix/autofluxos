@@ -9,7 +9,7 @@ const marca = `zz-acervo-${Math.random().toString(36).slice(2, 8)}`
 let clienteId = ''
 let outroId = ''
 
-/** Um PNG de 1x1 de verdade — o bucket confere o MIME, não a extensão. */
+/** Um PNG de 1x1 de verdade, o bucket confere o MIME, não a extensão. */
 function png(nome: string): File {
   const bytes = Uint8Array.from(
     atob(
@@ -57,7 +57,7 @@ describe.skipIf(!temCredencial)('acervo de mídia', () => {
 
   it('dois arquivos de mesmo nome convivem em vez de um sobrescrever o outro', async () => {
     // Sobrescrever trocaria o arquivo de um fluxo já publicado sem ninguém
-    // pedir — o grafo aponta para uma URL e ela não pode mudar de conteúdo.
+    // pedir, o grafo aponta para uma URL e ela não pode mudar de conteúdo.
     const a = await guardarNoAcervo(clienteId, png('plano.png'))
     const b = await guardarNoAcervo(clienteId, png('plano.png'))
 
@@ -83,7 +83,7 @@ describe.skipIf(!temCredencial)('acervo de mídia', () => {
     await expect(apagarDoAcervo(clienteId, `${clienteId}/../${outroId}/x.png`)).rejects.toThrow()
   })
 
-  it('apagar o cliente leva o acervo junto — cascata não alcança o Storage', async () => {
+  it('apagar o cliente leva o acervo junto, cascata não alcança o Storage', async () => {
     const efemero = await criarCliente(`${marca} efêmero`)
     const arquivo = await guardarNoAcervo(efemero.id, png('some-junto.png'))
     expect(await listarAcervo(efemero.id)).toHaveLength(1)
@@ -91,7 +91,7 @@ describe.skipIf(!temCredencial)('acervo de mídia', () => {
     await apagarCliente(efemero.id)
 
     expect(await listarAcervo(efemero.id)).toEqual([])
-    // E o endereço público para de responder — o arquivo saiu mesmo do bucket.
+    // E o endereço público para de responder, o arquivo saiu mesmo do bucket.
     expect((await fetch(arquivo.url)).status).toBe(400)
   })
 

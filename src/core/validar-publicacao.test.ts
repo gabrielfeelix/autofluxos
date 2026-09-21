@@ -28,7 +28,7 @@ const codigos = (problemas: { codigo: string }[]) => problemas.map((x) => x.codi
 describe('texto de exemplo não trocado', () => {
   it('recusa o endereço de mentira do modelo de menu', () => {
     const r = validarPublicacao(
-      comTexto('*Onde estamos*\nRua Exemplo, 123 — bairro, cidade.'),
+      comTexto('*Onde estamos*\nRua Exemplo, 123, bairro, cidade.'),
     )
     expect(r.ok).toBe(false)
     expect(codigos(r.erros)).toContain('TEXTO_DE_EXEMPLO')

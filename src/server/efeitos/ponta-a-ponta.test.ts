@@ -13,7 +13,7 @@ import { executarComEfeitos } from './resolver'
  * `API_TESTE_REAL=1 npm test` quando quiser a prova de verdade.
  *
  * O ViaCEP é escolha deliberada: é público, gratuito, sem chave, e é o mesmo
- * endereço com que o bloco nasce no editor — então este teste também confere
+ * endereço com que o bloco nasce no editor, então este teste também confere
  * que a demonstração de reunião continua funcionando.
  */
 const real = process.env.API_TESTE_REAL === '1'

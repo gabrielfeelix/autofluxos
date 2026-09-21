@@ -12,7 +12,7 @@ import {
 /**
  * O catálogo que a IA enxerga.
  *
- * O que precisa ser provado aqui não é que os dados existem — é que as travas
+ * O que precisa ser provado aqui não é que os dados existem, é que as travas
  * são travas. Catálogo de ferramenta é a superfície por onde um modelo age no
  * sistema de um cliente; o teste que importa é o que tenta passar por ela.
  */
@@ -114,7 +114,7 @@ describe('as travas do §4', () => {
 
   it('todo argumento do tipo `id` exige ter vindo de resultado anterior', () => {
     // Id não se inventa, se recebe. Um `id` sem a marca é um id que o modelo
-    // pode alucinar — ou repetir de uma mensagem escrita por um estranho.
+    // pode alucinar, ou repetir de uma mensagem escrita por um estranho.
     for (const f of FERRAMENTAS) {
       for (const a of f.argumentos.filter((a) => a.tipo === 'id')) {
         expect(a.soDeResultadoAnterior).toBe(true)
@@ -144,7 +144,7 @@ describe('as travas do §4', () => {
   })
 
   it('toda lista projetada tem teto', () => {
-    // Sem teto, um dia de agenda cheio afoga a pergunta no meio do contexto — e
+    // Sem teto, um dia de agenda cheio afoga a pergunta no meio do contexto, e
     // é token pago em toda volta seguinte da conversa.
     for (const f of FERRAMENTAS) {
       for (const p of f.projecao) {
@@ -168,7 +168,7 @@ describe('whitelist por nó', () => {
     ])
   })
 
-  it('lista vazia devolve nada — que é a IA de hoje, texto puro', () => {
+  it('lista vazia devolve nada, que é a IA de hoje, texto puro', () => {
     expect(ferramentasPermitidas([])).toEqual([])
   })
 
@@ -201,7 +201,7 @@ describe('projetar recorta o que o modelo vê', () => {
 
   it('mantém o par hora↔id dentro do mesmo objeto', () => {
     // É a razão de a projeção devolver objeto em vez de texto separado por `;`.
-    // Achatado, o modelo repareia por posição — e marca a aula de outra pessoa.
+    // Achatado, o modelo repareia por posição, e marca a aula de outra pessoa.
     const saida = projetar(resposta, projecao) as { livres: Record<string, unknown>[] }
 
     expect(saida.livres[0]).toEqual({
@@ -284,7 +284,7 @@ describe('idsVistos alimenta a trava de id', () => {
 
   it('ignora id vazio', () => {
     // String vazia como id passaria em qualquer conferência e não identifica
-    // nada — deixá-la entrar é abrir a trava por acidente.
+    // nada, deixá-la entrar é abrir a trava por acidente.
     expect([...idsVistos({ sessaoId: '' })]).toEqual([])
   })
 })

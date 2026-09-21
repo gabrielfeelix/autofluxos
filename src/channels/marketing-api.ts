@@ -1,7 +1,7 @@
 import type { NomesDoAnuncio } from '@/core/anuncios'
 
 /**
- * O nó `Ad` da Marketing API — só para descobrir nomes.
+ * O nó `Ad` da Marketing API, só para descobrir nomes.
  *
  * ---------------------------------------------------------------------------
  * O que esta chamada é, e o que ela não é
@@ -10,7 +10,7 @@ import type { NomesDoAnuncio } from '@/core/anuncios'
  * É **leitura**, de três campos de texto. Não cria campanha, não altera
  * orçamento, não pausa anúncio, não lê métrica. O produto continua sendo uma
  * caixa de entrada: saber de qual campanha a pessoa veio é contexto do
- * atendimento, do mesmo tipo que o telefone e a data de chegada — não é
+ * atendimento, do mesmo tipo que o telefone e a data de chegada, não é
  * gerenciar mídia, que é outro produto (o Otimiza Gestor).
  *
  * Vale dizer por escrito porque a fronteira é fácil de cruzar sem perceber: o
@@ -25,7 +25,7 @@ import type { NomesDoAnuncio } from '@/core/anuncios'
  * A field expansion da Graph (`campaign{name}`) traz o conjunto e a campanha
  * junto do anúncio, então não há encadeamento de três requisições. Importa
  * porque o limite de chamadas da Meta é por Página e proporcional ao volume de
- * leads — gastar três onde uma serve encurta o teto de quem está começando.
+ * leads, gastar três onde uma serve encurta o teto de quem está começando.
  */
 
 const VERSAO_PADRAO = 'v25.0'
@@ -35,7 +35,7 @@ const VERSAO_PADRAO = 'v25.0'
  *
  * Menos que os quinze do envio de mensagem, e de propósito: mandar uma resposta
  * ao cliente é o trabalho; descobrir o nome de uma campanha é enfeite de tela.
- * Se a Meta estiver lenta, o enfeite espera — a linha mostra o `headline`, que
+ * Se a Meta estiver lenta, o enfeite espera, a linha mostra o `headline`, que
  * já está no contato.
  */
 const TIMEOUT_MS = 10_000
@@ -68,7 +68,7 @@ function texto(valor: unknown): string {
  * **Nunca lança.** Quem chama está desenhando uma tela de atendimento: uma
  * Graph fora do ar não pode derrubar o Inbox nem fazer um webhook responder
  * erro para a Meta. Todo caminho de falha vira `{ ok: false }` com o código,
- * que é o que permite distinguir "token venceu" de "estourou o limite" — os
+ * que é o que permite distinguir "token venceu" de "estourou o limite", os
  * dois erram parecido e pedem respostas opostas (reconectar vs. esperar).
  */
 export async function lerNomesDoAnuncio(entrada: {
@@ -79,8 +79,8 @@ export async function lerNomesDoAnuncio(entrada: {
   const versao = entrada.versaoGraph ?? process.env.META_GRAPH_VERSAO ?? VERSAO_PADRAO
   const url = new URL(`https://graph.facebook.com/${versao}/${entrada.adId}`)
   /*
-   * `fields` explícito, sempre. Sem ele a Graph devolve o conjunto default —
-   * que é menor do que o disponível — e some com `campaign`/`adset` sem dizer
+   * `fields` explícito, sempre. Sem ele a Graph devolve o conjunto default ,
+   * que é menor do que o disponível, e some com `campaign`/`adset` sem dizer
    * por quê. É o erro que faz alguém concluir "a Meta não manda o nome".
    */
   url.searchParams.set('fields', 'name,adset{name},campaign{name}')
@@ -118,7 +118,7 @@ export async function lerNomesDoAnuncio(entrada: {
   } catch (erro) {
     /*
      * `AbortError` é o timeout acima; o resto é rede. Os dois dizem a mesma
-     * coisa a quem chama — não deu para saber agora — e nenhum é motivo para
+     * coisa a quem chama, não deu para saber agora, e nenhum é motivo para
      * apagar o nome que já está guardado.
      */
     const detalhe = erro instanceof Error ? erro.message : String(erro)
@@ -139,13 +139,13 @@ export type RespostaDeLead =
 /**
  * Busca um lead pelo `leadgen_id`.
  *
- * **O webhook só manda IDs.** Nunca vem `field_data` no aviso — é preciso vir
+ * **O webhook só manda IDs.** Nunca vem `field_data` no aviso, é preciso vir
  * aqui buscar, e é por isso que o handler do webhook responde `200` antes e
  * processa depois: buscar dentro dele transformaria lentidão da Graph em falha
  * de entrega, e a Meta reentregaria o lote inteiro.
  *
  * `fields` explícito, sempre. Sem ele a Graph devolve o conjunto default, que é
- * menor que o disponível, e some com `ad_id` sem dizer por quê — o erro que faz
+ * menor que o disponível, e some com `ad_id` sem dizer por quê, o erro que faz
  * alguém concluir que a Meta não manda atribuição.
  */
 export async function lerLeadDoFormularioNaMeta(entrada: {

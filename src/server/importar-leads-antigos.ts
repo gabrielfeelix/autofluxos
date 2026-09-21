@@ -13,7 +13,7 @@ import { anotarFormulario } from './repos/paginas-de-lead'
  * ---------------------------------------------------------------------------
  *
  * O webhook só avisa de lead **novo**. Quem liga a conta hoje, com campanhas
- * rodando há meses, veria uma tela vazia — e tela vazia no primeiro minuto é o
+ * rodando há meses, veria uma tela vazia, e tela vazia no primeiro minuto é o
  * que faz alguém concluir que não funcionou. Importar o que já existe é o que
  * transforma "conectei e não vi nada" em "conectei e vieram quarenta".
  *
@@ -45,7 +45,7 @@ export type ResultadoDaImportacao = {
 /**
  * Importa os leads de todos os formulários de uma Página.
  *
- * `desde` recorta a janela — a tela oferece 90 dias, que é tudo o que a Meta
+ * `desde` recorta a janela, a tela oferece 90 dias, que é tudo o que a Meta
  * ainda tem.
  */
 export async function importarLeadsAntigos(entrada: {
@@ -70,7 +70,7 @@ export async function importarLeadsAntigos(entrada: {
     /*
      * Formulário sem lead nenhum não gasta chamada. Importa mais do que parece:
      * o limite da Meta é proporcional ao volume de leads da Página, então uma
-     * conta nova — que é justamente quem está importando — tem teto baixo.
+     * conta nova, que é justamente quem está importando, tem teto baixo.
      */
     if (formulario.leads === 0) continue
 
@@ -94,7 +94,7 @@ export async function importarLeadsAntigos(entrada: {
 
     /*
      * Anota o formulário para a reconciliação diária passar a cuidar dele.
-     * Importar é o primeiro contato com esse formulário — se não anotar aqui,
+     * Importar é o primeiro contato com esse formulário, se não anotar aqui,
      * a rede de segurança só passaria a cobri-lo depois do primeiro lead novo.
      */
     await anotarFormulario({

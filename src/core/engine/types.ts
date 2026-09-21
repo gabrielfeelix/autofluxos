@@ -14,7 +14,7 @@ import type {
  * webhook do WhatsApp manda o que chegou). Tudo que vem de fora é validado
  * antes de encostar no motor.
  *
- * `Acao` é só tipo — ela sempre sai daqui, nunca entra.
+ * `Acao` é só tipo, ela sempre sai daqui, nunca entra.
  */
 
 export const statusSessaoSchema = z.enum([
@@ -29,10 +29,10 @@ export const statusSessaoSchema = z.enum([
    *
    * Só existe porque ler e gravar não são a mesma coisa: ler é reversível,
    * marcar e desmarcar não são. Quem sai desta parada é o resolvedor, lendo a
-   * resposta — o motor não conhece ferramenta.
+   * resposta, o motor não conhece ferramenta.
    */
   'aguardando_confirmacao',
-  /** o humano assumiu — o bot fica calado */
+  /** o humano assumiu, o bot fica calado */
   'humano',
   /** o fluxo chegou ao fim */
   'encerrada',
@@ -56,7 +56,7 @@ export const sessaoSchema = z.object({
    *
    * Fica na sessão, e não numa tabela, porque é exatamente a definição dela:
    * *tudo que o motor precisa lembrar de uma conversa*. Some junto com a
-   * conversa, que é o certo — confirmação de ontem não vale para hoje.
+   * conversa, que é o certo, confirmação de ontem não vale para hoje.
    *
    * **Não tem segredo dentro**, e por isso pode viajar para o navegador no
    * simulador como o resto da sessão: nome de ferramenta, argumentos já
@@ -76,12 +76,12 @@ export const sessaoSchema = z.object({
    * esperado (0060).
    *
    * Existe pelo mesmo motivo de `iaPendente`, e é a mesma forma: o bloco de
-   * pesquisa tem **duas paradas** — a nota e o "por quê?" — e `noAtual` só sabe
+   * pesquisa tem **duas paradas**, a nota e o "por quê?", e `noAtual` só sabe
    * guardar uma. Sem isto, a segunda mensagem da pessoa voltaria ao bloco como
    * se fosse a nota, e um comentário viraria tentativa inválida de resposta.
    *
    * **A nota já está gravada quando isto existe.** Quem responde a nota e some
-   * antes de explicar continua contando no NPS — é o desfecho certo: a nota é o
+   * antes de explicar continua contando no NPS, é o desfecho certo: a nota é o
    * número, o comentário é o extra. Guardar a nota só no fim perderia a metade
    * que importa toda vez que alguém desistisse do segundo passo.
    *
@@ -113,7 +113,7 @@ export const entradaSchema = z.discriminatedUnion('tipo', [
     /**
      * O id do anexo no WhatsApp. **Opcional para sempre**: existe conversa
      * gravada de antes deste campo, e `Entrada` é validada ao voltar do
-     * navegador — obrigatório aqui faria essas sessões pararem de dar parse.
+     * navegador, obrigatório aqui faria essas sessões pararem de dar parse.
      */
     midiaId: z.string().optional(),
     /** A legenda que a pessoa escreveu junto com a foto, quando escreveu. */
@@ -133,7 +133,7 @@ export const entradaSchema = z.discriminatedUnion('tipo', [
    * O prazo da pergunta acabou e ninguém respondeu (B1).
    *
    * Não vem de pessoa nenhuma: vem do agendador. É a única entrada que o motor
-   * recebe sem alguém do outro lado ter feito nada — e por isso a única que
+   * recebe sem alguém do outro lado ter feito nada, e por isso a única que
    * significa **ausência**.
    */
   z.object({ tipo: z.literal('timeout') }),
@@ -144,7 +144,7 @@ export type Sessao = z.infer<typeof sessaoSchema>
 export type Entrada = z.infer<typeof entradaSchema>
 
 /**
- * O que o mundo lá fora deve fazer. O motor nunca executa nada — ele descreve.
+ * O que o mundo lá fora deve fazer. O motor nunca executa nada, ele descreve.
  * Quem executa é o canal (WhatsApp de verdade) ou o simulador (que só mostra).
  */
 export type Acao =
@@ -168,7 +168,7 @@ export type Acao =
    *
    * O motor descreve **de onde o arquivo sai** e não sabe como ele chega. Quem
    * entrega decide entre mandar o endereço, fazer upload ou reusar um id que já
-   * tem — é o mesmo motivo de `chamar_http` carregar `conexaoId` em vez da
+   * tem, é o mesmo motivo de `chamar_http` carregar `conexaoId` em vez da
    * credencial: `core/` não faz rede, e essa regra não abre exceção por mídia.
    */
   | {
@@ -181,10 +181,10 @@ export type Acao =
       nomeArquivo?: string
       atrasoMs?: number
     }
-  /** persistir no contato — é isso que alimenta a tela de leads */
+  /** persistir no contato, é isso que alimenta a tela de leads */
   | { tipo: 'salvar_campo'; campo: string; valor: string }
   /**
-   * Desligar a automação **deste contato** — o "AutoOff".
+   * Desligar a automação **deste contato**, o "AutoOff".
    *
    * Não é `transferir_humano`: ninguém entra na fila de atendimento e ninguém
    * é avisado. O bot simplesmente para de responder para esta pessoa, e a
@@ -201,14 +201,14 @@ export type Acao =
        * o catálogo vive no servidor e a versão publicada guarda só a escolha.
        */
       ferramentas: string[]
-      /** De qual credencial as ferramentas se servem. Só o id — nunca o valor. */
+      /** De qual credencial as ferramentas se servem. Só o id, nunca o valor. */
       conexaoId?: string
     }
   /**
    * Chamar uma API e reentrar no motor com `{ tipo: 'http_respondeu' }`.
    *
    * `url`, `corpo` e os valores dos cabeçalhos já vêm interpolados com as
-   * variáveis da sessão. O que **não** vem resolvido é `{{segredo.x}}` — isso é
+   * variáveis da sessão. O que **não** vem resolvido é `{{segredo.x}}`, isso é
    * trabalho do servidor, e de propósito: segredo que entrasse aqui entraria na
    * sessão, e a sessão viaja para o navegador no simulador.
    */
@@ -225,7 +225,7 @@ export type Acao =
       /**
        * Referência à credencial, nunca a credencial. O motor não sabe o que há
        * do outro lado deste id, e é por isso que segredo nenhum consegue
-       * entrar na sessão — que viaja para o navegador no simulador.
+       * entrar na sessão, que viaja para o navegador no simulador.
        */
       conexaoId?: string
     }
@@ -235,7 +235,7 @@ export type Acao =
    * Como toda ação daqui, o motor **descreve** e não executa: ele não sabe que
    * existe tabela `quadro_cartoes`, e é o servidor que cria o cartão se ele
    * ainda não existe ou o move se já existe. Etapa que sumiu depois da
-   * publicação é nada-a-fazer do lado de fora — o motor não tem como saber, e
+   * publicação é nada-a-fazer do lado de fora, o motor não tem como saber, e
    * uma conversa não pode morrer porque alguém arrumou o quadro.
    */
   | { tipo: 'mover_etapa'; quadroId: string; colunaId: string }
@@ -244,7 +244,7 @@ export type Acao =
    *
    * Como `mover_etapa`, o motor **descreve** e não executa: ele não sabe que
    * existe `contato_etiquetas`, nem que aplicar etiqueta pode começar uma
-   * sequência. Guarda referência e não cópia pelo mesmo motivo do quadro —
+   * sequência. Guarda referência e não cópia pelo mesmo motivo do quadro ,
    * etiqueta é estado vivo, e o cartão precisa cair na etiqueta que existe
    * hoje. Etiqueta apagada depois da publicação é nada-a-fazer do lado de fora.
    */
@@ -252,7 +252,7 @@ export type Acao =
   /**
    * Escrever na anotação do contato (0044).
    *
-   * O texto já vem **interpolado** com as variáveis da sessão — é o que permite
+   * O texto já vem **interpolado** com as variáveis da sessão, é o que permite
    * "pediu {{servico}} para {{dia}}". Quem acrescenta ao que já estava escrito
    * é o servidor: o motor não lê banco, então não sabe o que a equipe anotou, e
    * é justamente por isso que ele não pode mandar "substitua por isto".
@@ -261,7 +261,7 @@ export type Acao =
   /**
    * Continuar a conversa em **outra automação** (0036).
    *
-   * O motor não carrega fluxo nenhum — ele não fala com banco, e é essa
+   * O motor não carrega fluxo nenhum, ele não fala com banco, e é essa
    * ignorância que faz o simulador e a produção rodarem o mesmo código. Ele
    * descreve o salto; quem carrega a versão publicada do destino e reentra é o
    * resolvedor de efeitos, exatamente como já acontece com a IA e a API.
@@ -278,7 +278,7 @@ export type Acao =
        * A quem endereçar o aviso, quando o bloco escolheu alguém.
        *
        * Ausente = a equipe toda, que é o padrão. O motor só carrega o id: quem
-       * decide se essa pessoa ainda atende — e o que fazer se não atende — é o
+       * decide se essa pessoa ainda atende, e o que fazer se não atende, é o
        * servidor, porque isso é uma pergunta ao banco.
        */
       avisarUsuarioId?: string
@@ -301,11 +301,11 @@ export type Acao =
    *
    * `origem` sai do motor porque é o motor que sabe de onde a pesquisa veio: um
    * bloco num desenho é sempre `fluxo`. A pesquisa que sai do botão "resolver"
-   * no Inbox não passa por aqui — ela roda o fluxo de pós-atendimento, e é o
+   * no Inbox não passa por aqui, ela roda o fluxo de pós-atendimento, e é o
    * servidor que sabe que houve um atendente.
    *
    * Quem liga o comentário a esta nota é o servidor, completando **a última
-   * avaliação deste contato** — e não um id que o motor teria de carregar de
+   * avaliação deste contato**, e não um id que o motor teria de carregar de
    * volta. O motor não gera id, e inventar uma ida e volta só para transportar
    * um uuid faria a pesquisa precisar de um estado `aguardando_*` que nada mais
    * aqui precisa.
@@ -315,7 +315,7 @@ export type Acao =
    * Acrescentar o comentário à nota já gravada (0060).
    *
    * Separado de `guardar_nota` porque as duas coisas chegam em mensagens
-   * diferentes, e juntá-las obrigaria a segurar a nota até a pessoa explicar —
+   * diferentes, e juntá-las obrigaria a segurar a nota até a pessoa explicar ,
    * perdendo a nota de quem não explica, que é a maioria.
    */
   | { tipo: 'guardar_comentario'; comentario: string }

@@ -4,18 +4,18 @@ import { lerChave } from '../repos/chave-de-ia'
 import type { Modelo } from './types'
 
 /**
- * Qual modelo atende esta automação — e com a chave de quem.
+ * Qual modelo atende esta automação, e com a chave de quem.
  *
  * Hoje existe **uma chave só, da 4YU** (`GEMINI_API_KEY`). É o que faz a
  * demonstração ao vivo funcionar: fluxo criado na frente do cliente, na
  * reunião, já respondendo. Sem isso, mostrar IA exigiria o cliente ter conta,
- * chave e faturamento antes da primeira conversa — ninguém fecha assim.
+ * chave e faturamento antes da primeira conversa, ninguém fecha assim.
  *
  * **Onde está a linha.** O free tier do Gemini treina modelo com o que passa
  * por ele, inclusive com revisão humana. Enquanto quem conversa é a 4YU e o
  * cliente na reunião, isso é problema de ninguém: o dado é nosso e é
- * demonstração. Quando entrar conversa de gente de verdade — o cliente **do**
- * cliente, com nome, telefone e o que quer comprar — a chave tem que ser paga e
+ * demonstração. Quando entrar conversa de gente de verdade, o cliente **do**
+ * cliente, com nome, telefone e o que quer comprar, a chave tem que ser paga e
  * do cliente, senão é dado pessoal de terceiro indo para treino de modelo sem
  * o titular ter consentido. Esse é o momento de `clients.ia_chave_ref` sair do
  * papel e apontar para o Vault.
@@ -26,7 +26,7 @@ import type { Modelo } from './types'
  *
  * **A chave do cliente tem precedência, e é por isso que a função virou
  * assíncrona**: descobrir de quem é a chave passou a exigir uma ida ao cofre. A
- * nossa continua existindo como rede — conta sem chave própria segue respondendo
+ * nossa continua existindo como rede, conta sem chave própria segue respondendo
  * como respondia, que é o que mantém a demonstração de pé.
  */
 

@@ -9,7 +9,7 @@ export type Cliente = {
   contextoNegocio: string
   /** Quem responde por este cliente. Ex.: "Daniel, dono do estúdio". */
   responsavel: string
-  /** Telefone de quem responde — **não** é o número que o bot atende. */
+  /** Telefone de quem responde, **não** é o número que o bot atende. */
   telefone: string
   email: string
   /** Só para emissão de nota. Guardado como foi digitado. */
@@ -59,7 +59,7 @@ type Linha = {
  * cliente para trás de propósito, dizendo que ela sumiria "quando alguém
  * confirmar que ninguém mais depende dela". Ninguém depende: nada no código
  * lia `cliente.iaHabilitada`. Parar de selecionar é essa confirmação; o `drop`
- * no banco é o passo seguinte, e separado — código que parou de usar volta
+ * no banco é o passo seguinte, e separado, código que parou de usar volta
  * fácil, coluna apagada não.
  */
 const COLUNAS =
@@ -93,7 +93,7 @@ export async function listarClientes(): Promise<Cliente[]> {
 export type ResumoDeAtendimento = {
   contatos: number
   esperandoPessoa: number
-  /** `null` quando ninguém nunca escreveu — cliente novo, não cliente parado. */
+  /** `null` quando ninguém nunca escreveu, cliente novo, não cliente parado. */
   ultimaAtividade: Date | null
 }
 
@@ -105,7 +105,7 @@ type LinhaDeResumo = {
 }
 
 /**
- * Quem está esperando resposta, quantos contatos e o último movimento — de
+ * Quem está esperando resposta, quantos contatos e o último movimento, de
  * todos os clientes, numa consulta.
  *
  * Uma consulta por cliente seria N+1 na primeira tela que abre, e a agregação
@@ -157,14 +157,14 @@ export async function criarCliente(nome: string): Promise<Cliente> {
  *
  * É a única fonte de verdade do nó de IA: o prompt manda responder `não sei`
  * para tudo que não estiver aqui (ver `ia/prompt.ts`). Sem isto preenchido, o
- * bloco de IA existe, chama o modelo, e responde `não sei` sempre — passando a
+ * bloco de IA existe, chama o modelo, e responde `não sei` sempre, passando a
  * conversa para uma pessoa toda vez. Falha fechado, e por isso ninguém percebe
  * que está quebrado.
  */
 /**
  * Grava a ficha do cliente.
  *
- * O nome é o único obrigatório — cliente cadastrado no meio de uma reunião tem
+ * O nome é o único obrigatório, cliente cadastrado no meio de uma reunião tem
  * só isso, e exigir telefone para salvar o nome faria a pessoa inventar um.
  */
 export async function atualizarCadastro(id: string, cadastro: Cadastro): Promise<void> {
@@ -244,7 +244,7 @@ export async function contarOQueSomeCom(id: string): Promise<EstragoDaExclusao> 
  * com as credenciais.
  *
  * A logo e o acervo saem do bucket junto. O `on delete cascade` não alcança o
- * Storage — ele está fora dos schemas de domínio (ver BANCO-COMPARTILHADO) — e
+ * Storage, ele está fora dos schemas de domínio (ver BANCO-COMPARTILHADO), e
  * arquivo de cliente que não existe mais é dado pessoal órfão num bucket
  * público.
  */
@@ -291,7 +291,7 @@ export async function horarioDoCliente(
   if (ehIdInvalido(error)) return null
   if (error) {
     // Falhar aqui não pode derrubar a mensagem de alguém. Sem horário, o
-    // atendimento é tratado como aberto — que é como o produto sempre agiu.
+    // atendimento é tratado como aberto, que é como o produto sempre agiu.
     console.error('[clientes] não deu para ler o horário de atendimento', error.message)
     return null
   }

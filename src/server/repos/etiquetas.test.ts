@@ -18,7 +18,7 @@ import { apagarContatos } from './retencao'
 /**
  * As etiquetas manuais (0025).
  *
- * O que precisa ser provado aqui não é que a linha entra no banco — é que ela
+ * O que precisa ser provado aqui não é que a linha entra no banco, é que ela
  * **não atravessa a fronteira do cliente**. Os dois ids chegam de formulário, e
  * a chave estrangeira só sabe que eles existem, não de quem são.
  */
@@ -83,7 +83,7 @@ describe.skipIf(!temCredencial)('criar, editar e apagar', () => {
     })
   })
 
-  it('editar mantém a etiqueta em quem já a tinha — renomear não é recriar', async () => {
+  it('editar mantém a etiqueta em quem já a tinha, renomear não é recriar', async () => {
     const etiqueta = (await listarEtiquetas(clienteId)).find((e) => e.nome === 'VIP')!
     await marcarContatos(clienteId, etiqueta.id, [contatoA], true)
 
@@ -148,7 +148,7 @@ describe.skipIf(!temCredencial)('aplicar em contatos', () => {
       afetados: 2,
       validos: expect.arrayContaining([contatoA, contatoB]),
     })
-    // Aplicar de novo não pode estourar chave duplicada — quem clica duas vezes
+    // Aplicar de novo não pode estourar chave duplicada, quem clica duas vezes
     // está pedindo a mesma coisa, não uma segunda linha.
     expect(await marcarContatos(clienteId, etiqueta.id, [contatoA, contatoB], true)).toEqual({
       ok: true,

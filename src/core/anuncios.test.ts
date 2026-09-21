@@ -52,7 +52,7 @@ describe('comoMostrar', () => {
     ).toEqual({ texto: 'Filme institucional', detalhe: null })
   })
 
-  it('sem título, sobra o rótulo — nunca o id', () => {
+  it('sem título, sobra o rótulo, nunca o id', () => {
     expect(comoMostrar({ rotulo: 'Direto', titulo: '', nomes: null })).toEqual({
       texto: 'Direto',
       detalhe: null,

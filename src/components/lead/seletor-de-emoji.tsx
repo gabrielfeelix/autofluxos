@@ -14,7 +14,7 @@ import { buscarEmojis, emojiDoItem, GRUPOS_DE_EMOJI } from '@/core/emojis'
  * ---------------------------------------------------------------------------
  *
  * Reagir compete com responder: se escolher o emoji custar mais que digitar
- * "ok", ninguém reage — por isso ali são seis e acabou. Aqui a pessoa já está
+ * "ok", ninguém reage, por isso ali são seis e acabou. Aqui a pessoa já está
  * escrevendo, e o emoji entra no meio de uma frase que ela pensou. O custo de
  * procurar já foi pago; o que não pode é **não achar**.
  *
@@ -24,7 +24,7 @@ import { buscarEmojis, emojiDoItem, GRUPOS_DE_EMOJI } from '@/core/emojis'
  *
  * O WhatsApp trata emoji como texto: digitar 👍 no campo sempre funcionou, e
  * continua funcionando sem esta tela. O que faltava era **achar** o emoji sem
- * sair do navegador — e é só isso que este componente resolve.
+ * sair do navegador, e é só isso que este componente resolve.
  *
  * O emoji entra no cursor, e não no fim: quem escreveu "ótimo, combinado" e
  * quer o 👍 antes da vírgula não deveria ter que recortar a frase.
@@ -45,7 +45,7 @@ export function SeletorDeEmoji({
    * Fechar clicando fora e no Esc.
    *
    * Sem isso a telinha fica por cima da conversa até alguém acertar de novo o
-   * botão — e no meio de uma resposta ela tapa justamente a mensagem que a
+   * botão, e no meio de uma resposta ela tapa justamente a mensagem que a
    * pessoa está respondendo. O `Esc` existe pelo mesmo motivo do `Enter` que
    * envia: é o que a mão já faz sozinha.
    */
@@ -107,7 +107,7 @@ export function SeletorDeEmoji({
                * **Enter aqui não pode enviar a mensagem.**
                *
                * Esta telinha abre de dentro do `<form>` da resposta, e um
-               * `Enter` em campo de formulário dispara o `submit` — quem
+               * `Enter` em campo de formulário dispara o `submit`, quem
                * digitasse "festa" e apertasse Enter para buscar mandaria a
                * resposta pela metade para o cliente. O Enter escolhe o
                * primeiro resultado, que é o que a mão esperava.
@@ -162,7 +162,7 @@ export function SeletorDeEmoji({
             ))}
             {emojis.length === 0 && (
               <p className="col-span-8 px-1 py-4 text-center text-[11px] text-dim">
-                Nada com esse nome. Tente uma palavra só — &ldquo;festa&rdquo;,
+                Nada com esse nome. Tente uma palavra só, &ldquo;festa&rdquo;,
                 &ldquo;obrigado&rdquo;, &ldquo;dinheiro&rdquo;.
               </p>
             )}

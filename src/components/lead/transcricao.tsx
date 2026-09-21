@@ -13,7 +13,7 @@ import { acaoTranscreverAudio } from '@/server/acoes-transcricao'
  * Dois motivos, e os dois importam.
  *
  * **Custo.** Transcrever é uma chamada a modelo. Automático, cada rolagem de
- * uma conversa com trinta áudios seria trinta chamadas — e a conta chegaria sem
+ * uma conversa com trinta áudios seria trinta chamadas, e a conta chegaria sem
  * ninguém ter pedido nada.
  *
  * **Privacidade.** Enquanto a chave é a da 4YU no free tier, o Google treina

@@ -18,13 +18,13 @@ import { conferirAcessoAoCliente } from '@/server/sessao'
  * Roda o motor sem WhatsApp nenhum.
  *
  * O endpoint é **sem estado**: quem guarda a sessão é o navegador, que devolve
- * ela a cada mensagem. Isso não é atalho de MVP — é o que a pureza do motor
+ * ela a cada mensagem. Isso não é atalho de MVP, é o que a pureza do motor
  * permite. O webhook do WhatsApp chama exatamente o mesmo caminho, mudando só
  * de onde vem a sessão (banco, em vez do corpo da requisição).
  *
  * A IA roda aqui de verdade, com a chave da 4YU. É o que permite desenhar um
  * fluxo na frente do cliente e mostrar o bot respondendo na mesma reunião. O
- * dado que passa por aqui é inventado por quem está testando — ver
+ * dado que passa por aqui é inventado por quem está testando, ver
  * `ia/modelo.ts` sobre onde fica a linha entre demonstração e conversa real.
  */
 
@@ -115,14 +115,14 @@ export async function POST(req: Request) {
   }
 
   // O dono sai do banco, pelo id da automação. Sem `fluxoId`, ou com um que
-  // não existe, o teste roda sem credencial nenhuma — que é o certo: melhor o
+  // não existe, o teste roda sem credencial nenhuma, que é o certo: melhor o
   // bloco de API falhar do que usar a chave de alguém por engano.
   const clienteId = fluxoId ? ((await acharFluxo(fluxoId))?.clienteId ?? undefined) : undefined
 
   /**
    * **O furo que estava aberto.**
    *
-   * O desenho pode vir de fora — é o ponto do simulador: testar o que ainda não
+   * O desenho pode vir de fora, é o ponto do simulador: testar o que ainda não
    * foi salvo. O `fluxoId`, não: ele é o que faz o motor resolver a credencial
    * de um cliente e mandá-la para a URL que o corpo pedir. Sem esta linha,
    * bastava postar um fluxo inventado apontando para o `fluxoId` de qualquer
@@ -130,7 +130,7 @@ export async function POST(req: Request) {
    * escalada de privilégio no minuto em que o primeiro cliente entrasse.
    *
    * Sem `fluxoId` não há credencial a resolver, e o teste roda como sempre
-   * rodou — que é o certo: melhor o bloco de API falhar do que usar a chave de
+   * rodou, que é o certo: melhor o bloco de API falhar do que usar a chave de
    * alguém por engano.
    */
   if (clienteId && !(await conferirAcessoAoCliente(clienteId))) {
@@ -154,7 +154,7 @@ export async function POST(req: Request) {
       clienteId,
       /**
        * O salto entre automações também vale no teste, e ele lê a versão
-       * **publicada** do destino — que é o que a conversa de verdade vai
+       * **publicada** do destino, que é o que a conversa de verdade vai
        * executar. O rascunho do outro fluxo não entra aqui de propósito: testar
        * contra um desenho que ninguém publicou esconderia justamente o erro de
        * mandar conversa para uma automação que ainda não está pronta.

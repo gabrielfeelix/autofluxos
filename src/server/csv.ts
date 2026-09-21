@@ -5,14 +5,14 @@
  *
  * 1. **Injeção de fórmula.** Uma célula começando com `=`, `+`, `-` ou `@` é
  *    executada como fórmula ao abrir a planilha. O conteúdo vem do WhatsApp de
- *    estranhos — `=HYPERLINK(...)` num campo de nome vira link clicável na
+ *    estranhos, `=HYPERLINK(...)` num campo de nome vira link clicável na
  *    planilha de quem exportou, e há famílias inteiras de ataque em cima disso.
  *    Aspas não resolvem: o Excel avalia depois de tirar as aspas. O que resolve
  *    é uma aspa simples na frente, que a planilha entende como "isto é texto".
  * 2. **Quebra de linha e ponto e vírgula dentro do campo.** Sem aspas, uma
  *    mensagem com `\n` vira duas linhas e o arquivo inteiro desalinha.
  *
- * Por isso toda célula sai entre aspas, sempre — arquivo previsível vale mais
+ * Por isso toda célula sai entre aspas, sempre, arquivo previsível vale mais
  * do que arquivo curto.
  */
 
@@ -29,7 +29,7 @@ export function celulaCsv(valor: string | null | undefined): string {
  * Monta o arquivo.
  *
  * O `\uFEFF` na frente é o BOM. Sem ele, o Excel do Windows lê o arquivo como
- * latin-1 e todo acento vira lixo — e o nome das pessoas é justamente onde os
+ * latin-1 e todo acento vira lixo, e o nome das pessoas é justamente onde os
  * acentos estão. O `\r\n` é o que o RFC 4180 pede.
  */
 export function montarCsv(cabecalhos: string[], linhas: (string | null | undefined)[][]): string {

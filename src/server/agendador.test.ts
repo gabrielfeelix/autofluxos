@@ -18,7 +18,7 @@ import { rodarTarefas } from './tarefas'
  * O que precisa ser provado é **quando ele não faz nada**. A tarefa é agendada
  * minutos ou horas antes de rodar, e no meio disso a conversa pode ter andado,
  * sido assumida, ou o bot pode ter sido pausado. Agir sobre um estado que mudou
- * é acordar alguém com uma cobrança sem sentido — e ninguém está olhando quando
+ * é acordar alguém com uma cobrança sem sentido, e ninguém está olhando quando
  * o agendador erra.
  */
 const temCredencial = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SECRET_KEY)
@@ -234,7 +234,7 @@ describe.skipIf(!temCredencial)('o prazo da pergunta', () => {
   it('reagendar substitui em vez de criar uma segunda cobrança', async () => {
     const de = telefone(6)
     await receberMensagem(webhookTexto(de, 'oi', `wamid-${marca}-8`), comMock)
-    // Uma resposta que o bot não entende faz ele reperguntar — e a espera
+    // Uma resposta que o bot não entende faz ele reperguntar, e a espera
     // recomeça. Sem chave única sobrariam dois prazos vivos, e a pessoa
     // receberia a cobrança duas vezes.
     await receberMensagem(webhookTexto(de, 'blablabla', `wamid-${marca}-9`), comMock)

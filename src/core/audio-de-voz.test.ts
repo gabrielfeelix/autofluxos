@@ -14,7 +14,7 @@ import { TIPOS_ACEITOS } from '@/server/repos/acervo'
 
 /**
  * Estes testes existem porque o modo de falha desta funcionalidade é silencioso
- * e distante: o formato errado sobe, grava mensagem, e só a Meta recusa — com o
+ * e distante: o formato errado sobe, grava mensagem, e só a Meta recusa, com o
  * erro aparecendo na conversa de um cliente. Aqui a regra é conferida sem
  * navegador, sem microfone e sem rede.
  */
@@ -35,7 +35,7 @@ const NAVEGADORES = {
   /*
    * O caso que ainda não foi observado mas é plausível: build sem codificador
    * AAC (AAC tem patente, e alguns Chromium não o embarcam). Sobraria só
-   * Opus-em-MP4 — que a Meta não entrega. Recusar é a resposta certa.
+   * Opus-em-MP4, que a Meta não entrega. Recusar é a resposta certa.
    */
   chromiumSemAac: ['audio/mp4', 'audio/mp4;codecs=opus', 'audio/webm;codecs=opus'],
 }
@@ -67,7 +67,7 @@ describe('escolherFormato', () => {
   })
 
   /*
-   * O Safari não grava Opus — só MP4/AAC. E o MP4 do MediaRecorder é
+   * O Safari não grava Opus, só MP4/AAC. E o MP4 do MediaRecorder é
    * fragmentado, sem índice de amostras: o WhatsApp o lê como vazio. Recusar é
    * melhor do que gravar algo que sai daqui e não chega do outro lado.
    * Registrado como pendência, não como acidente.
@@ -174,7 +174,7 @@ describe('os limites', () => {
 
   it('cinco minutos de voz mono cabem folgados nos 16 MB da Meta', () => {
     // AAC mono de voz fica em torno de 32 kbps. O teto de tempo é bom senso,
-    // não limite de tamanho — e este teste é o que registra isso.
+    // não limite de tamanho, e este teste é o que registra isso.
     const bytesEstimados = (LIMITE_DE_GRAVACAO_S * 32_000) / 8
     expect(bytesEstimados).toBeLessThan(16 * 1024 * 1024)
   })
@@ -186,7 +186,7 @@ describe('os limites', () => {
  * -----------------------------------------------------------------------------
  *
  * Em 15/set/2026 o áudio foi gravado, subiu, a Cloud API respondeu 200, a
- * mensagem foi marcada como entregue — e nada chegou no celular. O arquivo foi
+ * mensagem foi marcada como entregue, e nada chegou no celular. O arquivo foi
  * aberto byte a byte: `mp4a` e `esds` ausentes, `Opus` e `dOps` presentes. O
  * Chrome tinha gravado Opus dentro de MP4, porque o pedido foi `audio/mp4` sem
  * codec.
@@ -203,8 +203,8 @@ describe('o codec, que é o que a Meta realmente olha', () => {
   /*
    * MP4 saiu da lista por duas falhas medidas no mesmo dia: primeiro o codec
    * (`audio/mp4` sem `;codecs=` deixou o Chrome gravar Opus dentro de MP4),
-   * depois o contêiner (o MP4 do MediaRecorder é fragmentado — `stts`, `stsz`
-   * e `stco` vazios, `mvhd duration = 0` — e quem lê MP4 progressivo vê zero
+   * depois o contêiner (o MP4 do MediaRecorder é fragmentado, `stts`, `stsz`
+   * e `stco` vazios, `mvhd duration = 0`, e quem lê MP4 progressivo vê zero
    * amostras). Ele não volta.
    */
   it('MP4 não está mais na lista, em nenhuma forma', () => {

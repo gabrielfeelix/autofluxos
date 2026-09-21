@@ -8,14 +8,14 @@ import { acaoDefinirTemperatura } from '@/server/acoes-crm'
  * O quanto quem atendeu acredita nesta venda (0068).
  *
  * **Três botões e não um menu**, ao contrário do estágio ao lado. A diferença
- * não é estética: o estágio tem seis valores e muda sozinho — abri-lo é um gesto
+ * não é estética: o estágio tem seis valores e muda sozinho, abri-lo é um gesto
  * raro, de correção. Temperatura tem três valores, nunca muda sozinha, e é
  * justamente o que se marca de passagem ao fechar uma conversa. Um menu custaria
  * dois cliques e uma leitura para o gesto mais frequente do painel.
  *
  * As cores são as do termo, e param aí: azul de frio, âmbar de morno, vermelho
  * de quente. Quem está daltônico continua lendo a palavra, que está escrita em
- * cada botão — a cor acompanha o texto, não o substitui.
+ * cada botão, a cor acompanha o texto, não o substitui.
  *
  * Otimista pelas três razões de sempre: é interno, é reversível num clique e não
  * é lote.

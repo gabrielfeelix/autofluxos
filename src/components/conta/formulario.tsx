@@ -12,7 +12,7 @@ const INICIAL: EstadoDeConta = {}
  *
  * A diferença entre eles é um campo de nome e o rótulo do botão. Escrever dois
  * componentes por causa disso significa corrigir a devolução do valor digitado,
- * o `aria-live` do erro e o estado pendente duas vezes — e é assim que um dos
+ * o `aria-live` do erro e o estado pendente duas vezes, e é assim que um dos
  * dois fica para trás.
  */
 export function FormularioDeConta({
@@ -26,7 +26,7 @@ export function FormularioDeConta({
   botao: string
   pedirNome?: boolean
   /**
-   * Só o cadastro aberto pede telefone, e ele é **opcional** — a mesma escolha
+   * Só o cadastro aberto pede telefone, e ele é **opcional**, a mesma escolha
    * que o Botconversa faz na tela equivalente. Exigir um telefone para deixar
    * alguém experimentar o produto é atrito cobrado antes de entregar valor.
    */
@@ -75,10 +75,10 @@ export function FormularioDeConta({
       {pedirTelefone && (
         <CampoDeTelefone
           // `key` força o campo a renascer com o que o servidor devolveu depois
-          // de um erro — sem ela, o estado interno da máscara ignoraria o valor.
+          // de um erro, sem ela, o estado interno da máscara ignoraria o valor.
           key={estado.telefone ?? ''}
           valorInicial={estado.telefone ?? ''}
-          ajuda="Opcional. É como a gente fala com você se algo travar — não é o número que o bot atende."
+          ajuda="Opcional. É como a gente fala com você se algo travar, não é o número que o bot atende."
         />
       )}
 

@@ -7,7 +7,7 @@ const padrao = (formato: Parameters<typeof conferirResposta>[0], texto: string) 
 }
 
 describe('sem formato', () => {
-  it('aceita qualquer coisa — é o que a pergunta livre sempre fez', () => {
+  it('aceita qualquer coisa, é o que a pergunta livre sempre fez', () => {
     expect(conferirResposta(undefined, '  qualquer coisa ')).toEqual({
       ok: true,
       valor: 'qualquer coisa',
@@ -39,7 +39,7 @@ describe('data', () => {
   })
 
   // Sem o ano, "05/01" em dezembro é janeiro do ano que vem para a pessoa e
-  // deste ano para o palpite — e o agendamento sai onze meses errado.
+  // deste ano para o palpite, e o agendamento sai onze meses errado.
   it('exige o ano, em vez de adivinhar pelo relógio', () => {
     expect(conferirResposta('data', '21/08').ok).toBe(false)
     expect(conferirResposta('data', '21/08/26').ok).toBe(false)
@@ -120,16 +120,16 @@ describe('cpf', () => {
   })
 })
 
-describe('data_futura — a data que já passou não serve para marcar aula', () => {
+describe('data_futura, a data que já passou não serve para marcar aula', () => {
   const HOJE = '2026-09-03'
 
   it('recusa data anterior a hoje', () => {
     // O caso real: em 03/09, o bot aceitou 01/09 e foi consultar a agenda de
-    // um dia que não volta — e ainda ofereceu horários.
+    // um dia que não volta, e ainda ofereceu horários.
     expect(conferirResposta('data_futura', '01/09/2026', HOJE).ok).toBe(false)
   })
 
-  it('aceita hoje — marcar para daqui a pouco é legítimo', () => {
+  it('aceita hoje, marcar para daqui a pouco é legítimo', () => {
     const r = conferirResposta('data_futura', '03/09/2026', HOJE)
     expect(r.ok).toBe(true)
     if (r.ok) expect(r.padrao).toBe('2026-09-03')
@@ -149,7 +149,7 @@ describe('data_futura — a data que já passou não serve para marcar aula', ()
   })
 
   /*
-   * Sem saber que dia é hoje, recusar seria chutar — e chutar contra a pessoa
+   * Sem saber que dia é hoje, recusar seria chutar, e chutar contra a pessoa
    * é pior do que aceitar. Acontece só onde o contexto não é montado (o motor
    * é puro e recebe o dia de fora).
    */

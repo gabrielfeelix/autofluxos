@@ -1,5 +1,5 @@
 /**
- * O ritmo da transmissão — as contas, sem rede e sem banco.
+ * O ritmo da transmissão, as contas, sem rede e sem banco.
  *
  * ---------------------------------------------------------------------------
  * Três limites diferentes, e confundi-los custa o número do cliente
@@ -7,24 +7,24 @@
  *
  * 1. **A escada de 24h**: 250 → 2.000 → 10.000 → 100.000 → ilimitado
  *    **destinatários únicos** em 24h. Desde out/2025 é **por portfólio**, não
- *    por número — quem soma os limites de dois números do mesmo cliente conta
+ *    por número, quem soma os limites de dois números do mesmo cliente conta
  *    o dobro do que existe.
  * 2. **O throughput por segundo**: 80 mps no padrão, **20 mps em coexistência**
- *    — que é o nosso caminho principal. É por `phone_number_id`, e conta
+ *   , que é o nosso caminho principal. É por `phone_number_id`, e conta
  *    **entrada e saída juntas**: o inbound do atendimento compete com a
  *    transmissão pela mesma cota.
  * 3. **O limite por usuário** (131049/131056): decisão da Meta sobre quantas
  *    mensagens de marketing uma pessoa aguenta. Não é nosso e não tem contorno.
  *
  * Só conta conversa **iniciada pela empresa**. Responder quem chamou é
- * ilimitado — e é por isso que um cliente que só atende nunca esbarra nisto.
+ * ilimitado, e é por isso que um cliente que só atende nunca esbarra nisto.
  */
 
 /**
  * A escada de destinatários únicos em 24h, por portfólio.
  *
  * Sobe em 6h quando a qualidade está alta **e** o cliente usou 50% do limite
- * nos últimos 7 dias. Quem dispara pouco fica preso em 250 para sempre — o que
+ * nos últimos 7 dias. Quem dispara pouco fica preso em 250 para sempre, o que
  * é contra-intuitivo e vale dizer na tela: mandar pouco não "guarda" limite.
  */
 export const ESCADA = [250, 2_000, 10_000, 100_000] as const
@@ -38,7 +38,7 @@ export const ESCADA = [250, 2_000, 10_000, 100_000] as const
 export const RITMO_PADRAO = 80
 
 /**
- * O ritmo em coexistência — **o nosso caso principal**.
+ * O ritmo em coexistência, **o nosso caso principal**.
  *
  * Um quarto do padrão. Quem dimensiona pelo número grande descobre isto no meio
  * de uma campanha, como uma enxurrada de 130429.
@@ -51,7 +51,7 @@ export const RITMO_EM_COEXISTENCIA = 20
  * Não é o teto, é o **ponto de partida seguro**, e a diferença importa. O
  * throughput conta entrada e saída na mesma cota: disparar no teto deixa o
  * atendimento sem banda e as respostas de quem está conversando agora começam
- * a falhar — o pior jeito possível de uma campanha dar errado.
+ * a falhar, o pior jeito possível de uma campanha dar errado.
  */
 export const RITMO_INICIAL = 20
 
@@ -65,7 +65,7 @@ export function intervaloMs(porSegundo: number): number {
  * Quantos cabem ainda hoje, dado o que já saiu.
  *
  * **Conferir isto ANTES de enfileirar, e não durante.** Uma campanha de 5.000
- * com tier de 2.000 não é um erro a ser descoberto na mensagem 2.001 — é uma
+ * com tier de 2.000 não é um erro a ser descoberto na mensagem 2.001, é uma
  * campanha que precisa ser fatiada em 3 dias, e a pessoa tem o direito de saber
  * disso na hora de agendar.
  */
@@ -87,7 +87,7 @@ export function diasNecessarios(publico: number, limiteDiario: number): number {
 // O retry
 // ---------------------------------------------------------------------------
 
-/** Nunca mais que isso entre tentativas — meia hora já é abandono na prática. */
+/** Nunca mais que isso entre tentativas, meia hora já é abandono na prática. */
 export const TETO_DO_BACKOFF_MS = 30 * 60 * 1000
 
 /** Depois de tantas, é porque não vai. */
@@ -97,7 +97,7 @@ export const TENTATIVAS_MAXIMAS = 4
  * Espera exponencial **com jitter**, e o jitter não é enfeite.
  *
  * Sem ele, mil mensagens que tomaram 130429 no mesmo segundo voltam juntas no
- * mesmo segundo — o mesmo pico que causou o erro, de novo. É o "thundering
+ * mesmo segundo, o mesmo pico que causou o erro, de novo. É o "thundering
  * herd", e ele transforma um soluço num apagão.
  *
  * O jitter é ±25% e vem de quem chama (`aleatorio`) para o teste poder fixá-lo.
@@ -134,7 +134,7 @@ export type Decisao =
  *
  * Traduz a conduta de `condutaPara()` em decisão de fila. As duas funções são
  * separadas de propósito: aquela classifica o **erro**, esta decide o **que
- * fazer agora** — e a segunda depende de quantas tentativas já houve, que a
+ * fazer agora**, e a segunda depende de quantas tentativas já houve, que a
  * primeira não sabe.
  */
 export function decidir(
@@ -146,7 +146,7 @@ export function decidir(
     case 'template_pausado':
       /*
        * O template morreu. Tentar outro destinatário só produz o mesmo erro
-       * 5.000 vezes — e cada uma delas é um registro a mais contra a nota de
+       * 5.000 vezes, e cada uma delas é um registro a mais contra a nota de
        * qualidade do número.
        */
       return { acao: 'parar_tudo', motivo: 'o modelo foi pausado ou reprovado pela Meta' }
@@ -179,7 +179,7 @@ export function decidir(
  * Dá para transmitir agora?
  *
  * Junta as três perguntas que a tela precisa responder antes de deixar alguém
- * clicar em "enviar" — e responde em português, porque quem lê é o consultor,
+ * clicar em "enviar", e responde em português, porque quem lê é o consultor,
  * não quem programou.
  */
 export function podeTransmitir(entrada: {
@@ -191,7 +191,7 @@ export function podeTransmitir(entrada: {
   if (entrada.statusDoTemplate !== 'aprovado') {
     return {
       pode: false,
-      recado: 'Este modelo ainda não está aprovado pela Meta — só modelo aprovado entrega.',
+      recado: 'Este modelo ainda não está aprovado pela Meta, só modelo aprovado entrega.',
     }
   }
 
@@ -213,7 +213,7 @@ export function podeTransmitir(entrada: {
     const dias = diasNecessarios(entrada.publico, entrada.limiteDiario)
     return {
       pode: true,
-      recado: `Cabem ${cabem} hoje. As outras saem nos próximos dias — no total, cerca de ${dias} dias.`,
+      recado: `Cabem ${cabem} hoje. As outras saem nos próximos dias, no total, cerca de ${dias} dias.`,
     }
   }
 

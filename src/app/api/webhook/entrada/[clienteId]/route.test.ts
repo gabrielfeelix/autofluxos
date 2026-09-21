@@ -89,7 +89,7 @@ describe('POST /api/webhook/entrada/[clienteId]', () => {
 
   it('assinatura de tamanho errado devolve 401 em vez de estourar', async () => {
     // `timingSafeEqual` lança com buffers de tamanhos diferentes. Sem a
-    // conferência de comprimento, isto viraria 500 numa rota pública — ou seja,
+    // conferência de comprimento, isto viraria 500 numa rota pública, ou seja,
     // uma forma de derrubar a rota com um cabeçalho de dois caracteres.
     const resposta = await pedir(
       { evento: 'vaga.aberta', telefone: '5511999998888' },
@@ -101,7 +101,7 @@ describe('POST /api/webhook/entrada/[clienteId]', () => {
   it('o corpo assinado é o corpo cru: mexer num byte invalida', async () => {
     const corpo = JSON.stringify({ evento: 'vaga.aberta', telefone: '5511999998888' })
     const assinatura = assinar(corpo)
-    // Mesma assinatura, corpo trocado — é o ataque que a assinatura existe para
+    // Mesma assinatura, corpo trocado, é o ataque que a assinatura existe para
     // barrar.
     const adulterado = JSON.stringify({ evento: 'vaga.aberta', telefone: '5511000000000' })
 
@@ -166,7 +166,7 @@ describe('POST /api/webhook/entrada/[clienteId]', () => {
     expect(resposta.status).toBe(400)
   })
 
-  it('evento sem gatilho ainda devolve 200 — o outro lado não deve reenfileirar', async () => {
+  it('evento sem gatilho ainda devolve 200, o outro lado não deve reenfileirar', async () => {
     vi.mocked(tratarEvento).mockResolvedValue('sem_gatilho')
     const resposta = await pedir({ evento: 'nao.assinado', telefone: '5511999998888' })
     expect(resposta.status).toBe(200)

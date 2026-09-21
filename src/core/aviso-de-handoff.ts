@@ -8,11 +8,11 @@ import { atendimentoAberto, type HorarioDeAtendimento } from './horario'
  * 30s e avisa **quem está com o painel aberto**. Fora disso o bot transfere,
  * ninguém percebe, e o cliente descobre pelo lead reclamando.
  *
- * Este módulo é só a decisão — puro, sem banco e sem rede. O envio mora em
+ * Este módulo é só a decisão, puro, sem banco e sem rede. O envio mora em
  * `server/avisar-handoff.ts`. Estão separados porque a decisão é a parte que
  * erra caro e em silêncio: avisar às 3h da manhã é a forma mais rápida de
  * fazer alguém desligar o aviso para sempre, e aí o produto volta a ter o
- * buraco que esta rodada fecha — só que agora sem ninguém saber.
+ * buraco que esta rodada fecha, só que agora sem ninguém saber.
  */
 
 /** Um membro da conta, do ponto de vista de quem decide o aviso. */
@@ -27,7 +27,7 @@ export type CandidatoAoAviso = {
 }
 
 /**
- * Os papéis que atendem — que hoje são **todos** os que existem.
+ * Os papéis que atendem, que hoje são **todos** os que existem.
  *
  * Os três valores vêm do plugin de organização do Better Auth e são em inglês:
  * `owner`, `admin`, `member` (ver `acoes-conta.ts:403`). Escrevê-los em
@@ -35,7 +35,7 @@ export type CandidatoAoAviso = {
  * membros existentes são `owner`, e nenhum deles receberia aviso nenhum. O
  * defeito passaria nos testes e apareceria como conversa sem resposta.
  *
- * A lista existe mesmo assim — e não um `return true` — porque um papel que
+ * A lista existe mesmo assim, e não um `return true`, porque um papel que
  * não atende (só leitura, faturamento) é o tipo de coisa que nasce depois, e
  * quando nascer o lugar de decidir isto já está escrito.
  *

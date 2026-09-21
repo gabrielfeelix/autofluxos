@@ -942,8 +942,7 @@ type Passo = { no: No; saida?: string }
 /**
  * A frase que o beco sem saída diz sobre si mesmo.
  *
- * O produto respondia só "A conversa terminou." a qualquer desenho que acabava
- *, e quem desenhou o botão "Voltar ao Menu", ligou ele e viu a conversa morrer
+ * O produto respondia só "A conversa terminou." a qualquer desenho que acabava, e quem desenhou o botão "Voltar ao Menu", ligou ele e viu a conversa morrer
  * não tinha por onde começar a procurar. O motor sabe exatamente qual bloco e
  * qual saída não levavam a lugar nenhum; era só ele contar.
  *

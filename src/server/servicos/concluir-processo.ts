@@ -14,8 +14,8 @@ import { chaveDaContinuidade, dadosDaContinuidadeSchema } from '@/core/continuid
  * ---------------------------------------------------------------------------
  *
  * `fecharCartao` fazia quatro idas ao banco em fila e o comentário dela
- * admitia: "Não é transação". Entre a segunda e a terceira cabia uma queda —
- * teto de tempo da função, deploy no meio, rede — e o cartão ficava ganho com o
+ * admitia: "Não é transação". Entre a segunda e a terceira cabia uma queda ,
+ * teto de tempo da função, deploy no meio, rede, e o cartão ficava ganho com o
  * histórico em branco.
  *
  * Coordenar duas escritas que precisam valer juntas não é ida ao banco, é
@@ -27,10 +27,10 @@ import { chaveDaContinuidade, dadosDaContinuidadeSchema } from '@/core/continuid
  * As três coisas que este arquivo garante
  * ---------------------------------------------------------------------------
  *
- *  1. **estado final e evento juntos** — ou os dois existem, ou nenhum (RB-24);
- *  2. **duplo clique devolve a mesma conclusão** — pela chave da operação, e
+ *  1. **estado final e evento juntos**, ou os dois existem, ou nenhum (RB-24);
+ *  2. **duplo clique devolve a mesma conclusão**, pela chave da operação, e
  *     pelo `and situacao = 'aberta'` do update quando não há chave (RB-10, A13);
- *  3. **a continuidade é intenção gravada, não efeito colateral** — se abrir o
+ *  3. **a continuidade é intenção gravada, não efeito colateral**, se abrir o
  *     processo seguinte falhar, a conclusão de origem continua de pé e fica uma
  *     pendência visível para repetir só essa parte (RB-25, A26).
  *
@@ -85,7 +85,7 @@ type LinhaDaConclusao = {
  * A mesma conclusão, como a `concluir_processo` a devolve.
  *
  * Os nomes levam `o_` porque os parâmetros OUT da função precisam não colidir
- * com as colunas das tabelas que ela consulta — ver a 0072 e o 42702 que a
+ * com as colunas das tabelas que ela consulta, ver a 0072 e o 42702 que a
  * primeira versão produzia. `o_repetida` é a única informação que não está na
  * tabela: ela responde "esta chamada escreveu, ou encontrou?".
  */
@@ -168,7 +168,7 @@ export type PedidoDeConclusao = {
   /**
    * A chave da operação. **Mande sempre** a partir da tela.
    *
-   * Sem ela, o duplo clique ainda não cria duas conclusões — o `situacao =
+   * Sem ela, o duplo clique ainda não cria duas conclusões, o `situacao =
    * 'aberta'` do update fecha isso. O que ela acrescenta é o retry depois de
    * uma **resposta perdida**: a requisição chegou, o cartão foi concluído, a
    * resposta se perdeu na volta, e a segunda tentativa precisa reconhecer a
@@ -186,7 +186,7 @@ export type ResultadoDaConclusao =
  *
  * A ordem importa: a conclusão é gravada **antes** de a continuidade ser
  * enfileirada, e enfileirar que falha não desfaz o que já está gravado. É a
- * ordem certa de falhar — perder o registro da venda porque o pós-venda não
+ * ordem certa de falhar, perder o registro da venda porque o pós-venda não
  * abriu seria inverter a importância das duas coisas.
  */
 export async function concluirProcesso(
@@ -229,7 +229,7 @@ export async function concluirProcesso(
    *
    * A primeira versão deduzia "já existia" da idade de `criado_em`. Duas
    * chamadas separadas por 80 ms dão a mesma idade que uma chamada só, então a
-   * dedução respondia "nova" para o segundo clique — que é exatamente o caso
+   * dedução respondia "nova" para o segundo clique, que é exatamente o caso
    * que ela existe para reconhecer. Quem sabe se escreveu é quem escreveu.
    */
   const repetida = primeira.o_repetida === true
@@ -260,7 +260,7 @@ export async function concluirProcesso(
    * quando ela **não** acontece. Antes: `console.error` e um `null`, num log
    * que expira. Agora: a intenção já está gravada em
    * `conclusoes_de_processo` antes desta linha rodar, então falhar aqui deixa
-   * uma pendência visível — e a fila a repete sozinha, com teto (RB-25, A26).
+   * uma pendência visível, e a fila a repete sozinha, com teto (RB-25, A26).
    *
    * Ordem, e ela importa: enfileira **antes** de tentar. Se a função morrer
    * entre as duas, a fila cobre; se fosse ao contrário, morrer na tentativa
@@ -272,8 +272,8 @@ export async function concluirProcesso(
     const resolvida = await resolverContinuidade(conclusao.id)
     if (resolvida) {
       // Deu certo na hora: a tarefa da fila não tem mais o que fazer. Deixá-la
-      // viva não criaria um segundo cartão — a `chave_de_criacao` da 0071
-      // fecha isso — mas gastaria uma passada do cron para descobrir.
+      // viva não criaria um segundo cartão, a `chave_de_criacao` da 0071
+      // fecha isso, mas gastaria uma passada do cron para descobrir.
       if (resolvida.continuidade !== 'pendente') {
         await cancelarPorChave(chaveDaContinuidade(conclusao.id))
       }
@@ -293,8 +293,8 @@ export async function concluirProcesso(
  *
  * A chave é por conclusão: reenfileirar a mesma intenção substitui a tarefa
  * pendente em vez de somar uma segunda. Duas tarefas vivas da mesma conclusão
- * não criariam dois cartões — a `chave_de_criacao` do destino fecha isso no
- * banco — mas criariam dois eventos "entrou no quadro", que é ruído no
+ * não criariam dois cartões, a `chave_de_criacao` do destino fecha isso no
+ * banco, mas criariam dois eventos "entrou no quadro", que é ruído no
  * histórico de alguém.
  */
 export async function enfileirarContinuidade(
@@ -315,7 +315,7 @@ export async function enfileirarContinuidade(
 /**
  * Executa a intenção: abre a ocorrência no processo de destino.
  *
- * Idempotente pela conclusão de origem, em duas camadas — ver a 0072. Chamada
+ * Idempotente pela conclusão de origem, em duas camadas, ver a 0072. Chamada
  * pela fila e, quando a pessoa clica em "tentar de novo" numa pendência, pela
  * tela.
  */
@@ -388,10 +388,10 @@ const COLUNAS =
  *
  * **Falha técnica sobe como exceção, de propósito.** O `rodarTarefas` a
  * transforma em `marcarFalha`, que devolve a tarefa à fila até o teto de três
- * tentativas — é a repetição com limite que a T1.2 pede, e ela já existe. O
+ * tentativas, é a repetição com limite que a T1.2 pede, e ela já existe. O
  * que não pode subir é a pendência de configuração: destino apagado ou sem
  * etapa não melhora tentando de novo, então a 0072 a grava como `falhou` e
- * esta função a trata como `feita` — a tarefa terminou, a pendência fica
+ * esta função a trata como `feita`, a tarefa terminou, a pendência fica
  * visível na conclusão.
  */
 export async function rodarContinuidadeDeProcesso(

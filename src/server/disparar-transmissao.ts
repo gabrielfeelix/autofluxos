@@ -35,7 +35,7 @@ import {
  *
  * 1. **Ritmo.** O throughput da Meta é por `phone_number_id` e conta entrada e
  *    saída na mesma cota. Disparar no teto deixa o atendimento sem banda e as
- *    respostas de quem está conversando AGORA começam a falhar — o pior jeito
+ *    respostas de quem está conversando AGORA começam a falhar, o pior jeito
  *    de uma campanha dar errado. Ver `RITMO_INICIAL`.
  * 2. **Retry por classe de erro.** As cinco classes são incompatíveis: repetir
  *    o que é terminal queima o número, desistir do que é transitório perde
@@ -73,7 +73,7 @@ export type ResumoDoDisparo = {
  * Os valores das variáveis para este contato.
  *
  * **Os parâmetros fixos vêm da transmissão; o que muda por pessoa vem do
- * contato.** `{{1}}` costuma ser o nome — e é por isso que existe o `nome` do
+ * contato.** `{{1}}` costuma ser o nome, e é por isso que existe o `nome` do
  * destinatário aqui: resolver na hora do envio é a única forma de uma
  * transmissão dizer "Oi, Ana" e "Oi, João" com o mesmo template.
  *
@@ -94,7 +94,7 @@ export function valoresPara(
     const bruto = parametros[String(i)] ?? ''
     /*
      * `{nome}` é o único marcador dinâmico. Mais que isso viraria uma
-     * linguagem de template dentro do template — e a Meta já tem uma.
+     * linguagem de template dentro do template, e a Meta já tem uma.
      *
      * Vazio nunca: a Meta recusa parâmetro em branco com 132000, e "Oi, " sem
      * nome é pior que "Oi, tudo bem?".
@@ -144,7 +144,7 @@ export async function dispararTransmissao(
 
   /*
    * O status é conferido **agora**, e não na hora de agendar. Um template
-   * aprovado ontem pode estar pausado hoje — a Meta pausa por qualidade sem
+   * aprovado ontem pode estar pausado hoje, a Meta pausa por qualidade sem
    * avisar antes, e uma campanha agendada para amanhã encontraria o modelo
    * morto.
    */
@@ -193,7 +193,7 @@ export async function dispararTransmissao(
       resumo.falhas += 1
       /*
        * O template morreu, ou o payload está errado. Nos dois casos, seguir
-       * tentando produz o mesmo erro contra os 5.000 que sobraram — e cada um
+       * tentando produz o mesmo erro contra os 5.000 que sobraram, e cada um
        * conta contra a nota de qualidade do número do cliente.
        */
       await pararTransmissao(transmissao, decisao.motivo)
@@ -218,7 +218,7 @@ type ResultadoDeUm =
 /**
  * Um destinatário: manda, lê a resposta de verdade e grava o que aconteceu.
  *
- * Nunca estoura. Um contato que falha não pode derrubar a transmissão — é o
+ * Nunca estoura. Um contato que falha não pode derrubar a transmissão, é o
  * mesmo desenho de `enviarAgendadas`, onde o `try` é por linha e não em volta
  * do laço.
  */
@@ -227,7 +227,7 @@ async function tentarUm(
   transmissao: Transmissao,
   /*
    * O template vem pronto de quem chama, lido **uma vez** por passada. Relê-lo
-   * aqui custaria uma ida ao banco por destinatário — 5.000 leituras de uma
+   * aqui custaria uma ida ao banco por destinatário, 5.000 leituras de uma
    * linha que não muda no meio do disparo.
    */
   template: TemplateLido,
@@ -245,8 +245,8 @@ async function tentarUm(
    * congelada na confirmação, e a RB-38 é explícita que editar o segmento
    * depois não aumenta o lote. Ela só recusa.
    *
-   * A transmissão sempre usa modelo aprovado — é o que `podeEnviar` já
-   * garantiu acima — então `comModelo: true`, e a janela de 24h não exclui
+   * A transmissão sempre usa modelo aprovado, é o que `podeEnviar` já
+   * garantiu acima, então `comModelo: true`, e a janela de 24h não exclui
    * ninguém aqui. Passar `false` faria toda campanha para quem não escreveu
    * nas últimas 24h ser recusada, que é o oposto da razão de existir do
    * modelo.
@@ -326,7 +326,7 @@ async function tentarUm(
 /**
  * O código da Meta dentro da mensagem de erro do adaptador.
  *
- * O `canalCloudApi` estoura com o corpo cru da Meta dentro do texto — é o que
+ * O `canalCloudApi` estoura com o corpo cru da Meta dentro do texto, é o que
  * permite ler o código sem mudar a forma de todos os outros envios. Feio e
  * honesto: a alternativa seria um tipo de erro novo em todo o canal, e o
  * retorno não paga.

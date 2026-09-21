@@ -166,7 +166,7 @@ describe('o vocabulário', () => {
   it('todo evento tem frase, e nenhuma usa travessão', () => {
     for (const evento of EVENTOS_DE_SAIDA) {
       expect(FRASE_DA_SAIDA[evento].length).toBeGreaterThan(0)
-      expect(FRASE_DA_SAIDA[evento]).not.toContain('—')
+      expect(FRASE_DA_SAIDA[evento]).not.toContain('-')
     }
   })
 })
