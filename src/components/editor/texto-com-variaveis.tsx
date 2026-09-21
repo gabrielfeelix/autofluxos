@@ -81,19 +81,33 @@ const FUNDO: CSSProperties = {
   overflow: 'hidden',
   pointerEvents: 'none',
   borderColor: 'transparent',
-  background: 'transparent',
+  /*
+   * O fundo opaco mora aqui, e não no campo, e trocar isso de lugar apaga o
+   * texto inteiro.
+   *
+   * O espelho fica **atrás** do `<textarea>`. Enquanto o campo era pintado com
+   * branco a 4,5% ele deixava o espelho passar por baixo; ao virar `--panel`,
+   * que no tema claro e `#ffffff` opaco, o campo passou a tapar a unica camada
+   * que desenha letra. O efeito e um campo que parece vazio com o contador
+   * marcando 138 caracteres e o corretor sublinhando o que ninguem ve.
+   *
+   * Quem pinta o fundo e quem pinta o texto tem que ser a mesma camada.
+   */
+  background: 'var(--panel)',
   color: 'var(--ink)',
 }
 
 /*
  * A cor vem de token, nunca de `rgba(255,255,255,...)`.
  *
- * Estes dois valores nasceram quando o painel so existia escuro: branco a 4,5%
- * de fundo e a 10% de borda desenhavam um campo discreto sobre preto. No tema
- * claro os dois somem, branco sobre branco, e o campo de mensagem ficava sem
- * borda nenhuma, parecendo texto solto no painel. `--panel` e `--line-strong`
- * sao os mesmos do `.app-field`, entao o campo espelhado passa a ser igual a
- * qualquer outro campo do sistema, nos dois temas.
+ * A borda nasceu como branco a 10%, de quando o painel so existia escuro. No
+ * tema claro ela sumia, branco sobre branco, e o campo de mensagem ficava sem
+ * borda nenhuma, parecendo texto solto no painel. `--line-strong` e o mesmo do
+ * `.app-field`, entao o campo espelhado tem a borda de qualquer outro campo do
+ * sistema, nos dois temas.
+ *
+ * O fundo nao esta aqui, e isso e deliberado: ele mora no espelho, porque quem
+ * pinta o fundo precisa ser quem pinta o texto. Ver o comentario do `FUNDO`.
  */
 const CAMPO: CSSProperties = {
   ...MEDIDAS,
@@ -101,7 +115,8 @@ const CAMPO: CSSProperties = {
   width: '100%',
   display: 'block',
   outline: 'none',
-  background: 'var(--panel)',
+  // Transparente de proposito: o fundo e desenhado pelo espelho, atras. Ver FUNDO.
+  background: 'transparent',
   borderColor: 'var(--line-strong)',
   // As duas linhas que fazem o espelho aparecer: o texto some, o cursor fica.
   color: 'transparent',
@@ -229,7 +244,9 @@ function DicasDeChaveSimples({
     <div
       ref={camada}
       aria-hidden
-      style={{ ...FUNDO, ...estilo, color: 'transparent', zIndex: 2 }}
+      // Fundo transparente na marra: esta camada fica **por cima** do campo, e
+      // herdar o `--panel` do espelho taparia o texto de novo, agora pelo outro lado.
+      style={{ ...FUNDO, ...estilo, background: 'transparent', color: 'transparent', zIndex: 2 }}
     >
       {pedacos.map((pedaco, i) => {
         const inicio = inicios[i] as number
