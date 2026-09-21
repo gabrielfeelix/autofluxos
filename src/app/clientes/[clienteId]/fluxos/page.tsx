@@ -67,6 +67,7 @@ import { OrdenarFluxo } from '@/components/fluxos/ordenar'
 import { NomeDoFluxo } from '@/components/editor/nome-do-fluxo'
 import { ETIQUETAS, MODELOS } from '@/exemplos/modelos'
 import { AbaDeTemplates, NovaAutomacao } from '@/components/fluxos/templates'
+import { ImportarJson } from '@/components/fluxos/importar-json'
 import { contatosPorCampanha, listarCampanhas } from '@/server/repos/campanhas'
 import { conversasEmAndamentoDeMuitos, listarFluxos } from '@/server/repos/fluxos'
 import { contarExecucoesPorFluxo } from '@/server/repos/metricas'
@@ -418,6 +419,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                 modal e a aba Templates, ver `components/fluxos/templates.tsx`.
                 Escondido num campo no fim do formulário, o modelo era escolhido
                 por um nome de três palavras e quase ninguém usava. */}
+            <ImportarJson clienteId={cliente.id} />
             <NovaAutomacao acao={criarComCliente} modelos={TEMPLATES} etiquetas={ETIQUETAS} />
             </span>
           </header>

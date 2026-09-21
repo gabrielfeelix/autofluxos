@@ -2,7 +2,9 @@
 
 import { podeResponderAgora } from './distribuir-atendimento'
 import { revalidatePath } from 'next/cache'
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { toString as qrParaSvg } from 'qrcode'
 import { z } from 'zod'
 import { fluxoSchema, type Fluxo, type TipoDeMidia } from '@/core/flow/schema'
 import type { Problema } from '@/core/flow/validar'
@@ -94,6 +96,7 @@ import { alternarGatilho, apagarGatilho, criarGatilho } from './repos/gatilhos'
 import { alternarCampanha, apagarCampanha, criarCampanha } from './repos/campanhas'
 import { apagarPasta, criarPasta, moverFluxo } from './repos/pastas'
 import { diasDoPrazo, limparParaCompartilhar, nomeAoImportar } from '@/core/compartilhar'
+import { lerArquivoDeFluxo } from '@/core/arquivo-de-fluxo'
 import {
   acharPorToken,
   contarImportacao,
@@ -1152,6 +1155,99 @@ export async function acaoImportarFluxoCompartilhado(
     alvoId: fluxo.id,
     alvoNome: fluxo.nome,
     detalhes: { origem: link.origem, versao: link.versao },
+    impersonadoPor: acesso.sessao?.impersonadoPor ?? null,
+  })
+
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  return { ok: true, fluxoId: fluxo.id }
+}
+
+/**
+ * O QR do link, para abrir a demonstração no celular de quem está na frente.
+ *
+ * O endereço é montado **aqui**, com o `host` da própria requisição, e não com
+ * o que a tela mandar: o QR é uma coisa que ninguém confere antes de apontar a
+ * câmera, então aceitar a origem do navegador seria aceitar que uma tela
+ * comprometida imprima um código que leva para outro lugar com a nossa cara.
+ *
+ * Gerado no servidor de propósito. O `qrcode` no navegador custaria uns 30 KB
+ * no pacote do editor, que todo mundo baixa, para uma ação que quase ninguém
+ * clica, e o SVG volta pronto para a tela desenhar.
+ */
+export async function acaoQrDoLinkDoFluxo(
+  clienteId: string,
+  fluxoId: string,
+  linkId: string,
+): Promise<{ ok: boolean; svg?: string; endereco?: string; erro?: string }> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
+
+  // O token sai da lista da conta, e não do corpo: é o que garante que o QR
+  // gerado aqui é de um link deste cliente e deste fluxo.
+  const link = (await listarLinks(clienteId, fluxoId)).find((item) => item.id === linkId)
+  if (!link) return { ok: false, erro: 'este link não é deste fluxo' }
+  if (link.estado !== 'valido') return { ok: false, erro: 'este link não está mais aberto' }
+
+  const cabecalhos = await headers()
+  const host = cabecalhos.get('host')
+  if (!host) return { ok: false, erro: 'não deu para descobrir o endereço do painel' }
+  const protocolo = cabecalhos.get('x-forwarded-proto') ?? 'https'
+  const endereco = `${protocolo}://${host}/f/${link.token}`
+
+  const svg = await qrParaSvg(endereco, {
+    type: 'svg',
+    errorCorrectionLevel: 'M',
+    margin: 1,
+    width: 220,
+  })
+
+  return { ok: true, svg, endereco }
+}
+
+/**
+ * Importa uma automação de um arquivo JSON.
+ *
+ * As mesmas três decisões de `acaoImportarFluxoCompartilhado`, e pelos mesmos
+ * motivos: **nasce rascunho**, **nasce sem IA** e **sem credencial** (quem
+ * limpa é `lerArquivoDeFluxo`, com o mesmo `limparParaCompartilhar` do link).
+ *
+ * A diferença é a procedência: o link veio de uma conta nossa e o arquivo veio
+ * do computador de alguém, podendo ter sido escrito à mão. Por isso nada aqui
+ * confia no conteúdo: o `fluxoSchema` valida o desenho inteiro antes de gravar,
+ * e o nome de dentro do arquivo é só sugestão, limitado no tamanho como o de
+ * qualquer formulário.
+ */
+export async function acaoImportarFluxoDeJson(
+  clienteId: string,
+  conteudo: string,
+): Promise<{ ok: boolean; fluxoId?: string; erro?: string }> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
+
+  // Um arquivo de automação não chega perto disso; o que chega é alguém
+  // mandando um dump de banco para a rota ver o que acontece.
+  const texto = String(conteudo ?? '')
+  if (texto.length > 2_000_000) return { ok: false, erro: 'este arquivo é grande demais' }
+
+  const lido = lerArquivoDeFluxo(texto)
+  if (!lido.ok) return { ok: false, erro: lido.erro }
+
+  const fluxo = await criarFluxo(
+    clienteId,
+    nomeAoImportar(lido.nome.slice(0, 80) || 'Automação importada'),
+    lido.grafo,
+    false,
+  )
+
+  await registrar({
+    acao: 'importou_fluxo',
+    autorId: acesso.sessao?.usuario.id ?? null,
+    autorEmail: acesso.sessao?.usuario.email ?? 'painel',
+    contaId: clienteId,
+    alvoTipo: 'fluxo',
+    alvoId: fluxo.id,
+    alvoNome: fluxo.nome,
+    detalhes: { origem: 'arquivo json' },
     impersonadoPor: acesso.sessao?.impersonadoPor ?? null,
   })
 

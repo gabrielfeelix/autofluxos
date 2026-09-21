@@ -8,8 +8,14 @@ import {
   avisosDoCompartilhamento,
   type AvisoDoCompartilhamento,
 } from '@/core/compartilhar'
+import { montarArquivoDeFluxo, nomeDoArquivoDeFluxo } from '@/core/arquivo-de-fluxo'
 import type { Fluxo } from '@/core/flow/schema'
-import { acaoCriarLinkDoFluxo, acaoListarLinksDoFluxo, acaoRevogarLinkDoFluxo } from '@/server/acoes'
+import {
+  acaoCriarLinkDoFluxo,
+  acaoListarLinksDoFluxo,
+  acaoQrDoLinkDoFluxo,
+  acaoRevogarLinkDoFluxo,
+} from '@/server/acoes'
 
 export type LinkNaLista = {
   id: string
@@ -36,10 +42,13 @@ export type LinkNaLista = {
 export function Compartilhar({
   clienteId,
   fluxoId,
+  nome,
   publicada,
 }: {
   clienteId: string
   fluxoId: string
+  /** O nome do fluxo. Só serve para batizar o arquivo do "Exportar JSON". */
+  nome: string
   /** O grafo no ar. `null` = nunca publicado, e aí não há o que compartilhar. */
   publicada: { versao: number; grafo: Fluxo } | null
 }) {
@@ -48,6 +57,8 @@ export function Compartilhar({
   const [prazo, setPrazo] = useState<string>(PRAZO_PADRAO)
   const [erro, setErro] = useState<string | null>(null)
   const [copiado, setCopiado] = useState<string | null>(null)
+  /** O QR aberto agora, se houver. Um por vez: são grandes. */
+  const [qr, setQr] = useState<{ linkId: string; svg: string; endereco: string } | null>(null)
   const [rodando, comecar] = useTransition()
 
   const avisos: AvisoDoCompartilhamento[] = publicada
@@ -103,6 +114,59 @@ export function Compartilhar({
     })
   }
 
+  /**
+   * O QR do link, para quem está com o celular na mão do lado.
+   *
+   * Vem do servidor já como SVG, e o endereço dentro dele é montado lá com o
+   * host da requisição: ver `acaoQrDoLinkDoFluxo`. A tela só desenha.
+   */
+  function mostrarQr(linkId: string) {
+    if (qr?.linkId === linkId) {
+      setQr(null)
+      return
+    }
+    setErro(null)
+    comecar(async () => {
+      try {
+        const r = await acaoQrDoLinkDoFluxo(clienteId, fluxoId, linkId)
+        if (!r.ok || !r.svg || !r.endereco) {
+          setErro(r.erro ?? 'não deu para gerar o QR')
+          return
+        }
+        setQr({ linkId, svg: r.svg, endereco: r.endereco })
+      } catch {
+        setErro('não deu para gerar o QR agora')
+      }
+    })
+  }
+
+  /**
+   * Baixa o fluxo como arquivo.
+   *
+   * Não passa pelo servidor: o desenho publicado já está nesta tela, e mandar
+   * ele de volta só para receber o mesmo JSON seria uma ida à rede para nada.
+   * `montarArquivoDeFluxo` é quem tira a credencial, e é o mesmo `core/` que a
+   * importação usa para ler.
+   */
+  function exportar() {
+    if (!publicada) return
+    const arquivo = montarArquivoDeFluxo({
+      nome,
+      grafo: publicada.grafo,
+      versaoPublicada: publicada.versao,
+    })
+    const url = URL.createObjectURL(
+      new Blob([JSON.stringify(arquivo, null, 2)], { type: 'application/json' }),
+    )
+    const ancora = document.createElement('a')
+    ancora.href = url
+    ancora.download = nomeDoArquivoDeFluxo(nome, publicada.versao)
+    ancora.click()
+    // Sem isto o blob fica preso na memória da aba até ela fechar, e quem
+    // exporta dez versões seguidas segura dez cópias do grafo.
+    URL.revokeObjectURL(url)
+  }
+
   async function copiar(token: string) {
     const endereco = `${window.location.origin}/f/${token}`
     try {
@@ -140,7 +204,10 @@ export function Compartilhar({
         onClick={(evento) => {
           if (evento.target === dialogo.current) dialogo.current?.close()
         }}
-        onClose={() => setCopiado(null)}
+        onClose={() => {
+          setCopiado(null)
+          setQr(null)
+        }}
         className="app-dialog m-auto w-[min(560px,92vw)] rounded-[18px] border border-line bg-panel text-ink shadow-[0_40px_100px_rgba(19,25,34,0.132)]"
       >
         <div className="p-[26px]">
@@ -238,6 +305,17 @@ export function Compartilhar({
                         {vivo && (
                           <button
                             type="button"
+                            onClick={() => mostrarQr(link.id)}
+                            disabled={rodando}
+                            title="Mostrar um QR para abrir este link no celular"
+                            className="app-secondary-button shrink-0 px-2.5 py-1.5 text-[11px]"
+                          >
+                            {qr?.linkId === link.id ? 'fechar QR' : 'QR'}
+                          </button>
+                        )}
+                        {vivo && (
+                          <button
+                            type="button"
                             onClick={() => revogar(link.id)}
                             disabled={rodando}
                             title="Fecha o link. A contagem do que ele já fez fica."
@@ -247,6 +325,25 @@ export function Compartilhar({
                           </button>
                         )}
                       </div>
+                      {qr?.linkId === link.id && (
+                        <div className="mt-3 flex flex-col items-center gap-2 rounded-xl border border-line bg-surface p-3">
+                          {/*
+                            O SVG vem da nossa própria ação, gerado no servidor
+                            a partir do host da requisição: não há texto de
+                            usuário dentro dele. É por isso que `dangerously…`
+                            aqui não é uma porta aberta.
+                          */}
+                          <div
+                            aria-label="QR do link"
+                            className="rounded-lg bg-white p-2 [&>svg]:block"
+                            dangerouslySetInnerHTML={{ __html: qr.svg }}
+                          />
+                          <p className="text-center font-mono text-[10px] break-all text-dim">
+                            {qr.endereco}
+                          </p>
+                        </div>
+                      )}
+
                       <p className="mt-2 text-[10.5px] text-dim">
                         {link.estado === 'revogado'
                           ? 'fechado'
@@ -264,7 +361,22 @@ export function Compartilhar({
             )}
           </div>
 
-          <div className="mt-5 flex justify-end">
+          <div className="mt-5 flex items-center justify-between gap-3">
+            {/*
+              O arquivo fica ao lado do link porque a pergunta é a mesma,
+              "como isto sai daqui?", e as respostas são diferentes: o link é
+              vivo, tem prazo e se revoga; o arquivo é morto, vai para o backup
+              e abre daqui a um ano sem depender de nada nosso estar no ar.
+            */}
+            <button
+              type="button"
+              onClick={exportar}
+              disabled={!publicada}
+              title="Baixar o desenho publicado como arquivo JSON, sem as credenciais"
+              className="app-secondary-button px-3.5 py-2 text-[12px]"
+            >
+              Exportar JSON
+            </button>
             <button
               type="button"
               onClick={() => dialogo.current?.close()}

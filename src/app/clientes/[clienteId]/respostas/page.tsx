@@ -8,6 +8,7 @@ import { rotuloDoCampo } from '@/core/contatos/rotulo-do-campo'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import { horaExata, quando } from '@/lib/quando'
 import { acharCliente } from '@/server/repos/clientes'
+import { acharFluxo } from '@/server/repos/fluxos'
 import {
   RESPOSTAS_POR_PAGINA,
   paginarRespostas,
@@ -111,6 +112,18 @@ export default async function Pagina({
   const desfecho = desfechoValido(busca.desfecho)
   const pagina = Math.max(1, Number(primeiro(busca.pagina)) || 1)
 
+  /*
+   * O nome da automação filtrada, só para a trilha.
+   *
+   * Fica aqui fora, e não dentro da `<Tabela>` (que já o descobre pela lista de
+   * automações), porque a trilha precisa aparecer **antes** do carregamento: é
+   * ela que diz de onde a pessoa veio, e uma trilha que só chega junto com a
+   * tabela não serve para voltar enquanto a tabela carrega. O custo é uma
+   * consulta por id, e só quando há filtro.
+   */
+  const automacao = fluxo ? await acharFluxo(fluxo) : null
+  const daConta = automacao?.clienteId === cliente.id ? automacao : null
+
   return (
     <ClienteShell cliente={cliente} ativa="fluxos">
       <main className="flex min-h-full flex-col px-4 md:px-[42px] pt-[26px] pb-[42px]">
@@ -127,6 +140,33 @@ export default async function Pagina({
         */}
         <div className="mb-5 flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
           <div className="min-w-0">
+            {/*
+              A trilha, e não só um botão "voltar": esta tela tem duas portas de
+              entrada (o cartão da automação e o topo do editor), e "voltar"
+              significaria coisas diferentes em cada uma. A trilha diz onde a
+              pessoa está e deixa ela subir um nível de cada vez.
+            */}
+            <nav aria-label="Trilha" className="mb-2 flex flex-wrap items-center gap-1.5 text-[11.5px] text-dim">
+              <Link
+                href={`/clientes/${cliente.id}/fluxos`}
+                className="rounded transition hover:text-primary"
+              >
+                Automações
+              </Link>
+              {daConta && (
+                <>
+                  <span aria-hidden>›</span>
+                  <Link
+                    href={`/clientes/${cliente.id}/fluxos/${daConta.id}`}
+                    className="max-w-[240px] truncate rounded transition hover:text-primary"
+                  >
+                    {daConta.nome}
+                  </Link>
+                </>
+              )}
+              <span aria-hidden>›</span>
+              <span className="text-muted">Respostas</span>
+            </nav>
             <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Respostas</h1>
             <p className="mt-1 max-w-[640px] text-[12px] text-muted">
               Uma linha por conversa, com o que a pessoa respondeu naquela passagem. A tela de

@@ -1434,6 +1434,7 @@ export function Editor({
         <Compartilhar
           clienteId={clienteId}
           fluxoId={fluxoId}
+          nome={nome}
           publicada={publicada ? { versao: publicada.versao, grafo: publicada.grafo } : null}
         />
 

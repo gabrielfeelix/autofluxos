@@ -5,8 +5,7 @@ import { ImportarFluxo, type DestinoDaImportacao } from '@/components/compartilh
 import { Vitrine } from '@/components/compartilhar/vitrine'
 import { resumirFluxo, roteiroDoFluxo, type LinhaDoRoteiro } from '@/core/compartilhar'
 import { acharPorToken, contarAbertura } from '@/server/repos/compartilhar'
-import { listarClientes } from '@/server/repos/clientes'
-import { contasDoUsuario, ehAdminDaPlataforma, sessaoAtual } from '@/server/sessao'
+import { contasDoUsuario, sessaoAtual } from '@/server/sessao'
 
 export const dynamic = 'force-dynamic'
 
@@ -227,28 +226,26 @@ function Aviso({ titulo, texto }: { titulo: string; texto: string }) {
 }
 
 /**
- * Para quais contas esta pessoa consegue importar.
+ * Para quais contas esta pessoa consegue importar: **as dela, e só elas**.
  *
- * É a mesma árvore de decisão de `conferirAcessoAoCliente`, e de propósito:
- * membro vê as contas dele; administrador da plataforma alcança a carteira
- * inteira, que é o que ele já alcança. Uma lista mais generosa do que a
- * conferência da ação seria um seletor cheio de opções que dão erro ao clicar;
- * uma mais restrita esconderia contas de quem tem direito a elas.
+ * O administrador da plataforma alcança a carteira inteira, e por um tempo esta
+ * lista refletiu isso. Numa página pública foi um erro de leitura do lugar: o
+ * link de um fluxo passou a mostrar, para quem o abrisse logado como admin, o
+ * nome de todos os clientes da 4YU , inclusive numa tela compartilhada com um
+ * deles. Um seletor de destino não vale esse preço.
  *
- * A lista **não decide nada**, quem decide é `exigirAcessoAoCliente` dentro da
- * ação, com o id que o navegador mandou.
+ * Quem for admin e precisar levar um fluxo para a conta de um cliente faz isso
+ * de dentro do painel, onde a carteira já é o assunto da tela.
+ *
+ * A lista **não decide nada**, quem decide é `exigirCapacidade` dentro da ação,
+ * com o id que o navegador mandou.
  */
 async function destinosPossiveis(): Promise<DestinoDaImportacao[]> {
   const sessao = await sessaoAtual()
   if (!sessao) return []
 
-  if (ehAdminDaPlataforma(sessao)) return todosOsClientes()
   return (await contasDoUsuario(sessao.usuario.id)).map((conta) => ({
     id: conta.id,
     nome: conta.nome,
   }))
-}
-
-async function todosOsClientes(): Promise<DestinoDaImportacao[]> {
-  return (await listarClientes()).map((cliente) => ({ id: cliente.id, nome: cliente.nome }))
 }
