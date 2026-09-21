@@ -54,7 +54,7 @@ import { Modal } from '@/components/design/modal'
 import { SeloDoCanal } from '@/components/design/selo-do-canal'
 import { AcaoDaArestaProvider, tiposDeAresta } from './arestas'
 import { DESCRICOES } from '@/core/flow/blocos'
-import { ICONES, NOMES, tiposDeNo } from './nos'
+import { CORES, ICONES, NOMES, tiposDeNo } from './nos'
 import { NomeDoFluxo } from './nome-do-fluxo'
 import { organizar } from './organizar'
 import { PuxadorDeLargura } from './puxador'
@@ -147,6 +147,42 @@ const TIPOS: TipoNo[] = [
  * seleção de outra aba, um link) chega como `text/plain` e viraria bloco.
  */
 const TIPO_ARRASTADO = 'application/autofluxos-bloco'
+
+/**
+ * O que o cursor carrega enquanto o bloco vem da barra para o desenho.
+ *
+ * O navegador, por padrão, arrasta uma foto do próprio botão do catálogo: o
+ * item da lista, com descrição e tudo. Quem estava usando o editor via um
+ * pedaço de lista voando e só descobria que aquilo era um bloco depois de
+ * soltar. O gesto precisa mostrar o resultado enquanto acontece, então o
+ * fantasma é o mesmo cartão que vai nascer: mesma largura, mesma borda por
+ * tipo, mesmo cabeçalho com ícone e nome.
+ *
+ * O elemento precisa estar no documento e pintado na hora do `setDragImage`
+ * (o navegador tira a foto ali e só ali), por isso ele entra fora da tela em
+ * vez de escondido: `display:none` ou `opacity:0` saem em branco.
+ */
+function cartaoDoArrasto(tipo: TipoNo) {
+  const fantasma = document.createElement('div')
+  fantasma.className = `pointer-events-none absolute top-[-1000px] left-0 w-[248px] overflow-hidden rounded-xl border bg-panel text-xs shadow-[0_14px_34px_rgba(19,25,34,0.077)] ${CORES[tipo]}`
+
+  const cabecalho = document.createElement('p')
+  cabecalho.className =
+    'flex h-[38px] items-center gap-2 border-b border-line px-3 text-[10px] font-bold tracking-[0.06em] text-muted uppercase'
+  const icone = document.createElement('span')
+  icone.className =
+    'flex size-6 items-center justify-center rounded-[7px] bg-surface text-[13px] text-soft'
+  icone.textContent = ICONES[tipo]
+  cabecalho.append(icone, NOMES[tipo])
+
+  const corpo = document.createElement('div')
+  corpo.className = 'px-3 py-2.5 text-[11.5px] leading-[1.4] text-dim'
+  corpo.textContent = DESCRICOES[tipo]
+
+  fantasma.append(cabecalho, corpo)
+  document.body.appendChild(fantasma)
+  return fantasma
+}
 
 /** Como cada bloco nasce ao ser arrastado da barra. */
 /**
@@ -1453,6 +1489,16 @@ export function Editor({
               onDragStart={(evento) => {
                 evento.dataTransfer.setData(TIPO_ARRASTADO, tipo)
                 evento.dataTransfer.effectAllowed = 'copy'
+
+                // O ponto de agarre repete o `centralizar` do soltar (metade da
+                // largura, 40px do topo): o cartão cai exatamente onde o
+                // fantasma estava, sem pulo no fim do gesto.
+                const fantasma = cartaoDoArrasto(tipo)
+                evento.dataTransfer.setDragImage(fantasma, LARGURA_NO / 2, 40)
+                // A foto já foi tirada; o elemento só precisava existir até
+                // aqui. Sair no mesmo quadro evita fantasma órfão se o
+                // `dragend` não vier (arrasto cancelado fora da janela).
+                requestAnimationFrame(() => fantasma.remove())
               }}
               // A dica do bloco entra no `title` quando ela sai da tela: quem
               // apertou a barra não deveria perder a explicação junto.
@@ -1624,6 +1670,16 @@ export function Editor({
           qualquer um dos dois reabre já naquela aba, então recolher nunca custa
           um clique a mais do que deveria.
         */}
+        {/*
+          O painel da direita tem 420px abertos, e não os 356px de antes.
+
+          É onde um bloco inteiro se preenche, e na largura anterior quase tudo
+          ficava apertado: "Tornar início" quebrava uma palavra em cima da
+          outra dentro do botão, rótulos de duas palavras iam para duas linhas,
+          e os dois campos lado a lado de "Guardar da resposta" ficavam
+          estreitos demais para caber o nome de um campo de API. O desenho perde
+          64px; o formulário ganha uma linha a menos em quase todo campo.
+        */}
         {!painelAberto ? (
           <aside className="flex w-[42px] shrink-0 flex-col items-center gap-2 border-l border-line bg-panel py-2.5">
             <button
@@ -1650,7 +1706,7 @@ export function Editor({
             ))}
           </aside>
         ) : (
-        <aside className="flex w-[356px] shrink-0 flex-col border-l border-line bg-panel">
+        <aside className="flex w-[420px] shrink-0 flex-col border-l border-line bg-panel">
           <div className="flex shrink-0 items-center gap-1 border-b border-line px-3 pt-2.5 text-xs">
             {(['bloco', 'testar'] as const).map((chave) => (
               <button
