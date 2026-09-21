@@ -14,10 +14,11 @@ import { contasDoUsuario, ehAdminDaPlataforma, exigirAcessoAoCliente } from '@/s
 import { BarraLateral } from './barra-lateral'
 import { type AbaDoCliente, secoesVisiveis } from './secoes-do-cliente'
 import { LogoDoCliente } from './logo-cliente'
+import { MarcaDeAdmin } from './marca-de-admin'
 import { Marca } from './marca'
 
 /**
- * A moldura das telas do cliente — **sidebar à esquerda, não abas no topo.**
+ * A moldura das telas do cliente: **sidebar à esquerda, não abas no topo.**
  *
  * A troca foi pedida pelo dono, e o motivo aparece quando a lista cresce: cinco
  * abas já não cabiam em 390px e rolavam na horizontal; onze (a contagem do
@@ -25,21 +26,21 @@ import { Marca } from './marca'
  * cresce para baixo, que é a direção em que sobra espaço.
  *
  * **Os itens são os que têm tela.** O desenho da §2.1 do PLANO-SISTEMA lista
- * sete, e um deles — Campanhas — é Etapa B. A regra escrita no próprio plano,
+ * sete, e um deles (Campanhas) é Etapa B. A regra escrita no próprio plano,
  * a propósito de Quadros, vale para ele: *item de menu para tela que não existe
  * é promessa que a interface faz e o produto não cumpre*. Ele entra junto com a
  * frente que o constrói.
  *
  * **Integrações saiu dessa lista e não volta.** Aquele desenho a previa como
  * sétimo item, e a decisão foi outra: ela é seção de Configurações. O primeiro
- * nível é trabalho diário — Inbox, Contatos, Quadros, Automações —, e ligar um
+ * nível é trabalho diário (Inbox, Contatos, Quadros, Automações), e ligar um
  * canal é trabalho de uma vez só. Item permanente para tarefa episódica gasta a
  * única coisa escassa aqui, que é a posição fixa na tela de quem usa o produto
  * o dia inteiro. É também o que Intercom, HubSpot e Chatwoot fazem com o mesmo
  * punhado de conexões. O raciocínio está em `docs/PLANO-CONFIGURACOES.md` §1.1.
  *
  * **Continua sendo componente e não `layout.tsx`.** Como layout ele envolveria
- * também o editor de fluxo, que é tela cheia por natureza — e layout no Next
+ * também o editor de fluxo, que é tela cheia por natureza, e layout no Next
  * não se desliga num filho. O custo é passar `ativa` na mão, e é esse mesmo
  * custo que permite `ajustes/contexto`, `ajustes/whatsapp` e `ajustes/chaves`
  * acenderem "Configurações".
@@ -60,7 +61,7 @@ export async function ClienteShell({
    * **A conferência de quem pode ver esta conta acontece aqui.**
    *
    * É o único ponto por onde todas as telas do cliente passam, o que a torna
-   * difícil de esquecer numa tela nova — e é por isso que ela mora na moldura,
+   * difícil de esquecer numa tela nova, e é por isso que ela mora na moldura,
    * e não copiada em cada `page.tsx`. O editor de fluxo, que não usa moldura,
    * chama a mesma função por conta própria.
    */
@@ -80,6 +81,12 @@ export async function ClienteShell({
 
   return (
     <div className="flex min-h-screen flex-col md:h-screen md:min-h-[700px] md:flex-row md:overflow-hidden">
+      {/*
+        Grava no navegador quem é administrador, para o esqueleto da próxima
+        tela reservar o espaço do "‹ Todos os clientes" em vez de deixar a
+        barra saltar. Ver `MarcaDeAdmin`.
+      */}
+      <MarcaDeAdmin admin={podeVerTodosOsClientes} />
       <BarraLateral
         marca={<Marca />}
         identidadeNoCelular={
@@ -118,7 +125,7 @@ export async function ClienteShell({
               Era o buraco do §3.10.1: o handoff acontecia e ninguém percebia, a
               não ser que a pessoa estivesse com o Inbox aberto. Quem está
               desenhando um fluxo ou conferindo contatos está no painel do mesmo
-              jeito — e é justamente quem dá para avisar de graça.
+              jeito, e é justamente quem dá para avisar de graça.
             */}
             <NotificacoesDaFila clienteId={cliente.id} compacto />
 
@@ -144,7 +151,7 @@ export async function ClienteShell({
           ela fazia com as abas.
           
           Antes ela punha o nome do cliente como `h1` em toda tela, e metade das
-          telas já trazia o próprio — "Credenciais", "Contexto do negócio",
+          telas já trazia o próprio: "Credenciais", "Contexto do negócio",
           "Acervo". Dois `h1` por página é ruído para quem navega por leitor de
           tela, e o título específico é sempre melhor que o genérico da seção.
           Quem diz onde você está é o item aceso na barra; quem dá nome à página
@@ -157,7 +164,7 @@ export async function ClienteShell({
 }
 
 /**
- * A conta atual no rodapé da barra — e o caminho para as outras.
+ * A conta atual no rodapé da barra, e o caminho para as outras.
  *
  * Vira link para o seletor só quando a pessoa tem mais de uma companhia. Um
  * botão que abre uma lista de um item é atrito puro, e um usuário de conta
