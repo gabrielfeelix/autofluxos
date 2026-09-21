@@ -6,19 +6,19 @@ import { AjudaDoCampo } from '@/components/design/ajuda-do-campo'
 import { Popover } from './popover'
 
 /**
- * O campo que nomeia uma variável — com a lista das que o fluxo já tem.
+ * O campo que nomeia uma variável, com a lista das que o fluxo já tem.
  *
  * Nasceu de um defeito relatado por quem monta fluxo: "Guardar resposta em" era
  * uma caixa de texto vazia, sem nenhum sinal de que a variável do bloco de cima
  * existia. O resultado previsível é o fluxo com `agendar_aula` e
- * `agendar_aula2` — duas variáveis onde a intenção era **uma**, e nada na tela
+ * `agendar_aula2`, duas variáveis onde a intenção era **uma**, e nada na tela
  * dizendo que a segunda nasceu por engano. Digitar de novo não é o mesmo gesto
  * que reaproveitar, e só a tela pode saber a diferença.
  *
  * Então o campo faz duas coisas que a caixa livre não fazia:
  *
- * - **oferece as que existem** num seletor igual ao `{x}` das mensagens — mesmo
- *   ícone, mesma busca —, e escolher **substitui o campo inteiro**, porque aqui
+ * - **oferece as que existem** num seletor igual ao `{x}` das mensagens, mesmo
+ *   ícone, mesma busca , e escolher **substitui o campo inteiro**, porque aqui
  *   o valor é o nome cru (`prazo`), não a citação (`{{prazo}}`);
  * - **diz em uma linha o que vai acontecer**: se aquele nome é novo, se ele
  *   cai em cima do que outro bloco já guarda, ou se está fora do formato que a
@@ -58,7 +58,7 @@ export function classificarNomeDeVariavel({
       ? { tom: 'reuso', texto: 'vem de um bloco que já guarda esse nome.' }
       : {
           tom: 'aviso',
-          texto: 'nenhum bloco deste fluxo guarda essa variável — ela vai chegar vazia aqui.',
+          texto: 'nenhum bloco deste fluxo guarda essa variável, ela vai chegar vazia aqui.',
         }
   }
 
@@ -94,12 +94,12 @@ export function CampoDeVariavel({
    */
   dica?: string
   /**
-   * O que este campo significa, com exemplo — o corpo do modal do “?”.
+   * O que este campo significa, com exemplo, o corpo do modal do “?”.
    *
    * A legenda que sobrou embaixo do campo fala do **nome** (é novo? é o de
    * outro bloco?), e ela fica porque muda conforme o que se digita. Esta fala
    * do **conteúdo** e não muda nunca: era o lugar certo para sair da tela. Foi
-   * o que faltava na pergunta com botões — sem dizer que a variável guarda o
+   * o que faltava na pergunta com botões, sem dizer que a variável guarda o
    * rótulo clicado, quem monta o fluxo conclui que precisa de uma variável por
    * opção, e desenha três onde uma responde.
    */
@@ -205,7 +205,7 @@ export function CampoDeVariavel({
         A única linha que sobra embaixo do campo, e ela sobra porque **muda
         conforme o que se digita**: nome fora do formato, nome que outro bloco
         já guarda, variável que ninguém preenche. Isso não é ajuda, é o campo
-        respondendo — e resposta atrás de um “?” é resposta que ninguém vê.
+        respondendo, e resposta atrás de um “?” é resposta que ninguém vê.
       */}
       {legenda && (
         <span

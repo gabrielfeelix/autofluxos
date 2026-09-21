@@ -11,7 +11,7 @@ import { SeletorDeVariavel } from './escolher-variavel'
  * `{{nome}}` digitado no meio de uma frase é indistinguível de texto comum, e a
  * consequência aparece tarde: a pessoa escreve `{{nomee}}`, publica, e descobre
  * na conversa de um cliente que ali sai vazio. O realce é o aviso no lugar certo
- * — na hora de escrever.
+ * na hora de escrever.
  *
  * **E ele distingue conhecida de desconhecida**, que é o que transforma enfeite
  * em informação. Variável que nenhum bloco preenche fica âmbar, com o mesmo
@@ -24,7 +24,7 @@ import { SeletorDeVariavel } from './escolher-variavel'
  * Não dá para estilizar pedaço de conteúdo dentro de um `<textarea>`. A saída é
  * uma `<div>` atrás desenhando o texto fatiado, e o campo por cima com o texto
  * transparente e só o cursor visível. O `<textarea>` continua sendo um
- * `<textarea>` de verdade — `contenteditable` daria o mesmo efeito e quebraria
+ * `<textarea>` de verdade, `contenteditable` daria o mesmo efeito e quebraria
  * colar, desfazer, seleção nativa e a inserção de variável na posição do cursor.
  *
  * **As medidas vêm de `style` inline, e não de classe.** A primeira versão usava
@@ -32,7 +32,7 @@ import { SeletorDeVariavel } from './escolher-variavel'
  * alguns pixels: `.app-field` define `color: var(--ink)` e ganhava do
  * `text-transparent` do Tailwind por ordem de origem, então as duas camadas
  * pintavam texto. Estilo inline é a única forma de garantir que **a mesma
- * medida** vale para as duas — e aqui divergir um pixel significa o cursor numa
+ * medida** vale para as duas, e aqui divergir um pixel significa o cursor numa
  * coluna e a cor em outra.
  *
  * O resto que a técnica exige, e cada item já quebrou em alguma implementação:
@@ -67,7 +67,7 @@ const MEDIDAS: CSSProperties = {
    * O vão da barra de rolagem, reservado sempre e nas duas camadas.
    *
    * Sem isto, o texto que passa da altura faz o `<textarea>` mostrar barra e
-   * perder ~15px de largura útil — o espelho, que não tem barra, continua com a
+   * perder ~15px de largura útil, o espelho, que não tem barra, continua com a
    * largura cheia e quebra as linhas em pontos diferentes. É o mesmo defeito de
    * desalinhamento, só que aparecendo de repente na quarta linha.
    */
@@ -99,18 +99,18 @@ const CAMPO: CSSProperties = {
 }
 
 /**
- * O realce de uma variável — **sem mexer em uma medida sequer**.
+ * O realce de uma variável, **sem mexer em uma medida sequer**.
  *
  * Era aqui o defeito que fazia o campo parecer duplicado: o realce tinha
  * `padding: 1px 3px` e `font-weight: 600`. Os dois mudam a largura do texto no
- * espelho, e o `<textarea>` por cima não sabe disso — ele desenha `{{nome}}`
+ * espelho, e o `<textarea>` por cima não sabe disso, ele desenha `{{nome}}`
  * com a largura normal. A partir da primeira variável as duas camadas passavam
  * a discordar de alguns pixels por variável, e o efeito na tela é exatamente o
  * que se vê: texto fantasma deslocado, e o cursor caindo numa coluna diferente
  * da letra que está sendo digitada.
  *
  * A regra desta técnica, que não abre exceção: **o espelho só pode mudar cor.**
- * Nada de padding, borda, negrito, `letter-spacing`, fonte ou transformação —
+ * Nada de padding, borda, negrito, `letter-spacing`, fonte ou transformação ,
  * qualquer coisa que mova um glifo um pixel quebra a ilusão.
  *
  * O ar em volta do realce continua existindo, feito por `box-shadow`: sombra
@@ -132,15 +132,15 @@ const REALCE_DESCONHECIDA: CSSProperties = {
 }
 
 /**
- * A chave de uma só, vermelha — o erro que sai literal na frente do cliente.
+ * A chave de uma só, vermelha, o erro que sai literal na frente do cliente.
  *
  * Vermelho e não âmbar de propósito: âmbar aqui já quer dizer "variável que
  * nenhum bloco preenche", que ao menos sai vazia. `{nome}` não é variável
  * nenhuma; o texto viaja como está. São dois problemas diferentes e a cor não
  * pode dizer que são o mesmo.
  *
- * Vale a regra do espelho, sem exceção: **só cor.** Nada de padding nem negrito
- * — qualquer coisa que mova um glifo desalinha o cursor do campo por cima.
+ * Vale a regra do espelho, sem exceção: **só cor.** Nada de padding nem negrito.
+ * Qualquer coisa que mova um glifo desalinha o cursor do campo por cima.
  */
 const REALCE_CHAVE_SIMPLES: CSSProperties = {
   borderRadius: 4,
@@ -181,13 +181,13 @@ function Pedacos({ valor, conhecidas }: { valor: string; conhecidas?: string[] }
  *
  * O espelho fica atrás do campo e tem `pointer-events: none`, então passar o
  * mouse por cima dele nunca acontece: quem recebe o ponteiro é o `<textarea>`.
- * Para a dica aparecer em cima do pedaço errado — e não numa frase solta embaixo
- * do campo — é preciso uma terceira camada **por cima**, invisível, onde só os
+ * Para a dica aparecer em cima do pedaço errado, e não numa frase solta embaixo
+ * do campo, é preciso uma terceira camada **por cima**, invisível, onde só os
  * pedaços de chave simples recebem ponteiro.
  *
  * Ela é invisível porque o texto é transparente: existe apenas para ocupar
  * exatamente as mesmas posições, com as mesmas medidas do espelho. Só nasce
- * quando há chave simples no texto — sem erro, nada é sobreposto ao campo.
+ * quando há chave simples no texto, sem erro, nada é sobreposto ao campo.
  *
  * Clicar na tag continua funcionando: o `mousedown` é devolvido ao campo, com o
  * cursor logo depois do pedaço clicado, que é onde se conserta a chave que
@@ -207,7 +207,7 @@ function DicasDeChaveSimples({
   const pedacos = fatiarVariaveis(valor)
   if (!pedacos.some((p) => p.tipo === 'chave-simples')) return null
 
-  // Onde cada pedaço começa no texto — calculado antes de desenhar, porque é o
+  // Onde cada pedaço começa no texto, calculado antes de desenhar, porque é o
   // que diz para onde mandar o cursor quando alguém clica na tag.
   const inicios: number[] = []
   pedacos.reduce((cursor, pedaco) => {
@@ -263,7 +263,7 @@ export function TextoComVariaveis({
   /** O mesmo `ref` que a barra de formatação usa para saber onde está o cursor. */
   area?: RefObject<HTMLTextAreaElement | null>
   rows?: number
-  /** Pinta a borda de recusa — texto acima do limite da Meta, por exemplo. */
+  /** Pinta a borda de recusa, texto acima do limite da Meta, por exemplo. */
   erro?: boolean
   /** Quando vem, variável fora da lista é marcada como desconhecida. */
   conhecidas?: string[]
@@ -287,8 +287,8 @@ export function TextoComVariaveis({
         rows={rows}
         onChange={(e) => aoMudar(e.target.value)}
         onScroll={(e) => {
-          // As três camadas rolam juntas, senão a cor — e a área que responde ao
-          // mouse — descola do texto a partir da quinta linha.
+          // As três camadas rolam juntas, senão a cor, e a área que responde ao
+          // mouse, descola do texto a partir da quinta linha.
           if (fundo.current) fundo.current.scrollTop = e.currentTarget.scrollTop
           if (dicas.current) dicas.current.scrollTop = e.currentTarget.scrollTop
         }}
@@ -305,7 +305,7 @@ export function TextoComVariaveis({
 }
 
 /**
- * A mesma coisa numa linha só — para os campos curtos que interpolam.
+ * A mesma coisa numa linha só, para os campos curtos que interpolam.
  *
  * O botão de variável mora **dentro** do campo, encostado na direita. Campo de
  * uma linha não tem barra de formatação para hospedá-lo (asterisco não vira
@@ -347,7 +347,7 @@ export function LinhaComVariaveis({
         style={{ ...FUNDO, ...espaco, ...fonte, whiteSpace: 'pre' }}
       >
         {/* O texto do campo é transparente, então o `placeholder` nativo também
-            seria — quem o desenha é o espelho, como desenha todo o resto. */}
+            seria, quem o desenha é o espelho, como desenha todo o resto. */}
         {valor === '' && placeholder ? (
           <span style={{ color: 'var(--dim, #6b7686)' }}>{placeholder}</span>
         ) : (
@@ -418,7 +418,7 @@ export function LegendaDeVariaveis({
 
   /*
    * Uma chave só vem antes de tudo: é engano de digitação, não de desenho, e
-   * some da conversa sem deixar rastro — `interpolar()` não reconhece, então
+   * some da conversa sem deixar rastro, `interpolar()` não reconhece, então
    * nem sai vazio, sai escrito.
    */
   const simples = chavesSimplesCitadas(valor)
@@ -428,7 +428,7 @@ export function LegendaDeVariaveis({
     return (
       <span className="mt-1 block text-[10.5px] leading-4 text-perigo">
         {simples.map((nome) => `{${nome}}`).join(', ')}{' '}
-        {simples.length === 1 ? 'tem uma chave só' : 'têm uma chave só'} — o certo é{' '}
+        {simples.length === 1 ? 'tem uma chave só' : 'têm uma chave só'}, o certo é{' '}
         {simples.map((nome) => `{{${nome}}}`).join(', ')}. Com uma, sai assim mesmo na conversa.
       </span>
     )
@@ -439,7 +439,7 @@ export function LegendaDeVariaveis({
       <span className="mt-1 block text-[10.5px] leading-4 text-aviso">
         {desconhecidas.map((nome) => `{{${nome}}}`).join(', ')}{' '}
         {desconhecidas.length === 1 ? 'não é preenchida' : 'não são preenchidas'} por nenhum bloco
-        antes daqui — vai sair vazio na conversa.
+        antes daqui, vai sair vazio na conversa.
       </span>
     )
   }

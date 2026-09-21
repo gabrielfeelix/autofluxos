@@ -32,8 +32,8 @@ function prazoEmPalavras(prazo: string | null, agora: number): { texto: string; 
  * O que está marcado para acontecer, na visão geral.
  *
  * As tarefas viviam só dentro da aba "Atividades" e as mensagens agendadas num
- * cartão perdido no fim da coluna. As duas respondem a mesma pergunta — o que
- * já está combinado com esta pessoa — e nenhuma delas aparecia sem alguém ir
+ * cartão perdido no fim da coluna. As duas respondem a mesma pergunta, o que
+ * já está combinado com esta pessoa, e nenhuma delas aparecia sem alguém ir
  * procurar. Aqui é um resumo com link para o lugar completo, não uma segunda
  * cópia da lista: só o que vence antes.
  */

@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Dica } from './dica'
 import { Modal } from './modal'
 
 /**
- * O "?" ao lado do título de um campo — e o único lugar onde a explicação mora.
+ * O "?" ao lado do título de um campo, e o único lugar onde a explicação mora.
  *
  * **A explicação sai de baixo do campo e entra aqui.** Antes, quase todo campo
  * do editor trazia um parágrafo cinza embaixo: o painel ficava duas vezes mais
@@ -16,7 +16,7 @@ import { Modal } from './modal'
  *
  * São três camadas, e a ordem importa:
  *
- * - **hover** (e foco pelo teclado) mostra `texto`, uma frase curta — o
+ * - **hover** (e foco pelo teclado) mostra `texto`, uma frase curta, o
  *   suficiente para quem só precisa de um empurrão e não quer parar;
  * - **clique** abre o modal com `detalhes`, a explicação inteira, com exemplo;
  * - **no rodapé do modal**, e só lá, o link para `/ajuda#secao`.
@@ -24,7 +24,7 @@ import { Modal } from './modal'
  * O `?` **nunca é link**. Antes ele era um `<a target="_blank">` para a página
  * de Ajuda: sair do desenho no meio de montar um bloco é o oposto de ajudar, e
  * quem clicava perdia o lugar onde estava. Ir para a Ajuda continua sendo
- * possível — mas como escolha de quem já abriu o modal e quis mais, nunca como
+ * possível, mas como escolha de quem já abriu o modal e quis mais, nunca como
  * efeito colateral de um clique de curiosidade.
  *
  * Sem `detalhes`, o modal mostra o próprio `texto`: o clique nunca é um gesto
@@ -47,17 +47,11 @@ export function AjudaDoCampo({
   titulo?: string
   /**
    * `direita` alinha o balão pela borda direita do "?", e é o que serve quando
-   * o título está encostado na lateral do painel — centrado, ele vazaria.
+   * o título está encostado na lateral do painel, centrado, ele vazaria.
    */
   alinhar?: 'centro' | 'direita'
 }) {
   const [aberto, setAberto] = useState(false)
-  // O modal sai por um portal para o `body`, e não é preciosismo: estes "?"
-  // ficam dentro de `<label>`, e um clique em qualquer lugar de um `<dialog>`
-  // que fosse filho do `<label>` devolveria o foco para o campo — fechando o
-  // dropdown, movendo o cursor, roubando o clique que ia para o link.
-  const [montado, setMontado] = useState(false)
-  useEffect(() => setMontado(true), [])
 
   return (
     <>
@@ -77,7 +71,18 @@ export function AjudaDoCampo({
         </button>
       </Dica>
 
-      {montado &&
+      {/*
+        O modal sai por um portal para o `body`, e não é preciosismo: estes "?"
+        ficam dentro de `<label>`, e um clique em qualquer lugar de um
+        `<dialog>` que fosse filho do `<label>` devolveria o foco para o campo,
+        fechando o dropdown, movendo o cursor, roubando o clique que ia para o
+        link do rodapé.
+
+        Ele só existe enquanto está aberto, e isso resolve o servidor de
+        quebra: `document` não existe lá, e `aberto` só vira verdadeiro a
+        partir de um clique, que é coisa de navegador.
+      */}
+      {aberto &&
         createPortal(
           <Modal
             aberto={aberto}

@@ -96,7 +96,7 @@ export function NomeDoContato({
         Trocando no lugar, **o nome sumia justamente enquanto era editado**: a
         tela perdia a única referência do que se está corrigindo, e o campo
         aparecia colado no telefone, sem título nem fronteira. O modal mostra a
-        pessoa inteira enquanto se digita — avatar, nome atual, e o do perfil do
+        pessoa inteira enquanto se digita, avatar, nome atual, e o do perfil do
         WhatsApp embaixo, que é a informação que explica por que corrigir.
       */}
       <dialog
@@ -172,7 +172,7 @@ export function NomeDoContato({
  *
  * Fechada por padrão pelo mesmo motivo da ficha do cliente: a tela é visitada
  * muitas vezes para olhar e uma vez para escrever. Quando já existe anotação,
- * ela aparece — nota escondida é nota que ninguém lê.
+ * ela aparece, nota escondida é nota que ninguém lê.
  */
 export function NotasDoContato({
   notas,
@@ -230,7 +230,7 @@ export function NotasDoContato({
               return r
             }}
             rotulo="Salvar anotação"
-            dica="Fica só aqui — não vai para o WhatsApp nem para nenhuma automação."
+            dica="Fica só aqui, não vai para o WhatsApp nem para nenhuma automação."
           >
             <textarea
               name="notas"

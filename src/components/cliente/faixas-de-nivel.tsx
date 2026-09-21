@@ -12,8 +12,8 @@ import { acaoDefinirFaixas } from '@/server/acoes-crm'
  * **Por que isto é ajuste e não constante do produto.** Um estúdio de pilates e
  * uma consultoria não têm o mesmo "cliente grande", e um número fixo erraria
  * para os dois. É também o que substitui o quintil: em vez de o sistema decidir
- * pelo formato da base — onde o topo de trinta pessoas vira "ouro" gastando
- * trezentos reais —, quem decide é quem conhece o próprio negócio.
+ * pelo formato da base, onde o topo de trinta pessoas vira "ouro" gastando
+ * trezentos reais , quem decide é quem conhece o próprio negócio.
  *
  * Só dois números, e não uma tabela de cinco faixas: ouro, prata e bronze é o
  * vocabulário que o dono já usa, e cada faixa a mais é uma decisão que ele
@@ -43,7 +43,7 @@ export function FaixasDeNivelDaConta({
           detalhes={
             <p>
               O nível sai do <strong>total que a pessoa já comprou</strong>, somado. Vale para a
-              coluna “Cliente” na lista de contatos e para as réguas que falam só com um nível —
+              coluna “Cliente” na lista de contatos e para as réguas que falam só com um nível ,
               uma mensagem de agradecimento que só faz sentido para quem já gastou bastante, por
               exemplo.
             </p>

@@ -61,7 +61,7 @@ import {
  * vista logo na abertura.
  *
  * Ficam aqui, atrás do mesmo “?” de todo o resto, e com isso o painel abre
- * mostrando campos — que é o que alguém veio fazer quando clicou num bloco.
+ * mostrando campos, que é o que alguém veio fazer quando clicou num bloco.
  */
 const AJUDA_DO_BLOCO: Partial<
   Record<No['type'], { texto: string; detalhes: ReactNode; secao: string }>
@@ -80,7 +80,7 @@ const AJUDA_DO_BLOCO: Partial<
           <strong>7 e 8 neutro</strong>, <strong>0 a 6 detrator</strong>. Cada faixa tem a sua
           saída. É o 7 que costuma surpreender: “quase dez” parece bom e conta como neutro.
         </p>
-        <p>A nota é guardada com a data, sempre — a de hoje não apaga a do mês passado.</p>
+        <p>A nota é guardada com a data, sempre, a de hoje não apaga a do mês passado.</p>
       </>
     ),
   },
@@ -170,7 +170,7 @@ const AJUDA_DO_BLOCO: Partial<
     ),
   },
   etiqueta: {
-    texto: 'Põe uma etiqueta no contato — o mesmo gesto de etiquetar à mão no Inbox.',
+    texto: 'Põe uma etiqueta no contato, o mesmo gesto de etiquetar à mão no Inbox.',
     secao: 'blocos',
     detalhes: (
       <>
@@ -491,7 +491,7 @@ export function Painel({
                 <p>
                   O documento chega ao WhatsApp com um nome escrito embaixo do ícone, e é ele que a
                   pessoa lê antes de decidir se baixa. Sem preencher, o WhatsApp usa o último
-                  pedaço do endereço do arquivo — normalmente algo como <code>a3f91c2e.pdf</code>,
+                  pedaço do endereço do arquivo, normalmente algo como <code>a3f91c2e.pdf</code>,
                   que não diz nada a ninguém.
                 </p>
               }
@@ -551,7 +551,7 @@ export function Painel({
               <>
                 <p>
                   É a fala do bot. Sem opções, a pessoa responde escrevendo; com opções, o WhatsApp
-                  desenha botões ou uma lista, e aí a mensagem vira <strong>interativa</strong> — o
+                  desenha botões ou uma lista, e aí a mensagem vira <strong>interativa</strong>, o
                   teto de caracteres cai para um quarto, porque é o que a Meta aceita nesse
                   formato.
                 </p>
@@ -738,7 +738,7 @@ export function Painel({
                         variaveis={deOutrosBlocos}
                         modo="guarda"
                         secao="perguntas"
-                        dica={`Ex.: ${no.data.formato}_padrao — guarda ${EXEMPLO_PADRONIZADO[no.data.formato]}.`}
+                        dica={`Ex.: ${no.data.formato}_padrao, guarda ${EXEMPLO_PADRONIZADO[no.data.formato]}.`}
                         aoMudar={(v) =>
                           aoMudarDados({ salvarPadraoEm: v.trim() === '' ? undefined : v.trim() })
                         }
@@ -877,7 +877,7 @@ export function Painel({
                     <p>
                       Com um prazo, a conversa sai pela saída <strong>“não respondeu”</strong>. Sem
                       nada ligado nela, ela vai para uma pessoa: quem parou no meio da triagem é o
-                      lead que mais vale resgatar. Sem prazo, a conversa espera para sempre — é
+                      lead que mais vale resgatar. Sem prazo, a conversa espera para sempre, é
                       como o produto sempre funcionou.
                     </p>
                     <p>
@@ -887,7 +887,7 @@ export function Painel({
                     <p>
                       A lista é fechada porque prazo é decisão de conversa, não de número: quem
                       digita “7” numa caixa não sabe se são minutos ou horas. O teto de 24h é a
-                      janela do WhatsApp — passado dela não há como mandar texto livre.
+                      janela do WhatsApp, passado dela não há como mandar texto livre.
                     </p>
                   </>
                 }
@@ -963,7 +963,7 @@ export function Painel({
                     <p>
                       Leia a linha inteira em voz alta para conferir:{' '}
                       <code>orcamento é maior que 500</code>. <strong>Vazio</strong> e{' '}
-                      <strong>preenchido</strong> não pedem valor nenhum — servem para perguntar se
+                      <strong>preenchido</strong> não pedem valor nenhum, servem para perguntar se
                       o fluxo já guardou aquilo.
                     </p>
                   </>
@@ -991,7 +991,7 @@ export function Painel({
                   <p>
                     Quando a variável vem de uma pergunta com botões, os valores possíveis aparecem
                     clicáveis logo abaixo deste campo. Use-os: digitar “Agendar aula” de memória
-                    cria um erro que <strong>não estoura em lugar nenhum</strong> — a comparação
+                    cria um erro que <strong>não estoura em lugar nenhum</strong>, a comparação
                     falha calada, todo mundo desce pelo ramo errado, e o desenho continua parecendo
                     certo.
                   </p>
@@ -1028,7 +1028,7 @@ export function Painel({
             dica="O que guardar: um texto que você escreve, ou outra informação da conversa."
             detalhes={
               <p>
-                Guarda um valor na conversa sem perguntar nada a ninguém — é o jeito de marcar por
+                Guarda um valor na conversa sem perguntar nada a ninguém, é o jeito de marcar por
                 onde o fluxo passou. Aceita <code>{'{{variavel}}'}</code>, então também serve para
                 copiar o que já foi guardado sob outro nome.
               </p>
@@ -1191,7 +1191,7 @@ export function Painel({
                 <p>
                   Ele separa sozinho, na régua do NPS: <strong>9 e 10 promotor</strong>,{' '}
                   <strong>7 e 8 neutro</strong>, <strong>0 a 6 detrator</strong>. Cada faixa tem a
-                  sua saída, e é o 7 que costuma surpreender — “quase dez” parece bom e conta como
+                  sua saída, e é o 7 que costuma surpreender, “quase dez” parece bom e conta como
                   neutro.
                 </p>
                 <p>A nota é guardada com a data, sempre: a de hoje não apaga a do mês passado.</p>
@@ -1232,7 +1232,7 @@ export function Painel({
             formatavel
             exemplo="O que faltou para ser uma boa experiência?"
             secao="blocos"
-            dica="Vazio, a pesquisa acaba na nota — e é a que mais gente responde até o fim."
+            dica="Vazio, a pesquisa acaba na nota, e é a que mais gente responde até o fim."
             detalhes={
               <>
                 <p>
@@ -1273,7 +1273,7 @@ export function Painel({
                   <p>
                     Pesquisa sem resposta <strong>encerra</strong>, e não chama ninguém: quem
                     ignorou uma pesquisa não vira fila de atendimento. É o desfecho oposto ao da
-                    Pergunta, de propósito — pôr na fila quem só ignorou uma pesquisa enche de
+                    Pergunta, de propósito, pôr na fila quem só ignorou uma pesquisa enche de
                     dívida falsa a tela onde o time vê o que deve.
                   </p>
                 }
@@ -1385,7 +1385,7 @@ export function Painel({
                     dizer o nome não quer dizer o nome de novo.
                   </p>
                   <p>
-                    A lista mostra o texto que está escrito no desenho, e não o tipo nem o id —
+                    A lista mostra o texto que está escrito no desenho, e não o tipo nem o id ,
                     você está procurando “Podemos ajudar em algo mais?”, que é o que se lê na tela.
                   </p>
                 </>
@@ -1550,7 +1550,7 @@ export function Painel({
             detalhes={
               <p>
                 É o que a equipe lê ao receber a conversa, para saber do que se trata antes de
-                abrir. <strong>Não vai para o WhatsApp</strong> — escreva para quem atende, não
+                abrir. <strong>Não vai para o WhatsApp</strong>, escreva para quem atende, não
                 para quem está do outro lado.
               </p>
             }
@@ -1580,7 +1580,7 @@ export function Painel({
                     <p>
                       Avisar a equipe toda é o padrão, e continua sendo o certo na maioria dos
                       handoffs: quem estiver disponível pega. Escolher uma pessoa é para quando o
-                      bloco já sabe de quem é o assunto — “cancelamento é com o dono”, “orçamento
+                      bloco já sabe de quem é o assunto, “cancelamento é com o dono”, “orçamento
                       acima de X é com a Marina”.
                     </p>
                   }
@@ -1631,9 +1631,9 @@ export function Painel({
           />
 
           {/*
-            A pergunta que travou quem montou o primeiro fluxo de agendamento
-            — *"ele consegue ser o primeiro bloco? ele já reconhece com quem
-            estou falando pelo número?"* — é respondida no “?” ao lado do nome
+            A pergunta que travou quem montou o primeiro fluxo de agendamento,
+            *"ele consegue ser o primeiro bloco? ele já reconhece com quem
+            estou falando pelo número?"*, é respondida no “?” ao lado do nome
             do bloco. Ver `AJUDA_DO_BLOCO`.
           */}
           <label className="block">
@@ -1647,11 +1647,11 @@ export function Painel({
                   <>
                     <p>
                       <strong>GET</strong> é consultar: pergunta alguma coisa ao sistema e traz a
-                      resposta para a conversa — os horários livres, o cadastro de quem está
+                      resposta para a conversa, os horários livres, o cadastro de quem está
                       falando.
                     </p>
                     <p>
-                      <strong>POST</strong> é mandar: entrega ao sistema o que a conversa coletou —
+                      <strong>POST</strong> é mandar: entrega ao sistema o que a conversa coletou ,
                       um pedido, um agendamento, um cadastro. Quem fez o sistema diz qual dos dois
                       aquele endereço espera.
                     </p>
@@ -1684,7 +1684,7 @@ export function Painel({
             detalhes={
               <>
                 <p>
-                  É o endereço que quem fez o sistema passou, e ele vem de lá pronto — não há como
+                  É o endereço que quem fez o sistema passou, e ele vem de lá pronto, não há como
                   descobri-lo pela tela. Começa com <code>https://</code>.
                 </p>
                 <p>
@@ -1748,7 +1748,7 @@ export function Painel({
                     </p>
                     <p>
                       O valor fica no cofre, e o fluxo guarda só a referência. Por isso trocar a
-                      chave depois <strong>não exige republicar</strong> — e por isso a chave nunca
+                      chave depois <strong>não exige republicar</strong>, e por isso a chave nunca
                       deve ser digitada num cabeçalho, onde ela ficaria gravada na versão
                       publicada.
                     </p>
@@ -1822,7 +1822,7 @@ export function Painel({
                     </p>
                     <p>
                       <strong>Continua a conversa mesmo assim</strong> serve quando a chamada é um
-                      extra — registrar o lead num CRM, por exemplo. O que o bloco guardaria fica
+                      extra, registrar o lead num CRM, por exemplo. O que o bloco guardaria fica
                       vazio, e os blocos seguintes precisam aguentar isso.
                     </p>
                   </>
@@ -2046,7 +2046,7 @@ function Linha({
       {/*
         Só o aviso fica embaixo: `{{preco}}` que nenhum bloco preenche, ou a
         chave simples que sai escrita na conversa. A explicação do campo subiu
-        para o “?” — o aviso não pode subir junto, porque ele fala do que está
+        para o “?”, o aviso não pode subir junto, porque ele fala do que está
         digitado agora.
       */}
       {aceitaVariavel && <LegendaDeVariaveis valor={valor} conhecidas={conhecidas} semPadrao />}
@@ -2199,7 +2199,7 @@ function Opcoes({
                 <p>
                   Até {LIMITE_BOTOES} opções o WhatsApp mostra como botões; acima disso vira lista
                   suspensa, e o teto dele é {LIMITE_LISTA}. Fluxo bom cabe em {LIMITE_BOTOES}{' '}
-                  botões — a lista suspensa esconde as opções atrás de um toque a mais.
+                  botões, a lista suspensa esconde as opções atrás de um toque a mais.
                 </p>
                 <p>
                   Sem opção nenhuma, a pessoa responde escrevendo. O contador não corta o que você
@@ -2511,8 +2511,8 @@ function Mapeamentos({
           detalhes={
             <>
               <p>
-                O sistema respondeu vários campos. Escolha quais a conversa guarda, e com que nome
-                — é assim que <code>{'{{cidade}}'}</code> passa a existir nas mensagens seguintes.
+                O sistema respondeu vários campos. Escolha quais a conversa guarda, e com que nome,
+                é assim que <code>{'{{cidade}}'}</code> passa a existir nas mensagens seguintes.
               </p>
               <p>
                 Os dois campos <strong>não são a mesma coisa duas vezes</strong>: o da esquerda é o
@@ -2638,7 +2638,7 @@ function Mapeamentos({
                               Campo entre chaves vem da resposta do sistema:{' '}
                               <code>{'{hora} · {servico}'}</code> produz{' '}
                               <code>07:00 · Pilates solo</code>. Sem modelo, o menu só mostra um
-                              campo por item — que é o bastante para uma lista de horários, e
+                              campo por item, que é o bastante para uma lista de horários, e
                               pouco para uma de horários com nome de aula.
                             </p>
                           }
@@ -2804,7 +2804,7 @@ function ConsultasDaIa({
             <>
               <p>
                 Nada vem marcado, e bloco de IA sem consulta continua sendo a escolha certa para
-                tirar dúvida sobre preço e horário de funcionamento — o que já está escrito no
+                tirar dúvida sobre preço e horário de funcionamento, o que já está escrito no
                 contexto do negócio não precisa de chamada nenhuma.
               </p>
               <p>
@@ -2862,7 +2862,7 @@ function ConsultasDaIa({
                 <p>
                   É a mesma credencial do bloco de Serviços externos: o valor fica no cofre e o
                   desenho guarda só a referência. Sem escolher uma, toda consulta volta negada e a
-                  IA responde <strong>“não sei”</strong> para tudo — que é o sintoma mais difícil
+                  IA responde <strong>“não sei”</strong> para tudo, que é o sintoma mais difícil
                   de ligar à causa.
                 </p>
               }

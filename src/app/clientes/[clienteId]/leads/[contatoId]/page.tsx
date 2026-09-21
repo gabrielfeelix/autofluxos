@@ -218,7 +218,7 @@ export default async function Pagina({
           {/* O pedido de exclusão da LGPD vira este botão. A pergunta diz o que
               some junto porque não existe desfazer: a conversa não está copiada
               em lugar nenhum. Mesma forma dos três vizinhos: ícone em cima,
-              palavra embaixo — o vermelho aparece no hover. */}
+              palavra embaixo, o vermelho aparece no hover. */}
           <ApagarContato
             acao={acaoApagarContato.bind(null, clienteId, contatoId)}
             titulo="Apaga a pessoa, a conversa inteira e o que o fluxo coletou. Não dá para desfazer."
@@ -435,7 +435,7 @@ export default async function Pagina({
                             <p>
                               Etiqueta é o que a pessoa <strong>é</strong>: “quer pilates”, “já é
                               aluno”. A equipe põe à mão, e o fluxo também etiqueta sozinho pelo
-                              bloco de Etiqueta — as duas aparecem juntas aqui, sem distinção.
+                              bloco de Etiqueta, as duas aparecem juntas aqui, sem distinção.
                             </p>
                           }
                         />
@@ -460,8 +460,8 @@ export default async function Pagina({
               conteudo: (
                 /*
                  * Tarefa humana, mensagem agendada e acompanhamento automático
-                 * moram juntos porque respondem a mesma pergunta — o que ainda
-                 * vai acontecer com esta pessoa — mas ficam em seções separadas
+                 * moram juntos porque respondem a mesma pergunta, o que ainda
+                 * vai acontecer com esta pessoa, mas ficam em seções separadas
                  * porque "agendar mensagem" e "criar atividade" são atos
                  * diferentes e misturá-los faria alguém marcar um querendo o
                  * outro. A contagem da aba é só das atividades abertas.
@@ -538,7 +538,7 @@ export default async function Pagina({
                         texto="Por quais anúncios esta pessoa passou antes de falar com a gente."
                         detalhes={
                           <p>
-                            Vazio significa que ela chegou <strong>direto</strong>, sem anúncio —
+                            Vazio significa que ela chegou <strong>direto</strong>, sem anúncio ,
                             e não que a informação se perdeu. É o que separa o lead que custou
                             dinheiro do que veio de graça.
                           </p>

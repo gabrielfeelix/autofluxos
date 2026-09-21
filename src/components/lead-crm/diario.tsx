@@ -46,7 +46,7 @@ export function Diario({
       <header className="flex items-center justify-between gap-3 border-b border-line px-[18px] py-3.5">
         <h2 className="flex items-center gap-1.5 text-[13px] font-bold">
           {/*
-            Era "Diário", que no CRM sugere um registro do sistema — e este bloco
+            Era "Diário", que no CRM sugere um registro do sistema, e este bloco
             é o contrário disso: é o que **a equipe** escreve à mão sobre a
             pessoa. O nome agora diz de quem é o texto, e a regra de que ele não
             vira mensagem saiu do corpo e virou o "?" ao lado.
@@ -60,7 +60,7 @@ export function Diario({
               <>
                 <p>
                   Cada anotação fica com a data e o nome de quem escreveu, e o que já foi escrito
-                  não é apagado por uma anotação nova — é um registro, não um campo.
+                  não é apagado por uma anotação nova, é um registro, não um campo.
                 </p>
                 <p>
                   <strong>Fica só aqui.</strong> Não vai para o WhatsApp nem para nenhuma
