@@ -99,6 +99,22 @@ describe('a porta do painel', () => {
     expect(seguiu(await proxy(pedir('/f/abc123')))).toBe(true)
   })
 
+  it('a conversa da vitrine abre sem sessão, senão o link compartilhado fica mudo', async () => {
+    /*
+     * A tela `/f/` abrir não adianta nada se a conversa dela não abrir junto:
+     * quem clicou no link não tem conta, o cookie não existe, e o 401 de
+     * `/api/` comia toda mensagem antes de a rota rodar. O sintoma foi uma
+     * vitrine em silêncio, indistinguível de um fluxo quebrado.
+     */
+    expect(seguiu(await proxy(pedir('/api/simular/compartilhado')))).toBe(true)
+  })
+
+  it('a vitrine abrir não abre o simulador da aba Testar', async () => {
+    // `/api/simular` aceita fluxo no corpo, e sem sessão isso seria um motor de
+    // uso geral rodando com a nossa chave de IA. Continua fechada.
+    expect(seguiu(await proxy(pedir('/api/simular')))).toBe(false)
+  })
+
   it('a abertura do /f/ é de prefixo, e não pega vizinho parecido', async () => {
     // `startsWith('/f/')` e não `startsWith('/f')`: sem a barra, uma rota futura
     // chamada `/faturamento` nasceria pública sem ninguém notar.

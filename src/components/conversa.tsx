@@ -42,8 +42,26 @@ export type ItemDaConversa =
   | { chave: number; de: 'pessoa'; texto: string; hora?: string }
   | { chave: number; de: 'sistema'; texto: string; alerta?: boolean }
 
+/**
+ * O que cada modo mostra, e a exceção que o `alerta` abre.
+ *
+ * O modo Conversa esconde o que é de sistema porque o ponto dele é parecer o
+ * WhatsApp, e no WhatsApp não existe "o motor entrou no bloco 4". **Mas erro
+ * não é bastidor.** Escondê-lo produz o pior resultado possível: a tela fica em
+ * silêncio, exatamente como um fluxo que não responde, e quem está olhando vai
+ * procurar defeito no desenho quando o problema era 401, limite estourado ou
+ * link vencido.
+ *
+ * Foi assim que o 401 do proxy na vitrine passou despercebido: a rota recusava
+ * toda mensagem, a tela dizia o motivo, e o filtro engolia a frase antes de ela
+ * chegar na tela. Quem testou perguntou "deveria responder?", que é a pergunta
+ * de quem não recebeu resposta nenhuma, nem a de erro.
+ *
+ * Então: bastidor some, alerta fica, nos dois modos.
+ */
 export function itensDoModo(itens: ItemDaConversa[], modo: ModoDaConversa) {
-  return modo === 'conversa' ? itens.filter((item) => item.de !== 'sistema') : itens
+  if (modo !== 'conversa') return itens
+  return itens.filter((item) => item.de !== 'sistema' || item.alerta === true)
 }
 
 export function contarEventos(itens: ItemDaConversa[]) {
@@ -251,12 +269,21 @@ export function Conversa({
           .then((corpo: { erro?: string }) => corpo.erro)
           .catch(() => undefined)
 
+        /*
+         * O status quando não há frase nenhuma.
+         *
+         * "o motor recusou este fluxo" em cima de um 401 manda procurar defeito
+         * no desenho, e o defeito estava no proxy. O número é feio e é exato:
+         * dá para pesquisar, dá para repetir com `curl` e dá para contar a
+         * quem vai consertar.
+         */
+
         setItens((atual) => [
           ...atual,
           {
             chave: novaChave(),
             de: 'sistema',
-            texto: motivo ?? 'o motor recusou este fluxo',
+            texto: motivo ?? `a conversa não respondeu (erro ${resposta.status})`,
             alerta: true,
           },
         ])

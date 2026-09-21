@@ -164,6 +164,38 @@ const PREFIXOS_ABERTOS = [
    * A primeira tentativa serviu de `/clientes/`, que é justamente o prefixo da
    * área autenticada. O caminho novo não colide com rota de tela nenhuma.
    */
+  /**
+   * **A conversa da vitrine. Sem isto o fluxo compartilhado nunca responde.**
+   *
+   * Terceira vez o mesmo bug neste arquivo, e o terceiro sintoma idêntico: a
+   * página `/f/` abre, o fluxo aparece, o visitante escreve, e não volta nada.
+   * A tela sem sessão chama `/api/simular/compartilhado`, o `getSessionCookie`
+   * não acha cookie nenhum porque quem abriu o link não tem conta, e o 401 de
+   * `/api/` come a chamada antes de a rota existir.
+   *
+   * Pior: o 401 responde `text/plain`, então o `resposta.json()` da tela falha
+   * e o motivo vira uma frase genérica, e essa frase é um item de sistema, que
+   * o modo Conversa esconde. Erro invisível numa página pública, descoberto
+   * porque alguém testou o link e perguntou "deveria responder?".
+   *
+   * O teste de trinta segundos que prova isto, o mesmo dos webhooks:
+   *
+   *     curl -s -o /dev/null -w '%{http_code}\n' -X POST \
+   *       https://autofluxos.4yu.com.br/api/simular/compartilhado
+   *
+   * 401 quer dizer que o proxy está comendo; qualquer outra coisa quer dizer
+   * que a rota rodou e se defendeu sozinha.
+   *
+   * Abrir não afrouxa nada, e a rota foi escrita para isso: ela não aceita
+   * fluxo no corpo (o desenho vem do banco, pelo token), não resolve cliente
+   * nenhum, roda com a rede fechada e tem teto de mensagens **por link**, que
+   * é o que a conta de origem revoga quando quiser. Ver o cabeçalho de
+   * `api/simular/compartilhado/route.ts`.
+   *
+   * O prefixo é o caminho inteiro, sem barra no fim: `/api/simular` continua
+   * fechada, que é a rota que aceita fluxo do corpo.
+   */
+  '/api/simular/compartilhado',
   '/logos/',
   /**
    * O ícone da aba do navegador.
