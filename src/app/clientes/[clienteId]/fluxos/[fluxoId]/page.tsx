@@ -8,6 +8,7 @@ import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { membrosDaConta } from '@/server/repos/usuarios'
 import { listarQuadros } from '@/server/repos/quadros'
 import { acharFluxo, acharVersao, listarFluxos, listarVersoes } from '@/server/repos/fluxos'
+import { contarRespostasPorVariavel } from '@/server/repos/respostas'
 import { ehAdminDaPlataforma, exigirAcessoAoCliente } from '@/server/sessao'
 
 export const dynamic = 'force-dynamic'
@@ -45,6 +46,16 @@ export default async function Pagina({
     listarFluxos(clienteId),
   ])
   if (!cliente || !fluxo || fluxo.clienteId !== cliente.id) notFound()
+
+  /*
+   * O selo de "quantas conversas responderam" em cada bloco.
+   *
+   * Depois do `notFound` e fora do `Promise.all` de propósito: ela depende do
+   * fluxo já conferido como sendo desta conta, e é a única consulta daqui que o
+   * desenho não precisa para existir. Falhar nela não pode impedir o editor de
+   * abrir, e é por isso que o repositório devolve `{}` em vez de estourar.
+   */
+  const respostasPorVariavel = await contarRespostasPorVariavel(cliente.id, fluxo.id)
 
   /*
    * A equipe, para o bloco de handoff poder endereçar o aviso a uma pessoa.
@@ -105,6 +116,9 @@ export default async function Pagina({
         podeContratarIa={ehAdminDaPlataforma(acesso.sessao)}
         contextoNegocio={cliente.contextoNegocio}
         temContextoDeNegocio={cliente.contextoNegocio.trim() !== ''}
+        /* Quantas conversas responderam cada variável, para o selo no bloco:
+           o desenho passa a dizer o que foi usado, sem sair para Respostas. */
+        respostasPorVariavel={respostasPorVariavel}
         conexoes={conexoes}
         /* As outras automações desta conta, para o bloco "Ir para outra
            automação". O próprio fluxo entra na lista: recomeçar do zero é

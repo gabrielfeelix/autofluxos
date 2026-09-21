@@ -1,7 +1,7 @@
 'use client'
 
 import { Handle, Position, type NodeProps, type NodeTypes } from '@xyflow/react'
-import { useState, type ReactNode } from 'react'
+import { createContext, useContext, useState, type ReactNode } from 'react'
 import { CORES, ICONES, NOMES } from '@/core/flow/blocos'
 import { exigeCredencial, presetDoBloco } from '@/core/presets'
 import { RealceDeVariaveis } from './realce-de-variaveis'
@@ -40,6 +40,22 @@ import {
  * './nos'` funcionando em quem já chamava assim.
  */
 export { CORES, ICONES, NOMES } from '@/core/flow/blocos'
+
+/**
+ * Quantas conversas já responderam cada variável deste fluxo.
+ *
+ * Vem por contexto e não por `data` do nó de propósito: `data` é o desenho, e o
+ * desenho é o que o editor salva e publica. Um número de execução ali dentro
+ * viraria diferença de rascunho ("você tem alterações não publicadas" por causa
+ * de uma contagem que mudou sozinha) e acabaria gravado no grafo.
+ *
+ * O padrão é `{}`, e com ele nenhum bloco desenha selo: é o que um fluxo novo
+ * precisa, e é também o caminho de quando a leitura falha. Contagem é enfeite
+ * de apoio, não pode ser motivo de tela quebrada.
+ */
+const RespostasPorVariavel = createContext<Record<string, number>>({})
+
+export const RespostasPorVariavelProvider = RespostasPorVariavel.Provider
 
 function Caixa({
   tipo,
@@ -286,7 +302,12 @@ function NoPergunta({ data, selected }: NodeProps) {
       <p className="line-clamp-2 text-[12.5px] leading-5 text-soft">
         <RealceDeVariaveis texto={vazio(d.texto, '(sem texto)')} />
       </p>
-      {d.salvarEm && <p className="mt-1 font-mono text-[10px] text-dim">guarda em {d.salvarEm}</p>}
+      {d.salvarEm && (
+        <p className="mt-1 flex items-center gap-1.5 font-mono text-[10px] text-dim">
+          <span className="truncate">guarda em {d.salvarEm}</span>
+          <SeloDeRespostas variavel={d.salvarEm} />
+        </p>
+      )}
 
       {dinamica ? (
         <>
@@ -634,6 +655,31 @@ function NoVoltar({ data, selected }: NodeProps) {
         {paraOInicio ? 'a conversa recomeça daqui' : 'a conversa continua de lá'}
       </p>
     </Caixa>
+  )
+}
+
+/**
+ * O contador de respostas do bloco.
+ *
+ * **Fica colado no `guarda em`**, e não no cabeçalho do cartão: é a contagem
+ * daquela variável, e no cabeçalho ela seria lida como "quantas vezes este
+ * bloco rodou", que é outra coisa e que ninguém mede aqui.
+ *
+ * Zero não desenha nada. Um bloco que ninguém respondeu ainda já se distingue
+ * sozinho pela ausência, e um "0" em cada bloco de um fluxo recém-publicado é
+ * ruído em todo o desenho justamente no dia em que ele é mais olhado.
+ */
+function SeloDeRespostas({ variavel }: { variavel: string }) {
+  const contagem = useContext(RespostasPorVariavel)[variavel] ?? 0
+  if (contagem === 0) return null
+
+  return (
+    <span
+      title={`${contagem} ${contagem === 1 ? 'conversa respondeu' : 'conversas responderam'} esta pergunta`}
+      className="ml-auto shrink-0 rounded-full border border-emerald-400/25 bg-emerald-400/[0.08] px-1.5 py-px font-sans text-[9.5px] font-bold text-ok"
+    >
+      {contagem}
+    </span>
   )
 }
 

@@ -365,3 +365,83 @@ async function sessoesComHandoff(ids: string[]): Promise<Set<string>> {
   }
   return comHandoff
 }
+
+/**
+ * Quantas vezes cada variável do fluxo foi respondida, para o selo no bloco.
+ *
+ * ---------------------------------------------------------------------------
+ * Por que a contagem é por **variável** e não por bloco
+ * ---------------------------------------------------------------------------
+ *
+ * Ninguém grava por onde a conversa passou: `sessions` guarda `vars` (o que foi
+ * colhido) e `no_atual` (onde ela parou), e mais nada. Registrar passagem
+ * bloco a bloco seria uma tabela nova escrevendo em toda mensagem de todo
+ * atendimento, e o histórico de quem já conversou nasceria vazio.
+ *
+ * `vars` responde a pergunta que o selo faz: a chave existir na sessão é a
+ * prova de que aquele bloco foi respondido naquela conversa. O bloco encontra a
+ * contagem dele pelo próprio `salvarEm`.
+ *
+ * **O que isso não alcança, e está certo assim:** bloco sem `salvarEm` (uma
+ * mensagem, um "ir para automação") não colhe nada e não recebe selo. Contar
+ * "quantas vezes esta mensagem foi enviada" é outra pergunta, de outra fonte.
+ *
+ * **Dois blocos que guardam na mesma variável somam.** É o mesmo dado sendo
+ * colhido em dois lugares do desenho, e o editor já avisa quem reaproveita
+ * variável de outro bloco (ver `variaveisDoFluxo`).
+ */
+export async function contarRespostasPorVariavel(
+  clienteId: string,
+  fluxoId: string,
+  teto = 5_000,
+): Promise<Record<string, number>> {
+  const contagem: Record<string, number> = {}
+  if (!pareceUuid(clienteId) || !pareceUuid(fluxoId)) return contagem
+
+  // O cliente entra na conferência, e não só no filtro: o id do fluxo vem do
+  // endereço, e o selo não pode virar uma janela para o desenho de outra conta.
+  const { data: fluxo, error: erroDoFluxo } = await db()
+    .from('flows')
+    .select('id')
+    .eq('id', fluxoId)
+    .eq('client_id', clienteId)
+    .maybeSingle()
+
+  if (ehIdInvalido(erroDoFluxo) || erroDoFluxo || !fluxo) return contagem
+
+  const { data: versoes, error: erroDasVersoes } = await db()
+    .from('flow_versions')
+    .select('id')
+    .eq('flow_id', fluxoId)
+
+  if (ehIdInvalido(erroDasVersoes) || erroDasVersoes) return contagem
+  const ids = ((versoes ?? []) as { id: string }[]).map((v) => v.id)
+  if (ids.length === 0) return contagem
+
+  /*
+   * Só a coluna `vars`, e com teto.
+   *
+   * O editor é a tela mais pesada do produto e esta consulta entra no caminho
+   * de abrir o desenho: trazer a sessão inteira de uma conta antiga pagaria
+   * megabytes para escrever um número de dois dígitos em cada bloco. As mais
+   * recentes primeiro porque é o recorte que alguém olharia primeiro se
+   * tivesse de escolher.
+   */
+  const { data, error } = await db()
+    .from('sessions')
+    .select('vars')
+    .in('flow_version_id', ids)
+    .order('criado_em', { ascending: false })
+    .limit(teto)
+
+  if (error) return contagem
+
+  for (const linha of (data ?? []) as { vars: Record<string, unknown> | null }[]) {
+    for (const chave of Object.keys(linha.vars ?? {})) {
+      if (NAO_SAO_RESPOSTA.has(chave)) continue
+      contagem[chave] = (contagem[chave] ?? 0) + 1
+    }
+  }
+
+  return contagem
+}

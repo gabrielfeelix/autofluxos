@@ -54,7 +54,7 @@ import { Modal } from '@/components/design/modal'
 import { SeloDoCanal } from '@/components/design/selo-do-canal'
 import { AcaoDaArestaProvider, tiposDeAresta } from './arestas'
 import { DESCRICOES } from '@/core/flow/blocos'
-import { CORES, ICONES, NOMES, tiposDeNo } from './nos'
+import { CORES, ICONES, NOMES, RespostasPorVariavelProvider, tiposDeNo } from './nos'
 import { NomeDoFluxo } from './nome-do-fluxo'
 import { organizar } from './organizar'
 import { PuxadorDeLargura } from './puxador'
@@ -342,6 +342,7 @@ export function Editor({
   podeContratarIa,
   contextoNegocio,
   temContextoDeNegocio,
+  respostasPorVariavel = {},
 }: {
   fluxoId: string
   clienteId: string
@@ -354,6 +355,14 @@ export function Editor({
   equipe: MembroDoCliente[]
   /** A conta tem horário de atendimento? O bloco de handoff usa. */
   horarioConfigurado: boolean
+  /**
+   * Quantas conversas já responderam cada variável, para o selo no bloco.
+   *
+   * Chega pronto do servidor porque o editor não fala com o banco, e opcional
+   * porque a prévia do link compartilhado monta o mesmo desenho sem conta
+   * nenhuma atrás.
+   */
+  respostasPorVariavel?: Record<string, number>
   /** As automações desta conta, para o bloco "Ir para outra automação". */
   fluxos: FluxoDaConta[]
   /**
@@ -1623,6 +1632,7 @@ export function Editor({
           }}
         >
           <AcaoDaArestaProvider value={acoesDaAresta}>
+          <RespostasPorVariavelProvider value={respostasPorVariavel}>
           <ReactFlow
             onInit={setTela}
             nodes={nodes}
@@ -1719,6 +1729,7 @@ export function Editor({
             />
           </ReactFlow>
           {previa && <PreviaDoBloco no={previa.no} x={previa.x} y={previa.y} />}
+          </RespostasPorVariavelProvider>
           </AcaoDaArestaProvider>
 
           {menu && (
