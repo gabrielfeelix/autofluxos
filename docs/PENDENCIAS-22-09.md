@@ -28,9 +28,11 @@ e descartado.
   conversa parada / acho q meu titulo foi bosta / da pra colocar em horario de
   atendimento se pa"*. **A fusão foi decisão do Gabriel**, tomada na hora, e
   não conclusão tirada depois do erro do Edu. `/ajustes/retomada` redireciona.
-- **Os três defeitos de template abaixo, corrigidos** (`1391718`, `6616560`,
-  `065a77d`), e o botão renomeado (`c3a62ea`). Detalhe de cada um na seção
-  seguinte.
+- **Os três defeitos de template, corrigidos** (`1391718`, `6616560`,
+  `065a77d`), e o botão renomeado (`c3a62ea`). Detalhe de cada um abaixo.
+- **Os quatro itens decididos e não implementados saíram** (`7b8f0c9`,
+  `63cc24f`, `db0ca42`, `cc3082e`). Sobrou o que depende de decisão sua: o
+  conteúdo do fluxo da MGM, o que é da Verandi, e o que está em aberto.
 
 ## Defeitos de template, corrigidos
 
@@ -88,24 +90,26 @@ agora roda os três casos de ponta a ponta.
   mais quatro textos de interface citavam o botão pelo nome antigo — trocar só
   o botão deixaria a interface mandando procurar um botão que não existe mais.
 
-## Decidido e ainda não implementado
+## Decidido, e agora implementado
 
-- Reagendamento **sem data livre**: semana → dia da semana → horários
-  ofertados. Hoje o aluno digita a data que quiser e o bot diz que não tem.
-  Proposta do Edu às 13:15: *"nunca deixando o aluno sair digitando a data q
-  quiser, aí sim a gente começa a evitar dor de cabeça nos fluxos"*.
-- Fluxo para aluno **inativo / de licença**, com boas-vindas e opções próprias
-  (voltar às aulas, cancelar contrato, falar com atendente). Edu, 13:16. Todas
-  as opções terminam num humano: *"de qualquer forma, cada uma delas leva pro
-  atendente, mas já resolve a maior dúvida do pq entrou em contato"*.
-- **Trilha no histórico do contato** ("acessou fluxo → agendamento → cancelou →
-  reagendou"). Proposta do **Edu** às 15:35. O Gabriel respondeu a outra coisa
-  na mesma janela e a conversa desviou; ninguém voltou. É o que permite depurar
-  fluxo sem adivinhar.
-- **Sinal de "bot pausado" no inbox.** O "não está indo" das 10:39 não era bug,
-  era handoff: às 11:26 o Gabriel explicou *"é que eu ou vc assumimos a
-  conversa, então tirou do bot"*. A retomada por inatividade trata o efeito; a
-  causa é não haver sinal claro de que a conversa saiu do bot.
+- **Reagendamento sem data livre** (`7b8f0c9`). Eram duas perguntas erradas
+  numa: a data aberta oferecia 365 respostas das quais meia dúzia funciona.
+  Agora são faixa (esta semana / a que vem / mais pra frente) e dia, vindo de
+  um menu com só os dias que têm vaga. As datas já existiam prontas em
+  `core/datas.ts`, com um comentário dizendo que existiam "para o menu de
+  agendamento poder oferecer dia sem ninguém digitar data": estavam escritas e
+  não usadas.
+- **Fluxo de aluno inativo / de licença** (`63cc24f`), em
+  `src/exemplos/aluno-inativo.ts`, registrado no catálogo de modelos. Voltar às
+  aulas, falar do contrato, cancelar, outro assunto — todas terminam numa
+  pessoa, com o motivo já escrito, que é o produto do fluxo.
+- **Trilha no histórico do contato** (`db0ca42`). Dois eventos, e não um por
+  nó: `entrou-no-fluxo` diz por onde a conversa começou, `escolheu-no-fluxo`
+  por onde ela foi. Um evento por bloco viraria log, e log ninguém lê.
+- **Sinal de "bot pausado" no inbox** (`cc3082e`). O dado já chegava na fila,
+  só não era mostrado. Separado de `aguardando`: aquilo é a fila formal com
+  relógio correndo, este é o estado silencioso em que ninguém espera e o robô
+  também não responde.
 
 ## Fluxo da MGM (conteúdo, não código)
 
