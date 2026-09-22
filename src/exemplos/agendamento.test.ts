@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { executar } from '@/core/engine/executar'
 import { sessaoNova, type Acao, type Resultado, type Sessao } from '@/core/engine/types'
 import { acharPreset } from '@/core/presets'
+import { varsIniciais } from '@/core/contatos/vars-iniciais'
 import { agendamento } from './agendamento'
 
 /*
@@ -105,10 +106,18 @@ const textos = (acoes: Acao[]) =>
 const opcoesDe = (acoes: Acao[]) =>
   acoes.flatMap((a) => (a.tipo === 'enviar_opcoes' ? a.opcoes : []))
 
-/** A conversa começa com o telefone de quem escreveu, como o webhook entrega. */
+/**
+ * A conversa começa com o telefone de quem escreveu, como o webhook entrega.
+ *
+ * Passa por `varsIniciais` em vez de montar `vars` à mão, que é o que
+ * `receber-mensagem.ts` faz nas duas entradas de produção. Montar o dicionário
+ * aqui dava um começo que o servidor nunca produz: sem `telefone_br`, a
+ * pergunta de conferência saía como *"o telefone ** é o seu mesmo?"*, e o teste
+ * não teria como ver isso.
+ */
 const comeco = (telefone = '5544998887766'): Sessao => ({
   ...sessaoNova(),
-  vars: { telefone },
+  vars: varsIniciais({ waId: telefone }),
 })
 
 describe('os caminhos do mapeamento batem com o que a API responde', () => {
@@ -188,8 +197,14 @@ describe('a conversa inteira, do "oi" ao horário marcado', () => {
      * Pedido de quem opera, e não formalidade: quem escreve pelo aparelho de
      * outra pessoa marcaria a aula na ficha errada, e o erro só apareceria com
      * as duas no estúdio.
+     *
+     * **Conferido como a aluna lê**, e não como a API guarda. Pedir que ela
+     * confira `5544998887766` é pedir leitura dígito a dígito de um número que
+     * ela nunca viu escrito assim; `+55 (44) 99888-7766` se reconhece de
+     * relance, que é o que uma pergunta de conferência precisa.
      */
-    expect(textos(r.acoes).join(' ')).toContain('5544998887766')
+    expect(textos(r.acoes).join(' ')).toContain('+55 (44) 99888-7766')
+    expect(textos(r.acoes).join(' ')).not.toContain('5544998887766')
 
     r = executar(agendamento, r.sessao, { tipo: 'opcao', opcaoId: 'sim' })
     r = responder(r, 'verandi-catalogo', CATALOGO)

@@ -1,5 +1,6 @@
 import { VARIAVEIS_DE_DATA } from '../datas'
 import { VARIAVEIS_DO_ATENDIMENTO } from '../vars-do-atendimento'
+import { telefoneLegivel } from './telefone'
 /**
  * O que a conversa já sabe antes de perguntar qualquer coisa.
  *
@@ -44,6 +45,7 @@ export type RetratoDoContato = {
 export const VARIAVEIS_NATIVAS = [
   'nome',
   'telefone',
+  'telefone_br',
   ...VARIAVEIS_DE_DATA,
   // Derivadas do horário da conta, e não da conversa: entram na rodada e saem
   // antes de gravar, como as datas. Ver `core/vars-do-atendimento.ts`.
@@ -61,6 +63,11 @@ export function varsIniciais(contato: RetratoDoContato): Record<string, string> 
   /*
    * O que a conversa coletou vence o que veio de fora.
    *
+   * Vale para `telefone_br` também: ele é recalculado depois deste bloco, a
+   * partir do `telefone` que sobreviveu, e não do `waId`. Um fluxo que
+   * perguntou o telefone e guardou em `telefone` quer ver **aquele** número na
+   * frase de confirmação, não o do WhatsApp.
+   *
    * Um fluxo que perguntou "qual seu telefone para contato?" e guardou em
    * `telefone` quis dizer aquilo; sobrescrever com o número do WhatsApp
    * apagaria a resposta de alguém em favor de um valor que o desenho não pediu.
@@ -77,6 +84,28 @@ export function varsIniciais(contato: RetratoDoContato): Record<string, string> 
    */
   const corrigido = (contato.nomeReal ?? '').trim()
   if (corrigido !== '') vars.nome = corrigido
+
+  /*
+   * O mesmo telefone, escrito para gente ler.
+   *
+   * `{{telefone}}` é `5511911001414`, e tem que continuar sendo: é ele que vai
+   * no corpo JSON dos presets de integração, e é por ele que a agenda acha a
+   * pessoa. Formatar na origem casaria a busca com nada.
+   *
+   * Mas ele também aparecia **dentro de frase**, e aí o cru denuncia o robô:
+   * *"Só confirmando: o telefone *5511911001414* é o seu mesmo?"* pede que a
+   * aluna confira dígito a dígito um número que ela nunca viu escrito assim.
+   *
+   * Então são dois, como `hoje` e `hoje_br` já são: um para máquina, um para
+   * gente. `telefoneLegivel` é a mesma função que a tela usa, e ela já resolve
+   * o nono dígito e devolve o cru quando não reconhece o formato , número
+   * estrangeiro continua legível, só não ganha máscara brasileira.
+   *
+   * Calculado por último, a partir do `telefone` **final**: se a conversa
+   * coletou um número próprio, é ele que a frase confirma.
+   */
+  const paraLer = (vars.telefone ?? '').trim()
+  if (paraLer !== '') vars.telefone_br = telefoneLegivel(paraLer)
 
   return vars
 }

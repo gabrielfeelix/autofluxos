@@ -102,6 +102,29 @@ describe('forma legível', () => {
     expect(telefoneLegivel('351912345678')).toBe('351912345678')
     expect(telefoneLegivel('sem telefone')).toBe('sem telefone')
   })
+
+  /*
+   * O estrangeiro que **tem o comprimento de um brasileiro**.
+   *
+   * `12025550123` são os mesmos onze dígitos de um celular com DDD, e saía
+   * como `+55 (12) 02555-0123`: país inventado, DDD tirado da ponta do código
+   * dos EUA, e um zero inicial que celular nenhum tem. O de Portugal acima
+   * passava por ter doze dígitos, então este caminho nunca foi conferido.
+   *
+   * O que o separa não é o tamanho nem o DDD (`12` é São José dos Campos), é a
+   * forma: onze dígitos brasileiros têm `9` depois do DDD.
+   */
+  it('número de outro país com onze dígitos não ganha +55 inventado', () => {
+    expect(telefoneLegivel('12025550123')).toBe('12025550123')
+    expect(telefoneLegivel('442071234567')).toBe('442071234567')
+  })
+
+  // E o que é brasileiro de verdade continua legível, com e sem DDI: é assim
+  // que a planilha do cliente escreve.
+  it('celular e fixo sem DDI continuam ganhando máscara', () => {
+    expect(telefoneLegivel('11987654321')).toBe('+55 (11) 98765-4321')
+    expect(telefoneLegivel('1139001234')).toBe('+55 (11) 3900-1234')
+  })
 })
 
 describe('digitos', () => {

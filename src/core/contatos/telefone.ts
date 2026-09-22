@@ -84,14 +84,60 @@ export function telefoneCanonico(bruto: string): string | null {
   return chaves.reduce((maior, atual) => (atual.length > maior.length ? atual : maior))
 }
 
-/** `+55 (11) 98765-4321`, para ler na tela. Devolve o cru se não reconhecer. */
+/**
+ * `+55 (11) 98765-4321`, para ler na tela. Devolve o cru se não reconhecer.
+ *
+ * **Só põe `+55` em quem já tem `55`.** Um `wa_id` americano como
+ * `12025550123` tem os mesmos onze dígitos de um celular brasileiro com DDD, e
+ * a versão anterior o formatava como `+55 (12) 02555-0123`: inventava um país,
+ * um DDD que é a ponta do código dos Estados Unidos, e um zero inicial que não
+ * existe em celular nenhum. Aparecia em oito telas de contato, e passou a
+ * importar mais quando `telefone_br` levou esta função para dentro de frases
+ * que o cliente lê.
+ *
+ * Onze dígitos sem DDI podem ser brasileiros (é como a planilha do cliente
+ * escreve) e continuam ganhando máscara. O que muda é o número que **já traz
+ * DDI de outro país**: ele atravessa inteiro, que é a resposta honesta.
+ */
 export function telefoneLegivel(bruto: string): string {
   const so = digitos(bruto)
-  const semDdi = so.startsWith(DDI_BRASIL) && (so.length === 12 || so.length === 13)
-    ? so.slice(2)
-    : so
+  const temDdiBrasil = so.startsWith(DDI_BRASIL) && (so.length === 12 || so.length === 13)
+  const semDdi = temDdiBrasil ? so.slice(2) : so
 
   if (semDdi.length !== 10 && semDdi.length !== 11) return bruto
+
+  /*
+   * **Sem DDI, o número precisa ter forma de telefone brasileiro.**
+   *
+   * Um `wa_id` americano como `12025550123` tem os mesmos onze dígitos de um
+   * celular brasileiro sem DDI, e a versão anterior o formatava como
+   * `+55 (12) 02555-0123`: inventava o país, tirava o DDD da ponta do código
+   * dos EUA e deixava um zero inicial que celular nenhum tem. Aparecia em oito
+   * telas de contato, e passou a importar mais quando `telefone_br` levou esta
+   * função para dentro de frases que o cliente lê.
+   *
+   * O comprimento não separa os dois, e o DDD também não (`12` é DDD de São
+   * José dos Campos). O que separa é a **forma**, e são as mesmas regras que
+   * `chavesDoTelefone` já usa logo acima:
+   *
+   * - DDD vai de 11 a 99: nenhum começa com 0.
+   * - Onze dígitos = celular, e celular brasileiro tem `9` depois do DDD.
+   * - Dez dígitos = fixo, que começa de 2 a 5, ou celular antigo, de 6 a 9.
+   *
+   * `12025550123` cai na segunda: depois do `12` vem `0`, e não `9`.
+   *
+   * Não vale para quem já trouxe `55`, onde o DDI é explícito: ali um número
+   * fora do padrão é cadastro errado, e mostrá-lo mascarado é o que deixa
+   * enxergar que está errado.
+   */
+  if (!temDdiBrasil) {
+    const ddd = semDdi.slice(0, 2)
+    const numero = semDdi.slice(2)
+    const pareceBrasileiro =
+      /^[1-9][1-9]$/.test(ddd) &&
+      (numero.length === 9 ? numero.startsWith('9') : /^[2-9]/.test(numero))
+    if (!pareceBrasileiro) return bruto
+  }
 
   const ddd = semDdi.slice(0, 2)
   const numero = semDdi.slice(2)

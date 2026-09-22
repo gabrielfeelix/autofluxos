@@ -84,7 +84,7 @@ export const agendamento: Fluxo = fluxoSchema.parse({
       type: 'pergunta',
       position: em(3, -1),
       data: {
-        texto: 'Só confirmando: o telefone *{{telefone}}* é o seu mesmo?',
+        texto: 'Só confirmando: o telefone *{{telefone_br}}* é o seu mesmo?',
         opcoes: [
           { id: 'sim', rotulo: '✅ É o meu' },
           { id: 'nao', rotulo: '🙋 É de outra pessoa' },
