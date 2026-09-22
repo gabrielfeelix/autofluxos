@@ -612,6 +612,12 @@ export const mapeamentoSchema = z.object({
    * da conversa, é campo da resposta. Usar a mesma marca convidaria a escrever
    * `{{nome}}` esperando o nome do lead.
    *
+   * **`{campo:formato}`** formata aquele campo: `{data:dia_semana}` faz
+   * `2026-09-18` virar `sexta 18/09`. O `formato` do mapeamento não alcança
+   * aqui, ele vale para o valor inteiro, e com modelo o valor inteiro já é a
+   * linha montada. Nasceu do menu de reposições da MGM, que mostrava
+   * `2026-09-18 07:00` num rótulo que o WhatsApp corta em 20 caracteres.
+   *
    * **`{campo|texto se vazio}`** dá um padrão para quando a API não mandar
    * nada. Nasceu de um menu que mostrou `14:00 ·`: a agenda devolveu quatro
    * horários sem profissional, o campo sumiu e o separador ficou, e quem lia

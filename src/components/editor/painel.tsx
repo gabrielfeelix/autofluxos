@@ -2857,13 +2857,23 @@ function Mapeamentos({
                           secao="listas"
                           texto="O modelo de uma linha do menu. Campo entre chaves vem da resposta."
                           detalhes={
-                            <p>
-                              Campo entre chaves vem da resposta do sistema:{' '}
-                              <code>{'{hora} · {servico}'}</code> produz{' '}
-                              <code>07:00 · Pilates solo</code>. Sem modelo, o menu só mostra um
-                              campo por item, que é o bastante para uma lista de horários, e pouco
-                              para uma de horários com nome de aula.
-                            </p>
+                            <>
+                              <p>
+                                Campo entre chaves vem da resposta do sistema:{' '}
+                                <code>{'{hora} · {servico}'}</code> produz{' '}
+                                <code>07:00 · Pilates solo</code>. Sem modelo, o menu só mostra um
+                                campo por item, que é o bastante para uma lista de horários, e pouco
+                                para uma de horários com nome de aula.
+                              </p>
+                              <p className="mt-2">
+                                <code>{'{data:dia_semana}'}</code> formata aquele campo:{' '}
+                                <code>2026-09-18</code> vira <code>sexta 18/09</code>. O
+                                &ldquo;formato&rdquo; logo abaixo vale para o valor inteiro, e aqui
+                                o valor inteiro já é a linha montada.{' '}
+                                <code>{'{profissional|a confirmar}'}</code> dá um texto para quando
+                                o campo vier vazio.
+                              </p>
+                            </>
                           }
                         />
                       </span>

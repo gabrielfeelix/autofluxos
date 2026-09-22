@@ -1,5 +1,5 @@
 import 'server-only'
-import { formatarValor } from '@/core/flow/formatos'
+import { FORMATOS_DE_SAIDA, type FormatoDeSaida, formatarValor } from '@/core/flow/formatos'
 import { Agent, request } from 'undici'
 import type { Acao } from '@/core/engine/types'
 import { MARCA_DE_LISTA, SEPARADOR_DE_LISTA } from '@/core/flow/schema'
@@ -480,18 +480,38 @@ export function extrair(
 function montar(modelo: string, item: unknown): string {
   return modelo
     .replace(
-      /\{\s*([a-zA-Z][a-zA-Z0-9_.]*)\s*(?:\|([^}]*))?\}/g,
-      (_, campo: string, padrao: string | undefined) => {
+      /\{\s*([a-zA-Z][a-zA-Z0-9_.]*)\s*(?::([a-z_]+))?\s*(?:\|([^}]*))?\}/g,
+      (_, campo: string, formato: string | undefined, padrao: string | undefined) => {
         const valor = descer(item, campo)
         const texto =
           valor === null || valor === undefined || typeof valor === 'object'
             ? ''
             : String(valor).trim()
-        return texto === '' ? (padrao ?? '').trim() : texto
+        if (texto === '') return (padrao ?? '').trim()
+        return formatarCampo(texto, formato)
       },
     )
     .replace(/\s+/g, ' ')
     .trim()
+}
+
+/**
+ * `{data:dia_semana}` dentro de um rótulo.
+ *
+ * O `formato` do mapeamento vale para o valor inteiro, e um rótulo montado já
+ * é um valor inteiro: `{data} {hora}` vira `2026-09-18 07:00`, e não há como
+ * pedir a data por extenso sem formatar campo a campo. O menu de reposições da
+ * MGM mostrava exatamente isso, num rótulo cortado em 20 caracteres pelo
+ * WhatsApp, e quem lia recebia a data que o banco usa em vez da que ela usa.
+ *
+ * Formato desconhecido devolve o texto cru, pela mesma razão que campo
+ * inexistente vira vazio: um rótulo com o dado certinho e feio é melhor do que
+ * uma conversa que morre por causa de um nome errado no desenho.
+ */
+function formatarCampo(texto: string, formato: string | undefined): string {
+  if (!formato) return texto
+  if (!(FORMATOS_DE_SAIDA as readonly string[]).includes(formato)) return texto
+  return formatarValor(texto, formato as FormatoDeSaida)
 }
 
 /** Quebra `livres[].hora` em `["livres", "hora"]`. Sem `[]`, o segundo é `null`. */

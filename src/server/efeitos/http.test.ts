@@ -663,3 +663,42 @@ describe('{campo|padrão}, o horário sem professor', () => {
     expect(extrair({ l: [{ n: '   ' }] }, 'l[]', false, '{n|a confirmar}')).toBe('a confirmar')
   })
 })
+
+/*
+ * O menu de reposições da MGM mostrava "2026-09-18 07:00", num rótulo que o
+ * WhatsApp ainda corta em 20 caracteres. A data que o banco usa não é a data
+ * que a aluna usa, e o `formato` do mapeamento não alcança um campo dentro do
+ * rótulo: lá ele já virou linha montada.
+ */
+describe('{campo:formato}, a data crua dentro do rótulo', () => {
+  const ficha = {
+    reposicoes: [
+      { data: '2026-09-18', hora: '07:00:00', servico: 'Pilates aparelho' },
+      { data: '2026-09-25', hora: '10:00:00', servico: 'Yoga' },
+    ],
+  }
+
+  it('formata campo a campo dentro da linha montada', () => {
+    expect(extrair(ficha, 'reposicoes[]', false, '{data:dia_semana} {hora:hora}')).toBe(
+      'sexta 18/09 07:00;sexta 25/09 10:00',
+    )
+  })
+
+  it('convive com o padrão de campo vazio', () => {
+    expect(
+      extrair({ l: [{ d: '' }, { d: '2026-09-18' }] }, 'l[]', false, '{d:data|a combinar}'),
+    ).toBe('a combinar;18/09/2026')
+  })
+
+  it('formato que não existe devolve o texto cru, e não quebra a conversa', () => {
+    expect(extrair(ficha, 'reposicoes[]', false, '{data:inventado}')).toBe(
+      '2026-09-18;2026-09-25',
+    )
+  })
+
+  it('sem formato, nada muda', () => {
+    expect(extrair(ficha, 'reposicoes[]', false, '{data} {servico}')).toBe(
+      '2026-09-18 Pilates aparelho;2026-09-25 Yoga',
+    )
+  })
+})
