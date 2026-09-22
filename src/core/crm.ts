@@ -368,6 +368,21 @@ export const TIPOS_DE_EVENTO = [
   'agendou',
   'automacao',
   'nota',
+  /*
+   * Por onde a conversa passou no fluxo.
+   *
+   * Pedido de quem opera: *"será que no histórico seria válido informar o que
+   * aconteceu mesmo que o lead seja recente? Fulano acessou fluxo, agendamento,
+   * cancelou, reagendou"*. Sem isto, depurar fluxo é adivinhar: a conversa
+   * mostra o que foi dito, e não por qual caminho o desenho levou , dois
+   * caminhos diferentes produzem a mesma frase com frequência.
+   *
+   * Grava o **começo** e os pontos de decisão, não cada nó: uma linha do tempo
+   * com um evento por bloco vira log, e log ninguém lê. Ver `entrou-no-fluxo`
+   * e `escolheu-no-fluxo` em `comoFrase`.
+   */
+  'entrou-no-fluxo',
+  'escolheu-no-fluxo',
 ] as const
 
 export type TipoDeEvento = (typeof TIPOS_DE_EVENTO)[number]
@@ -420,6 +435,17 @@ export function comoFrase(evento: Evento): string {
       return d.ativa === 'true' ? 'automação religada' : 'automação pausada'
     case 'nota':
       return d.texto ?? 'nota'
+    /*
+     * A trilha do fluxo, em duas frases que se leem sozinhas.
+     *
+     * O nome do fluxo e o rótulo do botão, e não os ids: `entrou no fluxo
+     * a3f2-…` é log. Quem abre a ficha quer ler "entrou em Agendamento" e
+     * "escolheu Quero remarcar", que é a conversa contada de fora.
+     */
+    case 'entrou-no-fluxo':
+      return d.fluxo ? `entrou no fluxo ${d.fluxo}` : 'entrou num fluxo'
+    case 'escolheu-no-fluxo':
+      return d.escolha ? `escolheu ${d.escolha}` : 'respondeu no fluxo'
     default:
       return evento.tipo
   }

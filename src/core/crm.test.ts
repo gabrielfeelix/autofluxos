@@ -177,4 +177,27 @@ describe('linha do tempo', () => {
   it('mostra o tipo cru em vez de sumir com o evento desconhecido', () => {
     expect(comoFrase({ ...base, tipo: 'coisa-nova', dados: {} })).toBe('coisa-nova')
   })
+
+  /*
+   * A trilha do fluxo, que quem opera pediu para poder depurar sem adivinhar:
+   * *"Fulano acessou fluxo, agendamento, cancelou, reagendou"*.
+   *
+   * As duas frases carregam **o que a pessoa viu**, e não os ids: "entrou no
+   * fluxo a3f2-…" e "escolheu op_2b" seriam log, e log ninguém lê numa ficha.
+   */
+  it('a trilha do fluxo se lê como história, e não como log', () => {
+    expect(comoFrase({ ...base, tipo: 'entrou-no-fluxo', dados: { fluxo: 'Agendamento' } })).toBe(
+      'entrou no fluxo Agendamento',
+    )
+    expect(
+      comoFrase({ ...base, tipo: 'escolheu-no-fluxo', dados: { escolha: '🔄 Quero remarcar' } }),
+    ).toBe('escolheu 🔄 Quero remarcar')
+  })
+
+  // Fluxo apagado, ou botão sem rótulo: a linha continua dizendo o que houve,
+  // em vez de virar "entrou no fluxo undefined".
+  it('sem o nome, a trilha ainda diz o que aconteceu', () => {
+    expect(comoFrase({ ...base, tipo: 'entrou-no-fluxo', dados: {} })).toBe('entrou num fluxo')
+    expect(comoFrase({ ...base, tipo: 'escolheu-no-fluxo', dados: {} })).toBe('respondeu no fluxo')
+  })
 })

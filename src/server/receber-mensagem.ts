@@ -345,6 +345,27 @@ export async function tratarUma(
     await aplicarFato(canalSalvo.clienteId, contato.id, 'voltou-a-falar')
   }
 
+  /*
+   * O botão que a pessoa apertou, na linha do tempo.
+   *
+   * A outra metade da trilha que quem opera pediu: `entrou-no-fluxo` diz por
+   * onde a conversa começou, e isto diz por onde ela foi , *"cancelou,
+   * reagendou"*.
+   *
+   * Só a escolha em menu, e não todo texto digitado: texto já está na conversa
+   * inteira, e repetir cada frase na linha do tempo faria dela um segundo
+   * inbox, pior que o primeiro. O que a conversa **não** mostra é qual ramo do
+   * desenho aquele clique tomou, e é isso que fica aqui.
+   *
+   * Guarda o rótulo que ela viu (`title`), não o `id` do botão: `escolheu
+   * op_2b` é log; "escolheu 🔄 Quero remarcar" é história.
+   */
+  if (entrada.tipo === 'opcao') {
+    await anotar(canalSalvo.clienteId, contato.id, 'escolheu-no-fluxo', {
+      escolha: texto ?? entrada.opcaoId,
+    })
+  }
+
   const mensagemId = await registrarEntrada({
     contatoId: contato.id,
     sessaoId: null,
@@ -599,6 +620,15 @@ async function desistirDaVez(canalSalvo: CanalSalvo, contato: Contato): Promise<
  */
 type Abertura = {
   versaoId: string
+  /**
+   * O nome do fluxo que abriu, para a linha do tempo do contato.
+   *
+   * Vem daqui e não de outra busca porque `acharFluxo` já o trouxe: quem abre
+   * a ficha quer ler "entrou no fluxo Agendamento", e uma segunda viagem ao
+   * banco só para escrever histórico sairia no caminho quente de toda
+   * conversa nova.
+   */
+  nomeDoFluxo: string
   /** Preenchido só quando quem escolheu foi um gatilho, para contar o disparo. */
   gatilhoId?: string
   /** Preenchido só quando quem escolheu foi uma campanha (B4). */
@@ -680,6 +710,7 @@ async function escolherAbertura(
     if (fluxo?.versaoPublicadaId && fluxo.ativo) {
       return {
         versaoId: fluxo.versaoPublicadaId,
+        nomeDoFluxo: fluxo.nome,
         ...(candidato.gatilhoId ? { gatilhoId: candidato.gatilhoId } : {}),
         ...(candidato.campanhaId ? { campanhaId: candidato.campanhaId } : {}),
       }
@@ -754,6 +785,20 @@ async function avancarConversa(
     salva = await criarSessao(contato.id, canalSalvo.id, abertura.versaoId, {
       ...sessaoNova(),
       vars: varsIniciais(contato),
+    })
+    /*
+     * Por onde a conversa entrou, na linha do tempo do contato.
+     *
+     * Pedido de quem opera: *"Fulano acessou fluxo, agendamento, cancelou,
+     * reagendou"*. Sem isto, depurar fluxo é adivinhar , a conversa guarda o
+     * que foi dito, não por qual caminho o desenho levou, e caminhos
+     * diferentes produzem a mesma frase com frequência.
+     *
+     * `anotar` engole o próprio erro por decisão do repositório: histórico é
+     * dado de apoio e não pode derrubar a conversa que o gerou.
+     */
+    await anotar(canalSalvo.clienteId, contato.id, 'entrou-no-fluxo', {
+      fluxo: abertura.nomeDoFluxo,
     })
     // Depois de criar a sessão de propósito: o contador é da tela, e nunca pode
     // ficar entre a escolha do fluxo e a conversa existir.
