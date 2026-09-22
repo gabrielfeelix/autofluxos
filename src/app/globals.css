@@ -133,6 +133,15 @@
   --line-soft: #eef0f3;
   /* A borda que precisa ser vista: campo em foco, item escolhido, moldura. */
   --line-strong: #d3d9e1;
+  /*
+   * A cor de descanso dos fios do editor de fluxo.
+   *
+   * Não é `--line-strong`: borda de cartão pode sumir no fundo sem prejuízo,
+   * fio não , ele é o conteúdo. E não é `--muted` tampouco: fio no mesmo peso
+   * do texto faz a tela virar novelo, que era exatamente o problema. Fica entre
+   * os dois, visível de longe e sem competir com os cartões.
+   */
+  --fio: #aab4c2;
 
   --ink: #131922;
   /*
@@ -256,6 +265,7 @@
   --line: #242d3b;
   --line-soft: #1b2330;
   --line-strong: #323d4e;
+  --fio: #4a5768;
 
   --ink: #e9eef5;
   --soft: #b9c2d0;
@@ -1095,14 +1105,14 @@ textarea::placeholder {
   fill: rgba(255, 255, 255, 0.14);
 }
 
+/*
+ * Só o repouso mora aqui. Foco, esmaecimento, contorno e seta são decididos
+ * dentro de `arestas.tsx`, porque dependem de qual linha está sob o ponteiro e
+ * de qual cartão está selecionado , coisa que CSS não enxerga.
+ */
 .react-flow__edge-path {
-  stroke: var(--line-strong);
+  stroke: var(--fio);
   stroke-width: 1.5;
-}
-
-.react-flow__edge.selected .react-flow__edge-path {
-  stroke: var(--accent);
-  stroke-width: 2;
 }
 
 .react-flow__controls,

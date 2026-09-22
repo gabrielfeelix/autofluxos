@@ -53,7 +53,7 @@ import {
 } from '@/server/acoes'
 import { Modal } from '@/components/design/modal'
 import { SeloDoCanal } from '@/components/design/selo-do-canal'
-import { AcaoDaArestaProvider, tiposDeAresta } from './arestas'
+import { AcaoDaArestaProvider, RealceDeArestasProvider, tiposDeAresta } from './arestas'
 import { DESCRICOES } from '@/core/flow/blocos'
 import { CORES, ICONES, NOMES, RespostasPorVariavelProvider, tiposDeNo } from './nos'
 import { NomeDoFluxo } from './nome-do-fluxo'
@@ -1642,6 +1642,7 @@ export function Editor({
           }}
         >
           <AcaoDaArestaProvider value={acoesDaAresta}>
+          <RealceDeArestasProvider>
           <RespostasPorVariavelProvider value={respostasPorVariavel}>
           <ReactFlow
             onInit={setTela}
@@ -1740,6 +1741,7 @@ export function Editor({
           </ReactFlow>
           {previa && <PreviaDoBloco no={previa.no} x={previa.x} y={previa.y} />}
           </RespostasPorVariavelProvider>
+          </RealceDeArestasProvider>
           </AcaoDaArestaProvider>
 
           {menu && (
