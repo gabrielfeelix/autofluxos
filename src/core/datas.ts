@@ -44,6 +44,7 @@ export const VARIAVEIS_DE_DATA = [
   'semana_ate',
   'prox_semana_de',
   'prox_semana_ate',
+  'daqui_30_dias',
 ] as const
 
 export type VariavelDeData = (typeof VARIAVEIS_DE_DATA)[number]
@@ -80,6 +81,20 @@ export function varsDeData(fuso: string, agora: Date = new Date()): Record<strin
   const proxAte = somarDias(proxDe, 6)
   const amanha = somarDias(hoje, 1)
 
+  /*
+   * O fim da janela de "mais pra frente".
+   *
+   * Existe para o menu de agendamento poder oferecer dia sem ninguém digitar
+   * data: as duas primeiras faixas cobrem duas semanas, e esta cobre o resto
+   * sem pedir uma data que a pessoa não tem como saber se tem vaga.
+   *
+   * **30 e não 90** (o teto da Verandi): a lista de opções de uma pergunta é
+   * cortada em `LIMITE_LISTA`, então uma janela maior não mostraria mais dias,
+   * só faria a consulta carregar horários que ninguém veria. E agenda de
+   * estúdio a três meses muda antes de a pessoa chegar.
+   */
+  const daqui30 = somarDias(hoje, 30)
+
   return {
     hoje,
     amanha,
@@ -89,6 +104,7 @@ export function varsDeData(fuso: string, agora: Date = new Date()): Record<strin
     semana_ate: semanaAte,
     prox_semana_de: proxDe,
     prox_semana_ate: proxAte,
+    daqui_30_dias: daqui30,
   }
 }
 

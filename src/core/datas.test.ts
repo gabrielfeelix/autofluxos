@@ -31,6 +31,15 @@ describe('a semana', () => {
     expect(v.prox_semana_ate).toBe('2026-09-13')
   })
 
+  /**
+   * A janela de "mais pra frente", que existe para ninguém precisar digitar
+   * data. Conta dias corridos a partir de hoje, sem alinhar em semana: quem
+   * escolhe essa faixa quer ver o que houver, não uma semana de calendário.
+   */
+  it('"daqui 30 dias" são 30 dias corridos a partir de hoje', () => {
+    expect(varsDeData(SP, TERCA).daqui_30_dias).toBe('2026-10-01')
+  })
+
   it('no domingo, "esta semana" é só o próprio domingo', () => {
     // O caso que quebra contas de semana escritas na mão: domingo é o fim, não
     // o começo. Um `getDay()` cru daria 0 e o intervalo sairia com oito dias.
