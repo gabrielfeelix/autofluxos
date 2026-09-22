@@ -21,7 +21,6 @@ import {
   type PointerEvent,
   type ReactNode,
 } from 'react'
-import { ICONES, NOMES } from './nos'
 
 /** O desvio que quem monta deu na linha, em coordenadas do desenho. */
 export type Desvio = { x: number; y: number }
@@ -139,78 +138,6 @@ function caminhoDesviado(
 type Ponto = { x: number; y: number }
 
 /**
- * A partir de que distância o fio deixa de ser desenhado e vira um atalho.
- *
- * **Este é o remédio para o que sobrou do emaranhado.** Corredor resolveu fio
- * passando por cima de cartão; não resolve, e não tem como resolver, o fato de
- * uma ligação da primeira coluna para a última atravessar o desenho inteiro e
- * amarrar visualmente o começo do fluxo no fim dele. O fio é longo porque a
- * ligação é longa.
- *
- * A saída é a mesma de todo editor de diálogo maduro , Voiceflow ("Go to
- * block"), Twine, Yarn, Articy: ligação longa **não se desenha**, vira um
- * crachá na saída dizendo para onde vai. O fio continua existindo e reaparece
- * quando a pessoa pede (ponteiro no crachá, ou o bloco selecionado). É o mesmo
- * princípio do bloco "Ir para outra automação" que este produto já tem , só que
- * dentro do próprio fluxo.
- *
- * Mais de três colunas para frente (a coluna tem 248 + 110 de vão), ou volta de
- * mais de uma coluna. Abaixo disso o fio é curto, se lê num relance, e esconder
- * seria tirar informação de graça , são também exatamente as ligações que o
- * arrumador consegue pôr em corredor, ver `MAXIMO_DE_COLUNAS_COM_CORREDOR`.
- */
-const LONGE_PARA_FRENTE = 3.5 * (248 + 110)
-const LONGE_PARA_TRAS = 248 + 110
-
-/**
- * Como o bloco de destino se chama no crachá.
- *
- * Lê campos genéricos de propósito. O resumo bonito de cada tipo mora no
- * `painel.tsx`, junto com o schema do grafo, e puxar aquilo para cá traria a
- * camada de fio para dentro do conhecimento do grafo por causa de um rótulo de
- * quinze caracteres. Sem texto, o nome do tipo já orienta.
- */
-function apelidoDoBloco(tipo: string, dados: Record<string, unknown> | undefined): string {
-  const bruto = primeiroTexto(dados)
-  const limpo = bruto.trim().replace(/\s+/g, ' ')
-  const nome = (NOMES as Record<string, string>)[tipo] ?? 'Bloco'
-  if (limpo === '') return nome
-  return limpo.length > 24 ? `${limpo.slice(0, 24)}…` : limpo
-}
-
-/**
- * O primeiro texto que o bloco tem para mostrar, seja qual for o formato.
- *
- * `partes` e `mensagens` vêm primeiro porque são os formatos **novos**: a
- * mensagem virou lista de pedaços e o handoff virou lista de falas, e os campos
- * antigos (`texto`, `mensagem`) seguem no schema só para as conversas que já
- * estavam rodando quando a mudança saiu. Ler o antigo primeiro era o bug do
- * crachá: todo bloco de mensagem aparecia como "Mensagem", sem nada dentro.
- */
-function primeiroTexto(dados: Record<string, unknown> | undefined): string {
-  if (!dados) return ''
-
-  const partes = dados.partes
-  if (Array.isArray(partes)) {
-    for (const parte of partes) {
-      if (parte && typeof parte === 'object' && typeof (parte as { texto?: unknown }).texto === 'string') {
-        return (parte as { texto: string }).texto
-      }
-    }
-  }
-
-  const mensagens = dados.mensagens
-  if (Array.isArray(mensagens) && typeof mensagens[0] === 'string') return mensagens[0]
-
-  for (const campo of ['texto', 'legenda', 'instrucao', 'mensagem', 'nome', 'url'] as const) {
-    const valor = dados[campo]
-    if (typeof valor === 'string' && valor.trim() !== '') return valor
-  }
-
-  return ''
-}
-
-/**
  * O caminho que segue os corredores reservados pelo arrumador.
  *
  * Recebe a origem, os pontos de dobra e o destino, e emenda tudo com cúbicas
@@ -303,8 +230,7 @@ function ArestaRemovivel({
 }: EdgeProps) {
   const acoes = useContext(AcaoDaAresta)
   const { realcada, realcar } = useContext(Realce)
-  const tela = useReactFlow()
-  const { screenToFlowPosition } = tela
+  const { screenToFlowPosition } = useReactFlow()
   const [arrastando, setArrastando] = useState(false)
 
   /**
@@ -330,21 +256,6 @@ function ArestaRemovivel({
   const haCartaoSelecionado = useStore((s) => {
     for (const no of s.nodeLookup.values()) if (no.selected) return true
     return false
-  })
-
-  /**
-   * Como o destino se chama, para o crachá. Sai do seletor já como texto: o
-   * seletor do React Flow compara o que devolve a cada desenho, e devolver um
-   * objeto novo aqui redesenharia todas as linhas sem parar.
-   */
-  const nomeDoDestino = useStore((s) => {
-    const no = s.nodeLookup.get(target)
-    if (!no) return ''
-    return apelidoDoBloco(no.type ?? '', no.data as Record<string, unknown> | undefined)
-  })
-  const iconeDoDestino = useStore((s) => {
-    const tipo = s.nodeLookup.get(target)?.type ?? ''
-    return (ICONES as Record<string, string>)[tipo] ?? '→'
   })
 
   /**
@@ -425,14 +336,6 @@ function ArestaRemovivel({
   const rotuloX = desvio ? meioX : (noMeioDoCorredor?.x ?? meioAutomaticoX)
   const rotuloY = desvio ? meioY : (noMeioDoCorredor?.y ?? meioAutomaticoY)
 
-  /**
-   * A ligação é longa demais para valer a pena desenhar?
-   *
-   * Desvio à mão manda mais: quem puxou o fio com o dedo quis vê-lo ali.
-   */
-  const dobrada =
-    !desvio && (targetX - sourceX > LONGE_PARA_FRENTE || sourceX - targetX > LONGE_PARA_TRAS)
-
   const sobOPonteiro = realcada === id
   const acesa = Boolean(sobOPonteiro || selected || arrastando || presaAoSelecionado)
   // Só apaga as outras quando há de fato algo em foco. Sem esta condição o
@@ -468,122 +371,88 @@ function ArestaRemovivel({
     setArrastando(false)
   }
 
-  /**
-   * O fio só aparece quando há motivo.
-   *
-   * Ligação curta: sempre. Ligação longa: só em foco , ponteiro no crachá,
-   * linha selecionada ou um dos dois cartões selecionado. É aqui que o desenho
-   * deixa de ser novelo: o que some é justamente o fio que atravessa a tela.
-   */
-  const mostrarFio = !dobrada || acesa
-
   return (
     <>
-      {mostrarFio && (
-        <>
-          {/*
-            O contorno: um traço da cor do canvas, mais grosso, por baixo do de
-            verdade. É o que faz a linha em foco cortar visualmente as que ela
-            cruza, em vez de virar mais um fio do novelo. Só aparece acesa,
-            porque contorno em toda linha engorda o desenho sem informar nada.
-          */}
-          {acesa && !esmaecida && (
-            <path
-              d={caminho}
-              fill="none"
-              stroke="var(--canvas)"
-              strokeWidth={8}
-              strokeLinecap="round"
-              style={{ pointerEvents: 'none' }}
-            />
-          )}
-
-          <BaseEdge
-            id={id}
-            path={caminho}
-            interactionWidth={0}
-            style={{
-              ...style,
-              strokeWidth: acesa ? 2.5 : 1.5,
-              strokeLinecap: 'round',
-              stroke: acesa ? 'var(--color-primary, #2563eb)' : (style?.stroke ?? 'var(--fio)'),
-              opacity: esmaecida ? 0.12 : 1,
-              transition: 'opacity 120ms ease, stroke 120ms ease, stroke-width 120ms ease',
-            }}
-          />
-
-          {/*
-            A seta de chegada. Desenhada à mão, e não com `markerEnd`, porque
-            `marker` em SVG não herda a cor do traço que o usa: acendendo a
-            linha, a ponta continuaria cinza.
-          */}
-          <path
-            d={`M ${targetX - 1},${targetY} L ${targetX - 9},${targetY - 4.5} L ${targetX - 9},${targetY + 4.5} Z`}
-            fill={acesa ? 'var(--color-primary, #2563eb)' : 'var(--fio)'}
-            style={{
-              pointerEvents: 'none',
-              opacity: esmaecida ? 0.12 : 1,
-              transition: 'opacity 120ms ease, fill 120ms ease',
-            }}
-          />
-
-          {/*
-            A faixa que recebe o gesto. Fica por cima do traço, invisível e
-            larga: o traço tem 1,5px e mirar nele é teste de pontaria.
-            `nodrag`/`nopan` porque, sem eles, o React Flow reivindica o mesmo
-            arrasto para mover a tela. O cursor é `ns-resize` porque o que se
-            organiza aqui é altura de linha, e é ele que avisa, antes do
-            clique, que a linha se mexe.
-
-            Ligação dobrada não ganha faixa nenhuma enquanto está escondida:
-            faixa invisível de 26px atravessando a tela inteira rouba o arrasto
-            do canvas num lugar onde não há nada desenhado.
-          */}
-          <path
-            d={caminho}
-            fill="none"
-            stroke="transparent"
-            strokeWidth={26}
-            className="nodrag nopan"
-            style={{ pointerEvents: 'stroke', cursor: arrastando ? 'grabbing' : 'ns-resize' }}
-            onPointerEnter={() => realcar(id)}
-            onPointerLeave={() => {
-              if (!gesto.current) realcar(null)
-            }}
-            onPointerDown={pegar}
-            onPointerMove={mover}
-            onPointerUp={soltar}
-            onPointerCancel={soltar}
-            onDoubleClick={(evento) => {
-              evento.stopPropagation()
-              acoes?.desviar(id, null)
-            }}
-          >
-            <title>
-              {desvio
-                ? 'Arraste para mover esta ligação; dois cliques devolvem ao caminho automático'
-                : 'Arraste para mover esta ligação'}
-            </title>
-          </path>
-        </>
-      )}
-
       {/*
-        O toco de fio entre a alça e o crachá.
-
-        Sem ele o crachá flutua no vazio e não se lê como ligação , foi
-        exatamente o que aconteceu: "isso aí é o quê?". Doze pixels bastam para
-        o olho fechar a conta de que aquilo sai dali.
+        O contorno: um traço da cor do canvas, mais grosso, por baixo do de
+        verdade. É o que faz a linha em foco cortar visualmente as que ela
+        cruza, em vez de virar mais um fio do novelo. Só aparece acesa,
+        porque contorno em toda linha engorda o desenho sem informar nada.
       */}
-      {dobrada && (
+      {acesa && !esmaecida && (
         <path
-          d={`M ${sourceX},${sourceY} L ${sourceX + 12},${sourceY}`}
-          stroke={acesa ? 'var(--color-primary, #2563eb)' : 'var(--fio)'}
-          strokeWidth={acesa ? 2.5 : 1.5}
+          d={caminho}
+          fill="none"
+          stroke="var(--canvas)"
+          strokeWidth={8}
           strokeLinecap="round"
-          style={{ pointerEvents: 'none', opacity: esmaecida ? 0.12 : 1 }}
+          style={{ pointerEvents: 'none' }}
         />
       )}
+
+      <BaseEdge
+        id={id}
+        path={caminho}
+        interactionWidth={0}
+        style={{
+          ...style,
+          strokeWidth: acesa ? 2.5 : 1.5,
+          strokeLinecap: 'round',
+          stroke: acesa ? 'var(--color-primary, #2563eb)' : (style?.stroke ?? 'var(--fio)'),
+          opacity: esmaecida ? 0.12 : 1,
+          transition: 'opacity 120ms ease, stroke 120ms ease, stroke-width 120ms ease',
+        }}
+      />
+
+      {/*
+        A seta de chegada. Desenhada à mão, e não com `markerEnd`, porque
+        `marker` em SVG não herda a cor do traço que o usa: acendendo a
+        linha, a ponta continuaria cinza.
+      */}
+      <path
+        d={`M ${targetX - 1},${targetY} L ${targetX - 9},${targetY - 4.5} L ${targetX - 9},${targetY + 4.5} Z`}
+        fill={acesa ? 'var(--color-primary, #2563eb)' : 'var(--fio)'}
+        style={{
+          pointerEvents: 'none',
+          opacity: esmaecida ? 0.12 : 1,
+          transition: 'opacity 120ms ease, fill 120ms ease',
+        }}
+      />
+
+      {/*
+        A faixa que recebe o gesto. Fica por cima do traço, invisível e
+        larga: o traço tem 1,5px e mirar nele é teste de pontaria.
+        `nodrag`/`nopan` porque, sem eles, o React Flow reivindica o mesmo
+        arrasto para mover a tela. O cursor é `ns-resize` porque o que se
+        organiza aqui é altura de linha, e é ele que avisa, antes do
+        clique, que a linha se mexe.
+      */}
+      <path
+        d={caminho}
+        fill="none"
+        stroke="transparent"
+        strokeWidth={26}
+        className="nodrag nopan"
+        style={{ pointerEvents: 'stroke', cursor: arrastando ? 'grabbing' : 'ns-resize' }}
+        onPointerEnter={() => realcar(id)}
+        onPointerLeave={() => {
+          if (!gesto.current) realcar(null)
+        }}
+        onPointerDown={pegar}
+        onPointerMove={mover}
+        onPointerUp={soltar}
+        onPointerCancel={soltar}
+        onDoubleClick={(evento) => {
+          evento.stopPropagation()
+          acoes?.desviar(id, null)
+        }}
+      >
+        <title>
+          {desvio
+            ? 'Arraste para mover esta ligação; dois cliques devolvem ao caminho automático'
+            : 'Arraste para mover esta ligação'}
+        </title>
+      </path>
 
       <EdgeLabelRenderer>
         <div
@@ -597,89 +466,35 @@ function ArestaRemovivel({
           // `ESPERA_PARA_APAGAR`.
           style={{
             position: 'absolute',
-            transform: dobrada
-              ? `translate(0, -50%) translate(${sourceX + 12}px, ${sourceY}px)`
-              : `translate(-50%, -50%) translate(${rotuloX}px, ${rotuloY}px)`,
+            transform: `translate(-50%, -50%) translate(${rotuloX}px, ${rotuloY}px)`,
           }}
           className="nodrag nopan pointer-events-none"
           onPointerEnter={() => realcar(id)}
           onPointerLeave={() => realcar(null)}
         >
-          {dobrada ? (
-            /*
-              O crachá que substitui o fio longo.
-
-              Clicar leva a câmera até o destino, que é a pergunta real de quem
-              olha para uma ligação dessas ("vai parar onde?") , e leva em menos
-              tempo do que seguir o traço com o olho levava.
-            */
-            <span
-              className={`pointer-events-auto flex items-center gap-1 rounded-full border bg-panel py-[3px] pr-[3px] pl-2 text-[10px] whitespace-nowrap shadow-[0_2px_10px_rgba(19,25,34,0.12)] transition ${
-                acesa ? 'border-primary/40 text-primary' : 'border-line text-muted'
-              }`}
-            >
-              <button
-                type="button"
-                title={`Esta saída leva ao bloco "${nomeDoDestino}". Clique para ir até lá.`}
-                onClick={(evento) => {
-                  evento.stopPropagation()
-                  tela.fitView({ nodes: [{ id: target }], duration: 400, maxZoom: 1.1 })
-                }}
-                className="flex items-center gap-1"
-              >
-                {/*
-                  "vai para" escrito por extenso, e não só uma seta.
-
-                  A primeira versão era ícone + nome + ↗, e ninguém entendeu o
-                  que era , dois dos três símbolos eram seta (o ícone do bloco
-                  de mensagem também é `↗`) e nenhum dizia que aquilo era uma
-                  ligação. Duas palavras resolvem o que três glifos não
-                  resolveram.
-                */}
-                <span className="text-[9px] tracking-wide text-soft">vai para</span>
-                <span aria-hidden>{iconeDoDestino}</span>
-                <span className="max-w-[120px] truncate font-medium">{nomeDoDestino}</span>
-              </button>
-              <button
-                type="button"
-                title="Apagar esta ligação"
-                aria-label="Apagar esta ligação"
-                onClick={(evento) => {
-                  evento.stopPropagation()
-                  acoes?.apagar(id)
-                }}
-                className={`flex size-[16px] items-center justify-center rounded-full text-[9px] transition hover:bg-rose-400/15 hover:text-perigo ${
-                  acesa ? 'opacity-100' : 'opacity-0'
-                }`}
-              >
-                ✕
-              </button>
-            </span>
-          ) : (
-            <button
-              type="button"
-              title="Apagar esta ligação"
-              aria-label="Apagar esta ligação"
-              onClick={(evento) => {
-                evento.stopPropagation()
-                acoes?.apagar(id)
-              }}
-              // Aparece **só** quando a linha está em foco (ponteiro, seleção
-              // da linha ou de um dos cartões). Antes ficava de leve em todas
-              // ao mesmo tempo: num fluxo de trinta ligações isso é trinta
-              // botões de apagar espalhados pelo desenho, e era metade da
-              // poluição que fazia a tela parecer novelo. Some durante o
-              // arrasto, quando fica debaixo do ponteiro esperando um clique
-              // acidental.
-              className={`flex size-[20px] items-center justify-center rounded-full border border-line bg-panel text-[10px] text-muted transition hover:scale-110 hover:border-rose-400/50 hover:bg-rose-400/15 hover:text-perigo ${
-                acesa && !arrastando
-                  ? 'pointer-events-auto opacity-100'
-                  : 'pointer-events-none opacity-0'
-              }`}
-            >
-              ✕
-            </button>
-          )}
+          <button
+            type="button"
+            title="Apagar esta ligação"
+            aria-label="Apagar esta ligação"
+            onClick={(evento) => {
+              evento.stopPropagation()
+              acoes?.apagar(id)
+            }}
+            // Aparece **só** quando a linha está em foco (ponteiro, seleção
+            // da linha ou de um dos cartões). Antes ficava de leve em todas
+            // ao mesmo tempo: num fluxo de trinta ligações isso é trinta
+            // botões de apagar espalhados pelo desenho, e era metade da
+            // poluição que fazia a tela parecer novelo. Some durante o
+            // arrasto, quando fica debaixo do ponteiro esperando um clique
+            // acidental.
+            className={`flex size-[20px] items-center justify-center rounded-full border border-line bg-panel text-[10px] text-muted transition hover:scale-110 hover:border-rose-400/50 hover:bg-rose-400/15 hover:text-perigo ${
+              acesa && !arrastando
+                ? 'pointer-events-auto opacity-100'
+                : 'pointer-events-none opacity-0'
+            }`}
+          >
+            ✕
+          </button>
         </div>
       </EdgeLabelRenderer>
     </>

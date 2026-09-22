@@ -1106,13 +1106,12 @@ textarea::placeholder {
 }
 
 /*
- * O crachá e o ✕ de uma ligação ficam por cima dos cartões.
+ * O ✕ de uma ligação fica por cima dos cartões.
  *
- * A camada dos rótulos nasce embaixo da dos blocos, e o crachá de uma ligação
- * longa mora no vão entre duas colunas , vão que é menor que ele. Embaixo, ele
- * aparecia cortado pela metade pelo cartão vizinho. A camada não rouba clique
- * de ninguém: ela é `pointer-events: none` e só o que é botão dentro dela
- * recebe ponteiro.
+ * A camada dos rótulos nasce embaixo da dos blocos, então o botão de apagar
+ * aparecia cortado sempre que a linha passava rente a um cartão. A camada não
+ * rouba clique de ninguém: ela é `pointer-events: none` e só o que é botão
+ * dentro dela recebe ponteiro.
  */
 .react-flow__edgelabel-renderer {
   z-index: 5;
