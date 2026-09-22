@@ -257,6 +257,34 @@ extração explícito para os objetos de `public`.
   `public.atividades` em 200 com a coluna nova já visível, e `app_verandi.conta`,
   `.contrato`, `.avaliacao` e `.cobranca` em 200.
 
+- **a `0090` foi aplicada em 22/set/2026**, com autorização explícita do dono
+  pedida nesta sessão ("sim aplica e pode dar deploy"). Conferida pelo ensaio em
+  transação contra a produção, limpo, que é o suficiente para o que ela faz:
+  aditiva pura, sem toque em dado existente e sem função nenhuma.
+
+  Ela acrescenta três colunas a `public.clients` (`retomar_bot_ativo` booleano
+  `not null default false`, `retomar_bot_minutos` inteiro `not null default 120`,
+  `retomar_bot_mensagem` texto anulável) e o índice parcial `sessions_humano_idx`
+  sobre `public.sessions (atualizado_em) where status = 'humano'`.
+
+  **Por que `ativo` nasce `false`**: o que ela liga acontece em conversa viva, e
+  aplicar a migration não pode mudar o comportamento de nenhuma conta no dia em
+  que roda. Conferido depois de aplicar: `count(*) where retomar_bot_ativo` em
+  **zero**. Quem liga é o dono, na tela.
+
+  **Por que o interruptor é separado do prazo**: com uma coluna só, `null` seria
+  "desligado" e desligar jogaria fora o prazo escolhido. Religar devolveria campo
+  vazio, e isso faz qualquer um evitar mexer no interruptor.
+
+  Releitura objeto a objeto depois de aplicar: as três colunas com tipo, default
+  e nulidade corretos, `sessions_humano_idx` presente em `pg_indexes`, e nenhuma
+  coluna de mesmo nome em `app_verandi`.
+
+  **Medidos antes e depois**, os dois iguais: `app_verandi` com **40** tabelas e
+  `app_verandi.migrations_aplicadas` com **34** linhas, `public` com **68**
+  tabelas. `public.clients` foi de **29** para **32** colunas, que é a única
+  diferença esperada.
+
 - **a `0088` foi aplicada em 20/set/2026**, com autorização explícita do dono
   pedida nesta sessão. Conferida pelos **dois** testes: replay do zero em Docker
   (`0001`–`0088` em ordem, sem erro) e ensaio em transação contra a produção,
