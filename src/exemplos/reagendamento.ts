@@ -39,6 +39,13 @@ import { acharPreset } from '@/core/presets'
  *    retorna as informações citando data, horário, nome, e fala assim: você tem
  *    aula agendada tal dia, tal horário, e pronto, acabou."* Quem confirma com
  *    os dados na tela não volta em uma hora perguntando se deu certo.
+ * 5. **Ninguém digita data.** A pergunta era aberta *"me manda a data, por
+ *    exemplo 21/08/2026"*, e quem opera cobrou: *"ele pergunta pra que dia,
+ *    como se o aluno pudesse escolher quando quiser. Aí ele fala dia 14 e n
+ *    tem, e o bot fala q n tem"*. Uma data aberta oferece 365 respostas das
+ *    quais meia dúzia funciona, e recusa as outras 359. Agora são duas
+ *    escolhas: a faixa (esta semana, a que vem, mais pra frente) e o dia,
+ *    vindo de um menu com **só os dias que têm vaga**.
  *
  * O que ele **não** faz, e por decisão registrada em `docs/PLANO-AGENDA.md`:
  * não desmarca a aula antiga sozinho. A reposição já está em aberto na agenda ,
@@ -174,19 +181,109 @@ export const reagendamento: Fluxo = fluxoSchema.parse({
       type: 'pergunta',
       position: em(6, 0),
       data: {
-        texto:
-          'Vamos remarcar então. Para quando você quer?\nMe manda a data, por exemplo: *21/08/2026*',
-        salvarEm: 'dia_escrito',
-        salvarPadraoEm: 'dia',
-        formato: 'data',
-        mensagemDeErro:
-          'Desculpe, pode escrever novamente citando dia / mês / ano? Exemplo: *21/08/2026*',
-        opcoes: [],
+        texto: 'Vamos remarcar então. Para quando você quer?',
+        salvarEm: 'faixa',
+        opcoes: [
+          { id: 'esta', rotulo: '📅 Esta semana' },
+          { id: 'proxima', rotulo: '🗓️ Semana que vem' },
+          { id: 'depois', rotulo: '⏳ Mais pra frente' },
+        ],
         timeoutMinutos: 60,
       },
     },
 
-    comPreset('verandi-horarios', { id: 'buscar-horarios', position: em(7, 0) }),
+    /*
+     * A faixa vira intervalo, num nó por opção.
+     *
+     * São dois valores (`data_de` e `data_ate`) e `salvarValorEm` guarda um
+     * só, então a tradução é explícita. As datas em si não são calculadas
+     * aqui: `semana_de`, `prox_semana_de` e `daqui_30_dias` já chegam prontas
+     * em toda conversa, com o fuso da conta, e foram escritas justamente para
+     * este menu existir sem ninguém digitar data. Ver `core/datas.ts`.
+     */
+    {
+      id: 'faixa-esta',
+      type: 'mensagem',
+      position: em(6.6, -1),
+      data: {
+        partes: [
+          { tipo: 'salvar', campo: 'data_de', valor: '{{semana_de}}' },
+          { tipo: 'salvar', campo: 'data_ate', valor: '{{semana_ate}}' },
+        ],
+      },
+    },
+    {
+      id: 'faixa-proxima',
+      type: 'mensagem',
+      position: em(6.6, 0),
+      data: {
+        partes: [
+          { tipo: 'salvar', campo: 'data_de', valor: '{{prox_semana_de}}' },
+          { tipo: 'salvar', campo: 'data_ate', valor: '{{prox_semana_ate}}' },
+        ],
+      },
+    },
+    {
+      id: 'faixa-depois',
+      type: 'mensagem',
+      position: em(6.6, 1),
+      data: {
+        partes: [
+          // Começa na semana seguinte à próxima: as duas primeiras faixas já
+          // cobrem até lá, e repetir dia já oferecido faria o terceiro menu
+          // parecer que as outras opções não valeram.
+          { tipo: 'salvar', campo: 'data_de', valor: '{{prox_semana_ate}}' },
+          { tipo: 'salvar', campo: 'data_ate', valor: '{{daqui_30_dias}}' },
+        ],
+      },
+    },
+
+    comPreset('verandi-dias', { id: 'buscar-dias', position: em(7.2, 0) }),
+
+    /*
+     * O dia sai de um menu, e não de um teclado.
+     *
+     * É a correção que quem opera pediu: *"ele pergunta: pra que dia? como se
+     * o aluno pudesse escolher quando quiser. Aí ele fala dia 14 e n tem, e o
+     * bot fala q n tem"*. Perguntar uma data aberta é oferecer 365 respostas
+     * das quais meia dúzia funciona, e depois recusar as outras 359.
+     *
+     * O menu lê `dias_livres_br` ("sexta 21/08") e manda `dias_livres`
+     * ("2026-08-21"): o rótulo é o que a pessoa escolhe, o valor é o que a
+     * agenda entende. Um só para os dois papéis significaria ou pedir que ela
+     * escolha entre datas ISO, ou mandar "sexta 21/08" no `?de=` da API.
+     */
+    {
+      id: 'dia-do-menu',
+      type: 'pergunta',
+      position: em(8, 0),
+      data: {
+        texto: 'Estes são os dias com vaga. Qual fica melhor?',
+        salvarEm: 'dia_escrito',
+        opcoes: [],
+        opcoesDe: 'dias_livres_br',
+        valoresDe: 'dias_livres',
+        salvarValorEm: 'dia',
+        timeoutMinutos: 60,
+      },
+    },
+
+    // Faixa sem nenhum dia livre: oferece escolher outra, em vez de morrer.
+    {
+      id: 'faixa-vazia',
+      type: 'pergunta',
+      position: em(8, 1.5),
+      data: {
+        texto: 'Não achei vaga nesse período. 😕\nQuer ver outro?',
+        opcoes: [
+          { id: 'outra', rotulo: '📅 Ver outro período' },
+          { id: 'falar', rotulo: '💬 Chamar a recepção' },
+        ],
+        timeoutMinutos: 60,
+      },
+    },
+
+    comPreset('verandi-horarios', { id: 'buscar-horarios', position: em(9, 0) }),
 
     /*
      * O menu diz a hora, a aula **e** o professor.
@@ -337,7 +434,28 @@ export const reagendamento: Fluxo = fluxoSchema.parse({
     { id: 'e11', source: 'mais-de-uma', sourceHandle: 'verdadeiro', target: 'recepcao' },
     { id: 'e12', source: 'mais-de-uma', sourceHandle: 'falso', target: 'uma-so' },
     { id: 'e12b', source: 'uma-so', target: 'qual-dia' },
-    { id: 'e13', source: 'qual-dia', target: 'buscar-horarios' },
+    /*
+     * Cada faixa grava o seu intervalo e as três caem na mesma busca.
+     *
+     * Três arestas chegando em `buscar-dias` é o desenho certo: o que muda
+     * entre elas é só o par de datas, e um nó de busca por faixa seria o mesmo
+     * bloco copiado três vezes, com três lugares para esquecer de mexer.
+     */
+    { id: 'e13a', source: 'qual-dia', sourceHandle: 'esta', target: 'faixa-esta' },
+    { id: 'e13b', source: 'qual-dia', sourceHandle: 'proxima', target: 'faixa-proxima' },
+    { id: 'e13c', source: 'qual-dia', sourceHandle: 'depois', target: 'faixa-depois' },
+    { id: 'e13d', source: 'faixa-esta', target: 'buscar-dias' },
+    { id: 'e13e', source: 'faixa-proxima', target: 'buscar-dias' },
+    { id: 'e13f', source: 'faixa-depois', target: 'buscar-dias' },
+    { id: 'e13g', source: 'buscar-dias', target: 'dia-do-menu' },
+    { id: 'e13h', source: 'dia-do-menu', sourceHandle: 'escolheu', target: 'buscar-horarios' },
+    // Período sem vaga nenhuma: a saída `vazio` da pergunta dinâmica existe
+    // para isto, e sem ela o menu abriria sem opção alguma.
+    { id: 'e13i', source: 'dia-do-menu', sourceHandle: 'vazio', target: 'faixa-vazia' },
+    { id: 'e13j', source: 'dia-do-menu', sourceHandle: 'timeout', target: 'recepcao' },
+    { id: 'e13k', source: 'faixa-vazia', sourceHandle: 'outra', target: 'qual-dia' },
+    { id: 'e13l', source: 'faixa-vazia', sourceHandle: 'falar', target: 'recepcao' },
+    { id: 'e13m', source: 'faixa-vazia', sourceHandle: 'timeout', target: 'recepcao' },
     { id: 'e14', source: 'qual-dia', sourceHandle: 'timeout', target: 'recepcao' },
     { id: 'e15', source: 'buscar-horarios', target: 'quem-atende' },
     { id: 'e16', source: 'quem-atende', target: 'qual-horario' },
@@ -346,11 +464,13 @@ export const reagendamento: Fluxo = fluxoSchema.parse({
     { id: 'e19', source: 'qual-horario', sourceHandle: 'timeout', target: 'recepcao' },
     // Voltar para a mesma pergunta é o "voltar ao menu": duas setas chegando no
     // mesmo bloco sempre foram válidas, e é o desenho que este caso pede.
-    { id: 'e20', source: 'sem-vaga', sourceHandle: 'outro-dia', target: 'qual-dia' },
+    // Volta ao **menu de dias**, e não à escolha de faixa: a pessoa já disse o
+    // período, e refazer essa pergunta descartaria uma resposta que vale.
+    { id: 'e20', source: 'sem-vaga', sourceHandle: 'outro-dia', target: 'dia-do-menu' },
     { id: 'e21', source: 'sem-vaga', sourceHandle: 'falar', target: 'recepcao' },
     { id: 'e22', source: 'sem-vaga', sourceHandle: 'timeout', target: 'recepcao' },
     { id: 'e23', source: 'confere', sourceHandle: 'sim', target: 'marcar' },
-    { id: 'e24', source: 'confere', sourceHandle: 'nao', target: 'qual-dia' },
+    { id: 'e24', source: 'confere', sourceHandle: 'nao', target: 'dia-do-menu' },
     { id: 'e25', source: 'confere', sourceHandle: 'timeout', target: 'recepcao' },
     { id: 'e26', source: 'marcar', target: 'confirmado' },
   ],

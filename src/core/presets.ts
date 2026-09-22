@@ -270,7 +270,28 @@ export const PRESETS: Preset[] = [
       // `unicos` é o que faz este menu prestar: a lista traz uma linha por
       // horário, então a mesma data aparece quatro vezes num dia com quatro
       // vagas, e um menu com "18/08" repetido não é menu.
-      mapear: [{ variavel: 'dias_livres', caminho: 'livres[].data', unicos: true }],
+      mapear: [
+        { variavel: 'dias_livres', caminho: 'livres[].data', unicos: true },
+        /*
+         * A mesma lista, escrita para gente ler.
+         *
+         * O par existe pela mesma razão que `horarios` e `horarios_id`: o
+         * rótulo é o que a pessoa lê, o valor é o que a API entende, e são
+         * coisas diferentes. Formatar `dias_livres` no lugar mandaria
+         * "sexta 21/08" para `?de=`, e a agenda não sabe ler isso.
+         *
+         * `dia_semana` e não `data`: o menu existe para a pessoa escolher sem
+         * abrir o calendário, e é o dia da semana que ela usa para isso. O ano
+         * fica de fora porque nenhum destes menus atravessa a virada dele , a
+         * janela mais longa é de 30 dias.
+         */
+        {
+          variavel: 'dias_livres_br',
+          caminho: 'livres[].data',
+          unicos: true,
+          formato: 'dia_semana',
+        },
+      ],
       // Sem os dias não há o que perguntar: a conversa morreria numa pergunta
       // sem resposta possível.
       aoFalhar: 'humano',

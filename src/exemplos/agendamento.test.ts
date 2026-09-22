@@ -13,6 +13,7 @@ import { agendamento } from './agendamento'
 vi.mock('./rede', () => ({ conferirEndereco: vi.fn() }))
 vi.mock('undici', () => ({ request: vi.fn(), Agent: vi.fn() }))
 const { extrair } = await import('@/server/efeitos/http')
+const { formatarValor } = await import('@/core/flow/formatos')
 
 /**
  * O modelo de agendamento, rodado de ponta a ponta.
@@ -82,10 +83,16 @@ function valoresDoPreset(presetId: string, json: unknown): Record<string, string
   if (!preset) throw new Error(`preset ${presetId} sumiu`)
 
   const valores: Record<string, string> = {}
-  // Os quatro argumentos, na mesma ordem que `resolverHttp` usa no servidor ,
-  // esquecer o `rotulo` aqui faria o teste passar com o menu errado.
-  for (const { variavel, caminho, unicos, rotulo, quantos } of preset.dados.mapear) {
-    valores[variavel] = extrair(json, caminho, unicos ?? false, rotulo, quantos ?? false)
+  /*
+   * Os mesmos passos que `resolverHttp` dá no servidor, na mesma ordem:
+   * extrair e **depois** formatar. Esquecer o `rotulo` faria o teste passar
+   * com o menu errado; esquecer o `formato` mostraria data ISO num teste que
+   * jura estar conferindo o que a pessoa lê.
+   */
+  for (const { variavel, caminho, unicos, rotulo, quantos, formato } of preset.dados.mapear) {
+    const cru = extrair(json, caminho, unicos ?? false, rotulo, quantos ?? false)
+    // Contar itens devolve número; formatá-lo como data não faz sentido nenhum.
+    valores[variavel] = quantos ? cru : formatarValor(cru, formato)
   }
   return valores
 }
@@ -143,7 +150,15 @@ describe('os caminhos do mapeamento batem com o que a API responde', () => {
       // pergunta que sempre vem em seguida.
       horarios: '07:00 · Pilates solo;10:00 · Pilates solo',
       horarios_id: 'a41f;b52g',
-      horarios_prof: 'Marina;Carol',
+      /*
+       * Já ligado com "e", e não `Marina;Carol`.
+       *
+       * O preset marca este campo com `formato: 'nomes'`, e o servidor formata
+       * depois de extrair. O teste esperava a forma crua porque o helper daqui
+       * pulava a formatação: afirmava um valor que produção nunca produziu, e
+       * a frase "quem atende é: Marina;Carol" teria passado por ele.
+       */
+      horarios_prof: 'Marina e Carol',
       // Vazio aqui é "não há horário cheio", e é diferente de não haver horário.
       lotados: '',
       lotados_id: '',
@@ -153,6 +168,8 @@ describe('os caminhos do mapeamento batem com o que a API responde', () => {
   it('o menu de dias não repete a mesma data uma vez por horário', () => {
     expect(valoresDoPreset('verandi-dias', DISPONIBILIDADE)).toEqual({
       dias_livres: '2026-08-21',
+      // O par do menu: a pessoa lê o dia da semana, a API recebe o ISO.
+      dias_livres_br: 'sexta 21/08',
     })
   })
 
