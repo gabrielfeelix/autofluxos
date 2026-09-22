@@ -56,6 +56,10 @@ export const PALAVRAS_ESCAPE = [
 const MENSAGEM_TRANSFERENCIA = 'Vou te passar para um atendente. Só um instante!'
 const MENSAGEM_NAO_ENTENDI = 'Desculpa, não entendi. Pode escolher uma das opções abaixo?'
 
+/** Quando chega figurinha no meio de uma pergunta. Ver a Regra B, em `executar`. */
+const MENSAGEM_SO_TEXTO =
+  'Ainda não sei ler figurinha. 😅 Pode me responder por aqui mesmo?'
+
 /**
  * O que o motor precisa saber sobre **o mundo em volta** para transferir bem.
  *
@@ -185,6 +189,39 @@ export function executar(
         no: parada,
         saida: SAIDA_MIDIA,
       })
+    }
+
+    /*
+     * Figurinha não gasta o atendimento de ninguém.
+     *
+     * Ela chega aqui como mídia porque é um WebP, mas não é a foto da receita
+     * nem o PDF do contrato: é o "ok" e o "valeu" de quem está conversando, e
+     * cai no meio do menu o tempo todo. Transferir por causa dela tira a pessoa
+     * do fluxo que ela mesma abriu e põe um humano para responder um polegar
+     * para cima. No teste da MGM em 22/set/2026 foi exatamente isso.
+     *
+     * Então o bot diz que não lê figurinha e repete a pergunta, e a tentativa
+     * conta: quem manda três seguidas continua indo para uma pessoa, pela mesma
+     * régua do menu que ninguém acerta. Áudio, foto e documento seguem na Regra
+     * B, porque quem manda um deles quase sempre mandou conteúdo de verdade.
+     *
+     * A saída "mandou arquivo" continua ganhando desta regra, logo acima: se o
+     * desenho disse o que fazer com a imagem, figurinha é imagem.
+     */
+    if (entrada.formato === 'sticker' && parada?.type === 'pergunta') {
+      s.tentativas += 1
+      if (s.tentativas >= MAX_TENTATIVAS) {
+        return transferir(
+          s,
+          acoes,
+          `o bot não entendeu a resposta ${MAX_TENTATIVAS} vezes seguidas`,
+          contexto,
+        )
+      }
+
+      acoes.push({ tipo: 'enviar_texto', texto: MENSAGEM_SO_TEXTO })
+      acoes.push(perguntar(parada, s))
+      return { acoes, sessao: s }
     }
 
     return transferir(s, acoes, `a pessoa mandou ${entrada.formato} e o bot só lê texto`, contexto)

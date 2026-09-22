@@ -229,6 +229,35 @@ describe('as três garantias que impedem a pessoa de ficar presa', () => {
     })
   })
 
+  /*
+   * O teste da MGM em 22/set/2026: figurinha no meio do menu chamou uma pessoa
+   * para responder um polegar para cima, e tirou quem estava conversando do
+   * fluxo que ela mesma tinha aberto.
+   */
+  it('figurinha não transfere: o bot diz que não lê e repete a pergunta', () => {
+    const { sessao, acoes } = conversar(triagem, [
+      { tipo: 'inicio' },
+      { tipo: 'midia', formato: 'sticker' },
+    ])
+
+    expect(sessao.status).not.toBe('humano')
+    expect(acoes.some((a) => a.tipo === 'transferir_humano')).toBe(false)
+    expect(textos(acoes).join(' ')).toContain('figurinha')
+    // Repetiu a pergunta em vez de deixar a pessoa no escuro.
+    expect(acoes.at(-1)?.tipo).toBe('enviar_opcoes')
+  })
+
+  it(`figurinha ${MAX_TENTATIVAS} vezes seguidas ainda vai para uma pessoa`, () => {
+    const { sessao } = conversar(triagem, [
+      { tipo: 'inicio' },
+      { tipo: 'midia', formato: 'sticker' },
+      { tipo: 'midia', formato: 'sticker' },
+      { tipo: 'midia', formato: 'sticker' },
+    ])
+
+    expect(sessao.status).toBe('humano')
+  })
+
   it(`transfere na ${MAX_TENTATIVAS}ª resposta que o bot não entende`, () => {
     let sessao = sessaoNova()
     let acoes: Acao[] = []
