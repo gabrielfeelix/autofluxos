@@ -712,7 +712,7 @@ export function Fila({
                   */}
                     {semLer > 0 && (
                       <span
-                        title={`${semLer} mensagem(ns) desde a última vez que você abriu`}
+                        title={`${semLer} ${semLer === 1 ? "mensagem nova" : "mensagens novas"} desde a última vez que você abriu`}
                         className="shrink-0 rounded-full bg-primary px-1.5 py-px text-[11px] font-bold text-white"
                       >
                         {semLer > TETO_DA_INSIGNIA
@@ -735,6 +735,31 @@ export function Fila({
                   {nomeDe(lead.atribuidoA) && (
                     <span className="mt-0.5 block truncate text-[11px] text-dim">
                       com {nomeDe(lead.atribuidoA)}
+                    </span>
+                  )}
+                  {/*
+                    O bot calado aparece **na fila**, e não só na conversa
+                    aberta.
+
+                    Veio de um relato de uso: o bot "não estava indo" e ninguém
+                    entendia por quê. Não era defeito, era handoff , alguém
+                    tinha assumido a conversa, e assumir cala o bot naquele
+                    contato. A informação existia só dentro da conversa aberta,
+                    e a fila, que é onde se decide o que abrir, não dizia nada.
+
+                    Separado de `aguardando`: aquilo é a fila formal de quem
+                    pediu atendente e tem relógio correndo. Este é o estado
+                    silencioso , ninguém está esperando, mas o robô também não
+                    responde, e sem alguém voltar ali a conversa fica muda para
+                    sempre. É justamente o que não tem sintoma nenhum.
+                  */}
+                  {!lead.automacaoAtiva && !lead.aguardando && (
+                    <span
+                      title="O bot está pausado neste contato. Ele só volta quando alguém marcar “Atendimento finalizado”."
+                      className="mt-0.5 flex items-center gap-1 text-[11px] text-amber-700"
+                    >
+                      <BotMudo />
+                      bot pausado
                     </span>
                   )}
                 </span>
@@ -1281,6 +1306,36 @@ function BotaoDaLinha({
  * para prender, a mesma gramática do WhatsApp, e a inclinação é a única pista
  * de estado que se lê sem parar para ler.
  */
+/**
+ * O robô com a boca riscada: ele está ali e não fala.
+ *
+ * Um ícone de "pausa" diria que alguém apertou um botão e vai despausar. O
+ * ponto deste estado é o contrário , ninguém vai, a menos que perceba. Por
+ * isso o traço cortando, que é como se marca canal mudo em qualquer tela.
+ */
+function BotMudo() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      width="12"
+      height="12"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="shrink-0"
+    >
+      <rect x="4" y="8" width="16" height="11" rx="2.5" />
+      <path d="M12 8V5" />
+      <circle cx="9" cy="13" r="0.9" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="13" r="0.9" fill="currentColor" stroke="none" />
+      <path d="M3 21 21 3" />
+    </svg>
+  );
+}
+
 function Alfinete({ preso = false }: { preso?: boolean }) {
   return (
     <svg
