@@ -70,7 +70,7 @@ export const EXEMPLO_PADRONIZADO: Record<FormatoDeResposta, string> = {
 export const PEDIDO_PADRAO: Record<FormatoDeResposta, string> = {
   data: 'Desculpe, não entendi a data. Pode escrever de novo com dia, mês e ano? Por exemplo: 21/08/2026.',
   data_futura:
-    'Essa data já passou. Pode escolher um dia de hoje em diante? Por exemplo: 21/08/2026.',
+    'Desculpe, não entendi a data. Pode escrever de novo com dia, mês e ano? Por exemplo: 21/08/2026.',
   hora: 'Desculpe, não entendi o horário. Pode escrever de novo assim: 07:00.',
   numero: 'Desculpe, não entendi o número. Pode escrever só o valor? Por exemplo: 1250.',
   email: 'Desculpe, esse e-mail não parece completo. Pode escrever de novo? Por exemplo: nome@dominio.com.',
@@ -79,10 +79,34 @@ export const PEDIDO_PADRAO: Record<FormatoDeResposta, string> = {
   cpf: 'Desculpe, não entendi o CPF. Pode escrever os 11 números? Por exemplo: 123.456.789-01.',
 }
 
+/**
+ * O que o bot diz quando a data existe, foi entendida, e já passou.
+ *
+ * **É outra conversa e por isso é outra frase.** Quem escreveu `30/06/2026` em
+ * setembro escreveu a data certinha; repetir "não entendi, escreva dia / mês /
+ * ano" acusa a pessoa de errar o formato que ela acertou, e ela reescreve a
+ * mesma data do mesmo jeito até o bot desistir dela. Foi o que aconteceu num
+ * teste da MGM em 22/set/2026.
+ *
+ * Esta frase não é sobrescrita pela "mensagem quando não entender" do bloco:
+ * aquele campo ensina o formato, e formato não é o problema aqui. Dizer o que
+ * está errado de verdade é o que faz a pessoa conseguir responder.
+ */
+export const MENSAGEM_DATA_PASSADA =
+  'Essa data já passou. Pode escolher um dia de hoje em diante? Por exemplo: 21/08/2026.'
+
+/**
+ * Por que a resposta não serve.
+ *
+ * `formato`: não deu para ler o que a pessoa escreveu.
+ * `passou`: deu para ler, é data de verdade, e ficou para trás.
+ */
+export type MotivoDaRecusa = 'formato' | 'passou'
+
 export type Conferida =
   /** `valor` é o que a pessoa escreveu, limpo; `padrao` é a forma canônica. */
   | { ok: true; valor: string; padrao: string }
-  | { ok: false }
+  | { ok: false; motivo: MotivoDaRecusa }
 
 /**
  * A resposta cabe no formato pedido?
@@ -107,10 +131,10 @@ export function conferirResposta(
 ): Conferida {
   const valor = texto.trim()
   if (formato === undefined) return { ok: true, valor, padrao: valor }
-  if (valor === '') return { ok: false }
+  if (valor === '') return { ok: false, motivo: 'formato' }
 
   const padrao = padronizar(formato, valor)
-  if (padrao === null) return { ok: false }
+  if (padrao === null) return { ok: false, motivo: 'formato' }
 
   /*
    * A data existe no calendário, mas já passou.
@@ -120,7 +144,8 @@ export function conferirResposta(
    * Comparação de texto basta: `AAAA-MM-DD` ordena igual à data que ele
    * representa, e é por isso que a forma canônica é essa.
    */
-  if (formato === 'data_futura' && hoje !== undefined && padrao < hoje) return { ok: false }
+  if (formato === 'data_futura' && hoje !== undefined && padrao < hoje)
+    return { ok: false, motivo: 'passou' }
 
   return { ok: true, valor, padrao }
 }

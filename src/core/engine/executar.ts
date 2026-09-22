@@ -1,6 +1,11 @@
 import { descrever, nomeDaSaida } from '../flow/descrever'
 import { mensagensDoHandoff, partesDaMensagem } from '../flow/mensagem'
-import { PEDIDO_PADRAO, conferirResposta } from '../flow/resposta'
+import {
+  MENSAGEM_DATA_PASSADA,
+  type MotivoDaRecusa,
+  PEDIDO_PADRAO,
+  conferirResposta,
+} from '../flow/resposta'
 import {
   LIMITE_BOTOES,
   LIMITE_LISTA,
@@ -351,7 +356,7 @@ function responderPergunta(
       // "{{nome}}, pode escrever a data assim: 21/08/2026?" é o uso real.
       acoes.push({
         tipo: 'enviar_texto',
-        texto: interpolar(mensagemDeRecusa(no), s.vars),
+        texto: interpolar(mensagemDeRecusa(no, conferida.motivo), s.vars),
       })
       return { acoes, sessao: s }
     }
@@ -1059,7 +1064,17 @@ export function valorDaOpcao(
  * porque "formato inválido" não ensina ninguém a responder certo, e quem não
  * sabe o que fazer com o erro manda a mesma coisa de novo até o bot desistir.
  */
-export function mensagemDeRecusa(no: NoPergunta): string {
+export function mensagemDeRecusa(no: NoPergunta, motivo: MotivoDaRecusa = 'formato'): string {
+  /*
+   * Data que já passou tem frase própria, e a do cliente não vence esta.
+   *
+   * O campo "mensagem quando não entender" existe para ensinar o formato. Quem
+   * escreveu `30/06/2026` acertou o formato e errou o calendário: devolver
+   * "escreva dia / mês / ano" manda a pessoa consertar o que já estava certo, e
+   * ela reescreve a mesma data até as três tentativas acabarem.
+   */
+  if (motivo === 'passou') return MENSAGEM_DATA_PASSADA
+
   const escrita = (no.data.mensagemDeErro ?? '').trim()
   if (escrita !== '') return escrita
   return no.data.formato ? PEDIDO_PADRAO[no.data.formato] : MENSAGEM_NAO_ENTENDI

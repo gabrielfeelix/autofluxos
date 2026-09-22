@@ -160,4 +160,16 @@ describe('data_futura, a data que já passou não serve para marcar aula', () =>
   it('o formato `data` comum não passou a recusar nada', () => {
     expect(conferirResposta('data', '01/09/2020', HOJE).ok).toBe(true)
   })
+
+  /*
+   * O motivo separa as duas recusas, e é o que deixa o bot dizer "essa data já
+   * passou" em vez de acusar de erro de formato quem escreveu a data certinha.
+   */
+  it('diz por que recusou: formato ilegível e data no passado não são a mesma coisa', () => {
+    const passada = conferirResposta('data_futura', '30/06/2026', HOJE)
+    expect(passada).toEqual({ ok: false, motivo: 'passou' })
+
+    const ilegivel = conferirResposta('data_futura', 'semana que vem', HOJE)
+    expect(ilegivel).toEqual({ ok: false, motivo: 'formato' })
+  })
 })

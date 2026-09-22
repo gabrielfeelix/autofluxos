@@ -586,6 +586,29 @@ describe('pergunta livre que confere o formato', () => {
     )
   })
 
+  /*
+   * O caso real do teste da MGM em 22/set/2026: a pessoa mandou `30/06/2026`,
+   * data perfeitamente escrita, e ouviu "pode escrever novamente citando dia /
+   * mês / ano". Ela reescreveria a mesma data para sempre.
+   */
+  it('data que já passou tem frase própria, e a do cliente não vence essa', () => {
+    const fluxo = agendar({
+      formato: 'data_futura',
+      mensagemDeErro: 'Desculpe, pode escrever citando dia / mês / ano? Exemplo: 21/08/2026',
+    })
+    const primeira = executar(fluxo, sessaoNova(), { tipo: 'inicio' }, { hoje: '2026-09-22', atendimentoAberto: true, proximaAbertura: null })
+    const r = executar(
+      fluxo,
+      primeira.sessao,
+      { tipo: 'texto', texto: '30/06/2026' },
+      { hoje: '2026-09-22', atendimentoAberto: true, proximaAbertura: null },
+    )
+
+    expect(textos(r.acoes).join(' ')).toContain('já passou')
+    expect(textos(r.acoes).join(' ')).not.toContain('citando dia / mês / ano')
+    expect(r.sessao.noAtual).toBe('quando')
+  })
+
   it('a data válida passa e o fluxo segue', () => {
     const fluxo = agendar({ formato: 'data' })
     const primeira = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
