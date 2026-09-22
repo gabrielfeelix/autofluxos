@@ -282,6 +282,7 @@ const ROTULO_DO_OPERADOR: Record<Operador, string> = {
 /** O nome curto de cada formato; o exemplo vem de `EXEMPLO_DO_FORMATO`. */
 const NOME_DO_FORMATO_DE_SAIDA: Record<FormatoDeSaida, string> = {
   data: 'data',
+  dia_semana: 'dia da semana',
   hora: 'hora',
   data_hora: 'data e hora',
   dinheiro: 'dinheiro',

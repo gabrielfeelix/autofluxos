@@ -12,12 +12,20 @@ import { itensDaLista } from './schema'
  * de propósito, `new Date('2026-09-01')` interpreta como UTC e, no Brasil,
  * devolve o dia anterior.
  */
-export const FORMATOS_DE_SAIDA = ['data', 'hora', 'data_hora', 'dinheiro', 'nomes'] as const
+export const FORMATOS_DE_SAIDA = [
+  'data',
+  'dia_semana',
+  'hora',
+  'data_hora',
+  'dinheiro',
+  'nomes',
+] as const
 export type FormatoDeSaida = (typeof FORMATOS_DE_SAIDA)[number]
 
 /** O nome de cada um no painel, com exemplo, que é o que ensina. */
 export const EXEMPLO_DO_FORMATO: Record<FormatoDeSaida, string> = {
   data: '2026-09-01 vira 01/09/2026',
+  dia_semana: '2026-09-22 vira segunda 22/09',
   hora: '07:00:00 vira 07:00',
   data_hora: '2026-09-01T07:30 vira 01/09/2026 07:30',
   dinheiro: '4200.5 vira 4.200,50',
@@ -52,6 +60,8 @@ function formatarUm(valor: string, formato: FormatoDeSaida): string {
   switch (formato) {
     case 'data':
       return comoData(valor) ?? valor
+    case 'dia_semana':
+      return comoDiaDaSemana(valor) ?? valor
     case 'hora':
       return comoHora(valor) ?? valor
     case 'data_hora': {
@@ -120,6 +130,66 @@ function ligarComE(itens: string[]): string {
   if (itens.length === 0) return ''
   if (itens.length === 1) return itens[0] as string
   return `${itens.slice(0, -1).join(', ')} e ${itens.at(-1) as string}`
+}
+
+/**
+ * `2026-09-22` → `segunda 22/09`.
+ *
+ * Existe por causa do menu de dias. Quem pergunta "quando você quer marcar?" e
+ * oferece `22/09/2026 · 23/09/2026 · 25/09/2026` está pedindo que a pessoa
+ * abra o calendário do celular para descobrir qual deles é a terça. O dia da
+ * semana é a informação que ela usa para escolher; a data é só a confirmação.
+ *
+ * **O ano sai fora**, ao contrário do formato `data`: menu de agendamento olha
+ * as próximas semanas, e "2026" repetido em cinco botões ocupa o espaço de 20
+ * caracteres que a Cloud API dá para o rótulo.
+ *
+ * **Sem `Date`**, pelo mesmo motivo escrito no topo deste arquivo: data sem
+ * fuso vira UTC e, no Brasil, devolve o dia anterior. Um menu que chama
+ * segunda de domingo é pior do que um menu sem dia da semana. A conta é a de
+ * Sakamoto, aritmética pura sobre ano, mês e dia.
+ */
+const DIAS_DA_SEMANA = [
+  'domingo',
+  'segunda',
+  'terça',
+  'quarta',
+  'quinta',
+  'sexta',
+  'sábado',
+] as const
+
+function comoDiaDaSemana(valor: string): string | null {
+  const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(valor)
+  if (!iso) return null
+
+  const ano = Number(iso[1])
+  const mes = Number(iso[2])
+  const dia = Number(iso[3])
+  if (mes < 1 || mes > 12 || dia < 1 || dia > 31) return null
+
+  return `${DIAS_DA_SEMANA[diaDaSemanaDe(ano, mes, dia)]} ${iso[3]}/${iso[2]}`
+}
+
+/**
+ * Qual dia da semana cai em uma data, com 0 = domingo.
+ *
+ * Fórmula de Sakamoto. Aritmética sobre os três números, sem `Date` e sem fuso:
+ * a mesma data devolve o mesmo dia em qualquer servidor, que é o que um formato
+ * puro precisa garantir.
+ */
+function diaDaSemanaDe(ano: number, mes: number, dia: number): number {
+  const deslocamento = [0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4]
+  const a = mes < 3 ? ano - 1 : ano
+  return (
+    (a +
+      Math.floor(a / 4) -
+      Math.floor(a / 100) +
+      Math.floor(a / 400) +
+      (deslocamento[mes - 1] as number) +
+      dia) %
+    7
+  )
 }
 
 /** `2026-09-01` → `01/09/2026`. Já brasileira, devolve como está. */

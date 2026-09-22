@@ -79,3 +79,32 @@ describe('nomes, a lista de quem atende vira frase', () => {
     expect(formatarValor(' Carol ;Carol;  Márcia', 'nomes')).toBe('Carol e Márcia')
   })
 })
+
+describe('dia_semana', () => {
+  /**
+   * A conta é de Sakamoto e não usa `Date`. Estes casos existem para provar
+   * isso: os quatro dias abaixo foram conferidos no calendário, e um deles é
+   * 1º de março de ano bissexto, que é onde toda fórmula de dia da semana
+   * costuma errar.
+   */
+  it.each([
+    ['2026-09-22', 'terça 22/09'],
+    ['2026-09-21', 'segunda 21/09'],
+    ['2026-09-27', 'domingo 27/09'],
+    ['2024-03-01', 'sexta 01/03'],
+    ['2000-02-29', 'terça 29/02'],
+  ])('%s vira %s', (iso, esperado) => {
+    expect(formatarValor(iso, 'dia_semana')).toBe(esperado)
+  })
+
+  it('formata cada item de uma lista, que é como o menu de dias chega', () => {
+    expect(formatarValor('2026-09-22;2026-09-23;2026-09-25', 'dia_semana')).toBe(
+      'terça 22/09; quarta 23/09; sexta 25/09',
+    )
+  })
+
+  /** O que não casa atravessa intacto: sumir com o dado é pior que mostrá-lo cru. */
+  it.each(['amanhã', '22/09/2026', '2026-13-01', ''])('deixa %s como está', (valor) => {
+    expect(formatarValor(valor, 'dia_semana')).toBe(valor)
+  })
+})
