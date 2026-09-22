@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AjustesShell } from '@/components/design/ajustes-shell'
 import { Trilha } from '@/components/design/trilha'
@@ -32,17 +31,6 @@ export default async function Pagina({
   return (
     <AjustesShell cliente={cliente} ativa="horario">
       <main className="w-full max-w-[1100px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
-        <nav className="mb-3 text-[12.5px] text-dim">
-          <Link
-            href={`/clientes/${cliente.id}/ajustes`}
-            className="text-muted underline underline-offset-2 transition hover:text-primary"
-          >
-            Configurações
-          </Link>
-          <span className="mx-2">/</span>
-          <span className="text-soft">Horário de atendimento</span>
-        </nav>
-
         <Trilha
           caminho={[
             { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },

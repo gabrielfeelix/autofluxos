@@ -8,27 +8,27 @@ import { LinhaLigaDesliga } from '@/components/design/interruptor'
 import {
   MENSAGEM_DE_RETOMADA_PADRAO,
   MINUTOS_DE_RETOMADA_PADRAO,
+  MINUTOS_DE_RETOMADA_TETO,
   type ConfigDaConta,
 } from '@/core/retomada'
 
 /**
  * O que acontece com a conversa que ficou parada com uma pessoa.
  *
- * **A tela conta o defeito antes de oferecer o conserto.** Quem chega aqui não
- * sabe que existe um jeito de o bot emudecer para sempre num contato: isso não
- * dá erro, não aparece em lista nenhuma e o sintoma chega semanas depois, pela
- * boca de um cliente que escreveu e ninguém respondeu. Um interruptor sem essa
- * explicação seria uma preferência sem motivo, e preferência sem motivo
- * ninguém liga.
+ * O defeito que ela conserta está contado no cabeçalho da página, e não aqui:
+ * repetir a explicação dentro de um cartão logo abaixo dela foi o primeiro
+ * desenho, e ler a mesma coisa duas vezes faz duvidar de que sejam a mesma
+ * coisa.
  */
 
 /**
- * Lista fechada, e pelo mesmo motivo escrito no prazo da pergunta: "quem digita
- * 7 numa caixa não sabe se são minutos ou horas".
+ * Lista fechada com saída, que é diferente de lista fechada.
  *
- * Começa em 30 minutos porque abaixo disso a retomada atropela atendimento de
- * verdade: gente almoça, atende no balcão, volta. O teto de 24h é a janela do
- * WhatsApp, e passado dele não há como avisar ninguém.
+ * Fechada porque "digite o prazo" sozinho não diz se o número é minuto ou hora,
+ * e porque cinco opções resolvem quase todo caso real. Com saída porque
+ * "quase todo" não é todo: quem atende em quinze minutos e quer quinze não pode
+ * ser obrigado a escolher trinta, e o produto não tem como saber o expediente
+ * de quem vai usá-lo.
  */
 const PRAZOS = [
   { valor: '30', rotulo: '30 minutos' },
@@ -38,7 +38,23 @@ const PRAZOS = [
   { valor: '480', rotulo: '8 horas' },
   { valor: '720', rotulo: '12 horas' },
   { valor: '1440', rotulo: '24 horas', detalhe: 'o teto da janela do WhatsApp' },
+  { valor: 'livre', rotulo: 'Personalizar…', detalhe: 'escolher o tempo exato' },
 ]
+
+const DA_LISTA = new Set(PRAZOS.map((p) => p.valor))
+
+/**
+ * Minutos viram "2 + horas" quando dividem certo, e continuam minutos quando
+ * não dividem.
+ *
+ * Quem gravou 90 quer ver "90 minutos", e não "1,5 horas": a segunda forma
+ * convida a arredondar um número que a pessoa escolheu de propósito.
+ */
+function separar(minutos: number): { quanto: number; unidade: 'minutos' | 'horas' } {
+  return minutos >= 60 && minutos % 60 === 0
+    ? { quanto: minutos / 60, unidade: 'horas' }
+    : { quanto: minutos, unidade: 'minutos' }
+}
 
 export function RetomadaDoBotForm({
   inicial,
@@ -47,71 +63,70 @@ export function RetomadaDoBotForm({
   inicial: ConfigDaConta
   salvar: (estado: EstadoSalvar, formData: FormData) => Promise<EstadoSalvar>
 }) {
+  const guardado = inicial.minutos || MINUTOS_DE_RETOMADA_PADRAO
+  const naLista = DA_LISTA.has(String(guardado))
+  const partes = separar(guardado)
+
   const [ligada, setLigada] = useState(inicial.ativo)
-  const [minutos, setMinutos] = useState(String(inicial.minutos || MINUTOS_DE_RETOMADA_PADRAO))
+  // `'livre'` quando o valor gravado não está na lista: quem salvou 45 minutos
+  // precisa reabrir a tela vendo 45, e não o item mais próximo.
+  const [escolha, setEscolha] = useState(naLista ? String(guardado) : 'livre')
+  const [quanto, setQuanto] = useState(String(partes.quanto))
+  const [unidade, setUnidade] = useState<'minutos' | 'horas'>(partes.unidade)
   const [mensagem, setMensagem] = useState(inicial.mensagem ?? MENSAGEM_DE_RETOMADA_PADRAO)
+
+  const livre = escolha === 'livre'
+  const minutos = livre ? Number(quanto || 0) * (unidade === 'horas' ? 60 : 1) : Number(escolha)
+  const foraDoLimite = livre && (!Number.isInteger(minutos) || minutos < 1 || minutos > MINUTOS_DE_RETOMADA_TETO)
 
   return (
     <FormularioSalvar action={salvar} rotulo="Salvar">
-      {/* O interruptor do `LinhaLigaDesliga` é estado do React, não um
-          `<input>`. O campo escondido é o que chega ao servidor. */}
+      {/* O interruptor e o prazo são estado do React. O que chega ao servidor
+          são estes dois campos, já em minutos, para o servidor não precisar
+          saber que existe uma escolha de unidade na tela. */}
       <input type="hidden" name="ativo" value={ligada ? 'on' : ''} />
+      <input type="hidden" name="minutos" value={String(minutos)} />
 
-      <section className="app-card mb-4 px-5 py-4">
-        <p className="text-[13px] leading-6 text-muted">
-          Quando o bot passa a conversa para uma pessoa, ele{' '}
-          <strong className="text-soft">para de responder naquele contato</strong> e só volta se
-          alguém clicar em “Religar o bot nesta conversa”, no Inbox.
-        </p>
-        <p className="mt-2 text-[13px] leading-6 text-muted">
-          Se ninguém clicar, o bot fica mudo ali para sempre. A pessoa continua escrevendo, as
-          mensagens continuam chegando no Inbox, e nada responde. Não aparece erro em lugar
-          nenhum.
-        </p>
-      </section>
-
-      <div className="app-card px-5 py-1.5">
-        <LinhaLigaDesliga
-          titulo="Devolver a conversa ao bot sozinho"
-          descricao="Passado o prazo sem ninguém da equipe falar, o bot avisa e reassume."
-          marcada={ligada}
-          aoMudar={setLigada}
-          ajuda={
-            <AjudaDoCampo
-              titulo="Devolver a conversa ao bot sozinho"
-              secao="duvidas"
-              texto="Sem isto, uma conversa que foi para uma pessoa e ninguém fechou fica sem resposta automática para sempre."
-              detalhes={
-                <>
-                  <p>
-                    O prazo conta a partir da <strong>última mensagem da equipe</strong>. Quem
-                    está respondendo agora nunca é interrompido: cada mensagem enviada reinicia a
-                    contagem, inclusive as mandadas do celular.
-                  </p>
-                  <p>
-                    Mensagem do cliente <strong>não</strong> reinicia o prazo. Ela é o sintoma:
-                    alguém escrevendo e ninguém respondendo é exatamente o que este prazo existe
-                    para resolver.
-                  </p>
-                  <p>
-                    Contato com o bot pausado (“Pausar o bot nesta conversa”) fica de fora. Isso é
-                    escolha explícita de alguém, e nenhum prazo desfaz escolha explícita.
-                  </p>
-                  <p>
-                    Um bloco de “falar com humano” pode ter prazo próprio, ou nunca voltar, e o
-                    que ele escolher vence o daqui naquele caminho. Enquanto esta chave estiver
-                    desligada, nenhum bloco volta sozinho.
-                  </p>
-                </>
-              }
-            />
-          }
-        />
-      </div>
+      <LinhaLigaDesliga
+        titulo="Devolver a conversa ao bot sozinho"
+        descricao="Passado o prazo sem ninguém da equipe falar, o bot avisa e reassume."
+        marcada={ligada}
+        aoMudar={setLigada}
+        ajuda={
+          <AjudaDoCampo
+            titulo="Devolver a conversa ao bot sozinho"
+            secao="duvidas"
+            texto="Sem isto, a conversa que foi para uma pessoa e ninguém fechou fica sem resposta automática para sempre."
+            detalhes={
+              <>
+                <p>
+                  O prazo conta a partir da <strong>última mensagem da equipe</strong>. Quem está
+                  respondendo agora nunca é interrompido: cada mensagem enviada reinicia a
+                  contagem, inclusive as mandadas do celular.
+                </p>
+                <p>
+                  Mensagem do cliente <strong>não</strong> reinicia o prazo. Ela é o sintoma:
+                  alguém escrevendo e ninguém respondendo é exatamente o que este prazo existe
+                  para resolver.
+                </p>
+                <p>
+                  Contato com o bot pausado (“Pausar o bot nesta conversa”) fica de fora. Isso é
+                  escolha explícita de alguém, e nenhum prazo desfaz escolha explícita.
+                </p>
+                <p>
+                  Um bloco de “falar com humano” pode ter prazo próprio, ou nunca voltar, e o que
+                  ele escolher vence o daqui naquele caminho. Enquanto esta chave estiver
+                  desligada, nenhuma conversa volta sozinha.
+                </p>
+              </>
+            }
+          />
+        }
+      />
 
       {ligada && (
-        <>
-          <div className="app-card mt-4 px-5 py-4">
+        <div className="app-card mt-4 px-5 py-4">
+          <label className="block">
             <span className="mb-1.5 block text-[12.5px] font-bold text-soft">
               Devolver ao bot depois de
             </span>
@@ -121,13 +136,47 @@ export function RetomadaDoBotForm({
             <Dropdown
               rotuloAcessivel="Prazo para devolver a conversa ao bot"
               opcoes={PRAZOS}
-              valor={minutos}
-              aoMudar={setMinutos}
+              valor={escolha}
+              aoMudar={setEscolha}
             />
-            <input type="hidden" name="minutos" value={minutos} />
-          </div>
+          </label>
 
-          <label className="app-card mt-4 block px-5 py-4">
+          {livre && (
+            <div className="mt-2.5 flex items-center gap-2">
+              <input
+                type="number"
+                min={1}
+                max={unidade === 'horas' ? 24 : MINUTOS_DE_RETOMADA_TETO}
+                value={quanto}
+                onChange={(e) => setQuanto(e.target.value)}
+                aria-label="Quanto tempo"
+                className="app-field w-[88px] px-3 py-2 text-[13px]"
+              />
+              <div className="w-[150px]">
+                <Dropdown
+                  rotuloAcessivel="Minutos ou horas"
+                  opcoes={[
+                    { valor: 'minutos', rotulo: 'minutos' },
+                    { valor: 'horas', rotulo: 'horas' },
+                  ]}
+                  valor={unidade}
+                  aoMudar={(v) => setUnidade(v as 'minutos' | 'horas')}
+                />
+              </div>
+              {/*
+                O erro aparece ao lado do campo que o causou, e antes de
+                salvar. O servidor recusa o mesmo valor, mas descobrir o limite
+                depois de clicar em Salvar é descobrir tarde.
+              */}
+              {foraDoLimite && (
+                <span className="text-[11.5px] leading-4 text-aviso">
+                  entre 1 minuto e 24 horas
+                </span>
+              )}
+            </div>
+          )}
+
+          <label className="mt-5 block">
             <span className="mb-1.5 block text-[12.5px] font-bold text-soft">
               O que o bot diz ao voltar
             </span>
@@ -161,14 +210,14 @@ export function RetomadaDoBotForm({
             conversa volta ao bot do mesmo jeito (é o que interessa), mas a
             frase acima não chega, e ninguém entende por quê.
           */}
-          {Number(minutos) >= 720 && (
-            <p className="mt-3 rounded-[8px] border border-amber-300/25 bg-amber-300/[0.06] px-3 py-2.5 text-[11.5px] leading-5 text-aviso">
+          {minutos >= 720 && (
+            <p className="mt-4 rounded-[8px] border border-amber-300/25 bg-amber-300/[0.06] px-3 py-2.5 text-[11.5px] leading-5 text-aviso">
               Prazo longo: o WhatsApp só deixa mandar texto livre até 24h depois da{' '}
               <strong>última mensagem do cliente</strong>. Vencendo depois disso, a conversa volta
               ao bot mesmo assim, mas a frase acima não é entregue.
             </p>
           )}
-        </>
+        </div>
       )}
     </FormularioSalvar>
   )
