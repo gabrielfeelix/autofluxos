@@ -85,10 +85,28 @@ export async function passadaDeRetomadaDoBot(): Promise<ResumoDaRetomadaDoBot> {
    */
   const porConta = new Map<string, ConfigDaConta | null>()
 
+  /*
+   * Um aviso por contato por passada.
+   *
+   * Um contato pode ter mais de uma sessão em `humano` ao mesmo tempo: cada
+   * devolução encerra a sessão, a mensagem seguinte abre outra, e outro handoff
+   * a deixa em `humano` de novo. Sem esta trava, a passada devolve todas e a
+   * pessoa recebe a mesma frase três vezes no mesmo minuto, que foi exatamente
+   * o que o teste da MGM mostrou em 22/set/2026.
+   *
+   * As outras sessões não ficam presas: elas continuam na lista da próxima
+   * passada, e a próxima as encerra.
+   */
+  const jaAvisados = new Set<string>()
+
   for (const parada of paradas) {
     resumo.olhadas += 1
 
     try {
+      if (jaAvisados.has(parada.contatoId)) {
+        resumo.esperando += 1
+        continue
+      }
       if (!porConta.has(parada.clienteId)) {
         porConta.set(parada.clienteId, await retomadaDoCliente(parada.clienteId))
       }
@@ -116,12 +134,20 @@ export async function passadaDeRetomadaDoBot(): Promise<ResumoDaRetomadaDoBot> {
       }
 
       /*
-       * O relógio conta da **última fala da equipe**. Quem está respondendo
-       * agora nunca é interrompido, e quem nunca respondeu é medido desde o
-       * momento em que a conversa virou `humano`, que é o caso do handoff que
-       * ninguém viu.
+       * O relógio conta do **mais recente** entre a última fala da equipe e o
+       * momento em que a conversa virou `humano`. Quem está respondendo agora
+       * nunca é interrompido, e o handoff que ninguém viu é medido desde o
+       * handoff.
+       *
+       * **Era `??`, e isso devolvia na mesma hora.** A última fala da equipe de
+       * um contato costuma ser de dias atrás; usada no lugar do handoff de
+       * agora, o prazo já nascia vencido. Em 22/set/2026, no teste da MGM, o
+       * bot transferiu às 13:49 e mandou "voltei a te atender" às 13:49, e às
+       * 14:22 mandou a mesma frase três vezes seguidas, uma por sessão presa.
+       * Com duas horas configuradas na conta.
        */
-      const desde = (await ultimaFalaDaEquipe(parada.contatoId)) ?? parada.desde
+      const daEquipe = await ultimaFalaDaEquipe(parada.contatoId)
+      const desde = daEquipe && daEquipe > parada.desde ? daEquipe : parada.desde
       const decisao = decidirRetomada(conta, bloco?.minutos, desde)
 
       if (decisao.o === 'desligado') {
@@ -134,6 +160,7 @@ export async function passadaDeRetomadaDoBot(): Promise<ResumoDaRetomadaDoBot> {
       }
 
       const avisou = await devolverAoBot(parada, mensagemDaRetomada(conta, bloco?.mensagem))
+      jaAvisados.add(parada.contatoId)
       resumo.devolvidas += 1
       if (!avisou) resumo.semAviso += 1
     } catch (erro) {
