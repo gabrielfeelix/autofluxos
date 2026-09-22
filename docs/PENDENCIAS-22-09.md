@@ -169,9 +169,15 @@ agora roda os três casos de ponta a ponta.
   demanda de propósito, porque a chave do Gemini é free tier e o áudio iria
   para treino. O clique é o consentimento.
 
-## Fora de produto
+## Fora de escopo
 
-- **Oderço**: 200 funcionários em vendas, quase fecharam com concorrente que
-  cobrava R$1,5k por fluxo. O Edu falou com o gestor dele (14:27) e vai montar
-  teste gratuito com um funcionário por pouco mais de um mês. Exige CNPJ de
-  tecnologia, MEI não fatura — precisa abrir ME. Bloqueio de receita com prazo.
+- **Oderço**: saiu por decisão do Gabriel em 22/09. Ficava registrado aqui como
+  bloqueio de receita (200 vendedores, exige CNPJ de tecnologia e MEI não
+  fatura); não é mais trabalho deste time.
+
+## Continuação
+
+O que sobrou não se resolve neste repositório: o conteúdo do fluxo da MGM vive
+no banco de produção, e os dois itens de interface são da Verandi. Ver
+`docs/HANDOFF-22-SET-MGM-E-VERANDI.md`, que mapeia cada um com o arquivo e o
+`flow_id` correspondente.
