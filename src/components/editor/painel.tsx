@@ -1,5 +1,6 @@
 'use client'
 
+import { MINUTOS_DE_RETOMADA_PADRAO, type ConfigDaConta } from '@/core/retomada'
 import { useId, useRef, useState, type ReactNode } from 'react'
 import { Caixa } from '@/components/design/caixa'
 import { FERRAMENTAS } from '@/core/ferramentas'
@@ -321,6 +322,7 @@ export function Painel({
   etapas = [],
   etiquetas = [],
   equipe = [],
+  retomadaDaConta,
   horarioConfigurado = false,
   fluxos = [],
   aoMudarDados,
@@ -358,6 +360,13 @@ export function Painel({
   etiquetas?: EtiquetaDoCliente[]
   /** Quem atende, para escolher a quem endereçar o aviso do handoff. */
   equipe?: MembroDoCliente[]
+  /**
+   * O que a conta decidiu sobre conversa parada em atendimento humano.
+   *
+   * Aparece escrito na opção "usar o padrão da conta": escolher herdar sem ver
+   * o que se está herdando é escolher no escuro.
+   */
+  retomadaDaConta?: ConfigDaConta
   /**
    * Esta conta tem horário de atendimento preenchido?
    *
@@ -1676,6 +1685,127 @@ export function Painel({
                   : 'Todo mundo que estiver disponível recebe, respeitando o horário de atendimento.'}
               </span>
             </label>
+          )}
+
+          {/*
+            **Se ninguém responder.**
+
+            O bloco transfere e a conversa fica em atendimento humano. Até a
+            0090 ela ficava lá para sempre quando ninguém clicava em "Religar o
+            bot": em 22/set/2026 havia quatro conversas de produção presas
+            assim, a mais velha de dezenove dias, com gente escrevendo e nada
+            respondendo. Não dava erro nem aparecia em tela nenhuma.
+
+            Quem decide é a conta. Este campo existe para o caminho que precisa
+            de outra coisa: prazo mais curto porque o assunto é urgente, ou
+            "nunca" porque interromper ali seria pior, uma negociação de
+            cancelamento, uma reclamação.
+          */}
+          <label className="block">
+            <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+              Se ninguém responder
+              <AjudaDoCampo
+                titulo="Se ninguém responder"
+                secao="blocos"
+                texto="Depois de quanto tempo sem a equipe falar a conversa volta para o bot."
+                alinhar="direita"
+                detalhes={
+                  <>
+                    <p>
+                      Transferida a conversa, o bot fica calado naquele contato até alguém clicar
+                      em “Religar o bot nesta conversa”, no Inbox. Quando ninguém clica, ele fica
+                      calado para sempre e a pessoa escreve sem receber resposta.
+                    </p>
+                    <p>
+                      O prazo conta a partir da <strong>última mensagem da equipe</strong>, então
+                      quem está respondendo agora nunca é interrompido. Vencido, o bot avisa e
+                      reassume.
+                    </p>
+                    <p>
+                      <strong>Nunca voltar</strong> é para o caminho que não pode ser
+                      interrompido. O padrão vem das Configurações da conta e vale para todos os
+                      outros caminhos, inclusive os que chegam a atendimento humano sem passar
+                      por bloco nenhum.
+                    </p>
+                  </>
+                }
+              />
+            </span>
+            <Dropdown
+              valor={
+                no.data.retomarEmMinutos === undefined ? '' : String(no.data.retomarEmMinutos)
+              }
+              aoMudar={(v) =>
+                aoMudarDados({
+                  retomarEmMinutos: v === '' ? undefined : v === 'nunca' ? 'nunca' : Number(v),
+                })
+              }
+              rotuloAcessivel="Quando a conversa volta para o bot"
+              opcoes={[
+                {
+                  valor: '',
+                  rotulo: 'usar o padrão da conta',
+                  detalhe: descreverPadraoDaConta(retomadaDaConta),
+                },
+                {
+                  valor: 'nunca',
+                  rotulo: 'nunca voltar',
+                  detalhe: 'esta conversa fica com a pessoa',
+                },
+                { valor: '30', rotulo: '30 minutos' },
+                { valor: '60', rotulo: '1 hora' },
+                { valor: '120', rotulo: '2 horas' },
+                { valor: '240', rotulo: '4 horas' },
+                { valor: '720', rotulo: '12 horas' },
+                { valor: '1440', rotulo: '24 horas', detalhe: 'o teto da janela do WhatsApp' },
+              ]}
+            />
+            {/*
+              O aviso de que o prazo escrito aqui não vale nada enquanto a
+              conta estiver desligada. Sem ele, alguém escolhe "2 horas",
+              publica, e o bloco continua se comportando como antes sem nada na
+              tela explicando por quê.
+            */}
+            {retomadaDaConta && !retomadaDaConta.ativo && (
+              <span className="mt-1.5 block text-[11px] leading-4 text-aviso">
+                A devolução automática está <strong>desligada nesta conta</strong>, então nenhuma
+                conversa volta sozinha, nem com prazo escolhido aqui.{' '}
+                {clienteId && (
+                  <a
+                    href={`/clientes/${clienteId}/ajustes/retomada`}
+                    className="font-semibold text-primary underline-offset-2 hover:underline"
+                  >
+                    Ligar nas Configurações
+                  </a>
+                )}
+              </span>
+            )}
+          </label>
+
+          {/*
+            O texto só aparece quando este bloco escolheu prazo próprio: quem
+            herda o prazo da conta herda também a frase, e um campo aberto ali
+            convidaria a escrever uma frase que nunca sairia.
+          */}
+          {typeof no.data.retomarEmMinutos === 'number' && (
+            <Linha
+              rotulo="O que o bot diz ao voltar"
+              valor={no.data.mensagemDeRetomada ?? ''}
+              secao="blocos"
+              dica="Vazio usa o texto das Configurações da conta."
+              detalhes={
+                <p>
+                  Precisa dizer duas coisas: que o bot voltou, e que a pessoa{' '}
+                  <strong>não foi esquecida</strong>. Sem a segunda, a retomada é lida como
+                  desistência do atendimento.
+                </p>
+              }
+              aoMudar={(mensagemDeRetomada) =>
+                aoMudarDados({ mensagemDeRetomada: mensagemDeRetomada || undefined })
+              }
+              aceitaVariavel
+              conhecidas={variaveis}
+            />
           )}
         </>
       )}
@@ -3063,4 +3193,22 @@ function ConsultasDaIa({
       )}
     </div>
   )
+}
+
+/**
+ * "hoje, 2 horas", ou "está desligada", para a opção que herda da conta.
+ *
+ * Duas frases porque são dois estados diferentes, e confundi-los é o pior erro
+ * desta tela: herdar de uma conta ligada é herdar um prazo; herdar de uma
+ * conta desligada é não voltar nunca.
+ */
+function descreverPadraoDaConta(conta: ConfigDaConta | undefined): string {
+  if (!conta) return 'o que estiver nas Configurações'
+  if (!conta.ativo) return 'está desligada nesta conta'
+  const minutos = conta.minutos || MINUTOS_DE_RETOMADA_PADRAO
+  if (minutos < 60) return `hoje, ${minutos} minutos`
+  const horas = minutos / 60
+  return Number.isInteger(horas)
+    ? `hoje, ${horas} ${horas === 1 ? 'hora' : 'horas'}`
+    : `hoje, ${minutos} minutos`
 }

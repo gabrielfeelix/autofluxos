@@ -9,6 +9,7 @@ import {
 } from '@/server/receber-status-de-template'
 import { enviarAgendadas } from '@/server/enviar-agendadas'
 import { passadaDeTransmissoes, POR_CARONA } from '@/server/passada-de-transmissoes'
+import { passadaDeRetomadaDoBot } from '@/server/passada-de-retomada-do-bot'
 import { rodarTarefas } from '@/server/tarefas'
 
 /**
@@ -196,6 +197,24 @@ export async function POST(req: Request) {
       await enviarAgendadas(5)
     } catch (erro) {
       console.error('[webhook] a carona das agendadas falhou', erro)
+    }
+
+    /*
+     * As conversas presas em atendimento humano, pela mesma carona (0090).
+     *
+     * A unidade aqui é a **hora**, não o dia, então o cron de madrugada sozinho
+     * transformaria "volta ao bot em 2h" em "volta ao bot amanhã de manhã". E,
+     * como nas outras caronas, a conta que tem conversa parada vencendo é a
+     * conta que está recebendo mensagem.
+     *
+     * A passada custa uma consulta com índice parcial (`sessions_humano_idx`) e
+     * quase sempre não encontra nada: atendimento parado é a exceção, não a
+     * regra.
+     */
+    try {
+      await passadaDeRetomadaDoBot()
+    } catch (erro) {
+      console.error('[webhook] a carona da retomada do bot falhou', erro)
     }
 
     /*

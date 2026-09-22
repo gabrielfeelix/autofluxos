@@ -309,6 +309,105 @@ export async function acharContato(contatoId: string): Promise<Contato | null> {
  */
 export type SessaoComContexto = SessaoSalva & { contatoId: string; canalId: string }
 
+/**
+ * Uma conversa parada em atendimento humano, com o que decide o destino dela.
+ *
+ * Vem do join com `contacts` porque as três perguntas do varredor (de que conta
+ * é, o bot está pausado neste contato, e para qual número falar) não fazem
+ * sentido separadas, e três viagens por sessão numa passada de cinquenta é
+ * lentidão que ninguém precisa pagar.
+ */
+export type SessaoParada = {
+  id: string
+  clienteId: string
+  contatoId: string
+  canalId: string
+  flowVersionId: string
+  /** Onde a conversa parou. É o bloco de handoff, quando foi um que parou. */
+  noAtual: string | null
+  automacaoAtiva: boolean
+  /** Quando ela virou `humano`, o relógio de quem nunca teve resposta. */
+  desde: Date
+}
+
+/**
+ * As conversas presas em atendimento humano, da mais antiga para a mais nova.
+ *
+ * **Varredura, e não tarefa agendada por sessão**, e a escolha importa. Tarefa
+ * agendada exigiria enfiar um `agendar` nas cinco portas que levam a `humano`
+ * (bloco de handoff, falha do motor, conversa travada, resposta da equipe pelo
+ * Inbox, mídia da equipe pelo Inbox), e esquecer uma delas é um defeito mudo,
+ * que é exatamente a categoria de problema que estamos consertando. Varrer não
+ * tem porta para esquecer: o estado no banco é a única coisa que ela lê.
+ *
+ * O bônus é que ela conserta o passado: as conversas que já estavam presas
+ * antes deste código existir entram na primeira passada, sem migração de dado.
+ *
+ * Da mais antiga primeiro porque, num teto de passada, quem espera há mais
+ * tempo é quem mais precisa.
+ */
+export async function sessoesEmAtendimentoParado(limite: number): Promise<SessaoParada[]> {
+  const { data, error } = await db()
+    .from('sessions')
+    .select(
+      'id, contact_id, channel_id, flow_version_id, no_atual, atualizado_em, contacts!inner(client_id, automacao_ativa)',
+    )
+    .eq('status', 'humano')
+    .order('atualizado_em', { ascending: true })
+    .limit(limite)
+
+  if (error) throw new Error(`não deu para listar as conversas paradas: ${error.message}`)
+
+  type Linha = {
+    id: string
+    contact_id: string
+    channel_id: string
+    flow_version_id: string
+    no_atual: string | null
+    atualizado_em: string
+    contacts: { client_id: string; automacao_ativa: boolean }
+  }
+
+  return (data as unknown as Linha[]).map((linha) => ({
+    id: linha.id,
+    clienteId: linha.contacts.client_id,
+    contatoId: linha.contact_id,
+    canalId: linha.channel_id,
+    flowVersionId: linha.flow_version_id,
+    noAtual: linha.no_atual,
+    automacaoAtiva: linha.contacts.automacao_ativa,
+    desde: new Date(linha.atualizado_em),
+  }))
+}
+
+/**
+ * Quando alguém da equipe falou por último nesta conversa, ou `null`.
+ *
+ * **Equipe é toda saída que não é do bot**, e não só a que tem autor de pessoa
+ * gravado. O dono respondendo pelo celular chega pela coexistência sem autor
+ * nenhum (ver `core/autor-da-mensagem.ts`), e ele é a equipe tanto quanto quem
+ * responde pelo painel. Tratar essa mensagem como "não foi a equipe" faria o
+ * prazo vencer no meio de um atendimento que está acontecendo, que é o único
+ * erro grave que esta função pode cometer.
+ *
+ * O bot é o caso conhecido e é o único excluído: ele grava
+ * `payload -> autor -> tipo = 'automacao'` em toda saída sua.
+ */
+export async function ultimaFalaDaEquipe(contatoId: string): Promise<Date | null> {
+  const { data, error } = await db()
+    .from('messages')
+    .select('ts')
+    .eq('contact_id', contatoId)
+    .eq('direcao', 'saida')
+    .or('payload->autor->>tipo.is.null,payload->autor->>tipo.neq.automacao')
+    .order('ts', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) throw new Error(`não deu para achar a última fala da equipe: ${error.message}`)
+  return data ? new Date((data as { ts: string }).ts) : null
+}
+
 export async function acharSessao(sessaoId: string): Promise<SessaoComContexto | null> {
   const { data, error } = await db()
     .from('sessions')

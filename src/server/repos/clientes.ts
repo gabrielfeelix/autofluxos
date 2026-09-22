@@ -1,5 +1,6 @@
 import 'server-only'
 import { lerHorario, type HorarioDeAtendimento } from '@/core/horario'
+import { MINUTOS_DE_RETOMADA_PADRAO, type ConfigDaConta } from '@/core/retomada'
 import { db, ehIdInvalido } from '../db'
 import { apagarAcervoDoCliente } from './acervo'
 
@@ -26,6 +27,14 @@ export type Cliente = {
    * anunciar que está fechado para clientes que nunca configuraram nada.
    */
   horarioAtendimento: HorarioDeAtendimento | null
+  /**
+   * A conversa parada em atendimento humano volta ao bot sozinha?
+   *
+   * Nasce desligada em toda conta, inclusive nas novas: o que ela muda
+   * acontece em conversa viva, e ninguém deve descobrir esse comportamento
+   * pelo cliente reclamando. Ver `core/retomada.ts`.
+   */
+  retomada: ConfigDaConta
 }
 
 /**
@@ -50,6 +59,9 @@ type Linha = {
   observacoes: string
   logo_url: string
   horario_atendimento: unknown
+  retomar_bot_ativo: boolean | null
+  retomar_bot_minutos: number | null
+  retomar_bot_mensagem: string | null
 }
 
 /**
@@ -63,7 +75,7 @@ type Linha = {
  * fácil, coluna apagada não.
  */
 const COLUNAS =
-  'id, nome, contexto_negocio, responsavel, telefone, email, cnpj, observacoes, logo_url, horario_atendimento'
+  'id, nome, contexto_negocio, responsavel, telefone, email, cnpj, observacoes, logo_url, horario_atendimento, retomar_bot_ativo, retomar_bot_minutos, retomar_bot_mensagem'
 
 function paraCliente(linha: Linha): Cliente {
   return {
@@ -77,6 +89,28 @@ function paraCliente(linha: Linha): Cliente {
     observacoes: linha.observacoes,
     logoUrl: linha.logo_url,
     horarioAtendimento: lerHorario(linha.horario_atendimento),
+    retomada: lerRetomada(linha),
+  }
+}
+
+/**
+ * As três colunas viram a configuração que `core/retomada.ts` entende.
+ *
+ * Tolera `null` nas três porque a linha pode ter sido lida por uma versão do
+ * código anterior à 0090 e porque `select` de coluna que acabou de nascer é
+ * exatamente onde um deploy pela metade aparece. Faltando qualquer uma, o
+ * resultado é "desligada", que é o estado seguro: ninguém perde conversa por
+ * causa de uma coluna que não veio.
+ */
+function lerRetomada(linha: {
+  retomar_bot_ativo: boolean | null
+  retomar_bot_minutos: number | null
+  retomar_bot_mensagem: string | null
+}): ConfigDaConta {
+  return {
+    ativo: linha.retomar_bot_ativo === true,
+    minutos: linha.retomar_bot_minutos ?? MINUTOS_DE_RETOMADA_PADRAO,
+    mensagem: linha.retomar_bot_mensagem,
   }
 }
 
@@ -296,6 +330,47 @@ export async function horarioDoCliente(
     return null
   }
   return lerHorario((data as { horario_atendimento: unknown } | null)?.horario_atendimento)
+}
+
+/**
+ * Só a configuração de retomada, sem carregar o cadastro inteiro.
+ *
+ * O varredor chama isto por conta a cada passada, e não precisa de contexto de
+ * negócio nem de logo para saber se o recurso está ligado. Mesma postura de
+ * `horarioDoCliente`, logo acima.
+ */
+export async function retomadaDoCliente(clienteId: string): Promise<ConfigDaConta | null> {
+  const { data, error } = await db()
+    .from('clients')
+    .select('retomar_bot_ativo, retomar_bot_minutos, retomar_bot_mensagem')
+    .eq('id', clienteId)
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return null
+  if (error) {
+    // Falhar a leitura não pode encerrar atendimento de ninguém. Sem resposta,
+    // o varredor trata como desligada e a conversa fica como está.
+    console.error('[clientes] não deu para ler a retomada do bot', error.message)
+    return null
+  }
+  if (!data) return null
+  return lerRetomada(data as Parameters<typeof lerRetomada>[0])
+}
+
+/** Grava o interruptor, o prazo e o texto. */
+export async function atualizarRetomada(id: string, config: ConfigDaConta): Promise<void> {
+  const { error } = await db()
+    .from('clients')
+    .update({
+      retomar_bot_ativo: config.ativo,
+      retomar_bot_minutos: config.minutos,
+      // Texto vazio vira `null` para a leitura cair no padrão em vez de mandar
+      // uma mensagem em branco para o WhatsApp de alguém.
+      retomar_bot_mensagem: (config.mensagem ?? '').trim() || null,
+    })
+    .eq('id', id)
+
+  if (error) throw new Error(`não deu para salvar a retomada do bot: ${error.message}`)
 }
 
 /** Grava o expediente. `null` volta a "atende sempre". */

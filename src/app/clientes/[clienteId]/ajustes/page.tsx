@@ -197,6 +197,19 @@ export default async function Pagina({
             }
           />
           <Cartao
+            href={`/clientes/${cliente.id}/ajustes/retomada`}
+            icone={ICONE_DA_TELA['retomada']}
+            titulo="Conversa parada"
+            descricao="O bot fica mudo no contato que foi para uma pessoa. Aqui ele volta sozinho."
+            estado={
+              cliente.retomada.ativo ? (
+                <Selo tom="ok">{rotuloDoPrazo(cliente.retomada.minutos)}</Selo>
+              ) : (
+                <Selo tom="alerta">desligada</Selo>
+              )
+            }
+          />
+          <Cartao
             href={`/clientes/${cliente.id}/ajustes/respostas-rapidas`}
             icone={ICONE_DA_TELA['respostas-rapidas']}
             titulo="Respostas rápidas"
@@ -472,4 +485,16 @@ function Selo({
       {children}
     </span>
   )
+}
+
+/**
+ * "2h", e não "120 minutos", no selo do cartão.
+ *
+ * O cartão tem uma linha para dizer o estado, e "120 minutos" ocupa ela toda
+ * para contar o que "2h" conta em dois caracteres.
+ */
+function rotuloDoPrazo(minutos: number): string {
+  if (minutos < 60) return `${minutos} min`
+  const horas = minutos / 60
+  return Number.isInteger(horas) ? `${horas}h` : `${minutos} min`
 }

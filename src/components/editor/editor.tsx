@@ -1,5 +1,6 @@
 'use client'
 
+import type { ConfigDaConta } from '@/core/retomada'
 import {
   addEdge,
   Controls,
@@ -329,6 +330,7 @@ export function Editor({
   etiquetas,
   equipe,
   horarioConfigurado,
+  retomadaDaConta,
   fluxos,
   variaveisDaConta = [],
   canal,
@@ -355,6 +357,14 @@ export function Editor({
   equipe: MembroDoCliente[]
   /** A conta tem horário de atendimento? O bloco de handoff usa. */
   horarioConfigurado: boolean
+  /**
+   * O que a conta decidiu sobre conversa parada em atendimento humano.
+   *
+   * O bloco de handoff precisa **mostrar** esse valor, e não só herdá-lo: a
+   * opção "usar o padrão da conta" sem dizer qual é o padrão faz a pessoa
+   * abrir outra aba para descobrir o que ela acabou de escolher.
+   */
+  retomadaDaConta: ConfigDaConta
   /**
    * Quantas conversas já responderam cada variável, para o selo no bloco.
    *
@@ -1847,6 +1857,7 @@ export function Editor({
                 etiquetas={etiquetas}
                 equipe={equipe}
                 horarioConfigurado={horarioConfigurado}
+                retomadaDaConta={retomadaDaConta}
                 fluxos={fluxos}
                 aoMudarDados={mudarDados}
                 aoDefinirInicio={definirInicio}

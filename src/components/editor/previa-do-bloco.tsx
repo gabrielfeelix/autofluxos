@@ -165,10 +165,24 @@ export function detalhesDoBloco(no: No): Detalhe[] {
 
     case 'handoff': {
       const mensagens = no.data.mensagens ?? [no.data.mensagem]
-      return [
+      const linhas = [
         { rotulo: 'Motivo', valor: texto(no.data.motivo) },
         { rotulo: 'Avisa', valor: mensagens.filter((m) => m.trim() !== '').join('\n') },
       ]
+      /*
+       * Só quando o bloco escolheu. Herdar o padrão da conta é o normal, e
+       * imprimir "usa o padrão" em todo bloco de handoff do desenho encheria
+       * a prévia de uma linha que não distingue nada.
+       */
+      if (no.data.retomarEmMinutos === 'nunca') {
+        linhas.push({ rotulo: 'Volta ao bot', valor: 'nunca, fica com a pessoa' })
+      } else if (typeof no.data.retomarEmMinutos === 'number') {
+        linhas.push({
+          rotulo: 'Volta ao bot',
+          valor: `em ${no.data.retomarEmMinutos} min sem resposta da equipe`,
+        })
+      }
+      return linhas
     }
 
     case 'http': {

@@ -163,6 +163,7 @@ export default async function Pagina({
         etiquetas={etiquetas.map((e) => ({ id: e.id, nome: e.nome, cor: e.cor }))}
         equipe={equipe}
         horarioConfigurado={cliente.horarioAtendimento !== null}
+        retomadaDaConta={cliente.retomada}
         publicadaInicial={
           publicada
             ? {

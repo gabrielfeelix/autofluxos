@@ -21,6 +21,7 @@ import {
 import { exigirCapacidade, recusou } from './permissoes'
 import { fluxoNovo } from '@/core/flow/novo'
 import { DIAS_DA_SEMANA, emMinutos, horarioSchema } from '@/core/horario'
+import { MINUTOS_DE_RETOMADA_TETO } from '@/core/retomada'
 import { triagem } from '@/exemplos/triagem'
 import {
   apagarCliente,
@@ -28,6 +29,7 @@ import {
   atualizarContexto,
   atualizarHorario,
   atualizarLogo,
+  atualizarRetomada,
   criarCliente,
 } from './repos/clientes'
 import {
@@ -2672,6 +2674,46 @@ export async function acaoImportarContatos(
  * coluna, e não "nunca atende". Confundir os dois faria o bot anunciar que
  * está fechado para quem só quis desligar a regra.
  */
+/**
+ * O interruptor, o prazo e o texto da retomada do bot (0090).
+ *
+ * `configurar_operacao` e não `atender`: isto muda o comportamento de **todas**
+ * as conversas da conta, e é a mesma capacidade que guarda o expediente logo
+ * abaixo.
+ */
+export async function acaoSalvarRetomada(
+  clienteId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
+
+  const ativo = String(formData.get('ativo') ?? '') === 'on'
+  const minutos = Number(formData.get('minutos'))
+  const mensagem = String(formData.get('mensagem') ?? '')
+
+  if (!Number.isInteger(minutos) || minutos < 1 || minutos > MINUTOS_DE_RETOMADA_TETO) {
+    return { erro: 'o prazo precisa estar entre 1 minuto e 24 horas' }
+  }
+
+  /*
+   * Texto em branco com o recurso ligado é recusado, e não trocado pelo padrão
+   * em silêncio. Quem apagou o campo quis apagar alguma coisa, e descobrir pelo
+   * WhatsApp do cliente qual frase foi para o lugar é tarde demais. Desligado,
+   * o campo pode ficar vazio: não sai mensagem nenhuma.
+   */
+  if (ativo && mensagem.trim() === '') {
+    return { erro: 'escreva o que o bot diz ao voltar, ou desligue a retomada' }
+  }
+
+  await atualizarRetomada(clienteId, { ativo, minutos, mensagem })
+
+  revalidatePath(`/clientes/${clienteId}`)
+  revalidatePath(`/clientes/${clienteId}/ajustes`)
+  return { ok: true }
+}
+
 export async function acaoSalvarHorario(
   clienteId: string,
   _estado: EstadoSalvar,

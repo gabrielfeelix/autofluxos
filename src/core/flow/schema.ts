@@ -487,6 +487,36 @@ export const noHandoffSchema = z.object({
      * que ninguém recebe, e o handoff continuaria esperando calado.
      */
     avisarUsuarioId: z.string().optional(),
+    /**
+     * Quanto tempo sem a equipe falar até a conversa voltar ao bot.
+     *
+     * Três valores possíveis, e os três são decisões diferentes:
+     *
+     * - **ausente**: usa o que a conta configurou. É o que 100% dos grafos já
+     *   publicados têm, e é o que mantém o comportamento deles ligado ao
+     *   interruptor da conta em vez de congelado no grafo;
+     * - **`'nunca'`**: este caminho específico nunca volta sozinho, mesmo com a
+     *   conta ligada. Existe para o handoff que não pode ser interrompido, um
+     *   cancelamento em negociação, uma reclamação;
+     * - **número**: minutos, deste bloco, vencendo o da conta.
+     *
+     * Opcional pelo mesmo motivo do `timeoutMinutos`: `flow_versions` é
+     * imutável e há conversa em produção rodando grafo publicado antes deste
+     * campo existir. Campo obrigatório faria todas pararem de dar parse.
+     *
+     * O teto de 24h é o da janela do WhatsApp, o mesmo do `timeoutMinutos`.
+     */
+    retomarEmMinutos: z
+      .union([z.number().int().min(1).max(1_440), z.literal('nunca')])
+      .optional(),
+    /**
+     * O que o bot diz ao reassumir. Ausente usa o texto da conta.
+     *
+     * Precisa dizer duas coisas, e o texto sugerido na tela diz as duas: que o
+     * bot voltou, e que a pessoa não foi esquecida. Sem a segunda, a retomada
+     * lê como desistência do atendimento.
+     */
+    mensagemDeRetomada: z.string().optional(),
   }),
 })
 

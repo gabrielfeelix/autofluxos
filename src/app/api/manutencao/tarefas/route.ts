@@ -3,6 +3,7 @@ import { iguais } from '@/lib/segredo'
 import { enviarAgendadas } from '@/server/enviar-agendadas'
 import { passadaDeRetomada } from '@/server/passada-de-retomada'
 import { passadaDeTransmissoes } from '@/server/passada-de-transmissoes'
+import { passadaDeRetomadaDoBot } from '@/server/passada-de-retomada-do-bot'
 import { rodarTarefas } from '@/server/tarefas'
 
 export const dynamic = 'force-dynamic'
@@ -96,7 +97,26 @@ export async function GET(req: Request) {
       return null
     })
 
-    return Response.json({ ...(await rodarTarefas()), agendadas, transmissoes, retomada })
+    /*
+     * O piso das conversas presas em atendimento humano (0090).
+     *
+     * A resolução real vem da carona no webhook, como nas agendadas. Aqui é a
+     * rede de segurança da conta que passou o dia inteiro sem mensagem
+     * nenhuma, que é justamente a conta com mais chance de ter uma conversa
+     * esquecida em `humano`.
+     */
+    const retomadaDoBot = await passadaDeRetomadaDoBot().catch((erro) => {
+      console.error('[tarefas] a passada de retomada do bot falhou', erro)
+      return null
+    })
+
+    return Response.json({
+      ...(await rodarTarefas()),
+      agendadas,
+      transmissoes,
+      retomada,
+      retomadaDoBot,
+    })
   } catch (erro) {
     // Ninguém está olhando quando isto roda. Um agendador que para de acontecer
     // em silêncio é uma fila crescendo com conversas esperando algo que nunca
