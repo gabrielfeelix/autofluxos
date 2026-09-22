@@ -1,6 +1,7 @@
 import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
 import { fluxoNovo } from '@/core/flow/novo'
 import { agendamento } from './agendamento'
+import { alunoInativo } from './aluno-inativo'
 import { carrinhoAbandonado } from './carrinho-abandonado'
 import { cobrancaAmigavel } from './cobranca-amigavel'
 import { lembrete } from './lembrete'
@@ -236,6 +237,18 @@ export const MODELOS: Modelo[] = [
       'não comparecimento', 'nao comparecimento', 'desmarcar', 'aula',
     ],
     grafo: naoComparecimento,
+  },
+  {
+    id: 'aluno-inativo',
+    nome: 'Aluno que parou de vir',
+    resumo:
+      'Quem está de licença, trancado ou parado recebe boas-vindas próprias: voltar às aulas, falar do contrato ou cancelar. Todas terminam numa pessoa, com o motivo já escrito. Precisa da credencial da Verandi.',
+    etiquetas: ['WhatsApp', 'Agenda', 'Precisa de integração'],
+    sinonimos: [
+      'inativo', 'licença', 'licenca', 'trancado', 'parou', 'voltar',
+      'retorno', 'reativar', 'cancelar contrato', 'aula',
+    ],
+    grafo: alunoInativo,
   },
   {
     id: 'lembrete',
