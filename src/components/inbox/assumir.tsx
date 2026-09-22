@@ -83,7 +83,7 @@ export function Assumir({
         **O rótulo era "Liberar", e era ambíguo do jeito caro.** Liberar o quê:
         a conversa, a pessoa, o robô? Quem está tentando fazer o bot voltar a
         responder lê "Liberar" como "libera o robô", clica, e o robô continua
-        calado, porque o que solta o robô é "Já atendi". "Devolver à fila" diz
+        calado, porque o que solta o robô é "Atendimento finalizado". "Devolver à fila" diz
         para onde a conversa vai, que é a única coisa que o botão faz.
       */}
       <button
@@ -92,8 +92,8 @@ export function Assumir({
         disabled={pendente}
         title={
           meu
-            ? 'Devolve a conversa para a fila. O bot continua calado até alguém marcar "Já atendi".'
-            : 'A conversa passa a ser sua e o bot para de responder. Ele só volta quando alguém marcar "Já atendi".'
+            ? 'Devolve a conversa para a fila. O bot continua calado até alguém marcar "Atendimento finalizado".'
+            : 'A conversa passa a ser sua e o bot para de responder. Ele só volta quando alguém marcar "Atendimento finalizado".'
         }
         className="rounded-[8px] border border-line px-2.5 py-1.5 text-[11.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary disabled:opacity-50"
       >

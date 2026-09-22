@@ -1327,7 +1327,7 @@ function DadosDoLead({
                   type="submit"
                   className="mt-2.5 w-full rounded-[8px] border border-rose-400/40 bg-white px-2.5 py-2 text-[12px] font-bold text-rose-600 transition hover:bg-rose-100"
                 >
-                  Já atendi
+                  Atendimento finalizado
                 </button>
               </form>
             </>

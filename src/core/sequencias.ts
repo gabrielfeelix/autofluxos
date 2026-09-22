@@ -47,7 +47,7 @@ export function ehEventoDeSequencia(valor: string): valor is EventoDeSequencia {
 }
 
 export const ROTULO_DO_EVENTO: Record<EventoDeSequencia, string> = {
-  atendimento_encerrado: 'Quando alguém clicar em “Já atendi”',
+  atendimento_encerrado: 'Quando alguém clicar em “Atendimento finalizado”',
   etiqueta_aplicada: 'Quando esta etiqueta for aplicada',
   etapa_alcancada: 'Quando o contato chegar nesta etapa do quadro',
   cliente_sumido: 'Quando um cliente parar de falar com você',

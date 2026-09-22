@@ -284,6 +284,12 @@ export default async function Pagina({
               o bot fica calado com esse número, então "atendi" e "pode voltar
               a atender" são o mesmo ato, e separar os dois só criaria um estado
               em que ninguém responde.
+
+              **"Atendimento finalizado", e não "Já atendi".** O par é o que dá
+              o sentido: "Assumir atendimento" tira a conversa do bot, este a
+              devolve. "Já atendi" descrevia quem clica; o nome novo descreve o
+              estado em que a conversa fica, que é o que a outra ponta do par
+              já fazia.
             */}
             <form action={acaoEncerrarAtendimento.bind(null, clienteId, contatoId)}>
               <button
@@ -291,7 +297,7 @@ export default async function Pagina({
                 title="Resolve o handoff. A próxima mensagem desta pessoa começa uma conversa nova com o bot."
                 className="shrink-0 rounded-[9px] border border-rose-400/30 bg-rose-400/[0.12] px-3.5 py-2 text-[12px] font-bold text-perigo transition hover:bg-rose-400/[0.2]"
               >
-                Já atendi
+                Atendimento finalizado
               </button>
             </form>
           </div>

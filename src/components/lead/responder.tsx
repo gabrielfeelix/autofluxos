@@ -382,7 +382,7 @@ export function CaixaDeResposta({
       {!gravando && temAutomacao && (
         <p className="mt-1.5 px-1 text-[11.5px] leading-4 text-dim">
           Responder daqui assume a conversa: o bot para de falar com {nome} até você clicar em
-          &ldquo;Já atendi&rdquo;.
+          &ldquo;Atendimento finalizado&rdquo;.
         </p>
       )}
     </form>
