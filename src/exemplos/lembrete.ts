@@ -54,7 +54,72 @@ export const lembrete: Fluxo = fluxoSchema.parse({
     comPreset('verandi-minha-agenda', { id: 'ficha', position: em(2, 0) }),
 
     /*
-     * A pergunta **é** o lembrete.
+     * Uma aula só não se pergunta.
+     *
+     * `qual-aula` monta o menu sobre `proximas`, e um menu não sabe quantos
+     * itens tem antes de abrir: com **uma** aula marcada, o lembrete mandava
+     * *"É sobre qual delas?"* e um botão sozinho. É o caso mais comum de
+     * todos, e era o único em que a pergunta não tinha o que perguntar , a
+     * pessoa clicava para confirmar o que o bot já sabia.
+     *
+     * A condição vem antes da pergunta, e não depois, porque o custo aqui é a
+     * mensagem enviada: perguntar e desprezar a resposta ainda teria gasto a
+     * notificação no dia da pessoa.
+     */
+    {
+      id: 'mais-de-uma-aula',
+      type: 'condicao',
+      position: em(2.6, 0),
+      data: { variavel: 'quantas_proximas', operador: 'maior', valor: '1' },
+    },
+
+    /*
+     * Uma, ou nenhuma?
+     *
+     * O ramo falso da condição acima junta os dois casos, e eles não seguem
+     * juntos: sem aula marcada, a mensagem de `a-aula` falaria de uma aula que
+     * não existe. Aqui eles se separam, e quem não tem nada cai no mesmo
+     * `nada-marcado` que a saída `vazio` da pergunta já usava.
+     */
+    {
+      id: 'tem-aula',
+      type: 'condicao',
+      position: em(2.6, 0.9),
+      data: { variavel: 'quantas_proximas', operador: 'igual', valor: '1' },
+    },
+
+    /*
+     * A aula única: o lembrete é dito, e não perguntado.
+     *
+     * Guarda em `aula` e `participacao_id` o que a pergunta guardaria, porque
+     * é disso que `vem-ou-nao` e o desmarcar vivem daqui para a frente. Com um
+     * item só, `{{proximas}}` e `{{proximas_id}}` **são** aquele item: não há
+     * ambiguidade de posição a resolver, que é o risco quando a lista tem
+     * vários.
+     *
+     * Os `salvar` entram como pedaço da mensagem, e não como bloco à parte,
+     * porque é assim que o motor oferece guardar variável , e aqui a ordem
+     * importa: eles vêm **antes** do texto, para que a frase já leia `{{aula}}`
+     * preenchido.
+     */
+    {
+      id: 'a-aula',
+      type: 'mensagem',
+      position: em(3, 0.9),
+      data: {
+        partes: [
+          { tipo: 'salvar', campo: 'aula', valor: '{{proximas}}' },
+          { tipo: 'salvar', campo: 'participacao_id', valor: '{{proximas_id}}' },
+          {
+            tipo: 'texto',
+            texto: 'Oi, *{{nome_na_agenda}}*! 👋 Passando para lembrar da sua aula.',
+          },
+        ],
+      },
+    },
+
+    /*
+     * A pergunta **é** o lembrete, quando há mais de uma aula.
      *
      * Uma mensagem antes dela, dizendo a mesma coisa, faria o lembrete chegar
      * em duas notificações separadas, e a segunda chega quando a pessoa já
@@ -180,7 +245,19 @@ export const lembrete: Fluxo = fluxoSchema.parse({
     { id: 'l1', source: 'reconhecer', target: 'ja-e-aluno' },
     { id: 'l2', source: 'ja-e-aluno', sourceHandle: 'verdadeiro', target: 'ficha' },
     { id: 'l3', source: 'ja-e-aluno', sourceHandle: 'falso', target: 'nao-e-aluno' },
-    { id: 'l4', source: 'ficha', target: 'qual-aula' },
+    { id: 'l4', source: 'ficha', target: 'mais-de-uma-aula' },
+    /*
+     * Duas ou mais: pergunta qual. Uma só: diz qual, e vai direto ao gesto.
+     *
+     * O ramo falso de `mais-de-uma-aula` junta uma e zero, e os dois não podem
+     * seguir juntos: com zero, `a-aula` mandaria uma frase sobre uma aula que
+     * não existe. `tem-aula` separa os dois antes que isso aconteça.
+     */
+    { id: 'l4b', source: 'mais-de-uma-aula', sourceHandle: 'verdadeiro', target: 'qual-aula' },
+    { id: 'l4c', source: 'mais-de-uma-aula', sourceHandle: 'falso', target: 'tem-aula' },
+    { id: 'l4d', source: 'tem-aula', sourceHandle: 'verdadeiro', target: 'a-aula' },
+    { id: 'l4e', source: 'tem-aula', sourceHandle: 'falso', target: 'nada-marcado' },
+    { id: 'l4f', source: 'a-aula', target: 'vem-ou-nao' },
     { id: 'l5', source: 'qual-aula', sourceHandle: 'escolheu', target: 'vem-ou-nao' },
     { id: 'l6', source: 'qual-aula', sourceHandle: 'vazio', target: 'nada-marcado' },
     { id: 'l7', source: 'qual-aula', sourceHandle: 'timeout', target: 'recepcao' },

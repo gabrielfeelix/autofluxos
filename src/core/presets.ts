@@ -586,15 +586,45 @@ export const PRESETS: Preset[] = [
        * Duas aulas no mesmo dia viravam duas opções idênticas no menu de
        * desmarcar, e escolher entre duas linhas iguais é escolher no escuro.
        * Com o modelo de rótulo, cada linha diz o dia, a hora e qual aula é.
+       *
+       * **`{data:dia_semana}`, e não `{data}`.** Sem o formato, a data sai como
+       * a API a guarda e o rótulo vira `2026-08-21 07:00 · P`: o ano ocupa
+       * cinco dos 20 caracteres que a Cloud API dá, e o corte come justamente o
+       * nome da aula, que é o que distingue uma opção da outra. `sexta 21/08`
+       * diz o que a pessoa usa para se localizar , ninguém abre o calendário
+       * para descobrir que dia da semana é 21/08 , e devolve espaço ao que
+       * importa.
        */
       mapear: [
         { variavel: 'nome_na_agenda', caminho: 'nome' },
-        { variavel: 'proximas', caminho: 'proximas[]', rotulo: '{data} {hora} · {servico}' },
+        {
+          variavel: 'proximas',
+          caminho: 'proximas[]',
+          rotulo: '{data:dia_semana} {hora} · {servico}',
+        },
         { variavel: 'proximas_id', caminho: 'proximas[].participacaoId' },
+        /*
+         * **Quantas** aulas vêm pela frente, irmã de `quantas_reposicoes`.
+         *
+         * Existe pelo mesmo motivo que ela: um menu montado sobre a lista não
+         * sabe quantos itens tem antes de abrir, e com **uma** aula o lembrete
+         * perguntava *"É sobre qual delas?"* mostrando um botão sozinho , uma
+         * escolha sem escolha, no caso mais comum de todos.
+         *
+         * A contagem é o que deixa o fluxo pular a pergunta quando ela não tem
+         * o que perguntar.
+         */
+        {
+          variavel: 'quantas_proximas',
+          caminho: 'proximas[].participacaoId',
+          quantos: true,
+        },
         {
           variavel: 'reposicoes_abertas',
           caminho: 'reposicoesAbertas[]',
-          rotulo: '{data} {hora} · {servico}',
+          // Mesmo motivo de `proximas` acima: sem o formato, o ano come o nome
+          // da aula no corte de 20 caracteres do rótulo.
+          rotulo: '{data:dia_semana} {hora} · {servico}',
         },
         { variavel: 'reposicoes_id', caminho: 'reposicoesAbertas[].participacaoId' },
         /*

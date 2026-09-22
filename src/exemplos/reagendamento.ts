@@ -131,19 +131,19 @@ export const reagendamento: Fluxo = fluxoSchema.parse({
      * pior desfecho possível.
      */
     /*
-     * "Mais de uma" escrito como "não é exatamente uma".
+     * Mais de uma, dito como "maior que 1".
      *
-     * A condição compara texto, e não número, não existe `maior` aqui, e
-     * inventar um operador numérico para este caso seria criar uma linguagem de
-     * comparação inteira para manter e explicar. O ramo do zero já saiu acima,
-     * então neste ponto `diferente de 1` só pode ser dois ou mais, e a leitura
-     * continua exata.
+     * Já foi `diferente de 1`, com um comentário explicando que não existia
+     * operador numérico e que o ramo do zero ter saído acima tornava a leitura
+     * exata. O contorno estava certo e deixou de ser necessário: `maior` e
+     * `menor` entraram no motor depois, e a condição agora diz o que quer
+     * dizer sem depender de qual ramo veio antes.
      */
     {
       id: 'mais-de-uma',
       type: 'condicao',
       position: em(5, 0),
-      data: { variavel: 'quantas_reposicoes', operador: 'diferente', valor: '1' },
+      data: { variavel: 'quantas_reposicoes', operador: 'maior', valor: '1' },
     },
 
     /*
