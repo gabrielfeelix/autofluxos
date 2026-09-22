@@ -53,6 +53,31 @@ export const PALAVRAS_ESCAPE = [
   'sair do bot',
 ]
 
+/**
+ * As palavras que voltam para o começo, de qualquer ponto.
+ *
+ * **Sem isto, quem se perdia só tinha uma saída: errar três vezes.** No teste da
+ * MGM em 22/set/2026 a pessoa escreveu "voltar ao inicio" dentro de uma pergunta
+ * de data e ouviu o erro da data de novo, porque o fluxo só entende a resposta
+ * que ele pediu. Todo bot de banco e de operadora entende essa frase, e quem
+ * conversa espera que este entenda também.
+ *
+ * `menu` sozinho fica de fora de propósito: ele é rótulo de opção em fluxo que
+ * já existe, e sequestrar a resposta de quem escolheu "Menu" no teclado seria
+ * trocar um caminho sem saída por outro.
+ */
+export const PALAVRAS_DE_REINICIO = [
+  'voltar ao inicio',
+  'voltar pro inicio',
+  'voltar para o inicio',
+  'voltar ao menu',
+  'voltar pro menu',
+  'voltar para o menu',
+  'menu principal',
+  'comecar de novo',
+  'recomecar',
+]
+
 const MENSAGEM_TRANSFERENCIA = 'Vou te passar para um atendente. Só um instante!'
 const MENSAGEM_NAO_ENTENDI = 'Desculpa, não entendi. Pode escolher uma das opções abaixo?'
 
@@ -148,6 +173,23 @@ export function executar(
 
   if (entrada.tipo === 'texto' && pediuAtendente(entrada.texto)) {
     return transferir(s, acoes, 'a pessoa pediu para falar com um atendente', contexto)
+  }
+
+  /*
+   * "Voltar ao início" volta ao início, de onde quer que a conversa esteja.
+   *
+   * Vem depois do pedido de atendente porque falar com gente é mais urgente que
+   * recomeçar, e antes de tudo o mais pela mesma razão que o escape existe: a
+   * pergunta em que a pessoa está presa é justamente a que não vai entender o
+   * pedido de sair dela.
+   *
+   * **As variáveis ficam**, como no bloco Voltar: quem já disse o nome não quer
+   * dizer de novo, e um reinício que esquece tudo é indistinguível de desligar
+   * e ligar a conversa.
+   */
+  if (entrada.tipo === 'texto' && pediuReinicio(entrada.texto)) {
+    s.tentativas = 0
+    return avancar(contexto, fluxo, porId, s, acoes, fluxo.inicio)
   }
 
   /*
@@ -1269,6 +1311,12 @@ function proximo(fluxo: Fluxo, noId: string, saida?: string): string | null {
 export function pediuAtendente(texto: string): boolean {
   const t = normalizar(texto)
   return PALAVRAS_ESCAPE.some((palavra) => t.includes(palavra))
+}
+
+/** A pessoa pediu para recomeçar. Ver `PALAVRAS_DE_REINICIO`. */
+export function pediuReinicio(texto: string): boolean {
+  const t = normalizar(texto)
+  return PALAVRAS_DE_REINICIO.some((palavra) => t.includes(palavra))
 }
 
 function indexar(fluxo: Fluxo): Map<string, No> {

@@ -216,6 +216,33 @@ describe('as três garantias que impedem a pessoa de ficar presa', () => {
     })
   })
 
+  /*
+   * O teste da MGM em 22/set/2026: "voltar ao inicio" dentro da pergunta de
+   * data devolveu o erro da data. A única saída era errar três vezes.
+   */
+  it('"voltar ao inicio" recomeça de qualquer ponto, sem estar no desenho', () => {
+    const { sessao, acoes } = conversar(triagem, [
+      { tipo: 'inicio' },
+      { tipo: 'texto', texto: 'voltar ao inicio' },
+    ])
+
+    expect(sessao.status).not.toBe('humano')
+    expect(acoes.some((a) => a.tipo === 'transferir_humano')).toBe(false)
+    // Rodou o fluxo desde o primeiro bloco e parou na primeira pergunta de novo.
+    expect(acoes.at(-1)?.tipo).toBe('enviar_opcoes')
+    const primeira = executar(triagem, sessaoNova(), { tipo: 'inicio' })
+    expect(sessao.noAtual).toBe(primeira.sessao.noAtual)
+  })
+
+  it('recomeçar não gasta tentativa nem esquece o que a pessoa já disse', () => {
+    let sessao = { ...sessaoNova(), vars: { nome: 'Gabriel' }, tentativas: 2 }
+    const r = executar(triagem, sessao, { tipo: 'inicio' })
+    const volta = executar(triagem, r.sessao, { tipo: 'texto', texto: 'menu principal' })
+
+    expect(volta.sessao.tentativas).toBe(0)
+    expect(volta.sessao.vars.nome).toBe('Gabriel')
+  })
+
   it('áudio vai direto para uma pessoa em vez de "não entendi"', () => {
     const { sessao, acoes } = conversar(triagem, [
       { tipo: 'inicio' },
