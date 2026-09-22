@@ -28,42 +28,68 @@ e descartado.
   conversa parada / acho q meu titulo foi bosta / da pra colocar em horario de
   atendimento se pa"*. **A fusão foi decisão do Gabriel**, tomada na hora, e
   não conclusão tirada depois do erro do Edu. `/ajustes/retomada` redireciona.
+- **Os três defeitos de template abaixo, corrigidos** (`1391718`, `6616560`,
+  `065a77d`), e o botão renomeado (`c3a62ea`). Detalhe de cada um na seção
+  seguinte.
 
-## Defeitos confirmados no código, ainda abertos
+## Defeitos de template, corrigidos
 
-- **`aula(s)`** em `src/exemplos/reagendamento.ts:96`. Pluralização preguiçosa
-  numa frase que vai para o cliente final. Não há sintaxe de plural no
-  interpolador (`src/core/engine/interpolar.ts` só troca `{{var}}`), então a
-  saída é criar variável derivada no preset ou reescrever a frase.
-- **Telefone cru** em `src/exemplos/agendamento.ts:87`: sai
-  `5511911001414` no meio da frase. Não existe helper de formatação no repo
-  (`grep formatarTelefone` = zero).
-- **Botão único num menu de uma opção só**, em `src/exemplos/lembrete.ts:73`.
-  O nó `qual-aula` abre `proximas` como menu e pergunta *"É sobre qual delas?"*
-  mesmo quando a lista tem um item: o WhatsApp mostra um botão sozinho e a
-  pergunta não tem escolha nenhuma a fazer.
+Os três eram de `src/exemplos/`. **O fluxo vivo da MGM é cópia e está no
+banco: nada aqui o conserta.** Repetir a correção lá mexe em produção e
+depende de autorização explícita.
+
+- **`aula(s)`** no reagendamento (`1391718`). O parêntese era o sintoma; o
+  defeito é que a frase rodava em `ola`, **antes** de `tem-reposicao`, onde o
+  número ainda pode ser zero: quem não tinha nada para repor lia *"você tem 0
+  aula(s) para repor:"* com lista vazia, e era desmentido na mensagem seguinte.
+  A contagem saiu da saudação e foi para os ramos, onde já é certa. O mesmo
+  parêntese existia no motivo do handoff (`reposição(ões)`), onde o número é
+  mesmo variável; virou "em aberto", que serve a qualquer número.
+- **Telefone cru** no agendamento (`6616560`). Formatar na origem quebraria as
+  integrações: `{{telefone}}` vai no corpo JSON dos presets e é por ele que a
+  agenda acha a pessoa. Então são dois, como `hoje` e `hoje_br`:
+  `{{telefone_br}}` é o legível, derivado do telefone que venceu a precedência.
+
+  **O doc dizia que não havia helper de formatação. Havia:** `telefoneLegivel`,
+  no módulo que já resolve o nono dígito. O grep procurou `formatarTelefone`,
+  que é outro nome.
+
+  E cobrir o caso estrangeiro revelou um defeito que já estava em **oito telas
+  de contato**: `12025550123`, um número americano, tem os mesmos onze dígitos
+  de um celular com DDD e saía como `+55 (12) 02555-0123`. O teste de
+  estrangeiro que existia usava um número de Portugal, de doze dígitos,
+  recusado pelo comprimento: este caminho nunca tinha sido conferido.
+- **Botão único num menu de uma opção só**, em `lembrete.ts` (`065a77d`).
+  `qual-aula` perguntava *"É sobre qual delas?"* com uma aula marcada, e o
+  WhatsApp mostrava um botão sozinho — o caso mais comum de todos. Agora
+  `quantas_proximas` decide antes de falar: uma aula é dita, duas ou mais são
+  perguntadas, zero continua em `nada-marcado`.
 
   **Correção ao que este doc dizia antes:** isto foi registrado como "passo
   morto no reagendamento", com a pergunta *"Qual delas vamos remarcar?"*. Essa
-  pergunta não existe no repo. `reagendamento.ts` já trata a contagem: o nó
-  `tem-reposicao` manda zero para outro assunto, `mais-de-uma` manda duas ou
-  mais para a recepção, e **uma** segue direto para `qual-dia`, sem perguntar
-  qual. O fluxo com o defeito é o do lembrete.
+  pergunta não existe no repo — `reagendamento.ts` já tratava a contagem. O
+  fluxo com o defeito era o do lembrete.
 
-Os dois primeiros estão nos **templates** (`src/exemplos/`). O fluxo vivo da
-MGM é cópia e está no banco: corrigir o template não conserta a MGM. São duas
-correções, e a da MGM mexe em produção — **não fazer sem autorização explícita**.
+  E rodar a conversa de verdade achou um terceiro defeito que nenhum teste
+  cobria: o rótulo do menu usava `{data}`, que emite a data como a API guarda,
+  e saía `2026-08-21 07:00 · P`. O ano gastava cinco dos 20 caracteres da Cloud
+  API e o corte comia o nome da aula, justamente o que separa uma opção da
+  outra. Agora é `{data:dia_semana}`: *"sexta 21/08 07:00 · Pilates solo"*.
+
+**O que isso ensinou sobre os testes daqui:** os do lembrete olhavam arestas e
+nenhum rodava a conversa. O desenho estava certo e a conversa é que não fazia
+sentido, e por isso o botão único sobreviveu a todos eles. `lembrete.test.ts`
+agora roda os três casos de ponta a ponta.
+
+## Feito também
+
+- **"Já atendi" virou "Atendimento finalizado"** (`c3a62ea`). Proposta do Edu
+  às 16:06, fechada pelo Gabriel às 17:41. O rótulo estava em duas telas, e
+  mais quatro textos de interface citavam o botão pelo nome antigo — trocar só
+  o botão deixaria a interface mandando procurar um botão que não existe mais.
 
 ## Decidido e ainda não implementado
 
-- **"Já atendi" vira "Atendimento finalizado".** Proposta do Edu às 16:06
-  (*"aí tem um botão de já atendi mas q da pra mudar pra atendimento
-  finalizado"*), fechada pelo Gabriel às 17:41: *"faz sentido faz sentido,
-  podemos manter assim"*. O rótulo está em dois lugares, os dois chamando
-  `acaoEncerrarAtendimento`: `inbox/page.tsx:1330` e
-  `leads/[contatoId]/page.tsx:294`. O par já existe e é o que dá sentido ao
-  novo nome: "Assumir atendimento" tira do bot, "Atendimento finalizado"
-  devolve.
 - Reagendamento **sem data livre**: semana → dia da semana → horários
   ofertados. Hoje o aluno digita a data que quiser e o bot diz que não tem.
   Proposta do Edu às 13:15: *"nunca deixando o aluno sair digitando a data q
