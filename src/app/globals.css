@@ -1106,6 +1106,19 @@ textarea::placeholder {
 }
 
 /*
+ * O crachá e o ✕ de uma ligação ficam por cima dos cartões.
+ *
+ * A camada dos rótulos nasce embaixo da dos blocos, e o crachá de uma ligação
+ * longa mora no vão entre duas colunas , vão que é menor que ele. Embaixo, ele
+ * aparecia cortado pela metade pelo cartão vizinho. A camada não rouba clique
+ * de ninguém: ela é `pointer-events: none` e só o que é botão dentro dela
+ * recebe ponteiro.
+ */
+.react-flow__edgelabel-renderer {
+  z-index: 5;
+}
+
+/*
  * Só o repouso mora aqui. Foco, esmaecimento, contorno e seta são decididos
  * dentro de `arestas.tsx`, porque dependem de qual linha está sob o ponteiro e
  * de qual cartão está selecionado , coisa que CSS não enxerga.

@@ -171,12 +171,43 @@ const LONGE_PARA_TRAS = 248 + 110
  * quinze caracteres. Sem texto, o nome do tipo já orienta.
  */
 function apelidoDoBloco(tipo: string, dados: Record<string, unknown> | undefined): string {
-  const bruto =
-    dados?.texto ?? dados?.legenda ?? dados?.instrucao ?? dados?.nome ?? dados?.url ?? ''
-  const limpo = typeof bruto === 'string' ? bruto.trim().replace(/\s+/g, ' ') : ''
+  const bruto = primeiroTexto(dados)
+  const limpo = bruto.trim().replace(/\s+/g, ' ')
   const nome = (NOMES as Record<string, string>)[tipo] ?? 'Bloco'
   if (limpo === '') return nome
-  return limpo.length > 26 ? `${limpo.slice(0, 26)}…` : limpo
+  return limpo.length > 24 ? `${limpo.slice(0, 24)}…` : limpo
+}
+
+/**
+ * O primeiro texto que o bloco tem para mostrar, seja qual for o formato.
+ *
+ * `partes` e `mensagens` vêm primeiro porque são os formatos **novos**: a
+ * mensagem virou lista de pedaços e o handoff virou lista de falas, e os campos
+ * antigos (`texto`, `mensagem`) seguem no schema só para as conversas que já
+ * estavam rodando quando a mudança saiu. Ler o antigo primeiro era o bug do
+ * crachá: todo bloco de mensagem aparecia como "Mensagem", sem nada dentro.
+ */
+function primeiroTexto(dados: Record<string, unknown> | undefined): string {
+  if (!dados) return ''
+
+  const partes = dados.partes
+  if (Array.isArray(partes)) {
+    for (const parte of partes) {
+      if (parte && typeof parte === 'object' && typeof (parte as { texto?: unknown }).texto === 'string') {
+        return (parte as { texto: string }).texto
+      }
+    }
+  }
+
+  const mensagens = dados.mensagens
+  if (Array.isArray(mensagens) && typeof mensagens[0] === 'string') return mensagens[0]
+
+  for (const campo of ['texto', 'legenda', 'instrucao', 'mensagem', 'nome', 'url'] as const) {
+    const valor = dados[campo]
+    if (typeof valor === 'string' && valor.trim() !== '') return valor
+  }
+
+  return ''
 }
 
 /**
@@ -537,6 +568,23 @@ function ArestaRemovivel({
         </>
       )}
 
+      {/*
+        O toco de fio entre a alça e o crachá.
+
+        Sem ele o crachá flutua no vazio e não se lê como ligação , foi
+        exatamente o que aconteceu: "isso aí é o quê?". Doze pixels bastam para
+        o olho fechar a conta de que aquilo sai dali.
+      */}
+      {dobrada && (
+        <path
+          d={`M ${sourceX},${sourceY} L ${sourceX + 12},${sourceY}`}
+          stroke={acesa ? 'var(--color-primary, #2563eb)' : 'var(--fio)'}
+          strokeWidth={acesa ? 2.5 : 1.5}
+          strokeLinecap="round"
+          style={{ pointerEvents: 'none', opacity: esmaecida ? 0.12 : 1 }}
+        />
+      )}
+
       <EdgeLabelRenderer>
         <div
           // `pointer-events-none` no contêiner e `auto` no que é clicável: o
@@ -566,24 +614,31 @@ function ArestaRemovivel({
               tempo do que seguir o traço com o olho levava.
             */
             <span
-              className={`pointer-events-auto flex items-center gap-1 rounded-full border bg-panel py-[3px] pr-[3px] pl-2 text-[10px] whitespace-nowrap shadow-sm transition ${
+              className={`pointer-events-auto flex items-center gap-1 rounded-full border bg-panel py-[3px] pr-[3px] pl-2 text-[10px] whitespace-nowrap shadow-[0_2px_10px_rgba(19,25,34,0.12)] transition ${
                 acesa ? 'border-primary/40 text-primary' : 'border-line text-muted'
               }`}
             >
               <button
                 type="button"
-                title={`Ir para "${nomeDoDestino}"`}
+                title={`Esta saída leva ao bloco "${nomeDoDestino}". Clique para ir até lá.`}
                 onClick={(evento) => {
                   evento.stopPropagation()
                   tela.fitView({ nodes: [{ id: target }], duration: 400, maxZoom: 1.1 })
                 }}
                 className="flex items-center gap-1"
               >
+                {/*
+                  "vai para" escrito por extenso, e não só uma seta.
+
+                  A primeira versão era ícone + nome + ↗, e ninguém entendeu o
+                  que era , dois dos três símbolos eram seta (o ícone do bloco
+                  de mensagem também é `↗`) e nenhum dizia que aquilo era uma
+                  ligação. Duas palavras resolvem o que três glifos não
+                  resolveram.
+                */}
+                <span className="text-[9px] tracking-wide text-soft">vai para</span>
                 <span aria-hidden>{iconeDoDestino}</span>
-                <span className="max-w-[130px] truncate">{nomeDoDestino}</span>
-                <span aria-hidden className="text-soft">
-                  ↗
-                </span>
+                <span className="max-w-[120px] truncate font-medium">{nomeDoDestino}</span>
               </button>
               <button
                 type="button"
