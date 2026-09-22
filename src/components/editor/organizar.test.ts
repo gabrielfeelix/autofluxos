@@ -138,6 +138,23 @@ describe('organizar', () => {
     expect(posicoes.size).toBe(4)
   })
 
+  it('não reserva corredor para ligação que vai virar crachá', () => {
+    // Cinco colunas de distância: acima do teto. Fio assim não é desenhado no
+    // canvas, então abrir faixa para ele nas quatro colunas do meio só
+    // esticaria o desenho para nada.
+    const nos = [no('a'), no('b'), no('c'), no('d'), no('e'), no('f')]
+    const arestas = [
+      liga('a', 'b'),
+      liga('b', 'c'),
+      liga('c', 'd'),
+      liga('d', 'e'),
+      liga('e', 'f'),
+      liga('a', 'f', 'o2'),
+    ]
+    const { curvas } = organizar(nos, arestas, 'a')
+    expect(curvas.get('a-f-o2')).toBeUndefined()
+  })
+
   it('aguenta desenho vazio e aresta órfã', () => {
     expect(organizar([], [], null).posicoes.size).toBe(0)
     const p = organizar([no('a')], [liga('a', 'sumiu'), liga('a', 'a')], null).posicoes

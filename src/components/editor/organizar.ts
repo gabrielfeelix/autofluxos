@@ -52,6 +52,16 @@ const VARREDURAS = 4
  * nada dentro.
  */
 const VAO_ENTRE_CORREDORES = 20
+/**
+ * Até quantas colunas uma ligação pode pular e ainda ganhar corredor.
+ *
+ * Acima disso ela não é desenhada: vira crachá na saída do bloco (ver
+ * `LONGE_PARA_FRENTE` em `arestas.tsx`). Reservar corredor para um fio que não
+ * aparece é o pior dos dois mundos , esticaria todas as colunas do meio para
+ * abrir espaço a um traço que ninguém vai ver. **Os dois números andam
+ * juntos**: mexer num sem o outro deixa espaço vazio ou fio em diagonal.
+ */
+const MAXIMO_DE_COLUNAS_COM_CORREDOR = 3
 
 export type NoDoDesenho = {
   id: string
@@ -296,7 +306,8 @@ function apoiar(
 
     const de = camada.get(a.source)
     const para = camada.get(a.target)
-    if (de === undefined || para === undefined || para - de <= 1) continue
+    if (de === undefined || para === undefined) continue
+    if (para - de <= 1 || para - de > MAXIMO_DE_COLUNAS_COM_CORREDOR) continue
 
     const idDaAresta = a.id ?? `${a.source}\u0000${a.sourceHandle ?? ''}\u0000${a.target}`
 
