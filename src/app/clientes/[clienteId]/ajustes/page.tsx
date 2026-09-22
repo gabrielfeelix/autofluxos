@@ -183,30 +183,32 @@ export default async function Pagina({
               )
             }
           />
+          {/*
+            Um cartão só para as duas configurações da fronteira com o humano.
+
+            Eram dois, e o segundo era uma tela inteira para uma única opção.
+            Os dois selos continuam: o da retomada desligada é o que avisa que
+            o bot pode ficar mudo para sempre num contato, e essa é a única
+            informação desta grade que é um defeito esperando acontecer.
+          */}
           <Cartao
             href={`/clientes/${cliente.id}/ajustes/horario`}
             icone={ICONE_DA_TELA['horario']}
             titulo="Horário de atendimento"
-            descricao="Quando há gente para atender. Fora disso, o bot avisa em vez de prometer um atendente."
+            descricao="Quando há gente para atender, e o que fazer com a conversa que ficou parada com uma pessoa."
             estado={
-              cliente.horarioAtendimento ? (
-                <Selo tom="ok">configurado</Selo>
-              ) : (
-                <Selo tom="alerta">atende sempre</Selo>
-              )
-            }
-          />
-          <Cartao
-            href={`/clientes/${cliente.id}/ajustes/retomada`}
-            icone={ICONE_DA_TELA['retomada']}
-            titulo="Conversa parada"
-            descricao="O bot fica mudo no contato que foi para uma pessoa. Aqui ele volta sozinho."
-            estado={
-              cliente.retomada.ativo ? (
-                <Selo tom="ok">{rotuloDoPrazo(cliente.retomada.minutos)}</Selo>
-              ) : (
-                <Selo tom="alerta">desligada</Selo>
-              )
+              <span className="flex flex-wrap items-center justify-end gap-1.5">
+                {cliente.horarioAtendimento ? (
+                  <Selo tom="ok">horário definido</Selo>
+                ) : (
+                  <Selo tom="alerta">atende sempre</Selo>
+                )}
+                {cliente.retomada.ativo ? (
+                  <Selo tom="ok">volta em {rotuloDoPrazo(cliente.retomada.minutos)}</Selo>
+                ) : (
+                  <Selo tom="alerta">não volta sozinho</Selo>
+                )}
+              </span>
             }
           />
           <Cartao

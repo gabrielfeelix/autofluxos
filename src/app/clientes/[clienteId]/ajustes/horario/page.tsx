@@ -2,18 +2,26 @@ import { notFound } from 'next/navigation'
 import { AjustesShell } from '@/components/design/ajustes-shell'
 import { Trilha } from '@/components/design/trilha'
 import { HorarioDeAtendimentoForm } from '@/components/cliente/horario'
-import { acaoSalvarHorario } from '@/server/acoes'
+import { RetomadaDoBotForm } from '@/components/cliente/retomada-do-bot'
+import { acaoSalvarHorario, acaoSalvarRetomada } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarConexoes } from '@/server/repos/conexoes'
 
 export const dynamic = 'force-dynamic'
 
 /**
- * O horário do **atendimento humano**, não o do bot.
+ * Tudo o que decide **o encontro da conversa com uma pessoa de verdade**.
  *
- * O bot responde 24 horas por dia e continua respondendo; o que muda é o que
- * ele diz quando a conversa precisa de gente. Sem isto, ele promete um
- * atendente às 3h da manhã e a pessoa fica no vácuo até alguém abrir o painel.
+ * São duas perguntas, e por um tempo foram duas telas: *quando* há gente
+ * (horário) e *o que fazer quando quem assumiu não voltou* (retomada). A
+ * separação tinha uma lógica defensável e não sobreviveu ao uso: o Edu foi
+ * procurar a mensagem de fora do expediente aqui, não achou, e gastou cinco
+ * mensagens perguntando onde estava. Uma tela inteira no menu para **uma única
+ * opção** também não se paga , o custo de achar o item é maior que o de ler
+ * mais um cartão numa tela que já é sobre o mesmo assunto.
+ *
+ * O bot responde 24 horas por dia nos dois casos. O que estas duas coisas
+ * configuram é só o que acontece na fronteira com o humano.
  */
 export default async function Pagina({
   params,
@@ -51,6 +59,23 @@ export default async function Pagina({
           conexoes={conexoes}
           salvar={acaoSalvarHorario.bind(null, cliente.id)}
         />
+
+        <section className="mt-12 border-t border-line pt-8">
+          <h2 className="text-[16px] font-bold tracking-[-0.01em]">
+            Conversa parada com uma pessoa
+          </h2>
+          <p className="mt-1 mb-6 max-w-[620px] text-[13px] leading-6 text-muted">
+            Quando alguém assume uma conversa, o bot{' '}
+            <strong className="text-soft">para de responder naquele contato</strong> e só volta se
+            clicarem em “Religar o bot”, no Inbox. Se ninguém clicar, ele fica calado ali para
+            sempre: a pessoa escreve, as mensagens chegam, e nada responde.
+          </p>
+
+          <RetomadaDoBotForm
+            inicial={cliente.retomada}
+            salvar={acaoSalvarRetomada.bind(null, cliente.id)}
+          />
+        </section>
       </main>
     </AjustesShell>
   )

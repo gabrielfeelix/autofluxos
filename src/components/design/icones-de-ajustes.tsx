@@ -56,15 +56,6 @@ export const ICONE_DA_TELA: Record<TelaDeAjustes, React.ReactNode> = {
       <circle cx="17.2" cy="6.8" r="0.9" />
     </Svg>
   ),
-  /* Seta voltando sobre um relógio: o tempo passa e a conversa retorna. */
-  retomada: (
-    <Svg>
-      <path d="M3.5 9.5V4.8" />
-      <path d="M3.5 9.5h4.7" />
-      <path d="M4.2 9.5A8.4 8.4 0 1 1 3.7 14" />
-      <path d="M12 7.8V12l2.8 1.7" />
-    </Svg>
-  ),
   contexto: (
     <Svg>
       <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5Z" />
