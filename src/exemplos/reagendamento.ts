@@ -71,12 +71,21 @@ export const reagendamento: Fluxo = fluxoSchema.parse({
     comPreset('verandi-minha-agenda', { id: 'ficha', position: em(2, 0) }),
 
     /*
-     * A saudação que quem opera pediu, com nome **e** número na mesma mensagem.
+     * A saudação, que sai depois das duas chamadas de propósito: o nome só
+     * existe porque a ficha já voltou.
      *
-     * Ela sai depois das duas chamadas de propósito: é o dado que faz a frase
-     * existir. Sem `{{quantas_reposicoes}}` esta mensagem seria a saudação
-     * genérica de qualquer bot, e a conversa começaria pedindo à aluna uma
-     * informação que a agenda já tinha.
+     * **A contagem não vem aqui, e já veio.** A frase era "você tem
+     * *{{quantas_reposicoes}}* aula(s) para repor", e ela roda antes de
+     * `tem-reposicao`, onde o número ainda pode ser qualquer um, inclusive
+     * zero. Quem não tinha nada para repor lia *"você tem 0 aula(s) para
+     * repor:"* seguido de uma lista vazia, e só na mensagem seguinte era
+     * desmentido. O `aula(s)` era o sintoma visível; o defeito era afirmar a
+     * contagem antes de saber qual era.
+     *
+     * Agora cada ramo diz a sua: `sem-reposicao` fala do zero, `uma-so` fala
+     * de uma, `recepcao-muitas` fala de duas ou mais. Nenhum deles precisa de
+     * `(s)`, porque cada um já sabe o número quando fala , e é por isso que a
+     * correção é esta, e não uma sintaxe de plural no interpolador.
      */
     {
       id: 'ola',
@@ -86,14 +95,7 @@ export const reagendamento: Fluxo = fluxoSchema.parse({
         partes: [
           {
             tipo: 'texto',
-            texto:
-              'Oi, *{{nome_na_agenda}}*! 👋 Vou te ajudar a reagendar sua aula.',
-          },
-          { tipo: 'atraso', segundos: 1 },
-          {
-            tipo: 'texto',
-            texto:
-              'Aqui no sistema você tem *{{quantas_reposicoes}}* aula(s) para repor:\n{{reposicoes_abertas}}',
+            texto: 'Oi, *{{nome_na_agenda}}*! 👋 Vou te ajudar a reagendar sua aula.',
           },
         ],
       },
@@ -144,7 +146,29 @@ export const reagendamento: Fluxo = fluxoSchema.parse({
       data: { variavel: 'quantas_reposicoes', operador: 'diferente', valor: '1' },
     },
 
-    // 4, uma só: o bot resolve inteiro. Para quando?
+    /*
+     * 4, uma só: aqui a contagem é certa, e a frase pode ser afirmativa.
+     *
+     * Ela existe porque a saudação deixou de dizer o número (ver o comentário
+     * em `ola`). Dizer *qual* aula está em aberto antes de perguntar a data é
+     * o que quem opera pediu , a aluna confirma que é aquela mesmo antes de
+     * escolher dia e hora, em vez de descobrir no fim.
+     */
+    {
+      id: 'uma-so',
+      type: 'mensagem',
+      position: em(5.5, 0.9),
+      data: {
+        partes: [
+          {
+            tipo: 'texto',
+            texto: 'Você tem *uma aula* para repor:\n{{reposicoes_abertas}}',
+          },
+        ],
+      },
+    },
+
+    // 5, uma só: o bot resolve inteiro. Para quando?
     {
       id: 'qual-dia',
       type: 'pergunta',
@@ -265,15 +289,22 @@ export const reagendamento: Fluxo = fluxoSchema.parse({
      * A saída para gente, e o motivo entra nela.
      *
      * `{{quantas_reposicoes}}` no motivo é o que faz a fila do Inbox dizer
-     * "3 reposições" antes de alguém abrir a conversa, quem pega já sabe se é
+     * "3 em aberto" antes de alguém abrir a conversa, quem pega já sabe se é
      * caso de dois minutos ou de dez.
+     *
+     * **"em aberto" e não "reposição(ões)".** Aqui o número é mesmo variável ,
+     * este handoff recebe o ramo de duas ou mais, o de zero e os timeouts , e
+     * não há ramificação que resolva a concordância como em `ola`. Como é
+     * texto de fila interna, e não fala com o cliente, a saída é a palavra que
+     * serve a qualquer número em vez de um parêntese que ninguém lê em voz
+     * alta.
      */
     {
       id: 'recepcao',
       type: 'handoff',
       position: em(12, 1.4),
       data: {
-        motivo: 'reagendar {{quantas_reposicoes}} reposição(ões), {{nome_na_agenda}}',
+        motivo: 'reagendar, {{quantas_reposicoes}} em aberto, {{nome_na_agenda}}',
         mensagem:
           'Vou chamar alguém da recepção para acertar isso com você. Só um instante! 🙌',
       },
@@ -304,7 +335,8 @@ export const reagendamento: Fluxo = fluxoSchema.parse({
     { id: 'e9', source: 'sem-reposicao', sourceHandle: 'falar', target: 'recepcao' },
     { id: 'e10', source: 'sem-reposicao', sourceHandle: 'timeout', target: 'recepcao' },
     { id: 'e11', source: 'mais-de-uma', sourceHandle: 'verdadeiro', target: 'recepcao' },
-    { id: 'e12', source: 'mais-de-uma', sourceHandle: 'falso', target: 'qual-dia' },
+    { id: 'e12', source: 'mais-de-uma', sourceHandle: 'falso', target: 'uma-so' },
+    { id: 'e12b', source: 'uma-so', target: 'qual-dia' },
     { id: 'e13', source: 'qual-dia', target: 'buscar-horarios' },
     { id: 'e14', source: 'qual-dia', sourceHandle: 'timeout', target: 'recepcao' },
     { id: 'e15', source: 'buscar-horarios', target: 'quem-atende' },

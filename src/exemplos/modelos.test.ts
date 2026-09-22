@@ -46,7 +46,7 @@ describe('os modelos de fluxo', () => {
 describe('o reagendamento faz o que quem opera descreveu', () => {
   const nos = new Map(reagendamento.nodes.map((no) => [no.id, no]))
 
-  it('a saudação diz o nome e o número de reposições na mesma mensagem', () => {
+  it('a saudação chama a aluna pelo nome', () => {
     const ola = nos.get('ola')
     if (ola?.type !== 'mensagem') throw new Error('sumiu a saudação')
 
@@ -54,9 +54,48 @@ describe('o reagendamento faz o que quem opera descreveu', () => {
       .map((p) => (p.tipo === 'texto' ? p.texto : ''))
       .join(' ')
 
-    // "Ele já identificou o nome do aluno" + "você tem x aulas para repor".
     expect(texto).toContain('{{nome_na_agenda}}')
-    expect(texto).toContain('{{quantas_reposicoes}}')
+  })
+
+  /*
+   * O pedido era *"ao identificar o aluno, já informar: você tem x aulas para
+   * repor"*, e por um tempo ele foi lido como "diga o número **na saudação**".
+   * Não dá: `ola` roda antes de `tem-reposicao`, então ali o número ainda pode
+   * ser zero, e a frase saía *"você tem 0 aula(s) para repor:"* com uma lista
+   * vazia embaixo , desmentida pela mensagem seguinte. O `aula(s)` era o
+   * sintoma; afirmar a contagem antes de conhecê-la era o defeito.
+   *
+   * O que o pedido quer é que a aluna **não precise perguntar** quantas tem, e
+   * isso continua valendo: cada ramo diz a sua, já sabendo o número. É isso
+   * que este caso protege , e ele falha tanto se alguém devolver a contagem
+   * para a saudação quanto se algum ramo parar de informá-la.
+   */
+  it('cada ramo informa a contagem sem a aluna pedir, e nenhum usa "(s)"', () => {
+    const textoDe = (id: string) => {
+      const no = nos.get(id)
+      if (no?.type === 'mensagem') {
+        return (no.data.partes ?? []).map((p) => (p.tipo === 'texto' ? p.texto : '')).join(' ')
+      }
+      if (no?.type === 'pergunta') return no.data.texto
+      throw new Error(`${id} não é mensagem nem pergunta`)
+    }
+
+    const ola = textoDe('ola')
+    expect(ola).not.toContain('{{quantas_reposicoes}}')
+
+    // Zero e uma falam do número; "duas ou mais" vai para gente e não promete.
+    expect(textoDe('sem-reposicao')).toContain('nenhuma aula para repor')
+    expect(textoDe('uma-so')).toContain('uma aula')
+
+    for (const id of ['ola', 'sem-reposicao', 'uma-so']) {
+      expect(textoDe(id)).not.toContain('(s)')
+    }
+  })
+
+  it('a contagem certa só é dita depois de o fluxo saber qual é', () => {
+    const contagem = reagendamento.edges.find((e) => e.target === 'uma-so')
+    expect(contagem?.source).toBe('mais-de-uma')
+    expect(contagem?.sourceHandle).toBe('falso')
   })
 
   /*
