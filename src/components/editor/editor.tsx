@@ -723,18 +723,56 @@ export function Editor({
    * grandes se cobrindo.
    */
   const arrumar = useCallback(() => {
-    setNodes((atuais) => {
-      const posicoes = organizar(atuais, edges, inicio)
-      return atuais.map((n) => ({ ...n, position: posicoes.get(n.id) ?? n.position }))
-    })
-    // Desvio é desvio de um caminho que não existe mais: os blocos acabaram de
-    // mudar de lugar, e uma linha presa à altura antiga passaria por cima deles
-    // justamente depois do gesto que serve para desembaraçar o desenho.
-    setEdges((atuais) => atuais.map((e) => (e.data?.desvio ? { ...e, data: undefined } : e)))
+    const { posicoes, curvas } = organizar(nodes, edges, inicio)
+    setNodes((atuais) =>
+      atuais.map((n) => ({ ...n, position: posicoes.get(n.id) ?? n.position })),
+    )
+    /*
+     * As linhas recebem o caminho que o arrumador reservou para elas.
+     *
+     * É a metade que faltava. Arrumar só os blocos deixava o fio que pula
+     * colunas viajar em diagonal por trás de tudo, e o desenho continuava
+     * emaranhado com os cartões perfeitamente alinhados , que era exatamente a
+     * reclamação. Os `pontos` são os corredores calculados junto com as
+     * colunas; ver a fase 3 em `organizar.ts`.
+     *
+     * E o desvio à mão vai embora: ele é desvio de um caminho que não existe
+     * mais, e uma linha presa à altura antiga passaria por cima dos blocos
+     * justamente depois do gesto que serve para desembaraçar o desenho.
+     */
+    setEdges((atuais) =>
+      atuais.map((e) => {
+        const pontos = curvas.get(e.id)
+        if (pontos) return { ...e, data: { pontos } }
+        return e.data ? { ...e, data: undefined } : e
+      }),
+    )
     // Depois do próximo desenho: o enquadramento só faz sentido com as posições
     // novas já aplicadas.
     setTimeout(() => tela?.fitView({ duration: 500, padding: 0.15 }), 0)
-  }, [edges, inicio, setEdges, setNodes, tela])
+  }, [edges, inicio, nodes, setEdges, setNodes, tela])
+
+  /**
+   * Bloco arrastado à mão perde os corredores das linhas dele.
+   *
+   * O corredor foi calculado para o lugar onde o bloco estava. Movido o bloco,
+   * o fio continuaria descendo até a altura antiga antes de voltar , um ângulo
+   * que não quer dizer nada. Sem corredor a linha volta à curva simples, que
+   * sempre acompanha as duas pontas. Arrumar de novo devolve os corredores.
+   */
+  const largarCorredores = useCallback(
+    (movidos: { id: string }[]) => {
+      const ids = new Set(movidos.map((n) => n.id))
+      setEdges((atuais) =>
+        atuais.map((e) =>
+          e.data?.pontos && (ids.has(e.source) || ids.has(e.target))
+            ? { ...e, data: undefined }
+            : e,
+        ),
+      )
+    },
+    [setEdges],
+  )
 
   /**
    * Põe um bloco novo no desenho, já selecionado.
@@ -971,9 +1009,16 @@ export function Editor({
   const desviarAresta = useCallback(
     (arestaId: string, desvio: { x: number; y: number } | null) => {
       setEdges((atuais) =>
-        atuais.map((e) =>
-          e.id === arestaId ? { ...e, data: desvio ? { ...e.data, desvio } : undefined } : e,
-        ),
+        atuais.map((e) => {
+          if (e.id !== arestaId) return e
+          if (desvio) return { ...e, data: { ...e.data, desvio } }
+          // Tirar o desvio devolve a linha ao caminho calculado, e o calculado
+          // pode ser o corredor do arrumador. Zerar `data` inteiro aqui jogava
+          // o corredor fora junto e a linha caía na curva simples , o desenho
+          // desarrumava sozinho a cada dois cliques.
+          const { desvio: _descartado, ...resto } = e.data ?? {}
+          return { ...e, data: Object.keys(resto).length > 0 ? resto : undefined }
+        }),
       )
     },
     [setEdges],
@@ -1681,6 +1726,7 @@ export function Editor({
             }}
             onNodeMouseLeave={fecharPrevia}
             onNodeDragStart={largarOFlutuante}
+            onNodeDragStop={(_evento, no, movidos) => largarCorredores(movidos ?? [no])}
             onMoveStart={largarOFlutuante}
             // Todo grafo já salvo tem aresta sem `type`; o padrão faz as antigas
             // ganharem o ✕ sem precisar migrar nada no banco.

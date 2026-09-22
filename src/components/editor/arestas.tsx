@@ -102,6 +102,44 @@ function caminhoDesviado(
   return `M ${sx},${sy} Q ${controleX},${controleY} ${tx},${ty}`
 }
 
+/** Um ponto por onde o fio passa, em coordenadas do desenho. */
+type Ponto = { x: number; y: number }
+
+/**
+ * O caminho que segue os corredores reservados pelo arrumador.
+ *
+ * Recebe a origem, os pontos de dobra e o destino, e emenda tudo com cúbicas
+ * de **tangente horizontal nas duas pontas de cada trecho**. Duas consequências
+ * e as duas são o ponto:
+ *
+ * - trecho entre dois pontos da mesma altura (a travessia de uma coluna) sai
+ *   **reto**, porque os controles ficam em cima da própria reta. É isso que
+ *   transforma seis fios de passagem em seis faixas paralelas;
+ * - trecho que troca de altura vira um S suave, e nunca um bico, porque a
+ *   tangente entra e sai na horizontal , a mesma direção das alças.
+ *
+ * A força do controle é metade do avanço horizontal, com piso de 18px: sem o
+ * piso, dois pontos quase na mesma vertical dariam controle nulo e o S viraria
+ * canto vivo.
+ */
+function caminhoPorCorredor(
+  sx: number,
+  sy: number,
+  tx: number,
+  ty: number,
+  pontos: Ponto[],
+): string {
+  const todos: Ponto[] = [{ x: sx, y: sy }, ...pontos, { x: tx, y: ty }]
+  let d = `M ${todos[0]!.x},${todos[0]!.y}`
+  for (let i = 0; i < todos.length - 1; i++) {
+    const a = todos[i]!
+    const b = todos[i + 1]!
+    const forca = Math.max(Math.abs(b.x - a.x) * 0.5, 18)
+    d += ` C ${a.x + forca},${a.y} ${b.x - forca},${b.y} ${b.x},${b.y}`
+  }
+  return d
+}
+
 /**
  * A linha entre dois blocos: com um **✕ no meio** e **puxável**.
  *
@@ -244,12 +282,27 @@ function ArestaRemovivel({
   const meioX = (sourceX + targetX) / 2 + (desvio?.x ?? 0)
   const meioY = (sourceY + targetY) / 2 + (desvio?.y ?? 0)
 
+  /*
+   * Os corredores que o arrumador reservou para esta linha, se houver.
+   *
+   * Eles mandam mais que a curva automática e menos que o desvio à mão: quem
+   * puxou a linha com o dedo decidiu depois do arrumador, e decisão de pessoa
+   * ganha de conta de máquina. Dois cliques na linha devolvem o corredor.
+   */
+  const pontos = (data?.pontos ?? null) as Ponto[] | null
+
   const caminho = desvio
     ? caminhoDesviado(sourceX, sourceY, targetX, targetY, meioX, meioY)
-    : caminhoAutomatico
+    : pontos && pontos.length > 0
+      ? caminhoPorCorredor(sourceX, sourceY, targetX, targetY, pontos)
+      : caminhoAutomatico
 
-  const rotuloX = desvio ? meioX : meioAutomaticoX
-  const rotuloY = desvio ? meioY : meioAutomaticoY
+  // No corredor, o ✕ vai para o meio da própria fiação, e não para o meio da
+  // reta entre as pontas , que num fio que dá a volta cai longe do fio.
+  const noMeioDoCorredor = pontos && pontos.length > 0 ? pontos[Math.floor(pontos.length / 2)]! : null
+
+  const rotuloX = desvio ? meioX : (noMeioDoCorredor?.x ?? meioAutomaticoX)
+  const rotuloY = desvio ? meioY : (noMeioDoCorredor?.y ?? meioAutomaticoY)
 
   const sobOPonteiro = realcada === id
   const acesa = Boolean(sobOPonteiro || selected || arrastando || presaAoSelecionado)

@@ -7,19 +7,27 @@
  * recoloca tudo em camadas da esquerda para a direita, que é o sentido em que
  * as alças já apontam (`target` à esquerda, `source` à direita, ver `nos.tsx`).
  *
- * O algoritmo é o Sugiyama enxuto, em três passos:
+ * O algoritmo é o Sugiyama, em quatro passos:
  *
  * 1. **Camada**: caminho mais longo a partir das entradas. Cada bloco fica uma
  *    coluna à direita do seu antecessor mais distante, então nenhuma linha
  *    anda para trás a não ser que o desenho tenha ciclo de verdade.
  * 2. **Ordem dentro da camada**: baricentro dos vizinhos, algumas varreduras
  *    de ida e volta. É o que desembaraça os cruzamentos.
- * 3. **Altura**: cada bloco tenta ficar na média da altura dos seus pais, e o
- *    empilhamento resolve as colisões descendo o de baixo.
+ * 3. **Nós de apoio**: uma ligação que pula colunas (da coluna 1 para a 5, por
+ *    exemplo) é quebrada em pedaços de uma coluna só, com um nó invisível em
+ *    cada coluna do meio. É a fase que faltava aqui, e a falta dela era **a**
+ *    causa do emaranhado: sem apoio, o fio ia em linha reta da coluna 1 até a
+ *    5, atravessando por trás de tudo o que estivesse no caminho, em diagonal.
+ *    Com apoio, ele anda de coluna em coluna, participa do desembaraço junto
+ *    com os blocos e ganha um corredor só seu na vertical. É o que Graphviz,
+ *    dagre e ELK fazem, e é por isso que o desenho deles se lê.
+ * 4. **Altura**: cada bloco (e cada apoio) tenta ficar na média da altura dos
+ *    seus pais, e o empilhamento resolve as colisões descendo o de baixo.
  *
- * **Volta, no entanto, um mapa de posições, e não os blocos.** Quem tem o
- * estado do editor é o `editor.tsx`; devolver posição solta deixa esta função
- * pura e testável sem React Flow no meio.
+ * **Volta posição e curva, e não os blocos.** Quem tem o estado do editor é o
+ * `editor.tsx`; devolver dado solto deixa esta função pura e testável sem
+ * React Flow no meio.
  */
 
 /** Largura fixa do bloco no canvas. Igual à do `editor.tsx`. */
@@ -34,6 +42,16 @@ const VAO_Y = 40
 const VAO_ENTRE_PARTES = 120
 /** Varreduras do baricentro. Quatro já estabiliza; mais é gasto sem ganho. */
 const VARREDURAS = 4
+/**
+ * Espaço entre dois corredores de fio vizinhos, dentro da mesma coluna.
+ *
+ * Menor que `VAO_Y` de propósito: corredor não tem conteúdo para ler, só
+ * precisa de distância suficiente para o olho separar um fio do outro. Usar os
+ * mesmos 40px de bloco faria uma coluna com seis fios de passagem ficar mais
+ * alta que a coluna de cartões ao lado, e o desenho cresceria para baixo sem
+ * nada dentro.
+ */
+const VAO_ENTRE_CORREDORES = 20
 
 export type NoDoDesenho = {
   id: string
@@ -43,9 +61,27 @@ export type NoDoDesenho = {
 }
 
 export type ArestaDoDesenho = {
+  /** O `id` da aresta no React Flow. É por ele que o editor acha a curva dela. */
+  id?: string
   source: string
   target: string
   sourceHandle?: string | null
+}
+
+/** Um ponto por onde o fio passa, em coordenadas do desenho. */
+export type Ponto = { x: number; y: number }
+
+/**
+ * O que sai do arrumador: onde fica cada bloco, e por onde passa cada fio.
+ *
+ * As duas coisas juntas porque são a mesma conta: o corredor de um fio é o
+ * lugar que o próprio empilhamento reservou para ele, e recalcular isso depois,
+ * olhando só as posições finais, é refazer o trabalho com menos informação.
+ */
+export type Desenho = {
+  posicoes: Map<string, Ponto>
+  /** `id` da aresta → os pontos de dobra dela, da origem para o destino. */
+  curvas: Map<string, Ponto[]>
 }
 
 type Posicao = { x: number; y: number }
@@ -83,9 +119,10 @@ export function organizar(
   nos: NoDoDesenho[],
   arestas: ArestaDoDesenho[],
   inicio: string | null,
-): Map<string, Posicao> {
+): Desenho {
   const posicoes = new Map<string, Posicao>()
-  if (nos.length === 0) return posicoes
+  const curvas = new Map<string, Ponto[]>()
+  if (nos.length === 0) return { posicoes, curvas }
 
   const porId = new Map(nos.map((n) => [n.id, n]))
 
@@ -115,6 +152,9 @@ export function organizar(
 
   const partes = pedacos(daTela, ligacoes)
 
+  /** `id` da aresta → os apoios dela, em ordem, para virar curva no fim. */
+  const todosOsApoios = new Map<string, string[]>()
+
   const cantoX = Math.min(...nos.map((n) => n.position.x))
   const cantoY = Math.min(...nos.map((n) => n.position.y))
   let deslocamentoY = 0
@@ -127,11 +167,14 @@ export function organizar(
     const ordem = ordemDeLeitura(parte, filhos, entradas, ordemNaTela)
     const voltas = arestasDeVolta(parte, filhos, entradas)
     const camada = emCamadas(parte, filhos, pais, entradas, voltas)
+    const apoios = apoiar(parte, ligacoes, camada, voltas, filhos, pais, ordem)
     const colunas = porColuna(camada)
     desembaracar(colunas, filhos, pais, ordem, voltas)
 
+    // Apoio não tem corpo: ele reserva um corredor, não ocupa uma faixa. Dar
+    // altura a ele afastaria os fios uns dos outros como se fossem cartões.
     const alturas = new Map<string, number>()
-    for (const id of parte) alturas.set(id, altura(porId.get(id)!))
+    for (const id of camada.keys()) alturas.set(id, porId.has(id) ? altura(porId.get(id)!) : 0)
 
     // Centro vertical de cada bloco, coluna por coluna. A coluna seguinte lê os
     // centros da anterior, então a ordem daqui importa.
@@ -150,12 +193,20 @@ export function organizar(
       // ou bloco solto) desce para o fim da coluna, sem furar a fila de quem
       // tem para onde apontar.
       let fundo = 0
+      let anterior: string | null = null
       for (const item of desejado) {
         const meia = alturas.get(item.id)! / 2
-        const topoDesejado = item.alvo === null ? fundo + VAO_Y + meia : item.alvo
-        const centro = Math.max(topoDesejado, fundo + VAO_Y + meia)
+        // Dois corredores vizinhos se separam com pouco; qualquer par que
+        // envolva cartão usa o vão cheio.
+        const vao =
+          anterior !== null && !porId.has(anterior) && !porId.has(item.id)
+            ? VAO_ENTRE_CORREDORES
+            : VAO_Y
+        const minimo = fundo + vao + meia
+        const centro = Math.max(item.alvo === null ? minimo : item.alvo, minimo)
         centros.set(item.id, centro)
         fundo = centro + meia
+        anterior = item.id
       }
 
       maisBaixo = Math.max(maisBaixo, fundo)
@@ -169,6 +220,8 @@ export function organizar(
         })
       }
     }
+
+    for (const [idDaAresta, ids] of apoios) todosOsApoios.set(idDaAresta, ids)
 
     deslocamentoY += maisBaixo + VAO_ENTRE_PARTES
   }
@@ -187,7 +240,104 @@ export function organizar(
     posicoes.set(id, { x: cantoX + p.x - esquerdaLocal, y: cantoY + p.y - topoLocal })
   }
 
-  return posicoes
+  /*
+   * O apoio vira dois pontos, e não um.
+   *
+   * Um ponto só no meio da coluna deixaria o fio fazer uma curva em S dentro
+   * dela, e o resultado é serpente, não corredor. Com um ponto em cada borda
+   * da coluna o trecho do meio sai **reto e horizontal**, que é o que faz
+   * vários fios de passagem virarem faixas paralelas em vez de novelo.
+   */
+  for (const [idDaAresta, ids] of todosOsApoios) {
+    const pontos: Ponto[] = []
+    for (const id of ids) {
+      const p = posicoes.get(id)
+      if (!p) continue
+      pontos.push({ x: p.x, y: p.y }, { x: p.x + LARGURA_NO, y: p.y })
+    }
+    if (pontos.length > 0) curvas.set(idDaAresta, pontos)
+    for (const id of ids) posicoes.delete(id)
+  }
+
+  return { posicoes, curvas }
+}
+
+/** Como um nó de apoio se chama. O `\u0000` não aparece em id de bloco real. */
+const nomeDoApoio = (aresta: string, coluna: number) => `\u0000apoio\u0000${aresta}\u0000${coluna}`
+
+/**
+ * Quebra as ligações que pulam colunas, pondo um apoio em cada coluna do meio.
+ *
+ * Depois disto o grafo é *próprio*: toda ligação liga colunas vizinhas. Isso é
+ * o que permite ao desembaraço e ao empilhamento cuidarem do fio como cuidam
+ * de um bloco , o apoio entra na fila da coluna, briga por lugar e ganha o seu.
+ * Sem essa etapa, o baricentro ordena olhando só as pontas da ligação e o meio
+ * do caminho fica sem dono, que é onde o desenho embaralha.
+ *
+ * Ligação de volta fica de fora: ela já é desenhada em caminho ortogonal pela
+ * própria linha (ver `arestas.tsx`), e forçá-la a virar corrente de apoios
+ * acrescentaria corredor para um fio que a pessoa lê como "e volta pro menu".
+ */
+function apoiar(
+  parte: string[],
+  ligacoes: ArestaDoDesenho[],
+  camada: Map<string, number>,
+  voltas: Set<string>,
+  filhos: Map<string, { id: string; ordem: number }[]>,
+  pais: Map<string, string[]>,
+  ordem: Map<string, number>,
+): Map<string, string[]> {
+  const naParte = new Set(parte)
+  const apoios = new Map<string, string[]>()
+
+  for (const a of ligacoes) {
+    if (!naParte.has(a.source) || !naParte.has(a.target)) continue
+    if (voltas.has(chave(a.source, a.target))) continue
+
+    const de = camada.get(a.source)
+    const para = camada.get(a.target)
+    if (de === undefined || para === undefined || para - de <= 1) continue
+
+    const idDaAresta = a.id ?? `${a.source}\u0000${a.sourceHandle ?? ''}\u0000${a.target}`
+
+    // A ordem da alça precisa ser lida **antes** de a ligação direta sair de
+    // `filhos`: é ela que mantém a primeira opção da pergunta por cima da
+    // segunda ao longo de todo o caminho, e não só na saída do bloco.
+    const daOrigem = filhos.get(a.source)
+    const ligacaoDireta = daOrigem?.find((f) => f.id === a.target)
+    const ordemDaAlca = ligacaoDireta?.ordem ?? 0
+
+    const ids: string[] = []
+
+    for (let coluna = de + 1; coluna < para; coluna++) {
+      const id = nomeDoApoio(idDaAresta, coluna)
+      ids.push(id)
+      camada.set(id, coluna)
+      filhos.set(id, [])
+      pais.set(id, [])
+      // Fica logo atrás da origem na ordem de leitura: é dela que o fio sai, e
+      // é perto dela que ele deve ficar quando o baricentro empatar.
+      ordem.set(id, (ordem.get(a.source) ?? 0) + 0.001 * (ordemDaAlca + 1))
+    }
+
+    // Tira a ligação direta e põe a corrente no lugar.
+    if (daOrigem && ligacaoDireta) daOrigem.splice(daOrigem.indexOf(ligacaoDireta), 1)
+    const doDestino = pais.get(a.target)
+    if (doDestino) {
+      const onde = doDestino.indexOf(a.source)
+      if (onde >= 0) doDestino.splice(onde, 1)
+    }
+
+    const corrente = [a.source, ...ids, a.target]
+    for (let i = 0; i < corrente.length - 1; i++) {
+      filhos.get(corrente[i]!)!.push({ id: corrente[i + 1]!, ordem: ordemDaAlca })
+      pais.get(corrente[i + 1]!)!.push(corrente[i]!)
+    }
+
+    apoios.set(idDaAresta, ids)
+  }
+
+  return apoios
 }
 
 /**
