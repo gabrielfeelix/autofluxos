@@ -96,7 +96,7 @@ export function AcoesRapidas({
   return (
     <div className="flex shrink-0 items-center gap-0.5">
       {(conversa.erro || bot.erro) && (
-        <span role="alert" className="mr-1 max-w-[160px] truncate text-[10.5px] text-rose-500">
+        <span role="alert" className="mr-1 max-w-[160px] truncate text-[11.5px] text-rose-500">
           {conversa.erro ?? bot.erro}
         </span>
       )}
@@ -107,7 +107,7 @@ export function AcoesRapidas({
         marcada={etiquetasAplicadas.length > 0}
         largura={272}
       >
-        <p className="mb-2 text-[11px] font-bold text-soft">Etiquetas do contato</p>
+        <p className="mb-2 text-[12px] font-bold text-soft">Etiquetas do contato</p>
         <SeletorDeEtiquetas
           clienteId={clienteId}
           contatoId={contatoId}
@@ -124,7 +124,7 @@ export function AcoesRapidas({
         <AcaoComPainel rotulo="Adiar conversa" icone={<IconeRelogio />} largura={196} recolhido>
           {(fechar) => (
             <>
-              <p className="px-3 pt-2 pb-1 text-[10.5px] font-bold tracking-[0.06em] text-dim uppercase">
+              <p className="px-3 pt-2 pb-1 text-[11.5px] font-bold tracking-[0.06em] text-dim uppercase">
                 Voltar para a fila em
               </p>
               {(Object.keys(PRAZOS_DE_ADIAMENTO) as PrazoDeAdiamento[]).map((prazo) => (
@@ -136,7 +136,7 @@ export function AcoesRapidas({
                     fechar()
                     conversa.agir('adiada', () => acaoAdiarConversa(clienteId, contatoId, prazo))
                   }}
-                  className="block w-full px-3 py-2 text-left text-[12px] font-semibold text-ink transition hover:bg-surface disabled:opacity-50"
+                  className="block w-full px-3 py-2 text-left text-[12.5px] font-semibold text-ink transition hover:bg-surface disabled:opacity-50"
                 >
                   {PRAZOS_DE_ADIAMENTO[prazo].rotulo}
                 </button>
@@ -213,8 +213,8 @@ export function AcoesRapidas({
         marcada={notas.trim() !== ''}
         largura={288}
       >
-        <p className="mb-1 text-[11px] font-bold text-soft">Anotação da equipe</p>
-        <p className="mb-2 text-[10.5px] leading-4 text-dim">
+        <p className="mb-1 text-[12px] font-bold text-soft">Anotação da equipe</p>
+        <p className="mb-2 text-[11.5px] leading-4 text-dim">
           Só a equipe vê. Não vai para o WhatsApp nem para a automação.
         </p>
         <NotaRapida inicial={notas} salvar={salvarNotas} />

@@ -83,7 +83,7 @@ export function QuemE({
         */}
         <a
           href={`tel:+${waId}`}
-          className="font-mono text-[11px] text-soft transition hover:text-primary"
+          className="font-mono text-[12px] text-soft transition hover:text-primary"
         >
           {telefoneLegivel(waId)}
         </a>
@@ -111,7 +111,7 @@ export function QuemE({
         a um passe de mouse para quem precisa da prova.
       */}
       <Linha rotulo="Cliente desde">
-        <time dateTime={criadoEm} title={horaExata(criadoEm)} className="text-[11px] text-soft">
+        <time dateTime={criadoEm} title={horaExata(criadoEm)} className="text-[12px] text-soft">
           {quando(criadoEm)}
         </time>
       </Linha>
@@ -126,12 +126,12 @@ export function QuemE({
           <time
             dateTime={ultimaEntradaEm}
             title={horaExata(ultimaEntradaEm)}
-            className="text-[11px] text-soft"
+            className="text-[12px] text-soft"
           >
             {quando(ultimaEntradaEm)}
           </time>
         ) : (
-          <span className="text-[11px] text-dim">nunca escreveu</span>
+          <span className="text-[12px] text-dim">nunca escreveu</span>
         )}
       </Linha>
     </dl>
@@ -173,7 +173,7 @@ function LinhaDeOrigem({
       <Linha rotulo="Origem">
         <span
           title={origem.anuncio === '' ? undefined : `Anúncio ${origem.anuncio}`}
-          className="text-[11px] text-soft"
+          className="text-[12px] text-soft"
         >
           {origem.titulo !== '' ? origem.titulo : origem.rotulo}
         </span>
@@ -186,7 +186,7 @@ function LinhaDeOrigem({
       <ul className="space-y-1">
         {comNome.map((passagem) => (
           <li key={`${passagem.adId}-${passagem.criadoEm}`}>
-            <span title={`Anúncio ${passagem.adId}`} className="text-[11px] text-soft">
+            <span title={`Anúncio ${passagem.adId}`} className="text-[12px] text-soft">
               {passagem.texto}
             </span>
             {/*
@@ -195,7 +195,7 @@ function LinhaDeOrigem({
               analisa e é ruído a quem só vai responder "oi".
             */}
             {passagem.detalhe !== null && (
-              <span className="block text-[10px] text-dim">{passagem.detalhe}</span>
+              <span className="block text-[11px] text-dim">{passagem.detalhe}</span>
             )}
             {/*
               A data é o que transforma a lista em linha do tempo. Sem ela,
@@ -205,7 +205,7 @@ function LinhaDeOrigem({
             <time
               dateTime={passagem.criadoEm}
               title={horaExata(passagem.criadoEm)}
-              className="block text-[10px] text-dim"
+              className="block text-[11px] text-dim"
             >
               {quando(passagem.criadoEm)}
             </time>
@@ -219,7 +219,7 @@ function LinhaDeOrigem({
 function Linha({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
-      <dt className="shrink-0 text-[10px] text-dim">{rotulo}</dt>
+      <dt className="shrink-0 text-[11px] text-dim">{rotulo}</dt>
       <dd className="min-w-0 truncate text-right">{children}</dd>
     </div>
   )

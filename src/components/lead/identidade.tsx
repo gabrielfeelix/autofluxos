@@ -76,7 +76,7 @@ export function NomeDoContato({
           </svg>
         </button>
       </h1>
-      <p className="mt-0.5 font-mono text-[11px] text-dim">
+      <p className="mt-0.5 font-mono text-[12px] text-dim">
         {telefoneLegivel(waId)}
         {/*
           Só aparece quando os dois divergem. Repetir o mesmo nome duas vezes
@@ -84,7 +84,7 @@ export function NomeDoContato({
           explica por que a notificação do celular diz outra coisa.
         */}
         {nomeReal !== '' && nomeDoPerfil && nomeDoPerfil.trim() !== nomeReal && (
-          <span className="ml-2 font-sans text-[11px] text-muted">
+          <span className="ml-2 font-sans text-[12px] text-muted">
             no WhatsApp: “{nomeDoPerfil}”
           </span>
         )}
@@ -115,13 +115,13 @@ export function NomeDoContato({
             <span className="block truncate text-[15px] font-bold">
               {nome ?? telefoneLegivel(waId)}
             </span>
-            <span className="block font-mono text-[11px] text-dim">{telefoneLegivel(waId)}</span>
+            <span className="block font-mono text-[12px] text-dim">{telefoneLegivel(waId)}</span>
           </span>
         </div>
 
         <form action={enviar} className="mt-5 space-y-3.5">
           <label className="block">
-            <span className="mb-1.5 block text-[11px] font-semibold tracking-[0.05em] text-muted uppercase">
+            <span className="mb-1.5 block text-[12px] font-semibold tracking-[0.05em] text-muted uppercase">
               Nome de verdade
             </span>
             <input
@@ -134,14 +134,14 @@ export function NomeDoContato({
             />
           </label>
 
-          <p className="text-[11.5px] leading-5 text-muted">
+          <p className="text-[12.5px] leading-5 text-muted">
             {nomeDoPerfil
               ? `No WhatsApp ela se chama “${nomeDoPerfil}”. Vazio volta a mostrar esse nome.`
               : 'Vazio volta a mostrar o nome do perfil do WhatsApp.'}
           </p>
 
           {erro && (
-            <p className="rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2.5 text-[12px] leading-5 text-perigo">
+            <p className="rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2.5 text-[12.5px] leading-5 text-perigo">
               {erro}
             </p>
           )}
@@ -153,11 +153,11 @@ export function NomeDoContato({
                 setErro(null)
                 dialogo.current?.close()
               }}
-              className="app-secondary-button flex-1 px-4 py-2.5 text-[13px]"
+              className="app-secondary-button flex-1 px-4 py-2.5 text-[13.5px]"
             >
               Cancelar
             </button>
-            <button type="submit" className="app-primary-button flex-[1.35] px-4 py-2.5 text-[13px]">
+            <button type="submit" className="app-primary-button flex-[1.35] px-4 py-2.5 text-[13.5px]">
               Salvar
             </button>
           </div>
@@ -188,7 +188,7 @@ export function NotasDoContato({
   return (
     <section className="app-card p-4">
       <header className="mb-2 flex items-center justify-between gap-3">
-        <h2 className="flex items-center gap-2 text-[12.5px] font-bold">
+        <h2 className="flex items-center gap-2 text-[13px] font-bold">
           <IconeDaSecao>{iconeLapis}</IconeDaSecao>
           Anotação
           <AjudaDoCampo
@@ -214,7 +214,7 @@ export function NotasDoContato({
             type="button"
             data-foco
             onClick={() => setEditando(true)}
-            className="rounded-lg border border-line px-2 py-0.5 text-[10.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
+            className="rounded-lg border border-line px-2 py-0.5 text-[11.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
           >
             {notas === '' ? 'anotar' : 'editar'}
           </button>
@@ -239,23 +239,23 @@ export function NotasDoContato({
               maxLength={limite}
               defaultValue={notas}
               placeholder="Prefere aula de manhã. Já perguntou preço duas vezes."
-              className="app-field resize-y px-3 py-2.5 text-[12.5px] leading-5"
+              className="app-field resize-y px-3 py-2.5 text-[13px] leading-5"
             />
           </FormularioSalvar>
           <button
             type="button"
             onClick={() => setEditando(false)}
-            className="mt-1.5 text-[11.5px] text-muted transition hover:text-primary"
+            className="mt-1.5 text-[12.5px] text-muted transition hover:text-primary"
           >
             Cancelar
           </button>
         </>
       ) : notas === '' ? (
-        <p className="text-[12px] text-dim">
+        <p className="text-[12.5px] text-dim">
           O que não cabe num campo: preferência de horário, o que já foi combinado.
         </p>
       ) : (
-        <p className="text-[12.5px] leading-5 whitespace-pre-wrap text-soft">{notas}</p>
+        <p className="text-[13px] leading-5 whitespace-pre-wrap text-soft">{notas}</p>
       )}
     </section>
   )

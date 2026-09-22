@@ -36,7 +36,7 @@ export async function FaixaDeCanalCaido({ clienteId }: { clienteId: string }) {
 
   return (
     <div className="border-b border-rose-400/25 bg-rose-400/[0.07] px-4 py-2.5 md:px-[42px]">
-      <p className="text-[12px] leading-5 text-perigo">
+      <p className="text-[12.5px] leading-5 text-perigo">
         <strong className="font-bold">O {canal} desta conta está fora do ar.</strong>{' '}
         {whatsCaiu
           ? 'A Meta desconectou o número, costuma acontecer quando o celular é trocado ou o WhatsApp Business é reinstalado. Enquanto isso, nada entra nem sai por ele.'

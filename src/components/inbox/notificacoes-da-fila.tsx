@@ -180,10 +180,10 @@ export function NotificacoesDaFila({
           aria-hidden
           className={`size-2 shrink-0 rounded-full ${ativo ? 'bg-emerald-400' : bloqueado ? 'bg-rose-400' : 'bg-amber-300'}`}
         />
-        <span className="flex-1 text-[11.5px] text-muted">
+        <span className="flex-1 text-[12.5px] text-muted">
           {ativo ? 'Avisos ligados' : bloqueado ? 'Avisos bloqueados' : 'Avisos desligados'}
         </span>
-        {!ativo && !bloqueado && <span className="text-[10.5px] text-dim">ligar</span>}
+        {!ativo && !bloqueado && <span className="text-[11.5px] text-dim">ligar</span>}
       </button>
     )
   }
@@ -202,7 +202,7 @@ export function NotificacoesDaFila({
               ? 'Os alertas foram bloqueados no navegador. Libere-os nas permissões do site para ativar.'
               : 'Ative alertas nativos para novos atendimentos.'
         }
-        className={`rounded-full border px-3 py-1.5 text-[10.5px] font-bold transition ${
+        className={`rounded-full border px-3 py-1.5 text-[11.5px] font-bold transition ${
           ativo
             ? 'border-emerald-400/20 bg-emerald-400/[0.07] text-ok'
             : bloqueado

@@ -27,7 +27,7 @@ export function NotaRapida({
       <button
         type="button"
         onClick={() => setAberta(true)}
-        className="mt-2 w-full rounded-[8px] border border-dashed border-strong px-2.5 py-2 text-[11px] text-dim transition hover:border-primary/40 hover:text-primary"
+        className="mt-2 w-full rounded-[8px] border border-dashed border-strong px-2.5 py-2 text-[12px] text-dim transition hover:border-primary/40 hover:text-primary"
       >
         + Anotar
       </button>
@@ -42,7 +42,7 @@ export function NotaRapida({
           defaultValue={inicial}
           rows={3}
           placeholder="Já ligou duas vezes. Prefere de manhã."
-          className="app-field resize-y px-2.5 py-2 text-[11.5px] leading-5"
+          className="app-field resize-y px-2.5 py-2 text-[12.5px] leading-5"
         />
       </FormularioSalvar>
     </div>

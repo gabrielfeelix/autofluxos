@@ -65,7 +65,7 @@ export function FunilDaConversa({
 
   return (
     <div className="mt-5">
-      <h3 className="mb-2 text-[11px] font-bold text-soft">No funil</h3>
+      <h3 className="mb-2 text-[12px] font-bold text-soft">No funil</h3>
       <div className="space-y-2">
         {funis.map((funil) => (
           <UmFunil key={funil.cartaoId} clienteId={clienteId} funil={funil} />
@@ -96,8 +96,8 @@ function UmFunil({ clienteId, funil }: { clienteId: string; funil: FunilDoContat
   return (
     <div className="rounded-[10px] border border-line bg-panel px-3 py-2.5">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="min-w-0 truncate text-[10px] text-dim">{funil.quadro}</span>
-        {erro && <span className="shrink-0 text-[10px] text-perigo">{erro}</span>}
+        <span className="min-w-0 truncate text-[11px] text-dim">{funil.quadro}</span>
+        {erro && <span className="shrink-0 text-[11px] text-perigo">{erro}</span>}
       </div>
 
       <div className="relative mt-1">
@@ -107,10 +107,10 @@ function UmFunil({ clienteId, funil }: { clienteId: string; funil: FunilDoContat
           onClick={() => setMenuAberto((aberto) => !aberto)}
           aria-expanded={menuAberto}
           title="Mover para outra etapa"
-          className="flex w-full items-center justify-between gap-2 rounded-[8px] border border-line bg-surface px-2.5 py-1.5 text-left text-[11.5px] font-semibold text-soft transition hover:border-primary/40 hover:text-primary disabled:opacity-50"
+          className="flex w-full items-center justify-between gap-2 rounded-[8px] border border-line bg-surface px-2.5 py-1.5 text-left text-[12.5px] font-semibold text-soft transition hover:border-primary/40 hover:text-primary disabled:opacity-50"
         >
           <span className="min-w-0 truncate">{etapaAtual}</span>
-          <span aria-hidden className="shrink-0 text-[9px] text-muted">
+          <span aria-hidden className="shrink-0 text-[11px] text-muted">
             ▾
           </span>
         </button>
@@ -137,7 +137,7 @@ function UmFunil({ clienteId, funil }: { clienteId: string; funil: FunilDoContat
                       type="button"
                       onClick={() => mover(etapa)}
                       aria-current={aqui ? 'step' : undefined}
-                      className={`block w-full truncate px-2.5 py-1.5 text-left text-[11.5px] transition ${
+                      className={`block w-full truncate px-2.5 py-1.5 text-left text-[12.5px] transition ${
                         aqui
                           ? 'bg-primary/[0.12] font-semibold text-ink'
                           : 'text-muted hover:bg-surface-strong hover:text-ink'

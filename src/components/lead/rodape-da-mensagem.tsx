@@ -53,7 +53,7 @@ type ReacaoNaBolha = {
 const EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏'] as const
 
 const BOTAO =
-  'rounded-full border border-line bg-surface px-1.5 py-0.5 text-[10px] leading-none text-muted transition hover:border-primary/40 hover:text-primary'
+  'rounded-full border border-line bg-surface px-1.5 py-0.5 text-[11px] leading-none text-muted transition hover:border-primary/40 hover:text-primary'
 
 export function RodapeDaMensagem({
   clienteId,
@@ -154,7 +154,7 @@ export function RodapeDaMensagem({
         <span
           key={chip.chave}
           title={`${chip.dono} reagiu`}
-          className="rounded-full border border-line bg-panel px-1.5 py-0.5 text-[11px] leading-none shadow-[0_1px_2px_rgba(19,25,34,0.055)]"
+          className="rounded-full border border-line bg-panel px-1.5 py-0.5 text-[12px] leading-none shadow-[0_1px_2px_rgba(19,25,34,0.055)]"
         >
           {chip.emoji}
         </span>
@@ -244,7 +244,7 @@ export function RodapeDaMensagem({
       </button>
 
       {(erro || erroDaEstrela) && (
-        <span className="max-w-[220px] text-[10px] leading-4 text-perigo" role="alert">
+        <span className="max-w-[220px] text-[11px] leading-4 text-perigo" role="alert">
           {erro ?? erroDaEstrela}
         </span>
       )}

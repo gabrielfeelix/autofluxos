@@ -20,6 +20,7 @@ import {
 import { webmOpusParaOgg } from '@/core/ogg-opus'
 import { acaoPrepararEnvioDeArquivo } from '@/server/acoes'
 import { acaoEnviarMidiaDoInbox } from '@/server/acoes-midia-do-inbox'
+import { pedirNovas } from '@/components/inbox/sinal-de-conversa'
 
 /**
  * Gravar um áudio e mandar, na caixa de resposta do Inbox.
@@ -182,7 +183,13 @@ export function BotaoDeMicrofone({
         nomeArquivo: preparo.envio.nome,
       })
 
-      if (!r.ok) setErro(r.erro ?? 'não deu para enviar')
+      if (!r.ok) {
+        setErro(r.erro ?? 'não deu para enviar')
+        return
+      }
+
+      // O áudio aparece na conversa agora, sem esperar o pulso do servidor.
+      pedirNovas()
     },
     [clienteId, contatoId],
   )
@@ -343,7 +350,7 @@ export function BotaoDeMicrofone({
 
         <span
           aria-live="polite"
-          className="flex shrink-0 items-center gap-1.5 text-[12px] tabular-nums text-perigo"
+          className="flex shrink-0 items-center gap-1.5 text-[12.5px] tabular-nums text-perigo"
         >
           <span aria-hidden className="h-2 w-2 animate-pulse rounded-full bg-rose-400" />
           {duracaoLegivel(segundos)}
@@ -369,7 +376,7 @@ export function BotaoDeMicrofone({
         </div>
 
         {faltando <= AVISO_DE_FIM_S && (
-          <span className="shrink-0 text-[10.5px] text-dim">para em {faltando}s</span>
+          <span className="shrink-0 text-[11.5px] text-dim">para em {faltando}s</span>
         )}
 
         <button
@@ -377,7 +384,7 @@ export function BotaoDeMicrofone({
           onClick={() => parar(false)}
           title="Enviar o áudio"
           aria-label="Enviar o áudio"
-          className="app-primary-button shrink-0 rounded-full px-3.5 py-2 text-[13px]"
+          className="app-primary-button shrink-0 rounded-full px-3.5 py-2 text-[13.5px]"
         >
           ➤
         </button>
@@ -424,7 +431,7 @@ export function BotaoDeMicrofone({
       </Dica>
 
       {erro && (
-        <p className="absolute right-0 bottom-[calc(100%+8px)] z-30 w-[260px] rounded-[10px] border border-rose-400/25 bg-panel px-3 py-2 text-[11.5px] leading-5 text-perigo shadow-pop">
+        <p className="absolute right-0 bottom-[calc(100%+8px)] z-30 w-[260px] rounded-[10px] border border-rose-400/25 bg-panel px-3 py-2 text-[12.5px] leading-5 text-perigo shadow-pop">
           {erro}
         </p>
       )}

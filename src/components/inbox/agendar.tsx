@@ -121,8 +121,8 @@ export function AgendarMensagem({
   return (
     <div>
       <div className="mb-1.5 flex items-baseline justify-between gap-2">
-        <p className="text-[11px] font-bold text-soft">Agendar mensagem</p>
-        <span className="font-mono text-[10px] text-dim tabular-nums">
+        <p className="text-[12px] font-bold text-soft">Agendar mensagem</p>
+        <span className="font-mono text-[11px] text-dim tabular-nums">
           {texto.length}/{LIMITE_DO_TEXTO}
         </span>
       </div>
@@ -133,17 +133,17 @@ export function AgendarMensagem({
         value={texto}
         onChange={(e) => setTexto(e.target.value)}
         placeholder={`O que mandar para ${nome}…`}
-        className="app-field mb-2 resize-none px-2.5 py-2 font-texto text-[12.5px] leading-[1.45] placeholder:text-dim"
+        className="app-field mb-2 resize-none px-2.5 py-2 font-texto text-[13px] leading-[1.45] placeholder:text-dim"
       />
 
-      <p className="mb-1 text-[10.5px] font-bold tracking-[0.06em] text-dim uppercase">Quando</p>
+      <p className="mb-1 text-[11.5px] font-bold tracking-[0.06em] text-dim uppercase">Quando</p>
       <div className="mb-2 flex flex-wrap gap-1">
         {PREDEFINICOES.map((p) => (
           <button
             key={p.chave}
             type="button"
             onClick={() => escolher(p.chave)}
-            className="rounded-full border border-line bg-surface px-2 py-0.5 text-[10.5px] font-semibold text-soft transition hover:border-primary/40 hover:text-primary"
+            className="rounded-full border border-line bg-surface px-2 py-0.5 text-[11.5px] font-semibold text-soft transition hover:border-primary/40 hover:text-primary"
           >
             {p.rotulo}
           </button>
@@ -157,7 +157,7 @@ export function AgendarMensagem({
           setQuandoBruto(e.target.value)
           setErro(null)
         }}
-        className="app-field mb-2 px-2.5 py-1.5 text-[12px]"
+        className="app-field mb-2 px-2.5 py-1.5 text-[12.5px]"
       />
 
       {/*
@@ -177,27 +177,27 @@ export function AgendarMensagem({
       */}
       {avisar && (
         <div className="mb-2 rounded-[8px] border border-amber-400/30 bg-amber-400/[0.09] px-2 py-1.5">
-          <p className="text-[10.5px] leading-4 text-aviso">
+          <p className="text-[11.5px] leading-4 text-aviso">
             <strong>Isso cai fora da janela de 24h.</strong> Sem modelo, se {nome} não
             escrever de novo antes da hora marcada, o WhatsApp recusa.
           </p>
 
           {aprovados === null ? (
-            <p className="mt-1.5 text-[10px] text-dim">Vendo os modelos aprovados…</p>
+            <p className="mt-1.5 text-[11px] text-dim">Vendo os modelos aprovados…</p>
           ) : aprovados.length === 0 ? (
-            <p className="mt-1.5 text-[10px] leading-4 text-dim">
+            <p className="mt-1.5 text-[11px] leading-4 text-dim">
               Esta conta ainda não tem modelo aprovado. Crie um em Transmissões para poder
               agendar fora da janela.
             </p>
           ) : (
             <label className="mt-1.5 block">
-              <span className="mb-1 block text-[10px] text-muted">
+              <span className="mb-1 block text-[11px] text-muted">
                 Mandar por um modelo, se a janela estiver fechada na hora:
               </span>
               <select
                 value={modelo}
                 onChange={(e) => setModelo(e.target.value)}
-                className="app-field w-full px-2 py-1 text-[11.5px]"
+                className="app-field w-full px-2 py-1 text-[12.5px]"
               >
                 <option value="">Sem modelo, e aceito o risco de falhar</option>
                 {aprovados.map((t) => (
@@ -212,7 +212,7 @@ export function AgendarMensagem({
       )}
 
       {erro && (
-        <p role="alert" className="mb-2 text-[10.5px] leading-4 text-perigo">
+        <p role="alert" className="mb-2 text-[11.5px] leading-4 text-perigo">
           {erro}
         </p>
       )}
@@ -221,7 +221,7 @@ export function AgendarMensagem({
         type="button"
         disabled={Boolean(recusa) || enviando}
         onClick={marcar}
-        className="app-primary-button w-full py-2 text-[12px]"
+        className="app-primary-button w-full py-2 text-[12.5px]"
       >
         {enviando ? 'Agendando…' : 'Agendar mensagem'}
       </button>
@@ -235,14 +235,14 @@ export function AgendarMensagem({
         precisão que a plataforma não entrega, e a diferença aparece exatamente
         no caso que mais importa: ninguém na tela, nenhuma mensagem chegando.
       */}
-      <p className="mt-1.5 text-[10px] leading-4 text-dim">
+      <p className="mt-1.5 text-[11px] leading-4 text-dim">
         Sai no horário marcado enquanto alguém estiver com o Inbox aberto ou chegar mensagem na
         conta. Com tudo parado, sai na primeira das duas coisas.
       </p>
 
       {agendadas.length > 0 && (
         <div className="mt-3 border-t border-line pt-2">
-          <p className="mb-1.5 text-[10.5px] font-bold tracking-[0.06em] text-dim uppercase">
+          <p className="mb-1.5 text-[11.5px] font-bold tracking-[0.06em] text-dim uppercase">
             Nesta conversa
           </p>
           <ul className="flex flex-col gap-1.5">
@@ -279,13 +279,13 @@ function LinhaAgendada({
     <li className="rounded-[8px] border border-line bg-surface px-2 py-1.5">
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-bold text-soft tabular-nums">
+          <p className="text-[11px] font-bold text-soft tabular-nums">
             {quandoLegivel(agendada.quando)}
             {agendada.criadaPorNome && (
               <span className="font-normal text-dim"> · {agendada.criadaPorNome}</span>
             )}
           </p>
-          <p className="line-clamp-2 text-[11px] leading-4 text-muted">{agendada.texto}</p>
+          <p className="line-clamp-2 text-[12px] leading-4 text-muted">{agendada.texto}</p>
         </div>
 
         {/*
@@ -304,7 +304,7 @@ function LinhaAgendada({
               })
             }
             aria-label="Cancelar esta mensagem agendada"
-            className="shrink-0 rounded-full px-1.5 py-0.5 text-[11px] leading-none text-dim transition hover:bg-surface-strong hover:text-perigo disabled:opacity-40"
+            className="shrink-0 rounded-full px-1.5 py-0.5 text-[12px] leading-none text-dim transition hover:bg-surface-strong hover:text-perigo disabled:opacity-40"
           >
             ×
           </button>
@@ -312,10 +312,10 @@ function LinhaAgendada({
       </div>
 
       {falhou && agendada.erro && (
-        <p className="mt-1 text-[10px] leading-4 text-perigo">não saiu: {agendada.erro}</p>
+        <p className="mt-1 text-[11px] leading-4 text-perigo">não saiu: {agendada.erro}</p>
       )}
       {erro && (
-        <p role="alert" className="mt-1 text-[10px] leading-4 text-perigo">
+        <p role="alert" className="mt-1 text-[11px] leading-4 text-perigo">
           {erro}
         </p>
       )}

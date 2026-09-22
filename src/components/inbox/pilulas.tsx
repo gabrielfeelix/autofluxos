@@ -70,7 +70,7 @@ export const ESTADOS_DA_FILA = [
 
 /** O visual comum a toda pílula, a escolhida e as outras. */
 const PILULA =
-  'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11.5px] font-semibold transition'
+  'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12.5px] font-semibold transition'
 
 const PILULA_PARADA = 'border-line bg-panel text-soft hover:border-strong hover:bg-surface'
 const PILULA_ACESA = 'border-primary/40 bg-primary-weak text-primary'
@@ -159,19 +159,19 @@ export function PilulaMenu({
                     {opcao.rotulo}
                   </span>
                   {opcao.contagem !== undefined && (
-                    <span className="shrink-0 font-mono text-[10.5px] text-dim">
+                    <span className="shrink-0 font-mono text-[11.5px] text-dim">
                       {opcao.contagem}
                     </span>
                   )}
                 </span>
                 {opcao.descricao && (
-                  <span className="mt-0.5 block text-[10.5px] leading-4 text-dim">
+                  <span className="mt-0.5 block text-[11.5px] leading-4 text-dim">
                     {opcao.descricao}
                   </span>
                 )}
               </>
             )
-            const classe = `block w-full px-3 py-2 text-left text-[12px] font-semibold transition ${
+            const classe = `block w-full px-3 py-2 text-left text-[12.5px] font-semibold transition ${
               acesa ? 'bg-primary-weak' : 'hover:bg-surface'
             }`
 
@@ -235,7 +235,7 @@ export function PilulaInterruptor({
     >
       {rotulo}
       {contagem !== undefined && contagem > 0 && (
-        <span className="font-mono text-[10.5px] opacity-70">{contagem}</span>
+        <span className="font-mono text-[11.5px] opacity-70">{contagem}</span>
       )}
     </button>
   )

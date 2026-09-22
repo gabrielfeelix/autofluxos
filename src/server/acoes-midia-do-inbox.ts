@@ -146,7 +146,12 @@ export async function acaoEnviarMidiaDoInbox(
 
   void quemResponde
 
-  revalidatePath(`/clientes/${clienteId}/inbox`)
+  /*
+   * O Inbox fica de fora do revalidate, como em `acaoResponderLead`: quem
+   * desenha a bolha do arquivo é a transcrição ao vivo, que busca só o que é
+   * novo. Redesenhar a página inteira para mostrar uma foto que acabou de sair
+   * era metade do "F5 a cada mensagem".
+   */
   revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
   return { ok: true }
 }

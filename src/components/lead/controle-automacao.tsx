@@ -51,7 +51,7 @@ export function ControleDeAutomacao({
             acaoAlternarAutomacaoDoLead(clienteId, contatoId, proximoEstado),
           )
         }
-        className={`mt-2.5 w-full rounded-[8px] border px-2.5 py-2 text-[11px] font-bold transition disabled:opacity-50 ${
+        className={`mt-2.5 w-full rounded-[8px] border px-2.5 py-2 text-[12px] font-bold transition disabled:opacity-50 ${
           ativa
             ? 'border-amber-300/25 bg-amber-300/[0.08] text-aviso hover:bg-amber-300/[0.15]'
             : 'border-emerald-400/30 bg-emerald-400/[0.1] text-ok hover:bg-emerald-400/[0.18]'
@@ -61,7 +61,7 @@ export function ControleDeAutomacao({
       </button>
 
       {erro && (
-        <p role="alert" className="mt-1.5 text-[10.5px] leading-4 text-perigo">
+        <p role="alert" className="mt-1.5 text-[11.5px] leading-4 text-perigo">
           {erro}
         </p>
       )}

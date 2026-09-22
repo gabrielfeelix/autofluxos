@@ -68,7 +68,7 @@ export function Assumir({
         primeira coisa escrita, e o nome de quem atende vem depois.
       */}
       {(responsavel || meu) && (
-        <span className="max-w-[190px] truncate text-[10.5px] text-dim">
+        <span className="max-w-[190px] truncate text-[11.5px] text-dim">
           <span className="font-semibold text-aviso">robô pausado</span>
           {meu ? ' · você atende' : ` · com ${responsavel}`}
         </span>
@@ -95,13 +95,13 @@ export function Assumir({
             ? 'Devolve a conversa para a fila. O bot continua calado até alguém marcar "Já atendi".'
             : 'A conversa passa a ser sua e o bot para de responder. Ele só volta quando alguém marcar "Já atendi".'
         }
-        className="rounded-[8px] border border-line px-2.5 py-1.5 text-[10.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary disabled:opacity-50"
+        className="rounded-[8px] border border-line px-2.5 py-1.5 text-[11.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary disabled:opacity-50"
       >
         {meu ? 'Devolver à fila' : responsavel ? 'Assumir mesmo assim' : 'Assumir'}
       </button>
 
       {erro && (
-        <span role="alert" className="max-w-[180px] text-[10.5px] leading-4 text-perigo">
+        <span role="alert" className="max-w-[180px] text-[11.5px] leading-4 text-perigo">
           {erro}
         </span>
       )}
@@ -147,12 +147,12 @@ export function PassarPara({
       <button
         type="submit"
         disabled={pendente}
-        className="rounded-[8px] border border-line px-2.5 py-1.5 text-[10.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary disabled:opacity-50"
+        className="rounded-[8px] border border-line px-2.5 py-1.5 text-[11.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary disabled:opacity-50"
       >
         {pendente ? '…' : 'Passar'}
       </button>
       {estado.erro && (
-        <span role="alert" className="max-w-[160px] text-[10.5px] leading-4 text-perigo">
+        <span role="alert" className="max-w-[160px] text-[11.5px] leading-4 text-perigo">
           {estado.erro}
         </span>
       )}

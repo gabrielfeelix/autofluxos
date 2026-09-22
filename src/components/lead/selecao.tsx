@@ -130,13 +130,13 @@ export function SelecaoDeContatos({
         <div className="mb-3 rounded-[12px] border border-line bg-surface px-4 py-3">
           {marcados.length > 0 && (
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              <strong className="text-[12.5px] font-bold">
+              <strong className="text-[13px] font-bold">
                 {marcados.length} {marcados.length === 1 ? 'selecionado' : 'selecionados'}
               </strong>
               <button
                 type="button"
                 onClick={() => setMarcados([])}
-                className="text-[11.5px] font-semibold text-primary hover:underline"
+                className="text-[12.5px] font-semibold text-primary hover:underline"
               >
                 Limpar
               </button>
@@ -144,7 +144,7 @@ export function SelecaoDeContatos({
               <span className="mx-1 h-4 w-px bg-line" aria-hidden />
 
               {etiquetas.length === 0 ? (
-                <span className="text-[11.5px] text-dim">
+                <span className="text-[12.5px] text-dim">
                   Crie etiquetas em Configurações para usá-las aqui.
                 </span>
               ) : (
@@ -155,7 +155,7 @@ export function SelecaoDeContatos({
                       disabled={ocupado}
                       onClick={() => etiquetar(etiqueta.id, true)}
                       title={`Aplicar “${etiqueta.nome}” nos selecionados`}
-                      className={`rounded-full border px-2 py-0.5 text-[10.5px] font-semibold transition disabled:opacity-50 ${CLASSE_DA_COR[etiqueta.cor]}`}
+                      className={`rounded-full border px-2 py-0.5 text-[11.5px] font-semibold transition disabled:opacity-50 ${CLASSE_DA_COR[etiqueta.cor]}`}
                     >
                       + {etiqueta.nome}
                     </button>
@@ -165,7 +165,7 @@ export function SelecaoDeContatos({
                       onClick={() => etiquetar(etiqueta.id, false)}
                       title={`Tirar “${etiqueta.nome}” dos selecionados`}
                       aria-label={`Tirar ${etiqueta.nome} dos selecionados`}
-                      className="rounded-full border border-line px-1.5 py-0.5 text-[10.5px] font-bold text-dim transition hover:border-strong hover:text-muted disabled:opacity-50"
+                      className="rounded-full border border-line px-1.5 py-0.5 text-[11.5px] font-bold text-dim transition hover:border-strong hover:text-muted disabled:opacity-50"
                     >
                       −
                     </button>
@@ -183,7 +183,7 @@ export function SelecaoDeContatos({
                       disabled={ocupado}
                       onClick={() => porNoQuadro(quadro.id)}
                       title={`Põe os selecionados na primeira etapa de “${quadro.nome}”. Quem já está lá não é movido.`}
-                      className="rounded-full border border-line bg-surface px-2.5 py-0.5 text-[10.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary disabled:opacity-50"
+                      className="rounded-full border border-line bg-surface px-2.5 py-0.5 text-[11.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary disabled:opacity-50"
                     >
                       → {quadro.nome}
                     </button>
@@ -195,7 +195,7 @@ export function SelecaoDeContatos({
                 type="button"
                 disabled={ocupado}
                 onClick={apagar}
-                className="ml-auto rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:border-rose-400/40 hover:bg-rose-400/[0.09] hover:text-perigo disabled:opacity-50"
+                className="ml-auto rounded-lg border border-line px-2.5 py-1 text-[12px] font-semibold text-muted transition hover:border-rose-400/40 hover:bg-rose-400/[0.09] hover:text-perigo disabled:opacity-50"
               >
                 {ocupado ? '…' : 'Apagar'}
               </button>
@@ -203,12 +203,12 @@ export function SelecaoDeContatos({
           )}
 
           {aviso && (
-            <p role="status" className="mt-1 text-[11.5px] font-semibold text-ok">
+            <p role="status" className="mt-1 text-[12.5px] font-semibold text-ok">
               {aviso}
             </p>
           )}
           {erro && (
-            <p role="alert" className="mt-1 text-[11.5px] font-semibold text-perigo">
+            <p role="alert" className="mt-1 text-[12.5px] font-semibold text-perigo">
               {erro}
             </p>
           )}

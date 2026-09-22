@@ -5,6 +5,7 @@ import { BotaoDeAnexo } from '@/components/lead/botao-de-anexo'
 import { BotaoDeMicrofone } from '@/components/lead/botao-de-microfone'
 import { useCitacao } from '@/components/lead/citacao'
 import { RetomarComModelo } from '@/components/lead/retomar-com-modelo'
+import { pedirNovas } from '@/components/inbox/sinal-de-conversa'
 import { SeletorDeEmoji } from '@/components/lead/seletor-de-emoji'
 
 /**
@@ -114,7 +115,7 @@ export function CaixaDeResposta({
 
     return (
       <div className="border-t border-line px-[18px] py-3.5">
-        <p className="text-[11.5px] leading-5 text-dim">
+        <p className="text-[12.5px] leading-5 text-dim">
           <strong className="text-muted">Não dá para responder por aqui agora.</strong> O WhatsApp
           só aceita texto livre por 24h depois da última mensagem de {nome}, ou por 72h quando a
           conversa nasceu de um anúncio. Passado isso, retomar exige um modelo aprovado pela Meta.
@@ -169,6 +170,16 @@ export function CaixaDeResposta({
         setErro(r.erro ?? 'não deu para enviar')
         return
       }
+      /*
+       * A bolha do que acabou de sair, sem esperar o servidor avisar.
+       *
+       * O envio já gravou a mensagem; quem desenha é a transcrição, que busca
+       * só o que é novo. Sem esta linha a própria resposta levaria até um
+       * segundo para aparecer (o tempo do pulso), e um segundo entre apertar
+       * enviar e ver o que se escreveu é o que faz uma tela parecer lenta.
+       */
+      pedirNovas()
+
       // Só depois de sair. O texto fica onde está enquanto houver erro.
       if (campo.current) campo.current.value = ''
       conferirTexto()
@@ -218,10 +229,10 @@ export function CaixaDeResposta({
       {citacao?.citando && (
         <div className="mb-2 flex items-start gap-2 rounded-[10px] border-l-2 border-primary/60 bg-surface px-2.5 py-2">
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold text-primary/90">
+            <p className="text-[11px] font-bold text-primary/90">
               Respondendo {citacao.citando.deQuem}
             </p>
-            <p className="truncate text-[11.5px] text-muted">
+            <p className="truncate text-[12.5px] text-muted">
               {citacao.citando.texto?.trim() || <span className="italic">mensagem sem texto</span>}
             </p>
           </div>
@@ -229,7 +240,7 @@ export function CaixaDeResposta({
             type="button"
             onClick={citacao.limpar}
             aria-label="Não citar esta mensagem"
-            className="shrink-0 rounded-full px-1.5 py-0.5 text-[12px] leading-none text-dim transition hover:bg-surface-strong hover:text-ink"
+            className="shrink-0 rounded-full px-1.5 py-0.5 text-[12.5px] leading-none text-dim transition hover:bg-surface-strong hover:text-ink"
           >
             ×
           </button>
@@ -250,7 +261,7 @@ export function CaixaDeResposta({
               disabled={enviando}
               title={resposta.texto}
               onClick={() => inserirResposta(resposta.texto)}
-              className="rounded-full border border-primary/20 bg-primary/[0.07] px-2.5 py-1 text-[10.5px] font-bold text-primary transition hover:border-primary/40 hover:bg-primary/[0.13] disabled:opacity-50"
+              className="rounded-full border border-primary/20 bg-primary/[0.07] px-2.5 py-1 text-[11.5px] font-bold text-primary transition hover:border-primary/40 hover:bg-primary/[0.13] disabled:opacity-50"
             >
               /{resposta.atalho}
             </button>
@@ -259,7 +270,7 @@ export function CaixaDeResposta({
       )}
 
       {erro && (
-        <p className="mb-2 rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2 text-[11.5px] leading-5 text-perigo">
+        <p className="mb-2 rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2 text-[12.5px] leading-5 text-perigo">
           {erro}
         </p>
       )}
@@ -353,7 +364,7 @@ export function CaixaDeResposta({
             type="submit"
             disabled={enviando}
             aria-label={enviando ? 'Enviando' : 'Enviar a mensagem'}
-            className="app-primary-button flex size-9 shrink-0 items-center justify-center rounded-full text-[13px] leading-none disabled:opacity-50"
+            className="app-primary-button flex size-9 shrink-0 items-center justify-center rounded-full text-[13.5px] leading-none disabled:opacity-50"
           >
             {enviando ? '…' : '➤'}
           </button>
@@ -369,7 +380,7 @@ export function CaixaDeResposta({
         que só importa a quem vai responder agora.
       */}
       {!gravando && temAutomacao && (
-        <p className="mt-1.5 px-1 text-[10.5px] leading-4 text-dim">
+        <p className="mt-1.5 px-1 text-[11.5px] leading-4 text-dim">
           Responder daqui assume a conversa: o bot para de falar com {nome} até você clicar em
           &ldquo;Já atendi&rdquo;.
         </p>

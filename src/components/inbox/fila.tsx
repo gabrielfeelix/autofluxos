@@ -358,7 +358,7 @@ export function Fila({
           </h2>
           <span
             title={`${contagem.total} conversa(s) nesta conta`}
-            className="shrink-0 rounded-full border border-line bg-surface px-2 py-0.5 font-mono text-[10px] text-muted"
+            className="shrink-0 rounded-full border border-line bg-surface px-2 py-0.5 font-mono text-[11px] text-muted"
           >
             {contagem.total}
           </span>
@@ -478,7 +478,7 @@ export function Fila({
             pílulas por atenção.
           */}
           <div className="ml-auto flex shrink-0 items-center gap-2">
-            <p className="text-[11px] text-dim">
+            <p className="text-[12px] text-dim">
               {esperando > 0
                 ? `${esperando} esperando uma pessoa`
                 : "Todas as conversas estão com o bot"}
@@ -566,7 +566,7 @@ export function Fila({
               onChange={(e) => setDigitado(e.target.value)}
               placeholder="Pesquisar em conversas"
               aria-label="Pesquisar em conversas"
-              className="app-field rounded-full py-2 pr-9 pl-9 text-[12.5px]"
+              className="app-field rounded-full py-2 pr-9 pl-9 text-[13px]"
             />
             {digitado !== "" && (
               <button
@@ -575,7 +575,7 @@ export function Fila({
                 aria-label="Limpar a busca"
                 className="absolute top-1/2 right-2.5 flex size-5 -translate-y-1/2 items-center justify-center rounded-full text-dim transition hover:bg-surface hover:text-ink"
               >
-                <span aria-hidden className="text-[13px] leading-none">
+                <span aria-hidden className="text-[13.5px] leading-none">
                   ×
                 </span>
               </button>
@@ -607,7 +607,7 @@ export function Fila({
           */}
 
           {erroDaMarcacao && (
-            <p role="alert" className="mt-1.5 text-[10.5px] leading-4 text-perigo">
+            <p role="alert" className="mt-1.5 text-[11.5px] leading-4 text-perigo">
               {erroDaMarcacao}
             </p>
           )}
@@ -659,7 +659,7 @@ export function Fila({
                 <span className="min-w-0 flex-1">
                   <span className="flex items-baseline gap-2">
                     <strong
-                      className={`min-w-0 flex-1 truncate text-[12.5px] ${ativa ? "text-ink" : semLer > 0 ? "font-bold text-ink" : "text-soft"}`}
+                      className={`min-w-0 flex-1 truncate text-[13px] ${ativa ? "text-ink" : semLer > 0 ? "font-bold text-ink" : "text-soft"}`}
                     >
                       {nome}
                     </strong>
@@ -679,7 +679,7 @@ export function Fila({
                         <Alfinete preso />
                       </span>
                     )}
-                    <small className="shrink-0 text-[9.5px] text-muted group-hover:opacity-0">
+                    <small className="shrink-0 text-[11px] text-muted group-hover:opacity-0">
                       {lead.ultimaEm ? quando(lead.ultimaEm) : ""}
                     </small>
                   </span>
@@ -698,7 +698,7 @@ export function Fila({
                           ? `Aguardando pessoa: ${lead.aguardando.motivo}`
                           : undefined
                       }
-                      className={`min-w-0 flex-1 truncate text-[10.5px] ${lead.aguardando ? "text-perigo" : semLer > 0 ? "text-soft" : "text-muted"}`}
+                      className={`min-w-0 flex-1 truncate text-[11.5px] ${lead.aguardando ? "text-perigo" : semLer > 0 ? "text-soft" : "text-muted"}`}
                     >
                       {lead.aguardando
                         ? `Pessoa: ${lead.aguardando.motivo}`
@@ -713,7 +713,7 @@ export function Fila({
                     {semLer > 0 && (
                       <span
                         title={`${semLer} mensagem(ns) desde a última vez que você abriu`}
-                        className="shrink-0 rounded-full bg-primary px-1.5 py-px text-[9.5px] font-bold text-white"
+                        className="shrink-0 rounded-full bg-primary px-1.5 py-px text-[11px] font-bold text-white"
                       >
                         {semLer > TETO_DA_INSIGNIA
                           ? `${TETO_DA_INSIGNIA}+`
@@ -733,7 +733,7 @@ export function Fila({
                   o trabalho duplicado que a atribuição existe para evitar.
                 */}
                   {nomeDe(lead.atribuidoA) && (
-                    <span className="mt-0.5 block truncate text-[10px] text-dim">
+                    <span className="mt-0.5 block truncate text-[11px] text-dim">
                       com {nomeDe(lead.atribuidoA)}
                     </span>
                   )}
@@ -798,7 +798,7 @@ export function Fila({
           })}
 
           {naTela.length === 0 && (
-            <p className="px-4 py-8 text-center text-[11.5px] leading-5 text-dim">
+            <p className="px-4 py-8 text-center text-[12.5px] leading-5 text-dim">
               {(local ? digitado : termo) === ""
                 ? "Nenhuma conversa neste filtro."
                 : `Ninguém com “${local ? digitado : termo}” aqui. Enter procura no servidor.`}
@@ -819,7 +819,7 @@ export function Fila({
             >
               ‹
             </PassoDaPagina>
-            <span className="font-mono text-[10px] text-dim">
+            <span className="font-mono text-[11px] text-dim">
               {pagina} / {paginas}
             </span>
             <PassoDaPagina
@@ -941,7 +941,7 @@ function PassoDaPagina({
     return (
       <span
         aria-disabled
-        className="rounded-md px-2 py-0.5 text-[13px] text-ink/15"
+        className="rounded-md px-2 py-0.5 text-[13.5px] text-ink/15"
       >
         {children}
       </span>
@@ -952,7 +952,7 @@ function PassoDaPagina({
       href={href}
       aria-label={rotulo}
       scroll={false}
-      className="rounded-md px-2 py-0.5 text-[13px] text-muted transition hover:bg-surface-strong hover:text-ink"
+      className="rounded-md px-2 py-0.5 text-[13.5px] text-muted transition hover:bg-surface-strong hover:text-ink"
     >
       {children}
     </Link>
@@ -991,7 +991,7 @@ function RelogioDaJanela({
    */
   if (restante === null) {
     return dentroDaPortaDeEntrada(janela) ? (
-      <span className="mt-0.5 block text-[10px] text-dim">
+      <span className="mt-0.5 block text-[11px] text-dim">
         só modelo aprovado<span className="text-dim"> · grátis, veio de anúncio</span>
       </span>
     ) : null;
@@ -1006,7 +1006,7 @@ function RelogioDaJanela({
 
   if (restante === 0) {
     return (
-      <span className="mt-0.5 block text-[10px] font-semibold text-perigo">
+      <span className="mt-0.5 block text-[11px] font-semibold text-perigo">
         janela fechada, só modelo aprovado
       </span>
     );
@@ -1018,7 +1018,7 @@ function RelogioDaJanela({
 
   return (
     <span
-      className={`mt-0.5 block text-[10px] ${apertado ? "font-semibold text-aviso" : "text-dim"}`}
+      className={`mt-0.5 block text-[11px] ${apertado ? "font-semibold text-aviso" : "text-dim"}`}
     >
       responder em {comoFalta(restante)}
       {gratis && <span className="text-dim"> · grátis, veio de anúncio</span>}

@@ -2,7 +2,7 @@ import { Fragment, Suspense, type ReactNode } from 'react'
 import { after } from 'next/server'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { comoFalta, podeReagir, restaDaJanela } from '@/channels/janela'
+import { comoFalta, restaDaJanela } from '@/channels/janela'
 import { Assumir, PassarPara } from '@/components/inbox/assumir'
 import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 import { sessaoAtual } from '@/server/sessao'
@@ -11,7 +11,6 @@ import { Dica } from '@/components/design/dica'
 import { LogoDoCanal } from '@/components/design/selo-do-canal'
 import { IlustracaoInbox } from '@/components/design/ilustracoes'
 import { recemConectado } from '@/core/coexistencia-na-tela'
-import { assinaturaDasReacoes } from '@/core/reacoes'
 import { coexistenciaDoCliente } from '@/server/repos/coexistencia'
 import { CamposColetados } from '@/components/lead/campos-coletados'
 import { camposSemOrigem } from '@/core/contatos/origem'
@@ -21,8 +20,6 @@ import { resolverAnuncios } from '@/server/resolver-anuncios'
 import { tokenDeAnuncios } from '@/server/token-de-anuncios'
 import { QuemE } from '@/components/lead/quem-e'
 import { CaixaDeResposta } from '@/components/lead/responder'
-import { RodapeDaMensagem } from '@/components/lead/rodape-da-mensagem'
-import { Transcricao } from '@/components/lead/transcricao'
 import { ProvedorDeCitacao } from '@/components/lead/citacao'
 import { ProvedorDeEntrega } from '@/components/lead/entrega-de-arquivos'
 import {
@@ -52,23 +49,13 @@ import {
   pulsoDaConta,
   type FiltroDeEstado,
   type Lead,
-  type MensagemDoLead,
 } from '@/server/repos/leads'
 import { listarRespostasRapidas, type RespostaRapida } from '@/server/repos/respostas-rapidas'
-import {
-  AnexoNaConversa,
-  ArquivoSemCopia,
-  MensagemNaoSuportada,
-  CartoesNaBolha,
-  CitacaoNaBolha,
-  LocalNaBolha,
-  SemTexto,
-} from '@/components/lead/anexo'
-import { etiquetasDeDia, horaDoRelogio, horaExata } from '@/lib/quando'
+import { horaExata } from '@/lib/quando'
 import type { EtiquetaEscolhivel } from '@/components/etiquetas/seletor'
 import { AcoesRapidas } from '@/components/inbox/acoes-rapidas'
 import { Avatar } from '@/components/inbox/avatar'
-import { MolduraDoInbox } from '@/components/inbox/moldura'
+import { ColunaDaFicha, MolduraDoInbox } from '@/components/inbox/moldura'
 import { Fila, type Contagem } from '@/components/inbox/fila'
 import { clienteTemAutomacao } from '@/server/repos/fluxos'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
@@ -78,8 +65,8 @@ import { marcarComoLida, naoLidasPorContato, quandoLeu } from '@/server/repos/le
 import { favoritasEntre, fixadasDoUsuario } from '@/server/repos/marcadores'
 import { ajustesDaConta } from '@/server/repos/distribuicao'
 import { avisarQueLeu } from '@/server/recibo-de-leitura'
-import { TextoDoWhatsApp } from '@/components/texto-do-whatsapp'
 import { FaixaDeCanalCaido } from '@/components/inbox/faixa-canal-caido'
+import { Historico } from '@/components/inbox/historico'
 import { PulsoDoInbox } from '@/components/inbox/pulso-do-inbox'
 import { Esqueleto } from '@/components/design/esqueleto'
 
@@ -523,9 +510,9 @@ function EstadoVazio({
   return (
     <section className="mx-auto mt-16 max-w-[440px] text-center">
       <IlustracaoInbox />
-      <p className="mt-6 font-mono text-[10px] font-bold tracking-[0.16em] text-dim">INBOX VAZIO</p>
+      <p className="mt-6 font-mono text-[11px] font-bold tracking-[0.16em] text-dim">INBOX VAZIO</p>
       <h2 className="mt-2 text-[18px] font-bold tracking-[-0.02em]">Nenhuma conversa para atender</h2>
-      <p className="mt-2 text-[13px] leading-6 text-muted">
+      <p className="mt-2 text-[13.5px] leading-6 text-muted">
         Quando alguém falar com o número ligado ao bot, a conversa aparece aqui. A tela de Leads
         continua sendo o lugar para analisar todos os contatos.
       </p>
@@ -536,14 +523,14 @@ function EstadoVazio({
        * que algo quebrou, que foi o que aconteceu com o primeiro cliente.
        */}
       {recem && (
-        <p className="mt-3 rounded-[10px] border border-line bg-surface px-3.5 py-2.5 text-left text-[12px] leading-5 text-dim">
+        <p className="mt-3 rounded-[10px] border border-line bg-surface px-3.5 py-2.5 text-left text-[12.5px] leading-5 text-dim">
           Este número foi conectado há pouco. A Meta ainda está sincronizando, e
           isso pode levar algumas horas, até terminar, é normal nenhuma
           conversa nova aparecer aqui.
         </p>
       )}
 
-      <Link href={`/clientes/${clienteId}/leads`} className="app-secondary-button mt-5 inline-block px-4 py-2.5 text-[12.5px]">
+      <Link href={`/clientes/${clienteId}/leads`} className="app-secondary-button mt-5 inline-block px-4 py-2.5 text-[13px]">
         Ver Leads
       </Link>
     </section>
@@ -693,7 +680,9 @@ async function Conteudo({
             fallback={
               <>
                 <EsperaDaConversa />
-                <EsperaDaFicha />
+                <ColunaDaFicha>
+                  <EsperaDaFicha />
+                </ColunaDaFicha>
               </>
             }
           >
@@ -709,7 +698,7 @@ async function Conteudo({
           </Suspense>
         ) : (
           <section className="flex min-w-0 items-center justify-center p-10 text-center">
-            <p className="max-w-[280px] text-[12.5px] leading-6 text-dim">
+            <p className="max-w-[280px] text-[13px] leading-6 text-dim">
               Nenhuma conversa nesta seleção.
               <br />
               Limpe a busca ou escolha outro filtro à esquerda.
@@ -888,7 +877,7 @@ async function ColunaDaConversa({
   if (!conversa) {
     return (
       <section className="flex min-w-0 items-center justify-center p-10 text-center">
-        <p className="max-w-[280px] text-[12.5px] leading-6 text-dim">
+        <p className="max-w-[280px] text-[13px] leading-6 text-dim">
           Não deu para abrir esta conversa.
         </p>
       </section>
@@ -982,10 +971,10 @@ async function ColunaDaConversa({
                 mesma coluna, a poucos centímetros de onde o olho já está.
               */
               <div className="shrink-0 border-t border-line bg-panel px-4 py-5 text-center">
-                <p className="text-[12.5px] font-semibold text-soft">
+                <p className="text-[13px] font-semibold text-soft">
                   {nomeDoDono ? `${nomeDoDono} está atendendo` : 'esta conversa já tem dono'}
                 </p>
-                <p className="mx-auto mt-1 max-w-[420px] text-[11.5px] leading-5 text-dim">
+                <p className="mx-auto mt-1 max-w-[420px] text-[12.5px] leading-5 text-dim">
                   Esta conta pediu que só quem assumiu responda, para duas pessoas não
                   escreverem ao mesmo tempo. Use o botão de assumir, no topo da conversa,
                   se precisar entrar nela.
@@ -1012,14 +1001,16 @@ async function ColunaDaConversa({
           </ProvedorDeEntrega>
         </ProvedorDeCitacao>
       </section>
-      <DadosDoLead
-        clienteId={clienteId}
-        lead={selecionado}
-        funis={funis}
-        temAutomacao={temAutomacao}
-        passagens={passagens}
-        nomesDosAnuncios={nomesDosAnuncios}
-      />
+      <ColunaDaFicha>
+        <DadosDoLead
+          clienteId={clienteId}
+          lead={selecionado}
+          funis={funis}
+          temAutomacao={temAutomacao}
+          passagens={passagens}
+          nomesDosAnuncios={nomesDosAnuncios}
+        />
+      </ColunaDaFicha>
     </>
   )
 }
@@ -1127,7 +1118,7 @@ function CabecalhoDaConversa({
             direita. É estado, não ação: quem lê o cabeçalho precisa saber se
             alguém já está nessa antes de decidir responder.
           */}
-          <p className="mt-0.5 flex items-center gap-2 truncate text-[11px] text-dim">
+          <p className="mt-0.5 flex items-center gap-2 truncate text-[12px] text-dim">
             <span className="truncate">
               {responsavel
                 ? `com ${responsavel.nome}`
@@ -1138,7 +1129,7 @@ function CabecalhoDaConversa({
             {janela && (
               <Dica texto="Depois disso o WhatsApp só aceita modelo aprovado pela Meta">
                 <span
-                  className={`flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
+                  className={`flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums ${
                     janelaApertada ? 'bg-amber-400/15 text-aviso' : 'bg-surface text-muted'
                   }`}
                 >
@@ -1196,277 +1187,18 @@ function CabecalhoDaConversa({
         é o dia em que esta linha ganha a segunda aba, sem mudar de forma.
       */}
       <div className="flex items-end gap-4 border-b border-line px-4">
-        <span className="flex items-center gap-1.5 border-b-2 border-[#25d366] py-2 text-[11.5px] font-semibold text-ink">
+        <span className="flex items-center gap-1.5 border-b-2 border-[#25d366] py-2 text-[12.5px] font-semibold text-ink">
           <span className="text-[#25d366]">
             <LogoDoCanal canal="whatsapp" tamanho={14} />
           </span>
           WhatsApp
         </span>
-        <span className="ml-auto py-2 font-mono text-[10.5px] text-dim">{lead.waId}</span>
+        <span className="ml-auto py-2 font-mono text-[11.5px] text-dim">{lead.waId}</span>
       </div>
     </>
   )
 }
 
-function Historico({
-  mensagens,
-  cortada,
-  nome,
-  clienteId,
-  contatoId,
-  favoritas,
-}: {
-  mensagens: MensagemDoLead[]
-  cortada: boolean
-  nome: string | null
-  clienteId: string
-  contatoId: string
-  /** Os ids que **eu** guardei, para a estrela nascer cheia. Ver a 0063. */
-  favoritas: Set<string>
-}) {
-  if (mensagens.length === 0) {
-    return <p className="py-16 text-center text-[12px] text-dim">Nenhuma mensagem registrada.</p>
-  }
-
-  /*
-   * Onde cada dia começa, calculado **uma vez** para a conversa inteira.
-   *
-   * Dentro do `map` isso viraria "comparar com a mensagem anterior" espalhado
-   * pelo JSX, e a regra é chata o bastante (fuso de São Paulo, virada da
-   * meia-noite) para merecer estar num lugar testado. Ver `lib/quando.ts`.
-   */
-  const diasDaConversa = etiquetasDeDia(mensagens, (m) => m.ts)
-
-  /*
-   * Ordem normal: mais antiga em cima, mais nova embaixo.
-   *
-   * O `flex-col-reverse` mora no container que ROLA, uma camada acima, e não
-   * aqui. Como este bloco é filho único dele, a inversão de lá só escolhe de
-   * que ponta o scroll nasce, não mexe na ordem. Inverter aqui também (o que
-   * esta tela chegou a fazer) invertia a conversa de verdade.
-   */
-  return (
-    /*
-     * **A conversa ocupa a largura toda, sem coluna centralizada.**
-     *
-     * Havia aqui um `mx-auto max-w-[680px]`. O alinhamento das bolhas estava
-     * certo, entrada à esquerda, saída à direita , mas relativo a essa
-     * coluna, não à tela: numa área larga, a coluna flutuava no meio e a
-     * conversa inteira aparecia deslocada para o centro, com as mensagens
-     * recebidas começando longe da borda esquerda. Parecia bug de alinhamento
-     * e era o contêiner.
-     *
-     * O `w-full` não é decoração: o pai que rola é um `flex-col-reverse`, e
-     * num contêiner flex em coluna o filho é dimensionado pelo conteúdo no
-     * eixo cruzado em vez de esticar. Sem ele, este bloco encolhe até a maior
-     * bolha e fica centrado, que foi exatamente o sintoma que sobrou depois
-     * de tirar o `max-w`: as bolhas alinhavam certo entre si, e o conjunto
-     * todo flutuava no meio, longe das duas bordas.
-     *
-     * Largura cheia é também o que o WhatsApp faz, e é o que faz a direção da
-     * mensagem ser legível de relance, que é a única coisa que o alinhamento
-     * precisa comunicar.
-     */
-    <div className="flex w-full flex-col gap-2.5">
-      {cortada && (
-        <p className="mb-1 self-center rounded-full border border-dashed border-strong px-3 py-1.5 text-center font-mono text-[9.5px] text-dim">
-          mostrando as 500 mensagens mais recentes
-        </p>
-      )}
-      {mensagens.map((mensagem, indice) => {
-        const nossa = mensagem.direcao === 'saida'
-        const etiqueta = diasDaConversa[indice]
-        /*
-         * A barra só aparece onde há id da Meta.
-         *
-         * Reagir e citar pedem esse id, e saída ainda não confirmada não tem,
-         * a Meta só o devolve depois de aceitar. Oferecer o botão ali daria um
-         * clique que falharia sempre.
-         */
-        return (
-          /*
-           * O `Fragment` existe para a etiqueta de dia ser **irmã** da bolha, e
-           * não filha dela: ela atravessa a conversa inteira e fica centrada,
-           * enquanto a bolha alinha a um dos lados. A `key` sobe para cá junto,
-           * porque agora é o fragmento que é o item da lista.
-           */
-          <Fragment key={mensagem.id}>
-            {etiqueta && <EtiquetaDoDia rotulo={etiqueta} />}
-            {/*
-             * A coluna existe para a reação ter onde ficar.
-             *
-             * Antes a bolha era filha direta do `flex justify-*`. A reação
-             * pendura embaixo dela e alinhada com ela, então as duas precisam
-             * de um pai que empilhe, e `items-end`/`items-start` é o que
-             * mantém a bolha do tamanho do conteúdo em vez de esticar na linha
-             * toda.
-             */}
-          <div
-            className={`flex min-w-0 max-w-full flex-col gap-0 ${nossa ? 'items-end' : 'items-start'}`}
-          >
-            {/*
-              `[overflow-wrap:anywhere]` e não `break-words`: `break-word` só
-              quebra a palavra depois de tentar empurrá-la para uma linha só,
-              e uma URL que já é maior que a linha inteira nunca chega a caber,
-              então ele desiste e deixa transbordar. `anywhere` quebra onde
-              precisar, que é o comportamento certo para link colado.
-            */}
-            {/*
-              `font-texto` e 14.5px, e não a fonte da casca em 13.
-
-              A Outfit é geométrica de display, traço de espessura uniforme,
-              aberturas fechadas, pouca diferença entre formas parecidas. Ela dá
-              a cara do produto num título e cansa num parágrafo, e a conversa é
-              o único lugar do painel onde se lê texto corrido, de outra pessoa,
-              o dia inteiro. Aqui entra a Inter (ver `layout.tsx`).
-
-              O corpo sobe para 14.5 e a entrelinha desce para 1.45: o ganho de
-              legibilidade vem do tamanho e da forma da letra. **Não engorde o
-              peso**, 500 numa bolha azul com texto branco vira borrão em tela
-              comum.
-            */}
-            <p className={`max-w-[78%] px-3.5 py-2 font-texto text-[14.5px] leading-[1.45] whitespace-pre-wrap [overflow-wrap:anywhere] ${
-              nossa
-                ? 'bolha-nossa rounded-[15px_15px_4px_15px]'
-                : 'rounded-[15px_15px_15px_4px] bg-surface-strong text-ink'
-            }`}>
-              {mensagem.cita && <CitacaoNaBolha cita={mensagem.cita} nome={nome} />}
-              {mensagem.anexo && <AnexoNaConversa anexo={mensagem.anexo} />}
-              {/*
-                O arquivo que a pessoa mandou. Mesma bolha do que sai, e a
-                diferença está em quem produziu a URL: aqui ela é assinada e
-                morre em cinco minutos.
-              */}
-              {mensagem.recebido && <AnexoNaConversa anexo={mensagem.recebido} />}
-              {/*
-                Transcrever só o áudio **recebido**.
-
-                O que sai foi escrito ou gravado por quem atende, que sabe o que
-                disse. Oferecer transcrição ali seria mandar a própria voz para
-                um modelo para ler de volta o que se acabou de falar.
-              */}
-              {mensagem.recebido?.midia === 'audio' && (
-                <Transcricao
-                  clienteId={clienteId}
-                  contatoId={contatoId}
-                  mensagemId={mensagem.id}
-                  inicial={mensagem.transcricao ?? null}
-                />
-              )}
-              {mensagem.semCopia && <ArquivoSemCopia nossa={nossa} />}
-              {mensagem.naoSuportada && <MensagemNaoSuportada />}
-              {mensagem.local && <LocalNaBolha local={mensagem.local} />}
-              {mensagem.cartoes && <CartoesNaBolha cartoes={mensagem.cartoes} />}
-              {/*
-                Lugar e cartão **substituem** o "(áudio, imagem ou documento)".
-                Eles são a mensagem inteira, e quase nunca vêm com legenda,
-                deixar a frase genérica embaixo diria que falta algo que não
-                falta.
-              */}
-              {/*
-                A frase "(áudio, imagem ou documento)" é para quando **não há
-                arquivo nenhum** para mostrar, mídia recebida que o webhook
-                registrou sem baixar. Ela aparecia também embaixo do player, o
-                que é dizer que não dá para ver o que está ali tocando.
-              */}
-              {mensagem.texto !== null ? (
-                <TextoDoWhatsApp texto={mensagem.texto} />
-              ) : (
-                !mensagem.local &&
-                !mensagem.cartoes &&
-                !mensagem.anexo &&
-                !mensagem.recebido &&
-                !mensagem.semCopia &&
-                !mensagem.naoSuportada && <SemTexto />
-              )}
-              {/*
-                O rodapé da bolha diz a hora, e **quem escreveu só quando isso
-                acrescenta alguma coisa**.
-
-                Na entrada não acrescenta: a conversa tem duas vozes, o nome de
-                quem está do outro lado já está no cabeçalho, e repeti-lo em
-                cada bolha recebida era a mesma palavra dezenas de vezes na
-                mesma tela.
-
-                Na saída acrescenta, e muito, mas o rótulo antigo era
-                "atendimento" em toda mensagem, do bot ou de gente. Não dizia
-                nada e parecia dizer. Agora sai o nome de quem respondeu, ou
-                "automação" quando foi o fluxo; quando não sabemos (mensagem
-                antiga, ou o eco do que o dono mandou pelo celular), fica só a
-                hora, ver `core/autor-da-mensagem.ts`.
-              */}
-              <span className="ml-2 text-[10px] text-muted" title={horaExata(mensagem.ts)}>
-                {nossa && mensagem.autor ? `${mensagem.autor} · ` : ''}
-                {horaDoRelogio(mensagem.ts)}
-              </span>
-              {nossa && !mensagem.entregue && (
-                <span className="ml-2 text-[10px] font-semibold text-soft">envio não confirmado</span>
-              )}
-            </p>
-            {/*
-              O rodapé passou a existir **em toda bolha**.
-
-              Antes ele só nascia com id da Meta ou reação, porque só citar e
-              reagir moravam ali, e os dois precisam do id. A estrela não
-              precisa: ela guarda pelo id interno (`messages.id`), que existe em
-              toda mensagem gravada, inclusive na saída que a Meta ainda não
-              confirmou. Guardar o que se acabou de escrever é justamente um dos
-              casos de uso, e escondê-lo até a confirmação chegar seria esconder
-              o botão no único momento em que a pessoa está olhando para a
-              mensagem.
-
-              Os outros dois continuam guardados por `waMessageId` dentro do
-              componente, então nada aparece que não funcione.
-            */}
-            {(
-              /*
-               * A `key` é o que devolve a palavra final ao servidor.
-               *
-               * O rodapé guarda a nossa reação em estado para poder mostrá-la
-               * antes da resposta. Quando a leitura seguinte trouxer outra
-               * coisa, alguém reagiu do celular, a Meta recusou, a outra
-               * pessoa reagiu também , a chave muda, o componente remonta, e
-               * o otimismo pendurado ali morre junto. Sem isso, a tela ficaria
-               * com a aposta para sempre.
-               */
-              <RodapeDaMensagem
-                key={assinaturaDasReacoes(mensagem.reacoes)}
-                clienteId={clienteId}
-                contatoId={contatoId}
-                waMessageId={mensagem.waMessageId ?? null}
-                podeReagir={podeReagir(mensagem.ts)}
-                reacoes={mensagem.reacoes ?? []}
-                nome={nome}
-                texto={mensagem.texto}
-                deQuem={nossa ? 'ao atendimento' : `a ${nome ?? 'cliente'}`}
-                nossa={nossa}
-                mensagemId={mensagem.id}
-                favorita={favoritas.has(mensagem.id)}
-              />
-            )}
-          </div>
-          </Fragment>
-        )
-      })}
-
-    </div>
-  )
-}
-
-/**
- * A etiqueta que separa os dias dentro da conversa.
- *
- * Ela não é enfeite: sem ela a hora de relógio mente. `09:14` de hoje e `09:14`
- * de terça ficam idênticos na tela, e quem atende lê a conversa de cima para
- * baixo sem nenhuma pista de onde um dia acabou.
- */
-function EtiquetaDoDia({ rotulo }: { rotulo: string }) {
-  return (
-    <p className="my-1 self-center rounded-full border border-line bg-surface px-3 py-1 text-center text-[10px] font-medium text-dim">
-      {rotulo}
-    </p>
-  )
-}
 
 /**
  * A coluna da direita: quem é a pessoa, e tudo que o sistema sabe dela.
@@ -1544,11 +1276,11 @@ function DadosDoLead({
         <h2 className="mt-2.5 max-w-full truncate text-[13.5px] font-bold">
           {lead.nome ?? 'sem nome'}
         </h2>
-        <p className="mt-0.5 font-mono text-[10.5px] text-dim">{lead.waId}</p>
+        <p className="mt-0.5 font-mono text-[11.5px] text-dim">{lead.waId}</p>
 
         <Link
           href={`/clientes/${clienteId}/leads/${lead.contatoId}`}
-          className="app-secondary-button mt-3 w-full px-3 py-1.5 text-center text-[11.5px]"
+          className="app-secondary-button mt-3 w-full px-3 py-1.5 text-center text-[12.5px]"
         >
           Ver ficha completa
         </Link>
@@ -1564,7 +1296,7 @@ function DadosDoLead({
           className={`rounded-[11px] border px-3 py-2.5 ${aguardandoPessoa ? 'border-rose-400/35 bg-rose-50' : !temAutomacao ? 'border-line bg-surface' : botPausado ? 'border-amber-400/40 bg-amber-50' : 'border-emerald-500/30 bg-emerald-50'}`}
         >
           <p
-            className={`text-[10px] font-bold tracking-[0.04em] ${aguardandoPessoa ? 'text-rose-600' : !temAutomacao ? 'text-muted' : botPausado ? 'text-amber-700' : 'text-emerald-700'}`}
+            className={`text-[11px] font-bold tracking-[0.04em] ${aguardandoPessoa ? 'text-rose-600' : !temAutomacao ? 'text-muted' : botPausado ? 'text-amber-700' : 'text-emerald-700'}`}
           >
             {aguardandoPessoa
               ? 'AGUARDANDO PESSOA'
@@ -1582,18 +1314,18 @@ function DadosDoLead({
                 depois de ver a linha vermelha na fila: cortar aqui também
                 deixaria o problema sem nenhum lugar onde possa ser lido.
               */}
-              <p className="mt-1 text-[11px] leading-4 break-words text-soft">
+              <p className="mt-1 text-[12px] leading-4 break-words text-soft">
                 {lead.aguardando?.motivo}
               </p>
               {lead.aguardando?.desde && (
-                <p className="mt-1 text-[10px] text-dim">
+                <p className="mt-1 text-[11px] text-dim">
                   esperando desde {horaExata(lead.aguardando.desde)}
                 </p>
               )}
               <form action={acaoEncerrarAtendimento.bind(null, clienteId, lead.contatoId)}>
                 <button
                   type="submit"
-                  className="mt-2.5 w-full rounded-[8px] border border-rose-400/40 bg-white px-2.5 py-2 text-[11px] font-bold text-rose-600 transition hover:bg-rose-100"
+                  className="mt-2.5 w-full rounded-[8px] border border-rose-400/40 bg-white px-2.5 py-2 text-[12px] font-bold text-rose-600 transition hover:bg-rose-100"
                 >
                   Já atendi
                 </button>
@@ -1624,7 +1356,7 @@ function DadosDoLead({
               {lead.etiquetasManuais.map((etiqueta) => (
                 <span
                   key={etiqueta.id}
-                  className="rounded-full border border-line bg-surface px-2 py-0.5 text-[10.5px] font-semibold text-soft"
+                  className="rounded-full border border-line bg-surface px-2 py-0.5 text-[11.5px] font-semibold text-soft"
                 >
                   {etiqueta.nome}
                 </span>
@@ -1637,14 +1369,14 @@ function DadosDoLead({
 
         <Secao titulo="Anotação da equipe" vazio="Sem anotação.">
           {lead.notas.trim() !== '' && (
-            <p className="rounded-[10px] border border-line bg-surface px-2.5 py-2 text-[11.5px] leading-5 whitespace-pre-line text-soft">
+            <p className="rounded-[10px] border border-line bg-surface px-2.5 py-2 text-[12.5px] leading-5 whitespace-pre-line text-soft">
               {lead.notas}
             </p>
           )}
         </Secao>
 
         <div className="mt-5">
-          <h3 className="text-[11px] font-bold text-soft">O que o fluxo coletou</h3>
+          <h3 className="text-[12px] font-bold text-soft">O que o fluxo coletou</h3>
           <CamposColetados campos={campos} />
         </div>
       </div>
@@ -1671,8 +1403,8 @@ function Secao({
 }) {
   return (
     <div className="mt-5">
-      <h3 className="mb-1.5 text-[11px] font-bold text-soft">{titulo}</h3>
-      {children || <p className="text-[11px] text-dim">{vazio}</p>}
+      <h3 className="mb-1.5 text-[12px] font-bold text-soft">{titulo}</h3>
+      {children || <p className="text-[12px] text-dim">{vazio}</p>}
     </div>
   )
 }

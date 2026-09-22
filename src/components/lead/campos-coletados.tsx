@@ -70,7 +70,7 @@ export function CamposColetados({ campos }: { campos: [string, string][] }) {
 
   if (campos.length === 0) {
     return (
-      <p className="mt-2 text-[11px] leading-5 text-dim">
+      <p className="mt-2 text-[12px] leading-5 text-dim">
         Ainda não houve campo preenchido nesta conversa.
       </p>
     )
@@ -87,7 +87,7 @@ export function CamposColetados({ campos }: { campos: [string, string][] }) {
               O rótulo, não a chave, e sem `font-mono`: a fonte de código é
               metade do que fazia a coluna parecer painel de sistema.
             */}
-            <dt className="text-[10px] font-semibold tracking-[0.01em] text-dim">
+            <dt className="text-[11px] font-semibold tracking-[0.01em] text-dim">
               {rotuloDoCampo(chave) || chave}
             </dt>
             {/*
@@ -96,7 +96,7 @@ export function CamposColetados({ campos }: { campos: [string, string][] }) {
               código curto. Antes era a linha crua com ponto e vírgula, que é
               exatamente o "número esquisito" da queixa.
             */}
-            <dd className="mt-0.5 text-[11.5px] text-soft"><ValorDoCampo valor={valor} /></dd>
+            <dd className="mt-0.5 text-[12.5px] text-soft"><ValorDoCampo valor={valor} /></dd>
           </div>
         ))}
       </dl>
@@ -104,7 +104,7 @@ export function CamposColetados({ campos }: { campos: [string, string][] }) {
         <button
           type="button"
           onClick={() => setAberto((estava) => !estava)}
-          className="mt-2 text-[10.5px] font-semibold text-primary transition hover:underline"
+          className="mt-2 text-[11.5px] font-semibold text-primary transition hover:underline"
         >
           {rotuloDoBotao}
         </button>

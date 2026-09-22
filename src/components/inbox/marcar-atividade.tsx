@@ -101,7 +101,7 @@ export function MarcarAtividade({
       }}
       className="flex flex-col gap-2.5"
     >
-      <p className="text-[11px] font-bold text-soft">Marcar atividade</p>
+      <p className="text-[12px] font-bold text-soft">Marcar atividade</p>
 
       {/*
         Os cinco tipos à mostra, e não atrás de um dropdown: são poucos, cabem
@@ -118,7 +118,7 @@ export function MarcarAtividade({
               role="radio"
               aria-checked={escolhido}
               onClick={() => setTipo(chave)}
-              className={`rounded-full border px-2.5 py-1 text-[11.5px] font-semibold capitalize transition ${
+              className={`rounded-full border px-2.5 py-1 text-[12.5px] font-semibold capitalize transition ${
                 escolhido
                   ? 'border-primary/40 bg-primary-weak text-primary'
                   : 'border-line text-muted hover:bg-surface hover:text-ink'
@@ -135,30 +135,30 @@ export function MarcarAtividade({
         onChange={(evento) => setTitulo(evento.target.value)}
         placeholder={formato.placeholder}
         aria-label={formato.placeholder}
-        className="app-field w-full px-3 py-2.5 text-[12.5px]"
+        className="app-field w-full px-3 py-2.5 text-[13px]"
       />
 
       {formato.onde && (
         <label className="flex flex-col gap-1">
-          <span className="text-[10.5px] font-medium text-muted">{formato.onde.rotulo}</span>
+          <span className="text-[11.5px] font-medium text-muted">{formato.onde.rotulo}</span>
           <input
             value={onde}
             onChange={(evento) => setOnde(evento.target.value)}
             placeholder={formato.onde.placeholder}
             maxLength={500}
-            className="app-field w-full px-3 py-2 text-[12px]"
+            className="app-field w-full px-3 py-2 text-[12.5px]"
           />
         </label>
       )}
 
       <div className="flex gap-2">
         <label className="flex flex-1 flex-col gap-1">
-          <span className="text-[10.5px] font-medium text-muted">Quando</span>
+          <span className="text-[11.5px] font-medium text-muted">Quando</span>
           <input
             type="date"
             value={prazo}
             onChange={(evento) => setPrazo(evento.target.value)}
-            className="app-field w-full px-2 py-2 text-[12px]"
+            className="app-field w-full px-2 py-2 text-[12.5px]"
           />
         </label>
         {/*
@@ -168,20 +168,20 @@ export function MarcarAtividade({
         */}
         {formato.pedeHora && (
           <label className="flex w-[104px] flex-col gap-1">
-            <span className="text-[10.5px] font-medium text-muted">Hora</span>
+            <span className="text-[11.5px] font-medium text-muted">Hora</span>
             <input
               type="time"
               value={hora}
               onChange={(evento) => setHora(evento.target.value)}
               disabled={prazo === ''}
-              className="app-field w-full px-2 py-2 text-[12px] disabled:opacity-50"
+              className="app-field w-full px-2 py-2 text-[12.5px] disabled:opacity-50"
             />
           </label>
         )}
       </div>
 
       {erro && (
-        <span role="alert" className="text-[11px] font-semibold text-perigo">
+        <span role="alert" className="text-[12px] font-semibold text-perigo">
           {erro}
         </span>
       )}
@@ -189,7 +189,7 @@ export function MarcarAtividade({
       <button
         type="submit"
         disabled={rodando || titulo.trim() === ''}
-        className="app-primary-button w-full px-3 py-2 text-[12px] disabled:opacity-50"
+        className="app-primary-button w-full px-3 py-2 text-[12.5px] disabled:opacity-50"
       >
         {rodando ? 'Marcando…' : 'Marcar'}
       </button>
@@ -198,7 +198,7 @@ export function MarcarAtividade({
         O aviso fica aqui, e não só no nome do botão: o vizinho desta ação na
         barra é "Agendar mensagem", que manda texto ao cliente.
       */}
-      <p className="border-t border-line pt-2 text-[10.5px] leading-4 text-dim">
+      <p className="border-t border-line pt-2 text-[11.5px] leading-4 text-dim">
         É um lembrete para a equipe. <strong>Nada é enviado ao cliente.</strong>
       </p>
     </form>

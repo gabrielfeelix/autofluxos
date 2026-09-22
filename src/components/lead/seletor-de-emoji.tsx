@@ -118,7 +118,7 @@ export function SeletorDeEmoji({
               if (primeiro) aoEscolher(primeiro)
             }}
             placeholder="Procurar: festa, obrigado, foto…"
-            className="mb-2 w-full rounded-[9px] border border-line bg-surface px-2.5 py-1.5 text-[11.5px] outline-none placeholder:text-dim focus:border-primary/40"
+            className="mb-2 w-full rounded-[9px] border border-line bg-surface px-2.5 py-1.5 text-[12.5px] outline-none placeholder:text-dim focus:border-primary/40"
           />
 
           {!procurando && (
@@ -161,7 +161,7 @@ export function SeletorDeEmoji({
               </button>
             ))}
             {emojis.length === 0 && (
-              <p className="col-span-8 px-1 py-4 text-center text-[11px] text-dim">
+              <p className="col-span-8 px-1 py-4 text-center text-[12px] text-dim">
                 Nada com esse nome. Tente uma palavra só, &ldquo;festa&rdquo;,
                 &ldquo;obrigado&rdquo;, &ldquo;dinheiro&rdquo;.
               </p>

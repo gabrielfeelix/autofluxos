@@ -49,6 +49,34 @@ const Contexto = createContext<EstadoDaFicha>({ aberta: true, alternar: () => {}
 
 export const useFicha = () => useContext(Contexto)
 
+/**
+ * A terceira coluna da grade, que **some do DOM** quando alguém a fecha.
+ *
+ * ---------------------------------------------------------------------------
+ * O defeito que ela conserta
+ * ---------------------------------------------------------------------------
+ *
+ * Fechar a ficha tirava a terceira faixa de `gridTemplateColumns` e mais nada:
+ * a ficha continuava sendo um item da grade, porque ela nasce dentro do mesmo
+ * nó da conversa (ver `ColunaDaConversa`), e a moldura não tem como não
+ * desenhá-la de fora.
+ *
+ * Uma grade com três itens e duas colunas **cria uma linha nova**. A ficha caía
+ * embaixo da fila, por cima do que já estava lá, e o resto da tela virava uma
+ * faixa branca: exatamente o que o print mostrava. O botão parecia quebrar a
+ * tela quando estava só escondendo uma coluna.
+ *
+ * Quem sabe se a ficha está aberta é este contexto, então quem decide desenhar
+ * ou não precisa ser um componente cliente daqui de dentro. A ficha inteira
+ * continua sendo desenhada no servidor; o que esta casca faz é decidir se o nó
+ * entra na grade.
+ */
+export function ColunaDaFicha({ children }: { children: ReactNode }) {
+  const { aberta } = useFicha()
+  if (!aberta) return null
+  return <>{children}</>
+}
+
 export function MolduraDoInbox({
   fila,
   conversa,

@@ -103,7 +103,7 @@ export function ColunasDaTabela({
         aria-haspopup="true"
         aria-expanded={aberto}
         onClick={() => setAberto((estava) => !estava)}
-        className="app-secondary-button px-3 py-1.5 text-[11.5px]"
+        className="app-secondary-button px-3 py-1.5 text-[12.5px]"
         title="Escolher quais colunas aparecem nesta tabela"
       >
         Colunas
@@ -116,13 +116,13 @@ export function ColunasDaTabela({
 
       {aberto && (
         <div className="absolute right-0 z-50 mt-1 max-h-[320px] w-[240px] overflow-y-auto rounded-[10px] border border-line bg-panel py-1.5 shadow-xl">
-          <p className="px-3 pb-1.5 text-[10px] font-semibold tracking-[0.06em] text-dim uppercase">
+          <p className="px-3 pb-1.5 text-[11px] font-semibold tracking-[0.06em] text-dim uppercase">
             Mostrar na tabela
           </p>
           {colunas.map((coluna) => (
             <label
               key={coluna.chave}
-              className="flex cursor-pointer items-center gap-2.5 px-3 py-1.5 text-[12px] text-soft transition hover:bg-surface-strong"
+              className="flex cursor-pointer items-center gap-2.5 px-3 py-1.5 text-[12.5px] text-soft transition hover:bg-surface-strong"
             >
               <input
                 type="checkbox"
@@ -145,7 +145,7 @@ export function ColunasDaTabela({
                   // Mesmo caso de `alternar`: sem gravar, vale para esta visita.
                 }
               }}
-              className="mt-1 w-full border-t border-line px-3 py-2 text-left text-[11.5px] font-semibold text-primary transition hover:bg-surface-strong"
+              className="mt-1 w-full border-t border-line px-3 py-2 text-left text-[12.5px] font-semibold text-primary transition hover:bg-surface-strong"
             >
               Mostrar todas
             </button>

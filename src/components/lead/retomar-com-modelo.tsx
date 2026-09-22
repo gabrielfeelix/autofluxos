@@ -89,7 +89,7 @@ export function RetomarComModelo({
   if (pronto) {
     return (
       <div className="border-t border-line px-[18px] py-3.5">
-        <p className="text-[11.5px] leading-5 text-dim">
+        <p className="text-[12.5px] leading-5 text-dim">
           <strong className="text-muted">Modelo enviado.</strong> Quando {nome} responder, a janela
           de 24h reabre e você volta a escrever livremente por aqui.
         </p>
@@ -99,20 +99,20 @@ export function RetomarComModelo({
 
   return (
     <div className="border-t border-line px-[18px] py-3.5">
-      <p className="text-[11.5px] leading-5 text-dim">
+      <p className="text-[12.5px] leading-5 text-dim">
         <strong className="text-muted">Passaram 24h desde a última mensagem de {nome}.</strong> O
         WhatsApp só deixa retomar com um modelo aprovado pela Meta.
       </p>
 
       {aprovados === null ? (
-        <p className="mt-2 text-[11.5px] text-dim">Vendo os modelos…</p>
+        <p className="mt-2 text-[12.5px] text-dim">Vendo os modelos…</p>
       ) : aprovados.length === 0 ? (
         /*
           Sem modelo aprovado, o que falta é criar um. O link leva direto para a
           aba certa: "vá em Transmissões e procure" é a versão com mais passos
           do mesmo beco.
         */
-        <p className="mt-2 text-[11.5px] leading-5 text-dim">
+        <p className="mt-2 text-[12.5px] leading-5 text-dim">
           Esta conta ainda não tem nenhum modelo aprovado.{' '}
           <a
             href={`/clientes/${clienteId}/transmissoes?aba=modelos`}
@@ -139,14 +139,14 @@ export function RetomarComModelo({
             type="button"
             onClick={enviar}
             disabled={enviando || !escolhido}
-            className="app-primary-button shrink-0 px-4 py-2.5 text-[12.5px] disabled:opacity-50"
+            className="app-primary-button shrink-0 px-4 py-2.5 text-[13px] disabled:opacity-50"
           >
             {enviando ? 'Enviando…' : 'Retomar'}
           </button>
         </div>
       )}
 
-      {erro && <p className="mt-2 text-[11.5px] leading-5 text-perigo">{erro}</p>}
+      {erro && <p className="mt-2 text-[12.5px] leading-5 text-perigo">{erro}</p>}
     </div>
   )
 }

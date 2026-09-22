@@ -64,7 +64,7 @@ export function AnexoNaConversa({ anexo }: { anexo: AnexoDaMensagem }) {
       <span aria-hidden className="text-sm">
         📄
       </span>
-      <span className="min-w-0 flex-1 truncate text-[11.5px] font-medium underline">{nome}</span>
+      <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium underline">{nome}</span>
     </a>
   )
 }
@@ -100,9 +100,9 @@ export function CitacaoNaBolha({ cita, nome }: { cita: Citada; nome: string | nu
     <span className="mb-1.5 flex gap-2 rounded-md border-l-2 border-primary/50 bg-surface px-2 py-1.5">
       <span className="min-w-0 flex-1">
         {cita.direcao && (
-          <span className="block text-[10px] font-bold text-primary/90">{deQuem}</span>
+          <span className="block text-[11px] font-bold text-primary/90">{deQuem}</span>
         )}
-        <span className="block truncate text-[11px] text-muted">
+        <span className="block truncate text-[12px] text-muted">
           {cita.texto?.trim() ? (
             cita.texto
           ) : (
@@ -151,12 +151,12 @@ export function LocalNaBolha({ local }: { local: LocalDaMensagem }) {
     >
       <span className="text-[15px] leading-none">📍</span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[11.5px] font-bold text-ink">{titulo}</span>
+        <span className="block text-[12.5px] font-bold text-ink">{titulo}</span>
         {local.endereco && (
-          <span className="block text-[11px] leading-4 text-muted">{local.endereco}</span>
+          <span className="block text-[12px] leading-4 text-muted">{local.endereco}</span>
         )}
-        <span className="block font-mono text-[9.5px] text-dim">{coordenadas}</span>
-        <span className="mt-0.5 block text-[10px] font-bold text-primary">Abrir no mapa →</span>
+        <span className="block font-mono text-[11px] text-dim">{coordenadas}</span>
+        <span className="mt-0.5 block text-[11px] font-bold text-primary">Abrir no mapa →</span>
       </span>
     </a>
   )
@@ -183,19 +183,19 @@ export function CartoesNaBolha({ cartoes }: { cartoes: CartaoDeContato[] }) {
         >
           <span className="text-[15px] leading-none">👤</span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[11.5px] font-bold text-ink">{cartao.nome}</span>
+            <span className="block text-[12.5px] font-bold text-ink">{cartao.nome}</span>
             {cartao.telefones.length > 0 ? (
               cartao.telefones.map((telefone) => (
                 <a
                   key={telefone}
                   href={`tel:${telefone.replace(/[^+\d]/g, '')}`}
-                  className="block font-mono text-[11px] text-primary hover:underline"
+                  className="block font-mono text-[12px] text-primary hover:underline"
                 >
                   {telefone}
                 </a>
               ))
             ) : (
-              <span className="block text-[11px] text-dim italic">sem telefone no cartão</span>
+              <span className="block text-[12px] text-dim italic">sem telefone no cartão</span>
             )}
           </span>
         </span>
@@ -223,10 +223,10 @@ export function CartoesNaBolha({ cartoes }: { cartoes: CartaoDeContato[] }) {
 export function MensagemNaoSuportada() {
   return (
     <span className="inline-flex max-w-full items-center gap-2 rounded-lg border border-dashed border-strong px-2.5 py-1.5">
-      <span aria-hidden className="text-[13px] leading-none">
+      <span aria-hidden className="text-[13.5px] leading-none">
         🚫
       </span>
-      <span className="text-[11px] leading-4 text-dim italic">
+      <span className="text-[12px] leading-4 text-dim italic">
         mensagem que o WhatsApp não entrega para o painel, veja no celular
       </span>
     </span>
@@ -260,8 +260,8 @@ export function ArquivoSemCopia({ nossa = false }: { nossa?: boolean }) {
       78% da bolha, um retângulo grande e vazio para dizer uma frase curta.
     */
     <span className="mb-1.5 inline-flex max-w-full items-center gap-2 rounded-lg border border-dashed border-strong px-2.5 py-1.5">
-      <span className="text-[13px] leading-none">📎</span>
-      <span className="text-[11px] leading-4 text-dim italic">
+      <span className="text-[13.5px] leading-none">📎</span>
+      <span className="text-[12px] leading-4 text-dim italic">
         {nossa
           ? 'arquivo enviado pelo celular, sem cópia por aqui'
           : 'arquivo recebido, sem cópia guardada, peça para enviar de novo'}

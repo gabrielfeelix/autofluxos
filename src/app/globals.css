@@ -135,15 +135,42 @@
   --line-strong: #d3d9e1;
 
   --ink: #131922;
-  --soft: #48525f;
-  --muted: #6b7684;
   /*
-   * `--dim` é o degrau mais apagado da escala e ainda assim legível: 4,6:1
-   * contra o branco. A regra que valia no escuro vale aqui: hierarquia
-   * visual não pode custar a leitura.
+   * ---------------------------------------------------------------------------
+   * A escala de cinzas foi medida de novo, e contra o fundo mais escuro
+   * ---------------------------------------------------------------------------
+   *
+   * A auditoria anterior anotou "4,6:1 contra o branco" para `--dim`, e a conta
+   * estava errada: `#8b94a1` sobre branco dá **3,07:1**, e sobre
+   * `--surface-strong`, que é onde mora metade dos rótulos do painel, 2,61:1. O
+   * mínimo de AA para texto normal é 4,5:1. Na prática, tudo que era `text-dim`
+   * , hora da mensagem, rótulo de campo da ficha, contador da fila , estava
+   * abaixo do piso, e em 10px.
+   *
+   * Agora cada degrau é medido contra **`--surface-strong` (`#e9edf2`)**, o
+   * fundo mais escuro em que texto cai no claro, e não contra o branco, que é o
+   * caso mais fácil. O pior caso de cada um:
+   *
+   * | token         | pior contraste |
+   * |---------------|----------------|
+   * | `--ink`       | 15,01:1        |
+   * | `--soft`      |  7,87:1        |
+   * | `--muted`     |  6,04:1        |
+   * | `--dim`       |  4,52:1        |
+   *
+   * A hierarquia continua de pé, os quatro degraus continuam distinguíveis, e
+   * nenhum deles depende mais de monitor bom.
    */
-  --dim: #8b94a1;
-  --placeholder: #a3abb7;
+  --soft: #3f4855;
+  --muted: #4f5967;
+  --dim: #636c79;
+  /*
+   * O texto de dica dentro do campo vazio. Fica abaixo de `--dim` de propósito,
+   * ele não é conteúdo, é instrução do campo, e precisa perder para o que a
+   * pessoa digita. Ainda assim subiu de 2,32:1 para 4,11:1 sobre `--surface`,
+   * que é o fundo dos campos: ilegível não ajuda ninguém a preencher nada.
+   */
+  --placeholder: #6e7784;
 
   /*
    * Os quatro estados, como token.
@@ -169,10 +196,15 @@
    */
   --bolha-nossa: var(--primary);
 
-  --perigo: #dc2626;
-  --aviso: #b45309;
+  /*
+   * Os quatro estados também passaram a ser medidos contra `--surface-strong`,
+   * e não contra o branco: é em cartão e em pílula que eles aparecem. `#dc2626`
+   * dava 4,11:1 ali, e o aviso mais urgente da tela ficava abaixo do piso.
+   */
+  --perigo: #b91c1c;
+  --aviso: #92400e;
   --ok: #047857;
-  --info: #0369a1;
+  --info: #075985;
 
   /* Ver o comentário em `@theme inline`: cor de marca não é escolha nossa. */
   --marca-whatsapp: #25d366;
@@ -227,9 +259,15 @@
 
   --ink: #e9eef5;
   --soft: #b9c2d0;
-  --muted: #8a94a6;
-  --dim: #7d8799;
-  --placeholder: #5c667a;
+  /*
+   * Mesma medição do claro, virada: aqui o pior caso é o fundo mais **claro**
+   * em que texto cai, `--surface-strong` (`#1e2634`). `--muted` dava 4,3:1 ali
+   * e `--placeholder`, 1,9:1. Os degraus novos: muted 6,64:1, dim 5,16:1,
+   * placeholder 4,48:1.
+   */
+  --muted: #a2acbd;
+  --dim: #8d97a9;
+  --placeholder: #828c9e;
 
   --perigo: #fca5a5;
   --aviso: #fcd34d;

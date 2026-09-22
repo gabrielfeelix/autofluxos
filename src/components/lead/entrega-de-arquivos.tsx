@@ -15,6 +15,7 @@ import {
 import { LIMITE_LEGENDA } from '@/core/flow/schema'
 import { acaoPrepararEnvioDeArquivo } from '@/server/acoes'
 import { acaoEnviarMidiaDoInbox } from '@/server/acoes-midia-do-inbox'
+import { pedirNovas } from '@/components/inbox/sinal-de-conversa'
 
 /**
  * Anexar arrastando para dentro da conversa, e revisar antes de mandar.
@@ -287,9 +288,15 @@ export function ProvedorDeEntrega({
              */
             setAnexos((atuais) => atuais.slice(i))
             setAtual(0)
+            // O que já saiu antes do erro também é conversa: a transcrição
+            // busca o que houver, e o que falhou simplesmente não está lá.
+            pedirNovas()
             return
           }
         }
+        // A leva inteira saiu: as bolhas entram na conversa agora, sem esperar
+        // o pulso do servidor e sem redesenhar a página.
+        pedirNovas()
         fechar()
       } finally {
         setFase('parado')
@@ -344,8 +351,8 @@ export function ProvedorDeEntrega({
           >
             <div className="flex w-full max-w-[420px] flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-primary/60 bg-primary/[0.06] px-8 py-12 text-center">
               <span className="text-3xl leading-none">📎</span>
-              <p className="text-[13px] font-semibold text-ink">Solte para anexar</p>
-              <p className="text-[11px] text-dim">
+              <p className="text-[13.5px] font-semibold text-ink">Solte para anexar</p>
+              <p className="text-[12px] text-dim">
                 Foto, vídeo, áudio ou PDF, você revisa antes de enviar
               </p>
             </div>
@@ -436,14 +443,14 @@ function PainelDeRevisao({
           onClick={aoFechar}
           disabled={ocupado}
           aria-label="Cancelar o envio"
-          className="rounded-lg px-2 py-1 text-[13px] leading-none text-dim transition hover:bg-surface-strong hover:text-ink disabled:opacity-40"
+          className="rounded-lg px-2 py-1 text-[13.5px] leading-none text-dim transition hover:bg-surface-strong hover:text-ink disabled:opacity-40"
         >
           ✕
         </button>
-        <p className="text-[12.5px] font-semibold">
+        <p className="text-[13px] font-semibold">
           {anexos.length === 1 ? 'Enviar este arquivo' : `Enviar ${anexos.length} arquivos`}
         </p>
-        <p className="ml-auto min-w-0 truncate text-[10.5px] text-dim" title={emFoco.arquivo.name}>
+        <p className="ml-auto min-w-0 truncate text-[11.5px] text-dim" title={emFoco.arquivo.name}>
           {emFoco.arquivo.name} · {(emFoco.arquivo.size / 1024 / 1024).toFixed(1)} MB
         </p>
       </header>
@@ -469,7 +476,7 @@ function PainelDeRevisao({
           ícone genérico sem o nome seria uma revisão que não revisa nada.
         */}
         {!ehImagem && !ehVideo && !ehAudio && (
-          <p className="max-w-[320px] rounded-xl border border-line bg-surface px-6 py-10 text-center text-[12.5px] break-all text-soft">
+          <p className="max-w-[320px] rounded-xl border border-line bg-surface px-6 py-10 text-center text-[13px] break-all text-soft">
             <span aria-hidden className="mb-2 block text-3xl">
               📄
             </span>
@@ -480,7 +487,7 @@ function PainelDeRevisao({
 
       <div className="shrink-0 border-t border-line px-3 py-3">
         {erro && (
-          <p className="mb-2 rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2 text-[11.5px] leading-5 text-perigo">
+          <p className="mb-2 rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2 text-[12.5px] leading-5 text-perigo">
             {erro}
           </p>
         )}
@@ -491,7 +498,7 @@ function PainelDeRevisao({
             deixá-lo aceitar texto e o envio recusar depois.
           */}
           {ehAudio ? (
-            <p className="flex-1 px-1 text-[11px] text-dim">Áudio não leva legenda no WhatsApp.</p>
+            <p className="flex-1 px-1 text-[12px] text-dim">Áudio não leva legenda no WhatsApp.</p>
           ) : (
             <div className="min-w-0 flex-1">
               <input
@@ -510,7 +517,7 @@ function PainelDeRevisao({
                 className="w-full rounded-[19px] border border-line bg-surface px-3.5 py-2 font-texto text-[14px] leading-[1.45] outline-none transition placeholder:text-dim focus:border-primary/40 disabled:opacity-50"
               />
               {excede && (
-                <p className="mt-1 px-1 text-[10.5px] text-perigo">
+                <p className="mt-1 px-1 text-[11.5px] text-perigo">
                   a legenda aceita {LIMITE_LEGENDA} caracteres, e esta tem{' '}
                   {legendaAtual.trim().length}
                 </p>
@@ -525,11 +532,11 @@ function PainelDeRevisao({
             aria-label={
               anexos.length === 1 ? 'Enviar o arquivo' : `Enviar ${anexos.length} arquivos`
             }
-            className="app-primary-button relative flex size-9 shrink-0 items-center justify-center rounded-full text-[13px] leading-none disabled:opacity-50"
+            className="app-primary-button relative flex size-9 shrink-0 items-center justify-center rounded-full text-[13.5px] leading-none disabled:opacity-50"
           >
             {ocupado ? '…' : '➤'}
             {anexos.length > 1 && !ocupado && (
-              <span className="absolute -top-1 -right-1 flex size-[17px] items-center justify-center rounded-full bg-panel text-[9.5px] font-bold text-primary ring-1 ring-primary/40">
+              <span className="absolute -top-1 -right-1 flex size-[17px] items-center justify-center rounded-full bg-panel text-[11px] font-bold text-primary ring-1 ring-primary/40">
                 {anexos.length}
               </span>
             )}
@@ -567,7 +574,7 @@ function PainelDeRevisao({
                   type="button"
                   onClick={() => aoRemover(anexo.id)}
                   aria-label={`Tirar ${anexo.arquivo.name} da leva`}
-                  className="absolute -top-1.5 -right-1.5 hidden size-[18px] items-center justify-center rounded-full border border-line bg-panel text-[10px] leading-none text-dim shadow-sm transition group-hover:flex hover:text-perigo"
+                  className="absolute -top-1.5 -right-1.5 hidden size-[18px] items-center justify-center rounded-full border border-line bg-panel text-[11px] leading-none text-dim shadow-sm transition group-hover:flex hover:text-perigo"
                 >
                   ✕
                 </button>
@@ -599,7 +606,7 @@ function PainelDeRevisao({
           </button>
 
           {ocupado && (
-            <p className="ml-auto shrink-0 pl-2 text-[10.5px] text-dim">
+            <p className="ml-auto shrink-0 pl-2 text-[11.5px] text-dim">
               {fase === 'subindo' ? 'Subindo' : 'Enviando'} {enviado + 1} de {anexos.length}…
             </p>
           )}

@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { z } from 'zod'
 import { precisaAtualizar } from './pulso'
+import { DEU_CONTA, ESPERA_PELA_CONVERSA_MS, pedirNovas } from './sinal-de-conversa'
 
 const respostaSchema = z.object({ pulso: z.string().nullable() })
 
@@ -27,13 +28,26 @@ const INTERVALO = 5_000
 const SILENCIO_ATE_DESISTIR = 40_000
 
 /**
- * Quantos `router.refresh()` sem efeito antes de apelar para o reload.
+ * O intervalo mínimo entre dois redesenhos da página.
  *
- * Três é folga suficiente para um refresh lento (o servidor remonta a lista, o
- * histórico e a barra lateral) sem deixar ninguém mais de quinze segundos
- * olhando para uma tela que já não é verdade.
+ * Redesenhar continua existindo, mas só para o que **não** é a conversa aberta:
+ * a fila da esquerda, as contagens, a insígnia de não lidas. Numa conta
+ * movimentada, cinco mensagens em cinco segundos pediriam cinco páginas
+ * inteiras ao servidor para desenhar praticamente a mesma fila. Uma a cada
+ * quatro segundos mantém a lista viva sem transformar movimento em pisca-pisca.
  */
-const TENTATIVAS_ATE_RECARREGAR = 3
+const ESPERA_ENTRE_REDESENHOS_MS = 4_000
+
+/**
+ * De quanto em quanto tempo a fila da esquerda se acerta quando a conversa
+ * aberta está dando conta sozinha.
+ *
+ * Meio minuto: quem está numa conversa longa olha para as bolhas, não para a
+ * linha da fila, e a linha só precisa não estar mentindo quando o olho voltar
+ * para ela. Mais curto que isso é pagar página inteira por mensagem de novo,
+ * que é exatamente o defeito que esta versão desfaz.
+ */
+const REDESENHO_PREGUICOSO_MS = 30_000
 
 /**
  * O Inbox se atualizando sozinho quando chega mensagem.
@@ -99,45 +113,91 @@ export function PulsoDoInbox({
   pulsoNaTela: string | null
 }) {
   const router = useRouter()
-  /*
-   * Quantas vezes seguidas pedimos refresh sem a tela alcançar o banco.
-   *
-   * `router.refresh()` é a forma boa de atualizar, mantém o que está digitado
-   * na caixa de resposta, o scroll e o foco. Mas quando ele não resolve, ficar
-   * repetindo em silêncio deixa quem atende olhando para uma conversa
-   * congelada, que é o pior resultado possível.
-   *
-   * Depois de `TENTATIVAS_ATE_RECARREGAR`, recarrega a página. É o martelo, e
-   * por isso vem só no fim: perde o rascunho da resposta, mas mostra a verdade.
-   */
-  const tentativas = useRef(0)
+  /** Quando a página foi redesenhada pela última vez, para não repetir à toa. */
+  const ultimoRedesenho = useRef(0)
 
   useEffect(() => {
     let ativo = true
     /** Instante do último sinal do stream, batida ou evento. */
     let ultimoSinal = Date.now()
+    /** O redesenho marcado, que a conversa aberta ainda pode cancelar. */
+    let redesenhoMarcado: number | null = null
+    /** O redesenho sem pressa, só para a fila da esquerda não mentir por horas. */
+    let preguicoso: number | null = null
+
+    /*
+     * A conversa aberta avisando que já mostrou o que chegou.
+     *
+     * É o que faz a mensagem da conversa à vista **não** custar uma página
+     * inteira: a bolha já está na tela, e redesenhar só repetiria o que se
+     * está vendo. Mensagem de outra conversa nunca produz este aviso, e aí o
+     * redesenho marcado acontece e a fila da esquerda se atualiza.
+     */
+    const aoDarConta = () => {
+      if (redesenhoMarcado !== null) {
+        window.clearTimeout(redesenhoMarcado)
+        redesenhoMarcado = null
+      }
+
+      /*
+       * A fila da esquerda ainda precisa saber, só que **sem pressa**.
+       *
+       * A bolha já apareceu na conversa; o que falta é a linha da fila mostrar
+       * a última frase e a ordem certa. Isso não vale uma página inteira por
+       * mensagem numa conversa em andamento, e vale um redesenho de vez em
+       * quando, senão a fila mente por horas em quem atende o dia todo na mesma
+       * conversa.
+       */
+      if (preguicoso === null) {
+        preguicoso = window.setTimeout(() => {
+          preguicoso = null
+          redesenhar()
+        }, REDESENHO_PREGUICOSO_MS)
+      }
+    }
+    window.addEventListener(DEU_CONTA, aoDarConta)
+
+    /** O redesenho da página, no máximo um a cada `ESPERA_ENTRE_REDESENHOS_MS`. */
+    function redesenhar() {
+      if (!ativo) return
+      const desde = Date.now() - ultimoRedesenho.current
+      if (desde < ESPERA_ENTRE_REDESENHOS_MS) {
+        // Ainda dentro da janela: remarca para o fim dela em vez de desistir,
+        // senão a última mensagem de uma rajada nunca chegaria à fila.
+        redesenhoMarcado = window.setTimeout(redesenhar, ESPERA_ENTRE_REDESENHOS_MS - desde)
+        return
+      }
+      ultimoRedesenho.current = Date.now()
+      redesenhoMarcado = null
+      router.refresh()
+    }
 
     /**
      * O que fazer com um carimbo, venha ele do stream ou do polling.
      *
-     * Um lugar só de propósito: a regra de "a tela está velha?" e a escada até
-     * o reload não podem existir em duas versões que discordem entre si.
+     * ------------------------------------------------------------------------
+     * Duas coisas acontecem, nesta ordem, e a ordem é o conserto
+     * ------------------------------------------------------------------------
+     *
+     * Antes, "mudou alguma coisa na conta" virava `router.refresh()` direto: a
+     * página inteira no servidor, a cada mensagem, recebida ou enviada. Era o
+     * F5 automático que se via na tela.
+     *
+     * Agora o aviso vai primeiro para a **conversa aberta** (`pedirNovas`), que
+     * busca só as mensagens novas e acrescenta as bolhas. Se ela responder que
+     * deu conta, nada mais acontece. Só o silêncio dela, a mensagem era de
+     * outra conversa, é que paga o preço de redesenhar a fila.
      */
     function reagir(pulso: string | null) {
       if (!ativo) return
+      if (!precisaAtualizar({ doBanco: pulso, naTela: pulsoNaTela })) return
 
-      if (!precisaAtualizar({ doBanco: pulso, naTela: pulsoNaTela })) {
-        tentativas.current = 0
-        return
-      }
+      pedirNovas(pulso)
 
-      tentativas.current += 1
-      if (tentativas.current >= TENTATIVAS_ATE_RECARREGAR) {
-        window.location.reload()
-        return
-      }
-
-      router.refresh()
+      // Um só por vez: duas mensagens seguidas marcariam dois redesenhos, e o
+      // "deu conta" da conversa só cancelaria um deles.
+      if (redesenhoMarcado !== null) return
+      redesenhoMarcado = window.setTimeout(redesenhar, ESPERA_PELA_CONVERSA_MS)
     }
 
     // ---------------------------------------------------------------- stream
@@ -242,6 +302,9 @@ export function PulsoDoInbox({
       ativo = false
       fecharStream()
       window.clearInterval(intervalo)
+      if (redesenhoMarcado !== null) window.clearTimeout(redesenhoMarcado)
+      if (preguicoso !== null) window.clearTimeout(preguicoso)
+      window.removeEventListener(DEU_CONTA, aoDarConta)
       document.removeEventListener('visibilitychange', aoTrocarDeVisibilidade)
     }
   }, [clienteId, router, pulsoNaTela])

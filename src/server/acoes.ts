@@ -2179,7 +2179,20 @@ export async function acaoResponderLead(
 
   revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
   revalidatePath(`/clientes/${clienteId}/leads`)
-  revalidatePath(`/clientes/${clienteId}/inbox`)
+  /*
+   * **O Inbox não é revalidado aqui de propósito.**
+   *
+   * Ele era, e esse era o outro lado do F5 a cada mensagem: responder pedia a
+   * página inteira de volta do servidor, com fila, contagens, etiquetas, funis
+   * e agendadas, para acrescentar uma bolha no fim da conversa que já estava
+   * aberta na frente de quem escreveu.
+   *
+   * Quem desenha a resposta agora é a transcrição ao vivo
+   * (`components/inbox/historico.tsx`), que busca só o que é novo assim que o
+   * envio volta. A fila da esquerda se acerta no redesenho sem pressa do
+   * `PulsoDoInbox`. A tela da Ficha, que não tem transcrição ao vivo, continua
+   * coberta pelos dois `revalidatePath` acima.
+   */
   return { ok: true }
 }
 

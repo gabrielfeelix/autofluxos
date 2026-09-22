@@ -62,7 +62,7 @@ export function ContadorDeAgendadas({
         type="button"
         onClick={() => setAberto((x) => !x)}
         aria-expanded={aberto}
-        className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold transition ${
+        className={`rounded-full border px-2 py-0.5 text-[12px] font-semibold transition ${
           falharam > 0
             ? 'border-rose-400/30 bg-rose-400/[0.09] text-perigo'
             : 'border-line bg-surface text-soft hover:border-primary/40 hover:text-primary'
@@ -74,7 +74,7 @@ export function ContadorDeAgendadas({
 
       {aberto && (
         <div className="absolute top-full right-0 z-50 mt-1.5 w-[340px] overflow-hidden rounded-[12px] border border-line bg-panel shadow-menu">
-          <p className="border-b border-line px-3 py-2 text-[10.5px] font-bold tracking-[0.06em] text-dim uppercase">
+          <p className="border-b border-line px-3 py-2 text-[11.5px] font-bold tracking-[0.06em] text-dim uppercase">
             Mensagens agendadas
           </p>
           <ul className="max-h-[320px] overflow-y-auto">
@@ -103,18 +103,18 @@ function Linha({
     <li className="border-b border-line-soft px-3 py-2 last:border-0">
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[11.5px] font-bold text-ink">
+          <p className="truncate text-[12.5px] font-bold text-ink">
             {agendada.nomeDoContato ?? 'sem nome'}
             <span className="ml-1.5 font-normal text-dim tabular-nums">
               {quandoLegivel(agendada.quando)}
             </span>
           </p>
-          <p className="line-clamp-2 text-[11px] leading-4 text-muted">{agendada.texto}</p>
+          <p className="line-clamp-2 text-[12px] leading-4 text-muted">{agendada.texto}</p>
           {falhou && agendada.erro && (
-            <p className="mt-0.5 text-[10px] leading-4 text-perigo">não saiu: {agendada.erro}</p>
+            <p className="mt-0.5 text-[11px] leading-4 text-perigo">não saiu: {agendada.erro}</p>
           )}
           {erro && (
-            <p role="alert" className="mt-0.5 text-[10px] leading-4 text-perigo">
+            <p role="alert" className="mt-0.5 text-[11px] leading-4 text-perigo">
               {erro}
             </p>
           )}
@@ -131,7 +131,7 @@ function Linha({
               })
             }
             aria-label={`Cancelar a mensagem de ${agendada.nomeDoContato ?? 'sem nome'}`}
-            className="shrink-0 rounded-full px-1.5 py-0.5 text-[12px] leading-none text-dim transition hover:bg-surface hover:text-perigo disabled:opacity-40"
+            className="shrink-0 rounded-full px-1.5 py-0.5 text-[12.5px] leading-none text-dim transition hover:bg-surface hover:text-perigo disabled:opacity-40"
           >
             ×
           </button>

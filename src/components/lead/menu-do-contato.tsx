@@ -131,7 +131,7 @@ export function MenuDoContato({
         aria-expanded={aberto}
         aria-label={`Ações de ${nome}`}
         onClick={() => setAberto((estava) => !estava)}
-        className="rounded-lg px-2 py-1 text-[13px] leading-none text-dim transition hover:bg-surface-strong hover:text-soft"
+        className="rounded-lg px-2 py-1 text-[13.5px] leading-none text-dim transition hover:bg-surface-strong hover:text-soft"
       >
         ⋮
       </button>
@@ -146,14 +146,14 @@ export function MenuDoContato({
           <Link
             role="menuitem"
             href={`/clientes/${clienteId}/inbox?conversa=${encodeURIComponent(contatoId)}`}
-            className="block px-3 py-2 text-[12px] text-soft transition hover:bg-surface-strong"
+            className="block px-3 py-2 text-[12.5px] text-soft transition hover:bg-surface-strong"
           >
             Abrir no Inbox
           </Link>
           <Link
             role="menuitem"
             href={`/clientes/${clienteId}/leads/${contatoId}`}
-            className="block px-3 py-2 text-[12px] text-soft transition hover:bg-surface-strong"
+            className="block px-3 py-2 text-[12.5px] text-soft transition hover:bg-surface-strong"
           >
             Ver a ficha
           </Link>
@@ -174,7 +174,7 @@ export function MenuDoContato({
                 : undefined
             }
             onClick={alternarBot}
-            className="block w-full px-3 py-2 text-left text-[12px] text-soft transition hover:bg-surface-strong disabled:opacity-40"
+            className="block w-full px-3 py-2 text-left text-[12.5px] text-soft transition hover:bg-surface-strong disabled:opacity-40"
           >
             {automacaoAtiva ? 'Pausar o bot' : 'Religar o bot'}
           </button>
@@ -184,13 +184,13 @@ export function MenuDoContato({
             type="button"
             disabled={rodando}
             onClick={apagar}
-            className="block w-full border-t border-line px-3 py-2 text-left text-[12px] text-perigo transition hover:bg-rose-400/[0.09] disabled:opacity-40"
+            className="block w-full border-t border-line px-3 py-2 text-left text-[12.5px] text-perigo transition hover:bg-rose-400/[0.09] disabled:opacity-40"
           >
             Apagar contato
           </button>
 
           {erro && (
-            <p role="alert" className="px-3 py-2 text-[10.5px] leading-4 text-perigo">
+            <p role="alert" className="px-3 py-2 text-[11.5px] leading-4 text-perigo">
               {erro}
             </p>
           )}

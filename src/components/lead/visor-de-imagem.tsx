@@ -101,7 +101,7 @@ export function ImagemDaConversa({ url, nome }: { url: string; nome: string }) {
             type="button"
             onClick={() => setAberto(false)}
             aria-label="Fechar"
-            className="absolute top-4 right-4 rounded-lg border border-white/20 bg-black/50 px-3 py-1.5 text-[13px] text-white transition hover:border-white/50"
+            className="absolute top-4 right-4 rounded-lg border border-white/20 bg-black/50 px-3 py-1.5 text-[13.5px] text-white transition hover:border-white/50"
           >
             ✕
           </button>
@@ -117,7 +117,7 @@ export function ImagemDaConversa({ url, nome }: { url: string; nome: string }) {
             target="_blank"
             rel="noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-lg border border-white/20 bg-black/50 px-3 py-1.5 text-[11.5px] text-white transition hover:border-white/50"
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-lg border border-white/20 bg-black/50 px-3 py-1.5 text-[12.5px] text-white transition hover:border-white/50"
           >
             Abrir em nova aba
           </a>

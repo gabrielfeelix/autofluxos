@@ -43,7 +43,7 @@ export function Transcricao({
 
   if (texto) {
     return (
-      <span className="mt-1 block border-l-2 border-line pl-2 font-texto text-[12.5px] leading-[1.45] text-muted italic">
+      <span className="mt-1 block border-l-2 border-line pl-2 font-texto text-[13px] leading-[1.45] text-muted italic">
         {texto}
       </span>
     )
@@ -66,13 +66,13 @@ export function Transcricao({
             setTexto(r.texto ?? '')
           })
         }}
-        className="rounded-full border border-line bg-surface px-2 py-0.5 text-[10px] font-semibold text-soft transition hover:border-primary/40 hover:text-primary disabled:opacity-50"
+        className="rounded-full border border-line bg-surface px-2 py-0.5 text-[11px] font-semibold text-soft transition hover:border-primary/40 hover:text-primary disabled:opacity-50"
       >
         {indo ? 'transcrevendo…' : 'transcrever'}
       </button>
 
       {erro && (
-        <span role="alert" className="ml-1.5 text-[10px] text-perigo">
+        <span role="alert" className="ml-1.5 text-[11px] text-perigo">
           {erro}
         </span>
       )}
