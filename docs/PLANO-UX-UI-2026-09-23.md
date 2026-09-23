@@ -742,19 +742,19 @@ publicada. Publique antes de ligar, senão ninguém recebe resposta.";
 - Menu `⋯`: Ligar/Desligar, Mover para pasta, Subir, Descer, Duplicar, Apagar.
 - Alertas só quando acionáveis: destino/validação pendente, nunca publicada e ligada.
 
-- [ ] **Passo 1:** busca por nome (`?q=`), filtros Canal, Estado (publicadas,
+- [x] **Passo 1:** busca por nome (`?q=`), filtros Canal, Estado (publicadas,
   nunca publicadas, ligadas, desligadas, com pendência) e Pasta, com a mesma
   barra da tarefa 2.3 (reaproveitar o componente se ele ficou genérico; se não,
   extrair `BarraDeLista` de 2.3 para `src/components/design/`).
-- [ ] **Passo 2:** reorganizar a linha como no desenho; a linha inteira continua
+- [x] **Passo 2:** reorganizar a linha como no desenho; a linha inteira continua
   abrindo o editor.
-- [ ] **Passo 3:** pastas: acrescentar **Renomear pasta** (ação nova
+- [x] **Passo 3:** pastas: acrescentar **Renomear pasta** (ação nova
   `acaoRenomearPasta(clienteId, pastaId, nome)` com teste de integração
   `renomear não mexe nos fluxos da pasta`), mantendo "Apagar pasta devolve os
   fluxos para Sem pasta".
-- [ ] **Passo 4:** as outras abas (palavras, eventos, campanhas, sequências)
+- [x] **Passo 4:** as outras abas (palavras, eventos, campanhas, sequências)
   ganham a mesma busca por texto.
-- [ ] **Passo 5:** prints desktop e celular; commit `feat(automacoes): lista com busca, filtros e ações secundárias no menu`.
+- [x] **Passo 5:** prints desktop e celular; commit `feat(automacoes): lista com busca, filtros e ações secundárias no menu`.
 
 ### Tarefa 3.5: salvamento automático com estado claro [A07]
 
@@ -1429,3 +1429,14 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   anúncio de desligar é um cartão no rodapé por portal no `body` (dentro da
   lista, no celular, o `fixed` ficava preso e nascia fora da tela) mais uma
   região viva `sr-only`.
+- 23/09, tarefa 3.4: a barra de Contatos não era genérica; nasceu
+  `BarraDeLista` (`src/components/design/barra-de-lista.tsx`), e **Contatos
+  não foi migrado para ela** (o outro agente estava mexendo em Contatos na
+  mesma hora). Filtro puro em `src/core/lista-de-fluxos.ts`, em memória (a
+  página já lê todos os fluxos). Filtrando, a lista fica plana e cada linha diz
+  a pasta. "Com pendência" = impedimento ou ligada sem nunca publicar. O menu
+  `⋯` (`MenuDoFluxo`) substituiu interruptor, setas, seletor de pasta, Duplicar
+  e Apagar da linha; os quatro componentes antigos foram apagados. Subir/Descer
+  usam a ordem inteira da pasta mesmo com filtro. Resultado das ações sai em
+  `AvisoFlutuante` (portal). "Publique para ligar" deixou de ser alerta (o
+  estado já diz "Nunca publicada · Entrada desligada").

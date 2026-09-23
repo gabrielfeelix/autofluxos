@@ -39,6 +39,31 @@ export async function criarPasta(
 }
 
 /**
+ * Troca o nome da gaveta (A15). Só o nome: os fluxos apontam para o id, então
+ * nenhum deles se mexe.
+ */
+export async function renomearPasta(
+  clienteId: string,
+  pastaId: string,
+  nome: string,
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  const limpo = nome.trim().slice(0, 40)
+  if (limpo === '') return { ok: false, motivo: 'escreva o nome da pasta' }
+
+  const { data, error } = await db()
+    .from('pastas')
+    .update({ nome: limpo })
+    .eq('id', pastaId)
+    .eq('client_id', clienteId)
+    .select('id')
+
+  if (error?.code === '23505') return { ok: false, motivo: `já existe uma pasta “${limpo}”` }
+  if (ehIdInvalido(error)) return { ok: false, motivo: 'esta pasta não existe mais' }
+  if (error) throw new Error(`não deu para renomear a pasta: ${error.message}`)
+  return (data?.length ?? 0) === 1 ? { ok: true } : { ok: false, motivo: 'esta pasta não existe mais' }
+}
+
+/**
  * Apagar a pasta devolve os fluxos para a raiz, é o `on delete set null` da
  * 0029. `cascade` aqui seria um clique de arrumação levando junto o desenho
  * publicado que está atendendo gente.

@@ -98,7 +98,7 @@ import { apagarContato, apagarContatos } from './repos/retencao'
 import { apagarRespostaRapida, criarRespostaRapida } from './repos/respostas-rapidas'
 import { alternarGatilho, apagarGatilho, criarGatilho } from './repos/gatilhos'
 import { alternarCampanha, apagarCampanha, criarCampanha } from './repos/campanhas'
-import { apagarPasta, criarPasta, moverFluxo } from './repos/pastas'
+import { apagarPasta, criarPasta, moverFluxo, renomearPasta } from './repos/pastas'
 import { diasDoPrazo, limparParaCompartilhar, nomeAoImportar } from '@/core/compartilhar'
 import { lerArquivoDeFluxo } from '@/core/arquivo-de-fluxo'
 import {
@@ -1031,6 +1031,22 @@ export async function acaoCriarPasta(
 
   const r = await criarPasta(clienteId, String(formData.get('nome') ?? ''))
   if (!r.ok) return { erro: r.motivo }
+
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  return { ok: true }
+}
+
+/** Renomeia a pasta (A15). Os fluxos dela não se mexem. */
+export async function acaoRenomearPasta(
+  clienteId: string,
+  pastaId: string,
+  nome: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
+
+  const r = await renomearPasta(clienteId, pastaId, nome)
+  if (!r.ok) return { ok: false, erro: r.motivo }
 
   revalidatePath(`/clientes/${clienteId}/fluxos`)
   return { ok: true }

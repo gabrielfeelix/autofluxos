@@ -2,6 +2,17 @@ import Link from 'next/link'
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { rotulosDoEstado, TEXTO_DA_RECUSA } from '@/core/entrada'
+import {
+  casaFluxo,
+  ESTADOS_DO_FILTRO,
+  lerFiltroDeFluxos,
+  ROTULO_DO_ESTADO,
+  semAcento,
+} from '@/core/lista-de-fluxos'
+import { DEFINICAO_DO_CANAL } from '@/core/canais'
+import { BarraDeLista } from '@/components/design/barra-de-lista'
+import { MenuDoFluxo } from '@/components/fluxos/menu-do-fluxo'
+import { RenomearPasta } from '@/components/fluxos/renomear-pasta'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import {
   EsqueletoDeAbas,
@@ -61,10 +72,6 @@ import {
 import { listarTemplatesAprovados } from '@/server/repos/templates'
 import { listarQuadros } from '@/server/repos/quadros'
 import { SeloDoCanal } from '@/components/design/selo-do-canal'
-import { InterruptorDeFluxo } from '@/components/fluxos/interruptor'
-import { MoverFluxo } from '@/components/editor/mover-fluxo'
-import { DuplicarFluxo } from '@/components/fluxos/duplicar'
-import { OrdenarFluxo } from '@/components/fluxos/ordenar'
 import { NomeDoFluxo } from '@/components/editor/nome-do-fluxo'
 import { ETIQUETAS, MODELOS } from '@/exemplos/modelos'
 import { AbaDeTemplates, NovaAutomacao } from '@/components/fluxos/templates'
@@ -140,10 +147,18 @@ export default async function Pagina({
   searchParams,
 }: {
   params: Promise<{ clienteId: string }>
-  searchParams: Promise<{ aba?: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const { clienteId } = await params
-  const { aba: abaPedida } = await searchParams
+  const pedidos = await searchParams
+  const abaPedida = typeof pedidos.aba === 'string' ? pedidos.aba : undefined
+  // Só o que a lista entende passa adiante (A01): o endereço é copiável, e
+  // parâmetro estranho não vira filtro.
+  const parametros: Record<string, string> = {}
+  for (const chave of ['aba', 'q', 'canal', 'estado', 'pasta']) {
+    const valor = pedidos[chave]
+    if (typeof valor === 'string' && valor.trim() !== '') parametros[chave] = valor.trim().slice(0, 80)
+  }
   // Aba desconhecida cai em Fluxos em vez de mostrar nada: o valor vem da URL,
   // e link velho não pode virar tela em branco.
   const aba: Aba = (ABAS_VALIDAS as readonly string[]).includes(abaPedida ?? '')
@@ -172,7 +187,7 @@ export default async function Pagina({
           agora por dentro.
         */}
         <Suspense key={aba} fallback={<Espera aba={aba} />}>
-          <Conteudo cliente={cliente} aba={aba} />
+          <Conteudo cliente={cliente} aba={aba} parametros={parametros} />
         </Suspense>
       </main>
     </ClienteShell>
@@ -193,7 +208,15 @@ function Espera({ aba }: { aba: Aba }) {
   )
 }
 
-async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
+async function Conteudo({
+  cliente,
+  aba,
+  parametros,
+}: {
+  cliente: Cliente
+  aba: Aba
+  parametros: Record<string, string>
+}) {
   /*
    * O carregamento é **por aba**, e a barra é por contagem (T7.1, item 5).
    *
@@ -268,6 +291,54 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
   ])
   const criarPastaComCliente = acaoCriarPasta.bind(null, cliente.id, {})
 
+  /*
+   * As duas conferências, como no editor (T7.2).
+   *
+   * A lista mostra "N impedimento(s)", e esse número tem que ser o mesmo que o
+   * botão Publicar vai cobrar. Contar só os do desenho diria "pronto" sobre o
+   * rascunho que acabou de sair do modelo e ainda diz "Rua Exemplo, 123": a
+   * pessoa abriria o editor esperando publicar e encontraria dois impedimentos.
+   *
+   * Antes da lista, e não dentro da linha, porque o filtro "Com pendência"
+   * precisa do resultado.
+   */
+  const conferencia = new Map(
+    fluxos.map((fluxo) => {
+      const doDesenho = validar(fluxo.rascunho, { iaHabilitada: fluxo.iaHabilitada, canal: fluxo.canal })
+      const daPublicacao = validarPublicacao(fluxo.rascunho)
+      return [
+        fluxo.id,
+        { ok: doDesenho.ok && daPublicacao.ok, erros: [...doDesenho.erros, ...daPublicacao.erros] },
+      ] as const
+    }),
+  )
+  const filtro = lerFiltroDeFluxos(parametros)
+  const filtrando =
+    filtro.q !== '' || filtro.canal !== null || filtro.estado !== null || filtro.pasta !== null
+  const visiveis = fluxos.filter((fluxo) =>
+    casaFluxo(
+      {
+        nome: fluxo.nome,
+        canal: fluxo.canal,
+        publicada: fluxo.versaoPublicadaId !== null,
+        ativo: fluxo.ativo,
+        pastaId: fluxo.pastaId,
+        pendente: !(conferencia.get(fluxo.id)?.ok ?? true),
+      },
+      filtro,
+    ),
+  )
+  const nomeDaPasta = new Map(pastas.map((p) => [p.id, p.nome]))
+  // As outras abas buscam por texto (A01): frase, evento, nome da campanha ou
+  // da sequência, sem acento, como a de fluxos.
+  const termo = semAcento(filtro.q)
+  const casaTexto = (...textos: string[]) =>
+    termo === '' || textos.some((texto) => semAcento(texto).includes(termo))
+  const gatilhosVisiveis = gatilhos.filter((g) => casaTexto(g.frase))
+  const eventosVisiveis = gatilhosDeEvento.filter((g) => casaTexto(g.evento))
+  const campanhasVisiveis = campanhas.filter((c) => casaTexto(c.nome, c.frase))
+  const sequenciasVisiveis = sequencias.filter((q) => casaTexto(q.nome))
+
   /**
    * Os fluxos agrupados por gaveta, com a raiz **por último**.
    *
@@ -276,18 +347,29 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
    * bagunça que a pasta veio arrumar. Sem pasta nenhuma, o agrupamento
    * desaparece e a lista fica como sempre foi.
    */
-  const grupos = [
-    ...pastas.map((pasta) => ({
-      id: pasta.id,
-      nome: pasta.nome,
-      fluxos: fluxos.filter((fluxo) => fluxo.pastaId === pasta.id),
-    })),
-    {
-      id: null,
-      nome: pastas.length > 0 ? 'Sem pasta' : '',
-      fluxos: fluxos.filter((fluxo) => !fluxo.pastaId),
-    },
-  ]
+  const todosDoGrupo = (pastaId: string | null) =>
+    fluxos.filter((fluxo) => (fluxo.pastaId ?? null) === pastaId)
+  /*
+   * Filtrando, a lista fica plana (um grupo só, sem cabeçalho) e cada linha diz
+   * a pasta dela: resultado de busca separado em gavetas obriga a procurar de
+   * novo dentro do resultado.
+   */
+  const grupos = filtrando
+    ? [{ id: null, nome: '', total: 0, fluxos: visiveis }]
+    : [
+        ...pastas.map((pasta) => ({
+          id: pasta.id,
+          nome: pasta.nome,
+          total: todosDoGrupo(pasta.id).length,
+          fluxos: todosDoGrupo(pasta.id),
+        })),
+        {
+          id: null,
+          nome: pastas.length > 0 ? 'Sem pasta' : '',
+          total: todosDoGrupo(null).length,
+          fluxos: todosDoGrupo(null),
+        },
+      ]
   /*
    * Quantas conversas rodam cada fluxo agora (RB-44).
    *
@@ -395,7 +477,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
 
         {aba === 'fluxos' && (
         <section className="app-card overflow-hidden">
-          <header className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
+          <header className="flex flex-col gap-3 border-b border-line px-5 py-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="text-[14.5px] font-bold">Fluxos</h2>
               <p className="mt-0.5 text-[12px] text-dim">
@@ -403,7 +485,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                 verdade.
               </p>
             </div>
-            <span className="flex items-center gap-2">
+            <span className="flex flex-wrap items-center gap-2">
             <ModalFormulario
               botao="+ Nova pasta"
               titulo="Nova pasta"
@@ -434,6 +516,44 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
             </span>
           </header>
 
+          {fluxos.length > 0 && (
+            <div className="border-b border-line px-5 py-3">
+              <BarraDeLista
+                base={`/clientes/${cliente.id}/fluxos`}
+                parametros={parametros}
+                busca={{ chave: 'q', placeholder: 'Buscar automação pelo nome', rotulo: 'Buscar automação pelo nome' }}
+                grupos={[
+                  {
+                    chave: 'estado',
+                    titulo: 'Estado',
+                    opcoes: ESTADOS_DO_FILTRO.map((e) => ({ valor: e, rotulo: ROTULO_DO_ESTADO[e] })),
+                  },
+                  {
+                    chave: 'canal',
+                    titulo: 'Canal',
+                    opcoes: [...new Set(fluxos.map((f) => f.canal))].map((c) => ({
+                      valor: c,
+                      rotulo: DEFINICAO_DO_CANAL[c].nome,
+                    })),
+                  },
+                  ...(pastas.length > 0
+                    ? [
+                        {
+                          chave: 'pasta',
+                          titulo: 'Pasta',
+                          opcoes: [
+                            ...pastas.map((p) => ({ valor: p.id, rotulo: p.nome })),
+                            { valor: 'sem', rotulo: 'Sem pasta' },
+                          ],
+                        },
+                      ]
+                    : []),
+                ]}
+                resumo={filtrando ? `${visiveis.length} de ${fluxos.length}` : undefined}
+              />
+            </div>
+          )}
+
           {fluxos.length === 0 && pastas.length === 0 ? (
             <div className="px-5 py-14 text-center">
               <IlustracaoAutomacoes />
@@ -443,6 +563,16 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
               <p className="mt-1 text-xs leading-5 text-dim">
                 Crie o primeiro fluxo para começar a desenhar o atendimento.
               </p>
+            </div>
+          ) : filtrando && visiveis.length === 0 ? (
+            <div className="px-5 py-12 text-center">
+              <p className="text-[13.5px] font-semibold text-soft">Nenhuma automação com esses filtros</p>
+              <Link
+                href={`/clientes/${cliente.id}/fluxos`}
+                className="mt-2 inline-block text-xs font-semibold text-primary hover:underline"
+              >
+                Limpar filtros
+              </Link>
             </div>
           ) : (
             <ul>
@@ -465,15 +595,14 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                         <span className="text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
                           {grupo.nome}
                         </span>
-                        <span className="text-[10.5px] text-dim">
-                          {grupo.fluxos.length}
-                        </span>
+                        <span className="text-[10.5px] text-dim">{grupo.total}</span>
                         {grupo.id && (
-                          <span className="ml-auto">
+                          <span className="ml-auto flex items-center gap-1.5">
+                            <RenomearPasta clienteId={cliente.id} pastaId={grupo.id} nome={grupo.nome} />
                             <BotaoPerigo
                               rotulo="Apagar pasta"
-                              titulo="Apaga só a gaveta. Os fluxos dentro dela voltam para a raiz."
-                              pergunta={`Apagar a pasta “${grupo.nome}”? Os ${grupo.fluxos.length} fluxo(s) dentro dela voltam para a raiz, nenhum desenho some.`}
+                              titulo="Apaga só a gaveta. Os fluxos dentro dela voltam para Sem pasta."
+                              pergunta={`Apagar a pasta “${grupo.nome}”? Os ${grupo.total} fluxo(s) dentro dela voltam para Sem pasta, nenhum desenho some.`}
                               acao={acaoApagarPasta.bind(null, cliente.id, grupo.id)}
                             />
                           </span>
@@ -483,73 +612,51 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                     <ul>
                       {grupo.fluxos.length === 0 && (
                         <li className="border-b border-line px-5 py-4 text-[11.5px] text-dim">
-                          Pasta vazia, mova um fluxo para cá pelo botão de pasta na linha dele.
+                          Pasta vazia. Mova uma automação para cá pelo menu ⋯ da linha dela.
                         </li>
                       )}
                       {grupo.fluxos.map((fluxo) => {
-                /*
-                 * As duas conferências, como no editor (T7.2).
-                 *
-                 * A lista mostra "N impedimento(s)", e esse número tem que ser o
-                 * mesmo que o botão Publicar vai cobrar. Contar só os do desenho
-                 * diria "pronto" sobre o rascunho que acabou de sair do modelo e
-                 * ainda diz "Rua Exemplo, 123": a pessoa abriria o editor
-                 * esperando publicar e encontraria dois impedimentos.
-                 */
-                const doDesenho = validar(fluxo.rascunho, {
-                  iaHabilitada: fluxo.iaHabilitada,
-                  canal: fluxo.canal,
-                })
-                const daPublicacao = validarPublicacao(fluxo.rascunho)
-                const validacao = {
-                  ok: doDesenho.ok && daPublicacao.ok,
-                  erros: [...doDesenho.erros, ...daPublicacao.erros],
-                }
+                const validacao = conferencia.get(fluxo.id) ?? { ok: true, erros: [] }
                 // Fluxo ligado a um número é o que está atendendo agora. Dizer
                 // isso aqui evita a viagem até a tela do número só para conferir.
                 const papeis = papeisDoFluxo(fluxo.id)
                 const totalDeExecucoes = execucoes.get(fluxo.id) ?? 0
+                const rotulo = rotulosDoEstado({
+                  versao: fluxo.versaoPublicadaId
+                    ? (numeroDaVersao.get(fluxo.versaoPublicadaId) ?? null)
+                    : null,
+                  ativo: fluxo.ativo,
+                })
+                const pasta = fluxo.pastaId ? nomeDaPasta.get(fluxo.pastaId) : undefined
 
                 return (
                   <li
                     key={fluxo.id}
-                    className="group/linha relative flex items-center border-b border-line pr-4 transition last:border-0 hover:bg-surface"
+                    className="group/linha relative flex items-start gap-3 border-b border-line px-4 py-3.5 transition last:border-0 hover:bg-surface md:items-center md:px-5"
                   >
                     {/*
-                      O link cobre a linha por baixo, em vez de envolvê-la.
-
-                      **O lápis precisa ficar colado no nome**, e o nome estava
-                      dentro do link, botão dentro de link é clique ambíguo, que
-                      é a regra que o botão de apagar já respeitava ficando de
-                      fora. Só que "de fora" o empurrava para a ponta direita,
-                      longe do que ele renomeia.
-
-                      Com o link em cobertura, o conteúdo é irmão dele: o lápis
-                      senta ao lado do nome e continua sendo um botão de verdade.
-                      A linha inteira continua clicável, que é o que a área
-                      grande de alvo garantia antes.
+                      O link cobre a linha por baixo, em vez de envolvê-la: o
+                      lápis de renomear senta ao lado do nome e continua sendo
+                      botão de verdade, e a linha inteira continua abrindo o
+                      editor. Quem é interativo aqui dentro é `relative` (senão
+                      o link, que vem antes no DOM, pinta por cima) e devolve
+                      `pointer-events-auto` para si.
                     */}
                     <Link
                       href={`/clientes/${cliente.id}/fluxos/${fluxo.id}`}
                       aria-label={`Abrir a automação ${fluxo.nome}`}
                       className="absolute inset-0"
                     />
-                    {/*
-                      `pointer-events-none` para o clique atravessar até o link;
-                      quem é interativo aqui dentro devolve `pointer-events-auto`
-                      para si mesmo.
-                    */}
-                    <span className="pointer-events-none relative flex min-w-0 flex-1 items-center gap-3.5 px-5 py-[15px]">
-                      <span
-                        className={`size-2 shrink-0 rounded-full ${fluxo.versaoPublicadaId && fluxo.ativo ? 'bg-emerald-400' : 'bg-dim'}`}
-                        aria-hidden
-                      />
+                    <span
+                      className={`relative mt-[7px] size-2 shrink-0 rounded-full md:mt-0 ${fluxo.versaoPublicadaId && fluxo.ativo ? 'bg-emerald-400' : 'bg-dim'}`}
+                      aria-hidden
+                    />
+                    <span className="pointer-events-none relative flex min-w-0 flex-1 flex-col gap-1.5 md:flex-row md:items-center md:gap-4">
                       <span className="min-w-0 flex-1">
-                        {/* O canal fica em cada linha, e não no cabeçalho da
-                            seção: desde a 0037 duas automações da mesma conta
-                            podem ser de canais diferentes, e um selo único lá
-                            em cima mentiria sobre a que estivesse fora dele. */}
-                        <strong className="flex items-center gap-1.5 text-[13.5px] font-semibold">
+                        {/* O canal fica em cada linha: desde a 0037 duas
+                            automações da mesma conta podem ser de canais
+                            diferentes. */}
+                        <strong className="flex flex-wrap items-center gap-1.5 text-[13.5px] font-semibold">
                           <span className="truncate">{fluxo.nome}</span>
                           <NomeDoFluxo
                             clienteId={cliente.id}
@@ -558,124 +665,69 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                             variante="linha"
                           />
                           <SeloDoCanal canal={fluxo.canal} compacto />
+                          {fluxo.iaHabilitada && (
+                            <span className="rounded border border-line px-1.5 text-[10px] font-bold text-info">IA</span>
+                          )}
                         </strong>
                         <span className="mt-0.5 block text-[11px] text-dim">
                           {fluxo.rascunho.nodes.length} blocos
-                          {fluxo.iaHabilitada ? ' · IA ativa' : ''}
+                          {filtrando ? ` · ${pasta ?? 'Sem pasta'}` : ''}
                           {papeis.length > 0 ? ` · ${papeis.join(', ')}` : ''}
                         </span>
-                        {!fluxo.versaoPublicadaId && (
+                        {/* Alertas só quando pedem ação (N09). */}
+                        {fluxo.ativo && !fluxo.versaoPublicadaId && (
                           <span className="mt-0.5 block text-[11px] font-medium text-aviso">
-                            {fluxo.ativo
-                              ? 'Ligada, mas sem versão publicada: não responde ninguém.'
-                              : 'Publique para ligar.'}
+                            Ligada, mas sem versão publicada: não responde ninguém.
                           </span>
                         )}
                       </span>
-                      {!validacao.ok && (
-                        <span className="rounded-full border border-rose-400/25 bg-rose-400/10 px-2.5 py-1 text-[10.5px] font-bold text-perigo">
-                          {validacao.erros.length} impedimento(s)
-                        </span>
-                      )}
-                      {/*
-                        A contagem virou link, e essa é a segunda porta do
-                        histórico de respostas: aqui a pergunta é "o que **esta**
-                        colheu", então ela abre a tela já filtrada nesta
-                        automação. A do topo do editor abre sem filtro.
-
-                        `pointer-events-auto` e `relative` porque o pai é
-                        `pointer-events-none` sobre um link de cobertura: sem os
-                        dois, o clique atravessa e abre o editor, que é o
-                        contrário do que a pessoa pediu.
-                      */}
-                      <Link
-                        href={`/clientes/${cliente.id}/respostas?fluxo=${fluxo.id}`}
-                        title={`Ver o que as pessoas responderam em “${fluxo.nome}”`}
-                        className="pointer-events-auto relative whitespace-nowrap rounded-lg px-2 py-1 text-[11px] text-dim transition hover:bg-primary/[0.08] hover:text-primary"
-                      >
-                        <strong className="font-semibold text-soft">{totalDeExecucoes}</strong>{' '}
-                        {totalDeExecucoes === 1 ? 'resposta' : 'respostas'}
-                      </Link>
-                      {/*
-                        Duas informações, e não um selo (A03). "Publicada" e
-                        "entrada" são perguntas diferentes desde a 0036: um
-                        fluxo desligado continua com a versão dele no ar, ele
-                        só não abre conversa nova. O selo único obrigava a
-                        deduzir uma pela outra; aqui as duas estão escritas.
-                      */}
-                      {(() => {
-                        const rotulo = rotulosDoEstado({
-                          versao: fluxo.versaoPublicadaId
-                            ? (numeroDaVersao.get(fluxo.versaoPublicadaId) ?? null)
-                            : null,
-                          ativo: fluxo.ativo,
-                        })
-                        return (
-                          <span className="whitespace-nowrap text-[11px] text-dim">
-                            <span className={fluxo.versaoPublicadaId ? 'text-soft' : ''}>
-                              {rotulo.publicacao}
-                            </span>
-                            {' · '}
-                            <span
-                              className={`font-semibold ${fluxo.ativo ? 'text-ok' : 'text-aviso'}`}
-                            >
-                              {rotulo.entrada}
-                            </span>
+                      <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-dim">
+                        {!validacao.ok && (
+                          <span className="rounded-full border border-rose-400/25 bg-rose-400/10 px-2 py-0.5 text-[10.5px] font-bold text-perigo">
+                            {validacao.erros.length} impedimento(s)
                           </span>
-                        )
-                      })()}
-                    </span>
-                    {/*
-                      `relative` aqui não é enfeite: o link de cobertura é
-                      `absolute inset-0` e vem antes no DOM, então tudo o que
-                      é irmão dele e fica `static` é pintado por baixo, o
-                      clique chega no link, e o botão parece não funcionar.
-                      Foi exatamente o que acontecia com Apagar e Mover.
-                    */}
-                    {/*
-                      Subir/descer antes do interruptor: a ordem é do grupo, e
-                      os ids do grupo são o que a ação precisa receber inteiro.
-                    */}
-                    <span className="relative mr-2">
-                      <OrdenarFluxo
-                        clienteId={cliente.id}
-                        fluxoId={fluxo.id}
-                        idsDoGrupo={grupo.fluxos.map((f) => f.id)}
-                      />
-                    </span>
-                    <span className="relative mr-3">
-                      <InterruptorDeFluxo
-                        clienteId={cliente.id}
-                        fluxoId={fluxo.id}
-                        ativo={fluxo.ativo}
-                        nome={fluxo.nome}
-                        semVersao={!fluxo.versaoPublicadaId}
-                        emAndamento={emAndamento.get(fluxo.id) ?? 0}
-                      />
-                    </span>
-                    {pastas.length > 0 && (
-                      <span className="relative mr-3">
-                        <MoverFluxo
-                          clienteId={cliente.id}
-                          fluxoId={fluxo.id}
-                          pastaAtual={fluxo.pastaId}
-                          pastas={pastas}
-                        />
+                        )}
+                        {/* Duas informações, e não um selo (A03). */}
+                        <span className="whitespace-nowrap">
+                          <span className={fluxo.versaoPublicadaId ? 'text-soft' : ''}>{rotulo.publicacao}</span>
+                          {' · '}
+                          <span className={`font-semibold ${fluxo.ativo ? 'text-ok' : 'text-aviso'}`}>
+                            {rotulo.entrada}
+                          </span>
+                        </span>
+                        {/*
+                          A contagem é a segunda porta do histórico de
+                          respostas: abre a tela já filtrada nesta automação.
+                        */}
+                        <Link
+                          href={`/clientes/${cliente.id}/respostas?fluxo=${fluxo.id}`}
+                          title={`Ver o que as pessoas responderam em “${fluxo.nome}”`}
+                          className="pointer-events-auto relative whitespace-nowrap rounded-lg py-1 transition hover:text-primary md:px-2"
+                        >
+                          <strong className="font-semibold text-soft">{totalDeExecucoes}</strong>{' '}
+                          {totalDeExecucoes === 1 ? 'resposta' : 'respostas'}
+                        </Link>
                       </span>
-                    )}
-                    {/* Fora do `Link`: botão dentro de link é clique ambíguo. */}
-                    <span className="relative mr-1">
-                      <DuplicarFluxo
-                        clienteId={cliente.id}
-                        fluxoId={fluxo.id}
-                        nome={fluxo.nome}
-                      />
                     </span>
-                    <span className="relative">
-                      <BotaoPerigo
-                        titulo="Apaga esta automação. Recusa enquanto ela estiver ligada a um número."
-                        pergunta={`Apagar a automação "${fluxo.nome}"? O desenho e as versões publicadas dela somem.`}
-                        acao={acaoApagarFluxo.bind(null, cliente.id, fluxo.id)}
+                    <span className="relative flex shrink-0 items-center gap-1">
+                      <Link
+                        href={`/clientes/${cliente.id}/fluxos/${fluxo.id}`}
+                        className="hidden rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:border-strong hover:text-ink md:inline-block"
+                      >
+                        Editar
+                      </Link>
+                      <MenuDoFluxo
+                        clienteId={cliente.id}
+                        fluxo={{
+                          id: fluxo.id,
+                          nome: fluxo.nome,
+                          ativo: fluxo.ativo,
+                          publicada: fluxo.versaoPublicadaId !== null,
+                          pastaId: fluxo.pastaId,
+                        }}
+                        pastas={pastas}
+                        idsDoGrupo={todosDoGrupo(fluxo.pastaId ?? null).map((f) => f.id)}
+                        emAndamento={emAndamento.get(fluxo.id) ?? 0}
                       />
                     </span>
                   </li>
@@ -687,7 +739,6 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
               )}
             </ul>
           )}
-
 
         </section>
         )}
@@ -766,6 +817,15 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
               </ModalFormulario>
             )}
           </header>
+          {gatilhos.length > 0 && (
+            <BuscaDaAba
+              base={`/clientes/${cliente.id}/fluxos`}
+              parametros={parametros}
+              placeholder="Buscar palavra-chave"
+              visiveis={gatilhosVisiveis.length}
+              total={gatilhos.length}
+            />
+          )}
 
           {gatilhos.length === 0 ? (
             <div className="border-b border-line px-5 py-10 text-center">
@@ -779,7 +839,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
             </div>
           ) : (
             <ul>
-              {gatilhos.map((gatilho) => {
+              {gatilhosVisiveis.map((gatilho) => {
                 const destino = fluxos.find((item) => item.id === gatilho.fluxoId)
 
                 return (
@@ -871,6 +931,15 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
               </ModalFormulario>
             )}
           </header>
+          {gatilhosDeEvento.length > 0 && (
+            <BuscaDaAba
+              base={`/clientes/${cliente.id}/fluxos`}
+              parametros={parametros}
+              placeholder="Buscar evento"
+              visiveis={eventosVisiveis.length}
+              total={gatilhosDeEvento.length}
+            />
+          )}
 
           {gatilhosDeEvento.length === 0 ? (
             <div className="border-b border-line px-5 py-10 text-center">
@@ -881,7 +950,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
             </div>
           ) : (
             <ul>
-              {gatilhosDeEvento.map((gatilho) => {
+              {eventosVisiveis.map((gatilho) => {
                 const destino = fluxos.find((item) => item.id === gatilho.fluxoId)
 
                 return (
@@ -1007,6 +1076,15 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
               </ModalFormulario>
             )}
           </header>
+          {campanhas.length > 0 && (
+            <BuscaDaAba
+              base={`/clientes/${cliente.id}/fluxos`}
+              parametros={parametros}
+              placeholder="Buscar campanha pelo nome ou frase"
+              visiveis={campanhasVisiveis.length}
+              total={campanhas.length}
+            />
+          )}
 
           {campanhas.length === 0 ? (
             <div className="border-b border-line px-5 py-10 text-center">
@@ -1018,7 +1096,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
             </div>
           ) : (
             <ul>
-              {campanhas.map((campanha) => {
+              {campanhasVisiveis.map((campanha) => {
                 const destino = fluxos.find((item) => item.id === campanha.fluxoId)
                 const trouxe = contatosDaCampanha.get(campanha.id) ?? 0
 
@@ -1094,6 +1172,15 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
               />
             </ModalFormulario>
           </header>
+          {sequencias.length > 0 && (
+            <BuscaDaAba
+              base={`/clientes/${cliente.id}/fluxos`}
+              parametros={parametros}
+              placeholder="Buscar sequência pelo nome"
+              visiveis={sequenciasVisiveis.length}
+              total={sequencias.length}
+            />
+          )}
 
           {sequencias.length === 0 ? (
             <div className="border-b border-line px-5 py-10 text-center">
@@ -1104,7 +1191,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
             </div>
           ) : (
             <ul>
-              {sequencias.map((sequencia) => {
+              {sequenciasVisiveis.map((sequencia) => {
                 const contagem = inscricoes.get(sequencia.id) ?? {
                   ativas: 0,
                   concluidas: 0,
@@ -1379,4 +1466,38 @@ function AvisoDoDestino({
       ? 'Ligada, mas o destino nunca foi publicado: não abre nada.'
       : 'Publique o destino para ligar.'
   return <span className="mt-1 block text-[11px] font-medium text-aviso">{texto}</span>
+}
+
+/** A busca por texto das abas de gatilhos e sequências, com o vazio do filtro. */
+function BuscaDaAba({
+  base,
+  parametros,
+  placeholder,
+  visiveis,
+  total,
+}: {
+  base: string
+  parametros: Record<string, string>
+  placeholder: string
+  visiveis: number
+  total: number
+}) {
+  const buscando = (parametros.q ?? '') !== ''
+  return (
+    <>
+      <div className="border-b border-line px-5 py-3">
+        <BarraDeLista
+          base={base}
+          parametros={parametros}
+          busca={{ chave: 'q', placeholder, rotulo: placeholder }}
+          resumo={buscando ? `${visiveis} de ${total}` : undefined}
+        />
+      </div>
+      {buscando && visiveis === 0 && (
+        <p className="border-b border-line px-5 py-8 text-center text-[12.5px] text-dim">
+          Nada com essa busca.
+        </p>
+      )}
+    </>
+  )
 }
