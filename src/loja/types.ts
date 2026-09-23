@@ -14,3 +14,6 @@ export type Loja = {
   lerConfig(): Promise<ResultadoDaLoja<ConfigDaLoja>>
 }
 export type DadosDaLoja = { endereco: string; codigoDaLoja: string | null; sufixo: string }
+
+/** Qual caminho da REST respondeu pelo estoque: MSI (2.3+) ou o legado. */
+export type ViaDeEstoque = 'msi' | 'legado'

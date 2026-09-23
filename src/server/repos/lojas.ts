@@ -1,4 +1,5 @@
 import 'server-only'
+import type { ViaDeEstoque } from '@/loja/types'
 import { db, ehIdInvalido } from '../db'
 
 /**
@@ -14,7 +15,7 @@ import { db, ehIdInvalido } from '../db'
  * servidor, nunca do modelo nem do navegador sem conferência.
  */
 
-export type ViaDeEstoque = 'msi' | 'legado'
+export type { ViaDeEstoque } from '@/loja/types'
 
 export type LojaIntegrada = {
   id: string
