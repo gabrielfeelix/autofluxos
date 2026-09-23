@@ -241,7 +241,7 @@ export async function definirPapelNaConta(
   /*
    * **Rebaixar o último dono é recusado** (UI-18).
    *
-   * `removerDaConta` já protegia a saída do último `owner` desde sempre, mas a
+   * `removerComDestino` já protegia a saída do último `owner` desde sempre, mas a
    * troca de papel não: `owner` -> `member` num clique deixava a conta sem
    * dono nenhum, pela porta ao lado. O caminho de volta é um `insert` na mão,
    * e é o tipo de estado que ninguém percebe ter criado até precisar.
@@ -277,37 +277,81 @@ export async function definirPapelNaConta(
 }
 
 /**
- * Tira alguém da conta.
+ * Tira alguém da conta **e** decide o destino do que era dela (E15, RB-40).
  *
- * **Recusa quando é o último dono.** Uma conta sem dono é uma conta que só a
- * 4YU consegue mexer, e o caminho de volta é um `insert` na mão, exatamente o
- * tipo de estado que ninguém percebe ter criado até precisar.
+ * Numa transação só: reatribuir e remover são uma decisão, e metade dela
+ * gravada (a pessoa saiu, as conversas continuam apontando para ela) é
+ * exatamente a referência sem tratamento que a RB-40 proíbe.
  *
- * Não apaga o usuário: ele pode ser dono de outra companhia, e apagar gente por
- * causa de um desvínculo é o erro que não tem desfazer.
+ * `destino` nulo quer dizer "deixar sem responsável": conversas voltam para a
+ * fila, cartões e atividades abertas ficam sem dono. Com destino, ele precisa
+ * ser outra pessoa **desta** conta, conferido aqui dentro, e nunca confiado à
+ * tela. Só o que está aberto muda de mão: venda ganha e atividade concluída
+ * continuam no nome de quem fez (é histórico).
  */
-export async function removerDaConta(
+export async function removerComDestino(
   contaId: string,
   usuarioId: string,
-): Promise<{ ok: true } | { ok: false; motivo: string }> {
-  const { rows } = await bancoDoLogin().query(
-    `select "userId", "role" from public.af_membros where "organizationId" = $1`,
-    [contaId],
-  )
+  destino: string | null,
+): Promise<
+  | { ok: true; conversas: number; cartoes: number; atividades: number }
+  | { ok: false; motivo: string }
+> {
+  if (destino === usuarioId) return { ok: false, motivo: 'escolha outra pessoa para receber' }
 
-  const alvo = rows.find((linha) => String(linha.userId) === usuarioId)
-  if (!alvo) return { ok: false, motivo: 'esta pessoa não está nesta conta' }
+  const cliente = await bancoDoLogin().connect()
+  try {
+    await cliente.query('begin')
+    const { rows } = await cliente.query(
+      `select "userId", "role" from public.af_membros where "organizationId" = $1 for update`,
+      [contaId],
+    )
+    const alvo = rows.find((linha) => String(linha.userId) === usuarioId)
+    if (!alvo) {
+      await cliente.query('rollback')
+      return { ok: false, motivo: 'esta pessoa não está nesta conta' }
+    }
+    const donos = rows.filter((linha) => String(linha.role) === 'owner')
+    if (String(alvo.role) === 'owner' && donos.length === 1) {
+      await cliente.query('rollback')
+      return { ok: false, motivo: 'esta é a única pessoa dona da conta, dê a posse a outra antes' }
+    }
+    if (destino !== null && !rows.some((linha) => String(linha.userId) === destino)) {
+      await cliente.query('rollback')
+      return { ok: false, motivo: 'quem vai receber não está nesta conta' }
+    }
 
-  const donos = rows.filter((linha) => String(linha.role) === 'owner')
-  if (String(alvo.role) === 'owner' && donos.length === 1) {
-    return { ok: false, motivo: 'esta é a única pessoa dona da conta, dê a posse a outra antes' }
+    const conversas = await cliente.query(
+      'update public.contacts set atribuido_a = $3 where client_id = $1 and atribuido_a = $2',
+      [contaId, usuarioId, destino],
+    )
+    const cartoes = await cliente.query(
+      `update public.quadro_cartoes set responsavel = $3
+        where client_id = $1 and responsavel = $2 and situacao = 'aberta'`,
+      [contaId, usuarioId, destino],
+    )
+    const atividades = await cliente.query(
+      `update public.atividades set responsavel = $3
+        where client_id = $1 and responsavel = $2 and situacao = 'aberta'`,
+      [contaId, usuarioId, destino],
+    )
+    await cliente.query(
+      'delete from public.af_membros where "organizationId" = $1 and "userId" = $2',
+      [contaId, usuarioId],
+    )
+    await cliente.query('commit')
+    return {
+      ok: true,
+      conversas: conversas.rowCount ?? 0,
+      cartoes: cartoes.rowCount ?? 0,
+      atividades: atividades.rowCount ?? 0,
+    }
+  } catch (erro) {
+    await cliente.query('rollback').catch(() => {})
+    throw erro
+  } finally {
+    cliente.release()
   }
-
-  await bancoDoLogin().query(
-    'delete from public.af_membros where "organizationId" = $1 and "userId" = $2',
-    [contaId, usuarioId],
-  )
-  return { ok: true }
 }
 
 /** O usuário com este e-mail, se existir. É como "cadastrar" vira "vincular". */

@@ -94,7 +94,7 @@ export function Distribuicao({
   return (
     <section className="app-card mt-6 overflow-hidden">
       <header className="border-b border-line px-5 py-4">
-        <h2 className="text-[14.5px] font-bold">Distribuição dos leads</h2>
+        <h2 className="text-[14.5px] font-bold">Distribuição do atendimento</h2>
         <p className="mt-1 max-w-[640px] text-[12px] leading-5 text-dim">
           Quem recebe a conversa quando o bot desiste e alguém precisa atender.
         </p>

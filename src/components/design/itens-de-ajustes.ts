@@ -51,7 +51,7 @@ export const GRUPOS: { titulo: string | null; itens: { chave: TelaDeAjustes; rot
     titulo: 'Conta',
     itens: [
       { chave: 'negocio', rotulo: 'Dados da empresa' },
-      { chave: 'equipe', rotulo: 'Equipe' },
+      { chave: 'equipe', rotulo: 'Pessoas e acesso' },
       /*
        * Recursos entra em "Conta", e não em "Atendimento".
        *

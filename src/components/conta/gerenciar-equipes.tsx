@@ -19,9 +19,12 @@ import { useConfirmar } from '@/components/design/confirmar'
 export function GerenciarEquipes({
   clienteId,
   equipes,
+  perda = {},
 }: {
   clienteId: string
   equipes: { id: string; nome: string; pessoas: number }[]
+  /** Por equipe, quem está nela e se fica sem alcance nenhum sem ela (E15). */
+  perda?: Record<string, { nome: string; semAlcance: boolean }[]>
 }) {
   const [nome, setNome] = useState('')
   const [erro, setErro] = useState<string | null>(null)
@@ -44,10 +47,15 @@ export function GerenciarEquipes({
 
   const arquivar = (equipe: { id: string; nome: string; pessoas: number }) => {
     setErro(null)
+    const pessoas = perda[equipe.id] ?? []
+    const semAlcance = pessoas.filter((pessoa) => pessoa.semAlcance).map((pessoa) => pessoa.nome)
     const aviso =
-      equipe.pessoas > 0
-        ? ` ${equipe.pessoas} pessoa(s) perdem o escopo desta equipe. Quem estiver em "da equipe dela" e não tiver outra passa a não alcançar nada.`
-        : ''
+      pessoas.length === 0
+        ? ''
+        : ` Perdem o escopo desta equipe: ${pessoas.map((pessoa) => pessoa.nome).join(', ')}.` +
+          (semAlcance.length > 0
+            ? ` Ficam sem alcance nenhum, porque não estão em outra equipe: ${semAlcance.join(', ')}.`
+            : '')
     confirmar({
       titulo: `Arquivar a equipe ${equipe.nome}?`,
       descricao: `O histórico continua legível.${aviso}`,

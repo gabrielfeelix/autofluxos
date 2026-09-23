@@ -160,10 +160,16 @@ export async function acaoAplicarModelo(
 export async function acaoPendenciasDoMembro(
   clienteId: string,
   usuarioId: string,
-): Promise<{ ok: boolean; conversas?: number; cartoes?: number; erro?: string }> {
+): Promise<{
+  ok: boolean
+  conversas?: number
+  cartoes?: number
+  atividades?: number
+  erro?: string
+}> {
   const acesso = await exigirCapacidade(clienteId, 'configurar_empresa', 'todos')
   if (recusou(acesso)) return acesso
 
   const r = await pendenciasDoMembro(clienteId, usuarioId)
-  return { ok: true, conversas: r.conversas, cartoes: r.cartoes }
+  return { ok: true, ...r }
 }

@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { acaoDefinirPapelNaConta, acaoRemoverDaConta } from '@/server/acoes'
+import { acaoDefinirPapelNaConta } from '@/server/acoes'
 import { acaoPendenciasDoMembro } from '@/server/acoes-acesso'
 import type { OpcaoDropdown } from '@/components/design/dropdown'
 import { Dropdown } from '@/components/design/dropdown'
 import { EditorDeAcesso, type MembroParaAcesso } from './editor-de-acesso'
 import { ehPapelDaConta, resumoDoAcesso, rotuloDoPapel, type Politica } from '@/core/permissoes'
-import { useConfirmar } from '@/components/design/confirmar'
+import { RemoverComDestino, type Pendencias } from './remover-com-destino'
 
 type Membro = {
   id: string
@@ -34,15 +34,18 @@ export function LinhaDaEquipe({
   papeis,
   podeMexer,
   equipesDaConta = [],
+  pessoas = [],
 }: {
   clienteId: string
   membro: Membro
   papeis: OpcaoDropdown[]
   podeMexer: boolean
   equipesDaConta?: { id: string; nome: string }[]
+  /** Quem pode receber as pendências se esta pessoa sair. */
+  pessoas?: { id: string; nome: string }[]
 }) {
   const [erro, setErro] = useState<string | null>(null)
-  const { confirmar, dialogo } = useConfirmar()
+  const [removendo, setRemovendo] = useState<Pendencias | null>(null)
   const [papel, setPapel] = useState(membro.papel)
   const [editando, setEditando] = useState<MembroParaAcesso | null>(null)
   const [rodando, comecar] = useTransition()
@@ -73,37 +76,35 @@ export function LinhaDaEquipe({
   }
 
   /**
-   * Remover **conta o que fica pendurado antes de perguntar** (RB-40).
+   * Remover **conta o que fica pendurado antes de perguntar** (RB-40, E15).
    *
    * "Remover alguém da equipe exige decidir destino das atribuições e
-   * atividades abertas; nunca deixar referências sem tratamento." Contar e
-   * dizer o número é o mínimo: sem ele, a pessoa confirma sem saber que oito
-   * conversas vão ficar sem dono, e descobre pela fila parada.
+   * atividades abertas; nunca deixar referências sem tratamento." O modal
+   * pede o destino, e o servidor reatribui e remove juntos.
    */
   const remover = () => {
     setErro(null)
     comecar(async () => {
-      const pendencias = await acaoPendenciasDoMembro(clienteId, membro.id)
-
-      const resumo =
-        pendencias.ok && (pendencias.conversas || pendencias.cartoes)
-          ? ` Ficam sem dono: ${pendencias.conversas ?? 0} conversa(s) e ` +
-            `${pendencias.cartoes ?? 0} cartão(ões) aberto(s). ` +
-            'Reatribua antes, ou eles voltam para a fila de ninguém.'
-          : ''
-
-      confirmar({
-        titulo: `Tirar ${membro.nome} desta conta?`,
-        descricao: `A pessoa continua existindo no sistema.${resumo}`,
-        rotulo: 'Tirar da conta',
-        aoConfirmar: () => acaoRemoverDaConta(clienteId, membro.id),
-      })
+      const r = await acaoPendenciasDoMembro(clienteId, membro.id)
+      if (!r.ok) {
+        setErro(r.erro ?? 'não deu para conferir as pendências')
+        return
+      }
+      setRemovendo({ conversas: r.conversas ?? 0, cartoes: r.cartoes ?? 0, atividades: r.atividades ?? 0 })
     })
   }
 
   return (
     <li className="border-b border-line px-5 py-4 last:border-0">
-      {dialogo}
+      {removendo && (
+        <RemoverComDestino
+          clienteId={clienteId}
+          membro={membro}
+          pendencias={removendo}
+          pessoas={pessoas}
+          aoFechar={() => setRemovendo(null)}
+        />
+      )}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <span className="min-w-0 flex-1">
           <strong className="flex items-center gap-2 text-[13.5px] font-semibold">

@@ -1055,17 +1055,17 @@ do Inbox continua sendo só a entrada ("+ Anotar").
 
 ### Tarefa 7.4: Pessoas e acesso, e remoção com destino [E5, E20, E15, S07, E6 parcial]
 
-- [ ] **Passo 1:** página renomeada "Pessoas e acesso" com três blocos: Pessoas,
+- [x] **Passo 1:** página renomeada "Pessoas e acesso" com três blocos: Pessoas,
   Equipes, Distribuição do atendimento.
-- [ ] **Passo 2:** remover pessoa com pendências exige escolher destino
+- [x] **Passo 2:** remover pessoa com pendências exige escolher destino
   (reatribuir para X, deixar sem responsável) antes de confirmar; ação no
   servidor faz a reatribuição e a remoção juntas. Teste de integração:
   `remover com destino reatribui conversas, cartões e atividades abertas`.
-- [ ] **Passo 3:** arquivar equipe lista quem perde alcance.
-- [ ] **Passo 4:** cadastro de pessoa com senha ganha o aviso "Acesso
+- [x] **Passo 3:** arquivar equipe lista quem perde alcance.
+- [x] **Passo 4:** cadastro de pessoa com senha ganha o aviso "Acesso
   provisório: peça para a pessoa trocar a senha no primeiro acesso." (convite
   por e-mail fica na tarefa 10.6).
-- [ ] **Passo 5:** commit `feat(equipe): pessoas e acesso, remoção com destino das pendências`.
+- [x] **Passo 5:** commit `feat(equipe): pessoas e acesso, remoção com destino das pendências`.
 
 ### Tarefa 7.5: "Você": perfil próprio no rodapé da barra lateral (pedida pelo Gabriel em 23/09)
 

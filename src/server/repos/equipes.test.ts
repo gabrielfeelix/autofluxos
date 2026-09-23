@@ -186,8 +186,8 @@ describe.skipIf(!temCredencial)('o que fica pendurado', () => {
    * referências sem tratamento**. Contar é o mínimo: sem o número, quem remove
    * confirma sem saber que oito conversas vão ficar sem dono.
    */
-  it('conta conversas e cartões da pessoa', async () => {
+  it('conta conversas, cartões e atividades da pessoa', async () => {
     const vazio = await pendenciasDoMembro(empresaA, pessoa)
-    expect(vazio).toEqual({ conversas: 0, cartoes: 0 })
+    expect(vazio).toEqual({ conversas: 0, cartoes: 0, atividades: 0 })
   })
 })

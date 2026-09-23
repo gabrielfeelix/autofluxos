@@ -338,8 +338,8 @@ export default async function Pagina({
           <Cartao
             href={`/clientes/${cliente.id}/ajustes/equipe`}
             icone={ICONE_DA_TELA['equipe']}
-            titulo="Equipe"
-            descricao="Quem entra nesta conta e o que cada um pode fazer. Defina quem pode atender e o que cada pessoa pode acessar."
+            titulo="Pessoas e acesso"
+            descricao="Quem entra nesta conta, o que cada pessoa pode fazer, equipes e distribuição do atendimento."
             estado={
               <Selo tom={equipe.length === 0 ? 'alerta' : 'ok'}>
                 {equipe.length === 0

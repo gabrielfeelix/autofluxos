@@ -73,7 +73,7 @@ import {
   acharUsuarioPorEmail,
   definirPapelNaConta,
   membrosDaConta,
-  removerDaConta,
+  removerComDestino,
 } from './repos/usuarios'
 import { autenticacao } from './auth'
 import { registrar } from './repos/auditoria'
@@ -1929,11 +1929,13 @@ export async function acaoDefinirPapelNaConta(
 export async function acaoRemoverDaConta(
   clienteId: string,
   usuarioId: string,
+  destino: string | null,
 ): Promise<{ ok: boolean; erro?: string }> {
   const acesso = await exigirAcessoAoCliente(clienteId)
   if (!podeAdministrarConta(acesso)) return { ok: false, erro: SO_QUEM_ADMINISTRA }
 
-  const r = await removerDaConta(clienteId, usuarioId)
+  // Reatribuir e remover juntos, numa transação (E15): ver `removerComDestino`.
+  const r = await removerComDestino(clienteId, usuarioId, destino)
   if (!r.ok) return { ok: false, erro: r.motivo }
 
   await registrar({

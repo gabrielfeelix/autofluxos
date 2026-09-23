@@ -13,7 +13,7 @@ import { contarAbertasPorAtendente } from '@/server/repos/leads'
 import { conferirAcessoAoCliente, podeAdministrarConta } from '@/server/sessao'
 import { capacidadesPorMembro, equipesPorMembro, listarEquipes } from '@/server/repos/equipes'
 import { GerenciarEquipes } from '@/components/conta/gerenciar-equipes'
-import { DETALHE_DO_PAPEL, ROTULO_DO_PAPEL } from '@/core/permissoes'
+import { DETALHE_DO_PAPEL, ROTULO_DO_PAPEL, ehPapelDaConta, resumoDoAcesso } from '@/core/permissoes'
 
 export const dynamic = 'force-dynamic'
 
@@ -82,32 +82,55 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
     }
   })
 
+  /*
+   * Quem cada equipe leva junto ao ser arquivada (E15). "Fica sem alcance" é
+   * quem, sem esta equipe, passa a não alcançar contato nenhum: calculado pela
+   * mesma regra do resumo, com a equipe tirada.
+   */
+  const perdaPorEquipe = Object.fromEntries(
+    equipesDaConta.map((time) => {
+      const dentro = equipe.filter((membro) => (porMembro.get(membro.id) ?? []).includes(time.id))
+      return [
+        time.id,
+        dentro.map((membro) => ({
+          nome: membro.nome,
+          semAlcance: resumoDoAcesso({
+            papel: ehPapelDaConta(membro.papel) ? membro.papel : null,
+            usuarioId: membro.id,
+            equipes: (porMembro.get(membro.id) ?? []).filter((id) => id !== time.id),
+            sobrescritas: capacidades.get(membro.id) ?? {},
+          }).semAlcance,
+        })),
+      ]
+    }),
+  )
+
   return (
     <AjustesShell cliente={cliente} ativa="equipe">
       <main className="w-full max-w-[1100px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <Trilha
           caminho={[
             { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },
-            { rotulo: 'Equipe' },
+            { rotulo: 'Pessoas e acesso' },
           ]}
         />
-        <h1 className="text-[25px] font-bold tracking-[-0.02em]">Equipe</h1>
+        <h1 className="text-[25px] font-bold tracking-[-0.02em]">Pessoas e acesso</h1>
         <p className="mt-1.5 mb-6 max-w-[650px] text-[13px] leading-6 text-dim">
-          Quem entra nesta conta e o que cada um pode fazer. É desta lista que sai
-          o rail <strong className="text-muted">Atribuído</strong> do Inbox, quem
-          não está aqui não aparece para assumir conversa.
+          Quem entra nesta conta e o que cada pessoa pode fazer. Só quem está aqui
+          aparece para assumir conversa no Inbox.
         </p>
 
         <section className="app-card overflow-hidden">
           <header className="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
             <h2 className="text-[14.5px] font-bold">
-              {equipe.length} {equipe.length === 1 ? 'pessoa' : 'pessoas'}
+              Pessoas{' '}
+              <span className="font-semibold text-dim">{equipe.length}</span>
             </h2>
             {podeMexer && (
               <ModalFormulario
                 botao="+ Cadastrar pessoa"
                 titulo="Adicionar alguém"
-                descricao="A senha é definida aqui e combinada por fora, ainda não há convite por e-mail, porque o servidor é compartilhado com outro produto. E-mail que já existe apenas liga a pessoa a esta conta."
+                descricao="Acesso provisório: peça para a pessoa trocar a senha no primeiro acesso (em Você, no rodapé da barra). E-mail que já existe só liga a pessoa a esta conta."
                 rotuloEnviar="Adicionar"
                 variante={equipe.length === 0 ? 'primario' : 'secundario'}
                 action={acaoCadastrarPessoaNaConta.bind(null, clienteId, {})}
@@ -173,6 +196,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
                   papeis={PAPEIS}
                   podeMexer={podeMexer}
                   equipesDaConta={equipesDaConta}
+                  pessoas={equipe.map((pessoa) => ({ id: pessoa.id, nome: pessoa.nome }))}
                 />
               ))}
             </ul>
@@ -180,7 +204,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         </section>
 
         {podeMexer && (
-          <GerenciarEquipes clienteId={clienteId} equipes={equipesDaConta} />
+          <GerenciarEquipes clienteId={clienteId} equipes={equipesDaConta} perda={perdaPorEquipe} />
         )}
 
         <Distribuicao

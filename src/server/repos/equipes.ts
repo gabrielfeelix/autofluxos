@@ -254,8 +254,8 @@ export async function capacidadesPorMembro(
 export async function pendenciasDoMembro(
   clienteId: string,
   usuarioId: string,
-): Promise<{ conversas: number; cartoes: number }> {
-  const [conversas, cartoes] = await Promise.all([
+): Promise<{ conversas: number; cartoes: number; atividades: number }> {
+  const [conversas, cartoes, atividades] = await Promise.all([
     db()
       .from('contacts')
       .select('id', { count: 'exact', head: true })
@@ -267,7 +267,17 @@ export async function pendenciasDoMembro(
       .eq('client_id', clienteId)
       .eq('responsavel', usuarioId)
       .eq('situacao', 'aberta'),
+    db()
+      .from('atividades')
+      .select('id', { count: 'exact', head: true })
+      .eq('client_id', clienteId)
+      .eq('responsavel', usuarioId)
+      .eq('situacao', 'aberta'),
   ])
 
-  return { conversas: conversas.count ?? 0, cartoes: cartoes.count ?? 0 }
+  return {
+    conversas: conversas.count ?? 0,
+    cartoes: cartoes.count ?? 0,
+    atividades: atividades.count ?? 0,
+  }
 }
