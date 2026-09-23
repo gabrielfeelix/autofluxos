@@ -1,5 +1,8 @@
 # Handoff: 19/ago/2026, atualizado em 04/set
 
+> **Plano de UX de 23/set/2026 (em execução):** onde parou e o próximo passo
+> em [HANDOFF-23-SET-UX-FASE-1.md](HANDOFF-23-SET-UX-FASE-1.md).
+
 > **Magento / cross-sell da PCYES (23/set/2026):** o que falta está em
 > [HANDOFF-23-SET-MAGENTO.md](HANDOFF-23-SET-MAGENTO.md).
 
