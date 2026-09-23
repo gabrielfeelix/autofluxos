@@ -20,6 +20,22 @@ export const GRUPOS: { titulo: string | null; itens: { chave: TelaDeAjustes; rot
   // O índice fica solto no topo, sem rótulo de grupo: ele não é um assunto, é
   // o caminho de volta para a visão geral.
   { titulo: null, itens: [{ chave: 'inicio', rotulo: 'Visão geral' }] },
+  /*
+   * Grupos por intenção (tarefa 10.1 do plano de UX de 23/09), na mesma ordem
+   * da Visão geral. As rotas não mudaram; só nome e lugar.
+   *
+   * Objetivo e recursos mora em Organização porque o que se decide ali é que
+   * partes do produto esta empresa usa, e não como ela atende.
+   */
+  {
+    titulo: 'Organização',
+    itens: [
+      { chave: 'negocio', rotulo: 'Dados da empresa' },
+      { chave: 'equipe', rotulo: 'Pessoas e acesso' },
+      { chave: 'recursos', rotulo: 'Objetivo e recursos' },
+      { chave: 'plano', rotulo: 'Plano e consumo' },
+    ],
+  },
   {
     titulo: 'Canais',
     itens: [
@@ -28,10 +44,15 @@ export const GRUPOS: { titulo: string | null; itens: { chave: TelaDeAjustes; rot
     ],
   },
   {
-    titulo: 'Atendimento',
+    titulo: 'Automação de resposta',
     itens: [
       { chave: 'contexto', rotulo: 'Conhecimento da IA' },
-      { chave: 'horario', rotulo: 'Horário de atendimento' },
+      { chave: 'horario', rotulo: 'Horário e retomada' },
+    ],
+  },
+  {
+    titulo: 'Ferramentas do atendimento',
+    itens: [
       { chave: 'respostas-rapidas', rotulo: 'Respostas rápidas' },
       { chave: 'etiquetas', rotulo: 'Etiquetas' },
       { chave: 'produtos', rotulo: 'Catálogo' },
@@ -39,29 +60,12 @@ export const GRUPOS: { titulo: string | null; itens: { chave: TelaDeAjustes; rot
     ],
   },
   {
-    titulo: 'Integrações',
+    titulo: 'Conexões e APIs',
     itens: [
       // "Todas" primeiro porque é a visão, e as outras duas são o detalhe dela.
-      { chave: 'integracoes', rotulo: 'Todas as integrações' },
-      { chave: 'anuncios', rotulo: 'Captação por anúncios' },
+      { chave: 'integracoes', rotulo: 'Todas as conexões' },
+      { chave: 'anuncios', rotulo: 'Anúncios' },
       { chave: 'chaves', rotulo: 'Chaves de API' },
     ],
   },
-  {
-    titulo: 'Conta',
-    itens: [
-      { chave: 'negocio', rotulo: 'Dados da empresa' },
-      { chave: 'equipe', rotulo: 'Pessoas e acesso' },
-      /*
-       * Recursos entra em "Conta", e não em "Atendimento".
-       *
-       * O que se decide ali é **que partes do produto esta empresa usa**, e não
-       * como ela atende. É a tradução do §4.2: "CRM fica disponível em
-       * Configurações → Recursos, com explicação e botão Ativar CRM".
-       */
-      { chave: 'recursos', rotulo: 'Personalizar sistema' },
-      { chave: 'plano', rotulo: 'Plano e consumo' },
-    ],
-  },
 ]
-

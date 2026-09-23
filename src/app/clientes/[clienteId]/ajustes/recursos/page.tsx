@@ -59,10 +59,10 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         <Trilha
           caminho={[
             { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },
-            { rotulo: 'Personalizar sistema' },
+            { rotulo: 'Objetivo e recursos' },
           ]}
         />
-        <h1 className="text-[25px] font-bold tracking-[-0.02em]">Personalizar sistema</h1>
+        <h1 className="text-[25px] font-bold tracking-[-0.02em]">Objetivo e recursos</h1>
         <p className="mt-1.5 mb-6 max-w-[650px] text-[13px] leading-6 text-dim">
           O que esta conta usa do produto. Ninguém precisa de tudo: quem só quer
           atender mais rápido não precisa montar funil nem desenhar chatbot, e o

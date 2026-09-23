@@ -70,10 +70,10 @@ export default async function Pagina({
           <Trilha
             caminho={[
               { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },
-              { rotulo: 'Captação por anúncios' },
+              { rotulo: 'Anúncios' },
             ]}
           />
-          <h1 className="text-[25px] font-bold tracking-[-0.02em]">Captação por anúncios</h1>
+          <h1 className="text-[25px] font-bold tracking-[-0.02em]">Anúncios</h1>
           <p className="mt-1.5 max-w-[620px] text-[13px] leading-6 text-dim">
             Quem preenche o formulário de um anúncio no Facebook ou no Instagram entra aqui
             como lead, com o telefone e a campanha de onde veio, sem planilha e sem

@@ -7,7 +7,17 @@ import { GRUPOS, type TelaDeAjustes } from './itens-de-ajustes'
 export type { TelaDeAjustes } from './itens-de-ajustes'
 
 const normalizar = (texto: string) => texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
-const sinonimos: Partial<Record<TelaDeAjustes, string>> = { contexto: 'contexto negocio inteligencia artificial bot', acervo: 'acervo fotos videos pdf documentos', recursos: 'recursos onboarding crm objetivo assistente', negocio: 'cadastro cnpj empresa', anuncios: 'leads meta facebook anuncios' }
+const sinonimos: Partial<Record<TelaDeAjustes, string>> = {
+  contexto: 'contexto negocio inteligencia artificial bot',
+  acervo: 'acervo fotos videos pdf documentos',
+  recursos: 'recursos onboarding crm objetivo assistente personalizar sistema',
+  negocio: 'cadastro cnpj empresa',
+  anuncios: 'leads meta facebook anuncios captacao formulario',
+  horario: 'retomada inatividade expediente',
+  equipe: 'equipe usuarios membros papeis permissoes',
+  integracoes: 'integracao integracoes magento loja',
+  produtos: 'produtos servicos loja planilha',
+}
 
 export function MenuDeAjustes({ clienteId, ativa }: { clienteId?: string; ativa: TelaDeAjustes }) {
   const [busca, setBusca] = useState('')

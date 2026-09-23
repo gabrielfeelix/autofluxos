@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { AjustesShell } from '@/components/design/ajustes-shell'
 import { ICONE_DA_TELA } from '@/components/design/icones-de-ajustes'
 import { acharPlano } from '@/core/planos'
+import { estaAtivo } from '@/core/produtos'
 import { saudeDoInstagram, saudeDoWhatsApp } from '@/core/saude-da-conexao'
 import type { ReactNode } from 'react'
 import { ApagarCliente } from '@/components/cliente/apagar'
@@ -21,6 +22,8 @@ import { TrilhaDeConfiguracao } from '@/components/cliente/trilha-de-configuraca
 import { listarRespostasRapidas } from '@/server/repos/respostas-rapidas'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { planoDaConta } from '@/server/repos/plano'
+import { lojaDaConta } from '@/server/repos/lojas'
+import { listarProdutos } from '@/server/repos/produtos'
 import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 
 export const dynamic = 'force-dynamic'
@@ -35,8 +38,8 @@ const TOTAL_DE_INTEGRACOES = 5
  * que separa um índice de um menu: conferir se o contexto está preenchido ou
  * quantas chaves existem deixa de exigir abrir as três telas e voltar.
  *
- * As linhas moram em **quatro grupos**, Canais, Atendimento, Integrações e
- * Conta , e todas as telas de configuração moram sob `/ajustes/`. As duas
+ * As linhas moram em **cinco grupos por intenção** (Organização, Canais,
+ * Automação de resposta, Ferramentas do atendimento, Conexões e APIs), e todas as telas de configuração moram sob `/ajustes/`. As duas
  * coisas são da mesma decisão, e o porquê de cada uma está em
  * `docs/PLANO-CONFIGURACOES.md`. Rota que mudou de endereço continua
  * respondendo pelo redirecionamento escrito em `next.config.ts`.
@@ -50,7 +53,7 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [conexoes, canais, respostasRapidas, acervo, estrago, etiquetas, contaDoInstagram, paginasDeLead, plano, recursos, fluxos, contatos] =
+  const [conexoes, canais, respostasRapidas, acervo, estrago, etiquetas, contaDoInstagram, paginasDeLead, plano, recursos, fluxos, contatos, loja, listaDeProdutos] =
     await Promise.all([
       listarConexoes(cliente.id),
       listarCanais(cliente.id),
@@ -64,7 +67,10 @@ export default async function Pagina({
       recursosDaConta(cliente.id),
       listarFluxos(cliente.id),
       contarLeads(cliente.id),
+      lojaDaConta(cliente.id),
+      listarProdutos(cliente.id),
     ])
+  const produtos = listaDeProdutos.filter(estaAtivo).length
   const semContexto = cliente.contextoNegocio.trim() === ''
 
   /*
@@ -123,25 +129,58 @@ export default async function Pagina({
         {faltaNaTrilha && <TrilhaDeConfiguracao clienteId={cliente.id} passos={trilha} />}
 
         {/*
-          Quatro grupos, não dez linhas soltas.
+          Cinco grupos por intenção (tarefa 10.1 do plano de UX de 23/09): o
+          nome do grupo diz para que a pessoa entrou, e não de que tipo é a
+          tela. Organização vem primeiro porque é o que uma conta nova preenche
+          antes de tudo; Conexões e APIs por último porque é episódico.
 
-          Dez linhas planas é o tamanho em que a lista deixa de ser lida e passa
-          a ser varrida: tudo tem o mesmo peso, e "ligar o WhatsApp" (sem o qual
-          não existe produto) aparece igual a "respostas rápidas". O cabeçalho
-          de grupo custa uma linha de texto e devolve a hierarquia.
-
-          **Continua sendo uma página só.** Menu de duas colunas é o padrão de
-          Intercom e HubSpot e só compensa acima de umas 25 telas, quando o
-          índice vira rolagem, com onze, a segunda coluna seria moldura
-          ocupando espaço sem responder nada.
-
-          A ordem dos grupos é a ordem em que uma conta nova precisa deles:
-          sem canal não há produto; atendimento se ajusta toda semana;
-          integração é episódica; conta é administração.
-
-          O raciocínio inteiro, com a pesquisa de mercado que o sustenta, está
-          em `docs/PLANO-CONFIGURACOES.md`.
+          Continua sendo uma página só, e as rotas não mudaram. O raciocínio
+          antigo, com a pesquisa de mercado, está em `docs/PLANO-CONFIGURACOES.md`.
         */}
+        <Grupo
+          titulo="Organização"
+          descricao="Quem é a empresa, quem entra na conta, para que ela usa o sistema e em que plano está."
+        >
+          <Cartao
+            href={`/clientes/${cliente.id}/ajustes/negocio`}
+            icone={ICONE_DA_TELA['negocio']}
+            titulo="Dados da empresa"
+            descricao="Edite nome, logo, dados de contato e informações administrativas da empresa."
+            estado={
+              <Selo tom={cliente.logoUrl ? 'ok' : 'neutro'}>
+                {cliente.logoUrl ? 'com logo' : 'sem logo'}
+              </Selo>
+            }
+          />
+          <Cartao
+            href={`/clientes/${cliente.id}/ajustes/equipe`}
+            icone={ICONE_DA_TELA['equipe']}
+            titulo="Pessoas e acesso"
+            descricao="Quem entra nesta conta, o que cada pessoa pode fazer, equipes e distribuição do atendimento."
+            estado={
+              <Selo tom={equipe.length === 0 ? 'alerta' : 'ok'}>
+                {equipe.length === 0
+                  ? 'ninguém'
+                  : `${equipe.length} ${equipe.length === 1 ? 'pessoa' : 'pessoas'}`}
+              </Selo>
+            }
+          />
+          <Cartao
+            href={`/clientes/${cliente.id}/ajustes/recursos`}
+            icone={ICONE_DA_TELA['recursos']}
+            titulo="Objetivo e recursos"
+            descricao="Para que esta conta usa o AutoFluxos, e se o CRM aparece no menu. Ninguém precisa de tudo."
+            estado={<Selo tom={recursos.crmAtivo ? 'ok' : 'neutro'}>{recursos.crmAtivo ? 'com CRM' : 'sem CRM'}</Selo>}
+          />
+          <Cartao
+            href={`/clientes/${cliente.id}/ajustes/plano`}
+            icone={ICONE_DA_TELA['plano']}
+            titulo="Plano e consumo"
+            descricao="Em que plano esta conta está, quanto já foi usado neste mês, e como pedir para mudar de faixa."
+            estado={<Selo tom="neutro">{acharPlano(plano).nome}</Selo>}
+          />
+        </Grupo>
+
         <Grupo
           titulo="Canais"
           descricao="Por onde a conversa entra e sai. Canal caído é cliente sem atendimento."
@@ -185,8 +224,8 @@ export default async function Pagina({
         </Grupo>
 
         <Grupo
-          titulo="Atendimento"
-          descricao="Como o atendimento funciona, o que o bot sabe, quando há gente, e o que já está pronto para usar."
+          titulo="Automação de resposta"
+          descricao="O que o bot sabe e quando ele devolve a conversa para a equipe ou volta a responder."
         >
           <Cartao
             href={`/clientes/${cliente.id}/ajustes/contexto`}
@@ -201,18 +240,10 @@ export default async function Pagina({
               )
             }
           />
-          {/*
-            Um cartão só para as duas configurações da fronteira com o humano.
-
-            Eram dois, e o segundo era uma tela inteira para uma única opção.
-            Os dois selos continuam: o da retomada desligada é o que avisa que
-            o bot pode ficar mudo para sempre num contato, e essa é a única
-            informação desta grade que é um defeito esperando acontecer.
-          */}
           <Cartao
             href={`/clientes/${cliente.id}/ajustes/horario`}
             icone={ICONE_DA_TELA['horario']}
-            titulo="Horário de atendimento"
+            titulo="Horário e retomada"
             descricao="Quando há gente para atender, e o que fazer com a conversa que ficou parada com uma pessoa."
             estado={
               <span className="flex flex-wrap items-center justify-end gap-1.5">
@@ -229,6 +260,12 @@ export default async function Pagina({
               </span>
             }
           />
+        </Grupo>
+
+        <Grupo
+          titulo="Ferramentas do atendimento"
+          descricao="O que a equipe usa na conversa: frases prontas, etiquetas, catálogo e arquivos."
+        >
           <Cartao
             href={`/clientes/${cliente.id}/ajustes/respostas-rapidas`}
             icone={ICONE_DA_TELA['respostas-rapidas']}
@@ -259,8 +296,16 @@ export default async function Pagina({
             href={`/clientes/${cliente.id}/ajustes/produtos`}
             icone={ICONE_DA_TELA['produtos']}
             titulo="Catálogo"
-            descricao="Organize produtos e serviços para registrar interesses e vendas."
-            estado={<Selo tom="neutro">produtos e serviços</Selo>}
+            descricao="Produtos que a equipe manda no Inbox e o bot consulta."
+            estado={
+              loja?.ativa ? (
+                <Selo tom="ok">vem da Magento</Selo>
+              ) : (
+                <Selo tom={produtos === 0 ? 'neutro' : 'ok'}>
+                  {produtos === 0 ? 'vazio' : `${produtos} ${produtos === 1 ? 'item' : 'itens'}`}
+                </Selo>
+              )
+            }
           />
           <Cartao
             href={`/clientes/${cliente.id}/ajustes/acervo`}
@@ -277,25 +322,15 @@ export default async function Pagina({
           />
         </Grupo>
 
-        {/*
-          Anúncios e Chaves de API são integração e não canal porque nenhum dos
-          dois produz conversa no Inbox: um traz lead, o outro é o fluxo falando
-          com o sistema do próprio cliente. É o mesmo corte que o Intercom faz
-          entre Channels e Integrations.
-
-          Anúncios vem primeiro de propósito: é o caminho que o cliente procura
-          por nome ("como ligo meus anúncios?"), enquanto Chaves de API é onde
-          ele só chega sabendo o que é uma chave.
-        */}
         <Grupo
-          titulo="Integrações"
-          descricao="Com quem o sistema fala além dos canais, o que entra de fora e o que sai para os sistemas deste cliente."
+          titulo="Conexões e APIs"
+          descricao="Com quem o sistema fala além dos canais: anúncios que trazem contato e sistemas deste cliente."
         >
           <Cartao
             href={`/clientes/${cliente.id}/ajustes/integracoes`}
             icone={ICONE_DA_TELA['integracoes']}
-            titulo="Todas as integrações"
-            descricao="O catálogo: o que dá para ligar nesta conta, o que já está ligado, e o que ainda está por vir."
+            titulo="Todas as conexões"
+            descricao="O que dá para ligar nesta conta, o que já está ligado e o que ainda está por vir."
             estado={
               <Selo tom="neutro">
                 {`${conectadas} de ${TOTAL_DE_INTEGRACOES}`}
@@ -305,7 +340,7 @@ export default async function Pagina({
           <Cartao
             href={`/clientes/${cliente.id}/ajustes/anuncios`}
             icone={ICONE_DA_TELA['anuncios']}
-            titulo="Captação por anúncios"
+            titulo="Anúncios"
             descricao="Receber como lead quem preenche o formulário de um anúncio no Facebook ou no Instagram."
             estado={
               <Selo tom={paginasDeLead.length === 0 ? 'neutro' : 'ok'}>
@@ -327,67 +362,6 @@ export default async function Pagina({
                   : `${conexoes.length} ${conexoes.length === 1 ? 'chave' : 'chaves'}`}
               </Selo>
             }
-          />
-        </Grupo>
-
-        <Grupo
-          titulo="Conta"
-          descricao="Informações e preferências da sua empresa, quem entra na conta e o que cada um pode fazer."
-        >
-          {/*
-            Dados do negócio morava no Painel, acima de tudo, e saiu de lá pelo
-            motivo que vale para qualquer cadastro: nome, CNPJ e logo não se
-            olham todo dia, e ocupavam o espaço mais caro do produto. A tela
-            continua acessível pelo Painel, quem acabou de criar a conta chega
-            por lá , e passa a ter também o caminho que uma pessoa procura
-            quando vai mexer nela de propósito.
-          */}
-          <Cartao
-            href={`/clientes/${cliente.id}/ajustes/negocio`}
-            icone={ICONE_DA_TELA['negocio']}
-            titulo="Dados da empresa"
-            descricao="Edite nome, logo, dados de contato e informações administrativas da empresa."
-            estado={
-              <Selo tom={cliente.logoUrl ? 'ok' : 'neutro'}>
-                {cliente.logoUrl ? 'com logo' : 'sem logo'}
-              </Selo>
-            }
-          />
-          <Cartao
-            href={`/clientes/${cliente.id}/ajustes/equipe`}
-            icone={ICONE_DA_TELA['equipe']}
-            titulo="Pessoas e acesso"
-            descricao="Quem entra nesta conta, o que cada pessoa pode fazer, equipes e distribuição do atendimento."
-            estado={
-              <Selo tom={equipe.length === 0 ? 'alerta' : 'ok'}>
-                {equipe.length === 0
-                  ? 'ninguém'
-                  : `${equipe.length} ${equipe.length === 1 ? 'pessoa' : 'pessoas'}`}
-              </Selo>
-            }
-          />
-          {/*
-            Recursos vem antes de Plano porque a pergunta é anterior: o que esta
-            conta usa do produto decide o que ela consome, e não o contrário.
-          */}
-          <Cartao
-            href={`/clientes/${cliente.id}/ajustes/recursos`}
-            icone={ICONE_DA_TELA['recursos']}
-            titulo="Personalizar sistema"
-            descricao="Para que esta conta usa o AutoFluxos, e se o CRM aparece no menu. Ninguém precisa de tudo."
-            estado={<Selo tom={recursos.crmAtivo ? 'ok' : 'neutro'}>{recursos.crmAtivo ? 'com CRM' : 'sem CRM'}</Selo>}
-          />
-          {/*
-            O selo mostra o plano e não o consumo, embora a tela mostre os dois.
-            Consumo é número que muda todo dia, e um selo que muda todo dia no
-            índice treina a pessoa a ignorar os selos que ela precisa ver.
-          */}
-          <Cartao
-            href={`/clientes/${cliente.id}/ajustes/plano`}
-            icone={ICONE_DA_TELA['plano']}
-            titulo="Plano e consumo"
-            descricao="Em que plano esta conta está, quanto já foi usado neste mês, e como pedir para mudar de faixa."
-            estado={<Selo tom="neutro">{acharPlano(plano).nome}</Selo>}
           />
         </Grupo>
 

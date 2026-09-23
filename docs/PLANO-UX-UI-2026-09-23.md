@@ -1229,10 +1229,10 @@ Conexões e APIs. A tela de Produtos já tem `AjudaDaTela`: é o modelo para as
 outras telas desta fase.
 | Conexões e APIs | Todas as conexões · Anúncios · Chaves de API |
 
-- [ ] **Passo 1:** aplicar a tabela; sinônimos na busca: "retomada" → Horário,
+- [x] **Passo 1:** aplicar a tabela; sinônimos na busca: "retomada" → Horário,
   "equipe" → Pessoas e acesso, "personalizar" → Objetivo e recursos,
   "integração" → Todas as conexões.
-- [ ] **Passo 2:** commit `feat(configuracoes): grupos por intenção e nomes que dizem o que a tela faz`.
+- [x] **Passo 2:** commit `feat(configuracoes): grupos por intenção e nomes que dizem o que a tela faz`.
 
 ### Tarefa 10.2: trilha de primeira configuração [S01]
 

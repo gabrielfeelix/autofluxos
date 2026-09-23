@@ -38,7 +38,7 @@ export default async function Pagina({
       <main className="w-full max-w-[1100px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
         <Trilha
           caminho={[
-            { rotulo: 'Integrações', href: `/clientes/${cliente.id}/ajustes/integracoes` },
+            { rotulo: 'Todas as conexões', href: `/clientes/${cliente.id}/ajustes/integracoes` },
             { rotulo: 'Magento' },
           ]}
         />

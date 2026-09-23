@@ -166,7 +166,7 @@ export default async function Pagina({
   return (
     <AjustesShell cliente={cliente} ativa="integracoes">
       <main className="w-full max-w-[1100px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
-        <h1 className="text-[22px] font-bold tracking-[-0.02em] md:text-[28px]">Integrações</h1>
+        <h1 className="text-[22px] font-bold tracking-[-0.02em] md:text-[28px]">Todas as conexões</h1>
         <p className="mt-1.5 max-w-[640px] text-[13px] leading-6 text-dim">
           Tudo com que esta conta fala, os canais por onde a conversa passa e os sistemas que
           entregam e recebem dado. Cada cartão leva para onde se liga e se confere.
