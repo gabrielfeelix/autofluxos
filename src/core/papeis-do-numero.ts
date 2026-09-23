@@ -31,3 +31,35 @@ export const EXPLICACAO_DO_PAPEL: Record<PapelDoNumero, string> = {
   posAtendimento:
     'Quando alguém da equipe clica em “Atendimento finalizado”. É aqui que entra a pesquisa de satisfação. Vazio: não acontece nada.',
 }
+
+/** Um papel que hoje não responde, e por quê. */
+export type PapelCalado = {
+  papel: PapelDoNumero
+  /** `sem_fluxo`: nada escolhido. `rascunho`: escolhido, nunca publicado. */
+  motivo: 'sem_fluxo' | 'rascunho'
+  fluxoId: string | null
+}
+
+/**
+ * O resumo "Responde em 3 de 4 situações" do cartão do número (tarefa 6.6).
+ *
+ * Um papel só **responde** com fluxo escolhido e publicado. Fluxo apagado
+ * conta como sem fluxo: o id ficou no canal, mas não há o que rodar.
+ */
+export function respostasDoNumero(
+  escolhidos: Record<PapelDoNumero, string | null>,
+  fluxos: { id: string; versaoPublicadaId: string | null }[],
+): { respondendo: number; total: number; calados: PapelCalado[] } {
+  const calados: PapelCalado[] = []
+  for (const papel of PAPEIS_DO_NUMERO) {
+    const id = escolhidos[papel]
+    const fluxo = id ? fluxos.find((item) => item.id === id) : undefined
+    if (!fluxo) calados.push({ papel, motivo: 'sem_fluxo', fluxoId: null })
+    else if (!fluxo.versaoPublicadaId) calados.push({ papel, motivo: 'rascunho', fluxoId: fluxo.id })
+  }
+  return {
+    respondendo: PAPEIS_DO_NUMERO.length - calados.length,
+    total: PAPEIS_DO_NUMERO.length,
+    calados,
+  }
+}

@@ -55,10 +55,13 @@ export function ConectarWhatsapp({
   clienteId,
   appId,
   configId,
+  rotulo = 'Conectar meu WhatsApp',
 }: {
   clienteId: string
   appId: string
   configId: string
+  /** "Reconectar" no cartão de um número que caiu (tarefa 6.6). */
+  rotulo?: string
 }) {
   const router = useRouter()
   const [estado, setEstado] = useState<'parado' | 'abrindo' | 'concluindo' | 'erro'>('parado')
@@ -269,7 +272,7 @@ export function ConectarWhatsapp({
           : estado === 'abrindo'
             ? 'Siga na janela da Meta…'
             : pronto
-              ? 'Conectar meu WhatsApp'
+              ? rotulo
               : 'Carregando…'}
       </button>
 

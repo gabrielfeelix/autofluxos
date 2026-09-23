@@ -995,10 +995,10 @@ do Inbox continua sendo só a entrada ("+ Anotar").
 
 ### Tarefa 6.6: WhatsApp separado em saúde, respostas e webhook [T05, S05]
 
-- [ ] **Passo 1:** no cartão do número: bloco "Estado da conexão" (sincronização,
+- [x] **Passo 1:** no cartão do número: bloco "Estado da conexão" (sincronização,
   reconectar), bloco "O que o bot responde" com resumo "Responde em 3 de 4
   situações" e link para a situação sem fluxo publicado, bloco "Webhook".
-- [ ] **Passo 2:** commit `feat(whatsapp): cartão do número separa saúde, respostas e webhook`.
+- [x] **Passo 2:** commit `feat(whatsapp): cartão do número separa saúde, respostas e webhook`.
 
 ### Tarefa 6.7: chaves de API com ciclo claro [T06, C07, C08]
 

@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { AjustesShell } from '@/components/design/ajustes-shell'
@@ -17,6 +18,7 @@ import {
   EXPLICACAO_DO_PAPEL,
   PAPEIS_DO_NUMERO,
   ROTULO_DO_PAPEL,
+  respostasDoNumero,
 } from '@/core/papeis-do-numero'
 import {
   identidadeNaTela,
@@ -29,7 +31,7 @@ import { fluxoDoPapel, listarCanais } from '@/server/repos/conversas'
 import { listarFluxos } from '@/server/repos/fluxos'
 import { whatsappConfigurado } from '@/server/whatsapp/conexao'
 import { CamadasDaConexao } from '@/components/conexoes/camadas'
-import { estadoDaConexao } from '@/core/conexoes'
+import { estadoDaConexao, idadeDoEvento } from '@/core/conexoes'
 import { ultimaMensagemRecebida } from '@/server/repos/ultimos-eventos'
 
 export const dynamic = 'force-dynamic'
@@ -256,7 +258,7 @@ export default async function Pagina({
                   <strong className="text-muted">Confirm</strong>, e cola o código.
                 </li>
                 <li>
-                  4. Você escolhe se quer trazer as conversas antigas ,{' '}
+                  4. Você escolhe se quer trazer as conversas antigas:{' '}
                   <strong className="text-muted">é escolha sua</strong>, não obrigação.
                 </li>
               </ol>
@@ -326,7 +328,7 @@ export default async function Pagina({
         {/*
          * **Tudo daqui para baixo só existe depois que há um número.**
          *
-         * Antes, a tela abria com dois botões que pareciam a mesma coisa ,
+         * Antes, a tela abria com dois botões que pareciam a mesma coisa:
          * "Conectar meu WhatsApp" e "+ Conectar número", e nada dizia qual
          * usar. São caminhos diferentes: o de cima é o Embedded Signup (o
          * número que a pessoa já usa no celular, em coexistência); este é o
@@ -338,7 +340,7 @@ export default async function Pagina({
          * num formulário pedindo um id que ele não tem, e não há como voltar
          * disso sem entender a diferença entre as duas APIs.
          *
-         * Com um número conectado a pergunta muda e passa a fazer sentido ,
+         * Com um número conectado a pergunta muda e passa a fazer sentido:
          * "conectar **outro** número" é operação de quem já entendeu o que é
          * um. O webhook segue a mesma regra: é endereço para configurar um
          * número que ainda não existe.
@@ -349,7 +351,7 @@ export default async function Pagina({
             <div className="min-w-0 max-w-[70ch]">
             <h2 className="text-[14.5px] font-bold">Números do WhatsApp</h2>
             <p className="mt-0.5 text-[12px] leading-5 text-dim">
-              Cada número executa um fluxo. A identificação está no painel da
+              Cada número mostra a conexão, o que o bot responde e o endereço da Meta. A identificação está no painel da
               Meta, em{' '}
               <strong className="text-muted">
                 WhatsApp → Configuração da API
@@ -397,12 +399,6 @@ export default async function Pagina({
           ) : (
             <ul>
               {canais.map((canal) => {
-                const fluxo = fluxos.find((item) => item.id === canal.flowId)
-                const aviso = !fluxo
-                  ? 'Sem fluxo principal, o bot não responde.'
-                  : !fluxo.versaoPublicadaId
-                    ? 'O fluxo principal ainda não foi publicado.'
-                    : null
                 const salvarFluxos = acaoDefinirFluxosDoNumero.bind(
                   null,
                   cliente.id,
@@ -410,14 +406,28 @@ export default async function Pagina({
                   {},
                 )
                 const estado = coexistencia[canal.id]
-                const situacao = situacaoDoNumero(estado)
+                // O desembarque gravado no canal vale mesmo sem o estado de
+                // coexistência: é o mesmo dado que o topo da tela usa (6.4), e as
+                // duas partes precisam dizer a mesma coisa.
+                const situacao = canal.desembarcadoEm ? 'desembarcado' : situacaoDoNumero(estado)
                 const progresso = progressoGeral(estado)
                 const identidade = identidadeNaTela(estado, canal.phoneNumberId, canal.displayPhoneNumber)
+                const respostas = respostasDoNumero(
+                  {
+                    principal: fluxoDoPapel(canal, 'principal'),
+                    boasVindas: fluxoDoPapel(canal, 'boasVindas'),
+                    midia: fluxoDoPapel(canal, 'midia'),
+                    posAtendimento: fluxoDoPapel(canal, 'posAtendimento'),
+                  },
+                  fluxos,
+                )
+                const principalCalado = respostas.calados.some((c) => c.papel === 'principal')
+                const caiu = situacao === 'desembarcado' || situacao === 'travado'
 
                 return (
                   <li
                     key={canal.id}
-                    className="border-b border-line px-5 py-3.5"
+                    className="border-b border-line px-5 py-4"
                   >
                     <div className="flex items-center gap-2.5 text-[12.5px] font-semibold">
                       {/*
@@ -430,10 +440,6 @@ export default async function Pagina({
                        * não achava o seu número, via "Conectar número" ao lado
                        * e concluía que não tinha conectado.
                        *
-                       * O selo verde é o mesmo do card de antes de conectar ,
-                       * é o que dá continuidade: a tela que convidou e a tela
-                       * que confirma falam a mesma língua.
-                       *
                        * O id não some, só desce: ele ainda é a identidade do
                        * canal e o que se procura no painel da Meta.
                        */}
@@ -443,7 +449,7 @@ export default async function Pagina({
                       >
                         <LogoDoCanal canal="whatsapp" tamanho={14} />
                         <span
-                          className={`absolute -right-0.5 -bottom-0.5 size-[9px] rounded-full border-2 border-[#12161c] ${aviso ? 'bg-amber-300' : 'bg-emerald-400'}`}
+                          className={`absolute -right-0.5 -bottom-0.5 size-[9px] rounded-full border-2 border-[#12161c] ${principalCalado || caiu ? 'bg-amber-300' : 'bg-emerald-400'}`}
                           aria-hidden
                         />
                       </span>
@@ -468,23 +474,32 @@ export default async function Pagina({
                         )}
                       />
                     </div>
-                    {aviso && (
-                      <p className="mt-2 ml-4 rounded-lg border border-amber-300/25 bg-amber-300/[0.08] px-2.5 py-2 text-[11.5px] text-aviso">
-                        {aviso}
-                      </p>
-                    )}
 
-                    {situacao !== 'comum' && (
-                      <div className="mt-2.5 ml-4">
+                    {/*
+                     * Três perguntas diferentes, três blocos (tarefa 6.6): o
+                     * número está ligado? o bot responde o quê? a Meta sabe para
+                     * onde mandar? Antes era uma lista só, e o aviso de fluxo
+                     * em rascunho aparecia misturado com o de sincronização.
+                     */}
+                    <div className="mt-3.5 grid gap-3 lg:grid-cols-3">
+                      <BlocoDoNumero titulo="Estado da conexão">
+                        {situacao === 'comum' && (
+                          <>
+                            <p className="text-[12px] font-semibold text-ok">Conectado</p>
+                            <p className="mt-1 text-[11px] leading-5 text-dim">
+                              Número ligado pela API da Meta.
+                            </p>
+                          </>
+                        )}
+
                         {situacao === 'sincronizando' && (
-                          <div className="rounded-lg border border-sky-400/25 bg-sky-400/[0.07] px-3 py-2.5">
-                            <p className="text-[11.5px] font-semibold text-info">
+                          <>
+                            <p className="text-[12px] font-semibold text-info">
                               Trazendo as conversas antigas
                               {progresso !== null ? `, ${progresso}%` : ''}
                             </p>
                             {/*
-                             * A barra existe para o caso que a spec nomeia:
-                             * "conectado" sem a conversa antiga aparecer faz o
+                             * "Conectado" sem a conversa antiga aparecer faz o
                              * cliente achar que quebrou. Progresso visível é a
                              * diferença entre esperar e desconfiar.
                              */}
@@ -503,35 +518,42 @@ export default async function Pagina({
                                 />
                               </div>
                             )}
-                            <p className="mt-2 text-[11px] leading-5 text-info/80">
+                            <p className="mt-2 text-[11px] leading-5 text-dim">
                               Leva de alguns minutos a algumas horas. Pode fechar esta tela, as
                               conversas vão aparecendo sozinhas no Inbox.
                             </p>
-                          </div>
+                          </>
                         )}
 
                         {situacao === 'travado' && (
-                          <p className="rounded-lg border border-amber-300/25 bg-amber-300/[0.08] px-3 py-2.5 text-[11.5px] leading-5 text-aviso">
-                            A Meta parou de informar como vai a importação das conversas antigas
-                            {progresso !== null ? ` (ficou em ${progresso}%)` : ''}. Isso não
-                            atrapalha o que já chegou: confira no Inbox. Se faltar conversa antiga
-                            daqui a algumas horas, desconecte e conecte o número de novo. Este aviso
-                            sai sozinho em um dia.
-                          </p>
+                          <>
+                            <p className="text-[12px] font-semibold text-aviso">
+                              Importação parada{progresso !== null ? ` em ${progresso}%` : ''}
+                            </p>
+                            <p className="mt-1 text-[11px] leading-5 text-dim">
+                              A Meta parou de informar como vai a importação das conversas
+                              antigas. O que já chegou continua no Inbox. Se faltar conversa
+                              antiga daqui a algumas horas, reconecte. Este aviso sai sozinho em
+                              um dia.
+                            </p>
+                          </>
                         )}
 
                         {situacao === 'desembarcado' && (
-                          <p className="rounded-lg border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2.5 text-[11.5px] leading-5 text-perigo">
-                            A conexão caiu, costuma acontecer quando o celular é trocado ou o
-                            WhatsApp Business é reinstalado. Normalmente volta sozinha em alguns
-                            minutos; enquanto isso, o envio por aqui fica parado.
-                          </p>
+                          <>
+                            <p className="text-[12px] font-semibold text-perigo">A conexão caiu</p>
+                            <p className="mt-1 text-[11px] leading-5 text-dim">
+                              Costuma acontecer quando o celular é trocado ou o WhatsApp Business
+                              é reinstalado. Normalmente volta sozinha em alguns minutos; enquanto
+                              isso, o envio por aqui fica parado.
+                            </p>
+                          </>
                         )}
 
                         {situacao === 'pronto' && (
-                          <div className="rounded-lg border border-line bg-panel px-3 py-2.5">
-                            <p className="text-[11.5px] font-semibold text-ok">
-                              Conectado ao WhatsApp Business deste número
+                          <>
+                            <p className="text-[12px] font-semibold text-ok">
+                              Conectado ao WhatsApp Business do celular
                             </p>
                             {/*
                              * As duas coisas que ninguém adivinha, e que só
@@ -542,78 +564,142 @@ export default async function Pagina({
                               <li>
                                 · Abra o WhatsApp Business no celular{' '}
                                 <strong className="text-muted">ao menos uma vez a cada 14
-                                dias</strong>, sem isso a Meta derruba a conexão e as mensagens
-                                param de chegar.
+                                dias</strong>, sem isso a Meta derruba a conexão.
                               </li>
                               <li>
                                 · O <strong className="text-muted">nome do negócio ficou
-                                travado</strong> na Meta. Para mudar, é preciso desconectar e
-                                conectar de novo.
+                                travado</strong> na Meta. Para mudar, reconecte o número.
                               </li>
                             </ul>
+                          </>
+                        )}
+
+                        {/*
+                         * Reconectar só aparece quando caiu ou travou: refazer o
+                         * cadastro num número que está bem desvincula os
+                         * aparelhos do cliente sem necessidade.
+                         */}
+                        {caiu && podeConectar && (
+                          <div className="mt-3">
+                            <ConectarWhatsapp
+                              clienteId={cliente.id}
+                              appId={appId}
+                              configId={configId}
+                              rotulo="Reconectar"
+                            />
                           </div>
                         )}
-                      </div>
-                    )}
+                      </BlocoDoNumero>
 
-                    <div className="mt-3 ml-4">
-                      <ModalFormulario
-                        /*
-                          O botão dizia "Configurar os 4 papéis", e "papel" é
-                          palavra nossa: ela existe no `core/papeis-do-numero.ts`
-                          porque o servidor precisa de um nome para a coisa, e
-                          vazou para a tela. Quem chega aqui não sabe que tem
-                          quatro de nada, nem o que é um papel, sabe que quer
-                          escolher o que o bot responde.
-                        */
-                        botao="Escolher os fluxos deste número"
-                        titulo={`Fluxos de ${identidade.titulo}`}
-                        descricao="Cada situação abaixo pode rodar um fluxo diferente. Em branco, o bot não responde naquela situação, a conversa vai para uma pessoa."
-                        rotuloEnviar="Salvar fluxos"
-                        variante="secundario"
-                        action={salvarFluxos}
-                      >
-                        <div className="space-y-4">
-                          {PAPEIS_DO_NUMERO.map((papel) => {
-                            const escolhido = fluxoDoPapel(canal, papel) ?? ''
-                            const naoPublicado = fluxos.some(
-                              (item) => item.id === escolhido && !item.versaoPublicadaId,
-                            )
-
-                            return (
-                              <div key={papel}>
-                                <p className="text-[11.5px] font-semibold text-soft">
-                                  {ROTULO_DO_PAPEL[papel]}
-                                </p>
-                                <p className="mt-0.5 mb-1.5 text-[11px] leading-4 text-dim">
-                                  {EXPLICACAO_DO_PAPEL[papel]}
-                                </p>
-                                <Dropdown
-                                  nome={papel}
-                                  valorInicial={escolhido}
-                                  rotuloAcessivel={`Fluxo de ${ROTULO_DO_PAPEL[papel]}`}
-                                  opcoes={[
-                                    { valor: '', rotulo: 'sem fluxo' },
-                                    ...fluxos.map((item) => ({
-                                      valor: item.id,
-                                      rotulo: item.nome,
-                                      ...(item.versaoPublicadaId
-                                        ? {}
-                                        : { detalhe: 'rascunho' }),
-                                    })),
-                                  ]}
-                                />
-                                {naoPublicado && (
-                                  <p className="mt-1 text-[11px] text-aviso">
-                                    Este fluxo ainda não foi publicado, enquanto
-                                    estiver assim, este papel não fala.
-                                  </p>
+                      <BlocoDoNumero titulo="O que o bot responde">
+                        <p
+                          className={`text-[12px] font-semibold ${
+                            respostas.respondendo === respostas.total
+                              ? 'text-ok'
+                              : principalCalado
+                                ? 'text-aviso'
+                                : ''
+                          }`}
+                        >
+                          Responde em {respostas.respondendo} de {respostas.total} situações
+                        </p>
+                        {respostas.calados.length > 0 && (
+                          <ul className="mt-1.5 space-y-1 text-[11px] leading-5 text-dim">
+                            {respostas.calados.map((calado) => (
+                              <li key={calado.papel}>
+                                · <strong className="text-muted">{ROTULO_DO_PAPEL[calado.papel]}</strong>
+                                {calado.motivo === 'rascunho' && calado.fluxoId ? (
+                                  <>
+                                    : fluxo em rascunho.{' '}
+                                    <Link
+                                      href={`/clientes/${cliente.id}/fluxos/${calado.fluxoId}`}
+                                      className="font-semibold text-primary hover:underline"
+                                    >
+                                      Publicar ›
+                                    </Link>
+                                  </>
+                                ) : (
+                                  ': sem fluxo.'
                                 )}
-                              </div>
-                            )
-                          })}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        {principalCalado && (
+                          <p className="mt-1.5 text-[11px] leading-5 text-aviso">
+                            Sem o principal publicado, o bot não responde a maioria das mensagens.
+                          </p>
+                        )}
+                        <div className="mt-3">
+                          <ModalFormulario
+                            /*
+                              "Papel" é palavra nossa, do `core/papeis-do-numero.ts`.
+                              Quem chega aqui quer escolher o que o bot responde.
+                            */
+                            botao="Escolher os fluxos"
+                            titulo={`Fluxos de ${identidade.titulo}`}
+                            descricao="Cada situação abaixo pode rodar um fluxo diferente. Em branco, o bot não responde naquela situação, a conversa vai para uma pessoa."
+                            rotuloEnviar="Salvar fluxos"
+                            variante="secundario"
+                            action={salvarFluxos}
+                          >
+                            <div className="space-y-4">
+                              {PAPEIS_DO_NUMERO.map((papel) => {
+                                const escolhido = fluxoDoPapel(canal, papel) ?? ''
+                                const naoPublicado = fluxos.some(
+                                  (item) => item.id === escolhido && !item.versaoPublicadaId,
+                                )
+
+                                return (
+                                  <div key={papel}>
+                                    <p className="text-[11.5px] font-semibold text-soft">
+                                      {ROTULO_DO_PAPEL[papel]}
+                                    </p>
+                                    <p className="mt-0.5 mb-1.5 text-[11px] leading-4 text-dim">
+                                      {EXPLICACAO_DO_PAPEL[papel]}
+                                    </p>
+                                    <Dropdown
+                                      nome={papel}
+                                      valorInicial={escolhido}
+                                      rotuloAcessivel={`Fluxo de ${ROTULO_DO_PAPEL[papel]}`}
+                                      opcoes={[
+                                        { valor: '', rotulo: 'sem fluxo' },
+                                        ...fluxos.map((item) => ({
+                                          valor: item.id,
+                                          rotulo: item.nome,
+                                          ...(item.versaoPublicadaId
+                                            ? {}
+                                            : { detalhe: 'rascunho' }),
+                                        })),
+                                      ]}
+                                    />
+                                    {naoPublicado && (
+                                      <p className="mt-1 text-[11px] text-aviso">
+                                        Este fluxo ainda não foi publicado. Enquanto
+                                        estiver assim, esta situação fica sem resposta.
+                                      </p>
+                                    )}
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </ModalFormulario>
                         </div>
-                      </ModalFormulario>
+                      </BlocoDoNumero>
+
+                      <BlocoDoNumero titulo="Webhook">
+                        <p className="text-[11px] leading-5 text-dim">
+                          O endereço que a Meta chama. Cadastre na configuração do WhatsApp
+                          Business, no painel dela.
+                        </p>
+                        <div className="mt-2">
+                          <CampoParaCopiar valor={webhook} rotuloAcessivel="Copiar o endereço do webhook" />
+                        </div>
+                        <p className="mt-2 text-[11px] leading-5 text-dim">
+                          Última mensagem recebida na conta:{' '}
+                          <strong className="text-muted">{idadeDoEvento(ultimaMensagem)}</strong>
+                        </p>
+                      </BlocoDoNumero>
                     </div>
                   </li>
                 )
@@ -624,20 +710,19 @@ export default async function Pagina({
         </section>
         )}
 
-        {canais.length > 0 && (
-        <section className="app-card p-5">
-          <h2 className="text-[13px] font-bold">
-            Endereço para o painel da Meta
-          </h2>
-          <p className="mt-1 text-[11.5px] text-dim">
-            Cadastre este webhook na configuração do WhatsApp Business.
-          </p>
-          <div className="mt-2.5">
-            <CampoParaCopiar valor={webhook} rotuloAcessivel="Copiar o endereço do webhook" />
-          </div>
-        </section>
-        )}
       </main>
     </AjustesShell>
+  )
+}
+
+/** Um dos três blocos do cartão do número (tarefa 6.6). */
+function BlocoDoNumero({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  return (
+    <div className="min-w-0 rounded-[10px] border border-line bg-panel px-3.5 py-3">
+      <h3 className="mb-1.5 text-[10.5px] font-bold tracking-[0.08em] text-dim uppercase">
+        {titulo}
+      </h3>
+      {children}
+    </div>
   )
 }
