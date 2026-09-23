@@ -217,8 +217,8 @@ bloqueados...">` lendo `Notification.permission` durante a renderização. O
 servidor não tem `Notification`, então renderiza o formulário; o navegador
 renderiza o botão; o React acusa hidratação divergente em todas as telas.
 
-- [ ] **Passo 1:** ler o componente inteiro.
-- [ ] **Passo 2:** mover a leitura da permissão para um estado inicializado em
+- [x] **Passo 1:** ler o componente inteiro.
+- [x] **Passo 2:** mover a leitura da permissão para um estado inicializado em
   `useEffect` (primeira renderização igual à do servidor, com o estado
   "desconhecido"), e só depois trocar para bloqueado/permitido. Padrão:
 
@@ -231,10 +231,10 @@ useEffect(() => {
 
   Na renderização, `'desconhecida'` desenha exatamente o que o servidor desenha
   hoje.
-- [ ] **Passo 3:** `npm run typecheck`; subir o `dev.sh`, abrir `/inbox` e duas
+- [x] **Passo 3:** `npm run typecheck`; subir o `dev.sh`, abrir `/inbox` e duas
   outras telas; o overlay do Next não pode mostrar "Issue". Conferir também no
   log do `dev.sh` que não aparece `Hydration failed`.
-- [ ] **Passo 4:** commit `fix(inbox): notificações renderizam igual no servidor e no navegador`.
+- [x] **Passo 4:** commit `fix(inbox): notificações renderizam igual no servidor e no navegador`.
 
 ### Tarefa 0.3: textos que se contradizem [N03, N07, `01` P3]
 

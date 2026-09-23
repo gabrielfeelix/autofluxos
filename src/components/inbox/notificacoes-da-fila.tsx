@@ -20,7 +20,7 @@ const respostaSchema = z.object({
   ),
 })
 
-type Permissao = NotificationPermission | 'indisponivel'
+type Permissao = NotificationPermission | 'indisponivel' | 'desconhecida'
 
 const INTERVALO_DE_CONSULTA = 30_000
 
@@ -57,7 +57,7 @@ export function NotificacoesDaFila({
    *
    * Ausente, a **primeira consulta** vira a linha de base e não avisa nada.
    * Sem isso, abrir uma tela qualquer do painel dispararia, trinta segundos
-   * depois, uma notificação para cada conversa que já estava esperando ,
+   * depois, uma notificação para cada conversa que já estava esperando:
    * uma rajada que ensina a pessoa a desligar o aviso.
    */
   alertasIniciais?: AlertaDaFila[]
@@ -68,7 +68,16 @@ export function NotificacoesDaFila({
   const vistos = useRef<Set<string> | null>(
     alertasIniciais ? idsDosAlertas(alertasIniciais) : null,
   )
-  const [permissao, setPermissao] = useState<Permissao>(permissaoAtual)
+  /*
+   * O servidor não tem `Notification`. Ler a permissão já na primeira
+   * renderização fazia o navegador desenhar outra coisa e o React acusar
+   * hidratação divergente em toda tela. Começa "desconhecida" (igual ao
+   * servidor) e só depois da montagem lê a de verdade.
+   */
+  const [permissao, setPermissao] = useState<Permissao>('desconhecida')
+  useEffect(() => {
+    setPermissao(permissaoAtual())
+  }, [])
 
   useEffect(() => {
     let ativa = true
@@ -156,7 +165,7 @@ export function NotificacoesDaFila({
     if (novaPermissao === 'granted') await registrarPush()
   }
 
-  if (permissao === 'indisponivel') return null
+  if (permissao === 'indisponivel' || permissao === 'desconhecida') return null
 
   const ativo = permissao === 'granted'
   const bloqueado = permissao === 'denied'
