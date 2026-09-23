@@ -49,6 +49,11 @@ Chat, Blip, Zenvia):
 3. **Pix e pedido** (plano próprio): `docs/superpowers/specs/2026-09-22-cobrar-no-chat-design.md`,
    e depois o pedido criado no Magento.
 
+> **Corrigido em 23/set/2026, depois da Task 10b:** a foto não depende do
+> token na PCYES. A REST da loja responde a anônimo, e `GET /V1/products/{sku}`
+> traz a URL do CDN em `media_gallery_entries`. O `/media` que o parágrafo
+> abaixo cita responde 400 lá, com ou sem token. Ver o handoff.
+
 **A foto é o bloqueio da etapa 1, e o token resolve.** A busca pública da PCYES
 devolve placeholder em 100% dos produtos (62 de 62, 23/set/2026). Sem foto
 também não há etapa 2: a Meta recusa item sem imagem. O Gabriel escolheu o

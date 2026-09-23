@@ -87,13 +87,19 @@
      do site é `base`. A PCYES pode usar outro.
    - `GET /rest/V1/inventory/get-product-salable-quantity/{sku}/{stockId}`:
      supõe que devolve um número inteiro.
-   - `GET /rest/V1/products/{sku}/media` e a URL montada como
-     `{endereco}/media/catalog/product{file}`. **Esta é a suspeita mais forte
-     da lista:** o GraphQL público da PCYES devolve placeholder em 100% dos
-     produtos, e o site mostra foto real. Uma explicação provável é imagem em
-     storage remoto ou CDN, e nesse caso a URL montada dá 404. **Com o token em
-     mãos, faça `curl -I` na URL de foto de três produtos antes de ligar
-     qualquer coisa que dependa dela.**
+   - ~~`GET /rest/V1/products/{sku}/media`~~ **Provado errado e trocado em
+     23/set.** Na PCYES o arquivo da foto é a URL inteira do CDN
+     (`https://cdn.oderco.com.br/produtos/...`, 200 `image/png`), e `/media`
+     responde 400 com ou sem token, porque o Magento deles tenta ler essa URL
+     do disco. Agora a foto vem de `GET /rest/V1/products/{sku}`
+     (`media_gallery_entries[].file`), **sem token**: a REST da PCYES responde
+     a anônimo. Com 401, havendo token, tenta de novo com ele. **Consequência:
+     o card com foto funciona na PCYES sem esperar o token.** Não provado: o
+     WhatsApp aceitar a URL do CDN, que não tem extensão (o `content-type` é
+     `image/png`). O primeiro card real é essa prova.
+   - Estoque exige token na PCYES (401 sem ele), e o 401 revelou os nomes de
+     ACL: `Magento_InventorySalesApi::stock` e
+     `Magento_Catalog::catalog_inventory`. O guia foi corrigido com eles.
    - Os nomes de permissão (ACL) no `docs/GUIA-MAGENTO-LOJISTA.md` são
      aproximados. O próprio guia diz isso ao lojista.
    - O `chamarHttp` só manda credencial para a mesma origem. Se `/rest` da
@@ -121,9 +127,11 @@
    200 na PCYES), e a descrição manda oferecer o link em vez de negar. A
    suposição do "mínimo de 3 letras" estava errada para a PCYES: `pc` traz 603
    produtos e `mo` traz 131 (GraphQL real, 23/set).
-4. **Não há aviso de token revogado.** O plano pedia a tela avisar "o token
-   parou de funcionar". Não foi feito: o bot cai para "tem / não tem" em
-   silêncio e a tela mostra o estado salvo, não um teste ao vivo.
+4. ~~Não há aviso de token revogado.~~ **Feito em 23/set:** a tela confere
+   o token na loja ao abrir (`estadoDoToken`, pelo caminho de estoque, que é
+   o que exige token; o catálogo da PCYES é aberto e não serviria) e mostra
+   "A loja recusou o token". Na conversa, recusa vira `alertar` uma vez por
+   conta por dia, sem o token.
 5. **`loja_combina_com` vai responder vazio quase sempre na PCYES.** Em 87
    produtos sondados, `crosssell` e `upsell` vazios em todos, `related` em 6.
    Não é bug, é dado da loja; a tela avisa o lojista.

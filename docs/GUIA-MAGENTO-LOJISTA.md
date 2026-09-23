@@ -4,12 +4,15 @@ Para o responsável técnico da loja. Leva uns 5 minutos.
 
 ## Para que serve
 
-Com este token, o atendimento automático no WhatsApp mostra a **foto real** do
-produto e diz **quantas unidades restam**. Sem ele, o atendimento já funciona,
-mas só diz se o produto tem ou não tem em estoque.
+Com este token, o atendimento automático no WhatsApp diz **quantas unidades
+restam** de cada produto. Sem ele, o atendimento já funciona, mas só diz se o
+produto tem ou não tem em estoque. A foto do produto aparece com ou sem token
+na maioria das lojas; o token só é usado para ela se a loja não deixar o
+catálogo aberto.
 
 **O acesso é usado só para leitura.** O AutoFluxos só faz consultas (GET) em
-três pontos: fotos do produto, estoque vendável e configuração de estoque.
+três pontos: estoque vendável, configuração de estoque e, se preciso, fotos do
+produto.
 Nada é criado, alterado ou apagado na loja. Você pode revogar a qualquer
 momento, sem falar com a gente (passo 6).
 
@@ -28,12 +31,15 @@ momento, sem falar com a gente (passo 6).
 
 2. Aba **API**, em "Acesso a recursos": escolha **Personalizado** e marque
    **só**:
-   - **Catálogo › Inventário › Produtos** (fotos do produto);
    - **Lojas › Inventário › Estoques** (estoque vendável), se aparecer. Esse
-     item só existe em lojas com o módulo de Inventário (MSI). Se não
-     existir, a loja usa o estoque antigo e o item de Produtos basta.
+     item só existe em lojas com o módulo de Inventário (MSI). No código do
+     Magento ele é `Magento_InventorySalesApi::stock`;
+   - **Catálogo › Inventário** (estoque antigo e fotos). No código do Magento
+     é `Magento_Catalog::catalog_inventory`, e ele inclui **Produtos**.
 
-   Os nomes mudam um pouco entre versões do Magento. Se o AutoFluxos disser
+   Esses dois códigos são os que a própria loja da PCYES pediu ao recusar uma
+   consulta sem token (23/set/2026). Os nomes na tela mudam um pouco entre
+   versões do Magento. Se o AutoFluxos disser
    que a loja recusou o token mesmo com o passo 5 feito, é permissão faltando:
    nos avise qual versão da loja e dizemos qual item marcar.
 

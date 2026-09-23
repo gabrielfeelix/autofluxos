@@ -10,6 +10,7 @@ import {
   acaoTestarLoja,
 } from '@/server/acoes-loja'
 import { acharCliente } from '@/server/repos/clientes'
+import { estadoDoToken } from '@/server/adaptador-da-loja'
 import { lojaDaConta } from '@/server/repos/lojas'
 
 export const dynamic = 'force-dynamic'
@@ -30,7 +31,7 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const loja = await lojaDaConta(cliente.id)
+  const [loja, token] = await Promise.all([lojaDaConta(cliente.id), estadoDoToken(cliente.id)])
 
   return (
     <AjustesShell cliente={cliente} ativa="integracoes">
@@ -56,6 +57,7 @@ export default async function Pagina({
                   ativa: loja.ativa,
                   verificadaEm: loja.verificadaEm,
                   tokenConectado: loja.estoqueExato !== 'desligado',
+                  tokenRecusado: token === 'recusado',
                 }
               : null
           }

@@ -25,9 +25,21 @@ function comPrazo<T>(promessa: Promise<T>, prazo: Promise<null>): Promise<T | nu
 export async function enriquecer(
   produtos: ProdutoDaLoja[],
   admin: Complemento,
-  { via, estoqueId, prazoMs }: { via: ViaDeEstoque; estoqueId: number | null; prazoMs: number },
+  {
+    via,
+    estoqueId,
+    prazoMs,
+    comFoto = true,
+  }: {
+    /** `null` sem token: quantidade nem é pedida. */
+    via: ViaDeEstoque | null
+    estoqueId: number | null
+    prazoMs: number
+    /** Foto só para o card; a busca não precisa dela e economiza a chamada. */
+    comFoto?: boolean
+  },
 ): Promise<ProdutoDaLoja[]> {
-  if (produtos.length === 0) return produtos
+  if (produtos.length === 0 || (via === null && !comFoto)) return produtos
 
   let desligar: ReturnType<typeof setTimeout> | undefined
   const prazo = new Promise<null>((resolve) => {
@@ -38,8 +50,8 @@ export async function enriquecer(
     produtos.map(async (produto) => {
       const [quantidade, foto] = await Promise.all([
         // Esgotado já diz tudo: gastar chamada para ouvir "0" é só latência.
-        produto.emEstoque ? comPrazo(admin.quantidade(produto.produtoId, via, estoqueId), prazo) : null,
-        comPrazo(admin.foto(produto.produtoId), prazo),
+        produto.emEstoque && via !== null ? comPrazo(admin.quantidade(produto.produtoId, via, estoqueId), prazo) : null,
+        comFoto ? comPrazo(admin.foto(produto.produtoId), prazo) : null,
       ])
       return {
         ...produto,

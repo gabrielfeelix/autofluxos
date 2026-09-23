@@ -14,7 +14,14 @@ import type { ResultadoDoTeste } from '@/server/acoes-loja'
  * o endereço era de outra loja ou que o preço vem errado.
  */
 
-type Inicial = { endereco: string; ativa: boolean; verificadaEm: string | null; tokenConectado: boolean } | null
+type Inicial = {
+  endereco: string
+  ativa: boolean
+  verificadaEm: string | null
+  tokenConectado: boolean
+  /** Conferido ao abrir a tela, na loja. Ver `estadoDoToken`. */
+  tokenRecusado?: boolean
+} | null
 
 const real = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 
@@ -229,20 +236,32 @@ export function LojaMagento({
 
       {ativa && (
         <section className="mt-8 border-t border-line pt-6">
-          <h2 className="text-[15px] font-bold tracking-[-0.01em]">Foto e estoque exato (opcional)</h2>
+          <h2 className="text-[15px] font-bold tracking-[-0.01em]">Estoque exato (opcional)</h2>
           <p className="mt-1 mb-4 max-w-[600px] text-[13px] leading-6 text-muted">
-            Com o token de administrador da loja, o bot mostra a <strong className="text-soft">foto real</strong>{' '}
-            do produto e diz quantas unidades restam. Este acesso é usado só para ler: o AutoFluxos não cria,
-            altera nem apaga nada na loja, e a loja pode revogar quando quiser em Sistema › Integrações.
+            Com o token de administrador da loja, o bot diz <strong className="text-soft">quantas unidades restam</strong>{' '}
+            e garante a foto do produto nas lojas que não a deixam aberta. Este acesso é usado só para ler: o AutoFluxos não cria, altera nem
+            apaga nada na loja, e a loja pode revogar quando quiser em Sistema › Integrações.
           </p>
 
           <div className="app-card px-5 py-4">
             {tokenConectado ? (
               <>
-                <p className="text-[13px] font-bold text-ok">Token conectado</p>
-                <p className="mt-1 text-[12.5px] leading-5 text-muted">
-                  Se a loja revogar o token, o bot volta sozinho a dizer só se tem ou não tem.
-                </p>
+                {inicial?.tokenRecusado ? (
+                  <>
+                    <p className="text-[13px] font-bold text-perigo">A loja recusou o token</p>
+                    <p className="mt-1 text-[12.5px] leading-5 text-muted">
+                      Ele foi revogado ou expirou. Enquanto isso, o bot diz só se tem ou não tem. Desconecte e
+                      cole um token novo.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[13px] font-bold text-ok">Token conectado</p>
+                    <p className="mt-1 text-[12.5px] leading-5 text-muted">
+                      Se a loja revogar o token, o bot volta sozinho a dizer só se tem ou não tem.
+                    </p>
+                  </>
+                )}
                 <button
                   type="button"
                   onClick={aoDesconectarToken}

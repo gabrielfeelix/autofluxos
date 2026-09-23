@@ -3,7 +3,13 @@ import { chamarHttp, type CredencialDaChamada } from '@/server/efeitos/http'
 import type { ResultadoDaLoja, ViaDeEstoque } from './types'
 
 /**
- * Magento com o token de administrador do lojista: foto real e estoque exato.
+ * Magento pela REST: foto real (sem credencial) e estoque exato (com o token).
+ *
+ * A foto sai **sem** o token, de propósito: é dado público do catálogo, e na
+ * PCYES `GET /V1/products/{sku}` responde sem autenticação (23/set/2026).
+ * Mandar o token onde ele não é preciso só aumenta onde ele circula. Loja que
+ * fecha a REST para anônimo responde 401, e aí, havendo token, a foto é pedida
+ * de novo com ele; sem token, o card sai como texto.
  *
  * ---------------------------------------------------------------------------
  * Por que este arquivo não sabe escrever
@@ -34,9 +40,16 @@ const CAMINHOS = {
     `/rest/V1/inventory/get-product-salable-quantity/${encodeURIComponent(sku)}/${estoqueId}`,
   /** Loja sem MSI. */
   legado: (sku: string) => `/rest/V1/stockItems/${encodeURIComponent(sku)}`,
-  /** As fotos. Na PCYES o GraphQL público só devolve placeholder (23/set/2026). */
-  midia: (sku: string) => `/rest/V1/products/${encodeURIComponent(sku)}/media`,
+  /**
+   * O produto, pela galeria (`media_gallery_entries`). Não `/media`: na PCYES
+   * o arquivo da foto é a URL inteira do CDN, e `/media` tenta ler esse
+   * "arquivo" do disco e responde 400, com ou sem token (23/set/2026).
+   */
+  produto: (sku: string) => `/rest/V1/products/${encodeURIComponent(sku)}`,
 } as const
+
+/** SKU que não existe, para conferir o token no caminho legado: 404 é token bom. */
+const SKU_DE_CONFERENCIA = 'autofluxos-conferencia-de-token'
 
 type Chamar = typeof chamarHttp
 
@@ -50,10 +63,14 @@ function inteiroNaoNegativo(v: unknown): number | null {
 }
 
 export function lojaAdmin(
-  dados: { endereco: string; credencial: CredencialDaChamada },
+  dados: { endereco: string; credencial: CredencialDaChamada | null },
   chamar: Chamar = chamarHttp,
 ) {
-  async function ler(caminho: string): Promise<ResultadoDaLoja<unknown> & { status?: number | null }> {
+  async function ler(
+    caminho: string,
+    { comToken = true }: { comToken?: boolean } = {},
+  ): Promise<ResultadoDaLoja<unknown> & { status?: number | null }> {
+    if (comToken && !dados.credencial) return { ok: false, motivo: 'sem token conectado', status: null }
     const r = await chamar(
       {
         tipo: 'chamar_http',
@@ -64,7 +81,7 @@ export function lojaAdmin(
         mapear: [],
         aoFalhar: 'humano',
       },
-      { deTeste: false, credencial: dados.credencial, comJson: true },
+      { deTeste: false, credencial: comToken ? dados.credencial : null, comJson: true },
     )
     if (r.ok) return { ok: true, valor: r.json }
     const status = statusDe(r.motivo)
@@ -120,6 +137,20 @@ export function lojaAdmin(
     quantidade,
 
     /**
+     * O token ainda vale? `recusado` só com 401/403; loja fora do ar é
+     * `sem_resposta`, e quem mostra isso não pode dizer que o token caiu.
+     */
+    async conferir(via: ViaDeEstoque): Promise<'ok' | 'recusado' | 'sem_resposta'> {
+      // Pelo caminho de estoque, que é o que exige o token: o catálogo pode
+      // estar aberto a anônimo (a PCYES está) e responderia 200 com token
+      // revogado. O Magento confere a permissão antes de procurar o produto,
+      // então no legado um SKU inexistente devolve 404 com token bom e 401 sem.
+      const r = await ler(via === 'msi' ? CAMINHOS.estoqueDoSite() : CAMINHOS.legado(SKU_DE_CONFERENCIA))
+      if (r.ok || (via === 'legado' && r.status === 404)) return 'ok'
+      return r.status === 401 || r.status === 403 ? 'recusado' : 'sem_resposta'
+    },
+
+    /**
      * A foto principal do produto: a ativa com o papel `image`, ou a primeira
      * ativa se nenhuma tiver o papel. Vídeo fica de fora.
      *
@@ -128,9 +159,11 @@ export function lojaAdmin(
      * marca da loja no WhatsApp do cliente.
      */
     async foto(sku: string): Promise<ResultadoDaLoja<string | null>> {
-      const r = await ler(CAMINHOS.midia(sku))
+      let r = await ler(CAMINHOS.produto(sku), { comToken: false })
+      if (!r.ok && (r.status === 401 || r.status === 403) && dados.credencial) r = await ler(CAMINHOS.produto(sku))
       if (!r.ok) return { ok: false, motivo: r.motivo }
-      const lista = Array.isArray(r.valor) ? (r.valor as Record<string, unknown>[]) : []
+      const galeria = (r.valor as { media_gallery_entries?: unknown } | null)?.media_gallery_entries
+      const lista = Array.isArray(galeria) ? (galeria as Record<string, unknown>[]) : []
       const ativas = lista.filter(
         (m) => m && m.disabled !== true && m.media_type === 'image' && typeof m.file === 'string' && m.file !== '',
       )
@@ -138,6 +171,9 @@ export function lojaAdmin(
         ativas.find((m) => Array.isArray(m.types) && (m.types as unknown[]).includes('image')) ?? ativas[0]
       if (!principal) return { ok: true, valor: null }
       const arquivo = String(principal.file)
+      // Absoluta quando a loja guarda a foto num CDN (PCYES). Só `https`: o
+      // WhatsApp busca a imagem do cabeçalho, e endereço sem TLS é recusado.
+      if (/^[a-z]+:\/\//i.test(arquivo)) return { ok: true, valor: arquivo.startsWith('https://') ? arquivo : null }
       return {
         ok: true,
         valor: `${dados.endereco}/media/catalog/product${arquivo.startsWith('/') ? '' : '/'}${arquivo}`,
