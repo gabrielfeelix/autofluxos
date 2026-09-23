@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs'
 import { expect, test, type BrowserContext, type Page } from '@playwright/test'
+import { rest } from './banco-local'
 import { cadastrar, identidade } from './cadastro'
 
 /**
@@ -27,40 +27,10 @@ test.beforeEach(async ({ context }) => {
   if (sessaoSalva) await context.addCookies(sessaoSalva.cookies)
 })
 
-/**
- * O contato nasce direto no banco **local**, e só ele.
- *
- * Conta nova, sem canal, não mostra o "+ Criar contato" (a tela de Contatos
- * vazia manda conectar um número). As atividades, que são o assunto aqui,
- * continuam nascendo pela ficha.
+/*
+ * O contato nasce direto no banco **local** (`rest`), e só ele. As atividades,
+ * que são o assunto aqui, continuam nascendo pela ficha.
  */
-function envLocal(): Record<string, string> {
-  const env = Object.fromEntries(
-    readFileSync(new URL('../../.env.teste-local', import.meta.url), 'utf8')
-      .split('\n')
-      .filter((linha) => linha.includes('=') && !linha.startsWith('#'))
-      .map((linha) => [linha.slice(0, linha.indexOf('=')), linha.slice(linha.indexOf('=') + 1).trim()]),
-  )
-  if (!/^http:\/\/(127\.0\.0\.1|localhost):/.test(env.SUPABASE_URL ?? '')) throw new Error('SUPABASE_URL não é local')
-  return env
-}
-
-/** PostgREST do banco local, com a chave de serviço local. */
-async function rest(caminho: string, init: { method?: string; body?: unknown } = {}) {
-  const env = envLocal()
-  const resposta = await fetch(`${env.SUPABASE_URL}/rest/v1/${caminho}`, {
-    method: init.method ?? 'GET',
-    headers: {
-      apikey: env.SUPABASE_SECRET_KEY!,
-      Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`,
-      'Content-Type': 'application/json',
-      Prefer: 'return=representation',
-    },
-    body: init.body === undefined ? undefined : JSON.stringify(init.body),
-  })
-  return (await resposta.json()) as { id: string }[]
-}
-
 const clienteDaConta = () => painelDaConta.split('/').pop()!
 
 async function criarContato(page: Page, nome = CONTATO) {

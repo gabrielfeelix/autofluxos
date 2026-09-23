@@ -631,16 +631,16 @@ Filtros ativos: Cliente: Ouro ✕   Etiqueta: Plano anual ✕   Limpar tudo
   Ainda não comprou) e Etiquetas (automáticas e manuais, com contagem).
 - Filtro ativo sempre com texto + ✕; `aria-pressed` nas opções.
 
-- [ ] **Passo 1:** manter **os mesmos parâmetros de URL** que a página usa hoje
+- [x] **Passo 1:** manter **os mesmos parâmetros de URL** que a página usa hoje
   (ler o código antes); a barra só muda a apresentação.
-- [ ] **Passo 2:** busca `max-w-[360px]`, botão Buscar some (Enter e 400 ms).
-- [ ] **Passo 3:** remover as duas faixas de pills; chips só dos ativos.
-- [ ] **Passo 4:** estado vazio com filtros: "Nenhum contato com estes filtros" + Limpar.
-- [ ] **Passo 5:** teste e2e (acrescentar em `test/e2e/jornada-chatbot-crm.spec.ts`
+- [x] **Passo 2:** busca `max-w-[360px]`, botão Buscar some (Enter e 400 ms).
+- [x] **Passo 3:** remover as duas faixas de pills; chips só dos ativos.
+- [x] **Passo 4:** estado vazio com filtros: "Nenhum contato com estes filtros" + Limpar.
+- [x] **Passo 5:** teste e2e (acrescentar em `test/e2e/jornada-chatbot-crm.spec.ts`
   ou arquivo novo `contatos.spec.ts`): aplicar dois filtros e uma busca, remover
   um filtro e conferir que o outro e a busca continuam; recarregar a URL e
   conferir o mesmo resultado.
-- [ ] **Passo 6:** prints desktop e celular; commit `feat(contatos): busca e filtros numa barra só`.
+- [x] **Passo 6:** prints desktop e celular; commit `feat(contatos): busca e filtros numa barra só`.
 
 ### Tarefa 2.4: seleção diz o alcance [X11, X17]
 
@@ -1380,3 +1380,12 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   vale para toda ficha de etiqueta (tabela, ficha, Inbox, seletor, barra de
   seleção). `dark:` do Tailwind passou a seguir `data-tema` (antes seguia o
   sistema): corrige de quebra os três `dark:` que já existiam.
+- 23/09, tarefa 2.3: `paginarLeads` busca nome sem acento (`padraoSemAcento`,
+  `imatch`) e telefone pelos dígitos ("5552 02" acha); CSV e o seletor de
+  "Nova atividade" herdam. A barra fica **fora** do `Suspense` com `key`
+  (senão remontava e a busca perdia o foco); cabeçalho, Colunas e tabela
+  leem a mesma página via `cache` do React. "+ Novo contato" foi para o
+  cabeçalho e aparece também na conta sem ninguém (achado da 1.4). A busca
+  também vira chip. Etiquetas automáticas seguem sem contagem (custo, ver o
+  comentário na página). Helpers de banco local do e2e em
+  `test/e2e/banco-local.ts`. e2e `contatos.spec.ts` e `agenda.spec.ts` verdes.

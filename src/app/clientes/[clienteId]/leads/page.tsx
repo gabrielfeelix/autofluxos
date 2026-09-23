@@ -5,7 +5,7 @@ import { telefoneLegivel } from '@/core/contatos/telefone'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { IlustracaoContatos } from '@/components/design/ilustracoes'
-import { Suspense } from 'react'
+import { cache, Suspense } from 'react'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarCanais } from '@/server/repos/conversas'
 import {
@@ -22,13 +22,16 @@ import { FichaDeEtiqueta } from '@/components/etiquetas/ficha'
 import { CaixaDeSelecao, CaixaDeTodos, SelecaoDeContatos } from '@/components/lead/selecao'
 import { MenuDoContato } from '@/components/lead/menu-do-contato'
 import { ColunasDaTabela } from '@/components/lead/colunas-da-tabela'
+import { BarraDeContatos } from '@/components/contatos/barra-de-contatos'
+import { enderecoDosContatos } from '@/core/contatos/filtro'
+import { IconeDoQuadro, PopoverDoQuadro } from '@/components/quadros/popover-do-quadro'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { acaoCriarContato } from '@/server/acoes'
 import { listarEtiquetasComContagem, type Etiqueta } from '@/server/repos/etiquetas'
 import { listarQuadros } from '@/server/repos/quadros'
 import { faixasDaConta, relacionamentoDeMuitos } from '@/server/repos/relacionamento'
 import { contatosDoNivel } from '@/server/consultas/nivel'
-import { FAIXAS_PADRAO, NIVEIS, ROTULO_DO_NIVEL, type Nivel } from '@/core/relacionamento'
+import { FAIXAS_PADRAO, NIVEIS, type Nivel } from '@/core/relacionamento'
 import { SeloDoCliente } from '@/components/lead-crm/selo-do-cliente'
 
 export const dynamic = 'force-dynamic'
@@ -43,12 +46,6 @@ type Busca = {
   nivel?: string | string[]
 }
 
-const filtros: { etiqueta: EtiquetaDeLead; rotulo: string }[] = [
-  { etiqueta: 'abriu_com_midia', rotulo: 'Abriu com áudio/mídia' },
-  { etiqueta: 'foi_para_pessoa', rotulo: 'Foi para pessoa' },
-  { etiqueta: 'nao_respondeu', rotulo: 'Não respondeu depois da primeira' },
-]
-
 function primeiro(valor: string | string[] | undefined): string {
   return (Array.isArray(valor) ? valor[0] : valor) ?? ''
 }
@@ -62,28 +59,6 @@ function nivelValido(valor: Busca['nivel']): Nivel | null {
 function etiquetaValida(valor: Busca['etiqueta']): EtiquetaDeLead | null {
   const unica = primeiro(valor)
   return ETIQUETAS_DE_LEAD.find((etiqueta) => etiqueta === unica) ?? null
-}
-
-/** Monta o endereço da própria tela preservando o que já estava escolhido. */
-function endereco(
-  clienteId: string,
-  filtro: {
-    etiqueta?: EtiquetaDeLead | null
-    marca?: string | null
-    busca?: string
-    pagina?: number
-    nivel?: Nivel | null
-  },
-): string {
-  const parametros = new URLSearchParams()
-  if (filtro.etiqueta) parametros.set('etiqueta', filtro.etiqueta)
-  if (filtro.marca) parametros.set('marca', filtro.marca)
-  if (filtro.busca) parametros.set('busca', filtro.busca)
-  if (filtro.nivel) parametros.set('nivel', filtro.nivel)
-  if (filtro.pagina && filtro.pagina > 1) parametros.set('pagina', String(filtro.pagina))
-
-  const consulta = parametros.toString()
-  return `/clientes/${clienteId}/leads${consulta ? `?${consulta}` : ''}`
 }
 
 /** A exportação leva o mesmo filtro da tela, ver o porquê na própria rota. */
@@ -106,6 +81,58 @@ function enderecoDoCsv(
   return `/api/clientes/${clienteId}/leads/csv${consulta ? `?${consulta}` : ''}`
 }
 
+/** O filtro da tela, já validado. Tudo primitivo: é a chave do `cache` abaixo. */
+type Filtro = {
+  clienteId: string
+  etiqueta: EtiquetaDeLead | null
+  marca: string | null
+  termo: string
+  pagina: number
+  nivel: Nivel | null
+}
+
+/**
+ * A página de contatos pedida, lida uma vez por requisição.
+ *
+ * O cabeçalho (contagem, "Baixar CSV"), o botão Colunas e a tabela moram em
+ * `Suspense` separados, e os três precisam da mesma página. O `cache` do React
+ * faz os três receberem a mesma leitura em vez de três idas ao banco.
+ */
+const lerPagina = cache(
+  async (clienteId: string, etiqueta: EtiquetaDeLead | null, marca: string | null, termo: string, pagina: number, nivel: Nivel | null) => {
+    const faixas = (await faixasDaConta(clienteId)) ?? FAIXAS_PADRAO
+
+    /*
+      O filtro de nível é resolvido **no servidor**, antes de paginar (RB-37).
+
+      Até a T6.1 ele era um `leads.filter(...)` sobre a página já carregada: a
+      contagem dizia "3 de 50" (3 daquela página, não da base), a paginação
+      ignorava o filtro, e o CSV nem o conhecia, quem filtrava por Ouro e
+      exportava recebia todo mundo. Duas superfícies, duas definições.
+
+      Agora `consultarContatos` responde quem está na faixa, olhando a conta
+      inteira, e a lista de leads é restringida a esses contatos antes do
+      `range`. A faixa vira condição por `condicoesDoNivel`, que é o mesmo
+      caminho que a exportação usa.
+    */
+    const daFaixa = nivel ? await contatosDoNivel(clienteId, nivel, faixas) : null
+    const resultado = await paginarLeads(clienteId, {
+      // Contatos é a base inteira. Sem isto valia o padrão do Inbox
+      // (`aberta`) e quem teve a conversa resolvida sumia da lista e do total.
+      estado: 'todas',
+      etiqueta,
+      etiquetaId: marca,
+      busca: termo,
+      pagina,
+      contatos: daFaixa,
+    })
+    return { ...resultado, faixas }
+  },
+)
+
+const ler = (f: Filtro) => lerPagina(f.clienteId, f.etiqueta, f.marca, f.termo, f.pagina, f.nivel)
+const filtrando = (f: Filtro) => f.etiqueta !== null || f.marca !== null || f.termo !== '' || f.nivel !== null
+
 export default async function Pagina({
   params,
   searchParams,
@@ -117,34 +144,188 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const etiqueta = etiquetaValida(busca.etiqueta)
-  const marca = primeiro(busca.marca) || null
-  const termo = limparBusca(primeiro(busca.busca))
-  const pagina = Math.max(1, Number(primeiro(busca.pagina)) || 1)
-  const nivel = nivelValido(busca.nivel)
+  const filtro: Filtro = {
+    clienteId: cliente.id,
+    etiqueta: etiquetaValida(busca.etiqueta),
+    marca: primeiro(busca.marca) || null,
+    termo: limparBusca(primeiro(busca.busca)),
+    pagina: Math.max(1, Number(primeiro(busca.pagina)) || 1),
+    nivel: nivelValido(busca.nivel),
+  }
+  const chave = `${filtro.etiqueta}-${filtro.marca}-${filtro.termo}-${filtro.pagina}-${filtro.nivel}`
+
+  // O total da conta decide entre a tela de primeira vez e a tabela; as
+  // etiquetas alimentam o popover de filtros. As duas leituras são baratas.
+  const [totalDaConta, etiquetasDaConta] = await Promise.all([
+    contarLeads(cliente.id),
+    listarEtiquetasComContagem(cliente.id),
+  ])
 
   return (
     <ClienteShell cliente={cliente} ativa="leads">
       <main className="flex min-h-full flex-col px-4 md:px-[42px] pt-[26px] pb-[42px]">
-        <h1 className="mb-5 text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Contatos</h1>
+        <CabecalhoDaTela filtro={filtro} chave={chave} totalDaConta={totalDaConta} />
 
-        {/*
-          `min-h-0` e `flex-1` descem daqui até o cartão da tabela, que é quem
-          precisa esticar. Sem o `min-h-0`, um filho de flex se recusa a encolher
-          abaixo do próprio conteúdo e a rolagem escapa para a página inteira.
-        */}
-        <Suspense key={`${etiqueta}-${marca}-${termo}-${pagina}-${nivel}`} fallback={<Esqueleto />}>
-          <Tabela
-            clienteId={cliente.id}
-            etiqueta={etiqueta}
-            marca={marca}
-            termo={termo}
-            pagina={pagina}
-            nivel={nivel}
-          />
-        </Suspense>
+        {totalDaConta === 0 ? (
+          <PrimeiraVezDaConta clienteId={cliente.id} />
+        ) : (
+          <>
+            <BarraDeContatos
+              base={`/clientes/${cliente.id}/leads`}
+              filtro={{ etiqueta: filtro.etiqueta, marca: filtro.marca, busca: filtro.termo, nivel: filtro.nivel }}
+              manuais={etiquetasDaConta.map(({ id, nome, contatos }) => ({ id, nome, contatos: contatos ?? null }))}
+              colunas={
+                <Suspense key={chave} fallback={<ColunasEsperando />}>
+                  <ColunasDoFiltro filtro={filtro} />
+                </Suspense>
+              }
+            />
+            {/*
+              `min-h-0` e `flex-1` descem daqui até o cartão da tabela, que é quem
+              precisa esticar. Sem o `min-h-0`, um filho de flex se recusa a encolher
+              abaixo do próprio conteúdo e a rolagem escapa para a página inteira.
+            */}
+            <Suspense key={chave} fallback={<Esqueleto />}>
+              <Tabela filtro={filtro} etiquetasDaConta={etiquetasDaConta} />
+            </Suspense>
+          </>
+        )}
       </main>
     </ClienteShell>
+  )
+}
+
+/**
+ * Título, quantos são e as ações da tela.
+ *
+ * "+ Novo contato" fica aqui, fora da tabela, e por isso aparece também na conta
+ * que ainda não tem ninguém: antes ele só existia com a tabela montada, e conta
+ * nova sem número conectado não tinha como cadastrar o primeiro contato.
+ */
+function CabecalhoDaTela({ filtro, chave, totalDaConta }: { filtro: Filtro; chave: string; totalDaConta: number }) {
+  const { clienteId } = filtro
+  return (
+    <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-3">
+      <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Contatos</h1>
+      {totalDaConta > 0 && (
+        <Suspense key={chave} fallback={null}>
+          <Contagem filtro={filtro} totalDaConta={totalDaConta} />
+        </Suspense>
+      )}
+      <div className="ml-auto flex items-center gap-2">
+        <Link
+          href={`/clientes/${clienteId}/leads/importar`}
+          className="quadro-tool"
+          title="Casar a planilha do cliente com quem já conversou, e corrigir os nomes"
+        >
+          Importar
+        </Link>
+        <PopoverDoQuadro
+          rotulo="Mais ações de contatos"
+          largura={260}
+          className="quadro-icon-button"
+          gatilho={<IconeDoQuadro tipo="menu" />}
+        >
+          <Link href={`/clientes/${clienteId}/leads/segmentos`} data-fechar-popover className="quadro-menu-item">
+            <span className="flex-1">
+              Segmentos
+              <span className="block text-[11px] font-normal text-dim">Grupos salvos por regra, com prévia de quem entra</span>
+            </span>
+          </Link>
+          {totalDaConta > 0 && (
+            <a
+              href={enderecoDoCsv(clienteId, filtro.etiqueta, filtro.marca, filtro.termo, filtro.nivel)}
+              data-fechar-popover
+              className="quadro-menu-item"
+            >
+              <span className="flex-1">
+                Baixar CSV
+                <span className="block text-[11px] font-normal text-dim">
+                  <Suspense fallback="Baixa os contatos do filtro atual">
+                    <AlcanceDoCsv filtro={filtro} />
+                  </Suspense>
+                </span>
+              </span>
+            </a>
+          )}
+        </PopoverDoQuadro>
+        <ModalFormulario
+          botao="+ Novo contato"
+          titulo="Novo contato"
+          descricao="Para quem você já tem o telefone e ainda não escreveu por aqui. O bot só fala depois que a pessoa mandar a primeira mensagem, o WhatsApp não deixa começar conversa com texto livre."
+          action={acaoCriarContato.bind(null, clienteId)}
+        >
+          <label>
+            <RotuloCampo>Nome</RotuloCampo>
+            <input
+              name="nome"
+              placeholder="ex.: Ana Souza"
+              className="app-field px-[13px] py-[11px] text-[13.5px]"
+            />
+          </label>
+          <label>
+            <RotuloCampo>Telefone com DDD</RotuloCampo>
+            <input
+              name="telefone"
+              required
+              autoFocus
+              placeholder="ex.: (11) 98765-4321"
+              className="app-field px-[13px] py-[11px] text-[13.5px]"
+            />
+          </label>
+        </ModalFormulario>
+      </div>
+    </div>
+  )
+}
+
+async function Contagem({ filtro, totalDaConta }: { filtro: Filtro; totalDaConta: number }) {
+  const { leads, total } = await ler(filtro)
+  const esperando = leads.filter((lead) => lead.aguardando).length
+  return (
+    <>
+      <span className="rounded-full border border-line bg-surface px-3 py-1 text-[11px] font-semibold text-muted tabular-nums">
+        {filtrando(filtro)
+          ? `${total} de ${totalDaConta} ${totalDaConta === 1 ? 'contato' : 'contatos'}`
+          : `${total} ${total === 1 ? 'contato' : 'contatos'}`}
+      </span>
+      {esperando > 0 && (
+        <span className="rounded-full border border-rose-400/25 bg-rose-400/[0.09] px-3 py-1 text-[11px] font-bold text-perigo">
+          {esperando} esperando humano nesta página
+        </span>
+      )}
+    </>
+  )
+}
+
+/** O que o CSV leva, dito antes do clique: o filtro inteiro, não só a página. */
+async function AlcanceDoCsv({ filtro }: { filtro: Filtro }) {
+  const { total } = await ler(filtro)
+  if (!filtrando(filtro)) return <>Baixa todos os {total} contatos</>
+  return <>Baixa os {total} do filtro atual</>
+}
+
+/*
+  O que o botão "Colunas" oferece: uma por variável coletada nesta página,
+  depois as fixas. "Contato" fica de fora de propósito, tabela de contatos sem
+  a coluna de contato é uma tela que não responde mais nada.
+*/
+async function ColunasDoFiltro({ filtro }: { filtro: Filtro }) {
+  const { leads } = await ler(filtro)
+  const colunasDisponiveis = [
+    ...colunasDosCampos(leads).map((coluna) => ({ chave: coluna, rotulo: rotuloDoCampo(coluna) || coluna })),
+    { chave: 'cliente', rotulo: 'Cliente' },
+    { chave: 'situacao', rotulo: 'Situação' },
+    { chave: 'ultima', rotulo: 'Última mensagem' },
+  ]
+  return <ColunasDaTabela clienteId={filtro.clienteId} colunas={colunasDisponiveis} />
+}
+
+function ColunasEsperando() {
+  return (
+    <button type="button" disabled className="quadro-tool opacity-60">
+      Colunas
+    </button>
   )
 }
 
@@ -173,64 +354,12 @@ function colunasDosCampos(leads: Lead[]): string[] {
   return vistas
 }
 
-async function Tabela({
-  clienteId,
-  etiqueta,
-  marca,
-  termo,
-  pagina: pedida,
-  nivel,
-}: {
-  clienteId: string
-  etiqueta: EtiquetaDeLead | null
-  marca: string | null
-  termo: string
-  pagina: number
-  nivel: Nivel | null
-}) {
-  const filtrando = etiqueta !== null || marca !== null || termo !== '' || nivel !== null
-
-  const faixas = (await faixasDaConta(clienteId)) ?? FAIXAS_PADRAO
-
-  /*
-    O filtro de nível é resolvido **no servidor**, antes de paginar (RB-37).
-
-    Até a T6.1 ele era um `leads.filter(...)` sobre a página já carregada: a
-    contagem dizia "3 de 50" (3 daquela página, não da base), a paginação
-    ignorava o filtro, e o CSV nem o conhecia, quem filtrava por Ouro e
-    exportava recebia todo mundo. Duas superfícies, duas definições.
-
-    Agora `consultarContatos` responde quem está na faixa, olhando a conta
-    inteira, e a lista de leads é restringida a esses contatos antes do
-    `range`. A faixa vira condição por `condicoesDoNivel`, que é o mesmo
-    caminho que a exportação usa.
-  */
-  const daFaixa = nivel ? await contatosDoNivel(clienteId, nivel, faixas) : null
-
-  const [{ leads, total, pagina, paginas }, etiquetasDaConta, quadrosDaConta, totalDaConta] =
-    await Promise.all([
-      paginarLeads(clienteId, {
-        // Contatos é a base inteira. Sem isto valia o padrão do Inbox
-        // (`aberta`) e quem teve a conversa resolvida sumia da lista e do total.
-        estado: 'todas',
-        etiqueta,
-        etiquetaId: marca,
-        busca: termo,
-        pagina: pedida,
-        contatos: daFaixa,
-      }),
-      listarEtiquetasComContagem(clienteId),
-      listarQuadros(clienteId),
-      // O "de N" do selo só existe com filtro; sem filtro o total já é a conta.
-      filtrando ? contarLeads(clienteId) : Promise.resolve(null),
-    ])
-
-  // Sem filtro e sem nenhum lead, a tela ainda é de primeira vez: o que ajuda
-  // é dizer o que falta ligar, não uma tabela vazia com um cabeçalho bonito.
-  if (total === 0 && !filtrando) {
-    const canais = await listarCanais(clienteId)
-    return <PrimeiraVez clienteId={clienteId} temCanal={canais.length > 0} />
-  }
+async function Tabela({ filtro, etiquetasDaConta }: { filtro: Filtro; etiquetasDaConta: Etiqueta[] }) {
+  const { clienteId, etiqueta, marca, termo, nivel } = filtro
+  const [{ leads, total, pagina, paginas, faixas }, quadrosDaConta] = await Promise.all([
+    ler(filtro),
+    listarQuadros(clienteId),
+  ])
 
   /*
     O relacionamento ainda é lido da página, e agora isso é só para **desenhar
@@ -242,224 +371,30 @@ async function Tabela({
     faixas,
   )
 
-  // Sem `filter()`: a página que chegou já é a página certa.
-  const visiveis = leads
-
   const colunas = colunasDosCampos(leads)
-
-  /*
-    O que o botão "Colunas" oferece: as fixas primeiro, depois uma por variável
-    coletada. "Contato" fica de fora de propósito, tabela de contatos sem a
-    coluna de contato é uma tela que não responde mais nada.
-  */
-  const colunasDisponiveis = [
-    ...colunas.map((coluna) => ({ chave: coluna, rotulo: rotuloDoCampo(coluna) || coluna })),
-    { chave: 'cliente', rotulo: 'Cliente' },
-    { chave: 'situacao', rotulo: 'Situação' },
-    { chave: 'ultima', rotulo: 'Última mensagem' },
-  ]
-  const esperando = leads.filter((lead) => lead.aguardando).length
   const primeiroDaPagina = (pagina - 1) * LEADS_POR_PAGINA + 1
   const ultimoDaPagina = primeiroDaPagina + leads.length - 1
+  const base = `/clientes/${clienteId}/leads`
+  const daPagina = (n: number) => {
+    const endereco = enderecoDosContatos(base, { etiqueta, marca, busca: termo, nivel })
+    return n > 1 ? `${endereco}${endereco.includes('?') ? '&' : '?'}pagina=${n}` : endereco
+  }
 
   return (
     <>
-      <div className="mb-[22px] flex flex-wrap items-center justify-end gap-2 md:-mt-[53px]">
-        <span className="rounded-full border border-line bg-surface px-3 py-1 text-[11px] font-semibold text-muted">
-          {filtrando && totalDaConta !== null
-            ? `${total} de ${totalDaConta} ${totalDaConta === 1 ? 'contato' : 'contatos'}`
-            : `${total} ${total === 1 ? 'contato' : 'contatos'}`}
-        </span>
-        {esperando > 0 && (
-          <span className="rounded-full border border-rose-400/25 bg-rose-400/[0.09] px-3 py-1 text-[11px] font-bold text-perigo">
-            {esperando} esperando humano nesta página
-          </span>
-        )}
-        {/*
-          As colunas que cada pessoa quer ver. Ver `ColunasDaTabela`: a escolha
-          é deste navegador, e some a coluna por CSS em vez de mudar a consulta.
-        */}
-        <ColunasDaTabela clienteId={clienteId} colunas={colunasDisponiveis} />
-        <Link
-          href={`/clientes/${clienteId}/leads/segmentos`}
-          className="app-secondary-button px-3 py-1.5 text-[11.5px]"
-          title="Regras salvas de quem entra num grupo, com prévia de quem pode receber"
-        >
-          Segmentos
-        </Link>
-        <Link
-          href={`/clientes/${clienteId}/leads/importar`}
-          className="app-secondary-button px-3 py-1.5 text-[11.5px]"
-          title="Casar a planilha do cliente com quem já conversou, e corrigir os nomes"
-        >
-          Importar
-        </Link>
-        <ModalFormulario
-          botao="+ Criar contato"
-          titulo="Novo contato"
-          descricao="Para quem você já tem o telefone e ainda não escreveu por aqui. O bot só fala depois que a pessoa mandar a primeira mensagem, o WhatsApp não deixa começar conversa com texto livre."
-          action={acaoCriarContato.bind(null, clienteId)}
-        >
-          <label>
-            <RotuloCampo>Nome</RotuloCampo>
-            <input
-              name="nome"
-              placeholder="ex.: Ana Souza"
-              className="app-field px-[13px] py-[11px] text-[13.5px]"
-            />
-          </label>
-          <label>
-            <RotuloCampo>Telefone com DDD</RotuloCampo>
-            <input
-              name="telefone"
-              required
-              autoFocus
-              placeholder="ex.: (11) 98765-4321"
-              className="app-field px-[13px] py-[11px] text-[13.5px]"
-            />
-          </label>
-        </ModalFormulario>
-        <a
-          href={enderecoDoCsv(clienteId, etiqueta, marca, termo, nivel)}
-          className="app-secondary-button px-3 py-1.5 text-[11.5px]"
-          title="Baixar como planilha exatamente o que este filtro mostra"
-        >
-          Baixar CSV
-        </a>
-      </div>
-
-      <form action={`/clientes/${clienteId}/leads`} className="mb-3 flex flex-wrap gap-2">
-        {etiqueta && <input type="hidden" name="etiqueta" value={etiqueta} />}
-        {marca && <input type="hidden" name="marca" value={marca} />}
-        <label className="flex-1 basis-[240px]">
-          <span className="sr-only">Buscar por nome ou telefone</span>
-          <input
-            type="search"
-            name="busca"
-            defaultValue={termo}
-            placeholder="Buscar por nome ou telefone"
-            className="app-field px-3 py-2 text-[12.5px]"
-          />
-        </label>
-        <button type="submit" className="app-secondary-button px-4 py-2 text-[12px]">
-          Buscar
-        </button>
-        {termo !== '' && (
-          <Link
-            href={endereco(clienteId, { etiqueta, marca, nivel })}
-            className="self-center text-[11.5px] font-semibold text-primary hover:underline"
-          >
-            Limpar busca
-          </Link>
-        )}
-      </form>
-
-      {/* Sem contagem por etiqueta de propósito: cada número desses obrigava a
-          ler o histórico do cliente inteiro a cada visita, exatamente o que a
-          paginação veio evitar. O número que importa continua acima. */}
-      {/*
-        O nível fica numa fileira própria, e não junto das etiquetas.
-
-        São duas perguntas diferentes: etiqueta é "o que marcaram nesta pessoa",
-        nível é "quanto ela já me deu". Misturar as duas numa fileira só faria
-        parecer que clicar em "Ouro" desmarca "Não respondeu", e elas somam.
-      */}
-      <nav aria-label="Filtrar por valor do cliente" className="mb-2 flex flex-wrap items-center gap-2">
-        <span className="text-[10.5px] font-semibold tracking-[0.04em] text-dim uppercase">
-          Cliente
-        </span>
-        <Link
-          href={endereco(clienteId, { etiqueta, marca, busca: termo })}
-          aria-current={nivel === null ? 'page' : undefined}
-          className={classeDoFiltro(nivel === null)}
-          scroll={false}
-        >
-          Qualquer
-        </Link>
-        {NIVEIS.map((opcao) => (
-          <Link
-            key={opcao}
-            href={endereco(clienteId, {
-              etiqueta,
-              marca,
-              busca: termo,
-              nivel: nivel === opcao ? null : opcao,
-            })}
-            aria-current={nivel === opcao ? 'page' : undefined}
-            className={classeDoFiltro(nivel === opcao)}
-            scroll={false}
-          >
-            {ROTULO_DO_NIVEL[opcao]}
-          </Link>
-        ))}
-        {nivel && (
-          /* Dizer que o filtro é da página evita a conclusão errada, "só tenho
-             dois clientes ouro", quando na verdade são dois **nesta** página. */
-          <span className="text-[10.5px] text-dim">
-            {visiveis.length} de {leads.length} nesta página
-          </span>
-        )}
-      </nav>
-
-      <nav aria-label="Filtrar contatos por etiqueta" className="mb-3 flex flex-wrap gap-2">
-        <Link
-          href={endereco(clienteId, { busca: termo, nivel })}
-          aria-current={etiqueta === null && marca === null ? 'page' : undefined}
-          className={classeDoFiltro(etiqueta === null && marca === null)}
-          scroll={false}
-        >
-          Todos
-        </Link>
-        {filtros.map((filtro) => (
-          <Link
-            key={filtro.etiqueta}
-            href={endereco(clienteId, { etiqueta: filtro.etiqueta, marca, busca: termo, nivel })}
-            aria-current={etiqueta === filtro.etiqueta ? 'page' : undefined}
-            className={classeDoFiltro(etiqueta === filtro.etiqueta)}
-            scroll={false}
-          >
-            {filtro.rotulo}
-          </Link>
-        ))}
-
-        {/*
-          As manuais **têm** contagem, e as derivadas não.
-          
-          Não é inconsistência: contar uma derivada obriga a ler o histórico do
-          cliente inteiro a cada visita, exatamente o que a paginação veio
-          evitar. Contar uma manual é ler uma tabela de ligação com índice. O
-          número aparece onde ele é barato, e some onde não é.
-        */}
-        {etiquetasDaConta.map((manual) => (
-          <Link
-            key={manual.id}
-            href={endereco(clienteId, {
-              etiqueta,
-              marca: marca === manual.id ? null : manual.id,
-              busca: termo,
-              nivel,
-            })}
-            aria-current={marca === manual.id ? 'page' : undefined}
-            className={classeDoFiltro(marca === manual.id)}
-            scroll={false}
-          >
-            {manual.nome}
-            <span className="ml-1.5 text-dim">{manual.contatos ?? 0}</span>
-          </Link>
-        ))}
-      </nav>
-
       {leads.length === 0 ? (
         <div className="app-card py-14 text-center">
           <p className="text-[13px] font-bold">
-            {termo !== '' ? `Ninguém com "${termo}"` : 'Ninguém com esta etiqueta'}
+            {termo !== '' && etiqueta === null && marca === null && nivel === null
+              ? `Ninguém com "${termo}"`
+              : 'Nenhum contato com estes filtros'}
           </p>
           <Link
-            href={`/clientes/${clienteId}/leads`}
+            href={base}
             className="mt-2 inline-block text-[11.5px] font-semibold text-primary hover:underline"
             scroll={false}
           >
-            Limpar filtro
+            Limpar filtros
           </Link>
         </div>
       ) : (
@@ -513,7 +448,7 @@ async function Tabela({
                 </tr>
               </thead>
               <tbody>
-                {visiveis.map((lead) => (
+                {leads.map((lead) => (
                 <LinhaClicavel
                   key={lead.contatoId}
                   href={`/clientes/${clienteId}/leads/${lead.contatoId}`}
@@ -606,7 +541,7 @@ async function Tabela({
               </p>
               <div className="flex items-center gap-2">
                 <Passo
-                  href={endereco(clienteId, { etiqueta, marca, busca: termo, nivel, pagina: pagina - 1 })}
+                  href={daPagina(pagina - 1)}
                   ativo={pagina > 1}
                 >
                   ‹ Anterior
@@ -615,7 +550,7 @@ async function Tabela({
                   Página {pagina} de {paginas}
                 </span>
                 <Passo
-                  href={endereco(clienteId, { etiqueta, marca, busca: termo, nivel, pagina: pagina + 1 })}
+                  href={daPagina(pagina + 1)}
                   ativo={pagina < paginas}
                 >
                   Próxima ›
@@ -629,6 +564,12 @@ async function Tabela({
   )
 }
 
+/** Conta sem nenhum contato: dizer o que falta ligar, e não uma tabela vazia. */
+async function PrimeiraVezDaConta({ clienteId }: { clienteId: string }) {
+  const canais = await listarCanais(clienteId)
+  return <PrimeiraVez clienteId={clienteId} temCanal={canais.length > 0} />
+}
+
 function PrimeiraVez({ clienteId, temCanal }: { clienteId: string; temCanal: boolean }) {
   return (
     <div className="mx-auto mt-16 max-w-[420px] text-center">
@@ -637,7 +578,7 @@ function PrimeiraVez({ clienteId, temCanal }: { clienteId: string; temCanal: boo
           <p className="mb-3 font-mono text-[10px] tracking-[0.16em] text-dim">SEM CANAL</p>
           <h2 className="text-[15.5px] font-bold">Nenhum número conectado</h2>
           <p className="mt-1.5 text-[12.5px] leading-6 text-muted">
-            Sem um número de WhatsApp ligado a um fluxo publicado, ninguém consegue conversar com o bot, e nenhum contato entra aqui.
+            Sem um número de WhatsApp ligado a um fluxo publicado, ninguém conversa com o bot. Quem você já conhece dá para cadastrar em “+ Novo contato”.
           </p>
           {/* Vai para a tela do número, e não para o painel. Botão de estado
               vazio que leva ao lugar errado é pior que estado vazio sem botão:
@@ -701,14 +642,6 @@ const FIXA_CONTATO =
  */
 const FUNDO_DA_FIXA =
   'group-hover:bg-surface group-has-[:checked]:bg-[color-mix(in_oklab,var(--primary)_6%,var(--panel))]'
-
-function classeDoFiltro(ativo: boolean): string {
-  return `rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${
-    ativo
-      ? 'border-primary/35 bg-primary/12 text-primary'
-      : 'border-line bg-panel text-muted hover:border-strong hover:text-ink'
-  }`
-}
 
 /**
  * Uma coluna da tabela.

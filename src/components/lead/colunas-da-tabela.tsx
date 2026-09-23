@@ -103,9 +103,13 @@ export function ColunasDaTabela({
         aria-haspopup="true"
         aria-expanded={aberto}
         onClick={() => setAberto((estava) => !estava)}
-        className="app-secondary-button px-3 py-1.5 text-[12.5px]"
+        className="quadro-tool"
         title="Escolher quais colunas aparecem nesta tabela"
       >
+        <svg aria-hidden viewBox="0 0 24 24" className="size-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
+          <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+          <path d="M9.5 4.5v15M14.5 4.5v15" />
+        </svg>
         Colunas
         {montado && escondidas.length > 0 && (
           <span className="ml-1.5 text-dim">
@@ -115,7 +119,7 @@ export function ColunasDaTabela({
       </button>
 
       {aberto && (
-        <div className="absolute right-0 z-50 mt-1 max-h-[320px] w-[240px] overflow-y-auto rounded-[10px] border border-line bg-panel py-1.5 shadow-xl">
+        <div className="absolute left-0 z-50 mt-1 max-h-[320px] w-[240px] overflow-y-auto rounded-[10px] border border-line bg-panel py-1.5 shadow-xl">
           <p className="px-3 pb-1.5 text-[11px] font-semibold tracking-[0.06em] text-dim uppercase">
             Mostrar na tabela
           </p>

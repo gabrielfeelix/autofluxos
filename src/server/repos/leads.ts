@@ -1,7 +1,8 @@
 import 'server-only'
 import { z } from 'zod'
 import type { Conciliacao, ContatoConhecido } from '@/core/contatos/planilha'
-import { chavesDoTelefone } from '@/core/contatos/telefone'
+import { chavesDoTelefone, digitos } from '@/core/contatos/telefone'
+import { padraoSemAcento } from '@/core/atividades'
 import { LIMITE_DA_NOTA } from '@/core/flow/limites'
 import {
   cartoesDoPayload,
@@ -729,11 +730,16 @@ export async function paginarLeads(
     if (termo !== '') {
       // Buscar nos dois nomes, não só no do perfil: quem corrigiu "Rodrigão"
       // para "Rodrigo" vai procurar por Rodrigo, e antes disto não achava nada.
-      const partes = [
-        `nome.ilike.*${termo}*`,
-        `nome_real.ilike.*${termo}*`,
-        `wa_id.ilike.*${termo}*`,
-      ]
+      //
+      // Os nomes vão por regex com as classes de acento (`padraoSemAcento`, a
+      // mesma da agenda): "marcia" acha "Márcia" sem a extensão `unaccent`, que
+      // é global ao banco dividido. O telefone vai pelos dígitos, que é o que
+      // faz "9990 1021" achar `5544999010 21` com os espaços no meio.
+      const padrao = padraoSemAcento(termo)
+      const numeros = digitos(termo)
+      const partes = [`wa_id.ilike.*${termo}*`]
+      if (padrao.trim() !== '') partes.push(`nome.imatch.${padrao}`, `nome_real.imatch.${padrao}`)
+      if (numeros.length >= 4) partes.push(`wa_id.like.*${numeros}*`)
       // E buscar pelas formas do telefone, não só pelo que foi digitado: quem
       // procura "(11) 98765-4321" não acha `551187654321` com `ilike`, e o nono
       // dígito faz o mesmo aparelho ter duas grafias. `chavesDoTelefone`

@@ -326,6 +326,21 @@ describe.skipIf(!temCredencial)('leads contra o Supabase', () => {
     expect(porNome.total).toBe(1)
   }, 15_000)
 
+  it('busca sem depender de acento e com o telefone escrito com espaço', async () => {
+    const { cliente } = await montarCliente('acento')
+    await acharOuCriarContato(cliente.id, `${marca}-5544555101`, 'Márcia Conceição')
+    await acharOuCriarContato(cliente.id, `${marca}-5544555202`, 'Marta Lima')
+
+    const semAcento = await paginarLeads(cliente.id, { busca: 'marcia conceicao' })
+    expect(semAcento.leads.map((l) => l.nome)).toEqual(['Márcia Conceição'])
+
+    const comAcento = await paginarLeads(cliente.id, { busca: 'MÁRCIA' })
+    expect(comAcento.leads.map((l) => l.nome)).toEqual(['Márcia Conceição'])
+
+    const telefone = await paginarLeads(cliente.id, { busca: '5552 02' })
+    expect(telefone.leads.map((l) => l.nome)).toEqual(['Marta Lima'])
+  }, 15_000)
+
   /**
    * O `or` do PostgREST é uma string com sintaxe. Um termo com vírgula e
    * parêntese não pode virar filtro: viraria escolha de linha por conta própria.
