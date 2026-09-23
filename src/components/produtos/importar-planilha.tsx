@@ -33,6 +33,10 @@ export function ImportarPlanilha({ clienteId }: { clienteId: string }) {
   const [etapa, setEtapa] = useState<Etapa>({ tipo: 'escolher' })
   const [erro, setErro] = useState<string | null>(null)
   const [pendente, setPendente] = useState(false)
+  const [arrastando, setArrastando] = useState(false)
+  // `dragenter`/`dragleave` disparam a cada filho cruzado; a conta de
+  // profundidade evita o destaque piscar ao passar por cima do texto.
+  const profundidade = useRef(0)
 
   function abrir() {
     setArquivo(null)
@@ -102,6 +106,32 @@ export function ImportarPlanilha({ clienteId }: { clienteId: string }) {
         onClick={(evento) => {
           if (evento.target === dialogo.current) fechar()
         }}
+        onDragEnter={(e) => {
+          if (!ehArrastoDeArquivo(e) || etapa.tipo !== 'escolher') return
+          e.preventDefault()
+          profundidade.current += 1
+          setArrastando(true)
+        }}
+        onDragOver={(e) => {
+          // Sem cancelar o `dragover` o navegador recusa o soltar e abre o
+          // arquivo numa aba nova por cima do painel.
+          if (!ehArrastoDeArquivo(e)) return
+          e.preventDefault()
+          e.dataTransfer.dropEffect = etapa.tipo === 'escolher' ? 'copy' : 'none'
+        }}
+        onDragLeave={(e) => {
+          if (!ehArrastoDeArquivo(e)) return
+          profundidade.current = Math.max(0, profundidade.current - 1)
+          if (profundidade.current === 0) setArrastando(false)
+        }}
+        onDrop={(e) => {
+          if (!ehArrastoDeArquivo(e)) return
+          e.preventDefault()
+          profundidade.current = 0
+          setArrastando(false)
+          const solto = e.dataTransfer.files[0]
+          if (solto && etapa.tipo === 'escolher' && !pendente) void prever(solto)
+        }}
         className="app-dialog m-auto w-[min(520px,92vw)] rounded-[18px] border border-line bg-panel p-[26px] text-ink shadow-[0_40px_100px_rgba(19,25,34,0.132)]"
       >
         <h2 className="text-[17px] font-bold">Importar planilha</h2>
@@ -109,9 +139,8 @@ export function ImportarPlanilha({ clienteId }: { clienteId: string }) {
         {etapa.tipo === 'escolher' && (
           <>
             <p className="mt-1 mb-5 text-[12.5px] leading-6 text-muted">
-              Uma linha por item. Só a coluna <strong>nome</strong> é obrigatória; tipo, sku, preço,
-              descrição, link e foto são opcionais. Quem já existe (mesmo SKU, ou mesmo nome) é atualizado, e
-              célula em branco não apaga nada.
+              Uma linha por item, só o nome é obrigatório. Item que já existe (mesmo SKU ou nome) é
+              atualizado, e célula em branco não apaga nada.
             </p>
             <div className="mb-4 flex flex-wrap items-center gap-2 text-[12px]">
               <span className="text-dim">Modelo para preencher:</span>
@@ -128,8 +157,26 @@ export function ImportarPlanilha({ clienteId }: { clienteId: string }) {
                 CSV
               </a>
             </div>
-            <label className="block cursor-pointer rounded-[14px] border border-dashed border-line px-4 py-7 text-center text-[12.5px] text-muted hover:bg-white/[0.03]">
-              {pendente ? 'Lendo a planilha…' : arquivo ? arquivo.name : 'Escolher arquivo .xlsx ou .csv'}
+            <label
+              className={
+                arrastando
+                  ? 'flex cursor-pointer flex-col items-center gap-1 rounded-2xl border-2 border-dashed border-primary/60 bg-primary/[0.06] px-4 py-9 text-center'
+                  : 'flex cursor-pointer flex-col items-center gap-1 rounded-2xl border-2 border-dashed border-line px-4 py-9 text-center transition hover:border-primary/40 hover:bg-primary/[0.03]'
+              }
+            >
+              <span className="text-2xl leading-none" aria-hidden>
+                📄
+              </span>
+              <span className="text-[13.5px] font-semibold text-ink">
+                {pendente
+                  ? 'Lendo a planilha…'
+                  : arrastando
+                    ? 'Solte para ler a planilha'
+                    : 'Arraste a planilha para cá'}
+              </span>
+              <span className="text-[12px] text-dim">
+                {arquivo && !arrastando ? arquivo.name : 'ou clique para escolher, .xlsx ou .csv'}
+              </span>
               <input
                 type="file"
                 accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -256,4 +303,8 @@ function ListaDeErros({ erros }: { erros: ErroDaLinha[] }) {
       ))}
     </ul>
   )
+}
+
+function ehArrastoDeArquivo(evento: React.DragEvent) {
+  return Array.from(evento.dataTransfer?.types ?? []).includes('Files')
 }

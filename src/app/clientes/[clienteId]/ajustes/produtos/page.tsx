@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import { AjudaDaTela, type PassoDaAjuda } from '@/components/design/ajuda-da-tela'
 import { AjustesShell } from '@/components/design/ajustes-shell'
 import { Trilha } from '@/components/design/trilha'
 import { Dropdown } from '@/components/design/dropdown'
@@ -17,6 +18,44 @@ const OPCOES_DE_ESPECIE = ESPECIES.map((especie) => ({
   valor: especie,
   rotulo: NOME_DA_ESPECIE[especie],
 }))
+
+const PASSOS_DA_AJUDA: PassoDaAjuda[] = [
+  {
+    titulo: 'Cadastre um item ou importe a lista inteira',
+    texto:
+      'Em “+ Novo item”, um por vez: nome, tipo (produto ou serviço) e, se quiser, preço. Para muitos itens, use “Importar”.',
+  },
+  {
+    titulo: 'Importar: baixe o modelo e preencha',
+    texto:
+      'Em “Importar”, baixe o modelo em Excel ou CSV. Uma linha por item. Só a coluna nome é obrigatória; tipo, sku, preço, descrição, link e foto são opcionais. Preço aceita 1.299,90 ou 1299.90.',
+  },
+  {
+    titulo: 'Arraste o arquivo e confira a prévia',
+    texto:
+      'Arraste a planilha para a janela ou clique para escolher. Antes de gravar, a prévia mostra quantos itens entram, quantos são atualizados e qual linha tem erro e por quê. Linha com erro fica de fora e o resto entra.',
+  },
+  {
+    titulo: 'Reimportar atualiza, não duplica',
+    texto:
+      'O item que já existe é reconhecido pelo SKU ou, sem SKU, pelo nome, e é atualizado. Célula em branco não apaga o que já estava lá: para tirar um preço, use o botão “Preço” do item.',
+  },
+  {
+    titulo: 'Foto e link viram o card',
+    texto:
+      'Com foto e link (os dois começando com https://), o item vai para o WhatsApp como card, com a imagem e o botão para abrir a página. Sem foto, vai como texto com o link. Serviço sem foto funciona igual.',
+  },
+  {
+    titulo: 'Ligue no bot',
+    texto:
+      'No editor da automação, no bloco de IA, marque “Buscar produto na loja” e “Mandar o card do produto”. O bot passa a achar os itens por nome, SKU ou descrição, responder o preço e mandar o card.',
+  },
+  {
+    titulo: 'Mande pelo Inbox',
+    texto:
+      'Na conversa, o botão de produtos busca por nome ou SKU e manda o card para a pessoa, do mesmo jeito que o bot.',
+  },
+]
 
 /**
  * O catálogo mínimo (T5.1), com preço desde a 0091.
@@ -50,19 +89,32 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             { rotulo: 'Catálogo' },
           ]}
         />
-        <h1 className="text-[25px] font-bold tracking-[-0.02em]">Catálogo</h1>
-        <p className="mt-1.5 mb-6 max-w-[650px] text-[13px] leading-6 text-dim">
-          O que a empresa vende: nome e, quando você quiser, preço. Serve para
-          dizer no que uma negociação está interessada, o que foi vendido, para
-          filtrar depois por “quem comprou o Plano Ouro” e para o bot saber
-          quanto custa.
-          <br />
-          O preço aqui é <em>a oferta de hoje</em>, não o histórico: mudar não
-          reescreve venda nenhuma, porque o valor de uma venda é o valor{' '}
-          <em>daquela</em> venda. Item sem preço o bot não anuncia, e é por isso
-          que em branco quer dizer “não informado”, nunca “de graça”.
-          <br />
-          Estoque e imposto continuam de fora de propósito.
+        <div className="flex items-center gap-2.5">
+          <h1 className="text-[25px] font-bold tracking-[-0.02em]">Catálogo</h1>
+          <AjudaDaTela
+            titulo="Como funciona o Catálogo"
+            resumo="O catálogo é a lista do que a empresa vende. Ele serve a três leitores: o bot, a equipe no Inbox e o funil de vendas."
+            passos={PASSOS_DA_AJUDA}
+          >
+            <p>
+              <strong className="text-ink">Preço é a oferta de hoje, não o histórico.</strong> Mudar o preço
+              aqui não reescreve venda nenhuma: cada venda guarda o valor daquela venda. Em branco quer dizer
+              “não informado”, e o bot não anuncia preço que ninguém cadastrou. Para item de graça, escreva 0.
+            </p>
+            <p>
+              <strong className="text-ink">Com loja Magento ligada</strong>, o bot e o Inbox buscam na loja, ao
+              vivo, e esta lista não é preenchida com os produtos dela: copiar deixaria preço e estoque velhos.
+              Ela continua servindo ao funil.
+            </p>
+            <p>
+              <strong className="text-ink">Arquivar não apaga.</strong> O item some da escolha e do bot, mas as
+              vendas antigas continuam apontando para ele. Estoque e imposto ficam de fora de propósito.
+            </p>
+          </AjudaDaTela>
+        </div>
+        <p className="mt-1.5 mb-6 text-[13px] leading-6 text-dim">
+          O que a empresa vende, com preço, foto e link. O bot usa esta lista para dizer quanto custa e mandar
+          o card do produto na conversa, e a equipe manda o mesmo card pelo Inbox.
         </p>
 
         <section className="app-card overflow-hidden">
