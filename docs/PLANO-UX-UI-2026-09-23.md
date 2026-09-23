@@ -1261,10 +1261,10 @@ outras telas desta fase.
   cada um diz o que acontece depois.
 - [x] **Passo 2:** `error.tsx` e `not-found.tsx` voltam para a conta ativa quando
   der, senão `/contas`; admin 4YU volta para `/admin/contas`.
-- [ ] **Passo 3:** com uma conta só, o nome da conta no rodapé vira menu "Conta e
+- [x] **Passo 3:** com uma conta só, o nome da conta no rodapé vira menu "Conta e
   perfil" (papel nesta conta, ajuda, sair).
 - [x] **Passo 4:** `/f/[token]` expirado mostra a data e o caminho para pedir outro.
-- [ ] **Passo 5:** commit `feat(entrada): telas de acesso e erro dizem onde a pessoa está`.
+- [x] **Passo 5:** commit `feat(entrada): telas de acesso e erro dizem onde a pessoa está`.
 
 ### Tarefa 10.5: área admin com escopo escrito [S10, E16]
 

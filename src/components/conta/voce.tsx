@@ -96,6 +96,9 @@ export function PainelVoce({
       <div className="mt-2 flex flex-col gap-0.5 border-t border-line pt-2">
         {configuracoesHref && <Linha href={configuracoesHref}>Configurações da conta</Linha>}
         {outrasContas > 1 && <Linha href="/contas">Trocar de conta</Linha>}
+        {/* Ajuda aqui e não só no "?" de cada tela: é o lugar em que se procura
+            "onde eu aprendo isso" sem estar numa tela específica (10.4). */}
+        <Linha href="/ajuda">Ajuda</Linha>
         <form action={acaoSair}>
           <button
             type="submit"
