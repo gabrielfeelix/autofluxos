@@ -1,6 +1,7 @@
 import 'server-only'
 import {
   LIMITE_DE_CARDS,
+  linkDaBusca,
   QUERY_BUSCA,
   QUERY_CONFIG,
   QUERY_POR_SKU,
@@ -64,6 +65,9 @@ export function lojaMagento(dados: DadosDaLoja, chamar: Chamar = chamarHttp): Lo
       if (pedidos.length === 0) return { ok: true, valor: [] }
       const r = await graphql(QUERY_POR_SKU, { skus: pedidos })
       return r.ok ? { ok: true, valor: traduzirPorSku(r.valor, pedidos, dados.endereco, dados.sufixo) } : r
+    },
+    linkDaBusca(termo) {
+      return linkDaBusca(dados.endereco, termo)
     },
     async lerConfig() {
       const r = await graphql(QUERY_CONFIG, {})

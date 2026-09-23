@@ -75,6 +75,10 @@ describe('o catálogo de efeitos do motor', () => {
     'enviar_texto',
     'enviar_opcoes',
     'enviar_midia',
+    // Auditado em 23/set/2026: só entrega mensagem, não escreve em lugar
+    // nenhum. No simulador vira bolha no navegador; a leitura da loja por trás
+    // dele é `loja_mostrar`, que é GET e `escreve: false`.
+    'enviar_produtos',
     'salvar_campo',
     'pausar_automacao',
     'chamar_ia',

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   QUERY_BUSCA,
   linhasDoCard,
+  linkDaBusca,
   linkDoProduto,
   textoDoCard,
   traduzirPorSku,
@@ -157,5 +158,13 @@ describe('produto com variações de preço', () => {
     const [p] = traduzirProdutos(resposta([fixo]), 'https://loja.com.br', '')
     expect(p).toMatchObject({ preco: 149.9, precoDe: 199.9 })
     expect(p).not.toHaveProperty('precoAPartirDe')
+  })
+})
+
+describe('linkDaBusca', () => {
+  it('codifica o termo na página de busca padrão do Magento', () => {
+    expect(linkDaBusca('https://loja.com.br', ' mouse & teclado ')).toBe(
+      'https://loja.com.br/catalogsearch/result/?q=mouse%20%26%20teclado',
+    )
   })
 })

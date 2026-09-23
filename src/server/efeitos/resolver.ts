@@ -1080,8 +1080,18 @@ async function executarNaLoja(
     return r.ok ? { ok: true, json: { mostrados: r.valor } } : r
   }
 
-  const r =
-    operacao === 'buscar' ? await loja.buscar(valores.termo ?? '') : await loja.combinaCom(valores.produtoId ?? '')
+  if (operacao === 'buscar') {
+    const termo = valores.termo ?? ''
+    const r = await loja.buscar(termo)
+    if (!r.ok) return r
+    // Vazio vem com a página de busca da loja: ver `linkDaBusca`.
+    return {
+      ok: true,
+      json: r.valor.length > 0 ? { produtos: r.valor } : { produtos: [], buscaNaLoja: loja.linkDaBusca(termo) },
+    }
+  }
+
+  const r = await loja.combinaCom(valores.produtoId ?? '')
   return r.ok ? { ok: true, json: { produtos: r.valor } } : r
 }
 

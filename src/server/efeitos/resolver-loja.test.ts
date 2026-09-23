@@ -231,4 +231,39 @@ describe('ferramentas de loja no laço da IA', () => {
     const r = await rodar(fluxo(['loja_buscar']), modelo)
     expect(r.acoes.some((a) => a.tipo === 'enviar_produtos')).toBe(false)
   })
+
+  it('busca vazia entrega ao modelo o link da busca da loja, não um "não temos"', async () => {
+    lojaAtivaDaConta.mockResolvedValue(lojaFalsa({ produtos: [headset] }))
+    const modelo = modeloComRoteiro([
+      { tipo: 'usar_ferramenta', nome: 'loja_buscar', argumentos: { termo: 'teclado gamer' } },
+      { tipo: 'texto', texto: 'Dá uma olhada aqui.' },
+    ])
+    await rodar(fluxo(['loja_buscar']), modelo)
+    expect(JSON.stringify(modelo.pedidos[1])).toContain('catalogsearch/result/?q=teclado%20gamer')
+  })
+
+  it('busca com resultado não manda link de busca', async () => {
+    lojaAtivaDaConta.mockResolvedValue(lojaFalsa({ produtos: [headset] }))
+    const modelo = modeloComRoteiro([
+      { tipo: 'usar_ferramenta', nome: 'loja_buscar', argumentos: { termo: 'headset' } },
+      { tipo: 'texto', texto: 'Temos.' },
+    ])
+    await rodar(fluxo(['loja_buscar']), modelo)
+    expect(JSON.stringify(modelo.pedidos[1])).not.toContain('catalogsearch')
+  })
+
+  it('sem conta (a vitrine do link público), a loja nem é procurada', async () => {
+    const modelo = modeloComRoteiro([
+      { tipo: 'usar_ferramenta', nome: 'loja_buscar', argumentos: { termo: 'headset' } },
+      { tipo: 'texto', texto: 'não devia chegar aqui' },
+    ])
+    const r = await executarComEfeitos(fluxo(['loja_buscar']), sessaoNova(), { tipo: 'inicio' }, {
+      modelo,
+      contextoNegocio: 'Loja de periféricos.',
+      historico: [{ de: 'pessoa', texto: 'tem headset?' }],
+      semRede: true,
+    } as Parameters<typeof executarComEfeitos>[3])
+    expect(lojaAtivaDaConta).not.toHaveBeenCalled()
+    expect(r.acoes.some((a) => a.tipo === 'transferir_humano')).toBe(true)
+  })
 })

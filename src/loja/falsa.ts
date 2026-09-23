@@ -43,6 +43,9 @@ export function lojaFalsa({
       if (falhar) return fora
       return { ok: true, valor: skus.flatMap((sku) => produtos.filter((p) => p.produtoId === sku)) }
     },
+    linkDaBusca(termo) {
+      return `https://loja.falsa/catalogsearch/result/?q=${encodeURIComponent(termo.trim())}`
+    },
     async lerConfig() {
       if (falhar) return fora
       return { ok: true, valor: { codigoDaLoja: 'default', moeda: 'BRL', sufixo: '' } }

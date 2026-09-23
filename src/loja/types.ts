@@ -13,6 +13,8 @@ export type Loja = {
   combinaCom(sku: string): Promise<ResultadoDaLoja<ProdutoDaLoja[]>>
   /** Relê pelo SKU, na ordem pedida, para o card sair com o preço de agora. */
   lerPorSku(skus: string[]): Promise<ResultadoDaLoja<ProdutoDaLoja[]>>
+  /** A página de busca da loja para este termo. Sem rede. */
+  linkDaBusca(termo: string): string
   lerConfig(): Promise<ResultadoDaLoja<ConfigDaLoja>>
 }
 export type DadosDaLoja = { endereco: string; codigoDaLoja: string | null; sufixo: string }

@@ -61,6 +61,10 @@
 - **Testes unitários** dos arquivos novos e dos vizinhos que mudaram: passam.
   `npm run typecheck`, `eslint` nos arquivos tocados e `npm run build` limpos.
   A **suíte inteira não foi rodada** (preferência do Gabriel; rode por arquivo).
+- **A vitrine do link público não consulta a loja**: ela não passa
+  `clienteId`, e sem conta `executarNaLoja` recusa antes de procurar a loja
+  (teste em `resolver-loja.test.ts`, trava de texto em
+  `simulador-nao-escapa.test.ts`).
 - **A página nova existe em produção**: `/clientes/<id>/ajustes/integracoes/magento`
   responde 307 para `/entrar` (não 404, não 500).
 
@@ -111,11 +115,11 @@
    de/por), e o card diz "a partir de". Sondagem real no mesmo dia: a PCYES
    aceita o campo, e as 20 cadeiras de "cadeira" são `SimpleProduct` com mínimo
    igual ao máximo (cada cor é um SKU). Na PCYES o caso quase não acontece.
-3. **Busca vazia vira "não temos".** A busca do Magento ignora termo curto
-   (mínimo de 3 letras por padrão) e é por relevância. O bot pode concluir que
-   a loja não vende o que vende. Sugestão: quando vier vazio, a ferramenta
-   devolver o link de busca da loja (`{endereco}/catalogsearch/result/?q=<termo>`)
-   e a descrição mandar oferecer esse link em vez de negar.
+3. ~~Busca vazia vira "não temos".~~ **Consertado em 23/set:** busca vazia
+   devolve ao modelo `buscaNaLoja` (`{endereco}/catalogsearch/result/?q=`,
+   200 na PCYES), e a descrição manda oferecer o link em vez de negar. A
+   suposição do "mínimo de 3 letras" estava errada para a PCYES: `pc` traz 603
+   produtos e `mo` traz 131 (GraphQL real, 23/set).
 4. **Não há aviso de token revogado.** O plano pedia a tela avisar "o token
    parou de funcionar". Não foi feito: o bot cai para "tem / não tem" em
    silêncio e a tela mostra o estado salvo, não um teste ao vivo.

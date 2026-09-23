@@ -102,6 +102,19 @@ export function linkDoProduto(endereco: string, urlKey: string, sufixo: string):
   return `${endereco}/${encodeURIComponent(urlKey)}${sufixo}`
 }
 
+/**
+ * A página de busca da própria loja, para quando a busca do bot volta vazia.
+ *
+ * Vazio não quer dizer "não vende": a busca é por relevância, e o termo que o
+ * bot escolheu pode não bater com o nome do produto. O link deixa a pessoa
+ * procurar do jeito dela em vez de ouvir um "não temos" falso. A rota é a
+ * padrão do Magento (`catalogsearch/result`), conferida 200 na PCYES em
+ * 23/set/2026.
+ */
+export function linkDaBusca(endereco: string, termo: string): string {
+  return `${endereco}/catalogsearch/result/?q=${encodeURIComponent(termo.trim())}`
+}
+
 function valor(no: unknown): number | undefined {
   const v = (no as { value?: unknown } | null | undefined)?.value
   return typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : undefined

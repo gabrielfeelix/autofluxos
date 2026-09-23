@@ -449,13 +449,14 @@ export const FERRAMENTAS: Ferramenta[] = [
       'Quando vier `precoAPartirDe`, o preço muda com a variação (cor, tamanho): diga "a partir de" esse valor. ' +
       'Quando vier `quantidade`, diga quantas restam só se forem 5 ou menos; acima disso, só diga que tem. ' +
       'Sempre mande o link para a pessoa comprar; você não fecha pedido. ' +
+      'Se não vier produto nenhum, não diga que a loja não tem: tente outro termo ou mande o link `buscaNaLoja` para a pessoa procurar. ' +
       'Não use para horário de aula ou agenda.',
     argumentos: [
       { nome: 'termo', tipo: 'texto', descricao: 'O que procurar, em até 5 palavras.', obrigatorio: true },
     ],
     injetados: [],
     chamada: { tipo: 'loja', operacao: 'buscar' },
-    projecao: [{ caminho: 'produtos', campos: CAMPOS_DE_PRODUTO, limite: 5 }],
+    projecao: [{ caminho: 'produtos', campos: CAMPOS_DE_PRODUTO, limite: 5 }, { caminho: 'buscaNaLoja' }],
     credencial: 'nenhuma',
     integracao: 'loja',
   },
