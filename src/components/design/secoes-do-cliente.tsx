@@ -35,6 +35,7 @@ export type AbaDoCliente =
   | 'transmissoes'
   | 'leads'
   | 'quadros'
+  | 'relatorios'
   | 'inbox'
   | 'ajustes'
 
@@ -74,6 +75,10 @@ export const ITENS: {
    * de um rótulo não se paga.
    */
   { chave: 'quadros', rotulo: 'Funil de vendas', href: '/quadros', icone: <IconeQuadros /> },
+  // Relatórios fica no dia a dia, logo abaixo do funil: é onde se olha como a
+  // semana andou. Todo mundo que atende vê, cada um no próprio escopo; o corte
+  // é feito na consulta, não no menu (plano de UX, 11.1).
+  { chave: 'relatorios', rotulo: 'Relatórios', href: '/relatorios', icone: <IconeRelatorios /> },
   { chave: 'fluxos', rotulo: 'Automações', href: '/fluxos', icone: <IconeAutomacoes /> },
   /*
    * Transmissões entra ao lado de Automações, e não dentro delas.
@@ -167,6 +172,14 @@ function IconeAutomacoes() {
       <circle cx="11.6" cy="3.4" r="2" />
       <circle cx="7.5" cy="11.8" r="2" />
       <path d="M3.4 5.4v1.4a1.6 1.6 0 0 0 1.6 1.6h5a1.6 1.6 0 0 0 1.6-1.6V5.4M7.5 8.4v1.4" />
+    </svg>
+  )
+}
+
+function IconeRelatorios() {
+  return (
+    <svg aria-hidden width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+      <path d="M2 13h11M4 10.5V8M7.5 10.5V4M11 10.5V6.5" />
     </svg>
   )
 }

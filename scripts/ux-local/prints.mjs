@@ -10,7 +10,8 @@ import { chromium } from 'playwright'
 const saida = process.argv[2] ?? '.ux-local/prints'
 const pedidas = process.argv.slice(3)
 const psql = (sql) => execFileSync('docker', ['exec', 'supabase_db_autofluxos', 'psql', '-U', 'postgres', '-At', '-c', sql], { encoding: 'utf8' }).trim()
-const C = psql("select id from clients where nome = 'Studio Pilates Revisão' limit 1")
+// `CONTA` troca a conta fotografada (ex.: a do seed-relatorios.mts).
+const C = psql(`select id from clients where nome = '${process.env.CONTA ?? 'Studio Pilates Revisão'}' limit 1`)
 const CT = psql(`select id from contacts where client_id = '${C}' order by nome limit 1`)
 const FL = psql(`select id from flows where client_id = '${C}' and nome = 'Agendar aula experimental'`)
 const B = `/clientes/${C}`

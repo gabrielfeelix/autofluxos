@@ -48,6 +48,7 @@ export const TESTES_DE_INTEGRACAO = [
   'src/server/repos/leituras.test.ts',
   'src/server/repos/metricas-b3.test.ts',
   'src/server/repos/metricas.test.ts',
+  'src/server/repos/relatorios.test.ts',
   'src/server/repos/oportunidades.test.ts',
   'src/server/repos/paginas-de-lead.test.ts',
   'src/server/repos/painel.test.ts',
