@@ -6,6 +6,7 @@ import {
   criarTransmissao,
   enfileirarDestinatarios,
   enviadasHojePelaConta,
+  listarDestinatarios,
   mudarEstadoDaTransmissao,
   progressoDa,
   progressoDas,
@@ -142,5 +143,28 @@ describe.skipIf(!temCredencial)('o progresso da lista numa consulta só', () => 
     const vazia = await criarTransmissao({ clienteId, nome: `${marca} vazia`, templateId })
     expect((await progressoDas([vazia.id])).get(vazia.id)?.total).toBe(0)
     expect((await progressoDas([])).size).toBe(0)
+  })
+})
+
+describe.skipIf(!temCredencial)('os destinatários no detalhe', () => {
+  it('pagina, conta o total e filtra pelo estado, com nome e motivo', async () => {
+    const t = await transmissao('detalhe', 5)
+    await marcarSaida(t.id, 2, HOJE_CEDO, 'falhou')
+    await db()
+      .from('transmissao_destinatarios')
+      .update({ erro: 'este número não recebe' })
+      .eq('transmissao_id', t.id)
+      .eq('estado', 'falhou')
+
+    const primeira = await listarDestinatarios(t.id, { pagina: 1, porPagina: 3 })
+    expect(primeira.total).toBe(5)
+    expect(primeira.linhas).toHaveLength(3)
+    const segunda = await listarDestinatarios(t.id, { pagina: 2, porPagina: 3 })
+    expect(segunda.linhas).toHaveLength(2)
+
+    const falhas = await listarDestinatarios(t.id, { estado: 'falhou', pagina: 1, porPagina: 50 })
+    expect(falhas.total).toBe(2)
+    expect(falhas.linhas[0]).toMatchObject({ estado: 'falhou', motivo: 'este número não recebe' })
+    expect(falhas.linhas[0]?.nome).toMatch(/^C\d$/)
   })
 })

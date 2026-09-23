@@ -260,6 +260,68 @@ export async function proximosDaFila(
   })
 }
 
+export type DestinatarioNaTela = {
+  id: string
+  contatoId: string
+  nome: string | null
+  waId: string | null
+  estado: EstadoDoDestinatario
+  /** O motivo de não ter recebido: o erro do envio ou a exclusão na revalidação. */
+  motivo: string | null
+  enviadaEm: string | null
+}
+
+/**
+ * Os destinatários de uma transmissão, uma página por vez, para o detalhe.
+ *
+ * O total vem do `count` do mesmo pedido: a página diz "1 a 50 de 4.800" sem
+ * trazer as 4.800 linhas.
+ */
+export async function listarDestinatarios(
+  transmissaoId: string,
+  opcoes: { estado?: EstadoDoDestinatario; pagina: number; porPagina: number },
+): Promise<{ linhas: DestinatarioNaTela[]; total: number }> {
+  const inicio = (opcoes.pagina - 1) * opcoes.porPagina
+  let consulta = db()
+    .from('transmissao_destinatarios')
+    .select('id, contato_id, estado, erro, motivo_da_exclusao, enviada_em, contacts (wa_id, nome)', {
+      count: 'exact',
+    })
+    .eq('transmissao_id', transmissaoId)
+  if (opcoes.estado) consulta = consulta.eq('estado', opcoes.estado)
+
+  const { data, error, count } = await consulta
+    .order('id', { ascending: true })
+    .range(inicio, inicio + opcoes.porPagina - 1)
+
+  if (error) {
+    if (ehIdInvalido(error)) return { linhas: [], total: 0 }
+    throw error
+  }
+
+  type Bruta = {
+    id: string
+    contato_id: string
+    estado: string
+    erro: string | null
+    motivo_da_exclusao: string | null
+    enviada_em: string | null
+    contacts: { wa_id: string; nome: string | null } | null
+  }
+  return {
+    total: count ?? 0,
+    linhas: ((data ?? []) as unknown as Bruta[]).map((l) => ({
+      id: l.id,
+      contatoId: l.contato_id,
+      nome: l.contacts?.nome ?? null,
+      waId: l.contacts?.wa_id ?? null,
+      estado: l.estado as EstadoDoDestinatario,
+      motivo: l.motivo_da_exclusao ?? l.erro,
+      enviadaEm: l.enviada_em,
+    })),
+  }
+}
+
 /**
  * Grava o que aconteceu com um destinatário.
  *

@@ -43,10 +43,10 @@ export default async function Pagina({
   searchParams,
 }: {
   params: Promise<{ clienteId: string }>
-  searchParams: Promise<{ aba?: string }>
+  searchParams: Promise<{ aba?: string; q?: string; estado?: string; periodo?: string }>
 }) {
   const { clienteId } = await params
-  const { aba: pedida } = await searchParams
+  const { aba: pedida, q, estado, periodo } = await searchParams
 
   // Aba desconhecida cai em modelos, e não em tela em branco: o valor vem da
   // URL, e link velho não pode virar nada.
@@ -71,7 +71,7 @@ export default async function Pagina({
           de rota, sem a chave, o React segura o conteúdo velho na tela.
         */}
         <Suspense key={aba} fallback={<Espera aba={aba} />}>
-          <Conteudo cliente={cliente} aba={aba} />
+          <Conteudo cliente={cliente} aba={aba} filtro={{ q, estado, periodo }} />
         </Suspense>
       </main>
     </ClienteShell>
@@ -90,7 +90,15 @@ function Espera({ aba }: { aba: Aba }) {
   )
 }
 
-async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
+async function Conteudo({
+  cliente,
+  aba,
+  filtro,
+}: {
+  cliente: Cliente
+  aba: Aba
+  filtro: { q?: string; estado?: string; periodo?: string }
+}) {
   const [templates, transmissoes, enviadasHoje] = await Promise.all([
     listarTemplates(cliente.id),
     listarTransmissoes(cliente.id),
@@ -131,6 +139,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
           progressos={progressos}
           templates={templates}
           enviadasHoje={enviadasHoje}
+          filtro={filtro}
         />
       )}
     </>

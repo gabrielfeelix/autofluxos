@@ -1,15 +1,23 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { BarraDeLista } from '@/components/design/barra-de-lista'
+import {
+  FILTROS_DE_ESTADO,
+  PERIODOS,
+  ROTULO_DO_FILTRO,
+  ROTULO_DO_PERIODO,
+  filtrarTransmissoes,
+  proximaAcaoDaTransmissao,
+  type Periodo,
+} from '@/core/transmissoes-na-tela'
 import { NovaTransmissao } from '@/components/transmissoes/nova-transmissao'
 import { acaoCancelarTransmissao } from '@/server/acoes-transmissoes'
 import type { Template } from '@/server/repos/templates'
-import type {
-  EstadoDaTransmissao,
-  Progresso,
-  Transmissao,
-} from '@/server/repos/transmissoes'
+import type { Progresso, Transmissao } from '@/server/repos/transmissoes'
+import { Numeros, ProximaAcao, ROTULO_DO_ESTADO } from '@/components/transmissoes/numeros'
 import { useConfirmar } from '@/components/design/confirmar'
 
 /**
@@ -29,14 +37,6 @@ import { useConfirmar } from '@/components/design/confirmar'
  * "enviado", é "a Meta está decidindo".
  */
 
-const ROTULO_DO_ESTADO: Record<EstadoDaTransmissao, { texto: string; cor: string }> = {
-  rascunho: { texto: 'Rascunho', cor: 'bg-line text-dim' },
-  agendada: { texto: 'Agendada', cor: 'bg-sky-500/15 text-sky-600' },
-  enviando: { texto: 'Enviando', cor: 'bg-amber-500/15 text-amber-600' },
-  concluida: { texto: 'Concluída', cor: 'bg-emerald-500/15 text-emerald-600' },
-  cancelada: { texto: 'Cancelada', cor: 'bg-line text-dim' },
-  falhou: { texto: 'Parou', cor: 'bg-red-500/15 text-red-600' },
-}
 
 export function ListaDeTransmissoes({
   clienteId,
@@ -44,14 +44,20 @@ export function ListaDeTransmissoes({
   progressos,
   templates,
   enviadasHoje,
+  filtro,
 }: {
   clienteId: string
   transmissoes: Transmissao[]
   progressos: Record<string, Progresso>
   templates: Template[]
   enviadasHoje: number
+  filtro: { q?: string; estado?: string; periodo?: string }
 }) {
   const aprovados = templates.filter((t) => t.status === 'aprovado')
+  const visiveis = filtrarTransmissoes(transmissoes, (t) => progressos[t.id], filtro)
+  const filtrando = Boolean(filtro.q || filtro.estado || filtro.periodo)
+  const parametros: Record<string, string> = { aba: 'transmissoes' }
+  for (const [chave, valor] of Object.entries(filtro)) if (valor) parametros[chave] = valor
 
   return (
     <section className="app-card overflow-hidden">
@@ -75,11 +81,39 @@ export function ListaDeTransmissoes({
         </p>
       )}
 
+      {transmissoes.length > 0 && (
+        <div className="border-b border-line px-5 py-3">
+          <BarraDeLista
+            base={`/clientes/${clienteId}/transmissoes`}
+            parametros={parametros}
+            busca={{ chave: 'q', placeholder: 'Buscar transmissão pelo nome', rotulo: 'Buscar transmissão pelo nome' }}
+            grupos={[
+              {
+                chave: 'estado',
+                titulo: 'Estado',
+                opcoes: FILTROS_DE_ESTADO.map((e) => ({ valor: e, rotulo: ROTULO_DO_FILTRO[e] })),
+              },
+              {
+                chave: 'periodo',
+                titulo: 'Período',
+                opcoes: (Object.keys(PERIODOS) as Periodo[]).map((p) => ({
+                  valor: p,
+                  rotulo: ROTULO_DO_PERIODO[p],
+                })),
+              },
+            ]}
+            resumo={filtrando ? `${visiveis.length} de ${transmissoes.length}` : undefined}
+          />
+        </div>
+      )}
+
       {transmissoes.length === 0 ? (
         <p className="px-5 py-8 text-center text-[13px] text-dim">Nenhuma transmissão ainda.</p>
+      ) : visiveis.length === 0 ? (
+        <p className="px-5 py-8 text-center text-[13px] text-dim">Nenhuma transmissão com esse filtro.</p>
       ) : (
         <ul className="divide-y divide-line">
-          {transmissoes.map((transmissao) => (
+          {visiveis.map((transmissao) => (
             <Linha
               key={transmissao.id}
               clienteId={clienteId}
@@ -110,6 +144,7 @@ function Linha({
   */
   const { confirmar, dialogo, rodando: cancelando } = useConfirmar()
   const estado = ROTULO_DO_ESTADO[transmissao.estado]
+  const proxima = proximaAcaoDaTransmissao(transmissao, progresso, clienteId)
 
   const podeCancelar =
     transmissao.estado === 'agendada' ||
@@ -143,7 +178,12 @@ function Linha({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[13.5px] font-semibold">{transmissao.nome}</span>
+            <Link
+              href={`/clientes/${clienteId}/transmissoes/${transmissao.id}`}
+              className="text-[13.5px] font-semibold hover:text-primary hover:underline"
+            >
+              {transmissao.nome}
+            </Link>
             <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${estado.cor}`}>
               {estado.texto}
             </span>
@@ -162,6 +202,8 @@ function Linha({
             </p>
           )}
 
+          {proxima && <ProximaAcao acao={proxima} />}
+
           {recado && <p className="mt-2 text-[12px] leading-5 text-dim">{recado}</p>}
         </div>
 
@@ -177,50 +219,5 @@ function Linha({
         )}
       </div>
     </li>
-  )
-}
-
-/**
- * Os números do progresso.
- *
- * `entregue` e `lida` somam como "chegou": para quem olha o painel, uma
- * mensagem lida obviamente chegou, e mostrar as duas separadas faria a conta
- * não fechar com o total aos olhos de quem soma.
- *
- * **`retida` NÃO soma com nada.** Ela é o estado que a Meta ainda está
- * decidindo, e juntá-la a "chegou" é exatamente o erro que esta tela existe
- * para não cometer.
- */
-function Numeros({ progresso }: { progresso: Progresso }) {
-  const chegou = progresso.entregue + progresso.lida
-
-  return (
-    <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-dim">
-      <span>
-        <strong className="text-ink">{progresso.total}</strong> no total
-      </span>
-      {chegou > 0 && (
-        <span>
-          <strong className="text-ink">{chegou}</strong> chegaram
-          {progresso.lida > 0 && ` (${progresso.lida} lidas)`}
-        </span>
-      )}
-      {progresso.aceita > 0 && <span>{progresso.aceita} saíram</span>}
-      {progresso.na_fila > 0 && <span>{progresso.na_fila} na fila</span>}
-      {progresso.retida > 0 && (
-        /*
-          A linha mais importante desta tela. "A Meta está avaliando" e não
-          "enviado": se o veredito for ruim, estas mensagens são DESCARTADAS.
-        */
-        <span className="text-amber-600">
-          <strong>{progresso.retida}</strong> a Meta está avaliando, ainda podem não sair
-        </span>
-      )}
-      {progresso.falhou > 0 && (
-        <span className="text-red-600">
-          <strong>{progresso.falhou}</strong> falharam
-        </span>
-      )}
-    </div>
   )
 }

@@ -964,13 +964,13 @@ do Inbox continua sendo só a entrada ("+ Anotar").
 
 ### Tarefa 6.3: lista com filtros, detalhe e próxima ação [C11, T02]
 
-- [ ] **Passo 1:** filtros Estado e Período na lista (mesma barra de lista).
-- [ ] **Passo 2:** detalhe da transmissão (rota nova
+- [x] **Passo 1:** filtros Estado e Período na lista (mesma barra de lista).
+- [x] **Passo 2:** detalhe da transmissão (rota nova
   `transmissoes/[transmissaoId]`): números entregue/retida/falha, lista paginada
   de destinatários com estado e motivo, link para o contato.
-- [ ] **Passo 3:** para cada motivo de parada, a próxima ação: modelo pausado →
+- [x] **Passo 3:** para cada motivo de parada, a próxima ação: modelo pausado →
   link para o modelo; falha sem retry → "não há nova tentativa automática".
-- [ ] **Passo 4:** commit `feat(transmissoes): filtros, detalhe por destinatário e próxima ação`.
+- [x] **Passo 4:** commit `feat(transmissoes): filtros, detalhe por destinatário e próxima ação`.
 
 ### Tarefa 6.4: estados de conexão em camadas [C01, C04, C05, C02]
 
