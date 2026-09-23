@@ -15,6 +15,7 @@ equipe como histórico no Inbox, pedida pelo Gabriel; está escrita no plano).
 | 5.1 abas Fluxos · Gatilhos · Sequências (`src/core/abas-de-automacao.ts`) | `22e4e51` |
 | Pedido do Gabriel: interruptor de volta na linha, alça de arrastar (`ListaOrdenavel`), "Ver respostas" no menu ⋯, sem "Entrada ligada/desligada" | `586ba41` |
 | 5.2 "+ Criar automação" com 4 origens; `?aba=templates` abre a galeria no diálogo | `b0bcab8` |
+| Arrasto refeito: linha flutua, marcador azul entre linhas, grava ao soltar | `e13411c` |
 
 ## Preferências do Gabriel vistas nesta sessão
 
