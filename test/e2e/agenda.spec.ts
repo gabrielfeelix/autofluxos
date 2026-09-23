@@ -63,12 +63,13 @@ async function rest(caminho: string, init: { method?: string; body?: unknown } =
 
 const clienteDaConta = () => painelDaConta.split('/').pop()!
 
-async function criarContato(page: Page) {
+async function criarContato(page: Page, nome = CONTATO) {
   const [contato] = await rest('contacts', {
     method: 'POST',
-    body: { client_id: clienteDaConta(), wa_id: `55449912${Date.now().toString().slice(-5)}`, nome: CONTATO },
+    body: { client_id: clienteDaConta(), wa_id: `55449912${Date.now().toString().slice(-5)}`, nome },
   })
   await page.goto(`${painelDaConta}/leads/${contato!.id}`)
+  return contato!.id
 }
 
 async function criarAtividadeNaFicha(page: Page, titulo: string) {
@@ -122,4 +123,27 @@ test('concluir, desfazer, reagendar e buscar sem acento, tudo pela agenda', asyn
   await expect(linha(page, 'Ligar para confirmar')).toContainText(CONTATO)
   await page.getByRole('searchbox', { name: /Buscar atividade/ }).fill('ninguem-com-esse-nome')
   await expect(page.getByText('Nada com estes filtros.')).toBeVisible()
+})
+
+test('criar pela agenda, ver na lista e na ficha do contato', async ({ page }) => {
+  const contatoId = await criarContato(page, 'Márcia Nova')
+
+  // Com um recorte que a atividade nova não cumpre, o aviso diz isso.
+  await page.goto(`${painelDaConta}/atividades?recorte=vencidas`)
+  await page.getByRole('button', { name: '+ Nova atividade' }).click()
+  await page.getByRole('searchbox', { name: 'Buscar contato' }).fill('Márcia nov')
+  await page.getByRole('list', { name: 'Contatos encontrados' }).getByRole('button', { name: /Márcia Nova/ }).click()
+  await page.getByRole('radio', { name: /liga/i }).click()
+  await page.getByRole('textbox', { name: 'sobre o que é a ligação' }).fill('Retornar sobre plano anual')
+  await page.getByRole('button', { name: 'Criar atividade' }).click()
+  await expect(page.getByText('Ela não aparece com os filtros atuais.')).toBeVisible()
+  await expect(page).toHaveURL(/recorte=vencidas/)
+
+  // "Ver" leva a uma agenda onde ela aparece.
+  await page.getByRole('link', { name: 'Ver', exact: true }).click()
+  await expect(linha(page, 'Retornar sobre plano anual')).toContainText('Márcia Nova')
+
+  await page.goto(`${painelDaConta}/leads/${contatoId}`)
+  await page.getByRole('tab', { name: /Atividades/ }).click()
+  await expect(page.getByText('Retornar sobre plano anual', { exact: true }).filter({ visible: true }).first()).toBeVisible()
 })

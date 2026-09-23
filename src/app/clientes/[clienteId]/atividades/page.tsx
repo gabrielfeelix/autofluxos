@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { BarraDaAgenda } from '@/components/atividades/barra-da-agenda'
 import { ListaDaAgenda } from '@/components/atividades/lista-da-agenda'
+import { NovaAtividade } from '@/components/atividades/nova-atividade'
 import { Paginacao } from '@/components/atividades/paginacao'
 import { AjudaDaTela, type PassoDaAjuda } from '@/components/design/ajuda-da-tela'
 import { ClienteShell } from '@/components/design/cliente-shell'
@@ -57,6 +58,10 @@ export default async function Pagina({
   const acesso = await exigirCapacidadeNaPagina(clienteId, 'atender', 'proprios')
   const escopo = filtroDoAcesso(acesso, 'atender')
   const podeVerEquipe = escopo.tipo === 'tudo' || escopo.tipo === 'equipes'
+  // Criar e escolher responsável seguem a capacidade da ação, não a da tela.
+  const escopoDeCriar = filtroDoAcesso(acesso, 'criar_oportunidade')
+  const podeCriar = escopoDeCriar.tipo !== 'impossivel'
+  const podeCriarParaOutros = escopoDeCriar.tipo === 'tudo' || escopoDeCriar.tipo === 'equipes'
 
   const lido = lerFiltroDaAgenda(await searchParams)
   // Sem escopo de equipe, "equipe" e responsável de outra pessoa não existem.
@@ -65,7 +70,7 @@ export default async function Pagina({
   const agora = agoraDoServidor()
   const [pagina, membros] = await Promise.all([
     paginaDaAgenda(clienteId, escopo, acesso.sessao.usuario.id, filtro, agora),
-    podeVerEquipe ? membrosDaConta(clienteId) : Promise.resolve([]),
+    podeVerEquipe || podeCriarParaOutros ? membrosDaConta(clienteId) : Promise.resolve([]),
   ])
 
   const base = `/clientes/${cliente.id}/atividades`
@@ -101,6 +106,17 @@ export default async function Pagina({
               pode ver.
             </p>
           </AjudaDaTela>
+          {podeCriar && (
+            <NovaAtividade
+              clienteId={cliente.id}
+              usuarioId={acesso.sessao.usuario.id}
+              equipe={equipe}
+              podeAtribuir={podeCriarParaOutros}
+              base={base}
+              filtro={filtro}
+              idsNaTela={pagina.itens.map((i) => i.id)}
+            />
+          )}
         </div>
         <p className="mt-1.5 mb-5 text-[13px] leading-6 text-dim">
           Lembretes internos da equipe. Nada aqui é enviado ao cliente.

@@ -469,25 +469,34 @@ export async function reagendarAtividade(
 /**
  * Passa a atividade para outra pessoa, ou para ninguém (`null`).
  *
- * O responsável precisa ser da conta: `af_usuarios` é global, e sem esta
- * conferência um id de outra empresa viraria dono da atividade daqui.
+ * O responsável precisa ser da conta (`ehMembroDaConta`).
  */
 export async function atribuirAtividade(
   clienteId: string,
   atividadeId: string,
   responsavelId: string | null,
 ): Promise<{ ok: true } | { ok: false; motivo: string }> {
-  if (responsavelId !== null) {
-    const { data, error } = await db()
-      .from('af_membros')
-      .select('userId')
-      .eq('organizationId', clienteId)
-      .eq('userId', responsavelId)
-      .maybeSingle()
-    if (error && !ehIdInvalido(error)) throw new Error(`não deu para ler a equipe: ${error.message}`)
-    if (!data) return { ok: false, motivo: 'essa pessoa não é da equipe desta conta' }
+  if (responsavelId !== null && !(await ehMembroDaConta(clienteId, responsavelId))) {
+    return { ok: false, motivo: 'essa pessoa não é da equipe desta conta' }
   }
   return mudarAberta(clienteId, atividadeId, { responsavel: responsavelId })
+}
+
+/**
+ * A pessoa é da equipe desta conta?
+ *
+ * `af_usuarios` é global: sem esta conferência, um id de outra empresa viraria
+ * dono de atividade daqui. Vale para atribuir e para criar.
+ */
+export async function ehMembroDaConta(clienteId: string, usuarioId: string): Promise<boolean> {
+  const { data, error } = await db()
+    .from('af_membros')
+    .select('userId')
+    .eq('organizationId', clienteId)
+    .eq('userId', usuarioId)
+    .maybeSingle()
+  if (error && !ehIdInvalido(error)) throw new Error(`não deu para ler a equipe: ${error.message}`)
+  return Boolean(data)
 }
 
 async function mudarAberta(

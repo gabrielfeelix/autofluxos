@@ -12,12 +12,16 @@ import {
   atribuirAtividade,
   criarAtividade,
   donoDaAtividade,
+  ehMembroDaConta,
   reagendarAtividade,
   reabrirAtividade,
   resolverAoFechar,
   resolverAtividade,
 } from './repos/atividades'
 import { contatoEhDoCliente } from './repos/crm'
+import { paginarLeads } from './repos/leads'
+import { oportunidadesAbertasDoContato } from './repos/quadros'
+import { telefoneLegivel } from '@/core/contatos/telefone'
 import type { FiltroDeEscopo } from '@/core/permissoes'
 import { exigirCapacidade, filtroDoAcesso, recusou } from './permissoes'
 import { sessaoAtual } from './sessao'
@@ -55,7 +59,7 @@ export async function acaoCriarAtividade(
     hora?: string
     responsavelId?: string | null
   },
-): Promise<RespostaDaAtividade> {
+): Promise<RespostaDaAtividade & { criada?: { id: string; prazo: string | null } }> {
   const acesso = await exigirCapacidade(clienteId, 'criar_oportunidade', 'proprios')
   if (recusou(acesso)) return acesso
 
@@ -69,24 +73,95 @@ export async function acaoCriarAtividade(
   }
 
   const quem = await sessaoAtual()
+  const escopo = filtroDoAcesso(acesso, 'criar_oportunidade')
+
+  // Responsável escolhido na tela: as mesmas regras de atribuir.
+  const pedido = (dados.responsavelId ?? '').trim()
+  if (pedido !== '' && pedido !== quem?.usuario.id) {
+    if (escopo.tipo === 'proprios') return { ok: false, erro: 'você só pode criar atividades para você mesmo' }
+    if (!(await ehMembroDaConta(clienteId, pedido))) {
+      return { ok: false, erro: 'essa pessoa não é da equipe desta conta' }
+    }
+  }
+
+  // O negócio precisa ser deste contato e visível para quem cria: sem isso, um
+  // id de cartão de outra conta ou de outra equipe prenderia a atividade nele.
+  const cartaoId = (dados.cartaoId ?? '').trim() || null
+  if (cartaoId !== null) {
+    const abertos = await oportunidadesAbertasDoContato(clienteId, dados.contatoId, escopo)
+    if (!abertos.some((o) => o.cartaoId === cartaoId)) return { ok: false, erro: 'esse negócio não está aberto' }
+  }
+
   const r = await criarAtividade({
     clienteId,
     contatoId: dados.contatoId,
-    cartaoId: dados.cartaoId ?? null,
+    cartaoId,
     tipo: dados.tipo,
     titulo: dados.titulo,
     nota: dados.nota ?? null,
     onde: dados.onde ?? null,
     horaMarcada: (dados.hora ?? '').trim() !== '',
     prazo: prazoDoDia(dados.prazo, dados.hora),
-    responsavelId: dados.responsavelId ?? quem?.usuario.id ?? null,
+    responsavelId: pedido || quem?.usuario.id || null,
     criadaPor: quem?.usuario.nome ?? null,
   })
 
   if (!r.ok) return { ok: false, erro: r.motivo }
 
   recarregar(clienteId, dados.contatoId)
-  return { ok: true }
+  return { ok: true, criada: { id: r.atividade.id, prazo: r.atividade.prazo } }
+}
+
+export type ContatoParaAtividade = { contatoId: string; nome: string; telefone: string }
+
+/**
+ * Contatos para o seletor de "Nova atividade" da agenda.
+ *
+ * A mesma busca de Contatos (`paginarLeads`, nome ou telefone, com `estado:
+ * 'todas'`), cortada em 8: é um seletor, não uma lista. Menos de 2 letras não
+ * busca, porque "a" devolveria a base inteira em ordem nenhuma.
+ */
+export async function acaoBuscarContatosParaAtividade(
+  clienteId: string,
+  termo: string,
+): Promise<{ ok: boolean; erro?: string; contatos?: ContatoParaAtividade[] }> {
+  const acesso = await exigirCapacidade(clienteId, 'criar_oportunidade', 'proprios')
+  if (recusou(acesso)) return acesso
+
+  const limpo = String(termo ?? '').trim()
+  if (limpo.length < 2) return { ok: true, contatos: [] }
+
+  const { leads } = await paginarLeads(clienteId, { estado: 'todas', busca: limpo, porPagina: 8 })
+  return {
+    ok: true,
+    contatos: leads.map((l) => ({
+      contatoId: l.contatoId,
+      nome: l.nome || telefoneLegivel(l.waId),
+      telefone: telefoneLegivel(l.waId),
+    })),
+  }
+}
+
+export type NegocioParaAtividade = { cartaoId: string; rotulo: string; detalhe: string }
+
+/** Os negócios abertos do contato que quem cria pode ver, para prender a atividade. */
+export async function acaoNegociosParaAtividade(
+  clienteId: string,
+  contatoId: string,
+): Promise<{ ok: boolean; erro?: string; negocios?: NegocioParaAtividade[] }> {
+  const acesso = await exigirCapacidade(clienteId, 'criar_oportunidade', 'proprios')
+  if (recusou(acesso)) return acesso
+  if (!(await contatoEhDoCliente(clienteId, contatoId))) return { ok: false, erro: 'esse contato não existe' }
+
+  const abertos = await oportunidadesAbertasDoContato(clienteId, contatoId, filtroDoAcesso(acesso, 'criar_oportunidade'))
+  return {
+    ok: true,
+    negocios: abertos.map((o) => ({
+      cartaoId: o.cartaoId,
+      rotulo: o.titulo || o.quadro,
+      detalhe: `${o.quadro} · ${o.etapa}`,
+    })),
+  }
 }
 
 export async function acaoResolverAtividade(

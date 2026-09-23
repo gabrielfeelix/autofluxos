@@ -545,19 +545,19 @@ export async function acaoAtribuirAtividade(
 - Criar: `src/components/atividades/nova-atividade.tsx`
 - Reaproveitar: formulário de `src/components/inbox/marcar-atividade.tsx` (tipo, título, dia, hora, onde) e `acaoCriarAtividade`
 
-- [ ] **Passo 1:** diálogo com seletor de contato (busca por nome ou telefone,
+- [x] **Passo 1:** diálogo com seletor de contato (busca por nome ou telefone,
   reaproveitar a consulta de busca de contatos que Contatos usa; mínimo 2
   caracteres), depois os mesmos campos do marcador do Inbox, responsável
   (padrão: quem cria) e negócio opcional (lista os negócios abertos do contato
   escolhido).
-- [ ] **Passo 2:** extrair do `marcar-atividade.tsx` os campos para um componente
+- [x] **Passo 2:** extrair do `marcar-atividade.tsx` os campos para um componente
   compartilhado `CamposDaAtividade` e fazer Inbox e agenda usarem o mesmo. Não
   pode existir segunda regra de criação.
-- [ ] **Passo 3:** ao salvar, fechar, manter filtros e mostrar a atividade nova
+- [x] **Passo 3:** ao salvar, fechar, manter filtros e mostrar a atividade nova
   (se ela couber no filtro atual; se não couber, anúncio "Atividade criada para
   <data>. Ela não aparece com os filtros atuais." com link "Ver").
-- [ ] **Passo 4:** acrescentar no `agenda.spec.ts`: criar pela agenda e ver na ficha do contato.
-- [ ] **Passo 5:** typecheck, e2e, prints; commit `feat(atividades): criar atividade direto da agenda`.
+- [x] **Passo 4:** acrescentar no `agenda.spec.ts`: criar pela agenda e ver na ficha do contato.
+- [x] **Passo 5:** typecheck, e2e, prints; commit `feat(atividades): criar atividade direto da agenda`.
 
 ---
 
@@ -1292,3 +1292,12 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   contato"** (a tela vazia de Contatos só manda conectar número). Achado para a
   Fase 2. `.env.teste-local` precisou de `DATABASE_URL` local para o e2e subir.
   Helpers de cadastro do e2e foram para `test/e2e/cadastro.ts`.
+- 23/09, tarefa 1.5: a criação passou a conferir o responsável escolhido
+  (`ehMembroDaConta`, extraída de `atribuirAtividade`; escopo `proprios` só cria
+  para si) e o negócio (precisa estar em `oportunidadesAbertasDoContato` do
+  contato, no escopo de quem cria). A busca de contato do diálogo é
+  `paginarLeads` e **ainda depende de acento** ("marcia" não acha "Márcia"):
+  herda a correção da tarefa 2.3. "Ver" no aviso leva à agenda aberta, sem
+  recorte nem busca, no alcance do responsável. A ficha continua com o
+  formulário dela (fora do escopo da 1.5).
+
