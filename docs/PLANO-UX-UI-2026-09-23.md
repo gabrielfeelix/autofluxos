@@ -1519,3 +1519,7 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   já na galeria (`abrirModelos` em `resolverAba`); a seção da galeria em
   página e `AbaDeTemplates` foram apagadas. No celular os cartões perdem a
   miniatura (os quatro cabiam só rolando).
+- 23/09, pedido do Gabriel sobre o arrasto: a lista não se reordena mais ao
+  vivo. A linha arrastada fica apagada no lugar, um cartão com o nome flutua
+  sob o ponteiro (portal no `body`) e uma linha azul entre as linhas marca
+  onde ela entra; a ordem muda e grava só ao soltar.
