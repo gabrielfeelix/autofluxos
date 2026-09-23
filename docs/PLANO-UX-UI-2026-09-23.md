@@ -1044,6 +1044,49 @@ export async function editarPasso(
   por e-mail fica na tarefa 10.6).
 - [ ] **Passo 5:** commit `feat(equipe): pessoas e acesso, remoção com destino das pendências`.
 
+### Tarefa 7.5: "Você": perfil próprio no rodapé da barra lateral (pedida pelo Gabriel em 23/09)
+
+**Por quê:** o rodapé mostra o nome da **empresa** ("MGM Pilates", "dono da
+conta") e não diz **quem está usando**. E quem tem acesso de atendimento não
+entra em Configurações (tarefa 7.2), então nome, foto e senha próprios não
+podem morar lá. O perfil é da pessoa, não da conta: vale igual para
+proprietário, gestão e atendimento.
+
+**Arquivos:** `src/components/design/barra-lateral.tsx` (rodapé e o diálogo
+"Conta e perfil"), `src/components/design/cliente-shell.tsx` (`PAPEIS`, dados
+da sessão), `af_usuarios.image` (coluna já existe, `0019_login_por_usuario.sql`).
+
+- [ ] **Passo 1: rodapé mostra a pessoa.** Foto (ou iniciais) + **nome da
+  pessoa** + estado (Disponível/Ausente, com a bolinha). O nome da **conta** sobe
+  para o topo da barra, logo abaixo do logo (junto de "Todos os clientes" para
+  quem tem mais de uma): continua respondendo "estou na conta certa?", que era
+  o motivo de ele estar no rodapé.
+- [ ] **Passo 2: o diálogo vira "Você".** Em cima, a pessoa: foto, nome, e-mail
+  e o papel nesta conta com os nomes da 7.1 ("Proprietário · MGM Pilates",
+  "Acesso de atendimento · MGM Pilates"; nunca mais "dono da conta"). Embaixo, as
+  ações: **Editar perfil**, **Trocar senha**, Disponível/Ausente, Avisos, Tema,
+  **Trocar de conta** (só com mais de uma), Sair.
+- [ ] **Passo 3: o que cada um vê.** Proprietário e administrador da conta: tudo
+  acima + atalho "Configurações da conta". Acesso de gestão: igual, e o atalho
+  só aparece se o acesso incluir alguma configuração. Acesso de atendimento: só
+  o perfil próprio, sem atalho nenhum para Configurações. Suporte 4YU: selo
+  "Suporte 4YU" no lugar do papel (casa com a faixa da 7.3).
+- [ ] **Passo 4: Editar perfil** (modal): nome e foto. A ação no servidor só
+  mexe na **própria** sessão (`sessaoAtual().usuario.id`), nunca aceita id vindo
+  da tela, e não pede capacidade nenhuma. Foto: jpg/png/webp até 2 MB, recortada
+  quadrada. **Storage é global ao projeto dividido com a Verandi**: bucket
+  próprio `autofluxos-avatares`, criado por migration **só no Supabase local**;
+  produção fica pendente no fim deste plano para o Gabriel autorizar. Sem foto,
+  iniciais.
+- [ ] **Passo 5: Trocar senha** (modal): senha atual + nova (mínimo do cadastro),
+  pela troca de senha do Better Auth. Resolve o "acesso provisório" da 7.4
+  ("peça para a pessoa trocar a senha no primeiro acesso").
+- [ ] **Passo 6:** testes: integração "editar perfil só altera o próprio usuário"
+  e "nome vazio é recusado"; e2e com um membro de acesso de atendimento: troca o
+  próprio nome e a foto pelo rodapé, e o menu não mostra Configurações. Prints
+  do rodapé e do diálogo para proprietário e atendimento, desktop e celular.
+- [ ] **Passo 7:** commit `feat(perfil): você no rodapé, com nome, foto e senha próprios`.
+
 ---
 
 ## Fase 8: atendimento, Inbox e ficha
@@ -1325,4 +1368,6 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   opções fixas no topo, Enter com um resultado só escolhe) serve o "Atribuir
   tarefa…" do menu, o filtro Responsável e também o responsável de "Nova
   atividade" (tinha o mesmo problema da lista longa).
+- 23/09: tarefa 7.5 (perfil próprio no rodapé) entrou no plano a pedido do
+  Gabriel. Os nomes dos papéis continuam os da tabela de decisões.
 
