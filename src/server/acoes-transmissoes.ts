@@ -9,7 +9,7 @@ import {
   type EntradaDeBotao,
   type ModeloDaBiblioteca,
 } from '@/channels/templates-api'
-import { podeTransmitir } from '@/core/disparo'
+import { podeTransmitir, saiNoDiaDeHoje } from '@/core/disparo'
 import {
   CAMPOS,
   camposUsados,
@@ -40,6 +40,7 @@ import {
   enfileirarDestinatarios,
   lerTransmissao,
   mudarEstadoDaTransmissao,
+  enviadasHojePelaConta,
   progressoDa,
 } from './repos/transmissoes'
 import { autorDaPessoa } from '@/core/autor-da-mensagem'
@@ -424,7 +425,6 @@ export async function acaoCriarTransmissao(
     quando?: string | null
     /** O teto de 24h do cliente. Vem da tela porque a Meta não o expõe por API. */
     limiteDiario?: number
-    jaEnviadasHoje?: number
   },
 ): Promise<ResultadoDaTransmissao> {
   const acesso = await exigirCapacidade(clienteId, 'exportar', 'todos')
@@ -444,7 +444,9 @@ export async function acaoCriarTransmissao(
     // 250 é o degrau de quem está começando, e é onde a maioria fica: só sobe
     // quem usa 50% do limite em 7 dias.
     limiteDiario: dados.limiteDiario ?? 250,
-    jaEnviadasHoje: dados.jaEnviadasHoje ?? 0,
+    // Recontado aqui, e não aceito da tela: entre abrir a prévia e clicar,
+    // outra pessoa da equipe pode ter mandado uma transmissão.
+    jaEnviadasHoje: saiNoDiaDeHoje(dados.quando) ? await enviadasHojePelaConta(clienteId) : 0,
   })
 
   if (!veredito.pode) return { ok: false, erro: veredito.recado ?? 'Não dá para transmitir agora.' }
@@ -543,7 +545,6 @@ export async function acaoCriarTransmissaoPorEtiqueta(
     parametros?: Record<string, string>
     quando?: string | null
     limiteDiario?: number
-    jaEnviadasHoje?: number
   },
 ): Promise<ResultadoDaTransmissao> {
   const acesso = await exigirCapacidade(clienteId, 'exportar', 'todos')

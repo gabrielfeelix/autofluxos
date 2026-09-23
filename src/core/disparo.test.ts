@@ -12,6 +12,7 @@ import {
   TENTATIVAS_MAXIMAS,
   TETO_DO_BACKOFF_MS,
   podeTransmitir,
+  saiNoDiaDeHoje,
 } from './disparo'
 
 describe('o ritmo', () => {
@@ -164,13 +165,33 @@ describe('dá para transmitir agora?', () => {
   })
 
   /*
-   * Campanha maior que o teto não é erro, é campanha que leva mais de um dia.
-   * Barrar seria errado; deixar sem avisar seria pior.
+   * O motor não fatia por dia: o que passa do limite a Meta recusa. A
+   * campanha maior que o que sobra hoje é barrada com os números, para a
+   * pessoa diminuir a lista ou deixar para amanhã.
    */
-  it('deixa passar a campanha grande, avisando em quantos dias ela cabe', () => {
-    const r = podeTransmitir({ ...base, publico: 5_000, limiteDiario: 2_000 })
-    expect(r.pode).toBe(true)
-    expect(r.recado).toMatch(/Cabem 2000 hoje/)
-    expect(r.recado).toMatch(/3 dias/)
+  it('barra a lista maior que o que sobra hoje, dizendo os números', () => {
+    const r = podeTransmitir({ ...base, publico: 120, limiteDiario: 250, jaEnviadasHoje: 180 })
+    expect(r.pode).toBe(false)
+    expect(r.recado).toBe('Hoje já saíram 180 de 250. Esta lista tem 120.')
+  })
+
+  it('deixa a lista que cabe exatamente no que sobra', () => {
+    expect(podeTransmitir({ ...base, publico: 70, limiteDiario: 250, jaEnviadasHoje: 180 }).pode).toBe(
+      true,
+    )
+  })
+})
+
+describe('a transmissão sai hoje?', () => {
+  // 23/09 às 22h em Brasília já é 24/09 em UTC.
+  const agora = new Date('2026-09-24T01:00:00Z')
+
+  it('sem horário sai agora', () => {
+    expect(saiNoDiaDeHoje(null, agora)).toBe(true)
+  })
+
+  it('usa o dia de Brasília, não o de UTC', () => {
+    expect(saiNoDiaDeHoje('2026-09-24T02:30:00Z', agora)).toBe(true)
+    expect(saiNoDiaDeHoje('2026-09-24T03:30:00Z', agora)).toBe(false)
   })
 })

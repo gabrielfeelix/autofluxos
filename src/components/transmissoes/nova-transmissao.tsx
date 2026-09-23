@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Dropdown } from '@/components/design/dropdown'
 import { Modal } from '@/components/design/modal'
-import { podeTransmitir } from '@/core/disparo'
+import { cabemHoje, podeTransmitir, saiNoDiaDeHoje } from '@/core/disparo'
 import { camposDoCorpoDaMeta, previa } from '@/core/modelos-prontos'
 import {
   acaoCriarTransmissaoPorEtiqueta,
@@ -21,8 +21,9 @@ import type { Template } from '@/server/repos/templates'
  * ---------------------------------------------------------------------------
  *
  * `podeTransmitir` é puro, então esta tela o chama a cada escolha e mostra o
- * recado enquanto a pessoa ainda está decidindo. Descobrir "cabem 250 hoje, o
- * resto sai em 5 dias" **depois** de mandar não é aviso: é notícia.
+ * recado enquanto a pessoa ainda está decidindo. Descobrir que a lista passa
+ * do limite do dia **depois** de mandar não é aviso: é notícia. O consumo de
+ * hoje (`enviadasHoje`) é o real, contado pela página.
  *
  * O servidor confere de novo em `acaoCriarTransmissao`, e isso não é
  * duplicação, o limite pode ter sido consumido por outra campanha entre a
@@ -47,9 +48,12 @@ const LIMITE_PADRAO = 250
 export function NovaTransmissao({
   clienteId,
   templates,
+  enviadasHoje,
 }: {
   clienteId: string
   templates: Template[]
+  /** Quanto do limite de hoje já foi gasto (`enviadasHojePelaConta`). */
+  enviadasHoje: number
 }) {
   const [aberto, setAberto] = useState(false)
   const aprovados = templates.filter((t) => t.status === 'aprovado')
@@ -79,6 +83,7 @@ export function NovaTransmissao({
         <Formulario
           clienteId={clienteId}
           aprovados={aprovados}
+          enviadasHoje={enviadasHoje}
           aoFechar={() => setAberto(false)}
         />
       )}
@@ -89,10 +94,12 @@ export function NovaTransmissao({
 function Formulario({
   clienteId,
   aprovados,
+  enviadasHoje,
   aoFechar,
 }: {
   clienteId: string
   aprovados: Template[]
+  enviadasHoje: number
   aoFechar: () => void
 }) {
   const router = useRouter()
@@ -136,14 +143,19 @@ function Formulario({
   const tamanho = publico?.contatos ?? 0
 
   /*
-   * O veredito, recalculado a cada escolha. É o que põe "cabem 250 hoje" na
-   * tela enquanto a pessoa decide, e não depois.
+   * O veredito, recalculado a cada escolha. É o que põe "cabem 70 hoje" na
+   * tela enquanto a pessoa decide, e não depois. Marcada para outro dia, o
+   * que saiu hoje não pesa.
    */
+  const jaEnviadas = saiNoDiaDeHoje(quando ? new Date(quando).toISOString() : null)
+    ? enviadasHoje
+    : 0
+  const cabem = cabemHoje(LIMITE_PADRAO, jaEnviadas)
   const veredito = podeTransmitir({
     statusDoTemplate: template?.status ?? 'pendente',
     publico: tamanho,
     limiteDiario: LIMITE_PADRAO,
-    jaEnviadasHoje: 0,
+    jaEnviadasHoje: jaEnviadas,
   })
 
   /** Os buracos que a pessoa precisa preencher, o do nome sai do contato. */
@@ -294,17 +306,26 @@ function Formulario({
         </Campo>
 
         {/*
-          O recado do teto. Amarelo quando cabe mas leva dias, vermelho quando
-          não dá, e sempre antes do clique.
+          O limite do dia, sempre antes do clique: quanto cabe, ou em quanto a
+          lista passa. O modelo não aprovado tem o recado dele.
         */}
-        {veredito.recado && tamanho > 0 && (
+        {tamanho > 0 && template?.status === 'aprovado' && (
           <p
             className={`rounded-[10px] px-3 py-2.5 text-[12.5px] leading-5 ${
-              veredito.pode
-                ? 'bg-amber-500/[0.08] text-amber-700 dark:text-amber-300'
+              tamanho <= cabem
+                ? 'bg-line/40 text-dim'
                 : 'bg-red-500/10 text-red-700 dark:text-red-300'
             }`}
           >
+            {tamanho <= cabem
+              ? `Cabem ${cabem} hoje. Esta lista tem ${tamanho}.`
+              : cabem === 0
+                ? `O limite de ${LIMITE_PADRAO} de hoje já foi usado. Escolha um horário a partir de amanhã.`
+                : `Passa do limite de hoje em ${tamanho - cabem}. Hoje já saíram ${jaEnviadas} de ${LIMITE_PADRAO}.`}
+          </p>
+        )}
+        {veredito.recado && tamanho > 0 && template?.status !== 'aprovado' && (
+          <p className="rounded-[10px] bg-red-500/10 px-3 py-2.5 text-[12.5px] leading-5 text-red-700 dark:text-red-300">
             {veredito.recado}
           </p>
         )}

@@ -176,6 +176,21 @@ export function decidir(
 }
 
 /**
+ * A transmissão sai hoje, em Brasília? Sem horário quer dizer "agora".
+ *
+ * Marcada para outro dia, o consumo de hoje não diz nada sobre ela, e a prévia
+ * não pode barrar a campanha de amanhã pelo que saiu hoje.
+ */
+export function saiNoDiaDeHoje(quando: string | null | undefined, agora = new Date()): boolean {
+  if (!quando) return true
+  const momento = new Date(quando)
+  if (Number.isNaN(momento.getTime())) return true
+  const dia = (d: Date) =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(d)
+  return dia(momento) <= dia(agora)
+}
+
+/**
  * Dá para transmitir agora?
  *
  * Junta as três perguntas que a tela precisa responder antes de deixar alguém
@@ -208,12 +223,14 @@ export function podeTransmitir(entrada: {
   }
 
   if (entrada.publico > cabem) {
-    // Passa, mas avisando: fatiar é o certo, e a pessoa tem que saber que vai
-    // levar mais de um dia ANTES de clicar.
-    const dias = diasNecessarios(entrada.publico, entrada.limiteDiario)
+    /*
+     * Barra, com os números. O motor manda a lista inteira de uma vez e não
+     * fatia por dia: a mensagem que passa do limite a Meta recusa. Deixar
+     * criar dizendo "o resto sai amanhã" prometia algo que ninguém cumpre.
+     */
     return {
-      pode: true,
-      recado: `Cabem ${cabem} hoje. As outras saem nos próximos dias, no total, cerca de ${dias} dias.`,
+      pode: false,
+      recado: `Hoje já saíram ${entrada.jaEnviadasHoje} de ${entrada.limiteDiario}. Esta lista tem ${entrada.publico}.`,
     }
   }
 

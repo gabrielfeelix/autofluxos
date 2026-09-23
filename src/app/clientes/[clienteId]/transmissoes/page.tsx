@@ -6,7 +6,11 @@ import { ListaDeTemplates } from '@/components/transmissoes/lista-de-templates'
 import { ListaDeTransmissoes } from '@/components/transmissoes/lista-de-transmissoes'
 import { acharCliente, type Cliente } from '@/server/repos/clientes'
 import { listarTemplates } from '@/server/repos/templates'
-import { listarTransmissoes, progressoDa } from '@/server/repos/transmissoes'
+import {
+  enviadasHojePelaConta,
+  listarTransmissoes,
+  progressoDas,
+} from '@/server/repos/transmissoes'
 
 export const dynamic = 'force-dynamic'
 
@@ -87,24 +91,17 @@ function Espera({ aba }: { aba: Aba }) {
 }
 
 async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
-  const [templates, transmissoes] = await Promise.all([
+  const [templates, transmissoes, enviadasHoje] = await Promise.all([
     listarTemplates(cliente.id),
     listarTransmissoes(cliente.id),
+    enviadasHojePelaConta(cliente.id),
   ])
 
   /*
-   * O progresso de cada transmissão vem junto, numa consulta por linha.
-   *
-   * Parece caro e não é: a lista mostra "3 de 400 entregues", e sem o número a
-   * linha não diz nada que importe. O que seria caro é a tela carregar os 400
-   * destinatários para contar em memória, por isso `progressoDa` conta no
-   * banco.
+   * O progresso de todas numa consulta só, contada no banco (0096). A lista
+   * mostra "3 de 400 entregues", e sem o número a linha não diz nada.
    */
-  const progressos = Object.fromEntries(
-    await Promise.all(
-      transmissoes.map(async (t) => [t.id, await progressoDa(t.id)] as const),
-    ),
-  )
+  const progressos = Object.fromEntries(await progressoDas(transmissoes.map((t) => t.id)))
 
   return (
     <>
@@ -133,6 +130,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
           transmissoes={transmissoes}
           progressos={progressos}
           templates={templates}
+          enviadasHoje={enviadasHoje}
         />
       )}
     </>

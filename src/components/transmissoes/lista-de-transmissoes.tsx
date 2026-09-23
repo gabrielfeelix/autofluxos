@@ -43,11 +43,13 @@ export function ListaDeTransmissoes({
   transmissoes,
   progressos,
   templates,
+  enviadasHoje,
 }: {
   clienteId: string
   transmissoes: Transmissao[]
   progressos: Record<string, Progresso>
   templates: Template[]
+  enviadasHoje: number
 }) {
   const aprovados = templates.filter((t) => t.status === 'aprovado')
 
@@ -60,7 +62,7 @@ export function ListaDeTransmissoes({
             Um modelo aprovado, um público e um horário.
           </p>
         </div>
-        <NovaTransmissao clienteId={clienteId} templates={templates} />
+        <NovaTransmissao clienteId={clienteId} templates={templates} enviadasHoje={enviadasHoje} />
       </header>
 
       {aprovados.length === 0 && (

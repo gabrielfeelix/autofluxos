@@ -354,22 +354,55 @@ export async function aplicarStatusPorWamid(
 
 export type Progresso = Record<EstadoDoDestinatario, number> & { total: number }
 
-/**
- * Quantos estão em cada estado, o que a tela de progresso mostra.
- *
- * Conta no banco e não em memória: carregar 5.000 linhas para fazer `length`
- * seria trazer a tabela inteira para dizer um número.
- */
+function progressoZerado(): Progresso {
+  return { na_fila: 0, aceita: 0, retida: 0, entregue: 0, lida: 0, falhou: 0, total: 0 }
+}
+
+/** Quantos estão em cada estado, o que a tela de progresso mostra. */
 export async function progressoDa(transmissaoId: string): Promise<Progresso> {
-  const zerado = {
-    na_fila: 0,
-    aceita: 0,
-    retida: 0,
-    entregue: 0,
-    lida: 0,
-    falhou: 0,
-    total: 0,
-  } as Progresso
+  return (await progressoDas([transmissaoId])).get(transmissaoId) ?? progressoZerado()
+}
+
+/**
+ * O progresso de várias transmissões numa consulta só (0096).
+ *
+ * A contagem é feita no banco, agrupada. Ler os destinatários para contar em
+ * memória custava uma consulta por linha da lista e **mentia acima de 1.000**,
+ * porque o PostgREST corta em `max_rows`.
+ *
+ * Enquanto a 0096 não estiver aplicada (produção atrasada em relação ao
+ * código), cai na leitura antiga, uma por transmissão: a tela continua de pé.
+ */
+export async function progressoDas(ids: string[]): Promise<Map<string, Progresso>> {
+  const mapa = new Map<string, Progresso>(ids.map((id) => [id, progressoZerado()]))
+  if (ids.length === 0) return mapa
+
+  const { data, error } = await db().rpc('progresso_das_transmissoes', { p_ids: ids })
+
+  if (error) {
+    if (ehIdInvalido(error)) return mapa
+    if (error.code === 'PGRST202' || error.code === '42883') {
+      await Promise.all(ids.map(async (id) => mapa.set(id, await progressoLidoUmAUm(id))))
+      return mapa
+    }
+    throw error
+  }
+
+  for (const linha of (data ?? []) as { transmissao_id: string; estado: string; quantos: number }[]) {
+    const progresso = mapa.get(linha.transmissao_id)
+    if (!progresso) continue
+    const estado = linha.estado as EstadoDoDestinatario
+    const quantos = Number(linha.quantos)
+    if (estado in progresso) progresso[estado] += quantos
+    progresso.total += quantos
+  }
+
+  return mapa
+}
+
+/** A leitura de antes da 0096. Só existe como recuo de `progressoDas`. */
+async function progressoLidoUmAUm(transmissaoId: string): Promise<Progresso> {
+  const zerado = progressoZerado()
 
   const { data, error } = await db()
     .from('transmissao_destinatarios')
@@ -388,6 +421,71 @@ export async function progressoDa(transmissaoId: string): Promise<Progresso> {
   }
 
   return zerado
+}
+
+/**
+ * Quantas mensagens de transmissão a conta já gastou do limite de hoje.
+ *
+ * É o número que a prévia de "Nova transmissão" usa para dizer quantas cabem.
+ * Soma duas coisas, no mesmo critério do limite:
+ *
+ *  - o que **saiu** hoje (`enviada_em` desde a meia-noite de Brasília; retida
+ *    conta, porque o pedido foi feito);
+ *  - o que ainda está **na fila** de transmissão agendada ou enviando que sai
+ *    até o fim de hoje. Duas campanhas marcadas para a mesma tarde disputam o
+ *    mesmo limite, e a segunda precisa saber da primeira.
+ *
+ * Transmissão cancelada antes de sair não conta: os destinatários dela ficam
+ * `na_fila` para sempre, mas nunca vão gastar nada.
+ */
+export async function enviadasHojePelaConta(
+  clienteId: string,
+  agora: Date = new Date(),
+): Promise<number> {
+  const { inicio, fim } = diaDeBrasilia(agora)
+
+  const [saidas, naFila] = await Promise.all([
+    db()
+      .from('transmissao_destinatarios')
+      .select('id, transmissoes!inner(cliente_id)', { count: 'exact', head: true })
+      .eq('transmissoes.cliente_id', clienteId)
+      .gte('enviada_em', inicio)
+      .lt('enviada_em', fim),
+    db()
+      .from('transmissao_destinatarios')
+      .select('id, transmissoes!inner(cliente_id, estado, quando)', { count: 'exact', head: true })
+      .eq('transmissoes.cliente_id', clienteId)
+      .in('transmissoes.estado', ['agendada', 'enviando'])
+      .or(`quando.is.null,quando.lt.${fim}`, { referencedTable: 'transmissoes' })
+      .eq('estado', 'na_fila'),
+  ])
+
+  for (const r of [saidas, naFila]) {
+    if (r.error) {
+      if (ehIdInvalido(r.error)) return 0
+      throw r.error
+    }
+  }
+  return (saidas.count ?? 0) + (naFila.count ?? 0)
+}
+
+/**
+ * O dia corrente em Brasília, como intervalo em ISO.
+ *
+ * O Brasil não tem horário de verão desde 2019, então o deslocamento é fixo.
+ * Em UTC, "hoje" viraria amanhã às 21h, e a prévia da noite diria que o
+ * limite zerou.
+ */
+function diaDeBrasilia(agora: Date): { inicio: string; fim: string } {
+  const dia = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(agora)
+  const inicio = new Date(`${dia}T00:00:00-03:00`)
+  const fim = new Date(inicio.getTime() + 86_400_000)
+  return { inicio: inicio.toISOString(), fim: fim.toISOString() }
 }
 
 export async function mudarEstadoDaTransmissao(
