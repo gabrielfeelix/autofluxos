@@ -1,5 +1,7 @@
 # Plano 23/set/2026: catálogo de produtos para o bot e para a equipe
 
+> **Executado em 23/set/2026.** Estado, decisões e pendências: `docs/HANDOFF-23-SET-CATALOGO.md`.
+
 > Para o próximo agente: leia antes `AGENTS.md`, `docs/BANCO-COMPARTILHADO.md`
 > (inteiro, a etapa 1 mexe no banco compartilhado com a Verandi) e
 > `docs/HANDOFF-23-SET-MAGENTO.md`. Seja cético: o que está aqui foi conferido

@@ -18,9 +18,9 @@
 
 ## Depois deste handoff (23/set, tarde)
 
-- **Próximo trabalho decidido**: catálogo de produtos (importar planilha,
-  bot sem Magento, produtos no Inbox). Plano em
-  `docs/superpowers/plans/2026-09-23-catalogo-de-produtos.md`.
+- **Catálogo de produtos: feito e no ar** (importar planilha, bot sem
+  Magento, produtos no Inbox). Estado e pendências em
+  `docs/HANDOFF-23-SET-CATALOGO.md`.
 - Inbox, no ar: menu do bot embaixo da bolha com a opção tocada, toque em
   verde, motivo do `unsupported` guardado (`083e6e6`, `b33ff74`, `0527eec`).
 - Saída do bot e da equipe passou a gravar `wa_message_id` (antes, 0 de 99).
