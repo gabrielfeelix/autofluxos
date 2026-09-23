@@ -2,6 +2,10 @@ import { notFound } from 'next/navigation'
 import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
 import { Editor } from '@/components/editor/editor'
 import { variaveisDoFluxo } from '@/core/flow/variaveis'
+import { origemValida } from '@/core/flow/antes-de-publicar'
+import { listarCampanhas } from '@/server/repos/campanhas'
+import { listarGatilhos } from '@/server/repos/gatilhos'
+import { listarGatilhosDeEvento } from '@/server/repos/webhooks-de-entrada'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarConexoesParaFluxos } from '@/server/repos/conexoes'
 import { lojaDaConta } from '@/server/repos/lojas'
@@ -34,10 +38,13 @@ function quando(iso: string): string {
 
 export default async function Pagina({
   params,
+  searchParams,
 }: {
   params: Promise<{ clienteId: string; fluxoId: string }>
+  searchParams: Promise<{ origem?: string }>
 }) {
   const { clienteId, fluxoId } = await params
+  const origem = origemValida((await searchParams).origem)
 
   const [cliente, fluxo, conexoes, quadros, etiquetas, fluxosDaConta, loja, temCatalogo] = await Promise.all([
     acharCliente(clienteId),
@@ -99,6 +106,20 @@ export default async function Pagina({
     listarVersoes(fluxo.id),
   ])
 
+  // Só quem acabou de importar ou duplicar vê "Antes de publicar" (A13), então
+  // só aí vale ir ao banco perguntar o que começa esta automação.
+  const gatilhosDoFluxo = origem
+    ? (
+        await Promise.all([
+          listarGatilhos(cliente.id),
+          listarCampanhas(cliente.id),
+          listarGatilhosDeEvento(cliente.id),
+        ])
+      )
+        .flat()
+        .filter((g) => g.fluxoId === fluxo.id).length
+    : 0
+
   return (
     <>
       <FaixaDeImpersonacao />
@@ -124,6 +145,8 @@ export default async function Pagina({
         /* Quantas conversas responderam cada variável, para o selo no bloco:
            o desenho passa a dizer o que foi usado, sem sair para Respostas. */
         respostasPorVariavel={respostasPorVariavel}
+        origem={origem}
+        gatilhosDoFluxo={gatilhosDoFluxo}
         conexoes={conexoes}
         /* Magento ligada ou catálogo próprio com item ativo: os dois servem de
            loja para o bot (`adaptador-da-loja.ts`). */

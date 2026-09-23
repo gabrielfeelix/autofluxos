@@ -564,7 +564,7 @@ function DuplicarExistente({
         setErro(r.erro ?? 'não deu para duplicar')
         return
       }
-      router.push(`/clientes/${clienteId}/fluxos/${r.id}`)
+      router.push(`/clientes/${clienteId}/fluxos/${r.id}?origem=duplicado`)
     })
   }
 

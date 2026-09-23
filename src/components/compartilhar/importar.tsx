@@ -49,7 +49,7 @@ export function ImportarFluxo({
           setErro(r.erro ?? 'não deu para importar')
           return
         }
-        router.push(`/clientes/${destino}/fluxos/${r.fluxoId}`)
+        router.push(`/clientes/${destino}/fluxos/${r.fluxoId}?origem=importado`)
       } catch {
         setErro('não deu para importar agora, tente de novo em instantes')
       }

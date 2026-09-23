@@ -856,13 +856,13 @@ export async function editarPasso(
 
 ### Tarefa 5.3: checklist depois de importar ou duplicar [A13]
 
-- [ ] **Passo 1:** ao abrir o editor de um fluxo recém-importado/duplicado
+- [x] **Passo 1:** ao abrir o editor de um fluxo recém-importado/duplicado
   (`?origem=importado|duplicado`), painel lateral "Antes de publicar": canal,
   blocos que precisam de conexão, etiquetas/etapas/variáveis que não existem
   nesta conta, IA removida, gatilhos desligados. Cada item com link.
-- [ ] **Passo 2:** compartilhar: versão e validade ao lado do botão copiar;
+- [x] **Passo 2:** compartilhar: versão e validade ao lado do botão copiar;
   link expirado diz "expirou em <data>" e revogado diz "foi revogado".
-- [ ] **Passo 3:** commit `feat(editor): checklist do que falta depois de importar`.
+- [x] **Passo 3:** commit `feat(editor): checklist do que falta depois de importar`.
 
 ### Tarefa 5.4: catálogo de blocos agrupado [A09]
 

@@ -9,6 +9,7 @@ import {
   nomeAoImportar,
   resumirFluxo,
   roteiroDoFluxo,
+  validadeDoLink,
 } from './compartilhar'
 
 /**
@@ -215,6 +216,19 @@ describe('o estado do link', () => {
     // O pior lado do erro aqui é um link que devia estar morto continuar
     // aberto, então data torta vira expirado, nunca válido.
     expect(estadoDoLink({ expiraEm: 'ontem', revogadoEm: null }, agora)).toBe('expirado')
+  })
+
+  it('a validade diz a data e separa prazo de revogação', () => {
+    expect(validadeDoLink({ expiraEm: '2026-09-18T15:00:00Z', revogadoEm: null }, agora)).toBe(
+      'vale até 18/09/2026',
+    )
+    expect(validadeDoLink({ expiraEm: '2026-08-18T15:00:00Z', revogadoEm: null }, agora)).toBe(
+      'expirou em 18/08/2026',
+    )
+    expect(
+      validadeDoLink({ expiraEm: '2026-09-18T15:00:00Z', revogadoEm: '2026-08-17T15:00:00Z' }, agora),
+    ).toBe('foi revogado em 17/08/2026')
+    expect(validadeDoLink({ expiraEm: null, revogadoEm: null }, agora)).toBe('sem prazo')
   })
 })
 

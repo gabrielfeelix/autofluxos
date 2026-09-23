@@ -57,6 +57,15 @@ const RespostasPorVariavel = createContext<Record<string, number>>({})
 
 export const RespostasPorVariavelProvider = RespostasPorVariavel.Provider
 
+/**
+ * O nome de cada etiqueta da conta, por id, para o bloco de etiqueta dizer qual
+ * é. O grafo guarda só o id (ver `noEtiquetaSchema`), e id não diz nada a quem
+ * olha o desenho; id que não está aqui é etiqueta de outra conta ou apagada.
+ */
+const NomesDeEtiqueta = createContext<Record<string, string>>({})
+
+export const NomesDeEtiquetaProvider = NomesDeEtiqueta.Provider
+
 function Caixa({
   tipo,
   selecionado,
@@ -488,6 +497,33 @@ function NoEtapa({ data, selected }: NodeProps) {
   )
 }
 
+/*
+ * Etiqueta e anotação não tinham desenho registrado em `tiposDeNo`, e o React
+ * Flow caía no nó padrão: uma caixa branca vazia, sem tipo nem conteúdo.
+ */
+function NoEtiqueta({ data, selected }: NodeProps) {
+  const d = data as { etiquetaId: string }
+  const nome = useContext(NomesDeEtiqueta)[d.etiquetaId]
+  return (
+    <Caixa tipo="etiqueta" selecionado={!!selected}>
+      <p className={`truncate text-[12.5px] leading-5 ${d.etiquetaId && !nome ? 'text-perigo' : 'text-soft'}`}>
+        {!d.etiquetaId ? '(nenhuma etiqueta escolhida)' : (nome ?? 'etiqueta que não existe nesta conta')}
+      </p>
+    </Caixa>
+  )
+}
+
+function NoNota({ data, selected }: NodeProps) {
+  const d = data as { texto: string }
+  return (
+    <Caixa tipo="nota" selecionado={!!selected}>
+      <p className="line-clamp-3 text-[12.5px] leading-5 text-soft">
+        <RealceDeVariaveis texto={vazio(d.texto, '(sem texto)')} />
+      </p>
+    </Caixa>
+  )
+}
+
 function NoIa({ data, selected }: NodeProps) {
   const d = data as { instrucao: string; salvarEm?: string }
   return (
@@ -693,6 +729,8 @@ export const tiposDeNo: NodeTypes = {
   handoff: NoHandoff,
   http: NoHttp,
   etapa: NoEtapa,
+  etiqueta: NoEtiqueta,
+  nota: NoNota,
   'ir-fluxo': NoIrFluxo,
   voltar: NoVoltar,
   nps: NoNps,

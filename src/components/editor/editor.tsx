@@ -58,7 +58,7 @@ import { Modal } from '@/components/design/modal'
 import { SeloDoCanal } from '@/components/design/selo-do-canal'
 import { AcaoDaArestaProvider, RealceDeArestasProvider, tiposDeAresta } from './arestas'
 import { DESCRICOES } from '@/core/flow/blocos'
-import { CORES, ICONES, NOMES, RespostasPorVariavelProvider, tiposDeNo } from './nos'
+import { CORES, ICONES, NOMES, NomesDeEtiquetaProvider, RespostasPorVariavelProvider, tiposDeNo } from './nos'
 import { NomeDoFluxo } from './nome-do-fluxo'
 import { organizar, type AlcasDoBloco } from './organizar'
 import { PuxadorDeLargura } from './puxador'
@@ -73,6 +73,9 @@ import type {
 } from './painel'
 import { Versoes, type VersaoNaLista } from './versoes'
 import { Compartilhar } from './compartilhar'
+import { AntesDePublicar } from './antes-de-publicar'
+import { antesDePublicar, type OrigemDoFluxo } from '@/core/flow/antes-de-publicar'
+import { descrever } from '@/core/flow/descrever'
 import { Caixa } from '@/components/design/caixa'
 
 const PAUSA_ANTES_DE_SALVAR = 800
@@ -325,6 +328,14 @@ function paraArestas(arestas: Fluxo['edges']): Edge[] {
   })) as Edge[]
 }
 
+type AbaDoPainel = 'bloco' | 'testar' | 'antes'
+
+const ROTULO_DA_ABA: Record<AbaDoPainel, string> = {
+  bloco: 'Bloco',
+  testar: 'Testar',
+  antes: 'Antes de publicar',
+}
+
 export function Editor({
   fluxoId,
   clienteId,
@@ -350,6 +361,8 @@ export function Editor({
   contextoNegocio,
   temContextoDeNegocio,
   respostasPorVariavel = {},
+  origem = null,
+  gatilhosDoFluxo = 0,
 }: {
   fluxoId: string
   clienteId: string
@@ -380,6 +393,13 @@ export function Editor({
    * nenhuma atrás.
    */
   respostasPorVariavel?: Record<string, number>
+  /**
+   * De onde a automação acabou de chegar (`?origem=`). Com valor, o painel abre
+   * na aba "Antes de publicar" (A13).
+   */
+  origem?: OrigemDoFluxo | null
+  /** Gatilhos desta conta que apontam para este fluxo. Só é lido com `origem`. */
+  gatilhosDoFluxo?: number
   /** As automações desta conta, para o bloco "Ir para outra automação". */
   fluxos: FluxoDaConta[]
   /**
@@ -436,7 +456,7 @@ export function Editor({
   const [selecionados, setSelecionados] = useState<string[]>([])
   /** Qual bloco a última seleção apontava, ver `onSelectionChange`. */
   const ultimoSelecionado = useRef<string | null>(null)
-  const [aba, setAba] = useState<'bloco' | 'testar'>('bloco')
+  const [aba, setAba] = useState<AbaDoPainel>(origem ? 'antes' : 'bloco')
   const [painelAberto, setPainelAberto] = useState(true)
 
   // A largura da barra de blocos, lembrada no navegador de quem usa.
@@ -577,6 +597,12 @@ export function Editor({
 
   const fluxo = useMemo(() => paraFluxo(inicio, nodes, edges), [inicio, nodes, edges])
   const idsDeConexao = useMemo(() => conexoes.map((c) => c.id), [conexoes])
+  const idsDeEtapa = useMemo(() => etapas.map((e) => e.colunaId), [etapas])
+  const idsDeEtiqueta = useMemo(() => etiquetas.map((e) => e.id), [etiquetas])
+  const nomesDeEtiqueta = useMemo(
+    () => Object.fromEntries(etiquetas.map((e) => [e.id, e.nome])),
+    [etiquetas],
+  )
   const validacao = useMemo(
     () => {
       const doDesenho = validar(fluxo, {
@@ -586,6 +612,10 @@ export function Editor({
         fluxos,
         fluxoAtualId: fluxoId,
         variaveisDaConta,
+        // Os mesmos ids que o servidor confere ao publicar: sem eles, uma
+        // etiqueta de outra conta (fluxo importado) só aparecia na recusa.
+        etapas: idsDeEtapa,
+        etiquetas: idsDeEtiqueta,
         // O aviso tem que chegar enquanto a pessoa desenha, e não na publicação:
         // descobrir na hora de publicar que a lista não cabe é refazer o menu.
         canal,
@@ -612,8 +642,26 @@ export function Editor({
         avisos: [...doDesenho.avisos, ...daPublicacao.avisos],
       }
     },
-    [fluxo, comIa, idsDeConexao, temContextoDeNegocio, fluxos, fluxoId, variaveisDaConta, canal],
+    [fluxo, comIa, idsDeConexao, idsDeEtapa, idsDeEtiqueta, temContextoDeNegocio, fluxos, fluxoId, variaveisDaConta, canal],
   )
+
+  const itensAntes = useMemo(
+    () =>
+      origem
+        ? antesDePublicar({
+            origem,
+            fluxo,
+            canal,
+            iaHabilitada: comIa,
+            entradaLigada,
+            problemas: [...validacao.erros, ...validacao.avisos],
+            gatilhos: gatilhosDoFluxo,
+          })
+        : [],
+    [origem, fluxo, canal, comIa, entradaLigada, validacao, gatilhosDoFluxo],
+  )
+  const faltamAntes = itensAntes.filter((item) => item.estado === 'pendente').length
+  const abas: AbaDoPainel[] = origem ? ['bloco', 'testar', 'antes'] : ['bloco', 'testar']
 
   const assinatura = JSON.stringify(fluxo)
   const assinaturaSalva = useRef(assinatura)
@@ -1779,6 +1827,7 @@ export function Editor({
           <AcaoDaArestaProvider value={acoesDaAresta}>
           <RealceDeArestasProvider>
           <RespostasPorVariavelProvider value={respostasPorVariavel}>
+          <NomesDeEtiquetaProvider value={nomesDeEtiqueta}>
           <ReactFlow
             onInit={setTela}
             nodes={nodes}
@@ -1893,6 +1942,7 @@ export function Editor({
             />
           </ReactFlow>
           {previa && <PreviaDoBloco no={previa.no} x={previa.x} y={previa.y} />}
+          </NomesDeEtiquetaProvider>
           </RespostasPorVariavelProvider>
           </RealceDeArestasProvider>
           </AcaoDaArestaProvider>
@@ -1939,7 +1989,7 @@ export function Editor({
             >
               ‹
             </button>
-            {(['bloco', 'testar'] as const).map((chave) => (
+            {abas.map((chave) => (
               <button
                 key={chave}
                 onClick={() => {
@@ -1950,14 +2000,14 @@ export function Editor({
                   aba === chave ? 'text-ink' : 'text-muted hover:text-ink'
                 }`}
               >
-                {chave === 'bloco' ? 'Bloco' : 'Testar'}
+                {ROTULO_DA_ABA[chave]}
               </button>
             ))}
           </aside>
         ) : (
         <aside className="flex w-[420px] shrink-0 flex-col border-l border-line bg-panel">
           <div className="flex shrink-0 items-center gap-1 border-b border-line px-3 pt-2.5 text-xs">
-            {(['bloco', 'testar'] as const).map((chave) => (
+            {abas.map((chave) => (
               <button
                 key={chave}
                 onClick={() => setAba(chave)}
@@ -1967,7 +2017,12 @@ export function Editor({
                     : 'border-transparent text-muted hover:text-ink'
                 }`}
               >
-                {chave === 'bloco' ? 'Bloco' : 'Testar'}
+                {ROTULO_DA_ABA[chave]}
+                {chave === 'antes' && faltamAntes > 0 && (
+                  <span className="ml-1.5 rounded-full bg-rose-400/15 px-1.5 py-px text-[10px] text-perigo">
+                    {faltamAntes}
+                  </span>
+                )}
               </button>
             ))}
             <button
@@ -2075,6 +2130,17 @@ export function Editor({
                 </div>
               )}
             </div>
+          ) : aba === 'antes' && origem ? (
+            <AntesDePublicar
+              origem={origem}
+              itens={itensAntes}
+              clienteId={clienteId}
+              rotuloDoNo={(noId) => {
+                const no = fluxo.nodes.find((n) => n.id === noId)
+                return no ? descrever(no) : 'Bloco'
+              }}
+              aoFocar={focar}
+            />
           ) : (
             <>
               <Conversa

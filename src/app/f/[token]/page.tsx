@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { Marca } from '@/components/design/marca'
 import { ImportarFluxo, type DestinoDaImportacao } from '@/components/compartilhar/importar'
 import { Vitrine } from '@/components/compartilhar/vitrine'
-import { resumirFluxo, roteiroDoFluxo, type LinhaDoRoteiro } from '@/core/compartilhar'
+import { resumirFluxo, roteiroDoFluxo, validadeDoLink, type LinhaDoRoteiro } from '@/core/compartilhar'
 import { acharPorToken, contarAbertura } from '@/server/repos/compartilhar'
 import { contasDoUsuario, sessaoAtual } from '@/server/sessao'
 
@@ -62,15 +62,15 @@ export default async function Pagina({ params }: { params: Promise<{ token: stri
   if (link.estado === 'revogado') {
     return (
       <Aviso
-        titulo="Este link foi fechado"
-        texto="Quem compartilhou revogou o acesso. Peça um link novo."
+        titulo={`Este link ${validadeDoLink(link)}`}
+        texto="Quem compartilhou fechou o acesso. Peça um link novo."
       />
     )
   }
   if (link.estado === 'expirado' || !link.grafo) {
     return (
       <Aviso
-        titulo="O prazo deste link acabou"
+        titulo={`Este link ${validadeDoLink(link)}`}
         texto="Links de fluxo têm validade. Peça um link novo a quem compartilhou."
       />
     )

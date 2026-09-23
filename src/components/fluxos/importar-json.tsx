@@ -49,7 +49,7 @@ export function ImportarJson({
         }
         // Abre no editor: quem importou precisa olhar o desenho antes de
         // publicar, e é justamente isso que a importação não faz sozinha.
-        router.push(`/clientes/${clienteId}/fluxos/${r.fluxoId}`)
+        router.push(`/clientes/${clienteId}/fluxos/${r.fluxoId}?origem=importado`)
       } catch {
         setErro('não deu para ler este arquivo')
       } finally {

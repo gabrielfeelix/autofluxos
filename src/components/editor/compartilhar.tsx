@@ -6,6 +6,7 @@ import {
   PRAZOS_DO_LINK,
   PRAZO_PADRAO,
   avisosDoCompartilhamento,
+  validadeDoLink,
   type AvisoDoCompartilhamento,
 } from '@/core/compartilhar'
 import { montarArquivoDeFluxo, nomeDoArquivoDeFluxo } from '@/core/arquivo-de-fluxo'
@@ -21,6 +22,8 @@ export type LinkNaLista = {
   id: string
   token: string
   expiraEm: string | null
+  revogadoEm: string | null
+  versao: number | null
   aberturas: number
   importacoes: number
   estado: 'valido' | 'revogado' | 'expirado'
@@ -105,7 +108,9 @@ export function Compartilhar({
         }
         setLinks((atuais) =>
           (atuais ?? []).map((link) =>
-            link.id === linkId ? { ...link, estado: 'revogado' as const } : link,
+            link.id === linkId
+              ? { ...link, estado: 'revogado' as const, revogadoEm: new Date().toISOString() }
+              : link,
           ),
         )
       } catch {
@@ -285,6 +290,23 @@ export function Compartilhar({
                       key={link.id}
                       className="rounded-xl border border-line bg-panel p-3"
                     >
+                      {/*
+                        Versão e validade em cima do endereço, e não no rodapé
+                        do cartão: é o que se confere antes de copiar. Quem
+                        republicou depois continua mandando a versão antiga
+                        por este link, e o número é o que avisa (A13).
+                      */}
+                      <p className="mb-2 flex items-center gap-1.5 text-[11px]">
+                        {link.versao !== null && (
+                          <span className="rounded-md border border-line px-1.5 py-px font-semibold text-muted">
+                            v{link.versao}
+                          </span>
+                        )}
+                        <span className={vivo ? 'text-muted' : 'font-semibold text-perigo'}>
+                          {vivo ? 'Link ' : 'Este link '}
+                          {validadeDoLink(link)}
+                        </span>
+                      </p>
                       <div className="flex items-center gap-2">
                         <input
                           readOnly
@@ -345,14 +367,7 @@ export function Compartilhar({
                       )}
 
                       <p className="mt-2 text-[10.5px] text-dim">
-                        {link.estado === 'revogado'
-                          ? 'fechado'
-                          : link.estado === 'expirado'
-                            ? 'prazo vencido'
-                            : link.expiraEm
-                              ? `vale até ${new Date(link.expiraEm).toLocaleDateString('pt-BR')}`
-                              : 'sem prazo'}{' '}
-                        · {link.aberturas} abertura(s) · {link.importacoes} importação(ões)
+                        {link.aberturas} abertura(s) · {link.importacoes} importação(ões)
                       </p>
                     </li>
                   )

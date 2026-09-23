@@ -23,6 +23,8 @@ export type LinkDoFluxo = {
   importacoes: number
   criadoEm: string
   estado: EstadoDoLink
+  /** A versão publicada que o link mostra. Fica a mesma mesmo depois de republicar. */
+  versao: number | null
 }
 
 type Linha = {
@@ -35,10 +37,11 @@ type Linha = {
   aberturas: number
   importacoes: number
   criado_em: string
+  flow_versions: { versao: number } | null
 }
 
 const COLUNAS =
-  'id, flow_id, token, nome, expira_em, revogado_em, aberturas, importacoes, criado_em'
+  'id, flow_id, token, nome, expira_em, revogado_em, aberturas, importacoes, criado_em, flow_versions (versao)'
 
 function paraLink(linha: Linha): LinkDoFluxo {
   const parcial = { expiraEm: linha.expira_em, revogadoEm: linha.revogado_em }
@@ -53,6 +56,7 @@ function paraLink(linha: Linha): LinkDoFluxo {
     importacoes: linha.importacoes,
     criadoEm: linha.criado_em,
     estado: estadoDoLink(parcial),
+    versao: linha.flow_versions?.versao ?? null,
   }
 }
 
@@ -118,7 +122,7 @@ export async function criarLink(
     .single()
 
   if (error) throw new Error(`não deu para criar o link: ${error.message}`)
-  return { ok: true, link: paraLink(data as Linha) }
+  return { ok: true, link: paraLink(data as unknown as Linha) }
 }
 
 /** Os links deste fluxo, do mais novo para o mais velho. Inclui os mortos. */
@@ -132,7 +136,7 @@ export async function listarLinks(clienteId: string, fluxoId: string): Promise<L
 
   if (ehIdInvalido(error)) return []
   if (error) throw new Error(`não deu para listar os links: ${error.message}`)
-  return (data as Linha[]).map(paraLink)
+  return (data as unknown as Linha[]).map(paraLink)
 }
 
 /**
@@ -184,6 +188,8 @@ export type LinkAberto = {
   contextoNegocio: string
   versao: number
   publicadoEm: string
+  expiraEm: string | null
+  revogadoEm: string | null
 }
 
 /**
@@ -235,6 +241,8 @@ export async function acharPorToken(token: string): Promise<LinkAberto | null> {
     contextoNegocio: linha.clients.contexto_negocio ?? '',
     versao: linha.flow_versions.versao,
     publicadoEm: linha.flow_versions.publicado_em,
+    expiraEm: linha.expira_em,
+    revogadoEm: linha.revogado_em,
   }
 }
 

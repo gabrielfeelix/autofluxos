@@ -370,3 +370,28 @@ export function estadoDoLink(
 
   return prazo > agora ? 'valido' : 'expirado'
 }
+
+function dataCurta(iso: string): string {
+  return new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+}
+
+/**
+ * A validade dita em uma frase, com a data (A13).
+ *
+ * "Prazo vencido" e "fechado" diziam o estado sem dizer quando, e quem recebe
+ * "o link não abre" precisa saber se foi o prazo ou alguém que fechou: um se
+ * resolve pedindo outro, o outro pode ter sido de propósito.
+ */
+export function validadeDoLink(
+  link: { expiraEm: string | null; revogadoEm: string | null },
+  agora: number = Date.now(),
+): string {
+  const estado = estadoDoLink(link, agora)
+  if (estado === 'revogado' && link.revogadoEm) return `foi revogado em ${dataCurta(link.revogadoEm)}`
+  if (estado === 'expirado') {
+    return link.expiraEm && !Number.isNaN(Date.parse(link.expiraEm))
+      ? `expirou em ${dataCurta(link.expiraEm)}`
+      : 'expirou'
+  }
+  return link.expiraEm ? `vale até ${dataCurta(link.expiraEm)}` : 'sem prazo'
+}
