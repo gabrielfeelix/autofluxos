@@ -68,7 +68,7 @@ export function SelecaoDeContatos({
       if (!r.ok) setErro(r.erro ?? 'não deu para etiquetar')
       else {
         const nome = etiquetas.find((e) => e.id === etiquetaId)?.nome ?? 'a etiqueta'
-        setAviso(`${aplicar ? 'Apliquei' : 'Tirei'} “${nome}” em ${marcados.length} contato(s).`)
+        setAviso(resumoDaEtiqueta(nome, aplicar, marcados.length, r.mudaram ?? 0, r.validos ?? marcados.length))
         setMarcados([])
       }
     })
@@ -95,8 +95,8 @@ export function SelecaoDeContatos({
         const postos = r.postos ?? 0
         setAviso(
           postos === marcados.length
-            ? `Pus ${postos} contato(s) em “${nome}”.`
-            : `Pus ${postos} em “${nome}”, ${marcados.length - postos} já estavam lá e não foram movidos.`,
+            ? `${contatos(postos)} ${postos === 1 ? 'entrou' : 'entraram'} em “${nome}”.`
+            : `${contatos(postos)} ${postos === 1 ? 'entrou' : 'entraram'} em “${nome}” · ${marcados.length - postos} já ${marcados.length - postos === 1 ? 'estava' : 'estavam'} lá e não ${marcados.length - postos === 1 ? 'foi movido' : 'foram movidos'}.`,
         )
         setMarcados([])
       } catch {
@@ -108,14 +108,20 @@ export function SelecaoDeContatos({
   const apagar = () => {
     setErro(null)
     setAviso(null)
+    const n = marcados.length
     confirmar({
-      titulo: `Apagar ${marcados.length} contato(s)?`,
-      descricao: 'Some a conversa inteira de cada um, e não dá para desfazer.',
-      rotulo: 'Apagar contatos',
+      titulo: n === 1 ? 'Apagar o contato selecionado?' : `Apagar os ${n} contatos selecionados nesta página?`,
+      descricao: 'Some a conversa inteira de cada um, e não dá para desfazer. Só entram os marcados nesta página.',
+      rotulo: n === 1 ? 'Apagar contato' : `Apagar ${n} contatos`,
       aoConfirmar: async () => {
         const r = await acaoApagarContatos(clienteId, marcados)
         if (r.ok) {
-          setAviso(`Apaguei ${r.apagados ?? 0} contato(s).`)
+          const apagados = r.apagados ?? 0
+          setAviso(
+            apagados === n
+              ? `${contatos(apagados)} ${apagados === 1 ? 'apagado' : 'apagados'}.`
+              : `${contatos(apagados)} ${apagados === 1 ? 'apagado' : 'apagados'} · ${n - apagados} não ${n - apagados === 1 ? 'foi' : 'foram'} (já não ${n - apagados === 1 ? 'existia' : 'existiam'} ou não ${n - apagados === 1 ? 'é' : 'são'} desta conta).`,
+          )
           setMarcados([])
         }
         return r
@@ -130,8 +136,8 @@ export function SelecaoDeContatos({
         <div className="mb-3 rounded-[12px] border border-line bg-surface px-4 py-3">
           {marcados.length > 0 && (
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              <strong className="text-[13px] font-bold">
-                {marcados.length} {marcados.length === 1 ? 'selecionado' : 'selecionados'}
+              <strong className="text-[13px] font-bold" aria-live="polite">
+                {marcados.length} {marcados.length === 1 ? 'selecionado' : 'selecionados'} nesta página
               </strong>
               <button
                 type="button"
@@ -220,6 +226,35 @@ export function SelecaoDeContatos({
   )
 }
 
+function contatos(n: number): string {
+  return n === 1 ? '1 contato' : `${n} contatos`
+}
+
+/**
+ * O resultado de etiquetar em massa, separado pelo que aconteceu com cada um.
+ *
+ * "Apliquei em 30" quando 12 já tinham a etiqueta faz a pessoa achar que 30
+ * entraram numa sequência por etiqueta; o número que importa é o que mudou.
+ */
+function resumoDaEtiqueta(nome: string, aplicar: boolean, pedidos: number, mudaram: number, validos: number): string {
+  const fora = pedidos - validos
+  const foraDaConta = fora > 0 ? ` · ${fora} fora desta conta` : ''
+  if (mudaram === 0) {
+    const todos = validos === 1 ? 'O contato' : `Os ${validos}`
+    return aplicar
+      ? `${todos} já ${validos === 1 ? 'tinha' : 'tinham'} “${nome}”, nada mudou${foraDaConta}.`
+      : `${validos === 1 ? 'O contato não tinha' : `Nenhum dos ${validos} tinha`} “${nome}”, nada mudou${foraDaConta}.`
+  }
+  const partes = [
+    aplicar
+      ? `“${nome}” aplicada em ${contatos(mudaram)}`
+      : `“${nome}” tirada de ${contatos(mudaram)}`,
+  ]
+  const semMudar = validos - mudaram
+  if (semMudar > 0) partes.push(aplicar ? `${semMudar} já ${semMudar === 1 ? 'tinha' : 'tinham'}` : `${semMudar} não ${semMudar === 1 ? 'tinha' : 'tinham'}`)
+  return `${partes.join(' · ')}${foraDaConta}.`
+}
+
 function useSelecao(): Contexto {
   const contexto = useContext(SelecaoContexto)
   if (!contexto) throw new Error('CaixaDeSelecao fora de SelecaoDeContatos')
@@ -258,7 +293,8 @@ export function CaixaDeTodos({ ids }: { ids: string[] }) {
       checked={todos}
       disabled={ocupado}
       onChange={() => definir(todos ? [] : ids)}
-      aria-label="Selecionar os contatos desta página"
+      aria-label={`Selecionar os ${ids.length} contatos desta página`}
+      title={`Seleciona os ${ids.length} desta página, não os das outras páginas`}
       className="block size-3.5 accent-[#a78bfa]"
     />
   )

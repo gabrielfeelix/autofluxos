@@ -131,7 +131,7 @@ describe.skipIf(!temCredencial)('aplicar em contatos', () => {
     // E o de fora é descartado sem levar junto o de dentro: é este caso que
     // fazia a inscrição em sequência alcançar contato de outra conta.
     const misturado = await marcarContatos(clienteId, minha.id, [contatoB, doOutro], true)
-    expect(misturado).toEqual({ ok: true, afetados: 1, validos: [contatoB] })
+    expect(misturado).toEqual({ ok: true, afetados: 1, mudaram: 1, validos: [contatoB] })
     await marcarContatos(clienteId, minha.id, [contatoB], false)
   })
 
@@ -146,13 +146,16 @@ describe.skipIf(!temCredencial)('aplicar em contatos', () => {
     expect(await marcarContatos(clienteId, etiqueta.id, [contatoA, contatoB], true)).toEqual({
       ok: true,
       afetados: 2,
+      mudaram: 2,
       validos: expect.arrayContaining([contatoA, contatoB]),
     })
     // Aplicar de novo não pode estourar chave duplicada, quem clica duas vezes
     // está pedindo a mesma coisa, não uma segunda linha.
+    // `mudaram` é o que a tela usa para dizer "já tinham": ninguém mudou.
     expect(await marcarContatos(clienteId, etiqueta.id, [contatoA, contatoB], true)).toEqual({
       ok: true,
       afetados: 2,
+      mudaram: 0,
       validos: expect.arrayContaining([contatoA, contatoB]),
     })
 
@@ -160,7 +163,8 @@ describe.skipIf(!temCredencial)('aplicar em contatos', () => {
       [contatoA, contatoB].sort(),
     )
 
-    await marcarContatos(clienteId, etiqueta.id, [contatoB], false)
+    const tirou = await marcarContatos(clienteId, etiqueta.id, [contatoB], false)
+    expect(tirou.ok && tirou.mudaram).toBe(1)
     expect(await contatosComEtiqueta(clienteId, etiqueta.id)).toEqual([contatoA])
   })
 

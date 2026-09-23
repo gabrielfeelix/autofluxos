@@ -232,7 +232,7 @@ export async function marcarContatos(
   etiquetaId: string,
   contatos: string[],
   aplicar: boolean,
-): Promise<{ ok: true; afetados: number; validos: string[] } | { ok: false; motivo: string }> {
+): Promise<{ ok: true; afetados: number; mudaram: number; validos: string[] } | { ok: false; motivo: string }> {
   if (contatos.length === 0) return { ok: false, motivo: 'escolha ao menos um contato' }
 
   const [{ data: etiqueta, error: erroDaEtiqueta }, { data: doCliente, error: erroDosContatos }] =
@@ -251,21 +251,29 @@ export async function marcarContatos(
   const validos = (doCliente as { id: string }[]).map((c) => c.id)
   if (validos.length === 0) return { ok: false, motivo: 'nenhum contato deste cliente na seleção' }
 
+  // `mudaram` conta as linhas que o banco devolveu: no `upsert` com
+  // `ignoreDuplicates` só voltam as novas, no `delete` só as que existiam. É a
+  // diferença entre ele e `afetados` que deixa a tela dizer "já tinham".
+  let mudaram = 0
   if (aplicar) {
-    const { error } = await db()
+    const { data, error } = await db()
       .from('contato_etiquetas')
       .upsert(
         validos.map((contatoId) => ({ contato_id: contatoId, etiqueta_id: etiquetaId })),
         { onConflict: 'contato_id,etiqueta_id', ignoreDuplicates: true },
       )
+      .select('contato_id')
     if (error) throw new Error(`não deu para etiquetar: ${error.message}`)
+    mudaram = data?.length ?? 0
   } else {
-    const { error } = await db()
+    const { data, error } = await db()
       .from('contato_etiquetas')
       .delete()
       .eq('etiqueta_id', etiquetaId)
       .in('contato_id', validos)
+      .select('contato_id')
     if (error) throw new Error(`não deu para tirar a etiqueta: ${error.message}`)
+    mudaram = data?.length ?? 0
   }
 
   // Os ids **conferidos** voltam junto, e não só a contagem: quem chama usa
@@ -273,7 +281,7 @@ export async function marcarContatos(
   // formulário pode conter contato de outra conta. Devolver só o número
   // obrigaria a ação a reusar a lista crua, que é exatamente a que não passou
   // pela conferência de dono feita aqui em cima.
-  return { ok: true, afetados: validos.length, validos }
+  return { ok: true, afetados: validos.length, mudaram, validos }
 }
 
 /**

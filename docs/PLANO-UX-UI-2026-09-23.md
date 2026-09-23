@@ -644,14 +644,14 @@ Filtros ativos: Cliente: Ouro ✕   Etiqueta: Plano anual ✕   Limpar tudo
 
 ### Tarefa 2.4: seleção diz o alcance [X11, X17]
 
-- [ ] **Passo 1:** em `src/components/lead/selecao.tsx`, o checkbox do cabeçalho
+- [x] **Passo 1:** em `src/components/lead/selecao.tsx`, o checkbox do cabeçalho
   ganha `aria-label="Selecionar os N contatos desta página"` e, com seleção
   ativa, a barra de ações diz "N selecionados nesta página".
-- [ ] **Passo 2:** a confirmação de ações em massa (etiqueta, funil, apagar)
+- [x] **Passo 2:** a confirmação de ações em massa (etiqueta, funil, apagar)
   repete o número e mostra o resultado parcial devolvido pelo servidor
   (adicionados / já existiam / falharam), reaproveitando o retorno que as
   ações já dão.
-- [ ] **Passo 3:** prints; commit `feat(contatos): seleção em massa diz exatamente quem será afetado`.
+- [x] **Passo 3:** prints; commit `feat(contatos): seleção em massa diz exatamente quem será afetado`.
 
 ---
 
@@ -1389,3 +1389,9 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   também vira chip. Etiquetas automáticas seguem sem contagem (custo, ver o
   comentário na página). Helpers de banco local do e2e em
   `test/e2e/banco-local.ts`. e2e `contatos.spec.ts` e `agenda.spec.ts` verdes.
+- 23/09, tarefa 2.4: etiquetar em massa não devolvia o que mudou de fato
+  (`afetados` era o número de válidos). `marcarContatos` ganhou `mudaram`
+  (linhas devolvidas pelo `upsert` com `ignoreDuplicates` ou pelo `delete`), e
+  a tela diz "aplicada em N · M já tinham · K fora desta conta". Etiquetar e
+  pôr no funil continuam sem diálogo antes (um clique, resultado depois);
+  só apagar confirma, agora com o número e "nesta página".

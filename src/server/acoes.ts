@@ -830,7 +830,7 @@ export async function acaoMarcarEtiqueta(
   etiquetaId: string,
   contatos: string[],
   aplicar: boolean,
-): Promise<{ ok: boolean; erro?: string }> {
+): Promise<{ ok: boolean; erro?: string; mudaram?: number; validos?: number }> {
   const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
   if (recusou(acesso)) return acesso
 
@@ -867,7 +867,9 @@ export async function acaoMarcarEtiqueta(
   for (const contatoId of contatos) {
     revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
   }
-  return { ok: true }
+  // O que mudou de fato e quantos eram desta conta: a tela separa "aplicada",
+  // "já tinham" e "fora desta conta" com estes dois números.
+  return { ok: true, mudaram: r.mudaram, validos: r.afetados }
 }
 
 /**
