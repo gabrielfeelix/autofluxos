@@ -1,6 +1,7 @@
 import { rotuloDoCampo } from '@/core/contatos/rotulo-do-campo'
 import { ehCampoTecnico } from '@/core/contatos/valor-do-campo'
 import { AjudaDoCampo } from '@/components/design/ajuda-do-campo'
+import { ehVariavelDeNome, nomeComoSeEscreve } from '@/core/engine/interpolar'
 import { IconeDaSecao, iconeFormulario } from './icones'
 import { ValorDoCampo } from './valor-do-campo'
 
@@ -83,7 +84,7 @@ function Lista({ campos }: { campos: [string, string][] }) {
         <div key={chave} className="bg-panel px-[18px] py-3">
           <dt className="text-[10.5px] font-semibold text-dim">{rotuloDoCampo(chave) || chave}</dt>
           <dd className="mt-1">
-            <ValorDoCampo valor={valor} />
+            <ValorDoCampo valor={ehVariavelDeNome(chave) ? nomeComoSeEscreve(valor) : valor} />
           </dd>
         </div>
       ))}

@@ -486,7 +486,7 @@ function ListaDeMensagens({
  * Lista sai aberta, com todas as linhas. No celular ela fica atrás de um
  * botão, mas aqui quem lê precisa saber o que ela oferecia sem abrir nada.
  */
-function MenuNaConversa({
+export function MenuNaConversa({
   menu,
   respondido,
 }: {

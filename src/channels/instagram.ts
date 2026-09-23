@@ -203,7 +203,7 @@ export function canalInstagram(config: ConfigInstagram): Canal {
             buttons: [{ type: 'web_url', url: p.link, title: TEXTO_DO_BOTAO_DA_LOJA }],
           }
         })
-      if (elementos.length === 0) return
+      if (elementos.length === 0) return null
 
       await mandar({
         recipient: { id: para },
@@ -214,6 +214,7 @@ export function canalInstagram(config: ConfigInstagram): Canal {
           },
         },
       })
+      return null
     },
 
     async enviarOpcoes(para, texto, opcoes) {

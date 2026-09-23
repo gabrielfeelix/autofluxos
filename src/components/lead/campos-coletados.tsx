@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { rotuloDoCampo } from '@/core/contatos/rotulo-do-campo'
 import { ValorDoCampo } from '@/components/lead-crm/valor-do-campo'
 import { ehCampoTecnico } from '@/core/contatos/valor-do-campo'
+import { ehVariavelDeNome, nomeComoSeEscreve } from '@/core/engine/interpolar'
 
 /**
  * O que o fluxo coletou, no painel direito do Inbox.
@@ -102,7 +103,7 @@ export function CamposColetados({ campos }: { campos: [string, string][] }) {
               código curto. Antes era a linha crua com ponto e vírgula, que é
               exatamente o "número esquisito" da queixa.
             */}
-            <dd className="mt-0.5 text-[12.5px] text-soft"><ValorDoCampo valor={valor} /></dd>
+            <dd className="mt-0.5 text-[12.5px] text-soft"><ValorDoCampo valor={ehVariavelDeNome(chave) ? nomeComoSeEscreve(valor) : valor} /></dd>
           </div>
         ))}
       </dl>

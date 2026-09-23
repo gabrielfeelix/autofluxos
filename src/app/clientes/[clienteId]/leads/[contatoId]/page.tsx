@@ -78,6 +78,7 @@ import {
 } from '@/components/lead/anexo'
 import { NomeDoContato, NotasDoContato } from '@/components/lead/identidade'
 import { etiquetasDeDia, horaDoRelogio, horaExata, quando } from '@/lib/quando'
+import { MenuNaConversa } from '@/components/inbox/historico'
 import { TextoDoWhatsApp } from '@/components/texto-do-whatsapp'
 
 export const dynamic = 'force-dynamic'
@@ -674,7 +675,7 @@ async function Historico({
             {/* A coluna é o que dá lugar à reação embaixo da bolha, ver o Inbox. */}
             <div className={`flex flex-col gap-0 ${nossa ? 'items-end' : 'items-start'}`}>
             {/* Mesma fonte e mesmo corpo do Inbox, ver o comentário de lá. */}
-            <p className={`max-w-[78%] px-3 py-2 font-texto text-[14.5px] leading-[1.45] whitespace-pre-wrap ${nossa ? 'rounded-[13px_13px_4px_13px] border border-primary/[0.22] bg-primary/[0.13]' : 'rounded-[13px_13px_13px_4px] border border-line bg-surface'}`}>
+            <p className={`max-w-[78%] px-3 py-2 font-texto text-[14.5px] leading-[1.45] whitespace-pre-wrap ${nossa ? 'rounded-[13px_13px_4px_13px] border border-primary/[0.22] bg-primary/[0.13]' : mensagem.toque ? 'rounded-[13px_13px_13px_4px] border border-ok/35 bg-ok/10' : 'rounded-[13px_13px_13px_4px] border border-line bg-surface'}`}>
               {mensagem.cita && <CitacaoNaBolha cita={mensagem.cita} nome={nomeDoLead} />}
               {mensagem.anexo && <AnexoNaConversa anexo={mensagem.anexo} />}
               {/*
@@ -707,6 +708,7 @@ async function Historico({
                 que quem respondeu foi gente, ver `core/autor-da-mensagem.ts`.
               */}
               <span className="ml-2 text-[9.5px] text-muted" title={horaExata(mensagem.ts)}>
+                {mensagem.toque && <span className="font-semibold text-ok">tocou na opção · </span>}
                 {nossa && mensagem.autor ? `${mensagem.autor} · ` : ''}
                 {horaDoRelogio(mensagem.ts)}
               </span>
@@ -714,6 +716,10 @@ async function Historico({
                 <span className="ml-2 text-[9.5px] text-aviso">envio não confirmado</span>
               )}
             </p>
+            {/* Os botões que o bot mandou e o que a pessoa tocou, ver o Inbox. */}
+            {mensagem.menu && (
+              <MenuNaConversa menu={mensagem.menu} respondido={indice < conversa.mensagens.length - 1} />
+            )}
             {/* Em toda bolha, e não só nas com id da Meta: a estrela guarda pelo
                 id interno, que a saída ainda não confirmada também tem. */}
             {(

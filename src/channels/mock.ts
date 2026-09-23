@@ -40,6 +40,7 @@ export function canalMock(): Canal & { enviadas: Enviada[] } {
     },
     async enviarProdutos(para, produtos) {
       enviadas.push({ tipo: 'produtos', para, produtos })
+      return null
     },
     /**
      * O mock sempre aceita.

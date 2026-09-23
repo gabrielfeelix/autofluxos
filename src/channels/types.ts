@@ -131,7 +131,7 @@ export type Canal = {
    * foto real**; sem foto, quem chama também manda texto, e o adaptador nunca
    * precisa inventar imagem.
    */
-  enviarProdutos?(para: string, produtos: ProdutoDaLoja[]): Promise<void>
+  enviarProdutos?(para: string, produtos: ProdutoDaLoja[]): Promise<string | null>
   /**
    * Manda um modelo aprovado, a única coisa que atravessa a janela fechada.
    *

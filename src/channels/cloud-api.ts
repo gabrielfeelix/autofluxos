@@ -572,10 +572,15 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
        * vezes. Um formato só para 1 e para 3 deixa o JSON que sai igual ao que
        * o teste confere.
        */
+      /*
+       * Os cards são gravados numa linha só do histórico, e ela leva o id do
+       * primeiro: é nele que a reação e a citação da pessoa costumam cair.
+       */
+      let primeiro: string | null = null
       for (const produto of produtos) {
         if (!produto.foto) continue
         const { titulo, detalhe } = linhasDoCard(produto)
-        await mandar({
+        const resposta = await mandar({
           to: para,
           type: 'interactive',
           interactive: {
@@ -588,7 +593,9 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
             },
           },
         })
+        primeiro ??= idDoEnvio(resposta)
       }
+      return primeiro
     },
 
     async enviarOpcoes(para, texto, opcoes, formato) {
