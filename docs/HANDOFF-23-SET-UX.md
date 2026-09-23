@@ -1,7 +1,7 @@
-# Handoff 23/09: plano de UX, Fases 0 e 1 feitas (1.1 a 1.7)
+# Handoff 23/09: plano de UX, Fases 0, 1 e 2 feitas
 
 Plano: `docs/PLANO-UX-UI-2026-09-23.md`. Os checkboxes e o "Registro de
-execução" no fim dele estão em dia até a 1.7. **Próxima: Fase 2, tarefa 2.1.**
+execução" no fim dele estão em dia até a 2.4. **Próxima: Fase 3, tarefa 3.1.**
 
 ## Feito (tudo na `main`, com push)
 
@@ -18,20 +18,23 @@ execução" no fim dele estão em dia até a 1.7. **Próxima: Fase 2, tarefa 2.1
 | 1.6 | `d1221ee` | `?vista=agenda&escala=semana\|mes&dia=`; `agendaDoIntervalo` + `intervaloDaVista`; `VistaDaAgenda`; ações extraídas em `useAcoesDaAgenda` |
 | 1.7 | `72874fd` | `SeletorDePessoa` (modal com busca) no "Atribuir tarefa…", no filtro Responsável e em Nova atividade |
 
-Deploy: `72874fd` READY. e2e `agenda.spec.ts` com 4 testes verdes.
+| 2.1 | `2804dd1` | Contato e checkbox fixos (`FIXA_SELECAO`/`FIXA_CONTATO`); contêiner `relative` (página do celular rolava 913px de lado) |
+| 2.2 | `c03c9ff` | `CLASSE_DA_COR` com versão clara; `dark:` segue `data-tema` (`@custom-variant` em `globals.css`); máx. 2 etiquetas + "+N" |
+| 2.3 | `70f7996` | `BarraDeContatos` fora do `Suspense`; `lerPagina` com `cache`; `paginarLeads` sem acento; "+ Novo contato" no cabeçalho; e2e `contatos.spec.ts` |
+| 2.4 | `a7f48a0` | "desta página"; `marcarContatos` devolve `mudaram`; resumo aplicados / já tinham / fora da conta |
+
+Deploy: `a7f48a0` READY. e2e `agenda.spec.ts` com 4 testes verdes.
 
 ## Achados que não estavam no plano
 
-- **Conta nova sem canal não mostra "+ Criar contato"** em Contatos
-  (`PrimeiraVez` em `leads/page.tsx`). Entra na Fase 2.
 - `prazoDoDia` com hora usa o fuso do servidor (Vercel = UTC): "14:00"
   digitado pode virar 11:00 em Brasília. Não mexi; conferir antes da Fase 8.
 - Ações de concluir/cancelar/reabrir não conferem dono com escopo `proprios`
   (reagendar e atribuir já conferem, `conferirDono` em `acoes-atividades.ts`).
 - Seed local tem atividades repetidas (mesmo título e contato várias vezes).
-- **Busca de contatos (`paginarLeads`) depende de acento**: "marcia" não acha
-  "Márcia". Afeta Contatos e o seletor de Nova atividade. Corrigir na 2.3
-  (dá para reaproveitar `padraoSemAcento` de `src/core/atividades.ts`).
+- `src/server/consultas/contatos.ts:172` (segmentos) ainda busca com `ilike`
+  (depende de acento). Fora do plano; não mexi.
+- `colunas-da-tabela.tsx:56` tem erro de lint antigo (`setState` em efeito).
 
 ## Ambiente (armadilhas pagas)
 
@@ -42,7 +45,15 @@ Deploy: `72874fd` READY. e2e `agenda.spec.ts` com 4 testes verdes.
 - Scripts meus em `.ux-local/` (ignorado): `hidratacao.mjs <rotas>` conta erro
   de hidratação; `texto.mjs <rota> <seletor>` imprime o texto da tela;
   `dialogo.mjs` e `menu.mjs` tiram print do diálogo de Nova atividade e do
-  menu/seletor de atribuir. `prints.mjs` ganhou `agenda-semana` e `agenda-mes`.
+  menu/seletor de atribuir. `prints.mjs` ganhou `agenda-semana`, `agenda-mes`
+  e `contatos-filtros`. Novos em `.ux-local/`: `rolagem.mjs` (tabela rolada à
+  direita, zoom 200%, celular), `popover.mjs <saida> [rótulo do botão]`,
+  `selecao.mjs`, `escuro.mjs <rota> <arquivo>`, `largo.mjs` (quem estoura a
+  largura no celular) e **`deploy.sh [sha]`** (espera o deploy e diz o estado).
+- Parar o dev: `ps -eo pid,cmd | grep -E "[n]ext dev|[n]ext-server"` e `kill`
+  nos PIDs. `pkill -f` mata o próprio shell.
+- Banco local: as etiquetas da conta de revisão foram recoloridas (cinza,
+  verde, âmbar, rosa, roxo) e "Beatriz Ribeiro Neto" tem as 5 (para ver "+N").
 - Print "antes" de tarefa já editada: `git stash push <arquivos>`, print com o
   dev rodando, `git stash pop`.
 - Deploy: API da Vercel com `VERCEL_TOKEN` do `.secrets/4yu.env`, projeto
@@ -53,4 +64,4 @@ Deploy: `72874fd` READY. e2e `agenda.spec.ts` com 4 testes verdes.
 
 ## Banco
 
-Nenhuma migration nesta rodada. Nada pendente para produção.
+Nenhuma migration nas Fases 0 a 2. Nada pendente para produção.
