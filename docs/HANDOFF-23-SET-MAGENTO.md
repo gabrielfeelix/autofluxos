@@ -16,6 +16,21 @@
    (o plano, com as decisões que não se reabrem sem motivo novo) e
    `docs/INTEGRACAO-MAGENTO-23-SET.md` (a pesquisa e a primeira sondagem).
 
+## Depois deste handoff (23/set, tarde)
+
+- **Próximo trabalho decidido**: catálogo de produtos (importar planilha,
+  bot sem Magento, produtos no Inbox). Plano em
+  `docs/superpowers/plans/2026-09-23-catalogo-de-produtos.md`.
+- Inbox, no ar: menu do bot embaixo da bolha com a opção tocada, toque em
+  verde, motivo do `unsupported` guardado (`083e6e6`, `b33ff74`, `0527eec`).
+- Saída do bot e da equipe passou a gravar `wa_message_id` (antes, 0 de 99).
+  Só vale para mensagens novas.
+- Nome em mensagem sai "Daniel", nunca `*DANIEL*` (`3bb4f58`,
+  `core/engine/interpolar.ts`).
+- Não provado: os nomes de `motivoDoNaoSuportado` (`enquete`, `mensagem
+  editada`) são suposição sobre o `unsupported.type` da Meta; conferir no
+  primeiro caso real (`messages.payload`).
+
 ## O contexto em cinco linhas
 
 - Cliente: **PCYES** (`https://www.pcyes.com.br`), loja Magento. Quer o bot do
