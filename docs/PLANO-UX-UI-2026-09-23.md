@@ -559,6 +559,21 @@ export async function acaoAtribuirAtividade(
 - [x] **Passo 4:** acrescentar no `agenda.spec.ts`: criar pela agenda e ver na ficha do contato.
 - [x] **Passo 5:** typecheck, e2e, prints; commit `feat(atividades): criar atividade direto da agenda`.
 
+### Tarefa 1.6: alternar entre Lista e Agenda (pedida pelo Gabriel em 23/09)
+
+- [x] **Passo 1:** `vista`, `escala` e `dia` no filtro da URL (`?vista=agenda&escala=mes&dia=AAAA-MM-DD`), padrão lista e semana.
+- [x] **Passo 2:** `agendaDoIntervalo` com a mesma preparação de `paginaDaAgenda` (escopo, busca, filtros, recorte) trocando paginação por intervalo de prazo; sem prazo lidas à parte.
+- [x] **Passo 3:** calendário de semana (colunas por dia, com hora) e de mês (grade, "+N mais" leva à semana), faixa "Sem prazo", celular como lista por dia.
+- [x] **Passo 4:** clicar na atividade abre as mesmas ações da linha (`useAcoesDaAgenda`, extraído da lista).
+- [x] **Passo 5:** testes (unit da régua de dias, integração do intervalo, e2e alternar e concluir pelo diálogo), prints; commit.
+
+### Tarefa 1.7: "Atribuir tarefa…" em modal com busca (pedida pelo Gabriel em 23/09)
+
+- [ ] **Passo 1:** seletor pesquisável de pessoa (busca por nome, lista com rolagem, "Ninguém" como opção) em componente próprio.
+- [ ] **Passo 2:** menu `⋯` da linha com um item só, "Atribuir tarefa…", que abre o modal.
+- [ ] **Passo 3:** o filtro "Responsável" do popover Filtros usa o mesmo seletor.
+- [ ] **Passo 4:** typecheck, e2e, prints; commit.
+
 ---
 
 ## Fase 2: Contatos operável
@@ -1300,4 +1315,10 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   herda a correção da tarefa 2.3. "Ver" no aviso leva à agenda aberta, sem
   recorte nem busca, no alcance do responsável. A ficha continua com o
   formulário dela (fora do escopo da 1.5).
+- 23/09, tarefa 1.6: a semana do calendário vai de segunda a domingo e o dia de
+  cada atividade é o dia UTC (`diaDoPrazo`), a régua de `urgenciaDe`. O
+  calendário lê no máximo 600 com prazo (`TETO_DO_CALENDARIO`) e avisa quando
+  corta; a faixa "Sem prazo" mostra 6 e leva à lista para ver todas. A semana
+  não é grade de horas: as atividades vêm em ordem de hora dentro do dia, com a
+  hora escrita (grade de horas com 5 tipos e poucas com hora ficaria vazia).
 

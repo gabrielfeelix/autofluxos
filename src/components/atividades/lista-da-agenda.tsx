@@ -33,7 +33,7 @@ function semChave(registro: Record<string, string>, chave: string): Record<strin
 }
 
 /**
- * A lista da agenda com as ações de cada linha.
+ * As ações de cada atividade da agenda, para a lista e para o calendário.
  *
  * **Ação que falha não some com a linha.** A linha só sai depois que o
  * servidor responde `ok`; com erro ela fica, e a mensagem do servidor aparece
@@ -43,20 +43,17 @@ function semChave(registro: Record<string, string>, chave: string): Record<strin
  * Quem tira a linha de verdade é o servidor: a ação revalida a página e a
  * lista nova chega sem ela. `saindo` só cobre o intervalo até isso chegar.
  */
-export function ListaDaAgenda({
-  itens,
-  agora,
+export function useAcoesDaAgenda({
   clienteId,
-  volta,
   equipe,
   podeAtribuir,
+  aoSair,
 }: {
-  itens: ItemDaAgenda[]
-  agora: number
   clienteId: string
-  volta: string
   equipe: { id: string; nome: string }[]
   podeAtribuir: boolean
+  /** Avisado quando uma atividade sai da tela (concluída, cancelada, reaberta). */
+  aoSair?: (atividadeId: string) => void
 }) {
   const [, comecar] = useTransition()
   const [pendentes, setPendentes] = useState<Record<string, string>>({})
@@ -96,7 +93,10 @@ export function ListaDaAgenda({
         setErros((atual) => ({ ...atual, [item.id]: r.erro ?? 'não deu certo' }))
         return
       }
-      if (depois.sai) setSaindo((atual) => new Set(atual).add(item.id))
+      if (depois.sai) {
+        setSaindo((atual) => new Set(atual).add(item.id))
+        aoSair?.(item.id)
+      }
       if (depois.anuncio) anunciar(depois.anuncio)
     })
   }
@@ -138,8 +138,6 @@ export function ListaDaAgenda({
     })
   }
 
-  const visiveis = itens.filter((item) => !saindo.has(item.id))
-
   const acoes = (item: ItemDaAgenda) => (
     <AcoesDaLinha
       item={item}
@@ -150,6 +148,62 @@ export function ListaDaAgenda({
       aoPedir={(pedido) => pedir(item, pedido)}
     />
   )
+
+  const extras = (
+    <>
+      <div aria-live="polite" className="pointer-events-none fixed inset-x-0 bottom-5 z-50 flex justify-center px-4">
+        {anuncio && (
+          <div className="pointer-events-auto flex items-center gap-3 rounded-xl border border-line bg-ink px-4 py-2.5 text-[12.5px] text-white shadow-lg">
+            <span>{anuncio.texto}</span>
+            {anuncio.atividadeId && (
+              <button
+                type="button"
+                onClick={() => desfazer(anuncio.atividadeId!)}
+                className="font-bold text-primary-weak underline underline-offset-2"
+              >
+                Desfazer
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {cancelando && (
+        <DialogoDeCancelar
+          titulo={cancelando.titulo}
+          aoFechar={() => setCancelando(null)}
+          aoConfirmar={(motivo) =>
+            rodar(cancelando, 'cancelar', () => acaoResolverAtividade(clienteId, cancelando.id, 'cancelada', motivo), {
+              sai: true,
+              anuncio: { texto: 'Atividade cancelada.', atividadeId: cancelando.id },
+            })
+          }
+        />
+      )}
+    </>
+  )
+
+  return { acoes, erros, saindo, extras }
+}
+
+/** A lista da agenda com as ações de cada linha. */
+export function ListaDaAgenda({
+  itens,
+  agora,
+  clienteId,
+  volta,
+  equipe,
+  podeAtribuir,
+}: {
+  itens: ItemDaAgenda[]
+  agora: number
+  clienteId: string
+  volta: string
+  equipe: { id: string; nome: string }[]
+  podeAtribuir: boolean
+}) {
+  const { acoes, erros, saindo, extras } = useAcoesDaAgenda({ clienteId, equipe, podeAtribuir })
+  const visiveis = itens.filter((item) => !saindo.has(item.id))
 
   return (
     <>
@@ -196,35 +250,7 @@ export function ListaDaAgenda({
         ))}
       </ul>
 
-      <div aria-live="polite" className="pointer-events-none fixed inset-x-0 bottom-5 z-50 flex justify-center px-4">
-        {anuncio && (
-          <div className="pointer-events-auto flex items-center gap-3 rounded-xl border border-line bg-ink px-4 py-2.5 text-[12.5px] text-white shadow-lg">
-            <span>{anuncio.texto}</span>
-            {anuncio.atividadeId && (
-              <button
-                type="button"
-                onClick={() => desfazer(anuncio.atividadeId!)}
-                className="font-bold text-primary-weak underline underline-offset-2"
-              >
-                Desfazer
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      {cancelando && (
-        <DialogoDeCancelar
-          titulo={cancelando.titulo}
-          aoFechar={() => setCancelando(null)}
-          aoConfirmar={(motivo) =>
-            rodar(cancelando, 'cancelar', () => acaoResolverAtividade(clienteId, cancelando.id, 'cancelada', motivo), {
-              sai: true,
-              anuncio: { texto: 'Atividade cancelada.', atividadeId: cancelando.id },
-            })
-          }
-        />
-      )}
+      {extras}
     </>
   )
 }

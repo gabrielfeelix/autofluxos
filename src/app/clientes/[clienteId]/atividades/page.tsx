@@ -3,12 +3,13 @@ import { notFound } from 'next/navigation'
 import { BarraDaAgenda } from '@/components/atividades/barra-da-agenda'
 import { ListaDaAgenda } from '@/components/atividades/lista-da-agenda'
 import { NovaAtividade } from '@/components/atividades/nova-atividade'
+import { VistaDaAgenda } from '@/components/atividades/vista-da-agenda'
 import { Paginacao } from '@/components/atividades/paginacao'
 import { AjudaDaTela, type PassoDaAjuda } from '@/components/design/ajuda-da-tela'
 import { ClienteShell } from '@/components/design/cliente-shell'
-import { lerFiltroDaAgenda, paraParametros, POR_PAGINA_DA_AGENDA } from '@/core/atividades'
+import { intervaloDaVista, lerFiltroDaAgenda, paraParametros, POR_PAGINA_DA_AGENDA } from '@/core/atividades'
 import { exigirCapacidadeNaPagina, filtroDoAcesso } from '@/server/permissoes'
-import { paginaDaAgenda } from '@/server/repos/atividades'
+import { agendaDoIntervalo, paginaDaAgenda } from '@/server/repos/atividades'
 import { acharCliente } from '@/server/repos/clientes'
 import { membrosDaConta } from '@/server/repos/usuarios'
 
@@ -33,6 +34,10 @@ const PASSOS_DA_AJUDA: PassoDaAjuda[] = [
   {
     titulo: 'Onde ela nasce',
     texto: 'Na ficha do contato, na barra do Inbox ou pelo botão Nova atividade desta tela.',
+  },
+  {
+    titulo: 'Lista ou agenda',
+    texto: 'A lista mostra 50 por página, na ordem do prazo. A agenda mostra a semana ou o mês, com os mesmos filtros.',
   },
   {
     titulo: 'Como ela sai daqui',
@@ -68,8 +73,15 @@ export default async function Pagina({
   const filtro = podeVerEquipe ? lido : { ...lido, alcance: 'minhas' as const, responsavel: null }
 
   const agora = agoraDoServidor()
-  const [pagina, membros] = await Promise.all([
-    paginaDaAgenda(clienteId, escopo, acesso.sessao.usuario.id, filtro, agora),
+  const noCalendario = filtro.vista === 'agenda'
+  const intervalo = intervaloDaVista(filtro.escala, filtro.dia, agora)
+  const [pagina, calendario, membros] = await Promise.all([
+    noCalendario
+      ? null
+      : paginaDaAgenda(clienteId, escopo, acesso.sessao.usuario.id, filtro, agora),
+    noCalendario
+      ? agendaDoIntervalo(clienteId, escopo, acesso.sessao.usuario.id, filtro, agora, intervalo)
+      : null,
     podeVerEquipe || podeCriarParaOutros ? membrosDaConta(clienteId) : Promise.resolve([]),
   ])
 
@@ -114,7 +126,7 @@ export default async function Pagina({
               podeAtribuir={podeCriarParaOutros}
               base={base}
               filtro={filtro}
-              idsNaTela={pagina.itens.map((i) => i.id)}
+              idsNaTela={(pagina?.itens ?? [...calendario!.itens, ...calendario!.semPrazo]).map((i) => i.id)}
             />
           )}
         </div>
@@ -125,12 +137,29 @@ export default async function Pagina({
         <BarraDaAgenda
           base={base}
           filtro={filtro}
-          contagens={pagina.contagens}
+          contagens={(pagina ?? calendario!).contagens}
           equipe={equipe}
           podeVerEquipe={podeVerEquipe}
         />
 
-        {pagina.itens.length === 0 ? (
+        {calendario && (
+          <VistaDaAgenda
+            itens={calendario.itens}
+            semPrazo={calendario.semPrazo}
+            totalSemPrazo={calendario.totalSemPrazo}
+            cortado={calendario.cortado}
+            intervalo={intervalo}
+            base={base}
+            filtro={filtro}
+            agora={agora}
+            clienteId={cliente.id}
+            volta={aqui}
+            equipe={equipe}
+            podeAtribuir={podeVerEquipe}
+          />
+        )}
+
+        {pagina && pagina.itens.length === 0 && (
           <div className="app-card px-5 py-12 text-center">
             {filtrando || filtro.situacao !== 'aberta' ? (
               <>
@@ -148,7 +177,9 @@ export default async function Pagina({
               </p>
             )}
           </div>
-        ) : (
+        )}
+
+        {pagina && pagina.itens.length > 0 && (
           <ListaDaAgenda
             itens={pagina.itens}
             agora={agora}
@@ -159,13 +190,15 @@ export default async function Pagina({
           />
         )}
 
-        <Paginacao
-          pagina={filtro.pagina}
-          porPagina={POR_PAGINA_DA_AGENDA}
-          total={pagina.total}
-          hrefDaPagina={(n) => endereco({ pagina: n })}
-          rotulo="Páginas da agenda"
-        />
+        {pagina && (
+          <Paginacao
+            pagina={filtro.pagina}
+            porPagina={POR_PAGINA_DA_AGENDA}
+            total={pagina.total}
+            hrefDaPagina={(n) => endereco({ pagina: n })}
+            rotulo="Páginas da agenda"
+          />
+        )}
       </main>
     </ClienteShell>
   )

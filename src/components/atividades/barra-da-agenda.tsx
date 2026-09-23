@@ -228,6 +228,27 @@ export function BarraDaAgenda({
           </div>
         )}
         {carregando && <span className="text-[11.5px] text-dim">carregando…</span>}
+        <div role="group" aria-label="Como mostrar" className="flex rounded-lg border border-line bg-panel p-0.5 sm:ml-auto">
+          {(
+            [
+              { valor: 'lista', rotulo: 'Lista' },
+              { valor: 'agenda', rotulo: 'Agenda' },
+            ] as const
+          ).map((opcao) => (
+            <button
+              key={opcao.valor}
+              type="button"
+              aria-pressed={filtro.vista === opcao.valor}
+              onClick={() => ir({ vista: opcao.valor })}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] font-semibold transition ${
+                filtro.vista === opcao.valor ? 'bg-primary-weak text-primary' : 'text-muted hover:text-ink'
+              }`}
+            >
+              <IconeDaVista vista={opcao.valor} />
+              {opcao.rotulo}
+            </button>
+          ))}
+        </div>
       </div>
 
       {temFiltro && (
@@ -255,6 +276,21 @@ export function BarraDaAgenda({
         </div>
       )}
     </div>
+  )
+}
+
+function IconeDaVista({ vista }: { vista: 'lista' | 'agenda' }) {
+  return (
+    <svg aria-hidden viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      {vista === 'lista' ? (
+        <path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" />
+      ) : (
+        <>
+          <rect x="3.5" y="5" width="17" height="15" rx="2" />
+          <path d="M3.5 10h17M8 3v4M16 3v4" />
+        </>
+      )}
+    </svg>
   )
 }
 

@@ -231,9 +231,18 @@ export type FiltroDaAgenda = {
   responsavel: string | 'ninguem' | null
   /** `'equipe'` só vale se o escopo de quem olha permitir; o servidor decide. */
   alcance: 'minhas' | 'equipe'
-  /** Começa em 1. */
+  /** Começa em 1. Só a vista de lista pagina. */
   pagina: number
+  /** Lista paginada ou calendário. Padrão: lista. */
+  vista: VistaDaAgenda
+  /** Tamanho do calendário. Padrão: semana. */
+  escala: EscalaDaAgenda
+  /** `AAAA-MM-DD` que o calendário mostra; `''` = hoje. */
+  dia: string
 }
+
+export type VistaDaAgenda = 'lista' | 'agenda'
+export type EscalaDaAgenda = 'semana' | 'mes'
 
 type Parametros = Record<string, string | string[] | undefined>
 
@@ -269,7 +278,14 @@ export function lerFiltroDaAgenda(params: Parametros): FiltroDaAgenda {
     responsavel: responsavel === 'ninguem' ? 'ninguem' : /^[\w-]{1,64}$/.test(responsavel) ? responsavel : null,
     alcance: primeiro(params.alcance) === 'equipe' ? 'equipe' : 'minhas',
     pagina: Number.isFinite(pagina) && pagina > 1 ? pagina : 1,
+    vista: primeiro(params.vista) === 'agenda' ? 'agenda' : 'lista',
+    escala: primeiro(params.escala) === 'mes' ? 'mes' : 'semana',
+    dia: ehDiaValido(primeiro(params.dia)) ? primeiro(params.dia) : '',
   }
+}
+
+function ehDiaValido(dia: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(dia) && !Number.isNaN(Date.parse(`${dia}T00:00:00Z`))
 }
 
 /** O caminho de volta: só o que difere do padrão entra na URL. */
@@ -282,8 +298,76 @@ export function paraParametros(filtro: FiltroDaAgenda): URLSearchParams {
   if (filtro.responsavel) p.set('responsavel', filtro.responsavel)
   if (filtro.alcance !== 'minhas') p.set('alcance', filtro.alcance)
   if (filtro.pagina > 1) p.set('pagina', String(filtro.pagina))
+  if (filtro.vista !== 'lista') p.set('vista', filtro.vista)
+  if (filtro.escala !== 'semana') p.set('escala', filtro.escala)
+  if (filtro.dia) p.set('dia', filtro.dia)
   return p
 }
+
+/** O dia (`AAAA-MM-DD`) de um prazo, na régua de `urgenciaDe`: dia UTC. */
+export function diaDoPrazo(prazo: string): string {
+  return new Date(prazo).toISOString().slice(0, 10)
+}
+
+export type IntervaloDaVista = {
+  /** Os dias da grade, em ordem, segunda a domingo. */
+  dias: string[]
+  /** Início do primeiro dia, instante ISO. */
+  de: string
+  /** Início do dia seguinte ao último, instante ISO (exclusivo). */
+  ate: string
+  /** O dia de referência para ir para trás e para a frente. */
+  anterior: string
+  seguinte: string
+  /** O dia que o calendário mostra (`dia` do filtro ou hoje). */
+  referencia: string
+}
+
+/**
+ * Os dias que o calendário mostra, na mesma régua de dia de `urgenciaDe`
+ * (dia UTC), para a atividade cair no dia que a lista diz.
+ *
+ * Semana é de segunda a domingo. Mês é a grade inteira: da segunda antes do
+ * dia 1 ao domingo depois do último dia.
+ */
+export function intervaloDaVista(escala: EscalaDaAgenda, dia: string, agora: number): IntervaloDaVista {
+  const referencia = dia || new Date(agora).toISOString().slice(0, 10)
+  const ref = Date.parse(`${referencia}T00:00:00Z`)
+  const d = new Date(ref)
+  const semanaDe = (ms: number) => ms - ((new Date(ms).getUTCDay() + 6) % 7) * DIA_EM_MS
+
+  let inicio: number
+  let fim: number
+  let anterior: number
+  let seguinte: number
+  if (escala === 'semana') {
+    inicio = semanaDe(ref)
+    fim = inicio + 7 * DIA_EM_MS
+    anterior = ref - 7 * DIA_EM_MS
+    seguinte = ref + 7 * DIA_EM_MS
+  } else {
+    const primeiroDoMes = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)
+    const primeiroDoSeguinte = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1)
+    inicio = semanaDe(primeiroDoMes)
+    fim = semanaDe(primeiroDoSeguinte - DIA_EM_MS) + 7 * DIA_EM_MS
+    anterior = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - 1, 1)
+    seguinte = primeiroDoSeguinte
+  }
+
+  const dias: string[] = []
+  for (let ms = inicio; ms < fim; ms += DIA_EM_MS) dias.push(new Date(ms).toISOString().slice(0, 10))
+  const comoDia = (ms: number) => new Date(ms).toISOString().slice(0, 10)
+  return {
+    dias,
+    de: new Date(inicio).toISOString(),
+    ate: new Date(fim).toISOString(),
+    anterior: comoDia(anterior),
+    seguinte: comoDia(seguinte),
+    referencia,
+  }
+}
+
+const DIA_EM_MS = 86_400_000
 
 /**
  * Onde começa hoje e onde começa amanhã, **no dia UTC**.

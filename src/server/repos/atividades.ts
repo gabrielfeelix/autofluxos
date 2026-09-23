@@ -243,6 +243,75 @@ export async function paginaDaAgenda(
   }
 }
 
+/** Teto de atividades num calendário: um mês cheio de uma equipe grande. */
+export const TETO_DO_CALENDARIO = 600
+
+/** Quantas "sem prazo" a faixa do calendário mostra. */
+const TETO_SEM_PRAZO = 30
+
+export type AgendaDoIntervalo = {
+  /** Com prazo dentro do intervalo, em ordem de prazo. */
+  itens: ItemDaAgenda[]
+  /** `true` quando o intervalo tinha mais que `TETO_DO_CALENDARIO`. */
+  cortado: boolean
+  semPrazo: ItemDaAgenda[]
+  totalSemPrazo: number
+  contagens: Record<RecorteDaAgenda, number>
+}
+
+/**
+ * A agenda de um intervalo de datas, para a vista de calendário (tarefa 1.6).
+ *
+ * **Mesma regra da lista**: escopo, busca, tipo, responsável, recorte e
+ * situação saem de `prepararAgenda`. O calendário só troca a paginação por um
+ * intervalo `[de, ate)` de prazo, e lê à parte as sem prazo, que não cabem em
+ * dia nenhum.
+ */
+export async function agendaDoIntervalo(
+  clienteId: string,
+  escopo: FiltroDeEscopo,
+  usuarioId: string,
+  filtro: FiltroDaAgenda,
+  agora: number,
+  intervalo: { de: string; ate: string },
+): Promise<AgendaDoIntervalo> {
+  const vazia: AgendaDoIntervalo = { itens: [], cortado: false, semPrazo: [], totalSemPrazo: 0, contagens: { ...ZERADAS } }
+  const preparo = await prepararAgenda(clienteId, escopo, usuarioId, filtro, agora)
+  if (!preparo) return vazia
+  const { comuns, doRecorte } = preparo
+
+  const base = (colunas: string, opcoes?: { count: 'exact' }) =>
+    doRecorte(comuns(db().from('atividades').select(colunas, opcoes)), filtro.recorte).eq('situacao', filtro.situacao)
+
+  const [comPrazo, semPrazo, contagens] = await Promise.all([
+    base(COLUNAS_DA_AGENDA)
+      .gte('prazo', intervalo.de)
+      .lt('prazo', intervalo.ate)
+      .order('prazo', { ascending: true })
+      .order('id', { ascending: true })
+      .limit(TETO_DO_CALENDARIO + 1),
+    base(COLUNAS_DA_AGENDA, { count: 'exact' })
+      .is('prazo', null)
+      .order('criado_em', { ascending: true })
+      .limit(TETO_SEM_PRAZO),
+    contar(preparo),
+  ])
+
+  for (const r of [comPrazo, semPrazo]) {
+    if (ehIdInvalido(r.error)) return vazia
+    if (r.error) throw new Error(`não deu para ler a agenda: ${r.error.message}`)
+  }
+
+  const linhas = comPrazo.data as unknown as LinhaDaAgenda[]
+  return {
+    itens: linhas.slice(0, TETO_DO_CALENDARIO).map(paraItemDaAgenda),
+    cortado: linhas.length > TETO_DO_CALENDARIO,
+    semPrazo: (semPrazo.data as unknown as LinhaDaAgenda[]).map(paraItemDaAgenda),
+    totalSemPrazo: semPrazo.count ?? 0,
+    contagens,
+  }
+}
+
 /**
  * Só as contagens dos atalhos, para o número da barra lateral.
  *

@@ -1,10 +1,19 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { lerFiltroDaAgenda, prazoDoDia, proximaAcao, urgenciaDe, type FiltroDaAgenda } from '@/core/atividades'
+import {
+  diaDoPrazo,
+  intervaloDaVista,
+  lerFiltroDaAgenda,
+  prazoDoDia,
+  proximaAcao,
+  urgenciaDe,
+  type FiltroDaAgenda,
+} from '@/core/atividades'
 import { db } from '../db'
 import { criarCliente } from './clientes'
 import { acharOuCriarContato } from './conversas'
 import {
   abertasDoCartao,
+  agendaDoIntervalo,
   atividadesDoContato,
   paginaDaAgenda,
   atribuirAtividade,
@@ -370,6 +379,27 @@ describe.skipIf(!temCredencial)('agenda paginada', () => {
     expect(r.total).toBe(60)
     expect(r.itens).toHaveLength(10)
     expect(r.itens.at(-1)?.prazo).toBeNull()
+  })
+
+  it('calendário da semana: só o intervalo, cada uma no seu dia, sem prazo à parte', async () => {
+    const semana = intervaloDaVista('semana', '', AGORA)
+    const r = await agendaDoIntervalo(conta, { tipo: 'tudo' }, eu, filtro(), AGORA, semana)
+    // 10 de hoje (23) + as próximas de 24 a 27 (4 por dia) = 26.
+    expect(r.itens).toHaveLength(26)
+    expect(r.itens.every((a) => semana.dias.includes(diaDoPrazo(a.prazo!)))).toBe(true)
+    expect(r.itens.find((a) => a.titulo === 'Hoje tarde da noite')?.prazo?.slice(0, 10)).toBe('2026-09-23')
+    expect(r.totalSemPrazo).toBe(5)
+    expect(r.semPrazo.every((a) => a.prazo === null)).toBe(true)
+    expect(r.cortado).toBe(false)
+  })
+
+  it('calendário usa os mesmos filtros da lista: escopo proprios e busca', async () => {
+    const semana = intervaloDaVista('semana', '', AGORA)
+    const doColega = await agendaDoIntervalo(conta, { tipo: 'proprios', usuarioId: colega }, colega, filtro(), AGORA, semana)
+    expect(doColega.itens.length).toBeGreaterThan(0)
+    expect(doColega.itens.every((a) => a.responsavelId === colega)).toBe(true)
+    const busca = await agendaDoIntervalo(conta, { tipo: 'tudo' }, eu, filtro({ busca: 'tarde da noite' }), AGORA, semana)
+    expect(busca.itens.map((a) => a.titulo)).toEqual(['Hoje tarde da noite'])
   })
 
   it('não lê atividade de outra conta', async () => {

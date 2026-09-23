@@ -16,7 +16,7 @@ const FL = psql(`select id from flows where client_id = '${C}' and nome = 'Agend
 const B = `/clientes/${C}`
 
 const TELAS = {
-  inicio: '', atividades: '/atividades', contatos: '/leads', funil: '/quadros', inbox: '/inbox', ficha: `/leads/${CT}`,
+  inicio: '', atividades: '/atividades', 'agenda-semana': '/atividades?vista=agenda', 'agenda-mes': '/atividades?vista=agenda&escala=mes', contatos: '/leads', funil: '/quadros', inbox: '/inbox', ficha: `/leads/${CT}`,
   fluxos: '/fluxos', 'fluxos-palavras': '/fluxos?aba=palavras', 'fluxos-sequencias': '/fluxos?aba=sequencias', editor: `/fluxos/${FL}`,
   transmissoes: '/transmissoes?aba=transmissoes', ajustes: '/ajustes', equipe: '/ajustes/equipe', integracoes: '/ajustes/integracoes', relatorios: '/relatorios',
 }

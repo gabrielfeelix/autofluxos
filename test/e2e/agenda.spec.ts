@@ -147,3 +147,28 @@ test('criar pela agenda, ver na lista e na ficha do contato', async ({ page }) =
   await page.getByRole('tab', { name: /Atividades/ }).click()
   await expect(page.getByText('Retornar sobre plano anual', { exact: true }).filter({ visible: true }).first()).toBeVisible()
 })
+
+test('vista de agenda: alternar, abrir a atividade e concluir pelo diálogo', async ({ page }) => {
+  await criarContato(page, 'Paula Calendário')
+  await criarAtividadeNaFicha(page, 'Revisar ficha de saúde')
+
+  await page.goto(`${painelDaConta}/atividades`)
+  await page.getByRole('button', { name: 'Agenda', exact: true }).click()
+  await expect(page).toHaveURL(/vista=agenda/)
+
+  // Sem prazo não cabe em dia nenhum: fica na faixa à parte.
+  const faixa = page.getByRole('region', { name: 'Sem prazo' })
+  await faixa.getByRole('button', { name: /Revisar ficha de saúde/ }).click()
+  const dialogo = page.getByRole('dialog', { name: 'Atividade' })
+  await expect(dialogo).toContainText('Paula Calendário')
+  await dialogo.getByRole('button', { name: /Concluir/ }).click()
+  await expect(dialogo).toHaveCount(0)
+  await expect(faixa.getByRole('button', { name: /Revisar ficha de saúde/ })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Desfazer' })).toBeVisible()
+
+  // A escolha fica na URL: mês e volta para a lista.
+  await page.getByRole('link', { name: 'Mês', exact: true }).click()
+  await expect(page).toHaveURL(/escala=mes/)
+  await page.getByRole('button', { name: 'Lista', exact: true }).click()
+  await expect(page).not.toHaveURL(/vista=agenda/)
+})
