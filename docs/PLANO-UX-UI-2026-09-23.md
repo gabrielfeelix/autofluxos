@@ -887,14 +887,14 @@ export async function editarPasso(
 
 ### Tarefa 5.6: histórico com comparação [A12]
 
-- [ ] **Passo 1:** em `src/components/editor/versoes.tsx`, cada versão tem "Ver"
+- [x] **Passo 1:** em `src/components/editor/versoes.tsx`, cada versão tem "Ver"
   (abre o grafo em modo leitura) e o resumo do que muda em relação ao rascunho
   atual: blocos acrescentados, removidos e alterados (comparar por id de nó;
   função pura nova `compararGrafos(a, b)` em `src/core/` com teste unitário de 3
   casos).
-- [ ] **Passo 2:** a confirmação de republicar repete "vira a versão vN+1; só
+- [x] **Passo 2:** a confirmação de republicar repete "vira a versão vN+1; só
   novas conversas usam".
-- [ ] **Passo 3:** commit `feat(editor): comparar versão antes de republicar`.
+- [x] **Passo 3:** commit `feat(editor): comparar versão antes de republicar`.
 
 ### Tarefa 5.7: webhook de entrada com teste e status [A14]
 

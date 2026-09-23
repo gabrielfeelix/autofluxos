@@ -1603,6 +1603,9 @@ export function Editor({
           publicadaId={publicada?.id ?? null}
           voltando={voltando}
           aoVoltar={voltarParaVersao}
+          clienteId={clienteId}
+          fluxoId={fluxoId}
+          rascunho={fluxo}
         />
 
         {/* Ao lado do histórico porque é a mesma matéria: as duas falam de
