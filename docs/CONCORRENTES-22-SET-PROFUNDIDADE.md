@@ -918,15 +918,31 @@ com rollback, validador que recusa fluxo sem caminho até humano, BYOK.
 
 O que falta não é tela. É:
 
-**(a) Ligar o que já está construído e não tem tela.** Campanhas e Sequências têm
-repositório completo e **zero tela**. NPS tem bloco, migration `0060` em
-produção, e **nenhuma tela lê** — grep por `listarAvaliacoes` fora do repositório
-devolve zero. Templates da Meta estão com a submissão `1082311667664553` **em
-rascunho, nunca enviada**. Instagram comment-to-DM está escrito e testado,
-travado no Advanced Access.
+**(a) Ligar o que já está construído e não tem tela.**
 
-Isso explica a observação de que "o pessoal não clica" nas telas embaixo de
-Automação: metade delas não tem tela, e a outra metade está travada.
+**Correção de 22/set/2026, conferida no repo.** Este parágrafo repetia uma
+afirmação do `CONCORRENTES-15-SET.md`, que é de 15/set e envelheceu. O que
+vale:
+
+- **Campanhas e Sequências TÊM tela.** São abas de `fluxos/page.tsx`
+  (`ABAS_VALIDAS` inclui `campanhas` e `sequencias`), ligadas aos
+  repositórios, e `src/components/sequencias/` existe. A afirmação
+  "repositório completo e zero tela" **não vale mais**.
+- **NPS funciona ponta a ponta.** O nó existe no motor, grava por
+  `guardarNota`/`guardarComentario` em `receber-mensagem.ts`, e como tem
+  `salvarEm`, **a resposta já aparece na tela de Respostas** como qualquer
+  variável colhida. O que ninguém lê são duas consultas de **agregação**
+  (`notasDaConta`, `comentariosDaConta`) — e isso é decisão de produto, não
+  buraco. A ideia do dono é melhor: **NPS como filtro na tela de Respostas**,
+  que já existe com busca, paginação e CSV.
+- **Templates da Meta**: submissão `1082311667664553` **em rascunho, nunca
+  enviada**. Não é código: é gravar vídeo e enviar.
+- **Instagram comment-to-DM**: escrito e testado, travado no Advanced Access.
+  Também não é código.
+
+**A lição de método vale mais que o item: o doc envelhece e o repo não.** Antes
+de tratar "X não tem tela" como fila de trabalho, rode o grep. Esta seção já
+esteve errada uma vez.
 
 **(b) Uma peça nova que fecha o ciclo: cobrar no chat.**
 
