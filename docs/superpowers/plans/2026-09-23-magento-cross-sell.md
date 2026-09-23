@@ -4,6 +4,13 @@
 > (inline, neste projeto não se implementa por subagente). Passos em checkbox
 > (`- [ ]`) para acompanhar.
 
+> **Andamento (23/set/2026):** Tasks 0 a 7 feitas e publicadas (`5cdd14a`,
+> `aa36ed2`, `85e0044`, `17b5d30`, `29ebe1f`, `eb798f8`). A 0092 está aplicada
+> em produção. Falta a Task 8 (ligar na conta da PCYES, que ainda não existe no
+> AutoFluxos, e provar pelo simulador) e a fase 2 inteira, que espera o token.
+> O teste de integração de `repos/lojas.ts` está escrito e não rodou: o Docker
+> está fora nesta máquina.
+
 **Objetivo:** o bot do cliente que usa Magento consulta a loja dele durante a
 conversa, diz preço e disponibilidade reais, recomenda o que o próprio lojista
 marcou como "combina com", e manda o link do produto. Numa segunda fase, com
