@@ -1033,18 +1033,18 @@ do Inbox continua sendo só a entrada ("+ Anotar").
 
 ### Tarefa 7.2: menu por capacidade e tela de sem acesso [E7, E8, E12]
 
-- [ ] **Passo 1:** `secoesVisiveis` (`src/components/design/secoes-do-cliente.tsx:96`)
+- [x] **Passo 1:** `secoesVisiveis` (`src/components/design/secoes-do-cliente.tsx:96`)
   recebe o mapa de capacidades e esconde o que a pessoa não pode usar. Teste
   unitário: membro com acesso de atendimento não vê Automações nem Transmissões.
-- [ ] **Passo 2:** `exigirCapacidadeNaPagina` recusada renderiza componente
+- [x] **Passo 2:** `exigirCapacidadeNaPagina` recusada renderiza componente
   `SemAcesso` com motivo ("Seu acesso não inclui Automações. Fale com o
   proprietário da conta.") em vez de 404/redirect silencioso. Recurso desligado
   (CRM desativado) tem outra tela: "O funil está desligado nesta conta" com link
   para Objetivo e recursos (se a pessoa puder).
-- [ ] **Passo 3:** percorrer as rotas com um membro de acesso de atendimento no
+- [x] **Passo 3:** percorrer as rotas com um membro de acesso de atendimento no
   ambiente local e registrar num quadro no "Registro de execução" quais rotas
   abrem, quais mostram SemAcesso (E12).
-- [ ] **Passo 4:** commit `feat(acesso): menu mostra só o que a pessoa pode usar`.
+- [x] **Passo 4:** commit `feat(acesso): menu mostra só o que a pessoa pode usar`.
 
 ### Tarefa 7.3: suporte 4YU inequívoco [E9]
 

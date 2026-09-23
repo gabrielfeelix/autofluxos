@@ -1,6 +1,9 @@
 import { notFound } from 'next/navigation'
 import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
 import { Editor } from '@/components/editor/editor'
+import { ClienteShell } from '@/components/design/cliente-shell'
+import { SemAcesso } from '@/components/design/sem-acesso'
+import { capacidadeNaPagina } from '@/server/permissoes'
 import { variaveisDoFluxo } from '@/core/flow/variaveis'
 import { origemValida } from '@/core/flow/antes-de-publicar'
 import { listarCampanhas } from '@/server/repos/campanhas'
@@ -46,6 +49,17 @@ export default async function Pagina({
 }) {
   const { clienteId, fluxoId } = await params
   const origem = origemValida((await searchParams).origem)
+
+  // O editor não usa a moldura, então confere a seção por conta própria (E7).
+  if (!(await capacidadeNaPagina(clienteId, 'configurar_operacao', 'todos'))) {
+    const cliente = await acharCliente(clienteId)
+    if (!cliente) notFound()
+    return (
+      <ClienteShell cliente={cliente} ativa="fluxos">
+        <SemAcesso clienteId={clienteId} oQue="Automações" />
+      </ClienteShell>
+    )
+  }
 
   const [cliente, fluxo, conexoes, quadros, etiquetas, fluxosDaConta, loja, temCatalogo] = await Promise.all([
     acharCliente(clienteId),

@@ -4,6 +4,8 @@ import { ClienteShell } from '@/components/design/cliente-shell'
 import { ImportarContatos } from '@/components/lead/importar'
 import { acaoImportarContatos } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
+import { capacidadeNaPagina } from '@/server/permissoes'
+import { SemAcesso } from '@/components/design/sem-acesso'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,6 +22,15 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const { clienteId } = await params
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
+
+  // A ação recusa sem `exportar` (importar em lote é da mesma capacidade).
+  if (!(await capacidadeNaPagina(clienteId, 'exportar', 'todos'))) {
+    return (
+      <ClienteShell cliente={cliente} ativa="leads">
+        <SemAcesso clienteId={clienteId} oQue="Importar contatos" />
+      </ClienteShell>
+    )
+  }
 
   return (
     <ClienteShell cliente={cliente} ativa="leads">

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { ITENS, secoesVisiveis } from './secoes-do-cliente'
+import { MODELOS_EXTRA, type Acesso } from '@/core/permissoes'
+import { ITENS, liberaSecao, secoesVisiveis } from './secoes-do-cliente'
 
 /**
  * A barra lateral com o CRM opcional (T7.1, §4.2).
@@ -34,5 +35,46 @@ describe('as seções visíveis', () => {
     for (const essencial of ['inicio', 'inbox', 'leads', 'ajustes'] as const) {
       expect(chaves).toContain(essencial)
     }
+  })
+})
+
+describe('as seções que esta pessoa pode usar (E7)', () => {
+  const atendimento: Acesso = {
+    papel: 'member',
+    usuarioId: 'u1',
+    sobrescritas: { ...MODELOS_EXTRA.operador },
+  }
+
+  it('acesso de atendimento não vê Automações, Transmissões nem Configurações', () => {
+    const chaves = secoesVisiveis({ crmVisivel: true, regras: atendimento }).map((i) => i.chave)
+    expect(chaves).not.toContain('fluxos')
+    expect(chaves).not.toContain('transmissoes')
+    expect(chaves).not.toContain('ajustes')
+    expect(chaves).toEqual(['inicio', 'inbox', 'atividades', 'leads', 'quadros'])
+  })
+
+  it('membro sem exceção continua vendo tudo: o menu não tira acesso de quem já tinha', () => {
+    const chaves = secoesVisiveis({ crmVisivel: true, regras: { papel: 'member', usuarioId: 'u1' } })
+    expect(chaves).toHaveLength(ITENS.length)
+  })
+
+  it('suporte 4YU vê tudo', () => {
+    expect(
+      secoesVisiveis({ crmVisivel: true, regras: { papel: null, ehAdminDaPlataforma: true } }),
+    ).toHaveLength(ITENS.length)
+  })
+
+  it('Configurações abre para quem mexe só na operação', () => {
+    const soOperacao: Acesso = {
+      papel: 'member',
+      usuarioId: 'u1',
+      sobrescritas: { ...MODELOS_EXTRA.operador, configurar_operacao: 'todos' },
+    }
+    expect(liberaSecao(soOperacao, 'ajustes')).toBe(true)
+    expect(liberaSecao(atendimento, 'ajustes')).toBe(false)
+  })
+
+  it('sem regras é o esqueleto, e mostra tudo', () => {
+    expect(liberaSecao(undefined, 'fluxos')).toBe(true)
   })
 })

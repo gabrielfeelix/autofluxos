@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { exigirCapacidadeNaPagina } from '@/server/permissoes'
+import { capacidadeNaPagina } from '@/server/permissoes'
+import { SemAcesso } from '@/components/design/sem-acesso'
 import { onboardingDaConta } from '@/server/repos/onboarding'
 import { notFound } from 'next/navigation'
 import { AjustesShell } from '@/components/design/ajustes-shell'
@@ -35,7 +36,15 @@ export const dynamic = 'force-dynamic'
  */
 export default async function Pagina({ params }: { params: Promise<{ clienteId: string }> }) {
   const { clienteId } = await params
-  await exigirCapacidadeNaPagina(clienteId, 'configurar_operacao', 'todos')
+  if (!(await capacidadeNaPagina(clienteId, 'configurar_operacao', 'todos'))) {
+    const cliente = await acharCliente(clienteId)
+    if (!cliente) notFound()
+    return (
+      <AjustesShell cliente={cliente} ativa="recursos">
+        <SemAcesso clienteId={clienteId} oQue="Objetivo e recursos" />
+      </AjustesShell>
+    )
+  }
   const onboarding = await onboardingDaConta(clienteId)
   const [cliente, recursos, quadros] = await Promise.all([
     acharCliente(clienteId),

@@ -61,7 +61,7 @@ export function BarraLateral({ marca, identidadeNoCelular, voltar, itens, rodape
       {!recolhida && voltar}
       <nav aria-label="Seções do cliente" className="flex gap-1 overflow-x-auto border-b border-line px-3 py-2 md:min-h-0 md:flex-1 md:flex-col md:overflow-y-auto md:border-0 md:p-0">
         {itens.filter((item) => item.chave === 'inicio').map(link)}
-        {[{ nome: 'Dia a dia', chaves: ['inbox', 'atividades', 'leads', 'quadros', 'relatorios'] }, { nome: 'Automação', chaves: ['fluxos', 'transmissoes'] }].map((grupo) => (
+        {[{ nome: 'Dia a dia', chaves: ['inbox', 'atividades', 'leads', 'quadros', 'relatorios'] }, { nome: 'Automação', chaves: ['fluxos', 'transmissoes'] }].filter((grupo) => itens.some((item) => grupo.chaves.includes(item.chave))).map((grupo) => (
           <div key={grupo.nome} className="contents md:block">
             <p className={`mt-5 mb-1.5 px-2.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-dim ${recolhida ? 'hidden' : 'hidden md:block'}`}>{grupo.nome}</p>
             {itens.filter((item) => grupo.chaves.includes(item.chave)).map(link)}

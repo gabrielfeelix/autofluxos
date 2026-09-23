@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { pode, type Acesso, type Capacidade, type Escopo } from '@/core/permissoes'
 
 /**
  * As seções do cliente, a lista, os ícones, e mais nada.
@@ -99,7 +100,51 @@ export const ITENS: {
 ]
 
 /**
- * As seções que **esta** conta vê (T7.1).
+ * O que cada seção exige de quem a abre (E7).
+ *
+ * A mesma exigência vale para o menu (o item some) e para a moldura (a rota
+ * direta mostra `SemAcesso`); as ações continuam conferindo no servidor, cada
+ * uma com a sua capacidade. Duas capacidades numa seção querem dizer
+ * "qualquer uma das duas": Configurações serve a quem mexe na empresa **ou** na
+ * operação.
+ *
+ * Não muda acesso de ninguém que já existe: `member` sem exceção tem todas as
+ * capacidades abaixo em `todos`. Quem perde itens do menu é quem já não
+ * conseguia usar a tela (o acesso de atendimento, por exemplo), e que até
+ * aqui abria a tela para ser recusado no primeiro clique.
+ */
+export const EXIGENCIA_DA_SECAO: Partial<
+  Record<AbaDoCliente, { capacidades: readonly Capacidade[]; minimo: Escopo }>
+> = {
+  inbox: { capacidades: ['atender'], minimo: 'proprios' },
+  atividades: { capacidades: ['atender'], minimo: 'proprios' },
+  leads: { capacidades: ['atender'], minimo: 'proprios' },
+  quadros: { capacidades: ['criar_oportunidade'], minimo: 'proprios' },
+  fluxos: { capacidades: ['configurar_operacao'], minimo: 'todos' },
+  transmissoes: { capacidades: ['exportar'], minimo: 'todos' },
+  ajustes: { capacidades: ['configurar_empresa', 'configurar_operacao'], minimo: 'todos' },
+}
+
+/**
+ * Esta pessoa abre esta seção?
+ *
+ * `regras` ausente é "não perguntei" (o esqueleto), e responde sim pelo mesmo
+ * motivo do `crmVisivel`: esconder por falta de resposta faria a barra piscar.
+ */
+export function liberaSecao(regras: Acesso | undefined, chave: AbaDoCliente): boolean {
+  if (!regras) return true
+  const exigencia = EXIGENCIA_DA_SECAO[chave]
+  if (!exigencia) return true
+  return exigencia.capacidades.some((capacidade) => pode(regras, capacidade, exigencia.minimo))
+}
+
+/** O nome da seção como o menu mostra, para a tela de sem acesso dizer o mesmo. */
+export function rotuloDaSecao(chave: AbaDoCliente): string {
+  return ITENS.find((item) => item.chave === chave)?.rotulo ?? 'esta tela'
+}
+
+/**
+ * As seções que **esta** conta vê (T7.1), e que **esta pessoa** pode usar (E7).
  *
  * ---------------------------------------------------------------------------
  * Por que a filtragem mora aqui, e não em `cliente-shell.tsx`
@@ -110,19 +155,22 @@ export const ITENS: {
  * de verdade. Quem vai ao banco é a moldura; ela pergunta lá e passa a resposta
  * para cá.
  *
- * **O padrão é mostrar.** `crmVisivel` ausente quer dizer "não perguntei" (é o
- * esqueleto, que não pergunta nada), e esconder por falta de resposta faria a
- * barra piscar um item a menos em todo carregamento: exatamente o defeito que
- * este arquivo existe para não ter.
+ * **O padrão é mostrar.** `crmVisivel` e `regras` ausentes querem dizer "não
+ * perguntei" (é o esqueleto, que não pergunta nada), e esconder por falta de
+ * resposta faria a barra piscar um item a menos em todo carregamento:
+ * exatamente o defeito que este arquivo existe para não ter.
  *
- * O item escondido continua tendo rota: `/quadros` responde para quem tiver o
- * link salvo, porque ocultar é preferência de menu e não revogação de acesso
- * (§4.2). Quem esconde o item e quer trancar a tela está pedindo outra coisa, e
- * isso se chama permissão.
+ * O funil escondido por preferência (CRM desligado) e a seção escondida por
+ * acesso são coisas diferentes, e a rota direta diz qual das duas é (E8): a
+ * moldura mostra "o funil está desligado" num caso e `SemAcesso` no outro.
  */
-export function secoesVisiveis({ crmVisivel }: { crmVisivel?: boolean } = {}): typeof ITENS {
-  if (crmVisivel === false) return ITENS.filter((item) => item.chave !== 'quadros')
-  return ITENS
+export function secoesVisiveis({
+  crmVisivel,
+  regras,
+}: { crmVisivel?: boolean; regras?: Acesso } = {}): typeof ITENS {
+  return ITENS.filter(
+    (item) => !(crmVisivel === false && item.chave === 'quadros') && liberaSecao(regras, item.chave),
+  )
 }
 
 function IconePainel() {

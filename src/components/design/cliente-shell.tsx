@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { acessoCompleto, filtroDoAcesso } from '@/server/permissoes'
+import { pode } from '@/core/permissoes'
 import { contagensDaAgenda } from '@/server/repos/atividades'
 import { lerFiltroDaAgenda } from '@/core/atividades'
 import { ContadorDaAgenda } from '@/components/atividades/contador-da-agenda'
@@ -11,9 +12,10 @@ import { acaoDefinirPresenca, acaoSair } from '@/server/acoes-conta'
 import type { Cliente } from '@/server/repos/clientes'
 import { crmVisivel } from '@/server/repos/recursos'
 import { presencaDoUsuario } from '@/server/repos/usuarios'
-import { contasDoUsuario, ehAdminDaPlataforma, exigirAcessoAoCliente } from '@/server/sessao'
+import { contasDoUsuario, ehAdminDaPlataforma } from '@/server/sessao'
 import { BarraLateral } from './barra-lateral'
-import { type AbaDoCliente, secoesVisiveis } from './secoes-do-cliente'
+import { type AbaDoCliente, liberaSecao, rotuloDaSecao, secoesVisiveis } from './secoes-do-cliente'
+import { FunilDesligado, SemAcesso } from './sem-acesso'
 import { LogoDoCliente } from './logo-cliente'
 import { MarcaDeAdmin } from './marca-de-admin'
 import { Marca } from './marca'
@@ -65,8 +67,11 @@ export async function ClienteShell({
    * difícil de esquecer numa tela nova, e é por isso que ela mora na moldura,
    * e não copiada em cada `page.tsx`. O editor de fluxo, que não usa moldura,
    * chama a mesma função por conta própria.
+   *
+   * `acessoCompleto` faz `exigirAcessoAoCliente` por dentro e traz as regras
+   * de capacidade, que decidem o menu e a tela de sem acesso (E7).
    */
-  const acesso = await exigirAcessoAoCliente(cliente.id)
+  const acesso = await acessoCompleto(cliente.id)
   const contas = acesso.sessao ? await contasDoUsuario(acesso.sessao.usuario.id) : []
   const presenca = await presencaDoUsuario(acesso.sessao.usuario.id)
   // O administrador da plataforma veio da lista de clientes e precisa do
@@ -79,6 +84,22 @@ export async function ClienteShell({
    * para o dia a tela de quem já usa quadros.
    */
   const mostraCrm = await crmVisivel(cliente.id)
+
+  /*
+   * A rota direta de uma seção que a pessoa não pode usar mostra o motivo, e
+   * não a tela (E7). Funil com o CRM desligado é outra resposta (E8): não é
+   * falta de acesso, é escolha da conta.
+   */
+  const conteudo = !liberaSecao(acesso.regras, ativa) ? (
+    <SemAcesso clienteId={cliente.id} oQue={rotuloDaSecao(ativa)} />
+  ) : ativa === 'quadros' && !mostraCrm ? (
+    <FunilDesligado
+      clienteId={cliente.id}
+      podeLigar={pode(acesso.regras, 'configurar_operacao', 'todos')}
+    />
+  ) : (
+    children
+  )
 
   return (
     <div className="flex min-h-screen flex-col md:h-screen md:min-h-[700px] md:flex-row md:overflow-hidden">
@@ -108,7 +129,7 @@ export async function ClienteShell({
             </Link>
           ) : null
         }
-        itens={secoesVisiveis({ crmVisivel: mostraCrm }).map((item) => ({
+        itens={secoesVisiveis({ crmVisivel: mostraCrm, regras: acesso.regras }).map((item) => ({
           chave: item.chave,
           rotulo: item.rotulo,
           href: `/clientes/${cliente.id}${item.href}`,
@@ -158,7 +179,7 @@ export async function ClienteShell({
           Quem diz onde você está é o item aceso na barra; quem dá nome à página
           é a página.
         */}
-        <div className="app-page-enter flex min-h-full flex-col md:h-full">{children}</div>
+        <div className="app-page-enter flex min-h-full flex-col md:h-full">{conteudo}</div>
       </div>
     </div>
   )

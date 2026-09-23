@@ -6,9 +6,10 @@ import { NovaAtividade } from '@/components/atividades/nova-atividade'
 import { VistaDaAgenda } from '@/components/atividades/vista-da-agenda'
 import { Paginacao } from '@/components/atividades/paginacao'
 import { AjudaDaTela, type PassoDaAjuda } from '@/components/design/ajuda-da-tela'
+import { SemAcesso } from '@/components/design/sem-acesso'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { intervaloDaVista, lerFiltroDaAgenda, paraParametros, POR_PAGINA_DA_AGENDA } from '@/core/atividades'
-import { exigirCapacidadeNaPagina, filtroDoAcesso } from '@/server/permissoes'
+import { capacidadeNaPagina, filtroDoAcesso } from '@/server/permissoes'
 import { agendaDoIntervalo, paginaDaAgenda } from '@/server/repos/atividades'
 import { acharCliente } from '@/server/repos/clientes'
 import { membrosDaConta } from '@/server/repos/usuarios'
@@ -60,7 +61,14 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const acesso = await exigirCapacidadeNaPagina(clienteId, 'atender', 'proprios')
+  const acesso = await capacidadeNaPagina(clienteId, 'atender', 'proprios')
+  if (!acesso) {
+    return (
+      <ClienteShell cliente={cliente} ativa="atividades">
+        <SemAcesso clienteId={clienteId} oQue="Atividades" />
+      </ClienteShell>
+    )
+  }
   const escopo = filtroDoAcesso(acesso, 'atender')
   const podeVerEquipe = escopo.tipo === 'tudo' || escopo.tipo === 'equipes'
   // Criar e escolher responsável seguem a capacidade da ação, não a da tela.

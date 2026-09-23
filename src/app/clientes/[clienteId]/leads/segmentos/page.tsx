@@ -5,7 +5,8 @@ import { EditorDeSegmento } from '@/components/contatos/editor-de-segmento'
 import { explicarSegmento } from '@/core/segmentos'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarSegmentos } from '@/server/repos/segmentos'
-import { exigirCapacidadeNaPagina } from '@/server/permissoes'
+import { capacidadeNaPagina } from '@/server/permissoes'
+import { SemAcesso } from '@/components/design/sem-acesso'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,7 +26,13 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  await exigirCapacidadeNaPagina(clienteId, 'exportar', 'todos')
+  if (!(await capacidadeNaPagina(clienteId, 'exportar', 'todos'))) {
+    return (
+      <ClienteShell cliente={cliente} ativa="leads">
+        <SemAcesso clienteId={clienteId} oQue="Segmentos" />
+      </ClienteShell>
+    )
+  }
   const segmentos = await listarSegmentos(clienteId)
 
   return (

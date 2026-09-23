@@ -1,5 +1,4 @@
 import 'server-only'
-import { notFound } from 'next/navigation'
 import {
   ehCapacidade,
   ehEscopo,
@@ -183,20 +182,22 @@ export function recusou(r: AcessoCompleto | Recusa): r is Recusa {
 }
 
 /**
- * A versão para páginas: **404**, não 403.
+ * A versão para páginas: devolve `null` na recusa, e a página mostra
+ * `SemAcesso` com o motivo (E7).
  *
- * Mesma decisão de `exigirAcessoAoCliente`, confirmar que a tela existe já
- * conta da existência dela para quem não a alcança. Rota de API não usa esta:
- * ela responde status, e usa `exigirCapacidade`.
+ * Era 404, pela ideia de não confirmar que a tela existe. Só que quem chega
+ * aqui já é membro da conta (a fronteira da empresa continua em
+ * `exigirAcessoAoCliente`, que segue 404) e vê o menu: o 404 fazia a pessoa
+ * achar que o link quebrou. Rota de API não usa esta: ela responde status, e
+ * usa `exigirCapacidade`.
  */
-export async function exigirCapacidadeNaPagina(
+export async function capacidadeNaPagina(
   clienteId: string,
   capacidade: Capacidade,
   minimo: Escopo = 'proprios',
-): Promise<AcessoCompleto> {
+): Promise<AcessoCompleto | null> {
   const r = await exigirCapacidade(clienteId, capacidade, minimo)
-  if (recusou(r)) notFound()
-  return r
+  return recusou(r) ? null : r
 }
 
 /**
