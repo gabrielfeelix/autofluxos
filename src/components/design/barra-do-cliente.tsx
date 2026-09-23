@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Suspense } from 'react'
+import { Suspense, cache } from 'react'
 import { acessoCompleto, filtroDoAcesso } from '@/server/permissoes'
 import { resumoDoAcesso } from '@/core/permissoes'
 import { PainelVoce, PerfilDaSessao } from '@/components/conta/voce'
@@ -173,7 +173,11 @@ function Presenca({ atual }: { atual: string }) {
 
 
 
-async function contarPendencias(clienteId: string) {
+/*
+ * O contador aparece duas vezes na mesma resposta (barra do computador e barra
+ * de baixo do celular): `cache` faz as duas lerem uma consulta só.
+ */
+const contarPendencias = cache(async (clienteId: string) => {
   try {
     const acesso = await acessoCompleto(clienteId)
     // Mesma regra dos atalhos da agenda: o número do menu e os da tela batem.
@@ -187,7 +191,7 @@ async function contarPendencias(clienteId: string) {
   } catch {
     return null
   }
-}
+})
 
 async function Pendencias({ clienteId }: { clienteId: string }) {
   const contagens = await contarPendencias(clienteId)
