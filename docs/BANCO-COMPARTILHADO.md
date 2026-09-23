@@ -150,11 +150,12 @@ extração explícito para os objetos de `public`.
   `service_role` (e o dono `postgres`). A `0097` ganhou o `notify pgrst` antes
   de ser aplicada (ela só existia no local), porque o código lê as colunas
   novas pela Data API. Releitura objeto a objeto depois de aplicar: bucket,
-  três colunas com tipo e nulidade, grants da função. **Pendente:** a
-  conferência da Data API dos dois produtos depois do reload (`connections`
-  com as colunas novas em 200, a RPC em 401 para `anon`, e uma tabela de
-  `app_verandi` com `Accept-Profile` em 200) não foi feita nesta sessão: o
-  modo automático recusou a leitura da produção por HTTP.
+  três colunas com tipo e nulidade, grants da função. **Data API conferida em
+  23/set/2026**, nos dois produtos, sem precisar de novo reload:
+  `GET connections?select=id,testada_em,teste_ok` com a chave secreta deu 200;
+  `POST rpc/progresso_das_transmissoes` com `{"p_ids":[]}` deu 401 (`42501`)
+  com a chave pública e 200 (`[]`) com a secreta; `GET conta` com
+  `Accept-Profile: app_verandi` deu 200.
 - **a `0084` e a `0085` foram aplicadas em 20/set/2026**, na execução da F7, com
   autorização explícita do dono (pedida para a `0084` e estendida por ele às
   seguintes da F7/F8). As duas conferidas pelos **dois** testes: replay do zero em

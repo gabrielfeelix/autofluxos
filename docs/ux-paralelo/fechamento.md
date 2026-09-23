@@ -49,8 +49,10 @@ mensagem de entrada + respostas rápidas `zz*`). `prints.mjs` ganhou a tela
 ## Produção
 
 `0094` a `0097` aplicadas em 23/09 com autorização do Gabriel (registro em
-`docs/BANCO-COMPARTILHADO.md`). Falta só conferir a Data API dos dois produtos
-depois do reload; o modo automático recusou a leitura por HTTP.
+`docs/BANCO-COMPARTILHADO.md`). Data API conferida em 23/09 nos dois produtos:
+`connections` com `testada_em`/`teste_ok` em 200, a RPC
+`progresso_das_transmissoes` em 401 para a chave pública, e `app_verandi.conta`
+com `Accept-Profile` em 200. Nada pendente na produção.
 
 ## Ambiente (armadilhas desta sessão)
 
