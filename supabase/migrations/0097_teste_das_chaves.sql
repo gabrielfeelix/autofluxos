@@ -17,3 +17,5 @@ set search_path = public, extensions;
 alter table public.connections
   add column if not exists testada_em timestamptz,
   add column if not exists teste_ok boolean;
+
+notify pgrst, 'reload schema';

@@ -135,6 +135,26 @@ extração explícito para os objetos de `public`.
   escrever outro grant amplo em `public` reabre de novo, e o comentário da
   tabela avisa, e o revoke da `0042` precisa ser reexecutado depois;
 - aplicação em produção pela Management API do Supabase;
+- **a `0094`, a `0095`, a `0096` e a `0097` foram aplicadas em 23/set/2026**
+  (plano de UX), com autorização explícita do dono, pela Management API, em
+  ordem. Conferidas pelo ensaio em transação contra a produção (as quatro
+  juntas, sem o `notify`, com `rollback`): limpo, e a releitura depois do
+  rollback voltou a zero. As quatro são aditivas. A **`0094`** cria o bucket
+  `autofluxos-avatares` (público, 2 MB, jpeg/png/webp); **Storage é global**,
+  e os buckets existentes (`assinatura-recibo`, `foto-*`, `logos` da Verandi e
+  `autofluxos-acervo`, `autofluxos-recebidos`) não foram tocados. A **`0095`**
+  e a **`0097`** acrescentam colunas anuláveis (`webhooks_de_entrada.recusada_em`;
+  `connections.testada_em` e `teste_ok`), sem default e sem reescrever dado:
+  nenhuma conexão ficou marcada. A **`0096`** cria
+  `public.progresso_das_transmissoes(uuid[])`, só leitura, `EXECUTE` só para
+  `service_role` (e o dono `postgres`). A `0097` ganhou o `notify pgrst` antes
+  de ser aplicada (ela só existia no local), porque o código lê as colunas
+  novas pela Data API. Releitura objeto a objeto depois de aplicar: bucket,
+  três colunas com tipo e nulidade, grants da função. **Pendente:** a
+  conferência da Data API dos dois produtos depois do reload (`connections`
+  com as colunas novas em 200, a RPC em 401 para `anon`, e uma tabela de
+  `app_verandi` com `Accept-Profile` em 200) não foi feita nesta sessão: o
+  modo automático recusou a leitura da produção por HTTP.
 - **a `0084` e a `0085` foram aplicadas em 20/set/2026**, na execução da F7, com
   autorização explícita do dono (pedida para a `0084` e estendida por ele às
   seguintes da F7/F8). As duas conferidas pelos **dois** testes: replay do zero em

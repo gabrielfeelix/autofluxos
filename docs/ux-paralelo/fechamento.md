@@ -46,16 +46,11 @@ Scripts de print desta sessão em `.ux-local/`: `whatsapp.mjs` (6.6),
 mensagem de entrada + respostas rápidas `zz*`). `prints.mjs` ganhou a tela
 `chaves` e `INBOX_CONTATO=<id>` abre o Inbox numa conversa.
 
-## Pendente para produção (precisa de autorização do Gabriel)
+## Produção
 
-- `0094_avatares.sql` (A2): sem ela, trocar foto de perfil falha.
-- `0095_webhook_recusado.sql`: sem ela a tela funciona (lê sem a coluna), só
-  não mostra "assinatura inválida".
-- `0096_progresso_das_transmissoes.sql` (função só leitura, `service_role`):
-  sem ela `progressoDas` cai na leitura antiga, uma por transmissão, que
-  também corta em 1.000 destinatários.
-- `0097_teste_das_chaves.sql` (6.7, duas colunas anuláveis em `connections`):
-  sem ela a tela de Chaves funciona, só diz "nunca testada" para a agenda.
+`0094` a `0097` aplicadas em 23/09 com autorização do Gabriel (registro em
+`docs/BANCO-COMPARTILHADO.md`). Falta só conferir a Data API dos dois produtos
+depois do reload; o modo automático recusou a leitura por HTTP.
 
 ## Ambiente (armadilhas desta sessão)
 
