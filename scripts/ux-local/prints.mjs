@@ -19,7 +19,7 @@ const B = `/clientes/${C}`
 const TELAS = {
   inicio: '', atividades: '/atividades', 'agenda-semana': '/atividades?vista=agenda', 'agenda-mes': '/atividades?vista=agenda&escala=mes', contatos: '/leads', 'contatos-filtros': '/leads?nivel=sem_compra&busca=lucas', funil: '/quadros', inbox: '/inbox', ficha: `/leads/${CT}`,
   fluxos: '/fluxos', 'fluxos-palavras': '/fluxos?aba=palavras', 'fluxos-gatilhos': '/fluxos?aba=gatilhos&tipo=eventos', 'fluxos-sequencias': '/fluxos?aba=sequencias', editor: `/fluxos/${FL}`,
-  transmissoes: '/transmissoes?aba=transmissoes', ajustes: '/ajustes', equipe: '/ajustes/equipe', integracoes: '/ajustes/integracoes', relatorios: '/relatorios',
+  transmissoes: '/transmissoes?aba=transmissoes', ajustes: '/ajustes', equipe: '/ajustes/equipe', integracoes: '/ajustes/integracoes', relatorios: '/relatorios', 'relatorios-90': '/relatorios?dias=90', 'relatorios-personalizado': '/relatorios?de=2026-07-01&ate=2026-07-20',
 }
 const nomes = pedidas.length ? pedidas : Object.keys(TELAS)
 mkdirSync(saida, { recursive: true })

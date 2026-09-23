@@ -74,8 +74,9 @@ for (let d = 119; d >= 0; d--) {
       const entrou = new Date(hora.getTime() + 5 * 60000)
       const origem = r < 0.85 ? 'prevista' : 'falha'
       const esperou = Math.round(2 + sorte() * sorte() * 180)
-      const fechou = sorte() < 0.9 ? new Date(entrou.getTime() + (esperou + 20 + sorte() * 600) * 60000) : null
-      sql += `insert into handoffs(session_id,motivo,origem,criado_em,resolvido_em) values('${sessao}','seed-relatorios','${origem}','${entrou.toISOString()}',${fechou ? `'${fechou.toISOString()}'` : 'null'});\n`
+      // Fila ainda aberta só nos últimos dias: esquecida há 100 dias seria outro problema.
+      const fechou = d > 2 || sorte() < 0.5 ? new Date(entrou.getTime() + (esperou + 20 + sorte() * 600) * 60000) : null
+      sql += `insert into handoffs(session_id,motivo,origem,criado_em,resolvido_em) values('${sessao}','Pediu para falar com uma pessoa','${origem}','${entrou.toISOString()}',${fechou ? `'${fechou.toISOString()}'` : 'null'});\n`
       if (sorte() < 0.92) sql += `insert into messages(contact_id,session_id,direcao,texto,ts) values('${contato}','${sessao}','saida','Oi, aqui é da equipe!','${new Date(entrou.getTime() + esperou * 60000).toISOString()}');\n`
     }
     if (sorte() < 0.25) {

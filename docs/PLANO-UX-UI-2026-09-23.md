@@ -1293,20 +1293,20 @@ outras telas desta fase.
 - Modificar: `src/components/design/secoes-do-cliente.tsx` (item "Relatórios" no grupo do dia a dia, logo abaixo de Funil de vendas, visível só com a capacidade de ler métricas)
 - Usar: `src/server/repos/metricas.ts` (`medirDesfechos`, `medirTempos`, `serieDiaria` :248)
 
-- [ ] **Passo 1:** ler `metricas.ts` e listar no "Registro de execução" quais
+- [x] **Passo 1:** ler `metricas.ts` e listar no "Registro de execução" quais
   métricas existem, com a definição de cada uma.
-- [ ] **Passo 2:** período (7, 30, 90 dias, personalizado) em `?de=&ate=`,
+- [x] **Passo 2:** período (7, 30, 90 dias, personalizado) em `?de=&ate=`,
   comparação com o período anterior de mesmo tamanho.
-- [ ] **Passo 3:** cartões com os totais do período e a variação; cada cartão
+- [x] **Passo 3:** cartões com os totais do período e a variação; cada cartão
   tem um "?" com a definição e o fuso.
-- [ ] **Passo 4:** série diária com **todos os dias do período**, zero incluído
+- [x] **Passo 4:** série diária com **todos os dias do período**, zero incluído
   (função pura `completarDias(serie, de, ate)` com teste unitário), gráfico
   seguindo a skill `dataviz`.
-- [ ] **Passo 5:** escopo: pessoa com escopo próprio vê só os números dela;
+- [x] **Passo 5:** escopo: pessoa com escopo próprio vê só os números dela;
   teste de integração `relatório de quem vê só os próprios não soma a conta inteira`.
-- [ ] **Passo 6:** métricas que estavam na home e agora estão aqui saem da home
+- [x] **Passo 6:** métricas que estavam na home e agora estão aqui saem da home
   (a home fica com pendências e um link "Ver relatórios").
-- [ ] **Passo 7:** prints `relatorios inicio`; commit `feat(relatorios): primeira versão com período, comparação e série diária`.
+- [x] **Passo 7:** prints `relatorios inicio`; commit `feat(relatorios): primeira versão com período, comparação e série diária`.
 
 ---
 

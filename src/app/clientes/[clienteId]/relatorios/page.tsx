@@ -152,7 +152,7 @@ export default async function Pagina({
           />
           <Cartao
             titulo="Espera pela equipe"
-            valor={comoDuracao(atual.tempos.medianaAteResponder)}
+            valor={atual.tempos.medianaAteResponder === null ? 'sem dado' : comoDuracao(atual.tempos.medianaAteResponder)}
             detalhe={
               atual.tempos.entraramNaFila === 0
                 ? 'ninguém pediu uma pessoa'
