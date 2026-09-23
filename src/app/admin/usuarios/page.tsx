@@ -7,6 +7,7 @@ import {
 } from '@/server/acoes-conta'
 import { listarUsuarios } from '@/server/repos/usuarios'
 import { exigirAdminDaPlataforma } from '@/server/sessao'
+import { EscopoDoAdmin } from '@/components/conta/escopo-do-admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,11 +27,13 @@ export default async function Usuarios() {
     <main className="w-full px-4 pt-[38px] pb-[46px] md:px-[46px]">
       <header className="mb-7 flex flex-wrap items-end justify-between gap-4">
         <div>
+          <EscopoDoAdmin>Usuários da plataforma · papel global</EscopoDoAdmin>
           <h1 className="text-[25px] font-bold tracking-[-0.02em]">Usuários</h1>
           <p className="mt-1 text-[13px] text-muted">
             {usuarios.length} {usuarios.length === 1 ? 'pessoa cadastrada' : 'pessoas cadastradas'}.
-            Convite por e-mail depende de SMTP, que é compartilhado com outro produto, até lá, a
-            senha é combinada fora daqui.
+            O papel daqui é o da plataforma (suporte 4YU ou usuário comum); o papel dentro de
+            cada conta se muda na própria conta, em Equipe. Convite por e-mail ainda não existe:
+            a senha é combinada fora daqui.
           </p>
         </div>
 

@@ -1,5 +1,6 @@
 import { acharPlano, comoTamanho, fracaoUsada, O_QUE_E_CONVERSA } from '@/core/planos'
 import { consumoDeTodasAsContas, type ConsumoDeUmaConta } from '@/server/repos/plano'
+import { EscopoDoAdmin } from '@/components/conta/escopo-do-admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,6 +29,7 @@ export default async function Consumo() {
   return (
     <main className="w-full px-4 pt-[38px] pb-[46px] md:px-[46px]">
       <header className="mb-7">
+        <EscopoDoAdmin>Consumo por conta · plataforma inteira</EscopoDoAdmin>
         <h1 className="text-[25px] font-bold tracking-[-0.02em]">Consumo</h1>
         <p className="mt-1 max-w-[680px] text-[13px] leading-6 text-muted">
           O que cada conta usou neste mês, contra o que o plano dela comporta.{' '}

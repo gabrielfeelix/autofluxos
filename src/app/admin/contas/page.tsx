@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { ContasAdmin } from '@/components/conta/contas-admin'
 import { acaoVincularMembro } from '@/server/acoes-conta'
 import { listarContasComMembros, listarUsuarios } from '@/server/repos/usuarios'
+import { EscopoDoAdmin } from '@/components/conta/escopo-do-admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,6 +21,7 @@ export default async function Contas() {
   return (
     <main className="w-full px-4 pt-[38px] pb-[46px] md:px-[46px]">
       <header className="mb-6">
+        <EscopoDoAdmin>Contas de clientes · plataforma inteira</EscopoDoAdmin>
         <h1 className="text-[25px] font-bold tracking-[-0.02em]">Contas</h1>
         {/*
           O resumo diz o tamanho da operação, e não o alarme.

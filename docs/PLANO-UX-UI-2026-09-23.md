@@ -1268,9 +1268,9 @@ outras telas desta fase.
 
 ### Tarefa 10.5: área admin com escopo escrito [S10, E16]
 
-- [ ] **Passo 1:** subtítulo em cada tela admin ("Usuários da plataforma",
+- [x] **Passo 1:** subtítulo em cada tela admin ("Usuários da plataforma",
   "Contas de clientes", "Registro de auditoria da plataforma").
-- [ ] **Passo 2:** commit `feat(admin): cada tela diz o próprio escopo`.
+- [x] **Passo 2:** commit `feat(admin): cada tela diz o próprio escopo`.
 
 ### Tarefa 10.6: convite por e-mail [E6] (depende do envio transacional)
 

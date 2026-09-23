@@ -1,5 +1,6 @@
 import { horaExata, quando } from '@/lib/quando'
 import { listarAtos, type LinhaDeAuditoria } from '@/server/repos/auditoria'
+import { EscopoDoAdmin } from '@/components/conta/escopo-do-admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,6 +22,7 @@ export default async function Auditoria() {
   return (
     <main className="w-full px-4 pt-[38px] pb-[46px] md:px-[46px]">
       <header className="mb-7">
+        <EscopoDoAdmin>Registro de auditoria da plataforma · todas as contas</EscopoDoAdmin>
         <h1 className="text-[25px] font-bold tracking-[-0.02em]">Auditoria</h1>
         <p className="mt-1 text-[13px] text-muted">
           O que aconteceu na plataforma, do mais novo para o mais velho. Não dá para editar nem

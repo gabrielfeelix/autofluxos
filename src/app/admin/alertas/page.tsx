@@ -1,6 +1,7 @@
 import { horaExata, quando } from '@/lib/quando'
 import { acaoMarcarAlertaVisto, acaoMarcarTodosOsAlertasVistos } from '@/server/acoes-alertas'
 import { type Alerta, listarAlertas } from '@/server/repos/alertas'
+import { EscopoDoAdmin } from '@/components/conta/escopo-do-admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,6 +30,7 @@ export default async function Alertas() {
     <main className="w-full px-4 pt-[38px] pb-[46px] md:px-[46px]">
       <header className="mb-7 flex flex-wrap items-start justify-between gap-4">
         <div>
+          <EscopoDoAdmin>Alertas da plataforma · todas as contas</EscopoDoAdmin>
           <h1 className="text-[25px] font-bold tracking-[-0.02em]">Alertas</h1>
           <p className="mt-1 max-w-2xl text-[13px] text-muted">
             Falhas que o produto registrou sozinho: webhook que não processou, entrega recusada
