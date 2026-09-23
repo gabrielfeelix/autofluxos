@@ -42,29 +42,43 @@ export default async function Pagina({
         <Trilha
           caminho={[
             { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },
-            { rotulo: 'Horário de atendimento' },
+            { rotulo: 'Horário e retomada' },
           ]}
         />
-        <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">
-          Horário de atendimento
-        </h1>
-        <p className="mt-1 mb-6 max-w-[560px] text-[13px] leading-6 text-muted">
-          Vale para <strong className="text-soft">quando o bot passa a conversa para uma
-          pessoa</strong>. O bot continua respondendo a qualquer hora; o que muda é o que ele diz
-          fora do expediente, em vez de prometer um atendente que só chega de manhã.
+        <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Horário e retomada</h1>
+        <p className="mt-1 mb-7 max-w-[620px] text-[13px] leading-6 text-muted">
+          Duas decisões sobre quando há gente do outro lado. Cada uma salva sozinha.
         </p>
 
-        <HorarioDeAtendimentoForm
-          inicial={cliente.horarioAtendimento}
-          conexoes={conexoes}
-          salvar={acaoSalvarHorario.bind(null, cliente.id)}
-        />
-
-        <section className="mt-12 border-t border-line pt-8">
-          <h2 className="text-[16px] font-bold tracking-[-0.01em]">
-            Conversa parada com uma pessoa
+        {/* Duas seções do mesmo peso, cada uma com o próprio salvar e o próprio
+            "Salvo" (S04). Antes a retomada vinha como apêndice do horário, e
+            quem salvava uma não sabia se tinha salvo a outra. */}
+        <section aria-labelledby="titulo-horario">
+          <h2 id="titulo-horario" className="text-[16px] font-bold tracking-[-0.01em]">
+            Horário de atendimento
           </h2>
-          <p className="mt-1 mb-6 max-w-[620px] text-[13px] leading-6 text-muted">
+          <p className="mt-1 mb-5 max-w-[620px] text-[13px] leading-6 text-muted">
+            Vale para <strong className="text-soft">quando o bot passa a conversa para uma
+            pessoa</strong>. O bot continua respondendo a qualquer hora; o que muda é o que ele diz
+            fora do expediente, em vez de prometer um atendente que só chega de manhã.
+          </p>
+
+          <HorarioDeAtendimentoForm
+            inicial={cliente.horarioAtendimento}
+            conexoes={conexoes}
+            salvar={acaoSalvarHorario.bind(null, cliente.id)}
+          />
+        </section>
+
+        <section
+          id="retomada"
+          aria-labelledby="titulo-retomada"
+          className="mt-12 scroll-mt-6 border-t border-line pt-8"
+        >
+          <h2 id="titulo-retomada" className="text-[16px] font-bold tracking-[-0.01em]">
+            Retomada após inatividade
+          </h2>
+          <p className="mt-1 mb-5 max-w-[620px] text-[13px] leading-6 text-muted">
             Quando alguém assume uma conversa, o bot{' '}
             <strong className="text-soft">para de responder naquele contato</strong> e só volta se
             clicarem em “Religar o bot”, no Inbox. Se ninguém clicar, ele fica calado ali para

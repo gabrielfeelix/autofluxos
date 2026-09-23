@@ -27,11 +27,14 @@ export function EscolhaDePlano({
   atual,
   consumo,
   podeMexer,
+  pedidoAberto,
   pedirTroca,
 }: {
   atual: IdDoPlano
   consumo: ConsumoDoMes
   podeMexer: boolean
+  /** O último pedido de troca ainda não atendido, lido da auditoria. */
+  pedidoAberto: { para: IdDoPlano; quando: string; por: string } | null
   pedirTroca: (desejado: IdDoPlano) => Promise<{ ok: boolean; erro?: string }>
 }) {
   const plano = acharPlano(atual)
@@ -58,7 +61,12 @@ export function EscolhaDePlano({
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="app-card p-5">
+      {/* Duas seções com dono diferente (S08): ler o plano e o consumo é de
+          todos; pedir troca é do proprietário ou do administrador da conta. */}
+      <section className="app-card p-5" aria-labelledby="titulo-seu-plano">
+        <h2 id="titulo-seu-plano" className="mb-3 text-[15px] font-bold tracking-[-0.01em]">
+          Seu plano e consumo
+        </h2>
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
           <div>
             <p className="text-[11.5px] text-dim">Plano desta conta</p>
@@ -110,15 +118,38 @@ export function EscolhaDePlano({
         </p>
       </section>
 
-      <section>
-        <h2 className="mb-3 text-[15px] font-bold tracking-[-0.01em]">Os planos</h2>
+      <section aria-labelledby="titulo-solicitar">
+        <h2 id="titulo-solicitar" className="text-[15px] font-bold tracking-[-0.01em]">
+          Solicitar alteração
+        </h2>
+        <p className="mt-1 mb-3 max-w-[650px] text-[12.5px] leading-6 text-dim">
+          {podeMexer
+            ? 'O pedido vai para a 4YU, que confirma com você antes de mudar a cobrança.'
+            : 'Só o proprietário ou um administrador da conta pede mudança de plano. Os planos ficam aqui para consulta.'}
+        </p>
+
+        {(pedido ?? pedidoAberto) && (
+          <p
+            role="status"
+            className="mb-3 flex max-w-[650px] items-start gap-2 rounded-[11px] border border-primary/20 bg-primary-weak px-4 py-3 text-[12.5px] leading-5 text-soft"
+          >
+            <span aria-hidden className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
+            <span>
+              {pedido
+                ? `Pedido para o plano ${acharPlano(pedido).nome} enviado agora. A 4YU entra em contato.`
+                : `Pedido para o plano ${acharPlano(pedidoAberto!.para).nome} enviado em ${new Date(
+                    pedidoAberto!.quando,
+                  ).toLocaleDateString('pt-BR')}${pedidoAberto!.por ? ` por ${pedidoAberto!.por}` : ''}. Aguardando a 4YU.`}
+            </span>
+          </p>
+        )}
         <div className="grid gap-3 lg:grid-cols-3">
           {PLANOS.map((p) => (
             <Cartao
               key={p.id}
               plano={p}
               ehOAtual={p.id === atual}
-              pedido={pedido === p.id}
+              pedido={(pedido ?? pedidoAberto?.para) === p.id}
               podeMexer={podeMexer}
               rodando={rodando}
               aoPedir={() => pedir(p.id)}
@@ -129,12 +160,6 @@ export function EscolhaDePlano({
         {erro && (
           <p role="alert" className="mt-3 text-[12.5px] text-perigo">
             {erro}
-          </p>
-        )}
-
-        {!podeMexer && (
-          <p className="mt-3 text-[12.5px] leading-6 text-dim">
-            Só quem administra a conta pode pedir mudança de plano.
           </p>
         )}
 
@@ -221,7 +246,7 @@ function Cartao({
           title={
             podeMexer
               ? `Pedir mudança para o plano ${plano.nome}`
-              : 'Só quem administra a conta pode pedir mudança de plano'
+              : 'Só o proprietário ou um administrador da conta pede mudança de plano'
           }
           className="app-primary-button w-full disabled:cursor-not-allowed disabled:opacity-50"
         >

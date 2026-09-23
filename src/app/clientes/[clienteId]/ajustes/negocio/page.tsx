@@ -4,6 +4,8 @@ import { AjustesShell } from '@/components/design/ajustes-shell'
 import { Trilha } from '@/components/design/trilha'
 import { acaoRemoverLogo, acaoSalvarCadastro, acaoSalvarLogo } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
+import { acessoCompleto } from '@/server/permissoes'
+import { pode } from '@/core/permissoes'
 import { FaixasDeNivelDaConta } from '@/components/cliente/faixas-de-nivel'
 import { faixasDaConta } from '@/server/repos/relacionamento'
 import { FAIXAS_PADRAO } from '@/core/relacionamento'
@@ -18,13 +20,19 @@ export const dynamic = 'force-dynamic'
  * conclusão por caminhos diferentes, `docs/PLANO-HOMEPAGE.md` §7 e
  * `docs/PLANO-CONFIGURACOES.md` §4 , e esta rota é o endereço combinado.
  *
- * A página só monta `FichaDoCliente`, que não mudou: o componente já era
- * autônomo, e movê-lo de lugar não era motivo para reescrevê-lo.
+ * A página monta `FichaDoCliente`, e diz a ela se quem olha pode editar: sem
+ * `configurar_empresa` a ficha vira só leitura (S02). A ação recusa de
+ * qualquer jeito; esconder o botão só evita o formulário que não salva.
  */
 export default async function Pagina({ params }: { params: Promise<{ clienteId: string }> }) {
   const { clienteId } = await params
-  const [cliente, faixas] = await Promise.all([acharCliente(clienteId), faixasDaConta(clienteId)])
+  const [cliente, faixas, acesso] = await Promise.all([
+    acharCliente(clienteId),
+    faixasDaConta(clienteId),
+    acessoCompleto(clienteId),
+  ])
   if (!cliente) notFound()
+  const podeEditar = pode(acesso.regras, 'configurar_empresa', 'todos')
 
   return (
     <AjustesShell cliente={cliente} ativa="negocio">
@@ -43,6 +51,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
         <FichaDoCliente
           cliente={cliente}
+          podeEditar={podeEditar}
           salvarCadastro={acaoSalvarCadastro.bind(null, cliente.id)}
           salvarLogo={acaoSalvarLogo.bind(null, cliente.id)}
           removerLogo={acaoRemoverLogo.bind(null, cliente.id)}

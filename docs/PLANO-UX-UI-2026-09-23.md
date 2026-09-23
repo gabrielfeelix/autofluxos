@@ -1244,15 +1244,15 @@ outras telas desta fase.
 
 ### Tarefa 10.3: formulários com resultado próprio [S02, S03, S04, S08]
 
-- [ ] **Passo 1:** Dados da empresa: "Salvo" persistente depois de salvar; quem
+- [x] **Passo 1:** Dados da empresa: "Salvo" persistente depois de salvar; quem
   não pode editar vê os dados sem campos.
-- [ ] **Passo 2:** Conhecimento da IA: dois cartões, "Conhecimento usado nas
+- [x] **Passo 2:** Conhecimento da IA: dois cartões, "Conhecimento usado nas
   respostas" e "Credencial do provedor" (chave sempre mascarada).
-- [ ] **Passo 3:** Horário: dois cartões com salvar e sucesso independentes,
+- [x] **Passo 3:** Horário: dois cartões com salvar e sucesso independentes,
   "Horário de atendimento" e "Retomada após inatividade".
-- [ ] **Passo 4:** Plano: "Seu plano e consumo" (todos veem) separado de
+- [x] **Passo 4:** Plano: "Seu plano e consumo" (todos veem) separado de
   "Solicitar alteração" (proprietário/administrador), com estado do pedido.
-- [ ] **Passo 5:** commit `feat(configuracoes): cada formulário mostra o próprio resultado`.
+- [x] **Passo 5:** commit `feat(configuracoes): cada formulário mostra o próprio resultado`.
 
 ### Tarefa 10.4: entrada, erro e contexto [S09, S12, S11, E10, E11]
 

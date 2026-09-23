@@ -80,7 +80,7 @@ export function RetomadaDoBotForm({
   const foraDoLimite = livre && (!Number.isInteger(minutos) || minutos < 1 || minutos > MINUTOS_DE_RETOMADA_TETO)
 
   return (
-    <FormularioSalvar action={salvar} rotulo="Salvar">
+    <FormularioSalvar action={salvar} rotulo="Salvar retomada">
       {/* O interruptor e o prazo são estado do React. O que chega ao servidor
           são estes dois campos, já em minutos, para o servidor não precisar
           saber que existe uma escolha de unidade na tela. */}

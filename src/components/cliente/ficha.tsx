@@ -23,8 +23,11 @@ export function FichaDoCliente({
   salvarCadastro,
   salvarLogo,
   removerLogo,
+  podeEditar,
 }: {
   cliente: Cliente
+  /** Sem `configurar_empresa`, a ficha é só leitura. A ação recusa do mesmo jeito. */
+  podeEditar: boolean
   salvarCadastro: (estado: EstadoSalvar, formData: FormData) => Promise<EstadoSalvar>
   salvarLogo: (estado: EstadoSalvar, formData: FormData) => Promise<EstadoSalvar>
   removerLogo: () => Promise<void>
@@ -41,15 +44,19 @@ export function FichaDoCliente({
             WhatsApp.
           </p>
         </div>
-        <button
-          onClick={() => setEditando((antes) => !antes)}
-          className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-[12px] font-bold text-soft transition hover:border-strong hover:bg-surface-strong"
-        >
-          {editando ? 'Cancelar' : 'Editar'}
-        </button>
+        {podeEditar ? (
+          <button
+            onClick={() => setEditando((antes) => !antes)}
+            className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-[12px] font-bold text-soft transition hover:border-strong hover:bg-surface-strong"
+          >
+            {editando ? 'Fechar' : 'Editar'}
+          </button>
+        ) : (
+          <p className="text-[12px] text-dim">Só o proprietário ou um administrador da conta edita.</p>
+        )}
       </header>
 
-      {editando ? (
+      {editando && podeEditar ? (
         <div className="p-4 sm:p-6">
           <Logo cliente={cliente} salvarLogo={salvarLogo} removerLogo={removerLogo} />
 

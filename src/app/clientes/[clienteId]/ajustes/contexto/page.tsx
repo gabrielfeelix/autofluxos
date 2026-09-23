@@ -63,31 +63,47 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           trabalho, incluindo o que ela <em>não</em> deve responder.
         </p>
 
-        {vazio && (
-          <p className="mb-5 rounded-[11px] border border-amber-300/25 bg-amber-300/[0.08] px-4 py-3 text-[12.5px] leading-5 text-aviso">
-            Está vazio. Enquanto ficar assim, um fluxo com bloco de IA não publica, ele responderia
-            &quot;não sei&quot; a tudo.
-          </p>
-        )}
+        {/* Dois cartões, e não uma página corrida (S03): o texto que a IA usa e
+            a credencial com que ela fala têm risco e finalidade diferentes, e
+            cada um mostra o próprio resultado ao salvar. */}
+        <section className="app-card max-w-[860px] overflow-hidden">
+          <header className="border-b border-line px-[18px] py-3.5">
+            <h2 className="text-[13px] font-bold">Conhecimento usado nas respostas</h2>
+            <p className="mt-0.5 text-[12px] text-dim">
+              O que a IA sabe do negócio. Não cole chave nem senha aqui: este texto vai para o
+              provedor em toda resposta.
+            </p>
+          </header>
+          <div className="px-[18px] py-4">
+            {vazio && (
+              <p className="mb-4 rounded-[11px] border border-amber-300/25 bg-amber-300/[0.08] px-4 py-3 text-[12.5px] leading-5 text-aviso">
+                Está vazio. Enquanto ficar assim, um fluxo com bloco de IA não publica, ele
+                responderia &quot;não sei&quot; a tudo.
+              </p>
+            )}
 
-        <FormularioSalvar
-          action={acaoSalvarContexto.bind(null, clienteId)}
-          dica="Vale na próxima conversa. Não precisa republicar fluxo nenhum."
-        >
-          <textarea
-            name="contexto"
-            rows={18}
-            defaultValue={cliente.contextoNegocio}
-            placeholder={EXEMPLO}
-            className="app-field resize-y px-4 py-3.5 text-[13px] leading-6"
-          />
-        </FormularioSalvar>
+            <FormularioSalvar
+              action={acaoSalvarContexto.bind(null, clienteId)}
+              rotulo="Salvar conhecimento"
+              dica="Vale na próxima conversa. Não precisa republicar fluxo nenhum."
+            >
+              <textarea
+                name="contexto"
+                rows={18}
+                aria-label="Conhecimento usado nas respostas"
+                defaultValue={cliente.contextoNegocio}
+                placeholder={EXEMPLO}
+                className="app-field resize-y px-4 py-3.5 text-[13px] leading-6"
+              />
+            </FormularioSalvar>
+          </div>
+        </section>
 
         {/* Depois do contexto, e não antes: o que a IA **pode dizer** é a
             pergunta que traz a pessoa aqui; com a chave de quem ela fala é a
             segunda. Em cima, a chave viraria um campo técnico barrando a tela
             que interessa. */}
-        <div className="mt-8 max-w-[620px]">
+        <div className="mt-5 max-w-[860px]">
           <ChaveDeIa
             estado={chave}
             guardar={acaoGuardarChaveDeIa.bind(null, clienteId)}

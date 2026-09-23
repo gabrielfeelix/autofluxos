@@ -38,13 +38,20 @@ export function ChaveDeIa({
 }) {
   const [trocando, setTrocando] = useState(false)
   const [erro, setErro] = useState('')
+  // O resultado mora no cartão, e não no formulário: salvar fecha o formulário,
+  // e um "Salvo" dentro dele sumiria junto (S03).
+  const [feito, setFeito] = useState('')
   const [pendente, comecar] = useTransition()
 
   return (
     <section className="app-card overflow-hidden">
-      <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
-        Chave da IA
-      </h2>
+      <header className="border-b border-line px-[18px] py-3.5">
+        <h2 className="text-[13px] font-bold">Credencial do provedor</h2>
+        <p className="mt-0.5 text-[12px] text-dim">
+          A chave do Gemini que o bloco de IA usa para escrever as respostas. Nunca aparece
+          inteira depois de salva.
+        </p>
+      </header>
 
       <div className="px-[18px] py-4">
         {estado.propria ? (
@@ -66,7 +73,10 @@ export function ChaveDeIa({
             <FormularioSalvar
               action={async (anterior, formData) => {
                 const r = await guardar(anterior, formData)
-                if (r.ok) setTrocando(false)
+                if (r.ok) {
+                  setTrocando(false)
+                  setFeito('Chave salva. Vale na próxima conversa.')
+                }
                 return r
               }}
               rotulo={estado.propria ? 'Trocar a chave' : 'Salvar a chave'}
@@ -94,7 +104,10 @@ export function ChaveDeIa({
           <div className="mt-3.5 flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => setTrocando(true)}
+              onClick={() => {
+                setFeito('')
+                setTrocando(true)
+              }}
               className="rounded-lg border border-line px-2.5 py-1 text-[11.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
             >
               Trocar
@@ -105,8 +118,10 @@ export function ChaveDeIa({
               onClick={() =>
                 comecar(async () => {
                   setErro('')
+                  setFeito('')
                   const r = await apagar()
                   if (!r.ok) setErro(r.erro ?? 'não deu para apagar')
+                  else setFeito('Chave do cliente apagada. A conta voltou para a chave da 4YU.')
                 })
               }
               className="rounded-lg border border-line px-2.5 py-1 text-[11.5px] font-semibold text-muted transition hover:border-perigo/40 hover:text-perigo disabled:opacity-50"
@@ -116,7 +131,17 @@ export function ChaveDeIa({
           </div>
         )}
 
-        {erro !== '' && <p className="mt-2 text-[11.5px] text-perigo">{erro}</p>}
+        {erro !== '' && (
+          <p role="alert" className="mt-2 text-[11.5px] text-perigo">
+            {erro}
+          </p>
+        )}
+        {feito !== '' && erro === '' && (
+          <p role="status" className="mt-2.5 flex items-center gap-1.5 text-[12px] font-semibold text-ok">
+            <span className="size-1.5 rounded-full bg-emerald-400" />
+            {feito}
+          </p>
+        )}
       </div>
     </section>
   )

@@ -14,5 +14,5 @@ export default async function Pagina({
   params: Promise<{ clienteId: string }>
 }) {
   const { clienteId } = await params
-  redirect(`/clientes/${clienteId}/ajustes/horario`)
+  redirect(`/clientes/${clienteId}/ajustes/horario#retomada`)
 }

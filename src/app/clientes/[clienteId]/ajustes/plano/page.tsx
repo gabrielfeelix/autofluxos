@@ -5,6 +5,8 @@ import { Trilha } from '@/components/design/trilha'
 import { acaoPedirTrocaDePlano } from '@/server/acoes-plano'
 import { acharCliente } from '@/server/repos/clientes'
 import { consumoDaConta, planoDaConta } from '@/server/repos/plano'
+import { ultimoAto } from '@/server/repos/auditoria'
+import type { IdDoPlano } from '@/core/planos'
 import { conferirAcessoAoCliente, podeAdministrarConta } from '@/server/sessao'
 
 export const dynamic = 'force-dynamic'
@@ -33,10 +35,17 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const acesso = await conferirAcessoAoCliente(clienteId)
   const podeMexer = acesso !== null && podeAdministrarConta(acesso)
 
-  const [plano, consumo] = await Promise.all([
+  const [plano, consumo, ultimoPedido] = await Promise.all([
     planoDaConta(clienteId),
     consumoDaConta(clienteId),
+    ultimoAto(clienteId, 'pediu_troca_de_plano'),
   ])
+  // Pedido para o plano que a conta já tem foi atendido: some da tela.
+  const para = ultimoPedido?.detalhes?.para
+  const pedidoAberto =
+    ultimoPedido && typeof para === 'string' && para !== plano
+      ? { para: para as IdDoPlano, quando: ultimoPedido.quando, por: ultimoPedido.autorEmail ?? '' }
+      : null
 
   return (
     <AjustesShell cliente={cliente} ativa="plano">
@@ -57,6 +66,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           atual={plano}
           consumo={consumo}
           podeMexer={podeMexer}
+          pedidoAberto={pedidoAberto}
           pedirTroca={acaoPedirTrocaDePlano.bind(null, cliente.id)}
         />
       </main>

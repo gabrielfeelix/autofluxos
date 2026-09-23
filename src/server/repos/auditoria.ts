@@ -135,6 +135,27 @@ export async function listarAtos(
 }
 
 /**
+ * O ato mais recente de um tipo numa conta, ou `null`.
+ *
+ * Serve para a tela mostrar o estado de um pedido que só existe na auditoria,
+ * como a troca de plano: sem tabela própria, o registro é a única prova de que
+ * alguém pediu.
+ */
+export async function ultimoAto(contaId: string, acao: string): Promise<LinhaDeAuditoria | null> {
+  const { data, error } = await db()
+    .from('af_auditoria')
+    .select(COLUNAS)
+    .eq('conta_id', contaId)
+    .eq('acao', acao)
+    .order('quando', { ascending: false })
+    .limit(1)
+  if (ehIdInvalido(error)) return null
+  if (error) throw new Error(`não deu para ler a auditoria: ${error.message}`)
+  const [linha] = data as Linha[]
+  return linha ? paraAto(linha) : null
+}
+
+/**
  * Só os atos feitos de dentro de um "entrar como".
  *
  * É a consulta que alguém vai fazer com pressa, e por isso ela tem índice

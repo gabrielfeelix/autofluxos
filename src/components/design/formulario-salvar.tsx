@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, type ReactNode } from 'react'
+import { useActionState, useState, type ReactNode } from 'react'
 
 export type EstadoSalvar = { ok?: boolean; erro?: string }
 
@@ -29,9 +29,13 @@ export function FormularioSalvar({
   dica?: ReactNode
 }) {
   const [estado, enviar, pendente] = useActionState(action, INICIAL)
+  // "Salvo" fica à vista até a pessoa mexer de novo (S02): sumir sozinho
+  // deixava quem olhou para o lado sem saber se gravou, e ficar depois de uma
+  // edição nova diria que o que está na tela já foi gravado, e não foi.
+  const [mexeuDepois, setMexeuDepois] = useState(false)
 
   return (
-    <form action={enviar}>
+    <form action={enviar} onInput={() => setMexeuDepois(true)} onSubmit={() => setMexeuDepois(false)}>
       {children}
       <div className="mt-3.5 flex items-center gap-3">
         <button disabled={pendente} className="app-primary-button px-[18px] py-2.5 text-[13px] disabled:opacity-60">
@@ -42,7 +46,7 @@ export function FormularioSalvar({
           <span role="alert" className="text-[12px] font-semibold text-perigo">
             {estado.erro}
           </span>
-        ) : estado.ok ? (
+        ) : estado.ok && !mexeuDepois ? (
           <span role="status" className="flex items-center gap-1.5 text-[12px] font-semibold text-ok">
             <span className="size-1.5 rounded-full bg-emerald-400" />
             Salvo

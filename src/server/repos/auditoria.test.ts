@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it } from 'vitest'
 import { db } from '../db'
-import { listarAtos, listarImpersonacoes, registrar } from './auditoria'
+import { listarAtos, listarImpersonacoes, registrar, ultimoAto } from './auditoria'
 import { apagarCliente, criarCliente } from './clientes'
 
 const temCredencial = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SECRET_KEY)
@@ -36,6 +36,19 @@ describe.skipIf(!temCredencial)('auditoria', () => {
       alvoNome: 'PRINCIPAL',
       detalhes: { versao: 3 },
     })
+  })
+
+  it('ultimoAto devolve o mais recente daquele tipo, ou null', async () => {
+    const conta = await criarCliente(`${marca} ultimo`)
+    contas.push(conta.id)
+    expect(await ultimoAto(conta.id, 'pediu_troca_de_plano')).toBeNull()
+
+    await registrar({ acao: 'pediu_troca_de_plano', contaId: conta.id, detalhes: { para: 'operacao' } })
+    await registrar({ acao: 'pediu_troca_de_plano', contaId: conta.id, detalhes: { para: 'escala' } })
+    await registrar({ acao: 'publicou_fluxo', contaId: conta.id })
+
+    const ultimo = await ultimoAto(conta.id, 'pediu_troca_de_plano')
+    expect(ultimo?.detalhes).toEqual({ para: 'escala' })
   })
 
   it('separa o que foi feito de dentro de um "entrar como"', async () => {
