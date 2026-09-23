@@ -47,6 +47,8 @@ export type ProdutoDaLoja = {
   precoDe?: number
   emEstoque: boolean
   quantidade?: number
+  /** Só com token (fase 2). Ausente = sem foto real; nunca o placeholder da loja. */
+  foto?: string
   link: string
 }
 

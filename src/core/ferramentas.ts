@@ -446,6 +446,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       'Use quando a pessoa perguntar se tem um produto, quanto custa, ou pedir uma indicação. ' +
       'Busque pelo tipo de produto em poucas palavras ("headset usb"), não pela frase inteira. ' +
       'Se um produto vier sem preço, diga que vai confirmar o valor e nunca invente. ' +
+      'Quando vier `quantidade`, diga quantas restam só se forem 5 ou menos; acima disso, só diga que tem. ' +
       'Sempre mande o link para a pessoa comprar; você não fecha pedido. ' +
       'Não use para horário de aula ou agenda.',
     argumentos: [
