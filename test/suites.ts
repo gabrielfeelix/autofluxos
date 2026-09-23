@@ -22,6 +22,7 @@ export const TESTES_DE_INTEGRACAO = [
   'src/server/repos/pastas.test.ts',
   'src/server/consultas/contatos.test.ts',
   'src/server/acoes-conta.test.ts',
+  'src/server/acoes-perfil.test.ts',
   'src/server/agendador.test.ts',
   'src/server/auth.test.ts',
   'src/server/card-do-produto.test.ts',

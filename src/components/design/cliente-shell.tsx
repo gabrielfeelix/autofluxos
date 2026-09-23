@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { acessoCompleto, filtroDoAcesso } from '@/server/permissoes'
-import { pode } from '@/core/permissoes'
+import { pode, resumoDoAcesso } from '@/core/permissoes'
+import { PainelVoce, PerfilDaSessao } from '@/components/conta/voce'
 import { contagensDaAgenda } from '@/server/repos/atividades'
 import { lerFiltroDaAgenda } from '@/core/atividades'
 import { ContadorDaAgenda } from '@/components/atividades/contador-da-agenda'
@@ -9,7 +10,7 @@ import type { ReactNode } from 'react'
 import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
 import { FaixaDeSuporte } from '@/components/conta/faixa-de-suporte'
 import { NotificacoesDaFila } from '@/components/inbox/notificacoes-da-fila'
-import { acaoDefinirPresenca, acaoSair } from '@/server/acoes-conta'
+import { acaoDefinirPresenca } from '@/server/acoes-conta'
 import type { Cliente } from '@/server/repos/clientes'
 import { crmVisivel } from '@/server/repos/recursos'
 import { presencaDoUsuario } from '@/server/repos/usuarios'
@@ -110,6 +111,9 @@ export async function ClienteShell({
         barra saltar. Ver `MarcaDeAdmin`.
       */}
       <MarcaDeAdmin admin={podeVerTodosOsClientes} />
+      <PerfilDaSessao
+        inicial={{ nome: acesso.sessao.usuario.nome, imagem: acesso.sessao.usuario.imagem ?? null }}
+      >
       <BarraLateral
         marca={<Marca />}
         identidadeNoCelular={
@@ -120,6 +124,7 @@ export async function ClienteShell({
         }
         presenca={presenca ?? undefined}
         conta={cliente.nome}
+        contaNoTopo={<SeletorDeConta cliente={cliente} outrasContas={contas.length} />}
         voltar={
           podeVerTodosOsClientes ? (
             <Link
@@ -139,8 +144,16 @@ export async function ClienteShell({
           contador: item.chave === 'atividades' ? <Suspense fallback={null}><Pendencias clienteId={cliente.id} /></Suspense> : undefined,
         }))}
         rodape={
-          <>
-            <SeletorDeConta cliente={cliente} outrasContas={contas.length} papel={acesso.papel} />
+          <PainelVoce
+            email={acesso.sessao.usuario.email}
+            papel={`${resumoDoAcesso(acesso.regras).perfil} · ${cliente.nome}`}
+            suporte={acesso.papel === null}
+            configuracoesHref={
+              liberaSecao(acesso.regras, 'ajustes') ? `/clientes/${cliente.id}/ajustes` : null
+            }
+            outrasContas={contas.length}
+          >
+            {presenca && <Presenca atual={presenca} />}
 
             {/*
               O aviso de fila vive **aqui**, e não só no Inbox.
@@ -151,20 +164,10 @@ export async function ClienteShell({
               jeito, e é justamente quem dá para avisar de graça.
             */}
             <NotificacoesDaFila clienteId={cliente.id} compacto />
-
-            {presenca && <Presenca atual={presenca} />}
-
-            <form action={acaoSair} className="mt-2 px-1.5">
-              <button
-                type="submit"
-                className="rounded-[7px] px-1.5 py-1 text-[11.5px] font-semibold text-dim transition hover:bg-rose-400/[0.08] hover:text-rose-400"
-              >
-                Sair
-              </button>
-            </form>
-          </>
+          </PainelVoce>
         }
       />
+      </PerfilDaSessao>
 
       <div className="relative min-w-0 flex-1 md:overflow-auto">
         <FaixaDeImpersonacao />
@@ -188,35 +191,20 @@ export async function ClienteShell({
 }
 
 /**
- * A conta atual no rodapé da barra, e o caminho para as outras.
+ * A conta atual no topo da barra, e o caminho para as outras.
  *
- * Vira link para o seletor só quando a pessoa tem mais de uma companhia. Um
- * botão que abre uma lista de um item é atrito puro, e um usuário de conta
- * única é o caso comum.
+ * Morava no rodapé; subiu quando o rodapé passou a ser da pessoa (7.5). Vira
+ * link para o seletor só quando a pessoa tem mais de uma companhia. Um botão
+ * que abre uma lista de um item é atrito puro, e conta única é o caso comum.
  */
-function SeletorDeConta({
-  cliente,
-  outrasContas,
-  papel,
-}: {
-  cliente: Cliente
-  outrasContas: number
-  papel: string | null
-}) {
-  // Papel nulo só acontece para o administrador da plataforma: quem não é
-  // membro nem administrador já foi recusado por `conferirAcessoAoCliente`.
-  const legenda = PAPEIS[papel ?? ''] ?? 'administrador 4YU'
-
+function SeletorDeConta({ cliente, outrasContas }: { cliente: Cliente; outrasContas: number }) {
   const miolo = (
     <>
-      <LogoDoCliente cliente={cliente} tamanho={30} />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-[12.5px] font-semibold">{cliente.nome}</span>
-        <span className="block text-[11px] text-dim">{legenda}</span>
-      </span>
+      <LogoDoCliente cliente={cliente} tamanho={24} />
+      <span className="min-w-0 flex-1 truncate text-[12.5px] font-semibold text-muted">{cliente.nome}</span>
       {outrasContas > 1 && (
-        <span aria-hidden className="text-dim">
-          ›
+        <span aria-hidden className="text-[11px] text-dim">
+          trocar
         </span>
       )}
     </>
@@ -226,14 +214,15 @@ function SeletorDeConta({
     return (
       <Link
         href="/contas"
-        className="flex items-center gap-2.5 rounded-[10px] px-1.5 py-1.5 transition hover:bg-surface"
+        title="Trocar de conta"
+        className="flex items-center gap-2 rounded-[10px] px-2 py-1.5 transition hover:bg-surface"
       >
         {miolo}
       </Link>
     )
   }
 
-  return <div className="flex items-center gap-2.5 px-1.5 py-1.5">{miolo}</div>
+  return <div className="flex items-center gap-2 px-2 py-1.5">{miolo}</div>
 }
 
 /**
@@ -251,7 +240,7 @@ function Presenca({ atual }: { atual: string }) {
     <form action={acaoDefinirPresenca.bind(null, disponivel ? 'ausente' : 'disponivel')}>
       <button
         type="submit"
-        className="flex w-full items-center gap-2 rounded-[10px] px-1.5 py-1.5 text-left transition hover:bg-surface"
+        className="flex w-full items-center gap-2 rounded-[10px] px-2 py-2 text-left transition hover:bg-surface"
       >
         {/* Ponto **e** palavra: quem não distingue as duas cores lê o estado
             do mesmo jeito (WCAG 1.4.1). */}
@@ -259,21 +248,15 @@ function Presenca({ atual }: { atual: string }) {
           aria-hidden
           className={`size-2 shrink-0 rounded-full ${disponivel ? 'bg-emerald-400' : 'bg-dim'}`}
         />
-        <span className="flex-1 text-[11.5px] text-muted">
+        <span className="flex-1 text-[13px] font-semibold text-muted">
           {disponivel ? 'Disponível' : 'Ausente'}
         </span>
-        <span className="text-[10.5px] text-dim">trocar</span>
+        <span className="text-[11px] text-dim">trocar</span>
       </button>
     </form>
   )
 }
 
-/** O que cada papel do plugin de organização quer dizer em português. */
-const PAPEIS: Record<string, string> = {
-  owner: 'dono da conta',
-  admin: 'administrador',
-  member: 'equipe',
-}
 
 
 async function contarPendencias(clienteId: string) {

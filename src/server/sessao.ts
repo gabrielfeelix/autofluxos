@@ -24,6 +24,8 @@ export type UsuarioDaSessao = {
   id: string
   nome: string
   email: string
+  /** URL da foto de perfil (`af_usuarios.image`). Nulo = mostra as iniciais. */
+  imagem?: string | null
   /** `admin` = administrador da 4YU. Nulo = usuário comum, dono ou membro de conta. */
   papelDePlataforma: string | null
   banido: boolean
@@ -64,6 +66,7 @@ export async function sessaoAtual(): Promise<SessaoAtual | null> {
         id: user.id,
         nome: user.name,
         email: user.email,
+        imagem: user.image ?? null,
         papelDePlataforma: user.role ?? null,
         banido: Boolean(user.banned),
       },

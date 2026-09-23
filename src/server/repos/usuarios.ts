@@ -364,3 +364,32 @@ export async function acharUsuarioPorEmail(
   )
   return rows.length > 0 ? { id: String(rows[0].id), nome: String(rows[0].nome) } : null
 }
+
+/**
+ * Nome e foto da **própria** pessoa (tarefa 7.5).
+ *
+ * Recebe o id de quem chamou, e quem chama é a ação, que o tira da sessão:
+ * nenhum caminho aceita id vindo da tela. `imagem` ausente não mexe na foto;
+ * `null` tira. Devolve a foto anterior, para a ação apagar o arquivo velho.
+ */
+export async function atualizarPerfil(
+  usuarioId: string,
+  campos: { nome: string; imagem?: string | null },
+): Promise<{ ok: true; imagemAnterior: string | null } | { ok: false; motivo: string }> {
+  const nome = campos.nome.trim()
+  if (nome === '') return { ok: false, motivo: 'o nome não pode ficar vazio' }
+  if (nome.length > 80) return { ok: false, motivo: 'o nome passa de 80 letras' }
+
+  const { rows } = await bancoDoLogin().query(
+    `with antes as (select image from public.af_usuarios where id = $1)
+     update public.af_usuarios
+        set "name" = $2,
+            image = case when $3 then $4 else image end,
+            "updatedAt" = now()
+      where id = $1
+     returning (select image from antes) as anterior`,
+    [usuarioId, nome, campos.imagem !== undefined, campos.imagem ?? null],
+  )
+  if (rows.length === 0) return { ok: false, motivo: 'pessoa não encontrada' }
+  return { ok: true, imagemAnterior: rows[0].anterior ? String(rows[0].anterior) : null }
+}
