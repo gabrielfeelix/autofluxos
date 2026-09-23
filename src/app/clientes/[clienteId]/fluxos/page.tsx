@@ -86,10 +86,16 @@ import {
 } from '@/server/repos/fluxos'
 import { contarExecucoesPorFluxo } from '@/server/repos/metricas'
 import { contagensDeAutomacao } from '@/server/repos/contagens-de-automacao'
+import {
+  consultaDaAba,
+  resolverAba,
+  type AbaPrincipal,
+  type Conteudo,
+  type TipoDeGatilho,
+} from '@/core/abas-de-automacao'
 
 export const dynamic = 'force-dynamic'
 
-const ABAS_VALIDAS = ['fluxos', 'templates', 'palavras', 'eventos', 'campanhas', 'sequencias'] as const
 
 /**
  * A galeria recebe **só o texto** de cada modelo.
@@ -106,43 +112,29 @@ const ABAS_VALIDAS = ['fluxos', 'templates', 'palavras', 'eventos', 'campanhas',
 const TEMPLATES = MODELOS.filter((modelo) => modelo.id !== 'vazio').map(
   ({ id, nome, resumo, etiquetas, sinonimos }) => ({ id, nome, resumo, etiquetas, sinonimos }),
 )
-type Aba = (typeof ABAS_VALIDAS)[number]
+type Aba = Conteudo
 
 /**
- * Os rótulos, separados das contagens de propósito.
+ * Os rótulos, separados das contagens de propósito: o esqueleto desenha a
+ * barra de verdade, com a aba certa acesa, sem esperar o banco.
  *
- * O rótulo não depende de consulta nenhuma; a contagem depende de seis. Manter
- * os dois juntos obrigava a barra inteira a esperar o banco, e era o que fazia
- * a tela parecer travada no clique da aba. Assim o esqueleto desenha a barra de
- * verdade, com a aba certa acesa, e só a pastilha do número fica cinza.
- */
-/**
- * Os rótulos, e a palavra que foi trocada de propósito.
- *
- * **"Templates" virou "Modelos de chatbot".** A aba oferecia desenhos de
- * automação prontos, e o produto chama de "modelo" outra coisa: o modelo de
- * mensagem aprovado pela Meta, que vive em Transmissões e é o que atravessa a
- * janela de 24h. Duas coisas com o mesmo nome, em dois menus, e nenhuma pista de
- * qual é qual: quem precisava aprovar um texto na Meta vinha procurar aqui.
- *
- * O §4.3 da proposta é literal: "não criar uma aba 'Templates' que misture
- * modelos de chatbot e mensagens do WhatsApp. Estas últimas aparecem como
- * Modelos de mensagem do WhatsApp, no contexto de envio e na administração do
- * canal".
- *
- * **A chave `templates` não muda**, e é a mesma decisão que manteve a rota
- * `/leads` quando a aba virou "Contatos": `?aba=templates` está em link salvo e
- * em endereço colado em conversa, e trocar a chave por causa de um rótulo
- * quebraria os dois para não ganhar nada.
+ * "Modelos de chatbot" saiu da barra (decisão de 23/09): os prontos estão em
+ * "Nova automação", e `?aba=templates` continua abrindo a galeria. O nome
+ * "Templates" já tinha virado "Modelos de chatbot" porque "modelo" também é o
+ * modelo de mensagem aprovado pela Meta, que mora em Transmissões.
  */
 const ABAS_ROTULOS = [
   { chave: 'fluxos', rotulo: 'Fluxos' },
-  { chave: 'templates', rotulo: 'Modelos de chatbot' },
+  { chave: 'gatilhos', rotulo: 'Gatilhos' },
+  { chave: 'sequencias', rotulo: 'Sequências' },
+] as const satisfies readonly { chave: AbaPrincipal; rotulo: string }[]
+
+/** As sub-abas de Gatilhos, na ordem em que aparecem. */
+const TIPOS_ROTULOS = [
   { chave: 'palavras', rotulo: 'Palavras-chave' },
   { chave: 'eventos', rotulo: 'Eventos' },
   { chave: 'campanhas', rotulo: 'Campanhas' },
-  { chave: 'sequencias', rotulo: 'Sequências' },
-] as const satisfies readonly { chave: Aba; rotulo: string }[]
+] as const satisfies readonly { chave: TipoDeGatilho; rotulo: string }[]
 
 export default async function Pagina({
   params,
@@ -154,6 +146,7 @@ export default async function Pagina({
   const { clienteId } = await params
   const pedidos = await searchParams
   const abaPedida = typeof pedidos.aba === 'string' ? pedidos.aba : undefined
+  const tipoPedido = typeof pedidos.tipo === 'string' ? pedidos.tipo : undefined
   // Só o que a lista entende passa adiante (A01): o endereço é copiável, e
   // parâmetro estranho não vira filtro.
   const parametros: Record<string, string> = {}
@@ -161,11 +154,8 @@ export default async function Pagina({
     const valor = pedidos[chave]
     if (typeof valor === 'string' && valor.trim() !== '') parametros[chave] = valor.trim().slice(0, 80)
   }
-  // Aba desconhecida cai em Fluxos em vez de mostrar nada: o valor vem da URL,
-  // e link velho não pode virar tela em branco.
-  const aba: Aba = (ABAS_VALIDAS as readonly string[]).includes(abaPedida ?? '')
-    ? (abaPedida as Aba)
-    : 'fluxos' 
+  // URL antiga e aba desconhecida: ver `resolverAba`.
+  const { conteudo: aba, principal } = resolverAba(abaPedida, tipoPedido)
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
@@ -188,8 +178,8 @@ export default async function Pagina({
           velho na tela até o novo ficar pronto, que é o congelamento de novo,
           agora por dentro.
         */}
-        <Suspense key={aba} fallback={<Espera aba={aba} />}>
-          <Conteudo cliente={cliente} aba={aba} parametros={parametros} />
+        <Suspense key={aba} fallback={<Espera aba={aba} principal={principal} />}>
+          <ConteudoDaAba cliente={cliente} aba={aba} principal={principal} parametros={parametros} />
         </Suspense>
       </main>
     </ClienteShell>
@@ -197,10 +187,10 @@ export default async function Pagina({
 }
 
 /** O que ocupa a tela entre o clique na aba e a resposta do banco. */
-function Espera({ aba }: { aba: Aba }) {
+function Espera({ aba, principal }: { aba: Aba; principal: AbaPrincipal }) {
   return (
     <>
-      <EsqueletoDeAbas abas={ABAS_ROTULOS} ativa={aba} />
+      <EsqueletoDeAbas abas={ABAS_ROTULOS} ativa={principal} />
       {aba === 'templates' ? (
         <EsqueletoDeCartoes quantidade={6} rotulo="Carregando os modelos…" />
       ) : (
@@ -210,13 +200,15 @@ function Espera({ aba }: { aba: Aba }) {
   )
 }
 
-async function Conteudo({
+async function ConteudoDaAba({
   cliente,
   aba,
+  principal,
   parametros,
 }: {
   cliente: Cliente
   aba: Aba
+  principal: AbaPrincipal
   parametros: Record<string, string>
 }) {
   /*
@@ -422,7 +414,14 @@ async function Conteudo({
   // Derivado dos rótulos, e não reescrito: a barra do esqueleto e a barra de
   // verdade precisam ter os mesmos itens na mesma ordem, senão a tela pula
   // quando o conteúdo chega.
-  const ABAS = ABAS_ROTULOS.map((item) => ({ ...item, contagem: CONTAGEM[item.chave] }))
+  // Gatilhos soma os três tipos; cada sub-aba mostra o seu.
+  const CONTAGEM_PRINCIPAL: Record<AbaPrincipal, number> = {
+    fluxos: CONTAGEM.fluxos,
+    gatilhos: CONTAGEM.palavras + CONTAGEM.eventos + CONTAGEM.campanhas,
+    sequencias: CONTAGEM.sequencias,
+  }
+  const ABAS = ABAS_ROTULOS.map((item) => ({ ...item, contagem: CONTAGEM_PRINCIPAL[item.chave] }))
+  const TIPOS = TIPOS_ROTULOS.map((item) => ({ ...item, contagem: CONTAGEM[item.chave] }))
   const nomeDaEtiqueta = (id: string | null) =>
     etiquetas.find((etiqueta) => etiqueta.id === id)?.nome ?? 'uma etiqueta apagada'
 
@@ -470,8 +469,9 @@ async function Conteudo({
             <Link
               key={item.chave}
               href={`/clientes/${cliente.id}/fluxos?aba=${item.chave}`}
+              aria-current={item.chave === principal ? 'page' : undefined}
               className={`-mb-px border-b-2 px-3.5 py-2.5 text-[13px] font-semibold transition ${
-                item.chave === aba
+                item.chave === principal
                   ? 'border-primary text-primary'
                   : 'border-transparent text-dim hover:text-soft'
               }`}
@@ -485,6 +485,29 @@ async function Conteudo({
             </Link>
           ))}
         </nav>
+
+        {principal === 'gatilhos' && (
+          <div className="mb-5 flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between">
+            <p className="text-[12.5px] text-muted">O que faz uma automação começar.</p>
+            <nav aria-label="Tipos de gatilho" className="flex w-fit flex-wrap gap-1 rounded-[10px] border border-line bg-panel p-1">
+              {TIPOS.map((item) => (
+                <Link
+                  key={item.chave}
+                  href={`/clientes/${cliente.id}/fluxos?${consultaDaAba(item.chave)}`}
+                  aria-current={item.chave === aba ? 'page' : undefined}
+                  className={`rounded-[7px] px-3 py-1.5 text-[12.5px] font-semibold transition ${
+                    item.chave === aba ? 'bg-primary-weak text-primary' : 'text-dim hover:text-soft'
+                  }`}
+                >
+                  {item.rotulo}
+                  {item.contagem > 0 && (
+                    <span className="ml-1.5 text-[11px] font-normal text-dim">{item.contagem}</span>
+                  )}
+                </Link>
+              ))}
+            </nav>
+          </div>
+        )}
 
         {aba === 'fluxos' && (
         <section className="app-card overflow-hidden">
@@ -1018,7 +1041,11 @@ async function Conteudo({
             <div className="min-w-0">
             <h2 className="text-[14.5px] font-bold">Campanhas</h2>
             <p className="mt-0.5 text-[12px] leading-5 text-dim">
-              A frase que o anúncio já deixa digitada no WhatsApp do cliente.
+              Por frase ou link de anúncio. Para mandar mensagem a uma lista, use{' '}
+              <Link href={`/clientes/${cliente.id}/transmissoes`} className="font-semibold text-primary hover:underline">
+                Transmissões
+              </Link>
+              .
             </p>
             </div>
             {/*

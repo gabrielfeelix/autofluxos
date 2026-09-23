@@ -833,17 +833,17 @@ export async function editarPasso(
 
 **Arquivos:** `src/app/clientes/[clienteId]/fluxos/page.tsx:78-170`
 
-- [ ] **Passo 1:** barra principal com três abas. `?aba=gatilhos` mostra sub-abas
+- [x] **Passo 1:** barra principal com três abas. `?aba=gatilhos` mostra sub-abas
   Palavras-chave, Eventos, Campanhas (`?aba=gatilhos&tipo=palavras`).
-- [ ] **Passo 2:** compatibilidade: `aba=palavras|eventos|campanhas` redireciona
+- [x] **Passo 2:** compatibilidade: `aba=palavras|eventos|campanhas` redireciona
   (ou renderiza) como `aba=gatilhos&tipo=...`; `aba=templates` abre Fluxos com o
   diálogo "Nova automação" já na opção "Usar modelo". Aba inválida continua
   caindo em Fluxos.
-- [ ] **Passo 3:** descrição de Gatilhos: "O que faz uma automação começar."
+- [x] **Passo 3:** descrição de Gatilhos: "O que faz uma automação começar."
   Campanhas ganha subtítulo "Por frase ou link de anúncio. Para mandar mensagem a
   uma lista, use Transmissões." com link.
-- [ ] **Passo 4:** contadores na aba Gatilhos somam os três tipos; sub-abas têm os seus.
-- [ ] **Passo 5:** prints (acrescentar `fluxos-gatilhos` no script); commit `feat(automacoes): abas Fluxos, Gatilhos e Sequências`.
+- [x] **Passo 4:** contadores na aba Gatilhos somam os três tipos; sub-abas têm os seus.
+- [x] **Passo 5:** prints (acrescentar `fluxos-gatilhos` no script); commit `feat(automacoes): abas Fluxos, Gatilhos e Sequências`.
 
 ### Tarefa 5.2: "Nova automação" com as quatro origens [A04]
 
@@ -1472,3 +1472,10 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   `ModalFormulario` ganhou a variante `linha` (tamanho do `BotaoPerigo`).
   Sem print de antes da lista aberta (o de antes, `fluxos-sequencias`, é da
   aba fechada).
+- 23/09, tarefa 5.1: a resolução de aba é pura, `resolverAba`
+  (`src/core/abas-de-automacao.ts`). URL antiga **renderiza** (não
+  redireciona): `aba=palavras|eventos|campanhas` abre a sub-aba, com Gatilhos
+  aceso. `aba=templates` ainda abre a galeria em página (sem aba acesa na
+  barra além de Fluxos); o diálogo "Usar modelo" é da 5.2. Os prontos já
+  estavam no "+ Criar automação" (`NovaAutomacao`), então tirar a aba da barra
+  não escondeu nada.
