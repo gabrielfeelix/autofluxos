@@ -4,10 +4,15 @@
 > (inline, neste projeto não se implementa por subagente). Passos em checkbox
 > (`- [ ]`) para acompanhar.
 
-> **Andamento (23/set/2026):** Tasks 0 a 7 feitas e publicadas (`5cdd14a`,
-> `aa36ed2`, `85e0044`, `17b5d30`, `29ebe1f`, `eb798f8`). A 0092 está aplicada
-> em produção. Falta a Task 8 (ligar na conta da PCYES, que ainda não existe no
-> AutoFluxos, e provar pelo simulador) e a fase 2 inteira, que espera o token.
+> **Andamento (23/set/2026):** Tasks 0 a 7, 9, 10 e 11 feitas e publicadas.
+> A 0092 está aplicada em produção. Faltam: a **Task 10b** (card do produto:
+> ação nova no motor, `cta_url` no WhatsApp, `generic` no Instagram, registro
+> no Inbox e simulador), a **Task 8** (ligar na conta da PCYES, que ainda não
+> existe no AutoFluxos) e a **Task 12** (provar com o token real e corrigir os
+> nomes de ACL do guia). A tela não foi vista renderizada: o painel pede login.
+> Desvio da Task 10: não há alerta automático de token recusado; o bot cai
+> para a fase 1 em silêncio e a tela mostra o estado salvo, não um teste ao
+> vivo.
 > O teste de integração de `repos/lojas.ts` está escrito e não rodou: o Docker
 > está fora nesta máquina.
 

@@ -2,7 +2,13 @@ import { notFound } from 'next/navigation'
 import { AjustesShell } from '@/components/design/ajustes-shell'
 import { Trilha } from '@/components/design/trilha'
 import { LojaMagento } from '@/components/cliente/loja-magento'
-import { acaoDesligarLoja, acaoLigarLoja, acaoTestarLoja } from '@/server/acoes-loja'
+import {
+  acaoConectarToken,
+  acaoDesconectarToken,
+  acaoDesligarLoja,
+  acaoLigarLoja,
+  acaoTestarLoja,
+} from '@/server/acoes-loja'
 import { acharCliente } from '@/server/repos/clientes'
 import { lojaDaConta } from '@/server/repos/lojas'
 
@@ -43,11 +49,25 @@ export default async function Pagina({
         </p>
 
         <LojaMagento
-          inicial={loja ? { endereco: loja.endereco, ativa: loja.ativa, verificadaEm: loja.verificadaEm } : null}
+          inicial={
+            loja
+              ? {
+                  endereco: loja.endereco,
+                  ativa: loja.ativa,
+                  verificadaEm: loja.verificadaEm,
+                  tokenConectado: loja.estoqueExato !== 'desligado',
+                }
+              : null
+          }
           fluxosHref={`/clientes/${cliente.id}/fluxos`}
           testar={acaoTestarLoja.bind(null, cliente.id)}
           ligar={acaoLigarLoja.bind(null, cliente.id)}
           desligar={acaoDesligarLoja.bind(null, cliente.id)}
+          conectarToken={acaoConectarToken.bind(null, cliente.id)}
+          desconectarToken={acaoDesconectarToken.bind(null, cliente.id)}
+          // O guia mora no repositório público, e é o que se manda ao técnico
+          // da loja: ele não tem acesso ao painel.
+          guiaHref="https://github.com/gabrielfeelix/autofluxos/blob/main/docs/GUIA-MAGENTO-LOJISTA.md"
         />
       </main>
     </AjustesShell>

@@ -14,7 +14,7 @@ import type { ResultadoDoTeste } from '@/server/acoes-loja'
  * o endereço era de outra loja ou que o preço vem errado.
  */
 
-type Inicial = { endereco: string; ativa: boolean; verificadaEm: string | null } | null
+type Inicial = { endereco: string; ativa: boolean; verificadaEm: string | null; tokenConectado: boolean } | null
 
 const real = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 
@@ -51,15 +51,21 @@ function Amostra({ produtos }: { produtos: ProdutoDaLoja[] }) {
 export function LojaMagento({
   inicial,
   fluxosHref,
+  guiaHref,
   testar,
   ligar,
   desligar,
+  conectarToken,
+  desconectarToken,
 }: {
   inicial: Inicial
   fluxosHref: string
+  guiaHref: string
   testar: (endereco: string, termo: string) => Promise<ResultadoDoTeste>
   ligar: (endereco: string, termo: string) => Promise<{ ok: true } | { ok: false; motivo: string }>
   desligar: () => Promise<{ ok: true } | { ok: false; motivo: string }>
+  conectarToken: (token: string, sku: string) => Promise<{ ok: true; via: string } | { ok: false; motivo: string }>
+  desconectarToken: () => Promise<{ ok: true } | { ok: false; motivo: string }>
 }) {
   const [endereco, setEndereco] = useState(inicial?.endereco ?? '')
   const [termo, setTermo] = useState('')
@@ -67,6 +73,33 @@ export function LojaMagento({
   const [ativa, setAtiva] = useState(inicial?.ativa ?? false)
   const [erro, setErro] = useState<string | null>(null)
   const [pendente, iniciar] = useTransition()
+  const [token, setToken] = useState('')
+  const [tokenConectado, setTokenConectado] = useState(inicial?.tokenConectado ?? false)
+  const [erroDoToken, setErroDoToken] = useState<string | null>(null)
+  // O produto de prova do token é o primeiro da amostra: só existe depois de
+  // testar a loja nesta visita, e é de propósito, para provar o token num SKU
+  // que acabou de responder.
+  const skuDeProva = resultado?.ok ? (resultado.amostra[0]?.produtoId ?? '') : ''
+
+  function aoConectarToken() {
+    setErroDoToken(null)
+    iniciar(async () => {
+      const r = await conectarToken(token, skuDeProva)
+      if (r.ok) {
+        setTokenConectado(true)
+        setToken('')
+      } else setErroDoToken(r.motivo)
+    })
+  }
+
+  function aoDesconectarToken() {
+    setErroDoToken(null)
+    iniciar(async () => {
+      const r = await desconectarToken()
+      if (r.ok) setTokenConectado(false)
+      else setErroDoToken(r.motivo)
+    })
+  }
 
   // Mudou o endereço ou o produto depois de testar: o teste deixou de valer
   // para o que está escrito, e o botão de ligar some até testar de novo.
@@ -193,6 +226,70 @@ export function LojaMagento({
 
         {erro && <p className="mt-3 text-[12.5px] leading-5 text-perigo">{erro}</p>}
       </div>
+
+      {ativa && (
+        <section className="mt-8 border-t border-line pt-6">
+          <h2 className="text-[15px] font-bold tracking-[-0.01em]">Foto e estoque exato (opcional)</h2>
+          <p className="mt-1 mb-4 max-w-[600px] text-[13px] leading-6 text-muted">
+            Com o token de administrador da loja, o bot mostra a <strong className="text-soft">foto real</strong>{' '}
+            do produto e diz quantas unidades restam. Este acesso é usado só para ler: o AutoFluxos não cria,
+            altera nem apaga nada na loja, e a loja pode revogar quando quiser em Sistema › Integrações.
+          </p>
+
+          <div className="app-card px-5 py-4">
+            {tokenConectado ? (
+              <>
+                <p className="text-[13px] font-bold text-ok">Token conectado</p>
+                <p className="mt-1 text-[12.5px] leading-5 text-muted">
+                  Se a loja revogar o token, o bot volta sozinho a dizer só se tem ou não tem.
+                </p>
+                <button
+                  type="button"
+                  onClick={aoDesconectarToken}
+                  disabled={pendente}
+                  className="app-secondary-button mt-3 px-[14px] py-2 text-[12.5px] disabled:opacity-60"
+                >
+                  Desconectar
+                </button>
+              </>
+            ) : (
+              <>
+                <label className="block">
+                  <span className="mb-1.5 block text-[12.5px] font-bold text-soft">Token de acesso</span>
+                  <span className="mb-2 block text-[11.5px] leading-4 text-dim">
+                    Quem gera é a loja.{' '}
+                    <a href={guiaHref} target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-primary">
+                      Passo a passo para mandar ao responsável
+                    </a>
+                    .
+                  </span>
+                  <input
+                    type="password"
+                    autoComplete="off"
+                    value={token}
+                    onChange={(e) => setToken(e.target.value)}
+                    className="app-field px-3.5 py-2.5 text-[13px]"
+                  />
+                </label>
+                {skuDeProva === '' && (
+                  <p className="mt-2 text-[11.5px] leading-4 text-dim">
+                    Teste a conexão da loja acima primeiro: o token é provado num produto que ela acabou de mostrar.
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={aoConectarToken}
+                  disabled={pendente || token.trim() === '' || skuDeProva === ''}
+                  className="app-primary-button mt-3 px-[18px] py-2.5 text-[13px] disabled:opacity-60"
+                >
+                  {pendente ? 'Conferindo…' : 'Testar e salvar'}
+                </button>
+              </>
+            )}
+            {erroDoToken && <p className="mt-3 text-[12.5px] leading-5 text-perigo">{erroDoToken}</p>}
+          </div>
+        </section>
+      )}
     </div>
   )
 }

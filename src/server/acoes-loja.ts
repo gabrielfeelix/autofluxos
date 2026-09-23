@@ -3,8 +3,10 @@
 import { revalidatePath } from 'next/cache'
 import { normalizarEndereco, type ProdutoDaLoja } from '@/core/loja'
 import { lojaMagento } from '@/loja/magento'
+import { lojaAdmin } from '@/loja/magento-admin'
 import { exigirCapacidade, recusou } from './permissoes'
-import { ligarLoja, salvarLoja } from './repos/lojas'
+import { apagarConexao, criarConexao } from './repos/conexoes'
+import { desligarEstoqueExato, ligarEstoqueExato, ligarLoja, lojaDaConta, salvarLoja } from './repos/lojas'
 
 /**
  * A tela da loja Magento: testar, ligar, desligar.
@@ -106,4 +108,76 @@ export async function acaoDesligarLoja(clienteId: string): Promise<{ ok: true } 
   const r = await ligarLoja(clienteId, false)
   revalidatePath(`/clientes/${clienteId}/ajustes/integracoes`)
   return r
+}
+
+/**
+ * Conecta o token de administrador: foto real e estoque exato.
+ *
+ * **O token é conferido na loja antes de tocar o cofre.** Se a loja recusar,
+ * nada é gravado e o valor morre com esta requisição. O token nunca volta em
+ * retorno nenhum desta ação, nem em mensagem de erro.
+ *
+ * O SKU de teste é o primeiro produto da amostra que a tela mostrou: provar o
+ * token num produto que existe é o que distingue "token ruim" de "SKU errado".
+ */
+export async function acaoConectarToken(
+  clienteId: string,
+  tokenDigitado: string,
+  skuDeTeste: string,
+): Promise<{ ok: true; via: 'msi' | 'legado' } | { ok: false; motivo: string }> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return { ok: false, motivo: acesso.erro ?? 'sem permissão' }
+
+  const token = tokenDigitado.trim()
+  if (token.length < 20) return { ok: false, motivo: 'cole o Token de acesso inteiro, como o Magento mostrou' }
+  if (skuDeTeste.trim() === '') return { ok: false, motivo: 'teste a loja antes, para termos um produto de prova' }
+
+  const loja = await lojaDaConta(clienteId)
+  if (!loja || !loja.ativa) return { ok: false, motivo: 'ligue a loja antes de conectar o token' }
+  if (loja.conexaoId) return { ok: false, motivo: 'já há um token conectado; desconecte antes de trocar' }
+
+  const admin = lojaAdmin({ endereco: loja.endereco, credencial: { tipo: 'bearer', campo: null, valor: token } })
+  const descoberta = await admin.descobrir(skuDeTeste.trim())
+  if (!descoberta.ok) {
+    return {
+      ok: false,
+      motivo:
+        descoberta.motivo === 'o token foi recusado pela loja'
+          ? 'a loja recusou o token. Confira se copiou o Token de acesso (não o Consumer Key) e se a opção de usar como Bearer está ligada.'
+          : descoberta.motivo,
+    }
+  }
+
+  const conexao = await criarConexao({
+    clienteId,
+    nome: 'Magento (somente leitura)',
+    tipo: 'bearer',
+    valor: token,
+  })
+  await ligarEstoqueExato(clienteId, {
+    conexaoId: conexao.id,
+    via: descoberta.valor.via,
+    estoqueId: descoberta.valor.estoqueId,
+  })
+
+  revalidatePath(`/clientes/${clienteId}/ajustes/integracoes/magento`)
+  return { ok: true, via: descoberta.valor.via }
+}
+
+/**
+ * Desconecta o token. Nessa ordem, e a ordem é a regra da 0092: primeiro zera
+ * o estoque exato, depois apaga a Conexão (e o gatilho da 0006 apaga o segredo
+ * no Vault). A inversa esbarra no check `lojas_estoque_exige_token`.
+ *
+ * Não toca a loja: revogar do lado de lá é o lojista, em Sistema > Integrações.
+ */
+export async function acaoDesconectarToken(clienteId: string): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return { ok: false, motivo: acesso.erro ?? 'sem permissão' }
+
+  const { conexaoId } = await desligarEstoqueExato(clienteId)
+  if (conexaoId) await apagarConexao(conexaoId, clienteId)
+
+  revalidatePath(`/clientes/${clienteId}/ajustes/integracoes/magento`)
+  return { ok: true }
 }
