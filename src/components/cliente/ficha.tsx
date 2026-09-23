@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { FormularioSalvar, type EstadoSalvar } from '@/components/design/formulario-salvar'
 import { LogoDoCliente } from '@/components/design/logo-cliente'
 import type { Cliente } from '@/server/repos/clientes'
+import { telefoneLegivel } from '@/core/contatos/telefone'
 
 /**
  * A ficha do cliente: lê fechada, edita quando pedem.
@@ -103,7 +104,7 @@ export function FichaDoCliente({
           <LogoDoCliente cliente={cliente} tamanho={72} />
           <dl className="grid min-w-0 flex-1 grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
             <Leitura rotulo="Quem responde" valor={cliente.responsavel} />
-            <Leitura rotulo="Telefone" valor={cliente.telefone} />
+            <Leitura rotulo="Telefone" valor={cliente.telefone ? telefoneLegivel(cliente.telefone) : cliente.telefone} />
             <Leitura rotulo="E-mail" valor={cliente.email} />
             <Leitura rotulo="CNPJ" valor={cliente.cnpj} />
             <Leitura rotulo="Observações" valor={cliente.observacoes} largo />

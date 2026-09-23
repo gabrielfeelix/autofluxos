@@ -6,6 +6,8 @@
  * qual caso quebrou. A tela só desenha o que sai daqui.
  */
 
+import { telefoneLegivel } from './contatos/telefone'
+
 /** O que a tela precisa saber de um número, vindo de `coexistenciaDoCliente`. */
 export type EstadoNaTela = {
   isOnBizApp?: boolean | null
@@ -189,8 +191,10 @@ export function identidadeNaTela(
   const telefone = estado?.displayPhoneNumber?.trim() || telefoneDoCanal?.trim()
   if (!telefone) return { titulo: id, abaixo: null }
 
+  // O webhook entrega só dígitos (`554474007438`); a tela mostra como se
+  // escreve telefone no Brasil. Número de fora atravessa como veio.
   const nome = estado?.verifiedName?.trim()
-  return { titulo: telefone, abaixo: nome ? `${nome} · ${id}` : id }
+  return { titulo: telefoneLegivel(telefone), abaixo: nome ? `${nome} · ${id}` : id }
 }
 
 /**

@@ -264,13 +264,18 @@ describe('identidadeNaTela', () => {
         { displayPhoneNumber: '+55 11 91100-1414', verifiedName: 'Academia' },
         '110549275215531',
       ),
-    ).toEqual({ titulo: '+55 11 91100-1414', abaixo: 'Academia · 110549275215531' })
+    ).toEqual({ titulo: '+55 (11) 91100-1414', abaixo: 'Academia · 110549275215531' })
   })
 
   it('sem nome verificado, o id fica sozinho embaixo', () => {
     expect(
       identidadeNaTela({ displayPhoneNumber: '+55 11 91100-1414' }, '110549275215531'),
-    ).toEqual({ titulo: '+55 11 91100-1414', abaixo: '110549275215531' })
+    ).toEqual({ titulo: '+55 (11) 91100-1414', abaixo: '110549275215531' })
+  })
+
+  it('o telefone cru do webhook sai formatado, com DDI e DDD', () => {
+    expect(identidadeNaTela(undefined, '1301107846409860', '554474007438').titulo).toBe('+55 (44) 7400-7438')
+    expect(identidadeNaTela(undefined, '1', '5544998775978').titulo).toBe('+55 (44) 99877-5978')
   })
 
   it('canal antigo, sem telefone guardado, volta a mostrar o id', () => {

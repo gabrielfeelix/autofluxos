@@ -1,5 +1,6 @@
 import { ImagemDaConversa } from '@/components/lead/visor-de-imagem'
 import type { AnexoDaMensagem, CartaoDeContato, Citada, LocalDaMensagem } from '@/server/repos/leads'
+import { telefoneLegivel } from '@/core/contatos/telefone'
 
 /**
  * O arquivo dentro da bolha, nas telas de Lead e de Inbox.
@@ -189,9 +190,9 @@ export function CartoesNaBolha({ cartoes }: { cartoes: CartaoDeContato[] }) {
                 <a
                   key={telefone}
                   href={`tel:${telefone.replace(/[^+\d]/g, '')}`}
-                  className="block font-mono text-[12px] text-primary hover:underline"
+                  className="block text-[12px] text-primary tabular-nums hover:underline"
                 >
-                  {telefone}
+                  {telefoneLegivel(telefone)}
                 </a>
               ))
             ) : (

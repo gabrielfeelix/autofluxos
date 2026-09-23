@@ -48,6 +48,7 @@ import {
 } from '@/server/acoes'
 import { Modal } from '@/components/design/modal'
 import { Caixa } from '@/components/design/caixa'
+import { telefoneLegivel } from '@/core/contatos/telefone'
 
 /**
  * O quadro (C1), redesenhado para funcionar como um quadro de verdade.
@@ -818,8 +819,8 @@ export function AdicionarContato({
                     <strong className="block truncate text-[12.5px] font-semibold">
                       {contato.nome}
                     </strong>
-                    <span className="block truncate font-mono text-[10.5px] text-dim">
-                      {contato.telefone}
+                    <span className="block truncate text-[10.5px] text-dim tabular-nums">
+                      {telefoneLegivel(contato.telefone)}
                     </span>
                   </span>
                 </label>
