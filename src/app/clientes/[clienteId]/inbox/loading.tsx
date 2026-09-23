@@ -1,4 +1,4 @@
-import { EsqueletoDoCliente } from '@/components/design/esqueleto-do-cliente'
+import { MioloCarregando } from '@/components/design/esqueleto-do-cliente'
 import { EsqueletoDeInbox } from '@/components/design/esqueleto'
 
 /**
@@ -16,10 +16,10 @@ import { EsqueletoDeInbox } from '@/components/design/esqueleto'
  */
 export default function Carregando() {
   return (
-    <EsqueletoDoCliente ativa="inbox">
+    <MioloCarregando>
       <div className="flex min-h-0 flex-1 flex-col p-3 md:p-4">
         <EsqueletoDeInbox />
       </div>
-    </EsqueletoDoCliente>
+    </MioloCarregando>
   )
 }

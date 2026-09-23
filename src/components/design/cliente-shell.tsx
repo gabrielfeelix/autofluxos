@@ -1,54 +1,27 @@
-import Link from 'next/link'
-import { Suspense } from 'react'
-import { acessoCompleto, filtroDoAcesso } from '@/server/permissoes'
-import { pode, resumoDoAcesso } from '@/core/permissoes'
-import { PainelVoce, PerfilDaSessao } from '@/components/conta/voce'
-import { contagensDaAgenda } from '@/server/repos/atividades'
-import { lerFiltroDaAgenda } from '@/core/atividades'
-import { ContadorDaAgenda } from '@/components/atividades/contador-da-agenda'
 import type { ReactNode } from 'react'
-import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
-import { FaixaDeSuporte } from '@/components/conta/faixa-de-suporte'
-import { NotificacoesDaFila } from '@/components/inbox/notificacoes-da-fila'
-import { acaoDefinirPresenca } from '@/server/acoes-conta'
+import { acessoCompleto } from '@/server/permissoes'
+import { pode } from '@/core/permissoes'
 import type { Cliente } from '@/server/repos/clientes'
 import { crmVisivel } from '@/server/repos/recursos'
-import { presencaDoUsuario } from '@/server/repos/usuarios'
-import { contasDoUsuario, ehAdminDaPlataforma } from '@/server/sessao'
-import { BarraLateral } from './barra-lateral'
-import { type AbaDoCliente, liberaSecao, rotuloDaSecao, secoesVisiveis } from './secoes-do-cliente'
+import { type AbaDoCliente, liberaSecao, rotuloDaSecao } from './secoes-do-cliente'
 import { FunilDesligado, SemAcesso } from './sem-acesso'
-import { LogoDoCliente } from './logo-cliente'
-import { MarcaDeAdmin } from './marca-de-admin'
-import { Marca } from './marca'
 
 /**
- * A moldura das telas do cliente: **sidebar à esquerda, não abas no topo.**
+ * O miolo das telas do cliente, e a conferência de quem pode ver a seção.
  *
- * A troca foi pedida pelo dono, e o motivo aparece quando a lista cresce: cinco
- * abas já não cabiam em 390px e rolavam na horizontal; onze (a contagem do
- * produto que serviu de referência) não cabem em lugar nenhum. Barra lateral
- * cresce para baixo, que é a direção em que sobra espaço.
+ * **A barra lateral não mora mais aqui.** Ela foi para
+ * `app/clientes/[clienteId]/layout.tsx` (`BarraDoCliente` + `MolduraDoCliente`),
+ * porque aqui ela era desenhada de novo a cada página e piscava em todo clique.
+ * O nome e a assinatura ficaram, para as telas não mudarem.
  *
- * **Os itens são os que têm tela.** O desenho da §2.1 do PLANO-SISTEMA lista
- * sete, e um deles (Campanhas) é Etapa B. A regra escrita no próprio plano,
- * a propósito de Quadros, vale para ele: *item de menu para tela que não existe
- * é promessa que a interface faz e o produto não cumpre*. Ele entra junto com a
- * frente que o constrói.
+ * **A conferência continua aqui, e não no layout.** Layout não roda de novo na
+ * navegação, e a documentação do Next é clara: conferir acesso só nele deixa a
+ * página seguinte passar sem pergunta. Esta função roda em toda página. O
+ * editor de fluxo, que não usa este miolo, chama a mesma conferência por conta
+ * própria.
  *
- * **Integrações saiu dessa lista e não volta.** Aquele desenho a previa como
- * sétimo item, e a decisão foi outra: ela é seção de Configurações. O primeiro
- * nível é trabalho diário (Inbox, Contatos, Quadros, Automações), e ligar um
- * canal é trabalho de uma vez só. Item permanente para tarefa episódica gasta a
- * única coisa escassa aqui, que é a posição fixa na tela de quem usa o produto
- * o dia inteiro. É também o que Intercom, HubSpot e Chatwoot fazem com o mesmo
- * punhado de conexões. O raciocínio está em `docs/PLANO-CONFIGURACOES.md` §1.1.
- *
- * **Continua sendo componente e não `layout.tsx`.** Como layout ele envolveria
- * também o editor de fluxo, que é tela cheia por natureza, e layout no Next
- * não se desliga num filho. O custo é passar `ativa` na mão, e é esse mesmo
- * custo que permite `ajustes/contexto`, `ajustes/whatsapp` e `ajustes/chaves`
- * acenderem "Configurações".
+ * `acessoCompleto` faz `exigirAcessoAoCliente` por dentro e traz as regras de
+ * capacidade, que decidem a tela de sem acesso (E7).
  */
 
 export type { AbaDoCliente } from './secoes-do-cliente'
@@ -62,30 +35,13 @@ export async function ClienteShell({
   ativa: AbaDoCliente
   children: ReactNode
 }) {
-  /**
-   * **A conferência de quem pode ver esta conta acontece aqui.**
-   *
-   * É o único ponto por onde todas as telas do cliente passam, o que a torna
-   * difícil de esquecer numa tela nova, e é por isso que ela mora na moldura,
-   * e não copiada em cada `page.tsx`. O editor de fluxo, que não usa moldura,
-   * chama a mesma função por conta própria.
-   *
-   * `acessoCompleto` faz `exigirAcessoAoCliente` por dentro e traz as regras
-   * de capacidade, que decidem o menu e a tela de sem acesso (E7).
-   */
   const acesso = await acessoCompleto(cliente.id)
-  const contas = acesso.sessao ? await contasDoUsuario(acesso.sessao.usuario.id) : []
-  const presenca = await presencaDoUsuario(acesso.sessao.usuario.id)
-  // O administrador da plataforma veio da lista de clientes e precisa do
-  // caminho de volta. O dono do negócio, não: para ele não existe "todos os
-  // clientes", existe a conta dele.
-  const podeVerTodosOsClientes = ehAdminDaPlataforma(acesso.sessao)
   /*
    * O CRM é opcional (§4.2), e quem responde é `crmVisivel`: ele considera o
    * interruptor da conta **e** a existência de funil, para não esconder da noite
    * para o dia a tela de quem já usa quadros.
    */
-  const mostraCrm = await crmVisivel(cliente.id)
+  const mostraCrm = ativa === 'quadros' ? await crmVisivel(cliente.id) : true
 
   /*
    * A rota direta de uma seção que a pessoa não pode usar mostra o motivo, e
@@ -103,187 +59,9 @@ export async function ClienteShell({
     children
   )
 
-  return (
-    <div className="flex min-h-screen flex-col md:h-screen md:min-h-[700px] md:flex-row md:overflow-hidden">
-      {/*
-        Grava no navegador quem é administrador, para o esqueleto da próxima
-        tela reservar o espaço do "‹ Todos os clientes" em vez de deixar a
-        barra saltar. Ver `MarcaDeAdmin`.
-      */}
-      <MarcaDeAdmin admin={podeVerTodosOsClientes} />
-      <PerfilDaSessao
-        inicial={{ nome: acesso.sessao.usuario.nome, imagem: acesso.sessao.usuario.imagem ?? null }}
-      >
-      <BarraLateral
-        marca={<Marca />}
-        identidadeNoCelular={
-          <>
-            <LogoDoCliente cliente={cliente} tamanho={26} />
-            <span className="max-w-[72px] truncate text-[12px] font-semibold min-[375px]:max-w-[110px]">{cliente.nome}</span>
-          </>
-        }
-        presenca={presenca ?? undefined}
-        conta={cliente.nome}
-        contaNoTopo={<SeletorDeConta cliente={cliente} outrasContas={contas.length} />}
-        voltar={
-          podeVerTodosOsClientes ? (
-            <Link
-              href="/painel"
-              className="hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11.5px] text-dim transition hover:text-primary md:mb-1.5 md:flex"
-            >
-              <span aria-hidden>‹</span> Todos os clientes
-            </Link>
-          ) : null
-        }
-        itens={secoesVisiveis({ crmVisivel: mostraCrm, regras: acesso.regras }).map((item) => ({
-          chave: item.chave,
-          rotulo: item.rotulo,
-          href: `/clientes/${cliente.id}${item.href}`,
-          icone: item.icone,
-          acesa: item.chave === ativa,
-          contador: item.chave === 'atividades' ? <Suspense fallback={null}><Pendencias clienteId={cliente.id} /></Suspense> : undefined,
-        }))}
-        rodape={
-          <PainelVoce
-            email={acesso.sessao.usuario.email}
-            papel={`${resumoDoAcesso(acesso.regras).perfil} · ${cliente.nome}`}
-            suporte={acesso.papel === null}
-            configuracoesHref={
-              liberaSecao(acesso.regras, 'ajustes') ? `/clientes/${cliente.id}/ajustes` : null
-            }
-            outrasContas={contas.length}
-          >
-            {presenca && <Presenca atual={presenca} />}
-
-            {/*
-              O aviso de fila vive **aqui**, e não só no Inbox.
-
-              Era o buraco do §3.10.1: o handoff acontecia e ninguém percebia, a
-              não ser que a pessoa estivesse com o Inbox aberto. Quem está
-              desenhando um fluxo ou conferindo contatos está no painel do mesmo
-              jeito, e é justamente quem dá para avisar de graça.
-            */}
-            <NotificacoesDaFila clienteId={cliente.id} compacto />
-          </PainelVoce>
-        }
-      />
-      </PerfilDaSessao>
-
-      <div className="relative min-w-0 flex-1 md:overflow-auto">
-        <FaixaDeImpersonacao />
-        <FaixaDeSuporte clienteId={cliente.id} />
-
-        {/*
-          A moldura **não** escreve título de página, e isso é diferente do que
-          ela fazia com as abas.
-          
-          Antes ela punha o nome do cliente como `h1` em toda tela, e metade das
-          telas já trazia o próprio: "Credenciais", "Contexto do negócio",
-          "Acervo". Dois `h1` por página é ruído para quem navega por leitor de
-          tela, e o título específico é sempre melhor que o genérico da seção.
-          Quem diz onde você está é o item aceso na barra; quem dá nome à página
-          é a página.
-        */}
-        <div className="app-page-enter flex min-h-full flex-col md:h-full">{conteudo}</div>
-      </div>
-    </div>
-  )
-}
-
-/**
- * A conta atual no topo da barra, e o caminho para as outras.
- *
- * Morava no rodapé; subiu quando o rodapé passou a ser da pessoa (7.5). Vira
- * link para o seletor só quando a pessoa tem mais de uma companhia. Um botão
- * que abre uma lista de um item é atrito puro, e conta única é o caso comum.
- */
-function SeletorDeConta({ cliente, outrasContas }: { cliente: Cliente; outrasContas: number }) {
-  const miolo = (
-    <>
-      <LogoDoCliente cliente={cliente} tamanho={24} />
-      <span className="min-w-0 flex-1 truncate text-[12.5px] font-semibold text-muted">{cliente.nome}</span>
-      {outrasContas > 1 && (
-        <span aria-hidden className="text-[11px] text-dim">
-          trocar
-        </span>
-      )}
-    </>
-  )
-
-  if (outrasContas > 1) {
-    return (
-      <Link
-        href="/contas"
-        title="Trocar de conta"
-        className="flex items-center gap-2 rounded-[10px] px-2 py-1.5 transition hover:bg-surface"
-      >
-        {miolo}
-      </Link>
-    )
-  }
-
-  return <div className="flex items-center gap-2 px-2 py-1.5">{miolo}</div>
-}
-
-/**
- * Disponível ou ausente.
- *
- * Fica ao lado da conta, no rodapé, e não escondido num menu de perfil: é um
- * estado que a pessoa precisa **ver sem procurar**. Quem esquece de voltar de
- * "ausente" some da lista de quem pode receber conversa, e some sem erro nenhum
- * aparecer em lugar nenhum.
- */
-function Presenca({ atual }: { atual: string }) {
-  const disponivel = atual === 'disponivel'
-
-  return (
-    <form action={acaoDefinirPresenca.bind(null, disponivel ? 'ausente' : 'disponivel')}>
-      <button
-        type="submit"
-        className="flex w-full items-center gap-2 rounded-[10px] px-2 py-2 text-left transition hover:bg-surface"
-      >
-        {/* Ponto **e** palavra: quem não distingue as duas cores lê o estado
-            do mesmo jeito (WCAG 1.4.1). */}
-        <span
-          aria-hidden
-          className={`size-2 shrink-0 rounded-full ${disponivel ? 'bg-emerald-400' : 'bg-dim'}`}
-        />
-        <span className="flex-1 text-[13px] font-semibold text-muted">
-          {disponivel ? 'Disponível' : 'Ausente'}
-        </span>
-        <span className="text-[11px] text-dim">trocar</span>
-      </button>
-    </form>
-  )
-}
-
-
-
-async function contarPendencias(clienteId: string) {
-  try {
-    const acesso = await acessoCompleto(clienteId)
-    // Mesma regra dos atalhos da agenda: o número do menu e os da tela batem.
-    return await contagensDaAgenda(
-      clienteId,
-      filtroDoAcesso(acesso, 'atender'),
-      acesso.sessao.usuario.id,
-      { ...lerFiltroDaAgenda({}), alcance: 'equipe' },
-      Date.now(),
-    )
-  } catch {
-    return null
-  }
-}
-
-async function Pendencias({ clienteId }: { clienteId: string }) {
-  const contagens = await contarPendencias(clienteId)
-  const quantidade = contagens ? contagens.vencidas + contagens.hoje : 0
-  if (!quantidade) return null
-  const recorte = contagens!.vencidas > 0 ? 'vencidas' : 'hoje'
-  return (
-    <ContadorDaAgenda
-      quantidade={quantidade}
-      destino={`/clientes/${clienteId}/atividades?recorte=${recorte}&alcance=equipe`}
-    />
-  )
+  /*
+   * A moldura **não** escreve título de página. Quem diz onde você está é o
+   * item aceso na barra; quem dá nome à página é a página.
+   */
+  return <div className="app-page-enter flex min-h-full flex-col md:h-full">{conteudo}</div>
 }

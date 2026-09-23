@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { GRUPOS, type TelaDeAjustes } from './itens-de-ajustes'
 export type { TelaDeAjustes } from './itens-de-ajustes'
 
@@ -19,7 +19,21 @@ const sinonimos: Partial<Record<TelaDeAjustes, string>> = {
   produtos: 'produtos servicos loja planilha',
 }
 
-export function MenuDeAjustes({ clienteId, ativa }: { clienteId?: string; ativa: TelaDeAjustes }) {
+const TELAS = new Set<string>(GRUPOS.flatMap((grupo) => grupo.itens.map((item) => item.chave)))
+
+/**
+ * A tela acesa pelo endereço: `/ajustes` é a visão geral, `/ajustes/<tela>/...`
+ * é a tela. O menu mora no `layout.tsx` de Configurações e não é desenhado de
+ * novo a cada clique, então não recebe mais `ativa` de cada página.
+ */
+function telaDoCaminho(caminho: string): TelaDeAjustes {
+  const tela = caminho.split('/ajustes/')[1]?.split('/')[0]
+  return tela && TELAS.has(tela) ? (tela as TelaDeAjustes) : 'inicio'
+}
+
+export function MenuDeAjustes({ clienteId, ativa: ativaRecebida }: { clienteId?: string; ativa?: TelaDeAjustes }) {
+  const caminho = usePathname()
+  const ativa = ativaRecebida ?? telaDoCaminho(caminho)
   const [busca, setBusca] = useState('')
   const router = useRouter()
   const endereco = (chave: TelaDeAjustes) => `/clientes/${clienteId}/ajustes${chave === 'inicio' ? '' : `/${chave}`}`

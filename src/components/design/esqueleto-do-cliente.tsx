@@ -28,3 +28,14 @@ export function EsqueletoDoCliente({ ativa, children }: { ativa: AbaDoCliente; c
     <div className="relative min-w-0 flex-1 md:overflow-auto"><div className="flex min-h-full flex-col md:h-full">{children}</div></div>
   </div>
 }
+
+/**
+ * O miolo de uma tela da conta enquanto ela vem, **sem barra**.
+ *
+ * A barra mora no `layout.tsx` e continua na tela durante a navegação; o
+ * `loading.tsx` de cada seção só troca o miolo. Mesmas classes do miolo pronto
+ * (`ClienteShell`), para a altura não pular quando a tela chega.
+ */
+export function MioloCarregando({ children }: { children: ReactNode }) {
+  return <div className="flex min-h-full flex-col md:h-full">{children}</div>
+}
