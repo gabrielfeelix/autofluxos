@@ -164,7 +164,7 @@ A maior que sobrou. Nada dela existe. O desenho está no plano (seção "Task
 ### C. Task 8: ligar na PCYES e provar
 
 Depende de a conta da PCYES existir. Enquanto isso, dá para testar na conta
-"Cliente 00 — Gabriel" (`4d26cf4c-7c49-485a-8819-68da3931c530`), **com o
+"Cliente 00, do Gabriel" (`4d26cf4c-7c49-485a-8819-68da3931c530`), **com o
 Gabriel sabendo**. Passos no plano. O teste de Cloudflare/Vercel (item 2 da
 lista de não provados) acontece aqui.
 

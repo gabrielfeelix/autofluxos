@@ -1,4 +1,4 @@
-# Handoff — 19/ago/2026, atualizado em 04/set
+# Handoff: 19/ago/2026, atualizado em 04/set
 
 > **Magento / cross-sell da PCYES (23/set/2026):** o que falta está em
 > [HANDOFF-23-SET-MAGENTO.md](HANDOFF-23-SET-MAGENTO.md).
@@ -8,7 +8,7 @@
 > Ele tem o trabalho em aberto (a virada de aquisição para relacionamento), o
 > estado do banco de produção e a pesquisa que o dono pediu. Este documento aqui
 > continua valendo para a Meta, o Instagram e a infraestrutura, que é o que ele
-> cobre — mas o que está em movimento hoje está no outro.
+> cobre, mas o que está em movimento hoje está no outro.
 
 Para quem pegar este projeto agora, humano ou agente. Leia isto inteiro, depois
 [PLANO-SISTEMA.md](PLANO-SISTEMA.md), e só então código. As decisões de produto
@@ -27,7 +27,7 @@ perguntas: o que entrou, o que trava, e quem destrava cada coisa.
 foram encontrados e corrigidos **quatro defeitos no canal de Instagram** que
 teriam derrubado o produto mesmo depois da aprovação.
 
-**Na parte da tarde**, a fila do que dependia de código foi zerada — quatro
+**Na parte da tarde**, a fila do que dependia de código foi zerada, quatro
 commits, todos em produção, listados em [0.4](#04-o-que-falta). O maior deles é
 o `subscribed_apps`: sem ele, a aprovação chegaria e nenhuma conta de cliente
 receberia mensagem, pelo mesmo tipo de silêncio dos quatro defeitos da manhã.
@@ -36,14 +36,14 @@ O gatilho foi banal: gravar o vídeo do app review. A conta conectava, o direct
 saía do celular, e o Inbox ficava vazio. Cada defeito escondia o seguinte, e
 nenhum deles aparecia em log, alerta ou banco.
 
-### 0.1 Os quatro defeitos do Instagram — todos corrigidos e em produção
+### 0.1 Os quatro defeitos do Instagram, todos corrigidos e em produção
 
 | Commit | O que estava errado |
 |---|---|
 | `1081da9` | A assinatura do webhook era conferida só com `META_APP_SECRET`. O Direct é assinado com a chave do **app do Instagram** (`AutoFluxos-IG`, id `2275979176586034`), que é outro par. Todo evento levava **401** na porta. |
-| `3ebed53` | `trocarCodigoPorConta` gravava `curto.user_id` — o id com escopo do app, `27914774691477704`. O webhook manda em `recipient.id` o id da **conta profissional**, `17841400183953038`. O `/me` já era chamado e o `user_id` era lido e descartado na mesma linha. |
+| `3ebed53` | `trocarCodigoPorConta` gravava `curto.user_id`, o id com escopo do app, `27914774691477704`. O webhook manda em `recipient.id` o id da **conta profissional**, `17841400183953038`. O `/me` já era chamado e o `user_id` era lido e descartado na mesma linha. |
 | `b5b1d61` + `5c5fef8` | Canal não encontrado e corpo fora do formato saíam com `continue` mudo. Sem esses dois alertas o quarto defeito não teria sido encontrado. |
-| `e474672` | **O que realmente segurava tudo.** `entry[].messaging` mistura a mensagem com avisos (`read`, `seen`, reação) que não têm `sender` nem `recipient`. O schema exigia os dois em todos os itens, e o zod reprova o payload inteiro quando um item falha — um aviso de leitura no mesmo lote **descartava a mensagem junto**, com 200 na resposta. |
+| `e474672` | **O que realmente segurava tudo.** `entry[].messaging` mistura a mensagem com avisos (`read`, `seen`, reação) que não têm `sender` nem `recipient`. O schema exigia os dois em todos os itens, e o zod reprova o payload inteiro quando um item falha, um aviso de leitura no mesmo lote **descartava a mensagem junto**, com 200 na resposta. |
 
 O corpo que provou os defeitos 2 e 4 de uma vez, colhido pelo alerta do
 `5c5fef8`:
@@ -56,7 +56,7 @@ O corpo que provou os defeitos 2 e 4 de uma vez, colhido pelo alerta do
 `entry.0.messaging.0.sender: Required`.
 
 Também entrou `c5ed171`, que loga o corpo cru quando o webhook não produz
-mensagem nenhuma — diagnóstico temporário, dá para remover depois da aprovação.
+mensagem nenhuma, diagnóstico temporário, dá para remover depois da aprovação.
 
 ### 0.2 O que a análise da Meta está esperando
 
@@ -66,7 +66,7 @@ Submetida em **04/set/2026**, prazo de até 20 dias. Seis permissões:
 `business_management`, `public_profile`.
 
 Enquanto o acesso for **Standard**, o webhook `messages` só entrega eventos da
-própria conta conectada — foi por isso que o `read` chegava e a mensagem de
+própria conta conectada, foi por isso que o `read` chegava e a mensagem de
 outra pessoa nunca chegou. Isso está escrito na justificativa da permissão de
 mensagens, e não é motivo de rejeição.
 
@@ -79,7 +79,7 @@ revisor.meta@4yu.com.br / RevisorMeta2026
 
 É dona do cliente `Estúdio de exemplo` (`22ee56d8-48e3-4763-a5af-d863db5eee62`).
 
-### 0.3 O que o dono já resolveu — não refaça
+### 0.3 O que o dono já resolveu, não refaça
 
 Toda a lista de bloqueios do handoff anterior saiu do caminho em 04/set:
 
@@ -104,7 +104,7 @@ Toda a lista de bloqueios do handoff anterior saiu do caminho em 04/set:
 ### 0.4 O que falta
 
 **Depende da Meta, não de nós:** a aprovação. Conferida pela API em 04/set às
-12h35 — `submission_status: PENDING`, `review_completed_time: null`, e as seis
+12h35, `submission_status: PENDING`, `review_completed_time: null`, e as seis
 permissões da submissão com `access_level: none`. Sem Advanced Access, o
 Embedded Signup do WhatsApp embarca só números da própria conta, e o Direct só
 entrega eventos da conta conectada.
@@ -115,7 +115,7 @@ entrega eventos da conta conectada.
   `true` quando o Advanced Access sair. Antes disso, ligar o canal faria alguém
   desenhar um fluxo inteiro para descobrir na publicação que não há conta de
   cliente para ligar.
-- **`c5ed171` é diagnóstico temporário** — o `console.error` com o corpo cru
+- **`c5ed171` é diagnóstico temporário**, o `console.error` com o corpo cru
   quando o webhook não produz mensagem. Pode sair depois da aprovação; até lá é
   a única janela para o que a Meta manda de verdade.
 
@@ -126,9 +126,9 @@ entrega eventos da conta conectada.
 | `34824a9` | `subscribed_apps` no fim do OAuth. Autorizar entrega o token e **não** inscreve a conta no webhook: quem conectasse pelo OAuth ficaria verde na tela e com o Inbox vazio para sempre. Vai depois de o canal estar guardado; falhar só nela troca o aviso da tela (`resultado=sem_webhook`) e grava alerta, sem descartar a conexão. |
 | `98e14e6` | `acaoVincularMembro` lê o papel na conta antes. Igual = nada a fazer; diferente = troca de papel. O `addMember` também é protegido, e quem decide é o banco depois do erro, não o texto do erro do plugin. |
 | `c2e3bea` | Os limites de `canais.ts` alimentam o `validar()`, por `Capacidades.canal`. O nome do canal entra nas mensagens junto com o número. Ligar canal novo passa a ser duas coisas em vez de três. |
-| `db8fa3a` | O nome de quem manda direct, por `GET /{igsid}` — uma consulta por pessoa, com cache de processo. Junto: `acharOuCriarContato` parou de escrever `nome = null` por cima do nome que já estava lá. |
+| `db8fa3a` | O nome de quem manda direct, por `GET /{igsid}`, uma consulta por pessoa, com cache de processo. Junto: `acharOuCriarContato` parou de escrever `nome = null` por cima do nome que já estava lá. |
 
-**A renovação automática do token já existia** — `f7561e6`, `renovarTokensDoInstagram()`
+**A renovação automática do token já existia**, `f7561e6`, `renovarTokensDoInstagram()`
 em `server/instagram/renovacao.ts`, chamada pelo cron diário
 `/api/manutencao/retencao` (07:00, `vercel.json`). O handoff anterior dizia que
 `renovarToken()` não era chamada por ninguém; era, e é. Confira o código antes
@@ -136,19 +136,19 @@ de refazer.
 
 **Depende do dono:**
 
-- Verificar o e-mail `contato@4yu.com.br` — `contact_email_verified` continua
+- Verificar o e-mail `contato@4yu.com.br`, `contact_email_verified` continua
   `false`. Não bloqueou a submissão.
 - Trocar a senha do usuário `revisor.meta@4yu.com.br` (ou apagá-lo) depois da
   aprovação. A senha está em texto puro no formulário da Meta e no `.env`.
 
-### 0.4.1 As armadilhas já pagas — não redescubra
+### 0.4.1 As armadilhas já pagas, não redescubra
 
 - **Websocket direto no Supabase Realtime está fechado.** A chave que assina o
   JWT do projeto é **ES256** e a metade privada fica dentro do Supabase: não há
   como emitir token de canal privado, e o produto autentica com Better Auth,
   não com Supabase Auth. Canal público entregaria a quem soubesse o uuid do
   cliente *quando* aquele negócio recebe mensagem. Fazer funcionar exigiria
-  rotacionar a chave do projeto para HS256 — mudança global num banco
+  rotacionar a chave do projeto para HS256, mudança global num banco
   compartilhado com a Verandi e sem backup. Por isso é SSE. Está escrito por
   extenso no cabeçalho de
   `app/api/clientes/[clienteId]/inbox/stream/route.ts`.
@@ -174,7 +174,7 @@ de refazer.
   tempo até ser removida. A assinatura que vale é a da tela do produto.
 - **A Meta entrega o webhook e responde "sucesso" no botão Teste mesmo quando o
   produto não funciona.** O teste do painel usa o formato `changes/field/value`,
-  e o Direct real usa `entry[].messaging[]` — passar no teste não prova nada
+  e o Direct real usa `entry[].messaging[]`, passar no teste não prova nada
   sobre a mensagem de verdade.
 - **O `VERCEL_TOKEN` não tem escopo de logs.** `runtime-logs`, `observability` e
   o MCP da Vercel devolvem 403 ou 404. Para ver requisição chegando, ou é a UI
@@ -183,11 +183,11 @@ de refazer.
   dizia que `0030` e `0031` esperavam autorização; estavam aplicadas havia
   semanas. Confira no banco, sempre.
 - **Nem sobre o código.** Este mesmo handoff dizia, em 04/set de manhã, que
-  `renovarToken()` não era chamada por ninguém — a rotina inteira estava
+  `renovarToken()` não era chamada por ninguém, a rotina inteira estava
   escrita, testada e no cron desde `f7561e6`. Um `grep` custa segundos e vale
   mais que qualquer parágrafo daqui.
 
-### 0.4.2 A correção que vale mais que tudo acima — feita na `0041`
+### 0.4.2 A correção que vale mais que tudo acima, feita na `0041`
 
 O §6 de [BANCO-COMPARTILHADO.md](BANCO-COMPARTILHADO.md) afirmava que as tabelas
 de `public` não têm `grant` para `anon`/`authenticated`. Era falso: 13 dos 42
@@ -204,13 +204,13 @@ protegida por RLS**, e a conferência do banco em 03/set achou o resto:
 - as 21 funções de `public` eram executáveis por `anon` e `authenticated`,
   **inclusive as que uma migration já tentara fechar**. `revoke execute ...
   from anon, authenticated` não faz nada enquanto o `GRANT EXECUTE TO PUBLIC`
-  implícito do Postgres continua de pé — os dois herdam de `PUBLIC` o que se
+  implícito do Postgres continua de pé, os dois herdam de `PUBLIC` o que se
   revoga deles. A `0026` revogou `pegar_tarefas` dos dois e ela seguiu
   executável pelos dois. Só a `0040` acertou a forma;
 - `limpar_segredo_da_conexao` é `security definer`, apaga de `vault.secrets` e
   estava aberta. É gêmea da `apagar_token_do_canal`, que a `0040` fechou. Hoje
   não é alcançável por RPC porque o PostgREST não expõe função que retorna
-  `trigger` — uma garantia de outro projeto, que pode mudar sem nos avisar.
+  `trigger`, uma garantia de outro projeto, que pode mudar sem nos avisar.
 
 A `0041` fecha `public` por padrão: `anon` e `authenticated` perdem tudo
 (tabela, view, sequence, função), `service_role` recebe de volta o que precisa,
@@ -218,7 +218,7 @@ e o default do papel `postgres` no schema passa a criar objeto **fechado**. A
 regra deixa de depender de alguém lembrar.
 
 Continua valendo escrever `revoke all on function ... from public, anon,
-authenticated` em função criada fora de `public` — o default corrigido só
+authenticated` em função criada fora de `public`, o default corrigido só
 alcança este schema.
 
 ---
@@ -230,7 +230,7 @@ Três commits (`746d398`, `489eed5`, `12d306e`) mais o `9b77184`, todos saídos 
 cinco donos de negócio montando a automação da própria empresa (farmácia com
 delivery, estúdio de pilates, produtora de vídeo, petshop, imobiliária) e três
 leigos avaliando se a tela se explica sozinha (dona de salão, dono de pizzaria,
-secretária de clínica). Os cenários e relatos não estão no repositório — o que
+secretária de clínica). Os cenários e relatos não estão no repositório, o que
 importa deles está aqui e nos commits.
 
 **O que o produto passou a permitir**
@@ -238,11 +238,11 @@ importa deles está aqui e nos commits.
 - **A foto pode ser a resposta.** A pergunta ganhou `aceitaMidia` (o interruptor
   que faz nascer a saída `midia`, "mandou arquivo") e `salvarMidiaEm` (a
   referência do anexo). Antes, qualquer imagem, áudio ou documento ia para uma
-  pessoa com o motivo "o bot só lê texto" — e quem atendia não sabia que aquilo
+  pessoa com o motivo "o bot só lê texto", e quem atendia não sabia que aquilo
   era uma receita. Sem a saída ligada, tudo se comporta como antes. O webhook
   passou a carregar `id` e `caption` do anexo, e o simulador ganhou o botão 📷.
 - **A condição compara número.** Entraram `maior` e `menor`, e o campo de valor
-  passou a interpolar — dá para comparar `{{orcamento}}` com `{{preco}}`. Lado
+  passou a interpolar, dá para comparar `{{orcamento}}` com `{{preco}}`. Lado
   que não é número dá falso, nunca ordem alfabética.
 - **Opção desenhada à mão tem valor técnico** (`opcao.valor`): a pessoa lê "Vídeo
   institucional", a API recebe `institucional`. Antes custava uma condição por
@@ -255,7 +255,7 @@ importa deles está aqui e nos commits.
 **Avisos falsos que treinavam a ignorar o painel de avisos**
 
 `{{nome}}` e `{{telefone}}` são preenchidas por `varsIniciais()` em toda conversa
-e eram acusadas de não existir — inclusive dentro dos presets do produto, que já
+e eram acusadas de não existir, inclusive dentro dos presets do produto, que já
 vêm com `{{telefone}}` escrito. `salvarPadraoEm` tinha o mesmo problema. As
 nativas agora saem de `VARIAVEIS_NATIVAS`, em `core/contatos/vars-iniciais.ts`,
 lida pelo validador e pelo editor. Também entrou `CHAVE_SIMPLES`: `{nome}` de uma
@@ -263,7 +263,7 @@ chave só saía literal na conversa e nada avisava.
 
 **Segurança: host de mídia vindo de variável**
 
-A regra continua — o host não pode vir do que a pessoa digita no WhatsApp, senão
+A regra continua, o host não pode vir do que a pessoa digita no WhatsApp, senão
 quem conversa escolhe de qual servidor a Meta baixa. A exceção aberta é estreita:
 quando **todas** as variáveis do host vêm de mapeamento de bloco `http`, quem
 escolheu o endereço foi o dono do fluxo no editor. Uma variável de origem mista
@@ -277,13 +277,13 @@ Dez pontos de `?` no painel abrindo a seção certa da Ajuda em aba nova; "Corpo
 (JSON)" virou "O que mandar para o sistema" com exemplo dentro do campo;
 cabeçalhos, credencial, método, endereço, valor da condição e etapa do quadro
 ganharam a frase que faltava; "campo da resposta" virou "como o sistema chama"; e
-o preset "Webhook · avisar um sistema seu" virou **"O meu próprio sistema"** —
+o preset "Webhook · avisar um sistema seu" virou **"O meu próprio sistema"** , 
 todos os outros presets têm nome de produto conhecido, e quem tinha sistema feito
 sob medida procurava o próprio sistema na lista, não achava, e concluía que o
 produto não servia.
 
 `npm test` → **922 passando, 29 pulados**. `typecheck`, `lint` e `build` limpos.
-Deploy conferido: `12d306e` READY em produção. **Nenhuma migration** — nada aqui
+Deploy conferido: `12d306e` READY em produção. **Nenhuma migration**, nada aqui
 tocou banco, e a próxima a escrever continua sendo a `0038`.
 
 ---
@@ -293,19 +293,19 @@ tocou banco, e a próxima a escrever continua sendo a `0038`.
 **O problema, na voz de quem o encontrou.** A dona de salão de 52 anos travou em
 algo que nenhum ajuste de texto resolve: o painel e a Ajuda dizem "o cliente",
 "este cliente", "a tela do cliente", "o sistema do cliente". Ela é a dona da
-loja. Para ela, "cliente" é **quem entra no salão** — o lead. O produto inteiro
+loja. Para ela, "cliente" é **quem entra no salão**, o lead. O produto inteiro
 usa a palavra no sentido oposto ao dela, e o efeito é ler a tela como se ela não
 fosse dona de nada.
 
 **A decisão do dono, tomada em 28/ago:** o alvo é **a dona do estúdio**. Hoje
 quem monta são o Gabriel e o Edu, mas o vocabulário tem que ser o dela. "Cliente"
-passa a ser **o cliente dela** — o lead, o contato, o paciente, o aluno. Ela é a
+passa a ser **o cliente dela**, o lead, o contato, o paciente, o aluno. Ela é a
 dona do negócio, não uma conta atendida por uma agência.
 
 **O que fazer, e nesta ordem:**
 
 1. **Pesquise antes de escrever.** Como resolvem isso os produtos que vivem do
-   mesmo problema — quem opera para si e quem opera para terceiros na mesma
+   mesmo problema, quem opera para si e quem opera para terceiros na mesma
    ferramenta. Olhe pelo menos: as ferramentas de automação de WhatsApp
    brasileiras (BotConversa, ManyChat, Take Blip), os CRMs de PME (RD Station,
    Pipedrive, HubSpot) e as agendas verticais (Trinks, Belasis). A pergunta é
@@ -314,7 +314,7 @@ dona do negócio, não uma conta atendida por uma agência.
    escolheram um lado. Traga o que acharam e por quê.
 2. **Decida o vocabulário e escreva num só lugar.** Como `blocos.ts` é a fonte
    única do nome dos blocos, o vocabulário da conta precisa de fonte única
-   equivalente — a Ajuda e o painel não podem divergir, e hoje divergiriam na
+   equivalente, a Ajuda e o painel não podem divergir, e hoje divergiriam na
    primeira mudança.
 3. **Varra a tela.** `components/editor/painel.tsx`, `components/ajuda/*`, as
    páginas em `app/clientes/[clienteId]/**` e os textos de erro do
@@ -322,7 +322,7 @@ dona do negócio, não uma conta atendida por uma agência.
    painel, que a pessoa lê enquanto monta.
 4. **Cuidado com o que NÃO é texto.** A rota é `/clientes/[clienteId]`, e há
    tabela, coluna e função com esse nome. **Renomear rota ou banco não faz parte
-   desta tarefa** — o ganho é de vocabulário na tela, e mexer no resto multiplica
+   desta tarefa**, o ganho é de vocabulário na tela, e mexer no resto multiplica
    o risco sem melhorar nada para quem lê.
 5. **O caso agência não some.** O Gabriel e o Edu montam para vários negócios, e
    a estrutura multi-conta continua valendo. Se a pesquisa disser que dá para
@@ -331,7 +331,7 @@ dona do negócio, não uma conta atendida por uma agência.
 
 ---
 
-## 0.6.1 FEITO em 28/ago — a chave simples ficou vermelha no lugar dela
+## 0.6.1 FEITO em 28/ago, a chave simples ficou vermelha no lugar dela
 
 Commits `c2c98e9` (realce) e `0572569` (atraso em lote).
 
@@ -339,11 +339,11 @@ Commits `c2c98e9` (realce) e `0572569` (atraso em lote).
 migrou.** O que mudou é onde o erro de `{nome}` aparece.
 
 - `fatiarVariaveis` (`core/engine/interpolar.ts`) ganhou o terceiro tipo de
-  pedaço, `chave-simples`, e **`chavesSimplesCitadas` passou a sair dela** — uma
+  pedaço, `chave-simples`, e **`chavesSimplesCitadas` passou a sair dela**, uma
   regra só, senão a cor diria uma coisa e o validador outra.
 - No campo (`components/editor/texto-com-variaveis.tsx`) a tag fica vermelha. O
   âmbar continua querendo dizer outra coisa: variável que nenhum bloco preenche,
-  que ao menos sai vazia. A regra do espelho não abriu exceção — o realce só
+  que ao menos sai vazia. A regra do espelho não abriu exceção, o realce só
   muda cor.
 - **A dica no hover exigiu uma terceira camada.** O espelho fica *atrás* do
   campo e tem `pointer-events: none`: quem recebe o ponteiro é sempre o
@@ -353,34 +353,34 @@ migrou.** O que mudou é onde o erro de `{nome}` aparece.
   campo, com o cursor dentro dela. As três camadas rolam juntas.
 - O mesmo realce no card do desenho e na prévia do hover, por
   `components/editor/realce-de-variaveis.tsx`: Mensagem, Pergunta, legenda da
-  Mídia, IA e Guardar. Cor e fundo sutil, **sem padding** — o card tem
+  Mídia, IA e Guardar. Cor e fundo sutil, **sem padding**, o card tem
   `line-clamp-3` e uma pílula comeria uma das três linhas.
 - O aviso `CHAVE_SIMPLES` do validador continua onde estava, como rede de baixo.
 
 **Continua valendo:** inverter a sintaxe para uma chave só (`{nome}`) é caro e
 não se decide sozinho. `flow_versions` é imutável, então toda conversa em
 produção seguiria rodando grafos com `{{ }}` e o motor teria de aceitar as duas
-formas por tempo indeterminado — dois jeitos de escrever a mesma coisa é
+formas por tempo indeterminado, dois jeitos de escrever a mesma coisa é
 exatamente o que produz o erro que acabamos de consertar. Se alguém pedir, peça
 a decisão por escrito ao dono antes de encostar.
 
 ### Do mesmo dia: ação em lote na seleção
 
 Pedido de quem monta: pôr o "digitando…" em todas as falas de uma vez. Ctrl (ou
-⌘) clicando junta blocos; `Shift` arrastando laça uma área — o padrão do React
+⌘) clicando junta blocos; `Shift` arrastando laça uma área, o padrão do React
 Flow era ⌘ **só** no Mac, e quem monta está no Windows, então isso simplesmente
 não existia. Com mais de um selecionado nasce uma barra no topo do desenho:
 `1s`, `2s`, `3s` (o limite do schema) e `tirar`.
 
 A regra é pura, em `core/flow/atraso-em-lote.ts`, com teste. Vale só para quem
-fala — **Mensagem e Mídia**; pergunta, condição e guardar não mandam texto —, e
+fala, **Mensagem e Mídia**; pergunta, condição e guardar não mandam texto , , e
 a barra mostra quantas falas de fato mudam, para não prometer o que não fez. Na
 mensagem o atraso entra como **primeiro** pedaço da pilha: no meio dela, a
 espera aconteceria depois de a fala já ter saído. Grafo no formato antigo entra
 no lote sem migration, porque `partesDaMensagem` já o traduz.
 
 `npm test` → **936 passando, 28 pulados**. `typecheck`, `lint` e `build` limpos.
-**Nenhuma migration** — a próxima a escrever continua sendo a `0038`.
+**Nenhuma migration**, a próxima a escrever continua sendo a `0038`.
 
 Fica pendente a barra em si crescer: hoje ela só faz atraso. Apagar, duplicar e
 alinhar em lote são os próximos candidatos naturais, e o encanamento (`selecionados`
@@ -398,10 +398,10 @@ uma receita na Ajuda escrita para quem não usa a Verandi.
 ## 0.7 O que mudou em 27/ago, e por quê
 
 Dois commits, os dois vindos de **quem opera montando fluxo com cliente na
-frente** — não de plano. Vale ler porque metade é conserto de coisa que a tela
+frente**, não de plano. Vale ler porque metade é conserto de coisa que a tela
 afirmava e não era verdade, que é o tipo de defeito que não aparece em teste.
 
-**`5c2a6e2` — a conversa sabe quantas reposições a pessoa tem**
+**`5c2a6e2`, a conversa sabe quantas reposições a pessoa tem**
 
 - `Mapeamento` ganhou **`quantos`**: guarda o número de itens da lista em vez
   dos itens. É o que faz o bot abrir com "você tem 3 aulas para repor". Também
@@ -411,11 +411,11 @@ afirmava e não era verdade, que é o tipo de defeito que não aparece em teste.
   pilates.
 - Modelos novos: **reagendamento** e **lembrete**. O de agendar ganhou
   conferência de telefone, escolha de modalidade e confirmação antes de gravar.
-- O par de campos do "Guardar da resposta" ganhou rótulo — eram duas caixas
+- O par de campos do "Guardar da resposta" ganhou rótulo, eram duas caixas
   idênticas e ninguém sabia qual era o nome que se escolhe e qual é o campo que
   a API devolveu.
 
-**`0e7f011` — voltar ao menu, e o card diz o que está ligado**
+**`0e7f011`, voltar ao menu, e o card diz o que está ligado**
 
 - Bloco novo **Voltar**: manda a conversa para um passo anterior do mesmo fluxo.
   Nasce apontando para o início. A seta continua valendo e não foi substituída.
@@ -426,13 +426,13 @@ afirmava e não era verdade, que é o tipo de defeito que não aparece em teste.
   para o ViaCEP. Agora o destaque reflete o bloco, não o clique.
 
 **O que ficou faltando, e é o próximo pedido natural:** o lembrete tem a
-conversa inteira, mas **não dispara sozinho na véspera** — começar conversa fora
+conversa inteira, mas **não dispara sozinho na véspera**, começar conversa fora
 da janela de 24h exige modelo aprovado da Meta (C4). É a mesma lacuna do §2.1 do
 [PLANO-AGENDA.md](PLANO-AGENDA.md), o webhook de entrada. As duas se resolvem
 juntas e são o maior valor parado hoje.
 
 `npm test` → **878 passando, 28 pulados**. `typecheck`, `lint` e `build` limpos.
-Deploy em produção conferido. **Nenhuma migration nova** — nada aqui tocou
+Deploy em produção conferido. **Nenhuma migration nova**, nada aqui tocou
 banco, e a próxima a escrever continua sendo a `0038`.
 
 > Um teste de `repos/` falhou uma vez e passou nas duas rodadas seguintes, sem
@@ -448,12 +448,12 @@ visual, motor puro que executa, e handoff para uma pessoa quando o bot não dá
 conta. Está em produção em `autofluxos.4yu.com.br` (Vercel), com Supabase
 **compartilhado com outro produto** (Verandi).
 
-**A Etapa A está inteira no ar (A1 a A7) e a Etapa B também (B1 a B6)** — agora
+**A Etapa A está inteira no ar (A1 a A7) e a Etapa B também (B1 a B6)**, agora
 **sem recorte**: compartilhar fluxo por link e sequências entraram (§5.7 e §5.8).
 O que sobra esbarra em coisas que só o dono resolve:
 [PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md).
 
-A **Etapa C começou pela C1** — Quadros, inteira: o quadro (§5.9) e o quadro que
+A **Etapa C começou pela C1**, Quadros, inteira: o quadro (§5.9) e o quadro que
 se move sozinho (§5.10). O resto dela está em §8.2.
 
 **A conversa fala com a agenda** desde 24/ago: o bot reconhece quem já é
@@ -464,7 +464,7 @@ primeira integração de ponta a ponta com um sistema de negócio, e está em §
 e `API_TESTE_REAL`, por desenho). `typecheck`, `lint` e `build` limpos.
 A contagem é de 28/ago; o §0 explica o que entrou.
 **Migrations aplicadas em produção: `0001` a `0037`, todas. A próxima a escrever
-é a `0038`.** Conferido em 24/ago contra o banco, e não contra este documento —
+é a `0038`.** Conferido em 24/ago contra o banco, e não contra este documento , 
 `flows.ativo`, `flows.canal` e `contacts.nome_real` respondem. Ele dizia `0035`
 depois de a `0036` e a `0037` já terem sido aplicadas, que é exatamente o tipo de
 divergência que o [BANCO-COMPARTILHADO.md](BANCO-COMPARTILHADO.md) manda resolver
@@ -478,20 +478,20 @@ O mapa que economiza a primeira hora de quem chega:
 
 | Se você vai mexer em… | O arquivo é |
 |---|---|
-| **o que a conversa faz** | `src/core/engine/executar.ts` — puro, sem rede, sem relógio |
+| **o que a conversa faz** | `src/core/engine/executar.ts`, puro, sem rede, sem relógio |
 | **qual fluxo abre uma conversa** | `escolherAbertura` em `src/server/receber-mensagem.ts` |
 | **o que o WhatsApp manda e recebe** | `src/channels/cloud-api.ts` · o mock em `mock.ts` |
-| **quem pode o quê** | `src/server/sessao.ts` — a fronteira de autorização, sem exceção |
+| **quem pode o quê** | `src/server/sessao.ts`, a fronteira de autorização, sem exceção |
 | **qualquer escrita vinda de tela** | `src/server/acoes.ts` (e o teste que a policia, §6.4) |
-| **ida ao banco** | `src/server/repos/*` — nada de SQL fora daqui |
+| **ida ao banco** | `src/server/repos/*`, nada de SQL fora daqui |
 | **o desenho do fluxo** | `src/core/flow/schema.ts` (formato) · `validar.ts` (o que publica) |
-| **o editor** | `src/components/editor/` — `painel.tsx` é o inspetor, `nos.tsx` é o desenho |
-| **regra pura e testável sozinha** | `src/core/` — horário, gatilhos, campanhas, etiquetas, tarefas, presets, sequências |
-| **o que sai da conta num link compartilhado** | `src/core/compartilhar.ts` — é a única barreira antes de uma URL pública |
+| **o editor** | `src/components/editor/`, `painel.tsx` é o inspetor, `nos.tsx` é o desenho |
+| **regra pura e testável sozinha** | `src/core/`, horário, gatilhos, campanhas, etiquetas, tarefas, presets, sequências |
+| **o que sai da conta num link compartilhado** | `src/core/compartilhar.ts`, é a única barreira antes de uma URL pública |
 | **quando um passo de sequência roda** | `src/core/sequencias.ts` (régua) · `server/sequencias.ts` (entra/sai) · `server/sequencias-passo.ts` (executa) |
 | **a etapa em que um contato está** | `src/core/quadros.ts` (régua) · `repos/quadros.ts` · `components/quadros/quadro.tsx` |
 | **um formulário de criar/editar** | `components/design/modal-formulario.tsx` (com Server Action) · `modal.tsx` (controlado). Ver §10.1 |
-| **um tipo de bloco novo no fluxo** | `core/flow/schema.ts`, `core/flow/blocos.ts` (nome, ícone, cor, descrição), `engine/executar.ts`, `flow/validar.ts` (duas funções), `core/compartilhar.ts`, `app/f/[token]/page.tsx`, e no editor `nos.tsx`+`editor.tsx` (`TIPOS` e `dadosPadrao`)+`painel.tsx`, mais `ajuda/conteudo-fluxos.tsx`. **O compilador aponta todos** — os `switch` e os `Record<TipoNo, …>` são exaustivos, então basta acrescentar o tipo no schema e seguir os erros do `typecheck`. Conferido em 27/ago com o bloco de Voltar |
+| **um tipo de bloco novo no fluxo** | `core/flow/schema.ts`, `core/flow/blocos.ts` (nome, ícone, cor, descrição), `engine/executar.ts`, `flow/validar.ts` (duas funções), `core/compartilhar.ts`, `app/f/[token]/page.tsx`, e no editor `nos.tsx`+`editor.tsx` (`TIPOS` e `dadosPadrao`)+`painel.tsx`, mais `ajuda/conteudo-fluxos.tsx`. **O compilador aponta todos**, os `switch` e os `Record<TipoNo, …>` são exaustivos, então basta acrescentar o tipo no schema e seguir os erros do `typecheck`. Conferido em 27/ago com o bloco de Voltar |
 
 Duas leis de arquitetura que explicam o mapa: **`core/` não faz rede** (é o que
 faz o simulador e a produção rodarem o mesmo código), e **`repos/` não decide
@@ -505,10 +505,10 @@ nada** (é o que faz a regra ser testável sem banco).
 
 | Rota | O que é | Quem alcança |
 |---|---|---|
-| `/entrar` | **a porta, e é a única** — login por usuário (Better Auth) | todo mundo |
+| `/entrar` | **a porta, e é a única**, login por usuário (Better Auth) | todo mundo |
 | `/criar-conta` | primeira execução **e** cadastro feito por administrador | ninguém cadastrado ainda, ou administrador |
 | `/api/auth/[...all]` | a porta do Better Auth | todo mundo |
-| `/f/[token]` | **fluxo compartilhado** — a única tela que abre sem sessão nenhuma | quem tiver o link |
+| `/f/[token]` | **fluxo compartilhado**, a única tela que abre sem sessão nenhuma | quem tiver o link |
 
 ### Painel do operador 4YU
 
@@ -522,7 +522,7 @@ nada** (é o que faz a regra ser testável sem banco).
 
 ### Painel do cliente
 
-Barra lateral com seis itens — **Painel · Inbox · Contatos · Quadros ·
+Barra lateral com seis itens, **Painel · Inbox · Contatos · Quadros ·
 Automações · Configurações**. Não há abas no topo.
 
 Quadros entra ao lado de Contatos, e não no fim, porque é a mesma gente olhada de
@@ -538,7 +538,7 @@ um está".
 | `/clientes/[id]/leads/importar` | Contatos | importação por planilha, com conciliação |
 | `/clientes/[id]/quadros` | Quadros | **em que etapa cada contato está** (C1). `?q=<id>` escolhe o quadro |
 | `/clientes/[id]/fluxos` | Automações | fluxos **por pasta**, **palavras-chave**, **campanhas** e **sequências** |
-| `/clientes/[id]/fluxos/[fluxoId]` | — | **o editor**, tela cheia, sem a moldura |
+| `/clientes/[id]/fluxos/[fluxoId]` |, | **o editor**, tela cheia, sem a moldura |
 | `/clientes/[id]/ajustes` | Configurações | índice, com o estado de cada peça |
 | `/clientes/[id]/ajustes/horario` | Configurações | horário de atendimento |
 | `/clientes/[id]/ajustes/equipe` | Configurações | quem entra na conta, papel, cadastrar pessoa |
@@ -564,7 +564,7 @@ um está".
 
 ## 4. A Etapa A, frente a frente
 
-### A1 — login, contas e papéis
+### A1, login, contas e papéis
 
 - **Better Auth 1.7** em `src/server/auth.ts`, com os plugins `admin`
   (impersonação) e `organization` (contas e membros).
@@ -575,12 +575,12 @@ um está".
   API e Server Action passa por `exigirUsuario`, `exigirAdminDaPlataforma`,
   `exigirAcessoAoCliente` ou `conferirAcessoAoCliente`.
 - **"Entrar como"**: sessão de uma hora marcada com `impersonatedBy`,
-  registrada na auditoria, com faixa âmbar em toda tela que ela alcança —
+  registrada na auditoria, com faixa âmbar em toda tela que ela alcança , 
   inclusive o editor, que não usa moldura e a chama explicitamente.
 - **Auditoria append-only** (`af_auditoria`): `service_role` só tem `insert` e
   `select`.
 
-### A2 — sidebar e as duas visões
+### A2, sidebar e as duas visões
 
 A moldura do cliente virou barra lateral; a área do administrador ganhou
 `layout.tsx` próprio, onde `exigirAdminDaPlataforma()` roda uma vez e toda rota
@@ -590,10 +590,10 @@ abaixo herda a conferência.
 item próprio nem depois de existirem (§5): campanhas moram dentro de Automações,
 junto dos fluxos que elas abrem, e integração é um bloco dentro do editor, não
 uma tela. Item de menu para tela que não existe é promessa que a interface faz e
-o produto não cumpre — e tela nova só porque a peça nasceu é a mesma promessa
+o produto não cumpre, e tela nova só porque a peça nasceu é a mesma promessa
 pelo avesso.
 
-### A3 — bloco de mensagem em pilha
+### A3, bloco de mensagem em pilha
 
 O bloco era `data: { texto }` e virou uma pilha de até dez pedaços: **texto**
 (com `*negrito*`, `_itálico_`, `~riscado~`, crases e emoji), **arquivo**,
@@ -606,7 +606,7 @@ O bloco era `data: { texto }` e virou uma pilha de até dez pedaços: **texto**
 Ficou de fora a janela de 24h dentro do bloco (`Dentro de` / `Fora de`): ela só
 faz sentido com modelo aprovado pela Meta, que é trava externa.
 
-### A4 — a cadeia de atendimento
+### A4, a cadeia de atendimento
 
 - **Horário de atendimento** por conta (`core/horario.ts`, puro e sem rede),
   com fuso IANA e mais de uma faixa por dia. Fora do expediente o handoff diz
@@ -618,7 +618,7 @@ faz sentido com modelo aprovado pela Meta, que é trava externa.
 - **O aviso de fila toca em qualquer tela do painel**, não só com o Inbox
   aberto.
 
-### A5 — Inbox de verdade
+### A5, Inbox de verdade
 
 Fila paginada de 50 (era tudo), rail `Atribuído` horizontal com contagem, busca
 por nome e telefone, e anotação da equipe no painel lateral do contato.
@@ -626,14 +626,14 @@ por nome e telefone, e anotação da equipe no painel lateral do contato.
 Mais duas peças que a `0023` tinha destravado e ficaram esperando código:
 
 - **Não lidas por pessoa** (`af_leituras` + `nao_lidas_por_contato`). "Não lida"
-  é por pessoa e não por conversa — "alguém leu" é exatamente a informação que
+  é por pessoa e não por conversa, "alguém leu" é exatamente a informação que
   não ajuda ninguém a decidir o que abrir. **O piso é a criação do usuário**:
   sem ele, a primeira pessoa da equipe abriria o Inbox com meses de histórico em
   vermelho, histórico que ela não deixou de ler porque não estava lá.
 - **A prévia da fila** parou de dizer "mídia ou mensagem sem texto" para foto,
   áudio, figurinha e PDF igualmente (`core/tipo-da-mensagem.ts`).
 
-### A6 — fluxos padrão e gatilhos
+### A6, fluxos padrão e gatilhos
 
 Um número deixou de executar **um** fluxo e passou a ter quatro papéis:
 
@@ -650,13 +650,13 @@ das duas ganha.
 
 E os **gatilhos por palavra-chave** (`gatilhos`, por conta): frase → fluxo, com
 operador `É`/`Contém`, liga/desliga e contagem de execuções. `Contém` é "contém
-a **palavra**", com borda dos dois lados — substring cru faria o gatilho `sim`
+a **palavra**", com borda dos dois lados, substring cru faria o gatilho `sim`
 disparar em "assim", e ninguém ligaria a causa ao efeito.
 
 **A ordem de decisão da entrada é a regra do produto**, e mora em
 `escolherAbertura` (`server/receber-mensagem.ts`):
 
-1. **o escape global ganha de tudo** — `pediuAtendente()` é lido do motor antes
+1. **o escape global ganha de tudo**, `pediuAtendente()` é lido do motor antes
    de olhar gatilho nenhum. Um gatilho do cliente com a palavra "falar" não
    pode engolir "quero falar com uma pessoa";
 2. **campanha** (B4), que casa com a mensagem inteira;
@@ -666,7 +666,7 @@ disparar em "assim", e ninguém ligaria a causa ao efeito.
 6. **o principal**, só quando não há conversa viva para continuar.
 
 Gatilho, campanha e mídia **interrompem a conversa em andamento**. Parece
-agressivo e é o que o escape global sempre fez — e o que a mídia substitui
+agressivo e é o que o escape global sempre fez, e o que a mídia substitui
 (handoff imediato) interrompia mais ainda. A sessão anterior fica `encerrada`,
 nunca `ativa`.
 
@@ -681,17 +681,17 @@ contrato de IA de `channels.flow_id` e agora lê do fluxo que está rodando de
 verdade (`VersaoPublicada.fluxoId`); e `apagarFluxo` confere os quatro papéis,
 não só o principal.
 
-### A7 — configurações reunidas
+### A7, configurações reunidas
 
 **Etiquetas manuais** (`etiquetas` + `contato_etiquetas`, 0025). As derivadas
 continuam derivadas e **não** viram linha: no instante em que virassem,
 precisariam de sincronização, e a primeira resposta de um lead deixaria
-`nao_respondeu` mentindo. Cor é lista fechada — hexadecimal livre é como se cria
+`nao_respondeu` mentindo. Cor é lista fechada, hexadecimal livre é como se cria
 uma etiqueta invisível.
 
 **Equipe** (`/ajustes/equipe`) funcionando sem SMTP: a senha é definida por quem
 cadastra e combinada por fora, como todo usuário nasce hoje. E-mail que já
-existe **vincula** em vez de recusar — quem administra duas companhias é o caso
+existe **vincula** em vez de recusar, quem administra duas companhias é o caso
 que a A1 modelou. Remover recusa quando é a única dona da conta. As três ações
 passam por `podeAdministrarConta`: `exigirAcessoAoCliente` responde "pode ver", e
 deixar um `member` cadastrar gente seria ele criar o próprio acesso de
@@ -701,18 +701,18 @@ administrador.
 
 ## 5. A Etapa B, frente a frente
 
-### B1 — o agendador (`tarefas`, 0026)
+### B1, o agendador (`tarefas`, 0026)
 
 Até ele o produto era inteiramente reativo: tudo que acontecia acontecia porque
 uma mensagem chegou.
 
 `pegar_tarefas` usa **`for update skip locked`**. Duas invocações do cron que se
-sobrepõem — o que acontece sozinho quando uma passada demora mais que o
-intervalo, justamente a passada grande — leriam a mesma fila, e a pessoa
+sobrepõem, o que acontece sozinho quando uma passada demora mais que o
+intervalo, justamente a passada grande, leriam a mesma fila, e a pessoa
 receberia a mesma mensagem duas vezes.
 
 **A Vercel no plano Hobby dispara cron uma vez por dia.** Um prazo de trinta
-minutos conferido de madrugada chega depois de a janela de 24h fechar — então o
+minutos conferido de madrugada chega depois de a janela de 24h fechar, então o
 agendador **pega carona no webhook** (teto de 5 por mensagem, depois da resposta
 à Meta). A conta com prazo vencendo é, por construção, a conta que está
 recebendo mensagem. O cron continua declarado como piso, para a conta que passou
@@ -720,13 +720,13 @@ o dia calada. Como dar resolução de verdade a ele:
 [PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md), item 3.1.
 
 Primeiro consumidor: **prazo da pergunta** (`timeoutMinutos`, opcional no schema
-— ausente é esperar para sempre, que é o comportamento de sempre). Sem saída
+,  ausente é esperar para sempre, que é o comportamento de sempre). Sem saída
 `timeout` desenhada, o prazo passa a conversa para uma pessoa: quem parou no
 meio da triagem é o lead que mais vale resgatar, e encerrar calado seria sumir
 com ele.
 
-**Quase todo o executor é motivo para não fazer nada** — a conversa andou, foi
-assumida, encerrada, o bot foi pausado — e "ignorada" é resultado normal, não
+**Quase todo o executor é motivo para não fazer nada**, a conversa andou, foi
+assumida, encerrada, o bot foi pausado, e "ignorada" é resultado normal, não
 falha. Contar como falha faria a tarefa voltar para a fila três vezes para ser
 ignorada de novo.
 
@@ -734,7 +734,7 @@ Para o **próximo tipo de tarefa** não é preciso migration: `tarefas.tipo` é
 texto, a lista fechada mora em `core/tarefas.ts`, e o executor recusa o que não
 conhece em vez de estourar.
 
-### B2 — contatos completo
+### B2, contatos completo
 
 Criar à mão, seleção múltipla, ações em lote (etiquetar, tirar etiqueta,
 apagar) e menu por linha.
@@ -742,7 +742,7 @@ apagar) e menu por linha.
 O telefone digitado passa por `chavesDoTelefone`: **`wa_id` é a identidade da
 pessoa no WhatsApp**, e gravar `(11) 98765-4321` ali criaria um cadastro que
 nunca casa com a conversa que chegar depois. Número sem DDD é recusado em vez de
-adivinhado — chutar o DDD casaria a conversa de uma pessoa com o cadastro de
+adivinhado, chutar o DDD casaria a conversa de uma pessoa com o cadastro de
 outra.
 
 O "marcar todos" do cabeçalho pega **esta página**, não a base inteira: a outra
@@ -752,7 +752,7 @@ A tabela continua sendo do servidor; só a caixinha e a barra são de cliente. A
 datas têm hora relativa e fuso fixo, e formatá-las no navegador traria a
 divergência clássica entre HTML e hidratação.
 
-### B3 — painel completo (views da 0028)
+### B3, painel completo (views da 0028)
 
 **Mediana e média juntas, sempre.** Média de tempo de resposta é a métrica que
 mais mente em atendimento: uma conversa esquecida no fim de semana empurra a
@@ -761,7 +761,7 @@ esperou o atendimento típico"; a média mostra que existe cauda.
 
 O relógio conta do **handoff**, não da mensagem da pessoa: o bot pode ter
 conversado dez minutos legitimamente antes de desistir. Quem entrou na fila e
-ninguém respondeu fica **fora** da conta e aparece como aviso à parte — contar
+ninguém respondeu fica **fora** da conta e aparece como aviso à parte, contar
 como zero seria premiar o esquecimento.
 
 O gráfico é **SVG à mão**: três séries de trinta pontos num painel que já
@@ -773,10 +773,10 @@ para o relatório do cliente) e dia sem movimento vale zero em vez de sumir.
 no meio, e dividir a espera entre quem assumiu depois seria cobrar de alguém o
 atraso de outro.
 
-### B4 — campanhas (`campanhas`, 0027)
+### B4, campanhas (`campanhas`, 0027)
 
 Frase de anúncio Click-to-WhatsApp → fluxo. **Decide antes do gatilho**, porque
-casa com a mensagem inteira — critério estrito — e é a porta que o cliente está
+casa com a mensagem inteira, critério estrito, e é a porta que o cliente está
 pagando para manter aberta.
 
 **A normalização de pontuação final é nossa**, e não um pedido ao anunciante: o
@@ -788,22 +788,22 @@ Atribuição de **primeiro toque** (`contacts.campanha_id`), a mesma regra de
 `campos.origem`: nunca sobrescreve. Quem voltou por um segundo anúncio não troca
 de dono, senão o relatório do primeiro perde o lead que ele pagou para trazer.
 
-### B5 — pastas e modelos (`pastas`, 0029) · **com recorte**
+### B5, pastas e modelos (`pastas`, 0029) · **com recorte**
 
 Pastas com **`on delete set null`, nunca `cascade`**: apagar a gaveta devolve os
 fluxos para a raiz. `cascade` seria um clique de arrumação levando junto o
 desenho publicado que está atendendo gente. Elas não têm permissão e não herdam
-nada — pasta que decide quem vê o quê seria um segundo sistema de autorização
+nada, pasta que decide quem vê o quê seria um segundo sistema de autorização
 paralelo ao de contas.
 
 Modelos são **dado em código** (`src/exemplos/modelos.ts`), não banco: tabela
 criaria uma segunda fonte de fluxos para versionar junto do schema. Todos nascem
-válidos, e há teste provando — um modelo que produzisse fluxo recusado faria a
+válidos, e há teste provando, um modelo que produzisse fluxo recusado faria a
 pessoa ver uma lista de erros sobre um desenho que ela não fez.
 
 **Compartilhar fluxo por link ficou de fora.** Ver §8.1.
 
-### B6 — integrações por preset
+### B6, integrações por preset
 
 RD Station primeiro (é o cliente real), depois Google Sheets e webhook genérico.
 Zapier não entra.
@@ -811,17 +811,17 @@ Zapier não entra.
 **Preset, e não tipo de nó novo.** Ele preenche um bloco `http` comum e sai do
 caminho; o que fica gravado no fluxo é o **bloco resolvido**, não uma referência
 viva. Referência mudaria por baixo o que uma conversa em andamento chama no dia
-em que a RD trocasse de endereço — e versão publicada é imutável aqui também.
+em que a RD trocasse de endereço, e versão publicada é imutável aqui também.
 
 Três testes prendem o que importa: cada preset publica dentro de um fluxo,
 nenhum manda a conversa para uma pessoa quando a API falha (o lead já está no
 nosso banco; sincronia com CRM não é atendimento), e nenhum carrega credencial
-no corpo ou no cabeçalho — chave escrita ali viraria segredo dentro de
+no corpo ou no cabeçalho, chave escrita ali viraria segredo dentro de
 `flow_versions`, de onde não sai.
 
-### 5.7 — compartilhar fluxo por link (`fluxo_links`, 0030)
+### 5.7, compartilhar fluxo por link (`fluxo_links`, 0030)
 
-A peça que a B5 recortou. O link é público e mora em `/f/<token>` — a **única**
+A peça que a B5 recortou. O link é público e mora em `/f/<token>`, a **única**
 tela do sistema que abre sem sessão nenhuma, e por isso a que mais decisão
 carrega por linha:
 
@@ -833,13 +833,13 @@ carrega por linha:
   quê em vez de sumir;
 - **o token fica em texto claro, e isso não é guardar senha.** Ele não autentica
   ninguém: é capacidade de leitura sobre uma versão escolhida, com prazo e botão
-  de revogar. Só o hash impediria a tela de mostrar o link de novo — e link que
+  de revogar. Só o hash impediria a tela de mostrar o link de novo, e link que
   não dá para recopiar é link que a pessoa recria cinco vezes e nunca revoga os
   quatro antigos. São 24 bytes de `randomBytes` em `base64url`, e a tabela tem
   RLS ligada com `revoke all` como todas;
 - **a única coisa removida do grafo é `conexaoId`** (`limparParaCompartilhar`).
   Ela aponta para uma credencial da conta de origem, que não significa nada no
-  destino a não ser um convite a tentar — e o `publicar()` do destino recusaria
+  destino a não ser um convite a tentar, e o `publicar()` do destino recusaria
   o fluxo por causa dela, com um erro que a pessoa não causou e não sabe
   corrigir. **Nada mais é reescrito**: texto, URL de mídia e URL de API saem
   inteiros, porque fluxo com o miolo apagado não é fluxo compartilhado, é
@@ -847,7 +847,7 @@ carrega por linha:
 - **e por isso os avisos vêm antes de o link existir**, não depois. Compartilhar
   manda o texto de todas as mensagens para fora da conta, e descobrir isso
   depois de mandar o link para um grupo é tarde. É a única coisa da tela que
-  revogar não desfaz. O aviso sobre bloco de API mostra **só o host** — o
+  revogar não desfaz. O aviso sobre bloco de API mostra **só o host**, o
   caminho é onde chave costuma estar, e o aviso não pode ser o vazamento que ele
   denuncia;
 - **o que se importa nasce rascunho, sem IA e sem credencial.** Publicar o
@@ -860,23 +860,23 @@ carrega por linha:
 
 A página pública **não desenha o grafo**: ela escreve o fluxo como roteiro, na
 ordem da conversa (`roteiroDoFluxo`). Quem abre está decidindo se importa, e
-para isso precisa ler o atendimento — montar o canvas custaria o bundle do
+para isso precisa ler o atendimento, montar o canvas custaria o bundle do
 editor numa rota que qualquer um alcança, para entregar menos. Bloco que
 ninguém alcança aparece marcado como **solto**: é coisa que quem recebe precisa
 ver antes de importar, não descobrir publicando.
 
-No `proxy.ts` a abertura é por prefixo `'/f/'` — com a barra. Sem ela, uma rota
+No `proxy.ts` a abertura é por prefixo `'/f/'`, com a barra. Sem ela, uma rota
 futura chamada `/faturamento` nasceria pública sem ninguém notar, e há teste
 prendendo isso.
 
-### 5.8 — sequências (`sequencias`, 0031)
+### 5.8, sequências (`sequencias`, 0031)
 
 O que o agendador (B1) existia para sustentar. O produto sabia responder e sabia
 cobrar um prazo de pergunta; não sabia **voltar** a falar com quem parou.
 
 **A verdade desconfortável primeiro, porque ela decide o resto.** A Meta só
 deixa mandar texto livre dentro de 24h contadas da última mensagem *da pessoa*.
-E quem responde **sai** da sequência — que é a regra que a impede de virar spam.
+E quem responde **sai** da sequência, que é a regra que a impede de virar spam.
 Somando as duas: a última mensagem da pessoa é sempre anterior ao evento que a
 inscreveu, então o prazo útil de uma sequência é o que restar das 24h quando ela
 começa. Por isso `atraso_minutos` tem teto de 1440, o mesmo de `timeoutMinutos`
@@ -888,20 +888,20 @@ honesto.
 
 **Dois eventos inscrevem, e os dois são atos de gente:** alguém clicou em "Já
 atendi", ou alguém aplicou uma etiqueta. "Contato criado" ficou de fora de
-propósito — quem acabou de chegar já está dentro de um fluxo de entrada, e uma
+propósito, quem acabou de chegar já está dentro de um fluxo de entrada, e uma
 sequência por cima disputaria a mesma conversa.
 
 **Quatro saídas, e elas são o produto**, não o tratamento de erro:
 
 | Sai quando | Motivo gravado |
 |---|---|
-| a pessoa responde | `respondeu` — sai no webhook, **antes** de qualquer outra decisão |
+| a pessoa responde | `respondeu`, sai no webhook, **antes** de qualquer outra decisão |
 | alguém assume a conversa | `atendimento` |
 | o bot é pausado no contato (AutoOff) | `automacao_pausada` |
-| a etiqueta de saída é aplicada | `etiqueta_de_saida` — o "virou cliente, pode parar" |
+| a etiqueta de saída é aplicada | `etiqueta_de_saida`, o "virou cliente, pode parar" |
 
 A saída por resposta vale mesmo com o bot pausado, mesmo fora do expediente e
-mesmo que a conversa não vá avançar por nenhum outro motivo — por isso ela está
+mesmo que a conversa não vá avançar por nenhum outro motivo, por isso ela está
 no topo de `tratarUma`, logo depois da deduplicação. Reenvio da Meta não é uma
 resposta nova, e usá-lo para tirar alguém de uma sequência seria deixar a fila
 de entrega da Meta decidir o acompanhamento do cliente.
@@ -909,23 +909,23 @@ de entrega da Meta decidir o acompanhamento do cliente.
 **`bloqueada` é estado próprio, e não um `saiu` com motivo.** `saiu` é a
 sequência funcionando; `bloqueada` é a sequência **não entregando** porque a
 janela fechou. Misturar os dois esconderia o único número que diz ao cliente que
-os prazos dele estão longos demais — e ele aparece na tela, em âmbar.
+os prazos dele estão longos demais, e ele aparece na tela, em âmbar.
 
 **O atraso conta do evento, não do passo anterior.** Offset absoluto porque é o
 que dá para conferir contra as 24h sem somar nada: "20h depois" ou cabe ou não
 cabe. Encadeado, descobrir que o último passo é inalcançável exigiria somar a
-régua inteira — e o erro só apareceria com gente esperando. É também o que
+régua inteira, e o erro só apareceria com gente esperando. É também o que
 impede uma passada lenta do agendador de empurrar a sequência inteira para a
 frente: `quandoRodaOPasso` recebe `entrouEm`, nunca `Date.now()`.
 
 **Cinco passos é o teto**, e é limite de produto: cinco mensagens em 24h para
-quem não respondeu nenhuma já é o que alguém tolera. O sexto não traz lead —
+quem não respondeu nenhuma já é o que alguém tolera. O sexto não traz lead , 
 traz bloqueio, e bloqueio não se desfaz.
 
 Duas conferências que a sequência obrigou a acrescentar, pelo mesmo raciocínio
 dos quatro papéis do número: **`apagarFluxo` recusa fluxo que é passo de
 sequência**, e **`apagarEtiqueta` recusa etiqueta que dispara uma**. Nos dois
-casos a chave estrangeira é `restrict` e o banco recusaria sozinho — o que o
+casos a chave estrangeira é `restrict` e o banco recusaria sozinho, o que o
 código acrescenta é o nome do lugar onde ir desligar.
 
 Estrutura em três arquivos, e a divisão não é estética: `core/sequencias.ts` é a
@@ -933,28 +933,28 @@ régua pura; `server/sequencias.ts` inscreve e tira, e é chamado de dentro do
 webhook; `server/sequencias-passo.ts` executa, e precisa de `receber-mensagem.ts`
 inteiro. Juntar os dois últimos fecharia um ciclo de imports.
 
-O passo abre um fluxo por `abrirFluxoParaContato` — a mesma função que o
+O passo abre um fluxo por `abrirFluxoParaContato`, a mesma função que o
 pós-atendimento passou a usar. Ela devolve **motivo** e não booleano porque os
 dois chamadores decidem coisas diferentes com cada um: `ocupado` faz o passo
 tentar de novo (uma mensagem está chegando, e a mensagem ganha do prazo,
 sempre), `janela_fechada` bloqueia, `sem_fluxo` encerra sem insistir.
 
-### 5.9 — Quadros, a primeira frente da Etapa C (`quadros`, 0032 e 0033)
+### 5.9, Quadros, a primeira frente da Etapa C (`quadros`, 0032 e 0033)
 
 A etapa em que cada contato está, desenhada. A decisão que impede o quadro de
 virar outro produto é do próprio plano (§3.4) e está gravada como chave
 estrangeira obrigatória, não como disciplina: **cartão sempre aponta para um
-contato, e não existe cartão avulso** — senão em três meses são duas listas de
+contato, e não existe cartão avulso**, senão em três meses são duas listas de
 gente que divergem.
 
 **Por que não é etiqueta com outro nome.** Etiqueta é conjunto: o contato tem
 zero ou muitas, sem ordem. Etapa é exclusiva e ordenada. É essa diferença que
-responde "quantos estão parados em Aula agendada?", que a etiqueta não responde —
+responde "quantos estão parados em Aula agendada?", que a etiqueta não responde , 
 e é ela que justifica a tela. As duas convivem, e devem: "orçamento enviado" é um
 fato sobre a pessoa; "aula agendada" é onde ela está no funil.
 
 **`entrou_na_coluna_em` é o campo que torna o quadro útil.** Sem ele, o quadro
-mostra onde as pessoas estão e esconde quem foi esquecido — que é a pergunta que
+mostra onde as pessoas estão e esconde quem foi esquecido, que é a pergunta que
 importa. A coluna ordena **quem está parado há mais tempo em cima**, e a faixa
 âmbar marca três dias ou mais: dentro da janela de 24h ainda dá para retomar em
 texto livre; passados três dias, retomar exige um motivo novo. Marcar antes disso
@@ -965,14 +965,14 @@ para de ser lido.
 cartão de volta para onde ele já estava é engano de mão, e zerar a espera por
 causa dele apagaria o número que denuncia o esquecimento. A regra mora dentro da
 função do banco, junto da escrita, porque mover é **duas escritas que não podem
-se separar** — feito em duas idas, uma falha no meio deixaria o cartão na etapa
+se separar**, feito em duas idas, uma falha no meio deixaria o cartão na etapa
 nova com o relógio da antiga.
 
 Outras decisões, e o que cada uma evita:
 
 - **`quadro_colunas.ordem` não tem índice único.** Trocar duas etapas de lugar é
   escrever duas linhas, e com `unique` a primeira já colide com a segunda dentro
-  da transação — o clássico "swap não passa sem valor temporário". Empate é
+  da transação, o clássico "swap não passa sem valor temporário". Empate é
   desempatado por `criado_em`, que é determinístico: sem isso a coluna "pula" ao
   recarregar. Mover para o lado troca **só as duas**;
 - **apagar etapa com gente dentro é recusado**, e a recusa diz quantos são. A
@@ -980,7 +980,7 @@ Outras decisões, e o que cada uma evita:
   é o número que transforma "não deu" em "mova essas três primeiro". Mover por
   conta própria seria decidir por outra pessoa onde elas vão parar;
 - **apagar o quadro leva etapas e cartões, e nenhum contato.** O que some é a
-  posição das pessoas no funil — é a diferença entre apagar um quadro e apagar
+  posição das pessoas no funil, é a diferença entre apagar um quadro e apagar
   uma lista de gente;
 - **pôr em lote não move quem já está lá.** Quem selecionou trinta contatos sem
   lembrar quais já estavam no quadro não pode desfazer o trabalho de quem os
@@ -989,14 +989,14 @@ Outras decisões, e o que cada uma evita:
 - **as três etapas iniciais são neutras** (`Novo`, `Em conversa`, `Fechado`).
   Descrevem atendimento, não um ramo. O erro do produto de referência foi um
   empty state *de imobiliária* ("Visita agendada", "R$600 mil") numa conta de
-  estúdio de pilates — empty state ensina o negócio de quem está olhando. Zero
+  estúdio de pilates, empty state ensina o negócio de quem está olhando. Zero
   etapas seria a outra forma de errar: um quadro que abre morto;
 - **oito etapas é o teto**, e ele é de tela antes de ser de produto: acima disso
   as colunas não cabem lado a lado e some a visão de conjunto que o quadro existe
   para dar. Funil maior que isso costuma ser dois funis;
 - **arrastar é nativo, e nunca é o único caminho.** HTML5 DnD resolve o gesto em
   três handlers; uma biblioteca custaria mais bundle do que a tela inteira. Todo
-  cartão tem um menu com as etapas escritas — no celular não há arrasto, e com
+  cartão tem um menu com as etapas escritas, no celular não há arrasto, e com
   teclado também não;
 - **o quadro não é uma ilha.** A ficha do contato mostra em que quadro e etapa
   ele está, e há quanto tempo. Sem isso o quadro vira um lugar que alguém
@@ -1005,10 +1005,10 @@ Outras decisões, e o que cada uma evita:
   seria uma tela nova para a mesma tela. O seletor só aparece com mais de um
   quadro, pela mesma razão de `destinoAposEntrar`.
 
-### 5.10 — o quadro que se move sozinho (C1b, 0034)
+### 5.10, o quadro que se move sozinho (C1b, 0034)
 
 Sem isto a C1 não valeria: **quadro que depende de digitação manual é quadro que
-ninguém mantém, e quadro desatualizado é pior que quadro nenhum — ele mente com
+ninguém mantém, e quadro desatualizado é pior que quadro nenhum, ele mente com
 cara de dado.** Duas peças fecham a frente.
 
 **O bloco `etapa`.** Nono tipo de nó, e o primeiro desde a A3. Ele guarda
@@ -1020,7 +1020,7 @@ preset e do modelo (§6.3). Etapa não é configuração congelável: é estado 
 o cartão precisa cair na etapa que existe **hoje**. O preço é a etapa poder sumir
 depois de publicada, e ele é pago em dois lugares, de propósito:
 
-- **`validar()` recusa publicar** apontando para etapa que não existe — e o
+- **`validar()` recusa publicar** apontando para etapa que não existe, e o
   `publicar()` passa a lista de etapas do cliente junto das conexões, pelo mesmo
   motivo: uma aba aberta há uma hora publicaria um bloco que não move ninguém;
 - **o servidor trata etapa sumida como nada-a-fazer**, com log, em vez de
@@ -1038,13 +1038,13 @@ Aula agendada e não compareceu → lembrete algumas horas depois"*.
 
 Dava para não fazer nada e pedir que o fluxo aplicasse uma etiqueta junto,
 reusando o evento que já existia. Isso obrigaria toda conta a manter duas coisas
-em sincronia à mão — e no dia em que alguém movesse o cartão pela tela sem a
+em sincronia à mão, e no dia em que alguém movesse o cartão pela tela sem a
 etiqueta, o acompanhamento simplesmente não aconteceria, sem erro nenhum para
 investigar.
 
 **Só o bloco de fluxo inscreve; arrastar na tela não.** Mover o cartão à mão é
 gesto de arrumação, e disparar mensagem por causa de um arrasto seria mandar
-mensagem por engano — a tela diz isso onde a sequência é criada.
+mensagem por engano, a tela diz isso onde a sequência é criada.
 
 E `sequenciasDoEvento` passou a ler o alvo **na coluna que cada evento usa**.
 Filtrar sempre por `etiqueta_id` faria o evento de etapa não achar nada, em
@@ -1054,21 +1054,21 @@ silêncio; há teste prendendo.
 
 - **A barra de formatação estava presa no bloco de Mensagem.** Virou
   `components/editor/barra-de-formato.tsx` e chegou na Pergunta, no Handoff e na
-  legenda da Mídia. **Não** entra onde o texto não vira mensagem — valor do
+  legenda da Mídia. **Não** entra onde o texto não vira mensagem, valor do
   bloco Guardar, motivo interno do handoff, instrução da IA, URL: `*negrito*`
   ali não fica em negrito, fica com asterisco literal na frente de quem lê.
 - **O bloco de arquivo pedia um link.** Agora aceita o arquivo arrastado ou
   escolhido, que sobe para o mesmo Acervo (reutilizável, e ainda apagável em
   Configurações). **O tipo saiu do dropdown e vem do arquivo**: escolher
   "Documento" e subir um PNG é um erro que só aparecia quando a Meta recusava a
-  entrega. Colar endereço continua existindo como caminho secundário — é quem
+  entrega. Colar endereço continua existindo como caminho secundário, é quem
   hospeda fora, e o único jeito de usar `{{variavel}}` na URL.
-- **E o arquivo deixou de passar pelo nosso servidor** — ver §6.8. Ele passava,
+- **E o arquivo deixou de passar pelo nosso servidor**, ver §6.8. Ele passava,
   e batia no teto de 1 MB da Server Action.
 
 ---
 
-### 5.11 — a conversa que marca horário, e a agenda do cliente
+### 5.11, a conversa que marca horário, e a agenda do cliente
 
 Entrou em 24/ago/2026, depois de quem opera comentar treze prints. **É a
 primeira vez que o bot resolve uma tarefa de negócio inteira** em vez de
@@ -1095,12 +1095,12 @@ dia, oferecer horário, marcar, desmarcar, fila de espera.
 `exemplos/agendamento.test.ts` roda a conversa do "oi" ao horário marcado, com as
 respostas **copiadas da documentação da Verandi**. É o que protege do defeito
 mais provável desta integração: um `livres[].hora` escrito `livre[].hora`
-publica, valida, e devolve variável vazia para sempre — o menu chega sem opção
+publica, valida, e devolve variável vazia para sempre, o menu chega sem opção
 nenhuma e ninguém descobre até um cliente tentar marcar.
 
 **Do lado da agenda** entrou `GET /pessoas?telefone=` (repositório `verandi`): a
 busca só olhava nome, e o robô chega com o identificador do WhatsApp. Ela procura
-todas as formas do mesmo aparelho — com e sem país, com e sem o nono dígito — e
+todas as formas do mesmo aparelho, com e sem país, com e sem o nono dígito, e
 recusa número sem DDD, porque chutar o DDD casaria a conversa de uma pessoa com a
 ficha de outra.
 
@@ -1113,7 +1113,7 @@ avisa um sistema de fora segue em frente.
 
 ---
 
-### 5.12 — os defeitos que só aparecem com alguém usando
+### 5.12, os defeitos que só aparecem com alguém usando
 
 A mesma leva de 24/ago trouxe seis correções vindas de quem estava desenhando
 fluxo de verdade. Estão aqui porque **as três primeiras tinham a mesma causa**, e
@@ -1126,7 +1126,7 @@ plano básico ocupa duas unidades. O campo de rótulo de opção tinha
 - rótulo de 19 letras **recusava qualquer emoji**, sem dizer por quê;
 - colar texto longo cortava no meio do par substituto;
 - o pedaço solto atravessava o `JSON.stringify` e o **Postgres recusava o
-  `jsonb`** — o rascunho parava de gravar, e ao recarregar a opção e os emojis
+  `jsonb`**, o rascunho parava de gravar, e ao recarregar a opção e os emojis
   tinham sumido.
 
 A regra que fica: **conte por caractere (`core/flow/texto.ts`), e nunca corte o
@@ -1137,11 +1137,11 @@ As outras três:
 
 - **O teste mostrava `*negrito*` cru.** O produto sempre soube escrever a
   formatação; faltava **ler** de volta (`core/flow/marcacao.ts`). A aba Testar é
-  onde se decide se a mensagem está boa — mostrar outra coisa que o WhatsApp a
+  onde se decide se a mensagem está boa, mostrar outra coisa que o WhatsApp a
   desqualifica inteira. O Inbox ganhou o mesmo desenho.
 - **Não dava para renomear um fluxo.** O nome era escolhido no modal de criação e
   nunca mais.
-- **"Assumir" não calava o bot** — só responder calava. Quem assumia dividia a
+- **"Assumir" não calava o bot**, só responder calava. Quem assumia dividia a
   conversa com o robô.
 
 ---
@@ -1167,14 +1167,14 @@ curl -s -X POST "https://api.supabase.com/v1/projects/$AUTOFLUXOS_SUPABASE_PROJE
 
 Depois de aplicar, **confira as três coisas**: que os objetos existem, que toda
 tabela nova tem RLS ligada e o `grant` revogado, e que `app_verandi` continua
-com **40 tabelas**. O roteiro pronto — com o que **não** é sinal de problema —
+com **40 tabelas**. O roteiro pronto, com o que **não** é sinal de problema , 
 está no §9.3.
 
 ### 6.2 A view `leads` só aceita coluna nova **no fim**
 
 `create or replace view` não reordena nem remove: recusa qualquer outra
 diferença com `cannot change name of view column`. A ordem verdadeira é a da
-última migration que mexeu nela — hoje a `0023`, que acrescentou `ultimo_tipo`
+última migration que mexeu nela, hoje a `0023`, que acrescentou `ultimo_tipo`
 no fim. Nenhuma migration depois dela tocou na view.
 
 ### 6.3 Versão publicada é imutável, inclusive para nós
@@ -1185,7 +1185,7 @@ de dar parse no que foi publicado antes, **toda conversa em andamento morre no
 meio**, e não há como saber quantas são.
 
 O caminho é sempre **ler os dois formatos e normalizar na leitura**, e todo
-campo novo do schema é **opcional** — foi assim que `timeoutMinutos` entrou na
+campo novo do schema é **opcional**, foi assim que `timeoutMinutos` entrou na
 B1. Nenhuma migration reescreve `flow_versions.grafo`. Três testes prendem isso:
 `core/flow/mensagem.test.ts`, o `describe('o bloco de mensagem em pilha')` em
 `core/engine/executar.test.ts`, e o teste do webhook que publica a abertura no
@@ -1198,38 +1198,38 @@ referenciados.
 ### 6.4 Quem autoriza é `server/sessao.ts`, não o `proxy.ts`
 
 O proxy decide se a requisição **segue**; a conferência do login por usuário lá
-é só de **presença do cookie** — não vai ao banco e não decide nada sozinha.
+é só de **presença do cookie**, não vai ao banco e não decide nada sozinha.
 
 Não é preguiça: a documentação do Next avisa que Server Action é um POST na
 rota onde ela é usada, e um refactor que a mova de rota a tira do matcher sem
 ninguém perceber. **`src/server/acoes.test.ts` lê o texto de `acoes.ts` e
-recusa ação nova que esqueça a conferência** — e também recusa ação que confira
+recusa ação nova que esqueça a conferência**, e também recusa ação que confira
 **depois** de escrever.
 
 Quando você acrescentar uma ação com `clienteId`, ela precisa começar com
 `await exigirAcessoAoCliente(clienteId)`; a que não recebe cliente precisa de
-`exigirOperadorDa4YU()`. Quem exige mais que "pode ver" — mexer na equipe, por
-exemplo — chama `podeAdministrarConta` **depois**, sem substituir a primeira
+`exigirOperadorDa4YU()`. Quem exige mais que "pode ver", mexer na equipe, por
+exemplo, chama `podeAdministrarConta` **depois**, sem substituir a primeira
 linha.
 
 ### 6.5 A porta é uma só, e o que sobrou de largo
 
 **A senha única do time saiu.** `/login`, `PAINEL_SENHA`, o cookie assinado e
 `lib/painel-auth.ts` não existem mais; `/entrar` é a porta. Ela existia enquanto
-nenhuma tela sabia de qual conta a pessoa era — hoje todas sabem, e mantê-la
+nenhuma tela sabia de qual conta a pessoa era, hoje todas sabem, e mantê-la
 significava manter um caminho que alcança qualquer conta **sem passar por
 membro** e, portanto, sem deixar rastro na auditoria.
 
 Sobrou uma linha larga, e ela está escrita para não se perder: **o administrador
 da plataforma passa em `exigirAcessoAoCliente` mesmo sem ser membro**. É a última
-forma de alcançar uma conta sem rastro, e a saída dela é "só impersonando" — que
+forma de alcançar uma conta sem rastro, e a saída dela é "só impersonando", que
 registra. Fechar é decisão do dono, porque no dia em que fechar ele precisa ser
 membro de toda conta que quiser abrir. Ver PENDENCIAS-DO-DONO.md.
 
 Quem não pode recebe **404**, e não 403: confirmar que a conta existe já é contar
 de um cliente para quem não é dele.
 
-De `painel-auth.ts` sobreviveu só `iguais`, em `lib/segredo.ts` — comparação em
+De `painel-auth.ts` sobreviveu só `iguais`, em `lib/segredo.ts`, comparação em
 tempo constante, que as rotas de manutenção usam no `CRON_SECRET`.
 
 ### 6.6 `auth.ts` exporta função, não constante
@@ -1237,7 +1237,7 @@ tempo constante, que as rotas de manutenção usam no `CRON_SECRET`.
 `autenticacao()` constrói a instância na primeira chamada. Voltar a
 `export const auth = betterAuth(...)` **derruba o CI**: o pool estoura sem
 `DATABASE_URL`, e o `npm run build` do CI roda sem variável de banco nenhuma, de
-propósito — este repositório é público e não guarda segredo. O mesmo vale para a
+propósito, este repositório é público e não guarda segredo. O mesmo vale para a
 rota `[...all]`, que chama `autenticacao()` dentro de cada método em vez de usar
 `toNextJsHandler`.
 
@@ -1253,7 +1253,7 @@ de apagar; não existe permissão.
 
 **Server Action tem teto de corpo, e ele falha antes do seu código.** O padrão
 do Next é **1 MB**: acima disso o framework devolve 413 sem a função rodar, e o
-que a pessoa vê é a página de erro genérica — sem motivo, porque não houve
+que a pessoa vê é a página de erro genérica, sem motivo, porque não houve
 código nosso para produzir um. Foi assim que o bloco de arquivo, anunciando
 "até 16 MB", derrubava a tela inteira com um PDF de 3 MB.
 
@@ -1263,12 +1263,12 @@ planilha**, que precisa mesmo passar pelo servidor para ser lida.
 
 **Mídia vai direto do navegador para o Storage**, por URL assinada
 (`pedirEnvioAssinado` em `repos/acervo.ts`): o servidor confere o dono e assina
-um caminho, o navegador manda os bytes. O teto volta a ser o do bucket — 16 MB,
-o da própria Cloud API — e `allowed_mime_types` mais `file_size_limit` (0017)
+um caminho, o navegador manda os bytes. O teto volta a ser o do bucket, 16 MB,
+o da própria Cloud API, e `allowed_mime_types` mais `file_size_limit` (0017)
 passam a ser a checagem que ninguém contorna.
 
 Regra prática, então: **arquivo de gente nunca entra numa Server Action.** A
-logo é a exceção que confirma — ela cabe porque o limite dela é 512 KB.
+logo é a exceção que confirma, ela cabe porque o limite dela é 512 KB.
 
 E o corolário no cliente: **toda chamada de ação dentro de `useTransition`
 precisa de `try/catch`.** Promessa rejeitada ali sobe para a fronteira de erro
@@ -1288,7 +1288,7 @@ do React e derruba a tela; falha de upload tem que ser um recado numa linha.
 | `connections` | credenciais dos blocos de API |
 | `af_usuarios` | usuários (Better Auth), com `presenca`. **Não** é `auth.users` |
 | `af_sessoes` | sessões, com `impersonatedBy` e `activeOrganizationId` |
-| `af_contas` | credenciais — guarda **hash** de senha |
+| `af_contas` | credenciais, guarda **hash** de senha |
 | `af_verificacoes` | tokens de verificação |
 | `af_membros` | usuário × conta × papel (`owner`/`admin`/`member`) |
 | `af_convites` | a tabela existe; o convite não, porque depende de SMTP |
@@ -1317,7 +1317,7 @@ Funções: `publicar_fluxo` · `contar_disparo_do_gatilho` ·
 `anon` e `authenticated` na 0019): `af_contas` guarda hash de senha e
 `af_sessoes` guarda token. Por isso `src/server/repos/usuarios.ts` e
 `src/server/sessao.ts` falam Postgres direto pelo pool do Better Auth
-(`bancoDoLogin()`), e são a exceção da casa — todo o resto usa `supabase-js`.
+(`bancoDoLogin()`), e são a exceção da casa, todo o resto usa `supabase-js`.
 
 ---
 
@@ -1326,15 +1326,15 @@ Funções: `publicar_fluxo` · `contar_disparo_do_gatilho` ·
 ### 8.1 A Etapa B fechou
 
 As duas peças que faltavam entraram, e o que elas custaram está em §5.7 e §5.8.
-Nada da Etapa B está mais fora do código — o que falta é a autorização para
+Nada da Etapa B está mais fora do código, o que falta é a autorização para
 aplicar a `0030` e a `0031`, item 3.2 de
 [PENDENCIAS-DO-DONO.md](PENDENCIAS-DO-DONO.md).
 
-### 8.2 A Etapa C — em andamento
+### 8.2 A Etapa C, em andamento
 
 | Frente | Estado |
 |---|---|
-| **C1 Quadros** | **inteira no ar** — o quadro (§5.9) e o bloco que o move sozinho (§5.10) |
+| **C1 Quadros** | **inteira no ar**, o quadro (§5.9) e o bloco que o move sozinho (§5.10) |
 | C2 central de notificações | não começou. Reaproveita o alerta de fila que já toca em qualquer tela |
 | C3 casca (idioma, ajuda, relatar bug) | não começou. Ninguém deixa de operar por falta |
 | C4 modelos da Meta e Transmissão | **trava externa**: verificação da empresa e App Review. Não é código nosso que destrava |
@@ -1360,7 +1360,7 @@ Transmissão só depende do agendador (feito) mais os modelos da Meta.
   ninguém recebe nada duas vezes. Está escrito em `apagarPasso`.
 - **A numeração vai cruzar com a da Verandi** (`0030_vr_`). O prefixo distingue
   e nenhum repositório aplica a migration do outro; se incomodar, o caminho é
-  prefixo próprio — nunca renumerar o que já foi aplicado.
+  prefixo próprio, nunca renumerar o que já foi aplicado.
 - **O agendador depende da carona no webhook** para ter resolução. Conta parada
   o dia inteiro só é varrida uma vez por dia.
 - **`ALERTA_WEBHOOK_URL` continua vazia**, então `alertar()` é no-op: falha de
@@ -1375,10 +1375,10 @@ travam:
 1. **Aplicar a `0030` e a `0031`.** É o que trava agora: as duas frentes novas
    estão inteiras no código e sem tabela em produção.
 2. **`ALERTA_WEBHOOK_URL`**, sem a qual nada falha ruidosamente.
-3. **Provar a mídia no WhatsApp de verdade** — nenhuma foto saiu pela Cloud API
+3. **Provar a mídia no WhatsApp de verdade**, nenhuma foto saiu pela Cloud API
    até hoje, e agora o bloco de arquivo sobe direto para o Storage.
 
-O primeiro administrador e o dono de cada conta **já existem** — conferido em
+O primeiro administrador e o dono de cada conta **já existem**, conferido em
 produção em 19/ago/2026. E fica a distinção que ninguém acerta de primeira:
 `owner` é papel **dentro de uma conta** (`af_membros`), `admin` é papel **de
 plataforma** (`af_usuarios.role`). Ser dono de três contas não abre `/admin/*`.
@@ -1398,17 +1398,17 @@ npm run build     # roda também sem DATABASE_URL, e tem que continuar rodando
 
 Commit por etapa validada, push, e a Vercel faz o deploy sozinha do `main`.
 Conferir o deploy pela API (`VERCEL_TOKEN` no cofre) e **provar em produção**,
-não só no build — o roteiro é o §9.3.
+não só no build, o roteiro é o §9.3.
 
 ### 9.2 Testes
 
 Boa parte da suíte fala com o **Supabase de produção**. Eles limpam o que criam
 com prefixo `zz-`; execução que quebra no meio deixa lixo. `af_auditoria` é a
-exceção — append-only, então `auditoria.test.ts` deixa linhas de
+exceção, append-only, então `auditoria.test.ts` deixa linhas de
 `gente@exemplo.test` lá para sempre, e `/admin/auditoria` já nasce com elas.
 
 Os testes que falam com o WhatsApp injetam `canalMock` como fábrica de canal.
-**Toda função nova que entrega mensagem precisa aceitar essa injeção** — foi o
+**Toda função nova que entrega mensagem precisa aceitar essa injeção**, foi o
 que `rodarTarefas(limite, fabricaDeCanal)` teve que ganhar para o agendador ser
 testável sem bater na Cloud API de verdade.
 
@@ -1442,24 +1442,24 @@ regressão: alguém criou objeto com outro papel, ou desfez o default.
 As cinco que valem:
 
 ```sql
--- 2a. tabela de `public` sem RLS — tem que vir VAZIO
+-- 2a. tabela de `public` sem RLS, tem que vir VAZIO
 select relname from pg_class c
   join pg_namespace n on n.oid = c.relnamespace
  where n.nspname = 'public' and c.relkind = 'r' and not c.relrowsecurity;
 
--- 2b. qualquer política em `public` — tem que vir VAZIO.
+-- 2b. qualquer política em `public`, tem que vir VAZIO.
 --     A RLS sem política é a camada que barra o acesso do lado da tabela.
 select tablename, policyname from pg_policies where schemaname = 'public';
 
--- 2c. tabela, view ou sequence alcançável por anon/authenticated — VAZIO.
+-- 2c. tabela, view ou sequence alcançável por anon/authenticated, VAZIO.
 --     View não obedece RLS por si: `leads` e as `metricas_*` dependem do
 --     `revoke` e do `security_invoker`.
 select distinct table_name from information_schema.role_table_grants
  where table_schema = 'public' and grantee in ('anon', 'authenticated');
 
--- 2d. função alcançável por anon/authenticated — VAZIO.
+-- 2d. função alcançável por anon/authenticated, VAZIO.
 --     Função NÃO é protegida por RLS, e `has_function_privilege` enxerga o
---     `EXECUTE` herdado de `PUBLIC` — que foi o furo que a `0041` fechou.
+--     `EXECUTE` herdado de `PUBLIC`, que foi o furo que a `0041` fechou.
 select p.proname from pg_proc p
   join pg_namespace n on n.oid = p.pronamespace
  where n.nspname = 'public'
@@ -1469,7 +1469,7 @@ select p.proname from pg_proc p
 -- 2e. nenhum objeto NOSSO em `app_verandi`.
 --
 --     Era `count(*) = 40`, e o número envelheceu no primeiro dia em que a
---     Verandi aplicou uma migration dela — passou a 41 sem nada de errado ter
+--     Verandi aplicou uma migration dela, passou a 41 sem nada de errado ter
 --     acontecido. Número fixo aqui produz susto falso e, pior, ensina a ignorar
 --     a conferência. A pergunta certa nunca foi "quantas tabelas" e sim
 --     "alguma coisa nossa vazou para lá": tem que vir VAZIO.
@@ -1488,7 +1488,7 @@ curl -s -o /dev/null -w '%{http_code}\n' https://autofluxos.4yu.com.br/api/manut
 curl -s -o /dev/null -w '%{http_code}\n' https://autofluxos.4yu.com.br/api/webhook/whatsapp    # 403
 
 # a única leitura de banco que abre sem sessão. Token inválido tem que render
-# "NÃO ENCONTRADO" com 200 — se vier erro de aplicação, o `service_role` perdeu
+# "NÃO ENCONTRADO" com 200, se vier erro de aplicação, o `service_role` perdeu
 # acesso a `public` e é a primeira coisa a conferir depois de mexer em `grant`.
 curl -s https://autofluxos.4yu.com.br/f/token-invalido | grep -c 'NÃO ENCONTRADO'  # 1
 
@@ -1518,13 +1518,13 @@ curl -s -H "Authorization: Bearer $AUTOFLUXOS_CRON_SECRET" \
   violação de chave estrangeira crua na cara de quem clicou. O Postgres não
   expressa "recuse o gesto direto, ceda quando o pai está sendo apagado". A saída
   é `cascade` no banco e a recusa no código, com a frase que diz onde ir
-  desligar — é o que `campanhas.flow_id` já fazia desde a 0027. Ver a 0035.
+  desligar, é o que `campanhas.flow_id` já fazia desde a 0027. Ver a 0035.
 - **`ON CONFLICT` contra índice único parcial.** O PostgREST não expressa o
   predicado, e o `upsert` falha com "no unique or exclusion constraint
   matching". Foi o que fez `agendar()` virar cancelar-e-inserir.
 - **Função que devolve tipo composto não devolve `null` pelo PostgREST.** Quando
   o `update` dentro dela não casa nada, o retorno chega como um objeto com
-  **todos os campos nulos** — `{"id":null,"quadro_id":null,…}` — que é
+  **todos os campos nulos**, `{"id":null,"quadro_id":null,…}`, que é
   verdadeiro em JavaScript. `mover_cartao` respondia "movi" para as duas
   tentativas que ela existe para recusar, e foram os testes de isolamento que
   pegaram. A forma segura é `returns setof`: nada casou vira `[]`. Consertar só
@@ -1536,15 +1536,15 @@ curl -s -H "Authorization: Bearer $AUTOFLUXOS_CRON_SECRET" \
   dizendo "o servidor estourou e não conto o quê" (`resolveErrorProd`). Quem
   responde é o **500 do servidor**, não o número do cliente.
 - **Saída sem nome que pega a aresta errada.** Depois que a pergunta ganhou a
-  saída `timeout`, `proximo()` sem handle passou a precisar excluí-la — senão
+  saída `timeout`, `proximo()` sem handle passou a precisar excluí-la, senão
   quem **respondeu** vai pelo caminho de quem **não respondeu**, e o desenho na
   tela parece certo.
 - **Tela de autorização que o Next prerenderiza.** `/admin/page.tsx` só
   redireciona, e sem `force-dynamic` o Next resolvia no build.
 - **`Date.now()` dentro do JSX de um Server Component.** O compilador do React
   recusa com `react-hooks/purity`, e ele tem razão em geral. Quando a rota é
-  `force-dynamic` e o valor precisa mesmo ser o relógio do servidor — para o
-  cliente **não** ler o dele e divergir na hidratação — a saída é uma função no
+  `force-dynamic` e o valor precisa mesmo ser o relógio do servidor, para o
+  cliente **não** ler o dele e divergir na hidratação, a saída é uma função no
   módulo, chamada uma vez. Ver `agoraDoServidor` em `quadros/page.tsx`.
 - **Altura calculada em `calc(100vh - N)`.** Erra em silêncio quando o
   cabeçalho muda: a lista some por baixo e nada quebra para avisar. Use flex.
@@ -1553,7 +1553,7 @@ curl -s -H "Authorization: Bearer $AUTOFLUXOS_CRON_SECRET" \
 - **Duas funções que discordam sobre a mesma regra.** `proximaAbertura`
   anunciava faixa que `atendimentoAberto` nunca honraria.
 - **Duas coisas com o mesmo sintoma escondem uma à outra.** "Falha que some ao
-  rodar de novo" foi atribuída ao relógio do WSL2 por semanas — era o teto de
+  rodar de novo" foi atribuída ao relógio do WSL2 por semanas, era o teto de
   5s do Vitest **e** telefone de teste derivado de `Date.now()`.
 
 ### 9.5 O `.npmrc` com `legacy-peer-deps` é obrigatório
@@ -1575,7 +1575,7 @@ cadeia do Svelte, que exige `vite@8` contra o `vite@7` do Vitest. Sem o
 |---|---|---|---|
 | `SUPABASE_URL`, `SUPABASE_SECRET_KEY` | ✅ | ✅ | |
 | `META_APP_SECRET`, `WHATSAPP_TOKEN`, `WHATSAPP_VERIFY_TOKEN` | ✅ | ✅ | |
-| `GEMINI_API_KEY` | ✅ | ✅ | entrou em 17/ago — antes disso o bloco de IA nunca funcionou em produção |
+| `GEMINI_API_KEY` | ✅ | ✅ | entrou em 17/ago, antes disso o bloco de IA nunca funcionou em produção |
 | ~~`PAINEL_SENHA`~~ | ❌ | ❌ | **saiu** com a rota `/login`. Se ainda estiver na Vercel, pode remover |
 | ~~`PAINEL_SEGREDO`~~ | ❌ | ❌ | **saiu** junto |
 | `CRON_SECRET` | ✅ | ✅ | sem ela a retenção **e o agendador** respondem 503 |
@@ -1585,7 +1585,7 @@ cadeia do Svelte, que exige `vite@8` contra o `vite@7` do Vitest. Sem o
 | `ALERTA_WEBHOOK_URL` | ❌ | ❌ | **falta**. Sem ela `alertar()` é no-op |
 
 Valores em `4yu-apps/.secrets/4yu.env`, prefixo `AUTOFLUXOS_`. **Nunca** copie
-segredo para dentro do repo — ele é público.
+segredo para dentro do repo, ele é público.
 
 Conexão direta: `postgresql://postgres.<ref>:<senha>@aws-0-sa-east-1.pooler.supabase.com:6543/postgres`.
 Porta **6543** (transaction pooler). Em modo transação o Supavisor **não
@@ -1598,7 +1598,7 @@ suporta prepared statements**.
 Três, e as três vieram de o dono olhar a interface e apontar o que estava errado.
 
 **1. Criar e editar são modais.** Formulário de criação aberto na página é um
-bloco que ocupa o mesmo espaço da lista que ele alimenta — e criar é raro,
+bloco que ocupa o mesmo espaço da lista que ele alimenta, e criar é raro,
 enquanto ler a lista é o tempo todo. Automações chegou a ter quatro desses
 empilhados, cada um maior que a seção que servia.
 
@@ -1607,7 +1607,7 @@ O padrão é `ModalFormulario` (botão + `<form>` com Server Action) ou `Modal`
 `EstadoSalvar` servem aos dois sem adaptador: `acao.bind(null, ids…, {})`
 transforma `(estado, formData)` em `(formData)`.
 
-**A exceção é a página que já É o formulário** — contexto do negócio, horário de
+**A exceção é a página que já É o formulário**, contexto do negócio, horário de
 atendimento, cadastro do cliente. Ali não há lista competindo pelo espaço, e um
 modal em cima de uma tela vazia é uma janela dentro de outra. A regra vale para
 **item de lista**.
@@ -1616,17 +1616,17 @@ modal em cima de uma tela vazia é uma janela dentro de outra. A regra vale para
 menos, herdado de quando eram formulários de uma coluna. Numa tela larga isso
 deixa um terço da área morto ao lado do conteúdo, com as tabelas espremidas. As
 telas de lista foram para `1440px`, as de configuração para `1100px`, e os
-parágrafos ganharam `max-w` próprio — largura de leitura e largura de tabela são
+parágrafos ganharam `max-w` próprio, largura de leitura e largura de tabela são
 medidas diferentes, e usar a mesma para as duas erra uma delas.
 
 **3. Coisa criada aparece.** A lista de fluxos escondia grupo vazio, e o efeito
-era criar uma pasta e a tela não mudar em nada — que ensina que o botão está
+era criar uma pasta e a tela não mudar em nada, que ensina que o botão está
 quebrado. A gaveta recém-criada é justamente a que ainda não tem nada dentro;
 esconder o resultado do único clique que a pessoa deu é o pior desfecho.
 
 **4. Quatro assuntos que se usam um de cada vez viram abas.** Automações
 empilhava fluxos, palavras-chave, campanhas e sequências, cada um com o próprio
-texto de apoio — quem abria via um paredão de explicação e rolava para descobrir
+texto de apoio, quem abria via um paredão de explicação e rolava para descobrir
 que havia mais coisa. A aba vem por `?aba=`, e não por estado de cliente: o
 endereço leva de volta ao mesmo lugar, o "voltar" do navegador funciona, e a
 página continua sendo renderizada no servidor.
@@ -1634,7 +1634,7 @@ página continua sendo renderizada no servidor.
 **5. `{{variavel}}` no editor não parece texto comum.** Ela era indistinguível
 do resto da frase, e a consequência aparecia tarde: alguém escrevia `{{nomee}}`,
 publicava, e descobria na conversa de um cliente que ali saía vazio. Agora ela é
-realçada — **e conhecida é diferente de desconhecida**, que é o que transforma
+realçada, **e conhecida é diferente de desconhecida**, que é o que transforma
 enfeite em informação: variável que nenhum bloco preenche fica âmbar, com o mesmo
 critério do `validar()`.
 
@@ -1649,7 +1649,7 @@ implementação por aí: as duas camadas medindo igual, rolagem sincronizada, um
 caractere depois da última quebra de linha, e `pre-wrap` nas duas.
 
 **A fatia mora em `core/engine/interpolar.ts`, ao lado de `interpolar`**, e usa o
-mesmo padrão — de propósito. Se o realce reconhecesse mais coisa que o motor, o
+mesmo padrão, de propósito. Se o realce reconhecesse mais coisa que o motor, o
 editor pintaria de azul um `{{ nome }}` que a conversa mandaria literal, e a
 pessoa confiaria na cor. Há teste prendendo os dois no mesmo resultado.
 
@@ -1662,7 +1662,7 @@ ensina que o produto não sabe para onde mandar a pessoa.
 
 ## 11. O que o dono decidiu, e que não se renegocia sem ele
 
-1. **A conta é do cliente e ele faz tudo nela** — cria, edita, publica, apaga.
+1. **A conta é do cliente e ele faz tudo nela**, cria, edita, publica, apaga.
    Nós somos administradores de contas, não donos dos fluxos.
 2. **Sidebar à esquerda, não abas no topo.** Foi explícito e enfático.
 3. **Cada tela nova é superfície, e superfície custa manutenção para sempre.**
@@ -1675,7 +1675,7 @@ ensina que o produto não sabe para onde mandar a pessoa.
 6. **Mandar o cliente usar n8n/Zapier/Make não é resposta aceitável.** Faltou
    peça? Constrói a peça.
 7. **Não temos dado de dinheiro.** Inventar por multiplicação vira mentira no
-   relatório do cliente. O caminho honesto é ler valor fechado do CRM — o preset
+   relatório do cliente. O caminho honesto é ler valor fechado do CRM, o preset
    da RD já manda o lead para lá; falta o caminho de volta, e ele é Etapa C.
 8. **Nada de pedir ao usuário que compense detalhe da plataforma.** Se o
    WhatsApp come o ponto final da frase de campanha, quem normaliza somos nós.
