@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { alertar } from '@/server/alertar'
 import { consumirLimite } from '@/server/limite'
 import { tratarEvento } from '@/server/receber-evento'
-import { segredosAtivos, marcarChamada } from '@/server/repos/webhooks-de-entrada'
+import { segredosAtivos, marcarChamada, marcarRecusa } from '@/server/repos/webhooks-de-entrada'
 
 /**
  * Onde um sistema de fora avisa que algo aconteceu (0044).
@@ -102,6 +102,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ cliente
     // 401 sem detalhe: dizer "a conta não tem webhook" e "a assinatura não
     // bate" com respostas diferentes entregaria, de graça, quais contas têm
     // integração ligada.
+    //
+    // A recusa fica marcada depois da resposta, e só dentro do limite por
+    // minuto: uma enxurrada de 401 não vira enxurrada de escrita (0095).
+    after(() => marcarRecusa(clienteId))
     return Response.json({ erro: 'assinatura inválida' }, { status: 401 })
   }
 

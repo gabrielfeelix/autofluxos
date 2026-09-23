@@ -2,7 +2,7 @@ import { createHmac } from 'node:crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { consumirLimite } from '@/server/limite'
 import { tratarEvento } from '@/server/receber-evento'
-import { marcarChamada, segredosAtivos } from '@/server/repos/webhooks-de-entrada'
+import { marcarChamada, marcarRecusa, segredosAtivos } from '@/server/repos/webhooks-de-entrada'
 import { POST } from './route'
 
 /**
@@ -18,6 +18,7 @@ vi.mock('@/server/receber-evento', () => ({ tratarEvento: vi.fn() }))
 vi.mock('@/server/repos/webhooks-de-entrada', () => ({
   segredosAtivos: vi.fn(),
   marcarChamada: vi.fn(),
+  marcarRecusa: vi.fn(),
 }))
 vi.mock('@/server/alertar', () => ({ alertar: vi.fn() }))
 // `after()` roda depois da resposta; no teste ele executa na hora, que é o que
@@ -59,6 +60,7 @@ describe('POST /api/webhook/entrada/[clienteId]', () => {
     vi.mocked(segredosAtivos).mockResolvedValue([{ id: 'wh1', segredo: SEGREDO }])
     vi.mocked(tratarEvento).mockResolvedValue('aberto')
     vi.mocked(marcarChamada).mockResolvedValue(undefined)
+    vi.mocked(marcarRecusa).mockResolvedValue(undefined)
   })
 
   it('assinatura certa processa o evento', async () => {
@@ -76,6 +78,9 @@ describe('POST /api/webhook/entrada/[clienteId]', () => {
 
     expect(resposta.status).toBe(401)
     expect(tratarEvento).not.toHaveBeenCalled()
+    // A tela mostra "assinatura inválida em <data>" a partir disto (0095).
+    expect(marcarRecusa).toHaveBeenCalledWith(CLIENTE)
+    expect(marcarChamada).not.toHaveBeenCalled()
   })
 
   it('sem cabeçalho de assinatura devolve 401', async () => {

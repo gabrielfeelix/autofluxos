@@ -7,6 +7,7 @@ import {
   acaoCriarWebhookDeEntrada,
 } from '@/server/acoes'
 import type { WebhookDeEntrada } from '@/server/repos/webhooks-de-entrada'
+import { dataDaChamada, estadoDoWebhook } from '@/core/webhook-de-entrada'
 
 /**
  * Quem pode avisar este cliente de fora (0044).
@@ -73,6 +74,8 @@ export function WebhooksDeEntrada({
         </div>
       )}
 
+      <EnderecoParaCopiar endereco={endereco} />
+
       <div className="mb-4 flex flex-wrap items-end gap-2">
         <label className="min-w-[200px] flex-1">
           <span className="mb-1 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
@@ -124,14 +127,7 @@ export function WebhooksDeEntrada({
                 >
                   {webhook.nome}
                 </strong>
-                <span className="mt-0.5 block text-[11px] text-dim">
-                  {/* "Ainda não chamou" responde a pergunta que importa: a
-                      integração do outro lado está de pé? Sem isto, um webhook
-                      cadastrado há meses parece funcionando. */}
-                  {webhook.ultimaEm
-                    ? `última chamada em ${new Date(webhook.ultimaEm).toLocaleString('pt-BR')}`
-                    : 'ainda não recebeu nenhuma chamada'}
-                </span>
+                <UltimaChamada webhook={webhook} />
               </span>
               <BotaoApagar clienteId={clienteId} webhookId={webhook.id} nome={webhook.nome} />
             </li>
@@ -223,7 +219,7 @@ function BotaoApagar({
       <button
         type="button"
         onClick={() => setConfirmando(true)}
-        title="Apaga o webhook e o segredo. Quem chamava passa a levar 401."
+        title="Apaga o webhook e o segredo."
         className="shrink-0 rounded-lg border border-line px-2.5 py-1 text-[11px] text-dim transition hover:border-rose-400/40 hover:text-perigo"
       >
         Apagar
@@ -232,23 +228,97 @@ function BotaoApagar({
   }
 
   return (
-    <span className="flex shrink-0 items-center gap-1.5">
-      <span className="text-[10.5px] text-dim">Apagar “{nome}”?</span>
-      <button
-        type="button"
-        disabled={rodando}
-        onClick={() => comecar(async () => void (await acaoApagarWebhookDeEntrada(clienteId, webhookId)))}
-        className="rounded-lg border border-rose-400/40 px-2.5 py-1 text-[11px] text-perigo disabled:opacity-50"
-      >
-        Apagar
-      </button>
-      <button
-        type="button"
-        onClick={() => setConfirmando(false)}
-        className="rounded-lg border border-line px-2.5 py-1 text-[11px] text-dim"
-      >
-        Não
-      </button>
+    <span role="alertdialog" aria-label={`Apagar ${nome}`} className="flex max-w-[320px] shrink-0 flex-col items-end gap-1.5 text-right">
+      <span className="text-[11px] leading-4 text-muted">
+        Apagar “{nome}”? O sistema que chama este endereço com este segredo passa a ser recusado, e os
+        avisos dele deixam de começar automações. Não dá para desfazer: um segredo novo precisa ser
+        trocado lá também.
+      </span>
+      <span className="flex items-center gap-1.5">
+        <button
+          type="button"
+          disabled={rodando}
+          onClick={() => comecar(async () => void (await acaoApagarWebhookDeEntrada(clienteId, webhookId)))}
+          className="rounded-lg border border-rose-400/40 px-2.5 py-1 text-[11px] text-perigo disabled:opacity-50"
+        >
+          Apagar
+        </button>
+        <button
+          type="button"
+          onClick={() => setConfirmando(false)}
+          className="rounded-lg border border-line px-2.5 py-1 text-[11px] text-dim"
+        >
+          Não
+        </button>
+      </span>
+    </span>
+  )
+}
+
+/**
+ * O endereço que o outro sistema chama, com o botão de copiar.
+ *
+ * Antes ele só existia dentro do `curl` do "Como o outro sistema chama", e
+ * copiar dali trazia junto a barra invertida da linha.
+ */
+function EnderecoParaCopiar({ endereco }: { endereco: string }) {
+  const [copiado, setCopiado] = useState(false)
+  return (
+    <div className="mb-4">
+      <span className="mb-1 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">Endereço</span>
+      <div className="flex items-center gap-2">
+        <code className="min-w-0 flex-1 truncate rounded-lg border border-line bg-surface px-3 py-2 font-mono text-[11.5px] text-soft" title={endereco}>
+          {endereco}
+        </code>
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(endereco)
+              setCopiado(true)
+              setTimeout(() => setCopiado(false), 2000)
+            } catch {
+              setCopiado(false)
+            }
+          }}
+          className="shrink-0 rounded-lg border border-line bg-surface px-3 py-2 text-[12px] font-semibold transition hover:border-strong"
+        >
+          {copiado ? 'Copiado' : 'Copiar'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * A última chamada: nunca, aceita ou recusada por assinatura (0095).
+ *
+ * "Ainda não chamou" e "chamou com a assinatura errada" eram a mesma frase, e
+ * são dois problemas diferentes do outro lado: um é integração desligada, o
+ * outro é segredo ou jeito de assinar errado.
+ */
+function UltimaChamada({ webhook }: { webhook: WebhookDeEntrada }) {
+  const estado = estadoDoWebhook(webhook)
+  if (estado.tipo === 'nunca') {
+    return <span className="mt-0.5 block text-[11px] text-dim">Nunca chamado</span>
+  }
+  if (estado.tipo === 'autenticada') {
+    return (
+      <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-dim">
+        <span aria-hidden className="size-1.5 rounded-full bg-emerald-500" />
+        Autenticada em {dataDaChamada(estado.em)}
+      </span>
+    )
+  }
+  return (
+    <span className="mt-0.5 block text-[11px] leading-4 text-perigo">
+      <span className="flex items-center gap-1.5">
+        <span aria-hidden className="size-1.5 rounded-full bg-perigo" />
+        Assinatura inválida em {dataDaChamada(estado.em)}
+      </span>
+      <span className="block text-dim">
+        Chegou uma chamada e nenhum segredo desta conta conferiu. Veja o exemplo abaixo.
+      </span>
     </span>
   )
 }

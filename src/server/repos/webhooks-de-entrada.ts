@@ -18,6 +18,8 @@ export type WebhookDeEntrada = {
   nome: string
   ativo: boolean
   ultimaEm: string | null
+  /** Última chamada recusada por assinatura na conta (0095). */
+  recusadaEm: string | null
   criadoEm: string
 }
 
@@ -26,10 +28,11 @@ type Linha = {
   nome: string
   ativo: boolean
   ultima_em: string | null
+  recusada_em?: string | null
   criado_em: string
 }
 
-const COLUNAS = 'id, nome, ativo, ultima_em, criado_em'
+const COLUNAS = 'id, nome, ativo, ultima_em, recusada_em, criado_em'
 
 function paraWebhook(linha: Linha): WebhookDeEntrada {
   return {
@@ -37,20 +40,27 @@ function paraWebhook(linha: Linha): WebhookDeEntrada {
     nome: linha.nome,
     ativo: linha.ativo,
     ultimaEm: linha.ultima_em,
+    recusadaEm: linha.recusada_em ?? null,
     criadoEm: linha.criado_em,
   }
 }
 
 export async function listarWebhooks(clienteId: string): Promise<WebhookDeEntrada[]> {
-  const { data, error } = await db()
-    .from('webhooks_de_entrada')
-    .select(COLUNAS)
-    .eq('client_id', clienteId)
-    .order('criado_em', { ascending: true })
+  const ler = (colunas: string) =>
+    db()
+      .from('webhooks_de_entrada')
+      .select(colunas)
+      .eq('client_id', clienteId)
+      .order('criado_em', { ascending: true })
+
+  let { data, error } = await ler(COLUNAS)
+  // Banco sem a 0095 ainda (o deploy sai antes da migration ser autorizada):
+  // a lista abre sem a recusa, em vez de derrubar a aba de Eventos.
+  if (error?.code === '42703') ({ data, error } = await ler(COLUNAS.replace(', recusada_em', '')))
 
   if (ehIdInvalido(error)) return []
   if (error) throw new Error(`não deu para listar os webhooks: ${error.message}`)
-  return (data as Linha[]).map(paraWebhook)
+  return (data as unknown as Linha[]).map(paraWebhook)
 }
 
 /**
@@ -194,6 +204,25 @@ export async function marcarChamada(webhookId: string): Promise<void> {
 
   // Perder o carimbo não pode custar o evento. Vira log e a chamada segue.
   if (error) console.error('[webhook] não deu para marcar a chamada', error.message)
+}
+
+/**
+ * Marca que uma chamada chegou e a assinatura não conferiu (0095).
+ *
+ * Marca **todos os ativos da conta**: a chamada não diz qual webhook ela queria,
+ * e qualquer um deles poderia ter sido o destino. É o que deixa a tela dizer
+ * "assinatura inválida em <data>" em vez de "ainda não recebeu nenhuma
+ * chamada" para quem está montando a integração do outro lado.
+ */
+export async function marcarRecusa(clienteId: string): Promise<void> {
+  const { error } = await db()
+    .from('webhooks_de_entrada')
+    .update({ recusada_em: new Date().toISOString() })
+    .eq('client_id', clienteId)
+    .eq('ativo', true)
+
+  if (ehIdInvalido(error)) return
+  if (error) console.error('[webhook] não deu para marcar a recusa', error.message)
 }
 
 // ---------------------------------------------------------------------------

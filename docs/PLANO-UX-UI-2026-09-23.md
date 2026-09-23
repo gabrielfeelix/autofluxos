@@ -898,13 +898,13 @@ export async function editarPasso(
 
 ### Tarefa 5.7: webhook de entrada com teste e status [A14]
 
-- [ ] **Passo 1:** em `src/components/gatilhos/webhooks-de-entrada.tsx`: botão
+- [x] **Passo 1:** em `src/components/gatilhos/webhooks-de-entrada.tsx`: botão
   copiar URL e exemplo `curl` com assinatura; status da última chamada:
   "nunca chamado", "autenticada em <data>", "assinatura inválida em <data>"
   (ler se a última chamada já guarda o resultado; se não guarda, acrescentar
   coluna numa migration nova e aplicar só no local).
-- [ ] **Passo 2:** apagar explica que integrações externas deixam de funcionar.
-- [ ] **Passo 3:** commit `feat(gatilhos): webhook mostra a última chamada`.
+- [x] **Passo 2:** apagar explica que integrações externas deixam de funcionar.
+- [x] **Passo 3:** commit `feat(gatilhos): webhook mostra a última chamada`.
 
 ### Tarefa 5.8: abas responsivas [A02]
 
