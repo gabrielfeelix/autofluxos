@@ -18,6 +18,27 @@ atividade" pela agenda); depois, Fase 2.
 
 Deploy: `2f6a5e9` READY; `b38b538` estava BUILDING ao escrever isto. Conferir.
 
+## Duas mudanças pedidas pelo Gabriel em 23/09 (decididas, não reabrir)
+
+Entram como tarefas **1.6 e 1.7**, depois da 1.5, ainda na Fase 1.
+
+**1.6: alternância Lista | Agenda.** A lista atual continua; ao lado dela, um
+toggle na barra (`?vista=lista|agenda`, padrão `lista`, guardado na URL como os
+outros filtros) troca para uma **visão de agenda de verdade**: calendário com as
+atividades nos dias (semana com colunas por dia e horário; mês como grade).
+Mesmos filtros, busca e escopo da lista (`paginaDaAgenda` ou uma variante por
+intervalo de datas, não uma segunda regra). Clicar na atividade abre as mesmas
+ações da linha. Sem prazo fica numa faixa à parte ("Sem prazo"). Celular: vista
+de agenda vira lista por dia.
+
+**1.7: atribuir vira modal com busca.** Hoje o menu `⋯` lista "Atribuir a" com
+todos os membros embaixo (`src/components/atividades/acoes-da-linha.tsx`); com
+300 funcionários isso vira uma lista infinita. Trocar por um item só,
+**"Atribuir tarefa…"**, que abre um modal com um seletor pesquisável (campo de
+busca por nome, lista filtrada com rolagem, "Ninguém" como opção). Vale o mesmo
+padrão para o filtro "Responsável" do popover Filtros em
+`barra-da-agenda.tsx`, que tem o mesmo problema.
+
 ## Tarefa 1.5: onde parei (nada editado ainda)
 
 - Extrair de `src/components/inbox/marcar-atividade.tsx` os campos (tipos em
