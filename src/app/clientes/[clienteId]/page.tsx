@@ -34,7 +34,8 @@ import {
   ROTULO_DO_NIVEL,
 } from '@/core/relacionamento'
 import { listarQuadros } from '@/server/repos/quadros'
-import { recursosDaConta } from '@/server/repos/recursos'
+import { crmVisivel, recursosDaConta } from '@/server/repos/recursos'
+import { type AbaDoCliente, secoesVisiveis } from '@/components/design/secoes-do-cliente'
 import { sessaoAtual } from '@/server/sessao'
 
 export const dynamic = 'force-dynamic'
@@ -71,13 +72,14 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const acesso = await acessoCompleto(clienteId)
   const configura = pode(acesso.regras, 'configurar_operacao', 'todos')
   const onboarding = configura ? await onboardingDaConta(clienteId) : null
-  const [sessao, fluxos, canais, contatos, quadros, recursos] = await Promise.all([
+  const [sessao, fluxos, canais, contatos, quadros, recursos, crm] = await Promise.all([
     sessaoAtual(),
     listarFluxos(cliente.id),
     listarCanais(cliente.id),
     contarLeads(cliente.id),
     listarQuadros(cliente.id),
     recursosDaConta(cliente.id),
+    crmVisivel(cliente.id),
   ])
 
   // A mesma regra da trilha de Configurações: canal apontando para publicada.
@@ -129,7 +131,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
         <div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_336px]">
           <div className="flex min-w-0 flex-col gap-5">
-            <Atalhos clienteId={cliente.id} />
+            <Atalhos clienteId={cliente.id} visiveis={secoesVisiveis({ crmVisivel: crm, regras: acesso.regras }).map((secao) => secao.chave)} />
 
             <Suspense fallback={<EsqueletoDeLista linhas={3} comRosto rotulo="Carregando a fila…" />}>
               <Fila clienteId={cliente.id} contatos={contatos} acesso={acesso} canais={canais} configura={configura} />
@@ -377,30 +379,36 @@ function Estado({
  * onde a pessoa ia clicar de qualquer jeito, e uma aposta com seis opções não é
  * aposta nenhuma.
  */
-function Atalhos({ clienteId }: { clienteId: string }) {
+function Atalhos({ clienteId, visiveis }: { clienteId: string; visiveis: AbaDoCliente[] }) {
+  // Só o que a barra também mostra (7.2): atalho para uma tela de "sem acesso"
+  // é convite para um beco.
   const atalhos = [
     {
       href: `/clientes/${clienteId}/inbox`,
       titulo: 'Inbox',
       texto: 'Responder quem está falando com o negócio agora.',
       icone: <IconeConversa className="size-[18px]" />,
+      secao: 'inbox' as const,
     },
     {
       href: `/clientes/${clienteId}/quadros`,
       titulo: 'Funil',
       texto: 'Ver em que ponto cada negociação está.',
       icone: <IconeFunil className="size-[18px]" />,
+      secao: 'quadros' as const,
     },
     {
       href: `/clientes/${clienteId}/fluxos`,
       titulo: 'Automações',
       texto: 'Desenhar e publicar o que o bot responde.',
       icone: <IconeAutomacao className="size-[18px]" />,
+      secao: 'fluxos' as const,
     },
-  ]
+  ].filter((atalho) => visiveis.includes(atalho.secao))
+  if (atalhos.length === 0) return null
 
   return (
-    <nav aria-label="Atalhos" className="grid gap-3 sm:grid-cols-3">
+    <nav aria-label="Atalhos" className={`grid gap-3 ${atalhos.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
       {atalhos.map((atalho) => (
         <Link
           key={atalho.href}
