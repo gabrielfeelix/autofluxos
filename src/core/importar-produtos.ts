@@ -96,14 +96,16 @@ function endereco(
       motivo: `${artigo} precisa ser um endereço que começa com https://`,
     }
   }
-  if (url.protocol !== 'https:') {
+  // `new URL` aceita "https:loja.com"; o banco (0093) exige as barras.
+  if (url.protocol !== 'https:' || !/^https:\/\//i.test(texto)) {
     return {
       ok: false,
       motivo: `${artigo} precisa ser um endereço que começa com https://`,
     }
   }
   if (texto.length > 1000) return { ok: false, motivo: `${artigo} tem mais de 1000 caracteres` }
-  return { ok: true, valor: texto }
+  // "HTTPS://" passa aqui e o check do banco é sensível a caixa.
+  return { ok: true, valor: texto.replace(/^https:/i, 'https:') }
 }
 
 function lerLinha(

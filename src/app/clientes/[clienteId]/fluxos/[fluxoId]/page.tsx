@@ -5,6 +5,7 @@ import { variaveisDoFluxo } from '@/core/flow/variaveis'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarConexoesParaFluxos } from '@/server/repos/conexoes'
 import { lojaDaConta } from '@/server/repos/lojas'
+import { temProdutoAtivo } from '@/server/repos/produtos'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { membrosDaConta } from '@/server/repos/usuarios'
 import { listarQuadros } from '@/server/repos/quadros'
@@ -38,7 +39,7 @@ export default async function Pagina({
 }) {
   const { clienteId, fluxoId } = await params
 
-  const [cliente, fluxo, conexoes, quadros, etiquetas, fluxosDaConta, loja] = await Promise.all([
+  const [cliente, fluxo, conexoes, quadros, etiquetas, fluxosDaConta, loja, temCatalogo] = await Promise.all([
     acharCliente(clienteId),
     acharFluxo(fluxoId),
     listarConexoesParaFluxos(clienteId),
@@ -46,6 +47,7 @@ export default async function Pagina({
     listarEtiquetas(clienteId),
     listarFluxos(clienteId),
     lojaDaConta(clienteId),
+    temProdutoAtivo(clienteId),
   ])
   if (!cliente || !fluxo || fluxo.clienteId !== cliente.id) notFound()
 
@@ -122,7 +124,9 @@ export default async function Pagina({
            o desenho passa a dizer o que foi usado, sem sair para Respostas. */
         respostasPorVariavel={respostasPorVariavel}
         conexoes={conexoes}
-        lojaAtiva={loja?.ativa ?? false}
+        /* Magento ligada ou catálogo próprio com item ativo: os dois servem de
+           loja para o bot (`adaptador-da-loja.ts`). */
+        lojaAtiva={(loja?.ativa ?? false) || temCatalogo}
         /* As outras automações desta conta, para o bloco "Ir para outra
            automação". O próprio fluxo entra na lista: recomeçar do zero é
            desenho legítimo, e quem barra o laço infinito é a trava de saltos do

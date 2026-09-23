@@ -3247,14 +3247,21 @@ function ConsultasDaIa({
         */}
         {!lojaAtiva && !lojaMarcada ? (
           <p className="text-[11.5px] leading-5 text-dim">
-            Ligue a loja em{' '}
+            Cadastre produtos no{' '}
+            <a
+              className="underline underline-offset-2 hover:text-primary"
+              href={`/clientes/${clienteId}/ajustes/produtos`}
+            >
+              Catálogo
+            </a>{' '}
+            ou ligue a loja em{' '}
             <a
               className="underline underline-offset-2 hover:text-primary"
               href={`/clientes/${clienteId}/ajustes/integracoes/magento`}
             >
               Integrações
             </a>{' '}
-            para a IA consultar produtos, preço e estoque.
+            para a IA consultar produtos e preço.
           </p>
         ) : (
           <>
@@ -3269,8 +3276,8 @@ function ConsultasDaIa({
             ))}
             {!lojaAtiva && (
               <p className="mt-2 rounded-[10px] border border-amber-400/20 bg-amber-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-aviso">
-                A loja desta conta está desligada: estas consultas vão responder “não sei” até
-                religar em Integrações.
+                Esta conta está sem loja ligada e sem item no Catálogo: estas consultas vão
+                responder “não sei” até um dos dois existir.
               </p>
             )}
           </>

@@ -58,6 +58,12 @@ export function ImportarPlanilha({ clienteId }: { clienteId: string }) {
 
   async function prever(escolhido: File) {
     setArquivo(escolhido)
+    // O servidor recusa acima de 3 MB, mas o Next corta antes, em 4 MB, com
+    // erro que não chega aqui como frase.
+    if (escolhido.size > 3 * 1024 * 1024) {
+      setErro('o arquivo passa de 3 MB; divida em partes')
+      return
+    }
     setErro(null)
     setPendente(true)
     try {
@@ -66,6 +72,8 @@ export function ImportarPlanilha({ clienteId }: { clienteId: string }) {
       const r = await acaoPreverImportacao(clienteId, f)
       if (r.ok) setEtapa({ tipo: 'previa', previa: r.previa })
       else setErro(r.erro)
+    } catch {
+      setErro('não deu para ler o arquivo agora, tente de novo')
     } finally {
       setPendente(false)
     }
@@ -84,6 +92,8 @@ export function ImportarPlanilha({ clienteId }: { clienteId: string }) {
           erros: r.erros,
         })
       else setErro(r.erro)
+    } catch {
+      setErro('não deu para importar agora; nada foi perdido, tente de novo')
     } finally {
       setPendente(false)
     }

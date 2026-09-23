@@ -233,6 +233,18 @@ describe.skipIf(!temCredencial)('importar planilha (0093)', () => {
     expect(cadeira).toMatchObject({ nome: 'Cadeira Preta', sku: 'cad-1', preco: 999, foto: 'https://cdn.x/c.png' })
   })
 
+  it('lê o catálogo inteiro, mesmo acima das 1000 linhas que a Data API devolve por vez', async () => {
+    const outra = (await criarCliente(`${marca} grande`)).id
+    try {
+      const linhas = Array.from({ length: 1005 }, (_, i) => ({ client_id: outra, nome: `Item ${String(i).padStart(4, '0')}` }))
+      const { error } = await db().from('produtos').insert(linhas)
+      expect(error).toBeNull()
+      expect((await listarProdutos(outra)).length).toBe(1005)
+    } finally {
+      await db().from('clients').delete().eq('id', outra)
+    }
+  })
+
   it('lote recusado pelo banco é refeito linha a linha, e só a ruim fica de fora', async () => {
     // Plano feito com o catálogo vazio: "Avaliação" já existe, e só o banco sabe.
     const r = await gravarImportacao(

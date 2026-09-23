@@ -72,16 +72,46 @@ export type ResultadoDoProduto = { ok: true; produto: Produto } | { ok: false; m
  * sem ir ao banco de novo.
  */
 export async function listarProdutos(clienteId: string): Promise<Produto[]> {
-  const { data, error } = await db()
-    .from('produtos')
-    .select(COLUNAS)
-    .eq('client_id', clienteId)
-    .order('arquivado_em', { ascending: true, nullsFirst: true })
-    .order('nome', { ascending: true })
+  /*
+   * Em páginas: a Data API devolve no máximo 1000 linhas por consulta
+   * (`max_rows`), e a importação deixa o catálogo passar disso. Sem páginas,
+   * o item 1001 some da busca do bot e a reimportação o trata como novo.
+   * O `id` no fim da ordem deixa as páginas estáveis entre si.
+   */
+  const PAGINA = 1000
+  const todos: LinhaDoProduto[] = []
+  for (let de = 0; ; de += PAGINA) {
+    const { data, error } = await db()
+      .from('produtos')
+      .select(COLUNAS)
+      .eq('client_id', clienteId)
+      .order('arquivado_em', { ascending: true, nullsFirst: true })
+      .order('nome', { ascending: true })
+      .order('id', { ascending: true })
+      .range(de, de + PAGINA - 1)
 
-  if (ehIdInvalido(error)) return []
+    if (ehIdInvalido(error)) return []
+    if (error) throw new Error(`não deu para ler o catálogo: ${error.message}`)
+    todos.push(...(data as LinhaDoProduto[]))
+    if (data.length < PAGINA) break
+  }
+  return todos.map(paraProduto)
+}
+
+/**
+ * A conta tem ao menos um item ativo? É o que liga o catálogo como loja do
+ * bot quando não há Magento (`adaptador-da-loja.ts`), e o editor pergunta
+ * isso para mostrar as consultas de loja.
+ */
+export async function temProdutoAtivo(clienteId: string): Promise<boolean> {
+  const { count, error } = await db()
+    .from('produtos')
+    .select('id', { count: 'exact', head: true })
+    .eq('client_id', clienteId)
+    .is('arquivado_em', null)
+  if (ehIdInvalido(error)) return false
   if (error) throw new Error(`não deu para ler o catálogo: ${error.message}`)
-  return (data as LinhaDoProduto[]).map(paraProduto)
+  return (count ?? 0) > 0
 }
 
 /** Um item do catálogo, arquivado ou não. `null` = não existe nesta conta. */

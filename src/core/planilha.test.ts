@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { lerCsv, lerXlsx, type Linha } from './planilha'
+import { decodificarCsv, lerCsv, lerXlsx, type Linha } from './planilha'
 
 /** Só as células, para os testes que não olham o número da linha. */
 const celulas = (linhas: Linha[]) => linhas.map((l) => l.celulas)
@@ -33,6 +33,22 @@ describe('lerCsv', () => {
       { linha: 2, celulas: ['A'] },
       { linha: 5, celulas: ['B'] },
     ])
+  })
+})
+
+describe('achados da revisão final', () => {
+  it('o separador vem do cabeçalho, mesmo com descrição cheia de vírgulas sem aspas', () => {
+    const texto = 'nome;preco;descricao\nCamiseta;49,90;azul, algodão, gola, manga, bolso, zíper\n'
+    expect(celulas(lerCsv(texto))[0]).toEqual(['nome', 'preco', 'descricao'])
+  })
+
+  it('CSV do Excel em Windows-1252 não vira "Cal�a"', () => {
+    const bytes = new Uint8Array([0x43, 0x61, 0x6c, 0xe7, 0x61]) // "Calça" em Windows-1252
+    expect(decodificarCsv(bytes)).toBe('Calça')
+  })
+
+  it('CSV em UTF-8 continua UTF-8', () => {
+    expect(decodificarCsv(new TextEncoder().encode('Calça'))).toBe('Calça')
   })
 })
 
@@ -94,6 +110,13 @@ describe('lerXlsx', () => {
       '<row r="1" spans="1:1"/>' + '<row r="2"><c r="A2" t="inlineStr"><is><t>b</t></is></c></row>',
     )
     expect(lerXlsx(arquivos)).toEqual([{ linha: 2, celulas: ['b'] }])
+  })
+
+  it('<t/> vazio não engole o texto seguinte, e a leitura fonética fica de fora', () => {
+    const arquivos = xlsx('<row r="1"><c r="A1" t="s"><v>0</v></c></row>')
+    arquivos['xl/sharedStrings.xml'] =
+      '<sst><si><r><t xml:space="preserve"/></r><r><t>Calça</t></r><rPh sb="0" eb="1"><t>カ</t></rPh></si></sst>'
+    expect(celulas(lerXlsx(arquivos))).toEqual([['Calça']])
   })
 
   it('recusa arquivo que não é planilha', () => {

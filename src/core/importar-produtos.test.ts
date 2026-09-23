@@ -67,6 +67,12 @@ describe('lerProdutosDaPlanilha', () => {
     ])
   })
 
+  it('HTTPS maiúsculo é aceito e gravado minúsculo; https: sem barras é recusado', () => {
+    const r = lidos(['A', '', '', '', '', 'HTTPS://loja.com/a'], ['B', '', '', '', '', 'https:loja.com/b'])
+    expect(r.itens.map((i) => i.link)).toEqual(['https://loja.com/a'])
+    expect(r.erros).toEqual([{ linha: 3, motivo: 'o link precisa ser um endereço que começa com https://' }])
+  })
+
   it('sku ou nome repetido na mesma planilha é erro na segunda aparição', () => {
     const r = lidos(['A', '', 'ab-1'], ['B', '', ' AB-1 '], ['C'], ['c'])
     expect(r.itens.map((i) => i.nome)).toEqual(['A', 'C'])

@@ -8,7 +8,7 @@ import {
   type ErroDaLinha,
   type PlanoDeImportacao,
 } from '@/core/importar-produtos'
-import { lerCsv, lerXlsx, type Linha } from '@/core/planilha'
+import { decodificarCsv, lerCsv, lerXlsx, type Linha } from '@/core/planilha'
 import { estaAtivo } from '@/core/produtos'
 import { gravarImportacao, listarProdutos } from './repos/produtos'
 import { exigirCapacidade, recusou } from './permissoes'
@@ -26,6 +26,9 @@ import { exigirCapacidade, recusou } from './permissoes'
 
 /** Teto do arquivo. O limite do Next para ação é 4 MB (`next.config.ts`). */
 const TAMANHO_MAXIMO = 3 * 1024 * 1024
+
+/** Teto dos XML de dentro do .xlsx, somados, depois de abertos. */
+const TETO_DESCOMPACTADO = 40 * 1024 * 1024
 
 export type Previa = {
   criar: number
@@ -56,14 +59,29 @@ async function lerArquivo(
     if (nome.endsWith('.csv') || nome.endsWith('.txt')) {
       return {
         ok: true,
-        linhas: lerCsv(new TextDecoder('utf-8').decode(bytes)),
+        linhas: lerCsv(decodificarCsv(bytes)),
       }
     }
     if (nome.endsWith('.xlsx')) {
       // Só os XML que a leitura usa. Descompactar o resto (imagens, estilos)
       // gastaria memória com o que ninguém lê.
+      //
+      // E com teto do tamanho descompactado: 3 MB de zip bem feito viram
+      // gigabytes, e a função morreria sem memória antes de ler a primeira
+      // linha. Uma planilha de 2000 itens tem poucos MB de XML.
+      let descompactado = 0
       const zip = unzipSync(bytes, {
-        filter: (f) => f.name.startsWith('xl/') && (f.name.endsWith('.xml') || f.name.endsWith('.rels')),
+        filter: (f) => {
+          const usado =
+            f.name === 'xl/workbook.xml' ||
+            f.name === 'xl/_rels/workbook.xml.rels' ||
+            f.name === 'xl/sharedStrings.xml' ||
+            /^xl\/worksheets\/[^/]+\.xml$/.test(f.name)
+          if (!usado) return false
+          descompactado += f.originalSize
+          if (descompactado > TETO_DESCOMPACTADO) throw new Error('a planilha é grande demais depois de aberta; divida em partes')
+          return true
+        },
       })
       const arquivos: Record<string, string> = {}
       for (const [caminho, conteudo] of Object.entries(zip)) arquivos[caminho] = strFromU8(conteudo)

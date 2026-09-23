@@ -19,24 +19,49 @@ function ehVazia(celulas: string[]): boolean {
 }
 
 /**
- * O separador é o que aparece mais no arquivo, fora de aspas. O arquivo
- * inteiro e não só o cabeçalho: planilha de uma coluna não tem separador na
- * primeira linha.
+ * O separador é o que aparece mais no cabeçalho, fora de aspas.
+ *
+ * O cabeçalho e não o arquivo inteiro: o Excel em português não põe aspas em
+ * célula com vírgula, e uma descrição "azul, algodão, gola" pesaria mais que
+ * os pontos e vírgulas de verdade. Só a planilha de uma coluna, sem separador
+ * no cabeçalho, olha o resto do arquivo.
  *
  * O Excel em português salva CSV com ponto e vírgula, o Google Planilhas com
  * vírgula. Perguntar para a pessoa qual é seria pedir uma coisa que ela não
  * sabe responder.
  */
 function separadorDe(texto: string): ',' | ';' {
-  let virgulas = 0
-  let pontos = 0
-  let dentro = false
-  for (const c of texto) {
-    if (c === '"') dentro = !dentro
-    else if (!dentro && c === ',') virgulas++
-    else if (!dentro && c === ';') pontos++
+  const contar = (trecho: string) => {
+    let virgulas = 0
+    let pontos = 0
+    let dentro = false
+    for (const c of trecho) {
+      if (c === '"') dentro = !dentro
+      else if (!dentro && c === ',') virgulas++
+      else if (!dentro && c === ';') pontos++
+    }
+    return { virgulas, pontos }
   }
+  const cabecalho = texto.split('\n').find((l) => l.trim() !== '') ?? ''
+  let { virgulas, pontos } = contar(cabecalho)
+  if (virgulas === 0 && pontos === 0) ({ virgulas, pontos } = contar(texto))
   return pontos >= virgulas && pontos > 0 ? ';' : ','
+}
+
+/**
+ * Os bytes do CSV em texto.
+ *
+ * UTF-8 quando é UTF-8 válido; senão Windows-1252, que é o que o Excel no
+ * Windows salva em "CSV (separado por vírgulas)". Ler Windows-1252 como UTF-8
+ * grava "Cal\uFFFDa" no catálogo, e a importação seguinte, já em UTF-8, não
+ * reconhece o item e duplica.
+ */
+export function decodificarCsv(bytes: Uint8Array): string {
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+  } catch {
+    return new TextDecoder('windows-1252').decode(bytes)
+  }
 }
 
 /** CSV no formato da RFC 4180: aspas, aspas dobradas e quebra de linha dentro de aspas. */
@@ -97,8 +122,11 @@ function decodificarXml(texto: string): string {
 
 /** Todo o texto dos `<t>` de um trecho, na ordem. Texto rico vem em vários. */
 function textoDosT(trecho: string): string {
+  // A leitura fonética (`<rPh>`, das planilhas em japonês) não é o texto.
+  const semFonetica = trecho.replace(/<rPh\b[\s\S]*?<\/rPh>/g, '')
   let saida = ''
-  for (const m of trecho.matchAll(/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/g)) saida += m[1]
+  // `<t/>` vazio fecha nele mesmo; sem tratar, a busca iria até o próximo `</t>`.
+  for (const m of semFonetica.matchAll(/<t(?:\s[^>]*?)?(?:\/>|>([\s\S]*?)<\/t>)/g)) saida += m[1] ?? ''
   return decodificarXml(saida)
 }
 

@@ -70,6 +70,8 @@ export function SeletorDeProduto({
         setProdutos([])
         setErro(r.erro)
       }
+    } catch {
+      if (numero === ultimaBusca.current) setErro('não deu para buscar agora, tente de novo')
     } finally {
       if (numero === ultimaBusca.current) setBuscando(false)
     }
@@ -93,6 +95,8 @@ export function SeletorDeProduto({
         setTermo('')
         setProdutos([])
       } else setErro(r.erro ?? 'não deu para enviar')
+    } catch {
+      setErro('não deu para enviar agora, tente de novo')
     } finally {
       setEnviando(null)
     }
