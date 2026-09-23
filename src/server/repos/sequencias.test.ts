@@ -16,7 +16,7 @@ import {
   criarSequencia,
   editarPasso,
   encerrarInscricao,
-  esperandoOPasso,
+  esperandoPorPasso,
   inscrever,
   listarSequencias,
   sairDasSequencias,
@@ -454,8 +454,9 @@ describe.skipIf(!temCredencial)('editar um passo com gente no meio (A06)', () =>
     expect(await editarPasso(clienteId, passos[1]!.id, { atrasoMinutos: 200 })).toEqual({ ok: true, remarcadas: 1 })
     const { data } = await db().from('tarefas').select('quando').eq('chave', chave).eq('estado', 'pendente').single()
     expect(new Date(data!.quando as string).getTime()).toBe(new Date(entrouEm).getTime() + 200 * 60_000)
-    expect(await esperandoOPasso(clienteId, passos[1]!.id)).toBe(1)
-    expect(await esperandoOPasso(clienteId, passos[2]!.id)).toBe(0)
+    const esperando = await esperandoPorPasso(clienteId)
+    expect(esperando.get(`${sequenciaId}:1`)).toBe(1)
+    expect(esperando.get(`${sequenciaId}:2`)).toBeUndefined()
   })
 
   it('horário que troca a ordem é recusado, dizendo a faixa', async () => {

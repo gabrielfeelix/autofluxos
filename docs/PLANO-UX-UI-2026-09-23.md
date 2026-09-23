@@ -818,12 +818,12 @@ export async function editarPasso(
 
 ### Tarefa 4.2: editar passo (tela)
 
-- [ ] **Passo 1:** em `fluxos/page.tsx:1153-1313`, cada passo ganha "Editar",
+- [x] **Passo 1:** em `fluxos/page.tsx:1153-1313`, cada passo ganha "Editar",
   que abre o mesmo formulário da criação preenchido. Mostrar a ordem, o atraso
   acumulado ("2º passo · 12 h depois da entrada") e, ao salvar horário, "3
   pessoas que estavam esperando este passo foram remarcadas".
-- [ ] **Passo 2:** apagar passo mostra quantas inscrições estão esperando por ele antes de confirmar.
-- [ ] **Passo 3:** prints `fluxos-sequencias`; commit `feat(sequencias): editar passo pela tela`.
+- [x] **Passo 2:** apagar passo mostra quantas inscrições estão esperando por ele antes de confirmar.
+- [x] **Passo 3:** prints `fluxos-sequencias`; commit `feat(sequencias): editar passo pela tela`.
 
 ---
 
@@ -1460,6 +1460,15 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   (`src/core/sequencias.ts`). Remarcar mexe só no `quando` da tarefa pendente
   da inscrição (chave `sequencia:<inscrição>`, conferida pelo `passoIndice`
   dos dados), com base no `entrouEm` gravado nela. `fluxoId` nulo mantém o
-  fluxo (o passo sempre tem um). Nasceu também `esperandoOPasso`, para a 4.2
+  fluxo (o passo sempre tem um). Na 4.2 nasceu `esperandoPorPasso` (uma consulta por aba), para
   dizer quantos esperam antes de apagar. Os testes foram escritos junto com a
   implementação, não antes.
+- 23/09, tarefa 4.2: campos do passo viraram `CamposDoPasso`
+  (`src/components/sequencias/passo.tsx`), usados na criação e no "Editar".
+  O modal de editar diz o horário atual e a faixa permitida; salvar mostra
+  "N pessoas que estavam esperando este passo foram remarcadas" em
+  `AvisoFlutuante`. A linha diz "2º passo · 12h depois da entrada" e quantas
+  pessoas esperam o passo; "Tirar" diz esse número antes de confirmar.
+  `ModalFormulario` ganhou a variante `linha` (tamanho do `BotaoPerigo`).
+  Sem print de antes da lista aberta (o de antes, `fluxos-sequencias`, é da
+  aba fechada).

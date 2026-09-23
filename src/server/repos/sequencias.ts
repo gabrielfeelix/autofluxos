@@ -419,33 +419,28 @@ async function remarcarQuemEspera(sequenciaId: string, indice: number, atraso: n
 }
 
 /**
- * Quantas inscrições ativas estão esperando este passo agora.
+ * Quantas inscrições ativas esperam cada passo agora, na conta inteira.
  *
- * É o número que a tela mostra antes de apagar o passo: essas pessoas
- * terminam a sequência sem ele (ver `apagarPasso`).
+ * Chave `<sequência>:<índice do passo>`. É o número que a tela mostra antes de
+ * apagar um passo (essas pessoas terminam a sequência sem ele, ver
+ * `apagarPasso`). Uma consulta para a aba inteira, não uma por passo.
  */
-export async function esperandoOPasso(clienteId: string, passoId: string): Promise<number> {
-  const { data: linha, error } = await db()
-    .from('sequencia_passos')
-    .select('sequencia_id')
-    .eq('id', passoId)
-    .maybeSingle()
-  if (ehIdInvalido(error)) return 0
-  if (error) throw new Error(`não deu para buscar o passo: ${error.message}`)
-  if (!linha) return 0
-
-  const sequencia = await acharSequencia(clienteId, linha.sequencia_id as string)
-  if (!sequencia) return 0
-  const indice = passosEmOrdem(sequencia.passos).findIndex((passo) => passo.id === passoId)
-
-  const { count, error: erroDaContagem } = await db()
+export async function esperandoPorPasso(clienteId: string): Promise<Map<string, number>> {
+  const { data, error } = await db()
     .from('sequencia_inscricoes')
-    .select('id', { count: 'exact', head: true })
-    .eq('sequencia_id', sequencia.id)
+    .select('sequencia_id, passo_atual')
+    .eq('client_id', clienteId)
     .eq('estado', 'ativa')
-    .eq('passo_atual', indice)
-  if (erroDaContagem) throw new Error(`não deu para contar quem espera o passo: ${erroDaContagem.message}`)
-  return count ?? 0
+
+  if (ehIdInvalido(error)) return new Map()
+  if (error) throw new Error(`não deu para contar quem espera cada passo: ${error.message}`)
+
+  const contagem = new Map<string, number>()
+  for (const linha of data ?? []) {
+    const chave = `${linha.sequencia_id}:${linha.passo_atual}`
+    contagem.set(chave, (contagem.get(chave) ?? 0) + 1)
+  }
+  return contagem
 }
 
 /**

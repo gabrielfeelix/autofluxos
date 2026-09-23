@@ -60,8 +60,11 @@ export function ModalFormulario({
   children: ReactNode
   /** O texto do botão que confirma. Nem todo modal cria e abre alguma coisa. */
   rotuloEnviar?: string
-  /** `secundario` para quando o modal não é a ação principal da tela. */
-  variante?: 'primario' | 'secundario'
+  /**
+   * `secundario` para quando o modal não é a ação principal da tela; `linha`
+   * para a ação de uma linha de lista, no tamanho do `BotaoPerigo` ao lado.
+   */
+  variante?: 'primario' | 'secundario' | 'linha'
 }) {
   const dialogo = useRef<HTMLDialogElement>(null)
   const formulario = useRef<HTMLFormElement>(null)
@@ -149,7 +152,9 @@ export function ModalFormulario({
         className={
           variante === 'primario'
             ? 'app-primary-button px-[18px] py-2.5 text-[13px]'
-            : 'app-secondary-button px-3 py-1.5 text-[11.5px]'
+            : variante === 'linha'
+              ? 'rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:bg-surface-strong hover:text-ink'
+              : 'app-secondary-button px-3 py-1.5 text-[11.5px]'
         }
       >
         {botao}

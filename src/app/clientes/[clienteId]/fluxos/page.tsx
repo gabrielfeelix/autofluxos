@@ -34,6 +34,7 @@ import { WebhooksDeEntrada } from '@/components/gatilhos/webhooks-de-entrada'
 import { InterruptorDeCampanha } from '@/components/gatilhos/interruptor-de-campanha'
 import { InterruptorDeSequencia } from '@/components/sequencias/interruptor'
 import { CamposDaSequencia } from '@/components/sequencias/campos'
+import { CamposDoPasso, EditarPasso } from '@/components/sequencias/passo'
 import {
   LIMITE_DE_PASSOS,
   ROTULO_DO_EVENTO,
@@ -66,6 +67,7 @@ import { listarPastas } from '@/server/repos/pastas'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
 import {
   contarInscricoes,
+  esperandoPorPasso,
   listarSequencias,
   type ContagemDaSequencia,
 } from '@/server/repos/sequencias'
@@ -253,6 +255,7 @@ async function Conteudo({
     quadros,
     templatesAprovados,
     pastas,
+    esperando,
   ] = await Promise.all([
     contagensDeAutomacao(cliente.id),
     precisa('fluxos', 'palavras', 'eventos', 'campanhas', 'sequencias')
@@ -288,8 +291,16 @@ async function Conteudo({
       ? listarTemplatesAprovados(cliente.id)
       : vazio([] as Awaited<ReturnType<typeof listarTemplatesAprovados>>),
     precisa('fluxos') ? listarPastas(cliente.id) : vazio([] as Awaited<ReturnType<typeof listarPastas>>),
+    precisa('sequencias') ? esperandoPorPasso(cliente.id) : vazio(new Map<string, number>()),
   ])
   const criarPastaComCliente = acaoCriarPasta.bind(null, cliente.id, {})
+  // Os campos de passo (criar e editar) usam as mesmas listas.
+  const opcoesDeFluxo = fluxos.map((item) => ({
+    valor: item.id,
+    rotulo: item.nome,
+    ...(item.versaoPublicadaId ? {} : { detalhe: 'rascunho' }),
+  }))
+  const modelosDoPasso = templatesAprovados.map(({ id, nome, idioma }) => ({ id, nome, idioma }))
 
   /*
    * As duas conferências, como no editor (T7.2).
@@ -1271,19 +1282,28 @@ async function Conteudo({
                         <ol className="mt-3 flex flex-col gap-2">
                           {sequencia.passos.map((passo, indice) => {
                             const destino = fluxos.find((item) => item.id === passo.fluxoId)
+                            const quantosEsperam = esperando.get(`${sequencia.id}:${indice}`) ?? 0
+                            const anterior = sequencia.passos[indice - 1]?.atrasoMinutos
+                            const seguinte = sequencia.passos[indice + 1]?.atrasoMinutos
+                            const faixa =
+                              anterior !== undefined && seguinte !== undefined
+                                ? `entre ${comoAtraso(anterior)} e ${comoAtraso(seguinte)}`
+                                : anterior !== undefined
+                                  ? `depois de ${comoAtraso(anterior)}`
+                                  : seguinte !== undefined
+                                    ? `antes de ${comoAtraso(seguinte)}`
+                                    : null
                             return (
                               <li
                                 key={passo.id}
                                 className="flex items-center gap-3 rounded-lg border border-line bg-panel px-3 py-2"
                               >
-                                <span className="w-4 shrink-0 font-mono text-[11px] text-dim">
-                                  {indice + 1}
-                                </span>
                                 <span className="min-w-0 flex-1 text-[12px]">
+                                  <span className="text-dim">{indice + 1}º passo · </span>
                                   <strong className="font-semibold text-soft">
                                     {comoAtraso(passo.atrasoMinutos)}
                                   </strong>{' '}
-                                  depois do evento ·{' '}
+                                  depois da entrada ·{' '}
                                   {passo.templateId ? (
                                     /*
                                       O passo que passa de 24h manda modelo, e
@@ -1312,11 +1332,35 @@ async function Conteudo({
                                       )}
                                     </>
                                   )}
+                                  {quantosEsperam > 0 && (
+                                    <span className="block text-[11px] text-dim">
+                                      {quantosEsperam === 1
+                                        ? '1 pessoa esperando este passo'
+                                        : `${quantosEsperam} pessoas esperando este passo`}
+                                    </span>
+                                  )}
                                 </span>
+                                <EditarPasso
+                                  clienteId={cliente.id}
+                                  passoId={passo.id}
+                                  titulo={`Editar ${indice + 1}º passo`}
+                                  descricao={`Hoje: ${comoAtraso(passo.atrasoMinutos)} depois da entrada.${
+                                    faixa ? ` O horário novo precisa ficar ${faixa}, para a ordem dos passos não mudar.` : ''
+                                  } Mudar o fluxo ou o modelo vale para quem ainda não recebeu este passo.`}
+                                  fluxos={opcoesDeFluxo}
+                                  modelos={modelosDoPasso}
+                                  inicial={passo}
+                                />
                                 <BotaoPerigo
                                   rotulo="Tirar"
                                   titulo="Tira este passo. Quem já está no meio da sequência pode terminar antes."
-                                  pergunta={`Tirar o passo de ${comoAtraso(passo.atrasoMinutos)}? Quem já está no meio da sequência pode terminar antes do previsto.`}
+                                  pergunta={`Tirar o passo de ${comoAtraso(passo.atrasoMinutos)}? ${
+                                    quantosEsperam === 0
+                                      ? 'Ninguém está esperando este passo agora.'
+                                      : quantosEsperam === 1
+                                        ? '1 pessoa está esperando este passo e termina a sequência sem ele.'
+                                        : `${quantosEsperam} pessoas estão esperando este passo e terminam a sequência sem ele.`
+                                  }`}
                                   acao={acaoApagarPassoDaSequencia.bind(
                                     null,
                                     cliente.id,
@@ -1349,79 +1393,7 @@ async function Conteudo({
                             variante="secundario"
                             action={criarPassoComCliente}
                           >
-                            <div className="grid grid-cols-2 gap-3">
-                              <label>
-                                <RotuloCampo>Horas</RotuloCampo>
-                                <input
-                                  name="horas"
-                                  type="number"
-                                  min={0}
-                                  /* 30 dias em horas. O teto de 24 caiu com a 0061. */
-                                  max={720}
-                                  defaultValue={2}
-                                  autoFocus
-                                  className="app-field px-[13px] py-[11px] text-[13.5px]"
-                                />
-                              </label>
-                              <label>
-                                <RotuloCampo>Minutos</RotuloCampo>
-                                <input
-                                  name="minutos"
-                                  type="number"
-                                  min={0}
-                                  max={59}
-                                  defaultValue={0}
-                                  className="app-field px-[13px] py-[11px] text-[13.5px]"
-                                />
-                              </label>
-                            </div>
-                            <label>
-                              <RotuloCampo>Fluxo que este passo abre</RotuloCampo>
-                              <Dropdown
-                                nome="fluxoId"
-                                rotuloAcessivel="Fluxo que este passo abre"
-                                opcoes={fluxos.map((item) => ({
-                                  valor: item.id,
-                                  rotulo: item.nome,
-                                  ...(item.versaoPublicadaId ? {} : { detalhe: 'rascunho' }),
-                                }))}
-                              />
-                            </label>
-                            {/*
-                              O modelo aprovado, para o passo que passa de 24h.
-
-                              Opcional, e o rótulo diz quando ele deixa de ser:
-                              dentro da janela o fluxo entrega sozinho, e exigir
-                              modelo ali seria cobrar aprovação da Meta para
-                              mandar a segunda mensagem de uma conversa que está
-                              acontecendo agora.
-
-                              Só modelos APROVADOS entram na lista. Oferecer um
-                              pendente faria a pessoa desenhar uma sequência que
-                              só entregaria se a Meta aprovasse a tempo.
-                            */}
-                            <label>
-                              <RotuloCampo>Modelo aprovado (só para passos acima de 24h)</RotuloCampo>
-                              {templatesAprovados.length === 0 ? (
-                                <p className="text-[11.5px] leading-5 text-muted">
-                                  Nenhum modelo aprovado ainda, então o teto deste passo é 24h.
-                                  Crie um em Transmissões e espere a revisão da Meta.
-                                </p>
-                              ) : (
-                                <Dropdown
-                                  nome="templateId"
-                                  rotuloAcessivel="Modelo aprovado deste passo"
-                                  opcoes={[
-                                    { valor: '', rotulo: 'Nenhum, o passo fica até 24h' },
-                                    ...templatesAprovados.map((item) => ({
-                                      valor: item.id,
-                                      rotulo: item.nome,
-                                      detalhe: item.idioma,
-                                    })),
-                                  ]}
-                                />
-                              )}
-                            </label>
+                            <CamposDoPasso fluxos={opcoesDeFluxo} modelos={modelosDoPasso} />
                           </ModalFormulario>
                         )}
                       </div>
