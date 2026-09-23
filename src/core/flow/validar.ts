@@ -25,7 +25,7 @@ import { contarCaracteres, temMetadeDeCaractere } from './texto'
 import { CANAL_PADRAO, DEFINICAO_DO_CANAL, type CanalId, type DefinicaoDeCanal } from '../canais'
 import { VARIAVEIS_NATIVAS } from '../contatos/vars-iniciais'
 import { chavesSimplesCitadas, variaveisCitadas } from '../engine/interpolar'
-import { nomesDeFerramenta } from '../ferramentas'
+import { acharFerramenta, nomesDeFerramenta } from '../ferramentas'
 
 /** Os nomes que o catálogo de ferramentas da IA conhece hoje. */
 const CATALOGO = nomesDeFerramenta()
@@ -404,14 +404,22 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
        * Ferramenta sem credencial não é meia integração: é uma chamada que sai
        * sem `Authorization` e volta 401 em toda conversa. O bloco pareceria
        * ligado e a IA diria "não sei" para tudo o que dependesse dele.
+       *
+       * Só vale para ferramenta HTTP autenticada. As de loja consultam a loja
+       * da conta pelo adaptador, sem Conexão, e exigir uma aqui barraria a
+       * publicação de um bloco que funciona.
        */
-      if (!no.data.conexaoId) {
+      const precisaDeCredencial = no.data.ferramentas.some((nome) => {
+        const f = acharFerramenta(nome)
+        return f !== undefined && f.chamada.tipo === 'http' && f.credencial !== 'nenhuma'
+      })
+      if (!no.data.conexaoId && precisaDeCredencial) {
         erros.push({
           codigo: 'FERRAMENTA_SEM_CREDENCIAL',
           mensagem: `${descrever(no)} deixa a IA consultar o sistema, mas nenhuma credencial foi escolhida. Sem ela a consulta volta negada e a IA responderia "não sei".`,
           noId: no.id,
         })
-      } else if (conexoes && !conexoes.includes(no.data.conexaoId)) {
+      } else if (no.data.conexaoId && conexoes && !conexoes.includes(no.data.conexaoId)) {
         erros.push({
           codigo: 'CONEXAO_INEXISTENTE',
           mensagem: `${descrever(no)} usa uma credencial que não existe mais neste cliente. Escolha outra, ou tire as consultas.`,

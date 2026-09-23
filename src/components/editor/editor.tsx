@@ -326,6 +326,7 @@ export function Editor({
   fluxoId,
   clienteId,
   conexoes,
+  lojaAtiva = false,
   etapas,
   etiquetas,
   equipe,
@@ -349,6 +350,8 @@ export function Editor({
   fluxoId: string
   clienteId: string
   conexoes: ConexaoDoCliente[]
+  /** A conta tem loja on-line ligada (0092). Libera as consultas de loja no bloco de IA. */
+  lojaAtiva?: boolean
   /** As etapas de quadro deste cliente, para o bloco de etapa (C1b). */
   etapas: EtapaDoCliente[]
   /** As etiquetas deste cliente, para o bloco de etiqueta (0044). */
@@ -1900,6 +1903,7 @@ export function Editor({
                 blocos={fluxo.nodes}
                 valoresDeVariaveis={valoresDeVariaveis}
                 conexoes={conexoes}
+                lojaAtiva={lojaAtiva}
                 iaHabilitada={comIa}
                 etapas={etapas}
                 etiquetas={etiquetas}

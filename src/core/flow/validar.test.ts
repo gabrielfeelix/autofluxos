@@ -1292,3 +1292,26 @@ describe('a pesquisa de satisfação', () => {
     expect(codigos(r.avisos)).not.toContain('NPS_MOTIVO_SEM_PERGUNTA')
   })
 })
+
+describe('credencial das consultas da IA', () => {
+  function fluxoComIa(ferramentas: string[]): Fluxo {
+    return fluxoSchema.parse({
+      inicio: 'ia',
+      nodes: [
+        { id: 'ia', type: 'ia', position: p, data: { instrucao: 'Ajude a escolher.', ferramentas } },
+        { id: 'fim', type: 'handoff', position: p, data: { motivo: 'fim', mensagem: 'Já te passo.' } },
+      ],
+      edges: [{ id: 'a', source: 'ia', target: 'fim' }],
+    })
+  }
+  const codigos = (f: Fluxo) => validar(f).erros.map((e) => e.codigo)
+
+  it('consulta à loja não exige credencial: a loja é da conta', () => {
+    expect(codigos(fluxoComIa(['loja_buscar', 'loja_combina_com']))).not.toContain('FERRAMENTA_SEM_CREDENCIAL')
+  })
+
+  it('consulta à agenda continua exigindo, inclusive misturada com a loja', () => {
+    expect(codigos(fluxoComIa(['agenda_horarios']))).toContain('FERRAMENTA_SEM_CREDENCIAL')
+    expect(codigos(fluxoComIa(['loja_buscar', 'agenda_horarios']))).toContain('FERRAMENTA_SEM_CREDENCIAL')
+  })
+})

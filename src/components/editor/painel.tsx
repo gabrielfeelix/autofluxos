@@ -319,6 +319,7 @@ export function Painel({
   blocos = [],
   valoresDeVariaveis = {},
   conexoes = [],
+  lojaAtiva = false,
   iaHabilitada = false,
   etapas = [],
   etiquetas = [],
@@ -355,6 +356,7 @@ export function Painel({
    */
   valoresDeVariaveis?: Record<string, string[]>
   conexoes?: ConexaoDoCliente[]
+  lojaAtiva?: boolean
   /** Este cliente tem o plano de IA. Muda o card inteiro do bloco de IA. */
   iaHabilitada?: boolean
   etapas?: EtapaDoCliente[]
@@ -1551,6 +1553,7 @@ export function Painel({
             escolhidas={no.data.ferramentas ?? []}
             conexaoId={no.data.conexaoId ?? ''}
             conexoes={conexoes}
+            lojaAtiva={lojaAtiva}
             clienteId={clienteId}
             aoMudar={aoMudarDados}
           />
@@ -3036,12 +3039,14 @@ function ConsultasDaIa({
   escolhidas,
   conexaoId,
   conexoes,
+  lojaAtiva,
   clienteId,
   aoMudar,
 }: {
   escolhidas: string[] | undefined
   conexaoId: string
   conexoes: ConexaoDoCliente[]
+  lojaAtiva: boolean
   clienteId: string
   aoMudar: (dados: { ferramentas?: string[]; conexaoId?: string | undefined }) => void
 }) {
@@ -3057,6 +3062,15 @@ function ConsultasDaIa({
   const lista = escolhidas ?? []
   const marcadas = new Set(lista)
   const grava = lista.some((nome) => FERRAMENTAS.find((f) => f.nome === nome)?.escreve)
+  // A credencial é da agenda. Consulta de loja fala com a loja da conta, sem
+  // Conexão, e pedir uma credencial a quem só marcou a loja seria mandar a
+  // pessoa atrás de uma chave que não existe.
+  const precisaDeCredencial = lista.some((nome) => {
+    const f = FERRAMENTAS.find((x) => x.nome === nome)
+    return f !== undefined && f.chamada.tipo === 'http' && f.credencial !== 'nenhuma'
+  })
+  const daLoja = FERRAMENTAS.filter((f) => f.integracao === 'loja')
+  const lojaMarcada = daLoja.some((f) => marcadas.has(f.nome))
 
   const alternar = (nome: string, marcada: boolean) => {
     // A ordem do catálogo, e não a de clique: ela conta a conversa (catálogo,
@@ -3115,7 +3129,7 @@ function ConsultasDaIa({
             )}
           </legend>
 
-          {FERRAMENTAS.filter((f) => f.escreve === grupo.escreve).map((f) => (
+          {FERRAMENTAS.filter((f) => f.integracao === 'verandi' && f.escreve === grupo.escreve).map((f) => (
             <label
               key={f.nome}
               className="mb-1 flex items-center gap-2.5 rounded-[7px] px-1.5 py-1 last:mb-0 hover:bg-surface"
@@ -3130,7 +3144,7 @@ function ConsultasDaIa({
         </fieldset>
       ))}
 
-      {lista.length > 0 && (
+      {precisaDeCredencial && (
         <label className="mt-2.5 block">
           <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
             Credencial das consultas
@@ -3202,6 +3216,66 @@ function ConsultasDaIa({
           conversando, e só em horários que ela mesma acabou de consultar.
         </p>
       )}
+
+      <div className="mt-4 border-t border-line pt-3">
+        <span className="mb-1 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+          O que a IA pode consultar na loja
+          <AjudaDoCampo
+            titulo="O que a IA pode consultar na loja"
+            secao="outros-sistemas"
+            texto="A IA busca na loja on-line da conta, na hora, e manda o link do produto."
+            detalhes={
+              <>
+                <p>
+                  Só leitura. A IA diz se tem, quanto custa e manda o link; quem fecha a compra é o
+                  site. Nada é criado, alterado ou apagado na loja.
+                </p>
+                <p>
+                  Produto sem preço na loja não vira “R$ 0,00”: a IA diz que vai confirmar o valor.
+                  Loja fora do ar vira “não sei” e a conversa vai para uma pessoa.
+                </p>
+              </>
+            }
+          />
+        </span>
+
+        {/*
+          Sem loja ligada, caixinha para marcar seria promessa falsa: o bloco
+          publicaria e cada consulta voltaria "a loja desta conta não está
+          ligada". O link leva a quem resolve. Já marcada numa conta que
+          desligou a loja, a caixinha fica, para dar para desmarcar.
+        */}
+        {!lojaAtiva && !lojaMarcada ? (
+          <p className="text-[11.5px] leading-5 text-dim">
+            Ligue a loja em{' '}
+            <a
+              className="underline underline-offset-2 hover:text-primary"
+              href={`/clientes/${clienteId}/ajustes/integracoes/magento`}
+            >
+              Integrações
+            </a>{' '}
+            para a IA consultar produtos, preço e estoque.
+          </p>
+        ) : (
+          <>
+            {daLoja.map((f) => (
+              <label
+                key={f.nome}
+                className="mb-1 flex items-center gap-2.5 rounded-[7px] px-1.5 py-1 last:mb-0 hover:bg-surface"
+              >
+                <Caixa marcada={marcadas.has(f.nome)} aoMudar={(marcada) => alternar(f.nome, marcada)} />
+                <span className="text-[12.5px] leading-4">{f.rotulo}</span>
+              </label>
+            ))}
+            {!lojaAtiva && (
+              <p className="mt-2 rounded-[10px] border border-amber-400/20 bg-amber-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-aviso">
+                A loja desta conta está desligada: estas consultas vão responder “não sei” até
+                religar em Integrações.
+              </p>
+            )}
+          </>
+        )}
+      </div>
     </div>
   )
 }
