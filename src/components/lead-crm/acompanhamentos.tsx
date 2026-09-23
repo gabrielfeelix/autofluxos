@@ -1,5 +1,6 @@
 import { FRASE_DA_SAIDA, podeRetomar, porQueNaoRetoma } from '@/core/politica-de-acompanhamento'
 import type { AcompanhamentoDoContato } from '@/server/repos/sequencias'
+import { CabecalhoDoTipo } from './tipo-do-passo'
 
 /**
  * Os acompanhamentos deste contato (UI-23/UI-24, T7.3).
@@ -48,17 +49,21 @@ export function Acompanhamentos({
 }: {
   acompanhamentos: AcompanhamentoDoContato[]
 }) {
-  if (acompanhamentos.length === 0) return null
+  const ativos = acompanhamentos.filter((item) => item.estado === 'ativa').length
 
   return (
     <section className="app-card overflow-hidden">
-      <header className="border-b border-line px-5 py-4">
-        <h2 className="text-[14.5px] font-bold">Acompanhamentos</h2>
-        <p className="mt-0.5 text-[12px] leading-5 text-dim">
-          As sequências automáticas por que esta pessoa passou, e por que cada uma
-          parou. É daqui que vem a mensagem automática que aparece no histórico.
+      <CabecalhoDoTipo
+        titulo="Acompanhamentos automáticos"
+        quemFaz="uma sequência automática"
+        contagem={ativos}
+        descricao="As sequências por que esta pessoa passou, e por que cada uma parou. É daqui que vem a mensagem automática que aparece no histórico."
+      />
+      {acompanhamentos.length === 0 && (
+        <p className="px-5 py-4 text-[12px] leading-5 text-dim">
+          Esta pessoa não entrou em nenhuma sequência.
         </p>
-      </header>
+      )}
 
       <ul>
         {acompanhamentos.map((item) => (

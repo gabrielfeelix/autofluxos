@@ -172,6 +172,48 @@ export function urgenciaDe(
 }
 
 /**
+ * O prazo em palavras, para o resumo da ficha e os próximos passos.
+ *
+ * **Dia sem hora nunca ganha hora.** A versão anterior contava horas até o
+ * instante: uma proposta "para amanhã" (guardada ao meio-dia UTC) aparecia como
+ * "em 21 h", uma hora que ninguém combinou. Sem `horaMarcada` a conta é por
+ * dia, na mesma régua de `urgenciaDe`, e as duas nunca discordam.
+ */
+export function prazoEmPalavras(
+  atividade: Pick<Atividade, 'prazo' | 'horaMarcada'>,
+  agora: number = Date.now(),
+): { texto: string; atrasada: boolean } {
+  if (!atividade.prazo) return { texto: 'sem prazo', atrasada: false }
+  const prazo = new Date(atividade.prazo)
+  if (Number.isNaN(prazo.getTime())) return { texto: 'sem prazo', atrasada: false }
+
+  const hoje = new Date(agora)
+  const dias = Math.round(
+    (Date.UTC(prazo.getUTCFullYear(), prazo.getUTCMonth(), prazo.getUTCDate()) -
+      Date.UTC(hoje.getUTCFullYear(), hoje.getUTCMonth(), hoje.getUTCDate())) /
+      86_400_000,
+  )
+
+  if (atividade.horaMarcada) {
+    const falta = prazo.getTime() - agora
+    const horas = Math.floor(Math.abs(falta) / 3_600_000)
+    if (falta < 0 && horas < 24) {
+      return { texto: horas < 1 ? 'venceu agora há pouco' : `venceu há ${horas} h`, atrasada: true }
+    }
+    if (falta >= 0 && horas < 24) {
+      return { texto: horas < 1 ? 'na próxima hora' : `em ${horas} h`, atrasada: false }
+    }
+  }
+
+  if (dias < 0) {
+    return { texto: dias === -1 ? 'venceu ontem' : `venceu há ${-dias} dias`, atrasada: true }
+  }
+  if (dias === 0) return { texto: 'hoje', atrasada: false }
+  if (dias === 1) return { texto: 'amanhã', atrasada: false }
+  return { texto: `em ${dias} dias`, atrasada: false }
+}
+
+/**
  * A próxima ação de um contato, para a ficha e para o cartão.
  *
  * Só atividades **abertas** concorrem, e sem prazo perde para com prazo: a

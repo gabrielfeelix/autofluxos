@@ -1,6 +1,6 @@
 import type { MensagemAgendada } from '@/server/repos/mensagens-agendadas'
-import { horaExata } from '@/lib/quando'
-import { IconeDaSecao, iconeRelogio } from './icones'
+import { horaComFuso } from '@/lib/quando'
+import { CabecalhoDoTipo } from './tipo-do-passo'
 
 /**
  * O que já está marcado para sair.
@@ -15,17 +15,22 @@ import { IconeDaSecao, iconeRelogio } from './icones'
  * que o cliente nunca recebeu o lembrete.
  */
 export function Agendadas({ agendadas }: { agendadas: MensagemAgendada[] }) {
-  if (agendadas.length === 0) return null
+  const pendentes = agendadas.filter((a) => a.estado !== 'falhou').length
 
   return (
     <section className="app-card overflow-hidden">
-      <h2 className="flex items-center gap-2 border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
-        <IconeDaSecao>{iconeRelogio}</IconeDaSecao>
-        Para enviar depois
-      </h2>
+      <CabecalhoDoTipo
+        titulo="Mensagens agendadas"
+        quemFaz="o sistema, na hora marcada"
+        contagem={pendentes}
+        descricao="Saem sozinhas para o WhatsApp da pessoa. Para marcar ou cancelar, use Agendar no alto da ficha."
+      />
+      {agendadas.length === 0 && (
+        <p className="px-5 py-4 text-[12px] leading-5 text-dim">Nenhuma mensagem agendada.</p>
+      )}
       <ul>
         {agendadas.map((agendada) => (
-          <li key={agendada.id} className="border-b border-line px-[18px] py-3 last:border-0">
+          <li key={agendada.id} className="border-b border-line px-5 py-3 last:border-0">
             <span className="flex items-center gap-1.5">
               <span
                 className={`size-1.5 shrink-0 rounded-full ${
@@ -37,7 +42,7 @@ export function Agendadas({ agendadas }: { agendadas: MensagemAgendada[] }) {
                   agendada.estado === 'falhou' ? 'text-perigo' : 'text-soft'
                 }`}
               >
-                {agendada.estado === 'falhou' ? 'não saiu' : horaExata(agendada.quando)}
+                {agendada.estado === 'falhou' ? 'não saiu' : horaComFuso(agendada.quando)}
               </strong>
             </span>
             <span className="mt-1 block line-clamp-3 text-[12px] leading-5 text-muted">

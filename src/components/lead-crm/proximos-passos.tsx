@@ -1,32 +1,10 @@
 'use client'
 
-import type { Atividade } from '@/core/atividades'
+import { prazoEmPalavras, type Atividade } from '@/core/atividades'
 import type { MensagemAgendada } from '@/server/repos/mensagens-agendadas'
-import { horaExata, quando } from '@/lib/quando'
+import { horaComFuso } from '@/lib/quando'
 import { AjudaDoCampo } from '@/components/design/ajuda-do-campo'
 import { IconeDaSecao, iconeRelogio } from './icones'
-
-/**
- * O prazo em palavras.
- *
- * `quando()` só sabe falar do passado: para um prazo que ainda não venceu ele
- * responde "agora", e "Mandar o contrato" com prazo para depois de amanhã
- * aparecia como se fosse para este minuto. Atrasado continua com `quando()`,
- * que é a frase certa para o que já passou.
- */
-function prazoEmPalavras(prazo: string | null, agora: number): { texto: string; atrasada: boolean } {
-  if (prazo === null) return { texto: 'sem prazo', atrasada: false }
-
-  const falta = new Date(prazo).getTime() - agora
-  if (falta < 0) return { texto: `venceu ${quando(prazo, agora)}`, atrasada: true }
-
-  const horas = Math.floor(falta / 3_600_000)
-  if (horas < 1) return { texto: 'na próxima hora', atrasada: false }
-  if (horas < 24) return { texto: `em ${horas} h`, atrasada: false }
-
-  const dias = Math.floor(horas / 24)
-  return { texto: dias === 1 ? 'amanhã' : `em ${dias} dias`, atrasada: false }
-}
 
 /**
  * O que está marcado para acontecer, na visão geral.
@@ -108,7 +86,7 @@ export function ProximosPassos({
           ))}
 
           {abertas.slice(0, 3).map((atividade) => {
-            const { texto, atrasada } = prazoEmPalavras(atividade.prazo, agora)
+            const { texto, atrasada } = prazoEmPalavras(atividade, agora)
             return (
               <p key={atividade.id} className="px-[18px] py-3">
                 <span className="flex items-center gap-1.5">
@@ -133,7 +111,7 @@ export function ProximosPassos({
               <span className="flex items-center gap-1.5">
                 <span className="size-1.5 shrink-0 rounded-full bg-surface-strong" />
                 <strong className="text-[11.5px] font-bold text-soft">
-                  {horaExata(agendada.quando)}
+                  {horaComFuso(agendada.quando)}
                 </strong>
               </span>
               <span className="mt-1 block line-clamp-2 text-[12px] leading-5 text-muted">

@@ -45,53 +45,67 @@ export function AcoesDaFicha({
 
   return (
     <>
+      {/*
+        Os mesmos dois grupos da barra do Inbox (8.3): o que fica na equipe e o
+        que sai para o cliente. Etiquetar fica com a equipe porque ninguém fora
+        dela vê etiqueta.
+      */}
       <span className="flex items-center gap-1">
-        <AcaoDaFicha
-          rotulo="Agendar"
-          marcada={temAgendada}
-          aoClicar={() => setAgendando(true)}
-          icone={
-            <>
-              <circle cx="12" cy="12" r="8.5" />
-              <path d="M12 7.5V12l3 1.8" />
-            </>
-          }
-        />
-        {/*
-          O ícone é o mesmo de "Marcar atividade" no Inbox, de propósito: é o
-          mesmo painel e o mesmo resultado, e ícone diferente para a mesma coisa
-          ensina que são duas coisas.
-        */}
-        <AcaoDaFicha
-          rotulo="Atividade"
-          aoClicar={() => setMarcando(true)}
-          icone={
-            <>
-              <circle cx="12" cy="12" r="8.5" />
-              <path d="m8.5 12.2 2.4 2.4 4.6-4.9" />
-            </>
-          }
-        />
-        <AcaoDaFicha
-          rotulo="Anotar"
-          aoClicar={() => focar('anotacao')}
-          icone={
-            <>
-              <path d="M4.5 19.5h15" />
-              <path d="M6 15.2 15.4 5.8a2 2 0 0 1 2.8 2.8L8.8 18 5 19l1-3.8Z" />
-            </>
-          }
-        />
-        <AcaoDaFicha
-          rotulo="Etiquetar"
-          aoClicar={() => focar('etiquetas')}
-          icone={
-            <>
-              <path d="M4.5 10.2V5.2a.7.7 0 0 1 .7-.7h5l9 9a1.6 1.6 0 0 1 0 2.3l-4.2 4.2a1.6 1.6 0 0 1-2.3 0l-8-8Z" />
-              <circle cx="8.6" cy="8.6" r="1.1" />
-            </>
-          }
-        />
+        <span role="group" aria-label="Para a equipe" className="flex items-center gap-1">
+          {/*
+            O ícone é o mesmo de "Marcar atividade" no Inbox, de propósito: é o
+            mesmo painel e o mesmo resultado, e ícone diferente para a mesma coisa
+            ensina que são duas coisas.
+          */}
+          <AcaoDaFicha
+            rotulo="Atividade"
+            titulo="Para a equipe: marcar atividade"
+            aoClicar={() => setMarcando(true)}
+            icone={
+              <>
+                <circle cx="12" cy="12" r="8.5" />
+                <path d="m8.5 12.2 2.4 2.4 4.6-4.9" />
+              </>
+            }
+          />
+          <AcaoDaFicha
+            rotulo="Anotar"
+            titulo="Para a equipe: anotar"
+            aoClicar={() => focar('anotacao')}
+            icone={
+              <>
+                <path d="M4.5 19.5h15" />
+                <path d="M6 15.2 15.4 5.8a2 2 0 0 1 2.8 2.8L8.8 18 5 19l1-3.8Z" />
+              </>
+            }
+          />
+          <AcaoDaFicha
+            rotulo="Etiquetar"
+            titulo="Para a equipe: etiquetar"
+            aoClicar={() => focar('etiquetas')}
+            icone={
+              <>
+                <path d="M4.5 10.2V5.2a.7.7 0 0 1 .7-.7h5l9 9a1.6 1.6 0 0 1 0 2.3l-4.2 4.2a1.6 1.6 0 0 1-2.3 0l-8-8Z" />
+                <circle cx="8.6" cy="8.6" r="1.1" />
+              </>
+            }
+          />
+        </span>
+        <span aria-hidden className="h-8 w-px bg-line" />
+        <span role="group" aria-label="Para o contato" className="flex items-center">
+          <AcaoDaFicha
+            rotulo="Agendar"
+            titulo="Para o contato: agendar mensagem"
+            marcada={temAgendada}
+            aoClicar={() => setAgendando(true)}
+            icone={
+              <>
+                <circle cx="12" cy="12" r="8.5" />
+                <path d="M12 7.5V12l3 1.8" />
+              </>
+            }
+          />
+        </span>
       </span>
 
       <Modal

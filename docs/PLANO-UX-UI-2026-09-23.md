@@ -1144,14 +1144,14 @@ Ler `05-atendimento-crm.md` inteiro antes. Preservar os invariantes da seção
 
 ### Tarefa 8.3: próximos passos separados por tipo [X04, X10, X08]
 
-- [ ] **Passo 1:** ações rápidas agrupadas: "Para a equipe" (atividade, adiar)
+- [x] **Passo 1:** ações rápidas agrupadas: "Para a equipe" (atividade, adiar)
   e "Para o contato" (agendar mensagem).
-- [ ] **Passo 2:** na ficha, aba Atividades mostra três tipos com rótulo de quem
+- [x] **Passo 2:** na ficha, aba Atividades mostra três tipos com rótulo de quem
   executa (Pessoa / Mensagem agendada / Acompanhamento automático) e a contagem
   da aba diz o que conta.
-- [ ] **Passo 3:** resumo fixo no topo da ficha: dono, estágio, última entrada,
+- [x] **Passo 3:** resumo fixo no topo da ficha: dono, estágio, última entrada,
   próxima atividade, mensagem agendada, estado do bot.
-- [ ] **Passo 4:** commit `feat(ficha): próximos passos separados e resumo fixo`.
+- [x] **Passo 4:** commit `feat(ficha): próximos passos separados e resumo fixo`.
 
 ### Tarefa 8.4: ganhar, perder e segmento dizem o efeito [X09, X12, X13, X14]
 

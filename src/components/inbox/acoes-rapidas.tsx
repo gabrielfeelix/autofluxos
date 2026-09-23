@@ -114,77 +114,103 @@ export function AcoesRapidas({
       </AcaoComPainel>
 
       {/*
-        Adiar some numa conversa que já está adiada ou resolvida: ela já saiu
-        da fila aberta, e o único gesto que falta ali é voltar.
+        **Próximos passos em dois grupos, pelo destino (8.3).** Adiar, marcar
+        atividade e agendar mensagem eram vizinhos iguais, e o resultado é
+        oposto: dois ficam dentro da equipe, um sai para o cliente. O grupo
+        diz para quem é antes de a pessoa abrir o painel, na dica e na moldura.
       */}
-      {!resolvida && (
-        <AcaoComPainel rotulo="Adiar conversa" icone={<IconeRelogio />} largura={196} recolhido>
+      <GrupoDeAcoes rotulo="Para a equipe">
+        {/*
+          Adiar some numa conversa que já está adiada ou resolvida: ela já saiu
+          da fila aberta, e o único gesto que falta ali é voltar.
+        */}
+        {!resolvida && (
+          <AcaoComPainel
+            rotulo="Para a equipe: adiar a conversa"
+            icone={<IconeRelogio />}
+            largura={196}
+            recolhido
+          >
+            {(fechar) => (
+              <>
+                <p className="px-3 pt-2 pb-1 text-[11.5px] font-bold tracking-[0.06em] text-dim uppercase">
+                  Voltar para a fila em
+                </p>
+                {(Object.keys(PRAZOS_DE_ADIAMENTO) as PrazoDeAdiamento[]).map((prazo) => (
+                  <button
+                    key={prazo}
+                    type="button"
+                    disabled={conversa.pendente}
+                    onClick={() => {
+                      fechar()
+                      conversa.agir('adiada', () => acaoAdiarConversa(clienteId, contatoId, prazo))
+                    }}
+                    className="block w-full px-3 py-2 text-left text-[12.5px] font-semibold text-ink transition hover:bg-surface disabled:opacity-50"
+                  >
+                    {PRAZOS_DE_ADIAMENTO[prazo].rotulo}
+                  </button>
+                ))}
+              </>
+            )}
+          </AcaoComPainel>
+        )}
+
+        {/* Atividade não envia nada (RB-33, ver `core/atividades.ts`). */}
+        <AcaoComPainel
+          rotulo="Para a equipe: marcar atividade"
+          icone={<IconeAtividade />}
+          largura={300}
+        >
           {(fechar) => (
             <>
-              <p className="px-3 pt-2 pb-1 text-[11.5px] font-bold tracking-[0.06em] text-dim uppercase">
-                Voltar para a fila em
-              </p>
-              {(Object.keys(PRAZOS_DE_ADIAMENTO) as PrazoDeAdiamento[]).map((prazo) => (
-                <button
-                  key={prazo}
-                  type="button"
-                  disabled={conversa.pendente}
-                  onClick={() => {
-                    fechar()
-                    conversa.agir('adiada', () => acaoAdiarConversa(clienteId, contatoId, prazo))
-                  }}
-                  className="block w-full px-3 py-2 text-left text-[12.5px] font-semibold text-ink transition hover:bg-surface disabled:opacity-50"
-                >
-                  {PRAZOS_DE_ADIAMENTO[prazo].rotulo}
-                </button>
-              ))}
+              <DestinoDoPainel>Para a equipe</DestinoDoPainel>
+              <MarcarAtividade clienteId={clienteId} contatoId={contatoId} aoFechar={fechar} />
             </>
           )}
         </AcaoComPainel>
-      )}
+
+        <AcaoComPainel
+          rotulo="Para a equipe: anotar"
+          icone={<IconeNota />}
+          marcada={temAnotacao}
+          largura={288}
+        >
+          <DestinoDoPainel>Para a equipe</DestinoDoPainel>
+          <p className="mb-1 text-[12px] font-bold text-soft">Anotação da equipe</p>
+          <p className="mb-2 text-[11.5px] leading-4 text-dim">
+            Só a equipe vê. Não vai para o WhatsApp nem para a automação. Cada anotação fica no
+            histórico do contato, com o seu nome e a hora.
+          </p>
+          <EntradaDeAnotacao limite={LIMITE_DA_NOTA} />
+        </AcaoComPainel>
+      </GrupoDeAcoes>
 
       {/*
-        Agendar fica entre adiar e resolver porque os três são a mesma família:
-        decidem **quando** algo acontece. Marcada quando já há mensagem
-        esperando, do mesmo jeito que etiqueta e anotação, o ponto é a barra
-        dizer o que esta conversa já tem sem ninguém abrir nada.
+        Marcada quando já há mensagem esperando, do mesmo jeito que etiqueta e
+        anotação: a barra diz o que esta conversa já tem sem ninguém abrir nada.
       */}
-      <AcaoComPainel
-        rotulo="Agendar mensagem"
-        icone={<IconeAgendar />}
-        marcada={agendadas.some((a) => a.estado === 'agendada' || a.estado === 'enviando')}
-        largura={320}
-      >
-        {(fechar) => (
-          <AgendarMensagem
-            clienteId={clienteId}
-            contatoId={contatoId}
-            nome={nomeDoContato}
-            fimDaJanela={fimDaJanela}
-            agendadas={agendadas}
-            aoFechar={fechar}
-          />
-        )}
-      </AcaoComPainel>
-
-      {/*
-        **Marcar atividade fica ao lado de agendar, e por isso avisa.**
-
-        Os dois respondem "e depois?", e é por isso que são vizinhos: quem
-        acabou de combinar alguma coisa na conversa resolve ali mesmo se aquilo
-        vira um lembrete para a equipe ou uma mensagem para o cliente. Mas o
-        resultado é oposto, e o painel diz isso escrito: atividade não envia
-        nada (RB-33, ver `core/atividades.ts`).
-      */}
-      <AcaoComPainel
-        rotulo="Marcar atividade"
-        icone={<IconeAtividade />}
-        largura={300}
-      >
-        {(fechar) => (
-          <MarcarAtividade clienteId={clienteId} contatoId={contatoId} aoFechar={fechar} />
-        )}
-      </AcaoComPainel>
+      <GrupoDeAcoes rotulo="Para o contato">
+        <AcaoComPainel
+          rotulo="Para o contato: agendar mensagem"
+          icone={<IconeAgendar />}
+          marcada={agendadas.some((a) => a.estado === 'agendada' || a.estado === 'enviando')}
+          largura={320}
+        >
+          {(fechar) => (
+            <>
+              <DestinoDoPainel>Para o contato</DestinoDoPainel>
+              <AgendarMensagem
+                clienteId={clienteId}
+                contatoId={contatoId}
+                nome={nomeDoContato}
+                fimDaJanela={fimDaJanela}
+                agendadas={agendadas}
+                aoFechar={fechar}
+              />
+            </>
+          )}
+        </AcaoComPainel>
+      </GrupoDeAcoes>
 
       {/*
         Resolver e reabrir são o mesmo botão, e o ícone conta qual dos dois:
@@ -203,20 +229,6 @@ export function AcoesRapidas({
       >
         {resolvida ? <IconeReabrir /> : <IconeTique />}
       </BotaoDeIcone>
-
-      <AcaoComPainel
-        rotulo="Anotação da equipe"
-        icone={<IconeNota />}
-        marcada={temAnotacao}
-        largura={288}
-      >
-        <p className="mb-1 text-[12px] font-bold text-soft">Anotação da equipe</p>
-        <p className="mb-2 text-[11.5px] leading-4 text-dim">
-          Só a equipe vê. Não vai para o WhatsApp nem para a automação. Cada anotação fica no
-          histórico do contato, com o seu nome e a hora.
-        </p>
-        <EntradaDeAnotacao limite={LIMITE_DA_NOTA} />
-      </AcaoComPainel>
 
       {temAutomacao && (
         <BotaoDeIcone
@@ -249,6 +261,28 @@ export function AcoesRapidas({
 /* -------------------------------------------------------------------------- */
 /* Peças                                                                      */
 /* -------------------------------------------------------------------------- */
+
+/** Uma moldura leve em volta dos ícones que vão para o mesmo destino. */
+function GrupoDeAcoes({ rotulo, children }: { rotulo: string; children: ReactNode }) {
+  return (
+    <div
+      role="group"
+      aria-label={rotulo}
+      className="flex items-center gap-0.5 rounded-[10px] border border-line/70 px-0.5"
+    >
+      {children}
+    </div>
+  )
+}
+
+/** A linha "para quem" no alto do painel, a mesma palavra da dica do ícone. */
+function DestinoDoPainel({ children }: { children: ReactNode }) {
+  return (
+    <p className="mb-1.5 text-[10.5px] font-bold tracking-[0.06em] text-primary uppercase">
+      {children}
+    </p>
+  )
+}
 
 function BotaoDeIcone({
   rotulo,

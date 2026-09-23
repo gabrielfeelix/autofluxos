@@ -3,6 +3,7 @@ import {
   conferirTitulo,
   ehDestinoAoFechar,
   ehTipoDeAtividade,
+  prazoEmPalavras,
   proximaAcao,
   urgenciaDe,
   type Atividade,
@@ -111,5 +112,33 @@ describe('as portas de entrada recusam valor de fora', () => {
     expect(ehTipoDeAtividade('whatsapp')).toBe(false)
     expect(ehDestinoAoFechar('manter')).toBe(true)
     expect(ehDestinoAoFechar('enviar')).toBe(false)
+  })
+})
+
+describe('prazoEmPalavras', () => {
+  it('dia sem hora nunca ganha hora', () => {
+    // Amanhã, guardado ao meio-dia UTC: faltam 21 h, mas ninguém combinou hora.
+    const r = prazoEmPalavras(atividade({ prazo: '2026-09-21T12:00:00Z' }), HOJE)
+    expect(r).toEqual({ texto: 'amanhã', atrasada: false })
+  })
+
+  it('hoje sem hora é "hoje", mesmo com o meio-dia UTC já passado', () => {
+    const r = prazoEmPalavras(atividade({ prazo: '2026-09-20T12:00:00Z' }), HOJE)
+    expect(r).toEqual({ texto: 'hoje', atrasada: false })
+  })
+
+  it('com hora marcada conta horas', () => {
+    const r = prazoEmPalavras(atividade({ prazo: '2026-09-20T18:30:00Z', horaMarcada: true }), HOJE)
+    expect(r).toEqual({ texto: 'em 3 h', atrasada: false })
+  })
+
+  it('vencida por dia concorda com urgenciaDe', () => {
+    const a = atividade({ prazo: '2026-09-17T12:00:00Z' })
+    expect(prazoEmPalavras(a, HOJE)).toEqual({ texto: 'venceu há 3 dias', atrasada: true })
+    expect(urgenciaDe(a, HOJE)).toBe('vencida')
+  })
+
+  it('sem prazo', () => {
+    expect(prazoEmPalavras(atividade({ prazo: null }), HOJE).texto).toBe('sem prazo')
   })
 })

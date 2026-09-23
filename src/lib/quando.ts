@@ -46,6 +46,16 @@ export function horaExata(iso: string): string {
   return horaCompleta.format(new Date(iso))
 }
 
+/**
+ * A hora exata com o fuso escrito, para o que **vai sair** numa hora marcada.
+ *
+ * Mensagem agendada é um compromisso com o cliente, e quem atende de outro
+ * estado precisa saber que "20:30" é o relógio de Brasília, não o dele.
+ */
+export function horaComFuso(iso: string): string {
+  return `${horaCompleta.format(new Date(iso))} (Brasília)`
+}
+
 /*
  * -----------------------------------------------------------------------------
  * Hora de relógio e agrupamento por dia

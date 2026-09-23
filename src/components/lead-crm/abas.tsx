@@ -7,6 +7,8 @@ export type AbaDaFicha = {
   rotulo: string
   /** Aparece ao lado do rótulo. Zero não é mostrado: contador de nada é ruído. */
   contagem?: number
+  /** O que a contagem conta, em palavras: vai na dica e no leitor de tela. */
+  contagemRotulo?: string
   conteudo: ReactNode
   /** A conversa é a única que gerencia a própria rolagem e o próprio rodapé. */
   solta?: boolean
@@ -175,11 +177,13 @@ export function Abas({
                 {aba.rotulo}
                 {aba.contagem !== undefined && aba.contagem > 0 && (
                   <span
+                    title={aba.contagemRotulo}
                     className={`rounded-full px-1.5 text-[10px] tabular-nums ${
                       escolhida ? 'bg-primary/15 text-primary' : 'bg-surface-strong text-dim'
                     }`}
                   >
-                    {aba.contagem}
+                    <span aria-hidden={aba.contagemRotulo ? true : undefined}>{aba.contagem}</span>
+                    {aba.contagemRotulo && <span className="sr-only">: {aba.contagemRotulo}</span>}
                   </span>
                 )}
               </button>
@@ -227,5 +231,29 @@ export function Abas({
         )
       })}
     </section>
+  )
+}
+
+/**
+ * Um botão que leva a uma aba da ficha, de fora das abas (o resumo do topo).
+ * Usa o mesmo pedido `ficha:aba` dos atalhos "Anotar" e "Etiquetar".
+ */
+export function IrParaAba({
+  aba,
+  children,
+  className,
+}: {
+  aba: string
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => window.dispatchEvent(new CustomEvent('ficha:aba', { detail: aba }))}
+      className={className}
+    >
+      {children}
+    </button>
   )
 }

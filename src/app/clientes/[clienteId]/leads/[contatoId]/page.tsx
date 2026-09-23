@@ -45,7 +45,9 @@ import { tokenDeAnuncios } from '@/server/token-de-anuncios'
 import type { AnuncioEmCache, Passagem } from '@/core/anuncios'
 import { origemDoContato } from '@/core/contatos/origem'
 import { Avatar } from '@/components/inbox/avatar'
-import { Abas } from '@/components/lead-crm/abas'
+import { Abas, IrParaAba } from '@/components/lead-crm/abas'
+import { CabecalhoDoTipo } from '@/components/lead-crm/tipo-do-passo'
+import { prazoEmPalavras, proximaAcao } from '@/core/atividades'
 import { EstagioDoContato } from '@/components/lead-crm/estagio-do-contato'
 import { Historico as HistoricoDoContato } from '@/components/lead-crm/historico'
 import { Negociacoes } from '@/components/lead-crm/negociacoes'
@@ -81,7 +83,7 @@ import {
 import { NomeDoContato } from '@/components/lead/identidade'
 import { CartaoDeAnotacoes } from '@/components/inbox/anotacoes'
 import { anotacoesDoContato } from '@/server/repos/eventos'
-import { etiquetasDeDia, horaDoRelogio, horaExata } from '@/lib/quando'
+import { etiquetasDeDia, horaComFuso, horaDoRelogio, horaExata, quando } from '@/lib/quando'
 import { MenuNaConversa } from '@/components/inbox/historico'
 import { TextoDoWhatsApp } from '@/components/texto-do-whatsapp'
 
@@ -164,6 +166,23 @@ export default async function Pagina({
   const donoNome = equipe.find((membro) => membro.id === lead.atribuidoA)?.nome ?? null
 
   const agoraDaFicha = agoraDoServidor()
+
+  /*
+   * O resumo do topo (8.3): a próxima atividade e a próxima mensagem, as duas
+   * contas feitas aqui para as abas não precisarem ser abertas para responder
+   * "o que vem agora com esta pessoa".
+   */
+  const proxima = proximaAcao(atividades)
+  const prazoDaProxima = proxima ? prazoEmPalavras(proxima, agoraDaFicha) : null
+  const proximaMensagem =
+    agendadas
+      .filter((a) => a.estado === 'agendada' || a.estado === 'enviando')
+      .sort((a, b) => a.quando.localeCompare(b.quando))[0] ?? null
+  const mensagemFalhou = agendadas.some((a) => a.estado === 'falhou')
+  const abertas = atividades.filter((a) => a.situacao === 'aberta').length
+  const aSair = agendadas.filter((a) => a.estado === 'agendada' || a.estado === 'enviando').length
+  const sequenciasAtivas = acompanhamentos.filter((a) => a.estado === 'ativa').length
+  const pendentesDaAba = abertas + aSair + sequenciasAtivas
 
   const campos = Object.entries(lead.campos)
   const nome = lead.nome ?? 'sem nome'
@@ -287,6 +306,51 @@ export default async function Pagina({
             <span className="flex h-[38px] items-center">
               <SeloDoAtendimento atendimento={atendimento} donoNome={donoNome} />
             </span>
+          </div>
+          {/*
+            A segunda linha do resumo (8.3): o que já passou e o que vem. Fica
+            acima das abas para responder em qualquer uma delas; cada valor leva
+            à aba onde ele mora.
+          */}
+          <div className="crm-field">
+            <span>Última mensagem da pessoa</span>
+            <span className="text-[12.5px] text-ink">
+              {lead.ultimaEntradaEm ? (
+                <span title={horaExata(lead.ultimaEntradaEm)}>
+                  {quando(lead.ultimaEntradaEm, agoraDaFicha)}
+                </span>
+              ) : (
+                <span className="text-dim">nunca escreveu</span>
+              )}
+            </span>
+          </div>
+          <div className="crm-field">
+            <span>Próxima atividade</span>
+            {proxima && prazoDaProxima ? (
+              <IrParaAba aba="atividades" className="truncate text-left text-[12.5px] text-ink hover:text-primary">
+                <strong className={prazoDaProxima.atrasada ? 'text-perigo' : 'text-soft'}>
+                  {prazoDaProxima.texto}
+                </strong>
+                {' · '}
+                {proxima.titulo}
+              </IrParaAba>
+            ) : (
+              <span className="text-[12.5px] text-dim">nenhuma aberta</span>
+            )}
+          </div>
+          <div className="crm-field">
+            <span>Mensagem agendada</span>
+            {mensagemFalhou ? (
+              <IrParaAba aba="atividades" className="text-left text-[12.5px] font-semibold text-perigo">
+                uma mensagem não saiu
+              </IrParaAba>
+            ) : proximaMensagem ? (
+              <IrParaAba aba="atividades" className="text-left text-[12.5px] text-ink hover:text-primary">
+                sai em {horaComFuso(proximaMensagem.quando)}
+              </IrParaAba>
+            ) : (
+              <span className="text-[12.5px] text-dim">nenhuma</span>
+            )}
           </div>
         </section>
 
@@ -452,23 +516,37 @@ export default async function Pagina({
             {
               chave: 'atividades',
               rotulo: 'Atividades',
-              contagem: atividades.filter((a) => a.situacao === 'aberta').length,
+              contagem: pendentesDaAba,
+              contagemRotulo: [
+                `${abertas} ${abertas === 1 ? 'atividade aberta' : 'atividades abertas'}`,
+                `${aSair} ${aSair === 1 ? 'mensagem a sair' : 'mensagens a sair'}`,
+                `${sequenciasAtivas} ${sequenciasAtivas === 1 ? 'sequência em andamento' : 'sequências em andamento'}`,
+              ].join(', '),
               conteudo: (
                 /*
-                 * Tarefa humana, mensagem agendada e acompanhamento automático
-                 * moram juntos porque respondem a mesma pergunta, o que ainda
-                 * vai acontecer com esta pessoa, mas ficam em seções separadas
-                 * porque "agendar mensagem" e "criar atividade" são atos
-                 * diferentes e misturá-los faria alguém marcar um querendo o
-                 * outro. A contagem da aba é só das atividades abertas.
+                 * Três tipos, três cartões, cada um dizendo quem faz (8.3):
+                 * a atividade é de uma pessoa, a mensagem sai sozinha na hora
+                 * marcada, o acompanhamento é de uma sequência. A contagem da
+                 * aba soma o que está pendente nos três e a dica diz quanto
+                 * de cada.
                  */
                 <div className="flex flex-col gap-[18px]">
-                  <Atividades
-                    clienteId={clienteId}
-                    contatoId={contatoId}
-                    atividadesIniciais={atividades}
-                    agora={agoraDaFicha}
-                  />
+                  <section className="app-card overflow-hidden">
+                    <CabecalhoDoTipo
+                      titulo="Atividades da equipe"
+                      quemFaz="uma pessoa da equipe"
+                      contagem={abertas}
+                      descricao="Lembretes do que alguém precisa fazer: ligar, mandar proposta, visitar."
+                    />
+                    <div className="px-5 py-4">
+                      <Atividades
+                        clienteId={clienteId}
+                        contatoId={contatoId}
+                        atividadesIniciais={atividades}
+                        agora={agoraDaFicha}
+                      />
+                    </div>
+                  </section>
                   <Agendadas agendadas={agendadas} />
                   <Acompanhamentos acompanhamentos={acompanhamentos} />
                 </div>
