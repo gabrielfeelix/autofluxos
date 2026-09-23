@@ -6,6 +6,7 @@ import { ehEspecie, type Produto } from '@/core/produtos'
 import {
   arquivarProduto,
   criarProduto,
+  definirPreco,
   listarProdutos,
   renomearProduto,
 } from './repos/produtos'
@@ -56,7 +57,12 @@ export async function acaoCriarProduto(
   // devolveria o erro do `check` da 0079, que é texto de Postgres.
   if (!ehEspecie(especie)) return { erro: 'escolha produto ou serviço' }
 
-  const r = await criarProduto(clienteId, String(formData.get('nome') ?? ''), especie)
+  const r = await criarProduto(
+    clienteId,
+    String(formData.get('nome') ?? ''),
+    especie,
+    String(formData.get('preco') ?? ''),
+  )
   if (!r.ok) return { erro: r.motivo }
 
   recarregar(clienteId)
@@ -73,6 +79,33 @@ export async function acaoRenomearProduto(
   if (recusou(acesso)) return acesso
 
   const r = await renomearProduto(clienteId, produtoId, String(formData.get('nome') ?? ''))
+  if (!r.ok) return { erro: r.motivo }
+
+  recarregar(clienteId)
+  return { ok: true }
+}
+
+/**
+ * O preço do item (0091).
+ *
+ * `configurar_operacao` como o resto do catálogo, e aqui a exigência pesa mais
+ * do que no nome: o preço é o que o bot vai anunciar para o cliente final.
+ * Quem pode mexer nele está mexendo no que a empresa cobra, e isso é decisão
+ * de quem configura a operação, não de quem atende uma conversa.
+ *
+ * Campo vazio apaga o preço, e é intencional: volta para "não informado", que
+ * é o estado que faz o bot calar em vez de anunciar um preço velho.
+ */
+export async function acaoDefinirPreco(
+  clienteId: string,
+  produtoId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
+
+  const r = await definirPreco(clienteId, produtoId, String(formData.get('preco') ?? ''))
   if (!r.ok) return { erro: r.motivo }
 
   recarregar(clienteId)

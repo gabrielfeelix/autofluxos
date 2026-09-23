@@ -4,8 +4,9 @@ import { Trilha } from '@/components/design/trilha'
 import { Dropdown } from '@/components/design/dropdown'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { BotaoArquivar } from '@/components/produtos/botao-arquivar'
+import { comoDinheiro } from '@/core/crm'
 import { ESPECIES, NOME_DA_ESPECIE, estaAtivo } from '@/core/produtos'
-import { acaoCriarProduto, acaoRenomearProduto } from '@/server/acoes-produtos'
+import { acaoCriarProduto, acaoDefinirPreco, acaoRenomearProduto } from '@/server/acoes-produtos'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarProdutos } from '@/server/repos/produtos'
 
@@ -17,11 +18,16 @@ const OPCOES_DE_ESPECIE = ESPECIES.map((especie) => ({
 }))
 
 /**
- * O catálogo mínimo (T5.1).
+ * O catálogo mínimo (T5.1), com preço desde a 0091.
  *
- * Nome e ativo/arquivado. A ausência de preço aqui é a decisão: o valor de uma
- * venda é o valor **daquela** venda, guardado em `venda_itens`, e um preço de
- * tabela nesta tela viraria uma segunda verdade que ninguém atualiza.
+ * Esta tela dizia que a ausência de preço era a decisão, e o argumento era
+ * bom: o valor de uma venda é o valor **daquela** venda, em `venda_itens`, e
+ * preço de tabela vira segunda verdade que ninguém atualiza.
+ *
+ * O que mudou foi o leitor. O preço existe para o bot conseguir dizer quanto
+ * custa; o histórico continua em `venda_itens` e ninguém o reescreve daqui.
+ * Por isso a tela mostra o preço como **oferta**, e não como o que foi
+ * cobrado, e por isso item sem preço aparece como "sem preço" em vez de R$ 0.
  */
 export default async function Pagina({ params }: { params: Promise<{ clienteId: string }> }) {
   const { clienteId } = await params
@@ -45,13 +51,17 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         />
         <h1 className="text-[25px] font-bold tracking-[-0.02em]">Catálogo</h1>
         <p className="mt-1.5 mb-6 max-w-[650px] text-[13px] leading-6 text-dim">
-          O que a empresa vende, só com nome. Serve para dizer no que uma
-          negociação está interessada, o que foi vendido, e para filtrar depois
-          por “quem comprou o Plano Ouro”.
+          O que a empresa vende: nome e, quando você quiser, preço. Serve para
+          dizer no que uma negociação está interessada, o que foi vendido, para
+          filtrar depois por “quem comprou o Plano Ouro” e para o bot saber
+          quanto custa.
           <br />
-          Não tem preço, estoque nem imposto de propósito: o valor de uma venda é
-          o valor <em>daquela</em> venda, e um preço de tabela aqui viraria uma
-          segunda verdade que ninguém lembra de atualizar.
+          O preço aqui é <em>a oferta de hoje</em>, não o histórico: mudar não
+          reescreve venda nenhuma, porque o valor de uma venda é o valor{' '}
+          <em>daquela</em> venda. Item sem preço o bot não anuncia, e é por isso
+          que em branco quer dizer “não informado”, nunca “de graça”.
+          <br />
+          Estoque e imposto continuam de fora de propósito.
         </p>
 
         <section className="app-card overflow-hidden">
@@ -87,6 +97,19 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
                   opcoes={OPCOES_DE_ESPECIE}
                 />
               </label>
+              <label>
+                <RotuloCampo>Preço (opcional)</RotuloCampo>
+                <input
+                  name="preco"
+                  inputMode="decimal"
+                  placeholder="ex.: 150,00"
+                  className="app-field px-[13px] py-[11px] text-[13.5px]"
+                />
+                <span className="mt-1.5 block text-[11px] leading-5 text-dim">
+                  Em branco é “não informado”: o bot não anuncia preço que
+                  ninguém cadastrou. Para item de graça, escreva 0.
+                </span>
+              </label>
             </ModalFormulario>
           </header>
 
@@ -105,6 +128,43 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
                 >
                   <span className="flex-1 text-[13.5px] font-medium">{produto.nome}</span>
                   <span className="text-[11px] text-dim">{NOME_DA_ESPECIE[produto.especie]}</span>
+                  {/*
+                    "sem preço" em vez de R$ 0,00: são estados diferentes, e o
+                    segundo é uma oferta que ninguém fez.
+                  */}
+                  <span
+                    className={
+                      produto.preco === null
+                        ? 'text-[11px] text-dim italic'
+                        : 'text-[12.5px] font-medium tabular-nums'
+                    }
+                  >
+                    {produto.preco === null ? 'sem preço' : comoDinheiro(produto.preco)}
+                  </span>
+                  <ModalFormulario
+                    botao="Preço"
+                    titulo={`Preço de “${produto.nome}”`}
+                    descricao="É a oferta de hoje. As vendas já registradas guardam o valor da época e não mudam."
+                    rotuloEnviar="Salvar"
+                    variante="secundario"
+                    action={acaoDefinirPreco.bind(null, cliente.id, produto.id, {})}
+                  >
+                    <label>
+                      <RotuloCampo>Preço</RotuloCampo>
+                      <input
+                        name="preco"
+                        autoFocus
+                        inputMode="decimal"
+                        defaultValue={produto.preco === null ? '' : produto.preco.toFixed(2).replace('.', ',')}
+                        placeholder="ex.: 150,00"
+                        className="app-field px-[13px] py-[11px] text-[13.5px]"
+                      />
+                      <span className="mt-1.5 block text-[11px] leading-5 text-dim">
+                        Apagar o campo volta para “não informado”, e aí o bot
+                        deixa de anunciar preço em vez de anunciar um antigo.
+                      </span>
+                    </label>
+                  </ModalFormulario>
                   <ModalFormulario
                     botao="Renomear"
                     titulo={`Renomear “${produto.nome}”`}
@@ -150,6 +210,9 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
                 >
                   <span className="flex-1 text-[13.5px] text-dim">{produto.nome}</span>
                   <span className="text-[11px] text-dim">{NOME_DA_ESPECIE[produto.especie]}</span>
+                  <span className="text-[12.5px] text-dim tabular-nums">
+                    {produto.preco === null ? '' : comoDinheiro(produto.preco)}
+                  </span>
                   <BotaoArquivar clienteId={cliente.id} produto={produto} arquivar={false} />
                 </li>
               ))}

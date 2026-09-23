@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   conferirNome,
+  conferirPreco,
   ehEspecie,
   estaAtivo,
   selecionaveis,
+  temPrecoInformado,
   type Produto,
 } from './produtos'
 
@@ -12,6 +14,7 @@ function produto(parcial: Partial<Produto> = {}): Produto {
     id: 'p1',
     nome: 'Plano Ouro',
     especie: 'produto',
+    preco: null,
     arquivadoEm: null,
     ...parcial,
   }
@@ -61,5 +64,43 @@ describe('selecionaveis', () => {
     // venda de março precisa do nome do item arquivado depois.
     expect(selecionaveis(lista).map((p) => p.id)).toEqual(['ativo'])
     expect(lista).toHaveLength(2)
+  })
+})
+
+describe('conferirPreco', () => {
+  it('em branco é "não informado", e não zero', () => {
+    // A distinção inteira da 0091 mora neste teste: se `''` virasse 0, o bot
+    // anunciaria "de graça" todo item que o dono ainda não cadastrou.
+    expect(conferirPreco('')).toEqual({ ok: true, preco: null })
+    expect(conferirPreco('   ')).toEqual({ ok: true, preco: null })
+  })
+
+  it('zero é preço válido, para brinde e plano gratuito', () => {
+    expect(conferirPreco('0')).toEqual({ ok: true, preco: 0 })
+  })
+
+  it('entende as três grafias, porque é o mesmo parser do valor da venda', () => {
+    expect(conferirPreco('1.500')).toEqual({ ok: true, preco: 1500 })
+    expect(conferirPreco('1.50')).toEqual({ ok: true, preco: 1.5 })
+    expect(conferirPreco('R$ 150,00')).toEqual({ ok: true, preco: 150 })
+  })
+
+  it('recusa o que não é número', () => {
+    expect(conferirPreco('caro').ok).toBe(false)
+  })
+
+  it('recusa preço que não caberia na coluna', () => {
+    // numeric(12, 2) guarda dez dígitos antes da vírgula. Preço nessa ordem de
+    // grandeza é dedo escorregado, não oferta.
+    expect(conferirPreco('999999999').ok).toBe(true)
+    expect(conferirPreco('99999999999').ok).toBe(false)
+  })
+})
+
+describe('temPrecoInformado', () => {
+  it('separa "não cadastrou" de "é de graça"', () => {
+    expect(temPrecoInformado(produto({ preco: null }))).toBe(false)
+    expect(temPrecoInformado(produto({ preco: 0 }))).toBe(true)
+    expect(temPrecoInformado(produto({ preco: 150 }))).toBe(true)
   })
 })

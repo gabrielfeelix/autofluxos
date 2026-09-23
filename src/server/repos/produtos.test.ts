@@ -5,6 +5,7 @@ import { criarCliente } from './clientes'
 import {
   arquivarProduto,
   criarProduto,
+  definirPreco,
   listarProdutos,
   produtoPorId,
   renomearProduto,
@@ -129,5 +130,61 @@ describe.skipIf(!temCredencial)('isolamento por conta', () => {
 
   it('id torto não derruba a leitura', async () => {
     expect(await produtoPorId(clienteId, 'nao-e-uuid')).toBeNull()
+  })
+})
+
+
+describe.skipIf(!temCredencial)('preço (0091)', () => {
+  it('volta como número, e não como a string que o numeric entrega', async () => {
+    // O supabase-js devolve `numeric` como string. Se `paraPreco` não
+    // convertesse, `preco` seria "150.00" e toda comparação com número
+    // responderia errado sem levantar erro nenhum.
+    const novo = await criarProduto(clienteId, `${marca} com preco`, 'produto', '150,00')
+    expect(novo.ok).toBe(true)
+    if (!novo.ok) return
+
+    expect(novo.produto.preco).toBe(150)
+    expect(typeof novo.produto.preco).toBe('number')
+
+    const lido = await produtoPorId(clienteId, novo.produto.id)
+    expect(lido?.preco).toBe(150)
+  })
+
+  it('sem preço nasce null, e null não é zero', async () => {
+    const novo = await criarProduto(clienteId, `${marca} sem preco`, 'servico')
+    expect(novo.ok).toBe(true)
+    if (!novo.ok) return
+    expect(novo.produto.preco).toBeNull()
+  })
+
+  it('campo vazio apaga o preço em vez de zerar', async () => {
+    const novo = await criarProduto(clienteId, `${marca} apaga`, 'produto', '90')
+    expect(novo.ok).toBe(true)
+    if (!novo.ok) return
+    expect(novo.produto.preco).toBe(90)
+
+    const apagado = await definirPreco(clienteId, novo.produto.id, '')
+    expect(apagado.ok).toBe(true)
+    if (!apagado.ok) return
+
+    // O ponto: `null`, nunca 0. Zero seria uma oferta de graça que ninguém fez.
+    expect(apagado.produto.preco).toBeNull()
+  })
+
+  it('zero é preço de verdade e sobrevive à ida e volta', async () => {
+    const novo = await criarProduto(clienteId, `${marca} brinde`, 'produto', '0')
+    expect(novo.ok).toBe(true)
+    if (!novo.ok) return
+    expect(novo.produto.preco).toBe(0)
+    expect((await produtoPorId(clienteId, novo.produto.id))?.preco).toBe(0)
+  })
+
+  it('preço não atravessa conta', async () => {
+    const meu = await criarProduto(clienteId, `${marca} preco meu`, 'produto', '10')
+    expect(meu.ok).toBe(true)
+    if (!meu.ok) return
+
+    expect((await definirPreco(outroId, meu.produto.id, '999')).ok).toBe(false)
+    expect((await produtoPorId(clienteId, meu.produto.id))?.preco).toBe(10)
   })
 })

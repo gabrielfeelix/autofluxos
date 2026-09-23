@@ -5,15 +5,29 @@
  * Por que ele é mínimo, e por que isso é uma decisão e não preguiça
  * ---------------------------------------------------------------------------
  *
- * Produto/serviço, nome, ativo/arquivado. Nada de estoque, imposto, SKU ou
- * ERP. O catálogo existe para responder duas perguntas do produto:
+ * Produto/serviço, nome, preço, ativo/arquivado. Nada de estoque, imposto, SKU
+ * ou ERP. O catálogo existe para responder três perguntas do produto:
  *
  *   - "no que esta oportunidade está interessada?"
  *   - "quem comprou o Plano XYZ nos últimos 90 dias?" (RB-36, na F6)
+ *   - "quanto custa o Plano XYZ?", que é a pergunta do bot (0091)
  *
- * Nenhuma das duas exige cadastro fiscal, e tentar incluí-lo agora faria a
+ * Nenhuma das três exige cadastro fiscal, e tentar incluí-lo agora faria a
  * empresa ter que recadastrar o catálogo inteiro antes de registrar a primeira
  * venda.
+ *
+ * ---------------------------------------------------------------------------
+ * O preço chegou depois, e a recusa antiga continua de pé
+ * ---------------------------------------------------------------------------
+ *
+ * A 0079 recusou preço com um argumento bom: preço de tabela vira "uma segunda
+ * verdade que ninguém atualiza". O que mudou não foi o argumento, foi o leitor.
+ * Enquanto o catálogo só era lido por gente, o preço era redundante, quem
+ * registrava a venda sabia o valor. O bot não sabe: sem preço na oferta ele não
+ * diz quanto custa nem recomenda.
+ *
+ * Então o preço aqui é **a oferta de hoje**, nunca o histórico, e as duas
+ * coisas não se misturam em lugar nenhum do código.
  *
  * ---------------------------------------------------------------------------
  * O que este arquivo NÃO decide
@@ -26,6 +40,8 @@
  *
  * Puro e sem rede. Quem grava é `server/repos/produtos.ts`.
  */
+
+import { lerValor } from './crm'
 
 /**
  * Produto ou serviço.
@@ -52,6 +68,16 @@ export type Produto = {
   id: string
   nome: string
   especie: Especie
+  /**
+   * O preço de oferta de hoje, em BRL.
+   *
+   * `null` é **"não informado", e nunca 0**. É a mesma regra do
+   * `vendas.valorTotal`, e a distinção não é preciosismo: colapsar as duas
+   * faria o bot anunciar "sai de graça" para todo item que o dono ainda não
+   * cadastrou, que é o pior erro que este campo pode cometer. Zero segue
+   * válido de propósito, para brinde e plano gratuito, só não é o default.
+   */
+  preco: number | null
   /** `null` = ativo. Data = arquivado naquele instante, e ainda legível. */
   arquivadoEm: string | null
 }
@@ -62,6 +88,10 @@ export function estaAtivo(produto: Pick<Produto, 'arquivadoEm'>): boolean {
 }
 
 export type Conferencia = { ok: true; nome: string } | { ok: false; motivo: string }
+
+export type ConferenciaDePreco =
+  | { ok: true; preco: number | null }
+  | { ok: false; motivo: string }
 
 /**
  * O nome serve?
@@ -75,6 +105,44 @@ export function conferirNome(bruto: string): Conferencia {
   if (nome === '') return { ok: false, motivo: 'dê um nome ao item do catálogo' }
   if (nome.length > 120) return { ok: false, motivo: 'o nome precisa ter até 120 caracteres' }
   return { ok: true, nome }
+}
+
+/**
+ * O preço serve?
+ *
+ * Quem entende a grafia é `lerValor`, do `core/crm.ts`, e reusar não é
+ * economia: ele já sabe que "1.500" é mil e quinhentos e que "1.50" é um e
+ * cinquenta, e um segundo parser daria respostas diferentes para a mesma mão
+ * em duas telas do mesmo sistema.
+ *
+ * O que esta função acrescenta é o teto. `lerValor` recusa acima de dez
+ * bilhões porque é o limite do `numeric` das vendas; aqui o limite é menor de
+ * propósito, `numeric(12, 2)` guarda dez dígitos antes da vírgula, e um preço
+ * de tabela que chega perto disso é dedo escorregado no teclado, não oferta.
+ */
+export function conferirPreco(bruto: string): ConferenciaDePreco {
+  const lido = lerValor(bruto)
+  if (!lido.ok) return { ok: false, motivo: lido.motivo }
+  if (lido.valor === null) return { ok: true, preco: null }
+
+  if (lido.valor > 9_999_999_99) {
+    return { ok: false, motivo: 'esse preço é alto demais, confira o número' }
+  }
+
+  return { ok: true, preco: lido.valor }
+}
+
+/**
+ * Dá para oferecer este item?
+ *
+ * O bot só anuncia preço que alguém cadastrou. Item sem preço não é item de
+ * graça, é item que o dono não configurou, e a diferença é toda a razão de
+ * `preco` ser anulável. Quem for montar a oferta pergunta aqui em vez de
+ * testar `preco != null` espalhado, que é o teste que mais cedo ou mais tarde
+ * alguém escreve como `preco > 0` e some com o brinde da lista.
+ */
+export function temPrecoInformado(produto: Pick<Produto, 'preco'>): boolean {
+  return produto.preco !== null
 }
 
 /**

@@ -1,5 +1,5 @@
 import 'server-only'
-import { conferirNome, type Especie, type Produto } from '@/core/produtos'
+import { conferirNome, conferirPreco, type Especie, type Produto } from '@/core/produtos'
 import { db, ehIdInvalido } from '../db'
 
 /**
@@ -21,16 +21,33 @@ type LinhaDoProduto = {
   id: string
   nome: string
   especie: string
+  preco: string | number | null
   arquivado_em: string | null
 }
 
-const COLUNAS = 'id, nome, especie, arquivado_em'
+const COLUNAS = 'id, nome, especie, preco, arquivado_em'
+
+/**
+ * `numeric` do Postgres chega como **string** no supabase-js, não número.
+ *
+ * O driver não converte de propósito: `numeric` guarda mais precisão do que um
+ * `double` aguenta, e converter cedo perderia centavo calado. Para preço de
+ * tabela o `Number` é seguro, mas a conversão precisa ser explícita aqui e não
+ * espalhada, senão em algum lugar `preco` vira `"150.00"` e a comparação com
+ * número responde errado sem erro nenhum.
+ */
+function paraPreco(bruto: string | number | null): number | null {
+  if (bruto === null) return null
+  const numero = typeof bruto === 'number' ? bruto : Number(bruto)
+  return Number.isFinite(numero) ? numero : null
+}
 
 function paraProduto(linha: LinhaDoProduto): Produto {
   return {
     id: linha.id,
     nome: linha.nome,
     especie: linha.especie === 'servico' ? 'servico' : 'produto',
+    preco: paraPreco(linha.preco),
     arquivadoEm: linha.arquivado_em,
   }
 }
@@ -76,13 +93,19 @@ export async function criarProduto(
   clienteId: string,
   nomeBruto: string,
   especie: Especie,
+  precoBruto = '',
 ): Promise<ResultadoDoProduto> {
   const conferido = conferirNome(nomeBruto)
   if (!conferido.ok) return { ok: false, motivo: conferido.motivo }
 
+  // Preço em branco é o caminho normal, não exceção: o item nasce sem preço e
+  // ganha depois, e é por isso que o parâmetro tem default.
+  const preco = conferirPreco(precoBruto)
+  if (!preco.ok) return { ok: false, motivo: preco.motivo }
+
   const { data, error } = await db()
     .from('produtos')
-    .insert({ client_id: clienteId, nome: conferido.nome, especie })
+    .insert({ client_id: clienteId, nome: conferido.nome, especie, preco: preco.preco })
     .select(COLUNAS)
     .single()
 
@@ -117,6 +140,46 @@ export async function renomearProduto(
   }
   if (ehIdInvalido(error)) return { ok: false, motivo: 'esse item do catálogo não existe' }
   if (error) return { ok: false, motivo: `não deu para renomear: ${error.message}` }
+  if (!data) return { ok: false, motivo: 'esse item do catálogo não existe' }
+
+  return { ok: true, produto: paraProduto(data as LinhaDoProduto) }
+}
+
+/**
+ * O preço do item.
+ *
+ * Função própria em vez de um parâmetro opcional em `renomearProduto`, e a
+ * razão é a que atrapalha todo update parcial: com um campo anulável, "não
+ * mandei o preço" e "mandei o preço vazio para apagar" chegariam iguais, e uma
+ * das duas intenções seria perdida calada. Separando, cada função tem um
+ * assunto e `''` quer dizer sempre a mesma coisa: **apaga o preço**.
+ *
+ * Apagar é operação legítima e não é erro: o dono que parou de vender por um
+ * preço fixo precisa conseguir voltar para "não informado", e voltar para
+ * "não informado" é justamente o que impede o bot de anunciar um preço velho.
+ *
+ * Isto **não toca venda nenhuma**. `venda_itens.valor_unitario` guarda o que
+ * foi cobrado na época e continua guardando, pela mesma razão que renomear não
+ * reescreve `venda_itens.descricao`.
+ */
+export async function definirPreco(
+  clienteId: string,
+  produtoId: string,
+  precoBruto: string,
+): Promise<ResultadoDoProduto> {
+  const preco = conferirPreco(precoBruto)
+  if (!preco.ok) return { ok: false, motivo: preco.motivo }
+
+  const { data, error } = await db()
+    .from('produtos')
+    .update({ preco: preco.preco, atualizado_em: new Date().toISOString() })
+    .eq('client_id', clienteId)
+    .eq('id', produtoId)
+    .select(COLUNAS)
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return { ok: false, motivo: 'esse item do catálogo não existe' }
+  if (error) return { ok: false, motivo: `não deu para salvar o preço: ${error.message}` }
   if (!data) return { ok: false, motivo: 'esse item do catálogo não existe' }
 
   return { ok: true, produto: paraProduto(data as LinhaDoProduto) }
