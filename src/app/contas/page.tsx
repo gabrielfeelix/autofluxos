@@ -5,15 +5,12 @@ import { Marca } from '@/components/design/marca'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { acaoCriarCompanhia, acaoSair, acaoTrocarDeCompanhia } from '@/server/acoes-conta'
 import { contasDoUsuario, ehAdminDaPlataforma, exigirUsuario } from '@/server/sessao'
+import { ROTULO_DO_PAPEL } from '@/core/permissoes'
 
 export const dynamic = 'force-dynamic'
 
 /** O que cada papel do plugin de organização quer dizer em português. */
-const PAPEIS: Record<string, string> = {
-  owner: 'dono da conta',
-  admin: 'administrador',
-  member: 'equipe',
-}
+const PAPEIS: Record<string, string> = ROTULO_DO_PAPEL
 
 /**
  * As companhias desta pessoa.

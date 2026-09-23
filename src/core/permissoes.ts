@@ -367,3 +367,150 @@ export function filtroDe(acesso: Acesso, capacidade: Capacidade): FiltroDeEscopo
     }
   }
 }
+
+// ---------------------------------------------------------------------------
+// Os nomes que a tela usa
+// ---------------------------------------------------------------------------
+
+/**
+ * O papel da conta em português (E2, E3).
+ *
+ * `member` virou "Membro", e não "Atende": a política dele é ampla (atende,
+ * vende, exporta, vê valores), e o nome antigo prometia um atendente
+ * limitado. Quem é limitado de verdade recebe o perfil "Acesso de
+ * atendimento" por cima do papel.
+ */
+export const ROTULO_DO_PAPEL: Record<PapelDaConta, string> = {
+  owner: 'Proprietário',
+  admin: 'Administrador da conta',
+  member: 'Membro',
+}
+
+/** O que o administrador da 4YU é numa conta em que ele não é membro (E9). */
+export const ROTULO_DO_SUPORTE = 'Suporte 4YU'
+
+export const DETALHE_DO_PAPEL: Record<PapelDaConta, string> = {
+  owner: 'faz tudo, inclusive mexer em quem manda',
+  admin: 'faz tudo na conta, menos virar proprietário',
+  member: 'o acesso vem do perfil escolhido em Acesso',
+}
+
+export function rotuloDoPapel(papel: string | null | undefined): string {
+  return papel && ehPapelDaConta(papel) ? ROTULO_DO_PAPEL[papel] : ROTULO_DO_SUPORTE
+}
+
+/** Os modelos de acesso com o nome que a tela mostra (E1). Não são cargo. */
+export const ROTULO_DO_MODELO: Record<keyof typeof MODELOS_EXTRA, string> = {
+  gestor: 'Acesso de gestão',
+  operador: 'Acesso de atendimento',
+}
+
+// ---------------------------------------------------------------------------
+// O resumo do acesso
+// ---------------------------------------------------------------------------
+
+export type ResumoDoAcesso = {
+  /**
+   * O nome do conjunto: papel, modelo ou "Acesso personalizado".
+   *
+   * Calculado pela política **efetiva**, não por uma etiqueta gravada: reabrir
+   * o editor e salvar sem mexer mantém o mesmo nome, que é o critério do E1.
+   */
+  perfil: string
+  /** Frases curtas, na ordem em que alguém pergunta: o que vê, o que faz. */
+  frases: string[]
+  /** O que merece olho na lista: "toda a conta", "sem alcance", "2 equipes". */
+  alertas: string[]
+  /** Alguma capacidade depende de equipe e a pessoa não está em nenhuma (E14). */
+  semAlcance: boolean
+}
+
+const MESMA_POLITICA = (a: Politica, b: Politica) =>
+  CAPACIDADES.every((capacidade) => a[capacidade] === b[capacidade])
+
+function listaComE(itens: string[]): string {
+  if (itens.length <= 1) return itens.join('')
+  return `${itens.slice(0, -1).join(', ')} e ${itens[itens.length - 1]}`
+}
+
+/**
+ * O acesso de uma pessoa em frases humanas (E4, E13).
+ *
+ * Existe para a lista de pessoas responder, numa passada, quem vê a conta
+ * inteira, quem vê só o que é dela e quem ficou sem alcance, sem abrir o
+ * editor de cada um. Usa `escopoDe`, a mesma função do servidor: o resumo
+ * nunca promete o que a ação recusa.
+ *
+ * `nomesDasEquipes` traduz id em nome; equipe sem nome conhecido (arquivada,
+ * por exemplo) não entra na frase, mas conta no alerta.
+ */
+export function resumoDoAcesso(
+  regras: Acesso,
+  nomesDasEquipes: Record<string, string> = {},
+): ResumoDoAcesso {
+  if (regras.ehAdminDaPlataforma) {
+    return {
+      perfil: ROTULO_DO_SUPORTE,
+      frases: ['Vê e faz tudo nesta conta, como suporte'],
+      alertas: ['toda a conta'],
+      semAlcance: false,
+    }
+  }
+  if (regras.papel === null) {
+    return { perfil: 'Sem acesso', frases: ['Não entra nesta conta'], alertas: [], semAlcance: false }
+  }
+
+  const efetiva = Object.fromEntries(
+    CAPACIDADES.map((capacidade) => [capacidade, escopoDe(regras, capacidade)]),
+  ) as Politica
+
+  const equipes = regras.equipes ?? []
+  const semAlcance =
+    equipes.length === 0 && CAPACIDADES.some((capacidade) => efetiva[capacidade] === 'equipe')
+
+  const perfil =
+    regras.papel !== 'member'
+      ? ROTULO_DO_PAPEL[regras.papel]
+      : MESMA_POLITICA(efetiva, POLITICAS.member)
+        ? ROTULO_DO_PAPEL.member
+        : MESMA_POLITICA(efetiva, MODELOS_EXTRA.gestor)
+          ? ROTULO_DO_MODELO.gestor
+          : MESMA_POLITICA(efetiva, MODELOS_EXTRA.operador)
+            ? ROTULO_DO_MODELO.operador
+            : 'Acesso personalizado'
+
+  const frases: string[] = []
+
+  // O que vê. É a pergunta que mais importa, então vem primeiro.
+  switch (efetiva.atender) {
+    case 'todos':
+      frases.push('Vê todos os contatos')
+      break
+    case 'proprios':
+      frases.push('Vê só os contatos dela')
+      break
+    case 'equipe': {
+      const nomes = equipes.map((id) => nomesDasEquipes[id]).filter((nome): nome is string => !!nome)
+      if (equipes.length === 0) frases.push('Não alcança nenhum contato')
+      else if (nomes.length === 0) frases.push('Vê os contatos da equipe dela')
+      else frases.push(`Vê ${nomes.length === 1 ? 'a equipe' : 'as equipes'} ${listaComE(nomes)}`)
+      break
+    }
+    case 'nenhum':
+      frases.push('Não atende conversas')
+      break
+  }
+
+  if (efetiva.configurar_empresa !== 'nenhum') frases.push('Mexe na equipe e no acesso')
+  if (efetiva.configurar_operacao !== 'nenhum') frases.push('Configura automações e funis')
+  if (efetiva.registrar_venda !== 'nenhum') frases.push('Registra venda')
+  frases.push(efetiva.exportar !== 'nenhum' ? 'Pode exportar' : 'Não exporta')
+  if (efetiva.ler_valores === 'nenhum') frases.push('Não vê valores')
+
+  const alertas: string[] = []
+  if (efetiva.atender === 'todos') alertas.push('toda a conta')
+  if (semAlcance) alertas.push('sem alcance')
+  if (equipes.length >= 2) alertas.push(`${equipes.length} equipes`)
+
+  return { perfil, frases, alertas, semAlcance }
+}

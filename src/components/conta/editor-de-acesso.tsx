@@ -6,7 +6,10 @@ import {
   ESCOPOS,
   MODELOS_EXTRA,
   POLITICAS,
+  ROTULO_DO_MODELO,
+  ROTULO_DO_PAPEL,
   escopoDe,
+  resumoDoAcesso,
   type Capacidade,
   type Escopo,
   type PapelDaConta,
@@ -37,6 +40,15 @@ import { acaoSalvarAcesso } from '@/server/acoes-acesso'
  * apaga a sobrescrita em vez de gravar o valor atual, e a diferença importa ,
  * gravar o valor congelaria a pessoa na política de hoje, e trocar o papel
  * dela depois não teria efeito nenhum. Ver `definirCapacidades`.
+ *
+ * ---------------------------------------------------------------------------
+ * Perfil primeiro, matriz depois (E1, E13)
+ * ---------------------------------------------------------------------------
+ *
+ * Quem abre o editor quer dizer "esta pessoa atende" ou "esta pessoa gere", e
+ * não traduzir oito linhas de capacidade. Os perfis ficam em cima; a matriz
+ * vai para "Ajustes avançados", recolhida, e abre sozinha quando o acesso já
+ * é personalizado (senão a pessoa não veria o que está diferente).
  */
 
 const ROTULO_DA_CAPACIDADE: Record<Capacidade, { titulo: string; detalhe: string }> = {
@@ -106,6 +118,7 @@ export function EditorDeAcesso({
   const [sobrescritas, setSobrescritas] = useState<Partial<Politica>>(membro?.sobrescritas ?? {})
   const [equipes, setEquipes] = useState<string[]>(membro?.equipes ?? [])
   const [erro, setErro] = useState<string | null>(null)
+  const [confirmandoSemAlcance, setConfirmandoSemAlcance] = useState(false)
   const [rodando, comecar] = useTransition()
 
   /**
@@ -126,14 +139,22 @@ export function EditorDeAcesso({
 
   const podeDeVerdade = efetivo.filter((linha) => linha.escopo !== 'nenhum')
 
-  /** Escopo de equipe sem equipe nenhuma alcança zero registros. Avisar é barato. */
-  const escopoDeEquipeSemEquipe =
-    equipes.length === 0 && efetivo.some((linha) => linha.escopo === 'equipe')
+  const nomesDasEquipes = useMemo(
+    () => Object.fromEntries(equipesDaConta.map((equipe) => [equipe.id, equipe.nome])),
+    [equipesDaConta],
+  )
+  const resumo = resumoDoAcesso({ papel, sobrescritas, equipes, usuarioId: membro?.id }, nomesDasEquipes)
+
+  /** Escopo de equipe sem equipe nenhuma alcança zero registros (E14). */
+  const escopoDeEquipeSemEquipe = resumo.semAlcance
+
+  const [avancadoAberto, setAvancadoAberto] = useState(resumo.perfil === 'Acesso personalizado')
 
   if (!membro) return null
 
   const trocar = (capacidade: Capacidade, valor: string) => {
     setErro(null)
+    setConfirmandoSemAlcance(false)
     setSobrescritas((atual) => {
       const copia = { ...atual }
       // "Igual ao papel" apaga a sobrescrita, ver o cabeçalho.
@@ -143,13 +164,20 @@ export function EditorDeAcesso({
     })
   }
 
-  const aplicarModelo = (modelo: keyof typeof MODELOS_EXTRA) => {
+  const aplicarModelo = (modelo: keyof typeof MODELOS_EXTRA | null) => {
     setErro(null)
-    setSobrescritas({ ...MODELOS_EXTRA[modelo] })
+    setConfirmandoSemAlcance(false)
+    setSobrescritas(modelo ? { ...MODELOS_EXTRA[modelo] } : {})
   }
 
   const salvar = () => {
     setErro(null)
+    // Salvar sem alcance é permitido (a pessoa pode entrar na equipe depois),
+    // mas nunca por acidente: o primeiro clique mostra o efeito e pede outro.
+    if (escopoDeEquipeSemEquipe && !confirmandoSemAlcance) {
+      setConfirmandoSemAlcance(true)
+      return
+    }
     comecar(async () => {
       const r = await acaoSalvarAcesso(clienteId, membro.id, {
         papel,
@@ -169,21 +197,36 @@ export function EditorDeAcesso({
       aberto
       aoFechar={aoFechar}
       titulo={`Acesso de ${membro.nome}`}
-      descricao="O papel dá o padrão; aqui você muda só o que precisa ser diferente. Quem não tem uma capacidade não vê a tela dela, e a chamada direta também é recusada."
+      descricao={`Papel na conta: ${ROTULO_DO_PAPEL[papel]}. Escolha um perfil; quem não tem acesso a uma tela não a vê no menu, e o servidor recusa a chamada direta.`}
       largura={760}
     >
       <div className="grid gap-5 md:grid-cols-[1fr_260px]">
         <div className="flex flex-col gap-4">
           <section>
-            <RotuloCampo>Começar de um modelo</RotuloCampo>
+            <RotuloCampo>Perfil de acesso</RotuloCampo>
             <div className="flex flex-wrap gap-2">
-              <BotaoDeModelo rotulo="Gestor" aoClicar={() => aplicarModelo('gestor')} />
-              <BotaoDeModelo rotulo="Operador" aoClicar={() => aplicarModelo('operador')} />
-              <BotaoDeModelo rotulo="Limpar exceções" aoClicar={() => setSobrescritas({})} />
+              <BotaoDeModelo
+                rotulo={papel === 'member' ? 'Membro (acesso amplo)' : ROTULO_DO_PAPEL[papel]}
+                ativo={resumo.perfil === ROTULO_DO_PAPEL[papel]}
+                aoClicar={() => aplicarModelo(null)}
+              />
+              <BotaoDeModelo
+                rotulo={ROTULO_DO_MODELO.gestor}
+                ativo={resumo.perfil === ROTULO_DO_MODELO.gestor}
+                aoClicar={() => aplicarModelo('gestor')}
+              />
+              <BotaoDeModelo
+                rotulo={ROTULO_DO_MODELO.operador}
+                ativo={resumo.perfil === ROTULO_DO_MODELO.operador}
+                aoClicar={() => aplicarModelo('operador')}
+              />
+              {resumo.perfil === 'Acesso personalizado' && (
+                <BotaoDeModelo rotulo="Acesso personalizado" ativo aoClicar={() => setAvancadoAberto(true)} />
+              )}
             </div>
             <p className="mt-1.5 text-[11.5px] leading-5 text-dim">
-              Modelo é ponto de partida, não cargo: depois de aplicar, mexa no que
-              quiser. Nada é salvo até você clicar em Salvar acesso.
+              Perfil é ponto de partida, não cargo. Nada é salvo até você clicar em
+              Salvar acesso.
             </p>
           </section>
 
@@ -197,14 +240,15 @@ export function EditorDeAcesso({
                     <button
                       key={equipe.id}
                       type="button"
-                      onClick={() =>
+                      onClick={() => {
+                        setConfirmandoSemAlcance(false)
                         setEquipes((atual) =>
                           dentro ? atual.filter((id) => id !== equipe.id) : [...atual, equipe.id],
                         )
-                      }
+                      }}
                       className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold transition ${
                         dentro
-                          ? 'border-transparent bg-emerald-400/15 text-emerald-300'
+                          ? 'border-transparent bg-primary-weak text-primary-strong'
                           : 'border-line text-dim hover:text-muted'
                       }`}
                     >
@@ -216,8 +260,18 @@ export function EditorDeAcesso({
             </section>
           )}
 
-          <section className="flex flex-col gap-2.5">
-            <RotuloCampo>O que ela pode</RotuloCampo>
+          <details
+            open={avancadoAberto}
+            onToggle={(e) => setAvancadoAberto(e.currentTarget.open)}
+            className="group rounded-xl border border-line"
+          >
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3.5 py-2.5 text-[12.5px] font-semibold text-muted">
+              Ajustes avançados
+              <span className="text-[11px] font-normal text-dim">
+                {avancadoAberto ? 'recolher' : 'capacidade por capacidade'}
+              </span>
+            </summary>
+          <section className="flex flex-col gap-2.5 border-t border-line px-3.5 py-3">
             {CAPACIDADES.map((capacidade) => {
               const daSobrescrita = sobrescritas[capacidade]
               const doPapel = POLITICAS[papel][capacidade]
@@ -249,16 +303,19 @@ export function EditorDeAcesso({
               )
             })}
           </section>
+          </details>
         </div>
 
         {/*
           A prévia. Ela responde a pergunta que a lista de chaves não responde:
           "depois de salvar, o que essa pessoa consegue fazer?"
         */}
-        <aside className="rounded-xl border border-line bg-black/20 p-4 text-[12px] leading-5 md:sticky md:top-0 md:self-start">
+        <aside className="rounded-xl border border-line bg-surface p-4 text-[12px] leading-5 md:sticky md:top-0 md:self-start">
           <strong className="block text-[11px] font-semibold tracking-[0.05em] text-muted uppercase">
             Depois de salvar
           </strong>
+          <span className="mt-1.5 block text-[13px] font-semibold text-claro">{resumo.perfil}</span>
+          <p className="mt-0.5 text-dim">{resumo.frases.join(' · ')}</p>
 
           {podeDeVerdade.length === 0 ? (
             <p className="mt-2 text-dim">
@@ -277,9 +334,12 @@ export function EditorDeAcesso({
           )}
 
           {escopoDeEquipeSemEquipe && (
-            <p className="mt-3 rounded-lg border border-amber-400/30 bg-amber-400/10 p-2.5 text-amber-200">
+            <p className="mt-3 rounded-lg border border-aviso/30 bg-aviso/10 p-2.5 text-aviso">
               Alguma capacidade está no escopo da equipe, e esta pessoa não está em
-              equipe nenhuma. Na prática isso é não poder: escolha uma equipe acima.
+              equipe nenhuma. Na prática isso é não poder:{' '}
+              {equipesDaConta.length > 0
+                ? 'escolha uma equipe acima.'
+                : 'crie uma equipe no bloco Equipes, nesta página.'}
             </p>
           )}
 
@@ -298,8 +358,19 @@ export function EditorDeAcesso({
         </aside>
       </div>
 
+      {confirmandoSemAlcance && (
+        <p
+          role="alert"
+          className="mt-4 rounded-lg border border-aviso/30 bg-aviso/10 p-2.5 text-[12px] text-aviso"
+        >
+          Assim {membro.nome} não alcança nenhum contato: o escopo é da equipe e ela
+          não está em equipe nenhuma. Escolha uma equipe, ou clique de novo para
+          salvar mesmo assim.
+        </p>
+      )}
+
       {erro && (
-        <p className="mt-4 rounded-lg border border-rose-400/30 bg-rose-400/10 p-2.5 text-[12px] text-rose-200">
+        <p className="mt-4 rounded-lg border border-perigo/30 bg-perigo/10 p-2.5 text-[12px] text-perigo">
           {erro}
         </p>
       )}
@@ -316,21 +387,34 @@ export function EditorDeAcesso({
           type="button"
           onClick={salvar}
           disabled={rodando}
-          className="rounded-lg bg-emerald-400/90 px-3.5 py-2 text-[12.5px] font-bold text-black transition hover:bg-emerald-300 disabled:opacity-50"
+          className="rounded-lg bg-primary px-3.5 py-2 text-[12.5px] font-bold text-primary-ink transition hover:bg-primary-strong disabled:opacity-50"
         >
-          {rodando ? 'Salvando…' : 'Salvar acesso'}
+          {rodando ? 'Salvando…' : confirmandoSemAlcance ? 'Salvar mesmo assim' : 'Salvar acesso'}
         </button>
       </div>
     </Modal>
   )
 }
 
-function BotaoDeModelo({ rotulo, aoClicar }: { rotulo: string; aoClicar: () => void }) {
+function BotaoDeModelo({
+  rotulo,
+  ativo = false,
+  aoClicar,
+}: {
+  rotulo: string
+  ativo?: boolean
+  aoClicar: () => void
+}) {
   return (
     <button
       type="button"
+      aria-pressed={ativo}
       onClick={aoClicar}
-      className="rounded-lg border border-line px-3 py-1.5 text-[12px] font-semibold text-dim transition hover:text-muted"
+      className={`rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition ${
+        ativo
+          ? 'border-transparent bg-primary-weak text-primary-strong'
+          : 'border-line text-dim hover:text-muted'
+      }`}
     >
       {rotulo}
     </button>

@@ -1017,19 +1017,19 @@ do Inbox continua sendo só a entrada ("+ Anotar").
 `src/components/conta/linha-da-equipe.tsx`, `src/components/conta/editor-de-acesso.tsx`,
 `src/core/permissoes.ts` (só textos e função de resumo; **não mudar política**)
 
-- [ ] **Passo 1:** função pura `resumoDoAcesso(regras)` em `src/core/permissoes.ts`
+- [x] **Passo 1:** função pura `resumoDoAcesso(regras)` em `src/core/permissoes.ts`
   que devolve frases humanas ("Vê só os contatos dela", "Vê a equipe Norte",
   "Pode exportar", "Não vê valores"). Teste unitário para `owner`, `member` sem
   sobrescrita, preset de atendimento com escopo próprio, escopo de equipe sem
   equipe ("não alcança nenhum contato").
-- [ ] **Passo 2:** rótulos: Proprietário / Administrador da conta / Membro;
+- [x] **Passo 2:** rótulos: Proprietário / Administrador da conta / Membro;
   presets "Acesso de gestão" e "Acesso de atendimento"; bloco "Ajustes
   avançados" recolhido com a matriz de capacidades.
-- [ ] **Passo 3:** a linha de cada pessoa mostra o resumo e alertas ("toda a
+- [x] **Passo 3:** a linha de cada pessoa mostra o resumo e alertas ("toda a
   conta", "sem alcance", "2 equipes").
-- [ ] **Passo 4:** escopo de equipe sem equipe: salvar mostra o aviso e pede
+- [x] **Passo 4:** escopo de equipe sem equipe: salvar mostra o aviso e pede
   confirmação [E14].
-- [ ] **Passo 5:** commit `feat(equipe): papéis com nome claro e resumo do acesso`.
+- [x] **Passo 5:** commit `feat(equipe): papéis com nome claro e resumo do acesso`.
 
 ### Tarefa 7.2: menu por capacidade e tela de sem acesso [E7, E8, E12]
 

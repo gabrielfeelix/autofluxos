@@ -68,25 +68,25 @@ export type UsuarioDaLista = { id: string; nome: string; email: string }
 const PAPEIS = [
   {
     valor: 'owner',
-    rotulo: 'Dono',
+    rotulo: 'Proprietário',
     detalhe: 'o cliente. Enxerga tudo da conta dele e não sai sozinho.',
   },
   {
     valor: 'admin',
-    rotulo: 'Administrador',
+    rotulo: 'Administrador da conta',
     detalhe: 'opera a conta por inteiro, inclusive convidar gente.',
   },
   {
     valor: 'member',
-    rotulo: 'Equipe',
-    detalhe: 'atende no inbox. Não mexe na configuração da conta.',
+    rotulo: 'Membro',
+    detalhe: 'atende e vende. Não mexe na equipe nem no acesso da conta.',
   },
 ] as const
 
 const NOME_DO_PAPEL: Record<string, string> = {
-  owner: 'dono',
-  admin: 'administrador',
-  member: 'equipe',
+  owner: 'proprietário',
+  admin: 'administrador da conta',
+  member: 'membro',
 }
 
 type Acao = (formData: FormData) => void | Promise<void>

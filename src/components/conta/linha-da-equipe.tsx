@@ -6,7 +6,7 @@ import { acaoPendenciasDoMembro } from '@/server/acoes-acesso'
 import type { OpcaoDropdown } from '@/components/design/dropdown'
 import { Dropdown } from '@/components/design/dropdown'
 import { EditorDeAcesso, type MembroParaAcesso } from './editor-de-acesso'
-import type { Politica } from '@/core/permissoes'
+import { ehPapelDaConta, resumoDoAcesso, rotuloDoPapel, type Politica } from '@/core/permissoes'
 import { useConfirmar } from '@/components/design/confirmar'
 
 type Membro = {
@@ -46,6 +46,18 @@ export function LinhaDaEquipe({
   const [papel, setPapel] = useState(membro.papel)
   const [editando, setEditando] = useState<MembroParaAcesso | null>(null)
   const [rodando, comecar] = useTransition()
+
+  // O resumo sai da mesma regra do servidor (`escopoDe`), com o papel da tela:
+  // trocar o papel no seletor já muda o resumo, sem esperar a volta.
+  const resumo = resumoDoAcesso(
+    {
+      papel: ehPapelDaConta(papel) ? papel : null,
+      usuarioId: membro.id,
+      equipes: membro.equipes ?? [],
+      sobrescritas: membro.sobrescritas ?? {},
+    },
+    Object.fromEntries(equipesDaConta.map((equipe) => [equipe.id, equipe.nome])),
+  )
 
   const trocarPapel = (novo: string) => {
     const anterior = papel
@@ -102,6 +114,25 @@ export function LinhaDaEquipe({
             <span className="truncate">{membro.nome}</span>
           </strong>
           <span className="mt-0.5 block truncate text-[11.5px] text-dim">{membro.email}</span>
+          <span className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11.5px] leading-4">
+            {/* Com o seletor de papel ao lado, repetir o mesmo nome é ruído. */}
+            {!(podeMexer && resumo.perfil === rotuloDoPapel(papel)) && (
+              <span className="font-semibold text-muted">{resumo.perfil}</span>
+            )}
+            <span className="text-dim">{resumo.frases.join(' · ')}</span>
+            {resumo.alertas.map((alerta) => (
+              <span
+                key={alerta}
+                className={`rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${
+                  alerta === 'sem alcance'
+                    ? 'bg-aviso/15 text-aviso'
+                    : 'bg-surface text-muted'
+                }`}
+              >
+                {alerta}
+              </span>
+            ))}
+          </span>
         </span>
 
         {podeMexer ? (
@@ -152,12 +183,16 @@ export function LinhaDaEquipe({
         </p>
       )}
 
-      <EditorDeAcesso
-        clienteId={clienteId}
-        membro={editando}
-        equipesDaConta={equipesDaConta}
-        aoFechar={() => setEditando(null)}
-      />
+      {/* Monta só aberto: o editor guarda o rascunho em estado, e montado
+          desde o início ele nasceria com o acesso vazio de antes do clique. */}
+      {editando && (
+        <EditorDeAcesso
+          clienteId={clienteId}
+          membro={editando}
+          equipesDaConta={equipesDaConta}
+          aoFechar={() => setEditando(null)}
+        />
+      )}
     </li>
   )
 }

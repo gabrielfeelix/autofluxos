@@ -13,14 +13,15 @@ import { contarAbertasPorAtendente } from '@/server/repos/leads'
 import { conferirAcessoAoCliente, podeAdministrarConta } from '@/server/sessao'
 import { capacidadesPorMembro, equipesPorMembro, listarEquipes } from '@/server/repos/equipes'
 import { GerenciarEquipes } from '@/components/conta/gerenciar-equipes'
+import { DETALHE_DO_PAPEL, ROTULO_DO_PAPEL } from '@/core/permissoes'
 
 export const dynamic = 'force-dynamic'
 
-const PAPEIS = [
-  { valor: 'member', rotulo: 'Atende', detalhe: 'responde no Inbox' },
-  { valor: 'admin', rotulo: 'Administra', detalhe: 'mexe na equipe e nos ajustes' },
-  { valor: 'owner', rotulo: 'Dona da conta', detalhe: 'manda em tudo' },
-]
+const PAPEIS = (['member', 'admin', 'owner'] as const).map((valor) => ({
+  valor,
+  rotulo: ROTULO_DO_PAPEL[valor],
+  detalhe: DETALHE_DO_PAPEL[valor],
+}))
 
 export default async function Pagina({ params }: { params: Promise<{ clienteId: string }> }) {
   const { clienteId } = await params

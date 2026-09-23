@@ -10,6 +10,8 @@ import {
   MODELOS_EXTRA,
   pode,
   POLITICAS,
+  resumoDoAcesso,
+  rotuloDoPapel,
   type Acesso,
 } from './permissoes'
 
@@ -268,5 +270,72 @@ describe('as peças de tipo', () => {
   /** `minimo: 'nenhum'` é "não exijo nada", e precisa passar para qualquer um. */
   it('exigir nenhum passa até para quem não é membro', () => {
     expect(pode(deFora, 'atender', 'nenhum')).toBe(true)
+  })
+})
+
+describe('o resumo do acesso em frases', () => {
+  it('proprietário vê a conta inteira', () => {
+    const r = resumoDoAcesso({ papel: 'owner', usuarioId: 'u1' })
+    expect(r.perfil).toBe('Proprietário')
+    expect(r.frases).toContain('Vê todos os contatos')
+    expect(r.frases).toContain('Mexe na equipe e no acesso')
+    expect(r.alertas).toEqual(['toda a conta'])
+  })
+
+  it('membro sem sobrescrita é Membro, amplo, e não mexe na equipe', () => {
+    const r = resumoDoAcesso({ papel: 'member', usuarioId: 'u1' })
+    expect(r.perfil).toBe('Membro')
+    expect(r.frases).toContain('Vê todos os contatos')
+    expect(r.frases).toContain('Pode exportar')
+    expect(r.frases).not.toContain('Mexe na equipe e no acesso')
+  })
+
+  it('acesso de atendimento vê só os contatos dela, sem valores nem exportação', () => {
+    const r = resumoDoAcesso({
+      papel: 'member',
+      usuarioId: 'u1',
+      sobrescritas: { ...MODELOS_EXTRA.operador },
+    })
+    expect(r.perfil).toBe('Acesso de atendimento')
+    expect(r.frases).toEqual(['Vê só os contatos dela', 'Não exporta', 'Não vê valores'])
+    expect(r.alertas).toEqual([])
+  })
+
+  it('escopo de equipe sem equipe não alcança nenhum contato', () => {
+    const r = resumoDoAcesso({
+      papel: 'member',
+      usuarioId: 'u1',
+      equipes: [],
+      sobrescritas: { ...MODELOS_EXTRA.gestor },
+    })
+    expect(r.perfil).toBe('Acesso de gestão')
+    expect(r.semAlcance).toBe(true)
+    expect(r.frases[0]).toBe('Não alcança nenhum contato')
+    expect(r.alertas).toContain('sem alcance')
+  })
+
+  it('escopo de equipe diz o nome das equipes e conta quando são duas', () => {
+    const r = resumoDoAcesso(
+      { papel: 'member', usuarioId: 'u1', equipes: ['e1', 'e2'], sobrescritas: { ...MODELOS_EXTRA.gestor } },
+      { e1: 'Norte', e2: 'Sul' },
+    )
+    expect(r.frases[0]).toBe('Vê as equipes Norte e Sul')
+    expect(r.alertas).toEqual(['2 equipes'])
+  })
+
+  it('mexer numa capacidade do modelo vira acesso personalizado', () => {
+    const r = resumoDoAcesso({
+      papel: 'member',
+      usuarioId: 'u1',
+      sobrescritas: { ...MODELOS_EXTRA.operador, exportar: 'proprios' },
+    })
+    expect(r.perfil).toBe('Acesso personalizado')
+    expect(r.frases).toContain('Pode exportar')
+  })
+
+  it('suporte 4YU tem nome próprio, nunca admin sozinho', () => {
+    expect(resumoDoAcesso({ papel: null, ehAdminDaPlataforma: true }).perfil).toBe('Suporte 4YU')
+    expect(rotuloDoPapel(null)).toBe('Suporte 4YU')
+    expect(rotuloDoPapel('admin')).toBe('Administrador da conta')
   })
 })
