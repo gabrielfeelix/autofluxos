@@ -34,7 +34,8 @@ describe('o catálogo tem forma de catálogo', () => {
     // O eixo que decide a política de aprovação não pode ser opinião de quem
     // escreveu a entrada do catálogo.
     for (const f of FERRAMENTAS) {
-      expect(f.escreve).toBe(f.chamada.metodo !== 'GET')
+      // Ferramenta de loja não tem verbo: ela só lê, por construção do adaptador.
+      expect(f.escreve).toBe(f.chamada.tipo === 'http' ? f.chamada.metodo !== 'GET' : false)
     }
   })
 
@@ -87,6 +88,7 @@ describe('o catálogo tem forma de catálogo', () => {
     // toa; marca na chamada sem declaração é chamada que sai com `{{x}}`
     // literal na URL.
     for (const f of FERRAMENTAS) {
+      if (f.chamada.tipo !== 'http') continue
       const declarados = new Set([...f.argumentos.map((a) => a.nome), ...f.injetados])
       const usados = new Set(
         [...`${f.chamada.url}${f.chamada.corpo}`.matchAll(/\{\{([a-z0-9_]+)\}\}/g)].map(
@@ -126,7 +128,7 @@ describe('as travas do §4', () => {
     // A regra escrita no PLANO-AGENDA §1, agora cobrada por teste:
     // `/pessoas?busca=` devolve nome e telefone de terceiros.
     for (const f of FERRAMENTAS) {
-      expect(f.chamada.url).not.toContain('busca=')
+      if (f.chamada.tipo === 'http') expect(f.chamada.url).not.toContain('busca=')
     }
   })
 
@@ -314,5 +316,29 @@ describe('limparQueryVazia faz o filtro opcional ser opcional', () => {
 
   it('preserva valor em base64, que termina em `=` e não está vazio', () => {
     expect(limparQueryVazia('https://x/d?t=YWJj==&vazio=')).toBe('https://x/d?t=YWJj==')
+  })
+})
+
+describe('ferramentas de loja', () => {
+  it('não escrevem, não pedem credencial e não têm injetado', () => {
+    for (const nome of ['loja_buscar', 'loja_combina_com']) {
+      const f = acharFerramenta(nome)!
+      expect(f.escreve).toBe(false)
+      expect(f.credencial).toBe('nenhuma')
+      expect(f.chamada.tipo).toBe('loja')
+      expect(f.injetados).toEqual([])
+    }
+  })
+
+  it('o produtoId de loja_combina_com só vale se já apareceu numa busca', () => {
+    const arg = acharFerramenta('loja_combina_com')!.argumentos[0]!
+    expect(arg.soDeResultadoAnterior).toBe(true)
+    const projetado = projetar(
+      { produtos: [{ produtoId: '330107', nome: 'Headset', segredo: 'x' }] },
+      acharFerramenta('loja_buscar')!.projecao,
+    )
+    expect(idsVistos(projetado).has('330107')).toBe(true)
+    // A projeção é allow-list: campo que a loja mandar a mais não chega ao modelo.
+    expect(JSON.stringify(projetado)).not.toContain('segredo')
   })
 })

@@ -156,13 +156,7 @@ export type Ferramenta = {
    * funciona é o parâmetro perigoso não existir no vocabulário dele.
    */
   injetados: string[]
-  chamada: {
-    metodo: Metodo
-    /** Aceita `{{argumento}}` e `{{injetado}}`. Quem interpola é o resolvedor. */
-    url: string
-    cabecalhos: Cabecalho[]
-    corpo: string
-  }
+  chamada: ChamadaDeFerramenta
   projecao: Projecao[]
   credencial: CredencialDeFerramenta
   /**
@@ -170,8 +164,33 @@ export type Ferramenta = {
    *
    * Serve para a tela agrupar e para o validador saber qual Conexão cobrar.
    */
-  integracao: 'verandi'
+  integracao: 'verandi' | 'loja'
 }
+
+/**
+ * Como a ferramenta chega ao outro lado.
+ *
+ * `http` é o caso de sempre: URL fixa na declaração, credencial da Conexão do
+ * nó. `loja` não tem URL porque o endereço é de cada conta: quem executa é o
+ * adaptador da loja, no servidor, e a conta é a da conversa. O modelo não tem
+ * como nomear a loja que consulta, que é a regra de `injetados` levada ao fim.
+ */
+export type ChamadaDeFerramenta =
+  | {
+      tipo: 'http'
+      metodo: Metodo
+      /** Aceita `{{argumento}}` e `{{injetado}}`. Quem interpola é o resolvedor. */
+      url: string
+      cabecalhos: Cabecalho[]
+      corpo: string
+    }
+  | {
+      tipo: 'loja'
+      operacao: 'buscar' | 'combina_com'
+    }
+
+/** Os campos que as ferramentas de loja devolvem ao modelo. Allow-list. */
+const CAMPOS_DE_PRODUTO = ['produtoId', 'nome', 'preco', 'precoDe', 'emEstoque', 'quantidade', 'link']
 
 /**
  * O formato de data que toda ferramenta usa.
@@ -241,6 +260,7 @@ export const FERRAMENTAS: Ferramenta[] = [
     ],
     injetados: [],
     chamada: {
+      tipo: 'http',
       metodo: 'GET',
       url: `${ENDERECO_DA_AGENDA}/disponibilidade?de={{de}}&ate={{ate}}&servico={{servico}}&profissional={{profissional}}`,
       cabecalhos: [],
@@ -278,6 +298,7 @@ export const FERRAMENTAS: Ferramenta[] = [
     argumentos: [],
     injetados: [],
     chamada: {
+      tipo: 'http',
       metodo: 'GET',
       url: `${ENDERECO_DA_AGENDA}/catalogo`,
       cabecalhos: [],
@@ -312,6 +333,7 @@ export const FERRAMENTAS: Ferramenta[] = [
     argumentos: [],
     injetados: ['pessoa_id'],
     chamada: {
+      tipo: 'http',
       metodo: 'GET',
       url: `${ENDERECO_DA_AGENDA}/pessoas/{{pessoa_id}}`,
       cabecalhos: [],
@@ -361,6 +383,7 @@ export const FERRAMENTAS: Ferramenta[] = [
     ],
     injetados: ['pessoa_id'],
     chamada: {
+      tipo: 'http',
       metodo: 'POST',
       url: `${ENDERECO_DA_AGENDA}/participacoes`,
       cabecalhos: [{ chave: 'Content-Type', valor: 'application/json' }],
@@ -395,6 +418,7 @@ export const FERRAMENTAS: Ferramenta[] = [
     ],
     injetados: [],
     chamada: {
+      tipo: 'http',
       metodo: 'DELETE',
       url: `${ENDERECO_DA_AGENDA}/participacoes/{{participacao_id}}`,
       cabecalhos: [],
@@ -403,6 +427,59 @@ export const FERRAMENTAS: Ferramenta[] = [
     projecao: [{ caminho: 'status' }],
     credencial: 'bearer',
     integracao: 'verandi',
+  },
+  {
+    nome: 'loja_buscar',
+    rotulo: 'Buscar produto na loja',
+    escreve: false,
+    /*
+     * Busca por poucas palavras, e não pela frase inteira: a busca do Magento
+     * é por relevância de termo, e "vocês têm aquele headset branco sem fio"
+     * afoga "headset" em palavra que nenhum produto tem.
+     *
+     * "Nunca invente preço" está na descrição porque produto sem preço é caso
+     * real (0 por grupo de cliente vira ausente em `core/loja.ts`), e o modelo,
+     * sem ser avisado, completa com o que parecer plausível.
+     */
+    descricao:
+      'Procura produtos na loja on-line da empresa e devolve nome, preço, se tem em estoque e o link. ' +
+      'Use quando a pessoa perguntar se tem um produto, quanto custa, ou pedir uma indicação. ' +
+      'Busque pelo tipo de produto em poucas palavras ("headset usb"), não pela frase inteira. ' +
+      'Se um produto vier sem preço, diga que vai confirmar o valor e nunca invente. ' +
+      'Sempre mande o link para a pessoa comprar; você não fecha pedido. ' +
+      'Não use para horário de aula ou agenda.',
+    argumentos: [
+      { nome: 'termo', tipo: 'texto', descricao: 'O que procurar, em até 5 palavras.', obrigatorio: true },
+    ],
+    injetados: [],
+    chamada: { tipo: 'loja', operacao: 'buscar' },
+    projecao: [{ caminho: 'produtos', campos: CAMPOS_DE_PRODUTO, limite: 5 }],
+    credencial: 'nenhuma',
+    integracao: 'loja',
+  },
+  {
+    nome: 'loja_combina_com',
+    rotulo: 'Sugerir o que combina',
+    escreve: false,
+    descricao:
+      'Devolve os produtos que a própria loja marcou como complemento de um produto, só os que têm estoque. ' +
+      'Use depois de a pessoa demonstrar interesse num produto, para sugerir um complemento, uma vez só. ' +
+      'Não use antes de `loja_buscar`: o produtoId precisa ter vindo de lá. ' +
+      'Se voltar vazio, não sugira nada por conta própria.',
+    argumentos: [
+      {
+        nome: 'produtoId',
+        tipo: 'id',
+        descricao: 'O produtoId de um item que veio de `loja_buscar`.',
+        obrigatorio: true,
+        soDeResultadoAnterior: true,
+      },
+    ],
+    injetados: [],
+    chamada: { tipo: 'loja', operacao: 'combina_com' },
+    projecao: [{ caminho: 'produtos', campos: CAMPOS_DE_PRODUTO, limite: 5 }],
+    credencial: 'nenhuma',
+    integracao: 'loja',
   },
 ]
 

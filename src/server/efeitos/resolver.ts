@@ -31,6 +31,7 @@ import type { Modelo, Resposta, Turno } from '../ia/types'
 import { alertar } from '../alertar'
 import { chamarHttp } from './http'
 import { lerCredencial } from '../repos/conexoes'
+import { lojaAtivaDaConta } from '../adaptador-da-loja'
 
 /**
  * O motor, com os efeitos externos resolvidos.
@@ -676,7 +677,16 @@ async function responderComFerramentas({
     }
   }
 
-  if (!credencial) {
+  /*
+   * Só ferramenta HTTP autenticada precisa da Conexão do nó. As de loja falam
+   * com a loja da conta pelo adaptador, e a busca pública não tem credencial:
+   * exigir uma aqui faria o bloco com só `loja_buscar` responder "não sei"
+   * para tudo.
+   */
+  const precisaDeCredencial = permitidas.some(
+    (f) => f.chamada.tipo === 'http' && f.credencial !== 'nenhuma',
+  )
+  if (precisaDeCredencial && !credencial) {
     // Consultar sem credencial volta 401 em toda conversa, e a IA diria "não
     // sei" para tudo sem ninguém entender por quê. Melhor dizer o motivo.
     return { tipo: 'nao_sei', motivo: 'a credencial das consultas não pôde ser lida' }
@@ -968,6 +978,22 @@ async function dispararFerramenta({
     return { ok: false, motivo: conferida.motivo }
   }
 
+  if (ferramenta.chamada.tipo === 'loja') {
+    const r = await executarNaLoja(ferramenta.chamada.operacao, conferida.chamada.valores, opcoes)
+    await logar({
+      opcoes,
+      ferramenta,
+      argumentos: conferida.chamada.valores,
+      decididoPor,
+      ok: r.ok,
+      ...(r.ok ? {} : { detalhe: r.motivo }),
+      resumo,
+    })
+    return r
+  }
+
+  const chamadaHttp = ferramenta.chamada
+
   let credencial = null
   if (conexaoId && opcoes.clienteId) {
     try {
@@ -988,9 +1014,9 @@ async function dispararFerramenta({
   const bruta = await chamarHttp(
     {
       tipo: 'chamar_http',
-      metodo: ferramenta.chamada.metodo,
+      metodo: chamadaHttp.metodo,
       url: conferida.chamada.url,
-      cabecalhos: ferramenta.chamada.cabecalhos,
+      cabecalhos: chamadaHttp.cabecalhos,
       corpo: conferida.chamada.corpo,
       mapear: [],
       aoFalhar: 'humano',
@@ -1010,6 +1036,27 @@ async function dispararFerramenta({
   })
 
   return bruta.ok ? { ok: true, json: bruta.json } : { ok: false, motivo: bruta.motivo }
+}
+
+/**
+ * Ferramenta de loja: a conta é a da conversa, nunca um argumento do modelo.
+ *
+ * Loja desligada ou ausente é falha com motivo, e não lista vazia: "não temos
+ * esse produto" dito por causa de uma integração desligada é frase falsa e
+ * venda perdida. Falhando, a conversa vai para uma pessoa.
+ */
+async function executarNaLoja(
+  operacao: 'buscar' | 'combina_com',
+  valores: Record<string, string>,
+  opcoes: OpcoesDeEfeitos,
+): Promise<{ ok: true; json: unknown } | { ok: false; motivo: string }> {
+  if (!opcoes.clienteId) return { ok: false, motivo: 'a consulta à loja só funciona numa conta' }
+  const loja = await lojaAtivaDaConta(opcoes.clienteId)
+  if (!loja) return { ok: false, motivo: 'a loja desta conta não está ligada' }
+
+  const r =
+    operacao === 'buscar' ? await loja.buscar(valores.termo ?? '') : await loja.combinaCom(valores.produtoId ?? '')
+  return r.ok ? { ok: true, json: { produtos: r.valor } } : r
 }
 
 async function logar({

@@ -147,8 +147,13 @@ export function conferirPedido({
     ok: true,
     chamada: {
       ferramenta,
-      url: limparQueryVazia(preencher(ferramenta.chamada.url, valores, encodeURIComponent)),
-      corpo: preencher(ferramenta.chamada.corpo, valores, escaparJson),
+      // Ferramenta de loja não tem URL: quem executa é o adaptador da conta,
+      // e os argumentos conferidos seguem em `valores`.
+      url:
+        ferramenta.chamada.tipo === 'http'
+          ? limparQueryVazia(preencher(ferramenta.chamada.url, valores, encodeURIComponent))
+          : '',
+      corpo: ferramenta.chamada.tipo === 'http' ? preencher(ferramenta.chamada.corpo, valores, escaparJson) : '',
       valores,
     },
   }
