@@ -1,0 +1,219 @@
+# Handoff 23/set/2026: Magento no bot (cross-sell), o que falta
+
+> **Para o próximo agente: seja cético com tudo o que está escrito aqui,
+> inclusive com este aviso.** Este documento foi escrito por quem fez o
+> trabalho, no fim de uma sessão longa, e quem fez tende a achar que está
+> certo. Cada afirmação abaixo diz se foi **provada** (com o quê) ou só
+> **suposta**. Trate "suposto" como "provavelmente errado até você provar".
+> Se o código ou a produção contradisserem este documento, o código e a
+> produção ganham, e corrija o documento.
+
+## Leia antes, nesta ordem
+
+1. `AGENTS.md` e `docs/BANCO-COMPARTILHADO.md` (obrigatório antes de encostar
+   no banco; a produção é dividida com a Verandi e não tem backup).
+2. `docs/superpowers/plans/2026-09-23-magento-cross-sell.md`: o plano inteiro,
+   com as decisões que não se reabrem sem motivo novo. O bloco "Andamento" no
+   topo foi atualizado até a Task 11.
+3. `docs/INTEGRACAO-MAGENTO-23-SET.md`: a pesquisa e a sondagem real da PCYES.
+4. Este arquivo.
+
+## O contexto em quatro linhas
+
+- Cliente: **PCYES** (`https://www.pcyes.com.br`), loja Magento. Quer o bot do
+  WhatsApp vendendo com o catálogo real.
+- Desenho em três etapas, decidido com o Gabriel: (1) mandar o produto
+  certinho, **este trabalho**; (2) catálogo na Meta e carrinho nativo do
+  WhatsApp; (3) Pix e pedido. Só a etapa 1 está em andamento.
+- **Tudo é só leitura na loja.** Nada cria, altera ou apaga nada no Magento.
+  Isso é regra do Gabriel ("não podemos sair apagando as coisas"), não detalhe.
+- Pendências do lado da PCYES: **token de administrador** (vão gerar), **número
+  de WhatsApp no AutoFluxos** (semana de 28/set), **catálogo na Meta** (ainda
+  vão criar). A **conta da PCYES não existe** no AutoFluxos hoje (6 contas em
+  produção, nenhuma é ela).
+
+## O que foi feito (commits em `main`, todos com push, e push é deploy)
+
+| Commit | O quê |
+|---|---|
+| `4ec9144` | pesquisa Magento |
+| `c2a4645` | plano + sondagem da PCYES |
+| `5cdd14a` | `src/core/loja.ts` (regra pura) + `src/loja/magento.ts` (GraphQL público) + `src/loja/falsa.ts` |
+| `aa36ed2` | migration `0092_lojas_integradas`, **aplicada em produção** |
+| `85e0044` | `src/server/repos/lojas.ts` + `src/server/adaptador-da-loja.ts` |
+| `17b5d30` | ferramentas `loja_buscar` e `loja_combina_com`; `chamada` virou união `http`/`loja`; resolvedor |
+| `29ebe1f` | tela Integrações › Loja Magento; conserto do ciclo de import em `http.ts` |
+| `eb798f8` | editor: seção de loja no bloco de IA; validador não exige credencial para loja |
+| `78c7628` | `src/loja/magento-admin.ts`: token, só GET, foto e estoque |
+| `bb7c052` | `src/loja/enriquecer.ts`: foto e quantidade por cima da busca pública, prazo 3 s |
+| `5578898` | tela do token + `docs/GUIA-MAGENTO-LOJISTA.md` |
+
+## O que foi provado, e com o quê
+
+- **GraphQL público da PCYES**: `curl` de 23/set. Aberto, 200, preço e estoque
+  vêm, `product_url_suffix` é `null` (link sem `.html`, conferido 200).
+  `traduzirProdutos` rodado contra a resposta real de "headset": promoção de/por,
+  esgotado e link corretos.
+- **0092**: ensaio em transação contra a produção (as três travas recusaram o
+  que deviam) e releitura objeto a objeto depois de aplicar; Verandi intacta
+  (35 migrations, 42 tabelas, 16 policies); PostgREST 200/401 nos dois
+  produtos. Registrado em `docs/BANCO-COMPARTILHADO.md`.
+- **Testes unitários** dos arquivos novos e dos vizinhos que mudaram: passam.
+  `npm run typecheck`, `eslint` nos arquivos tocados e `npm run build` limpos.
+  A **suíte inteira não foi rodada** (preferência do Gabriel; rode por arquivo).
+- **A página nova existe em produção**: `/clientes/<id>/ajustes/integracoes/magento`
+  responde 307 para `/entrar` (não 404, não 500).
+
+## O que NÃO foi provado (suponha que pode estar errado)
+
+1. **Nenhuma tela foi vista renderizada.** O painel pede login e a sessão não
+   tinha acesso. Tela da loja, seção do token, card em Integrações e a seção de
+   loja no editor foram escritas pelas classes das telas vizinhas, às cegas. O
+   Gabriel é designer: **peça um acesso ou que ele abra e aponte**, e revise
+   espaçamento, hierarquia, estado de carregamento (o teste leva 2 a 3 s e só
+   o texto do botão muda) e o layout em celular.
+2. **Cloudflare contra a Vercel.** A PCYES tem Cloudflare na frente. Daqui
+   (WSL) não barrou nem sem user-agent. **Da Vercel ninguém testou.** O primeiro
+   clique em "Testar conexão" em produção é essa prova.
+3. **`src/server/repos/lojas.test.ts` nunca rodou.** Está na lista de
+   integração (`test/suites.ts`), mas o Docker está desligado nesta máquina
+   (integração WSL). Rode no stack local antes de confiar no repositório.
+4. **Todo o caminho do token é suposição sobre a API da Adobe**, testado só com
+   rede falsa:
+   - `GET /rest/V1/inventory/stock-resolver/website/base`: supõe que o código
+     do site é `base`. A PCYES pode usar outro.
+   - `GET /rest/V1/inventory/get-product-salable-quantity/{sku}/{stockId}`:
+     supõe que devolve um número inteiro.
+   - `GET /rest/V1/products/{sku}/media` e a URL montada como
+     `{endereco}/media/catalog/product{file}`. **Esta é a suspeita mais forte
+     da lista:** o GraphQL público da PCYES devolve placeholder em 100% dos
+     produtos, e o site mostra foto real. Uma explicação provável é imagem em
+     storage remoto ou CDN, e nesse caso a URL montada dá 404. **Com o token em
+     mãos, faça `curl -I` na URL de foto de três produtos antes de ligar
+     qualquer coisa que dependa dela.**
+   - Os nomes de permissão (ACL) no `docs/GUIA-MAGENTO-LOJISTA.md` são
+     aproximados. O próprio guia diz isso ao lojista.
+   - O `chamarHttp` só manda credencial para a mesma origem. Se `/rest` da
+     PCYES redirecionar (ex.: sem `www` para com `www`), o token cai no salto e
+     a resposta vira 401. Não testado.
+
+## Bugs e fraquezas conhecidos, em ordem de gravidade
+
+1. **BUG: apagar a Conexão do token pela tela de Chaves de API falha.** O
+   token vira uma Conexão chamada "Magento (somente leitura)", que aparece em
+   Integrações › Chaves de API. Apagar por lá chama `apagarConexao`
+   (`src/server/acoes.ts:1997`). O `on delete set null` da 0092 tenta pôr
+   `conexao_id` em nulo com `estoque_exato = 'msi'`, e o check
+   `lojas_estoque_exige_token` recusa: o delete inteiro falha. **Não provado
+   em banco, deduzido do SQL; prove no Docker primeiro.** Conserto sugerido,
+   sem migration: em `apagarConexao` (ou na ação de `acoes.ts`), antes do
+   delete, zerar `estoque_exato`/`estoque_id` da loja que aponta para aquela
+   conexão. Alternativa: esconder essa Conexão da lista de Chaves e do seletor
+   de credencial da IA (hoje ela também aparece lá e alguém pode escolhê-la
+   para a agenda da Verandi).
+2. **Produto configurável (com variações) mostra o menor preço como se fosse
+   o preço.** `price_range.minimum_price` é "a partir de". Uma cadeira com
+   cores de preços diferentes vai ser anunciada pelo menor. Conserto sugerido:
+   trazer `maximum_price` também e, quando diferir, devolver `precoAPartirDe`
+   em vez de `preco`, com a descrição da ferramenta dizendo "a partir de".
+3. **Busca vazia vira "não temos".** A busca do Magento ignora termo curto
+   (mínimo de 3 letras por padrão) e é por relevância. O bot pode concluir que
+   a loja não vende o que vende. Sugestão: quando vier vazio, a ferramenta
+   devolver o link de busca da loja (`{endereco}/catalogsearch/result/?q=<termo>`)
+   e a descrição mandar oferecer esse link em vez de negar.
+4. **Não há aviso de token revogado.** O plano pedia a tela avisar "o token
+   parou de funcionar". Não foi feito: o bot cai para "tem / não tem" em
+   silêncio e a tela mostra o estado salvo, não um teste ao vivo.
+5. **`loja_combina_com` vai responder vazio quase sempre na PCYES.** Em 87
+   produtos sondados, `crosssell` e `upsell` vazios em todos, `related` em 6.
+   Não é bug, é dado da loja; a tela avisa o lojista.
+
+## O que falta, em ordem
+
+### A. Consertar o bug 1 (antes de qualquer token real entrar)
+
+É a única coisa desta lista que pode travar uma ação do usuário em produção.
+Escreva o teste de integração que reproduz, veja falhar no Docker, conserte.
+
+### B. Task 10b: o card do produto (`loja_mostrar`)
+
+A maior que sobrou. Nada dela existe. O desenho está no plano (seção "Task
+10b"); o que ele não diz, e que você precisa decidir olhando o código:
+
+- **Uma ação nova no motor.** Hoje `Acao` (`src/core/engine/types.ts`) tem
+  `enviar_texto`, `enviar_opcoes`, `enviar_midia`. O card precisa de uma
+  `enviar_produto` (ou similar). Procure **todo** `switch`/`if` sobre
+  `a.tipo`: o aplicador em `src/server/receber-mensagem.ts:~1444`, o
+  simulador, o registro de saída que alimenta o Inbox, e qualquer lista
+  exaustiva. Deixar um de fora = card que some sem erro.
+- **O resolvedor hoje só devolve texto.** `responderComFerramentas`
+  (`src/server/efeitos/resolver.ts`) termina em `texto`, `nao_sei` ou
+  `confirmar`. O card exige que a resposta final carregue ações extras além do
+  texto. Leia como `chamar_ia` vira `enviar_texto` antes de desenhar.
+- **Canal**: `Canal` (`src/channels/types.ts`) ganha um método opcional (no
+  molde de `enviarTemplate?`). WhatsApp: `interactive` tipo `cta_url`, header
+  `image`, corpo com nome, "de R$ X por R$ Y", estoque, botão "Ver na loja"
+  (máx. 20 caracteres). Instagram: `template` `generic` (carrossel, até 10).
+  Confira os limites na documentação da Meta, não neste parágrafo.
+- **Sem foto real, não mande placeholder**: texto com o link.
+- **Janela de 24h**: `interactive` só vale dentro da janela. Confira como o
+  resto do código trata isso antes de assumir que está coberto.
+- A ferramenta relê o SKU na loja na hora de mostrar (preço fresco), e o SKU
+  passa pela trava `soDeResultadoAnterior`.
+
+### C. Task 8: ligar na PCYES e provar
+
+Depende de a conta da PCYES existir. Enquanto isso, dá para testar na conta
+"Cliente 00 — Gabriel" (`4d26cf4c-7c49-485a-8819-68da3931c530`), **com o
+Gabriel sabendo**. Passos no plano. O teste de Cloudflare/Vercel (item 2 da
+lista de não provados) acontece aqui.
+
+### D. Task 12: com o token real
+
+Passos no plano. Acrescente, antes de tudo: `curl -I` nas URLs de foto (item 4
+da lista de não provados) e confira o código do site para o stock-resolver.
+Corrija o guia do lojista com os nomes reais de ACL.
+
+## Regras da casa que já custaram caro
+
+- **Migration primeiro, deploy depois.** Push na `main` é deploy (Vercel).
+  Código que lê objeto novo publicado antes da migration derruba tela.
+- **Nunca** `supabase db push`/`db reset` contra produção. Aplicar em produção
+  **só com autorização explícita do Gabriel na sessão**; a de hoje valeu só
+  para a 0092. Número da próxima migration: `ls supabase/migrations | tail -1`
+  (hoje a última é a `0092`, mas confira).
+- Banco de produção pela Management API: `SUPABASE_ACCESS_TOKEN` do
+  `../.secrets/4yu.env` + ref literal `xxxynoshwirupkdzwxbj`
+  (`POST https://api.supabase.com/v1/projects/<ref>/database/query` com
+  `{"query": "..."}`). O cofre desta máquina **não** tem as `AUTOFLUXOS_*`
+  que os runbooks antigos citam.
+- **Sem travessão** em nenhum arquivo, novo ou antigo que você abrir.
+- Commit e push ao fim de cada tarefa, sem perguntar.
+- Implementar inline, sem subagente (preferência do Gabriel).
+- Validar com `npm run typecheck`, o arquivo de teste da tarefa e
+  `npm run build`; não rodar a suíte inteira.
+- Segredo (token do Magento) nunca em log, doc, commit ou retorno de ação.
+- Resposta ao Gabriel: curta, decisão tomada, link clicável quando mandar ele a
+  um painel externo.
+
+## Onde está cada coisa
+
+| Arquivo | Papel |
+|---|---|
+| `src/core/loja.ts` | regra pura: endereço, queries, tradução, link |
+| `src/loja/types.ts` | interface `Loja`, `ViaDeEstoque` |
+| `src/loja/magento.ts` | GraphQL público (GET, termo como variável) |
+| `src/loja/magento-admin.ts` | token: só GET, lista fixa de caminhos |
+| `src/loja/enriquecer.ts` | foto/quantidade por cima, prazo total |
+| `src/loja/falsa.ts` | loja em memória para teste |
+| `src/server/repos/lojas.ts` | `public.lojas_integradas`; não apaga linha |
+| `src/server/adaptador-da-loja.ts` | monta a loja da conta, com ou sem token |
+| `src/server/acoes-loja.ts` | ações da tela (testar, ligar, desligar, token) |
+| `src/components/cliente/loja-magento.tsx` | a tela |
+| `src/app/clientes/[clienteId]/ajustes/integracoes/magento/page.tsx` | a rota |
+| `src/core/ferramentas.ts` | `loja_buscar`, `loja_combina_com`, união `ChamadaDeFerramenta` |
+| `src/server/efeitos/resolver.ts` | `executarNaLoja`, credencial só para HTTP |
+| `src/core/flow/validar.ts` | credencial exigida só para ferramenta HTTP |
+| `src/components/editor/painel.tsx` | `ConsultasDaIa`: seção de loja |
+| `supabase/migrations/0092_lojas_integradas.sql` | a tabela |
+| `docs/GUIA-MAGENTO-LOJISTA.md` | o que o técnico da loja segue |

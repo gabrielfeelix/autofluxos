@@ -1,5 +1,8 @@
 # Handoff — 19/ago/2026, atualizado em 04/set
 
+> **Magento / cross-sell da PCYES (23/set/2026):** o que falta está em
+> [HANDOFF-23-SET-MAGENTO.md](HANDOFF-23-SET-MAGENTO.md).
+
 > **Se você está começando agora, em 18/set/2026 ou depois, leia primeiro
 > [HANDOFF-18-SET-CRM-RELACIONAMENTO.md](HANDOFF-18-SET-CRM-RELACIONAMENTO.md).**
 > Ele tem o trabalho em aberto (a virada de aquisição para relacionamento), o
