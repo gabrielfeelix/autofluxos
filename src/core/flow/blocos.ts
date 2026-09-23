@@ -37,13 +37,15 @@ export const NOMES: Record<TipoNo, string> = {
   http: 'Serviços externos',
   midia: 'Mídia',
   /**
-   * "Etapa do quadro", e não "Kanban" nem "mover cartão".
+   * "Etapa do funil", e não "Kanban", "quadro" nem "mover cartão". Funil é o
+   * nome da tela onde as etapas moram; o bloco com outro nome parecia mexer em
+   * outra coisa (5.4).
    *
    * Quem desenha o fluxo pensa em "marcar que essa pessoa agendou a aula", não
    * em mover um cartão, o cartão é o desenho da coisa, não a coisa. É a mesma
    * correção que fez `http` deixar de se chamar "API".
    */
-  etapa: 'Etapa do quadro',
+  etapa: 'Etapa do funil',
   /**
    * "Etiqueta", e não "marcar" nem "tag".
    *
@@ -110,7 +112,7 @@ export const DESCRICOES: Record<TipoNo, string> = {
   pergunta: 'Pergunta e guarda',
   condicao: 'Divide o caminho',
   'salvar-campo': 'Registra no lead',
-  etapa: 'Move no quadro',
+  etapa: 'Move no funil',
   etiqueta: 'Marca o contato',
   nota: 'Escreve na ficha',
   'ir-fluxo': 'Continua em outra',
@@ -143,4 +145,39 @@ export const CORES: Record<TipoNo, string> = {
   'ir-fluxo': 'border-indigo-400/30',
   voltar: 'border-slate-300/30',
   nps: 'border-yellow-400/30',
+}
+
+/**
+ * O catálogo do editor, agrupado pela intenção de quem desenha (A09).
+ *
+ * Catorze blocos numa lista só obrigavam a ler todos para achar um. Os grupos
+ * respondem à pergunta que a pessoa já tem na cabeça: quero falar com o
+ * contato, decidir um caminho, anotar algo dele ou falar com outro sistema.
+ * Nenhum tipo sai do catálogo: o teste confere que os quatro grupos cobrem
+ * todos.
+ */
+export const GRUPOS_DE_BLOCOS: { nome: string; tipos: TipoNo[] }[] = [
+  { nome: 'Conversar', tipos: ['mensagem', 'midia', 'pergunta', 'nps'] },
+  { nome: 'Decidir', tipos: ['condicao', 'voltar', 'ir-fluxo'] },
+  { nome: 'Organizar', tipos: ['salvar-campo', 'etapa', 'etiqueta', 'nota'] },
+  { nome: 'Integrar', tipos: ['ia', 'http', 'handoff'] },
+]
+
+function semAcento(texto: string): string {
+  return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+}
+
+/**
+ * Os grupos com os blocos cujo nome ou descrição contém o termo, sem ligar
+ * para acento nem maiúscula. Grupo que fica vazio sai da lista.
+ */
+export function filtrarCatalogo(termo: string): { nome: string; tipos: TipoNo[] }[] {
+  const busca = semAcento(termo.trim())
+  if (busca === '') return GRUPOS_DE_BLOCOS
+  return GRUPOS_DE_BLOCOS.map((grupo) => ({
+    nome: grupo.nome,
+    tipos: grupo.tipos.filter((tipo) =>
+      semAcento(`${NOMES[tipo]} ${DESCRICOES[tipo]}`).includes(busca),
+    ),
+  })).filter((grupo) => grupo.tipos.length > 0)
 }

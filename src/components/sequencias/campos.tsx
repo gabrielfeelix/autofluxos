@@ -89,7 +89,7 @@ export function CamposDaSequencia({
               opcoes={etapas.map((etapa) => ({ valor: etapa.id, rotulo: etapa.rotulo }))}
             />
             <span className="mt-1 block text-[10.5px] leading-4 text-dim">
-              Vale para quem chega pelo bloco de fluxo <strong>Etapa do quadro</strong>. Mover o
+              Vale para quem chega pelo bloco de fluxo <strong>Etapa do funil</strong>. Mover o
               cartão à mão na tela de Funil de vendas não inscreve ninguém, inscrever alguém por um
               arrasto de arrumação seria mandar mensagem por engano.
             </span>

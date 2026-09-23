@@ -1107,11 +1107,11 @@ export function Painel({
       {no.type === 'etapa' && (
         <label className="block">
           <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
-            Etapa do quadro
+            Etapa do funil
             <AjudaDoCampo
-              titulo="Etapa do quadro"
+              titulo="Etapa do funil"
               secao="blocos"
-              texto="Para qual coluna do quadro a pessoa vai quando passar por aqui."
+              texto="Para qual etapa do funil a pessoa vai quando passar por aqui."
               detalhes={
                 <>
                   <p>
@@ -1146,7 +1146,7 @@ export function Painel({
                     rotulo: escolhida?.rotulo ?? '',
                   })
                 }}
-                rotuloAcessivel="Etapa do quadro"
+                rotuloAcessivel="Etapa do funil"
                 opcoes={[
                   { valor: '', rotulo: 'Nenhuma, o bloco não faz nada' },
                   ...etapas.map((etapa) => ({
@@ -2707,7 +2707,7 @@ function resumoDoBloco(no: No): string {
     case 'http':
       return curto(no.data.url) || 'Serviços externos'
     case 'etapa':
-      return 'Move no quadro'
+      return 'Move no funil'
     case 'etiqueta':
       return 'Põe uma etiqueta'
     case 'nota':

@@ -51,7 +51,7 @@ export function descrever(no: No): string {
     case 'etapa':
       // O bloco de etapa não tem texto nenhum para citar, os dois campos são
       // ids. Sobra o tipo, que é o que já acontece com qualquer bloco vazio.
-      return 'O bloco de etapa do quadro'
+      return 'O bloco de etapa do funil'
     case 'etiqueta':
       // Como a etapa: o campo é um id, e id não identifica bloco nenhum para
       // quem lê a lista de problemas.

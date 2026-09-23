@@ -57,7 +57,7 @@ import {
 import { Modal } from '@/components/design/modal'
 import { SeloDoCanal } from '@/components/design/selo-do-canal'
 import { AcaoDaArestaProvider, RealceDeArestasProvider, tiposDeAresta } from './arestas'
-import { DESCRICOES } from '@/core/flow/blocos'
+import { DESCRICOES, filtrarCatalogo, GRUPOS_DE_BLOCOS } from '@/core/flow/blocos'
 import { CORES, ICONES, NOMES, NomesDeEtiquetaProvider, RespostasPorVariavelProvider, tiposDeNo } from './nos'
 import { NomeDoFluxo } from './nome-do-fluxo'
 import { organizar, type AlcasDoBloco } from './organizar'
@@ -124,27 +124,8 @@ const OPCOES_PADRAO_DA_ARESTA = { type: 'removivel' }
  */
 const TECLAS_DE_MULTISSELECAO = ['Control', 'Meta']
 
-const TIPOS: TipoNo[] = [
-  'mensagem',
-  'midia',
-  'pergunta',
-  'condicao',
-  'salvar-campo',
-  'etapa',
-  // Ao lado da etapa: os três registram o que se sabe da pessoa, onde ela
-  // está no funil, o que ela é, e o que a conversa apurou.
-  'etiqueta',
-  'nota',
-  'ir-fluxo',
-  // Ao lado do ir-fluxo: os dois respondem "para onde a conversa vai daqui".
-  'voltar',
-  'ia',
-  'handoff',
-  'http',
-  // No fim, junto do handoff: os dois são o que acontece **depois** que a
-  // conversa resolveu o que tinha para resolver.
-  'nps',
-]
+/** Todos os blocos do catálogo, na ordem dos grupos. O soltar confere contra ela. */
+const TIPOS: TipoNo[] = GRUPOS_DE_BLOCOS.flatMap((grupo) => grupo.tipos)
 
 
 /**
@@ -458,6 +439,8 @@ export function Editor({
   const ultimoSelecionado = useRef<string | null>(null)
   const [aba, setAba] = useState<AbaDoPainel>(origem ? 'antes' : 'bloco')
   const [painelAberto, setPainelAberto] = useState(true)
+  const [buscaDeBloco, setBuscaDeBloco] = useState('')
+  const catalogo = useMemo(() => filtrarCatalogo(buscaDeBloco), [buscaDeBloco])
 
   // A largura da barra de blocos, lembrada no navegador de quem usa.
   const [larguraDosBlocos, mudarLarguraDosBlocos] = useLarguraGuardada(
@@ -1753,10 +1736,35 @@ export function Editor({
             padrao={LARGURA_PADRAO_DOS_BLOCOS}
             rotulo="Largura da barra de blocos"
           />
-          <p className="mb-2.5 px-2 text-[10.5px] font-bold tracking-[0.08em] text-dim uppercase">
-            Blocos
+          <input
+            type="search"
+            value={buscaDeBloco}
+            onChange={(evento) => setBuscaDeBloco(evento.target.value)}
+            onKeyDown={(evento) => {
+              // Enter com um resultado só já põe o bloco: quem digitou
+              // "etiq" sabe o que quer, e não precisa ir ao mouse.
+              const achados = catalogo.flatMap((grupo) => grupo.tipos)
+              const [unico] = achados
+              if (evento.key === 'Enter' && achados.length === 1 && unico) {
+                adicionar(unico)
+                setBuscaDeBloco('')
+              }
+            }}
+            placeholder="Buscar bloco"
+            aria-label="Buscar bloco pelo nome ou pelo que ele faz"
+            className="app-field mb-3 w-full px-2.5 py-1.5 text-[12px]"
+          />
+          {catalogo.length === 0 && (
+            <p className="px-2 text-[11.5px] leading-[1.5] text-dim">
+              Nenhum bloco com “{buscaDeBloco.trim()}”.
+            </p>
+          )}
+          {catalogo.map((grupo) => (
+          <section key={grupo.nome} aria-label={grupo.nome} className="mb-2">
+          <p className="mb-1 px-2 text-[10.5px] font-bold tracking-[0.08em] text-dim uppercase">
+            {grupo.nome}
           </p>
-          {TIPOS.map((tipo) => (
+          {grupo.tipos.map((tipo) => (
             <button
               key={tipo}
               onClick={() => adicionar(tipo)}
@@ -1810,6 +1818,8 @@ export function Editor({
                 )}
               </span>
             </button>
+          ))}
+          </section>
           ))}
         </nav>
 

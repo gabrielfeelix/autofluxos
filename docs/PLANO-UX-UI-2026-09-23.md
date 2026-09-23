@@ -866,12 +866,12 @@ export async function editarPasso(
 
 ### Tarefa 5.4: catálogo de blocos agrupado [A09]
 
-- [ ] **Passo 1:** agrupar os 14 tipos (`editor.tsx:121-141`) em Conversar
+- [x] **Passo 1:** agrupar os 14 tipos (`editor.tsx:121-141`) em Conversar
   (mensagem, mídia, pergunta, NPS), Decidir (condição, voltar, ir para
   automação), Organizar (salvar campo, etapa, etiqueta, nota), Integrar (IA,
   HTTP, falar com humano). Busca por nome e descrição no topo.
-- [ ] **Passo 2:** nomes consistentes com a tela: "Etapa do quadro" → "Etapa do funil".
-- [ ] **Passo 3:** prints `editor`; commit `feat(editor): catálogo de blocos por intenção, com busca`.
+- [x] **Passo 2:** nomes consistentes com a tela: "Etapa do quadro" → "Etapa do funil".
+- [x] **Passo 3:** prints `editor`; commit `feat(editor): catálogo de blocos por intenção, com busca`.
 
 ### Tarefa 5.5: HTTP e IA explicam o que fazem [A10, A11]
 

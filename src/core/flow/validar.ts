@@ -433,7 +433,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
         erros.push({
           codigo: 'ETAPA_NAO_ESCOLHIDA',
           mensagem:
-            'Este bloco move o contato no quadro, mas nenhuma etapa foi escolhida. Do jeito que está ele não faria nada.',
+            'Este bloco move o contato no funil, mas nenhuma etapa foi escolhida. Do jeito que está ele não faria nada.',
           noId: no.id,
         })
       } else if (etapas && !etapas.includes(no.data.colunaId)) {

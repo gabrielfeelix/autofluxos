@@ -41,7 +41,7 @@ const ROTULO_DO_BLOCO: Record<LinhaDoRoteiro['tipo'], string> = {
   ia: 'IA',
   handoff: 'Chama uma pessoa',
   http: 'API',
-  etapa: 'Etapa do quadro',
+  etapa: 'Etapa do funil',
   etiqueta: 'Etiqueta',
   nota: 'Anotação',
   'ir-fluxo': 'Vai para outra automação',
