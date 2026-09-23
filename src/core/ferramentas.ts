@@ -190,7 +190,18 @@ export type ChamadaDeFerramenta =
     }
 
 /** Os campos que as ferramentas de loja devolvem ao modelo. Allow-list. */
-const CAMPOS_DE_PRODUTO = ['produtoId', 'nome', 'preco', 'precoDe', 'precoAPartirDe', 'emEstoque', 'quantidade', 'link']
+const CAMPOS_DE_PRODUTO = [
+  'produtoId',
+  'nome',
+  'descricao',
+  'preco',
+  'precoDe',
+  'precoAPartirDe',
+  'emEstoque',
+  'semControleDeEstoque',
+  'quantidade',
+  'link',
+]
 
 /**
  * O formato de data que toda ferramenta usa.
@@ -442,14 +453,15 @@ export const FERRAMENTAS: Ferramenta[] = [
      * sem ser avisado, completa com o que parecer plausível.
      */
     descricao:
-      'Procura produtos na loja on-line da empresa e devolve nome, preço, se tem em estoque e o link. ' +
-      'Use quando a pessoa perguntar se tem um produto, quanto custa, ou pedir uma indicação. ' +
+      'Procura produtos e serviços da empresa (na loja on-line ou no catálogo cadastrado) e devolve nome, preço, se tem em estoque e o link. ' +
+      'Use quando a pessoa perguntar se tem um produto ou serviço, quanto custa, ou pedir uma indicação. ' +
       'Busque pelo tipo de produto em poucas palavras ("headset usb"), não pela frase inteira. ' +
       'Se um produto vier sem preço, diga que vai confirmar o valor e nunca invente. ' +
       'Quando vier `precoAPartirDe`, o preço muda com a variação (cor, tamanho): diga "a partir de" esse valor. ' +
       'Quando vier `quantidade`, diga quantas restam só se forem 5 ou menos; acima disso, só diga que tem. ' +
-      'Sempre mande o link para a pessoa comprar; você não fecha pedido. ' +
-      'Se não vier produto nenhum, não diga que a loja não tem: tente outro termo ou mande o link `buscaNaLoja` para a pessoa procurar. ' +
+      'Quando vier `semControleDeEstoque`, não fale de estoque. Use a `descricao`, quando vier, para explicar o item. ' +
+      'Mande o link quando o item tiver um; você não fecha pedido. ' +
+      'Se não vier produto nenhum, não diga que a empresa não tem: tente outro termo; se vier o link `buscaNaLoja`, mande para a pessoa procurar. ' +
       'Não use para horário de aula ou agenda.',
     argumentos: [
       { nome: 'termo', tipo: 'texto', descricao: 'O que procurar, em até 5 palavras.', obrigatorio: true },

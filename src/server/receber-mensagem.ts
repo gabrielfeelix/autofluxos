@@ -1530,7 +1530,9 @@ async function aplicar(
          * recebeu sem saber desenhar card; `payload` guarda o produto inteiro.
          */
         const enviarCards = canal.enviarProdutos?.bind(canal)
-        const comFoto = enviarCards ? acao.produtos.filter((p) => p.foto) : []
+        // Foto sem link também vira texto: o card sem link não tem botão, o
+        // canal pula, e o item sumiria calado.
+        const comFoto = enviarCards ? acao.produtos.filter((p) => p.foto && p.link) : []
         const semFoto = acao.produtos.filter((p) => !comFoto.includes(p))
 
         if (enviarCards && comFoto.length > 0) {

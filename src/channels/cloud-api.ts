@@ -578,7 +578,8 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
        */
       let primeiro: string | null = null
       for (const produto of produtos) {
-        if (!produto.foto) continue
+        // Sem link não há botão, e o cta_url sem url a Meta recusa.
+        if (!produto.foto || !produto.link) continue
         const { titulo, detalhe } = linhasDoCard(produto)
         const resposta = await mandar({
           to: para,

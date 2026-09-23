@@ -1,11 +1,14 @@
 import 'server-only'
 import { enriquecer, type Complemento } from '@/loja/enriquecer'
+import { lojaCatalogo } from '@/loja/catalogo'
 import { lojaMagento } from '@/loja/magento'
 import { lojaAdmin } from '@/loja/magento-admin'
 import type { Loja } from '@/loja/types'
 import { alertar } from './alertar'
 import { lerCredencial } from './repos/conexoes'
 import { lojaDaConta } from './repos/lojas'
+import { listarProdutos } from './repos/produtos'
+import { estaAtivo } from '@/core/produtos'
 
 /** Quanto a foto e o estoque exato podem atrasar uma resposta, somados. */
 export const PRAZO_DO_TOKEN_MS = 3_000
@@ -14,9 +17,14 @@ export const PRAZO_DO_TOKEN_MS = 3_000
  * Qual adaptador fala com a loja desta conta, no desenho de
  * `adaptador-do-canal.ts`: um lugar só escolhe, e quem usa recebe `Loja`.
  *
- * `null` quando a conta não tem loja ou ela está desligada. Quem chama trata
- * isso como "a loja desta conta não está ligada", e o bot passa para pessoa em
- * vez de inventar catálogo.
+ * **Magento ligada ganha.** Sem ela, a conta com catálogo próprio ativo
+ * (`public.produtos`, cadastrado ou importado) usa o catálogo, pelo mesmo
+ * caminho: o bot busca e manda o card igual. O catálogo nunca é cópia da
+ * Magento, e com as duas a busca é a da loja, ao vivo.
+ *
+ * `null` quando a conta não tem nenhum dos dois. Quem chama trata isso como
+ * "a loja desta conta não está ligada", e o bot passa para pessoa em vez de
+ * inventar catálogo.
  *
  * **Por cima da busca pública, e só por cima** (ver `loja/enriquecer.ts`):
  *
@@ -29,7 +37,7 @@ export const PRAZO_DO_TOKEN_MS = 3_000
  */
 export async function lojaAtivaDaConta(clienteId: string): Promise<Loja | null> {
   const loja = await lojaDaConta(clienteId)
-  if (!loja || !loja.ativa) return null
+  if (!loja || !loja.ativa) return catalogoDaConta(clienteId)
 
   const publica = lojaMagento({ endereco: loja.endereco, codigoDaLoja: loja.codigoDaLoja, sufixo: loja.sufixo })
 
@@ -62,6 +70,18 @@ export async function lojaAtivaDaConta(clienteId: string): Promise<Loja | null> 
       return r.ok ? { ok: true, valor: await enriquecer(r.valor, admin, noCard) } : r
     },
   }
+}
+
+/**
+ * O catálogo próprio como loja, ou `null` se ele não tem item ativo.
+ *
+ * Lido uma vez só: a mesma lista serve a busca e a releitura do card dentro
+ * da mesma rodada, e item arquivado depois disso aparece até a próxima.
+ */
+async function catalogoDaConta(clienteId: string): Promise<Loja | null> {
+  const ativos = (await listarProdutos(clienteId)).filter(estaAtivo)
+  if (ativos.length === 0) return null
+  return lojaCatalogo(async () => ativos)
 }
 
 export type EstadoDoToken = 'sem_token' | 'ok' | 'recusado' | 'sem_resposta'

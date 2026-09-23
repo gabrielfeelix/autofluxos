@@ -130,6 +130,13 @@ describe('card do produto', () => {
   it('o texto do card termina no link', () => {
     expect(textoDoCard({ ...base, preco: 10 })).toBe('Headset CM500\nR$ 10,00, em estoque\nhttps://loja.com.br/cm500')
   })
+  it('catálogo sem controle de estoque não escreve "em estoque"', () => {
+    expect(linhasDoCard({ ...base, preco: 150, semControleDeEstoque: true }).detalhe).toBe('R$ 150,00')
+  })
+  it('sem link e sem detalhe, o texto não deixa linha vazia', () => {
+    expect(textoDoCard({ ...base, link: '', semControleDeEstoque: true })).toBe('Headset CM500')
+    expect(textoDoCard({ ...base, link: '', preco: 10, semControleDeEstoque: true })).toBe('Headset CM500\nR$ 10,00')
+  })
 })
 
 describe('produto com variações de preço', () => {

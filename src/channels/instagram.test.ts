@@ -220,7 +220,11 @@ describe('card do produto no Instagram', () => {
   it('manda um generic com um elemento por produto com foto', async () => {
     const espiao = fingirFetch()
 
-    await canal().enviarProdutos!('igsid', [produto, { ...produto, produtoId: 'x', foto: undefined }])
+    await canal().enviarProdutos!('igsid', [
+      produto,
+      { ...produto, produtoId: 'x', foto: undefined },
+      { ...produto, produtoId: 'sem-link', link: '' },
+    ])
 
     expect(corpos(espiao)).toEqual([
       {

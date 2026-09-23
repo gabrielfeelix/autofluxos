@@ -477,7 +477,12 @@ describe('card do produto na Cloud API', () => {
     vi.stubGlobal('fetch', fetchMock)
     const canal = canalCloudApi({ phoneNumberId: 'numero-1', token: 'token-de-teste', versaoGraph: 'v25.0' })
 
-    await canal.enviarProdutos!('5544999', [produto, { ...produto, produtoId: 'sem-foto', foto: undefined }])
+    await canal.enviarProdutos!('5544999', [
+      produto,
+      { ...produto, produtoId: 'sem-foto', foto: undefined },
+      // Sem link não há botão: o cta_url exige url, e a Meta recusaria.
+      { ...produto, produtoId: 'sem-link', link: '' },
+    ])
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({

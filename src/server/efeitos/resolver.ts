@@ -1084,11 +1084,11 @@ async function executarNaLoja(
     const termo = valores.termo ?? ''
     const r = await loja.buscar(termo)
     if (!r.ok) return r
-    // Vazio vem com a página de busca da loja: ver `linkDaBusca`.
-    return {
-      ok: true,
-      json: r.valor.length > 0 ? { produtos: r.valor } : { produtos: [], buscaNaLoja: loja.linkDaBusca(termo) },
-    }
+    // Vazio vem com a página de busca da loja: ver `linkDaBusca`. O catálogo
+    // próprio não tem página de busca, e aí vai só a lista vazia.
+    if (r.valor.length > 0) return { ok: true, json: { produtos: r.valor } }
+    const buscaNaLoja = loja.linkDaBusca(termo)
+    return { ok: true, json: buscaNaLoja ? { produtos: [], buscaNaLoja } : { produtos: [] } }
   }
 
   const r = await loja.combinaCom(valores.produtoId ?? '')

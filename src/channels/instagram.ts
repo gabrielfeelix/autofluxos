@@ -191,7 +191,8 @@ export function canalInstagram(config: ConfigInstagram): Canal {
       // Um carrossel só: o `generic` com vários elementos rola de lado, que é
       // o jeito do Instagram mostrar mais de um produto sem uma mensagem cada.
       const elementos = produtos
-        .filter((p) => p.foto)
+        // Sem link não há botão nem ação: o generic sem url a Meta recusa.
+        .filter((p) => p.foto && p.link)
         .slice(0, LIMITE_ELEMENTOS_GENERIC)
         .map((p) => {
           const { titulo, detalhe } = linhasDoCard(p)

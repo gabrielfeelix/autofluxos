@@ -76,6 +76,14 @@ export type ProdutoDaLoja = {
    */
   precoAPartirDe?: number
   emEstoque: boolean
+  /**
+   * Catálogo próprio da conta (`loja/catalogo.ts`): ninguém conta estoque
+   * nele, e serviço não tem estoque. O card não escreve "em estoque" por cima
+   * de um dado que não existe.
+   */
+  semControleDeEstoque?: true
+  /** Só no catálogo próprio: o que o dono escreveu sobre o item. */
+  descricao?: string
   quantidade?: number
   /** Só com token (fase 2). Ausente = sem foto real; nunca o placeholder da loja. */
   foto?: string
@@ -230,10 +238,13 @@ export function linhasDoCard(produto: ProdutoDaLoja): { titulo: string; detalhe:
         : comoDinheiro(produto.preco),
     )
   }
-  if (!produto.emEstoque) partes.push('esgotado')
-  else if (produto.quantidade !== undefined && produto.quantidade <= 5) {
-    partes.push(produto.quantidade === 1 ? 'última unidade' : `últimas ${produto.quantidade} unidades`)
-  } else partes.push('em estoque')
+  // Catálogo próprio: ninguém conta estoque, então o card não afirma nada.
+  if (!produto.semControleDeEstoque) {
+    if (!produto.emEstoque) partes.push('esgotado')
+    else if (produto.quantidade !== undefined && produto.quantidade <= 5) {
+      partes.push(produto.quantidade === 1 ? 'última unidade' : `últimas ${produto.quantidade} unidades`)
+    } else partes.push('em estoque')
+  }
   return { titulo: produto.nome, detalhe: partes.join(', ') }
 }
 
@@ -244,5 +255,7 @@ export function linhasDoCard(produto: ProdutoDaLoja): { titulo: string; detalhe:
  */
 export function textoDoCard(produto: ProdutoDaLoja): string {
   const { titulo, detalhe } = linhasDoCard(produto)
-  return `${titulo}\n${detalhe}\n${produto.link}`
+  // Item do catálogo próprio pode não ter preço nem link: linha vazia no
+  // WhatsApp é espaço sobrando no meio da mensagem.
+  return [titulo, detalhe, produto.link].filter(Boolean).join('\n')
 }
