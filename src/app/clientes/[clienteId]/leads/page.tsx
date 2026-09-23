@@ -479,14 +479,24 @@ async function Tabela({
             passar do fim rola aqui dentro em vez de rolar a página.
           */}
           <div className="app-card flex min-h-0 flex-1 flex-col overflow-hidden">
-            <div className="min-h-0 flex-1 overflow-auto">
+            {/*
+              `relative` é o que prende o `sr-only` do cabeçalho de Ações (que é
+              `absolute`) dentro da rolagem. Sem ele, o texto invisível ficava
+              na ponta direita da tabela e esticava a página inteira no celular.
+            */}
+            <div className="relative min-h-0 flex-1 overflow-auto">
             <table id="tabela-de-contatos" className="w-full min-w-[820px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-line">
-                  <th scope="col" className="w-9 px-3.5 py-2.5">
+                  <th scope="col" className={`${FIXA_SELECAO} z-[3] px-3.5 py-2.5`}>
                     <CaixaDeTodos ids={leads.map((lead) => lead.contatoId)} />
                   </th>
-                  <Cabecalho>Contato</Cabecalho>
+                  <th
+                    scope="col"
+                    className={`${FIXA_CONTATO} z-[3] px-3.5 py-3.5 text-[10.5px] font-bold tracking-[0.06em] text-dim uppercase`}
+                  >
+                    Contato
+                  </th>
                   {/* O rótulo, não a chave: `objetivo_aluno` em fonte de código
                       era o mesmo problema do painel do Inbox, numa tabela. */}
                   {colunas.map((coluna) => (
@@ -507,17 +517,17 @@ async function Tabela({
                 <LinhaClicavel
                   key={lead.contatoId}
                   href={`/clientes/${clienteId}/leads/${lead.contatoId}`}
-                  className="cursor-pointer border-b border-line transition last:border-0 hover:bg-surface"
+                  className="group cursor-pointer border-b border-line transition last:border-0 hover:bg-surface has-[:checked]:bg-primary/[0.06]"
                 >
                   {/*
                     `align-middle` e não `align-top`: a caixa estava colada no
                     topo de uma linha de três alturas (nome, telefone,
                     etiquetas), desalinhada de tudo que ela seleciona.
                   */}
-                  <td className="px-3.5 py-3 align-middle">
+                  <td className={`${FIXA_SELECAO} ${FUNDO_DA_FIXA} z-[2] px-3.5 py-3 align-middle`}>
                     <CaixaDeSelecao id={lead.contatoId} rotulo={lead.nome ?? lead.waId} />
                   </td>
-                  <td className="px-3.5 py-3">
+                  <td className={`${FIXA_CONTATO} ${FUNDO_DA_FIXA} z-[2] px-3.5 py-3`}>
                     <div className="flex items-center gap-2.5">
                       <Avatar nome={lead.nome} />
                       <div className="min-w-0">
@@ -670,6 +680,27 @@ function Passo({ href, ativo, children }: { href: string; ativo: boolean; childr
     </Link>
   )
 }
+
+/*
+  As duas primeiras colunas ficam presas na esquerda quando a tabela rola para
+  o lado: sem elas, quem vai conferir um campo lá no fim perde de vista de quem
+  é a linha e qual caixa está marcando.
+
+  A largura da primeira é fixa porque é ela que dá o `left` da segunda. Ocultar
+  coluna pelo botão "Colunas" não mexe aqui: as duas nunca são ocultáveis.
+*/
+const FIXA_SELECAO = 'sticky left-0 w-12 min-w-12 max-w-12 bg-panel'
+// No celular a coluna Contato encolhe (o nome trunca): com 260px, as duas fixas
+// tomavam quase a tela inteira e sobrava uma fresta para o resto da tabela.
+const FIXA_CONTATO =
+  'sticky left-12 w-[176px] min-w-[176px] max-w-[176px] md:w-auto md:max-w-none md:min-w-[260px] bg-panel shadow-[inset_-1px_0_0_var(--line)]'
+/**
+ * Célula fixa precisa de fundo opaco nos três estados, senão o texto das
+ * colunas que passam por baixo aparece através dela. O da linha marcada é a
+ * mesma tinta da linha (`primary` a 6%), só que já misturada com o painel.
+ */
+const FUNDO_DA_FIXA =
+  'group-hover:bg-surface group-has-[:checked]:bg-[color-mix(in_oklab,var(--primary)_6%,var(--panel))]'
 
 function classeDoFiltro(ativo: boolean): string {
   return `rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${

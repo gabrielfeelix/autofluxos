@@ -584,20 +584,20 @@ export async function acaoAtribuirAtividade(
 - Modificar: `src/app/clientes/[clienteId]/leads/page.tsx:459-530` (tabela)
 - Modificar: `src/components/lead/colunas-da-tabela.tsx` (não permitir ocultar Contato)
 
-- [ ] **Passo 1:** print antes `contatos`.
-- [ ] **Passo 2:** primeira coluna (checkbox) `sticky left-0 z-[2]` com largura
+- [x] **Passo 1:** print antes `contatos`.
+- [x] **Passo 2:** primeira coluna (checkbox) `sticky left-0 z-[2]` com largura
   fixa `w-12 min-w-12`; segunda (Contato) `sticky left-12 z-[2]` com `min-w-[260px]`
   e sombra de separação `shadow-[inset_-1px_0_0_var(--border)]` (usar o token de
   borda que a tabela já usa). Cabeçalho das duas com `z-[3]` e o mesmo fundo do
   cabeçalho. Células com fundo opaco nos três estados: normal, hover e
   selecionada (o fundo de linha selecionada precisa existir na célula fixa, senão
   o texto de trás aparece por baixo).
-- [ ] **Passo 3:** o controle Colunas não oferece mais ocultar "Contato".
-- [ ] **Passo 4:** conferir com Playwright: rolar a tabela até o fim à direita
+- [x] **Passo 3:** o controle Colunas não oferece mais ocultar "Contato".
+- [x] **Passo 4:** conferir com Playwright: rolar a tabela até o fim à direita
   (`page.locator('<contêiner da tabela>').evaluate(e => e.scrollLeft = e.scrollWidth)`)
   e tirar print; checkbox e nome visíveis, cabeçalho alinhado. Repetir com zoom
   200% (`page.evaluate(() => document.body.style.zoom = '2')`) e no celular.
-- [ ] **Passo 5:** commit `feat(contatos): seleção e nome fixos ao rolar a tabela`.
+- [x] **Passo 5:** commit `feat(contatos): seleção e nome fixos ao rolar a tabela`.
 
 ### Tarefa 2.2: etiquetas legíveis na tabela [N06]
 
@@ -1370,4 +1370,8 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   atividade" (tinha o mesmo problema da lista longa).
 - 23/09: tarefa 7.5 (perfil próprio no rodapé) entrou no plano a pedido do
   Gabriel. Os nomes dos papéis continuam os da tabela de decisões.
-
+- 23/09, tarefa 2.1: o passo 3 já valia (Contato nunca foi oferecido no
+  "Colunas"). Achado: no celular a página inteira rolava 913px para o lado,
+  porque o `sr-only` do cabeçalho de Ações é `absolute` e o contêiner de
+  rolagem não era `relative`; agora é. No celular a coluna Contato fixa tem
+  176px (o nome trunca), senão as duas fixas tomavam a tela.
