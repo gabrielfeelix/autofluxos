@@ -285,6 +285,36 @@ extração explícito para os objetos de `public`.
   tabelas. `public.clients` foi de **29** para **32** colunas, que é a única
   diferença esperada.
 
+- **a `0092` foi aplicada em 23/set/2026**, com autorização explícita do dono
+  pedida nesta sessão ("sim autorizo"). Conferida pelo ensaio em transação
+  contra a produção, limpo, que basta para o que ela faz: tabela nova, sem
+  toque em tabela ou dado existente, sem função.
+
+  Ela cria `public.lojas_integradas`, a loja on-line de cada conta para o bot
+  consultar catálogo ao vivo (plano `docs/superpowers/plans/2026-09-23-magento-cross-sell.md`).
+  **`ativa` nasce `false`**: aplicar não liga nada em conta nenhuma. As colunas
+  do token de administrador (`conexao_id`, `estoque_exato`, `estoque_id`)
+  nasceram aqui, desligadas, pelo motivo da `0066`.
+
+  O ensaio provou as travas dentro da transação: endereço `http://` recusado,
+  segunda loja `magento` na mesma conta recusada, e `estoque_exato = 'msi'` sem
+  `conexao_id` recusado pelo `lojas_estoque_exige_token`. Depois do rollback, a
+  tabela não existia.
+
+  Releitura objeto a objeto depois de aplicar: 13 colunas, 7 checks, RLS ligada
+  e zero políticas, `has_table_privilege` falso para `anon` e `authenticated`,
+  zero linhas. Medidos antes e depois: `app_verandi.migrations_aplicadas` com
+  **35** linhas, **42** tabelas e **16** policies de `storage.objects`, iguais;
+  `public` de **79** para **80** tabelas, a única diferença esperada; **6**
+  contas e **44** contatos intactos.
+
+  **Tem `notify pgrst`, e o reload foi conferido nos dois produtos:**
+  `lojas_integradas` responde **200** para a chave secreta e **401** para a
+  publicável, e `app_verandi.conta` continua em **200**.
+
+  **A migration entrou antes do código que a lê**, pela regra da `0071`: até
+  aqui só a regra pura e o adaptador estão publicados, e nada consulta a tabela.
+
 - **a `0088` foi aplicada em 20/set/2026**, com autorização explícita do dono
   pedida nesta sessão. Conferida pelos **dois** testes: replay do zero em Docker
   (`0001`–`0088` em ordem, sem erro) e ensaio em transação contra a produção,
