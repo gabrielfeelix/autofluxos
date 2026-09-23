@@ -3,6 +3,7 @@ import { ATENDIMENTO_SEMPRE_ABERTO, avisoDeForaDoHorario, executar } from '@/cor
 import type { ContextoDoAtendimento } from '@/core/engine/executar'
 import type { Acao, Entrada, Resultado, Sessao } from '@/core/engine/types'
 import type { Fluxo } from '@/core/flow/schema'
+import type { ProdutoDaLoja } from '@/core/loja'
 import { VARIAVEIS_DE_DATA } from '@/core/datas'
 import { VARIAVEIS_DO_ATENDIMENTO, varsDoAtendimento } from '@/core/vars-do-atendimento'
 import {
@@ -488,7 +489,10 @@ async function rodar(
     )
 
     resultado = {
-      acoes: [...semEfeito(resultado.acoes, 'chamar_ia'), ...seguinte.acoes],
+      acoes: [
+        ...semEfeito(resultado.acoes, 'chamar_ia'),
+        ...comCards(seguinte.acoes, resposta.texto, resposta.produtos ?? []),
+      ],
       sessao: seguinte.sessao,
     }
   }
@@ -594,7 +598,13 @@ export const MAX_VOLTAS_DE_FERRAMENTA = 2
  * silêncio, que é o único desfecho que este produto não aceita.
  */
 type RespostaFinal =
-  | Exclude<Resposta, { tipo: 'usar_ferramenta' }>
+  | Exclude<Resposta, { tipo: 'usar_ferramenta' | 'texto' }>
+  /**
+   * `produtos` são os cards que `loja_mostrar` separou nesta rodada. Viajam
+   * com o texto, e não como ação à parte, porque só saem se a resposta sair:
+   * uma rodada que termina em `nao_sei` não manda card nenhum.
+   */
+  | (Extract<Resposta, { tipo: 'texto' }> & { produtos?: ProdutoDaLoja[] })
   /**
    * A IA quer gravar e a política deste cliente manda perguntar antes.
    *
@@ -708,6 +718,9 @@ async function responderComFerramentas({
   /** Como cada id apareceu em palavras. Alimenta a pergunta de confirmação. */
   const rotulos = new Map<string, string>()
 
+  /** O que `loja_mostrar` separou para sair como card junto da resposta. */
+  const cards: ProdutoDaLoja[] = []
+
   for (let volta = 0; volta <= MAX_VOLTAS_DE_FERRAMENTA; volta++) {
     const resposta = await modelo.responder({
       ...base,
@@ -718,6 +731,7 @@ async function responderComFerramentas({
       ferramentas: volta === MAX_VOLTAS_DE_FERRAMENTA ? [] : permitidas,
     })
 
+    if (resposta.tipo === 'texto' && cards.length > 0) return { ...resposta, produtos: cards }
     if (resposta.tipo !== 'usar_ferramenta') return resposta
 
     const conferida = conferirPedido({
@@ -809,6 +823,10 @@ async function responderComFerramentas({
       // Falha de consulta é handoff pelo mesmo motivo do nó de API com
       // `aoFalhar: humano`: responder sem o dado é responder chutando.
       return { tipo: 'nao_sei', motivo: `a consulta ${ferramenta.nome} falhou, ${disparo.motivo}` }
+    }
+
+    if (ferramenta.chamada.tipo === 'loja' && ferramenta.chamada.operacao === 'mostrar') {
+      cards.push(...produtosDe(disparo.json))
     }
 
     const recorte = projetar(disparo.json, ferramenta.projecao)
@@ -1046,7 +1064,7 @@ async function dispararFerramenta({
  * venda perdida. Falhando, a conversa vai para uma pessoa.
  */
 async function executarNaLoja(
-  operacao: 'buscar' | 'combina_com',
+  operacao: 'buscar' | 'combina_com' | 'mostrar',
   valores: Record<string, string>,
   opcoes: OpcoesDeEfeitos,
 ): Promise<{ ok: true; json: unknown } | { ok: false; motivo: string }> {
@@ -1054,9 +1072,38 @@ async function executarNaLoja(
   const loja = await lojaAtivaDaConta(opcoes.clienteId)
   if (!loja) return { ok: false, motivo: 'a loja desta conta não está ligada' }
 
+  if (operacao === 'mostrar') {
+    // Relê na loja em vez de reusar o que a busca trouxe: o card é a última
+    // palavra sobre preço antes do clique, e ela tem que ser a de agora.
+    const skus = [valores.produtoId, valores.produtoId2, valores.produtoId3].filter((s): s is string => Boolean(s))
+    const r = await loja.lerPorSku(skus)
+    return r.ok ? { ok: true, json: { mostrados: r.valor } } : r
+  }
+
   const r =
     operacao === 'buscar' ? await loja.buscar(valores.termo ?? '') : await loja.combinaCom(valores.produtoId ?? '')
   return r.ok ? { ok: true, json: { produtos: r.valor } } : r
+}
+
+/** Os produtos que `executarNaLoja('mostrar')` devolveu, inteiros, com foto. */
+function produtosDe(json: unknown): ProdutoDaLoja[] {
+  const lista = (json as { mostrados?: unknown } | null)?.mostrados
+  return Array.isArray(lista) ? (lista as ProdutoDaLoja[]) : []
+}
+
+/**
+ * Põe os cards logo depois da frase da IA que os apresenta.
+ *
+ * Depois, e não no fim da lista: o nó de IA pode seguir para outro bloco que
+ * já fala ("posso ajudar em mais alguma coisa?"), e o card chegando depois
+ * dessa pergunta leria fora de ordem.
+ */
+function comCards(acoes: Acao[], texto: string, produtos: ProdutoDaLoja[]): Acao[] {
+  if (produtos.length === 0) return acoes
+  const card: Acao = { tipo: 'enviar_produtos', produtos }
+  const posicao = acoes.findIndex((a) => a.tipo === 'enviar_texto' && a.texto === texto)
+  if (posicao === -1) return [...acoes, card]
+  return [...acoes.slice(0, posicao + 1), card, ...acoes.slice(posicao + 1)]
 }
 
 async function logar({

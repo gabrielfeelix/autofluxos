@@ -6,6 +6,7 @@ import { canalDoWhatsApp } from './canal-do-whatsapp'
 import { AUTOR_AUTOMACAO } from '@/core/autor-da-mensagem'
 import { sessaoNova, type Acao, type Entrada } from '@/core/engine/types'
 import { varsIniciais } from '@/core/contatos/vars-iniciais'
+import { textoDoCard } from '@/core/loja'
 import { alertar, type ContextoDoAlerta } from './alertar'
 import { avisarHandoff } from './avisar-handoff'
 import { executarComEfeitos, type OpcoesDeEfeitos } from './efeitos/resolver'
@@ -1502,6 +1503,52 @@ async function aplicar(
         if (!entrega.ok) return pararNoHumano(entrega.motivo)
 
         await confirmarEntrega(registro)
+        break
+      }
+
+      case 'enviar_produtos': {
+        if (acao.atrasoMs && mensagemId) {
+          await canal.aguardarResposta({ mensagemId, contato: contato.waId }, acao.atrasoMs)
+        }
+
+        /*
+         * Card só com foto real e canal que saiba mostrar. O resto vai como
+         * texto com o link, um por produto, e a prévia do link mostra o que a
+         * loja tiver: nunca a imagem placeholder do Magento.
+         *
+         * No histórico fica o texto do card, para o Inbox ler o que a pessoa
+         * recebeu sem saber desenhar card; `payload` guarda o produto inteiro.
+         */
+        const enviarCards = canal.enviarProdutos?.bind(canal)
+        const comFoto = enviarCards ? acao.produtos.filter((p) => p.foto) : []
+        const semFoto = acao.produtos.filter((p) => !comFoto.includes(p))
+
+        if (enviarCards && comFoto.length > 0) {
+          const registro = await registrarSaida({
+            contatoId: contato.id,
+            sessaoId,
+            autor: AUTOR_AUTOMACAO,
+            texto: comFoto.map(textoDoCard).join('\n\n'),
+            payload: { produtos: comFoto },
+          })
+          const entrega = await entregar(() => enviarCards(contato.waId, comFoto), alvo)
+          if (!entrega.ok) return pararNoHumano(entrega.motivo)
+          await confirmarEntrega(registro)
+        }
+
+        for (const produto of semFoto) {
+          const texto = textoDoCard(produto)
+          const registro = await registrarSaida({
+            contatoId: contato.id,
+            sessaoId,
+            autor: AUTOR_AUTOMACAO,
+            texto,
+            payload: { produtos: [produto] },
+          })
+          const entrega = await entregar(() => canal.enviarTexto(contato.waId, texto), alvo)
+          if (!entrega.ok) return pararNoHumano(entrega.motivo)
+          await confirmarEntrega(registro)
+        }
         break
       }
 

@@ -1,4 +1,5 @@
 import type { Opcao } from '@/core/flow/schema'
+import type { ProdutoDaLoja } from '@/core/loja'
 import type { Canal, EnvioDeTemplate, Midia, Template } from './types'
 
 export type Enviada =
@@ -7,6 +8,7 @@ export type Enviada =
   | { tipo: 'opcoes'; para: string; texto: string; opcoes: Opcao[]; formato: 'botoes' | 'lista' }
   | ({ tipo: 'midia'; para: string } & Midia)
   | ({ tipo: 'template'; para: string } & Template)
+  | { tipo: 'produtos'; para: string; produtos: ProdutoDaLoja[] }
 
 /**
  * O canal que não envia nada, guarda o que enviaria.
@@ -32,6 +34,9 @@ export function canalMock(): Canal & { enviadas: Enviada[] } {
     },
     async enviarMidia(para, midia) {
       enviadas.push({ tipo: 'midia', para, ...midia })
+    },
+    async enviarProdutos(para, produtos) {
+      enviadas.push({ tipo: 'produtos', para, produtos })
     },
     /**
      * O mock sempre aceita.

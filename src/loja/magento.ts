@@ -1,5 +1,14 @@
 import 'server-only'
-import { QUERY_BUSCA, QUERY_CONFIG, QUERY_RECOMENDACOES, traduzirProdutos, traduzirRecomendacoes } from '@/core/loja'
+import {
+  LIMITE_DE_CARDS,
+  QUERY_BUSCA,
+  QUERY_CONFIG,
+  QUERY_POR_SKU,
+  QUERY_RECOMENDACOES,
+  traduzirPorSku,
+  traduzirProdutos,
+  traduzirRecomendacoes,
+} from '@/core/loja'
 import { chamarHttp } from '@/server/efeitos/http'
 import type { DadosDaLoja, Loja, ResultadoDaLoja } from './types'
 
@@ -17,7 +26,7 @@ type Chamar = typeof chamarHttp
  * hora de salvar, deixaria a porta aberta para quem trocar o DNS depois.
  */
 export function lojaMagento(dados: DadosDaLoja, chamar: Chamar = chamarHttp): Loja {
-  async function graphql(query: string, variaveis: Record<string, string>): Promise<ResultadoDaLoja<unknown>> {
+  async function graphql(query: string, variaveis: Record<string, unknown>): Promise<ResultadoDaLoja<unknown>> {
     const url = new URL(`${dados.endereco}/graphql`)
     url.searchParams.set('query', query)
     if (Object.keys(variaveis).length > 0) url.searchParams.set('variables', JSON.stringify(variaveis))
@@ -49,6 +58,12 @@ export function lojaMagento(dados: DadosDaLoja, chamar: Chamar = chamarHttp): Lo
     async combinaCom(sku) {
       const r = await graphql(QUERY_RECOMENDACOES, { sku })
       return r.ok ? { ok: true, valor: traduzirRecomendacoes(r.valor, dados.endereco, dados.sufixo) } : r
+    },
+    async lerPorSku(skus) {
+      const pedidos = [...new Set(skus.map((s) => s.trim()).filter(Boolean))].slice(0, LIMITE_DE_CARDS)
+      if (pedidos.length === 0) return { ok: true, valor: [] }
+      const r = await graphql(QUERY_POR_SKU, { skus: pedidos })
+      return r.ok ? { ok: true, valor: traduzirPorSku(r.valor, pedidos, dados.endereco, dados.sufixo) } : r
     },
     async lerConfig() {
       const r = await graphql(QUERY_CONFIG, {})

@@ -1,4 +1,5 @@
 import type { Opcao, TipoDeMidia } from '@/core/flow/schema'
+import type { ProdutoDaLoja } from '@/core/loja'
 
 /** O que o canal precisa para entregar um arquivo. Espelha `enviar_midia`. */
 export type Midia = {
@@ -116,6 +117,15 @@ export type Canal = {
     formato: 'botoes' | 'lista',
   ): Promise<void>
   enviarMidia(para: string, midia: Midia, citando?: Citacao): Promise<void>
+  /**
+   * O card do produto: foto, nome, preço, estoque e o botão para a loja.
+   *
+   * Opcional, como `reagir`: o Telegram não tem o formato, e quem chama manda
+   * texto com o link quando o método não existe. Só recebe produto **com
+   * foto real**; sem foto, quem chama também manda texto, e o adaptador nunca
+   * precisa inventar imagem.
+   */
+  enviarProdutos?(para: string, produtos: ProdutoDaLoja[]): Promise<void>
   /**
    * Manda um modelo aprovado, a única coisa que atravessa a janela fechada.
    *

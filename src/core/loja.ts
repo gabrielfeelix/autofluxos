@@ -15,7 +15,17 @@
  *   Concatenar na query abriria injeção; como variável, a query é constante.
  */
 
+import { comoDinheiro } from './crm'
+
 export const LIMITE_DE_PRODUTOS = 5
+
+/**
+ * Quantos cards o bot manda de uma vez.
+ *
+ * Três e não os cinco da busca: cada card é uma mensagem inteira no WhatsApp,
+ * e cinco seguidos empurram a conversa para fora da tela de quem perguntou.
+ */
+export const LIMITE_DE_CARDS = 3
 
 const CAMPOS_DO_PRODUTO = `
   sku
@@ -36,6 +46,17 @@ export const QUERY_RECOMENDACOES = `query Recomendar($sku: String!) {
       related_products { ${CAMPOS_DO_PRODUTO} }
     }
   }
+}`
+
+/**
+ * Relê produtos pelo SKU, para o card sair com o preço de agora.
+ *
+ * `in` com lista, e a lista vai como variável pelo mesmo motivo do termo: os
+ * SKUs passaram pela trava `soDeResultadoAnterior`, mas a query continua
+ * constante mesmo assim.
+ */
+export const QUERY_POR_SKU = `query Ler($skus: [String]) {
+  products(filter: { sku: { in: $skus } }, pageSize: ${LIMITE_DE_CARDS}) { items { ${CAMPOS_DO_PRODUTO} } }
 }`
 
 export const QUERY_CONFIG = `{ storeConfig { store_code base_currency_code product_url_suffix } }`
@@ -133,4 +154,56 @@ export function traduzirRecomendacoes(json: unknown, endereco: string, sufixo: s
     saida.push(p)
   }
   return saida.slice(0, LIMITE_DE_PRODUTOS)
+}
+
+/**
+ * O resultado da releitura, na ordem em que o bot pediu.
+ *
+ * A loja devolve na ordem dela, e o bot escolheu uma ordem ao falar ("o
+ * primeiro é o mais barato"). SKU que a loja não devolveu some, sem erro: o
+ * produto pode ter saído do catálogo entre a busca e o card.
+ */
+export function traduzirPorSku(json: unknown, skus: readonly string[], endereco: string, sufixo: string): ProdutoDaLoja[] {
+  const porSku = new Map<string, ProdutoDaLoja>()
+  for (const bruto of itensDe(json)) {
+    const p = traduzirItem(bruto, endereco, sufixo)
+    if (p) porSku.set(p.produtoId, p)
+  }
+  return skus.flatMap((sku) => {
+    const p = porSku.get(sku)
+    return p ? [p] : []
+  })
+}
+
+/**
+ * As linhas do card: nome, preço e estoque. Sem o link, que cada canal põe do
+ * seu jeito (botão no WhatsApp e no Instagram, texto quando não há foto).
+ *
+ * Sem preço não escreve preço nenhum, nem "R$ 0,00" nem "consulte": o bot já
+ * disse na conversa que vai confirmar o valor, e o card repetir isso é ruído.
+ */
+export function linhasDoCard(produto: ProdutoDaLoja): { titulo: string; detalhe: string } {
+  const partes: string[] = []
+  if (produto.preco !== undefined) {
+    partes.push(
+      produto.precoDe !== undefined
+        ? `de ${comoDinheiro(produto.precoDe)} por ${comoDinheiro(produto.preco)}`
+        : comoDinheiro(produto.preco),
+    )
+  }
+  if (!produto.emEstoque) partes.push('esgotado')
+  else if (produto.quantidade !== undefined && produto.quantidade <= 5) {
+    partes.push(produto.quantidade === 1 ? 'última unidade' : `últimas ${produto.quantidade} unidades`)
+  } else partes.push('em estoque')
+  return { titulo: produto.nome, detalhe: partes.join(', ') }
+}
+
+/**
+ * O card quando ele não pode ser card: sem foto real, ou num canal sem o
+ * recurso. Texto com o link no fim, e a prévia do link mostra o que a loja
+ * tiver. Nunca a foto placeholder da loja.
+ */
+export function textoDoCard(produto: ProdutoDaLoja): string {
+  const { titulo, detalhe } = linhasDoCard(produto)
+  return `${titulo}\n${detalhe}\n${produto.link}`
 }

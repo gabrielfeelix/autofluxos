@@ -206,3 +206,49 @@ describe('o adaptador do Instagram', () => {
     )
   })
 })
+
+describe('card do produto no Instagram', () => {
+  const produto = {
+    produtoId: '330107',
+    nome: 'Headset PCYES Comfort CM500',
+    preco: 108.9,
+    emEstoque: true,
+    foto: 'https://www.pcyes.com.br/media/catalog/product/c/m/cm500.jpg',
+    link: 'https://www.pcyes.com.br/headset-comfort-cm500',
+  }
+
+  it('manda um generic com um elemento por produto com foto', async () => {
+    const espiao = fingirFetch()
+
+    await canal().enviarProdutos!('igsid', [produto, { ...produto, produtoId: 'x', foto: undefined }])
+
+    expect(corpos(espiao)).toEqual([
+      {
+        recipient: { id: 'igsid' },
+        message: {
+          attachment: {
+            type: 'template',
+            payload: {
+              template_type: 'generic',
+              elements: [
+                {
+                  title: 'Headset PCYES Comfort CM500',
+                  subtitle: 'R$ 108,90, em estoque',
+                  image_url: produto.foto,
+                  default_action: { type: 'web_url', url: produto.link },
+                  buttons: [{ type: 'web_url', url: produto.link, title: 'Ver na loja' }],
+                },
+              ],
+            },
+          },
+        },
+      },
+    ])
+  })
+
+  it('sem nenhuma foto não manda nada', async () => {
+    const espiao = fingirFetch()
+    await canal().enviarProdutos!('igsid', [{ ...produto, foto: undefined }])
+    expect(corpos(espiao)).toEqual([])
+  })
+})

@@ -34,4 +34,16 @@ describe('lojaMagento', () => {
     await lojaMagento({ ...dados, codigoDaLoja: 'pt_br' }, chamar).buscar('x')
     expect(JSON.stringify(chamar.mock.calls[0]![0].cabecalhos)).toContain('pt_br')
   })
+  it('relê por SKU com a lista só em variables, sem repetir e no máximo 3', async () => {
+    const chamar = ok({ data: { products: { items: [] } } })
+    await lojaMagento(dados, chamar).lerPorSku(['A', 'A', 'B', 'C', 'D'])
+    const url = new URL(chamar.mock.calls[0]![0].url)
+    expect(JSON.parse(url.searchParams.get('variables')!)).toEqual({ skus: ['A', 'B', 'C'] })
+    expect(url.searchParams.get('query')).not.toContain('"A"')
+  })
+  it('lista vazia de SKU não chama a loja', async () => {
+    const chamar = ok({})
+    expect(await lojaMagento(dados, chamar).lerPorSku([' '])).toEqual({ ok: true, valor: [] })
+    expect(chamar).not.toHaveBeenCalled()
+  })
 })

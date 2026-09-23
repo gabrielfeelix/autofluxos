@@ -11,6 +11,8 @@ export type ConfigDaLoja = { codigoDaLoja: string | null; moeda: string; sufixo:
 export type Loja = {
   buscar(termo: string): Promise<ResultadoDaLoja<ProdutoDaLoja[]>>
   combinaCom(sku: string): Promise<ResultadoDaLoja<ProdutoDaLoja[]>>
+  /** Relê pelo SKU, na ordem pedida, para o card sair com o preço de agora. */
+  lerPorSku(skus: string[]): Promise<ResultadoDaLoja<ProdutoDaLoja[]>>
   lerConfig(): Promise<ResultadoDaLoja<ConfigDaLoja>>
 }
 export type DadosDaLoja = { endereco: string; codigoDaLoja: string | null; sufixo: string }

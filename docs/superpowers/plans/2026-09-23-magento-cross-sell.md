@@ -4,17 +4,14 @@
 > (inline, neste projeto não se implementa por subagente). Passos em checkbox
 > (`- [ ]`) para acompanhar.
 
-> **Andamento (23/set/2026):** Tasks 0 a 7, 9, 10 e 11 feitas e publicadas.
-> A 0092 está aplicada em produção. Faltam: a **Task 10b** (card do produto:
-> ação nova no motor, `cta_url` no WhatsApp, `generic` no Instagram, registro
-> no Inbox e simulador), a **Task 8** (ligar na conta da PCYES, que ainda não
+> **Andamento (23/set/2026):** Tasks 0 a 7, 9, 10, 10b e 11 feitas e
+> publicadas. A 0092 está aplicada em produção. Faltam: a **Task 8** (ligar na conta da PCYES, que ainda não
 > existe no AutoFluxos) e a **Task 12** (provar com o token real e corrigir os
 > nomes de ACL do guia). A tela não foi vista renderizada: o painel pede login.
 > Desvio da Task 10: não há alerta automático de token recusado; o bot cai
 > para a fase 1 em silêncio e a tela mostra o estado salvo, não um teste ao
 > vivo.
-> O teste de integração de `repos/lojas.ts` está escrito e não rodou: o Docker
-> está fora nesta máquina.
+> O teste de integração de `repos/lojas.ts` rodou no Docker em 23/set (9 de 9).
 
 **Objetivo:** o bot do cliente que usa Magento consulta a loja dele durante a
 conversa, diz preço e disponibilidade reais, recomenda o que o próprio lojista

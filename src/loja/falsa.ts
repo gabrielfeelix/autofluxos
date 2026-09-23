@@ -39,6 +39,10 @@ export function lojaFalsa({
         valor: produtos.filter((p) => skus.includes(p.produtoId) && p.emEstoque).slice(0, LIMITE_DE_PRODUTOS),
       }
     },
+    async lerPorSku(skus) {
+      if (falhar) return fora
+      return { ok: true, valor: skus.flatMap((sku) => produtos.filter((p) => p.produtoId === sku)) }
+    },
     async lerConfig() {
       if (falhar) return fora
       return { ok: true, valor: { codigoDaLoja: 'default', moeda: 'BRL', sufixo: '' } }

@@ -1,5 +1,6 @@
 import { LIMITE_ATRASO_SEGUNDOS, type Opcao } from '@/core/flow/schema'
 import { cortarCaracteres } from '@/core/flow/texto'
+import { linhasDoCard } from '@/core/loja'
 import { DEFINICAO_DO_CANAL } from '@/core/canais'
 import type { Canal, Midia } from './types'
 
@@ -41,6 +42,15 @@ const VERSAO_PADRAO = 'v25.0'
 
 /** Mesmo teto do WhatsApp, e pelo mesmo motivo: ver `cloud-api.ts`. */
 const TIMEOUT_MS = 15_000
+
+/**
+ * Limites do template `generic`, conferidos na documentação da Meta em
+ * 23/set/2026 (developers.facebook.com, "Generic Template" do Instagram
+ * Messaging): até 10 elementos, título e subtítulo até 80 caracteres.
+ */
+const LIMITE_ELEMENTOS_GENERIC = 10
+const LIMITE_TITULO_GENERIC = 80
+const TEXTO_DO_BOTAO_DA_LOJA = 'Ver na loja'
 /** Indicador é conveniência; ele não pode consumir o prazo de um envio real. */
 const TIMEOUT_INDICADOR_MS = 2_000
 
@@ -170,6 +180,35 @@ export function canalInstagram(config: ConfigInstagram): Canal {
             // um cache com invalidação para economizar um download da Meta. É a
             // mesma decisão do `link` no WhatsApp, pelo mesmo motivo.
             payload: { url: endereco, is_reusable: false },
+          },
+        },
+      })
+    },
+
+    async enviarProdutos(para, produtos) {
+      // Um carrossel só: o `generic` com vários elementos rola de lado, que é
+      // o jeito do Instagram mostrar mais de um produto sem uma mensagem cada.
+      const elementos = produtos
+        .filter((p) => p.foto)
+        .slice(0, LIMITE_ELEMENTOS_GENERIC)
+        .map((p) => {
+          const { titulo, detalhe } = linhasDoCard(p)
+          return {
+            title: cortarCaracteres(titulo, LIMITE_TITULO_GENERIC),
+            subtitle: cortarCaracteres(detalhe, LIMITE_TITULO_GENERIC),
+            image_url: p.foto,
+            default_action: { type: 'web_url', url: p.link },
+            buttons: [{ type: 'web_url', url: p.link, title: TEXTO_DO_BOTAO_DA_LOJA }],
+          }
+        })
+      if (elementos.length === 0) return
+
+      await mandar({
+        recipient: { id: para },
+        message: {
+          attachment: {
+            type: 'template',
+            payload: { template_type: 'generic', elements: elementos },
           },
         },
       })

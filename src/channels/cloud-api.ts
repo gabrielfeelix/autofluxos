@@ -1,5 +1,6 @@
 import { LIMITE_ATRASO_SEGUNDOS, LIMITE_ROTULO, type Opcao } from '@/core/flow/schema'
 import { cortarCaracteres } from '@/core/flow/texto'
+import { linhasDoCard } from '@/core/loja'
 import { lerStatusDeEnvio } from '@/core/templates'
 import type { Canal, EnvioDeTemplate, Template } from './types'
 
@@ -26,6 +27,14 @@ const VERSAO_PADRAO = 'v25.0'
  * caso normal, então quinze só corta o que já está quebrado.
  */
 const TIMEOUT_MS = 15_000
+
+/**
+ * Limites do `interactive` `cta_url`, conferidos na documentação da Meta em
+ * 23/set/2026 (developers.facebook.com, "Interactive Call-to-Action URL
+ * Button Messages"): corpo até 1024 caracteres, botão até 20.
+ */
+const LIMITE_CORPO_CTA = 1024
+const TEXTO_DO_BOTAO_DA_LOJA = 'Ver na loja'
 /** Indicador é conveniência; ele não pode consumir o prazo de um envio real. */
 const TIMEOUT_INDICADOR_MS = 2_000
 /**
@@ -538,6 +547,32 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
          */
         wamid: primeira?.id ?? '',
         situacao: lerStatusDeEnvio(primeira?.message_status),
+      }
+    },
+
+    async enviarProdutos(para, produtos) {
+      /*
+       * Um card por produto, e não o carrossel de mídia: o carrossel exige de
+       * 2 a 10 cards, e "mostra esse aqui" é um produto só na maior parte das
+       * vezes. Um formato só para 1 e para 3 deixa o JSON que sai igual ao que
+       * o teste confere.
+       */
+      for (const produto of produtos) {
+        if (!produto.foto) continue
+        const { titulo, detalhe } = linhasDoCard(produto)
+        await mandar({
+          to: para,
+          type: 'interactive',
+          interactive: {
+            type: 'cta_url',
+            header: { type: 'image', image: { link: produto.foto } },
+            body: { text: cortarCaracteres(`*${titulo}*\n${detalhe}`, LIMITE_CORPO_CTA) },
+            action: {
+              name: 'cta_url',
+              parameters: { display_text: TEXTO_DO_BOTAO_DA_LOJA, url: produto.link },
+            },
+          },
+        })
       }
     },
 

@@ -11,6 +11,7 @@ import {
 } from '@/core/flow/schema'
 import type { Fluxo, Opcao, TipoDeMidia } from '@/core/flow/schema'
 import { varsIniciais } from '@/core/contatos/vars-iniciais'
+import { textoDoCard } from '@/core/loja'
 import { TextoDoWhatsApp } from './texto-do-whatsapp'
 
 /** Como a faixa do NPS se lê na aba Testar. */
@@ -339,6 +340,19 @@ export function Conversa({
               ...(acao.nomeArquivo ? { nomeArquivo: acao.nomeArquivo } : {}),
             },
           })
+          break
+        case 'enviar_produtos':
+          // O simulador mostra o card como o WhatsApp mostraria: a foto como
+          // anexo quando há, e o texto do card com o link.
+          for (const produto of acao.produtos) {
+            adicionar({
+              chave: novaChave(),
+              de: 'bot',
+              texto: textoDoCard(produto),
+              hora: horaAtual(),
+              ...(produto.foto ? { anexo: { midia: 'imagem' as const, url: produto.foto } } : {}),
+            })
+          }
           break
         case 'enviar_opcoes':
           adicionar({

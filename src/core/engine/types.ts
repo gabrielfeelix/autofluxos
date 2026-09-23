@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { ProdutoDaLoja } from '@/core/loja'
 import type {
   AoFalhar,
   Cabecalho,
@@ -179,6 +180,19 @@ export type Acao =
       legenda?: string
       /** O nome que a pessoa vê antes de baixar. Só `documento` usa. */
       nomeArquivo?: string
+      atrasoMs?: number
+    }
+  /**
+   * O card do produto da loja (Task 10b do plano do Magento).
+   *
+   * Nunca sai do motor: quem escreve é o resolvedor, depois de a IA usar
+   * `loja_mostrar`, com o produto relido na loja naquele instante. O canal
+   * decide a forma: card com foto e botão onde há recurso e foto real, texto
+   * com o link nos outros casos.
+   */
+  | {
+      tipo: 'enviar_produtos'
+      produtos: ProdutoDaLoja[]
       atrasoMs?: number
     }
   /** persistir no contato, é isso que alimenta a tela de leads */

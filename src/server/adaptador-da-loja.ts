@@ -49,5 +49,9 @@ export async function lojaAtivaDaConta(clienteId: string): Promise<Loja | null> 
       const r = await publica.combinaCom(sku)
       return r.ok ? { ok: true, valor: await enriquecer(r.valor, admin, opcoes) } : r
     },
+    async lerPorSku(skus) {
+      const r = await publica.lerPorSku(skus)
+      return r.ok ? { ok: true, valor: await enriquecer(r.valor, admin, opcoes) } : r
+    },
   }
 }

@@ -126,31 +126,33 @@
 
 ### A. Consertar o bug 1: feito (ver acima)
 
-### B. Task 10b: o card do produto (`loja_mostrar`)
+### B. Task 10b: feita em 23/set
 
-A maior que sobrou. Nada dela existe. O desenho está no plano (seção "Task
-10b"); o que ele não diz, e que você precisa decidir olhando o código:
+Como ficou, para quem for mexer:
 
-- **Uma ação nova no motor.** Hoje `Acao` (`src/core/engine/types.ts`) tem
-  `enviar_texto`, `enviar_opcoes`, `enviar_midia`. O card precisa de uma
-  `enviar_produto` (ou similar). Procure **todo** `switch`/`if` sobre
-  `a.tipo`: o aplicador em `src/server/receber-mensagem.ts:~1444`, o
-  simulador, o registro de saída que alimenta o Inbox, e qualquer lista
-  exaustiva. Deixar um de fora = card que some sem erro.
-- **O resolvedor hoje só devolve texto.** `responderComFerramentas`
-  (`src/server/efeitos/resolver.ts`) termina em `texto`, `nao_sei` ou
-  `confirmar`. O card exige que a resposta final carregue ações extras além do
-  texto. Leia como `chamar_ia` vira `enviar_texto` antes de desenhar.
-- **Canal**: `Canal` (`src/channels/types.ts`) ganha um método opcional (no
-  molde de `enviarTemplate?`). WhatsApp: `interactive` tipo `cta_url`, header
-  `image`, corpo com nome, "de R$ X por R$ Y", estoque, botão "Ver na loja"
-  (máx. 20 caracteres). Instagram: `template` `generic` (carrossel, até 10).
-  Confira os limites na documentação da Meta, não neste parágrafo.
-- **Sem foto real, não mande placeholder**: texto com o link.
-- **Janela de 24h**: `interactive` só vale dentro da janela. Confira como o
-  resto do código trata isso antes de assumir que está coberto.
-- A ferramenta relê o SKU na loja na hora de mostrar (preço fresco), e o SKU
-  passa pela trava `soDeResultadoAnterior`.
+- Ferramenta `loja_mostrar` (`src/core/ferramentas.ts`): até 3 SKUs, em três
+  argumentos (`produtoId`, `produtoId2`, `produtoId3`), todos pela trava
+  `soDeResultadoAnterior`. A memória de ids é **por rodada**: produto de uma
+  mensagem anterior exige nova busca, e a descrição manda o modelo buscar de
+  novo (buscar + mostrar cabem nas 2 voltas).
+- O resolvedor relê os SKUs na loja (`Loja.lerPorSku`, GraphQL com `sku: { in }`
+  como variável) e devolve os produtos junto do texto. Só saem se a resposta
+  sair; `nao_sei` e `confirmar` descartam os cards.
+- Ação nova `enviar_produtos`, posta logo depois da frase da IA.
+- Aplicador (`receber-mensagem.ts`): foto real e canal com `enviarProdutos`
+  viram card; o resto vira texto com o link. O histórico guarda o texto do
+  card (nome, preço, estoque, link), e o `payload` guarda o produto.
+- WhatsApp: um `cta_url` por produto. Instagram: um `generic` com um elemento
+  por produto. Telegram: texto com link. Limites conferidos na doc da Meta.
+- A janela de 24h já é conferida antes de falar fora do webhook
+  (`receber-mensagem.ts`, `dentroDaJanela`); dentro do webhook está aberta por
+  definição.
+
+Provado: testes unitários do JSON exato para a Meta, do resolvedor e da regra
+pura; `src/server/card-do-produto.test.ts` (integração, Docker) do webhook até
+o canal e o histórico. **Não provado:** o card renderizado num WhatsApp ou
+Instagram de verdade, e a URL da foto (depende do token, item 4 acima). O
+Inbox mostra o card como texto, não como card.
 
 ### C. Task 8: ligar na PCYES e provar
 

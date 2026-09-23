@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
   QUERY_BUSCA,
+  linhasDoCard,
   linkDoProduto,
+  textoDoCard,
+  traduzirPorSku,
   normalizarEndereco,
   traduzirProdutos,
   traduzirRecomendacoes,
@@ -92,5 +95,38 @@ describe('segurança da query', () => {
 describe('linkDoProduto', () => {
   it('respeita sufixo vazio', () => {
     expect(linkDoProduto('https://loja.com.br', 'tapete', '')).toBe('https://loja.com.br/tapete')
+  })
+})
+
+describe('traduzirPorSku', () => {
+  it('devolve na ordem pedida e some com o SKU que a loja não trouxe', () => {
+    const json = resposta([item({ sku: 'B', name: 'Bola', url_key: 'bola' }), item({ sku: 'A' })])
+    const r = traduzirPorSku(json, ['A', 'SUMIU', 'B'], 'https://loja.com.br', '')
+    expect(r.map((p) => p.produtoId)).toEqual(['A', 'B'])
+  })
+})
+
+describe('card do produto', () => {
+  const base = { produtoId: 'A', nome: 'Headset CM500', emEstoque: true, link: 'https://loja.com.br/cm500' }
+
+  it('promoção vira de/por', () => {
+    expect(linhasDoCard({ ...base, preco: 95.92, precoDe: 119.9 })).toEqual({
+      titulo: 'Headset CM500',
+      detalhe: 'de R$ 119,90 por R$ 95,92, em estoque',
+    })
+  })
+  it('sem preço não escreve preço nenhum, nunca R$ 0,00', () => {
+    expect(linhasDoCard(base).detalhe).toBe('em estoque')
+  })
+  it('poucas unidades aparecem; muitas não', () => {
+    expect(linhasDoCard({ ...base, preco: 10, quantidade: 1 }).detalhe).toBe('R$ 10,00, última unidade')
+    expect(linhasDoCard({ ...base, preco: 10, quantidade: 3 }).detalhe).toBe('R$ 10,00, últimas 3 unidades')
+    expect(linhasDoCard({ ...base, preco: 10, quantidade: 40 }).detalhe).toBe('R$ 10,00, em estoque')
+  })
+  it('esgotado diz esgotado', () => {
+    expect(linhasDoCard({ ...base, preco: 10, emEstoque: false }).detalhe).toBe('R$ 10,00, esgotado')
+  })
+  it('o texto do card termina no link', () => {
+    expect(textoDoCard({ ...base, preco: 10 })).toBe('Headset CM500\nR$ 10,00, em estoque\nhttps://loja.com.br/cm500')
   })
 })

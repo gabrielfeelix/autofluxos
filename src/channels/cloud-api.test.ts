@@ -460,3 +460,36 @@ describe('o envio de template', () => {
     ).rejects.toThrow(/132001/)
   })
 })
+
+describe('card do produto na Cloud API', () => {
+  const produto = {
+    produtoId: '330107',
+    nome: 'Headset PCYES Comfort CM500',
+    preco: 95.92,
+    precoDe: 119.9,
+    emEstoque: true,
+    foto: 'https://www.pcyes.com.br/media/catalog/product/c/m/cm500.jpg',
+    link: 'https://www.pcyes.com.br/headset-comfort-cm500',
+  }
+
+  it('manda cta_url com a foto no cabeçalho e o botão Ver na loja', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const canal = canalCloudApi({ phoneNumberId: 'numero-1', token: 'token-de-teste', versaoGraph: 'v25.0' })
+
+    await canal.enviarProdutos!('5544999', [produto, { ...produto, produtoId: 'sem-foto', foto: undefined }])
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({
+      messaging_product: 'whatsapp',
+      to: '5544999',
+      type: 'interactive',
+      interactive: {
+        type: 'cta_url',
+        header: { type: 'image', image: { link: produto.foto } },
+        body: { text: '*Headset PCYES Comfort CM500*\nde R$ 119,90 por R$ 95,92, em estoque' },
+        action: { name: 'cta_url', parameters: { display_text: 'Ver na loja', url: produto.link } },
+      },
+    })
+  })
+})

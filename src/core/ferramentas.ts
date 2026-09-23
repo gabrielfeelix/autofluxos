@@ -186,7 +186,7 @@ export type ChamadaDeFerramenta =
     }
   | {
       tipo: 'loja'
-      operacao: 'buscar' | 'combina_com'
+      operacao: 'buscar' | 'combina_com' | 'mostrar'
     }
 
 /** Os campos que as ferramentas de loja devolvem ao modelo. Allow-list. */
@@ -479,6 +479,55 @@ export const FERRAMENTAS: Ferramenta[] = [
     injetados: [],
     chamada: { tipo: 'loja', operacao: 'combina_com' },
     projecao: [{ caminho: 'produtos', campos: CAMPOS_DE_PRODUTO, limite: 5 }],
+    credencial: 'nenhuma',
+    integracao: 'loja',
+  },
+  {
+    /*
+     * Separada de `loja_buscar` porque buscar é pensar e mostrar é falar com o
+     * cliente. O card sai pelo servidor, com o preço relido na hora; o modelo
+     * só escolhe quais, e só entre os que a conversa já viu.
+     *
+     * Três argumentos em vez de uma lista: a trava `soDeResultadoAnterior`
+     * confere argumento por argumento, e um id por argumento passa inteiro por
+     * ela sem ninguém precisar ensinar a trava a abrir lista.
+     */
+    nome: 'loja_mostrar',
+    rotulo: 'Mandar o card do produto',
+    escreve: false,
+    descricao:
+      'Manda para a pessoa o card do produto, com foto quando houver, preço, estoque e o botão para comprar na loja. ' +
+      'Use quando a pessoa quiser ver um produto ou pedir o link, com até 3 produtos. ' +
+      'Não use para só responder quanto custa ou se tem: para isso basta o texto. ' +
+      'O produtoId precisa ter vindo de `loja_buscar` ou `loja_combina_com` nesta mesma resposta; ' +
+      'se a pessoa falar de um produto de uma mensagem anterior, busque de novo antes. ' +
+      'Depois de usar, responda com uma frase curta apresentando os produtos, sem repetir preço nem link: o card já leva os dois.',
+    argumentos: [
+      {
+        nome: 'produtoId',
+        tipo: 'id',
+        descricao: 'O produtoId do primeiro produto a mostrar.',
+        obrigatorio: true,
+        soDeResultadoAnterior: true,
+      },
+      {
+        nome: 'produtoId2',
+        tipo: 'id',
+        descricao: 'O produtoId de um segundo produto. Deixe vazio se for um só.',
+        obrigatorio: false,
+        soDeResultadoAnterior: true,
+      },
+      {
+        nome: 'produtoId3',
+        tipo: 'id',
+        descricao: 'O produtoId de um terceiro produto. Deixe vazio se forem menos.',
+        obrigatorio: false,
+        soDeResultadoAnterior: true,
+      },
+    ],
+    injetados: [],
+    chamada: { tipo: 'loja', operacao: 'mostrar' },
+    projecao: [{ caminho: 'mostrados', campos: ['produtoId', 'nome'], limite: 3 }],
     credencial: 'nenhuma',
     integracao: 'loja',
   },

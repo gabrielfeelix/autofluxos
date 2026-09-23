@@ -178,4 +178,57 @@ describe('ferramentas de loja no laço da IA', () => {
     expect(JSON.stringify(modelo.pedidos[2])).toContain('195230')
     expect(textos(r)).toContain('Leva o suporte junto?')
   })
+
+  it('loja_mostrar relê o preço e põe o card logo depois da frase da IA', async () => {
+    const loja = lojaFalsa({ produtos: [headset, suporte] })
+    lojaAtivaDaConta.mockResolvedValue({
+      ...loja,
+      // A loja mudou o preço entre a busca e o card: vale o de agora.
+      lerPorSku: async (skus: string[]) => ({
+        ok: true,
+        valor: skus.includes('330107') ? [{ ...headset, preco: 99.9, foto: 'https://x/cm500.jpg' }] : [],
+      }),
+    })
+    const modelo = modeloComRoteiro([
+      { tipo: 'usar_ferramenta', nome: 'loja_buscar', argumentos: { termo: 'headset' } },
+      { tipo: 'usar_ferramenta', nome: 'loja_mostrar', argumentos: { produtoId: '330107' } },
+      { tipo: 'texto', texto: 'Olha ele aqui:' },
+    ])
+
+    const r = await rodar(fluxo(['loja_buscar', 'loja_mostrar']), modelo)
+
+    const tipos = r.acoes.map((a) => a.tipo)
+    const posTexto = r.acoes.findIndex((a) => a.tipo === 'enviar_texto' && a.texto === 'Olha ele aqui:')
+    expect(tipos[posTexto + 1]).toBe('enviar_produtos')
+    const card = r.acoes[posTexto + 1]
+    expect(card?.tipo === 'enviar_produtos' && card.produtos[0]?.preco).toBe(99.9)
+    // O modelo vê só id e nome do que foi mostrado, nunca a foto.
+    expect(JSON.stringify(modelo.pedidos[2])).not.toContain('cm500.jpg')
+  })
+
+  it('loja_mostrar com SKU que a conversa não viu não chega à loja', async () => {
+    const loja = lojaFalsa({ produtos: [headset] })
+    const lerPorSku = vi.spyOn(loja, 'lerPorSku')
+    lojaAtivaDaConta.mockResolvedValue(loja)
+    const modelo = modeloComRoteiro([
+      { tipo: 'usar_ferramenta', nome: 'loja_mostrar', argumentos: { produtoId: '330107' } },
+      { tipo: 'texto', texto: 'não devia chegar aqui' },
+    ])
+
+    const r = await rodar(fluxo(['loja_mostrar']), modelo)
+
+    expect(lerPorSku).not.toHaveBeenCalled()
+    expect(r.acoes.some((a) => a.tipo === 'enviar_produtos')).toBe(false)
+    expect(r.acoes.some((a) => a.tipo === 'transferir_humano')).toBe(true)
+  })
+
+  it('sem loja_mostrar, nenhuma resposta ganha card', async () => {
+    lojaAtivaDaConta.mockResolvedValue(lojaFalsa({ produtos: [headset] }))
+    const modelo = modeloComRoteiro([
+      { tipo: 'usar_ferramenta', nome: 'loja_buscar', argumentos: { termo: 'headset' } },
+      { tipo: 'texto', texto: 'Temos.' },
+    ])
+    const r = await rodar(fluxo(['loja_buscar']), modelo)
+    expect(r.acoes.some((a) => a.tipo === 'enviar_produtos')).toBe(false)
+  })
 })

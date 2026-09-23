@@ -21,6 +21,7 @@ export const TESTES_DE_INTEGRACAO = [
   'src/server/acoes-conta.test.ts',
   'src/server/agendador.test.ts',
   'src/server/auth.test.ts',
+  'src/server/card-do-produto.test.ts',
   'src/server/controle-da-conversa.test.ts',
   'src/server/fluxos-padrao.test.ts',
   'src/server/importar-duas-vezes.test.ts',
