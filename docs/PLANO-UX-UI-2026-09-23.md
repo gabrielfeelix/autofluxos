@@ -1048,10 +1048,10 @@ do Inbox continua sendo só a entrada ("+ Anotar").
 
 ### Tarefa 7.3: suporte 4YU inequívoco [E9]
 
-- [ ] **Passo 1:** faixa fixa no topo quando `af_usuarios.role = 'admin'` e não é
+- [x] **Passo 1:** faixa fixa no topo quando `af_usuarios.role = 'admin'` e não é
   membro da conta: "Você está nesta conta como Suporte 4YU. Suas ações ficam
   registradas com o seu nome." com link "Sair da conta".
-- [ ] **Passo 2:** commit `feat(suporte): faixa de modo suporte em toda tela da conta`.
+- [x] **Passo 2:** commit `feat(suporte): faixa de modo suporte em toda tela da conta`.
 
 ### Tarefa 7.4: Pessoas e acesso, e remoção com destino [E5, E20, E15, S07, E6 parcial]
 

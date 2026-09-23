@@ -7,6 +7,7 @@ import { lerFiltroDaAgenda } from '@/core/atividades'
 import { ContadorDaAgenda } from '@/components/atividades/contador-da-agenda'
 import type { ReactNode } from 'react'
 import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
+import { FaixaDeSuporte } from '@/components/conta/faixa-de-suporte'
 import { NotificacoesDaFila } from '@/components/inbox/notificacoes-da-fila'
 import { acaoDefinirPresenca, acaoSair } from '@/server/acoes-conta'
 import type { Cliente } from '@/server/repos/clientes'
@@ -167,6 +168,7 @@ export async function ClienteShell({
 
       <div className="relative min-w-0 flex-1 md:overflow-auto">
         <FaixaDeImpersonacao />
+        <FaixaDeSuporte clienteId={cliente.id} />
 
         {/*
           A moldura **não** escreve título de página, e isso é diferente do que

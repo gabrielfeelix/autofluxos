@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
+import { FaixaDeSuporte } from '@/components/conta/faixa-de-suporte'
 import { Editor } from '@/components/editor/editor'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { SemAcesso } from '@/components/design/sem-acesso'
@@ -139,6 +140,7 @@ export default async function Pagina({
   return (
     <>
       <FaixaDeImpersonacao />
+      <FaixaDeSuporte clienteId={cliente.id} />
       <Editor
         fluxoId={fluxo.id}
         clienteId={cliente.id}
