@@ -332,3 +332,41 @@ export function padraoSemAcento(termo: string): string {
   }
   return padrao
 }
+
+// ---------------------------------------------------------------------------
+// Dia e hora da tela para instante (criar e reagendar usam a mesma)
+// ---------------------------------------------------------------------------
+
+/**
+ * A data da tela vira instante.
+ *
+ * `YYYY-MM-DD` sem hora é interpretado como meia-noite **UTC** pelo
+ * `Date.parse`, e a régua de `urgenciaDe` compara por dia UTC. Mandar a data
+ * crua mantém os dois lados falando a mesma língua; montar um instante local
+ * aqui faria "hoje" virar "ontem" para quem está a oeste de Greenwich.
+ */
+export function prazoDoDia(dia: string | undefined, hora?: string): string | null {
+  const limpo = (dia ?? '').trim()
+  if (limpo === '') return null
+
+  /*
+   * **Com hora marcada o instante é local; sem ela, meio-dia UTC.**
+   *
+   * Sem hora o valor só precisa cair no dia certo para `urgenciaDe`, que
+   * compara por dia UTC: meio-dia sobrevive a qualquer fuso sem virar o dia, e
+   * é por isso que ele estava aqui sozinho.
+   *
+   * Com hora o número passa a ser mostrado à pessoa, e tem de ser a hora que
+   * ela escolheu no relógio dela: "14:00" digitado aqui precisa voltar 14:00.
+   * Sem sufixo, o runtime resolve pelo fuso local, que é o certo neste caso e
+   * seria errado no de cima.
+   */
+  const horaLimpa = (hora ?? '').trim()
+  if (horaLimpa !== '') {
+    const comHora = Date.parse(`${limpo}T${horaLimpa}`)
+    if (!Number.isNaN(comHora)) return new Date(comHora).toISOString()
+  }
+
+  const data = Date.parse(`${limpo}T12:00:00Z`)
+  return Number.isNaN(data) ? null : new Date(data).toISOString()
+}

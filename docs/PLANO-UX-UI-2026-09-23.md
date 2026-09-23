@@ -466,9 +466,9 @@ export async function acaoAtribuirAtividade(
 - `recarregar(clienteId, contatoId)` depois de mudar, para ficha e agenda
   atualizarem.
 
-- [ ] **Passo 1:** testes de integração que falham: `reagendar muda dia e hora e mantém tipo, contato e responsável`; `reagendar sem hora grava meio-dia UTC e hora_marcada falso`; `não reagenda concluída`; `atribuir para quem não é membro é recusado`; `não mexe em atividade de outra conta`.
-- [ ] **Passo 2:** rodar → FAIL. **Passo 3:** implementar repo e ações. **Passo 4:** rodar → PASS; typecheck.
-- [ ] **Passo 5:** commit `feat(atividades): reagendar e atribuir pela agenda`.
+- [x] **Passo 1:** testes de integração que falham: `reagendar muda dia e hora e mantém tipo, contato e responsável`; `reagendar sem hora grava meio-dia UTC e hora_marcada falso`; `não reagenda concluída`; `atribuir para quem não é membro é recusado`; `não mexe em atividade de outra conta`.
+- [x] **Passo 2:** rodar → FAIL. **Passo 3:** implementar repo e ações. **Passo 4:** rodar → PASS; typecheck.
+- [x] **Passo 5:** commit `feat(atividades): reagendar e atribuir pela agenda`.
 
 ### Tarefa 1.3: a página nova de Atividades
 
@@ -1276,3 +1276,8 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   banco dividido): o termo vira regex com classes de acento e vai por `imatch`
   (`padraoSemAcento` em `src/core/atividades.ts`). Responsável `ninguem` com
   escopo de equipe devolve vazio (sem responsável não é de equipe nenhuma).
+- 23/09, tarefa 1.2: a criação não conferia se o responsável é da conta (o plano
+  dizia "mesma checagem da criação"). A checagem nova mora em
+  `atribuirAtividade` (`af_membros`). `prazoDoDia` saiu da ação para
+  `src/core/atividades.ts`, e criar e reagendar usam a mesma. Com escopo
+  `proprios`, reagendar/atribuir conferem o dono (`conferirDono`).

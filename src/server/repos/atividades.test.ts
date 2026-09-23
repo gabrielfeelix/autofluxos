@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { lerFiltroDaAgenda, proximaAcao, urgenciaDe, type FiltroDaAgenda } from '@/core/atividades'
+import { lerFiltroDaAgenda, prazoDoDia, proximaAcao, urgenciaDe, type FiltroDaAgenda } from '@/core/atividades'
 import { db } from '../db'
 import { criarCliente } from './clientes'
 import { acharOuCriarContato } from './conversas'
@@ -8,6 +8,8 @@ import {
   agenda,
   atividadesDoContato,
   paginaDaAgenda,
+  atribuirAtividade,
+  reagendarAtividade,
   criarAtividade,
   reabrirAtividade,
   resolverAoFechar,
@@ -373,5 +375,97 @@ describe.skipIf(!temCredencial)('agenda paginada', () => {
     expect(r.total).toBe(0)
     const daVizinha = await paginaDaAgenda(vizinha, { tipo: 'tudo' }, eu, filtro(), AGORA)
     expect(daVizinha.itens.map((a) => a.titulo)).toEqual(['Da vizinha'])
+  })
+})
+
+/*
+ * Reagendar e atribuir pela agenda (tarefa 1.2).
+ */
+describe.skipIf(!temCredencial)('reagendar e atribuir', () => {
+  let conta = ''
+  let membro = ''
+  let estranho = ''
+  let contato = ''
+
+  beforeAll(async () => {
+    if (!temCredencial) return
+    conta = (await criarCliente(`${marca} reagendar`)).id
+    contato = (await acharOuCriarContato(conta, `5511${seed}41`, 'Bia')).id
+    const usuarios = [`${marca} membro`, `${marca} estranho`].map((nome) => ({
+      id: crypto.randomUUID(),
+      name: nome,
+      email: `${nome.replace(/\s/g, '-')}@exemplo.test`,
+      emailVerified: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }))
+    await db().from('af_usuarios').insert(usuarios)
+    membro = usuarios[0]!.id
+    estranho = usuarios[1]!.id
+    const { error } = await db()
+      .from('af_membros')
+      .insert({ organizationId: conta, userId: membro, role: 'member' })
+    if (error) throw new Error(error.message)
+  })
+
+  afterAll(async () => {
+    if (!temCredencial) return
+    await db().from('af_membros').delete().eq('organizationId', conta)
+    if (conta) await db().from('clients').delete().eq('id', conta)
+    await db().from('af_usuarios').delete().in('id', [membro, estranho].filter(Boolean))
+  })
+
+  const nova = async () => {
+    const r = await criarAtividade({
+      clienteId: conta, contatoId: contato, tipo: 'ligacao', titulo: 'Ligar para a Bia',
+      prazo: '2026-09-24T17:00:00.000Z', horaMarcada: true, responsavelId: membro,
+    })
+    if (!r.ok) throw new Error(r.motivo)
+    return r.atividade
+  }
+
+  it('reagendar muda dia e hora e mantém tipo, contato e responsável', async () => {
+    const a = await nova()
+    const r = await reagendarAtividade(conta, a.id, { prazo: '2026-10-02T14:30:00.000Z', horaMarcada: true })
+    expect(r).toEqual({ ok: true })
+    const [depois] = (await atividadesDoContato(conta, contato)).filter((x) => x.id === a.id)
+    expect(depois).toMatchObject({
+      prazo: '2026-10-02T14:30:00+00:00', horaMarcada: true, tipo: 'ligacao', contatoId: contato, responsavelId: membro,
+    })
+  })
+
+  it('reagendar sem hora grava meio-dia UTC e hora_marcada falso', async () => {
+    const a = await nova()
+    const prazo = prazoDoDia('2026-10-05', '')
+    expect(prazo).toBe('2026-10-05T12:00:00.000Z')
+    await reagendarAtividade(conta, a.id, { prazo, horaMarcada: false })
+    const [depois] = (await atividadesDoContato(conta, contato)).filter((x) => x.id === a.id)
+    expect(depois).toMatchObject({ prazo: '2026-10-05T12:00:00+00:00', horaMarcada: false })
+  })
+
+  it('não reagenda concluída', async () => {
+    const a = await nova()
+    await resolverAtividade(conta, a.id, 'concluida')
+    const r = await reagendarAtividade(conta, a.id, { prazo: null, horaMarcada: false })
+    expect(r).toEqual({ ok: false, motivo: 'só dá para mudar atividade aberta' })
+  })
+
+  it('atribuir para quem não é membro é recusado', async () => {
+    const a = await nova()
+    expect(await atribuirAtividade(conta, a.id, estranho)).toEqual({
+      ok: false, motivo: 'essa pessoa não é da equipe desta conta',
+    })
+    expect(await atribuirAtividade(conta, a.id, null)).toEqual({ ok: true })
+    expect(await atribuirAtividade(conta, a.id, membro)).toEqual({ ok: true })
+  })
+
+  it('não mexe em atividade de outra conta', async () => {
+    const a = await nova()
+    const outra = (await criarCliente(`${marca} reagendar vizinha`)).id
+    expect((await reagendarAtividade(outra, a.id, { prazo: null, horaMarcada: false })).ok).toBe(false)
+    expect((await atribuirAtividade(outra, a.id, null)).ok).toBe(false)
+    const [intacta] = (await atividadesDoContato(conta, contato)).filter((x) => x.id === a.id)
+    expect(intacta?.responsavelId).toBe(membro)
+    await db().from('clients').delete().eq('id', outra)
   })
 })

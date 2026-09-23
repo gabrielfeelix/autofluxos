@@ -4,17 +4,22 @@ import { revalidatePath } from 'next/cache'
 import {
   ehDestinoAoFechar,
   ehTipoDeAtividade,
+  prazoDoDia,
   type Atividade,
 } from '@/core/atividades'
 import {
   atividadesDoContato,
+  atribuirAtividade,
   criarAtividade,
+  donoDaAtividade,
+  reagendarAtividade,
   reabrirAtividade,
   resolverAoFechar,
   resolverAtividade,
 } from './repos/atividades'
 import { contatoEhDoCliente } from './repos/crm'
-import { exigirCapacidade, recusou } from './permissoes'
+import type { FiltroDeEscopo } from '@/core/permissoes'
+import { exigirCapacidade, filtroDoAcesso, recusou } from './permissoes'
 import { sessaoAtual } from './sessao'
 
 /**
@@ -84,40 +89,6 @@ export async function acaoCriarAtividade(
   return { ok: true }
 }
 
-/**
- * A data da tela vira instante.
- *
- * `YYYY-MM-DD` sem hora é interpretado como meia-noite **UTC** pelo
- * `Date.parse`, e a régua de `urgenciaDe` compara por dia UTC. Mandar a data
- * crua mantém os dois lados falando a mesma língua; montar um instante local
- * aqui faria "hoje" virar "ontem" para quem está a oeste de Greenwich.
- */
-function prazoDoDia(dia: string | undefined, hora?: string): string | null {
-  const limpo = (dia ?? '').trim()
-  if (limpo === '') return null
-
-  /*
-   * **Com hora marcada o instante é local; sem ela, meio-dia UTC.**
-   *
-   * Sem hora o valor só precisa cair no dia certo para `urgenciaDe`, que
-   * compara por dia UTC: meio-dia sobrevive a qualquer fuso sem virar o dia, e
-   * é por isso que ele estava aqui sozinho.
-   *
-   * Com hora o número passa a ser mostrado à pessoa, e tem de ser a hora que
-   * ela escolheu no relógio dela: "14:00" digitado aqui precisa voltar 14:00.
-   * Sem sufixo, o runtime resolve pelo fuso local, que é o certo neste caso e
-   * seria errado no de cima.
-   */
-  const horaLimpa = (hora ?? '').trim()
-  if (horaLimpa !== '') {
-    const comHora = Date.parse(`${limpo}T${horaLimpa}`)
-    if (!Number.isNaN(comHora)) return new Date(comHora).toISOString()
-  }
-
-  const data = Date.parse(`${limpo}T12:00:00Z`)
-  return Number.isNaN(data) ? null : new Date(data).toISOString()
-}
-
 export async function acaoResolverAtividade(
   clienteId: string,
   atividadeId: string,
@@ -136,6 +107,87 @@ export async function acaoResolverAtividade(
 
   recarregar(clienteId, null)
   return { ok: true }
+}
+
+/**
+ * Muda o dia (e a hora) de uma atividade aberta, pela agenda.
+ *
+ * O prazo sai de `prazoDoDia`, a mesma conversão da criação: duas regras de
+ * dia e hora dariam duas respostas para "amanhã às 14h".
+ */
+export async function acaoReagendarAtividade(
+  clienteId: string,
+  atividadeId: string,
+  /** `AAAA-MM-DD` ou vazio ("algum dia"). */
+  dia: string,
+  /** `HH:MM` ou vazio (só o dia). */
+  hora: string,
+): Promise<RespostaDaAtividade> {
+  const acesso = await exigirCapacidade(clienteId, 'criar_oportunidade', 'proprios')
+  if (recusou(acesso)) return acesso
+
+  const escopo = filtroDoAcesso(acesso, 'criar_oportunidade')
+  const dono = await conferirDono(clienteId, atividadeId, escopo)
+  if (!dono.ok) return dono
+
+  const prazo = prazoDoDia(dia, hora)
+  if ((dia ?? '').trim() !== '' && prazo === null) return { ok: false, erro: 'essa data não existe' }
+
+  const r = await reagendarAtividade(clienteId, atividadeId, {
+    prazo,
+    horaMarcada: prazo !== null && (hora ?? '').trim() !== '',
+  })
+  if (!r.ok) return { ok: false, erro: r.motivo }
+
+  recarregar(clienteId, dono.contatoId)
+  return { ok: true }
+}
+
+/** Passa a atividade para outra pessoa da conta, ou para ninguém. */
+export async function acaoAtribuirAtividade(
+  clienteId: string,
+  atividadeId: string,
+  /** `''` = ninguém. */
+  responsavelId: string,
+): Promise<RespostaDaAtividade> {
+  const acesso = await exigirCapacidade(clienteId, 'criar_oportunidade', 'proprios')
+  if (recusou(acesso)) return acesso
+
+  const escopo = filtroDoAcesso(acesso, 'criar_oportunidade')
+  const dono = await conferirDono(clienteId, atividadeId, escopo)
+  if (!dono.ok) return dono
+
+  const para = responsavelId.trim() || null
+  // Quem só mexe no próprio trabalho não distribui trabalho para os outros.
+  if (escopo.tipo === 'proprios' && para !== escopo.usuarioId) {
+    return { ok: false, erro: 'você só pode atribuir atividades a você mesmo' }
+  }
+
+  const r = await atribuirAtividade(clienteId, atividadeId, para)
+  if (!r.ok) return { ok: false, erro: r.motivo }
+
+  recarregar(clienteId, dono.contatoId)
+  return { ok: true }
+}
+
+/**
+ * Com escopo `proprios`, só a atividade da própria pessoa.
+ *
+ * A capacidade diz *se* a pessoa mexe em atividade; o escopo diz *em qual*.
+ * Sem esta conferência, o id de uma atividade do colega, colado numa chamada,
+ * reagendaria o trabalho dele.
+ */
+async function conferirDono(
+  clienteId: string,
+  atividadeId: string,
+  escopo: FiltroDeEscopo,
+): Promise<{ ok: true; contatoId: string } | { ok: false; erro: string }> {
+  const dono = await donoDaAtividade(clienteId, atividadeId)
+  if (!dono) return { ok: false, erro: 'essa atividade não existe' }
+  if (escopo.tipo === 'proprios' && dono.responsavelId !== escopo.usuarioId) {
+    return { ok: false, erro: 'essa atividade é de outra pessoa' }
+  }
+  return { ok: true, contatoId: dono.contatoId }
 }
 
 export async function acaoReabrirAtividade(

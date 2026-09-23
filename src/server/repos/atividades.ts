@@ -433,6 +433,85 @@ export async function resolverAtividade(
   return data ? { ok: true } : { ok: false, motivo: 'essa atividade já foi resolvida' }
 }
 
+/** De quem é a atividade e de qual contato, para a ação conferir o escopo. */
+export async function donoDaAtividade(
+  clienteId: string,
+  atividadeId: string,
+): Promise<{ contatoId: string; responsavelId: string | null } | null> {
+  const { data, error } = await db()
+    .from('atividades')
+    .select('contact_id, responsavel')
+    .eq('client_id', clienteId)
+    .eq('id', atividadeId)
+    .maybeSingle()
+  if (ehIdInvalido(error)) return null
+  if (error) throw new Error(`não deu para ler a atividade: ${error.message}`)
+  if (!data) return null
+  const linha = data as { contact_id: string; responsavel: string | null }
+  return { contatoId: linha.contact_id, responsavelId: linha.responsavel }
+}
+
+const SO_ABERTA = 'só dá para mudar atividade aberta'
+
+/** Muda o prazo de uma atividade **aberta**. Tipo, contato e responsável ficam. */
+export async function reagendarAtividade(
+  clienteId: string,
+  atividadeId: string,
+  novo: { prazo: string | null; horaMarcada: boolean },
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  return mudarAberta(clienteId, atividadeId, {
+    prazo: novo.prazo,
+    hora_marcada: novo.prazo !== null && novo.horaMarcada,
+  })
+}
+
+/**
+ * Passa a atividade para outra pessoa, ou para ninguém (`null`).
+ *
+ * O responsável precisa ser da conta: `af_usuarios` é global, e sem esta
+ * conferência um id de outra empresa viraria dono da atividade daqui.
+ */
+export async function atribuirAtividade(
+  clienteId: string,
+  atividadeId: string,
+  responsavelId: string | null,
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  if (responsavelId !== null) {
+    const { data, error } = await db()
+      .from('af_membros')
+      .select('userId')
+      .eq('organizationId', clienteId)
+      .eq('userId', responsavelId)
+      .maybeSingle()
+    if (error && !ehIdInvalido(error)) throw new Error(`não deu para ler a equipe: ${error.message}`)
+    if (!data) return { ok: false, motivo: 'essa pessoa não é da equipe desta conta' }
+  }
+  return mudarAberta(clienteId, atividadeId, { responsavel: responsavelId })
+}
+
+async function mudarAberta(
+  clienteId: string,
+  atividadeId: string,
+  campos: Record<string, unknown>,
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  const { data, error } = await db()
+    .from('atividades')
+    .update({ ...campos, atualizado_em: new Date().toISOString() })
+    .eq('client_id', clienteId)
+    .eq('id', atividadeId)
+    .eq('situacao', 'aberta')
+    .select('id')
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return { ok: false, motivo: 'essa atividade não existe' }
+  if (error) throw new Error(`não deu para mudar a atividade: ${error.message}`)
+  if (data) return { ok: true }
+
+  // Nada mudou: ou não existe nesta conta, ou não está aberta.
+  const existe = await donoDaAtividade(clienteId, atividadeId)
+  return { ok: false, motivo: existe ? SO_ABERTA : 'essa atividade não existe' }
+}
+
 /** Reabre uma atividade resolvida por engano. */
 export async function reabrirAtividade(
   clienteId: string,
