@@ -86,10 +86,10 @@ Barra de baixo, fixa, cinco itens:
 - `safe-area-inset-bottom` respeitado; o miolo ganha o espaço da barra embaixo
   para nada ficar escondido atrás dela.
 
-- [ ] 3.1 Topo e gaveta.
-- [ ] 3.2 Barra de baixo com o botão central.
-- [ ] 3.3 Inbox com conversa aberta, editor e diálogos por cima da barra.
-- [ ] 3.4 Esqueleto de quem chega de fora também no formato novo.
+- [x] 3.1 Topo e gaveta.
+- [x] 3.2 Barra de baixo com o botão central.
+- [x] 3.3 Inbox com conversa aberta, editor e diálogos por cima da barra.
+- [x] 3.4 Esqueleto de quem chega de fora também no formato novo.
 
 ## Como cada fase termina
 

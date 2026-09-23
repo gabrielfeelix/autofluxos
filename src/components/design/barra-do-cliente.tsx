@@ -56,12 +56,7 @@ export async function BarraDoCliente({ cliente }: { cliente: Cliente }) {
         <BarraLateral
           base={base}
           marca={<Marca />}
-          identidadeNoCelular={
-            <>
-              <LogoDoCliente cliente={cliente} tamanho={26} />
-              <span className="max-w-[72px] truncate text-[12px] font-semibold min-[375px]:max-w-[110px]">{cliente.nome}</span>
-            </>
-          }
+          voltarHref={podeVerTodosOsClientes ? '/painel' : undefined}
           presenca={presenca ?? undefined}
           conta={cliente.nome}
           contaNoTopo={<SeletorDeConta cliente={cliente} outrasContas={contas.length} />}
