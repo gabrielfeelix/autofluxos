@@ -708,7 +708,23 @@ export async function registrarSaida(dados: {
 }
 
 /** A mensagem saiu. Chamado logo depois do envio dar certo. */
-export async function confirmarEntrega(id: string): Promise<void> {
+export async function confirmarEntrega(id: string, waMessageId?: string | null): Promise<void> {
+  /*
+   * O id da Meta entra junto, quando o canal devolveu um. É ele que liga esta
+   * mensagem ao toque no botão, à citação e à reação que vierem depois.
+   *
+   * Colisão no `unique` (código 23505) não pode derrubar a conversa: se um eco
+   * da coexistência já gravou este id em outra linha, a mensagem foi entregue
+   * do mesmo jeito, e confirmar sem o id é o registro honesto.
+   */
+  if (waMessageId) {
+    const { error } = await db()
+      .from('messages')
+      .update({ entregue: true, wa_message_id: waMessageId })
+      .eq('id', id)
+    if (!error) return
+    if (error.code !== '23505') throw new Error(`não deu para confirmar a entrega: ${error.message}`)
+  }
   const { error } = await db().from('messages').update({ entregue: true }).eq('id', id)
   if (error) throw new Error(`não deu para confirmar a entrega: ${error.message}`)
 }

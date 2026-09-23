@@ -339,7 +339,9 @@ function ListaDeMensagens({
             <p className={`max-w-[78%] px-3.5 py-2 font-texto text-[14.5px] leading-[1.45] whitespace-pre-wrap [overflow-wrap:anywhere] ${
               nossa
                 ? 'bolha-nossa rounded-[15px_15px_4px_15px]'
-                : 'rounded-[15px_15px_15px_4px] bg-surface-strong text-ink'
+                : mensagem.toque
+                  ? 'rounded-[15px_15px_15px_4px] border border-ok/35 bg-ok/10 text-ink'
+                  : 'rounded-[15px_15px_15px_4px] bg-surface-strong text-ink'
             }`}>
               {mensagem.cita && <CitacaoNaBolha cita={mensagem.cita} nome={nome} />}
               {mensagem.anexo && <AnexoNaConversa anexo={mensagem.anexo} />}
@@ -406,7 +408,12 @@ function ListaDeMensagens({
                 antiga, ou o eco do que o dono mandou pelo celular), fica só a
                 hora, ver `core/autor-da-mensagem.ts`.
               */}
+              {/*
+                Toque em botão: verde e com o nome dito no rodapé, para quem
+                atende ler "resposta pronta" sem comparar com o menu acima.
+              */}
               <span className="ml-2 text-[11px] text-muted" title={horaExata(mensagem.ts)}>
+                {mensagem.toque && <span className="font-semibold text-ok">tocou na opção · </span>}
                 {nossa && mensagem.autor ? `${mensagem.autor} · ` : ''}
                 {horaDoRelogio(mensagem.ts)}
               </span>

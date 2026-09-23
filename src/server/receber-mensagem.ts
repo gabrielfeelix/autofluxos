@@ -1282,7 +1282,7 @@ async function prepararIa(
 /** O texto padrão antes de uma pessoa assumir. */
 const AVISO_DE_HANDOFF = 'Vou te passar para um atendente. Só um instante!'
 
-type Entrega = { ok: true } | { ok: false; motivo: string }
+type Entrega = { ok: true; waMessageId: string | null } | { ok: false; motivo: string }
 
 /**
  * Manda, e devolve o que aconteceu em vez de estourar.
@@ -1295,12 +1295,12 @@ type Entrega = { ok: true } | { ok: false; motivo: string }
  * todos casos rotineiros que caíam exatamente nisso.
  */
 async function entregar(
-  envio: () => Promise<void>,
+  envio: () => Promise<string | null | void>,
   contexto: ContextoDoAlerta = {},
 ): Promise<Entrega> {
   try {
-    await envio()
-    return { ok: true }
+    const waMessageId = (await envio()) ?? null
+    return { ok: true, waMessageId }
   } catch (erro) {
     const detalhe = erro instanceof Error ? erro.message : String(erro)
     // Fica no log porque o motivo do handoff aparece na tela do painel e o
@@ -1448,7 +1448,7 @@ async function aplicar(
         // como não confirmada, que é o registro honesto do que se tentou.
         if (!entrega.ok) return pararNoHumano(entrega.motivo)
 
-        await confirmarEntrega(registro)
+        await confirmarEntrega(registro, entrega.waMessageId)
         break
       }
 
@@ -1486,7 +1486,7 @@ async function aplicar(
         // depois de a foto do plano ter falhado entrega a conversa pela metade.
         if (!entrega.ok) return pararNoHumano(entrega.motivo)
 
-        await confirmarEntrega(registro)
+        await confirmarEntrega(registro, entrega.waMessageId)
         break
       }
 
@@ -1512,7 +1512,7 @@ async function aplicar(
         )
         if (!entrega.ok) return pararNoHumano(entrega.motivo)
 
-        await confirmarEntrega(registro)
+        await confirmarEntrega(registro, entrega.waMessageId)
         break
       }
 
@@ -1543,7 +1543,7 @@ async function aplicar(
           })
           const entrega = await entregar(() => enviarCards(contato.waId, comFoto), alvo)
           if (!entrega.ok) return pararNoHumano(entrega.motivo)
-          await confirmarEntrega(registro)
+          await confirmarEntrega(registro, entrega.waMessageId)
         }
 
         for (const produto of semFoto) {
@@ -1557,7 +1557,7 @@ async function aplicar(
           })
           const entrega = await entregar(() => canal.enviarTexto(contato.waId, texto), alvo)
           if (!entrega.ok) return pararNoHumano(entrega.motivo)
-          await confirmarEntrega(registro)
+          await confirmarEntrega(registro, entrega.waMessageId)
         }
         break
       }
@@ -1711,7 +1711,7 @@ async function aplicar(
           texto: AVISO_DE_HANDOFF,
         })
         const entrega = await entregar(() => canal.enviarTexto(contato.waId, AVISO_DE_HANDOFF), alvo)
-        if (entrega.ok) await confirmarEntrega(registro)
+        if (entrega.ok) await confirmarEntrega(registro, entrega.waMessageId)
 
         return pararNoHumano(
           entrega.ok
@@ -1732,7 +1732,7 @@ async function aplicar(
           texto: AVISO_DE_HANDOFF,
         })
         const entrega = await entregar(() => canal.enviarTexto(contato.waId, AVISO_DE_HANDOFF), alvo)
-        if (entrega.ok) await confirmarEntrega(registro)
+        if (entrega.ok) await confirmarEntrega(registro, entrega.waMessageId)
 
         return pararNoHumano(
           entrega.ok

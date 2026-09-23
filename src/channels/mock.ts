@@ -28,12 +28,15 @@ export function canalMock(): Canal & { enviadas: Enviada[] } {
     },
     async enviarTexto(para, texto) {
       enviadas.push({ tipo: 'texto', para, texto })
+      return null
     },
     async enviarOpcoes(para, texto, opcoes, formato) {
       enviadas.push({ tipo: 'opcoes', para, texto, opcoes, formato })
+      return null
     },
     async enviarMidia(para, midia) {
       enviadas.push({ tipo: 'midia', para, ...midia })
+      return null
     },
     async enviarProdutos(para, produtos) {
       enviadas.push({ tipo: 'produtos', para, produtos })

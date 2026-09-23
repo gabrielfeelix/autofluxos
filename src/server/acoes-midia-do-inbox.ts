@@ -130,8 +130,9 @@ export async function acaoEnviarMidiaDoInbox(
     autor: autorDaPessoa(quemResponde?.usuario),
   })
 
+  let waMessageId: string | null
   try {
-    await canal.enviarMidia(contexto.waId, {
+    waMessageId = await canal.enviarMidia(contexto.waId, {
       midia,
       url,
       ...(legenda !== '' ? { legenda } : {}),
@@ -141,7 +142,7 @@ export async function acaoEnviarMidiaDoInbox(
     return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para enviar' }
   }
 
-  await confirmarEntrega(registro)
+  await confirmarEntrega(registro, waMessageId)
   if (contexto.sessaoId) await definirStatusDaSessao(contexto.sessaoId, 'humano')
 
   void quemResponde

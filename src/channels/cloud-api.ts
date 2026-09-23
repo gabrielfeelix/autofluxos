@@ -130,6 +130,19 @@ type RespostaDeEnvio = {
   messages?: { id?: string; message_status?: string }[]
 }
 
+/**
+ * O `wamid` que a Meta deu ao envio, ou `null` quando o corpo não trouxe.
+ *
+ * É o id que liga a mensagem gravada ao toque, à citação e à reação que
+ * vierem depois. Sem ele o Inbox não conseguia reagir nem citar nada que o
+ * bot ou a equipe mandaram, e o toque num botão aparecia como resposta a uma
+ * "mensagem original" que não existia no histórico.
+ */
+function idDoEnvio(resposta: RespostaDeEnvio): string | null {
+  const id = resposta.messages?.[0]?.id
+  return typeof id === 'string' && id !== '' ? id : null
+}
+
 export function canalCloudApi(config: ConfigCloudApi): Canal {
   const versao = config.versaoGraph ?? process.env.META_GRAPH_VERSION ?? VERSAO_PADRAO
   const raiz = `https://graph.facebook.com/${versao}`
@@ -299,12 +312,13 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
     },
 
     async enviarTexto(para, texto, citando) {
-      await mandar({
+      const resposta = await mandar({
         to: para,
         type: 'text',
         ...citacao(citando),
         text: { preview_url: true, body: texto },
       })
+      return idDoEnvio(resposta)
     },
 
     /**
@@ -457,7 +471,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
       const tipo = TIPO_NA_META[midia]
       const mediaId = await subirParaAMeta(url)
 
-      await mandar({
+      const resposta = await mandar({
         to: para,
         type: tipo,
         ...citacao(citando),
@@ -471,6 +485,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
           ...(nomeArquivo && midia === 'documento' ? { filename: nomeArquivo } : {}),
         },
       })
+      return idDoEnvio(resposta)
     },
 
     /**
@@ -587,7 +602,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
       const curto = (o: Opcao) => cortarCaracteres(o.rotulo, LIMITE_ROTULO)
 
       if (formato === 'botoes') {
-        await mandar({
+        const resposta = await mandar({
           to: para,
           type: 'interactive',
           interactive: {
@@ -598,10 +613,10 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
             },
           },
         })
-        return
+        return idDoEnvio(resposta)
       }
 
-      await mandar({
+      const resposta = await mandar({
         to: para,
         type: 'interactive',
         interactive: {
@@ -613,6 +628,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
           },
         },
       })
+      return idDoEnvio(resposta)
     },
   }
 }

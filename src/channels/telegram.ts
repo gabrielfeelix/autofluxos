@@ -213,6 +213,7 @@ export function canalTelegram(config: ConfigTelegram): Canal {
         text: texto,
         ...citacao(citando),
       })
+      return null
     },
 
     async enviarMidia(para, { midia, url: endereco, legenda }: Midia, citando) {
@@ -233,6 +234,7 @@ export function canalTelegram(config: ConfigTelegram): Canal {
         ...(legenda ? { caption: legenda } : {}),
         ...citacao(citando),
       })
+      return null
     },
 
     async enviarOpcoes(para, texto, opcoes) {
@@ -265,6 +267,7 @@ export function canalTelegram(config: ConfigTelegram): Canal {
         text: texto,
         reply_markup: { inline_keyboard: linhas },
       })
+      return null
     },
   }
 }

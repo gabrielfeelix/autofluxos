@@ -788,9 +788,10 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
  */
 function canalQueRecusa(motivo: string, aPartirDe = 0) {
   let tentativas = 0
-  const recusar = async () => {
+  const recusar = async (): Promise<string | null> => {
     tentativas += 1
     if (tentativas > aPartirDe) throw new Error(`Cloud API respondeu 400: ${motivo}`)
+    return null
   }
 
   return {

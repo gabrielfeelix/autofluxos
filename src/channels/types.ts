@@ -109,14 +109,20 @@ export type EnvioDeTemplate = {
 export type Canal = {
   /** Mostra "digitando" quando houver suporte e segura a resposta pelo prazo. */
   aguardarResposta(alvo: AlvoDoIndicador, atrasoMs: number): Promise<void>
-  enviarTexto(para: string, texto: string, citando?: Citacao): Promise<void>
+  /**
+   * Os três envios devolvem o id que a Meta deu à mensagem, para gravar no
+   * histórico (`wa_message_id`). `null` quando o canal não tem id que sirva
+   * ali: Telegram e Instagram numeram de outro jeito, e misturar os ids deles
+   * na coluna da Meta quebraria a unicidade que deduplica o histórico.
+   */
+  enviarTexto(para: string, texto: string, citando?: Citacao): Promise<string | null>
   enviarOpcoes(
     para: string,
     texto: string,
     opcoes: Opcao[],
     formato: 'botoes' | 'lista',
-  ): Promise<void>
-  enviarMidia(para: string, midia: Midia, citando?: Citacao): Promise<void>
+  ): Promise<string | null>
+  enviarMidia(para: string, midia: Midia, citando?: Citacao): Promise<string | null>
   /**
    * O card do produto: foto, nome, preço, estoque e o botão para a loja.
    *

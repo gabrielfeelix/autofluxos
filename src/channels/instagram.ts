@@ -159,6 +159,7 @@ export function canalInstagram(config: ConfigInstagram): Canal {
 
     async enviarTexto(para, texto) {
       await mandarTexto(para, texto)
+      return null
     },
 
     async enviarMidia(para, { midia, url: endereco, legenda }: Midia) {
@@ -183,6 +184,7 @@ export function canalInstagram(config: ConfigInstagram): Canal {
           },
         },
       })
+      return null
     },
 
     async enviarProdutos(para, produtos) {
@@ -246,6 +248,7 @@ export function canalInstagram(config: ConfigInstagram): Canal {
           })),
         },
       })
+      return null
     },
   }
 }

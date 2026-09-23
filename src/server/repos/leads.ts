@@ -8,6 +8,7 @@ import {
   casarToques,
   localDoPayload,
   menuDoPayload,
+  toqueDoPayload,
   motivoDoNaoSuportado,
   type CartaoDeContato,
   type LocalDaMensagem,
@@ -195,6 +196,14 @@ export type MensagemDoLead = {
   naoSuportada?: true
   /** O que era o `unsupported`, quando a Meta disse. Ver `motivoDoNaoSuportado`. */
   motivoNaoSuportada?: string
+  /**
+   * A pessoa tocou num botão ou numa linha de lista, em vez de escrever.
+   *
+   * A bolha pinta diferente: "Reagendar aula" tocado e "reagendar aula"
+   * digitado dizem coisas diferentes a quem atende. O primeiro é resposta
+   * pronta, o segundo é a pessoa com as próprias palavras.
+   */
+  toque?: true
   /**
    * Os botões ou a lista que o bot mandou junto desta mensagem, e qual deles a
    * pessoa tocou. Sem isto o Inbox mostrava a pergunta e escondia as
@@ -1070,7 +1079,14 @@ export async function lerConversa(
         const escolhida = toques.get(m.id)
         const menu = menuCru ? { ...menuCru, ...(escolhida ? { escolhida } : {}) } : null
         const reacoes = m.wa_message_id ? reacoesPorAlvo.get(m.wa_message_id) : undefined
-        const cita = m.cita ? citadaDoHistorico(m.cita, porWaId) : null
+        /*
+         * Toque não mostra citação. A Meta pendura `context` no toque apontando
+         * o menu, que já está logo acima com a opção marcada; repetir a
+         * pergunta dentro da bolha, ou pior, "mensagem original" quando o menu
+         * foi gravado sem id, é ruído na bolha mais comum de uma triagem.
+         */
+        const toque = m.direcao === 'entrada' && toqueDoPayload(m.payload) !== null
+        const cita = m.cita && !toque ? citadaDoHistorico(m.cita, porWaId) : null
         return {
           id: m.id,
           direcao: direcaoSchema.parse(m.direcao),
@@ -1083,6 +1099,7 @@ export async function lerConversa(
           ...(naoSuportada ? { naoSuportada: true as const } : {}),
           ...(motivo ? { motivoNaoSuportada: motivo } : {}),
           ...(menu ? { menu } : {}),
+          ...(toque ? { toque: true as const } : {}),
           ...(autor ? { autor } : {}),
           ...(m.transcricao ? { transcricao: m.transcricao } : {}),
           ...(local ? { local } : {}),

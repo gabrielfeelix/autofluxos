@@ -2163,15 +2163,16 @@ export async function acaoResponderLead(
     ...(citando ? { cita: citando } : {}),
   })
 
+  let waMessageId: string | null
   try {
-    await canal.enviarTexto(contexto.waId, assinar(texto, quemResponde?.usuario.nome), citando)
+    waMessageId = await canal.enviarTexto(contexto.waId, assinar(texto, quemResponde?.usuario.nome), citando)
   } catch (erro) {
     // O texto da Meta é específico e é ele que resolve. Engolir aqui devolveria
     // "não deu certo" para quem precisa saber que o token expirou.
     return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para enviar' }
   }
 
-  await confirmarEntrega(registro)
+  await confirmarEntrega(registro, waMessageId)
 
   // Só o status: o que a conversa já coletou continua na sessão, e é ele que
   // volta a valer se o bot reassumir depois do "Já atendi".
@@ -2997,8 +2998,7 @@ async function avisarQueEntrou(
       texto: aviso,
       autor: autorDaPessoa({ nome }),
     })
-    await canal.enviarTexto(contexto.waId, aviso)
-    await confirmarEntrega(registro)
+    await confirmarEntrega(registro, await canal.enviarTexto(contexto.waId, aviso))
   } catch (erro) {
     console.error(
       '[assumir] não deu para avisar que o atendente entrou',

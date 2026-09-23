@@ -236,8 +236,7 @@ async function devolverAoBot(parada: SessaoParada, texto: string): Promise<boole
       autor: AUTOR_AUTOMACAO,
     })
 
-    await canal.enviarTexto(contexto.waId, texto)
-    await confirmarEntrega(registro)
+    await confirmarEntrega(registro, await canal.enviarTexto(contexto.waId, texto))
     avisou = true
   }
 

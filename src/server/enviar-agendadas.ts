@@ -133,8 +133,10 @@ async function enviarUma(agendada: MensagemAgendada): Promise<void> {
     autor: autorDaPessoa({ nome: agendada.criadaPorNome }),
   })
 
-  await canal.enviarTexto(contexto.waId, assinar(agendada.texto, agendada.criadaPorNome))
-  await confirmarEntrega(registro)
+  await confirmarEntrega(
+    registro,
+    await canal.enviarTexto(contexto.waId, assinar(agendada.texto, agendada.criadaPorNome)),
+  )
   await marcarEnviada(agendada.id)
 }
 
