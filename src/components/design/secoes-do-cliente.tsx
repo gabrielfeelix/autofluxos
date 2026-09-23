@@ -120,6 +120,8 @@ export const EXIGENCIA_DA_SECAO: Partial<
   atividades: { capacidades: ['atender'], minimo: 'proprios' },
   leads: { capacidades: ['atender'], minimo: 'proprios' },
   quadros: { capacidades: ['criar_oportunidade'], minimo: 'proprios' },
+  // Mesma porta que a página de Relatórios já usava (o escopo filtra os números).
+  relatorios: { capacidades: ['atender'], minimo: 'proprios' },
   fluxos: { capacidades: ['configurar_operacao'], minimo: 'todos' },
   transmissoes: { capacidades: ['exportar'], minimo: 'todos' },
   ajustes: { capacidades: ['configurar_empresa', 'configurar_operacao'], minimo: 'todos' },

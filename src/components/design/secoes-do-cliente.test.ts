@@ -50,7 +50,7 @@ describe('as seções que esta pessoa pode usar (E7)', () => {
     expect(chaves).not.toContain('fluxos')
     expect(chaves).not.toContain('transmissoes')
     expect(chaves).not.toContain('ajustes')
-    expect(chaves).toEqual(['inicio', 'inbox', 'atividades', 'leads', 'quadros'])
+    expect(chaves).toEqual(ITENS.map((i) => i.chave).filter((c) => !['fluxos', 'transmissoes', 'ajustes'].includes(c)))
   })
 
   it('membro sem exceção continua vendo tudo: o menu não tira acesso de quem já tinha', () => {

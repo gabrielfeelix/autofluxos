@@ -18,7 +18,8 @@ import {
   variacao,
   type Periodo,
 } from '@/core/relatorios'
-import { exigirCapacidadeNaPagina, filtroDoAcesso } from '@/server/permissoes'
+import { capacidadeNaPagina, filtroDoAcesso } from '@/server/permissoes'
+import { SemAcesso } from '@/components/design/sem-acesso'
 import { acharCliente } from '@/server/repos/clientes'
 import {
   atendimentosPorPessoa,
@@ -70,7 +71,14 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const acesso = await exigirCapacidadeNaPagina(clienteId, 'atender', 'proprios')
+  const acesso = await capacidadeNaPagina(clienteId, 'atender', 'proprios')
+  if (!acesso) {
+    return (
+      <ClienteShell cliente={cliente} ativa="relatorios">
+        <SemAcesso clienteId={clienteId} oQue="Relatórios" />
+      </ClienteShell>
+    )
+  }
   const escopo = filtroDoAcesso(acesso, 'atender')
   const podeVerValor = pode(acesso.regras, 'ler_valores', 'proprios')
 
