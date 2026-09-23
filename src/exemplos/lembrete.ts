@@ -112,7 +112,7 @@ export const lembrete: Fluxo = fluxoSchema.parse({
           { tipo: 'salvar', campo: 'participacao_id', valor: '{{proximas_id}}' },
           {
             tipo: 'texto',
-            texto: 'Oi, *{{nome_na_agenda}}*! 👋 Passando para lembrar da sua aula.',
+            texto: 'Oi, {{nome_na_agenda}}! 👋 Passando para lembrar da sua aula.',
           },
         ],
       },
@@ -135,7 +135,7 @@ export const lembrete: Fluxo = fluxoSchema.parse({
       position: em(3, 0),
       data: {
         texto:
-          'Oi, *{{nome_na_agenda}}*! 👋 Passando para lembrar da sua aula.\nÉ sobre qual delas?',
+          'Oi, {{nome_na_agenda}}! 👋 Passando para lembrar da sua aula.\nÉ sobre qual delas?',
         salvarEm: 'aula',
         opcoes: [],
         opcoesDe: 'proximas',
@@ -156,7 +156,7 @@ export const lembrete: Fluxo = fluxoSchema.parse({
           {
             tipo: 'texto',
             texto:
-              'Oi, *{{nome_na_agenda}}*! 👋 Não vi nenhuma aula marcada para você por aqui.\nSe quiser marcar uma, é só me chamar. 🙌',
+              'Oi, {{nome_na_agenda}}! 👋 Não vi nenhuma aula marcada para você por aqui.\nSe quiser marcar uma, é só me chamar. 🙌',
           },
         ],
       },

@@ -86,7 +86,7 @@ export const alunoInativo: Fluxo = fluxoSchema.parse({
       position: em(4, -1.4),
       data: {
         motivo: 'aluno ativo escreveu no fluxo de inativos, {{nome_na_agenda}}',
-        mensagem: 'Oi, *{{nome_na_agenda}}*! 👋 Só um instante que já te atendo. 🙌',
+        mensagem: 'Oi, {{nome_na_agenda}}! 👋 Só um instante que já te atendo. 🙌',
       },
     },
 
@@ -107,7 +107,7 @@ export const alunoInativo: Fluxo = fluxoSchema.parse({
       position: em(4, 0.6),
       data: {
         texto:
-          'Oi, *{{nome_na_agenda}}*! 👋 Que bom te ver por aqui de novo.\nComo posso te ajudar hoje?',
+          'Oi, {{nome_na_agenda}}! 👋 Que bom te ver por aqui de novo.\nComo posso te ajudar hoje?',
         salvarEm: 'intencao',
         opcoes: [
           { id: 'voltar', rotulo: '💪 Voltar às aulas' },

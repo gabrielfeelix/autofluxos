@@ -97,7 +97,7 @@ export const naoComparecimento: Fluxo = fluxoSchema.parse({
       position: em(3, 0),
       data: {
         texto:
-          'Oi, *{{nome_na_agenda}}*! 👋 Vamos avisar da falta então.\nQual aula você não vai poder fazer?',
+          'Oi, {{nome_na_agenda}}! 👋 Vamos avisar da falta então.\nQual aula você não vai poder fazer?',
         salvarEm: 'aula',
         opcoes: [],
         opcoesDe: 'proximas',
@@ -115,7 +115,7 @@ export const naoComparecimento: Fluxo = fluxoSchema.parse({
           {
             tipo: 'texto',
             texto:
-              'Oi, *{{nome_na_agenda}}*! 👋 Não vi nenhuma aula marcada para você por aqui.\nSe precisar de alguma coisa, é só me chamar. 🙌',
+              'Oi, {{nome_na_agenda}}! 👋 Não vi nenhuma aula marcada para você por aqui.\nSe precisar de alguma coisa, é só me chamar. 🙌',
           },
         ],
       },

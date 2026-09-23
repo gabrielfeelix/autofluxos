@@ -60,7 +60,7 @@ export const agendamento: Fluxo = fluxoSchema.parse({
         partes: [
           {
             tipo: 'texto',
-            texto: 'Oi, *{{nome_na_agenda}}*! 👋 Vamos marcar sua aula?',
+            texto: 'Oi, {{nome_na_agenda}}! 👋 Vamos marcar sua aula?',
           },
         ],
       },

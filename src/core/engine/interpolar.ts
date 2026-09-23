@@ -13,9 +13,62 @@ export function interpolar(
   vars: Record<string, string>,
   escapar: Escape = comoTexto,
 ): string {
-  return texto.replace(/\{\{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*\}\}/g, (_, chave: string) => {
-    return escapar(vars[chave] ?? '')
+  const mensagem = escapar === comoTexto
+  const base = mensagem ? semDestaqueNoNome(texto) : texto
+  return base.replace(/\{\{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*\}\}/g, (_, chave: string) => {
+    const valor = vars[chave] ?? ''
+    return escapar(mensagem && ehVariavelDeNome(chave) ? nomeComoSeEscreve(valor) : valor)
   })
+}
+
+/**
+ * `nome`, `nome_na_agenda`, `primeiro_nome`, `nome_completo`: a variável que
+ * guarda o nome de gente. `nome_do_plano` também casa, e tudo bem: o que se
+ * faz com ela só mexe em texto todo em caixa alta ou todo em caixa baixa.
+ */
+export function ehVariavelDeNome(chave: string): boolean {
+  return /(^|_)nome(_|$)/i.test(chave)
+}
+
+/**
+ * O nome como uma pessoa o escreveria numa mensagem.
+ *
+ * A agenda da Verandi guarda "DANIEL", o perfil do WhatsApp às vezes vem
+ * "maria da silva", e os dois saíam assim no "Oi, DANIEL!", que é a cara de
+ * robô que o Gabriel pediu para sumir. Só o texto **inteiro** em caixa alta ou
+ * em caixa baixa é refeito: "João McArthur" já está escrito por alguém e fica.
+ */
+export function nomeComoSeEscreve(valor: string): string {
+  const letras = valor.replace(/[^\p{L}]/gu, '')
+  if (letras === '') return valor
+  const uniforme = letras === letras.toUpperCase() || letras === letras.toLowerCase()
+  if (!uniforme) return valor
+  return valor
+    .toLowerCase()
+    .split(/(\s+|-)/)
+    .map((parte, i) =>
+      i > 0 && PARTICULAS.has(parte) ? parte : parte.charAt(0).toUpperCase() + parte.slice(1),
+    )
+    .join('')
+}
+
+const PARTICULAS = new Set(['de', 'da', 'do', 'das', 'dos', 'e'])
+
+/**
+ * Tira o negrito e o itálico **em volta de uma variável de nome**:
+ * `*{{nome_na_agenda}}*` vira `{{nome_na_agenda}}`.
+ *
+ * Nome em negrito é assinatura de mensagem automática; ninguém escreve "Oi,
+ * **Daniel**!" para um amigo. Os modelos de `src/exemplos` vinham assim, e os
+ * fluxos já publicados a partir deles continuam assim no banco. Tirar aqui
+ * conserta todos sem reescrever fluxo de cliente.
+ */
+function semDestaqueNoNome(texto: string): string {
+  return texto.replace(
+    /([*_])(\{\{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*\}\})\1/g,
+    (achado, _marca: string, variavel: string, chave: string) =>
+      ehVariavelDeNome(chave) ? variavel : achado,
+  )
 }
 
 /**

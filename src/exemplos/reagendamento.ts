@@ -102,7 +102,7 @@ export const reagendamento: Fluxo = fluxoSchema.parse({
         partes: [
           {
             tipo: 'texto',
-            texto: 'Oi, *{{nome_na_agenda}}*! 👋 Vou te ajudar a reagendar sua aula.',
+            texto: 'Oi, {{nome_na_agenda}}! 👋 Vou te ajudar a reagendar sua aula.',
           },
         ],
       },
@@ -372,7 +372,7 @@ export const reagendamento: Fluxo = fluxoSchema.parse({
           {
             tipo: 'texto',
             texto:
-              'Prontinho, *{{nome_na_agenda}}*! ✅\nSua aula está marcada para *{{dia_escrito}} às {{horario}}*.',
+              'Prontinho, {{nome_na_agenda}}! ✅\nSua aula está marcada para *{{dia_escrito}} às {{horario}}*.',
           },
           { tipo: 'atraso', segundos: 1 },
           {

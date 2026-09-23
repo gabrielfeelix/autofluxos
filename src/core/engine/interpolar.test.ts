@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { chavesSimplesCitadas, fatiarVariaveis, variaveisCitadas } from './interpolar'
+import { chavesSimplesCitadas, comoUrl, fatiarVariaveis, interpolar, variaveisCitadas } from './interpolar'
 
 describe('fatiarVariaveis, o realce do editor', () => {
   it('separa literal de citação', () => {
@@ -107,5 +107,27 @@ describe('chavesSimplesCitadas, o engano de uma chave só', () => {
 
   it('não repete a mesma chave', () => {
     expect(chavesSimplesCitadas('{dia} e depois {dia}')).toEqual(['dia'])
+  })
+})
+
+describe('nome de gente na mensagem', () => {
+  it('caixa alta da agenda vira como se escreve, sem negrito', () => {
+    expect(interpolar('Oi, *{{nome_na_agenda}}*! 👋', { nome_na_agenda: 'DANIEL' })).toBe('Oi, Daniel! 👋')
+  })
+
+  it('caixa baixa também, e partícula fica minúscula', () => {
+    expect(interpolar('Oi, {{nome}}', { nome: 'maria da silva' })).toBe('Oi, Maria da Silva')
+  })
+
+  it('nome já escrito por alguém fica como está', () => {
+    expect(interpolar('Oi, {{nome}}', { nome: 'João McArthur' })).toBe('Oi, João McArthur')
+  })
+
+  it('negrito em variável que não é nome continua', () => {
+    expect(interpolar('Sua aula: *{{aula}}*', { aula: 'PILATES' })).toBe('Sua aula: *PILATES*')
+  })
+
+  it('em URL e JSON o valor vai cru', () => {
+    expect(interpolar('/p?n={{nome}}', { nome: 'DANIEL' }, comoUrl)).toBe('/p?n=DANIEL')
   })
 })
