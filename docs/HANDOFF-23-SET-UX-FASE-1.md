@@ -1,8 +1,7 @@
-# Handoff 23/09: plano de UX, Fase 0 feita, Fase 1 até a tarefa 1.4
+# Handoff 23/09: plano de UX, Fases 0 e 1 feitas (1.1 a 1.7)
 
 Plano: `docs/PLANO-UX-UI-2026-09-23.md`. Os checkboxes e o "Registro de
-execução" no fim dele estão em dia até a 1.4. **Próxima: tarefa 1.5** ("Nova
-atividade" pela agenda); depois, Fase 2.
+execução" no fim dele estão em dia até a 1.7. **Próxima: Fase 2, tarefa 2.1.**
 
 ## Feito (tudo na `main`, com push)
 
@@ -15,42 +14,11 @@ atividade" pela agenda); depois, Fase 2.
 | 1.2 | `5d0bbe1` | `reagendarAtividade`/`atribuirAtividade` + ações; `prazoDoDia` foi para `src/core/atividades.ts` |
 | 1.3 | `03efe07`, `2f6a5e9` | página nova de Atividades; contador do menu com `contagensDaAgenda` (clique vai a `?recorte=vencidas`); `agenda()` removida |
 | 1.4 | `b38b538` | `ListaDaAgenda` + `AcoesDaLinha` (Concluir com Desfazer 6 s, Reagendar em popover, menu `⋯`, Cancelar com motivo); e2e `test/e2e/agenda.spec.ts` verde |
+| 1.5 | `a6612df` | `NovaAtividade` (busca de contato, `CamposDaAtividade` compartilhado com o Inbox, responsável, negócio); criação confere responsável (`ehMembroDaConta`) e negócio no servidor |
+| 1.6 | `d1221ee` | `?vista=agenda&escala=semana\|mes&dia=`; `agendaDoIntervalo` + `intervaloDaVista`; `VistaDaAgenda`; ações extraídas em `useAcoesDaAgenda` |
+| 1.7 | `72874fd` | `SeletorDePessoa` (modal com busca) no "Atribuir tarefa…", no filtro Responsável e em Nova atividade |
 
-Deploy: `2f6a5e9` READY; `b38b538` estava BUILDING ao escrever isto. Conferir.
-
-## Duas mudanças pedidas pelo Gabriel em 23/09 (decididas, não reabrir)
-
-Entram como tarefas **1.6 e 1.7**, depois da 1.5, ainda na Fase 1.
-
-**1.6: alternância Lista | Agenda.** A lista atual continua; ao lado dela, um
-toggle na barra (`?vista=lista|agenda`, padrão `lista`, guardado na URL como os
-outros filtros) troca para uma **visão de agenda de verdade**: calendário com as
-atividades nos dias (semana com colunas por dia e horário; mês como grade).
-Mesmos filtros, busca e escopo da lista (`paginaDaAgenda` ou uma variante por
-intervalo de datas, não uma segunda regra). Clicar na atividade abre as mesmas
-ações da linha. Sem prazo fica numa faixa à parte ("Sem prazo"). Celular: vista
-de agenda vira lista por dia.
-
-**1.7: atribuir vira modal com busca.** Hoje o menu `⋯` lista "Atribuir a" com
-todos os membros embaixo (`src/components/atividades/acoes-da-linha.tsx`); com
-300 funcionários isso vira uma lista infinita. Trocar por um item só,
-**"Atribuir tarefa…"**, que abre um modal com um seletor pesquisável (campo de
-busca por nome, lista filtrada com rolagem, "Ninguém" como opção). Vale o mesmo
-padrão para o filtro "Responsável" do popover Filtros em
-`barra-da-agenda.tsx`, que tem o mesmo problema.
-
-## Tarefa 1.5: onde parei (nada editado ainda)
-
-- Extrair de `src/components/inbox/marcar-atividade.tsx` os campos (tipos em
-  radio, título, `onde` por `FORMATO_DO_TIPO`, dia, hora) para
-  `CamposDaAtividade` compartilhado; Inbox e agenda usam o mesmo.
-- `src/components/atividades/nova-atividade.tsx`: diálogo com busca de contato
-  (mín. 2 caracteres). **Não existe ação de busca de contatos genérica**; a
-  mais perto é `acaoBuscarContatosDoQuadro` (`src/server/acoes.ts:1626`).
-  Criar uma que use `paginarLeads(..., { estado: 'todas', busca, porPagina: 8 })`.
-  Negócio opcional: `oportunidadesAbertasDoContato` (`src/server/repos/quadros.ts:1326`).
-- Botão "+ Nova atividade" no cabeçalho de `atividades/page.tsx` (ainda não existe).
-- Acrescentar ao `agenda.spec.ts`: criar pela agenda e ver na ficha.
+Deploy: `72874fd` READY. e2e `agenda.spec.ts` com 4 testes verdes.
 
 ## Achados que não estavam no plano
 
@@ -61,6 +29,9 @@ padrão para o filtro "Responsável" do popover Filtros em
 - Ações de concluir/cancelar/reabrir não conferem dono com escopo `proprios`
   (reagendar e atribuir já conferem, `conferirDono` em `acoes-atividades.ts`).
 - Seed local tem atividades repetidas (mesmo título e contato várias vezes).
+- **Busca de contatos (`paginarLeads`) depende de acento**: "marcia" não acha
+  "Márcia". Afeta Contatos e o seletor de Nova atividade. Corrigir na 2.3
+  (dá para reaproveitar `padraoSemAcento` de `src/core/atividades.ts`).
 
 ## Ambiente (armadilhas pagas)
 
@@ -69,7 +40,11 @@ padrão para o filtro "Responsável" do popover Filtros em
   o padrão casa com o próprio shell e mata o comando.
 - `.env.teste-local` ganhou `DATABASE_URL` local (arquivo ignorado pelo git).
 - Scripts meus em `.ux-local/` (ignorado): `hidratacao.mjs <rotas>` conta erro
-  de hidratação; `texto.mjs <rota> <seletor>` imprime o texto da tela.
+  de hidratação; `texto.mjs <rota> <seletor>` imprime o texto da tela;
+  `dialogo.mjs` e `menu.mjs` tiram print do diálogo de Nova atividade e do
+  menu/seletor de atribuir. `prints.mjs` ganhou `agenda-semana` e `agenda-mes`.
+- Print "antes" de tarefa já editada: `git stash push <arquivos>`, print com o
+  dev rodando, `git stash pop`.
 - Deploy: API da Vercel com `VERCEL_TOKEN` do `.secrets/4yu.env`, projeto
   `prj_17XxHvJ1vOAQ6j4mQSauCPA1BJXO`, time `team_hmVHyYO1YFO9fuAtpG9Ym2hm`
   (o MCP da Vercel dá 403 nesse time).
