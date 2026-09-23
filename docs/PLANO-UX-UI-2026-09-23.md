@@ -915,6 +915,29 @@ export async function editarPasso(
 
 ---
 
+### Tarefa 5.9: anotações da equipe como histórico (pedida pelo Gabriel em 23/09)
+
+Hoje o "Anotação da equipe" do Inbox guarda **uma** nota por contato. Passa a
+ser uma lista: cada anotação é uma entrada com autor, data e hora, e a caixa
+do Inbox continua sendo só a entrada ("+ Anotar").
+
+- [ ] **Passo 1:** tabela nova de anotações (uma linha por nota: contato,
+  conta, autor, texto, criada_em), com RLS e escopo como a `notas` de hoje.
+  A nota antiga de cada contato vira a primeira entrada. Migration só no
+  Supabase local; produção fica anotada no fim deste plano.
+- [ ] **Passo 2:** anotar **não recarrega a página**: a nota aparece na hora
+  na barra lateral de detalhes do contato (à direita, no Inbox), de forma
+  otimista, enquanto o servidor grava; se falhar, a entrada diz o erro e
+  oferece tentar de novo, sem sumir.
+- [ ] **Passo 3:** a barra lateral lista as anotações da mais nova para a mais
+  antiga, com autor e "23/09 às 14:32". A ficha do contato mostra a mesma
+  lista.
+- [ ] **Passo 4:** teste de integração (anotar, listar, outra conta não vê);
+  prints do Inbox antes e depois; commit `feat(inbox): anotações da equipe
+  como histórico`.
+
+---
+
 ## Fase 6: Transmissões e conexões
 
 ### Tarefa 6.1: consumo real do dia na prévia [T03, C10]
@@ -1479,3 +1502,12 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   barra além de Fluxos); o diálogo "Usar modelo" é da 5.2. Os prontos já
   estavam no "+ Criar automação" (`NovaAutomacao`), então tirar a aba da barra
   não escondeu nada.
+
+- 23/09, pedido do Gabriel na lista de Fluxos (desfaz parte da 3.4): o
+  interruptor voltou para a linha (`InterruptorDoFluxo`), o texto "Entrada
+  ligada/desligada" saiu (fica só "Publicada vN"), a alça de pontinhos
+  (`ListaOrdenavel`, ponteiro com escuta na janela, setas no teclado)
+  substituiu "Subir/Descer na lista", e "Ver respostas" (com o número) foi
+  para o menu ⋯. Com a lista filtrada a alça some.
+- 23/09: tarefa 5.9 (anotações como histórico no Inbox) entrou no plano a
+  pedido do Gabriel.

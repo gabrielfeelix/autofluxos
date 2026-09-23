@@ -12,6 +12,8 @@ import {
 import { DEFINICAO_DO_CANAL } from '@/core/canais'
 import { BarraDeLista } from '@/components/design/barra-de-lista'
 import { MenuDoFluxo } from '@/components/fluxos/menu-do-fluxo'
+import { InterruptorDoFluxo } from '@/components/fluxos/interruptor-do-fluxo'
+import { ListaOrdenavel } from '@/components/fluxos/lista-ordenavel'
 import { RenomearPasta } from '@/components/fluxos/renomear-pasta'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import {
@@ -44,7 +46,6 @@ import { OPERADORES_DE_GATILHO, ROTULO_DO_OPERADOR } from '@/core/gatilhos'
 import { PAPEIS_DO_NUMERO, ROTULO_DO_PAPEL } from '@/core/papeis-do-numero'
 import {
   acaoApagarCampanha,
-  acaoApagarFluxo,
   acaoApagarGatilho,
   acaoApagarGatilhoDeEvento,
   acaoCriarCampanha,
@@ -649,7 +650,11 @@ async function ConteudoDaAba({
                           Pasta vazia. Mova uma automação para cá pelo menu ⋯ da linha dela.
                         </li>
                       )}
-                      {grupo.fluxos.map((fluxo) => {
+                      <ListaOrdenavel
+                        clienteId={cliente.id}
+                        arrastavel={!filtrando && grupo.fluxos.length > 1}
+                        classeDaLinha="group/linha relative flex items-start gap-3 border-b border-line px-4 py-3.5 last:border-0 hover:bg-surface md:items-center md:px-5"
+                        itens={grupo.fluxos.map((fluxo) => {
                 const validacao = conferencia.get(fluxo.id) ?? { ok: true, erros: [] }
                 // Fluxo ligado a um número é o que está atendendo agora. Dizer
                 // isso aqui evita a viagem até a tela do número só para conferir.
@@ -663,11 +668,8 @@ async function ConteudoDaAba({
                 })
                 const pasta = fluxo.pastaId ? nomeDaPasta.get(fluxo.pastaId) : undefined
 
-                return (
-                  <li
-                    key={fluxo.id}
-                    className="group/linha relative flex items-start gap-3 border-b border-line px-4 py-3.5 transition last:border-0 hover:bg-surface md:items-center md:px-5"
-                  >
+                return { id: fluxo.id, nome: fluxo.nome, conteudo: (
+                  <>
                     {/*
                       O link cobre a linha por baixo, em vez de envolvê-la: o
                       lápis de renomear senta ao lado do nome e continua sendo
@@ -680,10 +682,6 @@ async function ConteudoDaAba({
                       href={`/clientes/${cliente.id}/fluxos/${fluxo.id}`}
                       aria-label={`Abrir a automação ${fluxo.nome}`}
                       className="absolute inset-0"
-                    />
-                    <span
-                      className={`relative mt-[7px] size-2 shrink-0 rounded-full md:mt-0 ${fluxo.versaoPublicadaId && fluxo.ativo ? 'bg-emerald-400' : 'bg-dim'}`}
-                      aria-hidden
                     />
                     <span className="pointer-events-none relative flex min-w-0 flex-1 flex-col gap-1.5 md:flex-row md:items-center md:gap-4">
                       <span className="min-w-0 flex-1">
@@ -721,29 +719,24 @@ async function ConteudoDaAba({
                             {validacao.erros.length} impedimento(s)
                           </span>
                         )}
-                        {/* Duas informações, e não um selo (A03). */}
-                        <span className="whitespace-nowrap">
-                          <span className={fluxo.versaoPublicadaId ? 'text-soft' : ''}>{rotulo.publicacao}</span>
-                          {' · '}
-                          <span className={`font-semibold ${fluxo.ativo ? 'text-ok' : 'text-aviso'}`}>
-                            {rotulo.entrada}
-                          </span>
+                        {/* Ligada ou desligada é o interruptor ao lado; aqui
+                            fica só a publicação (A03). */}
+                        <span className={`whitespace-nowrap ${fluxo.versaoPublicadaId ? 'text-soft' : ''}`}>
+                          {rotulo.publicacao}
                         </span>
-                        {/*
-                          A contagem é a segunda porta do histórico de
-                          respostas: abre a tela já filtrada nesta automação.
-                        */}
-                        <Link
-                          href={`/clientes/${cliente.id}/respostas?fluxo=${fluxo.id}`}
-                          title={`Ver o que as pessoas responderam em “${fluxo.nome}”`}
-                          className="pointer-events-auto relative whitespace-nowrap rounded-lg py-1 transition hover:text-primary md:px-2"
-                        >
-                          <strong className="font-semibold text-soft">{totalDeExecucoes}</strong>{' '}
-                          {totalDeExecucoes === 1 ? 'resposta' : 'respostas'}
-                        </Link>
                       </span>
                     </span>
-                    <span className="relative flex shrink-0 items-center gap-1">
+                    <span className="relative flex shrink-0 items-center gap-2">
+                      <InterruptorDoFluxo
+                        clienteId={cliente.id}
+                        fluxo={{
+                          id: fluxo.id,
+                          nome: fluxo.nome,
+                          ativo: fluxo.ativo,
+                          publicada: fluxo.versaoPublicadaId !== null,
+                        }}
+                        emAndamento={emAndamento.get(fluxo.id) ?? 0}
+                      />
                       <Link
                         href={`/clientes/${cliente.id}/fluxos/${fluxo.id}`}
                         className="hidden rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:border-strong hover:text-ink md:inline-block"
@@ -752,21 +745,15 @@ async function ConteudoDaAba({
                       </Link>
                       <MenuDoFluxo
                         clienteId={cliente.id}
-                        fluxo={{
-                          id: fluxo.id,
-                          nome: fluxo.nome,
-                          ativo: fluxo.ativo,
-                          publicada: fluxo.versaoPublicadaId !== null,
-                          pastaId: fluxo.pastaId,
-                        }}
+                        fluxo={{ id: fluxo.id, nome: fluxo.nome, pastaId: fluxo.pastaId }}
                         pastas={pastas}
-                        idsDoGrupo={todosDoGrupo(fluxo.pastaId ?? null).map((f) => f.id)}
-                        emAndamento={emAndamento.get(fluxo.id) ?? 0}
+                        respostas={totalDeExecucoes}
                       />
                     </span>
-                  </li>
-                )
+                  </>
+                ) }
                       })}
+                      />
                     </ul>
                   </li>
                 ),

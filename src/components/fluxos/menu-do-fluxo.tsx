@@ -1,28 +1,21 @@
 'use client'
 
+import Link from 'next/link'
 import { useCallback, useState, useTransition } from 'react'
 import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
 import { useConfirmar } from '@/components/design/confirmar'
 import { PopoverDoQuadro } from '@/components/quadros/popover-do-quadro'
-import { AVISO_AO_DESLIGAR } from '@/core/entrada'
-import {
-  acaoAlternarFluxoAtivo,
-  acaoApagarFluxo,
-  acaoDuplicarFluxo,
-  acaoMoverFluxo,
-  acaoReordenarFluxos,
-} from '@/server/acoes'
+import { acaoApagarFluxo, acaoDuplicarFluxo, acaoMoverFluxo } from '@/server/acoes'
 
 type Recado = { texto: string; erro?: boolean }
 
 /**
- * O `⋯` da linha de automação (A01, N09): ligar/desligar, pasta, ordem,
- * duplicar e apagar.
+ * O `⋯` da linha de automação (A01, N09): respostas, pasta, duplicar e apagar.
  *
- * Eram sete controles no mesmo peso em cada linha (setas, interruptor, seletor
- * de pasta, Duplicar, Apagar). O estado continua escrito na linha ("Publicada
- * v1 · Entrada ligada"); o que muda o estado mora aqui, um clique mais longe,
- * porque é o que se faz de vez em quando, não em toda visita.
+ * Eram sete controles no mesmo peso em cada linha. Ficam na linha só o
+ * interruptor (ligada ou desligada é o que mais importa) e a alça de arrastar,
+ * que trocou o "Subir/Descer na lista"; o resto mora aqui, porque é o que se
+ * faz de vez em quando, não em toda visita.
  *
  * O resultado de cada ação sai num aviso no rodapé: o menu fecha no clique, e
  * um erro escrito dentro dele sumiria junto.
@@ -31,16 +24,13 @@ export function MenuDoFluxo({
   clienteId,
   fluxo,
   pastas,
-  idsDoGrupo,
-  emAndamento = 0,
+  respostas,
 }: {
   clienteId: string
-  fluxo: { id: string; nome: string; ativo: boolean; publicada: boolean; pastaId: string | null }
+  fluxo: { id: string; nome: string; pastaId: string | null }
   pastas: { id: string; nome: string }[]
-  /** A ordem inteira do grupo (pasta), mesmo com a lista filtrada: é o que a ação regrava. */
-  idsDoGrupo: string[]
-  /** Conversas rodando esta automação agora (RB-44), para o aviso de desligar. */
-  emAndamento?: number
+  /** Quantas vezes a automação rodou: o número ao lado de "Ver respostas". */
+  respostas: number
 }) {
   const [rodando, comecar] = useTransition()
   const [recado, setRecado] = useState<Recado | null>(null)
@@ -55,21 +45,6 @@ export function MenuDoFluxo({
     })
   }
 
-  const posicao = idsDoGrupo.indexOf(fluxo.id)
-  function mover(direcao: -1 | 1) {
-    const destino = posicao + direcao
-    if (posicao < 0 || destino < 0 || destino >= idsDoGrupo.length) return
-    const nova = idsDoGrupo.filter((id) => id !== fluxo.id)
-    nova.splice(destino, 0, fluxo.id)
-    rodar(async () => {
-      const r = await acaoReordenarFluxos(clienteId, nova)
-      return r.ok ? null : { texto: r.erro ?? 'não deu para reordenar', erro: true }
-    })
-  }
-
-  const conversas =
-    emAndamento === 1 ? '1 conversa em andamento termina' : `${emAndamento} conversas em andamento terminam`
-  const bloqueado = !fluxo.ativo && !fluxo.publicada
 
   return (
     <>
@@ -78,31 +53,15 @@ export function MenuDoFluxo({
         largura={240}
         gatilho={<span aria-hidden className="px-0.5 text-[14px] leading-none">{rodando ? '…' : '⋯'}</span>}
       >
-        <button
-          type="button"
+        <Link
+          href={`/clientes/${clienteId}/respostas?fluxo=${fluxo.id}`}
           data-fechar-popover
-          disabled={rodando || bloqueado}
-          title={
-            bloqueado
-              ? 'Publique antes de ligar, senão ninguém recebe resposta.'
-              : fluxo.ativo
-                ? `Para de abrir conversa nova. ${emAndamento > 0 ? conversas : 'Quem já está conversando termina'} na versão em que começou.`
-                : 'Volta a abrir conversa na próxima mensagem. Não precisa publicar de novo.'
-          }
-          onClick={() =>
-            rodar(async () => {
-              const r = await acaoAlternarFluxoAtivo(clienteId, fluxo.id, !fluxo.ativo)
-              if (!r.ok) return { texto: r.erro ?? 'não deu para ligar/desligar', erro: true }
-              return fluxo.ativo
-                ? { texto: `“${fluxo.nome}” desligada. ${AVISO_AO_DESLIGAR}` }
-                : { texto: `“${fluxo.nome}” ligada: abre conversa nova a partir da próxima mensagem.` }
-            })
-          }
+          title={`Ver o que as pessoas responderam em “${fluxo.nome}”`}
           className="quadro-menu-item"
         >
-          <span className="flex-1">{fluxo.ativo ? 'Desligar entrada' : 'Ligar entrada'}</span>
-          {bloqueado && <span className="text-[10.5px] text-dim">publique antes</span>}
-        </button>
+          <span className="flex-1">Ver respostas</span>
+          <span className="text-[10.5px] text-dim">{respostas}</span>
+        </Link>
 
         {pastas.length > 0 && (
           <>
@@ -133,24 +92,6 @@ export function MenuDoFluxo({
         )}
 
         <div className="mt-1 border-t border-line pt-1">
-          <button
-            type="button"
-            data-fechar-popover
-            disabled={rodando || posicao <= 0}
-            onClick={() => mover(-1)}
-            className="quadro-menu-item"
-          >
-            Subir na lista
-          </button>
-          <button
-            type="button"
-            data-fechar-popover
-            disabled={rodando || posicao < 0 || posicao === idsDoGrupo.length - 1}
-            onClick={() => mover(1)}
-            className="quadro-menu-item"
-          >
-            Descer na lista
-          </button>
           <button
             type="button"
             data-fechar-popover
