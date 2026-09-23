@@ -153,6 +153,16 @@ const mensagemSchema = z.object({
    * reação" no banco (coluna `reacao`, migration 0054).
    */
   reaction: z.object({ message_id: z.string(), emoji: z.string().optional() }).optional(),
+  /*
+   * O porquê de um `unsupported`, que antes o parse jogava fora.
+   *
+   * Sem isto o banco guardava só `{id, from, type}`, e a bolha nunca podia
+   * dizer se era enquete, mensagem editada ou visualização única. Lidos soltos
+   * (`z.unknown()`): quem interpreta é `motivoDoNaoSuportado`, e formato novo
+   * da Meta não pode derrubar o parse da mensagem.
+   */
+  unsupported: z.unknown().optional(),
+  errors: z.unknown().optional(),
 })
 
 export const webhookSchema = z.object({

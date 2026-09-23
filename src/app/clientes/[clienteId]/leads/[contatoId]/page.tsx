@@ -684,7 +684,7 @@ async function Historico({
               */}
               {mensagem.recebido && <AnexoNaConversa anexo={mensagem.recebido} />}
               {mensagem.semCopia && <ArquivoSemCopia />}
-              {mensagem.naoSuportada && <MensagemNaoSuportada />}
+              {mensagem.naoSuportada && <MensagemNaoSuportada motivo={mensagem.motivoNaoSuportada} />}
               {mensagem.local && <LocalNaBolha local={mensagem.local} />}
               {mensagem.cartoes && <CartoesNaBolha cartoes={mensagem.cartoes} />}
               {/*

@@ -365,7 +365,7 @@ function ListaDeMensagens({
                 />
               )}
               {mensagem.semCopia && <ArquivoSemCopia nossa={nossa} />}
-              {mensagem.naoSuportada && <MensagemNaoSuportada />}
+              {mensagem.naoSuportada && <MensagemNaoSuportada motivo={mensagem.motivoNaoSuportada} />}
               {mensagem.local && <LocalNaBolha local={mensagem.local} />}
               {mensagem.cartoes && <CartoesNaBolha cartoes={mensagem.cartoes} />}
               {/*
@@ -414,6 +414,9 @@ function ListaDeMensagens({
                 <span className="ml-2 text-[11px] font-semibold text-soft">envio não confirmado</span>
               )}
             </p>
+            {mensagem.menu && (
+              <MenuNaConversa menu={mensagem.menu} respondido={indice < mensagens.length - 1} />
+            )}
             {/*
               O rodapé passou a existir **em toda bolha**.
 
@@ -460,6 +463,60 @@ function ListaDeMensagens({
         )
       })}
 
+    </div>
+  )
+}
+
+/**
+ * Os botões ou a lista que o bot mandou, do jeito que a pessoa viu.
+ *
+ * Pendurados embaixo da bolha, como no WhatsApp, para ler "pergunta e o que
+ * havia para tocar" como uma coisa só. A opção tocada ganha o azul e o ✓; as
+ * outras apagam. Menu sem toque e com conversa depois dele diz isso com todas
+ * as letras: foi exatamente a dúvida que gerou este componente, uma conversa
+ * em que o menu expirou e parecia que o toque tinha sumido.
+ *
+ * Lista sai aberta, com todas as linhas. No celular ela fica atrás de um
+ * botão, mas aqui quem lê precisa saber o que ela oferecia sem abrir nada.
+ */
+function MenuNaConversa({
+  menu,
+  respondido,
+}: {
+  menu: NonNullable<MensagemDoLead['menu']>
+  respondido: boolean
+}) {
+  const tocou = menu.escolhida !== undefined
+  return (
+    <div className="mt-1 flex w-full max-w-[min(78%,300px)] flex-col gap-1">
+      {menu.formato === 'lista' && (
+        <span className="px-1 text-[11px] font-medium text-muted">opções da lista</span>
+      )}
+      {menu.opcoes.map((opcao) => {
+        const escolhida = opcao.id === menu.escolhida
+        return (
+          <span
+            key={opcao.id}
+            className={`flex items-center justify-center gap-1.5 rounded-[12px] border px-3 py-1.5 text-center text-[13px] leading-5 ${
+              escolhida
+                ? 'border-primary bg-primary-weak font-semibold text-primary-strong'
+                : tocou
+                  ? 'border-line bg-surface text-dim'
+                  : 'border-line bg-surface text-primary'
+            }`}
+          >
+            {escolhida && (
+              <span aria-hidden className="text-[12px]">
+                ✓
+              </span>
+            )}
+            {opcao.rotulo}
+          </span>
+        )
+      })}
+      {!tocou && respondido && (
+        <span className="px-1 text-right text-[11px] text-muted">nenhuma opção foi tocada</span>
+      )}
     </div>
   )
 }

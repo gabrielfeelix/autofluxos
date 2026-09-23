@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { cartoesDoPayload, localDoPayload } from './payload-da-mensagem'
+import {
+  cartoesDoPayload,
+  casarToques,
+  localDoPayload,
+  menuDoPayload,
+  motivoDoNaoSuportado,
+  toqueDoPayload,
+} from './payload-da-mensagem'
 
 describe('a localização no payload', () => {
   it('lê nome e endereço quando a pessoa escolhe um lugar do mapa', () => {
@@ -91,5 +98,65 @@ describe('os cartões de contato no payload', () => {
   it('devolve vazio para mensagem que não tem cartão', () => {
     expect(cartoesDoPayload({ type: 'text' })).toEqual([])
     expect(cartoesDoPayload(null)).toEqual([])
+  })
+})
+
+describe('o menu do bot no Inbox', () => {
+  const menu = {
+    autor: { tipo: 'automacao' },
+    formato: 'botoes',
+    opcoes: [
+      { id: 'experimental', rotulo: '📅 Aula experimental' },
+      { id: 'aluno', rotulo: '👤 Já sou aluno(a)' },
+    ],
+  }
+  const toque = (id: string) => ({ type: 'interactive', interactive: { button_reply: { id, title: 'x' } } })
+
+  it('lê as opções e o formato gravados na saída', () => {
+    expect(menuDoPayload(menu)).toEqual({ formato: 'botoes', opcoes: menu.opcoes })
+    expect(menuDoPayload({ formato: 'lista', opcoes: [{ id: 'a', rotulo: 'A' }] })?.formato).toBe('lista')
+    expect(menuDoPayload({ autor: { tipo: 'automacao' } })).toBeNull()
+    expect(menuDoPayload({ opcoes: [{ id: 1 }] })).toBeNull()
+  })
+
+  it('lê o toque em botão e em lista', () => {
+    expect(toqueDoPayload(toque('aluno'))).toBe('aluno')
+    expect(toqueDoPayload({ interactive: { list_reply: { id: '55511a7e' } } })).toBe('55511a7e')
+    expect(toqueDoPayload({ type: 'text', text: { body: 'oi' } })).toBeNull()
+  })
+
+  it('marca a opção tocada no menu que ela respondeu', () => {
+    const escolhas = casarToques([
+      { id: 'm1', direcao: 'saida', payload: menu },
+      { id: 'e1', direcao: 'entrada', payload: toque('aluno') },
+    ])
+    expect(escolhas.get('m1')).toBe('aluno')
+  })
+
+  it('menu sem toque fica sem escolha, que é o menu que expirou', () => {
+    const escolhas = casarToques([
+      { id: 'm1', direcao: 'saida', payload: menu },
+      { id: 'e1', direcao: 'entrada', payload: { type: 'text', text: { body: 'oi' } } },
+    ])
+    expect(escolhas.has('m1')).toBe(false)
+  })
+
+  it('o mesmo menu repetido: cada toque vai para o mais recente em aberto', () => {
+    const escolhas = casarToques([
+      { id: 'm1', direcao: 'saida', payload: menu },
+      { id: 'e1', direcao: 'entrada', payload: toque('experimental') },
+      { id: 'm2', direcao: 'saida', payload: menu },
+      { id: 'e2', direcao: 'entrada', payload: toque('aluno') },
+    ])
+    expect(escolhas.get('m1')).toBe('experimental')
+    expect(escolhas.get('m2')).toBe('aluno')
+  })
+})
+
+describe('o motivo do unsupported', () => {
+  it('nomeia só o tipo conhecido', () => {
+    expect(motivoDoNaoSuportado({ type: 'unsupported', unsupported: { type: 'poll' } })).toBe('enquete')
+    expect(motivoDoNaoSuportado({ type: 'unsupported', unsupported: { type: 'algo_novo' } })).toBeNull()
+    expect(motivoDoNaoSuportado({ type: 'unsupported' })).toBeNull()
   })
 })

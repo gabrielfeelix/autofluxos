@@ -220,14 +220,14 @@ export function CartoesNaBolha({ cartoes }: { cartoes: CartaoDeContato[] }) {
  * o caminho é abrir a conversa no celular. Dizer isso é a única coisa útil que
  * esta bolha pode fazer, e não prometer recuperação, porque não há.
  */
-export function MensagemNaoSuportada() {
+export function MensagemNaoSuportada({ motivo }: { motivo?: string } = {}) {
   return (
     <span className="inline-flex max-w-full items-center gap-2 rounded-lg border border-dashed border-strong px-2.5 py-1.5">
       <span aria-hidden className="text-[13.5px] leading-none">
         🚫
       </span>
       <span className="text-[12px] leading-4 text-dim italic">
-        mensagem que o WhatsApp não entrega para o painel, veja no celular
+        {motivo ? `${motivo}: ` : ''}mensagem que o WhatsApp não entrega para o painel, veja no celular
       </span>
     </span>
   )

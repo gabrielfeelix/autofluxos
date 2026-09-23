@@ -62,10 +62,16 @@ export function CamposColetados({ campos }: { campos: [string, string][] }) {
     eram UUID de horário, de sessão e de pessoa: a coluna gastava a dobra
     inteira com código e escondia a resposta da pessoa atrás de "Ver mais".
     Reordenar resolve sem apagar nada. Ver `ehCampoTecnico`.
+
+    Vazio vai junto para o fim. Pergunta sem resposta não grava campo; quem
+    grava vazio é consulta de sistema (a busca na agenda que não achou a
+    pessoa), e "Pessoa id: sem resposta" no topo empurrava para baixo da dobra
+    o que ela tocou no menu.
   */
+  const noFim = (chave: string, valor: string) => valor.trim() === '' || ehCampoTecnico(chave, valor)
   const ordenados = [
-    ...campos.filter(([chave, valor]) => !ehCampoTecnico(chave, valor)),
-    ...campos.filter(([chave, valor]) => ehCampoTecnico(chave, valor)),
+    ...campos.filter(([chave, valor]) => !noFim(chave, valor)),
+    ...campos.filter(([chave, valor]) => noFim(chave, valor)),
   ]
 
   if (campos.length === 0) {

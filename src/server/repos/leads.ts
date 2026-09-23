@@ -5,9 +5,13 @@ import { chavesDoTelefone } from '@/core/contatos/telefone'
 import { LIMITE_DA_NOTA } from '@/core/flow/limites'
 import {
   cartoesDoPayload,
+  casarToques,
   localDoPayload,
+  menuDoPayload,
+  motivoDoNaoSuportado,
   type CartaoDeContato,
   type LocalDaMensagem,
+  type MenuDoBot,
 } from '@/core/payload-da-mensagem'
 import { autorDoPayload, comoChamarOAutor } from '@/core/autor-da-mensagem'
 import { ehArquivoGuardado, midiaDoTipo } from '@/core/midia-recebida'
@@ -189,6 +193,15 @@ export type MensagemDoLead = {
    * nenhum dos dois descreve isto.
    */
   naoSuportada?: true
+  /** O que era o `unsupported`, quando a Meta disse. Ver `motivoDoNaoSuportado`. */
+  motivoNaoSuportada?: string
+  /**
+   * Os botões ou a lista que o bot mandou junto desta mensagem, e qual deles a
+   * pessoa tocou. Sem isto o Inbox mostrava a pergunta e escondia as
+   * respostas possíveis, e um menu que expirou sem toque parecia conversa
+   * cortada.
+   */
+  menu?: MenuDoBot
   /**
    * Quem produziu esta mensagem, já escrito para a tela: "Gabriel Barbosa" ou
    * "automação". Ausente = não sabemos, e aí a bolha mostra só a hora.
@@ -999,6 +1012,8 @@ export async function lerConversa(
    * não se dobra: URL assinada guardada em coluna é link público com um passo a
    * mais, ela viaja em log e em backup e continua valendo até expirar.
    */
+  const toques = casarToques(visiveis)
+
   const caminhos = visiveis
     .map((m) => (ehArquivoGuardado(m.arquivo) ? m.arquivo.caminho : null))
     .filter((caminho): caminho is string => caminho !== null)
@@ -1050,6 +1065,10 @@ export async function lerConversa(
          * ali, e parecia defeito do painel.
          */
         const naoSuportada = tipoDaMeta === 'unsupported'
+        const motivo = naoSuportada ? motivoDoNaoSuportado(m.payload) : null
+        const menuCru = m.direcao === 'saida' ? menuDoPayload(m.payload) : null
+        const escolhida = toques.get(m.id)
+        const menu = menuCru ? { ...menuCru, ...(escolhida ? { escolhida } : {}) } : null
         const reacoes = m.wa_message_id ? reacoesPorAlvo.get(m.wa_message_id) : undefined
         const cita = m.cita ? citadaDoHistorico(m.cita, porWaId) : null
         return {
@@ -1062,6 +1081,8 @@ export async function lerConversa(
           ...(recebido ? { recebido } : {}),
           ...(semCopia ? { semCopia: true as const } : {}),
           ...(naoSuportada ? { naoSuportada: true as const } : {}),
+          ...(motivo ? { motivoNaoSuportada: motivo } : {}),
+          ...(menu ? { menu } : {}),
           ...(autor ? { autor } : {}),
           ...(m.transcricao ? { transcricao: m.transcricao } : {}),
           ...(local ? { local } : {}),
