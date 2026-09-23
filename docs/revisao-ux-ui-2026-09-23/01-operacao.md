@@ -1,11 +1,11 @@
-# Revisão UX/UI — operação (Atividades, Contatos e Funil)
+# Revisão UX/UI: operação (Atividades, Contatos e Funil)
 
 Data: 23/09/2026  
 Escopo: leitura estática do código atual, sem execução da aplicação, sem banco e sem produção. Este documento registra evidência de implementação e hipóteses visuais separadamente.
 
 ## Registro incremental
 
-### 23/09 — baseline confirmado no código
+### 23/09: baseline confirmado no código
 
 - Atividades é uma lista server-rendered agrupada apenas em Vencidas/Hoje/Depois, com largura máxima de 900px. Há responsável e tipo como texto secundário, mas cada item só oferece abrir contato. Ver [página de atividades](../../src/app/clientes/[clienteId]/atividades/page.tsx:58). **Certeza: confirmado no código. Impacto: alto.**
 - Contatos já usa layout flex para consumir a altura disponível e uma tabela horizontal com `min-w-[820px]`; a seleção ocupa a primeira coluna e Contato a segunda. Ver [tabela](../../src/app/clientes/[clienteId]/leads/page.tsx:459). **Certeza: confirmado no código.**
@@ -23,5 +23,46 @@ Escopo: leitura estática do código atual, sem execução da aplicação, sem b
 
 1. Executar visualmente em desktop largo, tablet e viewport móvel: confirmar se a largura de Atividades é realmente subutilizada, se a barra de ações de Contatos quebra, e se as pills de filtro parecem controles ou etiquetas decorativas.
 2. Validar teclado/foco em tabela horizontal: sticky da seleção e Contato deve preservar foco visível, contraste e leitura por leitor de tela.
-3. Verificar se “Atividades” tem criação/conclusão/adiamento no fluxo real; a página atual só lista e abre contato, embora a intenção do usuário peça ações de atividade.
+3. Validar em navegador a jornada completa (criar, concluir, reagendar, filtrar e voltar ao contato) nos breakpoints desktop, tablet e móvel; esta análise estática não comprova funcionamento visual/interativo.
 
+### Achados complementares: atividades e coerência com o funil
+
+- A consulta da agenda retorna somente `situacao = aberta`, com limite 200 e ordenação por prazo; a tela não oferece alternância para concluídas/canceladas, histórico, busca ou filtro por responsável/tipo. Ver [consulta da agenda](../../src/server/repos/atividades.ts:156) e [renderização](../../src/app/clientes/[clienteId]/atividades/page.tsx:54). **Certeza: confirmado no código. Impacto: alto.** Recomendação: toolbar com busca, tipo, responsável, situação e período; preservar “abertas” como padrão e deixar “Concluídas” acessível.
+- A tela de Atividades não tem ação primária de criar, concluir, cancelar ou reabrir; `Concluir` e `Reabrir` existem apenas no componente da ficha do contato. Ver [ações disponíveis na ficha](../../src/components/lead-crm/atividades.tsx:185) e [ações de servidor](../../src/server/acoes-atividades.ts:121). **Certeza: confirmado no código. Impacto: alto.** Recomendação: concluir inline, abrir contato, abrir conversa quando aplicável e “Nova atividade” com seletor de contato; cancelamento deve pedir motivo, conforme domínio.
+- A modelagem suporta cinco tipos, local/link, data/hora, nota e responsável, mas a lista de Atividades exibe só tipo, urgência e nome do responsável; `nota`, `onde`, hora marcada e vínculo com oportunidade ficam invisíveis. Ver [tipo de atividade](../../src/core/atividades.ts:24) e [item da lista](../../src/app/clientes/[clienteId]/atividades/page.tsx:114). **Certeza: confirmado no código. Impacto: alto.** Recomendação: layout de tabela/lista orientado à ação com colunas Prazo, Atividade, Contato, Responsável, Tipo, Funil/etapa e ações; tornar link/endereço acionável.
+- O acesso da página usa `exigirCapacidadeNaPagina(clienteId, 'atender', 'proprios')`, e o repositório restringe a responsável do usuário quando o escopo é próprio. Isso separa dados por permissão, mas a interface não explica se “minhas atividades” é intencional nem oferece troca para equipe quando a capacidade permitir. Ver [escopo da página](../../src/app/clientes/[clienteId]/atividades/page.tsx:45) e [filtro no repositório](../../src/server/repos/atividades.ts:169). **Certeza: confirmado no código; necessidade de seletor depende do papel/fluxo de negócio. Impacto: médio-alto.** Recomendação: rótulo explícito “Minhas atividades” e seletor “Equipe/Todos” apenas para papéis autorizados.
+- O contador na barra lateral soma vencidas e de hoje, mas a página agrupa também “Depois” e “sem prazo”; o número não representa o total que a pessoa encontrará ao abrir. Ver [contador](../../src/components/design/cliente-shell.tsx:255) e [grupos](../../src/app/clientes/[clienteId]/atividades/page.tsx:54). **Certeza: confirmado no código. Impacto: médio.** Recomendação: explicar o badge como “urgentes” ou mostrar dois números (urgentes e total aberto) para alinhar expectativa.
+- Funil já apresenta um padrão mais completo de operação: toolbar única com busca, situação, responsável, ordenação, contagem viva e filtros ativos removíveis. Contatos distribui filtros em duas barras e ações em outra, enquanto Atividades não tem toolbar. Ver [toolbar do funil](../../src/components/quadros/barra-do-quadro.tsx:45) e [filtros de contatos](../../src/app/clientes/[clienteId]/leads/page.tsx:324). **Certeza: confirmado no código. Impacto: alto.** Recomendação: reutilizar a gramática do Funil (campo de busca + filtros agrupados + resumo + limpar filtros), adaptando ao domínio de atividade.
+- No Funil, filtro de responsável só lista pessoas com cartões no quadro (`equipeDoQuadro`); isso reduz ruído, mas pode esconder responsáveis sem cartões visíveis ou induzir “não existe”. Ver [derivação da equipe](../../src/components/quadros/quadro.tsx:147) e [menu](../../src/components/quadros/barra-do-quadro.tsx:91). **Certeza: confirmado no código; impacto depende da operação.** Recomendação: manter filtro contextual se intencional, mas explicar “responsáveis com cartões neste funil” ou oferecer “todos da equipe”.
+
+## Recomendações priorizadas e critérios de aceite
+
+### P1: tornar Atividades uma tela operacional
+
+Composição sugerida: título + resumo de urgentes/abertas + toolbar (buscar contato/título, tipo, responsável, situação, período) + lista em largura útil + ações por linha. A primeira coluna deve manter prazo/urgência visíveis; o contato deve ser link; “Concluir” deve ser ação imediata; “Cancelar” pede motivo; “Reabrir” aparece em resolvidas.
+
+Critérios: (a) usuário encontra uma atividade por nome, título ou responsável sem navegar para a ficha; (b) consegue concluir e confirmar feedback sem perder contexto; (c) consegue alternar abertas/resolvidas; (d) o escopo de permissão continua aplicado; (e) 200+ itens têm paginação ou carregamento incremental, sem truncamento silencioso.
+
+Arquitetura sugerida para não conflitar com permissões: o padrão deve ser “Minhas atividades” (`proprios`), com seletor “Equipe”/“Todos” renderizado somente quando `exigirCapacidadeNaPagina` devolver escopo de equipe/conta. O responsável deve ser filtro de primeira classe e também campo na criação; o default pode continuar sendo a sessão atual, como já ocorre em [criação](../../src/server/acoes-atividades.ts:66). “Reagendar” não deve editar silenciosamente o prazo: abrir um popover/modal curto com data, hora opcional e confirmação, preservando tipo, contato e responsável. “Nova atividade” deve permitir selecionar contato e, se a origem for Funil/ficha, carregar contato e oportunidade pré-selecionados.
+
+O que já existe em outro contexto precisa ser reaproveitado, não duplicado: criação contextual, concluir/reabrir e tipos ricos existem na ficha do contato ([componente](../../src/components/lead-crm/atividades.tsx:76)); tipos, prazo, hora e `onde` existem no marcador do Inbox ([formulário](../../src/components/inbox/marcar-atividade.tsx:96)); persistência de resolver/reabrir existe no servidor ([ações](../../src/server/acoes-atividades.ts:121)). A lacuna é a superfície de agenda global, não a ausência do domínio.
+
+### P1: fixar contexto em Contatos
+
+Aplicar sticky horizontal à coluna de seleção e à coluna Contato, incluindo cabeçalho, com fundo opaco, z-index e bordas/sombra de separação; garantir que a coluna de ações não fique escondida. A solução precisa coexistir com o scroll vertical interno da tabela.
+
+Critérios: em viewport desktop com campos suficientes para overflow, seleção e nome/telefone permanecem visíveis ao rolar até o último campo; header fica alinhado; foco de teclado não fica sob camada sticky; em mobile há alternativa legível (scroll ou transformação para cards) e não overflow da página inteira.
+
+Implementação visual provável: `th`/`td` de seleção com `sticky left-0`, Contato com `sticky left-[36px]` (ou largura medida pelo primeiro `th`), fundos `bg-panel`/`bg-surface`, z-index maior no cabeçalho e uma sombra/borda na segunda coluna. A largura real deve ser derivada do layout atual, pois o primeiro `th` é `w-9` e as células têm padding; validar em navegador antes de aceitar offsets fixos. **Hipótese de implementação, exige execução visual.**
+
+### P2: alinhar Contatos à gramática do Funil
+
+Unificar busca e filtros em toolbar com campo de largura controlada, botão/atalho claro, chips ativos com remover e um menu “Filtros”. Manter distinção semântica entre nível/valor e etiquetas, mas apresentar filtros ativos em uma única região resumível. Agrupar ações secundárias em menu “Mais” ou separar “Gerenciar base” (importar/CSV/segmentos) de “Criar contato”.
+
+Critérios: a busca não domina a largura em desktop; filtros ativos são identificáveis e removíveis individualmente; o estado vazio diz qual filtro está ativo e oferece limpar; a navegação por teclado anuncia `aria-current`/estado selecionado; toolbar quebra em uma ordem previsível em 320–768px.
+
+Uma composição concreta: linha 1 com título/contagem e ações principais; linha 2 com busca `max-w-[360px]` + botão de filtros + ordenar/colunas; linha 3 opcional apenas quando houver filtros ativos, com chips removíveis e “Limpar tudo”. “Cliente” (nível) e “Etiquetas” continuam grupos semanticamente distintos dentro do popover, mas deixam de ocupar duas fileiras permanentes quando nenhum filtro está ativo. O padrão do Funil comprova a linguagem de popover, contagem e estado ativo em [barra](../../src/components/quadros/barra-do-quadro.tsx:78).
+
+### P3: linguagem e descoberta
+
+O menu exibe “Funil de vendas”, mas há textos visíveis na mesma jornada que usam “quadro”, por exemplo “O cartão fica no quadro” ao fechar uma oportunidade e “Filtros do quadro” na toolbar. Ver [rótulo do menu](../../src/components/design/secoes-do-cliente.tsx:63), [mensagem de fechamento](../../src/components/quadros/fechar-cartao.tsx:59) e [toolbar](../../src/components/quadros/barra-do-quadro.tsx:78). **Certeza: confirmado como inconsistência textual exibida.** Recomenda-se decidir “Funil de vendas” para a tela e “etapa/cartão” para seus elementos, mantendo “quadro” apenas se for conceito que o usuário realmente precisa conhecer.
