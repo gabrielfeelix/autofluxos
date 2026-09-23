@@ -45,8 +45,9 @@ fazer e em que ordem**, o ticket diz o porquê e as evidências.
   vazio em tabela é `·` ou texto (`sem dado`), nunca `,`.
 - **Banco:** ler `docs/BANCO-COMPARTILHADO.md` antes de qualquer migration.
   Nunca `supabase db push` nem `db reset` contra produção. Próxima migration se
-  descobre com `ls supabase/migrations | tail -1` (hoje a última é `0093`, que
-  pertence a outro trabalho em andamento; não mexa nela). Migration nova começa
+  descobre com `ls supabase/migrations | tail -1` (em 23/09 a última é `0093`, catálogo com
+  card, do trabalho de produtos; a próxima deste plano seria `0094`, mas confira
+  o diretório, porque outro agente trabalha em paralelo). Migration nova começa
   com `set search_path = public, extensions`. **Não aplique nada em produção**:
   migration é aplicada só no Supabase local; produção fica para o Gabriel
   autorizar, e a tarefa registra isso no fim do commit.
@@ -65,6 +66,16 @@ fazer e em que ordem**, o ticket diz o porquê e as evidências.
   (`owner`, `member`, `webhook` só onde o público for técnico).
 - **Commits** em Conventional Commits, em português, um por tarefa, e push na
   `main` logo em seguida.
+- **Trabalho em paralelo:** outro agente mexe no mesmo repositório (catálogo,
+  loja, Inbox). Antes de cada tarefa: `git pull --rebase` e `git log --oneline -10`;
+  se um commit novo tocou arquivo da tarefa, leia o diff antes de editar.
+- **Peças que já existem e devem ser reaproveitadas:**
+  - `telefoneLegivel` (`src/core/contatos/telefone.ts`): todo telefone na tela
+    sai como `+55 (44) 99877-5978`. Nunca mostrar `wa_id` cru.
+  - `AjudaDaTela` (`src/components/design/ajuda-da-tela.tsx`): o `?` ao lado do
+    título que abre a explicação da tela. Descrição embaixo do título fica em
+    até duas linhas; passo a passo e regras vão para dentro do `?`. Exemplo de
+    uso: `src/app/clientes/[clienteId]/ajustes/produtos/page.tsx:97`.
 - **Atualizar este arquivo:** ao terminar uma tarefa, marque os checkboxes e,
   se algo saiu diferente do plano, escreva uma linha em "Registro de execução"
   no fim do arquivo, com o hash do commit.
@@ -348,10 +359,12 @@ export async function paginaDaAgenda(
   JS não é possível no servidor, então consulte primeiro os contatos cujo
   `nome`, `nome_real` ou `wa_id` casem com o termo, limite 500 ids, e junte com
   `or(titulo.ilike.%termo%, contact_id.in.(ids))`). Dígitos na busca casam com
-  `wa_id` ignorando espaços e traços.
+  `wa_id` ignorando tudo que não é dígito: quem copia `+55 (44) 99877-5978` da
+  tela precisa achar o contato (`wa_id` é só dígitos).
 - Junta contato (`contacts(id, nome, nome_real, wa_id)`) e negócio
   (`quadro_cartoes(id, titulo, quadros(nome), quadro_colunas(nome))`) na mesma
-  consulta. Nome exibido: `nome_real ?? nome ?? telefone formatado`.
+  consulta. Nome exibido: `nome_real ?? nome ?? telefoneLegivel(wa_id)`; o telefone
+  da linha também sai por `telefoneLegivel`.
 - Ordenação: `prazo asc nulls last`, depois `criado_em asc`. Concluídas e
   canceladas: `concluida_em desc`.
 - Paginação com `range((pagina-1)*50, pagina*50-1)` e `count: 'exact'`.
@@ -468,8 +481,10 @@ export async function acaoAtribuirAtividade(
 
 - [ ] **Passo 1:** print antes: `node scripts/ux-local/prints.mjs .ux-local/antes atividades`.
 - [ ] **Passo 2:** página: remover `max-w-[900px]`; usar a largura do shell como
-  Contatos e Funil. Cabeçalho com título, subtítulo atual ("nada aqui é enviado
-  ao cliente" continua, é informação valiosa) e botão "+ Nova atividade" (a
+  Contatos e Funil. Cabeçalho com título, `AjudaDaTela` (o que é atividade, que
+  nada é enviado ao cliente, diferença para mensagem agendada, o que conta no
+  número da barra lateral), subtítulo de uma linha ("Lembretes internos da
+  equipe. Nada aqui é enviado ao cliente.") e botão "+ Nova atividade" (a
   tarefa 1.5 liga o botão; aqui ele já aparece).
 - [ ] **Passo 3:** atalhos de recorte com as contagens de `PaginaDaAgenda.contagens`;
   o ativo tem `aria-pressed="true"`; clicar no ativo desliga.
@@ -848,7 +863,9 @@ export async function editarPasso(
 - [ ] **Passo 1:** HTTP: ao lado da URL, "Só endereço HTTPS público. O segredo
   fica na conexão, nunca aqui." e, antes de publicar, erro de validação legível
   para URL inválida.
-- [ ] **Passo 2:** IA: ferramentas separadas em "Só consulta" e "Grava dados";
+- [ ] **Passo 2:** IA: ferramentas separadas em "Só consulta" e "Grava dados"
+  (as ferramentas de loja do commit `e760fe6`, buscar produto e consultar
+  estoque, são "Só consulta");
   para as que gravam, mostrar a política efetiva da conta (automático, pede
   confirmação ao contato, passa para humano) lida de `src/server/ia/politica.ts`.
 - [ ] **Passo 3:** commit `feat(editor): blocos HTTP e IA explicam o alcance`.
@@ -1037,7 +1054,11 @@ Ler `05-atendimento-crm.md` inteiro antes. Preservar os invariantes da seção
   "modelo" (texto livre desabilitado com o motivo), rascunho preservado ao trocar
   de modo e de aba.
 - [ ] **Passo 2:** respostas rápidas viram busca com teclado (`/` abre), sem
-  empurrar o compositor.
+  empurrar o compositor. **Preservar** o seletor de produto que o outro agente
+  pôs na barra do compositor (`src/components/lead/seletor-de-produto.tsx`,
+  `icones-da-barra.tsx`, commit `5e736ef`): produto e resposta rápida são duas
+  entradas da mesma barra, com o mesmo padrão de busca por teclado. Ler
+  `responder.tsx` inteiro antes, ele mudou depois da revisão.
 - [ ] **Passo 3:** commit `feat(inbox): compositor único com texto livre, modelo e bloqueado`.
 
 ### Tarefa 8.3: próximos passos separados por tipo [X04, X10, X08]
@@ -1116,6 +1137,15 @@ Estrutura alvo (rotas não mudam):
 | Canais | WhatsApp · Instagram |
 | Automação de resposta | Conhecimento da IA · Horário e retomada |
 | Ferramentas do atendimento | Respostas rápidas · Etiquetas · Catálogo · Arquivos e mídias |
+
+**Catálogo mudou depois da revisão** (commits `68d0c59`, `e760fe6`, `8626880`,
+`53c468a`): importa planilha, vira a loja do bot quando não há Magento, manda
+card no Inbox e avisa quando o catálogo vem da Magento. Consequências:
+descrição do item na busca e na Visão geral passa a ser "Produtos que a equipe
+manda no Inbox e o bot consulta"; com Magento ligada, o cartão da Visão geral
+mostra "vem da Magento" em vez da contagem local; Loja Magento continua em
+Conexões e APIs. A tela de Produtos já tem `AjudaDaTela`: é o modelo para as
+outras telas desta fase.
 | Conexões e APIs | Todas as conexões · Anúncios · Chaves de API |
 
 - [ ] **Passo 1:** aplicar a tabela; sinônimos na busca: "retomada" → Horário,
@@ -1233,3 +1263,8 @@ Estrutura alvo (rotas não mudam):
 Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
 
 - 23/09: plano escrito; ambiente local e prints de antes em `prints-antes/`.
+- 23/09: conferidos os commits do outro agente (`b211466` a `53c468a`: catálogo,
+  loja, card de produto no Inbox, telefone legível). Plano ajustado: 0093 não é
+  mais pendente, `telefoneLegivel` e `AjudaDaTela` viram peças obrigatórias,
+  compositor do Inbox preserva o seletor de produto, Catálogo com nova descrição.
+  Nenhuma tarefa do plano foi feita por eles; nenhuma sai do plano.
