@@ -3,6 +3,7 @@ import { acessoCompleto } from '@/server/permissoes'
 import { pode } from '@/core/permissoes'
 import type { Cliente } from '@/server/repos/clientes'
 import { crmVisivel } from '@/server/repos/recursos'
+import { atrasoDeRevisao } from '@/server/atraso-de-revisao'
 import { type AbaDoCliente, liberaSecao, rotuloDaSecao } from './secoes-do-cliente'
 import { FunilDesligado, SemAcesso } from './sem-acesso'
 
@@ -35,6 +36,7 @@ export async function ClienteShell({
   ativa: AbaDoCliente
   children: ReactNode
 }) {
+  await atrasoDeRevisao()
   const acesso = await acessoCompleto(cliente.id)
   /*
    * O CRM é opcional (§4.2), e quem responde é `crmVisivel`: ele considera o

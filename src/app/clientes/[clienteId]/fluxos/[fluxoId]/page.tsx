@@ -3,6 +3,7 @@ import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
 import { FaixaDeSuporte } from '@/components/conta/faixa-de-suporte'
 import { Editor } from '@/components/editor/editor'
 import { ClienteShell } from '@/components/design/cliente-shell'
+import { atrasoDeRevisao } from '@/server/atraso-de-revisao'
 import { SemAcesso } from '@/components/design/sem-acesso'
 import { capacidadeNaPagina } from '@/server/permissoes'
 import { variaveisDoFluxo } from '@/core/flow/variaveis'
@@ -48,6 +49,7 @@ export default async function Pagina({
   params: Promise<{ clienteId: string; fluxoId: string }>
   searchParams: Promise<{ origem?: string }>
 }) {
+  await atrasoDeRevisao()
   const { clienteId, fluxoId } = await params
   const origem = origemValida((await searchParams).origem)
 
