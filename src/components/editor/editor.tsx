@@ -1,6 +1,7 @@
 'use client'
 
 import { rotulosDoEstado } from '@/core/entrada'
+import { useConfirmar } from '@/components/design/confirmar'
 import type { ConfigDaConta } from '@/core/retomada'
 import {
   addEdge,
@@ -445,6 +446,14 @@ export function Editor({
     LARGURA_MAXIMA_DOS_BLOCOS,
   )
   const [salvamento, setSalvamento] = useState<'salvo' | 'salvando' | 'pendente' | 'erro'>('salvo')
+  /**
+   * Quando o último salvamento automático deu certo (A07). "salvo" sozinho não
+   * dizia se era de agora ou de meia hora atrás, antes da rede cair.
+   */
+  const [salvoEm, setSalvoEm] = useState<Date | null>(null)
+  /** Muda para forçar o salvamento de novo depois de um erro ("Tentar de novo"). */
+  const [tentativa, setTentativa] = useState(0)
+  const { confirmar: confirmarPublicacao, dialogo: dialogoDePublicacao } = useConfirmar()
   const [publicada, setPublicada] = useState(publicadaInicial)
   const [versoes, setVersoes] = useState(versoesIniciais)
   /** Id da versão sendo republicada, para a linha dela mostrar o progresso. */
@@ -655,6 +664,8 @@ export function Editor({
     [publicada],
   )
   const haNovidade = assinatura !== assinaturaPublicada
+  /** A versão que nasce no próximo Publicar (A07): a maior que já existiu, mais um. */
+  const proximaVersao = versoes.reduce((maior, v) => Math.max(maior, v.versao), 0) + 1
 
   // Salva sozinho depois de uma pausa. Rascunho incompleto pode ser salvo ,
   // quem barra a publicação é o validador, não o salvamento.
@@ -669,6 +680,7 @@ export function Editor({
         const r = await acaoSalvarRascunho(fluxoId, clienteId, JSON.parse(congelado))
         if (r.ok) {
           assinaturaSalva.current = congelado
+          setSalvoEm(new Date())
           setSalvamento(congelado === assinatura ? 'salvo' : 'pendente')
         } else {
           setSalvamento('erro')
@@ -679,7 +691,7 @@ export function Editor({
     }, PAUSA_ANTES_DE_SALVAR)
 
     return () => clearTimeout(relogio)
-  }, [assinatura, clienteId, fluxoId])
+  }, [assinatura, clienteId, fluxoId, tentativa])
 
   // Avisa antes de fechar a aba com coisa por salvar.
   useEffect(() => {
@@ -1379,7 +1391,11 @@ export function Editor({
           </p>
         </div>
         <span className="mx-0.5 h-6 w-px bg-surface-strong" />
-        <EstadoSalvamento estado={salvamento} />
+        <EstadoSalvamento
+          estado={salvamento}
+          salvoEm={salvoEm}
+          aoTentarDeNovo={() => setTentativa((n) => n + 1)}
+        />
         <span className="mx-0.5 h-6 w-px bg-surface-strong" />
 
         {/*
@@ -1592,7 +1608,19 @@ export function Editor({
         </button>
 
         <button
-          onClick={publicarAgora}
+          onClick={() =>
+            confirmarPublicacao({
+              titulo: `Publicar v${proximaVersao}?`,
+              descricao: publicada
+                ? `Só novas conversas usam a versão nova. Quem já está no meio continua na v${publicada.versao}.`
+                : 'A partir de agora, novas conversas que chegarem pela entrada desta automação usam este desenho.',
+              rotulo: `Publicar v${proximaVersao}`,
+              tom: 'normal',
+              aoConfirmar: async () => {
+                await publicarAgora()
+              },
+            })
+          }
           disabled={!validacao.ok || !haNovidade || publicando || salvamento === 'salvando'}
           title={
             !validacao.ok
@@ -1603,8 +1631,9 @@ export function Editor({
           }
           className="app-primary-button px-[18px] py-2 text-[13px]"
         >
-          {publicando ? 'publicando…' : 'Publicar'}
+          {publicando ? 'publicando…' : `Publicar v${proximaVersao}`}
         </button>
+        {dialogoDePublicacao}
       </header>
 
       {errosDePublicacao && (
@@ -2363,16 +2392,35 @@ function livre(inicial: { x: number; y: number }, existentes: Node[]): { x: numb
   return alvo
 }
 
-function EstadoSalvamento({ estado }: { estado: 'salvo' | 'salvando' | 'pendente' | 'erro' }) {
+function EstadoSalvamento({
+  estado,
+  salvoEm,
+  aoTentarDeNovo,
+}: {
+  estado: 'salvo' | 'salvando' | 'pendente' | 'erro'
+  salvoEm: Date | null
+  aoTentarDeNovo: () => void
+}) {
+  /*
+   * A07: o estado diz quando, e o erro diz por quê e o que fazer. Sem hora,
+   * "salvo" parecia valer para o desenho de agora mesmo depois de a rede cair.
+   */
+  const hora = salvoEm
+    ? salvoEm.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    : null
+  const semRede = estado === 'erro' && typeof navigator !== 'undefined' && !navigator.onLine
   const texto = {
-    salvo: 'salvo',
-    salvando: 'salvando…',
-    pendente: 'alterações não salvas',
-    erro: 'não deu para salvar',
+    salvo: hora ? `Salvo às ${hora}` : 'Salvo',
+    salvando: 'Salvando…',
+    pendente: 'Alterações não salvas',
+    erro: semRede ? 'Não salvo: sem conexão.' : 'Não salvo.',
   }[estado]
 
   return (
-    <span className={`flex items-center gap-2 text-xs ${estado === 'erro' ? 'text-perigo' : 'text-muted'}`}>
+    <span
+      role="status"
+      className={`flex items-center gap-2 text-xs whitespace-nowrap ${estado === 'erro' ? 'text-perigo' : 'text-muted'}`}
+    >
       <span
         className={`size-1.5 rounded-full ${
           estado === 'erro'
@@ -2385,6 +2433,15 @@ function EstadoSalvamento({ estado }: { estado: 'salvo' | 'salvando' | 'pendente
         }`}
       />
       {texto}
+      {estado === 'erro' && (
+        <button
+          type="button"
+          onClick={aoTentarDeNovo}
+          className="font-semibold underline underline-offset-2 hover:text-ink"
+        >
+          Tentar de novo
+        </button>
+      )}
     </span>
   )
 }

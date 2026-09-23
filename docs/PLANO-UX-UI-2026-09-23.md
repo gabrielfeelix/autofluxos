@@ -758,12 +758,12 @@ publicada. Publique antes de ligar, senão ninguém recebe resposta.";
 
 ### Tarefa 3.5: salvamento automático com estado claro [A07]
 
-- [ ] **Passo 1:** no cabeçalho do editor (`src/components/editor/editor.tsx:1329`),
+- [x] **Passo 1:** no cabeçalho do editor (`src/components/editor/editor.tsx:1329`),
   o indicador passa a dizer "Salvo às 14:32", "Salvando...", "Não salvo:
   sem conexão. [Tentar de novo]".
-- [ ] **Passo 2:** o botão Publicar mostra a versão que vai nascer ("Publicar v4")
+- [x] **Passo 2:** o botão Publicar mostra a versão que vai nascer ("Publicar v4")
   e a confirmação diz "Só novas conversas usam a versão nova".
-- [ ] **Passo 3:** prints; commit `feat(editor): salvamento e publicação dizem o que aconteceu`.
+- [x] **Passo 3:** prints; commit `feat(editor): salvamento e publicação dizem o que aconteceu`.
 
 ### Tarefa 3.6: ações do bloco sem botão direito [A08]
 
@@ -1440,3 +1440,10 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   usam a ordem inteira da pasta mesmo com filtro. Resultado das ações sai em
   `AvisoFlutuante` (portal). "Publique para ligar" deixou de ser alerta (o
   estado já diz "Nunca publicada · Entrada desligada").
+- 23/09, tarefa 3.5: "Salvo às HH:MM" só depois do primeiro salvamento da
+  sessão (antes diz "Salvo"; o editor não recebe `atualizado_em`). "Sem
+  conexão" vem de `navigator.onLine`; outro erro diz só "Não salvo." com o
+  mesmo "Tentar de novo" (que força o salvamento de novo). A próxima versão é a
+  maior da lista de versões mais um. Publicar agora confirma antes (não
+  confirmava). **Achado:** no celular o editor inteiro rola de lado (cabeçalho
+  largo), e o diálogo aparece deslocado; fica para a 5.8.
