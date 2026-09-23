@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { z } from 'zod'
 import { idsDosAlertas, novosAlertas, type AlertaDaFila } from './alertas'
@@ -23,6 +23,9 @@ const respostaSchema = z.object({
 type Permissao = NotificationPermission | 'indisponivel' | 'desconhecida'
 
 const INTERVALO_DE_CONSULTA = 30_000
+
+/** A permissão não avisa quando muda; quem muda é o clique, que guarda o novo valor. */
+const semAssinatura = () => () => {}
 
 function permissaoAtual(): Permissao {
   if (typeof window === 'undefined' || !('Notification' in window)) return 'indisponivel'
@@ -71,13 +74,13 @@ export function NotificacoesDaFila({
   /*
    * O servidor não tem `Notification`. Ler a permissão já na primeira
    * renderização fazia o navegador desenhar outra coisa e o React acusar
-   * hidratação divergente em toda tela. Começa "desconhecida" (igual ao
-   * servidor) e só depois da montagem lê a de verdade.
+   * hidratação divergente em toda tela. Na hidratação vale "desconhecida"
+   * (igual ao servidor); logo depois, a de verdade. O clique em "ligar"
+   * sobrepõe com a resposta do navegador.
    */
-  const [permissao, setPermissao] = useState<Permissao>('desconhecida')
-  useEffect(() => {
-    setPermissao(permissaoAtual())
-  }, [])
+  const lida = useSyncExternalStore(semAssinatura, permissaoAtual, () => 'desconhecida' as const)
+  const [escolhida, setPermissao] = useState<Permissao | null>(null)
+  const permissao = escolhida ?? lida
 
   useEffect(() => {
     let ativa = true
