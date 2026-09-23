@@ -121,3 +121,72 @@ armadilhas que custaram voltas:
   `tsc --noEmit` fica limpo.
 - O repo da Verandi andou durante o trabalho (`f85d271`). Rebaseei e revalidei.
   **`git fetch` antes de começar** continua valendo para os dois repos.
+
+---
+
+# PUBLICADO em 22/set/2026, à noite
+
+Autorizado pelo Gabriel. Quatro publicações, todas pela RPC `publicar_fluxo`,
+todas relidas da produção depois e com a conversa rodada contra o grafo
+**baixado de volta**, não contra o arquivo local.
+
+| Fluxo | Era | Ficou | Versão para voltar |
+|---|---|---|---|
+| Reagendamento | v7 | **v8** | `91af1324-afaa-47b7-82ad-159f053bf31f` |
+| Atendimento | v12 | **v13** | `f18cbccd-5502-4916-8d04-a127cb7bc858` |
+| Agendamento (redação) | v7 | v8 | `a761881a-28e4-4f58-817d-02cd9a5c891c` |
+| Agendamento (experimental) | v8 | **v9** | `46a52c8b-c489-4cae-97c2-2241b74b42c5` |
+
+Zero fluxos apontando para versão inexistente.
+
+## A aula experimental, e a correção do que estava escrito
+
+O doc anterior registrava a decisão como *"oferece só pilates aula experimental
+e se a pessoa seleciona os outros transfere"*. **Está errado**, e o Gabriel
+corrigiu em 22/09: oferece experimental de **todas** as modalidades; Pilates
+aparelho o bot marca sozinho no fluxo normal de disponibilidade; qualquer outra
+vai para um atendente.
+
+O que se descobriu implementando: o Agendamento **já tinha** a pergunta
+`qual-modalidade`, alimentada por `servicosExperimentais[]`. Essa chave da API
+filtra por `aceitaExperimental`, e no banco da Verandi **só Pilates aparelho
+tem esse campo** — os outros oito serviços ativos estão todos `false`. Ou seja,
+o menu chegava ao WhatsApp com **uma opção só**, e quem queria RPG não via a
+modalidade nem tinha como pedir.
+
+A correção, em três partes:
+
+1. `catalogo` passa a mapear `servicos[]` no lugar de `servicosExperimentais[]`,
+   então o menu lista as nove modalidades ativas.
+2. `e-pilates` compara `servico_id` com `26f98ed0-a814-4015-88bd-2008921547fc`.
+   Verdadeiro segue para `quando`, que é o fluxo automático de sempre.
+3. Falso cai em `experimental-com-pessoa`, um handoff com a modalidade escrita
+   no motivo: *"quer aula experimental de {{modalidade}}"*.
+
+**Por que não marcar as outras no banco da Verandi:** seria a outra saída
+(ligar `aceita_experimental` em mais serviços), e ela é alteração em produto que
+não se toca a partir deste repositório. Além disso exigiria decidir quais das
+oito realmente aceitam, o que é pergunta para o cliente, não para nós.
+
+## Um defeito de dado que ficou, e é da Verandi
+
+O rótulo do menu vem da API e o WhatsApp corta em 20 caracteres:
+`Toque de Tensigridade` chega como **"Toque de Tensigridad"**. O validador do
+produto não pega porque só confere rótulo escrito à mão, e estes nascem em
+tempo de execução.
+
+E o nome está grafado errado no banco: **"Liberação Miofacial"**, sem o "s" de
+*miofascial*. Os dois são dado da Verandi, em `app_verandi.servico`, e este
+repositório não altera objeto de lá. Levar para quem cuida da Verandi.
+
+## Como provar, se precisar refazer
+
+O caminho que funcionou está descrito acima, e a armadilha do `mapear` vale
+também aqui: o fluxo de Agendamento pede o nome antes do menu quando a pessoa
+não está na agenda, então o teste precisa responder texto livre para chegar na
+modalidade. Sem isso a conversa para em *"Como posso te chamar?"* e o menu
+parece vazio.
+
+Os rótulos também não são `d0, d1, ...`: pegue o `id` real da opção pelo
+rótulo, senão você escolhe Personal Pilates achando que escolheu Pilates
+aparelho — aconteceu.
