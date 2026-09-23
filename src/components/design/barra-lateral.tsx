@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useRef, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { BotaoDeTema, definirPreferencia, usePreferencia } from '@/components/design/tema'
 import { Avatar } from '@/components/design/avatar'
 import { usePerfil } from '@/components/conta/voce'
@@ -30,6 +30,31 @@ export function BarraLateral({ marca, identidadeNoCelular, voltar, itens, rodape
 }) {
   const recolhida = usePreferencia('barra')
   const painel = useRef<HTMLDialogElement>(null)
+  const secoes = useRef<HTMLElement>(null)
+  const [maisADireita, setMaisADireita] = useState(false)
+  const chaveAcesa = itens.find((item) => item.acesa)?.chave
+  /*
+   * No celular a barra de seções é uma faixa que rola de lado (5.8). Sem isto,
+   * quem abre Automações ou Configurações vê "Painel · Inbox · Atividades · Co"
+   * e o item aceso fica fora da tela. Rola até ele ao abrir, e o esmaecido da
+   * borda direita avisa que há mais itens.
+   */
+  useEffect(() => {
+    const faixa = secoes.current
+    if (!faixa) return
+    const conferir = () => setMaisADireita(faixa.scrollWidth - faixa.clientWidth - faixa.scrollLeft > 4)
+    const acesa = faixa.querySelector<HTMLElement>('[aria-current="page"]')
+    if (acesa && faixa.scrollWidth > faixa.clientWidth) {
+      faixa.scrollLeft = Math.max(0, acesa.offsetLeft - (faixa.clientWidth - acesa.offsetWidth) / 2)
+    }
+    conferir()
+    faixa.addEventListener('scroll', conferir, { passive: true })
+    window.addEventListener('resize', conferir)
+    return () => {
+      faixa.removeEventListener('scroll', conferir)
+      window.removeEventListener('resize', conferir)
+    }
+  }, [chaveAcesa])
   const disponivel = presenca === 'disponivel'
   const perfil = usePerfil()
   const nomeNoBotao = perfil?.nome ?? 'Você'
@@ -61,7 +86,8 @@ export function BarraLateral({ marca, identidadeNoCelular, voltar, itens, rodape
       </div>
       {!recolhida && voltar}
       {!recolhida && contaNoTopo && <div className="mb-3 hidden md:block">{contaNoTopo}</div>}
-      <nav aria-label="Seções do cliente" className="flex gap-1 overflow-x-auto border-b border-line px-3 py-2 md:min-h-0 md:flex-1 md:flex-col md:overflow-y-auto md:border-0 md:p-0">
+      <div className="relative md:contents">
+      <nav ref={secoes} aria-label="Seções do cliente" className="flex gap-1 overflow-x-auto border-b border-line px-3 py-2 md:min-h-0 md:flex-1 md:flex-col md:overflow-y-auto md:border-0 md:p-0">
         {itens.filter((item) => item.chave === 'inicio').map(link)}
         {[{ nome: 'Dia a dia', chaves: ['inbox', 'atividades', 'leads', 'quadros', 'relatorios'] }, { nome: 'Automação', chaves: ['fluxos', 'transmissoes'] }].filter((grupo) => itens.some((item) => grupo.chaves.includes(item.chave))).map((grupo) => (
           <div key={grupo.nome} className="contents md:block">
@@ -71,6 +97,8 @@ export function BarraLateral({ marca, identidadeNoCelular, voltar, itens, rodape
         ))}
         <div className="contents md:mt-auto md:block md:pt-5">{itens.filter((item) => item.chave === 'ajustes').map(link)}</div>
       </nav>
+      {maisADireita && <span aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-panel to-transparent md:hidden" />}
+      </div>
       <div className="mt-3 hidden border-t border-line pt-3 md:block">
         {contaButton()}
         <div className={recolhida ? 'flex flex-col items-center' : 'mt-2 flex items-center justify-between'}>

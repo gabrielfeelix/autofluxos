@@ -908,10 +908,10 @@ export async function editarPasso(
 
 ### Tarefa 5.8: abas responsivas [A02]
 
-- [ ] **Passo 1:** print celular de Automações; se as abas cortarem, rolagem
+- [x] **Passo 1:** print celular de Automações; se as abas cortarem, rolagem
   horizontal com indicador de mais conteúdo e aba ativa sempre visível
   (`scrollIntoView` no carregamento).
-- [ ] **Passo 2:** commit `fix(automacoes): abas utilizáveis no celular`.
+- [x] **Passo 2:** commit `fix(automacoes): abas utilizáveis no celular`.
 
 ---
 

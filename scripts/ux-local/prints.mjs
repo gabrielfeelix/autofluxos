@@ -25,7 +25,7 @@ const TELAS = {
 const nomes = pedidas.length ? pedidas : Object.keys(TELAS)
 mkdirSync(saida, { recursive: true })
 const b = await chromium.launch()
-for (const [largura, altura, sufixo] of [[1440, 900, ''], [390, 844, '-celular']]) {
+for (const [largura, altura, sufixo] of (process.env.LARGURAS ? JSON.parse(process.env.LARGURAS) : [[1440, 900, ''], [390, 844, '-celular']])) {
   const ctx = await b.newContext({ baseURL: `http://localhost:${process.env.PORTA ?? 3100}`, storageState: '.ux-local/sessao.json', viewport: { width: largura, height: altura } })
   const p = await ctx.newPage()
   for (const n of nomes) {

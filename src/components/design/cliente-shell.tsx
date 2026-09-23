@@ -119,7 +119,7 @@ export async function ClienteShell({
         identidadeNoCelular={
           <>
             <LogoDoCliente cliente={cliente} tamanho={26} />
-            <span className="max-w-[110px] truncate text-[12px] font-semibold">{cliente.nome}</span>
+            <span className="max-w-[72px] truncate text-[12px] font-semibold min-[375px]:max-w-[110px]">{cliente.nome}</span>
           </>
         }
         presenca={presenca ?? undefined}

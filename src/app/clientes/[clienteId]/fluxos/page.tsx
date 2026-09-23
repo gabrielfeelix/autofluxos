@@ -463,13 +463,13 @@ async function ConteudoDaAba({
           leva de volta ao mesmo lugar, o botão "voltar" do navegador funciona, e
           a página continua sendo renderizada no servidor.
         */}
-        <nav className="mb-5 flex flex-wrap gap-1 border-b border-line">
+        <nav aria-label="Automações" className="mb-5 flex gap-1 overflow-x-auto border-b border-line whitespace-nowrap">
           {ABAS.map((item) => (
             <Link
               key={item.chave}
               href={`/clientes/${cliente.id}/fluxos?aba=${item.chave}`}
               aria-current={item.chave === principal ? 'page' : undefined}
-              className={`-mb-px border-b-2 px-3.5 py-2.5 text-[13px] font-semibold transition ${
+              className={`-mb-px shrink-0 border-b-2 px-3 py-2.5 text-[13px] font-semibold transition sm:px-3.5 ${
                 item.chave === principal
                   ? 'border-primary text-primary'
                   : 'border-transparent text-dim hover:text-soft'
@@ -488,13 +488,13 @@ async function ConteudoDaAba({
         {principal === 'gatilhos' && (
           <div className="mb-5 flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between">
             <p className="text-[12.5px] text-muted">O que faz uma automação começar.</p>
-            <nav aria-label="Tipos de gatilho" className="flex w-fit flex-wrap gap-1 rounded-[10px] border border-line bg-panel p-1">
+            <nav aria-label="Tipos de gatilho" className="flex max-w-full gap-1 self-start overflow-x-auto rounded-[10px] border border-line bg-panel p-1 whitespace-nowrap md:self-auto">
               {TIPOS.map((item) => (
                 <Link
                   key={item.chave}
                   href={`/clientes/${cliente.id}/fluxos?${consultaDaAba(item.chave)}`}
                   aria-current={item.chave === aba ? 'page' : undefined}
-                  className={`rounded-[7px] px-3 py-1.5 text-[12.5px] font-semibold transition ${
+                  className={`shrink-0 rounded-[7px] px-2.5 py-1.5 text-[12.5px] font-semibold transition sm:px-3 ${
                     item.chave === aba ? 'bg-primary-weak text-primary' : 'text-dim hover:text-soft'
                   }`}
                 >
