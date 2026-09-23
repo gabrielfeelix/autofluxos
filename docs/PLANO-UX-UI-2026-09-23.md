@@ -812,9 +812,9 @@ export async function editarPasso(
   Se o novo horário já passou, a tarefa roda na próxima passada (não pular).
 - Devolver quantas inscrições foram remarcadas, para a tela dizer.
 
-- [ ] **Passo 1:** testes que falham: `editar conteúdo vale para quem ainda não recebeu`; `editar horário remarca a tarefa de quem está esperando este passo`; `horário que troca a ordem é recusado`; `acima de 24h sem modelo é recusado`; `não edita passo de outra conta`.
-- [ ] **Passo 2:** FAIL → implementar → PASS; typecheck.
-- [ ] **Passo 3:** commit `feat(sequencias): editar passo, remarcando quem está esperando`.
+- [x] **Passo 1:** testes que falham: `editar conteúdo vale para quem ainda não recebeu`; `editar horário remarca a tarefa de quem está esperando este passo`; `horário que troca a ordem é recusado`; `acima de 24h sem modelo é recusado`; `não edita passo de outra conta`.
+- [x] **Passo 2:** FAIL → implementar → PASS; typecheck.
+- [x] **Passo 3:** commit `feat(sequencias): editar passo, remarcando quem está esperando`.
 
 ### Tarefa 4.2: editar passo (tela)
 
@@ -1452,3 +1452,14 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   ou uma ligação selecionados, com os mesmos handlers do botão direito. O passo
   2 já existia: a confirmação de Excluir conta as ligações e o painel mostra
   "Bloco apagado, e N ligação(ões). Desfazer".
+- 23/09, pedido do Gabriel antes da Fase 4: Contatos ganhou a coluna
+  Responsável (ligada de saída, logo depois de Contato; nome de
+  `membrosDaConta`, "Fora da equipe" para quem saiu) e o número do botão
+  Colunas passou a ser quantas colunas ainda estão fora da tabela (`2c569fa`).
+- 23/09, tarefa 4.1: a checagem de ordem é pura, `conferirOrdem`
+  (`src/core/sequencias.ts`). Remarcar mexe só no `quando` da tarefa pendente
+  da inscrição (chave `sequencia:<inscrição>`, conferida pelo `passoIndice`
+  dos dados), com base no `entrouEm` gravado nela. `fluxoId` nulo mantém o
+  fluxo (o passo sempre tem um). Nasceu também `esperandoOPasso`, para a 4.2
+  dizer quantos esperam antes de apagar. Os testes foram escritos junto com a
+  implementação, não antes.

@@ -126,6 +126,7 @@ import {
   apagarPasso,
   apagarSequencia,
   criarPasso,
+  editarPasso,
   criarSequencia,
 } from './repos/sequencias'
 import {
@@ -1448,6 +1449,40 @@ export async function acaoCriarPassoDaSequencia(
 
   revalidatePath(`/clientes/${clienteId}/fluxos`)
   return { ok: true }
+}
+
+/**
+ * Muda horário, fluxo ou modelo de um passo que já existe (A06).
+ *
+ * As regras moram em `editarPasso`: horário novo não troca a ordem, a régua é
+ * a mesma da criação, e quem está esperando este passo é remarcado. O número
+ * de remarcadas volta para a tela dizer.
+ */
+export async function acaoEditarPassoDaSequencia(
+  clienteId: string,
+  passoId: string,
+  _estado: EstadoSalvar & { remarcadas?: number },
+  formData: FormData,
+): Promise<EstadoSalvar & { remarcadas?: number }> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
+
+  const horas = Number(formData.get('horas') ?? 0)
+  const minutos = Number(formData.get('minutos') ?? 0)
+  const total = Math.round((Number.isFinite(horas) ? horas : 0) * 60 + (Number.isFinite(minutos) ? minutos : 0))
+  const fluxoId = String(formData.get('fluxoId') ?? '').trim()
+  // Vazio tira o modelo: passo dentro das 24h não precisa dele.
+  const templateId = String(formData.get('templateId') ?? '').trim() || null
+
+  const r = await editarPasso(clienteId, passoId, {
+    atrasoMinutos: total,
+    fluxoId: fluxoId || undefined,
+    templateId,
+  })
+  if (!r.ok) return { erro: r.motivo }
+
+  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  return { ok: true, remarcadas: r.remarcadas }
 }
 
 export async function acaoApagarPassoDaSequencia(

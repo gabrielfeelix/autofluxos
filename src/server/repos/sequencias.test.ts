@@ -8,18 +8,23 @@ import { apagarFluxo, criarFluxo } from './fluxos'
 import {
   acharInscricao,
   alternarSequencia,
+  avancarInscricao,
   apagarPasso,
   apagarSequencia,
   contarInscricoes,
   criarPasso,
   criarSequencia,
+  editarPasso,
   encerrarInscricao,
+  esperandoOPasso,
   inscrever,
   listarSequencias,
   sairDasSequencias,
   sairPorEtiquetaDeSaida,
   sequenciasDoEvento,
 } from './sequencias'
+import { agendar } from './tarefas'
+import { chaveDoPasso } from '@/core/tarefas'
 import { acharQuadro, apagarEtapa, criarEtapa, criarQuadro } from './quadros'
 
 /**
@@ -394,5 +399,85 @@ describe.skipIf(!temCredencial)('a régua de retomada (0070)', () => {
     // Sem passo ela não inscreve ninguém, e `sequenciasDoEvento` já filtra isso:
     // a régua existe no banco e ainda não alcança pessoa nenhuma.
     expect(doEvento.every((s) => s.evento === 'cliente_sumido')).toBe(true)
+  })
+})
+
+describe.skipIf(!temCredencial)('editar um passo com gente no meio (A06)', () => {
+  let sequenciaId = ''
+  let passos: { id: string; atrasoMinutos: number }[] = []
+  let outroFluxo = ''
+  let entrouEm = ''
+  let chave = ''
+
+  beforeAll(async () => {
+    const r = await criarSequencia(clienteId, {
+      nome: `${marca} edicao`,
+      evento: 'atendimento_encerrado',
+      etiquetaId: null,
+      etiquetaDeSaidaId: null,
+      colunaId: null,
+    })
+    if (!r.ok) throw new Error(r.motivo)
+    sequenciaId = r.id
+    // Fluxo próprio: o bloco de cima apaga o `fluxoId` compartilhado.
+    const fluxo = (await criarFluxo(clienteId, `${marca} passo editavel`, triagem)).id
+    for (const atraso of [30, 120, 360]) {
+      const p = await criarPasso(clienteId, sequenciaId, { atrasoMinutos: atraso, fluxoId: fluxo })
+      if (!p.ok) throw new Error(p.motivo)
+    }
+    passos = (await listarSequencias(clienteId)).find((s) => s.id === sequenciaId)!.passos
+    outroFluxo = (await criarFluxo(clienteId, `${marca} outro conteudo`, triagem)).id
+
+    // Alguém que já recebeu o 1º passo e espera o 2º (índice 1), com a tarefa
+    // agendada como o executor agenda.
+    const contato = await acharOuCriarContato(clienteId, `5511${seed}09`, 'Bia')
+    const inscricao = (await inscrever(clienteId, sequenciaId, contato.id))!
+    await avancarInscricao(inscricao.id, 1)
+    entrouEm = inscricao.entrouEm
+    chave = chaveDoPasso(inscricao.id)
+    await agendar({
+      clienteId,
+      tipo: 'passo_de_sequencia',
+      quando: new Date(new Date(entrouEm).getTime() + 120 * 60_000),
+      chave,
+      dados: { inscricaoId: inscricao.id, sequenciaId, contatoId: contato.id, passoIndice: 1, entrouEm },
+    })
+  })
+
+  it('editar conteúdo vale para quem ainda não recebeu, sem remarcar ninguém', async () => {
+    expect(await editarPasso(clienteId, passos[1]!.id, { fluxoId: outroFluxo })).toEqual({ ok: true, remarcadas: 0 })
+    const sequencia = (await listarSequencias(clienteId)).find((s) => s.id === sequenciaId)!
+    expect(sequencia.passos[1]!.fluxoId).toBe(outroFluxo)
+  })
+
+  it('editar horário remarca a tarefa de quem está esperando este passo', async () => {
+    expect(await editarPasso(clienteId, passos[1]!.id, { atrasoMinutos: 200 })).toEqual({ ok: true, remarcadas: 1 })
+    const { data } = await db().from('tarefas').select('quando').eq('chave', chave).eq('estado', 'pendente').single()
+    expect(new Date(data!.quando as string).getTime()).toBe(new Date(entrouEm).getTime() + 200 * 60_000)
+    expect(await esperandoOPasso(clienteId, passos[1]!.id)).toBe(1)
+    expect(await esperandoOPasso(clienteId, passos[2]!.id)).toBe(0)
+  })
+
+  it('horário que troca a ordem é recusado, dizendo a faixa', async () => {
+    const r = await editarPasso(clienteId, passos[1]!.id, { atrasoMinutos: 400 })
+    expect(r).toEqual({ ok: false, motivo: 'Esse horário mudaria a ordem dos passos. Escolha entre 30min e 6h.' })
+    expect(await editarPasso(clienteId, passos[1]!.id, { atrasoMinutos: 30 })).toMatchObject({ ok: false })
+  })
+
+  it('acima de 24h sem modelo é recusado', async () => {
+    const r = await editarPasso(clienteId, passos[2]!.id, { atrasoMinutos: 1500 })
+    expect(r.ok).toBe(false)
+    expect(r.ok ? '' : r.motivo).toContain('24h')
+  })
+
+  it('não edita passo de outra conta', async () => {
+    expect(await editarPasso(outroId, passos[0]!.id, { atrasoMinutos: 10 })).toEqual({
+      ok: false,
+      motivo: 'este passo não existe mais',
+    })
+    expect(await editarPasso(clienteId, passos[0]!.id, { fluxoId: fluxoDoOutro })).toEqual({
+      ok: false,
+      motivo: 'este fluxo não é deste cliente',
+    })
   })
 })

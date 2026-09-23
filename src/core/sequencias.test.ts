@@ -14,6 +14,7 @@ import {
   passoEntregavel,
   porQueNaoEntrega,
   TETO_DO_PASSO_MINUTOS,
+  conferirOrdem,
 } from './sequencias'
 
 /**
@@ -176,5 +177,31 @@ describe('o passo que atravessa a janela fechada (0061)', () => {
     // Nem "sem teto": agendamento de seis meses é seis meses de chance de o
     // número, o fluxo ou o cliente não existirem mais.
     expect(TETO_DO_PASSO_MINUTOS).toBe(30 * 24 * 60)
+  })
+})
+
+describe('conferirOrdem: o horário novo de um passo não troca a ordem', () => {
+  const passos = [
+    { id: 'a', atrasoMinutos: 30, fluxoId: 'f' },
+    { id: 'b', atrasoMinutos: 120, fluxoId: 'f' },
+    { id: 'c', atrasoMinutos: 360, fluxoId: 'f' },
+  ]
+
+  it('aceita dentro da faixa e recusa nas bordas', () => {
+    expect(conferirOrdem(passos, 'b', 200)).toEqual({ ok: true })
+    expect(conferirOrdem(passos, 'b', 30).ok).toBe(false)
+    expect(conferirOrdem(passos, 'b', 360).ok).toBe(false)
+  })
+
+  it('no primeiro e no último passo a faixa só tem um lado', () => {
+    expect(conferirOrdem(passos, 'a', 120)).toEqual({
+      ok: false,
+      motivo: 'Esse horário mudaria a ordem dos passos. Escolha antes de 2h.',
+    })
+    expect(conferirOrdem(passos, 'c', 60)).toEqual({
+      ok: false,
+      motivo: 'Esse horário mudaria a ordem dos passos. Escolha depois de 2h.',
+    })
+    expect(conferirOrdem(passos, 'c', 5000)).toEqual({ ok: true })
   })
 })

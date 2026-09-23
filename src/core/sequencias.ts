@@ -215,6 +215,38 @@ export function comoAtraso(minutos: number): string {
 }
 
 /**
+ * O horário novo de um passo que já existe mantém a ordem da sequência?
+ *
+ * **Não existe reordenar** (decisão de 23/09, A06): quem está no meio da
+ * sequência guarda o índice do próximo passo, e trocar a ordem faria alguém
+ * receber de novo o que já recebeu, ou pular um passo. O horário novo precisa
+ * ficar estritamente entre o do passo anterior e o do seguinte; para trocar a
+ * ordem, troca-se o conteúdo dos passos.
+ */
+export function conferirOrdem(
+  passos: PassoDaSequencia[],
+  passoId: string,
+  minutos: number,
+): { ok: true } | { ok: false; motivo: string } {
+  const ordem = passosEmOrdem(passos)
+  const indice = ordem.findIndex((passo) => passo.id === passoId)
+  if (indice < 0) return { ok: false, motivo: 'este passo não existe mais' }
+
+  const anterior = ordem[indice - 1]?.atrasoMinutos ?? null
+  const seguinte = ordem[indice + 1]?.atrasoMinutos ?? null
+  const cabe = (anterior === null || minutos > anterior) && (seguinte === null || minutos < seguinte)
+  if (cabe) return { ok: true }
+
+  const faixa =
+    anterior !== null && seguinte !== null
+      ? `entre ${comoAtraso(anterior)} e ${comoAtraso(seguinte)}`
+      : anterior !== null
+        ? `depois de ${comoAtraso(anterior)}`
+        : `antes de ${comoAtraso(seguinte!)}`
+  return { ok: false, motivo: `Esse horário mudaria a ordem dos passos. Escolha ${faixa}.` }
+}
+
+/**
  * A régua de um passo novo, antes de o banco ver qualquer coisa.
  *
  * O `check` da migration diz a mesma coisa; isto existe para a recusa chegar

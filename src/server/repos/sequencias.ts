@@ -1,10 +1,13 @@
 import 'server-only'
 import {
+  conferirAtraso,
+  conferirOrdem,
   ehEventoDeSequencia,
   passosEmOrdem,
   type EventoDeSequencia,
   type Sequencia,
 } from '@/core/sequencias'
+import { chaveDoPasso } from '@/core/tarefas'
 import { db, ehIdInvalido } from '../db'
 
 /**
@@ -289,6 +292,160 @@ export async function criarPasso(
   }
   if (error) throw new Error(`não deu para criar o passo: ${error.message}`)
   return { ok: true }
+}
+
+/**
+ * Muda o conteúdo ou o horário de um passo que já existe (A06).
+ *
+ * **Conteúdo** (fluxo ou modelo): nada a remarcar. O executor lê o passo na
+ * hora de enviar (`sequencias-passo.ts`), então vale para quem ainda não
+ * recebeu aquele passo, e quem já recebeu não recebe de novo.
+ *
+ * **Horário**: vale também para quem já está na sequência e ainda não chegou
+ * neste passo. Quem está esperando exatamente este passo tem uma tarefa
+ * pendente marcada para o horário antigo, e ela é remarcada para
+ * `entrouEm + atraso novo`. Se esse instante já passou, a tarefa roda na
+ * próxima passada do agendador (não pula o passo). Quem está esperando um
+ * passo anterior não tem nada a remarcar: o próximo agendamento já lê o
+ * horário novo. O horário novo não pode trocar a ordem (`conferirOrdem`), e
+ * por isso o índice de quem está esperando continua apontando para este passo.
+ */
+export async function editarPasso(
+  clienteId: string,
+  passoId: string,
+  mudanca: { atrasoMinutos?: number; fluxoId?: string | null; templateId?: string | null },
+): Promise<{ ok: true; remarcadas: number } | { ok: false; motivo: string }> {
+  const { data: linha, error: erroDoPasso } = await db()
+    .from('sequencia_passos')
+    .select('id, sequencia_id')
+    .eq('id', passoId)
+    .maybeSingle()
+
+  if (ehIdInvalido(erroDoPasso)) return { ok: false, motivo: 'este passo não existe mais' }
+  if (erroDoPasso) throw new Error(`não deu para buscar o passo: ${erroDoPasso.message}`)
+  if (!linha) return { ok: false, motivo: 'este passo não existe mais' }
+
+  // A conta vem da sequência: passo de outra conta responde igual a passo
+  // apagado, sem dizer que ele existe.
+  const sequencia = await acharSequencia(clienteId, linha.sequencia_id as string)
+  const atual = sequencia?.passos.find((passo) => passo.id === passoId)
+  if (!sequencia || !atual) return { ok: false, motivo: 'este passo não existe mais' }
+
+  const atraso = mudanca.atrasoMinutos ?? atual.atrasoMinutos
+  const fluxoId = mudanca.fluxoId ?? atual.fluxoId
+  // `undefined` mantém o modelo; `null` tira.
+  const templateId = mudanca.templateId === undefined ? atual.templateId : mudanca.templateId
+
+  const outros = sequencia.passos.filter((passo) => passo.id !== passoId).map((passo) => passo.atrasoMinutos)
+  const regua = conferirAtraso(atraso, outros, templateId)
+  if (!regua.ok) return regua
+  const ordem = conferirOrdem(sequencia.passos, passoId, atraso)
+  if (!ordem.ok) return ordem
+
+  if (fluxoId !== atual.fluxoId) {
+    const { data: fluxo, error: erroDoFluxo } = await db()
+      .from('flows')
+      .select('id')
+      .eq('id', fluxoId)
+      .eq('client_id', clienteId)
+      .maybeSingle()
+
+    if (ehIdInvalido(erroDoFluxo)) return { ok: false, motivo: 'escolha um fluxo válido' }
+    if (erroDoFluxo) throw new Error(`não deu para conferir o fluxo: ${erroDoFluxo.message}`)
+    if (!fluxo) return { ok: false, motivo: 'este fluxo não é deste cliente' }
+  }
+
+  const { error } = await db()
+    .from('sequencia_passos')
+    .update({ atraso_minutos: atraso, flow_id: fluxoId, template_id: templateId })
+    .eq('id', passoId)
+    .eq('sequencia_id', sequencia.id)
+
+  if (error?.code === '23505') return { ok: false, motivo: 'já existe um passo neste mesmo tempo' }
+  if (error?.code === '23514') {
+    return { ok: false, motivo: 'passo com mais de 24h precisa de um modelo aprovado pela Meta' }
+  }
+  if (error) throw new Error(`não deu para editar o passo: ${error.message}`)
+
+  if (atraso === atual.atrasoMinutos) return { ok: true, remarcadas: 0 }
+
+  const indice = passosEmOrdem(sequencia.passos).findIndex((passo) => passo.id === passoId)
+  const remarcadas = await remarcarQuemEspera(sequencia.id, indice, atraso)
+  return { ok: true, remarcadas }
+}
+
+/**
+ * Remarca a tarefa de cada inscrição ativa parada no passo `indice`.
+ *
+ * A tarefa é achada pela chave da inscrição (uma pendente por inscrição, ver
+ * `chaveDoPasso`) e conferida pelo índice gravado nela: uma tarefa de outro
+ * passo não é mexida. O instante base é o `entrouEm` da própria tarefa, que é
+ * o mesmo que o executor usa para agendar o passo seguinte.
+ */
+async function remarcarQuemEspera(sequenciaId: string, indice: number, atraso: number): Promise<number> {
+  const { data: inscricoes, error } = await db()
+    .from('sequencia_inscricoes')
+    .select('id')
+    .eq('sequencia_id', sequenciaId)
+    .eq('estado', 'ativa')
+    .eq('passo_atual', indice)
+
+  if (error) throw new Error(`não deu para buscar quem está na sequência: ${error.message}`)
+  if (!inscricoes || inscricoes.length === 0) return 0
+
+  const { data: tarefas, error: erroDasTarefas } = await db()
+    .from('tarefas')
+    .select('id, dados')
+    .eq('tipo', 'passo_de_sequencia')
+    .eq('estado', 'pendente')
+    .in('chave', inscricoes.map((inscricao) => chaveDoPasso(inscricao.id as string)))
+
+  if (erroDasTarefas) throw new Error(`não deu para buscar os envios agendados: ${erroDasTarefas.message}`)
+
+  let remarcadas = 0
+  for (const tarefa of tarefas ?? []) {
+    const dados = tarefa.dados as { passoIndice?: number; entrouEm?: string }
+    if (dados.passoIndice !== indice || !dados.entrouEm) continue
+    const quando = new Date(new Date(dados.entrouEm).getTime() + atraso * 60_000)
+    const { error: erroAoRemarcar } = await db()
+      .from('tarefas')
+      .update({ quando: quando.toISOString() })
+      .eq('id', tarefa.id)
+      .eq('estado', 'pendente')
+    if (erroAoRemarcar) throw new Error(`não deu para remarcar o envio: ${erroAoRemarcar.message}`)
+    remarcadas++
+  }
+  return remarcadas
+}
+
+/**
+ * Quantas inscrições ativas estão esperando este passo agora.
+ *
+ * É o número que a tela mostra antes de apagar o passo: essas pessoas
+ * terminam a sequência sem ele (ver `apagarPasso`).
+ */
+export async function esperandoOPasso(clienteId: string, passoId: string): Promise<number> {
+  const { data: linha, error } = await db()
+    .from('sequencia_passos')
+    .select('sequencia_id')
+    .eq('id', passoId)
+    .maybeSingle()
+  if (ehIdInvalido(error)) return 0
+  if (error) throw new Error(`não deu para buscar o passo: ${error.message}`)
+  if (!linha) return 0
+
+  const sequencia = await acharSequencia(clienteId, linha.sequencia_id as string)
+  if (!sequencia) return 0
+  const indice = passosEmOrdem(sequencia.passos).findIndex((passo) => passo.id === passoId)
+
+  const { count, error: erroDaContagem } = await db()
+    .from('sequencia_inscricoes')
+    .select('id', { count: 'exact', head: true })
+    .eq('sequencia_id', sequencia.id)
+    .eq('estado', 'ativa')
+    .eq('passo_atual', indice)
+  if (erroDaContagem) throw new Error(`não deu para contar quem espera o passo: ${erroDaContagem.message}`)
+  return count ?? 0
 }
 
 /**
