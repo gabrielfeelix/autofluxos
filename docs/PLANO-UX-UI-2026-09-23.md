@@ -988,10 +988,10 @@ do Inbox continua sendo só a entrada ("+ Anotar").
 
 ### Tarefa 6.5: cartões de integração com ação explícita [T04, S06, C03]
 
-- [ ] **Passo 1:** cada cartão diz a ação em texto ("Conectar", "Configurar",
+- [x] **Passo 1:** cada cartão diz a ação em texto ("Conectar", "Configurar",
   "Em breve"); cartão sem tela não parece clicável. Categoria visível (Canal,
   Anúncios, Loja, API). Texto do Telegram: "Telegram ainda não está disponível."
-- [ ] **Passo 2:** commit `feat(integracoes): cartões dizem o que dá para fazer`.
+- [x] **Passo 2:** commit `feat(integracoes): cartões dizem o que dá para fazer`.
 
 ### Tarefa 6.6: WhatsApp separado em saúde, respostas e webhook [T05, S05]
 

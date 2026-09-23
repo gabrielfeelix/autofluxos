@@ -180,6 +180,18 @@ function Cartao({ clienteId, item }: { clienteId: string; item: ItemDoCatalogo }
           {item.rotuloDoEvento}: {idadeDoEvento(estado.ultimoEvento)}
         </p>
       )}
+      {/*
+        A ação escrita, e não só o cartão clicável (T04): quem olha sabe o que
+        acontece ao clicar. Sem tela, o texto não promete ação nenhuma.
+      */}
+      <span className="flex-1" />
+      <p
+        className={`mt-3 text-[12px] font-bold ${
+          !item.href ? 'text-dim' : estado.falha ? 'text-perigo' : estado.proximaAcao && estado.configurado ? 'text-aviso' : 'text-primary'
+        }`}
+      >
+        {acaoDoCartao(item)}
+      </p>
     </>
   )
 
@@ -200,6 +212,12 @@ function Cartao({ clienteId, item }: { clienteId: string; item: ItemDoCatalogo }
       {conteudo}
     </Link>
   )
+}
+
+function acaoDoCartao(item: ItemDoCatalogo): string {
+  if (!item.href || !item.disponivel) return 'Em breve'
+  if (item.estado.configurado && item.estado.proximaAcao) return `${item.estado.proximaAcao.texto} ›`
+  return item.estado.configurado ? 'Configurar ›' : 'Conectar ›'
 }
 
 function Selo({

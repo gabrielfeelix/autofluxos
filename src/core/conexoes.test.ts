@@ -81,7 +81,7 @@ describe('o estado da conexão em camadas', () => {
     const e = estadoDaConexao({ tipo: 'whatsapp', numeros: [], ultimoEvento: null }, AGORA)
     expect(e.configurado).toBe(false)
     expect(e.falha).toBeNull()
-    expect(seloDaConexao(e).texto).toBe('conectar')
+    expect(seloDaConexao(e).texto).toBe('não conectada')
   })
 })
 

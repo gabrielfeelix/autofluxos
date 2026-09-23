@@ -158,7 +158,7 @@ function porValidade(expiraEm: string | null, agora: Date): Autorizacao {
 export function seloDaConexao(
   estado: EstadoDaConexao,
 ): { texto: string; tom: 'ok' | 'alerta' | 'perigo' | 'neutro' } {
-  if (!estado.configurado) return { texto: 'conectar', tom: 'neutro' }
+  if (!estado.configurado) return { texto: 'não conectada', tom: 'neutro' }
   if (estado.falha) return { texto: 'precisa de ação', tom: 'perigo' }
   if (estado.autorizacao === 'vence_em_breve') return { texto: 'vence em breve', tom: 'alerta' }
   return { texto: 'configurada', tom: 'ok' }
