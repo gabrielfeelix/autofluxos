@@ -42,8 +42,8 @@ export default async function PrimeiroAcesso({
 
   return (
     <Portico
-      titulo={`Bem-vindo, ${sessao.usuario.nome.split(' ')[0]}`}
-      descricao="Falta só dizer de quem é a conta."
+      titulo="Criar sua empresa"
+      descricao={`Olá, ${sessao.usuario.nome.split(' ')[0]}. Esta será a primeira conta da sua empresa no AutoFluxos.`}
       rodape={
         <p>
           Depois, vamos ajudar você a escolher seu objetivo, preparar o sistema e conectar seu canal de atendimento.

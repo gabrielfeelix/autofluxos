@@ -20,11 +20,8 @@ export default function NaoEncontrado() {
       <p className="mt-2 mb-[22px] text-[12.5px] leading-[1.65] text-muted">
         O cliente, o fluxo ou o lead deste endereço não existe, ou não é deste painel.
       </p>
-      <Link
-        href="/painel"
-        className="app-secondary-button inline-block px-5 py-2.5 text-[13px]"
-      >
-        Voltar para os clientes
+      <Link href="/voltar" className="app-secondary-button inline-block px-5 py-2.5 text-[13px]">
+        Voltar para o início
       </Link>
       </div>
     </main>

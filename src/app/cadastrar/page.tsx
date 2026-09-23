@@ -29,8 +29,8 @@ export default async function Cadastrar() {
 
   return (
     <Portico
-      titulo="Criar sua conta"
-      descricao="Atenda no WhatsApp que você já usa, sem trocar de número."
+      titulo="Criar seu acesso"
+      descricao="Seu login no AutoFluxos. A empresa você cria no passo seguinte."
       rodape={
         <p>
           Já tem conta?{' '}
@@ -45,10 +45,10 @@ export default async function Cadastrar() {
     >
       <FormularioDeConta
         action={acaoCadastrarSe}
-        botao="Criar conta"
+        botao="Criar acesso"
         pedirNome
         pedirTelefone
-        ajuda="No passo seguinte você diz o nome da sua empresa. Leva menos de um minuto."
+        ajuda="Depois daqui você entra e cria a sua empresa. Leva menos de um minuto."
       />
     </Portico>
   )

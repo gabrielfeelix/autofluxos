@@ -82,7 +82,7 @@ export default async function CriarConta() {
 
   return (
     <Portico
-      titulo={jaTemGente ? 'Cadastrar usuário' : 'Primeiro acesso'}
+      titulo={jaTemGente ? 'Cadastrar usuário da plataforma' : 'Cadastrar administrador da plataforma'}
       descricao={
         jaTemGente
           ? 'A pessoa entra com esta senha e pode trocá-la depois.'
@@ -94,8 +94,8 @@ export default async function CriarConta() {
             O usuário nasce sem conta nenhuma. Ligue ele a um cliente em{' '}
             <Link href="/admin/contas" className="text-muted underline underline-offset-2 transition hover:text-primary">
               Contas
-            </Link>{' '}
-           , sem isso ele entra e não vê nada.
+            </Link>
+            ; sem isso ele entra e não vê nada.
           </p>
         ) : (
           <p>

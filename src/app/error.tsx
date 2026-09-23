@@ -1,8 +1,10 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { DetalheDoErro } from '@/components/design/detalhe-do-erro'
+import { voltaDoErro } from '@/core/volta-do-erro'
 
 /**
  * Deu errado.
@@ -39,6 +41,7 @@ export default function Erro({
   reset: () => void
 }) {
   const [jaTentou, setJaTentou] = useState(false)
+  const volta = voltaDoErro(usePathname() ?? '')
 
   useEffect(() => {
     console.error(error)
@@ -69,11 +72,8 @@ export default function Erro({
         >
           {jaTentou ? 'Recarregar a página' : 'Tentar de novo'}
         </button>
-        <Link
-          href="/painel"
-          className="app-secondary-button px-5 py-2.5 text-[13px]"
-        >
-          Voltar para os clientes
+        <Link href={volta.href} className="app-secondary-button px-5 py-2.5 text-[13px]">
+          {volta.rotulo}
         </Link>
       </div>
 

@@ -1256,14 +1256,14 @@ outras telas desta fase.
 
 ### Tarefa 10.4: entrada, erro e contexto [S09, S12, S11, E10, E11]
 
-- [ ] **Passo 1:** títulos: `/cadastrar` "Criar seu acesso", `/primeiro-acesso`
+- [x] **Passo 1:** títulos: `/cadastrar` "Criar seu acesso", `/primeiro-acesso`
   "Criar sua empresa", `/criar-conta` "Cadastrar administrador da plataforma";
   cada um diz o que acontece depois.
-- [ ] **Passo 2:** `error.tsx` e `not-found.tsx` voltam para a conta ativa quando
+- [x] **Passo 2:** `error.tsx` e `not-found.tsx` voltam para a conta ativa quando
   der, senão `/contas`; admin 4YU volta para `/admin/contas`.
 - [ ] **Passo 3:** com uma conta só, o nome da conta no rodapé vira menu "Conta e
   perfil" (papel nesta conta, ajuda, sair).
-- [ ] **Passo 4:** `/f/[token]` expirado mostra a data e o caminho para pedir outro.
+- [x] **Passo 4:** `/f/[token]` expirado mostra a data e o caminho para pedir outro.
 - [ ] **Passo 5:** commit `feat(entrada): telas de acesso e erro dizem onde a pessoa está`.
 
 ### Tarefa 10.5: área admin com escopo escrito [S10, E16]

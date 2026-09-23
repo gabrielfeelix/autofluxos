@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { Marca } from '@/components/design/marca'
@@ -71,8 +72,15 @@ export default async function Pagina({ params }: { params: Promise<{ token: stri
     return (
       <Aviso
         titulo={`Este link ${validadeDoLink(link)}`}
-        texto="Links de fluxo têm validade. Peça um link novo a quem compartilhou."
-      />
+        texto={`Peça um link novo a ${link.origem}: quem compartilhou gera outro no editor da automação, em "Compartilhar".`}
+      >
+        <Link href="/entrar" className="app-secondary-button px-4 py-2 text-[12.5px]">
+          Entrar no AutoFluxos
+        </Link>
+        <Link href="/ajuda" className="px-3 py-2 text-[12.5px] font-semibold text-primary hover:opacity-80">
+          Ver a ajuda
+        </Link>
+      </Aviso>
     )
   }
 
@@ -215,12 +223,13 @@ function Selo({ children, destaque = false }: { children: React.ReactNode; desta
   )
 }
 
-function Aviso({ titulo, texto }: { titulo: string; texto: string }) {
+function Aviso({ titulo, texto, children }: { titulo: string; texto: string; children?: ReactNode }) {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[480px] flex-col items-center justify-center px-6 text-center">
       <Marca compacta />
       <h1 className="mt-7 text-[20px] font-bold tracking-[-0.02em]">{titulo}</h1>
       <p className="mt-2 text-[13px] leading-[1.7] text-dim">{texto}</p>
+      {children && <div className="mt-5 flex flex-wrap items-center justify-center gap-2">{children}</div>}
     </main>
   )
 }

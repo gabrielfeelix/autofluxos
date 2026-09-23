@@ -31,7 +31,7 @@ export async function cadastrar(page: Page, quem: ReturnType<typeof identidade>)
   // senha" do `CampoDeSenha` também casa com esse texto, e o locator recusa em
   // modo estrito com "resolved to 2 elements".
   await page.getByRole('textbox', { name: 'Senha' }).fill(quem.senha)
-  await page.getByRole('button', { name: /criar conta|cadastrar/i }).click()
+  await page.getByRole('button', { name: /criar acesso|cadastrar/i }).click()
 
   // Passo dois: a empresa. O cadastro tem dois passos de propósito, e a
   // segunda tela só aparece para quem ainda não tem empresa nenhuma.
