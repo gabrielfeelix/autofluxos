@@ -5,7 +5,7 @@ import { chromium } from 'playwright'
 
 mkdirSync('.ux-local', { recursive: true })
 const b = await chromium.launch()
-const ctx = await b.newContext({ baseURL: 'http://localhost:3100' })
+const ctx = await b.newContext({ baseURL: `http://localhost:${process.env.PORTA ?? 3100}` })
 const page = await ctx.newPage()
 await page.goto('/cadastrar')
 await page.getByRole('textbox', { name: 'Nome' }).fill('Gabriel Teste')

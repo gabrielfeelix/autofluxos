@@ -1523,3 +1523,6 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   vivo. A linha arrastada fica apagada no lugar, um cartão com o nome flutua
   sob o ponteiro (portal no `body`) e uma linha azul entre as linhas marca
   onde ela entra; a ordem muda e grava só ao soltar.
+- 23/09: o plano passa a rodar com **4 agentes em paralelo** (regras em
+  `docs/PARALELO-UX.md`). A partir daqui o registro de cada um fica em
+  `docs/ux-paralelo/aN.md`, não aqui. A 5.9 foi para o agente da Fase 8.

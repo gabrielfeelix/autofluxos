@@ -65,10 +65,13 @@ function ambienteDeTeste(): Record<string, string> {
     PAINEL_SENHA: env.PAINEL_SENHA ?? 'senha-de-teste-local',
     PAINEL_SEGREDO: env.PAINEL_SEGREDO ?? 'segredo-de-teste-local-sem-valor',
     BETTER_AUTH_SECRET: env.BETTER_AUTH_SECRET ?? 'better-auth-de-teste-local-sem-valor',
-    BETTER_AUTH_URL: 'http://localhost:3100',
+    BETTER_AUTH_URL: `http://localhost:${process.env.PORTA ?? '3100'}`,
     NODE_ENV: 'test',
   }
 }
+
+// Vários agentes em paralelo: cada um roda o e2e na sua PORTA (padrão 3100).
+const PORTA = process.env.PORTA ?? '3100'
 
 export default defineConfig({
   testDir: './test/e2e',
@@ -95,7 +98,7 @@ export default defineConfig({
   reporter: [['list']],
 
   use: {
-    baseURL: 'http://localhost:3100',
+    baseURL: `http://localhost:${PORTA}`,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
@@ -111,8 +114,8 @@ export default defineConfig({
   // próprios chunks com "Blocked cross-origin request". A página abre assim
   // mesmo, então isso passaria por verde enquanto enche o log de aviso.
   webServer: {
-    command: 'npx next dev --port 3100',
-    url: 'http://localhost:3100/entrar',
+    command: `npx next dev --port ${PORTA}`,
+    url: `http://localhost:${PORTA}/entrar`,
     reuseExistingServer: false,
     timeout: 180_000,
     stdout: 'pipe',
