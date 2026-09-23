@@ -20,6 +20,7 @@
     "@supabase/supabase-js": "^2.112.3",
     "@xyflow/react": "^12.11.2",
     "better-auth": "^1.7.0",
+    "fflate": "^0.8.3",
     "next": "^16.3.0",
     "pg": "^8.23.0",
     "qrcode": "^1.5.4",

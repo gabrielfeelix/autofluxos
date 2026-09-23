@@ -15,6 +15,10 @@ function produto(parcial: Partial<Produto> = {}): Produto {
     nome: 'Plano Ouro',
     especie: 'produto',
     preco: null,
+    sku: null,
+    descricao: null,
+    link: null,
+    foto: null,
     arquivadoEm: null,
     ...parcial,
   }

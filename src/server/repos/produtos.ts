@@ -1,4 +1,5 @@
 import 'server-only'
+import type { ErroDaLinha, ItemDaPlanilha, PlanoDeImportacao } from '@/core/importar-produtos'
 import { conferirNome, conferirPreco, type Especie, type Produto } from '@/core/produtos'
 import { db, ehIdInvalido } from '../db'
 
@@ -22,10 +23,14 @@ type LinhaDoProduto = {
   nome: string
   especie: string
   preco: string | number | null
+  sku: string | null
+  descricao: string | null
+  link: string | null
+  foto: string | null
   arquivado_em: string | null
 }
 
-const COLUNAS = 'id, nome, especie, preco, arquivado_em'
+const COLUNAS = 'id, nome, especie, preco, sku, descricao, link, foto, arquivado_em'
 
 /**
  * `numeric` do Postgres chega como **string** no supabase-js, não número.
@@ -48,6 +53,10 @@ function paraProduto(linha: LinhaDoProduto): Produto {
     nome: linha.nome,
     especie: linha.especie === 'servico' ? 'servico' : 'produto',
     preco: paraPreco(linha.preco),
+    sku: linha.sku,
+    descricao: linha.descricao,
+    link: linha.link,
+    foto: linha.foto,
     arquivadoEm: linha.arquivado_em,
   }
 }
@@ -220,4 +229,92 @@ export async function arquivarProduto(
   if (!data) return { ok: false, motivo: 'esse item do catálogo não existe' }
 
   return { ok: true, produto: paraProduto(data as LinhaDoProduto) }
+}
+
+export type ResultadoDaImportacao = {
+  criados: number
+  atualizados: number
+  erros: ErroDaLinha[]
+}
+
+/**
+ * Grava o plano da importação (`core/importar-produtos.planejarImportacao`).
+ *
+ * Os novos vão em lotes de 500 num `insert` só, porque 2000 idas ao banco uma
+ * a uma estourariam o tempo da função. Se um lote falha (um nome que alguém
+ * criou entre a prévia e a confirmação, por exemplo), só aquele lote é refeito
+ * linha a linha: a regra da importação é que linha com erro não derruba as
+ * outras, e o erro volta com o número da linha, como os de leitura.
+ *
+ * As atualizações vão 20 por vez. Cada uma tem campos diferentes, porque
+ * célula vazia não apaga (ver o cabeçalho de `core/importar-produtos.ts`):
+ * na atualização só vão os campos preenchidos.
+ */
+export async function gravarImportacao(
+  clienteId: string,
+  plano: PlanoDeImportacao,
+): Promise<ResultadoDaImportacao> {
+  const erros: ErroDaLinha[] = [...plano.erros]
+  let criados = 0
+  let atualizados = 0
+  const agora = new Date().toISOString()
+
+  const motivoDoBanco = (erro: { code?: string; message: string }) =>
+    erro.code === '23505'
+      ? 'já existe outro item com esse nome ou SKU no catálogo'
+      : `o banco recusou: ${erro.message}`
+
+  const linhaNova = (item: ItemDaPlanilha) => ({
+    client_id: clienteId,
+    nome: item.nome,
+    especie: item.especie ?? 'produto',
+    preco: item.preco,
+    sku: item.sku,
+    descricao: item.descricao,
+    link: item.link,
+    foto: item.foto,
+  })
+
+  for (let i = 0; i < plano.criar.length; i += 500) {
+    const lote = plano.criar.slice(i, i + 500)
+    const { error } = await db().from('produtos').insert(lote.map(linhaNova))
+    if (!error) {
+      criados += lote.length
+      continue
+    }
+    for (const item of lote) {
+      const { error: doItem } = await db().from('produtos').insert(linhaNova(item))
+      if (doItem) erros.push({ linha: item.linha, motivo: motivoDoBanco(doItem) })
+      else criados++
+    }
+  }
+
+  for (let i = 0; i < plano.atualizar.length; i += 20) {
+    const resultados = await Promise.all(
+      plano.atualizar.slice(i, i + 20).map(async ({ id, item }) => {
+        const campos: Record<string, unknown> = { nome: item.nome, atualizado_em: agora }
+        if (item.especie !== null) campos.especie = item.especie
+        if (item.preco !== null) campos.preco = item.preco
+        if (item.sku !== null) campos.sku = item.sku
+        if (item.descricao !== null) campos.descricao = item.descricao
+        if (item.link !== null) campos.link = item.link
+        if (item.foto !== null) campos.foto = item.foto
+
+        const { error } = await db()
+          .from('produtos')
+          .update(campos)
+          .eq('client_id', clienteId)
+          .eq('id', id)
+          .is('arquivado_em', null)
+        return { item, error }
+      }),
+    )
+    for (const { item, error } of resultados) {
+      if (error) erros.push({ linha: item.linha, motivo: motivoDoBanco(error) })
+      else atualizados++
+    }
+  }
+
+  erros.sort((a, b) => a.linha - b.linha)
+  return { criados, atualizados, erros }
 }

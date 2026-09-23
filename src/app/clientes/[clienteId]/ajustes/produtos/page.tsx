@@ -4,6 +4,7 @@ import { Trilha } from '@/components/design/trilha'
 import { Dropdown } from '@/components/design/dropdown'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { BotaoArquivar } from '@/components/produtos/botao-arquivar'
+import { ImportarPlanilha } from '@/components/produtos/importar-planilha'
 import { comoDinheiro } from '@/core/crm'
 import { ESPECIES, NOME_DA_ESPECIE, estaAtivo } from '@/core/produtos'
 import { acaoCriarProduto, acaoDefinirPreco, acaoRenomearProduto } from '@/server/acoes-produtos'
@@ -69,7 +70,9 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             <h2 className="text-[14.5px] font-bold">
               {ativos.length} {ativos.length === 1 ? 'item ativo' : 'itens ativos'}
             </h2>
-            <ModalFormulario
+            <div className="flex items-center gap-2">
+              <ImportarPlanilha clienteId={cliente.id} />
+              <ModalFormulario
               botao="+ Novo item"
               titulo="Novo item do catálogo"
               descricao="Produto ou serviço é só o vocabulário de quem vende: o sistema trata os dois igual."
@@ -110,7 +113,8 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
                   ninguém cadastrou. Para item de graça, escreva 0.
                 </span>
               </label>
-            </ModalFormulario>
+              </ModalFormulario>
+            </div>
           </header>
 
           {ativos.length === 0 ? (
@@ -126,7 +130,12 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
                   key={produto.id}
                   className="flex items-center gap-3 border-b border-line px-5 py-4 last:border-0"
                 >
-                  <span className="flex-1 text-[13.5px] font-medium">{produto.nome}</span>
+                  <span className="flex-1 text-[13.5px] font-medium">
+                    {produto.nome}
+                    {produto.sku && (
+                      <span className="ml-2 text-[11px] font-normal text-dim tabular-nums">{produto.sku}</span>
+                    )}
+                  </span>
                   <span className="text-[11px] text-dim">{NOME_DA_ESPECIE[produto.especie]}</span>
                   {/*
                     "sem preço" em vez de R$ 0,00: são estados diferentes, e o

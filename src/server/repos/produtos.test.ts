@@ -1,11 +1,13 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { selecionaveis } from '@/core/produtos'
+import { planejarImportacao, type ItemDaPlanilha } from '@/core/importar-produtos'
+import { estaAtivo, selecionaveis } from '@/core/produtos'
 import { db } from '../db'
 import { criarCliente } from './clientes'
 import {
   arquivarProduto,
   criarProduto,
   definirPreco,
+  gravarImportacao,
   listarProdutos,
   produtoPorId,
   renomearProduto,
@@ -186,5 +188,58 @@ describe.skipIf(!temCredencial)('preço (0091)', () => {
 
     expect((await definirPreco(outroId, meu.produto.id, '999')).ok).toBe(false)
     expect((await produtoPorId(clienteId, meu.produto.id))?.preco).toBe(10)
+  })
+})
+
+describe.skipIf(!temCredencial)('importar planilha (0093)', () => {
+  let contaId = ''
+  beforeAll(async () => {
+    contaId = (await criarCliente(`${marca} importa`)).id
+  })
+  afterAll(async () => {
+    if (contaId) await db().from('clients').delete().eq('id', contaId)
+  })
+
+  const item = (p: Partial<ItemDaPlanilha> & { linha: number; nome: string }): ItemDaPlanilha => ({
+    especie: null,
+    sku: null,
+    preco: null,
+    descricao: null,
+    link: null,
+    foto: null,
+    ...p,
+  })
+
+  async function importar(itens: ItemDaPlanilha[]) {
+    const ativos = (await listarProdutos(contaId)).filter(estaAtivo)
+    return gravarImportacao(contaId, planejarImportacao(itens, ativos))
+  }
+
+  it('cria com sku, descrição, link e foto', async () => {
+    const r = await importar([
+      item({ linha: 2, nome: 'Cadeira', sku: 'CAD-1', preco: 1299.9, foto: 'https://cdn.x/c.png' }),
+      item({ linha: 3, nome: 'Avaliação', especie: 'servico', link: 'https://x/av' }),
+    ])
+    expect(r).toEqual({ criados: 2, atualizados: 0, erros: [] })
+    const [cadeira] = (await listarProdutos(contaId)).filter((p) => p.sku === 'CAD-1')
+    expect(cadeira).toMatchObject({ nome: 'Cadeira', preco: 1299.9, foto: 'https://cdn.x/c.png', especie: 'produto' })
+  })
+
+  it('reimportar atualiza pelo sku e célula vazia não apaga', async () => {
+    const r = await importar([item({ linha: 2, nome: 'Cadeira Preta', sku: 'cad-1', preco: 999 })])
+    expect(r).toEqual({ criados: 0, atualizados: 1, erros: [] })
+    const [cadeira] = (await listarProdutos(contaId)).filter((p) => p.sku?.toLowerCase() === 'cad-1')
+    // A grafia do SKU passa a ser a da planilha; a foto, vazia nela, fica.
+    expect(cadeira).toMatchObject({ nome: 'Cadeira Preta', sku: 'cad-1', preco: 999, foto: 'https://cdn.x/c.png' })
+  })
+
+  it('lote recusado pelo banco é refeito linha a linha, e só a ruim fica de fora', async () => {
+    // Plano feito com o catálogo vazio: "Avaliação" já existe, e só o banco sabe.
+    const r = await gravarImportacao(
+      contaId,
+      planejarImportacao([item({ linha: 2, nome: 'Mouse' }), item({ linha: 3, nome: 'avaliação' })], []),
+    )
+    expect(r.criados).toBe(1)
+    expect(r.erros).toEqual([{ linha: 3, motivo: 'já existe outro item com esse nome ou SKU no catálogo' }])
   })
 })

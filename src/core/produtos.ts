@@ -5,8 +5,9 @@
  * Por que ele é mínimo, e por que isso é uma decisão e não preguiça
  * ---------------------------------------------------------------------------
  *
- * Produto/serviço, nome, preço, ativo/arquivado. Nada de estoque, imposto, SKU
- * ou ERP. O catálogo existe para responder três perguntas do produto:
+ * Produto/serviço, nome, preço, ativo/arquivado, e desde a 0093 o que o card
+ * precisa (SKU, descrição, link, foto). Nada de estoque, imposto ou ERP. O
+ * catálogo existe para responder três perguntas do produto:
  *
  *   - "no que esta oportunidade está interessada?"
  *   - "quem comprou o Plano XYZ nos últimos 90 dias?" (RB-36, na F6)
@@ -78,6 +79,15 @@ export type Produto = {
    * válido de propósito, para brinde e plano gratuito, só não é o default.
    */
   preco: number | null
+  /**
+   * O que o card do produto precisa (0093). Todos opcionais: o catálogo do CRM
+   * vive sem eles, e item sem foto sai como texto com link.
+   */
+  sku: string | null
+  descricao: string | null
+  /** Só `https://`, o banco recusa o resto. */
+  link: string | null
+  foto: string | null
   /** `null` = ativo. Data = arquivado naquele instante, e ainda legível. */
   arquivadoEm: string | null
 }
