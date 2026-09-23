@@ -22,19 +22,19 @@ que rola de lado no topo.
 
 ## Fase 1: a barra vira layout e para de recarregar
 
-- [ ] 1.1 `clientes/[clienteId]/layout.tsx` com a moldura: barra, faixas de
+- [x] 1.1 `clientes/[clienteId]/layout.tsx` com a moldura: barra, faixas de
   suporte e impersonação, conferência de acesso à conta. Sem mover nenhuma
   pasta (outros agentes trabalham nessas páginas; mover arquivo é conflito em
   todo rebase).
-- [ ] 1.2 O item aceso sai do `usePathname`, não mais do `ativa` de cada página.
-- [ ] 1.3 O editor de fluxo continua tela cheia: a moldura (componente de
+- [x] 1.2 O item aceso sai do `usePathname`, não mais do `ativa` de cada página.
+- [x] 1.3 O editor de fluxo continua tela cheia: a moldura (componente de
   cliente) não desenha a barra quando o caminho é `/fluxos/<id>`.
-- [ ] 1.4 `ClienteShell` vira só a guarda da seção (sem acesso, funil
+- [x] 1.4 `ClienteShell` vira só a guarda da seção (sem acesso, funil
   desligado) e o miolo. As páginas não mudam de assinatura.
-- [ ] 1.5 `loading.tsx` das seções deixam de desenhar barra: só o miolo. O
+- [x] 1.5 `loading.tsx` das seções deixam de desenhar barra: só o miolo. O
   `loading.tsx` de `[clienteId]` continua com a barra, porque é o de quem chega
   de fora (lista de clientes, link salvo).
-- [ ] 1.6 Prova: navegar Início → Inbox → Contatos com Playwright e conferir que
+- [x] 1.6 Prova: navegar Início → Inbox → Contatos com Playwright e conferir que
   o `<aside>` é o **mesmo nó** do DOM (marcador gravado nele não some).
 
 ## Fase 2: um esqueleto por tela, copiado do print

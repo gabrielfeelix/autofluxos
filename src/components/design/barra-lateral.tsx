@@ -1,14 +1,22 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { BotaoDeTema, definirPreferencia, usePreferencia } from '@/components/design/tema'
 import { Avatar } from '@/components/design/avatar'
 import { usePerfil } from '@/components/conta/voce'
+import { abaDoCaminho } from './aba-do-caminho'
 
-type Item = { chave: string; rotulo: string; href: string; icone: ReactNode; acesa: boolean; contador?: ReactNode }
+type Item = { chave: string; rotulo: string; href: string; icone: ReactNode; acesa?: boolean; contador?: ReactNode }
 
-export function BarraLateral({ marca, identidadeNoCelular, voltar, itens, rodape, presenca, conta, contaNoTopo, carregando = false }: {
+export function BarraLateral({ base, itens: itensRecebidos, marca, identidadeNoCelular, voltar, rodape, presenca, conta, contaNoTopo, carregando = false }: {
+  /**
+   * O começo do endereço da conta (`/clientes/<id>`). Com ele, o item aceso sai
+   * do caminho, e a barra, que mora no layout, acompanha a navegação sem ser
+   * desenhada de novo. Sem ele (o esqueleto), vale o `acesa` de cada item.
+   */
+  base?: string
   marca: ReactNode
   identidadeNoCelular: ReactNode
   voltar: ReactNode | null
@@ -28,6 +36,9 @@ export function BarraLateral({ marca, identidadeNoCelular, voltar, itens, rodape
   contaNoTopo?: ReactNode
   carregando?: boolean
 }) {
+  const caminho = usePathname()
+  const abaAcesa = base ? abaDoCaminho(caminho, base) : null
+  const itens = base ? itensRecebidos.map((item) => ({ ...item, acesa: item.chave === abaAcesa })) : itensRecebidos
   const recolhida = usePreferencia('barra')
   const painel = useRef<HTMLDialogElement>(null)
   const secoes = useRef<HTMLElement>(null)

@@ -1,13 +1,16 @@
 import type { ReactNode } from 'react'
 import { ClienteShell } from './cliente-shell'
-import { MenuDeAjustes, type TelaDeAjustes } from './menu-de-ajustes'
+import type { TelaDeAjustes } from './menu-de-ajustes'
 import type { Cliente } from '@/server/repos/clientes'
 
 /**
- * A moldura de todas as telas de Configurações.
+ * O miolo de todas as telas de Configurações.
  *
  * Duas barras: a global e a da seção, com os quatro grupos. O porquê da
  * segunda está em `menu-de-ajustes.tsx` e em `docs/PLANO-UI-CONFIGURACOES.md`.
+ * **As duas moram em layout** (`clientes/[clienteId]/layout.tsx` e
+ * `ajustes/layout.tsx`) e não piscam entre uma tela e outra. `ativa` ficou na
+ * assinatura para as telas não mudarem; quem acende o item é o endereço.
  *
  * **A global não encolhe mais ao entrar aqui.** Ela encolhia por decisão de
  * tela, para que duas colunas de texto não competissem, e o efeito era a barra
@@ -23,7 +26,6 @@ import type { Cliente } from '@/server/repos/clientes'
  */
 export function AjustesShell({
   cliente,
-  ativa,
   children,
 }: {
   cliente: Cliente
@@ -32,10 +34,7 @@ export function AjustesShell({
 }) {
   return (
     <ClienteShell cliente={cliente} ativa="ajustes">
-      <div className="flex min-h-full flex-col md:flex-row">
-        <MenuDeAjustes clienteId={cliente.id} ativa={ativa} />
-        <div className="min-w-0 flex-1">{children}</div>
-      </div>
+      {children}
     </ClienteShell>
   )
 }
