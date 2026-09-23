@@ -18,7 +18,6 @@ import { RenomearPasta } from '@/components/fluxos/renomear-pasta'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import {
   EsqueletoDeAbas,
-  EsqueletoDeCartoes,
   EsqueletoDeLista,
 } from '@/components/design/esqueleto'
 import { IlustracaoAutomacoes } from '@/components/design/ilustracoes'
@@ -77,8 +76,7 @@ import { listarQuadros } from '@/server/repos/quadros'
 import { SeloDoCanal } from '@/components/design/selo-do-canal'
 import { NomeDoFluxo } from '@/components/editor/nome-do-fluxo'
 import { ETIQUETAS, MODELOS } from '@/exemplos/modelos'
-import { AbaDeTemplates, NovaAutomacao } from '@/components/fluxos/templates'
-import { ImportarJson } from '@/components/fluxos/importar-json'
+import { NovaAutomacao } from '@/components/fluxos/templates'
 import { contatosPorCampanha, listarCampanhas } from '@/server/repos/campanhas'
 import {
   conversasEmAndamentoDeMuitos,
@@ -156,7 +154,7 @@ export default async function Pagina({
     if (typeof valor === 'string' && valor.trim() !== '') parametros[chave] = valor.trim().slice(0, 80)
   }
   // URL antiga e aba desconhecida: ver `resolverAba`.
-  const { conteudo: aba, principal } = resolverAba(abaPedida, tipoPedido)
+  const { conteudo: aba, principal, abrirModelos = false } = resolverAba(abaPedida, tipoPedido)
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
@@ -179,8 +177,14 @@ export default async function Pagina({
           velho na tela até o novo ficar pronto, que é o congelamento de novo,
           agora por dentro.
         */}
-        <Suspense key={aba} fallback={<Espera aba={aba} principal={principal} />}>
-          <ConteudoDaAba cliente={cliente} aba={aba} principal={principal} parametros={parametros} />
+        <Suspense key={aba} fallback={<Espera principal={principal} />}>
+          <ConteudoDaAba
+            cliente={cliente}
+            aba={aba}
+            principal={principal}
+            abrirModelos={abrirModelos}
+            parametros={parametros}
+          />
         </Suspense>
       </main>
     </ClienteShell>
@@ -188,15 +192,11 @@ export default async function Pagina({
 }
 
 /** O que ocupa a tela entre o clique na aba e a resposta do banco. */
-function Espera({ aba, principal }: { aba: Aba; principal: AbaPrincipal }) {
+function Espera({ principal }: { principal: AbaPrincipal }) {
   return (
     <>
       <EsqueletoDeAbas abas={ABAS_ROTULOS} ativa={principal} />
-      {aba === 'templates' ? (
-        <EsqueletoDeCartoes quantidade={6} rotulo="Carregando os modelos…" />
-      ) : (
-        <EsqueletoDeLista linhas={4} rotulo="Carregando as automações…" />
-      )}
+      <EsqueletoDeLista linhas={4} rotulo="Carregando as automações…" />
     </>
   )
 }
@@ -205,11 +205,13 @@ async function ConteudoDaAba({
   cliente,
   aba,
   principal,
+  abrirModelos,
   parametros,
 }: {
   cliente: Cliente
   aba: Aba
   principal: AbaPrincipal
+  abrirModelos: boolean
   parametros: Record<string, string>
 }) {
   /*
@@ -400,13 +402,9 @@ async function ConteudoDaAba({
    * É a linha que faz a barra continuar certa depois do carregamento por aba:
    * `gatilhos` está vazio quando a aba aberta é outra, então `gatilhos.length`
    * diria zero palavras-chave para quem tem vinte.
-   *
-   * `templates` é a exceção honesta: a galeria é constante em `exemplos/`, e
-   * contá-la no banco não faria sentido.
    */
   const CONTAGEM: Record<Aba, number> = {
     fluxos: contagens.fluxos,
-    templates: TEMPLATES.length,
     palavras: contagens.palavras,
     eventos: contagens.eventos,
     campanhas: contagens.campanhas,
@@ -546,8 +544,14 @@ async function ConteudoDaAba({
                 modal e a aba Templates, ver `components/fluxos/templates.tsx`.
                 Escondido num campo no fim do formulário, o modelo era escolhido
                 por um nome de três palavras e quase ninguém usava. */}
-            <ImportarJson clienteId={cliente.id} />
-            <NovaAutomacao acao={criarComCliente} modelos={TEMPLATES} etiquetas={ETIQUETAS} />
+            <NovaAutomacao
+              acao={criarComCliente}
+              modelos={TEMPLATES}
+              etiquetas={ETIQUETAS}
+              clienteId={cliente.id}
+              existentes={fluxos.map(({ id, nome }) => ({ id, nome }))}
+              abrirEmModelos={abrirModelos}
+            />
             </span>
           </header>
 
@@ -761,25 +765,6 @@ async function ConteudoDaAba({
             </ul>
           )}
 
-        </section>
-        )}
-
-        {aba === 'templates' && (
-        <section className="app-card overflow-hidden">
-          <header className="border-b border-line px-5 py-4">
-            <h2 className="text-[14.5px] font-bold">Modelos de chatbot</h2>
-            <p className="mt-0.5 text-[12px] leading-5 text-dim">
-              Desenhos prontos de automação. Escolher cria uma <strong>cópia sua</strong>,
-              como rascunho: editar a cópia não mexe no modelo, e o modelo mudar
-              depois não mexe na sua (RB-43).
-              <br />
-              Não confunda com os <em>modelos de mensagem do WhatsApp</em>, que
-              são textos aprovados pela Meta e ficam em Transmissões.
-            </p>
-          </header>
-          <div className="px-5 py-4">
-            <AbaDeTemplates acao={criarComCliente} modelos={TEMPLATES} etiquetas={ETIQUETAS} />
-          </div>
         </section>
         )}
 

@@ -6,11 +6,11 @@
  *
  * **As URLs antigas continuam valendo.** `?aba=palavras`, `eventos` e
  * `campanhas` estão em link salvo e em endereço colado em conversa: elas abrem
- * a mesma sub-aba. `?aba=templates` abre a galeria de modelos, que saiu da
- * barra (os prontos também estão em "Nova automação"). Aba desconhecida cai em
+ * a mesma sub-aba. `?aba=templates` abre Fluxos com o diálogo "Nova
+ * automação" já na galeria de modelos (`abrirModelos`). Aba desconhecida cai em
  * Fluxos: o valor vem da URL, e link velho não pode virar tela em branco.
  */
-export const CONTEUDOS = ['fluxos', 'templates', 'palavras', 'eventos', 'campanhas', 'sequencias'] as const
+export const CONTEUDOS = ['fluxos', 'palavras', 'eventos', 'campanhas', 'sequencias'] as const
 export type Conteudo = (typeof CONTEUDOS)[number]
 
 export const TIPOS_DE_GATILHO = ['palavras', 'eventos', 'campanhas'] as const
@@ -21,14 +21,14 @@ export type AbaPrincipal = 'fluxos' | 'gatilhos' | 'sequencias'
 export function resolverAba(
   aba: string | undefined,
   tipo: string | undefined,
-): { conteudo: Conteudo; principal: AbaPrincipal } {
+): { conteudo: Conteudo; principal: AbaPrincipal; abrirModelos?: true } {
   const ehTipo = (valor: string | undefined): valor is TipoDeGatilho =>
     (TIPOS_DE_GATILHO as readonly string[]).includes(valor ?? '')
 
   if (aba === 'gatilhos') return { conteudo: ehTipo(tipo) ? tipo : 'palavras', principal: 'gatilhos' }
   if (ehTipo(aba)) return { conteudo: aba, principal: 'gatilhos' }
   if (aba === 'sequencias') return { conteudo: 'sequencias', principal: 'sequencias' }
-  if (aba === 'templates') return { conteudo: 'templates', principal: 'fluxos' }
+  if (aba === 'templates') return { conteudo: 'fluxos', principal: 'fluxos', abrirModelos: true }
   return { conteudo: 'fluxos', principal: 'fluxos' }
 }
 

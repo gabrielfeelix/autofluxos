@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useTransition } from 'react'
+import { useCallback, useId, useRef, useState, useTransition, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { acaoImportarFluxoDeJson } from '@/server/acoes'
 
@@ -15,12 +15,26 @@ import { acaoImportarFluxoDeJson } from '@/server/acoes'
  * O arquivo é lido no navegador e mandado como texto para a ação. Não existe
  * upload nem arquivo guardado em lugar nenhum: o que interessa é o desenho, e
  * ele vira uma linha em `flows` na mesma requisição.
+ *
+ * `renderizar` troca o botão: no diálogo "Nova automação" o gatilho é o cartão
+ * "Importar arquivo".
  */
-export function ImportarJson({ clienteId }: { clienteId: string }) {
+export function ImportarJson({
+  clienteId,
+  renderizar,
+}: {
+  clienteId: string
+  renderizar?: (abrir: () => void, rodando: boolean) => ReactNode
+}) {
   const entrada = useRef<HTMLInputElement>(null)
   const [erro, setErro] = useState<string | null>(null)
   const [rodando, comecar] = useTransition()
   const router = useRouter()
+
+  // Pelo id, e não pela ref: o gatilho vem de fora (`renderizar`), e passar a
+  // ref para ele contaria como ler a ref durante o desenho.
+  const idDaEntrada = useId()
+  const abrirArquivo = useCallback(() => document.getElementById(idDaEntrada)?.click(), [idDaEntrada])
 
   function escolher(arquivo: File | undefined) {
     if (!arquivo) return
@@ -50,11 +64,13 @@ export function ImportarJson({ clienteId }: { clienteId: string }) {
     <>
       <input
         ref={entrada}
+        id={idDaEntrada}
         type="file"
         accept="application/json,.json"
         hidden
         onChange={(evento) => escolher(evento.target.files?.[0])}
       />
+      {renderizar ? renderizar(abrirArquivo, rodando) : (
       <button
         type="button"
         onClick={() => entrada.current?.click()}
@@ -64,6 +80,7 @@ export function ImportarJson({ clienteId }: { clienteId: string }) {
       >
         {rodando ? 'importando…' : 'Importar JSON'}
       </button>
+      )}
       {erro && (
         <p role="alert" className="w-full text-right text-[11px] text-perigo">
           {erro}

@@ -847,12 +847,12 @@ export async function editarPasso(
 
 ### Tarefa 5.2: "Nova automação" com as quatro origens [A04]
 
-- [ ] **Passo 1:** o botão abre um diálogo com Em branco, Usar modelo (galeria
+- [x] **Passo 1:** o botão abre um diálogo com Em branco, Usar modelo (galeria
   atual `GaleriaDeTemplates`, `src/components/fluxos/templates.tsx`), Importar
   arquivo (`importar-json.tsx`) e Duplicar existente (lista com busca). Cada
   opção diz o que nasce: "Nasce como rascunho, desligada."
-- [ ] **Passo 2:** remover os botões soltos "Importar JSON" do cabeçalho da lista.
-- [ ] **Passo 3:** prints; commit `feat(automacoes): criar automação por um caminho só`.
+- [x] **Passo 2:** remover os botões soltos "Importar JSON" do cabeçalho da lista.
+- [x] **Passo 3:** prints; commit `feat(automacoes): criar automação por um caminho só`.
 
 ### Tarefa 5.3: checklist depois de importar ou duplicar [A13]
 
@@ -1511,3 +1511,11 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   para o menu ⋯. Com a lista filtrada a alça some.
 - 23/09: tarefa 5.9 (anotações como histórico no Inbox) entrou no plano a
   pedido do Gabriel.
+- 23/09, tarefa 5.2: o texto "Nasce como rascunho, desligada." só é
+  verdadeiro para Duplicar (a cópia nasce `ativo = false`). Em branco e
+  modelo nascem ligadas e sem versão (padrão da 0036, ver 3.1), então o
+  cartão diz "Nasce como rascunho: só atende depois de publicar"; importar
+  diz "sem IA e sem credenciais". `?aba=templates` abre Fluxos com o diálogo
+  já na galeria (`abrirModelos` em `resolverAba`); a seção da galeria em
+  página e `AbaDeTemplates` foram apagadas. No celular os cartões perdem a
+  miniatura (os quatro cabiam só rolando).

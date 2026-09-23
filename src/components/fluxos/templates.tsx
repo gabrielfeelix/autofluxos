@@ -1,11 +1,16 @@
 'use client'
 
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState, useTransition, type ReactNode } from 'react'
+import { useRouter } from 'next/navigation'
+import { ImportarJson } from '@/components/fluxos/importar-json'
+import { acaoDuplicarFluxo } from '@/server/acoes'
 import { Modal } from '@/components/design/modal'
 import { EscolherCanal } from '@/components/fluxos/escolher-canal'
 import { contarEtiquetas, filtrarModelos } from '@/core/flow/filtrar-modelos'
 import {
   DesenhoDoTemplate,
+  MiniaturaDeArquivo,
+  MiniaturaDeCopia,
   MiniaturaDeTemplate,
   MiniaturaEmBranco,
 } from '@/components/fluxos/desenhos'
@@ -313,7 +318,7 @@ function CamposDoFluxo({
 
 /* ------------------------------------------------------------------- modais */
 
-type Passo = 'como' | 'templates' | 'formulario'
+type Passo = 'como' | 'templates' | 'formulario' | 'duplicar'
 
 /**
  * Um dos dois caminhos da primeira pergunta.
@@ -328,6 +333,7 @@ function EscolhaDeComeco({
   miniatura,
   aoClicar,
   children,
+  desabilitado = false,
 }: {
   titulo: string
   /** A linha miúda de baixo: o que vem junto, em vez de mais uma frase. */
@@ -335,18 +341,20 @@ function EscolhaDeComeco({
   miniatura: ReactNode
   aoClicar: () => void
   children: ReactNode
+  desabilitado?: boolean
 }) {
   return (
     <button
       type="button"
       onClick={aoClicar}
-      className="group flex flex-col rounded-[14px] border border-line bg-panel p-3 text-left transition hover:border-primary/45 hover:bg-primary/[0.045] focus-visible:border-primary/60 focus-visible:outline-none"
+      disabled={desabilitado}
+      className="group flex flex-col rounded-[14px] border border-line bg-panel p-3 text-left transition hover:border-primary/45 hover:bg-primary/[0.045] focus-visible:border-primary/60 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
     >
-      <span className="block overflow-hidden rounded-[10px] opacity-90 transition group-hover:opacity-100">
+      <span className="hidden overflow-hidden rounded-[10px] opacity-90 transition group-hover:opacity-100 sm:block">
         {miniatura}
       </span>
 
-      <span className="mt-3 block text-[14px] font-bold text-soft">{titulo}</span>
+      <span className="block text-[14px] font-bold text-soft sm:mt-3">{titulo}</span>
       {/* Altura reservada: sem ela, uma descrição de duas linhas e outra de três
           desalinham os rodapés, e dois cartões lado a lado com linhas em
           alturas diferentes parecem dois componentes distintos. */}
@@ -362,23 +370,34 @@ function EscolhaDeComeco({
 }
 
 /**
- * O botão "+ Criar automação" e o modal de duas perguntas.
+ * O botão "+ Criar automação" e o diálogo com as quatro origens (A04): em
+ * branco, de um modelo, de um arquivo, ou cópia de uma que já existe.
+ *
+ * Um caminho só para criar. O "Importar JSON" solto no cabeçalho e a aba
+ * "Modelos de chatbot" eram duas portas a mais para a mesma coisa; `?aba=
+ * templates` agora abre este diálogo já na galeria (`abrirEmModelos`).
  *
  * O passo `como` existe para a pessoa **ver que existem prontos** antes de
- * começar a preencher. Quem já sabe o que quer perde um clique; quem não sabe
- * ganha treze desenhos que não conhecia.
+ * começar a preencher.
  */
 export function NovaAutomacao({
   acao,
   modelos,
   etiquetas,
+  clienteId,
+  existentes,
+  abrirEmModelos = false,
 }: {
   acao: Acao
   modelos: readonly ModeloDeGaleria[]
   etiquetas: readonly string[]
+  clienteId: string
+  /** As automações da conta, para "Duplicar existente". */
+  existentes: readonly { id: string; nome: string }[]
+  abrirEmModelos?: boolean
 }) {
-  const [aberto, setAberto] = useState(false)
-  const [passo, setPasso] = useState<Passo>('como')
+  const [aberto, setAberto] = useState(abrirEmModelos)
+  const [passo, setPasso] = useState<Passo>(abrirEmModelos ? 'templates' : 'como')
   const [escolhido, setEscolhido] = useState<ModeloDeGaleria | null>(null)
 
   function abrir() {
@@ -391,8 +410,10 @@ export function NovaAutomacao({
     passo === 'como'
       ? 'Nova automação'
       : passo === 'templates'
-        ? 'Escolha um template'
-        : escolhido
+        ? 'Escolha um modelo'
+        : passo === 'duplicar'
+          ? 'Duplicar uma automação'
+          : escolhido
           ? 'Quase lá'
           : 'Nova automação em branco'
 
@@ -415,9 +436,11 @@ export function NovaAutomacao({
             ? 'Como você quer começar?'
             : passo === 'templates'
               ? 'Desenhos prontos e válidos. Depois de criar, tudo é editável.'
-              : 'Falta só o nome e onde ela vai atender.'
+              : passo === 'duplicar'
+                ? 'A cópia nasce como rascunho, desligada, e abre no editor.'
+                : 'Falta só o nome e onde ela vai atender.'
         }
-        largura={passo === 'templates' ? 820 : passo === 'como' ? 620 : 440}
+        largura={passo === 'templates' ? 820 : passo === 'como' ? 640 : 440}
       >
         {passo === 'como' && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -430,18 +453,46 @@ export function NovaAutomacao({
               }}
               miniatura={<MiniaturaEmBranco />}
             >
-              Você põe os blocos na ordem que quiser, do primeiro “oi” até a saída para uma pessoa.
+              Você põe os blocos na ordem que quiser. Nasce como rascunho: só atende depois de publicar.
             </EscolhaDeComeco>
 
             <EscolhaDeComeco
-              titulo="De um template"
+              titulo="Usar modelo"
               rodape={`${modelos.length} prontos, todos conferidos`}
               aoClicar={() => setPasso('templates')}
               miniatura={<MiniaturaDeTemplate />}
             >
-              Um desenho que já funciona: você troca os textos pelos seus e publica.
+              Um desenho que já funciona: você troca os textos pelos seus. Nasce como rascunho.
+            </EscolhaDeComeco>
+
+            <ImportarJson
+              clienteId={clienteId}
+              renderizar={(abrirArquivo, rodando) => (
+                <EscolhaDeComeco
+                  titulo={rodando ? 'Importando…' : 'Importar arquivo'}
+                  rodape="um .json exportado do editor"
+                  aoClicar={abrirArquivo}
+                  miniatura={<MiniaturaDeArquivo />}
+                >
+                  Traz uma automação exportada daqui. Nasce como rascunho, sem IA e sem credenciais.
+                </EscolhaDeComeco>
+              )}
+            />
+
+            <EscolhaDeComeco
+              titulo="Duplicar existente"
+              rodape={existentes.length === 1 ? '1 automação nesta conta' : `${existentes.length} automações nesta conta`}
+              aoClicar={() => setPasso('duplicar')}
+              miniatura={<MiniaturaDeCopia />}
+              desabilitado={existentes.length === 0}
+            >
+              Uma cópia de uma automação sua. Nasce como rascunho, desligada.
             </EscolhaDeComeco>
           </div>
+        )}
+
+        {passo === 'duplicar' && (
+          <DuplicarExistente clienteId={clienteId} existentes={existentes} aoVoltar={() => setPasso('como')} />
         )}
 
         {passo === 'templates' && (
@@ -478,43 +529,84 @@ export function NovaAutomacao({
   )
 }
 
+const semAcento = (texto: string) =>
+  texto.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+
 /**
- * A aba Templates: a mesma galeria, sem modal na frente.
+ * "Duplicar existente": a lista das automações da conta, com busca.
  *
- * Escolher abre só o passo final, quem entrou nesta aba já respondeu "quero um
- * template" ao clicar nela.
+ * Clicar duplica na hora e abre a cópia no editor: a cópia nasce desligada e
+ * sem publicar (`acaoDuplicarFluxo`), então abrir é o próximo passo natural.
  */
-export function AbaDeTemplates({
-  acao,
-  modelos,
-  etiquetas,
+function DuplicarExistente({
+  clienteId,
+  existentes,
+  aoVoltar,
 }: {
-  acao: Acao
-  modelos: readonly ModeloDeGaleria[]
-  etiquetas: readonly string[]
+  clienteId: string
+  existentes: readonly { id: string; nome: string }[]
+  aoVoltar: () => void
 }) {
-  const [escolhido, setEscolhido] = useState<ModeloDeGaleria | null>(null)
+  const [busca, setBusca] = useState('')
+  const [erro, setErro] = useState<string | null>(null)
+  const [rodando, comecar] = useTransition()
+  const [qual, setQual] = useState<string | null>(null)
+  const router = useRouter()
+  const termo = semAcento(busca.trim())
+  const visiveis = termo ? existentes.filter((f) => semAcento(f.nome).includes(termo)) : existentes
+
+  function duplicar(id: string) {
+    setErro(null)
+    setQual(id)
+    comecar(async () => {
+      const r = await acaoDuplicarFluxo(clienteId, id)
+      if (!r.ok || !r.id) {
+        setErro(r.erro ?? 'não deu para duplicar')
+        return
+      }
+      router.push(`/clientes/${clienteId}/fluxos/${r.id}`)
+    })
+  }
 
   return (
-    <>
-      <GaleriaDeTemplates
-        modelos={modelos}
-        etiquetas={etiquetas}
-        aoEscolher={setEscolhido}
-        colunas={3}
+    <div className="flex flex-col gap-3">
+      <input
+        type="search"
+        value={busca}
+        onChange={(evento) => setBusca(evento.target.value)}
+        placeholder="Buscar automação pelo nome"
+        aria-label="Buscar automação pelo nome"
+        autoFocus
+        className="app-field w-full px-[13px] py-[10px] text-[13px]"
       />
-
-      <Modal
-        aberto={escolhido !== null}
-        aoFechar={() => setEscolhido(null)}
-        titulo="Quase lá"
-        descricao="Falta só o nome e onde ela vai atender."
-        largura={440}
-      >
-        {escolhido && (
-          <CamposDoFluxo acao={acao} modelo={escolhido} aoCancelar={() => setEscolhido(null)} />
+      <ul className="max-h-[300px] overflow-y-auto rounded-[10px] border border-line">
+        {visiveis.length === 0 && (
+          <li className="px-3 py-4 text-center text-[12px] text-dim">Nenhuma automação com esse nome</li>
         )}
-      </Modal>
-    </>
+        {visiveis.map((fluxo) => (
+          <li key={fluxo.id} className="border-b border-line last:border-0">
+            <button
+              type="button"
+              disabled={rodando}
+              onClick={() => duplicar(fluxo.id)}
+              className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-[13px] transition hover:bg-surface-strong disabled:opacity-60"
+            >
+              <span className="min-w-0 flex-1 truncate font-semibold text-soft">{fluxo.nome}</span>
+              <span className="text-[11px] text-dim">
+                {rodando && qual === fluxo.id ? 'duplicando…' : 'Duplicar'}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      {erro && (
+        <p role="alert" className="text-[12px] text-perigo">
+          {erro}
+        </p>
+      )}
+      <button type="button" onClick={aoVoltar} className="self-start text-[11.5px] font-semibold text-muted hover:text-soft">
+        ← voltar
+      </button>
+    </div>
   )
 }

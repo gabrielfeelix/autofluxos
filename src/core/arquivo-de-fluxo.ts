@@ -3,7 +3,7 @@ import { limparParaCompartilhar } from './compartilhar'
 
 /**
  * O fluxo como **arquivo**: o que sai no "Exportar JSON" e o que entra no
- * "Importar JSON".
+ * "Importar arquivo" (diálogo "Nova automação").
  *
  * Existe ao lado do link compartilhado, e não no lugar dele, porque as duas
  * coisas respondem a perguntas diferentes. O link é vivo: tem prazo, conta

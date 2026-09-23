@@ -10,7 +10,7 @@ describe('resolverAba', () => {
 
   it('as URLs antigas continuam abrindo a mesma coisa', () => {
     expect(resolverAba('eventos', undefined)).toEqual({ conteudo: 'eventos', principal: 'gatilhos' })
-    expect(resolverAba('templates', undefined)).toEqual({ conteudo: 'templates', principal: 'fluxos' })
+    expect(resolverAba('templates', undefined)).toEqual({ conteudo: 'fluxos', principal: 'fluxos', abrirModelos: true })
   })
 
   it('aba desconhecida cai em Fluxos', () => {

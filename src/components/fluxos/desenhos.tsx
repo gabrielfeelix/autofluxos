@@ -485,3 +485,55 @@ export function DesenhoDoTemplate({ id }: { id: string }) {
   const Desenho = DESENHOS[id] ?? DesenhoGenerico
   return <Desenho />
 }
+
+/** "Importar arquivo": uma folha com a seta entrando. */
+export function MiniaturaDeArquivo() {
+  return (
+    <Canvas id="arquivo" altura={116}>
+      <path
+        d="M108 32h24l12 12v40a4 4 0 0 1-4 4h-32a4 4 0 0 1-4-4V36a4 4 0 0 1 4-4z"
+        fill="rgba(255,255,255,0.03)"
+        stroke="rgba(255,255,255,0.3)"
+        strokeWidth="1.2"
+      />
+      <path d="M132 32v12h12" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.2" />
+      <path
+        d="M124 52v22M116 66l8 8 8-8"
+        fill="none"
+        stroke="rgba(255,255,255,0.45)"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Canvas>
+  )
+}
+
+/** "Duplicar existente": dois blocos, o de trás tracejado. */
+export function MiniaturaDeCopia() {
+  return (
+    <Canvas id="copia" altura={116}>
+      <rect
+        x="104"
+        y="34"
+        width="56"
+        height="36"
+        rx="6"
+        fill="rgba(255,255,255,0.02)"
+        stroke="rgba(255,255,255,0.22)"
+        strokeWidth="1.2"
+        strokeDasharray="5 4"
+      />
+      <rect
+        x="90"
+        y="48"
+        width="56"
+        height="36"
+        rx="6"
+        fill="rgba(255,255,255,0.05)"
+        stroke="rgba(255,255,255,0.4)"
+        strokeWidth="1.2"
+      />
+    </Canvas>
+  )
+}
