@@ -1,6 +1,6 @@
 import Link from 'next/link'
-import { acessoCompleto } from '@/server/permissoes'
-import { pode } from '@/core/permissoes'
+import { acessoCompleto, filtroDoAcesso, type AcessoCompleto } from '@/server/permissoes'
+import { pode, type FiltroDeEscopo } from '@/core/permissoes'
 import { onboardingDaConta } from '@/server/repos/onboarding'
 import { passosDoOnboarding } from '@/core/onboarding'
 import { notFound } from 'next/navigation'
@@ -15,7 +15,10 @@ import { telefoneLegivel } from '@/core/contatos/telefone'
 import { comoDinheiro } from '@/core/crm'
 import { cobra, type Objetivo } from '@/core/objetivo-da-conta'
 import { acharCliente } from '@/server/repos/clientes'
-import { listarCanais } from '@/server/repos/conversas'
+import { listarCanais, type CanalSalvo } from '@/server/repos/conversas'
+import { contagensDaAgenda } from '@/server/repos/atividades'
+import { lerFiltroDaAgenda } from '@/core/atividades'
+import { pendenciasDoInicio } from '@/core/pendencias-do-inicio'
 import { listarFluxos } from '@/server/repos/fluxos'
 import { contarLeads } from '@/server/repos/leads'
 import {
@@ -119,8 +122,8 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         </header>
 
         {configura && onboarding?.status !== 'concluido' && <section className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-primary/20 bg-primary-weak p-5">
-          <div><h2 className="text-sm font-bold">{onboarding ? 'Continue preparando sua empresa' : 'Deixe o sistema com a sua cara'}</h2><p className="mt-1 text-xs leading-5 text-muted">Escolha como atender e quais modelos ajudam sua rotina. O que você já configurou será preservado.</p></div>
-          <Link href={`/clientes/${cliente.id}/configurar`} className="app-primary-button px-4 py-2.5 text-xs">{onboarding ? 'Continuar preparação' : 'Personalizar sistema'} →</Link>
+          <div><h2 className="text-sm font-bold">{onboarding ? 'Continue preparando sua empresa' : 'Defina o objetivo da conta'}</h2><p className="mt-1 text-xs leading-5 text-muted">Escolha como atender e quais modelos ajudam sua rotina. O que você já configurou será preservado.</p></div>
+          <Link href={`/clientes/${cliente.id}/configurar`} className="app-primary-button px-4 py-2.5 text-xs">{onboarding ? 'Continuar preparação' : 'Objetivo e recursos'} →</Link>
         </section>}
         {!configura && <section className="app-card mb-5 p-5"><h2 className="text-sm font-bold">Sua rotina começa aqui</h2><p className="mt-2 text-sm leading-6 text-muted">Responda conversas no Inbox, acompanhe seus lembretes em Atividades e consulte os dados em Contatos.</p><div className="mt-3 flex flex-wrap gap-4 text-sm text-primary"><Link href={`/clientes/${cliente.id}/inbox`}>Abrir Inbox →</Link><Link href={`/clientes/${cliente.id}/atividades`}>Ver atividades →</Link><Link href={`/clientes/${cliente.id}/leads`}>Ver contatos →</Link></div></section>}
 
@@ -138,7 +141,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             <Atalhos clienteId={cliente.id} />
 
             <Suspense fallback={<EsqueletoDeLista linhas={3} comRosto rotulo="Carregando a fila…" />}>
-              <Fila clienteId={cliente.id} contatos={contatos} />
+              <Fila clienteId={cliente.id} contatos={contatos} acesso={acesso} canais={canais} configura={configura} />
             </Suspense>
 
             <ComoFunciona />
@@ -453,19 +456,53 @@ function Atalhos({ clienteId }: { clienteId: string }) {
 // ---------------------------------------------------------------------------
 
 /**
- * Quem precisa de uma pessoa agora.
+ * Tudo que precisa de uma pessoa hoje: conexão quebrada, conversa e agenda.
  *
- * A linha inteira é o botão e leva direto à conversa no Inbox: a fila da tela
- * inicial só vale se o caminho entre ver e responder for um clique.
+ * O bloco mostrava só a fila de conversas e dizia "Ninguém esperando" com 67
+ * atividades vencidas (N04). Agora o topo é a lista de pendências de
+ * `pendenciasDoInicio`, cada uma levando à lista já filtrada, e embaixo as
+ * conversas mais antigas da fila, uma linha por pessoa, como antes.
+ *
+ * **O escopo de quem olha decide o que entra.** Agenda usa a mesma contagem do
+ * número do menu (`contagensDaAgenda` com o escopo de `atender`), então os
+ * dois nunca discordam. Conversa entra para quem atende, com a mesma fila que
+ * o Inbox mostra (o Inbox não recorta conversa por escopo, e o número daqui
+ * precisa bater com o que abre do outro lado). Conexão só para quem configura:
+ * é a única pessoa que consegue resolver.
  *
  * Os dois vazios são duas frases diferentes de propósito. "Ninguém escreveu
  * ainda" numa conta recém-ligada é notícia boa esperando a primeira mensagem;
- * "ninguém esperando" numa conta cheia é o dia em que o trabalho acabou. Dizer
- * a mesma coisa nos dois casos faria o segundo parecer defeito.
+ * "ninguém esperando" numa conta cheia é o dia em que o trabalho acabou. E ele
+ * só aparece quando **tudo** for zero.
  */
-async function Fila({ clienteId, contatos }: { clienteId: string; contatos: number }) {
-  const fila = await filaDoPainel(clienteId)
-  const restantes = fila.total - fila.itens.length
+async function Fila({
+  clienteId,
+  contatos,
+  acesso,
+  canais,
+  configura,
+}: {
+  clienteId: string
+  contatos: number
+  acesso: AcessoCompleto
+  canais: CanalSalvo[]
+  configura: boolean
+}) {
+  const atende = filtroDoAcesso(acesso, 'atender')
+  const podeAtender = atende.tipo !== 'impossivel'
+  const [fila, agenda] = await Promise.all([
+    podeAtender ? filaDoPainel(clienteId) : null,
+    podeAtender ? agendaDeHoje(clienteId, atende, acesso.sessao.usuario.id) : null,
+  ])
+  const pendencias = pendenciasDoInicio({
+    conversas: fila ? { pedindoPessoa: fila.pedindoPessoa, esperando: fila.total - fila.pedindoPessoa } : null,
+    agenda,
+    agendaDaEquipe: atende.tipo === 'tudo' || atende.tipo === 'equipes',
+    canais: configura ? canais : null,
+    agora: agora(),
+  })
+  const itens = fila?.itens ?? []
+  const restantes = fila ? fila.total - itens.length : 0
 
   return (
     <section className="app-card overflow-hidden" aria-labelledby="titulo-fila">
@@ -473,32 +510,64 @@ async function Fila({ clienteId, contatos }: { clienteId: string; contatos: numb
         <h2 id="titulo-fila" className="text-[15px] font-bold tracking-[-0.01em]">
           Precisa de você
         </h2>
-        {fila.total > 0 && (
-          <span className="rounded-full bg-primary-weak px-2 py-0.5 text-[11.5px] font-bold text-primary-strong">
-            {fila.total}
-          </span>
-        )}
         <span className="flex-1" />
-        <Link
-          href={`/clientes/${clienteId}/inbox`}
-          className="text-[12px] font-semibold text-primary transition hover:opacity-80 active:opacity-60"
-        >
-          Abrir o Inbox
-        </Link>
+        {podeAtender && (
+          <Link
+            href={`/clientes/${clienteId}/inbox`}
+            className="text-[12px] font-semibold text-primary transition hover:opacity-80 active:opacity-60"
+          >
+            Abrir o Inbox
+          </Link>
+        )}
       </header>
 
-      {fila.itens.length === 0 ? (
+      {pendencias.length === 0 ? (
         <p className="border-t border-line-soft px-5 py-8 text-center text-[13px] text-muted">
           {contatos === 0
             ? 'Ninguém escreveu ainda. A primeira conversa aparece aqui assim que chegar.'
-            : 'Ninguém esperando. O bot deu conta e nada ficou sem resposta.'}
+            : 'Ninguém esperando. Nenhuma conversa sem resposta e nada vencido na agenda.'}
         </p>
       ) : (
-        <ul>
-          {fila.itens.map((item) => (
-            <LinhaDaFila key={item.contatoId} item={item} clienteId={clienteId} />
+        <ul className="border-t border-line-soft py-1">
+          {pendencias.map((pendencia) => (
+            <li key={pendencia.chave}>
+              <Link
+                href={`/clientes/${clienteId}${pendencia.href}`}
+                className="flex items-center gap-3 px-5 py-2 text-[13.5px] transition hover:bg-surface active:bg-surface-strong"
+              >
+                <span
+                  aria-hidden
+                  className={`size-2 shrink-0 rounded-full ${
+                    pendencia.tom === 'falha'
+                      ? 'bg-rose-400'
+                      : pendencia.tom === 'alerta'
+                        ? 'bg-amber-300'
+                        : 'bg-primary'
+                  }`}
+                />
+                <span className={`min-w-0 flex-1 ${pendencia.tom === 'normal' ? '' : 'font-semibold'}`}>
+                  {pendencia.texto}
+                </span>
+                <span aria-hidden className="text-[13px] text-dim">
+                  ›
+                </span>
+              </Link>
+            </li>
           ))}
         </ul>
+      )}
+
+      {itens.length > 0 && (
+        <>
+          <h3 className="border-t border-line-soft px-5 pt-3 pb-1 text-[11px] font-bold tracking-[0.08em] text-dim uppercase">
+            Na fila há mais tempo
+          </h3>
+          <ul>
+            {itens.map((item) => (
+              <LinhaDaFila key={item.contatoId} item={item} clienteId={clienteId} />
+            ))}
+          </ul>
+        </>
       )}
 
       {restantes > 0 && (
@@ -514,6 +583,20 @@ async function Fila({ clienteId, contatos }: { clienteId: string; contatos: numb
     </section>
   )
 }
+
+/** A mesma contagem do número de Atividades no menu, só vencidas e hoje. */
+async function agendaDeHoje(clienteId: string, escopo: FiltroDeEscopo, usuarioId: string) {
+  const contagens = await contagensDaAgenda(
+    clienteId,
+    escopo,
+    usuarioId,
+    { ...lerFiltroDaAgenda({}), alcance: 'equipe' },
+    agora(),
+  )
+  return { vencidas: contagens.vencidas, hoje: contagens.hoje }
+}
+
+const agora = () => Date.now()
 
 function LinhaDaFila({ item, clienteId }: { item: ItemDaFila; clienteId: string }) {
   const pediu = item.motivo === 'pediu-pessoa'

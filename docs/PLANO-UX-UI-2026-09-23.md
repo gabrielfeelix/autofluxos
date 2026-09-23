@@ -1190,17 +1190,17 @@ Ler `05-atendimento-crm.md` inteiro antes. Preservar os invariantes da seção
 
 ### Tarefa 9.1: "Precisa de você" com o que existe
 
-- [ ] **Passo 1:** o bloco lista, no escopo da pessoa: conversas aguardando
+- [x] **Passo 1:** o bloco lista, no escopo da pessoa: conversas aguardando
   humano, atividades vencidas, atividades de hoje, conexões com falha conhecida
   (da tarefa 6.4). Cada linha é link para a lista já filtrada
   (`/atividades?recorte=vencidas`, `/inbox?...`).
-- [ ] **Passo 2:** "Ninguém esperando" só aparece quando tudo for zero.
-- [ ] **Passo 3:** "Deixe o sistema com a sua cara" / "Personalizar sistema"
+- [x] **Passo 2:** "Ninguém esperando" só aparece quando tudo for zero.
+- [x] **Passo 3:** "Deixe o sistema com a sua cara" / "Personalizar sistema"
   some depois do onboarding concluído e o botão vira "Objetivo e recursos"
   (renomeação da Fase 10).
-- [ ] **Passo 4:** métricas que ficaram na home saem para Relatórios (Fase 11);
+- [x] **Passo 4:** métricas que ficaram na home saem para Relatórios (Fase 11);
   enquanto Relatórios não existe, deixar como está.
-- [ ] **Passo 5:** prints `inicio`; commit `feat(inicio): o que precisa de você inclui agenda e conexões`.
+- [x] **Passo 5:** prints `inicio`; commit `feat(inicio): o que precisa de você inclui agenda e conexões`.
 
 ---
 
