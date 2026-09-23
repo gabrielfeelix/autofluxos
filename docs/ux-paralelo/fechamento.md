@@ -19,23 +19,32 @@ Feito, tudo na `main`, deploys READY:
 | 6.3 filtros, detalhe por destinatário, próxima ação | `9d1b881` |
 | 6.4 estado da conexão em camadas (inclui a troca de `falhaDoCanal`) | `924d406` |
 | 6.5 cartões de integração com ação escrita | `5674660` |
+| 6.6 cartão do número: saúde, respostas, webhook | `01d3617` |
+| 6.7 chaves: testar, trocar, excluir (migration **0097**) | `3d51465` |
+| 8.1 estado do atendimento igual no Inbox e na ficha | `589bf38` |
+| 8.2 compositor com três modos e respostas rápidas por teclado | `ae32e1a` |
 
-Detalhes e desvios de cada uma em `a1.md` (Fase 6 é do A1).
+Detalhes e desvios: 6.x em `a1.md`, 8.x em `a2.md`.
 
 **Próximo, na ordem:**
 
-1. 6.6 (WhatsApp: blocos saúde, respostas, webhook) e 6.7 (chaves de API).
-   O bloco de saúde da 6.6 já existe em parte: `CamadasDaConexao` no topo da
-   tela do WhatsApp (6.4). Juntar a ele sincronização e reconectar.
-2. Fase 8 (8.1 a 8.6). Somar o achado da 5.9: **Inbox no celular (390 px)
-   mostra lista e conversa lado a lado**, a conversa sai cortada.
-3. 7.5 Passo 6: e2e do membro de atendimento (trocar nome e foto pelo rodapé,
+1. 8.3 a 8.6. Somar o achado da 5.9: **Inbox no celular (390 px) mostra
+   lista e conversa lado a lado**, a conversa sai cortada (continua assim).
+   Na 8.5 passo 2, o print da 8.1 mostrou o caso: conversa aberta por link
+   (`?conversa=`) que não está na página da fila abre sem aviso nenhum.
+2. 7.5 Passo 6: e2e do membro de atendimento (trocar nome e foto pelo rodapé,
    menu sem Configurações) e os testes "editar perfil só altera o próprio" e
    "nome vazio é recusado", se ainda não existirem.
-4. Revisar os merges que o A4 não revisou (A1 `ba6eff4`, A2 Fase 7).
-5. Fase 12 (validação integrada), com as personas criadas no local. Provar ali
+3. Revisar os merges que o A4 não revisou (A1 `ba6eff4`, A2 Fase 7).
+4. Fase 12 (validação integrada), com as personas criadas no local. Provar ali
    que atendimento não vê o atalho "Automações ›" no Início.
-6. 10.6 continua **bloqueada**: Brevo sem `autofluxos.mail.4yu.com.br`.
+5. 10.6 continua **bloqueada**: Brevo sem `autofluxos.mail.4yu.com.br`.
+
+Scripts de print desta sessão em `.ux-local/`: `whatsapp.mjs` (6.6),
+`chaves.mjs` (6.7), `atendimento.mjs [aguardando|humano]` (8.1, cria sessão
+`humano` e pedido de pessoa no primeiro contato), `compositor.mjs` (8.2,
+mensagem de entrada + respostas rápidas `zz*`). `prints.mjs` ganhou a tela
+`chaves` e `INBOX_CONTATO=<id>` abre o Inbox numa conversa.
 
 ## Pendente para produção (precisa de autorização do Gabriel)
 
