@@ -138,6 +138,45 @@ describe('organizar', () => {
     expect(posicoes.size).toBe(4)
   })
 
+  it('condição: o verdadeiro fica acima do falso, mesmo desenhado ao contrário', () => {
+    // O caso da MGM: sem opções, as duas saídas empatavam e o falso subia.
+    const nos = [no('c'), no('do-falso', 400, 0), no('do-verdadeiro', 400, 900)]
+    const p = organizar(
+      nos,
+      [liga('c', 'do-falso', 'falso'), liga('c', 'do-verdadeiro', 'verdadeiro')],
+      'c',
+    ).posicoes
+
+    expect(p.get('do-verdadeiro')!.y).toBeLessThan(p.get('do-falso')!.y)
+  })
+
+  it('põe o filho na linha da alça que aponta para ele', () => {
+    // Pergunta alta com o único fio saindo da última linha: o filho desce até
+    // ela, em vez de ficar centrado no meio do pai com o fio em diagonal.
+    const nos = [no('p', 0, 0, 400), no('f', 400, 0, 100)]
+    const alcas = new Map([
+      ['p', { saidas: new Map([['timeout', 370]]), entrada: 200 }],
+      ['f', { saidas: new Map([['', 50]]), entrada: 50 }],
+    ])
+    const p = organizar(nos, [liga('p', 'f', 'timeout')], 'p', alcas).posicoes
+
+    expect(p.get('f')!.y + 50).toBe(p.get('p')!.y + 370)
+  })
+
+  it('não cruza os fios de uma condição que alimenta outra condição', () => {
+    const nos = [no('c1'), no('msg'), no('c2'), no('a'), no('b')]
+    const arestas = [
+      liga('c1', 'c2', 'verdadeiro'),
+      liga('c1', 'msg', 'falso'),
+      liga('c2', 'a', 'verdadeiro'),
+      liga('c2', 'b', 'falso'),
+    ]
+    const p = organizar(nos, arestas, 'c1').posicoes
+
+    expect(p.get('c2')!.y).toBeLessThan(p.get('msg')!.y)
+    expect(p.get('a')!.y).toBeLessThan(p.get('b')!.y)
+  })
+
   it('aguenta desenho vazio e aresta órfã', () => {
     expect(organizar([], [], null).posicoes.size).toBe(0)
     const p = organizar([no('a')], [liga('a', 'sumiu'), liga('a', 'a')], null).posicoes

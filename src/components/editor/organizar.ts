@@ -22,8 +22,11 @@
  *    Com apoio, ele anda de coluna em coluna, participa do desembaraço junto
  *    com os blocos e ganha um corredor só seu na vertical. É o que Graphviz,
  *    dagre e ELK fazem, e é por isso que o desenho deles se lê.
- * 4. **Altura**: cada bloco (e cada apoio) tenta ficar na média da altura dos
- *    seus pais, e o empilhamento resolve as colisões descendo o de baixo.
+ * 4. **Altura**: cada bloco (e cada apoio) mira a altura **da alça** que
+ *    aponta para ele, não o meio do pai. É o que põe o filho do "verdadeiro"
+ *    na linha do "verdadeiro", e o fio sai reto. Quando os filhos não cabem
+ *    todos na mira, a coluna inteira se acomoda com o menor desvio total
+ *    (regressão isotônica), em vez de empurrar só o de baixo para o fundo.
  *
  * **Volta posição e curva, e não os blocos.** Quem tem o estado do editor é o
  * `editor.tsx`; devolver dado solto deixa esta função pura e testável sem
@@ -40,8 +43,11 @@ const VAO_X = 110
 const VAO_Y = 40
 /** Espaço entre dois pedaços do desenho que não se ligam. */
 const VAO_ENTRE_PARTES = 120
-/** Varreduras do baricentro. Quatro já estabiliza; mais é gasto sem ganho. */
-const VARREDURAS = 4
+/**
+ * Varreduras do baricentro. Com a melhor guardada a cada rodada, mais rodada
+ * só pode ajudar; oito cobre fluxo de cem blocos em poucos milissegundos.
+ */
+const VARREDURAS = 8
 /**
  * Espaço entre dois corredores de fio vizinhos, dentro da mesma coluna.
  *
@@ -68,6 +74,19 @@ export type ArestaDoDesenho = {
   sourceHandle?: string | null
 }
 
+/**
+ * Onde ficam as alças de um bloco, medidas pelo React Flow.
+ *
+ * Tudo em px a partir do topo do bloco, no centro da alça. Sem medida (teste,
+ * bloco que ainda não pintou) o arrumador estima pela ordem conhecida das
+ * saídas, ver `ORDEM_FIXA`.
+ */
+export type AlcasDoBloco = {
+  /** `sourceHandle` (ou `''` para a saída única) → altura da alça. */
+  saidas: Map<string, number>
+  entrada: number | null
+}
+
 /** Um ponto por onde o fio passa, em coordenadas do desenho. */
 export type Ponto = { x: number; y: number }
 
@@ -87,22 +106,55 @@ export type Desenho = {
 type Posicao = { x: number; y: number }
 
 /**
- * A ordem em que as saídas de um bloco aparecem na tela.
+ * As saídas que não são opção, na ordem em que o bloco as desenha (ver
+ * `nos.tsx`). Só vale quando falta medida: com medida, manda a altura real.
  *
- * Sem isto, dois ramos de uma pergunta podem sair trocados, e a linha da
- * primeira opção cruza a da segunda logo na saída, que é o cruzamento mais
- * feio de todos porque acontece colado no bloco. A ordem das opções é a ordem
- * das alças (ver `Saida` em `nos.tsx`), então basta procurar o `sourceHandle`
- * na lista de opções do bloco de origem.
+ * Era a falta disto que trocava os ramos. "verdadeiro" e "falso" não estão em
+ * `opcoes`, então empatavam, e o empate caía na ordem de tela: o "falso" saía
+ * por cima e cruzava com o "verdadeiro" colado no bloco.
  */
-function ordemDaSaida(no: NoDoDesenho | undefined, alca: string | null | undefined): number {
-  if (!no || !alca) return 0
-  const opcoes = no.data?.opcoes
-  if (!Array.isArray(opcoes)) return 0
-  const indice = opcoes.findIndex(
+const ORDEM_FIXA = [
+  'escolheu',
+  'vazio',
+  'verdadeiro',
+  'falso',
+  'promotor',
+  'neutro',
+  'detrator',
+  'midia',
+  '',
+  'timeout',
+]
+
+/**
+ * Altura da alça de saída, a partir do topo do bloco.
+ *
+ * É ao mesmo tempo a ordem das saídas (quem está mais acima sai primeiro) e a
+ * altura que o filho mira. Sem medida, estima uma linha de 34px por saída
+ * depois do cabeçalho, que é o desenho do `Saida` em `nos.tsx`.
+ */
+function alturaDaSaida(
+  no: NoDoDesenho | undefined,
+  alca: string | null | undefined,
+  alcas: Map<string, AlcasDoBloco> | undefined,
+): number {
+  if (!no) return 0
+  const medida = alcas?.get(no.id)?.saidas.get(alca ?? '')
+  if (medida !== undefined) return medida
+  if (!alca) return altura(no) / 2
+  const opcoes = Array.isArray(no.data?.opcoes) ? (no.data!.opcoes as unknown[]) : []
+  const naOpcao = opcoes.findIndex(
     (o) => typeof o === 'object' && o !== null && (o as { id?: unknown }).id === alca,
   )
-  return indice < 0 ? opcoes.length : indice
+  const fixa = ORDEM_FIXA.indexOf(alca)
+  const linha =
+    naOpcao >= 0 ? naOpcao : opcoes.length + (fixa >= 0 ? fixa : ORDEM_FIXA.length)
+  return 60 + linha * 34
+}
+
+/** Altura da alça de entrada, a partir do topo. O padrão do React Flow é o meio. */
+function alturaDaEntrada(no: NoDoDesenho, alcas: Map<string, AlcasDoBloco> | undefined): number {
+  return alcas?.get(no.id)?.entrada ?? altura(no) / 2
 }
 
 function altura(no: NoDoDesenho): number {
@@ -119,6 +171,7 @@ export function organizar(
   nos: NoDoDesenho[],
   arestas: ArestaDoDesenho[],
   inicio: string | null,
+  alcas?: Map<string, AlcasDoBloco>,
 ): Desenho {
   const posicoes = new Map<string, Posicao>()
   const curvas = new Map<string, Ponto[]>()
@@ -134,13 +187,18 @@ export function organizar(
 
   const filhos = new Map<string, { id: string; ordem: number }[]>()
   const pais = new Map<string, string[]>()
+  /** Ligação pai→filho → altura da alça de onde ela sai, a partir do topo do pai. */
+  const saidas = new Map<string, number>()
   for (const no of nos) {
     filhos.set(no.id, [])
     pais.set(no.id, [])
   }
   for (const a of ligacoes) {
-    filhos.get(a.source)!.push({ id: a.target, ordem: ordemDaSaida(porId.get(a.source), a.sourceHandle) })
+    const y = alturaDaSaida(porId.get(a.source), a.sourceHandle, alcas)
+    filhos.get(a.source)!.push({ id: a.target, ordem: y })
     pais.get(a.target)!.push(a.source)
+    const k = chave(a.source, a.target)
+    saidas.set(k, Math.min(saidas.get(k) ?? Infinity, y))
   }
   for (const lista of filhos.values()) lista.sort((x, y) => x.ordem - y.ordem)
 
@@ -167,57 +225,45 @@ export function organizar(
     const ordem = ordemDeLeitura(parte, filhos, entradas, ordemNaTela)
     const voltas = arestasDeVolta(parte, filhos, entradas)
     const camada = emCamadas(parte, filhos, pais, entradas, voltas)
-    const apoios = apoiar(parte, ligacoes, camada, voltas, filhos, pais, ordem)
+    const apoios = apoiar(parte, ligacoes, camada, voltas, filhos, pais, ordem, saidas)
     const colunas = porColuna(camada)
-    desembaracar(colunas, filhos, pais, ordem, voltas)
 
     // Apoio não tem corpo: ele reserva um corredor, não ocupa uma faixa. Dar
     // altura a ele afastaria os fios uns dos outros como se fossem cartões.
     const alturas = new Map<string, number>()
     for (const id of camada.keys()) alturas.set(id, porId.has(id) ? altura(porId.get(id)!) : 0)
 
-    // Centro vertical de cada bloco, coluna por coluna. A coluna seguinte lê os
-    // centros da anterior, então a ordem daqui importa.
-    const centros = new Map<string, number>()
-    let maisBaixo = 0
+    /** Onde, de 0 a 1, a alça fica na altura do pai. É o que separa dois irmãos. */
+    const fracaoDaSaida = (pai: string, filho: string) => {
+      const h = alturas.get(pai) ?? 0
+      return h > 0 ? Math.min(0.99, (saidas.get(chave(pai, filho)) ?? h / 2) / h) : 0.5
+    }
+    desembaracar(colunas, filhos, pais, ordem, voltas, fracaoDaSaida)
+
+    // Topo de cada bloco, coluna por coluna. A coluna seguinte lê os topos da
+    // anterior, então a ordem daqui importa.
+    const topos = new Map<string, number>()
 
     for (const coluna of colunas) {
-      const desejado = coluna.map((id) => {
-        const dosPais = (pais.get(id) ?? [])
-          .map((p) => centros.get(p))
-          .filter((v): v is number => v !== undefined)
-        return { id, alvo: media(dosPais) }
+      const itens = coluna.map((id) => {
+        const entrada = porId.has(id) ? alturaDaEntrada(porId.get(id)!, alcas) : 0
+        const miras = (pais.get(id) ?? [])
+          .filter((p) => !voltas.has(chave(p, id)) && topos.has(p))
+          .map((p) => topos.get(p)! + (saidas.get(chave(p, id)) ?? 0) - entrada)
+        return { id, h: alturas.get(id)!, mira: media(miras), peso: miras.length }
       })
-
-      // Quem tem pai vai para a média deles; quem não tem (entrada do fluxo,
-      // ou bloco solto) desce para o fim da coluna, sem furar a fila de quem
-      // tem para onde apontar.
-      let fundo = 0
-      let anterior: string | null = null
-      for (const item of desejado) {
-        const meia = alturas.get(item.id)! / 2
-        // Dois corredores vizinhos se separam com pouco; qualquer par que
-        // envolva cartão usa o vão cheio.
-        const vao =
-          anterior !== null && !porId.has(anterior) && !porId.has(item.id)
-            ? VAO_ENTRE_CORREDORES
-            : VAO_Y
-        const minimo = fundo + vao + meia
-        const centro = Math.max(item.alvo === null ? minimo : item.alvo, minimo)
-        centros.set(item.id, centro)
-        fundo = centro + meia
-        anterior = item.id
-      }
-
-      maisBaixo = Math.max(maisBaixo, fundo)
+      const achados = acomodar(itens, porId)
+      for (const [i, item] of itens.entries()) topos.set(item.id, achados[i]!)
     }
 
+    // O pedaço começa no zero dele, qualquer que tenha sido a acomodação.
+    const topo = Math.min(...topos.values())
+    let maisBaixo = 0
     for (const [indice, coluna] of colunas.entries()) {
       for (const id of coluna) {
-        posicoes.set(id, {
-          x: indice * (LARGURA_NO + VAO_X),
-          y: deslocamentoY + centros.get(id)! - alturas.get(id)! / 2,
-        })
+        const y = topos.get(id)! - topo
+        maisBaixo = Math.max(maisBaixo, y + alturas.get(id)!)
+        posicoes.set(id, { x: indice * (LARGURA_NO + VAO_X), y: deslocamentoY + y })
       }
     }
 
@@ -262,6 +308,73 @@ export function organizar(
   return { posicoes, curvas }
 }
 
+/**
+ * Acomoda uma coluna: cada item o mais perto possível da sua mira, sem
+ * sair da ordem e sem encostar no vizinho.
+ *
+ * O jeito antigo era guloso: o de cima pegava a mira dele e o de baixo descia
+ * o quanto precisasse. Numa pergunta com quatro opções e filhos altos, isso
+ * alinhava a primeira opção e jogava a última lá para baixo, com o fio
+ * descendo em diagonal. Aqui a conta é a regressão isotônica (o algoritmo dos
+ * vizinhos que se juntam, PAVA): quem colide forma um bloco, e o bloco se
+ * centra na média das miras de quem está nele. O desvio total sai o menor
+ * possível, e o grupo de filhos fica centrado nas opções que o alimentam.
+ *
+ * Item sem mira (entrada do fluxo, bloco que só recebe fio de volta) não puxa
+ * nada: ele só segue o vizinho de cima.
+ */
+function acomodar(
+  itens: { id: string; h: number; mira: number | null; peso: number }[],
+  porId: Map<string, NoDoDesenho>,
+): number[] {
+  if (itens.length === 0) return []
+
+  // Quanto cada item precisa estar abaixo do primeiro, no mínimo. Com isso a
+  // restrição "não encostar" vira só "não passar na frente": z[i] >= z[i-1].
+  const recuo: number[] = [0]
+  for (let i = 1; i < itens.length; i++) {
+    const anterior = itens[i - 1]!
+    const atual = itens[i]!
+    // Dois corredores vizinhos se separam com pouco; qualquer par que envolva
+    // cartão usa o vão cheio.
+    const vao = !porId.has(anterior.id) && !porId.has(atual.id) ? VAO_ENTRE_CORREDORES : VAO_Y
+    recuo.push(recuo[i - 1]! + anterior.h + vao)
+  }
+
+  type Bloco = { soma: number; peso: number; inicio: number; fim: number }
+  const blocos: Bloco[] = []
+  for (const [i, item] of itens.entries()) {
+    const peso = item.mira === null ? 0 : item.peso
+    let bloco: Bloco = {
+      soma: item.mira === null ? 0 : (item.mira - recuo[i]!) * peso,
+      peso,
+      inicio: i,
+      fim: i,
+    }
+    const valor = (b: Bloco) => (b.peso > 0 ? b.soma / b.peso : -Infinity)
+    // Sem mira, o valor é -∞: ele encosta no bloco de cima, que é "seguir o vizinho".
+    while (blocos.length > 0 && valor(blocos[blocos.length - 1]!) >= valor(bloco)) {
+      const cima = blocos.pop()!
+      bloco = { soma: cima.soma + bloco.soma, peso: cima.peso + bloco.peso, inicio: cima.inicio, fim: bloco.fim }
+    }
+    blocos.push(bloco)
+  }
+
+  // Só o primeiro bloco pode ficar sem mira (os outros encostaram no de
+  // cima); ele gruda no de baixo, para não abrir buraco no topo da coluna.
+  const valores = blocos.map((b) => (b.peso > 0 ? b.soma / b.peso : null))
+  if (valores[0] === null) valores[0] = valores[1] ?? 0
+  const z: number[] = []
+  for (const [n, b] of blocos.entries()) {
+    for (let i = b.inicio; i <= b.fim; i++) z.push(valores[n]!)
+  }
+  // Um bloco sem mira nenhuma pode ter ficado abaixo do de cima; a restrição
+  // manda, então sobe até encostar.
+  for (let i = 1; i < z.length; i++) z[i] = Math.max(z[i]!, z[i - 1]!)
+
+  return z.map((v, i) => v + recuo[i]!)
+}
+
 /** Como um nó de apoio se chama. O `\u0000` não aparece em id de bloco real. */
 const nomeDoApoio = (aresta: string, coluna: number) => `\u0000apoio\u0000${aresta}\u0000${coluna}`
 
@@ -286,6 +399,7 @@ function apoiar(
   filhos: Map<string, { id: string; ordem: number }[]>,
   pais: Map<string, string[]>,
   ordem: Map<string, number>,
+  saidas: Map<string, number>,
 ): Map<string, string[]> {
   const naParte = new Set(parte)
   const apoios = new Map<string, string[]>()
@@ -318,7 +432,7 @@ function apoiar(
       pais.set(id, [])
       // Fica logo atrás da origem na ordem de leitura: é dela que o fio sai, e
       // é perto dela que ele deve ficar quando o baricentro empatar.
-      ordem.set(id, (ordem.get(a.source) ?? 0) + 0.001 * (ordemDaAlca + 1))
+      ordem.set(id, (ordem.get(a.source) ?? 0) + 0.0001 * (ordemDaAlca + 1))
     }
 
     // Tira a ligação direta e põe a corrente no lugar.
@@ -333,7 +447,10 @@ function apoiar(
     for (let i = 0; i < corrente.length - 1; i++) {
       filhos.get(corrente[i]!)!.push({ id: corrente[i + 1]!, ordem: ordemDaAlca })
       pais.get(corrente[i + 1]!)!.push(corrente[i]!)
+      // Só o primeiro trecho sai de alça de verdade; apoio não tem altura.
+      saidas.set(chave(corrente[i]!, corrente[i + 1]!), i === 0 ? ordemDaAlca : 0)
     }
+    filhos.get(a.source)!.sort((x, y) => x.ordem - y.ordem)
 
     apoios.set(idDaAresta, ids)
   }
@@ -531,6 +648,16 @@ function porColuna(camada: Map<string, number>): string[][] {
  * Varre para a direita olhando os pais, para a esquerda olhando os filhos, e
  * repete. É a heurística clássica de redução de cruzamentos: não dá o mínimo,
  * dá um desenho que uma pessoa consegue seguir com o olho, que é o pedido.
+ *
+ * Duas coisas que a versão ingênua não faz, e que eram o emaranhado:
+ *
+ * - **O pai conta pela alça, não pelo bloco.** Os dois filhos de uma condição
+ *   têm o mesmo pai e empatavam; somando a fração da altura da alça (o
+ *   "verdadeiro" em cima, o "falso" embaixo) o empate some, e cada filho fica
+ *   do lado da saída que o alimenta.
+ * - **Fica a melhor ordem, não a última.** Uma varredura pode piorar o que a
+ *   anterior acertou; contar os cruzamentos a cada rodada e guardar o menor é
+ *   o que garante que organizar nunca deixa o desenho mais embaraçado.
  */
 function desembaracar(
   colunas: string[][],
@@ -538,6 +665,7 @@ function desembaracar(
   pais: Map<string, string[]>,
   ordem: Map<string, number>,
   voltas: Set<string>,
+  fracaoDaSaida: (pai: string, filho: string) => number,
 ) {
   for (const coluna of colunas) {
     coluna.sort((a, b) => ordem.get(a)! - ordem.get(b)!)
@@ -545,7 +673,33 @@ function desembaracar(
 
   const posicaoNa = (coluna: string[]) => new Map(coluna.map((id, i) => [id, i]))
 
-  for (let volta = 0; volta < VARREDURAS; volta++) {
+  const cruzamentos = () => {
+    let total = 0
+    for (let i = 0; i < colunas.length - 1; i++) {
+      const aqui = posicaoNa(colunas[i]!)
+      const ali = posicaoNa(colunas[i + 1]!)
+      const fios: [number, number][] = []
+      for (const id of colunas[i]!) {
+        for (const f of filhos.get(id) ?? []) {
+          if (voltas.has(chave(id, f.id)) || !ali.has(f.id)) continue
+          fios.push([aqui.get(id)! + fracaoDaSaida(id, f.id), ali.get(f.id)!])
+        }
+      }
+      for (let a = 0; a < fios.length; a++) {
+        for (let b = a + 1; b < fios.length; b++) {
+          const [s1, t1] = fios[a]!
+          const [s2, t2] = fios[b]!
+          if ((s1 - s2) * (t1 - t2) < 0) total++
+        }
+      }
+    }
+    return total
+  }
+
+  let melhor = colunas.map((c) => [...c])
+  let menos = cruzamentos()
+
+  for (let volta = 0; volta < VARREDURAS && menos > 0; volta++) {
     for (let i = 1; i < colunas.length; i++) {
       const acima = posicaoNa(colunas[i - 1]!)
       ordenarPor(
@@ -553,9 +707,8 @@ function desembaracar(
         (id) =>
           media(
             (pais.get(id) ?? [])
-              .filter((p) => !voltas.has(chave(p, id)))
-              .map((p) => acima.get(p))
-              .filter((v): v is number => v !== undefined),
+              .filter((p) => !voltas.has(chave(p, id)) && acima.has(p))
+              .map((p) => acima.get(p)! + fracaoDaSaida(p, id)),
           ),
         ordem,
       )
@@ -574,7 +727,16 @@ function desembaracar(
         ordem,
       )
     }
+    const agora = cruzamentos()
+    if (agora < menos) {
+      menos = agora
+      melhor = colunas.map((c) => [...c])
+    }
   }
+
+  // A ida da última rodada é a que casa a ordem com as alças; se ela não bateu
+  // a melhor, volta para a melhor.
+  for (const [i, c] of melhor.entries()) colunas[i]!.splice(0, colunas[i]!.length, ...c)
 }
 
 /**

@@ -58,7 +58,7 @@ import { AcaoDaArestaProvider, RealceDeArestasProvider, tiposDeAresta } from './
 import { DESCRICOES } from '@/core/flow/blocos'
 import { CORES, ICONES, NOMES, RespostasPorVariavelProvider, tiposDeNo } from './nos'
 import { NomeDoFluxo } from './nome-do-fluxo'
-import { organizar } from './organizar'
+import { organizar, type AlcasDoBloco } from './organizar'
 import { PuxadorDeLargura } from './puxador'
 import { useLarguraGuardada } from './largura-guardada'
 import { Painel } from './painel'
@@ -734,7 +734,24 @@ export function Editor({
    * grandes se cobrindo.
    */
   const arrumar = useCallback(() => {
-    const { posicoes, curvas } = organizar(nodes, edges, inicio)
+    /*
+     * Onde cada alça está, medido pelo React Flow depois de pintar.
+     *
+     * É o que deixa o filho do "verdadeiro" na linha do "verdadeiro": a opção
+     * de uma pergunta com texto de duas linhas fica mais baixa que a conta
+     * "uma linha por saída" daria, e só a medida acerta.
+     */
+    const alcas = new Map<string, AlcasDoBloco>()
+    for (const n of nodes) {
+      const limites = tela?.getInternalNode(n.id)?.internals.handleBounds
+      if (!limites) continue
+      const centro = (a: { y: number; height: number }) => a.y + a.height / 2
+      alcas.set(n.id, {
+        saidas: new Map((limites.source ?? []).map((a) => [a.id ?? '', centro(a)])),
+        entrada: limites.target?.[0] ? centro(limites.target[0]) : null,
+      })
+    }
+    const { posicoes, curvas } = organizar(nodes, edges, inicio, alcas)
     setNodes((atuais) =>
       atuais.map((n) => ({ ...n, position: posicoes.get(n.id) ?? n.position })),
     )
