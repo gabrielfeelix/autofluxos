@@ -25,6 +25,28 @@ de `docs/PLANO-23-SET-O-QUE-CONSTRUIR.md`.
 
 ---
 
+## As três etapas, e onde este plano para
+
+Decidido com o Gabriel em 23/set/2026, no desenho que o mercado usa (Nuvem
+Chat, Blip, Zenvia):
+
+1. **Mandar o produto certinho** (este plano): card com foto, nome, preço de/por,
+   estoque e botão "Ver na loja". Não depende da Meta.
+2. **Catálogo na Meta e carrinho nativo do WhatsApp** (plano próprio, depois):
+   catálogo da loja no Commerce Manager com `retailer_id` = SKU, mensagem de
+   produto único e múltiplo, a pessoa monta o carrinho no WhatsApp, o webhook
+   `order` vira oportunidade no CRM com itens. Espera: número da PCYES no
+   AutoFluxos (semana de 28/set) e o catálogo que a PCYES vai criar.
+3. **Pix e pedido** (plano próprio): `docs/superpowers/specs/2026-09-22-cobrar-no-chat-design.md`,
+   e depois o pedido criado no Magento.
+
+**A foto é o bloqueio da etapa 1, e o token resolve.** A busca pública da PCYES
+devolve placeholder em 100% dos produtos (62 de 62, 23/set/2026). Sem foto
+também não há etapa 2: a Meta recusa item sem imagem. O Gabriel escolheu o
+token: a REST autenticada (`GET /V1/products/{sku}/media`) devolve o arquivo
+real. Por isso a fase 2 deste plano deixou de ser "opcional, só estoque": ela
+traz **foto e estoque**, e a Task 9 inclui o caminho de mídia.
+
 ## Decisões (tomadas, não reabrir sem motivo novo)
 
 1. **Ao vivo, não sincronizado.** O bot pergunta à loja na hora. Copiar o
@@ -612,7 +634,7 @@ export function lojaMagento(dados: DadosDaLoja, chamar: Chamar = chamarHttp): Lo
         tipo: 'chamar_http',
         metodo: 'GET',
         url: url.toString(),
-        cabecalhos: dados.codigoDaLoja ? [{ nome: 'Store', valor: dados.codigoDaLoja }] : [],
+        cabecalhos: dados.codigoDaLoja ? [{ chave: 'Store', valor: dados.codigoDaLoja }] : [],
         corpo: '',
         mapear: [],
         aoFalhar: 'humano',
@@ -656,9 +678,6 @@ export function lojaMagento(dados: DadosDaLoja, chamar: Chamar = chamarHttp): Lo
 }
 ```
 
-> Conferir no passo 3 os nomes exatos de `Cabecalho` em `src/core/flow/schema.ts`
-> (`nome`/`valor` ou outro) e ajustar; o tipo é o que manda.
-
 `falsa.ts`: implementa `Loja` com um array em memória e um interruptor
 `falhar: boolean`, para a Task 5 testar o resolvedor sem rede.
 
@@ -667,7 +686,6 @@ export function lojaMagento(dados: DadosDaLoja, chamar: Chamar = chamarHttp): Lo
 
 ```ts
 import { describe, expect, it, vi } from 'vitest'
-vi.mock('server-only', () => ({}))
 import { lojaMagento } from './magento'
 
 const dados = { endereco: 'https://loja.com.br', codigoDaLoja: null, sufixo: '.html' }
@@ -1103,6 +1121,10 @@ const CAMINHOS = {
   estoqueDoSite: () => `/rest/V1/inventory/stock-resolver/website/base`,
   // Loja sem MSI.
   legado: (sku: string) => `/rest/V1/stockItems/${encodeURIComponent(sku)}`,
+  // A foto real. Na PCYES o GraphQL público só devolve placeholder.
+  // A URL final é `${endereco}/media/catalog/product${file}`, só entradas com
+  // `disabled = false` e `media_type = 'image'`, a de papel `image` primeiro.
+  midia: (sku: string) => `/rest/V1/products/${encodeURIComponent(sku)}/media`,
 } as const
 ```
 
@@ -1155,6 +1177,25 @@ dizer quantas restam se forem 5 ou menos; acima disso, só diga que tem."
   fase 1 intacto; loja lenta no admin não atrasa a resposta além de 3 s;
   produto esgotado não gasta chamada. · Implementar · passar + typecheck ·
   commit `feat(loja): quantidade exata quando há token` e push.
+
+### Task 10b: o card do produto (`loja_mostrar`)
+
+A ferramenta que **manda** o produto, separada da que busca, porque buscar é
+pensar e mostrar é falar com o cliente.
+
+- `loja_mostrar`, `escreve: false` (não escreve na loja), argumento
+  `produtoIds` (até 3, `soDeResultadoAnterior`). O resolvedor relê cada SKU na
+  loja (preço fresco) e devolve, junto da resposta de texto, um efeito
+  `enviar_produtos` que o caminho de saída executa.
+- **WhatsApp:** `interactive` tipo `cta_url`, cabeçalho `image` (a foto da
+  Task 9), corpo com nome, "de R$ X por R$ Y" e "em estoque", botão
+  "Ver na loja" (máximo 20 caracteres) com o link. Um card por produto.
+- **Instagram:** `template` `generic`, até 10 elementos num carrossel, botão
+  `web_url`.
+- **Sem foto real** (token ausente ou falhou): não manda placeholder. Manda
+  texto com o link, e a prévia do link mostra o que a loja tiver.
+- Novo tipo de mensagem em `src/channels/types.ts` e nos dois adaptadores, com
+  teste do JSON exato que sai para a Meta.
 
 ### Task 11: tela, seção "Estoque exato (opcional)"
 
