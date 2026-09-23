@@ -37,7 +37,14 @@ describe('cada preset produz um bloco de API válido', () => {
     const fluxo = fluxoSchema.parse({
       inicio: 'api',
       nodes: [
-        { id: 'api', type: 'http', position: { x: 0, y: 0 }, data: preset.dados },
+        {
+          id: 'api',
+          type: 'http',
+          position: { x: 0, y: 0 },
+          // "O meu próprio sistema" nasce com o endereço por preencher, e o
+          // `validar()` recusa publicar `https://` sozinho (URL_INVALIDA).
+          data: preset.dados.url === 'https://' ? { ...preset.dados, url: 'https://pedidos.exemplo.com.br/novo' } : preset.dados,
+        },
         {
           id: 'humano',
           type: 'handoff',

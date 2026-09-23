@@ -875,15 +875,15 @@ export async function editarPasso(
 
 ### Tarefa 5.5: HTTP e IA explicam o que fazem [A10, A11]
 
-- [ ] **Passo 1:** HTTP: ao lado da URL, "Só endereço HTTPS público. O segredo
+- [x] **Passo 1:** HTTP: ao lado da URL, "Só endereço HTTPS público. O segredo
   fica na conexão, nunca aqui." e, antes de publicar, erro de validação legível
   para URL inválida.
-- [ ] **Passo 2:** IA: ferramentas separadas em "Só consulta" e "Grava dados"
+- [x] **Passo 2:** IA: ferramentas separadas em "Só consulta" e "Grava dados"
   (as ferramentas de loja do commit `e760fe6`, buscar produto e consultar
   estoque, são "Só consulta");
   para as que gravam, mostrar a política efetiva da conta (automático, pede
   confirmação ao contato, passa para humano) lida de `src/server/ia/politica.ts`.
-- [ ] **Passo 3:** commit `feat(editor): blocos HTTP e IA explicam o alcance`.
+- [x] **Passo 3:** commit `feat(editor): blocos HTTP e IA explicam o alcance`.
 
 ### Tarefa 5.6: histórico com comparação [A12]
 

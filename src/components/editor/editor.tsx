@@ -74,6 +74,7 @@ import type {
 import { Versoes, type VersaoNaLista } from './versoes'
 import { Compartilhar } from './compartilhar'
 import { AntesDePublicar } from './antes-de-publicar'
+import type { PoliticaDaIa } from '@/core/autonomia-da-ia'
 import { antesDePublicar, type OrigemDoFluxo } from '@/core/flow/antes-de-publicar'
 import { descrever } from '@/core/flow/descrever'
 import { Caixa } from '@/components/design/caixa'
@@ -322,6 +323,7 @@ export function Editor({
   clienteId,
   conexoes,
   lojaAtiva = false,
+  politicasDaIa = {},
   etapas,
   etiquetas,
   equipe,
@@ -350,6 +352,8 @@ export function Editor({
   conexoes: ConexaoDoCliente[]
   /** A conta tem loja on-line ligada (0092). Libera as consultas de loja no bloco de IA. */
   lojaAtiva?: boolean
+  /** A política desta conta para cada consulta que grava (A11). Sem linha, pede confirmação. */
+  politicasDaIa?: Record<string, PoliticaDaIa>
   /** As etapas de quadro deste cliente, para o bloco de etapa (C1b). */
   etapas: EtapaDoCliente[]
   /** As etiquetas deste cliente, para o bloco de etiqueta (0044). */
@@ -2073,6 +2077,7 @@ export function Editor({
                 valoresDeVariaveis={valoresDeVariaveis}
                 conexoes={conexoes}
                 lojaAtiva={lojaAtiva}
+                politicasDaIa={politicasDaIa}
                 iaHabilitada={comIa}
                 etapas={etapas}
                 etiquetas={etiquetas}

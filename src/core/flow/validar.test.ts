@@ -504,6 +504,18 @@ describe('validação do nó de API', () => {
     expect(codigos(comHttp({ url: 'https://exemplo.com' }))).not.toContain('URL_INSEGURA')
   })
 
+  it('recusa antes de publicar o endereço malformado ou interno', () => {
+    expect(codigos(comHttp({ url: 'https://exemplo com.br/aulas' }))).toContain('URL_INVALIDA')
+    expect(codigos(comHttp({ url: 'https://servidor/aulas' }))).toContain('URL_INVALIDA')
+    expect(codigos(comHttp({ url: 'https://localhost:3000/aulas' }))).toContain('URL_INTERNA')
+    expect(codigos(comHttp({ url: 'https://192.168.0.10/aulas' }))).toContain('URL_INTERNA')
+    expect(codigos(comHttp({ url: 'https://172.20.1.1/x' }))).toContain('URL_INTERNA')
+    // Variável depois da primeira barra não atrapalha a leitura do endereço.
+    const ok = codigos(comHttp({ url: 'https://api.exemplo.com.br/aulas/{{id}}?q={{nome}}' }))
+    expect(ok).not.toContain('URL_INVALIDA')
+    expect(ok).not.toContain('URL_INTERNA')
+  })
+
   it('recusa nome de variável inválido no mapeamento', () => {
     const fluxo = comHttp({
       url: 'https://e.com',

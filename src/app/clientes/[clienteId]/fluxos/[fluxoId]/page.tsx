@@ -6,6 +6,7 @@ import { origemValida } from '@/core/flow/antes-de-publicar'
 import { listarCampanhas } from '@/server/repos/campanhas'
 import { listarGatilhos } from '@/server/repos/gatilhos'
 import { listarGatilhosDeEvento } from '@/server/repos/webhooks-de-entrada'
+import { lerPoliticas } from '@/server/ia/politica'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarConexoesParaFluxos } from '@/server/repos/conexoes'
 import { lojaDaConta } from '@/server/repos/lojas'
@@ -101,9 +102,10 @@ export default async function Pagina({
   // O histórico vem junto do desenho: abrir o editor é o único lugar de onde
   // alguém decide voltar atrás, e uma segunda ida ao banco só ao clicar deixaria
   // o botão "Histórico" mentindo sobre existir versão para escolher.
-  const [publicada, versoes] = await Promise.all([
+  const [publicada, versoes, politicasDaIa] = await Promise.all([
     fluxo.versaoPublicadaId ? acharVersao(fluxo.versaoPublicadaId) : null,
     listarVersoes(fluxo.id),
+    lerPoliticas(cliente.id),
   ])
 
   // Só quem acabou de importar ou duplicar vê "Antes de publicar" (A13), então
@@ -151,6 +153,9 @@ export default async function Pagina({
         /* Magento ligada ou catálogo próprio com item ativo: os dois servem de
            loja para o bot (`adaptador-da-loja.ts`). */
         lojaAtiva={(loja?.ativa ?? false) || temCatalogo}
+        /* O que a IA faz antes de gravar, por consulta, para o bloco de IA dizer
+           a regra desta conta em vez de prometer sempre "pergunta antes". */
+        politicasDaIa={Object.fromEntries(politicasDaIa)}
         /* As outras automações desta conta, para o bloco "Ir para outra
            automação". O próprio fluxo entra na lista: recomeçar do zero é
            desenho legítimo, e quem barra o laço infinito é a trava de saltos do

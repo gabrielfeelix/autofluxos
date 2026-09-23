@@ -1,5 +1,7 @@
 'use client'
 
+import { problemaDoEndereco } from '@/core/flow/validar'
+import { efeitoDaPolitica, politicaDaFerramenta, type PoliticaDaIa } from '@/core/autonomia-da-ia'
 import { MINUTOS_DE_RETOMADA_PADRAO, type ConfigDaConta } from '@/core/retomada'
 import { useId, useRef, useState, type ReactNode } from 'react'
 import { Caixa } from '@/components/design/caixa'
@@ -320,6 +322,7 @@ export function Painel({
   valoresDeVariaveis = {},
   conexoes = [],
   lojaAtiva = false,
+  politicasDaIa = {},
   iaHabilitada = false,
   etapas = [],
   etiquetas = [],
@@ -357,6 +360,8 @@ export function Painel({
   valoresDeVariaveis?: Record<string, string[]>
   conexoes?: ConexaoDoCliente[]
   lojaAtiva?: boolean
+  /** A política desta conta para cada consulta que grava (A11). Sem linha, pede confirmação. */
+  politicasDaIa?: Record<string, PoliticaDaIa>
   /** Este cliente tem o plano de IA. Muda o card inteiro do bloco de IA. */
   iaHabilitada?: boolean
   etapas?: EtapaDoCliente[]
@@ -1554,6 +1559,7 @@ export function Painel({
             conexaoId={no.data.conexaoId ?? ''}
             conexoes={conexoes}
             lojaAtiva={lojaAtiva}
+            politicasDaIa={politicasDaIa}
             clienteId={clienteId}
             aoMudar={aoMudarDados}
           />
@@ -1903,6 +1909,19 @@ export function Painel({
             aceitaVariavel
             conhecidas={variaveis}
           />
+          {/*
+            O limite dito ao lado do campo, e o erro no lugar dele (A10): antes
+            o endereço interno só falhava na conversa de alguém, como "falha na
+            chamada", e a pessoa colava a senha na URL por não saber onde pôr.
+          */}
+          <p className="-mt-2 text-[11px] leading-[1.5] text-dim">
+            Só endereço HTTPS público. Senha ou chave fica na credencial, nunca no endereço.
+          </p>
+          {erroDoEndereco(no.data.url) && (
+            <p role="alert" className="-mt-2 text-[11px] leading-[1.5] text-perigo">
+              {erroDoEndereco(no.data.url)}
+            </p>
+          )}
 
           {no.data.metodo === 'POST' && (
             <Area
@@ -3040,6 +3059,7 @@ function ConsultasDaIa({
   conexaoId,
   conexoes,
   lojaAtiva,
+  politicasDaIa,
   clienteId,
   aoMudar,
 }: {
@@ -3047,6 +3067,7 @@ function ConsultasDaIa({
   conexaoId: string
   conexoes: ConexaoDoCliente[]
   lojaAtiva: boolean
+  politicasDaIa: Record<string, PoliticaDaIa>
   clienteId: string
   aoMudar: (dados: { ferramentas?: string[]; conexaoId?: string | undefined }) => void
 }) {
@@ -3069,6 +3090,9 @@ function ConsultasDaIa({
     const f = FERRAMENTAS.find((x) => x.nome === nome)
     return f !== undefined && f.chamada.tipo === 'http' && f.credencial !== 'nenhuma'
   })
+  const semPerguntar = FERRAMENTAS.filter(
+    (f) => f.escreve && marcadas.has(f.nome) && politicaDaFerramenta(f.nome, politicasDaIa) === 'automatico',
+  ).map((f) => `“${f.rotulo}”`)
   const daLoja = FERRAMENTAS.filter((f) => f.integracao === 'loja')
   const lojaMarcada = daLoja.some((f) => marcadas.has(f.nome))
 
@@ -3083,8 +3107,8 @@ function ConsultasDaIa({
   }
 
   const grupos = [
-    { titulo: 'Pode consultar', escreve: false },
-    { titulo: 'Pode agir na agenda', escreve: true },
+    { titulo: 'Só consulta', escreve: false },
+    { titulo: 'Grava dados', escreve: true },
   ] as const
 
   return (
@@ -3138,7 +3162,16 @@ function ConsultasDaIa({
                 marcada={marcadas.has(f.nome)}
                 aoMudar={(marcada) => alternar(f.nome, marcada)}
               />
-              <span className="text-[12.5px] leading-4">{f.rotulo}</span>
+              <span className="min-w-0 flex-1 text-[12.5px] leading-4">{f.rotulo}</span>
+              {f.escreve && (
+                <span
+                  className={`shrink-0 text-[10.5px] ${
+                    politicaDaFerramenta(f.nome, politicasDaIa) === 'automatico' ? 'font-semibold text-aviso' : 'text-dim'
+                  }`}
+                >
+                  {efeitoDaPolitica(politicaDaFerramenta(f.nome, politicasDaIa)).selo}
+                </span>
+              )}
             </label>
           ))}
         </fieldset>
@@ -3210,16 +3243,26 @@ function ConsultasDaIa({
         </label>
       )}
 
+      {/*
+        A regra **desta conta**, e não a promessa de sempre (A11). O texto
+        antigo dizia "a IA pergunta posso?" mesmo numa conta configurada para
+        gravar sozinha, que é justamente a conta onde isso importa.
+      */}
       {grava && (
         <p className="mt-2.5 rounded-[10px] border border-amber-400/20 bg-amber-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-aviso">
-          Antes de gravar, a IA pergunta “posso?” e espera a resposta. Ela só age sobre quem está
-          conversando, e só em horários que ela mesma acabou de consultar.
+          {semPerguntar.length === 0
+            ? 'Nesta conta, antes de gravar a IA pergunta “posso?” ao contato e só grava com o sim.'
+            : `Nesta conta, ${semPerguntar.join(', ')} ${semPerguntar.length === 1 ? 'grava' : 'gravam'} sozinha, sem perguntar ao contato. Para mudar essa regra, fale com a 4YU.`}{' '}
+          Ela só age sobre quem está conversando, e só em horários que acabou de consultar.
         </p>
       )}
 
       <div className="mt-4 border-t border-line pt-3">
         <span className="mb-1 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
           O que a IA pode consultar na loja
+          <span className="ml-1.5 rounded-full bg-surface-strong px-1.5 py-px text-[9.5px] font-bold tracking-normal text-muted normal-case">
+            só consulta
+          </span>
           <AjudaDoCampo
             titulo="O que a IA pode consultar na loja"
             secao="outros-sistemas"
@@ -3303,4 +3346,14 @@ function descreverPadraoDaConta(conta: ConfigDaConta | undefined): string {
   return Number.isInteger(horas)
     ? `hoje, ${horas} ${horas === 1 ? 'hora' : 'horas'}`
     : `hoje, ${minutos} minutos`
+}
+
+/** O erro do endereço, enquanto a pessoa escreve. Vazio não é erro ainda. */
+function erroDoEndereco(url: string): string | null {
+  const limpo = url.trim()
+  if (limpo === '') return null
+  if (!limpo.startsWith('https://')) return 'Precisa começar com https://.'
+  // Variável no servidor tem erro próprio e mais claro, na lista do fluxo.
+  if (/^https:\/\/[^/]*\{\{/.test(limpo)) return null
+  return problemaDoEndereco(limpo)?.mensagem ?? null
 }

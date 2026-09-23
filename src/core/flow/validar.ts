@@ -1069,6 +1069,9 @@ function conferirConteudo(
           mensagem: 'O endereço precisa começar com https://, o servidor recusa qualquer outro.',
           noId: no.id,
         })
+      } else {
+        const problema = problemaDoEndereco(no.data.url)
+        if (problema) erros.push({ ...problema, noId: no.id })
       }
 
       for (const item of no.data.mapear) {
@@ -1502,4 +1505,50 @@ function temVariavelNoHost(url: string): boolean {
   const autoridade = fim === -1 ? limpa.slice(inicio) : limpa.slice(inicio, inicio + fim)
 
   return limpa.slice(0, inicio).includes('{{') || autoridade.includes('{{')
+}
+
+/**
+ * O endereço que o servidor recusaria na hora da conversa, dito antes de
+ * publicar (A10).
+ *
+ * `server/efeitos/rede.ts` é quem barra de verdade, inclusive o nome que só
+ * resolve para rede interna depois do DNS. Aqui fica o que dá para ver no
+ * texto: endereço que não se lê como URL e endereço interno escrito às claras.
+ * Sem isto, o erro aparecia só na conversa de alguém, como "falha na chamada".
+ */
+export function problemaDoEndereco(url: string): Omit<Problema, 'noId'> | null {
+  // As variáveis ficam depois da primeira barra (ver `HOST_VARIAVEL`); trocar
+  // por uma palavra qualquer deixa o resto ser lido como URL.
+  let host: string
+  try {
+    host = new URL(url.trim().replace(/\{\{[^}]*\}\}/g, 'x')).hostname.toLowerCase()
+  } catch {
+    return {
+      codigo: 'URL_INVALIDA',
+      mensagem: 'O endereço não se lê como um link. Confira se está inteiro, sem espaço, como https://sistema.com.br/caminho.',
+    }
+  }
+  const interno =
+    host === 'localhost' ||
+    host.endsWith('.localhost') ||
+    host.endsWith('.local') ||
+    host.endsWith('.internal') ||
+    host.startsWith('[') ||
+    /^(0|10|127)\./.test(host) ||
+    /^169\.254\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(host)
+  if (interno) {
+    return {
+      codigo: 'URL_INTERNA',
+      mensagem: 'Só endereço público: o servidor recusa localhost, rede interna e IP privado.',
+    }
+  }
+  if (!host.includes('.')) {
+    return {
+      codigo: 'URL_INVALIDA',
+      mensagem: 'O endereço precisa de um domínio completo, como https://sistema.com.br/caminho.',
+    }
+  }
+  return null
 }
