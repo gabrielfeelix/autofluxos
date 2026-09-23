@@ -583,6 +583,7 @@ export default async function Pagina({
                     nome={primeiroNome}
                     respostasRapidas={respostasRapidas}
                     temAutomacao={temAutomacao}
+                    conversa={{ clienteId, contatoId }}
                   />
                 </ProvedorDeCitacao>
               ),

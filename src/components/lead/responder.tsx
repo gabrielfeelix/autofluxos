@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useTransition } from 'react'
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { BotaoDeAnexo } from '@/components/lead/botao-de-anexo'
 import { BotaoDeMicrofone } from '@/components/lead/botao-de-microfone'
 import { useCitacao } from '@/components/lead/citacao'
@@ -8,6 +8,7 @@ import { RetomarComModelo } from '@/components/lead/retomar-com-modelo'
 import { pedirNovas } from '@/components/inbox/sinal-de-conversa'
 import { SeletorDeEmoji } from '@/components/lead/seletor-de-emoji'
 import { SeletorDeProduto } from '@/components/lead/seletor-de-produto'
+import { SeletorDeRespostaRapida } from '@/components/lead/seletor-de-resposta-rapida'
 
 /**
  * Até onde o campo cresce sozinho antes de virar rolagem.
@@ -31,7 +32,8 @@ const TETO_DA_ALTURA = 132
  * - **Não limpa o campo antes de a mensagem sair.** Erro de envio com o texto
  *   apagado faz a pessoa reescrever um parágrafo que ela acabou de pensar.
  * - **Diz que responder assume a conversa**, em vez de deixar descobrir depois
- *   que o bot calou. Fora da janela de 24h o campo nem abre.
+ *   que o bot calou. Fora da janela de 24h o campo fica desabilitado, com o
+ *   motivo e o rascunho, e o modelo aprovado aparece acima dele (8.2).
  *
  * A recusa de verdade é a do servidor (`acaoResponderLead`); isto aqui é
  * conveniência, como o botão desabilitado de publicar.
@@ -56,6 +58,7 @@ export function CaixaDeResposta({
   respostasRapidas = [],
   temAutomacao = true,
   anexo,
+  conversa,
 }: {
   acao: (formData: FormData) => Promise<{ ok: boolean; erro?: string }>
   /** `null` = fora da janela, ou a pessoa nunca escreveu. */
@@ -75,7 +78,21 @@ export function CaixaDeResposta({
    * inventar um botão que não teria para onde enviar.
    */
   anexo?: { clienteId: string; contatoId: string }
+  /**
+   * A conversa, para a Ficha, que não tem anexo: com ela o modo "modelo" e o
+   * rascunho guardado também valem lá (tarefa 8.2).
+   */
+  conversa?: { clienteId: string; contatoId: string }
 }) {
+  const ids = anexo ?? conversa ?? null
+  /*
+   * Os três modos de um compositor só (tarefa 8.2, X05). Fora da janela ele
+   * **continua na tela**: o campo fica desabilitado com o motivo e o que se
+   * escreveu antes fica lá, em vez de sumir junto com a caixa.
+   */
+  const modo: 'livre' | 'modelo' | 'bloqueado' =
+    restaDaJanela !== null ? 'livre' : ids ? 'modelo' : 'bloqueado'
+  const livre = modo === 'livre'
   const campo = useRef<HTMLTextAreaElement>(null)
   const [erro, setErro] = useState<string | null>(null)
   /*
@@ -101,29 +118,48 @@ export function CaixaDeResposta({
   const [enviando, comecar] = useTransition()
   /** `null` fora do provedor, porque a tela da Ficha não monta citação. */
   const citacao = useCitacao()
+  const [rapidasAbertas, setRapidasAbertas] = useState(false)
+  // O que o leitor de tela ouve quando uma resposta rápida entra no campo.
+  const [anuncio, setAnuncio] = useState('')
 
-  if (restaDaJanela === null) {
-    /*
-     * Fora da janela, a saída é o modelo aprovado, e ela só existe onde há os
-     * ids para mandá-lo. A Ficha não os passa (mesmo motivo do clipe de
-     * anexar), e lá a explicação continua sendo só texto.
-     */
-    if (anexo) {
-      return (
-        <RetomarComModelo clienteId={anexo.clienteId} contatoId={anexo.contatoId} nome={nome} />
-      )
+  /*
+   * O rascunho sobrevive a trocar de aba, de modo e de tela (tarefa 8.2).
+   *
+   * `sessionStorage`, por conversa, e só como conveniência: some ao fechar a
+   * aba, e erro de armazenamento (janela anônima, cota) é ignorado. O campo
+   * continua não controlado; o armazenamento só semeia o valor ao montar.
+   */
+  const chaveDoRascunho = ids ? `af:rascunho:${ids.contatoId}` : null
+  const guardarRascunho = useCallback(
+    (texto: string) => {
+      if (!chaveDoRascunho) return
+      try {
+        if (texto.trim() === '') sessionStorage.removeItem(chaveDoRascunho)
+        else sessionStorage.setItem(chaveDoRascunho, texto)
+      } catch {
+        // Sem armazenamento, o rascunho vive só enquanto o campo estiver montado.
+      }
+    },
+    [chaveDoRascunho],
+  )
+  useEffect(() => {
+    const textarea = campo.current
+    if (!textarea || !chaveDoRascunho || textarea.value !== '') return
+    try {
+      const salvo = sessionStorage.getItem(chaveDoRascunho)
+      if (!salvo) return
+      /*
+       * Pelo setter nativo e com um evento `input`, e não `textarea.value =`:
+       * o React só enxerga a mudança assim, e o `onChange` do campo faz o
+       * resto (altura, microfone que vira avião), por um caminho só.
+       */
+      const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set
+      setter?.call(textarea, salvo)
+      textarea.dispatchEvent(new Event('input', { bubbles: true }))
+    } catch {
+      // Idem: sem armazenamento, nada a restaurar.
     }
-
-    return (
-      <div className="border-t border-line px-[18px] py-3.5">
-        <p className="text-[12.5px] leading-5 text-dim">
-          <strong className="text-muted">Não dá para responder por aqui agora.</strong> O WhatsApp
-          só aceita texto livre por 24h depois da última mensagem de {nome}, ou por 72h quando a
-          conversa nasceu de um anúncio. Passado isso, retomar exige um modelo aprovado pela Meta.
-        </p>
-      </div>
-    )
-  }
+  }, [chaveDoRascunho])
 
   /**
    * O campo cresce com o que se escreve, até o teto, e **só aí** ganha rolagem.
@@ -153,6 +189,7 @@ export function CaixaDeResposta({
     if (!textarea) return
     setTemTexto(textarea.value.trim() !== '')
     ajustarAltura(textarea)
+    guardarRascunho(textarea.value)
   }
 
   function enviar(dados: FormData) {
@@ -208,6 +245,11 @@ export function CaixaDeResposta({
     setErro(null)
   }
 
+  const fecharRapidas = useCallback(() => {
+    setRapidasAbertas(false)
+    campo.current?.focus()
+  }, [])
+
   /*
    * Quem ocupa a direita.
    *
@@ -215,11 +257,29 @@ export function CaixaDeResposta({
    * mandar (`anexo`). Na Ficha, que não passa os ids, a direita fica sendo o
    * avião sempre: um canto vazio faria procurar o botão de enviar.
    */
-  const mostrarMicrofone = Boolean(anexo) && (!temTexto || gravando)
-  const mostrarEnviar = !gravando && (temTexto || !anexo)
+  const mostrarMicrofone = livre && Boolean(anexo) && (!temTexto || gravando)
+  const mostrarEnviar = !gravando && (temTexto || !anexo || !livre)
 
   return (
     <form action={enviar} className="border-t border-line px-[18px] py-3">
+      {/*
+        Fora da janela, a saída vem **dentro** do compositor, acima do campo:
+        o modelo aprovado com prévia e destinatário. O campo continua embaixo,
+        desabilitado e com o rascunho, para quando a pessoa responder.
+      */}
+      {modo === 'modelo' && ids && (
+        <RetomarComModelo clienteId={ids.clienteId} contatoId={ids.contatoId} nome={nome} embutido />
+      )}
+      {modo === 'bloqueado' && (
+        <p className="mb-2 text-[12.5px] leading-5 text-dim">
+          <strong className="text-muted">Texto livre fechado.</strong> O WhatsApp só aceita texto
+          livre por 24h depois da última mensagem de {nome}, ou por 72h quando a conversa nasceu de
+          um anúncio. Passado isso, retomar exige um modelo aprovado pela Meta.
+        </p>
+      )}
+      <p aria-live="polite" className="sr-only">
+        {anuncio}
+      </p>
       {/*
         A citação escolhida, acima do campo.
 
@@ -248,28 +308,6 @@ export function CaixaDeResposta({
         </div>
       )}
 
-      {/*
-        As respostas rápidas vêm **acima** da linha de escrever, e não abaixo.
-        Elas são o que se escolhe antes de escrever; embaixo, empurravam o campo
-        para longe do botão de enviar a cada conta que tem muitos atalhos.
-      */}
-      {respostasRapidas.length > 0 && !gravando && (
-        <div className="mb-2 flex flex-wrap gap-1.5" aria-label="Inserir resposta rápida">
-          {respostasRapidas.map((resposta) => (
-            <button
-              key={resposta.atalho}
-              type="button"
-              disabled={enviando}
-              title={resposta.texto}
-              onClick={() => inserirResposta(resposta.texto)}
-              className="rounded-full border border-primary/20 bg-primary/[0.07] px-2.5 py-1 text-[11.5px] font-bold text-primary transition hover:border-primary/40 hover:bg-primary/[0.13] disabled:opacity-50"
-            >
-              /{resposta.atalho}
-            </button>
-          ))}
-        </div>
-      )}
-
       {erro && (
         <p className="mb-2 rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2 text-[12.5px] leading-5 text-perigo">
           {erro}
@@ -282,14 +320,32 @@ export function CaixaDeResposta({
         meio de um retângulo alto.
       */}
       <div className="flex items-end gap-1">
-        {anexo && !gravando && <BotaoDeAnexo desabilitado={enviando} />}
+        {livre && anexo && !gravando && <BotaoDeAnexo desabilitado={enviando} />}
         {/*
           O emoji entra pelo mesmo caminho da resposta rápida: `inserirResposta`
           escreve no cursor e confere o teto de 4.096 caracteres. Um caminho só
           é o que evita a tela aceitar por aqui o que recusa por ali.
         */}
-        {!gravando && <SeletorDeEmoji aoEscolher={inserirResposta} desabilitado={enviando} />}
-        {anexo && !gravando && (
+        {livre && !gravando && <SeletorDeEmoji aoEscolher={inserirResposta} desabilitado={enviando} />}
+        {/*
+          Resposta rápida e produto são duas entradas da mesma barra, com o
+          mesmo padrão: abre para cima, busca por teclado, Esc fecha (8.2).
+        */}
+        {livre && !gravando && respostasRapidas.length > 0 && (
+          <SeletorDeRespostaRapida
+            respostas={respostasRapidas}
+            aberto={rapidasAbertas}
+            aoAbrir={() => setRapidasAbertas(true)}
+            aoFechar={fecharRapidas}
+            aoEscolher={(resposta) => {
+              setRapidasAbertas(false)
+              inserirResposta(resposta.texto)
+              setAnuncio(`Resposta /${resposta.atalho} inserida.`)
+            }}
+            desabilitado={enviando}
+          />
+        )}
+        {livre && anexo && !gravando && (
           <SeletorDeProduto clienteId={anexo.clienteId} contatoId={anexo.contatoId} desabilitado={enviando} />
         )}
 
@@ -312,8 +368,13 @@ export function CaixaDeResposta({
             reserva.
           */
           style={{ overflowY: 'hidden' }}
-          disabled={enviando}
-          placeholder={`Responder ${nome} pelo WhatsApp…`}
+          disabled={enviando || !livre}
+          aria-describedby={livre ? undefined : 'motivo-do-compositor'}
+          placeholder={
+            livre
+              ? `Responder ${nome} pelo WhatsApp…`
+              : `Texto livre fechado até ${nome} responder`
+          }
           /*
             `font-texto` aqui pelo mesmo motivo da bolha, e mais um: o que se
             escreve tem que parecer com o que sai. Campo numa fonte e bolha em
@@ -324,6 +385,7 @@ export function CaixaDeResposta({
           onChange={(evento) => {
             setTemTexto(evento.currentTarget.value.trim() !== '')
             ajustarAltura(evento.currentTarget)
+            guardarRascunho(evento.currentTarget.value)
           }}
           /*
             Ao sair do campo, reconfere.
@@ -336,6 +398,17 @@ export function CaixaDeResposta({
           */
           onBlur={conferirTexto}
           onKeyDown={(evento) => {
+            // `/` no campo vazio abre as respostas rápidas, sem tirar a mão do
+            // teclado. Com texto, a barra é só uma barra.
+            if (
+              evento.key === '/' &&
+              evento.currentTarget.value === '' &&
+              respostasRapidas.length > 0
+            ) {
+              evento.preventDefault()
+              setRapidasAbertas(true)
+              return
+            }
             // Enter manda, Shift+Enter quebra linha, o hábito de todo mundo que
             // usa WhatsApp. `requestSubmit` para o `action` do form valer.
             if (evento.key === 'Enter' && !evento.shiftKey) {
@@ -366,8 +439,8 @@ export function CaixaDeResposta({
         {mostrarEnviar && (
           <button
             type="submit"
-            disabled={enviando}
-            aria-label={enviando ? 'Enviando' : 'Enviar a mensagem'}
+            disabled={enviando || !livre}
+            aria-label={enviando ? 'Enviando' : livre ? 'Enviar a mensagem' : 'Texto livre fechado'}
             className="app-primary-button flex size-9 shrink-0 items-center justify-center rounded-full text-[13.5px] leading-none disabled:opacity-50"
           >
             {enviando ? '…' : '➤'}
@@ -383,7 +456,12 @@ export function CaixaDeResposta({
         rodapé só era lida por quem já estava prestes a escrever. O que fica é o
         que só importa a quem vai responder agora.
       */}
-      {!gravando && temAutomacao && (
+      {!livre && (
+        <p id="motivo-do-compositor" className="mt-1.5 px-1 text-[11.5px] leading-4 text-dim">
+          O que você escreveu fica guardado aqui e volta a poder ser enviado quando {nome} responder.
+        </p>
+      )}
+      {livre && !gravando && temAutomacao && (
         <p className="mt-1.5 px-1 text-[11.5px] leading-4 text-dim">
           Responder daqui assume a conversa: o bot para de falar com {nome} até você clicar em
           &ldquo;Finalizar atendimento&rdquo;.

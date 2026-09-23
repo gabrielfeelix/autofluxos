@@ -39,11 +39,15 @@ export function RetomarComModelo({
   clienteId,
   contatoId,
   nome,
+  embutido = false,
 }: {
   clienteId: string
   contatoId: string
   nome: string
+  /** Dentro do compositor (8.2): sem a borda e o respiro de caixa própria. */
+  embutido?: boolean
 }) {
+  const moldura = embutido ? 'mb-2.5' : 'border-t border-line px-[18px] py-3.5'
   const router = useRouter()
   const [aprovados, setAprovados] = useState<Template[] | null>(null)
   const [escolhido, setEscolhido] = useState('')
@@ -68,6 +72,9 @@ export function RetomarComModelo({
     }
   }, [clienteId])
 
+  const corpo = aprovados?.find((t) => t.id === escolhido)?.componentes.corpo ?? null
+  const previa = corpo ? corpo.replace(/\{\{\d+\}\}/g, nome) : null
+
   function enviar() {
     setErro(null)
     comecar(async () => {
@@ -88,7 +95,7 @@ export function RetomarComModelo({
 
   if (pronto) {
     return (
-      <div className="border-t border-line px-[18px] py-3.5">
+      <div className={moldura}>
         <p className="text-[12.5px] leading-5 text-dim">
           <strong className="text-muted">Modelo enviado.</strong> Quando {nome} responder, a janela
           de 24h reabre e você volta a escrever livremente por aqui.
@@ -98,7 +105,7 @@ export function RetomarComModelo({
   }
 
   return (
-    <div className="border-t border-line px-[18px] py-3.5">
+    <div className={moldura}>
       <p className="text-[12.5px] leading-5 text-dim">
         <strong className="text-muted">Passaram 24h desde a última mensagem de {nome}.</strong> O
         WhatsApp só deixa retomar com um modelo aprovado pela Meta.
@@ -135,6 +142,16 @@ export function RetomarComModelo({
               rotuloAcessivel="Modelo para retomar a conversa"
             />
           </div>
+          {/*
+            O que vai sair, para quem, antes do clique (X05): as variáveis do
+            modelo viram o nome do contato, como o servidor faz ao enviar.
+          */}
+          {previa && (
+            <p className="order-last w-full rounded-[10px] border border-line bg-surface px-3 py-2 text-[12px] leading-5 whitespace-pre-line text-muted">
+              <span className="mb-0.5 block text-[11px] font-bold text-dim">Para {nome}:</span>
+              {previa}
+            </p>
+          )}
           <button
             type="button"
             onClick={enviar}

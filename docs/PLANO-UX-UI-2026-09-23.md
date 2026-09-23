@@ -1131,16 +1131,16 @@ Ler `05-atendimento-crm.md` inteiro antes. Preservar os invariantes da seção
 
 ### Tarefa 8.2: um compositor com três modos [X05, X20]
 
-- [ ] **Passo 1:** fora da janela de 24h o compositor continua na tela em modo
+- [x] **Passo 1:** fora da janela de 24h o compositor continua na tela em modo
   "modelo" (texto livre desabilitado com o motivo), rascunho preservado ao trocar
   de modo e de aba.
-- [ ] **Passo 2:** respostas rápidas viram busca com teclado (`/` abre), sem
+- [x] **Passo 2:** respostas rápidas viram busca com teclado (`/` abre), sem
   empurrar o compositor. **Preservar** o seletor de produto que o outro agente
   pôs na barra do compositor (`src/components/lead/seletor-de-produto.tsx`,
   `icones-da-barra.tsx`, commit `5e736ef`): produto e resposta rápida são duas
   entradas da mesma barra, com o mesmo padrão de busca por teclado. Ler
   `responder.tsx` inteiro antes, ele mudou depois da revisão.
-- [ ] **Passo 3:** commit `feat(inbox): compositor único com texto livre, modelo e bloqueado`.
+- [x] **Passo 3:** commit `feat(inbox): compositor único com texto livre, modelo e bloqueado`.
 
 ### Tarefa 8.3: próximos passos separados por tipo [X04, X10, X08]
 

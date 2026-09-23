@@ -80,3 +80,13 @@ export function IconeMicrofone() {
     </svg>
   )
 }
+
+/** Resposta rápida: um balão com a barra do atalho dentro (tarefa 8.2). */
+export function IconeRespostaRapida() {
+  return (
+    <svg {...traco} width={TAMANHO} height={TAMANHO}>
+      <path d="M4 5.5h16v10H9l-5 4v-14Z" />
+      <path d="m13.5 8-3 5" />
+    </svg>
+  )
+}
