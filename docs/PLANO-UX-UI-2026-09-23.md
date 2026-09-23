@@ -767,13 +767,13 @@ publicada. Publique antes de ligar, senão ninguém recebe resposta.";
 
 ### Tarefa 3.6: ações do bloco sem botão direito [A08]
 
-- [ ] **Passo 1:** bloco selecionado mostra botão "⋯" acessível por teclado com
+- [x] **Passo 1:** bloco selecionado mostra botão "⋯" acessível por teclado com
   Duplicar, Excluir, Marcar como início; aresta selecionada mostra "Remover
   ligação". Reaproveitar os handlers do menu de contexto (`editor.tsx:957-985`,
   `:2040-2184`).
-- [ ] **Passo 2:** Excluir informa quantas ligações somem e oferece Desfazer
+- [x] **Passo 2:** Excluir informa quantas ligações somem e oferece Desfazer
   (o undo já existe).
-- [ ] **Passo 3:** prints; commit `feat(editor): ações do bloco alcançáveis sem mouse`.
+- [x] **Passo 3:** prints; commit `feat(editor): ações do bloco alcançáveis sem mouse`.
 
 ---
 
@@ -1447,3 +1447,8 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   maior da lista de versões mais um. Publicar agora confirma antes (não
   confirmava). **Achado:** no celular o editor inteiro rola de lado (cabeçalho
   largo), e o diálogo aparece deslocado; fica para a 5.8.
+- 23/09, tarefa 3.6: em vez de um "⋯" dentro de cada bloco, uma barra no topo
+  do quadro (`BarraDoSelecionado`, `Panel` do React Flow) aparece com um bloco
+  ou uma ligação selecionados, com os mesmos handlers do botão direito. O passo
+  2 já existia: a confirmação de Excluir conta as ligações e o painel mostra
+  "Bloco apagado, e N ligação(ões). Desfazer".

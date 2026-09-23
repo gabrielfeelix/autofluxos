@@ -2,6 +2,7 @@
 
 import { rotulosDoEstado } from '@/core/entrada'
 import { useConfirmar } from '@/components/design/confirmar'
+import { PopoverDoQuadro } from '@/components/quadros/popover-do-quadro'
 import type { ConfigDaConta } from '@/core/retomada'
 import {
   addEdge,
@@ -1329,6 +1330,7 @@ export function Editor({
   const apertada = larguraDosBlocos < LARGURA_SEM_DESCRICAO
 
   const noSelecionado = fluxo.nodes.find((n) => n.id === selecionado) ?? null
+  const arestaSelecionada = noSelecionado ? null : (edges.find((e) => e.selected) ?? null)
   const {
     nomes: doDesenho,
     origens: origensDeVariaveis,
@@ -1836,6 +1838,23 @@ export function Editor({
             colorMode={temaEscuro ? 'dark' : 'light'}
             proOptions={{ hideAttribution: false }}
           >
+            {/*
+              A08: tudo que o botão direito oferece, também sem ele. Com um
+              bloco ou uma ligação selecionados (clique ou Tab), a barra no
+              topo do quadro abre as mesmas ações, e o teclado alcança.
+            */}
+            {selecionados.length <= 1 && (noSelecionado || arestaSelecionada) && (
+              <Panel position="top-center">
+                <BarraDoSelecionado
+                  no={noSelecionado ? { id: noSelecionado.id, tipo: noSelecionado.type ?? '' } : null}
+                  ehInicio={noSelecionado?.id === inicio}
+                  aoDuplicar={() => noSelecionado && duplicar(noSelecionado.id)}
+                  aoMarcarInicio={definirInicio}
+                  aoExcluir={() => noSelecionado && pedirParaApagar(noSelecionado.id)}
+                  aoRemoverLigacao={() => arestaSelecionada && apagarAresta(arestaSelecionada.id)}
+                />
+              </Panel>
+            )}
             {selecionados.length > 1 && (
               <Panel position="top-center">
                 <AcoesEmLote
@@ -2108,6 +2127,78 @@ export function Editor({
         aoFechar={() => setAApagar(null)}
         aoConfirmar={() => aApagar && apagar(aApagar)}
       />
+    </div>
+  )
+}
+
+/**
+ * As ações do bloco (ou da ligação) selecionado, sem botão direito (A08).
+ * Reaproveita os mesmos handlers do menu de contexto; Excluir passa pela mesma
+ * confirmação, que diz quantas ligações somem, e deixa o Desfazer no painel.
+ */
+function BarraDoSelecionado({
+  no,
+  ehInicio,
+  aoDuplicar,
+  aoMarcarInicio,
+  aoExcluir,
+  aoRemoverLigacao,
+}: {
+  no: { id: string; tipo: string } | null
+  ehInicio: boolean
+  aoDuplicar: () => void
+  aoMarcarInicio: () => void
+  aoExcluir: () => void
+  aoRemoverLigacao: () => void
+}) {
+  const nome = no ? (NOMES[no.tipo as keyof typeof NOMES] ?? 'Bloco') : null
+  return (
+    <div className="flex items-center gap-2 rounded-xl border border-line bg-panel px-3 py-1.5 text-[12px] shadow-sm">
+      {no ? (
+        <>
+          <span className="text-muted">
+            Bloco: <strong className="font-semibold text-ink">{nome}</strong>
+            {ehInicio ? ' · início' : ''}
+          </span>
+          <PopoverDoQuadro
+            rotulo={`Ações do bloco ${nome}`}
+            largura={220}
+            gatilho={<span aria-hidden className="px-0.5 text-[14px] leading-none">⋯</span>}
+          >
+            <button type="button" data-fechar-popover onClick={aoDuplicar} className="quadro-menu-item">
+              Duplicar
+            </button>
+            <button
+              type="button"
+              data-fechar-popover
+              disabled={ehInicio}
+              onClick={aoMarcarInicio}
+              className="quadro-menu-item"
+            >
+              {ehInicio ? 'Já é o início' : 'Marcar como início'}
+            </button>
+            <button
+              type="button"
+              data-fechar-popover
+              onClick={aoExcluir}
+              className="quadro-menu-item quadro-danger mt-1 border-t border-line text-perigo"
+            >
+              Excluir…
+            </button>
+          </PopoverDoQuadro>
+        </>
+      ) : (
+        <>
+          <span className="text-muted">Ligação selecionada</span>
+          <button
+            type="button"
+            onClick={aoRemoverLigacao}
+            className="rounded-lg border border-line px-2.5 py-1 text-[11.5px] font-semibold text-perigo transition hover:border-rose-400/40 hover:bg-rose-400/[0.09]"
+          >
+            Remover ligação
+          </button>
+        </>
+      )}
     </div>
   )
 }
