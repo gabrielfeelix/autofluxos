@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { BarraDaAgenda } from '@/components/atividades/barra-da-agenda'
-import { CartaoDaAgenda, LinhaDaAgenda } from '@/components/atividades/linha-da-agenda'
+import { ListaDaAgenda } from '@/components/atividades/lista-da-agenda'
 import { Paginacao } from '@/components/atividades/paginacao'
 import { AjudaDaTela, type PassoDaAjuda } from '@/components/design/ajuda-da-tela'
 import { ClienteShell } from '@/components/design/cliente-shell'
@@ -133,35 +133,14 @@ export default async function Pagina({
             )}
           </div>
         ) : (
-          <>
-            <div className="app-card hidden shrink-0 overflow-hidden md:block">
-              <table className="w-full border-collapse text-left">
-                <thead>
-                  <tr className="border-b border-line">
-                    {['Prazo', 'Atividade', 'Contato', 'Responsável'].map((coluna) => (
-                      <th
-                        key={coluna}
-                        scope="col"
-                        className="px-4 py-3 text-[10.5px] font-bold tracking-[0.06em] text-dim uppercase"
-                      >
-                        {coluna}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {pagina.itens.map((item) => (
-                    <LinhaDaAgenda key={item.id} item={item} agora={agora} clienteId={cliente.id} volta={aqui} />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <ul className="app-card shrink-0 overflow-hidden md:hidden">
-              {pagina.itens.map((item) => (
-                <CartaoDaAgenda key={item.id} item={item} agora={agora} clienteId={cliente.id} volta={aqui} />
-              ))}
-            </ul>
-          </>
+          <ListaDaAgenda
+            itens={pagina.itens}
+            agora={agora}
+            clienteId={cliente.id}
+            volta={aqui}
+            equipe={equipe}
+            podeAtribuir={podeVerEquipe}
+          />
         )}
 
         <Paginacao

@@ -519,25 +519,25 @@ export async function acaoAtribuirAtividade(
 - Criar: `src/components/atividades/acoes-da-linha.tsx` (cliente)
 - Reaproveitar: o diálogo de cancelamento com motivo e o fluxo de concluir/reabrir de `src/components/lead-crm/atividades.tsx` (extraia para `src/components/atividades/` o que for compartilhado e faça a ficha importar de lá; não duplicar)
 
-- [ ] **Passo 1:** Concluir: botão na linha, chama `acaoResolverAtividade(..., 'concluida')`,
+- [x] **Passo 1:** Concluir: botão na linha, chama `acaoResolverAtividade(..., 'concluida')`,
   estado pendente na própria linha (botão desabilitado e "Concluindo..."). Sucesso:
   a linha sai da lista de abertas com anúncio `aria-live` "Atividade concluída.
   Desfazer" por 6 s; "Desfazer" chama `acaoReabrirAtividade`. Erro: a linha fica,
   com a mensagem do servidor embaixo dela (`role="alert"`).
-- [ ] **Passo 2:** Reagendar: popover curto com dia (atalhos Hoje, Amanhã, Próxima
+- [x] **Passo 2:** Reagendar: popover curto com dia (atalhos Hoje, Amanhã, Próxima
   segunda) e hora opcional, confirmar chama `acaoReagendarAtividade`. Esc fecha
   sem salvar e devolve o foco ao botão.
-- [ ] **Passo 3:** menu `⋯`: Atribuir (lista de membros, só com escopo que
+- [x] **Passo 3:** menu `⋯`: Atribuir (lista de membros, só com escopo que
   permita), Abrir contato, Abrir conversa (`/inbox?conversa=<contatoId>`),
   Cancelar (diálogo com motivo obrigatório, como na ficha). Em concluídas e
   canceladas: Reabrir.
-- [ ] **Passo 4:** teste e2e novo `test/e2e/agenda.spec.ts` (usa o mesmo
+- [x] **Passo 4:** teste e2e novo `test/e2e/agenda.spec.ts` (usa o mesmo
   padrão de cadastro único e `storageState` de `jornada-chatbot-crm.spec.ts`):
   cria contato e 2 atividades pela ficha, abre `/atividades`, conclui uma pela
   linha e confere que some e que "Desfazer" a traz de volta; reagenda a outra
   para amanhã e confere o texto do prazo; busca pelo nome do contato sem acento.
-- [ ] **Passo 5:** `npm run test:e2e:local -- test/e2e/agenda.spec.ts` → PASS (lembrar do limite de 5 cadastros em 5 min descrito em `test/e2e/README.md`).
-- [ ] **Passo 6:** prints depois; commit `feat(atividades): concluir, reagendar, atribuir e cancelar na própria agenda`.
+- [x] **Passo 5:** `npm run test:e2e:local -- test/e2e/agenda.spec.ts` → PASS (lembrar do limite de 5 cadastros em 5 min descrito em `test/e2e/README.md`).
+- [x] **Passo 6:** prints depois; commit `feat(atividades): concluir, reagendar, atribuir e cancelar na própria agenda`.
 
 ### Tarefa 1.5: "Nova atividade" pela agenda
 
@@ -1286,3 +1286,9 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   página e o menu a usavam); o contador do menu passou a usar
   `contagensDaAgenda` (contagem exata, mesma regra dos atalhos, sem o teto de
   200). O clique no número leva a `?recorte=vencidas` (ou `hoje`).
+- 23/09, tarefa 1.4: a ficha não tinha diálogo de cancelar para extrair; ele
+  nasceu em `src/components/atividades/cancelar-atividade.tsx`. O e2e cria o
+  contato direto no banco local: **conta nova sem canal não mostra "+ Criar
+  contato"** (a tela vazia de Contatos só manda conectar número). Achado para a
+  Fase 2. `.env.teste-local` precisou de `DATABASE_URL` local para o e2e subir.
+  Helpers de cadastro do e2e foram para `test/e2e/cadastro.ts`.

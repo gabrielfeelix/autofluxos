@@ -151,6 +151,16 @@ type Props = {
   volta: string
   /** Botões de ação. Vêm de fora porque são componente de cliente. */
   acoes?: ReactNode
+  /** A mensagem do servidor quando a última ação nesta linha falhou. */
+  erro?: string | null
+}
+
+function Erro({ texto }: { texto: string }) {
+  return (
+    <p role="alert" className="rounded-lg border border-rose-400/25 bg-rose-400/[0.07] px-3 py-2 text-[12px] leading-5 text-perigo">
+      {texto}
+    </p>
+  )
 }
 
 function partes({ item, agora, clienteId, volta }: Props) {
@@ -221,14 +231,24 @@ function partes({ item, agora, clienteId, volta }: Props) {
 
 export function LinhaDaAgenda(props: Props) {
   const p = partes(props)
+  const colunas = props.acoes !== undefined ? 5 : 4
   return (
-    <tr className="border-b border-line align-top last:border-0 hover:bg-surface/60">
-      <td className="w-[150px] px-4 py-3.5">{p.prazo}</td>
-      <td className="px-4 py-3.5">{p.atividade}</td>
-      <td className="w-[210px] max-w-[210px] px-4 py-3.5">{p.contato}</td>
-      <td className="w-[170px] max-w-[170px] px-4 py-3.5">{p.responsavel}</td>
-      {props.acoes !== undefined && <td className="w-[1%] px-4 py-3 whitespace-nowrap">{props.acoes}</td>}
-    </tr>
+    <>
+      <tr className={`align-top hover:bg-surface/60 ${props.erro ? '' : 'border-b border-line last:border-0'}`}>
+        <td className="w-[150px] px-4 py-3.5">{p.prazo}</td>
+        <td className="px-4 py-3.5">{p.atividade}</td>
+        <td className="w-[210px] max-w-[210px] px-4 py-3.5">{p.contato}</td>
+        <td className="w-[170px] max-w-[170px] px-4 py-3.5">{p.responsavel}</td>
+        {props.acoes !== undefined && <td className="w-[1%] px-4 py-3 whitespace-nowrap">{props.acoes}</td>}
+      </tr>
+      {props.erro && (
+        <tr className="border-b border-line last:border-0">
+          <td colSpan={colunas} className="px-4 pb-3">
+            <Erro texto={props.erro} />
+          </td>
+        </tr>
+      )}
+    </>
   )
 }
 
@@ -245,6 +265,11 @@ export function CartaoDaAgenda(props: Props) {
         {p.contato}
         <span className="shrink-0">{p.responsavel}</span>
       </div>
+      {props.erro && (
+        <div className="mt-2.5">
+          <Erro texto={props.erro} />
+        </div>
+      )}
     </li>
   )
 }
