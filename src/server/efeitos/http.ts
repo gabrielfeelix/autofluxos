@@ -1,8 +1,13 @@
 import 'server-only'
+// `schema` antes de `formatos`, e a ordem importa: os dois se importam, e o
+// `schema` usa `FORMATOS_DE_SAIDA` no topo do módulo. Entrando por `formatos`,
+// o `schema` roda antes de `formatos` terminar e o build quebra com "Cannot
+// access before initialization". A tela da loja Magento foi a primeira a
+// chegar aqui por este arquivo sem ter passado pelo `schema` antes.
+import { MARCA_DE_LISTA, SEPARADOR_DE_LISTA } from '@/core/flow/schema'
 import { FORMATOS_DE_SAIDA, type FormatoDeSaida, formatarValor } from '@/core/flow/formatos'
 import { Agent, request } from 'undici'
 import type { Acao } from '@/core/engine/types'
-import { MARCA_DE_LISTA, SEPARADOR_DE_LISTA } from '@/core/flow/schema'
 import { conferirEndereco } from './rede'
 
 /**

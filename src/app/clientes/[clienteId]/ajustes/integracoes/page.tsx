@@ -5,6 +5,7 @@ import { AjustesShell } from '@/components/design/ajustes-shell'
 import {
   LogoChave,
   LogoInstagram,
+  LogoLoja,
   LogoMeta,
   LogoTelegram,
   LogoWhatsApp,
@@ -13,6 +14,7 @@ import { saudeDoInstagram, saudeDoWhatsApp, type SaudeDaConexao } from '@/core/s
 import { acharCliente } from '@/server/repos/clientes'
 import { canalDoInstagram } from '@/server/repos/canais-instagram'
 import { listarConexoes } from '@/server/repos/conexoes'
+import { lojaDaConta } from '@/server/repos/lojas'
 import { listarCanais } from '@/server/repos/conversas'
 import { paginasDaConta } from '@/server/repos/paginas-de-lead'
 
@@ -72,11 +74,12 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [canais, contaDoInstagram, paginasDeLead, conexoes] = await Promise.all([
+  const [canais, contaDoInstagram, paginasDeLead, conexoes, loja] = await Promise.all([
     listarCanais(cliente.id),
     canalDoInstagram(cliente.id),
     paginasDaConta(cliente.id),
     listarConexoes(cliente.id),
+    lojaDaConta(cliente.id),
   ])
 
   const base = `/clientes/${cliente.id}/ajustes`
@@ -121,6 +124,16 @@ export default async function Pagina({
       logo: <LogoChave />,
       saude: conexoes.length === 0 ? 'nao-ligada' : 'ligada',
       href: `${base}/chaves`,
+    },
+    {
+      chave: 'magento',
+      nome: 'Loja Magento',
+      categoria: 'Loja on-line',
+      descricao:
+        'O bot consulta o catálogo da loja na hora: diz se tem, quanto custa e manda o link do produto.',
+      logo: <LogoLoja />,
+      saude: loja?.ativa ? 'ligada' : 'nao-ligada',
+      href: `${base}/integracoes/magento`,
     },
     {
       chave: 'telegram',

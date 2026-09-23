@@ -125,3 +125,25 @@ export function LogoChave() {
     </Moldura>
   )
 }
+
+/** Loja on-line, sem marca: o ícone é da ideia de loja, não de plataforma. */
+export function LogoLoja() {
+  return (
+    <Moldura classe="text-soft">
+      <svg
+        width="21"
+        height="21"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        <path d="M5 8h14l-1 12H6L5 8Z" />
+        <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+      </svg>
+    </Moldura>
+  )
+}
