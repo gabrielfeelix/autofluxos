@@ -30,14 +30,8 @@ async function pessoa(nome: string) {
 
 beforeAll(async () => {
   if (!temBanco) return
-  ;[{ id: conta }] = (await q(
-    `insert into clients (nome, slug) values ($1, $1) returning id`,
-    [`${marca}-conta`],
-  )) as { id: string }[]
-  ;[{ id: outraConta }] = (await q(
-    `insert into clients (nome, slug) values ($1, $1) returning id`,
-    [`${marca}-outra`],
-  )) as { id: string }[]
+  conta = String((await q(`insert into clients (nome, slug) values ($1, $1) returning id`, [`${marca}-conta`]))[0].id)
+  outraConta = String((await q(`insert into clients (nome, slug) values ($1, $1) returning id`, [`${marca}-outra`]))[0].id)
   sai = await pessoa('sai')
   fica = await pessoa('fica')
   estranho = await pessoa('estranho')
@@ -45,10 +39,14 @@ beforeAll(async () => {
     `insert into af_membros ("organizationId", "userId", role) values ($1, $2, 'member'), ($1, $3, 'owner'), ($4, $5, 'owner')`,
     [conta, sai, fica, outraConta, estranho],
   )
-  ;[{ id: contato }] = (await q(
-    `insert into contacts (client_id, wa_id, nome, atribuido_a) values ($1, $2, 'Contato', $3) returning id`,
-    [conta, `55449${Math.floor(Math.random() * 1e8)}`, sai],
-  )) as { id: string }[]
+  contato = String(
+    (
+      await q(
+        `insert into contacts (client_id, wa_id, nome, atribuido_a) values ($1, $2, 'Contato', $3) returning id`,
+        [conta, `55449${Math.floor(Math.random() * 1e8)}`, sai],
+      )
+    )[0].id,
+  )
   const [{ id: quadro }] = await q(`insert into quadros (client_id, nome) values ($1, 'Funil') returning id`, [conta])
   const [{ id: coluna }] = await q(`insert into quadro_colunas (quadro_id, nome) values ($1, 'Novo') returning id`, [quadro])
   await q(
