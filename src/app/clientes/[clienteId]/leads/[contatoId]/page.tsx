@@ -5,7 +5,8 @@ import { ClienteShell } from '@/components/design/cliente-shell'
 import { Suspense } from 'react'
 import { comoFalta, podeReagir, restaDaJanela } from '@/channels/janela'
 import { Dica } from '@/components/design/dica'
-import { ControleDeAutomacao } from '@/components/lead/controle-automacao'
+import { CartaoDoAtendimento, SeloDoAtendimento } from '@/components/atendimento/estado'
+import { estadoDoAtendimento } from '@/core/estado-do-atendimento'
 import { clienteTemAutomacao } from '@/server/repos/fluxos'
 import { CaixaDeResposta } from '@/components/lead/responder'
 import { RodapeDaMensagem } from '@/components/lead/rodape-da-mensagem'
@@ -16,12 +17,13 @@ import { ProvedorDeCitacao } from '@/components/lead/citacao'
 import {
   acaoApagarContato,
   acaoCorrigirNome,
+  acaoAlternarAutomacaoDoLead,
   acaoEncerrarAtendimento,
   acaoResponderLead,
 } from '@/server/acoes'
 import { acaoAnotar, acaoAnotarNoDiario } from '@/server/acoes-crm'
 import { acharCliente } from '@/server/repos/clientes'
-import { contextoDeResposta } from '@/server/repos/conversas'
+import { contextoDeResposta, sessaoComPessoa } from '@/server/repos/conversas'
 import { acharLead, lerConversa, LIMITE_DA_NOTA } from '@/server/repos/leads'
 import { listarRespostasRapidas } from '@/server/repos/respostas-rapidas'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
@@ -79,7 +81,7 @@ import {
 import { NomeDoContato } from '@/components/lead/identidade'
 import { CartaoDeAnotacoes } from '@/components/inbox/anotacoes'
 import { anotacoesDoContato } from '@/server/repos/eventos'
-import { etiquetasDeDia, horaDoRelogio, horaExata, quando } from '@/lib/quando'
+import { etiquetasDeDia, horaDoRelogio, horaExata } from '@/lib/quando'
 import { MenuNaConversa } from '@/components/inbox/historico'
 import { TextoDoWhatsApp } from '@/components/texto-do-whatsapp'
 
@@ -117,6 +119,7 @@ export default async function Pagina({
     acompanhamentos,
     anotacoes,
     sessaoDaFicha,
+    comPessoa,
   ] = await Promise.all([
     acharCliente(clienteId),
     acharLead(clienteId, contatoId),
@@ -144,8 +147,21 @@ export default async function Pagina({
     acompanhamentosDoContato(clienteId, contatoId),
     anotacoesDoContato(clienteId, contatoId),
     sessaoAtual(),
+    sessaoComPessoa(contatoId),
   ])
   if (!cliente || !lead) notFound()
+
+  // O mesmo estado do Inbox (8.1), pela mesma função.
+  const atendimento = estadoDoAtendimento({
+    automacaoAtiva: lead.automacaoAtiva,
+    aguardando: lead.aguardando,
+    atribuidoA: lead.atribuidoA,
+    sessaoComPessoa: comPessoa,
+    estado: lead.estadoEfetivo,
+    temAutomacao,
+    usuarioId: sessaoDaFicha?.usuario.id ?? null,
+  })
+  const donoNome = equipe.find((membro) => membro.id === lead.atribuidoA)?.nome ?? null
 
   const agoraDaFicha = agoraDoServidor()
 
@@ -269,69 +285,28 @@ export default async function Pagina({
               abaixo, que é onde mora o botão.
             */}
             <span className="flex h-[38px] items-center">
-              <span
-                className={`rounded-full border px-3 py-1 text-[10.5px] font-bold ${lead.aguardando ? 'border-rose-400/25 bg-rose-400/[0.09] text-perigo' : !lead.automacaoAtiva ? 'border-amber-300/25 bg-amber-300/[0.08] text-aviso' : 'border-emerald-400/20 bg-emerald-400/[0.07] text-ok'}`}
-              >
-                {lead.aguardando ? 'AGUARDANDO HUMANO' : !lead.automacaoAtiva ? 'BOT EM PAUSA' : 'COM O BOT'}
-              </span>
+              <SeloDoAtendimento atendimento={atendimento} donoNome={donoNome} />
             </span>
           </div>
         </section>
 
-        {lead.aguardando && (
-          <div className="mb-[18px] flex items-center gap-3 rounded-[13px] border border-rose-400/25 bg-rose-400/[0.06] px-[17px] py-[13px]">
-            <span className="size-2 shrink-0 animate-pulse rounded-full bg-rose-400" />
-            <div className="min-w-0 flex-1">
-              <strong className="block text-[13px] text-perigo">Esperando uma pessoa {quando(lead.aguardando.desde)}</strong>
-              <span className="mt-0.5 block text-[11.5px] text-muted">Motivo do handoff: {lead.aguardando.motivo}</span>
-            </div>
-            {/*
-              O que este botão faz, e por que ele é um só: tira o lead da fila e
-              devolve o contato ao bot. Enquanto a sessão estiver com uma pessoa,
-              o bot fica calado com esse número, então "atendi" e "pode voltar
-              a atender" são o mesmo ato, e separar os dois só criaria um estado
-              em que ninguém responde.
-
-              **"Atendimento finalizado", e não "Já atendi".** O par é o que dá
-              o sentido: "Assumir atendimento" tira a conversa do bot, este a
-              devolve. "Já atendi" descrevia quem clica; o nome novo descreve o
-              estado em que a conversa fica, que é o que a outra ponta do par
-              já fazia.
-            */}
-            <form action={acaoEncerrarAtendimento.bind(null, clienteId, contatoId)}>
-              <button
-                type="submit"
-                title="Resolve o handoff. A próxima mensagem desta pessoa começa uma conversa nova com o bot."
-                className="shrink-0 rounded-[9px] border border-rose-400/30 bg-rose-400/[0.12] px-3.5 py-2 text-[12px] font-bold text-perigo transition hover:bg-rose-400/[0.2]"
-              >
-                Atendimento finalizado
-              </button>
-            </form>
-          </div>
-        )}
-
-        {!lead.aguardando && temAutomacao && (
-          <div className={`mb-[18px] flex items-center gap-3 rounded-[13px] border px-[17px] py-[13px] ${lead.automacaoAtiva ? 'border-emerald-400/20 bg-emerald-400/[0.045]' : 'border-amber-300/25 bg-amber-300/[0.06]'}`}>
-            <span className={`size-2 shrink-0 rounded-full ${lead.automacaoAtiva ? 'bg-emerald-400' : 'bg-amber-300'}`} />
-            <div className="min-w-0 flex-1">
-              <strong className={`block text-[13px] ${lead.automacaoAtiva ? 'text-ok' : 'text-aviso'}`}>
-                {lead.automacaoAtiva ? 'Bot respondendo este contato' : 'Bot pausado para este contato'}
-              </strong>
-              <span className="mt-0.5 block text-[11.5px] text-muted">
-                {lead.automacaoAtiva
-                  ? 'Pause se você vai conduzir a conversa manualmente.'
-                  : 'As mensagens entram no histórico, sem resposta automática.'}
-              </span>
-            </div>
-            <div className="w-[132px] shrink-0">
-              <ControleDeAutomacao
-                clienteId={clienteId}
-                contatoId={contatoId}
-                automacaoAtiva={lead.automacaoAtiva}
-              />
-            </div>
-          </div>
-        )}
+        {/*
+          Um cartão só para o estado do atendimento (8.1), o mesmo da coluna do
+          Inbox. Eram duas faixas: uma para quem pediu pessoa, com "Atendimento
+          finalizado", e outra com o interruptor do bot, que dizia "Bot
+          respondendo" mesmo com a sessão nas mãos de alguém.
+        */}
+        <div className="mb-[18px]">
+          <CartaoDoAtendimento
+            largo
+            atendimento={atendimento}
+            donoNome={donoNome}
+            aguardando={lead.aguardando}
+            automacaoAtiva={lead.automacaoAtiva}
+            finalizar={acaoEncerrarAtendimento.bind(null, clienteId, contatoId)}
+            alternarBot={acaoAlternarAutomacaoDoLead.bind(null, clienteId, contatoId)}
+          />
+        </div>
 
         {/*
           **A ficha é um documento, não um chat com notas na margem.** Ela era um
@@ -559,7 +534,7 @@ export default async function Pagina({
                         texto="Por quais anúncios esta pessoa passou antes de falar com a gente."
                         detalhes={
                           <p>
-                            Vazio significa que ela chegou <strong>direto</strong>, sem anúncio ,
+                            Vazio significa que ela chegou <strong>direto</strong>, sem anúncio,
                             e não que a informação se perdeu. É o que separa o lead que custou
                             dinheiro do que veio de graça.
                           </p>

@@ -507,6 +507,27 @@ export async function criarSessao(
 }
 
 /**
+ * A última sessão do contato está com uma pessoa (`status = 'humano'`)?
+ *
+ * É a terceira fonte do estado do atendimento (tarefa 8.1): alguém assumiu ou
+ * respondeu pelo painel, e o bot fica calado até finalizar. Uma linha, pelo
+ * índice de sessões do contato; só a conversa aberta na tela pergunta.
+ */
+export async function sessaoComPessoa(contatoId: string): Promise<boolean> {
+  const { data, error } = await db()
+    .from('sessions')
+    .select('status')
+    .eq('contact_id', contatoId)
+    .order('criado_em', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return false
+  if (error) throw new Error(`não deu para ler a sessão do contato: ${error.message}`)
+  return (data as { status: string } | null)?.status === 'humano'
+}
+
+/**
  * Cala o bot na conversa que está andando agora.
  *
  * **É o que faltava para "assumir" significar o que a palavra diz.** Assumir

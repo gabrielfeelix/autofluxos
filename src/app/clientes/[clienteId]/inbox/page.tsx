@@ -28,12 +28,13 @@ import { ProvedorDeEntrega } from '@/components/lead/entrega-de-arquivos'
 import {
   acaoAssumirAtendimento,
   acaoAtribuirPara,
+  acaoAlternarAutomacaoDoLead,
   acaoEncerrarAtendimento,
   acaoLiberarAtendimento,
   acaoResponderLead,
 } from '@/server/acoes'
 import { acharCliente, type Cliente } from '@/server/repos/clientes'
-import { contextoDeResposta } from '@/server/repos/conversas'
+import { contextoDeResposta, sessaoComPessoa } from '@/server/repos/conversas'
 import {
   agendadasDaConta as listarAgendadasDaConta,
   agendadasDoContato,
@@ -53,7 +54,8 @@ import {
   type Lead,
 } from '@/server/repos/leads'
 import { listarRespostasRapidas, type RespostaRapida } from '@/server/repos/respostas-rapidas'
-import { horaExata } from '@/lib/quando'
+import { CartaoDoAtendimento, SeloDoAtendimento } from '@/components/atendimento/estado'
+import { estadoDoAtendimento, type Atendimento } from '@/core/estado-do-atendimento'
 import type { EtiquetaEscolhivel } from '@/components/etiquetas/seletor'
 import { AcoesRapidas } from '@/components/inbox/acoes-rapidas'
 import { Avatar } from '@/components/inbox/avatar'
@@ -777,7 +779,7 @@ async function ColunaDaConversa({
   // `lead` veio de `paginarLeads(clienteId, ...)` ou de `acharLead(clienteId, ...)`.
   // Só depois desse vínculo cliente–contato confirmado é seguro ler as mensagens
   // pelo id do contato.
-  const [conversa, contexto, posicoes, quadros, agendadasDaConversa, anotacoes] = await Promise.all([
+  const [conversa, contexto, posicoes, quadros, agendadasDaConversa, anotacoes, comPessoa] = await Promise.all([
     lerConversa(lead.contatoId),
     contextoDeResposta(clienteId, lead.contatoId),
     /*
@@ -792,7 +794,19 @@ async function ColunaDaConversa({
     // ícone aceso, e o painel lista com o botão de cancelar.
     agendadasDoContato(clienteId, lead.contatoId),
     anotacoesDoContato(clienteId, lead.contatoId),
+    // A terceira fonte do estado do atendimento (8.1): a sessão com uma pessoa.
+    sessaoComPessoa(lead.contatoId),
   ])
+
+  const atendimento = estadoDoAtendimento({
+    automacaoAtiva: lead.automacaoAtiva,
+    aguardando: lead.aguardando,
+    atribuidoA: lead.atribuidoA,
+    sessaoComPessoa: comPessoa,
+    estado: lead.estadoEfetivo,
+    temAutomacao,
+    usuarioId,
+  })
 
   /*
    * Quais destas bolhas **eu** guardei.
@@ -904,6 +918,7 @@ async function ColunaDaConversa({
           usuarioId={usuarioId}
           etiquetas={etiquetas}
           temAutomacao={temAutomacao}
+          atendimento={atendimento}
           janela={janela}
           janelaApertada={apertado}
           fimDaJanela={fimDaJanela}
@@ -1014,7 +1029,8 @@ async function ColunaDaConversa({
           clienteId={clienteId}
           lead={selecionado}
           funis={funis}
-          temAutomacao={temAutomacao}
+          atendimento={atendimento}
+          donoNome={equipe.find((membro) => membro.id === lead.atribuidoA)?.nome ?? null}
           passagens={passagens}
           nomesDosAnuncios={nomesDosAnuncios}
         />
@@ -1084,6 +1100,7 @@ function CabecalhoDaConversa({
   usuarioId,
   etiquetas,
   temAutomacao,
+  atendimento,
   janela,
   janelaApertada,
   fimDaJanela,
@@ -1095,6 +1112,8 @@ function CabecalhoDaConversa({
   usuarioId: string | null
   etiquetas: EtiquetaEscolhivel[]
   temAutomacao: boolean
+  /** O estado do atendimento, o mesmo da coluna ao lado e da ficha (8.1). */
+  atendimento: Atendimento
   /**
    * Quanto falta da janela de 24h, já escrito (`22h18`). `null` = fora dela, e
    * aí quem avisa é a caixa de resposta, que vira um aviso e não abre campo.
@@ -1132,13 +1151,17 @@ function CabecalhoDaConversa({
             alguém já está nessa antes de decidir responder.
           */}
           <p className="mt-0.5 flex items-center gap-2 truncate text-[12px] text-dim">
-            <span className="truncate">
-              {responsavel
-                ? `com ${responsavel.nome}`
-                : lead.atribuidoA
-                  ? 'com alguém fora da equipe'
-                  : 'Não atribuído'}
-            </span>
+            {/*
+              Estado e dono juntos, pela mesma função da coluna ao lado e da
+              ficha (8.1): antes o cabeçalho dizia "robô pausado" só por haver
+              responsável, e a coluna dizia "BOT RESPONDENDO".
+            */}
+            <SeloDoAtendimento
+              atendimento={atendimento}
+              donoNome={
+                responsavel?.nome ?? (lead.atribuidoA ? 'alguém fora da equipe' : null)
+              }
+            />
             {janela && (
               <Dica texto="Depois disso o WhatsApp só aceita modelo aprovado pela Meta">
                 <span
@@ -1239,7 +1262,8 @@ function DadosDoLead({
   clienteId,
   lead,
   funis,
-  temAutomacao,
+  atendimento,
+  donoNome,
   passagens,
   nomesDosAnuncios,
 }: {
@@ -1252,11 +1276,11 @@ function DadosDoLead({
   /** Um por quadro em que o contato está. Vazio = fora de todo funil. */
   funis: FunilDoContato[]
   /**
-   * Existe fluxo ligado a um papel do número, ou gatilho ativo. **Sem isto o
-   * card mentia**: dizia "BOT RESPONDENDO" numa conta sem fluxo nenhum e
-   * oferecia "Pausar bot" para pausar o que não existe.
+   * O estado do atendimento (8.1). Já considera se a conta tem automação: sem
+   * isso o card dizia "BOT RESPONDENDO" numa conta sem fluxo nenhum.
    */
-  temAutomacao: boolean
+  atendimento: Atendimento
+  donoNome: string | null
 }) {
   /*
    * Sem as chaves de origem: elas já aparecem em destaque no `QuemE`, logo
@@ -1264,14 +1288,6 @@ function DadosDoLead({
    * vezes a mesma coisa.
    */
   const campos = camposSemOrigem(Object.entries(lead.campos))
-  const aguardandoPessoa = lead.aguardando !== null
-  /*
-   * `automacao_ativa` é um interruptor **por conversa**, não a existência do
-   * robô: ele nasce ligado e quer dizer "esta conversa não foi silenciada".
-   * Numa conta sem automação ele fica ligado para sempre, e era por ler só
-   * ele que a tela afirmava um estado impossível.
-   */
-  const botPausado = !lead.automacaoAtiva
 
   return (
     // Rola por dentro, como as outras duas colunas: agora que a moldura tem
@@ -1303,47 +1319,14 @@ function DadosDoLead({
           que ligar, desligar ou explicar. O card vira rótulo e para por aí,
           antes ele dizia "BOT RESPONDENDO" numa conta sem fluxo nenhum.
         */}
-        <div
-          className={`rounded-[11px] border px-3 py-2.5 ${aguardandoPessoa ? 'border-rose-400/35 bg-rose-50' : !temAutomacao ? 'border-line bg-surface' : botPausado ? 'border-amber-400/40 bg-amber-50' : 'border-emerald-500/30 bg-emerald-50'}`}
-        >
-          <p
-            className={`text-[11px] font-bold tracking-[0.04em] ${aguardandoPessoa ? 'text-rose-600' : !temAutomacao ? 'text-muted' : botPausado ? 'text-amber-700' : 'text-emerald-700'}`}
-          >
-            {aguardandoPessoa
-              ? 'AGUARDANDO PESSOA'
-              : !temAutomacao
-                ? 'ATENDIMENTO MANUAL'
-                : botPausado
-                  ? 'BOT EM PAUSA'
-                  : 'BOT RESPONDENDO'}
-          </p>
-          {aguardandoPessoa && (
-            <>
-              {/*
-                O motivo **inteiro**, quebrando linha, e não truncado.
-                Este é o lugar onde a pessoa vem entender o que aconteceu
-                depois de ver a linha vermelha na fila: cortar aqui também
-                deixaria o problema sem nenhum lugar onde possa ser lido.
-              */}
-              <p className="mt-1 text-[12px] leading-4 break-words text-soft">
-                {lead.aguardando?.motivo}
-              </p>
-              {lead.aguardando?.desde && (
-                <p className="mt-1 text-[11px] text-dim">
-                  esperando desde {horaExata(lead.aguardando.desde)}
-                </p>
-              )}
-              <form action={acaoEncerrarAtendimento.bind(null, clienteId, lead.contatoId)}>
-                <button
-                  type="submit"
-                  className="mt-2.5 w-full rounded-[8px] border border-rose-400/40 bg-white px-2.5 py-2 text-[12px] font-bold text-rose-600 transition hover:bg-rose-100"
-                >
-                  Atendimento finalizado
-                </button>
-              </form>
-            </>
-          )}
-        </div>
+        <CartaoDoAtendimento
+          atendimento={atendimento}
+          donoNome={donoNome}
+          aguardando={lead.aguardando}
+          automacaoAtiva={lead.automacaoAtiva}
+          finalizar={acaoEncerrarAtendimento.bind(null, clienteId, lead.contatoId)}
+          alternarBot={acaoAlternarAutomacaoDoLead.bind(null, clienteId, lead.contatoId)}
+        />
 
         {/*
           Quem é a pessoa vem antes de tudo que se faz com ela.

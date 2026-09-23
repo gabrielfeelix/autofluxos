@@ -713,6 +713,7 @@ export function Fila({
                     {semLer > 0 && (
                       <span
                         title={`${semLer} ${semLer === 1 ? "mensagem nova" : "mensagens novas"} desde a última vez que você abriu`}
+                        aria-label={`${semLer} não ${semLer === 1 ? "lida" : "lidas"} para você`}
                         className="shrink-0 rounded-full bg-primary px-1.5 py-px text-[11px] font-bold text-white"
                       >
                         {semLer > TETO_DA_INSIGNIA
@@ -732,9 +733,16 @@ export function Fila({
                   fila é onde se decide o que pegar, e pegar o que já tem dono é
                   o trabalho duplicado que a atribuição existe para evitar.
                 */}
+                  {/*
+                    Responsável é da conversa; a insígnia acima é só sua (8.1).
+                    Abrir a conversa zera a sua insígnia e **não** muda esta
+                    linha: ler nunca atribui.
+                  */}
                   {nomeDe(lead.atribuidoA) && (
                     <span className="mt-0.5 block truncate text-[11px] text-dim">
-                      com {nomeDe(lead.atribuidoA)}
+                      {lead.atribuidoA === usuarioId
+                        ? "responsável: você"
+                        : `responsável: ${nomeDe(lead.atribuidoA)}`}
                     </span>
                   )}
                   {/*
@@ -742,20 +750,20 @@ export function Fila({
                     aberta.
 
                     Veio de um relato de uso: o bot "não estava indo" e ninguém
-                    entendia por quê. Não era defeito, era handoff , alguém
+                    entendia por quê. Não era defeito, era handoff: alguém
                     tinha assumido a conversa, e assumir cala o bot naquele
                     contato. A informação existia só dentro da conversa aberta,
                     e a fila, que é onde se decide o que abrir, não dizia nada.
 
                     Separado de `aguardando`: aquilo é a fila formal de quem
                     pediu atendente e tem relógio correndo. Este é o estado
-                    silencioso , ninguém está esperando, mas o robô também não
+                    silencioso: ninguém está esperando, mas o robô também não
                     responde, e sem alguém voltar ali a conversa fica muda para
                     sempre. É justamente o que não tem sintoma nenhum.
                   */}
                   {!lead.automacaoAtiva && !lead.aguardando && (
                     <span
-                      title="O bot está pausado neste contato. Ele só volta quando alguém marcar “Atendimento finalizado”."
+                      title="O bot está pausado neste contato. Ele só volta quando alguém religar o bot."
                       className="mt-0.5 flex items-center gap-1 text-[11px] text-amber-700"
                     >
                       <BotMudo />
@@ -995,7 +1003,7 @@ function PassoDaPagina({
  *
  * §3.10.1: *"a fila precisa mostrar quanto tempo resta, não só que alguém
  * espera"*. Passada a janela, a Meta só aceita modelo aprovado, que este
- * produto ainda não tem , então "fechada" quer dizer que não dá para
+ * produto ainda não tem, então "fechada" quer dizer que não dá para
  * responder por texto, e é a informação mais importante da linha.
  */
 function RelogioDaJanela({
@@ -1310,7 +1318,7 @@ function BotaoDaLinha({
  * O robô com a boca riscada: ele está ali e não fala.
  *
  * Um ícone de "pausa" diria que alguém apertou um botão e vai despausar. O
- * ponto deste estado é o contrário , ninguém vai, a menos que perceba. Por
+ * ponto deste estado é o contrário: ninguém vai, a menos que perceba. Por
  * isso o traço cortando, que é como se marca canal mudo em qualquer tela.
  */
 function BotMudo() {

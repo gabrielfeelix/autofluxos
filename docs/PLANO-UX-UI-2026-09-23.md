@@ -1119,15 +1119,15 @@ Ler `05-atendimento-crm.md` inteiro antes. Preservar os invariantes da seção
 
 ### Tarefa 8.1: estado do atendimento num lugar só [X03, X02]
 
-- [ ] **Passo 1:** função pura `estadoDoAtendimento(contato, conversa)` →
+- [x] **Passo 1:** função pura `estadoDoAtendimento(contato, conversa)` →
   `'bot' | 'aguardando_humano' | 'com_humano' | 'encerrado'` com dono e efeito,
   teste unitário dos quatro.
-- [ ] **Passo 2:** cabeçalho da conversa (Inbox e ficha) mostra o estado, o dono
+- [x] **Passo 2:** cabeçalho da conversa (Inbox e ficha) mostra o estado, o dono
   e a próxima ação (Assumir / Finalizar atendimento / Devolver ao bot). Finalizar
   confirma "Na próxima mensagem o bot volta a responder".
-- [ ] **Passo 3:** a fila separa "não lida para você" de "com responsável";
+- [x] **Passo 3:** a fila separa "não lida para você" de "com responsável";
   abrir nunca atribui.
-- [ ] **Passo 4:** commit `feat(inbox): estado do atendimento claro e igual no Inbox e na ficha`.
+- [x] **Passo 4:** commit `feat(inbox): estado do atendimento claro e igual no Inbox e na ficha`.
 
 ### Tarefa 8.2: um compositor com três modos [X05, X20]
 
