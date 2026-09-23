@@ -130,3 +130,32 @@ describe('card do produto', () => {
     expect(textoDoCard({ ...base, preco: 10 })).toBe('Headset CM500\nR$ 10,00, em estoque\nhttps://loja.com.br/cm500')
   })
 })
+
+describe('produto com variações de preço', () => {
+  const variavel = item({
+    price_range: {
+      minimum_price: { regular_price: { value: 999 }, final_price: { value: 799 } },
+      maximum_price: { final_price: { value: 1099 } },
+    },
+  })
+
+  it('vira "a partir de", sem preço cheio e sem de/por', () => {
+    const [p] = traduzirProdutos(resposta([variavel]), 'https://loja.com.br', '')
+    expect(p).toMatchObject({ precoAPartirDe: 799 })
+    expect(p).not.toHaveProperty('preco')
+    expect(p).not.toHaveProperty('precoDe')
+    expect(linhasDoCard(p!).detalhe).toBe('a partir de R$ 799,00, em estoque')
+  })
+
+  it('máximo igual ao mínimo continua preço normal', () => {
+    const fixo = item({
+      price_range: {
+        minimum_price: { regular_price: { value: 199.9 }, final_price: { value: 149.9 } },
+        maximum_price: { final_price: { value: 149.9 } },
+      },
+    })
+    const [p] = traduzirProdutos(resposta([fixo]), 'https://loja.com.br', '')
+    expect(p).toMatchObject({ preco: 149.9, precoDe: 199.9 })
+    expect(p).not.toHaveProperty('precoAPartirDe')
+  })
+})

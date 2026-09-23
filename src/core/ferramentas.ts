@@ -190,7 +190,7 @@ export type ChamadaDeFerramenta =
     }
 
 /** Os campos que as ferramentas de loja devolvem ao modelo. Allow-list. */
-const CAMPOS_DE_PRODUTO = ['produtoId', 'nome', 'preco', 'precoDe', 'emEstoque', 'quantidade', 'link']
+const CAMPOS_DE_PRODUTO = ['produtoId', 'nome', 'preco', 'precoDe', 'precoAPartirDe', 'emEstoque', 'quantidade', 'link']
 
 /**
  * O formato de data que toda ferramenta usa.
@@ -446,6 +446,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       'Use quando a pessoa perguntar se tem um produto, quanto custa, ou pedir uma indicação. ' +
       'Busque pelo tipo de produto em poucas palavras ("headset usb"), não pela frase inteira. ' +
       'Se um produto vier sem preço, diga que vai confirmar o valor e nunca invente. ' +
+      'Quando vier `precoAPartirDe`, o preço muda com a variação (cor, tamanho): diga "a partir de" esse valor. ' +
       'Quando vier `quantidade`, diga quantas restam só se forem 5 ou menos; acima disso, só diga que tem. ' +
       'Sempre mande o link para a pessoa comprar; você não fecha pedido. ' +
       'Não use para horário de aula ou agenda.',

@@ -32,7 +32,10 @@ const CAMPOS_DO_PRODUTO = `
   name
   url_key
   stock_status
-  price_range { minimum_price { regular_price { value } final_price { value } } }
+  price_range {
+    minimum_price { regular_price { value } final_price { value } }
+    maximum_price { final_price { value } }
+  }
 `
 
 export const QUERY_BUSCA = `query Buscar($termo: String!) {
@@ -66,6 +69,12 @@ export type ProdutoDaLoja = {
   nome: string
   preco?: number
   precoDe?: number
+  /**
+   * Produto com variações de preços diferentes (cor, tamanho): o menor deles.
+   * Aparece **no lugar** de `preco`, nunca junto, para o bot não anunciar a
+   * variação mais barata como se fosse o preço do produto.
+   */
+  precoAPartirDe?: number
   emEstoque: boolean
   quantidade?: number
   /** Só com token (fase 2). Ausente = sem foto real; nunca o placeholder da loja. */
@@ -106,9 +115,25 @@ function traduzirItem(bruto: unknown, endereco: string, sufixo: string): Produto
   const urlKey = typeof it.url_key === 'string' ? it.url_key.trim() : ''
   if (!sku || !nome || !urlKey) return null
 
-  const minimo = (it.price_range as { minimum_price?: Record<string, unknown> } | null | undefined)?.minimum_price
-  const final = valor(minimo?.final_price)
-  const cheio = valor(minimo?.regular_price)
+  const faixa = it.price_range as
+    | { minimum_price?: Record<string, unknown>; maximum_price?: Record<string, unknown> }
+    | null
+    | undefined
+  const final = valor(faixa?.minimum_price?.final_price)
+  const cheio = valor(faixa?.minimum_price?.regular_price)
+  const teto = valor(faixa?.maximum_price?.final_price)
+
+  // Variações com preços diferentes: "a partir de", e sem de/por, porque o
+  // "de" de uma variação ao lado do "por" de outra seria desconto inventado.
+  if (final !== undefined && teto !== undefined && teto > final) {
+    return {
+      produtoId: sku,
+      nome,
+      precoAPartirDe: final,
+      emEstoque: it.stock_status === 'IN_STOCK',
+      link: linkDoProduto(endereco, urlKey, sufixo),
+    }
+  }
 
   return {
     produtoId: sku,
@@ -184,7 +209,8 @@ export function traduzirPorSku(json: unknown, skus: readonly string[], endereco:
  */
 export function linhasDoCard(produto: ProdutoDaLoja): { titulo: string; detalhe: string } {
   const partes: string[] = []
-  if (produto.preco !== undefined) {
+  if (produto.precoAPartirDe !== undefined) partes.push(`a partir de ${comoDinheiro(produto.precoAPartirDe)}`)
+  else if (produto.preco !== undefined) {
     partes.push(
       produto.precoDe !== undefined
         ? `de ${comoDinheiro(produto.precoDe)} por ${comoDinheiro(produto.preco)}`

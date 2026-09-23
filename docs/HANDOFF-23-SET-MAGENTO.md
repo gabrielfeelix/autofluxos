@@ -105,11 +105,12 @@
    desliga o estoque exato da loja que aponta para a Conexão antes do delete.
    Sobra a fraqueza menor: essa Conexão ainda aparece no seletor de credencial
    da IA.
-2. **Produto configurável (com variações) mostra o menor preço como se fosse
-   o preço.** `price_range.minimum_price` é "a partir de". Uma cadeira com
-   cores de preços diferentes vai ser anunciada pelo menor. Conserto sugerido:
-   trazer `maximum_price` também e, quando diferir, devolver `precoAPartirDe`
-   em vez de `preco`, com a descrição da ferramenta dizendo "a partir de".
+2. ~~Produto configurável mostra o menor preço como se fosse o preço.~~
+   **Consertado em 23/set:** `maximum_price` entra na query e, quando é maior
+   que o mínimo, o produto vem com `precoAPartirDe` no lugar de `preco` (sem
+   de/por), e o card diz "a partir de". Sondagem real no mesmo dia: a PCYES
+   aceita o campo, e as 20 cadeiras de "cadeira" são `SimpleProduct` com mínimo
+   igual ao máximo (cada cor é um SKU). Na PCYES o caso quase não acontece.
 3. **Busca vazia vira "não temos".** A busca do Magento ignora termo curto
    (mínimo de 3 letras por padrão) e é por relevância. O bot pode concluir que
    a loja não vende o que vende. Sugestão: quando vier vazio, a ferramenta
