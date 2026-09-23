@@ -315,6 +315,33 @@ extração explícito para os objetos de `public`.
   **A migration entrou antes do código que a lê**, pela regra da `0071`: até
   aqui só a regra pura e o adaptador estão publicados, e nada consulta a tabela.
 
+- **a `0093` foi aplicada em 23/set/2026**, com autorização explícita do dono
+  pedida nesta sessão ("Sim, autorizo"). Conferida pelos **dois** testes:
+  replay do zero em Docker (`0001`–`0093`, sem erro) e ensaio em transação
+  contra a produção, limpo.
+
+  Ela acrescenta a `public.produtos` quatro colunas anuláveis sem default
+  (`sku`, `descricao`, `link`, `foto`), os checks de tamanho e de `https://`
+  em `link` e `foto`, e o índice único parcial `produtos_sku_ativo_unico_idx`
+  em `(client_id, lower(trim(sku)))` entre ativos com sku. É o catálogo
+  aguentando o card do produto (plano
+  `docs/superpowers/plans/2026-09-23-catalogo-de-produtos.md`).
+
+  No Docker foram provadas as travas: `' ab-12'` depois de `'AB-12'` recusado,
+  `http://` recusado em link e foto, arquivar libera o sku, vários itens sem
+  sku convivem. Na produção havia **zero** produtos, então nenhum dado a
+  migrar.
+
+  Releitura depois de aplicar: as 4 colunas `text` anuláveis, os 4 checks, o
+  índice novo e os 3 antigos, `has_table_privilege` falso para `anon` e
+  `authenticated`. Medidos antes e depois: `app_verandi.migrations_aplicadas`
+  com **35** linhas, **42** tabelas e **16** policies de `storage.objects`,
+  iguais; `public` com **80** tabelas; `produtos` de **8** para **12**
+  colunas, a única diferença esperada; **6** contas e **44** contatos intactos.
+  **Tem `notify pgrst`**: `produtos?select=sku,descricao,link,foto` responde
+  **200** para a chave secreta e **401** para a publicável, e
+  `app_verandi.conta` continua em **200**.
+
 - **a `0088` foi aplicada em 20/set/2026**, com autorização explícita do dono
   pedida nesta sessão. Conferida pelos **dois** testes: replay do zero em Docker
   (`0001`–`0088` em ordem, sem erro) e ensaio em transação contra a produção,
