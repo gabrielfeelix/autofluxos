@@ -89,3 +89,23 @@ Vitrine headless em Next.js (Reach Digital) sobre o GraphQL do Magento, com
 GraphQL Mesh. Não é camada de dado. Cliente com GraphCommerce é Magento normal:
 falamos direto com o Magento.
 <https://www.graphcommerce.org/>
+
+---
+
+## Sondagem da loja do cliente: PCYES (23/set/2026)
+
+`https://www.pcyes.com.br`, só leitura pela busca pública, sem credencial.
+
+- **GraphQL aberto**: `storeConfig` respondeu 200. `store_code` `default`,
+  moeda `BRL`.
+- **`product_url_suffix` é `null`**, e o link certo é `https://www.pcyes.com.br/<url_key>`
+  (conferido: 200). Tratar `null` como `.html` quebraria todo link.
+- **Busca funciona**: "mouse" devolve 75 produtos, com `sku`, nome, preço
+  (`regular_price` e `final_price`) e `stock_status`.
+- **"Combina com" quase vazio**: em 87 produtos de quatro buscas (teclado,
+  headset, cadeira, gabinete), `crosssell_products` e `upsell_products` vieram
+  vazios em todos, e `related_products` preenchido em 6. Sugerir complemento
+  vai responder vazio na maioria dos casos até o lojista cadastrar.
+- **Cloudflare na frente**, mas não barrou chamada sem user-agent de navegador
+  a partir daqui. Não prova que não barra IP da Vercel: conferir na Task 8 do
+  plano.
