@@ -1,137 +1,176 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { BarraDaAgenda } from '@/components/atividades/barra-da-agenda'
+import { CartaoDaAgenda, LinhaDaAgenda } from '@/components/atividades/linha-da-agenda'
+import { Paginacao } from '@/components/atividades/paginacao'
+import { AjudaDaTela, type PassoDaAjuda } from '@/components/design/ajuda-da-tela'
 import { ClienteShell } from '@/components/design/cliente-shell'
-import { NOME_DO_TIPO, urgenciaDe, type Urgencia } from '@/core/atividades'
-import { acharCliente } from '@/server/repos/clientes'
-import { agenda } from '@/server/repos/atividades'
+import { lerFiltroDaAgenda, paraParametros, POR_PAGINA_DA_AGENDA } from '@/core/atividades'
 import { exigirCapacidadeNaPagina, filtroDoAcesso } from '@/server/permissoes'
+import { paginaDaAgenda } from '@/server/repos/atividades'
+import { acharCliente } from '@/server/repos/clientes'
+import { membrosDaConta } from '@/server/repos/usuarios'
 
 export const dynamic = 'force-dynamic'
 
 /**
- * A agenda da equipe (UI-13, T5.3).
+ * A agenda da equipe como tela de trabalho (plano de UX de 23/09, fase 1).
  *
  * **O escopo é aplicado na consulta**, e não aqui: `filtroDoAcesso` vai para
- * `agenda()`, que o traduz em `where`. Filtrar depois de ler entregaria a
- * agenda inteira ao processo que não devia tê-la, e é o mesmo A19 que a F6
- * persegue na lista de contatos.
+ * `paginaDaAgenda()`, que o traduz em `where`. Filtrar depois de ler
+ * entregaria a agenda inteira ao processo que não devia tê-la.
  *
  * **Nada nesta tela envia mensagem** (RB-33). É uma lista de lembretes para
  * pessoas; o cliente não é notificado por nada daqui.
  */
-const TOM: Record<Urgencia, string> = {
-  vencida: 'border-rose-400/50',
-  hoje: 'border-amber-400/50',
-  futura: 'border-line',
-  'sem-prazo': 'border-line',
-}
 
-const ROTULO: Record<Urgencia, string> = {
-  vencida: 'vencida',
-  hoje: 'hoje',
-  futura: '',
-  'sem-prazo': 'sem prazo',
-}
+const PASSOS_DA_AJUDA: PassoDaAjuda[] = [
+  {
+    titulo: 'O que é uma atividade',
+    texto: 'Um lembrete da equipe sobre um contato: ligar, marcar reunião, fazer visita, mandar proposta.',
+  },
+  {
+    titulo: 'Onde ela nasce',
+    texto: 'Na ficha do contato, na barra do Inbox ou pelo botão Nova atividade desta tela.',
+  },
+  {
+    titulo: 'Como ela sai daqui',
+    texto: 'Concluída ou cancelada (com motivo). As duas ficam guardadas e dá para reabrir.',
+  },
+]
 
 function agoraDoServidor(): number {
   return Date.now()
 }
 
-export default async function Pagina({ params }: { params: Promise<{ clienteId: string }> }) {
+export default async function Pagina({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ clienteId: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
   const { clienteId } = await params
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
   const acesso = await exigirCapacidadeNaPagina(clienteId, 'atender', 'proprios')
-  const atividades = await agenda(clienteId, filtroDoAcesso(acesso, 'atender'))
+  const escopo = filtroDoAcesso(acesso, 'atender')
+  const podeVerEquipe = escopo.tipo === 'tudo' || escopo.tipo === 'equipes'
+
+  const lido = lerFiltroDaAgenda(await searchParams)
+  // Sem escopo de equipe, "equipe" e responsável de outra pessoa não existem.
+  const filtro = podeVerEquipe ? lido : { ...lido, alcance: 'minhas' as const, responsavel: null }
+
   const agora = agoraDoServidor()
+  const [pagina, membros] = await Promise.all([
+    paginaDaAgenda(clienteId, escopo, acesso.sessao.usuario.id, filtro, agora),
+    podeVerEquipe ? membrosDaConta(clienteId) : Promise.resolve([]),
+  ])
 
-  const comUrgencia = atividades.map((atividade) => ({
-    atividade,
-    urgencia: urgenciaDe(atividade, agora),
-  }))
-
-  const vencidas = comUrgencia.filter((a) => a.urgencia === 'vencida')
-  const hoje = comUrgencia.filter((a) => a.urgencia === 'hoje')
-  const resto = comUrgencia.filter((a) => a.urgencia !== 'vencida' && a.urgencia !== 'hoje')
+  const base = `/clientes/${cliente.id}/atividades`
+  const endereco = (novo: Partial<typeof filtro>) => {
+    const p = paraParametros({ ...filtro, ...novo }).toString()
+    return p ? `${base}?${p}` : base
+  }
+  const aqui = endereco({})
+  const filtrando =
+    filtro.busca !== '' || filtro.tipo !== null || filtro.responsavel !== null || filtro.recorte !== null
+  const equipe = membros.map((m) => ({ id: m.id, nome: m.nome || m.email }))
 
   return (
     <ClienteShell cliente={cliente} ativa="atividades">
-      <main className="w-full max-w-[900px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
-        <div className="mb-5 flex items-baseline justify-between gap-4">
-          <h1 className="text-[25px] font-bold tracking-[-0.02em]">Atividades</h1>
-          <Link
-            href={`/clientes/${cliente.id}/inbox`}
-            className="text-[12px] text-dim underline"
+      <main className="flex min-h-full w-full flex-col px-4 pt-[26px] pb-[42px] md:px-[42px]">
+        <div className="flex items-center gap-2.5">
+          <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Atividades</h1>
+          <AjudaDaTela
+            titulo="Como funciona a agenda"
+            resumo="Atividades são lembretes internos da equipe sobre um contato. Nenhuma delas manda mensagem ao cliente."
+            passos={PASSOS_DA_AJUDA}
           >
-            Abrir Inbox
-          </Link>
+            <p>
+              <strong className="text-ink">Atividade não é mensagem agendada.</strong> Para o sistema mandar texto ao
+              cliente numa hora marcada, use <em>Agendar mensagem</em> na conversa do Inbox.
+            </p>
+            <p>
+              <strong className="text-ink">Vencida e hoje contam pelo dia, não pela hora.</strong> Marcada para hoje às
+              9h continua sendo de hoje às 9h01. Sem prazo é &quot;algum dia&quot; e nunca fica vencida.
+            </p>
+            <p>
+              <strong className="text-ink">O número no menu lateral</strong> soma as vencidas e as de hoje que você
+              pode ver.
+            </p>
+          </AjudaDaTela>
         </div>
-
-        <p className="mb-6 max-w-[650px] text-[13px] leading-6 text-dim">
-          O que a equipe marcou para fazer. São lembretes internos:{' '}
-          <strong>nada aqui é enviado ao cliente</strong>.
+        <p className="mt-1.5 mb-5 text-[13px] leading-6 text-dim">
+          Lembretes internos da equipe. Nada aqui é enviado ao cliente.
         </p>
 
-        {atividades.length === 0 ? (
-          /*
-            O texto dizia que a atividade nasce "na ficha de um contato ou no
-            painel de uma oportunidade". A segunda metade era falsa: o painel do
-            cartão não cria atividade. E mandar procurar noutra tela sem dizer
-            qual contato deixa quem chegou aqui sem o próximo passo.
-          */
-          <div className="app-card px-5 py-10 text-center">
-            <p className="text-xs leading-5 text-dim">
-              Nenhuma atividade aberta. Toda atividade é sobre alguém: ela nasce
-              na conversa, pela barra do Inbox, ou na ficha do contato.
-            </p>
-            <Link
-              href={`/clientes/${cliente.id}/inbox`}
-              className="app-secondary-button mt-4 inline-block px-4 py-2 text-[12px]"
-            >
-              Ir para o Inbox
-            </Link>
+        <BarraDaAgenda
+          base={base}
+          filtro={filtro}
+          contagens={pagina.contagens}
+          equipe={equipe}
+          podeVerEquipe={podeVerEquipe}
+        />
+
+        {pagina.itens.length === 0 ? (
+          <div className="app-card px-5 py-12 text-center">
+            {filtrando || filtro.situacao !== 'aberta' ? (
+              <>
+                <p className="text-[13px] text-muted">Nada com estes filtros.</p>
+                <Link
+                  href={endereco({ busca: '', tipo: null, responsavel: null, recorte: null, situacao: 'aberta', pagina: 1 })}
+                  className="app-secondary-button mt-4 inline-block px-4 py-2 text-[12px]"
+                >
+                  Limpar filtros
+                </Link>
+              </>
+            ) : (
+              <p className="mx-auto max-w-[440px] text-[13px] leading-6 text-muted">
+                Nenhuma atividade aberta. Crie uma pela ficha do contato, pelo Inbox ou pelo botão acima.
+              </p>
+            )}
           </div>
         ) : (
-          <div className="flex flex-col gap-6">
-            {[
-              { titulo: 'Vencidas', itens: vencidas },
-              { titulo: 'Hoje', itens: hoje },
-              { titulo: 'Depois', itens: resto },
-            ]
-              .filter((grupo) => grupo.itens.length > 0)
-              .map((grupo) => (
-                <section key={grupo.titulo}>
-                  <h2 className="mb-2 text-[13px] font-bold">
-                    {grupo.titulo} <span className="text-dim">({grupo.itens.length})</span>
-                  </h2>
-                  <ul className="flex flex-col gap-1.5">
-                    {grupo.itens.map(({ atividade, urgencia }) => (
-                      <li
-                        key={atividade.id}
-                        className={`app-card flex items-center gap-3 border px-4 py-3 ${TOM[urgencia]}`}
+          <>
+            <div className="app-card hidden shrink-0 overflow-hidden md:block">
+              <table className="w-full border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-line">
+                    {['Prazo', 'Atividade', 'Contato', 'Responsável'].map((coluna) => (
+                      <th
+                        key={coluna}
+                        scope="col"
+                        className="px-4 py-3 text-[10.5px] font-bold tracking-[0.06em] text-dim uppercase"
                       >
-                        <span className="flex-1">
-                          <span className="block text-[13px]">{atividade.titulo}</span>
-                          <span className="block text-[11px] text-dim">
-                            {NOME_DO_TIPO[atividade.tipo]}
-                            {ROTULO[urgencia] && ` · ${ROTULO[urgencia]}`}
-                            {atividade.responsavelNome && ` · ${atividade.responsavelNome}`}
-                          </span>
-                        </span>
-                        <Link
-                          href={`/clientes/${cliente.id}/leads/${atividade.contatoId}`}
-                          className="text-[11.5px] text-dim underline"
-                        >
-                          abrir contato
-                        </Link>
-                      </li>
+                        {coluna}
+                      </th>
                     ))}
-                  </ul>
-                </section>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pagina.itens.map((item) => (
+                    <LinhaDaAgenda key={item.id} item={item} agora={agora} clienteId={cliente.id} volta={aqui} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <ul className="app-card shrink-0 overflow-hidden md:hidden">
+              {pagina.itens.map((item) => (
+                <CartaoDaAgenda key={item.id} item={item} agora={agora} clienteId={cliente.id} volta={aqui} />
               ))}
-          </div>
+            </ul>
+          </>
         )}
+
+        <Paginacao
+          pagina={filtro.pagina}
+          porPagina={POR_PAGINA_DA_AGENDA}
+          total={pagina.total}
+          hrefDaPagina={(n) => endereco({ pagina: n })}
+          rotulo="Páginas da agenda"
+        />
       </main>
     </ClienteShell>
   )

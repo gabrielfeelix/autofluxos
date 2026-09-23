@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { acessoCompleto, filtroDoAcesso } from '@/server/permissoes'
-import { agenda } from '@/server/repos/atividades'
-import { urgenciaDe } from '@/core/atividades'
+import { contagensDaAgenda } from '@/server/repos/atividades'
+import { lerFiltroDaAgenda } from '@/core/atividades'
+import { ContadorDaAgenda } from '@/components/atividades/contador-da-agenda'
 import type { ReactNode } from 'react'
 import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
 import { NotificacoesDaFila } from '@/components/inbox/notificacoes-da-fila'
@@ -255,16 +256,28 @@ const PAPEIS: Record<string, string> = {
 async function contarPendencias(clienteId: string) {
   try {
     const acesso = await acessoCompleto(clienteId)
-    const itens = await agenda(clienteId, filtroDoAcesso(acesso, 'atender'))
-    const agora = Date.now()
-    return itens.filter((item) => ['hoje', 'vencida'].includes(urgenciaDe(item, agora))).length
+    // Mesma regra dos atalhos da agenda: o número do menu e os da tela batem.
+    return await contagensDaAgenda(
+      clienteId,
+      filtroDoAcesso(acesso, 'atender'),
+      acesso.sessao.usuario.id,
+      { ...lerFiltroDaAgenda({}), alcance: 'equipe' },
+      Date.now(),
+    )
   } catch {
-    return 0
+    return null
   }
 }
 
 async function Pendencias({ clienteId }: { clienteId: string }) {
-  const quantidade = await contarPendencias(clienteId)
+  const contagens = await contarPendencias(clienteId)
+  const quantidade = contagens ? contagens.vencidas + contagens.hoje : 0
   if (!quantidade) return null
-  return <span title="Atividades vencidas e de hoje" className="rounded-md bg-primary-weak px-1.5 py-0.5 text-[10px] font-bold text-primary">{quantidade >= 200 ? '200+' : quantidade}</span>
+  const recorte = contagens!.vencidas > 0 ? 'vencidas' : 'hoje'
+  return (
+    <ContadorDaAgenda
+      quantidade={quantidade}
+      destino={`/clientes/${clienteId}/atividades?recorte=${recorte}&alcance=equipe`}
+    />
+  )
 }

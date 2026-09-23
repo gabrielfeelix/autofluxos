@@ -479,39 +479,39 @@ export async function acaoAtribuirAtividade(
 - Criar: `src/components/atividades/paginacao.tsx`
 - Referência visual e de código: `src/components/quadros/barra-do-quadro.tsx` (popover, `aria-live`, chip removível)
 
-- [ ] **Passo 1:** print antes: `node scripts/ux-local/prints.mjs .ux-local/antes atividades`.
-- [ ] **Passo 2:** página: remover `max-w-[900px]`; usar a largura do shell como
+- [x] **Passo 1:** print antes: `node scripts/ux-local/prints.mjs .ux-local/antes atividades`.
+- [x] **Passo 2:** página: remover `max-w-[900px]`; usar a largura do shell como
   Contatos e Funil. Cabeçalho com título, `AjudaDaTela` (o que é atividade, que
   nada é enviado ao cliente, diferença para mensagem agendada, o que conta no
   número da barra lateral), subtítulo de uma linha ("Lembretes internos da
   equipe. Nada aqui é enviado ao cliente.") e botão "+ Nova atividade" (a
   tarefa 1.5 liga o botão; aqui ele já aparece).
-- [ ] **Passo 3:** atalhos de recorte com as contagens de `PaginaDaAgenda.contagens`;
+- [x] **Passo 3:** atalhos de recorte com as contagens de `PaginaDaAgenda.contagens`;
   o ativo tem `aria-pressed="true"`; clicar no ativo desliga.
-- [ ] **Passo 4:** barra: busca com `max-w-[360px]` (enviar ao apertar Enter e
+- [x] **Passo 4:** barra: busca com `max-w-[360px]` (enviar ao apertar Enter e
   após 400 ms sem digitar), seletor Situação (Abertas / Concluídas /
   Canceladas), popover Filtros (Tipo, Responsável com "Sem responsável"),
   alternância Minhas/Equipe **renderizada só quando o escopo do acesso for
   `equipes` ou `todos`**. Chips de filtro ativo com ✕ e "Limpar tudo". Mudar
   filtro volta para a página 1.
-- [ ] **Passo 5:** lista em tabela no desktop (`<table>` com cabeçalho) e cartões
+- [x] **Passo 5:** lista em tabela no desktop (`<table>` com cabeçalho) e cartões
   no celular (`md:` breakpoint), colunas e conteúdo do desenho acima. Nome do
   contato é link para a ficha **levando a URL atual em `?volta=`** para o botão
   voltar da ficha (a ficha passa a respeitar `volta` na tarefa 8.5; aqui só
   mandar). Avatar com iniciais + nome do responsável (não só iniciais).
-- [ ] **Passo 6:** estados vazios distintos: "Nenhuma atividade aberta. Crie uma
+- [x] **Passo 6:** estados vazios distintos: "Nenhuma atividade aberta. Crie uma
   pela ficha do contato, pelo Inbox ou pelo botão acima." versus "Nada com estes
   filtros." + botão "Limpar filtros".
-- [ ] **Passo 7:** paginação "1–50 de 230" com Anterior/Próxima (links, não
+- [x] **Passo 7:** paginação "1–50 de 230" com Anterior/Próxima (links, não
   botões JS).
-- [ ] **Passo 8:** badge da barra lateral (`src/components/design/cliente-shell.tsx:255`):
+- [x] **Passo 8:** badge da barra lateral (`src/components/design/cliente-shell.tsx:255`):
   manter a soma vencidas + hoje, mas `title`/`aria-label` "N atividades vencidas
   ou de hoje", e o clique leva a `/atividades?recorte=vencidas` quando houver
   vencida, senão `?recorte=hoje`.
-- [ ] **Passo 9:** typecheck; prints depois (desktop e celular); comparar com o
+- [x] **Passo 9:** typecheck; prints depois (desktop e celular); comparar com o
   antes. Conferir: nome do contato visível, hora quando marcada, ícone, link de
   reunião clicável, 230 abertas navegáveis até a última página.
-- [ ] **Passo 10:** commit `feat(atividades): agenda em largura total com busca, filtros e paginação`.
+- [x] **Passo 10:** commit `feat(atividades): agenda em largura total com busca, filtros e paginação`.
 
 ### Tarefa 1.4: ações na linha (concluir, reagendar, cancelar, reabrir, atribuir)
 
@@ -1281,3 +1281,8 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   `atribuirAtividade` (`af_membros`). `prazoDoDia` saiu da ação para
   `src/core/atividades.ts`, e criar e reagendar usam a mesma. Com escopo
   `proprios`, reagendar/atribuir conferem o dono (`conferirDono`).
+- 23/09, tarefa 1.3: o botão "+ Nova atividade" entra junto com o diálogo, na
+  1.5 (botão sem ação na tela seria pior). `agenda()` continua existindo: a
+  ficha e o Início ainda a usam; o contador do menu passou a usar
+  `contagensDaAgenda` (contagem exata, mesma regra dos atalhos, sem o teto de
+  200). O clique no número leva a `?recorte=vencidas` (ou `hoje`).

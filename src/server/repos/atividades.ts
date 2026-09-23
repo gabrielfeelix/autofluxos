@@ -254,6 +254,92 @@ export async function paginaDaAgenda(
   agora: number,
 ): Promise<PaginaDaAgenda> {
   const vazia: PaginaDaAgenda = { itens: [], total: 0, contagens: { ...ZERADAS } }
+  const preparo = await prepararAgenda(clienteId, escopo, usuarioId, filtro, agora)
+  if (!preparo) return vazia
+  const { comuns, doRecorte } = preparo
+
+  const pagina = Math.max(1, filtro.pagina)
+  const inicio = (pagina - 1) * POR_PAGINA_DA_AGENDA
+
+  let lista = doRecorte(
+    comuns(db().from('atividades').select(COLUNAS_DA_AGENDA, { count: 'exact' })),
+    filtro.recorte,
+  ).eq('situacao', filtro.situacao)
+  lista =
+    filtro.situacao === 'aberta'
+      ? lista
+          .order('prazo', { ascending: true, nullsFirst: false })
+          .order('criado_em', { ascending: true })
+      : lista.order('concluida_em', { ascending: false }).order('criado_em', { ascending: false })
+
+  const [resposta, contagens] = await Promise.all([
+    lista.order('id', { ascending: true }).range(inicio, inicio + POR_PAGINA_DA_AGENDA - 1),
+    contar(preparo),
+  ])
+
+  if (ehIdInvalido(resposta.error)) return vazia
+  if (resposta.error) throw new Error(`não deu para ler a agenda: ${resposta.error.message}`)
+
+  return {
+    itens: (resposta.data as unknown as LinhaDaAgenda[]).map(paraItemDaAgenda),
+    total: resposta.count ?? 0,
+    contagens,
+  }
+}
+
+/**
+ * Só as contagens dos atalhos, para o número da barra lateral.
+ *
+ * Mesma regra da tela, então o número do menu e os atalhos da agenda nunca
+ * discordam. Contagem exata: a versão antiga lia até 200 linhas e contava na
+ * memória.
+ */
+export async function contagensDaAgenda(
+  clienteId: string,
+  escopo: FiltroDeEscopo,
+  usuarioId: string,
+  filtro: FiltroDaAgenda,
+  agora: number,
+): Promise<Record<RecorteDaAgenda, number>> {
+  const preparo = await prepararAgenda(clienteId, escopo, usuarioId, filtro, agora)
+  return preparo ? contar(preparo) : { ...ZERADAS }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Consulta = any
+
+type Preparo = {
+  comuns: (q: Consulta) => Consulta
+  doRecorte: (q: Consulta, recorte: RecorteDaAgenda | null) => Consulta
+}
+
+async function contar({ comuns, doRecorte }: Preparo): Promise<Record<RecorteDaAgenda, number>> {
+  const respostas = await Promise.all(
+    RECORTES_DA_AGENDA.map((recorte) =>
+      doRecorte(comuns(db().from('atividades').select('id', { count: 'exact', head: true })), recorte).eq(
+        'situacao',
+        'aberta',
+      ),
+    ),
+  )
+  const contado = { ...ZERADAS }
+  RECORTES_DA_AGENDA.forEach((recorte, i) => {
+    const c = respostas[i] as { count: number | null; error: { message: string } | null }
+    if (c.error) throw new Error(`não deu para contar a agenda: ${c.error.message}`)
+    contado[recorte] = c.count ?? 0
+  })
+  return contado
+}
+
+/** Monta os filtros comuns; `null` quando o resultado é vazio sem consultar. */
+async function prepararAgenda(
+  clienteId: string,
+  escopo: FiltroDeEscopo,
+  usuarioId: string,
+  filtro: FiltroDaAgenda,
+  agora: number,
+): Promise<Preparo | null> {
+  const vazia = null
   if (escopo.tipo === 'impossivel') return vazia
 
   // Quem pode ter atividade aqui: `null` = qualquer um.
@@ -313,8 +399,7 @@ export async function paginaDaAgenda(
   const { inicioDeHoje, inicioDeAmanha } = fronteirasDoDia(agora)
 
   // O que vale para a lista e para as contagens: tudo menos recorte e situação.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const comuns = <Q extends { eq: any; in: any; is: any; or: any }>(q: Q): Q => {
+  const comuns = (q: Consulta): Consulta => {
     let r = q.eq('client_id', clienteId)
     if (responsaveis !== null) r = r.in('responsavel', responsaveis)
     if (soSemResponsavel) r = r.is('responsavel', null)
@@ -322,54 +407,14 @@ export async function paginaDaAgenda(
     if (busca) r = r.or(busca)
     return r
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const doRecorte = <Q extends { lt: any; gte: any; is: any }>(q: Q, recorte: RecorteDaAgenda | null): Q => {
+  const doRecorte = (q: Consulta, recorte: RecorteDaAgenda | null): Consulta => {
     if (recorte === 'vencidas') return q.lt('prazo', inicioDeHoje)
     if (recorte === 'hoje') return q.gte('prazo', inicioDeHoje).lt('prazo', inicioDeAmanha)
     if (recorte === 'proximas') return q.gte('prazo', inicioDeAmanha)
     if (recorte === 'sem-prazo') return q.is('prazo', null)
     return q
   }
-
-  const pagina = Math.max(1, filtro.pagina)
-  const inicio = (pagina - 1) * POR_PAGINA_DA_AGENDA
-
-  let lista = doRecorte(
-    comuns(db().from('atividades').select(COLUNAS_DA_AGENDA, { count: 'exact' })),
-    filtro.recorte,
-  ).eq('situacao', filtro.situacao)
-  lista =
-    filtro.situacao === 'aberta'
-      ? lista
-          .order('prazo', { ascending: true, nullsFirst: false })
-          .order('criado_em', { ascending: true })
-      : lista.order('concluida_em', { ascending: false }).order('criado_em', { ascending: false })
-
-  const [resposta, ...contagens] = await Promise.all([
-    lista.order('id', { ascending: true }).range(inicio, inicio + POR_PAGINA_DA_AGENDA - 1),
-    ...RECORTES_DA_AGENDA.map((recorte) =>
-      doRecorte(
-        comuns(db().from('atividades').select('id', { count: 'exact', head: true })),
-        recorte,
-      ).eq('situacao', 'aberta'),
-    ),
-  ])
-
-  if (ehIdInvalido(resposta.error)) return vazia
-  if (resposta.error) throw new Error(`não deu para ler a agenda: ${resposta.error.message}`)
-
-  const contado = { ...ZERADAS }
-  RECORTES_DA_AGENDA.forEach((recorte, i) => {
-    const c = contagens[i]!
-    if (c.error) throw new Error(`não deu para contar a agenda: ${c.error.message}`)
-    contado[recorte] = c.count ?? 0
-  })
-
-  return {
-    itens: (resposta.data as unknown as LinhaDaAgenda[]).map(paraItemDaAgenda),
-    total: resposta.count ?? 0,
-    contagens: contado,
-  }
+  return { comuns, doRecorte }
 }
 
 function paraItemDaAgenda(linha: LinhaDaAgenda): ItemDaAgenda {
