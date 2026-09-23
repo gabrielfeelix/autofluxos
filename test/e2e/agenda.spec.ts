@@ -172,3 +172,24 @@ test('vista de agenda: alternar, abrir a atividade e concluir pelo diálogo', as
   await page.getByRole('button', { name: 'Lista', exact: true }).click()
   await expect(page).not.toHaveURL(/vista=agenda/)
 })
+
+test('atribuir tarefa pelo modal com busca, e filtrar responsável pelo mesmo seletor', async ({ page }) => {
+  await criarContato(page, 'Rita Atribuir')
+  await criarAtividadeNaFicha(page, 'Conferir pagamento')
+
+  await page.goto(`${painelDaConta}/atividades?alcance=equipe`)
+  await linha(page, 'Conferir pagamento').getByRole('button', { name: 'Mais ações para Conferir pagamento' }).click()
+  await page.getByRole('button', { name: 'Atribuir tarefa…' }).click()
+  const seletor = page.getByRole('dialog', { name: 'Atribuir tarefa' })
+  await seletor.getByRole('searchbox', { name: 'Buscar pessoa pelo nome' }).fill('nome-que-nao-existe')
+  await expect(seletor.getByText('Ninguém com esse nome.')).toBeVisible()
+  await seletor.getByRole('button', { name: 'Ninguém', exact: true }).click()
+  await expect(seletor).toHaveCount(0)
+  await expect(page.getByText('Responsável atualizado.')).toBeVisible()
+
+  await page.getByRole('button', { name: /Filtros/ }).click()
+  await page.getByRole('button', { name: /Escolher…/ }).click()
+  await page.getByRole('dialog', { name: 'Filtrar por responsável' }).getByRole('button', { name: 'Sem responsável' }).click()
+  await expect(page).toHaveURL(/responsavel=ninguem/)
+  await expect(linha(page, 'Conferir pagamento')).toBeVisible()
+})

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { Dropdown } from '@/components/design/dropdown'
+import { SeletorDePessoa } from './seletor-de-pessoa'
 import { paraParametros, type FiltroDaAgenda } from '@/core/atividades'
 import {
   acaoBuscarContatosParaAtividade,
@@ -164,6 +165,7 @@ function DialogoDeNovaAtividade({
   const [negocio, setNegocio] = useState('')
   const [valores, setValores] = useState<ValoresDaAtividade>(VALORES_VAZIOS)
   const [responsavel, setResponsavel] = useState(usuarioId)
+  const [escolhendoResponsavel, setEscolhendoResponsavel] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [rodando, comecar] = useTransition()
 
@@ -228,6 +230,7 @@ function DialogoDeNovaAtividade({
   }
 
   const mostrarResponsavel = podeAtribuir && equipe.length > 1
+  const nomeDoResponsavel = rotuloDaPessoa(equipe.find((m) => m.id === responsavel), usuarioId)
 
   return (
     <dialog
@@ -291,18 +294,18 @@ function DialogoDeNovaAtividade({
             {(mostrarResponsavel || negocios.length > 0) && (
               <div className="flex flex-col gap-2.5 sm:flex-row">
                 {mostrarResponsavel && (
-                  <label className="flex flex-1 flex-col gap-1">
+                  <div className="flex flex-1 flex-col gap-1">
                     <span className="text-[11.5px] font-medium text-muted">Responsável</span>
-                    <Dropdown
-                      rotuloAcessivel="Responsável"
-                      valor={responsavel}
-                      aoMudar={setResponsavel}
-                      opcoes={equipe.map((m) => ({
-                        valor: m.id,
-                        rotulo: m.id === usuarioId ? `${m.nome} (você)` : m.nome,
-                      }))}
-                    />
-                  </label>
+                    <button
+                      type="button"
+                      onClick={() => setEscolhendoResponsavel(true)}
+                      aria-label={`Responsável: ${nomeDoResponsavel}. Trocar`}
+                      className="app-field flex w-full items-center gap-2 px-3 py-2.5 text-left text-[13px]"
+                    >
+                      <span className="min-w-0 flex-1 truncate">{nomeDoResponsavel}</span>
+                      <span className="text-[12px] font-semibold text-primary">Trocar</span>
+                    </button>
+                  </div>
                 )}
                 {negocios.length > 0 && (
                   <label className="flex flex-1 flex-col gap-1">
@@ -321,6 +324,16 @@ function DialogoDeNovaAtividade({
               </div>
             )}
           </>
+        )}
+
+        {escolhendoResponsavel && (
+          <SeletorDePessoa
+            titulo="Responsável pela atividade"
+            pessoas={equipe.map((m) => ({ id: m.id, nome: rotuloDaPessoa(m, usuarioId) }))}
+            atual={responsavel}
+            aoEscolher={setResponsavel}
+            aoFechar={() => setEscolhendoResponsavel(false)}
+          />
         )}
 
         {erro && (
@@ -352,6 +365,11 @@ function DialogoDeNovaAtividade({
       </form>
     </dialog>
   )
+}
+
+function rotuloDaPessoa(pessoa: { id: string; nome: string } | undefined, usuarioId: string): string {
+  if (!pessoa) return 'Você'
+  return pessoa.id === usuarioId ? `${pessoa.nome} (você)` : pessoa.nome
 }
 
 function ResultadoDaBusca({

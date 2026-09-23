@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import { SeletorDePessoa } from './seletor-de-pessoa'
 import { PopoverDoQuadro } from '@/components/quadros/popover-do-quadro'
 import { horaDoRelogio } from '@/lib/quando'
 import type { ItemDaAgenda } from '@/server/repos/atividades'
@@ -59,6 +60,7 @@ export function AcoesDaLinha({
   const [dia, setDia] = useState(item.prazo ? item.prazo.slice(0, 10) : '')
   const [hora, setHora] = useState(item.horaMarcada && item.prazo ? horaDoRelogio(item.prazo) : '')
   const ocupado = pendente !== null
+  const [atribuindo, setAtribuindo] = useState(false)
 
   return (
     <div className="flex items-center justify-end gap-1.5">
@@ -143,26 +145,15 @@ export function AcoesDaLinha({
           Abrir conversa
         </Link>
         {aberta && podeAtribuir && (
-          <>
-            <p className="quadro-menu-label mt-1 border-t border-line pt-2">Atribuir a</p>
-            {[{ id: '', nome: 'Ninguém' }, ...equipe].map((pessoa) => {
-              const atual = (item.responsavelId ?? '') === pessoa.id
-              return (
-                <button
-                  key={pessoa.id}
-                  type="button"
-                  data-fechar-popover
-                  disabled={atual || ocupado}
-                  aria-pressed={atual}
-                  onClick={() => aoPedir({ tipo: 'atribuir', responsavelId: pessoa.id })}
-                  className="quadro-menu-item"
-                >
-                  <span className="flex-1 truncate">{pessoa.nome}</span>
-                  {atual && <span className="text-primary">✓</span>}
-                </button>
-              )
-            })}
-          </>
+          <button
+            type="button"
+            data-fechar-popover
+            disabled={ocupado}
+            onClick={() => setAtribuindo(true)}
+            className="quadro-menu-item mt-1 border-t border-line"
+          >
+            Atribuir tarefa…
+          </button>
         )}
         {aberta && (
           <button
@@ -176,6 +167,19 @@ export function AcoesDaLinha({
           </button>
         )}
       </PopoverDoQuadro>
+
+      {atribuindo && (
+        <SeletorDePessoa
+          titulo="Atribuir tarefa"
+          pessoas={equipe}
+          fixas={[{ id: '', nome: 'Ninguém' }]}
+          atual={item.responsavelId ?? ''}
+          aoEscolher={(id) => {
+            if (id !== (item.responsavelId ?? '')) aoPedir({ tipo: 'atribuir', responsavelId: id })
+          }}
+          aoFechar={() => setAtribuindo(false)}
+        />
+      )}
     </div>
   )
 }

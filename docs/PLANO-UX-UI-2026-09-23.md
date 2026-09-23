@@ -569,10 +569,10 @@ export async function acaoAtribuirAtividade(
 
 ### Tarefa 1.7: "Atribuir tarefa…" em modal com busca (pedida pelo Gabriel em 23/09)
 
-- [ ] **Passo 1:** seletor pesquisável de pessoa (busca por nome, lista com rolagem, "Ninguém" como opção) em componente próprio.
-- [ ] **Passo 2:** menu `⋯` da linha com um item só, "Atribuir tarefa…", que abre o modal.
-- [ ] **Passo 3:** o filtro "Responsável" do popover Filtros usa o mesmo seletor.
-- [ ] **Passo 4:** typecheck, e2e, prints; commit.
+- [x] **Passo 1:** seletor pesquisável de pessoa (busca por nome, lista com rolagem, "Ninguém" como opção) em componente próprio.
+- [x] **Passo 2:** menu `⋯` da linha com um item só, "Atribuir tarefa…", que abre o modal.
+- [x] **Passo 3:** o filtro "Responsável" do popover Filtros usa o mesmo seletor.
+- [x] **Passo 4:** typecheck, e2e, prints; commit.
 
 ---
 
@@ -1321,4 +1321,8 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   corta; a faixa "Sem prazo" mostra 6 e leva à lista para ver todas. A semana
   não é grade de horas: as atividades vêm em ordem de hora dentro do dia, com a
   hora escrita (grade de horas com 5 tipos e poucas com hora ficaria vazia).
+- 23/09, tarefa 1.7: `SeletorDePessoa` (modal, busca sem acento no navegador,
+  opções fixas no topo, Enter com um resultado só escolhe) serve o "Atribuir
+  tarefa…" do menu, o filtro Responsável e também o responsável de "Nova
+  atividade" (tinha o mesmo problema da lista longa).
 

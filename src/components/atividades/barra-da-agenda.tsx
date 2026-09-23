@@ -12,6 +12,7 @@ import {
   type FiltroDaAgenda,
   type RecorteDaAgenda,
 } from '@/core/atividades'
+import { SeletorDePessoa } from './seletor-de-pessoa'
 
 const ROTULO_DO_RECORTE: Record<RecorteDaAgenda, string> = {
   vencidas: 'Vencidas',
@@ -61,6 +62,7 @@ export function BarraDaAgenda({
   const router = useRouter()
   const [carregando, comecar] = useTransition()
   const [busca, setBusca] = useState(filtro.busca)
+  const [escolhendoResponsavel, setEscolhendoResponsavel] = useState(false)
   const espera = useRef<number | null>(null)
 
   function ir(novo: Partial<FiltroDaAgenda>) {
@@ -189,22 +191,31 @@ export function BarraDaAgenda({
           {podeVerEquipe && filtro.alcance === 'equipe' && (
             <>
               <p className="quadro-menu-label mt-1 border-t border-line pt-2">Responsável</p>
-              {[{ id: '', nome: 'Todos os responsáveis' }, { id: 'ninguem', nome: 'Sem responsável' }, ...equipe].map((pessoa) => (
-                <button
-                  key={pessoa.id}
-                  type="button"
-                  data-fechar-popover
-                  aria-pressed={(filtro.responsavel ?? '') === pessoa.id}
-                  onClick={() => ir({ responsavel: pessoa.id || null })}
-                  className="quadro-menu-item"
-                >
-                  <span className="flex-1 truncate">{pessoa.nome}</span>
-                  {(filtro.responsavel ?? '') === pessoa.id && <span className="text-primary">✓</span>}
-                </button>
-              ))}
+              <button
+                type="button"
+                data-fechar-popover
+                onClick={() => setEscolhendoResponsavel(true)}
+                className="quadro-menu-item"
+              >
+                <span className="flex-1 truncate">{responsavel ?? 'Todos os responsáveis'}</span>
+                <span className="text-[11.5px] font-semibold text-primary">Escolher…</span>
+              </button>
             </>
           )}
         </PopoverDoQuadro>
+        {escolhendoResponsavel && (
+          <SeletorDePessoa
+            titulo="Filtrar por responsável"
+            pessoas={equipe}
+            fixas={[
+              { id: '', nome: 'Todos os responsáveis' },
+              { id: 'ninguem', nome: 'Sem responsável' },
+            ]}
+            atual={filtro.responsavel ?? ''}
+            aoEscolher={(id) => ir({ responsavel: id || null })}
+            aoFechar={() => setEscolhendoResponsavel(false)}
+          />
+        )}
         {podeVerEquipe && (
           <div role="group" aria-label="De quem" className="flex rounded-lg border border-line bg-panel p-0.5">
             {(
