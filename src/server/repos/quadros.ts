@@ -684,7 +684,17 @@ export async function porNoQuadro(
   clienteId: string,
   quadroId: string,
   contatos: string[],
-): Promise<{ ok: true; postos: number } | { ok: false; motivo: string }> {
+): Promise<
+  | {
+      ok: true
+      postos: number
+      /** Já tinham cartão aberto aqui e não foram movidos. */
+      jaEstavam: number
+      /** Não entraram: contato de outra conta, apagado, ou corrida no insert. */
+      falharam: number
+    }
+  | { ok: false; motivo: string }
+> {
   if (contatos.length === 0) return { ok: false, motivo: 'escolha ao menos um contato' }
 
   const quadro = await acharQuadro(clienteId, quadroId)
@@ -709,7 +719,10 @@ export async function porNoQuadro(
 
   const jaEstao = await jaAbertosNoQuadro(quadroId, validos)
   const aInserir = validos.filter((contatoId) => !jaEstao.has(contatoId))
-  if (aInserir.length === 0) return { ok: true, postos: 0 }
+  const foraDaConta = new Set(contatos).size - validos.length
+  if (aInserir.length === 0) {
+    return { ok: true, postos: 0, jaEstavam: jaEstao.size, falharam: foraDaConta }
+  }
 
   const { data, error } = await db()
     .from('quadro_cartoes')
@@ -729,7 +742,13 @@ export async function porNoQuadro(
   if (error && error.code !== '23505') {
     throw new Error(`não deu para pôr no quadro: ${error.message}`)
   }
-  return { ok: true, postos: (data as { id: string }[] | null)?.length ?? 0 }
+  const postos = (data as { id: string }[] | null)?.length ?? 0
+  return {
+    ok: true,
+    postos,
+    jaEstavam: jaEstao.size,
+    falharam: foraDaConta + (aInserir.length - postos),
+  }
 }
 
 export type ContatoParaOQuadro = { id: string; nome: string; telefone: string }
@@ -804,7 +823,17 @@ export async function porNaEtapa(
   quadroId: string,
   colunaId: string,
   contatos: string[],
-): Promise<{ ok: true; postos: number } | { ok: false; motivo: string }> {
+): Promise<
+  | {
+      ok: true
+      postos: number
+      /** Já tinham cartão aberto aqui e não foram movidos. */
+      jaEstavam: number
+      /** Não entraram: contato de outra conta, apagado, ou corrida no insert. */
+      falharam: number
+    }
+  | { ok: false; motivo: string }
+> {
   if (contatos.length === 0) return { ok: false, motivo: 'escolha ao menos um contato' }
 
   const quadro = await acharQuadro(clienteId, quadroId)
@@ -827,7 +856,10 @@ export async function porNaEtapa(
 
   const jaEstao = await jaAbertosNoQuadro(quadroId, validos)
   const aInserir = validos.filter((contatoId) => !jaEstao.has(contatoId))
-  if (aInserir.length === 0) return { ok: true, postos: 0 }
+  const foraDaConta = new Set(contatos).size - validos.length
+  if (aInserir.length === 0) {
+    return { ok: true, postos: 0, jaEstavam: jaEstao.size, falharam: foraDaConta }
+  }
 
   const { data, error } = await db()
     .from('quadro_cartoes')
@@ -844,7 +876,13 @@ export async function porNaEtapa(
   if (error && error.code !== '23505') {
     throw new Error(`não deu para pôr na etapa: ${error.message}`)
   }
-  return { ok: true, postos: (data as { id: string }[] | null)?.length ?? 0 }
+  const postos = (data as { id: string }[] | null)?.length ?? 0
+  return {
+    ok: true,
+    postos,
+    jaEstavam: jaEstao.size,
+    falharam: foraDaConta + (aInserir.length - postos),
+  }
 }
 
 /**

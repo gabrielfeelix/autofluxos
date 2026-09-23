@@ -80,6 +80,7 @@ export function Quadro({
   equipe,
   motivos,
   finalidade = 'operacional',
+  seguinte,
 }: {
   clienteId: string
   quadroId: string
@@ -99,6 +100,8 @@ export function Quadro({
    * ninguém faturou.
    */
   finalidade?: 'operacional' | 'comercial'
+  /** O funil que este entrega ao ganhar, pelo nome. `null` = não entrega. */
+  seguinte?: string | null
 }) {
   const [cartoes, setCartoes] = useState(cartoesIniciais)
   const [ultimoDoServidor, setUltimoDoServidor] = useState(cartoesIniciais)
@@ -607,6 +610,7 @@ export function Quadro({
         cartao={ehVenda ? null : (fechando?.cartao ?? null)}
         situacao={fechando?.situacao ?? 'ganha'}
         motivos={motivos}
+        seguinte={seguinte ?? null}
         aoFechar={cancelarFechamento}
         aoConcluir={({ abriuEm }) => {
           setFechando(null)

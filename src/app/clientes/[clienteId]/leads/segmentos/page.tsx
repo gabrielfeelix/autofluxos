@@ -71,9 +71,16 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
               {segmentos.map((segmento) => (
                 <li key={segmento.id} className="border-b border-line px-5 py-4 last:border-0">
                   <span className="block text-[13.5px] font-medium">{segmento.nome}</span>
-                  <span className="block text-[11.5px] leading-5 text-dim">
-                    {explicarSegmento(segmento.regra)}
-                  </span>
+                  {/* Regra vazia é a base inteira (8.4): dito em destaque, não numa frase miúda. */}
+                  {segmento.regra.condicoes.length === 0 ? (
+                    <span className="mt-0.5 inline-block rounded-full border border-amber-400/50 px-2 py-0.5 text-[11px] font-semibold text-aviso">
+                      Todos os contatos
+                    </span>
+                  ) : (
+                    <span className="block text-[11.5px] leading-5 text-dim">
+                      {explicarSegmento(segmento.regra)}
+                    </span>
+                  )}
                 </li>
               ))}
             </ul>

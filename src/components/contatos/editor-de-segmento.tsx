@@ -63,10 +63,14 @@ export function EditorDeSegmento({
   const [condicoes, setCondicoes] = useState<Condicao[]>(regraInicial?.condicoes ?? [])
   const [comModelo, setComModelo] = useState(true)
   const [previa, setPrevia] = useState<RespostaDaPrevia | null>(null)
+  /** A regra que produziu a prévia na tela. Mudou depois? A prévia é velha. */
+  const [regraDaPrevia, setRegraDaPrevia] = useState<string | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const [rodando, comecar] = useTransition()
 
   const regra: Segmento = { juncao, condicoes }
+  const assinatura = JSON.stringify({ regra, comModelo })
+  const previaVelha = previa !== null && regraDaPrevia !== assinatura
 
   return (
     <div className="flex flex-col gap-4">
@@ -87,15 +91,21 @@ export function EditorDeSegmento({
           <span className="text-[11px] font-bold tracking-[0.04em] text-dim uppercase">
             Quem entra
           </span>
-          <select
-            value={juncao}
-            onChange={(e) => setJuncao(e.target.value as 'todas' | 'qualquer')}
-            aria-label="Como as condições se combinam"
-            className="app-field px-2 py-1 text-[11.5px]"
-          >
-            <option value="todas">todas as condições</option>
-            <option value="qualquer">qualquer condição</option>
-          </select>
+          {condicoes.length === 0 ? (
+            <span className="rounded-full border border-amber-400/50 px-2 py-0.5 text-[11px] font-semibold text-aviso">
+              Todos os contatos
+            </span>
+          ) : (
+            <select
+              value={juncao}
+              onChange={(e) => setJuncao(e.target.value as 'todas' | 'qualquer')}
+              aria-label="Como as condições se combinam"
+              className="app-field px-2 py-1 text-[11.5px]"
+            >
+              <option value="todas">todas as condições</option>
+              <option value="qualquer">qualquer condição</option>
+            </select>
+          )}
         </div>
 
         <div className="flex flex-col gap-2">
@@ -157,7 +167,22 @@ export function EditorDeSegmento({
         </button>
       </div>
 
-      {previa?.ok && <Prevalencia previa={previa} />}
+      {/*
+        A prévia é de uma regra. Mudar condição, junção ou o modelo depois
+        dela deixa os números valendo para outra coisa (8.4, X12): eles ficam
+        na tela, apagados e com o aviso, até alguém pedir a prévia de novo.
+      */}
+      {previa?.ok && previaVelha && (
+        <p role="status" className="text-[11.5px] leading-5 font-semibold text-aviso">
+          A regra mudou depois desta prévia. Os números abaixo estão desatualizados: clique em
+          Ver prévia de novo.
+        </p>
+      )}
+      {previa?.ok && (
+        <div className={previaVelha ? 'opacity-45' : undefined}>
+          <Prevalencia previa={previa} />
+        </div>
+      )}
       {previa && !previa.ok && (
         <p role="alert" className="text-[11.5px] leading-5 text-perigo">
           {previa.erro}
@@ -191,7 +216,9 @@ export function EditorDeSegmento({
   function previsualizar() {
     setErro(null)
     comecar(async () => {
+      const pedida = assinatura
       setPrevia(await acaoPrevisualizarSegmento(clienteId, regra, { comModelo }))
+      setRegraDaPrevia(pedida)
     })
   }
 

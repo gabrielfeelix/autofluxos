@@ -146,7 +146,7 @@ describe.skipIf(!temCredencial)('etapas', () => {
 describe.skipIf(!temCredencial)('cartões', () => {
   it('põe em lote, ignora contato de outra conta, e não move quem já está', async () => {
     const r = await porNoQuadro(clienteId, quadroId, [ana, bruno, doOutro])
-    expect(r).toEqual({ ok: true, postos: 2 })
+    expect(r).toEqual({ ok: true, postos: 2, jaEstavam: 0, falharam: 1 })
 
     const primeira = (await acharQuadro(clienteId, quadroId))!.etapas[0]!
     const cartoes = await listarCartoes(clienteId, quadroId)
@@ -164,7 +164,12 @@ describe.skipIf(!temCredencial)('cartões', () => {
 
     // O ponto do `ignoreDuplicates`: quem selecionou trinta sem lembrar quais já
     // estavam lá não pode desfazer o trabalho de quem os arrastou até o fim.
-    expect(await porNoQuadro(clienteId, quadroId, [ana, bruno])).toEqual({ ok: true, postos: 0 })
+    expect(await porNoQuadro(clienteId, quadroId, [ana, bruno])).toEqual({
+      ok: true,
+      postos: 0,
+      jaEstavam: 2,
+      falharam: 0,
+    })
 
     const depois = (await listarCartoes(clienteId, quadroId)).find((c) => c.contatoId === ana)!
     expect(depois.colunaId).toBe(destino.id)
@@ -222,7 +227,12 @@ describe.skipIf(!temCredencial)('cartões', () => {
   })
 
   it('a mesma pessoa entra em quadros diferentes, cada um na sua etapa', async () => {
-    expect(await porNoQuadro(clienteId, outroQuadroId, [ana])).toEqual({ ok: true, postos: 1 })
+    expect(await porNoQuadro(clienteId, outroQuadroId, [ana])).toEqual({
+      ok: true,
+      postos: 1,
+      jaEstavam: 0,
+      falharam: 0,
+    })
 
     const posicoes = await quadrosDoContato(clienteId, ana)
     expect(posicoes).toHaveLength(2)

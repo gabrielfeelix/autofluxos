@@ -212,6 +212,7 @@ async function Conteudo({ cliente, q }: { cliente: Cliente; q?: string }) {
             equipe={equipe.map(({ id, nome }) => ({ id, nome }))}
             motivos={motivos.map(({ id, nome }) => ({ id, nome }))}
             finalidade={aberto.finalidade}
+            seguinte={quadros.find((quadro) => quadro.id === aberto.seguinteId)?.nome ?? null}
           />
         </>
       )}

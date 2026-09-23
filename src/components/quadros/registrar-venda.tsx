@@ -79,7 +79,7 @@ export function RegistrarVenda({
       aberto={cartao !== null}
       aoFechar={aoFechar}
       titulo={`Registrar venda, ${cartao?.nome ?? ''}`}
-      descricao="A oportunidade é marcada como ganha na mesma operação. Se este funil entrega a outro, o cartão de lá abre sozinho."
+      descricao="A oportunidade é marcada como ganha na mesma operação. Se este funil entrega a outro, o cartão de lá abre sozinho. A conversa não é encerrada e o bot continua como está."
     >
       <div className="flex flex-col gap-3">
         <div className="flex gap-3">

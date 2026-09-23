@@ -44,7 +44,7 @@ export function SelecaoDeContatos({
   const [marcados, setMarcados] = useState<string[]>([])
   const [erro, setErro] = useState<string | null>(null)
   const { confirmar, dialogo } = useConfirmar()
-  const [aviso, setAviso] = useState<string | null>(null)
+  const [aviso, setAviso] = useState<ReactNode>(null)
   const [ocupado, comecar] = useTransition()
 
   const valor = useMemo<Contexto>(
@@ -93,10 +93,37 @@ export function SelecaoDeContatos({
         }
         const nome = quadros.find((q) => q.id === quadroId)?.nome ?? 'o quadro'
         const postos = r.postos ?? 0
+        const jaEstavam = r.jaEstavam ?? 0
+        const falharam = r.falharam ?? 0
+        /*
+         * Três números, e não "N entraram" (8.4, X13): quem já estava não foi
+         * movido, e o link leva ao funil para achá-los; quem falhou não entrou
+         * por não ser desta conta ou ter sido apagado no meio.
+         */
         setAviso(
-          postos === marcados.length
-            ? `${contatos(postos)} ${postos === 1 ? 'entrou' : 'entraram'} em “${nome}”.`
-            : `${contatos(postos)} ${postos === 1 ? 'entrou' : 'entraram'} em “${nome}” · ${marcados.length - postos} já ${marcados.length - postos === 1 ? 'estava' : 'estavam'} lá e não ${marcados.length - postos === 1 ? 'foi movido' : 'foram movidos'}.`,
+          <>
+            {`${contatos(postos)} ${postos === 1 ? 'entrou' : 'entraram'} em “${nome}”.`}
+            {jaEstavam > 0 && (
+              <>
+                {' '}
+                {`${jaEstavam} já ${jaEstavam === 1 ? 'estava' : 'estavam'} lá e não ${jaEstavam === 1 ? 'foi movido' : 'foram movidos'}`}{' '}
+                (
+                <a
+                  href={`/clientes/${clienteId}/quadros?q=${quadroId}`}
+                  className="underline underline-offset-2"
+                >
+                  ver no funil
+                </a>
+                ).
+              </>
+            )}
+            {falharam > 0 && (
+              <span className="text-perigo">
+                {' '}
+                {`${falharam} não ${falharam === 1 ? 'entrou' : 'entraram'}: contato apagado ou de outra conta.`}
+              </span>
+            )}
+          </>,
         )
         setMarcados([])
       } catch {

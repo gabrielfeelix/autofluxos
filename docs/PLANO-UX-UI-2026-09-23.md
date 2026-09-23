@@ -1155,13 +1155,13 @@ Ler `05-atendimento-crm.md` inteiro antes. Preservar os invariantes da seção
 
 ### Tarefa 8.4: ganhar, perder e segmento dizem o efeito [X09, X12, X13, X14]
 
-- [ ] **Passo 1:** modal de ganhar/perder lista o que acontece (venda registrada,
+- [x] **Passo 1:** modal de ganhar/perder lista o que acontece (venda registrada,
   estágio do contato, próximo funil) e o que não acontece (a conversa não é
   encerrada).
-- [ ] **Passo 2:** segmento sem condição mostra "Todos os contatos"; prévia
+- [x] **Passo 2:** segmento sem condição mostra "Todos os contatos"; prévia
   antiga fica marcada como desatualizada quando a regra muda.
-- [ ] **Passo 3:** adicionar ao funil diz adicionados / já estavam (com link) / falharam.
-- [ ] **Passo 4:** commit `feat(crm): ganhar, perder, segmento e funil explicam o efeito`.
+- [x] **Passo 3:** adicionar ao funil diz adicionados / já estavam (com link) / falharam.
+- [x] **Passo 4:** commit `feat(crm): ganhar, perder, segmento e funil explicam o efeito`.
 
 ### Tarefa 8.5: contexto preservado entre telas [X07, X01, X16, H10]
 

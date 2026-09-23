@@ -1705,7 +1705,13 @@ export async function acaoPorNoQuadro(
   clienteId: string,
   quadroId: string,
   contatos: string[],
-): Promise<{ ok: boolean; postos?: number; erro?: string }> {
+): Promise<{
+  ok: boolean
+  postos?: number
+  jaEstavam?: number
+  falharam?: number
+  erro?: string
+}> {
   const acesso = await exigirCapacidade(clienteId, 'criar_oportunidade', 'proprios')
   if (recusou(acesso)) return acesso
 
@@ -1718,7 +1724,7 @@ export async function acaoPorNoQuadro(
 
   revalidatePath(`/clientes/${clienteId}/quadros`)
   revalidatePath(`/clientes/${clienteId}/leads`)
-  return { ok: true, postos: r.postos }
+  return { ok: true, postos: r.postos, jaEstavam: r.jaEstavam, falharam: r.falharam }
 }
 
 /**

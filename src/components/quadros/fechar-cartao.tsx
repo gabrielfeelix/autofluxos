@@ -22,6 +22,7 @@ export function FecharCartao({
   motivos,
   aoFechar,
   aoConcluir,
+  seguinte,
 }: {
   clienteId: string
   cartao: { id: string; nome: string; titulo?: string | null; valor?: number | null } | null
@@ -29,6 +30,11 @@ export function FecharCartao({
   motivos: { id: string; nome: string }[]
   aoFechar: () => void
   aoConcluir: (resultado: { abriuEm?: string }) => void
+  /**
+   * O nome do funil que este entrega ao ganhar. `undefined` = quem abre não
+   * sabe (a ficha), e o modal fala da regra em vez de afirmar um destino.
+   */
+  seguinte?: string | null
 }) {
   /*
    * Os campos nascem do cartão, e quem os reseta é a `key` de quem renderiza
@@ -54,12 +60,9 @@ export function FecharCartao({
       aberto={cartao !== null}
       aoFechar={aoFechar}
       titulo={ganhou ? `Ganhar, ${cartao?.nome ?? ''}` : `Perder, ${cartao?.nome ?? ''}`}
-      descricao={
-        ganhou
-          ? 'O negócio continua no funil, marcado como ganho, e o contato passa a ser cliente. Se este funil entrega a outro, o negócio de lá abre sozinho.'
-          : 'O negócio continua no funil, marcado como perdido. O contato continua na lista e na conversa, perder não apaga ninguém.'
-      }
     >
+      <Efeitos ganhou={ganhou} seguinte={seguinte} />
+
       {ganhou ? (
         <div className="flex flex-col gap-3">
           <label>
@@ -163,4 +166,59 @@ export function FecharCartao({
       }
     })
   }
+}
+
+/**
+ * O que acontece e o que **não** acontece ao fechar (8.4, X09).
+ *
+ * A confusão cara é achar que ganhar encerra a conversa, ou que perder some
+ * com a pessoa. As duas listas dizem o efeito real de `concluirProcesso`:
+ * cartão marcado, fato no histórico, estágio do contato pela regra de
+ * `estagioDepoisDe`, funil seguinte quando existe. Conversa, bot, outros
+ * negócios e atividades não são tocados.
+ */
+function Efeitos({ ganhou, seguinte }: { ganhou: boolean; seguinte?: string | null }) {
+  const acontece = ganhou
+    ? [
+        'Este negócio fica marcado como ganho, com o valor, e entra nos relatórios.',
+        'O contato passa a ser cliente, se ainda não era.',
+        seguinte === undefined
+          ? 'Se este funil entrega a outro, o negócio de lá abre sozinho.'
+          : seguinte
+            ? `Abre um negócio no funil ${seguinte}.`
+            : null,
+        'Fica registrado no histórico do contato.',
+      ]
+    : [
+        'Este negócio fica marcado como perdido, com o motivo.',
+        'O contato passa a perdido, se não tiver outro negócio aberto.',
+        'Fica registrado no histórico do contato.',
+      ]
+  const naoAcontece = [
+    'A conversa não é encerrada e o bot continua como está.',
+    'Os outros negócios desta pessoa não mudam.',
+    'As atividades abertas continuam na agenda.',
+    ...(ganhou ? [] : ['Ninguém é apagado: o contato continua na lista.']),
+  ]
+
+  return (
+    <div className="mb-4 grid gap-3 rounded-[10px] border border-line bg-surface px-3.5 py-3 text-[12px] leading-5 sm:grid-cols-2">
+      <div>
+        <p className="mb-1 text-[10.5px] font-bold tracking-[0.06em] text-soft uppercase">O que acontece</p>
+        <ul className="flex list-disc flex-col gap-0.5 pl-4 text-muted">
+          {acontece.filter(Boolean).map((frase) => (
+            <li key={frase}>{frase}</li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <p className="mb-1 text-[10.5px] font-bold tracking-[0.06em] text-soft uppercase">O que não muda</p>
+        <ul className="flex list-disc flex-col gap-0.5 pl-4 text-muted">
+          {naoAcontece.map((frase) => (
+            <li key={frase}>{frase}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  )
 }
