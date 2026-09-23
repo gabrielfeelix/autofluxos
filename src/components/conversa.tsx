@@ -178,6 +178,7 @@ export function Conversa({
   const [desatualizada, setDesatualizada] = useState(false)
   const [modo, setModo] = useState<ModoDaConversa>('conversa')
   const [avisoDaApiAberto, setAvisoDaApiAberto] = useState(true)
+  const [avisoDaIaAberto, setAvisoDaIaAberto] = useState(true)
   /**
    * Por que a conversa acabou, quando ela acabou por engano.
    *
@@ -493,6 +494,13 @@ export function Conversa({
 
   const viva = status === 'ativa' || status === 'aguardando_ia' || status === 'aguardando_http'
   const temApi = fluxo.nodes.some((n) => n.type === 'http')
+  /*
+   * A IA do teste é a de verdade (A16): a chave é a da conta quando ela tem uma,
+   * então testar gasta o mesmo que conversar. O que a IA **gravaria** (marcar
+   * aula, por exemplo) é simulado no servidor, ver `efeitos/resolver.ts`. Na
+   * vitrine quem testa é visita, e consumo da conta não é assunto dela.
+   */
+  const temIa = iaHabilitada && !naVitrine && fluxo.nodes.some((n) => n.type === 'ia')
 
   /** A conversa está parada numa pergunta que tem prazo para responder (B1)? */
   const temPrazo =
@@ -564,9 +572,36 @@ export function Conversa({
         Então minimiza: vira uma tarja de uma linha, que continua dizendo que a
         chamada é real e reabre num clique.
       */}
+      {temIa &&
+        (avisoDaIaAberto ? (
+          <div className="mx-3.5 mt-3.5 flex items-start gap-2 rounded-[11px] border border-cyan-400/20 bg-cyan-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-info">
+            <p className="min-w-0 flex-1">
+              Este teste usa a IA <strong>de verdade</strong> e conta no consumo da conta.
+              Nenhuma mensagem sai pelo WhatsApp.
+            </p>
+            <button
+              type="button"
+              onClick={() => setAvisoDaIaAberto(false)}
+              title="Minimizar este aviso"
+              aria-label="Minimizar o aviso de IA real"
+              className="-mt-0.5 -mr-1 shrink-0 rounded-md px-1.5 text-[13px] leading-5 transition hover:bg-cyan-400/[0.16]"
+            >
+              −
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setAvisoDaIaAberto(true)}
+            className="mx-3.5 mt-3.5 flex items-center gap-1.5 rounded-full border border-cyan-400/20 bg-cyan-400/[0.07] px-2.5 py-1 text-[10px] font-semibold text-info transition hover:bg-cyan-400/[0.14]"
+          >
+            <span aria-hidden>⚠</span> o teste usa a IA de verdade
+          </button>
+        ))}
+
       {temApi &&
         (avisoDaApiAberto ? (
-          <div className="mx-3.5 mt-3.5 flex items-start gap-2 rounded-[11px] border border-cyan-400/20 bg-cyan-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-cyan-300">
+          <div className="mx-3.5 mt-3.5 flex items-start gap-2 rounded-[11px] border border-cyan-400/20 bg-cyan-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-info">
             <p className="min-w-0 flex-1">
               {naVitrine ? (
                 <>
@@ -594,7 +629,7 @@ export function Conversa({
           <button
             type="button"
             onClick={() => setAvisoDaApiAberto(true)}
-            className="mx-3.5 mt-3.5 flex items-center gap-1.5 rounded-full border border-cyan-400/20 bg-cyan-400/[0.07] px-2.5 py-1 text-[10px] font-semibold text-cyan-300 transition hover:bg-cyan-400/[0.14]"
+            className="mx-3.5 mt-3.5 flex items-center gap-1.5 rounded-full border border-cyan-400/20 bg-cyan-400/[0.07] px-2.5 py-1 text-[10px] font-semibold text-info transition hover:bg-cyan-400/[0.14]"
           >
             <span aria-hidden>⚠</span>{' '}
             {naVitrine ? 'a API responde dado de exemplo' : 'o teste chama a API de verdade'}

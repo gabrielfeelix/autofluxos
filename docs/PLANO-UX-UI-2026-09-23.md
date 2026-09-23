@@ -707,17 +707,17 @@ publicada. Publique antes de ligar, senão ninguém recebe resposta.";
 - Modificar: `src/components/conversa.tsx:535-600` (o aviso de HTTP já existe; estender)
 - Ler antes: `src/app/api/simular/route.ts` para saber se ferramentas de IA que **gravam** (catálogo em `src/core/ferramentas.ts`) executam no simulador
 
-- [ ] **Passo 1:** descobrir, lendo `route.ts` e `executarComEfeitos`, se uma
+- [x] **Passo 1:** descobrir, lendo `route.ts` e `executarComEfeitos`, se uma
   ferramenta de escrita da IA grava dado real durante o teste. Registrar a
   resposta em uma linha no "Registro de execução" deste arquivo.
-- [ ] **Passo 2:** se grava: o simulador passa a executar ferramentas de escrita
+- [x] **Passo 2:** se grava: o simulador passa a executar ferramentas de escrita
   em modo simulado (responde "simulado: pedido não gravado") e só ferramentas de
   leitura executam de verdade. Teste de integração cobrindo: `no simulador, ferramenta de escrita não grava`.
   Se não grava: pular para o passo 3.
-- [ ] **Passo 3:** aviso antes da primeira mensagem, no mesmo estilo do aviso
+- [x] **Passo 3:** aviso antes da primeira mensagem, no mesmo estilo do aviso
   de HTTP, quando o fluxo tem bloco IA: "Este teste usa a IA de verdade e conta
   no consumo da conta. Nenhuma mensagem sai pelo WhatsApp."
-- [ ] **Passo 4:** prints do editor com a aba Testar aberta; commit `feat(editor): Testar avisa o que roda de verdade`.
+- [x] **Passo 4:** prints do editor com a aba Testar aberta; commit `feat(editor): Testar avisa o que roda de verdade`.
 
 ### Tarefa 3.3: publicação e entrada como duas informações [A03]
 
@@ -1412,3 +1412,10 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   visíveis). Hover sem `transition` e com a mesma cor na linha e nas fixas (o
   descompasso era a linha animar 150 ms e as fixas não). Divisória das fixas só
   com a tabela rolada (`RolagemDaTabela`, `data-rolada`).
+- 23/09, tarefa 3.2: **não grava.** Na aba Testar, ferramenta de escrita da IA
+  (`agenda_marcar`, `agenda_desmarcar`) já é simulada em
+  `src/server/efeitos/resolver.ts` (`deTeste && ferramenta.escreve`, antes da
+  política de confirmação); leitura continua real. Passo 2 pulado. O aviso de IA
+  só aparece com IA contratada e bloco IA no desenho, e não na vitrine do link
+  compartilhado (visita não tem consumo). Os dois avisos (IA e API) usavam
+  `text-cyan-300`, ilegível no tema claro; passaram para `text-info`.
