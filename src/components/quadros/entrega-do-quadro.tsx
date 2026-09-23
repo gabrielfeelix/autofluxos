@@ -38,7 +38,7 @@ export function EntregaDoQuadro({
     <span className="flex flex-col items-start gap-2 text-[12px] text-muted">
       <span className="whitespace-nowrap">Ao ganhar, mandar para</span>
       <Dropdown
-        rotuloAcessivel="Para qual funil este quadro entrega ao ganhar"
+        rotuloAcessivel="Para qual funil este funil entrega ao ganhar"
         valor={seguinteId ?? ''}
         desabilitado={rodando}
         className="w-full"
@@ -52,9 +52,9 @@ export function EntregaDoQuadro({
           comecar(async () => {
             try {
               const r = await acaoEncadearQuadro(clienteId, quadroId, destino)
-              if (!r.ok) setErro(r.erro ?? 'não deu para ligar os quadros')
+              if (!r.ok) setErro(r.erro ?? 'não deu para ligar os funis')
             } catch {
-              setErro('não deu para ligar os quadros agora')
+              setErro('não deu para ligar os funis agora')
             }
           })
         }}

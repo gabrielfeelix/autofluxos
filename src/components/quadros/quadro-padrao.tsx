@@ -79,8 +79,8 @@ export function QuadroPadrao({
       rotulo={erro ?? 'Receber novos contatos automaticamente'}
       titulo={
         recebePorSerOPrimeiro && !padrao
-          ? 'Contato novo entra aqui por ser o quadro mais antigo da conta. Marque outro quadro para mudar o destino.'
-          : 'Quando alguém escreve pela primeira vez, o contato vira cartão na primeira etapa deste quadro. Só um quadro por conta pode receber.'
+          ? 'Contato novo entra aqui por ser o funil mais antigo da conta. Marque outro funil para mudar o destino.'
+          : 'Quando alguém escreve pela primeira vez, o contato vira cartão na primeira etapa deste funil. Só um funil por conta pode receber.'
       }
       ligada={recebendo}
       desabilitada={pendente}

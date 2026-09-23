@@ -13,6 +13,7 @@ import {
   LEADS_POR_PAGINA,
   limparBusca,
   paginarLeads,
+  contarLeads,
   type EtiquetaDeLead,
   type Lead,
 } from '@/server/repos/leads'
@@ -206,9 +207,12 @@ async function Tabela({
   */
   const daFaixa = nivel ? await contatosDoNivel(clienteId, nivel, faixas) : null
 
-  const [{ leads, total, pagina, paginas }, etiquetasDaConta, quadrosDaConta] =
+  const [{ leads, total, pagina, paginas }, etiquetasDaConta, quadrosDaConta, totalDaConta] =
     await Promise.all([
       paginarLeads(clienteId, {
+        // Contatos é a base inteira. Sem isto valia o padrão do Inbox
+        // (`aberta`) e quem teve a conversa resolvida sumia da lista e do total.
+        estado: 'todas',
         etiqueta,
         etiquetaId: marca,
         busca: termo,
@@ -217,6 +221,8 @@ async function Tabela({
       }),
       listarEtiquetasComContagem(clienteId),
       listarQuadros(clienteId),
+      // O "de N" do selo só existe com filtro; sem filtro o total já é a conta.
+      filtrando ? contarLeads(clienteId) : Promise.resolve(null),
     ])
 
   // Sem filtro e sem nenhum lead, a tela ainda é de primeira vez: o que ajuda
@@ -260,8 +266,9 @@ async function Tabela({
     <>
       <div className="mb-[22px] flex flex-wrap items-center justify-end gap-2 md:-mt-[53px]">
         <span className="rounded-full border border-line bg-surface px-3 py-1 text-[11px] font-semibold text-muted">
-          {total} {total === 1 ? 'pessoa' : 'pessoas'}
-          {filtrando && ' no filtro'}
+          {filtrando && totalDaConta !== null
+            ? `${total} de ${totalDaConta} ${totalDaConta === 1 ? 'contato' : 'contatos'}`
+            : `${total} ${total === 1 ? 'contato' : 'contatos'}`}
         </span>
         {esperando > 0 && (
           <span className="rounded-full border border-rose-400/25 bg-rose-400/[0.09] px-3 py-1 text-[11px] font-bold text-perigo">

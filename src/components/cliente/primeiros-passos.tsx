@@ -43,7 +43,7 @@ export function PrimeirosPassos({ passos }: { passos: PassoDaConta[] }) {
         </h2>
         <p className="mt-1 text-[12.5px] text-white/85">
           {proximo
-            ? `${passos.length - prontos} de ${passos.length} passos para preparar seu atendimento.`
+            ? `Falta${passos.length - prontos === 1 ? '' : 'm'} ${passos.length - prontos} ${passos.length - prontos === 1 ? 'passo' : 'passos'} para preparar seu atendimento.`
             : 'Tudo pronto, a conta está completa.'}
         </p>
 

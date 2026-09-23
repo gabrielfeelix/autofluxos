@@ -76,7 +76,7 @@ export function BarraDoQuadro({
           />
         </div>
         <PopoverDoQuadro
-          rotulo="Filtros do quadro"
+          rotulo="Filtros do funil"
           gatilho={
             <>
               <IconeDoQuadro tipo="filtro" />
@@ -145,7 +145,7 @@ export function BarraDoQuadro({
           )}
         </span>
         <PopoverDoQuadro
-          rotulo="Ajuda sobre o quadro"
+          rotulo="Ajuda sobre o funil"
           gatilho={<IconeDoQuadro tipo="ajuda" />}
           className="quadro-stage-menu"
         >

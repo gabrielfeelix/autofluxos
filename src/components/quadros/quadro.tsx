@@ -243,11 +243,11 @@ export function Quadro({
         const r = await acaoTirarDoQuadro(clienteId, cartaoId)
         if (!r.ok) {
           setCartoes(antes)
-          setErro(r.erro ?? 'não deu para tirar do quadro')
+          setErro(r.erro ?? 'não deu para tirar do funil')
         }
       } catch {
         setCartoes(antes)
-        setErro('não deu para tirar do quadro agora')
+        setErro('não deu para tirar do funil agora')
       }
     })
   }
@@ -781,7 +781,7 @@ export function AdicionarContato({
         aberto={aberto}
         aoFechar={fechar}
         titulo={`Adicionar em “${etapaNome}”`}
-        descricao="Só aparece quem ainda não está no quadro. Para pôr muita gente de uma vez, use a seleção em lote na tela de Contatos."
+        descricao="Só aparece quem ainda não está no funil. Para pôr muita gente de uma vez, use a seleção em lote na tela de Contatos."
       >
         <input
           autoFocus
@@ -798,8 +798,8 @@ export function AdicionarContato({
           ) : achados.length === 0 ? (
             <li className="px-1 py-3 text-[11.5px] leading-5 text-dim">
               {termo.trim() === ''
-                ? 'Todo mundo deste cliente já está no quadro, ou ainda não há contato nenhum.'
-                : 'Ninguém com esse nome fora do quadro.'}
+                ? 'Todo mundo deste cliente já está no funil, ou ainda não há contato nenhum.'
+                : 'Ninguém com esse nome fora do funil.'}
             </li>
           ) : (
             achados.map((contato) => (
@@ -1051,7 +1051,7 @@ function MenuDaEtapa({
             disabled={ehUnica}
             title={
               ehUnica
-                ? 'Um quadro precisa de pelo menos uma etapa'
+                ? 'Um funil precisa de pelo menos uma etapa'
                 : ocupada > 0
                   ? `${ocupada} contato(s) estão aqui. Mova-os antes de apagar.`
                   : 'Apagar esta etapa'
@@ -1384,7 +1384,7 @@ function MenuDoCartao({
                 <span className="my-1 border-t border-line" />
                 <Item
                   perigo
-                  title="Tira do quadro. O contato continua na lista, na conversa e nas etiquetas."
+                  title="Tira do funil. O contato continua na lista, na conversa e nas etiquetas."
                   onClick={() => {
                     setAberto(false)
                     aoTirar()

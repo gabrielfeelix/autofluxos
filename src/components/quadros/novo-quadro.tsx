@@ -60,7 +60,7 @@ export function NovoQuadro({
   function criar() {
     const limpo = nome.trim()
     if (limpo === '') {
-      setErro('dê um nome ao quadro')
+      setErro('dê um nome ao funil')
       return
     }
 
@@ -69,7 +69,7 @@ export function NovoQuadro({
       try {
         const r = await acaoCriarQuadroComModelo(clienteId, limpo, modelo?.id ?? 'branco')
         if (!r.ok) {
-          setErro(r.erro ?? 'não deu para criar o quadro')
+          setErro(r.erro ?? 'não deu para criar o funil')
           return
         }
         fechar()
@@ -220,7 +220,7 @@ export function NovoQuadro({
                 onClick={criar}
                 className="app-primary-button px-4 py-2 text-[12.5px] disabled:opacity-50"
               >
-                {rodando ? 'criando…' : 'Criar quadro'}
+                {rodando ? 'criando…' : 'Criar funil'}
               </button>
             </div>
           </div>

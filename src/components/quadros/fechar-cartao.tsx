@@ -56,8 +56,8 @@ export function FecharCartao({
       titulo={ganhou ? `Ganhar, ${cartao?.nome ?? ''}` : `Perder, ${cartao?.nome ?? ''}`}
       descricao={
         ganhou
-          ? 'O cartão fica no quadro, marcado como ganho, e o contato passa a ser cliente. Se este funil entrega a outro, o cartão de lá abre sozinho.'
-          : 'O cartão fica no quadro, marcado como perdido. O contato continua na lista e na conversa, perder não apaga ninguém.'
+          ? 'O negócio continua no funil, marcado como ganho, e o contato passa a ser cliente. Se este funil entrega a outro, o negócio de lá abre sozinho.'
+          : 'O negócio continua no funil, marcado como perdido. O contato continua na lista e na conversa, perder não apaga ninguém.'
       }
     >
       {ganhou ? (

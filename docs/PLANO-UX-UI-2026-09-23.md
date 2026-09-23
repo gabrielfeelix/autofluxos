@@ -243,24 +243,24 @@ useEffect(() => {
 - Modificar: `src/app/clientes/[clienteId]/leads/page.tsx` (cabeçalho com "N pessoas")
 - Modificar: `src/components/quadros/fechar-cartao.tsx:59`, `src/components/quadros/barra-do-quadro.tsx:78`
 
-- [ ] **Passo 1:** primeiros passos: trocar o texto para o que falta, sem
+- [x] **Passo 1:** primeiros passos: trocar o texto para o que falta, sem
   competir com a barra:
 
 ```tsx
 ? `Falta${passos.length - prontos === 1 ? '' : 'm'} ${passos.length - prontos} ${passos.length - prontos === 1 ? 'passo' : 'passos'} para preparar seu atendimento.`
 ```
 
-- [ ] **Passo 2:** Contatos: o selo do cabeçalho mostra o **total do filtro**,
+- [x] **Passo 2:** Contatos: o selo do cabeçalho mostra o **total do filtro**,
   não o tamanho da página. Ler como o total chega à página (`listarLeads` /
   `paginarLeads`); se o total já existe, usar; se não existe, acrescentar
   `count: 'exact'` na consulta existente. Texto: "60 contatos" (e "12 de 60
   contatos" quando houver filtro ou busca).
-- [ ] **Passo 3:** Funil: "O cartão fica no quadro" → "O negócio continua no
+- [x] **Passo 3:** Funil: "O cartão fica no quadro" → "O negócio continua no
   funil"; "Filtros do quadro" → "Filtros do funil". Procurar outros "quadro"
   visíveis ao usuário na pasta `src/components/quadros/` (`grep -n "quadro" ...`
   só em strings de tela) e trocar por "funil" ou "etapa" conforme o sentido.
-- [ ] **Passo 4:** typecheck; prints `inicio contatos funil`.
-- [ ] **Passo 5:** commit `fix(textos): contagens e nomes que contradiziam a tela`.
+- [x] **Passo 4:** typecheck; prints `inicio contatos funil`.
+- [x] **Passo 5:** commit `fix(textos): contagens e nomes que contradiziam a tela`.
 
 ---
 
@@ -1268,3 +1268,7 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   mais pendente, `telefoneLegivel` e `AjudaDaTela` viram peças obrigatórias,
   compositor do Inbox preserva o seletor de produto, Catálogo com nova descrição.
   Nenhuma tarefa do plano foi feita por eles; nenhuma sai do plano.
+- 23/09, tarefa 0.3: o "30 pessoas" não era o tamanho da página. Contatos e o
+  CSV chamavam `paginarLeads` sem `estado`, e o padrão é o do Inbox (`aberta`):
+  quem teve a conversa resolvida sumia da lista e do total. Os dois passam
+  `estado: 'todas'`. O "de N" com filtro usa `contarLeads`.

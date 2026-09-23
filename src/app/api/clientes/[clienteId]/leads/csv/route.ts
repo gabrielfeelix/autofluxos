@@ -138,6 +138,8 @@ async function lerTudo(
 
   for (let pagina = 1; tudo.length < TETO_DE_LINHAS; pagina++) {
     const lote = await paginarLeads(clienteId, {
+      // A mesma base da tela de Contatos: todas as conversas, não só as abertas.
+      estado: 'todas',
       busca,
       etiqueta,
       etiquetaId,
