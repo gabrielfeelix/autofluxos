@@ -4,10 +4,10 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useAcaoOtimista } from '@/components/design/acao-otimista'
 import { Dica } from '@/components/design/dica'
 import { SeletorDeEtiquetas, type EtiquetaEscolhivel } from '@/components/etiquetas/seletor'
-import { NotaRapida } from '@/components/inbox/nota-rapida'
+import { EntradaDeAnotacao, useTemAnotacao } from '@/components/inbox/anotacoes'
+import { LIMITE_DA_NOTA } from '@/core/flow/limites'
 import { useFicha } from '@/components/inbox/moldura'
 import { PRAZOS_DE_ADIAMENTO, type PrazoDeAdiamento } from '@/core/adiamento'
-import type { EstadoSalvar } from '@/components/design/formulario-salvar'
 import { AgendarMensagem, IconeAgendar } from '@/components/inbox/agendar'
 import { MarcarAtividade, IconeAtividade } from '@/components/inbox/marcar-atividade'
 import type { MensagemAgendada } from '@/server/repos/mensagens-agendadas'
@@ -55,8 +55,6 @@ export function AcoesRapidas({
   estado,
   etiquetas,
   etiquetasAplicadas,
-  notas,
-  salvarNotas,
   automacaoAtiva,
   temAutomacao,
   fimDaJanela,
@@ -68,8 +66,6 @@ export function AcoesRapidas({
   estado: 'aberta' | 'adiada' | 'resolvida'
   etiquetas: EtiquetaEscolhivel[]
   etiquetasAplicadas: string[]
-  notas: string
-  salvarNotas: (estado: EstadoSalvar, formData: FormData) => Promise<EstadoSalvar>
   automacaoAtiva: boolean
   /** Sem fluxo ligado não há bot: o botão de pausar não aparece. */
   temAutomacao: boolean
@@ -80,6 +76,7 @@ export function AcoesRapidas({
   /** Como chamar o contato dentro do painel de agendar. */
   nomeDoContato: string
 }) {
+  const temAnotacao = useTemAnotacao()
   const ficha = useFicha()
 
   /*
@@ -210,14 +207,15 @@ export function AcoesRapidas({
       <AcaoComPainel
         rotulo="Anotação da equipe"
         icone={<IconeNota />}
-        marcada={notas.trim() !== ''}
+        marcada={temAnotacao}
         largura={288}
       >
         <p className="mb-1 text-[12px] font-bold text-soft">Anotação da equipe</p>
         <p className="mb-2 text-[11.5px] leading-4 text-dim">
-          Só a equipe vê. Não vai para o WhatsApp nem para a automação.
+          Só a equipe vê. Não vai para o WhatsApp nem para a automação. Cada anotação fica no
+          histórico do contato, com o seu nome e a hora.
         </p>
-        <NotaRapida inicial={notas} salvar={salvarNotas} />
+        <EntradaDeAnotacao limite={LIMITE_DA_NOTA} />
       </AcaoComPainel>
 
       {temAutomacao && (

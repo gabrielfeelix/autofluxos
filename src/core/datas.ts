@@ -147,3 +147,16 @@ function emBr(iso: string): string {
   const [ano, mes, dia] = iso.split('-')
   return `${dia}/${mes}/${ano}`
 }
+
+/** "23/09 às 14:32", no fuso de Brasília, que é o de quem lê a tela. */
+export function diaEHora(iso: string, fuso = 'America/Sao_Paulo'): string {
+  const partes = new Intl.DateTimeFormat('pt-BR', {
+    timeZone: fuso,
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).formatToParts(new Date(iso))
+  const valor = (tipo: string) => partes.find((parte) => parte.type === tipo)?.value ?? ''
+  return `${valor('day')}/${valor('month')} às ${valor('hour')}:${valor('minute')}`
+}

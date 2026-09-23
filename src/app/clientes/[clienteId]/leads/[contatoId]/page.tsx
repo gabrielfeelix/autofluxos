@@ -18,9 +18,8 @@ import {
   acaoCorrigirNome,
   acaoEncerrarAtendimento,
   acaoResponderLead,
-  acaoSalvarNotas,
 } from '@/server/acoes'
-import { acaoAnotarNoDiario } from '@/server/acoes-crm'
+import { acaoAnotar, acaoAnotarNoDiario } from '@/server/acoes-crm'
 import { acharCliente } from '@/server/repos/clientes'
 import { contextoDeResposta } from '@/server/repos/conversas'
 import { acharLead, lerConversa, LIMITE_DA_NOTA } from '@/server/repos/leads'
@@ -64,6 +63,7 @@ import {
   IconeWhatsApp,
   iconeAlvo,
   iconeEtiqueta,
+  iconeLapis,
   iconeLinhaDoTempo,
 } from '@/components/lead-crm/icones'
 import { SeletorDeEtiquetas } from '@/components/etiquetas/seletor'
@@ -76,7 +76,9 @@ import {
   LocalNaBolha,
   SemTexto,
 } from '@/components/lead/anexo'
-import { NomeDoContato, NotasDoContato } from '@/components/lead/identidade'
+import { NomeDoContato } from '@/components/lead/identidade'
+import { CartaoDeAnotacoes } from '@/components/inbox/anotacoes'
+import { anotacoesDoContato } from '@/server/repos/eventos'
 import { etiquetasDeDia, horaDoRelogio, horaExata, quando } from '@/lib/quando'
 import { MenuNaConversa } from '@/components/inbox/historico'
 import { TextoDoWhatsApp } from '@/components/texto-do-whatsapp'
@@ -113,6 +115,8 @@ export default async function Pagina({
     temAutomacao,
     atividades,
     acompanhamentos,
+    anotacoes,
+    sessaoDaFicha,
   ] = await Promise.all([
     acharCliente(clienteId),
     acharLead(clienteId, contatoId),
@@ -138,6 +142,8 @@ export default async function Pagina({
     // Os acompanhamentos automáticos (UI-23/UI-24). Na mesma leva pelo mesmo
     // motivo: a ficha só existe inteira.
     acompanhamentosDoContato(clienteId, contatoId),
+    anotacoesDoContato(clienteId, contatoId),
+    sessaoAtual(),
   ])
   if (!cliente || !lead) notFound()
 
@@ -424,10 +430,18 @@ export default async function Pagina({
                       )}
                     />
                     <div id="anotacao">
-                      <NotasDoContato
-                        notas={lead.notas}
+                      <CartaoDeAnotacoes
+                        iniciais={anotacoes}
+                        antiga={lead.notas}
+                        autor={sessaoDaFicha?.usuario.nome ?? null}
+                        anotar={acaoAnotar.bind(null, clienteId, contatoId)}
                         limite={LIMITE_DA_NOTA}
-                        salvar={acaoSalvarNotas.bind(null, clienteId, contatoId)}
+                        titulo={
+                          <h2 className="flex items-center gap-2 text-[13px] font-bold">
+                            <IconeDaSecao>{iconeLapis}</IconeDaSecao>
+                            Anotações da equipe
+                          </h2>
+                        }
                       />
                     </div>
                     <section id="etiquetas" className="app-card overflow-hidden">

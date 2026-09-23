@@ -67,7 +67,7 @@ export function SeletorDeEtiquetas({
    * A etiqueta nasce **no momento em que alguém precisa dela**, olhando uma
    * conversa e pensando "isso é um orçamento". Mandar essa pessoa para outra
    * tela para criar e voltar é a mesma volta que fazia ninguém anotar nada
-   * antes da `NotaRapida` existir: quem tem que ir e voltar, não vai.
+   * antes da anotação rápida existir: quem tem que ir e voltar, não vai.
    *
    * A cor não é perguntada. Seis cores e nenhuma delas muda o que a etiqueta
    * faz, decidir entre elas no meio de um atendimento é escolha que só

@@ -8,7 +8,8 @@ import { definirFaixas } from './repos/relacionamento'
 import type { CorDeEtiqueta } from '@/core/etiquetas'
 import { LIMITE_DA_NOTA } from '@/core/flow/limites'
 import type { EstadoSalvar } from '@/components/design/formulario-salvar'
-import { anotar, linhaDoTempo } from './repos/eventos'
+import { anotacoesDoContato, anotar, linhaDoTempo, registrarAnotacao } from './repos/eventos'
+import type { Anotacao } from '@/core/anotacoes'
 import { listarMotivos, criarMotivo, apagarMotivo } from './repos/motivos-de-perda'
 import {
   contatoEhDoCliente,
@@ -339,6 +340,9 @@ export async function acaoAbrirPainelDoContato(
 ): Promise<{
   ficha: Awaited<ReturnType<typeof fichaDoContato>>
   eventos: Awaited<ReturnType<typeof linhaDoTempo>>
+  anotacoes: Anotacao[]
+  /** Quem abriu o painel, para a anotação provisória já sair com o nome. */
+  autor: string | null
   /** `null` em `total`/`compras` = sem autorização para ver valores (A27). */
   resumo: { total: number | null; compras: number | null; ultimaEm: string | null }
   etiquetas: { id: string; nome: string; cor: CorDeEtiqueta }[]
@@ -369,7 +373,7 @@ export async function acaoAbrirPainelDoContato(
 
   const veValores = pode(acesso.regras, 'ler_valores')
 
-  const [ficha, eventos, resumo, etiquetas, porContato, equipe, agendadas, funis, motivos] =
+  const [ficha, eventos, resumo, etiquetas, porContato, equipe, agendadas, funis, motivos, anotacoes, quem] =
     await Promise.all([
       fichaDoContato(clienteId, contatoId),
       linhaDoTempo(clienteId, contatoId),
@@ -380,11 +384,15 @@ export async function acaoAbrirPainelDoContato(
       agendadasDoContato(clienteId, contatoId),
       quadrosDoContato(clienteId, contatoId),
       listarMotivos(clienteId),
+      anotacoesDoContato(clienteId, contatoId),
+      sessaoAtual(),
     ])
 
   return {
     ficha,
     eventos,
+    anotacoes,
+    autor: quem?.usuario.nome ?? null,
     /*
      * Zerar não serve: "R$ 0,00 · 0 compras" é uma afirmação falsa sobre o
      * cliente, e quem a lê decide em cima dela. `null` diz "não sei", que é a
@@ -545,6 +553,39 @@ export async function acaoAtribuirContato(
   revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
   revalidatePath(`/clientes/${clienteId}/inbox`)
   return { ok: true }
+}
+
+/**
+ * Anota pela entrada "+ Anotar" do Inbox e da ficha (tarefa 5.9).
+ *
+ * Devolve a anotação gravada, e não só "ok": a tela já mostrou a nota na hora,
+ * de forma otimista, e troca a provisória pela de verdade (id e hora do
+ * servidor). **Não revalida a página**: anotar não pode recarregar a conversa
+ * de quem está atendendo. A ficha é revalidada porque ninguém está nela.
+ */
+export async function acaoAnotar(
+  clienteId: string,
+  contatoId: string,
+  texto: string,
+): Promise<{ ok: true; anotacao: Anotacao } | { ok: false; erro: string }> {
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return { ok: false, erro: acesso.erro }
+
+  const limpo = texto.trim().slice(0, LIMITE_DA_NOTA)
+  if (limpo === '') return { ok: false, erro: 'escreva alguma coisa antes de anotar' }
+  if (!(await contatoEhDoCliente(clienteId, contatoId))) {
+    return { ok: false, erro: 'este contato não é deste cliente' }
+  }
+
+  const quemFez = await sessaoAtual()
+  try {
+    const anotacao = await registrarAnotacao(clienteId, contatoId, limpo, quemFez?.usuario.nome ?? null)
+    revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
+    return { ok: true, anotacao }
+  } catch (erro) {
+    console.error('[anotar]', erro instanceof Error ? erro.message : erro)
+    return { ok: false, erro: 'não deu para guardar agora' }
+  }
 }
 
 /**

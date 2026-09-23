@@ -1,11 +1,9 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { FormularioSalvar, type EstadoSalvar } from '@/components/design/formulario-salvar'
+import type { EstadoSalvar } from '@/components/design/formulario-salvar'
 import { Avatar } from '@/components/inbox/avatar'
 import { telefoneLegivel } from '@/core/contatos/telefone'
-import { AjudaDoCampo } from '@/components/design/ajuda-do-campo'
-import { IconeDaSecao, iconeLapis } from '@/components/lead-crm/icones'
 
 type Acao = (estado: EstadoSalvar, formData: FormData) => Promise<EstadoSalvar>
 
@@ -164,99 +162,5 @@ export function NomeDoContato({
         </form>
       </dialog>
     </div>
-  )
-}
-
-/**
- * A anotação de quem atende.
- *
- * Fechada por padrão pelo mesmo motivo da ficha do cliente: a tela é visitada
- * muitas vezes para olhar e uma vez para escrever. Quando já existe anotação,
- * ela aparece, nota escondida é nota que ninguém lê.
- */
-export function NotasDoContato({
-  notas,
-  limite,
-  salvar,
-}: {
-  notas: string
-  limite: number
-  salvar: Acao
-}) {
-  const [editando, setEditando] = useState(false)
-
-  return (
-    <section className="app-card p-4">
-      <header className="mb-2 flex items-center justify-between gap-3">
-        <h2 className="flex items-center gap-2 text-[13px] font-bold">
-          <IconeDaSecao>{iconeLapis}</IconeDaSecao>
-          Anotação
-          <AjudaDoCampo
-            titulo="Lembrete"
-            secao="duvidas"
-            texto="Um lembrete curto da equipe sobre esta pessoa, sempre visível na ficha."
-            detalhes={
-              <>
-                <p>
-                  Uma linha que fica sempre à vista, para quem abrir a ficha não precisar ler o
-                  histórico inteiro: “prefere ligação”, “alérgica a amendoim”, “é irmã da Ana”.
-                </p>
-                <p>
-                  <strong>Fica só aqui.</strong> Não vai para o WhatsApp nem para nenhuma
-                  automação.
-                </p>
-              </>
-            }
-          />
-        </h2>
-        {!editando && (
-          <button
-            type="button"
-            data-foco
-            onClick={() => setEditando(true)}
-            className="rounded-lg border border-line px-2 py-0.5 text-[11.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
-          >
-            {notas === '' ? 'anotar' : 'editar'}
-          </button>
-        )}
-      </header>
-
-      {editando ? (
-        <>
-          <FormularioSalvar
-            action={async (estado, formData) => {
-              const r = await salvar(estado, formData)
-              if (r.ok) setEditando(false)
-              return r
-            }}
-            rotulo="Salvar anotação"
-            dica="Fica só aqui, não vai para o WhatsApp nem para nenhuma automação."
-          >
-            <textarea
-              name="notas"
-              autoFocus
-              rows={4}
-              maxLength={limite}
-              defaultValue={notas}
-              placeholder="Prefere aula de manhã. Já perguntou preço duas vezes."
-              className="app-field resize-y px-3 py-2.5 text-[13px] leading-5"
-            />
-          </FormularioSalvar>
-          <button
-            type="button"
-            onClick={() => setEditando(false)}
-            className="mt-1.5 text-[12.5px] text-muted transition hover:text-primary"
-          >
-            Cancelar
-          </button>
-        </>
-      ) : notas === '' ? (
-        <p className="text-[12.5px] text-dim">
-          O que não cabe num campo: preferência de horário, o que já foi combinado.
-        </p>
-      ) : (
-        <p className="text-[13px] leading-5 whitespace-pre-wrap text-soft">{notas}</p>
-      )}
-    </section>
   )
 }

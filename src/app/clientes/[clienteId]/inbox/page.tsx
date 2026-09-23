@@ -1,4 +1,7 @@
 import { Fragment, Suspense, type ReactNode } from 'react'
+import { ListaDeAnotacoes, ProvedorDeAnotacoes } from '@/components/inbox/anotacoes'
+import { anotacoesDoContato } from '@/server/repos/eventos'
+import { acaoAnotar } from '@/server/acoes-crm'
 import { after } from 'next/server'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -28,7 +31,6 @@ import {
   acaoEncerrarAtendimento,
   acaoLiberarAtendimento,
   acaoResponderLead,
-  acaoSalvarNotas,
 } from '@/server/acoes'
 import { acharCliente, type Cliente } from '@/server/repos/clientes'
 import { contextoDeResposta } from '@/server/repos/conversas'
@@ -775,7 +777,7 @@ async function ColunaDaConversa({
   // `lead` veio de `paginarLeads(clienteId, ...)` ou de `acharLead(clienteId, ...)`.
   // Só depois desse vínculo cliente–contato confirmado é seguro ler as mensagens
   // pelo id do contato.
-  const [conversa, contexto, posicoes, quadros, agendadasDaConversa] = await Promise.all([
+  const [conversa, contexto, posicoes, quadros, agendadasDaConversa, anotacoes] = await Promise.all([
     lerConversa(lead.contatoId),
     contextoDeResposta(clienteId, lead.contatoId),
     /*
@@ -789,6 +791,7 @@ async function ColunaDaConversa({
     // O que já está marcado para esta conversa: a barra de ações mostra o
     // ícone aceso, e o painel lista com o botão de cancelar.
     agendadasDoContato(clienteId, lead.contatoId),
+    anotacoesDoContato(clienteId, lead.contatoId),
   ])
 
   /*
@@ -887,7 +890,12 @@ async function ColunaDaConversa({
   const selecionado = lead
 
   return (
-    <>
+    <ProvedorDeAnotacoes
+      iniciais={anotacoes}
+      antiga={lead.notas}
+      autor={equipe.find((membro) => membro.id === usuarioId)?.nome ?? null}
+      anotar={acaoAnotar.bind(null, clienteId, lead.contatoId)}
+    >
       <section className="flex min-h-0 min-w-0 flex-col border-r border-line">
         <CabecalhoDaConversa
           clienteId={clienteId}
@@ -1011,7 +1019,7 @@ async function ColunaDaConversa({
           nomesDosAnuncios={nomesDosAnuncios}
         />
       </ColunaDaFicha>
-    </>
+    </ProvedorDeAnotacoes>
   )
 }
 
@@ -1109,9 +1117,14 @@ function CabecalhoDaConversa({
 
   return (
     <>
-      <header className="flex min-h-[62px] items-center gap-3 border-b border-line px-4">
+      {/*
+        Quebra linha quando falta largura. Sem isso, em 1440 px com a coluna do
+        contato aberta, o nome encolhia a nada e os ícones da direita passavam
+        por baixo da coluna do contato, sem dar para clicar (visto na 5.9).
+      */}
+      <header className="flex min-h-[62px] flex-wrap items-center gap-x-3 gap-y-2 border-b border-line px-4 py-2">
         <Avatar nome={lead.nome} alerta={Boolean(lead.aguardando)} />
-        <div className="min-w-0 flex-1">
+        <div className="min-w-[140px] flex-1">
           <h2 className="truncate text-[13.5px] font-bold">{nome}</h2>
           {/*
             De quem é a conversa fica **embaixo do nome**, e não num botão à
@@ -1169,8 +1182,6 @@ function CabecalhoDaConversa({
           estado={lead.estadoEfetivo}
           etiquetas={etiquetas}
           etiquetasAplicadas={lead.etiquetasManuais.map((etiqueta) => etiqueta.id)}
-          notas={lead.notas}
-          salvarNotas={acaoSalvarNotas.bind(null, clienteId, lead.contatoId)}
           automacaoAtiva={lead.automacaoAtiva}
           temAutomacao={temAutomacao}
           fimDaJanela={fimDaJanela}
@@ -1367,13 +1378,10 @@ function DadosDoLead({
 
         <FunilDaConversa clienteId={clienteId} funis={funis} />
 
-        <Secao titulo="Anotação da equipe" vazio="Sem anotação.">
-          {lead.notas.trim() !== '' && (
-            <p className="rounded-[10px] border border-line bg-surface px-2.5 py-2 text-[12.5px] leading-5 whitespace-pre-line text-soft">
-              {lead.notas}
-            </p>
-          )}
-        </Secao>
+        <div className="mt-5">
+          <h3 className="mb-1.5 text-[12px] font-bold text-soft">Anotações da equipe</h3>
+          <ListaDeAnotacoes />
+        </div>
 
         <div className="mt-5">
           <h3 className="text-[12px] font-bold text-soft">O que o fluxo coletou</h3>

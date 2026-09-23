@@ -7,6 +7,8 @@ import { Avatar } from '@/components/inbox/avatar'
 import { EstagioDoContato } from '@/components/lead-crm/estagio-do-contato'
 import { ResponsavelDoContato } from '@/components/lead-crm/responsavel-do-contato'
 import { EditarTextoDoContato, DetalhesDaOportunidade } from '@/components/lead-crm/editores'
+import { EntradaDeAnotacao, ListaDeAnotacoes, ProvedorDeAnotacoes } from '@/components/inbox/anotacoes'
+import { LIMITE_DA_NOTA } from '@/core/flow/limites'
 import { TemperaturaDaOportunidade } from './temperatura-da-oportunidade'
 import { InteresseDaOportunidade } from './interesse-da-oportunidade'
 import { SeletorDeEtiquetas } from '@/components/etiquetas/seletor'
@@ -15,7 +17,7 @@ import { comoParado, type Temperatura } from '@/core/quadros'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import { origemDoContato } from '@/core/contatos/origem'
 import { horaExata, quando } from '@/lib/quando'
-import { acaoAbrirPainelDoContato } from '@/server/acoes-crm'
+import { acaoAbrirPainelDoContato, acaoAnotar } from '@/server/acoes-crm'
 
 type CartaoDoPainel = {
   id: string
@@ -319,26 +321,19 @@ export function PainelDoContato({
                 aplicadas={dados?.aplicadas ?? []}
               />
             </Secao>
-            <Secao
-              titulo="Anotação da equipe"
-              acao={
-                <EditarTextoDoContato
-                  clienteId={clienteId}
-                  contatoId={contatoId}
-                  tipo="notas"
-                  valor={ficha.notas}
-                  aoSalvar={(notas) =>
-                    setDados((atual) =>
-                      atual?.ficha ? { ...atual, ficha: { ...atual.ficha, notas } } : atual,
-                    )
-                  }
-                />
-              }
-            >
-              <p className="text-[13px] leading-6 break-words whitespace-pre-wrap text-muted">
-                {ficha.notas ||
-                  'Registre preferências e combinados importantes para o próximo atendimento.'}
-              </p>
+            <Secao titulo="Anotações da equipe">
+              {/* A mesma lista do Inbox e da ficha (5.9): anotar aqui aparece lá. */}
+              <ProvedorDeAnotacoes
+                iniciais={dados?.anotacoes ?? []}
+                antiga={ficha.notas}
+                autor={dados?.autor ?? null}
+                anotar={acaoAnotar.bind(null, clienteId, contatoId)}
+              >
+                <div className="mb-2">
+                  <EntradaDeAnotacao limite={LIMITE_DA_NOTA} />
+                </div>
+                <ListaDeAnotacoes vazio="Registre preferências e combinados importantes para o próximo atendimento." />
+              </ProvedorDeAnotacoes>
             </Secao>
           </>
         )}

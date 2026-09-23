@@ -1,5 +1,6 @@
 import 'server-only'
 import type { Evento, TipoDeEvento } from '@/core/crm'
+import type { Anotacao } from '@/core/anotacoes'
 import { db, ehIdInvalido } from '../db'
 
 /**
@@ -94,4 +95,64 @@ export async function linhaDoTempo(
       criadoEm: linha.criado_em,
     }),
   )
+}
+
+/**
+ * As anotações da equipe sobre um contato, da mais nova para a mais antiga
+ * (tarefa 5.9).
+ *
+ * São os eventos `nota` do diário, os mesmos que a linha do tempo da ficha já
+ * mostra: uma anotação é "o que aconteceu em volta da conversa, com autor e
+ * hora", e uma segunda tabela guardaria os mesmos campos. Ver o porquê em
+ * `acaoAnotarNoDiario`.
+ */
+export async function anotacoesDoContato(
+  clienteId: string,
+  contatoId: string,
+  limite = 50,
+): Promise<Anotacao[]> {
+  const { data, error } = await db()
+    .from('eventos_do_contato')
+    .select('id, dados, autor, criado_em')
+    .eq('client_id', clienteId)
+    .eq('contato_id', contatoId)
+    .eq('tipo', 'nota')
+    .order('criado_em', { ascending: false })
+    .limit(limite)
+
+  if (ehIdInvalido(error)) return []
+  if (error) throw new Error(`não deu para ler as anotações: ${error.message}`)
+
+  return (data as { id: string; dados: { texto?: unknown } | null; autor: string | null; criado_em: string }[]).map(
+    (linha) => ({
+      id: linha.id,
+      texto: typeof linha.dados?.texto === 'string' ? linha.dados.texto : '',
+      autor: linha.autor,
+      criadoEm: linha.criado_em,
+    }),
+  )
+}
+
+/**
+ * Grava uma anotação e **devolve o que gravou**, ou lança.
+ *
+ * Ao contrário de `anotar`, que engole o erro porque ali o evento é dado de
+ * apoio, aqui a anotação é a própria ação: a tela mostra a nota na hora e
+ * precisa saber se ela ficou, para dizer o erro e oferecer tentar de novo.
+ */
+export async function registrarAnotacao(
+  clienteId: string,
+  contatoId: string,
+  texto: string,
+  autor: string | null,
+): Promise<Anotacao> {
+  const { data, error } = await db()
+    .from('eventos_do_contato')
+    .insert({ client_id: clienteId, contato_id: contatoId, tipo: 'nota', dados: { texto }, autor })
+    .select('id, criado_em')
+    .single()
+
+  if (error) throw new Error(`não deu para guardar a anotação: ${error.message}`)
+  const linha = data as { id: string; criado_em: string }
+  return { id: linha.id, texto, autor, criadoEm: linha.criado_em }
 }

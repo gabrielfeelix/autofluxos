@@ -1,3 +1,5 @@
+import { diaEHora } from './datas'
+
 /**
  * O que a tela diz da última chamada de um webhook de entrada (tarefa 5.7).
  *
@@ -20,15 +22,5 @@ export function estadoDoWebhook(webhook: { ultimaEm: string | null; recusadaEm: 
   return { tipo: 'autenticada', em: ultimaEm as string }
 }
 
-/** "23/09 às 14:32", no fuso de Brasília, que é o de quem lê a tela. */
-export function dataDaChamada(iso: string): string {
-  const partes = new Intl.DateTimeFormat('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).formatToParts(new Date(iso))
-  const valor = (tipo: string) => partes.find((parte) => parte.type === tipo)?.value ?? ''
-  return `${valor('day')}/${valor('month')} às ${valor('hour')}:${valor('minute')}`
-}
+/** A hora da chamada, no mesmo formato das outras datas curtas da tela. */
+export const dataDaChamada = (iso: string) => diaEHora(iso)

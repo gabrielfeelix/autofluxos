@@ -921,18 +921,18 @@ Hoje o "Anotação da equipe" do Inbox guarda **uma** nota por contato. Passa a
 ser uma lista: cada anotação é uma entrada com autor, data e hora, e a caixa
 do Inbox continua sendo só a entrada ("+ Anotar").
 
-- [ ] **Passo 1:** tabela nova de anotações (uma linha por nota: contato,
+- [x] **Passo 1:** tabela nova de anotações (uma linha por nota: contato,
   conta, autor, texto, criada_em), com RLS e escopo como a `notas` de hoje.
   A nota antiga de cada contato vira a primeira entrada. Migration só no
   Supabase local; produção fica anotada no fim deste plano.
-- [ ] **Passo 2:** anotar **não recarrega a página**: a nota aparece na hora
+- [x] **Passo 2:** anotar **não recarrega a página**: a nota aparece na hora
   na barra lateral de detalhes do contato (à direita, no Inbox), de forma
   otimista, enquanto o servidor grava; se falhar, a entrada diz o erro e
   oferece tentar de novo, sem sumir.
-- [ ] **Passo 3:** a barra lateral lista as anotações da mais nova para a mais
+- [x] **Passo 3:** a barra lateral lista as anotações da mais nova para a mais
   antiga, com autor e "23/09 às 14:32". A ficha do contato mostra a mesma
   lista.
-- [ ] **Passo 4:** teste de integração (anotar, listar, outra conta não vê);
+- [x] **Passo 4:** teste de integração (anotar, listar, outra conta não vê);
   prints do Inbox antes e depois; commit `feat(inbox): anotações da equipe
   como histórico`.
 
