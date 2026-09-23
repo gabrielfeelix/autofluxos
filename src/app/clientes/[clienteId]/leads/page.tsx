@@ -22,6 +22,7 @@ import { FichaDeEtiqueta } from '@/components/etiquetas/ficha'
 import { CaixaDeSelecao, CaixaDeTodos, SelecaoDeContatos } from '@/components/lead/selecao'
 import { MenuDoContato } from '@/components/lead/menu-do-contato'
 import { ColunasDaTabela } from '@/components/lead/colunas-da-tabela'
+import { RolagemDaTabela } from '@/components/lead/rolagem-da-tabela'
 import { BarraDeContatos } from '@/components/contatos/barra-de-contatos'
 import { enderecoDosContatos } from '@/core/contatos/filtro'
 import { IconeDoQuadro, PopoverDoQuadro } from '@/components/quadros/popover-do-quadro'
@@ -306,17 +307,18 @@ async function AlcanceDoCsv({ filtro }: { filtro: Filtro }) {
 }
 
 /*
-  O que o botão "Colunas" oferece: uma por variável coletada nesta página,
-  depois as fixas. "Contato" fica de fora de propósito, tabela de contatos sem
+  O que o botão "Colunas" oferece: as principais (ligadas de saída) e uma por
+  variável coletada nesta página (desligadas de saída). "Contato" fica de fora de propósito, tabela de contatos sem
   a coluna de contato é uma tela que não responde mais nada.
 */
 async function ColunasDoFiltro({ filtro }: { filtro: Filtro }) {
   const { leads } = await ler(filtro)
   const colunasDisponiveis = [
-    ...colunasDosCampos(leads).map((coluna) => ({ chave: coluna, rotulo: rotuloDoCampo(coluna) || coluna })),
-    { chave: 'cliente', rotulo: 'Cliente' },
-    { chave: 'situacao', rotulo: 'Situação' },
-    { chave: 'ultima', rotulo: 'Última mensagem' },
+    { chave: 'etiquetas', rotulo: 'Etiquetas', padrao: true },
+    { chave: 'cliente', rotulo: 'Cliente', padrao: true },
+    { chave: 'situacao', rotulo: 'Situação', padrao: true },
+    { chave: 'ultima', rotulo: 'Última mensagem', padrao: true },
+    ...colunasDosCampos(leads).map((coluna) => ({ chave: coluna, rotulo: rotuloDoCampo(coluna) || coluna, padrao: false })),
   ]
   return <ColunasDaTabela clienteId={filtro.clienteId} colunas={colunasDisponiveis} />
 }
@@ -414,35 +416,29 @@ async function Tabela({ filtro, etiquetasDaConta }: { filtro: Filtro; etiquetasD
             passar do fim rola aqui dentro em vez de rolar a página.
           */}
           <div className="app-card flex min-h-0 flex-1 flex-col overflow-hidden">
-            {/*
-              `relative` é o que prende o `sr-only` do cabeçalho de Ações (que é
-              `absolute`) dentro da rolagem. Sem ele, o texto invisível ficava
-              na ponta direita da tabela e esticava a página inteira no celular.
-            */}
-            <div className="relative min-h-0 flex-1 overflow-auto">
-            <table id="tabela-de-contatos" className="w-full min-w-[820px] border-collapse text-left">
+            <RolagemDaTabela>
+            <table id="tabela-de-contatos" className="w-full min-w-[760px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-line">
-                  <th scope="col" className={`${FIXA_SELECAO} z-[3] px-3.5 py-2.5`}>
+                  <th scope="col" className={`${FIXA_SELECAO} z-[3] px-4 py-3`}>
                     <CaixaDeTodos ids={leads.map((lead) => lead.contatoId)} />
                   </th>
-                  <th
-                    scope="col"
-                    className={`${FIXA_CONTATO} z-[3] px-3.5 py-3.5 text-[10.5px] font-bold tracking-[0.06em] text-dim uppercase`}
-                  >
+                  <th scope="col" className={`${FIXA_CONTATO} ${CLASSE_DO_CABECALHO} z-[3]`}>
                     Contato
                   </th>
-                  {/* O rótulo, não a chave: `objetivo_aluno` em fonte de código
-                      era o mesmo problema do painel do Inbox, numa tabela. */}
-                  {colunas.map((coluna) => (
-                    <Cabecalho key={coluna} coluna={coluna}>
-                      {rotuloDoCampo(coluna) || coluna}
-                    </Cabecalho>
-                  ))}
+                  <Cabecalho coluna="etiquetas">Etiquetas</Cabecalho>
                   <Cabecalho coluna="cliente">Cliente</Cabecalho>
                   <Cabecalho coluna="situacao">Situação</Cabecalho>
                   <Cabecalho coluna="ultima">Última mensagem</Cabecalho>
-                  <th scope="col" className="w-10 px-2 py-2.5">
+                  {/* As variáveis coletadas saem escondidas (`hidden`) e quem
+                      liga é o botão Colunas. O rótulo, não a chave:
+                      `objetivo_aluno` em fonte de código não diz nada. */}
+                  {colunas.map((coluna) => (
+                    <Cabecalho key={coluna} coluna={coluna} opcional>
+                      {rotuloDoCampo(coluna) || coluna}
+                    </Cabecalho>
+                  ))}
+                  <th scope="col" className="w-12 px-2 py-3">
                     <span className="sr-only">Ações</span>
                   </th>
                 </tr>
@@ -452,70 +448,69 @@ async function Tabela({ filtro, etiquetasDaConta }: { filtro: Filtro; etiquetasD
                 <LinhaClicavel
                   key={lead.contatoId}
                   href={`/clientes/${clienteId}/leads/${lead.contatoId}`}
-                  className="group cursor-pointer border-b border-line transition last:border-0 hover:bg-surface has-[:checked]:bg-primary/[0.06]"
+                  className={`group cursor-pointer border-b border-line last:border-0 ${FUNDO_DA_LINHA}`}
                 >
-                  {/*
-                    `align-middle` e não `align-top`: a caixa estava colada no
-                    topo de uma linha de três alturas (nome, telefone,
-                    etiquetas), desalinhada de tudo que ela seleciona.
-                  */}
-                  <td className={`${FIXA_SELECAO} ${FUNDO_DA_FIXA} z-[2] px-3.5 py-3 align-middle`}>
+                  <td className={`${FIXA_SELECAO} ${FUNDO_DA_FIXA} z-[2] px-4 py-3`}>
                     <CaixaDeSelecao id={lead.contatoId} rotulo={lead.nome ?? lead.waId} />
                   </td>
-                  <td className={`${FIXA_CONTATO} ${FUNDO_DA_FIXA} z-[2] px-3.5 py-3`}>
-                    <div className="flex items-center gap-2.5">
+                  <td className={`${FIXA_CONTATO} ${FUNDO_DA_FIXA} z-[2] px-4 py-3`}>
+                    <div className="flex items-center gap-3">
                       <Avatar nome={lead.nome} />
                       <div className="min-w-0">
                         <Link
                           href={`/clientes/${clienteId}/leads/${lead.contatoId}`}
-                          className="block truncate text-[13px] font-bold transition hover:text-primary"
+                          className={`block truncate text-[13px] font-bold transition hover:text-primary ${lead.nome ? '' : 'text-dim'}`}
                         >
                           {lead.nome ?? 'sem nome'}
                         </Link>
-                        <span className="block whitespace-nowrap font-mono text-[10px] text-dim">{telefoneLegivel(lead.waId)}</span>
-                        <Etiquetas lista={lead.etiquetasManuais} />
+                        <span className="block whitespace-nowrap font-mono text-[10.5px] text-dim">{telefoneLegivel(lead.waId)}</span>
                       </div>
                     </div>
                   </td>
-                  {colunas.map((coluna) => (
-                    <td key={coluna} data-coluna={coluna} className="max-w-48 truncate px-3.5 py-3 text-[11.5px] text-muted">
-                      {lead.campos[coluna] || <span className="text-dim" aria-label="sem dado">·</span>}
-                    </td>
-                  ))}
-                  <td data-coluna="cliente" className="px-3.5 py-3">
+                  <td data-coluna="etiquetas" className="px-4 py-3">
+                    <Etiquetas lista={lead.etiquetasManuais} />
+                  </td>
+                  <td data-coluna="cliente" className="px-4 py-3">
                     {relacionamentos.get(lead.contatoId) && (
                       <SeloDoCliente r={relacionamentos.get(lead.contatoId)!} />
                     )}
                   </td>
-                  <td data-coluna="situacao" className="px-3.5 py-3">
+                  <td data-coluna="situacao" className="px-4 py-3">
                     {lead.aguardando ? (
                       <>
-                        <span className="inline-flex rounded-full border border-rose-400/25 bg-rose-400/[0.09] px-2.5 py-1 text-[10.5px] font-bold text-perigo">
-                          AGUARDANDO HUMANO
+                        <span className="flex items-center gap-1.5 text-[12px] font-semibold whitespace-nowrap text-perigo">
+                          <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-rose-500" />
+                          Esperando pessoa
                         </span>
-                        <span className="mt-1 block max-w-52 truncate text-[10.5px] text-dim" title={horaExata(lead.aguardando.desde)}>
+                        <span className="mt-0.5 block max-w-52 truncate text-[10.5px] text-dim" title={horaExata(lead.aguardando.desde)}>
                           {quando(lead.aguardando.desde)} · {lead.aguardando.motivo}
                         </span>
                       </>
                     ) : (
-                      <span className="inline-flex rounded-full border border-emerald-400/20 bg-emerald-400/[0.07] px-2.5 py-1 text-[10.5px] font-bold text-ok">
-                        COM O BOT
+                      <span className="flex items-center gap-1.5 text-[12px] font-semibold whitespace-nowrap text-muted">
+                        <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-emerald-500" />
+                        Com o bot
                       </span>
                     )}
                   </td>
-                  <td data-coluna="ultima" className="px-3.5 py-3 text-[11.5px] whitespace-nowrap text-muted">
+                  <td data-coluna="ultima" className="px-4 py-3 text-[12px] whitespace-nowrap text-muted">
                     {lead.ultimaEm ? (
                       <>
                         <span title={horaExata(lead.ultimaEm)}>{quando(lead.ultimaEm)}</span>
                         {lead.ultimoTexto && (
-                          <span className="block max-w-52 truncate text-[10.5px] text-dim">
+                          <span className="block max-w-56 truncate text-[10.5px] text-dim">
                             {lead.ultimaDirecao === 'saida' && `${lead.ultimaEntregue ? 'bot: ' : 'envio não confirmado: '}`}{lead.ultimoTexto}
                           </span>
                         )}
                       </>
-                    ) : 'sem mensagem'}
+                    ) : <span className="text-dim">sem mensagem</span>}
                   </td>
-                  <td className="px-2 py-3 align-middle">
+                  {colunas.map((coluna) => (
+                    <td key={coluna} data-coluna={coluna} className="hidden max-w-52 truncate px-4 py-3 text-[12px] text-muted">
+                      {lead.campos[coluna] || <span className="text-dim" aria-label="sem dado">·</span>}
+                    </td>
+                  ))}
+                  <td className="px-2 py-3">
                     <MenuDoContato
                       clienteId={clienteId}
                       contatoId={lead.contatoId}
@@ -528,7 +523,7 @@ async function Tabela({ filtro, etiquetasDaConta }: { filtro: Filtro; etiquetasD
                 ))}
               </tbody>
             </table>
-            </div>
+            </RolagemDaTabela>
           </div>
 
           {paginas > 1 && (
@@ -625,37 +620,52 @@ function Passo({ href, ativo, children }: { href: string; ativo: boolean; childr
 /*
   As duas primeiras colunas ficam presas na esquerda quando a tabela rola para
   o lado: sem elas, quem vai conferir um campo lá no fim perde de vista de quem
-  é a linha e qual caixa está marcando.
+  é a linha e qual caixa está marcando. A divisória só aparece com a tabela
+  rolada (`data-rolada`, ver `RolagemDaTabela`): parada no começo, ela só pesava.
 
-  A largura da primeira é fixa porque é ela que dá o `left` da segunda. Ocultar
-  coluna pelo botão "Colunas" não mexe aqui: as duas nunca são ocultáveis.
+  A largura da primeira é fixa porque é ela que dá o `left` da segunda.
 */
 const FIXA_SELECAO = 'sticky left-0 w-12 min-w-12 max-w-12 bg-panel'
-// No celular a coluna Contato encolhe (o nome trunca): com 260px, as duas fixas
+// No celular a coluna Contato encolhe (o nome trunca): com 240px, as duas fixas
 // tomavam quase a tela inteira e sobrava uma fresta para o resto da tabela.
 const FIXA_CONTATO =
-  'sticky left-12 w-[176px] min-w-[176px] max-w-[176px] md:w-auto md:max-w-none md:min-w-[260px] bg-panel shadow-[inset_-1px_0_0_var(--line)]'
-/**
- * Célula fixa precisa de fundo opaco nos três estados, senão o texto das
- * colunas que passam por baixo aparece através dela. O da linha marcada é a
- * mesma tinta da linha (`primary` a 6%), só que já misturada com o painel.
- */
+  'sticky left-12 w-[176px] min-w-[176px] max-w-[176px] md:w-auto md:max-w-[320px] md:min-w-[240px] bg-panel group-data-[rolada=sim]/rolagem:shadow-[inset_-1px_0_0_var(--line)]'
+
+/*
+  O fundo da linha e o das duas células fixas são **a mesma cor, trocada ao
+  mesmo tempo e sem transição**. Com `transition` só na linha, o fundo dela
+  entrava em 150 ms e o das fixas na hora: passar o mouse rápido deixava as
+  duas metades da linha em tempos diferentes. As fixas precisam de cor opaca
+  (senão o texto que rola por baixo aparece), por isso a mistura com o painel.
+  (Escritas por extenso de propósito: o Tailwind lê o texto do arquivo, e uma
+  classe montada com `${}` não existiria na folha de estilo.)
+*/
+const FUNDO_DA_LINHA =
+  'hover:bg-[color-mix(in_oklab,var(--surface)_75%,var(--panel))] has-[:checked]:bg-[color-mix(in_oklab,var(--primary)_6%,var(--panel))]'
 const FUNDO_DA_FIXA =
-  'group-hover:bg-surface group-has-[:checked]:bg-[color-mix(in_oklab,var(--primary)_6%,var(--panel))]'
+  'group-hover:bg-[color-mix(in_oklab,var(--surface)_75%,var(--panel))] group-has-[:checked]:bg-[color-mix(in_oklab,var(--primary)_6%,var(--panel))]'
+
+
+const CLASSE_DO_CABECALHO =
+  'px-4 py-3 text-[10.5px] font-bold tracking-[0.06em] whitespace-nowrap text-dim uppercase'
 
 /**
  * Uma coluna da tabela.
  *
- * `data-coluna` é o que o botão "Colunas" usa para esconder a coluna inteira
- * com uma regra de CSS. Sem ele, a escolha não teria como alcançar uma tabela
- * montada no servidor.
+ * `data-coluna` é o que o botão "Colunas" usa para mostrar ou esconder a coluna
+ * inteira com uma regra de CSS; `opcional` sai escondida do servidor.
  */
-function Cabecalho({ children, coluna }: { children: React.ReactNode; coluna?: string }) {
+function Cabecalho({
+  children,
+  coluna,
+  opcional = false,
+}: {
+  children: React.ReactNode
+  coluna: string
+  opcional?: boolean
+}) {
   return (
-    <th
-      data-coluna={coluna}
-      className="px-3.5 py-3.5 text-[10.5px] font-bold tracking-[0.06em] text-dim uppercase"
-    >
+    <th scope="col" data-coluna={coluna} className={`${CLASSE_DO_CABECALHO} ${opcional ? 'hidden' : ''}`}>
       {children}
     </th>
   )
@@ -678,11 +688,11 @@ function Avatar({ nome }: { nome: string | null }) {
  * fichas, com o nome da pessoa perdido no meio.
  */
 function Etiquetas({ lista }: { lista: Etiqueta[] }) {
-  if (lista.length === 0) return null
+  if (lista.length === 0) return <span className="text-[12px] text-dim" aria-label="sem etiqueta">·</span>
   const vistas = lista.slice(0, 2)
   const resto = lista.slice(2)
   return (
-    <span className="mt-1 flex flex-wrap gap-1">
+    <span className="flex max-w-[260px] items-center gap-1">
       {vistas.map((etiqueta) => (
         <FichaDeEtiqueta key={etiqueta.id} nome={etiqueta.nome} cor={etiqueta.cor} />
       ))}

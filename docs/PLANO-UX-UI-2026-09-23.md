@@ -1405,3 +1405,10 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   então toda automação recém-criada mostra "Ligada, mas sem versão publicada"
   até publicar. O aviso foi para a linha de baixo do nome, não para junto do
   interruptor: ao lado dele desalinhava a linha (que a 3.4 refaz).
+- 23/09, pedido do Gabriel depois da Fase 2: tabela de Contatos redesenhada no
+  tom da de Atividades. Começa enxuta (Contato, Etiquetas, Cliente, Situação,
+  Última mensagem); as variáveis coletadas saem `hidden` do servidor e se ligam
+  em Colunas (chave nova `autofluxos:colunas-visiveis:<id>`, guarda as
+  visíveis). Hover sem `transition` e com a mesma cor na linha e nas fixas (o
+  descompasso era a linha animar 150 ms e as fixas não). Divisória das fixas só
+  com a tabela rolada (`RolagemDaTabela`, `data-rolada`).
