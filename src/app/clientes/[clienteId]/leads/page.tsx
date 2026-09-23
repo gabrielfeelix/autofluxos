@@ -737,14 +737,31 @@ function Avatar({ nome }: { nome: string | null }) {
   )
 }
 
-/** As etiquetas manuais na linha do contato. Nada quando não há nenhuma. */
+/**
+ * As etiquetas manuais na linha do contato. Nada quando não há nenhuma.
+ *
+ * No máximo duas, e o resto vira "+N" com os nomes no `title`: com quatro
+ * etiquetas a linha ganhava quatro alturas e a tabela virava uma lista de
+ * fichas, com o nome da pessoa perdido no meio.
+ */
 function Etiquetas({ lista }: { lista: Etiqueta[] }) {
   if (lista.length === 0) return null
+  const vistas = lista.slice(0, 2)
+  const resto = lista.slice(2)
   return (
     <span className="mt-1 flex flex-wrap gap-1">
-      {lista.map((etiqueta) => (
+      {vistas.map((etiqueta) => (
         <FichaDeEtiqueta key={etiqueta.id} nome={etiqueta.nome} cor={etiqueta.cor} />
       ))}
+      {resto.length > 0 && (
+        <span
+          title={resto.map((etiqueta) => etiqueta.nome).join(', ')}
+          aria-label={`e mais ${resto.length}: ${resto.map((etiqueta) => etiqueta.nome).join(', ')}`}
+          className="inline-flex items-center rounded-full border border-line px-1.5 py-0.5 text-[10.5px] font-semibold text-muted"
+        >
+          +{resto.length}
+        </span>
+      )}
     </span>
   )
 }

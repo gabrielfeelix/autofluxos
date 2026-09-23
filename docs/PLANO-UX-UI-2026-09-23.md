@@ -601,15 +601,15 @@ export async function acaoAtribuirAtividade(
 
 ### Tarefa 2.2: etiquetas legíveis na tabela [N06]
 
-- [ ] **Passo 1:** achar o componente que desenha as etiquetas da linha
+- [x] **Passo 1:** achar o componente que desenha as etiquetas da linha
   (`grep -rn "etiqueta" src/app/clientes/[clienteId]/leads/page.tsx`) e o
   componente compartilhado `src/components/etiquetas/ficha.tsx`.
-- [ ] **Passo 2:** garantir contraste AA (4.5:1) entre texto e fundo para todas
+- [x] **Passo 2:** garantir contraste AA (4.5:1) entre texto e fundo para todas
   as cores de etiqueta: texto na cor escura da família, fundo na clara. Se o
   componente compartilhado já resolve, a tabela passa a usar ele.
-- [ ] **Passo 3:** mostrar no máximo 2 etiquetas por linha e "+N" com `title`
+- [x] **Passo 3:** mostrar no máximo 2 etiquetas por linha e "+N" com `title`
   listando as outras.
-- [ ] **Passo 4:** prints; commit `fix(contatos): etiquetas legíveis na tabela`.
+- [x] **Passo 4:** prints; commit `fix(contatos): etiquetas legíveis na tabela`.
 
 ### Tarefa 2.3: barra única de busca e filtros [H03]
 
@@ -1375,3 +1375,8 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   porque o `sr-only` do cabeçalho de Ações é `absolute` e o contêiner de
   rolagem não era `relative`; agora é. No celular a coluna Contato fixa tem
   176px (o nome trunca), senão as duas fixas tomavam a tela.
+- 23/09, tarefa 2.2: a causa estava na origem, `CLASSE_DA_COR`
+  (`src/core/etiquetas.ts`), que só tinha a versão do tema escuro; a correção
+  vale para toda ficha de etiqueta (tabela, ficha, Inbox, seletor, barra de
+  seleção). `dark:` do Tailwind passou a seguir `data-tema` (antes seguia o
+  sistema): corrige de quebra os três `dark:` que já existiam.

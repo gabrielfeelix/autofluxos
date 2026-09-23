@@ -1,6 +1,13 @@
 @import 'tailwindcss';
 
 /*
+ * `dark:` segue o tema do painel (`data-tema`), e não o do sistema: o padrão
+ * do Tailwind é `prefers-color-scheme`, e o painel é claro de propósito mesmo
+ * com o sistema no escuro (ver o comentário dos tokens logo abaixo).
+ */
+@custom-variant dark (&:where([data-tema='escuro'], [data-tema='escuro'] *));
+
+/*
  * **`--color-soft` faltava e ninguém tinha percebido.** `text-soft` aparece em
  * 34 lugares do painel, mas o token só existia em `:root`, e `:root` não gera
  * utilitário no Tailwind 4, só `@theme` gera. O resultado é que `text-soft`
@@ -1060,8 +1067,8 @@ textarea::placeholder {
  * o outro atravessando o desenho, e arrastar um bloco deixava o halo para trás
  * como um vulto perseguindo o cartão. Foi o relato literal de quem usa.
  *
- * A causa é que a posição muda por dois motivos diferentes — a seleção trocou,
- * ou o bloco/canvas se moveu — e a transição não sabe distinguir os dois.
+ * A causa é que a posição muda por dois motivos diferentes: a seleção trocou,
+ * ou o bloco/canvas se moveu. E a transição não sabe distinguir os dois.
  * Animar o segundo é sempre atraso.
  *
  * Então: nenhuma transição de posição (o halo gruda no bloco, inclusive no
