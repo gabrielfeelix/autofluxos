@@ -5,7 +5,7 @@ import { HorarioDeAtendimentoForm } from '@/components/cliente/horario'
 import { RetomadaDoBotForm } from '@/components/cliente/retomada-do-bot'
 import { acaoSalvarHorario, acaoSalvarRetomada } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
-import { listarConexoes } from '@/server/repos/conexoes'
+import { listarConexoesParaFluxos } from '@/server/repos/conexoes'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,7 +34,7 @@ export default async function Pagina({
 
   // As credenciais servem para escolher qual delas abre a agenda do CRM, quando
   // o cliente prefere puxar o expediente de lá em vez de digitar aqui.
-  const conexoes = (await listarConexoes(clienteId)).map((c) => ({ id: c.id, nome: c.nome }))
+  const conexoes = (await listarConexoesParaFluxos(clienteId)).map((c) => ({ id: c.id, nome: c.nome }))
 
   return (
     <AjustesShell cliente={cliente} ativa="horario">

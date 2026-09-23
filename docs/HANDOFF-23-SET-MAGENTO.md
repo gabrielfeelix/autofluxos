@@ -107,8 +107,9 @@
    falhou no Docker com `violates check constraint "lojas_estoque_exige_token"`.
    Conserto sem migration: `apagarConexao` (`src/server/repos/conexoes.ts`)
    desliga o estoque exato da loja que aponta para a Conexão antes do delete.
-   Sobra a fraqueza menor: essa Conexão ainda aparece no seletor de credencial
-   da IA.
+   A Conexão do token também saiu do seletor de credencial do editor e da
+   tela de horário, e a publicação recusa fluxo que aponte para ela
+   (`listarConexoesParaFluxos`). Na tela de Chaves ela continua.
 2. ~~Produto configurável mostra o menor preço como se fosse o preço.~~
    **Consertado em 23/set:** `maximum_price` entra na query e, quando é maior
    que o mínimo, o produto vem com `precoAPartirDe` no lugar de `preco` (sem

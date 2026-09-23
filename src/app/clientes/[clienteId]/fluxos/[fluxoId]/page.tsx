@@ -3,7 +3,7 @@ import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
 import { Editor } from '@/components/editor/editor'
 import { variaveisDoFluxo } from '@/core/flow/variaveis'
 import { acharCliente } from '@/server/repos/clientes'
-import { listarConexoes } from '@/server/repos/conexoes'
+import { listarConexoesParaFluxos } from '@/server/repos/conexoes'
 import { lojaDaConta } from '@/server/repos/lojas'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { membrosDaConta } from '@/server/repos/usuarios'
@@ -41,7 +41,7 @@ export default async function Pagina({
   const [cliente, fluxo, conexoes, quadros, etiquetas, fluxosDaConta, loja] = await Promise.all([
     acharCliente(clienteId),
     acharFluxo(fluxoId),
-    listarConexoes(clienteId),
+    listarConexoesParaFluxos(clienteId),
     listarQuadros(clienteId),
     listarEtiquetas(clienteId),
     listarFluxos(clienteId),

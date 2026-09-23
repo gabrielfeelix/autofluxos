@@ -66,6 +66,26 @@ export async function listarConexoes(clienteId: string): Promise<Conexao[]> {
   return (data as Linha[]).map(paraConexao)
 }
 
+/**
+ * As Conexões que um fluxo pode usar: todas, menos o token da loja.
+ *
+ * O token do Magento (0092) é uma Conexão comum no cofre, e sem este filtro
+ * aparecia no seletor de credencial do nó de API e da IA. Escolhido lá, ele
+ * sairia no `Authorization` para qualquer URL que o fluxo chamasse: um token
+ * de administrador da loja entregue a um terceiro. Na tela de Chaves ele
+ * continua aparecendo, porque apagar por lá é permitido.
+ */
+export async function listarConexoesParaFluxos(clienteId: string): Promise<Conexao[]> {
+  const [todas, { data, error }] = await Promise.all([
+    listarConexoes(clienteId),
+    db().from('lojas_integradas').select('conexao_id').eq('client_id', clienteId).not('conexao_id', 'is', null),
+  ])
+  if (ehIdInvalido(error)) return todas
+  if (error) throw new Error(`não deu para conferir o token da loja: ${error.message}`)
+  const daLoja = new Set((data as { conexao_id: string }[]).map((l) => l.conexao_id))
+  return todas.filter((c) => !daLoja.has(c.id))
+}
+
 export async function criarConexao(entrada: {
   clienteId: string
   nome: string

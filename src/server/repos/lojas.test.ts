@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { db } from '../db'
 import { criarCliente } from './clientes'
-import { apagarConexao, criarConexao } from './conexoes'
+import { apagarConexao, criarConexao, listarConexoes, listarConexoesParaFluxos } from './conexoes'
 import { desligarEstoqueExato, ligarEstoqueExato, ligarLoja, lojaDaConta, salvarLoja } from './lojas'
 
 /**
@@ -106,5 +106,17 @@ describe.skipIf(!temCredencial)('loja da conta', () => {
 
     expect((await lojaDaConta(clienteId))!.estoqueExato).toBe('msi')
     await apagarConexao(conexao.id, clienteId)
+  })
+
+  it('o token da loja some da lista dos fluxos e continua na tela de Chaves', async () => {
+    const comum = await criarConexao({ clienteId, nome: 'API da agenda', tipo: 'bearer', valor: 'outro-token' })
+    const token = await criarConexao({ clienteId, nome: 'Magento (somente leitura)', tipo: 'bearer', valor: 'token-de-teste' })
+    await ligarEstoqueExato(clienteId, { conexaoId: token.id, via: 'msi', estoqueId: 1 })
+
+    expect((await listarConexoesParaFluxos(clienteId)).map((c) => c.id)).toEqual([comum.id])
+    expect((await listarConexoes(clienteId)).map((c) => c.id)).toContain(token.id)
+
+    await apagarConexao(token.id, clienteId)
+    await apagarConexao(comum.id, clienteId)
   })
 })

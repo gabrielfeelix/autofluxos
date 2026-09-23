@@ -5,7 +5,7 @@ import { LIMITE_NOME_DO_FLUXO } from '@/core/flow/limites'
 import { validar, type Problema } from '@/core/flow/validar'
 import { validarPublicacao } from '@/core/validar-publicacao'
 import { db, ehIdInvalido, pareceUuid } from '../db'
-import { listarConexoes } from './conexoes'
+import { listarConexoesParaFluxos } from './conexoes'
 import { sequenciasQueUsamOFluxo } from './sequencias'
 import { listarEtiquetas } from './etiquetas'
 import { listarQuadros } from './quadros'
@@ -299,7 +299,9 @@ export async function publicar(
   // As conexões entram aqui, e não só no editor: uma aba aberta há uma hora
   // publicaria fluxo apontando para credencial já apagada. Recusa de tela é
   // conveniência; a que vale é esta.
-  const conexoes = (await listarConexoes(fluxo.clienteId)).map((c) => c.id)
+  // Sem o token da loja: ver `listarConexoesParaFluxos`. Aqui é a recusa que
+  // vale, a do seletor é conveniência.
+  const conexoes = (await listarConexoesParaFluxos(fluxo.clienteId)).map((c) => c.id)
   const cliente = await acharCliente(fluxo.clienteId)
   // As etapas entram pelo mesmo motivo das conexões: uma aba aberta há uma hora
   // publicaria fluxo apontando para etapa já apagada, e o bloco não moveria
