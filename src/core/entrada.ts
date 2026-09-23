@@ -34,3 +34,26 @@ export function podeLigar(
   }
   return { ok: true }
 }
+
+/**
+ * Publicação e entrada são duas perguntas (A03), e a tela responde as duas por
+ * escrito. O selo único (`ATIVA`/`RASCUNHO`/`DESLIGADO`) obrigava a deduzir uma
+ * pela outra, e "DESLIGADO" escondia que a versão continuava publicada.
+ */
+export function rotulosDoEstado(estado: {
+  /** Número da versão no ar, ou `null` quando nunca foi publicada. */
+  versao: number | null
+  ativo: boolean
+  /** O rascunho difere do publicado. Só o editor sabe. */
+  comMudancas?: boolean
+}): { publicacao: string; entrada: string } {
+  const publicacao =
+    estado.versao === null
+      ? 'Nunca publicada'
+      : `Publicada v${estado.versao}${estado.comMudancas ? ' · com mudanças' : ''}`
+  return { publicacao, entrada: estado.ativo ? 'Entrada ligada' : 'Entrada desligada' }
+}
+
+/** O que acontece ao desligar, dito na hora em que acontece. */
+export const AVISO_AO_DESLIGAR =
+  'Novas conversas não entram mais. Quem já está no meio continua na versão em que começou.'

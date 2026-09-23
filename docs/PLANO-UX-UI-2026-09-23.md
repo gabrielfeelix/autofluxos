@@ -721,14 +721,14 @@ publicada. Publique antes de ligar, senão ninguém recebe resposta.";
 
 ### Tarefa 3.3: publicação e entrada como duas informações [A03]
 
-- [ ] **Passo 1:** na linha da lista e no cabeçalho do editor, trocar o selo
+- [x] **Passo 1:** na linha da lista e no cabeçalho do editor, trocar o selo
   único (`RASCUNHO`/`ATIVA`/`DESLIGADO`) por dois textos curtos:
   "Publicada v3" ou "Nunca publicada" (e "Rascunho com mudanças" quando o
   rascunho difere do publicado, informação que o editor já tem) + "Entrada
   ligada" / "Entrada desligada".
-- [ ] **Passo 2:** ao desligar, anúncio: "Novas conversas não entram mais.
+- [x] **Passo 2:** ao desligar, anúncio: "Novas conversas não entram mais.
   Quem já está no meio continua na versão em que começou."
-- [ ] **Passo 3:** prints; commit `feat(automacoes): publicação e entrada aparecem separadas`.
+- [x] **Passo 3:** prints; commit `feat(automacoes): publicação e entrada aparecem separadas`.
 
 ### Tarefa 3.4: lista de fluxos enxuta com busca e filtros [A01, N09, A15]
 
@@ -1419,3 +1419,13 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   só aparece com IA contratada e bloco IA no desenho, e não na vitrine do link
   compartilhado (visita não tem consumo). Os dois avisos (IA e API) usavam
   `text-cyan-300`, ilegível no tema claro; passaram para `text-info`.
+- 23/09, tarefa 3.3: rótulos em `rotulosDoEstado` (`src/core/entrada.ts`); o
+  número da versão na lista vem de `numerosDasVersoes` (uma consulta para a
+  lista inteira). "Com mudanças" só no editor (a lista não compara desenho com
+  publicado). No editor as duas informações ficam numa pílula só, e o texto
+  ficou "Publicada v1 · com mudanças" (não "rascunho com mudanças") porque o
+  cabeçalho estourava a 1440px e empurrava o Publicar para fora; pelo mesmo
+  motivo, Organizar e Respostas viram só ícone abaixo de 1536px (`2xl`). O
+  anúncio de desligar é um cartão no rodapé por portal no `body` (dentro da
+  lista, no celular, o `fixed` ficava preso e nascia fora da tela) mais uma
+  região viva `sr-only`.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { podeLigar } from './entrada'
+import { podeLigar, rotulosDoEstado } from './entrada'
 
 /**
  * Ligar uma entrada (palavra-chave, evento, campanha ou a própria automação)
@@ -22,5 +22,31 @@ describe('podeLigar', () => {
     const r = podeLigar({ existe: false, publicado: true })
     expect(r).toMatchObject({ ok: false, motivo: 'destino_apagado' })
     if (!r.ok) expect(r.texto).toMatch(/Escolha outra/)
+  })
+})
+
+describe('rotulosDoEstado', () => {
+  it('publicada e ligada', () => {
+    expect(rotulosDoEstado({ versao: 3, ativo: true })).toEqual({
+      publicacao: 'Publicada v3',
+      entrada: 'Entrada ligada',
+    })
+  })
+
+  it('publicada e desligada continua dizendo a versão', () => {
+    expect(rotulosDoEstado({ versao: 1, ativo: false })).toEqual({
+      publicacao: 'Publicada v1',
+      entrada: 'Entrada desligada',
+    })
+  })
+
+  it('nunca publicada', () => {
+    expect(rotulosDoEstado({ versao: null, ativo: true }).publicacao).toBe('Nunca publicada')
+  })
+
+  it('rascunho com mudanças aparece junto da versão', () => {
+    expect(rotulosDoEstado({ versao: 4, ativo: true, comMudancas: true }).publicacao).toBe(
+      'Publicada v4 · com mudanças',
+    )
   })
 })

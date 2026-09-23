@@ -115,6 +115,7 @@ export default async function Pagina({
         inicial={fluxo.rascunho}
         canal={fluxo.canal}
         iaHabilitada={fluxo.iaHabilitada}
+        entradaLigada={fluxo.ativo}
         /* Contratar a Etapa 2 é decisão comercial da 4YU. Para a conta, o
            contrato é estado, ver o cabeçalho do editor. */
         podeContratarIa={ehAdminDaPlataforma(acesso.sessao)}

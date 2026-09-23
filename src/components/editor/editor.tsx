@@ -1,5 +1,6 @@
 'use client'
 
+import { rotulosDoEstado } from '@/core/entrada'
 import type { ConfigDaConta } from '@/core/retomada'
 import {
   addEdge,
@@ -342,6 +343,7 @@ export function Editor({
   publicadaInicial,
   versoesIniciais,
   iaHabilitada,
+  entradaLigada = true,
   podeContratarIa,
   contextoNegocio,
   temContextoDeNegocio,
@@ -393,6 +395,12 @@ export function Editor({
   inicial: Fluxo
   /** Etapa 2 é plano à parte: sem contratar, fluxo com nó de IA não publica. */
   iaHabilitada: boolean
+  /**
+   * A automação abre conversa nova (`flows.ativo`). Mora ao lado da publicação
+   * no cabeçalho (A03): publicada e desligada é um estado real, e sem isto o
+   * editor dizia "no ar" para quem tinha acabado de desligar.
+   */
+  entradaLigada?: boolean
   /**
    * Quem está olhando pode **contratar** a IA desta automação?
    *
@@ -1407,17 +1415,47 @@ export function Editor({
           desenho está, que é a mesma matéria do "salvo" e do "com IA" logo ao
           lado. A direita ficou só com o que se clica.
         */}
-        {publicada ? (
-          <span
-            className={`shrink-0 rounded-full border px-3 py-1 text-xs ${haNovidade ? 'border-amber-300/25 bg-amber-300/[0.08] text-aviso' : 'border-emerald-400/20 bg-emerald-400/[0.08] text-ok'}`}
-          >
-            {haNovidade ? 'Desenho difere do publicado' : `No ar · v${publicada.versao}`}
-          </span>
-        ) : (
-          <span className="shrink-0 rounded-full border border-dashed border-strong px-3 py-1 text-xs text-muted">
-            Nunca publicado
-          </span>
-        )}
+        {(() => {
+          const rotulo = rotulosDoEstado({
+            versao: publicada ? publicada.versao : null,
+            ativo: entradaLigada,
+            comMudancas: Boolean(publicada) && haNovidade,
+          })
+          return (
+            <span className="flex shrink-0 items-center overflow-hidden rounded-full border border-line text-xs">
+              <span
+                title={
+                  !publicada
+                    ? 'Ninguém conversa com este desenho até publicar.'
+                    : haNovidade
+                      ? `A v${publicada.versao} está no ar; o desenho mudou depois dela e as mudanças só valem ao publicar.`
+                      : `A v${publicada.versao} está no ar e é igual ao desenho.`
+                }
+                className={`px-3 py-1 ${
+                  !publicada
+                    ? 'text-muted'
+                    : haNovidade
+                      ? 'bg-amber-300/[0.08] text-aviso'
+                      : 'bg-emerald-400/[0.08] text-ok'
+                }`}
+              >
+                {rotulo.publicacao}
+              </span>
+              <span
+                title={
+                  entradaLigada
+                    ? 'Abre conversa nova. Liga e desliga na lista de automações.'
+                    : 'Não abre conversa nova. Quem já está no meio termina. Liga na lista de automações.'
+                }
+                className={`border-l border-line px-3 py-1 ${
+                  entradaLigada ? 'text-soft' : 'bg-amber-300/[0.08] text-aviso'
+                }`}
+              >
+                {rotulo.entrada}
+              </span>
+            </span>
+          )
+        })()}
 
         {!validacao.ok && (
           // Clicável porque o número sozinho não diz onde: quem apaga uma
@@ -1453,10 +1491,11 @@ export function Editor({
           onClick={arrumar}
           disabled={nodes.length < 2}
           title="Arrumar o desenho: blocos em colunas, da entrada para a saída"
-          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-strong px-2.5 py-1 text-xs text-muted transition hover:border-primary/50 hover:bg-primary/[0.08] hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-strong px-2.5 py-1.5 text-xs text-muted transition hover:border-primary/50 hover:bg-primary/[0.08] hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 2xl:py-1"
         >
           <span aria-hidden>⌗</span>
-          Organizar
+          {/* Só ícone abaixo de 1536px: publicação e entrada (A03) precisam do espaço. */}
+          <span className="sr-only 2xl:not-sr-only">Organizar</span>
         </button>
 
         {/*
@@ -1472,10 +1511,10 @@ export function Editor({
         <a
           href={`/clientes/${clienteId}/respostas`}
           title="Ver o que as pessoas responderam nas automações desta conta"
-          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-strong px-2.5 py-1 text-xs text-muted transition hover:border-primary/50 hover:bg-primary/[0.08] hover:text-primary"
+          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-strong px-2.5 py-1.5 text-xs text-muted transition hover:border-primary/50 hover:bg-primary/[0.08] hover:text-primary 2xl:py-1"
         >
           <span aria-hidden>☰</span>
-          Respostas
+          <span className="sr-only 2xl:not-sr-only">Respostas</span>
         </a>
 
         <a

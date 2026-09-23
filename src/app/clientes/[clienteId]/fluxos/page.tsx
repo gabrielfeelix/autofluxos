@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
-import { TEXTO_DA_RECUSA } from '@/core/entrada'
+import { rotulosDoEstado, TEXTO_DA_RECUSA } from '@/core/entrada'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import {
   EsqueletoDeAbas,
@@ -70,7 +70,11 @@ import { ETIQUETAS, MODELOS } from '@/exemplos/modelos'
 import { AbaDeTemplates, NovaAutomacao } from '@/components/fluxos/templates'
 import { ImportarJson } from '@/components/fluxos/importar-json'
 import { contatosPorCampanha, listarCampanhas } from '@/server/repos/campanhas'
-import { conversasEmAndamentoDeMuitos, listarFluxos } from '@/server/repos/fluxos'
+import {
+  conversasEmAndamentoDeMuitos,
+  listarFluxos,
+  numerosDasVersoes,
+} from '@/server/repos/fluxos'
 import { contarExecucoesPorFluxo } from '@/server/repos/metricas'
 import { contagensDeAutomacao } from '@/server/repos/contagens-de-automacao'
 
@@ -290,9 +294,14 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
    * Em lote, e depois da lista: são duas consultas para a tela inteira em vez de
    * duas por linha. Só a aba de fluxos mostra o interruptor, então só ela paga.
    */
-  const emAndamento = precisa('fluxos')
-    ? await conversasEmAndamentoDeMuitos(fluxos.map((f) => f.id))
-    : new Map<string, number>()
+  const [emAndamento, numeroDaVersao] = precisa('fluxos')
+    ? await Promise.all([
+        conversasEmAndamentoDeMuitos(fluxos.map((f) => f.id)),
+        numerosDasVersoes(
+          fluxos.map((f) => f.versaoPublicadaId).filter((id): id is string => id !== null),
+        ),
+      ])
+    : [new Map<string, number>(), new Map<string, number>()]
 
   const criarComCliente = acaoCriarFluxo.bind(null, cliente.id)
   const criarGatilhoComCliente = acaoCriarGatilho.bind(null, cliente.id, {})
@@ -588,23 +597,33 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                         {totalDeExecucoes === 1 ? 'resposta' : 'respostas'}
                       </Link>
                       {/*
-                        Três estados, e não dois. "Publicado" e "atendendo" são
-                        perguntas diferentes desde a 0036: um fluxo desligado
-                        continua com a versão dele no ar, ele só não abre
-                        conversa nova. Mostrar "ATIVA" nele seria mentir
-                        exatamente para quem acabou de desligar.
+                        Duas informações, e não um selo (A03). "Publicada" e
+                        "entrada" são perguntas diferentes desde a 0036: um
+                        fluxo desligado continua com a versão dele no ar, ele
+                        só não abre conversa nova. O selo único obrigava a
+                        deduzir uma pela outra; aqui as duas estão escritas.
                       */}
-                      <span
-                        className={`rounded-full border px-2.5 py-1 text-[10.5px] font-bold ${
-                          !fluxo.ativo
-                            ? 'border-amber-300/25 bg-amber-300/[0.08] text-aviso'
-                            : fluxo.versaoPublicadaId
-                              ? 'border-emerald-400/25 bg-emerald-400/[0.08] text-ok'
-                              : 'border-line bg-surface text-muted'
-                        }`}
-                      >
-                        {!fluxo.ativo ? 'DESLIGADO' : fluxo.versaoPublicadaId ? 'ATIVA' : 'RASCUNHO'}
-                      </span>
+                      {(() => {
+                        const rotulo = rotulosDoEstado({
+                          versao: fluxo.versaoPublicadaId
+                            ? (numeroDaVersao.get(fluxo.versaoPublicadaId) ?? null)
+                            : null,
+                          ativo: fluxo.ativo,
+                        })
+                        return (
+                          <span className="whitespace-nowrap text-[11px] text-dim">
+                            <span className={fluxo.versaoPublicadaId ? 'text-soft' : ''}>
+                              {rotulo.publicacao}
+                            </span>
+                            {' · '}
+                            <span
+                              className={`font-semibold ${fluxo.ativo ? 'text-ok' : 'text-aviso'}`}
+                            >
+                              {rotulo.entrada}
+                            </span>
+                          </span>
+                        )
+                      })()}
                     </span>
                     {/*
                       `relative` aqui não é enfeite: o link de cobertura é

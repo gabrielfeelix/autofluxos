@@ -1,6 +1,8 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
+import { createPortal } from 'react-dom'
+import { AVISO_AO_DESLIGAR } from '@/core/entrada'
 import { acaoAlternarFluxoAtivo } from '@/server/acoes'
 
 /**
@@ -49,6 +51,17 @@ export function InterruptorDeFluxo({
 }) {
   const [erro, setErro] = useState<string | null>(null)
   const [rodando, comecar] = useTransition()
+  /*
+   * Desligar diz o efeito na hora (A03): a linha só troca "Entrada ligada" por
+   * "desligada", e o que importa, quem está no meio continua, não cabe nela.
+   * Flutua no rodapé para não empurrar a linha, e some sozinho.
+   */
+  const [desligouAgora, setDesligouAgora] = useState(false)
+  useEffect(() => {
+    if (!desligouAgora) return
+    const t = setTimeout(() => setDesligouAgora(false), 8000)
+    return () => clearTimeout(t)
+  }, [desligouAgora])
 
   /*
    * A frase diz o que acontece com quem **já está** conversando, e é a RB-44:
@@ -87,6 +100,7 @@ export function InterruptorDeFluxo({
           comecar(async () => {
             const r = await acaoAlternarFluxoAtivo(clienteId, fluxoId, !ativo)
             if (!r.ok) setErro(r.erro ?? 'não deu para ligar/desligar')
+            else setDesligouAgora(ativo)
           })
         }}
         className={`relative h-[18px] w-8 shrink-0 rounded-full border transition disabled:cursor-not-allowed disabled:opacity-50 ${
@@ -103,6 +117,26 @@ export function InterruptorDeFluxo({
           }`}
         />
       </button>
+
+      {/* Sempre montada: região viva que nasce junto do texto não é lida. */}
+      <span role="status" className="sr-only">
+        {desligouAgora ? `“${nome}” desligada. ${AVISO_AO_DESLIGAR}` : ''}
+      </span>
+      {/*
+        O cartão visível vai para o `body`: dentro da lista, algum ancestral
+        prende o `fixed` e no celular o aviso nascia abaixo da tela. Só existe
+        depois de um clique, então nunca roda no servidor.
+      */}
+      {desligouAgora &&
+        createPortal(
+          <div
+            aria-hidden
+            className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-md rounded-xl border border-line bg-panel px-4 py-3 text-[12.5px] leading-5 text-ink shadow-lg"
+          >
+            <strong className="font-semibold">“{nome}” desligada.</strong> {AVISO_AO_DESLIGAR}
+          </div>,
+          document.body,
+        )}
 
       {erro && (
         <span role="alert" className="max-w-[220px] text-right text-[10.5px] leading-4 text-perigo">

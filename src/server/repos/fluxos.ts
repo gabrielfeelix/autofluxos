@@ -260,6 +260,19 @@ export async function listarVersoes(
 }
 
 /**
+ * O número de cada versão publicada, pelo id dela. A lista de automações diz
+ * "Publicada v3" (A03), e o fluxo só guarda o id da versão no ar.
+ */
+export async function numerosDasVersoes(ids: string[]): Promise<Map<string, number>> {
+  const validos = ids.filter(pareceUuid)
+  if (validos.length === 0) return new Map()
+
+  const { data, error } = await db().from('flow_versions').select('id, versao').in('id', validos)
+  if (error) throw new Error(`não deu para ler o número das versões: ${error.message}`)
+  return new Map((data as { id: string; versao: number }[]).map((v) => [v.id, v.versao]))
+}
+
+/**
  * Publica o desenho: guarda o rascunho como versão imutável e aponta o fluxo
  * para ela.
  *
