@@ -194,18 +194,18 @@ separadas, cada uma começando pela "tarefa zero" (ambiente local).
 - Modificar: `src/app/clientes/[clienteId]/leads/page.tsx:530`
 - Modificar: `src/app/clientes/[clienteId]/respostas/page.tsx:431`
 
-- [ ] **Passo 1:** procurar outros placeholders estragados pela limpeza:
+- [x] **Passo 1:** procurar outros placeholders estragados pela limpeza:
   `grep -rnE ">,</|\\? ',' :|\\|\\| ','" src --include=*.tsx`. Cada ocorrência em
   que a vírgula está sozinha como conteúdo de célula vazia entra nesta tarefa.
-- [ ] **Passo 2:** trocar o conteúdo por `·` com rótulo acessível:
+- [x] **Passo 2:** trocar o conteúdo por `·` com rótulo acessível:
 
 ```tsx
 {lead.campos[coluna] || <span className="text-dim" aria-label="sem dado">·</span>}
 ```
 
-- [ ] **Passo 3:** `npm run typecheck`.
-- [ ] **Passo 4:** print `contatos` e conferir a coluna "Indicado por".
-- [ ] **Passo 5:** commit `fix(contatos): célula vazia volta a mostrar ponto, não vírgula`.
+- [x] **Passo 3:** `npm run typecheck`.
+- [x] **Passo 4:** print `contatos` e conferir a coluna "Indicado por".
+- [x] **Passo 5:** commit `fix(contatos): célula vazia volta a mostrar ponto, não vírgula`.
 
 ### Tarefa 0.2: erro de hidratação do botão de notificações [N02]
 

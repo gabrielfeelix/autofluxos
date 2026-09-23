@@ -527,7 +527,7 @@ async function Tabela({
                   </td>
                   {colunas.map((coluna) => (
                     <td key={coluna} data-coluna={coluna} className="max-w-48 truncate px-3.5 py-3 text-[11.5px] text-muted">
-                      {lead.campos[coluna] || <span className="text-dim">,</span>}
+                      {lead.campos[coluna] || <span className="text-dim" aria-label="sem dado">·</span>}
                     </td>
                   ))}
                   <td data-coluna="cliente" className="px-3.5 py-3">

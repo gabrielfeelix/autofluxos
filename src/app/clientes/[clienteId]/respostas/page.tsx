@@ -428,7 +428,7 @@ async function Tabela({
                           className="max-w-48 truncate px-3.5 py-3 text-[11.5px] text-muted"
                           title={resposta.vars[coluna] ?? ''}
                         >
-                          {resposta.vars[coluna] || <span className="text-dim">,</span>}
+                          {resposta.vars[coluna] || <span className="text-dim" aria-label="sem dado">·</span>}
                         </td>
                       ))}
                     </LinhaClicavel>
