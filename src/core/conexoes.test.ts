@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { estadoDaConexao, idadeDoEvento, resumoDoCatalogo, seloDaConexao } from './conexoes'
+import { estadoDaConexao, idadeDoEvento, resumoDoCatalogo, seloDaConexao, testeDaChave } from './conexoes'
 
 const AGORA = new Date('2026-09-23T15:00:00Z')
 const dias = (n: number) => new Date(AGORA.getTime() + n * 86_400_000).toISOString()
@@ -105,5 +105,22 @@ describe('o resumo do catálogo', () => {
         { disponivel: false, estado: desligado },
       ]),
     ).toEqual({ conectadas: 1, total: 2 })
+  })
+})
+
+describe('testeDaChave', () => {
+  it('chave que não dá para testar diz isso, e não "nunca testada"', () => {
+    expect(testeDaChave({ testadaEm: null, testeOk: null }, false).texto).toBe('não dá para testar daqui')
+  })
+  it('testável sem data é nunca testada', () => {
+    expect(testeDaChave({ testadaEm: null, testeOk: null }, true)).toEqual({ texto: 'nunca testada', tom: 'neutro' })
+  })
+  it('data no horário de Brasília, e falha dita como falha', () => {
+    // 01:30 UTC do dia 24 é 22:30 do dia 23 em Brasília.
+    expect(testeDaChave({ testadaEm: '2026-09-24T01:30:00Z', testeOk: true }, true)).toEqual({
+      texto: 'testada em 23/09 às 22:30',
+      tom: 'bom',
+    })
+    expect(testeDaChave({ testadaEm: '2026-09-24T01:30:00Z', testeOk: false }, true).tom).toBe('ruim')
   })
 })

@@ -93,7 +93,7 @@ import {
   renomearFluxo,
   salvarRascunho,
 } from './repos/fluxos'
-import { apagarConexao, criarConexao, lerCredencial, trocarValor } from './repos/conexoes'
+import { apagarConexao, criarConexao, lerCredencial, marcarTeste, trocarValor } from './repos/conexoes'
 import { apagarContato, apagarContatos } from './repos/retencao'
 import { apagarRespostaRapida, criarRespostaRapida } from './repos/respostas-rapidas'
 import { alternarGatilho, apagarGatilho, criarGatilho } from './repos/gatilhos'
@@ -1976,12 +1976,14 @@ export async function acaoLigarAgenda(
   if (!estado.ok) return { ok: false, erro: estado.motivo }
 
   try {
-    await criarConexao({
+    const conexao = await criarConexao({
       clienteId,
       nome: NOME_DA_CREDENCIAL_DA_AGENDA,
       tipo: 'bearer',
       valor: chave.trim(),
     })
+    // Conferida antes de guardar: nasce testada.
+    await marcarTeste(conexao.id, clienteId, true)
   } catch (erro) {
     return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para guardar' }
   }
@@ -2019,6 +2021,8 @@ export async function acaoConferirAgenda(
   if (!credencial) return { ok: false, erro: 'esta credencial não é deste cliente' }
 
   const estado = await conferirChaveDaAgenda(credencial.valor)
+  await marcarTeste(conexaoId, clienteId, estado.ok)
+  revalidatePath(`/clientes/${clienteId}/ajustes/chaves`)
   if (!estado.ok) return { ok: false, erro: estado.motivo }
 
   /*
@@ -2094,15 +2098,20 @@ export async function acaoTrocarValorDaConexao(
   return { ok: true }
 }
 
-export async function acaoApagarConexao(clienteId: string, conexaoId: string) {
+export async function acaoApagarConexao(
+  clienteId: string,
+  conexaoId: string,
+): Promise<{ ok: boolean; erro?: string }> {
   const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
-  // Ligada direto a `<form action>`, que exige retorno vazio: a recusa para a
-  // ação e não vira valor. A tela não mostra a permissão que falta, e não
-  // deve: quem não pode não precisa saber que a capacidade existe (RB-42).
-  if (recusou(acesso)) return
+  if (recusou(acesso)) return acesso
 
-  await apagarConexao(conexaoId, clienteId)
+  try {
+    await apagarConexao(conexaoId, clienteId)
+  } catch (erro) {
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para excluir' }
+  }
   revalidatePath(`/clientes/${clienteId}/ajustes/chaves`)
+  return { ok: true }
 }
 
 /** O maior texto que a Cloud API aceita numa mensagem. */

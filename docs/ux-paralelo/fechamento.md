@@ -45,6 +45,8 @@ Detalhes e desvios de cada uma em `a1.md` (Fase 6 é do A1).
 - `0096_progresso_das_transmissoes.sql` (função só leitura, `service_role`):
   sem ela `progressoDas` cai na leitura antiga, uma por transmissão, que
   também corta em 1.000 destinatários.
+- `0097_teste_das_chaves.sql` (6.7, duas colunas anuláveis em `connections`):
+  sem ela a tela de Chaves funciona, só diz "nunca testada" para a agenda.
 
 ## Ambiente (armadilhas desta sessão)
 

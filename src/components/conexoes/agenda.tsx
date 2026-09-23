@@ -80,7 +80,7 @@ export function CartaoDaAgenda({
           title="Chama a agenda agora com a chave guardada e diz o que ela respondeu"
           className="app-secondary-button shrink-0 px-3 py-1.5 text-[11.5px] disabled:opacity-50"
         >
-          {conferindo ? 'conferindo…' : 'Conferir agora'}
+          {conferindo ? 'conferindo…' : 'Testar agora'}
         </button>
       </div>
 

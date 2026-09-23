@@ -195,3 +195,30 @@ export function resumoDoCatalogo(
     total: disponiveis.length,
   }
 }
+
+/**
+ * O estado de teste de uma chave de API, em texto de tela (tarefa 6.7).
+ *
+ * Só a da agenda é `testavel`: é a única cujo endereço conhecemos. Testar
+ * uma URL qualquer que a pessoa digitasse continua proibido (C08), então as
+ * outras dizem que não dá, em vez de fingir que nunca ninguém testou.
+ */
+export function testeDaChave(
+  chave: { testadaEm: string | null; testeOk: boolean | null },
+  testavel: boolean,
+): { texto: string; tom: 'bom' | 'ruim' | 'neutro' } {
+  if (!testavel) return { texto: 'não dá para testar daqui', tom: 'neutro' }
+  if (!chave.testadaEm) return { texto: 'nunca testada', tom: 'neutro' }
+  const quando = new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+    .format(new Date(chave.testadaEm))
+    .replace(', ', ' às ')
+  return chave.testeOk === false
+    ? { texto: `falhou no teste de ${quando}`, tom: 'ruim' }
+    : { texto: `testada em ${quando}`, tom: 'bom' }
+}

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { AjustesShell } from '@/components/design/ajustes-shell'
 import { Trilha } from '@/components/design/trilha'
 import { Dropdown } from '@/components/design/dropdown'
+import { BotaoPerigo } from '@/components/design/botao-perigo'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import {
   acaoApagarConexao,
@@ -18,6 +19,7 @@ import {
   NOME_DA_CREDENCIAL_DA_AGENDA,
   PREFIXO_DA_CHAVE,
 } from '@/core/agenda'
+import { testeDaChave } from '@/core/conexoes'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,7 +30,7 @@ export const dynamic = 'force-dynamic'
  * "ver o token atual", nem no HTML, nem numa chamada escondida, o tipo que o
  * servidor devolve (`Conexao`) não tem campo de valor. Trocar é gravar de novo.
  *
- * Isso é chato de propósito. A alternativa, mostrar o token para conferência ,
+ * Isso é chato de propósito. A alternativa, mostrar o token para conferência,
  * põe credencial de terceiro no HTML de uma página, no histórico do navegador e
  * em qualquer captura de tela.
  */
@@ -56,18 +58,22 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
    * dá para ter a chave certa guardada e nenhuma automação chamando nada. Sai do
    * rascunho de cada fluxo, que já está na mão, nenhuma consulta a mais.
    */
-  const usoPorConexao = new Map<string, { blocos: number; fluxos: number }>()
+  const usoPorConexao = new Map<string, { blocos: number; fluxos: number; nomes: string[] }>()
   for (const fluxo of fluxos) {
     const daqui = new Set<string>()
     for (const no of fluxo.rascunho.nodes) {
       if (no.type !== 'http' || !no.data.conexaoId) continue
-      const uso = usoPorConexao.get(no.data.conexaoId) ?? { blocos: 0, fluxos: 0 }
+      const uso = usoPorConexao.get(no.data.conexaoId) ?? { blocos: 0, fluxos: 0, nomes: [] }
       uso.blocos += 1
       usoPorConexao.set(no.data.conexaoId, uso)
       daqui.add(no.data.conexaoId)
     }
     // Contado uma vez por automação: três blocos no mesmo fluxo são um fluxo.
-    for (const id of daqui) usoPorConexao.get(id)!.fluxos += 1
+    for (const id of daqui) {
+      const uso = usoPorConexao.get(id)!
+      uso.fluxos += 1
+      uso.nomes.push(fluxo.nome)
+    }
   }
 
   const daAgenda = conexoes.find((c) => c.nome === NOME_DA_CREDENCIAL_DA_AGENDA) ?? null
@@ -76,7 +82,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
     <AjustesShell cliente={cliente} ativa="chaves">
       <main className="w-full max-w-[1280px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
 
-        <div className="mb-[30px] flex items-end justify-between gap-4">
+        <div className="mb-[30px] flex flex-wrap items-end justify-between gap-4">
           <div>
             <Trilha
           caminho={[
@@ -87,7 +93,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             <h1 className="text-[25px] font-bold tracking-[-0.02em]">Chaves de API</h1>
             <p className="mt-1.5 max-w-[560px] text-[13px] leading-6 text-dim">
               As chaves que os blocos de API usam para falar com os sistemas deste cliente. O valor
-              é guardado num cofre e <strong className="text-soft">nunca volta para esta tela</strong> ,
+              é guardado num cofre e <strong className="text-soft">nunca volta para esta tela</strong>:
               para trocar, grave de novo.
             </p>
           </div>
@@ -205,64 +211,83 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           </div>
         ) : (
           <ul className="space-y-2.5">
-            {conexoes.map((conexao) => (
-              <li key={conexao.id} className="app-card flex items-center gap-4 px-5 py-4">
-                <div className="min-w-0 flex-1">
+            {conexoes.map((conexao) => {
+              const uso = usoPorConexao.get(conexao.id)
+              const teste = testeDaChave(conexao, conexao.id === daAgenda?.id)
+              // Excluir diz o efeito com nome: "para de funcionar" sem dizer
+              // onde obriga a pessoa a abrir automação por automação.
+              const efeito = uso
+                ? `Os blocos de API que usam esta chave param de funcionar, em: ${uso.nomes.join(', ')}.`
+                : 'Nenhum bloco usa esta chave hoje, nada para de funcionar.'
+              return (
+              <li key={conexao.id} className="app-card flex flex-wrap items-center gap-x-4 gap-y-3 px-5 py-4">
+                <div className="min-w-0 flex-1 basis-[260px]">
                   <p className="text-[13.5px] font-bold">{conexao.nome}</p>
                   <p className="mt-0.5 font-mono text-[11px] text-dim">
                     {COMO_ENTRA[conexao.tipo](conexao.campo)}
                   </p>
                   {/*
-                    Cadastrada e usada são perguntas diferentes. Uma credencial
-                    que nenhum bloco aponta não faz nada, e a lista mostrava as
-                    duas exatamente igual.
+                    Cadastrada, usada e testada são perguntas diferentes. Uma
+                    credencial que nenhum bloco aponta não faz nada, e a lista
+                    mostrava as duas exatamente igual.
                   */}
                   <p className="mt-1 text-[11px] text-dim">
-                    {(() => {
-                      const uso = usoPorConexao.get(conexao.id)
-                      if (!uso) return <span className="text-aviso">nenhum bloco usa</span>
-                      return (
-                        <>
-                          usada em <strong className="text-soft">{uso.blocos}</strong>{' '}
-                          {uso.blocos === 1 ? 'bloco' : 'blocos'} de{' '}
-                          <strong className="text-soft">{uso.fluxos}</strong>{' '}
-                          {uso.fluxos === 1 ? 'automação' : 'automações'}
-                        </>
-                      )
-                    })()}
+                    {uso ? (
+                      <>
+                        usada em <strong className="text-soft">{uso.blocos}</strong>{' '}
+                        {uso.blocos === 1 ? 'bloco' : 'blocos'} de{' '}
+                        <strong className="text-soft">{uso.fluxos}</strong>{' '}
+                        {uso.fluxos === 1 ? 'automação' : 'automações'}
+                      </>
+                    ) : (
+                      <span className="text-aviso">nenhum bloco usa</span>
+                    )}
+                    {' · '}
+                    <span
+                      className={
+                        teste.tom === 'bom' ? 'text-ok' : teste.tom === 'ruim' ? 'text-perigo' : ''
+                      }
+                      title={
+                        teste.tom === 'neutro' && conexao.id !== daAgenda?.id
+                          ? 'Só a agenda tem endereço conhecido. Para testar esta, rode o bloco que a usa pelo Testar da automação.'
+                          : undefined
+                      }
+                    >
+                      {teste.texto}
+                    </span>
                   </p>
                 </div>
 
-                <ModalFormulario
-                  botao="Trocar valor"
-                  variante="secundario"
-                  titulo={`Trocar o valor de "${conexao.nome}"`}
-                  descricao="Os fluxos apontam para esta chave pelo id, então a troca vale na próxima conversa. Nada precisa ser republicado."
-                  rotuloEnviar="Guardar"
-                  action={acaoTrocarValorDaConexao.bind(null, clienteId, conexao.id)}
-                >
-                  <label className="block">
-                    <RotuloCampo>Novo valor</RotuloCampo>
-                    <input
-                      name="valor"
-                      type="password"
-                      required
-                      autoComplete="off"
-                      className="app-field px-3 py-2.5 font-mono text-[13px]"
-                    />
-                  </label>
-                </ModalFormulario>
-
-                <form action={acaoApagarConexao.bind(null, clienteId, conexao.id)}>
-                  <button
-                    className="rounded-lg border border-rose-400/30 px-2.5 py-1.5 text-[11px] font-semibold text-perigo transition hover:bg-rose-400/10"
-                    title="Apagar. Fluxo que usa esta chave para de funcionar."
+                <div className="flex items-center gap-2">
+                  <ModalFormulario
+                    botao="Trocar segredo"
+                    variante="secundario"
+                    titulo={`Trocar o segredo de "${conexao.nome}"`}
+                    descricao="Os blocos apontam para esta chave, não para o segredo: a troca vale na próxima conversa e nada precisa ser republicado. O segredo antigo deixa de valer aqui."
+                    rotuloEnviar="Guardar"
+                    action={acaoTrocarValorDaConexao.bind(null, clienteId, conexao.id)}
                   >
-                    Apagar
-                  </button>
-                </form>
+                    <label className="block">
+                      <RotuloCampo>Novo segredo</RotuloCampo>
+                      <input
+                        name="valor"
+                        type="password"
+                        required
+                        autoComplete="off"
+                        className="app-field px-3 py-2.5 font-mono text-[13px]"
+                      />
+                    </label>
+                  </ModalFormulario>
+
+                  <BotaoPerigo
+                    rotulo="Excluir"
+                    pergunta={`Excluir a chave "${conexao.nome}"? ${efeito} O segredo sai do cofre e não dá para desfazer.`}
+                    acao={acaoApagarConexao.bind(null, clienteId, conexao.id)}
+                  />
+                </div>
               </li>
-            ))}
+              )
+            })}
           </ul>
         )}
       </main>

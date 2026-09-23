@@ -1002,10 +1002,10 @@ do Inbox continua sendo só a entrada ("+ Anotar").
 
 ### Tarefa 6.7: chaves de API com ciclo claro [T06, C07, C08]
 
-- [ ] **Passo 1:** estado "testada em <data>" / "nunca testada" / "não dá para
+- [x] **Passo 1:** estado "testada em <data>" / "nunca testada" / "não dá para
   testar daqui"; "Trocar segredo" separado de "Excluir"; excluir lista os blocos
   que usam a chave. Nada de testar URL arbitrária (manter a regra C08).
-- [ ] **Passo 2:** commit `feat(chaves): testar, trocar e excluir com efeito explicado`.
+- [x] **Passo 2:** commit `feat(chaves): testar, trocar e excluir com efeito explicado`.
 
 ---
 

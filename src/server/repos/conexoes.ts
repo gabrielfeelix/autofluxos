@@ -25,6 +25,9 @@ export type Conexao = {
   tipo: TipoDeConexao
   /** Nome do cabeçalho ou do parâmetro. `null` no `bearer`. */
   campo: string | null
+  /** Último teste (0097). `null`: nunca testada, ou o banco ainda sem a coluna. */
+  testadaEm: string | null
+  testeOk: boolean | null
 }
 
 /** O que o resolvedor recebe, no servidor, para montar a requisição. */
@@ -40,9 +43,13 @@ type Linha = {
   nome: string
   tipo: TipoDeConexao
   campo: string | null
+  testada_em?: string | null
+  teste_ok?: boolean | null
 }
 
 const COLUNAS = 'id, client_id, nome, tipo, campo'
+/** Com o último teste (0097). Sem a migration, a leitura cai em `COLUNAS`. */
+const COLUNAS_COM_TESTE = `${COLUNAS}, testada_em, teste_ok`
 
 function paraConexao(linha: Linha): Conexao {
   return {
@@ -51,19 +58,21 @@ function paraConexao(linha: Linha): Conexao {
     nome: linha.nome,
     tipo: linha.tipo,
     campo: linha.campo,
+    testadaEm: linha.testada_em ?? null,
+    testeOk: linha.teste_ok ?? null,
   }
 }
 
 export async function listarConexoes(clienteId: string): Promise<Conexao[]> {
-  const { data, error } = await db()
-    .from('connections')
-    .select(COLUNAS)
-    .eq('client_id', clienteId)
-    .order('criado_em', { ascending: true })
+  const ler = (colunas: string) =>
+    db().from('connections').select(colunas).eq('client_id', clienteId).order('criado_em', { ascending: true })
+  let { data, error } = await ler(COLUNAS_COM_TESTE)
+  // Produção sem a 0097: a tela funciona, só não sabe do último teste.
+  if (error?.code === '42703') ({ data, error } = await ler(COLUNAS))
 
   if (ehIdInvalido(error)) return []
   if (error) throw new Error(`não deu para listar as conexões: ${error.message}`)
-  return (data as Linha[]).map(paraConexao)
+  return (data as unknown as Linha[]).map(paraConexao)
 }
 
 /**
@@ -158,6 +167,26 @@ export async function trocarValor(id: string, clienteId: string, valor: string):
     valor,
   })
   if (erroDoCofre) throw new Error(`não deu para trocar o valor: ${erroDoCofre.message}`)
+
+  // O valor novo nunca foi testado: o teste do antigo não vale para ele.
+  await marcarTeste(id, clienteId, null)
+}
+
+/**
+ * Grava o resultado do último teste (0097). `null` apaga, é o "nunca testada".
+ *
+ * Melhor esforço: sem a coluna (produção antes da 0097) não grava e não
+ * derruba quem chamou, porque o teste em si já respondeu à pessoa.
+ */
+export async function marcarTeste(id: string, clienteId: string, ok: boolean | null): Promise<void> {
+  const { error } = await db()
+    .from('connections')
+    .update({ testada_em: ok === null ? null : new Date().toISOString(), teste_ok: ok })
+    .eq('id', id)
+    .eq('client_id', clienteId)
+  if (error && error.code !== '42703' && error.code !== 'PGRST204') {
+    throw new Error(`não deu para gravar o teste da conexão: ${error.message}`)
+  }
 }
 
 export async function apagarConexao(id: string, clienteId: string): Promise<void> {
