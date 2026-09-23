@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AjudaDaTela, type PassoDaAjuda } from '@/components/design/ajuda-da-tela'
 import { AjustesShell } from '@/components/design/ajustes-shell'
@@ -10,6 +11,7 @@ import { comoDinheiro } from '@/core/crm'
 import { ESPECIES, NOME_DA_ESPECIE, estaAtivo } from '@/core/produtos'
 import { acaoCriarProduto, acaoDefinirPreco, acaoRenomearProduto } from '@/server/acoes-produtos'
 import { acharCliente } from '@/server/repos/clientes'
+import { lojaDaConta } from '@/server/repos/lojas'
 import { listarProdutos } from '@/server/repos/produtos'
 
 export const dynamic = 'force-dynamic'
@@ -71,9 +73,10 @@ const PASSOS_DA_AJUDA: PassoDaAjuda[] = [
  */
 export default async function Pagina({ params }: { params: Promise<{ clienteId: string }> }) {
   const { clienteId } = await params
-  const [cliente, produtos] = await Promise.all([
+  const [cliente, produtos, loja] = await Promise.all([
     acharCliente(clienteId),
     listarProdutos(clienteId),
+    lojaDaConta(clienteId),
   ])
   if (!cliente) notFound()
 
@@ -116,6 +119,29 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           O que a empresa vende, com preço, foto e link. O bot usa esta lista para dizer quanto custa e mandar
           o card do produto na conversa, e a equipe manda o mesmo card pelo Inbox.
         </p>
+
+        {loja?.ativa && (
+          /*
+           * Com Magento ligada, o bot e o Inbox buscam na loja, ao vivo, e esta
+           * lista não é preenchida com os produtos dela: 600 itens copiados
+           * seriam 600 preços e estoques envelhecendo. Ela segue sendo o
+           * vocabulário do funil.
+           */
+          <div className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[14px] border border-primary/25 bg-primary/[0.06] px-4 py-3 text-[12.5px] leading-6">
+            <span className="flex-1">
+              <strong>O catálogo desta conta vem da loja Magento.</strong>{' '}
+              <span className="text-muted">
+                O bot e o Inbox buscam os produtos lá, ao vivo. Esta lista serve ao funil de vendas.
+              </span>
+            </span>
+            <Link
+              href={`/clientes/${cliente.id}/ajustes/integracoes/magento`}
+              className="app-secondary-button px-3 py-1.5 text-[11.5px]"
+            >
+              Ver a loja
+            </Link>
+          </div>
+        )}
 
         <section className="app-card overflow-hidden">
           <header className="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
