@@ -945,22 +945,22 @@ do Inbox continua sendo só a entrada ("+ Anotar").
 **Arquivos:** `src/components/transmissoes/nova-transmissao.tsx:101-147`,
 `src/server/acoes-transmissoes.ts:441-466`, repositório de transmissões.
 
-- [ ] **Passo 1:** função de repositório `enviadasHojePelaConta(clienteId, agora)`
+- [x] **Passo 1:** função de repositório `enviadasHojePelaConta(clienteId, agora)`
   (conta destinatários de transmissões aceitas no dia, no mesmo critério que o
   limite usa) com teste de integração: `conta as de hoje e ignora as de ontem e as canceladas antes de sair`.
-- [ ] **Passo 2:** a página passa o valor real para `NovaTransmissao` (não mais
+- [x] **Passo 2:** a página passa o valor real para `NovaTransmissao` (não mais
   `0`) e a ação recalcula no servidor antes de criar; se estourar, devolve erro
   com os números ("Hoje já saíram 180 de 250. Esta lista tem 120.").
-- [ ] **Passo 3:** a prévia mostra "Cabem 70 hoje" / "Passa do limite de hoje em 50".
-- [ ] **Passo 4:** commit `fix(transmissoes): prévia usa o consumo real do dia`.
+- [x] **Passo 3:** a prévia mostra "Cabem 70 hoje" / "Passa do limite de hoje em 50".
+- [x] **Passo 4:** commit `fix(transmissoes): prévia usa o consumo real do dia`.
 
 ### Tarefa 6.2: progresso sem uma consulta por linha [C09]
 
-- [ ] **Passo 1:** trocar `progressoDa` por transmissão
+- [x] **Passo 1:** trocar `progressoDa` por transmissão
   (`transmissoes/page.tsx:89`) por uma consulta agregada `progressoDas(ids)`
   que devolve um mapa. Teste de integração comparando o resultado com o antigo
   para 3 transmissões.
-- [ ] **Passo 2:** commit `perf(transmissoes): progresso da lista numa consulta só`.
+- [x] **Passo 2:** commit `perf(transmissoes): progresso da lista numa consulta só`.
 
 ### Tarefa 6.3: lista com filtros, detalhe e próxima ação [C11, T02]
 
