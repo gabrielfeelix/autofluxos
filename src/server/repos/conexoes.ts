@@ -141,6 +141,18 @@ export async function trocarValor(id: string, clienteId: string, valor: string):
 }
 
 export async function apagarConexao(id: string, clienteId: string): Promise<void> {
+  // A Conexão pode ser o token do Magento (0092), e ela aparece na tela de
+  // Chaves de API como qualquer outra. O `on delete set null` sozinho esbarra
+  // no check `lojas_estoque_exige_token` e derruba o delete inteiro, então o
+  // estoque exato da loja é desligado antes. Filtrado pela conta: apagar pela
+  // conta errada não desliga nada e o delete abaixo não acha a linha.
+  const { error: erroDaLoja } = await db()
+    .from('lojas_integradas')
+    .update({ conexao_id: null, estoque_exato: 'desligado', estoque_id: null, atualizado_em: new Date().toISOString() })
+    .eq('conexao_id', id)
+    .eq('client_id', clienteId)
+  if (erroDaLoja) throw new Error(`não deu para desligar o estoque exato da loja: ${erroDaLoja.message}`)
+
   // O gatilho da migration apaga o segredo no cofre junto com a linha.
   const { error } = await db()
     .from('connections')

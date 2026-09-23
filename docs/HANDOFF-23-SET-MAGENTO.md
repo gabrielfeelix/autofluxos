@@ -75,9 +75,8 @@
 2. **Cloudflare contra a Vercel.** A PCYES tem Cloudflare na frente. Daqui
    (WSL) não barrou nem sem user-agent. **Da Vercel ninguém testou.** O primeiro
    clique em "Testar conexão" em produção é essa prova.
-3. **`src/server/repos/lojas.test.ts` nunca rodou.** Está na lista de
-   integração (`test/suites.ts`), mas o Docker está desligado nesta máquina
-   (integração WSL). Rode no stack local antes de confiar no repositório.
+3. ~~`src/server/repos/lojas.test.ts` nunca rodou.~~ **Rodou em 23/set**, no
+   Docker local com replay 0001 a 0092: 9 de 9 passam.
 4. **Todo o caminho do token é suposição sobre a API da Adobe**, testado só com
    rede falsa:
    - `GET /rest/V1/inventory/stock-resolver/website/base`: supõe que o código
@@ -99,18 +98,13 @@
 
 ## Bugs e fraquezas conhecidos, em ordem de gravidade
 
-1. **BUG: apagar a Conexão do token pela tela de Chaves de API falha.** O
-   token vira uma Conexão chamada "Magento (somente leitura)", que aparece em
-   Integrações › Chaves de API. Apagar por lá chama `apagarConexao`
-   (`src/server/acoes.ts:1997`). O `on delete set null` da 0092 tenta pôr
-   `conexao_id` em nulo com `estoque_exato = 'msi'`, e o check
-   `lojas_estoque_exige_token` recusa: o delete inteiro falha. **Não provado
-   em banco, deduzido do SQL; prove no Docker primeiro.** Conserto sugerido,
-   sem migration: em `apagarConexao` (ou na ação de `acoes.ts`), antes do
-   delete, zerar `estoque_exato`/`estoque_id` da loja que aponta para aquela
-   conexão. Alternativa: esconder essa Conexão da lista de Chaves e do seletor
-   de credencial da IA (hoje ela também aparece lá e alguém pode escolhê-la
-   para a agenda da Verandi).
+1. ~~BUG: apagar a Conexão do token pela tela de Chaves de API falha.~~
+   **Provado e consertado em 23/set.** O teste em `src/server/repos/lojas.test.ts`
+   falhou no Docker com `violates check constraint "lojas_estoque_exige_token"`.
+   Conserto sem migration: `apagarConexao` (`src/server/repos/conexoes.ts`)
+   desliga o estoque exato da loja que aponta para a Conexão antes do delete.
+   Sobra a fraqueza menor: essa Conexão ainda aparece no seletor de credencial
+   da IA.
 2. **Produto configurável (com variações) mostra o menor preço como se fosse
    o preço.** `price_range.minimum_price` é "a partir de". Uma cadeira com
    cores de preços diferentes vai ser anunciada pelo menor. Conserto sugerido:
@@ -130,10 +124,7 @@
 
 ## O que falta, em ordem
 
-### A. Consertar o bug 1 (antes de qualquer token real entrar)
-
-É a única coisa desta lista que pode travar uma ação do usuário em produção.
-Escreva o teste de integração que reproduz, veja falhar no Docker, conserte.
+### A. Consertar o bug 1: feito (ver acima)
 
 ### B. Task 10b: o card do produto (`loja_mostrar`)
 

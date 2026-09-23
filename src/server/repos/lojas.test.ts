@@ -1,7 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { db } from '../db'
 import { criarCliente } from './clientes'
-import { desligarEstoqueExato, ligarLoja, lojaDaConta, salvarLoja } from './lojas'
+import { apagarConexao, criarConexao } from './conexoes'
+import { desligarEstoqueExato, ligarEstoqueExato, ligarLoja, lojaDaConta, salvarLoja } from './lojas'
 
 /**
  * A loja da conta contra o banco de verdade (0092).
@@ -77,5 +78,33 @@ describe.skipIf(!temCredencial)('loja da conta', () => {
   it('desligar o estoque exato sem token é inofensivo', async () => {
     expect(await desligarEstoqueExato(clienteId)).toEqual({ conexaoId: null })
     expect((await lojaDaConta(clienteId))!.estoqueExato).toBe('desligado')
+  })
+
+  // O token do Magento é uma Conexão comum, e aparece na tela de Chaves de
+  // API. Apagar por lá não passa por `desconectarToken`: o `on delete set
+  // null` da 0092 esbarrava no check `lojas_estoque_exige_token` e o delete
+  // inteiro falhava.
+  it('apagar a Conexão do token pela tela de Chaves desliga o estoque exato', async () => {
+    const conexao = await criarConexao({ clienteId, nome: 'Magento (somente leitura)', tipo: 'bearer', valor: 'token-de-teste' })
+    await ligarEstoqueExato(clienteId, { conexaoId: conexao.id, via: 'msi', estoqueId: 1 })
+
+    await apagarConexao(conexao.id, clienteId)
+
+    const loja = await lojaDaConta(clienteId)
+    expect(loja!.estoqueExato).toBe('desligado')
+    expect(loja!.conexaoId).toBeNull()
+    expect(loja!.estoqueId).toBeNull()
+    const { data } = await db().from('connections').select('id').eq('id', conexao.id)
+    expect(data).toEqual([])
+  })
+
+  it('apagar Conexão de outra conta não mexe na loja desta', async () => {
+    const conexao = await criarConexao({ clienteId, nome: 'Magento (somente leitura)', tipo: 'bearer', valor: 'token-de-teste' })
+    await ligarEstoqueExato(clienteId, { conexaoId: conexao.id, via: 'msi', estoqueId: 1 })
+
+    await expect(apagarConexao(conexao.id, outroId)).resolves.toBeUndefined()
+
+    expect((await lojaDaConta(clienteId))!.estoqueExato).toBe('msi')
+    await apagarConexao(conexao.id, clienteId)
   })
 })
