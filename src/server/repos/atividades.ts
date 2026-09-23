@@ -153,50 +153,6 @@ export async function abertasDoCartao(clienteId: string, cartaoId: string): Prom
   return (data as unknown as LinhaDaAtividade[]).map(paraAtividade)
 }
 
-/**
- * A agenda da conta, respeitando o escopo de quem olha.
- *
- * O filtro entra **na consulta**, e não depois: filtrar em memória entregaria
- * a agenda inteira ao processo que não devia tê-la, e contaria errado qualquer
- * total. É o mesmo motivo de `oportunidadesAbertasDoContato`.
- */
-export async function agenda(
-  clienteId: string,
-  filtro: FiltroDeEscopo,
-  opcoes: { situacao?: SituacaoDaAtividade; limite?: number } = {},
-): Promise<Atividade[]> {
-  if (filtro.tipo === 'impossivel') return []
-
-  let consulta = db()
-    .from('atividades')
-    .select(COLUNAS)
-    .eq('client_id', clienteId)
-    .eq('situacao', opcoes.situacao ?? 'aberta')
-
-  if (filtro.tipo === 'proprios') {
-    consulta = consulta.eq('responsavel', filtro.usuarioId)
-  } else if (filtro.tipo === 'equipes') {
-    const { data: membros, error } = await db()
-      .from('equipe_membros')
-      .select('usuario_id')
-      .eq('client_id', clienteId)
-      .in('equipe_id', [...filtro.equipes])
-
-    if (error) throw new Error(`não deu para ler as equipes: ${error.message}`)
-    const usuarios = [...new Set((membros as { usuario_id: string }[]).map((m) => m.usuario_id))]
-    if (usuarios.length === 0) return []
-    consulta = consulta.in('responsavel', usuarios)
-  }
-
-  const { data, error } = await consulta
-    .order('prazo', { ascending: true, nullsFirst: false })
-    .limit(opcoes.limite ?? 200)
-
-  if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler a agenda: ${error.message}`)
-  return (data as unknown as LinhaDaAtividade[]).map(paraAtividade)
-}
-
 // ---------------------------------------------------------------------------
 // A agenda paginada: a tela de Atividades
 // ---------------------------------------------------------------------------
@@ -237,7 +193,7 @@ const ZERADAS: Record<RecorteDaAgenda, number> = { vencidas: 0, hoje: 0, proxima
 /**
  * Uma página da agenda, com o total e as contagens dos atalhos.
  *
- * **O escopo entra na consulta**, como em `agenda()`. E com escopo `proprios`
+ * **O escopo entra na consulta**, e não depois. E com escopo `proprios`
  * o `alcance` e o `responsavel` pedidos na URL são ignorados: quem só vê o
  * próprio trabalho não vê o do colega digitando o id dele.
  *

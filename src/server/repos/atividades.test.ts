@@ -5,7 +5,6 @@ import { criarCliente } from './clientes'
 import { acharOuCriarContato } from './conversas'
 import {
   abertasDoCartao,
-  agenda,
   atividadesDoContato,
   paginaDaAgenda,
   atribuirAtividade,
@@ -140,20 +139,23 @@ describe.skipIf(!temCredencial)('a régua da agenda lida do banco', () => {
   })
 
   it('a agenda respeita o escopo de quem olha', async () => {
-    const tudo = await agenda(clienteId, { tipo: 'tudo' })
-    expect(tudo.length).toBeGreaterThan(0)
+    const ver = (escopo: Parameters<typeof paginaDaAgenda>[1]) =>
+      paginaDaAgenda(clienteId, escopo, pessoa, { ...lerFiltroDaAgenda({}), alcance: 'equipe' }, Date.now())
+    const tudo = await ver({ tipo: 'tudo' })
+    expect(tudo.total).toBeGreaterThan(0)
 
     // Quem só vê o próprio trabalho não vê a atividade sem responsável.
-    const doVendedor = await agenda(clienteId, { tipo: 'proprios', usuarioId: pessoa })
-    expect(doVendedor.every((a) => a.responsavelId === pessoa)).toBe(true)
-    expect(doVendedor.length).toBeLessThan(tudo.length)
+    const doVendedor = await ver({ tipo: 'proprios', usuarioId: pessoa })
+    expect(doVendedor.itens.every((a) => a.responsavelId === pessoa)).toBe(true)
+    expect(doVendedor.total).toBeLessThan(tudo.total)
 
-    expect(await agenda(clienteId, { tipo: 'impossivel' })).toHaveLength(0)
+    expect((await ver({ tipo: 'impossivel' })).total).toBe(0)
   })
 
   it('não lê agenda de outra conta', async () => {
     const outro = (await criarCliente(`${marca} vizinho`)).id
-    expect(await agenda(outro, { tipo: 'tudo' })).toHaveLength(0)
+    const daOutra = await paginaDaAgenda(outro, { tipo: 'tudo' }, pessoa, { ...lerFiltroDaAgenda({}), alcance: 'equipe' }, Date.now())
+    expect(daOutra.total).toBe(0)
     expect(await atividadesDoContato(outro, contatoId)).toHaveLength(0)
     await db().from('clients').delete().eq('id', outro)
   })

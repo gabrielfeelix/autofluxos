@@ -1282,7 +1282,7 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   `src/core/atividades.ts`, e criar e reagendar usam a mesma. Com escopo
   `proprios`, reagendar/atribuir conferem o dono (`conferirDono`).
 - 23/09, tarefa 1.3: o botão "+ Nova atividade" entra junto com o diálogo, na
-  1.5 (botão sem ação na tela seria pior). `agenda()` continua existindo: a
-  ficha e o Início ainda a usam; o contador do menu passou a usar
+  1.5 (botão sem ação na tela seria pior). `agenda()` foi removida (só a
+  página e o menu a usavam); o contador do menu passou a usar
   `contagensDaAgenda` (contagem exata, mesma regra dos atalhos, sem o teto de
   200). O clique no número leva a `?recorte=vencidas` (ou `hoje`).
