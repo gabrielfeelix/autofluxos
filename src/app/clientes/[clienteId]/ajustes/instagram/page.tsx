@@ -6,6 +6,9 @@ import { acaoConectarInstagram, acaoDesligarInstagram } from '@/server/acoes-ins
 import { ESCOPOS, instagramConfigurado } from '@/server/instagram/conexao'
 import { acharCliente } from '@/server/repos/clientes'
 import { canalDoInstagram, diasAteVencer } from '@/server/repos/canais-instagram'
+import { ultimaMensagemRecebida } from '@/server/repos/ultimos-eventos'
+import { CamadasDaConexao } from '@/components/conexoes/camadas'
+import { estadoDaConexao } from '@/core/conexoes'
 
 export const dynamic = 'force-dynamic'
 
@@ -62,7 +65,15 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const canal = await canalDoInstagram(clienteId)
+  const [canal, ultimaMensagem] = await Promise.all([
+    canalDoInstagram(clienteId),
+    ultimaMensagemRecebida(clienteId),
+  ])
+  const estado = estadoDaConexao({
+    tipo: 'instagram',
+    conta: canal ? { igUsername: canal.igUsername, tokenExpiraEm: canal.tokenExpiraEm } : null,
+    ultimoEvento: ultimaMensagem,
+  })
   const configurado = instagramConfigurado()
   const dias = diasAteVencer(canal?.tokenExpiraEm ?? null)
   const aviso = resultado ? RESULTADOS[resultado] : undefined
@@ -94,6 +105,14 @@ export default async function Pagina({
             {aviso.texto}
           </p>
         )}
+
+        <div className="mb-5">
+          <CamadasDaConexao
+            clienteId={cliente.id}
+            estado={estado}
+            rotuloDoEvento="Última mensagem recebida na conta"
+          />
+        </div>
 
         {canal ? (
           <section className="app-card px-5 py-5">

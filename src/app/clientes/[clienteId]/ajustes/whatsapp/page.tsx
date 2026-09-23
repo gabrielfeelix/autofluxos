@@ -28,6 +28,9 @@ import { coexistenciaDoCliente } from '@/server/repos/coexistencia'
 import { fluxoDoPapel, listarCanais } from '@/server/repos/conversas'
 import { listarFluxos } from '@/server/repos/fluxos'
 import { whatsappConfigurado } from '@/server/whatsapp/conexao'
+import { CamadasDaConexao } from '@/components/conexoes/camadas'
+import { estadoDaConexao } from '@/core/conexoes'
+import { ultimaMensagemRecebida } from '@/server/repos/ultimos-eventos'
 
 export const dynamic = 'force-dynamic'
 
@@ -99,12 +102,21 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [fluxos, canais, coexistencia, cabecalhos] = await Promise.all([
+  const [fluxos, todosOsCanais, coexistencia, cabecalhos, ultimaMensagem] = await Promise.all([
     listarFluxos(cliente.id),
     listarCanais(cliente.id),
     coexistenciaDoCliente(cliente.id),
     headers(),
+    ultimaMensagemRecebida(cliente.id),
   ])
+  // A conta do Instagram mora na mesma tabela; aqui aparecia como "sem número".
+  const canais = todosOsCanais.filter((c) => c.provider !== 'instagram')
+  // As quatro camadas (6.4): cadastro, último evento e falha conhecida.
+  const estado = estadoDaConexao({
+    tipo: 'whatsapp',
+    numeros: canais.map((c) => ({ displayPhoneNumber: c.displayPhoneNumber, desembarcadoEm: c.desembarcadoEm })),
+    ultimoEvento: ultimaMensagem,
+  })
 
   // `erro` cobre os dois que a rota manda para `/painel?erro=`; quem chegar
   // aqui com um deles na URL vê o mesmo texto.
@@ -158,6 +170,14 @@ export default async function Pagina({
         <h1 className="mb-5 text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">
           WhatsApp
         </h1>
+
+        <div className="mb-5">
+          <CamadasDaConexao
+            clienteId={cliente.id}
+            estado={estado}
+            rotuloDoEvento="Última mensagem recebida na conta"
+          />
+        </div>
 
         {aviso && (
           <p

@@ -1,3 +1,5 @@
+import { estadoDaConexao } from './conexoes'
+
 /**
  * O que o bloco "Precisa de você" do Início lista, e em que ordem.
  *
@@ -17,9 +19,9 @@
  *
  * **Falha é só o que se sabe que quebra**, nunca ausência de tráfego: canal
  * quieto há três dias pode ser só um negócio pequeno numa semana fraca, e
- * chamar isso de falha ensina a ignorar o aviso (regra do H05). Por isso aqui
- * entram só o `desembarcadoEm` do WhatsApp (o envio falha na Meta enquanto ele
- * existir) e o token do Instagram que já venceu.
+ * chamar isso de falha ensina a ignorar o aviso (regra do H05). A regra de
+ * "falha conhecida" é a de `estadoDaConexao` (`core/conexoes.ts`), a mesma das
+ * telas de conexão: número desembarcado e token do Instagram vencido.
  *
  * Cada linha é link para a lista **já filtrada** com a mesma regra que contou
  * o número, para quem clica em "12 atividades vencidas" achar 12 do outro lado.
@@ -106,25 +108,26 @@ export function pendenciasDoInicio(entrada: EntradaDasPendencias): Pendencia[] {
 }
 
 function falhaDoCanal(canal: CanalParaPendencia, agora: number): Pendencia | null {
-  if (canal.provider === 'instagram') {
-    const vence = canal.tokenExpiraEm ? Date.parse(canal.tokenExpiraEm) : Number.NaN
-    if (Number.isNaN(vence) || vence > agora) return null
-    const nome = canal.igUsername ? `@${canal.igUsername}` : 'do Instagram'
-    return {
-      chave: `instagram-${canal.igUsername ?? ''}`,
-      texto: `Autorização ${nome} venceu: o direct não responde até reconectar`,
-      href: '/ajustes/instagram',
-      tom: 'falha',
-    }
+  const instagram = canal.provider === 'instagram'
+  const estado = estadoDaConexao(
+    instagram
+      ? {
+          tipo: 'instagram',
+          conta: { igUsername: canal.igUsername, tokenExpiraEm: canal.tokenExpiraEm },
+          ultimoEvento: null,
+        }
+      : {
+          tipo: 'whatsapp',
+          numeros: [{ displayPhoneNumber: canal.displayPhoneNumber, desembarcadoEm: canal.desembarcadoEm }],
+          ultimoEvento: null,
+        },
+    new Date(agora),
+  )
+  if (!estado.falha) return null
+  return {
+    chave: instagram ? `instagram-${canal.igUsername ?? ''}` : `whatsapp-${canal.displayPhoneNumber ?? ''}`,
+    texto: estado.falha.replace(/\.$/, ''),
+    href: estado.proximaAcao?.href ?? (instagram ? '/ajustes/instagram' : '/ajustes/whatsapp'),
+    tom: 'falha',
   }
-  if (canal.desembarcadoEm) {
-    const numero = canal.displayPhoneNumber ?? ''
-    return {
-      chave: `whatsapp-${numero}`,
-      texto: `WhatsApp ${numero} desconectado do celular: nada é enviado até reconectar`.replace(/\s+/g, ' '),
-      href: '/ajustes/whatsapp',
-      tom: 'falha',
-    }
-  }
-  return null
 }

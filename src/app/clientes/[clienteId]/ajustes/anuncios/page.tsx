@@ -8,6 +8,9 @@ import { acharCliente } from '@/server/repos/clientes'
 import { listarConexoes } from '@/server/repos/conexoes'
 import { paginasDaConta } from '@/server/repos/paginas-de-lead'
 import { NOME_DA_CONEXAO_DE_ADS } from '@/server/token-de-anuncios'
+import { ultimaChegadaDeAnuncio } from '@/server/repos/ultimos-eventos'
+import { CamadasDaConexao } from '@/components/conexoes/camadas'
+import { estadoDaConexao } from '@/core/conexoes'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,14 +44,23 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [conexoes, paginas] = await Promise.all([
+  const [conexoes, paginas, ultimaChegada] = await Promise.all([
     listarConexoes(clienteId),
     paginasDaConta(clienteId),
+    ultimaChegadaDeAnuncio(clienteId),
   ])
 
   const temToken = conexoes.some(
     (c) => c.nome.trim().toLowerCase() === NOME_DA_CONEXAO_DE_ADS && c.tipo === 'bearer',
   )
+  const estado = estadoDaConexao({
+    tipo: 'anuncios',
+    paginas: paginas.length,
+    temToken,
+    // A inscrição da página no webhook não é gravada hoje: desconhecida.
+    webhookInscrito: null,
+    ultimoEvento: ultimaChegada,
+  })
 
   return (
     <AjustesShell cliente={cliente} ativa="anuncios">
@@ -79,6 +91,14 @@ export default async function Pagina({
             como lead, com o telefone e a campanha de onde veio, sem planilha e sem
             intermediário no meio.
           </p>
+        </div>
+
+        <div className="mb-4">
+          <CamadasDaConexao
+            clienteId={cliente.id}
+            estado={estado}
+            rotuloDoEvento="Último contato vindo de anúncio"
+          />
         </div>
 
         {/*

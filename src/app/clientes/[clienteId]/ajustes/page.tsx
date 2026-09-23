@@ -4,7 +4,8 @@ import { AjustesShell } from '@/components/design/ajustes-shell'
 import { ICONE_DA_TELA } from '@/components/design/icones-de-ajustes'
 import { acharPlano } from '@/core/planos'
 import { estaAtivo } from '@/core/produtos'
-import { saudeDoInstagram, saudeDoWhatsApp } from '@/core/saude-da-conexao'
+import { resumoDoCatalogo } from '@/core/conexoes'
+import { catalogoDeIntegracoes } from '@/server/catalogo-de-integracoes'
 import type { ReactNode } from 'react'
 import { ApagarCliente } from '@/components/cliente/apagar'
 import { acaoApagarCliente } from '@/server/acoes'
@@ -22,14 +23,10 @@ import { TrilhaDeConfiguracao } from '@/components/cliente/trilha-de-configuraca
 import { listarRespostasRapidas } from '@/server/repos/respostas-rapidas'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { planoDaConta } from '@/server/repos/plano'
-import { lojaDaConta } from '@/server/repos/lojas'
 import { listarProdutos } from '@/server/repos/produtos'
 import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 
 export const dynamic = 'force-dynamic'
-
-/** Quantas integrações o catálogo conhece, contando o Telegram, que é "em breve". */
-const TOTAL_DE_INTEGRACOES = 5
 
 /**
  * O índice da configuração.
@@ -53,7 +50,7 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [conexoes, canais, respostasRapidas, acervo, estrago, etiquetas, contaDoInstagram, paginasDeLead, plano, recursos, fluxos, contatos, loja, listaDeProdutos] =
+  const [conexoes, canais, respostasRapidas, acervo, estrago, etiquetas, contaDoInstagram, paginasDeLead, plano, recursos, fluxos, contatos, catalogo, listaDeProdutos] =
     await Promise.all([
       listarConexoes(cliente.id),
       listarCanais(cliente.id),
@@ -67,7 +64,7 @@ export default async function Pagina({
       recursosDaConta(cliente.id),
       listarFluxos(cliente.id),
       contarLeads(cliente.id),
-      lojaDaConta(cliente.id),
+      catalogoDeIntegracoes(cliente.id),
       listarProdutos(cliente.id),
     ])
   const produtos = listaDeProdutos.filter(estaAtivo).length
@@ -81,7 +78,8 @@ export default async function Pagina({
    * "1 número", em verde, exatamente igual a um número funcionando. Quem contava
    * a verdade era a tela de dentro, que ninguém abre sem motivo.
    */
-  const saudeDoWhats = saudeDoWhatsApp(canais)
+  const estadoDe = (chave: string) => catalogo.find((i) => i.chave === chave)?.estado
+  const whatsappComFalha = Boolean(estadoDe('whatsapp')?.falha)
 
   const trilha = trilhaDeConfiguracao({
     empresa: cliente,
@@ -92,19 +90,14 @@ export default async function Pagina({
     temContato: contatos > 0,
   })
   const faltaNaTrilha = trilha.some((passo) => passo.estado !== 'feito')
-  const saudeDoIg = saudeDoInstagram(contaDoInstagram)
+  const autorizacaoDoIg = estadoDe('instagram')?.autorizacao
 
   /*
-   * Quantas das cinco do catálogo estão de pé. O número mora aqui e a lista
-   * mora na tela de Integrações, contar dos dois lados divergiria no dia em
-   * que uma entrasse.
+   * Quantas do catálogo estão configuradas, contadas da mesma lista que a
+   * tela de Integrações desenha (C02). O Telegram, que não dá para ligar, fica
+   * fora do total.
    */
-  const conectadas = [
-    saudeDoWhats !== 'nao-ligada',
-    saudeDoIg !== 'nao-ligada',
-    paginasDeLead.length > 0,
-    conexoes.length > 0,
-  ].filter(Boolean).length
+  const { conectadas, total: totalDeIntegracoes } = resumoDoCatalogo(catalogo)
 
   // A equipe fala Postgres direto e pode estourar sem `DATABASE_URL`. Um índice
   // de configurações não pode deixar de abrir por causa de um selo.
@@ -191,7 +184,7 @@ export default async function Pagina({
             titulo="WhatsApp"
             descricao="Conecte seu número e escolha como receber e responder às mensagens."
             estado={
-              saudeDoWhats === 'reconectar' ? (
+              whatsappComFalha ? (
                 <Selo tom="perigo">reconectar</Selo>
               ) : (
                 <Selo tom={canais.length === 0 ? 'alerta' : 'ok'}>
@@ -208,9 +201,9 @@ export default async function Pagina({
             titulo="Instagram"
             descricao="Ligar o direct de uma conta profissional para as mensagens chegarem no mesmo Inbox."
             estado={
-              saudeDoIg === 'reconectar' ? (
+              autorizacaoDoIg === 'vencida' ? (
                 <Selo tom="perigo">reconectar</Selo>
-              ) : saudeDoIg === 'vencendo' ? (
+              ) : autorizacaoDoIg === 'vence_em_breve' ? (
                 <Selo tom="alerta">vence em breve</Selo>
               ) : (
                 <Selo tom={contaDoInstagram ? 'ok' : 'neutro'}>
@@ -298,7 +291,7 @@ export default async function Pagina({
             titulo="Catálogo"
             descricao="Produtos que a equipe manda no Inbox e o bot consulta."
             estado={
-              loja?.ativa ? (
+              estadoDe('magento')?.configurado ? (
                 <Selo tom="ok">vem da Magento</Selo>
               ) : (
                 <Selo tom={produtos === 0 ? 'neutro' : 'ok'}>
@@ -333,7 +326,7 @@ export default async function Pagina({
             descricao="O que dá para ligar nesta conta, o que já está ligado e o que ainda está por vir."
             estado={
               <Selo tom="neutro">
-                {`${conectadas} de ${TOTAL_DE_INTEGRACOES}`}
+                {`${conectadas} de ${totalDeIntegracoes}`}
               </Selo>
             }
           />

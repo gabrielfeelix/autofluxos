@@ -20,6 +20,8 @@ import { contagensDaAgenda } from '@/server/repos/atividades'
 import { lerFiltroDaAgenda } from '@/core/atividades'
 import { comoDuracao } from '@/core/relatorios'
 import { pendenciasDoInicio } from '@/core/pendencias-do-inicio'
+import { idadeDoEvento } from '@/core/conexoes'
+import { ultimaMensagemRecebida } from '@/server/repos/ultimos-eventos'
 import { automacaoNoAr } from '@/core/trilha-de-configuracao'
 import { listarFluxos } from '@/server/repos/fluxos'
 import { contarLeads } from '@/server/repos/leads'
@@ -72,7 +74,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const acesso = await acessoCompleto(clienteId)
   const configura = pode(acesso.regras, 'configurar_operacao', 'todos')
   const onboarding = configura ? await onboardingDaConta(clienteId) : null
-  const [sessao, fluxos, canais, contatos, quadros, recursos, crm] = await Promise.all([
+  const [sessao, fluxos, canais, contatos, quadros, recursos, crm, ultimaMensagem] = await Promise.all([
     sessaoAtual(),
     listarFluxos(cliente.id),
     listarCanais(cliente.id),
@@ -80,6 +82,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
     listarQuadros(cliente.id),
     recursosDaConta(cliente.id),
     crmVisivel(cliente.id),
+    ultimaMensagemRecebida(cliente.id),
   ])
 
   // A mesma regra da trilha de Configurações: canal apontando para publicada.
@@ -127,6 +130,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           canais={canais.length}
           atendendo={atendendo}
           contatos={contatos}
+          ultimaMensagem={ultimaMensagem}
         />
 
         <div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_336px]">
@@ -306,6 +310,7 @@ function Estado({
   canais,
   atendendo,
   contatos,
+  ultimaMensagem,
 }: {
   clienteId: string
   fluxos: number
@@ -313,6 +318,7 @@ function Estado({
   canais: number
   atendendo: number
   contatos: number
+  ultimaMensagem: string | null
 }) {
   // A ordem importa: a primeira peça que falta é a que adianta resolver. Listar
   // tudo que está errado de uma vez faz parecer que há quatro problemas quando
@@ -339,7 +345,12 @@ function Estado({
           aria-hidden
           className={`size-2.5 rounded-full ${pendencia ? 'bg-amber-300' : 'bg-emerald-400'}`}
         />
-        {pendencia ? 'Ainda não está atendendo' : 'Atendendo agora'}
+        {/*
+          "Atendendo agora" era lido como "está recebendo agora", e só dizia que
+          existe cadastro (C01). O selo diz o que se sabe: está configurado, e
+          a última mensagem chegou há tanto tempo. Canal quieto não é falha.
+        */}
+        {pendencia ? 'Ainda não está atendendo' : 'Configurado'}
       </p>
 
       <p className="text-[12.5px] text-muted">
@@ -347,6 +358,10 @@ function Estado({
           pendencia.texto
         ) : (
           <>
+            {ultimaMensagem
+              ? `Última mensagem recebida ${idadeDoEvento(ultimaMensagem)}`
+              : 'Nenhuma mensagem recebida ainda'}{' '}
+            ·{' '}
             {publicados} {publicados === 1 ? 'automação no ar' : 'automações no ar'} · {canais}{' '}
             {canais === 1 ? 'canal ligado' : 'canais ligados'} · {contatos}{' '}
             {contatos === 1 ? 'contato' : 'contatos'}

@@ -10,13 +10,13 @@ import {
   LogoTelegram,
   LogoWhatsApp,
 } from '@/components/design/logos-de-marca'
-import { saudeDoInstagram, saudeDoWhatsApp, type SaudeDaConexao } from '@/core/saude-da-conexao'
+import { idadeDoEvento, seloDaConexao } from '@/core/conexoes'
+import {
+  catalogoDeIntegracoes,
+  type ChaveDaIntegracao,
+  type ItemDoCatalogo,
+} from '@/server/catalogo-de-integracoes'
 import { acharCliente } from '@/server/repos/clientes'
-import { canalDoInstagram } from '@/server/repos/canais-instagram'
-import { listarConexoes } from '@/server/repos/conexoes'
-import { lojaDaConta } from '@/server/repos/lojas'
-import { listarCanais } from '@/server/repos/conversas'
-import { paginasDaConta } from '@/server/repos/paginas-de-lead'
 
 export const dynamic = 'force-dynamic'
 
@@ -49,17 +49,13 @@ export const dynamic = 'force-dynamic'
 
 type Aba = 'conectadas' | 'disponiveis'
 
-type Integracao = {
-  chave: string
-  nome: string
-  categoria: string
-  descricao: string
-  logo: ReactNode
-  saude: SaudeDaConexao
-  /** Para onde o cartão leva. `null` = não há tela: o canal ainda não existe. */
-  href: string | null
-  /** Quando não dá para ligar, o que falta, escrito para quem não é da casa. */
-  emBreve?: string
+const LOGO: Record<ChaveDaIntegracao, ReactNode> = {
+  whatsapp: <LogoWhatsApp />,
+  instagram: <LogoInstagram />,
+  anuncios: <LogoMeta />,
+  chaves: <LogoChave />,
+  magento: <LogoLoja />,
+  telegram: <LogoTelegram />,
 }
 
 export default async function Pagina({
@@ -74,81 +70,14 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [canais, contaDoInstagram, paginasDeLead, conexoes, loja] = await Promise.all([
-    listarCanais(cliente.id),
-    canalDoInstagram(cliente.id),
-    paginasDaConta(cliente.id),
-    listarConexoes(cliente.id),
-    lojaDaConta(cliente.id),
-  ])
+  /*
+   * A lista e o estado de cada uma vêm do mesmo catálogo que conta o "N de M"
+   * do índice de Configurações (C02): os dois lados não divergem.
+   */
+  const integracoes = await catalogoDeIntegracoes(cliente.id)
 
-  const base = `/clientes/${cliente.id}/ajustes`
-
-  const integracoes: Integracao[] = [
-    {
-      chave: 'whatsapp',
-      nome: 'WhatsApp',
-      categoria: 'Canal',
-      descricao:
-        'O número da empresa atendendo pela Cloud API da Meta. É por onde a conversa entra e sai.',
-      logo: <LogoWhatsApp />,
-      saude: saudeDoWhatsApp(canais),
-      href: `${base}/whatsapp`,
-    },
-    {
-      chave: 'instagram',
-      nome: 'Instagram',
-      categoria: 'Canal',
-      descricao:
-        'O direct de uma conta profissional chegando no mesmo Inbox do WhatsApp.',
-      logo: <LogoInstagram />,
-      saude: saudeDoInstagram(contaDoInstagram),
-      href: `${base}/instagram`,
-    },
-    {
-      chave: 'anuncios',
-      nome: 'Anúncios da Meta',
-      categoria: 'Leads',
-      descricao:
-        'Quem preenche o formulário de um anúncio no Facebook ou no Instagram entra aqui como lead.',
-      logo: <LogoMeta />,
-      saude: paginasDeLead.length === 0 ? 'nao-ligada' : 'ligada',
-      href: `${base}/anuncios`,
-    },
-    {
-      chave: 'chaves',
-      nome: 'Chaves de API',
-      categoria: 'Sistemas do cliente',
-      descricao:
-        'As chaves que os blocos de Serviços externos usam para falar com os sistemas deste cliente.',
-      logo: <LogoChave />,
-      saude: conexoes.length === 0 ? 'nao-ligada' : 'ligada',
-      href: `${base}/chaves`,
-    },
-    {
-      chave: 'magento',
-      nome: 'Loja Magento',
-      categoria: 'Loja on-line',
-      descricao:
-        'O bot consulta o catálogo da loja na hora: diz se tem, quanto custa e manda o link do produto.',
-      logo: <LogoLoja />,
-      saude: loja?.ativa ? 'ligada' : 'nao-ligada',
-      href: `${base}/integracoes/magento`,
-    },
-    {
-      chave: 'telegram',
-      nome: 'Telegram',
-      categoria: 'Canal',
-      descricao: 'Atendimento no Telegram, com teclado inline e sem janela de 24 horas.',
-      logo: <LogoTelegram />,
-      saude: 'nao-ligada',
-      href: null,
-      emBreve: 'O envio já existe; falta onde guardar o bot e receber as mensagens dele.',
-    },
-  ]
-
-  const conectadas = integracoes.filter((i) => i.saude !== 'nao-ligada')
-  const disponiveis = integracoes.filter((i) => i.saude === 'nao-ligada')
+  const conectadas = integracoes.filter((i) => i.estado.configurado)
+  const disponiveis = integracoes.filter((i) => !i.estado.configurado)
 
   /*
    * A aba com nada dentro não pode ser a que abre: conta nova tem zero
@@ -188,7 +117,7 @@ export default async function Pagina({
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {lista.map((item) => (
-              <Cartao key={item.chave} item={item} />
+              <Cartao key={item.chave} clienteId={cliente.id} item={item} />
             ))}
           </div>
         )}
@@ -226,17 +155,31 @@ function Tab({
   )
 }
 
-function Cartao({ item }: { item: Integracao }) {
+function Cartao({ clienteId, item }: { clienteId: string; item: ItemDoCatalogo }) {
+  const { estado } = item
+  const selo = item.disponivel ? seloDaConexao(estado) : { texto: 'em breve', tom: 'neutro' as const }
   const conteudo = (
     <>
       <div className="mb-3 flex items-start justify-between gap-3">
-        {item.logo}
-        <SeloDaSaude saude={item.saude} emBreve={Boolean(item.emBreve)} />
+        {LOGO[item.chave]}
+        <Selo tom={selo.tom}>{selo.texto}</Selo>
       </div>
       <p className="text-[13.5px] font-bold tracking-[-0.01em]">{item.nome}</p>
       <p className="mt-0.5 text-[11px] font-semibold text-dim">{item.categoria}</p>
       <p className="mt-1.5 text-[12px] leading-5 text-muted">{item.descricao}</p>
       {item.emBreve && <p className="mt-2 text-[11px] leading-5 text-dim">{item.emBreve}</p>}
+      {/*
+        As camadas que não cabem no selo: a falha conhecida, com o que fazer, e
+        a idade do último evento. Canal quieto não é falha: só a data aparece.
+      */}
+      {estado.configurado && estado.falha && (
+        <p className="mt-2 text-[11.5px] leading-5 font-semibold text-perigo">{estado.falha}</p>
+      )}
+      {estado.configurado && item.rotuloDoEvento && (
+        <p className="mt-2 text-[11px] leading-5 text-dim">
+          {item.rotuloDoEvento}: {idadeDoEvento(estado.ultimoEvento)}
+        </p>
+      )}
     </>
   )
 
@@ -250,19 +193,13 @@ function Cartao({ item }: { item: Integracao }) {
   }
 
   return (
-    <Link href={item.href} className="app-card app-card-interactive flex flex-col p-4 no-underline">
+    <Link
+      href={`/clientes/${clienteId}${item.href}`}
+      className="app-card app-card-interactive flex flex-col p-4 no-underline"
+    >
       {conteudo}
     </Link>
   )
-}
-
-function SeloDaSaude({ saude, emBreve }: { saude: SaudeDaConexao; emBreve: boolean }) {
-  if (emBreve) return <Selo tom="neutro">em breve</Selo>
-
-  if (saude === 'reconectar') return <Selo tom="perigo">reconectar</Selo>
-  if (saude === 'vencendo') return <Selo tom="alerta">vence em breve</Selo>
-  if (saude === 'ligada') return <Selo tom="ok">conectada</Selo>
-  return <Selo tom="neutro">conectar</Selo>
 }
 
 function Selo({

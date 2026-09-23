@@ -974,17 +974,17 @@ do Inbox continua sendo só a entrada ("+ Anotar").
 
 ### Tarefa 6.4: estados de conexão em camadas [C01, C04, C05, C02]
 
-- [ ] **Passo 1:** função pura `estadoDaConexao(dados)` em
+- [x] **Passo 1:** função pura `estadoDaConexao(dados)` em
   `src/core/conexoes.ts` que devolve `{ configurado, autorizacao: 'valida' |
   'vence_em_breve' | 'vencida' | 'nao_se_aplica', ultimoEvento: string | null,
   falha: string | null, proximaAcao: { texto, href } | null }`. Teste unitário
   cobrindo: canal sem evento recente continua "valido" (não é falha); token
   vencido pede reconectar; página de anúncio sem webhook pede reinscrever.
-- [ ] **Passo 2:** usar a função em Integrações, WhatsApp, Instagram, Anúncios e
+- [x] **Passo 2:** usar a função em Integrações, WhatsApp, Instagram, Anúncios e
   no selo do Início ("Atendendo agora" vira "Configurado · último evento há 2 h").
-- [ ] **Passo 3:** o resumo "N de M" das integrações passa a ser derivado da
+- [x] **Passo 3:** o resumo "N de M" das integrações passa a ser derivado da
   mesma lista do catálogo (C02), Telegram como "indisponível", fora da conta.
-- [ ] **Passo 4:** commit `feat(conexoes): estado separa configurado, autorização, último evento e falha`.
+- [x] **Passo 4:** commit `feat(conexoes): estado separa configurado, autorização, último evento e falha`.
 
 ### Tarefa 6.5: cartões de integração com ação explícita [T04, S06, C03]
 
