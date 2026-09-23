@@ -92,6 +92,7 @@ export function ColunasDaTabela({
   const ligadas = colunas.filter((c) => !c.padrao && visiveis.includes(c.chave)).map((c) => c.chave)
   const desligadas = colunas.filter((c) => c.padrao && !visiveis.includes(c.chave)).map((c) => c.chave)
   const mudouDoPadrao = escolha !== null && (ligadas.length > 0 || desligadas.length > 0)
+  const escondidas = colunas.filter((c) => !visiveis.includes(c.chave)).length
   const essenciais = colunas.filter((c) => c.padrao)
   const coletadas = colunas.filter((c) => !c.padrao)
 
@@ -107,15 +108,19 @@ export function ColunasDaTabela({
         aria-expanded={aberto}
         onClick={() => setAberto((estava) => !estava)}
         className="quadro-tool"
-        title="Escolher quais colunas aparecem nesta tabela"
+        title={escondidas > 0 ? `${escondidas} coluna(s) ainda fora da tabela` : 'Escolher quais colunas aparecem nesta tabela'}
       >
         <svg aria-hidden viewBox="0 0 24 24" className="size-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
           <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
           <path d="M9.5 4.5v15M14.5 4.5v15" />
         </svg>
         Colunas
-        {ligadas.length > 0 && (
-          <span className="grid size-4 place-items-center rounded bg-primary text-[10px] text-white">+{ligadas.length}</span>
+        {/* Quantas ainda dá para ligar, não quantas já foram ligadas: "+1"
+            com vinte variáveis escondidas fazia parecer que só havia uma. */}
+        {escondidas > 0 && (
+          <span className="grid h-4 min-w-4 place-items-center rounded bg-primary px-1 text-[10px] font-semibold text-white tabular-nums">
+            +{escondidas > 99 ? '99' : escondidas}
+          </span>
         )}
       </button>
 

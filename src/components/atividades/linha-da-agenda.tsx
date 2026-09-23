@@ -128,7 +128,7 @@ function Onde({ onde }: { onde: string }) {
   return <span className="truncate">{onde}</span>
 }
 
-function Responsavel({ nome }: { nome: string | null }) {
+export function Responsavel({ nome }: { nome: string | null }) {
   if (!nome) return <span className="text-[12px] text-dim">Sem responsável</span>
   return (
     <span className="flex min-w-0 items-center gap-2">

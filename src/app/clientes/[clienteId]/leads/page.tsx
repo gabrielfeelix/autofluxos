@@ -34,6 +34,8 @@ import { faixasDaConta, relacionamentoDeMuitos } from '@/server/repos/relacionam
 import { contatosDoNivel } from '@/server/consultas/nivel'
 import { FAIXAS_PADRAO, NIVEIS, type Nivel } from '@/core/relacionamento'
 import { SeloDoCliente } from '@/components/lead-crm/selo-do-cliente'
+import { Responsavel } from '@/components/atividades/linha-da-agenda'
+import { membrosDaConta } from '@/server/repos/usuarios'
 
 export const dynamic = 'force-dynamic'
 
@@ -314,6 +316,7 @@ async function AlcanceDoCsv({ filtro }: { filtro: Filtro }) {
 async function ColunasDoFiltro({ filtro }: { filtro: Filtro }) {
   const { leads } = await ler(filtro)
   const colunasDisponiveis = [
+    { chave: 'responsavel', rotulo: 'Responsável', padrao: true },
     { chave: 'etiquetas', rotulo: 'Etiquetas', padrao: true },
     { chave: 'cliente', rotulo: 'Cliente', padrao: true },
     { chave: 'situacao', rotulo: 'Situação', padrao: true },
@@ -358,10 +361,15 @@ function colunasDosCampos(leads: Lead[]): string[] {
 
 async function Tabela({ filtro, etiquetasDaConta }: { filtro: Filtro; etiquetasDaConta: Etiqueta[] }) {
   const { clienteId, etiqueta, marca, termo, nivel } = filtro
-  const [{ leads, total, pagina, paginas, faixas }, quadrosDaConta] = await Promise.all([
+  const [{ leads, total, pagina, paginas, faixas }, quadrosDaConta, equipe] = await Promise.all([
     ler(filtro),
     listarQuadros(clienteId),
+    membrosDaConta(clienteId),
   ])
+  // Quem saiu da conta (ou foi bloqueado) não está em `equipe`, mas o contato
+  // continua com o id dele até alguém reatribuir: a linha diz isso.
+  const nomeDoMembro = new Map(equipe.map((membro) => [membro.id, membro.nome]))
+  const responsavelDe = (id: string | null) => (id ? (nomeDoMembro.get(id) ?? 'Fora da equipe') : null)
 
   /*
     O relacionamento ainda é lido da página, e agora isso é só para **desenhar
@@ -426,6 +434,7 @@ async function Tabela({ filtro, etiquetasDaConta }: { filtro: Filtro; etiquetasD
                   <th scope="col" className={`${FIXA_CONTATO} ${CLASSE_DO_CABECALHO} z-[3]`}>
                     Contato
                   </th>
+                  <Cabecalho coluna="responsavel">Responsável</Cabecalho>
                   <Cabecalho coluna="etiquetas">Etiquetas</Cabecalho>
                   <Cabecalho coluna="cliente">Cliente</Cabecalho>
                   <Cabecalho coluna="situacao">Situação</Cabecalho>
@@ -466,6 +475,9 @@ async function Tabela({ filtro, etiquetasDaConta }: { filtro: Filtro; etiquetasD
                         <span className="block whitespace-nowrap font-mono text-[10.5px] text-dim">{telefoneLegivel(lead.waId)}</span>
                       </div>
                     </div>
+                  </td>
+                  <td data-coluna="responsavel" className="max-w-44 px-4 py-3">
+                    <Responsavel nome={responsavelDe(lead.atribuidoA)} />
                   </td>
                   <td data-coluna="etiquetas" className="px-4 py-3">
                     <Etiquetas lista={lead.etiquetasManuais} />
