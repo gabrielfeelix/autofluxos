@@ -7,6 +7,7 @@ import { useCitacao } from '@/components/lead/citacao'
 import { RetomarComModelo } from '@/components/lead/retomar-com-modelo'
 import { pedirNovas } from '@/components/inbox/sinal-de-conversa'
 import { SeletorDeEmoji } from '@/components/lead/seletor-de-emoji'
+import { SeletorDeProduto } from '@/components/lead/seletor-de-produto'
 
 /**
  * Até onde o campo cresce sozinho antes de virar rolagem.
@@ -288,6 +289,9 @@ export function CaixaDeResposta({
           é o que evita a tela aceitar por aqui o que recusa por ali.
         */}
         {!gravando && <SeletorDeEmoji aoEscolher={inserirResposta} desabilitado={enviando} />}
+        {anexo && !gravando && (
+          <SeletorDeProduto clienteId={anexo.clienteId} contatoId={anexo.contatoId} desabilitado={enviando} />
+        )}
 
         {/*
           O campo some enquanto grava, e `hidden` em vez de desmontar: desmontar
