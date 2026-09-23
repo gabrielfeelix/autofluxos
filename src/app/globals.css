@@ -710,6 +710,77 @@ textarea::placeholder {
   animation: fade-up 350ms ease both;
 }
 
+/* A gaveta do menu no celular entra pela direita, do lado do botão que a abriu. */
+.app-gaveta[open] {
+  animation: gaveta-entra 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes gaveta-entra {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-gaveta[open] {
+    animation: none;
+  }
+}
+
+/*
+ * O celular com cara de aplicativo (`BarraDoCelular`): topo de 60px e barra de
+ * baixo fixa de 64px mais a área segura. O miolo ganha essa altura embaixo para
+ * o último item não ficar atrás da barra.
+ *
+ * O Inbox no celular é uma coluna de cada vez (`MolduraDoInbox`), e o atributo
+ * `data-inbox-celular` no `<html>` diz qual. Com a conversa aberta a barra de
+ * baixo sai e o campo de escrever encosta no pé da tela, como no WhatsApp.
+ */
+.app-inbox-voltar {
+  display: none;
+}
+
+@media (max-width: 767.98px) {
+  .app-miolo-com-barra {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+
+  .app-inbox {
+    grid-template-columns: minmax(0, 1fr) !important;
+    height: calc(100dvh - 60px - 76px - env(safe-area-inset-bottom));
+  }
+
+  /* A ficha do contato não cabe ao lado: no celular, só lista ou conversa. */
+  .app-inbox > :nth-child(n + 4) {
+    display: none;
+  }
+
+  html:not([data-inbox-celular='conversa']) .app-inbox > :nth-child(3) {
+    display: none;
+  }
+
+  html[data-inbox-celular='conversa'] .app-inbox > :nth-child(-n + 2) {
+    display: none;
+  }
+
+  html[data-inbox-celular='conversa'] .app-inbox {
+    grid-template-rows: minmax(0, 1fr) !important;
+    height: calc(100dvh - 60px - 44px);
+  }
+
+  html[data-inbox-celular='conversa'] .app-inbox-voltar {
+    display: flex;
+  }
+
+  html[data-inbox-celular='conversa'] .app-barra-de-baixo {
+    display: none;
+  }
+
+  html[data-inbox-celular='conversa'] .app-miolo-com-barra {
+    padding-bottom: 0;
+  }
+}
+
 /*
  * O esqueleto, o retângulo cinza que **segura o lugar** do conteúdo enquanto
  * ele vem do servidor.

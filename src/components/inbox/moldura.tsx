@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { LARGURA_DA_FILA } from '@/components/design/tema'
 
 /**
@@ -77,12 +77,42 @@ export function ColunaDaFicha({ children }: { children: ReactNode }) {
   return <>{children}</>
 }
 
+/**
+ * No celular o Inbox é uma coluna de cada vez, como no WhatsApp: a lista, e ao
+ * tocar numa pessoa, a conversa em tela cheia com "‹ Conversas" para voltar.
+ *
+ * O estado mora num atributo do `<html>` (`data-inbox-celular`), e não só no
+ * React, por dois motivos. A barra de baixo, que mora no layout, precisa sair
+ * quando a conversa abre, e ela lê o mesmo atributo pelo CSS. E esta moldura é
+ * remontada a cada troca de filtro (a `key` do `<Suspense>` da página): guardar
+ * só em `useState` jogaria a pessoa de volta para a lista no meio da conversa.
+ *
+ * O endereço não serve para decidir: a fila grava a conversa escolhida nele
+ * mesmo quando foi escolhida sozinha (`useFilaLocal`).
+ */
+const ATRIBUTO_DO_CELULAR = 'data-inbox-celular'
+type ColunaDoCelular = 'lista' | 'conversa'
+
+function colunaInicial(conversaPedida: boolean): ColunaDoCelular {
+  if (typeof document !== 'undefined') {
+    const guardada = document.documentElement.getAttribute(ATRIBUTO_DO_CELULAR)
+    if (guardada === 'lista' || guardada === 'conversa') return guardada
+  }
+  return conversaPedida ? 'conversa' : 'lista'
+}
+
 export function MolduraDoInbox({
   fila,
   conversa,
   ficha,
   temFicha,
+  conversaPedida = false,
 }: {
+  /**
+   * O endereço pediu uma conversa (`?conversa=`) ao chegar: veio de um aviso,
+   * da ficha, de um link. No celular abre direto nela, e não na lista.
+   */
+  conversaPedida?: boolean
   /** A barra de filtros e a lista, nesta ordem, como irmãs. */
   fila: ReactNode
   /**
@@ -108,9 +138,22 @@ export function MolduraDoInbox({
 }) {
   const [aberta, setAberta] = useState(true)
   const mostrandoFicha = (temFicha ?? Boolean(ficha)) && aberta
+  const [noCelular, setNoCelular] = useState<ColunaDoCelular>(() => colunaInicial(conversaPedida))
+  const grade = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    document.documentElement.setAttribute(ATRIBUTO_DO_CELULAR, noCelular)
+  }, [noCelular])
 
   return (
     <Contexto.Provider value={{ aberta, alternar: () => setAberta((x) => !x) }}>
+      <button
+        type="button"
+        onClick={() => setNoCelular('lista')}
+        className="app-inbox-voltar h-11 shrink-0 items-center gap-1.5 border-b border-line bg-panel px-4 text-[13.5px] font-semibold text-primary md:hidden"
+      >
+        <span aria-hidden className="text-[18px] leading-none">‹</span> Conversas
+      </button>
       {/*
         A moldura tem **altura máxima**, e é isso que faz o histórico rolar por
         dentro.
@@ -153,7 +196,13 @@ export function MolduraDoInbox({
           sobre a página, ela **é** a página. Quem a separa da barra lateral é a
           borda que a barra já tem, desenhar outra aqui daria uma linha dupla.
         */
-        className="grid h-[calc(100dvh-132px)] min-h-[420px] overflow-hidden bg-panel md:h-full"
+        ref={grade}
+        onClickCapture={(evento) => {
+          // Tocar numa pessoa da lista (a segunda filha da grade) abre a conversa.
+          const link = (evento.target as Element).closest('a[href*="conversa="]')
+          if (link && grade.current?.children[1]?.contains(link)) setNoCelular('conversa')
+        }}
+        className="app-inbox grid min-h-[420px] overflow-hidden bg-panel md:h-full"
       >
         {fila}
         {conversa}

@@ -474,6 +474,7 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
             pagina={fila.pagina}
             paginas={fila.paginas}
             temAutomacao={temAutomacao}
+            conversaPedida={Boolean(pedido)}
           />
         )}
       </main>
@@ -576,8 +577,11 @@ async function Conteudo({
   pagina,
   paginas,
   temAutomacao,
+  conversaPedida,
 }: {
   clienteId: string
+  /** O endereço já chegou com `?conversa=`: no celular, abre nela. */
+  conversaPedida: boolean
   leads: Lead[]
   /**
    * A fila inteira, sem filtro de estado nem de dono, ou `null` quando a conta
@@ -716,6 +720,7 @@ async function Conteudo({
         grade, ver `MolduraDoInbox`.
       */
       temFicha={Boolean(selecionado)}
+      conversaPedida={conversaPedida}
     />
   )
 }

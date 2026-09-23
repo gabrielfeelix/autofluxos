@@ -29,7 +29,11 @@ export function MolduraDoCliente({
   return (
     <div className="flex min-h-screen flex-col md:h-screen md:min-h-[700px] md:flex-row md:overflow-hidden">
       {barra}
-      <div className="relative min-w-0 flex-1 md:overflow-auto">
+      {/*
+        No celular a barra de baixo é fixa e cobre o pé da tela: o miolo ganha
+        a altura dela embaixo, para o último item não ficar escondido atrás.
+      */}
+      <div className="app-miolo-com-barra relative min-w-0 flex-1 md:overflow-auto">
         {faixas}
         {children}
       </div>
