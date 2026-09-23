@@ -14,6 +14,10 @@ import { canalDoInstagram } from '@/server/repos/canais-instagram'
 import { listarConexoes } from '@/server/repos/conexoes'
 import { paginasDaConta } from '@/server/repos/paginas-de-lead'
 import { listarCanais } from '@/server/repos/conversas'
+import { listarFluxos } from '@/server/repos/fluxos'
+import { contarLeads } from '@/server/repos/leads'
+import { automacaoNoAr, trilhaDeConfiguracao } from '@/core/trilha-de-configuracao'
+import { TrilhaDeConfiguracao } from '@/components/cliente/trilha-de-configuracao'
 import { listarRespostasRapidas } from '@/server/repos/respostas-rapidas'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { planoDaConta } from '@/server/repos/plano'
@@ -46,7 +50,7 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [conexoes, canais, respostasRapidas, acervo, estrago, etiquetas, contaDoInstagram, paginasDeLead, plano, recursos] =
+  const [conexoes, canais, respostasRapidas, acervo, estrago, etiquetas, contaDoInstagram, paginasDeLead, plano, recursos, fluxos, contatos] =
     await Promise.all([
       listarConexoes(cliente.id),
       listarCanais(cliente.id),
@@ -58,6 +62,8 @@ export default async function Pagina({
       paginasDaConta(cliente.id),
       planoDaConta(cliente.id),
       recursosDaConta(cliente.id),
+      listarFluxos(cliente.id),
+      contarLeads(cliente.id),
     ])
   const semContexto = cliente.contextoNegocio.trim() === ''
 
@@ -70,6 +76,16 @@ export default async function Pagina({
    * a verdade era a tela de dentro, que ninguém abre sem motivo.
    */
   const saudeDoWhats = saudeDoWhatsApp(canais)
+
+  const trilha = trilhaDeConfiguracao({
+    empresa: cliente,
+    canais: canais.length,
+    temHorario: cliente.horarioAtendimento !== null,
+    temConhecimento: !semContexto,
+    ...automacaoNoAr(fluxos, canais),
+    temContato: contatos > 0,
+  })
+  const faltaNaTrilha = trilha.some((passo) => passo.estado !== 'feito')
   const saudeDoIg = saudeDoInstagram(contaDoInstagram)
 
   /*
@@ -103,6 +119,8 @@ export default async function Pagina({
           Tudo que muda como esta conta atende: por onde as conversas entram, o que o bot sabe
           responder, com quem o sistema fala e quem tem acesso.
         </p>
+
+        {faltaNaTrilha && <TrilhaDeConfiguracao clienteId={cliente.id} passos={trilha} />}
 
         {/*
           Quatro grupos, não dez linhas soltas.

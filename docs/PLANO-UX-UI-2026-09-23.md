@@ -1236,11 +1236,11 @@ outras telas desta fase.
 
 ### Tarefa 10.2: trilha de primeira configuração [S01]
 
-- [ ] **Passo 1:** no topo da Visão geral, enquanto houver pendência: Dados da
+- [x] **Passo 1:** no topo da Visão geral, enquanto houver pendência: Dados da
   empresa → Canal → Horário e conhecimento → Automação publicada → Testar. Cada
   passo com estado (feito, pendente, bloqueado e por quê) e link. Reaproveitar o
   cálculo de `primeiros-passos.tsx` (não duplicar a regra).
-- [ ] **Passo 2:** commit `feat(configuracoes): trilha de primeira configuração`.
+- [x] **Passo 2:** commit `feat(configuracoes): trilha de primeira configuração`.
 
 ### Tarefa 10.3: formulários com resultado próprio [S02, S03, S04, S08]
 

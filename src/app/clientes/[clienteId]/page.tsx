@@ -20,6 +20,7 @@ import { contagensDaAgenda } from '@/server/repos/atividades'
 import { lerFiltroDaAgenda } from '@/core/atividades'
 import { comoDuracao } from '@/core/relatorios'
 import { pendenciasDoInicio } from '@/core/pendencias-do-inicio'
+import { automacaoNoAr } from '@/core/trilha-de-configuracao'
 import { listarFluxos } from '@/server/repos/fluxos'
 import { contarLeads } from '@/server/repos/leads'
 import { filaDoPainel, type ItemDaFila } from '@/server/repos/painel'
@@ -79,9 +80,8 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
     recursosDaConta(cliente.id),
   ])
 
-  const noAr = fluxos.filter((fluxo) => fluxo.versaoPublicadaId)
-  const publicados = new Set(noAr.map((fluxo) => fluxo.id))
-  const atendendo = canais.filter((canal) => canal.flowId && publicados.has(canal.flowId))
+  // A mesma regra da trilha de Configurações: canal apontando para publicada.
+  const { publicados, atendendo } = automacaoNoAr(fluxos, canais)
   const primeiroNome = (sessao?.usuario.nome ?? '').trim().split(/\s+/)[0] ?? ''
 
   const passos = passosDaConta({
@@ -89,7 +89,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
     objetivo: recursos.objetivo,
     opcionais: passosDoOnboarding(recursos.objetivo, onboarding),
     temFluxo: fluxos.length > 0,
-    temPublicado: noAr.length > 0,
+    temPublicado: publicados > 0,
     temCanal: canais.length > 0,
     temContato: contatos > 0,
     temQuadro: quadros.length > 0,
@@ -121,9 +121,9 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         <Estado
           clienteId={cliente.id}
           fluxos={fluxos.length}
-          publicados={noAr.length}
+          publicados={publicados}
           canais={canais.length}
-          atendendo={atendendo.length}
+          atendendo={atendendo}
           contatos={contatos}
         />
 
