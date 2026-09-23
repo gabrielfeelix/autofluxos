@@ -1,5 +1,7 @@
 'use server'
 
+import { podeLigar } from '@/core/entrada'
+import { destinoPodeReceber, recusaParaLigar } from './repos/entrada'
 import { podeResponderAgora } from './distribuir-atendimento'
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
@@ -540,6 +542,21 @@ export async function acaoAlternarFluxoAtivo(
   const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
   if (recusou(acesso)) return acesso
 
+  // Ligar sem versão publicada abriria conversa para um fluxo que não responde
+  // (A05). Quem já está ligado assim continua; só o gesto de ligar é recusado.
+  if (ativo) {
+    const r = podeLigar(await destinoPodeReceber(clienteId, fluxoId))
+    if (!r.ok) {
+      return {
+        ok: false,
+        erro:
+          r.motivo === 'destino_apagado'
+            ? 'esta automação não existe mais'
+            : 'Esta automação ainda não foi publicada. Publique antes de ligar, senão ninguém recebe resposta.',
+      }
+    }
+  }
+
   const mudou = await definirAtivo(clienteId, fluxoId, ativo)
   revalidatePath(`/clientes/${clienteId}/fluxos`)
   revalidatePath(`/clientes/${clienteId}`)
@@ -612,6 +629,11 @@ export async function acaoAlternarGatilhoDeEvento(
 ): Promise<{ ok: boolean; erro?: string }> {
   const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
   if (recusou(acesso)) return acesso
+
+  if (ativo) {
+    const recusa = await recusaParaLigar('gatilhos_de_evento', clienteId, gatilhoId)
+    if (recusa) return { ok: false, erro: recusa }
+  }
 
   const mudou = await alternarGatilhoDeEvento(clienteId, gatilhoId, ativo)
   revalidatePath(`/clientes/${clienteId}/fluxos`)
@@ -718,6 +740,11 @@ export async function acaoAlternarGatilho(
 ): Promise<{ ok: boolean; erro?: string }> {
   const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
   if (recusou(acesso)) return acesso
+
+  if (ativo) {
+    const recusa = await recusaParaLigar('gatilhos', clienteId, gatilhoId)
+    if (recusa) return { ok: false, erro: recusa }
+  }
 
   const mudou = await alternarGatilho(clienteId, gatilhoId, ativo)
   revalidatePath(`/clientes/${clienteId}/fluxos`)
@@ -963,6 +990,11 @@ export async function acaoAlternarCampanha(
 ): Promise<{ ok: boolean; erro?: string }> {
   const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
   if (recusou(acesso)) return acesso
+
+  if (ativa) {
+    const recusa = await recusaParaLigar('campanhas', clienteId, campanhaId)
+    if (recusa) return { ok: false, erro: recusa }
+  }
 
   const mudou = await alternarCampanha(clienteId, campanhaId, ativa)
   revalidatePath(`/clientes/${clienteId}/fluxos`)

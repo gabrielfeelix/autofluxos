@@ -71,7 +71,7 @@ export async function criarCampanha(
   // a chave estrangeira só sabe que ele existe, não de quem é.
   const { data: fluxo, error: erroDoFluxo } = await db()
     .from('flows')
-    .select('id')
+    .select('id, versao_publicada_id')
     .eq('id', campanha.fluxoId)
     .eq('client_id', clienteId)
     .maybeSingle()
@@ -80,9 +80,13 @@ export async function criarCampanha(
   if (erroDoFluxo) throw new Error(`não deu para conferir o fluxo: ${erroDoFluxo.message}`)
   if (!fluxo) return { ok: false, motivo: 'este fluxo não é deste cliente' }
 
+  // Aponta para rascunho? Cadastra (dá para preparar antes de publicar), mas
+  // desligado: ligado, a entrada casaria e ninguém responderia (A05).
+  const ligado = (fluxo as { versao_publicada_id: string | null }).versao_publicada_id !== null
+
   const { error } = await db()
     .from('campanhas')
-    .insert({ client_id: clienteId, nome, frase, flow_id: campanha.fluxoId })
+    .insert({ client_id: clienteId, nome, frase, flow_id: campanha.fluxoId, ativa: ligado })
 
   if (error?.code === '23505') {
     return { ok: false, motivo: 'já existe uma campanha com esta frase' }

@@ -25,6 +25,7 @@ export function InterruptorDeFluxo({
   ativo,
   nome,
   emAndamento = 0,
+  semVersao = false,
 }: {
   clienteId: string
   fluxoId: string
@@ -39,6 +40,12 @@ export function InterruptorDeFluxo({
    * leitura não aconteceu.
    */
   emAndamento?: number
+  /**
+   * Nunca foi publicada (A05). Desligada, não liga: abriria conversa para um
+   * fluxo que não responde. Ligada (de antes da regra), fica âmbar, porque verde
+   * diria que atende. O servidor recusa do mesmo jeito.
+   */
+  semVersao?: boolean
 }) {
   const [erro, setErro] = useState<string | null>(null)
   const [rodando, comecar] = useTransition()
@@ -60,6 +67,11 @@ export function InterruptorDeFluxo({
         emAndamento > 0 ? `${conversas} o roteiro normalmente` : 'Quem já está conversando termina'
       }, e a versão no ar continua publicada.`
     : `Ligar “${nome}”: volta a abrir conversa na próxima mensagem. Não precisa publicar de novo.`
+  const bloqueio = semVersao
+    ? ativo
+      ? `“${nome}” está ligada, mas nunca foi publicada: ninguém recebe resposta até publicar.`
+      : `Publique “${nome}” antes de ligar, senão ninguém recebe resposta.`
+    : null
 
   return (
     <span className="inline-flex flex-col items-end gap-1">
@@ -68,8 +80,8 @@ export function InterruptorDeFluxo({
         role="switch"
         aria-checked={ativo}
         aria-label={ativo ? `Desligar a automação ${nome}` : `Ligar a automação ${nome}`}
-        disabled={rodando}
-        title={explicacao}
+        disabled={rodando || (!ativo && semVersao)}
+        title={bloqueio ?? explicacao}
         onClick={() => {
           setErro(null)
           comecar(async () => {
@@ -77,13 +89,17 @@ export function InterruptorDeFluxo({
             if (!r.ok) setErro(r.erro ?? 'não deu para ligar/desligar')
           })
         }}
-        className={`relative h-[18px] w-8 shrink-0 rounded-full border transition disabled:opacity-50 ${
-          ativo ? 'border-emerald-400/40 bg-emerald-400/25' : 'border-line bg-surface-strong'
+        className={`relative h-[18px] w-8 shrink-0 rounded-full border transition disabled:cursor-not-allowed disabled:opacity-50 ${
+          ativo && semVersao
+            ? 'border-amber-300/40 bg-amber-300/20'
+            : ativo
+              ? 'border-emerald-400/40 bg-emerald-400/25'
+              : 'border-line bg-surface-strong'
         }`}
       >
         <span
           className={`absolute top-[2px] size-3 rounded-full transition-all ${
-            ativo ? 'left-[15px] bg-emerald-300' : 'left-[2px] bg-dim'
+            ativo ? `left-[15px] ${semVersao ? 'bg-amber-300' : 'bg-emerald-300'}` : 'left-[2px] bg-dim'
           }`}
         />
       </button>

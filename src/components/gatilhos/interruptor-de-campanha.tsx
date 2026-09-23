@@ -15,10 +15,18 @@ export function InterruptorDeCampanha({
   clienteId,
   campanhaId,
   ativa,
+  bloqueio = null,
 }: {
   clienteId: string
   campanhaId: string
   ativa: boolean
+  /**
+   * Por que não dá para ligar, quando não dá (A05): o destino não tem versão
+   * publicada. Desligado, o interruptor trava e o motivo vira o `title`; ligado
+   * (entrada antiga, de antes da regra), fica âmbar, porque verde diria que
+   * atende. O servidor recusa do mesmo jeito: isto é só a tela contando antes.
+   */
+  bloqueio?: string | null
 }) {
   const [erro, setErro] = useState<string | null>(null)
   const [rodando, comecar] = useTransition()
@@ -34,8 +42,8 @@ export function InterruptorDeCampanha({
         role="switch"
         aria-checked={ativa}
         aria-label={ativa ? 'Desligar campanha' : 'Ligar campanha'}
-        disabled={rodando}
-        title={explicacao}
+        disabled={rodando || (!ativa && bloqueio !== null)}
+        title={bloqueio ?? explicacao}
         onClick={() => {
           setErro(null)
           comecar(async () => {
@@ -43,13 +51,17 @@ export function InterruptorDeCampanha({
             if (!r.ok) setErro(r.erro ?? 'não deu para mudar a campanha')
           })
         }}
-        className={`relative h-[18px] w-8 shrink-0 rounded-full border transition disabled:opacity-50 ${
-          ativa ? 'border-emerald-400/40 bg-emerald-400/25' : 'border-line bg-surface-strong'
+        className={`relative h-[18px] w-8 shrink-0 rounded-full border transition disabled:cursor-not-allowed disabled:opacity-50 ${
+          ativa && bloqueio !== null
+            ? 'border-amber-300/40 bg-amber-300/20'
+            : ativa
+              ? 'border-emerald-400/40 bg-emerald-400/25'
+              : 'border-line bg-surface-strong'
         }`}
       >
         <span
           className={`absolute top-[2px] size-3 rounded-full transition-all ${
-            ativa ? 'left-[15px] bg-emerald-300' : 'left-[2px] bg-dim'
+            ativa ? `left-[15px] ${bloqueio !== null ? 'bg-amber-300' : 'bg-emerald-300'}` : 'left-[2px] bg-dim'
           }`}
         />
       </button>

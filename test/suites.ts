@@ -17,6 +17,7 @@
  */
 export const TESTES_DE_INTEGRACAO = [
   'src/server/repos/onboarding.test.ts',
+  'src/server/repos/entrada.test.ts',
   'src/server/consultas/contatos.test.ts',
   'src/server/acoes-conta.test.ts',
   'src/server/agendador.test.ts',

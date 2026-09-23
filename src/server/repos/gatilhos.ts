@@ -91,7 +91,7 @@ export async function criarGatilho(
 
   const { data: fluxo, error: erroDoFluxo } = await db()
     .from('flows')
-    .select('id')
+    .select('id, versao_publicada_id')
     .eq('id', gatilho.fluxoId)
     .eq('client_id', clienteId)
     .maybeSingle()
@@ -100,11 +100,16 @@ export async function criarGatilho(
   if (erroDoFluxo) throw new Error(`não deu para conferir o fluxo: ${erroDoFluxo.message}`)
   if (!fluxo) return { ok: false, motivo: 'este fluxo não é deste cliente' }
 
+  // Aponta para rascunho? Cadastra (dá para preparar antes de publicar), mas
+  // desligado: ligado, a entrada casaria e ninguém responderia (A05).
+  const ligado = (fluxo as { versao_publicada_id: string | null }).versao_publicada_id !== null
+
   const { error } = await db().from('gatilhos').insert({
     client_id: clienteId,
     frase,
     operador: gatilho.operador,
     flow_id: gatilho.fluxoId,
+    ativo: ligado,
   })
 
   // O índice único é por (conta, frase, operador). Sem tratar, "essa palavra já

@@ -688,18 +688,18 @@ publicada. Publique antes de ligar, senão ninguém recebe resposta.";
 - Criar gatilho apontando para rascunho continua permitido (preparar antes de
   publicar), mas ele nasce **desligado** quando o destino não está publicado.
 
-- [ ] **Passo 1:** teste puro de `podeLigar` (3 casos) → FAIL → implementar → PASS.
-- [ ] **Passo 2:** teste de integração em `src/server/acoes.test.ts` ou no teste
+- [x] **Passo 1:** teste puro de `podeLigar` (3 casos) → FAIL → implementar → PASS.
+- [x] **Passo 2:** teste de integração em `src/server/acoes.test.ts` ou no teste
   do repositório de gatilhos: `ligar palavra-chave para fluxo em rascunho é recusado com motivo`;
   `ligar para fluxo publicado funciona`; `desligar sempre funciona`; `criar para rascunho nasce desligado`.
   (Se as ações não forem testáveis direto por causa de sessão, testar a função
   de repositório nova `destinoPodeReceber(clienteId, fluxoId)` e chamar ela nas
   ações.)
-- [ ] **Passo 3:** implementar nas quatro ações e na criação.
-- [ ] **Passo 4:** tela: interruptor desabilitado com `title` e texto curto ao
+- [x] **Passo 3:** implementar nas quatro ações e na criação.
+- [x] **Passo 4:** tela: interruptor desabilitado com `title` e texto curto ao
   lado ("Publique o destino para ligar") quando o destino não está publicado;
   erro devolvido pelo servidor aparece junto do interruptor.
-- [ ] **Passo 5:** typecheck, prints `fluxos fluxos-palavras`; commit `fix(automacoes): gatilho e automação não ligam sem versão publicada`.
+- [x] **Passo 5:** typecheck, prints `fluxos fluxos-palavras`; commit `fix(automacoes): gatilho e automação não ligam sem versão publicada`.
 
 ### Tarefa 3.2: o Testar avisa que IA e HTTP são reais [A16]
 
@@ -1395,3 +1395,13 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   a tela diz "aplicada em N · M já tinham · K fora desta conta". Etiquetar e
   pôr no funil continuam sem diálogo antes (um clique, resultado depois);
   só apagar confirma, agora com o número e "nesta página".
+- 23/09, tarefa 3.1: a checagem mora em `src/server/repos/entrada.ts`
+  (`destinoPodeReceber` e `recusaParaLigar`, uma função para as três tabelas de
+  entrada); o teste de integração é dela, porque as ações dependem de sessão.
+  A criação nasce desligada dentro dos próprios repositórios (`criarGatilho`,
+  `criarCampanha`, `criarGatilhoDeEvento`). **Consequência:** entrada criada
+  para rascunho continua desligada depois de publicar o destino; alguém precisa
+  ligar. Automação nova ainda nasce `ativo = true` sem versão (padrão da 0036),
+  então toda automação recém-criada mostra "Ligada, mas sem versão publicada"
+  até publicar. O aviso foi para a linha de baixo do nome, não para junto do
+  interruptor: ao lado dele desalinhava a linha (que a 3.4 refaz).

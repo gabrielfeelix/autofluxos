@@ -278,7 +278,7 @@ export async function criarGatilhoDeEvento(
   // chave estrangeira só sabe que ele existe em algum lugar.
   const { data: fluxo, error: erroDoFluxo } = await db()
     .from('flows')
-    .select('id')
+    .select('id, versao_publicada_id')
     .eq('id', fluxoId)
     .eq('client_id', clienteId)
     .maybeSingle()
@@ -287,9 +287,13 @@ export async function criarGatilhoDeEvento(
   if (erroDoFluxo) throw new Error(`não deu para conferir o fluxo: ${erroDoFluxo.message}`)
   if (!fluxo) return { ok: false, motivo: 'este fluxo não é deste cliente' }
 
+  // Aponta para rascunho? Cadastra (dá para preparar antes de publicar), mas
+  // desligado: ligado, a entrada casaria e ninguém responderia (A05).
+  const ligado = (fluxo as { versao_publicada_id: string | null }).versao_publicada_id !== null
+
   const { data, error } = await db()
     .from('gatilhos_de_evento')
-    .insert({ client_id: clienteId, evento: limpo, flow_id: fluxoId })
+    .insert({ client_id: clienteId, evento: limpo, flow_id: fluxoId, ativo: ligado })
     .select('id')
     .single()
 

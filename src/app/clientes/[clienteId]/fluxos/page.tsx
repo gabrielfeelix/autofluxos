@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
+import { TEXTO_DA_RECUSA } from '@/core/entrada'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import {
   EsqueletoDeAbas,
@@ -554,6 +555,13 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                           {fluxo.iaHabilitada ? ' · IA ativa' : ''}
                           {papeis.length > 0 ? ` · ${papeis.join(', ')}` : ''}
                         </span>
+                        {!fluxo.versaoPublicadaId && (
+                          <span className="mt-0.5 block text-[11px] font-medium text-aviso">
+                            {fluxo.ativo
+                              ? 'Ligada, mas sem versão publicada: não responde ninguém.'
+                              : 'Publique para ligar.'}
+                          </span>
+                        )}
                       </span>
                       {!validacao.ok && (
                         <span className="rounded-full border border-rose-400/25 bg-rose-400/10 px-2.5 py-1 text-[10.5px] font-bold text-perigo">
@@ -622,6 +630,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                         fluxoId={fluxo.id}
                         ativo={fluxo.ativo}
                         nome={fluxo.nome}
+                        semVersao={!fluxo.versaoPublicadaId}
                         emAndamento={emAndamento.get(fluxo.id) ?? 0}
                       />
                     </span>
@@ -760,6 +769,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                     className="flex items-center gap-3 border-b border-line px-5 py-3.5 last:border-0"
                   >
                     <InterruptorDeGatilho
+                      bloqueio={bloqueioDoDestino(destino)}
                       clienteId={cliente.id}
                       gatilhoId={gatilho.id}
                       ativo={gatilho.ativo}
@@ -775,10 +785,8 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                         <strong className="font-semibold text-muted">
                           {destino?.nome ?? 'um fluxo que sumiu'}
                         </strong>
-                        {destino && !destino.versaoPublicadaId
-                          ? ' · ainda não publicado, então não abre nada'
-                          : ''}
                       </span>
+                      <AvisoDoDestino destino={destino} ligada={gatilho.ativo} />
                     </span>
                     <span className="whitespace-nowrap text-[11px] text-dim">
                       <strong className="font-semibold text-soft">{gatilho.execucoes}</strong>{' '}
@@ -863,6 +871,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                     className="flex items-center gap-3 border-b border-line px-5 py-3.5"
                   >
                     <InterruptorDeEvento
+                      bloqueio={bloqueioDoDestino(destino)}
                       clienteId={cliente.id}
                       gatilhoId={gatilho.id}
                       ativo={gatilho.ativo}
@@ -878,10 +887,8 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                         <strong className="font-semibold text-muted">
                           {destino?.nome ?? 'um fluxo que sumiu'}
                         </strong>
-                        {destino && !destino.versaoPublicadaId
-                          ? ' · ainda não publicado, então não abre nada'
-                          : ''}
                       </span>
+                      <AvisoDoDestino destino={destino} ligada={gatilho.ativo} />
                     </span>
                     <span className="whitespace-nowrap text-[11px] text-dim">
                       <strong className="font-semibold text-soft">{gatilho.execucoes}</strong>{' '}
@@ -1002,6 +1009,7 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                     className="flex items-center gap-3 border-b border-line px-5 py-3.5 last:border-0"
                   >
                     <InterruptorDeCampanha
+                      bloqueio={bloqueioDoDestino(destino)}
                       clienteId={cliente.id}
                       campanhaId={campanha.id}
                       ativa={campanha.ativa}
@@ -1017,10 +1025,8 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
                         <strong className="font-semibold text-muted">
                           {destino?.nome ?? 'um fluxo que sumiu'}
                         </strong>
-                        {destino && !destino.versaoPublicadaId
-                          ? ' · ainda não publicado, então não abre nada'
-                          : ''}
                       </span>
+                      <AvisoDoDestino destino={destino} ligada={campanha.ativa} />
                     </span>
                     <span className="whitespace-nowrap text-right text-[11px] text-dim">
                       <strong className="font-semibold text-soft">{trouxe}</strong> contato(s)
@@ -1325,4 +1331,33 @@ async function Conteudo({ cliente, aba }: { cliente: Cliente; aba: Aba }) {
         )}
     </>
   )
+}
+
+/**
+ * Por que a entrada não liga, ou `null` quando liga (A05). Mesma regra de
+ * `podeLigar`, que o servidor aplica de novo no clique.
+ */
+function bloqueioDoDestino(destino: { versaoPublicadaId: string | null } | undefined) {
+  if (!destino) return TEXTO_DA_RECUSA.destino_apagado
+  return destino.versaoPublicadaId ? null : TEXTO_DA_RECUSA.destino_nao_publicado
+}
+
+/**
+ * A linha de aviso embaixo da entrada cujo destino não atende. Linha própria, e
+ * não o fim da linha de cima: aquela trunca, e no celular o aviso sumia.
+ */
+function AvisoDoDestino({
+  destino,
+  ligada,
+}: {
+  destino: { versaoPublicadaId: string | null } | undefined
+  ligada: boolean
+}) {
+  if (destino?.versaoPublicadaId) return null
+  const texto = !destino
+    ? 'A automação de destino foi apagada. Escolha outra.'
+    : ligada
+      ? 'Ligada, mas o destino nunca foi publicado: não abre nada.'
+      : 'Publique o destino para ligar.'
+  return <span className="mt-1 block text-[11px] font-medium text-aviso">{texto}</span>
 }
