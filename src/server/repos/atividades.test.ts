@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { proximaAcao, urgenciaDe } from '@/core/atividades'
+import { lerFiltroDaAgenda, proximaAcao, urgenciaDe, type FiltroDaAgenda } from '@/core/atividades'
 import { db } from '../db'
 import { criarCliente } from './clientes'
 import { acharOuCriarContato } from './conversas'
@@ -7,6 +7,7 @@ import {
   abertasDoCartao,
   agenda,
   atividadesDoContato,
+  paginaDaAgenda,
   criarAtividade,
   reabrirAtividade,
   resolverAoFechar,
@@ -231,5 +232,146 @@ describe.skipIf(!temCredencial)('ao fechar a oportunidade (RB-28)', () => {
       (a) => a.cartaoId === null && a.situacao === 'aberta',
     ).length
     expect(aindaSoltas).toBe(soltas)
+  })
+})
+
+/*
+ * A agenda paginada (tarefa 1.1 do plano de UX de 23/09).
+ *
+ * Fixture própria: uma conta nova com 60 abertas, porque os testes de cima
+ * mexem nas atividades da outra conta e contagem exata não sobrevive a isso.
+ */
+describe.skipIf(!temCredencial)('agenda paginada', () => {
+  const AGORA = Date.UTC(2026, 8, 23, 15, 0)
+  let conta = ''
+  let vizinha = ''
+  let eu = ''
+  let colega = ''
+  let joao = ''
+  const telefoneDoJoao = `5544${seed.slice(0, 3)}9901021`.slice(0, 13)
+
+  const filtro = (parcial: Partial<FiltroDaAgenda> = {}): FiltroDaAgenda => ({
+    ...lerFiltroDaAgenda({}),
+    alcance: 'equipe',
+    ...parcial,
+  })
+
+  beforeAll(async () => {
+    if (!temCredencial) return
+    conta = (await criarCliente(`${marca} agenda`)).id
+    vizinha = (await criarCliente(`${marca} agenda vizinha`)).id
+
+    const usuarios = [`${marca} eu`, `${marca} colega`].map((nome) => ({
+      id: crypto.randomUUID(),
+      name: nome,
+      email: `${nome.replace(/\s/g, '-')}@exemplo.test`,
+      emailVerified: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }))
+    await db().from('af_usuarios').insert(usuarios)
+    ;[eu, colega] = [usuarios[0]!.id, usuarios[1]!.id]
+
+    joao = (await acharOuCriarContato(conta, telefoneDoJoao, 'João Pedro')).id
+    const maria = (await acharOuCriarContato(conta, `5511${seed}31`, 'Maria')).id
+    const pedro = (await acharOuCriarContato(conta, `5511${seed}32`, 'Pedro')).id
+    const outroDaVizinha = (await acharOuCriarContato(vizinha, `5511${seed}33`, 'João Vizinho')).id
+
+    const dia = (d: number, h = 12, m = 0) => new Date(Date.UTC(2026, 8, d, h, m)).toISOString()
+    const linhas: Record<string, unknown>[] = []
+    const abre = (prazo: string | null, contato: string, titulo: string, responsavel = eu) =>
+      linhas.push({ client_id: conta, contact_id: contato, tipo: 'tarefa', titulo, prazo, responsavel, situacao: 'aberta', concluida_em: null })
+
+    // 20 vencidas, 10 de hoje (uma às 23h30 UTC), 25 próximas, 5 sem prazo = 60 abertas.
+    for (let i = 0; i < 20; i++) abre(dia(1 + (i % 20)), maria, `Vencida ${i}`)
+    for (let i = 0; i < 9; i++) abre(dia(23, 9 + i), pedro, `Hoje ${i}`)
+    abre(dia(23, 23, 30), pedro, 'Hoje tarde da noite')
+    for (let i = 0; i < 24; i++) abre(dia(24 + (i % 6)), maria, `Próxima ${i}`, i < 5 ? colega : eu)
+    // A do João é a última da ordem: sem busca, ela só aparece na página 2.
+    abre(dia(30, 18), joao, 'Aula experimental')
+    for (let i = 0; i < 5; i++) abre(null, pedro, `Algum dia ${i}`)
+
+    const fechadas = [dia(20, 10), dia(22, 10), dia(21, 10)].map((quando, i) => ({
+      client_id: conta, contact_id: maria, tipo: 'tarefa', titulo: `Feita ${i}`,
+      situacao: 'concluida', concluida_em: quando, responsavel: eu, prazo: null,
+    }))
+    const daVizinha = { client_id: vizinha, contact_id: outroDaVizinha, tipo: 'tarefa', titulo: 'Da vizinha', prazo: dia(22), responsavel: null, situacao: 'aberta', concluida_em: null }
+
+    const { error } = await db().from('atividades').insert([...linhas, ...fechadas, daVizinha])
+    if (error) throw new Error(error.message)
+  })
+
+  afterAll(async () => {
+    if (!temCredencial) return
+    await db().from('clients').delete().in('id', [conta, vizinha].filter(Boolean))
+    await db().from('af_usuarios').delete().in('id', [eu, colega].filter(Boolean))
+  })
+
+  it('acha atividade além das primeiras 50 pela busca do nome do contato, sem acento', async () => {
+    const sem = await paginaDaAgenda(conta, { tipo: 'tudo' }, eu, filtro(), AGORA)
+    expect(sem.itens.some((a) => a.contato.id === joao)).toBe(false)
+
+    const r = await paginaDaAgenda(conta, { tipo: 'tudo' }, eu, filtro({ busca: 'joao' }), AGORA)
+    expect(r.total).toBe(1)
+    expect(r.itens[0]?.titulo).toBe('Aula experimental')
+    expect(r.itens[0]?.contato.nome).toBe('João Pedro')
+  })
+
+  it('busca por telefone ignora espaço e traço', async () => {
+    const final = telefoneDoJoao.slice(-8)
+    const digitado = `${final.slice(0, 4)} ${final.slice(4, 6)}-${final.slice(6)}`
+    const r = await paginaDaAgenda(conta, { tipo: 'tudo' }, eu, filtro({ busca: digitado }), AGORA)
+    expect(r.itens.map((a) => a.contato.id)).toEqual([joao])
+  })
+
+  it('recortes somam o total de abertas', async () => {
+    const r = await paginaDaAgenda(conta, { tipo: 'tudo' }, eu, filtro(), AGORA)
+    expect(r.contagens).toEqual({ vencidas: 20, hoje: 10, proximas: 25, 'sem-prazo': 5 })
+    const soma = Object.values(r.contagens).reduce((a, b) => a + b, 0)
+    expect(soma).toBe(r.total)
+  })
+
+  it('atividade de hoje às 23h30 UTC conta como hoje, igual a urgenciaDe', async () => {
+    const r = await paginaDaAgenda(conta, { tipo: 'tudo' }, eu, filtro({ recorte: 'hoje' }), AGORA)
+    const tarde = r.itens.find((a) => a.titulo === 'Hoje tarde da noite')
+    expect(tarde).toBeDefined()
+    expect(r.itens.every((a) => urgenciaDe(a, AGORA) === 'hoje')).toBe(true)
+  })
+
+  it('escopo proprios não vê a de outra pessoa nem pedindo responsavel na URL', async () => {
+    const r = await paginaDaAgenda(
+      conta,
+      { tipo: 'proprios', usuarioId: eu },
+      eu,
+      filtro({ responsavel: colega }),
+      AGORA,
+    )
+    expect(r.total).toBe(55)
+    expect(r.itens.every((a) => a.responsavelId === eu)).toBe(true)
+    expect(r.contagens.proximas).toBe(20)
+  })
+
+  it('minhas mostra só as de quem olha, mesmo com escopo amplo', async () => {
+    const r = await paginaDaAgenda(conta, { tipo: 'tudo' }, colega, filtro({ alcance: 'minhas' }), AGORA)
+    expect(r.total).toBe(5)
+  })
+
+  it('concluídas vêm em ordem de conclusão, a mais recente primeiro', async () => {
+    const r = await paginaDaAgenda(conta, { tipo: 'tudo' }, eu, filtro({ situacao: 'concluida' }), AGORA)
+    expect(r.itens.map((a) => a.titulo)).toEqual(['Feita 1', 'Feita 2', 'Feita 0'])
+  })
+
+  it('total e página: 60 abertas dão página 2 com 10 itens', async () => {
+    const r = await paginaDaAgenda(conta, { tipo: 'tudo' }, eu, filtro({ pagina: 2 }), AGORA)
+    expect(r.total).toBe(60)
+    expect(r.itens).toHaveLength(10)
+    expect(r.itens.at(-1)?.prazo).toBeNull()
+  })
+
+  it('não lê atividade de outra conta', async () => {
+    const r = await paginaDaAgenda(conta, { tipo: 'tudo' }, eu, filtro({ busca: 'vizinh' }), AGORA)
+    expect(r.total).toBe(0)
+    const daVizinha = await paginaDaAgenda(vizinha, { tipo: 'tudo' }, eu, filtro(), AGORA)
+    expect(daVizinha.itens.map((a) => a.titulo)).toEqual(['Da vizinha'])
   })
 })

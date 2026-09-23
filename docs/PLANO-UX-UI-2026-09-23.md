@@ -374,7 +374,7 @@ export async function paginaDaAgenda(
   (`grep -rn "agenda(" src`); se só a página de Atividades usa, remova-a no fim
   da tarefa 1.3.
 
-- [ ] **Passo 1: teste puro que falha** em `src/core/atividades-agenda.test.ts`:
+- [x] **Passo 1: teste puro que falha** em `src/core/atividades-agenda.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest'
@@ -405,11 +405,11 @@ describe('filtro da agenda lido da URL', () => {
 })
 ```
 
-- [ ] **Passo 2:** `npx vitest run --config vitest.unit.config.ts src/core/atividades-agenda.test.ts` → FAIL (função não existe).
-- [ ] **Passo 3:** implementar `lerFiltroDaAgenda` e `paraParametros` em
+- [x] **Passo 2:** `npx vitest run --config vitest.unit.config.ts src/core/atividades-agenda.test.ts` → FAIL (função não existe).
+- [x] **Passo 3:** implementar `lerFiltroDaAgenda` e `paraParametros` em
   `src/core/atividades.ts` (nomes de parâmetro na URL: `situacao`, `recorte`,
   `q`, `tipo`, `responsavel`, `alcance`, `pagina`). Rodar → PASS.
-- [ ] **Passo 4: testes de integração que falham** em
+- [x] **Passo 4: testes de integração que falham** em
   `src/server/repos/atividades.test.ts`, num `describe.skipIf(!temCredencial)('agenda paginada', ...)`
   com fixture própria (cliente novo, 2 membros, 3 contatos, 60 atividades):
   - `acha atividade além das primeiras 50 pela busca do nome do contato, sem acento` (contato "João", busca "joao").
@@ -420,10 +420,10 @@ describe('filtro da agenda lido da URL', () => {
   - `concluídas vêm em ordem de conclusão, a mais recente primeiro`.
   - `total e página: 60 abertas dão página 2 com 10 itens`.
   - `não lê atividade de outra conta`.
-- [ ] **Passo 5:** `npx vitest run --config vitest.integration.config.ts src/server/repos/atividades.test.ts` → FAIL.
-- [ ] **Passo 6:** implementar `paginaDaAgenda` seguindo as regras acima.
-- [ ] **Passo 7:** rodar de novo → PASS. `npm run typecheck`.
-- [ ] **Passo 8:** commit `feat(atividades): agenda paginada com busca, recortes e escopo no servidor`.
+- [x] **Passo 5:** `npx vitest run --config vitest.integration.config.ts src/server/repos/atividades.test.ts` → FAIL.
+- [x] **Passo 6:** implementar `paginaDaAgenda` seguindo as regras acima.
+- [x] **Passo 7:** rodar de novo → PASS. `npm run typecheck`.
+- [x] **Passo 8:** commit `feat(atividades): agenda paginada com busca, recortes e escopo no servidor`.
 
 ### Tarefa 1.2: reagendar e atribuir (servidor)
 
@@ -1272,3 +1272,7 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
   CSV chamavam `paginarLeads` sem `estado`, e o padrão é o do Inbox (`aberta`):
   quem teve a conversa resolvida sumia da lista e do total. Os dois passam
   `estado: 'todas'`. O "de N" com filtro usa `contarLeads`.
+- 23/09, tarefa 1.1: busca sem acento sem `unaccent` (extensão é global ao
+  banco dividido): o termo vira regex com classes de acento e vai por `imatch`
+  (`padraoSemAcento` em `src/core/atividades.ts`). Responsável `ninguem` com
+  escopo de equipe devolve vazio (sem responsável não é de equipe nenhuma).

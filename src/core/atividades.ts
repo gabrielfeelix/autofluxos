@@ -206,3 +206,129 @@ export type DestinoAoFechar = (typeof DESTINOS_AO_FECHAR)[number]
 export function ehDestinoAoFechar(valor: unknown): valor is DestinoAoFechar {
   return typeof valor === 'string' && (DESTINOS_AO_FECHAR as readonly string[]).includes(valor)
 }
+
+// ---------------------------------------------------------------------------
+// A agenda como tela: filtro que mora na URL
+// ---------------------------------------------------------------------------
+
+export const POR_PAGINA_DA_AGENDA = 50
+
+/** O quanto da busca é levado a sério. Mais que isso não é busca, é colagem. */
+export const LIMITE_DA_BUSCA_DA_AGENDA = 80
+
+export const RECORTES_DA_AGENDA = ['vencidas', 'hoje', 'proximas', 'sem-prazo'] as const
+
+export type RecorteDaAgenda = (typeof RECORTES_DA_AGENDA)[number]
+
+export type FiltroDaAgenda = {
+  situacao: SituacaoDaAtividade
+  /** `null` = todos os prazos. */
+  recorte: RecorteDaAgenda | null
+  /** `''` = sem busca. Já aparada e cortada em 80 caracteres. */
+  busca: string
+  tipo: TipoDeAtividade | null
+  /** Id do membro; `'ninguem'` = sem responsável; `null` = qualquer um. */
+  responsavel: string | 'ninguem' | null
+  /** `'equipe'` só vale se o escopo de quem olha permitir; o servidor decide. */
+  alcance: 'minhas' | 'equipe'
+  /** Começa em 1. */
+  pagina: number
+}
+
+type Parametros = Record<string, string | string[] | undefined>
+
+function primeiro(valor: string | string[] | undefined): string {
+  if (Array.isArray(valor)) return valor[0] ?? ''
+  return valor ?? ''
+}
+
+/**
+ * O filtro da agenda a partir dos parâmetros da URL.
+ *
+ * Valor desconhecido cai no padrão em vez de quebrar a tela: a URL é colada,
+ * editada à mão e guardada em favorito, e nenhuma dessas origens é confiável.
+ */
+export function lerFiltroDaAgenda(params: Parametros): FiltroDaAgenda {
+  const situacao = primeiro(params.situacao)
+  const recorte = primeiro(params.recorte)
+  const tipo = primeiro(params.tipo)
+  const responsavel = primeiro(params.responsavel).trim()
+  const pagina = Number.parseInt(primeiro(params.pagina), 10)
+
+  return {
+    situacao: (SITUACOES as readonly string[]).includes(situacao)
+      ? (situacao as SituacaoDaAtividade)
+      : 'aberta',
+    recorte: (RECORTES_DA_AGENDA as readonly string[]).includes(recorte)
+      ? (recorte as RecorteDaAgenda)
+      : null,
+    busca: primeiro(params.q).trim().slice(0, LIMITE_DA_BUSCA_DA_AGENDA),
+    tipo: ehTipoDeAtividade(tipo) ? tipo : null,
+    // Id vira filtro de `eq` no servidor; qualquer coisa fora do formato de id
+    // é descartada aqui para não chegar ao banco como texto livre.
+    responsavel: responsavel === 'ninguem' ? 'ninguem' : /^[\w-]{1,64}$/.test(responsavel) ? responsavel : null,
+    alcance: primeiro(params.alcance) === 'equipe' ? 'equipe' : 'minhas',
+    pagina: Number.isFinite(pagina) && pagina > 1 ? pagina : 1,
+  }
+}
+
+/** O caminho de volta: só o que difere do padrão entra na URL. */
+export function paraParametros(filtro: FiltroDaAgenda): URLSearchParams {
+  const p = new URLSearchParams()
+  if (filtro.situacao !== 'aberta') p.set('situacao', filtro.situacao)
+  if (filtro.recorte) p.set('recorte', filtro.recorte)
+  if (filtro.busca) p.set('q', filtro.busca)
+  if (filtro.tipo) p.set('tipo', filtro.tipo)
+  if (filtro.responsavel) p.set('responsavel', filtro.responsavel)
+  if (filtro.alcance !== 'minhas') p.set('alcance', filtro.alcance)
+  if (filtro.pagina > 1) p.set('pagina', String(filtro.pagina))
+  return p
+}
+
+/**
+ * Onde começa hoje e onde começa amanhã, **no dia UTC**.
+ *
+ * É a mesma régua de `urgenciaDe`, e precisa ser: o atalho "Hoje" conta pela
+ * consulta e a linha se pinta por `urgenciaDe`. Réguas diferentes fariam o
+ * contador dizer 12 e a lista mostrar 11 marcadas como "hoje".
+ */
+export function fronteirasDoDia(agora: number): { inicioDeHoje: string; inicioDeAmanha: string } {
+  const d = new Date(agora)
+  const hoje = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())
+  return {
+    inicioDeHoje: new Date(hoje).toISOString(),
+    inicioDeAmanha: new Date(hoje + 86_400_000).toISOString(),
+  }
+}
+
+const VARIANTES: Record<string, string> = {
+  a: 'aáàâãäAÁÀÂÃÄ',
+  e: 'eéèêëEÉÈÊË',
+  i: 'iíìîïIÍÌÎÏ',
+  o: 'oóòôõöOÓÒÔÕÖ',
+  u: 'uúùûüUÚÙÛÜ',
+  c: 'cçCÇ',
+  n: 'nñNÑ',
+}
+
+/**
+ * Uma expressão regular que acha o termo com ou sem acento.
+ *
+ * O banco não tem `unaccent`, e instalar extensão mexe no projeto que a
+ * Verandi também usa. Então o termo vira classe de caracteres: "joao" vira
+ * `j[oó...][aã...][oó...]` e casa "João". As duas caixas vão na classe porque
+ * o `~*` do Postgres só dobra caixa de letra ASCII na localidade C.
+ *
+ * Só sobra letra, número, espaço e `@ _ -`; ponto vira `[.]`. Assim nada do
+ * termo é curinga de regex, nem quebra o `or()` do PostgREST.
+ */
+export function padraoSemAcento(termo: string): string {
+  let padrao = ''
+  for (const letra of termo.normalize('NFD').replace(/\p{M}/gu, '')) {
+    const base = letra.toLowerCase()
+    if (VARIANTES[base]) padrao += `[${VARIANTES[base]}]`
+    else if (letra === '.') padrao += '[.]'
+    else if (/[\p{L}\p{N}\s@_-]/u.test(letra)) padrao += letra
+  }
+  return padrao
+}
