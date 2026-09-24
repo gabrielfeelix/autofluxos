@@ -1,3 +1,5 @@
+import { ehBsuid } from './bsuid'
+
 /**
  * Casar o telefone da planilha do cliente com o `wa_id` que a Meta manda.
  *
@@ -100,6 +102,9 @@ export function telefoneCanonico(bruto: string): string | null {
  * DDI de outro país**: ele atravessa inteiro, que é a resposta honesta.
  */
 export function telefoneLegivel(bruto: string): string {
+  // Usernames do WhatsApp: o endereço é o id da Meta, não um número.
+  if (ehBsuid(bruto)) return 'número oculto'
+
   const so = digitos(bruto)
   const temDdiBrasil = so.startsWith(DDI_BRASIL) && (so.length === 12 || so.length === 13)
   const semDdi = temDdiBrasil ? so.slice(2) : so

@@ -1,3 +1,4 @@
+import { ehBsuid } from '@/core/contatos/bsuid'
 import { LIMITE_ATRASO_SEGUNDOS, LIMITE_ROTULO, type Opcao } from '@/core/flow/schema'
 import { cortarCaracteres } from '@/core/flow/texto'
 import { linhasDoCard } from '@/core/loja'
@@ -143,6 +144,21 @@ function idDoEnvio(resposta: RespostaDeEnvio): string | null {
   return typeof id === 'string' && id !== '' ? id : null
 }
 
+/**
+ * Troca `to` por `recipient` quando o destino é um BSUID.
+ *
+ * Contato que adotou nome de usuário no WhatsApp e não deu o telefone fica com
+ * o BSUID no `wa_id` (ver `core/contatos/bsuid.ts`). A Cloud API aceita o
+ * BSUID só em `recipient`; em `to` ela trataria como telefone e recusaria.
+ * Feito aqui, no único POST de `/messages`, para nenhum dos sete tipos de envio
+ * precisar saber disso.
+ */
+export function enderecar(corpo: Record<string, unknown>): Record<string, unknown> {
+  if (!ehBsuid(corpo.to as string | undefined)) return corpo
+  const { to, ...resto } = corpo
+  return { ...resto, recipient: to }
+}
+
 export function canalCloudApi(config: ConfigCloudApi): Canal {
   const versao = config.versaoGraph ?? process.env.META_GRAPH_VERSION ?? VERSAO_PADRAO
   const raiz = `https://graph.facebook.com/${versao}`
@@ -171,7 +187,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
           Authorization: `Bearer ${config.token}`,
           'content-type': 'application/json',
         },
-        body: JSON.stringify({ messaging_product: 'whatsapp', ...corpo }),
+        body: JSON.stringify({ messaging_product: 'whatsapp', ...enderecar(corpo) }),
         signal: AbortSignal.timeout(timeoutMs),
       })
     } catch (erro) {

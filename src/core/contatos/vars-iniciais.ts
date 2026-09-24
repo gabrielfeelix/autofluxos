@@ -1,5 +1,6 @@
 import { VARIAVEIS_DE_DATA } from '../datas'
 import { VARIAVEIS_DO_ATENDIMENTO } from '../vars-do-atendimento'
+import { ehBsuid } from './bsuid'
 import { telefoneLegivel } from './telefone'
 /**
  * O que a conversa já sabe antes de perguntar qualquer coisa.
@@ -58,7 +59,9 @@ export function varsIniciais(contato: RetratoDoContato): Record<string, string> 
   const doPerfil = (contato.nome ?? '').trim()
   if (doPerfil !== '') vars.nome = doPerfil
 
-  vars.telefone = contato.waId
+  // Sem telefone quando o endereço é BSUID (usernames do WhatsApp): o id da
+  // Meta dentro de uma frase ou no corpo de uma integração não é um número.
+  if (!ehBsuid(contato.waId)) vars.telefone = contato.waId
 
   /*
    * O que a conversa coletou vence o que veio de fora.

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { canalCloudApi } from './cloud-api'
+import { canalCloudApi, enderecar } from './cloud-api'
 
 afterEach(() => {
   vi.useRealTimers()
@@ -496,5 +496,19 @@ describe('card do produto na Cloud API', () => {
         action: { name: 'cta_url', parameters: { display_text: 'Ver na loja', url: produto.link } },
       },
     })
+  })
+})
+
+describe('envio para contato sem telefone (BSUID)', () => {
+  it('troca `to` por `recipient` quando o destino é BSUID', () => {
+    expect(enderecar({ to: 'BR.13491208655302741918', type: 'text' })).toEqual({
+      recipient: 'BR.13491208655302741918',
+      type: 'text',
+    })
+  })
+
+  it('telefone continua em `to`', () => {
+    const corpo = { to: '5511987654321', type: 'text' }
+    expect(enderecar(corpo)).toBe(corpo)
   })
 })

@@ -33,6 +33,7 @@ export const TESTES_DE_INTEGRACAO = [
   'src/server/isolamento-do-schema.test.ts',
   'src/server/passada-de-retomada.test.ts',
   'src/server/receber-evento.test.ts',
+  'src/server/repos/contato-por-bsuid.test.ts',
   'src/server/receber-lead-do-formulario.test.ts',
   'src/server/receber-mensagem.test.ts',
   'src/server/permissoes.test.ts',

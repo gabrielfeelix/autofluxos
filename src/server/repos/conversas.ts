@@ -1,6 +1,7 @@
 import 'server-only'
 import type { OrigemDoHandoff } from '@/core/desfecho-da-conversa'
 import type { AutorDaSaida } from '@/core/autor-da-mensagem'
+import { ehBsuid } from '@/core/contatos/bsuid'
 import { sessaoSchema, type Sessao } from '@/core/engine/types'
 import type { PapelDoNumero } from '@/core/papeis-do-numero'
 import { db, ehIdInvalido } from '../db'
@@ -234,11 +235,52 @@ function paraContato(linha: Record<string, unknown>): Omit<Contato, 'criadoAgora
  * Instagram ele exige uma consulta à parte, que pode falhar, e falhar não pode
  * custar o nome que já estava no Inbox.
  */
+/**
+ * O que o webhook do WhatsApp diz de quem mandou, além do endereço.
+ *
+ * Com os nomes de usuário do WhatsApp (2026) o telefone pode não vir, e o
+ * BSUID vem sempre. Ver `core/contatos/bsuid.ts` e a migration `0098`.
+ */
+export type IdentidadeDoWhatsApp = {
+  bsuid?: string | null
+  username?: string | null
+}
+
 export async function acharOuCriarContato(
   clienteId: string,
   waId: string,
   nome: string | null,
+  identidade: IdentidadeDoWhatsApp = {},
 ): Promise<Contato> {
+  const bsuid = identidade.bsuid ?? null
+  const username = identidade.username ?? null
+
+  /*
+   * **O BSUID primeiro, antes do endereço.** O mesmo cliente pode chegar hoje
+   * com telefone e amanhã sem (passaram 30 dias sem conversa e ele adotou nome
+   * de usuário), ou o contrário. Procurar pelo endereço primeiro abriria uma
+   * segunda ficha a cada troca; o BSUID é o que não muda entre as duas.
+   */
+  if (bsuid) {
+    const { data, error } = await db()
+      .from('contacts')
+      .select(COLUNAS_DO_CONTATO)
+      .eq('client_id', clienteId)
+      .eq('bsuid', bsuid)
+      .maybeSingle()
+    if (error) throw new Error(`não deu para achar o contato pelo BSUID: ${error.message}`)
+    if (data) {
+      const achado = paraContato(data as Record<string, unknown>)
+      return { ...(await atualizarIdentidade(achado, waId, nome, username)), criadoAgora: false }
+    }
+  }
+
+  const extras = {
+    ...(nome === null ? {} : { nome }),
+    ...(bsuid === null ? {} : { bsuid }),
+    ...(username === null ? {} : { username }),
+  }
+
   /**
    * **Duas escritas para responder "este contato nasceu agora?".**
    *
@@ -255,7 +297,7 @@ export async function acharOuCriarContato(
    */
   const { data: inserido, error: erroAoInserir } = await db()
     .from('contacts')
-    .insert({ client_id: clienteId, wa_id: waId, ...(nome === null ? {} : { nome }) })
+    .insert({ client_id: clienteId, wa_id: waId, ...extras })
     .select(COLUNAS_DO_CONTATO)
     .maybeSingle()
 
@@ -274,7 +316,7 @@ export async function acharOuCriarContato(
   const { data, error } = await db()
     .from('contacts')
     .upsert(
-      { client_id: clienteId, wa_id: waId, ...(nome === null ? {} : { nome }) },
+      { client_id: clienteId, wa_id: waId, ...extras },
       { onConflict: 'client_id,wa_id' },
     )
     .select(COLUNAS_DO_CONTATO)
@@ -283,6 +325,80 @@ export async function acharOuCriarContato(
   if (error) throw new Error(`não deu para registrar o contato: ${error.message}`)
 
   return { ...paraContato(data as Record<string, unknown>), criadoAgora: false }
+}
+
+/**
+ * O contato achado pelo BSUID, com o que o webhook trouxe de novo.
+ *
+ * **O telefone vence o BSUID no `wa_id`** quando aparece: é o que a Meta
+ * recomenda (mandar para o número mantém o número vindo nos webhooks) e é o
+ * que a planilha, a agenda e o formulário de anúncio sabem casar. O contrário
+ * nunca acontece: um telefone guardado não volta a ser BSUID só porque um
+ * webhook veio sem ele.
+ *
+ * Se o telefone já é de outra ficha (a pessoa falou pelos dois caminhos antes
+ * de o BSUID ser guardado), as duas continuam separadas: juntar histórico é
+ * decisão de gente, e errar aqui misturaria conversas de pessoas diferentes.
+ */
+async function atualizarIdentidade(
+  achado: Omit<Contato, 'criadoAgora'>,
+  waId: string,
+  nome: string | null,
+  username: string | null,
+): Promise<Omit<Contato, 'criadoAgora'>> {
+  const mudanca: Record<string, string> = {}
+  if (ehBsuid(achado.waId) && !ehBsuid(waId) && waId !== achado.waId) mudanca.wa_id = waId
+  if (nome !== null && nome !== achado.nome) mudanca.nome = nome
+  if (username !== null) mudanca.username = username
+  if (Object.keys(mudanca).length === 0) return achado
+
+  const gravar = (campos: Record<string, string>) =>
+    db().from('contacts').update(campos).eq('id', achado.id).select(COLUNAS_DO_CONTATO).single()
+
+  let { data, error } = await gravar(mudanca)
+  if (error?.code === '23505' && mudanca.wa_id) {
+    console.warn('[contatos] telefone já pertence a outra ficha; mantendo o BSUID', achado.id)
+    const semTelefone = { ...mudanca }
+    delete semTelefone.wa_id
+    if (Object.keys(semTelefone).length === 0) return achado
+    ;({ data, error } = await gravar(semTelefone))
+  }
+  if (error) throw new Error(`não deu para atualizar o contato: ${error.message}`)
+
+  return paraContato(data as Record<string, unknown>)
+}
+
+/**
+ * A pessoa trocou de número, e com isso de BSUID (mensagem de sistema
+ * `user_changed_number` ou `user_changed_user_id`).
+ *
+ * Sem isto, a próxima mensagem dela chegaria com um BSUID que ninguém conhece
+ * e abriria uma ficha nova, vazia, para alguém que já tem histórico. O número
+ * novo, quando a Meta pode mostrá-lo, vira o endereço; quando não pode e a
+ * ficha estava presa ao BSUID antigo, o novo BSUID toma o lugar dele.
+ */
+export async function trocarBsuid(
+  clienteId: string,
+  anterior: string,
+  novo: string,
+  telefone: string | null,
+): Promise<void> {
+  const { data, error } = await db()
+    .from('contacts')
+    .select(COLUNAS_DO_CONTATO)
+    .eq('client_id', clienteId)
+    .eq('bsuid', anterior)
+    .maybeSingle()
+  if (error) throw new Error(`não deu para achar o contato pelo BSUID: ${error.message}`)
+  if (!data) return
+
+  const achado = paraContato(data as Record<string, unknown>)
+  const mudanca: Record<string, string> = { bsuid: novo }
+  if (telefone && telefone !== achado.waId) mudanca.wa_id = telefone
+  else if (ehBsuid(achado.waId)) mudanca.wa_id = novo
+
+  const { error: erro } = await db().from('contacts').update(mudanca).eq('id', achado.id)
+  if (erro) throw new Error(`não deu para trocar o BSUID do contato: ${erro.message}`)
 }
 
 export async function acharContato(contatoId: string): Promise<Contato | null> {

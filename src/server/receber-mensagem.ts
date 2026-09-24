@@ -63,8 +63,10 @@ import {
   trocarVersaoDaSessao,
   ultimaSessao,
   vincularSessaoNaMensagem,
+  trocarBsuid,
   type CanalSalvo,
   type Contato,
+  type IdentidadeDoWhatsApp,
   type SessaoSalva,
   revisaoDoControle,
 } from './repos/conversas'
@@ -106,8 +108,28 @@ const anexoSchema = z.object({
 
 const mensagemSchema = z.object({
   id: z.string(),
-  from: z.string(),
+  /*
+   * **Opcional desde os nomes de usuário do WhatsApp (2026).** Quem adota um
+   * chega sem telefone, a menos que o número da conta tenha falado com ele nos
+   * últimos 30 dias, e a Meta **omite** o campo em vez de mandar vazio. Com
+   * `from` obrigatório o parse do lote inteiro falhava e a mensagem sumia sem
+   * alerta. `from_user_id` (o BSUID) vem sempre. Ver `core/contatos/bsuid.ts`.
+   */
+  from: z.string().optional(),
+  from_user_id: z.string().optional(),
   type: z.string(),
+  /*
+   * Troca de número ou de BSUID (`user_changed_number`, `user_changed_user_id`).
+   * Não é conversa: atualiza a ficha e não passa pelo bot.
+   */
+  system: z
+    .object({
+      type: z.string().optional(),
+      wa_id: z.string().optional(),
+      user_id: z.string().optional(),
+      previous_user_id: z.string().optional(),
+    })
+    .optional(),
   referral: referralSchema.optional(),
   text: z.object({ body: z.string() }).optional(),
   interactive: z
@@ -217,8 +239,12 @@ export const webhookSchema = z.object({
                 contacts: z
                   .array(
                     z.object({
-                      wa_id: z.string(),
-                      profile: z.object({ name: z.string().optional() }).optional(),
+                      // Os dois como em `messages[].from`: o telefone pode faltar.
+                      wa_id: z.string().optional(),
+                      user_id: z.string().optional(),
+                      profile: z
+                        .object({ name: z.string().optional(), username: z.string().optional() })
+                        .optional(),
                     }),
                   )
                   .optional(),
@@ -240,7 +266,11 @@ export const webhookSchema = z.object({
  * webhook de lá para cá antes de chamar `tratarUma`. Traduzir na entrada é o
  * que impede o motor, o histórico e o handoff de ganharem um `if` por canal.
  */
-export type Mensagem = z.infer<typeof mensagemSchema>
+/**
+ * A mensagem com o endereço já resolvido: o telefone, ou o BSUID quando o
+ * telefone não veio. O Instagram monta a mesma forma com o IGSID.
+ */
+export type Mensagem = z.infer<typeof mensagemSchema> & { from: string }
 type Referral = z.infer<typeof referralSchema>
 
 /** Como o canal é montado. Injetável para os testes rodarem sem rede. */
@@ -291,8 +321,30 @@ export async function receberMensagem(
       await guardarTelefoneDoCanal(canalSalvo, valor.metadata?.display_phone_number)
 
       for (const mensagem of valor.messages) {
-        const perfil = valor.contacts?.find((c) => c.wa_id === mensagem.from)
-        await tratarUma(canalSalvo, mensagem, perfil?.profile?.name ?? null, fabricaDeCanal)
+        if (mensagem.type === 'system') {
+          await tratarTrocaDeIdentidade(canalSalvo, mensagem.system)
+          continue
+        }
+
+        const endereco = mensagem.from ?? mensagem.from_user_id
+        if (!endereco) {
+          await alertar('mensagem do WhatsApp sem remetente', 'sem from e sem from_user_id', {
+            canal: canalSalvo.id,
+          })
+          continue
+        }
+
+        const perfil = valor.contacts?.find(
+          (c) =>
+            (mensagem.from !== undefined && c.wa_id === mensagem.from) ||
+            (mensagem.from_user_id !== undefined && c.user_id === mensagem.from_user_id),
+        )
+        const username = perfil?.profile?.username ?? null
+        const nome = perfil?.profile?.name ?? (username ? `@${username}` : null)
+        await tratarUma(canalSalvo, { ...mensagem, from: endereco }, nome, fabricaDeCanal, {
+          bsuid: mensagem.from_user_id ?? perfil?.user_id ?? null,
+          username,
+        })
       }
     }
   }
@@ -306,6 +358,28 @@ export async function receberMensagem(
  * o que não recebe 200 a tempo, e reentrega vira mensagem duplicada para o
  * lead. Cara demais por um rótulo.
  */
+/**
+ * A mensagem de sistema de troca de número ou de BSUID. Ver `trocarBsuid`.
+ *
+ * Falha aqui não pode derrubar o resto do lote: vira alerta, e a próxima
+ * mensagem da pessoa, no pior caso, abre uma ficha nova.
+ */
+async function tratarTrocaDeIdentidade(
+  canal: CanalSalvo,
+  sistema: z.infer<typeof mensagemSchema>['system'],
+): Promise<void> {
+  const anterior = sistema?.previous_user_id
+  const novo = sistema?.user_id
+  if (!anterior || !novo) return
+
+  try {
+    await trocarBsuid(canal.clienteId, anterior, novo, sistema?.wa_id ?? null)
+  } catch (erro) {
+    const detalhe = erro instanceof Error ? erro.message : String(erro)
+    await alertar('não deu para trocar o BSUID do contato', detalhe, { canal: canal.id })
+  }
+}
+
 async function guardarTelefoneDoCanal(canal: CanalSalvo, telefone: string | undefined) {
   if (!telefone || canal.displayPhoneNumber) return
 
@@ -329,9 +403,15 @@ export async function tratarUma(
   mensagem: Mensagem,
   nomeDoPerfil: string | null,
   fabricaDeCanal: FabricaDeCanal,
+  identidade: IdentidadeDoWhatsApp = {},
 ): Promise<void> {
   const { entrada, texto } = paraEntrada(mensagem)
-  const contato = await acharOuCriarContato(canalSalvo.clienteId, mensagem.from, nomeDoPerfil)
+  const contato = await acharOuCriarContato(
+    canalSalvo.clienteId,
+    mensagem.from,
+    nomeDoPerfil,
+    identidade,
+  )
 
   if (contato.criadoAgora) await porNoQuadroPadrao(contato)
 

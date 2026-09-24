@@ -126,7 +126,9 @@ const valorSchema = z
     contacts: z
       .array(
         z.object({
-          wa_id: z.string(),
+          // Opcional como em `receber-mensagem.ts`: com os nomes de usuário do
+          // WhatsApp (2026) a Meta omite o telefone de quem adotou um.
+          wa_id: z.string().optional(),
           profile: z.object({ name: z.string().optional() }).optional(),
         }),
       )
