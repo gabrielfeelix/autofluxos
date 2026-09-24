@@ -68,10 +68,44 @@ cadastrados à mão, com aviso de "app não verificado".
 frente. A mensagem para outro agente investigar foi entregue no chat de
 24/set.
 
-### 0.5 Migration `0103_loja_conectar`
+### 0.5 Migration `0103_loja_conectar`, ✅ **aplicada**
 
-Criada pela sessão da loja, commitada e publicada junto no push de 24/set, e
-**não aplicada** em produção. Conferir com aquela frente antes de aplicar.
+Aplicada em produção em 24/set com a sua autorização, depois do deploy
+`dd08e98`. Registro em `docs/BANCO-COMPARTILHADO.md`.
+
+### 0.6 Criar o app da Nuvemshop (trava a Nuvemshop em "Em breve")
+
+O código da conexão está no ar e não aparece para ninguém até existir o app.
+Só você cria, e não há API para isso:
+
+1. Conta de parceiro e app novo em <https://partners.nuvemshop.com.br>.
+2. Permissões: **só leitura**, `read_products` e `read_orders`.
+3. URL de redirecionamento:
+   `https://autofluxos.4yu.com.br/api/loja/nuvemshop/retorno`.
+4. Webhooks de LGPD (`store/redact`, `customers/redact`,
+   `customers/data_request`), os três para
+   `https://autofluxos.4yu.com.br/api/webhook/nuvemshop`.
+5. Copiar o **ID do app** e o **client secret** para a Vercel
+   (<https://vercel.com/4-yu/autofluxos/settings/environment-variables>) como
+   `NUVEMSHOP_APP_ID` e `NUVEMSHOP_CLIENT_SECRET`, e fazer um novo deploy.
+6. Pedir a loja demo gratuita de parceiro no mesmo portal, para o primeiro
+   teste.
+
+Depois disso o cartão da Nuvemshop em Loja > Conectar loja vira "Disponível".
+
+### 0.7 Confirmar duas coisas na primeira conexão real da Nuvemshop
+
+A documentação da Nuvemshop não afirma, com todas as letras:
+
+- **App não publicado instala por link.** A central de ajuda indica que sim
+  (tem página de suporte para "apps não disponíveis na Loja de Aplicativos"),
+  e é disso que a conexão depende. Se a Nuvemshop exigir homologação antes,
+  o caminho passa a ser publicar o app, com os três webhooks de LGPD que já
+  respondem.
+- **O link do produto.** O bot usa `canonical_url` quando vem, senão
+  `<loja>/produtos/<nome>/`. Conferir na loja demo que o link abre o produto.
+
+Pesquisa completa: `docs/INTEGRACAO-MAGENTO-23-SET.md`, seção Nuvemshop.
 
 
 ## 1. O primeiro administrador, ✅ **feito**

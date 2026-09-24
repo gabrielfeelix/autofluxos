@@ -404,17 +404,14 @@ só no fim da frente.
 **F4. Loja** (5.6): tela de plataformas, "Quero esta", Nuvemshop e WooCommerce
 depois da pesquisa de cada uma.
 
-**Estado da F4 (24/set, commits `5c94c9e` e `12ab219`, só local, sem deploy;
-WooCommerce fica para depois):**
+**Estado da F4 (24/set, commits `5c94c9e` e `12ab219`, em produção pelo deploy
+`dd08e98`; WooCommerce fica para depois):**
 
-- **Migration `0103_loja_conectar.sql`, aplicada só no local. Falta
-  autorização para produção**, e ela entra **antes** do deploy (o código lê
-  `pedidos_de_loja`, `clients.loja_ativa` e `lojas_integradas.id_na_plataforma`).
-  Aditiva: check de `plataforma` com `nuvemshop` e `woocommerce`,
+- **Migration `0103_loja_conectar.sql`, aplicada em produção** depois do deploy,
+  com autorização (registro em `docs/BANCO-COMPARTILHADO.md`). Aditiva: check de `plataforma` com `nuvemshop` e `woocommerce`,
   `id_na_plataforma` (anulável, único por plataforma), tabela
   `pedidos_de_loja` (RLS ligada, zero políticas, revoke com `public`) e
-  `clients.loja_ativa` (anulável, sem default: `null` = regra de antes). Ao
-  aplicar, registrar em `docs/BANCO-COMPARTILHADO.md` como a `0101`.
+  `clients.loja_ativa` (anulável, sem default: `null` = regra de antes).
 - Tela `loja/page.tsx` + `components/loja/conectar-loja.tsx`: "Disponível
   agora" (cartão largo) e "Em breve" (grade, Brasil primeiro), "O que a
   conexão rende" à direita, estado vazio com "Montar o catálogo". Regras puras
@@ -434,7 +431,8 @@ WooCommerce fica para depois):**
   `loja/nuvemshop.ts`, tradução pura `core/nuvemshop.ts` com teste; o bot usa
   Magento ligada, senão Nuvemshop ligada, senão catálogo. Tela
   `loja/nuvemshop`.
-- **Depende do Gabriel** para a Nuvemshop sair do "Em breve": conta de parceiro
+- **Depende do Gabriel** (`docs/PENDENCIAS-DO-DONO.md`, 0.6 e 0.7) para a
+  Nuvemshop sair do "Em breve": conta de parceiro
   e app em <https://partners.nuvemshop.com.br> (escopos `read_products` e
   `read_orders`, retorno `https://autofluxos.4yu.com.br/api/loja/nuvemshop/retorno`,
   webhooks de LGPD para `https://autofluxos.4yu.com.br/api/webhook/nuvemshop`),

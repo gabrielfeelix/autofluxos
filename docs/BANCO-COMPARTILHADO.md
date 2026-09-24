@@ -232,6 +232,35 @@ extração explícito para os objetos de `public`.
 
   A migration entrou **antes** do código que lê as colunas novas (regra da
   `0071`); o código publicado até aqui não lê nenhuma delas.
+- **a `0103` foi aplicada em 24/set/2026** (F4 do plano de navegação e CRM,
+  Loja), com autorização explícita do dono, pela Management API. Aditiva:
+  `lojas_integradas.plataforma` passa a aceitar `nuvemshop` e `woocommerce`
+  (drop e recria do check; a tabela tinha **0** linhas),
+  `lojas_integradas.id_na_plataforma` (texto anulável, índice único parcial
+  por plataforma), tabela `public.pedidos_de_loja` (o "Quero esta") e
+  `clients.loja_ativa` (booleano anulável, **sem default**: `null` é a regra de
+  antes, e nenhuma conta mudou de menu).
+
+  Verandi conferida antes: **35** migrations aplicadas (última `0064`),
+  repositório sem alteração local. Ensaio em transação antes, sem o `notify`:
+  dentro, `clients` com 39 colunas, `lojas_integradas` com 14, a tabela nova
+  com RLS e `has_table_privilege` falso para `anon`/`authenticated`; depois do
+  `rollback`, a tabela ausente e `clients` de volta a 38. Releitura depois de
+  aplicar: `loja_ativa` boolean anulável sem default, **0** contas com
+  escolha; `id_na_plataforma` e o índice presentes; `pedidos_de_loja` com RLS
+  ligada, **0** políticas, só `service_role` alcança; `pg_tables` de `public`
+  de 72 para 73; **6** contas e **46** contatos intactos;
+  `app_verandi.migrations_aplicadas` **35**, 40 tabelas em `app_verandi` e
+  **16** policies de `storage.objects`, iguais a antes. Data API depois do
+  `notify`: `pedidos_de_loja`, `clients?select=loja_ativa` e
+  `lojas_integradas?select=id_na_plataforma` **200** com a chave secreta e
+  **401** com a publicável; `app_verandi.conta` **200**.
+
+  **Aqui o deploy veio antes da migration, e o intervalo foi medido:** o
+  código de `dd08e98` lê as colunas novas com recuo (`lojaVisivel` cai na regra
+  antiga, a lista de pedidos vira vazia, a Nuvemshop vira `null`), então no
+  intervalo só o "Quero esta" e o interruptor de Loja recusavam, com mensagem,
+  e nenhuma tela caiu.
 - **a `0084` e a `0085` foram aplicadas em 20/set/2026**, na execução da F7, com
   autorização explícita do dono (pedida para a `0084` e estendida por ele às
   seguintes da F7/F8). As duas conferidas pelos **dois** testes: replay do zero em
