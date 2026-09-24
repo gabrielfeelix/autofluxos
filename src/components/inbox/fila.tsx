@@ -730,11 +730,22 @@ export function Fila({
                           ? `Aguardando pessoa: ${lead.aguardando.motivo}`
                           : undefined
                       }
-                      className={`min-w-0 flex-1 truncate text-[13.5px] leading-5 ${lead.aguardando ? "text-perigo" : semLer > 0 ? "font-medium text-ink" : "text-soft"}`}
+                      className={`min-w-0 flex-1 truncate text-[13.5px] leading-5 ${semLer > 0 ? "font-medium text-ink" : "text-soft"}`}
                     >
-                      {lead.aguardando
-                        ? `Pessoa: ${lead.aguardando.motivo}`
-                        : <ResumoDaConversa lead={lead} />}
+                      {/*
+                        Só o rótulo em vermelho, o motivo em cinza: o rótulo
+                        diz "precisa de gente", e é o único ponto vermelho que
+                        a linha precisa. Motivo inteiro em vermelho competia com
+                        o nome pela atenção.
+                      */}
+                      {lead.aguardando ? (
+                        <>
+                          <span className="font-semibold text-perigo">Pessoa: </span>
+                          {lead.aguardando.motivo}
+                        </>
+                      ) : (
+                        <ResumoDaConversa lead={lead} />
+                      )}
                     </span>
                     {/*
                     A insígnia é **minha**, não da conversa: ela conta o que
@@ -1076,7 +1087,13 @@ function RelogioDaJanela({
 
   if (restante === 0) {
     return (
-      <span className="mt-0.5 block text-[12px] font-semibold text-perigo">
+      /*
+        Cinza, não vermelho (24/set). Numa conversa esperando pessoa, a linha
+        de cima já é o alerta; as duas em vermelho, e em negrito, gritavam
+        juntas e a fila inteira parecia estar pegando fogo. O vermelho fica só
+        onde está a ação: alguém precisa atender.
+      */
+      <span className="mt-0.5 block text-[12px] text-dim">
         janela fechada, só modelo aprovado
       </span>
     );
