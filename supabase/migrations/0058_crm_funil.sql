@@ -1,11 +1,11 @@
--- 0058 — o quadro vira funil: estágio do contato, negociação no cartão,
+-- 0058: o quadro vira funil: estágio do contato, negociação no cartão,
 --        funis encadeados e a linha do tempo.
 --
 -- A decisão inteira está em `docs/MODELO-CRM.md`, e o resumo dela é um só:
 -- **existe um registro de pessoa, o contato, e o que se multiplica é o cartão**.
 -- Ninguém "vira" outro cadastro ao comprar; muda o estágio e nasce um cartão.
 --
--- Tudo aqui é aditivo — nenhuma coluna existente muda de tipo, nenhuma linha é
+-- Tudo aqui é aditivo, nenhuma coluna existente muda de tipo, nenhuma linha é
 -- reescrita, e todo default preenche o passado com o valor que já era verdade.
 -- É o que permite aplicar num banco dividido com a Verandi sem janela de parada
 -- (ver docs/BANCO-COMPARTILHADO.md). Nada aqui cita `app_verandi`, e todo
@@ -18,7 +18,7 @@ set search_path = public, extensions;
 -- ---------------------------------------------------------------------------
 --
 -- Um valor só, sempre presente, e **consequência e não formulário**: quem o
--- muda é o que aconteceu — a primeira mensagem, o fluxo que qualificou, o
+-- muda é o que aconteceu, a primeira mensagem, o fluxo que qualificou, o
 -- cartão que foi ganho. O ajuste na mão existe, mas é exceção.
 --
 -- `text` com `check`, e não `enum`: acrescentar valor a um enum no Postgres é
@@ -108,7 +108,7 @@ alter table public.quadro_colunas
 -- ---------------------------------------------------------------------------
 --
 -- Estas seis colunas são o que separa "um contato numa coluna" de uma
--- oportunidade — e são o que dá LTV, previsão e motivo de perda **sem** catálogo
+-- oportunidade, e são o que dá LTV, previsão e motivo de perda **sem** catálogo
 -- de produto, carrinho ou proposta, que são um produto inteiro e não é o nosso.
 --
 -- `titulo` é texto livre ("Plano trimestral", "Orçamento cozinha"). Um catálogo
@@ -125,7 +125,7 @@ alter table public.quadro_cartoes
   add column if not exists responsavel uuid references public.af_usuarios (id) on delete set null,
   add column if not exists situacao text not null default 'aberta'
     check (situacao in ('aberta', 'ganha', 'perdida')),
-  -- Só faz sentido em `perdida`, e é obrigatório lá — mas a obrigação mora em
+  -- Só faz sentido em `perdida`, e é obrigatório lá, mas a obrigação mora em
   -- `core/crm.ts`, não num `check` que impediria fechar um cartão antigo sem
   -- motivo cadastrado.
   add column if not exists motivo text,
@@ -141,7 +141,7 @@ create index if not exists quadro_cartoes_abertos_idx
   on public.quadro_cartoes (quadro_id, coluna_id)
   where situacao = 'aberta';
 
--- "Quanto este cliente já rendeu" e "quando foi a última compra" — as duas
+-- "Quanto este cliente já rendeu" e "quando foi a última compra", as duas
 -- perguntas do pós-venda, respondidas por um índice só.
 create index if not exists quadro_cartoes_ganhos_do_contato_idx
   on public.quadro_cartoes (contact_id, fechado_em desc)
@@ -152,7 +152,7 @@ create index if not exists quadro_cartoes_ganhos_do_contato_idx
 -- ---------------------------------------------------------------------------
 --
 -- Lista curta e por conta, editável, em vez de texto livre. Texto livre produz
--- "preço", "Preço", "caro", "achou caro" e nenhum agrupamento possível — e
+-- "preço", "Preço", "caro", "achou caro" e nenhum agrupamento possível, e
 -- agrupar é a única razão de registrar o motivo.
 
 create table if not exists public.motivos_de_perda (
@@ -184,7 +184,7 @@ comment on table public.motivos_de_perda is
 -- e a memória de quem atendeu.
 --
 -- Não substitui `messages`. A conversa continua sendo a conversa; aqui entram os
--- **fatos sobre o relacionamento** — mudou de etapa, alguém assumiu, virou
+-- **fatos sobre o relacionamento**, mudou de etapa, alguém assumiu, virou
 -- cliente, perdeu e por quê, automação pausada, nota escrita. Mensagem entra
 -- como marco resumido, não como cópia do texto.
 --
@@ -221,6 +221,6 @@ comment on table public.eventos_do_contato is
 
 -- As duas tabelas novas vivem em `public`, que é schema exposto na Data API, e o
 -- servidor fala com elas pelo PostgREST. Sem recarregar o cache,
--- `from('eventos_do_contato')` responde 404 até a próxima reinicialização — e o
+-- `from('eventos_do_contato')` responde 404 até a próxima reinicialização, e o
 -- cache é o mesmo dos dois produtos, por isso o reload é breve e de propósito.
 notify pgrst, 'reload schema';

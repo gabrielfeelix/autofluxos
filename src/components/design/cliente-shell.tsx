@@ -43,7 +43,9 @@ export async function ClienteShell({
    * interruptor da conta **e** a existência de funil, para não esconder da noite
    * para o dia a tela de quem já usa quadros.
    */
-  const mostraCrm = ativa === 'quadros' ? await crmVisivel(cliente.id) : true
+  // Vendas é o resultado dos negócios: some e desliga junto com eles.
+  const dependeDoCrm = ativa === 'quadros' || ativa === 'vendas'
+  const mostraCrm = dependeDoCrm ? await crmVisivel(cliente.id) : true
 
   /*
    * A rota direta de uma seção que a pessoa não pode usar mostra o motivo, e
@@ -52,7 +54,7 @@ export async function ClienteShell({
    */
   const conteudo = !liberaSecao(acesso.regras, ativa) ? (
     <SemAcesso clienteId={cliente.id} oQue={rotuloDaSecao(ativa)} />
-  ) : ativa === 'quadros' && !mostraCrm ? (
+  ) : dependeDoCrm && !mostraCrm ? (
     <FunilDesligado
       clienteId={cliente.id}
       podeLigar={pode(acesso.regras, 'configurar_operacao', 'todos')}

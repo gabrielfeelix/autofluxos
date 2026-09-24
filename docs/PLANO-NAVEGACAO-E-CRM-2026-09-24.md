@@ -368,6 +368,39 @@ só no fim da frente.
 **F3. Análise > Vendas e Etiquetas como lista** (5.3 e 5.4)
 - Aceite: números batem com uma consulta à mão no banco local para um período.
 
+**Estado da F3 (feita em 24/set, só local, sem deploy, sem migration):**
+
+- **Aceite conferido.** Seed `scripts/ux-local/seed-vendas.mts` (90 negócios
+  fechados em 12 meses, chave `seed-vendas-*`, `--apagar` desfaz). Período
+  27/06 a 24/09/2026 (o padrão, 90 dias), conta local `afacb27c...`, consulta
+  à mão com `(fechado_em at time zone 'America/Sao_Paulo')::date between ...`
+  sobre `quadro_cartoes`: 19 ganhos, 21 perdidos, R$ 9.780,00, ticket
+  R$ 543,33 (`avg(valor)` ignora o ganho sem valor), taxa 48% (anterior 6/12 =
+  50%); motivos Comprou de outro 5, sem motivo 4, Sem interesse agora 4, Fora do
+  perfil 3, Preço 3, Sem resposta 2; equipe Gabriel 7/14 R$ 4.140 11 dias,
+  Carla 5/12 R$ 2.820 25 dias, Bruno 4/7 R$ 1.860 20 dias, Ana 3/7 R$ 960 19
+  dias; criados no período por etapa 60/57/38/23. **A tela mostrou os mesmos
+  números** (`.ux-local/f3.mjs`, fora do git).
+- Vendas: rota `relatorios/vendas/page.tsx`, porta nova `vendas` em `SECOES`
+  (exige `criar_oportunidade`, como Negócios; some com o CRM desligado, também
+  em `cliente-shell.tsx`). Abas por `?aba=`, funil por `?funil=` (seletor só com
+  mais de um funil), período com atalhos 30/90/365 (`ATALHOS_DE_VENDAS`, padrão
+  90). Valor em R$ só com `ler_valores`; sem ele, tudo vira quantidade.
+- Definições em `repos/analise-de-vendas.ts`, iguais ao cartão "Fechamentos" de
+  Atendimento (todos os funis, `fechado_em`, escopo por `responsavel`). A
+  passagem de etapa usa outra população, de propósito: negócios **criados** no
+  período, até a etapa mais adiantada (atual ou do histórico `mudou-de-etapa`).
+  Regras puras em `core/analise-de-vendas.ts`, com teste.
+- Gráfico por mês: 12 meses até o fim do período, os do período em destaque
+  (`grafico-mensal.tsx`). Período, cartão e comparações saíram de
+  `relatorios/page.tsx` para `components/relatorios/pecas.tsx` (as duas telas usam).
+- Etiquetas: `components/etiquetas/tabela-de-etiquetas.tsx`, ações em
+  `server/acoes-etiquetas.ts` (criar e renomear otimistas; juntar e apagar
+  confirmam). `juntarEtiquetas` em `repos/etiquetas.ts`, numa transação, não
+  dispara sequência e recusa se a origem é gatilho (teste de integração). A
+  contagem passou a `contato_etiquetas(count)`: a antiga lia um vínculo por
+  linha e errava acima de 1000. Número abre `/leads?marca=<id>`.
+
 **F4. Loja** (5.6): tela de plataformas, "Quero esta", Nuvemshop e WooCommerce
 depois da pesquisa de cada uma.
 

@@ -51,6 +51,7 @@ export type AbaDoCliente =
   | 'transmissoes'
   | 'loja'
   | 'relatorios'
+  | 'vendas'
   | 'ajustes'
 
 export type ChaveDaSecao = 'inicio' | 'conversas' | 'crm' | 'automacoes' | 'loja' | 'analise' | 'ajustes'
@@ -157,11 +158,18 @@ export const SECOES: Secao[] = [
     ],
   },
   {
-    // Vendas entra aqui na F3 do plano, ao lado de Atendimento.
+    /*
+     * Atendimento responde "como a fila andou"; Vendas, "quanto entrou, onde
+     * perco e quem vende" (plano, 5.3). Vendas é sobre negócios, então some
+     * junto com Negócios quando o CRM está desligado.
+     */
     chave: 'analise',
     rotulo: 'Análise',
     icone: <IconeRelatorios />,
-    itens: [{ id: 'atendimento', rotulo: 'Atendimento', href: '/relatorios', aba: 'relatorios' }],
+    itens: [
+      { id: 'atendimento', rotulo: 'Atendimento', href: '/relatorios', aba: 'relatorios' },
+      { id: 'vendas', rotulo: 'Vendas', href: '/relatorios/vendas', aba: 'vendas' },
+    ],
   },
   {
     chave: 'ajustes',
@@ -203,6 +211,8 @@ export const EXIGENCIA_DA_SECAO: Partial<
   quadros: { capacidades: ['criar_oportunidade'], minimo: 'proprios' },
   // Mesma porta que a página de Relatórios já usava (o escopo filtra os números).
   relatorios: { capacidades: ['atender'], minimo: 'proprios' },
+  // A porta de Negócios: quem mexe em negócio vê o resultado deles (o escopo filtra).
+  vendas: { capacidades: ['criar_oportunidade'], minimo: 'proprios' },
   fluxos: { capacidades: ['configurar_operacao'], minimo: 'todos' },
   transmissoes: { capacidades: ['exportar'], minimo: 'todos' },
   'respostas-rapidas': DE_CONFIGURACAO,
@@ -256,6 +266,7 @@ const ENDERECO_DA_ABA: Record<AbaDoCliente, string> = {
   transmissoes: '/transmissoes',
   loja: '/loja/magento',
   relatorios: '/relatorios',
+  vendas: '/relatorios/vendas',
   ajustes: '/ajustes',
 }
 
@@ -309,7 +320,8 @@ export function secoesVisiveis({
     .map((secao) => ({
       ...secao,
       itens: secao.itens.filter(
-        (item) => !(crmVisivel === false && item.aba === 'quadros') && liberaSecao(regras, item.aba),
+        (item) =>
+          !(crmVisivel === false && (item.aba === 'quadros' || item.aba === 'vendas')) && liberaSecao(regras, item.aba),
       ),
     }))
     .filter((secao) => secao.itens.length > 0)

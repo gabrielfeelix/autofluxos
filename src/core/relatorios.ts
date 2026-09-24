@@ -11,7 +11,14 @@ export const FUSO_DOS_RELATORIOS = 'America/Sao_Paulo'
 
 /** Os atalhos da tela. Qualquer outro intervalo é "personalizado". */
 export const ATALHOS_DE_PERIODO = [7, 30, 90] as const
-export type AtalhoDePeriodo = (typeof ATALHOS_DE_PERIODO)[number]
+
+/**
+ * Venda anda mais devagar que conversa: uma semana de negócios quase sempre é
+ * zero ganho, e o gráfico por mês pede ao menos um trimestre para dizer algo.
+ */
+export const ATALHOS_DE_VENDAS = [30, 90, 365] as const
+
+export type AtalhoDePeriodo = number
 
 /** Mais que um ano vira gráfico de barra fina demais para ler um dia. */
 export const MAXIMO_DE_DIAS = 366
@@ -86,6 +93,8 @@ function periodoDoAtalho(atalho: AtalhoDePeriodo, hoje: string): Periodo {
 export function lerPeriodo(
   parametros: Record<string, string | string[] | undefined>,
   hoje: string,
+  atalhos: readonly number[] = ATALHOS_DE_PERIODO,
+  padrao = 30,
 ): Periodo {
   const um = (chave: string) => {
     const valor = parametros[chave]
@@ -102,13 +111,13 @@ export function lerPeriodo(
       // Um intervalo escolhido à mão que termina hoje e tem o tamanho de um
       // atalho é o atalho: o botão dele acende, em vez de "personalizado".
       const atalho =
-        fim === hoje ? (ATALHOS_DE_PERIODO.find((a) => a === dias) ?? null) : null
+        fim === hoje ? (atalhos.find((a) => a === dias) ?? null) : null
       return { de: inicio, ate: fim, dias, atalho }
     }
   }
 
   const dias = Number(um('dias'))
-  const atalho = ATALHOS_DE_PERIODO.find((a) => a === dias) ?? 30
+  const atalho = atalhos.find((a) => a === dias) ?? padrao
   return periodoDoAtalho(atalho, hoje)
 }
 

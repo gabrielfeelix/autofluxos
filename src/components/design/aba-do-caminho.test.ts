@@ -15,6 +15,8 @@ describe('o item aceso pelo caminho', () => {
     expect(abaDoCaminho(`${base}/negocios/abc`, base)).toBe('quadros')
     expect(abaDoCaminho(`${base}/ajustes/horario`, base)).toBe('ajustes')
     expect(abaDoCaminho(`${base}/transmissoes/9`, base)).toBe('transmissoes')
+    expect(abaDoCaminho(`${base}/relatorios`, base)).toBe('relatorios')
+    expect(abaDoCaminho(`${base}/relatorios/vendas`, base)).toBe('vendas')
   })
 
   it('mantém as exceções que as páginas escolhiam à mão', () => {
@@ -53,6 +55,8 @@ describe('a seção aberta e o subitem aceso', () => {
     expect(acesoDoCaminho(`${base}/conversas/canais/instagram`, base)).toEqual({ secao: 'conversas', item: 'canais' })
     expect(acesoDoCaminho(`${base}/loja/catalogo`, base)).toEqual({ secao: 'loja', item: 'catalogo' })
     expect(acesoDoCaminho(`${base}/negocios/abc`, base)).toEqual({ secao: 'crm', item: 'negocios' })
+    expect(acesoDoCaminho(`${base}/relatorios`, base)).toEqual({ secao: 'analise', item: 'atendimento' })
+    expect(acesoDoCaminho(`${base}/relatorios/vendas`, base, busca('aba=conversao'))).toEqual({ secao: 'analise', item: 'vendas' })
     expect(acesoDoCaminho(base, base)).toEqual({ secao: 'inicio', item: 'inicio' })
   })
 })

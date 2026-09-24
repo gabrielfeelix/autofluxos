@@ -9,6 +9,7 @@ import {
   editarEtiqueta,
   etiquetasDeContatos,
   listarEtiquetas,
+  juntarEtiquetas,
   listarEtiquetasComContagem,
   marcarContatos,
 } from './etiquetas'
@@ -185,6 +186,26 @@ describe.skipIf(!temCredencial)('aplicar em contatos', () => {
     // Filtro que não acha ninguém tem que devolver vazio, e não a lista inteira.
     const vazia = await paginarLeads(clienteId, { etiquetaId: '00000000-0000-0000-0000-000000000000' })
     expect(vazia.total).toBe(0)
+  })
+
+  it('juntar passa os contatos para a outra, sem repetir quem já tinha as duas, e apaga a de origem', async () => {
+    const a = await criarEtiqueta(clienteId, { nome: 'Juntar A', cor: 'azul' })
+    const b = await criarEtiqueta(clienteId, { nome: 'Juntar B', cor: 'verde' })
+    const deFora = await criarEtiqueta(outroId, { nome: 'Juntar de fora', cor: 'cinza' })
+    if (!a.ok || !b.ok || !deFora.ok) throw new Error('não criou')
+    await marcarContatos(clienteId, a.etiqueta.id, [contatoA, contatoB], true)
+    await marcarContatos(clienteId, b.etiqueta.id, [contatoA], true)
+
+    // Etiqueta de outra conta nunca entra na junção, nem como destino.
+    expect((await juntarEtiquetas(clienteId, a.etiqueta.id, deFora.etiqueta.id)).ok).toBe(false)
+    expect((await juntarEtiquetas(clienteId, a.etiqueta.id, a.etiqueta.id)).ok).toBe(false)
+
+    const r = await juntarEtiquetas(clienteId, a.etiqueta.id, b.etiqueta.id)
+    expect(r.ok && r.movidos).toBe(1)
+    expect((await contatosComEtiqueta(clienteId, b.etiqueta.id)).sort()).toEqual([contatoA, contatoB].sort())
+    const lista = await listarEtiquetasComContagem(clienteId)
+    expect(lista.find((e) => e.id === a.etiqueta.id)).toBeUndefined()
+    expect(lista.find((e) => e.id === b.etiqueta.id)?.contatos).toBe(2)
   })
 
   it('apagar a etiqueta a tira de quem a tinha', async () => {

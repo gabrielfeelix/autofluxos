@@ -19,8 +19,10 @@ describe('as seções visíveis', () => {
     expect(chaves(secoesVisiveis({ crmVisivel: undefined, lojaVisivel: undefined }))).toEqual(SECOES.map((secao) => secao.chave))
   })
 
-  it('sem o CRM esconde Negócios, e só ele', () => {
-    expect(ids(secoesVisiveis({ crmVisivel: false }))).toEqual(ITENS.map((item) => item.id).filter((id) => id !== 'negocios'))
+  it('sem o CRM esconde Negócios e Vendas, e só eles', () => {
+    expect(ids(secoesVisiveis({ crmVisivel: false }))).toEqual(
+      ITENS.map((item) => item.id).filter((id) => id !== 'negocios' && id !== 'vendas'),
+    )
   })
 
   it('sem Loja a seção some inteira, e só ela', () => {
@@ -100,6 +102,7 @@ describe('telaInicial e destinoNaConta', () => {
     expect(destinoNaConta({ papel: 'owner' }, 'inbox')).toBe('/inbox')
     expect(destinoNaConta({ papel: 'owner' }, 'fluxos')).toBe('/fluxos')
     expect(destinoNaConta({ papel: 'owner' }, 'etiquetas')).toBe('/leads/etiquetas')
+    expect(destinoNaConta({ papel: 'owner' }, 'vendas')).toBe('/relatorios/vendas')
   })
 
   it('seção fechada ou inventada cai na tela inicial, nunca na de sem acesso', () => {

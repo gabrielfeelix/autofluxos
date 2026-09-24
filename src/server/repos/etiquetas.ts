@@ -1,5 +1,6 @@
 import 'server-only'
 import { ehCorDeEtiqueta, LIMITE_DO_NOME, type CorDeEtiqueta } from '@/core/etiquetas'
+import { bancoDoLogin } from '../auth'
 import { db, ehIdInvalido } from '../db'
 import { sequenciasQueUsamAEtiqueta } from './sequencias'
 
@@ -18,6 +19,8 @@ export type Etiqueta = {
   cor: CorDeEtiqueta
   /** Quantos contatos a têm. Presente só onde a tela pede a contagem. */
   contatos?: number
+  /** Presente só na listagem com contagem (a tela de Etiquetas). */
+  criadoEm?: string
 }
 
 type Linha = { id: string; nome: string; cor: string }
@@ -50,29 +53,81 @@ export async function listarEtiquetas(clienteId: string): Promise<Etiqueta[]> {
  *
  * É o rail da tela de contatos (§3.2 do plano), e a contagem é metade da
  * informação: uma lista de vinte etiquetas sem número nenhum não diz qual vale
- * clicar. Duas consultas e a soma na aplicação, o PostgREST não faz `group by`
- * e uma view só para isto envelheceria junto com a tabela.
+ * clicar.
+ *
+ * A contagem vem do próprio PostgREST (`contato_etiquetas(count)`), numa ida
+ * só. Antes eram duas consultas e a soma aqui, e a segunda trazia uma linha
+ * por vínculo: passava do teto de 1000 linhas da API e a conta saía menor que
+ * a verdade, em silêncio, justamente nas contas maiores.
  */
 export async function listarEtiquetasComContagem(clienteId: string): Promise<Etiqueta[]> {
-  const etiquetas = await listarEtiquetas(clienteId)
-  if (etiquetas.length === 0) return []
-
   const { data, error } = await db()
-    .from('contato_etiquetas')
-    .select('etiqueta_id')
-    .in(
-      'etiqueta_id',
-      etiquetas.map((e) => e.id),
-    )
+    .from('etiquetas')
+    .select(`${COLUNAS}, criado_em, contato_etiquetas(count)`)
+    .eq('client_id', clienteId)
+    .order('nome', { ascending: true })
 
+  if (ehIdInvalido(error)) return []
   if (error) throw new Error(`não deu para contar as etiquetas: ${error.message}`)
 
-  const total = new Map<string, number>()
-  for (const linha of data as { etiqueta_id: string }[]) {
-    total.set(linha.etiqueta_id, (total.get(linha.etiqueta_id) ?? 0) + 1)
+  return (data as (Linha & { criado_em: string; contato_etiquetas: { count: number }[] })[]).map((linha) => ({
+    ...paraEtiqueta(linha),
+    criadoEm: linha.criado_em,
+    contatos: linha.contato_etiquetas[0]?.count ?? 0,
+  }))
+}
+
+/**
+ * Junta a etiqueta `origem` na `destino`: quem tinha a origem passa a ter a
+ * destino, e a origem é apagada. Numa transação só, para ninguém ficar sem
+ * nenhuma das duas se algo falhar no meio.
+ *
+ * **Não dispara sequência.** Juntar é arrumação de nome, não um fato novo sobre
+ * as pessoas: acordar a sequência da destino para duzentos contatos de uma vez
+ * mandaria mensagem para quem nunca pediu. Recusa, como apagar, quando a
+ * origem é gatilho de sequência.
+ */
+export async function juntarEtiquetas(
+  clienteId: string,
+  origemId: string,
+  destinoId: string,
+): Promise<{ ok: true; movidos: number } | { ok: false; motivo: string }> {
+  if (origemId === destinoId) return { ok: false, motivo: 'escolha outra etiqueta para juntar' }
+
+  const sequencias = await sequenciasQueUsamAEtiqueta(clienteId, origemId)
+  if (sequencias.length > 0) {
+    return {
+      ok: false,
+      motivo: `esta etiqueta dispara a sequência ${sequencias.join(', ')}. Troque o gatilho da sequência primeiro.`,
+    }
   }
 
-  return etiquetas.map((etiqueta) => ({ ...etiqueta, contatos: total.get(etiqueta.id) ?? 0 }))
+  const conexao = await bancoDoLogin().connect()
+  try {
+    await conexao.query('begin')
+    const { rows: donas } = await conexao.query(
+      'select id from public.etiquetas where client_id = $1 and id = any($2::uuid[]) for update',
+      [clienteId, [origemId, destinoId]],
+    )
+    if (donas.length !== 2) {
+      await conexao.query('rollback')
+      return { ok: false, motivo: 'uma das etiquetas não existe mais' }
+    }
+    const { rowCount } = await conexao.query(
+      `insert into public.contato_etiquetas (contato_id, etiqueta_id)
+       select contato_id, $2 from public.contato_etiquetas where etiqueta_id = $1
+       on conflict do nothing`,
+      [origemId, destinoId],
+    )
+    await conexao.query('delete from public.etiquetas where id = $1 and client_id = $2', [origemId, clienteId])
+    await conexao.query('commit')
+    return { ok: true, movidos: rowCount ?? 0 }
+  } catch (erro) {
+    await conexao.query('rollback')
+    throw erro
+  } finally {
+    conexao.release()
+  }
 }
 
 /**

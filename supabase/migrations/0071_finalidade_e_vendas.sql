@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------------------------
--- 0071 — finalidade do processo, ocorrência recorrente e venda com registro
+-- 0071: finalidade do processo, ocorrência recorrente e venda com registro
 --        próprio
 -- ---------------------------------------------------------------------------
 --
@@ -9,7 +9,7 @@
 -- Até a 0070, `quadro_cartoes.situacao = 'ganha'` queria dizer duas coisas ao
 -- mesmo tempo: "este trabalho terminou bem" e "esta pessoa comprou". Os modelos
 -- de funil marcam como ganho a etapa final do Atendimento ("Resolvido"), da
--- Captação ("Qualificado") e da Agenda ("Compareceu") — nenhuma delas é compra.
+-- Captação ("Qualificado") e da Agenda ("Compareceu"), nenhuma delas é compra.
 -- Como `repos/crm.ts` e `repos/relacionamento.ts` derivam compra de cartão
 -- ganho, a clínica que respondeu dez dúvidas aparecia com dez compras e uma
 -- receita que ninguém faturou.
@@ -20,10 +20,10 @@
 --
 -- Três mudanças, todas **aditivas**:
 --
---   1. `quadros.finalidade`  — comercial ou operacional (RB-03)
+--   1. `quadros.finalidade`: comercial ou operacional (RB-03)
 --   2. `quadro_cartoes` ganha identidade de ocorrência, e a unicidade
 --      permanente por contato vira unicidade do **evento de criação** (RB-02)
---   3. `vendas` e `venda_itens` — a compra com registro próprio (RB-05, RB-29)
+--   3. `vendas` e `venda_itens`: a compra com registro próprio (RB-05, RB-29)
 --
 -- O que NÃO acontece aqui
 -- ---------------------------------------------------------------------------
@@ -62,7 +62,7 @@ comment on column public.quadros.finalidade is
 
 -- **Todo quadro que já existe fica operacional.** É a escolha conservadora e
 -- ela é deliberada: marcar os antigos como comerciais transformaria, de uma
--- vez, todo "Resolvido" acumulado em compra — exatamente o defeito que esta
+-- vez, todo "Resolvido" acumulado em compra, exatamente o defeito que esta
 -- migration existe para acabar. Quem vende de verdade marca o funil como
 -- comercial numa ação explícita, que a F5 entrega na tela.
 --
@@ -75,8 +75,8 @@ update public.quadros set finalidade = 'operacional' where finalidade is null;
 -- ---------------------------------------------------------------------------
 --
 -- `quadro_cartoes_unico_idx (quadro_id, contact_id)`, da 0032, garante um
--- cartão por pessoa em cada quadro. Ele resolve um problema real — dois
--- cliques em "pôr no quadro" não podem criar a mesma pessoa em duas etapas —
+-- cartão por pessoa em cada quadro. Ele resolve um problema real, dois
+-- cliques em "pôr no quadro" não podem criar a mesma pessoa em duas etapas,
 -- mas resolve proibindo recorrência para sempre: a segunda compra do mesmo
 -- cliente no mesmo funil não tem onde existir (A12).
 --
