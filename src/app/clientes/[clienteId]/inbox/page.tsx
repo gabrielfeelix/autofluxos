@@ -61,6 +61,8 @@ import { AcoesRapidas } from '@/components/inbox/acoes-rapidas'
 import { hrefDaFicha } from '@/core/volta-da-ficha'
 import { Avatar } from '@/components/inbox/avatar'
 import { ColunaDaFicha, MolduraDoInbox } from '@/components/inbox/moldura'
+import { telefoneLegivel } from '@/core/contatos/telefone'
+import { AbasDaFicha } from '@/components/inbox/abas-da-ficha'
 import { Fila, type Contagem } from '@/components/inbox/fila'
 import { clienteTemAutomacao } from '@/server/repos/fluxos'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
@@ -1053,6 +1055,7 @@ async function ColunaDaConversa({
         <DadosDoLead
           clienteId={clienteId}
           lead={selecionado}
+          canal={canal}
           funis={funis}
           atendimento={atendimento}
           donoNome={equipe.find((membro) => membro.id === lead.atribuidoA)?.nome ?? null}
@@ -1109,8 +1112,14 @@ function EsperaDaConversa() {
 function EsperaDaFicha() {
   return (
     <aside className="hidden min-h-0 flex-col gap-3 overflow-hidden p-4 xl:flex">
-      <Esqueleto className="size-14 self-center rounded-full" />
-      <Esqueleto className="h-3 w-32 self-center" />
+      <span className="flex items-center gap-3">
+        <Esqueleto className="size-10 shrink-0 rounded-full" />
+        <span className="flex flex-1 flex-col gap-2">
+          <Esqueleto className="h-3 w-32" />
+          <Esqueleto className="h-2.5 w-24" />
+        </span>
+      </span>
+      <Esqueleto className="mt-1 h-8 w-full rounded-lg" />
       <Esqueleto className="mt-3 h-2.5 w-full" />
       <Esqueleto className="h-2.5 w-4/5" />
       <Esqueleto className="mt-3 h-16 w-full rounded-xl" />
@@ -1288,6 +1297,7 @@ function CabecalhoDaConversa({
 function DadosDoLead({
   clienteId,
   lead,
+  canal,
   funis,
   atendimento,
   donoNome,
@@ -1296,6 +1306,7 @@ function DadosDoLead({
 }: {
   clienteId: string
   lead: Lead
+  canal: CanalId
   /** Por onde o contato já chegou, da mais recente para a mais antiga. */
   passagens: Passagem[]
   /** Nomes da Marketing API por `ad_id`. Vazio quando a conta não conectou o Ads. */
@@ -1325,24 +1336,35 @@ function DadosDoLead({
         referência. A coluna rola, e depois de duas telas de campos coletados
         nada nela dizia mais de quem era aquela ficha.
       */}
-      <div className="flex flex-col items-center border-b border-line px-4 py-5 text-center">
-        <Avatar nome={lead.nome} tamanho={56} />
-        <h2 className="mt-2.5 max-w-full truncate text-[13.5px] font-bold">
-          {lead.nome ?? 'sem nome'}
-        </h2>
-        <p className="mt-0.5 font-mono text-[11.5px] text-dim">{lead.waId}</p>
-
+      {/*
+        O topo em uma linha: foto à esquerda, nome em cima e número embaixo, o
+        arranjo da referência (24/set). Centralizado e com foto de 56px, ele
+        gastava 150px de altura para dizer o que o cabeçalho da conversa, logo
+        ao lado, já dizia, e empurrava o resto da coluna para baixo da dobra.
+      */}
+      <div className="flex items-center gap-3 border-b border-line px-4 py-3.5">
+        <Avatar nome={lead.nome} tamanho={40} canal={canal} />
+        <div className="min-w-0 flex-1">
+          <h2 className="truncate text-[14.5px] leading-5 font-semibold">{lead.nome ?? 'sem nome'}</h2>
+          <p className="truncate font-mono text-[12px] text-dim">
+            {canal === 'whatsapp' ? telefoneLegivel(lead.waId) : 'Instagram'}
+          </p>
+        </div>
         <Link
           href={hrefDaFicha(clienteId, lead.contatoId, {
             volta: `/clientes/${clienteId}/inbox?conversa=${lead.contatoId}`,
           })}
-          className="app-secondary-button mt-3 w-full px-3 py-1.5 text-center text-[12.5px]"
+          title="Abrir a ficha completa"
+          className="app-secondary-button shrink-0 px-2.5 py-1 text-[12px]"
         >
-          Ver ficha completa
+          Ficha
         </Link>
       </div>
 
-      <div className="p-4">
+      <AbasDaFicha
+        anotacoes={<ListaDeAnotacoes />}
+        contato={
+      <>
         {/*
           Sem automação a tag é a resposta inteira: não há bot, então não há o
           que ligar, desligar ou explicar. O card vira rótulo e para por aí,
@@ -1390,16 +1412,14 @@ function DadosDoLead({
 
         <FunilDaConversa clienteId={clienteId} funis={funis} />
 
-        <div className="mt-5">
-          <h3 className="mb-1.5 text-[12px] font-bold text-soft">Anotações da equipe</h3>
-          <ListaDeAnotacoes />
-        </div>
 
         <div className="mt-5">
           <h3 className="text-[12px] font-bold text-soft">O que o fluxo coletou</h3>
           <CamposColetados campos={campos} />
         </div>
-      </div>
+      </>
+        }
+      />
     </aside>
   )
 }
