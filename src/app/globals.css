@@ -227,18 +227,6 @@
   --marca-instagram: #e1306c;
   --marca-meta: #0866ff;
   --marca-telegram: #229ed9;
-  /*
-   * As plataformas de loja (Comércio > Integrações) não viram classe do Tailwind:
-   * o cartão desenha a inicial com `var(--marca-<id>)`, e a cor mora aqui, uma
-   * linha por marca, no mesmo lugar das outras.
-   */
-  --marca-nuvemshop: #2c3357;
-  --marca-tray: #0a4ee4;
-  --marca-loja_integrada: #00a0a0;
-  --marca-vtex: #f71963;
-  --marca-woocommerce: #7f54b3;
-  --marca-shopify: #5e8e3e;
-  --marca-magento: #ee672f;
 
   /* O polegar da barra de rolagem: a borda dele é sempre a cor do fundo. */
   --barra: #c8cfd8;
@@ -1667,5 +1655,158 @@ textarea::placeholder {
 @media (min-width: 768px) {
   html[data-admin='sim'] .voltar-reservado {
     display: flex;
+  }
+}
+
+/*
+ * O movimento das ilustrações dos estados vazios (`components/design/ilustracoes.tsx`).
+ *
+ * Tudo lento e pequeno: a ilustração é fundo, e fundo que pula rouba o olho do
+ * botão. `transform-box: fill-box` faz o `transform-origin: center` ser o
+ * centro da peça, não do SVG; quem gira em volta de um ponto (o ponteiro, o
+ * sino) passa o ponto por `style` e usa `view-box`.
+ */
+.ilu {
+  animation: fade-up 480ms ease both;
+}
+
+.ilu-flutua {
+  transform-box: fill-box;
+  animation: ilu-flutua 4.5s ease-in-out infinite;
+}
+
+.ilu-pulsa {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ilu-pulsa 2.8s ease-in-out infinite;
+}
+
+.ilu-corre {
+  stroke-dasharray: 3 4;
+  animation: ilu-corre 1.4s linear infinite;
+}
+
+.ilu-onda {
+  animation: ilu-onda 2.2s ease-in-out infinite;
+}
+
+.ilu-pisca {
+  animation: ilu-pisca 1.1s steps(1) infinite;
+}
+
+.ilu-balanca {
+  transform-box: view-box;
+  animation: ilu-balanca 3.6s ease-in-out infinite;
+}
+
+.ilu-gira {
+  transform-box: view-box;
+  animation: ilu-gira 8s linear infinite;
+}
+
+.ilu-gira-devagar {
+  transform-box: view-box;
+  animation: ilu-gira 12s linear infinite;
+}
+
+.ilu-encaixa {
+  animation: ilu-encaixa 2.6s ease-in-out infinite;
+}
+
+.ilu-percorre {
+  animation: ilu-percorre 5s ease-in-out infinite;
+}
+
+@keyframes ilu-flutua {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes ilu-pulsa {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.14);
+  }
+}
+
+@keyframes ilu-corre {
+  to {
+    stroke-dashoffset: -14;
+  }
+}
+
+@keyframes ilu-onda {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes ilu-pisca {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes ilu-balanca {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(5deg);
+  }
+  75% {
+    transform: rotate(-5deg);
+  }
+}
+
+@keyframes ilu-gira {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ilu-encaixa {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(6px);
+  }
+}
+
+/* De um passo ao outro, com pausa em cada um: é o intervalo da sequência. */
+@keyframes ilu-percorre {
+  0%,
+  12% {
+    transform: translateX(0);
+  }
+  38%,
+  50% {
+    transform: translateX(60px);
+  }
+  76%,
+  100% {
+    transform: translateX(120px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ilu,
+  .ilu * {
+    animation: none !important;
   }
 }

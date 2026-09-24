@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
 import type { ProdutoDaLoja } from '@/core/loja'
+import { Marca } from './conectar-loja'
 
 type Resposta = { ok: true } | { ok: false; motivo: string }
 type Teste = { ok: true; amostra: ProdutoDaLoja[] } | { ok: false; motivo: string }
@@ -181,13 +182,7 @@ function Conectada({
   return (
     <>
       <section className="app-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
-        <span
-          aria-hidden
-          className="flex size-10 shrink-0 items-center justify-center rounded-[12px] text-[17px] font-extrabold text-white"
-          style={{ backgroundColor: 'var(--marca-nuvemshop)' }}
-        >
-          N
-        </span>
+        <Marca id="nuvemshop" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-[15px] font-bold">Nuvemshop conectada</h2>

@@ -133,7 +133,7 @@ function CartaoLargo({
 
   return (
     <article className="app-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
-      <Marca id={ficha.id} nome={ficha.nome} />
+      <Marca id={ficha.id} grande />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <h3 className="text-[15px] font-bold tracking-[-0.01em]">{ficha.nome}</h3>
@@ -176,7 +176,7 @@ function Cartao({
   return (
     <article className="app-card flex flex-col p-5">
       <div className="mb-4 flex items-start justify-between gap-3">
-        <Marca id={ficha.id} nome={ficha.nome} />
+        <Marca id={ficha.id} />
         {ficha.brasileira && (
           <span className="shrink-0 rounded-full border border-line bg-surface px-2.5 py-1 text-[10.5px] font-bold text-muted">
             Brasil
@@ -260,18 +260,32 @@ function SeloDoEstado({ estado }: { estado: EstadoDaPlataforma }) {
 }
 
 /**
- * A marca da plataforma: a inicial sobre a cor dela (`--marca-<id>` em
- * `globals.css`). Sem logo desenhada: sete silhuetas de marca alheia para uma
- * grade de escolha seria custo sem ganho, e a cor mais o nome já identificam.
+ * O símbolo oficial de cada plataforma, servido de `public/marcas-de-loja/`.
+ *
+ * Baixado uma vez do site de cada uma (ou do SVG oficial), e **servido
+ * daqui**, pela regra de `logos-de-marca.tsx`: uma tela que busca imagem no
+ * servidor de outra empresa quebra quando ele cai e conta para fora quem
+ * abriu a página. O uso é nominativo: identificar a integração.
  */
-function Marca({ id, nome }: { id: PlataformaDeLoja; nome: string }) {
+const ARQUIVO_DA_MARCA: Record<PlataformaDeLoja, string> = {
+  nuvemshop: 'nuvemshop.png',
+  tray: 'tray.png',
+  loja_integrada: 'loja_integrada.svg',
+  vtex: 'vtex.png',
+  woocommerce: 'woocommerce.png',
+  shopify: 'shopify.png',
+  magento: 'magento.svg',
+}
+
+export function Marca({ id, grande = false }: { id: PlataformaDeLoja; grande?: boolean }) {
   return (
     <span
       aria-hidden
-      className="flex size-10 shrink-0 items-center justify-center rounded-[12px] text-[17px] font-extrabold text-white"
-      style={{ backgroundColor: `var(--marca-${id})` }}
+      className={`flex shrink-0 items-center justify-center rounded-[12px] border border-line bg-white ${grande ? 'size-12 p-2' : 'size-10 p-1.5'}`}
     >
-      {nome.charAt(0)}
+      {/* Arquivo estático nosso, de tamanho fixo: `next/image` não acrescenta nada. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={`/marcas-de-loja/${ARQUIVO_DA_MARCA[id]}`} alt="" className="size-full object-contain" />
     </span>
   )
 }
