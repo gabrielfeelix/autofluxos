@@ -295,6 +295,15 @@ function validarCondicao(
     return { ok: false, motivo: `${campo.rotulo} precisa de um número` }
   }
 
+  // "Depois de", "antes de" e "entre" comparam com uma data do calendário.
+  // Um "2" que sobrou de "há mais de 2 dias" ao trocar o operador chegava ao
+  // banco como data e derrubava a tela de Segmentos inteira (24/09).
+  if (campo.tipo === 'data' && (operador === 'maior' || operador === 'menor' || operador === 'entre')) {
+    if (!ehData(valor) || (operador === 'entre' && !ehData(entrada.ate))) {
+      return { ok: false, motivo: `escolha uma data para ${campo.rotulo}` }
+    }
+  }
+
   if (
     (operador === 'ha_mais_de_dias' || operador === 'ha_menos_de_dias') &&
     (!Number.isFinite(Number(valor)) || Number(valor) < 0)
@@ -428,4 +437,11 @@ export const FRASE_DO_MOTIVO: Record<MotivoDaExclusao, string> = {
   sem_telefone: 'sem número de WhatsApp',
   janela_fechada_sem_modelo: 'fora da janela de 24h, e o envio é de texto livre',
   nunca_escreveu: 'nunca escreveu para este número',
+}
+
+/** `AAAA-MM-DD` que existe no calendário (31/02 não passa). */
+function ehData(valor: unknown): boolean {
+  if (typeof valor !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(valor)) return false
+  const d = new Date(`${valor}T12:00:00Z`)
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === valor
 }

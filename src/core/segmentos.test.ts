@@ -216,3 +216,19 @@ describe('condicoesDoNivel: a faixa vira condição de servidor', () => {
     expect(r.ok).toBe(false)
   })
 })
+
+describe('data do calendário em "depois de", "antes de" e "entre"', () => {
+  const opcoes = { podeLerValores: true }
+  it('recusa o número que sobrou de "há mais de N dias"', () => {
+    const r = validarSegmento({ juncao: 'todas', condicoes: [{ campo: 'criado_em', operador: 'maior', valor: '2' }] }, opcoes)
+    expect(r.ok).toBe(false)
+  })
+  it('aceita uma data de verdade', () => {
+    const r = validarSegmento({ juncao: 'todas', condicoes: [{ campo: 'criado_em', operador: 'maior', valor: '2026-09-01' }] }, opcoes)
+    expect(r.ok).toBe(true)
+  })
+  it('recusa 31 de fevereiro e "entre" sem o fim', () => {
+    expect(validarSegmento({ juncao: 'todas', condicoes: [{ campo: 'criado_em', operador: 'menor', valor: '2026-02-31' }] }, opcoes).ok).toBe(false)
+    expect(validarSegmento({ juncao: 'todas', condicoes: [{ campo: 'criado_em', operador: 'entre', valor: '2026-01-01' }] }, opcoes).ok).toBe(false)
+  })
+})

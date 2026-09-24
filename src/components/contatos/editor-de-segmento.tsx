@@ -297,7 +297,14 @@ function LinhaDaCondicao({
         <Dropdown
           rotuloAcessivel="Operador"
           valor={condicao.operador}
-          aoMudar={(valor) => aoMudar({ ...condicao, operador: valor as Operador })}
+          aoMudar={(valor) => {
+            const operador = valor as Operador
+            // "Há mais de N dias" guarda um número; "depois de" guarda uma data.
+            // Trocar entre os dois leva o valor junto só se ele ainda servir.
+            const emDias = (op: Operador) => op === 'ha_mais_de_dias' || op === 'ha_menos_de_dias'
+            const mudouDeEspecie = campo?.tipo === 'data' && emDias(operador) !== emDias(condicao.operador)
+            aoMudar(mudouDeEspecie ? { ...condicao, operador, valor: '', ate: undefined } : { ...condicao, operador })
+          }}
           opcoes={operadores.map((op) => ({ valor: op, rotulo: ROTULO_DO_OPERADOR[op] }))}
         />
       </div>

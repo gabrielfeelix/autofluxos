@@ -36,8 +36,18 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const escopo = filtroDoAcesso(acesso, 'exportar')
   const segmentos = await listarSegmentos(clienteId)
   // Quantos casam agora, no escopo de quem olha: uma contagem por segmento.
+  // Regra que o banco recusa (salva antes de a validação pegá-la) fica sem
+  // número em vez de derrubar a tela: a pessoa precisa dela aberta para editar.
   const totais = await Promise.all(
-    segmentos.map((s) => consultarContatos({ clienteId, segmento: s.regra, escopo, porPagina: 1 }).then((r) => r.total)),
+    segmentos.map((s) =>
+      consultarContatos({ clienteId, segmento: s.regra, escopo, porPagina: 1 }).then(
+        (r) => r.total,
+        (erro: unknown) => {
+          console.error(`segmento ${s.id} não contou:`, erro)
+          return null
+        },
+      ),
+    ),
   )
 
   return (
