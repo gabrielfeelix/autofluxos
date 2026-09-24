@@ -83,7 +83,30 @@ function usoDoRecurso(recurso: RecursoDoPlano, uso: UsoDaOrganizacao): string | 
   }
 }
 
-export function impactoDaTroca(de: Plano, para: Plano, uso: UsoDaOrganizacao): ImpactoDaTroca {
+/** O que um plano precisa ter para entrar na conta do impacto. */
+export type PlanoNaTroca = Pick<Plano, 'nome' | 'preco' | 'conversas' | 'numeros' | 'recursos'> & { id: string }
+
+/** O que o modal de troca mostra: de onde, para onde, e o impacto. */
+export type PrevisaoDaTroca = {
+  de: { id: string; nome: string; preco: number }
+  para: { id: string; nome: string; preco: number }
+  impacto: ImpactoDaTroca
+}
+
+/**
+ * A previsão inteira, calculada onde o uso já estiver: no navegador, com o uso
+ * medido junto da página (o modal abre na hora), e no servidor, de novo, ao
+ * confirmar.
+ */
+export function previsaoDaTroca(de: PlanoNaTroca, para: PlanoNaTroca, uso: UsoDaOrganizacao): PrevisaoDaTroca {
+  return {
+    de: { id: de.id, nome: de.nome, preco: de.preco },
+    para: { id: para.id, nome: para.nome, preco: para.preco },
+    impacto: impactoDaTroca(de, para, uso),
+  }
+}
+
+export function impactoDaTroca(de: PlanoNaTroca, para: PlanoNaTroca, uso: UsoDaOrganizacao): ImpactoDaTroca {
   const rotulo = new Map<string, string>(RECURSOS_DO_PLANO.map((r) => [r.chave, r.rotulo]))
   const ganha = para.recursos.filter((r) => !de.recursos.includes(r)).map((r) => rotulo.get(r) ?? r)
   if (para.conversas > de.conversas) ganha.unshift(`Até ${para.conversas.toLocaleString('pt-BR')} conversas por mês`)

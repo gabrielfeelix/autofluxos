@@ -2,12 +2,14 @@
 
 import { useState, useTransition } from 'react'
 import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
-import { acaoAdminPreverTroca, acaoAdminRecusarPedido, acaoAdminTrocarPlano } from '@/server/acoes-admin'
+import { acaoAdminRecusarPedido, acaoAdminTrocarPlano } from '@/server/acoes-admin'
 import { ModalDeTroca } from '@/components/plano/modal-de-troca'
+import type { RecursoDoPlano } from '@/core/planos'
+import { previsaoDaTroca, type UsoDaOrganizacao } from '@/core/troca-de-plano'
 import { horaExata, quando } from '@/lib/quando'
 import { Selo } from './partes'
 
-export type PlanoNaTela = { id: string; nome: string; preco: number; conversas: number; numeros: number; resumo: string }
+export type PlanoNaTela = { id: string; nome: string; preco: number; conversas: number; numeros: number; resumo: string; recursos: RecursoDoPlano[] }
 export type PedidoNaTela = { id: string; quando: string; quemPediu: string; de: string; para: string; situacao: 'aberto' | 'atendido' | 'recusado' }
 
 /**
@@ -20,12 +22,15 @@ export function PlanoDaOrganizacao({
   planos,
   conversas,
   pedidos: pedidosIniciais,
+  uso,
 }: {
   organizacaoId: string
   atual: string
   planos: PlanoNaTela[]
   conversas: number
   pedidos: PedidoNaTela[]
+  /** O uso medido junto da página: o modal calcula o impacto na hora. */
+  uso: UsoDaOrganizacao
 }) {
   const [atual, setAtual] = useState(inicial)
   const [pedidos, setPedidos] = useState(pedidosIniciais)
@@ -167,7 +172,7 @@ export function PlanoDaOrganizacao({
         <ModalDeTroca
           quem="administracao"
           paraNome={nome(escolha.para)}
-          carregar={() => acaoAdminPreverTroca(organizacaoId, escolha.para)}
+          previsao={previsaoDaTroca(plano, planos.find((item) => item.id === escolha.para) ?? plano, uso)}
           aoFechar={() => setEscolha(null)}
           aoConfirmar={(confirmacao) => trocar(escolha.para, escolha.pedidoId, confirmacao)}
         />

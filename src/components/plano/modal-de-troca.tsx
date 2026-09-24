@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Caixa } from '@/components/design/caixa'
 import { Modal } from '@/components/design/modal'
 import { RotuloCampo } from '@/components/design/modal-formulario'
-import type { PrevisaoDaTroca } from '@/server/troca-de-plano'
+import type { PrevisaoDaTroca } from '@/core/troca-de-plano'
 
 type Carregado = { ok: boolean; erro?: string; previsao?: PrevisaoDaTroca }
 
@@ -14,7 +14,8 @@ const reais = (valor: number) => `R$ ${valor.toLocaleString('pt-BR')}`
 /**
  * A confirmação de toda troca de plano, na organização e na administração.
  *
- * Abre medindo (`preverTroca`) e mostra, nesta ordem: o preço de antes e de
+ * Abre com a previsão pronta quando a tela já tem o uso (o normal: abre na
+ * hora), ou medindo pelo servidor (`carregar`), e mostra, nesta ordem: o preço de antes e de
  * depois, o que impede a troca, o que entra, o que sai (com o que está em uso)
  * e o aviso de consumo. Bloqueio desliga o botão; recurso em uso que sai pede
  * "entendi". O servidor confere tudo de novo ao confirmar.
@@ -25,6 +26,7 @@ const reais = (valor: number) => `R$ ${valor.toLocaleString('pt-BR')}`
 export function ModalDeTroca({
   quem,
   paraNome,
+  previsao: pronta,
   carregar,
   aoFechar,
   aoConfirmar,
@@ -32,13 +34,15 @@ export function ModalDeTroca({
 }: {
   quem: 'organizacao' | 'administracao'
   paraNome: string
-  carregar: () => Promise<Carregado>
+  /** A previsão já calculada na tela. Sem ela, o modal mede pelo servidor. */
+  previsao?: PrevisaoDaTroca
+  carregar?: () => Promise<Carregado>
   aoFechar: () => void
   aoConfirmar: (confirmacao: { ciente: boolean; motivo: string }) => void
   /** Onde desconectar números, quando o bloqueio é esse (só na organização). */
   conexoesHref?: string
 }) {
-  const [estado, setEstado] = useState<Carregado | null>(null)
+  const [estado, setEstado] = useState<Carregado | null>(pronta ? { ok: true, previsao: pronta } : null)
   const [ciente, setCiente] = useState(false)
   const [motivo, setMotivo] = useState('')
 
@@ -46,6 +50,7 @@ export function ModalDeTroca({
   // de novo a cada render mudaria o modal embaixo de quem está lendo.
   const carregarAoAbrir = useRef(carregar)
   useEffect(() => {
+    if (!carregarAoAbrir.current) return
     let vivo = true
     carregarAoAbrir.current()
       .then((r) => vivo && setEstado(r))

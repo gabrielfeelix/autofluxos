@@ -234,7 +234,12 @@ export async function consumoDeTodasAsContas(
  * que falha vira zero: o modal perde um detalhe, e a troca continua passando
  * pela confirmação de quem pediu.
  */
-export async function usoDaOrganizacao(clienteId: string, agora = new Date()): Promise<UsoDaOrganizacao> {
+export async function usoDaOrganizacao(
+  clienteId: string,
+  agora = new Date(),
+  /** O consumo do mês, quando a página já o leu: poupa a consulta às views. */
+  consumoJaLido?: Promise<ConsumoDoMes>,
+): Promise<UsoDaOrganizacao> {
   const inicioDoMes = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), 1)).toISOString()
   const contar = async (consulta: PromiseLike<{ count: number | null; error: unknown }>) => {
     const { count, error } = await consulta
@@ -242,7 +247,7 @@ export async function usoDaOrganizacao(clienteId: string, agora = new Date()): P
     return count ?? 0
   }
   const [consumo, numeros, fluxosComIa, transcricoes, transmissoes, conexoes, webhooks, cliente] = await Promise.all([
-    consumoDaConta(clienteId, agora),
+    consumoJaLido ?? consumoDaConta(clienteId, agora),
     contar(db().from('channels').select('id', { count: 'exact', head: true }).eq('client_id', clienteId).eq('status', 'ativo').neq('provider', 'instagram')),
     contar(db().from('flows').select('id', { count: 'exact', head: true }).eq('client_id', clienteId).eq('ativo', true).eq('ia_habilitada', true)),
     contar(

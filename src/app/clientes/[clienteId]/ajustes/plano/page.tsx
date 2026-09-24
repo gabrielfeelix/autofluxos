@@ -2,9 +2,9 @@ import { notFound } from 'next/navigation'
 import { EscolhaDePlano } from '@/components/cliente/escolha-de-plano'
 import { AjustesShell } from '@/components/design/ajustes-shell'
 import { Trilha } from '@/components/design/trilha'
-import { acaoPedirTrocaDePlano, acaoPreverTrocaDePlano } from '@/server/acoes-plano'
+import { acaoPedirTrocaDePlano } from '@/server/acoes-plano'
 import { acharCliente } from '@/server/repos/clientes'
-import { consumoDaConta, planoDaConta } from '@/server/repos/plano'
+import { consumoDaConta, planoDaConta, usoDaOrganizacao } from '@/server/repos/plano'
 import { pedidosDePlano } from '@/server/repos/pedidos-de-plano'
 import { planosVigentes } from '@/server/repos/planos'
 import type { IdDoPlano } from '@/core/planos'
@@ -36,11 +36,14 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const acesso = await conferirAcessoAoCliente(clienteId)
   const podeMexer = acesso !== null && podeAdministrarConta(acesso)
 
-  const [plano, consumo, pedidos, planos] = await Promise.all([
+  const lendoConsumo = consumoDaConta(clienteId)
+  const [plano, consumo, pedidos, planos, uso] = await Promise.all([
     planoDaConta(clienteId),
-    consumoDaConta(clienteId),
+    lendoConsumo,
     pedidosDePlano({ organizacaoId: clienteId }).catch(() => []),
     planosVigentes(),
+    // Medido junto da página para o modal de troca abrir na hora.
+    usoDaOrganizacao(clienteId, undefined, lendoConsumo),
   ])
   // Só o pedido que a administração ainda não respondeu (A5). Atendido ou
   // recusado, some da tela; pedido para o plano que já vale também.
@@ -68,7 +71,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           podeMexer={podeMexer}
           pedidoAberto={pedidoAberto}
           pedirTroca={acaoPedirTrocaDePlano.bind(null, cliente.id)}
-          preverTroca={acaoPreverTrocaDePlano.bind(null, cliente.id)}
+          uso={uso}
           conexoesHref={`/clientes/${cliente.id}/ajustes/integracoes`}
           planos={planos.filter((p) => p.ativo || p.id === plano)}
         />

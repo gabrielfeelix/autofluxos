@@ -6,7 +6,7 @@ import { planoVigente } from './repos/planos'
 import { registrar } from './repos/auditoria'
 import { planoDaConta } from './repos/plano'
 import { exigirAcessoAoCliente, podeAdministrarConta } from './sessao'
-import { preverTroca, recusaDaTroca, resumoDaTroca, type PrevisaoDaTroca } from './troca-de-plano'
+import { preverTroca, recusaDaTroca, resumoDaTroca } from './troca-de-plano'
 
 /**
  * O pedido de mudança de plano.
@@ -74,15 +74,4 @@ export async function acaoPedirTrocaDePlano(
 
   revalidatePath(`/clientes/${clienteId}/ajustes/plano`)
   return { ok: true }
-}
-
-/** O que muda se a organização for para `desejado`, para o modal mostrar antes do pedido. */
-export async function acaoPreverTrocaDePlano(
-  clienteId: string,
-  desejado: IdDoPlano,
-): Promise<{ ok: boolean; erro?: string; previsao?: PrevisaoDaTroca }> {
-  const acesso = await exigirAcessoAoCliente(clienteId)
-  if (!podeAdministrarConta(acesso)) return { ok: false, erro: 'só quem administra a organização pode pedir mudança de plano' }
-  if (desejado !== 'essencial' && desejado !== 'operacao' && desejado !== 'escala') return { ok: false, erro: 'esse plano não existe' }
-  return { ok: true, previsao: await preverTroca(clienteId, desejado) }
 }

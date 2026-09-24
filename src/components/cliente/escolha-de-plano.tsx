@@ -12,7 +12,7 @@ import {
   type IdDoPlano,
 } from '@/core/planos'
 import type { ConsumoDoMes } from '@/server/repos/plano'
-import type { PrevisaoDaTroca } from '@/server/troca-de-plano'
+import { previsaoDaTroca, type UsoDaOrganizacao } from '@/core/troca-de-plano'
 import { ModalDeTroca } from '@/components/plano/modal-de-troca'
 
 /**
@@ -32,7 +32,7 @@ export function EscolhaDePlano({
   podeMexer,
   pedidoAberto,
   pedirTroca,
-  preverTroca,
+  uso,
   conexoesHref,
   planos = PLANOS,
 }: {
@@ -44,8 +44,8 @@ export function EscolhaDePlano({
   /** O último pedido de troca ainda não atendido, lido da auditoria. */
   pedidoAberto: { para: IdDoPlano; quando: string; por: string } | null
   pedirTroca: (desejado: IdDoPlano, ciente: boolean) => Promise<{ ok: boolean; erro?: string }>
-  /** O que muda com a troca, medido no servidor, para o modal mostrar antes do pedido. */
-  preverTroca: (desejado: IdDoPlano) => Promise<{ ok: boolean; erro?: string; previsao?: PrevisaoDaTroca }>
+  /** O uso medido junto da página: o modal calcula o impacto na hora, sem ir ao servidor. */
+  uso: UsoDaOrganizacao
   conexoesHref: string
 }) {
   const acharPlano = (id: IdDoPlano) => planos.find((p) => p.id === id) ?? acharPlanoDoCodigo(id)
@@ -182,7 +182,7 @@ export function EscolhaDePlano({
           <ModalDeTroca
             quem="organizacao"
             paraNome={acharPlano(escolhido).nome}
-            carregar={() => preverTroca(escolhido)}
+            previsao={previsaoDaTroca(plano, acharPlano(escolhido), uso)}
             aoFechar={() => setEscolhido(null)}
             aoConfirmar={({ ciente }) => pedir(escolhido, ciente)}
             conexoesHref={conexoesHref}

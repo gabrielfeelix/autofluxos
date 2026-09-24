@@ -1,14 +1,9 @@
 import 'server-only'
-import { impactoDaTroca, type ImpactoDaTroca } from '@/core/troca-de-plano'
+import { previsaoDaTroca, type PrevisaoDaTroca } from '@/core/troca-de-plano'
 import { planoVigente } from './repos/planos'
 import { planoDaConta, usoDaOrganizacao } from './repos/plano'
 
-/** O que o modal de troca mostra: de onde, para onde, e o impacto medido. */
-export type PrevisaoDaTroca = {
-  de: { id: string; nome: string; preco: number }
-  para: { id: string; nome: string; preco: number }
-  impacto: ImpactoDaTroca
-}
+export type { PrevisaoDaTroca }
 
 /**
  * O impacto de levar esta organização para `para`, medido agora.
@@ -20,11 +15,7 @@ export type PrevisaoDaTroca = {
 export async function preverTroca(clienteId: string, para: string): Promise<PrevisaoDaTroca> {
   const [atual, uso] = await Promise.all([planoDaConta(clienteId), usoDaOrganizacao(clienteId)])
   const [de, destino] = await Promise.all([planoVigente(atual), planoVigente(para)])
-  return {
-    de: { id: de.id, nome: de.nome, preco: de.preco },
-    para: { id: destino.id, nome: destino.nome, preco: destino.preco },
-    impacto: impactoDaTroca(de, destino, uso),
-  }
+  return previsaoDaTroca(de, destino, uso)
 }
 
 /** O motivo de recusar a confirmação, ou nulo se ela pode seguir. */
