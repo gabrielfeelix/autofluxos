@@ -212,3 +212,40 @@ hierarquia, e função nova no meio quebraria "quem mexe em quem".
   plano de navegação em andamento.
 - **AGENTS.md**: as linhas com travessão geradas pelo `next dev` ficaram (o
   bloco é recriado); a linha nossa foi corrigida.
+
+## 8. Descida de plano de verdade (decidido pelo Gabriel em 24/set)
+
+A troca com modal de impacto está no ar (`f7a5db7`). Falta o que acontece
+depois. Decisões:
+
+- **A descida vale na virada do mês**, nunca na hora. O resto do mês é o prazo
+  para salvar e exportar. Subida continua valendo na hora. Precisa de migration
+  (`clients.plano_agendado`, `plano_agendado_para`) e de uma passada diária que
+  aplica na virada.
+- **Aviso no app e por e-mail 7 dias e 1 dia antes** de valer, dizendo o que
+  sai e o que está em uso.
+- **Nada é apagado; o que sai fica só leitura** e religa sozinho se a
+  organização subir de novo: IA para de responder (configuração guardada);
+  transcrições antigas legíveis, sem transcrever nova; transmissões com
+  histórico visível, sem criar nova, e as agendadas para depois da virada
+  canceladas com aviso; integrações e webhook pausados; número a mais continua
+  bloqueando a troca.
+- **Conversa acima do limite, por conversa, na fatura seguinte** (coluna nova
+  `planos.preco_excedente`, editável na tela Planos):
+
+  | Plano | Embutido no plano | Excedente |
+  |---|---|---|
+  | Essencial | R$ 0,30 (297/1.000) | **R$ 0,40** |
+  | Operação | R$ 0,20 (597/3.000) | **R$ 0,30** |
+  | Escala | R$ 0,15 (1.197/8.000) | **R$ 0,20** |
+
+  Regra: excedente um terço acima do preço embutido, para subir de plano
+  compensar antes de o excedente pesar (Essencial com 3.000 conversas daria
+  R$ 1.097, contra R$ 597 da Operação). Referência de mercado em set/2026:
+  Octadesk cobrava R$ 1,25 a R$ 1,40 por conversa adicional; RD Station
+  Conversas embute R$ 0,90 a R$ 1,98 por cliente atendido e cobra o excedente
+  na fatura seguinte. Ficamos bem abaixo, coerente com o preço de entrada. A
+  tarifa da Meta segue à parte (`TARIFA_DA_META`).
+- O modal passa a mostrar a conta: "passou N conversas; a R$ X cada, são R$ Y
+  a mais neste mês". Enquanto não houver gateway, a cobrança é manual e a tela
+  diz "estimativa".
