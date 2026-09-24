@@ -249,3 +249,26 @@ depois. Decisões:
 - O modal passa a mostrar a conta: "passou N conversas; a R$ X cada, são R$ Y
   a mais neste mês". Enquanto não houver gateway, a cobrança é manual e a tela
   diz "estimativa".
+
+### 8.1 Conferido contra a tabela de boas práticas (24/set)
+
+Já cobertos acima: não apagar histórico, read-only no que sai, automação
+pausada com configuração guardada, reativar na hora ao subir, excedente em
+vez de obrigar a subir, e o mês seguinte voltando ao preço normal sozinho
+(o excedente é por mês). "Contatos acima do limite" não se aplica: nenhum
+plano limita contatos nem atendentes.
+
+Entram na frente, porque são lacunas de verdade:
+
+- **Mudar preço na tela Planos hoje vale na hora para todo mundo.** Passa a
+  valer só para organização nova. Para quem já está no plano, a
+  administração escolhe entre manter o preço antigo (legado) e aplicar com
+  **aviso de 30 dias**. Precisa guardar o preço contratado por organização
+  (`clients.preco_contratado`, preenchido com o preço de hoje na migration).
+- **Aviso de consumo em 80% e 100%** da faixa do mês, no app e por e-mail,
+  já com a conta do excedente, para o pico não chegar como surpresa na
+  fatura.
+
+Fica de fora: teto de gasto configurável pela organização. Parar de atender
+ao bater um teto contradiz a regra de nunca travar atendimento por
+consumo; o aviso de 80% cumpre o papel.
