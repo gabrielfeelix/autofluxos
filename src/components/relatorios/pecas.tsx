@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { Sparkline } from '@/components/relatorios/graficos'
+import { PeriodoPersonalizado } from '@/components/relatorios/periodo-personalizado'
 import { ATALHOS_DE_PERIODO, comoDuracao, diaCurto, variacao, type Periodo } from '@/core/relatorios'
 
 /**
@@ -9,7 +10,7 @@ import { ATALHOS_DE_PERIODO, comoDuracao, diaCurto, variacao, type Periodo } fro
  */
 
 /**
- * Atalhos como link e o intervalo à mão como formulário `get`: escolher o
+ * Atalhos como link e o intervalo à mão num modal (`PeriodoPersonalizado`): escolher o
  * período muda o endereço, então ele pode ser salvo e mandado para alguém.
  *
  * `manter` são os outros parâmetros da tela (aba, funil): trocar o período não
@@ -57,31 +58,14 @@ export function BarraDoPeriodo({
           ))}
         </nav>
 
-        <details className="group relative" open={periodo.atalho === null}>
-          <summary
-            className={`flex cursor-pointer list-none items-center gap-1 rounded-lg border px-3 py-1.5 text-[12.5px] font-semibold ${
-              periodo.atalho === null ? 'border-primary/40 bg-primary-weak text-primary' : 'border-line text-dim hover:text-ink'
-            }`}
-          >
-            Personalizado
-          </summary>
-          <form action={base} method="get" className="mt-2 flex flex-wrap items-end gap-2">
-            {Object.entries(manter).map(([nome, valor]) => (
-              <input key={nome} type="hidden" name={nome} value={valor} />
-            ))}
-            <label className="flex flex-col gap-1 text-[11.5px] text-dim">
-              De
-              <input type="date" name="de" defaultValue={periodo.de} max={hoje} required className="app-field h-9 px-2 text-[13px]" />
-            </label>
-            <label className="flex flex-col gap-1 text-[11.5px] text-dim">
-              Até
-              <input type="date" name="ate" defaultValue={periodo.ate} max={hoje} required className="app-field h-9 px-2 text-[13px]" />
-            </label>
-            <button type="submit" className="app-primary-button h-9 px-3 text-[12.5px]">
-              Aplicar
-            </button>
-          </form>
-        </details>
+        <PeriodoPersonalizado
+          base={base}
+          manter={manter}
+          de={periodo.de}
+          ate={periodo.ate}
+          hoje={hoje}
+          ativo={periodo.atalho === null}
+        />
       </div>
 
       <p className="text-[12px] text-dim">
