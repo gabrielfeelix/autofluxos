@@ -129,3 +129,37 @@ diretório, aplicada só com autorização explícita do Gabriel.
   uma linha em `alcancaDono` (`core/permissoes.ts`).
 - `member` sem exceção (acesso completo menos configurar a empresa) vira
   **Administrador** na migração das funções (A7), porque é o que ele faz hoje.
+
+## 6. Execução (24/set/2026)
+
+A1 `518bc66` · A2 `afcae57` · A3 `cf8b496` · A4 `36c8aa5` · A5 `af34014` ·
+A6 `712e0fc` · A7 `f190147` (publicado). Migrations `0099` e `0100` só no
+local. Pendências e comando de produção: `docs/HANDOFF-24-SET-ADMINISTRACAO.md`.
+
+## Decisões da execução
+
+- **Rotas**: `/admin` é a Visão geral; `/admin/organizacoes` e o detalhe
+  `/admin/organizacoes/[id]/*` seguem o plano. `/painel` e `/admin/contas`
+  continuam e redirecionam (links salvos, retornos de WhatsApp e Instagram).
+- **Hierarquia pura em `src/core/funcoes.ts`**, feita já na A2 porque a aba
+  Pessoas precisava dela; a A7 só acrescentou a tabela. Suporte 4YU tem nível 5
+  (fora da escada). Ninguém edita a si mesmo. Dar Proprietário passa a posse e
+  o dono anterior vira Administrador. Exceções por pessoa não passam da
+  política de quem concede.
+- **Função sem tabela** é derivada da política efetiva (cabe no Atendente,
+  Atendente; cabe no Gestor, Gestor; senão Administrador). A migração da A7
+  usa a mesma regra e grava a diferença como exceção, então ninguém ganha nem
+  perde acesso (o `member` sem exceção vira Administrador sem configurar a
+  organização nem corrigir venda, que é o que ele faz hoje).
+- **Planos**: a tabela edita os três planos existentes, não cria plano novo
+  (`clients.plano` guarda o id). A landing continua lendo `core/planos.ts`.
+- **Suspender organização** (`clients.suspensa_em`, na 0099) bloqueia o painel
+  para as pessoas da organização e deixa o Suporte 4YU entrar; não desliga bot
+  nem canais.
+- **Pedidos de plano** vêm da auditoria; a resposta vira ato com o id do pedido
+  em `detalhes.pedido`.
+- **Funções na organização** ficam em Configurações > Pessoas > Funções (só
+  leitura), sem item novo no menu de Configurações, para não colidir com o
+  plano de navegação em andamento.
+- **AGENTS.md**: as linhas com travessão geradas pelo `next dev` ficaram (o
+  bloco é recriado); a linha nossa foi corrigida.
