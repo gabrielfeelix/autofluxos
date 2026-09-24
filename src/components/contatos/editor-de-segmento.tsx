@@ -12,12 +12,14 @@ import {
   type Operador,
   type Segmento,
 } from '@/core/segmentos'
+import { Dropdown } from '@/components/design/dropdown'
 import {
   acaoCriarSegmento,
   acaoPrevisualizarSegmento,
   acaoSalvarSegmento,
   type RespostaDaPrevia,
 } from '@/server/acoes-segmentos'
+import type { SegmentoSalvo } from '@/server/repos/segmentos'
 
 /**
  * O editor de segmento, com prévia explicável (UI-14, RB-39).
@@ -50,13 +52,16 @@ export function EditorDeSegmento({
   nomeInicial = '',
   regraInicial,
   aoSalvar,
+  aoCancelar,
 }: {
   clienteId: string
   /** Ausente = criando um segmento novo. */
   segmentoId?: string
   nomeInicial?: string
   regraInicial?: Segmento
-  aoSalvar?: () => void
+  /** Recebe o segmento como ficou gravado, para a tabela mudar sem recarregar. */
+  aoSalvar?: (segmento: SegmentoSalvo) => void
+  aoCancelar?: () => void
 }) {
   const [nome, setNome] = useState(nomeInicial)
   const [juncao, setJuncao] = useState<'todas' | 'qualquer'>(regraInicial?.juncao ?? 'todas')
@@ -73,21 +78,22 @@ export function EditorDeSegmento({
   const previaVelha = previa !== null && regraDaPrevia !== assinatura
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       <label>
-        <span className="mb-1 block text-[11px] font-bold tracking-[0.04em] text-dim uppercase">
+        <span className="mb-1.5 block text-[11px] font-bold tracking-[0.04em] text-dim uppercase">
           Nome do segmento
         </span>
         <input
           value={nome}
           onChange={(e) => setNome(e.target.value)}
-          placeholder="ex.: clientes sem comprar há 90 dias"
-          className="app-field w-full px-3 py-2.5 text-[12.5px]"
+          autoFocus
+          placeholder="Exemplo: clientes sem comprar há 90 dias"
+          className="app-field w-full px-[13px] py-[11px] text-[13.5px]"
         />
       </label>
 
       <div>
-        <div className="mb-2 flex items-center gap-2">
+        <div className="mb-2.5 flex flex-wrap items-center gap-2">
           <span className="text-[11px] font-bold tracking-[0.04em] text-dim uppercase">
             Quem entra
           </span>
@@ -96,15 +102,20 @@ export function EditorDeSegmento({
               Todos os contatos
             </span>
           ) : (
-            <select
-              value={juncao}
-              onChange={(e) => setJuncao(e.target.value as 'todas' | 'qualquer')}
-              aria-label="Como as condições se combinam"
-              className="app-field px-2 py-1 text-[11.5px]"
-            >
-              <option value="todas">todas as condições</option>
-              <option value="qualquer">qualquer condição</option>
-            </select>
+            <>
+              <span className="text-[12px] text-dim">quem cumpre</span>
+              <div className="w-52">
+                <Dropdown
+                  rotuloAcessivel="Como as condições se combinam"
+                  valor={juncao}
+                  aoMudar={(v) => setJuncao(v as 'todas' | 'qualquer')}
+                  opcoes={[
+                    { valor: 'todas', rotulo: 'todas as condições' },
+                    { valor: 'qualquer', rotulo: 'qualquer condição' },
+                  ]}
+                />
+              </div>
+            </>
           )}
         </div>
 
@@ -129,9 +140,9 @@ export function EditorDeSegmento({
               { campo: CAMPOS[0].chave, operador: 'igual', valor: '' },
             ])
           }
-          className="mt-2 rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:bg-white/[0.04]"
+          className="app-secondary-button mt-2.5 h-9 px-3.5 text-[12.5px]"
         >
-          + condição
+          + Adicionar condição
         </button>
 
         {condicoes.length === 0 && (
@@ -141,16 +152,17 @@ export function EditorDeSegmento({
         )}
       </div>
 
-      <div className="border-t border-line pt-3">
-        <label className="mb-2 flex items-center gap-2 text-[12px]">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-t border-line pt-4">
+        <label className="flex max-w-[420px] items-start gap-2.5 text-[12.5px]">
           <input
             type="checkbox"
             checked={comModelo}
             onChange={(e) => setComModelo(e.target.checked)}
+            className="mt-0.5 accent-[var(--color-primary)]"
           />
           <span>
             O envio usa modelo aprovado
-            <span className="block text-[10.5px] leading-4 text-dim">
+            <span className="block text-[11px] leading-4 text-dim">
               Com modelo, quem está fora da janela de 24h ainda pode receber. Sem
               modelo, o envio é texto livre e a janela é a lei.
             </span>
@@ -161,9 +173,9 @@ export function EditorDeSegmento({
           type="button"
           disabled={rodando}
           onClick={previsualizar}
-          className="app-secondary-button px-3 py-1.5 text-[12px] disabled:opacity-50"
+          className="app-secondary-button h-9 px-3.5 text-[12.5px] disabled:opacity-50"
         >
-          {rodando ? 'calculando…' : 'Ver prévia'}
+          {rodando ? 'Calculando…' : 'Ver quem entra'}
         </button>
       </div>
 
@@ -194,14 +206,21 @@ export function EditorDeSegmento({
         </p>
       )}
 
-      <button
-        type="button"
-        disabled={rodando || nome.trim() === ''}
-        onClick={salvar}
-        className="app-primary-button px-4 py-2.5 text-[13px] disabled:opacity-50"
-      >
-        {segmentoId ? 'Salvar segmento' : 'Criar segmento'}
-      </button>
+      <div className="flex justify-end gap-2">
+        {aoCancelar && (
+          <button type="button" onClick={aoCancelar} disabled={rodando} className="app-secondary-button h-9 px-4 text-[13px]">
+            Cancelar
+          </button>
+        )}
+        <button
+          type="button"
+          disabled={rodando || nome.trim() === ''}
+          onClick={salvar}
+          className="app-primary-button h-9 px-4 text-[13px] disabled:opacity-50"
+        >
+          {segmentoId ? 'Salvar segmento' : 'Criar segmento'}
+        </button>
+      </div>
 
       {segmentoId && (
         <p className="text-[10.5px] leading-4 text-dim">
@@ -232,7 +251,7 @@ export function EditorDeSegmento({
         setErro(r.erro ?? 'não deu para salvar')
         return
       }
-      aoSalvar?.()
+      if (r.segmento) aoSalvar?.(r.segmento)
     })
   }
 }
@@ -251,68 +270,55 @@ function LinhaDaCondicao({
   const precisaDeValor = !SEM_VALOR.includes(condicao.operador)
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <select
-        value={condicao.campo}
-        onChange={(e) => {
-          const novo = acharCampo(e.target.value)
-          // Trocar de campo pode invalidar o operador: "contém" não existe em
-          // data. Cair no primeiro válido evita um estado que o servidor
-          // recusaria sem a pessoa entender por quê.
-          const operadorValido = novo && OPERADORES_POR_TIPO[novo.tipo].includes(condicao.operador)
-          aoMudar({
-            campo: e.target.value,
-            operador: operadorValido
-              ? condicao.operador
-              : ((novo ? OPERADORES_POR_TIPO[novo.tipo][0] : 'igual') as Operador),
-            valor: '',
-          })
-        }}
-        aria-label="Campo"
-        className="app-field min-w-0 flex-[1.4] px-2 py-2 text-[12px]"
-      >
-        {CAMPOS.map((c) => (
-          <option key={c.chave} value={c.chave}>
-            {c.rotulo}
-          </option>
-        ))}
-      </select>
+    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line-soft bg-surface-strong/40 p-2">
+      <div className="min-w-[180px] flex-[1.4]">
+        <Dropdown
+          rotuloAcessivel="Campo"
+          valor={condicao.campo}
+          aoMudar={(valor) => {
+            const novo = acharCampo(valor)
+            // Trocar de campo pode invalidar o operador: "contém" não existe em
+            // data. Cair no primeiro válido evita um estado que o servidor
+            // recusaria sem a pessoa entender por quê.
+            const operadorValido = novo && OPERADORES_POR_TIPO[novo.tipo].includes(condicao.operador)
+            aoMudar({
+              campo: valor,
+              operador: operadorValido
+                ? condicao.operador
+                : ((novo ? OPERADORES_POR_TIPO[novo.tipo][0] : 'igual') as Operador),
+              valor: '',
+            })
+          }}
+          opcoes={CAMPOS.map((c) => ({ valor: c.chave, rotulo: c.rotulo.charAt(0).toUpperCase() + c.rotulo.slice(1) }))}
+        />
+      </div>
 
-      <select
-        value={condicao.operador}
-        onChange={(e) => aoMudar({ ...condicao, operador: e.target.value as Operador })}
-        aria-label="Operador"
-        className="app-field min-w-0 flex-1 px-2 py-2 text-[12px]"
-      >
-        {operadores.map((op) => (
-          <option key={op} value={op}>
-            {ROTULO_DO_OPERADOR[op]}
-          </option>
-        ))}
-      </select>
+      <div className="min-w-[150px] flex-1">
+        <Dropdown
+          rotuloAcessivel="Operador"
+          valor={condicao.operador}
+          aoMudar={(valor) => aoMudar({ ...condicao, operador: valor as Operador })}
+          opcoes={operadores.map((op) => ({ valor: op, rotulo: ROTULO_DO_OPERADOR[op] }))}
+        />
+      </div>
 
       {precisaDeValor &&
         (campo?.tipo === 'opcao' && campo.opcoes ? (
-          <select
-            value={condicao.valor ?? ''}
-            onChange={(e) => aoMudar({ ...condicao, valor: e.target.value })}
-            aria-label="Valor"
-            className="app-field min-w-0 flex-1 px-2 py-2 text-[12px]"
-          >
-            <option value="">escolha</option>
-            {campo.opcoes.map((opcao) => (
-              <option key={opcao} value={opcao}>
-                {opcao}
-              </option>
-            ))}
-          </select>
+          <div className="min-w-[150px] flex-1">
+            <Dropdown
+              rotuloAcessivel="Valor"
+              valor={condicao.valor ?? ''}
+              aoMudar={(valor) => aoMudar({ ...condicao, valor })}
+              opcoes={[{ valor: '', rotulo: 'Escolha' }, ...campo.opcoes.map((opcao) => ({ valor: opcao, rotulo: opcao }))]}
+            />
+          </div>
         ) : (
           <input
             value={condicao.valor ?? ''}
             onChange={(e) => aoMudar({ ...condicao, valor: e.target.value })}
-            placeholder={campo?.tipo === 'data' ? 'aaaa-mm-dd ou dias' : 'valor'}
+            placeholder={campo?.tipo === 'data' ? 'Exemplo: 30 (dias) ou 2026-01-31' : 'Exemplo: Maringá'}
             aria-label="Valor"
-            className="app-field min-w-0 flex-1 px-2 py-2 text-[12px]"
+            className="app-field h-10 min-w-[150px] flex-1 px-3 text-[13px]"
           />
         ))}
 
@@ -322,7 +328,7 @@ function LinhaDaCondicao({
           onChange={(e) => aoMudar({ ...condicao, ate: e.target.value })}
           placeholder="até"
           aria-label="Fim do intervalo"
-          className="app-field w-[90px] px-2 py-2 text-[12px]"
+          className="app-field h-10 w-[100px] px-3 text-[13px]"
         />
       )}
 
@@ -330,7 +336,8 @@ function LinhaDaCondicao({
         type="button"
         onClick={aoRemover}
         aria-label="Remover condição"
-        className="rounded-lg border border-line px-2 py-1 text-[11px] text-muted transition hover:bg-white/[0.04]"
+        title="Remover condição"
+        className="flex size-10 shrink-0 items-center justify-center rounded-lg text-[16px] text-dim transition hover:bg-surface-strong hover:text-perigo"
       >
         ×
       </button>

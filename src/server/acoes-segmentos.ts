@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { validarSegmento } from '@/core/segmentos'
 import {
   apagarSegmento,
@@ -29,7 +28,7 @@ import { sessaoAtual } from './sessao'
  * que é literalmente o A19.
  */
 
-export type RespostaDoSegmento = { ok: boolean; erro?: string }
+export type RespostaDoSegmento = { ok: boolean; erro?: string; segmento?: SegmentoSalvo }
 
 export type RespostaDaPrevia =
   | { ok: true; previa: Previa; explicacao: string; amostra: { nome: string | null }[] }
@@ -61,8 +60,9 @@ export async function acaoCriarSegmento(
   const r = await criarSegmento(clienteId, nome, validada.segmento, quem?.usuario.nome ?? null)
   if (!r.ok) return { ok: false, erro: r.motivo }
 
-  revalidatePath(`/clientes/${clienteId}/leads/segmentos`)
-  return { ok: true }
+  // Sem `revalidatePath` da tela de Segmentos: ela está aberta e acrescenta a
+  // linha com o que volta daqui, sem refazer a página.
+  return { ok: true, segmento: r.segmento }
 }
 
 export async function acaoSalvarSegmento(
@@ -90,8 +90,7 @@ export async function acaoSalvarSegmento(
   const r = await salvarRegra(clienteId, segmentoId, validada.segmento, nome)
   if (!r.ok) return { ok: false, erro: r.motivo }
 
-  revalidatePath(`/clientes/${clienteId}/leads/segmentos`)
-  return { ok: true }
+  return { ok: true, segmento: r.segmento }
 }
 
 export async function acaoApagarSegmento(
@@ -101,9 +100,32 @@ export async function acaoApagarSegmento(
   const acesso = await exigirCapacidade(clienteId, 'exportar', 'todos')
   if (recusou(acesso)) return acesso
 
-  await apagarSegmento(clienteId, segmentoId)
-  revalidatePath(`/clientes/${clienteId}/leads/segmentos`)
-  return { ok: true }
+  const apagou = await apagarSegmento(clienteId, segmentoId)
+  return apagou ? { ok: true } : { ok: false, erro: 'esse segmento não existe mais' }
+}
+
+/**
+ * Quantos contatos casam com a regra agora, no escopo de quem pergunta. É o
+ * número da tabela para um segmento recém-salvo; a prévia do editor continua
+ * sendo a resposta completa (quem pode receber e por quê).
+ */
+export async function acaoContarSegmento(
+  clienteId: string,
+  regraBruta: unknown,
+): Promise<{ ok: true; total: number } | { ok: false; erro: string }> {
+  const acesso = await exigirCapacidade(clienteId, 'exportar', 'todos')
+  if (recusou(acesso)) return { ok: false, erro: acesso.erro ?? 'sem acesso' }
+
+  const validada = validarSegmento(regraBruta, { podeLerValores: pode(acesso.regras, 'ler_valores') })
+  if (!validada.ok) return { ok: false, erro: validada.motivo }
+
+  const r = await consultarContatos({
+    clienteId,
+    segmento: validada.segmento,
+    escopo: filtroDoAcesso(acesso, 'exportar'),
+    porPagina: 1,
+  })
+  return { ok: true, total: r.total }
 }
 
 /**
