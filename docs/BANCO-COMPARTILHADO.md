@@ -156,6 +156,47 @@ extração explícito para os objetos de `public`.
   `POST rpc/progresso_das_transmissoes` com `{"p_ids":[]}` deu 401 (`42501`)
   com a chave pública e 200 (`[]`) com a secreta; `GET conta` com
   `Accept-Profile: app_verandi` deu 200.
+- **a `0099` e a `0100` foram aplicadas em 24/set/2026** (plano da
+  administração, A6 e A7), com autorização explícita do dono, que valeu só
+  para as duas, pela Management API, nessa ordem. Antes, conferido na produção
+  que a `0098` já estava lá (`contacts.bsuid`, `contacts.username` e o índice
+  `contacts_client_bsuid_key` presentes; ela não tinha registro aqui) e que
+  nada apareceu no diretório depois da `0100`.
+
+  A **`0099`** cria `public.planos` (os três planos de `core/planos.ts`, com os
+  mesmos valores) e `clients.suspensa_em` (anulável, sem default). A **`0100`**
+  cria `public.funcoes` (Proprietário, Administrador, Gestor, Atendente) e
+  `af_membros.funcao_id` (anulável, FK `on delete set null`), e classifica os
+  membros sem mudar o acesso de ninguém.
+
+  **Ensaio em transação contra a produção, as duas juntas e sem o `notify`**,
+  com a política efetiva de cada membro (exceção, senão função, senão papel)
+  medida antes e depois dentro da transação: **56** capacidades (7 membros × 8)
+  antes, **56** depois, **56** iguais, **zero** diferentes. Os 7 membros da
+  produção são `owner` e viraram Proprietário; nenhuma exceção precisou ser
+  criada. Depois do `rollback`, nenhuma das duas tabelas nem das duas colunas
+  sobrou. No local tinham sido 168 capacidades iguais (21 membros com `member`
+  e exceções).
+
+  Releitura objeto a objeto depois de aplicar: `planos` com 3 linhas e
+  `funcoes` com 4, as duas com RLS ligada e zero políticas; as duas colunas
+  anuláveis sem default; `has_table_privilege` falso nos quatro privilégios
+  para `anon` e `authenticated` e verdadeiro para `service_role`; grants só
+  de `postgres` e `service_role`; 7 membros em `proprietario`, **0** linhas
+  em `membro_capacidades`, **0** organizações suspensas. Medidos antes e
+  depois: `app_verandi.migrations_aplicadas` com **35** linhas, **42**
+  tabelas e **16** policies de `storage.objects`, iguais; `public` de **80**
+  para **82** tabelas e `clients` de **32** para **33** colunas, as únicas
+  diferenças esperadas; **6** contas e **45** contatos intactos.
+
+  **As duas têm `notify pgrst`, e o reload foi conferido nos dois produtos:**
+  `planos`, `funcoes`, `clients?select=suspensa_em` e
+  `af_membros?select=funcao_id` respondem **200** para a chave secreta e
+  **401** para a publicável, e `app_verandi.conta` continua em **200**.
+
+  **Aqui o código foi publicado antes da migration, e de propósito:** ele lê
+  as colunas novas por `to_jsonb` e cai em `core/planos.ts` e nos papéis
+  quando as tabelas não existem, então não havia intervalo em que a tela cai.
 - **a `0084` e a `0085` foram aplicadas em 20/set/2026**, na execução da F7, com
   autorização explícita do dono (pedida para a `0084` e estendida por ele às
   seguintes da F7/F8). As duas conferidas pelos **dois** testes: replay do zero em
