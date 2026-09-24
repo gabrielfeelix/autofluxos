@@ -193,10 +193,18 @@ export function TabelaDeEtiquetas({ clienteId, inicial }: { clienteId: string; i
                           type="button"
                           data-fechar-popover
                           disabled={lista.length < 2}
-                          className="quadro-menu-item"
+                          className="quadro-menu-item disabled:cursor-not-allowed disabled:opacity-100 disabled:hover:bg-transparent"
                           onClick={() => setEdicao({ tipo: 'juntar', etiqueta: e })}
                         >
-                          Juntar com outra…
+                          {/* Desligado sem dizer por quê parece botão quebrado. */}
+                          {lista.length < 2 ? (
+                            <span className="flex flex-col items-start text-dim">
+                              Juntar com outra…
+                              <span className="text-[11px]">Crie outra etiqueta antes</span>
+                            </span>
+                          ) : (
+                            'Juntar com outra…'
+                          )}
                         </button>
                         <button
                           type="button"
