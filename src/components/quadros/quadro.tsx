@@ -605,7 +605,7 @@ export function Quadro({
       />
 
       <FecharCartao
-        key={fechando?.cartao.id ?? 'vazio'}
+        key={`fechar:${fechando?.cartao.id ?? 'vazio'}`}
         clienteId={clienteId}
         cartao={ehVenda ? null : (fechando?.cartao ?? null)}
         situacao={fechando?.situacao ?? 'ganha'}
@@ -627,7 +627,7 @@ export function Quadro({
         não usar.
       */}
       <PainelDoContato
-        key={noPainel?.id ?? 'vazio'}
+        key={`painel:${noPainel?.id ?? 'vazio'}`}
         clienteId={clienteId}
         volta={`/clientes/${clienteId}/quadros?q=${quadroId}`}
         contatoId={noPainel?.contatoId ?? null}

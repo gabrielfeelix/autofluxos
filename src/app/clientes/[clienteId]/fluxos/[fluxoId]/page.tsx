@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import { voltaInterna } from '@/core/volta-da-ficha'
 import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
 import { FaixaDeSuporte } from '@/components/conta/faixa-de-suporte'
 import { Editor } from '@/components/editor/editor'
@@ -47,11 +48,14 @@ export default async function Pagina({
   searchParams,
 }: {
   params: Promise<{ clienteId: string; fluxoId: string }>
-  searchParams: Promise<{ origem?: string }>
+  searchParams: Promise<{ origem?: string; volta?: string }>
 }) {
   await atrasoDeRevisao()
   const { clienteId, fluxoId } = await params
-  const origem = origemValida((await searchParams).origem)
+  const pedido = await searchParams
+  const origem = origemValida(pedido.origem)
+  // Aberto pelo destino de um gatilho, o ‹ volta para aquela aba (Fase 12).
+  const volta = voltaInterna(pedido.volta, clienteId)
 
   // O editor não usa a moldura, então confere a seção por conta própria (E7).
   if (!(await capacidadeNaPagina(clienteId, 'configurar_operacao', 'todos'))) {
@@ -152,7 +156,7 @@ export default async function Pagina({
            um fluxo quase sempre vai abrir outro, ou a palavra-chave dele. Voltar
            para o painel jogava a pessoa dois cliques longe do que ela estava
            fazendo. */
-        voltarHref={`/clientes/${cliente.id}/fluxos`}
+        voltarHref={volta ?? `/clientes/${cliente.id}/fluxos`}
         inicial={fluxo.rascunho}
         canal={fluxo.canal}
         iaHabilitada={fluxo.iaHabilitada}

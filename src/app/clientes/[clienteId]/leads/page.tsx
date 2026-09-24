@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { hrefDaFicha } from '@/core/volta-da-ficha'
 import { LinhaClicavel } from '@/components/lead/linha-clicavel'
 import { rotuloDoCampo } from '@/core/contatos/rotulo-do-campo'
 import { telefoneLegivel } from '@/core/contatos/telefone'
@@ -82,6 +83,24 @@ function enderecoDoCsv(
 
   const consulta = parametros.toString()
   return `/api/clientes/${clienteId}/leads/csv${consulta ? `?${consulta}` : ''}`
+}
+
+/**
+ * A ficha aberta daqui volta para esta mesma lista: busca, filtros e página.
+ * Sem isto, o "← Contatos" da ficha caía na lista inteira e a pessoa refazia a
+ * pesquisa a cada contato que abria (Fase 12, jornada Contatos → ficha).
+ */
+function fichaComVolta(filtro: Filtro, contatoId: string): string {
+  const parametros = new URLSearchParams()
+  if (filtro.etiqueta) parametros.set('etiqueta', filtro.etiqueta)
+  if (filtro.marca) parametros.set('marca', filtro.marca)
+  if (filtro.termo) parametros.set('busca', filtro.termo)
+  if (filtro.nivel) parametros.set('nivel', filtro.nivel)
+  if (filtro.pagina > 1) parametros.set('pagina', String(filtro.pagina))
+  const consulta = parametros.toString()
+  return hrefDaFicha(filtro.clienteId, contatoId, {
+    volta: consulta === '' ? undefined : `/clientes/${filtro.clienteId}/leads?${consulta}`,
+  })
 }
 
 /** O filtro da tela, já validado. Tudo primitivo: é a chave do `cache` abaixo. */
@@ -456,7 +475,7 @@ async function Tabela({ filtro, etiquetasDaConta }: { filtro: Filtro; etiquetasD
                 {leads.map((lead) => (
                 <LinhaClicavel
                   key={lead.contatoId}
-                  href={`/clientes/${clienteId}/leads/${lead.contatoId}`}
+                  href={fichaComVolta(filtro, lead.contatoId)}
                   className={`group cursor-pointer border-b border-line last:border-0 ${FUNDO_DA_LINHA}`}
                 >
                   <td className={`${FIXA_SELECAO} ${FUNDO_DA_FIXA} z-[2] px-4 py-3`}>
@@ -467,7 +486,7 @@ async function Tabela({ filtro, etiquetasDaConta }: { filtro: Filtro; etiquetasD
                       <Avatar nome={lead.nome} />
                       <div className="min-w-0">
                         <Link
-                          href={`/clientes/${clienteId}/leads/${lead.contatoId}`}
+                          href={fichaComVolta(filtro, lead.contatoId)}
                           className={`block truncate text-[13px] font-bold transition hover:text-primary ${lead.nome ? '' : 'text-dim'}`}
                         >
                           {lead.nome ?? 'sem nome'}

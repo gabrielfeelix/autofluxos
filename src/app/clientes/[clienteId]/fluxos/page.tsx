@@ -232,6 +232,8 @@ async function ConteudoDaAba({
    * blocos `{aba === ...}` deste arquivo, não por palpite.
    */
   const precisa = (...abas: Aba[]) => abas.includes(aba)
+  // O editor aberto pelo destino volta para esta mesma aba, com a busca.
+  const voltaDaAba = `/clientes/${cliente.id}/fluxos?${new URLSearchParams(parametros).toString()}`
   const vazio = <T,>(valor: T) => Promise.resolve(valor)
 
   const [
@@ -867,9 +869,7 @@ async function ConteudoDaAba({
                       </strong>
                       <span className="mt-0.5 block truncate text-[11px] text-dim">
                         {ROTULO_DO_OPERADOR[gatilho.operador]} · abre{' '}
-                        <strong className="font-semibold text-muted">
-                          {destino?.nome ?? 'um fluxo que sumiu'}
-                        </strong>
+                        <NomeDoDestino destino={destino} clienteId={cliente.id} volta={voltaDaAba} />
                       </span>
                       <AvisoDoDestino destino={destino} ligada={gatilho.ativo} />
                     </span>
@@ -978,9 +978,7 @@ async function ConteudoDaAba({
                       </strong>
                       <span className="mt-0.5 block truncate text-[11px] text-dim">
                         abre{' '}
-                        <strong className="font-semibold text-muted">
-                          {destino?.nome ?? 'um fluxo que sumiu'}
-                        </strong>
+                        <NomeDoDestino destino={destino} clienteId={cliente.id} volta={voltaDaAba} />
                       </span>
                       <AvisoDoDestino destino={destino} ligada={gatilho.ativo} />
                     </span>
@@ -1129,9 +1127,7 @@ async function ConteudoDaAba({
                       </strong>
                       <span className="mt-0.5 block truncate text-[11px] text-dim">
                         “{campanha.frase}” · abre{' '}
-                        <strong className="font-semibold text-muted">
-                          {destino?.nome ?? 'um fluxo que sumiu'}
-                        </strong>
+                        <NomeDoDestino destino={destino} clienteId={cliente.id} volta={voltaDaAba} />
                       </span>
                       <AvisoDoDestino destino={destino} ligada={campanha.ativa} />
                     </span>
@@ -1320,9 +1316,7 @@ async function ConteudoDaAba({
                                   ) : (
                                     <>
                                       abre{' '}
-                                      <strong className="font-semibold text-muted">
-                                        {destino?.nome ?? 'um fluxo que sumiu'}
-                                      </strong>
+                                      <NomeDoDestino destino={destino} clienteId={cliente.id} volta={voltaDaAba} />
                                       {destino && !destino.versaoPublicadaId && (
                                         <span className="text-aviso">
                                           {' '}
@@ -1417,6 +1411,31 @@ async function ConteudoDaAba({
 function bloqueioDoDestino(destino: { versaoPublicadaId: string | null } | undefined) {
   if (!destino) return TEXTO_DA_RECUSA.destino_apagado
   return destino.versaoPublicadaId ? null : TEXTO_DA_RECUSA.destino_nao_publicado
+}
+
+/**
+ * O nome do destino é o caminho para corrigi-lo: "o destino nunca foi
+ * publicado" sem link obrigava a achar a automação na outra aba e depois achar
+ * de novo o gatilho. O editor aberto daqui volta para a aba de origem.
+ */
+function NomeDoDestino({
+  destino,
+  clienteId,
+  volta,
+}: {
+  destino: { id: string; nome: string } | undefined
+  clienteId: string
+  volta: string
+}) {
+  if (!destino) return <strong className="font-semibold text-muted">um fluxo que sumiu</strong>
+  return (
+    <Link
+      href={`/clientes/${clienteId}/fluxos/${destino.id}?volta=${encodeURIComponent(volta)}`}
+      className="font-semibold text-muted underline decoration-line underline-offset-2 hover:text-primary"
+    >
+      {destino.nome}
+    </Link>
+  )
 }
 
 /**

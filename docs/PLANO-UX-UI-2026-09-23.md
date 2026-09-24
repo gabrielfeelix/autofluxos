@@ -1314,10 +1314,10 @@ outras telas desta fase.
 
 ### Tarefa 12.1: percorrer as jornadas
 
-- [ ] **Passo 1:** com o ambiente local, percorrer a matriz "Ligações entre
+- [x] **Passo 1:** com o ambiente local, percorrer a matriz "Ligações entre
   telas" de `08-handoff-execucao.md` e anotar cada jornada como OK ou com
   defeito (e o defeito vira tarefa nova no fim deste arquivo).
-- [ ] **Passo 2:** personas: proprietário, membro com acesso de gestão, membro
+- [x] **Passo 2:** personas: proprietário, membro com acesso de gestão, membro
   com acesso de atendimento (escopo próprio). Criar os dois membros no local
   com o script de seed ou pela tela.
 - [ ] **Passo 3:** prints finais de todas as telas em
@@ -1325,6 +1325,22 @@ outras telas desta fase.
   `docs/revisao-ux-ui-2026-09-23/00-cobertura.md` (coluna de cobertura passa a
   "Validada em navegador" onde for o caso).
 - [ ] **Passo 4:** commit `docs(ux): validação integrada e prints finais`.
+
+---
+
+### Tarefa 12.2: achados da validação integrada (23/09)
+
+Registro completo em `docs/ux-paralelo/fase-12.md`.
+
+- [x] Contatos → ficha → voltar mantém busca, filtro e página.
+- [x] Funil: `key` duplicada entre o fechamento e o painel do contato.
+- [x] Transmissão: a volta do destinatário mantém o filtro de estado.
+- [x] Gatilho: nome do destino leva ao editor, que volta à aba de origem (conferir no navegador).
+- [ ] **Decisão do Gabriel:** Inbox e Contatos recortam por escopo "só os próprios"? Hoje mostram tudo, e o Início conta igual ao Inbox.
+- [ ] Cartão do número do WhatsApp: cada situação "sem fluxo" com link para escolher a automação.
+- [ ] Reparo de integração com volta para o fluxo ou campanha que dependia dela.
+- [ ] O ‹ do editor volta para a lista com a busca que estava aberta.
+- [ ] Conferir no navegador "Segmento → transmissão" e "Testar" (scripts de 12.1 não chegaram lá).
 
 ---
 

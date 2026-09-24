@@ -180,7 +180,9 @@ async function Detalhe({
                     <Link
                       href={hrefDaFicha(clienteId, d.contatoId, {
                         aba: 'conversa',
-                        volta: `/clientes/${clienteId}/transmissoes/${transmissaoId}`,
+                        // Volta ao mesmo recorte ("Não recebeu", página 2): é dele que a
+                        // pessoa saiu para investigar um por um.
+                        volta: endereco({ estado, pagina }),
                       })}
                       className="text-[13px] font-semibold hover:text-primary hover:underline"
                     >
