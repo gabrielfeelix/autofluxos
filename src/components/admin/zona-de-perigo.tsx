@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useTransition } from 'react'
 import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
@@ -115,6 +116,7 @@ function Apagar({ organizacao, pessoas, aoFechar }: { organizacao: { id: string;
   }, [organizacao.id])
 
   const confere = digitado.trim() === organizacao.nome.trim()
+  const conectado = (estrago?.conectados ?? 0) > 0
   const linha = (quantos: number, um: string, varios: string) => (
     <li>
       <strong>{quantos}</strong> {quantos === 1 ? um : varios}
@@ -136,17 +138,31 @@ function Apagar({ organizacao, pessoas, aoFechar }: { organizacao: { id: string;
           </ul>
         )}
       </div>
-      <p className="mt-4 text-[12.5px] leading-6 text-muted">
-        Para confirmar, digite <strong className="text-ink">{organizacao.nome}</strong> abaixo.
-      </p>
-      <input
-        type="text"
-        value={digitado}
-        onChange={(evento) => setDigitado(evento.target.value)}
-        aria-label={`Digite ${organizacao.nome} para confirmar`}
-        autoComplete="off"
-        className="app-field mt-2 px-3 py-2.5 text-[13px]"
-      />
+      {conectado ? (
+        <div className="mt-4 rounded-[12px] border border-amber-400/30 bg-amber-400/[0.07] px-4 py-3 text-[12.5px] leading-5 text-soft">
+          <p className="font-semibold">
+            {estrago!.conectados === 1 ? 'Há um canal conectado' : `Há ${estrago!.conectados} canais conectados`}
+          </p>
+          <p className="mt-0.5 text-muted">Desconecte o WhatsApp e o Instagram antes de apagar. Suspender é o caminho reversível.</p>
+          <Link href={`/clientes/${organizacao.id}/ajustes/integracoes`} className="mt-2 inline-block font-semibold text-primary underline-offset-2 hover:underline">
+            Abrir as conexões da organização
+          </Link>
+        </div>
+      ) : (
+        <>
+          <p className="mt-4 text-[12.5px] leading-6 text-muted">
+            Para confirmar, digite <strong className="text-ink">{organizacao.nome}</strong> abaixo.
+          </p>
+          <input
+            type="text"
+            value={digitado}
+            onChange={(evento) => setDigitado(evento.target.value)}
+            aria-label={`Digite ${organizacao.nome} para confirmar`}
+            autoComplete="off"
+            className="app-field mt-2 px-3 py-2.5 text-[13px]"
+          />
+        </>
+      )}
       {erro && (
         <p role="alert" className="mt-3 rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2.5 text-[12px] leading-5 text-perigo">
           {erro}
@@ -158,7 +174,7 @@ function Apagar({ organizacao, pessoas, aoFechar }: { organizacao: { id: string;
         </button>
         <button
           type="button"
-          disabled={!confere || indo || estrago === null}
+          disabled={!confere || indo || estrago === null || conectado}
           onClick={() => {
             setErro(null)
             comecar(async () => {

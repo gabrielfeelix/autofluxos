@@ -407,3 +407,20 @@ export async function atualizarPerfil(
   if (rows.length === 0) return { ok: false, motivo: 'pessoa não encontrada' }
   return { ok: true, imagemAnterior: rows[0].anterior ? String(rows[0].anterior) : null }
 }
+
+/**
+ * As organizações em que o login é o **único** dono. Excluir o login deixaria
+ * cada uma sem dono, então a exclusão pede para passar a posse antes (A9).
+ */
+export async function organizacoesSoDele(usuarioId: string): Promise<{ id: string; nome: string }[]> {
+  const { rows } = await bancoDoLogin().query(
+    `select c.id, c.nome
+       from public.af_membros m
+       join public.clients c on c.id = m."organizationId"
+      where m."userId" = $1 and m."role" = 'owner'
+        and (select count(*) from public.af_membros o where o."organizationId" = m."organizationId" and o."role" = 'owner') = 1
+      order by c.nome`,
+    [usuarioId],
+  )
+  return rows.map((linha) => ({ id: String(linha.id), nome: String(linha.nome) }))
+}

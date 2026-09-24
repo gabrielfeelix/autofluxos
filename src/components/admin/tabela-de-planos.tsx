@@ -320,7 +320,7 @@ function EditarPlano({
           <fieldset className="rounded-[12px] border border-amber-400/30 bg-amber-400/[0.06] px-4 py-3">
             <legend className="sr-only">Preço para quem já está no plano</legend>
             <p className="mb-2 text-[12.5px] leading-5 text-soft">
-              O preço novo vale para organização nova. E para as {quantas} que já estão no {plano.nome}?
+              O preço novo vale para organização nova. E para {plano.organizacoes === 1 ? 'a organização que já está' : `as ${quantas} que já estão`} no {plano.nome}?
             </p>
             {(
               [

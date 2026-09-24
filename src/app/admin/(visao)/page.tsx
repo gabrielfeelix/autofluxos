@@ -1,10 +1,10 @@
 import Link from 'next/link'
-import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
+import { NovaOrganizacao } from '@/components/admin/nova-organizacao'
 import { LogoDoCliente } from '@/components/design/logo-cliente'
 import { Numero, TelaDaAdministracao } from '@/components/admin/partes'
 import { acharPlano, fracaoUsada } from '@/core/planos'
 import { horaExata, quando } from '@/lib/quando'
-import { acaoCriarCliente, acaoCriarExemplo } from '@/server/acoes'
+import { acaoCriarExemplo } from '@/server/acoes'
 import { contarAlertasAbertos } from '@/server/repos/alertas'
 import { listarClientes, resumirAtendimento } from '@/server/repos/clientes'
 import { consumoDeTodasAsContas } from '@/server/repos/plano'
@@ -52,22 +52,7 @@ export default async function VisaoGeral() {
       titulo="Visão geral"
       descricao="A plataforma hoje: onde tem gente esperando, o uso do mês e o que precisa de atenção."
       acoes={
-        <ModalFormulario
-          botao={
-            <span className="flex items-center gap-2">
-              <span aria-hidden className="text-lg leading-none">+</span>
-              Nova organização
-            </span>
-          }
-          titulo="Nova organização"
-          descricao="A organização nasce vazia: o primeiro fluxo e o número de WhatsApp vêm depois, na tela dela."
-          action={acaoCriarCliente}
-        >
-          <label>
-            <RotuloCampo>Nome da organização</RotuloCampo>
-            <input name="nome" required autoFocus placeholder="Exemplo: Vega Filmes" className="app-field px-[13px] py-[11px] text-[13.5px]" />
-          </label>
-        </ModalFormulario>
+        <NovaOrganizacao planos={planos} />
       }
     >
       <section className="mb-7 grid grid-cols-2 gap-3 lg:grid-cols-4">

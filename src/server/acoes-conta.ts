@@ -647,6 +647,13 @@ export async function acaoApagarConta(contaId: string): Promise<{ ok: boolean; e
   const cliente = await acharCliente(contaId)
   if (!cliente) return { ok: false, erro: 'esta conta não existe mais' }
 
+  // Canal conectado bloqueia (A10): apagar com o número ligado deixaria a
+  // Meta entregando mensagem para uma organização que não existe mais.
+  const { conectados } = await contarOQueSomeCom(contaId)
+  if (conectados > 0) {
+    return { ok: false, erro: `a organização tem ${conectados} ${conectados === 1 ? 'canal conectado' : 'canais conectados'}. Desconecte antes de apagar.` }
+  }
+
   // O registro vai **antes** da exclusão: `af_auditoria.conta_id` é
   // `on delete set null` (0021), então gravar depois perderia o vínculo de
   // qualquer jeito, e gravar antes garante que existe linha mesmo se o delete

@@ -275,6 +275,8 @@ export type EstragoDaExclusao = {
   fluxos: number
   conexoes: number
   numeros: number
+  /** Canais ainda conectados (WhatsApp, Instagram): bloqueiam a exclusão (A10). */
+  conectados: number
 }
 
 /**
@@ -295,14 +297,22 @@ export async function contarOQueSomeCom(id: string): Promise<EstragoDaExclusao> 
     return count ?? 0
   }
 
-  const [leads, fluxos, conexoes, numeros] = await Promise.all([
+  const conectados = async () => {
+    const { count, error } = await db().from('channels').select('id', { count: 'exact', head: true }).eq('client_id', id).eq('status', 'ativo')
+    if (ehIdInvalido(error)) return 0
+    if (error) throw new Error(`não deu para contar os canais conectados: ${error.message}`)
+    return count ?? 0
+  }
+
+  const [leads, fluxos, conexoes, numeros, ativos] = await Promise.all([
     contar('contacts'),
     contar('flows'),
     contar('connections'),
     contar('channels'),
+    conectados(),
   ])
 
-  return { leads, fluxos, conexoes, numeros }
+  return { leads, fluxos, conexoes, numeros, conectados: ativos }
 }
 
 /**

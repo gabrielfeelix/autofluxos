@@ -6,7 +6,8 @@ import { Avatar } from '@/components/design/avatar'
 import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
 import { IconeDoQuadro, PopoverDoQuadro } from '@/components/quadros/popover-do-quadro'
 import { RolagemDaTabela } from '@/components/lead/rolagem-da-tabela'
-import { acaoAdminUsuario, type OperacaoDeUsuario } from '@/server/acoes-admin'
+import { acaoAdminExcluirUsuario, acaoAdminUsuario, type OperacaoDeUsuario } from '@/server/acoes-admin'
+import { EditarUsuario, ExcluirUsuario, OrganizacoesDoUsuario, RedefinirSenha, ROTULO_DA_FUNCAO } from './modais-do-usuario'
 import { acaoEntrarComo } from '@/server/acoes-conta'
 import { dataCurta, horaExata, quando } from '@/lib/quando'
 import { COLUNA_FIXA, FUNDO_DA_FIXA, FUNDO_DA_LINHA, Selo } from './partes'
@@ -25,7 +26,9 @@ export type UsuarioNaTabela = {
   voce: boolean
 }
 
-const ROTULO: Record<string, string> = { proprietario: 'Proprietário', administrador: 'Administrador', gestor: 'Gestor', atendente: 'Atendente' }
+const ROTULO = ROTULO_DA_FUNCAO
+
+type Aberto = { tipo: 'editar' | 'senha' | 'organizacoes' | 'excluir'; usuario: UsuarioNaTabela }
 
 /**
  * Os logins da plataforma, em tabela.
@@ -34,10 +37,47 @@ const ROTULO: Record<string, string> = { proprietario: 'Proprietário', administ
  * "Entrar como" é a exceção: ele navega para a organização da pessoa, então é
  * um formulário de verdade.
  */
-export function TabelaDeUsuarios({ usuarios: iniciais, cabecalhos }: { usuarios: UsuarioNaTabela[]; cabecalhos: React.ReactNode }) {
+export function TabelaDeUsuarios({
+  usuarios: iniciais,
+  cabecalhos,
+  organizacoes,
+}: {
+  usuarios: UsuarioNaTabela[]
+  cabecalhos: React.ReactNode
+  /** Todas as organizações, para "pôr em outra organização". */
+  organizacoes: { id: string; nome: string }[]
+}) {
   const [usuarios, setUsuarios] = useState(iniciais)
   const [aviso, setAviso] = useState<string | null>(null)
+  const [aberto, setAberto] = useState<Aberto | null>(null)
   const [, comecar] = useTransition()
+
+  /** Muda a linha na hora e volta, com aviso, se a ação recusar. */
+  const otimista = (usuario: UsuarioNaTabela, parcial: Partial<UsuarioNaTabela>, acao: () => Promise<{ ok: boolean; erro?: string }>) => {
+    const anterior = usuarios.find((item) => item.id === usuario.id) ?? usuario
+    setUsuarios((lista) => lista.map((item) => (item.id === usuario.id ? { ...item, ...parcial } : item)))
+    setAberto(null)
+    comecar(async () => {
+      const r = await acao().catch(() => ({ ok: false, erro: 'sem conexão com o servidor' }))
+      if (!r.ok) {
+        setUsuarios((lista) => lista.map((item) => (item.id === usuario.id ? anterior : item)))
+        setAviso(r.erro ?? 'não deu para fazer isso')
+      }
+    })
+  }
+
+  const excluir = (usuario: UsuarioNaTabela) => {
+    const antes = usuarios
+    setUsuarios((lista) => lista.filter((item) => item.id !== usuario.id))
+    setAberto(null)
+    comecar(async () => {
+      const r = await acaoAdminExcluirUsuario(usuario.id).catch(() => ({ ok: false, erro: 'sem conexão com o servidor' }))
+      if (!r.ok) {
+        setUsuarios(antes)
+        setAviso(r.erro ?? 'não deu para excluir')
+      }
+    })
+  }
 
   const mudar = (usuario: UsuarioNaTabela, operacao: OperacaoDeUsuario, otimista: Partial<UsuarioNaTabela>) => {
     const anterior = usuario
@@ -125,6 +165,18 @@ export function TabelaDeUsuarios({ usuarios: iniciais, cabecalhos }: { usuarios:
                           </button>
                         </form>
                       )}
+                      <button type="button" data-fechar-popover onClick={() => setAberto({ tipo: 'editar', usuario })} className="quadro-menu-item">
+                        <span className="flex-1">Editar nome e e-mail</span>
+                      </button>
+                      <button type="button" data-fechar-popover onClick={() => setAberto({ tipo: 'organizacoes', usuario })} className="quadro-menu-item">
+                        <span className="flex-1">
+                          Organizações e função
+                          <span className="block text-[11px] font-normal text-dim">Pôr, trocar a função, tirar</span>
+                        </span>
+                      </button>
+                      <button type="button" data-fechar-popover onClick={() => setAberto({ tipo: 'senha', usuario })} className="quadro-menu-item">
+                        <span className="flex-1">Redefinir a senha</span>
+                      </button>
                       {!usuario.voce && (
                         <button
                           type="button"
@@ -150,6 +202,11 @@ export function TabelaDeUsuarios({ usuarios: iniciais, cabecalhos }: { usuarios:
                           <span className="flex-1">{usuario.suspenso ? 'Devolver o acesso' : 'Suspender o acesso'}</span>
                         </button>
                       )}
+                      {!usuario.voce && (
+                        <button type="button" data-fechar-popover onClick={() => setAberto({ tipo: 'excluir', usuario })} className="quadro-menu-item text-perigo">
+                          <span className="flex-1">Excluir o login</span>
+                        </button>
+                      )}
                       {usuario.voce && <p className="px-3 py-2 text-[12px] text-dim">Este é o seu login.</p>}
                     </PopoverDoQuadro>
                   </td>
@@ -159,6 +216,19 @@ export function TabelaDeUsuarios({ usuarios: iniciais, cabecalhos }: { usuarios:
           </tbody>
         </table>
       </RolagemDaTabela>
+      {aberto?.tipo === 'editar' && (
+        <EditarUsuario usuario={aberto.usuario} aoFechar={() => setAberto(null)} aoMudar={(parcial, acao) => otimista(aberto.usuario, parcial, acao)} />
+      )}
+      {aberto?.tipo === 'senha' && <RedefinirSenha usuario={aberto.usuario} aoFechar={() => setAberto(null)} aoPronto={() => setUsuarios((lista) => lista.map((item) => (item.id === aberto.usuario.id && !item.voce ? { ...item, sessoesAtivas: 0 } : item)))} />}
+      {aberto?.tipo === 'organizacoes' && (
+        <OrganizacoesDoUsuario
+          usuario={aberto.usuario}
+          todas={organizacoes}
+          aoFechar={() => setAberto(null)}
+          aoMudar={(lista) => setUsuarios((todos) => todos.map((item) => (item.id === aberto.usuario.id ? { ...item, organizacoes: lista } : item)))}
+        />
+      )}
+      {aberto?.tipo === 'excluir' && <ExcluirUsuario usuario={aberto.usuario} aoFechar={() => setAberto(null)} aoExcluir={() => excluir(aberto.usuario)} />}
       {aviso && (
         <AvisoFlutuante tom="erro" aoSumir={() => setAviso(null)}>
           {aviso}

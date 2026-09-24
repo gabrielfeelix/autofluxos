@@ -4,6 +4,7 @@ import { lerParametros, ordenar, SemResultado, TelaDaAdministracao, Th, ThOrdena
 import { TabelaDeUsuarios } from '@/components/admin/tabela-de-usuarios'
 import { usuariosDaPlataforma, type UsuarioDaPlataforma } from '@/server/repos/usuarios-da-plataforma'
 import { exigirAdminDaPlataforma } from '@/server/sessao'
+import { listarOrganizacoes } from '@/server/repos/organizacoes'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,7 +34,7 @@ function passa(usuario: UsuarioDaPlataforma, situacao: string): boolean {
  */
 export default async function Usuarios({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const parametros = lerParametros(await searchParams)
-  const [sessao, todos] = await Promise.all([exigirAdminDaPlataforma(), usuariosDaPlataforma()])
+  const [sessao, todos, organizacoes] = await Promise.all([exigirAdminDaPlataforma(), usuariosDaPlataforma(), listarOrganizacoes()])
 
   const busca = (parametros.busca ?? '').trim().toLocaleLowerCase('pt-BR')
   const filtrados = todos.filter((usuario) => {
@@ -85,6 +86,7 @@ export default async function Usuarios({ searchParams }: { searchParams: Promise
         <TabelaDeUsuarios
           key={JSON.stringify(parametros)}
           usuarios={lista.map((usuario) => ({ ...usuario, voce: usuario.id === sessao.usuario.id }))}
+          organizacoes={organizacoes.map(({ id, nome }) => ({ id, nome }))}
           cabecalhos={
             <>
               <ThOrdenavel base={BASE} parametros={parametros} chave="nome" fixa>

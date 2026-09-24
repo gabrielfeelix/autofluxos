@@ -2,13 +2,14 @@
 
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
 import type { EstadoSalvar } from '@/components/design/formulario-salvar'
 import { acaoRemoverLogo, acaoSalvarCadastro, acaoSalvarLogo } from './acoes'
 import { registrar } from './repos/auditoria'
-import { acharCliente } from './repos/clientes'
+import { acharCliente, criarCliente } from './repos/clientes'
 import { definirSuspensao } from './repos/organizacoes'
 import { pendenciasDoMembro } from './repos/equipes'
-import { acharUsuarioPorEmail, papelNaConta, removerComDestino } from './repos/usuarios'
+import { acharUsuarioPorEmail, organizacoesSoDele, papelNaConta, removerComDestino } from './repos/usuarios'
 import { acharUsuario, exigirAdminDaPlataforma } from './sessao'
 import { autenticacao } from './auth'
 import { definirFuncaoDoMembro } from './pessoas'
@@ -225,6 +226,51 @@ export async function acaoAdminDarAcesso(
   })
   revalidatePath('/admin/usuarios')
   return { ok: true, pessoa: { id: usuarioId, nome: existente?.nome ?? nome, email, funcao } }
+}
+
+/**
+ * Cria a organização pela administração (A10): nome, plano e o proprietário
+ * por e-mail. E-mail que já tem login vira dono; e-mail novo ganha login com
+ * a senha provisória (o mesmo caminho do Dar acesso). Abre a organização no fim.
+ */
+export async function acaoAdminCriarOrganizacao(formData: FormData): Promise<{ ok?: boolean; erro?: string } | void> {
+  const sessao = await exigirAdminDaPlataforma()
+  const nome = String(formData.get('nome') ?? '').trim()
+  const planoId = String(formData.get('plano') ?? PLANO_DE_ENTRADA)
+  const email = String(formData.get('email') ?? '').trim()
+  if (nome === '') return { ok: false, erro: 'escreva o nome da organização' }
+  const plano = (await planosVigentes()).find((item) => item.id === planoId)
+  if (!plano) return { ok: false, erro: 'esse plano não existe' }
+  if (email === '') return { ok: false, erro: 'escreva o e-mail de quem vai ser o Proprietário' }
+  const existente = await acharUsuarioPorEmail(email)
+  if (!existente) {
+    if (String(formData.get('nomeDono') ?? '').trim() === '') return { ok: false, erro: 'e-mail sem login: escreva o nome de quem vai ser o Proprietário' }
+    if (String(formData.get('senha') ?? '').length < 10) return { ok: false, erro: 'e-mail sem login: a senha provisória precisa de pelo menos 10 caracteres' }
+  }
+
+  const organizacao = await criarCliente(nome)
+  const r = await definirPlano(organizacao.id, plano.id, plano.preco)
+  if (!r.ok) return { ok: false, erro: r.erro }
+  const acesso = new FormData()
+  acesso.set('email', email)
+  acesso.set('nome', String(formData.get('nomeDono') ?? '').trim())
+  acesso.set('senha', String(formData.get('senha') ?? ''))
+  acesso.set('funcao', 'proprietario')
+  const dono = await acaoAdminDarAcesso(organizacao.id, acesso)
+  await registrar({
+    acao: 'criou_conta',
+    autorId: sessao.usuario.id,
+    autorEmail: sessao.usuario.email,
+    contaId: organizacao.id,
+    contaNome: nome,
+    alvoTipo: 'client',
+    alvoId: organizacao.id,
+    alvoNome: nome,
+    detalhes: { plano: plano.id, proprietario: email, ...(dono.erro ? { erroNoDono: dono.erro } : {}) },
+    impersonadoPor: sessao.impersonadoPor,
+  })
+  // A organização já existe; o dono que falhou se põe na aba Pessoas.
+  redirect(`/admin/organizacoes/${organizacao.id}${dono.erro ? '/pessoas' : ''}`)
 }
 
 // ---------------------------------------------------------------------------
@@ -661,6 +707,113 @@ export async function acaoAdminUsuario(usuarioId: string, operacao: OperacaoDeUs
     detalhes: operacao.endsWith('_admin') ? { papelDePlataforma: operacao === 'tornar_admin' ? 'admin' : 'user' } : {},
     impersonadoPor: sessao.impersonadoPor,
   })
+  return { ok: true }
+}
+
+/** Edita nome e e-mail de um login (A9). E-mail de outro login é recusado. */
+export async function acaoAdminEditarUsuario(usuarioId: string, dados: { nome: string; email: string }): Promise<{ ok: boolean; erro?: string }> {
+  const sessao = await exigirAdminDaPlataforma()
+  const alvo = await acharUsuario(usuarioId)
+  if (!alvo) return { ok: false, erro: 'este login não existe mais' }
+  const nome = String(dados.nome ?? '').trim()
+  const email = String(dados.email ?? '').trim().toLowerCase()
+  if (nome.length < 1 || nome.length > 120) return { ok: false, erro: 'escreva o nome' }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, erro: 'esse e-mail não parece válido' }
+  const dono = await acharUsuarioPorEmail(email)
+  if (dono && dono.id !== usuarioId) return { ok: false, erro: 'esse e-mail já é de outro login' }
+  try {
+    await autenticacao().api.adminUpdateUser({ headers: await headers(), body: { userId: usuarioId, data: { name: nome, email } } })
+  } catch (erro) {
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para salvar' }
+  }
+  await registrar({
+    acao: 'editou_usuario',
+    autorId: sessao.usuario.id,
+    autorEmail: sessao.usuario.email,
+    alvoTipo: 'usuario',
+    alvoId: usuarioId,
+    alvoNome: nome,
+    detalhes: { nomeAntes: alvo.nome, emailAntes: alvo.email, nome, email },
+    impersonadoPor: sessao.impersonadoPor,
+  })
+  return { ok: true }
+}
+
+/**
+ * Redefine a senha com uma provisória, como no Dar acesso (sem e-mail ainda),
+ * e derruba as sessões abertas: quem estava dentro com a senha velha sai.
+ */
+export async function acaoAdminRedefinirSenha(usuarioId: string, senha: string): Promise<{ ok: boolean; erro?: string }> {
+  const sessao = await exigirAdminDaPlataforma()
+  const alvo = await acharUsuario(usuarioId)
+  if (!alvo) return { ok: false, erro: 'este login não existe mais' }
+  if (String(senha ?? '').length < 10) return { ok: false, erro: 'a senha precisa de pelo menos 10 caracteres' }
+  const api = autenticacao().api
+  const comHeaders = { headers: await headers() }
+  try {
+    await api.setUserPassword({ ...comHeaders, body: { userId: usuarioId, newPassword: senha } })
+    if (usuarioId !== sessao.usuario.id) await api.revokeUserSessions({ ...comHeaders, body: { userId: usuarioId } })
+  } catch (erro) {
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para redefinir a senha' }
+  }
+  await registrar({
+    acao: 'redefiniu_senha',
+    autorId: sessao.usuario.id,
+    autorEmail: sessao.usuario.email,
+    alvoTipo: 'usuario',
+    alvoId: usuarioId,
+    alvoNome: alvo.nome,
+    impersonadoPor: sessao.impersonadoPor,
+  })
+  return { ok: true }
+}
+
+/** Põe um login existente numa organização, com uma função (A9). */
+export async function acaoAdminPorNaOrganizacao(usuarioId: string, organizacaoId: string, funcao: string): Promise<{ ok: boolean; erro?: string }> {
+  await exigirAdminDaPlataforma()
+  const alvo = await acharUsuario(usuarioId)
+  if (!alvo) return { ok: false, erro: 'este login não existe mais' }
+  if ((await papelNaConta(organizacaoId, usuarioId)) !== null) return { ok: false, erro: 'esta pessoa já está nesta organização' }
+  const dados = new FormData()
+  dados.set('email', alvo.email)
+  dados.set('funcao', funcao)
+  const r = await acaoAdminDarAcesso(organizacaoId, dados)
+  return r.ok ? { ok: true } : { ok: false, erro: r.erro ?? 'não deu para pôr na organização' }
+}
+
+/** O que impede excluir o login: as organizações em que ele é o único dono. */
+export async function acaoAdminImpedimentosDoUsuario(usuarioId: string): Promise<{ ok: boolean; erro?: string; soDele?: { id: string; nome: string }[] }> {
+  await exigirAdminDaPlataforma()
+  return { ok: true, soDele: await organizacoesSoDele(usuarioId) }
+}
+
+/**
+ * Exclui o login (A9). Bloqueado se ele for o único Proprietário de alguma
+ * organização: a posse passa antes. Contatos atribuídos a ele ficam sem
+ * responsável (`on delete set null`), e a auditoria guarda o nome.
+ */
+export async function acaoAdminExcluirUsuario(usuarioId: string): Promise<{ ok: boolean; erro?: string }> {
+  const sessao = await exigirAdminDaPlataforma()
+  if (usuarioId === sessao.usuario.id) return { ok: false, erro: 'isso não se faz com o próprio login' }
+  const alvo = await acharUsuario(usuarioId)
+  if (!alvo) return { ok: false, erro: 'este login não existe mais' }
+  const soDele = await organizacoesSoDele(usuarioId)
+  if (soDele.length > 0) return { ok: false, erro: `é o único Proprietário de ${soDele.map((o) => o.nome).join(', ')}. Passe a posse antes.` }
+  await registrar({
+    acao: 'excluiu_usuario',
+    autorId: sessao.usuario.id,
+    autorEmail: sessao.usuario.email,
+    alvoTipo: 'usuario',
+    alvoId: usuarioId,
+    alvoNome: alvo.nome,
+    detalhes: { email: alvo.email },
+    impersonadoPor: sessao.impersonadoPor,
+  })
+  try {
+    await autenticacao().api.removeUser({ headers: await headers(), body: { userId: usuarioId } })
+  } catch (erro) {
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para excluir' }
+  }
   return { ok: true }
 }
 

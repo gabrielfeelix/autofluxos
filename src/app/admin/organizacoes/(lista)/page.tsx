@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { BarraDeLista } from '@/components/design/barra-de-lista'
 import { LogoDoCliente } from '@/components/design/logo-cliente'
-import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { LinhaClicavel } from '@/components/lead/linha-clicavel'
 import {
   COLUNA_FIXA,
@@ -17,7 +16,7 @@ import {
   ThOrdenavel,
 } from '@/components/admin/partes'
 import { dataCurta, horaExata, quando } from '@/lib/quando'
-import { acaoCriarCliente } from '@/server/acoes'
+import { NovaOrganizacao } from '@/components/admin/nova-organizacao'
 import { listarOrganizacoes, type OrganizacaoListada } from '@/server/repos/organizacoes'
 import { planosVigentes } from '@/server/repos/planos'
 
@@ -88,22 +87,7 @@ export default async function Organizacoes({
       titulo="Organizações"
       descricao="Quem usa o AutoFluxos: plano, quem tem acesso, quem espera e o uso do mês. Clique numa linha para abrir o detalhe."
       acoes={
-        <ModalFormulario
-          botao={
-            <span className="flex items-center gap-2">
-              <span aria-hidden className="text-lg leading-none">+</span>
-              Nova organização
-            </span>
-          }
-          titulo="Nova organização"
-          descricao="A organização nasce vazia: o primeiro fluxo e o número de WhatsApp vêm depois, na tela dela."
-          action={acaoCriarCliente}
-        >
-          <label>
-            <RotuloCampo>Nome da organização</RotuloCampo>
-            <input name="nome" required autoFocus placeholder="Exemplo: Vega Filmes" className="app-field px-[13px] py-[11px] text-[13.5px]" />
-          </label>
-        </ModalFormulario>
+        <NovaOrganizacao planos={planos} />
       }
     >
       <div className="mb-3">
