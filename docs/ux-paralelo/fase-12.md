@@ -25,6 +25,19 @@ das páginas:
   Favoritas e Relatórios; todo o resto mostra "Sem acesso". Início não mostra
   o atalho "Automações ›" (achado antigo do A3, resolvido).
 
+**Rodada final (23/09, depois do Docker):** mesma varredura, 40 rotas × 3
+personas, 160 visitas: todas 200, nenhuma tela de erro, nenhum erro de JS, o
+mesmo "Sem acesso" de antes. Prints do proprietário em desktop (1440) e
+celular (390) em `docs/revisao-ux-ui-2026-09-23/prints-depois/` (80 jpg),
+olhados em folha de contato; nenhuma tela rola de lado no celular, o editor
+incluído depois do `5357659`. Detalhe da transmissão fica de fora: a conta de
+revisão não tem transmissão.
+
+Atalho do Início, provado de novo (`.ux-local/atalho-atende.mjs`, conta pelo
+`href` dentro de `nav[aria-label=Atalhos]`, porque o "›" é `aria-hidden`):
+proprietário vê Inbox, Funil e Automações; Rita (atendimento) vê Inbox e
+Funil.
+
 ## Jornadas (matriz de `08-handoff-execucao.md`)
 
 | Jornada | Resultado |

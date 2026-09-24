@@ -1320,11 +1320,11 @@ outras telas desta fase.
 - [x] **Passo 2:** personas: proprietário, membro com acesso de gestão, membro
   com acesso de atendimento (escopo próprio). Criar os dois membros no local
   com o script de seed ou pela tela.
-- [ ] **Passo 3:** prints finais de todas as telas em
+- [x] **Passo 3:** prints finais de todas as telas em
   `docs/revisao-ux-ui-2026-09-23/prints-depois/` e atualização de
   `docs/revisao-ux-ui-2026-09-23/00-cobertura.md` (coluna de cobertura passa a
   "Validada em navegador" onde for o caso).
-- [ ] **Passo 4:** commit `docs(ux): validação integrada e prints finais`.
+- [x] **Passo 4:** commit `docs(ux): validação integrada e prints finais`.
 
 ---
 
