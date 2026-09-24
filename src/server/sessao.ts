@@ -2,6 +2,7 @@ import 'server-only'
 import { headers } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import { autenticacao, bancoDoLogin } from './auth'
+import { organizacaoSuspensa } from './repos/organizacoes'
 
 /**
  * Quem está aí do outro lado.
@@ -231,8 +232,14 @@ export async function exigirAcessoAoCliente(contaId: string): Promise<AcessoAoCl
   const acesso = await conferirAcessoAoCliente(contaId)
   if (acesso) return acesso
 
+  // Organização suspensa pela administração: a pessoa continua sendo membro,
+  // só não entra até a 4YU reativar. Cai na lista dela com o aviso, e não num
+  // "não existe", que faria parecer que a organização sumiu.
+  const sessao = await sessaoAtual()
+  if (sessao && (await papelNaConta(sessao.usuario.id, contaId)) !== null) redirect('/contas?suspensa=1')
+
   // Sem sessão nenhuma é "entre"; com sessão e sem direito é "não existe".
-  if (await sessaoAtual()) notFound()
+  if (sessao) notFound()
   redirect('/entrar')
 }
 
@@ -249,8 +256,12 @@ export async function conferirAcessoAoCliente(contaId: string): Promise<AcessoAo
   if (!sessao) return null
 
   const papel = await papelNaConta(sessao.usuario.id, contaId)
+  const admin = ehAdminDaPlataforma(sessao)
+  // A suspensão vale para quem é da organização, e não para o suporte 4YU:
+  // é justamente ele quem entra para resolver.
+  if (papel !== null && !admin && (await organizacaoSuspensa(contaId))) return null
   if (papel !== null) return { sessao, papel }
-  if (ehAdminDaPlataforma(sessao)) return { sessao, papel: null }
+  if (admin) return { sessao, papel: null }
   return null
 }
 

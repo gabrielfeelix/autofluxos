@@ -260,6 +260,13 @@ export type Acesso = {
    */
   ehAdminDaPlataforma?: boolean
   sobrescritas?: Partial<Politica>
+  /**
+   * A política da função gravada da pessoa (tabela `funcoes`, A7).
+   *
+   * Ausente = vale a do papel, que é o que acontece enquanto a tabela não
+   * existe. As exceções continuam valendo por cima das duas.
+   */
+  politicaBase?: Politica
   /** As equipes de que esta pessoa faz parte. Vazio = nenhuma. */
   equipes?: readonly string[]
   usuarioId?: string
@@ -273,7 +280,7 @@ export function escopoDe(acesso: Acesso, capacidade: Capacidade): Escopo {
   const daSobrescrita = acesso.sobrescritas?.[capacidade]
   if (daSobrescrita !== undefined) return daSobrescrita
 
-  return POLITICAS[acesso.papel][capacidade]
+  return acesso.politicaBase?.[capacidade] ?? POLITICAS[acesso.papel][capacidade]
 }
 
 /**

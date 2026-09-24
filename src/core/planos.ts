@@ -63,6 +63,34 @@ export type Plano = {
    * franquia continua sendo a primeira.
    */
   itens: string[]
+  /** Quantos números de WhatsApp o plano comporta. */
+  numeros: number
+  /** O que o plano libera, na lista fechada de `RECURSOS_DO_PLANO`. */
+  recursos: RecursoDoPlano[]
+}
+
+/**
+ * O que um plano pode liberar, com o nome que a tela escreve.
+ *
+ * Lista fechada pelo mesmo motivo das capacidades (`core/permissoes.ts`):
+ * texto livre viraria `ia` num lugar e `IA` noutro. Hoje ela descreve o
+ * plano; a cobrança por recurso, quando existir, lê daqui.
+ */
+export const RECURSOS_DO_PLANO = [
+  { chave: 'crm', rotulo: 'Fluxos, Inbox e CRM' },
+  { chave: 'ia', rotulo: 'Respostas com IA' },
+  { chave: 'transcricao', rotulo: 'Transcrição de áudio' },
+  { chave: 'transmissoes', rotulo: 'Transmissões e modelos da Meta' },
+  { chave: 'integracoes', rotulo: 'Conexão com outros sistemas' },
+  { chave: 'varios_numeros', rotulo: 'Vários números e unidades' },
+  { chave: 'chave_propria', rotulo: 'Chave de IA própria' },
+  { chave: 'webhook', rotulo: 'Webhook de entrada e auditoria' },
+] as const
+
+export type RecursoDoPlano = (typeof RECURSOS_DO_PLANO)[number]['chave']
+
+export function ehRecursoDoPlano(valor: string): valor is RecursoDoPlano {
+  return RECURSOS_DO_PLANO.some((recurso) => recurso.chave === valor)
 }
 
 /**
@@ -75,6 +103,8 @@ export const PLANOS: Plano[] = [
     nome: 'Essencial',
     preco: 297,
     conversas: 1000,
+    numeros: 1,
+    recursos: ['crm'],
     resumo: 'Para quem atende sozinho e quer parar de repetir horário e preço.',
     itens: [
       'Até 1.000 conversas por mês',
@@ -90,6 +120,8 @@ export const PLANOS: Plano[] = [
     nome: 'Operação',
     preco: 597,
     conversas: 3000,
+    numeros: 1,
+    recursos: ['crm', 'ia', 'transcricao', 'transmissoes', 'integracoes'],
     resumo: 'Para quem já tem gente atendendo junto e perde conversa no meio.',
     itens: [
       'Tudo do Essencial',
@@ -106,6 +138,8 @@ export const PLANOS: Plano[] = [
     nome: 'Escala',
     preco: 1197,
     conversas: 8000,
+    numeros: 5,
+    recursos: ['crm', 'ia', 'transcricao', 'transmissoes', 'integracoes', 'varios_numeros', 'chave_propria', 'webhook'],
     resumo: 'Para operação com mais de um número, volume alto e dado sensível.',
     itens: [
       'Tudo da Operação',
@@ -160,7 +194,7 @@ export const TARIFA_DA_META =
 export const O_QUE_E_CONVERSA =
   'Conversa é contato que trocou mensagem nos dois sentidos no mês. Disparo que ninguém respondeu não conta.'
 
-export function acharPlano(id: IdDoPlano): Plano {
+export function acharPlano(id: IdDoPlano | string): Plano {
   const plano = PLANOS.find((p) => p.id === id)
   /*
    * Cair no plano de entrada, e não estourar, porque quem chama isto é tela: uma

@@ -45,7 +45,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         />
         <h1 className="text-[25px] font-bold tracking-[-0.02em]">Dados da organização</h1>
         <p className="mt-1.5 mb-6 max-w-[650px] text-[13px] leading-6 text-dim">
-          O cadastro e o logo desta conta. Nada daqui vai para o WhatsApp, é o que a
+          O cadastro e o logo desta organização. Nada daqui vai para o WhatsApp, é o que a
           4YU usa para saber com quem fala.
         </p>
 

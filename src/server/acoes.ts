@@ -2493,7 +2493,7 @@ export async function acaoSalvarCadastro(
   if (recusou(acesso)) return acesso
 
   const nome = String(formData.get('nome') ?? '').trim()
-  if (nome === '') return { erro: 'O cliente precisa de um nome.' }
+  if (nome === '') return { erro: 'A organização precisa de um nome.' }
 
   try {
     await atualizarCadastro(clienteId, {

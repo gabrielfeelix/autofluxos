@@ -26,12 +26,16 @@ export function RemoverComDestino({
   pendencias,
   pessoas,
   aoFechar,
+  remover = acaoRemoverDaConta,
 }: {
   clienteId: string
   membro: { id: string; nome: string }
   pendencias: Pendencias
   pessoas: { id: string; nome: string }[]
-  aoFechar: () => void
+  /** `true` quando tirou de fato, para a lista tirar a linha sem recarregar. */
+  aoFechar: (removido?: boolean) => void
+  /** Quem tira. Na administração é a ação da plataforma; o padrão é a da organização. */
+  remover?: (clienteId: string, usuarioId: string, destino: string | null) => Promise<{ ok: boolean; erro?: string }>
 }) {
   const [destino, setDestino] = useState<string | null>(null)
   const [erro, setErro] = useState<string | null>(null)
@@ -49,7 +53,7 @@ export function RemoverComDestino({
     if (temPendencia && destino === null) return
     setErro(null)
     comecar(async () => {
-      const r = await acaoRemoverDaConta(
+      const r = await remover(
         clienteId,
         membro.id,
         destino === null || destino === SEM_RESPONSAVEL ? null : destino,
@@ -58,15 +62,15 @@ export function RemoverComDestino({
         setErro(r.erro ?? 'não deu para tirar da organização')
         return
       }
-      aoFechar()
+      aoFechar(true)
     })
   }
 
   return (
     <Modal
       aberto
-      aoFechar={aoFechar}
-      titulo={`Tirar ${membro.nome} desta conta?`}
+      aoFechar={() => aoFechar()}
+      titulo={`Tirar ${membro.nome} desta organização?`}
       descricao="A pessoa continua existindo no sistema e o histórico dela fica como está."
       largura={460}
     >
@@ -105,7 +109,7 @@ export function RemoverComDestino({
       <div className="mt-5 flex justify-end gap-2">
         <button
           type="button"
-          onClick={aoFechar}
+          onClick={() => aoFechar()}
           className="rounded-lg border border-line px-3.5 py-2 text-[12.5px] font-semibold text-dim transition hover:text-muted"
         >
           Cancelar

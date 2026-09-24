@@ -24,6 +24,8 @@ import {
 } from './sessao'
 import { destinoNaConta } from '@/components/design/secoes-do-cliente'
 import { responsaveisDoEscopo } from './repos/relatorios'
+import { funcoesGravadas, funcoesVigentes } from './repos/funcoes'
+import type { IdDaFuncao } from '@/core/funcoes'
 
 /**
  * A autorização de negócio (RB-40 a RB-42).
@@ -89,12 +91,20 @@ async function regrasDe(acesso: AcessoAoCliente, clienteId: string): Promise<Ace
 
   const papel = acesso.papel !== null && ehPapelDaConta(acesso.papel) ? acesso.papel : null
 
-  const [equipes, sobrescritas] = await Promise.all([
+  const [equipes, sobrescritas, funcoes, gravadas] = await Promise.all([
     equipesDoUsuario(clienteId, usuarioId),
     sobrescritasDoUsuario(clienteId, usuarioId),
+    funcoesVigentes(),
+    funcoesGravadas(clienteId).catch(() => new Map<string, IdDaFuncao>()),
   ])
 
-  return { papel, usuarioId, equipes, sobrescritas }
+  // Com a tabela de funções no banco e a função gravada, a base da pessoa é a
+  // política da função (editável na administração). Sem uma das duas, vale o
+  // papel, exatamente como antes da A7.
+  const gravada = gravadas.get(usuarioId)
+  const politicaBase = funcoes.daTabela && gravada ? funcoes.porId[gravada].capacidades : undefined
+
+  return { papel, usuarioId, equipes, sobrescritas, politicaBase }
 }
 
 /** As equipes desta pessoa nesta conta. Arquivada não conta. */
