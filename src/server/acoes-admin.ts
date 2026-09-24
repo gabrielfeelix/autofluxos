@@ -12,6 +12,9 @@ import { acharUsuarioPorEmail, papelNaConta, removerComDestino } from './repos/u
 import { acharUsuario, exigirAdminDaPlataforma } from './sessao'
 import { autenticacao } from './auth'
 import { definirFuncaoDoMembro } from './pessoas'
+import { definirPlano, planoDaConta } from './repos/plano'
+import { planoVigente } from './repos/planos'
+import { acharPedido } from './repos/pedidos-de-plano'
 import { ehFuncao, PAPEL_DA_FUNCAO, type IdDaFuncao } from '@/core/funcoes'
 
 /**
@@ -217,6 +220,80 @@ export async function acaoAdminDarAcesso(
   })
   revalidatePath('/admin/usuarios')
   return { ok: true, pessoa: { id: usuarioId, nome: existente?.nome ?? nome, email, funcao } }
+}
+
+// ---------------------------------------------------------------------------
+// Plano da organização e pedidos de troca
+// ---------------------------------------------------------------------------
+
+/**
+ * Troca o plano da organização (grava `clients.plano`) e, quando vem de um
+ * pedido, fecha o pedido como atendido. As duas coisas vão para a auditoria.
+ */
+export async function acaoAdminTrocarPlano(
+  organizacaoId: string,
+  plano: string,
+  pedidoId?: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  const sessao = await exigirAdminDaPlataforma()
+  if (plano !== 'essencial' && plano !== 'operacao' && plano !== 'escala') return { ok: false, erro: 'esse plano não existe' }
+  const organizacao = await acharCliente(organizacaoId)
+  if (!organizacao) return { ok: false, erro: 'esta organização não existe mais' }
+
+  const de = await planoDaConta(organizacaoId)
+  const destino = await planoVigente(plano)
+  if (de !== plano) {
+    const r = await definirPlano(organizacaoId, plano)
+    if (!r.ok) return { ok: false, erro: r.erro }
+    await registrar({
+      acao: 'trocou_plano',
+      autorId: sessao.usuario.id,
+      autorEmail: sessao.usuario.email,
+      contaId: organizacaoId,
+      contaNome: organizacao.nome,
+      alvoTipo: 'plano',
+      alvoId: plano,
+      alvoNome: destino.nome,
+      detalhes: { de, para: plano, ...(pedidoId ? { pedido: pedidoId } : {}) },
+      impersonadoPor: sessao.impersonadoPor,
+    })
+  }
+  if (pedidoId) {
+    await registrar({
+      acao: 'atendeu_pedido_de_plano',
+      autorId: sessao.usuario.id,
+      autorEmail: sessao.usuario.email,
+      contaId: organizacaoId,
+      contaNome: organizacao.nome,
+      alvoTipo: 'pedido',
+      alvoId: pedidoId,
+      alvoNome: destino.nome,
+      detalhes: { pedido: pedidoId, de, para: plano },
+      impersonadoPor: sessao.impersonadoPor,
+    })
+  }
+  revalidatePath('/admin/organizacoes')
+  return { ok: true }
+}
+
+export async function acaoAdminRecusarPedido(pedidoId: string): Promise<{ ok: boolean; erro?: string }> {
+  const sessao = await exigirAdminDaPlataforma()
+  const pedido = await acharPedido(pedidoId)
+  if (!pedido) return { ok: false, erro: 'esse pedido não existe' }
+  if (pedido.situacao !== 'aberto') return { ok: false, erro: 'esse pedido já foi respondido' }
+  await registrar({
+    acao: 'recusou_pedido_de_plano',
+    autorId: sessao.usuario.id,
+    autorEmail: sessao.usuario.email,
+    contaId: pedido.organizacaoId,
+    contaNome: pedido.organizacaoNome,
+    alvoTipo: 'pedido',
+    alvoId: pedidoId,
+    alvoNome: pedido.para,
+    detalhes: { pedido: pedidoId, de: pedido.de, para: pedido.para },
+    impersonadoPor: sessao.impersonadoPor,
+  })
+  return { ok: true }
 }
 
 // ---------------------------------------------------------------------------
